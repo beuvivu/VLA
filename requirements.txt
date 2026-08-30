@@ -12,6 +12,6 @@ matplotlib==3.10.3
 seaborn==0.13.2
 jinja2==3.1.6
 scikit-learn>=1.5,<2.0
-joblib>=1.2,<2.0
+joblib>=1.5.3,<2.0
 scipy>=1.10,<2.0
 openpyxl==3.1.5
