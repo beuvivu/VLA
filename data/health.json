@@ -1,24 +1,19 @@
 {
   "ok": true,
-  "latest_date": "2026-08-11",
-  "last_date": "2026-08-11",
+  "latest_date": "2026-08-30",
+  "last_date": "2026-08-30",
   "first_date": "2025-08-11",
-  "row_count": 362,
+  "row_count": 385,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
-  "full_missing_count": 4,
-  "full_missing_dates": [
-    "2026-02-16",
-    "2026-02-17",
-    "2026-02-18",
-    "2026-02-19"
-  ],
+  "full_missing_count": 0,
+  "full_missing_dates": [],
   "duplicate_dates": [],
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 362,
+    "rows": 385,
     "bad_row_count": 0,
     "expected_sum_per_draw": 27,
     "bad_dates": []

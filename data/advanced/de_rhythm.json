@@ -5,21 +5,7 @@
     "number_str":"15",
     "hit_count":0,
     "last_seen":null,
-    "current_gap":365,
-    "min_gap":null,
-    "mean_gap":null,
-    "median_gap":null,
-    "max_gap":null,
-    "last_10_intervals":"",
-    "rhythm_pressure":null
-  },
-  {
-    "mode":"de",
-    "number":18,
-    "number_str":"18",
-    "hit_count":0,
-    "last_seen":null,
-    "current_gap":365,
+    "current_gap":384,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -33,7 +19,7 @@
     "number_str":"56",
     "hit_count":0,
     "last_seen":null,
-    "current_gap":365,
+    "current_gap":384,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -47,7 +33,7 @@
     "number_str":"58",
     "hit_count":0,
     "last_seen":null,
-    "current_gap":365,
+    "current_gap":384,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -61,7 +47,7 @@
     "number_str":"98",
     "hit_count":0,
     "last_seen":null,
-    "current_gap":365,
+    "current_gap":384,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -75,7 +61,7 @@
     "number_str":"31",
     "hit_count":1,
     "last_seen":"2025-09-10",
-    "current_gap":335,
+    "current_gap":354,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -89,7 +75,7 @@
     "number_str":"07",
     "hit_count":1,
     "last_seen":"2025-09-14",
-    "current_gap":331,
+    "current_gap":350,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -103,7 +89,7 @@
     "number_str":"73",
     "hit_count":1,
     "last_seen":"2025-10-29",
-    "current_gap":286,
+    "current_gap":305,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -117,7 +103,7 @@
     "number_str":"02",
     "hit_count":1,
     "last_seen":"2025-11-06",
-    "current_gap":278,
+    "current_gap":297,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -127,45 +113,17 @@
   },
   {
     "mode":"de",
-    "number":26,
-    "number_str":"26",
-    "hit_count":2,
-    "last_seen":"2025-12-07",
-    "current_gap":247,
-    "min_gap":1.0,
-    "mean_gap":1.0,
-    "median_gap":1.0,
-    "max_gap":1.0,
-    "last_10_intervals":"1",
-    "rhythm_pressure":247.0
-  },
-  {
-    "mode":"de",
-    "number":72,
-    "number_str":"72",
-    "hit_count":2,
-    "last_seen":"2025-12-19",
-    "current_gap":235,
-    "min_gap":60.0,
-    "mean_gap":60.0,
-    "median_gap":60.0,
-    "max_gap":60.0,
-    "last_10_intervals":"60",
-    "rhythm_pressure":3.9167
-  },
-  {
-    "mode":"de",
     "number":27,
     "number_str":"27",
     "hit_count":3,
     "last_seen":"2026-01-13",
-    "current_gap":210,
+    "current_gap":229,
     "min_gap":47.0,
     "mean_gap":72.5,
     "median_gap":72.5,
     "max_gap":98.0,
     "last_10_intervals":"98|47",
-    "rhythm_pressure":2.8966
+    "rhythm_pressure":3.1586
   },
   {
     "mode":"de",
@@ -173,13 +131,13 @@
     "number_str":"86",
     "hit_count":5,
     "last_seen":"2026-01-21",
-    "current_gap":202,
+    "current_gap":221,
     "min_gap":2.0,
     "mean_gap":32.75,
     "median_gap":38.0,
     "max_gap":53.0,
     "last_10_intervals":"53|28|48|2",
-    "rhythm_pressure":6.1679
+    "rhythm_pressure":6.7481
   },
   {
     "mode":"de",
@@ -187,13 +145,13 @@
     "number_str":"62",
     "hit_count":4,
     "last_seen":"2026-01-24",
-    "current_gap":199,
+    "current_gap":218,
     "min_gap":9.0,
     "mean_gap":33.3333,
     "median_gap":16.0,
     "max_gap":75.0,
     "last_10_intervals":"9|75|16",
-    "rhythm_pressure":5.97
+    "rhythm_pressure":6.54
   },
   {
     "mode":"de",
@@ -201,27 +159,13 @@
     "number_str":"74",
     "hit_count":2,
     "last_seen":"2026-01-26",
-    "current_gap":197,
+    "current_gap":216,
     "min_gap":96.0,
     "mean_gap":96.0,
     "median_gap":96.0,
     "max_gap":96.0,
     "last_10_intervals":"96",
-    "rhythm_pressure":2.0521
-  },
-  {
-    "mode":"de",
-    "number":45,
-    "number_str":"45",
-    "hit_count":3,
-    "last_seen":"2026-01-30",
-    "current_gap":193,
-    "min_gap":48.0,
-    "mean_gap":82.5,
-    "median_gap":82.5,
-    "max_gap":117.0,
-    "last_10_intervals":"48|117",
-    "rhythm_pressure":2.3394
+    "rhythm_pressure":2.25
   },
   {
     "mode":"de",
@@ -229,13 +173,13 @@
     "number_str":"77",
     "hit_count":4,
     "last_seen":"2026-02-13",
-    "current_gap":179,
+    "current_gap":198,
     "min_gap":5.0,
     "mean_gap":60.6667,
     "median_gap":7.0,
     "max_gap":170.0,
     "last_10_intervals":"170|7|5",
-    "rhythm_pressure":2.9505
+    "rhythm_pressure":3.2637
   },
   {
     "mode":"de",
@@ -243,13 +187,13 @@
     "number_str":"30",
     "hit_count":3,
     "last_seen":"2026-02-14",
-    "current_gap":178,
+    "current_gap":197,
     "min_gap":20.0,
     "mean_gap":84.0,
     "median_gap":84.0,
     "max_gap":148.0,
     "last_10_intervals":"148|20",
-    "rhythm_pressure":2.119
+    "rhythm_pressure":2.3452
   },
   {
     "mode":"de",
@@ -257,13 +201,13 @@
     "number_str":"49",
     "hit_count":2,
     "last_seen":"2026-03-06",
-    "current_gap":158,
+    "current_gap":177,
     "min_gap":62.0,
     "mean_gap":62.0,
     "median_gap":62.0,
     "max_gap":62.0,
     "last_10_intervals":"62",
-    "rhythm_pressure":2.5484
+    "rhythm_pressure":2.8548
   },
   {
     "mode":"de",
@@ -271,13 +215,13 @@
     "number_str":"95",
     "hit_count":2,
     "last_seen":"2026-03-19",
-    "current_gap":145,
+    "current_gap":164,
     "min_gap":136.0,
     "mean_gap":136.0,
     "median_gap":136.0,
     "max_gap":136.0,
     "last_10_intervals":"136",
-    "rhythm_pressure":1.0662
+    "rhythm_pressure":1.2059
   },
   {
     "mode":"de",
@@ -285,13 +229,13 @@
     "number_str":"24",
     "hit_count":4,
     "last_seen":"2026-03-20",
-    "current_gap":144,
+    "current_gap":163,
     "min_gap":8.0,
     "mean_gap":52.3333,
     "median_gap":54.0,
     "max_gap":95.0,
     "last_10_intervals":"95|54|8",
-    "rhythm_pressure":2.7516
+    "rhythm_pressure":3.1146
   },
   {
     "mode":"de",
@@ -299,13 +243,13 @@
     "number_str":"46",
     "hit_count":3,
     "last_seen":"2026-03-22",
-    "current_gap":142,
+    "current_gap":161,
     "min_gap":4.0,
     "mean_gap":94.0,
     "median_gap":94.0,
     "max_gap":184.0,
     "last_10_intervals":"4|184",
-    "rhythm_pressure":1.5106
+    "rhythm_pressure":1.7128
   },
   {
     "mode":"de",
@@ -313,13 +257,13 @@
     "number_str":"29",
     "hit_count":3,
     "last_seen":"2026-03-24",
-    "current_gap":140,
+    "current_gap":159,
     "min_gap":20.0,
     "mean_gap":55.0,
     "median_gap":55.0,
     "max_gap":90.0,
     "last_10_intervals":"20|90",
-    "rhythm_pressure":2.5455
+    "rhythm_pressure":2.8909
   },
   {
     "mode":"de",
@@ -327,13 +271,13 @@
     "number_str":"88",
     "hit_count":5,
     "last_seen":"2026-03-29",
-    "current_gap":135,
+    "current_gap":154,
     "min_gap":4.0,
     "mean_gap":46.75,
     "median_gap":34.0,
     "max_gap":115.0,
     "last_10_intervals":"37|31|115|4",
-    "rhythm_pressure":2.8877
+    "rhythm_pressure":3.2941
   },
   {
     "mode":"de",
@@ -341,27 +285,13 @@
     "number_str":"66",
     "hit_count":2,
     "last_seen":"2026-04-01",
-    "current_gap":132,
+    "current_gap":151,
     "min_gap":164.0,
     "mean_gap":164.0,
     "median_gap":164.0,
     "max_gap":164.0,
     "last_10_intervals":"164",
-    "rhythm_pressure":0.8049
-  },
-  {
-    "mode":"de",
-    "number":44,
-    "number_str":"44",
-    "hit_count":2,
-    "last_seen":"2026-04-03",
-    "current_gap":130,
-    "min_gap":220.0,
-    "mean_gap":220.0,
-    "median_gap":220.0,
-    "max_gap":220.0,
-    "last_10_intervals":"220",
-    "rhythm_pressure":0.5909
+    "rhythm_pressure":0.9207
   },
   {
     "mode":"de",
@@ -369,13 +299,13 @@
     "number_str":"06",
     "hit_count":2,
     "last_seen":"2026-04-06",
-    "current_gap":127,
+    "current_gap":146,
     "min_gap":190.0,
     "mean_gap":190.0,
     "median_gap":190.0,
     "max_gap":190.0,
     "last_10_intervals":"190",
-    "rhythm_pressure":0.6684
+    "rhythm_pressure":0.7684
   },
   {
     "mode":"de",
@@ -383,13 +313,13 @@
     "number_str":"82",
     "hit_count":2,
     "last_seen":"2026-04-07",
-    "current_gap":126,
+    "current_gap":145,
     "min_gap":101.0,
     "mean_gap":101.0,
     "median_gap":101.0,
     "max_gap":101.0,
     "last_10_intervals":"101",
-    "rhythm_pressure":1.2475
+    "rhythm_pressure":1.4356
   },
   {
     "mode":"de",
@@ -397,13 +327,13 @@
     "number_str":"20",
     "hit_count":2,
     "last_seen":"2026-04-10",
-    "current_gap":123,
+    "current_gap":142,
     "min_gap":147.0,
     "mean_gap":147.0,
     "median_gap":147.0,
     "max_gap":147.0,
     "last_10_intervals":"147",
-    "rhythm_pressure":0.8367
+    "rhythm_pressure":0.966
   },
   {
     "mode":"de",
@@ -411,13 +341,13 @@
     "number_str":"35",
     "hit_count":3,
     "last_seen":"2026-04-16",
-    "current_gap":117,
+    "current_gap":136,
     "min_gap":95.0,
     "mean_gap":113.5,
     "median_gap":113.5,
     "max_gap":132.0,
     "last_10_intervals":"95|132",
-    "rhythm_pressure":1.0308
+    "rhythm_pressure":1.1982
   },
   {
     "mode":"de",
@@ -425,13 +355,13 @@
     "number_str":"48",
     "hit_count":5,
     "last_seen":"2026-04-22",
-    "current_gap":111,
+    "current_gap":130,
     "min_gap":13.0,
     "mean_gap":27.5,
     "median_gap":29.0,
     "max_gap":39.0,
     "last_10_intervals":"32|26|13|39",
-    "rhythm_pressure":4.0364
+    "rhythm_pressure":4.7273
   },
   {
     "mode":"de",
@@ -439,13 +369,13 @@
     "number_str":"76",
     "hit_count":3,
     "last_seen":"2026-04-24",
-    "current_gap":109,
+    "current_gap":128,
     "min_gap":3.0,
     "mean_gap":82.0,
     "median_gap":82.0,
     "max_gap":161.0,
     "last_10_intervals":"161|3",
-    "rhythm_pressure":1.3293
+    "rhythm_pressure":1.561
   },
   {
     "mode":"de",
@@ -453,13 +383,13 @@
     "number_str":"59",
     "hit_count":5,
     "last_seen":"2026-04-27",
-    "current_gap":106,
+    "current_gap":125,
     "min_gap":8.0,
     "mean_gap":53.75,
     "median_gap":58.5,
     "max_gap":90.0,
     "last_10_intervals":"90|72|8|45",
-    "rhythm_pressure":1.9721
+    "rhythm_pressure":2.3256
   },
   {
     "mode":"de",
@@ -467,13 +397,13 @@
     "number_str":"75",
     "hit_count":3,
     "last_seen":"2026-04-30",
-    "current_gap":103,
+    "current_gap":122,
     "min_gap":77.0,
     "mean_gap":130.5,
     "median_gap":130.5,
     "max_gap":184.0,
     "last_10_intervals":"184|77",
-    "rhythm_pressure":0.7893
+    "rhythm_pressure":0.9349
   },
   {
     "mode":"de",
@@ -481,13 +411,13 @@
     "number_str":"64",
     "hit_count":3,
     "last_seen":"2026-05-03",
-    "current_gap":100,
+    "current_gap":119,
     "min_gap":34.0,
     "mean_gap":95.5,
     "median_gap":95.5,
     "max_gap":157.0,
     "last_10_intervals":"157|34",
-    "rhythm_pressure":1.0471
+    "rhythm_pressure":1.2461
   },
   {
     "mode":"de",
@@ -495,13 +425,13 @@
     "number_str":"12",
     "hit_count":4,
     "last_seen":"2026-05-05",
-    "current_gap":98,
+    "current_gap":117,
     "min_gap":72.0,
     "mean_gap":83.0,
     "median_gap":83.0,
     "max_gap":94.0,
     "last_10_intervals":"94|83|72",
-    "rhythm_pressure":1.1807
+    "rhythm_pressure":1.4096
   },
   {
     "mode":"de",
@@ -509,7 +439,7 @@
     "number_str":"41",
     "hit_count":1,
     "last_seen":"2026-05-06",
-    "current_gap":97,
+    "current_gap":116,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -523,13 +453,13 @@
     "number_str":"40",
     "hit_count":2,
     "last_seen":"2026-05-07",
-    "current_gap":96,
+    "current_gap":115,
     "min_gap":209.0,
     "mean_gap":209.0,
     "median_gap":209.0,
     "max_gap":209.0,
     "last_10_intervals":"209",
-    "rhythm_pressure":0.4593
+    "rhythm_pressure":0.5502
   },
   {
     "mode":"de",
@@ -537,41 +467,13 @@
     "number_str":"92",
     "hit_count":7,
     "last_seen":"2026-05-09",
-    "current_gap":94,
+    "current_gap":113,
     "min_gap":8.0,
     "mean_gap":42.3333,
     "median_gap":42.5,
     "max_gap":87.0,
     "last_10_intervals":"65|9|28|8|57|87",
-    "rhythm_pressure":2.2205
-  },
-  {
-    "mode":"de",
-    "number":17,
-    "number_str":"17",
-    "hit_count":5,
-    "last_seen":"2026-05-11",
-    "current_gap":92,
-    "min_gap":16.0,
-    "mean_gap":60.5,
-    "median_gap":50.5,
-    "max_gap":125.0,
-    "last_10_intervals":"125|21|80|16",
-    "rhythm_pressure":1.5207
-  },
-  {
-    "mode":"de",
-    "number":33,
-    "number_str":"33",
-    "hit_count":5,
-    "last_seen":"2026-05-12",
-    "current_gap":91,
-    "min_gap":35.0,
-    "mean_gap":62.75,
-    "median_gap":60.5,
-    "max_gap":95.0,
-    "last_10_intervals":"35|43|78|95",
-    "rhythm_pressure":1.4502
+    "rhythm_pressure":2.6693
   },
   {
     "mode":"de",
@@ -579,27 +481,13 @@
     "number_str":"69",
     "hit_count":3,
     "last_seen":"2026-05-14",
-    "current_gap":89,
+    "current_gap":108,
     "min_gap":15.0,
     "mean_gap":29.0,
     "median_gap":29.0,
     "max_gap":43.0,
     "last_10_intervals":"43|15",
-    "rhythm_pressure":3.069
-  },
-  {
-    "mode":"de",
-    "number":61,
-    "number_str":"61",
-    "hit_count":3,
-    "last_seen":"2026-05-18",
-    "current_gap":85,
-    "min_gap":105.0,
-    "mean_gap":119.0,
-    "median_gap":119.0,
-    "max_gap":133.0,
-    "last_10_intervals":"133|105",
-    "rhythm_pressure":0.7143
+    "rhythm_pressure":3.7241
   },
   {
     "mode":"de",
@@ -607,13 +495,13 @@
     "number_str":"81",
     "hit_count":3,
     "last_seen":"2026-05-25",
-    "current_gap":78,
+    "current_gap":97,
     "min_gap":94.0,
     "mean_gap":108.0,
     "median_gap":108.0,
     "max_gap":122.0,
     "last_10_intervals":"122|94",
-    "rhythm_pressure":0.7222
+    "rhythm_pressure":0.8981
   },
   {
     "mode":"de",
@@ -621,7 +509,7 @@
     "number_str":"11",
     "hit_count":1,
     "last_seen":"2026-05-26",
-    "current_gap":77,
+    "current_gap":96,
     "min_gap":null,
     "mean_gap":null,
     "median_gap":null,
@@ -631,59 +519,17 @@
   },
   {
     "mode":"de",
-    "number":13,
-    "number_str":"13",
-    "hit_count":2,
-    "last_seen":"2026-05-27",
-    "current_gap":76,
-    "min_gap":95.0,
-    "mean_gap":95.0,
-    "median_gap":95.0,
-    "max_gap":95.0,
-    "last_10_intervals":"95",
-    "rhythm_pressure":0.8
-  },
-  {
-    "mode":"de",
     "number":50,
     "number_str":"50",
     "hit_count":6,
     "last_seen":"2026-05-28",
-    "current_gap":75,
+    "current_gap":94,
     "min_gap":11.0,
     "mean_gap":56.4,
     "median_gap":45.0,
     "max_gap":146.0,
     "last_10_intervals":"30|11|45|146|50",
-    "rhythm_pressure":1.3298
-  },
-  {
-    "mode":"de",
-    "number":43,
-    "number_str":"43",
-    "hit_count":6,
-    "last_seen":"2026-05-30",
-    "current_gap":73,
-    "min_gap":16.0,
-    "mean_gap":53.6,
-    "median_gap":37.0,
-    "max_gap":148.0,
-    "last_10_intervals":"37|25|16|148|42",
-    "rhythm_pressure":1.3619
-  },
-  {
-    "mode":"de",
-    "number":78,
-    "number_str":"78",
-    "hit_count":4,
-    "last_seen":"2026-06-05",
-    "current_gap":67,
-    "min_gap":42.0,
-    "mean_gap":91.0,
-    "median_gap":94.0,
-    "max_gap":137.0,
-    "last_10_intervals":"137|42|94",
-    "rhythm_pressure":0.7363
+    "rhythm_pressure":1.6667
   },
   {
     "mode":"de",
@@ -691,13 +537,13 @@
     "number_str":"93",
     "hit_count":7,
     "last_seen":"2026-06-07",
-    "current_gap":65,
+    "current_gap":84,
     "min_gap":2.0,
     "mean_gap":47.6667,
     "median_gap":49.5,
     "max_gap":98.0,
     "last_10_intervals":"12|2|98|26|75|73",
-    "rhythm_pressure":1.3636
+    "rhythm_pressure":1.7622
   },
   {
     "mode":"de",
@@ -705,13 +551,13 @@
     "number_str":"05",
     "hit_count":6,
     "last_seen":"2026-06-08",
-    "current_gap":64,
+    "current_gap":83,
     "min_gap":1.0,
     "mean_gap":53.0,
     "median_gap":17.0,
     "max_gap":154.0,
     "last_10_intervals":"1|17|85|8|154",
-    "rhythm_pressure":1.2075
+    "rhythm_pressure":1.566
   },
   {
     "mode":"de",
@@ -719,13 +565,13 @@
     "number_str":"08",
     "hit_count":5,
     "last_seen":"2026-06-10",
-    "current_gap":62,
+    "current_gap":81,
     "min_gap":15.0,
     "mean_gap":60.0,
     "median_gap":60.5,
     "max_gap":104.0,
     "last_10_intervals":"15|42|79|104",
-    "rhythm_pressure":1.0333
+    "rhythm_pressure":1.35
   },
   {
     "mode":"de",
@@ -733,27 +579,13 @@
     "number_str":"14",
     "hit_count":6,
     "last_seen":"2026-06-13",
-    "current_gap":59,
+    "current_gap":78,
     "min_gap":1.0,
     "mean_gap":43.6,
     "median_gap":53.0,
     "max_gap":82.0,
     "last_10_intervals":"1|82|53|23|59",
-    "rhythm_pressure":1.3532
-  },
-  {
-    "mode":"de",
-    "number":80,
-    "number_str":"80",
-    "hit_count":3,
-    "last_seen":"2026-06-15",
-    "current_gap":57,
-    "min_gap":41.0,
-    "mean_gap":69.5,
-    "median_gap":69.5,
-    "max_gap":98.0,
-    "last_10_intervals":"41|98",
-    "rhythm_pressure":0.8201
+    "rhythm_pressure":1.789
   },
   {
     "mode":"de",
@@ -761,13 +593,13 @@
     "number_str":"84",
     "hit_count":3,
     "last_seen":"2026-06-16",
-    "current_gap":56,
+    "current_gap":75,
     "min_gap":30.0,
     "mean_gap":90.5,
     "median_gap":90.5,
     "max_gap":151.0,
     "last_10_intervals":"151|30",
-    "rhythm_pressure":0.6188
+    "rhythm_pressure":0.8287
   },
   {
     "mode":"de",
@@ -775,13 +607,13 @@
     "number_str":"03",
     "hit_count":2,
     "last_seen":"2026-06-17",
-    "current_gap":55,
+    "current_gap":74,
     "min_gap":207.0,
     "mean_gap":207.0,
     "median_gap":207.0,
     "max_gap":207.0,
     "last_10_intervals":"207",
-    "rhythm_pressure":0.2657
+    "rhythm_pressure":0.3575
   },
   {
     "mode":"de",
@@ -789,13 +621,13 @@
     "number_str":"32",
     "hit_count":3,
     "last_seen":"2026-06-18",
-    "current_gap":54,
+    "current_gap":73,
     "min_gap":36.0,
     "mean_gap":41.5,
     "median_gap":41.5,
     "max_gap":47.0,
     "last_10_intervals":"36|47",
-    "rhythm_pressure":1.3012
+    "rhythm_pressure":1.759
   },
   {
     "mode":"de",
@@ -803,13 +635,13 @@
     "number_str":"55",
     "hit_count":5,
     "last_seen":"2026-06-19",
-    "current_gap":53,
+    "current_gap":72,
     "min_gap":12.0,
     "mean_gap":53.5,
     "median_gap":52.0,
     "max_gap":98.0,
     "last_10_intervals":"98|41|12|63",
-    "rhythm_pressure":0.9907
+    "rhythm_pressure":1.3458
   },
   {
     "mode":"de",
@@ -817,27 +649,13 @@
     "number_str":"36",
     "hit_count":7,
     "last_seen":"2026-06-22",
-    "current_gap":50,
+    "current_gap":69,
     "min_gap":5.0,
     "mean_gap":44.1667,
     "median_gap":45.5,
     "max_gap":87.0,
     "last_10_intervals":"73|9|5|72|87|19",
-    "rhythm_pressure":1.1321
-  },
-  {
-    "mode":"de",
-    "number":37,
-    "number_str":"37",
-    "hit_count":6,
-    "last_seen":"2026-06-23",
-    "current_gap":49,
-    "min_gap":27.0,
-    "mean_gap":57.8,
-    "median_gap":53.0,
-    "max_gap":113.0,
-    "last_10_intervals":"113|57|39|27|53",
-    "rhythm_pressure":0.8478
+    "rhythm_pressure":1.5623
   },
   {
     "mode":"de",
@@ -845,13 +663,13 @@
     "number_str":"51",
     "hit_count":5,
     "last_seen":"2026-06-24",
-    "current_gap":48,
+    "current_gap":67,
     "min_gap":15.0,
     "mean_gap":39.25,
     "median_gap":42.0,
     "max_gap":58.0,
     "last_10_intervals":"48|58|36|15",
-    "rhythm_pressure":1.2229
+    "rhythm_pressure":1.707
   },
   {
     "mode":"de",
@@ -859,13 +677,13 @@
     "number_str":"04",
     "hit_count":5,
     "last_seen":"2026-06-26",
-    "current_gap":46,
+    "current_gap":65,
     "min_gap":8.0,
     "mean_gap":53.75,
     "median_gap":34.0,
     "max_gap":139.0,
     "last_10_intervals":"139|35|8|33",
-    "rhythm_pressure":0.8558
+    "rhythm_pressure":1.2093
   },
   {
     "mode":"de",
@@ -873,13 +691,13 @@
     "number_str":"53",
     "hit_count":5,
     "last_seen":"2026-06-27",
-    "current_gap":45,
+    "current_gap":64,
     "min_gap":25.0,
     "mean_gap":55.25,
     "median_gap":50.0,
     "max_gap":96.0,
     "last_10_intervals":"25|74|96|26",
-    "rhythm_pressure":0.8145
+    "rhythm_pressure":1.1584
   },
   {
     "mode":"de",
@@ -887,13 +705,13 @@
     "number_str":"52",
     "hit_count":5,
     "last_seen":"2026-06-28",
-    "current_gap":44,
+    "current_gap":63,
     "min_gap":46.0,
     "mean_gap":76.25,
     "median_gap":77.5,
     "max_gap":104.0,
     "last_10_intervals":"46|59|96|104",
-    "rhythm_pressure":0.577
+    "rhythm_pressure":0.8262
   },
   {
     "mode":"de",
@@ -901,27 +719,13 @@
     "number_str":"42",
     "hit_count":3,
     "last_seen":"2026-06-29",
-    "current_gap":43,
+    "current_gap":62,
     "min_gap":29.0,
     "mean_gap":55.5,
     "median_gap":55.5,
     "max_gap":82.0,
     "last_10_intervals":"82|29",
-    "rhythm_pressure":0.7748
-  },
-  {
-    "mode":"de",
-    "number":68,
-    "number_str":"68",
-    "hit_count":7,
-    "last_seen":"2026-06-30",
-    "current_gap":42,
-    "min_gap":3.0,
-    "mean_gap":33.5,
-    "median_gap":34.5,
-    "max_gap":70.0,
-    "last_10_intervals":"3|18|35|34|70|41",
-    "rhythm_pressure":1.2537
+    "rhythm_pressure":1.1171
   },
   {
     "mode":"de",
@@ -929,13 +733,13 @@
     "number_str":"65",
     "hit_count":3,
     "last_seen":"2026-07-03",
-    "current_gap":39,
+    "current_gap":58,
     "min_gap":27.0,
     "mean_gap":133.5,
     "median_gap":133.5,
     "max_gap":240.0,
     "last_10_intervals":"240|27",
-    "rhythm_pressure":0.2921
+    "rhythm_pressure":0.4345
   },
   {
     "mode":"de",
@@ -943,13 +747,13 @@
     "number_str":"87",
     "hit_count":2,
     "last_seen":"2026-07-04",
-    "current_gap":38,
+    "current_gap":57,
     "min_gap":108.0,
     "mean_gap":108.0,
     "median_gap":108.0,
     "max_gap":108.0,
     "last_10_intervals":"108",
-    "rhythm_pressure":0.3519
+    "rhythm_pressure":0.5278
   },
   {
     "mode":"de",
@@ -957,13 +761,13 @@
     "number_str":"71",
     "hit_count":3,
     "last_seen":"2026-07-05",
-    "current_gap":37,
+    "current_gap":56,
     "min_gap":41.0,
     "mean_gap":164.0,
     "median_gap":164.0,
     "max_gap":287.0,
     "last_10_intervals":"41|287",
-    "rhythm_pressure":0.2256
+    "rhythm_pressure":0.3415
   },
   {
     "mode":"de",
@@ -971,13 +775,13 @@
     "number_str":"97",
     "hit_count":4,
     "last_seen":"2026-07-06",
-    "current_gap":36,
+    "current_gap":55,
     "min_gap":39.0,
     "mean_gap":74.0,
     "median_gap":77.0,
     "max_gap":106.0,
     "last_10_intervals":"39|106|77",
-    "rhythm_pressure":0.4865
+    "rhythm_pressure":0.7432
   },
   {
     "mode":"de",
@@ -985,13 +789,13 @@
     "number_str":"89",
     "hit_count":3,
     "last_seen":"2026-07-08",
-    "current_gap":34,
+    "current_gap":53,
     "min_gap":26.0,
     "mean_gap":91.0,
     "median_gap":91.0,
     "max_gap":156.0,
     "last_10_intervals":"156|26",
-    "rhythm_pressure":0.3736
+    "rhythm_pressure":0.5824
   },
   {
     "mode":"de",
@@ -999,27 +803,27 @@
     "number_str":"85",
     "hit_count":3,
     "last_seen":"2026-07-09",
-    "current_gap":33,
+    "current_gap":52,
     "min_gap":49.0,
     "mean_gap":76.0,
     "median_gap":76.0,
     "max_gap":103.0,
     "last_10_intervals":"103|49",
-    "rhythm_pressure":0.4342
+    "rhythm_pressure":0.6842
   },
   {
     "mode":"de",
     "number":1,
     "number_str":"01",
-    "hit_count":5,
+    "hit_count":9,
     "last_seen":"2026-07-11",
-    "current_gap":31,
-    "min_gap":6.0,
-    "mean_gap":75.25,
-    "median_gap":74.5,
-    "max_gap":146.0,
-    "last_10_intervals":"48|101|6|146",
-    "rhythm_pressure":0.412
+    "current_gap":50,
+    "min_gap":1.0,
+    "mean_gap":37.625,
+    "median_gap":3.5,
+    "max_gap":142.0,
+    "last_10_intervals":"48|101|6|1|1|1|1|142",
+    "rhythm_pressure":1.3289
   },
   {
     "mode":"de",
@@ -1027,13 +831,13 @@
     "number_str":"94",
     "hit_count":5,
     "last_seen":"2026-07-12",
-    "current_gap":30,
+    "current_gap":49,
     "min_gap":55.0,
     "mean_gap":82.5,
     "median_gap":63.0,
     "max_gap":149.0,
     "last_10_intervals":"149|68|55|58",
-    "rhythm_pressure":0.3636
+    "rhythm_pressure":0.5939
   },
   {
     "mode":"de",
@@ -1041,13 +845,13 @@
     "number_str":"99",
     "hit_count":2,
     "last_seen":"2026-07-13",
-    "current_gap":29,
+    "current_gap":48,
     "min_gap":200.0,
     "mean_gap":200.0,
     "median_gap":200.0,
     "max_gap":200.0,
     "last_10_intervals":"200",
-    "rhythm_pressure":0.145
+    "rhythm_pressure":0.24
   },
   {
     "mode":"de",
@@ -1055,13 +859,13 @@
     "number_str":"19",
     "hit_count":3,
     "last_seen":"2026-07-15",
-    "current_gap":27,
+    "current_gap":46,
     "min_gap":133.0,
     "mean_gap":145.5,
     "median_gap":145.5,
     "max_gap":158.0,
     "last_10_intervals":"158|133",
-    "rhythm_pressure":0.1856
+    "rhythm_pressure":0.3162
   },
   {
     "mode":"de",
@@ -1069,27 +873,13 @@
     "number_str":"63",
     "hit_count":4,
     "last_seen":"2026-07-16",
-    "current_gap":26,
+    "current_gap":45,
     "min_gap":82.0,
     "mean_gap":98.0,
     "median_gap":93.0,
     "max_gap":119.0,
     "last_10_intervals":"119|82|93",
-    "rhythm_pressure":0.2653
-  },
-  {
-    "mode":"de",
-    "number":39,
-    "number_str":"39",
-    "hit_count":6,
-    "last_seen":"2026-07-17",
-    "current_gap":25,
-    "min_gap":15.0,
-    "mean_gap":64.0,
-    "median_gap":41.0,
-    "max_gap":150.0,
-    "last_10_intervals":"85|150|29|41|15",
-    "rhythm_pressure":0.3906
+    "rhythm_pressure":0.4592
   },
   {
     "mode":"de",
@@ -1097,13 +887,13 @@
     "number_str":"90",
     "hit_count":4,
     "last_seen":"2026-07-18",
-    "current_gap":24,
+    "current_gap":43,
     "min_gap":70.0,
     "mean_gap":100.3333,
     "median_gap":73.0,
     "max_gap":158.0,
     "last_10_intervals":"70|73|158",
-    "rhythm_pressure":0.2392
+    "rhythm_pressure":0.4286
   },
   {
     "mode":"de",
@@ -1111,13 +901,13 @@
     "number_str":"70",
     "hit_count":3,
     "last_seen":"2026-07-21",
-    "current_gap":21,
+    "current_gap":40,
     "min_gap":116.0,
     "mean_gap":122.0,
     "median_gap":122.0,
     "max_gap":128.0,
     "last_10_intervals":"116|128",
-    "rhythm_pressure":0.1721
+    "rhythm_pressure":0.3279
   },
   {
     "mode":"de",
@@ -1125,27 +915,13 @@
     "number_str":"54",
     "hit_count":8,
     "last_seen":"2026-07-23",
-    "current_gap":19,
+    "current_gap":38,
     "min_gap":1.0,
     "mean_gap":36.1429,
     "median_gap":21.0,
     "max_gap":87.0,
     "last_10_intervals":"80|87|21|10|33|21|1",
-    "rhythm_pressure":0.5257
-  },
-  {
-    "mode":"de",
-    "number":38,
-    "number_str":"38",
-    "hit_count":8,
-    "last_seen":"2026-07-24",
-    "current_gap":18,
-    "min_gap":5.0,
-    "mean_gap":34.4286,
-    "median_gap":24.0,
-    "max_gap":92.0,
-    "last_10_intervals":"8|15|24|92|30|67|5",
-    "rhythm_pressure":0.5228
+    "rhythm_pressure":1.0514
   },
   {
     "mode":"de",
@@ -1153,13 +929,13 @@
     "number_str":"28",
     "hit_count":5,
     "last_seen":"2026-07-25",
-    "current_gap":17,
+    "current_gap":36,
     "min_gap":5.0,
     "mean_gap":70.75,
     "median_gap":89.0,
     "max_gap":100.0,
     "last_10_intervals":"93|100|85|5",
-    "rhythm_pressure":0.2403
+    "rhythm_pressure":0.5088
   },
   {
     "mode":"de",
@@ -1167,27 +943,13 @@
     "number_str":"16",
     "hit_count":4,
     "last_seen":"2026-07-26",
-    "current_gap":16,
+    "current_gap":35,
     "min_gap":31.0,
     "mean_gap":115.3333,
     "median_gap":128.0,
     "max_gap":187.0,
     "last_10_intervals":"128|187|31",
-    "rhythm_pressure":0.1387
-  },
-  {
-    "mode":"de",
-    "number":96,
-    "number_str":"96",
-    "hit_count":2,
-    "last_seen":"2026-07-27",
-    "current_gap":15,
-    "min_gap":217.0,
-    "mean_gap":217.0,
-    "median_gap":217.0,
-    "max_gap":217.0,
-    "last_10_intervals":"217",
-    "rhythm_pressure":0.0691
+    "rhythm_pressure":0.3035
   },
   {
     "mode":"de",
@@ -1195,27 +957,13 @@
     "number_str":"00",
     "hit_count":3,
     "last_seen":"2026-07-28",
-    "current_gap":14,
+    "current_gap":33,
     "min_gap":44.0,
     "mean_gap":53.5,
     "median_gap":53.5,
     "max_gap":63.0,
     "last_10_intervals":"63|44",
-    "rhythm_pressure":0.2617
-  },
-  {
-    "mode":"de",
-    "number":83,
-    "number_str":"83",
-    "hit_count":8,
-    "last_seen":"2026-07-29",
-    "current_gap":13,
-    "min_gap":4.0,
-    "mean_gap":43.0,
-    "median_gap":22.0,
-    "max_gap":123.0,
-    "last_10_intervals":"22|4|123|97|7|10|38",
-    "rhythm_pressure":0.3023
+    "rhythm_pressure":0.6168
   },
   {
     "mode":"de",
@@ -1223,13 +971,13 @@
     "number_str":"34",
     "hit_count":4,
     "last_seen":"2026-07-30",
-    "current_gap":12,
+    "current_gap":31,
     "min_gap":2.0,
     "mean_gap":114.6667,
     "median_gap":98.0,
     "max_gap":244.0,
     "last_10_intervals":"2|98|244",
-    "rhythm_pressure":0.1047
+    "rhythm_pressure":0.2703
   },
   {
     "mode":"de",
@@ -1237,27 +985,13 @@
     "number_str":"10",
     "hit_count":2,
     "last_seen":"2026-07-31",
-    "current_gap":11,
+    "current_gap":30,
     "min_gap":278.0,
     "mean_gap":278.0,
     "median_gap":278.0,
     "max_gap":278.0,
     "last_10_intervals":"278",
-    "rhythm_pressure":0.0396
-  },
-  {
-    "mode":"de",
-    "number":23,
-    "number_str":"23",
-    "hit_count":5,
-    "last_seen":"2026-08-01",
-    "current_gap":10,
-    "min_gap":23.0,
-    "mean_gap":77.25,
-    "median_gap":82.5,
-    "max_gap":121.0,
-    "last_10_intervals":"105|121|23|60",
-    "rhythm_pressure":0.1294
+    "rhythm_pressure":0.1079
   },
   {
     "mode":"de",
@@ -1265,13 +999,13 @@
     "number_str":"09",
     "hit_count":2,
     "last_seen":"2026-08-02",
-    "current_gap":9,
+    "current_gap":28,
     "min_gap":303.0,
     "mean_gap":303.0,
     "median_gap":303.0,
     "max_gap":303.0,
     "last_10_intervals":"303",
-    "rhythm_pressure":0.0297
+    "rhythm_pressure":0.0924
   },
   {
     "mode":"de",
@@ -1279,13 +1013,13 @@
     "number_str":"47",
     "hit_count":5,
     "last_seen":"2026-08-03",
-    "current_gap":8,
+    "current_gap":27,
     "min_gap":20.0,
     "mean_gap":76.25,
     "median_gap":81.5,
     "max_gap":122.0,
     "last_10_intervals":"96|122|67|20",
-    "rhythm_pressure":0.1049
+    "rhythm_pressure":0.3541
   },
   {
     "mode":"de",
@@ -1293,13 +1027,13 @@
     "number_str":"25",
     "hit_count":4,
     "last_seen":"2026-08-04",
-    "current_gap":7,
+    "current_gap":26,
     "min_gap":10.0,
     "mean_gap":100.3333,
     "median_gap":107.0,
     "max_gap":184.0,
     "last_10_intervals":"184|10|107",
-    "rhythm_pressure":0.0698
+    "rhythm_pressure":0.2591
   },
   {
     "mode":"de",
@@ -1307,13 +1041,13 @@
     "number_str":"60",
     "hit_count":4,
     "last_seen":"2026-08-05",
-    "current_gap":6,
+    "current_gap":25,
     "min_gap":46.0,
     "mean_gap":110.0,
     "median_gap":113.0,
     "max_gap":171.0,
     "last_10_intervals":"113|171|46",
-    "rhythm_pressure":0.0545
+    "rhythm_pressure":0.2273
   },
   {
     "mode":"de",
@@ -1321,13 +1055,13 @@
     "number_str":"67",
     "hit_count":4,
     "last_seen":"2026-08-06",
-    "current_gap":5,
+    "current_gap":24,
     "min_gap":27.0,
     "mean_gap":92.3333,
     "median_gap":99.0,
     "max_gap":151.0,
     "last_10_intervals":"151|99|27",
-    "rhythm_pressure":0.0542
+    "rhythm_pressure":0.2599
   },
   {
     "mode":"de",
@@ -1335,13 +1069,13 @@
     "number_str":"79",
     "hit_count":7,
     "last_seen":"2026-08-07",
-    "current_gap":4,
+    "current_gap":23,
     "min_gap":1.0,
     "mean_gap":56.5,
     "median_gap":26.5,
     "max_gap":234.0,
     "last_10_intervals":"45|1|22|6|234|31",
-    "rhythm_pressure":0.0708
+    "rhythm_pressure":0.4071
   },
   {
     "mode":"de",
@@ -1349,13 +1083,13 @@
     "number_str":"22",
     "hit_count":5,
     "last_seen":"2026-08-08",
-    "current_gap":3,
+    "current_gap":22,
     "min_gap":8.0,
     "mean_gap":87.5,
     "median_gap":98.5,
     "max_gap":145.0,
     "last_10_intervals":"145|8|64|133",
-    "rhythm_pressure":0.0343
+    "rhythm_pressure":0.2514
   },
   {
     "mode":"de",
@@ -1363,13 +1097,13 @@
     "number_str":"21",
     "hit_count":6,
     "last_seen":"2026-08-09",
-    "current_gap":2,
+    "current_gap":21,
     "min_gap":41.0,
     "mean_gap":72.2,
     "median_gap":73.0,
     "max_gap":115.0,
     "last_10_intervals":"54|41|73|115|78",
-    "rhythm_pressure":0.0277
+    "rhythm_pressure":0.2909
   },
   {
     "mode":"de",
@@ -1377,13 +1111,13 @@
     "number_str":"57",
     "hit_count":3,
     "last_seen":"2026-08-10",
-    "current_gap":1,
+    "current_gap":20,
     "min_gap":161.0,
     "mean_gap":175.5,
     "median_gap":175.5,
     "max_gap":190.0,
     "last_10_intervals":"190|161",
-    "rhythm_pressure":0.0057
+    "rhythm_pressure":0.114
   },
   {
     "mode":"de",
@@ -1391,12 +1125,278 @@
     "number_str":"91",
     "hit_count":5,
     "last_seen":"2026-08-11",
-    "current_gap":0,
+    "current_gap":19,
     "min_gap":31.0,
     "mean_gap":89.75,
     "median_gap":96.5,
     "max_gap":135.0,
     "last_10_intervals":"135|60|31|133",
+    "rhythm_pressure":0.2117
+  },
+  {
+    "mode":"de",
+    "number":26,
+    "number_str":"26",
+    "hit_count":3,
+    "last_seen":"2026-08-12",
+    "current_gap":18,
+    "min_gap":1.0,
+    "mean_gap":124.5,
+    "median_gap":124.5,
+    "max_gap":248.0,
+    "last_10_intervals":"1|248",
+    "rhythm_pressure":0.1446
+  },
+  {
+    "mode":"de",
+    "number":44,
+    "number_str":"44",
+    "hit_count":3,
+    "last_seen":"2026-08-13",
+    "current_gap":17,
+    "min_gap":132.0,
+    "mean_gap":176.0,
+    "median_gap":176.0,
+    "max_gap":220.0,
+    "last_10_intervals":"220|132",
+    "rhythm_pressure":0.0966
+  },
+  {
+    "mode":"de",
+    "number":18,
+    "number_str":"18",
+    "hit_count":1,
+    "last_seen":"2026-08-14",
+    "current_gap":16,
+    "min_gap":null,
+    "mean_gap":null,
+    "median_gap":null,
+    "max_gap":null,
+    "last_10_intervals":"",
+    "rhythm_pressure":null
+  },
+  {
+    "mode":"de",
+    "number":78,
+    "number_str":"78",
+    "hit_count":5,
+    "last_seen":"2026-08-15",
+    "current_gap":15,
+    "min_gap":42.0,
+    "mean_gap":86.0,
+    "median_gap":82.5,
+    "max_gap":137.0,
+    "last_10_intervals":"137|42|94|71",
+    "rhythm_pressure":0.1744
+  },
+  {
+    "mode":"de",
+    "number":96,
+    "number_str":"96",
+    "hit_count":3,
+    "last_seen":"2026-08-16",
+    "current_gap":14,
+    "min_gap":20.0,
+    "mean_gap":118.5,
+    "median_gap":118.5,
+    "max_gap":217.0,
+    "last_10_intervals":"217|20",
+    "rhythm_pressure":0.1181
+  },
+  {
+    "mode":"de",
+    "number":39,
+    "number_str":"39",
+    "hit_count":7,
+    "last_seen":"2026-08-17",
+    "current_gap":13,
+    "min_gap":15.0,
+    "mean_gap":58.5,
+    "median_gap":36.0,
+    "max_gap":150.0,
+    "last_10_intervals":"85|150|29|41|15|31",
+    "rhythm_pressure":0.2222
+  },
+  {
+    "mode":"de",
+    "number":83,
+    "number_str":"83",
+    "hit_count":9,
+    "last_seen":"2026-08-18",
+    "current_gap":12,
+    "min_gap":4.0,
+    "mean_gap":40.125,
+    "median_gap":21.0,
+    "max_gap":123.0,
+    "last_10_intervals":"22|4|123|97|7|10|38|20",
+    "rhythm_pressure":0.2991
+  },
+  {
+    "mode":"de",
+    "number":43,
+    "number_str":"43",
+    "hit_count":7,
+    "last_seen":"2026-08-19",
+    "current_gap":11,
+    "min_gap":16.0,
+    "mean_gap":58.1667,
+    "median_gap":39.5,
+    "max_gap":148.0,
+    "last_10_intervals":"37|25|16|148|42|81",
+    "rhythm_pressure":0.1891
+  },
+  {
+    "mode":"de",
+    "number":23,
+    "number_str":"23",
+    "hit_count":6,
+    "last_seen":"2026-08-20",
+    "current_gap":10,
+    "min_gap":19.0,
+    "mean_gap":65.6,
+    "median_gap":60.0,
+    "max_gap":121.0,
+    "last_10_intervals":"105|121|23|60|19",
+    "rhythm_pressure":0.1524
+  },
+  {
+    "mode":"de",
+    "number":33,
+    "number_str":"33",
+    "hit_count":6,
+    "last_seen":"2026-08-21",
+    "current_gap":9,
+    "min_gap":35.0,
+    "mean_gap":70.4,
+    "median_gap":78.0,
+    "max_gap":101.0,
+    "last_10_intervals":"35|43|78|95|101",
+    "rhythm_pressure":0.1278
+  },
+  {
+    "mode":"de",
+    "number":13,
+    "number_str":"13",
+    "hit_count":3,
+    "last_seen":"2026-08-22",
+    "current_gap":8,
+    "min_gap":87.0,
+    "mean_gap":91.0,
+    "median_gap":91.0,
+    "max_gap":95.0,
+    "last_10_intervals":"95|87",
+    "rhythm_pressure":0.0879
+  },
+  {
+    "mode":"de",
+    "number":38,
+    "number_str":"38",
+    "hit_count":9,
+    "last_seen":"2026-08-23",
+    "current_gap":7,
+    "min_gap":5.0,
+    "mean_gap":33.875,
+    "median_gap":27.0,
+    "max_gap":92.0,
+    "last_10_intervals":"8|15|24|92|30|67|5|30",
+    "rhythm_pressure":0.2066
+  },
+  {
+    "mode":"de",
+    "number":17,
+    "number_str":"17",
+    "hit_count":6,
+    "last_seen":"2026-08-24",
+    "current_gap":6,
+    "min_gap":16.0,
+    "mean_gap":69.4,
+    "median_gap":80.0,
+    "max_gap":125.0,
+    "last_10_intervals":"125|21|80|16|105",
+    "rhythm_pressure":0.0865
+  },
+  {
+    "mode":"de",
+    "number":80,
+    "number_str":"80",
+    "hit_count":4,
+    "last_seen":"2026-08-25",
+    "current_gap":5,
+    "min_gap":41.0,
+    "mean_gap":70.0,
+    "median_gap":71.0,
+    "max_gap":98.0,
+    "last_10_intervals":"41|98|71",
+    "rhythm_pressure":0.0714
+  },
+  {
+    "mode":"de",
+    "number":61,
+    "number_str":"61",
+    "hit_count":4,
+    "last_seen":"2026-08-26",
+    "current_gap":4,
+    "min_gap":100.0,
+    "mean_gap":112.6667,
+    "median_gap":105.0,
+    "max_gap":133.0,
+    "last_10_intervals":"133|105|100",
+    "rhythm_pressure":0.0355
+  },
+  {
+    "mode":"de",
+    "number":45,
+    "number_str":"45",
+    "hit_count":4,
+    "last_seen":"2026-08-27",
+    "current_gap":3,
+    "min_gap":48.0,
+    "mean_gap":124.6667,
+    "median_gap":117.0,
+    "max_gap":209.0,
+    "last_10_intervals":"48|117|209",
+    "rhythm_pressure":0.0241
+  },
+  {
+    "mode":"de",
+    "number":68,
+    "number_str":"68",
+    "hit_count":8,
+    "last_seen":"2026-08-28",
+    "current_gap":2,
+    "min_gap":3.0,
+    "mean_gap":37.1429,
+    "median_gap":35.0,
+    "max_gap":70.0,
+    "last_10_intervals":"3|18|35|34|70|41|59",
+    "rhythm_pressure":0.0538
+  },
+  {
+    "mode":"de",
+    "number":37,
+    "number_str":"37",
+    "hit_count":7,
+    "last_seen":"2026-08-29",
+    "current_gap":1,
+    "min_gap":27.0,
+    "mean_gap":59.3333,
+    "median_gap":55.0,
+    "max_gap":113.0,
+    "last_10_intervals":"113|57|39|27|53|67",
+    "rhythm_pressure":0.0169
+  },
+  {
+    "mode":"de",
+    "number":72,
+    "number_str":"72",
+    "hit_count":3,
+    "last_seen":"2026-08-30",
+    "current_gap":0,
+    "min_gap":60.0,
+    "mean_gap":157.0,
+    "median_gap":157.0,
+    "max_gap":254.0,
+    "last_10_intervals":"60|254",
     "rhythm_pressure":0.0
   }
 ]
