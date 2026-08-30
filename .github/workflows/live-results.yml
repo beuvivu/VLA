@@ -1,0 +1,87 @@
+name: Near-live XSMB results
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Start before the normal ~18:15 XSMB draw.  One job stays alive during the
+    # window and polls every ~25 seconds; GitHub cron itself cannot run faster
+    # than every five minutes and may occasionally start late.
+    - cron: "4 18 * * *"
+      timezone: "Asia/Ho_Chi_Minh"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-xsmb-window
+  cancel-in-progress: true
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+      POLL_SECONDS: "25"
+      MAX_SECONDS: "2700"
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements-live.txt
+
+      - name: Install live dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-live.txt
+
+      - name: Poll sources and force-publish one-file live branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          started="$(date +%s)"
+          previous_payload_hash=""
+          while true; do
+            python src/live_sync.py --out /tmp/live.json --min-agreement 2
+
+            # Ignore checked_at timestamps when deciding whether the user-visible
+            # payload changed, so we do not create needless force-pushes.
+            payload_hash="$(python - <<'PY'
+          import hashlib, json
+          p=json.load(open('/tmp/live.json', encoding='utf-8'))
+          p.pop('checked_at_utc', None); p.pop('checked_at_local', None)
+          print(hashlib.sha256(json.dumps(p, sort_keys=True, ensure_ascii=False).encode()).hexdigest())
+          PY
+          )"
+
+            if [[ "$payload_hash" != "$previous_payload_hash" ]]; then
+              blob="$(git hash-object -w /tmp/live.json)"
+              tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
+              commit="$(printf 'live: XSMB snapshot\n' | git commit-tree "$tree")"
+              git push --force origin "$commit:refs/heads/live"
+              previous_payload_hash="$payload_hash"
+            fi
+
+            status="$(python -c "import json; print(json.load(open('/tmp/live.json'))['status'])")"
+            if [[ "$status" == "complete_verified" ]]; then
+              echo "Verified complete result reached; live window can stop."
+              break
+            fi
+
+            now="$(date +%s)"
+            if (( now - started >= MAX_SECONDS )); then
+              echo "Live polling window finished."
+              break
+            fi
+            sleep "$POLL_SECONDS"
+          done

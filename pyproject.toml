@@ -1,0 +1,16 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+# CI blocks only correctness-critical diagnostics.
+# Style/formatting rules are intentionally non-blocking for this legacy analytical codebase.
+select = [
+  "E9",   # fatal syntax/runtime parse errors
+  "F63",  # invalid comparisons / assertions
+  "F7",   # syntax-related pyflakes errors
+  "F82",  # undefined names
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]

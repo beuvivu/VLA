@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+import argparse
+from datetime import date, timedelta
+from pathlib import Path
+
+import pandas as pd
+
+from ensemble_utils import ensure_full_probs, normalize_distribution
+
+
+def _latest_anchor_date(xsmb_csv: Path) -> date:
+    df = pd.read_csv(xsmb_csv)
+    df["date"] = pd.to_datetime(df["date"])
+    return df["date"].max().date()
+
+
+def _load_path_full(path_ui_dir: Path, mode: str, kind: str, anchor: date) -> pd.DataFrame:
+    f = path_ui_dir / f"predict_next_{mode}_{kind}_{anchor.isoformat()}_all.csv"
+    if f.exists():
+        return pd.read_csv(f)
+    f2 = path_ui_dir / f"predict_next_{mode}_{kind}_{anchor.isoformat()}.csv"
+    if f2.exists():
+        return pd.read_csv(f2)
+    return pd.DataFrame(columns=["number", "prob"])
+
+
+def _load_ml_full(ml_dir: Path, mode: str) -> pd.DataFrame:
+    f = ml_dir / f"predict_next_{mode}_ml_all.csv"
+    if f.exists():
+        return pd.read_csv(f)
+    return pd.DataFrame(columns=["number", "prob"])
+
+
+def _load_cau_full(ai_ml_dir: Path, mode: str) -> pd.DataFrame:
+    f = ai_ml_dir / f"cau_keo_{mode}_all.csv"
+    if f.exists():
+        return pd.read_csv(f)
+    return pd.DataFrame(columns=["number", "prob"])
+
+
+def _load_stat_full(stat_dir: Path, mode: str) -> pd.DataFrame:
+    f = stat_dir / f"predict_next_{mode}_stat_all.csv"
+    if f.exists():
+        return pd.read_csv(f)
+    return pd.DataFrame(columns=["number", "prob"])
+
+
+def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_date") -> None:
+    """Upsert one prediction day into the compact GitHub history store."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if out.exists() and out.stat().st_size > 0:
+        df_old = pd.read_csv(out)
+        df_old = df_old[df_old[key_col].astype(str) != str(df_new[key_col].iloc[0])]
+        df_all = pd.concat([df_old, df_new], ignore_index=True)
+    else:
+        df_all = df_new
+    df_all.sort_values([key_col, "number"], inplace=True)
+    df_all.to_csv(out, index=False)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Record component predictions into history store.")
+    ap.add_argument("--data-dir", default="data")
+    ap.add_argument("--path-ui-dir", default="data/path_ui")
+    ap.add_argument("--ml-dir", default="data/ml")
+    ap.add_argument("--out-dir", default="data/history")
+    ap.add_argument("--ai-ml-dir", default="data/ai_ml")
+    ap.add_argument("--stat-dir", default="data/statistical_signal")
+    args = ap.parse_args()
+
+    data_dir = Path(args.data_dir)
+    anchor = _latest_anchor_date(data_dir / "xsmb.csv")
+    target = anchor + timedelta(days=1)
+
+    path_ui_dir = Path(args.path_ui_dir)
+    ml_dir = Path(args.ml_dir)
+    out_dir = Path(args.out_dir)
+    ai_ml_dir = Path(args.ai_ml_dir)
+    stat_dir = Path(args.stat_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    for mode in ["loto", "de"]:
+        df_active = _load_path_full(path_ui_dir, mode, "active", anchor)
+        df_stable = _load_path_full(path_ui_dir, mode, "stable", anchor)
+        df_ml = _load_ml_full(ml_dir, mode)
+        df_cau = _load_cau_full(ai_ml_dir, mode)
+        df_stat = _load_stat_full(stat_dir, mode)
+
+        p_active = ensure_full_probs(df_active)
+        p_stable = ensure_full_probs(df_stable)
+        p_ml = ensure_full_probs(df_ml)
+        p_cau = ensure_full_probs(df_cau)
+        p_stat = ensure_full_probs(df_stat)
+
+        if mode == "de":
+            p_active = normalize_distribution(p_active)
+            p_stable = normalize_distribution(p_stable)
+            p_ml = normalize_distribution(p_ml)
+            p_cau = normalize_distribution(p_cau)
+            p_stat = normalize_distribution(p_stat)
+
+        df_hist = pd.DataFrame(
+            {
+                "target_date": [target.isoformat()] * 100,
+                "number": list(range(100)),
+                "p_ml": p_ml,
+                "p_cau": p_cau,
+                "p_stat": p_stat,
+                "p_active": p_active,
+                "p_stable": p_stable,
+            }
+        )
+        out_path = out_dir / f"pred_{mode}.csv"
+        _upsert_history_csv(df_hist, out_path)
+        print(f"[OK] recorded {mode} predictions for target_date={target} -> {out_path}")
+
+
+if __name__ == "__main__":
+    main()

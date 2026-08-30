@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test statistics and AI/ML pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      VN_LOTTERY_ROOT: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/src
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install -r requirements-dev.txt
+
+      - name: Release check
+        run: bash scripts/release_check.sh

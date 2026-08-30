@@ -1,0 +1,191 @@
+{
+  "ok": true,
+  "latest_date": "2026-08-11",
+  "last_date": "2026-08-11",
+  "first_date": "2025-08-11",
+  "row_count": 362,
+  "lookback_days": 90,
+  "missing_count": 0,
+  "missing_dates": [],
+  "full_missing_count": 4,
+  "full_missing_dates": [
+    "2026-02-16",
+    "2026-02-17",
+    "2026-02-18",
+    "2026-02-19"
+  ],
+  "duplicate_dates": [],
+  "range_issues": [],
+  "sparse_check": {
+    "ok": true,
+    "rows": 362,
+    "bad_row_count": 0,
+    "expected_sum_per_draw": 27,
+    "bad_dates": []
+  },
+  "leading_zero_examples": [
+    {
+      "column": "special",
+      "date": "2025-08-15",
+      "csv_value": 7177,
+      "excel_text": "07177"
+    },
+    {
+      "column": "prize1",
+      "date": "2025-08-18",
+      "csv_value": 6825,
+      "excel_text": "06825"
+    },
+    {
+      "column": "prize2_1",
+      "date": "2025-08-11",
+      "csv_value": 5225,
+      "excel_text": "05225"
+    },
+    {
+      "column": "prize2_2",
+      "date": "2025-08-13",
+      "csv_value": 2817,
+      "excel_text": "02817"
+    },
+    {
+      "column": "prize3_1",
+      "date": "2025-08-20",
+      "csv_value": 1035,
+      "excel_text": "01035"
+    },
+    {
+      "column": "prize3_2",
+      "date": "2025-08-15",
+      "csv_value": 5178,
+      "excel_text": "05178"
+    },
+    {
+      "column": "prize3_3",
+      "date": "2025-09-15",
+      "csv_value": 8686,
+      "excel_text": "08686"
+    },
+    {
+      "column": "prize3_4",
+      "date": "2025-09-07",
+      "csv_value": 6797,
+      "excel_text": "06797"
+    },
+    {
+      "column": "prize3_5",
+      "date": "2025-08-13",
+      "csv_value": 4963,
+      "excel_text": "04963"
+    },
+    {
+      "column": "prize3_6",
+      "date": "2025-08-15",
+      "csv_value": 7484,
+      "excel_text": "07484"
+    },
+    {
+      "column": "prize4_1",
+      "date": "2025-08-17",
+      "csv_value": 946,
+      "excel_text": "0946"
+    },
+    {
+      "column": "prize4_2",
+      "date": "2025-08-20",
+      "csv_value": 635,
+      "excel_text": "0635"
+    },
+    {
+      "column": "prize4_3",
+      "date": "2025-08-13",
+      "csv_value": 735,
+      "excel_text": "0735"
+    },
+    {
+      "column": "prize4_4",
+      "date": "2025-08-24",
+      "csv_value": 662,
+      "excel_text": "0662"
+    },
+    {
+      "column": "prize5_1",
+      "date": "2025-08-24",
+      "csv_value": 23,
+      "excel_text": "0023"
+    },
+    {
+      "column": "prize5_2",
+      "date": "2025-08-11",
+      "csv_value": 931,
+      "excel_text": "0931"
+    },
+    {
+      "column": "prize5_3",
+      "date": "2025-08-14",
+      "csv_value": 220,
+      "excel_text": "0220"
+    },
+    {
+      "column": "prize5_4",
+      "date": "2025-08-29",
+      "csv_value": 693,
+      "excel_text": "0693"
+    },
+    {
+      "column": "prize5_5",
+      "date": "2025-08-11",
+      "csv_value": 431,
+      "excel_text": "0431"
+    },
+    {
+      "column": "prize5_6",
+      "date": "2025-08-14",
+      "csv_value": 575,
+      "excel_text": "0575"
+    },
+    {
+      "column": "prize6_1",
+      "date": "2025-08-13",
+      "csv_value": 76,
+      "excel_text": "076"
+    },
+    {
+      "column": "prize6_2",
+      "date": "2025-08-11",
+      "csv_value": 16,
+      "excel_text": "016"
+    },
+    {
+      "column": "prize6_3",
+      "date": "2025-08-24",
+      "csv_value": 28,
+      "excel_text": "028"
+    },
+    {
+      "column": "prize7_1",
+      "date": "2025-08-29",
+      "csv_value": 8,
+      "excel_text": "08"
+    },
+    {
+      "column": "prize7_2",
+      "date": "2025-08-28",
+      "csv_value": 3,
+      "excel_text": "03"
+    },
+    {
+      "column": "prize7_3",
+      "date": "2025-08-12",
+      "csv_value": 7,
+      "excel_text": "07"
+    },
+    {
+      "column": "prize7_4",
+      "date": "2025-08-13",
+      "csv_value": 6,
+      "excel_text": "06"
+    }
+  ],
+  "excel_note": "Use data/excel/*.xlsx for Excel consumption; lottery codes are written as text to preserve leading zeroes."
+}

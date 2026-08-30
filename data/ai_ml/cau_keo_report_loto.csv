@@ -1,0 +1,6 @@
+"mode","top_k","validation_days","hit_any_days","hit_any_rate","avg_hits_per_day","interpretation"
+"loto",5,60,36,0.6,0.9166666666666666,"top-k contains at least one actual loto"
+"loto",8,60,51,0.85,1.75,"top-k contains at least one actual loto"
+"loto",10,60,57,0.95,2.2,"top-k contains at least one actual loto"
+"loto",15,60,58,0.9666666666666667,3.2,"top-k contains at least one actual loto"
+"loto",20,60,58,0.9666666666666667,4.233333333333333,"top-k contains at least one actual loto"

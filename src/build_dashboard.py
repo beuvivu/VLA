@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pandas as pd
+
+
+def _read_json(p: Path) -> dict:
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _latest_date(data_dir: Path) -> str:
+    """Return latest draw date from known repository data files."""
+    for cand in [
+        data_dir / "xsmb.parquet",
+        data_dir / "xsmb.csv",
+        data_dir / "rawdata.parquet",
+        data_dir / "raw.parquet",
+        data_dir / "results.parquet",
+    ]:
+        if not cand.exists():
+            continue
+        try:
+            if cand.suffix == ".csv":
+                df = pd.read_csv(cand, usecols=["date"])
+            else:
+                df = pd.read_parquet(cand, columns=["date"])
+            if df.empty:
+                continue
+            return pd.to_datetime(df["date"]).max().date().isoformat()
+        except Exception:
+            continue
+    return ""
+
+
+def main() -> None:
+    root = Path(".")
+    data_dir = root / "data"
+    docs_dir = root / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+
+    latest = _latest_date(data_dir)
+    gen = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+    picks_loto = _read_json(data_dir / "predict" / "picks_loto.json")
+    picks_de = _read_json(data_dir / "predict" / "picks_de.json")
+    w_loto = _read_json(data_dir / "ensemble" / "weights_loto.json")
+    w_de = _read_json(data_dir / "ensemble" / "weights_de.json")
+    c_loto = _read_json(data_dir / "ensemble" / "calibration_loto.json")
+    c_de = _read_json(data_dir / "ensemble" / "calibration_de.json")
+
+    if not w_loto:
+        w_loto = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "weights not learned yet (not enough labeled days)"}
+    if not w_de:
+        w_de = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "weights not learned yet (not enough labeled days)"}
+    if not c_loto:
+        c_loto = {"note": "calibration not learned yet"}
+    if not c_de:
+        c_de = {"note": "calibration not learned yet"}
+    if not picks_loto:
+        picks_loto = {"note": "picks not generated yet; run pipeline / predict_nextday_2d.py"}
+    if not picks_de:
+        picks_de = {"note": "picks not generated yet; run pipeline / predict_nextday_2d.py"}
+
+    def load_pred(mode: str) -> pd.DataFrame:
+        pred_dir = data_dir / "predict"
+        files = sorted(pred_dir.glob(f"predict_next_{mode}_all_*.csv"))
+        if not files:
+            return pd.DataFrame()
+        try:
+            df = pd.read_csv(files[-1])
+            return df.sort_values("prob", ascending=False).head(20)
+        except Exception:
+            return pd.DataFrame()
+
+    pred_loto = load_pred("loto")
+    pred_de = load_pred("de")
+
+    def df_to_html(df: pd.DataFrame) -> str:
+        if df.empty:
+            return "<p><em>No data.</em></p><p class='muted'>Full file in <code>data/predict/</code>.</p>"
+        cols = [c for c in df.columns if c in ("number", "prob")]
+        if not cols:
+            cols = df.columns.tolist()[:2]
+        df2 = df[cols].copy()
+        if "prob" in df2.columns:
+            df2["prob"] = df2["prob"].astype(float).map(lambda x: f"{x:.6f}")
+        return df2.to_html(index=False, escape=True)
+
+    html = f"""<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XSMB Analytics Dashboard</title>
+  <style>
+    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
+    h1,h2,h3 {{ margin: 0.6em 0 0.4em; }}
+    .meta {{ color: #555; margin-bottom: 18px; }}
+    .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+    .card {{ border: 1px solid #ddd; border-radius: 12px; padding: 14px 16px; }}
+    pre {{ background: #f7f7f7; padding: 10px; border-radius: 10px; overflow:auto; }}
+    table {{ border-collapse: collapse; width: 100%; }}
+    th, td {{ border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; font-size: 13px; }}
+    .muted {{ color: #666; font-size: 13px; }}
+    a {{ color: #0b57d0; text-decoration: none; }}
+  </style>
+</head>
+<body>
+  <h1>XSMB Analytics Dashboard</h1>
+  <div class="meta">Latest data date: <b>{latest}</b> &nbsp;|&nbsp; Generated: {gen}</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Picks (Lô tô)</h2>
+      <pre>{json.dumps(picks_loto, ensure_ascii=False, indent=2)}</pre>
+    </div>
+    <div class="card">
+      <h2>Picks (Đề / ĐB)</h2>
+      <pre>{json.dumps(picks_de, ensure_ascii=False, indent=2)}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Weights (Loto)</h2>
+      <pre>{json.dumps(w_loto, ensure_ascii=False, indent=2)}</pre>
+      <h3>Calibration (Loto)</h3>
+      <pre>{json.dumps(c_loto, ensure_ascii=False, indent=2)}</pre>
+    </div>
+    <div class="card">
+      <h2>Weights (De)</h2>
+      <pre>{json.dumps(w_de, ensure_ascii=False, indent=2)}</pre>
+      <h3>Calibration (De)</h3>
+      <pre>{json.dumps(c_de, ensure_ascii=False, indent=2)}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Top probabilities (Loto) — preview</h2>
+      {df_to_html(pred_loto)}
+    </div>
+    <div class="card">
+      <h2>Top probabilities (De) — preview</h2>
+      {df_to_html(pred_de)}
+    </div>
+  </div>
+
+  <p class="muted" style="margin-top:16px;">
+    Pages: <a href="index.html">Docs index</a> · <a href="statistics.html">Statistical matrices</a> · <a href="model-quality.html">Model quality</a>
+  </p>
+</body>
+</html>
+"""
+    (docs_dir / "dashboard.html").write_text(html, encoding="utf-8")
+    print("Wrote:", docs_dir / "dashboard.html")
+
+    # GitHub Pages publishes only docs/. Keep model-quality data self-contained
+    # instead of fetching ../data at runtime (which is unavailable with /docs
+    # branch publishing).
+    quality_path = data_dir / "prob_eval" / "ensemble_history.csv"
+    try:
+        quality = pd.read_csv(quality_path) if quality_path.exists() else pd.DataFrame()
+    except Exception:
+        quality = pd.DataFrame()
+
+    if quality.empty:
+        quality_body = "<p><em>Chưa có đủ lịch sử đánh giá mô hình.</em></p>"
+        latest_quality = ""
+    else:
+        q = quality.copy()
+        q["target_date"] = q["target_date"].astype(str)
+        q["logloss"] = pd.to_numeric(q["logloss"], errors="coerce")
+        q["brier"] = pd.to_numeric(q["brier"], errors="coerce")
+        q = q.sort_values(["mode", "target_date"])
+        latest_rows = q.groupby("mode", as_index=False).tail(1).copy()
+        latest_rows["logloss"] = latest_rows["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
+        latest_rows["brier"] = latest_rows["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
+        latest_quality = latest_rows[["mode", "target_date", "logloss", "brier"]].to_html(index=False, escape=True)
+
+        recent = q.groupby("mode", group_keys=False).tail(30).copy()
+        recent["logloss"] = recent["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
+        recent["brier"] = recent["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
+        quality_body = recent[["mode", "target_date", "logloss", "brier"]].to_html(index=False, escape=True)
+
+    quality_html = f"""<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Model Quality — XSMB Analytics</title>
+  <style>
+    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }}
+    .card {{ border:1px solid #ddd; border-radius:12px; padding:16px; margin:14px 0; }}
+    table {{ border-collapse:collapse; width:100%; }}
+    th,td {{ border-bottom:1px solid #eee; padding:8px; text-align:left; font-size:13px; }}
+    th {{ background:#fafafa; }}
+    .muted {{ color:#666; font-size:13px; }}
+    a {{ color:#0b57d0; text-decoration:none; }}
+  </style>
+</head>
+<body>
+  <h1>Model Quality</h1>
+  <p class="muted">Đánh giá rolling out-of-sample của ensemble. LogLoss/Brier thấp hơn là tốt hơn; đây là thước đo xác suất, không phải cam kết kết quả.</p>
+  <p><a href="index.html">Trang chính</a> · <a href="dashboard.html">AI/ML dashboard</a> · <a href="statistics.html">Thống kê</a></p>
+  <div class="card"><h2>Latest</h2>{latest_quality or '<p>Chưa có dữ liệu.</p>'}</div>
+  <div class="card"><h2>30 đánh giá gần nhất / mode</h2>{quality_body}</div>
+</body>
+</html>
+"""
+    (docs_dir / "model-quality.html").write_text(quality_html, encoding="utf-8")
+    print("Wrote:", docs_dir / "model-quality.html")
+
+
+if __name__ == "__main__":
+    main()

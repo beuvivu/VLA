@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-08-30T22:21:29Z",
+  "scope": "all",
+  "lag_max": 30,
+  "window_days": 2000,
+  "min_trials": 60,
+  "min_max_streak": 3,
+  "min_current_streak": 3,
+  "top_positions_per_number": 8,
+  "outputs": {
+    "loto": {
+      "positions": "cau_position_evidence_loto.csv",
+      "summary": "cau_number_explain_loto.csv",
+      "rows_positions": "800",
+      "rows_summary": "100"
+    },
+    "de": {
+      "positions": "cau_position_evidence_de.csv",
+      "summary": "cau_number_explain_de.csv",
+      "rows_positions": "55",
+      "rows_summary": "100"
+    }
+  },
+  "note": "Position evidence powers click-to-explain UI for 00-99 matrices."
+}

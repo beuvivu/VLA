@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "mode": "loto",
+  "generated_at_utc": "2026-08-30T22:20:48Z",
+  "anchor_date": "2026-08-11",
+  "target_date": "2026-08-12",
+  "history_days": 362,
+  "half_life_days": 45,
+  "prior_strength": 80.0,
+  "mean_stability": 0.9662144491105596,
+  "min_stability": 0.917426885981026,
+  "max_stability": 0.9969224936879625,
+  "interpretation": "Empirical-Bayes descriptive signal; instability is shrunk toward baseline and does not imply deterministic predictability."
+}

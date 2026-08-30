@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ML — Đề Top 10</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; color:#111; }
+    .topbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .pill { display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:999px; text-decoration:none; color:#111; }
+    .pill:hover { background:#f6f6f6; }
+    .tbl { border-collapse: collapse; width: 100%; }
+    .tbl th, .tbl td { border: 1px solid #e5e5e5; padding: 10px; text-align: left; font-size:14px; }
+    .tbl th { background: #fafafa; }
+    .meta { color:#555; font-size:13px; margin: 6px 0 12px; }
+    .tabs { display:flex; gap:8px; margin: 12px 0 16px; }
+    .tabbtn { padding:10px 12px; border:1px solid #ddd; border-radius:10px; cursor:pointer; background:#fff; }
+    .tabbtn.active { background:#111; color:#fff; border-color:#111; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .hint { color:#666; font-size:13px; margin-top:10px; }
+  </style>
+</head>
+<body>
+
+        <div class="topbar">
+          <a class="pill" href="index.html">Dashboard</a>
+          <a class="pill" href="ml_top10_loto.html">Lô Top10</a>
+          <a class="pill" href="soi-path-loto-active.html">Soi Path Lô (Active)</a>
+          <a class="pill" href="soi-path-de-active.html">Soi Path Đề (Active)</a>
+        </div>
+        
+    <h2>ML Prediction — ĐỀ Top 10 (2 số cuối ĐB)</h2>
+    <div class="meta">Predict for: <code>2026-08-12</code></div>
+    <table border="1" class="dataframe tbl">
+  <thead>
+    <tr style="text-align: right;">
+      <th>predict_for_date</th>
+      <th>number</th>
+      <th>prob_percent</th>
+      <th>prob</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2026-08-12</td>
+      <td>81</td>
+      <td>1.053%</td>
+      <td>0.010533</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>78</td>
+      <td>1.042%</td>
+      <td>0.010417</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>76</td>
+      <td>1.039%</td>
+      <td>0.010392</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>59</td>
+      <td>1.039%</td>
+      <td>0.010385</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>92</td>
+      <td>1.039%</td>
+      <td>0.010385</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>13</td>
+      <td>1.036%</td>
+      <td>0.010358</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>65</td>
+      <td>1.027%</td>
+      <td>0.010274</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>68</td>
+      <td>1.027%</td>
+      <td>0.010274</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>17</td>
+      <td>1.027%</td>
+      <td>0.010274</td>
+    </tr>
+    <tr>
+      <td>2026-08-12</td>
+      <td>69</td>
+      <td>1.022%</td>
+      <td>0.010224</td>
+    </tr>
+  </tbody>
+</table>
+    
+        <div class="hint">Đề: model chuẩn hoá xác suất về phân phối 00–99 (sum≈1).</div>
+        
+</body>
+</html>

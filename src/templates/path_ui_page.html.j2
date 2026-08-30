@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <style>
+    :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
+           --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text);}
+    a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+    .kpi{display:flex;gap:10px;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+    .dot.hit{background:var(--hit)} .dot.hitde{background:var(--hitde)} .dot.none{background:#334155}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{border-bottom:1px solid var(--line);padding:8px 8px;text-align:center;font-size:12px}
+    th{position:sticky;top:0;background:rgba(15,23,42,.98);z-index:1}
+    td.left,th.left{text-align:left}
+    tr:hover td{background:rgba(255,255,255,.03)}
+    .cell{display:inline-flex;gap:6px;align-items:center;justify-content:center;min-width:42px;padding:4px 6px;border-radius:8px;border:1px solid #243041}
+    .cell.hit{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.35)}
+    .cell.hitde{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.35)}
+    .cell.none{background:rgba(148,163,184,.06)}
+    .small{font-size:11px;color:var(--muted)}
+    .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+    .btn.secondary{background:transparent;color:var(--text)}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1 style="margin:0;font-size:20px">{{ title }}</h1>
+      <div class="small">Anchor (Biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Mode: <b class="mono">{{ mode }}</b> · Type: <b class="mono">{{ kind }}</b></div>
+    </div>
+    <div class="kpi">
+      <span class="chip">Màu đỏ: về ĐB</span>
+      <span class="chip">Màu cam: loto đã về</span>
+      <span class="chip">Tooltip: lag + vị trí rawdata</span>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:12px">
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Aggregated % từ các path đủ điều kiện ({{ kind }}).</div></div>
+        <div style="display:flex;gap:8px">
+          {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind }} ({{ other_mode }})</a>{% endif %}
+          {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Index</a>{% endif %}
+        </div>
+      </div>
+      <div style="margin-top:10px;overflow:auto">
+        <table>
+          <thead><tr><th>Rank</th><th>Số</th><th>%</th><th>Support paths</th></tr></thead>
+          <tbody>
+            {% for r in picks %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="mono">{{ "%02d"|format(r.number) }}</td>
+              <td>{{ (r.prob*100)|round(2) }}</td>
+              <td>{{ r.support_paths_count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <b>Chọn nhanh</b>
+      <div class="small" style="margin-top:6px">Các file CSV/JSON đã được export vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Trang này là bản render tĩnh giống style website.</div>
+      <div class="legend">
+        <span><span class="dot hitde"></span>Về ĐB</span>
+        <span><span class="dot hit"></span>Về loto</span>
+        <span><span class="dot none"></span>Không về</span>
+      </div>
+      <div style="margin-top:10px" class="small">
+        Tip: bạn có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong workflow/CLI để giống “biên độ” website hơn. citeturn0search10
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px; overflow:auto">
+    <b>Bảng PATH (rawdata → number) theo ngày</b>
+    <div class="small" style="margin-top:6px">Hàng = path; cột = ngày trong “Số ngày cầu chạy”. Ô hiển thị số dự đoán của path tại ngày đó, tô màu nếu về.</div>
+    <div style="margin-top:10px; overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th class="left">Path</th>
+            <th>p_mean</th>
+            <th>streak</th>
+            {% for d in days %}
+              <th class="mono">{{ d[5:] }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td class="left">
+              <div class="mono">{{ row.path_id }}</div>
+              <div class="small">lag={{ row.lag }} · i={{ row.i }} ({{ row.i_label }}) · j={{ row.j }} ({{ row.j_label }})</div>
+            </td>
+            <td>{{ (row.p_mean*100)|round(2) }}</td>
+            <td class="mono">{{ row.streak }}</td>
+            {% for cell in row.cells %}
+              {% if cell.hitde %}
+                <td title="{{ cell.tooltip }}"><span class="cell hitde mono">{{ "%02d"|format(cell.num) }}</span></td>
+              {% elif cell.hit %}
+                <td title="{{ cell.tooltip }}"><span class="cell hit mono">{{ "%02d"|format(cell.num) }}</span></td>
+              {% else %}
+                <td title="{{ cell.tooltip }}"><span class="cell none mono">{{ "%02d"|format(cell.num) }}</span></td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="small" style="margin-top:14px;color:var(--muted)">
+    Generated by <span class="mono">src/build_docs.py</span> · Data source: local crawl (multi-source fallback).  
+  </div>
+</div>
+</body>
+</html>

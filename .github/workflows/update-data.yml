@@ -1,0 +1,201 @@
+name: Finalize XSMB + Statistics + AI/ML
+
+on:
+  # Bootstrap a freshly published repository and re-run the production pipeline
+  # whenever core code/config/data is intentionally changed on the default branch.
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "src/**"
+      - "scripts/**"
+      - "tests/**"
+      - "data/xsmb.csv"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/update-data.yml"
+  workflow_dispatch:
+  schedule:
+    # Finalization shortly after the normal draw window plus two recovery runs.
+    # The guard makes later runs a no-op after a successful canonical update.
+    - cron: "38 18 * * *"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "53 18 * * *"
+      timezone: "Asia/Ho_Chi_Minh"
+    - cron: "13 19 * * *"
+      timezone: "Asia/Ho_Chi_Minh"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-xsmb-pipeline
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      generated_changed: ${{ steps.commit.outputs.generated_changed }}
+
+    env:
+      VN_LOTTERY_ROOT: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/src
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward to latest default branch
+        run: git pull --ff-only origin "${GITHUB_REF_NAME}"
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Decide whether finalization is needed
+        id: guard
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import csv
+          import os
+          from datetime import datetime, time, timedelta
+          from zoneinfo import ZoneInfo
+
+          # A manual run is always a forced sync/rebuild.
+          if os.environ.get("EVENT_NAME") == "workflow_dispatch":
+              print("run=true")
+              print("reason=manual")
+              raise SystemExit
+
+          now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
+          target = now.date() if now.time() >= time(18, 35) else now.date() - timedelta(days=1)
+          latest = ""
+          try:
+              with open("data/xsmb.csv", newline="", encoding="utf-8") as f:
+                  latest = max(row["date"][:10] for row in csv.DictReader(f) if row.get("date"))
+          except Exception:
+              pass
+
+          # A push from a fresh install/code change rebuilds even when data is
+          # already current, so generated models/docs always match the code.
+          is_push = os.environ.get("EVENT_NAME") == "push"
+          should_run = is_push or latest != target.isoformat()
+          print(f"run={'true' if should_run else 'false'}")
+          print(f"latest={latest}")
+          print(f"target={target.isoformat()}")
+          print(f"reason={'push-bootstrap' if is_push else 'scheduled-staleness'}")
+          PY
+
+      - name: Install dependencies
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install -r requirements.txt
+
+      - name: Run strict end-to-end finalization
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          python src/pipeline.py \
+            --cutoff 18:35 \
+            --window-days 2000 \
+            --display-days 10 \
+            --lag-max 30 \
+            --fill-missing-days-back 365 \
+            --strict
+
+      - name: Verify latest expected canonical draw and continuity
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          python src/monitor_health.py \
+            --health data/health.json \
+            --cutoff 18:35 \
+            --cutoff-aware \
+            --max-staleness-days 0 \
+            --fail-on-stale \
+            --fail-on-missing
+
+      - name: Verify generated outputs
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          test -s data/xsmb.csv
+          test -s data/xsmb.json
+          test -s data/source_audit.json
+          test -s data/history/pred_loto.csv
+          test -s data/history/pred_de.csv
+          test -s data/significance/global_diagnostics.json
+          test -s data/statistical_signal/predict_next_loto_stat_all.csv
+          test -s data/statistical_signal/predict_next_de_stat_all.csv
+          test -s models/ml_loto.joblib
+          test -s models/ml_de.joblib
+          test -s models/cau_keo_loto.joblib
+          test -s models/cau_keo_de.joblib
+          test -s docs/index.html
+          test -s docs/statistics.html
+          test -s docs/dashboard.html
+          test -s docs/model-quality.html
+          test -s docs/live.html
+
+      - name: Commit finalized data and dashboards
+        id: commit
+        if: steps.guard.outputs.run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data models images docs README.md
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            echo "generated_changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          DATA_DATE="$(python -c 'import pandas as pd; df=pd.read_csv("data/xsmb.csv", usecols=["date"]); print(pd.to_datetime(df["date"]).max().date().isoformat())')"
+          git commit -m "chore: finalize analytics ${DATA_DATE}"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "generated_changed=true" >> "$GITHUB_OUTPUT"
+
+  # Pages is deliberately isolated from the data/ML job. A repository can be
+  # private or Pages may not yet be enabled during first installation; that must
+  # never prevent canonical data/models from updating successfully.
+  deploy-pages:
+    name: Deploy refreshed dashboards (optional)
+    needs: update
+    if: ${{ github.event.repository.private == false }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout latest generated commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
