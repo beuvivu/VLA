@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "mode": "de",
-  "generated_at_utc": "2026-08-31T17:52:27Z",
+  "generated_at_utc": "2026-08-31T18:30:43Z",
   "anchor_date": "2026-08-31",
   "target_date": "2026-09-01",
   "history_days": 386,
@@ -10,5 +10,9 @@
   "mean_stability": 0.7628093955762606,
   "min_stability": 0.7628093955762609,
   "max_stability": 0.7628093955762609,
-  "interpretation": "Empirical-Bayes descriptive signal; instability is shrunk toward baseline and does not imply deterministic predictability."
+  "dynamics_weight_in_stat_signal": 0.2,
+  "global_dynamics_reliability": 0.6403067622566256,
+  "regime_js_divergence_30_vs_180": 0.046990187041334924,
+  "transition_active_mean_trials": 3.0,
+  "interpretation": "Empirical-Bayes + higher-order dynamics component. Markov, transition, hazard, lag and regime evidence is shrinkage-regularized and used only as probabilistic ranking support."
 }

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "mode": "loto",
+  "history_days": 386,
+  "active_numbers_last_draw": 24,
+  "transition_prior_strength": 45.0,
+  "transition_active_mean_trials": 92.08333333333333,
+  "regime_js_divergence_30_vs_180": 0.011633298525650829,
+  "entropy_recent": 4.549432041269273,
+  "entropy_long": 4.5957496296013565,
+  "global_dynamics_reliability": 0.7561773328551376,
+  "hazard_nonzero_bins": 38,
+  "generated_at_utc": "2026-08-31T18:30:43Z",
+  "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence. They do not imply deterministic numerical laws.",
+  "anchor_date": "2026-08-31"
+}
