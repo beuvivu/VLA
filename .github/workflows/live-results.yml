@@ -24,12 +24,12 @@ jobs:
       MAX_SECONDS: "2700"
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: "pip"
@@ -119,7 +119,7 @@ jobs:
               },
           )
           with urllib.request.urlopen(req, timeout=20) as resp:
-              if resp.status not in (204,):
+              if resp.status != 204:
                   raise RuntimeError(f"workflow dispatch failed: HTTP {resp.status}")
           print("Daily finalization dispatched after verified live result.")
           PY
