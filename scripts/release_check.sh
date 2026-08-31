@@ -49,6 +49,35 @@ python src/validate_data.py --lookback-days 90 --out data/health.json
 python src/statistical_signal.py --mode both
 python src/significance_stats.py --windows 30,90,365
 
+printf '%s\n' "== Higher-order dynamics integrity =="
+python - <<'PYDYN'
+import json
+import numpy as np
+import pandas as pd
+
+for mode in ("loto", "de"):
+    cur = pd.read_csv(f"data/number_dynamics/current_dynamics_{mode}.csv")
+    trans = pd.read_csv(f"data/number_dynamics/transition_prob_lag1_{mode}.csv")
+    lift = pd.read_csv(f"data/number_dynamics/transition_lift_lag1_{mode}.csv")
+    phi = pd.read_csv(f"data/number_dynamics/cooccurrence_phi_{mode}.csv")
+    lag = pd.read_csv(f"data/number_dynamics/lag_dependency_{mode}.csv")
+    diag = json.load(open(f"data/number_dynamics/diagnostics_{mode}.json", encoding="utf-8"))
+
+    assert len(cur) == 100, (mode, len(cur))
+    assert trans.shape == (100, 101), (mode, trans.shape)
+    assert lift.shape == (100, 101), (mode, lift.shape)
+    assert phi.shape == (100, 101), (mode, phi.shape)
+    assert len(lag) == 100 * 2 * 6, (mode, len(lag))
+    p = cur.sort_values("number")["prob"].to_numpy(dtype=float)
+    assert np.isfinite(p).all(), mode
+    if mode == "de":
+        assert np.isclose(float(p.sum()), 1.0, atol=1e-8), float(p.sum())
+    else:
+        assert ((p > 0.0) & (p < 1.0)).all(), mode
+    assert 0.15 <= float(diag["global_dynamics_reliability"]) <= 0.80, diag
+    print("OK dynamics", mode, "reliability=", diag["global_dynamics_reliability"])
+PYDYN
+
 printf '%s\n' "== Fresh base-ML train/predict smoke =="
 TMP_MODELS="$(mktemp -d)"
 TMP_PRED="$(mktemp -d)"
@@ -97,6 +126,18 @@ required=(
   data/significance/global_diagnostics.json
   data/statistical_signal/predict_next_loto_stat_all.csv
   data/statistical_signal/predict_next_de_stat_all.csv
+  data/number_dynamics/current_dynamics_loto.csv
+  data/number_dynamics/current_dynamics_de.csv
+  data/number_dynamics/transition_prob_lag1_loto.csv
+  data/number_dynamics/transition_prob_lag1_de.csv
+  data/number_dynamics/transition_lift_lag1_loto.csv
+  data/number_dynamics/transition_lift_lag1_de.csv
+  data/number_dynamics/cooccurrence_phi_loto.csv
+  data/number_dynamics/cooccurrence_phi_de.csv
+  data/number_dynamics/lag_dependency_loto.csv
+  data/number_dynamics/lag_dependency_de.csv
+  data/number_dynamics/diagnostics_loto.json
+  data/number_dynamics/diagnostics_de.json
   docs/live.html
   models/ml_loto.joblib
   models/ml_de.joblib
