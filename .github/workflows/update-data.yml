@@ -54,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -62,7 +62,7 @@ jobs:
         run: git pull --ff-only origin "${GITHUB_REF_NAME}"
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: "pip"
@@ -206,15 +206,23 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Commit the authoritative result before any expensive analytics/ML.
-          # This guarantees that an analytics failure cannot hold back daily data.
-          git add data/xsmb* data/source_audit.json
+          # sync.py writes the canonical CSV/JSON views, source audit and Excel
+          # exports. Commit them as one transaction so git pull/rebase never sees
+          # leftover sync-generated files.
+          git add data/xsmb* data/source_audit.json data/excel
           if git diff --cached --quiet; then
             echo "Canonical result already committed."
             echo "canonical_changed=false" >> "$GITHUB_OUTPUT"
           else
             TARGET_DATE="${{ steps.canonical.outputs.target }}"
             git commit -m "data: finalize XSMB ${TARGET_DATE}"
+
+            if [[ -n "$(git status --porcelain)" ]]; then
+              echo "::error::Unexpected uncommitted files remain after canonical commit"
+              git status --short
+              exit 1
+            fi
+
             git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
             echo "canonical_changed=true" >> "$GITHUB_OUTPUT"
@@ -279,6 +287,13 @@ jobs:
           fi
           DATA_DATE="$(python -c 'import pandas as pd; df=pd.read_csv("data/xsmb.csv", usecols=["date"]); print(pd.to_datetime(df["date"]).max().date().isoformat())')"
           git commit -m "chore: finalize analytics ${DATA_DATE}"
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::Unexpected uncommitted files remain after analytics commit"
+            git status --short
+            exit 1
+          fi
+
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
           echo "generated_changed=true" >> "$GITHUB_OUTPUT"
@@ -297,18 +312,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout latest generated commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
