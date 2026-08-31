@@ -15,14 +15,17 @@ on:
       - ".github/workflows/update-data.yml"
   workflow_dispatch:
   schedule:
-    # Finalization shortly after the normal draw window plus two recovery runs.
-    # The guard makes later runs a no-op after a successful canonical update.
-    - cron: "38 18 * * *"
-      timezone: "Asia/Ho_Chi_Minh"
-    - cron: "53 18 * * *"
-      timezone: "Asia/Ho_Chi_Minh"
-    - cron: "13 19 * * *"
-      timezone: "Asia/Ho_Chi_Minh"
+    # IMPORTANT: keep schedules in UTC. Vietnam is UTC+7.
+    # Multiple independent start windows reduce the chance that a delayed/dropped
+    # GitHub scheduled event leaves the canonical daily result stale.
+    # Local VN times: 18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28.
+    - cron: "18 11 * * *"
+    - cron: "28 11 * * *"
+    - cron: "38 11 * * *"
+    - cron: "48 11 * * *"
+    - cron: "58 11 * * *"
+    - cron: "13 12 * * *"
+    - cron: "28 12 * * *"
 
 permissions:
   contents: write
@@ -39,6 +42,7 @@ jobs:
     timeout-minutes: 45
     outputs:
       generated_changed: ${{ steps.commit.outputs.generated_changed }}
+      canonical_changed: ${{ steps.canonical_commit.outputs.canonical_changed }}
 
     env:
       VN_LOTTERY_ROOT: ${{ github.workspace }}
@@ -76,14 +80,11 @@ jobs:
           from datetime import datetime, time, timedelta
           from zoneinfo import ZoneInfo
 
-          # A manual run is always a forced sync/rebuild.
-          if os.environ.get("EVENT_NAME") == "workflow_dispatch":
-              print("run=true")
-              print("reason=manual")
-              raise SystemExit
-
           now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
-          target = now.date() if now.time() >= time(18, 35) else now.date() - timedelta(days=1)
+          # From 18:15 onward we actively look for today's result. The parser only
+          # accepts a complete draw, and recent draws still require 2 independent
+          # source groups to agree before canonical promotion.
+          target = now.date() if now.time() >= time(18, 15) else now.date() - timedelta(days=1)
           latest = ""
           try:
               with open("data/xsmb.csv", newline="", encoding="utf-8") as f:
@@ -91,14 +92,13 @@ jobs:
           except Exception:
               pass
 
-          # A push from a fresh install/code change rebuilds even when data is
-          # already current, so generated models/docs always match the code.
-          is_push = os.environ.get("EVENT_NAME") == "push"
-          should_run = is_push or latest != target.isoformat()
+          event_name = os.environ.get("EVENT_NAME", "")
+          forced = event_name in {"workflow_dispatch", "push"}
+          should_run = forced or latest != target.isoformat()
           print(f"run={'true' if should_run else 'false'}")
           print(f"latest={latest}")
           print(f"target={target.isoformat()}")
-          print(f"reason={'push-bootstrap' if is_push else 'scheduled-staleness'}")
+          print(f"reason={'forced-' + event_name if forced else 'scheduled-staleness'}")
           PY
 
       - name: Install dependencies
@@ -107,11 +107,124 @@ jobs:
           python -m pip install --upgrade pip wheel setuptools
           python -m pip install -r requirements.txt
 
-      - name: Run strict end-to-end finalization
+      - name: Wait for verified canonical draw
+        id: canonical
         if: steps.guard.outputs.run == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          import os
+          import subprocess
+          import sys
+          import time
+          from datetime import datetime, time as dtime, timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+
+          tz = ZoneInfo("Asia/Ho_Chi_Minh")
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          event_name = os.environ.get("EVENT_NAME", "")
+          deadline = time.monotonic() + 15 * 60
+
+          def expected_target():
+              now = datetime.now(tz)
+              return now.date() if now.time() >= dtime(18, 15) else now.date() - timedelta(days=1)
+
+          def latest_date():
+              try:
+                  with open("data/xsmb.csv", newline="", encoding="utf-8") as f:
+                      values = [row["date"][:10] for row in csv.DictReader(f) if row.get("date")]
+                  return max(values) if values else ""
+              except Exception:
+                  return ""
+
+          def audit_ok(target):
+              try:
+                  audit = json.loads(Path("data/source_audit.json").read_text(encoding="utf-8"))
+                  row = audit.get(target.isoformat(), {})
+                  return bool(row.get("accepted")) and int(row.get("agreement", 0)) >= 2
+              except Exception:
+                  return False
+
+          while True:
+              target = expected_target()
+              latest = latest_date()
+
+              # For code/manual rebuilds, an already-present canonical date can be
+              # reused even if an old repository did not yet persist source_audit.
+              # Scheduled ingestion remains strict and requires 2-source consensus.
+              if latest == target.isoformat() and (audit_ok(target) or event_name in {"push", "workflow_dispatch"}):
+                  with output.open("a", encoding="utf-8") as f:
+                      f.write("ready=true\n")
+                      f.write(f"target={target.isoformat()}\n")
+                  print(f"Canonical draw ready: {target} (latest={latest})")
+                  break
+
+              subprocess.run(
+                  [
+                      sys.executable,
+                      "src/sync.py",
+                      "--cutoff", "18:15",
+                      "--fill-missing-days-back", "14",
+                      "--max-retries", "1",
+                      "--retry-backoff-s", "1.5",
+                      "--consensus-min-recent", "2",
+                      "--consensus-recent-days", "2",
+                  ],
+                  check=True,
+              )
+
+              latest = latest_date()
+              if latest == target.isoformat() and audit_ok(target):
+                  with output.open("a", encoding="utf-8") as f:
+                      f.write("ready=true\n")
+                      f.write(f"target={target.isoformat()}\n")
+                  print(f"Verified canonical draw accepted: {target}")
+                  break
+
+              if time.monotonic() >= deadline:
+                  with output.open("a", encoding="utf-8") as f:
+                      f.write("ready=false\n")
+                      f.write(f"target={target.isoformat()}\n")
+                  print(f"No verified complete result yet for {target}; a later recovery schedule will retry.")
+                  break
+
+              print(f"Result not complete/verified yet for {target}; retrying in 25s...")
+              time.sleep(25)
+          PY
+
+      - name: Commit canonical result immediately
+        id: canonical_commit
+        if: steps.canonical.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Commit the authoritative result before any expensive analytics/ML.
+          # This guarantees that an analytics failure cannot hold back daily data.
+          git add data/xsmb* data/source_audit.json
+          if git diff --cached --quiet; then
+            echo "Canonical result already committed."
+            echo "canonical_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            TARGET_DATE="${{ steps.canonical.outputs.target }}"
+            git commit -m "data: finalize XSMB ${TARGET_DATE}"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "canonical_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run strict end-to-end finalization
+        if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/pipeline.py \
-            --cutoff 18:35 \
+            --cutoff 18:15 \
             --window-days 2000 \
             --display-days 10 \
             --lag-max 30 \
@@ -119,18 +232,18 @@ jobs:
             --strict
 
       - name: Verify latest expected canonical draw and continuity
-        if: steps.guard.outputs.run == 'true'
+        if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/monitor_health.py \
             --health data/health.json \
-            --cutoff 18:35 \
+            --cutoff 18:15 \
             --cutoff-aware \
             --max-staleness-days 0 \
             --fail-on-stale \
             --fail-on-missing
 
       - name: Verify generated outputs
-        if: steps.guard.outputs.run == 'true'
+        if: steps.canonical.outputs.ready == 'true'
         run: |
           test -s data/xsmb.csv
           test -s data/xsmb.json
@@ -150,9 +263,9 @@ jobs:
           test -s docs/model-quality.html
           test -s docs/live.html
 
-      - name: Commit finalized data and dashboards
+      - name: Commit finalized analytics and dashboards
         id: commit
-        if: steps.guard.outputs.run == 'true'
+        if: steps.canonical.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -160,7 +273,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data models images docs README.md
           if git diff --cached --quiet; then
-            echo "No generated changes to commit."
+            echo "No generated analytics changes to commit."
             echo "generated_changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -176,7 +289,7 @@ jobs:
   deploy-pages:
     name: Deploy refreshed dashboards (optional)
     needs: update
-    if: ${{ github.event.repository.private == false }}
+    if: ${{ github.event.repository.private == false && needs.update.result == 'success' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     environment:
