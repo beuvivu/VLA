@@ -2,10 +2,17 @@ from __future__ import annotations
 
 """Conservative empirical-Bayes statistical signal for the 00..99 universe.
 
-This component is deliberately different from the ML/path models.  It combines
-recency-weighted frequency, target-weekday frequency and multiple rolling
-windows with Bayesian shrinkage toward the historical baseline.  Unstable
-signals are pulled back toward baseline rather than amplified.
+This component combines:
+- recency-weighted Bayesian frequency;
+- target-weekday posterior;
+- 30/90/365-day shrinkage;
+- stability/credible intervals;
+- higher-order number dynamics (Markov-2, renewal hazard, lag kernels,
+  cross-number lag-1 transition matrices, and regime drift).
+
+All dynamic evidence is strongly shrunk toward historical baselines. The output
+is a calibrated ranking component for the wider ML/path ensemble, not a claim
+of deterministic numerical predictability.
 """
 
 import argparse
@@ -19,6 +26,7 @@ from scipy.stats import beta as beta_dist
 
 from ensemble_utils import normalize_distribution
 from lottery import Lottery
+from number_dynamics import build_dynamics_signal, export_dynamics
 
 
 def _exp_weights(n: int, half_life: float) -> np.ndarray:
@@ -41,10 +49,20 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
     p = normalize_distribution(np.clip(p.astype(float), 1e-12, None))
     q = normalize_distribution(np.clip(q.astype(float), 1e-12, None))
     m = 0.5 * (p + q)
-    return float(0.5 * np.sum(p * np.log(p / m)) + 0.5 * np.sum(q * np.log(q / m)))
+    return float(
+        0.5 * np.sum(p * np.log(p / m))
+        + 0.5 * np.sum(q * np.log(q / m))
+    )
 
 
-def _loto_signal(hit: np.ndarray, dates: pd.Series, target_weekday: int, *, half_life: int, prior_strength: float) -> pd.DataFrame:
+def _loto_signal(
+    hit: np.ndarray,
+    dates: pd.Series,
+    target_weekday: int,
+    *,
+    half_life: int,
+    prior_strength: float,
+) -> pd.DataFrame:
     n = hit.shape[0]
     baseline = float(hit.mean())
     a0 = max(1e-6, baseline * prior_strength)
@@ -64,7 +82,9 @@ def _loto_signal(hit: np.ndarray, dates: pd.Series, target_weekday: int, *, half
     window_probs: dict[int, np.ndarray] = {}
     for window in (30, 90, 365):
         h = hit[-min(window, n) :]
-        window_probs[window] = (a0 + h.sum(axis=0)) / (a0 + b0 + len(h))
+        window_probs[window] = (a0 + h.sum(axis=0)) / (
+            a0 + b0 + len(h)
+        )
 
     stack = np.vstack([_logit(window_probs[w]) for w in (30, 90, 365)])
     instability = np.std(stack, axis=0)
@@ -74,8 +94,6 @@ def _loto_signal(hit: np.ndarray, dates: pd.Series, target_weekday: int, *, half
     prob = baseline + stability * (raw - baseline)
     prob = np.clip(prob, 1e-5, 1 - 1e-5)
 
-    # Approximate credible interval from the recency-weighted posterior using an
-    # effective sample size.  It is diagnostic, not a guarantee of coverage.
     ess = _effective_n(w)
     weighted_rate = weighted_hits / max(weighted_trials, 1e-12)
     alpha = a0 + weighted_rate * ess
@@ -102,19 +120,27 @@ def _loto_signal(hit: np.ndarray, dates: pd.Series, target_weekday: int, *, half
     )
 
 
-def _de_posterior(onehot: np.ndarray, weights: np.ndarray, prior_strength: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _de_posterior(
+    onehot: np.ndarray, weights: np.ndarray, prior_strength: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     prior = np.full(100, prior_strength / 100.0, dtype=float)
     counts = (onehot * weights[:, None]).sum(axis=0)
     alpha = prior + counts
     total = float(alpha.sum())
     p = alpha / total
-    # Dirichlet marginal is Beta(alpha_i, alpha_0-alpha_i).
     low = beta_dist.ppf(0.025, alpha, np.maximum(total - alpha, 1e-9))
     high = beta_dist.ppf(0.975, alpha, np.maximum(total - alpha, 1e-9))
     return p, low, high
 
 
-def _de_signal(onehot: np.ndarray, dates: pd.Series, target_weekday: int, *, half_life: int, prior_strength: float) -> pd.DataFrame:
+def _de_signal(
+    onehot: np.ndarray,
+    dates: pd.Series,
+    target_weekday: int,
+    *,
+    half_life: int,
+    prior_strength: float,
+) -> pd.DataFrame:
     n = onehot.shape[0]
     uniform = np.full(100, 0.01, dtype=float)
     w = _exp_weights(n, half_life)
@@ -122,12 +148,20 @@ def _de_signal(onehot: np.ndarray, dates: pd.Series, target_weekday: int, *, hal
 
     weekday_mask = dates.dt.weekday.to_numpy() == int(target_weekday)
     weekday_rows = onehot[weekday_mask]
-    weekday = _de_posterior(weekday_rows, np.ones(len(weekday_rows)), prior_strength)[0] if len(weekday_rows) else uniform
+    weekday = (
+        _de_posterior(
+            weekday_rows, np.ones(len(weekday_rows)), prior_strength
+        )[0]
+        if len(weekday_rows)
+        else uniform
+    )
 
     window_probs: dict[int, np.ndarray] = {}
     for window in (30, 90, 365):
         h = onehot[-min(window, n) :]
-        window_probs[window] = _de_posterior(h, np.ones(len(h)), prior_strength)[0]
+        window_probs[window] = _de_posterior(
+            h, np.ones(len(h)), prior_strength
+        )[0]
 
     drift = np.array(
         [
@@ -137,8 +171,12 @@ def _de_signal(onehot: np.ndarray, dates: pd.Series, target_weekday: int, *, hal
         ]
     )
     global_stability = float(np.exp(-10.0 * drift.mean()))
-    raw = normalize_distribution(0.55 * ewm + 0.25 * weekday + 0.20 * window_probs[90])
-    prob = normalize_distribution(uniform + global_stability * (raw - uniform))
+    raw = normalize_distribution(
+        0.55 * ewm + 0.25 * weekday + 0.20 * window_probs[90]
+    )
+    prob = normalize_distribution(
+        uniform + global_stability * (raw - uniform)
+    )
 
     return pd.DataFrame(
         {
@@ -159,7 +197,71 @@ def _de_signal(onehot: np.ndarray, dates: pd.Series, target_weekday: int, *, hal
     )
 
 
-def build_statistical_signal(mode: str, *, half_life: int = 45, prior_strength: float = 80.0) -> tuple[pd.DataFrame, dict]:
+def _blend_dynamics(
+    df: pd.DataFrame,
+    hit: np.ndarray,
+    *,
+    mode: str,
+) -> tuple[pd.DataFrame, dict]:
+    dynamics = build_dynamics_signal(hit, mode=mode)
+    dyn = dynamics.current.rename(
+        columns={
+            "prob": "dynamics_prob",
+            "baseline_prob": "dynamics_baseline_prob",
+            "transition_prob": "cross_transition_prob",
+        }
+    )
+    keep = [
+        "number",
+        "dynamics_prob",
+        "dynamics_baseline_prob",
+        "markov2_prob",
+        "markov2_state",
+        "markov2_reliability",
+        "hazard_prob",
+        "next_gap",
+        "hazard_reliability",
+        "cross_transition_prob",
+        "lag_kernel_prob",
+        "regime_prob",
+        "regime_log_ratio",
+        "dynamics_reliability",
+    ]
+    merged = df.merge(dyn[keep], on="number", how="left")
+    merged["base_stat_prob"] = merged["prob"].astype(float)
+
+    dyn_weight = 0.30 if mode == "loto" else 0.20
+    combined = (
+        (1.0 - dyn_weight) * merged["base_stat_prob"].to_numpy(dtype=float)
+        + dyn_weight * merged["dynamics_prob"].to_numpy(dtype=float)
+    )
+    if mode == "de":
+        combined = normalize_distribution(np.clip(combined, 1e-12, None))
+    else:
+        combined = np.clip(combined, 1e-5, 1 - 1e-5)
+    merged["prob"] = combined
+
+    dyn_diag = {
+        "dynamics_weight_in_stat_signal": dyn_weight,
+        "global_dynamics_reliability": float(
+            dynamics.diagnostics["global_dynamics_reliability"]
+        ),
+        "regime_js_divergence_30_vs_180": float(
+            dynamics.diagnostics["regime_js_divergence_30_vs_180"]
+        ),
+        "transition_active_mean_trials": float(
+            dynamics.diagnostics["transition_active_mean_trials"]
+        ),
+    }
+    return merged, dyn_diag
+
+
+def build_statistical_signal(
+    mode: str,
+    *,
+    half_life: int = 45,
+    prior_strength: float = 80.0,
+) -> tuple[pd.DataFrame, dict]:
     lot = Lottery()
     lot.load()
     two = lot.get_2_digits_data().copy()
@@ -173,23 +275,41 @@ def build_statistical_signal(mode: str, *, half_life: int = 45, prior_strength: 
 
     if mode == "de":
         de = (two["special"].astype(int).to_numpy() % 100).astype(int)
-        onehot = np.zeros((len(de), 100), dtype=np.int8)
-        onehot[np.arange(len(de)), de] = 1
-        df = _de_signal(onehot, two["date"], target.weekday(), half_life=half_life, prior_strength=prior_strength)
+        hit = np.zeros((len(de), 100), dtype=np.int8)
+        hit[np.arange(len(de)), de] = 1
+        df = _de_signal(
+            hit,
+            two["date"],
+            target.weekday(),
+            half_life=half_life,
+            prior_strength=prior_strength,
+        )
     elif mode == "loto":
-        hit = (sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0).astype(np.int8)
-        df = _loto_signal(hit, sparse["date"], target.weekday(), half_life=half_life, prior_strength=prior_strength)
+        hit = (
+            sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0
+        ).astype(np.int8)
+        df = _loto_signal(
+            hit,
+            sparse["date"],
+            target.weekday(),
+            half_life=half_life,
+            prior_strength=prior_strength,
+        )
     else:
         raise ValueError(mode)
 
+    df, dynamics_diag = _blend_dynamics(df, hit, mode=mode)
     df["number_str"] = df["number"].map(lambda x: f"{int(x):02d}")
     df["anchor_date"] = anchor.isoformat()
     df["target_date"] = target.isoformat()
     df.sort_values("prob", ascending=False, inplace=True, ignore_index=True)
+
     diagnostics = {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": mode,
-        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "generated_at_utc": datetime.now(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
         "anchor_date": anchor.isoformat(),
         "target_date": target.isoformat(),
         "history_days": int(len(two)),
@@ -198,27 +318,49 @@ def build_statistical_signal(mode: str, *, half_life: int = 45, prior_strength: 
         "mean_stability": float(df["stability"].mean()),
         "min_stability": float(df["stability"].min()),
         "max_stability": float(df["stability"].max()),
-        "interpretation": "Empirical-Bayes descriptive signal; instability is shrunk toward baseline and does not imply deterministic predictability.",
+        **dynamics_diag,
+        "interpretation": (
+            "Empirical-Bayes + higher-order dynamics component. Markov, "
+            "transition, hazard, lag and regime evidence is shrinkage-regularized "
+            "and used only as probabilistic ranking support."
+        ),
     }
     return df, diagnostics
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Build conservative empirical-Bayes statistical prediction component.")
+    ap = argparse.ArgumentParser(
+        description=(
+            "Build conservative empirical-Bayes + higher-order dynamics "
+            "statistical prediction component."
+        )
+    )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     ap.add_argument("--half-life", type=int, default=45)
     ap.add_argument("--prior-strength", type=float, default=80.0)
     ap.add_argument("--out-dir", default="data/statistical_signal")
+    ap.add_argument("--dynamics-out-dir", default="data/number_dynamics")
     args = ap.parse_args()
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     modes = ["loto", "de"] if args.mode == "both" else [args.mode]
     for mode in modes:
-        df, diag = build_statistical_signal(mode, half_life=args.half_life, prior_strength=args.prior_strength)
+        df, diag = build_statistical_signal(
+            mode,
+            half_life=args.half_life,
+            prior_strength=args.prior_strength,
+        )
         df.to_csv(out / f"predict_next_{mode}_stat_all.csv", index=False)
-        (out / f"diagnostics_{mode}.json").write_text(json.dumps(diag, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[OK] statistical signal {mode}: target={diag['target_date']} -> {out}")
+        (out / f"diagnostics_{mode}.json").write_text(
+            json.dumps(diag, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+        export_dynamics(mode, Path(args.dynamics_out_dir))
+        print(
+            f"[OK] statistical signal {mode}: "
+            f"target={diag['target_date']} -> {out}"
+        )
 
 
 if __name__ == "__main__":
