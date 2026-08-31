@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "mode": "loto",
-  "generated_at_utc": "2026-08-30T23:05:13Z",
-  "anchor_date": "2026-08-30",
-  "target_date": "2026-08-31",
-  "history_days": 385,
+  "generated_at_utc": "2026-08-31T17:52:27Z",
+  "anchor_date": "2026-08-31",
+  "target_date": "2026-09-01",
+  "history_days": 386,
   "half_life_days": 45,
   "prior_strength": 80.0,
-  "mean_stability": 0.9671569113262143,
-  "min_stability": 0.9087375782544009,
-  "max_stability": 0.9978992174304846,
+  "mean_stability": 0.9664589727853786,
+  "min_stability": 0.9087398736523463,
+  "max_stability": 0.9961407204799008,
   "interpretation": "Empirical-Bayes descriptive signal; instability is shrunk toward baseline and does not imply deterministic predictability."
 }
