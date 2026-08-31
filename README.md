@@ -1,8 +1,5 @@
-# Vietnam Lottery Analysis — GitHub-only Edition
+# Vietnam VLA
 
-Bộ mã nguồn **GitHub-only** để tự động thu thập dữ liệu XSMB, xây dựng thống kê, chạy AI/ML, đánh giá mô hình và xuất dashboard tĩnh bằng **GitHub Actions + GitHub Pages**. Không cần máy chủ riêng hay backend chạy thường trực.
-
-> Mục đích của hệ thống là phân tích dữ liệu lịch sử và nghiên cứu xác suất. Kết quả AI/ML là tín hiệu thống kê, không bảo đảm kết quả tương lai.
 
 ## Latest data snapshot
 
@@ -11,38 +8,7 @@ Bộ mã nguồn **GitHub-only** để tự động thu thập dữ liệu XSMB,
 | :------------: | :----------: |
 | <table><tr><td>Date (Ngày)</td><td>30-08-2026</td></tr><tr><td>Special (Đặc biệt)</td><td>83772</td></tr><tr><td>First (Giải nhất)</td><td>68785</td></tr><tr><td>Second (Giải nhì)</td><td>50518, 27452</td></tr><tr><td>Third (Giải ba)</td><td>57053, 92810, 56241, 65128, 33811, 42264</td></tr><tr><td>Fourth (Giải tư)</td><td>4753, 1152, 6777, 3507</td></tr><tr><td>Fifth (Giải năm)</td><td>9460, 2913, 3232, 2999, 3670, 5129</td></tr><tr><td>Sixth (Giải sáu)</td><td>939, 751, 594</td></tr><tr><td>Seventh (Giải bảy)</td><td>66, 21, 34, 78</td></tr></table> | <table><tr><td>First (Đầu)</td><td>Last (Đuôi)</td></tr><tr><td>0</td><td>7</td></tr><tr><td>1</td><td>8, 0, 1, 3</td></tr><tr><td>2</td><td>8, 9, 1</td></tr><tr><td>3</td><td>2, 9, 4</td></tr><tr><td>4</td><td>1</td></tr><tr><td>5</td><td>2, 3, 3, 2, 1</td></tr><tr><td>6</td><td>4, 0, 6</td></tr><tr><td>7</td><td>2, 7, 0, 8</td></tr><tr><td>8</td><td>5</td></tr><tr><td>9</td><td>9, 4</td></tr></table> |
 <!-- SNAPSHOT:END -->
-## Kiến trúc production
 
-### Nguồn dữ liệu theo thứ tự ưu tiên
-
-1. `xoso.com.vn`
-2. `mketqua.net`
-3. `www.minhngoc.net.vn`
-4. `xosominhngoc.com`
-5. `xosodaiphat.com`
-6. `hainhay.net`
-
-Kết quả mới không được ghi thẳng vào lịch sử chỉ vì một website đã hiển thị. Với kỳ quay gần nhất, hệ thống chuẩn hóa đúng độ dài từng giải, đối chiếu toàn bộ 27 giá trị và yêu cầu **ít nhất 2 provider group độc lập** đồng thuận. Hai domain Minh Ngọc được coi là cùng một provider group để tránh đếm mirror như hai xác nhận độc lập.
-
-Dữ liệu live là provisional và được giữ tách biệt khỏi canonical history cho tới khi đủ consensus.
-
-## Chức năng chính
-
-- Multi-source collection, retry, source audit và data-health gate.
-- Near-live XSMB bằng GitHub Actions: 6 nguồn được fetch song song, merge từng ô giải và cập nhật JSON live khi payload thay đổi.
-- Strict parser: không zero-fill placeholder hoặc số đang quay chưa đủ độ dài.
-- Thống kê tần suất, gan, chu kỳ, nháy, đầu/đuôi/tổng, chạm, cặp lộn, lô rơi, ma trận ngày/tuần/tháng/năm.
-- Kiểm định thống kê với Bayesian shrinkage, credible interval, multiple-testing control/FDR và diagnostics về entropy/drift.
-- Empirical-Bayes signal độc lập: exponential decay, weekday posterior, multi-window stability và shrinkage về baseline khi tín hiệu không ổn định.
-- Path/cầu engine theo vị trí chữ số, active/stable streak, walk-forward backtest và explainable position evidence.
-- Base ML với temporal feature engineering: target weekday, EWM 14/45, rolling 7/30/90/365, trend, gap/streak, reverse-number dynamics và vectorized path support.
-- Temporal model selection 4 tầng: train → natural-prevalence calibration → model-selection → untouched validation.
-- `HistGradientBoostingClassifier` + Platt calibration + recency weighting; model yếu được shrink về historical baseline thay vì phát xác suất quá tự tin.
-- Cầu-kèo ML + position evidence.
-- Ensemble 5 thành phần: base ML + cầu-kèo ML + statistical Bayes + active path + stable path; trọng số học bằng walk-forward LogLoss với regularization.
-- Model disagreement/uncertainty tier, rolling LogLoss/Brier và compact prediction history.
-- Dashboard responsive trong `docs/`, triển khai trực tiếp bằng GitHub Pages Actions.
-- Excel-safe exports giữ số 0 ở đầu.
 
 ## Cài đặt mới hoàn toàn trên GitHub
 
