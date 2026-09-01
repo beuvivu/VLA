@@ -85,14 +85,15 @@ def availability_from_history_day(sub: pd.DataFrame) -> dict[str, bool]:
     positive total mass; this prevents legacy all-zero placeholders from being
     mistaken for real model output.
     """
-    if len(sub) != 100:
+    if len(sub) != 100 or "number" not in sub.columns:
         return {key: False for key in COMPONENT_KEYS}
 
-    numbers = pd.to_numeric(sub.get("number"), errors="coerce")
+    numbers = pd.to_numeric(sub["number"], errors="coerce")
+    number_values = numbers.to_numpy(dtype=float)
     universe_ok = (
         not numbers.isna().any()
-        and np.isfinite(numbers.to_numpy(dtype=float)).all()
-        and np.all(numbers.to_numpy(dtype=float) == np.floor(numbers.to_numpy(dtype=float)))
+        and np.isfinite(number_values).all()
+        and np.all(number_values == np.floor(number_values))
         and set(numbers.astype(int).tolist()) == set(range(100))
     )
     if not universe_ok:
