@@ -271,6 +271,7 @@ def main() -> None:
         )
         _run(_py("src/build_docs_ml.py"), allow_fail=soft_fail)
         _run(_py("src/build_dashboard.py"), allow_fail=soft_fail)
+        _run(_py("src/build_markdown_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
         _run(_py("src/build_fun_prediction.py"), allow_fail=soft_fail)
