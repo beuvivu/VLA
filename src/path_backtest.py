@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
-from datetime import timedelta
 from pathlib import Path
 from typing import Literal
 
-import numpy as np
 import pandas as pd
 
+from calendar_alignment import consecutive_next_pairs, normalize_dates
 from lottery import Lottery
 from path_models import PathParams, build_daily_targets
 from path_prob import predict_next_day
@@ -34,33 +33,45 @@ def _eval_one_day(
     df_2d: pd.DataFrame,
     *,
     idx_train_end: int,
+    target_idx: int,
     params: PathParams,
     mode: Mode,
     kind: Kind,
     top_k: int,
 ) -> tuple[int, int, int, float]:
-    """Train on [..idx_train_end], predict idx_train_end+1 and score."""
+    """Train through one anchor draw and score its exact next-calendar-day target."""
+    dates = normalize_dates(df_2d["date"])
+    if target_idx >= len(dates) or (dates[target_idx] - dates[idx_train_end]).days != 1:
+        raise ValueError("path backtest target must be exactly one calendar day after anchor")
+
     df_raw_train = df_raw.iloc[: idx_train_end + 1].copy()
     df_2d_train = df_2d.iloc[: idx_train_end + 1].copy()
 
-    pred = predict_next_day(df_raw=df_raw_train, df_2digits=df_2d_train, params=params, mode=mode, kind=kind, top_numbers=top_k)
+    pred = predict_next_day(
+        df_raw=df_raw_train,
+        df_2digits=df_2d_train,
+        params=params,
+        mode=mode,
+        kind=kind,
+        top_numbers=top_k,
+    )
     if pred.empty:
         return 0, 0, 0, 0.0
 
-    # actual targets at next day
-    dates, loto_targets, de_targets = build_daily_targets(df_2d)
-    next_idx = idx_train_end + 1
-    if next_idx >= len(dates):
-        return 0, 0, int(pred["support_paths_count"].sum()), float(pred["prob"].mean())
-
+    _, loto_targets, de_targets = build_daily_targets(df_2d)
     if mode == "loto":
-        actual_set = loto_targets[next_idx]
+        actual_set = loto_targets[target_idx]
         hit_flags = [1 if int(n) in actual_set else 0 for n in pred["number"].tolist()]
-        return int(any(hit_flags)), int(sum(hit_flags)), int(pred["support_paths_count"].sum()), float(pred["prob"].mean())
     else:
-        actual = int(de_targets[next_idx])
+        actual = int(de_targets[target_idx])
         hit_flags = [1 if int(n) == actual else 0 for n in pred["number"].tolist()]
-        return int(any(hit_flags)), int(sum(hit_flags)), int(pred["support_paths_count"].sum()), float(pred["prob"].mean())
+
+    return (
+        int(any(hit_flags)),
+        int(sum(hit_flags)),
+        int(pred["support_paths_count"].sum()),
+        float(pred["prob"].mean()),
+    )
 
 
 def main() -> None:
@@ -92,18 +103,27 @@ def main() -> None:
     if df_raw.empty or df_2d.empty:
         raise SystemExit("No data loaded. Run src/sync.py first.")
 
-    # backtest last bt_days days (walk-forward)
-    n = len(df_raw)
-    start_idx = max(0, n - args.bt_days - 2)  # keep room for next day
-    end_idx = n - 2  # last training end where next day exists
+    raw_dates = normalize_dates(df_raw["date"])
+    two_dates = normalize_dates(df_2d["date"])
+    if not raw_dates.equals(two_dates):
+        raise SystemExit("Raw and two-digit histories are not date-aligned")
+
+    source_idx, target_idx = consecutive_next_pairs(raw_dates)
+    if source_idx.size == 0:
+        raise SystemExit("No exact next-calendar-day trials available for backtest")
+    # Keep the most recent requested number of legitimate calendar transitions.
+    if args.bt_days > 0:
+        source_idx = source_idx[-args.bt_days :]
+        target_idx = target_idx[-args.bt_days :]
 
     res: list[BacktestResult] = []
-    for idx_train_end in range(start_idx, end_idx + 1):
-        d = pd.to_datetime(df_raw.iloc[idx_train_end + 1]["date"]).date().isoformat()
+    for idx_train_end, idx_target in zip(source_idx.tolist(), target_idx.tolist()):
+        d = raw_dates[idx_target].date().isoformat()
         hit, hits_count, support_paths, mean_prob = _eval_one_day(
             df_raw,
             df_2d,
-            idx_train_end=idx_train_end,
+            idx_train_end=int(idx_train_end),
+            target_idx=int(idx_target),
             params=params,
             mode=args.mode,  # type: ignore[arg-type]
             kind=args.kind,  # type: ignore[arg-type]
@@ -127,10 +147,10 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(out_path, index=False)
 
-    # Summary
     if not out_df.empty:
         summary = {
             "days": int(out_df.shape[0]),
+            "calendar_next_day_only": True,
             "hit_rate@k": float(out_df["hit"].mean()),
             "mean_hits_in_topk": float(out_df["hits_count"].mean()),
             "mean_support_paths": float(out_df["support_paths"].mean()),
