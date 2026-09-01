@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "mode": "de",
-  "history_days": 386,
+  "history_days": 387,
   "active_numbers_last_draw": 1,
   "transition_prior_strength": 160.0,
-  "transition_active_mean_trials": 3.0,
-  "regime_js_divergence_30_vs_180": 0.046990187041334924,
-  "entropy_recent": 4.448107428919504,
+  "transition_active_mean_trials": 6.0,
+  "regime_js_divergence_30_vs_180": 0.0456794565059888,
+  "entropy_recent": 4.439010454980991,
   "entropy_long": 4.449266952917986,
-  "global_dynamics_reliability": 0.6403067622566256,
+  "global_dynamics_reliability": 0.6441779247269362,
   "hazard_nonzero_bins": 200,
-  "generated_at_utc": "2026-09-01T08:20:31Z",
+  "generated_at_utc": "2026-09-01T11:31:46Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-08-31"
+  "anchor_date": "2026-09-01"
 }

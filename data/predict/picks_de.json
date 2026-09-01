@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "anchor_date": "2026-08-31",
-  "target_date": "2026-09-01",
+  "anchor_date": "2026-09-01",
+  "target_date": "2026-09-02",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -16,40 +16,43 @@
     "temperature": 1.0
   },
   "meta": {
-    "active": false,
-    "trust": 0.0,
-    "quality_pass": false,
-    "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.598548958577824,
-    "baseline_validation_logloss": 4.610741346170067,
-    "logloss_skill": 0.0026443442988556276
+    "active": true,
+    "trust": 0.06805446876443884,
+    "quality_pass": true,
+    "reason": "validated stacked challenger blended into production",
+    "candidate": "meta_balanced",
+    "validation_logloss": 4.596158321830472,
+    "baseline_validation_logloss": 4.6100302630617325,
+    "logloss_skill": 0.0030090781274064726,
+    "brier_skill": 0.0002747475835968016,
+    "trained_through_target_date": "2026-09-01"
   },
   "top4": [
     "83",
-    "38",
     "54",
-    "79"
+    "38",
+    "68"
   ],
   "top8": [
     "83",
-    "38",
     "54",
-    "79",
-    "37",
+    "38",
     "68",
-    "39",
-    "47"
+    "43",
+    "21",
+    "23",
+    "28"
   ],
   "top10": [
     "83",
-    "38",
     "54",
-    "79",
-    "37",
+    "38",
     "68",
+    "43",
+    "21",
+    "23",
+    "28",
     "39",
-    "47",
-    "78",
-    "23"
+    "67"
   ]
 }
