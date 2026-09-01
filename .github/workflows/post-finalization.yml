@@ -8,7 +8,8 @@ on:
 
 permissions:
   contents: write
-\concurrency:
+
+concurrency:
   group: post-finalization-reconcile
   cancel-in-progress: false
 
