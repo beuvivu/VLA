@@ -57,10 +57,6 @@ def _get_text(resp: object) -> str:
     return getattr(resp, "text", "")
 
 
-def _only_digits(s: str) -> str:
-    return re.sub(r"\D+", "", s)
-
-
 def _ascii_fold(value: str) -> str:
     value = unicodedata.normalize("NFKD", value)
     value = "".join(ch for ch in value if not unicodedata.combining(ch))
@@ -154,8 +150,15 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
 
 def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, list[str]]) -> Result | None:
     def full(key: str) -> list[int] | None:
-        vals = [_only_digits(v) for v in prize_map.get(key, [])]
-        vals = [v for v in vals if len(v) == EXPECTED_WIDTHS[key]]
+        width = EXPECTED_WIDTHS[key]
+        vals: list[str] = []
+        for raw_value in prize_map.get(key, []):
+            token = str(raw_value).strip()
+            # External data is never "repaired" by stripping unexpected
+            # characters.  Accept only ASCII decimal digits of the exact prize
+            # width; anything else is rejected at the ingestion boundary.
+            if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None:
+                vals.append(token)
         if len(vals) < EXPECTED_COUNTS[key]:
             return None
         return [int(v) for v in vals[: EXPECTED_COUNTS[key]]]
