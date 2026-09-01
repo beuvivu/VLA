@@ -173,15 +173,25 @@ Nếu repository dùng branch-protection, **không áp dụng rule cấm force-p
 
 > GitHub scheduled workflows có thể bị platform delay. Vì vậy GitHub-only không thể cam kết wall-clock realtime như một server luôn chạy. Thiết kế này giảm rủi ro bằng cách mở live job trước giờ quay, polling bên trong job và có nhiều mốc finalization/recovery sau quay.
 
-## Lịch daily finalization
+<!-- AUTOMATION:BEGIN -->
+## ⚙️ Zero-touch automation
 
-Timezone: `Asia/Ho_Chi_Minh`.
+Hệ thống vận hành tự động bằng GitHub Actions; không cần chạy cron/VPS bên ngoài trong cấu hình mặc định.
 
-- `18:38` — finalization chính.
-- `18:53` — recovery 1.
-- `19:13` — recovery 2.
+| Lớp tự động | Giờ Việt Nam | Hành vi |
+|---|---|---|
+| Near-live chính | **18:04** | Mở cửa sổ live, poll khoảng 25 giây/lần và kiểm chứng nhiều nguồn. |
+| Live watchdog | **18:10, 18:20** | Nếu live chưa có heartbeat của ngày hiện tại, tự dispatch lại live workflow. |
+| Daily finalization | **18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28** | Poll/fetch, yêu cầu ≥2 provider group độc lập, commit canonical trước rồi mới chạy Statistics + AI/ML + prediction + README + Pages. |
+| Canonical recovery | **19:35, 20:05** | Nếu canonical còn stale hoặc artifact audit fail, tự dispatch lại daily finalization. |
+| Pages recovery | **20:20** | Retry deploy Pages độc lập khi canonical đã ổn. |
+| Overnight safety net | **07:15** | Kiểm tra lại canonical, prediction, README, model artifacts, dashboards và live reconciliation. |
+| Post-finalization | Sau mỗi daily success | Full production audit và đồng bộ branch `live` về đúng canonical `complete_verified`. |
 
-Guard kiểm tra canonical date trước khi chạy; nếu kỳ hôm nay đã được ghi thành công, các recovery run trở thành no-op. Có thể `Run workflow` thủ công bất kỳ lúc nào.
+Recovery workflows kiểm tra trạng thái trước khi dispatch để tránh tạo job trùng khi workflow mục tiêu đang `queued/in_progress`. Daily canonical commit vẫn độc lập với Pages/watchdog, nên lỗi dashboard hoặc hậu kiểm không giữ lại kết quả daily đã xác minh.
+
+> GitHub scheduled workflows là best-effort và nguồn dữ liệu bên thứ ba có thể thay đổi/gián đoạn. Watchdog + nhiều recovery slots giúp hệ thống tự phục hồi tối đa trong giới hạn kiến trúc GitHub-only, nhưng không thể tạo SLA tuyệt đối như một scheduler/server chuyên dụng.
+<!-- AUTOMATION:END -->
 
 ## Dashboard
 
