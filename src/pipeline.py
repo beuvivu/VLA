@@ -45,8 +45,8 @@ def _py(script: str, *args: str) -> list[str]:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "GitHub pipeline: sync -> statistics -> research falsification -> paths -> "
-            "base ML -> stacked ML -> calibrated predictions -> dashboards."
+            "GitHub pipeline: sync -> validate canonical data -> statistics -> research "
+            "falsification -> paths -> base ML -> stacked ML -> calibrated predictions -> dashboards."
         )
     )
     ap.add_argument(
@@ -92,6 +92,30 @@ def main() -> None:
             )
         )
 
+    # Canonical data integrity is a hard precondition, even in non-strict mode.
+    # Many historical analytics use row-based rolling windows after this gate;
+    # allowing a gap here would silently change the meaning of "day" and "t+1".
+    _run(
+        _py(
+            "src/validate_data.py",
+            "--lookback-days",
+            "90",
+            "--out",
+            "data/health.json",
+        ),
+        allow_fail=False,
+    )
+    _run(
+        _py(
+            "src/monitor_health.py",
+            "--health",
+            "data/health.json",
+            "--max-staleness-days",
+            "2",
+        ),
+        allow_fail=True,
+    )
+
     for script in [
         "src/analyze.py",
         "src/advanced_stats.py",
@@ -110,10 +134,7 @@ def main() -> None:
         _py("src/research_diagnostics.py", "--permutations", "127", "--max-lag", "14"),
         allow_fail=True,
     )
-    _run(
-        _py("src/research_legacy_extensions.py"),
-        allow_fail=True,
-    )
+    _run(_py("src/research_legacy_extensions.py"), allow_fail=True)
     _run(
         _py("src/legacy_advanced_diagnostics.py", "--max-lag", "15"),
         allow_fail=True,
@@ -144,27 +165,6 @@ def main() -> None:
         ),
         allow_fail=True,
         timeout_s=600,
-    )
-
-    _run(
-        _py(
-            "src/validate_data.py",
-            "--lookback-days",
-            "90",
-            "--out",
-            "data/health.json",
-        ),
-        allow_fail=soft_fail,
-    )
-    _run(
-        _py(
-            "src/monitor_health.py",
-            "--health",
-            "data/health.json",
-            "--max-staleness-days",
-            "2",
-        ),
-        allow_fail=True,
     )
 
     if not args.skip_path:
@@ -237,10 +237,7 @@ def main() -> None:
             ),
             allow_fail=soft_fail,
         )
-        _run(
-            _py("src/path_timeline_evidence.py", "--recent", "20"),
-            allow_fail=True,
-        )
+        _run(_py("src/path_timeline_evidence.py", "--recent", "20"), allow_fail=True)
 
         _run(_py("src/statistical_matrices.py"), allow_fail=soft_fail)
         _run(_py("src/record_pred_history.py"), allow_fail=soft_fail)
