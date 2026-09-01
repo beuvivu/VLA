@@ -1,0 +1,52 @@
+name: Post-finalization audit + live reconciliation
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Finalize XSMB + Statistics + AI/ML"]
+    types: [completed]
+
+permissions:
+  contents: write
+\concurrency:
+  group: post-finalization-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout latest default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Run strict production audit
+        run: |
+          python src/production_audit.py \
+            --cutoff 18:15 \
+            --strict \
+            --json-out /tmp/production_audit.json
+
+      - name: Build canonical live snapshot
+        run: |
+          python src/reconcile_live_canonical.py --out /tmp/live-canonical.json
+
+      - name: Force-publish canonical snapshot to live branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          blob="$(git hash-object -w /tmp/live-canonical.json)"
+          tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
+          commit="$(printf 'live: reconcile canonical result\n' | git commit-tree "$tree")"
+          git push --force origin "$commit:refs/heads/live"
