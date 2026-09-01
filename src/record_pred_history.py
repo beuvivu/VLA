@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ensemble_components import probability_component
+from ensemble_components import COMPONENT_KEYS, probability_component
 
 
 def _latest_anchor_date(xsmb_csv: Path) -> date:
@@ -47,8 +47,44 @@ def _load_stat_full(stat_dir: Path, mode: str) -> pd.DataFrame:
     return pd.DataFrame(columns=["number", "prob"])
 
 
+def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
+    """Infer availability for legacy rows and erase synthetic all-zero placeholders."""
+    out = df.copy()
+    if "target_date" not in out.columns or "number" not in out.columns:
+        return out
+
+    for key in COMPONENT_KEYS:
+        p_col = f"p_{key}"
+        has_col = f"has_{key}"
+        if has_col not in out.columns:
+            out[has_col] = False
+        if p_col not in out.columns:
+            out[p_col] = np.nan
+            out[has_col] = False
+            continue
+
+        for _, idx in out.groupby("target_date", sort=False).groups.items():
+            loc = list(idx)
+            sub = out.loc[loc]
+            numbers = pd.to_numeric(sub["number"], errors="coerce")
+            values = pd.to_numeric(sub[p_col], errors="coerce").to_numpy(dtype=float)
+            valid = (
+                len(sub) == 100
+                and numbers.notna().all()
+                and set(numbers.astype(int).tolist()) == set(range(100))
+                and values.shape == (100,)
+                and np.isfinite(values).all()
+                and np.all((values >= 0.0) & (values <= 1.0))
+                and float(values.sum()) > 0.0
+            )
+            out.loc[loc, has_col] = bool(valid)
+            if not valid:
+                out.loc[loc, p_col] = np.nan
+    return out
+
+
 def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_date") -> None:
-    """Upsert one prediction day into the compact GitHub history store."""
+    """Upsert one prediction day and migrate the compact history to the availability contract."""
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and out.stat().st_size > 0:
         df_old = pd.read_csv(out)
@@ -56,6 +92,7 @@ def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_
         df_all = pd.concat([df_old, df_new], ignore_index=True)
     else:
         df_all = df_new
+    df_all = _sanitize_history(df_all)
     df_all.sort_values([key_col, "number"], inplace=True)
     df_all.to_csv(out, index=False)
 
