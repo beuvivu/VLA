@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import re
+from datetime import date
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 DATA_DIR = Path("data")
 README = Path("README.md")
+FUN_PREDICTION = DATA_DIR / "predict" / "fun_draw_next.json"
 
 WIDTHS = {
     "special": 5,
@@ -99,16 +103,114 @@ def _replace_between_markers(text: str, new_block: str) -> str:
         _, post = rest.split("<!-- SNAPSHOT:END -->", 1)
         return pre.rstrip() + "\n\n" + new_block + post.lstrip()
 
-    # Backward-compatible regex replacement (older READMEs)
     pat = re.compile(
         r"\| Lottery \(Xổ số\) \| Loto \(Lô tô\) \|\n\| :\-+:\s*\| :\-+:\s*\|\n\|\s*<table>.*?</table>\s*\|\s*<table>.*?</table>\s*\|\n",
         re.DOTALL,
     )
     if pat.search(text):
         return pat.sub(new_block, text, count=1)
-
-    # Fallback: prepend
     return new_block + "\n\n" + text
+
+
+def _load_fun_prediction(path: Path = FUN_PREDICTION) -> dict[str, Any]:
+    if not path.exists() or path.stat().st_size == 0:
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Invalid fun prediction payload: {path}")
+    return payload
+
+
+def _fmt_iso_date(value: Any) -> str:
+    try:
+        return date.fromisoformat(str(value)[:10]).strftime("%d-%m-%Y")
+    except Exception:
+        return str(value or "—")
+
+
+def _fmt_prob(value: Any, decimals: int) -> str:
+    try:
+        return f"{float(value):.{decimals}f}%"
+    except Exception:
+        return "—"
+
+
+def _render_fun_prediction_block(payload: dict[str, Any]) -> str:
+    target = _fmt_iso_date(payload.get("target_date"))
+    anchor = _fmt_iso_date(payload.get("anchor_date"))
+
+    groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
+    prize_rows: list[str] = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        label = str(group.get("label") or group.get("key") or "Giải")
+        values = group.get("values") if isinstance(group.get("values"), list) else []
+        rendered = []
+        for item in values:
+            if isinstance(item, dict):
+                value = str(item.get("value") or "")
+                if value:
+                    rendered.append(f"`{value}`")
+        prize_rows.append(f"| {label} | {' · '.join(rendered) if rendered else '—'} |")
+
+    def top_table(items: Any, *, decimals: int) -> str:
+        if not isinstance(items, list) or not items:
+            return "_Chưa có dữ liệu._"
+        rows = ["| # | Số | Xác suất model |", "|---:|:---:|---:|"]
+        for idx, item in enumerate(items[:10], start=1):
+            if not isinstance(item, dict):
+                continue
+            rank = item.get("rank", idx)
+            number = str(item.get("number") or "").zfill(2)
+            prob = _fmt_prob(item.get("prob_percent"), decimals)
+            rows.append(f"| {rank} | **{number}** | **{prob}** |")
+        return "\n".join(rows)
+
+    prize_table = "\n".join(
+        ["| Giải | Dự đoán vui |", "|---|---|"] + prize_rows
+    )
+    loto_table = top_table(payload.get("top_loto"), decimals=2)
+    de_table = top_table(payload.get("top_de"), decimals=3)
+
+    disclaimer = str(
+        payload.get("disclaimer")
+        or "Dự đoán vui/mô phỏng để tham khảo; không phải kết quả thật và không bảo đảm kết quả tương lai."
+    )
+
+    return (
+        "<!-- FUN_PREDICTION:BEGIN -->\n"
+        f"## 🎲 Dự đoán vui ngày {target}\n\n"
+        f"> **Anchor:** kết quả thực đến **{anchor}**. **Không phải kết quả thật.** {disclaimer}\n\n"
+        "### Bảng mô phỏng đầy đủ\n\n"
+        f"{prize_table}\n\n"
+        "### Top Loto ngày mai\n\n"
+        f"{loto_table}\n\n"
+        "### Top Đặc biệt ngày mai\n\n"
+        f"{de_table}\n\n"
+        "> Xác suất ở bảng Loto là xác suất model cho số 00–99 xuất hiện trong kỳ; xác suất ĐB là distribution riêng cho 2 số cuối giải đặc biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh deterministic để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.\n"
+        "<!-- FUN_PREDICTION:END -->\n"
+    )
+
+
+def _replace_fun_prediction_block(text: str, new_block: str) -> str:
+    begin = "<!-- FUN_PREDICTION:BEGIN -->"
+    end = "<!-- FUN_PREDICTION:END -->"
+    if begin in text and end in text:
+        pre, rest = text.split(begin, 1)
+        _, post = rest.split(end, 1)
+        return pre.rstrip() + "\n\n" + new_block + "\n" + post.lstrip()
+
+    snapshot_end = "<!-- SNAPSHOT:END -->"
+    if snapshot_end in text:
+        pre, post = text.split(snapshot_end, 1)
+        return pre + snapshot_end + "\n\n" + new_block + "\n" + post.lstrip()
+
+    marker = "## Kiến trúc production"
+    if marker in text:
+        pre, post = text.split(marker, 1)
+        return pre.rstrip() + "\n\n" + new_block + "\n\n" + marker + post
+    return text.rstrip() + "\n\n" + new_block
 
 
 def main() -> None:
@@ -122,16 +224,24 @@ def main() -> None:
 
     lottery_html = _build_lottery_table(latest_raw)
     loto_html = _build_loto_table(latest_2d)
-    new_block = _render_block(lottery_html, loto_html)
+    snapshot_block = _render_block(lottery_html, loto_html)
 
     if not README.exists():
         raise FileNotFoundError("README.md not found")
 
     txt = README.read_text(encoding="utf-8")
-    new_txt = _replace_between_markers(txt, new_block)
+    new_txt = _replace_between_markers(txt, snapshot_block)
+
+    fun_payload = _load_fun_prediction()
+    if fun_payload:
+        fun_block = _render_fun_prediction_block(fun_payload)
+        new_txt = _replace_fun_prediction_block(new_txt, fun_block)
+
     README.write_text(new_txt, encoding="utf-8")
 
     print("README updated for date:", pd.to_datetime(latest_raw["date"]).date())
+    if fun_payload:
+        print("README fun prediction target:", fun_payload.get("target_date"))
 
 
 if __name__ == "__main__":
