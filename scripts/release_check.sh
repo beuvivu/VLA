@@ -48,9 +48,10 @@ printf '%s\n' "== Data integrity + canonical statistics =="
 python src/validate_data.py --lookback-days 90 --out data/health.json
 python src/statistical_signal.py --mode both
 python src/significance_stats.py --windows 30,90,365
-# Rebuild the current production cầu-kèo artifacts before any consumer reads
-# their date metadata. This prevents PR CI from auditing stale committed outputs.
-python src/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20
+# Rebuild the current production cầu-kèo artifacts and model pack from the
+# calendar-validated feature builder.  The final supervised anchor is necessarily
+# one day behind the latest canonical draw because its label is that latest draw.
+python src/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20 --force-train
 python src/statistical_matrices.py
 python src/conditional_matrices.py --top 500
 python src/statistics_ai_overlay.py
@@ -187,24 +188,50 @@ PYMETA
 
 printf '%s\n' "== Production model artifact compatibility =="
 python - <<'PYMODEL'
+from datetime import timedelta
+
 import joblib
 import pandas as pd
 from cau_keo_ml import FEATURE_COLS as CAU_FEATURE_COLS
 from ml_train import FEATURE_SCHEMA_VERSION
 
-latest = str(pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).max().date())
+calendar = sorted(
+    pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"])
+    .dt.date.unique()
+)
+assert len(calendar) >= 2, len(calendar)
+latest_date = calendar[-1]
+latest = latest_date.isoformat()
+last_supervised_anchor = calendar[-2].isoformat()
+assert calendar[-2] + timedelta(days=1) == latest_date, calendar[-2:]
+
 for path in ["models/ml_loto.joblib", "models/ml_de.joblib"]:
     obj = joblib.load(path)
     assert isinstance(obj, dict) and "model" in obj, path
     assert int(obj.get("feature_schema_version", 0)) == FEATURE_SCHEMA_VERSION, path
     assert str(obj.get("trained_through_date")) == latest, (path, obj.get("trained_through_date"), latest)
     print("OK", path, "trust=", obj.get("model_trust"))
+
 for path in ["models/cau_keo_loto.joblib", "models/cau_keo_de.joblib"]:
     obj = joblib.load(path)
     assert isinstance(obj, dict) and "model" in obj, path
     assert obj.get("features") == CAU_FEATURE_COLS, path
-    assert str(obj.get("trained_through_date")) == latest, (path, obj.get("trained_through_date"), latest)
-    print("OK", path, "calendar=", obj.get("calendar_contract", "legacy-pack"))
+    # Cầu-kèo rows are (anchor t -> target t+1).  The newest canonical draw is
+    # the newest *label*, so the latest trainable anchor is exactly one day prior.
+    assert str(obj.get("trained_through_date")) == last_supervised_anchor, (
+        path,
+        obj.get("trained_through_date"),
+        last_supervised_anchor,
+    )
+    assert obj.get("calendar_contract") == "daily-contiguous raw and two-digit histories", obj
+    print(
+        "OK",
+        path,
+        "supervised_anchor=",
+        obj.get("trained_through_date"),
+        "target_through=",
+        latest,
+    )
 PYMODEL
 
 printf '%s\n' "== Cầu-kèo production-path smoke =="
