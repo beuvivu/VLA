@@ -43,7 +43,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
           set -euo pipefail
@@ -54,7 +53,6 @@ jobs:
           import os
           import subprocess
           import sys
-          import urllib.error
           import urllib.request
           from datetime import datetime, time, timedelta
           from zoneinfo import ZoneInfo
@@ -79,8 +77,7 @@ jobs:
                   },
               )
               with urllib.request.urlopen(req, timeout=20) as resp:
-                  raw = resp.read()
-                  return resp.status, raw
+                  return resp.status, resp.read()
 
           def dispatch(workflow):
               url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/dispatches"
@@ -122,7 +119,6 @@ jobs:
                   print("[OK] live heartbeat is current")
               raise SystemExit(0)
 
-          # Canonical/data audit outside the live window.
           expected = now.date() if now.time().replace(tzinfo=None) >= time(18, 15) else now.date() - timedelta(days=1)
           latest = None
           try:
@@ -131,9 +127,8 @@ jobs:
           except Exception as exc:
               print(f"[WARN] cannot read canonical CSV: {exc}")
 
-          stale = latest != expected.isoformat()
           print(f"[INFO] canonical latest={latest} expected={expected}")
-          if stale:
+          if latest != expected.isoformat():
               dispatch("update-data.yml")
               raise SystemExit(0)
 
@@ -148,10 +143,21 @@ jobs:
               dispatch("update-data.yml")
               raise SystemExit(0)
 
+          live = fetch_live()
+          live_reconciled = bool(
+              live
+              and str(live.get("draw_date")) == latest
+              and str(live.get("status")) == "complete_verified"
+              and bool(live.get("verified_complete"))
+              and bool(live.get("canonical_reconciled"))
+          )
+          if not live_reconciled:
+              dispatch("post-finalization.yml")
+          else:
+              print("[OK] live branch is reconciled to canonical")
+
           if pages_window:
-              # Pages deployment is intentionally independent of canonical data.
-              # A retry is cheap and repairs transient Pages/environment failures.
               dispatch("pages.yml")
           else:
-              print("[OK] production audit passed; no recovery needed")
+              print("[OK] production audit passed")
           PY
