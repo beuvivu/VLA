@@ -176,7 +176,13 @@ def _write_df(ws, df: pd.DataFrame, *, freeze_row: int = 1) -> None:
             max_len = len(str(col))
         else:
             max_len = max(
-                [len(str(col)), *[len(str(v)) for v in df.iloc[:500, col_idx - 1].tolist()]]
+                [
+                    len(str(col)),
+                    *[
+                        len(str(v))
+                        for v in df.iloc[:500, col_idx - 1].tolist()
+                    ],
+                ]
             )
         ws.column_dimensions[get_column_letter(col_idx)].width = min(
             max(10, max_len + 2), 22
@@ -204,6 +210,11 @@ def _verify_sheet_roundtrip(path: Path, sheet: str, df: pd.DataFrame) -> None:
         for c_idx, expected in enumerate(row, start=1):
             cell = ws.cell(r_idx, c_idx)
             if isinstance(expected, str):
+                # OOXML/openpyxl serializes an empty string as a blank cell and
+                # reads it back as None. This is acceptable only for genuinely
+                # empty display cells (for example a loto head with no tails).
+                if expected == "" and cell.value is None:
+                    continue
                 if not isinstance(cell.value, str) or cell.value != expected:
                     raise RuntimeError(
                         f"Excel text roundtrip mismatch {path.name}/{sheet} "
@@ -302,7 +313,11 @@ def _validate_prize_sheet(path: Path, *, two_digit: bool) -> int:
                 raise RuntimeError(
                     f"{path.name} {field} row {row_idx} is not stored as text"
                 )
-            if len(value) != expected_width or not value.isascii() or not value.isdigit():
+            if (
+                len(value) != expected_width
+                or not value.isascii()
+                or not value.isdigit()
+            ):
                 raise RuntimeError(
                     f"{path.name} {field} row {row_idx} has invalid code {value!r}; "
                     f"expected exactly {expected_width} digits"
@@ -348,7 +363,9 @@ def _validate_daily_workbook(path: Path) -> int:
                 )
             values_checked += 1
     if seen != set(labels):
-        raise RuntimeError(f"{path.name} is missing prize group(s): {set(labels) - seen}")
+        raise RuntimeError(
+            f"{path.name} is missing prize group(s): {set(labels) - seen}"
+        )
     if values_checked != EXPECTED_PRIZE_VALUES:
         raise RuntimeError(
             f"{path.name} has {values_checked} prize values, expected 27"
