@@ -11,6 +11,58 @@ Bộ mã nguồn **GitHub-only** để tự động thu thập dữ liệu XSMB,
 | :------------: | :----------: |
 | <table><tr><td>Date (Ngày)</td><td>31-08-2026</td></tr><tr><td>Special (Đặc biệt)</td><td>35644</td></tr><tr><td>First (Giải nhất)</td><td>44080</td></tr><tr><td>Second (Giải nhì)</td><td>78984, 50748</td></tr><tr><td>Third (Giải ba)</td><td>89513, 30669, 56530, 96863, 99520, 17862</td></tr><tr><td>Fourth (Giải tư)</td><td>4957, 1095, 3729, 9646</td></tr><tr><td>Fifth (Giải năm)</td><td>5516, 8263, 4726, 6107, 8216, 8450</td></tr><tr><td>Sixth (Giải sáu)</td><td>878, 021, 893</td></tr><tr><td>Seventh (Giải bảy)</td><td>77, 34, 70, 20</td></tr></table> | <table><tr><td>First (Đầu)</td><td>Last (Đuôi)</td></tr><tr><td>0</td><td>7</td></tr><tr><td>1</td><td>3, 6, 6</td></tr><tr><td>2</td><td>0, 9, 6, 1, 0</td></tr><tr><td>3</td><td>0, 4</td></tr><tr><td>4</td><td>4, 8, 6</td></tr><tr><td>5</td><td>7, 0</td></tr><tr><td>6</td><td>9, 3, 2, 3</td></tr><tr><td>7</td><td>8, 7, 0</td></tr><tr><td>8</td><td>0, 4</td></tr><tr><td>9</td><td>5, 3</td></tr></table> |
 <!-- SNAPSHOT:END -->
+
+<!-- FUN_PREDICTION:BEGIN -->
+## 🎲 Dự đoán vui ngày 01-09-2026
+
+> **Anchor:** kết quả thực đến **31-08-2026**. **Không phải kết quả thật.** Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp deterministic, không phải xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế.
+
+### Bảng mô phỏng đầy đủ
+
+| Giải | Dự đoán vui |
+|---|---|
+| Đặc biệt | `30972` |
+| Giải nhất | `60647` |
+| Giải nhì | `82068` · `70310` |
+| Giải ba | `15222` · `86183` · `96995` · `27514` · `70457` · `89652` |
+| Giải tư | `8196` · `0080` · `5583` · `2941` |
+| Giải năm | `9314` · `8755` · `4674` · `0555` · `5929` · `7200` |
+| Giải sáu | `654` · `901` · `932` |
+| Giải bảy | `01` · `56` · `73` · `99` |
+
+### Top Loto ngày mai
+
+| # | Số | Xác suất model |
+|---:|:---:|---:|
+| 1 | **77** | **24.97%** |
+| 2 | **83** | **24.94%** |
+| 3 | **95** | **24.93%** |
+| 4 | **54** | **24.93%** |
+| 5 | **06** | **24.90%** |
+| 6 | **00** | **24.87%** |
+| 7 | **32** | **24.73%** |
+| 8 | **04** | **24.69%** |
+| 9 | **52** | **24.67%** |
+| 10 | **69** | **24.66%** |
+
+### Top Đặc biệt ngày mai
+
+| # | Số | Xác suất model |
+|---:|:---:|---:|
+| 1 | **83** | **1.216%** |
+| 2 | **38** | **1.180%** |
+| 3 | **54** | **1.161%** |
+| 4 | **79** | **1.138%** |
+| 5 | **37** | **1.137%** |
+| 6 | **68** | **1.131%** |
+| 7 | **39** | **1.128%** |
+| 8 | **47** | **1.123%** |
+| 9 | **78** | **1.106%** |
+| 10 | **23** | **1.104%** |
+
+> Xác suất ở bảng Loto là xác suất model cho số 00–99 xuất hiện trong kỳ; xác suất ĐB là distribution riêng cho 2 số cuối giải đặc biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh deterministic để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.
+<!-- FUN_PREDICTION:END -->
+
 ## Kiến trúc production
 
 ### Nguồn dữ liệu theo thứ tự ưu tiên
