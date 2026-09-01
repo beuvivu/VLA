@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from calibration import learn_calibration
+from ensemble_components import COMPONENT_KEYS, availability_from_history_day
 from ensemble_utils import (
     EnsembleWeights,
     bernoulli_brier,
@@ -20,16 +21,34 @@ from ensemble_utils import (
     weight_grid,
 )
 
-COMPONENT_COLS = ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"]
+COMPONENT_COLS = [f"p_{key}" for key in COMPONENT_KEYS]
 
 
 def _select_recent_complete_days(df: pd.DataFrame, window_days: int) -> list[str]:
-    required = ["y", *COMPONENT_COLS]
-    if any(c not in df.columns for c in required):
+    """Select only fully labeled days with five genuinely available components.
+
+    Explicit ``has_*`` flags are honored for new history.  Legacy history without
+    those flags is validated from probability content, so an old all-zero missing
+    placeholder can no longer masquerade as a complete model prediction.
+    """
+    if "target_date" not in df.columns or "y" not in df.columns:
         return []
-    by_day = df.groupby("target_date")[required].apply(lambda g: bool(g.notna().all().all()) and len(g) == 100)
-    days = sorted([str(d) for d, ok in by_day.items() if bool(ok)])
-    return days if window_days <= 0 else days[-window_days:]
+    if any(c not in df.columns for c in COMPONENT_COLS):
+        return []
+
+    complete: list[str] = []
+    for day, sub in df.groupby("target_date", sort=True):
+        if len(sub) != 100 or not sub["y"].notna().all():
+            continue
+        numbers = pd.to_numeric(sub.get("number"), errors="coerce")
+        if numbers.isna().any() or set(numbers.astype(int).tolist()) != set(range(100)):
+            continue
+        available = availability_from_history_day(sub)
+        if all(available.get(key, False) for key in COMPONENT_KEYS):
+            complete.append(str(day))
+
+    complete.sort()
+    return complete if window_days <= 0 else complete[-window_days:]
 
 
 def _day_weights(days: list[str], half_life_days: int) -> np.ndarray:
@@ -96,8 +115,6 @@ def _optimize_weights_continuous(
 
     def obj(x: np.ndarray) -> float:
         ll = eval_scores(x)[0]
-        # Shrink learned weights toward a diversified prior.  With short rolling
-        # history this materially reduces optimizer noise/weight collapse.
         penalty = 0.025 * float(np.square(x - prior).sum())
         return ll + penalty
 
@@ -153,12 +170,13 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     weights_path = out_dir / f"weights_{args.mode}.json"
     payload = {
-        "schema_version": 5,
+        "schema_version": 6,
         "mode": args.mode,
         "learned_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "window_days": args.window_days,
         "half_life_days": args.half_life_days,
         "days_used": day_list,
+        "component_availability_required": True,
         "metric": {"logloss": float(best_ll), "brier": float(best_br)},
         "weights": best_w.as_dict(),
     }
@@ -175,11 +193,12 @@ def main() -> None:
     calib = learn_calibration(args.mode, p_blend, y, sample_weight_by_day=w_day)
     calib_path = out_dir / f"calibration_{args.mode}.json"
     calib_payload = {
-        "schema_version": 5,
+        "schema_version": 6,
         "mode": args.mode,
         "learned_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "window_days": args.window_days,
         "half_life_days": args.half_life_days,
+        "component_availability_required": True,
         "params": calib.as_dict(),
     }
     calib_path.write_text(json.dumps(calib_payload, ensure_ascii=False, indent=2), encoding="utf-8")
