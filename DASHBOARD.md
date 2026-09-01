@@ -10,7 +10,7 @@
 ![Loto Meta](https://img.shields.io/badge/LOTO_META-ACTIVE-22c55e?style=for-the-badge)
 ![De Meta](https://img.shields.io/badge/DE_META-ACTIVE-fb7185?style=for-the-badge)
 
-<sub>Generated 2026-09-01T11:32:55Z · canonical + statistics + ML + research evidence.</sub>
+<sub>Generated 2026-09-01T11:58:55Z · canonical + statistics + ML + research evidence.</sub>
 
 </div>
 
@@ -46,18 +46,18 @@
 | Giải sáu | 874 · 177 · 239 | 74 · 77 · 39 | Kết quả canonical đã xác minh |
 | Giải bảy | 63 · 93 · 51 · 68 | 63 · 93 · 51 · 68 | Kết quả canonical đã xác minh |
 
-### Dự đoán vui · 2026-09-01
+### Dự đoán vui · 2026-09-02
 
 | Giải | Mô phỏng | Suffix · probability | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | 30972 | `72` 1.01% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 60647 | `47` 23.94% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 82068 · 70310 | `68` 24.29% · `10` 23.84% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải ba | 15222 · 86183 · 96995 · 27514 · 70457 · 89652 | `22` 24.21% · `83` 24.94% · `95` 24.93% · `14` 24.14% · `57` 23.80% · `52` 24.67% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải tư | 8196 · 0080 · 5583 · 2941 | `96` 24.07% · `80` 24.19% · `83` 24.94% · `41` 23.93% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải năm | 9314 · 8755 · 4674 · 0555 · 5929 · 7200 | `14` 24.14% · `55` 23.90% · `74` 24.09% · `55` 23.90% · `29` 23.83% · `00` 24.87% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 654 · 901 · 932 | `54` 24.93% · `01` 24.42% · `32` 24.73% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 01 · 56 · 73 · 99 | `01` 24.42% · `56` 23.80% · `73` 24.38% · `99` 24.00% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Đặc biệt | 43307 | `07` 0.93% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 11964 | `64` 23.94% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 84470 · 32305 | `70` 22.54% · `05` 23.78% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải ba | 47863 · 26057 · 98789 · 86137 · 28626 · 47553 | `63` 23.50% · `57` 23.37% · `89` 23.41% · `37` 23.33% · `26` 23.53% · `53` 22.90% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải tư | 3874 · 7790 · 2666 · 1243 | `74` 23.32% · `90` 23.90% · `66` 23.83% · `43` 23.32% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải năm | 6147 · 1441 · 1310 · 7452 · 1450 · 7671 | `47` 23.61% · `41` 23.70% · `10` 23.24% · `52` 23.94% · `50` 23.96% · `71` 23.05% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 348 · 531 · 596 | `48` 23.15% · `31` 23.57% · `96` 23.57% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 49 · 41 · 04 · 24 | `49` 23.62% · `41` 23.70% · `04` 23.54% · `24` 23.48% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
