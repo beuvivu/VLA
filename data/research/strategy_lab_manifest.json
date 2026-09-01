@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-01T07:33:28Z",
+  "anchor_date": "2026-08-31",
+  "strategy_count": 20,
+  "modes": {
+    "loto": {
+      "research_gate_pass_count": 0,
+      "best_holdout_lift": 1.2010323244405436
+    },
+    "de": {
+      "research_gate_pass_count": 0,
+      "best_holdout_lift": 2.580773042616452
+    }
+  },
+  "production_integration": false
+}

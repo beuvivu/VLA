@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-01T07:33:27Z",
+  "anchor_date": "2026-08-31",
+  "modes": {
+    "loto": {
+      "mode": "loto",
+      "hypotheses": 1458,
+      "train_days": 231,
+      "validation_days": 77,
+      "holdout_days": 77,
+      "fdr_significant_train": 0,
+      "production_eligible_count": 0,
+      "minimum_lift_gate": 1.03,
+      "minimum_effect_gate": 0.004,
+      "reality_check": {
+        "permutations": 63,
+        "observed_max_skill": 0.11085523869029026,
+        "null_max_skill_mean": 0.09510312229998046,
+        "null_max_skill_p95": 0.11178649529164995,
+        "p_value": 0.09375,
+        "method": "max-statistic circular shift; preserves daily cross-sectional outcomes"
+      },
+      "gate_pass": false,
+      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
+    },
+    "de": {
+      "mode": "de",
+      "hypotheses": 1458,
+      "train_days": 231,
+      "validation_days": 77,
+      "holdout_days": 77,
+      "fdr_significant_train": 6,
+      "production_eligible_count": 3,
+      "minimum_lift_gate": 1.03,
+      "minimum_effect_gate": 0.0005,
+      "reality_check": {
+        "permutations": 63,
+        "observed_max_skill": 0.03369223369223369,
+        "null_max_skill_mean": 0.029232456745684258,
+        "null_max_skill_p95": 0.037594504261170926,
+        "p_value": 0.140625,
+        "method": "max-statistic circular shift; preserves daily cross-sectional outcomes"
+      },
+      "gate_pass": false,
+      "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
+    }
+  }
+}

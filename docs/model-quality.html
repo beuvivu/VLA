@@ -1,10 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Model Quality — XSMB Analytics</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Model Quality — XSMB Analytics</title>
+<style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }
     .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:14px 0; }
     table { border-collapse:collapse; width:100%; }
@@ -15,404 +16,404 @@
   </style>
 </head>
 <body>
-  <h1>Model Quality</h1>
-  <p class="muted">Đánh giá rolling out-of-sample của ensemble. LogLoss/Brier thấp hơn là tốt hơn; đây là thước đo xác suất, không phải cam kết kết quả.</p>
-  <p><a href="index.html">Trang chính</a> · <a href="dashboard.html">AI/ML dashboard</a> · <a href="statistics.html">Thống kê</a></p>
-  <div class="card"><h2>Latest</h2><table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>mode</th>
-      <th>target_date</th>
-      <th>logloss</th>
-      <th>brier</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>de</td>
-      <td>2026-08-31</td>
-      <td>4.556583</td>
-      <td>0.009890</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-31</td>
-      <td>0.550734</td>
-      <td>0.182265</td>
-    </tr>
-  </tbody>
+<h1>Model Quality</h1>
+<p class="muted">Đánh giá rolling out-of-sample của ensemble. LogLoss/Brier thấp hơn là tốt hơn; đây là thước đo xác suất, không phải cam kết kết quả.</p>
+<p><a href="index.html">Trang chính</a> · <a href="dashboard.html">AI/ML dashboard</a> · <a href="statistics.html">Thống kê</a></p>
+<div class="card"><h2>Latest</h2><table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th>mode</th>
+<th>target_date</th>
+<th>logloss</th>
+<th>brier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>de</td>
+<td>2026-08-31</td>
+<td>4.556583</td>
+<td>0.009890</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-31</td>
+<td>0.550734</td>
+<td>0.182265</td>
+</tr>
+</tbody>
 </table></div>
-  <div class="card"><h2>30 đánh giá gần nhất / mode</h2><table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>mode</th>
-      <th>target_date</th>
-      <th>logloss</th>
-      <th>brier</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>de</td>
-      <td>2026-07-15</td>
-      <td>4.613126</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-16</td>
-      <td>4.598449</td>
-      <td>0.009899</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-17</td>
-      <td>4.626680</td>
-      <td>0.009904</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-18</td>
-      <td>4.606519</td>
-      <td>0.009900</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-19</td>
-      <td>4.618665</td>
-      <td>0.009903</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-20</td>
-      <td>4.614117</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-21</td>
-      <td>4.664482</td>
-      <td>0.009912</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-22</td>
-      <td>4.610696</td>
-      <td>0.009901</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-23</td>
-      <td>4.608937</td>
-      <td>0.009901</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-24</td>
-      <td>4.616844</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-25</td>
-      <td>4.614117</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-26</td>
-      <td>4.597726</td>
-      <td>0.009899</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-27</td>
-      <td>4.590301</td>
-      <td>0.009897</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-28</td>
-      <td>4.604485</td>
-      <td>0.009900</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-29</td>
-      <td>4.607880</td>
-      <td>0.009901</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-30</td>
-      <td>4.608350</td>
-      <td>0.009901</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-07-31</td>
-      <td>4.607616</td>
-      <td>0.009901</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-01</td>
-      <td>4.614117</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-02</td>
-      <td>4.614117</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-03</td>
-      <td>4.614117</td>
-      <td>0.009902</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-04</td>
-      <td>4.574695</td>
-      <td>0.009894</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-05</td>
-      <td>4.574455</td>
-      <td>0.009894</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-06</td>
-      <td>4.600855</td>
-      <td>0.009899</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-07</td>
-      <td>4.600855</td>
-      <td>0.009899</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-08</td>
-      <td>4.619624</td>
-      <td>0.009903</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-09</td>
-      <td>4.600855</td>
-      <td>0.009899</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-10</td>
-      <td>4.626144</td>
-      <td>0.009904</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-11</td>
-      <td>4.566952</td>
-      <td>0.009892</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-12</td>
-      <td>4.669645</td>
-      <td>0.009913</td>
-    </tr>
-    <tr>
-      <td>de</td>
-      <td>2026-08-31</td>
-      <td>4.556583</td>
-      <td>0.009890</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-15</td>
-      <td>0.551750</td>
-      <td>0.182651</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-16</td>
-      <td>0.527705</td>
-      <td>0.171883</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-17</td>
-      <td>0.528400</td>
-      <td>0.172136</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-18</td>
-      <td>0.550805</td>
-      <td>0.182300</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-19</td>
-      <td>0.551072</td>
-      <td>0.182397</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-20</td>
-      <td>0.528064</td>
-      <td>0.172014</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-21</td>
-      <td>0.527789</td>
-      <td>0.171914</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-22</td>
-      <td>0.539198</td>
-      <td>0.177071</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-23</td>
-      <td>0.539208</td>
-      <td>0.177075</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-24</td>
-      <td>0.562592</td>
-      <td>0.187596</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-25</td>
-      <td>0.539908</td>
-      <td>0.177328</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-26</td>
-      <td>0.516161</td>
-      <td>0.166676</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-27</td>
-      <td>0.550249</td>
-      <td>0.182098</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-28</td>
-      <td>0.562977</td>
-      <td>0.187737</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-29</td>
-      <td>0.517574</td>
-      <td>0.167189</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-30</td>
-      <td>0.563151</td>
-      <td>0.187797</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-07-31</td>
-      <td>0.527456</td>
-      <td>0.171791</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-01</td>
-      <td>0.562690</td>
-      <td>0.187630</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-02</td>
-      <td>0.574188</td>
-      <td>0.192819</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-03</td>
-      <td>0.539850</td>
-      <td>0.177307</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-04</td>
-      <td>0.539743</td>
-      <td>0.177269</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-05</td>
-      <td>0.562891</td>
-      <td>0.187701</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-06</td>
-      <td>0.516063</td>
-      <td>0.166642</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-07</td>
-      <td>0.539387</td>
-      <td>0.177141</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-08</td>
-      <td>0.562460</td>
-      <td>0.187548</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-09</td>
-      <td>0.562660</td>
-      <td>0.187619</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-10</td>
-      <td>0.539194</td>
-      <td>0.177069</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-11</td>
-      <td>0.527900</td>
-      <td>0.171954</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-12</td>
-      <td>0.528865</td>
-      <td>0.172309</td>
-    </tr>
-    <tr>
-      <td>loto</td>
-      <td>2026-08-31</td>
-      <td>0.550734</td>
-      <td>0.182265</td>
-    </tr>
-  </tbody>
+<div class="card"><h2>30 đánh giá gần nhất / mode</h2><table border="1" class="dataframe">
+<thead>
+<tr style="text-align: right;">
+<th>mode</th>
+<th>target_date</th>
+<th>logloss</th>
+<th>brier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>de</td>
+<td>2026-07-15</td>
+<td>4.613126</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-16</td>
+<td>4.598449</td>
+<td>0.009899</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-17</td>
+<td>4.626680</td>
+<td>0.009904</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-18</td>
+<td>4.606519</td>
+<td>0.009900</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-19</td>
+<td>4.618665</td>
+<td>0.009903</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-20</td>
+<td>4.614117</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-21</td>
+<td>4.664482</td>
+<td>0.009912</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-22</td>
+<td>4.610696</td>
+<td>0.009901</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-23</td>
+<td>4.608937</td>
+<td>0.009901</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-24</td>
+<td>4.616844</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-25</td>
+<td>4.614117</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-26</td>
+<td>4.597726</td>
+<td>0.009899</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-27</td>
+<td>4.590301</td>
+<td>0.009897</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-28</td>
+<td>4.604485</td>
+<td>0.009900</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-29</td>
+<td>4.607880</td>
+<td>0.009901</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-30</td>
+<td>4.608350</td>
+<td>0.009901</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-07-31</td>
+<td>4.607616</td>
+<td>0.009901</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-01</td>
+<td>4.614117</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-02</td>
+<td>4.614117</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-03</td>
+<td>4.614117</td>
+<td>0.009902</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-04</td>
+<td>4.574695</td>
+<td>0.009894</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-05</td>
+<td>4.574455</td>
+<td>0.009894</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-06</td>
+<td>4.600855</td>
+<td>0.009899</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-07</td>
+<td>4.600855</td>
+<td>0.009899</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-08</td>
+<td>4.619624</td>
+<td>0.009903</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-09</td>
+<td>4.600855</td>
+<td>0.009899</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-10</td>
+<td>4.626144</td>
+<td>0.009904</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-11</td>
+<td>4.566952</td>
+<td>0.009892</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-12</td>
+<td>4.669645</td>
+<td>0.009913</td>
+</tr>
+<tr>
+<td>de</td>
+<td>2026-08-31</td>
+<td>4.556583</td>
+<td>0.009890</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-15</td>
+<td>0.551750</td>
+<td>0.182651</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-16</td>
+<td>0.527705</td>
+<td>0.171883</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-17</td>
+<td>0.528400</td>
+<td>0.172136</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-18</td>
+<td>0.550805</td>
+<td>0.182300</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-19</td>
+<td>0.551072</td>
+<td>0.182397</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-20</td>
+<td>0.528064</td>
+<td>0.172014</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-21</td>
+<td>0.527789</td>
+<td>0.171914</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-22</td>
+<td>0.539198</td>
+<td>0.177071</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-23</td>
+<td>0.539208</td>
+<td>0.177075</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-24</td>
+<td>0.562592</td>
+<td>0.187596</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-25</td>
+<td>0.539908</td>
+<td>0.177328</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-26</td>
+<td>0.516161</td>
+<td>0.166676</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-27</td>
+<td>0.550249</td>
+<td>0.182098</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-28</td>
+<td>0.562977</td>
+<td>0.187737</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-29</td>
+<td>0.517574</td>
+<td>0.167189</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-30</td>
+<td>0.563151</td>
+<td>0.187797</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-07-31</td>
+<td>0.527456</td>
+<td>0.171791</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-01</td>
+<td>0.562690</td>
+<td>0.187630</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-02</td>
+<td>0.574188</td>
+<td>0.192819</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-03</td>
+<td>0.539850</td>
+<td>0.177307</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-04</td>
+<td>0.539743</td>
+<td>0.177269</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-05</td>
+<td>0.562891</td>
+<td>0.187701</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-06</td>
+<td>0.516063</td>
+<td>0.166642</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-07</td>
+<td>0.539387</td>
+<td>0.177141</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-08</td>
+<td>0.562460</td>
+<td>0.187548</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-09</td>
+<td>0.562660</td>
+<td>0.187619</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-10</td>
+<td>0.539194</td>
+<td>0.177069</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-11</td>
+<td>0.527900</td>
+<td>0.171954</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-12</td>
+<td>0.528865</td>
+<td>0.172309</td>
+</tr>
+<tr>
+<td>loto</td>
+<td>2026-08-31</td>
+<td>0.550734</td>
+<td>0.182265</td>
+</tr>
+</tbody>
 </table></div>
-</body>
+<a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Research Lab</a></body>
 </html>
