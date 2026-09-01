@@ -27,6 +27,10 @@ PYREF
 
 printf '%s\n' "== Legacy descriptive preservation =="
 python src/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
+python src/research_legacy_extensions.py
+
+printf '%s\n' "== Legacy path explainability preservation =="
+python src/path_timeline_evidence.py --recent 20
 
 printf '%s\n' "== Scientific falsification battery =="
 python src/research_diagnostics.py --permutations 31 --max-lag 14 --seed 20260901
@@ -84,6 +88,44 @@ for path in [
 ]:
     p = Path(path)
     assert p.is_file() and p.stat().st_size > 0, path
+
+ext = root / "legacy_extensions"
+manifest = json.loads((ext / "manifest.json").read_text(encoding="utf-8"))
+assert manifest["research_only"] is True
+assert manifest["anchor_date"] == diag["anchor_date"]
+assert int(manifest["rows"]["number_recency_loto.csv"]) == 100
+assert int(manifest["rows"]["number_recency_de.csv"]) == 100
+assert int(manifest["rows"]["de_weekday_profile.csv"]) == 700
+assert int(manifest["rows"]["loto_transition_independence.csv"]) == 100
+assert int(manifest["rows"]["loto_acf_bartlett.csv"]) >= 500
+for name in (
+    "number_recency_loto.csv",
+    "number_recency_de.csv",
+    "pair_recency_loto.csv",
+    "de_weekday_profile.csv",
+    "loto_transition_independence.csv",
+    "loto_acf_bartlett.csv",
+):
+    table = pd.read_csv(ext / name)
+    assert not table.empty, name
+for name in ("loto_transition_independence.csv", "loto_acf_bartlett.csv"):
+    table = pd.read_csv(ext / name)
+    assert table["p_value"].between(0, 1).all(), name
+    assert table["q_value_fdr"].between(0, 1).all(), name
+for key in ("ks_full_special", "ljung_box_even_tail_count"):
+    p = manifest[key].get("p_value")
+    assert p is None or 0.0 <= float(p) <= 1.0, (key, p)
+
+path_manifest = json.loads((root / "path_timelines" / "manifest.json").read_text(encoding="utf-8"))
+assert path_manifest["research_only"] is True
+for mode in ("loto", "de"):
+    item = path_manifest["modes"][mode]
+    assert item["status"] == "ok", (mode, item)
+    assert int(item["rows"]) > 0, (mode, item)
+    timeline = pd.read_csv(root / "path_timelines" / f"path_timeline_{mode}.csv")
+    assert not timeline.empty
+    assert timeline["timeline_trials"].gt(0).all()
+    assert timeline["recent_hit_rate"].dropna().between(0, 1).all()
 print("OK research artifacts")
 PYRESEARCH
 
