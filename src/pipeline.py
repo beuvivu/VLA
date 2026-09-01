@@ -106,10 +106,6 @@ def main() -> None:
     ]:
         _run(_py(script), allow_fail=soft_fail)
 
-    # Research/falsification modules are deliberately isolated from production
-    # prediction. They run automatically every day, but a research-only numerical
-    # edge case must never prevent canonical data or the validated production ML
-    # pipeline from completing.
     _run(
         _py("src/research_diagnostics.py", "--permutations", "127", "--max-lag", "14"),
         allow_fail=True,
@@ -271,7 +267,7 @@ def main() -> None:
         )
         _run(_py("src/build_docs_ml.py"), allow_fail=soft_fail)
         _run(_py("src/build_dashboard.py"), allow_fail=soft_fail)
-        _run(_py("src/build_markdown_dashboard.py"), allow_fail=soft_fail)
+        _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
         _run(_py("src/build_fun_prediction.py"), allow_fail=soft_fail)
