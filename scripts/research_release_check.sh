@@ -92,7 +92,7 @@ for path in [
 ext = root / "legacy_extensions"
 manifest = json.loads((ext / "manifest.json").read_text(encoding="utf-8"))
 assert manifest["research_only"] is True
-assert manifest["anchor_date"] == diag["anchor_date"]
+assert manifest["anchor_date"] == diag["end_date"]
 assert int(manifest["rows"]["number_recency_loto.csv"]) == 100
 assert int(manifest["rows"]["number_recency_de.csv"]) == 100
 assert int(manifest["rows"]["de_weekday_profile.csv"]) == 700
