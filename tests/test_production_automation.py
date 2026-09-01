@@ -55,9 +55,6 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
 
 
 def test_current_repo_data_and_models_are_internally_consistent():
-    # Pytest runs before release_check rebuilds generated landing pages. Keep this
-    # pre-build gate focused on canonical/data/model/README consistency; full UI
-    # consistency is enforced after builders and again by post-finalization.
     result = audit(check_freshness=False, check_docs=False)
     assert result["ok"], result["critical"]
 
@@ -65,6 +62,7 @@ def test_current_repo_data_and_models_are_internally_consistent():
 def test_watchdog_and_post_finalization_workflows_are_wired():
     watchdog = Path(".github/workflows/watchdog.yml").read_text(encoding="utf-8")
     post = Path(".github/workflows/post-finalization.yml").read_text(encoding="utf-8")
+    daily = Path(".github/workflows/update-data.yml").read_text(encoding="utf-8")
 
     for cron in ("10 11 * * *", "20 11 * * *", "35 12 * * *", "5 13 * * *", "20 13 * * *", "15 0 * * *"):
         assert cron in watchdog
@@ -72,6 +70,17 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     assert 'dispatch("update-data.yml")' in watchdog
     assert 'dispatch("pages.yml")' in watchdog
     assert 'dispatch("post-finalization.yml")' in watchdog
-    assert 'workflows: ["Finalize XSMB + Statistics + AI/ML"]' in post
+
+    # Deterministic primary path: a successful daily run explicitly dispatches
+    # post-finalization; watchdog remains an independent fallback.
+    assert "actions: write" in daily
+    assert "canonical_ready" in daily
+    assert "trigger-post-finalization:" in daily
+    assert "post-finalization.yml/dispatches" in daily
+
+    # Do not rely on workflow_run for the primary hand-off; newly introduced
+    # workflow_run triggers can miss the same commit's already-started run.
+    assert "workflow_run:" not in post
+    assert "workflow_dispatch:" in post
     assert "src/production_audit.py" in post
     assert "src/reconcile_live_canonical.py" in post
