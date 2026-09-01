@@ -50,6 +50,7 @@ def _read_prob_file(path: Path) -> pd.DataFrame:
 def _load_probs(
     data_dir: Path, mode: Mode, anchor: date
 ) -> tuple[dict[str, np.ndarray], dict[str, bool], dict[str, str]]:
+    target = anchor + timedelta(days=1)
     path_ui = data_dir / "path_ui"
     df_a = _read_prob_file(
         path_ui / f"predict_next_{mode}_active_{anchor.isoformat()}_all.csv"
@@ -76,7 +77,12 @@ def _load_probs(
         "stable": df_s,
     }
     components = {
-        key: probability_component(frame, mode=mode)
+        key: probability_component(
+            frame,
+            mode=mode,
+            expected_target_date=target,
+            expected_anchor_date=anchor,
+        )
         for key, frame in frames.items()
     }
     available = {key: bool(component.available) for key, component in components.items()}
@@ -221,8 +227,8 @@ def _blend_linear(vectors: dict[str, np.ndarray], weights: EnsembleWeights) -> n
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "Next-day 2-digit picks using an availability-aware calibrated linear "
-            "ensemble plus a validation-gated nonlinear stacked-ML challenger."
+            "Next-day 2-digit picks using an availability/date-aware calibrated "
+            "linear ensemble plus a validation-gated nonlinear stacked-ML challenger."
         )
     )
     ap.add_argument("--mode", choices=["loto", "de"], default="loto")
@@ -268,10 +274,6 @@ def main() -> None:
             p_linear,
         )
     else:
-        # Calibration and the nonlinear stack were trained on the complete
-        # five-component feature contract. Applying either to a reduced blend
-        # would be an out-of-schema extrapolation, so degrade to the renormalized
-        # linear ensemble until all components recover.
         p_linear = p_linear_raw
         calibration_info = {
             **calib.as_dict(),
@@ -355,6 +357,7 @@ def main() -> None:
     print("configured weights:", picks.weights)
     print("effective weights:", picks.effective_weights)
     print("component availability:", picks.component_availability)
+    print("component reasons:", picks.component_reasons)
     print("calibration:", picks.calibration)
     print("stacked ML:", picks.meta)
     print("top4:", picks.top4)
