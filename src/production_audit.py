@@ -56,12 +56,15 @@ def _prediction_target(path: Path) -> str | None:
         return None
     with path.open(newline="", encoding="utf-8") as fh:
         row = next(csv.DictReader(fh), None)
-    if not row:
+    if row:
+        for key in ("predict_for_date", "target_date", "date"):
+            if row.get(key):
+                return str(row[key])[:10]
+    suffix = path.stem[-10:]
+    try:
+        return date.fromisoformat(suffix).isoformat()
+    except ValueError:
         return None
-    for key in ("predict_for_date", "target_date", "date"):
-        if row.get(key):
-            return str(row[key])[:10]
-    return None
 
 
 def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness: bool = True) -> dict:
@@ -135,7 +138,7 @@ def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness
                 continue
             latest_file = max(candidates, key=lambda p: p.name)
             pred_target = _prediction_target(latest_file)
-            if pred_target and pred_target != target.isoformat():
+            if pred_target != target.isoformat():
                 critical.append(f"predict_{mode}_target={pred_target} expected={target}")
 
         try:
