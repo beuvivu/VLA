@@ -18,7 +18,7 @@ Legacy repositories under revalidation:
 | `SUPERSEDED` | A duplicate/older entrypoint remains only as a compatibility wrapper around the canonical implementation. |
 | `RESEARCH-ONLY` | Capability exists for falsification/descriptive analysis and is not allowed to alter production prediction weights automatically. |
 | `EXCLUDED` | Deliberately not retained because it is deployment-specific, duplicate generated state, or inferior to the canonical VLA implementation. |
-| `PENDING-FINAL-CI` | Code/test contract is implemented but final approval is withheld until core + research checks pass on the final PR head. |
+| `VERIFIED` | The capability and its release/research gates passed on the recorded final-head verification run; any later code change requires a new final-head run. |
 
 ## Critical findings reopened after the 2026-09-01 retirement approval
 
@@ -35,7 +35,7 @@ The earlier retirement acceptance was re-opened because file-name/feature-level 
 9. duplicate legacy CLIs/builders (`vip_stats.py`, `run_path.py`, `build_markdown_dashboard.py`) maintained independent logic or ambiguous artifacts;
 10. release and production audits did not explicitly gate the new calendar/target-date contracts.
 
-These are now closed in code, subject to final-head CI.
+These findings are closed in code and were verified by GitHub CI run 120 on commit `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7`: 148/148 regression tests passed, the core release gate passed, and the research-plane release gate passed. This documentation-only status commit must itself pass the same CI before merge.
 
 ## Capability audit matrix
 
@@ -73,9 +73,9 @@ These are now closed in code, subject to final-head CI.
 | Research Lab UI | `src/build_research_lab.py` | Source-backed research outputs rendered without automatic production promotion | research release check | MIGRATED / RESEARCH-ONLY |
 | Markdown dashboard | `src/build_markdown_dashboard_v3.py` | V3 is sole canonical renderer | release static-builder smoke | RETAINED |
 | Legacy Markdown dashboard command | `src/build_markdown_dashboard.py` -> v3 | Independent ~34KB old renderer removed; command delegates to v3 | release check invokes legacy command and validates output downstream | SUPERSEDED |
-| End-to-end release gate | `scripts/release_check.sh` | Unit suite + real data integrity + canonical conditionals + date-safe overlay + dynamics + fresh ML + stacked ML + cầu-kèo + builders + production consistency | GitHub CI | HARDENED / PENDING-FINAL-CI |
-| Research release gate | `scripts/research_release_check.sh` | Real-history research diagnostics, conditional, cross-lag, strategy and UI integrity | GitHub CI | HARDENED / PENDING-FINAL-CI |
-| Runtime production audit | `src/production_audit.py` | Canonical gaps, consensus, prediction target dates, conditional pair counts, overlay target, dynamics calendar, cầu manifest target, docs | release check + post-finalization workflow | HARDENED / PENDING-FINAL-CI |
+| End-to-end release gate | `scripts/release_check.sh` | Unit suite + real data integrity + canonical conditionals + date-safe overlay + dynamics + fresh ML + stacked ML + cầu-kèo + builders + production consistency | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
+| Research release gate | `scripts/research_release_check.sh` | Real-history research diagnostics, conditional, cross-lag, strategy and UI integrity | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
+| Runtime production audit | `src/production_audit.py` | Canonical gaps, consensus, prediction target dates, conditional pair counts, overlay target, dynamics calendar, cầu manifest target, docs | release check + post-finalization workflow | HARDENED / VERIFIED |
 | Daily generated-state transaction | `.github/workflows/update-data.yml` | Strict pipeline runs before broad `git add data models images docs ...`; new artifacts persist in same analytics transaction | production workflow structure | RETAINED / VERIFIED BY FINALIZATION AFTER MERGE |
 | Server-only deployment stacks | historical hosting/webapp/scheduler artifacts | Not part of GitHub-only architecture; explicitly forbidden by release check | forbidden-artifact loop in `release_check.sh` | EXCLUDED |
 | Old scraper/parser stacks | legacy repositories | Not migrated where current VLA source adapters/consensus are newer and independently tested | source policy + parser/consensus tests | EXCLUDED / SUPERSEDED |
@@ -139,11 +139,11 @@ PR #24 must remain Draft until **all** of the following are true on the same fin
 8. higher-order dynamics report `calendar_contiguous=true` for Loto and ĐB;
 9. fresh base-ML train/predict smoke passes;
 10. stacked-ML challenger smoke passes;
-11. production model schema/date checks pass;
+11. production model schema/date checks pass with the supervised anchor correctly one day behind its newest known target;
 12. Markdown/HTML builders pass;
 13. strict production consistency audit passes;
 14. research-plane release check passes;
 15. PR is mergeable against the latest `main`;
 16. after merge, strict daily finalization + Pages + post-finalization/live reconciliation pass on production.
 
-**Current decision:** `PENDING-FINAL-CI`. The earlier 2026-09-01 retirement approval is suspended for the scope reopened by PR #24 until this gate is complete.
+**Current decision:** `VERIFIED-PRE-MERGE`. GitHub CI run 120 passed both core and research gates on `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7`. This documentation-only status commit must pass the same CI before PR #24 leaves Draft. Post-merge production verification remains mandatory under gate 16.
