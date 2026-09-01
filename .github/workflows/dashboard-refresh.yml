@@ -1,0 +1,74 @@
+name: Refresh Markdown Dashboard
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/build_markdown_dashboard_v3.py"
+      - ".github/workflows/dashboard-refresh.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: markdown-dashboard-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dashboard dependencies
+        run: python -m pip install pandas==2.2.3 numpy==2.2.6
+
+      - name: Build Markdown dashboard from committed data
+        run: python src/build_markdown_dashboard_v3.py
+
+      - name: Validate balanced dashboard output
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path("DASHBOARD.md")
+          text = p.read_text(encoding="utf-8")
+          required = [
+              "Màu | Khoảng giá trị | Ý nghĩa",
+              "calendar 7 cột",
+              "Lift vs baseline",
+              "Audit & Deep Links",
+          ]
+          for marker in required:
+              assert marker in text, marker
+          assert text.count("Đầu\\Đuôi") >= 12
+          assert text.count("| Ý nghĩa | Visual |") >= 20
+          assert "| month_key | 01 | 02 | 03 | 04 | 05 |" not in text
+          assert len(text) > 70_000
+          print(f"OK DASHBOARD.md {len(text):,} chars")
+          PY
+
+      - name: Commit refreshed dashboard
+        run: |
+          if git diff --quiet -- DASHBOARD.md; then
+            echo "DASHBOARD.md already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add DASHBOARD.md
+          git commit -m "chore: refresh balanced markdown dashboard"
+          git push origin HEAD:main
