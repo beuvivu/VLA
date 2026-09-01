@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -10,24 +9,35 @@ import pandas as pd
 from lottery import Lottery
 
 
-def _gap_series(hit_days: list[int], n: int) -> tuple[int, int, float, float]:
-    """Return (current_gap, max_gap, mean_gap, median_gap) in days between hits.
-    hit_days: sorted list of day indices where hit occurs.
-    n: total days
+def _gap_series_calendar(
+    hit_dates: list[date],
+    all_dates: list[date],
+) -> tuple[int, int, float, float]:
+    """Return absence gaps in real calendar days.
+
+    ``current_gap`` is calendar days since the latest hit. ``max_gap`` includes
+    the left/right boundary absence and completed between-hit absence segments.
+    ``mean_gap``/``median_gap`` describe completed/boundary-left absence segments,
+    preserving the historical cycle-table intent without treating missing rows as
+    elapsed lottery days.
     """
-    if not hit_days:
-        return n, n, float("nan"), float("nan")
-    gaps = []
-    prev = -1
-    for d in hit_days:
-        gaps.append(d - prev - 1)
-        prev = d
-    # gap after last hit to end
-    current_gap = (n - 1) - hit_days[-1]
-    max_gap = max(gaps + [current_gap])
-    mean_gap = float(np.mean(gaps)) if gaps else float("nan")
-    median_gap = float(np.median(gaps)) if gaps else float("nan")
-    return int(current_gap), int(max_gap), mean_gap, median_gap
+    if not all_dates:
+        return 0, 0, float("nan"), float("nan")
+    if not hit_dates:
+        span = (all_dates[-1] - all_dates[0]).days + 1
+        return span, span, float("nan"), float("nan")
+
+    hit_dates = sorted(hit_dates)
+    leading = max(0, (hit_dates[0] - all_dates[0]).days)
+    completed_absences = [
+        max(0, (b - a).days - 1) for a, b in zip(hit_dates, hit_dates[1:])
+    ]
+    current_gap = max(0, (all_dates[-1] - hit_dates[-1]).days)
+    observed = [leading, *completed_absences, current_gap]
+    historical = [leading, *completed_absences]
+    mean_gap = float(np.mean(historical)) if historical else float("nan")
+    median_gap = float(np.median(historical)) if historical else float("nan")
+    return int(current_gap), int(max(observed)), mean_gap, median_gap
 
 
 def build_cycle_tables(out_dir: str = "data/cycle") -> None:
@@ -38,24 +48,24 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
         raise SystemExit("No data available. Run src/sync.py first.")
 
     dates = [d.to_pydatetime().date() for d in pd.to_datetime(df2["date"])]
-    n = len(dates)
 
     # DE: 2 digits from special
     de = (df2["special"].astype(int) % 100).tolist()
 
     rows_de = []
     for x in range(100):
-        hit_days = [i for i, v in enumerate(de) if v == x]
-        cur_gap, max_gap, mean_gap, median_gap = _gap_series(hit_days, n)
+        hit_dates = [dates[i] for i, v in enumerate(de) if v == x]
+        cur_gap, max_gap, mean_gap, median_gap = _gap_series_calendar(hit_dates, dates)
         rows_de.append(
             {
                 "number": f"{x:02d}",
-                "count": len(hit_days),
+                "count": len(hit_dates),
                 "current_gap": cur_gap,
                 "max_gap": max_gap,
                 "mean_gap": mean_gap,
                 "median_gap": median_gap,
-                "last_seen": dates[hit_days[-1]].isoformat() if hit_days else None,
+                "last_seen": hit_dates[-1].isoformat() if hit_dates else None,
+                "gap_unit": "calendar_days_absent",
             }
         )
     de_df = pd.DataFrame(rows_de).sort_values(["current_gap", "max_gap"], ascending=[False, False])
@@ -65,17 +75,18 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
     loto_sets = [set(int(r[c]) for c in cols) for _, r in df2.iterrows()]
     rows_loto = []
     for x in range(100):
-        hit_days = [i for i, s in enumerate(loto_sets) if x in s]
-        cur_gap, max_gap, mean_gap, median_gap = _gap_series(hit_days, n)
+        hit_dates = [dates[i] for i, s in enumerate(loto_sets) if x in s]
+        cur_gap, max_gap, mean_gap, median_gap = _gap_series_calendar(hit_dates, dates)
         rows_loto.append(
             {
                 "number": f"{x:02d}",
-                "count": len(hit_days),
+                "count": len(hit_dates),
                 "current_gap": cur_gap,
                 "max_gap": max_gap,
                 "mean_gap": mean_gap,
                 "median_gap": median_gap,
-                "last_seen": dates[hit_days[-1]].isoformat() if hit_days else None,
+                "last_seen": hit_dates[-1].isoformat() if hit_dates else None,
+                "gap_unit": "calendar_days_absent",
             }
         )
     loto_df = pd.DataFrame(rows_loto).sort_values(["count", "current_gap"], ascending=[False, False])
@@ -99,7 +110,6 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
     for name, fn, k in [("head", head, 10), ("tail", tail, 10), ("total", total, 10)]:
         for g in range(k):
             xs = [x for x in range(100) if fn(x) == g]
-            # Use worst (max current_gap) as conservative metric
             sub = de_df[de_df["number"].isin([f"{x:02d}" for x in xs])]
             agg_rows.append(
                 {
@@ -108,6 +118,7 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
                     "max_current_gap": int(sub["current_gap"].max()),
                     "max_max_gap": int(sub["max_gap"].max()),
                     "mean_count": float(sub["count"].mean()),
+                    "gap_unit": "calendar_days_absent",
                 }
             )
     pd.DataFrame(agg_rows).to_csv(out / "cycle_de_groups.csv", index=False)

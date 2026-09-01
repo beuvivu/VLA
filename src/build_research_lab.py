@@ -48,7 +48,7 @@ def _primary_tests(diag: dict) -> str:
     return "".join(rows) or '<tr><td colspan="5">Chưa có dữ liệu</td></tr>'
 
 
-def _firewall_cards(report: dict) -> str:
+def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
     cards = []
     for mode, item in report.get("modes", {}).items():
         reality = item.get("reality_check", {})
@@ -57,6 +57,22 @@ def _firewall_cards(report: dict) -> str:
             f"<span>Research firewall · {html.escape(mode.upper())}</span>"
             f"<strong>{int(item.get('production_eligible_count', 0))}</strong>"
             f"<em>eligible / {int(item.get('hypotheses', 0))} giả thuyết · reality p={_fmt(reality.get('p_value'), 3)}</em>"
+            "</article>"
+        )
+    if cross:
+        cards.append(
+            '<article class="metric-card">'
+            '<span>Cross-lag positional</span>'
+            f"<strong>{int(cross.get('hypotheses', 0))}</strong>"
+            f"<em>hypotheses · research gate pass {int(cross.get('research_gate_pass_count', 0))} · production wired: Không</em>"
+            "</article>"
+        )
+    if conditional:
+        cards.append(
+            '<article class="metric-card">'
+            '<span>ĐB → Loto ngày kế</span>'
+            f"<strong>{html.escape(str(conditional.get('current_special_2d', '—')))}</strong>"
+            f"<em>ĐB 2D hiện tại · {int(conditional.get('rows', 0))} conditional cells · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
             "</article>"
         )
     return "".join(cards)
@@ -96,6 +112,81 @@ def _gap_table(touch: pd.DataFrame, sums: pd.DataFrame, top: int = 6) -> str:
     return "".join(rows) or '<tr><td colspan="3">Chưa có dữ liệu</td></tr>'
 
 
+def _legacy_diagnostics(advanced: dict) -> str:
+    tests = [
+        ("Aggregate Loto transition 2×2", advanced.get("aggregate_transition", {})),
+        ("Weekday × đuôi ĐB 7×10", advanced.get("weekday_special_tail", {})),
+    ]
+    rows = []
+    for label, item in tests:
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(label)}</td>"
+            f"<td>{_fmt(item.get('statistic'))}</td>"
+            f"<td>{_fmt(item.get('p_value'))}</td>"
+            f"<td>{html.escape(str(item.get('method', '—')))}</td>"
+            "</tr>"
+        )
+    rows.append(
+        "<tr>"
+        "<td>Full-special ACF/Bartlett</td>"
+        f"<td>{int(advanced.get('full_special_acf_rows', 0))} lags</td>"
+        "<td>—</td>"
+        f"<td>{int(advanced.get('full_special_acf_fdr_05', 0))} lag FDR&lt;.05</td>"
+        "</tr>"
+    )
+    return "".join(rows) if rows else '<tr><td colspan="4">Chưa có dữ liệu</td></tr>'
+
+
+def _crosslag_table(df: pd.DataFrame, top: int = 10) -> str:
+    if df.empty:
+        return '<tr><td colspan="7">Chưa có dữ liệu</td></tr>'
+    view = df.sort_values(
+        ["research_gate_pass", "holdout_lift", "validation_lift", "train_q_value_fdr"],
+        ascending=[False, False, False, True],
+    ).head(top)
+    rows = []
+    for _, r in view.iterrows():
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(r.get('operator', '')))}</td>"
+            f"<td>{html.escape(str(r.get('position_a_name', '')))}</td>"
+            f"<td>{int(r.get('lag_a_days', 0))}</td>"
+            f"<td>{html.escape(str(r.get('position_b_name', '—')) or '—')}</td>"
+            f"<td>{int(r.get('lag_b_days', -1)) if pd.notna(r.get('lag_b_days')) else -1}</td>"
+            f"<td>{_fmt(r.get('holdout_lift'), 3)}</td>"
+            f"<td>{'REVIEW' if bool(r.get('research_gate_pass')) else '—'}</td>"
+            "</tr>"
+        )
+    return "".join(rows)
+
+
+def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) -> str:
+    if df.empty:
+        return '<tr><td colspan="6">Chưa có dữ liệu</td></tr>'
+    try:
+        state = int(current_special)
+    except Exception:
+        return '<tr><td colspan="6">Chưa có trạng thái ĐB hiện tại</td></tr>'
+    view = df[df["special"].astype(int) == state].copy()
+    if view.empty:
+        return '<tr><td colspan="6">Chưa đủ lịch sử cho trạng thái này</td></tr>'
+    view = view.sort_values(["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]).head(top)
+    rows = []
+    for _, r in view.iterrows():
+        rows.append(
+            "<tr>"
+            f"<td>{html.escape(str(r.get('number_str', int(r.get('number', 0)))))}</td>"
+            f"<td>{int(r.get('trials', 0))}</td>"
+            f"<td>{int(r.get('hits', 0))}</td>"
+            f"<td>{_fmt(r.get('p_raw'), 4)}</td>"
+            f"<td>{_fmt(r.get('p_eb'), 4)}</td>"
+            f"<td>{_fmt(r.get('q_value_fdr'), 4)}</td>"
+            "</tr>"
+        )
+    return "".join(rows)
+
+
 def _inject_link(path: Path) -> None:
     if not path.exists() or path.stat().st_size == 0:
         return
@@ -123,6 +214,13 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     touch = _read_csv(desc / "gap_touch_loto.csv")
     sums = _read_csv(desc / "gap_digit_sum_loto.csv")
 
+    advanced = _read_json(research / "legacy_advanced" / "manifest.json")
+    cross_report = _read_json(research / "crosslag_positional" / "report.json")
+    cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules.csv")
+    conditional_manifest = _read_json(data_dir / "conditional" / "manifest.json")
+    conditional = _read_csv(data_dir / "conditional" / "loto_nextday_given_special_long.csv")
+    current_special = str(conditional_manifest.get("current_special_2d", ""))
+
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VLA Research Lab</title>
@@ -140,14 +238,17 @@ th,td{{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;whit
 </style></head><body><main>
 <section class="hero"><div><a href="index.html" style="color:#bfdbfe">← Trang chính</a></div><h1>Scientific Research Lab</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và strategy. Mọi kết quả tại đây được tách khỏi production predictor cho đến khi vượt chronological holdout, multiple-testing control, effect-size gate và data-snooping reality check.</p></section>
-<div class="warn">Research Lab dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. p-value nhỏ hoặc lift lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai.</div>
-<section class="metrics">{_firewall_cards(firewall)}</section>
+<div class="warn">Research Lab dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. p-value nhỏ hoặc lift lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng Legacy completeness và Cross-lag bên dưới <b>không được nối vào production weights</b>.</div>
+<section class="metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
 <section class="grid">
 <article class="card"><h2>Randomness & dependence diagnostics</h2><p>Primary tests được hiệu chỉnh Benjamini–Hochberg FDR.</p><div class="table-wrap"><table><thead><tr><th>Test</th><th>Statistic</th><th>p</th><th>q(FDR)</th><th>FDR&lt;.05</th></tr></thead><tbody>{_primary_tests(diagnostics)}</tbody></table></div></article>
 <article class="card"><h2>Gan tổng / chạm</h2><p>Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.</p><div class="table-wrap"><table><thead><tr><th>Nhóm</th><th>Gan ngày</th><th>Lần cuối</th></tr></thead><tbody>{_gap_table(touch,sums)}</tbody></table></div></article>
+<article class="card"><h2>Legacy completeness · exact semantics</h2><p>Các kiểm định có câu hỏi thống kê khác với battery hiện đại nên được giữ riêng để không mất semantics.</p><div class="table-wrap"><table><thead><tr><th>Diagnostic</th><th>Statistic</th><th>p</th><th>Method / FDR</th></tr></thead><tbody>{_legacy_diagnostics(advanced)}</tbody></table></div></article>
+<article class="card"><h2>ĐB {html.escape(current_special or '—')} → Loto ngày kế</h2><p>Conditional matrix chỉ dùng cặp ngày lịch liên tiếp; pEB được shrink về marginal baseline và q là BH-FDR.</p><div class="table-wrap"><table><thead><tr><th>Số</th><th>Trials</th><th>Hits</th><th>p raw</th><th>p EB</th><th>q</th></tr></thead><tbody>{_conditional_table(conditional,current_special)}</tbody></table></div></article>
 <article class="card"><h2>Strategy Lab · Loto</h2><div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Nhóm</th><th>Precision</th><th>Lift</th><th>q</th><th>Gate</th></tr></thead><tbody>{_strategy_table(strategy_loto)}</tbody></table></div></article>
 <article class="card"><h2>Strategy Lab · Đề</h2><div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Nhóm</th><th>Precision</th><th>Lift</th><th>q</th><th>Gate</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
 </section>
+<section class="card" style="margin-top:16px"><h2>Cross-lag positional family</h2><p>Phục hồi family cầu dọc/chéo giữa các ngày khác nhau: concat, lộn, bộ-bóng, chạm và tổng. Mỗi rule chỉ đọc target−lag theo ngày lịch, sau đó qua train/validation/untouched holdout và FDR/Bonferroni. `research gate` chỉ có nghĩa đáng xem tiếp, không phải production eligible.</p><div class="table-wrap"><table><thead><tr><th>Op</th><th>Vị trí A</th><th>Lag A</th><th>Vị trí B</th><th>Lag B</th><th>Holdout lift</th><th>Gate</th></tr></thead><tbody>{_crosslag_table(cross_rules)}</tbody></table></div></section>
 <section class="card" style="margin-top:16px"><h2>Research firewall</h2><p>Hệ thống quét 27×27 vị trí cho hai family tail-tail và head-tail, sau đó chia train/validation/holdout theo thời gian. FDR chỉ áp dụng trên train; validation và untouched holdout phải giữ effect/lift, đồng thời max-statistic circular-shift reality check kiểm soát data snooping ở cấp toàn family.</p></section>
 </main></body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)

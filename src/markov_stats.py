@@ -6,48 +6,43 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import consecutive_next_pairs
 from lottery import Lottery
 from path_models import build_daily_targets
 
 
 def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float = 1.0) -> pd.DataFrame:
-    """For each number x in 00..99, compute:
-      p_hit_given_hit = P(hit_t=1 | hit_{t-1}=1)
-      p_hit_given_miss = P(hit_t=1 | hit_{t-1}=0)
-    with Beta smoothing.
+    """Estimate same-number next-calendar-day transition probabilities.
 
-    Returns a dataframe with counts and probabilities.
+    For each number x in 00..99:
+      p_hit_given_hit = P(hit_t=1 | hit_{t-1 calendar day}=1)
+      p_hit_given_miss = P(hit_t=1 | hit_{t-1 calendar day}=0)
+
+    Missing dates are skipped rather than collapsing a multi-day jump into a
+    one-day Markov transition. Probabilities use Beta smoothing.
     """
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
-    _, loto_targets, _ = build_daily_targets(df_2d)
+    dates, loto_targets, _ = build_daily_targets(df_2d)
     n = len(loto_targets)
     if n < 2:
         return pd.DataFrame()
 
-    # transitions for each x: from prev_state in {0,1} to curr_state in {0,1}
-    # store counts: c_prev0_curr1, c_prev0_total, c_prev1_curr1, c_prev1_total
-    prev1_total = np.zeros(100, dtype=np.int32)
-    prev1_curr1 = np.zeros(100, dtype=np.int32)
-    prev0_total = np.zeros(100, dtype=np.int32)
-    prev0_curr1 = np.zeros(100, dtype=np.int32)
+    hit = np.zeros((n, 100), dtype=bool)
+    for t, nums in enumerate(loto_targets):
+        if nums:
+            hit[t, np.fromiter((int(x) for x in nums), dtype=np.int16)] = True
 
-    prev_hit = np.zeros(100, dtype=bool)
-    # init with day0 hits
-    for x in loto_targets[0]:
-        prev_hit[int(x)] = True
+    source_idx, target_idx = consecutive_next_pairs(dates)
+    if source_idx.size == 0:
+        return pd.DataFrame()
 
-    for t in range(1, n):
-        curr_hit = np.zeros(100, dtype=bool)
-        for x in loto_targets[t]:
-            curr_hit[int(x)] = True
+    prev_hit = hit[source_idx]
+    curr_hit = hit[target_idx]
 
-        prev1_total += prev_hit.astype(np.int32)
-        prev0_total += (~prev_hit).astype(np.int32)
-
-        prev1_curr1 += (prev_hit & curr_hit).astype(np.int32)
-        prev0_curr1 += ((~prev_hit) & curr_hit).astype(np.int32)
-
-        prev_hit = curr_hit
+    prev1_total = prev_hit.sum(axis=0, dtype=np.int32)
+    prev0_total = (~prev_hit).sum(axis=0, dtype=np.int32)
+    prev1_curr1 = (prev_hit & curr_hit).sum(axis=0, dtype=np.int32)
+    prev0_curr1 = ((~prev_hit) & curr_hit).sum(axis=0, dtype=np.int32)
 
     p11 = (prev1_curr1 + alpha) / (prev1_total + alpha + beta)
     p01 = (prev0_curr1 + alpha) / (prev0_total + alpha + beta)
@@ -55,6 +50,7 @@ def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float
     df = pd.DataFrame(
         {
             "number": np.arange(100, dtype=np.int32),
+            "calendar_transition_days": int(source_idx.size),
             "prev1_total": prev1_total,
             "prev1_curr1": prev1_curr1,
             "p_hit_given_hit": p11,

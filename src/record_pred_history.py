@@ -4,9 +4,10 @@ import argparse
 from datetime import date, timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from ensemble_utils import ensure_full_probs, normalize_distribution
+from ensemble_components import COMPONENT_KEYS, probability_component
 
 
 def _latest_anchor_date(xsmb_csv: Path) -> date:
@@ -46,8 +47,43 @@ def _load_stat_full(stat_dir: Path, mode: str) -> pd.DataFrame:
     return pd.DataFrame(columns=["number", "prob"])
 
 
+def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
+    """Infer availability for legacy rows and erase synthetic all-zero placeholders."""
+    out = df.copy()
+    if "target_date" not in out.columns or "number" not in out.columns:
+        return out
+
+    for key in COMPONENT_KEYS:
+        p_col = f"p_{key}"
+        has_col = f"has_{key}"
+        if has_col not in out.columns:
+            out[has_col] = False
+        if p_col not in out.columns:
+            out[p_col] = np.nan
+            out[has_col] = False
+            continue
+
+        for _, idx in out.groupby("target_date", sort=False).groups.items():
+            loc = list(idx)
+            sub = out.loc[loc]
+            numbers = pd.to_numeric(sub["number"], errors="coerce")
+            values = pd.to_numeric(sub[p_col], errors="coerce").to_numpy(dtype=float)
+            valid = (
+                len(sub) == 100
+                and numbers.notna().all()
+                and set(numbers.astype(int).tolist()) == set(range(100))
+                and values.shape == (100,)
+                and np.isfinite(values).all()
+                and np.all((values >= 0.0) & (values <= 1.0))
+                and float(values.sum()) > 0.0
+            )
+            out.loc[loc, has_col] = bool(valid)
+            if not valid:
+                out.loc[loc, p_col] = np.nan
+    return out
+
+
 def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_date") -> None:
-    """Upsert one prediction day into the compact GitHub history store."""
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and out.stat().st_size > 0:
         df_old = pd.read_csv(out)
@@ -55,6 +91,7 @@ def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_
         df_all = pd.concat([df_old, df_new], ignore_index=True)
     else:
         df_all = df_new
+    df_all = _sanitize_history(df_all)
     df_all.sort_values([key_col, "number"], inplace=True)
     df_all.to_csv(out, index=False)
 
@@ -81,39 +118,51 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for mode in ["loto", "de"]:
-        df_active = _load_path_full(path_ui_dir, mode, "active", anchor)
-        df_stable = _load_path_full(path_ui_dir, mode, "stable", anchor)
-        df_ml = _load_ml_full(ml_dir, mode)
-        df_cau = _load_cau_full(ai_ml_dir, mode)
-        df_stat = _load_stat_full(stat_dir, mode)
-
-        p_active = ensure_full_probs(df_active)
-        p_stable = ensure_full_probs(df_stable)
-        p_ml = ensure_full_probs(df_ml)
-        p_cau = ensure_full_probs(df_cau)
-        p_stat = ensure_full_probs(df_stat)
-
-        if mode == "de":
-            p_active = normalize_distribution(p_active)
-            p_stable = normalize_distribution(p_stable)
-            p_ml = normalize_distribution(p_ml)
-            p_cau = normalize_distribution(p_cau)
-            p_stat = normalize_distribution(p_stat)
+        frames = {
+            "active": _load_path_full(path_ui_dir, mode, "active", anchor),
+            "stable": _load_path_full(path_ui_dir, mode, "stable", anchor),
+            "ml": _load_ml_full(ml_dir, mode),
+            "cau": _load_cau_full(ai_ml_dir, mode),
+            "stat": _load_stat_full(stat_dir, mode),
+        }
+        components = {
+            key: probability_component(
+                frame,
+                mode=mode,  # type: ignore[arg-type]
+                expected_target_date=target,
+                expected_anchor_date=anchor,
+            )
+            for key, frame in frames.items()
+        }
 
         df_hist = pd.DataFrame(
             {
                 "target_date": [target.isoformat()] * 100,
                 "number": list(range(100)),
-                "p_ml": p_ml,
-                "p_cau": p_cau,
-                "p_stat": p_stat,
-                "p_active": p_active,
-                "p_stable": p_stable,
+                **{
+                    f"p_{key}": (
+                        component.prob
+                        if component.available
+                        else np.full(100, np.nan, dtype=float)
+                    )
+                    for key, component in components.items()
+                },
+                **{
+                    f"has_{key}": [bool(component.available)] * 100
+                    for key, component in components.items()
+                },
             }
         )
         out_path = out_dir / f"pred_{mode}.csv"
         _upsert_history_csv(df_hist, out_path)
-        print(f"[OK] recorded {mode} predictions for target_date={target} -> {out_path}")
+        status = ", ".join(
+            f"{key}={'ok' if component.available else component.reason}"
+            for key, component in components.items()
+        )
+        print(
+            f"[OK] recorded {mode} predictions for target_date={target} -> {out_path}; "
+            f"components: {status}"
+        )
 
 
 if __name__ == "__main__":

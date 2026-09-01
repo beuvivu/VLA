@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 
 from calibration import CalibParams, apply_calibration
-from ensemble_utils import EnsembleWeights, clip01, ensure_full_probs, normalize_distribution
+from ensemble_components import COMPONENT_KEYS, probability_component, renormalize_available_weights
+from ensemble_utils import EnsembleWeights, clip01, normalize_distribution
 from meta_predictor import META_SCHEMA_VERSION, blend_predictions, predict_meta
 
 Mode = Literal["loto", "de"]
@@ -24,6 +25,9 @@ class Picks:
     anchor_date: str
     target_date: str
     weights: dict
+    effective_weights: dict
+    component_availability: dict
+    component_reasons: dict
     calibration: dict
     meta: dict
     top4: list[str]
@@ -44,8 +48,9 @@ def _read_prob_file(path: Path) -> pd.DataFrame:
 
 
 def _load_probs(
-    data_dir: Path, mode: str, anchor: date
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    data_dir: Path, mode: Mode, anchor: date
+) -> tuple[dict[str, np.ndarray], dict[str, bool], dict[str, str]]:
+    target = anchor + timedelta(days=1)
     path_ui = data_dir / "path_ui"
     df_a = _read_prob_file(
         path_ui / f"predict_next_{mode}_active_{anchor.isoformat()}_all.csv"
@@ -53,7 +58,6 @@ def _load_probs(
     df_s = _read_prob_file(
         path_ui / f"predict_next_{mode}_stable_{anchor.isoformat()}_all.csv"
     )
-
     if df_a.empty:
         df_a = _read_prob_file(
             path_ui / f"predict_next_{mode}_active_{anchor.isoformat()}.csv"
@@ -63,26 +67,35 @@ def _load_probs(
             path_ui / f"predict_next_{mode}_stable_{anchor.isoformat()}.csv"
         )
 
-    df_m = _read_prob_file(data_dir / "ml" / f"predict_next_{mode}_ml_all.csv")
-    df_c = _read_prob_file(data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv")
-    df_t = _read_prob_file(
-        data_dir / "statistical_signal" / f"predict_next_{mode}_stat_all.csv"
-    )
-
-    p_a = ensure_full_probs(df_a)
-    p_s = ensure_full_probs(df_s)
-    p_m = ensure_full_probs(df_m)
-    p_c = ensure_full_probs(df_c)
-    p_t = ensure_full_probs(df_t)
-
-    if mode == "de":
-        p_a = normalize_distribution(p_a)
-        p_s = normalize_distribution(p_s)
-        p_m = normalize_distribution(p_m)
-        p_c = normalize_distribution(p_c)
-        p_t = normalize_distribution(p_t)
-
-    return p_m, p_c, p_t, p_a, p_s
+    frames = {
+        "ml": _read_prob_file(data_dir / "ml" / f"predict_next_{mode}_ml_all.csv"),
+        "cau": _read_prob_file(data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"),
+        "stat": _read_prob_file(
+            data_dir / "statistical_signal" / f"predict_next_{mode}_stat_all.csv"
+        ),
+        "active": df_a,
+        "stable": df_s,
+    }
+    components = {
+        key: probability_component(
+            frame,
+            mode=mode,
+            expected_target_date=target,
+            expected_anchor_date=anchor,
+        )
+        for key, frame in frames.items()
+    }
+    available = {key: bool(component.available) for key, component in components.items()}
+    reasons = {key: component.reason for key, component in components.items()}
+    vectors = {
+        key: (
+            component.prob
+            if component.available
+            else np.zeros(100, dtype=np.float64)
+        )
+        for key, component in components.items()
+    }
+    return vectors, available, reasons
 
 
 def _load_weights(data_dir: Path, mode: str) -> EnsembleWeights:
@@ -177,16 +190,13 @@ def _meta_prediction(
         return linear_prob.copy(), 0.0, fallback
 
     if not quality_pass or trust <= 0:
-        reason = "validation gate rejected stacked challenger"
         return p_meta, 0.0, {
             "active": False,
             "trust": 0.0,
             "quality_pass": quality_pass,
-            "reason": reason,
+            "reason": "validation gate rejected stacked challenger",
             "validation_logloss": pack.get("validation_logloss"),
-            "baseline_validation_logloss": pack.get(
-                "baseline_validation_logloss"
-            ),
+            "baseline_validation_logloss": pack.get("baseline_validation_logloss"),
             "logloss_skill": pack.get("logloss_skill"),
         }
 
@@ -204,11 +214,21 @@ def _meta_prediction(
     }
 
 
+def _blend_linear(vectors: dict[str, np.ndarray], weights: EnsembleWeights) -> np.ndarray:
+    return (
+        weights.w_ml * vectors["ml"]
+        + weights.w_cau * vectors["cau"]
+        + weights.w_stat * vectors["stat"]
+        + weights.w_active * vectors["active"]
+        + weights.w_stable * vectors["stable"]
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "Next-day 2-digit picks using calibrated linear ensemble plus a "
-            "validation-gated nonlinear stacked-ML challenger."
+            "Next-day 2-digit picks using an availability/date-aware calibrated "
+            "linear ensemble plus a validation-gated nonlinear stacked-ML challenger."
         )
     )
     ap.add_argument("--mode", choices=["loto", "de"], default="loto")
@@ -223,40 +243,60 @@ def main() -> None:
     anchor = _latest_anchor_date(data_dir / "xsmb.csv")
     target = anchor + timedelta(days=1)
 
-    weights = _load_weights(data_dir, args.mode)
+    configured_weights = _load_weights(data_dir, args.mode)
     calib = _load_calibration(data_dir, args.mode)
-    p_m, p_c, p_t, p_a, p_s = _load_probs(data_dir, args.mode, anchor)
+    vectors, available, reasons = _load_probs(data_dir, args.mode, anchor)
+    effective_weights = renormalize_available_weights(configured_weights, available)
 
-    component_matrix = np.vstack([p_m, p_c, p_t, p_a, p_s])
-    p_linear_raw = (
-        weights.w_ml * p_m
-        + weights.w_cau * p_c
-        + weights.w_stat * p_t
-        + weights.w_active * p_a
-        + weights.w_stable * p_s
-    )
+    p_linear_raw = _blend_linear(vectors, effective_weights)
     if args.mode == "de":
         p_linear_raw = clip01(normalize_distribution(p_linear_raw), eps=1e-12)
     else:
         p_linear_raw = clip01(p_linear_raw, eps=1e-6)
 
-    p_linear = apply_calibration(args.mode, p_linear_raw, calib)
-    p_meta, meta_trust, meta_info = _meta_prediction(
-        models_dir,
-        args.mode,
-        target,
-        p_m,
-        p_c,
-        p_t,
-        p_a,
-        p_s,
-        p_linear,
-    )
+    all_components_available = all(available.get(key, False) for key in COMPONENT_KEYS)
+    if all_components_available:
+        p_linear = apply_calibration(args.mode, p_linear_raw, calib)
+        calibration_info = {
+            **calib.as_dict(),
+            "active": True,
+            "reason": "calibration matches full five-component ensemble",
+        }
+        p_meta, meta_trust, meta_info = _meta_prediction(
+            models_dir,
+            args.mode,
+            target,
+            vectors["ml"],
+            vectors["cau"],
+            vectors["stat"],
+            vectors["active"],
+            vectors["stable"],
+            p_linear,
+        )
+    else:
+        p_linear = p_linear_raw
+        calibration_info = {
+            **calib.as_dict(),
+            "active": False,
+            "reason": "bypassed because one or more ensemble components are unavailable",
+        }
+        p_meta = p_linear.copy()
+        meta_trust = 0.0
+        meta_info = {
+            "active": False,
+            "trust": 0.0,
+            "quality_pass": False,
+            "reason": "stacked model requires all five ensemble components",
+        }
+
     p = blend_predictions(args.mode, p_linear, p_meta, meta_trust)
 
-    disagreement = np.std(component_matrix, axis=0)
-    component_min = np.min(component_matrix, axis=0)
-    component_max = np.max(component_matrix, axis=0)
+    available_matrix = np.vstack(
+        [vectors[key] for key in COMPONENT_KEYS if available.get(key, False)]
+    )
+    disagreement = np.std(available_matrix, axis=0)
+    component_min = np.min(available_matrix, axis=0)
+    component_max = np.max(available_matrix, axis=0)
     meta_edge = p_meta - p_linear
     df_all = pd.DataFrame(
         {
@@ -267,6 +307,7 @@ def main() -> None:
             "meta_edge": meta_edge,
             "meta_trust": meta_trust,
             "meta_active": bool(meta_info.get("active", False)),
+            "component_count": int(sum(available.values())),
             "component_disagreement": disagreement,
             "component_min": component_min,
             "component_max": component_max,
@@ -297,8 +338,11 @@ def main() -> None:
         mode=args.mode,
         anchor_date=anchor.isoformat(),
         target_date=target.isoformat(),
-        weights=weights.as_dict(),
-        calibration=calib.as_dict(),
+        weights=configured_weights.as_dict(),
+        effective_weights=effective_weights.as_dict(),
+        component_availability=available,
+        component_reasons=reasons,
+        calibration=calibration_info,
         meta=meta_info,
         top4=df_all.head(4)["number_str"].tolist(),
         top8=df_all.head(8)["number_str"].tolist(),
@@ -310,7 +354,10 @@ def main() -> None:
     )
 
     print(f"[OK] picks ready: mode={args.mode} target={target}")
-    print("weights:", picks.weights)
+    print("configured weights:", picks.weights)
+    print("effective weights:", picks.effective_weights)
+    print("component availability:", picks.component_availability)
+    print("component reasons:", picks.component_reasons)
     print("calibration:", picks.calibration)
     print("stacked ML:", picks.meta)
     print("top4:", picks.top4)

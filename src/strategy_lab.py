@@ -2,11 +2,14 @@ from __future__ import annotations
 
 """Standardized walk-forward laboratory for deterministic strategy families.
 
-Legacy repositories contained many individually named "cầu" rules.  This module
+Legacy repositories contained many individually named "cầu" rules. This module
 preserves the useful idea -- a common evaluation contract -- while preventing
-those rules from silently entering production.  Every strategy is compared on
+those rules from silently entering production. Every strategy is compared on
 number-level trials against a training-only marginal baseline, with chronological
 holdout, FDR correction, agreement curves and diversity diagnostics.
+
+All row offsets are interpreted as calendar days only after the two-digit and
+sparse histories pass strict daily-contiguity and date-axis equality checks.
 """
 
 import argparse
@@ -20,6 +23,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from calendar_alignment import require_daily_contiguous
 from lottery import Lottery
 from number_reference import (
     bo,
@@ -139,6 +143,7 @@ def _hot(window: int, k: int) -> PredictFn:
         counts = ctx.presence[start : t + 1].sum(axis=0)
         order = np.lexsort((np.arange(100), -counts))
         return set(order[:k].astype(int).tolist())
+
     return predict
 
 
@@ -148,6 +153,7 @@ def _cold(window: int, k: int) -> PredictFn:
         counts = ctx.presence[start : t + 1].sum(axis=0)
         order = np.lexsort((np.arange(100), counts))
         return set(order[:k].astype(int).tolist())
+
     return predict
 
 
@@ -163,6 +169,7 @@ def _gan(k: int) -> PredictFn:
         gaps = np.where(last >= 0, t - last, t + 1)
         order = np.lexsort((np.arange(100), -gaps))
         return set(order[:k].astype(int).tolist())
+
     return predict
 
 
@@ -178,6 +185,7 @@ def _position_plurality(rule: str) -> PredictFn:
         counts = np.bincount(candidates.astype(int), minlength=100)
         order = np.lexsort((np.arange(100), -counts))
         return set(order[:3].astype(int).tolist())
+
     return predict
 
 
@@ -197,9 +205,9 @@ def registry() -> list[Strategy]:
         Strategy("Sát kép", "kep", _sat_kep, "Hai chữ số kề nhau."),
         Strategy("Lô rơi", "repeat", _lo_roi, "Toàn bộ số đã xuất hiện hôm nay."),
         Strategy("Lô lộn", "repeat", _lo_reverse, "Đảo toàn bộ số đã xuất hiện hôm nay."),
-        Strategy("Hot 30d top5", "recency", _hot(30, 5), "5 số xuất hiện nhiều ngày nhất trong 30 kỳ."),
-        Strategy("Cold 30d top5", "recency", _cold(30, 5), "5 số xuất hiện ít ngày nhất trong 30 kỳ."),
-        Strategy("Hot 90d top5", "recency", _hot(90, 5), "5 số xuất hiện nhiều ngày nhất trong 90 kỳ."),
+        Strategy("Hot 30d top5", "recency", _hot(30, 5), "5 số xuất hiện nhiều ngày nhất trong 30 ngày."),
+        Strategy("Cold 30d top5", "recency", _cold(30, 5), "5 số xuất hiện ít ngày nhất trong 30 ngày."),
+        Strategy("Hot 90d top5", "recency", _hot(90, 5), "5 số xuất hiện nhiều ngày nhất trong 90 ngày."),
         Strategy("Gan top5", "recency", _gan(5), "5 số lâu chưa xuất hiện nhất."),
         Strategy("Vị trí tail-tail plurality", "position", _position_plurality("tail_tail"), "Top3 số được nhiều cặp đuôi vị trí trỏ tới."),
         Strategy("Vị trí head-tail plurality", "position", _position_plurality("head_tail"), "Top3 số được nhiều cặp đầu-đuôi trỏ tới."),
@@ -228,7 +236,11 @@ def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return float((centre - margin) / denom), float((centre + margin) / denom)
 
 
-def _evaluate_events(events: list[tuple[int, set[int]]], target: np.ndarray, baseline: np.ndarray) -> dict[str, float | int]:
+def _evaluate_events(
+    events: list[tuple[int, set[int]]],
+    target: np.ndarray,
+    baseline: np.ndarray,
+) -> dict[str, float | int]:
     n_pred = 0
     hits = 0
     expected = 0.0
@@ -284,15 +296,41 @@ def _target_matrix(two: pd.DataFrame, sparse: pd.DataFrame, mode: Mode) -> np.nd
     return target
 
 
-def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup: int = 180, holdout_fraction: float = 0.25) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def evaluate_lab(
+    two: pd.DataFrame,
+    sparse: pd.DataFrame,
+    *,
+    mode: Mode,
+    warmup: int = 180,
+    holdout_fraction: float = 0.25,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    if two.empty or sparse.empty:
+        raise ValueError("strategy lab requires non-empty two-digit and sparse histories")
+    if "date" not in two.columns or "date" not in sparse.columns:
+        raise ValueError("strategy lab histories must contain date columns")
+
+    two_calendar = require_daily_contiguous(
+        two["date"], context="strategy lab two-digit history"
+    )
+    sparse_calendar = require_daily_contiguous(
+        sparse["date"], context="strategy lab sparse history"
+    )
+    if not two_calendar.equals(sparse_calendar):
+        raise ValueError("strategy lab two-digit and sparse histories are not date-aligned")
+
     values = two.drop(columns=["date"]).to_numpy(dtype=int) % 100
     presence = sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0
+    if len(values) != len(presence):
+        raise ValueError("strategy lab value/presence row count mismatch")
+
     ctx = StrategyContext(values=values, presence=presence)
     target = _target_matrix(two, sparse, mode)
     strategies = registry()
     last_source_day = len(two) - 2
     first = min(max(30, warmup), max(30, last_source_day - 30))
-    split = first + int((last_source_day - first + 1) * (1.0 - holdout_fraction))
+    split = first + int(
+        (last_source_day - first + 1) * (1.0 - holdout_fraction)
+    )
     split = min(max(first + 20, split), last_source_day - 10)
     baseline = _baseline(target, split + 1, mode)
 
@@ -313,7 +351,9 @@ def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup:
         all_events[strat.name] = events
         masks[strat.name] = mask
         full = _evaluate_events(events, target, baseline)
-        hold = _evaluate_events([(t, p) for t, p in events if t >= split + 1], target, baseline)
+        hold = _evaluate_events(
+            [(t, p) for t, p in events if t >= split + 1], target, baseline
+        )
         rows.append(
             {
                 "mode": mode,
@@ -322,13 +362,18 @@ def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup:
                 "description": strat.description,
                 "warmup_days": first,
                 "holdout_start_index": split + 1,
+                "calendar_start": two_calendar[0].date().isoformat(),
+                "calendar_end": two_calendar[-1].date().isoformat(),
+                "calendar_contiguous": True,
                 **{f"full_{k}": v for k, v in full.items()},
                 **{f"holdout_{k}": v for k, v in hold.items()},
             }
         )
 
     table = pd.DataFrame(rows)
-    q = bh_fdr(pd.to_numeric(table["holdout_p_value"], errors="coerce").to_numpy(dtype=float))
+    q = bh_fdr(
+        pd.to_numeric(table["holdout_p_value"], errors="coerce").to_numpy(dtype=float)
+    )
     table["holdout_q_value_fdr"] = q
     min_effect = 0.005 if mode == "loto" else 0.0007
     table["research_gate_pass"] = (
@@ -354,7 +399,8 @@ def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup:
             votes = np.zeros(100, dtype=int)
             for strat in strategies:
                 events = all_events[strat.name]
-                # Source index maps directly: first event predicts first+1.
+                # Source index maps directly because calendar continuity is an
+                # enforced invariant: first event predicts exactly first+1 day.
                 pos = target_t - (first + 1)
                 if 0 <= pos < len(events):
                     picks = events[pos][1]
@@ -378,7 +424,9 @@ def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup:
                 "hits": hits,
                 "precision": precision,
                 "baseline_rate": base_rate,
-                "lift": precision / base_rate if n_pred and base_rate > 0 else float("nan"),
+                "lift": precision / base_rate
+                if n_pred and base_rate > 0
+                else float("nan"),
             }
         )
     agreement = pd.DataFrame(agreement_rows)
@@ -395,16 +443,30 @@ def evaluate_lab(two: pd.DataFrame, sparse: pd.DataFrame, *, mode: Mode, warmup:
             inter = int(np.logical_and(x, y).sum())
             jaccard = inter / union if union else 0.0
             if x.std() > 0 and y.std() > 0:
-                corr = float(np.corrcoef(x.astype(float), y.astype(float))[0, 1])
+                corr = float(
+                    np.corrcoef(x.astype(float), y.astype(float))[0, 1]
+                )
             else:
                 corr = 0.0
-            div_rows.append({"mode": mode, "strategy_a": a, "strategy_b": b, "jaccard": jaccard, "phi_correlation": corr})
-    diversity = pd.DataFrame(div_rows).sort_values("phi_correlation", ascending=False, ignore_index=True)
+            div_rows.append(
+                {
+                    "mode": mode,
+                    "strategy_a": a,
+                    "strategy_b": b,
+                    "jaccard": jaccard,
+                    "phi_correlation": corr,
+                }
+            )
+    diversity = pd.DataFrame(div_rows).sort_values(
+        "phi_correlation", ascending=False, ignore_index=True
+    )
     return table, agreement, diversity
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Standardized deterministic strategy research lab.")
+    ap = argparse.ArgumentParser(
+        description="Standardized deterministic strategy research lab."
+    )
     ap.add_argument("--out-dir", default="data/research")
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     ap.add_argument("--warmup", type=int, default=180)
@@ -421,23 +483,36 @@ def main() -> None:
 
     modes = ("loto", "de") if args.mode == "both" else (args.mode,)
     manifest: dict[str, object] = {
-        "schema_version": 1,
-        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "schema_version": 2,
+        "generated_at_utc": datetime.now(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
         "anchor_date": pd.to_datetime(two["date"]).max().date().isoformat(),
         "strategy_count": len(registry()),
         "modes": {},
         "production_integration": False,
+        "calendar_contract": "daily-contiguous and identical two-digit/sparse date axes",
     }
     for mode in modes:
-        table, agreement, diversity = evaluate_lab(two, sparse, mode=mode, warmup=max(30, args.warmup))  # type: ignore[arg-type]
+        table, agreement, diversity = evaluate_lab(
+            two,
+            sparse,
+            mode=mode,  # type: ignore[arg-type]
+            warmup=max(30, args.warmup),
+        )
         table.to_csv(out / f"strategy_lab_{mode}.csv", index=False)
         agreement.to_csv(out / f"strategy_agreement_{mode}.csv", index=False)
         diversity.to_csv(out / f"strategy_diversity_{mode}.csv", index=False)
         manifest["modes"][mode] = {  # type: ignore[index]
             "research_gate_pass_count": int(table["research_gate_pass"].sum()),
-            "best_holdout_lift": float(pd.to_numeric(table["holdout_lift"], errors="coerce").max()),
+            "best_holdout_lift": float(
+                pd.to_numeric(table["holdout_lift"], errors="coerce").max()
+            ),
         }
-    (out / "strategy_lab_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (out / "strategy_lab_manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     print(f"[OK] strategy lab -> {out}")
 
 

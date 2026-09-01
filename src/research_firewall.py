@@ -12,8 +12,9 @@ preserving evaluation protocol:
 5. validation and untouched holdout effect-size gates;
 6. max-statistic circular-shift reality check for data snooping.
 
-The output is a research audit.  It is not wired into production prediction
-weights; future promotion must explicitly consume ``production_eligible``.
+The row-shift implementation is valid only for a contiguous daily series, so the
+calendar contract is enforced explicitly before any hypothesis is evaluated.
+The output is a research audit and is never wired into production weights.
 """
 
 import argparse
@@ -26,6 +27,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from calendar_alignment import require_daily_contiguous
 from lottery import Lottery
 from research_diagnostics import bh_fdr
 
@@ -64,7 +66,7 @@ def _candidate_family(two: pd.DataFrame) -> tuple[np.ndarray, list[dict[str, obj
 
 def _targets(two: pd.DataFrame, sparse: pd.DataFrame, mode: Mode) -> np.ndarray:
     if mode == "loto":
-        return (sparse.drop(columns=["date"]).to_numpy(dtype=int)[1:] > 0)
+        return sparse.drop(columns=["date"]).to_numpy(dtype=int)[1:] > 0
     de = (two["special"].to_numpy(dtype=int)[1:] % 100).astype(int)
     out = np.zeros((len(de), 100), dtype=bool)
     out[np.arange(len(de)), de] = True
@@ -119,7 +121,7 @@ def _reality_check(
     permutations: int,
     seed: int,
     max_days: int,
-) -> dict[str, float | int]:
+) -> dict[str, float | int | str]:
     n = min(len(target), max(120, int(max_days)))
     cand = candidates[-n:]
     tgt = target[-n:]
@@ -158,7 +160,7 @@ def _reality_check(
         "null_max_skill_mean": float(np.mean(null_max)),
         "null_max_skill_p95": float(np.quantile(null_max, 0.95)),
         "p_value": float((ge + 1) / (len(shifts) + 1)),
-        "method": "max-statistic circular shift; preserves daily cross-sectional outcomes",
+        "method": "max-statistic circular shift on explicitly contiguous daily outcomes",
     }
 
 
@@ -173,6 +175,11 @@ def evaluate_mode(
     seed: int = 20260901,
     max_reality_days: int = 1000,
 ) -> tuple[pd.DataFrame, dict]:
+    two_dates = require_daily_contiguous(two["date"], context="research firewall two-digit history")
+    sparse_dates = require_daily_contiguous(sparse["date"], context="research firewall sparse history")
+    if not two_dates.equals(sparse_dates):
+        raise ValueError("research firewall requires date-aligned two-digit and sparse histories")
+
     candidates, meta = _candidate_family(two)
     target = _targets(two, sparse, mode)
     if len(candidates) != len(target):
@@ -244,6 +251,7 @@ def evaluate_mode(
     )
     report = {
         "mode": mode,
+        "calendar_daily_contiguous": True,
         "hypotheses": int(len(meta)),
         "train_days": train_end,
         "validation_days": validation_end - train_end,
@@ -282,7 +290,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     modes = ("loto", "de") if args.mode == "both" else (args.mode,)
     reports: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "anchor_date": pd.to_datetime(two["date"]).max().date().isoformat(),
         "modes": {},
@@ -299,7 +307,9 @@ def main() -> None:
         table.to_csv(out / f"research_firewall_{mode}.csv", index=False)
         reports["modes"][mode] = report  # type: ignore[index]
 
-    (out / "research_firewall_report.json").write_text(json.dumps(reports, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (out / "research_firewall_report.json").write_text(
+        json.dumps(reports, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     print(f"[OK] research firewall -> {out}")
 
 

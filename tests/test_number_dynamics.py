@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
+import pytest
 
 from number_dynamics import build_dynamics_signal, transition_posterior
 
@@ -16,6 +18,10 @@ def _synthetic_loto(days: int = 240) -> np.ndarray:
     return hit
 
 
+def _dates(days: int) -> pd.DatetimeIndex:
+    return pd.date_range("2025-01-01", periods=days, freq="D")
+
+
 def test_transition_matrix_recovers_injected_relationship() -> None:
     hit = _synthetic_loto()
     _, lift, trials, _ = transition_posterior(hit, prior_strength=30.0)
@@ -25,7 +31,8 @@ def test_transition_matrix_recovers_injected_relationship() -> None:
 
 
 def test_loto_dynamics_outputs_are_finite_and_bounded() -> None:
-    artifacts = build_dynamics_signal(_synthetic_loto(), mode="loto")
+    hit = _synthetic_loto()
+    artifacts = build_dynamics_signal(hit, dates=_dates(len(hit)), mode="loto")
     current = artifacts.current.sort_values("number")
     assert len(current) == 100
     assert artifacts.transition_prob.shape == (100, 101)
@@ -35,6 +42,7 @@ def test_loto_dynamics_outputs_are_finite_and_bounded() -> None:
     assert np.isfinite(current["prob"].to_numpy()).all()
     assert ((current["prob"] > 0) & (current["prob"] < 1)).all()
     assert 0.15 <= artifacts.diagnostics["global_dynamics_reliability"] <= 0.80
+    assert artifacts.diagnostics["calendar_contiguous"] is True
 
 
 def test_de_dynamics_is_a_normalized_distribution() -> None:
@@ -43,7 +51,7 @@ def test_de_dynamics_is_a_normalized_distribution() -> None:
     hit = np.zeros((days, 100), dtype=np.int8)
     hit[np.arange(days), sequence] = 1
 
-    artifacts = build_dynamics_signal(hit, mode="de")
+    artifacts = build_dynamics_signal(hit, dates=_dates(days), mode="de")
     p = artifacts.current.sort_values("number")["prob"].to_numpy(dtype=float)
     assert np.isfinite(p).all()
     assert np.isclose(p.sum(), 1.0, atol=1e-10)
@@ -51,8 +59,22 @@ def test_de_dynamics_is_a_normalized_distribution() -> None:
 
 
 def test_cooccurrence_phi_is_symmetric_with_unit_diagonal() -> None:
-    artifacts = build_dynamics_signal(_synthetic_loto(), mode="loto")
+    hit = _synthetic_loto()
+    artifacts = build_dynamics_signal(hit, dates=_dates(len(hit)), mode="loto")
     phi = artifacts.cooccurrence_phi.drop(columns=["source"]).to_numpy(dtype=float)
     assert np.allclose(phi, phi.T, atol=1e-12)
     assert np.allclose(np.diag(phi), 1.0, atol=1e-12)
     assert np.nanmax(np.abs(phi)) <= 1.0 + 1e-12
+
+
+def test_dynamics_rejects_missing_calendar_day() -> None:
+    hit = _synthetic_loto(40)
+    dates = _dates(41).delete(20)
+    with pytest.raises(ValueError, match="requires contiguous calendar days"):
+        build_dynamics_signal(hit, dates=dates, mode="loto")
+
+
+def test_dynamics_rejects_date_hit_length_mismatch() -> None:
+    hit = _synthetic_loto(40)
+    with pytest.raises(ValueError, match="date/hit length mismatch"):
+        build_dynamics_signal(hit, dates=_dates(39), mode="loto")

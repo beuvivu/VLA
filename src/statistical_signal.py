@@ -5,14 +5,15 @@ from __future__ import annotations
 This component combines:
 - recency-weighted Bayesian frequency;
 - target-weekday posterior;
-- 30/90/365-day shrinkage;
+- 30/90/365-calendar-day shrinkage;
 - stability/credible intervals;
 - higher-order number dynamics (Markov-2, renewal hazard, lag kernels,
   cross-number lag-1 transition matrices, and regime drift).
 
-All dynamic evidence is strongly shrunk toward historical baselines. The output
-is a calibrated ranking component for the wider ML/path ensemble, not a claim
-of deterministic numerical predictability.
+Every day/lag/window interpretation is evaluated only on a verified daily-
+contiguous canonical calendar. All dynamic evidence is strongly shrunk toward
+historical baselines. The output is a calibrated ranking component for the wider
+ML/path ensemble, not a claim of deterministic numerical predictability.
 """
 
 import argparse
@@ -24,6 +25,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import beta as beta_dist
 
+from calendar_alignment import require_daily_contiguous
 from ensemble_utils import normalize_distribution
 from lottery import Lottery
 from number_dynamics import build_dynamics_signal, export_dynamics
@@ -200,10 +202,11 @@ def _de_signal(
 def _blend_dynamics(
     df: pd.DataFrame,
     hit: np.ndarray,
+    dates: pd.Series,
     *,
     mode: str,
 ) -> tuple[pd.DataFrame, dict]:
-    dynamics = build_dynamics_signal(hit, mode=mode)
+    dynamics = build_dynamics_signal(hit, dates=dates, mode=mode)  # type: ignore[arg-type]
     dyn = dynamics.current.rename(
         columns={
             "prob": "dynamics_prob",
@@ -252,6 +255,7 @@ def _blend_dynamics(
         "transition_active_mean_trials": float(
             dynamics.diagnostics["transition_active_mean_trials"]
         ),
+        "calendar_contiguous": bool(dynamics.diagnostics["calendar_contiguous"]),
     }
     return merged, dyn_diag
 
@@ -270,16 +274,27 @@ def build_statistical_signal(
         raise RuntimeError("No lottery data loaded")
     two["date"] = pd.to_datetime(two["date"])
     sparse["date"] = pd.to_datetime(sparse["date"])
-    anchor = two["date"].max().date()
+
+    two_calendar = require_daily_contiguous(
+        two["date"], context="statistical signal two-digit history"
+    )
+    sparse_calendar = require_daily_contiguous(
+        sparse["date"], context="statistical signal sparse history"
+    )
+    if not two_calendar.equals(sparse_calendar):
+        raise ValueError("two-digit and sparse statistical histories are not date-aligned")
+
+    anchor = two_calendar[-1].date()
     target = anchor + timedelta(days=1)
 
     if mode == "de":
         de = (two["special"].astype(int).to_numpy() % 100).astype(int)
         hit = np.zeros((len(de), 100), dtype=np.int8)
         hit[np.arange(len(de)), de] = 1
+        dates = two["date"]
         df = _de_signal(
             hit,
-            two["date"],
+            dates,
             target.weekday(),
             half_life=half_life,
             prior_strength=prior_strength,
@@ -288,9 +303,10 @@ def build_statistical_signal(
         hit = (
             sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0
         ).astype(np.int8)
+        dates = sparse["date"]
         df = _loto_signal(
             hit,
-            sparse["date"],
+            dates,
             target.weekday(),
             half_life=half_life,
             prior_strength=prior_strength,
@@ -298,14 +314,14 @@ def build_statistical_signal(
     else:
         raise ValueError(mode)
 
-    df, dynamics_diag = _blend_dynamics(df, hit, mode=mode)
+    df, dynamics_diag = _blend_dynamics(df, hit, dates, mode=mode)
     df["number_str"] = df["number"].map(lambda x: f"{int(x):02d}")
     df["anchor_date"] = anchor.isoformat()
     df["target_date"] = target.isoformat()
     df.sort_values("prob", ascending=False, inplace=True, ignore_index=True)
 
     diagnostics = {
-        "schema_version": 2,
+        "schema_version": 3,
         "mode": mode,
         "generated_at_utc": datetime.now(UTC)
         .isoformat(timespec="seconds")
@@ -321,8 +337,8 @@ def build_statistical_signal(
         **dynamics_diag,
         "interpretation": (
             "Empirical-Bayes + higher-order dynamics component. Markov, "
-            "transition, hazard, lag and regime evidence is shrinkage-regularized "
-            "and used only as probabilistic ranking support."
+            "transition, hazard, lag and regime evidence is shrinkage-regularized, "
+            "calendar-validated, and used only as probabilistic ranking support."
         ),
     }
     return df, diagnostics

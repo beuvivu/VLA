@@ -45,8 +45,8 @@ def _py(script: str, *args: str) -> list[str]:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "GitHub pipeline: sync -> statistics -> research falsification -> paths -> "
-            "base ML -> stacked ML -> calibrated predictions -> dashboards."
+            "GitHub pipeline: sync -> validate canonical data -> statistics -> research "
+            "falsification -> paths -> base ML -> stacked ML -> calibrated predictions -> dashboards."
         )
     )
     ap.add_argument(
@@ -92,6 +92,30 @@ def main() -> None:
             )
         )
 
+    # Canonical data integrity is a hard precondition, even in non-strict mode.
+    # Many historical analytics use row-based rolling windows after this gate;
+    # allowing a gap here would silently change the meaning of "day" and "t+1".
+    _run(
+        _py(
+            "src/validate_data.py",
+            "--lookback-days",
+            "90",
+            "--out",
+            "data/health.json",
+        ),
+        allow_fail=False,
+    )
+    _run(
+        _py(
+            "src/monitor_health.py",
+            "--health",
+            "data/health.json",
+            "--max-staleness-days",
+            "2",
+        ),
+        allow_fail=True,
+    )
+
     for script in [
         "src/analyze.py",
         "src/advanced_stats.py",
@@ -106,8 +130,23 @@ def main() -> None:
     ]:
         _run(_py(script), allow_fail=soft_fail)
 
+    # ``statistical_matrices.py`` still contains historical row-adjacent
+    # conditionals and an undated ML overlay loader. Canonical post-processors
+    # overwrite both artifact families before any downstream reader sees them.
+    _run(_py("src/conditional_matrices.py", "--top", "500"), allow_fail=soft_fail)
+    _run(_py("src/statistics_ai_overlay.py"), allow_fail=soft_fail)
+
     _run(
         _py("src/research_diagnostics.py", "--permutations", "127", "--max-lag", "14"),
+        allow_fail=True,
+    )
+    _run(_py("src/research_legacy_extensions.py"), allow_fail=True)
+    _run(
+        _py("src/legacy_advanced_diagnostics.py", "--max-lag", "15"),
+        allow_fail=True,
+    )
+    _run(
+        _py("src/conditional_nextday.py", "--top", "20", "--prior-strength", "60"),
         allow_fail=True,
     )
     _run(
@@ -120,26 +159,18 @@ def main() -> None:
         allow_fail=True,
         timeout_s=600,
     )
-
     _run(
         _py(
-            "src/validate_data.py",
-            "--lookback-days",
-            "90",
-            "--out",
-            "data/health.json",
-        ),
-        allow_fail=soft_fail,
-    )
-    _run(
-        _py(
-            "src/monitor_health.py",
-            "--health",
-            "data/health.json",
-            "--max-staleness-days",
-            "2",
+            "src/crosslag_positional_lab.py",
+            "--lag-pairs",
+            "1-1,1-2",
+            "--operators",
+            "concat,lon,bo,cham,tong",
+            "--warmup",
+            "180",
         ),
         allow_fail=True,
+        timeout_s=600,
     )
 
     if not args.skip_path:
@@ -212,8 +243,13 @@ def main() -> None:
             ),
             allow_fail=soft_fail,
         )
+        _run(_py("src/path_timeline_evidence.py", "--recent", "20"), allow_fail=True)
 
+        # Rebuild matrices after fresh ML artifacts and canonicalize both the
+        # next-day conditionals and the target-date-aware statistics AI overlay.
         _run(_py("src/statistical_matrices.py"), allow_fail=soft_fail)
+        _run(_py("src/conditional_matrices.py", "--top", "500"), allow_fail=soft_fail)
+        _run(_py("src/statistics_ai_overlay.py"), allow_fail=soft_fail)
         _run(_py("src/record_pred_history.py"), allow_fail=soft_fail)
         _run(_py("src/update_pred_labels.py"), allow_fail=soft_fail)
 
