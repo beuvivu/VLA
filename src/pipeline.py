@@ -115,12 +115,33 @@ def main() -> None:
         allow_fail=True,
     )
     _run(
+        _py("src/legacy_advanced_diagnostics.py", "--max-lag", "15"),
+        allow_fail=True,
+    )
+    _run(
+        _py("src/conditional_nextday.py", "--top", "20", "--prior-strength", "60"),
+        allow_fail=True,
+    )
+    _run(
         _py("src/research_firewall.py", "--mode", "both", "--permutations", "63"),
         allow_fail=True,
         timeout_s=600,
     )
     _run(
         _py("src/strategy_lab.py", "--mode", "both", "--warmup", "180"),
+        allow_fail=True,
+        timeout_s=600,
+    )
+    _run(
+        _py(
+            "src/crosslag_positional_lab.py",
+            "--lag-pairs",
+            "1-1,1-2",
+            "--operators",
+            "concat,lon,bo,cham,tong",
+            "--warmup",
+            "180",
+        ),
         allow_fail=True,
         timeout_s=600,
     )
