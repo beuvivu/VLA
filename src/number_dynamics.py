@@ -7,16 +7,18 @@ available through the anchor draw:
 - hierarchical Bayesian first-order cross-number transition matrices;
 - second-order per-number Markov state posteriors;
 - empirical-Bayes renewal/hazard probabilities by current gap;
-- multi-lag conditional kernels (1, 2, 3, 7, 14, 28 days);
+- multi-lag conditional kernels (1, 2, 3, 7, 14, 28 calendar days);
 - recent-vs-long regime drift with Jensen-Shannon diagnostics;
 - same-draw co-occurrence phi matrices for structural inspection.
 
+All day/lag semantics require a strictly increasing, daily-contiguous calendar.
 The estimates are aggressively shrunk toward historical baselines. They are
 probabilistic ranking evidence, not deterministic lottery rules.
 """
 
 import argparse
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -25,6 +27,7 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import require_daily_contiguous
 from ensemble_utils import normalize_distribution
 from lottery import Lottery
 
@@ -67,10 +70,14 @@ def _baseline(hit: np.ndarray, prior_strength: float) -> np.ndarray:
 def transition_posterior(
     hit: np.ndarray, *, prior_strength: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """P(target[t+1]=1 | source[t]=1), shrunk to target baselines."""
+    """P(target[next observation]=1 | source[current]=1), with shrinkage.
+
+    This low-level numerical primitive operates on adjacent observations. Public
+    day-based orchestration must validate calendar continuity before calling it.
+    """
     h = np.asarray(hit, dtype=np.int8)
     if h.ndim != 2 or h.shape[1] != 100:
-        raise ValueError("hit must have shape (n_days, 100)")
+        raise ValueError("hit must have shape (n_observations, 100)")
     base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
     if len(h) < 2:
         post = np.tile(base, (100, 1))
@@ -90,7 +97,7 @@ def transition_posterior(
 def _markov2_current(
     hit: np.ndarray, *, prior_strength: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Per-number P(hit_next | hit_{t-1}, hit_t) with hierarchical shrinkage."""
+    """Per-number P(hit_next | two previous states) with hierarchical shrinkage."""
     h = np.asarray(hit, dtype=np.int8)
     base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
     if len(h) < 3:
@@ -116,7 +123,7 @@ def _markov2_current(
 def _gap_hazard_current(
     hit: np.ndarray, *, max_gap: int, prior_strength: float
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]:
-    """Empirical-Bayes hazard by gap, shared across numbers for sample efficiency."""
+    """Empirical-Bayes hazard by daily gap, shared across numbers."""
     h = np.asarray(hit, dtype=np.int8)
     n_days, n_numbers = h.shape
     base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
@@ -140,8 +147,10 @@ def _gap_hazard_current(
     current_gap = np.empty(n_numbers, dtype=np.int32)
     for j in range(n_numbers):
         idx = np.where(h[:, j] > 0)[0]
-        current_gap[j] = 0 if idx.size and idx[-1] == n_days - 1 else (
-            n_days - 1 - idx[-1] if idx.size else max_gap - 1
+        current_gap[j] = (
+            0
+            if idx.size and idx[-1] == n_days - 1
+            else (n_days - 1 - idx[-1] if idx.size else max_gap - 1)
         )
     next_gap = np.clip(current_gap + 1, 1, max_gap)
     raw = hazard[next_gap]
@@ -164,7 +173,7 @@ def _gap_hazard_current(
 def _lag_kernel_current(
     hit: np.ndarray, *, lags: tuple[int, ...], prior_strength: float
 ) -> tuple[np.ndarray, pd.DataFrame]:
-    """Same-number multi-lag conditional kernels using only known lag states."""
+    """Same-number multi-lag kernels on a calendar-validated daily series."""
     h = np.asarray(hit, dtype=np.int8)
     base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
     weighted = np.zeros(100, dtype=np.float64)
@@ -251,12 +260,22 @@ def _cooccurrence_phi(hit: np.ndarray, shrink_strength: float = 60.0) -> np.ndar
 def build_dynamics_signal(
     hit: np.ndarray,
     *,
+    dates: Sequence[object] | pd.Series | pd.Index,
     mode: Mode,
     transition_prior: float | None = None,
 ) -> DynamicsArtifacts:
+    """Build dynamics only when row offsets are provably calendar-day offsets."""
     h = np.asarray(hit, dtype=np.int8)
     if h.ndim != 2 or h.shape[1] != 100 or len(h) == 0:
         raise ValueError("hit must be a non-empty (n_days, 100) matrix")
+
+    calendar = require_daily_contiguous(
+        dates, context=f"{mode} number dynamics"
+    )
+    if len(calendar) != len(h):
+        raise ValueError(
+            f"date/hit length mismatch: dates={len(calendar)} hit_rows={len(h)}"
+        )
 
     if transition_prior is None:
         transition_prior = 45.0 if mode == "loto" else 160.0
@@ -348,9 +367,12 @@ def build_dynamics_signal(
     phi_df.insert(0, "source", columns)
 
     diagnostics = {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": mode,
         "history_days": int(len(h)),
+        "calendar_contiguous": True,
+        "calendar_start": calendar[0].date().isoformat(),
+        "calendar_end": calendar[-1].date().isoformat(),
         "active_numbers_last_draw": int(active.size),
         "transition_prior_strength": float(transition_prior),
         "transition_active_mean_trials": float(
@@ -366,7 +388,8 @@ def build_dynamics_signal(
         .replace("+00:00", "Z"),
         "interpretation": (
             "Higher-order Bayesian dynamics are shrinkage-regularized statistical "
-            "evidence. They do not imply deterministic numerical laws."
+            "evidence computed only on a verified daily-contiguous calendar. They "
+            "do not imply deterministic numerical laws."
         ),
     }
 
@@ -403,7 +426,7 @@ def build_hit_matrix_from_lottery(mode: Mode) -> tuple[pd.DatetimeIndex, np.ndar
 
 def export_dynamics(mode: Mode, out_dir: Path) -> DynamicsArtifacts:
     dates, hit = build_hit_matrix_from_lottery(mode)
-    artifacts = build_dynamics_signal(hit, mode=mode)
+    artifacts = build_dynamics_signal(hit, dates=dates, mode=mode)
     out_dir.mkdir(parents=True, exist_ok=True)
     artifacts.current.to_csv(out_dir / f"current_dynamics_{mode}.csv", index=False)
     artifacts.transition_prob.to_csv(
