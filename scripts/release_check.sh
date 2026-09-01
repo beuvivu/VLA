@@ -89,6 +89,52 @@ python src/ml_predict.py --models-dir "$TMP_MODELS" --out-dir "$TMP_PRED" --wind
 test -s "$TMP_PRED/predict_next_loto_ml_all.csv"
 test -s "$TMP_PRED/predict_next_de_ml_all.csv"
 
+printf '%s\n' "== Leakage-safe stacked-ML challenger =="
+python src/meta_predictor.py \
+  --mode loto --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
+  --window-days 240 --min-days 100 --half-life-days 90
+python src/meta_predictor.py \
+  --mode de --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
+  --window-days 240 --min-days 100 --half-life-days 90
+
+test -s "$TMP_MODELS/meta_loto.joblib"
+test -s "$TMP_MODELS/meta_de.joblib"
+test -s "$TMP_PRED/meta_report_loto.json"
+test -s "$TMP_PRED/meta_report_de.json"
+
+python - <<PYMETA
+import joblib
+import math
+from meta_predictor import META_SCHEMA_VERSION
+
+for mode in ("loto", "de"):
+    path = "$TMP_MODELS/meta_" + mode + ".joblib"
+    pack = joblib.load(path)
+    assert int(pack["schema_version"]) == META_SCHEMA_VERSION, path
+    assert pack["mode"] == mode, path
+    assert 0.0 <= float(pack["meta_trust"]) <= 0.40, pack["meta_trust"]
+    for key in (
+        "validation_logloss",
+        "validation_brier",
+        "baseline_validation_logloss",
+        "baseline_validation_brier",
+        "logloss_skill",
+        "brier_skill",
+    ):
+        assert math.isfinite(float(pack[key])), (mode, key, pack[key])
+    assert len(pack["validation_days"]) >= 15, mode
+    print(
+        "OK stacked ML",
+        mode,
+        "quality=",
+        pack["quality_pass"],
+        "trust=",
+        pack["meta_trust"],
+        "skill=",
+        pack["logloss_skill"],
+    )
+PYMETA
+
 printf '%s\n' "== Production model artifact compatibility =="
 python - <<'PYMODEL'
 import joblib
