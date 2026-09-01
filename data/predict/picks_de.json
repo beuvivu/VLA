@@ -20,9 +20,9 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.598548958577824,
-    "baseline_validation_logloss": 4.610741346170067,
-    "logloss_skill": 0.0026443442988556276
+    "validation_logloss": 4.598548958577825,
+    "baseline_validation_logloss": 4.610741344525098,
+    "logloss_skill": 0.0026443439430300364
   },
   "top4": [
     "83",
