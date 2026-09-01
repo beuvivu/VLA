@@ -263,6 +263,7 @@ jobs:
           test -s docs/dashboard.html
           test -s docs/model-quality.html
           test -s docs/live.html
+          test -s DASHBOARD.md
 
       - name: Commit finalized analytics and dashboards
         id: commit
@@ -272,7 +273,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data models images docs README.md
+          git add data models images docs README.md DASHBOARD.md
           if git diff --cached --quiet; then
             echo "No generated analytics changes to commit."
             echo "generated_changed=false" >> "$GITHUB_OUTPUT"
