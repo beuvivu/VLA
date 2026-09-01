@@ -15,6 +15,15 @@
     "b": 0.0,
     "temperature": 1.0
   },
+  "meta": {
+    "active": false,
+    "trust": 0.0,
+    "quality_pass": false,
+    "reason": "validation gate rejected stacked challenger",
+    "validation_logloss": 4.598548958577824,
+    "baseline_validation_logloss": 4.610741346170067,
+    "logloss_skill": 0.0026443442988556276
+  },
   "top4": [
     "83",
     "38",

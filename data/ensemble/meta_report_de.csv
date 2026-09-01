@@ -1,0 +1,2 @@
+mode,component_tier,components,candidate,history_days,validation_days,meta_logloss,linear_logloss,logloss_skill,meta_brier,linear_brier,brier_skill,quality_pass,tier_trust_cap,meta_trust
+de,core_three,p_ml+p_active+p_stable,meta_shallow,214,30,4.598548958577824,4.610741346170067,0.0026443442988556276,0.00989918858941402,0.009901188853680068,0.00020202263542357102,False,0.15,0.0

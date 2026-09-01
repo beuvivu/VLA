@@ -15,6 +15,18 @@
     "b": 0.0,
     "temperature": 1.0
   },
+  "meta": {
+    "active": true,
+    "trust": 0.15,
+    "quality_pass": true,
+    "reason": "validated stacked challenger blended into production",
+    "candidate": "meta_balanced",
+    "validation_logloss": 0.5429133927336329,
+    "baseline_validation_logloss": 0.5791187864798065,
+    "logloss_skill": 0.06251807848653868,
+    "brier_skill": 0.018737272146010175,
+    "trained_through_target_date": "2026-08-31"
+  },
   "top4": [
     "77",
     "83",
