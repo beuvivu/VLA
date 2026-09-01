@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="${VN_LOTTERY_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "$ROOT"
+export PYTHONPATH="${PYTHONPATH:-$ROOT/src}"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
+
+printf '%s\n' "== Canonical number ontology =="
+python - <<'PYREF'
+from number_reference import BONG, all_bo, bo, bong, dan_cham, dan_tong_mod10, reverse
+for d in range(10):
+    assert BONG[BONG[d]] == d
+for n in range(100):
+    s = f"{n:02d}"
+    assert reverse(reverse(s)) == s
+    assert bong(bong(s)) == s
+    assert s in bo(s)
+assert all(len(dan_cham(d)) == 19 for d in range(10))
+assert all(len(dan_tong_mod10(d)) == 10 for d in range(10))
+assert 1 < len(all_bo()) < 100
+print("OK number ontology", len(all_bo()), "distinct bộ families")
+PYREF
+
+printf '%s\n' "== Legacy descriptive preservation =="
+python src/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
+
+printf '%s\n' "== Scientific falsification battery =="
+python src/research_diagnostics.py --permutations 31 --max-lag 14 --seed 20260901
+
+printf '%s\n' "== Data-snooping research firewall =="
+python src/research_firewall.py \
+  --mode both \
+  --permutations 15 \
+  --max-reality-days 500 \
+  --seed 20260901
+
+printf '%s\n' "== Standardized strategy lab =="
+python src/strategy_lab.py --mode both --warmup 180
+
+printf '%s\n' "== Research artifact integrity =="
+python - <<'PYRESEARCH'
+import json
+from pathlib import Path
+import pandas as pd
+
+root = Path("data/research")
+diag = json.loads((root / "scientific_diagnostics.json").read_text(encoding="utf-8"))
+assert diag["draw_days"] >= 365
+assert len(diag["primary_tests"]) == 5
+for item in diag["primary_tests"]:
+    q = item.get("q_value_fdr")
+    if q is not None:
+        assert 0.0 <= float(q) <= 1.0
+
+firewall = json.loads((root / "research_firewall_report.json").read_text(encoding="utf-8"))
+for mode in ("loto", "de"):
+    item = firewall["modes"][mode]
+    assert int(item["hypotheses"]) == 27 * 27 * 2
+    p = float(item["reality_check"]["p_value"])
+    assert 0.0 <= p <= 1.0
+    table = pd.read_csv(root / f"research_firewall_{mode}.csv")
+    assert len(table) == 27 * 27 * 2
+    assert table["train_q_value_fdr"].between(0, 1).all()
+
+    strategy = pd.read_csv(root / f"strategy_lab_{mode}.csv")
+    assert len(strategy) == 20
+    assert strategy["holdout_q_value_fdr"].dropna().between(0, 1).all()
+    agreement = pd.read_csv(root / f"strategy_agreement_{mode}.csv")
+    assert not agreement.empty
+    diversity = pd.read_csv(root / f"strategy_diversity_{mode}.csv")
+    assert len(diversity) == 20 * 19 // 2
+
+for path in [
+    "data/descriptive_ext/head_table_30d.csv",
+    "data/descriptive_ext/gap_touch_loto.csv",
+    "data/descriptive_ext/gap_digit_sum_de.csv",
+    "data/descriptive_ext/number_recency_loto.csv",
+    "data/descriptive_ext/number_recency_de.csv",
+    "data/descriptive_ext/pair_recency_loto.csv",
+]:
+    p = Path(path)
+    assert p.is_file() and p.stat().st_size > 0, path
+print("OK research artifacts")
+PYRESEARCH
+
+printf '%s\n' "== Static research page =="
+python src/build_research_lab.py
+python - <<'PYPAGE'
+from pathlib import Path
+page = Path("docs/research-lab.html")
+assert page.is_file() and page.stat().st_size > 1000
+text = page.read_text(encoding="utf-8")
+assert "Scientific Research Lab" in text
+assert "Research firewall" in text
+for name in ("index.html", "landing.html", "landing_desktop.html"):
+    path = Path("docs") / name
+    if path.exists():
+        assert path.read_text(encoding="utf-8").count('id="research-lab-link"') == 1, name
+print("OK research page")
+PYPAGE
+
+echo "OK research-plane release check"
