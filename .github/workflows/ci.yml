@@ -48,5 +48,8 @@ jobs:
       - name: Core release check
         run: bash scripts/release_check.sh
 
+      - name: Number ontology, pair and Excel integrity
+        run: bash scripts/number_integrity_check.sh
+
       - name: Research-plane release check
         run: bash scripts/research_release_check.sh
