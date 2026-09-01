@@ -79,7 +79,23 @@ jobs:
               with urllib.request.urlopen(req, timeout=20) as resp:
                   return resp.status, resp.read()
 
+          def workflow_active(workflow):
+              url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/runs?per_page=10"
+              try:
+                  status, raw = api_request(url)
+                  if status != 200:
+                      return False
+                  runs = json.loads(raw.decode("utf-8")).get("workflow_runs", [])
+                  active = {"queued", "in_progress", "pending", "waiting", "requested"}
+                  return any(str(run.get("status")) in active for run in runs)
+              except Exception as exc:
+                  print(f"[WARN] cannot inspect workflow {workflow}: {exc}")
+                  return False
+
           def dispatch(workflow):
+              if workflow_active(workflow):
+                  print(f"[SKIP] {workflow} already active")
+                  return
               url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/dispatches"
               status, _ = api_request(url, method="POST", payload={"ref": branch})
               if status != 204:
