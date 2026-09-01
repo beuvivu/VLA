@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-"""Leakage-safe nonlinear stacking for the five production prediction components.
+"""Leakage-safe nonlinear stacking for production prediction components.
 
-The base system already produces five independent probability signals. This module
-learns how their agreement, ranks and interactions relate to the next draw without
-replacing the conservative linear ensemble. The stacked learner is a challenger:
-it receives non-zero production trust only when it beats a leakage-safe linear
-baseline on an untouched chronological validation block.
+Prediction history evolves as new components are introduced. The stacked learner
+therefore trains on the richest component tier with enough fully labeled history
+instead of fabricating old values. A mature three-component model can run today
+with a small trust cap; richer four/five-component tiers activate automatically
+only after enough genuine walk-forward observations accumulate.
 """
 
 import argparse
@@ -18,8 +18,10 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 from sklearn.ensemble import HistGradientBoostingClassifier
 
+from calibration import apply_calibration, learn_calibration
 from ensemble_utils import (
     bernoulli_brier,
     bernoulli_logloss,
@@ -28,44 +30,18 @@ from ensemble_utils import (
     clip01,
     normalize_distribution,
 )
-from learn_ensemble_weights import COMPONENT_COLS, _day_weights, _optimize_weights_continuous
 from ml_models import PlattCalibratedClassifier
 
-META_SCHEMA_VERSION = 1
+META_SCHEMA_VERSION = 2
+COMPONENT_COLS = ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"]
 
-META_FEATURE_COLUMNS = [
-    "p_ml",
-    "p_cau",
-    "p_stat",
-    "p_active",
-    "p_stable",
-    "logp_ml",
-    "logp_cau",
-    "logp_stat",
-    "logp_active",
-    "logp_stable",
-    "rank_ml",
-    "rank_cau",
-    "rank_stat",
-    "rank_active",
-    "rank_stable",
-    "component_mean",
-    "component_std",
-    "component_min",
-    "component_max",
-    "component_range",
-    "component_cv",
-    "above_median_count",
-    "ml_stat_mean",
-    "cau_path_mean",
-    "path_mean",
-    "ml_x_stat",
-    "cau_x_path",
-    "weekday_sin",
-    "weekday_cos",
-    "is_double",
-    "digit_sum_mod10",
-    "reverse_distance",
+# Richer tiers are preferred, but only when every selected component has genuine
+# labeled walk-forward history. Smaller tiers have lower production trust caps.
+COMPONENT_TIERS = [
+    ("five_component", ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"], 0.40),
+    ("four_with_cau", ["p_ml", "p_cau", "p_active", "p_stable"], 0.25),
+    ("four_with_stat", ["p_ml", "p_stat", "p_active", "p_stable"], 0.25),
+    ("core_three", ["p_ml", "p_active", "p_stable"], 0.15),
 ]
 
 
@@ -75,6 +51,40 @@ class MetaMetrics:
     brier: float
 
 
+def meta_feature_columns(component_cols: list[str]) -> list[str]:
+    shorts = [c.removeprefix("p_") for c in component_cols]
+    cols = [*component_cols]
+    cols += [f"logp_{s}" for s in shorts]
+    cols += [f"rank_{s}" for s in shorts]
+    cols += [
+        "component_mean",
+        "component_std",
+        "component_min",
+        "component_max",
+        "component_range",
+        "component_cv",
+        "above_median_count",
+    ]
+    for i in range(len(shorts)):
+        for j in range(i + 1, len(shorts)):
+            cols.append(f"x_{shorts[i]}_{shorts[j]}")
+    cols += [
+        "weekday_sin",
+        "weekday_cos",
+        "is_double",
+        "digit_sum_mod10",
+        "reverse_distance",
+    ]
+    return cols
+
+
+META_FEATURE_COLUMNS = meta_feature_columns(COMPONENT_COLS)
+
+
+def _date_strings(values: pd.Series) -> pd.Series:
+    return pd.to_datetime(values).dt.date.astype(str)
+
+
 def _safe_prob(x: np.ndarray, mode: str) -> np.ndarray:
     arr = np.asarray(x, dtype=np.float64)
     if mode == "de":
@@ -82,39 +92,49 @@ def _safe_prob(x: np.ndarray, mode: str) -> np.ndarray:
     return clip01(arr, eps=1e-6)
 
 
-def _normalize_components_by_day(df: pd.DataFrame, mode: str) -> pd.DataFrame:
+def _normalize_components_by_day(
+    df: pd.DataFrame, mode: str, component_cols: list[str]
+) -> pd.DataFrame:
     out = df.copy()
-    for col in COMPONENT_COLS:
+    for col in component_cols:
         out[col] = pd.to_numeric(out[col], errors="coerce")
     if mode != "de":
         return out
 
-    for col in COMPONENT_COLS:
+    for col in component_cols:
         sums = out.groupby("target_date")[col].transform("sum")
         valid = sums > 0
         out.loc[valid, col] = out.loc[valid, col] / sums[valid]
-        out.loc[~valid, col] = 0.01
+        out.loc[~valid, col] = 1.0 / 100.0
     return out
 
 
-def build_meta_features(df: pd.DataFrame, mode: str) -> pd.DataFrame:
-    """Create features available at prediction time; never reads the target y."""
-    required = ["target_date", "number", *COMPONENT_COLS]
+def build_meta_features(
+    df: pd.DataFrame,
+    mode: str,
+    component_cols: list[str] | None = None,
+) -> pd.DataFrame:
+    """Create features available at prediction time; target ``y`` is never read."""
+    selected = list(component_cols or COMPONENT_COLS)
+    required = ["target_date", "number", *selected]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing meta-predictor columns: {missing}")
 
-    work = _normalize_components_by_day(df[required], mode)
+    work = _normalize_components_by_day(df[required], mode, selected)
     work["target_date"] = pd.to_datetime(work["target_date"])
     work["number"] = pd.to_numeric(work["number"], errors="raise").astype(int)
     work.sort_values(["target_date", "number"], inplace=True, ignore_index=True)
 
-    p = work[COMPONENT_COLS].to_numpy(dtype=np.float64)
+    p = work[selected].to_numpy(dtype=np.float64)
+    if not np.isfinite(p).all():
+        raise ValueError("Selected stacked-ML components contain non-finite values")
     p_clip = np.clip(p, 1e-8, 1.0)
-    out = work[["target_date", "number", *COMPONENT_COLS]].copy()
+    out = work[["target_date", "number", *selected]].copy()
 
-    for j, col in enumerate(COMPONENT_COLS):
-        short = col.removeprefix("p_")
+    shorts = [c.removeprefix("p_") for c in selected]
+    for j, col in enumerate(selected):
+        short = shorts[j]
         out[f"logp_{short}"] = np.log(p_clip[:, j])
         rank = work.groupby("target_date")[col].rank(
             method="average", ascending=False, pct=True
@@ -130,15 +150,14 @@ def build_meta_features(df: pd.DataFrame, mode: str) -> pd.DataFrame:
         out["component_mean"], 1e-6
     )
 
-    medians = work.groupby("target_date")[COMPONENT_COLS].transform("median")
-    out["above_median_count"] = (work[COMPONENT_COLS] >= medians).sum(axis=1)
+    medians = work.groupby("target_date")[selected].transform("median")
+    out["above_median_count"] = (work[selected] >= medians).sum(axis=1)
 
-    out["ml_stat_mean"] = 0.5 * (work["p_ml"] + work["p_stat"])
-    path_mean = 0.5 * (work["p_active"] + work["p_stable"])
-    out["path_mean"] = path_mean
-    out["cau_path_mean"] = 0.5 * (work["p_cau"] + path_mean)
-    out["ml_x_stat"] = work["p_ml"] * work["p_stat"]
-    out["cau_x_path"] = work["p_cau"] * path_mean
+    for i in range(len(selected)):
+        for j in range(i + 1, len(selected)):
+            out[f"x_{shorts[i]}_{shorts[j]}"] = (
+                work[selected[i]] * work[selected[j]]
+            )
 
     weekday = out["target_date"].dt.weekday.to_numpy(dtype=np.float64)
     angle = 2.0 * np.pi * weekday / 7.0
@@ -153,7 +172,8 @@ def build_meta_features(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     reverse = 10 * ones + tens
     out["reverse_distance"] = np.abs(numbers - reverse).astype(np.int16)
 
-    return out[["target_date", "number", *META_FEATURE_COLUMNS]]
+    feature_cols = meta_feature_columns(selected)
+    return out[["target_date", "number", *feature_cols]]
 
 
 def current_component_frame(
@@ -177,8 +197,10 @@ def current_component_frame(
     )
 
 
-def _complete_days(df: pd.DataFrame, window_days: int) -> list[str]:
-    required = ["y", *COMPONENT_COLS]
+def _complete_days_for_components(
+    df: pd.DataFrame, component_cols: list[str], window_days: int
+) -> list[str]:
+    required = ["y", *component_cols]
     if any(c not in df.columns for c in required):
         return []
     ok = df.groupby("target_date")[required].apply(
@@ -188,7 +210,24 @@ def _complete_days(df: pd.DataFrame, window_days: int) -> list[str]:
     return days if window_days <= 0 else days[-window_days:]
 
 
-def _four_way_split(days: list[str]) -> tuple[list[str], list[str], list[str], list[str]]:
+def _select_component_tier(
+    df: pd.DataFrame, window_days: int, min_days: int
+) -> tuple[str, list[str], float, list[str], dict[str, int]]:
+    maturity: dict[str, int] = {}
+    for name, cols, trust_cap in COMPONENT_TIERS:
+        days = _complete_days_for_components(df, cols, window_days)
+        maturity[name] = len(days)
+        if len(days) >= min_days:
+            return name, list(cols), float(trust_cap), days, maturity
+    raise RuntimeError(
+        "Stacked ML history is not mature for any supported tier: "
+        + ", ".join(f"{name}={count}" for name, count in maturity.items())
+    )
+
+
+def _four_way_split(
+    days: list[str],
+) -> tuple[list[str], list[str], list[str], list[str]]:
     n = len(days)
     if n < 100:
         raise RuntimeError("At least 100 fully labeled days are required for stacked ML.")
@@ -198,7 +237,12 @@ def _four_way_split(days: list[str]) -> tuple[list[str], list[str], list[str], l
     train_end = n - 3 * block
     cal_end = n - 2 * block
     select_end = n - block
-    return days[:train_end], days[train_end:cal_end], days[cal_end:select_end], days[select_end:]
+    return (
+        days[:train_end],
+        days[train_end:cal_end],
+        days[cal_end:select_end],
+        days[select_end:],
+    )
 
 
 def _candidate_configs() -> list[dict[str, object]]:
@@ -236,6 +280,14 @@ def _recency_row_weights(dates: pd.Series, half_life_days: float) -> np.ndarray:
     ages = np.asarray((latest - d).days, dtype=np.float64)
     w = np.power(0.5, ages / max(float(half_life_days), 1.0))
     w = np.clip(w, 0.05, 1.0)
+    return w / max(float(np.mean(w)), 1e-12)
+
+
+def _day_weights(days: list[str], half_life_days: int) -> np.ndarray:
+    if half_life_days <= 0:
+        return np.ones(len(days), dtype=float)
+    ages = np.arange(len(days) - 1, -1, -1, dtype=float)
+    w = np.power(0.5, ages / max(float(half_life_days), 1.0))
     return w / max(float(np.mean(w)), 1e-12)
 
 
@@ -287,9 +339,12 @@ def _fit_candidate(
 
 
 def _matrix_by_day(df: pd.DataFrame, column: str, days: list[str]) -> np.ndarray:
+    day_key = _date_strings(df["target_date"])
     rows: list[np.ndarray] = []
     for day in days:
-        sub = df[df["target_date"].astype(str) == day].sort_values("number")
+        sub = df[day_key == day].sort_values("number")
+        if len(sub) != 100:
+            raise RuntimeError(f"Incomplete history day {day}: {len(sub)} rows")
         rows.append(sub[column].astype(float).to_numpy())
     return np.vstack(rows)
 
@@ -312,16 +367,70 @@ def _evaluate(mode: str, probs: np.ndarray, y: np.ndarray) -> MetaMetrics:
 
 
 def _row_probs_to_day_matrix(
-    row_probs: np.ndarray, frame: pd.DataFrame, days: list[str], mode: str
+    row_probs: np.ndarray,
+    frame: pd.DataFrame,
+    days: list[str],
+    mode: str,
 ) -> np.ndarray:
     temp = frame[["target_date", "number"]].copy()
     temp["prob"] = np.asarray(row_probs, dtype=float)
+    day_key = _date_strings(temp["target_date"])
     out: list[np.ndarray] = []
     for day in days:
-        sub = temp[temp["target_date"].astype(str) == day].sort_values("number")
-        p = sub["prob"].to_numpy(dtype=float)
-        out.append(_safe_prob(p, mode))
+        sub = temp[day_key == day].sort_values("number")
+        if len(sub) != 100:
+            raise RuntimeError(f"Incomplete meta probability day {day}: {len(sub)} rows")
+        out.append(_safe_prob(sub["prob"].to_numpy(dtype=float), mode))
     return np.vstack(out)
+
+
+def _blend_arrays(
+    arrays: dict[str, np.ndarray], component_cols: list[str], weights: np.ndarray
+) -> np.ndarray:
+    out = np.zeros_like(arrays[component_cols[0]], dtype=np.float64)
+    for i, col in enumerate(component_cols):
+        out += float(weights[i]) * arrays[col]
+    return out
+
+
+def _optimize_linear_weights(
+    mode: str,
+    arrays: dict[str, np.ndarray],
+    component_cols: list[str],
+    y: np.ndarray,
+    day_weights: np.ndarray,
+) -> np.ndarray:
+    k = len(component_cols)
+    prior = np.full(k, 1.0 / k, dtype=float)
+
+    def objective(x: np.ndarray) -> float:
+        w = np.clip(x, 0.0, 1.0)
+        w = w / max(float(w.sum()), 1e-12)
+        p = _blend_arrays(arrays, component_cols, w)
+        if mode == "de":
+            losses = []
+            for i in range(len(p)):
+                pi = normalize_distribution(np.clip(p[i], 0.0, None))
+                losses.append(categorical_logloss(pi, int(np.argmax(y[i]))))
+        else:
+            losses = [bernoulli_logloss(p[i], y[i]) for i in range(len(p))]
+        ll = float(np.average(losses, weights=day_weights))
+        return ll + 0.02 * float(np.square(w - prior).sum())
+
+    bounds = [(0.0, 0.80)] * k
+    constraints = ({"type": "eq", "fun": lambda x: np.sum(x) - 1.0},)
+    result = minimize(
+        objective,
+        x0=prior,
+        bounds=bounds,
+        constraints=constraints,
+        method="SLSQP",
+        options={"maxiter": 200},
+    )
+    if not result.success:
+        return prior
+    w = np.clip(result.x, 0.0, 1.0)
+    return w / max(float(w.sum()), 1e-12)
 
 
 def _baseline_validation(
@@ -329,37 +438,35 @@ def _baseline_validation(
     pre_val_days: list[str],
     val_days: list[str],
     mode: str,
+    component_cols: list[str],
     half_life_days: int,
-) -> tuple[np.ndarray, dict[str, float]]:
-    pre = history[history["target_date"].astype(str).isin(pre_val_days)].copy()
-    all_arrays = {
-        col: _matrix_by_day(pre, col, pre_val_days) for col in COMPONENT_COLS
+) -> tuple[np.ndarray, dict[str, float], dict]:
+    pre = history[_date_strings(history["target_date"]).isin(pre_val_days)].copy()
+    arrays_pre = {
+        col: _matrix_by_day(pre, col, pre_val_days) for col in component_cols
     }
     y_pre = _matrix_by_day(pre, "y", pre_val_days)
     day_w = _day_weights(pre_val_days, half_life_days)
-    weights, _, _ = _optimize_weights_continuous(
-        mode,
-        all_arrays["p_ml"],
-        all_arrays["p_cau"],
-        all_arrays["p_stat"],
-        all_arrays["p_active"],
-        all_arrays["p_stable"],
-        y_pre,
-        day_w,
+    weights = _optimize_linear_weights(
+        mode, arrays_pre, component_cols, y_pre, day_w
     )
-
-    val = history[history["target_date"].astype(str).isin(val_days)].copy()
-    arrays = {col: _matrix_by_day(val, col, val_days) for col in COMPONENT_COLS}
-    p = (
-        weights.w_ml * arrays["p_ml"]
-        + weights.w_cau * arrays["p_cau"]
-        + weights.w_stat * arrays["p_stat"]
-        + weights.w_active * arrays["p_active"]
-        + weights.w_stable * arrays["p_stable"]
-    )
+    p_pre = _blend_arrays(arrays_pre, component_cols, weights)
     if mode == "de":
-        p = np.vstack([normalize_distribution(row) for row in p])
-    return p, weights.as_dict()
+        p_pre = np.vstack([normalize_distribution(row) for row in p_pre])
+    calib = learn_calibration(mode, p_pre, y_pre, sample_weight_by_day=day_w)
+
+    val = history[_date_strings(history["target_date"]).isin(val_days)].copy()
+    arrays_val = {
+        col: _matrix_by_day(val, col, val_days) for col in component_cols
+    }
+    p_val_raw = _blend_arrays(arrays_val, component_cols, weights)
+    p_val = np.vstack(
+        [apply_calibration(mode, row, calib) for row in p_val_raw]
+    )
+    weight_dict = {
+        col: float(weights[i]) for i, col in enumerate(component_cols)
+    }
+    return p_val, weight_dict, calib.as_dict()
 
 
 def train_meta(
@@ -375,35 +482,32 @@ def train_meta(
     if not history_path.exists():
         raise RuntimeError(f"History not found: {history_path}")
     history = pd.read_csv(history_path)
-    days = _complete_days(history, window_days)
-    if len(days) < min_days:
-        raise RuntimeError(
-            f"Stacked ML history is not mature: {len(days)} < {min_days} complete days"
-        )
-
-    history = history[history["target_date"].astype(str).isin(days)].copy()
-    history = _normalize_components_by_day(history, mode)
+    tier, component_cols, trust_cap, days, maturity = _select_component_tier(
+        history, window_days, min_days
+    )
+    history = history[_date_strings(history["target_date"]).isin(days)].copy()
+    history = _normalize_components_by_day(history, mode, component_cols)
     train_days, cal_days, select_days, val_days = _four_way_split(days)
-    features = build_meta_features(history, mode)
-    features["day_str"] = features["target_date"].dt.date.astype(str)
-    labels = history.sort_values(["target_date", "number"])[
-        ["target_date", "number", "y"]
-    ].copy()
+
+    features = build_meta_features(history, mode, component_cols)
+    features["day_str"] = _date_strings(features["target_date"])
+    labels = history[["target_date", "number", "y"]].copy()
     labels["target_date"] = pd.to_datetime(labels["target_date"])
     merged = features.merge(labels, on=["target_date", "number"], how="left")
+    feature_cols = meta_feature_columns(component_cols)
 
     def block(block_days: list[str]) -> tuple[np.ndarray, np.ndarray, pd.Series]:
         sub = merged[merged["day_str"].isin(block_days)]
         return (
-            sub[META_FEATURE_COLUMNS].astype(np.float32).to_numpy(),
+            sub[feature_cols].astype(np.float32).to_numpy(),
             sub["y"].astype(int).to_numpy(),
             sub["target_date"],
         )
 
     X_train_raw, y_train_raw, d_train = block(train_days)
     X_cal, y_cal, d_cal = block(cal_days)
-    X_select, y_select, _ = block(select_days)
-    X_val, y_val, _ = block(val_days)
+    X_select, _, _ = block(select_days)
+    X_val, _, _ = block(val_days)
 
     w_train_raw = _recency_row_weights(d_train, half_life_days=180.0)
     w_cal = _recency_row_weights(d_cal, half_life_days=90.0)
@@ -411,9 +515,11 @@ def train_meta(
         X_train_raw, y_train_raw, w_train_raw, mode, seed=42
     )
 
-    candidates: list[tuple[float, dict[str, object], PlattCalibratedClassifier]] = []
     select_frame = merged[merged["day_str"].isin(select_days)].copy()
     select_y = _matrix_by_day(history, "y", select_days)
+    candidates: list[
+        tuple[float, dict[str, object], PlattCalibratedClassifier]
+    ] = []
     for cfg in _candidate_configs():
         model = _fit_candidate(
             cfg, X_train, y_train, w_train, X_cal, y_cal, w_cal
@@ -436,8 +542,13 @@ def train_meta(
     meta_metrics = _evaluate(mode, p_meta, y_matrix)
 
     pre_val_days = train_days + cal_days + select_days
-    p_baseline, baseline_weights = _baseline_validation(
-        history, pre_val_days, val_days, mode, half_life_days
+    p_baseline, baseline_weights, baseline_calibration = _baseline_validation(
+        history,
+        pre_val_days,
+        val_days,
+        mode,
+        component_cols,
+        half_life_days,
     )
     baseline_metrics = _evaluate(mode, p_baseline, y_matrix)
 
@@ -458,13 +569,19 @@ def train_meta(
 
     meta_trust = 0.0
     if quality_pass:
-        meta_trust = float(np.clip(0.10 + 8.0 * logloss_skill, 0.10, 0.40))
+        meta_trust = float(
+            np.clip(0.05 + 6.0 * logloss_skill, 0.05, trust_cap)
+        )
 
     pack = {
         "schema_version": META_SCHEMA_VERSION,
         "mode": mode,
         "model": best_model,
-        "features": META_FEATURE_COLUMNS,
+        "features": feature_cols,
+        "component_tier": tier,
+        "component_cols": component_cols,
+        "tier_maturity_days": maturity,
+        "tier_trust_cap": trust_cap,
         "selected_candidate": dict(best_cfg),
         "quality_pass": quality_pass,
         "meta_trust": meta_trust,
@@ -475,6 +592,7 @@ def train_meta(
         "logloss_skill": logloss_skill,
         "brier_skill": brier_skill,
         "baseline_weights": baseline_weights,
+        "baseline_calibration": baseline_calibration,
         "history_days": len(days),
         "train_days": train_days,
         "calibration_days": cal_days,
@@ -493,9 +611,8 @@ def train_meta(
     report = {
         k: v
         for k, v in pack.items()
-        if k not in {"model", "features", "train_days", "calibration_days"}
+        if k not in {"model", "train_days", "calibration_days"}
     }
-    report["features"] = META_FEATURE_COLUMNS
     (report_dir / f"meta_report_{mode}.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -503,6 +620,8 @@ def train_meta(
         [
             {
                 "mode": mode,
+                "component_tier": tier,
+                "components": "+".join(component_cols),
                 "candidate": best_cfg["name"],
                 "history_days": len(days),
                 "validation_days": len(val_days),
@@ -513,16 +632,20 @@ def train_meta(
                 "linear_brier": baseline_metrics.brier,
                 "brier_skill": brier_skill,
                 "quality_pass": quality_pass,
+                "tier_trust_cap": trust_cap,
                 "meta_trust": meta_trust,
             }
         ]
     ).to_csv(report_dir / f"meta_report_{mode}.csv", index=False)
 
     print(
-        f"[OK] stacked ML {mode}: candidate={best_cfg['name']} "
-        f"logloss={meta_metrics.logloss:.6f} vs linear={baseline_metrics.logloss:.6f} "
-        f"skill={logloss_skill:.4%} trust={meta_trust:.3f}"
+        f"[OK] stacked ML {mode}: tier={tier} components={component_cols} "
+        f"history={len(days)} candidate={best_cfg['name']} "
+        f"logloss={meta_metrics.logloss:.6f} "
+        f"vs calibrated-linear={baseline_metrics.logloss:.6f} "
+        f"skill={logloss_skill:.4%} trust={meta_trust:.3f}/{trust_cap:.2f}"
     )
+    print("[INFO] tier maturity:", maturity)
     return pack
 
 
@@ -540,18 +663,24 @@ def predict_meta(
         raise ValueError("Incompatible stacked-ML schema")
     if str(pack.get("mode")) != mode:
         raise ValueError("Stacked-ML mode mismatch")
+    component_cols = list(pack.get("component_cols") or [])
+    if not component_cols:
+        raise ValueError("Stacked-ML component tier missing")
     frame = current_component_frame(
         target_date, p_ml, p_cau, p_stat, p_active, p_stable
     )
-    features = build_meta_features(frame, mode)
-    columns = list(pack.get("features", META_FEATURE_COLUMNS))
+    features = build_meta_features(frame, mode, component_cols)
+    columns = list(pack.get("features") or meta_feature_columns(component_cols))
     X = features[columns].astype(np.float32).to_numpy()
     p = pack["model"].predict_proba(X)[:, 1]
     return _safe_prob(p, mode)
 
 
 def blend_predictions(
-    mode: str, linear_prob: np.ndarray, meta_prob: np.ndarray, meta_trust: float
+    mode: str,
+    linear_prob: np.ndarray,
+    meta_prob: np.ndarray,
+    meta_trust: float,
 ) -> np.ndarray:
     trust = float(np.clip(meta_trust, 0.0, 0.40))
     linear = _safe_prob(linear_prob, mode)
@@ -562,7 +691,10 @@ def blend_predictions(
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Train leakage-safe nonlinear stacked predictor from walk-forward history."
+        description=(
+            "Train leakage-safe maturity-tiered nonlinear stacked predictor from "
+            "walk-forward history."
+        )
     )
     ap.add_argument("--mode", choices=["loto", "de"], required=True)
     ap.add_argument("--history-dir", default="data/history")
