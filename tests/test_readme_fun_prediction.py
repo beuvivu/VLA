@@ -66,3 +66,26 @@ def test_load_fun_payload(tmp_path: Path) -> None:
     path.write_text(json.dumps(_sample_payload(), ensure_ascii=False), encoding="utf-8")
     payload = update_readme._load_fun_prediction(path)
     assert payload["target_date"] == "2026-09-01"
+
+
+def test_automation_block_replaces_legacy_schedule_and_is_idempotent() -> None:
+    original = (
+        "# Test\n\n"
+        "## Lịch daily finalization\n\n"
+        "- `18:38` — finalization chính.\n"
+        "- `18:53` — recovery 1.\n\n"
+        "## Dashboard\n\n"
+        "dashboard text\n"
+    )
+    once = update_readme._replace_automation_block(original)
+    twice = update_readme._replace_automation_block(once)
+    assert once == twice
+    assert "## Lịch daily finalization" not in once
+    assert once.count("<!-- AUTOMATION:BEGIN -->") == 1
+    assert once.count("<!-- AUTOMATION:END -->") == 1
+    assert "18:04" in once
+    assert "18:10, 18:20" in once
+    assert "18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28" in once
+    assert "19:35, 20:05" in once
+    assert "20:20" in once
+    assert "07:15" in once

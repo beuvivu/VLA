@@ -55,7 +55,6 @@ def _load_latest_row(csv_path: Path) -> pd.Series:
 def _build_lottery_table(latest_raw: pd.Series) -> str:
     d = pd.to_datetime(latest_raw["date"]).date()
     d_str = d.strftime("%d-%m-%Y")
-
     rows = [f"<tr><td>Date (Ngày)</td><td>{d_str}</td></tr>"]
     for label, fields in GROUPS:
         vals = ", ".join(_fmt_width(f, int(latest_raw[f])) for f in fields)
@@ -138,7 +137,6 @@ def _fmt_prob(value: Any, decimals: int) -> str:
 def _render_fun_prediction_block(payload: dict[str, Any]) -> str:
     target = _fmt_iso_date(payload.get("target_date"))
     anchor = _fmt_iso_date(payload.get("anchor_date"))
-
     groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
     prize_rows: list[str] = []
     for group in groups:
@@ -167,12 +165,9 @@ def _render_fun_prediction_block(payload: dict[str, Any]) -> str:
             rows.append(f"| {rank} | **{number}** | **{prob}** |")
         return "\n".join(rows)
 
-    prize_table = "\n".join(
-        ["| Giải | Dự đoán vui |", "|---|---|"] + prize_rows
-    )
+    prize_table = "\n".join(["| Giải | Dự đoán vui |", "|---|---|"] + prize_rows)
     loto_table = top_table(payload.get("top_loto"), decimals=2)
     de_table = top_table(payload.get("top_de"), decimals=3)
-
     disclaimer = str(
         payload.get("disclaimer")
         or "Dự đoán vui/mô phỏng để tham khảo; không phải kết quả thật và không bảo đảm kết quả tương lai."
@@ -213,6 +208,48 @@ def _replace_fun_prediction_block(text: str, new_block: str) -> str:
     return text.rstrip() + "\n\n" + new_block
 
 
+def _render_automation_block() -> str:
+    return """<!-- AUTOMATION:BEGIN -->
+## ⚙️ Zero-touch automation
+
+Hệ thống vận hành tự động bằng GitHub Actions; không cần chạy cron/VPS bên ngoài trong cấu hình mặc định.
+
+| Lớp tự động | Giờ Việt Nam | Hành vi |
+|---|---|---|
+| Near-live chính | **18:04** | Mở cửa sổ live, poll khoảng 25 giây/lần và kiểm chứng nhiều nguồn. |
+| Live watchdog | **18:10, 18:20** | Nếu live chưa có heartbeat của ngày hiện tại, tự dispatch lại live workflow. |
+| Daily finalization | **18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28** | Poll/fetch, yêu cầu ≥2 provider group độc lập, commit canonical trước rồi mới chạy Statistics + AI/ML + prediction + README + Pages. |
+| Canonical recovery | **19:35, 20:05** | Nếu canonical còn stale hoặc artifact audit fail, tự dispatch lại daily finalization. |
+| Pages recovery | **20:20** | Retry deploy Pages độc lập khi canonical đã ổn. |
+| Overnight safety net | **07:15** | Kiểm tra lại canonical, prediction, README, model artifacts, dashboards và live reconciliation. |
+| Post-finalization | Sau mỗi daily success | Full production audit và đồng bộ branch `live` về đúng canonical `complete_verified`. |
+
+Recovery workflows kiểm tra trạng thái trước khi dispatch để tránh tạo job trùng khi workflow mục tiêu đang `queued/in_progress`. Daily canonical commit vẫn độc lập với Pages/watchdog, nên lỗi dashboard hoặc hậu kiểm không giữ lại kết quả daily đã xác minh.
+
+> GitHub scheduled workflows là best-effort và nguồn dữ liệu bên thứ ba có thể thay đổi/gián đoạn. Watchdog + nhiều recovery slots giúp hệ thống tự phục hồi tối đa trong giới hạn kiến trúc GitHub-only, nhưng không thể tạo SLA tuyệt đối như một scheduler/server chuyên dụng.
+<!-- AUTOMATION:END -->
+"""
+
+
+def _replace_automation_block(text: str) -> str:
+    block = _render_automation_block()
+    begin = "<!-- AUTOMATION:BEGIN -->"
+    end = "<!-- AUTOMATION:END -->"
+    if begin in text and end in text:
+        pre, rest = text.split(begin, 1)
+        _, post = rest.split(end, 1)
+        return pre.rstrip() + "\n\n" + block + "\n" + post.lstrip()
+
+    # Remove the legacy schedule section so README cannot show contradictory times.
+    legacy = re.compile(r"\n## Lịch daily finalization\n.*?(?=\n## Dashboard\n)", re.DOTALL)
+    text = legacy.sub("\n", text, count=1)
+    marker = "## Dashboard"
+    if marker in text:
+        pre, post = text.split(marker, 1)
+        return pre.rstrip() + "\n\n" + block + "\n" + marker + post
+    return text.rstrip() + "\n\n" + block
+
+
 def main() -> None:
     raw_csv = DATA_DIR / "xsmb.csv"
     two_csv = DATA_DIR / "xsmb-2-digits.csv"
@@ -221,7 +258,6 @@ def main() -> None:
 
     latest_raw = _load_latest_row(raw_csv)
     latest_2d = _load_latest_row(two_csv)
-
     lottery_html = _build_lottery_table(latest_raw)
     loto_html = _build_loto_table(latest_2d)
     snapshot_block = _render_block(lottery_html, loto_html)
@@ -237,11 +273,13 @@ def main() -> None:
         fun_block = _render_fun_prediction_block(fun_payload)
         new_txt = _replace_fun_prediction_block(new_txt, fun_block)
 
+    new_txt = _replace_automation_block(new_txt)
     README.write_text(new_txt, encoding="utf-8")
 
     print("README updated for date:", pd.to_datetime(latest_raw["date"]).date())
     if fun_payload:
         print("README fun prediction target:", fun_payload.get("target_date"))
+    print("README zero-touch automation block updated")
 
 
 if __name__ == "__main__":
