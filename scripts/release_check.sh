@@ -48,6 +48,9 @@ printf '%s\n' "== Data integrity + canonical statistics =="
 python src/validate_data.py --lookback-days 90 --out data/health.json
 python src/statistical_signal.py --mode both
 python src/significance_stats.py --windows 30,90,365
+# Rebuild the current production cầu-kèo artifacts before any consumer reads
+# their date metadata. This prevents PR CI from auditing stale committed outputs.
+python src/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20
 python src/statistical_matrices.py
 python src/conditional_matrices.py --top 500
 python src/statistics_ai_overlay.py
