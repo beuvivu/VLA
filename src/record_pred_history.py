@@ -4,9 +4,10 @@ import argparse
 from datetime import date, timedelta
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
-from ensemble_utils import ensure_full_probs, normalize_distribution
+from ensemble_components import probability_component
 
 
 def _latest_anchor_date(xsmb_csv: Path) -> date:
@@ -81,39 +82,46 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for mode in ["loto", "de"]:
-        df_active = _load_path_full(path_ui_dir, mode, "active", anchor)
-        df_stable = _load_path_full(path_ui_dir, mode, "stable", anchor)
-        df_ml = _load_ml_full(ml_dir, mode)
-        df_cau = _load_cau_full(ai_ml_dir, mode)
-        df_stat = _load_stat_full(stat_dir, mode)
-
-        p_active = ensure_full_probs(df_active)
-        p_stable = ensure_full_probs(df_stable)
-        p_ml = ensure_full_probs(df_ml)
-        p_cau = ensure_full_probs(df_cau)
-        p_stat = ensure_full_probs(df_stat)
-
-        if mode == "de":
-            p_active = normalize_distribution(p_active)
-            p_stable = normalize_distribution(p_stable)
-            p_ml = normalize_distribution(p_ml)
-            p_cau = normalize_distribution(p_cau)
-            p_stat = normalize_distribution(p_stat)
+        frames = {
+            "active": _load_path_full(path_ui_dir, mode, "active", anchor),
+            "stable": _load_path_full(path_ui_dir, mode, "stable", anchor),
+            "ml": _load_ml_full(ml_dir, mode),
+            "cau": _load_cau_full(ai_ml_dir, mode),
+            "stat": _load_stat_full(stat_dir, mode),
+        }
+        components = {
+            key: probability_component(frame, mode=mode)  # type: ignore[arg-type]
+            for key, frame in frames.items()
+        }
 
         df_hist = pd.DataFrame(
             {
                 "target_date": [target.isoformat()] * 100,
                 "number": list(range(100)),
-                "p_ml": p_ml,
-                "p_cau": p_cau,
-                "p_stat": p_stat,
-                "p_active": p_active,
-                "p_stable": p_stable,
+                **{
+                    f"p_{key}": (
+                        component.prob
+                        if component.available
+                        else np.full(100, np.nan, dtype=float)
+                    )
+                    for key, component in components.items()
+                },
+                **{
+                    f"has_{key}": [bool(component.available)] * 100
+                    for key, component in components.items()
+                },
             }
         )
         out_path = out_dir / f"pred_{mode}.csv"
         _upsert_history_csv(df_hist, out_path)
-        print(f"[OK] recorded {mode} predictions for target_date={target} -> {out_path}")
+        status = ", ".join(
+            f"{key}={'ok' if component.available else component.reason}"
+            for key, component in components.items()
+        )
+        print(
+            f"[OK] recorded {mode} predictions for target_date={target} -> {out_path}; "
+            f"components: {status}"
+        )
 
 
 if __name__ == "__main__":
