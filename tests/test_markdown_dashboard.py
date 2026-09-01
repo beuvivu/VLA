@@ -12,13 +12,35 @@ def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
     assert dashboard.is_file()
     text = dashboard.read_text(encoding="utf-8")
 
-    assert "# 🎯 VLA · XSMB Analytics Dashboard" in text
-    assert "## 🎟️ Daily Results" in text
-    assert "## 🔮 Forecast & Prediction" in text
-    assert "## 📊 Statistical Data Center" in text
-    assert "## 🗃️ Complete Data Catalog" in text
-    assert "data/advanced" in text
-    assert "data/research" in text
-    assert "data/statistical_signal" in text
-    assert "data/xsmb.csv" in text
-    assert len(text) > 20_000
+    required = [
+        "# ✨ VLA · XSMB ANALYTICAL COCKPIT",
+        "## 🎟️ Daily & Next Draw",
+        "## 🔮 Probability Arena",
+        "## 🔥 Frequency Heatmaps 00–99",
+        "## ⏳ Gap & Rhythm",
+        "## 🤖 AI/ML & Number Dynamics",
+        "## 🧬 Markov · Transition · Dependency",
+        "## 🧩 Head · Tail · Total · Pairs",
+        "## 📆 Special Boards & Conditional Next-day",
+        "## 🧪 Significance & Research Firewall",
+        "Ma trận probability 00–99",
+        "Higher-order dynamics",
+        "100×100 transition lift",
+        "Co-occurrence Phi",
+        "Strategy Lab",
+        "FDR",
+        "35644",
+        "30972",
+        "77",
+        "83",
+    ]
+    for marker in required:
+        assert marker in text, marker
+
+    # Dense GitHub-native presentation: several 10x10 number matrices and
+    # numeric/statistical tables should materially outweigh a simple file index.
+    assert text.count("Đầu\\Đuôi") >= 12
+    assert text.count("▰") >= 20
+    assert text.count("🟪") >= 10
+    assert "Complete Data Catalog" not in text
+    assert len(text) > 70_000
