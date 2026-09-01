@@ -9,6 +9,20 @@ from production_audit import audit, expected_latest_draw
 from reconcile_live_canonical import build_payload
 
 
+POST_BUILD_ONLY_PATHS = {
+    "data/advanced/conditional_matrices_diagnostics.json",
+    "data/advanced/ai_ml_signal_diagnostics.json",
+    "data/advanced/ai_ml_signal_loto.csv",
+    "data/advanced/ai_ml_signal_de.csv",
+}
+POST_BUILD_ONLY_PREFIXES = (
+    "conditional_diagnostics_invalid=",
+    "ai_overlay_diagnostics_invalid=",
+    "ai_overlay_loto_target=",
+    "ai_overlay_de_target=",
+)
+
+
 def test_expected_latest_draw_is_cutoff_aware():
     tz = ZoneInfo("Asia/Ho_Chi_Minh")
     assert expected_latest_draw(datetime(2026, 9, 1, 10, 0, tzinfo=tz), time(18, 15)).isoformat() == "2026-08-31"
@@ -54,9 +68,43 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     assert sum(len(v) for v in payload["prizes"].values()) == 27
 
 
+def _prebuild_critical(critical: list[str]) -> list[str]:
+    """Exclude only artifacts intentionally generated after pytest in release_check.
+
+    The final post-build `production_audit.py --strict` remains authoritative and
+    validates these outputs after `conditional_matrices.py` and
+    `statistics_ai_overlay.py` have generated them.  This prevents pytest order
+    from becoming a hidden prerequisite without weakening the release gate.
+    """
+    out: list[str] = []
+    for item in critical:
+        if item.startswith("missing_or_empty="):
+            paths = item.split("=", 1)[1].split(",")
+            remaining = [p for p in paths if p not in POST_BUILD_ONLY_PATHS]
+            if remaining:
+                out.append("missing_or_empty=" + ",".join(remaining))
+            continue
+        if item.startswith(POST_BUILD_ONLY_PREFIXES):
+            continue
+        out.append(item)
+    return out
+
+
 def test_current_repo_data_and_models_are_internally_consistent():
     result = audit(check_freshness=False, check_docs=False)
-    assert result["ok"], result["critical"]
+    critical = _prebuild_critical(result["critical"])
+    assert not critical, critical
+
+
+def test_prebuild_filter_does_not_hide_unrelated_failures():
+    critical = _prebuild_critical(
+        [
+            "missing_or_empty=data/advanced/ai_ml_signal_diagnostics.json,data/xsmb.csv",
+            "conditional_diagnostics_invalid=not built yet",
+            "health_json_not_ok",
+        ]
+    )
+    assert critical == ["missing_or_empty=data/xsmb.csv", "health_json_not_ok"]
 
 
 def test_watchdog_and_post_finalization_workflows_are_wired():
