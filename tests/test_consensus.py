@@ -66,6 +66,7 @@ def test_consensus_accepts_two_matching_sources(tmp_path: Path) -> None:
     audit = lot._fetch_audit[d.isoformat()]  # regression: audit is part of persisted provenance contract
     assert audit["agreement"] == 2
     assert audit["accepted"] is True
+    assert audit["ambiguous_tie"] is False
 
 
 def test_consensus_rejects_conflicting_single_sources_without_mutating_canonical(tmp_path: Path) -> None:
@@ -80,6 +81,7 @@ def test_consensus_rejects_conflicting_single_sources_without_mutating_canonical
     audit = lot._fetch_audit[d.isoformat()]
     assert audit["accepted"] is False
     assert audit["distinct_results"] == 2
+    assert audit["ambiguous_tie"] is False
 
 
 def test_two_minhnngoc_mirrors_alone_do_not_satisfy_two_provider_consensus(tmp_path: Path) -> None:
@@ -98,3 +100,49 @@ def test_two_minhnngoc_mirrors_alone_do_not_satisfy_two_provider_consensus(tmp_p
     audit = lot._fetch_audit[d.isoformat()]
     assert audit["agreement"] == 1
     assert audit["source_agreement"] == 2
+
+
+def test_consensus_rejects_equal_independent_group_tie(tmp_path: Path) -> None:
+    d = date(2026, 9, 1)
+    a = _result(d, special=12345)
+    b = _result(d, special=54321)
+    lot = _lottery(
+        tmp_path,
+        [
+            FakeSource("xoso.com.vn", a),
+            FakeSource("xosodaiphat.com", a),
+            FakeSource("mketqua.net", b),
+            FakeSource("hainhay.net", b),
+        ],
+    )
+
+    assert lot.fetch(d, min_agreement=2) is False
+    assert not lot.has_date(d)
+    audit = lot._fetch_audit[d.isoformat()]
+    assert audit["accepted"] is False
+    assert audit["agreement"] == 2
+    assert audit["runner_up_agreement"] == 2
+    assert audit["ambiguous_tie"] is True
+
+
+def test_consensus_accepts_unique_two_group_winner_over_mirror_pair(tmp_path: Path) -> None:
+    d = date(2026, 9, 1)
+    winner = _result(d, special=12345)
+    mirror_result = _result(d, special=54321)
+    lot = _lottery(
+        tmp_path,
+        [
+            FakeSource("xoso.com.vn", winner),
+            FakeSource("xosodaiphat.com", winner),
+            FakeSource("www.minhngoc.net.vn", mirror_result),
+            FakeSource("xosominhngoc.com", mirror_result),
+        ],
+    )
+
+    assert lot.fetch(d, min_agreement=2) is True
+    assert lot.has_date(d)
+    audit = lot._fetch_audit[d.isoformat()]
+    assert audit["accepted"] is True
+    assert audit["agreement"] == 2
+    assert audit["runner_up_agreement"] == 1
+    assert audit["ambiguous_tie"] is False

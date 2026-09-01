@@ -68,8 +68,6 @@ def test_slot_consensus_uses_priority_only_for_provisional_values() -> None:
 
 
 def test_parser_accepts_xosodaiphat_dotted_g_labels() -> None:
-    from sources import EXPECTED_COUNTS, extract_partial_prize_map
-
     html = """
     <table>
       <tr><td>G.ĐB</td><td>07523</td></tr>
@@ -94,3 +92,43 @@ def test_minhnngoc_mirrors_count_as_one_independent_group() -> None:
     assert source_independence_key("www.minhngoc.net.vn") == "minhngoc"
     assert source_independence_key("xosominhngoc.com") == "minhngoc"
     assert source_independence_key("xoso.com.vn") != "minhngoc"
+
+
+def test_slot_consensus_rejects_equal_two_group_tie_as_unverified() -> None:
+    maps = []
+    for source, value in [
+        ("xoso.com.vn", "11"),
+        ("xosodaiphat.com", "11"),
+        ("mketqua.net", "22"),
+        ("hainhay.net", "22"),
+    ]:
+        p = {k: [] for k in PRIZE_ORDER}
+        p["prize7"] = [value]
+        maps.append((source, p))
+
+    merged, meta = source_consensus_partial(maps, min_agreement=2)
+    slot = meta["slot_meta"]["prize7[0]"]
+    assert merged["prize7"][0] == "11"  # priority display only
+    assert slot["verified"] is False
+    assert slot["ambiguous_tie"] is True
+    assert meta["verified_slots"] == 0
+
+
+def test_slot_consensus_accepts_unique_independent_winner_over_mirrors() -> None:
+    maps = []
+    for source, value in [
+        ("xoso.com.vn", "11"),
+        ("xosodaiphat.com", "11"),
+        ("www.minhngoc.net.vn", "22"),
+        ("xosominhngoc.com", "22"),
+    ]:
+        p = {k: [] for k in PRIZE_ORDER}
+        p["prize7"] = [value]
+        maps.append((source, p))
+
+    merged, meta = source_consensus_partial(maps, min_agreement=2)
+    slot = meta["slot_meta"]["prize7[0]"]
+    assert merged["prize7"][0] == "11"
+    assert slot["verified"] is True
+    assert slot["ambiguous_tie"] is False
+    assert slot["support_groups"] == ["xoso", "xosodaiphat"]
