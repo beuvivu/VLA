@@ -28,7 +28,12 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
         logging.info("OK %.2fs: %s", elapsed, " ".join(cmd))
         return
     if allow_fail:
-        logging.warning("Command failed (non-critical): %s (code=%s, %.2fs)", " ".join(cmd), proc.returncode, elapsed)
+        logging.warning(
+            "Command failed (non-critical): %s (code=%s, %.2fs)",
+            " ".join(cmd),
+            proc.returncode,
+            elapsed,
+        )
         return
     raise SystemExit(proc.returncode)
 
@@ -39,17 +44,30 @@ def _py(script: str, *args: str) -> list[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="GitHub pipeline: sync -> statistics -> path analysis -> AI/ML -> dashboards."
+        description=(
+            "GitHub pipeline: sync -> statistics -> paths -> base ML -> "
+            "stacked ML -> calibrated predictions -> dashboards."
+        )
     )
-    ap.add_argument("--cutoff", default="18:35", help="Daily cutoff HH:MM in Asia/Ho_Chi_Minh.")
-    ap.add_argument("--window-days", type=int, default=2000, help="History window for ML/path features.")
-    ap.add_argument("--display-days", type=int, default=10, help="Recent days rendered in dashboard pages.")
+    ap.add_argument(
+        "--cutoff", default="18:35", help="Daily cutoff HH:MM in Asia/Ho_Chi_Minh."
+    )
+    ap.add_argument(
+        "--window-days", type=int, default=2000, help="History window for ML/path features."
+    )
+    ap.add_argument(
+        "--display-days", type=int, default=10, help="Recent days rendered in dashboard pages."
+    )
     ap.add_argument("--lag-max", type=int, default=30)
     ap.add_argument("--top-numbers", type=int, default=30)
     ap.add_argument("--top-paths", type=int, default=200)
     ap.add_argument("--fill-missing-days-back", type=int, default=365)
 
-    ap.add_argument("--skip-sync", action="store_true", help="Use committed data only; useful for CI/offline checks.")
+    ap.add_argument(
+        "--skip-sync",
+        action="store_true",
+        help="Use committed data only; useful for CI/offline checks.",
+    )
     ap.add_argument("--skip-path", action="store_true")
     ap.add_argument("--skip-ml", action="store_true")
     ap.add_argument("--skip-docs", action="store_true")
@@ -63,8 +81,6 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     soft_fail = not args.strict
 
-    # 1) Update committed source data. Scheduled GitHub Actions uses this step;
-    # CI can skip it so network availability never affects code validation.
     if not args.skip_sync:
         _run(
             _py(
@@ -76,7 +92,6 @@ def main() -> None:
             )
         )
 
-    # 2) Deterministic statistics and data validation.
     for script in [
         "src/analyze.py",
         "src/advanced_stats.py",
@@ -91,17 +106,26 @@ def main() -> None:
         _run(_py(script), allow_fail=soft_fail)
 
     _run(
-        _py("src/validate_data.py", "--lookback-days", "90", "--out", "data/health.json"),
+        _py(
+            "src/validate_data.py",
+            "--lookback-days",
+            "90",
+            "--out",
+            "data/health.json",
+        ),
         allow_fail=soft_fail,
     )
-    # Staleness is an operational alert rather than a build error. In CI the
-    # committed seed data may intentionally be older than today's draw.
     _run(
-        _py("src/monitor_health.py", "--health", "data/health.json", "--max-staleness-days", "2"),
+        _py(
+            "src/monitor_health.py",
+            "--health",
+            "data/health.json",
+            "--max-staleness-days",
+            "2",
+        ),
         allow_fail=True,
     )
 
-    # 3) Explainable path/cầu statistics.
     if not args.skip_path:
         for mode in ["loto", "de"]:
             _run(
@@ -123,20 +147,39 @@ def main() -> None:
                 allow_fail=soft_fail,
             )
 
-    # 4) AI/ML + calibrated ensemble.
     if not args.skip_ml:
         for mode in ["loto", "de"]:
             _run(
-                _py("src/ml_train.py", "--mode", mode, "--window-days", str(args.window_days)),
+                _py(
+                    "src/ml_train.py",
+                    "--mode",
+                    mode,
+                    "--window-days",
+                    str(args.window_days),
+                ),
                 allow_fail=soft_fail,
             )
 
         _run(
-            _py("src/ml_predict.py", "--cutoff", args.cutoff, "--window-days", str(args.window_days)),
+            _py(
+                "src/ml_predict.py",
+                "--cutoff",
+                args.cutoff,
+                "--window-days",
+                str(args.window_days),
+            ),
             allow_fail=soft_fail,
         )
         _run(
-            _py("src/cau_keo_ml.py", "--mode", "both", "--window-days", str(args.window_days), "--top", "20"),
+            _py(
+                "src/cau_keo_ml.py",
+                "--mode",
+                "both",
+                "--window-days",
+                str(args.window_days),
+                "--top",
+                "20",
+            ),
             allow_fail=soft_fail,
         )
         _run(
@@ -154,9 +197,7 @@ def main() -> None:
             allow_fail=soft_fail,
         )
 
-        # Rebuild matrices so their AI/ML overlays use predictions from this run.
         _run(_py("src/statistical_matrices.py"), allow_fail=soft_fail)
-
         _run(_py("src/record_pred_history.py"), allow_fail=soft_fail)
         _run(_py("src/update_pred_labels.py"), allow_fail=soft_fail)
 
@@ -175,26 +216,49 @@ def main() -> None:
                 ),
                 allow_fail=soft_fail,
             )
-            _run(_py("src/predict_nextday_2d.py", "--mode", mode, "--top", "10"), allow_fail=soft_fail)
+            _run(
+                _py(
+                    "src/meta_predictor.py",
+                    "--mode",
+                    mode,
+                    "--window-days",
+                    "240",
+                    "--min-days",
+                    "100",
+                    "--half-life-days",
+                    "90",
+                ),
+                allow_fail=soft_fail,
+            )
+            _run(
+                _py(
+                    "src/predict_nextday_2d.py",
+                    "--mode",
+                    mode,
+                    "--top",
+                    "10",
+                ),
+                allow_fail=soft_fail,
+            )
 
-    # 5) Rolling model-quality metrics. These commands use graceful [SKIP]
-    # outcomes when history is not mature enough, so they are safe in strict CI.
     for mode in ["loto", "de"]:
         _run(_py("src/prob_eval_history.py", "--mode", mode), allow_fail=soft_fail)
 
-    # 6) Static GitHub Pages output.
     if not args.skip_docs:
-        _run(_py("src/build_docs.py", "--display-days", str(args.display_days)), allow_fail=soft_fail)
+        _run(
+            _py("src/build_docs.py", "--display-days", str(args.display_days)),
+            allow_fail=soft_fail,
+        )
         _run(_py("src/build_docs_ml.py"), allow_fail=soft_fail)
         _run(_py("src/build_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 
-    # 7) Keep Git history compact. Full component history lives in
-    # data/history/pred_{mode}.csv, so dated UI/prediction snapshots only need
-    # a recent operational window.
-    _run(_py("src/cleanup_artifacts.py", "--retention-days", "45"), allow_fail=soft_fail)
+    _run(
+        _py("src/cleanup_artifacts.py", "--retention-days", "45"),
+        allow_fail=soft_fail,
+    )
 
     logging.info("DONE")
 
