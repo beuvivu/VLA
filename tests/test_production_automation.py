@@ -54,8 +54,11 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     assert sum(len(v) for v in payload["prizes"].values()) == 27
 
 
-def test_current_repo_artifacts_are_internally_consistent():
-    result = audit(check_freshness=False)
+def test_current_repo_data_and_models_are_internally_consistent():
+    # Pytest runs before release_check rebuilds generated landing pages. Keep this
+    # pre-build gate focused on canonical/data/model/README consistency; full UI
+    # consistency is enforced after builders and again by post-finalization.
+    result = audit(check_freshness=False, check_docs=False)
     assert result["ok"], result["critical"]
 
 
