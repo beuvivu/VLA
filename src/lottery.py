@@ -59,7 +59,8 @@ class Lottery:
         self._http = http or CloudScraper()
 
         # Ordered public-source policy.  This order is also the deterministic
-        # tie-breaker when live/final sources disagree.
+        # display/diagnostic tie-breaker, but never overrides an ambiguous
+        # verification tie between equally supported independent result groups.
         self._sources: list[Source] = sources or default_sources()
 
         self._data: dict[date, Result] = {}
@@ -133,7 +134,8 @@ class Lottery:
         ``min_agreement=1`` preserves the fast historical backfill behavior. For
         recent/final draws, ``min_agreement=2`` asks all configured providers and
         only promotes a candidate when at least two independent parsers agree on
-        every prize field. Conflicting single-source data is never written.
+        every prize field. Conflicting single-source data is never written, and
+        an equal-support tie between distinct verified candidates is rejected.
         """
         min_agreement = max(1, int(min_agreement))
         candidates: list[tuple[str, Result]] = []
@@ -160,6 +162,8 @@ class Lottery:
                     "accepted": True,
                     "required_agreement": 1,
                     "agreement": 1,
+                    "runner_up_agreement": 0,
+                    "ambiguous_tie": False,
                     "sources": [name],
                     "candidates": 1,
                 }
@@ -171,9 +175,12 @@ class Lottery:
 
         best: list[tuple[str, Result]] = []
         best_group_count = 0
+        runner_up_group_count = 0
+        ambiguous_tie = False
         if grouped:
-            # Prefer the result supported by the most independent provider groups;
-            # source count and priority only break ties.
+            # Canonical promotion is determined by independent-provider support.
+            # Raw source count and configured priority may order candidates for
+            # diagnostics, but MUST NOT break an equal-support verification tie.
             def group_score(items: list[tuple[str, Result]]) -> tuple[int, int, int]:
                 groups = {source_independence_key(name) for name, _ in items}
                 first_priority = min(
@@ -182,17 +189,28 @@ class Lottery:
                 )
                 return len(groups), len(items), -first_priority
 
-            best = max(grouped.values(), key=group_score)
+            ranked = sorted(grouped.values(), key=group_score, reverse=True)
+            best = ranked[0]
             best_group_count = len(
                 {source_independence_key(name) for name, _ in best}
             )
+            if len(ranked) > 1:
+                runner_up_group_count = len(
+                    {source_independence_key(name) for name, _ in ranked[1]}
+                )
+                ambiguous_tie = (
+                    best_group_count >= min_agreement
+                    and runner_up_group_count == best_group_count
+                )
 
-        accepted = best_group_count >= min_agreement
+        accepted = best_group_count >= min_agreement and not ambiguous_tie
         self._fetch_audit[selected_date.isoformat()] = {
             "checked_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
             "accepted": accepted,
             "required_agreement": min_agreement,
             "agreement": best_group_count,
+            "runner_up_agreement": runner_up_group_count,
+            "ambiguous_tie": ambiguous_tie,
             "source_agreement": len(best),
             "independent_groups": list(
                 dict.fromkeys(source_independence_key(name) for name, _ in best)
@@ -201,6 +219,12 @@ class Lottery:
             "candidates": len(candidates),
             "distinct_results": len(grouped),
         }
+        if ambiguous_tie:
+            logger.warning(
+                "Ambiguous consensus tie for %s: top two distinct results each have %d independent group(s); canonical data unchanged",
+                selected_date,
+                best_group_count,
+            )
         if accepted:
             self._data[selected_date] = best[0][1]
             logger.info(
@@ -214,7 +238,7 @@ class Lottery:
 
         if candidates:
             logger.warning(
-                "No %d-source consensus for %s (candidates=%d, distinct=%d); canonical data unchanged",
+                "No unambiguous %d-source consensus for %s (candidates=%d, distinct=%d); canonical data unchanged",
                 min_agreement, selected_date, len(candidates), len(grouped),
             )
         return False
