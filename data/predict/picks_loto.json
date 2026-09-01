@@ -9,11 +9,34 @@
     "w_active": 0.125,
     "w_stable": 0.125
   },
+  "effective_weights": {
+    "w_ml": 0.25,
+    "w_cau": 0.3,
+    "w_stat": 0.2,
+    "w_active": 0.125,
+    "w_stable": 0.125
+  },
+  "component_availability": {
+    "ml": true,
+    "cau": true,
+    "stat": true,
+    "active": true,
+    "stable": true
+  },
+  "component_reasons": {
+    "ml": "ok",
+    "cau": "ok",
+    "stat": "ok",
+    "active": "ok",
+    "stable": "ok"
+  },
   "calibration": {
     "mode": "loto",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 1.0
+    "temperature": 1.0,
+    "active": true,
+    "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
     "active": true,
@@ -21,10 +44,10 @@
     "quality_pass": true,
     "reason": "validated stacked challenger blended into production",
     "candidate": "meta_shallow",
-    "validation_logloss": 0.5443430028053885,
-    "baseline_validation_logloss": 0.5993451270678769,
-    "logloss_skill": 0.0917703703233067,
-    "brier_skill": 0.028417522267640938,
+    "validation_logloss": 0.5443430028053883,
+    "baseline_validation_logloss": 0.5992771601202579,
+    "logloss_skill": 0.09166736356821259,
+    "brier_skill": 0.02840928462027892,
     "trained_through_target_date": "2026-09-01"
   },
   "top4": [

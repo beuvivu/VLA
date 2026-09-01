@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "anchor_date": "2026-09-01",
+  "recent_timeline_length": 20,
+  "research_only": true,
+  "modes": {
+    "loto": {
+      "status": "ok",
+      "rows": 800,
+      "source": "cau_position_evidence_loto.csv",
+      "output": "path_timeline_loto.csv"
+    },
+    "de": {
+      "status": "ok",
+      "rows": 143,
+      "source": "cau_position_evidence_de.csv",
+      "output": "path_timeline_de.csv"
+    }
+  }
+}

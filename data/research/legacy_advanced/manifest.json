@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-01T19:02:34Z",
+  "anchor_date": "2026-09-01",
+  "research_only": true,
+  "aggregate_transition": {
+    "name": "aggregate_loto_transition_independence",
+    "table": {
+      "prev_hit_next_hit": 2232,
+      "prev_hit_next_miss": 6961,
+      "prev_miss_next_hit": 6966,
+      "prev_miss_next_miss": 22441
+    },
+    "statistic": 1.3158323509458858,
+    "p_value": 0.25134138528344496,
+    "expected_min": 2190.6013989637304,
+    "p_next_given_hit": 0.24279342978353094,
+    "p_next_given_absent": 0.23688237494474104,
+    "effect": 0.005911054838789898,
+    "lift": 1.0249535443072486,
+    "method": "2x2 chi-square with Yates continuity correction; all 00..99 transitions pooled"
+  },
+  "weekday_special_tail": {
+    "name": "weekday_vs_full_special_tail",
+    "statistic": 53.911227576707695,
+    "p_value": 0.477803082522784,
+    "dof": 54,
+    "min_expected_cell": 4.547803617571059,
+    "table": [
+      [
+        3,
+        9,
+        6,
+        5,
+        5,
+        7,
+        6,
+        8,
+        3,
+        4
+      ],
+      [
+        7,
+        8,
+        4,
+        5,
+        5,
+        4,
+        5,
+        5,
+        8,
+        5
+      ],
+      [
+        4,
+        7,
+        3,
+        10,
+        7,
+        1,
+        4,
+        4,
+        8,
+        7
+      ],
+      [
+        4,
+        1,
+        6,
+        10,
+        5,
+        9,
+        2,
+        6,
+        6,
+        6
+      ],
+      [
+        4,
+        2,
+        4,
+        6,
+        9,
+        5,
+        5,
+        5,
+        7,
+        8
+      ],
+      [
+        6,
+        5,
+        9,
+        11,
+        8,
+        3,
+        2,
+        4,
+        3,
+        4
+      ],
+      [
+        5,
+        7,
+        5,
+        3,
+        5,
+        4,
+        8,
+        7,
+        8,
+        3
+      ]
+    ],
+    "weekday_order": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
+    "tail_order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "method": "Pearson chi-square contingency test"
+  },
+  "full_special_acf_rows": 15,
+  "full_special_acf_fdr_05": 0,
+  "coverage_windows": [
+    3,
+    7,
+    14,
+    30
+  ],
+  "note": "Exact legacy semantics preserved for research comparability; no production weights consume these artifacts."
+}

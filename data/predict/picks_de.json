@@ -9,23 +9,40 @@
     "w_active": 0.125,
     "w_stable": 0.125
   },
+  "effective_weights": {
+    "w_ml": 0.2857142857142857,
+    "w_cau": 0.34285714285714286,
+    "w_stat": 0.2285714285714286,
+    "w_active": 0.0,
+    "w_stable": 0.14285714285714285
+  },
+  "component_availability": {
+    "ml": true,
+    "cau": true,
+    "stat": true,
+    "active": false,
+    "stable": true
+  },
+  "component_reasons": {
+    "ml": "ok",
+    "cau": "ok",
+    "stat": "ok",
+    "active": "all_zero_probability_vector",
+    "stable": "ok"
+  },
   "calibration": {
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 1.0
+    "temperature": 1.0,
+    "active": false,
+    "reason": "bypassed because one or more ensemble components are unavailable"
   },
   "meta": {
-    "active": true,
-    "trust": 0.0680544702180061,
-    "quality_pass": true,
-    "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_balanced",
-    "validation_logloss": 4.596158321830472,
-    "baseline_validation_logloss": 4.610030264181935,
-    "logloss_skill": 0.0030090783696676837,
-    "brier_skill": 0.00027474760354395666,
-    "trained_through_target_date": "2026-09-01"
+    "active": false,
+    "trust": 0.0,
+    "quality_pass": false,
+    "reason": "stacked model requires all five ensemble components"
   },
   "top4": [
     "83",
@@ -41,7 +58,7 @@
     "43",
     "21",
     "23",
-    "28"
+    "39"
   ],
   "top10": [
     "83",
@@ -51,8 +68,8 @@
     "43",
     "21",
     "23",
-    "28",
     "39",
-    "67"
+    "28",
+    "33"
   ]
 }

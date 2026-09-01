@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-01T19:03:31Z",
+  "anchor_date": "2026-09-01",
+  "target_date": "2026-09-02",
+  "modes": {
+    "loto": {
+      "schema_version": 1,
+      "mode": "loto",
+      "target_date": "2026-09-02",
+      "ml": {
+        "available": true,
+        "source": "cau_keo",
+        "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_loto_all.csv",
+        "attempts": [
+          {
+            "source": "cau_keo",
+            "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_loto_all.csv",
+            "status": "ok"
+          }
+        ]
+      },
+      "weights_configured": {
+        "ml": 0.4,
+        "freq30": 0.25,
+        "pressure": 0.2,
+        "freq7": 0.15
+      },
+      "weights_effective": {
+        "ml": 0.4,
+        "freq30": 0.25,
+        "pressure": 0.2,
+        "freq7": 0.15
+      }
+    },
+    "de": {
+      "schema_version": 1,
+      "mode": "de",
+      "target_date": "2026-09-02",
+      "ml": {
+        "available": true,
+        "source": "cau_keo",
+        "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_de_all.csv",
+        "attempts": [
+          {
+            "source": "cau_keo",
+            "path": "/home/runner/work/VLA/VLA/data/ai_ml/cau_keo_de_all.csv",
+            "status": "ok"
+          }
+        ]
+      },
+      "weights_configured": {
+        "ml": 0.45,
+        "year": 0.2,
+        "gap": 0.25,
+        "freq30": 0.1
+      },
+      "weights_effective": {
+        "ml": 0.45,
+        "year": 0.2,
+        "gap": 0.25,
+        "freq30": 0.1
+      }
+    }
+  }
+}

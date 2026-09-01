@@ -20,7 +20,7 @@
 </head>
 <body>
 <h1>XSMB Analytics Dashboard</h1>
-<div class="meta">Latest data date: <b>2026-09-01</b>  |  Generated: 2026-09-01T15:28:18Z</div>
+<div class="meta">Latest data date: <b>2026-09-01</b>  |  Generated: 2026-09-01T19:03:49Z</div>
 <div class="grid">
 <div class="card">
 <h2>Picks (Lô tô)</h2>
@@ -35,11 +35,34 @@
     "w_active": 0.125,
     "w_stable": 0.125
   },
+  "effective_weights": {
+    "w_ml": 0.25,
+    "w_cau": 0.3,
+    "w_stat": 0.2,
+    "w_active": 0.125,
+    "w_stable": 0.125
+  },
+  "component_availability": {
+    "ml": true,
+    "cau": true,
+    "stat": true,
+    "active": true,
+    "stable": true
+  },
+  "component_reasons": {
+    "ml": "ok",
+    "cau": "ok",
+    "stat": "ok",
+    "active": "ok",
+    "stable": "ok"
+  },
   "calibration": {
     "mode": "loto",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 1.0
+    "temperature": 1.0,
+    "active": true,
+    "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
     "active": true,
@@ -47,10 +70,10 @@
     "quality_pass": true,
     "reason": "validated stacked challenger blended into production",
     "candidate": "meta_shallow",
-    "validation_logloss": 0.5443430028053885,
-    "baseline_validation_logloss": 0.5993451270678769,
-    "logloss_skill": 0.0917703703233067,
-    "brier_skill": 0.028417522267640938,
+    "validation_logloss": 0.5443430028053883,
+    "baseline_validation_logloss": 0.5992771601202579,
+    "logloss_skill": 0.09166736356821259,
+    "brier_skill": 0.02840928462027892,
     "trained_through_target_date": "2026-09-01"
   },
   "top4": [
@@ -96,23 +119,40 @@
     "w_active": 0.125,
     "w_stable": 0.125
   },
+  "effective_weights": {
+    "w_ml": 0.2857142857142857,
+    "w_cau": 0.34285714285714286,
+    "w_stat": 0.2285714285714286,
+    "w_active": 0.0,
+    "w_stable": 0.14285714285714285
+  },
+  "component_availability": {
+    "ml": true,
+    "cau": true,
+    "stat": true,
+    "active": false,
+    "stable": true
+  },
+  "component_reasons": {
+    "ml": "ok",
+    "cau": "ok",
+    "stat": "ok",
+    "active": "all_zero_probability_vector",
+    "stable": "ok"
+  },
   "calibration": {
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 1.0
+    "temperature": 1.0,
+    "active": false,
+    "reason": "bypassed because one or more ensemble components are unavailable"
   },
   "meta": {
-    "active": true,
-    "trust": 0.0680544702180061,
-    "quality_pass": true,
-    "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_balanced",
-    "validation_logloss": 4.596158321830472,
-    "baseline_validation_logloss": 4.610030264181935,
-    "logloss_skill": 0.0030090783696676837,
-    "brier_skill": 0.00027474760354395666,
-    "trained_through_target_date": "2026-09-01"
+    "active": false,
+    "trust": 0.0,
+    "quality_pass": false,
+    "reason": "stacked model requires all five ensemble components"
   },
   "top4": [
     "83",
@@ -128,7 +168,7 @@
     "43",
     "21",
     "23",
-    "28"
+    "39"
   ],
   "top10": [
     "83",
@@ -138,9 +178,9 @@
     "43",
     "21",
     "23",
-    "28",
     "39",
-    "67"
+    "28",
+    "33"
   ]
 }</pre>
 </div>
@@ -582,11 +622,11 @@
 <tbody>
 <tr>
 <td>95</td>
-<td>0.243648</td>
+<td>0.243657</td>
 </tr>
 <tr>
 <td>83</td>
-<td>0.243559</td>
+<td>0.243581</td>
 </tr>
 <tr>
 <td>69</td>
@@ -598,7 +638,7 @@
 </tr>
 <tr>
 <td>17</td>
-<td>0.240945</td>
+<td>0.240949</td>
 </tr>
 <tr>
 <td>36</td>
@@ -610,39 +650,39 @@
 </tr>
 <tr>
 <td>50</td>
-<td>0.239612</td>
+<td>0.239593</td>
 </tr>
 <tr>
 <td>35</td>
-<td>0.239509</td>
+<td>0.239524</td>
 </tr>
 <tr>
 <td>52</td>
-<td>0.239428</td>
-</tr>
-<tr>
-<td>64</td>
-<td>0.239355</td>
+<td>0.239413</td>
 </tr>
 <tr>
 <td>7</td>
 <td>0.239354</td>
 </tr>
 <tr>
+<td>64</td>
+<td>0.239351</td>
+</tr>
+<tr>
 <td>94</td>
-<td>0.239216</td>
+<td>0.239198</td>
 </tr>
 <tr>
 <td>32</td>
 <td>0.239119</td>
 </tr>
 <tr>
-<td>90</td>
-<td>0.239023</td>
+<td>87</td>
+<td>0.239043</td>
 </tr>
 <tr>
-<td>87</td>
-<td>0.239019</td>
+<td>90</td>
+<td>0.239023</td>
 </tr>
 <tr>
 <td>6</td>
@@ -654,7 +694,7 @@
 </tr>
 <tr>
 <td>66</td>
-<td>0.238299</td>
+<td>0.238321</td>
 </tr>
 <tr>
 <td>80</td>
@@ -675,83 +715,83 @@
 <tbody>
 <tr>
 <td>83</td>
-<td>0.011984</td>
+<td>0.012484</td>
 </tr>
 <tr>
 <td>54</td>
-<td>0.011951</td>
+<td>0.012413</td>
 </tr>
 <tr>
 <td>38</td>
-<td>0.011753</td>
+<td>0.012097</td>
 </tr>
 <tr>
 <td>68</td>
-<td>0.011643</td>
+<td>0.011860</td>
 </tr>
 <tr>
 <td>43</td>
-<td>0.011388</td>
+<td>0.011602</td>
 </tr>
 <tr>
 <td>21</td>
-<td>0.011082</td>
+<td>0.011381</td>
 </tr>
 <tr>
 <td>23</td>
-<td>0.011069</td>
-</tr>
-<tr>
-<td>28</td>
-<td>0.011017</td>
+<td>0.011258</td>
 </tr>
 <tr>
 <td>39</td>
-<td>0.011011</td>
+<td>0.011175</td>
 </tr>
 <tr>
-<td>67</td>
-<td>0.010782</td>
+<td>28</td>
+<td>0.011092</td>
 </tr>
 <tr>
 <td>33</td>
-<td>0.010734</td>
-</tr>
-<tr>
-<td>17</td>
-<td>0.010722</td>
+<td>0.010952</td>
 </tr>
 <tr>
 <td>37</td>
-<td>0.010710</td>
+<td>0.010922</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.010906</td>
 </tr>
 <tr>
 <td>60</td>
-<td>0.010696</td>
-</tr>
-<tr>
-<td>47</td>
-<td>0.010692</td>
-</tr>
-<tr>
-<td>79</td>
-<td>0.010646</td>
+<td>0.010905</td>
 </tr>
 <tr>
 <td>1</td>
-<td>0.010628</td>
+<td>0.010822</td>
+</tr>
+<tr>
+<td>67</td>
+<td>0.010803</td>
+</tr>
+<tr>
+<td>47</td>
+<td>0.010796</td>
+</tr>
+<tr>
+<td>79</td>
+<td>0.010740</td>
 </tr>
 <tr>
 <td>44</td>
-<td>0.010572</td>
+<td>0.010722</td>
+</tr>
+<tr>
+<td>13</td>
+<td>0.010641</td>
 </tr>
 <tr>
 <td>78</td>
-<td>0.010554</td>
-</tr>
-<tr>
-<td>61</td>
-<td>0.010515</td>
+<td>0.010572</td>
 </tr>
 </tbody>
 </table>

@@ -11,12 +11,15 @@
     "current_gap":52,
     "mean_gap":37.625,
     "rhythm_pressure":1.3821,
-    "ml_prob":0.01098598,
     "freq_current_year":7,
     "z_score_current_year":2.9339,
+    "ml_prob":0.01098598,
     "ai_ml_signal_score":66.7547,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":15,
@@ -30,12 +33,15 @@
     "current_gap":386,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.01084703,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.01084703,
     "ai_ml_signal_score":65.6801,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":54,
@@ -49,12 +55,15 @@
     "current_gap":40,
     "mean_gap":36.1429,
     "rhythm_pressure":1.1067,
-    "ml_prob":0.01095394,
     "freq_current_year":7,
     "z_score_current_year":2.9339,
+    "ml_prob":0.01095394,
     "ai_ml_signal_score":65.3535,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":7,
@@ -68,12 +77,15 @@
     "current_gap":352,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.01071457,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.01071457,
     "ai_ml_signal_score":60.8977,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":4,
@@ -87,12 +99,15 @@
     "current_gap":67,
     "mean_gap":53.75,
     "rhythm_pressure":1.2465,
-    "ml_prob":0.01106879,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.01106879,
     "ai_ml_signal_score":60.7679,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":2,
@@ -106,12 +121,15 @@
     "current_gap":299,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.01071457,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.01071457,
     "ai_ml_signal_score":57.4651,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":13,
@@ -125,12 +143,15 @@
     "current_gap":10,
     "mean_gap":91.0,
     "rhythm_pressure":0.1099,
-    "ml_prob":0.01092807,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01092807,
     "ai_ml_signal_score":56.4778,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":23,
@@ -144,12 +165,15 @@
     "current_gap":12,
     "mean_gap":65.6,
     "rhythm_pressure":0.1829,
-    "ml_prob":0.01060472,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":56.0229,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":22,
@@ -163,12 +187,15 @@
     "current_gap":24,
     "mean_gap":87.5,
     "rhythm_pressure":0.2743,
-    "ml_prob":0.01060472,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":53.9429,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":0,
@@ -182,12 +209,15 @@
     "current_gap":35,
     "mean_gap":53.5,
     "rhythm_pressure":0.6542,
-    "ml_prob":0.01092807,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01092807,
     "ai_ml_signal_score":53.097,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":17,
@@ -201,12 +231,15 @@
     "current_gap":8,
     "mean_gap":69.4,
     "rhythm_pressure":0.1153,
-    "ml_prob":0.01045036,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.01045036,
     "ai_ml_signal_score":52.7567,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":37,
@@ -220,12 +253,15 @@
     "current_gap":3,
     "mean_gap":59.3333,
     "rhythm_pressure":0.0506,
-    "ml_prob":0.01045036,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.01045036,
     "ai_ml_signal_score":52.4329,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":47,
@@ -239,12 +275,15 @@
     "current_gap":29,
     "mean_gap":76.25,
     "rhythm_pressure":0.3803,
-    "ml_prob":0.01046984,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":51.6392,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":44,
@@ -258,12 +297,15 @@
     "current_gap":1,
     "mean_gap":123.3333,
     "rhythm_pressure":0.0081,
-    "ml_prob":0.01045036,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01045036,
     "ai_ml_signal_score":51.5891,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":83,
@@ -277,12 +319,15 @@
     "current_gap":14,
     "mean_gap":40.125,
     "rhythm_pressure":0.3489,
-    "ml_prob":0.01016951,
     "freq_current_year":6,
     "z_score_current_year":2.2905,
+    "ml_prob":0.01016951,
     "ai_ml_signal_score":50.5314,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":43,
@@ -296,12 +341,15 @@
     "current_gap":13,
     "mean_gap":58.1667,
     "rhythm_pressure":0.2235,
-    "ml_prob":0.01060472,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":50.3733,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":51,
@@ -315,12 +363,15 @@
     "current_gap":69,
     "mean_gap":39.25,
     "rhythm_pressure":1.758,
-    "ml_prob":0.01038156,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.01038156,
     "ai_ml_signal_score":50.3674,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":33,
@@ -334,12 +385,15 @@
     "current_gap":11,
     "mean_gap":70.4,
     "rhythm_pressure":0.1562,
-    "ml_prob":0.01060472,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":50.2438,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"high",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":80,
@@ -353,12 +407,15 @@
     "current_gap":7,
     "mean_gap":70.0,
     "rhythm_pressure":0.1,
-    "ml_prob":0.01045036,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.01045036,
     "ai_ml_signal_score":49.8348,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":25,
@@ -372,12 +429,15 @@
     "current_gap":28,
     "mean_gap":100.3333,
     "rhythm_pressure":0.2791,
-    "ml_prob":0.01046984,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":48.7173,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":67,
@@ -391,12 +451,15 @@
     "current_gap":26,
     "mean_gap":92.3333,
     "rhythm_pressure":0.2816,
-    "ml_prob":0.01046984,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":48.5878,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":60,
@@ -410,12 +473,15 @@
     "current_gap":27,
     "mean_gap":110.0,
     "rhythm_pressure":0.2455,
-    "ml_prob":0.01060472,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":48.4229,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":94,
@@ -429,12 +495,15 @@
     "current_gap":51,
     "mean_gap":82.5,
     "rhythm_pressure":0.6182,
-    "ml_prob":0.01045508,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.01045508,
     "ai_ml_signal_score":47.7765,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":68,
@@ -448,12 +517,15 @@
     "current_gap":4,
     "mean_gap":37.1429,
     "rhythm_pressure":0.1077,
-    "ml_prob":0.0100514,
     "freq_current_year":6,
     "z_score_current_year":2.2905,
+    "ml_prob":0.0100514,
     "ai_ml_signal_score":47.5831,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":63,
@@ -467,12 +539,15 @@
     "current_gap":47,
     "mean_gap":98.0,
     "rhythm_pressure":0.4796,
-    "ml_prob":0.01060472,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":47.5754,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":10,
@@ -486,12 +561,15 @@
     "current_gap":32,
     "mean_gap":278.0,
     "rhythm_pressure":0.1151,
-    "ml_prob":0.01092807,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01092807,
     "ai_ml_signal_score":47.1884,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":53,
@@ -505,12 +583,15 @@
     "current_gap":66,
     "mean_gap":55.25,
     "rhythm_pressure":1.1946,
-    "ml_prob":0.01046984,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":46.1784,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":42,
@@ -524,12 +605,15 @@
     "current_gap":64,
     "mean_gap":55.5,
     "rhythm_pressure":1.1532,
-    "ml_prob":0.01046984,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":46.0489,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":57,
@@ -543,12 +627,15 @@
     "current_gap":22,
     "mean_gap":175.5,
     "rhythm_pressure":0.1254,
-    "ml_prob":0.01046984,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":45.4715,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":85,
@@ -562,12 +649,15 @@
     "current_gap":54,
     "mean_gap":76.0,
     "rhythm_pressure":0.7105,
-    "ml_prob":0.01046984,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":45.4012,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":91,
@@ -581,12 +671,15 @@
     "current_gap":21,
     "mean_gap":89.75,
     "rhythm_pressure":0.234,
-    "ml_prob":0.01032208,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01032208,
     "ai_ml_signal_score":45.3854,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":97,
@@ -600,12 +693,15 @@
     "current_gap":57,
     "mean_gap":74.0,
     "rhythm_pressure":0.7703,
-    "ml_prob":0.01045508,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.01045508,
     "ai_ml_signal_score":45.3079,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":70,
@@ -619,12 +715,15 @@
     "current_gap":42,
     "mean_gap":122.0,
     "rhythm_pressure":0.3443,
-    "ml_prob":0.01060472,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01060472,
     "ai_ml_signal_score":44.3944,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":52,
@@ -638,12 +737,15 @@
     "current_gap":65,
     "mean_gap":76.25,
     "rhythm_pressure":0.8525,
-    "ml_prob":0.01046984,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":43.2565,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":65,
@@ -657,12 +759,15 @@
     "current_gap":60,
     "mean_gap":133.5,
     "rhythm_pressure":0.4494,
-    "ml_prob":0.01046984,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":42.9327,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":21,
@@ -676,12 +781,15 @@
     "current_gap":0,
     "mean_gap":64.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00984187,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.00984187,
     "ai_ml_signal_score":42.528,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":26,
@@ -695,12 +803,15 @@
     "current_gap":20,
     "mean_gap":124.5,
     "rhythm_pressure":0.1606,
-    "ml_prob":0.01046984,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":42.4849,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":48,
@@ -714,12 +825,15 @@
     "current_gap":132,
     "mean_gap":27.5,
     "rhythm_pressure":4.8,
-    "ml_prob":0.00975986,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.00975986,
     "ai_ml_signal_score":42.3368,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":96,
@@ -733,12 +847,15 @@
     "current_gap":16,
     "mean_gap":118.5,
     "rhythm_pressure":0.135,
-    "ml_prob":0.01032208,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01032208,
     "ai_ml_signal_score":42.2045,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":56,
@@ -752,12 +869,15 @@
     "current_gap":386,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00964055,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":42.1776,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":58,
@@ -771,12 +891,15 @@
     "current_gap":386,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00964055,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":42.1776,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":98,
@@ -790,12 +913,15 @@
     "current_gap":386,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00964055,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":42.1776,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":11,
@@ -809,12 +935,15 @@
     "current_gap":98,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.01043093,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01043093,
     "ai_ml_signal_score":41.7786,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":38,
@@ -828,12 +957,15 @@
     "current_gap":9,
     "mean_gap":33.875,
     "rhythm_pressure":0.2657,
-    "ml_prob":0.00973068,
     "freq_current_year":6,
     "z_score_current_year":2.2905,
+    "ml_prob":0.00973068,
     "ai_ml_signal_score":41.6591,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":45,
@@ -847,12 +979,15 @@
     "current_gap":5,
     "mean_gap":124.6667,
     "rhythm_pressure":0.0401,
-    "ml_prob":0.01031742,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01031742,
     "ai_ml_signal_score":41.4013,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":87,
@@ -866,12 +1001,15 @@
     "current_gap":59,
     "mean_gap":108.0,
     "rhythm_pressure":0.5463,
-    "ml_prob":0.01032208,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01032208,
     "ai_ml_signal_score":39.9894,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":71,
@@ -885,12 +1023,15 @@
     "current_gap":58,
     "mean_gap":164.0,
     "rhythm_pressure":0.3537,
-    "ml_prob":0.01046984,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01046984,
     "ai_ml_signal_score":39.946,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":90,
@@ -904,12 +1045,15 @@
     "current_gap":45,
     "mean_gap":100.3333,
     "rhythm_pressure":0.4485,
-    "ml_prob":0.01032208,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01032208,
     "ai_ml_signal_score":39.0827,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":77,
@@ -923,12 +1067,15 @@
     "current_gap":200,
     "mean_gap":60.6667,
     "rhythm_pressure":3.2967,
-    "ml_prob":0.00964055,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":38.7024,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":16,
@@ -942,12 +1089,15 @@
     "current_gap":37,
     "mean_gap":115.3333,
     "rhythm_pressure":0.3208,
-    "ml_prob":0.01032358,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01032358,
     "ai_ml_signal_score":38.5938,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":12,
@@ -961,12 +1111,15 @@
     "current_gap":119,
     "mean_gap":83.0,
     "rhythm_pressure":1.4337,
-    "ml_prob":0.01004243,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01004243,
     "ai_ml_signal_score":38.4279,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":39,
@@ -980,12 +1133,15 @@
     "current_gap":15,
     "mean_gap":58.5,
     "rhythm_pressure":0.2564,
-    "ml_prob":0.00968956,
     "freq_current_year":5,
     "z_score_current_year":1.6471,
+    "ml_prob":0.00968956,
     "ai_ml_signal_score":38.3897,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":72,
@@ -999,12 +1155,15 @@
     "current_gap":2,
     "mean_gap":157.0,
     "rhythm_pressure":0.0127,
-    "ml_prob":0.01031742,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01031742,
     "ai_ml_signal_score":38.3498,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":55,
@@ -1018,12 +1177,15 @@
     "current_gap":74,
     "mean_gap":53.5,
     "rhythm_pressure":1.3832,
-    "ml_prob":0.00985368,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.00985368,
     "ai_ml_signal_score":37.5507,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":6,
@@ -1037,12 +1199,15 @@
     "current_gap":148,
     "mean_gap":190.0,
     "rhythm_pressure":0.7789,
-    "ml_prob":0.01004243,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01004243,
     "ai_ml_signal_score":37.449,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":86,
@@ -1056,12 +1221,15 @@
     "current_gap":223,
     "mean_gap":32.75,
     "rhythm_pressure":6.8092,
-    "ml_prob":0.00964055,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":37.3349,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":73,
@@ -1075,12 +1243,15 @@
     "current_gap":307,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00964055,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":37.061,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":14,
@@ -1094,12 +1265,15 @@
     "current_gap":80,
     "mean_gap":43.6,
     "rhythm_pressure":1.8349,
-    "ml_prob":0.00979954,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.00979954,
     "ai_ml_signal_score":36.8847,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":5,
@@ -1113,12 +1287,15 @@
     "current_gap":85,
     "mean_gap":53.0,
     "rhythm_pressure":1.6038,
-    "ml_prob":0.01003927,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01003927,
     "ai_ml_signal_score":36.1643,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":8,
@@ -1132,12 +1309,15 @@
     "current_gap":83,
     "mean_gap":60.0,
     "rhythm_pressure":1.3833,
-    "ml_prob":0.01003927,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.01003927,
     "ai_ml_signal_score":36.0347,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":78,
@@ -1151,12 +1331,15 @@
     "current_gap":17,
     "mean_gap":86.0,
     "rhythm_pressure":0.1977,
-    "ml_prob":0.00968956,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.00968956,
     "ai_ml_signal_score":35.662,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":3,
@@ -1170,12 +1353,15 @@
     "current_gap":76,
     "mean_gap":207.0,
     "rhythm_pressure":0.3671,
-    "ml_prob":0.01013893,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.01013893,
     "ai_ml_signal_score":34.6657,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":49,
@@ -1189,12 +1375,15 @@
     "current_gap":179,
     "mean_gap":62.0,
     "rhythm_pressure":2.8871,
-    "ml_prob":0.00964055,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":34.4852,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":74,
@@ -1208,12 +1397,15 @@
     "current_gap":218,
     "mean_gap":96.0,
     "rhythm_pressure":2.2708,
-    "ml_prob":0.00964055,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":34.1539,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":59,
@@ -1227,12 +1419,15 @@
     "current_gap":127,
     "mean_gap":53.75,
     "rhythm_pressure":2.3628,
-    "ml_prob":0.00964055,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":33.9744,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":75,
@@ -1246,12 +1441,15 @@
     "current_gap":124,
     "mean_gap":130.5,
     "rhythm_pressure":0.9502,
-    "ml_prob":0.00975986,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00975986,
     "ai_ml_signal_score":33.2473,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":61,
@@ -1265,12 +1463,15 @@
     "current_gap":6,
     "mean_gap":112.6667,
     "rhythm_pressure":0.0533,
-    "ml_prob":0.00974637,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00974637,
     "ai_ml_signal_score":33.1991,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":95,
@@ -1284,12 +1485,15 @@
     "current_gap":166,
     "mean_gap":136.0,
     "rhythm_pressure":1.2206,
-    "ml_prob":0.00975986,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00975986,
     "ai_ml_signal_score":33.1103,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":62,
@@ -1303,12 +1507,15 @@
     "current_gap":220,
     "mean_gap":33.3333,
     "rhythm_pressure":6.6,
-    "ml_prob":0.00942838,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00942838,
     "ai_ml_signal_score":33.0075,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":69,
@@ -1322,12 +1529,15 @@
     "current_gap":110,
     "mean_gap":29.0,
     "rhythm_pressure":3.7931,
-    "ml_prob":0.00964055,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":32.8734,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":82,
@@ -1341,12 +1551,15 @@
     "current_gap":147,
     "mean_gap":101.0,
     "rhythm_pressure":1.4554,
-    "ml_prob":0.00975986,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00975986,
     "ai_ml_signal_score":31.8797,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":93,
@@ -1360,12 +1573,15 @@
     "current_gap":86,
     "mean_gap":47.6667,
     "rhythm_pressure":1.8042,
-    "ml_prob":0.00966031,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00966031,
     "ai_ml_signal_score":31.704,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":76,
@@ -1379,12 +1595,15 @@
     "current_gap":130,
     "mean_gap":82.0,
     "rhythm_pressure":1.5854,
-    "ml_prob":0.00964055,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":31.3116,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":31,
@@ -1398,12 +1617,15 @@
     "current_gap":356,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00916882,
     "freq_current_year":0,
     "z_score_current_year":-1.5699,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":31.0452,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":92,
@@ -1417,12 +1639,15 @@
     "current_gap":115,
     "mean_gap":42.3333,
     "rhythm_pressure":2.7165,
-    "ml_prob":0.00966336,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00966336,
     "ai_ml_signal_score":30.7844,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":64,
@@ -1436,12 +1661,15 @@
     "current_gap":121,
     "mean_gap":95.5,
     "rhythm_pressure":1.267,
-    "ml_prob":0.00964055,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":30.7287,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":46,
@@ -1455,12 +1683,15 @@
     "current_gap":163,
     "mean_gap":94.0,
     "rhythm_pressure":1.734,
-    "ml_prob":0.00964055,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":30.5918,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":79,
@@ -1474,12 +1705,15 @@
     "current_gap":25,
     "mean_gap":56.5,
     "rhythm_pressure":0.4425,
-    "ml_prob":0.00968956,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00968956,
     "ai_ml_signal_score":30.4659,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":66,
@@ -1493,12 +1727,15 @@
     "current_gap":153,
     "mean_gap":164.0,
     "rhythm_pressure":0.9329,
-    "ml_prob":0.00964055,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":29.9441,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":84,
@@ -1512,12 +1749,15 @@
     "current_gap":77,
     "mean_gap":90.5,
     "rhythm_pressure":0.8508,
-    "ml_prob":0.00973323,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00973323,
     "ai_ml_signal_score":29.6844,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":27,
@@ -1531,12 +1771,15 @@
     "current_gap":231,
     "mean_gap":72.5,
     "rhythm_pressure":3.1862,
-    "ml_prob":0.00928235,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00928235,
     "ai_ml_signal_score":28.018,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":41,
@@ -1550,12 +1793,15 @@
     "current_gap":118,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00964055,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":27.6773,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":40,
@@ -1569,12 +1815,15 @@
     "current_gap":117,
     "mean_gap":209.0,
     "rhythm_pressure":0.5598,
-    "ml_prob":0.00964055,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00964055,
     "ai_ml_signal_score":27.6125,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":24,
@@ -1588,12 +1837,15 @@
     "current_gap":165,
     "mean_gap":52.3333,
     "rhythm_pressure":3.1529,
-    "ml_prob":0.00916882,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":27.2461,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":34,
@@ -1607,12 +1859,15 @@
     "current_gap":33,
     "mean_gap":114.6667,
     "rhythm_pressure":0.2878,
-    "ml_prob":0.00989044,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00989044,
     "ai_ml_signal_score":27.0401,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":28,
@@ -1626,12 +1881,15 @@
     "current_gap":38,
     "mean_gap":70.75,
     "rhythm_pressure":0.5371,
-    "ml_prob":0.00941664,
     "freq_current_year":4,
     "z_score_current_year":1.0037,
+    "ml_prob":0.00941664,
     "ai_ml_signal_score":26.7056,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":30,
@@ -1645,12 +1903,15 @@
     "current_gap":199,
     "mean_gap":84.0,
     "rhythm_pressure":2.369,
-    "ml_prob":0.00916882,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":26.591,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":81,
@@ -1664,12 +1925,15 @@
     "current_gap":99,
     "mean_gap":108.0,
     "rhythm_pressure":0.9167,
-    "ml_prob":0.00950125,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00950125,
     "ai_ml_signal_score":26.5903,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"medium",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":18,
@@ -1683,12 +1947,15 @@
     "current_gap":18,
     "mean_gap":0.0,
     "rhythm_pressure":0.0,
-    "ml_prob":0.00956324,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00956324,
     "ai_ml_signal_score":24.6946,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":19,
@@ -1702,12 +1969,15 @@
     "current_gap":48,
     "mean_gap":145.5,
     "rhythm_pressure":0.3299,
-    "ml_prob":0.00956324,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00956324,
     "ai_ml_signal_score":24.4948,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":50,
@@ -1721,12 +1991,15 @@
     "current_gap":96,
     "mean_gap":56.4,
     "rhythm_pressure":1.7021,
-    "ml_prob":0.00938507,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00938507,
     "ai_ml_signal_score":24.1327,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":9,
@@ -1740,12 +2013,15 @@
     "current_gap":30,
     "mean_gap":303.0,
     "rhythm_pressure":0.099,
-    "ml_prob":0.00970412,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00970412,
     "ai_ml_signal_score":23.2161,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":32,
@@ -1759,12 +2035,15 @@
     "current_gap":75,
     "mean_gap":41.5,
     "rhythm_pressure":1.8072,
-    "ml_prob":0.009257,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.009257,
     "ai_ml_signal_score":23.135,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":36,
@@ -1778,12 +2057,15 @@
     "current_gap":71,
     "mean_gap":44.1667,
     "rhythm_pressure":1.6075,
-    "ml_prob":0.009257,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.009257,
     "ai_ml_signal_score":22.8759,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":29,
@@ -1797,12 +2079,15 @@
     "current_gap":161,
     "mean_gap":55.0,
     "rhythm_pressure":2.9273,
-    "ml_prob":0.00916882,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":21.2728,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":20,
@@ -1816,12 +2101,15 @@
     "current_gap":144,
     "mean_gap":147.0,
     "rhythm_pressure":0.9796,
-    "ml_prob":0.00916882,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":20.1717,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":35,
@@ -1835,12 +2123,15 @@
     "current_gap":138,
     "mean_gap":113.5,
     "rhythm_pressure":1.2159,
-    "ml_prob":0.00916882,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00916882,
     "ai_ml_signal_score":19.7831,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":88,
@@ -1854,12 +2145,15 @@
     "current_gap":156,
     "mean_gap":46.75,
     "rhythm_pressure":3.3369,
-    "ml_prob":0.00875875,
     "freq_current_year":2,
     "z_score_current_year":-0.2831,
+    "ml_prob":0.00875875,
     "ai_ml_signal_score":15.8179,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":89,
@@ -1873,12 +2167,15 @@
     "current_gap":55,
     "mean_gap":91.0,
     "rhythm_pressure":0.6044,
-    "ml_prob":0.00878858,
     "freq_current_year":3,
     "z_score_current_year":0.3603,
+    "ml_prob":0.00878858,
     "ai_ml_signal_score":12.7147,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   },
   {
     "number":99,
@@ -1892,11 +2189,14 @@
     "current_gap":50,
     "mean_gap":200.0,
     "rhythm_pressure":0.25,
-    "ml_prob":0.00904066,
     "freq_current_year":1,
     "z_score_current_year":-0.9265,
+    "ml_prob":0.00904066,
     "ai_ml_signal_score":11.5871,
+    "ml_available":true,
+    "ml_source":"cau_keo",
+    "target_date":"2026-09-02",
     "score_band":"low",
-    "note":"statistical ranking signal only; not a guaranteed prediction"
+    "note":"date-verified ML + current descriptive statistics; ranking signal only"
   }
 ]

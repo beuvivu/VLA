@@ -182,5 +182,6 @@
       "excel_text": "06"
     }
   ],
+  "calendar_contiguous_required": true,
   "excel_note": "Use data/excel/*.xlsx for Excel consumption; lottery codes are written as text to preserve leading zeroes."
 }

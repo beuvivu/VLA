@@ -1,10 +1,11 @@
 {
-  "schema_version": 1,
-  "generated_at_utc": "2026-09-01T15:27:46Z",
+  "schema_version": 2,
+  "generated_at_utc": "2026-09-01T19:02:37Z",
   "anchor_date": "2026-09-01",
   "modes": {
     "loto": {
       "mode": "loto",
+      "calendar_daily_contiguous": true,
       "hypotheses": 1458,
       "train_days": 231,
       "validation_days": 77,
@@ -19,13 +20,14 @@
         "null_max_skill_mean": 0.09510312229998046,
         "null_max_skill_p95": 0.11178649529164995,
         "p_value": 0.09375,
-        "method": "max-statistic circular shift; preserves daily cross-sectional outcomes"
+        "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
       "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
     },
     "de": {
       "mode": "de",
+      "calendar_daily_contiguous": true,
       "hypotheses": 1458,
       "train_days": 231,
       "validation_days": 77,
@@ -40,7 +42,7 @@
         "null_max_skill_mean": 0.029232456745684258,
         "null_max_skill_p95": 0.037594504261170926,
         "p_value": 0.140625,
-        "method": "max-statistic circular shift; preserves daily cross-sectional outcomes"
+        "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
       "note": "No strategy is promoted automatically. gate_pass only means the searched family warrants further review; the production ensemble remains unchanged unless a separate validated promotion is implemented."
