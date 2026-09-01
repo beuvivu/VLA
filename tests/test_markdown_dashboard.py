@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
-    subprocess.run([sys.executable, "src/build_markdown_dashboard.py"], check=True)
+    subprocess.run([sys.executable, "src/build_markdown_dashboard_v3.py"], check=True)
 
     dashboard = Path("DASHBOARD.md")
     assert dashboard.is_file()
@@ -14,33 +14,41 @@ def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
 
     required = [
         "# ✨ VLA · XSMB ANALYTICAL COCKPIT",
+        "Balanced UI · explicit legends",
         "## 🎟️ Daily & Next Draw",
         "## 🔮 Probability Arena",
         "## 🔥 Frequency Heatmaps 00–99",
         "## ⏳ Gap & Rhythm",
-        "## 🤖 AI/ML & Number Dynamics",
+        "## 🤖 AI/ML & Dynamics",
         "## 🧬 Markov · Transition · Dependency",
-        "## 🧩 Head · Tail · Total · Pairs",
-        "## 📆 Special Boards & Conditional Next-day",
-        "## 🧪 Significance & Research Firewall",
-        "Ma trận probability 00–99",
-        "Higher-order dynamics",
-        "100×100 transition lift",
+        "## 🧩 Structure & Pairs",
+        "## 📆 Special Boards & Conditional",
+        "## 🧪 Significance & Research",
+        "Màu | Khoảng giá trị | Ý nghĩa",
+        "Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Visual",
+        "Lift vs baseline",
+        "calendar 7 cột",
         "Co-occurrence Phi",
         "Strategy Lab",
-        "FDR",
-        "35644",
-        "30972",
-        "77",
-        "83",
+        "q(FDR)",
+        "Audit & Deep Links",
     ]
     for marker in required:
         assert marker in text, marker
 
-    # Dense GitHub-native presentation: several 10x10 number matrices and
-    # numeric/statistical tables should materially outweigh a simple file index.
+    # Heatmaps must always explain their color scale and standard analytical
+    # tables must expose a dedicated interpretation column.
     assert text.count("Đầu\\Đuôi") >= 12
+    assert text.count("Màu | Khoảng giá trị | Ý nghĩa") >= 12
+    assert text.count("| Ý nghĩa | Visual |") >= 20
     assert text.count("▰") >= 20
     assert text.count("🟪") >= 10
+
+    # Prevent the previous bottom-page layout failure: the 31-column monthly
+    # board is replaced by calendar-shaped 7-column tables and lag panels render.
+    assert "| month_key | 01 | 02 | 03 | 04 | 05 |" not in text
+    assert "Multi-lag dependency Loto\n_Chưa có dữ liệu._" not in text
+    assert "Multi-lag dependency ĐB\n_Chưa có dữ liệu._" not in text
+
     assert "Complete Data Catalog" not in text
     assert len(text) > 70_000
