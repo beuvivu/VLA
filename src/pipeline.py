@@ -130,10 +130,11 @@ def main() -> None:
     ]:
         _run(_py(script), allow_fail=soft_fail)
 
-    # ``statistical_matrices.py`` still contains the historical row-adjacent
-    # conditional implementation. Always overwrite those three artifact families
-    # with the exact-calendar canonical implementation before downstream readers.
+    # ``statistical_matrices.py`` still contains historical row-adjacent
+    # conditionals and an undated ML overlay loader. Canonical post-processors
+    # overwrite both artifact families before any downstream reader sees them.
     _run(_py("src/conditional_matrices.py", "--top", "500"), allow_fail=soft_fail)
+    _run(_py("src/statistics_ai_overlay.py"), allow_fail=soft_fail)
 
     _run(
         _py("src/research_diagnostics.py", "--permutations", "127", "--max-lag", "14"),
@@ -244,10 +245,11 @@ def main() -> None:
         )
         _run(_py("src/path_timeline_evidence.py", "--recent", "20"), allow_fail=True)
 
-        # Rebuild matrices after fresh ML artifacts, then immediately overwrite
-        # legacy row-adjacent conditional outputs again with canonical ones.
+        # Rebuild matrices after fresh ML artifacts and canonicalize both the
+        # next-day conditionals and the target-date-aware statistics AI overlay.
         _run(_py("src/statistical_matrices.py"), allow_fail=soft_fail)
         _run(_py("src/conditional_matrices.py", "--top", "500"), allow_fail=soft_fail)
+        _run(_py("src/statistics_ai_overlay.py"), allow_fail=soft_fail)
         _run(_py("src/record_pred_history.py"), allow_fail=soft_fail)
         _run(_py("src/update_pred_labels.py"), allow_fail=soft_fail)
 
