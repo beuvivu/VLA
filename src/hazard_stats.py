@@ -10,72 +10,91 @@ from lottery import Lottery
 from path_models import build_daily_targets
 
 
+def _calendar_ordinals(df_2d: pd.DataFrame) -> np.ndarray:
+    dates = pd.DatetimeIndex(pd.to_datetime(df_2d["date"]).dt.normalize())
+    if len(dates) == 0:
+        return np.zeros(0, dtype=np.int32)
+    return np.asarray((dates - dates[0]).days, dtype=np.int32)
+
+
 def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
-    """Aggregate hazard by gap for loto hits.
-    For each day and each number, gap = days since last hit (capped).
-    hazard(g) = P(hit today | current gap == g).
+    """Aggregate Loto hazard by real calendar-day absence gap.
+
+    For each observed draw date and number, gap is elapsed calendar days since
+    the previous hit. Missing rows therefore increase the elapsed gap rather than
+    being silently treated as one day.
     """
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
+    ordinals = _calendar_ordinals(df_2d)
     n = len(loto_targets)
     if n == 0:
         return pd.DataFrame()
 
-    last_seen = np.full(100, -10**9, dtype=np.int32)
-    # denominators: how many (day,number) had gap=g
+    max_gap = max(1, int(max_gap))
+    last_seen = np.full(100, -10**9, dtype=np.int64)
     denom = np.zeros(max_gap + 1, dtype=np.int64)
     numer = np.zeros(max_gap + 1, dtype=np.int64)
 
     for t in range(n):
+        day = int(ordinals[t])
         hit_mask = np.zeros(100, dtype=bool)
         for x in loto_targets[t]:
             hit_mask[int(x)] = True
 
-        gaps = t - last_seen
-        gaps = np.clip(gaps, 0, max_gap)
-
-        # count denom for all numbers
-        for g in gaps.tolist():
-            denom[g] += 1
-
-        # count numer for hit numbers
-        for x in np.where(hit_mask)[0]:
-            g = int(gaps[x])
-            numer[g] += 1
-            last_seen[x] = t
+        gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
+        denom += np.bincount(gaps, minlength=max_gap + 1)
+        hit_numbers = np.flatnonzero(hit_mask)
+        if hit_numbers.size:
+            hit_gaps = gaps[hit_numbers]
+            numer += np.bincount(hit_gaps, minlength=max_gap + 1)
+            last_seen[hit_numbers] = day
 
     p = numer / np.maximum(denom, 1)
-    df = pd.DataFrame({"gap": np.arange(max_gap + 1), "denom": denom, "hits": numer, "hazard": p})
-    return df
+    return pd.DataFrame(
+        {
+            "gap": np.arange(max_gap + 1),
+            "denom": denom,
+            "hits": numer,
+            "hazard": p,
+            "gap_unit": "calendar_days_since_previous_hit",
+        }
+    )
 
 
 def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
-    """Hazard by gap for the special-2digits value (de).
-    We track for each number x=00..99 its gap since last time it appeared as de.
-    hazard(g) = P(de == x today | gap(x) == g) aggregated across x and days.
-    """
+    """Aggregate De hazard by real calendar-day absence gap."""
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
     dates, _, de_targets = build_daily_targets(df_2d)
+    ordinals = _calendar_ordinals(df_2d)
     n = len(dates)
     if n == 0:
         return pd.DataFrame()
 
-    last_seen = np.full(100, -10**9, dtype=np.int32)
+    max_gap = max(1, int(max_gap))
+    last_seen = np.full(100, -10**9, dtype=np.int64)
     denom = np.zeros(max_gap + 1, dtype=np.int64)
     numer = np.zeros(max_gap + 1, dtype=np.int64)
 
     for t in range(n):
+        day = int(ordinals[t])
         x = int(de_targets[t])
-        gaps = t - last_seen
-        gaps = np.clip(gaps, 0, max_gap)
-        for g in gaps.tolist():
-            denom[g] += 1
+        gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
+        denom += np.bincount(gaps, minlength=max_gap + 1)
         g = int(gaps[x])
         numer[g] += 1
-        last_seen[x] = t
+        last_seen[x] = day
 
     p = numer / np.maximum(denom, 1)
-    return pd.DataFrame({"gap": np.arange(max_gap + 1), "denom": denom, "hits": numer, "hazard": p})
+    return pd.DataFrame(
+        {
+            "gap": np.arange(max_gap + 1),
+            "denom": denom,
+            "hits": numer,
+            "hazard": p,
+            "gap_unit": "calendar_days_since_previous_hit",
+        }
+    )
 
 
 def main() -> None:
