@@ -5,7 +5,7 @@ from datetime import datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from production_audit import expected_latest_draw
+from production_audit import audit, expected_latest_draw
 from reconcile_live_canonical import build_payload
 
 
@@ -28,8 +28,8 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     values = ["2026-08-31", "35644", "44080"] + [str(10000 + i) for i in range(2)] + [str(20000 + i) for i in range(6)] + [str(3000 + i) for i in range(4)] + [str(4000 + i) for i in range(6)] + [str(500 + i) for i in range(3)] + [str(60 + i) for i in range(4)]
     canonical.write_text(",".join(fields) + "\n" + ",".join(values) + "\n", encoding="utf-8")
 
-    audit = tmp_path / "audit.json"
-    audit.write_text(
+    audit_path = tmp_path / "audit.json"
+    audit_path.write_text(
         json.dumps(
             {
                 "2026-08-31": {
@@ -44,7 +44,7 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
         encoding="utf-8",
     )
 
-    payload = build_payload(canonical=canonical, audit_path=audit)
+    payload = build_payload(canonical=canonical, audit_path=audit_path)
     assert payload["draw_date"] == "2026-08-31"
     assert payload["status"] == "complete_verified"
     assert payload["verified_complete"] is True
@@ -52,6 +52,11 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     assert payload["received_values"] == 27
     assert payload["prizes"]["special"] == ["35644"]
     assert sum(len(v) for v in payload["prizes"].values()) == 27
+
+
+def test_current_repo_artifacts_are_internally_consistent():
+    result = audit(check_freshness=False)
+    assert result["ok"], result["critical"]
 
 
 def test_watchdog_and_post_finalization_workflows_are_wired():
