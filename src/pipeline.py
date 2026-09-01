@@ -111,6 +111,10 @@ def main() -> None:
         allow_fail=True,
     )
     _run(
+        _py("src/research_legacy_extensions.py"),
+        allow_fail=True,
+    )
+    _run(
         _py("src/research_firewall.py", "--mode", "both", "--permutations", "63"),
         allow_fail=True,
         timeout_s=600,
@@ -211,6 +215,10 @@ def main() -> None:
                 "8",
             ),
             allow_fail=soft_fail,
+        )
+        _run(
+            _py("src/path_timeline_evidence.py", "--recent", "20"),
+            allow_fail=True,
         )
 
         _run(_py("src/statistical_matrices.py"), allow_fail=soft_fail)
