@@ -16,6 +16,7 @@ from ensemble_components import (
 )
 from ensemble_utils import EnsembleWeights
 from learn_ensemble_weights import _select_recent_complete_days
+from record_pred_history import _sanitize_history
 
 
 def _frame(value: float = 0.2) -> pd.DataFrame:
@@ -29,6 +30,18 @@ def test_missing_or_zero_component_is_unavailable() -> None:
     assert not zero.available
     assert np.isnan(missing.prob).all()
     assert zero.reason == "all_zero_probability_vector"
+
+
+def test_stale_dated_component_is_unavailable() -> None:
+    frame = _frame(0.2)
+    frame["predict_for_date"] = "2026-08-31"
+    stale = probability_component(
+        frame,
+        mode="loto",
+        expected_target_date="2026-09-01",
+    )
+    assert stale.available is False
+    assert stale.reason == "stale_predict_for_date"
 
 
 def test_de_component_is_normalized_only_when_valid() -> None:
@@ -55,12 +68,13 @@ def test_no_available_component_fails_loudly() -> None:
 
 
 def _history_day(day: str, *, zero_component: str | None = None, explicit_flags: bool = False) -> pd.DataFrame:
+    y = np.zeros(100, dtype=int)
+    y[0] = 1
     data: dict[str, object] = {
         "target_date": [day] * 100,
         "number": np.arange(100),
-        "y": np.zeros(100, dtype=int),
+        "y": y,
     }
-    data["y"][0] = 1  # type: ignore[index]
     for key in ["ml", "cau", "stat", "active", "stable"]:
         p = np.full(100, 0.2, dtype=float)
         if key == zero_component:
@@ -78,8 +92,19 @@ def test_legacy_all_zero_placeholder_is_rejected_by_weight_learner() -> None:
     assert _select_recent_complete_days(df, 180) == ["2026-08-01"]
 
 
-def test_explicit_availability_flag_is_required_when_present() -> None:
-    sub = _history_day("2026-08-01", zero_component="stat", explicit_flags=True)
+def test_history_sanitizer_migrates_old_zero_placeholder() -> None:
+    old = _history_day("2026-08-02", zero_component="cau")
+    clean = _sanitize_history(old)
+    assert clean["has_ml"].all()
+    assert not clean["has_cau"].any()
+    assert clean["p_cau"].isna().all()
+
+
+def test_explicit_string_false_availability_is_not_truthy() -> None:
+    sub = _history_day("2026-08-01")
+    for key in ["ml", "cau", "stat", "active", "stable"]:
+        sub[f"has_{key}"] = "True"
+    sub["has_stat"] = "False"
     available = availability_from_history_day(sub)
     assert available["ml"] is True
     assert available["stat"] is False
