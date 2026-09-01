@@ -29,6 +29,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
   pages: write
   id-token: write
 
@@ -43,6 +44,7 @@ jobs:
     outputs:
       generated_changed: ${{ steps.commit.outputs.generated_changed }}
       canonical_changed: ${{ steps.canonical_commit.outputs.canonical_changed }}
+      canonical_ready: ${{ steps.canonical.outputs.ready }}
 
     env:
       VN_LOTTERY_ROOT: ${{ github.workspace }}
@@ -81,9 +83,6 @@ jobs:
           from zoneinfo import ZoneInfo
 
           now = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh"))
-          # From 18:15 onward we actively look for today's result. The parser only
-          # accepts a complete draw, and recent draws still require 2 independent
-          # source groups to agree before canonical promotion.
           target = now.date() if now.time() >= time(18, 15) else now.date() - timedelta(days=1)
           latest = ""
           try:
@@ -154,9 +153,6 @@ jobs:
               target = expected_target()
               latest = latest_date()
 
-              # For code/manual rebuilds, an already-present canonical date can be
-              # reused even if an old repository did not yet persist source_audit.
-              # Scheduled ingestion remains strict and requires 2-source consensus.
               if latest == target.isoformat() and (audit_ok(target) or event_name in {"push", "workflow_dispatch"}):
                   with output.open("a", encoding="utf-8") as f:
                       f.write("ready=true\n")
@@ -206,9 +202,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # sync.py writes the canonical CSV/JSON views, source audit and Excel
-          # exports. Commit them as one transaction so git pull/rebase never sees
-          # leftover sync-generated files.
           git add data/xsmb* data/source_audit.json data/excel
           if git diff --cached --quiet; then
             echo "Canonical result already committed."
@@ -298,9 +291,48 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME}"
           echo "generated_changed=true" >> "$GITHUB_OUTPUT"
 
-  # Pages is deliberately isolated from the data/ML job. A repository can be
-  # private or Pages may not yet be enabled during first installation; that must
-  # never prevent canonical data/models from updating successfully.
+  trigger-post-finalization:
+    name: Trigger audit + live reconciliation
+    needs: update
+    if: ${{ needs.update.result == 'success' && needs.update.outputs.canonical_ready == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch post-finalization workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          repo = os.environ["REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          branch = os.environ.get("DEFAULT_BRANCH") or "main"
+          url = f"https://api.github.com/repos/{repo}/actions/workflows/post-finalization.yml/dispatches"
+          payload = json.dumps({"ref": branch}).encode("utf-8")
+          req = urllib.request.Request(
+              url,
+              data=payload,
+              method="POST",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+              },
+          )
+          with urllib.request.urlopen(req, timeout=20) as response:
+              if response.status != 204:
+                  raise RuntimeError(f"post-finalization dispatch returned HTTP {response.status}")
+          print("[OK] dispatched post-finalization.yml")
+          PY
+
   deploy-pages:
     name: Deploy refreshed dashboards (optional)
     needs: update
