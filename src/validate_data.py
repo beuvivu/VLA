@@ -119,14 +119,14 @@ def main() -> None:
         out = {"ok": False, "reason": "missing xsmb.csv"}
         _write(args.out, out)
         print("[FAIL] xsmb.csv missing")
-        return
+        raise SystemExit(2)
 
     df = pd.read_csv(xsmb)
     if "date" not in df.columns or df.empty:
         out = {"ok": False, "reason": "empty_or_missing_date"}
         _write(args.out, out)
         print("[FAIL]", out["reason"])
-        return
+        raise SystemExit(2)
 
     df["date"] = pd.to_datetime(df["date"]).dt.date
     last = df["date"].max()
@@ -141,8 +141,14 @@ def main() -> None:
     sparse = _sparse_issues(data_dir)
     zero_examples = _leading_zero_examples(df)
 
+    ok = (
+        len(full_missing) == 0
+        and not duplicate_dates
+        and not range_issues
+        and bool(sparse.get("ok", False))
+    )
     out = {
-        "ok": len(missing) == 0 and not duplicate_dates and not range_issues and bool(sparse.get("ok", False)),
+        "ok": ok,
         "latest_date": last.isoformat(),
         "last_date": last.isoformat(),
         "first_date": first.isoformat(),
@@ -156,10 +162,13 @@ def main() -> None:
         "range_issues": range_issues,
         "sparse_check": sparse,
         "leading_zero_examples": zero_examples[:50],
+        "calendar_contiguous_required": True,
         "excel_note": "Use data/excel/*.xlsx for Excel consumption; lottery codes are written as text to preserve leading zeroes.",
     }
     _write(args.out, out)
-    print("[OK]" if out["ok"] else "[WARN]", "health written to", args.out)
+    print("[OK]" if out["ok"] else "[FAIL]", "health written to", args.out)
+    if not out["ok"]:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
