@@ -55,8 +55,7 @@ def _prediction_target(path: Path) -> str | None:
     if not path.exists():
         return None
     with path.open(newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
-        row = next(reader, None)
+        row = next(csv.DictReader(fh), None)
     if not row:
         return None
     for key in ("predict_for_date", "target_date", "date"):
@@ -65,7 +64,7 @@ def _prediction_target(path: Path) -> str | None:
     return None
 
 
-def audit(*, now: datetime | None = None, cutoff: str = "18:15") -> dict:
+def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness: bool = True) -> dict:
     now = now or datetime.now(TZ)
     cutoff_t = _parse_cutoff(cutoff)
     critical: list[str] = []
@@ -88,9 +87,9 @@ def audit(*, now: datetime | None = None, cutoff: str = "18:15") -> dict:
     expected = expected_latest_draw(now, cutoff_t)
     if latest is None:
         critical.append("latest_canonical_missing")
-    elif latest < expected:
+    elif check_freshness and latest < expected:
         critical.append(f"canonical_stale latest={latest} expected={expected}")
-    elif latest > expected:
+    elif check_freshness and latest > expected:
         warnings.append(f"canonical_ahead latest={latest} expected={expected}")
 
     if dates:
@@ -167,6 +166,7 @@ def audit(*, now: datetime | None = None, cutoff: str = "18:15") -> dict:
         "schema_version": 1,
         "checked_at_local": now.isoformat(),
         "cutoff": cutoff,
+        "freshness_checked": check_freshness,
         "expected_latest_draw": expected.isoformat(),
         "latest_canonical": latest.isoformat() if latest else None,
         "ok": not critical,
@@ -180,9 +180,10 @@ def main() -> None:
     ap.add_argument("--cutoff", default="18:15")
     ap.add_argument("--json-out", default="data/production_audit.json")
     ap.add_argument("--strict", action="store_true")
+    ap.add_argument("--consistency-only", action="store_true")
     args = ap.parse_args()
 
-    result = audit(cutoff=args.cutoff)
+    result = audit(cutoff=args.cutoff, check_freshness=not args.consistency_only)
     out = Path(args.json_out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
