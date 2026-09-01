@@ -44,10 +44,55 @@ assert source_independence_key("www.minhngoc.net.vn") == source_independence_key
 print("OK", actual)
 PYSOURCE
 
-printf '%s\n' "== Data integrity + statistical signal =="
+printf '%s\n' "== Data integrity + canonical statistics =="
 python src/validate_data.py --lookback-days 90 --out data/health.json
 python src/statistical_signal.py --mode both
 python src/significance_stats.py --windows 30,90,365
+python src/statistical_matrices.py
+python src/conditional_matrices.py --top 500
+python src/statistics_ai_overlay.py
+
+printf '%s\n' "== Calendar-safe conditional and AI-overlay integrity =="
+python - <<'PYCANON'
+import json
+from datetime import timedelta
+from pathlib import Path
+
+import pandas as pd
+
+latest = pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).max().date()
+expected_target = (latest + timedelta(days=1)).isoformat()
+rows = len(pd.read_csv("data/xsmb.csv", usecols=["date"]))
+
+cond = json.loads(Path("data/advanced/conditional_matrices_diagnostics.json").read_text(encoding="utf-8"))
+assert cond["calendar_rows"] == rows, cond
+assert cond["exact_next_day_pairs"] == max(0, rows - 1), cond
+assert cond["skipped_nonconsecutive_boundaries"] == 0, cond
+for name in (
+    "conditional_loto_after_special_top500.csv",
+    "conditional_special_after_special_top500.csv",
+    "conditional_loto_after_loto_top500.csv",
+):
+    path = Path("data/advanced") / name
+    assert path.is_file() and path.stat().st_size > 0, path
+
+ai = json.loads(Path("data/advanced/ai_ml_signal_diagnostics.json").read_text(encoding="utf-8"))
+assert ai["anchor_date"] == latest.isoformat(), ai
+assert ai["target_date"] == expected_target, ai
+for mode in ("loto", "de"):
+    table = pd.read_csv(f"data/advanced/ai_ml_signal_{mode}.csv")
+    assert len(table) == 100, (mode, len(table))
+    assert set(table["number"].astype(int)) == set(range(100)), mode
+    assert set(table["target_date"].astype(str)) == {expected_target}, mode
+    assert table["ml_available"].astype(str).str.lower().isin(["true", "false"]).all(), mode
+    diag = ai["modes"][mode]["ml"]
+    if diag["available"]:
+        assert diag["source"] in {"cau_keo", "base_ml", "ensemble_exact"}, diag
+        assert diag["attempts"][-1]["status"] == "ok", diag
+    else:
+        assert table["ml_source"].eq("unavailable").all(), mode
+print("OK canonical conditional/AI overlays", latest, "->", expected_target)
+PYCANON
 
 printf '%s\n' "== Higher-order dynamics integrity =="
 python - <<'PYDYN'
@@ -74,6 +119,7 @@ for mode in ("loto", "de"):
         assert np.isclose(float(p.sum()), 1.0, atol=1e-8), float(p.sum())
     else:
         assert ((p > 0.0) & (p < 1.0)).all(), mode
+    assert diag["calendar_contiguous"] is True, diag
     assert 0.15 <= float(diag["global_dynamics_reliability"]) <= 0.80, diag
     print("OK dynamics", mode, "reliability=", diag["global_dynamics_reliability"])
 PYDYN
@@ -81,7 +127,8 @@ PYDYN
 printf '%s\n' "== Fresh base-ML train/predict smoke =="
 TMP_MODELS="$(mktemp -d)"
 TMP_PRED="$(mktemp -d)"
-trap 'rm -rf "$TMP_MODELS" "$TMP_PRED"' EXIT
+TMP_CAU="$(mktemp -d)"
+trap 'rm -rf "$TMP_MODELS" "$TMP_PRED" "$TMP_CAU"' EXIT
 python src/ml_train.py --mode loto --out-dir "$TMP_MODELS" --window-days 365
 python src/ml_train.py --mode de --out-dir "$TMP_MODELS" --window-days 365
 python src/ml_predict.py --models-dir "$TMP_MODELS" --out-dir "$TMP_PRED" --window-days 365 --top 3
@@ -139,7 +186,9 @@ printf '%s\n' "== Production model artifact compatibility =="
 python - <<'PYMODEL'
 import joblib
 import pandas as pd
+from cau_keo_ml import FEATURE_COLS as CAU_FEATURE_COLS
 from ml_train import FEATURE_SCHEMA_VERSION
+
 latest = str(pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).max().date())
 for path in ["models/ml_loto.joblib", "models/ml_de.joblib"]:
     obj = joblib.load(path)
@@ -150,12 +199,35 @@ for path in ["models/ml_loto.joblib", "models/ml_de.joblib"]:
 for path in ["models/cau_keo_loto.joblib", "models/cau_keo_de.joblib"]:
     obj = joblib.load(path)
     assert isinstance(obj, dict) and "model" in obj, path
-    print("OK", path)
+    assert obj.get("features") == CAU_FEATURE_COLS, path
+    assert str(obj.get("trained_through_date")) == latest, (path, obj.get("trained_through_date"), latest)
+    print("OK", path, "calendar=", obj.get("calendar_contract", "legacy-pack"))
 PYMODEL
+
+printf '%s\n' "== Cầu-kèo production-path smoke =="
+python src/cau_keo_ml.py \
+  --mode both --models-dir models --out-dir "$TMP_CAU" \
+  --window-days 2000 --top 3
+for path in \
+  "$TMP_CAU/cau_keo_loto_all.csv" \
+  "$TMP_CAU/cau_keo_de_all.csv" \
+  "$TMP_CAU/cau_keo_manifest_loto.json" \
+  "$TMP_CAU/cau_keo_manifest_de.json"; do
+  test -s "$path" || { echo "Missing cầu-kèo smoke output: $path" >&2; exit 3; }
+done
+python - <<PYCAU
+import json
+from pathlib import Path
+for mode in ("loto", "de"):
+    obj = json.loads(Path("$TMP_CAU/cau_keo_manifest_" + mode + ".json").read_text(encoding="utf-8"))
+    assert obj["calendar_contract"] == "daily-contiguous raw and two-digit histories", obj
+print("OK cau-keo calendar-safe smoke")
+PYCAU
 
 printf '%s\n' "== Static GitHub Pages builders =="
 python src/build_docs_ml.py
 python src/build_dashboard.py
+python src/build_markdown_dashboard.py
 python src/build_statistics_dashboard.py
 python src/build_landing_page.py
 python src/build_fun_prediction.py
@@ -210,11 +282,18 @@ required=(
   data/number_dynamics/lag_dependency_de.csv
   data/number_dynamics/diagnostics_loto.json
   data/number_dynamics/diagnostics_de.json
+  data/advanced/conditional_matrices_diagnostics.json
+  data/advanced/ai_ml_signal_diagnostics.json
+  data/advanced/ai_ml_signal_loto.csv
+  data/advanced/ai_ml_signal_de.csv
   data/predict/fun_draw_next.json
   data/predict/fun_draw_next.csv
   docs/live.html
   models/ml_loto.joblib
   models/ml_de.joblib
+  models/cau_keo_loto.joblib
+  models/cau_keo_de.joblib
+  DASHBOARD.md
   docs/index.html
   docs/statistics.html
   docs/dashboard.html
