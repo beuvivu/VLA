@@ -15,9 +15,9 @@ concurrency:
 
 jobs:
   test:
-    name: Test statistics and AI/ML pipeline
+    name: Test statistics, AI/ML and research pipeline
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       VN_LOTTERY_ROOT: ${{ github.workspace }}
@@ -45,5 +45,8 @@ jobs:
           python -m pip install --upgrade pip wheel setuptools
           python -m pip install -r requirements-dev.txt
 
-      - name: Release check
+      - name: Core release check
         run: bash scripts/release_check.sh
+
+      - name: Research-plane release check
+        run: bash scripts/research_release_check.sh
