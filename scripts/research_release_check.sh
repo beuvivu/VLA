@@ -28,6 +28,14 @@ PYREF
 printf '%s\n' "== Legacy descriptive preservation =="
 python src/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
 python src/research_legacy_extensions.py
+python src/legacy_advanced_diagnostics.py --max-lag 15 --coverage-windows 3,7,14,30
+python src/conditional_nextday.py --top 20 --prior-strength 60
+
+printf '%s\n' "== Cross-lag positional research family =="
+python src/crosslag_positional_lab.py \
+  --lag-pairs 1-1,1-2 \
+  --operators concat,lon,bo,cham,tong \
+  --warmup 180
 
 printf '%s\n' "== Legacy path explainability preservation =="
 python src/path_timeline_evidence.py --recent 20
@@ -115,6 +123,48 @@ for name in ("loto_transition_independence.csv", "loto_acf_bartlett.csv"):
 for key in ("ks_full_special", "ljung_box_even_tail_count"):
     p = manifest[key].get("p_value")
     assert p is None or 0.0 <= float(p) <= 1.0, (key, p)
+
+advanced = root / "legacy_advanced"
+advanced_manifest = json.loads((advanced / "manifest.json").read_text(encoding="utf-8"))
+assert advanced_manifest["research_only"] is True
+assert advanced_manifest["anchor_date"] == diag["end_date"]
+for key in ("aggregate_transition", "weekday_special_tail"):
+    p = advanced_manifest[key].get("p_value")
+    assert p is None or 0.0 <= float(p) <= 1.0, (key, p)
+acf_full = pd.read_csv(advanced / "full_special_acf.csv")
+assert len(acf_full) == 15
+assert acf_full["p_value"].between(0, 1).all()
+assert acf_full["q_value_fdr"].between(0, 1).all()
+coverage = pd.read_csv(advanced / "rolling_coverage.csv")
+assert coverage["window_days"].astype(int).tolist() == [3, 7, 14, 30]
+assert coverage["observed_mean_distinct"].between(0, 100).all()
+
+conditional_dir = Path("data/conditional")
+conditional_manifest = json.loads((conditional_dir / "manifest.json").read_text(encoding="utf-8"))
+assert conditional_manifest["schema_version"] == 2
+assert conditional_manifest["research_only"] is True
+assert conditional_manifest["anchor_date"] == diag["end_date"]
+conditional = pd.read_csv(conditional_dir / "loto_nextday_given_special_long.csv")
+assert not conditional.empty
+assert conditional["p_raw"].between(0, 1).all()
+assert conditional["p_eb"].between(0, 1).all()
+assert conditional["baseline"].between(0, 1).all()
+assert conditional["p_value"].between(0, 1).all()
+assert conditional["q_value_fdr"].between(0, 1).all()
+
+cross = root / "crosslag_positional"
+cross_report = json.loads((cross / "report.json").read_text(encoding="utf-8"))
+assert cross_report["research_only"] is True
+assert cross_report["production_wired"] is False
+assert cross_report["anchor_date"] == diag["end_date"]
+assert int(cross_report["hypotheses"]) == 5832, cross_report["hypotheses"]
+assert int(cross_report["holdout_days"]) > 0
+cross_table = pd.read_csv(cross / "crosslag_rules.csv")
+assert len(cross_table) == 5832
+assert cross_table["train_q_value_fdr"].between(0, 1).all()
+assert cross_table["train_bonferroni_p"].between(0, 1).all()
+assert (~cross_table["production_eligible"].astype(bool)).all()
+assert set(cross_table["operator"]) == {"concat", "lon", "bo", "cham", "tong"}
 
 path_manifest = json.loads((root / "path_timelines" / "manifest.json").read_text(encoding="utf-8"))
 assert path_manifest["research_only"] is True
