@@ -84,7 +84,6 @@ def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_date") -> None:
-    """Upsert one prediction day and migrate the compact history to the availability contract."""
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and out.stat().st_size > 0:
         df_old = pd.read_csv(out)
@@ -127,7 +126,12 @@ def main() -> None:
             "stat": _load_stat_full(stat_dir, mode),
         }
         components = {
-            key: probability_component(frame, mode=mode)  # type: ignore[arg-type]
+            key: probability_component(
+                frame,
+                mode=mode,  # type: ignore[arg-type]
+                expected_target_date=target,
+                expected_anchor_date=anchor,
+            )
             for key, frame in frames.items()
         }
 
