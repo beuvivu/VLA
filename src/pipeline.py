@@ -45,8 +45,8 @@ def _py(script: str, *args: str) -> list[str]:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "GitHub pipeline: sync -> statistics -> paths -> base ML -> "
-            "stacked ML -> calibrated predictions -> dashboards."
+            "GitHub pipeline: sync -> statistics -> research falsification -> paths -> "
+            "base ML -> stacked ML -> calibrated predictions -> dashboards."
         )
     )
     ap.add_argument(
@@ -74,7 +74,7 @@ def main() -> None:
     ap.add_argument(
         "--strict",
         action="store_true",
-        help="Fail on statistics/AI/ML build errors instead of continuing with partial outputs.",
+        help="Fail on core statistics/AI/ML build errors instead of continuing with partial outputs.",
     )
 
     args = ap.parse_args()
@@ -102,8 +102,28 @@ def main() -> None:
         "src/markov_stats.py",
         "src/significance_stats.py",
         "src/statistical_signal.py",
+        "src/descriptive_extensions.py",
     ]:
         _run(_py(script), allow_fail=soft_fail)
+
+    # Research/falsification modules are deliberately isolated from production
+    # prediction. They run automatically every day, but a research-only numerical
+    # edge case must never prevent canonical data or the validated production ML
+    # pipeline from completing.
+    _run(
+        _py("src/research_diagnostics.py", "--permutations", "127", "--max-lag", "14"),
+        allow_fail=True,
+    )
+    _run(
+        _py("src/research_firewall.py", "--mode", "both", "--permutations", "63"),
+        allow_fail=True,
+        timeout_s=600,
+    )
+    _run(
+        _py("src/strategy_lab.py", "--mode", "both", "--warmup", "180"),
+        allow_fail=True,
+        timeout_s=600,
+    )
 
     _run(
         _py(
@@ -254,6 +274,7 @@ def main() -> None:
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
         _run(_py("src/build_fun_prediction.py"), allow_fail=soft_fail)
+        _run(_py("src/build_research_lab.py"), allow_fail=True)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 
     _run(
