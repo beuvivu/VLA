@@ -67,7 +67,13 @@ def _prediction_target(path: Path) -> str | None:
         return None
 
 
-def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness: bool = True) -> dict:
+def audit(
+    *,
+    now: datetime | None = None,
+    cutoff: str = "18:15",
+    check_freshness: bool = True,
+    check_docs: bool = True,
+) -> dict:
     now = now or datetime.now(TZ)
     cutoff_t = _parse_cutoff(cutoff)
     critical: list[str] = []
@@ -151,9 +157,12 @@ def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness
         except Exception as exc:
             critical.append(f"readme_invalid={exc}")
 
-        for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"):
-            p = ROOT / page
-            if p.exists():
+        if check_docs:
+            for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"):
+                p = ROOT / page
+                if not p.exists() or p.stat().st_size == 0:
+                    critical.append(f"landing_page_missing={page}")
+                    continue
                 text = p.read_text(encoding="utf-8", errors="replace")
                 if text.count('id="du-doan-vui"') != 1:
                     critical.append(f"fun_board_marker_invalid={page}")
@@ -170,6 +179,7 @@ def audit(*, now: datetime | None = None, cutoff: str = "18:15", check_freshness
         "checked_at_local": now.isoformat(),
         "cutoff": cutoff,
         "freshness_checked": check_freshness,
+        "docs_checked": check_docs,
         "expected_latest_draw": expected.isoformat(),
         "latest_canonical": latest.isoformat() if latest else None,
         "ok": not critical,
@@ -184,9 +194,14 @@ def main() -> None:
     ap.add_argument("--json-out", default="data/production_audit.json")
     ap.add_argument("--strict", action="store_true")
     ap.add_argument("--consistency-only", action="store_true")
+    ap.add_argument("--skip-docs", action="store_true")
     args = ap.parse_args()
 
-    result = audit(cutoff=args.cutoff, check_freshness=not args.consistency_only)
+    result = audit(
+        cutoff=args.cutoff,
+        check_freshness=not args.consistency_only,
+        check_docs=not args.skip_docs,
+    )
     out = Path(args.json_out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
