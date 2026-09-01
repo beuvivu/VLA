@@ -346,9 +346,10 @@ def source_consensus_partial(
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
     """Merge partial live results slot-by-slot using source priority + consensus.
 
-    A value with >= ``min_agreement`` matching sources is verified.  If a live
-    slot exists from only one source we expose the highest-priority value as
-    provisional, but it is never promoted into canonical history by this helper.
+    A value is verified only when it has >= ``min_agreement`` independent source
+    groups and no different value has the same independent support.  Otherwise
+    the highest-priority observation may be shown provisionally but is never
+    marked verified or promoted into canonical history by this helper.
     """
     merged = {k: [] for k in PRIZE_ORDER}
     slot_meta: dict[str, dict[str, object]] = {}
@@ -370,6 +371,7 @@ def source_consensus_partial(
             chosen = ""
             support: list[str] = []
             support_groups: list[str] = []
+            ambiguous_tie = False
             if counts:
                 def consensus_score(item: tuple[str, list[str]]) -> tuple[int, int, int]:
                     names = item[1]
@@ -379,17 +381,29 @@ def source_consensus_partial(
                     )
                     return len(groups), len(names), -first_priority
 
-                best_value, best_sources = max(counts.items(), key=consensus_score)
+                ranked = sorted(counts.items(), key=consensus_score, reverse=True)
+                best_value, best_sources = ranked[0]
                 best_groups = list(
                     dict.fromkeys(source_independence_key(name) for name in best_sources)
                 )
-                if len(best_groups) >= min_agreement:
+                runner_up_groups = 0
+                if len(ranked) > 1:
+                    runner_up_groups = len(
+                        {source_independence_key(name) for name in ranked[1][1]}
+                    )
+                    ambiguous_tie = (
+                        len(best_groups) >= min_agreement
+                        and runner_up_groups == len(best_groups)
+                    )
+
+                if len(best_groups) >= min_agreement and not ambiguous_tie:
                     chosen = best_value
                     support = best_sources
                     support_groups = best_groups
                     verified_slots += 1
                 else:
-                    # Priority fallback for display only.
+                    # Priority fallback is display-only. In particular, an
+                    # equal-support 2-vs-2 split is never marked verified.
                     chosen = values[0][1]
                     support = [values[0][0]]
                     support_groups = [source_independence_key(values[0][0])]
@@ -400,7 +414,8 @@ def source_consensus_partial(
                 merged[key].append(chosen)
             slot_meta[f"{key}[{idx}]"] = {
                 "value": chosen or None,
-                "verified": len(support_groups) >= min_agreement,
+                "verified": len(support_groups) >= min_agreement and not ambiguous_tie,
+                "ambiguous_tie": ambiguous_tie,
                 "support": support,
                 "support_groups": support_groups,
                 "observations": {value: names for value, names in counts.items()},
