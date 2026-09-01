@@ -286,5 +286,22 @@
     ],
     "candidates": 5,
     "distinct_results": 1
+  },
+  "2026-09-01": {
+    "checked_at_utc": "2026-09-01T11:31:08Z",
+    "accepted": true,
+    "required_agreement": 2,
+    "agreement": 2,
+    "source_agreement": 2,
+    "independent_groups": [
+      "xoso",
+      "xosodaiphat"
+    ],
+    "sources": [
+      "xoso.com.vn",
+      "xosodaiphat.com"
+    ],
+    "candidates": 4,
+    "distinct_results": 2
   }
 }
