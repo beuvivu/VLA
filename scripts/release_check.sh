@@ -158,7 +158,27 @@ python src/build_docs_ml.py
 python src/build_dashboard.py
 python src/build_statistics_dashboard.py
 python src/build_landing_page.py
+python src/build_fun_prediction.py
 python src/cleanup_artifacts.py --retention-days 45
+
+printf '%s\n' "== Fun prediction board integrity =="
+python - <<'PYFUN'
+import json
+from pathlib import Path
+
+payload = json.loads(Path("data/predict/fun_draw_next.json").read_text(encoding="utf-8"))
+assert payload["kind"] == "entertainment_simulation"
+assert len(payload["groups"]) == 8
+assert len(payload["rows"]) == 27
+assert len(payload["top_loto"]) == 10
+assert len(payload["top_de"]) == 10
+assert payload["target_date"] > payload["anchor_date"]
+for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"):
+    text = Path(page).read_text(encoding="utf-8")
+    assert text.count('id="du-doan-vui"') == 1, page
+    assert "Không phải kết quả thật" in text, page
+print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
+PYFUN
 
 printf '%s\n' "== Required outputs =="
 required=(
@@ -184,6 +204,8 @@ required=(
   data/number_dynamics/lag_dependency_de.csv
   data/number_dynamics/diagnostics_loto.json
   data/number_dynamics/diagnostics_de.json
+  data/predict/fun_draw_next.json
+  data/predict/fun_draw_next.csv
   docs/live.html
   models/ml_loto.joblib
   models/ml_de.joblib
