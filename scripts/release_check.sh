@@ -180,6 +180,12 @@ for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"
 print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
 PYFUN
 
+printf '%s\n' "== Post-build production consistency =="
+python src/production_audit.py \
+  --consistency-only \
+  --strict \
+  --json-out /tmp/production-audit-release.json
+
 printf '%s\n' "== Required outputs =="
 required=(
   data/xsmb.csv
