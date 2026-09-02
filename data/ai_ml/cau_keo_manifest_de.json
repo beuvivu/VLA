@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "generated_at": "2026-09-02T02:39:29Z",
-  "predict_for_date": "2026-09-02",
+  "generated_at": "2026-09-02T15:05:12Z",
+  "predict_for_date": "2026-09-03",
   "top": 20,
   "features": [
     "number_value",
@@ -100,8 +100,8 @@
     ],
     "ablation_report": "cau_keo_domain_ablation_de.csv",
     "gate_report": "cau_keo_domain_gate_de.json",
-    "final_brier_skill": 2.806679065492368e-05,
-    "final_logloss_skill": 0.00035421908495458787,
+    "final_brier_skill": 0.0,
+    "final_logloss_skill": 0.0,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening, confirmation, and the untouched combined final gate."
   }
 }
