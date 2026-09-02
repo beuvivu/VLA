@@ -2,8 +2,8 @@ from __future__ import annotations
 
 """Historical statistics for the common 50-cặp-loto partition.
 
-The partition contains 45 reverse pairs and five kép-bóng pairs.  This module
-measures whether members actually behave similarly in historical data.  It does
+The partition contains 45 reverse pairs and five kép-bóng pairs. This module
+measures whether members actually behave similarly in historical data. It does
 not assume that a domain relation is predictive; it emits evidence that can be
 used later by leakage-safe feature engineering or score regularization.
 """
@@ -27,7 +27,9 @@ def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     return out.sort_values("date").reset_index(drop=True)
 
 
-def _hit_matrices(two_digit_df: pd.DataFrame) -> tuple[pd.DatetimeIndex, np.ndarray, np.ndarray]:
+def _hit_matrices(
+    two_digit_df: pd.DataFrame,
+) -> tuple[pd.DatetimeIndex, np.ndarray, np.ndarray]:
     two = _ensure_datetime(two_digit_df)
     if two.empty:
         raise RuntimeError("No two-digit history loaded")
@@ -56,7 +58,9 @@ def _phi(x: np.ndarray, y: np.ndarray) -> float:
     n10 = float(np.sum(x & ~y))
     n01 = float(np.sum(~x & y))
     n00 = float(np.sum(~x & ~y))
-    denom = math.sqrt((n11 + n10) * (n01 + n00) * (n11 + n01) * (n10 + n00))
+    denom = math.sqrt(
+        (n11 + n10) * (n01 + n00) * (n11 + n01) * (n10 + n00)
+    )
     return (n11 * n00 - n10 * n01) / denom if denom > 0 else 0.0
 
 
@@ -67,7 +71,9 @@ def _current_gap(hit: np.ndarray) -> int:
     return int(len(hit) - 1 - idx[-1])
 
 
-def _window_metrics(x: np.ndarray, y: np.ndarray, window: int) -> dict[str, float]:
+def _window_metrics(
+    x: np.ndarray, y: np.ndarray, window: int
+) -> dict[str, float]:
     n = min(window, len(x))
     if n <= 0:
         return {
@@ -94,28 +100,45 @@ def _window_metrics(x: np.ndarray, y: np.ndarray, window: int) -> dict[str, floa
     }
 
 
-def _current_cau_scores(mode: str, data_dir: Path) -> dict[str, float]:
+def _current_cau_scores(
+    mode: str, data_dir: Path, *, expected_anchor: str
+) -> dict[str, float]:
+    """Load only a cầu-kèo artifact anchored to the same canonical history end."""
+
     path = data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"
     if not path.exists():
         return {}
     try:
-        df = pd.read_csv(path, dtype={"number_str": str})
+        df = pd.read_csv(path, dtype={"number_str": str, "anchor_date": str})
     except Exception:
         return {}
-    if "number_str" not in df.columns or "cau_score" not in df.columns:
+    required = {"number_str", "cau_score", "anchor_date"}
+    if not required.issubset(df.columns):
         return {}
+    anchors = {
+        str(v)[:10]
+        for v in df["anchor_date"].dropna().astype(str).tolist()
+        if str(v).strip()
+    }
+    if anchors != {expected_anchor}:
+        return {}
+
     out: dict[str, float] = {}
     for _, row in df.iterrows():
         raw = str(row["number_str"]).strip()
         if raw.isdigit():
             number = f"{int(raw):02d}"
-            score = pd.to_numeric(pd.Series([row["cau_score"]]), errors="coerce").iloc[0]
+            score = pd.to_numeric(
+                pd.Series([row["cau_score"]]), errors="coerce"
+            ).iloc[0]
             if pd.notna(score):
                 out[number] = float(score)
     return out
 
 
-def build_stats(mode: str, *, data_dir: Path) -> tuple[pd.DataFrame, dict[str, object]]:
+def build_stats(
+    mode: str, *, data_dir: Path
+) -> tuple[pd.DataFrame, dict[str, object]]:
     if mode not in {"loto", "de"}:
         raise ValueError("mode must be loto or de")
 
@@ -123,7 +146,8 @@ def build_stats(mode: str, *, data_dir: Path) -> tuple[pd.DataFrame, dict[str, o
     lot.load()
     dates, loto_hit, de_hit = _hit_matrices(lot.get_2_digits_data())
     hit = loto_hit if mode == "loto" else de_hit
-    cau = _current_cau_scores(mode, data_dir)
+    history_end = dates[-1].date().isoformat()
+    cau = _current_cau_scores(mode, data_dir, expected_anchor=history_end)
 
     rows: list[dict[str, object]] = []
     for pair in all_cap_loto_50():
@@ -141,7 +165,7 @@ def build_stats(mode: str, *, data_dir: Path) -> tuple[pd.DataFrame, dict[str, o
             "a": a,
             "b": b,
             "history_start": dates[0].date().isoformat(),
-            "history_end": dates[-1].date().isoformat(),
+            "history_end": history_end,
             "history_days": len(dates),
             "a_hit_days": int(x.sum()),
             "b_hit_days": int(y.sum()),
@@ -173,33 +197,51 @@ def build_stats(mode: str, *, data_dir: Path) -> tuple[pd.DataFrame, dict[str, o
             )
         rows.append(row)
 
-    df = pd.DataFrame(rows).sort_values(["pair_kind", "pair_id"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame(rows)
+        .sort_values(["pair_kind", "pair_id"])
+        .reset_index(drop=True)
+    )
     kep = df[df["pair_kind"] == "kep_bong"].copy()
-    reverse = df[df["pair_kind"] == "reverse"].copy()
+    reverse_pairs = df[df["pair_kind"] == "reverse"].copy()
 
     summary: dict[str, object] = {
         "schema_version": 1,
-        "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "generated_at": datetime.now(UTC)
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "Z"),
         "mode": mode,
         "history_start": dates[0].date().isoformat(),
-        "history_end": dates[-1].date().isoformat(),
+        "history_end": history_end,
         "history_days": len(dates),
         "pair_count": len(df),
-        "reverse_pair_count": len(reverse),
+        "reverse_pair_count": len(reverse_pairs),
         "kep_bong_pair_count": len(kep),
         "kep_bong_pairs": kep["pair_id"].tolist(),
-        "kep_bong_mean_member_rate_gap_365d": float(kep["member_rate_gap_365d"].mean()),
-        "kep_bong_mean_member_balance_365d": float(kep["member_balance_365d"].mean()),
+        "kep_bong_mean_member_rate_gap_365d": float(
+            kep["member_rate_gap_365d"].mean()
+        ),
+        "kep_bong_mean_member_balance_365d": float(
+            kep["member_balance_365d"].mean()
+        ),
         "kep_bong_mean_phi": float(kep["phi"].mean()),
-        "reverse_mean_member_rate_gap_365d": float(reverse["member_rate_gap_365d"].mean()),
-        "reverse_mean_member_balance_365d": float(reverse["member_balance_365d"].mean()),
+        "reverse_mean_member_rate_gap_365d": float(
+            reverse_pairs["member_rate_gap_365d"].mean()
+        ),
+        "reverse_mean_member_balance_365d": float(
+            reverse_pairs["member_balance_365d"].mean()
+        ),
+        "current_cau_scores_aligned": bool(cau),
         "predictive_policy": (
-            "pair relations provide shared evidence/candidate features; production predictive "
-            "weight requires leakage-safe validation and must not force equal probabilities"
+            "pair relations provide shared evidence/candidate features; production "
+            "predictive weight requires leakage-safe validation and must not force "
+            "equal probabilities"
         ),
     }
     if "cau_score_gap" in kep.columns and kep["cau_score_gap"].notna().any():
-        summary["kep_bong_mean_current_cau_score_gap"] = float(kep["cau_score_gap"].dropna().mean())
+        summary["kep_bong_mean_current_cau_score_gap"] = float(
+            kep["cau_score_gap"].dropna().mean()
+        )
         summary["kep_bong_mean_current_cau_score_balance"] = float(
             kep["cau_score_balance"].dropna().mean()
         )
@@ -207,7 +249,9 @@ def build_stats(mode: str, *, data_dir: Path) -> tuple[pd.DataFrame, dict[str, o
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Build statistics for the 50 cặp-loto partition")
+    ap = argparse.ArgumentParser(
+        description="Build statistics for the 50 cặp-loto partition"
+    )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     ap.add_argument("--data-dir", default="data")
     ap.add_argument("--out-dir", default="data/pairs")
