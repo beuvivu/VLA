@@ -1,0 +1,185 @@
+{
+  "schema_version": 3,
+  "canonical_bong": "bong_duong",
+  "bong_duong": {
+    "0": 5,
+    "1": 6,
+    "2": 7,
+    "3": 8,
+    "4": 9,
+    "5": 0,
+    "6": 1,
+    "7": 2,
+    "8": 3,
+    "9": 4
+  },
+  "bong_am": {
+    "status": "documented_domain_convention",
+    "mapping": {
+      "0": 7,
+      "7": 0,
+      "1": 4,
+      "4": 1,
+      "2": 9,
+      "9": 2,
+      "3": 6,
+      "6": 3,
+      "5": 8,
+      "8": 5
+    },
+    "predictive_status": "must_be_empirically_validated"
+  },
+  "bo_seed_label_count": 100,
+  "bo_unique_family_count": 15,
+  "bo_family_size_distribution": {
+    "4": 5,
+    "8": 10
+  },
+  "bo_family_kind_distribution": {
+    "bo_kep": 5,
+    "bo_thuong": 10
+  },
+  "cap_loto_50_count": 50,
+  "cap_loto_50_kind_distribution": {
+    "reverse": 45,
+    "kep_bong": 5
+  },
+  "kep_bong_pairs": [
+    "00-55",
+    "11-66",
+    "22-77",
+    "33-88",
+    "44-99"
+  ],
+  "kep_bang": [
+    "00",
+    "11",
+    "22",
+    "33",
+    "44",
+    "55",
+    "66",
+    "77",
+    "88",
+    "99"
+  ],
+  "kep_lech": [
+    "05",
+    "16",
+    "27",
+    "38",
+    "49",
+    "50",
+    "61",
+    "72",
+    "83",
+    "94"
+  ],
+  "kep_am": [
+    "07",
+    "14",
+    "29",
+    "36",
+    "41",
+    "58",
+    "63",
+    "70",
+    "85",
+    "92"
+  ],
+  "sat_kep": [
+    "01",
+    "10",
+    "12",
+    "21",
+    "23",
+    "32",
+    "34",
+    "43",
+    "45",
+    "54",
+    "56",
+    "65",
+    "67",
+    "76",
+    "78",
+    "87",
+    "89",
+    "98"
+  ],
+  "sat_kep_vong_research_variant": [
+    "01",
+    "09",
+    "10",
+    "12",
+    "21",
+    "23",
+    "32",
+    "34",
+    "43",
+    "45",
+    "54",
+    "56",
+    "65",
+    "67",
+    "76",
+    "78",
+    "87",
+    "89",
+    "90",
+    "98"
+  ],
+  "touch_cardinality": {
+    "0": 19,
+    "1": 19,
+    "2": 19,
+    "3": 19,
+    "4": 19,
+    "5": 19,
+    "6": 19,
+    "7": 19,
+    "8": 19,
+    "9": 19
+  },
+  "sum_mod10_cardinality": {
+    "0": 10,
+    "1": 10,
+    "2": 10,
+    "3": 10,
+    "4": 10,
+    "5": 10,
+    "6": 10,
+    "7": 10,
+    "8": 10,
+    "9": 10
+  },
+  "pair_terms": {
+    "generic_pair": "unordered pair of two distinct two-digit numbers",
+    "cap_loto_50": "45 reverse pairs plus 5 kép-bóng pairs partitioning 00..99",
+    "cap_lon": "deterministic AB↔BA relation",
+    "kep_bong": "00↔55,11↔66,22↔77,33↔88,44↔99",
+    "cap_bong_duong": "deterministic full-number bóng dương relation",
+    "cap_bong_am": "documented folklore bóng-âm relation",
+    "same_draw_cooccurrence": "statistical unordered pair observed in one draw",
+    "same_bo_family": "two numbers belong to the same canonical bộ family"
+  },
+  "artifact_schema_version": 2,
+  "number_rows": 100,
+  "seed_rows": 100,
+  "unique_family_rows": 15,
+  "cap_loto_50_rows": 50,
+  "files": [
+    "number_ontology_00_99.csv",
+    "bo_seed_catalog_00_99.csv",
+    "bo_unique_families.csv",
+    "cap_loto_50.csv"
+  ],
+  "data_semantics": {
+    "bo_seed_label": "historical 00..99 lookup label",
+    "bo_family_id": "one of the 15 unique bóng-dương/lộn families",
+    "cap_loto_50": "45 reverse pairs plus 5 kép-bóng pairs",
+    "kep_bong": "00-55,11-66,22-77,33-88,44-99",
+    "pair": "statistical pair artifacts must always carry pair_kind",
+    "predictive_contract": "domain relations are candidate explanatory features; predictive weight must be established by leakage-safe validation"
+  }
+}
