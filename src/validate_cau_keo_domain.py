@@ -21,12 +21,16 @@ from cau_keo_domain_challenger import (
 def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
     canonical = pd.read_csv(data_dir / "xsmb.csv", usecols=["date"])
     latest = pd.to_datetime(canonical["date"]).max().date()
-    expected_anchor = (latest - timedelta(days=1)).isoformat()
-    expected_target = latest.isoformat()
+    prediction_anchor = latest.isoformat()
+    supervised_anchor = (latest - timedelta(days=1)).isoformat()
+    next_target = (latest + timedelta(days=1)).isoformat()
 
     result: dict[str, object] = {
         "schema_version": DOMAIN_SCHEMA_VERSION,
         "latest_canonical": latest.isoformat(),
+        "prediction_anchor": prediction_anchor,
+        "supervised_anchor": supervised_anchor,
+        "next_target": next_target,
         "modes": {},
         "ok": True,
     }
@@ -50,14 +54,14 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
         if not set(confirmed).issubset(DOMAIN_FEATURE_GROUPS):
             raise RuntimeError(f"{mode}: unknown confirmed feature group")
 
-        # A supervised row anchored on t is labelled by t+1. The latest
-        # canonical draw is therefore the newest target and yesterday is the
-        # newest supervised anchor used by the OOS gate/training table.
-        if str(gate.get("anchor_date")) != expected_anchor:
+        # Two date contracts coexist intentionally:
+        # - prediction anchor = latest canonical draw T, used to predict T+1;
+        # - supervised-through anchor = T-1, because its known label is draw T.
+        if str(gate.get("anchor_date")) != prediction_anchor:
             raise RuntimeError(
-                f"{mode}: gate anchor {gate.get('anchor_date')} != {expected_anchor}"
+                f"{mode}: prediction anchor {gate.get('anchor_date')} != {prediction_anchor}"
             )
-        if str(gate.get("predict_for_date")) != (latest + timedelta(days=1)).isoformat():
+        if str(gate.get("predict_for_date")) != next_target:
             raise RuntimeError(f"{mode}: next-day prediction date mismatch")
 
         active = bool(gate.get("domain_active"))
@@ -125,7 +129,7 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             raise RuntimeError(f"{mode}: model-pack active flag mismatch")
         if list(pack.get("domain_groups", [])) != list(gate.get("production_selected_groups", [])):
             raise RuntimeError(f"{mode}: model-pack selected groups mismatch")
-        if str(pack.get("domain_trained_through_date")) != expected_anchor:
+        if str(pack.get("domain_trained_through_date")) != supervised_anchor:
             raise RuntimeError(f"{mode}: domain model supervised anchor mismatch")
 
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
