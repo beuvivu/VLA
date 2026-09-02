@@ -96,6 +96,17 @@ Dữ liệu live là provisional và được giữ tách biệt khỏi canonica
 - Dashboard responsive trong `docs/`, triển khai trực tiếp bằng GitHub Pages Actions.
 - Excel-safe exports giữ số 0 ở đầu.
 
+## Research and validation reference
+
+- [`docs/research/lottery_method_catalog.md`](docs/research/lottery_method_catalog.md) — public-method catalog, assumptions, ambiguity and implementation status.
+- [`docs/research/source_comparison.md`](docs/research/source_comparison.md) — source-by-source observations and comparison matrix.
+- [`docs/research/algorithm_definitions.md`](docs/research/algorithm_definitions.md) — formulas, APIs, temporal firewall, bootstrap and promotion rules.
+- [`docs/research/experiment_results.json`](docs/research/experiment_results.json) — machine-readable walk-forward results and explicit rejection reasons.
+
+Các công cụ thống kê mô tả và khai phá pattern không tự động trở thành tín hiệu
+production. Chỉ bằng chứng temporal out-of-sample, cùng uncertainty gate và
+feature allowlist, mới có thể cho phép một challenger ảnh hưởng dự đoán.
+
 ## Cài đặt mới hoàn toàn trên GitHub
 
 ### 1. Tạo repository
