@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "mode": "de",
+  "generated_at": "2026-09-02T02:39:38Z",
+  "positive_skill_threshold": 0.0001,
+  "folds": [
+    {
+      "fold": 1,
+      "calib_start": "2026-04-04",
+      "val_start": "2026-05-04",
+      "val_end_exclusive": "2026-06-03"
+    },
+    {
+      "fold": 2,
+      "calib_start": "2026-05-04",
+      "val_start": "2026-06-03",
+      "val_end_exclusive": "2026-07-03"
+    },
+    {
+      "fold": 3,
+      "calib_start": "2026-06-03",
+      "val_start": "2026-07-03",
+      "val_end_exclusive": "2026-08-02"
+    },
+    {
+      "fold": 4,
+      "calib_start": "2026-07-03",
+      "val_start": "2026-08-02",
+      "val_end_exclusive": null
+    }
+  ],
+  "feature_groups": {
+    "partner_cap50": [
+      "cap50_partner_hit_today",
+      "cap50_partner_freq_7d",
+      "cap50_partner_freq_30d",
+      "cap50_partner_freq_90d",
+      "cap50_partner_freq_365d",
+      "cap50_partner_gap",
+      "cap50_pair_freq_30_mean",
+      "cap50_pair_freq_90_mean",
+      "cap50_pair_freq_365_mean",
+      "cap50_pair_balance_30d",
+      "cap50_pair_balance_90d",
+      "cap50_pair_balance_365d",
+      "cap50_is_kep_bong"
+    ],
+    "bo": [
+      "bo_family_size",
+      "bo_hit_today_rate",
+      "bo_freq_7d_mean",
+      "bo_freq_30d_mean",
+      "bo_freq_90d_mean",
+      "bo_freq_365d_mean",
+      "bo_gap_mean",
+      "bo_path_support_mean"
+    ],
+    "bong": [
+      "bong_duong_hit_today",
+      "bong_duong_freq_7d",
+      "bong_duong_freq_30d",
+      "bong_duong_gap",
+      "bong_am_hit_today",
+      "bong_am_freq_7d",
+      "bong_am_freq_30d",
+      "bong_am_gap"
+    ],
+    "cham": [
+      "cham_hit_today_rate",
+      "cham_freq_7d_mean",
+      "cham_freq_30d_mean",
+      "cham_freq_90d_mean",
+      "cham_gap_mean",
+      "cham_path_support_mean"
+    ],
+    "tong": [
+      "tong_hit_today_rate",
+      "tong_freq_7d_mean",
+      "tong_freq_30d_mean",
+      "tong_freq_90d_mean",
+      "tong_gap_mean",
+      "tong_path_support_mean"
+    ]
+  },
+  "screen_summary": {
+    "partner_cap50": {
+      "mean_brier_skill": 0.00035988435130279717,
+      "mean_logloss_skill": 0.002775715597832018
+    },
+    "bo": {
+      "mean_brier_skill": 0.00025366415443922596,
+      "mean_logloss_skill": 0.0018021500787374634
+    },
+    "bong": {
+      "mean_brier_skill": 0.0004251234807310378,
+      "mean_logloss_skill": 0.0033714032824904705
+    },
+    "cham": {
+      "mean_brier_skill": -0.0005123299785635416,
+      "mean_logloss_skill": -0.0054888152024949455
+    },
+    "tong": {
+      "mean_brier_skill": 0.0005020820763784184,
+      "mean_logloss_skill": 0.004055384916314075
+    }
+  },
+  "screened_groups": [
+    "partner_cap50",
+    "bo",
+    "bong",
+    "tong"
+  ],
+  "confirmation": {
+    "partner_cap50": {
+      "brier_skill": -6.567245889965712e-05,
+      "logloss_skill": -0.000508764416063956,
+      "confirmed": false
+    },
+    "bo": {
+      "brier_skill": -0.00019965748746408885,
+      "logloss_skill": -0.0018108057577326253,
+      "confirmed": false
+    },
+    "bong": {
+      "brier_skill": 0.00020026290493080356,
+      "logloss_skill": 0.001787384845981177,
+      "confirmed": true
+    },
+    "tong": {
+      "brier_skill": 0.0002114206699297405,
+      "logloss_skill": 0.0018786703112673164,
+      "confirmed": true
+    }
+  },
+  "confirmed_groups": [
+    "bong",
+    "tong"
+  ],
+  "selected_features": [
+    "number_value",
+    "tens",
+    "ones",
+    "digit_total",
+    "weekday_next",
+    "month_next",
+    "freq_3d",
+    "freq_7d",
+    "freq_14d",
+    "freq_30d",
+    "freq_90d",
+    "freq_365d",
+    "gap",
+    "gap_log",
+    "hit_today",
+    "hit_yesterday",
+    "hit_2d_ago",
+    "loto_occ_today",
+    "loto_occ_7d",
+    "same_weekday_freq_364",
+    "month_to_date_freq",
+    "year_to_date_freq",
+    "path_support",
+    "path_support_log",
+    "reverse_hit_today",
+    "reverse_freq_7d",
+    "is_prev_special",
+    "is_reverse_prev_special",
+    "is_bong_prev_special",
+    "share_head_prev_special",
+    "share_tail_prev_special",
+    "same_total_prev_special",
+    "cham_overlap_prev_special",
+    "cond_de_rate",
+    "cond_loto_mean_rate",
+    "cond_loto_max_rate",
+    "head_freq_7d",
+    "tail_freq_7d",
+    "trend_7_vs_30"
+  ],
+  "final_brier_skill": 2.806679065492368e-05,
+  "final_logloss_skill": 0.00035421908495458787,
+  "all_groups_final_brier_skill": 0.0002565587286643689,
+  "all_groups_final_logloss_skill": 0.002363163768976273,
+  "domain_active": false,
+  "domain_trust": 0.0,
+  "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening, confirmation, and the untouched combined final gate.",
+  "reason": "combined confirmed challenger did not beat baseline on both final OOS metrics",
+  "anchor_date": "2026-09-01",
+  "predict_for_date": "2026-09-02",
+  "production_selected_groups": [],
+  "production_feature_count": 39,
+  "baseline_feature_count": 39
+}
