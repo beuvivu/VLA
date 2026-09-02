@@ -92,6 +92,12 @@ def _write_cap_loto_50_stats(*, data_dir: Path, out_dir: Path) -> None:
             json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+        print(
+            f"[OK] cap_loto_50 {mode}: "
+            f"kep_bong_balance365={summary['kep_bong_mean_member_balance_365d']:.4f}; "
+            f"reverse_balance365={summary['reverse_mean_member_balance_365d']:.4f}; "
+            f"kep_bong_phi={summary['kep_bong_mean_phi']:.4f}"
+        )
 
 
 def main() -> None:
