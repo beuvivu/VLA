@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
@@ -9,6 +11,58 @@ import pandas as pd
 from calendar_alignment import consecutive_next_pairs
 from lottery import Lottery
 from path_models import build_daily_targets
+
+
+@dataclass(frozen=True)
+class MarkovChain:
+    states: tuple[int, ...]
+    transition_counts: np.ndarray
+    transition_probabilities: np.ndarray
+    outgoing_counts: np.ndarray
+    alpha: float
+
+
+def build_markov_chain(
+    observations: Sequence[int],
+    *,
+    alpha: float = 1.0,
+    states: Sequence[int] = tuple(range(100)),
+) -> MarkovChain:
+    """Fit an exclusive-state first-order Markov chain with additive smoothing.
+
+    This implements ``(count(i,j)+alpha)/(count(i,*)+alpha*|S|)``.  It is a
+    statistical estimator, not evidence that lottery states are predictively
+    Markovian; it must be compared with marginal and rolling baselines OOS.
+    """
+    if not np.isfinite(alpha) or alpha < 0.0:
+        raise ValueError("alpha must be finite and >= 0")
+    state_space = tuple(int(state) for state in states)
+    if not state_space or len(state_space) != len(set(state_space)):
+        raise ValueError("states must be a non-empty unique sequence")
+    index = {state: i for i, state in enumerate(state_space)}
+    sequence = [int(value) for value in observations]
+    unknown = sorted(set(sequence) - set(state_space))
+    if unknown:
+        raise ValueError(f"observations contain states outside state space: {unknown[:10]}")
+
+    counts = np.zeros((len(state_space), len(state_space)), dtype=np.int64)
+    for previous, current in zip(sequence[:-1], sequence[1:], strict=True):
+        counts[index[previous], index[current]] += 1
+    outgoing = counts.sum(axis=1, dtype=np.int64)
+    denominator = outgoing[:, None] + alpha * len(state_space)
+    probabilities = np.divide(
+        counts + alpha,
+        denominator,
+        out=np.zeros_like(counts, dtype=float),
+        where=denominator > 0.0,
+    )
+    return MarkovChain(
+        states=state_space,
+        transition_counts=counts,
+        transition_probabilities=probabilities,
+        outgoing_counts=outgoing,
+        alpha=float(alpha),
+    )
 
 
 def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float = 1.0) -> pd.DataFrame:
