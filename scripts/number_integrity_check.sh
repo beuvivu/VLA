@@ -9,12 +9,11 @@ printf '%s\n' "== Canonical number ontology =="
 python src/export_number_reference.py --out-dir data/reference
 
 printf '%s\n' "== Pair artifacts + semantics =="
-python src/pair_stats.py --out-dir data/pairs --top 300
+python src/pair_stats.py --out-dir data/pairs --data-dir data --top 300
 python src/descriptive_extensions.py --out-dir data/descriptive_ext --pair-top 300
 python src/normalize_pair_artifacts.py \
   --descriptive-dir data/descriptive_ext \
   --pairs-dir data/pairs
-python src/cap_loto_50_stats.py --mode both --data-dir data --out-dir data/pairs
 
 printf '%s\n' "== Rebuild exact-width Excel outputs from canonical history =="
 python - <<'PY'
@@ -108,6 +107,8 @@ rev = pd.read_csv(
 assert not rev.empty
 assert set(rev["pair_kind"]) == {"reverse_pair_same_draw"}
 assert rev["reverse_related"].astype(str).str.lower().eq("true").all()
+assert rev["cap_loto_50_related"].astype(str).str.lower().eq("true").all()
+assert set(rev["cap_loto_50_kind"]) == {"reverse"}
 
 for mode in ("loto", "de"):
     stats = pd.read_csv(
