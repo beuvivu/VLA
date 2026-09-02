@@ -5,10 +5,11 @@ from __future__ import annotations
 Historically, the word ``pair`` was used for several different concepts:
 - an unordered pair of two loto numbers co-occurring in the same draw;
 - a deterministic reverse/lộn pair AB↔BA;
+- the common 50-cặp-loto partition (45 reverse + 5 kép-bóng);
 - two numbers related through bóng/bộ.
 
-This post-processor preserves old filenames for compatibility while adding an
-explicit ``pair_kind`` and deterministic relation metadata.
+This post-processor preserves old filenames for compatibility while adding
+explicit semantics and deterministic relation metadata.
 """
 
 import argparse
@@ -18,7 +19,11 @@ import pandas as pd
 
 from number_reference import (
     bo_family_id,
+    bong_am,
     bong_duong,
+    cap_loto_50_id,
+    cap_loto_50_kind,
+    cap_loto_50_partner,
     normalize_two_digit,
     pair_key,
     pair_relation_tags,
@@ -56,8 +61,6 @@ def annotate_pair_frame(
     a_text = out[a_col].map(_as_number_text)
     b_text = out[b_col].map(_as_number_text)
 
-    # Statistical pair keys are unordered. Deterministic direction remains
-    # available in a_str/b_str and relation flags.
     out["pair_kind"] = pair_kind
     out["canonical_pair_key"] = [
         pair_key(a, b, allow_equal=True) for a, b in zip(a_text, b_text)
@@ -70,6 +73,21 @@ def annotate_pair_frame(
     out["bong_duong_related"] = [
         bong_duong(a) == b for a, b in zip(a_text, b_text)
     ]
+    out["bong_am_related"] = [bong_am(a) == b for a, b in zip(a_text, b_text)]
+
+    cap50_related = [
+        cap_loto_50_partner(a) == b for a, b in zip(a_text, b_text)
+    ]
+    out["cap_loto_50_related"] = cap50_related
+    out["cap_loto_50_id"] = [
+        cap_loto_50_id(a) if related else ""
+        for a, related in zip(a_text, cap50_related)
+    ]
+    out["cap_loto_50_kind"] = [
+        cap_loto_50_kind(a) if related else ""
+        for a, related in zip(a_text, cap50_related)
+    ]
+
     out["bo_family_id_a"] = a_text.map(bo_family_id)
     out["bo_family_id_b"] = b_text.map(bo_family_id)
     out["same_bo_family"] = out["bo_family_id_a"] == out["bo_family_id_b"]
@@ -77,7 +95,6 @@ def annotate_pair_frame(
         "|".join(pair_relation_tags(a, b)) for a, b in zip(a_text, b_text)
     ]
 
-    # Keep historical pair column but make it canonical and text-safe.
     if "pair" in out.columns:
         out["pair"] = out["canonical_pair_key"]
     return out
@@ -116,6 +133,10 @@ def normalize_artifacts(
         )
         if not normalized.empty and not bool(normalized["reverse_related"].all()):
             raise RuntimeError("reversal pair artifact contains a non-reverse pair")
+        if not normalized.empty and not bool(
+            normalized["cap_loto_50_related"].all()
+        ):
+            raise RuntimeError("reverse artifact contains a pair outside cap_loto_50")
         normalized.to_csv(reversal, index=False)
         counts["reversal_pair_rows"] = len(normalized)
 
