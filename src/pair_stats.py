@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from cap_loto_50_stats import build_stats as build_cap_loto_50_stats
 from lottery import Lottery
 from path_models import build_daily_targets
 
 
 def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
-    """Count how often a number and its reverse (ab and ba) co-occur in the same day (loto set)."""
+    """Count same-day co-occurrence for the 45 non-double reverse pairs."""
+
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
-    dates, loto_targets, _ = build_daily_targets(df_2d)
+    _, loto_targets, _ = build_daily_targets(df_2d)
 
     counts = np.zeros(100, dtype=np.int32)
     days = np.zeros(100, dtype=np.int32)
@@ -23,7 +26,7 @@ def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
             a = x // 10
             b = x % 10
             rev = b * 10 + a
-            if x < rev:  # count each pair once using the smaller label
+            if x < rev:
                 days[x] += 1
                 if (x in s) and (rev in s):
                     counts[x] += 1
@@ -47,15 +50,16 @@ def compute_reversal_pair_cooccurrence(df_2d: pd.DataFrame) -> pd.DataFrame:
                 }
             )
 
-    return pd.DataFrame(rows).sort_values(["rate", "cooccur"], ascending=[False, False]).reset_index(drop=True)
+    return (
+        pd.DataFrame(rows)
+        .sort_values(["rate", "cooccur"], ascending=[False, False])
+        .reset_index(drop=True)
+    )
 
 
 def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
-    """Count unordered pair frequency within a day for all numbers (combinatorial).
+    """Count unordered same-day pair frequency for all distinct loto numbers."""
 
-    For each day, for each unordered pair (x<y) present in loto set, increment count.
-    This can get large; we export only top pairs.
-    """
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
     _, loto_targets, _ = build_daily_targets(df_2d)
 
@@ -68,13 +72,32 @@ def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
             for j in range(i + 1, len(arr)):
                 ctr[(arr[i], arr[j])] += 1
 
-    rows = [{"x": k[0], "y": k[1], "count": v, "pair": f"{k[0]:02d}-{k[1]:02d}"} for k, v in ctr.items()]
+    rows = [
+        {
+            "x": pair[0],
+            "y": pair[1],
+            "count": count,
+            "pair": f"{pair[0]:02d}-{pair[1]:02d}",
+        }
+        for pair, count in ctr.items()
+    ]
     return pd.DataFrame(rows).sort_values("count", ascending=False).reset_index(drop=True)
+
+
+def _write_cap_loto_50_stats(*, data_dir: Path, out_dir: Path) -> None:
+    for mode in ("loto", "de"):
+        df, summary = build_cap_loto_50_stats(mode, data_dir=data_dir)
+        df.to_csv(out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
+        (out_dir / f"cap_loto_50_summary_{mode}.json").write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-dir", type=str, default="data/pairs")
+    ap.add_argument("--data-dir", type=str, default="data")
     ap.add_argument("--top", type=int, default=300)
     args = ap.parse_args()
 
@@ -92,6 +115,10 @@ def main() -> None:
 
     pairs = compute_pair_frequency(df_2d).head(args.top)
     pairs.to_csv(out_dir / f"top_unordered_pairs_top{args.top}.csv", index=False)
+
+    # The 50-pair system is a different object from arbitrary co-occurrence:
+    # 45 AB-BA pairs plus 5 kép-bóng pairs partition the whole 00..99 universe.
+    _write_cap_loto_50_stats(data_dir=Path(args.data_dir), out_dir=out_dir)
 
     print(f"Saved pair stats to {out_dir}")
 
