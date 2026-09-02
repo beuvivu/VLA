@@ -303,5 +303,29 @@
     ],
     "candidates": 4,
     "distinct_results": 2
+  },
+  "2026-09-02": {
+    "checked_at_utc": "2026-09-02T15:03:55Z",
+    "accepted": true,
+    "required_agreement": 2,
+    "agreement": 4,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "source_agreement": 5,
+    "independent_groups": [
+      "xoso",
+      "mketqua",
+      "minhngoc",
+      "xosodaiphat"
+    ],
+    "sources": [
+      "xoso.com.vn",
+      "mketqua.net",
+      "www.minhngoc.net.vn",
+      "xosominhngoc.com",
+      "xosodaiphat.com"
+    ],
+    "candidates": 5,
+    "distinct_results": 1
   }
 }
