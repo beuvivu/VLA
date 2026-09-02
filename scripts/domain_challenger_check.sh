@@ -48,17 +48,26 @@ for mode in ("loto", "de"):
     assert set(gate["feature_groups"]) == set(DOMAIN_FEATURE_GROUPS), gate
     assert set(gate["confirmed_groups"]).issubset(DOMAIN_FEATURE_GROUPS), gate
     assert 0.0 <= float(gate["domain_trust"]) <= 0.30, gate
+    evaluation = gate["final_evaluation"]
+    feature_manifest = gate["feature_manifest"]
+    assert feature_manifest["production_features"] == gate["selected_features"], gate
+    assert feature_manifest["promoted_groups"] == gate["production_selected_groups"], gate
     if gate["domain_active"]:
         assert gate["confirmed_groups"], gate
         assert float(gate["final_brier_skill"]) > 0.0, gate
         assert float(gate["final_logloss_skill"]) > 0.0, gate
         assert float(gate["domain_trust"]) > 0.0, gate
+        assert not evaluation["rejection_reasons"], gate
+        assert int(evaluation["oos_dates"]) >= 30, gate
+        assert float(evaluation["brier_improvement_ci"]["lower"]) > 0.0, gate
+        assert float(evaluation["logloss_improvement_ci"]["lower"]) > 0.0, gate
     else:
         assert float(gate["domain_trust"]) == 0.0, gate
 
     ablation = pd.read_csv(f"$TMP_OUT/cau_keo_domain_ablation_{mode}.csv")
-    assert {"baseline", "screen", "final_diagnostic"}.issubset(set(ablation["stage"])), ablation["stage"].unique()
+    assert {"baseline", "screen", "confirmation_diagnostic"}.issubset(set(ablation["stage"])), ablation["stage"].unique()
     assert set(ablation.loc[ablation["stage"] == "screen", "candidate"]) == set(DOMAIN_FEATURE_GROUPS), mode
+    assert ablation.groupby("fold")["seed"].nunique().eq(1).all(), mode
     for value in ablation["brier_skill"].astype(float):
         assert math.isfinite(value), (mode, value)
     for value in ablation["logloss_skill"].astype(float):

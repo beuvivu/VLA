@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -16,7 +17,9 @@ from cau_keo_domain_challenger import (
     _positive_pair,
     _trust_from_skill,
     augment_domain_features,
+    walk_forward_ablation,
 )
+from ml_validation import evaluate_predictions
 
 
 def _base_frame(anchor: str = "2026-09-01") -> pd.DataFrame:
@@ -110,3 +113,48 @@ def test_production_gate_requires_both_metrics_to_have_positive_skill() -> None:
     assert _positive_pair(-0.01, 0.02) is False
     assert _trust_from_skill(-0.01, 0.02) == 0.0
     assert 0.05 <= _trust_from_skill(0.02, 0.01) <= 0.30
+
+
+def test_ablation_reuses_one_seed_per_fold_and_fails_back_to_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import cau_keo_domain_challenger as module
+
+    days = pd.date_range("2025-01-01", periods=300, freq="D")
+    frame = pd.DataFrame({"anchor_date": days})
+    y = pd.Series((np.arange(len(days)) % 2).astype(int))
+    calls: list[tuple[int, int]] = []
+
+    def fake_fit(
+        data: pd.DataFrame,
+        target: np.ndarray,
+        *,
+        features: list[str],
+        fold: object,
+        mode: str,
+        seed: int,
+    ):
+        del features, mode
+        calls.append((fold.fold, seed))
+        _, _, valid = module._fold_masks(data, fold)
+        return evaluate_predictions(
+            target[valid],
+            np.full(int(valid.sum()), 0.5),
+            data.loc[valid, "anchor_date"].to_numpy(),
+        )
+
+    monkeypatch.setattr(module, "_fit_fold", fake_fit)
+    _, gate = walk_forward_ablation(frame, y, mode="loto")
+
+    for fold in range(1, 5):
+        assert {seed for called_fold, seed in calls if called_fold == fold} == {
+            20260920 + fold
+        }
+    assert sum(called_fold == 4 for called_fold, _ in calls) == 1
+    assert gate["domain_active"] is False
+    assert gate["selected_features"] == list(module.FEATURE_COLS)
+    assert gate["final_evaluation"]["holdout_consumed"] is False
+    assert gate["final_evaluation"]["oos_dates"] == 0
+    manifest = gate["feature_manifest"]
+    assert manifest["promoted_groups"] == []
+    assert manifest["production_features"] == list(module.FEATURE_COLS)

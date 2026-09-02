@@ -11,7 +11,8 @@ Chronological gate:
 - folds 1-2: screen each feature group independently versus the same baseline;
 - fold 3: confirm each screened group on later unseen dates;
 - fold 4: evaluate the combined confirmed challenger on an untouched final fold;
-- production blend is enabled only when both Brier and LogLoss skill are > 0.
+- production blend is enabled only when both losses improve and their paired,
+  date-clustered bootstrap improvement intervals are strictly above zero.
 
 No deterministic relation (cặp/bộ/bóng/chạm/tổng) is treated as evidence of
 predictability by itself.  The relation merely defines candidate features.
@@ -30,7 +31,6 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import brier_score_loss, log_loss
 
 from cau_keo_ml import (
     FEATURE_COLS,
@@ -41,6 +41,15 @@ from cau_keo_ml import (
     run as run_baseline,
 )
 from ml_models import PlattCalibratedClassifier
+from ml_validation import (
+    PredictionEvaluation,
+    ValidationConfig,
+    assert_temporal_partitions,
+    compare_paired_predictions,
+    evaluate_predictions,
+    predict_with_feature_allowlist,
+    relative_skill,
+)
 from number_reference import (
     bo,
     bo_family_id,
@@ -53,12 +62,19 @@ from number_reference import (
 )
 
 Mode = Literal["loto", "de"]
-DOMAIN_SCHEMA_VERSION = 1
+DOMAIN_SCHEMA_VERSION = 2
 POSITIVE_SKILL_EPS = 1e-4
 N_FOLDS = 4
 DEFAULT_VAL_DAYS = 30
 DEFAULT_CALIB_DAYS = 30
 MIN_TRAIN_DAYS = 90
+FINAL_GATE_CONFIG = ValidationConfig(
+    bootstrap_replicates=1_000,
+    bootstrap_seed=20260902,
+    confidence_level=0.95,
+    minimum_oos_dates=30,
+    minimum_skill=POSITIVE_SKILL_EPS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -355,13 +371,6 @@ def _fold_masks(frame: pd.DataFrame, fold: FoldSpec) -> tuple[np.ndarray, np.nda
     return train, calib, valid
 
 
-def _metrics(y_true: np.ndarray, prob: np.ndarray) -> tuple[float, float]:
-    p = np.clip(np.asarray(prob, dtype=float), 1e-9, 1.0 - 1e-9)
-    brier = float(brier_score_loss(y_true, p))
-    ll = float(log_loss(y_true, np.column_stack([1.0 - p, p]), labels=[0, 1]))
-    return brier, ll
-
-
 def _fit_fold(
     frame: pd.DataFrame,
     y: np.ndarray,
@@ -370,15 +379,18 @@ def _fit_fold(
     fold: FoldSpec,
     mode: Mode,
     seed: int,
-) -> tuple[float, float]:
+) -> PredictionEvaluation:
     train_mask, calib_mask, val_mask = _fold_masks(frame, fold)
     if min(int(train_mask.sum()), int(calib_mask.sum()), int(val_mask.sum())) <= 0:
         raise RuntimeError(f"empty chronological split in fold {fold.fold}")
+    assert_temporal_partitions(
+        frame["anchor_date"].to_numpy(), train_mask, calib_mask, val_mask
+    )
 
     values = frame[features].astype(np.float32).to_numpy()
     X_train, y_train = values[train_mask], y[train_mask]
     X_cal, y_cal = values[calib_mask], y[calib_mask]
-    X_val, y_val = values[val_mask], y[val_mask]
+    y_val = y[val_mask]
     neg_ratio = 22 if mode == "de" else 8
     X_train, y_train = _downsample(X_train, y_train, neg_ratio=neg_ratio, seed=seed)
 
@@ -386,14 +398,17 @@ def _fit_fold(
     model.fit(X_train, y_train)
     p_cal = model.base_.predict_proba(X_cal)[:, 1]
     model.fit_platt(p_cal, y_cal)
-    p_val = model.predict_proba(X_val)[:, 1]
-    return _metrics(y_val, p_val)
+    validation_frame = frame.loc[val_mask]
+    p_val = predict_with_feature_allowlist(model, validation_frame, features)
+    return evaluate_predictions(
+        y_val,
+        p_val,
+        validation_frame["anchor_date"].to_numpy(),
+    )
 
 
 def _skill(candidate: float, baseline: float) -> float:
-    if not np.isfinite(candidate) or not np.isfinite(baseline) or baseline <= 0:
-        return float("-inf")
-    return float(1.0 - candidate / baseline)
+    return relative_skill(baseline, candidate)
 
 
 def _row(
@@ -403,26 +418,32 @@ def _row(
     fold: FoldSpec,
     candidate: str,
     features: list[str],
-    baseline_metrics: tuple[float, float],
-    candidate_metrics: tuple[float, float],
+    baseline_metrics: PredictionEvaluation,
+    candidate_metrics: PredictionEvaluation,
+    seed: int,
 ) -> dict[str, object]:
-    bb, bl = baseline_metrics
-    cb, cl = candidate_metrics
+    bb, bl = baseline_metrics.brier, baseline_metrics.logloss
+    cb, cl = candidate_metrics.brier, candidate_metrics.logloss
     return {
         "mode": mode,
         "stage": stage,
         "fold": fold.fold,
         "candidate": candidate,
         "feature_count": len(features),
+        "seed": int(seed),
         "calib_start": fold.calib_start.date().isoformat(),
         "val_start": fold.val_start.date().isoformat(),
         "val_end_exclusive": fold.val_end.date().isoformat() if fold.val_end is not None else "",
         "baseline_brier": bb,
         "candidate_brier": cb,
+        "brier_improvement": bb - cb,
         "brier_skill": _skill(cb, bb),
         "baseline_logloss": bl,
         "candidate_logloss": cl,
+        "logloss_improvement": bl - cl,
         "logloss_skill": _skill(cl, bl),
+        "oos_dates": candidate_metrics.oos_dates,
+        "oos_rows": candidate_metrics.oos_rows,
     }
 
 
@@ -451,16 +472,17 @@ def walk_forward_ablation(
     days = pd.DatetimeIndex(sorted(data["anchor_date"].unique()))
     folds = _make_folds(days)
 
-    baseline_by_fold: dict[int, tuple[float, float]] = {}
+    baseline_by_fold: dict[int, PredictionEvaluation] = {}
     rows: list[dict[str, object]] = []
     for fold in folds:
+        fold_seed = 20260920 + fold.fold
         metrics = _fit_fold(
             data,
             target,
             features=list(FEATURE_COLS),
             fold=fold,
             mode=mode,
-            seed=20260920 + fold.fold,
+            seed=fold_seed,
         )
         baseline_by_fold[fold.fold] = metrics
         rows.append(
@@ -472,6 +494,7 @@ def walk_forward_ablation(
                 features=list(FEATURE_COLS),
                 baseline_metrics=metrics,
                 candidate_metrics=metrics,
+                seed=fold_seed,
             )
         )
 
@@ -481,13 +504,14 @@ def walk_forward_ablation(
         feature_set = list(FEATURE_COLS) + list(group_features)
         group_rows: list[dict[str, object]] = []
         for fold in folds[:2]:
+            fold_seed = 20260920 + fold.fold
             metrics = _fit_fold(
                 data,
                 target,
                 features=feature_set,
                 fold=fold,
                 mode=mode,
-                seed=20261000 + 100 * list(DOMAIN_FEATURE_GROUPS).index(group) + fold.fold,
+                seed=fold_seed,
             )
             r = _row(
                 mode=mode,
@@ -497,6 +521,7 @@ def walk_forward_ablation(
                 features=feature_set,
                 baseline_metrics=baseline_by_fold[fold.fold],
                 candidate_metrics=metrics,
+                seed=fold_seed,
             )
             rows.append(r)
             group_rows.append(r)
@@ -514,6 +539,7 @@ def walk_forward_ablation(
     confirmation: dict[str, dict[str, float | bool]] = {}
     fold3 = folds[2]
     for group in screened:
+        fold_seed = 20260920 + fold3.fold
         feature_set = list(FEATURE_COLS) + list(DOMAIN_FEATURE_GROUPS[group])
         metrics = _fit_fold(
             data,
@@ -521,7 +547,7 @@ def walk_forward_ablation(
             features=feature_set,
             fold=fold3,
             mode=mode,
-            seed=20262000 + 100 * list(DOMAIN_FEATURE_GROUPS).index(group),
+            seed=fold_seed,
         )
         r = _row(
             mode=mode,
@@ -531,6 +557,7 @@ def walk_forward_ablation(
             features=feature_set,
             baseline_metrics=baseline_by_fold[fold3.fold],
             candidate_metrics=metrics,
+            seed=fold_seed,
         )
         rows.append(r)
         ok = _positive_pair(float(r["brier_skill"]), float(r["logloss_skill"]))
@@ -542,24 +569,29 @@ def walk_forward_ablation(
         if ok:
             confirmed.append(group)
 
-    fold4 = folds[3]
+    # Keep the fourth fold untouched unless a challenger has survived both
+    # screening and confirmation.  The all-groups diagnostic belongs on the
+    # confirmation fold and can never consume the final holdout pre-selection.
+    diagnostic_fold = fold3
+    diagnostic_seed = 20260920 + diagnostic_fold.fold
     all_features = list(FEATURE_COLS) + list(ALL_DOMAIN_FEATURES)
     all_metrics = _fit_fold(
         data,
         target,
         features=all_features,
-        fold=fold4,
+        fold=diagnostic_fold,
         mode=mode,
-        seed=20263000,
+        seed=diagnostic_seed,
     )
     all_row = _row(
         mode=mode,
-        stage="final_diagnostic",
-        fold=fold4,
+        stage="confirmation_diagnostic",
+        fold=diagnostic_fold,
         candidate="all_domain_groups",
         features=all_features,
-        baseline_metrics=baseline_by_fold[fold4.fold],
+        baseline_metrics=baseline_by_fold[diagnostic_fold.fold],
         candidate_metrics=all_metrics,
+        seed=diagnostic_seed,
     )
     rows.append(all_row)
 
@@ -567,6 +599,8 @@ def walk_forward_ablation(
     for group in confirmed:
         selected_features.extend(DOMAIN_FEATURE_GROUPS[group])
 
+    fold4 = folds[3]
+    fold4_seed = 20260920 + fold4.fold
     if confirmed:
         combined_metrics = _fit_fold(
             data,
@@ -574,7 +608,7 @@ def walk_forward_ablation(
             features=selected_features,
             fold=fold4,
             mode=mode,
-            seed=20264000,
+            seed=fold4_seed,
         )
         combined_row = _row(
             mode=mode,
@@ -584,18 +618,46 @@ def walk_forward_ablation(
             features=selected_features,
             baseline_metrics=baseline_by_fold[fold4.fold],
             candidate_metrics=combined_metrics,
+            seed=fold4_seed,
         )
         rows.append(combined_row)
-        final_brier_skill = float(combined_row["brier_skill"])
-        final_ll_skill = float(combined_row["logloss_skill"])
-        active = _positive_pair(final_brier_skill, final_ll_skill)
+        final_decision = compare_paired_predictions(
+            baseline_by_fold[fold4.fold],
+            combined_metrics,
+            config=FINAL_GATE_CONFIG,
+            temporal_checks_pass=True,
+        )
+        final_evaluation: dict[str, object] = final_decision.as_dict()
+        final_evaluation["holdout_consumed"] = True
+        final_brier_skill = final_decision.brier_skill
+        final_ll_skill = final_decision.logloss_skill
+        active = final_decision.promoted
     else:
         combined_row = None
+        final_evaluation = {
+            "promoted": False,
+            "rejection_reasons": ["insufficient_support", "research_only"],
+            "oos_dates": 0,
+            "oos_rows": 0,
+            "bootstrap_replicates": 0,
+            "bootstrap_seed": FINAL_GATE_CONFIG.bootstrap_seed,
+            "holdout_consumed": False,
+        }
         final_brier_skill = 0.0
         final_ll_skill = 0.0
         active = False
 
     trust = _trust_from_skill(final_brier_skill, final_ll_skill) if active else 0.0
+    production_features = selected_features if active else list(FEATURE_COLS)
+    promoted_groups = confirmed if active else []
+    feature_manifest = {
+        "schema_version": 1,
+        "baseline_features": list(FEATURE_COLS),
+        "feature_groups": DOMAIN_FEATURE_GROUPS,
+        "promoted_groups": promoted_groups,
+        "production_features": production_features,
+        "evaluation": final_evaluation,
+    }
     report = pd.DataFrame(rows)
     gate: dict[str, object] = {
         "schema_version": DOMAIN_SCHEMA_VERSION,
@@ -608,22 +670,30 @@ def walk_forward_ablation(
         "screened_groups": screened,
         "confirmation": confirmation,
         "confirmed_groups": confirmed,
-        "selected_features": selected_features if active else list(FEATURE_COLS),
+        "selected_features": production_features,
+        "feature_manifest": feature_manifest,
+        "final_evaluation": final_evaluation,
         "final_brier_skill": final_brier_skill,
         "final_logloss_skill": final_ll_skill,
-        "all_groups_final_brier_skill": float(all_row["brier_skill"]),
-        "all_groups_final_logloss_skill": float(all_row["logloss_skill"]),
+        "all_groups_confirmation_brier_skill": float(all_row["brier_skill"]),
+        "all_groups_confirmation_logloss_skill": float(all_row["logloss_skill"]),
         "domain_active": bool(active),
         "domain_trust": trust,
+        "pattern_selection_bias_risk": (
+            "screening folds select feature groups; only the untouched fourth fold is used "
+            "for the paired promotion decision"
+        ),
         "policy": (
             "A domain feature group can affect production only after positive OOS Brier and "
-            "LogLoss skill in screening, confirmation, and the untouched combined final gate."
+            "LogLoss skill in screening and confirmation, then positive clustered-bootstrap "
+            "lower confidence bounds for both losses on the untouched combined final fold."
         ),
     }
     if combined_row is None:
         gate["reason"] = "no individual domain feature group survived confirmation"
     elif not active:
-        gate["reason"] = "combined confirmed challenger did not beat baseline on both final OOS metrics"
+        reasons = ", ".join(str(x) for x in final_evaluation["rejection_reasons"])
+        gate["reason"] = f"combined confirmed challenger failed closed: {reasons}"
     else:
         gate["reason"] = "confirmed challenger passed the untouched final OOS gate"
     return report, gate
@@ -787,13 +857,13 @@ def run_mode(
     X_pred = augment_domain_features(X_pred).reset_index(drop=True)
 
     baseline_model = pack["model"]
-    p_baseline = baseline_model.predict_proba(
-        X_pred[FEATURE_COLS].astype(np.float32).to_numpy()
-    )[:, 1]
+    p_baseline = predict_with_feature_allowlist(
+        baseline_model, X_pred, FEATURE_COLS
+    )
     if challenger is not None:
-        p_domain = challenger.predict_proba(
-            X_pred[selected_features].astype(np.float32).to_numpy()
-        )[:, 1]
+        p_domain = predict_with_feature_allowlist(
+            challenger, X_pred, selected_features
+        )
     else:
         p_domain = p_baseline.copy()
 
@@ -836,6 +906,7 @@ def run_mode(
     pack["domain_gate"] = {
         "final_brier_skill": float(gate["final_brier_skill"]),
         "final_logloss_skill": float(gate["final_logloss_skill"]),
+        "final_evaluation": gate["final_evaluation"],
         "reason": gate["reason"],
     }
     pack["domain_trained_through_date"] = str(
@@ -856,6 +927,8 @@ def run_mode(
         "trust": trust,
         "selected_groups": selected_groups,
         "selected_features": selected_features if active else list(FEATURE_COLS),
+        "feature_manifest": gate["feature_manifest"],
+        "final_evaluation": gate["final_evaluation"],
         "ablation_report": ablation_path.name,
         "gate_report": gate_path.name,
         "final_brier_skill": float(gate["final_brier_skill"]),
