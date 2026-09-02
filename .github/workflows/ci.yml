@@ -48,6 +48,9 @@ jobs:
       - name: Core release check
         run: bash scripts/release_check.sh
 
+      - name: Domain challenger OOS gate
+        run: bash scripts/domain_challenger_check.sh
+
       - name: Number ontology, pair and Excel integrity
         run: bash scripts/number_integrity_check.sh
 
