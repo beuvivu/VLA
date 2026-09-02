@@ -45,8 +45,9 @@ def _py(script: str, *args: str) -> list[str]:
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
-            "GitHub pipeline: sync -> validate canonical data -> statistics -> research "
-            "falsification -> paths -> base ML -> stacked ML -> calibrated predictions -> dashboards."
+            "GitHub pipeline: sync -> validate canonical data -> reference/Excel integrity -> "
+            "statistics -> research falsification -> paths -> base ML -> stacked ML -> "
+            "calibrated predictions -> dashboards."
         )
     )
     ap.add_argument(
@@ -116,6 +117,12 @@ def main() -> None:
         allow_fail=True,
     )
 
+    # Deterministic number ontology and Excel serialization are hard data
+    # contracts. They must be valid before any downstream statistics consume
+    # number-family labels or prize workbooks.
+    _run(_py("src/export_number_reference.py"), allow_fail=False)
+    _run(_py("src/validate_excel_integrity.py"), allow_fail=False)
+
     for script in [
         "src/analyze.py",
         "src/advanced_stats.py",
@@ -129,6 +136,11 @@ def main() -> None:
         "src/descriptive_extensions.py",
     ]:
         _run(_py(script), allow_fail=soft_fail)
+
+    # Normalize all pair artifacts after both pair_stats and descriptive_ext
+    # have regenerated their raw tables. This preserves legacy filenames while
+    # making cặp lộn, bóng/bộ relations and statistical co-occurrence explicit.
+    _run(_py("src/normalize_pair_artifacts.py"), allow_fail=soft_fail)
 
     # ``statistical_matrices.py`` still contains historical row-adjacent
     # conditionals and an undated ML overlay loader. Canonical post-processors
