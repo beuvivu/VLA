@@ -257,6 +257,13 @@ def main() -> None:
             allow_fail=soft_fail,
             timeout_s=900,
         )
+        # In strict production runs the persisted gate, model pack and 100-number
+        # prediction table must agree. Inactive challengers must be an exact
+        # rollback to baseline probabilities.
+        _run(
+            _py("src/validate_cau_keo_domain.py"),
+            allow_fail=soft_fail,
+        )
         _run(
             _py(
                 "src/cau_position_evidence.py",
