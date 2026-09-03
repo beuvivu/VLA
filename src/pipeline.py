@@ -14,15 +14,19 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
     logging.info("RUN: %s", " ".join(cmd))
     started = time.perf_counter()
     try:
-        proc = subprocess.run(cmd, cwd=ROOT, check=False, timeout=timeout_s)
-    except subprocess.TimeoutExpired:
+        # Commands are fixed Python argv lists assembled by this module; no
+        # untrusted text is interpreted by a shell.
+        proc = subprocess.run(  # noqa: S603
+            cmd, cwd=ROOT, check=False, timeout=timeout_s
+        )
+    except subprocess.TimeoutExpired as exc:
         elapsed = time.perf_counter() - started
         message = f"Command timed out after {elapsed:.1f}s: {' '.join(cmd)}"
         if allow_fail:
             logging.warning("%s (non-critical)", message)
             return
         logging.error("%s", message)
-        raise SystemExit(124)
+        raise SystemExit(124) from exc
     elapsed = time.perf_counter() - started
     if proc.returncode == 0:
         logging.info("OK %.2fs: %s", elapsed, " ".join(cmd))

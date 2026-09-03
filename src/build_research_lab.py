@@ -11,6 +11,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from ui_locale import mode_label, strategy_label
+from web_security import security_meta_tags
 
 
 TEST_LABELS = {
@@ -247,6 +248,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+{security_meta_tags()}
 <title>Phòng nghiên cứu VLA</title>
 <style>
 :root{{--bg:#f5f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb}}

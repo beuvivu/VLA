@@ -51,28 +51,33 @@ jobs:
           started="$(date +%s)"
           previous_payload_hash=""
           verified="false"
+          live_path="$(mktemp "${RUNNER_TEMP}/live-result.XXXXXX.json")"
+          export LIVE_PATH="$live_path"
+          trap 'rm -f "$live_path"' EXIT
           while true; do
-            python src/live_sync.py --out /tmp/live.json --min-agreement 2
+            python src/live_sync.py --out "$live_path" --min-agreement 2
 
             # Ignore checked_at timestamps when deciding whether the user-visible
             # payload changed, so we do not create needless force-pushes.
             payload_hash="$(python - <<'PY'
           import hashlib, json
-          p=json.load(open('/tmp/live.json', encoding='utf-8'))
+          import os
+          with open(os.environ['LIVE_PATH'], encoding='utf-8') as fh:
+              p=json.load(fh)
           p.pop('checked_at_utc', None); p.pop('checked_at_local', None)
           print(hashlib.sha256(json.dumps(p, sort_keys=True, ensure_ascii=False).encode()).hexdigest())
           PY
           )"
 
             if [[ "$payload_hash" != "$previous_payload_hash" ]]; then
-              blob="$(git hash-object -w /tmp/live.json)"
+              blob="$(git hash-object -w "$live_path")"
               tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
               commit="$(printf 'live: XSMB snapshot\n' | git commit-tree "$tree")"
               git push --force origin "$commit:refs/heads/live"
               previous_payload_hash="$payload_hash"
             fi
 
-            status="$(python -c "import json; print(json.load(open('/tmp/live.json'))['status'])")"
+            status="$(python -c "import json, os; print(json.load(open(os.environ['LIVE_PATH']))['status'])")"
             if [[ "$status" == "complete_verified" ]]; then
               echo "Verified complete result reached."
               verified="true"

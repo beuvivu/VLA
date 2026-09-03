@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from build_landing_page import build_landing_page
+from build_landing_page import _fmt2, build_landing_page
+from web_security import json_for_html_script
 
 
 def test_landing_page_contains_navigation_and_sections() -> None:
@@ -47,3 +48,18 @@ def test_landing_page_is_self_contained() -> None:
     assert "https://cdn" not in html
     assert "http://cdn" not in html
     assert "<script type=\"application/json\" id=\"landing-data\">" in html
+
+
+def test_landing_page_escapes_embedded_data_and_avoids_untrusted_inner_html() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    build_landing_page(repo_root=repo_root)
+    rendered = (repo_root / "docs" / "landing.html").read_text(encoding="utf-8")
+
+    payload = json_for_html_script({"value": "</script><img src=x onerror=alert(1)>&"})
+    assert "</script>" not in payload
+    assert "<img" not in payload
+    assert "\\u003c" in payload and "\\u0026" in payload
+    assert _fmt2("' onmouseover='alert(1)") == ""
+    assert "li.innerHTML =" not in rendered
+    assert "Content-Security-Policy" in rendered
+    assert 'name="referrer" content="no-referrer"' in rendered

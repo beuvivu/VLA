@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
 from ui_locale import mode_label, path_kind_label
+from web_security import security_meta_tags
 
 
 @dataclass
@@ -99,7 +100,7 @@ def _render_page(
 
     # Rows
     rows: list[UiRow] = []
-    for idx, r in ui_df.iterrows():
+    for _, r in ui_df.iterrows():
         lag = int(r.get("lag", 0))
         i = int(r.get("i", 0))
         j = int(r.get("j", 0))
@@ -210,6 +211,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
     idx_html = [
         "<!doctype html><html lang='vi'><head><meta charset='utf-8'/>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
+        f"{security_meta_tags()}"
         "<title>Bảng điều khiển soi cầu</title>"
         "<style>body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:#0b0f17;color:#e5e7eb}"
         ".wrap{max-width:980px;margin:0 auto;padding:20px}"

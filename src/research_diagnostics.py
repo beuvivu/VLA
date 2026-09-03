@@ -203,7 +203,7 @@ def build_report(two: pd.DataFrame, sparse: pd.DataFrame, *, permutations: int =
         {"name": "loto_repeat_dependency", "statistic": float(repeat["effect"]), "p_value": float(repeat["p_value"])},
     ]
     q = bh_fdr([float(row["p_value"]) for row in primary])
-    for row, qv in zip(primary, q):
+    for row, qv in zip(primary, q, strict=True):
         row["q_value_fdr"] = float(qv) if np.isfinite(qv) else None
         row["fdr_05"] = bool(np.isfinite(qv) and qv <= 0.05)
 

@@ -25,6 +25,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from numbers import Integral
 from pathlib import Path
 from typing import Literal
 
@@ -51,6 +52,23 @@ class CauKeoConfig:
     lag_max_for_path_support: int = 30
     window_days: int = 2000
     top: int = 20
+
+    def __post_init__(self) -> None:
+        for name in (
+            "min_history_days",
+            "lag_max_for_path_support",
+            "window_days",
+            "top",
+        ):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 1
+            ):
+                raise ValueError(f"{name} must be a positive integer")
+        if self.top > 100:
+            raise ValueError("top must be <= 100")
 
 
 FEATURE_COLS = [
@@ -680,7 +698,8 @@ def _load_or_train(
         except Exception as exc:  # noqa: BLE001
             logger.warning("Cannot load %s (%s). Retraining.", model_path, exc)
 
-    assert y_train is not None
+    if y_train is None:
+        raise RuntimeError("supervised target is required for cầu-kèo training")
     return _train_model(mode, X_train, y_train, models_dir)
 
 

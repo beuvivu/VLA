@@ -78,7 +78,8 @@ def _prepare_sparse(sparse_df: pd.DataFrame) -> pd.DataFrame:
             continue
         try:
             n = int(col)
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("Ignoring unsupported sparse column %r: %s", col, exc)
             continue
         if 0 <= n <= 99:
             rename[col] = n

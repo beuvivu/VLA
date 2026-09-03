@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
 from ui_locale import column_label, localize_mapping_for_display, mode_label
+from web_security import security_meta_tags
+
+logger = logging.getLogger(__name__)
 
 
 def _read_json(p: Path) -> dict:
@@ -36,7 +40,8 @@ def _latest_date(data_dir: Path) -> str:
             if df.empty:
                 continue
             return pd.to_datetime(df["date"]).max().date().isoformat()
-        except Exception:
+        except Exception as exc:
+            logger.warning("Không thể đọc ngày mới nhất từ %s: %s", cand, exc)
             continue
     return ""
 
@@ -118,6 +123,7 @@ def main() -> None:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {security_meta_tags()}
   <title>Bảng điều khiển phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
@@ -217,6 +223,7 @@ def main() -> None:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {security_meta_tags()}
   <title>Chất lượng mô hình — Phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }}

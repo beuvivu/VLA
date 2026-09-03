@@ -104,3 +104,23 @@ def test_rejected_feature_cannot_affect_allowlisted_inference() -> None:
     actual = predict_with_feature_allowlist(FirstColumnModel(), mutated, ["baseline"])
 
     np.testing.assert_array_equal(actual, expected)
+
+
+def test_production_inference_rejects_nonfinite_features_and_invalid_probabilities() -> None:
+    class InvalidProbabilityModel:
+        def predict_proba(self, values: np.ndarray) -> np.ndarray:
+            return np.column_stack([np.zeros(len(values)), np.full(len(values), 1.2)])
+
+    with pytest.raises(ValueError, match="features must be finite"):
+        predict_with_feature_allowlist(
+            InvalidProbabilityModel(),
+            pd.DataFrame({"baseline": [np.inf]}),
+            ["baseline"],
+        )
+
+    with pytest.raises(ValueError, match="outside"):
+        predict_with_feature_allowlist(
+            InvalidProbabilityModel(),
+            pd.DataFrame({"baseline": [0.5]}),
+            ["baseline"],
+        )

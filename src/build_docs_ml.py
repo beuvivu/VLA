@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from ui_locale import column_label
+from web_security import security_meta_tags
 
 
 DOCS_DIR = Path("docs")
@@ -47,6 +48,7 @@ def _base_page(body: str, page_title: str) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  {security_meta_tags()}
   <title>{page_title}</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; color:#111; }}

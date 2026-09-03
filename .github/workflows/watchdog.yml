@@ -53,6 +53,7 @@ jobs:
           import os
           import subprocess
           import sys
+          import tempfile
           import urllib.request
           from datetime import datetime, time, timedelta
           from zoneinfo import ZoneInfo
@@ -148,11 +149,20 @@ jobs:
               dispatch("update-data.yml")
               raise SystemExit(0)
 
-          audit = subprocess.run(
-              [sys.executable, "src/production_audit.py", "--cutoff", "18:15", "--strict", "--json-out", "/tmp/production_audit.json"],
-              text=True,
-              capture_output=True,
-          )
+          with tempfile.TemporaryDirectory(prefix="vla-production-audit-") as temp_dir:
+              audit = subprocess.run(
+                  [
+                      sys.executable,
+                      "src/production_audit.py",
+                      "--cutoff",
+                      "18:15",
+                      "--strict",
+                      "--json-out",
+                      os.path.join(temp_dir, "audit.json"),
+                  ],
+                  text=True,
+                  capture_output=True,
+              )
           print(audit.stdout)
           if audit.returncode != 0:
               print(audit.stderr)

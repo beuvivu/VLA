@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import date
 from pathlib import Path
@@ -11,6 +12,7 @@ import pandas as pd
 DATA_DIR = Path("data")
 README = Path("README.md")
 FUN_PREDICTION = DATA_DIR / "predict" / "fun_draw_next.json"
+logger = logging.getLogger(__name__)
 
 WIDTHS = {
     "special": 5,
@@ -69,7 +71,8 @@ def _build_loto_table(latest_2d: pd.Series) -> str:
             continue
         try:
             nums.append(int(v))
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("Bỏ qua giá trị lô tô không hợp lệ %r: %s", v, exc)
             continue
 
     tails_by_head: dict[int, list[int]] = {h: [] for h in range(10)}

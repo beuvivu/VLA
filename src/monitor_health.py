@@ -16,10 +16,7 @@ def _load_health(path: Path) -> dict:
 
 def _now(tz: str | None) -> datetime:
     if tz:
-        try:
-            return datetime.now(ZoneInfo(tz))
-        except Exception:
-            pass
+        return datetime.now(ZoneInfo(tz))
     return datetime.now().astimezone()
 
 

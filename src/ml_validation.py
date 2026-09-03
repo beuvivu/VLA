@@ -9,6 +9,7 @@ that the challenger is better for both Brier score and LogLoss.
 """
 
 from dataclasses import dataclass
+from numbers import Integral, Real
 from typing import Protocol, Sequence
 
 import numpy as np
@@ -29,13 +30,33 @@ class ValidationConfig:
     minimum_skill: float = 0.0
 
     def __post_init__(self) -> None:
+        integer_fields = {
+            "bootstrap_replicates": self.bootstrap_replicates,
+            "bootstrap_seed": self.bootstrap_seed,
+            "minimum_oos_dates": self.minimum_oos_dates,
+        }
+        for name, value in integer_fields.items():
+            if isinstance(value, bool) or not isinstance(value, Integral):
+                raise ValueError(f"{name} must be an integer")
+        real_fields = {
+            "confidence_level": self.confidence_level,
+            "minimum_skill": self.minimum_skill,
+        }
+        for name, value in real_fields.items():
+            if isinstance(value, bool) or not isinstance(value, Real):
+                raise ValueError(f"{name} must be a real number")
         if self.bootstrap_replicates < 1:
             raise ValueError("bootstrap_replicates must be >= 1")
-        if not 0.0 < self.confidence_level < 1.0:
+        if self.bootstrap_seed < 0:
+            raise ValueError("bootstrap_seed must be >= 0")
+        if (
+            not np.isfinite(self.confidence_level)
+            or not 0.0 < self.confidence_level < 1.0
+        ):
             raise ValueError("confidence_level must be between 0 and 1")
         if self.minimum_oos_dates < 1:
             raise ValueError("minimum_oos_dates must be >= 1")
-        if self.minimum_skill < 0.0:
+        if not np.isfinite(self.minimum_skill) or self.minimum_skill < 0.0:
             raise ValueError("minimum_skill must be >= 0")
 
 
@@ -204,12 +225,16 @@ def predict_with_feature_allowlist(
     if missing:
         raise ValueError(f"feature allowlist columns missing from frame: {missing}")
     values = frame.loc[:, allowlist].astype(np.float32).to_numpy()
+    if not np.isfinite(values).all():
+        raise ValueError("production features must be finite")
     prediction = np.asarray(model.predict_proba(values), dtype=float)
     if prediction.ndim != 2 or prediction.shape != (len(frame), 2):
         raise ValueError("predict_proba must return shape (rows, 2)")
     probability = prediction[:, 1]
-    if not np.isfinite(probability).all():
-        raise ValueError("model returned non-finite probabilities")
+    if not np.isfinite(probability).all() or bool(
+        ((probability < 0.0) | (probability > 1.0)).any()
+    ):
+        raise ValueError("model returned probabilities outside [0, 1]")
     return probability
 
 

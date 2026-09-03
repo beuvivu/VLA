@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 from calendar import monthrange
 from datetime import UTC, date, datetime
@@ -16,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 ADV = DATA / "advanced"
 OUT = ROOT / "DASHBOARD.md"
+logger = logging.getLogger(__name__)
 
 HEAT = ["⬜", "🟦", "🟩", "🟨", "🟧", "🟥", "🟪"]
 HEAT_MEANING = [
@@ -183,7 +185,8 @@ def _number_matrix(
     for _, row in df.iterrows():
         try:
             n = int(float(row[ncol]))
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("Bỏ qua mã số không hợp lệ %r: %s", row[ncol], exc)
             continue
         if 0 <= n <= 99:
             values[n] = _safe_float(row[value_col])
@@ -457,7 +460,8 @@ def _month_calendar(path: Path, months: int=4) -> str:
         key=str(r.get("month_key",""))
         try:
             y,m=[int(x) for x in key.split("-")[:2]]
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("Bỏ qua khóa tháng không hợp lệ %r: %s", key, exc)
             continue
         first=date(y,m,1).weekday()
         days=monthrange(y,m)[1]

@@ -63,36 +63,40 @@ def annotate_pair_frame(
 
     out["pair_kind"] = pair_kind
     out["canonical_pair_key"] = [
-        pair_key(a, b, allow_equal=True) for a, b in zip(a_text, b_text)
+        pair_key(a, b, allow_equal=True) for a, b in zip(a_text, b_text, strict=True)
     ]
     out["a_str"] = a_text
     out["b_str"] = b_text
     out["reverse_related"] = [
-        reverse(a) == b and a != b for a, b in zip(a_text, b_text)
+        reverse(a) == b and a != b for a, b in zip(a_text, b_text, strict=True)
     ]
     out["bong_duong_related"] = [
-        bong_duong(a) == b for a, b in zip(a_text, b_text)
+        bong_duong(a) == b for a, b in zip(a_text, b_text, strict=True)
     ]
-    out["bong_am_related"] = [bong_am(a) == b for a, b in zip(a_text, b_text)]
+    out["bong_am_related"] = [
+        bong_am(a) == b for a, b in zip(a_text, b_text, strict=True)
+    ]
 
     cap50_related = [
-        cap_loto_50_partner(a) == b for a, b in zip(a_text, b_text)
+        cap_loto_50_partner(a) == b
+        for a, b in zip(a_text, b_text, strict=True)
     ]
     out["cap_loto_50_related"] = cap50_related
     out["cap_loto_50_id"] = [
         cap_loto_50_id(a) if related else ""
-        for a, related in zip(a_text, cap50_related)
+        for a, related in zip(a_text, cap50_related, strict=True)
     ]
     out["cap_loto_50_kind"] = [
         cap_loto_50_kind(a) if related else ""
-        for a, related in zip(a_text, cap50_related)
+        for a, related in zip(a_text, cap50_related, strict=True)
     ]
 
     out["bo_family_id_a"] = a_text.map(bo_family_id)
     out["bo_family_id_b"] = b_text.map(bo_family_id)
     out["same_bo_family"] = out["bo_family_id_a"] == out["bo_family_id_b"]
     out["relation_tags"] = [
-        "|".join(pair_relation_tags(a, b)) for a, b in zip(a_text, b_text)
+        "|".join(pair_relation_tags(a, b))
+        for a, b in zip(a_text, b_text, strict=True)
     ]
 
     if "pair" in out.columns:

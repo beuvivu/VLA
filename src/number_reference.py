@@ -404,40 +404,72 @@ def classify_number(value: int | str) -> dict[str, object]:
     }
 
 
+def _require_ontology(condition: bool, message: str) -> None:
+    if not condition:
+        raise RuntimeError(f"invalid canonical number ontology: {message}")
+
+
 def validate_ontology() -> None:
-    assert all(BONG_DUONG[BONG_DUONG[d]] == d for d in range(10))
-    assert all(BONG_AM[BONG_AM[d]] == d for d in range(10))
-    assert all(reverse(reverse(n)) == f"{n:02d}" for n in range(100))
+    _require_ontology(
+        all(BONG_DUONG[BONG_DUONG[d]] == d for d in range(10)),
+        "bong_duong must be an involution",
+    )
+    _require_ontology(
+        all(BONG_AM[BONG_AM[d]] == d for d in range(10)),
+        "bong_am must be an involution",
+    )
+    _require_ontology(
+        all(reverse(reverse(n)) == f"{n:02d}" for n in range(100)),
+        "reverse must be an involution",
+    )
 
     families = all_bo()
-    assert len(families) == 15
+    _require_ontology(len(families) == 15, "bộ must contain 15 families")
     sizes = sorted(len(f) for f in families)
-    assert sizes.count(4) == 5 and sizes.count(8) == 10
+    _require_ontology(
+        sizes.count(4) == 5 and sizes.count(8) == 10,
+        "bộ family-size distribution must be 5x4 and 10x8",
+    )
     flat = [member for family in families for member in family]
-    assert len(flat) == 100 and len(set(flat)) == 100
-    assert set(flat) == {f"{n:02d}" for n in range(100)}
-    assert {min(f) for f in families} == {
+    _require_ontology(
+        len(flat) == 100 and len(set(flat)) == 100,
+        "bộ families must partition 00..99 without duplicates",
+    )
+    _require_ontology(
+        set(flat) == {f"{n:02d}" for n in range(100)},
+        "bộ families must cover 00..99",
+    )
+    _require_ontology({min(f) for f in families} == {
         "00", "01", "02", "03", "04", "11", "12", "13", "14", "22",
         "23", "24", "33", "34", "44",
-    }
+    }, "unexpected bộ family identifiers")
 
     pairs = all_cap_loto_50()
-    assert len(pairs) == 50
-    assert all(len(p) == 2 for p in pairs)
+    _require_ontology(len(pairs) == 50, "cặp lô tô 50 must contain 50 pairs")
+    _require_ontology(all(len(p) == 2 for p in pairs), "every cặp lô tô 50 item must be a pair")
     pair_flat = [n for pair in pairs for n in pair]
-    assert len(pair_flat) == 100 and len(set(pair_flat)) == 100
-    assert set(pair_flat) == {f"{n:02d}" for n in range(100)}
-    assert sum(cap_loto_50_kind(min(p)) == "kep_bong" for p in pairs) == 5
-    assert set(cap_loto_50_id(f"{d}{d}") for d in range(10)) == {
+    _require_ontology(
+        len(pair_flat) == 100 and len(set(pair_flat)) == 100,
+        "cặp lô tô 50 must partition 00..99",
+    )
+    _require_ontology(
+        set(pair_flat) == {f"{n:02d}" for n in range(100)},
+        "cặp lô tô 50 must cover 00..99",
+    )
+    _require_ontology(
+        sum(cap_loto_50_kind(min(p)) == "kep_bong" for p in pairs) == 5,
+        "cặp lô tô 50 must contain five kép-bóng pairs",
+    )
+    _require_ontology(set(cap_loto_50_id(f"{d}{d}") for d in range(10)) == {
         "00-55", "11-66", "22-77", "33-88", "44-99"
-    }
+    }, "unexpected kép-bóng pair identifiers")
 
-    assert set(kep_lech()) == {
+    _require_ontology(set(kep_lech()) == {
         "05", "50", "16", "61", "27", "72", "38", "83", "49", "94"
-    }
-    assert set(kep_am()) == {
+    }, "unexpected kép lệch members")
+    _require_ontology(set(kep_am()) == {
         "07", "70", "14", "41", "29", "92", "36", "63", "58", "85"
-    }
+    }, "unexpected kép âm members")
 
 
 def reference_catalog() -> dict[str, object]:

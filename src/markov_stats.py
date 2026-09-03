@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Sequence
 
@@ -34,13 +35,30 @@ def build_markov_chain(
     statistical estimator, not evidence that lottery states are predictively
     Markovian; it must be compared with marginal and rolling baselines OOS.
     """
-    if not np.isfinite(alpha) or alpha < 0.0:
+    if (
+        isinstance(alpha, bool)
+        or not isinstance(alpha, Real)
+        or not np.isfinite(alpha)
+        or alpha < 0.0
+    ):
         raise ValueError("alpha must be finite and >= 0")
-    state_space = tuple(int(state) for state in states)
+    state_values = tuple(states)
+    if any(
+        isinstance(state, bool) or not isinstance(state, Integral)
+        for state in state_values
+    ):
+        raise ValueError("states must contain only integers")
+    state_space = tuple(int(state) for state in state_values)
     if not state_space or len(state_space) != len(set(state_space)):
         raise ValueError("states must be a non-empty unique sequence")
     index = {state: i for i, state in enumerate(state_space)}
-    sequence = [int(value) for value in observations]
+    observed_values = tuple(observations)
+    if any(
+        isinstance(value, bool) or not isinstance(value, Integral)
+        for value in observed_values
+    ):
+        raise ValueError("observations must contain only integers")
+    sequence = [int(value) for value in observed_values]
     unknown = sorted(set(sequence) - set(state_space))
     if unknown:
         raise ValueError(f"observations contain states outside state space: {unknown[:10]}")
@@ -75,6 +93,19 @@ def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float
     Missing dates are skipped rather than collapsing a multi-day jump into a
     one-day Markov transition. Probabilities use Beta smoothing.
     """
+    if (
+        isinstance(alpha, bool)
+        or isinstance(beta, bool)
+        or not isinstance(alpha, Real)
+        or not isinstance(beta, Real)
+        or not np.isfinite(alpha)
+        or not np.isfinite(beta)
+        or alpha < 0.0
+        or beta < 0.0
+    ):
+        raise ValueError("alpha and beta must be finite and >= 0")
+    if alpha + beta <= 0.0:
+        raise ValueError("alpha + beta must be > 0")
     df_2d = df_2d.sort_values("date").reset_index(drop=True)
     dates, loto_targets, _ = build_daily_targets(df_2d)
     n = len(loto_targets)

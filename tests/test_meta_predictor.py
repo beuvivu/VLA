@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from meta_predictor import (
     COMPONENT_COLS,
+    META_SCHEMA_VERSION,
     META_FEATURE_COLUMNS,
     blend_predictions,
     build_meta_features,
     current_component_frame,
+    meta_feature_columns,
+    predict_meta,
 )
 
 
@@ -73,3 +77,40 @@ def test_loto_meta_blend_stays_in_probability_bounds() -> None:
     meta = np.linspace(0.50, 0.10, 100)
     blended = blend_predictions("loto", linear, meta, 0.25)
     assert np.all((blended > 0.0) & (blended < 1.0))
+
+
+def test_meta_blend_rejects_nonfinite_probabilities_and_trust() -> None:
+    valid = np.full(100, 0.2)
+    invalid = valid.copy()
+    invalid[0] = np.nan
+
+    with pytest.raises(ValueError, match="finite"):
+        blend_predictions("loto", valid, invalid, 0.2)
+    with pytest.raises(ValueError, match="meta_trust"):
+        blend_predictions("loto", valid, valid, float("nan"))
+
+
+def test_meta_pack_cannot_expand_the_production_feature_allowlist() -> None:
+    class Model:
+        def predict_proba(self, values: np.ndarray) -> np.ndarray:
+            return np.column_stack(
+                [np.full(len(values), 0.8), np.full(len(values), 0.2)]
+            )
+
+    components = ["p_ml", "p_active", "p_stable"]
+    pack = {
+        "schema_version": META_SCHEMA_VERSION,
+        "mode": "loto",
+        "component_cols": components,
+        "features": [*meta_feature_columns(components), "rejected_experiment"],
+        "model": Model(),
+    }
+    p = np.full(100, 0.2)
+
+    with pytest.raises(ValueError, match="feature allowlist"):
+        predict_meta(pack, "loto", "2026-09-01", p, p, p, p, p)
+
+    pack["schema_version"] = float(META_SCHEMA_VERSION)
+    pack["features"] = meta_feature_columns(components)
+    with pytest.raises(ValueError, match="schema metadata"):
+        predict_meta(pack, "loto", "2026-09-01", p, p, p, p, p)

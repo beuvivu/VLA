@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import operator
 import re
 import unicodedata
 from collections import defaultdict
@@ -85,7 +86,13 @@ def _label_key(line: str) -> str | None:
 
 def _valid_tokens(text: str, key: str) -> list[str]:
     width = EXPECTED_WIDTHS[key]
-    return [token for token in re.findall(r"\b\d+\b", text) if len(token) == width]
+    return re.findall(rf"(?<!\d)[0-9]{{{width}}}(?!\d)", text)
+
+
+def _valid_prize_token(value: object, key: str) -> str | None:
+    token = str(value).strip()
+    width = EXPECTED_WIDTHS[key]
+    return token if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None else None
 
 
 def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
@@ -150,14 +157,13 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
 
 def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, list[str]]) -> Result | None:
     def full(key: str) -> list[int] | None:
-        width = EXPECTED_WIDTHS[key]
         vals: list[str] = []
         for raw_value in prize_map.get(key, []):
-            token = str(raw_value).strip()
+            token = _valid_prize_token(raw_value, key)
             # External data is never "repaired" by stripping unexpected
             # characters.  Accept only ASCII decimal digits of the exact prize
             # width; anything else is rejected at the ingestion boundary.
-            if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None:
+            if token is not None:
                 vals.append(token)
         if len(vals) < EXPECTED_COUNTS[key]:
             return None
@@ -175,7 +181,8 @@ def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, li
     prize5 = p["prize5"]
     prize6 = p["prize6"]
     prize7 = p["prize7"]
-    assert special and prize1 and prize2 and prize3 and prize4 and prize5 and prize6 and prize7
+    if not all((special, prize1, prize2, prize3, prize4, prize5, prize6, prize7)):
+        raise RuntimeError("validated prize map unexpectedly contains an empty prize")
 
     return Result(
         date=selected_date,
@@ -354,6 +361,14 @@ def source_consensus_partial(
     the highest-priority observation may be shown provisionally but is never
     marked verified or promoted into canonical history by this helper.
     """
+    if isinstance(min_agreement, bool):
+        raise ValueError("min_agreement must be an integer >= 1")
+    try:
+        min_agreement = operator.index(min_agreement)
+    except TypeError as exc:
+        raise ValueError("min_agreement must be an integer >= 1") from exc
+    if min_agreement < 1:
+        raise ValueError("min_agreement must be an integer >= 1")
     merged = {k: [] for k in PRIZE_ORDER}
     slot_meta: dict[str, dict[str, object]] = {}
     conflicts: list[str] = []
@@ -366,7 +381,9 @@ def source_consensus_partial(
             for source_name, pmap in partials:
                 vals = pmap.get(key, [])
                 if idx < len(vals):
-                    values.append((source_name, vals[idx]))
+                    token = _valid_prize_token(vals[idx], key)
+                    if token is not None:
+                        values.append((source_name, token))
             counts: dict[str, list[str]] = defaultdict(list)
             for source_name, value in values:
                 counts[value].append(source_name)
@@ -376,11 +393,18 @@ def source_consensus_partial(
             support_groups: list[str] = []
             ambiguous_tie = False
             if counts:
-                def consensus_score(item: tuple[str, list[str]]) -> tuple[int, int, int]:
+                observed_values = tuple(values)
+
+                def consensus_score(
+                    item: tuple[str, list[str]],
+                    observations: tuple[tuple[str, str], ...] = observed_values,
+                ) -> tuple[int, int, int]:
                     names = item[1]
                     groups = {source_independence_key(name) for name in names}
                     first_priority = min(
-                        i for i, (name, _) in enumerate(values) if name in names
+                        i
+                        for i, (name, _) in enumerate(observations)
+                        if name in names
                     )
                     return len(groups), len(names), -first_priority
 

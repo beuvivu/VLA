@@ -2,6 +2,89 @@
 
 Last verified: 2026-09-03
 
+## REP-0008 — Dữ liệu nguồn phải được chuẩn hóa trước đồng thuận
+
+Context: thu thập và hợp nhất 27 ô kết quả từ các trang công khai.
+
+Symptom: phép ép kiểu rộng có thể nhận chữ số Unicode, số thực, giá trị không
+hữu hạn hoặc chuỗi chứa HTML; closure kiểm tra đồng thuận cũng có thể tham chiếu
+nhầm giá trị của vòng lặp cuối.
+
+Root cause: biên tin cậy dùng chuyển đổi kiểu thuận tiện thay cho grammar dữ liệu
+giải thưởng, và biến vòng lặp không được đóng băng khi tạo predicate.
+
+Correct pattern: chỉ nhận token chữ số ASCII đúng độ rộng, số nguyên hữu hạn đúng
+miền; chuẩn hóa từng nguồn trước khi tính đồng thuận và bind dữ liệu quan sát vào
+tham số mặc định của closure.
+
+Avoid: `int(float(value))`, `str.isdigit()` hoặc đưa token chưa kiểm tra vào bỏ
+phiếu đồng thuận.
+
+Regression guard: `tests/test_sources.py`, `tests/test_validate_data_strict.py`,
+`tests/test_security_hardening.py`.
+
+Affected modules: `sources.py`, `reconcile_live_canonical.py`, `validate_data.py`,
+`lottery.py`.
+
+Confidence: high
+
+Last verified: 2026-09-03
+
+## REP-0009 — Dữ liệu dashboard không được đi qua HTML động
+
+Context: trang tĩnh nhúng JSON và hiển thị dữ liệu nguồn/giải thích mô hình.
+
+Symptom: chuỗi không tin cậy có thể đóng thẻ `<script>` hoặc đi vào `innerHTML`,
+tạo đường chèn markup/script trên GitHub Pages.
+
+Root cause: tuần tự hóa JSON hợp lệ chưa đủ an toàn cho ngữ cảnh HTML và builder
+dùng chuỗi HTML để tạo node giao diện.
+
+Correct pattern: escape `&`, `<`, `>`, U+2028 và U+2029 khi nhúng JSON; tạo DOM
+bằng `createElement`/`textContent`; thêm CSP và `no-referrer` cho mọi trang sinh.
+
+Avoid: ghép dữ liệu vào `innerHTML`, `document.write` hoặc thẻ script JSON chưa
+escape theo ngữ cảnh.
+
+Regression guard: `tests/test_landing_page.py`, `tests/test_security_hardening.py`,
+`tests/test_vietnamese_ui.py`.
+
+Affected modules: `web_security.py`, `build_landing_page.py`,
+`build_statistics_dashboard.py`, các builder HTML và `docs/live.html`.
+
+Confidence: high
+
+Last verified: 2026-09-03
+
+## REP-0010 — Artifact và cấu hình xác suất phải fail closed
+
+Context: suy luận ML, calibration, ensemble và challenger nghiên cứu.
+
+Symptom: model pack sai schema/allowlist, mảng có NaN, xác suất ngoài `[0,1]`,
+mode lạ hoặc cấu hình kiểu `bool` có thể đi sâu vào pipeline hay kích hoạt model
+không đủ điều kiện.
+
+Root cause: kiểm tra trước đây rời rạc và một số nhánh tin vào type hint hoặc
+metadata đã giải tuần tự.
+
+Correct pattern: kiểm tra chính xác schema, mode, allowlist, shape, miền số và
+tính hữu hạn tại biên; không gọi challenger bị từ chối; mọi trạng thái không hợp
+lệ đều quay về baseline hoặc báo lỗi rõ ràng tùy API.
+
+Avoid: suy luận feature từ toàn bộ cột, dùng `assert` cho điều kiện runtime hoặc
+chuẩn hóa vector/trọng số có NaN.
+
+Regression guard: `tests/test_ml_validation.py`, `tests/test_meta_predictor.py`,
+`tests/test_ensemble_utils_security.py`, `tests/test_configuration_validation.py`.
+
+Affected modules: `ml_predict.py`, `ml_validation.py`, `meta_predictor.py`,
+`predict_nextday_2d.py`, `calibration.py`, `ensemble_utils.py` và các dataclass cấu
+hình nghiên cứu.
+
+Confidence: high
+
+Last verified: 2026-09-03
+
 ## REP-0001 — Pair champion and challenger randomness
 
 Context: domain-feature walk-forward ablation.

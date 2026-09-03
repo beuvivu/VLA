@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: post-finalization-reconcile
@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   reconcile:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -28,14 +30,18 @@ jobs:
 
       - name: Chạy kiểm toán production nghiêm ngặt
         run: |
+          audit_path="$(mktemp "${RUNNER_TEMP}/production-audit.XXXXXX.json")"
           python src/production_audit.py \
             --cutoff 18:15 \
             --strict \
-            --json-out /tmp/production_audit.json
+            --json-out "$audit_path"
 
       - name: Tạo ảnh chụp trực tiếp chuẩn
+        id: live-payload
         run: |
-          python src/reconcile_live_canonical.py --out /tmp/live-canonical.json
+          live_path="$(mktemp "${RUNNER_TEMP}/live-canonical.XXXXXX.json")"
+          python src/reconcile_live_canonical.py --out "$live_path"
+          printf 'path=%s\n' "$live_path" >> "$GITHUB_OUTPUT"
 
       - name: Xuất bản ảnh chụp chuẩn lên nhánh live
         shell: bash
@@ -43,7 +49,8 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          blob="$(git hash-object -w /tmp/live-canonical.json)"
+          live_path="${{ steps.live-payload.outputs.path }}"
+          blob="$(git hash-object -w "$live_path")"
           tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
           commit="$(printf 'live: reconcile canonical result\n' | git commit-tree "$tree")"
           git push --force origin "$commit:refs/heads/live"

@@ -28,10 +28,7 @@ on:
     - cron: "28 12 * * *"
 
 permissions:
-  contents: write
-  actions: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: daily-xsmb-pipeline
@@ -39,6 +36,8 @@ concurrency:
 
 jobs:
   update:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
@@ -298,6 +297,9 @@ jobs:
     if: ${{ needs.update.result == 'success' && needs.update.outputs.canonical_ready == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Gọi quy trình sau hoàn tất
         env:
@@ -340,6 +342,10 @@ jobs:
     if: ${{ github.event.repository.private == false && needs.update.result == 'success' }}
     continue-on-error: true
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -145,7 +145,7 @@ def audit(
         if len(dates) != len(set(dates)):
             critical.append("duplicate_canonical_dates")
         missing_days: list[str] = []
-        for prev, cur in zip(dates, dates[1:]):
+        for prev, cur in zip(dates[:-1], dates[1:], strict=True):
             gap = (cur - prev).days
             if gap > 1:
                 missing_days.extend(

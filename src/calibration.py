@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Real
 from typing import Literal, Tuple
 
 import numpy as np
@@ -20,18 +21,39 @@ class CalibParams:
     # de: temperature scaling on log probs
     temperature: float = 1.0
 
+    def __post_init__(self) -> None:
+        if any(
+            isinstance(value, bool) or not isinstance(value, Real)
+            for value in (self.a, self.b, self.temperature)
+        ):
+            raise ValueError("calibration parameters must be real numbers")
+        values = np.array([self.a, self.b, self.temperature], dtype=float)
+        if self.mode not in {"loto", "de"}:
+            raise ValueError("calibration mode must be 'loto' or 'de'")
+        if not np.isfinite(values).all():
+            raise ValueError("calibration parameters must be finite")
+        if self.temperature <= 0.0:
+            raise ValueError("calibration temperature must be > 0")
+
     def as_dict(self) -> dict:
         return {"mode": self.mode, "a": float(self.a), "b": float(self.b), "temperature": float(self.temperature)}
 
 
 def apply_calibration(mode: Mode, p: np.ndarray, params: CalibParams) -> np.ndarray:
+    if params.mode != mode:
+        raise ValueError("calibration mode does not match prediction mode")
+    values = np.asarray(p, dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError("probabilities to calibrate must be finite")
+    if bool(((values < 0.0) | (values > 1.0)).any()):
+        raise ValueError("probabilities to calibrate must be inside [0, 1]")
     if mode == "de":
         # temperature scaling
         t = float(max(1e-6, params.temperature))
-        logp = np.log(clip01(p, eps=1e-12)) / t
+        logp = np.log(clip01(values, eps=1e-12)) / t
         return normalize_distribution(softmax_from_logp(logp))
     # loto
-    x = logit(clip01(p, eps=1e-6))
+    x = logit(clip01(values, eps=1e-6))
     z = params.a * x + params.b
     return clip01(sigmoid(z), eps=1e-6)
 

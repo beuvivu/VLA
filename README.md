@@ -4,6 +4,9 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 
 > Mục đích của hệ thống là phân tích dữ liệu lịch sử và nghiên cứu xác suất. Kết quả AI/ML là tín hiệu thống kê, không bảo đảm kết quả tương lai.
 
+Xem [SECURITY.md](SECURITY.md) để biết ranh giới tin cậy, quy tắc xử lý artifact
+mô hình, chính sách thu thập nguồn công khai và cách báo cáo lỗ hổng.
+
 ## Ảnh chụp dữ liệu mới nhất
 
 <!-- SNAPSHOT:BEGIN -->

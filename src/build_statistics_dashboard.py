@@ -24,6 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
+from web_security import json_for_html_script, security_meta_tags
 
 WEEKDAY_COLS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
 PERIOD_TITLES = {
@@ -225,8 +226,7 @@ def _clickable_number(number: object, *, mode: str | None, source_title: str, so
 
 
 def _json_for_script(payload: object) -> str:
-    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    return text.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    return json_for_html_script(payload)
 
 
 def _row_dict_for_ui(row: pd.Series, columns: Sequence[str]) -> dict[str, str]:
@@ -856,6 +856,7 @@ def main() -> None:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {security_meta_tags()}
   <title>Bảng điều khiển thống kê XSMB</title>
   <style>
     :root {{
@@ -1627,18 +1628,6 @@ def main() -> None:
       }}
     }}
 
-    function escapeHtml(value) {{
-      return String(value ?? '').replace(/[&<>"']/g, function(ch) {{
-        return ({{
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        }})[ch];
-      }});
-    }}
-
     function valueOrDash(value) {{
       if (value === undefined || value === null || value === '' || value === 'nan' || value === 'NaN') return '—';
       return String(value);
@@ -1648,17 +1637,41 @@ def main() -> None:
       return mode === 'de' ? 'ĐB' : 'loto';
     }}
 
+    function createEvidenceElement(tag, className, text) {{
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }}
+
     function metric(label, value) {{
-      return '<div class="evidence-metric"><span>' + escapeHtml(label) + '</span><b>' + escapeHtml(valueOrDash(value)) + '</b></div>';
+      const node = createEvidenceElement('div', 'evidence-metric');
+      node.append(
+        createEvidenceElement('span', '', label),
+        createEvidenceElement('b', '', valueOrDash(value))
+      );
+      return node;
     }}
 
     function renderPositionRows(positions) {{
       if (!positions || !positions.length) {{
-        return '<div class="evidence-empty">Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm điểm AI, tần suất, gan/nhịp và kết quả kiểm định trước khi đánh giá.</div>';
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm điểm AI, tần suất, gan/nhịp và kết quả kiểm định trước khi đánh giá.'
+        );
       }}
       const headers = ['Loại', 'Trễ', 'Ngày gốc', 'Vị trí A', 'Số A', 'Vị trí B', 'Số B', 'Tỷ lệ', 'Trúng/Mẫu', 'Chuỗi', 'Điểm', 'Căn cứ'];
-      const head = '<tr>' + headers.map(function(h) {{ return '<th>' + escapeHtml(h) + '</th>'; }}).join('') + '</tr>';
-      const body = positions.map(function(p) {{
+      const wrap = createEvidenceElement('div', 'evidence-table-wrap');
+      const table = createEvidenceElement('table', 'evidence-table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headers.forEach(function(header) {{
+        headerRow.appendChild(createEvidenceElement('th', '', header));
+      }});
+      thead.appendChild(headerRow);
+      const tbody = document.createElement('tbody');
+      positions.forEach(function(p) {{
         const cells = [
           p.rule_kind,
           p.lag_days,
@@ -1673,17 +1686,49 @@ def main() -> None:
           p.rule_score,
           p.reason
         ];
-        return '<tr>' + cells.map(function(c) {{ return '<td>' + escapeHtml(valueOrDash(c)) + '</td>'; }}).join('') + '</tr>';
-      }}).join('');
-      return '<div class="evidence-table-wrap"><table class="evidence-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+        const row = document.createElement('tr');
+        cells.forEach(function(cell) {{
+          row.appendChild(createEvidenceElement('td', '', valueOrDash(cell)));
+        }});
+        tbody.appendChild(row);
+      }});
+      table.append(thead, tbody);
+      wrap.appendChild(table);
+      return wrap;
     }}
 
     function renderTopLines(summary) {{
       const lines = [summary.top_position_1, summary.top_position_2, summary.top_position_3].filter(function(x) {{
         return x && String(x).trim() && String(x) !== 'nan' && String(x) !== 'NaN';
       }});
-      if (!lines.length) return '<div class="evidence-empty">Chưa có vị trí nổi bật đủ ngưỡng; khung này vẫn hiển thị bằng chứng AI/thống kê để đối chiếu.</div>';
-      return '<ol class="evidence-list">' + lines.map(function(line) {{ return '<li>' + escapeHtml(line) + '</li>'; }}).join('') + '</ol>';
+      if (!lines.length) {{
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có vị trí nổi bật đủ ngưỡng; khung này vẫn hiển thị bằng chứng AI/thống kê để đối chiếu.'
+        );
+      }}
+      const list = createEvidenceElement('ol', 'evidence-list');
+      lines.forEach(function(line) {{
+        list.appendChild(createEvidenceElement('li', '', line));
+      }});
+      return list;
+    }}
+
+    function evidenceSection(title, content) {{
+      const section = createEvidenceElement('section', 'evidence-card');
+      section.append(createEvidenceElement('h3', '', title), content);
+      return section;
+    }}
+
+    function evidenceParagraph(label, value) {{
+      const paragraph = document.createElement('p');
+      paragraph.style.cssText = 'margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;';
+      paragraph.append(
+        createEvidenceElement('b', '', label + ': '),
+        document.createTextNode(valueOrDash(value))
+      );
+      return paragraph;
     }}
 
     function showNumberEvidence(element) {{
@@ -1702,24 +1747,30 @@ def main() -> None:
       const score = summary.ai_cau_score || summary.cau_score;
       const prob = summary.ai_prob_percent || summary.prob_percent;
       const evidence = summary.ai_evidence || summary.evidence || '';
-      const content = ''
-        + '<section class="evidence-card"><h3>AI/ML nhận định</h3>'
-        + '<div class="evidence-metrics">'
-        + metric('Điểm AI', score)
-        + metric('Xác suất hiển thị', prob ? prob + '%' : '')
-        + metric('Số đường cầu', summary.path_lines_count)
-        + metric('Đang chạy', summary.active_path_count)
-        + metric('Cầu bền', summary.stable_path_count)
-        + metric('Chuỗi dài nhất', summary.max_streak)
-        + '</div>'
-        + '<p style="margin:12px 0 0;color:#334155;line-height:1.6;font-size:13px;"><b>Lý do:</b> ' + escapeHtml(valueOrDash(summary.primary_reason)) + '</p>'
-        + '<p style="margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;"><b>Bằng chứng:</b> ' + escapeHtml(valueOrDash(evidence)) + '</p>'
-        + '</section>'
-        + '<section class="evidence-card"><h3>Vị trí tạo số nổi bật</h3>' + renderTopLines(summary) + '</section>'
-        + '<section class="evidence-card"><h3>Bảng vị trí đường cầu</h3>' + renderPositionRows(positions) + '</section>'
-        + '<section class="evidence-card"><h3>Diễn giải ngắn</h3><p style="margin:0;color:#334155;line-height:1.65;font-size:13px;">' + escapeHtml(valueOrDash(summary.explain_text)) + '</p></section>';
+      const metrics = createEvidenceElement('div', 'evidence-metrics');
+      metrics.append(
+        metric('Điểm AI', score),
+        metric('Xác suất hiển thị', prob ? prob + '%' : ''),
+        metric('Số đường cầu', summary.path_lines_count),
+        metric('Đang chạy', summary.active_path_count),
+        metric('Cầu bền', summary.stable_path_count),
+        metric('Chuỗi dài nhất', summary.max_streak)
+      );
+      const aiContent = document.createDocumentFragment();
+      aiContent.append(
+        metrics,
+        evidenceParagraph('Lý do', summary.primary_reason),
+        evidenceParagraph('Bằng chứng', evidence)
+      );
+      const explanation = createEvidenceElement('p', '', valueOrDash(summary.explain_text));
+      explanation.style.cssText = 'margin:0;color:#334155;line-height:1.65;font-size:13px;';
 
-      document.getElementById('evidenceContent').innerHTML = content;
+      document.getElementById('evidenceContent').replaceChildren(
+        evidenceSection('AI/ML nhận định', aiContent),
+        evidenceSection('Vị trí tạo số nổi bật', renderTopLines(summary)),
+        evidenceSection('Bảng vị trí đường cầu', renderPositionRows(positions)),
+        evidenceSection('Diễn giải ngắn', explanation)
+      );
       document.getElementById('evidenceBackdrop').classList.add('open');
       const drawer = document.getElementById('evidenceDrawer');
       drawer.classList.add('open');
@@ -1740,6 +1791,7 @@ def main() -> None:
 </body>
 </html>
 """
+    html_doc = "\n".join(line.rstrip() for line in html_doc.splitlines()) + "\n"
     (docs / "statistics.html").write_text(html_doc, encoding="utf-8")
     print("Wrote:", docs / "statistics.html")
 

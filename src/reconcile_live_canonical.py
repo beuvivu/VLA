@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -39,10 +40,9 @@ def _latest_row(path: Path) -> dict[str, str]:
 
 def _fmt(value: str, width: int) -> str:
     text = str(value).strip()
-    try:
-        return f"{int(float(text)):0{width}d}"
-    except Exception:
-        return text.zfill(width)
+    if re.fullmatch(rf"[0-9]{{1,{width}}}", text) is None:
+        raise ValueError(f"invalid canonical prize value {value!r} for width {width}")
+    return text.zfill(width)
 
 
 def build_payload(*, canonical: Path, audit_path: Path) -> dict:
@@ -106,7 +106,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--canonical", default="data/xsmb.csv")
     ap.add_argument("--audit", default="data/source_audit.json")
-    ap.add_argument("--out", default="/tmp/live-canonical.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     payload = build_payload(canonical=Path(args.canonical), audit_path=Path(args.audit))

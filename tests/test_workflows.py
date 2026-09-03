@@ -43,6 +43,23 @@ def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     assert "push:" in text
 
 
+def test_daily_workflow_scopes_privileged_permissions_to_the_jobs_that_need_them() -> None:
+    text = _text("update-data.yml")
+    top, jobs = text.split("jobs:\n", 1)
+    update, rest = jobs.split("  trigger-post-finalization:\n", 1)
+    trigger, deploy = rest.split("  deploy-pages:\n", 1)
+
+    assert "permissions:\n  contents: read" in top
+    assert "    permissions:\n      contents: write" in update
+    assert "    permissions:\n      actions: write\n      contents: read" in trigger
+    assert (
+        "    permissions:\n"
+        "      contents: read\n"
+        "      id-token: write\n"
+        "      pages: write"
+    ) in deploy
+
+
 def test_pages_use_official_actions_deployment_flow() -> None:
     page = _text("pages.yml")
     daily = _text("update-data.yml")

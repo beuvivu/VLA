@@ -5,6 +5,8 @@ from datetime import datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from production_audit import audit, expected_latest_draw
 from reconcile_live_canonical import build_payload
 
@@ -87,6 +89,32 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     assert sum(len(v) for v in payload["prizes"].values()) == 27
 
 
+@pytest.mark.parametrize("unsafe_value", ["12.5", "NaN", "<script>", "１２３４５"])
+def test_reconcile_live_rejects_noncanonical_prize_values(
+    tmp_path: Path, unsafe_value: str
+) -> None:
+    canonical = tmp_path / "xsmb.csv"
+    canonical.write_text(
+        "date,special\n2026-08-31," + unsafe_value + "\n", encoding="utf-8"
+    )
+    audit_path = tmp_path / "audit.json"
+    audit_path.write_text(
+        json.dumps(
+            {
+                "2026-08-31": {
+                    "accepted": True,
+                    "agreement": 2,
+                    "sources": ["xoso.com.vn", "mketqua.net"],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises((KeyError, ValueError)):
+        build_payload(canonical=canonical, audit_path=audit_path)
+
+
 def _prebuild_critical(critical: list[str]) -> list[str]:
     """Exclude only analytics that release_check deliberately builds after pytest.
 
@@ -158,3 +186,12 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     assert "workflow_dispatch:" in post
     assert "src/production_audit.py" in post
     assert "src/reconcile_live_canonical.py" in post
+    assert "/tmp/live-canonical.json" not in post
+    assert "mktemp" in post
+
+    assert "/tmp/production_audit.json" not in watchdog
+    assert "TemporaryDirectory" in watchdog
+
+    live = Path(".github/workflows/live-results.yml").read_text(encoding="utf-8")
+    assert "/tmp/live.json" not in live
+    assert "mktemp" in live

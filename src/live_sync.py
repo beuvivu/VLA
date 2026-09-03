@@ -16,13 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-try:
-    from cloudscraper import create_scraper
-except ModuleNotFoundError:  # pragma: no cover
-    import requests
-
-    def create_scraper():
-        return requests.Session()
+import requests
 
 from sources import (
     EXPECTED_COUNTS,
@@ -45,9 +39,9 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
         started = time.perf_counter()
         error: str | None = None
         try:
-            # Separate sessions avoid thread-safety surprises in cloudscraper and
+            # Separate sessions avoid thread-safety surprises and
             # bound a full six-source snapshot by the slowest source, not their sum.
-            http = create_scraper()
+            http = requests.Session()
             prize_map = source.fetch_partial(now.date(), http, live=True)
         except Exception as exc:  # noqa: BLE001
             prize_map = {k: [] for k in PRIZE_ORDER}

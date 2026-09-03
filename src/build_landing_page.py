@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
+from web_security import json_for_html_script, security_meta_tags
 
 
 NAV_ITEMS: list[tuple[str, str, str]] = [
@@ -92,8 +93,8 @@ def _to_float(value: Any, default: float = 0.0) -> float:
         x = float(value)
         if np.isfinite(x):
             return x
-    except Exception:
-        pass
+    except (TypeError, ValueError):
+        return default
     return default
 
 
@@ -107,14 +108,11 @@ def _to_int(value: Any, default: int = 0) -> int:
 
 
 def _fmt2(value: Any) -> str:
-    try:
-        return f"{int(float(value)):02d}"
-    except Exception:
-        s = str(value).strip()
-        if not s:
-            return ""
-        digits = re.sub(r"\D+", "", s)
-        return digits[-2:].zfill(2) if digits else s
+    token = str(value).strip()
+    if re.fullmatch(r"[0-9]{1,2}(?:\.0+)?", token) is None:
+        return ""
+    number = int(float(token))
+    return f"{number:02d}" if 0 <= number <= 99 else ""
 
 
 def _fmt_num(value: Any, *, decimals: int = 0, percent: bool = False) -> str:
@@ -592,7 +590,10 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     for group, palette in [("head", "blue"), ("tail", "green"), ("total", "orange")]:
         part = df[df.get("group_type", "") == group].copy()
         if not part.empty:
-            part["label"] = part["group_value"].map(lambda x: f"{GROUP_LABELS.get(group, group)} {x}")
+            group_label = GROUP_LABELS.get(group, group)
+            part["label"] = part["group_value"].map(
+                lambda x, label=group_label: f"{label} {x}"
+            )
         cards.append(
             _render_bar_card(
                 title=GROUP_LABELS.get(group, group),
@@ -688,7 +689,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         for row in ai_summary_rows
     ) or "<span class='muted'>Chưa có dữ liệu AI/ML.</span>"
 
-    data_json = json.dumps({"explain": explain_map, "generated_at": generated_at}, ensure_ascii=False).replace("</", "<\\/")
+    data_json = json_for_html_script(
+        {"explain": explain_map, "generated_at": generated_at}
+    )
     body_class = ' class="desktop-view"' if desktop_view else ''
 
     html_doc = f"""<!doctype html>
@@ -696,6 +699,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  {security_meta_tags()}
   <title>Trung tâm phân tích xổ số</title>
   <style>
     :root {{
@@ -1829,7 +1833,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       document.getElementById('inspect-evidence').textContent = data && data.evidence ? data.evidence : 'Chưa có bằng chứng định lượng.';
       document.getElementById('inspect-summary').textContent = data && data.summary ? data.summary : 'Số này chưa nằm trong nhóm giải thích AI/ML hoặc chưa có đường cầu vị trí đủ mạnh.';
       const list = document.getElementById('inspect-lines');
-      list.innerHTML = '';
+      list.replaceChildren();
       const lines = data && Array.isArray(data.lines) ? data.lines : [];
       if (!lines.length) {{
         const li = document.createElement('li');
@@ -1838,14 +1842,18 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       }} else {{
         lines.forEach(line => {{
           const li = document.createElement('li');
-          li.innerHTML = '<b>' + (line.path_line || 'Đường cầu') + '</b><br>' +
-            '<span>Loại: ' + (line.kind || '—') +
+          const title = document.createElement('b');
+          title.textContent = line.path_line || 'Đường cầu';
+          const metrics = document.createElement('span');
+          metrics.textContent = 'Loại: ' + (line.kind || '—') +
             ' · Lag: ' + (line.lag || '—') +
             ' · P: ' + (line.p_mean || '—') +
             ' · Trúng/Mẫu: ' + (line.hits || '—') + '/' + (line.trials || '—') +
             ' · Nhịp: ' + (line.streak || '—') +
-            ' · Điểm: ' + (line.score || '—') + '</span><br>' +
-            '<span>' + (line.reason || '') + '</span>';
+            ' · Điểm: ' + (line.score || '—');
+          const reason = document.createElement('span');
+          reason.textContent = line.reason || '';
+          li.append(title, document.createElement('br'), metrics, document.createElement('br'), reason);
           list.appendChild(li);
         }});
       }}

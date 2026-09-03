@@ -14,3 +14,8 @@ Last verified: 2026-09-03
 10. Preserve deterministic domain definitions in `number_reference.py` rather than copying them into feature code.
 11. Khi tăng phiên bản schema của model, phải tái tạo mọi model/gate/manifest được theo dõi và chạy validator tương thích trước khi phát hành.
 12. Không đặt tên biến cục bộ trùng module đã import khi closure dùng module đó; kiểm thử phải thực thi builder chứ không chỉ đọc artifact cũ.
+13. Chuẩn hóa token kết quả theo chữ số ASCII, độ rộng, tính nguyên/hữu hạn và miền giải trước khi đưa vào đồng thuận hay lịch sử chuẩn.
+14. Khi nhúng JSON vào HTML, escape theo ngữ cảnh script và chỉ dựng nội dung không tin cậy bằng DOM `textContent`; mọi trang sinh phải có CSP và `no-referrer`.
+15. Metadata model sau giải tuần tự không phải dữ liệu tin cậy: kiểm tra schema, mode, feature allowlist, shape và miền xác suất trước suy luận.
+16. Không gọi model challenger khi cổng chất lượng từ chối; trạng thái thiếu, NaN hoặc không hợp lệ phải giữ baseline.
+17. Workflow chỉ cấp quyền ghi tại job cần ghi và chỉ dùng tệp tạm tên ngẫu nhiên trong thư mục tạm của runner.

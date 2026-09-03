@@ -23,3 +23,20 @@ one would fabricate a researched method. No code was added.
 Canonical co-occurrence and transition matrices now exist, but graph centrality
 features remain unimplemented and unvalidated. They must remain research-only
 if later introduced.
+
+## KF-0005 — Joblib artifacts require a trusted provenance
+
+`joblib.load` is pickle-based and can execute code before post-load schema checks
+run. Production artifacts must therefore originate from reviewed repository
+workflows; hostile or user-supplied model files remain unsupported.
+
+## KF-0006 — Static-page CSP still permits inline code
+
+Generated pages are self-contained and currently require `'unsafe-inline'` for
+scripts and styles. Context-safe JSON escaping and the ban on dynamic HTML sinks
+remain mandatory until assets are split and a nonce/hash policy is practical.
+
+## KF-0007 — GitHub Actions are version-pinned, not SHA-pinned
+
+Actions use reviewed major-version tags and Dependabot, but tags are mutable.
+Immutable commit-SHA pinning remains a supply-chain hardening follow-up.

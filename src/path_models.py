@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from numbers import Integral, Real
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -149,3 +150,42 @@ class PathParams:
 
     # Cap per lag to keep runtime stable
     top_rules_per_lag: int = 300
+
+    def __post_init__(self) -> None:
+        positive_integer_fields = (
+            "lag_max",
+            "window_days",
+            "min_trials",
+            "top_rules_per_lag",
+        )
+        nonnegative_integer_fields = ("min_max_streak", "min_current_streak")
+        for name in positive_integer_fields:
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 1
+            ):
+                raise ValueError(f"{name} must be a positive integer")
+        for name in nonnegative_integer_fields:
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 0
+            ):
+                raise ValueError(f"{name} must be a non-negative integer")
+        if (
+            isinstance(self.alpha, bool)
+            or not isinstance(self.alpha, Real)
+            or not np.isfinite(self.alpha)
+            or self.alpha < 0.0
+        ):
+            raise ValueError("alpha must be finite and >= 0")
+        if (
+            isinstance(self.beta, bool)
+            or not isinstance(self.beta, Real)
+            or not np.isfinite(self.beta)
+            or self.beta < 0.0
+        ):
+            raise ValueError("beta must be finite and >= 0")
