@@ -1,4 +1,4 @@
-name: Near-live XSMB results
+name: Kết quả XSMB gần thời gian thực
 
 on:
   workflow_dispatch:
@@ -23,24 +23,24 @@ jobs:
       POLL_SECONDS: "25"
       MAX_SECONDS: "2700"
     steps:
-      - name: Checkout default branch
+      - name: Lấy nhánh mặc định
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: requirements-live.txt
 
-      - name: Install live dependencies
+      - name: Cài đặt thư viện cho dữ liệu trực tiếp
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-live.txt
 
-      - name: Poll sources and force-publish one-file live branch
+      - name: Thăm dò nguồn và xuất bản nhánh live một tệp
         id: poll
         shell: bash
         run: |
@@ -89,7 +89,7 @@ jobs:
 
           echo "verified=${verified}" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger canonical daily finalization immediately
+      - name: Kích hoạt hoàn tất dữ liệu ngày ngay lập tức
         if: steps.poll.outputs.verified == 'true'
         env:
           GH_TOKEN: ${{ github.token }}

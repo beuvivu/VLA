@@ -1,63 +1,64 @@
 <div align="center">
 
-# ✨ VLA · XSMB ANALYTICAL COCKPIT
+# ✨ VLA · TRUNG TÂM PHÂN TÍCH XSMB
 
-**Balanced UI · explicit legends · comparable-width analytical tables**
+**Giao diện cân đối · chú giải rõ ràng · bảng phân tích dễ so sánh**
 
-![Data](https://img.shields.io/badge/DATA-HEALTHY-34d399?style=for-the-badge)
-![Latest](https://img.shields.io/badge/LATEST-2026--09--02-60a5fa?style=for-the-badge)
-![Forecast](https://img.shields.io/badge/FORECAST-2026--09--03-a78bfa?style=for-the-badge)
-![Loto Meta](https://img.shields.io/badge/LOTO_META-ACTIVE-22c55e?style=for-the-badge)
-![De Meta](https://img.shields.io/badge/DE_META-GATED-fb7185?style=for-the-badge)
+![Dữ liệu](https://img.shields.io/badge/DU_LIEU-TOT-34d399?style=for-the-badge)
+![Mới nhất](https://img.shields.io/badge/MOI_NHAT-2026--09--02-60a5fa?style=for-the-badge)
+![Dự báo](https://img.shields.io/badge/DU_BAO-2026--09--03-a78bfa?style=for-the-badge)
+![Meta lô tô](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
+![Meta đề](https://img.shields.io/badge/META_DE-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Generated 2026-09-02T15:06:05Z · canonical + statistics + ML + research evidence.</sub>
+<sub>Tạo lúc 2026-09-03T04:10:38Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
 > [!IMPORTANT]
-> **Quy ước UI:** mọi màu heatmap đều có bảng `Màu | Khoảng giá trị | Ý nghĩa` ngay phía trên; mọi thanh `▰▱` đều là xếp hạng **tương đối trong chính bảng**, không phải xác suất chắc chắn. Các bảng phân tích được chuẩn hóa 6 cột để hạn chế hiện tượng thò/thụt về bề ngang.
+> **Quy ước giao diện:** mọi ma trận nhiệt đều có bảng `Màu | Khoảng giá trị | Ý nghĩa` ngay phía trên; mọi thanh `▰▱` đều là xếp hạng **tương đối trong chính bảng**, không phải xác suất chắc chắn. Các bảng phân tích được chuẩn hóa 6 cột để hạn chế chênh lệch bề ngang.
 
 ## 🧭 Điều hướng
 
-**[Daily](#-daily--next-draw)** · **[Probability](#-probability-arena)** · **[Frequency](#-frequency-heatmaps-0099)** · **[Gap](#-gap--rhythm)** · **[AI/ML](#-aiml--dynamics)** · **[Markov](#-markov--transition--dependency)** · **[Structure](#-structure--pairs)** · **[Boards](#-special-boards--conditional)** · **[Research](#-significance--research)**
+**[Kết quả ngày](#daily--next-draw)** · **[Xác suất](#probability-arena)** · **[Tần suất](#frequency-heatmaps-0099)** · **[Gan](#gap--rhythm)** · **[AI/ML](#aiml--dynamics)** · **[Markov](#markov--transition--dependency)** · **[Cấu trúc](#structure--pairs)** · **[Bảng lịch](#special-boards--conditional)** · **[Nghiên cứu](#significance--research)**
 
 ---
 
-## 💎 Executive Pulse
+## 💎 Tóm tắt điều hành
 
-| Canonical | Forecast | Dataset | Model state |
+| Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **2026-09-02** | **2026-09-03** | **388 kỳ · missing 0** | Loto meta **ACTIVE** · Đề **GATED** |
+| **2026-09-02** | **2026-09-03** | **388 kỳ · thiếu 0** | Meta lô tô **ĐANG BẬT** · Đề **ĐÃ CHẶN** |
 
 ---
 
-## 🎟️ Daily & Next Draw
+<a id="daily--next-draw"></a>
+## 🎟️ Kết quả ngày và kỳ tiếp theo
 
-### Kết quả canonical · 2026-09-02
+### Kết quả chuẩn · 2026-09-02
 
 | Giải | Kết quả | 2 số cuối | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | **44542** | 42 | Kết quả canonical đã xác minh |
-| Giải nhất | 70943 | 43 | Kết quả canonical đã xác minh |
-| Giải nhì | 20944 · 30062 | 44 · 62 | Kết quả canonical đã xác minh |
-| Giải ba | 60516 · 22853 · 65620 · 02493 · 52067 · 04270 | 16 · 53 · 20 · 93 · 67 · 70 | Kết quả canonical đã xác minh |
-| Giải tư | 3422 · 1237 · 4540 · 1955 | 22 · 37 · 40 · 55 | Kết quả canonical đã xác minh |
-| Giải năm | 9150 · 5572 · 7077 · 4767 · 4522 · 2340 | 50 · 72 · 77 · 67 · 22 · 40 | Kết quả canonical đã xác minh |
-| Giải sáu | 261 · 232 · 249 | 61 · 32 · 49 | Kết quả canonical đã xác minh |
-| Giải bảy | 15 · 64 · 32 · 10 | 15 · 64 · 32 · 10 | Kết quả canonical đã xác minh |
+| Đặc biệt | **44542** | 42 | Kết quả chuẩn đã xác minh |
+| Giải nhất | 70943 | 43 | Kết quả chuẩn đã xác minh |
+| Giải nhì | 20944 · 30062 | 44 · 62 | Kết quả chuẩn đã xác minh |
+| Giải ba | 60516 · 22853 · 65620 · 02493 · 52067 · 04270 | 16 · 53 · 20 · 93 · 67 · 70 | Kết quả chuẩn đã xác minh |
+| Giải tư | 3422 · 1237 · 4540 · 1955 | 22 · 37 · 40 · 55 | Kết quả chuẩn đã xác minh |
+| Giải năm | 9150 · 5572 · 7077 · 4767 · 4522 · 2340 | 50 · 72 · 77 · 67 · 22 · 40 | Kết quả chuẩn đã xác minh |
+| Giải sáu | 261 · 232 · 249 | 61 · 32 · 49 | Kết quả chuẩn đã xác minh |
+| Giải bảy | 15 · 64 · 32 · 10 | 15 · 64 · 32 · 10 | Kết quả chuẩn đã xác minh |
 
-### Dự đoán vui · 2026-09-02
+### Dự đoán vui · 2026-09-03
 
-| Giải | Mô phỏng | Suffix · probability | Ý nghĩa |
+| Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | 77054 | `54` 1.24% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 10726 | `26` 23.53% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 29358 · 32324 | `58` 23.45% · `24` 23.48% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải ba | 77832 · 77915 · 72682 · 45179 · 71176 · 65968 | `32` 23.91% · `15` 23.46% · `82` 23.37% · `79` 23.04% · `76` 23.52% · `68` 23.69% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải tư | 0149 · 0332 · 8776 · 8501 | `49` 23.62% · `32` 23.91% · `76` 23.52% · `01` 23.53% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải năm | 5962 · 1149 · 0017 · 7734 · 1986 · 5367 | `62` 23.58% · `49` 23.62% · `17` 24.09% · `34` 23.70% · `86` 23.71% · `67` 23.54% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 979 · 954 · 634 | `79` 23.04% · `54` 24.05% · `34` 23.70% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 99 · 87 · 87 · 36 | `99` 23.61% · `87` 23.90% · `87` 23.90% · `36` 24.07% | Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối |
+| Đặc biệt | 03102 | `02` 0.93% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 76384 | `84` 24.40% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 66107 · 02399 | `07` 24.06% · `99` 24.15% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 55192 · 64851 · 09021 · 38618 · 49128 · 86678 | `92` 24.49% · `51` 24.59% · `21` 24.19% · `18` 24.18% · `28` 23.89% · `78` 23.79% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 7027 · 0542 · 7360 · 0661 | `27` 24.48% · `42` 24.28% · `60` 24.48% · `61` 24.63% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 7286 · 5586 · 1564 · 1358 · 7202 · 5717 | `86` 24.16% · `86` 24.16% · `64` 24.64% · `58` 23.96% · `02` 24.24% · `17` 24.54% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 668 · 301 · 812 | `68` 24.42% · `01` 24.20% · `12` 24.17% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 60 · 75 · 18 · 61 | `60` 24.48% · `75` 24.03% · `18` 24.18% · `61` 24.63% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
@@ -76,9 +77,10 @@
 
 ---
 
-## 🔮 Probability Arena
+<a id="probability-arena"></a>
+## 🔮 Khu vực xác suất
 
-### Loto · Top probability
+### Lô tô · Xác suất cao nhất
 
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
@@ -86,27 +88,27 @@
 | ▰▰▰▰▰▱▱▱▱▱ | Trung bình | Nằm quanh vùng giữa của nhóm so sánh |
 | ▰▰▰▰▰▰▰▰▰▰ | Cao | Thuộc nhóm giá trị lớn nhất trong bảng |
 
-| # | Số | Final probability | Đồng thuận | Ý nghĩa | Visual |
+| # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **95** | 25.100% | medium · disp 0.014 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **83** | 25.027% | low · disp 0.016 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **52** | 24.785% | medium · disp 0.014 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **50** | 24.687% | low · disp 0.015 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **54** | 24.641% | medium · disp 0.012 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **64** | 24.635% | high · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | **61** | 24.627% | low · disp 0.015 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | **51** | 24.587% | medium · disp 0.014 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | **13** | 24.577% | medium · disp 0.013 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | **06** | 24.552% | high · disp 0.009 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | **17** | 24.545% | medium · disp 0.014 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | **94** | 24.530% | medium · disp 0.012 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | **80** | 24.526% | high · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | **32** | 24.518% | medium · disp 0.013 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | **19** | 24.516% | high · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | **95** | 25.100% | Trung bình · disp 0.014 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **83** | 25.027% | Thấp · disp 0.016 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **52** | 24.785% | Trung bình · disp 0.014 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **50** | 24.687% | Thấp · disp 0.015 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **54** | 24.641% | Trung bình · disp 0.012 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **64** | 24.635% | Cao · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | **61** | 24.627% | Thấp · disp 0.015 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | **51** | 24.587% | Trung bình · disp 0.014 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | **13** | 24.577% | Trung bình · disp 0.013 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | **06** | 24.552% | Cao · disp 0.009 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | **17** | 24.545% | Trung bình · disp 0.014 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 12 | **94** | 24.530% | Trung bình · disp 0.012 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 13 | **80** | 24.526% | Cao · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 14 | **32** | 24.518% | Trung bình · disp 0.013 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | **19** | 24.516% | Cao · disp 0.011 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Loto · Heatmap probability 00–99
+### Lô tô · Ma trận nhiệt xác suất 00–99
 
-> **Cách đọc màu – Final probability Loto:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+> **Cách đọc màu – Xác suất cuối lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -131,29 +133,29 @@
 | **8x** | 🟧<br>`80`<br>**24.53%** | 🟧<br>`81`<br>**24.38%** | 🟩<br>`82`<br>**24.06%** | 🟪<br>`83`<br>**25.03%** | 🟧<br>`84`<br>**24.40%** | 🟦<br>`85`<br>**23.75%** | 🟨<br>`86`<br>**24.16%** | 🟧<br>`87`<br>**24.40%** | 🟨<br>`88`<br>**24.28%** | 🟩<br>`89`<br>**24.11%** |
 | **9x** | 🟩<br>`90`<br>**24.09%** | 🟨<br>`91`<br>**24.33%** | 🟧<br>`92`<br>**24.49%** | 🟧<br>`93`<br>**24.38%** | 🟧<br>`94`<br>**24.53%** | 🟪<br>`95`<br>**25.10%** | 🟩<br>`96`<br>**24.12%** | 🟦<br>`97`<br>**23.79%** | 🟦<br>`98`<br>**23.63%** | 🟨<br>`99`<br>**24.15%** |
 
-### ĐB · Top probability
+### ĐB · Xác suất cao nhất
 
-| # | Số | Final probability | Đồng thuận | Ý nghĩa | Visual |
+| # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **83** | 1.284% | low · disp 0.005 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **68** | 1.181% | low · disp 0.003 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | **39** | 1.165% | low · disp 0.003 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | **21** | 1.163% | low · disp 0.002 | Ưu tiên tương đối cao; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | **54** | 1.162% | low · disp 0.003 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **44** | 1.151% | low · disp 0.002 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **38** | 1.150% | low · disp 0.004 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | **23** | 1.141% | low · disp 0.002 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | **42** | 1.117% | medium · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | **37** | 1.114% | low · disp 0.002 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | **67** | 1.110% | low · disp 0.002 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | **01** | 1.091% | low · disp 0.001 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | **47** | 1.089% | low · disp 0.001 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | **17** | 1.084% | low · disp 0.002 | Theo dõi trong nhóm xếp hạng; độ đồng thuận model thấp | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | **80** | 1.080% | high · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▱▱ |
+| 1 | **83** | 1.284% | Thấp · disp 0.005 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **68** | 1.181% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | **39** | 1.165% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | **21** | 1.163% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | **54** | 1.162% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **44** | 1.151% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **38** | 1.150% | Thấp · disp 0.004 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | **23** | 1.141% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | **42** | 1.117% | Trung bình · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | **37** | 1.114% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | **67** | 1.110% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | **01** | 1.091% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | **47** | 1.089% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | **17** | 1.084% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | **80** | 1.080% | Cao · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▱▱ |
 
-### ĐB · Heatmap probability 00–99
+### ĐB · Ma trận nhiệt xác suất 00–99
 
-> **Cách đọc màu – Final probability ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+> **Cách đọc màu – Xác suất cuối ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -180,10 +182,11 @@
 
 ---
 
-## 🔥 Frequency Heatmaps 00–99
+<a id="frequency-heatmaps-0099"></a>
+## 🔥 Ma trận nhiệt tần suất 00–99
 
-### Loto · tháng
-> **Cách đọc màu – Tần suất Loto tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Lô tô · tháng
+> **Cách đọc màu – Tần suất lô tô tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -234,8 +237,8 @@
 | **8x** | ⬜<br>`80`<br>**0** | ⬜<br>`81`<br>**0** | ⬜<br>`82`<br>**0** | ⬜<br>`83`<br>**0** | ⬜<br>`84`<br>**0** | ⬜<br>`85`<br>**0** | ⬜<br>`86`<br>**0** | ⬜<br>`87`<br>**0** | ⬜<br>`88`<br>**0** | ⬜<br>`89`<br>**0** |
 | **9x** | ⬜<br>`90`<br>**0** | ⬜<br>`91`<br>**0** | ⬜<br>`92`<br>**0** | ⬜<br>`93`<br>**0** | ⬜<br>`94`<br>**0** | ⬜<br>`95`<br>**0** | ⬜<br>`96`<br>**0** | ⬜<br>`97`<br>**0** | ⬜<br>`98`<br>**0** | ⬜<br>`99`<br>**0** |
 
-### Loto · năm
-> **Cách đọc màu – Tần suất Loto năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Lô tô · năm
+> **Cách đọc màu – Tần suất lô tô năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -286,8 +289,8 @@
 | **8x** | 🟧<br>`80`<br>**4** | 🟩<br>`81`<br>**2** | 🟦<br>`82`<br>**1** | 🟪<br>`83`<br>**6** | 🟩<br>`84`<br>**2** | 🟨<br>`85`<br>**3** | 🟩<br>`86`<br>**2** | 🟩<br>`87`<br>**2** | 🟩<br>`88`<br>**2** | 🟨<br>`89`<br>**3** |
 | **9x** | 🟩<br>`90`<br>**2** | 🟨<br>`91`<br>**3** | 🟩<br>`92`<br>**2** | 🟨<br>`93`<br>**3** | 🟧<br>`94`<br>**4** | 🟦<br>`95`<br>**1** | 🟩<br>`96`<br>**2** | 🟨<br>`97`<br>**3** | ⬜<br>`98`<br>**0** | 🟦<br>`99`<br>**1** |
 
-### Loto · tuần
-> **Cách đọc màu – Tần suất Loto tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Lô tô · tuần
+> **Cách đọc màu – Tần suất lô tô tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -340,10 +343,11 @@
 
 ---
 
-## ⏳ Gap & Rhythm
+<a id="gap--rhythm"></a>
+## ⏳ Gan và nhịp
 
-### Heatmap gan Loto
-> **Cách đọc màu – Current gap Loto:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Ma trận nhiệt gan lô tô
+> **Cách đọc màu – Gan hiện tại của lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -368,33 +372,33 @@
 | **8x** | ⬜<br>`80`<br>**1** | 🟩<br>`81`<br>**4** | 🟩<br>`82`<br>**5** | 🟩<br>`83`<br>**4** | ⬜<br>`84`<br>**1** | 🟦<br>`85`<br>**3** | 🟨<br>`86`<br>**6** | 🟨<br>`87`<br>**7** | 🟩<br>`88`<br>**4** | 🟪<br>`89`<br>**14** |
 | **9x** | 🟥<br>`90`<br>**11** | 🟨<br>`91`<br>**7** | 🟧<br>`92`<br>**8** | ⬜<br>`93`<br>**0** | 🟦<br>`94`<br>**3** | 🟦<br>`95`<br>**2** | ⬜<br>`96`<br>**1** | ⬜<br>`97`<br>**1** | ⬜<br>`98`<br>**1** | 🟦<br>`99`<br>**3** |
 
-### Top gan Loto
+### Gan lô tô đứng đầu
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
 | ▰▰▱▱▱▱▱▱▱▱ | Thấp | Giá trị nhỏ tương đối trong chính bảng đang xem |
 | ▰▰▰▰▰▱▱▱▱▱ | Trung bình | Nằm quanh vùng giữa của nhóm so sánh |
 | ▰▰▰▰▰▰▰▰▰▰ | Cao | Thuộc nhóm giá trị lớn nhất trong bảng |
 
-| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Visual |
+| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **89** | 14 | TB 4.12 · max 25 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **75** | 12 | TB 4.25 · max 16 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | **27** | 12 | TB 3.59 · max 15 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | **00** | 11 | TB 4.65 · max 19 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | **06** | 11 | TB 4.73 · max 27 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | **90** | 11 | TB 4.16 · max 23 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **25** | 10 | TB 4.28 · max 13 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | **58** | 10 | TB 4.04 · max 17 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **14** | 10 | TB 3.53 · max 20 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **36** | 8 | TB 4.05 · max 18 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | **33** | 8 | TB 4.00 · max 15 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | **92** | 8 | TB 3.61 · max 14 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 13 | **23** | 7 | TB 4.30 · max 21 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
-| 14 | **35** | 7 | TB 4.04 · max 22 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
-| 15 | **65** | 7 | TB 3.89 · max 21 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 1 | **89** | 14 | TB 4.12 · lớn nhất 25 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **75** | 12 | TB 4.25 · lớn nhất 16 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | **27** | 12 | TB 3.59 · lớn nhất 15 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | **00** | 11 | TB 4.65 · lớn nhất 19 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **06** | 11 | TB 4.73 · lớn nhất 27 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | **90** | 11 | TB 4.16 · lớn nhất 23 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **25** | 10 | TB 4.28 · lớn nhất 13 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | **58** | 10 | TB 4.04 · lớn nhất 17 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | **14** | 10 | TB 3.53 · lớn nhất 20 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **36** | 8 | TB 4.05 · lớn nhất 18 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | **33** | 8 | TB 4.00 · lớn nhất 15 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | **92** | 8 | TB 3.61 · lớn nhất 14 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 13 | **23** | 7 | TB 4.30 · lớn nhất 21 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 14 | **35** | 7 | TB 4.04 · lớn nhất 22 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 15 | **65** | 7 | TB 3.89 · lớn nhất 21 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 
-### Heatmap gan ĐB
-> **Cách đọc màu – Current gap ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Ma trận nhiệt gan ĐB
+> **Cách đọc màu – Gan hiện tại của ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -419,107 +423,108 @@
 | **8x** | ⬜<br>`80`<br>**8** | 🟦<br>`81`<br>**100** | 🟩<br>`82`<br>**148** | ⬜<br>`83`<br>**15** | 🟦<br>`84`<br>**78** | ⬜<br>`85`<br>**55** | 🟧<br>`86`<br>**224** | 🟦<br>`87`<br>**60** | 🟩<br>`88`<br>**157** | 🟦<br>`89`<br>**56** |
 | **9x** | ⬜<br>`90`<br>**46** | ⬜<br>`91`<br>**22** | 🟩<br>`92`<br>**116** | 🟦<br>`93`<br>**87** | ⬜<br>`94`<br>**52** | 🟨<br>`95`<br>**167** | ⬜<br>`96`<br>**17** | 🟦<br>`97`<br>**58** | 🟪<br>`98`<br>**387** | ⬜<br>`99`<br>**51** |
 
-### Top gan ĐB
-| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Visual |
+### Gan ĐB đứng đầu
+| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **15** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **56** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **58** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **98** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **31** | 357 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **07** | 353 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **73** | 308 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **02** | 300 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | **27** | 232 | TB 72.50 · max 98 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 10 | **86** | 224 | TB 32.75 · max 53 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | **62** | 221 | TB 33.33 · max 75 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | **74** | 219 | TB 96.00 · max 96 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 13 | **77** | 201 | TB 60.67 · max 170 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
-| 14 | **30** | 200 | TB 84.00 · max 148 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
-| 15 | **49** | 180 | TB 62.00 · max 62 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 1 | **15** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **56** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **58** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **98** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **31** | 357 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **07** | 353 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **73** | 308 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **02** | 300 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | **27** | 232 | TB 72.50 · lớn nhất 98 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 10 | **86** | 224 | TB 32.75 · lớn nhất 53 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | **62** | 221 | TB 33.33 · lớn nhất 75 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | **74** | 219 | TB 96.00 · lớn nhất 96 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 13 | **77** | 201 | TB 60.67 · lớn nhất 170 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 14 | **30** | 200 | TB 84.00 · lớn nhất 148 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
+| 15 | **49** | 180 | TB 62.00 · lớn nhất 62 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 
 ### Gan giải nhất
-| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Visual |
+| # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **15** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **19** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **39** | 387 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **63** | 374 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **84** | 352 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **23** | 347 | TB 34.00 · max 34 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **67** | 300 | TB 0.00 · max — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **36** | 272 | TB 26.33 · max 50 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **25** | 271 | TB 54.50 · max 100 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **12** | 236 | TB 37.00 · max 37 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | **34** | 232 | TB 138.00 · max 138 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | **47** | 230 | TB 35.33 · max 73 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 1 | **15** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **19** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **39** | 387 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **63** | 374 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **84** | 352 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **23** | 347 | TB 34.00 · lớn nhất 34 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **67** | 300 | TB 0.00 · lớn nhất — | Gan trong vùng lịch sử thường gặp | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **36** | 272 | TB 26.33 · lớn nhất 50 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | **25** | 271 | TB 54.50 · lớn nhất 100 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **12** | 236 | TB 37.00 · lớn nhất 37 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | **34** | 232 | TB 138.00 · lớn nhất 138 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | **47** | 230 | TB 35.33 · lớn nhất 73 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▱▱▱▱ |
 
-### Hazard Loto
-| Gap | Hazard | Hits / exposure | Ý nghĩa | Visual |
+### Tỷ suất xuất hiện theo gan lô tô
+| Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
-| 0 | 0.00% | 0 / 0 | Xác suất empirical có điều kiện tại mức gap này | ▱▱▱▱▱▱▱▱▱▱ |
-| 1 | 24.29% | 2239 / 9219 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 2 | 23.98% | 1669 / 6961 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 3 | 24.17% | 1276 / 5280 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 4 | 23.30% | 931 / 3995 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | 24.31% | 743 / 3056 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | 22.58% | 521 / 2307 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | 23.53% | 419 / 1781 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | 23.82% | 323 / 1356 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | 22.43% | 231 / 1030 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | 23.03% | 184 / 799 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 11 | 20.92% | 128 / 612 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | 24.32% | 117 / 481 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | 24.86% | 90 / 362 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | 24.63% | 67 / 272 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | 22.55% | 46 / 204 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 16 | 23.42% | 37 / 158 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 17 | 20.66% | 25 / 121 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 18 | 27.08% | 26 / 96 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 19 | 20.00% | 14 / 70 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 20 | 23.21% | 13 / 56 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 21 | 20.93% | 9 / 43 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 22 | 32.35% | 11 / 34 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▰▰ |
-| 23 | 30.43% | 7 / 23 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▰▱ |
-| 24 | 18.75% | 3 / 16 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 25 | 30.77% | 4 / 13 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▰▰ |
+| 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
+| 1 | 24.29% | 2239 / 9219 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 2 | 23.98% | 1669 / 6961 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 3 | 24.17% | 1276 / 5280 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 4 | 23.30% | 931 / 3995 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | 24.31% | 743 / 3056 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | 22.58% | 521 / 2307 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 7 | 23.53% | 419 / 1781 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | 23.82% | 323 / 1356 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | 22.43% | 231 / 1030 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | 23.03% | 184 / 799 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 11 | 20.92% | 128 / 612 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | 24.32% | 117 / 481 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | 24.86% | 90 / 362 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | 24.63% | 67 / 272 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | 22.55% | 46 / 204 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 16 | 23.42% | 37 / 158 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 17 | 20.66% | 25 / 121 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 18 | 27.08% | 26 / 96 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 19 | 20.00% | 14 / 70 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 20 | 23.21% | 13 / 56 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 21 | 20.93% | 9 / 43 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 22 | 32.35% | 11 / 34 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
+| 23 | 30.43% | 7 / 23 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
+| 24 | 18.75% | 3 / 16 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 25 | 30.77% | 4 / 13 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Hazard ĐB
-| Gap | Hazard | Hits / exposure | Ý nghĩa | Visual |
+### Tỷ suất xuất hiện theo gan ĐB
+| Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
-| 0 | 0.00% | 0 / 0 | Xác suất empirical có điều kiện tại mức gap này | ▱▱▱▱▱▱▱▱▱▱ |
-| 1 | 2.33% | 9 / 387 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | 0.80% | 3 / 377 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 3 | 0.54% | 2 / 373 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▱▱▱▱▱▱▱▱ |
-| 4 | 0.81% | 3 / 370 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 5 | 1.09% | 4 / 366 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▱▱▱▱▱ |
-| 6 | 0.55% | 2 / 361 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▱▱▱▱▱▱▱▱ |
-| 7 | 0.56% | 2 / 358 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▱▱▱▱▱▱▱▱ |
-| 8 | 1.97% | 7 / 355 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | 0.86% | 3 / 347 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▱▱▱▱▱▱ |
-| 10 | 0.87% | 3 / 343 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▱▱▱▱▱▱ |
-| 11 | 0.29% | 1 / 339 | Xác suất empirical có điều kiện tại mức gap này | ▰▱▱▱▱▱▱▱▱▱ |
-| 12 | 0.59% | 2 / 337 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 13 | 0.30% | 1 / 334 | Xác suất empirical có điều kiện tại mức gap này | ▰▱▱▱▱▱▱▱▱▱ |
-| 14 | 0.00% | 0 / 332 | Xác suất empirical có điều kiện tại mức gap này | ▱▱▱▱▱▱▱▱▱▱ |
-| 15 | 1.51% | 5 / 331 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▱▱▱▱ |
-| 16 | 0.92% | 3 / 325 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▱▱▱▱▱▱ |
-| 17 | 0.31% | 1 / 321 | Xác suất empirical có điều kiện tại mức gap này | ▰▱▱▱▱▱▱▱▱▱ |
-| 18 | 0.63% | 2 / 319 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 19 | 0.63% | 2 / 316 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 20 | 1.60% | 5 / 313 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▰▰▰▱▱▱ |
-| 21 | 0.97% | 3 / 308 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▱▱▱▱▱▱ |
-| 22 | 0.66% | 2 / 304 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
-| 23 | 1.00% | 3 / 301 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▰▱▱▱▱▱▱ |
-| 24 | 0.34% | 1 / 297 | Xác suất empirical có điều kiện tại mức gap này | ▰▱▱▱▱▱▱▱▱▱ |
-| 25 | 0.68% | 2 / 296 | Xác suất empirical có điều kiện tại mức gap này | ▰▰▰▱▱▱▱▱▱▱ |
+| 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
+| 1 | 2.33% | 9 / 387 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | 0.80% | 3 / 377 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 3 | 0.54% | 2 / 373 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▱▱▱▱▱▱▱▱ |
+| 4 | 0.81% | 3 / 370 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 5 | 1.09% | 4 / 366 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▱▱▱▱▱ |
+| 6 | 0.55% | 2 / 361 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▱▱▱▱▱▱▱▱ |
+| 7 | 0.56% | 2 / 358 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▱▱▱▱▱▱▱▱ |
+| 8 | 1.97% | 7 / 355 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | 0.86% | 3 / 347 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▱▱▱▱▱▱ |
+| 10 | 0.87% | 3 / 343 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▱▱▱▱▱▱ |
+| 11 | 0.29% | 1 / 339 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▱▱▱▱▱▱▱▱▱ |
+| 12 | 0.59% | 2 / 337 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 13 | 0.30% | 1 / 334 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▱▱▱▱▱▱▱▱▱ |
+| 14 | 0.00% | 0 / 332 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
+| 15 | 1.51% | 5 / 331 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 16 | 0.92% | 3 / 325 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▱▱▱▱▱▱ |
+| 17 | 0.31% | 1 / 321 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▱▱▱▱▱▱▱▱▱ |
+| 18 | 0.63% | 2 / 319 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 19 | 0.63% | 2 / 316 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 20 | 1.60% | 5 / 313 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 21 | 0.97% | 3 / 308 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▱▱▱▱▱▱ |
+| 22 | 0.66% | 2 / 304 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
+| 23 | 1.00% | 3 / 301 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▱▱▱▱▱▱ |
+| 24 | 0.34% | 1 / 297 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▱▱▱▱▱▱▱▱▱ |
+| 25 | 0.68% | 2 / 296 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▱▱▱▱▱▱▱ |
 
 ---
 
-## 🤖 AI/ML & Dynamics
+<a id="aiml--dynamics"></a>
+## 🤖 AI/ML và động lực
 
-### Cầu-kèo Loto · heatmap score
-> **Cách đọc màu – Cầu-kèo ML Loto score:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Cầu-kèo lô tô · ma trận nhiệt điểm
+> **Cách đọc màu – Điểm cầu-kèo ML lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -544,8 +549,8 @@
 | **8x** | 🟧<br>`80`<br>**46.4** | 🟦<br>`81`<br>**34.2** | 🟩<br>`82`<br>**37.2** | 🟥<br>`83`<br>**50.2** | 🟨<br>`84`<br>**39.7** | ⬜<br>`85`<br>**23.9** | 🟩<br>`86`<br>**37.5** | 🟩<br>`87`<br>**39.3** | 🟦<br>`88`<br>**33.4** | 🟨<br>`89`<br>**40.8** |
 | **9x** | 🟩<br>`90`<br>**37.2** | 🟦<br>`91`<br>**32.7** | 🟨<br>`92`<br>**40.1** | 🟪<br>`93`<br>**60.5** | 🟨<br>`94`<br>**44.2** | 🟪<br>`95`<br>**57.2** | 🟨<br>`96`<br>**44.5** | 🟨<br>`97`<br>**40.3** | 🟩<br>`98`<br>**37.1** | 🟦<br>`99`<br>**32.1** |
 
-### Top Cầu-kèo Loto
-| # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Visual |
+### Cầu-kèo lô tô đứng đầu
+| # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **93** | 60.471 | ML xác suất cao + tần suất gần | ML xác suất cao + tần suất gần | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **95** | 57.245 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▰▰▱ |
@@ -563,8 +568,8 @@
 | 14 | **42** | 49.566 | hợp điều kiện ĐB hôm trước + hợp … | hợp điều kiện ĐB hôm trước + hợp điều… | ▰▰▰▰▰▰▰▰▱▱ |
 | 15 | **04** | 49.499 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▱▱ |
 
-### Cầu-kèo ĐB · heatmap score
-> **Cách đọc màu – Cầu-kèo ML ĐB score:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Cầu-kèo ĐB · ma trận nhiệt điểm
+> **Cách đọc màu – Điểm cầu-kèo ML ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -589,8 +594,8 @@
 | **8x** | 🟨<br>`80`<br>**39.3** | ⬜<br>`81`<br>**14.7** | ⬜<br>`82`<br>**10.1** | 🟥<br>`83`<br>**52.5** | ⬜<br>`84`<br>**11.2** | 🟨<br>`85`<br>**40.5** | 🟦<br>`86`<br>**20.5** | 🟩<br>`87`<br>**30.9** | 🟦<br>`88`<br>**20.3** | 🟦<br>`89`<br>**21.3** |
 | **9x** | 🟨<br>`90`<br>**37.8** | 🟧<br>`91`<br>**42.7** | 🟦<br>`92`<br>**22.1** | 🟩<br>`93`<br>**29.6** | 🟧<br>`94`<br>**44.3** | ⬜<br>`95`<br>**17.4** | 🟩<br>`96`<br>**30.2** | 🟨<br>`97`<br>**36.0** | 🟧<br>`98`<br>**46.0** | 🟧<br>`99`<br>**45.9** |
 
-### Top Cầu-kèo ĐB
-| # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Visual |
+### Cầu-kèo ĐB đứng đầu
+| # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **68** | 65.662 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **01** | 57.538 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▰▰▱ |
@@ -608,8 +613,8 @@
 | 14 | **18** | 46.168 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **63** | 46.113 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
 
-### AI/ML composite · Loto
-> **Cách đọc màu – AI/ML composite Loto:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### AI/ML tổng hợp · Lô tô
+> **Cách đọc màu – AI/ML tổng hợp lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -634,8 +639,8 @@
 | **8x** | 🟩<br>`80`<br>**35.2** | 🟧<br>`81`<br>**43.5** | 🟩<br>`82`<br>**35.8** | 🟨<br>`83`<br>**40.2** | 🟨<br>`84`<br>**37.8** | 🟦<br>`85`<br>**27.4** | 🟨<br>`86`<br>**40.6** | 🟨<br>`87`<br>**37.9** | 🟨<br>`88`<br>**38.0** | 🟧<br>`89`<br>**48.8** |
 | **9x** | 🟩<br>`90`<br>**34.7** | 🟦<br>`91`<br>**25.0** | 🟩<br>`92`<br>**36.3** | 🟪<br>`93`<br>**61.7** | 🟨<br>`94`<br>**40.7** | 🟪<br>`95`<br>**56.3** | 🟩<br>`96`<br>**35.4** | 🟦<br>`97`<br>**29.4** | ⬜<br>`98`<br>**23.4** | 🟨<br>`99`<br>**42.2** |
 
-### AI/ML composite · ĐB
-> **Cách đọc màu – AI/ML composite ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### AI/ML tổng hợp · ĐB
+> **Cách đọc màu – AI/ML tổng hợp ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -660,8 +665,8 @@
 | **8x** | 🟧<br>`80`<br>**51.1** | 🟦<br>`81`<br>**23.8** | ⬜<br>`82`<br>**18.7** | 🟪<br>`83`<br>**62.9** | ⬜<br>`84`<br>**15.9** | 🟧<br>`85`<br>**46.2** | 🟩<br>`86`<br>**32.2** | 🟩<br>`87`<br>**36.8** | 🟩<br>`88`<br>**31.1** | 🟩<br>`89`<br>**29.8** |
 | **9x** | 🟩<br>`90`<br>**37.7** | 🟧<br>`91`<br>**51.0** | 🟦<br>`92`<br>**28.3** | 🟩<br>`93`<br>**33.9** | 🟧<br>`94`<br>**49.4** | 🟦<br>`95`<br>**25.2** | 🟩<br>`96`<br>**32.6** | 🟨<br>`97`<br>**43.1** | 🟥<br>`98`<br>**59.7** | 🟧<br>`99`<br>**46.5** |
 
-### Higher-order dynamics · Loto
-> **Cách đọc màu – Dynamics probability Loto:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Động lực bậc cao · Lô tô
+> **Cách đọc màu – Xác suất động lực lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -686,26 +691,26 @@
 | **8x** | 🟨<br>`80`<br>**25.25%** | 🟨<br>`81`<br>**24.85%** | 🟩<br>`82`<br>**23.07%** | 🟪<br>`83`<br>**29.58%** | 🟨<br>`84`<br>**24.87%** | ⬜<br>`85`<br>**20.67%** | 🟦<br>`86`<br>**21.63%** | 🟧<br>`87`<br>**25.56%** | 🟨<br>`88`<br>**25.40%** | 🟩<br>`89`<br>**23.15%** |
 | **9x** | 🟩<br>`90`<br>**23.21%** | 🟥<br>`91`<br>**27.95%** | 🟧<br>`92`<br>**26.88%** | 🟩<br>`93`<br>**23.49%** | 🟧<br>`94`<br>**26.08%** | 🟪<br>`95`<br>**29.01%** | 🟩<br>`96`<br>**23.26%** | 🟨<br>`97`<br>**23.98%** | ⬜<br>`98`<br>**20.14%** | 🟦<br>`99`<br>**21.54%** |
 
-| # | Số | Dynamics P | So với baseline | Ý nghĩa | Visual |
+| # | Số | Xác suất động lực | So với nền | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **62** | 29.81% | base 28.59% · Δ 1.22% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **83** | 29.58% | base 29.56% · Δ 0.01% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **77** | 29.24% | base 26.40% · Δ 2.84% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **95** | 29.01% | base 27.86% · Δ 1.16% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **60** | 28.59% | base 28.35% · Δ 0.25% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **91** | 27.95% | base 28.35% · Δ -0.39% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **64** | 27.89% | base 26.64% · Δ 1.25% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | **51** | 27.43% | base 27.13% · Δ 0.30% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | **09** | 27.42% | base 27.37% · Δ 0.05% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | **69** | 27.41% | base 27.37% · Δ 0.04% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | **54** | 27.06% | base 27.37% · Δ -0.31% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | **73** | 26.97% | base 26.15% · Δ 0.81% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | **92** | 26.88% | base 26.88% · Δ 0.00% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | **13** | 26.79% | base 27.13% · Δ -0.33% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | **34** | 26.72% | base 26.15% · Δ 0.57% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | **62** | 29.81% | nền 28.59% · Δ 1.22% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **83** | 29.58% | nền 29.56% · Δ 0.01% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **77** | 29.24% | nền 26.40% · Δ 2.84% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **95** | 29.01% | nền 27.86% · Δ 1.16% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **60** | 28.59% | nền 28.35% · Δ 0.25% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **91** | 27.95% | nền 28.35% · Δ -0.39% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **64** | 27.89% | nền 26.64% · Δ 1.25% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | **51** | 27.43% | nền 27.13% · Δ 0.30% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | **09** | 27.42% | nền 27.37% · Δ 0.05% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | **69** | 27.41% | nền 27.37% · Δ 0.04% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | **54** | 27.06% | nền 27.37% · Δ -0.31% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | **73** | 26.97% | nền 26.15% · Δ 0.81% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | **92** | 26.88% | nền 26.88% · Δ 0.00% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | **13** | 26.79% | nền 27.13% · Δ -0.33% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | **34** | 26.72% | nền 26.15% · Δ 0.57% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Higher-order dynamics · ĐB
-> **Cách đọc màu – Dynamics probability ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Động lực bậc cao · ĐB
+> **Cách đọc màu – Xác suất động lực ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -730,253 +735,255 @@
 | **8x** | 🟨<br>`80`<br>**1.052%** | 🟩<br>`81`<br>**0.811%** | 🟦<br>`82`<br>**0.583%** | 🟪<br>`83`<br>**2.159%** | 🟩<br>`84`<br>**0.798%** | 🟩<br>`85`<br>**0.788%** | 🟨<br>`86`<br>**1.216%** | 🟦<br>`87`<br>**0.569%** | 🟨<br>`88`<br>**1.246%** | 🟩<br>`89`<br>**0.801%** |
 | **9x** | 🟨<br>`90`<br>**1.020%** | 🟨<br>`91`<br>**1.272%** | 🟥<br>`92`<br>**1.683%** | 🟥<br>`93`<br>**1.642%** | 🟨<br>`94`<br>**1.243%** | 🟦<br>`95`<br>**0.580%** | 🟩<br>`96`<br>**0.827%** | 🟨<br>`97`<br>**1.028%** | ⬜<br>`98`<br>**0.149%** | 🟦<br>`99`<br>**0.568%** |
 
-| # | Số | Dynamics P | So với baseline | Ý nghĩa | Visual |
+| # | Số | Xác suất động lực | So với nền | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **83** | 2.16% | base 2.09% · Δ 0.07% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **38** | 2.15% | base 2.09% · Δ 0.05% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **01** | 1.97% | base 2.09% · Δ -0.12% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | **68** | 1.93% | base 1.88% · Δ 0.05% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | **54** | 1.88% | base 1.88% · Δ -0.00% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **43** | 1.73% | base 1.67% · Δ 0.06% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **37** | 1.72% | base 1.67% · Δ 0.05% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **21** | 1.71% | base 1.67% · Δ 0.04% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | **39** | 1.70% | base 1.67% · Δ 0.04% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | **36** | 1.70% | base 1.67% · Δ 0.03% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | **79** | 1.68% | base 1.67% · Δ 0.02% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | **92** | 1.68% | base 1.67% · Δ 0.02% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | **93** | 1.64% | base 1.67% · Δ -0.02% | Dynamics không cao hơn baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | **17** | 1.49% | base 1.45% · Δ 0.04% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | **33** | 1.48% | base 1.45% · Δ 0.03% | Dynamics cao hơn baseline | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | **83** | 2.16% | nền 2.09% · Δ 0.07% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **38** | 2.15% | nền 2.09% · Δ 0.05% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **01** | 1.97% | nền 2.09% · Δ -0.12% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | **68** | 1.93% | nền 1.88% · Δ 0.05% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | **54** | 1.88% | nền 1.88% · Δ -0.00% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **43** | 1.73% | nền 1.67% · Δ 0.06% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **37** | 1.72% | nền 1.67% · Δ 0.05% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **21** | 1.71% | nền 1.67% · Δ 0.04% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | **39** | 1.70% | nền 1.67% · Δ 0.04% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 10 | **36** | 1.70% | nền 1.67% · Δ 0.03% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | **79** | 1.68% | nền 1.67% · Δ 0.02% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | **92** | 1.68% | nền 1.67% · Δ 0.02% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | **93** | 1.64% | nền 1.67% · Δ -0.02% | Động lực không cao hơn nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | **17** | 1.49% | nền 1.45% · Δ 0.04% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 15 | **33** | 1.48% | nền 1.45% · Δ 0.03% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▱▱▱ |
 
 ---
 
-## 🧬 Markov · Transition · Dependency
+<a id="markov--transition--dependency"></a>
+## 🧬 Markov · chuyển tiếp · phụ thuộc
 
-### Markov-1 Loto
+### Markov bậc 1 · Lô tô
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
 | ▰▰▱▱▱▱▱▱▱▱ | Thấp | Giá trị nhỏ tương đối trong chính bảng đang xem |
 | ▰▰▰▰▰▱▱▱▱▱ | Trung bình | Nằm quanh vùng giữa của nhóm so sánh |
 | ▰▰▰▰▰▰▰▰▰▰ | Cao | Thuộc nhóm giá trị lớn nhất trong bảng |
 
-| # | Số | Lift | P(hit\|hit) / P(hit\|miss) | Ý nghĩa | Visual |
+| # | Số | Độ nâng | P(trúng\|trúng) / P(trúng\|trượt) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **79** | 1.845 | P1 35.56% · P0 19.27% | Có persistence dương | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **77** | 1.565 | P1 36.54% · P0 23.34% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 3 | **54** | 1.560 | P1 37.61% · P0 24.11% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 4 | **81** | 1.499 | P1 34.00% · P0 22.68% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | **26** | 1.462 | P1 28.57% · P0 19.54% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | **50** | 1.428 | P1 32.65% · P0 22.87% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **07** | 1.416 | P1 28.24% · P0 19.93% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **14** | 1.385 | P1 34.86% · P0 25.18% | Có persistence dương | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | **00** | 1.382 | P1 26.83% · P0 19.42% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **52** | 1.325 | P1 33.02% · P0 24.91% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 11 | **65** | 1.319 | P1 30.61% · P0 23.21% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 12 | **59** | 1.277 | P1 25.88% · P0 20.26% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **31** | 1.275 | P1 29.59% · P0 23.21% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **55** | 1.256 | P1 22.97% · P0 18.30% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | **34** | 1.244 | P1 30.77% · P0 24.74% | Có persistence dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | **79** | 1.845 | P1 35.56% · P0 19.27% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **77** | 1.565 | P1 36.54% · P0 23.34% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | **54** | 1.560 | P1 37.61% · P0 24.11% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | **81** | 1.499 | P1 34.00% · P0 22.68% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **26** | 1.462 | P1 28.57% · P0 19.54% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | **50** | 1.428 | P1 32.65% · P0 22.87% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **07** | 1.416 | P1 28.24% · P0 19.93% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **14** | 1.385 | P1 34.86% · P0 25.18% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | **00** | 1.382 | P1 26.83% · P0 19.42% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **52** | 1.325 | P1 33.02% · P0 24.91% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 11 | **65** | 1.319 | P1 30.61% · P0 23.21% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 12 | **59** | 1.277 | P1 25.88% · P0 20.26% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 13 | **31** | 1.275 | P1 29.59% · P0 23.21% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **55** | 1.256 | P1 22.97% · P0 18.30% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
+| 15 | **34** | 1.244 | P1 30.77% · P0 24.74% | Có tính duy trì dương | ▰▰▰▰▰▰▰▱▱▱ |
 
-### Transition lift Loto · bỏ self-pair
-| # | Quan hệ | Giá trị | Metric | Ý nghĩa | Visual |
+### Độ nâng chuyển tiếp lô tô · bỏ cặp tự thân
+| # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `47` → **`90`** | 1.5235 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `27` → **`84`** | 1.4496 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `13` → **`30`** | 1.4460 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | `22` → **`76`** | 1.4285 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | `17` → **`29`** | 1.4122 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | `41` → **`59`** | 1.4001 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | `23` → **`56`** | 1.3994 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | `35` → **`41`** | 1.3976 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | `43` → **`70`** | 1.3938 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | `54` → **`81`** | 1.3935 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | `78` → **`96`** | 1.3730 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | `25` → **`64`** | 1.3723 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | `48` → **`07`** | 1.3657 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | `93` → **`10`** | 1.3633 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | `73` → **`20`** | 1.3610 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 16 | `33` → **`54`** | 1.3488 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 17 | `92` → **`49`** | 1.3466 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 18 | `28` → **`96`** | 1.3423 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 19 | `35` → **`85`** | 1.3400 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 20 | `23` → **`62`** | 1.3377 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | `47` → **`90`** | 1.5235 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `27` → **`84`** | 1.4496 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `13` → **`30`** | 1.4460 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | `22` → **`76`** | 1.4285 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | `17` → **`29`** | 1.4122 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | `41` → **`59`** | 1.4001 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | `23` → **`56`** | 1.3994 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | `35` → **`41`** | 1.3976 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | `43` → **`70`** | 1.3938 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | `54` → **`81`** | 1.3935 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | `78` → **`96`** | 1.3730 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | `25` → **`64`** | 1.3723 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | `48` → **`07`** | 1.3657 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | `93` → **`10`** | 1.3633 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | `73` → **`20`** | 1.3610 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 16 | `33` → **`54`** | 1.3488 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 17 | `92` → **`49`** | 1.3466 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 18 | `28` → **`96`** | 1.3423 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 19 | `35` → **`85`** | 1.3400 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
+| 20 | `23` → **`62`** | 1.3377 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Transition lift ĐB · bỏ self-pair
-| # | Quan hệ | Giá trị | Metric | Ý nghĩa | Visual |
+### Độ nâng chuyển tiếp ĐB · bỏ cặp tự thân
+| # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `81` → **`11`** | 2.5767 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `12` → **`41`** | 2.5610 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `44` → **`18`** | 2.5610 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `60` → **`31`** | 2.5610 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `08` → **`73`** | 2.5455 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `43` → **`02`** | 2.5150 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `01` → **`07`** | 2.4852 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | `27` → **`34`** | 2.1779 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | `41` → **`40`** | 2.0319 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | `06` → **`82`** | 2.0194 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | `87` → **`95`** | 2.0194 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | `19` → **`06`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | `29` → **`99`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | `30` → **`74`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | `65` → **`40`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 16 | `65` → **`87`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 17 | `69` → **`87`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 18 | `81` → **`74`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 19 | `84` → **`03`** | 2.0070 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
-| 20 | `25` → **`20`** | 1.9948 | Transition lift | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 1 | `81` → **`11`** | 2.5767 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `12` → **`41`** | 2.5610 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `44` → **`18`** | 2.5610 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `60` → **`31`** | 2.5610 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `08` → **`73`** | 2.5455 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | `43` → **`02`** | 2.5150 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | `01` → **`07`** | 2.4852 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | `27` → **`34`** | 2.1779 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | `41` → **`40`** | 2.0319 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 10 | `06` → **`82`** | 2.0194 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | `87` → **`95`** | 2.0194 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | `19` → **`06`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | `29` → **`99`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | `30` → **`74`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | `65` → **`40`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 16 | `65` → **`87`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 17 | `69` → **`87`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 18 | `81` → **`74`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 19 | `84` → **`03`** | 2.0070 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
+| 20 | `25` → **`20`** | 1.9948 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▱▱ |
 
-### Co-occurrence Phi Loto · bỏ đường chéo self-pair
-| # | Quan hệ | Giá trị | Metric | Ý nghĩa | Visual |
+### Đồng xuất hiện Phi lô tô · bỏ đường chéo tự thân
+| # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `34` → **`67`** | 0.1603 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `67` → **`34`** | 0.1603 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `86` → **`92`** | 0.1414 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | `92` → **`86`** | 0.1414 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | `55` → **`98`** | 0.1396 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | `98` → **`55`** | 0.1396 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | `23` → **`28`** | 0.1371 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | `28` → **`23`** | 0.1371 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | `63` → **`90`** | 0.1347 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | `90` → **`63`** | 0.1347 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | `75` → **`87`** | 0.1318 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | `87` → **`75`** | 0.1318 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | `33` → **`65`** | 0.1297 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | `65` → **`33`** | 0.1297 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | `07` → **`70`** | 0.1259 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 16 | `70` → **`07`** | 0.1259 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 17 | `27` → **`91`** | 0.1219 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 18 | `91` → **`27`** | 0.1219 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
-| 19 | `01` → **`85`** | 0.1176 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▱▱▱ |
-| 20 | `85` → **`01`** | 0.1176 | Co-occurrence Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | `34` → **`67`** | 0.1603 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `67` → **`34`** | 0.1603 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `86` → **`92`** | 0.1414 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | `92` → **`86`** | 0.1414 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | `55` → **`98`** | 0.1396 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | `98` → **`55`** | 0.1396 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | `23` → **`28`** | 0.1371 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | `28` → **`23`** | 0.1371 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | `63` → **`90`** | 0.1347 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 10 | `90` → **`63`** | 0.1347 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | `75` → **`87`** | 0.1318 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | `87` → **`75`** | 0.1318 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | `33` → **`65`** | 0.1297 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | `65` → **`33`** | 0.1297 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | `07` → **`70`** | 0.1259 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 16 | `70` → **`07`** | 0.1259 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 17 | `27` → **`91`** | 0.1219 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 18 | `91` → **`27`** | 0.1219 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
+| 19 | `01` → **`85`** | 0.1176 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▱▱▱ |
+| 20 | `85` → **`01`** | 0.1176 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▱▱▱ |
 
-### Co-occurrence Phi ĐB · bỏ đường chéo self-pair
-| # | Quan hệ | Giá trị | Metric | Ý nghĩa | Visual |
+### Đồng xuất hiện Phi ĐB · bỏ đường chéo tự thân
+| # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `00` → **`15`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 2 | `00` → **`56`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 3 | `00` → **`58`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 4 | `00` → **`98`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 5 | `01` → **`15`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 6 | `01` → **`56`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 7 | `01` → **`58`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 8 | `01` → **`98`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 9 | `02` → **`15`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 10 | `02` → **`56`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 11 | `02` → **`58`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 12 | `02` → **`98`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 13 | `03` → **`15`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 14 | `03` → **`56`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 15 | `03` → **`58`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 16 | `03` → **`98`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 17 | `04` → **`15`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 18 | `04` → **`56`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 19 | `04` → **`58`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
-| 20 | `04` → **`98`** | 0.0000 | Co-occurrence Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 1 | `00` → **`15`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 2 | `00` → **`56`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 3 | `00` → **`58`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 4 | `00` → **`98`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 5 | `01` → **`15`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 6 | `01` → **`56`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 7 | `01` → **`58`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 8 | `01` → **`98`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 9 | `02` → **`15`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 10 | `02` → **`56`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 11 | `02` → **`58`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 12 | `02` → **`98`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 13 | `03` → **`15`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 14 | `03` → **`56`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 15 | `03` → **`58`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 16 | `03` → **`98`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 17 | `04` → **`15`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 18 | `04` → **`56`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 19 | `04` → **`58`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
+| 20 | `04` → **`98`** | 0.0000 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▱▱▱▱▱▱▱▱▱▱ |
 
-### Multi-lag dependency Loto
-| # | Số | Lift vs baseline | Điều kiện | Ý nghĩa | Visual |
+### Phụ thuộc đa độ trễ lô tô
+| # | Số | Độ nâng so với nền | Điều kiện | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **79** | 1.363 | lag 1.0 · prev=miss · n=88 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **06** | 1.360 | lag 7.0 · prev=miss · n=80 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **03** | 1.321 | lag 28.0 · prev=miss · n=87 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **55** | 1.302 | lag 14.0 · prev=miss · n=70 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **16** | 1.286 | lag 2.0 · prev=miss · n=96 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **46** | 1.270 | lag 28.0 · prev=miss · n=88 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **77** | 1.260 | lag 1.0 · prev=miss · n=102 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | **54** | 1.257 | lag 1.0 · prev=miss · n=107 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | **22** | 1.245 | lag 2.0 · prev=miss · n=85 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | **37** | 1.235 | lag 14.0 · prev=miss · n=78 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | **81** | 1.231 | lag 1.0 · prev=miss · n=98 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | **23** | 1.231 | lag 7.0 · prev=miss · n=88 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | **06** | 1.227 | lag 28.0 · prev=miss · n=74 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | **64** | 1.224 | lag 28.0 · prev=miss · n=93 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | **33** | 1.215 | lag 3.0 · prev=miss · n=94 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 16 | **01** | 1.214 | lag 3.0 · prev=miss · n=99 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 17 | **99** | 1.207 | lag 28.0 · prev=miss · n=74 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 18 | **00** | 1.207 | lag 28.0 · prev=miss · n=72 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 19 | **80** | 1.207 | lag 7.0 · prev=miss · n=93 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
-| 20 | **26** | 1.205 | lag 1.0 · prev=miss · n=82 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | **79** | 1.363 | trễ 1.0 · trước=trượt · mẫu=88 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **06** | 1.360 | trễ 7.0 · trước=trượt · mẫu=80 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **03** | 1.321 | trễ 28.0 · trước=trượt · mẫu=87 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **55** | 1.302 | trễ 14.0 · trước=trượt · mẫu=70 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **16** | 1.286 | trễ 2.0 · trước=trượt · mẫu=96 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **46** | 1.270 | trễ 28.0 · trước=trượt · mẫu=88 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **77** | 1.260 | trễ 1.0 · trước=trượt · mẫu=102 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | **54** | 1.257 | trễ 1.0 · trước=trượt · mẫu=107 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | **22** | 1.245 | trễ 2.0 · trước=trượt · mẫu=85 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | **37** | 1.235 | trễ 14.0 · trước=trượt · mẫu=78 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | **81** | 1.231 | trễ 1.0 · trước=trượt · mẫu=98 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | **23** | 1.231 | trễ 7.0 · trước=trượt · mẫu=88 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | **06** | 1.227 | trễ 28.0 · trước=trượt · mẫu=74 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | **64** | 1.224 | trễ 28.0 · trước=trượt · mẫu=93 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | **33** | 1.215 | trễ 3.0 · trước=trượt · mẫu=94 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 16 | **01** | 1.214 | trễ 3.0 · trước=trượt · mẫu=99 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 17 | **99** | 1.207 | trễ 28.0 · trước=trượt · mẫu=74 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 18 | **00** | 1.207 | trễ 28.0 · trước=trượt · mẫu=72 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 19 | **80** | 1.207 | trễ 7.0 · trước=trượt · mẫu=93 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
+| 20 | **26** | 1.205 | trễ 1.0 · trước=trượt · mẫu=82 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Multi-lag dependency ĐB
-| # | Số | Lift vs baseline | Điều kiện | Ý nghĩa | Visual |
+### Phụ thuộc đa độ trễ ĐB
+| # | Số | Độ nâng so với nền | Điều kiện | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **01** | 2.377 | lag 1.0 · prev=miss · n=9 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **01** | 2.016 | lag 2.0 · prev=miss · n=9 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 3 | **76** | 1.987 | lag 3.0 · prev=miss · n=3 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 4 | **26** | 1.987 | lag 1.0 · prev=miss · n=3 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | **34** | 1.753 | lag 2.0 · prev=miss · n=4 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 6 | **77** | 1.753 | lag 7.0 · prev=miss · n=4 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | **01** | 1.654 | lag 3.0 · prev=miss · n=9 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | **86** | 1.600 | lag 28.0 · prev=miss · n=5 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **86** | 1.600 | lag 2.0 · prev=miss · n=5 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **05** | 1.491 | lag 1.0 · prev=miss · n=6 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | **14** | 1.491 | lag 1.0 · prev=miss · n=6 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | **79** | 1.420 | lag 28.0 · prev=miss · n=6 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 13 | **36** | 1.409 | lag 14.0 · prev=miss · n=7 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 14 | **92** | 1.409 | lag 28.0 · prev=miss · n=7 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 15 | **79** | 1.409 | lag 1.0 · prev=miss · n=7 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 16 | **93** | 1.409 | lag 14.0 · prev=miss · n=7 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 17 | **93** | 1.409 | lag 2.0 · prev=miss · n=7 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 18 | **68** | 1.344 | lag 3.0 · prev=miss · n=8 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 19 | **54** | 1.344 | lag 1.0 · prev=miss · n=8 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▰▱▱▱▱ |
-| 20 | **01** | 1.292 | lag 7.0 · prev=miss · n=9 | Tín hiệu tăng so với baseline | ▰▰▰▰▰▱▱▱▱▱ |
+| 1 | **01** | 2.377 | trễ 1.0 · trước=trượt · mẫu=9 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **01** | 2.016 | trễ 2.0 · trước=trượt · mẫu=9 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | **26** | 1.987 | trễ 1.0 · trước=trượt · mẫu=3 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | **76** | 1.987 | trễ 3.0 · trước=trượt · mẫu=3 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **34** | 1.753 | trễ 2.0 · trước=trượt · mẫu=4 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 6 | **77** | 1.753 | trễ 7.0 · trước=trượt · mẫu=4 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 7 | **01** | 1.654 | trễ 3.0 · trước=trượt · mẫu=9 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | **86** | 1.600 | trễ 28.0 · trước=trượt · mẫu=5 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | **86** | 1.600 | trễ 2.0 · trước=trượt · mẫu=5 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **14** | 1.491 | trễ 1.0 · trước=trượt · mẫu=6 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | **05** | 1.491 | trễ 1.0 · trước=trượt · mẫu=6 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | **79** | 1.420 | trễ 28.0 · trước=trượt · mẫu=6 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 13 | **93** | 1.409 | trễ 2.0 · trước=trượt · mẫu=7 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 14 | **93** | 1.409 | trễ 14.0 · trước=trượt · mẫu=7 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 15 | **79** | 1.409 | trễ 1.0 · trước=trượt · mẫu=7 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 16 | **92** | 1.409 | trễ 28.0 · trước=trượt · mẫu=7 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 17 | **36** | 1.409 | trễ 14.0 · trước=trượt · mẫu=7 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 18 | **54** | 1.344 | trễ 1.0 · trước=trượt · mẫu=8 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 19 | **68** | 1.344 | trễ 3.0 · trước=trượt · mẫu=8 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 20 | **01** | 1.292 | trễ 7.0 · trước=trượt · mẫu=9 | Tín hiệu tăng so với nền | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
-## 🧩 Structure & Pairs
+<a id="structure--pairs"></a>
+## 🧩 Cấu trúc và cặp số
 
-### Đầu Loto · tháng
-| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Visual |
+### Đầu lô tô · tháng
+| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 6 | 10 | rank 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | 1 | 7 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
-| 3 | 4 | 7 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
-| 4 | 7 | 7 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | 3 | 5 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
-| 6 | 5 | 5 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
-| 7 | 9 | 5 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
-| 8 | 2 | 4 | rank 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
-| 9 | 0 | 2 | rank 5 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
-| 10 | 8 | 2 | rank 5 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
+| 1 | 6 | 10 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | 1 | 7 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
+| 3 | 4 | 7 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
+| 4 | 7 | 7 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | 3 | 5 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
+| 6 | 5 | 5 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
+| 7 | 9 | 5 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
+| 8 | 2 | 4 | hạng 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
+| 9 | 0 | 2 | hạng 5 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
+| 10 | 8 | 2 | hạng 5 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
 
-### Đuôi Loto · tháng
-| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Visual |
+### Đuôi lô tô · tháng
+| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 2 | 11 | rank 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | 0 | 9 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
-| 3 | 7 | 7 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
-| 4 | 3 | 6 | rank 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
-| 5 | 4 | 6 | rank 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
-| 6 | 1 | 4 | rank 5 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
-| 7 | 5 | 3 | rank 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
-| 8 | 8 | 3 | rank 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
-| 9 | 9 | 3 | rank 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
-| 10 | 6 | 2 | rank 7 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
+| 1 | 2 | 11 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | 0 | 9 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | 7 | 7 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
+| 4 | 3 | 6 | hạng 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
+| 5 | 4 | 6 | hạng 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▱▱▱▱▱ |
+| 6 | 1 | 4 | hạng 5 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
+| 7 | 5 | 3 | hạng 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
+| 8 | 8 | 3 | hạng 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
+| 9 | 9 | 3 | hạng 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
+| 10 | 6 | 2 | hạng 7 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
 
-### Tổng Loto · tháng
-| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Visual |
+### Tổng lô tô · tháng
+| # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | 4 | 9 | rank 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | 7 | 7 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
-| 3 | 8 | 7 | rank 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
-| 4 | 0 | 6 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | 2 | 6 | rank 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
-| 6 | 3 | 5 | rank 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
-| 7 | 5 | 5 | rank 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
-| 8 | 6 | 4 | rank 5 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
-| 9 | 1 | 3 | rank 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
-| 10 | 9 | 2 | rank 7 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
+| 1 | 4 | 9 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | 7 | 7 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | 8 | 7 | hạng 2 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | 0 | 6 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | 2 | 6 | hạng 3 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
+| 6 | 3 | 5 | hạng 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
+| 7 | 5 | 5 | hạng 4 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
+| 8 | 6 | 4 | hạng 5 | Tần suất tương đối trong kỳ | ▰▰▰▰▱▱▱▱▱▱ |
+| 9 | 1 | 3 | hạng 6 | Tần suất tương đối trong kỳ | ▰▰▰▱▱▱▱▱▱▱ |
+| 10 | 9 | 2 | hạng 7 | Tần suất tương đối trong kỳ | ▰▰▱▱▱▱▱▱▱▱ |
 
 ### Cấu trúc ĐB · tháng
 | Nhóm | Phân bố nổi bật | Phạm vi | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đầu ĐB | **2** (1) · **4** (1) | Top 5 | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Đuôi ĐB | **1** (1) · **2** (1) | Top 5 | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Chạm ĐB | **2** (2) · **1** (1) · **4** (1) | Top 5 | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Tổng ĐB | **3** (1) · **6** (1) | Top 5 | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Đầu ĐB | **2** (1) · **4** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Đuôi ĐB | **1** (1) · **2** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Chạm ĐB | **2** (2) · **1** (1) · **4** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Tổng ĐB | **3** (1) · **6** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
 
 ### Cặp lộn · tháng
-| # | Cặp lộn | Tần suất | So sánh | Ý nghĩa | Visual |
+| # | Cặp lộn | Tần suất | So sánh | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **39-93** | 3 | cùng về 1 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **44-44** | 2 | cùng về 2 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
@@ -996,7 +1003,8 @@
 
 ---
 
-## 📆 Special Boards & Conditional
+<a id="special-boards--conditional"></a>
+## 📆 Bảng đặc biệt và quan hệ có điều kiện
 
 ### ĐB theo tuần
 | Tuần | T2 | T3 | T4 | T5 | T6 | T7 | CN |
@@ -1012,7 +1020,7 @@
 | 2026-W28 | 97 | 79 | 89 | 85 | 67 | 01 | 94 |
 | 2026-W27 | 42 | 68 | 54 | 39 | 65 | 87 | 71 |
 
-### ĐB theo tháng · calendar 7 cột
+### ĐB theo tháng · lịch 7 cột
 
 > Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối ĐB`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
 
@@ -1057,69 +1065,70 @@
 | **22**<br>`36` | **23**<br>`37` | **24**<br>`51` | **25**<br>`16` | **26**<br>`04` | **27**<br>`53` | **28**<br>`52` |
 | **29**<br>`42` | **30**<br>`68` |  |  |  |  |  |
 
-### ĐB hôm trước → Loto hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Visual |
+### ĐB hôm trước → lô tô hôm sau
+| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `73` → **`93`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `73` → **`92`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `73` → **`76`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `73` → **`74`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `73` → **`72`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `73` → **`65`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | `73` → **`58`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | `73` → **`57`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | `73` → **`56`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | `73` → **`53`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | `73` → **`50`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | `96` → **`12`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | `89` → **`13`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | `84` → **`86`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | `73` → **`76`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `73` → **`92`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `73` → **`93`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `73` → **`50`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | `73` → **`53`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | `73` → **`56`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | `73` → **`57`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | `73` → **`58`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | `73` → **`65`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | `73` → **`72`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 12 | `73` → **`74`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 13 | `73` → **`17`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 14 | `73` → **`19`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | `73` → **`24`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Loto hôm trước → Loto hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Visual |
+### Lô tô hôm trước → lô tô hôm sau
+| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `23` → **`62`** | 43.18% | n=88 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | `47` → **`90`** | 42.05% | n=88 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 3 | `25` → **`64`** | 41.57% | n=89 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 4 | `33` → **`54`** | 41.49% | n=94 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 5 | `27` → **`84`** | 40.95% | n=105 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | `72` → **`60`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | `11` → **`13`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | `11` → **`13`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | `72` → **`60`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 8 | `10` → **`95`** | 40.00% | n=90 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 9 | `59` → **`60`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 10 | `59` → **`54`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 11 | `63` → **`14`** | 39.36% | n=94 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 12 | `54` → **`81`** | 39.25% | n=107 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 13 | `84` → **`51`** | 39.18% | n=97 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | `38` → **`92`** | 39.13% | n=92 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | `36` → **`83`** | 39.13% | n=92 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | `36` → **`83`** | 39.13% | n=92 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | `38` → **`92`** | 39.13% | n=92 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### ĐB hôm trước → ĐB hôm sau
-| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Visual |
+| # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `02` → **`14`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `11` → **`13`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `18` → **`78`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `41` → **`40`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `31` → **`17`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | `41` → **`40`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `18` → **`78`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `02` → **`14`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `11` → **`13`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `31` → **`17`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
 | 7 | `07` → **`46`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
 | 8 | `42` → **`68`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
 | 9 | `27` → **`34`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | `40` → **`47`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 11 | `49` → **`51`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 12 | `49` → **`97`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 13 | `40` → **`43`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 14 | `95` → **`86`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 15 | `99` → **`47`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 10 | `95` → **`86`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 11 | `99` → **`36`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 12 | `49` → **`51`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 13 | `66` → **`67`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 14 | `99` → **`47`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 15 | `82` → **`05`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
-## 🧪 Significance & Research
+<a id="significance--research"></a>
+## 🧪 Mức ý nghĩa và nghiên cứu
 
-### Loto · significance 30d
-| # | Số | Lift | p / q(FDR) | Ý nghĩa | Visual |
+### Lô tô · mức ý nghĩa 30 ngày
+| # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **34** | 1.821 | p 0.0174 · q 0.5103 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **58** | 0.280 | p 0.0296 · q 0.5103 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▱ |
@@ -1137,8 +1146,8 @@
 | 14 | **59** | 0.420 | p 0.0866 · q 0.5412 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▱▱▱▱ |
 | 15 | **65** | 0.420 | p 0.0866 · q 0.5412 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▱▱▱▱ |
 
-### Loto · significance 90d
-| # | Số | Lift | p / q(FDR) | Ý nghĩa | Visual |
+### Lô tô · mức ý nghĩa 90 ngày
+| # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **52** | 1.452 | p 0.0248 · q 0.9362 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **83** | 1.452 | p 0.0248 · q 0.9362 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1156,8 +1165,8 @@
 | 14 | **98** | 0.703 | p 0.1364 · q 0.9362 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **17** | 1.265 | p 0.1726 · q 0.9362 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▱▱▱▱ |
 
-### ĐB · significance 30d
-| # | Số | Lift | p / q(FDR) | Ý nghĩa | Visual |
+### ĐB · mức ý nghĩa 30 ngày
+| # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **21** | 6.667 | p 0.0361 · q 0.9296 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **44** | 6.667 | p 0.0361 · q 0.9296 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1175,8 +1184,8 @@
 | 14 | **42** | 3.333 | p 0.2603 · q 0.9296 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 | 15 | **43** | 3.333 | p 0.2603 · q 0.9296 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 
-### ĐB · significance 90d
-| # | Số | Lift | p / q(FDR) | Ý nghĩa | Visual |
+### ĐB · mức ý nghĩa 90 ngày
+| # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **83** | 4.444 | p 0.0129 · q 0.9601 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **38** | 3.333 | p 0.0619 · q 0.9601 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▱▱▱ |
@@ -1194,72 +1203,72 @@
 | 14 | **51** | 2.222 | p 0.2273 · q 0.9601 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 | 15 | **60** | 2.222 | p 0.2273 · q 0.9601 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 
-### Strategy Lab · Loto OOS
-| # | Strategy | OOS lift | Holdout | Ý nghĩa | Visual |
+### Phòng chiến lược · Lô tô ngoài mẫu
+| # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | ĐB lặp lại | 1.284 | precision 30.77% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | ĐB lộn | 1.254 | precision 30.77% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | Cold 30d top5 | 1.125 | precision 26.92% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | Kép bằng + lệch | 1.094 | precision 25.96% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | Dàn đuôi ĐB | 1.090 | precision 25.96% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | Dàn tổng ĐB | 1.070 | precision 25.58% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | Chạm đuôi ĐB | 1.059 | precision 25.30% · q 0.566 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | Bộ ĐB | 1.042 | precision 25.00% · q 0.823 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | Vị trí head-tail plurality | 1.041 | precision 25.00% · q 0.823 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | Hot 90d top5 | 1.018 | precision 26.15% · q 0.823 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | Vị trí tail-tail plurality | 1.016 | precision 23.72% · q 0.823 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | Lô rơi | 1.013 | precision 24.21% · q 0.823 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | Lô lộn | 0.985 | precision 23.48% · q 0.872 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | Gan top5 | 0.966 | precision 23.08% · q 0.872 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | Hot 30d top5 | 0.955 | precision 23.08% · q 0.872 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | ĐB lặp lại | 1.284 | độ chính xác 30.77% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | ĐB lộn | 1.254 | độ chính xác 30.77% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | 5 số lạnh nhất trong 30 ngày | 1.125 | độ chính xác 26.92% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | Kép bằng + lệch | 1.094 | độ chính xác 25.96% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | Dàn đuôi ĐB | 1.090 | độ chính xác 25.96% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | Dàn tổng ĐB | 1.070 | độ chính xác 25.58% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | Chạm đuôi ĐB | 1.059 | độ chính xác 25.30% · q 0.566 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | Bộ ĐB | 1.042 | độ chính xác 25.00% · q 0.823 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | Đồng thuận vị trí đầu–đuôi | 1.041 | độ chính xác 25.00% · q 0.823 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 10 | 5 số nóng nhất trong 90 ngày | 1.018 | độ chính xác 26.15% · q 0.823 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | Đồng thuận vị trí đuôi–đuôi | 1.016 | độ chính xác 23.72% · q 0.823 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | Lô rơi | 1.013 | độ chính xác 24.21% · q 0.823 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | Lô lộn | 0.985 | độ chính xác 23.48% · q 0.872 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | 5 số gan nhất | 0.966 | độ chính xác 23.08% · q 0.872 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | 5 số nóng nhất trong 30 ngày | 0.955 | độ chính xác 23.08% · q 0.872 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
 
-### Strategy Lab · ĐB OOS
-| # | Strategy | OOS lift | Holdout | Ý nghĩa | Visual |
+### Phòng chiến lược · ĐB ngoài mẫu
+| # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Cold 30d top5 | 2.570 | precision 2.31% · q 0.316 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | Vị trí tail-tail plurality | 2.542 | precision 2.56% · q 0.316 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | Vị trí head-tail plurality | 2.517 | precision 2.56% · q 0.316 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | ĐB lặp lại | 1.809 | precision 1.92% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | Dàn đuôi ĐB | 1.706 | precision 1.73% · q 0.316 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▰▱▱▱ |
-| 6 | Chạm đuôi ĐB | 1.596 | precision 1.62% · q 0.316 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▰▱▱▱▱ |
-| 7 | Sát kép | 1.258 | precision 1.28% · q 0.748 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▱▱▱▱▱ |
-| 8 | Kép bằng + lệch | 1.249 | precision 1.35% · q 0.748 | Research-only; chưa qua FDR/gate | ▰▰▰▰▰▱▱▱▱▱ |
-| 9 | Ghép ĐB×G1 | 1.104 | precision 1.06% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▰▱▱▱▱▱▱ |
-| 10 | Lô lộn | 1.035 | precision 1.06% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▰▱▱▱▱▱▱ |
-| 11 | Lô rơi | 0.965 | precision 0.97% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▰▱▱▱▱▱▱ |
-| 12 | Chạm đầu ĐB | 0.797 | precision 0.81% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▱▱▱▱▱▱▱ |
-| 13 | Dàn đầu ĐB | 0.770 | precision 0.77% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▱▱▱▱▱▱▱ |
-| 14 | Dàn tổng ĐB | 0.769 | precision 0.77% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▰▱▱▱▱▱▱▱ |
-| 15 | Hot 90d top5 | 0.618 | precision 0.77% · q 0.923 | Research-only; chưa qua FDR/gate | ▰▰▱▱▱▱▱▱▱▱ |
+| 1 | 5 số lạnh nhất trong 30 ngày | 2.570 | độ chính xác 2.31% · q 0.316 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | Đồng thuận vị trí đuôi–đuôi | 2.542 | độ chính xác 2.56% · q 0.316 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | Đồng thuận vị trí đầu–đuôi | 2.517 | độ chính xác 2.56% · q 0.316 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | ĐB lặp lại | 1.809 | độ chính xác 1.92% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | Dàn đuôi ĐB | 1.706 | độ chính xác 1.73% · q 0.316 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 6 | Chạm đuôi ĐB | 1.596 | độ chính xác 1.62% · q 0.316 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 7 | Sát kép | 1.258 | độ chính xác 1.28% · q 0.748 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▱▱▱▱▱ |
+| 8 | Kép bằng + lệch | 1.249 | độ chính xác 1.35% · q 0.748 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▱▱▱▱▱ |
+| 9 | Ghép ĐB×G1 | 1.104 | độ chính xác 1.06% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▱▱▱▱▱▱ |
+| 10 | Lô lộn | 1.035 | độ chính xác 1.06% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▱▱▱▱▱▱ |
+| 11 | Lô rơi | 0.965 | độ chính xác 0.97% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▱▱▱▱▱▱ |
+| 12 | Chạm đầu ĐB | 0.797 | độ chính xác 0.81% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▱▱▱▱▱▱▱ |
+| 13 | Dàn đầu ĐB | 0.770 | độ chính xác 0.77% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▱▱▱▱▱▱▱ |
+| 14 | Dàn tổng ĐB | 0.769 | độ chính xác 0.77% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▱▱▱▱▱▱▱ |
+| 15 | 5 số nóng nhất trong 90 ngày | 0.618 | độ chính xác 0.77% · q 0.923 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▱▱▱▱▱▱▱▱ |
 
-### Diagnostics
-| Layer | Giá trị | So sánh | Ý nghĩa |
+### Chẩn đoán
+| Lớp | Giá trị | So sánh | Ý nghĩa |
 | --- | --- | --- | --- |
-| Data health | ✅ OK | rows 388 · missing 0 | Canonical integrity |
-| Dynamics Loto | 0.753 | JS 30/180 0.0126 | Reliability + regime drift |
-| Dynamics ĐB | 0.643 | JS 30/180 0.0461 | Reliability + regime drift |
+| Sức khỏe dữ liệu | ✅ ĐẠT | số dòng 388 · thiếu 0 | Tính toàn vẹn dữ liệu chuẩn |
+| Động lực lô tô | 0.753 | JS 30/180 0.0126 | Độ tin cậy + dịch chuyển chế độ |
+| Động lực ĐB | 0.643 | JS 30/180 0.0461 | Độ tin cậy + dịch chuyển chế độ |
 
 ---
 
-## 🔎 Audit & Deep Links
+## 🔎 Kiểm toán và liên kết chi tiết
 
 | Tài nguyên | Mục đích | Ý nghĩa |
 | --- | --- | --- |
-| [`data/xsmb.csv`](data/xsmb.csv) | Canonical | Dữ liệu kết quả chuẩn |
-| [`data/source_audit.json`](data/source_audit.json) | Source consensus | Kiểm tra nguồn xác minh |
-| [Statistics HTML](docs/statistics.html) | Interactive | Dashboard thống kê có tương tác |
-| [AI/ML HTML](docs/dashboard.html) | Interactive | Dashboard AI/ML |
-| [Research Lab](docs/research-lab.html) | Research | Falsification / OOS / FDR |
-| [Near-live](docs/live.html) | Live | Trạng thái live |
+| [`data/xsmb.csv`](data/xsmb.csv) | Dữ liệu chuẩn | Dữ liệu kết quả chuẩn |
+| [`data/source_audit.json`](data/source_audit.json) | Đồng thuận nguồn | Kiểm tra nguồn xác minh |
+| [Thống kê HTML](docs/statistics.html) | Tương tác | Bảng điều khiển thống kê có tương tác |
+| [AI/ML HTML](docs/dashboard.html) | Tương tác | Bảng điều khiển AI/ML |
+| [Phòng nghiên cứu](docs/research-lab.html) | Nghiên cứu | Bác bỏ giả thuyết / ngoài mẫu / FDR |
+| [Kết quả gần thời gian thực](docs/live.html) | Trực tiếp | Trạng thái kết quả trực tiếp |
 
 ---
 
 <div align="center">
 
-### ✨ VLA Analytics
+### ✨ Phân tích VLA
 
-**Một trang · số liệu trực tiếp · màu có giải thích · bảng cân đối · tự động refresh**
+**Một trang · số liệu trực tiếp · màu có giải thích · bảng cân đối · tự động làm mới**
 
-<sub>Không dùng mock data. Heat colors và visual bars chỉ là biểu diễn tương đối trong từng bảng.</sub>
+<sub>Không dùng dữ liệu giả. Màu nhiệt và thanh trực quan chỉ biểu diễn tương đối trong từng bảng.</sub>
 
 </div>

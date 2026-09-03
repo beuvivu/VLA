@@ -105,5 +105,5 @@ def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:
     assert text.count(f'id="{STYLE_ID}"') == 1
     assert "Dự đoán vui" in text
     assert "Không phải kết quả thật" in text
-    assert "Loto ngày mai" in text
+    assert "Lô tô ngày mai" in text
     assert "Đặc biệt ngày mai" in text

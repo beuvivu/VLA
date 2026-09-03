@@ -19,6 +19,8 @@ from typing import Any, Iterable, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
+
 
 NAV_ITEMS: list[tuple[str, str, str]] = [
     ("tong-quan", "Tổng quan", "Cập nhật, tín hiệu nóng và đường dẫn nhanh"),
@@ -32,7 +34,7 @@ NAV_ITEMS: list[tuple[str, str, str]] = [
     ("dau-duoi-tong", "Đầu · đuôi · tổng", "Phân bổ nhóm số dễ so sánh"),
     ("db-tuan-thang", "ĐB tuần/tháng", "Bảng đặc biệt theo lịch"),
     ("duong-cau", "Vị trí đường cầu", "Căn cứ khi bấm vào từng số"),
-    ("backtest", "Backtest AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
+    ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
 ]
 
 PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
@@ -56,73 +58,7 @@ PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
     ("prize7", "Giải bảy", ["prize7_1", "prize7_2", "prize7_3", "prize7_4"], "mini"),
 ]
 
-PRETTY_COLS = {
-    "period_kind": "Kỳ",
-    "period_key": "Mốc",
-    "scope_label": "Phạm vi",
-    "number": "Số",
-    "number_str": "Số",
-    "freq": "Tần suất",
-    "days_hit": "Ngày về",
-    "hit_rate": "Tỷ lệ",
-    "avg_per_draw": "TB/ngày",
-    "z_score": "Z-score",
-    "rank_in_period": "Hạng",
-    "score_band": "Nhóm",
-    "prob_percent": "Xác suất",
-    "cau_score": "Điểm cầu",
-    "ai_cau_score": "AI score",
-    "ai_prob_percent": "Xác suất",
-    "primary_reason": "Lý do chính",
-    "evidence": "Bằng chứng",
-    "ai_evidence": "Bằng chứng",
-    "current_gap": "Gan hiện tại",
-    "mean_gap": "Gan TB",
-    "max_gap": "Gan max",
-    "rhythm_pressure": "Áp lực nhịp",
-    "last_seen": "Lần về cuối",
-    "hit_count": "Số lần",
-    "pair": "Cặp",
-    "cooccur_days": "Ngày cùng về",
-    "group_type": "Nhóm",
-    "group_value": "Giá trị",
-    "rank_in_period_group": "Hạng",
-    "prev_special_2d": "ĐB trước",
-    "next_loto": "Loto sau",
-    "count": "Số lần",
-    "base_count": "Mẫu",
-    "conditional_rate": "Tỷ lệ",
-    "prev_loto": "Loto trước",
-    "target": "Trúng",
-    "prob": "Xác suất",
-    "top_k": "Top K",
-    "validation_days": "Ngày kiểm định",
-    "hit_any_days": "Ngày có ít nhất 1 hit",
-    "hit_any_rate": "Tỷ lệ hit",
-    "avg_hits_per_day": "TB hit/ngày",
-    "val_brier": "Brier",
-    "val_logloss": "Log-loss",
-    "path_line": "Đường cầu",
-    "rule_kind": "Loại",
-    "lag_days": "Độ trễ",
-    "base_date": "Ngày gốc",
-    "p_mean": "P lịch sử",
-    "hits": "Trúng",
-    "trials": "Mẫu",
-    "current_streak": "Nhịp hiện tại",
-    "rule_score": "Điểm",
-    "reason": "Diễn giải",
-}
-
-GROUP_LABELS = {
-    "head": "Đầu / hàng chục",
-    "tail": "Đuôi / hàng đơn vị",
-    "total": "Tổng",
-    "db_cham": "Chạm ĐB",
-    "db_head": "Đầu ĐB",
-    "db_tail": "Đuôi ĐB",
-    "db_total": "Tổng ĐB",
-}
+PRETTY_COLS = COLUMN_LABELS
 
 PALETTES = {
     "blue": ("#eff6ff", "#2563eb"),
@@ -202,7 +138,7 @@ def _pct(value: Any) -> str:
 
 
 def _pretty_col(col: str) -> str:
-    return PRETTY_COLS.get(col, col.replace("_", " ").title())
+    return PRETTY_COLS.get(col, col.replace("_", " "))
 
 
 def _prize_width(col: str) -> int:
@@ -606,6 +542,10 @@ def _render_table(
                     s = f"<button class='num-link' data-mode='{number_mode}' data-number='{s}'>{s}</button>"
                     cells.append(f"<td>{s}</td>")
                     continue
+                elif c == "mode":
+                    s = mode_label(value)
+                elif c in {"score_band", "period_kind", "stage", "status"}:
+                    s = str(value_label(value))
                 cells.append(f"<td>{html.escape(s)}</td>")
             trs.append("<tr>" + "".join(cells) + "</tr>")
         search = (
@@ -733,8 +673,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     hero_actions = """
       <div class="hero-actions">
         <a class="primary-action" href="#ket-qua">Xem kết quả ngày</a>
-        <a class="ghost-action" href="landing_desktop.html">Mở desktop view</a>
-        <a class="ghost-action" href="statistics.html">Mở dashboard thống kê đầy đủ</a>
+        <a class="ghost-action" href="landing_desktop.html">Mở giao diện máy tính</a>
+        <a class="ghost-action" href="statistics.html">Mở bảng điều khiển thống kê đầy đủ</a>
         <a class="ghost-action" href="soi-path-loto-active.html">Soi cầu vị trí</a>
       </div>
     """
@@ -743,7 +683,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     ai_pills = "".join(
         f"<button class='signal-pill' data-mode='loto' data-number='{_fmt2(row.get('number_str', row.get('number', '')))}'>"
         f"<b>{_fmt2(row.get('number_str', row.get('number', '')))}</b>"
-        f"<span>{html.escape(str(row.get('primary_reason', 'AI/ML signal')))}</span>"
+        f"<span>{html.escape(str(row.get('primary_reason', 'Tín hiệu AI/ML')))}</span>"
         f"</button>"
         for row in ai_summary_rows
     ) or "<span class='muted'>Chưa có dữ liệu AI/ML.</span>"
@@ -756,7 +696,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Lottery Intelligence Landing</title>
+  <title>Trung tâm phân tích xổ số</title>
   <style>
     :root {{
       --bg: #f5f7fb;
@@ -1654,11 +1594,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <div class="brand">
         <div class="brand-logo">AI</div>
         <div>
-          <strong>Lottery Intelligence</strong>
-          <small>Landing page thống kê XSMB</small>
+          <strong>Trung tâm phân tích xổ số</strong>
+          <small>Trang tổng hợp thống kê XSMB</small>
         </div>
       </div>
-      <div class="nav-title">Menu thống kê</div>
+      <div class="nav-title">Trình đơn thống kê</div>
       <nav class="side-nav" id="side-nav">
         {nav}
       </nav>
@@ -1668,11 +1608,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="tong-quan" class="hero section">
         <div class="hero-content">
           <div>
-            <p class="eyebrow" style="color:#93c5fd">Dashboard tổng hợp</p>
-            <h1>Trung tâm thống kê xổ số: kết quả ngày, ma trận, cầu vị trí và AI/ML signal.</h1>
+            <p class="eyebrow" style="color:#93c5fd">Bảng điều khiển tổng hợp</p>
+            <h1>Trung tâm thống kê xổ số: kết quả ngày, ma trận, cầu vị trí và tín hiệu AI/ML.</h1>
           </div>
           <p>
-            Trang này gom các bảng quan trọng vào một landing page hiện đại: menu bấm là cuộn tới đúng thống kê,
+            Trang này gom các bảng quan trọng vào một trang tổng hợp hiện đại: bấm trình đơn để cuộn tới đúng thống kê,
             bảng kết quả đặt trung tâm, chục–đơn vị đặt cạnh bên, còn AI/ML và các bảng phân tích nằm ở phải và bên dưới
             để so sánh nhanh mà không bị rối giao diện.
           </p>
@@ -1704,7 +1644,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
               <div class="card-head">
                 <div>
                   <p class="eyebrow">Chục × đơn vị</p>
-                  <h3>Ma trận loto ngày</h3>
+                  <h3>Ma trận lô tô ngày</h3>
                   <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
                 </div>
               </div>
@@ -1716,70 +1656,70 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 
         <aside class="right-rail">
           <section id="ai-ml" class="section">
-            {_render_bar_card(title='Top AI/ML loto', subtitle='Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.', df=ai_loto, label_col='number_str', value_col='cau_score', palette='purple', mode='loto', number_col='number_str', limit=10, value_decimals=1)}
+            {_render_bar_card(title='AI/ML lô tô đứng đầu', subtitle='Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.', df=ai_loto, label_col='number_str', value_col='cau_score', palette='purple', mode='loto', number_col='number_str', limit=10, value_decimals=1)}
           </section>
-          {_render_bar_card(title='Top AI/ML ĐB', subtitle='Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.', df=ai_de, label_col='number_str', value_col='cau_score', palette='orange', mode='de', number_col='number_str', limit=10, value_decimals=1)}
+          {_render_bar_card(title='AI/ML ĐB đứng đầu', subtitle='Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.', df=ai_de, label_col='number_str', value_col='cau_score', palette='orange', mode='de', number_col='number_str', limit=10, value_decimals=1)}
         </aside>
       </div>
 
       <section id="tan-suat-loto" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Frequency matrices</div>
-            <h2>Tần suất loto theo ngày / tuần / tháng / năm</h2>
+            <div class="section-kicker">Ma trận tần suất</div>
+            <h2>Tần suất lô tô theo ngày / tuần / tháng / năm</h2>
             <p>Những phần có đủ 00–99 được thể hiện bằng ma trận để mắt nhận ra vùng nóng/lạnh nhanh hơn bảng dài.</p>
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title='Loto ngày hiện tại', subtitle='Tần suất 00–99 trong ngày kết quả mới nhất.', values=_current_period_matrix(repo_root, 'loto', 'day'), palette='blue', mode='loto')}
-          {_render_matrix_card(title='Loto tuần hiện tại', subtitle='Cộng dồn loto trong tuần hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'week'), palette='green', mode='loto')}
-          {_render_matrix_card(title='Loto tháng hiện tại', subtitle='Cộng dồn loto trong tháng hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'month'), palette='orange', mode='loto')}
-          {_render_matrix_card(title='Loto năm hiện tại', subtitle='Cộng dồn loto trong năm hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'year'), palette='purple', mode='loto')}
+          {_render_matrix_card(title='Lô tô ngày hiện tại', subtitle='Tần suất 00–99 trong ngày kết quả mới nhất.', values=_current_period_matrix(repo_root, 'loto', 'day'), palette='blue', mode='loto')}
+          {_render_matrix_card(title='Lô tô tuần hiện tại', subtitle='Cộng dồn lô tô trong tuần hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'week'), palette='green', mode='loto')}
+          {_render_matrix_card(title='Lô tô tháng hiện tại', subtitle='Cộng dồn lô tô trong tháng hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'month'), palette='orange', mode='loto')}
+          {_render_matrix_card(title='Lô tô năm hiện tại', subtitle='Cộng dồn lô tô trong năm hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'year'), palette='purple', mode='loto')}
         </div>
       </section>
 
       <section id="tan-suat-de" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Special number</div>
+            <div class="section-kicker">Số đặc biệt</div>
             <h2>Tần suất ĐB theo kỳ</h2>
-            <p>ĐB là một kết quả/ngày nên xem bằng ma trận tháng/năm sẽ dễ nhận biết phân bổ hơn bảng top đơn thuần.</p>
+            <p>ĐB là một kết quả/ngày nên xem bằng ma trận tháng/năm sẽ dễ nhận biết phân bổ hơn bảng xếp hạng đơn thuần.</p>
           </div>
         </div>
         <div class="matrix-two">
           {_render_matrix_card(title='ĐB tháng hiện tại', subtitle='Tần suất 2 số cuối giải đặc biệt trong tháng.', values=_current_period_matrix(repo_root, 'de', 'month'), palette='orange', mode='de')}
           {_render_matrix_card(title='ĐB năm hiện tại', subtitle='Tần suất 2 số cuối giải đặc biệt trong năm.', values=_current_period_matrix(repo_root, 'de', 'year'), palette='rose', mode='de')}
-          {_render_matrix_card(title='AI score loto', subtitle='Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.', values=_ai_matrix(repo_root, 'loto'), palette='purple', mode='loto', decimals=1)}
-          {_render_matrix_card(title='AI score ĐB', subtitle='Điểm AI/ML dành riêng cho 2 số cuối giải đặc biệt.', values=_ai_matrix(repo_root, 'de'), palette='rose', mode='de', decimals=1)}
+          {_render_matrix_card(title='Điểm AI lô tô', subtitle='Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.', values=_ai_matrix(repo_root, 'loto'), palette='purple', mode='loto', decimals=1)}
+          {_render_matrix_card(title='Điểm AI ĐB', subtitle='Điểm AI/ML dành riêng cho 2 số cuối giải đặc biệt.', values=_ai_matrix(repo_root, 'de'), palette='rose', mode='de', decimals=1)}
         </div>
       </section>
 
       <section id="gan-nhip" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Rhythm</div>
+            <div class="section-kicker">Nhịp xuất hiện</div>
             <h2>Gan / nhịp và áp lực quay lại</h2>
             <p>Gan cao không đồng nghĩa chắc chắn về; phần này giúp phát hiện số lâu chưa xuất hiện và so sánh với nhịp lịch sử.</p>
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title='Gan loto hiện tại', subtitle='Số ngày chưa về của từng bộ loto.', values=_rhythm_matrix(repo_root, 'loto'), palette='green', mode='loto')}
+          {_render_matrix_card(title='Gan lô tô hiện tại', subtitle='Số ngày chưa về của từng bộ lô tô.', values=_rhythm_matrix(repo_root, 'loto'), palette='green', mode='loto')}
           {_render_matrix_card(title='Gan ĐB hiện tại', subtitle='Số ngày chưa về của từng bộ ĐB.', values=_rhythm_matrix(repo_root, 'de'), palette='rose', mode='de')}
-          {_render_bar_card(title='Top gan loto', subtitle='Các bộ loto có current gap cao nhất.', df=loto_rhythm, label_col='number_str', value_col='current_gap', palette='green', mode='loto', number_col='number_str', limit=12, value_decimals=0)}
-          {_render_bar_card(title='Top gan ĐB', subtitle='Các bộ ĐB có current gap cao nhất.', df=de_rhythm, label_col='number_str', value_col='current_gap', palette='rose', mode='de', number_col='number_str', limit=12, value_decimals=0)}
+          {_render_bar_card(title='Gan lô tô đứng đầu', subtitle='Các bộ lô tô có khoảng gan hiện tại cao nhất.', df=loto_rhythm, label_col='number_str', value_col='current_gap', palette='green', mode='loto', number_col='number_str', limit=12, value_decimals=0)}
+          {_render_bar_card(title='Gan ĐB đứng đầu', subtitle='Các bộ ĐB có khoảng gan hiện tại cao nhất.', df=de_rhythm, label_col='number_str', value_col='current_gap', palette='rose', mode='de', number_col='number_str', limit=12, value_decimals=0)}
         </div>
       </section>
 
       <section id="cap-lon" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Reverse pairs</div>
+            <div class="section-kicker">Cặp đảo chiều</div>
             <h2>Cặp lộn / cặp đảo chiều</h2>
             <p>Biểu đồ thanh phù hợp hơn ma trận vì cần so sánh xếp hạng từng cặp như 36–63, 69–96.</p>
           </div>
         </div>
         <div class="two-col">
-          {_render_bar_card(title='Top cặp lộn tháng', subtitle='Cặp đảo chiều có tổng tần suất cao trong tháng hiện tại.', df=reverse_pairs, label_col='pair', value_col='freq', palette='sky', limit=12, value_decimals=0)}
+          {_render_bar_card(title='Cặp lộn nổi bật trong tháng', subtitle='Cặp đảo chiều có tổng tần suất cao trong tháng hiện tại.', df=reverse_pairs, label_col='pair', value_col='freq', palette='sky', limit=12, value_decimals=0)}
           {_render_table(title='Chi tiết cặp lộn', subtitle='Có thêm số ngày về và số ngày cùng về để tránh nhìn nhầm chỉ theo tần suất.', df=reverse_pairs, columns=['pair', 'freq', 'days_hit', 'cooccur_days', 'avg_per_draw', 'rank_in_period'], limit=12, dense=False)}
         </div>
       </section>
@@ -1787,7 +1727,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="dau-duoi-tong" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Groups</div>
+            <div class="section-kicker">Nhóm số</div>
             <h2>Đầu · đuôi · tổng</h2>
             <p>Các nhóm 0–9 nên hiển thị bằng biểu đồ thanh để so sánh trực tiếp giữa các nhóm.</p>
           </div>
@@ -1798,9 +1738,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="db-tuan-thang" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Calendar boards</div>
+            <div class="section-kicker">Bảng theo lịch</div>
             <h2>Bảng ĐB tuần và tháng</h2>
-            <p>Nhóm lịch được giữ dạng bảng vì mục tiêu là đối chiếu theo ngày/thứ, không phải chỉ nhìn top.</p>
+            <p>Nhóm lịch được giữ dạng bảng vì mục tiêu là đối chiếu theo ngày/thứ, không phải chỉ nhìn nhóm đứng đầu.</p>
           </div>
         </div>
         <div class="two-col">
@@ -1812,9 +1752,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="duong-cau" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Click-to-explain</div>
+            <div class="section-kicker">Bấm để xem căn cứ</div>
             <h2>Vị trí đường cầu và căn cứ tạo số liệu</h2>
-            <p>Bấm vào bất kỳ số nào trên ma trận, bảng kết quả hoặc AI/ML top để cập nhật panel bên trái với lý do, điểm, xác suất và các đường cầu vị trí.</p>
+            <p>Bấm vào bất kỳ số nào trên ma trận, bảng kết quả hoặc bảng xếp hạng AI/ML để cập nhật khung bên trái với lý do, điểm, xác suất và các đường cầu vị trí.</p>
           </div>
         </div>
         <div class="inspector">
@@ -1823,9 +1763,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
               <b id="inspect-num">--</b>
               <div><span id="inspect-mode">Chưa chọn</span><h3 id="inspect-title">Chọn một số trên trang</h3></div>
             </div>
-            <p id="inspect-summary">Khi chọn số, hệ thống hiển thị AI score, xác suất, bằng chứng và các đường cầu vị trí tốt nhất.</p>
+            <p id="inspect-summary">Khi chọn số, hệ thống hiển thị điểm AI, xác suất, bằng chứng và các đường cầu vị trí tốt nhất.</p>
             <div class="inspect-meta">
-              <div><span>AI score</span><strong id="inspect-score">—</strong></div>
+              <div><span>Điểm AI</span><strong id="inspect-score">—</strong></div>
               <div><span>Xác suất</span><strong id="inspect-prob">—</strong></div>
             </div>
             <p><b>Lý do chính:</b> <span id="inspect-reason">—</span></p>
@@ -1836,8 +1776,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
             </ul>
           </aside>
           <div class="two-col">
-            {_render_table(title='Top vị trí cầu loto', subtitle='Các đường cầu loto có rule score cao nhất hiện tại.', df=evidence_loto, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True)}
-            {_render_table(title='Top vị trí cầu ĐB', subtitle='Các đường cầu ĐB có rule score cao nhất hiện tại.', df=evidence_de, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True, number_mode='de')}
+            {_render_table(title='Vị trí cầu lô tô nổi bật', subtitle='Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.', df=evidence_loto, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True)}
+            {_render_table(title='Vị trí cầu ĐB nổi bật', subtitle='Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.', df=evidence_de, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True, number_mode='de')}
           </div>
         </div>
       </section>
@@ -1845,18 +1785,18 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="backtest" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Model validation</div>
-            <h2>Backtest AI/ML và thống kê điều kiện</h2>
-            <p>Dùng backtest để đánh giá chất lượng xếp hạng trên lịch sử; không dùng để cam kết kết quả tương lai.</p>
+            <div class="section-kicker">Kiểm định mô hình</div>
+            <h2>Kiểm định lại AI/ML và thống kê điều kiện</h2>
+            <p>Dùng kiểm định lại để đánh giá chất lượng xếp hạng trên lịch sử; không dùng để cam kết kết quả tương lai.</p>
           </div>
         </div>
         <div class="two-col">
-          {_render_table(title='Báo cáo backtest loto', subtitle='Hit-rate top-k và metric calibration của mô hình loto.', df=report_loto, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
-          {_render_table(title='Báo cáo backtest ĐB', subtitle='Hit-rate top-k và metric calibration của mô hình ĐB.', df=report_de, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
-          {_render_table(title='Điều kiện ĐB hôm trước → loto hôm sau', subtitle='Các cặp điều kiện thường gặp, lọc theo count và conditional rate.', df=conditional_special, columns=['prev_special_2d', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
-          {_render_table(title='Điều kiện loto hôm trước → loto hôm sau', subtitle='Quan hệ chuyển tiếp giữa loto hôm trước và loto ngày sau.', df=conditional_loto, columns=['prev_loto', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
+          {_render_table(title='Báo cáo kiểm định lô tô', subtitle='Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình lô tô.', df=report_loto, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
+          {_render_table(title='Báo cáo kiểm định ĐB', subtitle='Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình ĐB.', df=report_de, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
+          {_render_table(title='Điều kiện ĐB hôm trước → lô tô hôm sau', subtitle='Các cặp điều kiện thường gặp, lọc theo số lần và tỷ lệ có điều kiện.', df=conditional_special, columns=['prev_special_2d', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
+          {_render_table(title='Điều kiện lô tô hôm trước → lô tô hôm sau', subtitle='Quan hệ chuyển tiếp giữa lô tô hôm trước và lô tô ngày sau.', df=conditional_loto, columns=['prev_loto', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
           {_render_table(title='Giải nhất lâu chưa về', subtitle='Một bảng phụ để đối chiếu giải nhất với nhịp chung.', df=first_prize, columns=['number_str', 'last_seen', 'current_gap', 'hit_count', 'mean_gap', 'max_gap'], limit=10, dense=False)}
-          {_render_table(title='Tần suất loto nổi bật tháng hiện tại', subtitle='Bảng hỗ trợ đọc số liệu bên cạnh ma trận.', df=_sort_top(loto_snapshot[loto_snapshot['period_kind'] == 'month'] if not loto_snapshot.empty and 'period_kind' in loto_snapshot.columns else loto_snapshot, 'freq', 10), columns=['number_str', 'freq', 'days_hit', 'hit_rate', 'avg_per_draw', 'z_score', 'rank_in_period'], limit=10, dense=False)}
+          {_render_table(title='Tần suất lô tô nổi bật tháng hiện tại', subtitle='Bảng hỗ trợ đọc số liệu bên cạnh ma trận.', df=_sort_top(loto_snapshot[loto_snapshot['period_kind'] == 'month'] if not loto_snapshot.empty and 'period_kind' in loto_snapshot.columns else loto_snapshot, 'freq', 10), columns=['number_str', 'freq', 'days_hit', 'hit_rate', 'avg_per_draw', 'z_score', 'rank_in_period'], limit=10, dense=False)}
         </div>
       </section>
 
@@ -1953,8 +1893,13 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 def build_landing_page(*, repo_root: Path) -> list[Path]:
     docs_dir = repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
-    html_doc = _render_html(repo_root)
-    desktop_doc = _render_html(repo_root, desktop_view=True)
+    html_doc = "\n".join(
+        line.rstrip() for line in _render_html(repo_root).splitlines()
+    ) + "\n"
+    desktop_doc = "\n".join(
+        line.rstrip()
+        for line in _render_html(repo_root, desktop_view=True).splitlines()
+    ) + "\n"
     out_index = docs_dir / "index.html"
     out_landing = docs_dir / "landing.html"
     out_desktop = docs_dir / "landing_desktop.html"
@@ -1965,8 +1910,10 @@ def build_landing_page(*, repo_root: Path) -> list[Path]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the modern statistics landing page.")
-    parser.add_argument("--repo-root", default=".", help="Repository root")
+    parser = argparse.ArgumentParser(
+        description="Dựng trang tổng hợp thống kê hiện đại."
+    )
+    parser.add_argument("--repo-root", default=".", help="Thư mục gốc kho mã")
     args = parser.parse_args()
     outputs = build_landing_page(repo_root=Path(args.repo_root).resolve())
     for output in outputs:

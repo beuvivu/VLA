@@ -1,4 +1,4 @@
-name: Post-finalization audit + live reconciliation
+name: Kiểm toán sau hoàn tất và đối soát trực tiếp
 
 on:
   workflow_dispatch:
@@ -15,29 +15,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout latest default branch
+      - name: Lấy nhánh mặc định mới nhất
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 1
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
-      - name: Run strict production audit
+      - name: Chạy kiểm toán production nghiêm ngặt
         run: |
           python src/production_audit.py \
             --cutoff 18:15 \
             --strict \
             --json-out /tmp/production_audit.json
 
-      - name: Build canonical live snapshot
+      - name: Tạo ảnh chụp trực tiếp chuẩn
         run: |
           python src/reconcile_live_canonical.py --out /tmp/live-canonical.json
 
-      - name: Force-publish canonical snapshot to live branch
+      - name: Xuất bản ảnh chụp chuẩn lên nhánh live
         shell: bash
         run: |
           set -euo pipefail

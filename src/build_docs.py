@@ -9,6 +9,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
+from ui_locale import mode_label, path_kind_label
 
 
 @dataclass
@@ -48,21 +49,23 @@ def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
         if m:
             dates.append(m.group(1))
     if not dates:
-        raise FileNotFoundError(f"No ui csv files found in {path_ui_dir} for mode={mode}")
+        raise FileNotFoundError(
+            f"Không tìm thấy tệp CSV giao diện trong {path_ui_dir} cho loại={mode}"
+        )
     return sorted(dates)[-1]
 
 
 def _load_ui_csv(path_ui_dir: Path, mode: str, kind: str, anchor_date: str, display_days: int) -> pd.DataFrame:
     p = path_ui_dir / f"ui_{mode}_{kind}_{anchor_date}_{display_days}d.csv"
     if not p.exists():
-        raise FileNotFoundError(f"Missing UI file: {p}")
+        raise FileNotFoundError(f"Thiếu tệp giao diện: {p}")
     return pd.read_csv(p)
 
 
 def _load_picks_csv(path_ui_dir: Path, mode: str, kind: str, anchor_date: str) -> pd.DataFrame:
     p = path_ui_dir / f"predict_next_{mode}_{kind}_{anchor_date}.csv"
     if not p.exists():
-        raise FileNotFoundError(f"Missing picks file: {p}")
+        raise FileNotFoundError(f"Thiếu tệp gợi ý: {p}")
     return pd.read_csv(p)
 
 
@@ -74,8 +77,8 @@ def _render_page(
     mode: str,
     kind: str,
     other_link: str | None,
-    other_kind: str,
-    other_mode: str,
+    other_kind_label: str,
+    other_mode_label: str,
     index_link: str,
     anchor_date: str,
     display_days: int,
@@ -107,9 +110,15 @@ def _render_page(
         p_mean = float(r.get("p_mean", 0.0))
         # show streaks
         if kind == "active":
-            streak = f"cur={int(r.get('current_streak', 0))} / max={int(r.get('max_streak', 0))}"
+            streak = (
+                f"hiện tại={int(r.get('current_streak', 0))} / "
+                f"dài nhất={int(r.get('max_streak', 0))}"
+            )
         else:
-            streak = f"max={int(r.get('max_streak', 0))} / cur={int(r.get('current_streak', 0))}"
+            streak = (
+                f"dài nhất={int(r.get('max_streak', 0))} / "
+                f"hiện tại={int(r.get('current_streak', 0))}"
+            )
 
         path_id = str(r.get("path_id", "")) or f"L{lag}-[{i},{j}]"
 
@@ -118,7 +127,10 @@ def _render_page(
             num = int(r[f"{d}_num"])
             hit = bool(int(r[f"{d}_hit"])) if f"{d}_hit" in ui_df.columns else False
             is_de = bool(int(r[f"{d}_is_de"])) if f"{d}_is_de" in ui_df.columns else False
-            tooltip = f"{d} · lag={lag} · i={i}({i_label}) · j={j}({j_label}) · num={num:02d}"
+            tooltip = (
+                f"{d} · trễ={lag} · vị trí A={i} ({i_label}) · "
+                f"vị trí B={j} ({j_label}) · số={num:02d}"
+            )
             cells.append(Cell(num=num, hit=hit, hitde=(hit and is_de), tooltip=tooltip))
 
         rows.append(UiRow(path_id=path_id, lag=lag, i=i, j=j, i_label=i_label, j_label=j_label, p_mean=p_mean, streak=streak, cells=cells))
@@ -126,10 +138,12 @@ def _render_page(
     html = tpl.render(
         title=title,
         mode=mode,
+        mode_label=mode_label(mode),
         kind=kind,
+        kind_label=path_kind_label(kind),
         other_link=other_link,
-        other_kind=other_kind,
-        other_mode=other_mode,
+        other_kind_label=other_kind_label,
+        other_mode_label=other_mode_label,
         index_link=index_link,
         anchor_date=anchor_date,
         display_days=display_days,
@@ -166,7 +180,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             other_kind = "stable" if kind == "active" else "active"
             other_link = f"soi-path-{mode}-{other_kind}.html"
 
-            title = f"SOI PATH ({mode.upper()}) — {kind.upper()}"
+            title = f"SOI CẦU {mode_label(mode).upper()} — {path_kind_label(kind).upper()}"
             _render_page(
                 env,
                 out_path=out_path,
@@ -174,8 +188,8 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
                 mode=mode,
                 kind=kind,
                 other_link=other_link,
-                other_kind=other_kind,
-                other_mode=mode,
+                other_kind_label=path_kind_label(other_kind),
+                other_mode_label=mode_label(mode),
                 index_link="index.html",
                 anchor_date=anchor_date,
                 display_days=display_days,
@@ -196,21 +210,22 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
     idx_html = [
         "<!doctype html><html lang='vi'><head><meta charset='utf-8'/>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
-        "<title>PATH Dashboard</title>"
+        "<title>Bảng điều khiển soi cầu</title>"
         "<style>body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:0;background:#0b0f17;color:#e5e7eb}"
         ".wrap{max-width:980px;margin:0 auto;padding:20px}"
         ".card{background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:14px;margin-top:12px}"
         "a{color:#93c5fd;text-decoration:none}a:hover{text-decoration:underline}"
         ".small{color:#94a3b8;font-size:12px}"
         "</style></head><body><div class='wrap'>"
-        "<h1 style='margin:0;font-size:20px'>PATH Dashboard (website-like)</h1>"
-        "<div class='small'>Biên ngày / số ngày cầu chạy theo style trang soi cầu. "
+        "<h1 style='margin:0;font-size:20px'>Bảng điều khiển soi cầu</h1>"
+        "<div class='small'>Biên ngày / số ngày cầu chạy theo cách trình bày của trang soi cầu. "
         "Màu đỏ: về ĐB · Màu cam: loto đã về.</div>"
     ]
     for it in index_items:
         idx_html.append(
             f"<div class='card'><a href='{it['href']}'><b>{it['title']}</b></a>"
-            f"<div class='small'>Anchor: {it['anchor_date']} · Days: {it['display_days']}</div></div>"
+            f"<div class='small'>Ngày neo: {it['anchor_date']} · "
+            f"Số ngày: {it['display_days']}</div></div>"
         )
     idx_html.append("</div></body></html>")
     (docs_dir / "index.html").write_text("\n".join(idx_html), encoding="utf-8")

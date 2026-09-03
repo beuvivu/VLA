@@ -12,8 +12,8 @@ from build_markdown_dashboard_v3 import main as canonical_main
 
 def main() -> None:
     print(
-        "[INFO] src/build_markdown_dashboard.py is superseded; "
-        "delegating to src/build_markdown_dashboard_v3.py."
+        "[THÔNG TIN] src/build_markdown_dashboard.py đã được thay thế; "
+        "chuyển sang src/build_markdown_dashboard_v3.py."
     )
     canonical_main()
 

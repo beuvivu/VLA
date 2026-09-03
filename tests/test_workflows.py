@@ -36,7 +36,7 @@ def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
         assert f'cron: "{cron}"' in text
     assert "--cutoff 18:15" in text
     assert '"--consensus-min-recent", "2"' in text
-    assert "Commit canonical result immediately" in text
+    assert "Ghi nhận kết quả chuẩn ngay lập tức" in text
     assert "--fail-on-stale" in text
     assert "--fail-on-missing" in text
     assert "--cutoff-aware" in text

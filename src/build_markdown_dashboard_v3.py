@@ -10,6 +10,8 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 import pandas as pd
 
+from ui_locale import strategy_label, value_label
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
 ADV = DATA / "advanced"
@@ -233,7 +235,10 @@ def _balanced_rank(
         rows.append(
             [i, f"**{_fmt2(r.get(label_col))}**" if label_col in {"number", "number_str"} else _short(r.get(label_col), 28), score_txt, compare, _short(meaning, 52), _bar(score, max_v)]
         )
-    return _md_table(["#", "Đối tượng", "Giá trị", "So sánh / căn cứ", "Ý nghĩa", "Visual"], rows)
+    return _md_table(
+        ["#", "Đối tượng", "Giá trị", "So sánh / căn cứ", "Ý nghĩa", "Thanh so sánh"],
+        rows,
+    )
 
 
 def _daily_board(df: pd.DataFrame) -> tuple[str, str]:
@@ -245,7 +250,7 @@ def _daily_board(df: pd.DataFrame) -> tuple[str, str]:
     for label, cols, width in PRIZE_GROUPS:
         vals = " · ".join(_fmt_code(row.get(c), width) for c in cols)
         suffix = " · ".join(_fmt2(str(_fmt_code(row.get(c), width))[-2:]) for c in cols)
-        rows.append([label, f"**{vals}**" if label == "Đặc biệt" else vals, suffix, "Kết quả canonical đã xác minh"])
+        rows.append([label, f"**{vals}**" if label == "Đặc biệt" else vals, suffix, "Kết quả chuẩn đã xác minh"])
     return day, _md_table(["Giải", "Kết quả", "2 số cuối", "Ý nghĩa"], rows)
 
 
@@ -255,8 +260,15 @@ def _fun_board(payload: dict[str, Any]) -> str:
         vals = group.get("values", []) if isinstance(group, dict) else []
         numbers = " · ".join(str(v.get("value", "")) for v in vals if isinstance(v, dict))
         suffix = " · ".join(f"`{v.get('suffix','')}` {_fmt_pct(v.get('model_prob',0),2)}" for v in vals if isinstance(v, dict))
-        rows.append([group.get("label", ""), numbers, suffix, "Mô phỏng deterministic; probability chỉ áp dụng cho 2 số cuối"])
-    return _md_table(["Giải", "Mô phỏng", "Suffix · probability", "Ý nghĩa"], rows)
+        rows.append(
+            [
+                group.get("label", ""),
+                numbers,
+                suffix,
+                "Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối",
+            ]
+        )
+    return _md_table(["Giải", "Mô phỏng", "Hai số cuối · xác suất", "Ý nghĩa"], rows)
 
 
 def _recent_results(df: pd.DataFrame, n: int = 10) -> str:
@@ -278,7 +290,7 @@ def _prediction(mode: str, target: str) -> pd.DataFrame:
 
 def _forecast_table(df: pd.DataFrame, mode: str, top_n: int = 15) -> str:
     if df.empty or "prob" not in df.columns:
-        return "_Chưa có prediction._"
+        return "_Chưa có dự báo._"
     view = df.copy()
     view["__p"] = pd.to_numeric(view["prob"], errors="coerce").fillna(0)
     view = view.sort_values("__p", ascending=False).head(top_n)
@@ -286,13 +298,16 @@ def _forecast_table(df: pd.DataFrame, mode: str, top_n: int = 15) -> str:
     rows = []
     for i, (_, r) in enumerate(view.iterrows(), 1):
         p = _safe_float(r.get("prob"))
-        agree = str(r.get("agreement_tier", "—"))
+        agree = str(value_label(str(r.get("agreement_tier", "—"))))
         dispersion = _safe_float(r.get("component_disagreement"))
         meaning = "Ưu tiên tương đối cao" if i <= 4 else "Theo dõi trong nhóm xếp hạng"
         if agree == "low":
-            meaning += "; độ đồng thuận model thấp"
+            meaning += "; độ đồng thuận mô hình thấp"
         rows.append([i, f"**{_fmt2(r.get('number_str',r.get('number')))}**", _fmt_pct(p,3), f"{agree} · disp {_fmt_num(dispersion,3)}", meaning, _bar(p,max_p)])
-    return _md_table(["#", "Số", "Final probability", "Đồng thuận", "Ý nghĩa", "Visual"], rows)
+    return _md_table(
+        ["#", "Số", "Xác suất cuối", "Đồng thuận", "Ý nghĩa", "Thanh so sánh"],
+        rows,
+    )
 
 
 def _period(df: pd.DataFrame, kind: str) -> pd.DataFrame:
@@ -322,8 +337,8 @@ def _gap_table(df: pd.DataFrame, top_n: int = 15) -> str:
         mean_gap = _safe_float(r.get("mean_gap"))
         ratio = gap / mean_gap if mean_gap > 0 else 0
         meaning = "Gan hiện tại vượt gan trung bình" if ratio > 1.25 else "Gan trong vùng lịch sử thường gặp"
-        rows.append([i, f"**{_fmt2(r.get('number_str',r.get('number')))}**", _fmt_num(gap,0), f"TB {_fmt_num(mean_gap,2)} · max {_fmt_num(r.get('max_gap'),0)}", meaning, _bar(gap,max_g)])
-    return _md_table(["#", "Số", "Gan hiện tại", "So sánh lịch sử", "Ý nghĩa", "Visual"], rows)
+        rows.append([i, f"**{_fmt2(r.get('number_str',r.get('number')))}**", _fmt_num(gap,0), f"TB {_fmt_num(mean_gap,2)} · lớn nhất {_fmt_num(r.get('max_gap'),0)}", meaning, _bar(gap,max_g)])
+    return _md_table(["#", "Số", "Gan hiện tại", "So sánh lịch sử", "Ý nghĩa", "Thanh so sánh"], rows)
 
 
 def _hazard_table(df: pd.DataFrame, max_gap: int = 25) -> str:
@@ -334,8 +349,11 @@ def _hazard_table(df: pd.DataFrame, max_gap: int = 25) -> str:
     rows = []
     for _, r in view.iterrows():
         h = _safe_float(r.get("hazard"))
-        rows.append([int(_safe_float(r.get("gap"))), _fmt_pct(h,2), f"{int(_safe_float(r.get('hits')))} / {int(_safe_float(r.get('denom')))}", "Xác suất empirical có điều kiện tại mức gap này", _bar(h,max_h)])
-    return _md_table(["Gap", "Hazard", "Hits / exposure", "Ý nghĩa", "Visual"], rows)
+        rows.append([int(_safe_float(r.get("gap"))), _fmt_pct(h,2), f"{int(_safe_float(r.get('hits')))} / {int(_safe_float(r.get('denom')))}", "Xác suất thực nghiệm có điều kiện tại mức gan này", _bar(h,max_h)])
+    return _md_table(
+        ["Mức gan", "Tỷ suất xuất hiện", "Trúng / số lần quan sát", "Ý nghĩa", "Thanh so sánh"],
+        rows,
+    )
 
 
 def _group_table(df: pd.DataFrame, kind: str, group: str, top_n: int) -> str:
@@ -350,8 +368,8 @@ def _group_table(df: pd.DataFrame, kind: str, group: str, top_n: int) -> str:
     rows = []
     for i, (_, r) in enumerate(view.iterrows(),1):
         f = _safe_float(r.get("freq"))
-        rows.append([i, str(r.get("group_value","")), _fmt_num(f,0), f"rank {r.get('rank_in_period_group','—')}", "Tần suất tương đối trong kỳ", _bar(f,max_f)])
-    return _md_table(["#", "Nhóm", "Tần suất", "Xếp hạng", "Ý nghĩa", "Visual"], rows)
+        rows.append([i, str(r.get("group_value","")), _fmt_num(f,0), f"hạng {r.get('rank_in_period_group','—')}", "Tần suất tương đối trong kỳ", _bar(f,max_f)])
+    return _md_table(["#", "Nhóm", "Tần suất", "Xếp hạng", "Ý nghĩa", "Thanh so sánh"], rows)
 
 
 def _special_group_table(df: pd.DataFrame, kind: str = "month") -> str:
@@ -367,7 +385,7 @@ def _special_group_table(df: pd.DataFrame, kind: str = "month") -> str:
         g["__f"] = pd.to_numeric(g["freq"], errors="coerce").fillna(0)
         g = g.sort_values("__f", ascending=False).head(5)
         top = " · ".join(f"**{r['group_value']}** ({int(r['__f'])})" for _,r in g.iterrows())
-        rows.append([label, top, "Top 5", "Nhìn cấu trúc phân bố thay vì một số đơn lẻ"])
+        rows.append([label, top, "5 nhóm đầu", "Nhìn cấu trúc phân bố thay vì một số đơn lẻ"])
     return _md_table(["Nhóm", "Phân bố nổi bật", "Phạm vi", "Ý nghĩa"], rows)
 
 
@@ -382,7 +400,7 @@ def _reverse_pairs(df: pd.DataFrame, top_n: int = 15) -> str:
     for i,(_,r) in enumerate(view.iterrows(),1):
         f=_safe_float(r.get("freq"))
         rows.append([i,f"**{r.get('pair','')}**",_fmt_num(f,0),f"cùng về {r.get('cooccur_days','—')} ngày","Cặp đảo có tần suất cao trong tháng",_bar(f,max_f)])
-    return _md_table(["#","Cặp lộn","Tần suất","So sánh","Ý nghĩa","Visual"],rows)
+    return _md_table(["#","Cặp lộn","Tần suất","So sánh","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _wide_top_pairs(path: Path, *, top_n: int = 20, metric_name: str) -> str:
@@ -405,11 +423,12 @@ def _wide_top_pairs(path: Path, *, top_n: int = 20, metric_name: str) -> str:
     max_v=max((abs(v) for _,_,v in chosen),default=1.0)
     rows=[]
     for i,(src,dst,v) in enumerate(chosen,1):
-        meaning = "Quan hệ dương mạnh" if v>1 and "lift" in metric_name.lower() else "Quan hệ nổi bật tương đối"
-        if "phi" in metric_name.lower():
+        metric_kind = path.name.lower()
+        meaning = "Quan hệ dương mạnh" if v>1 and "lift" in metric_kind else "Quan hệ nổi bật tương đối"
+        if "phi" in metric_kind:
             meaning = "Đồng xuất hiện dương mạnh hơn các cặp khác" if v>0 else "Đồng xuất hiện âm"
         rows.append([i,f"`{src}` → **`{dst}`**",_fmt_num(v,4),metric_name,meaning,_bar(v,max_v)])
-    return _md_table(["#","Quan hệ","Giá trị","Metric","Ý nghĩa","Visual"],rows)
+    return _md_table(["#","Quan hệ","Giá trị","Chỉ số","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _lag_dependency(path: Path, top_n: int=20) -> str:
@@ -422,10 +441,10 @@ def _lag_dependency(path: Path, top_n: int=20) -> str:
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
         lift=_safe_float(r.get("lift_vs_baseline"))
-        state="hit" if str(r.get("state"))=="1" else "miss"
-        meaning="Tín hiệu tăng so với baseline" if lift>1 else "Không cao hơn baseline"
-        rows.append([i,f"**{_fmt2(r.get('number'))}**",_fmt_num(lift,3),f"lag {r.get('lag')} · prev={state} · n={_fmt_num(r.get('trials'),0)}",meaning,_bar(lift,max_v)])
-    return _md_table(["#","Số","Lift vs baseline","Điều kiện","Ý nghĩa","Visual"],rows)
+        state="trúng" if str(r.get("state"))=="1" else "trượt"
+        meaning="Tín hiệu tăng so với nền" if lift>1 else "Không cao hơn nền"
+        rows.append([i,f"**{_fmt2(r.get('number'))}**",_fmt_num(lift,3),f"trễ {r.get('lag')} · trước={state} · mẫu={_fmt_num(r.get('trials'),0)}",meaning,_bar(lift,max_v)])
+    return _md_table(["#","Số","Độ nâng so với nền","Điều kiện","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _month_calendar(path: Path, months: int=4) -> str:
@@ -478,7 +497,7 @@ def _conditional(path: Path, top_n: int=15) -> str:
         meaning="Mẫu nhỏ – chỉ tham khảo" if sample<10 else "Có mẫu lịch sử tương đối tốt hơn"
         score_txt=_fmt_pct(s,2) if "rate" in score else _fmt_num(s,3)
         rows.append([i,f"`{_fmt2(r.get(prev))}` → **`{_fmt2(r.get(nxt))}`**" if prev and nxt else "—",score_txt,f"n={_fmt_num(sample,0)}",meaning,_bar(s,max_v)])
-    return _md_table(["#","Điều kiện → kết quả","Tỷ lệ","Mẫu","Ý nghĩa","Visual"],rows)
+    return _md_table(["#","Điều kiện → kết quả","Tỷ lệ","Mẫu","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _significance(path: Path, top_n: int=15) -> str:
@@ -495,7 +514,7 @@ def _significance(path: Path, top_n: int=15) -> str:
         sig=str(r.get("fdr_05","")).lower()=="true"
         meaning="Qua FDR 5%" if sig else "Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định"
         rows.append([i,f"**{_fmt2(r.get('number_str',r.get('number')))}**",_fmt_num(lift,3),f"p {_fmt_num(r.get('p_value'),4)} · q {_fmt_num(q,4)}",meaning,_bar(_safe_float(r.get("__e")),max_v)])
-    return _md_table(["#","Số","Lift","p / q(FDR)","Ý nghĩa","Visual"],rows)
+    return _md_table(["#","Số","Độ nâng","p / q (FDR)","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _strategy(path: Path, top_n: int=15) -> str:
@@ -510,9 +529,9 @@ def _strategy(path: Path, top_n: int=15) -> str:
         lift=_safe_float(r.get("holdout_lift"))
         q=_safe_float(r.get("holdout_q_value_fdr"),1.0)
         gate=str(r.get("research_gate_pass","")).lower()=="true"
-        meaning="Qua research gate" if gate else "Research-only; chưa qua FDR/gate"
-        rows.append([i,_short(r.get("strategy"),28),_fmt_num(lift,3),f"precision {_fmt_pct(r.get('holdout_precision'),2)} · q {_fmt_num(q,3)}",meaning,_bar(lift,max_v)])
-    return _md_table(["#","Strategy","OOS lift","Holdout","Ý nghĩa","Visual"],rows)
+        meaning="Qua cổng nghiên cứu" if gate else "Chỉ nghiên cứu; chưa qua FDR/cổng"
+        rows.append([i,_short(strategy_label(r.get("strategy")),28),_fmt_num(lift,3),f"độ chính xác {_fmt_pct(r.get('holdout_precision'),2)} · q {_fmt_num(q,3)}",meaning,_bar(lift,max_v)])
+    return _md_table(["#","Chiến lược","Độ nâng ngoài mẫu","Tập giữ lại","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _dynamics(df: pd.DataFrame, top_n: int=15) -> str:
@@ -523,9 +542,9 @@ def _dynamics(df: pd.DataFrame, top_n: int=15) -> str:
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
         p=_safe_float(r.get("prob")); base=_safe_float(r.get("baseline_prob")); delta=p-base
-        meaning="Dynamics cao hơn baseline" if delta>0 else "Dynamics không cao hơn baseline"
-        rows.append([i,f"**{_fmt2(r.get('number_str',r.get('number')))}**",_fmt_pct(p,2),f"base {_fmt_pct(base,2)} · Δ {_fmt_pct(delta,2)}",meaning,_bar(p,max_v)])
-    return _md_table(["#","Số","Dynamics P","So với baseline","Ý nghĩa","Visual"],rows)
+        meaning="Động lực cao hơn nền" if delta>0 else "Động lực không cao hơn nền"
+        rows.append([i,f"**{_fmt2(r.get('number_str',r.get('number')))}**",_fmt_pct(p,2),f"nền {_fmt_pct(base,2)} · Δ {_fmt_pct(delta,2)}",meaning,_bar(p,max_v)])
+    return _md_table(["#","Số","Xác suất động lực","So với nền","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _markov(df: pd.DataFrame, top_n: int=15) -> str:
@@ -535,19 +554,19 @@ def _markov(df: pd.DataFrame, top_n: int=15) -> str:
     max_v=float(df["__l"].max()) if not df.empty else 1.0
     rows=[]
     for i,(_,r) in enumerate(df.iterrows(),1):
-        lift=_safe_float(r.get("lift")); meaning="Có persistence dương" if lift>1 else "Không có persistence dương"
+        lift=_safe_float(r.get("lift")); meaning="Có tính duy trì dương" if lift>1 else "Không có tính duy trì dương"
         rows.append([i,f"**{_fmt2(r.get('number'))}**",_fmt_num(lift,3),f"P1 {_fmt_pct(r.get('p_hit_given_hit'),2)} · P0 {_fmt_pct(r.get('p_hit_given_miss'),2)}",meaning,_bar(lift,max_v)])
-    return _md_table(["#","Số","Lift","P(hit|hit) / P(hit|miss)","Ý nghĩa","Visual"],rows)
+    return _md_table(["#","Số","Độ nâng","P(trúng|trúng) / P(trúng|trượt)","Ý nghĩa","Thanh so sánh"],rows)
 
 
 def _diagnostics() -> str:
     health=_read_json(DATA/"health.json")
     dl=_read_json(DATA/"number_dynamics"/"diagnostics_loto.json")
     dd=_read_json(DATA/"number_dynamics"/"diagnostics_de.json")
-    return _md_table(["Layer","Giá trị","So sánh","Ý nghĩa"],[
-        ["Data health","✅ OK" if health.get("ok") else "⚠️ CHECK",f"rows {health.get('row_count','—')} · missing {health.get('missing_count','—')}","Canonical integrity"],
-        ["Dynamics Loto",_fmt_num(dl.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dl.get('regime_js_divergence_30_vs_180'),4)}","Reliability + regime drift"],
-        ["Dynamics ĐB",_fmt_num(dd.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dd.get('regime_js_divergence_30_vs_180'),4)}","Reliability + regime drift"],
+    return _md_table(["Lớp","Giá trị","So sánh","Ý nghĩa"],[
+        ["Sức khỏe dữ liệu","✅ ĐẠT" if health.get("ok") else "⚠️ CẦN KIỂM TRA",f"số dòng {health.get('row_count','—')} · thiếu {health.get('missing_count','—')}","Tính toàn vẹn dữ liệu chuẩn"],
+        ["Động lực lô tô",_fmt_num(dl.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dl.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
+        ["Động lực ĐB",_fmt_num(dd.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dd.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
     ])
 
 
@@ -576,40 +595,41 @@ def main() -> None:
 
     md=f'''<div align="center">
 
-# ✨ VLA · XSMB ANALYTICAL COCKPIT
+# ✨ VLA · TRUNG TÂM PHÂN TÍCH XSMB
 
-**Balanced UI · explicit legends · comparable-width analytical tables**
+**Giao diện cân đối · chú giải rõ ràng · bảng phân tích dễ so sánh**
 
-![Data](https://img.shields.io/badge/DATA-{'HEALTHY' if health.get('ok') else 'CHECK'}-34d399?style=for-the-badge)
-![Latest](https://img.shields.io/badge/LATEST-{latest.replace('-', '--')}-60a5fa?style=for-the-badge)
-![Forecast](https://img.shields.io/badge/FORECAST-{target.replace('-', '--')}-a78bfa?style=for-the-badge)
-![Loto Meta](https://img.shields.io/badge/LOTO_META-{'ACTIVE' if meta_l.get('active') else 'BASELINE'}-22c55e?style=for-the-badge)
-![De Meta](https://img.shields.io/badge/DE_META-{'ACTIVE' if meta_d.get('active') else 'GATED'}-fb7185?style=for-the-badge)
+![Dữ liệu](https://img.shields.io/badge/DU_LIEU-{'TOT' if health.get('ok') else 'KIEM_TRA'}-34d399?style=for-the-badge)
+![Mới nhất](https://img.shields.io/badge/MOI_NHAT-{latest.replace('-', '--')}-60a5fa?style=for-the-badge)
+![Dự báo](https://img.shields.io/badge/DU_BAO-{target.replace('-', '--')}-a78bfa?style=for-the-badge)
+![Meta lô tô](https://img.shields.io/badge/META_LO_TO-{'DANG_BAT' if meta_l.get('active') else 'NEN'}-22c55e?style=for-the-badge)
+![Meta đề](https://img.shields.io/badge/META_DE-{'DANG_BAT' if meta_d.get('active') else 'DA_CHAN'}-fb7185?style=for-the-badge)
 
-<sub>Generated {generated} · canonical + statistics + ML + research evidence.</sub>
+<sub>Tạo lúc {generated} · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
 > [!IMPORTANT]
-> **Quy ước UI:** mọi màu heatmap đều có bảng `Màu | Khoảng giá trị | Ý nghĩa` ngay phía trên; mọi thanh `▰▱` đều là xếp hạng **tương đối trong chính bảng**, không phải xác suất chắc chắn. Các bảng phân tích được chuẩn hóa 6 cột để hạn chế hiện tượng thò/thụt về bề ngang.
+> **Quy ước giao diện:** mọi ma trận nhiệt đều có bảng `Màu | Khoảng giá trị | Ý nghĩa` ngay phía trên; mọi thanh `▰▱` đều là xếp hạng **tương đối trong chính bảng**, không phải xác suất chắc chắn. Các bảng phân tích được chuẩn hóa 6 cột để hạn chế chênh lệch bề ngang.
 
 ## 🧭 Điều hướng
 
-**[Daily](#-daily--next-draw)** · **[Probability](#-probability-arena)** · **[Frequency](#-frequency-heatmaps-0099)** · **[Gap](#-gap--rhythm)** · **[AI/ML](#-aiml--dynamics)** · **[Markov](#-markov--transition--dependency)** · **[Structure](#-structure--pairs)** · **[Boards](#-special-boards--conditional)** · **[Research](#-significance--research)**
+**[Kết quả ngày](#daily--next-draw)** · **[Xác suất](#probability-arena)** · **[Tần suất](#frequency-heatmaps-0099)** · **[Gan](#gap--rhythm)** · **[AI/ML](#aiml--dynamics)** · **[Markov](#markov--transition--dependency)** · **[Cấu trúc](#structure--pairs)** · **[Bảng lịch](#special-boards--conditional)** · **[Nghiên cứu](#significance--research)**
 
 ---
 
-## 💎 Executive Pulse
+## 💎 Tóm tắt điều hành
 
-| Canonical | Forecast | Dataset | Model state |
+| Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · missing {health.get('missing_count','—')}** | Loto meta **{'ACTIVE' if meta_l.get('active') else 'OFF'}** · Đề **{'ACTIVE' if meta_d.get('active') else 'GATED'}** |
+| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · thiếu {health.get('missing_count','—')}** | Meta lô tô **{'ĐANG BẬT' if meta_l.get('active') else 'TẮT'}** · Đề **{'ĐANG BẬT' if meta_d.get('active') else 'ĐÃ CHẶN'}** |
 
 ---
 
-## 🎟️ Daily & Next Draw
+<a id="daily--next-draw"></a>
+## 🎟️ Kết quả ngày và kỳ tiếp theo
 
-### Kết quả canonical · {latest}
+### Kết quả chuẩn · {latest}
 
 {daily}
 
@@ -623,145 +643,151 @@ def main() -> None:
 
 ---
 
-## 🔮 Probability Arena
+<a id="probability-arena"></a>
+## 🔮 Khu vực xác suất
 
-### Loto · Top probability
+### Lô tô · Xác suất cao nhất
 
 {_bar_legend()}
 
 {_forecast_table(pred_l,'loto')}
 
-### Loto · Heatmap probability 00–99
+### Lô tô · Ma trận nhiệt xác suất 00–99
 
-{_number_matrix(pred_l,'prob',percent=True,decimals=2,metric='Final probability Loto')}
+{_number_matrix(pred_l,'prob',percent=True,decimals=2,metric='Xác suất cuối lô tô')}
 
-### ĐB · Top probability
+### ĐB · Xác suất cao nhất
 
 {_forecast_table(pred_d,'de')}
 
-### ĐB · Heatmap probability 00–99
+### ĐB · Ma trận nhiệt xác suất 00–99
 
-{_number_matrix(pred_d,'prob',percent=True,decimals=3,metric='Final probability ĐB')}
+{_number_matrix(pred_d,'prob',percent=True,decimals=3,metric='Xác suất cuối ĐB')}
 
 ---
 
-## 🔥 Frequency Heatmaps 00–99
+<a id="frequency-heatmaps-0099"></a>
+## 🔥 Ma trận nhiệt tần suất 00–99
 
-### Loto · tháng
-{_number_matrix(_period(snap_l,'month'),'freq',decimals=0,metric='Tần suất Loto tháng')}
+### Lô tô · tháng
+{_number_matrix(_period(snap_l,'month'),'freq',decimals=0,metric='Tần suất lô tô tháng')}
 
 ### ĐB · tháng
 {_number_matrix(_period(snap_d,'month'),'freq',decimals=0,metric='Tần suất ĐB tháng')}
 
-### Loto · năm
-{_number_matrix(_period(snap_l,'year'),'freq',decimals=0,metric='Tần suất Loto năm')}
+### Lô tô · năm
+{_number_matrix(_period(snap_l,'year'),'freq',decimals=0,metric='Tần suất lô tô năm')}
 
 ### ĐB · năm
 {_number_matrix(_period(snap_d,'year'),'freq',decimals=0,metric='Tần suất ĐB năm')}
 
-### Loto · tuần
-{_number_matrix(_period(snap_l,'week'),'freq',decimals=0,metric='Tần suất Loto tuần')}
+### Lô tô · tuần
+{_number_matrix(_period(snap_l,'week'),'freq',decimals=0,metric='Tần suất lô tô tuần')}
 
 ### ĐB · tuần
 {_number_matrix(_period(snap_d,'week'),'freq',decimals=0,metric='Tần suất ĐB tuần')}
 
 ---
 
-## ⏳ Gap & Rhythm
+<a id="gap--rhythm"></a>
+## ⏳ Gan và nhịp
 
-### Heatmap gan Loto
-{_number_matrix(rhythm_l,'current_gap',decimals=0,metric='Current gap Loto')}
+### Ma trận nhiệt gan lô tô
+{_number_matrix(rhythm_l,'current_gap',decimals=0,metric='Gan hiện tại của lô tô')}
 
-### Top gan Loto
+### Gan lô tô đứng đầu
 {_bar_legend()}
 
 {_gap_table(rhythm_l)}
 
-### Heatmap gan ĐB
-{_number_matrix(rhythm_d,'current_gap',decimals=0,metric='Current gap ĐB')}
+### Ma trận nhiệt gan ĐB
+{_number_matrix(rhythm_d,'current_gap',decimals=0,metric='Gan hiện tại của ĐB')}
 
-### Top gan ĐB
+### Gan ĐB đứng đầu
 {_gap_table(rhythm_d)}
 
 ### Gan giải nhất
 {_gap_table(first,12)}
 
-### Hazard Loto
+### Tỷ suất xuất hiện theo gan lô tô
 {_hazard_table(hazard_l)}
 
-### Hazard ĐB
+### Tỷ suất xuất hiện theo gan ĐB
 {_hazard_table(hazard_d)}
 
 ---
 
-## 🤖 AI/ML & Dynamics
+<a id="aiml--dynamics"></a>
+## 🤖 AI/ML và động lực
 
-### Cầu-kèo Loto · heatmap score
-{_number_matrix(cau_l,'cau_score',decimals=1,metric='Cầu-kèo ML Loto score')}
+### Cầu-kèo lô tô · ma trận nhiệt điểm
+{_number_matrix(cau_l,'cau_score',decimals=1,metric='Điểm cầu-kèo ML lô tô')}
 
-### Top Cầu-kèo Loto
+### Cầu-kèo lô tô đứng đầu
 {_balanced_rank(cau_l,score_col='cau_score',label_col='number_str',compare_col='primary_reason',meaning_fn=cau_mean)}
 
-### Cầu-kèo ĐB · heatmap score
-{_number_matrix(cau_d,'cau_score',decimals=1,metric='Cầu-kèo ML ĐB score')}
+### Cầu-kèo ĐB · ma trận nhiệt điểm
+{_number_matrix(cau_d,'cau_score',decimals=1,metric='Điểm cầu-kèo ML ĐB')}
 
-### Top Cầu-kèo ĐB
+### Cầu-kèo ĐB đứng đầu
 {_balanced_rank(cau_d,score_col='cau_score',label_col='number_str',compare_col='primary_reason',meaning_fn=cau_mean)}
 
-### AI/ML composite · Loto
-{_number_matrix(sig_l,'ai_ml_signal_score',decimals=1,metric='AI/ML composite Loto')}
+### AI/ML tổng hợp · Lô tô
+{_number_matrix(sig_l,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp lô tô')}
 
-### AI/ML composite · ĐB
-{_number_matrix(sig_d,'ai_ml_signal_score',decimals=1,metric='AI/ML composite ĐB')}
+### AI/ML tổng hợp · ĐB
+{_number_matrix(sig_d,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp ĐB')}
 
-### Higher-order dynamics · Loto
-{_number_matrix(dyn_l,'prob',percent=True,decimals=2,metric='Dynamics probability Loto')}
+### Động lực bậc cao · Lô tô
+{_number_matrix(dyn_l,'prob',percent=True,decimals=2,metric='Xác suất động lực lô tô')}
 
 {_dynamics(dyn_l)}
 
-### Higher-order dynamics · ĐB
-{_number_matrix(dyn_d,'prob',percent=True,decimals=3,metric='Dynamics probability ĐB')}
+### Động lực bậc cao · ĐB
+{_number_matrix(dyn_d,'prob',percent=True,decimals=3,metric='Xác suất động lực ĐB')}
 
 {_dynamics(dyn_d)}
 
 ---
 
-## 🧬 Markov · Transition · Dependency
+<a id="markov--transition--dependency"></a>
+## 🧬 Markov · chuyển tiếp · phụ thuộc
 
-### Markov-1 Loto
+### Markov bậc 1 · Lô tô
 {_bar_legend()}
 
 {_markov(markov)}
 
-### Transition lift Loto · bỏ self-pair
-{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_loto.csv',top_n=20,metric_name='Transition lift')}
+### Độ nâng chuyển tiếp lô tô · bỏ cặp tự thân
+{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_loto.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
-### Transition lift ĐB · bỏ self-pair
-{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_de.csv',top_n=20,metric_name='Transition lift')}
+### Độ nâng chuyển tiếp ĐB · bỏ cặp tự thân
+{_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_de.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
-### Co-occurrence Phi Loto · bỏ đường chéo self-pair
-{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_loto.csv',top_n=20,metric_name='Co-occurrence Phi')}
+### Đồng xuất hiện Phi lô tô · bỏ đường chéo tự thân
+{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_loto.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
-### Co-occurrence Phi ĐB · bỏ đường chéo self-pair
-{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_de.csv',top_n=20,metric_name='Co-occurrence Phi')}
+### Đồng xuất hiện Phi ĐB · bỏ đường chéo tự thân
+{_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_de.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
-### Multi-lag dependency Loto
+### Phụ thuộc đa độ trễ lô tô
 {_lag_dependency(DATA/'number_dynamics'/'lag_dependency_loto.csv')}
 
-### Multi-lag dependency ĐB
+### Phụ thuộc đa độ trễ ĐB
 {_lag_dependency(DATA/'number_dynamics'/'lag_dependency_de.csv')}
 
 ---
 
-## 🧩 Structure & Pairs
+<a id="structure--pairs"></a>
+## 🧩 Cấu trúc và cặp số
 
-### Đầu Loto · tháng
+### Đầu lô tô · tháng
 {_group_table(hht,'month','head',10)}
 
-### Đuôi Loto · tháng
+### Đuôi lô tô · tháng
 {_group_table(hht,'month','tail',10)}
 
-### Tổng Loto · tháng
+### Tổng lô tô · tháng
 {_group_table(hht,'month','total',19)}
 
 ### Cấu trúc ĐB · tháng
@@ -772,21 +798,22 @@ def main() -> None:
 
 ---
 
-## 📆 Special Boards & Conditional
+<a id="special-boards--conditional"></a>
+## 📆 Bảng đặc biệt và quan hệ có điều kiện
 
 ### ĐB theo tuần
 {_week_board(ADV/'special_week_board.csv',10)}
 
-### ĐB theo tháng · calendar 7 cột
+### ĐB theo tháng · lịch 7 cột
 
 > Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối ĐB`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
 
 {_month_calendar(ADV/'special_month_board.csv',4)}
 
-### ĐB hôm trước → Loto hôm sau
+### ĐB hôm trước → lô tô hôm sau
 {_conditional(ADV/'conditional_loto_after_special_top500.csv')}
 
-### Loto hôm trước → Loto hôm sau
+### Lô tô hôm trước → lô tô hôm sau
 {_conditional(ADV/'conditional_loto_after_loto_top500.csv')}
 
 ### ĐB hôm trước → ĐB hôm sau
@@ -794,56 +821,57 @@ def main() -> None:
 
 ---
 
-## 🧪 Significance & Research
+<a id="significance--research"></a>
+## 🧪 Mức ý nghĩa và nghiên cứu
 
-### Loto · significance 30d
+### Lô tô · mức ý nghĩa 30 ngày
 {_significance(DATA/'significance'/'number_significance_loto_30d.csv')}
 
-### Loto · significance 90d
+### Lô tô · mức ý nghĩa 90 ngày
 {_significance(DATA/'significance'/'number_significance_loto_90d.csv')}
 
-### ĐB · significance 30d
+### ĐB · mức ý nghĩa 30 ngày
 {_significance(DATA/'significance'/'number_significance_de_30d.csv')}
 
-### ĐB · significance 90d
+### ĐB · mức ý nghĩa 90 ngày
 {_significance(DATA/'significance'/'number_significance_de_90d.csv')}
 
-### Strategy Lab · Loto OOS
+### Phòng chiến lược · Lô tô ngoài mẫu
 {_strategy(DATA/'research'/'strategy_lab_loto.csv')}
 
-### Strategy Lab · ĐB OOS
+### Phòng chiến lược · ĐB ngoài mẫu
 {_strategy(DATA/'research'/'strategy_lab_de.csv')}
 
-### Diagnostics
+### Chẩn đoán
 {_diagnostics()}
 
 ---
 
-## 🔎 Audit & Deep Links
+## 🔎 Kiểm toán và liên kết chi tiết
 
 | Tài nguyên | Mục đích | Ý nghĩa |
 | --- | --- | --- |
-| [`data/xsmb.csv`](data/xsmb.csv) | Canonical | Dữ liệu kết quả chuẩn |
-| [`data/source_audit.json`](data/source_audit.json) | Source consensus | Kiểm tra nguồn xác minh |
-| [Statistics HTML](docs/statistics.html) | Interactive | Dashboard thống kê có tương tác |
-| [AI/ML HTML](docs/dashboard.html) | Interactive | Dashboard AI/ML |
-| [Research Lab](docs/research-lab.html) | Research | Falsification / OOS / FDR |
-| [Near-live](docs/live.html) | Live | Trạng thái live |
+| [`data/xsmb.csv`](data/xsmb.csv) | Dữ liệu chuẩn | Dữ liệu kết quả chuẩn |
+| [`data/source_audit.json`](data/source_audit.json) | Đồng thuận nguồn | Kiểm tra nguồn xác minh |
+| [Thống kê HTML](docs/statistics.html) | Tương tác | Bảng điều khiển thống kê có tương tác |
+| [AI/ML HTML](docs/dashboard.html) | Tương tác | Bảng điều khiển AI/ML |
+| [Phòng nghiên cứu](docs/research-lab.html) | Nghiên cứu | Bác bỏ giả thuyết / ngoài mẫu / FDR |
+| [Kết quả gần thời gian thực](docs/live.html) | Trực tiếp | Trạng thái kết quả trực tiếp |
 
 ---
 
 <div align="center">
 
-### ✨ VLA Analytics
+### ✨ Phân tích VLA
 
-**Một trang · số liệu trực tiếp · màu có giải thích · bảng cân đối · tự động refresh**
+**Một trang · số liệu trực tiếp · màu có giải thích · bảng cân đối · tự động làm mới**
 
-<sub>Không dùng mock data. Heat colors và visual bars chỉ là biểu diễn tương đối trong từng bảng.</sub>
+<sub>Không dùng dữ liệu giả. Màu nhiệt và thanh trực quan chỉ biểu diễn tương đối trong từng bảng.</sub>
 
 </div>
 '''
     OUT.write_text(md,encoding="utf-8")
-    print(f"Wrote {OUT} ({OUT.stat().st_size:,} bytes)")
+    print(f"Đã ghi {OUT} ({OUT.stat().st_size:,} byte)")
 
 
 if __name__ == "__main__":

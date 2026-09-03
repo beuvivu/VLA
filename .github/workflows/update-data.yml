@@ -1,4 +1,4 @@
-name: Finalize XSMB + Statistics + AI/ML
+name: Hoàn tất XSMB, thống kê và AI/ML
 
 on:
   # Bootstrap a freshly published repository and re-run the production pipeline
@@ -55,22 +55,22 @@ jobs:
       NUMEXPR_NUM_THREADS: "1"
 
     steps:
-      - name: Checkout
+      - name: Lấy mã nguồn
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Fast-forward to latest default branch
+      - name: Đồng bộ nhanh nhánh mặc định mới nhất
         run: git pull --ff-only origin "${GITHUB_REF_NAME}"
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: requirements.txt
 
-      - name: Decide whether finalization is needed
+      - name: Xác định có cần hoàn tất dữ liệu hay không
         id: guard
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -100,13 +100,13 @@ jobs:
           print(f"reason={'forced-' + event_name if forced else 'scheduled-staleness'}")
           PY
 
-      - name: Install dependencies
+      - name: Cài đặt thư viện phụ thuộc
         if: steps.guard.outputs.run == 'true'
         run: |
           python -m pip install --upgrade pip wheel setuptools
           python -m pip install -r requirements.txt
 
-      - name: Wait for verified canonical draw
+      - name: Chờ kỳ quay chuẩn đã được xác minh
         id: canonical
         if: steps.guard.outputs.run == 'true'
         env:
@@ -193,7 +193,7 @@ jobs:
               time.sleep(25)
           PY
 
-      - name: Commit canonical result immediately
+      - name: Ghi nhận kết quả chuẩn ngay lập tức
         id: canonical_commit
         if: steps.canonical.outputs.ready == 'true'
         shell: bash
@@ -221,7 +221,7 @@ jobs:
             echo "canonical_changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run strict end-to-end finalization
+      - name: Chạy quy trình hoàn tất đầu-cuối nghiêm ngặt
         if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/pipeline.py \
@@ -232,7 +232,7 @@ jobs:
             --fill-missing-days-back 365 \
             --strict
 
-      - name: Verify latest expected canonical draw and continuity
+      - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
         if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/monitor_health.py \
@@ -243,7 +243,7 @@ jobs:
             --fail-on-stale \
             --fail-on-missing
 
-      - name: Verify generated outputs
+      - name: Xác minh các đầu ra đã tạo
         if: steps.canonical.outputs.ready == 'true'
         run: |
           test -s data/xsmb.csv
@@ -265,7 +265,7 @@ jobs:
           test -s docs/live.html
           test -s DASHBOARD.md
 
-      - name: Commit finalized analytics and dashboards
+      - name: Ghi nhận phân tích và bảng điều khiển đã hoàn tất
         id: commit
         if: steps.canonical.outputs.ready == 'true'
         shell: bash
@@ -293,13 +293,13 @@ jobs:
           echo "generated_changed=true" >> "$GITHUB_OUTPUT"
 
   trigger-post-finalization:
-    name: Trigger audit + live reconciliation
+    name: Kích hoạt kiểm toán và đối soát trực tiếp
     needs: update
     if: ${{ needs.update.result == 'success' && needs.update.outputs.canonical_ready == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Dispatch post-finalization workflow
+      - name: Gọi quy trình sau hoàn tất
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -335,7 +335,7 @@ jobs:
           PY
 
   deploy-pages:
-    name: Deploy refreshed dashboards (optional)
+    name: Triển khai bảng điều khiển đã làm mới (tùy chọn)
     needs: update
     if: ${{ github.event.repository.private == false && needs.update.result == 'success' }}
     continue-on-error: true
@@ -344,19 +344,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout latest generated commit
+      - name: Lấy commit dữ liệu mới tạo gần nhất
         uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
-      - name: Configure GitHub Pages
+      - name: Cấu hình GitHub Pages
         uses: actions/configure-pages@v6
 
-      - name: Upload GitHub Pages artifact
+      - name: Tải artifact GitHub Pages lên
         uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
-      - name: Deploy to GitHub Pages
+      - name: Triển khai lên GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

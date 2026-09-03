@@ -1,4 +1,4 @@
-name: Production watchdog + self-healing
+name: Giám sát và tự phục hồi production
 
 on:
   workflow_dispatch:
@@ -28,17 +28,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout latest main
+      - name: Lấy mã nguồn main mới nhất
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
-      - name: Audit production state and dispatch recovery when needed
+      - name: Kiểm toán production và kích hoạt phục hồi khi cần
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}

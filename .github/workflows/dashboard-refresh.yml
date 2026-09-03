@@ -1,4 +1,4 @@
-name: Refresh Markdown Dashboard
+name: Làm mới bảng điều khiển Markdown
 
 on:
   push:
@@ -20,26 +20,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout latest main
+      - name: Lấy mã nguồn main mới nhất
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements.txt
 
-      - name: Install dashboard dependencies
+      - name: Cài đặt thư viện cho bảng điều khiển
         run: python -m pip install pandas==2.2.3 numpy==2.2.6
 
-      - name: Build Markdown dashboard from committed data
+      - name: Tạo bảng điều khiển Markdown từ dữ liệu đã lưu
         run: python src/build_markdown_dashboard_v3.py
 
-      - name: Validate balanced dashboard output
+      - name: Xác minh bố cục bảng điều khiển cân đối
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -61,7 +61,7 @@ jobs:
           print(f"OK DASHBOARD.md {len(text):,} chars")
           PY
 
-      - name: Commit refreshed dashboard
+      - name: Ghi nhận bảng điều khiển đã làm mới
         run: |
           if git diff --quiet -- DASHBOARD.md; then
             echo "DASHBOARD.md already current"
