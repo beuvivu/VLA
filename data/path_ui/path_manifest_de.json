@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "mode": "de",
-  "anchor_date": "2026-09-02",
+  "anchor_date": "2026-09-03",
   "lag_max": 30,
   "lag_semantics": "calendar days on a verified daily-contiguous history",
   "window_days": 2000,

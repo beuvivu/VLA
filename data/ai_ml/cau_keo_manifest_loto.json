@@ -1,7 +1,7 @@
 {
   "mode": "loto",
-  "generated_at": "2026-09-02T15:05:11Z",
-  "predict_for_date": "2026-09-03",
+  "generated_at": "2026-09-03T14:59:16Z",
+  "predict_for_date": "2026-09-04",
   "top": 20,
   "features": [
     "number_value",
@@ -54,9 +54,13 @@
   "note": "AI/ML scores are calibrated historical ranking signals, not guaranteed future lottery outcomes.",
   "domain_challenger": {
     "schema_version": 1,
-    "active": false,
-    "trust": 0.0,
-    "selected_groups": [],
+    "active": true,
+    "trust": 0.05,
+    "selected_groups": [
+      "partner_cap50",
+      "bong",
+      "tong"
+    ],
     "selected_features": [
       "number_value",
       "tens",
@@ -96,12 +100,39 @@
       "cond_loto_max_rate",
       "head_freq_7d",
       "tail_freq_7d",
-      "trend_7_vs_30"
+      "trend_7_vs_30",
+      "cap50_partner_hit_today",
+      "cap50_partner_freq_7d",
+      "cap50_partner_freq_30d",
+      "cap50_partner_freq_90d",
+      "cap50_partner_freq_365d",
+      "cap50_partner_gap",
+      "cap50_pair_freq_30_mean",
+      "cap50_pair_freq_90_mean",
+      "cap50_pair_freq_365_mean",
+      "cap50_pair_balance_30d",
+      "cap50_pair_balance_90d",
+      "cap50_pair_balance_365d",
+      "cap50_is_kep_bong",
+      "bong_duong_hit_today",
+      "bong_duong_freq_7d",
+      "bong_duong_freq_30d",
+      "bong_duong_gap",
+      "bong_am_hit_today",
+      "bong_am_freq_7d",
+      "bong_am_freq_30d",
+      "bong_am_gap",
+      "tong_hit_today_rate",
+      "tong_freq_7d_mean",
+      "tong_freq_30d_mean",
+      "tong_freq_90d_mean",
+      "tong_gap_mean",
+      "tong_path_support_mean"
     ],
     "ablation_report": "cau_keo_domain_ablation_loto.csv",
     "gate_report": "cau_keo_domain_gate_loto.json",
-    "final_brier_skill": 0.0,
-    "final_logloss_skill": 0.0,
+    "final_brier_skill": 0.0005212558004726864,
+    "final_logloss_skill": 0.0004714304735469188,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening, confirmation, and the untouched combined final gate."
   }
 }

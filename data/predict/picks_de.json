@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "anchor_date": "2026-09-02",
-  "target_date": "2026-09-03",
+  "anchor_date": "2026-09-03",
+  "target_date": "2026-09-04",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -10,24 +10,24 @@
     "w_stable": 0.125
   },
   "effective_weights": {
-    "w_ml": 0.2857142857142857,
-    "w_cau": 0.34285714285714286,
-    "w_stat": 0.2285714285714286,
-    "w_active": 0.0,
-    "w_stable": 0.14285714285714285
+    "w_ml": 0.25,
+    "w_cau": 0.3,
+    "w_stat": 0.2,
+    "w_active": 0.125,
+    "w_stable": 0.125
   },
   "component_availability": {
     "ml": true,
     "cau": true,
     "stat": true,
-    "active": false,
+    "active": true,
     "stable": true
   },
   "component_reasons": {
     "ml": "ok",
     "cau": "ok",
     "stat": "ok",
-    "active": "all_zero_probability_vector",
+    "active": "ok",
     "stable": "ok"
   },
   "calibration": {
@@ -35,41 +35,47 @@
     "a": 1.0,
     "b": 0.0,
     "temperature": 1.0,
-    "active": false,
-    "reason": "bypassed because one or more ensemble components are unavailable"
+    "active": true,
+    "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
-    "active": false,
-    "trust": 0.0,
-    "quality_pass": false,
-    "reason": "stacked model requires all five ensemble components"
+    "active": true,
+    "trust": 0.06805446876443884,
+    "quality_pass": true,
+    "reason": "validated stacked challenger blended into production",
+    "candidate": "meta_balanced",
+    "validation_logloss": 4.596158321830472,
+    "baseline_validation_logloss": 4.6100302630617325,
+    "logloss_skill": 0.0030090781274064726,
+    "brier_skill": 0.0002747475835968016,
+    "trained_through_target_date": "2026-09-01"
   },
   "top4": [
     "83",
-    "68",
-    "39",
-    "21"
+    "54",
+    "21",
+    "23"
   ],
   "top8": [
     "83",
-    "68",
-    "39",
-    "21",
     "54",
-    "44",
-    "38",
-    "23"
+    "21",
+    "23",
+    "39",
+    "43",
+    "37",
+    "79"
   ],
   "top10": [
     "83",
-    "68",
-    "39",
-    "21",
     "54",
-    "44",
-    "38",
+    "21",
     "23",
-    "42",
-    "37"
+    "39",
+    "43",
+    "37",
+    "79",
+    "38",
+    "68"
   ]
 }

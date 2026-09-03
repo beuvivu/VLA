@@ -34,10 +34,10 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 4,
-    "four_with_cau": 4,
-    "four_with_stat": 4,
-    "core_three": 216
+    "five_component": 5,
+    "four_with_cau": 5,
+    "four_with_stat": 5,
+    "core_three": 217
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
@@ -50,26 +50,25 @@
   },
   "quality_pass": true,
   "meta_trust": 0.15,
-  "validation_logloss": 0.5439512120461029,
-  "validation_brier": 0.17920293111223115,
-  "baseline_validation_logloss": 0.6163043445560572,
-  "baseline_validation_brier": 0.18627141606539144,
-  "logloss_skill": 0.11739838141506609,
-  "brier_skill": 0.0379472336790464,
+  "validation_logloss": 0.5443274342078005,
+  "validation_brier": 0.17937154462665447,
+  "baseline_validation_logloss": 0.6265076360493176,
+  "baseline_validation_brier": 0.18785190320489775,
+  "logloss_skill": 0.13117190775157284,
+  "brier_skill": 0.0451438523302764,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.14467676936269838,
-    "p_stable": 0.05532323063730165
+    "p_active": 0.14469910930287455,
+    "p_stable": 0.055300890697125384
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 4.837985727135216,
-    "b": 1.0467850834930679,
+    "a": 4.560305175019691,
+    "b": 0.918864954977326,
     "temperature": 1.0
   },
-  "history_days": 216,
+  "history_days": 217,
   "selection_days": [
-    "2026-06-17",
     "2026-06-18",
     "2026-06-19",
     "2026-06-20",
@@ -98,10 +97,10 @@
     "2026-07-13",
     "2026-07-14",
     "2026-07-15",
-    "2026-07-16"
+    "2026-07-16",
+    "2026-07-17"
   ],
   "validation_days": [
-    "2026-07-17",
     "2026-07-18",
     "2026-07-19",
     "2026-07-20",
@@ -130,8 +129,9 @@
     "2026-08-12",
     "2026-08-31",
     "2026-09-01",
-    "2026-09-02"
+    "2026-09-02",
+    "2026-09-03"
   ],
-  "trained_through_target_date": "2026-09-02",
-  "trained_at_utc": "2026-09-02T15:05:55Z"
+  "trained_through_target_date": "2026-09-03",
+  "trained_at_utc": "2026-09-03T15:00:02Z"
 }

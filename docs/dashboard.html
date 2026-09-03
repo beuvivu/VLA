@@ -20,14 +20,14 @@
 </head>
 <body>
 <h1>XSMB Analytics Dashboard</h1>
-<div class="meta">Latest data date: <b>2026-09-02</b>  |  Generated: 2026-09-02T15:06:04Z</div>
+<div class="meta">Latest data date: <b>2026-09-03</b>  |  Generated: 2026-09-03T15:00:12Z</div>
 <div class="grid">
 <div class="card">
 <h2>Picks (Lô tô)</h2>
 <pre>{
   "mode": "loto",
-  "anchor_date": "2026-09-02",
-  "target_date": "2026-09-03",
+  "anchor_date": "2026-09-03",
+  "target_date": "2026-09-04",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -70,39 +70,39 @@
     "quality_pass": true,
     "reason": "validated stacked challenger blended into production",
     "candidate": "meta_interaction",
-    "validation_logloss": 0.5439512120461029,
-    "baseline_validation_logloss": 0.6163043445560572,
-    "logloss_skill": 0.11739838141506609,
-    "brier_skill": 0.0379472336790464,
-    "trained_through_target_date": "2026-09-02"
+    "validation_logloss": 0.5443274342078005,
+    "baseline_validation_logloss": 0.6265076360493176,
+    "logloss_skill": 0.13117190775157284,
+    "brier_skill": 0.0451438523302764,
+    "trained_through_target_date": "2026-09-03"
   },
   "top4": [
-    "95",
+    "09",
     "83",
-    "52",
-    "50"
+    "54",
+    "95"
   ],
   "top8": [
-    "95",
+    "09",
     "83",
-    "52",
-    "50",
     "54",
-    "64",
+    "95",
+    "80",
     "61",
-    "51"
+    "91",
+    "62"
   ],
   "top10": [
-    "95",
+    "09",
     "83",
-    "52",
-    "50",
     "54",
-    "64",
+    "95",
+    "80",
     "61",
-    "51",
+    "91",
+    "62",
     "13",
-    "06"
+    "17"
   ]
 }</pre>
 </div>
@@ -110,8 +110,8 @@
 <h2>Picks (Đề / ĐB)</h2>
 <pre>{
   "mode": "de",
-  "anchor_date": "2026-09-02",
-  "target_date": "2026-09-03",
+  "anchor_date": "2026-09-03",
+  "target_date": "2026-09-04",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -120,24 +120,24 @@
     "w_stable": 0.125
   },
   "effective_weights": {
-    "w_ml": 0.2857142857142857,
-    "w_cau": 0.34285714285714286,
-    "w_stat": 0.2285714285714286,
-    "w_active": 0.0,
-    "w_stable": 0.14285714285714285
+    "w_ml": 0.25,
+    "w_cau": 0.3,
+    "w_stat": 0.2,
+    "w_active": 0.125,
+    "w_stable": 0.125
   },
   "component_availability": {
     "ml": true,
     "cau": true,
     "stat": true,
-    "active": false,
+    "active": true,
     "stable": true
   },
   "component_reasons": {
     "ml": "ok",
     "cau": "ok",
     "stat": "ok",
-    "active": "all_zero_probability_vector",
+    "active": "ok",
     "stable": "ok"
   },
   "calibration": {
@@ -145,42 +145,48 @@
     "a": 1.0,
     "b": 0.0,
     "temperature": 1.0,
-    "active": false,
-    "reason": "bypassed because one or more ensemble components are unavailable"
+    "active": true,
+    "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
-    "active": false,
-    "trust": 0.0,
-    "quality_pass": false,
-    "reason": "stacked model requires all five ensemble components"
+    "active": true,
+    "trust": 0.06805446876443884,
+    "quality_pass": true,
+    "reason": "validated stacked challenger blended into production",
+    "candidate": "meta_balanced",
+    "validation_logloss": 4.596158321830472,
+    "baseline_validation_logloss": 4.6100302630617325,
+    "logloss_skill": 0.0030090781274064726,
+    "brier_skill": 0.0002747475835968016,
+    "trained_through_target_date": "2026-09-01"
   },
   "top4": [
     "83",
-    "68",
-    "39",
-    "21"
+    "54",
+    "21",
+    "23"
   ],
   "top8": [
     "83",
-    "68",
-    "39",
-    "21",
     "54",
-    "44",
-    "38",
-    "23"
+    "21",
+    "23",
+    "39",
+    "43",
+    "37",
+    "79"
   ],
   "top10": [
     "83",
-    "68",
-    "39",
-    "21",
     "54",
-    "44",
-    "38",
+    "21",
     "23",
-    "42",
-    "37"
+    "39",
+    "43",
+    "37",
+    "79",
+    "38",
+    "68"
   ]
 }</pre>
 </div>
@@ -621,84 +627,84 @@
 </thead>
 <tbody>
 <tr>
-<td>95</td>
-<td>0.251003</td>
+<td>9</td>
+<td>0.249353</td>
 </tr>
 <tr>
 <td>83</td>
-<td>0.250270</td>
-</tr>
-<tr>
-<td>52</td>
-<td>0.247853</td>
-</tr>
-<tr>
-<td>50</td>
-<td>0.246874</td>
+<td>0.249201</td>
 </tr>
 <tr>
 <td>54</td>
-<td>0.246407</td>
+<td>0.249093</td>
 </tr>
 <tr>
-<td>64</td>
-<td>0.246351</td>
-</tr>
-<tr>
-<td>61</td>
-<td>0.246274</td>
-</tr>
-<tr>
-<td>51</td>
-<td>0.245872</td>
-</tr>
-<tr>
-<td>13</td>
-<td>0.245775</td>
-</tr>
-<tr>
-<td>6</td>
-<td>0.245519</td>
-</tr>
-<tr>
-<td>17</td>
-<td>0.245449</td>
-</tr>
-<tr>
-<td>94</td>
-<td>0.245304</td>
+<td>95</td>
+<td>0.248739</td>
 </tr>
 <tr>
 <td>80</td>
-<td>0.245259</td>
+<td>0.248480</td>
+</tr>
+<tr>
+<td>61</td>
+<td>0.247863</td>
+</tr>
+<tr>
+<td>91</td>
+<td>0.247600</td>
+</tr>
+<tr>
+<td>62</td>
+<td>0.247191</td>
+</tr>
+<tr>
+<td>13</td>
+<td>0.246764</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.246395</td>
+</tr>
+<tr>
+<td>34</td>
+<td>0.246249</td>
+</tr>
+<tr>
+<td>77</td>
+<td>0.245885</td>
+</tr>
+<tr>
+<td>52</td>
+<td>0.245584</td>
+</tr>
+<tr>
+<td>90</td>
+<td>0.245361</td>
+</tr>
+<tr>
+<td>51</td>
+<td>0.244959</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.244958</td>
 </tr>
 <tr>
 <td>32</td>
-<td>0.245176</td>
+<td>0.244901</td>
 </tr>
 <tr>
-<td>19</td>
-<td>0.245164</td>
-</tr>
-<tr>
-<td>92</td>
-<td>0.244880</td>
+<td>50</td>
+<td>0.244855</td>
 </tr>
 <tr>
 <td>60</td>
-<td>0.244846</td>
+<td>0.244632</td>
 </tr>
 <tr>
-<td>27</td>
-<td>0.244752</td>
-</tr>
-<tr>
-<td>73</td>
-<td>0.244406</td>
-</tr>
-<tr>
-<td>36</td>
-<td>0.244368</td>
+<td>94</td>
+<td>0.244577</td>
 </tr>
 </tbody>
 </table>
@@ -715,83 +721,83 @@
 <tbody>
 <tr>
 <td>83</td>
-<td>0.012845</td>
-</tr>
-<tr>
-<td>68</td>
-<td>0.011812</td>
-</tr>
-<tr>
-<td>39</td>
-<td>0.011654</td>
-</tr>
-<tr>
-<td>21</td>
-<td>0.011626</td>
+<td>0.011892</td>
 </tr>
 <tr>
 <td>54</td>
-<td>0.011620</td>
+<td>0.011640</td>
 </tr>
 <tr>
-<td>44</td>
-<td>0.011512</td>
-</tr>
-<tr>
-<td>38</td>
-<td>0.011503</td>
+<td>21</td>
+<td>0.011406</td>
 </tr>
 <tr>
 <td>23</td>
-<td>0.011408</td>
+<td>0.011384</td>
 </tr>
 <tr>
-<td>42</td>
-<td>0.011173</td>
+<td>39</td>
+<td>0.011350</td>
+</tr>
+<tr>
+<td>43</td>
+<td>0.011026</td>
 </tr>
 <tr>
 <td>37</td>
-<td>0.011136</td>
+<td>0.011019</td>
 </tr>
 <tr>
-<td>67</td>
-<td>0.011099</td>
+<td>79</td>
+<td>0.010965</td>
 </tr>
 <tr>
-<td>1</td>
+<td>38</td>
+<td>0.010950</td>
+</tr>
+<tr>
+<td>68</td>
+<td>0.010916</td>
+</tr>
+<tr>
+<td>44</td>
 <td>0.010912</td>
 </tr>
 <tr>
-<td>47</td>
-<td>0.010888</td>
+<td>42</td>
+<td>0.010792</td>
 </tr>
 <tr>
-<td>17</td>
-<td>0.010843</td>
+<td>33</td>
+<td>0.010756</td>
 </tr>
 <tr>
-<td>80</td>
-<td>0.010798</td>
-</tr>
-<tr>
-<td>63</td>
-<td>0.010798</td>
-</tr>
-<tr>
-<td>25</td>
-<td>0.010716</td>
-</tr>
-<tr>
-<td>16</td>
-<td>0.010692</td>
-</tr>
-<tr>
-<td>45</td>
-<td>0.010665</td>
+<td>36</td>
+<td>0.010719</td>
 </tr>
 <tr>
 <td>22</td>
-<td>0.010631</td>
+<td>0.010654</td>
+</tr>
+<tr>
+<td>96</td>
+<td>0.010605</td>
+</tr>
+<tr>
+<td>47</td>
+<td>0.010605</td>
+</tr>
+<tr>
+<td>67</td>
+<td>0.010586</td>
+</tr>
+<tr>
+<td>78</td>
+<td>0.010531</td>
+</tr>
+<tr>
+<td>28</td>
+<td>0.010483</td>
 </tr>
 </tbody>
 </table>
