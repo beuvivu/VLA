@@ -1,5 +1,7 @@
 # Verified research memory
 
+Last verified: 2026-09-03
+
 ## RES-0001 — Frequency and lô gan
 
 Source: https://mketqua.net/tan-suat-loto; https://mketqua.net/loto-gan; https://www.minhngoc.net.vn/thong-ke-xo-so/gan-cuc-dai-tinh.html
@@ -89,3 +91,27 @@ Status: rejected
 Confidence: low
 
 Last verified: 2026-09-02
+
+## RES-0006 — Nhóm đặc trưng quan hệ miền số độc lập
+
+Source: https://xosodaiphat.com/thong-ke-tan-suat-loto-cap.html;
+https://mketqua.net/cau-loto; các định nghĩa chuẩn hiện có của VLA.
+
+Observed concept: cặp đối tác và cặp 50 có liên quan nhưng không phải một nhóm
+giả thuyết thống kê duy nhất; bộ, bóng, chạm và tổng cũng cần provenance riêng.
+
+Independent mathematical interpretation: mỗi quan hệ chuẩn ánh xạ số `00..99`
+sang đối tác hoặc tập họ hàng; đặc trưng chỉ tổng hợp lịch sử tại cùng ngày neo,
+không tự mang ý nghĩa dự đoán.
+
+VLA implementation: `cau_keo_feature_groups.FEATURE_GROUP_SPECS` và
+`augment_domain_features`
+
+Validation: kiểm thử miền số, trật tự dòng/chỉ mục, cấu trúc đủ `00..99`, đột
+biến tương lai và ablation cuốn chiếu bốn lát.
+
+Status: rejected
+
+Confidence: high cho biến đổi mô tả; thấp cho giá trị dự đoán
+
+Last verified: 2026-09-03

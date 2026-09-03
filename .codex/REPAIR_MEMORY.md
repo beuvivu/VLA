@@ -1,5 +1,7 @@
 # Verified repair memory
 
+Last verified: 2026-09-03
+
 ## REP-0001 — Pair champion and challenger randomness
 
 Context: domain-feature walk-forward ablation.
@@ -110,3 +112,50 @@ Affected modules: `candidate_scoring.py`
 Confidence: high
 
 Last verified: 2026-09-02
+
+## REP-0006 — Schema code và artifact phải được nâng cấp nguyên tử
+
+Context: cổng challenger miền số trong PR #30.
+
+Symptom: `validate_cau_keo_domain.py` dừng với `domain gate schema mismatch`
+sau khi mã nguồn chuyển từ schema 2 sang schema 3.
+
+Root cause: model pack, gate và manifest được theo dõi vẫn là artifact schema 2.
+
+Correct pattern: tái tạo đầy đủ artifact cho cả lô tô và đề bằng đúng builder schema
+mới, rồi chạy validator và kiểm tra challenger bốn lát.
+
+Avoid: tăng hằng số schema nhưng giữ artifact cũ, hoặc hạ yêu cầu của validator.
+
+Regression guard: `validate_cau_keo_domain.py`, `domain_challenger_check.sh` và
+kiểm tra schema trong `tests/test_cau_keo_domain_challenger.py`.
+
+Affected modules: `cau_keo_feature_groups.py`, `cau_keo_domain_challenger.py`,
+`data/ai_ml/cau_keo_domain_*`, `models/cau_keo_*.joblib`
+
+Confidence: high
+
+Last verified: 2026-09-03
+
+## REP-0007 — Không che khuất module HTML trong builder
+
+Context: Việt hóa JSON hiển thị trong `build_dashboard.py`.
+
+Symptom: builder dừng với `NameError` khi closure gọi `html.escape`.
+
+Root cause: biến cục bộ `html` chứa toàn bộ trang làm che khuất module `html`
+đã import trong phạm vi hàm.
+
+Correct pattern: dùng tên `dashboard_html` cho chuỗi trang và giữ `html` dành
+cho module escape.
+
+Avoid: tái sử dụng tên module import cho biến cục bộ trong cùng phạm vi có closure.
+
+Regression guard: `tests/test_vietnamese_ui.py` thực thi builder và kiểm tra hai
+trang đầu ra.
+
+Affected modules: `build_dashboard.py`
+
+Confidence: high
+
+Last verified: 2026-09-03

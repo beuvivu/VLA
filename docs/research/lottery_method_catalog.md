@@ -1,484 +1,448 @@
-# Vietnamese lottery method catalog
+# Danh mục phương pháp phân tích xổ số Việt Nam
 
-Last verified: 2026-09-02
+Xác minh lần cuối: 2026-09-03
 
-This catalog records public behavior, not proprietary implementation details.
-Unless stated otherwise, each VLA equivalent is an **Independent implementation
-based on publicly observable behavior.** Marketing statements are not validation
-evidence. Historical patterns do not guarantee future lottery outcomes.
+Danh mục này ghi nhận hành vi công khai, không mô tả chi tiết triển khai độc
+quyền. Trừ khi ghi khác, mọi phương pháp tương đương trong VLA đều là **bản
+triển khai độc lập dựa trên hành vi quan sát được công khai**. Quảng cáo không
+được coi là bằng chứng dự báo. Mẫu lịch sử không bảo đảm kết quả tương lai.
 
-## Frequency
+## Tần suất
 
-Aliases: tần suất loto, số lần về, frequency
+**Tên gọi khác:** tần suất lô tô, số lần về.
 
-Sources: https://mketqua.net/tan-suat-loto; https://xosodaiphat.com/thong-ke-tan-suat-loto.html; https://www.minhngoc.net.vn/thong-ke-xo-so/tan-suat-tinh.html
+**Nguồn:** https://mketqua.net/tan-suat-loto;
+https://xosodaiphat.com/thong-ke-tan-suat-loto.html;
+https://www.minhngoc.net.vn/thong-ke-xo-so/tan-suat-tinh.html
 
-Category: descriptive
+**Loại:** mô tả.
 
-Input: date-indexed occurrence counts for 00..99
+**Đầu vào:** số lần xuất hiện 00..99 theo ngày.
 
-Mathematical definition: occurrence count is `sum_t count_t(x)`; draw count is `sum_t 1[count_t(x)>0]`; draw hit rate is draw count divided by eligible draws.
+**Định nghĩa toán học:** số lần xuất hiện là `Σ_t count_t(x)`; số kỳ có mặt là
+`Σ_t 1[count_t(x)>0]`; tỷ lệ ngày về bằng số kỳ có mặt chia số kỳ hợp lệ.
 
-Parameters: calendar or draw-count lookback; as-of date
+**Tham số:** cửa sổ theo ngày lịch hoặc số kỳ; ngày chốt.
 
-Output: occurrence/draw counts, hit rate, maximum multiplicity, exact-two and at-least-two counts
+**Đầu ra:** số lần xuất hiện, số kỳ, tỷ lệ ngày, bội số lớn nhất, số lần đúng
+hai nháy và ít nhất hai nháy.
 
-Edge cases: empty windows, duplicate dates, missing number columns, repeated occurrences in one draw
+**Trường hợp biên:** cửa sổ rỗng, ngày trùng, thiếu cột số, một số về nhiều lần.
 
-Leakage risk: medium if the target date enters the window; VLA uses dates strictly before the as-of date
+**Rủi ro rò rỉ:** trung bình nếu ngày mục tiêu lọt vào cửa sổ; VLA chỉ dùng ngày
+nhỏ hơn ngày chốt.
 
-Existing VLA equivalent: `frequency_stats.compute_frequency_stats`; `advanced_stats.compute_frequency` is a compatibility facade
+**Tương đương trong VLA:** `frequency_stats.compute_frequency_stats`;
+`advanced_stats.compute_frequency` là lớp tương thích.
 
-Implementation status: implemented
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Research confidence: high
+## Lô gan
 
-Predictive evidence: untested
+**Tên gọi khác:** gan, lô khan, số lâu chưa về.
 
-## Lô gan / gap
+**Nguồn:** https://mketqua.net/loto-gan; https://rongbachkim.net/thongke.html;
+https://www.minhngoc.net.vn/thong-ke-xo-so/gan-cuc-dai-tinh.html
 
-Aliases: gan, lô khan, overdue
+**Loại:** mô tả. **Đầu vào:** trạng thái có mặt của 00..99 theo ngày.
 
-Sources: https://mketqua.net/loto-gan; https://rongbachkim.net/thongke.html; https://www.minhngoc.net.vn/thong-ke-xo-so/gan-cuc-dai-tinh.html
+**Định nghĩa toán học:** `gap(x,D)` là số kỳ hợp lệ đã hoàn tất sau lần về gần
+nhất và nằm hoàn toàn trước `D`; khoảng vắng theo lịch là `(D-last_hit).days-1`.
 
-Category: descriptive
+**Tham số:** ngày chốt; cửa sổ lịch/số kỳ tùy chọn.
 
-Input: date-indexed draw presence for 00..99
+**Đầu ra:** gan theo kỳ/lịch, lần về cuối, gan lịch sử, phân vị, điểm Z.
 
-Mathematical definition: `gap(x,D)` is the completed eligible draws after the most recent hit and strictly before target date `D`; calendar absence is reported separately as `(D-last_hit).days-1`.
+**Trường hợp biên:** chưa từng về, chỉ về một lần, phương sai 0, thiếu ngày lịch.
 
-Parameters: as-of date; optional calendar/draw lookback
+**Rủi ro rò rỉ:** trung bình nếu chứa kết quả mục tiêu.
 
-Output: current draw/calendar gap, last hit, historical gaps, percentile, z-score
+**Tương đương trong VLA:** `gap_cycle_stats.compute_gap_stats`;
+`cycle_stats._gap_series_calendar` cũ.
 
-Edge cases: never seen, one hit, zero variance, missing calendar dates
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** bác bỏ quy tắc tự động “đến hạn”; gan dài không tự làm
+tăng xác suất tương lai.
 
-Leakage risk: medium if the target result is included
+## Chu kỳ / tái xuất hiện
 
-Existing VLA equivalent: `gap_cycle_stats.compute_gap_stats`; legacy `cycle_stats._gap_series_calendar`
+**Tên gọi khác:** chu kỳ, nhịp, khoảng lặp.
 
-Implementation status: implemented
+**Nguồn:** https://hainhay.net/chu-ky;
+https://xosodaiphat.com/thong-ke-chu-ky-loto.html
 
-Research confidence: high
+**Loại:** mô tả. **Đầu vào:** ngày/chỉ số các lần về theo thứ tự.
 
-Predictive evidence: rejected as an automatic “due number” rule; a long gap does not itself raise future probability
+**Định nghĩa toán học:** với `i_1,...,i_n`, chu kỳ là
+`g_k=i_k-i_(k-1)` và số kỳ vắng hoàn tất là `g_k-1`.
 
-## Cycle / recurrence
+**Tham số:** cửa sổ và số khoảng gần đây để tính xu hướng.
 
-Aliases: chu kỳ, nhịp, recurrence interval
+**Đầu ra:** trung bình, trung vị, phương sai, tứ phân vị, lớn nhất, độ dốc gần
+đây và khoảng kiểm duyệt phải.
 
-Sources: https://hainhay.net/chu-ky; https://xosodaiphat.com/thong-ke-chu-ky-loto.html
+**Trường hợp biên:** dưới hai lần về, lịch không đều, khoảng hiện tại chưa hoàn tất.
 
-Category: descriptive
+**Rủi ro rò rỉ:** thấp khi có ngày chốt nghiêm ngặt.
 
-Input: ordered hit dates and draw indices
+**Tương đương trong VLA:** `gap_cycle_stats.compute_recurrence_intervals`,
+`compute_gap_stats`; `cycle_stats.build_cycle_tables` cũ.
 
-Mathematical definition: for hit indices `i_1,...,i_n`, recurrence is `g_k=i_k-i_(k-1)` and completed absence is `g_k-1`; calendar recurrence uses date differences.
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Parameters: lookback and recent-trend interval count
+## Đầu / đuôi / tổng / chạm
 
-Output: intervals, mean, median, variance, quartiles, maximum, recent slope, current right-censored interval
+**Tên gọi khác:** hàng chục, hàng đơn vị, tổng đề, tổng modulo 10.
 
-Edge cases: fewer than two hits; irregular calendars; current censoring is not a completed interval
+**Nguồn:** https://mketqua.net/; https://xosodaiphat.com/;
+https://hainhay.net/chu-ky-db
 
-Leakage risk: low with a strict as-of boundary
+**Loại:** mô tả. **Đầu vào:** số `10a+b` hoặc lịch sử xuất hiện.
 
-Existing VLA equivalent: `gap_cycle_stats.compute_recurrence_intervals`, `compute_gap_stats`; legacy `cycle_stats.build_cycle_tables`
+**Định nghĩa toán học:** đầu=`a`; đuôi=`b`; tổng thô=`a+b`; tổng modulo
+10=`(a+b) mod 10`; chạm `d` chứa số có `a=d hoặc b=d`.
 
-Implementation status: implemented
+**Tham số:** loại nhóm và cửa sổ. **Đầu ra:** thành viên, số lần/kỳ, tỷ lệ, gan nhóm.
 
-Research confidence: high
+**Trường hợp biên:** `00`, `99`; chạm có 19 số; tổng thô 0..18 khác tổng modulo 10.
 
-Predictive evidence: untested
+**Rủi ro rò rỉ:** thấp với ngày chốt nghiêm ngặt.
 
-## Head / tail / total / chạm
+**Tương đương trong VLA:** `number_reference`,
+`frequency_stats.compute_group_frequency_stats`,
+`gap_cycle_stats.compute_group_gap_stats`.
 
-Aliases: đầu, đuôi, tổng, tổng modulo 10, chạm
+**Trạng thái triển khai:** hiện hữu. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Sources: https://mketqua.net/; https://xosodaiphat.com/; https://hainhay.net/chu-ky-db
+## Tần suất cặp cùng kỳ
 
-Category: descriptive
+**Tên gọi khác:** cặp cùng về, đồng xuất hiện, lịch sử lô xiên.
 
-Input: a two-digit number `10a+b` or historical occurrence counts
+**Nguồn:** https://xosodaiphat.com/thong-ke-lo-xien.html;
+https://mketqua.net/tan-suat-cap-loto
 
-Mathematical definition: head=`a`; tail=`b`; digit sum=`a+b`; total-mod-10=`(a+b) mod 10`; chạm `d` contains numbers where `a=d or b=d`.
+**Loại:** mô tả. **Đầu vào:** tập số lô tô duy nhất của từng kỳ.
 
-Parameters: group kind and historical window
+**Định nghĩa toán học:** `cooccur(i,j)=Σ_t 1[i∈draw_t và j∈draw_t]`;
+`support=cooccur/N`.
 
-Output: membership, occurrence/draw counts, hit rate, group gap
+**Tham số:** cửa sổ, hỗ trợ tối thiểu, số dòng đầu ra.
 
-Edge cases: `00`, `99`; chạm has 19 unique members; raw sum 0..18 differs from modulo-10 total
+**Đầu ra:** số đếm thô, hỗ trợ, biên, độ nâng, ngày gần đây.
 
-Leakage risk: low with a strict cutoff
+**Trường hợp biên:** một số về nhiều lần không phải cặp; cặp không thứ tự loại `i=j`.
 
-Existing VLA equivalent: `number_reference` group functions; `frequency_stats.compute_group_frequency_stats`; `gap_cycle_stats.compute_group_gap_stats`
+**Rủi ro rò rỉ:** cao nếu bảng toàn lịch sử được tái dùng cho kiểm định quá khứ.
 
-Implementation status: existing
+**Tương đương trong VLA:** `pair_stats.compute_pair_frequency`,
+`descriptive_extensions.build_pair_recency`,
+`conditional_matrices.build_cooccurrence_matrix`.
 
-Research confidence: high
+**Trạng thái triển khai:** hiện hữu. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Predictive evidence: untested
+## Lộn và cặp lô tô 50
 
-## Same-draw pair frequency
+**Tên gọi khác:** đảo, AB-BA, cặp 50, kép-bóng.
 
-Aliases: cặp cùng về, pair co-occurrence
+**Nguồn:** https://xosodaiphat.com/thong-ke-tan-suat-loto-cap.html;
+`docs/number-ontology-sources.md`
 
-Sources: https://xosodaiphat.com/thong-ke-lo-xien.html; https://mketqua.net/tan-suat-cap-loto
+**Loại:** mô tả. **Đầu vào:** một số hai chữ số.
 
-Category: descriptive
+**Định nghĩa toán học:** lộn `AB→BA`. Phân hoạch 50 cặp gồm 45 cặp đảo không
+kép và `00-55`, `11-66`, `22-77`, `33-88`, `44-99`.
 
-Input: unique Loto-number set for each draw
+**Tham số:** không có. **Đầu ra:** số đảo, định danh cặp, loại cặp.
 
-Mathematical definition: `cooccur(i,j)=sum_t 1[i in draw_t and j in draw_t]`; support=`cooccur/eligible_draws`.
+**Trường hợp biên:** số kép tự đảo và ghép với số kép bóng dương trong cặp 50.
 
-Parameters: lookback, minimum support, top-N
+**Rủi ro rò rỉ:** không có với ánh xạ tất định.
 
-Output: raw co-occurrence, support, marginal counts, lift, recent dates
+**Tương đương trong VLA:** `number_reference.reverse`,
+`cap_loto_50_partner`, `all_cap_loto_50`; `cap_loto_50_stats.build_stats`.
 
-Edge cases: one-number multiplicity is not pair co-occurrence; unordered pairs exclude `i=j`
+**Trạng thái triển khai:** hiện hữu. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** quan hệ chỉ là đặc trưng thử nghiệm.
 
-Leakage risk: high if a full-history table is reused in historical backtests
+## Bộ và bóng
 
-Existing VLA equivalent: `pair_stats.compute_pair_frequency`, `descriptive_extensions.build_pair_recency`, `conditional_matrices.build_cooccurrence_matrix`
+**Tên gọi khác:** bộ/hệ, bóng dương, bóng âm.
 
-Implementation status: existing
+**Nguồn:** nhiều mô tả công khai được đối chiếu tại
+`docs/number-ontology-sources.md`.
 
-Research confidence: high
+**Loại:** mô tả. **Đầu vào:** chữ số hoặc số hai chữ số.
 
-Predictive evidence: untested
+**Định nghĩa toán học:** bóng dương `0↔5,1↔6,2↔7,3↔8,4↔9`; bộ VLA là quỹ
+đạo sinh bởi bóng dương theo chữ số và phép đảo, gồm mười họ 8 số và năm họ 4 số.
 
-## Reverse / lộn and cặp loto 50
+**Tham số:** quy ước ánh xạ đã công bố. **Đầu ra:** phép biến đổi, mã họ, thành viên.
 
-Aliases: đảo, lộn, AB-BA, cặp 50, kép-bóng
+**Trường hợp biên:** thuật ngữ khác nhau giữa nguồn; VLA không gọi bù 9 là bóng.
 
-Sources: https://xosodaiphat.com/thong-ke-tan-suat-loto-cap.html; `docs/number-ontology-sources.md`
+**Rủi ro rò rỉ:** không với ánh xạ; trung bình nếu chọn họ theo kết quả mục tiêu.
 
-Category: descriptive
+**Tương đương trong VLA:** `number_reference.bo`, `bong_duong`, `bong_am`.
 
-Input: one two-digit number
+**Trạng thái triển khai:** hiện hữu. **Độ tin cậy nghiên cứu:** trung bình cho
+thuật ngữ, cao cho quy tắc VLA. **Bằng chứng dự báo:** không tự động có.
 
-Mathematical definition: reverse maps `AB→BA`. The 50-pair partition contains 45 non-double reverse pairs plus `00-55`, `11-66`, `22-77`, `33-88`, `44-99`.
+## Cầu vị trí động
 
-Parameters: none
+**Tên gọi khác:** cầu lô tô chạy N ngày, ghép vị trí, bạch thủ, cầu đặc biệt.
 
-Output: reverse, pair id, pair type
+**Nguồn:** https://mketqua.net/cau-loto;
+https://mketqua.net/cau-bach-thu; https://hainhay.net/cau-loto
 
-Edge cases: double numbers are reverse singletons and use their bóng-dương double in cặp 50
+**Loại:** khai phá mẫu. **Đầu vào:** vị trí giải/kết quả/chữ số ngữ nghĩa từ
+kỳ `t-1` và mục tiêu kỳ `t`.
 
-Leakage risk: none for the deterministic mapping
+**Định nghĩa toán học:** chọn chữ số nguồn rồi ghép, ghép đảo, tạo cặp đảo hoặc
+bộ. Chuỗi đang chạy là dãy ngày lịch liên tiếp mới nhất thỏa tiêu chí mục tiêu.
 
-Existing VLA equivalent: `number_reference.reverse`, `cap_loto_50_partner`, `all_cap_loto_50`; `cap_loto_50_stats.build_stats`
+**Tham số:** vị trí, phép biến đổi, mục tiêu, chuỗi/hỗ trợ tối thiểu, trần giả thuyết.
 
-Implementation status: existing
+**Đầu ra:** mã mẫu, ứng viên kế tiếp, chuỗi hiện tại/dài nhất, hỗ trợ, trúng/
+trượt, độ tin cậy, độ phủ, ngày trúng gần đây và số lượng giả thuyết.
 
-Research confidence: high
+**Trường hợp biên:** thiếu ngày làm đứt chuỗi; ngày trùng bị từ chối; mẫu 1/1 yếu.
 
-Predictive evidence: rejected as automatic predictive evidence; relation features remain challengers
+**Rủi ro rò rỉ:** cao; chọn và báo cáo cùng giai đoạn gắn
+`PATTERN_SELECTION_BIAS_RISK`.
 
-## Bộ and bóng
+**Tương đương trong VLA:** `dynamic_cau.find_running_patterns`;
+`crosslag_positional_lab.evaluate_lab` chuyên biệt cũ.
 
-Aliases: bộ/hệ, bóng dương, bóng âm
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** trung bình
+vì cách liệt kê/xếp hạng của nguồn là độc quyền. **Bằng chứng dự báo:** chưa kiểm định.
 
-Sources: multiple public descriptions cross-checked in `docs/number-ontology-sources.md`
+## Cầu hai nháy
 
-Category: descriptive
+**Tên gọi khác:** cầu ăn hai nháy.
 
-Input: digit or two-digit number
+**Nguồn:** https://mketqua.net/cau-hai-nhay;
+https://hainhay.net/cau-loto-2-nhay; https://rongbachkim.net/thongke.html
 
-Mathematical definition: bóng dương pairs are `0↔5,1↔6,2↔7,3↔8,4↔9`; VLA bộ is the orbit generated by digit-wise bóng dương and reversal, producing ten size-8 and five size-4 families.
+**Loại:** giả thuyết dự báo. **Đầu vào:** ứng viên vị trí và số lần xuất hiện
+của từng số trong kỳ mục tiêu.
 
-Parameters: declared mapping convention
+**Định nghĩa toán học:** VLA dùng `max_x count_t(x)>=2` cho từng `x` được dự
+báo riêng; không gộp số lần của các ứng viên khác nhau.
 
-Output: transformations, family id and members
+**Tham số:** quy tắc, độ dài chuỗi, hỗ trợ tối thiểu.
 
-Edge cases: terminology varies; complement-to-nine is deliberately not called bóng in VLA
+**Đầu ra:** số lần trúng thường/hai nháy và biểu đồ số lần chính xác.
 
-Leakage risk: none for mapping; medium if families are selected on target-period results
+**Trường hợp biên:** đúng hai khác ít nhất hai; hai số mỗi số một nháy không
+tạo thành hai nháy.
 
-Existing VLA equivalent: `number_reference.bo`, `bong_duong`, `bong_am`
+**Rủi ro rò rỉ:** cao khi tìm mẫu.
 
-Implementation status: existing
+**Tương đương trong VLA:** `dynamic_cau.evaluate_pattern(target_type="loto_2_nhay")`;
+mô tả `advanced_stats.compute_daily_nhay_stats`.
 
-Research confidence: medium for terminology, high for the documented VLA rule
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** trung bình.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Predictive evidence: rejected as automatic predictive evidence
+## Cầu vị trí giải đặc biệt
 
-## Dynamic positional cầu
+**Tên gọi khác:** cầu đề, cầu ĐB, bạch thủ đề.
 
-Aliases: cầu loto chạy N ngày, cầu ghép vị trí, bạch thủ, cầu đặc biệt
+**Nguồn:** https://mketqua.net/cau-giai-dac-biet;
+https://hainhay.net/cau-dac-biet
 
-Sources: https://mketqua.net/cau-loto; https://mketqua.net/cau-bach-thu; https://hainhay.net/cau-loto
+**Loại:** giả thuyết dự báo. **Đầu vào:** vị trí chữ số trước đó và hai số cuối
+ĐB kế tiếp.
 
-Category: pattern-mining
+**Định nghĩa toán học:** thành công khi `1[tập dự báo chứa special_t mod 100]`.
 
-Input: semantic prize/result/digit positions from draw `t-1` and targets at `t`
+**Tham số:** vị trí, phép biến đổi, ngưỡng chuỗi/hỗ trợ.
 
-Mathematical definition: select source digits and apply concatenation, reverse concatenation, reverse pair, or bộ. Active run is the latest consecutive-calendar sequence satisfying the target criterion.
+**Đầu ra:** bằng chứng mẫu và tập ứng viên tất định kế tiếp.
 
-Parameters: positions, transformations, target, minimum run/support, hypothesis cap
+**Trường hợp biên:** giải ĐB đầy đủ và hai số cuối là hai mục tiêu khác nhau.
 
-Output: pattern id, next candidate set, active/longest run, support, successes/failures, confidence, coverage, recent success dates, search counts
+**Rủi ro rò rỉ:** cao.
 
-Edge cases: missing calendar dates break runs; duplicates fail; one perfect observation is weak evidence
+**Tương đương trong VLA:** `dynamic_cau.evaluate_pattern(target_type="special")`;
+`crosslag_positional_lab` chỉ nghiên cứu.
 
-Leakage risk: high; same-period selection/reporting triggers `PATTERN_SELECTION_BIAS_RISK`
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** trung bình.
+**Bằng chứng dự báo:** chưa kiểm định.
 
-Existing VLA equivalent: `dynamic_cau.find_running_patterns`; specialized predecessor `crosslag_positional_lab.evaluate_lab`
+## Ma trận điều kiện và chuyển tiếp
 
-Implementation status: implemented
+**Tên gọi khác:** lô tô theo lô tô, lô tô theo ĐB, ma trận ngày kế.
 
-Research confidence: medium because exact site enumeration/ranking is proprietary
+**Nguồn:** https://mketqua.net/; https://hainhay.net/chu-ky
 
-Predictive evidence: untested
+**Loại:** khai phá mẫu. **Đầu vào:** trạng thái nguồn theo ngày và trạng thái
+đích đúng ngày lịch kế tiếp.
 
-## Cầu 2 nháy
+**Định nghĩa toán học:** `count(i,j)=Σ_t 1[i_t và j_(t+1)]`;
+`confidence=count/source_count`; `support=count/N`; `lift=confidence/P(j)`;
+làm trơn Beta đa nhãn `(count+alpha)/(source_count+2alpha)`.
 
-Aliases: cầu ăn hai nháy, two-hit Loto
+**Tham số:** ngày chốt nghiêm ngặt, `alpha`.
 
-Sources: https://mketqua.net/cau-hai-nhay; https://hainhay.net/cau-loto-2-nhay; https://rongbachkim.net/thongke.html
+**Đầu ra:** số đếm thô, hỗ trợ biên, độ tin cậy, tỷ lệ làm trơn, độ nâng.
 
-Category: predictive-hypothesis
+**Trường hợp biên:** bỏ qua ngày thiếu; hàng lô tô đa nhãn không cần tổng bằng một.
 
-Input: positional candidates and per-number target-draw multiplicity
+**Rủi ro rò rỉ:** cao nếu khớp bằng chuyển tiếp tương lai.
 
-Mathematical definition: VLA uses `max_x count_t(x)>=2` for an individually predicted `x`; counts from different candidates are not pooled. At-least-one, at-least-two, and exact counts are separate.
+**Tương đương trong VLA:** `conditional_matrices.build_transition_matrix`,
+`conditional_nextday`, `number_dynamics.transition_posterior`.
 
-Parameters: rule, run length, minimum support
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao.
+**Bằng chứng dự báo:** chưa kết luận; chỉ nghiên cứu/thử nghiệm.
 
-Output: ordinary/two-nháy successes and exact-count histogram
+## Luật kết hợp
 
-Edge cases: exactly two differs from at least two; two one-hit candidates do not form one two-nháy hit
+**Tên gọi khác:** A→B, quy tắc cặp có điều kiện.
 
-Leakage risk: high during pattern search
+**Nguồn:** công thức thống kê chuẩn áp dụng độc lập cho tính năng cặp/điều kiện công khai.
 
-Existing VLA equivalent: `dynamic_cau.evaluate_pattern(target_type="loto_2_nhay")`; descriptive `advanced_stats.compute_daily_nhay_stats`
+**Loại:** khai phá mẫu. **Đầu vào:** tập hiện diện cùng kỳ hoặc đúng ngày kế tiếp.
 
-Implementation status: implemented
+**Định nghĩa toán học:** `support=count(A∩B)/N`;
+`confidence=count(A∩B)/count(A)`; `lift=confidence/P(B)`.
 
-Research confidence: medium; public labels are clear but selection logic is unknown
+**Tham số:** độ trễ 0/1, hỗ trợ/độ tin cậy/độ nâng và số quan sát nguồn tối
+thiểu, `alpha`.
 
-Predictive evidence: untested
+**Đầu ra:** số đếm, chỉ số và cận dưới Wilson.
 
-## Special-prize positional cầu
+**Trường hợp biên:** nguồn hiếm, mẫu nhỏ hoàn hảo, có hướng/không thứ tự.
 
-Aliases: cầu đề, cầu giải đặc biệt, bạch thủ đề
+**Rủi ro rò rỉ:** cao khi chọn và đánh giá trên cùng giai đoạn.
 
-Sources: https://mketqua.net/cau-giai-dac-biet; https://hainhay.net/cau-dac-biet
+**Tương đương trong VLA:** `association_rules.mine_association_rules`.
 
-Category: predictive-hypothesis
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao cho
+toán học. **Bằng chứng dự báo:** chưa kiểm định.
 
-Input: prior semantic digit positions and next special-prize two-digit suffix
+## Chuỗi Markov bậc một
 
-Mathematical definition: positional transformation with success `1[predicted set contains special_t mod 100]`.
+**Tên gọi khác:** chuyển tiếp Markov.
 
-Parameters: positions, transform, run/support thresholds
+**Nguồn:** định nghĩa thống kê chuẩn; không nhận là mô hình độc quyền của nguồn nào.
 
-Output: pattern evidence and deterministic next candidate set
+**Loại:** giả thuyết dự báo. **Đầu vào:** chuỗi trạng thái loại trừ theo thứ tự.
 
-Edge cases: full special prize and its two-digit suffix are distinct targets
+**Định nghĩa toán học:**
+`P_ij=(count(i→j)+alpha)/(Σ_k count(i→k)+alpha|S|)`.
 
-Leakage risk: high
+**Tham số:** không gian trạng thái, `alpha`.
 
-Existing VLA equivalent: `dynamic_cau.evaluate_pattern(target_type="special")`; research-only `crosslag_positional_lab`
+**Đầu ra:** số đếm, hỗ trợ đi ra, xác suất từng hàng có tổng một.
 
-Implementation status: implemented
+**Trường hợp biên:** trạng thái chưa thấy, `alpha=0`, lô tô đa nhãn cần mô
+hình Bernoulli thay thế.
 
-Research confidence: medium
+**Rủi ro rò rỉ:** cao nếu ngày kiểm thử lọt vào ma trận.
 
-Predictive evidence: untested
+**Tương đương trong VLA:** `markov_stats.build_markov_chain`;
+`compute_markov_for_loto`; nghiên cứu bậc hai giới hạn trong `number_dynamics`.
 
-## Conditional and transition matrices
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao cho
+toán học. **Bằng chứng dự báo:** chưa kết luận; phải vượt nền biên/cuốn chiếu ngoài mẫu.
 
-Aliases: loto theo loto, loto theo đặc biệt, next-day matrix
+## Chấm điểm ứng viên / chỉ số nổ
 
-Sources: https://mketqua.net/; https://hainhay.net/chu-ky
+**Tên gọi khác:** điểm, điểm tổng hợp, chỉ số nổ.
 
-Category: pattern-mining
+**Nguồn:** tái dựng tổng quát từ màn hình nhiều chỉ báo công khai; không tuyên
+bố sao chép công thức độc quyền.
 
-Input: date-indexed source and exact-next-calendar-day target presence
+**Loại:** giả thuyết dự báo. **Đầu vào:** tần suất, gan, độ gần, EMA, chu kỳ và
+điểm điều kiện/mẫu tùy chọn, tất cả chỉ từ lịch sử nghiêm ngặt.
 
-Mathematical definition: `count(i,j)=sum_t 1[i_t and j_(t+1)]`; confidence=`count/source_count`; support=`count/N`; lift=`confidence/P(j)`; multi-label Beta smoothing=`(count+alpha)/(source_count+2alpha)`.
+**Định nghĩa toán học:** trung bình có trọng số của thành phần chuẩn hóa;
+`alpha=2/(span+1)` và `EMA_t=alpha*y_t+(1-alpha)*EMA_(t-1)`.
 
-Parameters: strict as-of date, smoothing alpha
+**Tham số:** cửa sổ, `span`, khởi tạo/lịch sử EMA tối thiểu, trọng số rõ ràng.
 
-Output: raw counts, marginal support, confidence, smoothed rate, lift
+**Đầu ra:** `CandidateScore` gồm điểm, thành phần, bằng chứng, giải thích, nguồn gốc.
 
-Edge cases: missing dates are skipped; multi-label Loto rows need not sum to one
+**Trường hợp biên:** thành phần tùy chọn thiếu được công bố và loại khỏi mẫu
+số; lịch sử thiếu trả 0.
 
-Leakage risk: high if fitted with future transitions
+**Rủi ro rò rỉ:** trung bình; mọi đầu vào phải tôn trọng ngày chốt.
 
-Existing VLA equivalent: `conditional_matrices.build_transition_matrix`, `conditional_nextday`, `number_dynamics.transition_posterior`
+**Tương đương trong VLA:** `candidate_scoring.rank_candidates`;
+`cau_keo_ml._add_ai_judgement` vận hành vẫn độc lập.
 
-Implementation status: implemented
+**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao cho
+công thức VLA, thấp cho tính tương đương nguồn. **Bằng chứng dự báo:** chưa kiểm
+định; điểm không phải xác suất đã hiệu chỉnh.
 
-Research confidence: high
+## Phép biến đổi kiểu Pascal
 
-Predictive evidence: inconclusive; research/challenger only
+**Tên gọi khác:** cầu Pascal, tam giác Pascal xổ số.
 
-## Association rules
+**Nguồn:** https://caulo100.com/soi-cau-pascal-cau-lo-100;
+https://soicauvn247.com/soi-cau-pascal
 
-Aliases: A→B, conditional pair rule
+**Loại:** giả thuyết dự báo. **Đầu vào:** chuỗi chữ số hạt giống do bên ngoài chọn.
 
-Sources: standard statistical formalism applied independently to public pair/conditional features
+**Định nghĩa toán học:** `r_(k+1,j)=(r_(k,j)+r_(k,j+1)) mod 10`; cách chọn hạt
+giống và trích ứng viên chưa đủ đặc tả.
 
-Category: pattern-mining
+**Tham số:** hạt giống, độ sâu, quy tắc trích. **Đầu ra:** tam giác tất định.
 
-Input: same-draw or exact-next-day presence sets
+**Trường hợp biên:** độ tin cậy quảng cáo không có phương pháp hiệu chỉnh công khai.
 
-Mathematical definition: support=`count(A and B)/N`; confidence=`count(A and B)/count(A)`; lift=`confidence/P(B)`.
+**Rủi ro rò rỉ:** cao nếu chọn hạt giống/quy tắc sau khi nhìn kết quả.
 
-Parameters: lag 0/1, minimum support/confidence/lift and antecedent observations, alpha
+**Tương đương trong VLA:** chưa có. **Trạng thái triển khai:** bác bỏ.
+**Độ tin cậy nghiên cứu:** trung bình cho truy hồi, thấp cho cách trích.
+**Bằng chứng dự báo:** bác bỏ cho tới khi có ánh xạ tái lập được.
 
-Output: raw counts and metrics plus Wilson lower confidence bound
+## Phép biến đổi kiểu Fibonacci
 
-Edge cases: zero/rare antecedents, perfect tiny samples, directed versus unordered semantics
+**Tên gọi khác:** cầu Fibonacci.
 
-Leakage risk: high when selection and evaluation share one period
+**Nguồn:** chưa tìm thấy mô tả ánh xạ xổ số Việt Nam ổn định và đủ chi tiết.
 
-Existing VLA equivalent: `association_rules.mine_association_rules`
+**Loại:** giả thuyết dự báo. **Đầu vào/đầu ra:** chưa xác định.
 
-Implementation status: implemented
+**Định nghĩa toán học:** chỉ `F_0=0`, `F_1=1`,
+`F_n=F_(n-1)+F_(n-2)` là không mơ hồ; chưa có ánh xạ lịch sử→ứng viên.
 
-Research confidence: high for mathematics
+**Tham số:** chưa xác định. **Trường hợp biên:** tự phát minh ánh xạ sẽ là bịa
+đặt phương pháp bên ngoài.
 
-Predictive evidence: untested
+**Rủi ro rò rỉ:** cao nếu hồi cứu quy tắc.
 
-## First-order Markov chain
+**Tương đương trong VLA:** chưa có. **Trạng thái triển khai:** bác bỏ.
+**Độ tin cậy nghiên cứu:** thấp. **Bằng chứng dự báo:** bác bỏ vì thiếu đặc tả.
 
-Aliases: Markov transition
+## Phân tích đồ thị
 
-Sources: standard statistical definition; no proprietary site model is claimed
+**Tên gọi khác:** đồ thị số, mạng đồng xuất hiện.
 
-Category: predictive-hypothesis
+**Nguồn:** thuật toán đồ thị chuẩn áp dụng cho ma trận trên; không tuyên bố
+tương đương nguồn độc quyền.
 
-Input: ordered exclusive states
+**Loại:** khai phá mẫu. **Đầu vào:** ma trận đồng xuất hiện, chuyển tiếp hoặc độ nâng.
 
-Mathematical definition: `P_ij=(count(i→j)+alpha)/(sum_k count(i→k)+alpha|S|)`.
+**Định nghĩa toán học:** nút là 00..99; cạnh có trọng số đã công bố dùng cho
+bậc có trọng số, PageRank, cộng đồng hoặc độ trung tâm.
 
-Parameters: state space and alpha
+**Tham số:** chỉ số/ngưỡng/hướng cạnh và thuật toán đồ thị.
 
-Output: counts, outgoing support, row-normalized probabilities
+**Đầu ra:** tóm tắt nút/cạnh mô tả.
 
-Edge cases: unseen states; alpha zero; multi-label Loto needs Bernoulli conditionals instead
+**Trường hợp biên:** nền cạnh dày và độ nhạy với ngưỡng.
 
-Leakage risk: high if test dates enter the matrix
+**Rủi ro rò rỉ:** cao nếu đồ thị dùng toàn bộ tương lai để tạo đặc trưng quá khứ.
 
-Existing VLA equivalent: `markov_stats.build_markov_chain`; same-number `compute_markov_for_loto`; limited second-order research in `number_dynamics`
+**Tương đương trong VLA:** chưa có; đầu vào ma trận chuẩn đã tồn tại.
 
-Implementation status: implemented
-
-Research confidence: high for mathematics
-
-Predictive evidence: inconclusive; must beat marginal/rolling baselines OOS
-
-## Candidate scoring / chỉ số nổ
-
-Aliases: score, điểm tổng hợp, chỉ số nổ
-
-Sources: generic reconstruction from common public multi-indicator displays; no proprietary formula claimed
-
-Category: predictive-hypothesis
-
-Input: strict-history frequency, gap, recency, EMA, cycle, optional conditional/pattern scores
-
-Mathematical definition: normalized weighted mean. EMA uses `alpha=2/(span+1)` and `EMA_t=alpha*y_t+(1-alpha)*EMA_(t-1)`.
-
-Parameters: lookback, EMA span/initialization/minimum history, explicit weights
-
-Output: `CandidateScore` containing score, components, evidence, explanation, provenance
-
-Edge cases: missing optional components are disclosed/excluded; insufficient history yields zero
-
-Leakage risk: medium; every input must respect as-of date
-
-Existing VLA equivalent: `candidate_scoring.rank_candidates`; production `cau_keo_ml._add_ai_judgement` remains separate
-
-Implementation status: implemented
-
-Research confidence: high for VLA formula, low for external equivalence
-
-Predictive evidence: untested; score is not a calibrated probability
-
-## Pascal-style transformation
-
-Aliases: cầu Pascal, tam giác Pascal xổ số
-
-Sources: https://caulo100.com/soi-cau-pascal-cau-lo-100; https://soicauvn247.com/soi-cau-pascal
-
-Category: predictive-hypothesis
-
-Input: an externally chosen seed digit sequence
-
-Mathematical definition: public pages describe `r_(k+1,j)=(r_(k,j)+r_(k,j+1)) mod 10`; seed choice and candidate extraction are insufficiently specified.
-
-Parameters: seed, depth, candidate-extraction rule
-
-Output: deterministic triangle; ranking needs a separately specified mapping
-
-Edge cases: displayed marketing confidence has no public calibration method and is not evidence
-
-Leakage risk: high if seed/extraction is chosen after outcomes
-
-Existing VLA equivalent: none
-
-Implementation status: rejected
-
-Research confidence: medium for recurrence, low for extraction
-
-Predictive evidence: rejected pending a reproducible mapping
-
-## Fibonacci-style transformation
-
-Aliases: cầu Fibonacci
-
-Sources: no stable, sufficiently detailed public Vietnamese lottery mapping identified in this pass
-
-Category: predictive-hypothesis
-
-Input: unspecified lottery history and Fibonacci sequence
-
-Mathematical definition: only `F_0=0`, `F_1=1`, `F_n=F_(n-1)+F_(n-2)` is unambiguous; no reproducible history-to-candidate mapping was found.
-
-Parameters: unspecified
-
-Output: unspecified
-
-Edge cases: inventing a mapping would fabricate an external method
-
-Leakage risk: high if rules are retrospectively selected
-
-Existing VLA equivalent: none
-
-Implementation status: rejected
-
-Research confidence: low
-
-Predictive evidence: rejected as underspecified
-
-## Graph analytics
-
-Aliases: number graph, co-occurrence network
-
-Sources: standard graph summaries applied to the matrices above; no proprietary-site equivalence claimed
-
-Category: pattern-mining
-
-Input: co-occurrence, transition, or lift matrix
-
-Mathematical definition: nodes are 00..99; declared weighted edges feed weighted degree, PageRank, community, or centrality algorithms.
-
-Parameters: edge metric/threshold/direction and graph algorithm
-
-Output: descriptive node/edge summaries
-
-Edge cases: dense background edges and threshold sensitivity
-
-Leakage risk: high if full-future graphs create historical features
-
-Existing VLA equivalent: none; canonical matrix inputs exist
-
-Implementation status: planned
-
-Research confidence: high for graph mathematics, low for predictive relevance
-
-Predictive evidence: untested
+**Trạng thái triển khai:** dự kiến. **Độ tin cậy nghiên cứu:** cao cho toán đồ
+thị, thấp cho giá trị dự báo. **Bằng chứng dự báo:** chưa kiểm định.

@@ -1,6 +1,6 @@
 # Repair rules
 
-Last verified: 2026-09-02
+Last verified: 2026-09-03
 
 1. Reproduce a defect with a focused test before or with the patch.
 2. Treat any feature change after future-result mutation as P0 temporal leakage.
@@ -12,3 +12,5 @@ Last verified: 2026-09-02
 8. Pass production model inputs through an explicit feature allowlist.
 9. Keep failed/rejected experiments out of production and record the reason.
 10. Preserve deterministic domain definitions in `number_reference.py` rather than copying them into feature code.
+11. Khi tăng phiên bản schema của model, phải tái tạo mọi model/gate/manifest được theo dõi và chạy validator tương thích trước khi phát hành.
+12. Không đặt tên biến cục bộ trùng module đã import khi closure dùng module đó; kiểm thử phải thực thi builder chứ không chỉ đọc artifact cũ.

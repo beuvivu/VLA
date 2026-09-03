@@ -1,57 +1,57 @@
-# Public-source comparison
+# So sánh các nguồn công khai
 
-Reviewed 2026-09-02 using public pages only. No authentication, CAPTCHA,
-private API, or proprietary source was accessed. Page labels and controls show
-what a service exposes; they do not reveal every ranking rule. Every VLA
-reconstruction below is an **Independent implementation based on publicly
-observable behavior.**
+Xác minh lần cuối: 2026-09-03, chỉ sử dụng các trang công khai. Không truy cập
+xác thực, CAPTCHA, API riêng tư hay mã nguồn độc quyền. Nhãn và điều khiển trên
+trang cho biết dịch vụ cung cấp gì, nhưng không bộc lộ toàn bộ quy tắc xếp hạng.
+Mọi phần tái dựng trong VLA dưới đây đều là **bản triển khai độc lập dựa trên
+hành vi quan sát được công khai**.
 
-## Site-level observations
+## Quan sát theo nguồn
 
-| Site | Publicly observed functionality | Behavior that can be inferred | Ambiguity / confidence |
+| Nguồn | Chức năng quan sát được công khai | Hành vi có thể suy ra | Điểm mơ hồ / độ tin cậy |
 | --- | --- | --- | --- |
-| [mketqua.net](https://mketqua.net/) | Frequency, pair frequency, cycle, gan, head/tail, conditional tables, lô rơi, Loto/special/bạch-thủ/two-nháy cầu | Date/window controls; occurrence tables; configurable running-cầu boundary/run length; displayed source positions and streak counts | Descriptive counts: high. Exact pattern enumeration/ranking: medium/low. |
-| [hainhay.net](https://hainhay.net/) | Cycle, frequency, pair frequency, gan, head/tail, conditional stats, Loto/two-nháy/bạch-thủ/special cầu | Cycle pages expose maximum interval, historical dates, and current draw distance; navigation distinguishes target families | Cycle interpretation: high. Proprietary cầu selection: low. |
-| [rongbachkim.net](https://rongbachkim.net/thongke.html) | 00..99 history grid, per-day multiplicity, special marker, cycle/gan drill-down | Legend explicitly separates no hit, one, two, three, and four occurrences; configurable date window | Multiplicity semantics: high. Internal sort/scoring: low. |
-| [xosodaiphat.com](https://xosodaiphat.com/) | Gan, same-draw pairs, doubles, head/tail, special, frequency, pair frequency, occurrence and cycle | Same-draw tool accepts chosen numbers/period and returns qualifying dates; pair-frequency page publishes the 50-pair layout | Descriptive relations: high. Predictive interpretation: unsupported. |
-| [minhngoc.net.vn](https://www.minhngoc.net.vn/thong-ke-xo-so/gan-cuc-dai-tinh.html) | Loto lookup, maximum gan, frequency by region/province and target type | Public form accepts 2–4 digit query, draw count/date context, Loto/head-tail/special modes; maximum absent-draw interval is displayed | Query behavior: high. Aggregation details across multi-province schedules: medium. |
-| [Cầu Lô 100 Pascal page](https://caulo100.com/soi-cau-pascal-cau-lo-100) | Pascal-labelled digit triangle and candidate display | Each next row is publicly described as adjacent sums with units-digit reduction | Recurrence: medium/high. Seed and candidate-selection mapping: low. Displayed confidence is not calibrated evidence. |
+| [mketqua.net](https://mketqua.net/) | Tần suất, tần suất cặp, chu kỳ, gan, đầu/đuôi, bảng điều kiện, lô rơi, cầu lô tô/đặc biệt/bạch thủ/hai nháy | Điều khiển ngày/cửa sổ; bảng số lần xuất hiện; cấu hình biên cầu chạy/độ dài chuỗi; hiển thị vị trí nguồn và số ngày liên tiếp | Số đếm mô tả: cao. Cách liệt kê/xếp hạng mẫu chính xác: trung bình/thấp. |
+| [hainhay.net](https://hainhay.net/) | Chu kỳ, tần suất, tần suất cặp, gan, đầu/đuôi, thống kê điều kiện, cầu lô tô/hai nháy/bạch thủ/đặc biệt | Trang chu kỳ hiển thị khoảng lớn nhất, ngày lịch sử và khoảng cách kỳ hiện tại; điều hướng tách riêng từng họ mục tiêu | Diễn giải chu kỳ: cao. Cách chọn cầu độc quyền: thấp. |
+| [rongbachkim.net](https://rongbachkim.net/thongke.html) | Lưới lịch sử 00..99, số lần xuất hiện theo ngày, dấu giải đặc biệt, xem sâu chu kỳ/gan | Chú giải tách rõ không về, về một, hai, ba và bốn lần; cửa sổ ngày có thể cấu hình | Ngữ nghĩa số lần xuất hiện: cao. Sắp xếp/chấm điểm nội bộ: thấp. |
+| [xosodaiphat.com](https://xosodaiphat.com/) | Gan, cặp cùng kỳ, kép, đầu/đuôi, đặc biệt, tần suất, tần suất cặp, lần xuất hiện và chu kỳ | Công cụ cùng kỳ nhận số/khoảng thời gian được chọn và trả về ngày thỏa điều kiện; trang tần suất cặp công bố bố cục 50 cặp | Quan hệ mô tả: cao. Diễn giải dự báo: không có bằng chứng. |
+| [minhngoc.net.vn](https://www.minhngoc.net.vn/thong-ke-xo-so/gan-cuc-dai-tinh.html) | Tra cứu lô tô, gan cực đại, tần suất theo miền/tỉnh và loại mục tiêu | Biểu mẫu công khai nhận truy vấn 2–4 chữ số, số kỳ/ngày, chế độ lô tô/đầu-đuôi/đặc biệt; hiển thị khoảng số kỳ vắng mặt lớn nhất | Hành vi truy vấn: cao. Cách tổng hợp lịch quay nhiều tỉnh: trung bình. |
+| [Trang Cầu Lô 100 Pascal](https://caulo100.com/soi-cau-pascal-cau-lo-100) | Tam giác chữ số mang nhãn Pascal và dàn số | Mỗi hàng tiếp theo được mô tả công khai là tổng hai số kề nhau rồi lấy hàng đơn vị | Quy tắc truy hồi: trung bình/cao. Cách chọn hạt giống và trích dàn: thấp. Độ tin cậy hiển thị không phải bằng chứng đã hiệu chỉnh. |
 
-## Method comparison matrix
+## Ma trận so sánh phương pháp
 
-| Method | External aliases | VLA implementation | Mathematical basis | Main parameters | Descriptive value | Leakage risk | Predictive status |
+| Phương pháp | Tên gọi khác | Triển khai trong VLA | Cơ sở toán học | Tham số chính | Giá trị mô tả | Rủi ro rò rỉ | Trạng thái dự báo |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Lô gan | gan, lô khan | `gap_cycle_stats.compute_gap_stats` | Completed draws since last hit, strict before target | as-of, lookback | Recency/censoring | Medium | Descriptive only; “due” claim rejected |
-| Frequency | tần suất, số lần về | `frequency_stats.compute_frequency_stats` | Occurrence sum and draw-presence sum | calendar/draw lookback | High | Medium | Untested |
-| Pair frequency | cặp cùng về, lô xiên history | `pair_stats`, `build_cooccurrence_matrix` | Same-draw joint count/support/lift | window, support | High | Medium | Untested |
-| Cycle | chu kỳ, nhịp | `gap_cycle_stats` | Hit-to-hit draw/calendar intervals | lookback, recent intervals | High | Low | Untested |
-| Head/tail | đầu/đuôi | `number_reference`, `frequency_stats` | Tens/units digit groups | group/window | High | Low | Untested |
-| Total | tổng, tổng đề | `digit_sum`, `digit_sum_mod10` | `a+b` or `(a+b) mod 10`, named explicitly | raw/mod-10 | High | Low | Untested |
-| Chạm | chạm đầu/đuôi | `dan_cham`, group stats | `a=d or b=d` | digit/window | High | Low | Untested |
-| Reverse | lộn, đảo | `number_reference.reverse` | `AB↔BA` | none | High | None | Deterministic only |
-| Cặp 50 | cặp loto, kép-bóng | `number_reference.cap_loto_50` | 45 reverse pairs + 5 double-shadow pairs | none | High | None | Challenger relation only |
-| Bộ/bóng | bộ, hệ, bóng dương/âm | `number_reference` | Documented digit maps and generated orbit | convention | Medium/high | Medium if selected | Challenger relation only |
-| Dynamic positional cầu | cầu chạy, ghép vị trí | `dynamic_cau.find_running_patterns` | Lag-one semantic digits + deterministic transform + streak | positions, run, support, target | Pattern discovery | High | Research only, untested |
-| Cầu lộn | reverse-pair cầu | `dynamic_cau` `reverse_pair` | Candidate set `{AB,BA}` | positions/run | Pattern discovery | High | Research only, untested |
-| Cầu 2 nháy | hai nháy | `dynamic_cau` `loto_2_nhay` | Any individually predicted number occurs at least twice | positions/run/support | Multiplicity-aware | High | Research only, untested |
-| Special-prize cầu | cầu đề, cầu ĐB | `dynamic_cau` `special` | Candidate contains next special suffix | positions/run | Pattern discovery | High | Research only, untested |
-| Conditional matrix | loto theo loto/ĐB | `conditional_matrices`, `conditional_nextday` | Exact-calendar joint/source counts and smoothed conditional rates | alpha, cutoff | High | High | Inconclusive/research only |
-| Association rules | A→B | `association_rules.mine_association_rules` | support, confidence, lift, Wilson lower bound | thresholds, lag | High | High | Untested |
-| Markov | transition model | `markov_stats.build_markov_chain` | Additively smoothed first-order transitions | alpha, states | Medium | High | Inconclusive/research only |
-| Candidate score | chỉ số nổ, điểm | `candidate_scoring.rank_candidates` | Explicit weighted normalized components | weights, EMA, lookback | Explanation/ranking | Medium | Untested; never labeled probability |
-| Pascal | tam giác Pascal | None | Public adjacent-sum modulo-10 recurrence; mapping underspecified | seed/depth/extraction | Transformation only | High | Rejected pending reproducible mapping |
-| Fibonacci | cầu Fibonacci | None | Fibonacci recurrence; lottery mapping not found | unspecified | None yet | High | Rejected as underspecified |
-| Graph | number network | None; matrix foundation exists | Weighted graph summaries | edge/threshold | Potentially descriptive | High | Planned research only |
+| Lô gan | gan, lô khan | `gap_cycle_stats.compute_gap_stats` | Số kỳ hoàn tất từ lần về gần nhất, luôn trước ngày mục tiêu | ngày chốt, cửa sổ | Độ gần/kiểm duyệt phải | Trung bình | Chỉ mô tả; bác bỏ diễn giải “đến hạn” |
+| Tần suất | số lần về | `frequency_stats.compute_frequency_stats` | Tổng số lần xuất hiện và tổng số ngày có mặt | cửa sổ lịch/số kỳ | Cao | Trung bình | Chưa kiểm định |
+| Tần suất cặp | cặp cùng về, lịch sử lô xiên | `pair_stats`, `build_cooccurrence_matrix` | Số đếm/mức hỗ trợ/độ nâng cùng kỳ | cửa sổ, hỗ trợ | Cao | Trung bình | Chưa kiểm định |
+| Chu kỳ | nhịp | `gap_cycle_stats` | Khoảng kỳ/ngày giữa hai lần về | cửa sổ, khoảng gần đây | Cao | Thấp | Chưa kiểm định |
+| Đầu/đuôi | hàng chục/hàng đơn vị | `number_reference`, `frequency_stats` | Nhóm chữ số hàng chục/hàng đơn vị | nhóm/cửa sổ | Cao | Thấp | Chưa kiểm định |
+| Tổng | tổng đề | `digit_sum`, `digit_sum_mod10` | `a+b` hoặc `(a+b) mod 10`, ghi rõ tên | tổng thô/modulo 10 | Cao | Thấp | Chưa kiểm định |
+| Chạm | chạm đầu/đuôi | `dan_cham`, thống kê nhóm | `a=d hoặc b=d` | chữ số/cửa sổ | Cao | Thấp | Chưa kiểm định |
+| Lộn | đảo | `number_reference.reverse` | `AB↔BA` | không có | Cao | Không | Chỉ là phép biến đổi tất định |
+| Cặp 50 | cặp lô tô, kép-bóng | `number_reference.cap_loto_50` | 45 cặp đảo + 5 cặp kép-bóng | không có | Cao | Không | Chỉ là quan hệ thử nghiệm |
+| Bộ/bóng | bộ, hệ, bóng dương/âm | `number_reference` | Ánh xạ chữ số đã định nghĩa và quỹ đạo sinh | quy ước | Trung bình/cao | Trung bình nếu được chọn | Chỉ là quan hệ thử nghiệm |
+| Cầu vị trí động | cầu chạy, ghép vị trí | `dynamic_cau.find_running_patterns` | Chữ số ngữ nghĩa trễ một ngày + phép biến đổi tất định + chuỗi liên tiếp | vị trí, chuỗi, hỗ trợ, mục tiêu | Khai phá mẫu | Cao | Chỉ nghiên cứu, chưa kiểm định |
+| Cầu lộn | cầu cặp đảo | phép `reverse_pair` trong `dynamic_cau` | Tập ứng viên `{AB,BA}` | vị trí/chuỗi | Khai phá mẫu | Cao | Chỉ nghiên cứu, chưa kiểm định |
+| Cầu 2 nháy | hai nháy | mục tiêu `loto_2_nhay` trong `dynamic_cau` | Một số được dự báo riêng xuất hiện ít nhất hai lần | vị trí/chuỗi/hỗ trợ | Nhận biết số lần xuất hiện | Cao | Chỉ nghiên cứu, chưa kiểm định |
+| Cầu giải đặc biệt | cầu đề, cầu ĐB | mục tiêu `special` trong `dynamic_cau` | Ứng viên chứa hai số cuối ĐB kế tiếp | vị trí/chuỗi | Khai phá mẫu | Cao | Chỉ nghiên cứu, chưa kiểm định |
+| Ma trận điều kiện | lô tô theo lô tô/ĐB | `conditional_matrices`, `conditional_nextday` | Số đếm nguồn–đích theo ngày lịch chính xác và tỷ lệ có làm trơn | alpha, ngày chốt | Cao | Cao | Chưa kết luận/chỉ nghiên cứu |
+| Luật kết hợp | A→B | `association_rules.mine_association_rules` | mức hỗ trợ, độ tin cậy, độ nâng, cận dưới Wilson | ngưỡng, độ trễ | Cao | Cao | Chưa kiểm định |
+| Markov | mô hình chuyển tiếp | `markov_stats.build_markov_chain` | Chuyển tiếp bậc một có làm trơn cộng | alpha, trạng thái | Trung bình | Cao | Chưa kết luận/chỉ nghiên cứu |
+| Điểm ứng viên | chỉ số nổ, điểm | `candidate_scoring.rank_candidates` | Các thành phần chuẩn hóa có trọng số rõ ràng | trọng số, EMA, cửa sổ | Giải thích/xếp hạng | Trung bình | Chưa kiểm định; không gọi là xác suất |
+| Pascal | tam giác Pascal | Chưa triển khai | Truy hồi tổng kề nhau modulo 10 công khai; ánh xạ chưa đủ rõ | hạt giống/độ sâu/cách trích | Chỉ là phép biến đổi | Cao | Bác bỏ cho tới khi có ánh xạ tái lập được |
+| Fibonacci | cầu Fibonacci | Chưa triển khai | Truy hồi Fibonacci; không tìm thấy ánh xạ xổ số | chưa xác định | Chưa có | Cao | Bác bỏ vì thiếu đặc tả |
+| Đồ thị | mạng số | Chưa có; đã có nền ma trận | Tóm tắt đồ thị có trọng số | cạnh/ngưỡng | Có thể hữu ích mô tả | Cao | Chỉ dự kiến nghiên cứu |
 
-## Evidence boundaries
+## Ranh giới bằng chứng
 
-- The sites consistently expose historical statistics and pattern-search tools.
-  That establishes terminology and observable transformations, not future skill.
-- Exact proprietary enumeration, pruning, ranking, or “confidence” formulas
-  cannot be recovered from public output and are not fabricated here.
-- VLA's canonical cặp-50 layout matches the public 50-pair table observed at
-  Xổ Số Đại Phát, including the five double-shadow pairs.
-- Public Pascal pages were mutually similar, but similarity does not establish
-  independence or a validated forecast. VLA records only the visible recurrence.
-- No sufficiently precise public Fibonacci-to-lottery mapping survived the
-  documentation threshold, so no implementation was added.
+- Các nguồn đều cung cấp thống kê lịch sử và công cụ tìm mẫu. Điều đó xác lập
+  thuật ngữ và phép biến đổi quan sát được, không chứng minh kỹ năng dự báo.
+- Không thể khôi phục cách liệt kê, cắt tỉa, xếp hạng hay công thức “độ tin cậy”
+  độc quyền từ đầu ra công khai; VLA không bịa đặt các phần đó.
+- Bố cục cặp 50 chuẩn của VLA khớp bảng 50 cặp công khai quan sát được tại Xổ
+  Số Đại Phát, gồm cả năm cặp kép-bóng.
+- Các trang Pascal công khai có mô tả tương tự nhau, nhưng sự giống nhau không
+  chứng minh tính độc lập hay khả năng dự báo. VLA chỉ ghi quy tắc truy hồi thấy được.
+- Không có ánh xạ Fibonacci→xổ số công khai nào đủ chính xác vượt ngưỡng tài
+  liệu, vì vậy không thêm triển khai.

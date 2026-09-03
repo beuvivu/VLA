@@ -1,6 +1,6 @@
 # Known failures and open risks
 
-Last verified: 2026-09-02
+Last verified: 2026-09-03
 
 ## KF-0001 — Historical pattern selection bias
 

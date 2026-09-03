@@ -19,6 +19,7 @@ from cau_keo_domain_challenger import (
     augment_domain_features,
     walk_forward_ablation,
 )
+from cau_keo_feature_groups import DOMAIN_FEATURE_SPECS
 from ml_validation import evaluate_predictions
 
 
@@ -43,9 +44,22 @@ def _base_frame(anchor: str = "2026-09-01") -> pd.DataFrame:
 
 
 def test_domain_feature_groups_are_unique_and_nonempty() -> None:
-    assert set(DOMAIN_FEATURE_GROUPS) == {"partner_cap50", "bo", "bong", "cham", "tong"}
+    assert set(DOMAIN_FEATURE_GROUPS) == {
+        "partner",
+        "cap_50",
+        "bo",
+        "bong",
+        "cham",
+        "tong",
+    }
     assert all(DOMAIN_FEATURE_GROUPS.values())
     assert len(ALL_DOMAIN_FEATURES) == len(set(ALL_DOMAIN_FEATURES))
+    assert set(DOMAIN_FEATURE_SPECS) == set(DOMAIN_FEATURE_GROUPS)
+    assert all(not spec.default_enabled for spec in DOMAIN_FEATURE_SPECS.values())
+    assert all(
+        spec.temporal_requirement == "same_anchor_only"
+        for spec in DOMAIN_FEATURE_SPECS.values()
+    )
 
 
 def test_augment_domain_features_respects_partner_bo_bong_cham_tong_semantics() -> None:
@@ -93,6 +107,43 @@ def test_domain_augmentation_preserves_row_order_and_has_no_cross_anchor_leakage
     older_anchor = out[out["anchor_date"] == "2026-08-31"].set_index("number")
     assert int(first_anchor.loc[0, "cap50_partner_freq_30d"]) == 1055
     assert int(older_anchor.loc[0, "cap50_partner_freq_30d"]) == 55
+
+
+def test_domain_augmentation_preserves_duplicate_index_labels() -> None:
+    frame = _base_frame().sample(frac=1.0, random_state=7)
+    frame.index = np.arange(len(frame)) % 11
+    expected_index = frame.index.copy()
+
+    out = augment_domain_features(frame)
+
+    assert out.index.equals(expected_index)
+    assert out["number"].tolist() == frame["number"].tolist()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda frame: pd.concat([frame, frame.iloc[[0]]]), "Mỗi ngày neo"),
+        (
+            lambda frame: frame.assign(
+                freq_30d=np.where(frame["number"].eq(0), np.inf, frame["freq_30d"])
+            ),
+            "không hữu hạn",
+        ),
+        (
+            lambda frame: frame.assign(
+                anchor_date=np.where(frame["number"].eq(0), None, frame["anchor_date"])
+            ),
+            "Ngày neo không được để trống",
+        ),
+    ],
+)
+def test_domain_augmentation_rejects_ambiguous_or_nonfinite_rows(
+    mutation,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        augment_domain_features(mutation(_base_frame()))
 
 
 def test_four_walk_forward_folds_are_strictly_chronological() -> None:
