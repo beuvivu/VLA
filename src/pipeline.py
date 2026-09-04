@@ -355,7 +355,10 @@ def main() -> None:
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
-        _run(_py("src/build_fun_prediction.py"), allow_fail=soft_fail)
+        # This is a user-visible, date-bound snapshot.  Swallowing a builder
+        # error here leaves yesterday's simulation in place and makes the UI
+        # appear frozen, so it is a hard step even in non-strict research runs.
+        _run(_py("src/build_fun_prediction.py"), allow_fail=False)
         _run(_py("src/build_research_lab.py"), allow_fail=True)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 

@@ -47,3 +47,10 @@ GitHub may delay or drop scheduled events. The live workflow therefore starts
 before the Vietnam draw, polls for up to 60 minutes, and dispatches daily
 finalization immediately after verified completion; watchdog recovery remains a
 fallback, not an absolute real-time SLA.
+
+## KF-0009 — GitHub CLI chưa có trong môi trường audit cục bộ
+
+Lệnh `gh cache list --repo beuvivu/VLA` và `gh cache delete --all --confirm
+--repo beuvivu/VLA` đã được thử trong runner hiện tại nhưng `gh` không được cài
+đặt. Việc purge thật phải chạy trên máy có GitHub CLI và token có quyền Actions
+write, hoặc kích hoạt workflow thủ công `.github/workflows/cache-purge.yml`.

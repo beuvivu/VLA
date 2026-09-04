@@ -2,6 +2,55 @@
 
 Last verified: 2026-09-03
 
+## REP-0012 — Không nuốt lỗi làm mới mô phỏng
+
+Context: pipeline dựng bảng mô phỏng xác suất cho ngày mục tiêu.
+
+Symptom: khi snapshot dự báo thiếu hoặc lỗi, pipeline non-strict vẫn tiếp tục
+và giữ `fun_draw_next.*` của ngày trước, khiến giao diện trông như bị đứng.
+
+Root cause: bước `build_fun_prediction.py` dùng `allow_fail=soft_fail` dù đầu ra
+là artifact user-visible, có ngày mục tiêu và được production audit kiểm tra.
+
+Correct pattern: coi bước làm mới mô phỏng là hard-fail; ghi JSON/CSV vào tệp tạm
+cùng thư mục rồi `os.replace` để không xuất bản tệp bị cắt dở.
+
+Avoid: nuốt lỗi dựng artifact hoặc ghi trực tiếp vào tệp production.
+
+Regression guard: `test_pipeline_treats_simulation_refresh_as_hard_failure` và
+`test_artifact_write_replaces_both_snapshots_without_partial_files`.
+
+Affected modules: `pipeline.py`, `build_fun_prediction.py`.
+
+Confidence: high
+
+Last verified: 2026-09-04
+
+## REP-0013 — Cache production không được che khuất dữ liệu mới
+
+Context: workflow live/daily/dashboard chạy trên GitHub Actions.
+
+Symptom: cache phụ thuộc của runner có thể làm chẩn đoán stale khó tái lập;
+không có cơ chế purge được kiểm soát.
+
+Root cause: job production dùng cache pip mặc định trong khi mục tiêu chính là
+khôi phục dữ liệu/artifact theo từng run.
+
+Correct pattern: bỏ cache pip ở các job production, cài với `--no-cache-dir`,
+ghi nhận `VLA_CACHE_BUST=${{ github.run_id }}`, và chỉ purge toàn bộ cache bằng
+workflow `workflow_dispatch` có quyền `actions: write`.
+
+Avoid: xóa cache tự động theo lịch hoặc giả định cache package là dữ liệu mới.
+
+Regression guard: `test_production_refreshes_do_not_restore_package_caches` và
+`test_cache_purge_is_explicit_and_not_scheduled`.
+
+Affected modules: `.github/workflows/*.yml`, `scripts/purge_github_caches.sh`.
+
+Confidence: high
+
+Last verified: 2026-09-04
+
 ## REP-0011 — Đồng nhất UTC+7 và bàn giao live→daily
 
 Context: dữ liệu daily và bảng mô phỏng không cập nhật kịp sau giờ quay.

@@ -30,11 +30,9 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-          cache: pip
-          cache-dependency-path: requirements.txt
 
       - name: Cài đặt thư viện cho bảng điều khiển
-        run: python -m pip install pandas==2.2.3 numpy==2.2.6
+        run: python -m pip install --no-cache-dir pandas==2.2.3 numpy==2.2.6
 
       - name: Tạo bảng điều khiển Markdown từ dữ liệu đã lưu
         run: python src/build_markdown_dashboard_v3.py

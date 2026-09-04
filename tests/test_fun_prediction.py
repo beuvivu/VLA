@@ -87,6 +87,32 @@ def test_fun_draw_seed_changes_when_target_snapshot_changes(tmp_path: Path) -> N
     assert build_fun_draw(inputs)["seed"] != build_fun_draw(changed)["seed"]
 
 
+def test_fun_draw_seed_changes_when_probability_snapshot_changes(tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    _write_prediction_fixture(data)
+    inputs = load_prediction_inputs(data)
+    changed_loto = inputs.loto.copy()
+    changed_loto.loc[0, "prob"] += 0.001
+    changed = replace(inputs, loto=changed_loto)
+    assert build_fun_draw(inputs)["seed"] != build_fun_draw(changed)["seed"]
+
+
+def test_artifact_write_replaces_both_snapshots_without_partial_files(tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    _write_prediction_fixture(data)
+    inputs = load_prediction_inputs(data)
+    first = build_fun_draw(inputs)
+    write_artifacts(first, data)
+
+    second = replace(inputs, target_date="2026-09-03")
+    second_payload = build_fun_draw(second)
+    json_path, csv_path = write_artifacts(second_payload, data)
+    assert json.loads(json_path.read_text(encoding="utf-8"))["target_date"] == "2026-09-03"
+    csv = pd.read_csv(csv_path, dtype={"value": str})
+    assert csv.iloc[0]["value"] == second_payload["rows"][0]["value"]
+    assert not list((data / "predict").glob(".fun-draw-*"))
+
+
 def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:
     data = tmp_path / "data"
     docs = tmp_path / "docs"

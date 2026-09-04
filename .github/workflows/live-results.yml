@@ -25,6 +25,7 @@ jobs:
       TZ: Asia/Ho_Chi_Minh
       POLL_SECONDS: "15"
       MAX_SECONDS: "3600"
+      VLA_CACHE_BUST: ${{ github.run_id }}
     steps:
       - name: Lấy nhánh mặc định
         uses: actions/checkout@v7
@@ -35,13 +36,11 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-          cache: "pip"
-          cache-dependency-path: requirements-live.txt
 
       - name: Cài đặt thư viện cho dữ liệu trực tiếp
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-live.txt
+          python -m pip install --upgrade --no-cache-dir pip
+          python -m pip install --no-cache-dir -r requirements-live.txt
 
       - name: Thăm dò nguồn và xuất bản nhánh live một tệp
         id: poll

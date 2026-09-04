@@ -86,3 +86,20 @@ def test_pages_use_official_actions_deployment_flow() -> None:
         assert "actions/configure-pages@v6" in text
         assert "actions/upload-pages-artifact@v5" in text
         assert "actions/deploy-pages@v5" in text
+
+
+def test_production_refreshes_do_not_restore_package_caches() -> None:
+    # Live/daily jobs must not restore an old runner cache while repairing a
+    # stale data snapshot.  CI may retain its dependency cache for speed.
+    for name in ("live-results.yml", "update-data.yml", "dashboard-refresh.yml"):
+        text = _text(name)
+        assert "cache:" not in text
+        assert "--no-cache-dir" in text
+
+
+def test_cache_purge_is_explicit_and_not_scheduled() -> None:
+    text = _text("cache-purge.yml")
+    assert "workflow_dispatch:" in text
+    assert "schedule:" not in text
+    assert "actions: write" in text
+    assert "gh cache delete --all --confirm" in text

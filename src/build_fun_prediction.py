@@ -13,7 +13,9 @@ import argparse
 import hashlib
 import html
 import json
+import os
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -216,8 +218,50 @@ def write_artifacts(payload: dict[str, Any], data_dir: Path) -> tuple[Path, Path
     pred_dir.mkdir(parents=True, exist_ok=True)
     json_path = pred_dir / "fun_draw_next.json"
     csv_path = pred_dir / "fun_draw_next.csv"
-    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    pd.DataFrame(payload["rows"]).to_csv(csv_path, index=False)
+
+    # Replace both snapshots atomically.  A runner interruption must not leave
+    # a truncated JSON/CSV pair that the next page build interprets as a stale
+    # simulation.  Temporary files live beside the destination so os.replace
+    # remains atomic on the same filesystem.
+    json_tmp: str | None = None
+    csv_tmp: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".json",
+            delete=False,
+        ) as fh:
+            json_tmp = fh.name
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".csv",
+            delete=False,
+        ) as fh:
+            csv_tmp = fh.name
+            pd.DataFrame(payload["rows"]).to_csv(fh, index=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(json_tmp, json_path)
+        json_tmp = None
+        os.replace(csv_tmp, csv_path)
+        csv_tmp = None
+    finally:
+        for path in (json_tmp, csv_tmp):
+            if path:
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
     return json_path, csv_path
 
 
