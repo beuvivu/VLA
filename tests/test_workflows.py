@@ -102,4 +102,4 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
     assert "workflow_dispatch:" in text
     assert "schedule:" not in text
     assert "actions: write" in text
-    assert "gh cache delete --all --confirm" in text
+    assert "scripts/purge_github_caches.py --confirm" in text

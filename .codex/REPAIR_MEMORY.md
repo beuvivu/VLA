@@ -38,7 +38,8 @@ khôi phục dữ liệu/artifact theo từng run.
 
 Correct pattern: bỏ cache pip ở các job production, cài với `--no-cache-dir`,
 ghi nhận `VLA_CACHE_BUST=${{ github.run_id }}`, và chỉ purge toàn bộ cache bằng
-workflow `workflow_dispatch` có quyền `actions: write`.
+workflow `workflow_dispatch` có quyền `actions: write`; thao tác purge dùng REST
+API chuẩn để không phụ thuộc binary `gh` trên máy chạy.
 
 Avoid: xóa cache tự động theo lịch hoặc giả định cache package là dữ liệu mới.
 

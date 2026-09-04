@@ -48,9 +48,10 @@ before the Vietnam draw, polls for up to 60 minutes, and dispatches daily
 finalization immediately after verified completion; watchdog recovery remains a
 fallback, not an absolute real-time SLA.
 
-## KF-0009 — GitHub CLI chưa có trong môi trường audit cục bộ
+## KF-0009 — GitHub CLI không có trong môi trường audit cục bộ
 
 Lệnh `gh cache list --repo beuvivu/VLA` và `gh cache delete --all --confirm
---repo beuvivu/VLA` đã được thử trong runner hiện tại nhưng `gh` không được cài
-đặt. Việc purge thật phải chạy trên máy có GitHub CLI và token có quyền Actions
-write, hoặc kích hoạt workflow thủ công `.github/workflows/cache-purge.yml`.
+--repo beuvivu/VLA` đã được thử nhưng `gh` không được cài đặt. Đã bổ sung
+`scripts/purge_github_caches.py`, dùng REST API tương đương với token `GH_TOKEN`,
+và workflow thủ công `.github/workflows/cache-purge.yml`; thao tác vẫn yêu cầu
+`--confirm` và quyền `actions: write`.
