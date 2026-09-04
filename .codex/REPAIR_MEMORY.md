@@ -2,7 +2,7 @@
 
 Last verified: 2026-09-03
 
-## REP-0008 — Đồng nhất UTC+7 và bàn giao live→daily
+## REP-0011 — Đồng nhất UTC+7 và bàn giao live→daily
 
 Context: dữ liệu daily và bảng mô phỏng không cập nhật kịp sau giờ quay.
 
