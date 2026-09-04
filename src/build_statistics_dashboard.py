@@ -779,7 +779,7 @@ def main() -> None:
 
     pair_body = f"""
     <div class="layout-grid two">
-      {_bar_chart(latest_month_pair, title="Cặp lộn nổi bật trong tháng", subtitle="Cặp lộn phù hợp biểu đồ thanh vì cần xếp hạng cặp có tần suất cao.", label_col="pair", value_col="freq", top_n=18, scheme="freq")}
+      {_bar_chart(latest_month_pair, title="Cặp lộn nổi bật trong tháng", subtitle="Gồm 45 cặp đảo chiều và 5 cặp kép-bóng; biểu đồ xếp hạng theo tần suất.", label_col="pair", value_col="freq", top_n=18, scheme="freq")}
       {_bar_chart(latest_year_pair, title="Cặp lộn nổi bật trong năm", subtitle="So sánh cặp nổi bật trên mẫu năm hiện tại.", label_col="pair", value_col="freq", top_n=18, scheme="hot")}
     </div>
     <div class="layout-grid two">
@@ -845,7 +845,7 @@ def main() -> None:
         _section("Bảng vị trí đường cầu và căn cứ khi bấm số", "Mỗi số có bảng căn cứ riêng: vị trí chữ số, ngày gốc, độ trễ, hiệu suất lịch sử và nhận định AI/ML.", position_body, "can-cu-cau"),
         _section("Gan, nhịp và chu kỳ", "Khoảng cách xuất hiện hiện tại nên hiển thị bằng ma trận nhiệt và biểu đồ xếp hạng để nhận biết số lâu chưa về.", rhythm_body, "gan-nhip"),
         _section("Đầu, đuôi, tổng và nhóm ĐB", "Nhóm ít giá trị nên dùng biểu đồ thanh; bảng chỉ giữ phần chi tiết cần đối chiếu.", group_body, "dau-duoi-tong"),
-        _section("Cặp lộn", "Cặp lộn là danh sách xếp hạng nên dùng biểu đồ thanh cho nhóm đứng đầu và bảng để xem số ngày về/cùng về.", pair_body, "cap-lon"),
+        _section("Cặp lộn và kép-bóng", "Cặp lộn gồm 45 cặp đảo chiều; năm cặp kép dùng quan hệ bóng (00-55, 11-66, 22-77, 33-88, 44-99).", pair_body, "cap-lon"),
         _section("Bảng đặc biệt và giải nhất", "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng biểu đồ/bảng gan riêng.", board_body, "bang-db"),
         _section("Điều kiện lịch sử", "Các bảng này có nhiều dòng và nhiều điều kiện, vì vậy giữ dạng bảng có lọc nhanh thay vì ép thành ma trận.", conditional_body, "dieu-kien"),
         _section("Quy tắc chọn loại hiển thị", "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.", qa_body, "ui-ux"),

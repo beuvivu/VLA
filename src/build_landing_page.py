@@ -32,7 +32,7 @@ NAV_ITEMS: list[tuple[str, str, str]] = [
     ("tan-suat-loto", "Tần suất loto", "Ma trận ngày, tuần, tháng, năm"),
     ("tan-suat-de", "Tần suất ĐB", "Ma trận đặc biệt theo kỳ"),
     ("gan-nhip", "Gan / nhịp", "Số lâu chưa về và áp lực nhịp"),
-    ("cap-lon", "Cặp lộn", "Cặp đảo chiều cùng tần suất"),
+    ("cap-lon", "Cặp lộn", "45 cặp đảo chiều và 5 cặp kép-bóng"),
     ("dau-duoi-tong", "Đầu · đuôi · tổng", "Phân bổ nhóm số dễ so sánh"),
     ("db-tuan-thang", "ĐB tuần/tháng", "Bảng đặc biệt theo lịch"),
     ("duong-cau", "Vị trí đường cầu", "Căn cứ khi bấm vào từng số"),
@@ -1719,13 +1719,13 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="cap-lon" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Cặp đảo chiều</div>
-            <h2>Cặp lộn / cặp đảo chiều</h2>
+            <div class="section-kicker">Cặp lộn / kép-bóng</div>
+            <h2>Cặp lộn và cặp kép-bóng</h2>
             <p>Biểu đồ thanh phù hợp hơn ma trận vì cần so sánh xếp hạng từng cặp như 36–63, 69–96.</p>
           </div>
         </div>
         <div class="two-col">
-          {_render_bar_card(title='Cặp lộn nổi bật trong tháng', subtitle='Cặp đảo chiều có tổng tần suất cao trong tháng hiện tại.', df=reverse_pairs, label_col='pair', value_col='freq', palette='sky', limit=12, value_decimals=0)}
+          {_render_bar_card(title='Cặp lộn nổi bật trong tháng', subtitle='45 cặp đảo chiều và 5 cặp kép-bóng có tổng tần suất cao trong tháng hiện tại.', df=reverse_pairs, label_col='pair', value_col='freq', palette='sky', limit=12, value_decimals=0)}
           {_render_table(title='Chi tiết cặp lộn', subtitle='Có thêm số ngày về và số ngày cùng về để tránh nhìn nhầm chỉ theo tần suất.', df=reverse_pairs, columns=['pair', 'freq', 'days_hit', 'cooccur_days', 'avg_per_draw', 'rank_in_period'], limit=12, dense=False)}
         </div>
       </section>

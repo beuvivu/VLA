@@ -8,9 +8,9 @@
 ![Mới nhất](https://img.shields.io/badge/MOI_NHAT-2026--09--02-60a5fa?style=for-the-badge)
 ![Dự báo](https://img.shields.io/badge/DU_BAO-2026--09--03-a78bfa?style=for-the-badge)
 ![Meta lô tô](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
-![Meta đề](https://img.shields.io/badge/META_DE-DA_CHAN-fb7185?style=for-the-badge)
+![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-03T04:10:38Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-04T15:22:16Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -27,7 +27,7 @@
 
 | Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **2026-09-02** | **2026-09-03** | **388 kỳ · thiếu 0** | Meta lô tô **ĐANG BẬT** · Đề **ĐÃ CHẶN** |
+| **2026-09-02** | **2026-09-03** | **388 kỳ · thiếu 0** | Meta lô tô **ĐANG BẬT** · Đặc Biệt **ĐÃ CHẶN** |
 
 ---
 
@@ -985,21 +985,21 @@
 ### Cặp lộn · tháng
 | # | Cặp lộn | Tần suất | So sánh | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **39-93** | 3 | cùng về 1 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **44-44** | 2 | cùng về 2 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 3 | **77-77** | 2 | cùng về 2 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 4 | **12-21** | 2 | cùng về 1 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | **16-61** | 2 | cùng về 1 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 6 | **22-22** | 2 | cùng về 1 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | **01-10** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | **02-20** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **04-40** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **05-50** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 11 | **07-70** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 12 | **15-51** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **23-32** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **26-62** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | **37-73** | 2 | cùng về 0 ngày | Cặp đảo có tần suất cao trong tháng | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | **22-77** | 4 | cùng về 1 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **39-93** | 3 | cùng về 1 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | **12-21** | 2 | cùng về 1 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 4 | **16-61** | 2 | cùng về 1 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 5 | **01-10** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 6 | **02-20** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 7 | **04-40** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 8 | **05-50** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 9 | **07-70** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 10 | **15-51** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 11 | **23-32** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 12 | **26-62** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 13 | **37-73** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 14 | **44-99** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
+| 15 | **46-64** | 2 | cùng về 0 ngày | Cặp lộn/kép-bóng có tần suất cao trong tháng | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 
@@ -1068,21 +1068,21 @@
 ### ĐB hôm trước → lô tô hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `73` → **`76`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `73` → **`92`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `73` → **`93`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `73` → **`50`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `73` → **`53`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `73` → **`56`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | `73` → **`57`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | `73` → **`58`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | `73` → **`65`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | `73` → **`72`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | `73` → **`74`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | `73` → **`17`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | `73` → **`19`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | `73` → **`24`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | `22` → **`49`** | 100.00% | n=5 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `48` → **`20`** | 100.00% | n=5 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `55` → **`95`** | 100.00% | n=5 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `94` → **`80`** | 100.00% | n=5 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `90` → **`88`** | 100.00% | n=4 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | `97` → **`93`** | 100.00% | n=4 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | `29` → **`61`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | `30` → **`67`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | `30` → **`81`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | `32` → **`64`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | `32` → **`91`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 12 | `35` → **`14`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 13 | `35` → **`30`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 14 | `35` → **`91`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | `42` → **`80`** | 100.00% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
 
 ### Lô tô hôm trước → lô tô hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
@@ -1095,8 +1095,8 @@
 | 6 | `11` → **`13`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 7 | `72` → **`60`** | 40.23% | n=87 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 8 | `10` → **`95`** | 40.00% | n=90 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | `59` → **`60`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | `59` → **`54`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | `59` → **`54`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | `59` → **`60`** | 39.76% | n=83 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 11 | `63` → **`14`** | 39.36% | n=94 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 12 | `54` → **`81`** | 39.25% | n=107 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 13 | `84` → **`51`** | 39.18% | n=97 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
@@ -1106,21 +1106,21 @@
 ### ĐB hôm trước → ĐB hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `41` → **`40`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `18` → **`78`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | `02` → **`14`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `11` → **`13`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | `02` → **`14`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `07` → **`46`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | `11` → **`13`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `18` → **`78`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
 | 5 | `31` → **`17`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `07` → **`46`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | `42` → **`68`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | `27` → **`34`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | `95` → **`86`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 11 | `99` → **`36`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 12 | `49` → **`51`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 13 | `66` → **`67`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 14 | `99` → **`47`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
-| 15 | `82` → **`05`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 6 | `41` → **`40`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | `73` → **`88`** | 100.00% | n=1 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | `27` → **`34`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | `42` → **`68`** | 66.67% | n=3 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | `03` → **`04`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 11 | `03` → **`32`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 12 | `06` → **`50`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 13 | `06` → **`82`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 14 | `09` → **`05`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
+| 15 | `09` → **`47`** | 50.00% | n=2 | Mẫu nhỏ – chỉ tham khảo | ▰▰▰▰▰▱▱▱▱▱ |
 
 ---
 

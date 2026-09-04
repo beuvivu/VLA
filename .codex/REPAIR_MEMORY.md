@@ -104,6 +104,34 @@ Confidence: high
 
 Last verified: 2026-09-03
 
+## REP-0014 — Cặp lộn của số kép phải dùng quan hệ kép-bóng
+
+Context: bảng `reverse_pair_frequency_*` và các dashboard hiển thị cặp lộn.
+
+Symptom: số kép như 77 xuất hiện dưới dạng cặp tự lặp `77-77`, làm sai phân
+hoạch cặp 50 và gây nhầm rằng phép đảo của số kép là một cặp hai phần tử.
+
+Root cause: bộ sinh thống kê tự tạo `AB-BA` cho toàn bộ 00..99; với `AA`,
+phép đảo trả lại chính nó và không chuyển sang đối tác bóng.
+
+Correct pattern: luôn lấy 50 họ cặp từ `number_reference.all_cap_loto_50()`;
+45 cặp thường dùng đảo chiều, còn 5 cặp kép dùng kép-bóng
+`00-55`, `11-66`, `22-77`, `33-88`, `44-99`.
+
+Avoid: tự dựng danh sách đảo trong từng báo cáo hoặc giữ nhánh đặc biệt
+`a == b` rồi gắn số kép với chính nó.
+
+Regression guard: `test_reverse_pair_frequency_uses_kep_bong_instead_of_self_pairs`,
+`test_reverse_pair_frequency_has_all_five_kep_bong_families` và kiểm tra artifact
+50 cặp/kỳ không có self-pair.
+
+Affected modules: `statistical_matrices.py`, các builder dashboard và artifact
+`data/advanced/reverse_pair_frequency_*`.
+
+Confidence: high
+
+Last verified: 2026-09-04
+
 ## REP-0009 — Dữ liệu dashboard không được đi qua HTML động
 
 Context: trang tĩnh nhúng JSON và hiển thị dữ liệu nguồn/giải thích mô hình.

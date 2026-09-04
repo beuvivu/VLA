@@ -6,6 +6,7 @@ from statistical_matrices import (
     _de_sparse_from_raw,
     _period_frequency_from_sparse,
     _prepare_sparse,
+    _reverse_pair_frequency,
     _rhythm_from_sparse,
     _special_boards,
 )
@@ -56,3 +57,57 @@ def test_de_sparse_and_rhythm() -> None:
     zero = rhythm[rhythm["number_str"] == "00"].iloc[0]
     assert int(zero["current_gap"]) == 0
     assert int(zero["hit_count"]) == 2
+
+
+def test_reverse_pair_frequency_uses_kep_bong_instead_of_self_pairs() -> None:
+    sparse = pd.DataFrame(
+        {
+            "date": ["2026-01-01", "2026-01-02"],
+            "22": [1, 0],
+            "77": [0, 1],
+            "13": [1, 0],
+            "31": [0, 1],
+        }
+    )
+    out = _reverse_pair_frequency(_prepare_sparse(sparse), period="day")
+
+    # One canonical 50-pair row per family and date; no double can become AA-AA.
+    assert len(out) == 100
+    assert "77-77" not in set(out["pair"])
+    assert set(out["pair"]) >= {"22-77", "13-31"}
+
+    kep_bong = out[out["pair"] == "22-77"].sort_values("period_key")
+    assert kep_bong["freq"].tolist() == [1, 1]
+    assert kep_bong["days_hit"].tolist() == [1, 1]
+    assert kep_bong["cooccur_days"].tolist() == [0, 0]
+
+
+def test_reverse_pair_frequency_has_all_five_kep_bong_families() -> None:
+    sparse = pd.DataFrame(
+        {
+            "date": ["2026-01-01"],
+            "00": [1],
+            "11": [1],
+            "22": [1],
+            "33": [1],
+            "44": [1],
+            "55": [0],
+            "66": [0],
+            "77": [0],
+            "88": [0],
+            "99": [0],
+        }
+    )
+    out = _reverse_pair_frequency(_prepare_sparse(sparse), period="day")
+    pairs = set(out["pair"])
+    expected = {
+        "00": "00-55",
+        "11": "11-66",
+        "22": "22-77",
+        "33": "33-88",
+        "44": "44-99",
+    }
+    assert set(expected.values()) <= pairs
+    for source, pair in expected.items():
+        row = out[out["pair"] == pair].iloc[0]
+        assert int(row["freq"]) == 1, source

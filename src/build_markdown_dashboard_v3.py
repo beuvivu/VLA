@@ -402,7 +402,7 @@ def _reverse_pairs(df: pd.DataFrame, top_n: int = 15) -> str:
     rows=[]
     for i,(_,r) in enumerate(view.iterrows(),1):
         f=_safe_float(r.get("freq"))
-        rows.append([i,f"**{r.get('pair','')}**",_fmt_num(f,0),f"cùng về {r.get('cooccur_days','—')} ngày","Cặp đảo có tần suất cao trong tháng",_bar(f,max_f)])
+        rows.append([i,f"**{r.get('pair','')}**",_fmt_num(f,0),f"cùng về {r.get('cooccur_days','—')} ngày","Cặp lộn/kép-bóng có tần suất cao trong tháng",_bar(f,max_f)])
     return _md_table(["#","Cặp lộn","Tần suất","So sánh","Ý nghĩa","Thanh so sánh"],rows)
 
 

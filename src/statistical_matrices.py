@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from lottery import Lottery, RepoPaths
+from number_reference import all_cap_loto_50
 from plot_utils import save_heatmap, save_labeled_heatmap, save_ranked_bar
 
 PeriodKind = Literal["day", "week", "month", "year"]
@@ -403,6 +404,14 @@ def _head_tail_total_by_period(two_digit_df: pd.DataFrame, *, period: PeriodKind
 
 
 def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> pd.DataFrame:
+    """Aggregate the canonical 50 cặp-loto families by period.
+
+    The historical implementation generated ``AB-BA`` directly.  That is
+    correct for 45 non-double reverse pairs, but it creates invalid self-pairs
+    such as ``77-77`` for doubles.  Doubles belong to the five kép-bóng
+    families (``00-55``, ..., ``44-99``), so the display and aggregation must
+    come from the canonical ontology rather than from ad-hoc reversal logic.
+    """
     df = _prepare_sparse(sparse_df)
     if df.empty:
         return pd.DataFrame()
@@ -413,28 +422,28 @@ def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> p
     days_by_period = bool_df.groupby("period_key", sort=True)[NUMBER_COLS].sum()
     draws = df.groupby("period_key", sort=True)["date"].nunique()
 
-    pairs: list[tuple[int, int]] = []
-    seen: set[tuple[int, int]] = set()
-    for n in NUMBER_COLS:
-        rev = (n % 10) * 10 + (n // 10)
-        key = tuple(sorted((n, rev)))
-        if key not in seen:
-            seen.add(key)
-            pairs.append(key)
+    # ``all_cap_loto_50`` is the single source of truth for cặp lộn/reverse
+    # families plus kép-bóng doubles.  It guarantees 50 disjoint pairs and
+    # therefore prevents a self-pair from ever reaching the dashboard.
+    pairs = [
+        tuple(sorted(int(member) for member in family))
+        for family in all_cap_loto_50()
+    ]
+    pairs.sort()
+    if len(pairs) != 50 or any(a == b for a, b in pairs):
+        raise RuntimeError("canonical cặp-loto ontology must contain 50 distinct pairs")
 
     rows: list[dict[str, object]] = []
     for period_key in count_by_period.index:
         for a, b in pairs:
-            if a == b:
-                freq = int(count_by_period.loc[period_key, a])
-                days_hit = int(days_by_period.loc[period_key, a])
-                cooccur_days = days_hit
-            else:
-                freq = int(count_by_period.loc[period_key, a] + count_by_period.loc[period_key, b])
-                a_hit = df.loc[df["period_key"] == period_key, a] > 0
-                b_hit = df.loc[df["period_key"] == period_key, b] > 0
-                days_hit = int((a_hit | b_hit).sum())
-                cooccur_days = int((a_hit & b_hit).sum())
+            freq = int(
+                count_by_period.loc[period_key, a]
+                + count_by_period.loc[period_key, b]
+            )
+            a_hit = df.loc[df["period_key"] == period_key, a] > 0
+            b_hit = df.loc[df["period_key"] == period_key, b] > 0
+            days_hit = int((a_hit | b_hit).sum())
+            cooccur_days = int((a_hit & b_hit).sum())
             rows.append(
                 {
                     "period_kind": period,
