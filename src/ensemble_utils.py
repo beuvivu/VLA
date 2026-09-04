@@ -20,10 +20,15 @@ def ensure_full_probs(df: pd.DataFrame) -> np.ndarray:
 
 
 def normalize_distribution(p: np.ndarray) -> np.ndarray:
-    s = float(np.sum(p))
+    values = np.asarray(p, dtype=np.float64)
+    if values.size == 0:
+        raise ValueError("probability distribution must not be empty")
+    if not np.isfinite(values).all() or bool((values < 0.0).any()):
+        raise ValueError("probability distribution must be finite and non-negative")
+    s = float(np.sum(values))
     if s <= 0:
-        return np.full_like(p, 1.0 / 100.0)
-    return p / s
+        return np.full(values.shape, 1.0 / values.size, dtype=np.float64)
+    return values / s
 
 
 def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
@@ -57,7 +62,13 @@ class EnsembleWeights:
     w_stable: float = 0.0
 
     def normalized(self) -> "EnsembleWeights":
-        arr = np.clip(np.array([self.w_ml, self.w_cau, self.w_stat, self.w_active, self.w_stable], dtype=float), 0.0, 1.0)
+        arr = np.array(
+            [self.w_ml, self.w_cau, self.w_stat, self.w_active, self.w_stable],
+            dtype=float,
+        )
+        if not np.isfinite(arr).all():
+            raise ValueError("ensemble weights must be finite")
+        arr = np.clip(arr, 0.0, 1.0)
         total = float(arr.sum())
         if total <= 0:
             arr[:] = 0.20

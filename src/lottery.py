@@ -4,28 +4,24 @@ import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, datetime
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
-
 import numpy as np
 import pandas as pd
-try:
-    # cloudscraper helps bypass some basic anti-bot protections.
-    from cloudscraper import CloudScraper
-except ModuleNotFoundError:  # pragma: no cover
-    # Fall back to a plain requests session so the code can still run
-    # in minimal environments.
-    import requests
-
-    CloudScraper = requests.Session  # type: ignore[assignment]
+import requests
 
 from dtos import Result, ResultList
 from excel_export import export_excel_outputs
-from sources import Source, default_sources, source_independence_key
+from sources import HttpClient, Source, default_sources, source_independence_key
+from time_policy import VIETNAM_TZ, vietnam_date
 
 logger = logging.getLogger(__name__)
+
+
+def vietnam_today(*, now: datetime | None = None) -> date:
+    """Return the domain date in Vietnam rather than the runner's local date."""
+    return vietnam_date(now)
 
 
 @dataclass(frozen=True)
@@ -52,11 +48,13 @@ class Lottery:
         self,
         *,
         paths: RepoPaths | None = None,
-        http: CloudScraper | None = None,
+        http: HttpClient | None = None,
         sources: list[Source] | None = None,
     ) -> None:
         self._paths = paths or RepoPaths.from_module()
-        self._http = http or CloudScraper()
+        # Use a normal HTTP session. The collector must not bypass CAPTCHA or
+        # anti-bot protections; inaccessible sources simply fail closed.
+        self._http = http or requests.Session()
 
         # Ordered public-source policy.  This order is also the deterministic
         # display/diagnostic tie-breaker, but never overrides an ambiguous
@@ -70,8 +68,8 @@ class Lottery:
         self._2_digits_data: pd.DataFrame = pd.DataFrame()
         self._sparse_data: pd.DataFrame = pd.DataFrame()
 
-        self._begin_date = date.today()
-        self._last_date = date.today()
+        self._begin_date = vietnam_today()
+        self._last_date = self._begin_date
 
     def load(self) -> None:
         xsmb_path = self._paths.data_dir / "xsmb.json"
@@ -83,6 +81,9 @@ class Lottery:
 
         with xsmb_path.open("r", encoding="utf-8") as f:
             data = ResultList.model_validate_json(f.read())
+        dates = [item.date for item in data.root]
+        if len(dates) != len(set(dates)):
+            raise ValueError("xsmb.json contains duplicate draw dates")
         for d in data.root:
             self._data[d.date] = d
 
@@ -248,8 +249,8 @@ class Lottery:
             self._raw_data = pd.DataFrame(columns=["date"])
             self._2_digits_data = pd.DataFrame(columns=["date"])
             self._sparse_data = pd.DataFrame(columns=["date"])
-            self._begin_date = date.today()
-            self._last_date = date.today()
+            self._begin_date = vietnam_today()
+            self._last_date = self._begin_date
             return
 
         ordered: list[dict[str, Any]] = [self._data[d].model_dump() for d in sorted(self._data)]

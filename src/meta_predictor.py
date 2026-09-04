@@ -13,6 +13,7 @@ import argparse
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from numbers import Integral
 from pathlib import Path
 
 import joblib
@@ -87,8 +88,16 @@ def _date_strings(values: pd.Series) -> pd.Series:
 
 def _safe_prob(x: np.ndarray, mode: str) -> np.ndarray:
     arr = np.asarray(x, dtype=np.float64)
+    if mode not in {"loto", "de"}:
+        raise ValueError("mode must be 'loto' or 'de'")
+    if arr.size == 0 or not np.isfinite(arr).all():
+        raise ValueError("probability values must be non-empty and finite")
     if mode == "de":
-        return normalize_distribution(np.clip(arr, 0.0, None))
+        if bool((arr < 0.0).any()):
+            raise ValueError("ĐB probability weights must be non-negative")
+        return normalize_distribution(arr)
+    if bool(((arr < 0.0) | (arr > 1.0)).any()):
+        raise ValueError("loto probabilities must be inside [0, 1]")
     return clip01(arr, eps=1e-6)
 
 
@@ -659,20 +668,34 @@ def predict_meta(
     p_active: np.ndarray,
     p_stable: np.ndarray,
 ) -> np.ndarray:
-    if int(pack.get("schema_version", 0)) != META_SCHEMA_VERSION:
+    if not isinstance(pack, dict):
+        raise ValueError("Invalid stacked-ML model pack")
+    schema_version = pack.get("schema_version")
+    if isinstance(schema_version, bool) or not isinstance(schema_version, Integral):
+        raise ValueError("Invalid stacked-ML schema metadata")
+    if schema_version != META_SCHEMA_VERSION:
         raise ValueError("Incompatible stacked-ML schema")
     if str(pack.get("mode")) != mode:
         raise ValueError("Stacked-ML mode mismatch")
     component_cols = list(pack.get("component_cols") or [])
-    if not component_cols:
-        raise ValueError("Stacked-ML component tier missing")
+    allowed_component_tiers = {tuple(columns) for _, columns, _ in COMPONENT_TIERS}
+    if tuple(component_cols) not in allowed_component_tiers:
+        raise ValueError("Stacked-ML component tier is not allowlisted")
+    expected_features = meta_feature_columns(component_cols)
+    if list(pack.get("features") or []) != expected_features:
+        raise ValueError("Stacked-ML feature allowlist mismatch")
+    model = pack.get("model")
+    if not callable(getattr(model, "predict_proba", None)):
+        raise ValueError("Stacked-ML model is missing predict_proba")
     frame = current_component_frame(
         target_date, p_ml, p_cau, p_stat, p_active, p_stable
     )
     features = build_meta_features(frame, mode, component_cols)
-    columns = list(pack.get("features") or meta_feature_columns(component_cols))
-    X = features[columns].astype(np.float32).to_numpy()
-    p = pack["model"].predict_proba(X)[:, 1]
+    X = features[expected_features].astype(np.float32).to_numpy()
+    prediction = np.asarray(model.predict_proba(X), dtype=np.float64)
+    if prediction.shape != (len(features), 2):
+        raise ValueError("Stacked-ML predict_proba must return shape (rows, 2)")
+    p = prediction[:, 1]
     return _safe_prob(p, mode)
 
 
@@ -682,6 +705,8 @@ def blend_predictions(
     meta_prob: np.ndarray,
     meta_trust: float,
 ) -> np.ndarray:
+    if not np.isfinite(meta_trust):
+        raise ValueError("meta_trust must be finite")
     trust = float(np.clip(meta_trust, 0.0, 0.40))
     linear = _safe_prob(linear_prob, mode)
     meta = _safe_prob(meta_prob, mode)

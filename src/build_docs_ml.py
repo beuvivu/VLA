@@ -4,6 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from ui_locale import column_label
+from ui_theme import tailwind_style_tag
+from web_security import security_meta_tags
+
 
 DOCS_DIR = Path("docs")
 ML_DIR = Path("data/ml")
@@ -26,6 +30,7 @@ def _df_to_html_table(df: pd.DataFrame, title: str) -> str:
         view["prob_percent"] = view["prob_percent"].astype(float).map(lambda x: f"{x:.3f}%")
     if "prob" in view.columns:
         view["prob"] = view["prob"].astype(float).map(lambda x: f"{x:.6f}")
+    view = view.rename(columns=column_label)
 
     gen_date = ""
     if "predict_for_date" in df.columns and len(df):
@@ -33,7 +38,7 @@ def _df_to_html_table(df: pd.DataFrame, title: str) -> str:
 
     return f"""
     <h2>{title}</h2>
-    <div class="meta">Predict for: <code>{gen_date}</code></div>
+    <div class="meta">Dự báo cho ngày: <code>{gen_date}</code></div>
     {view.to_html(index=False, escape=True, classes="tbl")}
     """
 
@@ -44,6 +49,8 @@ def _base_page(body: str, page_title: str) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  {security_meta_tags()}
+  {tailwind_style_tag()}
   <title>{page_title}</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; color:#111; }}
@@ -62,7 +69,7 @@ def _base_page(body: str, page_title: str) -> str:
     .hint {{ color:#666; font-size:13px; margin-top:10px; }}
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 {body}
 </body>
 </html>"""
@@ -77,50 +84,50 @@ def build() -> None:
     loto_page = _base_page(
         body=f"""
         <div class="topbar">
-          <a class="pill" href="index.html">Dashboard</a>
-          <a class="pill" href="ml_top10_de.html">Đề Top10</a>
-          <a class="pill" href="soi-path-loto-active.html">Soi Path Lô (Active)</a>
-          <a class="pill" href="soi-path-de-active.html">Soi Path Đề (Active)</a>
+          <a class="pill" href="index.html">Bảng điều khiển</a>
+          <a class="pill" href="ml_top10_de.html">10 số Đặc Biệt đứng đầu</a>
+          <a class="pill" href="soi-path-loto-active.html">Soi cầu lô tô (đang chạy)</a>
+          <a class="pill" href="soi-path-de-active.html">Soi cầu Đặc Biệt (đang chạy)</a>
         </div>
-        {_df_to_html_table(loto_top, "ML Prediction — LÔ Top 10 (00–99)")}
-        <div class="hint">Sau 18:35 (VN), workflow sẽ cập nhật dự báo cho ngày hôm sau.</div>
+        {_df_to_html_table(loto_top, "Dự báo ML — 10 số lô tô đứng đầu (00–99)")}
+        <div class="hint">Sau 18:35 (giờ Việt Nam), quy trình sẽ cập nhật dự báo cho ngày hôm sau.</div>
         """,
-        page_title="ML — Lô Top 10",
+        page_title="ML — 10 số lô tô đứng đầu",
     )
     (DOCS_DIR / "ml_top10_loto.html").write_text(loto_page, encoding="utf-8")
 
     de_page = _base_page(
         body=f"""
         <div class="topbar">
-          <a class="pill" href="index.html">Dashboard</a>
-          <a class="pill" href="ml_top10_loto.html">Lô Top10</a>
-          <a class="pill" href="soi-path-loto-active.html">Soi Path Lô (Active)</a>
-          <a class="pill" href="soi-path-de-active.html">Soi Path Đề (Active)</a>
+          <a class="pill" href="index.html">Bảng điều khiển</a>
+          <a class="pill" href="ml_top10_loto.html">10 số lô tô đứng đầu</a>
+          <a class="pill" href="soi-path-loto-active.html">Soi cầu lô tô (đang chạy)</a>
+          <a class="pill" href="soi-path-de-active.html">Soi cầu Đặc Biệt (đang chạy)</a>
         </div>
-        {_df_to_html_table(de_top, "ML Prediction — ĐỀ Top 10 (2 số cuối ĐB)")}
-        <div class="hint">Đề: model chuẩn hoá xác suất về phân phối 00–99 (sum≈1).</div>
+        {_df_to_html_table(de_top, "Dự báo ML — 10 số Đặc Biệt đứng đầu (2 số cuối ĐB)")}
+        <div class="hint italic text-slate-600">Đặc Biệt: mô hình chuẩn hóa xác suất thành phân phối 00–99 (tổng xấp xỉ 1).</div>
         """,
-        page_title="ML — Đề Top 10",
+        page_title="ML — 10 số Đặc Biệt đứng đầu",
     )
     (DOCS_DIR / "ml_top10_de.html").write_text(de_page, encoding="utf-8")
 
-    loto_html = _df_to_html_table(loto_top, "LÔ Top 10")
-    de_html = _df_to_html_table(de_top, "ĐỀ Top 10")
+    loto_html = _df_to_html_table(loto_top, "10 số lô tô đứng đầu")
+    de_html = _df_to_html_table(de_top, "10 số Đặc Biệt đứng đầu")
 
     index_body = f"""
     <div class="topbar">
-      <span class="pill" style="border:none; font-weight:700;">Lottery Insights Dashboard</span>
-      <a class="pill" href="ml_top10_loto.html">Lô Top10 (page)</a>
-      <a class="pill" href="ml_top10_de.html">Đề Top10 (page)</a>
-      <a class="pill" href="soi-path-loto-active.html">Soi Path Lô (Active)</a>
-      <a class="pill" href="soi-path-loto-stable.html">Soi Path Lô (Stable)</a>
-      <a class="pill" href="soi-path-de-active.html">Soi Path Đề (Active)</a>
-      <a class="pill" href="soi-path-de-stable.html">Soi Path Đề (Stable)</a>
+      <span class="pill" style="border:none; font-weight:700;">Bảng điều khiển phân tích xổ số</span>
+      <a class="pill" href="ml_top10_loto.html">Trang 10 số lô tô</a>
+      <a class="pill" href="ml_top10_de.html">Trang 10 số Đặc Biệt</a>
+      <a class="pill" href="soi-path-loto-active.html">Cầu lô tô đang chạy</a>
+      <a class="pill" href="soi-path-loto-stable.html">Cầu lô tô ổn định</a>
+      <a class="pill" href="soi-path-de-active.html">Cầu Đặc Biệt đang chạy</a>
+      <a class="pill" href="soi-path-de-stable.html">Cầu Đặc Biệt ổn định</a>
     </div>
 
     <div class="tabs">
       <button class="tabbtn active" data-tab="loto">LÔ (00–99)</button>
-      <button class="tabbtn" data-tab="de">ĐỀ (2 số cuối ĐB)</button>
+      <button class="tabbtn" data-tab="de">ĐẶC BIỆT (2 số cuối ĐB)</button>
     </div>
 
     <div id="panel-loto" class="panel active">{loto_html}</div>
@@ -140,12 +147,14 @@ def build() -> None:
     </script>
 
     <div class="hint">
-      Dashboard lấy dữ liệu từ <code>data/ml/predict_next_*_ml_top10.csv</code>.
+      Bảng điều khiển lấy dữ liệu từ <code>data/ml/predict_next_*_ml_top10.csv</code>.
       Nếu chưa thấy số mới: chạy GitHub Actions sau 18:35 (VN).
     </div>
     """
 
-    (DOCS_DIR / "index.html").write_text(_base_page(index_body, "Lottery Dashboard"), encoding="utf-8")
+    (DOCS_DIR / "index.html").write_text(
+        _base_page(index_body, "Bảng điều khiển xổ số"), encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":

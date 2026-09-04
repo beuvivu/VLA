@@ -67,7 +67,7 @@ def _assert_frame_exact(actual: pd.DataFrame, expected: pd.DataFrame, *, label: 
         a = actual[col].fillna("").astype(str).tolist()
         e = expected[col].fillna("").astype(str).tolist()
         if a != e:
-            for i, (av, ev) in enumerate(zip(a, e), start=2):
+            for i, (av, ev) in enumerate(zip(a, e, strict=True), start=2):
                 if av != ev:
                     raise RuntimeError(
                         f"{label} value mismatch at row {i}, column {col}: {av!r} != {ev!r}"

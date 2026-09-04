@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SOI PATH (DE) — ACTIVE</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
+  <meta name="referrer" content="no-referrer" />
+  <title>SOI CẦU ĐỀ — ĐANG CHẠY</title>
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
@@ -29,6 +31,7 @@
     .small{font-size:11px;color:var(--muted)}
     .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
     .btn.secondary{background:transparent;color:var(--text)}
+    .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
@@ -38,28 +41,28 @@
 <div class="wrap">
   <div class="top">
     <div>
-      <h1 style="margin:0;font-size:20px">SOI PATH (DE) — ACTIVE</h1>
-      <div class="small">Anchor (Biên ngày cầu chạy): <b>2026-09-04</b> · Số ngày cầu chạy: <b>10</b> · Mode: <b class="mono">de</b> · Type: <b class="mono">active</b></div>
+      <h1 style="margin:0;font-size:20px">SOI CẦU ĐỀ — ĐANG CHẠY</h1>
+      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-09-02</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
     </div>
     <div class="kpi">
       <span class="chip">Màu đỏ: về ĐB</span>
       <span class="chip">Màu cam: loto đã về</span>
-      <span class="chip">Tooltip: lag + vị trí rawdata</span>
+      <span class="chip">Gợi ý ô: độ trễ + vị trí dữ liệu gốc</span>
     </div>
   </div>
 
   <div class="grid" style="margin-top:12px">
     <div class="card">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Aggregated % từ các path đủ điều kiện (active).</div></div>
+        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện (Đang chạy).</div></div>
         <div style="display:flex;gap:8px">
-          <a class="btn secondary" href="soi-path-de-stable.html">Xem stable (de)</a>
-          <a class="btn secondary" href="index.html">Index</a>
+          <a class="btn secondary" href="soi-path-de-stable.html">Xem Ổn định (Đặc Biệt)</a>
+          <a class="btn secondary" href="index.html">Trang tổng hợp</a>
         </div>
       </div>
       <div style="margin-top:10px;overflow:auto">
         <table>
-          <thead><tr><th>Rank</th><th>Số</th><th>%</th><th>Support paths</th></tr></thead>
+          <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
           <tbody>
             
           </tbody>
@@ -69,28 +72,33 @@
 
     <div class="card">
       <b>Chọn nhanh</b>
-      <div class="small" style="margin-top:6px">Các file CSV/JSON đã được export vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Trang này là bản render tĩnh giống style website.</div>
+      <div class="small" style="margin-top:6px">Các tệp CSV/JSON đã được xuất vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Đây là trang tĩnh mô phỏng cách trình bày trên web.</div>
       <div class="legend">
         <span><span class="dot hitde"></span>Về ĐB</span>
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
+      <div class="empty-state">Chưa có dữ liệu chọn nhanh cho ngày neo này. Hãy chạy lại bước tạo dữ liệu đường cầu.</div>
       <div style="margin-top:10px" class="small">
-        Tip: bạn có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong workflow/CLI để giống “biên độ” website hơn. citeturn0search10
+        Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
       </div>
     </div>
   </div>
 
   <div class="card" style="margin-top:12px; overflow:auto">
-    <b>Bảng PATH (rawdata → number) theo ngày</b>
-    <div class="small" style="margin-top:6px">Hàng = path; cột = ngày trong “Số ngày cầu chạy”. Ô hiển thị số dự đoán của path tại ngày đó, tô màu nếu về.</div>
+    <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
+    <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
     <div style="margin-top:10px; overflow:auto">
       <table>
         <thead>
           <tr>
-            <th class="left">Path</th>
-            <th>p_mean</th>
-            <th>streak</th>
+            <th class="left">Đường cầu</th>
+            <th>Tỷ lệ lịch sử</th>
+            <th>Chuỗi liên tiếp</th>
+            
+              <th class="mono">08-24</th>
+            
+              <th class="mono">08-25</th>
             
               <th class="mono">08-26</th>
             
@@ -108,10 +116,6 @@
             
               <th class="mono">09-02</th>
             
-              <th class="mono">09-03</th>
-            
-              <th class="mono">09-04</th>
-            
           </tr>
         </thead>
         <tbody>
@@ -122,7 +126,7 @@
   </div>
 
   <div class="small" style="margin-top:14px;color:var(--muted)">
-    Generated by <span class="mono">src/build_docs.py</span> · Data source: local crawl (multi-source fallback).  
+    Được tạo bởi <span class="mono">src/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
   </div>
 </div>
 </body>

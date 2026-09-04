@@ -1,18 +1,18 @@
-# Vietnam Lottery Analysis — GitHub-only Edition
+# Phân tích xổ số Việt Nam — bản vận hành hoàn toàn trên GitHub
 
-Bộ mã nguồn **GitHub-only** để tự động thu thập dữ liệu XSMB, xây dựng thống kê, chạy AI/ML, đánh giá mô hình và xuất dashboard tĩnh bằng **GitHub Actions + GitHub Pages**. Không cần máy chủ riêng hay backend chạy thường trực.
+Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu thập dữ liệu XSMB, xây dựng thống kê, chạy AI/ML, đánh giá mô hình và xuất bảng điều khiển tĩnh bằng **GitHub Actions + GitHub Pages**. Không cần máy chủ riêng hay dịch vụ nền chạy thường trực.
 
 > Mục đích của hệ thống là phân tích dữ liệu lịch sử và nghiên cứu xác suất. Kết quả AI/ML là tín hiệu thống kê, không bảo đảm kết quả tương lai.
 
-## Latest data snapshot
+## Ảnh chụp dữ liệu mới nhất
 
 <!-- SNAPSHOT:BEGIN -->
-| Lottery (Xổ số) | Loto (Lô tô) |
+| Xổ số | Lô tô |
 | :------------: | :----------: |
-| <table><tr><td>Date (Ngày)</td><td>{{ date.strftime('%d-%m-%Y') }}</td></tr><tr><td>Special (Giải đặc biệt)</td><td>{{ "{:05}".format(special) }}</td></tr><tr><td>First (Giải nhất)</td><td>{{ "{:05}".format(prize1) }}</td></tr><tr><td>Second (Giải nhì)</td><td>{{ "{:05}".format(prize2_1) }}, {{ "{:05}".format(prize2_2) }}</td></tr><tr><td>Third (Giải ba)</td><td>{{ "{:05}".format(prize3_1) }}, {{ "{:05}".format(prize3_2) }}, {{ "{:05}".format(prize3_3) }}, {{ "{:05}".format(prize3_4) }}, {{ "{:05}".format(prize3_5) }}, {{ "{:05}".format(prize3_6) }}</td></tr><tr><td>Fourth (Giải tư)</td><td>{{ "{:04}".format(prize4_1) }}, {{ "{:04}".format(prize4_2) }}, {{ "{:04}".format(prize4_3) }}, {{ "{:04}".format(prize4_4) }}</td></tr><tr><td>Fifth (Giải năm)</td><td>{{ "{:04}".format(prize5_1) }}, {{ "{:04}".format(prize5_2) }}, {{ "{:04}".format(prize5_3) }}, {{ "{:04}".format(prize5_4) }}, {{ "{:04}".format(prize5_5) }}, {{ "{:04}".format(prize5_6) }}</td></tr><tr><td>Sixth (Giải sáu)</td><td>{{ "{:03}".format(prize6_1) }}, {{ "{:03}".format(prize6_2) }}, {{ "{:03}".format(prize6_3) }}</td></tr><tr><td>Seventh (Giải bảy)</td><td>{{ "{:02}".format(prize7_1) }}, {{ "{:02}".format(prize7_2) }}, {{ "{:02}".format(prize7_3) }}, {{ "{:02}".format(prize7_4) }}</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr>{%- for result in loto_result %}<tr><td>{{ loop.index0 }}</td><td>{{ result }}</td></tr>{%- endfor %}</table> |
+| <table><tr><td>Ngày</td><td>{{ date.strftime('%d-%m-%Y') }}</td></tr><tr><td>Giải đặc biệt</td><td>{{ "{:05}".format(special) }}</td></tr><tr><td>Giải nhất</td><td>{{ "{:05}".format(prize1) }}</td></tr><tr><td>Giải nhì</td><td>{{ "{:05}".format(prize2_1) }}, {{ "{:05}".format(prize2_2) }}</td></tr><tr><td>Giải ba</td><td>{{ "{:05}".format(prize3_1) }}, {{ "{:05}".format(prize3_2) }}, {{ "{:05}".format(prize3_3) }}, {{ "{:05}".format(prize3_4) }}, {{ "{:05}".format(prize3_5) }}, {{ "{:05}".format(prize3_6) }}</td></tr><tr><td>Giải tư</td><td>{{ "{:04}".format(prize4_1) }}, {{ "{:04}".format(prize4_2) }}, {{ "{:04}".format(prize4_3) }}, {{ "{:04}".format(prize4_4) }}</td></tr><tr><td>Giải năm</td><td>{{ "{:04}".format(prize5_1) }}, {{ "{:04}".format(prize5_2) }}, {{ "{:04}".format(prize5_3) }}, {{ "{:04}".format(prize5_4) }}, {{ "{:04}".format(prize5_5) }}, {{ "{:04}".format(prize5_6) }}</td></tr><tr><td>Giải sáu</td><td>{{ "{:03}".format(prize6_1) }}, {{ "{:03}".format(prize6_2) }}, {{ "{:03}".format(prize6_3) }}</td></tr><tr><td>Giải bảy</td><td>{{ "{:02}".format(prize7_1) }}, {{ "{:02}".format(prize7_2) }}, {{ "{:02}".format(prize7_3) }}, {{ "{:02}".format(prize7_4) }}</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr>{%- for result in loto_result %}<tr><td>{{ loop.index0 }}</td><td>{{ result }}</td></tr>{%- endfor %}</table> |
 <!-- SNAPSHOT:END -->
 
-## Kiến trúc production
+## Kiến trúc vận hành
 
 ### Nguồn dữ liệu theo thứ tự ưu tiên
 
@@ -23,35 +23,35 @@ Bộ mã nguồn **GitHub-only** để tự động thu thập dữ liệu XSMB,
 5. `xosodaiphat.com`
 6. `hainhay.net`
 
-Kết quả mới không được ghi thẳng vào lịch sử chỉ vì một website đã hiển thị. Với kỳ quay gần nhất, hệ thống chuẩn hóa đúng độ dài từng giải, đối chiếu toàn bộ 27 giá trị và yêu cầu **ít nhất 2 provider group độc lập** đồng thuận. Hai domain Minh Ngọc được coi là cùng một provider group để tránh đếm mirror như hai xác nhận độc lập.
+Kết quả mới không được ghi thẳng vào lịch sử chỉ vì một trang web đã hiển thị. Với kỳ quay gần nhất, hệ thống chuẩn hóa đúng độ dài từng giải, đối chiếu toàn bộ 27 giá trị và yêu cầu **ít nhất 2 nhóm nhà cung cấp độc lập** đồng thuận. Hai tên miền Minh Ngọc được coi là cùng một nhóm nhà cung cấp để tránh đếm trang phản chiếu như hai xác nhận độc lập.
 
-Dữ liệu live là provisional và được giữ tách biệt khỏi canonical history cho tới khi đủ consensus.
+Dữ liệu trực tiếp là tạm thời và được giữ tách biệt khỏi lịch sử chuẩn cho tới khi đủ đồng thuận.
 
 ## Chức năng chính
 
-- Multi-source collection, retry, source audit và data-health gate.
-- Near-live XSMB bằng GitHub Actions: 6 nguồn được fetch song song, merge từng ô giải và cập nhật JSON live khi payload thay đổi.
-- Strict parser: không zero-fill placeholder hoặc số đang quay chưa đủ độ dài.
+- Thu thập đa nguồn, thử lại, kiểm toán nguồn và cổng sức khỏe dữ liệu.
+- XSMB gần thời gian thực bằng GitHub Actions: 6 nguồn được tải song song, hợp nhất từng ô giải và cập nhật JSON trực tiếp khi dữ liệu thay đổi.
+- Bộ phân tích cú pháp nghiêm ngặt: không chèn số 0 vào chỗ trống hoặc số đang quay chưa đủ độ dài.
 - Thống kê tần suất, gan, chu kỳ, nháy, đầu/đuôi/tổng, chạm, cặp lộn, lô rơi, ma trận ngày/tuần/tháng/năm.
-- Kiểm định thống kê với Bayesian shrinkage, credible interval, multiple-testing control/FDR và diagnostics về entropy/drift.
-- Empirical-Bayes signal độc lập: exponential decay, weekday posterior, multi-window stability và shrinkage về baseline khi tín hiệu không ổn định.
-- Path/cầu engine theo vị trí chữ số, active/stable streak, walk-forward backtest và explainable position evidence.
-- Base ML với temporal feature engineering: target weekday, EWM 14/45, rolling 7/30/90/365, trend, gap/streak, reverse-number dynamics và vectorized path support.
-- Temporal model selection 4 tầng: train → natural-prevalence calibration → model-selection → untouched validation.
-- `HistGradientBoostingClassifier` + Platt calibration + recency weighting; model yếu được shrink về historical baseline thay vì phát xác suất quá tự tin.
-- Cầu-kèo ML + position evidence.
-- Ensemble 5 thành phần: base ML + cầu-kèo ML + statistical Bayes + active path + stable path; trọng số học bằng walk-forward LogLoss với regularization.
-- Model disagreement/uncertainty tier, rolling LogLoss/Brier và compact prediction history.
-- Dashboard responsive trong `docs/`, triển khai trực tiếp bằng GitHub Pages Actions.
-- Excel-safe exports giữ số 0 ở đầu.
+- Kiểm định thống kê với co Bayes, khoảng tin cậy, kiểm soát nhiều phép thử/FDR và chẩn đoán entropy/dịch chuyển.
+- Tín hiệu Bayes thực nghiệm độc lập: suy giảm hàm mũ, hậu nghiệm theo thứ, ổn định đa cửa sổ và co về nền khi tín hiệu không ổn định.
+- Bộ máy đường cầu theo vị trí chữ số, chuỗi đang chạy/ổn định, kiểm định cuốn chiếu và bằng chứng vị trí có thể giải thích.
+- ML nền với đặc trưng thời gian: thứ của ngày mục tiêu, EWM 14/45, cửa sổ 7/30/90/365, xu hướng, gan/chuỗi, động lực số đảo và mức hỗ trợ đường cầu được vector hóa.
+- Chọn mô hình theo thời gian qua 4 tầng: huấn luyện → hiệu chỉnh theo tỷ lệ tự nhiên → chọn mô hình → kiểm định chưa chạm.
+- `HistGradientBoostingClassifier` + hiệu chỉnh Platt + trọng số gần đây; mô hình yếu được co về nền lịch sử thay vì phát xác suất quá tự tin.
+- Cầu-kèo ML + bằng chứng vị trí.
+- Mô hình tổ hợp 5 thành phần: ML nền + cầu-kèo ML + Bayes thống kê + cầu đang chạy + cầu ổn định; trọng số học bằng LogLoss cuốn chiếu có điều chuẩn.
+- Mức bất đồng/bất định của mô hình, LogLoss/Brier cuốn chiếu và lịch sử dự báo gọn.
+- Bảng điều khiển thích ứng trong `docs/`, triển khai trực tiếp bằng GitHub Pages Actions.
+- Tệp xuất an toàn cho Excel, giữ số 0 ở đầu.
 
 ## Cài đặt mới hoàn toàn trên GitHub
 
-### 1. Tạo repository
+### 1. Tạo kho mã nguồn
 
-Tạo repository GitHub mới và upload **toàn bộ nội dung package vào root repository**.
+Tạo kho mã nguồn GitHub mới và tải **toàn bộ nội dung gói vào thư mục gốc của kho**.
 
-Khuyến nghị repository private trong giai đoạn thử nghiệm; khi Pages/public access đã đúng mới đổi visibility nếu cần.
+Khuyến nghị để kho ở chế độ riêng tư trong giai đoạn thử nghiệm; chỉ đổi quyền hiển thị khi Pages và truy cập công khai đã đúng.
 
 ### 2. Cho phép GitHub Actions ghi dữ liệu
 
@@ -61,9 +61,9 @@ Vào:
 
 Chọn:
 
-`Read and write permissions`
+`Read and write permissions` (quyền đọc và ghi)
 
-rồi Save.
+rồi bấm Lưu.
 
 ### 3. Bật GitHub Pages bằng GitHub Actions
 
@@ -73,134 +73,132 @@ Vào:
 
 Chọn:
 
-`Source: GitHub Actions`
+`Source: GitHub Actions` (nguồn: GitHub Actions)
 
-Không chọn `Deploy from a branch`; package đã có workflow Pages chính thức trong `.github/workflows/pages.yml`.
+Không chọn `Deploy from a branch`; gói đã có quy trình Pages chính thức trong `.github/workflows/pages.yml`.
 
-### 4. Chạy finalization lần đầu
+### 4. Chạy hoàn tất dữ liệu lần đầu
 
 Vào:
 
-`Actions → Finalize XSMB + Statistics + AI/ML → Run workflow`
+`Actions → Hoàn tất XSMB, thống kê và AI/ML → Run workflow`
 
 Lần chạy đầu sẽ:
 
-1. Load lịch sử đã commit.
+1. Nạp lịch sử đã ghi nhận.
 2. Đồng bộ ngày thiếu từ 6 nguồn.
-3. Chỉ promote kết quả mới khi vượt validation/consensus gate.
+3. Chỉ đưa kết quả mới vào dữ liệu chuẩn khi vượt cổng kiểm định/đồng thuận.
 4. Chạy thống kê và kiểm định.
-5. Refit path/cầu.
-6. Retrain base ML nếu có draw mới hoặc feature schema thay đổi.
-7. Chạy cầu-kèo ML và empirical-Bayes signal.
-8. Ghi prediction history và cập nhật labels.
-9. Học ensemble weights/calibration khi history đủ trưởng thành.
-10. Build dashboard.
-11. Commit `data/`, `models/`, `images/`, `docs/`, `README.md`.
-12. Deploy `docs/` trực tiếp lên GitHub Pages.
+5. Khớp lại đường cầu.
+6. Huấn luyện lại ML nền nếu có kỳ quay mới hoặc lược đồ đặc trưng thay đổi.
+7. Chạy cầu-kèo ML và tín hiệu Bayes thực nghiệm.
+8. Ghi lịch sử dự báo và cập nhật nhãn.
+9. Học trọng số/hiệu chỉnh mô hình tổ hợp khi lịch sử đủ trưởng thành.
+10. Dựng bảng điều khiển.
+11. Ghi nhận `data/`, `models/`, `images/`, `docs/`, `README.md`.
+12. Triển khai trực tiếp `docs/` lên GitHub Pages.
 
-Không cần GitHub Secret trong cấu hình mặc định.
+Không cần bí mật GitHub trong cấu hình mặc định.
 
-## Live XSMB
+## XSMB gần thời gian thực
 
 Workflow:
 
-`Near-live XSMB results`
+`Kết quả XSMB gần thời gian thực`
 
-được schedule lúc **18:04 Asia/Ho_Chi_Minh**. Một runner giữ sống trong cửa sổ quay và poll khoảng **25 giây/lần**. Mỗi snapshot fetch 6 nguồn song song; chỉ thay đổi payload mới được force-publish thành `live/live.json` trên branch `live`.
+được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
 
-`docs/live.html` đọc JSON raw từ branch `live`, vì vậy không phải rebuild toàn bộ GitHub Pages cho mỗi lần có thêm một giải.
+`docs/live.html` đọc JSON gốc từ nhánh `live`, vì vậy không phải dựng lại toàn bộ GitHub Pages mỗi lần có thêm một giải.
 
-Các trạng thái live:
+Các trạng thái trực tiếp:
 
-- `waiting`: chưa có giá trị.
+- `waiting`: đang chờ, chưa có giá trị.
 - `live`: đang có kết quả từng phần.
-- `complete_provisional`: đủ 27 giá trị nhưng chưa đủ independent consensus.
-- `complete_conflict`: đủ nhưng các nguồn còn xung đột.
-- `complete_verified`: toàn bộ 27 slot đã được xác minh; live job có thể dừng.
+- `complete_provisional`: đủ 27 giá trị nhưng chưa đủ đồng thuận độc lập.
+- `complete_conflict`: đã đủ nhưng các nguồn còn xung đột.
+- `complete_verified`: toàn bộ 27 ô đã được xác minh; tác vụ trực tiếp có thể dừng.
 
-Nếu repository dùng branch-protection, **không áp dụng rule cấm force-push cho branch `live`**, hoặc loại branch này khỏi rule. `main` không bị force-push.
+Nếu kho dùng bảo vệ nhánh, **không áp dụng quy tắc cấm đẩy cưỡng bức cho nhánh `live`**, hoặc loại nhánh này khỏi quy tắc. `main` không bị đẩy cưỡng bức.
 
-> GitHub scheduled workflows có thể bị platform delay. Vì vậy GitHub-only không thể cam kết wall-clock realtime như một server luôn chạy. Thiết kế này giảm rủi ro bằng cách mở live job trước giờ quay, polling bên trong job và có nhiều mốc finalization/recovery sau quay.
+> Quy trình GitHub theo lịch có thể bị nền tảng trì hoãn. Vì vậy kiến trúc chỉ dùng GitHub không thể cam kết thời gian thực tuyệt đối như máy chủ luôn chạy. Thiết kế này giảm rủi ro bằng cách mở tác vụ trực tiếp trước giờ quay, thăm dò trong tác vụ và có nhiều mốc hoàn tất/phục hồi sau quay.
 
-## Lịch daily finalization
+## Lịch hoàn tất dữ liệu hằng ngày
 
 Timezone: `Asia/Ho_Chi_Minh`.
 
-- `18:38` — finalization chính.
-- `18:53` — recovery 1.
-- `19:13` — recovery 2.
+- `18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00` — hoàn tất và phục hồi dữ liệu chuẩn.
 
-Guard kiểm tra canonical date trước khi chạy; nếu kỳ hôm nay đã được ghi thành công, các recovery run trở thành no-op. Có thể `Run workflow` thủ công bất kỳ lúc nào.
+Bộ gác kiểm tra ngày dữ liệu chuẩn trước khi chạy; nếu kỳ hôm nay đã được ghi thành công, các lượt phục hồi không làm gì thêm. Có thể bấm `Run workflow` để chạy thủ công bất kỳ lúc nào.
 
-## Dashboard
+## Bảng điều khiển
 
-- `docs/index.html` — landing/dashboard chính.
-- `docs/live.html` — near-live results và source verification.
+- `docs/index.html` — trang tổng hợp/bảng điều khiển chính.
+- `docs/live.html` — kết quả gần thời gian thực và xác minh nguồn.
 - `docs/statistics.html` — thống kê/ma trận nâng cao.
-- `docs/dashboard.html` — AI/ML ensemble dashboard.
-- `docs/model-quality.html` — rolling LogLoss/Brier.
+- `docs/dashboard.html` — bảng điều khiển mô hình tổ hợp AI/ML.
+- `docs/model-quality.html` — LogLoss/Brier cuốn chiếu.
 - `docs/ml_top10_loto.html`, `docs/ml_top10_de.html`.
 - `docs/soi-path-loto-active.html`, `docs/soi-path-loto-stable.html`.
 - `docs/soi-path-de-active.html`, `docs/soi-path-de-stable.html`.
 
-## Data outputs
+## Dữ liệu đầu ra
 
-| Dataset | CSV | JSON | Excel-safe XLSX |
+| Bộ dữ liệu | CSV | JSON | XLSX an toàn cho Excel |
 |---|---|---|---|
-| Raw | `data/xsmb.csv` | `data/xsmb.json` | `data/excel/xsmb.xlsx` |
-| 2 digits | `data/xsmb-2-digits.csv` | `data/xsmb-2-digits.json` | `data/excel/xsmb-2-digits.xlsx` |
-| Sparse 00–99 | `data/xsmb-sparse.csv` | `data/xsmb-sparse.json` | `data/excel/xsmb-sparse.xlsx` |
+| Kết quả gốc | `data/xsmb.csv` | `data/xsmb.json` | `data/excel/xsmb.xlsx` |
+| Hai chữ số | `data/xsmb-2-digits.csv` | `data/xsmb-2-digits.json` | `data/excel/xsmb-2-digits.xlsx` |
+| Thưa 00–99 | `data/xsmb-sparse.csv` | `data/xsmb-sparse.json` | `data/excel/xsmb-sparse.xlsx` |
 
-Derived outputs:
+Dữ liệu dẫn xuất:
 
-- `data/source_audit.json` — provenance/consensus gần đây.
+- `data/source_audit.json` — nguồn gốc/đồng thuận gần đây.
 - `data/advanced/` — thống kê nâng cao.
-- `data/significance/` — kiểm định/FDR/diagnostics.
-- `data/statistical_signal/` — empirical-Bayes component.
-- `data/path_ui/` — active/stable path outputs.
+- `data/significance/` — kiểm định/FDR/chẩn đoán.
+- `data/statistical_signal/` — thành phần Bayes thực nghiệm.
+- `data/path_ui/` — đầu ra đường cầu đang chạy/ổn định.
 - `data/ai_ml/` — cầu-kèo ML/evidence.
-- `data/ml/` — calibrated base-ML probabilities.
-- `data/ensemble/` — learned ensemble weights/calibration.
-- `data/predict/` — final ensemble probabilities/picks.
-- `data/history/` — compact walk-forward component history.
-- `data/prob_eval/` — rolling model-quality metrics.
-- `models/` — trained model artifacts + train reports.
+- `data/ml/` — xác suất ML nền đã hiệu chỉnh.
+- `data/ensemble/` — trọng số/hiệu chỉnh mô hình tổ hợp đã học.
+- `data/predict/` — xác suất và danh sách chọn cuối của mô hình tổ hợp.
+- `data/history/` — lịch sử thành phần cuốn chiếu gọn.
+- `data/prob_eval/` — chỉ số chất lượng mô hình cuốn chiếu.
+- `models/` — artifact mô hình đã huấn luyện + báo cáo huấn luyện.
 
 ## Thống kê 1 năm hiện tại
 
-- Max frequency: **{{ max_count }}**
-- Min frequency: **{{ min_count }}**
-- Mean: **{{ mean }}**
-- Standard deviation: **{{ std }}**
+- Tần suất lớn nhất: **{{ max_count }}**
+- Tần suất nhỏ nhất: **{{ min_count }}**
+- Trung bình: **{{ mean }}**
+- Độ lệch chuẩn: **{{ std }}**
 
-![Frequency heatmap](images/heatmap.jpg)
+![Ma trận nhiệt tần suất](images/heatmap.jpg)
 
-![Top 10](images/top-10.jpg)
+![10 số đứng đầu](images/top-10.jpg)
 
-![Distribution](images/distribution.jpg)
+![Phân phối](images/distribution.jpg)
 
 ## Kiểm tra chất lượng code
 
-CI chạy khi push/pull request. Có thể nghiệm thu tương đương trên máy phát triển:
+CI chạy khi đẩy mã hoặc mở yêu cầu hợp nhất. Có thể nghiệm thu tương đương trên máy phát triển:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 bash scripts/release_check.sh
 ```
 
-Release check kiểm tra syntax/lint, unit tests, source policy, training/prediction smoke, thống kê Bayes, data integrity và các output bắt buộc từ dữ liệu đã commit.
+Kiểm tra phát hành xác minh cú pháp/phân tích tĩnh, kiểm thử đơn vị, chính sách nguồn, thử nhanh huấn luyện/dự báo, thống kê Bayes, tính toàn vẹn dữ liệu và các đầu ra bắt buộc từ dữ liệu đã ghi nhận.
 
 ## Cấu trúc repository
 
 ```text
-.github/workflows/      CI, live, daily finalization, Pages deployment
-src/                    sources, validation, statistics, AI/ML, dashboard builders
-src/templates/          generated README/template assets
-tests/                  regression + data/source/ML tests
-data/                   canonical + analytical outputs
-models/                 trained model artifacts
-images/                 generated visualizations
-docs/                   GitHub Pages static website
+.github/workflows/      CI, trực tiếp, hoàn tất hằng ngày, triển khai Pages
+src/                    nguồn, kiểm định, thống kê, AI/ML, bộ dựng trang
+src/templates/          mẫu để tạo README và trang
+tests/                  kiểm thử hồi quy + dữ liệu/nguồn/ML
+data/                   dữ liệu chuẩn + đầu ra phân tích
+models/                 artifact mô hình đã huấn luyện
+images/                 hình trực quan đã tạo
+docs/                   trang web tĩnh GitHub Pages
 scripts/release_check.sh
 requirements*.txt
 README.md
@@ -208,8 +206,8 @@ README.md
 
 ## Ghi chú về xác suất
 
-Xổ số là quá trình ngẫu nhiên; thêm nhiều thuật toán không biến dữ liệu lịch sử thành bảo đảm dự đoán. Hệ thống ưu tiên calibration, out-of-sample validation, shrinkage và model disagreement để **giảm overfitting và overconfidence**, thay vì phóng đại tín hiệu yếu.
+Xổ số là quá trình ngẫu nhiên; thêm nhiều thuật toán không biến dữ liệu lịch sử thành bảo đảm dự đoán. Hệ thống ưu tiên hiệu chỉnh, kiểm định ngoài mẫu, co ước lượng và bất đồng mô hình để **giảm khớp quá mức và tự tin quá mức**, thay vì phóng đại tín hiệu yếu.
 
-## License
+## Giấy phép
 
-Xem `LICENSE` trong repository.
+Xem `LICENSE` trong kho mã nguồn.

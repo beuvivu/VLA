@@ -9,7 +9,7 @@ export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
 export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
 export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
-printf '%s\n' "== Canonical number ontology =="
+printf '%s\n' "== Miền số chuẩn =="
 python - <<'PYREF'
 from number_reference import BONG, all_bo, bo, bong, dan_cham, dan_tong_mod10, reverse
 for d in range(10):
@@ -25,35 +25,35 @@ assert 1 < len(all_bo()) < 100
 print("OK number ontology", len(all_bo()), "distinct bộ families")
 PYREF
 
-printf '%s\n' "== Legacy descriptive preservation =="
+printf '%s\n' "== Bảo toàn thống kê mô tả kế thừa =="
 python src/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
 python src/research_legacy_extensions.py
 python src/legacy_advanced_diagnostics.py --max-lag 15 --coverage-windows 3,7,14,30
 python src/conditional_nextday.py --top 20 --prior-strength 60
 
-printf '%s\n' "== Cross-lag positional research family =="
+printf '%s\n' "== Họ nghiên cứu vị trí chéo độ trễ =="
 python src/crosslag_positional_lab.py \
   --lag-pairs 1-1,1-2 \
   --operators concat,lon,bo,cham,tong \
   --warmup 180
 
-printf '%s\n' "== Legacy path explainability preservation =="
+printf '%s\n' "== Bảo toàn khả năng giải thích đường cầu kế thừa =="
 python src/path_timeline_evidence.py --recent 20
 
-printf '%s\n' "== Scientific falsification battery =="
+printf '%s\n' "== Bộ kiểm tra bác bỏ khoa học =="
 python src/research_diagnostics.py --permutations 31 --max-lag 14 --seed 20260901
 
-printf '%s\n' "== Data-snooping research firewall =="
+printf '%s\n' "== Tường lửa nghiên cứu chống dò dữ liệu =="
 python src/research_firewall.py \
   --mode both \
   --permutations 15 \
   --max-reality-days 500 \
   --seed 20260901
 
-printf '%s\n' "== Standardized strategy lab =="
+printf '%s\n' "== Phòng chiến lược đã chuẩn hóa =="
 python src/strategy_lab.py --mode both --warmup 180
 
-printf '%s\n' "== Research artifact integrity =="
+printf '%s\n' "== Tính toàn vẹn artifact nghiên cứu =="
 python - <<'PYRESEARCH'
 import json
 from pathlib import Path
@@ -179,20 +179,20 @@ for mode in ("loto", "de"):
 print("OK research artifacts")
 PYRESEARCH
 
-printf '%s\n' "== Static research page =="
+printf '%s\n' "== Trang nghiên cứu tĩnh =="
 python src/build_research_lab.py
 python - <<'PYPAGE'
 from pathlib import Path
 page = Path("docs/research-lab.html")
 assert page.is_file() and page.stat().st_size > 1000
 text = page.read_text(encoding="utf-8")
-assert "Scientific Research Lab" in text
-assert "Research firewall" in text
+assert "Phòng nghiên cứu khoa học" in text
+assert "Tường lửa nghiên cứu" in text
 for name in ("index.html", "landing.html", "landing_desktop.html"):
     path = Path("docs") / name
     if path.exists():
         assert path.read_text(encoding="utf-8").count('id="research-lab-link"') == 1, name
-print("OK research page")
+print("OK trang nghiên cứu")
 PYPAGE
 
-echo "OK research-plane release check"
+echo "OK kiểm tra phát hành lớp nghiên cứu"

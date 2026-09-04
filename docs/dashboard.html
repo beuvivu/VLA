@@ -4,7 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>XSMB Analytics Dashboard</title>
+<meta content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" http-equiv="Content-Security-Policy"/>
+<meta content="no-referrer" name="referrer"/>
+<title>Bảng điều khiển phân tích XSMB</title>
 <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
     h1,h2,h3 { margin: 0.6em 0 0.4em; }
@@ -19,28 +21,28 @@
   </style>
 </head>
 <body>
-<h1>XSMB Analytics Dashboard</h1>
-<div class="meta">Latest data date: <b>2026-09-04</b>  |  Generated: 2026-09-04T14:57:10Z</div>
+<h1>Bảng điều khiển phân tích XSMB</h1>
+<div class="meta">Ngày dữ liệu mới nhất: <b>2026-09-02</b>  |  Tạo lúc: 2026-09-03T15:51:04Z</div>
 <div class="grid">
 <div class="card">
-<h2>Picks (Lô tô)</h2>
+<h2>Danh sách gợi ý (lô tô)</h2>
 <pre>{
-  "mode": "loto",
-  "anchor_date": "2026-09-04",
-  "target_date": "2026-09-05",
-  "weights": {
-    "w_ml": 0.25,
+  "Loại": "Lô tô",
+  "Ngày neo": "2026-09-02",
+  "Ngày mục tiêu": "2026-09-03",
+  "Trọng số": {
+    "Trọng số ML": 0.25,
     "w_cau": 0.3,
     "w_stat": 0.2,
-    "w_active": 0.125,
-    "w_stable": 0.125
+    "Trọng số cầu đang chạy": 0.125,
+    "Trọng số cầu ổn định": 0.125
   },
   "effective_weights": {
-    "w_ml": 0.25,
+    "Trọng số ML": 0.25,
     "w_cau": 0.3,
     "w_stat": 0.2,
-    "w_active": 0.125,
-    "w_stable": 0.125
+    "Trọng số cầu đang chạy": 0.125,
+    "Trọng số cầu ổn định": 0.125
   },
   "component_availability": {
     "ml": true,
@@ -57,74 +59,74 @@
     "stable": "ok"
   },
   "calibration": {
-    "mode": "loto",
-    "a": 1.0,
-    "b": 0.0,
+    "Loại": "Lô tô",
+    "Số A": 1.0,
+    "Số B": 0.0,
     "temperature": 1.0,
     "active": true,
-    "reason": "calibration matches full five-component ensemble"
+    "Căn cứ": "calibration matches full five-component ensemble"
   },
   "meta": {
     "active": true,
     "trust": 0.15,
     "quality_pass": true,
-    "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_balanced",
-    "validation_logloss": 0.5444798369838065,
-    "baseline_validation_logloss": 0.6422815701188002,
-    "logloss_skill": 0.15227236415471745,
-    "brier_skill": 0.053372960966620364,
-    "trained_through_target_date": "2026-09-04"
+    "Căn cứ": "validated stacked challenger blended into production",
+    "candidate": "meta_interaction",
+    "validation_logloss": 0.5439512120461029,
+    "baseline_validation_logloss": 0.6163043445560572,
+    "logloss_skill": 0.11739838141506609,
+    "brier_skill": 0.0379472336790464,
+    "trained_through_target_date": "2026-09-02"
   },
   "top4": [
-    "83",
     "95",
-    "62",
-    "52"
+    "83",
+    "52",
+    "50"
   ],
   "top8": [
-    "83",
     "95",
-    "62",
+    "83",
     "52",
-    "54",
     "50",
-    "91",
-    "64"
+    "54",
+    "64",
+    "61",
+    "51"
   ],
   "top10": [
-    "83",
     "95",
-    "62",
+    "83",
     "52",
-    "54",
     "50",
-    "91",
+    "54",
     "64",
-    "34",
-    "09"
+    "61",
+    "51",
+    "13",
+    "06"
   ]
 }</pre>
 </div>
 <div class="card">
-<h2>Picks (Đề / ĐB)</h2>
+<h2>Danh sách gợi ý (đặc biệt / ĐB)</h2>
 <pre>{
-  "mode": "de",
-  "anchor_date": "2026-09-04",
-  "target_date": "2026-09-05",
-  "weights": {
-    "w_ml": 0.25,
+  "Loại": "Đặc Biệt",
+  "Ngày neo": "2026-09-02",
+  "Ngày mục tiêu": "2026-09-03",
+  "Trọng số": {
+    "Trọng số ML": 0.25,
     "w_cau": 0.3,
     "w_stat": 0.2,
-    "w_active": 0.125,
-    "w_stable": 0.125
+    "Trọng số cầu đang chạy": 0.125,
+    "Trọng số cầu ổn định": 0.125
   },
   "effective_weights": {
-    "w_ml": 0.2857142857142857,
+    "Trọng số ML": 0.2857142857142857,
     "w_cau": 0.34285714285714286,
     "w_stat": 0.2285714285714286,
-    "w_active": 0.0,
-    "w_stable": 0.14285714285714285
+    "Trọng số cầu đang chạy": 0.0,
+    "Trọng số cầu ổn định": 0.14285714285714285
   },
   "component_availability": {
     "ml": true,
@@ -141,53 +143,53 @@
     "stable": "ok"
   },
   "calibration": {
-    "mode": "de",
-    "a": 1.0,
-    "b": 0.0,
+    "Loại": "Đặc Biệt",
+    "Số A": 1.0,
+    "Số B": 0.0,
     "temperature": 1.0,
     "active": false,
-    "reason": "bypassed because one or more ensemble components are unavailable"
+    "Căn cứ": "bypassed because one or more ensemble components are unavailable"
   },
   "meta": {
     "active": false,
     "trust": 0.0,
     "quality_pass": false,
-    "reason": "stacked model requires all five ensemble components"
+    "Căn cứ": "stacked model requires all five ensemble components"
   },
   "top4": [
     "83",
-    "37",
-    "21",
-    "54"
+    "68",
+    "39",
+    "21"
   ],
   "top8": [
     "83",
-    "37",
+    "68",
+    "39",
     "21",
     "54",
-    "43",
-    "22",
-    "23",
-    "39"
+    "44",
+    "38",
+    "23"
   ],
   "top10": [
     "83",
-    "37",
+    "68",
+    "39",
     "21",
     "54",
-    "43",
-    "22",
-    "23",
-    "39",
+    "44",
     "38",
-    "42"
+    "23",
+    "42",
+    "37"
   ]
 }</pre>
 </div>
 <div class="card">
-<h2>Weights (Loto)</h2>
+<h2>Trọng số (lô tô)</h2>
 <pre>{
-  "mode": "loto",
+  "Loại": "Lô tô",
   "learned_at_utc": "2026-08-11T13:25:33Z",
   "window_days": 180,
   "half_life_days": 45,
@@ -374,33 +376,33 @@
     "2026-08-11"
   ],
   "metric": {
-    "logloss": 0.54691425795307,
-    "brier": 0.1805251942572948
+    "LogLoss": 0.54691425795307,
+    "Brier": 0.1805251942572948
   },
-  "weights": {
-    "w_ml": 0.9987388200440555,
-    "w_active": 0.0006741976071141795,
-    "w_stable": 0.000586982348830308
+  "Trọng số": {
+    "Trọng số ML": 0.9987388200440555,
+    "Trọng số cầu đang chạy": 0.0006741976071141795,
+    "Trọng số cầu ổn định": 0.000586982348830308
   }
 }</pre>
-<h3>Calibration (Loto)</h3>
+<h3>Hiệu chỉnh (lô tô)</h3>
 <pre>{
-  "mode": "loto",
+  "Loại": "Lô tô",
   "learned_at_utc": "2026-08-11T13:25:33Z",
   "window_days": 180,
   "half_life_days": 45,
   "params": {
-    "mode": "loto",
-    "a": 1.0004457078889597,
-    "b": -0.0003399373343723516,
+    "Loại": "Lô tô",
+    "Số A": 1.0004457078889597,
+    "Số B": -0.0003399373343723516,
     "temperature": 1.0
   }
 }</pre>
 </div>
 <div class="card">
-<h2>Weights (De)</h2>
+<h2>Trọng số (đặc biệt)</h2>
 <pre>{
-  "mode": "de",
+  "Loại": "Đặc Biệt",
   "learned_at_utc": "2026-08-11T13:25:35Z",
   "window_days": 180,
   "half_life_days": 45,
@@ -587,218 +589,218 @@
     "2026-08-11"
   ],
   "metric": {
-    "logloss": 4.613696702039495,
-    "brier": 0.009901926708461245
+    "LogLoss": 4.613696702039495,
+    "Brier": 0.009901926708461245
   },
-  "weights": {
-    "w_ml": 1.0,
-    "w_active": 2.7755575615628914e-17,
-    "w_stable": 1.6836533665281683e-18
+  "Trọng số": {
+    "Trọng số ML": 1.0,
+    "Trọng số cầu đang chạy": 2.7755575615628914e-17,
+    "Trọng số cầu ổn định": 1.6836533665281683e-18
   }
 }</pre>
-<h3>Calibration (De)</h3>
+<h3>Hiệu chỉnh (đặc biệt)</h3>
 <pre>{
-  "mode": "de",
+  "Loại": "Đặc Biệt",
   "learned_at_utc": "2026-08-11T13:25:35Z",
   "window_days": 180,
   "half_life_days": 45,
   "params": {
-    "mode": "de",
-    "a": 1.0,
-    "b": 0.0,
+    "Loại": "Đặc Biệt",
+    "Số A": 1.0,
+    "Số B": 0.0,
     "temperature": 5.0
   }
 }</pre>
 </div>
 <div class="card">
-<h2>Top probabilities (Loto) — preview</h2>
+<h2>Các xác suất lô tô cao nhất — xem trước</h2>
 <table border="1" class="dataframe">
 <thead>
 <tr style="text-align: right;">
-<th>number</th>
-<th>prob</th>
+<th>Số</th>
+<th>Xác suất</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>83</td>
-<td>0.249933</td>
-</tr>
-<tr>
 <td>95</td>
-<td>0.249144</td>
+<td>0.251003</td>
 </tr>
 <tr>
-<td>62</td>
-<td>0.248927</td>
+<td>83</td>
+<td>0.250270</td>
 </tr>
 <tr>
 <td>52</td>
-<td>0.248779</td>
-</tr>
-<tr>
-<td>54</td>
-<td>0.248219</td>
+<td>0.247853</td>
 </tr>
 <tr>
 <td>50</td>
-<td>0.247808</td>
+<td>0.246874</td>
 </tr>
 <tr>
-<td>91</td>
-<td>0.247763</td>
+<td>54</td>
+<td>0.246407</td>
 </tr>
 <tr>
 <td>64</td>
-<td>0.247166</td>
-</tr>
-<tr>
-<td>34</td>
-<td>0.247099</td>
-</tr>
-<tr>
-<td>9</td>
-<td>0.246823</td>
-</tr>
-<tr>
-<td>94</td>
-<td>0.246814</td>
-</tr>
-<tr>
-<td>77</td>
-<td>0.246620</td>
-</tr>
-<tr>
-<td>27</td>
-<td>0.246312</td>
-</tr>
-<tr>
-<td>84</td>
-<td>0.246043</td>
-</tr>
-<tr>
-<td>32</td>
-<td>0.245837</td>
-</tr>
-<tr>
-<td>60</td>
-<td>0.245824</td>
-</tr>
-<tr>
-<td>68</td>
-<td>0.245796</td>
+<td>0.246351</td>
 </tr>
 <tr>
 <td>61</td>
-<td>0.245776</td>
+<td>0.246274</td>
+</tr>
+<tr>
+<td>51</td>
+<td>0.245872</td>
+</tr>
+<tr>
+<td>13</td>
+<td>0.245775</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0.245519</td>
 </tr>
 <tr>
 <td>17</td>
-<td>0.245442</td>
+<td>0.245449</td>
+</tr>
+<tr>
+<td>94</td>
+<td>0.245304</td>
 </tr>
 <tr>
 <td>80</td>
-<td>0.245411</td>
+<td>0.245259</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0.245176</td>
+</tr>
+<tr>
+<td>19</td>
+<td>0.245164</td>
+</tr>
+<tr>
+<td>92</td>
+<td>0.244880</td>
+</tr>
+<tr>
+<td>60</td>
+<td>0.244846</td>
+</tr>
+<tr>
+<td>27</td>
+<td>0.244752</td>
+</tr>
+<tr>
+<td>73</td>
+<td>0.244406</td>
+</tr>
+<tr>
+<td>36</td>
+<td>0.244368</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="card">
-<h2>Top probabilities (De) — preview</h2>
+<h2>Các xác suất đặc biệt cao nhất — xem trước</h2>
 <table border="1" class="dataframe">
 <thead>
 <tr style="text-align: right;">
-<th>number</th>
-<th>prob</th>
+<th>Số</th>
+<th>Xác suất</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>83</td>
-<td>0.011932</td>
-</tr>
-<tr>
-<td>37</td>
-<td>0.011785</td>
-</tr>
-<tr>
-<td>21</td>
-<td>0.011677</td>
-</tr>
-<tr>
-<td>54</td>
-<td>0.011453</td>
-</tr>
-<tr>
-<td>43</td>
-<td>0.011378</td>
-</tr>
-<tr>
-<td>22</td>
-<td>0.011227</td>
-</tr>
-<tr>
-<td>23</td>
-<td>0.011199</td>
-</tr>
-<tr>
-<td>39</td>
-<td>0.011186</td>
-</tr>
-<tr>
-<td>38</td>
-<td>0.011130</td>
-</tr>
-<tr>
-<td>42</td>
-<td>0.010907</td>
-</tr>
-<tr>
-<td>1</td>
-<td>0.010889</td>
-</tr>
-<tr>
-<td>17</td>
-<td>0.010814</td>
-</tr>
-<tr>
-<td>79</td>
-<td>0.010810</td>
-</tr>
-<tr>
-<td>67</td>
-<td>0.010802</td>
-</tr>
-<tr>
-<td>44</td>
-<td>0.010795</td>
-</tr>
-<tr>
-<td>90</td>
-<td>0.010766</td>
-</tr>
-<tr>
-<td>13</td>
-<td>0.010740</td>
+<td>0.012845</td>
 </tr>
 <tr>
 <td>68</td>
-<td>0.010732</td>
+<td>0.011812</td>
 </tr>
 <tr>
-<td>91</td>
-<td>0.010704</td>
+<td>39</td>
+<td>0.011654</td>
+</tr>
+<tr>
+<td>21</td>
+<td>0.011626</td>
+</tr>
+<tr>
+<td>54</td>
+<td>0.011620</td>
+</tr>
+<tr>
+<td>44</td>
+<td>0.011512</td>
+</tr>
+<tr>
+<td>38</td>
+<td>0.011503</td>
+</tr>
+<tr>
+<td>23</td>
+<td>0.011408</td>
+</tr>
+<tr>
+<td>42</td>
+<td>0.011173</td>
+</tr>
+<tr>
+<td>37</td>
+<td>0.011136</td>
+</tr>
+<tr>
+<td>67</td>
+<td>0.011099</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0.010912</td>
+</tr>
+<tr>
+<td>47</td>
+<td>0.010888</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.010843</td>
+</tr>
+<tr>
+<td>80</td>
+<td>0.010798</td>
+</tr>
+<tr>
+<td>63</td>
+<td>0.010798</td>
+</tr>
+<tr>
+<td>25</td>
+<td>0.010716</td>
 </tr>
 <tr>
 <td>16</td>
-<td>0.010638</td>
+<td>0.010692</td>
+</tr>
+<tr>
+<td>45</td>
+<td>0.010665</td>
+</tr>
+<tr>
+<td>22</td>
+<td>0.010631</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <p class="muted" style="margin-top:16px;">
-    Pages: <a href="index.html">Docs index</a> · <a href="statistics.html">Statistical matrices</a> · <a href="model-quality.html">Model quality</a>
+    Trang: <a href="index.html">Mục lục tài liệu</a> · <a href="statistics.html">Ma trận thống kê</a> · <a href="model-quality.html">Chất lượng mô hình</a>
 </p>
-<a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Research Lab</a></body>
+<a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Phòng nghiên cứu</a></body>
 </html>

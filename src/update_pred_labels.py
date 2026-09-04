@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 PRIZE_COLS = [
@@ -31,7 +34,8 @@ def _loto_set(row: pd.Series) -> set[int]:
             continue
         try:
             v = int(row[c])
-        except Exception:
+        except (TypeError, ValueError) as exc:
+            logger.debug("Bỏ qua giá trị giải không hợp lệ tại %s: %r (%s)", c, row[c], exc)
             continue
         s.add(v % 100)
     return s

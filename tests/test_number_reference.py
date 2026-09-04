@@ -21,6 +21,13 @@ from number_reference import (
     cap_loto_50_id,
     cap_loto_50_kind,
     cap_loto_50_partner,
+    dan_cham,
+    dan_dau,
+    dan_duoi,
+    dan_tong_mod10,
+    digit_sum,
+    digit_sum_mod10,
+    head,
     kep_am,
     kep_bang,
     kep_bong_pairs,
@@ -31,9 +38,27 @@ from number_reference import (
     reverse,
     sat_kep,
     sat_kep_vong,
+    tail,
     unique_bo_catalog,
     validate_ontology,
 )
+
+
+def test_digit_domain_rules_cover_edge_numbers() -> None:
+    assert head("00") == 0
+    assert tail("00") == 0
+    assert digit_sum("00") == 0
+    assert digit_sum_mod10("00") == 0
+    assert reverse("00") == "00"
+    assert head("99") == 9
+    assert tail("99") == 9
+    assert digit_sum("99") == 18
+    assert digit_sum_mod10("99") == 8
+    assert reverse("99") == "99"
+    assert len(dan_dau(0)) == 10
+    assert len(dan_duoi(9)) == 10
+    assert len(dan_cham(0)) == 19
+    assert len(dan_tong_mod10(8)) == 10
 
 
 def test_bong_relations_and_reverse_are_involutions() -> None:

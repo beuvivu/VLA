@@ -8,21 +8,21 @@ from typing import Iterable
 from zoneinfo import ZoneInfo
 
 from lottery import Lottery
+from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TIMEZONE, latest_complete_draw_date as _latest_complete_draw_date
 
 
 logger = logging.getLogger(__name__)
 
 
-def latest_complete_draw_date(*, now: datetime, cutoff: dtime = dtime(18, 35)) -> datetime.date:
+def latest_complete_draw_date(
+    *, now: datetime, cutoff: dtime = DEFAULT_DRAW_CUTOFF
+) -> datetime.date:
     """Return the latest draw date that should have complete results.
 
     XSMB is typically announced in the evening. If running before the cutoff time
     (default 18:35 local), we treat "today" as not finished yet.
     """
-    last_date = now.date()
-    if now.time() < cutoff:
-        last_date -= timedelta(days=1)
-    return last_date
+    return _latest_complete_draw_date(now=now, cutoff=cutoff)
 
 
 def _daterange(start, end) -> Iterable:
@@ -35,8 +35,8 @@ def _daterange(start, end) -> Iterable:
 def ensure_up_to_date(
     *,
     lottery: Lottery,
-    tz_name: str = "Asia/Ho_Chi_Minh",
-    cutoff: dtime = dtime(18, 35),
+    tz_name: str = VIETNAM_TIMEZONE,
+    cutoff: dtime = DEFAULT_DRAW_CUTOFF,
     fill_missing_days_back: int = 365,
     polite_sleep_s: float = 0.15,
     max_retries: int = 2,
@@ -116,8 +116,12 @@ def _parse_hhmm(s: str) -> dtime:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Sync XSMB data with retries + hole filling.")
-    ap.add_argument("--tz", default="Asia/Ho_Chi_Minh")
-    ap.add_argument("--cutoff", default="18:35", help="Draw cutoff local time (HH:MM).")
+    ap.add_argument("--tz", default=VIETNAM_TIMEZONE)
+    ap.add_argument(
+        "--cutoff",
+        default="18:35",
+        help="Giờ Việt Nam coi kỳ quay đã hoàn tất (HH:MM; mặc định UTC+7).",
+    )
     ap.add_argument("--fill-missing-days-back", type=int, default=365)
     ap.add_argument("--max-retries", type=int, default=2)
     ap.add_argument("--retry-backoff-s", type=float, default=0.8)

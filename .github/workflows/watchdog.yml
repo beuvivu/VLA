@@ -1,17 +1,20 @@
-name: Production watchdog + self-healing
+name: Giám sát và tự phục hồi production
 
 on:
   workflow_dispatch:
   schedule:
     # UTC only; Vietnam is UTC+7.
-    # Live heartbeat recovery: 18:10 / 18:20 VN.
-    - cron: "10 11 * * *"
-    - cron: "20 11 * * *"
-    # Canonical/data recovery: 19:35 / 20:05 VN.
-    - cron: "35 12 * * *"
+    # Live heartbeat recovery: 17:55 / 18:05 / 18:15 / 18:25 / 18:45 VN.
+    - cron: "55 10 * * *"
+    - cron: "5 11 * * *"
+    - cron: "15 11 * * *"
+    - cron: "25 11 * * *"
+    - cron: "45 11 * * *"
+    # Canonical/data recovery: 19:05 / 19:25 / 19:45 / 20:05 VN.
+    - cron: "5 12 * * *"
+    - cron: "25 12 * * *"
+    - cron: "45 12 * * *"
     - cron: "5 13 * * *"
-    # Pages retry after normal finalization window: 20:20 VN.
-    - cron: "20 13 * * *"
     # Overnight safety net: 07:15 VN next morning.
     - cron: "15 0 * * *"
 
@@ -28,21 +31,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout latest main
+      - name: Lấy mã nguồn main mới nhất
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - name: Setup Python 3.11
+      - name: Thiết lập Python 3.11
         uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
-      - name: Audit production state and dispatch recovery when needed
+      - name: Kiểm toán production và kích hoạt phục hồi khi cần
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TZ: Asia/Ho_Chi_Minh
         shell: bash
         run: |
           set -euo pipefail
@@ -53,6 +57,7 @@ jobs:
           import os
           import subprocess
           import sys
+          import tempfile
           import urllib.request
           from datetime import datetime, time, timedelta
           from zoneinfo import ZoneInfo
@@ -92,12 +97,15 @@ jobs:
                   print(f"[WARN] cannot inspect workflow {workflow}: {exc}")
                   return False
 
-          def dispatch(workflow):
+          def dispatch(workflow, inputs=None):
               if workflow_active(workflow):
                   print(f"[SKIP] {workflow} already active")
                   return
               url = f"https://api.github.com/repos/{repo}/actions/workflows/{workflow}/dispatches"
-              status, _ = api_request(url, method="POST", payload={"ref": branch})
+              payload = {"ref": branch}
+              if inputs:
+                  payload["inputs"] = inputs
+              status, _ = api_request(url, method="POST", payload=payload)
               if status != 204:
                   raise RuntimeError(f"dispatch {workflow} failed: HTTP {status}")
               print(f"[RECOVERY] dispatched {workflow}")
@@ -115,7 +123,7 @@ jobs:
                   return None
 
           local_hm = now.hour * 60 + now.minute
-          live_window = 18 * 60 <= local_hm <= 18 * 60 + 45
+          live_window = 17 * 60 + 55 <= local_hm <= 18 * 60 + 55
           pages_window = 20 * 60 + 10 <= local_hm <= 20 * 60 + 35
 
           if live_window:
@@ -135,7 +143,7 @@ jobs:
                   print("[OK] live heartbeat is current")
               raise SystemExit(0)
 
-          expected = now.date() if now.time().replace(tzinfo=None) >= time(18, 15) else now.date() - timedelta(days=1)
+          expected = now.date() if now.time().replace(tzinfo=None) >= time(18, 35) else now.date() - timedelta(days=1)
           latest = None
           try:
               with open("data/xsmb.csv", newline="", encoding="utf-8") as fh:
@@ -145,18 +153,27 @@ jobs:
 
           print(f"[INFO] canonical latest={latest} expected={expected}")
           if latest != expected.isoformat():
-              dispatch("update-data.yml")
+              dispatch("update-data.yml", {"reason": "watchdog_recovery"})
               raise SystemExit(0)
 
-          audit = subprocess.run(
-              [sys.executable, "src/production_audit.py", "--cutoff", "18:15", "--strict", "--json-out", "/tmp/production_audit.json"],
-              text=True,
-              capture_output=True,
-          )
+          with tempfile.TemporaryDirectory(prefix="vla-production-audit-") as temp_dir:
+              audit = subprocess.run(
+                  [
+                      sys.executable,
+                      "src/production_audit.py",
+                      "--cutoff",
+                      "18:35",
+                      "--strict",
+                      "--json-out",
+                      os.path.join(temp_dir, "audit.json"),
+                  ],
+                  text=True,
+                  capture_output=True,
+              )
           print(audit.stdout)
           if audit.returncode != 0:
               print(audit.stderr)
-              dispatch("update-data.yml")
+              dispatch("update-data.yml", {"reason": "watchdog_recovery"})
               raise SystemExit(0)
 
           live = fetch_live()

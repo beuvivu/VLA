@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Integral
 from typing import Literal
 
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import normalize_dates
 from lottery import Lottery
 
 Mode = Literal["loto", "de"]
@@ -20,11 +22,41 @@ class FeatureParams:
     w4: int = 365
     lag_max_for_path_support: int = 30
 
+    def __post_init__(self) -> None:
+        for name in ("w1", "w2", "w3", "w4", "lag_max_for_path_support"):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 1
+            ):
+                raise ValueError(f"{name} must be a positive integer")
+
+
+def _validate_mode(mode: str) -> None:
+    if mode not in {"loto", "de"}:
+        raise ValueError("mode must be 'loto' or 'de'")
+
 
 def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"])
     return df.sort_values("date").reset_index(drop=True)
+
+
+def _validate_aligned_histories(
+    df_raw: pd.DataFrame, df_2d: pd.DataFrame
+) -> pd.DatetimeIndex:
+    """Require raw positional inputs and two-digit targets to share a date axis."""
+    if df_raw.empty or df_2d.empty:
+        raise RuntimeError("No data loaded. Run src/sync.py first.")
+    raw_dates = normalize_dates(df_raw["date"])
+    two_digit_dates = normalize_dates(df_2d["date"])
+    if not raw_dates.equals(two_digit_dates):
+        raise ValueError(
+            "raw and two-digit histories must have the same ordered date axis"
+        )
+    return two_digit_dates
 
 
 def _build_hit_matrices(df_2d: pd.DataFrame) -> tuple[pd.DatetimeIndex, np.ndarray, np.ndarray]:
@@ -208,17 +240,32 @@ def _path_support_for_day(raw_digits: list[np.ndarray], t: int, lag_max: int, I:
 
 
 def build_ml_table(mode: Mode, params: FeatureParams) -> tuple[pd.DataFrame, pd.Series]:
+    _validate_mode(mode)
+    lot = Lottery()
+    lot.load()
+    return build_ml_table_from_history(
+        mode,
+        params,
+        lot.get_raw_data(),
+        lot.get_2_digits_data(),
+    )
+
+
+def build_ml_table_from_history(
+    mode: Mode,
+    params: FeatureParams,
+    df_raw: pd.DataFrame,
+    df_2d: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.Series]:
     """
     Build dataset:
       X rows = (day t, number x) -> predict hit at day t+1
       y = hit(t+1, x)
     """
-    lot = Lottery()
-    lot.load()
-    df_raw = _ensure_datetime(lot.get_raw_data())
-    df_2d = _ensure_datetime(lot.get_2_digits_data())
-    if df_raw.empty or df_2d.empty:
-        raise RuntimeError("No data loaded. Run src/sync.py first.")
+    _validate_mode(mode)
+    df_raw = _ensure_datetime(df_raw)
+    df_2d = _ensure_datetime(df_2d)
+    _validate_aligned_histories(df_raw, df_2d)
 
     dates, hit_loto, hit_de = _build_hit_matrices(df_2d)
     hit = hit_loto if mode == "loto" else hit_de
@@ -293,10 +340,12 @@ def build_features_for_prediction(mode: Mode, params: FeatureParams) -> tuple[pd
     Build features for the last available day (t = last_date), to predict t+1.
     Returns (last_date, X_pred with 100 rows)
     """
+    _validate_mode(mode)
     lot = Lottery()
     lot.load()
     df_raw = _ensure_datetime(lot.get_raw_data())
     df_2d = _ensure_datetime(lot.get_2_digits_data())
+    _validate_aligned_histories(df_raw, df_2d)
 
     dates, hit_loto, hit_de = _build_hit_matrices(df_2d)
     hit = hit_loto if mode == "loto" else hit_de

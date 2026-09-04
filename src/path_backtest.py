@@ -117,7 +117,9 @@ def main() -> None:
         target_idx = target_idx[-args.bt_days :]
 
     res: list[BacktestResult] = []
-    for idx_train_end, idx_target in zip(source_idx.tolist(), target_idx.tolist()):
+    for idx_train_end, idx_target in zip(
+        source_idx.tolist(), target_idx.tolist(), strict=True
+    ):
         d = raw_dates[idx_target].date().isoformat()
         hit, hits_count, support_paths, mean_prob = _eval_one_day(
             df_raw,

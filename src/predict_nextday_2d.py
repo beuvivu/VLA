@@ -4,6 +4,7 @@ import argparse
 import json
 from dataclasses import dataclass
 from datetime import date, timedelta
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Literal
 
@@ -109,33 +110,50 @@ def _load_weights(data_dir: Path, mode: str) -> EnsembleWeights:
     f = data_dir / "ensemble" / f"weights_{mode}.json"
     if not f.exists():
         return default
-    j = json.loads(f.read_text(encoding="utf-8"))
-    w = j.get("weights", {})
-    if "w_stat" not in w or int(j.get("schema_version", 0)) < 5:
+    try:
+        j = json.loads(f.read_text(encoding="utf-8"))
+        w = j.get("weights", {})
+        schema_version = j.get("schema_version")
+        if (
+            isinstance(schema_version, bool)
+            or not isinstance(schema_version, Integral)
+            or schema_version < 5
+            or "w_stat" not in w
+        ):
+            return default
+        return EnsembleWeights(
+            w_ml=float(w.get("w_ml", default.w_ml)),
+            w_cau=float(w.get("w_cau", default.w_cau)),
+            w_stat=float(w.get("w_stat", default.w_stat)),
+            w_active=float(w.get("w_active", default.w_active)),
+            w_stable=float(w.get("w_stable", default.w_stable)),
+        ).normalized()
+    except (AttributeError, TypeError, ValueError):
         return default
-    return EnsembleWeights(
-        w_ml=float(w.get("w_ml", default.w_ml)),
-        w_cau=float(w.get("w_cau", default.w_cau)),
-        w_stat=float(w.get("w_stat", default.w_stat)),
-        w_active=float(w.get("w_active", default.w_active)),
-        w_stable=float(w.get("w_stable", default.w_stable)),
-    ).normalized()
 
 
 def _load_calibration(data_dir: Path, mode: str) -> CalibParams:
     f = data_dir / "ensemble" / f"calibration_{mode}.json"
     if not f.exists():
         return CalibParams(mode=mode)
-    j = json.loads(f.read_text(encoding="utf-8"))
-    if int(j.get("schema_version", 0)) < 5:
+    try:
+        j = json.loads(f.read_text(encoding="utf-8"))
+        schema_version = j.get("schema_version")
+        if (
+            isinstance(schema_version, bool)
+            or not isinstance(schema_version, Integral)
+            or schema_version < 5
+        ):
+            return CalibParams(mode=mode)
+        p = j.get("params") or {}
+        return CalibParams(
+            mode=mode,
+            a=float(p.get("a", 1.0)),
+            b=float(p.get("b", 0.0)),
+            temperature=float(p.get("temperature", 1.0)),
+        )
+    except (AttributeError, TypeError, ValueError):
         return CalibParams(mode=mode)
-    p = j.get("params") or {}
-    return CalibParams(
-        mode=mode,
-        a=float(p.get("a", 1.0)),
-        b=float(p.get("b", 0.0)),
-        temperature=float(p.get("temperature", 1.0)),
-    )
 
 
 def _meta_prediction(
@@ -161,19 +179,50 @@ def _meta_prediction(
 
     try:
         pack = joblib.load(model_path)
-    except (AttributeError, ModuleNotFoundError, ValueError) as exc:
+    except (AttributeError, EOFError, ImportError, OSError, ValueError) as exc:
         fallback["reason"] = f"stacked model load failed: {exc}"
         return linear_prob.copy(), 0.0, fallback
 
-    if int(pack.get("schema_version", 0)) != META_SCHEMA_VERSION:
+    if not isinstance(pack, dict):
+        fallback["reason"] = "stacked model pack has invalid type"
+        return linear_prob.copy(), 0.0, fallback
+    schema_version = pack.get("schema_version")
+    trust_value = pack.get("meta_trust")
+    if (
+        isinstance(schema_version, bool)
+        or not isinstance(schema_version, Integral)
+        or isinstance(trust_value, bool)
+        or not isinstance(trust_value, Real)
+    ):
+        fallback["reason"] = "stacked model metadata is invalid"
+        return linear_prob.copy(), 0.0, fallback
+    trust_value = float(trust_value)
+    if schema_version != META_SCHEMA_VERSION:
         fallback["reason"] = "stacked model schema mismatch"
         return linear_prob.copy(), 0.0, fallback
     if str(pack.get("mode")) != mode:
         fallback["reason"] = "stacked model mode mismatch"
         return linear_prob.copy(), 0.0, fallback
 
-    trust = float(np.clip(pack.get("meta_trust", 0.0), 0.0, 0.40))
-    quality_pass = bool(pack.get("quality_pass", False))
+    if not np.isfinite(trust_value) or not 0.0 <= trust_value <= 0.40:
+        fallback["reason"] = "stacked model trust is outside [0, 0.40]"
+        return linear_prob.copy(), 0.0, fallback
+    quality_value = pack.get("quality_pass", False)
+    if not isinstance(quality_value, bool):
+        fallback["reason"] = "stacked model quality gate is invalid"
+        return linear_prob.copy(), 0.0, fallback
+    trust = trust_value
+    quality_pass = quality_value
+    if not quality_pass or trust <= 0:
+        return linear_prob.copy(), 0.0, {
+            "active": False,
+            "trust": 0.0,
+            "quality_pass": quality_pass,
+            "reason": "validation gate rejected stacked challenger",
+            "validation_logloss": pack.get("validation_logloss"),
+            "baseline_validation_logloss": pack.get("baseline_validation_logloss"),
+            "logloss_skill": pack.get("logloss_skill"),
+        }
     try:
         p_meta = predict_meta(
             pack,
@@ -188,17 +237,6 @@ def _meta_prediction(
     except (KeyError, TypeError, ValueError) as exc:
         fallback["reason"] = f"stacked prediction failed: {exc}"
         return linear_prob.copy(), 0.0, fallback
-
-    if not quality_pass or trust <= 0:
-        return p_meta, 0.0, {
-            "active": False,
-            "trust": 0.0,
-            "quality_pass": quality_pass,
-            "reason": "validation gate rejected stacked challenger",
-            "validation_logloss": pack.get("validation_logloss"),
-            "baseline_validation_logloss": pack.get("baseline_validation_logloss"),
-            "logloss_skill": pack.get("logloss_skill"),
-        }
 
     return p_meta, trust, {
         "active": True,

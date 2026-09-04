@@ -13,25 +13,25 @@ def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
     text = dashboard.read_text(encoding="utf-8")
 
     required = [
-        "# ✨ VLA · XSMB ANALYTICAL COCKPIT",
-        "Balanced UI · explicit legends",
-        "## 🎟️ Daily & Next Draw",
-        "## 🔮 Probability Arena",
-        "## 🔥 Frequency Heatmaps 00–99",
-        "## ⏳ Gap & Rhythm",
-        "## 🤖 AI/ML & Dynamics",
-        "## 🧬 Markov · Transition · Dependency",
-        "## 🧩 Structure & Pairs",
-        "## 📆 Special Boards & Conditional",
-        "## 🧪 Significance & Research",
+        "# ✨ VLA · TRUNG TÂM PHÂN TÍCH XSMB",
+        "Giao diện cân đối · chú giải rõ ràng",
+        "## 🎟️ Kết quả ngày và kỳ tiếp theo",
+        "## 🔮 Khu vực xác suất",
+        "## 🔥 Ma trận nhiệt tần suất 00–99",
+        "## ⏳ Gan và nhịp",
+        "## 🤖 AI/ML và động lực",
+        "## 🧬 Markov · chuyển tiếp · phụ thuộc",
+        "## 🧩 Cấu trúc và cặp số",
+        "## 📆 Bảng đặc biệt và quan hệ có điều kiện",
+        "## 🧪 Mức ý nghĩa và nghiên cứu",
         "Màu | Khoảng giá trị | Ý nghĩa",
-        "Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Visual",
-        "Lift vs baseline",
-        "calendar 7 cột",
-        "Co-occurrence Phi",
-        "Strategy Lab",
-        "q(FDR)",
-        "Audit & Deep Links",
+        "Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh",
+        "Độ nâng so với nền",
+        "lịch 7 cột",
+        "Đồng xuất hiện Phi",
+        "Phòng chiến lược",
+        "q (FDR)",
+        "Kiểm toán và liên kết chi tiết",
     ]
     for marker in required:
         assert marker in text, marker
@@ -40,7 +40,7 @@ def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
     # tables must expose a dedicated interpretation column.
     assert text.count("Đầu\\Đuôi") >= 12
     assert text.count("Màu | Khoảng giá trị | Ý nghĩa") >= 12
-    assert text.count("| Ý nghĩa | Visual |") >= 20
+    assert text.count("| Ý nghĩa | Thanh so sánh |") >= 20
     assert text.count("▰") >= 20
     assert text.count("🟪") >= 10
 

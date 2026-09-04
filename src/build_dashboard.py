@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import html
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
+
+from ui_locale import column_label, localize_mapping_for_display, mode_label
+from ui_theme import tailwind_style_tag
+from web_security import security_meta_tags
+
+logger = logging.getLogger(__name__)
 
 
 def _read_json(p: Path) -> dict:
@@ -33,7 +41,8 @@ def _latest_date(data_dir: Path) -> str:
             if df.empty:
                 continue
             return pd.to_datetime(df["date"]).max().date().isoformat()
-        except Exception:
+        except Exception as exc:
+            logger.warning("Không thể đọc ngày mới nhất từ %s: %s", cand, exc)
             continue
     return ""
 
@@ -55,17 +64,27 @@ def main() -> None:
     c_de = _read_json(data_dir / "ensemble" / "calibration_de.json")
 
     if not w_loto:
-        w_loto = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "weights not learned yet (not enough labeled days)"}
+        w_loto = {
+            "weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3},
+            "note": "Chưa học được trọng số vì chưa đủ ngày có nhãn",
+        }
     if not w_de:
-        w_de = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "weights not learned yet (not enough labeled days)"}
+        w_de = {
+            "weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3},
+            "note": "Chưa học được trọng số vì chưa đủ ngày có nhãn",
+        }
     if not c_loto:
-        c_loto = {"note": "calibration not learned yet"}
+        c_loto = {"note": "Chưa học được phép hiệu chỉnh"}
     if not c_de:
-        c_de = {"note": "calibration not learned yet"}
+        c_de = {"note": "Chưa học được phép hiệu chỉnh"}
     if not picks_loto:
-        picks_loto = {"note": "picks not generated yet; run pipeline / predict_nextday_2d.py"}
+        picks_loto = {
+            "note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"
+        }
     if not picks_de:
-        picks_de = {"note": "picks not generated yet; run pipeline / predict_nextday_2d.py"}
+        picks_de = {
+            "note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"
+        }
 
     def load_pred(mode: str) -> pd.DataFrame:
         pred_dir = data_dir / "predict"
@@ -83,21 +102,31 @@ def main() -> None:
 
     def df_to_html(df: pd.DataFrame) -> str:
         if df.empty:
-            return "<p><em>No data.</em></p><p class='muted'>Full file in <code>data/predict/</code>.</p>"
+            return (
+                "<p><em>Chưa có dữ liệu.</em></p>"
+                "<p class='muted'>Tệp đầy đủ nằm trong <code>data/predict/</code>.</p>"
+            )
         cols = [c for c in df.columns if c in ("number", "prob")]
         if not cols:
             cols = df.columns.tolist()[:2]
         df2 = df[cols].copy()
         if "prob" in df2.columns:
             df2["prob"] = df2["prob"].astype(float).map(lambda x: f"{x:.6f}")
+        df2 = df2.rename(columns=column_label)
         return df2.to_html(index=False, escape=True)
 
-    html = f"""<!doctype html>
+    def display_json(payload: dict) -> str:
+        localized = localize_mapping_for_display(payload)
+        return html.escape(json.dumps(localized, ensure_ascii=False, indent=2))
+
+    dashboard_html = f"""<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>XSMB Analytics Dashboard</title>
+  {security_meta_tags()}
+  {tailwind_style_tag()}
+  <title>Bảng điều khiển phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
     h1,h2,h3 {{ margin: 0.6em 0 0.4em; }}
@@ -111,50 +140,50 @@ def main() -> None:
     a {{ color: #0b57d0; text-decoration: none; }}
   </style>
 </head>
-<body>
-  <h1>XSMB Analytics Dashboard</h1>
-  <div class="meta">Latest data date: <b>{latest}</b> &nbsp;|&nbsp; Generated: {gen}</div>
+<body class="bg-slate-50 text-slate-800">
+  <h1>Bảng điều khiển phân tích XSMB</h1>
+  <div class="meta">Ngày dữ liệu mới nhất: <b>{latest}</b> &nbsp;|&nbsp; Tạo lúc: {gen}</div>
 
   <div class="grid">
     <div class="card">
-      <h2>Picks (Lô tô)</h2>
-      <pre>{json.dumps(picks_loto, ensure_ascii=False, indent=2)}</pre>
+      <h2>Danh sách gợi ý (lô tô)</h2>
+      <pre>{display_json(picks_loto)}</pre>
     </div>
-    <div class="card">
-      <h2>Picks (Đề / ĐB)</h2>
-      <pre>{json.dumps(picks_de, ensure_ascii=False, indent=2)}</pre>
-    </div>
-
-    <div class="card">
-      <h2>Weights (Loto)</h2>
-      <pre>{json.dumps(w_loto, ensure_ascii=False, indent=2)}</pre>
-      <h3>Calibration (Loto)</h3>
-      <pre>{json.dumps(c_loto, ensure_ascii=False, indent=2)}</pre>
-    </div>
-    <div class="card">
-      <h2>Weights (De)</h2>
-      <pre>{json.dumps(w_de, ensure_ascii=False, indent=2)}</pre>
-      <h3>Calibration (De)</h3>
-      <pre>{json.dumps(c_de, ensure_ascii=False, indent=2)}</pre>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Danh sách gợi ý (Đặc Biệt / ĐB)</h2>
+      <pre>{display_json(picks_de)}</pre>
     </div>
 
     <div class="card">
-      <h2>Top probabilities (Loto) — preview</h2>
+      <h2>Trọng số (lô tô)</h2>
+      <pre>{display_json(w_loto)}</pre>
+      <h3>Hiệu chỉnh (lô tô)</h3>
+      <pre>{display_json(c_loto)}</pre>
+    </div>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Trọng số (Đặc Biệt)</h2>
+      <pre>{display_json(w_de)}</pre>
+      <h3>Hiệu chỉnh (Đặc Biệt)</h3>
+      <pre>{display_json(c_de)}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Các xác suất lô tô cao nhất — xem trước</h2>
       {df_to_html(pred_loto)}
     </div>
-    <div class="card">
-      <h2>Top probabilities (De) — preview</h2>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Các xác suất Đặc Biệt cao nhất — xem trước</h2>
       {df_to_html(pred_de)}
     </div>
   </div>
 
   <p class="muted" style="margin-top:16px;">
-    Pages: <a href="index.html">Docs index</a> · <a href="statistics.html">Statistical matrices</a> · <a href="model-quality.html">Model quality</a>
+    Trang: <a href="index.html">Mục lục tài liệu</a> · <a href="statistics.html">Ma trận thống kê</a> · <a href="model-quality.html">Chất lượng mô hình</a>
   </p>
 </body>
 </html>
 """
-    (docs_dir / "dashboard.html").write_text(html, encoding="utf-8")
+    (docs_dir / "dashboard.html").write_text(dashboard_html, encoding="utf-8")
     print("Wrote:", docs_dir / "dashboard.html")
 
     # GitHub Pages publishes only docs/. Keep model-quality data self-contained
@@ -178,19 +207,27 @@ def main() -> None:
         latest_rows = q.groupby("mode", as_index=False).tail(1).copy()
         latest_rows["logloss"] = latest_rows["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         latest_rows["brier"] = latest_rows["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        latest_quality = latest_rows[["mode", "target_date", "logloss", "brier"]].to_html(index=False, escape=True)
+        latest_rows["mode"] = latest_rows["mode"].map(mode_label)
+        latest_quality = latest_rows[["mode", "target_date", "logloss", "brier"]].rename(
+            columns=column_label
+        ).to_html(index=False, escape=True)
 
         recent = q.groupby("mode", group_keys=False).tail(30).copy()
         recent["logloss"] = recent["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         recent["brier"] = recent["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        quality_body = recent[["mode", "target_date", "logloss", "brier"]].to_html(index=False, escape=True)
+        recent["mode"] = recent["mode"].map(mode_label)
+        quality_body = recent[["mode", "target_date", "logloss", "brier"]].rename(
+            columns=column_label
+        ).to_html(index=False, escape=True)
 
     quality_html = f"""<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Model Quality — XSMB Analytics</title>
+  {security_meta_tags()}
+  {tailwind_style_tag()}
+  <title>Chất lượng mô hình — Phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }}
     .card {{ border:1px solid #ddd; border-radius:12px; padding:16px; margin:14px 0; }}
@@ -202,11 +239,11 @@ def main() -> None:
   </style>
 </head>
 <body>
-  <h1>Model Quality</h1>
-  <p class="muted">Đánh giá rolling out-of-sample của ensemble. LogLoss/Brier thấp hơn là tốt hơn; đây là thước đo xác suất, không phải cam kết kết quả.</p>
-  <p><a href="index.html">Trang chính</a> · <a href="dashboard.html">AI/ML dashboard</a> · <a href="statistics.html">Thống kê</a></p>
-  <div class="card"><h2>Latest</h2>{latest_quality or '<p>Chưa có dữ liệu.</p>'}</div>
-  <div class="card"><h2>30 đánh giá gần nhất / mode</h2>{quality_body}</div>
+  <h1>Chất lượng mô hình</h1>
+  <p class="muted">Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.</p>
+  <p><a href="index.html">Trang chính</a> · <a href="dashboard.html">Bảng điều khiển AI/ML</a> · <a href="statistics.html">Thống kê</a></p>
+  <div class="card"><h2>Mới nhất</h2>{latest_quality or '<p>Chưa có dữ liệu.</p>'}</div>
+  <div class="card"><h2>30 đánh giá gần nhất theo loại</h2>{quality_body}</div>
 </body>
 </html>
 """

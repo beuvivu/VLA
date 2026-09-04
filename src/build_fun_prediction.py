@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Build and inject a deterministic next-day *fun* XSMB prediction board.
+"""Dựng và chèn bảng mô phỏng XSMB tất định cho ngày kế tiếp.
 
 The production models predict only the two-digit Loto/ĐB universe.  This module
 turns those probabilities into a clearly-labelled entertainment simulation of a
@@ -13,7 +13,9 @@ import argparse
 import hashlib
 import html
 import json
+import os
 import re
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -70,15 +72,15 @@ def _prob_frame(path: Path) -> pd.DataFrame:
         raise FileNotFoundError(path)
     df = pd.read_csv(path)
     if "number" not in df.columns or "prob" not in df.columns:
-        raise ValueError(f"Prediction file lacks number/prob columns: {path}")
+        raise ValueError(f"Tệp dự báo thiếu cột number/prob: {path}")
     df = df[["number", "prob"]].copy()
     df["number"] = pd.to_numeric(df["number"], errors="raise").astype(int)
     df["prob"] = pd.to_numeric(df["prob"], errors="raise").astype(float)
     df = df.drop_duplicates("number", keep="last").sort_values("number")
     if df["number"].tolist() != list(range(100)):
-        raise ValueError(f"Prediction file must contain exactly 00..99: {path}")
+        raise ValueError(f"Tệp dự báo phải chứa đủ đúng miền 00..99: {path}")
     if not np.isfinite(df["prob"].to_numpy()).all():
-        raise ValueError(f"Non-finite probabilities in {path}")
+        raise ValueError(f"Tệp có xác suất không hữu hạn: {path}")
     return df.reset_index(drop=True)
 
 
@@ -92,9 +94,9 @@ def load_prediction_inputs(data_dir: Path) -> PredictionInputs:
     anchor_loto = str(picks_loto.get("anchor_date", ""))
     anchor_de = str(picks_de.get("anchor_date", ""))
     if not target_loto or target_loto != target_de:
-        raise ValueError(f"Loto/ĐB target dates disagree: {target_loto!r} vs {target_de!r}")
+        raise ValueError(f"Ngày mục tiêu lô tô/ĐB không khớp: {target_loto!r} và {target_de!r}")
     if not anchor_loto or anchor_loto != anchor_de:
-        raise ValueError(f"Loto/ĐB anchor dates disagree: {anchor_loto!r} vs {anchor_de!r}")
+        raise ValueError(f"Ngày neo lô tô/ĐB không khớp: {anchor_loto!r} và {anchor_de!r}")
 
     loto = _prob_frame(pred_dir / f"predict_next_loto_all_{target_loto}.csv")
     de = _prob_frame(pred_dir / f"predict_next_de_all_{target_loto}.csv")
@@ -190,13 +192,13 @@ def build_fun_draw(inputs: PredictionInputs) -> dict[str, Any]:
         "seed": seed,
         "disclaimer": (
             "Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; "
-            "các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp deterministic, không phải "
+            "các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải "
             "xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế."
         ),
         "method": (
-            "ĐB: weighted deterministic sample từ distribution ĐB. Các giải khác: weighted "
-            "deterministic sample từ distribution Loto. Prefix được sinh từ seed cố định theo "
-            "snapshot/model để cùng đầu vào luôn cho cùng một bảng mô phỏng."
+            "ĐB: lấy mẫu tất định có trọng số từ phân phối ĐB. Các giải khác: lấy mẫu tất định "
+            "có trọng số từ phân phối lô tô. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp "
+            "dữ liệu/mô hình để cùng đầu vào luôn cho cùng một bảng mô phỏng."
         ),
         "groups": groups,
         "rows": flat_rows,
@@ -216,8 +218,50 @@ def write_artifacts(payload: dict[str, Any], data_dir: Path) -> tuple[Path, Path
     pred_dir.mkdir(parents=True, exist_ok=True)
     json_path = pred_dir / "fun_draw_next.json"
     csv_path = pred_dir / "fun_draw_next.csv"
-    json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    pd.DataFrame(payload["rows"]).to_csv(csv_path, index=False)
+
+    # Replace both snapshots atomically.  A runner interruption must not leave
+    # a truncated JSON/CSV pair that the next page build interprets as a stale
+    # simulation.  Temporary files live beside the destination so os.replace
+    # remains atomic on the same filesystem.
+    json_tmp: str | None = None
+    csv_tmp: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".json",
+            delete=False,
+        ) as fh:
+            json_tmp = fh.name
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".csv",
+            delete=False,
+        ) as fh:
+            csv_tmp = fh.name
+            pd.DataFrame(payload["rows"]).to_csv(fh, index=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(json_tmp, json_path)
+        json_tmp = None
+        os.replace(csv_tmp, csv_path)
+        csv_tmp = None
+    finally:
+        for path in (json_tmp, csv_tmp):
+            if path:
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
     return json_path, csv_path
 
 
@@ -250,7 +294,7 @@ def _render_board(payload: dict[str, Any]) -> str:
             values.append(
                 f"<button class='fun-prize-number{cls}' data-mode='{item['mode']}' "
                 f"data-number='{html.escape(item['suffix'])}' "
-                f"title='2 số cuối {html.escape(item['suffix'])} · xác suất model {float(item['model_prob_percent']):.3f}%'>"
+            f"title='2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
                 f"{html.escape(item['value'])}</button>"
             )
         rows.append(
@@ -260,14 +304,14 @@ def _render_board(payload: dict[str, Any]) -> str:
 
     state = payload["model_state"]
     loto_state = (
-        f"Stacked ML active · trust {float(state['loto_meta_trust']) * 100:.0f}%"
+        f"ML xếp chồng đang bật · độ tin cậy {float(state['loto_meta_trust']) * 100:.0f}%"
         if state["loto_meta_active"]
-        else "Linear ensemble / ML gate fallback"
+        else "Mô hình tổ hợp tuyến tính / phương án dự phòng của cổng ML"
     )
     de_state = (
-        f"Stacked ML active · trust {float(state['de_meta_trust']) * 100:.0f}%"
+        f"ML xếp chồng đang bật · độ tin cậy {float(state['de_meta_trust']) * 100:.0f}%"
         if state["de_meta_active"]
-        else "Linear ensemble / ML gate fallback"
+        else "Mô hình tổ hợp tuyến tính / phương án dự phòng của cổng ML"
     )
 
     return f"""
@@ -276,7 +320,7 @@ def _render_board(payload: dict[str, Any]) -> str:
     <div>
       <div class="fun-eyebrow">🎲 Dự đoán vui · ngày kế tiếp</div>
       <h3>Bảng mô phỏng XSMB {html.escape(str(payload['target_date']))}</h3>
-      <p>Đặt ngay dưới kết quả thực ngày {html.escape(str(payload['anchor_date']))}. Chỉ phần <b>2 số cuối</b> dùng xác suất từ model; tiền tố giải là mô phỏng deterministic.</p>
+      <p>Đặt ngay dưới kết quả thực ngày {html.escape(str(payload['anchor_date']))}. Chỉ phần <b>2 số cuối</b> dùng xác suất từ mô hình; tiền tố giải là mô phỏng tất định.</p>
     </div>
     <span class="fun-warning">Không phải kết quả thật</span>
   </div>
@@ -287,8 +331,8 @@ def _render_board(payload: dict[str, Any]) -> str:
     </div>
     <div class="fun-prob-panels">
       <article class="fun-prob-card">
-        <div class="fun-prob-title"><span>Loto ngày mai</span><small>{html.escape(loto_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload['top_loto'], 'loto', 'Loto')}</div>
+        <div class="fun-prob-title"><span>Lô tô ngày mai</span><small>{html.escape(loto_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload['top_loto'], 'loto', 'Lô tô')}</div>
       </article>
       <article class="fun-prob-card de">
         <div class="fun-prob-title"><span>Đặc biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
@@ -375,7 +419,7 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
     soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
     target = soup.select_one("section#ket-qua")
     if target is None:
-        raise RuntimeError(f"Cannot find section#ket-qua in {path}")
+        raise RuntimeError(f"Không tìm thấy section#ket-qua trong {path}")
 
     old_block = soup.find(id=BLOCK_ID)
     if old_block is not None:
@@ -387,20 +431,21 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
     style = soup.new_tag("style", id=STYLE_ID)
     style.string = FUN_CSS
     if soup.head is None:
-        raise RuntimeError(f"Missing <head> in {path}")
+        raise RuntimeError(f"Thiếu thẻ <head> trong {path}")
     soup.head.append(style)
 
     fragment = BeautifulSoup(_render_board(payload), "html.parser")
     block = fragment.find(id=BLOCK_ID)
     if block is None:
-        raise RuntimeError("Failed to build fun prediction HTML fragment")
+        raise RuntimeError("Không dựng được khối HTML mô phỏng vui")
     target.append(block)
-    path.write_text(str(soup), encoding="utf-8")
+    rendered = "\n".join(line.rstrip() for line in str(soup).splitlines()) + "\n"
+    path.write_text(rendered, encoding="utf-8")
     return True
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Build and inject the next-day fun XSMB prediction board.")
+    ap = argparse.ArgumentParser(description="Dựng và chèn bảng mô phỏng vui XSMB ngày kế tiếp.")
     ap.add_argument("--data-dir", default="data")
     ap.add_argument("--docs-dir", default="docs")
     args = ap.parse_args()
@@ -418,11 +463,11 @@ def main() -> None:
             injected.append(str(path))
 
     if not injected:
-        raise RuntimeError("No landing-page HTML was available for fun prediction injection")
+        raise RuntimeError("Không có trang HTML tổng hợp để chèn bảng mô phỏng vui")
 
     print(
-        f"[OK] fun prediction target={payload['target_date']} -> {json_path}, {csv_path}; "
-        f"injected={', '.join(injected)}"
+        f"[OK] mô phỏng vui cho ngày={payload['target_date']} -> {json_path}, {csv_path}; "
+        f"đã chèn={', '.join(injected)}"
     )
 
 

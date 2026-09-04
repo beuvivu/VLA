@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Build the static Research Lab page from generated scientific artifacts."""
+"""Dựng phòng nghiên cứu tĩnh từ các artifact kiểm định khoa học."""
 
 import argparse
 import html
@@ -9,6 +9,32 @@ from pathlib import Path
 
 import pandas as pd
 from bs4 import BeautifulSoup
+
+from ui_locale import mode_label, strategy_label
+from ui_theme import tailwind_style_tag
+from web_security import security_meta_tags
+
+
+TEST_LABELS = {
+    "de_suffix_uniformity": "Độ đồng đều của hai số cuối giải đặc biệt",
+    "all_prize_suffix_uniformity": "Độ đồng đều của hai số cuối mọi giải",
+    "de_runs_independence": "Tính độc lập của chuỗi giải đặc biệt",
+    "weekday_vs_de_tail": "Quan hệ thứ trong tuần với đuôi đặc biệt",
+    "loto_repeat_dependency": "Phụ thuộc lặp lại của lô tô",
+}
+
+CATEGORY_LABELS = {
+    "bong": "Bóng",
+    "cross_prize": "Ghép chéo giải",
+    "head_tail": "Đầu / đuôi",
+    "kep": "Kép",
+    "position": "Vị trí",
+    "recency": "Gần đây",
+    "repeat": "Lặp lại",
+    "special": "Giải đặc biệt",
+    "sum": "Tổng",
+    "touch": "Chạm",
+}
 
 
 def _read_json(path: Path) -> dict:
@@ -38,7 +64,7 @@ def _primary_tests(diag: dict) -> str:
     for item in diag.get("primary_tests", []):
         rows.append(
             "<tr>"
-            f"<td>{html.escape(str(item.get('name', '')))}</td>"
+            f"<td>{html.escape(TEST_LABELS.get(str(item.get('name', '')), str(item.get('name', ''))))}</td>"
             f"<td>{_fmt(item.get('statistic'))}</td>"
             f"<td>{_fmt(item.get('p_value'))}</td>"
             f"<td>{_fmt(item.get('q_value_fdr'))}</td>"
@@ -54,17 +80,17 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
         reality = item.get("reality_check", {})
         cards.append(
             '<article class="metric-card">'
-            f"<span>Research firewall · {html.escape(mode.upper())}</span>"
+            f"<span>Tường lửa nghiên cứu · {html.escape(mode_label(mode))}</span>"
             f"<strong>{int(item.get('production_eligible_count', 0))}</strong>"
-            f"<em>eligible / {int(item.get('hypotheses', 0))} giả thuyết · reality p={_fmt(reality.get('p_value'), 3)}</em>"
+            f"<em>đủ điều kiện / {int(item.get('hypotheses', 0))} giả thuyết · p kiểm tra thực tế={_fmt(reality.get('p_value'), 3)}</em>"
             "</article>"
         )
     if cross:
         cards.append(
             '<article class="metric-card">'
-            '<span>Cross-lag positional</span>'
+            '<span>Vị trí chéo độ trễ</span>'
             f"<strong>{int(cross.get('hypotheses', 0))}</strong>"
-            f"<em>hypotheses · research gate pass {int(cross.get('research_gate_pass_count', 0))} · production wired: Không</em>"
+            f"<em>giả thuyết · qua cổng nghiên cứu {int(cross.get('research_gate_pass_count', 0))} · nối vào vận hành: Không</em>"
             "</article>"
         )
     if conditional:
@@ -72,7 +98,7 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
             '<article class="metric-card">'
             '<span>ĐB → Loto ngày kế</span>'
             f"<strong>{html.escape(str(conditional.get('current_special_2d', '—')))}</strong>"
-            f"<em>ĐB 2D hiện tại · {int(conditional.get('rows', 0))} conditional cells · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
+            f"<em>ĐB 2 số hiện tại · {int(conditional.get('rows', 0))} ô có điều kiện · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
             "</article>"
         )
     return "".join(cards)
@@ -86,12 +112,12 @@ def _strategy_table(df: pd.DataFrame, top: int = 10) -> str:
     for _, r in view.iterrows():
         rows.append(
             "<tr>"
-            f"<td>{html.escape(str(r.get('strategy', '')))}</td>"
-            f"<td>{html.escape(str(r.get('category', '')))}</td>"
+            f"<td>{html.escape(strategy_label(r.get('strategy', '')))}</td>"
+            f"<td>{html.escape(CATEGORY_LABELS.get(str(r.get('category', '')), str(r.get('category', ''))))}</td>"
             f"<td>{_fmt(r.get('holdout_precision'), 4)}</td>"
             f"<td>{_fmt(r.get('holdout_lift'), 3)}</td>"
             f"<td>{_fmt(r.get('holdout_q_value_fdr'), 4)}</td>"
-            f"<td>{'PASS' if bool(r.get('research_gate_pass')) else '—'}</td>"
+            f"<td>{'ĐẠT' if bool(r.get('research_gate_pass')) else '—'}</td>"
             "</tr>"
         )
     return "".join(rows)
@@ -114,8 +140,8 @@ def _gap_table(touch: pd.DataFrame, sums: pd.DataFrame, top: int = 6) -> str:
 
 def _legacy_diagnostics(advanced: dict) -> str:
     tests = [
-        ("Aggregate Loto transition 2×2", advanced.get("aggregate_transition", {})),
-        ("Weekday × đuôi ĐB 7×10", advanced.get("weekday_special_tail", {})),
+        ("Chuyển tiếp lô tô tổng hợp 2×2", advanced.get("aggregate_transition", {})),
+        ("Thứ trong tuần × đuôi ĐB 7×10", advanced.get("weekday_special_tail", {})),
     ]
     rows = []
     for label, item in tests:
@@ -129,10 +155,10 @@ def _legacy_diagnostics(advanced: dict) -> str:
         )
     rows.append(
         "<tr>"
-        "<td>Full-special ACF/Bartlett</td>"
-        f"<td>{int(advanced.get('full_special_acf_rows', 0))} lags</td>"
+        "<td>ACF/Bartlett toàn giải đặc biệt</td>"
+        f"<td>{int(advanced.get('full_special_acf_rows', 0))} độ trễ</td>"
         "<td>—</td>"
-        f"<td>{int(advanced.get('full_special_acf_fdr_05', 0))} lag FDR&lt;.05</td>"
+        f"<td>{int(advanced.get('full_special_acf_fdr_05', 0))} độ trễ có FDR&lt;.05</td>"
         "</tr>"
     )
     return "".join(rows) if rows else '<tr><td colspan="4">Chưa có dữ liệu</td></tr>'
@@ -155,7 +181,7 @@ def _crosslag_table(df: pd.DataFrame, top: int = 10) -> str:
             f"<td>{html.escape(str(r.get('position_b_name', '—')) or '—')}</td>"
             f"<td>{int(r.get('lag_b_days', -1)) if pd.notna(r.get('lag_b_days')) else -1}</td>"
             f"<td>{_fmt(r.get('holdout_lift'), 3)}</td>"
-            f"<td>{'REVIEW' if bool(r.get('research_gate_pass')) else '—'}</td>"
+            f"<td>{'CẦN XEM XÉT' if bool(r.get('research_gate_pass')) else '—'}</td>"
             "</tr>"
         )
     return "".join(rows)
@@ -194,7 +220,7 @@ def _inject_link(path: Path) -> None:
     if soup.find(id="research-lab-link") is not None or soup.body is None:
         return
     link = soup.new_tag("a", href="research-lab.html", id="research-lab-link")
-    link.string = "🧪 Research Lab"
+    link.string = "🧪 Phòng nghiên cứu"
     link["style"] = (
         "position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;"
         "border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;"
@@ -223,7 +249,9 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VLA Research Lab</title>
+{security_meta_tags()}
+{tailwind_style_tag()}
+<title>Phòng nghiên cứu VLA</title>
 <style>
 :root{{--bg:#f5f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}}
@@ -235,21 +263,21 @@ main{{max-width:1240px;margin:auto;padding:28px}}a{{color:var(--accent)}}.hero{{
 .card h2{{margin:0 0 7px}}.card p{{color:var(--muted);line-height:1.55}}.table-wrap{{overflow:auto}}table{{width:100%;border-collapse:collapse;font-size:12px}}
 th,td{{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}}th{{background:#f8fafc}}.warn{{padding:12px 14px;border-radius:14px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin:12px 0}}
 @media(max-width:850px){{.grid,.metrics{{grid-template-columns:1fr}}main{{padding:15px}}}}
-</style></head><body><main>
-<section class="hero"><div><a href="index.html" style="color:#bfdbfe">← Trang chính</a></div><h1>Scientific Research Lab</h1>
-<p>Không gian kiểm chứng riêng cho thống kê, cầu và strategy. Mọi kết quả tại đây được tách khỏi production predictor cho đến khi vượt chronological holdout, multiple-testing control, effect-size gate và data-snooping reality check.</p></section>
-<div class="warn">Research Lab dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. p-value nhỏ hoặc lift lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng Legacy completeness và Cross-lag bên dưới <b>không được nối vào production weights</b>.</div>
+</style></head><body class="bg-slate-50 text-slate-800"><main>
+<section class="hero"><div><a href="index.html" style="color:#bfdbfe">← Trang chính</a></div><h1>Phòng nghiên cứu khoa học</h1>
+<p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
+<div class="warn">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
 <section class="metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
 <section class="grid">
-<article class="card"><h2>Randomness & dependence diagnostics</h2><p>Primary tests được hiệu chỉnh Benjamini–Hochberg FDR.</p><div class="table-wrap"><table><thead><tr><th>Test</th><th>Statistic</th><th>p</th><th>q(FDR)</th><th>FDR&lt;.05</th></tr></thead><tbody>{_primary_tests(diagnostics)}</tbody></table></div></article>
+<article class="card"><h2>Chẩn đoán tính ngẫu nhiên và phụ thuộc</h2><p>Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.</p><div class="table-wrap"><table><thead><tr><th>Phép kiểm định</th><th>Thống kê</th><th>p</th><th>q (FDR)</th><th>FDR&lt;.05</th></tr></thead><tbody>{_primary_tests(diagnostics)}</tbody></table></div></article>
 <article class="card"><h2>Gan tổng / chạm</h2><p>Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.</p><div class="table-wrap"><table><thead><tr><th>Nhóm</th><th>Gan ngày</th><th>Lần cuối</th></tr></thead><tbody>{_gap_table(touch,sums)}</tbody></table></div></article>
-<article class="card"><h2>Legacy completeness · exact semantics</h2><p>Các kiểm định có câu hỏi thống kê khác với battery hiện đại nên được giữ riêng để không mất semantics.</p><div class="table-wrap"><table><thead><tr><th>Diagnostic</th><th>Statistic</th><th>p</th><th>Method / FDR</th></tr></thead><tbody>{_legacy_diagnostics(advanced)}</tbody></table></div></article>
-<article class="card"><h2>ĐB {html.escape(current_special or '—')} → Loto ngày kế</h2><p>Conditional matrix chỉ dùng cặp ngày lịch liên tiếp; pEB được shrink về marginal baseline và q là BH-FDR.</p><div class="table-wrap"><table><thead><tr><th>Số</th><th>Trials</th><th>Hits</th><th>p raw</th><th>p EB</th><th>q</th></tr></thead><tbody>{_conditional_table(conditional,current_special)}</tbody></table></div></article>
-<article class="card"><h2>Strategy Lab · Loto</h2><div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Nhóm</th><th>Precision</th><th>Lift</th><th>q</th><th>Gate</th></tr></thead><tbody>{_strategy_table(strategy_loto)}</tbody></table></div></article>
-<article class="card"><h2>Strategy Lab · Đề</h2><div class="table-wrap"><table><thead><tr><th>Strategy</th><th>Nhóm</th><th>Precision</th><th>Lift</th><th>q</th><th>Gate</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
+<article class="card"><h2>Kiểm tra tương thích cũ · đúng ngữ nghĩa</h2><p>Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.</p><div class="table-wrap"><table><thead><tr><th>Chẩn đoán</th><th>Thống kê</th><th>p</th><th>Phương pháp / FDR</th></tr></thead><tbody>{_legacy_diagnostics(advanced)}</tbody></table></div></article>
+<article class="card"><h2>ĐB {html.escape(current_special or '—')} → Lô tô ngày kế</h2><p>Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.</p><div class="table-wrap"><table><thead><tr><th>Số</th><th>Cỡ mẫu</th><th>Số lần trúng</th><th>p thô</th><th>p EB</th><th>q</th></tr></thead><tbody>{_conditional_table(conditional,current_special)}</tbody></table></div></article>
+<article class="card"><h2>Phòng chiến lược · Lô tô</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_loto)}</tbody></table></div></article>
+<article class="card"><h2>Phòng chiến lược · Đặc Biệt</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
 </section>
-<section class="card" style="margin-top:16px"><h2>Cross-lag positional family</h2><p>Phục hồi family cầu dọc/chéo giữa các ngày khác nhau: concat, lộn, bộ-bóng, chạm và tổng. Mỗi rule chỉ đọc target−lag theo ngày lịch, sau đó qua train/validation/untouched holdout và FDR/Bonferroni. `research gate` chỉ có nghĩa đáng xem tiếp, không phải production eligible.</p><div class="table-wrap"><table><thead><tr><th>Op</th><th>Vị trí A</th><th>Lag A</th><th>Vị trí B</th><th>Lag B</th><th>Holdout lift</th><th>Gate</th></tr></thead><tbody>{_crosslag_table(cross_rules)}</tbody></table></div></section>
-<section class="card" style="margin-top:16px"><h2>Research firewall</h2><p>Hệ thống quét 27×27 vị trí cho hai family tail-tail và head-tail, sau đó chia train/validation/holdout theo thời gian. FDR chỉ áp dụng trên train; validation và untouched holdout phải giữ effect/lift, đồng thời max-statistic circular-shift reality check kiểm soát data snooping ở cấp toàn family.</p></section>
+<section class="card" style="margin-top:16px"><h2>Họ vị trí chéo độ trễ</h2><p>Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.</p><div class="table-wrap"><table><thead><tr><th>Phép biến đổi</th><th>Vị trí A</th><th>Trễ A</th><th>Vị trí B</th><th>Trễ B</th><th>Độ nâng trên tập giữ lại</th><th>Cổng</th></tr></thead><tbody>{_crosslag_table(cross_rules)}</tbody></table></div></section>
+<section class="card" style="margin-top:16px"><h2>Tường lửa nghiên cứu</h2><p>Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ liệu trên toàn họ.</p></section>
 </main></body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
     out = docs_dir / "research-lab.html"
@@ -265,7 +293,7 @@ def main() -> None:
     ap.add_argument("--docs-dir", default="docs")
     args = ap.parse_args()
     out = build(Path(args.data_dir), Path(args.docs_dir))
-    print(f"[OK] research lab -> {out}")
+    print(f"[OK] phòng nghiên cứu -> {out}")
 
 
 if __name__ == "__main__":

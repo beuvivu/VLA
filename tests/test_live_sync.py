@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import live_sync
@@ -31,19 +31,30 @@ def _map() -> dict[str, list[str]]:
 def test_live_snapshot_marks_complete_only_when_two_sources_verify_every_slot(monkeypatch) -> None:
     p = _map()
     monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", p)])
-    monkeypatch.setattr(live_sync, "create_scraper", lambda: object())
+    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
     now = datetime(2026, 8, 30, 18, 30, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
     out = live_sync.fetch_snapshot(now=now)
     assert out["status"] == "complete_verified"
     assert out["verified_values"] == 27
     assert out["prizes"]["special"] == ["83772"]
+    assert out["checked_at_local"] == "2026-08-30T18:30:00+07:00"
+    assert out["checked_at_utc"] == "2026-08-30T11:30:00Z"
+
+
+def test_live_snapshot_normalizes_utc_clock_before_selecting_date(monkeypatch) -> None:
+    p = _map()
+    monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", p)])
+    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 11, 30, tzinfo=UTC))
+    assert out["draw_date"] == "2026-08-30"
+    assert out["status"] == "complete_verified"
 
 
 def test_live_single_source_is_provisional_not_canonical_verified(monkeypatch) -> None:
     p = _map()
     empty = {k: [] for k in PRIZE_ORDER}
     monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", empty)])
-    monkeypatch.setattr(live_sync, "create_scraper", lambda: object())
+    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
     now = datetime(2026, 8, 30, 18, 25, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
     out = live_sync.fetch_snapshot(now=now)
     assert out["complete"] is True

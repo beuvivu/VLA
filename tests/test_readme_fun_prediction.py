@@ -83,9 +83,9 @@ def test_automation_block_replaces_legacy_schedule_and_is_idempotent() -> None:
     assert "## Lịch daily finalization" not in once
     assert once.count("<!-- AUTOMATION:BEGIN -->") == 1
     assert once.count("<!-- AUTOMATION:END -->") == 1
-    assert "18:04" in once
-    assert "18:10, 18:20" in once
-    assert "18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28" in once
-    assert "19:35, 20:05" in once
-    assert "20:20" in once
+    assert "18:00" in once
+    assert "17:55, 18:05, 18:15, 18:25, 18:45" in once
+    assert "18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00" in once
+    assert "19:05, 19:25, 19:45, 20:05" in once
+    assert "20:10–20:35" in once
     assert "07:15" in once

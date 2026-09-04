@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -16,7 +17,10 @@ from cau_keo_domain_challenger import (
     _positive_pair,
     _trust_from_skill,
     augment_domain_features,
+    walk_forward_ablation,
 )
+from cau_keo_feature_groups import DOMAIN_FEATURE_SPECS
+from ml_validation import evaluate_predictions
 
 
 def _base_frame(anchor: str = "2026-09-01") -> pd.DataFrame:
@@ -40,9 +44,22 @@ def _base_frame(anchor: str = "2026-09-01") -> pd.DataFrame:
 
 
 def test_domain_feature_groups_are_unique_and_nonempty() -> None:
-    assert set(DOMAIN_FEATURE_GROUPS) == {"partner_cap50", "bo", "bong", "cham", "tong"}
+    assert set(DOMAIN_FEATURE_GROUPS) == {
+        "partner",
+        "cap_50",
+        "bo",
+        "bong",
+        "cham",
+        "tong",
+    }
     assert all(DOMAIN_FEATURE_GROUPS.values())
     assert len(ALL_DOMAIN_FEATURES) == len(set(ALL_DOMAIN_FEATURES))
+    assert set(DOMAIN_FEATURE_SPECS) == set(DOMAIN_FEATURE_GROUPS)
+    assert all(not spec.default_enabled for spec in DOMAIN_FEATURE_SPECS.values())
+    assert all(
+        spec.temporal_requirement == "same_anchor_only"
+        for spec in DOMAIN_FEATURE_SPECS.values()
+    )
 
 
 def test_augment_domain_features_respects_partner_bo_bong_cham_tong_semantics() -> None:
@@ -92,6 +109,43 @@ def test_domain_augmentation_preserves_row_order_and_has_no_cross_anchor_leakage
     assert int(older_anchor.loc[0, "cap50_partner_freq_30d"]) == 55
 
 
+def test_domain_augmentation_preserves_duplicate_index_labels() -> None:
+    frame = _base_frame().sample(frac=1.0, random_state=7)
+    frame.index = np.arange(len(frame)) % 11
+    expected_index = frame.index.copy()
+
+    out = augment_domain_features(frame)
+
+    assert out.index.equals(expected_index)
+    assert out["number"].tolist() == frame["number"].tolist()
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (lambda frame: pd.concat([frame, frame.iloc[[0]]]), "Mỗi ngày neo"),
+        (
+            lambda frame: frame.assign(
+                freq_30d=np.where(frame["number"].eq(0), np.inf, frame["freq_30d"])
+            ),
+            "không hữu hạn",
+        ),
+        (
+            lambda frame: frame.assign(
+                anchor_date=np.where(frame["number"].eq(0), None, frame["anchor_date"])
+            ),
+            "Ngày neo không được để trống",
+        ),
+    ],
+)
+def test_domain_augmentation_rejects_ambiguous_or_nonfinite_rows(
+    mutation,
+    message: str,
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        augment_domain_features(mutation(_base_frame()))
+
+
 def test_four_walk_forward_folds_are_strictly_chronological() -> None:
     days = pd.date_range("2025-01-01", periods=300, freq="D")
     folds = _make_folds(pd.DatetimeIndex(days))
@@ -110,3 +164,48 @@ def test_production_gate_requires_both_metrics_to_have_positive_skill() -> None:
     assert _positive_pair(-0.01, 0.02) is False
     assert _trust_from_skill(-0.01, 0.02) == 0.0
     assert 0.05 <= _trust_from_skill(0.02, 0.01) <= 0.30
+
+
+def test_ablation_reuses_one_seed_per_fold_and_fails_back_to_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import cau_keo_domain_challenger as module
+
+    days = pd.date_range("2025-01-01", periods=300, freq="D")
+    frame = pd.DataFrame({"anchor_date": days})
+    y = pd.Series((np.arange(len(days)) % 2).astype(int))
+    calls: list[tuple[int, int]] = []
+
+    def fake_fit(
+        data: pd.DataFrame,
+        target: np.ndarray,
+        *,
+        features: list[str],
+        fold: object,
+        mode: str,
+        seed: int,
+    ):
+        del features, mode
+        calls.append((fold.fold, seed))
+        _, _, valid = module._fold_masks(data, fold)
+        return evaluate_predictions(
+            target[valid],
+            np.full(int(valid.sum()), 0.5),
+            data.loc[valid, "anchor_date"].to_numpy(),
+        )
+
+    monkeypatch.setattr(module, "_fit_fold", fake_fit)
+    _, gate = walk_forward_ablation(frame, y, mode="loto")
+
+    for fold in range(1, 5):
+        assert {seed for called_fold, seed in calls if called_fold == fold} == {
+            20260920 + fold
+        }
+    assert sum(called_fold == 4 for called_fold, _ in calls) == 1
+    assert gate["domain_active"] is False
+    assert gate["selected_features"] == list(module.FEATURE_COLS)
+    assert gate["final_evaluation"]["holdout_consumed"] is False
+    assert gate["final_evaluation"]["oos_dates"] == 0
+    manifest = gate["feature_manifest"]
+    assert manifest["promoted_groups"] == []
+    assert manifest["production_features"] == list(module.FEATURE_COLS)

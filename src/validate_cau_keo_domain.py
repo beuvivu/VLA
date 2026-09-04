@@ -14,6 +14,7 @@ import pandas as pd
 from cau_keo_domain_challenger import (
     DOMAIN_FEATURE_GROUPS,
     DOMAIN_SCHEMA_VERSION,
+    FINAL_GATE_CONFIG,
     POSITIVE_SKILL_EPS,
 )
 
@@ -68,6 +69,9 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
         trust = float(gate.get("domain_trust", 0.0))
         brier_skill = float(gate.get("final_brier_skill", 0.0))
         logloss_skill = float(gate.get("final_logloss_skill", 0.0))
+        final_evaluation = gate.get("final_evaluation", {})
+        if not isinstance(final_evaluation, dict):
+            raise RuntimeError(f"{mode}: missing structured final evaluation")
         if not 0.0 <= trust <= 0.30:
             raise RuntimeError(f"{mode}: domain trust outside 0..0.30")
         if active:
@@ -75,6 +79,16 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
                 raise RuntimeError(f"{mode}: active domain challenger has no confirmed groups")
             if brier_skill <= POSITIVE_SKILL_EPS or logloss_skill <= POSITIVE_SKILL_EPS:
                 raise RuntimeError(f"{mode}: active challenger lacks positive final OOS skill")
+            if int(final_evaluation.get("oos_dates", 0)) < FINAL_GATE_CONFIG.minimum_oos_dates:
+                raise RuntimeError(f"{mode}: active challenger has insufficient OOS dates")
+            for metric in ("brier", "logloss"):
+                interval = final_evaluation.get(f"{metric}_improvement_ci", {})
+                if not isinstance(interval, dict) or float(interval.get("lower", 0.0)) <= 0.0:
+                    raise RuntimeError(
+                        f"{mode}: active challenger lacks positive {metric} lower CI"
+                    )
+            if final_evaluation.get("rejection_reasons"):
+                raise RuntimeError(f"{mode}: active challenger has rejection reasons")
             if trust <= 0.0:
                 raise RuntimeError(f"{mode}: active challenger must have positive trust")
         elif trust != 0.0:
@@ -82,7 +96,7 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
 
         ablation = pd.read_csv(ablation_path)
         stages = set(ablation["stage"].astype(str))
-        if not {"baseline", "screen", "final_diagnostic"}.issubset(stages):
+        if not {"baseline", "screen", "confirmation_diagnostic"}.issubset(stages):
             raise RuntimeError(f"{mode}: incomplete domain ablation stages")
         screened_candidates = set(
             ablation.loc[ablation["stage"].astype(str) == "screen", "candidate"].astype(str)
@@ -136,6 +150,15 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
         manifest_domain = manifest.get("domain_challenger", {})
         if bool(manifest_domain.get("active")) != active:
             raise RuntimeError(f"{mode}: manifest active flag mismatch")
+        feature_manifest = manifest_domain.get("feature_manifest", {})
+        if not isinstance(feature_manifest, dict):
+            raise RuntimeError(f"{mode}: missing production feature manifest")
+        expected_features = list(gate.get("selected_features", []))
+        if list(feature_manifest.get("production_features", [])) != expected_features:
+            raise RuntimeError(f"{mode}: production feature allowlist mismatch")
+        promoted = list(feature_manifest.get("promoted_groups", []))
+        if promoted != list(gate.get("production_selected_groups", [])):
+            raise RuntimeError(f"{mode}: promoted feature groups mismatch")
 
         result["modes"][mode] = {
             "active": active,

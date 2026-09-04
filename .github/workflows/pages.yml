@@ -1,4 +1,4 @@
-name: Deploy GitHub Pages
+name: Triển khai GitHub Pages
 
 on:
   workflow_dispatch:
@@ -29,6 +29,6 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: docs
-      - name: Deploy to GitHub Pages
+      - name: Triển khai lên GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

@@ -5,6 +5,8 @@ from datetime import datetime, time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from production_audit import audit, expected_latest_draw
 from reconcile_live_canonical import build_payload
 
@@ -44,8 +46,8 @@ POST_BUILD_ONLY_PREFIXES = (
 
 def test_expected_latest_draw_is_cutoff_aware():
     tz = ZoneInfo("Asia/Ho_Chi_Minh")
-    assert expected_latest_draw(datetime(2026, 9, 1, 10, 0, tzinfo=tz), time(18, 15)).isoformat() == "2026-08-31"
-    assert expected_latest_draw(datetime(2026, 9, 1, 19, 0, tzinfo=tz), time(18, 15)).isoformat() == "2026-09-01"
+    assert expected_latest_draw(datetime(2026, 9, 1, 10, 0, tzinfo=tz), time(18, 35)).isoformat() == "2026-08-31"
+    assert expected_latest_draw(datetime(2026, 9, 1, 19, 0, tzinfo=tz), time(18, 35)).isoformat() == "2026-09-01"
 
 
 def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
@@ -85,6 +87,32 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
     assert payload["received_values"] == 27
     assert payload["prizes"]["special"] == ["35644"]
     assert sum(len(v) for v in payload["prizes"].values()) == 27
+
+
+@pytest.mark.parametrize("unsafe_value", ["12.5", "NaN", "<script>", "１２３４５"])
+def test_reconcile_live_rejects_noncanonical_prize_values(
+    tmp_path: Path, unsafe_value: str
+) -> None:
+    canonical = tmp_path / "xsmb.csv"
+    canonical.write_text(
+        "date,special\n2026-08-31," + unsafe_value + "\n", encoding="utf-8"
+    )
+    audit_path = tmp_path / "audit.json"
+    audit_path.write_text(
+        json.dumps(
+            {
+                "2026-08-31": {
+                    "accepted": True,
+                    "agreement": 2,
+                    "sources": ["xoso.com.vn", "mketqua.net"],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises((KeyError, ValueError)):
+        build_payload(canonical=canonical, audit_path=audit_path)
 
 
 def _prebuild_critical(critical: list[str]) -> list[str]:
@@ -138,10 +166,13 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     post = Path(".github/workflows/post-finalization.yml").read_text(encoding="utf-8")
     daily = Path(".github/workflows/update-data.yml").read_text(encoding="utf-8")
 
-    for cron in ("10 11 * * *", "20 11 * * *", "35 12 * * *", "5 13 * * *", "20 13 * * *", "15 0 * * *"):
+    for cron in (
+        "55 10 * * *", "5 11 * * *", "15 11 * * *", "25 11 * * *", "45 11 * * *",
+        "5 12 * * *", "25 12 * * *", "45 12 * * *", "5 13 * * *", "15 0 * * *",
+    ):
         assert cron in watchdog
     assert 'dispatch("live-results.yml")' in watchdog
-    assert 'dispatch("update-data.yml")' in watchdog
+    assert 'dispatch("update-data.yml", {"reason": "watchdog_recovery"})' in watchdog
     assert 'dispatch("pages.yml")' in watchdog
     assert 'dispatch("post-finalization.yml")' in watchdog
 
@@ -158,3 +189,12 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     assert "workflow_dispatch:" in post
     assert "src/production_audit.py" in post
     assert "src/reconcile_live_canonical.py" in post
+    assert "/tmp/live-canonical.json" not in post
+    assert "mktemp" in post
+
+    assert "/tmp/production_audit.json" not in watchdog
+    assert "TemporaryDirectory" in watchdog
+
+    live = Path(".github/workflows/live-results.yml").read_text(encoding="utf-8")
+    assert "/tmp/live.json" not in live
+    assert "mktemp" in live

@@ -3,11 +3,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+from time_policy import VIETNAM_TZ, iso_local, iso_utc
+
+TZ = VIETNAM_TZ
 FIELDS = {
     "special": ["special"],
     "prize1": ["prize1"],
@@ -39,10 +41,9 @@ def _latest_row(path: Path) -> dict[str, str]:
 
 def _fmt(value: str, width: int) -> str:
     text = str(value).strip()
-    try:
-        return f"{int(float(text)):0{width}d}"
-    except Exception:
-        return text.zfill(width)
+    if re.fullmatch(rf"[0-9]{{1,{width}}}", text) is None:
+        raise ValueError(f"invalid canonical prize value {value!r} for width {width}")
+    return text.zfill(width)
 
 
 def build_payload(*, canonical: Path, audit_path: Path) -> dict:
@@ -58,7 +59,6 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
         prizes[group] = [_fmt(row[field], WIDTHS[group]) for field in fields]
 
     now_local = datetime.now(TZ)
-    now_utc = now_local.astimezone(ZoneInfo("UTC"))
     accepted_sources = list(evidence.get("sources", []))
     source_status = []
     for idx, source in enumerate(SOURCE_PRIORITY, start=1):
@@ -77,8 +77,8 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
     return {
         "schema_version": 2,
         "draw_date": draw_date,
-        "checked_at_utc": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "checked_at_local": now_local.isoformat(timespec="seconds"),
+        "checked_at_utc": iso_utc(now_local),
+        "checked_at_local": iso_local(now_local),
         "status": "complete_verified",
         "complete": True,
         "verified_complete": True,
@@ -106,7 +106,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--canonical", default="data/xsmb.csv")
     ap.add_argument("--audit", default="data/source_audit.json")
-    ap.add_argument("--out", default="/tmp/live-canonical.json")
+    ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     payload = build_payload(canonical=Path(args.canonical), audit_path=Path(args.audit))

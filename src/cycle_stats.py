@@ -30,7 +30,8 @@ def _gap_series_calendar(
     hit_dates = sorted(hit_dates)
     leading = max(0, (hit_dates[0] - all_dates[0]).days)
     completed_absences = [
-        max(0, (b - a).days - 1) for a, b in zip(hit_dates, hit_dates[1:])
+        max(0, (b - a).days - 1)
+        for a, b in zip(hit_dates[:-1], hit_dates[1:], strict=True)
     ]
     current_gap = max(0, (all_dates[-1] - hit_dates[-1]).days)
     observed = [leading, *completed_absences, current_gap]

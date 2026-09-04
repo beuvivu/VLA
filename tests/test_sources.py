@@ -53,6 +53,32 @@ def test_generic_parser_never_zero_fills_short_live_placeholders() -> None:
     assert p["special"] == []
 
 
+def test_generic_parser_rejects_unicode_digits_before_consensus() -> None:
+    p = extract_partial_prize_map("<div>ĐB １２３４５</div><div>G7 １２ 34</div>")
+    assert p["special"] == []
+    assert p["prize7"] == ["34"]
+
+    mixed = extract_partial_prize_map("<div>ĐB １12345２</div><div>G7 １12２</div>")
+    assert mixed["special"] == []
+    assert mixed["prize7"] == []
+
+
+def test_consensus_discards_malformed_tokens_and_invalid_thresholds() -> None:
+    import pytest
+
+    malicious = {k: [] for k in PRIZE_ORDER}
+    malicious["prize7"] = ["</script><script>alert(1)</script>"]
+    merged, meta = source_consensus_partial(
+        [("a", malicious), ("b", malicious)], min_agreement=2
+    )
+    assert merged["prize7"] == []
+    assert meta["received_slots"] == 0
+    assert meta["verified_slots"] == 0
+    for invalid in (0, True, 1.5):
+        with pytest.raises(ValueError, match="min_agreement"):
+            source_consensus_partial([], min_agreement=invalid)  # type: ignore[arg-type]
+
+
 def test_slot_consensus_uses_priority_only_for_provisional_values() -> None:
     a = {k: [] for k in PRIZE_ORDER}
     b = {k: [] for k in PRIZE_ORDER}

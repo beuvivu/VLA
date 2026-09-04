@@ -7,6 +7,8 @@ import sys
 import time
 from pathlib import Path
 
+from time_policy import DEFAULT_DRAW_CUTOFF
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -14,15 +16,19 @@ def _run(cmd: list[str], *, allow_fail: bool = False, timeout_s: int = 900) -> N
     logging.info("RUN: %s", " ".join(cmd))
     started = time.perf_counter()
     try:
-        proc = subprocess.run(cmd, cwd=ROOT, check=False, timeout=timeout_s)
-    except subprocess.TimeoutExpired:
+        # Commands are fixed Python argv lists assembled by this module; no
+        # untrusted text is interpreted by a shell.
+        proc = subprocess.run(  # noqa: S603
+            cmd, cwd=ROOT, check=False, timeout=timeout_s
+        )
+    except subprocess.TimeoutExpired as exc:
         elapsed = time.perf_counter() - started
         message = f"Command timed out after {elapsed:.1f}s: {' '.join(cmd)}"
         if allow_fail:
             logging.warning("%s (non-critical)", message)
             return
         logging.error("%s", message)
-        raise SystemExit(124)
+        raise SystemExit(124) from exc
     elapsed = time.perf_counter() - started
     if proc.returncode == 0:
         logging.info("OK %.2fs: %s", elapsed, " ".join(cmd))
@@ -51,7 +57,9 @@ def main() -> None:
         )
     )
     ap.add_argument(
-        "--cutoff", default="18:35", help="Daily cutoff HH:MM in Asia/Ho_Chi_Minh."
+        "--cutoff",
+        default=DEFAULT_DRAW_CUTOFF.strftime("%H:%M"),
+        help="Giờ Việt Nam hoàn tất kỳ quay (HH:MM; mặc định UTC+7).",
     )
     ap.add_argument(
         "--window-days", type=int, default=2000, help="History window for ML/path features."
@@ -264,6 +272,12 @@ def main() -> None:
             _py("src/validate_cau_keo_domain.py"),
             allow_fail=soft_fail,
         )
+        # Keep the machine-readable experiment report synchronized with the
+        # gate artifacts produced by this same daily run.
+        _run(
+            _py("src/build_domain_experiment_report.py"),
+            allow_fail=soft_fail,
+        )
         _run(
             _py(
                 "src/cau_position_evidence.py",
@@ -341,7 +355,10 @@ def main() -> None:
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
-        _run(_py("src/build_fun_prediction.py"), allow_fail=soft_fail)
+        # This is a user-visible, date-bound snapshot.  Swallowing a builder
+        # error here leaves yesterday's simulation in place and makes the UI
+        # appear frozen, so it is a hard step even in non-strict research runs.
+        _run(_py("src/build_fun_prediction.py"), allow_fail=False)
         _run(_py("src/build_research_lab.py"), allow_fail=True)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 

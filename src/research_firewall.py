@@ -51,7 +51,7 @@ def _candidate_family(two: pd.DataFrame) -> tuple[np.ndarray, list[dict[str, obj
 
     meta: list[dict[str, object]] = []
     for rule in ("tail_tail", "head_tail"):
-        for i, j in zip(ii, jj):
+        for i, j in zip(ii, jj, strict=True):
             meta.append(
                 {
                     "rule": rule,

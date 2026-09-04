@@ -354,7 +354,7 @@ def _validate_daily_workbook(path: Path) -> int:
             raise RuntimeError(
                 f"{path.name} {label} has {len(parts)} result(s), expected {len(fields)}"
             )
-        for value, field in zip(parts, fields):
+        for value, field in zip(parts, fields, strict=True):
             width = FIELD_WIDTHS[field]
             if len(value) != width or not value.isascii() or not value.isdigit():
                 raise RuntimeError(

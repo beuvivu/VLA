@@ -22,6 +22,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from frequency_stats import compute_frequency_stats
+from gap_cycle_stats import compute_gap_stats
 from lottery import Lottery, RepoPaths
 from plot_utils import save_heatmap, save_ranked_bar
 
@@ -89,54 +91,42 @@ def _save_bar(
 
 
 def compute_frequency(sparse_df: pd.DataFrame, *, window_days: int) -> pd.DataFrame:
-    """Frequency of each number 00..99 within a window."""
-    window = _filter_last_days(sparse_df, days=window_days)
-    if window.empty:
+    """Legacy report facade over the canonical frequency implementation."""
+    if sparse_df.empty:
         return pd.DataFrame(columns=["value", "freq", "days_hit", "max_nhay"])
-
-    counts = window.drop(columns=["date"]).sum(axis=0)
-    days_hit = (window.drop(columns=["date"]) > 0).sum(axis=0)
-    max_nhay = window.drop(columns=["date"]).max(axis=0)
-
-    out = pd.DataFrame(
-        {
-            "value": counts.index.astype(int),
-            "freq": counts.to_numpy(dtype=int),
-            "days_hit": days_hit.to_numpy(dtype=int),
-            "max_nhay": max_nhay.to_numpy(dtype=int),
-        }
+    target = pd.to_datetime(sparse_df["date"]).max().normalize() + pd.Timedelta(days=1)
+    canonical = compute_frequency_stats(
+        sparse_df, target, lookback_days=window_days
     )
-    out["value_str"] = out["value"].apply(lambda v: f"{int(v):02d}")
+    out = canonical.rename(
+        columns={
+            "number": "value",
+            "occurrence_count": "freq",
+            "draw_count": "days_hit",
+            "max_occurrences_per_draw": "max_nhay",
+        }
+    )[["value", "freq", "days_hit", "max_nhay", "number_str"]].rename(
+        columns={"number_str": "value_str"}
+    )
     return out.sort_values(["freq", "days_hit"], ascending=False).reset_index(drop=True)
 
 
 def compute_overdue(sparse_df: pd.DataFrame) -> pd.DataFrame:
-    """Current overdue days ("lô gan") for each number 00..99."""
+    """Legacy calendar-day lô-gan facade over the canonical gap API."""
     if sparse_df.empty:
         return pd.DataFrame(columns=["value", "last_seen", "days_since_last", "value_str"])
-
-    df = sparse_df.copy()
-    df["date"] = pd.to_datetime(df["date"])
-    as_of = df["date"].max().to_pydatetime().date()
-
-    values = df.drop(columns=["date"]).to_numpy(copy=False)
-    dates = df["date"].to_numpy()
-    last_seen: list[pd.Timestamp | None] = []
-    for j in range(values.shape[1]):
-        idx = np.where(values[:, j] > 0)[0]
-        last_seen.append(pd.to_datetime(dates[idx[-1]]) if idx.size else None)
-
-    last_seen_ts = pd.Series(last_seen)
-    days_since = (pd.Timestamp(as_of) - last_seen_ts).dt.days
-
-    out = pd.DataFrame(
-        {
-            "value": np.arange(100, dtype=int),
-            "last_seen": last_seen_ts.dt.date,
-            "days_since_last": days_since.astype("Int64"),
+    target = pd.to_datetime(sparse_df["date"]).max().normalize() + pd.Timedelta(days=1)
+    canonical = compute_gap_stats(sparse_df, target)
+    out = canonical.rename(
+        columns={
+            "number": "value",
+            "last_seen_date": "last_seen",
+            "current_gap_calendar_days": "days_since_last",
+            "number_str": "value_str",
         }
-    )
-    out["value_str"] = out["value"].apply(lambda v: f"{int(v):02d}")
+    )[["value", "last_seen", "days_since_last", "value_str"]]
+    out.loc[out["last_seen"].isna(), "days_since_last"] = pd.NA
+    out["days_since_last"] = out["days_since_last"].astype("Int64")
     return out.sort_values("days_since_last", ascending=False, na_position="last").reset_index(drop=True)
 
 
@@ -146,58 +136,26 @@ def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) 
     For each number, treat a day as "hit" if it appears at least once that day.
     Compute min/max/mean gap between hit days, and current gap (overdue).
     """
-    window = _filter_last_days(sparse_df, days=window_days)
-    if window.empty:
+    if sparse_df.empty:
         cols = ["value", "hits", "current_gap", "min_gap", "max_gap", "mean_gap"]
         return pd.DataFrame(columns=cols)
-
-    w = window.copy()
-    w["date"] = pd.to_datetime(w["date"])
-    as_of = w["date"].max()
-    dates = w["date"].to_numpy()
-    values = w.drop(columns=["date"]).to_numpy(copy=False)
-
-    rows: list[dict[str, object]] = []
-    for n in range(100):
-        idx = np.where(values[:, n] > 0)[0]
-        if idx.size == 0:
-            rows.append(
-                {
-                    "value": n,
-                    "hits": 0,
-                    "current_gap": int((as_of - w["date"].min()).days),
-                    "min_gap": pd.NA,
-                    "max_gap": pd.NA,
-                    "mean_gap": pd.NA,
-                }
-            )
-            continue
-
-        hit_dates = pd.to_datetime(dates[idx]).normalize()
-        # gaps in days between hit dates
-        if len(hit_dates) >= 2:
-            gaps = (hit_dates[1:] - hit_dates[:-1]).days.astype(int)
-            min_gap = int(np.min(gaps))
-            max_gap = int(np.max(gaps))
-            mean_gap = float(np.mean(gaps))
-        else:
-            min_gap = max_gap = None
-            mean_gap = None
-
-        current_gap = int((as_of.normalize() - hit_dates[-1]).days)
-        rows.append(
-            {
-                "value": n,
-                "hits": int(len(hit_dates)),
-                "current_gap": current_gap,
-                "min_gap": min_gap,
-                "max_gap": max_gap,
-                "mean_gap": mean_gap,
-            }
-        )
-
-    out = pd.DataFrame(rows)
-    out["value_str"] = out["value"].apply(lambda v: f"{int(v):02d}")
+    target = pd.to_datetime(sparse_df["date"]).max().normalize() + pd.Timedelta(days=1)
+    canonical = compute_gap_stats(
+        sparse_df,
+        target,
+        lookback_days=window_days,
+    )
+    out = canonical.rename(
+        columns={
+            "number": "value",
+            "hit_draws": "hits",
+            "current_gap_calendar_days": "current_gap",
+            "minimum_interval_calendar_days": "min_gap",
+            "maximum_interval_calendar_days": "max_gap",
+            "mean_interval_calendar_days": "mean_gap",
+            "number_str": "value_str",
+        }
+    )[["value", "hits", "current_gap", "min_gap", "max_gap", "mean_gap", "value_str"]]
     return out.sort_values(["current_gap", "hits"], ascending=[False, True]).reset_index(drop=True)
 
 
@@ -253,7 +211,7 @@ def compute_head_tail_total(two_digit_df: pd.DataFrame, *, window_days: int = 20
 
 
 def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Overdue for 'tổng đề' and 'chạm đề' based on last-2-digits of special prize."""
+    """Overdue for 'tổng Đặc Biệt' and 'chạm Đặc Biệt' based on special prize."""
     if raw_df.empty:
         empty = pd.DataFrame(columns=["key", "last_seen", "days_since_last"])
         return empty, empty

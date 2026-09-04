@@ -17,27 +17,21 @@ from typing import Iterable, Sequence
 import numpy as np
 import pandas as pd
 
+from ui_locale import (
+    COLUMN_LABELS,
+    GROUP_LABELS,
+    PERIOD_LABELS,
+    mode_label,
+    value_label,
+)
+from web_security import json_for_html_script, security_meta_tags
+
 WEEKDAY_COLS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
-PERIOD_LABELS = {
-    "day": "ngày",
-    "week": "tuần",
-    "month": "tháng",
-    "year": "năm",
-}
 PERIOD_TITLES = {
     "day": "Ngày hiện tại",
     "week": "Tuần hiện tại",
     "month": "Tháng hiện tại",
     "year": "Năm hiện tại",
-}
-GROUP_LABELS = {
-    "head": "Đầu",
-    "tail": "Đuôi",
-    "total": "Tổng",
-    "db_cham": "Chạm ĐB",
-    "db_head": "Đầu ĐB",
-    "db_tail": "Đuôi ĐB",
-    "db_total": "Tổng ĐB",
 }
 
 
@@ -111,112 +105,7 @@ def _fmt_value(value: object, *, decimals: int = 0, percent: bool = False) -> st
 
 
 def _pretty_col(col: str) -> str:
-    mapping = {
-        "period_kind": "Kỳ",
-        "period_key": "Mốc kỳ",
-        "mode": "Loại",
-        "draws": "Số ngày",
-        "number": "Số",
-        "number_str": "Bộ số",
-        "freq": "Tần suất",
-        "days_hit": "Ngày về",
-        "hit_rate": "Tỷ lệ ngày",
-        "avg_per_draw": "TB/ngày",
-        "expected_freq": "Kỳ vọng",
-        "z_score": "Z-score",
-        "rank_in_period": "Hạng",
-        "snapshot_as_of": "Cập nhật",
-        "scope_label": "Phạm vi",
-        "freq_7d": "7 ngày",
-        "freq_30d": "30 ngày",
-        "freq_365d": "365 ngày",
-        "days_hit_7d": "Ngày về 7d",
-        "days_hit_30d": "Ngày về 30d",
-        "days_hit_365d": "Ngày về 365d",
-        "current_gap": "Gan hiện tại",
-        "hit_count": "Số lần về",
-        "mean_gap": "Gan TB",
-        "max_gap": "Gan max",
-        "last_seen": "Lần cuối",
-        "rhythm_pressure": "Áp lực nhịp",
-        "ml_prob": "ML prob",
-        "ml_prob_raw": "ML prob thô",
-        "prob": "Xác suất",
-        "prob_percent": "Xác suất %",
-        "cau_score": "Cầu score",
-        "primary_reason": "Nhận định AI",
-        "reason_1": "Lý do 1",
-        "reason_2": "Lý do 2",
-        "reason_3": "Lý do 3",
-        "evidence": "Bằng chứng",
-        "path_support": "Cầu rawdata",
-        "cond_de_rate": "ĐB→số",
-        "cond_loto_mean_rate": "Loto→số TB",
-        "cond_loto_max_rate": "Loto→số max",
-        "same_weekday_freq_364": "Cùng thứ 364d",
-        "loto_occ_today": "Loto hôm nay",
-        "reverse_hit_today": "Cặp lộn chạm",
-        "is_reverse_prev_special": "Đảo ĐB",
-        "is_bong_prev_special": "Bóng ĐB",
-        "cham_overlap_prev_special": "Chạm ĐB",
-        "trend_7_vs_30": "Trend 7/30",
-        "top_k": "Top K",
-        "validation_days": "Ngày test",
-        "hit_any_days": "Ngày trúng",
-        "hit_any_rate": "Tỷ lệ trúng ngày",
-        "avg_hits_per_day": "TB hit/ngày",
-        "val_brier": "Brier",
-        "val_logloss": "Log-loss",
-        "calib_start": "Calib từ",
-        "val_start": "Test từ",
-        "freq_current_year": "Tần suất năm",
-        "z_score_current_year": "Z-score năm",
-        "ai_ml_signal_score": "AI/ML score",
-        "score_band": "Nhóm",
-        "pair": "Cặp",
-        "a": "Số A",
-        "b": "Số B",
-        "cooccur_days": "Ngày cùng về",
-        "group_type": "Nhóm",
-        "group_value": "Giá trị",
-        "rate": "Tỷ lệ",
-        "rank_in_period_group": "Hạng nhóm",
-        "prev_special_2d": "ĐB trước",
-        "prev_loto": "Loto trước",
-        "next_loto": "Loto sau",
-        "count": "Số lần",
-        "base_count": "Mẫu",
-        "conditional_rate": "Tỷ lệ điều kiện",
-        "ai_cau_score": "AI score",
-        "ai_prob_percent": "Xác suất %",
-        "ai_evidence": "Bằng chứng AI",
-        "path_lines_count": "Số đường cầu",
-        "active_path_count": "Cầu đang chạy",
-        "stable_path_count": "Cầu bền",
-        "top_path_score": "Điểm đường cầu",
-        "max_path_p_mean": "P đường cầu max",
-        "max_current_streak": "Nhịp hiện tại max",
-        "rule_kind": "Loại cầu",
-        "lag_days": "Độ trễ",
-        "base_date": "Ngày gốc",
-        "pos_i_label": "Vị trí A",
-        "digit_i": "Số A",
-        "pos_j_label": "Vị trí B",
-        "digit_j": "Số B",
-        "path_line": "Đường cầu",
-        "p_mean": "P lịch sử",
-        "trials": "Mẫu",
-        "hits": "Trúng",
-        "current_streak": "Đang chạy",
-        "max_streak": "Streak max",
-        "rule_score": "Điểm cầu",
-        "reason": "Căn cứ",
-        "explain_text": "Giải thích",
-        "top_position_1": "Đường cầu 1",
-        "top_position_2": "Đường cầu 2",
-        "top_position_3": "Đường cầu 3",
-    }
-    return mapping.get(col, col)
+    return COLUMN_LABELS.get(col, col)
 
 
 def _display_cell(value: object, col: str) -> str:
@@ -233,6 +122,10 @@ def _display_cell(value: object, col: str) -> str:
         return PERIOD_LABELS.get(str(value), str(value))
     if col == "group_type":
         return GROUP_LABELS.get(str(value), str(value))
+    if col == "mode":
+        return html.escape(mode_label(value))
+    if col == "score_band":
+        return html.escape(str(value_label(value)))
     if col in {"hit_rate", "rate", "conditional_rate", "ml_prob"}:
         return html.escape(_fmt_value(value, decimals=3, percent=False))
     if col in {"ai_ml_signal_score", "z_score", "z_score_current_year", "rhythm_pressure", "mean_gap", "avg_per_draw", "expected_freq"}:
@@ -333,8 +226,7 @@ def _clickable_number(number: object, *, mode: str | None, source_title: str, so
 
 
 def _json_for_script(payload: object) -> str:
-    text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-    return text.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    return json_for_html_script(payload)
 
 
 def _row_dict_for_ui(row: pd.Series, columns: Sequence[str]) -> dict[str, str]:
@@ -788,7 +680,12 @@ def main() -> None:
         _metric_card("Ngày dữ liệu mới nhất", as_of or "N/A", "Theo manifest thống kê", "📅"),
         _metric_card("Bảng/ma trận đã sinh", files_count or "N/A", "CSV/JSON trong data/advanced", "🧩"),
         _metric_card("Số bộ được phủ", "00–99", "Bấm vào số để xem căn cứ cầu", "🔢"),
-        _metric_card("AI/ML", "cầu-kèo + ranking", "Có xác suất, score, lý do, backtest và vị trí cầu", "🤖"),
+        _metric_card(
+            "AI/ML",
+            "cầu-kèo + xếp hạng",
+            "Có xác suất, điểm, lý do, kiểm định và vị trí cầu",
+            "🤖",
+        ),
     ]
 
     matrix_body = """
@@ -815,79 +712,79 @@ def main() -> None:
 
     ai_body = f"""
     <div class="decision-grid">
-      <article><b>Cầu-kèo ML</b><span>Model học từ tần suất, gan, cầu rawdata, quan hệ ĐB→số, loto→số, chạm/tổng/bóng và cùng thứ trong tuần.</span></article>
-      <article><b>AI giải thích</b><span>Mỗi bộ số có lý do chính và bằng chứng định lượng để người xem hiểu vì sao score cao/thấp.</span></article>
-      <article><b>Backtest</b><span>Luôn kèm tỷ lệ top-k trên tập validation; không trình bày như kết quả chắc chắn.</span></article>
+      <article><b>Cầu-kèo ML</b><span>Mô hình học từ tần suất, gan, cầu dữ liệu gốc, quan hệ ĐB→số, lô tô→số, chạm/tổng/bóng và cùng thứ trong tuần.</span></article>
+      <article><b>AI giải thích</b><span>Mỗi bộ số có lý do chính và bằng chứng định lượng để người xem hiểu vì sao điểm cao/thấp.</span></article>
+      <article><b>Kiểm định lại</b><span>Luôn kèm tỷ lệ nhóm K trên tập kiểm định; không trình bày như kết quả chắc chắn.</span></article>
     </div>
     <div class="layout-grid two">
-      {_matrix(cau_loto, title="Cầu-kèo AI/ML loto", subtitle="Ma trận score 00–99 từ model học cầu lô, cầu rawdata và thống kê tần suất.", value_col="cau_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="loto")}
-      {_matrix(cau_de, title="Cầu-kèo AI/ML ĐB", subtitle="Ma trận score ĐB 2 số; màu đậm = tín hiệu tổng hợp cao hơn trong lịch sử.", value_col="cau_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="de")}
+      {_matrix(cau_loto, title="Cầu-kèo AI/ML lô tô", subtitle="Ma trận điểm 00–99 từ mô hình học cầu lô, cầu dữ liệu gốc và thống kê tần suất.", value_col="cau_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="loto")}
+      {_matrix(cau_de, title="Cầu-kèo AI/ML ĐB", subtitle="Ma trận điểm ĐB 2 số; màu đậm = tín hiệu tổng hợp cao hơn trong lịch sử.", value_col="cau_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_bar_chart(cau_loto, title="Top cầu-kèo loto", subtitle="Dùng chart để so sánh top score và tránh đọc bảng dài.", label_col="number_str", value_col="cau_score", top_n=12, scheme="ai", decimals=1, evidence_mode="loto")}
-      {_bar_chart(cau_de, title="Top cầu-kèo ĐB", subtitle="Top ĐB theo score tổng hợp; xem kèm cột lý do ở bảng bên dưới.", label_col="number_str", value_col="cau_score", top_n=12, scheme="ai", decimals=1, evidence_mode="de")}
+      {_bar_chart(cau_loto, title="Cầu-kèo lô tô đứng đầu", subtitle="Dùng biểu đồ để so sánh các điểm cao nhất và tránh đọc bảng dài.", label_col="number_str", value_col="cau_score", top_n=12, scheme="ai", decimals=1, evidence_mode="loto")}
+      {_bar_chart(cau_de, title="Cầu-kèo ĐB đứng đầu", subtitle="Các số ĐB đứng đầu theo điểm tổng hợp; xem kèm cột lý do ở bảng bên dưới.", label_col="number_str", value_col="cau_score", top_n=12, scheme="ai", decimals=1, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_table(cau_loto, title="AI nhận định cầu-kèo loto", subtitle="Bảng giải thích: lý do chính, bằng chứng và các chỉ báo học từ lịch sử.", columns=["number_str", "cau_score", "prob_percent", "primary_reason", "evidence", "score_band"], max_rows=30, highlight_col="cau_score", zfill_cols={"number_str"}, evidence_mode="loto")}
-      {_table(cau_de, title="AI nhận định cầu-kèo ĐB", subtitle="Dữ liệu ĐB rất thưa nên phải xem cùng backtest, không dùng score như cam kết.", columns=["number_str", "cau_score", "prob_percent", "primary_reason", "evidence", "score_band"], max_rows=30, highlight_col="cau_score", zfill_cols={"number_str"}, evidence_mode="de")}
+      {_table(cau_loto, title="AI nhận định cầu-kèo lô tô", subtitle="Bảng giải thích: lý do chính, bằng chứng và các chỉ báo học từ lịch sử.", columns=["number_str", "cau_score", "prob_percent", "primary_reason", "evidence", "score_band"], max_rows=30, highlight_col="cau_score", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(cau_de, title="AI nhận định cầu-kèo ĐB", subtitle="Dữ liệu ĐB rất thưa nên phải xem cùng kiểm định, không dùng điểm như cam kết.", columns=["number_str", "cau_score", "prob_percent", "primary_reason", "evidence", "score_band"], max_rows=30, highlight_col="cau_score", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_table(cau_report_loto, title="Backtest cầu-kèo loto", subtitle="Tỷ lệ top-k trên tập validation gần nhất; dùng để kiểm tra model có học được tín hiệu hay không.", columns=["top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss", "val_start"], max_rows=10, highlight_col="hit_any_rate")}
-      {_table(cau_report_de, title="Backtest cầu-kèo ĐB", subtitle="ĐB là bài toán 1/100 mỗi ngày nên tỷ lệ top-k thấp là bình thường; bảng này giúp kiểm soát ảo giác model.", columns=["top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss", "val_start"], max_rows=10, highlight_col="hit_any_rate")}
+      {_table(cau_report_loto, title="Kiểm định cầu-kèo lô tô", subtitle="Tỷ lệ nhóm K trên tập kiểm định gần nhất; dùng để kiểm tra mô hình có học được tín hiệu hay không.", columns=["top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss", "val_start"], max_rows=10, highlight_col="hit_any_rate")}
+      {_table(cau_report_de, title="Kiểm định cầu-kèo ĐB", subtitle="ĐB là bài toán 1/100 mỗi ngày nên tỷ lệ nhóm K thấp là bình thường; bảng này giúp kiểm soát ảo giác mô hình.", columns=["top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss", "val_start"], max_rows=10, highlight_col="hit_any_rate")}
     </div>
     <div class="layout-grid two">
-      {_matrix(signal_loto, title="AI/ML score loto tổng hợp", subtitle="Lớp signal cũ vẫn giữ để nhìn toàn cảnh 00–99 theo ML probability, tần suất và nhịp.", value_col="ai_ml_signal_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="loto")}
-      {_matrix(signal_de, title="AI/ML score ĐB tổng hợp", subtitle="Score xếp hạng tương đối từ ML probability, chu kỳ, tần suất gần và độ lệch năm.", value_col="ai_ml_signal_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="de")}
+      {_matrix(signal_loto, title="Điểm AI/ML lô tô tổng hợp", subtitle="Lớp tín hiệu cũ vẫn được giữ để nhìn toàn cảnh 00–99 theo xác suất ML, tần suất và nhịp.", value_col="ai_ml_signal_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="loto")}
+      {_matrix(signal_de, title="Điểm AI/ML ĐB tổng hợp", subtitle="Điểm xếp hạng tương đối từ xác suất ML, chu kỳ, tần suất gần và độ lệch năm.", value_col="ai_ml_signal_score", scheme="ai", decimals=1, min_zero=False, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_bar_chart(signal_loto, title="Top AI/ML loto tổng hợp", subtitle="Dùng biểu đồ thanh để so sánh nhanh top score.", label_col="number_str", value_col="ai_ml_signal_score", top_n=12, scheme="ai", decimals=1, evidence_mode="loto")}
-      {_bar_chart(signal_de, title="Top AI/ML ĐB tổng hợp", subtitle="Các bộ có điểm thống kê tương đối cao nhất.", label_col="number_str", value_col="ai_ml_signal_score", top_n=12, scheme="ai", decimals=1, evidence_mode="de")}
+      {_bar_chart(signal_loto, title="AI/ML lô tô tổng hợp đứng đầu", subtitle="Dùng biểu đồ thanh để so sánh nhanh các điểm cao nhất.", label_col="number_str", value_col="ai_ml_signal_score", top_n=12, scheme="ai", decimals=1, evidence_mode="loto")}
+      {_bar_chart(signal_de, title="AI/ML ĐB tổng hợp đứng đầu", subtitle="Các bộ có điểm thống kê tương đối cao nhất.", label_col="number_str", value_col="ai_ml_signal_score", top_n=12, scheme="ai", decimals=1, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_table(signal_loto, title="Bảng AI/ML loto chi tiết", subtitle="Có lọc nhanh; ưu tiên các trường dễ đọc thay vì toàn bộ cột kỹ thuật.", columns=["number_str", "ai_ml_signal_score", "ml_prob", "freq_7d", "freq_30d", "freq_current_year", "current_gap", "rhythm_pressure", "score_band"], max_rows=30, highlight_col="ai_ml_signal_score", zfill_cols={"number_str"}, evidence_mode="loto")}
-      {_table(signal_de, title="Bảng AI/ML ĐB chi tiết", subtitle="Score chỉ là tín hiệu thống kê; không phải khuyến nghị chắc chắn.", columns=["number_str", "ai_ml_signal_score", "ml_prob", "freq_30d", "freq_current_year", "current_gap", "rhythm_pressure", "score_band"], max_rows=30, highlight_col="ai_ml_signal_score", zfill_cols={"number_str"}, evidence_mode="de")}
+      {_table(signal_loto, title="Bảng AI/ML lô tô chi tiết", subtitle="Có lọc nhanh; ưu tiên các trường dễ đọc thay vì toàn bộ cột kỹ thuật.", columns=["number_str", "ai_ml_signal_score", "ml_prob", "freq_7d", "freq_30d", "freq_current_year", "current_gap", "rhythm_pressure", "score_band"], max_rows=30, highlight_col="ai_ml_signal_score", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(signal_de, title="Bảng AI/ML ĐB chi tiết", subtitle="Điểm chỉ là tín hiệu thống kê; không phải khuyến nghị chắc chắn.", columns=["number_str", "ai_ml_signal_score", "ml_prob", "freq_30d", "freq_current_year", "current_gap", "rhythm_pressure", "score_band"], max_rows=30, highlight_col="ai_ml_signal_score", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     """
 
     rhythm_body = f"""
     <div class="layout-grid two">
-      {_matrix(rhythm_loto, title="Ma trận lô gan loto", subtitle="Dùng ma trận để nhận biết cụm số có current_gap cao/thấp.", value_col="current_gap", scheme="gap", evidence_mode="loto")}
+      {_matrix(rhythm_loto, title="Ma trận lô gan lô tô", subtitle="Dùng ma trận để nhận biết cụm số có khoảng gan hiện tại cao/thấp.", value_col="current_gap", scheme="gap", evidence_mode="loto")}
       {_matrix(rhythm_de, title="Ma trận gan ĐB", subtitle="Màu càng đậm nghĩa là số càng lâu chưa xuất hiện trong ĐB.", value_col="current_gap", scheme="gap", evidence_mode="de")}
     </div>
     <div class="layout-grid three">
-      {_bar_chart(rhythm_loto, title="Top lô gan loto", subtitle="Biểu đồ thanh phù hợp để xếp hạng gan hiện tại.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="loto")}
-      {_bar_chart(rhythm_de, title="Top gan ĐB", subtitle="So sánh những bộ có khoảng cách hiện tại cao nhất.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="de")}
-      {_bar_chart(first_overdue, title="Top gan giải nhất", subtitle="Riêng 2 số cuối giải nhất.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="loto")}
+      {_bar_chart(rhythm_loto, title="Lô gan lô tô đứng đầu", subtitle="Biểu đồ thanh phù hợp để xếp hạng gan hiện tại.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="loto")}
+      {_bar_chart(rhythm_de, title="Gan ĐB đứng đầu", subtitle="So sánh những bộ có khoảng cách hiện tại cao nhất.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="de")}
+      {_bar_chart(first_overdue, title="Gan giải nhất đứng đầu", subtitle="Riêng 2 số cuối giải nhất.", label_col="number_str", value_col="current_gap", top_n=15, scheme="gap", evidence_mode="loto")}
     </div>
     <div class="layout-grid two">
-      {_table(rhythm_loto, title="Lô gan loto chi tiết", subtitle="Bảng dùng khi cần xem cả số lần về, gan trung bình và lần cuối.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="loto")}
-      {_table(rhythm_de, title="Gan ĐB chi tiết", subtitle="Sắp theo current_gap giảm dần để dễ phán đoán.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="de")}
+      {_table(rhythm_loto, title="Lô gan lô tô chi tiết", subtitle="Bảng dùng khi cần xem cả số lần về, gan trung bình và lần cuối.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(rhythm_de, title="Gan ĐB chi tiết", subtitle="Sắp theo khoảng gan hiện tại giảm dần để dễ đối chiếu.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     """
 
     group_body = f"""
     <div class="layout-grid two">
-      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "head"] if not hht_month.empty else hht_month, title="Đầu loto trong tháng", subtitle="10 đầu số nên dùng biểu đồ thanh để so sánh trực tiếp.", label_col="group_value", value_col="freq", top_n=10, scheme="hot")}
-      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "tail"] if not hht_month.empty else hht_month, title="Đuôi loto trong tháng", subtitle="Đuôi nào tập trung nhiều trong tháng hiện tại.", label_col="group_value", value_col="freq", top_n=10, scheme="freq")}
+      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "head"] if not hht_month.empty else hht_month, title="Đầu lô tô trong tháng", subtitle="10 đầu số nên dùng biểu đồ thanh để so sánh trực tiếp.", label_col="group_value", value_col="freq", top_n=10, scheme="hot")}
+      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "tail"] if not hht_month.empty else hht_month, title="Đuôi lô tô trong tháng", subtitle="Đuôi nào tập trung nhiều trong tháng hiện tại.", label_col="group_value", value_col="freq", top_n=10, scheme="freq")}
     </div>
     <div class="layout-grid two">
-      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "total"] if not hht_month.empty else hht_month, title="Tổng loto trong tháng", subtitle="Tổng 0–18, dùng thanh ngang để dễ so sánh.", label_col="group_value", value_col="freq", top_n=19, scheme="de")}
+      {_bar_chart(hht_month[hht_month.get("group_type", pd.Series(dtype=str)).astype(str) == "total"] if not hht_month.empty else hht_month, title="Tổng lô tô trong tháng", subtitle="Tổng 0–18, dùng thanh ngang để dễ so sánh.", label_col="group_value", value_col="freq", top_n=19, scheme="de")}
       {_bar_chart(sg_month, title="Nhóm ĐB trong tháng", subtitle="Chạm/đầu/đuôi/tổng ĐB xếp theo tần suất tháng.", label_col="group_value", value_col="freq", top_n=16, scheme="de")}
     </div>
     <div class="layout-grid two">
-      {_table(hht_year, title="Đầu/đuôi/tổng loto năm", subtitle="Bảng chi tiết để đối chiếu nhóm và thứ hạng trong năm.", columns=["period_kind", "period_key", "group_type", "group_value", "freq", "rank_in_period_group"], max_rows=45, highlight_col="freq")}
+      {_table(hht_year, title="Đầu/đuôi/tổng lô tô năm", subtitle="Bảng chi tiết để đối chiếu nhóm và thứ hạng trong năm.", columns=["period_kind", "period_key", "group_type", "group_value", "freq", "rank_in_period_group"], max_rows=45, highlight_col="freq")}
       {_table(sg_year, title="Nhóm ĐB năm", subtitle="Tổng hợp nhóm đặc biệt: chạm, đầu, đuôi, tổng.", columns=["period_kind", "period_key", "group_type", "group_value", "freq", "rate", "rank_in_period_group"], max_rows=45, highlight_col="freq")}
     </div>
     """
 
     pair_body = f"""
     <div class="layout-grid two">
-      {_bar_chart(latest_month_pair, title="Top cặp lộn trong tháng", subtitle="Cặp lộn phù hợp biểu đồ thanh vì cần xếp hạng cặp có tần suất cao.", label_col="pair", value_col="freq", top_n=18, scheme="freq")}
-      {_bar_chart(latest_year_pair, title="Top cặp lộn trong năm", subtitle="So sánh cặp nổi bật trên mẫu năm hiện tại.", label_col="pair", value_col="freq", top_n=18, scheme="hot")}
+      {_bar_chart(latest_month_pair, title="Cặp lộn nổi bật trong tháng", subtitle="Gồm 45 cặp đảo chiều và 5 cặp kép-bóng; biểu đồ xếp hạng theo tần suất.", label_col="pair", value_col="freq", top_n=18, scheme="freq")}
+      {_bar_chart(latest_year_pair, title="Cặp lộn nổi bật trong năm", subtitle="So sánh cặp nổi bật trên mẫu năm hiện tại.", label_col="pair", value_col="freq", top_n=18, scheme="hot")}
     </div>
     <div class="layout-grid two">
-      {_table(latest_month_pair, title="Cặp lộn tháng chi tiết", subtitle="Có ngày cùng về/co-occur để nhìn độ đồng xuất hiện.", columns=["period_kind", "period_key", "pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], max_rows=45, highlight_col="freq")}
-      {_table(latest_year_pair, title="Cặp lộn năm chi tiết", subtitle="Dùng bảng khi cần soi sâu hơn top biểu đồ.", columns=["period_kind", "period_key", "pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], max_rows=45, highlight_col="freq")}
+      {_table(latest_month_pair, title="Cặp lộn tháng chi tiết", subtitle="Có số ngày cùng về để nhìn mức đồng xuất hiện.", columns=["period_kind", "period_key", "pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], max_rows=45, highlight_col="freq")}
+      {_table(latest_year_pair, title="Cặp lộn năm chi tiết", subtitle="Dùng bảng khi cần xem sâu hơn nhóm đứng đầu trên biểu đồ.", columns=["period_kind", "period_key", "pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], max_rows=45, highlight_col="freq")}
     </div>
     """
 
@@ -897,59 +794,59 @@ def main() -> None:
       {_board_month_table(special_month)}
     </div>
     <div class="layout-grid two">
-      {_table(first_overdue, title="Giải nhất gan", subtitle="2 số cuối giải nhất được tách riêng vì hành vi khác loto/ĐB.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(first_overdue, title="Giải nhất gan", subtitle="2 số cuối giải nhất được tách riêng vì hành vi khác lô tô/ĐB.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="loto")}
       {_table(sg_current, title="Nhóm ĐB hiện tại", subtitle="Nhóm trong kỳ hiện tại; phù hợp bảng do số nhóm ít.", columns=["period_kind", "period_key", "group_type", "group_value", "freq", "rate", "rank_in_period_group"], max_rows=45, highlight_col="freq")}
     </div>
     """
 
     conditional_body = f"""
     <div class="layout-grid two">
-      {_table(cond_de_loto, title="Loto sau ĐB", subtitle="Quan hệ điều kiện lịch sử: ĐB hôm trước → loto hôm sau.", columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_special_2d", "next_loto"})}
-      {_table(cond_loto_loto, title="Loto sau loto", subtitle="Quan hệ điều kiện lịch sử: loto hôm trước → loto hôm sau.", columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_loto", "next_loto"})}
+      {_table(cond_de_loto, title="Lô tô sau ĐB", subtitle="Quan hệ điều kiện lịch sử: ĐB hôm trước → lô tô hôm sau.", columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_special_2d", "next_loto"})}
+      {_table(cond_loto_loto, title="Lô tô sau lô tô", subtitle="Quan hệ điều kiện lịch sử: lô tô hôm trước → lô tô hôm sau.", columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], max_rows=45, highlight_col="conditional_rate", zfill_cols={"prev_loto", "next_loto"})}
     </div>
     """
 
     position_body = f"""
     <div class="decision-grid">
-      <article><b>Click-to-explain</b><span>Bấm bất kỳ số 00–99 ở ma trận, chart hoặc bảng để mở panel căn cứ: AI score, xác suất, lý do và vị trí cầu.</span></article>
+      <article><b>Bấm để xem căn cứ</b><span>Bấm bất kỳ số 00–99 ở ma trận, biểu đồ hoặc bảng để mở khung căn cứ: điểm AI, xác suất, lý do và vị trí cầu.</span></article>
       <article><b>Vị trí đường cầu</b><span>Mỗi dòng ghi rõ ngày gốc, độ trễ, vị trí chữ số A/B, số ghép ra và hiệu suất lịch sử của đường cầu đó.</span></article>
-      <article><b>Ưu tiên xem</b><span>Đường active thể hiện nhịp đang chạy; đường stable thể hiện cầu từng bền trong lịch sử. Luôn xem cùng backtest.</span></article>
+      <article><b>Ưu tiên xem</b><span>Đường đang chạy thể hiện nhịp hiện tại; đường ổn định thể hiện cầu từng bền trong lịch sử. Luôn xem cùng kết quả kiểm định.</span></article>
     </div>
     <div class="layout-grid two">
-      {_bar_chart(cau_explain_loto, title="Loto: số có nhiều căn cứ vị trí", subtitle="So sánh số lượng đường cầu đang được gắn vào từng bộ loto.", label_col="number_str", value_col="path_lines_count", top_n=15, scheme="freq", evidence_mode="loto")}
+      {_bar_chart(cau_explain_loto, title="Lô tô: số có nhiều căn cứ vị trí", subtitle="So sánh số lượng đường cầu đang được gắn vào từng bộ lô tô.", label_col="number_str", value_col="path_lines_count", top_n=15, scheme="freq", evidence_mode="loto")}
       {_bar_chart(cau_explain_de, title="ĐB: số có căn cứ vị trí", subtitle="ĐB ít mẫu hơn nên nhiều số có thể chưa đủ đường cầu vị trí đạt ngưỡng.", label_col="number_str", value_col="path_lines_count", top_n=15, scheme="de", evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_table(cau_explain_loto, title="Bảng căn cứ tổng hợp loto", subtitle="Một dòng mỗi số: AI score, xác suất, số đường cầu, đường mạnh nhất và giải thích tự động.", columns=["number_str", "ai_cau_score", "ai_prob_percent", "path_lines_count", "active_path_count", "stable_path_count", "top_path_score", "max_path_p_mean", "max_current_streak", "top_position_1", "explain_text"], max_rows=45, highlight_col="ai_cau_score", zfill_cols={"number_str"}, evidence_mode="loto")}
-      {_table(cau_explain_de, title="Bảng căn cứ tổng hợp ĐB", subtitle="Một dòng mỗi số ĐB; các số chưa có đường cầu đủ ngưỡng vẫn giữ AI/statistical evidence.", columns=["number_str", "ai_cau_score", "ai_prob_percent", "path_lines_count", "active_path_count", "stable_path_count", "top_path_score", "max_path_p_mean", "max_current_streak", "top_position_1", "explain_text"], max_rows=45, highlight_col="ai_cau_score", zfill_cols={"number_str"}, evidence_mode="de")}
+      {_table(cau_explain_loto, title="Bảng căn cứ tổng hợp lô tô", subtitle="Một dòng mỗi số: điểm AI, xác suất, số đường cầu, đường mạnh nhất và giải thích tự động.", columns=["number_str", "ai_cau_score", "ai_prob_percent", "path_lines_count", "active_path_count", "stable_path_count", "top_path_score", "max_path_p_mean", "max_current_streak", "top_position_1", "explain_text"], max_rows=45, highlight_col="ai_cau_score", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(cau_explain_de, title="Bảng căn cứ tổng hợp ĐB", subtitle="Một dòng mỗi số ĐB; các số chưa có đường cầu đủ ngưỡng vẫn giữ bằng chứng AI/thống kê.", columns=["number_str", "ai_cau_score", "ai_prob_percent", "path_lines_count", "active_path_count", "stable_path_count", "top_path_score", "max_path_p_mean", "max_current_streak", "top_position_1", "explain_text"], max_rows=45, highlight_col="ai_cau_score", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     <div class="layout-grid two">
-      {_table(cau_positions_loto, title="Vị trí đường cầu loto", subtitle="Chi tiết đường cầu rawdata: vị trí A/B, số ghép, độ trễ, ngày gốc và hiệu suất lịch sử.", columns=["number_str", "rule_kind", "lag_days", "base_date", "pos_i_label", "digit_i", "pos_j_label", "digit_j", "p_mean", "hits", "trials", "current_streak", "max_streak", "rule_score", "reason"], max_rows=90, highlight_col="rule_score", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(cau_positions_loto, title="Vị trí đường cầu lô tô", subtitle="Chi tiết đường cầu dữ liệu gốc: vị trí A/B, số ghép, độ trễ, ngày gốc và hiệu suất lịch sử.", columns=["number_str", "rule_kind", "lag_days", "base_date", "pos_i_label", "digit_i", "pos_j_label", "digit_j", "p_mean", "hits", "trials", "current_streak", "max_streak", "rule_score", "reason"], max_rows=90, highlight_col="rule_score", zfill_cols={"number_str"}, evidence_mode="loto")}
       {_table(cau_positions_de, title="Vị trí đường cầu ĐB", subtitle="ĐB có mẫu ít hơn; bảng này cho thấy những đường đủ ngưỡng hiện có.", columns=["number_str", "rule_kind", "lag_days", "base_date", "pos_i_label", "digit_i", "pos_j_label", "digit_j", "p_mean", "hits", "trials", "current_streak", "max_streak", "rule_score", "reason"], max_rows=90, highlight_col="rule_score", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     """
 
     qa_body = f"""
     <div class="decision-grid">
-      <article><b>Ma trận</b><span>Dùng cho 00–99: tần suất, gan, AI/ML score. Nhìn được toàn bộ mặt phẳng số và cụm bất thường.</span></article>
-      <article><b>Biểu đồ thanh</b><span>Dùng cho top/ranking: AI top, lô gan, đầu–đuôi–tổng, cặp lộn. So sánh lớn/nhỏ rất nhanh.</span></article>
+      <article><b>Ma trận</b><span>Dùng cho 00–99: tần suất, gan, điểm AI/ML. Nhìn được toàn bộ mặt phẳng số và cụm bất thường.</span></article>
+      <article><b>Biểu đồ thanh</b><span>Dùng cho xếp hạng: AI, lô gan, đầu–đuôi–tổng, cặp lộn. So sánh lớn/nhỏ rất nhanh.</span></article>
       <article><b>Bảng</b><span>Dùng cho dữ liệu cần đối chiếu chi tiết: bảng ĐB tuần/tháng, điều kiện lịch sử, các trường giải thích.</span></article>
     </div>
     <div class="layout-grid two">
-      {_table(snap_loto, title="Snapshot loto hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="loto")}
-      {_table(snap_de, title="Snapshot ĐB hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ĐB ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="de")}
+      {_table(snap_loto, title="Ảnh chụp lô tô hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="loto")}
+      {_table(snap_de, title="Ảnh chụp ĐB hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ĐB ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="de")}
     </div>
     """
 
     sections = [
         _section("Tần suất loto ngày / tuần / tháng / năm", "Các thống kê phủ 00–99 nên hiển thị bằng ma trận 10x10 để so sánh bằng màu thay vì đọc bảng dài.", matrix_body, "ma-tran-loto"),
         _section("Tần suất ĐB ngày / tuần / tháng / năm", "ĐB có mật độ thấp hơn loto; ma trận vẫn giúp phát hiện vùng số nổi bật trong tháng/năm.", de_body, "ma-tran-db"),
-        _section("Cầu-kèo AI/ML và ranking signal", "Phần AI/ML được trình bày bằng ma trận, top chart, bảng giải thích và backtest để dễ so sánh lẫn kiểm chứng.", ai_body, "ai-ml"),
+        _section("Cầu-kèo AI/ML và tín hiệu xếp hạng", "Phần AI/ML được trình bày bằng ma trận, biểu đồ xếp hạng, bảng giải thích và kết quả kiểm định để dễ so sánh lẫn kiểm chứng.", ai_body, "ai-ml"),
         _section("Bảng vị trí đường cầu và căn cứ khi bấm số", "Mỗi số có bảng căn cứ riêng: vị trí chữ số, ngày gốc, độ trễ, hiệu suất lịch sử và nhận định AI/ML.", position_body, "can-cu-cau"),
-        _section("Gan, nhịp và chu kỳ", "Khoảng cách xuất hiện hiện tại nên hiển thị bằng ma trận nhiệt và top chart để nhận biết số lâu chưa về.", rhythm_body, "gan-nhip"),
+        _section("Gan, nhịp và chu kỳ", "Khoảng cách xuất hiện hiện tại nên hiển thị bằng ma trận nhiệt và biểu đồ xếp hạng để nhận biết số lâu chưa về.", rhythm_body, "gan-nhip"),
         _section("Đầu, đuôi, tổng và nhóm ĐB", "Nhóm ít giá trị nên dùng biểu đồ thanh; bảng chỉ giữ phần chi tiết cần đối chiếu.", group_body, "dau-duoi-tong"),
-        _section("Cặp lộn", "Cặp lộn là danh sách xếp hạng nên dùng biểu đồ thanh cho top và bảng để xem co-occur/days_hit.", pair_body, "cap-lon"),
-        _section("Bảng đặc biệt và giải nhất", "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng chart/bảng gan riêng.", board_body, "bang-db"),
+        _section("Cặp lộn và kép-bóng", "Cặp lộn gồm 45 cặp đảo chiều; năm cặp kép dùng quan hệ bóng (00-55, 11-66, 22-77, 33-88, 44-99).", pair_body, "cap-lon"),
+        _section("Bảng đặc biệt và giải nhất", "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng biểu đồ/bảng gan riêng.", board_body, "bang-db"),
         _section("Điều kiện lịch sử", "Các bảng này có nhiều dòng và nhiều điều kiện, vì vậy giữ dạng bảng có lọc nhanh thay vì ép thành ma trận.", conditional_body, "dieu-kien"),
         _section("Quy tắc chọn loại hiển thị", "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.", qa_body, "ui-ux"),
     ]
@@ -959,7 +856,8 @@ def main() -> None:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dashboard thống kê XSMB hiện đại</title>
+  {security_meta_tags()}
+  <title>Bảng điều khiển thống kê XSMB</title>
   <style>
     :root {{
       --bg: #0b1020;
@@ -1651,7 +1549,7 @@ def main() -> None:
   <header class="hero">
     <div class="hero-inner">
       <span class="hero-kicker">📊 XSMB · Ma trận thống kê · Cầu-kèo AI/ML</span>
-      <h1>Dashboard thống kê xổ số dễ nhìn, hiện đại và tự chứa dữ liệu.</h1>
+      <h1>Bảng điều khiển thống kê xổ số dễ nhìn, hiện đại và tự chứa dữ liệu.</h1>
       <p>
         Giao diện này ưu tiên khả năng so sánh: dữ liệu 00–99 được đưa vào ma trận nhiệt,
         dữ liệu xếp hạng được đưa vào biểu đồ thanh, còn bảng chỉ dùng cho thông tin cần đối chiếu chi tiết.
@@ -1687,9 +1585,9 @@ def main() -> None:
     {''.join(sections)}
 
     <p class="footer-note">
-      Generated: {html.escape(generated)} · Data as of: {html.escape(str(as_of or 'N/A'))}
+      Tạo lúc: {html.escape(generated)} · Dữ liệu đến: {html.escape(str(as_of or 'Không có'))}
       · Manifest: <code>data/advanced/statistics_manifest.json</code>.
-      Dashboard này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp file HTML mà không bị mất ma trận.
+      Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
     </p>
   </main>
 
@@ -1730,18 +1628,6 @@ def main() -> None:
       }}
     }}
 
-    function escapeHtml(value) {{
-      return String(value ?? '').replace(/[&<>"']/g, function(ch) {{
-        return ({{
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        }})[ch];
-      }});
-    }}
-
     function valueOrDash(value) {{
       if (value === undefined || value === null || value === '' || value === 'nan' || value === 'NaN') return '—';
       return String(value);
@@ -1751,17 +1637,41 @@ def main() -> None:
       return mode === 'de' ? 'ĐB' : 'loto';
     }}
 
+    function createEvidenceElement(tag, className, text) {{
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }}
+
     function metric(label, value) {{
-      return '<div class="evidence-metric"><span>' + escapeHtml(label) + '</span><b>' + escapeHtml(valueOrDash(value)) + '</b></div>';
+      const node = createEvidenceElement('div', 'evidence-metric');
+      node.append(
+        createEvidenceElement('span', '', label),
+        createEvidenceElement('b', '', valueOrDash(value))
+      );
+      return node;
     }}
 
     function renderPositionRows(positions) {{
       if (!positions || !positions.length) {{
-        return '<div class="evidence-empty">Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm AI score, tần suất, gan/nhịp và backtest trước khi đánh giá.</div>';
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm điểm AI, tần suất, gan/nhịp và kết quả kiểm định trước khi đánh giá.'
+        );
       }}
-      const headers = ['Loại', 'Trễ', 'Ngày gốc', 'Vị trí A', 'Số A', 'Vị trí B', 'Số B', 'P', 'Trúng/Mẫu', 'Streak', 'Điểm', 'Căn cứ'];
-      const head = '<tr>' + headers.map(function(h) {{ return '<th>' + escapeHtml(h) + '</th>'; }}).join('') + '</tr>';
-      const body = positions.map(function(p) {{
+      const headers = ['Loại', 'Trễ', 'Ngày gốc', 'Vị trí A', 'Số A', 'Vị trí B', 'Số B', 'Tỷ lệ', 'Trúng/Mẫu', 'Chuỗi', 'Điểm', 'Căn cứ'];
+      const wrap = createEvidenceElement('div', 'evidence-table-wrap');
+      const table = createEvidenceElement('table', 'evidence-table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headers.forEach(function(header) {{
+        headerRow.appendChild(createEvidenceElement('th', '', header));
+      }});
+      thead.appendChild(headerRow);
+      const tbody = document.createElement('tbody');
+      positions.forEach(function(p) {{
         const cells = [
           p.rule_kind,
           p.lag_days,
@@ -1776,17 +1686,49 @@ def main() -> None:
           p.rule_score,
           p.reason
         ];
-        return '<tr>' + cells.map(function(c) {{ return '<td>' + escapeHtml(valueOrDash(c)) + '</td>'; }}).join('') + '</tr>';
-      }}).join('');
-      return '<div class="evidence-table-wrap"><table class="evidence-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+        const row = document.createElement('tr');
+        cells.forEach(function(cell) {{
+          row.appendChild(createEvidenceElement('td', '', valueOrDash(cell)));
+        }});
+        tbody.appendChild(row);
+      }});
+      table.append(thead, tbody);
+      wrap.appendChild(table);
+      return wrap;
     }}
 
     function renderTopLines(summary) {{
       const lines = [summary.top_position_1, summary.top_position_2, summary.top_position_3].filter(function(x) {{
         return x && String(x).trim() && String(x) !== 'nan' && String(x) !== 'NaN';
       }});
-      if (!lines.length) return '<div class="evidence-empty">Chưa có top vị trí đủ ngưỡng; panel vẫn hiển thị AI/statistical evidence để đối chiếu.</div>';
-      return '<ol class="evidence-list">' + lines.map(function(line) {{ return '<li>' + escapeHtml(line) + '</li>'; }}).join('') + '</ol>';
+      if (!lines.length) {{
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có vị trí nổi bật đủ ngưỡng; khung này vẫn hiển thị bằng chứng AI/thống kê để đối chiếu.'
+        );
+      }}
+      const list = createEvidenceElement('ol', 'evidence-list');
+      lines.forEach(function(line) {{
+        list.appendChild(createEvidenceElement('li', '', line));
+      }});
+      return list;
+    }}
+
+    function evidenceSection(title, content) {{
+      const section = createEvidenceElement('section', 'evidence-card');
+      section.append(createEvidenceElement('h3', '', title), content);
+      return section;
+    }}
+
+    function evidenceParagraph(label, value) {{
+      const paragraph = document.createElement('p');
+      paragraph.style.cssText = 'margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;';
+      paragraph.append(
+        createEvidenceElement('b', '', label + ': '),
+        document.createTextNode(valueOrDash(value))
+      );
+      return paragraph;
     }}
 
     function showNumberEvidence(element) {{
@@ -1805,24 +1747,30 @@ def main() -> None:
       const score = summary.ai_cau_score || summary.cau_score;
       const prob = summary.ai_prob_percent || summary.prob_percent;
       const evidence = summary.ai_evidence || summary.evidence || '';
-      const content = ''
-        + '<section class="evidence-card"><h3>AI/ML nhận định</h3>'
-        + '<div class="evidence-metrics">'
-        + metric('AI score', score)
-        + metric('Xác suất hiển thị', prob ? prob + '%' : '')
-        + metric('Số đường cầu', summary.path_lines_count)
-        + metric('Đang chạy', summary.active_path_count)
-        + metric('Cầu bền', summary.stable_path_count)
-        + metric('Streak max', summary.max_streak)
-        + '</div>'
-        + '<p style="margin:12px 0 0;color:#334155;line-height:1.6;font-size:13px;"><b>Lý do:</b> ' + escapeHtml(valueOrDash(summary.primary_reason)) + '</p>'
-        + '<p style="margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;"><b>Bằng chứng:</b> ' + escapeHtml(valueOrDash(evidence)) + '</p>'
-        + '</section>'
-        + '<section class="evidence-card"><h3>Top vị trí tạo số</h3>' + renderTopLines(summary) + '</section>'
-        + '<section class="evidence-card"><h3>Bảng vị trí đường cầu</h3>' + renderPositionRows(positions) + '</section>'
-        + '<section class="evidence-card"><h3>Diễn giải ngắn</h3><p style="margin:0;color:#334155;line-height:1.65;font-size:13px;">' + escapeHtml(valueOrDash(summary.explain_text)) + '</p></section>';
+      const metrics = createEvidenceElement('div', 'evidence-metrics');
+      metrics.append(
+        metric('Điểm AI', score),
+        metric('Xác suất hiển thị', prob ? prob + '%' : ''),
+        metric('Số đường cầu', summary.path_lines_count),
+        metric('Đang chạy', summary.active_path_count),
+        metric('Cầu bền', summary.stable_path_count),
+        metric('Chuỗi dài nhất', summary.max_streak)
+      );
+      const aiContent = document.createDocumentFragment();
+      aiContent.append(
+        metrics,
+        evidenceParagraph('Lý do', summary.primary_reason),
+        evidenceParagraph('Bằng chứng', evidence)
+      );
+      const explanation = createEvidenceElement('p', '', valueOrDash(summary.explain_text));
+      explanation.style.cssText = 'margin:0;color:#334155;line-height:1.65;font-size:13px;';
 
-      document.getElementById('evidenceContent').innerHTML = content;
+      document.getElementById('evidenceContent').replaceChildren(
+        evidenceSection('AI/ML nhận định', aiContent),
+        evidenceSection('Vị trí tạo số nổi bật', renderTopLines(summary)),
+        evidenceSection('Bảng vị trí đường cầu', renderPositionRows(positions)),
+        evidenceSection('Diễn giải ngắn', explanation)
+      );
       document.getElementById('evidenceBackdrop').classList.add('open');
       const drawer = document.getElementById('evidenceDrawer');
       drawer.classList.add('open');
@@ -1843,6 +1791,7 @@ def main() -> None:
 </body>
 </html>
 """
+    html_doc = "\n".join(line.rstrip() for line in html_doc.splitlines()) + "\n"
     (docs / "statistics.html").write_text(html_doc, encoding="utf-8")
     print("Wrote:", docs / "statistics.html")
 

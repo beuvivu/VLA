@@ -1,0 +1,29 @@
+name: Xóa cache Actions (thủ công)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: actions-cache-purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lấy script bảo trì
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Xóa toàn bộ cache workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python3 scripts/purge_github_caches.py --confirm --repo "$GITHUB_REPOSITORY"

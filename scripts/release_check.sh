@@ -286,7 +286,7 @@ printf '%s\n' "== Post-build production consistency =="
 python src/production_audit.py \
   --consistency-only \
   --strict \
-  --json-out /tmp/production-audit-release.json
+  --json-out "$TMP_PRED/production-audit-release.json"
 
 printf '%s\n' "== Required outputs =="
 required=(

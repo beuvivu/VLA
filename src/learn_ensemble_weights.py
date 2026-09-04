@@ -108,7 +108,8 @@ def _optimize_weights_continuous(
             ll, br = eval_scores(arr)
             if ll < best_ll - 1e-9 or (abs(ll - best_ll) <= 1e-9 and br < best_br):
                 best_w, best_ll, best_br = w, ll, br
-        assert best_w is not None
+        if best_w is None:
+            raise RuntimeError("ensemble weight grid unexpectedly produced no candidates")
         return best_w.normalized(), best_ll, best_br
 
     prior = np.array([0.25, 0.30, 0.20, 0.125, 0.125], dtype=float)

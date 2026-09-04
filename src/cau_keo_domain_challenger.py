@@ -11,7 +11,8 @@ Chronological gate:
 - folds 1-2: screen each feature group independently versus the same baseline;
 - fold 3: confirm each screened group on later unseen dates;
 - fold 4: evaluate the combined confirmed challenger on an untouched final fold;
-- production blend is enabled only when both Brier and LogLoss skill are > 0.
+- production blend is enabled only when both losses improve and their paired,
+  date-clustered bootstrap improvement intervals are strictly above zero.
 
 No deterministic relation (cặp/bộ/bóng/chạm/tổng) is treated as evidence of
 predictability by itself.  The relation merely defines candidate features.
@@ -30,7 +31,6 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.metrics import brier_score_loss, log_loss
 
 from cau_keo_ml import (
     FEATURE_COLS,
@@ -40,123 +40,39 @@ from cau_keo_ml import (
     build_cau_keo_feature_frame,
     run as run_baseline,
 )
+from cau_keo_feature_groups import (
+    ALL_DOMAIN_FEATURES,
+    DOMAIN_FEATURE_GROUPS,
+    FEATURE_GROUP_SCHEMA_VERSION,
+    augment_domain_features,
+)
 from ml_models import PlattCalibratedClassifier
-from number_reference import (
-    bo,
-    bo_family_id,
-    bong_am,
-    bong_duong,
-    cap_loto_50_kind,
-    cap_loto_50_partner,
-    dan_cham,
-    dan_tong_mod10,
+from ml_validation import (
+    PredictionEvaluation,
+    ValidationConfig,
+    assert_temporal_partitions,
+    compare_paired_predictions,
+    evaluate_predictions,
+    predict_with_feature_allowlist,
+    relative_skill,
 )
 
 Mode = Literal["loto", "de"]
-DOMAIN_SCHEMA_VERSION = 1
+DOMAIN_SCHEMA_VERSION = FEATURE_GROUP_SCHEMA_VERSION
 POSITIVE_SKILL_EPS = 1e-4
 N_FOLDS = 4
 DEFAULT_VAL_DAYS = 30
 DEFAULT_CALIB_DAYS = 30
 MIN_TRAIN_DAYS = 90
+FINAL_GATE_CONFIG = ValidationConfig(
+    bootstrap_replicates=1_000,
+    bootstrap_seed=20260902,
+    confidence_level=0.95,
+    minimum_oos_dates=30,
+    minimum_skill=POSITIVE_SKILL_EPS,
+)
 
 logger = logging.getLogger(__name__)
-
-NUMBERS = np.arange(100, dtype=np.int16)
-CAP50_PARTNER = np.array([int(cap_loto_50_partner(int(n))) for n in NUMBERS], dtype=np.int16)
-BONG_DUONG_PARTNER = np.array([int(bong_duong(int(n))) for n in NUMBERS], dtype=np.int16)
-BONG_AM_PARTNER = np.array([int(bong_am(int(n))) for n in NUMBERS], dtype=np.int16)
-CAP50_IS_KEP_BONG = np.array(
-    [1 if cap_loto_50_kind(int(n)) == "kep_bong" else 0 for n in NUMBERS],
-    dtype=np.int8,
-)
-BO_FAMILY_IDS = np.array([bo_family_id(int(n)) for n in NUMBERS], dtype=object)
-BO_MEMBERS = [np.array(sorted(int(x) for x in bo(int(n))), dtype=np.int16) for n in NUMBERS]
-CHAM_MEMBERS = [
-    np.array(sorted(int(x) for x in set(dan_cham(int(n) // 10)) | set(dan_cham(int(n) % 10))), dtype=np.int16)
-    for n in NUMBERS
-]
-TONG_MEMBERS = [
-    np.array([int(x) for x in dan_tong_mod10((int(n) // 10 + int(n) % 10) % 10)], dtype=np.int16)
-    for n in NUMBERS
-]
-
-
-def _mean_matrix(groups: list[np.ndarray]) -> np.ndarray:
-    out = np.zeros((100, 100), dtype=np.float32)
-    for n, members in enumerate(groups):
-        out[n, members] = 1.0 / float(len(members))
-    return out
-
-
-BO_MEAN = _mean_matrix(BO_MEMBERS)
-CHAM_MEAN = _mean_matrix(CHAM_MEMBERS)
-TONG_MEAN = _mean_matrix(TONG_MEMBERS)
-
-PARTNER_FEATURES = [
-    "cap50_partner_hit_today",
-    "cap50_partner_freq_7d",
-    "cap50_partner_freq_30d",
-    "cap50_partner_freq_90d",
-    "cap50_partner_freq_365d",
-    "cap50_partner_gap",
-    "cap50_pair_freq_30_mean",
-    "cap50_pair_freq_90_mean",
-    "cap50_pair_freq_365_mean",
-    "cap50_pair_balance_30d",
-    "cap50_pair_balance_90d",
-    "cap50_pair_balance_365d",
-    "cap50_is_kep_bong",
-]
-BO_FEATURES = [
-    "bo_family_size",
-    "bo_hit_today_rate",
-    "bo_freq_7d_mean",
-    "bo_freq_30d_mean",
-    "bo_freq_90d_mean",
-    "bo_freq_365d_mean",
-    "bo_gap_mean",
-    "bo_path_support_mean",
-]
-BONG_FEATURES = [
-    "bong_duong_hit_today",
-    "bong_duong_freq_7d",
-    "bong_duong_freq_30d",
-    "bong_duong_gap",
-    "bong_am_hit_today",
-    "bong_am_freq_7d",
-    "bong_am_freq_30d",
-    "bong_am_gap",
-]
-CHAM_FEATURES = [
-    "cham_hit_today_rate",
-    "cham_freq_7d_mean",
-    "cham_freq_30d_mean",
-    "cham_freq_90d_mean",
-    "cham_gap_mean",
-    "cham_path_support_mean",
-]
-TONG_FEATURES = [
-    "tong_hit_today_rate",
-    "tong_freq_7d_mean",
-    "tong_freq_30d_mean",
-    "tong_freq_90d_mean",
-    "tong_gap_mean",
-    "tong_path_support_mean",
-]
-
-DOMAIN_FEATURE_GROUPS: dict[str, list[str]] = {
-    "partner_cap50": PARTNER_FEATURES,
-    "bo": BO_FEATURES,
-    "bong": BONG_FEATURES,
-    "cham": CHAM_FEATURES,
-    "tong": TONG_FEATURES,
-}
-ALL_DOMAIN_FEATURES = [
-    feature
-    for group in DOMAIN_FEATURE_GROUPS.values()
-    for feature in group
-]
 
 
 @dataclass(frozen=True)
@@ -173,134 +89,6 @@ class FoldSpec:
             "val_start": self.val_start.date().isoformat(),
             "val_end_exclusive": self.val_end.date().isoformat() if self.val_end is not None else None,
         }
-
-
-def _balance(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-    denom = np.maximum(np.maximum(a.astype(float), b.astype(float)), 1.0)
-    return np.clip(1.0 - np.abs(a.astype(float) - b.astype(float)) / denom, 0.0, 1.0)
-
-
-def _validate_anchor_layout(frame: pd.DataFrame) -> pd.DataFrame:
-    required = {
-        "anchor_date",
-        "number",
-        "freq_7d",
-        "freq_30d",
-        "freq_90d",
-        "freq_365d",
-        "gap",
-        "hit_today",
-        "path_support",
-    }
-    missing = required - set(frame.columns)
-    if missing:
-        raise ValueError(f"domain challenger missing base feature columns: {sorted(missing)}")
-
-    ordered = frame.copy()
-    ordered["number"] = pd.to_numeric(ordered["number"], errors="raise").astype(int)
-    ordered = ordered.sort_values(["anchor_date", "number"]).copy()
-    counts = ordered.groupby("anchor_date", sort=False)["number"].nunique()
-    if counts.empty or not bool((counts == 100).all()):
-        raise ValueError("every anchor_date must contain exactly 100 unique numbers")
-    expected = np.tile(np.arange(100, dtype=int), len(counts))
-    actual = ordered["number"].to_numpy(dtype=int)
-    if not np.array_equal(actual, expected):
-        raise ValueError("each anchor_date must contain the complete ordered 00..99 universe")
-    return ordered
-
-
-def augment_domain_features(frame: pd.DataFrame) -> pd.DataFrame:
-    """Add leakage-safe domain relation features to a base cầu-kèo frame.
-
-    All inputs already describe information available at the row's anchor day.
-    Partner/family/chạm/tổng transforms only combine rows from that same anchor,
-    so no target-day information is introduced.
-    """
-
-    if frame.empty:
-        return frame.copy()
-
-    original_index = frame.index
-    ordered = _validate_anchor_layout(frame)
-    n_anchors = ordered["anchor_date"].nunique()
-
-    def matrix(col: str) -> np.ndarray:
-        return pd.to_numeric(ordered[col], errors="raise").to_numpy(dtype=float).reshape(n_anchors, 100)
-
-    hit = matrix("hit_today")
-    f7 = matrix("freq_7d")
-    f30 = matrix("freq_30d")
-    f90 = matrix("freq_90d")
-    f365 = matrix("freq_365d")
-    gap = matrix("gap")
-    path = matrix("path_support")
-
-    def put(name: str, values: np.ndarray) -> None:
-        ordered[name] = np.asarray(values).reshape(-1)
-
-    partner_f7 = f7[:, CAP50_PARTNER]
-    partner_f30 = f30[:, CAP50_PARTNER]
-    partner_f90 = f90[:, CAP50_PARTNER]
-    partner_f365 = f365[:, CAP50_PARTNER]
-    put("cap50_partner_hit_today", hit[:, CAP50_PARTNER])
-    put("cap50_partner_freq_7d", partner_f7)
-    put("cap50_partner_freq_30d", partner_f30)
-    put("cap50_partner_freq_90d", partner_f90)
-    put("cap50_partner_freq_365d", partner_f365)
-    put("cap50_partner_gap", gap[:, CAP50_PARTNER])
-    put("cap50_pair_freq_30_mean", (f30 + partner_f30) / 2.0)
-    put("cap50_pair_freq_90_mean", (f90 + partner_f90) / 2.0)
-    put("cap50_pair_freq_365_mean", (f365 + partner_f365) / 2.0)
-    put("cap50_pair_balance_30d", _balance(f30, partner_f30))
-    put("cap50_pair_balance_90d", _balance(f90, partner_f90))
-    put("cap50_pair_balance_365d", _balance(f365, partner_f365))
-    put("cap50_is_kep_bong", np.tile(CAP50_IS_KEP_BONG, (n_anchors, 1)))
-
-    put("bo_family_size", np.tile(np.array([len(x) for x in BO_MEMBERS], dtype=float), (n_anchors, 1)))
-    put("bo_hit_today_rate", hit @ BO_MEAN.T)
-    put("bo_freq_7d_mean", f7 @ BO_MEAN.T)
-    put("bo_freq_30d_mean", f30 @ BO_MEAN.T)
-    put("bo_freq_90d_mean", f90 @ BO_MEAN.T)
-    put("bo_freq_365d_mean", f365 @ BO_MEAN.T)
-    put("bo_gap_mean", gap @ BO_MEAN.T)
-    put("bo_path_support_mean", path @ BO_MEAN.T)
-
-    put("bong_duong_hit_today", hit[:, BONG_DUONG_PARTNER])
-    put("bong_duong_freq_7d", f7[:, BONG_DUONG_PARTNER])
-    put("bong_duong_freq_30d", f30[:, BONG_DUONG_PARTNER])
-    put("bong_duong_gap", gap[:, BONG_DUONG_PARTNER])
-    put("bong_am_hit_today", hit[:, BONG_AM_PARTNER])
-    put("bong_am_freq_7d", f7[:, BONG_AM_PARTNER])
-    put("bong_am_freq_30d", f30[:, BONG_AM_PARTNER])
-    put("bong_am_gap", gap[:, BONG_AM_PARTNER])
-
-    put("cham_hit_today_rate", hit @ CHAM_MEAN.T)
-    put("cham_freq_7d_mean", f7 @ CHAM_MEAN.T)
-    put("cham_freq_30d_mean", f30 @ CHAM_MEAN.T)
-    put("cham_freq_90d_mean", f90 @ CHAM_MEAN.T)
-    put("cham_gap_mean", gap @ CHAM_MEAN.T)
-    put("cham_path_support_mean", path @ CHAM_MEAN.T)
-
-    put("tong_hit_today_rate", hit @ TONG_MEAN.T)
-    put("tong_freq_7d_mean", f7 @ TONG_MEAN.T)
-    put("tong_freq_30d_mean", f30 @ TONG_MEAN.T)
-    put("tong_freq_90d_mean", f90 @ TONG_MEAN.T)
-    put("tong_gap_mean", gap @ TONG_MEAN.T)
-    put("tong_path_support_mean", path @ TONG_MEAN.T)
-
-    ordered["cap50_partner"] = np.tile([f"{n:02d}" for n in CAP50_PARTNER], n_anchors)
-    ordered["cap50_pair_kind"] = np.tile(
-        [cap_loto_50_kind(int(n)) for n in NUMBERS], n_anchors
-    )
-    ordered["bo_family_id"] = np.tile(BO_FAMILY_IDS, n_anchors)
-    ordered["bong_duong_partner"] = np.tile([f"{n:02d}" for n in BONG_DUONG_PARTNER], n_anchors)
-    ordered["bong_am_partner"] = np.tile([f"{n:02d}" for n in BONG_AM_PARTNER], n_anchors)
-
-    # Restore the caller's original row order/index.
-    ordered = ordered.sort_index()
-    if not ordered.index.equals(original_index):
-        ordered = ordered.reindex(original_index)
-    return ordered
 
 
 def _make_folds(anchor_days: pd.DatetimeIndex) -> list[FoldSpec]:
@@ -355,13 +143,6 @@ def _fold_masks(frame: pd.DataFrame, fold: FoldSpec) -> tuple[np.ndarray, np.nda
     return train, calib, valid
 
 
-def _metrics(y_true: np.ndarray, prob: np.ndarray) -> tuple[float, float]:
-    p = np.clip(np.asarray(prob, dtype=float), 1e-9, 1.0 - 1e-9)
-    brier = float(brier_score_loss(y_true, p))
-    ll = float(log_loss(y_true, np.column_stack([1.0 - p, p]), labels=[0, 1]))
-    return brier, ll
-
-
 def _fit_fold(
     frame: pd.DataFrame,
     y: np.ndarray,
@@ -370,15 +151,18 @@ def _fit_fold(
     fold: FoldSpec,
     mode: Mode,
     seed: int,
-) -> tuple[float, float]:
+) -> PredictionEvaluation:
     train_mask, calib_mask, val_mask = _fold_masks(frame, fold)
     if min(int(train_mask.sum()), int(calib_mask.sum()), int(val_mask.sum())) <= 0:
         raise RuntimeError(f"empty chronological split in fold {fold.fold}")
+    assert_temporal_partitions(
+        frame["anchor_date"].to_numpy(), train_mask, calib_mask, val_mask
+    )
 
     values = frame[features].astype(np.float32).to_numpy()
     X_train, y_train = values[train_mask], y[train_mask]
     X_cal, y_cal = values[calib_mask], y[calib_mask]
-    X_val, y_val = values[val_mask], y[val_mask]
+    y_val = y[val_mask]
     neg_ratio = 22 if mode == "de" else 8
     X_train, y_train = _downsample(X_train, y_train, neg_ratio=neg_ratio, seed=seed)
 
@@ -386,14 +170,17 @@ def _fit_fold(
     model.fit(X_train, y_train)
     p_cal = model.base_.predict_proba(X_cal)[:, 1]
     model.fit_platt(p_cal, y_cal)
-    p_val = model.predict_proba(X_val)[:, 1]
-    return _metrics(y_val, p_val)
+    validation_frame = frame.loc[val_mask]
+    p_val = predict_with_feature_allowlist(model, validation_frame, features)
+    return evaluate_predictions(
+        y_val,
+        p_val,
+        validation_frame["anchor_date"].to_numpy(),
+    )
 
 
 def _skill(candidate: float, baseline: float) -> float:
-    if not np.isfinite(candidate) or not np.isfinite(baseline) or baseline <= 0:
-        return float("-inf")
-    return float(1.0 - candidate / baseline)
+    return relative_skill(baseline, candidate)
 
 
 def _row(
@@ -403,26 +190,32 @@ def _row(
     fold: FoldSpec,
     candidate: str,
     features: list[str],
-    baseline_metrics: tuple[float, float],
-    candidate_metrics: tuple[float, float],
+    baseline_metrics: PredictionEvaluation,
+    candidate_metrics: PredictionEvaluation,
+    seed: int,
 ) -> dict[str, object]:
-    bb, bl = baseline_metrics
-    cb, cl = candidate_metrics
+    bb, bl = baseline_metrics.brier, baseline_metrics.logloss
+    cb, cl = candidate_metrics.brier, candidate_metrics.logloss
     return {
         "mode": mode,
         "stage": stage,
         "fold": fold.fold,
         "candidate": candidate,
         "feature_count": len(features),
+        "seed": int(seed),
         "calib_start": fold.calib_start.date().isoformat(),
         "val_start": fold.val_start.date().isoformat(),
         "val_end_exclusive": fold.val_end.date().isoformat() if fold.val_end is not None else "",
         "baseline_brier": bb,
         "candidate_brier": cb,
+        "brier_improvement": bb - cb,
         "brier_skill": _skill(cb, bb),
         "baseline_logloss": bl,
         "candidate_logloss": cl,
+        "logloss_improvement": bl - cl,
         "logloss_skill": _skill(cl, bl),
+        "oos_dates": candidate_metrics.oos_dates,
+        "oos_rows": candidate_metrics.oos_rows,
     }
 
 
@@ -451,16 +244,17 @@ def walk_forward_ablation(
     days = pd.DatetimeIndex(sorted(data["anchor_date"].unique()))
     folds = _make_folds(days)
 
-    baseline_by_fold: dict[int, tuple[float, float]] = {}
+    baseline_by_fold: dict[int, PredictionEvaluation] = {}
     rows: list[dict[str, object]] = []
     for fold in folds:
+        fold_seed = 20260920 + fold.fold
         metrics = _fit_fold(
             data,
             target,
             features=list(FEATURE_COLS),
             fold=fold,
             mode=mode,
-            seed=20260920 + fold.fold,
+            seed=fold_seed,
         )
         baseline_by_fold[fold.fold] = metrics
         rows.append(
@@ -472,6 +266,7 @@ def walk_forward_ablation(
                 features=list(FEATURE_COLS),
                 baseline_metrics=metrics,
                 candidate_metrics=metrics,
+                seed=fold_seed,
             )
         )
 
@@ -481,13 +276,14 @@ def walk_forward_ablation(
         feature_set = list(FEATURE_COLS) + list(group_features)
         group_rows: list[dict[str, object]] = []
         for fold in folds[:2]:
+            fold_seed = 20260920 + fold.fold
             metrics = _fit_fold(
                 data,
                 target,
                 features=feature_set,
                 fold=fold,
                 mode=mode,
-                seed=20261000 + 100 * list(DOMAIN_FEATURE_GROUPS).index(group) + fold.fold,
+                seed=fold_seed,
             )
             r = _row(
                 mode=mode,
@@ -497,6 +293,7 @@ def walk_forward_ablation(
                 features=feature_set,
                 baseline_metrics=baseline_by_fold[fold.fold],
                 candidate_metrics=metrics,
+                seed=fold_seed,
             )
             rows.append(r)
             group_rows.append(r)
@@ -514,6 +311,7 @@ def walk_forward_ablation(
     confirmation: dict[str, dict[str, float | bool]] = {}
     fold3 = folds[2]
     for group in screened:
+        fold_seed = 20260920 + fold3.fold
         feature_set = list(FEATURE_COLS) + list(DOMAIN_FEATURE_GROUPS[group])
         metrics = _fit_fold(
             data,
@@ -521,7 +319,7 @@ def walk_forward_ablation(
             features=feature_set,
             fold=fold3,
             mode=mode,
-            seed=20262000 + 100 * list(DOMAIN_FEATURE_GROUPS).index(group),
+            seed=fold_seed,
         )
         r = _row(
             mode=mode,
@@ -531,6 +329,7 @@ def walk_forward_ablation(
             features=feature_set,
             baseline_metrics=baseline_by_fold[fold3.fold],
             candidate_metrics=metrics,
+            seed=fold_seed,
         )
         rows.append(r)
         ok = _positive_pair(float(r["brier_skill"]), float(r["logloss_skill"]))
@@ -542,24 +341,29 @@ def walk_forward_ablation(
         if ok:
             confirmed.append(group)
 
-    fold4 = folds[3]
+    # Keep the fourth fold untouched unless a challenger has survived both
+    # screening and confirmation.  The all-groups diagnostic belongs on the
+    # confirmation fold and can never consume the final holdout pre-selection.
+    diagnostic_fold = fold3
+    diagnostic_seed = 20260920 + diagnostic_fold.fold
     all_features = list(FEATURE_COLS) + list(ALL_DOMAIN_FEATURES)
     all_metrics = _fit_fold(
         data,
         target,
         features=all_features,
-        fold=fold4,
+        fold=diagnostic_fold,
         mode=mode,
-        seed=20263000,
+        seed=diagnostic_seed,
     )
     all_row = _row(
         mode=mode,
-        stage="final_diagnostic",
-        fold=fold4,
+        stage="confirmation_diagnostic",
+        fold=diagnostic_fold,
         candidate="all_domain_groups",
         features=all_features,
-        baseline_metrics=baseline_by_fold[fold4.fold],
+        baseline_metrics=baseline_by_fold[diagnostic_fold.fold],
         candidate_metrics=all_metrics,
+        seed=diagnostic_seed,
     )
     rows.append(all_row)
 
@@ -567,6 +371,8 @@ def walk_forward_ablation(
     for group in confirmed:
         selected_features.extend(DOMAIN_FEATURE_GROUPS[group])
 
+    fold4 = folds[3]
+    fold4_seed = 20260920 + fold4.fold
     if confirmed:
         combined_metrics = _fit_fold(
             data,
@@ -574,7 +380,7 @@ def walk_forward_ablation(
             features=selected_features,
             fold=fold4,
             mode=mode,
-            seed=20264000,
+            seed=fold4_seed,
         )
         combined_row = _row(
             mode=mode,
@@ -584,18 +390,46 @@ def walk_forward_ablation(
             features=selected_features,
             baseline_metrics=baseline_by_fold[fold4.fold],
             candidate_metrics=combined_metrics,
+            seed=fold4_seed,
         )
         rows.append(combined_row)
-        final_brier_skill = float(combined_row["brier_skill"])
-        final_ll_skill = float(combined_row["logloss_skill"])
-        active = _positive_pair(final_brier_skill, final_ll_skill)
+        final_decision = compare_paired_predictions(
+            baseline_by_fold[fold4.fold],
+            combined_metrics,
+            config=FINAL_GATE_CONFIG,
+            temporal_checks_pass=True,
+        )
+        final_evaluation: dict[str, object] = final_decision.as_dict()
+        final_evaluation["holdout_consumed"] = True
+        final_brier_skill = final_decision.brier_skill
+        final_ll_skill = final_decision.logloss_skill
+        active = final_decision.promoted
     else:
         combined_row = None
+        final_evaluation = {
+            "promoted": False,
+            "rejection_reasons": ["insufficient_support", "research_only"],
+            "oos_dates": 0,
+            "oos_rows": 0,
+            "bootstrap_replicates": 0,
+            "bootstrap_seed": FINAL_GATE_CONFIG.bootstrap_seed,
+            "holdout_consumed": False,
+        }
         final_brier_skill = 0.0
         final_ll_skill = 0.0
         active = False
 
     trust = _trust_from_skill(final_brier_skill, final_ll_skill) if active else 0.0
+    production_features = selected_features if active else list(FEATURE_COLS)
+    promoted_groups = confirmed if active else []
+    feature_manifest = {
+        "schema_version": 1,
+        "baseline_features": list(FEATURE_COLS),
+        "feature_groups": DOMAIN_FEATURE_GROUPS,
+        "promoted_groups": promoted_groups,
+        "production_features": production_features,
+        "evaluation": final_evaluation,
+    }
     report = pd.DataFrame(rows)
     gate: dict[str, object] = {
         "schema_version": DOMAIN_SCHEMA_VERSION,
@@ -608,22 +442,30 @@ def walk_forward_ablation(
         "screened_groups": screened,
         "confirmation": confirmation,
         "confirmed_groups": confirmed,
-        "selected_features": selected_features if active else list(FEATURE_COLS),
+        "selected_features": production_features,
+        "feature_manifest": feature_manifest,
+        "final_evaluation": final_evaluation,
         "final_brier_skill": final_brier_skill,
         "final_logloss_skill": final_ll_skill,
-        "all_groups_final_brier_skill": float(all_row["brier_skill"]),
-        "all_groups_final_logloss_skill": float(all_row["logloss_skill"]),
+        "all_groups_confirmation_brier_skill": float(all_row["brier_skill"]),
+        "all_groups_confirmation_logloss_skill": float(all_row["logloss_skill"]),
         "domain_active": bool(active),
         "domain_trust": trust,
+        "pattern_selection_bias_risk": (
+            "screening folds select feature groups; only the untouched fourth fold is used "
+            "for the paired promotion decision"
+        ),
         "policy": (
             "A domain feature group can affect production only after positive OOS Brier and "
-            "LogLoss skill in screening, confirmation, and the untouched combined final gate."
+            "LogLoss skill in screening and confirmation, then positive clustered-bootstrap "
+            "lower confidence bounds for both losses on the untouched combined final fold."
         ),
     }
     if combined_row is None:
         gate["reason"] = "no individual domain feature group survived confirmation"
     elif not active:
-        gate["reason"] = "combined confirmed challenger did not beat baseline on both final OOS metrics"
+        reasons = ", ".join(str(x) for x in final_evaluation["rejection_reasons"])
+        gate["reason"] = f"combined confirmed challenger failed closed: {reasons}"
     else:
         gate["reason"] = "confirmed challenger passed the untouched final OOS gate"
     return report, gate
@@ -787,13 +629,13 @@ def run_mode(
     X_pred = augment_domain_features(X_pred).reset_index(drop=True)
 
     baseline_model = pack["model"]
-    p_baseline = baseline_model.predict_proba(
-        X_pred[FEATURE_COLS].astype(np.float32).to_numpy()
-    )[:, 1]
+    p_baseline = predict_with_feature_allowlist(
+        baseline_model, X_pred, FEATURE_COLS
+    )
     if challenger is not None:
-        p_domain = challenger.predict_proba(
-            X_pred[selected_features].astype(np.float32).to_numpy()
-        )[:, 1]
+        p_domain = predict_with_feature_allowlist(
+            challenger, X_pred, selected_features
+        )
     else:
         p_domain = p_baseline.copy()
 
@@ -836,6 +678,7 @@ def run_mode(
     pack["domain_gate"] = {
         "final_brier_skill": float(gate["final_brier_skill"]),
         "final_logloss_skill": float(gate["final_logloss_skill"]),
+        "final_evaluation": gate["final_evaluation"],
         "reason": gate["reason"],
     }
     pack["domain_trained_through_date"] = str(
@@ -856,6 +699,8 @@ def run_mode(
         "trust": trust,
         "selected_groups": selected_groups,
         "selected_features": selected_features if active else list(FEATURE_COLS),
+        "feature_manifest": gate["feature_manifest"],
+        "final_evaluation": gate["final_evaluation"],
         "ablation_report": ablation_path.name,
         "gate_report": gate_path.name,
         "final_brier_skill": float(gate["final_brier_skill"]),

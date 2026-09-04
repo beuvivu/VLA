@@ -3,7 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
+  <meta name="referrer" content="no-referrer" />
   <title>{{ title }}</title>
+  <style id="vla-tailwind-lite">
+    .bg-slate-50{background-color:#f8fafc}.text-slate-800{color:#1e293b}.text-slate-600{color:#475569}
+    .bg-white{background:#fff}.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+    .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.shadow-sm{box-shadow:0 1px 2px rgba(15,23,42,.06)}
+    .transition-all{transition:all .2s ease-in-out}.hover\:shadow-lg:hover{box-shadow:0 10px 25px rgba(15,23,42,.14)}
+  </style>
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
@@ -29,37 +37,43 @@
     .small{font-size:11px;color:var(--muted)}
     .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
     .btn.secondary{background:transparent;color:var(--text)}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #243041;border-radius:10px;background:rgba(30,41,59,.55);color:var(--text);text-decoration:none;transition:all .2s ease-in-out}
+    .quick-pick:hover{background:rgba(79,70,229,.22);border-color:rgba(129,140,248,.7);transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
+    .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
+    .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
+    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 <div class="wrap">
   <div class="top">
     <div>
       <h1 style="margin:0;font-size:20px">{{ title }}</h1>
-      <div class="small">Anchor (Biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Mode: <b class="mono">{{ mode }}</b> · Type: <b class="mono">{{ kind }}</b></div>
+      <div class="small">Ngày neo (biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Loại: <b>{{ mode_label }}</b> · Trạng thái: <b>{{ kind_label }}</b></div>
     </div>
     <div class="kpi">
       <span class="chip">Màu đỏ: về ĐB</span>
       <span class="chip">Màu cam: loto đã về</span>
-      <span class="chip">Tooltip: lag + vị trí rawdata</span>
+      <span class="chip">Gợi ý ô: độ trễ + vị trí dữ liệu gốc</span>
     </div>
   </div>
 
   <div class="grid" style="margin-top:12px">
     <div class="card">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Aggregated % từ các path đủ điều kiện ({{ kind }}).</div></div>
+        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện ({{ kind_label }}).</div></div>
         <div style="display:flex;gap:8px">
-          {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind }} ({{ other_mode }})</a>{% endif %}
-          {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Index</a>{% endif %}
+          {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind_label }} ({{ other_mode_label }})</a>{% endif %}
+          {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Trang tổng hợp</a>{% endif %}
         </div>
       </div>
       <div style="margin-top:10px;overflow:auto">
         <table>
-          <thead><tr><th>Rank</th><th>Số</th><th>%</th><th>Support paths</th></tr></thead>
+          <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
           <tbody>
             {% for r in picks %}
             <tr>
@@ -76,28 +90,41 @@
 
     <div class="card">
       <b>Chọn nhanh</b>
-      <div class="small" style="margin-top:6px">Các file CSV/JSON đã được export vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Trang này là bản render tĩnh giống style website.</div>
+      <div class="small" style="margin-top:6px">Các tệp CSV/JSON đã được xuất vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Đây là trang tĩnh mô phỏng cách trình bày trên web.</div>
       <div class="legend">
         <span><span class="dot hitde"></span>Về ĐB</span>
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
+      {% if picks %}
+      <div class="quick-grid" aria-label="Danh sách chọn nhanh">
+        {% for r in picks[:10] %}
+        <div class="quick-pick" title="Số {{ '%02d'|format(r.number) }} · điểm {{ (r.prob*100)|round(2) }}% · hỗ trợ {{ r.support_paths_count }} đường cầu">
+          <span class="quick-number mono">{{ "%02d"|format(r.number) }}</span>
+          <span class="quick-meta"><b>{{ (r.prob*100)|round(2) }}%</b><br>{{ r.support_paths_count }} đường cầu</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo điểm tổng hợp; đây là điểm xếp hạng, không phải xác suất đã hiệu chuẩn.</i></div>
+      {% else %}
+      <div class="empty-state">Chưa có dữ liệu chọn nhanh cho ngày neo này. Hãy chạy lại bước tạo dữ liệu đường cầu.</div>
+      {% endif %}
       <div style="margin-top:10px" class="small">
-        Tip: bạn có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong workflow/CLI để giống “biên độ” website hơn. citeturn0search10
+        Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
       </div>
     </div>
   </div>
 
   <div class="card" style="margin-top:12px; overflow:auto">
-    <b>Bảng PATH (rawdata → number) theo ngày</b>
-    <div class="small" style="margin-top:6px">Hàng = path; cột = ngày trong “Số ngày cầu chạy”. Ô hiển thị số dự đoán của path tại ngày đó, tô màu nếu về.</div>
+    <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
+    <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
     <div style="margin-top:10px; overflow:auto">
       <table>
         <thead>
           <tr>
-            <th class="left">Path</th>
-            <th>p_mean</th>
-            <th>streak</th>
+            <th class="left">Đường cầu</th>
+            <th>Tỷ lệ lịch sử</th>
+            <th>Chuỗi liên tiếp</th>
             {% for d in days %}
               <th class="mono">{{ d[5:] }}</th>
             {% endfor %}
@@ -108,7 +135,7 @@
           <tr>
             <td class="left">
               <div class="mono">{{ row.path_id }}</div>
-              <div class="small">lag={{ row.lag }} · i={{ row.i }} ({{ row.i_label }}) · j={{ row.j }} ({{ row.j_label }})</div>
+              <div class="small">trễ={{ row.lag }} · A={{ row.i }} ({{ row.i_label }}) · B={{ row.j }} ({{ row.j_label }})</div>
             </td>
             <td>{{ (row.p_mean*100)|round(2) }}</td>
             <td class="mono">{{ row.streak }}</td>
@@ -129,7 +156,7 @@
   </div>
 
   <div class="small" style="margin-top:14px;color:var(--muted)">
-    Generated by <span class="mono">src/build_docs.py</span> · Data source: local crawl (multi-source fallback).  
+    Được tạo bởi <span class="mono">src/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
   </div>
 </div>
 </body>

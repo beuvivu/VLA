@@ -18,6 +18,7 @@ import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from numbers import Integral
 from pathlib import Path
 from typing import Literal
 
@@ -43,6 +44,33 @@ class PositionEvidenceConfig:
     min_current_streak: int = 3
     top_positions_per_number: int = 8
     scope: str = "all"
+
+    def __post_init__(self) -> None:
+        positive_integer_fields = (
+            "lag_max",
+            "window_days",
+            "min_trials",
+            "top_positions_per_number",
+        )
+        nonnegative_integer_fields = ("min_max_streak", "min_current_streak")
+        for name in positive_integer_fields:
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 1
+            ):
+                raise ValueError(f"{name} must be a positive integer")
+        for name in nonnegative_integer_fields:
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 0
+            ):
+                raise ValueError(f"{name} must be a non-negative integer")
+        if self.scope not in {"all", "near_special", "special_only"}:
+            raise ValueError("scope must be all, near_special, or special_only")
 
 
 def _fmt2(n: int | float | str) -> str:
