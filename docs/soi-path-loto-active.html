@@ -31,6 +31,11 @@
     .small{font-size:11px;color:var(--muted)}
     .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
     .btn.secondary{background:transparent;color:var(--text)}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #243041;border-radius:10px;background:rgba(30,41,59,.55);color:var(--text);text-decoration:none;transition:all .2s ease-in-out}
+    .quick-pick:hover{background:rgba(79,70,229,.22);border-color:rgba(129,140,248,.7);transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
+    .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
@@ -217,6 +222,19 @@
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
+      <div class="quick-grid" aria-label="Danh sách chọn nhanh">
+        <div class="quick-pick"><span class="quick-number mono">14</span><span class="quick-meta"><b>25.43%</b><br>27 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">51</span><span class="quick-meta"><b>25.39%</b><br>16 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">59</span><span class="quick-meta"><b>25.37%</b><br>25 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">08</span><span class="quick-meta"><b>25.32%</b><br>16 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">66</span><span class="quick-meta"><b>25.26%</b><br>26 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">60</span><span class="quick-meta"><b>25.26%</b><br>35 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">24</span><span class="quick-meta"><b>25.21%</b><br>18 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">28</span><span class="quick-meta"><b>25.21%</b><br>17 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">95</span><span class="quick-meta"><b>25.2%</b><br>26 đường cầu</span></div>
+        <div class="quick-pick"><span class="quick-number mono">61</span><span class="quick-meta"><b>25.19%</b><br>32 đường cầu</span></div>
+      </div>
+      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo điểm tổng hợp; đây là điểm xếp hạng, không phải xác suất đã hiệu chuẩn.</i></div>
       <div style="margin-top:10px" class="small">
         Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
       </div>

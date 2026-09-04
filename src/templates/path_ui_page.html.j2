@@ -37,8 +37,14 @@
     .small{font-size:11px;color:var(--muted)}
     .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
     .btn.secondary{background:transparent;color:var(--text)}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #243041;border-radius:10px;background:rgba(30,41,59,.55);color:var(--text);text-decoration:none;transition:all .2s ease-in-out}
+    .quick-pick:hover{background:rgba(79,70,229,.22);border-color:rgba(129,140,248,.7);transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
+    .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
+    .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
+    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
@@ -90,6 +96,19 @@
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
+      {% if picks %}
+      <div class="quick-grid" aria-label="Danh sách chọn nhanh">
+        {% for r in picks[:10] %}
+        <div class="quick-pick" title="Số {{ '%02d'|format(r.number) }} · điểm {{ (r.prob*100)|round(2) }}% · hỗ trợ {{ r.support_paths_count }} đường cầu">
+          <span class="quick-number mono">{{ "%02d"|format(r.number) }}</span>
+          <span class="quick-meta"><b>{{ (r.prob*100)|round(2) }}%</b><br>{{ r.support_paths_count }} đường cầu</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo điểm tổng hợp; đây là điểm xếp hạng, không phải xác suất đã hiệu chuẩn.</i></div>
+      {% else %}
+      <div class="empty-state">Chưa có dữ liệu chọn nhanh cho ngày neo này. Hãy chạy lại bước tạo dữ liệu đường cầu.</div>
+      {% endif %}
       <div style="margin-top:10px" class="small">
         Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
       </div>
