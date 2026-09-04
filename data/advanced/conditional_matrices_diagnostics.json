@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "calendar_rows": 388,
+  "calendar_rows": 390,
   "calendar_start": "2025-08-11",
-  "calendar_end": "2026-09-02",
-  "exact_next_day_pairs": 387,
+  "calendar_end": "2026-09-04",
+  "exact_next_day_pairs": 389,
   "skipped_nonconsecutive_boundaries": 0,
-  "generated_at_utc": "2026-09-02T15:05:45Z",
+  "generated_at_utc": "2026-09-04T14:56:51Z",
   "contract": "only exact +1 calendar-day transitions are counted"
 }

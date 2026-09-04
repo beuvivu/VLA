@@ -1,17 +1,17 @@
 {
   "name": "aggregate_loto_transition_independence",
   "table": {
-    "prev_hit_next_hit": 2239,
-    "prev_hit_next_miss": 6980,
-    "prev_miss_next_hit": 6982,
-    "prev_miss_next_miss": 22499
+    "prev_hit_next_hit": 2249,
+    "prev_hit_next_miss": 7016,
+    "prev_miss_next_hit": 7019,
+    "prev_miss_next_miss": 22616
   },
-  "statistic": 1.3773851452114994,
-  "p_value": 0.24054705481651106,
-  "expected_min": 2196.599457364341,
-  "p_next_given_hit": 0.2428679900206096,
-  "p_next_given_absent": 0.23683050100064448,
-  "effect": 0.00603748901996512,
-  "lift": 1.0254928693494116,
+  "statistic": 1.3184029721134283,
+  "p_value": 0.25087886847592733,
+  "expected_min": 2207.40411311054,
+  "p_next_given_hit": 0.2427415002698327,
+  "p_next_given_absent": 0.23684832124177493,
+  "effect": 0.005893179028057777,
+  "lift": 1.0248816584266267,
   "method": "2x2 chi-square with Yates continuity correction; all 00..99 transitions pooled"
 }

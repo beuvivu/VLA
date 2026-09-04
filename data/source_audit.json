@@ -327,5 +327,53 @@
     ],
     "candidates": 5,
     "distinct_results": 1
+  },
+  "2026-09-03": {
+    "checked_at_utc": "2026-09-03T14:58:01Z",
+    "accepted": true,
+    "required_agreement": 2,
+    "agreement": 4,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "source_agreement": 5,
+    "independent_groups": [
+      "xoso",
+      "mketqua",
+      "minhngoc",
+      "xosodaiphat"
+    ],
+    "sources": [
+      "xoso.com.vn",
+      "mketqua.net",
+      "www.minhngoc.net.vn",
+      "xosominhngoc.com",
+      "xosodaiphat.com"
+    ],
+    "candidates": 5,
+    "distinct_results": 1
+  },
+  "2026-09-04": {
+    "checked_at_utc": "2026-09-04T14:54:59Z",
+    "accepted": true,
+    "required_agreement": 2,
+    "agreement": 4,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "source_agreement": 5,
+    "independent_groups": [
+      "xoso",
+      "mketqua",
+      "minhngoc",
+      "xosodaiphat"
+    ],
+    "sources": [
+      "xoso.com.vn",
+      "mketqua.net",
+      "www.minhngoc.net.vn",
+      "xosominhngoc.com",
+      "xosodaiphat.com"
+    ],
+    "candidates": 5,
+    "distinct_results": 1
   }
 }

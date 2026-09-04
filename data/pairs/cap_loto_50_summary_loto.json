@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-02T15:04:27Z",
+  "generated_at": "2026-09-04T14:55:31Z",
   "mode": "loto",
   "history_start": "2025-08-11",
-  "history_end": "2026-09-02",
-  "history_days": 388,
+  "history_end": "2026-09-04",
+  "history_days": 390,
   "pair_count": 50,
   "reverse_pair_count": 45,
   "kep_bong_pair_count": 5,
@@ -15,11 +15,11 @@
     "33-88",
     "44-99"
   ],
-  "kep_bong_mean_member_rate_gap_365d": 0.019178082191780826,
-  "kep_bong_mean_member_balance_365d": 0.921732610115555,
-  "kep_bong_mean_phi": -0.03718789848215476,
-  "reverse_mean_member_rate_gap_365d": 0.0323896499238965,
-  "reverse_mean_member_balance_365d": 0.8770995925470809,
+  "kep_bong_mean_member_rate_gap_365d": 0.021917808219178075,
+  "kep_bong_mean_member_balance_365d": 0.9119918066110018,
+  "kep_bong_mean_phi": -0.03628644224243942,
+  "reverse_mean_member_rate_gap_365d": 0.031415525114155254,
+  "reverse_mean_member_balance_365d": 0.8805865200060693,
   "current_cau_scores_aligned": false,
   "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities"
 }
