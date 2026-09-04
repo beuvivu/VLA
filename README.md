@@ -160,7 +160,7 @@ Workflow:
 
 `Kết quả XSMB gần thời gian thực`
 
-được lập lịch lúc **18:04 Asia/Ho_Chi_Minh**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **25 giây/lần**. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
+được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
 
 `docs/live.html` đọc JSON gốc từ nhánh `live`, vì vậy không phải dựng lại toàn bộ GitHub Pages mỗi lần có thêm một giải.
 
@@ -180,9 +180,7 @@ Nếu kho dùng bảo vệ nhánh, **không áp dụng quy tắc cấm đẩy c�
 
 Timezone: `Asia/Ho_Chi_Minh`.
 
-- `18:38` — hoàn tất chính.
-- `18:53` — phục hồi 1.
-- `19:13` — phục hồi 2.
+- `18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00` — hoàn tất và phục hồi dữ liệu chuẩn.
 
 Bộ gác kiểm tra ngày dữ liệu chuẩn trước khi chạy; nếu kỳ hôm nay đã được ghi thành công, các lượt phục hồi không làm gì thêm. Có thể bấm `Run workflow` để chạy thủ công bất kỳ lúc nào.
 
@@ -193,9 +191,9 @@ Hệ thống vận hành tự động bằng GitHub Actions; không cần chạy
 
 | Lớp tự động | Giờ Việt Nam | Hành vi |
 |---|---|---|
-| Gần thời gian thực chính | **18:04** | Mở cửa sổ trực tiếp, thăm dò khoảng 25 giây/lần và kiểm chứng nhiều nguồn. |
-| Bộ giám sát trực tiếp | **18:10, 18:20** | Nếu dữ liệu trực tiếp chưa có nhịp báo của ngày hiện tại, tự gọi lại quy trình trực tiếp. |
-| Hoàn tất hằng ngày | **18:18, 18:28, 18:38, 18:48, 18:58, 19:13, 19:28** | Thăm dò/tải, yêu cầu ≥2 nhóm nhà cung cấp độc lập, ghi dữ liệu chuẩn trước rồi mới chạy thống kê + AI/ML + dự báo + README + Pages. |
+| Gần thời gian thực chính | **18:00** | Mở cửa sổ trực tiếp trước giờ quay, thăm dò khoảng 15 giây/lần và kiểm chứng nhiều nguồn. |
+| Bộ giám sát trực tiếp | **17:55, 18:05, 18:15, 18:25, 18:45** | Nếu dữ liệu trực tiếp chưa có nhịp báo của ngày hiện tại, tự gọi lại quy trình trực tiếp. |
+| Hoàn tất hằng ngày | **18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00** | Thăm dò/tải, yêu cầu ≥2 nhóm nhà cung cấp độc lập, ghi dữ liệu chuẩn trước rồi mới chạy thống kê + AI/ML + dự báo + README + Pages. |
 | Phục hồi dữ liệu chuẩn | **19:35, 20:05** | Nếu dữ liệu chuẩn còn cũ hoặc kiểm toán artifact không đạt, tự gọi lại quy trình hoàn tất hằng ngày. |
 | Phục hồi Pages | **20:20** | Thử lại việc triển khai Pages độc lập khi dữ liệu chuẩn đã ổn. |
 | Lưới an toàn qua đêm | **07:15** | Kiểm tra lại dữ liệu chuẩn, dự báo, README, artifact mô hình, bảng điều khiển và đối soát dữ liệu trực tiếp. |

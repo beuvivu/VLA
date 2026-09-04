@@ -16,6 +16,8 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TZ: Asia/Ho_Chi_Minh
     steps:
       - name: Lấy nhánh mặc định mới nhất
         uses: actions/checkout@v7
@@ -32,7 +34,7 @@ jobs:
         run: |
           audit_path="$(mktemp "${RUNNER_TEMP}/production-audit.XXXXXX.json")"
           python src/production_audit.py \
-            --cutoff 18:15 \
+            --cutoff 18:35 \
             --strict \
             --json-out "$audit_path"
 

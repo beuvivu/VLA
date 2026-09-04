@@ -48,14 +48,14 @@ jobs:
           text = p.read_text(encoding="utf-8")
           required = [
               "Màu | Khoảng giá trị | Ý nghĩa",
-              "calendar 7 cột",
-              "Lift vs baseline",
-              "Audit & Deep Links",
+              "lịch 7 cột",
+              "Độ nâng so với nền",
+              "Kiểm toán và liên kết chi tiết",
           ]
           for marker in required:
               assert marker in text, marker
           assert text.count("Đầu\\Đuôi") >= 12
-          assert text.count("| Ý nghĩa | Visual |") >= 20
+          assert text.count("| Ý nghĩa | Thanh so sánh |") >= 20
           assert "| month_key | 01 | 02 | 03 | 04 | 05 |" not in text
           assert len(text) > 70_000
           print(f"OK DASHBOARD.md {len(text):,} chars")

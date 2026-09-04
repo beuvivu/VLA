@@ -19,3 +19,5 @@ Last verified: 2026-09-03
 15. Metadata model sau giải tuần tự không phải dữ liệu tin cậy: kiểm tra schema, mode, feature allowlist, shape và miền xác suất trước suy luận.
 16. Không gọi model challenger khi cổng chất lượng từ chối; trạng thái thiếu, NaN hoặc không hợp lệ phải giữ baseline.
 17. Workflow chỉ cấp quyền ghi tại job cần ghi và chỉ dùng tệp tạm tên ngẫu nhiên trong thư mục tạm của runner.
+18. GitHub Actions cron luôn là UTC; mọi cutoff/ngày nghiệp vụ phải đi qua chính sách `Asia/Ho_Chi_Minh` và có test chuyển đổi UTC→UTC+7.
+19. Mỗi thành phần ensemble phải xuất hiện đúng một lần trong công thức trộn; dùng test vector trọng số để bắt lỗi lặp/bỏ sót thành phần.

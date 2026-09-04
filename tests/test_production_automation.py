@@ -46,8 +46,8 @@ POST_BUILD_ONLY_PREFIXES = (
 
 def test_expected_latest_draw_is_cutoff_aware():
     tz = ZoneInfo("Asia/Ho_Chi_Minh")
-    assert expected_latest_draw(datetime(2026, 9, 1, 10, 0, tzinfo=tz), time(18, 15)).isoformat() == "2026-08-31"
-    assert expected_latest_draw(datetime(2026, 9, 1, 19, 0, tzinfo=tz), time(18, 15)).isoformat() == "2026-09-01"
+    assert expected_latest_draw(datetime(2026, 9, 1, 10, 0, tzinfo=tz), time(18, 35)).isoformat() == "2026-08-31"
+    assert expected_latest_draw(datetime(2026, 9, 1, 19, 0, tzinfo=tz), time(18, 35)).isoformat() == "2026-09-01"
 
 
 def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
@@ -166,10 +166,13 @@ def test_watchdog_and_post_finalization_workflows_are_wired():
     post = Path(".github/workflows/post-finalization.yml").read_text(encoding="utf-8")
     daily = Path(".github/workflows/update-data.yml").read_text(encoding="utf-8")
 
-    for cron in ("10 11 * * *", "20 11 * * *", "35 12 * * *", "5 13 * * *", "20 13 * * *", "15 0 * * *"):
+    for cron in (
+        "55 10 * * *", "5 11 * * *", "15 11 * * *", "25 11 * * *", "45 11 * * *",
+        "5 12 * * *", "25 12 * * *", "45 12 * * *", "5 13 * * *", "15 0 * * *",
+    ):
         assert cron in watchdog
     assert 'dispatch("live-results.yml")' in watchdog
-    assert 'dispatch("update-data.yml")' in watchdog
+    assert 'dispatch("update-data.yml", {"reason": "watchdog_recovery"})' in watchdog
     assert 'dispatch("pages.yml")' in watchdog
     assert 'dispatch("post-finalization.yml")' in watchdog
 

@@ -7,6 +7,8 @@ import sys
 import time
 from pathlib import Path
 
+from time_policy import DEFAULT_DRAW_CUTOFF
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -55,7 +57,9 @@ def main() -> None:
         )
     )
     ap.add_argument(
-        "--cutoff", default="18:35", help="Daily cutoff HH:MM in Asia/Ho_Chi_Minh."
+        "--cutoff",
+        default=DEFAULT_DRAW_CUTOFF.strftime("%H:%M"),
+        help="Giờ Việt Nam hoàn tất kỳ quay (HH:MM; mặc định UTC+7).",
     )
     ap.add_argument(
         "--window-days", type=int, default=2000, help="History window for ML/path features."

@@ -2,6 +2,30 @@
 
 Last verified: 2026-09-03
 
+## REP-0008 — Đồng nhất UTC+7 và bàn giao live→daily
+
+Context: dữ liệu daily và bảng mô phỏng không cập nhật kịp sau giờ quay.
+
+Symptom: lịch cron bắt đầu muộn, cutoff giữa các workflow không đồng nhất và
+live đã xác minh nhưng daily vẫn chờ lượt cron tiếp theo.
+
+Root cause: GitHub Actions dùng UTC trong khi logic nghiệp vụ dùng giờ Việt Nam;
+workflow live không truyền lý do xác minh cho workflow daily.
+
+Correct pattern: dùng `time_policy.py` làm nguồn giờ `Asia/Ho_Chi_Minh` (UTC+7),
+cutoff 18:35, cron UTC được ghi rõ và dispatch `reason=live_verified` ngay khi
+đủ đồng thuận.
+
+Regression guard: `tests/test_time_policy.py`, `tests/test_live_sync.py` và
+`tests/test_workflows.py`.
+
+Affected modules: `time_policy.py`, `live_sync.py`, `sync.py`, `production_audit.py`,
+`monitor_health.py`, các workflow live/daily/watchdog.
+
+Confidence: high
+
+Last verified: 2026-09-04
+
 ## REP-0008 — Dữ liệu nguồn phải được chuẩn hóa trước đồng thuận
 
 Context: thu thập và hợp nhất 27 ô kết quả từ các trang công khai.

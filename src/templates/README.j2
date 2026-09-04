@@ -106,7 +106,7 @@ Workflow:
 
 `Kết quả XSMB gần thời gian thực`
 
-được lập lịch lúc **18:04 Asia/Ho_Chi_Minh**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **25 giây/lần**. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
+được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
 
 `docs/live.html` đọc JSON gốc từ nhánh `live`, vì vậy không phải dựng lại toàn bộ GitHub Pages mỗi lần có thêm một giải.
 
@@ -126,9 +126,7 @@ Nếu kho dùng bảo vệ nhánh, **không áp dụng quy tắc cấm đẩy c�
 
 Timezone: `Asia/Ho_Chi_Minh`.
 
-- `18:38` — hoàn tất chính.
-- `18:53` — phục hồi 1.
-- `19:13` — phục hồi 2.
+- `18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00` — hoàn tất và phục hồi dữ liệu chuẩn.
 
 Bộ gác kiểm tra ngày dữ liệu chuẩn trước khi chạy; nếu kỳ hôm nay đã được ghi thành công, các lượt phục hồi không làm gì thêm. Có thể bấm `Run workflow` để chạy thủ công bất kỳ lúc nào.
 

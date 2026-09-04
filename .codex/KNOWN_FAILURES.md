@@ -40,3 +40,10 @@ remain mandatory until assets are split and a nonce/hash policy is practical.
 
 Actions use reviewed major-version tags and Dependabot, but tags are mutable.
 Immutable commit-SHA pinning remains a supply-chain hardening follow-up.
+
+## KF-0008 — GitHub scheduled events are best effort
+
+GitHub may delay or drop scheduled events. The live workflow therefore starts
+before the Vietnam draw, polls for up to 60 minutes, and dispatches daily
+finalization immediately after verified completion; watchdog recovery remains a
+fallback, not an absolute real-time SLA.

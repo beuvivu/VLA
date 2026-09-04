@@ -5,10 +5,10 @@ import csv
 import json
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TZ, latest_complete_draw_date
 
 ROOT = Path(".")
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+TZ = VIETNAM_TZ
 
 REQUIRED_PATHS = [
     "data/xsmb.csv",
@@ -53,11 +53,7 @@ def _parse_cutoff(value: str) -> time:
 
 
 def expected_latest_draw(now: datetime, cutoff: time) -> date:
-    return (
-        now.date()
-        if now.time().replace(tzinfo=None) >= cutoff
-        else now.date() - timedelta(days=1)
-    )
+    return latest_complete_draw_date(now=now, cutoff=cutoff)
 
 
 def _dates_from_csv(path: Path) -> list[date]:
@@ -106,7 +102,7 @@ def _single_csv_value(path: str, column: str) -> str | None:
 def audit(
     *,
     now: datetime | None = None,
-    cutoff: str = "18:15",
+    cutoff: str = DEFAULT_DRAW_CUTOFF.strftime("%H:%M"),
     check_freshness: bool = True,
     check_docs: bool = True,
 ) -> dict:
@@ -343,7 +339,7 @@ def audit(
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cutoff", default="18:15")
+    ap.add_argument("--cutoff", default=DEFAULT_DRAW_CUTOFF.strftime("%H:%M"))
     ap.add_argument("--json-out", default="data/production_audit.json")
     ap.add_argument("--strict", action="store_true")
     ap.add_argument("--consistency-only", action="store_true")

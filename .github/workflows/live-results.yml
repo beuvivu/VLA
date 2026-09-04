@@ -3,8 +3,10 @@ name: Kết quả XSMB gần thời gian thực
 on:
   workflow_dispatch:
   schedule:
-    # UTC only. Vietnam is UTC+7. Start at 18:04 local.
-    - cron: "4 11 * * *"
+    # GitHub cron is UTC.  11:00 UTC = 18:00 Asia/Ho_Chi_Minh (UTC+7).
+    # Start before the 18:15 draw so the first complete snapshot is published
+    # immediately when the final prize appears.
+    - cron: "0 11 * * *"
 
 permissions:
   contents: write
@@ -20,8 +22,9 @@ jobs:
     timeout-minutes: 50
     env:
       PYTHONPATH: ${{ github.workspace }}/src
-      POLL_SECONDS: "25"
-      MAX_SECONDS: "2700"
+      TZ: Asia/Ho_Chi_Minh
+      POLL_SECONDS: "15"
+      MAX_SECONDS: "3600"
     steps:
       - name: Lấy nhánh mặc định
         uses: actions/checkout@v7
@@ -111,7 +114,9 @@ jobs:
           repo = os.environ["REPOSITORY"]
           branch = os.environ.get("DEFAULT_BRANCH") or "main"
           url = f"https://api.github.com/repos/{repo}/actions/workflows/update-data.yml/dispatches"
-          payload = json.dumps({"ref": branch}).encode("utf-8")
+          payload = json.dumps(
+              {"ref": branch, "inputs": {"reason": "live_verified"}}
+          ).encode("utf-8")
           req = urllib.request.Request(
               url,
               data=payload,

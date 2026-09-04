@@ -7,8 +7,6 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
-
 import numpy as np
 import pandas as pd
 import requests
@@ -16,17 +14,14 @@ import requests
 from dtos import Result, ResultList
 from excel_export import export_excel_outputs
 from sources import HttpClient, Source, default_sources, source_independence_key
+from time_policy import VIETNAM_TZ, vietnam_date
 
 logger = logging.getLogger(__name__)
-VIETNAM_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 
 
 def vietnam_today(*, now: datetime | None = None) -> date:
     """Return the domain date in Vietnam rather than the runner's local date."""
-    current = now or datetime.now(VIETNAM_TZ)
-    if current.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    return current.astimezone(VIETNAM_TZ).date()
+    return vietnam_date(now)
 
 
 @dataclass(frozen=True)

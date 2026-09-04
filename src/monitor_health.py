@@ -3,9 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import date, datetime, time as dtime, timedelta
+from datetime import date, datetime, time as dtime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+
+from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TIMEZONE, latest_complete_draw_date
 
 
 def _load_health(path: Path) -> dict:
@@ -33,10 +35,7 @@ def expected_latest_draw_date(*, now: datetime, cutoff: dtime) -> date:
     morning bootstrap run from being marked stale merely because today's draw
     has not happened yet.
     """
-    target = now.date()
-    if now.time().replace(tzinfo=None) < cutoff:
-        target -= timedelta(days=1)
-    return target
+    return latest_complete_draw_date(now=now, cutoff=cutoff)
 
 
 def _write_github_summary(md: str) -> None:
@@ -49,9 +48,13 @@ def _write_github_summary(md: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Monitor data health and optionally fail the job.")
     ap.add_argument("--health", default="data/health.json")
-    ap.add_argument("--tz", default="Asia/Ho_Chi_Minh")
+    ap.add_argument("--tz", default=VIETNAM_TIMEZONE)
     ap.add_argument("--max-staleness-days", type=int, default=1, help="Allowed lag behind the expected latest draw.")
-    ap.add_argument("--cutoff", default="18:35", help="Local draw-completion cutoff HH:MM.")
+    ap.add_argument(
+        "--cutoff",
+        default=DEFAULT_DRAW_CUTOFF.strftime("%H:%M"),
+        help="Giờ Việt Nam hoàn tất kỳ quay (HH:MM; mặc định UTC+7).",
+    )
     ap.add_argument(
         "--cutoff-aware",
         action="store_true",

@@ -12,9 +12,8 @@ import argparse
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import requests
 
@@ -25,12 +24,16 @@ from sources import (
     source_consensus_partial,
     source_independence_key,
 )
+from time_policy import VIETNAM_TZ, iso_local, iso_utc
 
-TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+TZ = VIETNAM_TZ
 
 
 def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> dict:
     now = now or datetime.now(TZ)
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    now = now.astimezone(TZ)
     sources = default_sources()
     partial_by_priority: dict[int, tuple[str, dict[str, list[str]]]] = {}
     status_by_priority: dict[int, dict[str, object]] = {}
@@ -79,7 +82,9 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
 
     complete = received == expected
     verified_complete = complete and verified == expected and not conflicts
-    in_window = now.hour == 18 and 5 <= now.minute <= 55
+    in_window = (now.hour == 17 and now.minute >= 55) or (
+        now.hour == 18 and now.minute <= 55
+    )
 
     if verified_complete:
         status = "complete_verified"
@@ -95,8 +100,8 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
     return {
         "schema_version": 2,
         "draw_date": now.date().isoformat(),
-        "checked_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
-        "checked_at_local": now.isoformat(timespec="seconds"),
+        "checked_at_utc": iso_utc(now),
+        "checked_at_local": iso_local(now),
         "status": status,
         "complete": complete,
         "verified_complete": verified_complete,
