@@ -88,9 +88,9 @@ def _valid_tokens(text: str, key: str) -> list[str]:
     width = EXPECTED_WIDTHS[key]
     # Require token boundaries, not merely digit boundaries.  Otherwise an
     # embedded identifier such as ``ABC12345XYZ`` can masquerade as a prize.
-    return re.findall(
-        rf"(?<![A-Za-z0-9_])[0-9]{{{width}}}(?![A-Za-z0-9_])", text
-    )
+    # ``\w`` is Unicode-aware in Python, so full-width digits/letters cannot
+    # flank an ASCII result and bypass the token boundary check.
+    return re.findall(rf"(?<!\w)[0-9]{{{width}}}(?!\w)", text)
 
 
 def _valid_prize_token(value: object, key: str) -> str | None:
