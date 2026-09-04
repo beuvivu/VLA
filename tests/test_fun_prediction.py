@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -76,6 +77,14 @@ def test_fun_draw_is_deterministic_and_has_complete_prize_structure(tmp_path: Pa
     assert all(row["mode"] == "loto" for row in a["rows"][1:])
     assert a["top_loto"][0]["number"] == "99"
     assert a["top_de"][0]["number"] == "99"
+
+
+def test_fun_draw_seed_changes_when_target_snapshot_changes(tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    _write_prediction_fixture(data)
+    inputs = load_prediction_inputs(data)
+    changed = replace(inputs, target_date="2026-09-03")
+    assert build_fun_draw(inputs)["seed"] != build_fun_draw(changed)["seed"]
 
 
 def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:
