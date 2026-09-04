@@ -10,6 +10,13 @@ from pathlib import Path
 import pandas as pd
 
 
+# Domain challenger predictions are evaluated for the complete 00..99 universe.
+# Older committed ablation artifacts predate the explicit ``oos_*`` columns;
+# this constant lets the report reader recover their row cardinality from the
+# validation window without changing any metric values.
+NUMBER_UNIVERSE_SIZE = 100
+
+
 def _read_gate(path: Path) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -30,6 +37,32 @@ def _rejection_reasons(
     if not reasons:
         reasons.append("insufficient_support")
     return reasons
+
+
+def _oos_totals(rows: pd.DataFrame) -> tuple[int, int]:
+    """Return date/row totals while accepting legacy ablation schemas.
+
+    Current challenger runs persist ``oos_dates`` and ``oos_rows`` directly.
+    Some valid historical artifacts were generated before those observability
+    columns were added, so derive dates from the half-open validation interval
+    and rows from the canonical 00..99 candidate universe in that case.
+    """
+
+    if "oos_dates" in rows.columns:
+        dates = pd.to_numeric(rows["oos_dates"], errors="coerce").fillna(0)
+        oos_dates = int(dates.sum())
+    else:
+        starts = pd.to_datetime(rows.get("val_start"), errors="coerce")
+        ends = pd.to_datetime(rows.get("val_end_exclusive"), errors="coerce")
+        intervals = (ends - starts).dt.days.fillna(0).clip(lower=0)
+        oos_dates = int(intervals.sum())
+
+    if "oos_rows" in rows.columns:
+        counts = pd.to_numeric(rows["oos_rows"], errors="coerce").fillna(0)
+        oos_rows = int(counts.sum())
+    else:
+        oos_rows = oos_dates * NUMBER_UNIVERSE_SIZE
+    return oos_dates, oos_rows
 
 
 def _records_for_mode(
@@ -66,6 +99,7 @@ def _records_for_mode(
         logloss_skill = logloss_improvement / baseline_logloss
         val_ends = rows["val_end_exclusive"].dropna().astype(str)
         evaluation_end = val_ends.max() if not val_ends.empty else None
+        oos_dates, oos_rows = _oos_totals(rows)
 
         promoted = group in promoted_groups
         records.append(
@@ -88,8 +122,8 @@ def _records_for_mode(
                     "end_exclusive": evaluation_end,
                 },
                 "folds": [int(value) for value in rows["fold"].tolist()],
-                "oos_dates": int(rows["oos_dates"].sum()),
-                "oos_rows": int(rows["oos_rows"].sum()),
+                "oos_dates": oos_dates,
+                "oos_rows": oos_rows,
                 "baseline_brier": baseline_brier,
                 "challenger_brier": challenger_brier,
                 "brier_improvement": brier_improvement,
