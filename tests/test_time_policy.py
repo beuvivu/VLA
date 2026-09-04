@@ -39,3 +39,5 @@ def test_timestamp_rendering_is_explicit_and_stable() -> None:
 def test_naive_clock_is_rejected() -> None:
     with pytest.raises(ValueError):
         vietnam_date(datetime(2026, 9, 3, 11, 0))
+    with pytest.raises(ValueError):
+        latest_complete_draw_date(now=datetime(2026, 9, 3, 11, 0))

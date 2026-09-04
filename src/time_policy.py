@@ -38,7 +38,9 @@ def latest_complete_draw_date(
 ) -> date:
     """Return the latest draw date expected to be complete at ``now``."""
 
-    local = now.astimezone(VIETNAM_TZ) if now.tzinfo else now.replace(tzinfo=VIETNAM_TZ)
+    if now.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    local = now.astimezone(VIETNAM_TZ)
     target = local.date()
     if local.time().replace(tzinfo=None) < cutoff:
         target -= timedelta(days=1)
