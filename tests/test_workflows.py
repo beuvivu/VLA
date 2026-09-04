@@ -91,7 +91,7 @@ def test_pages_use_official_actions_deployment_flow() -> None:
 def test_production_refreshes_do_not_restore_package_caches() -> None:
     # Live/daily jobs must not restore an old runner cache while repairing a
     # stale data snapshot.  CI may retain its dependency cache for speed.
-    for name in ("live-results.yml", "update-data.yml", "dashboard-refresh.yml"):
+    for name in ("ci.yml", "live-results.yml", "update-data.yml", "dashboard-refresh.yml"):
         text = _text(name)
         assert "cache:" not in text
         assert "--no-cache-dir" in text
