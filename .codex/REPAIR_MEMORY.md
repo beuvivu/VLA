@@ -2,6 +2,35 @@
 
 Last verified: 2026-09-03
 
+## REP-0015 — Template phải render nội dung Chọn nhanh
+
+Context: trang tĩnh `soi-path-*-active.html` có bảng dự đoán nhưng khối
+“Chọn nhanh” bị trống.
+
+Symptom: CSV `predict_next_*` có dữ liệu, song HTML chỉ render chú giải màu và
+không có số nào trong thẻ “Chọn nhanh”.
+
+Root cause: `src/build_docs.py` đã truyền danh sách `picks` vào Jinja nhưng
+`src/templates/path_ui_page.html.j2` không sử dụng danh sách này ở khối
+“Chọn nhanh”.
+
+Correct pattern: dùng cùng danh sách dự đoán đã chuẩn hóa để render 10 số đầu,
+hiển thị điểm xếp hạng và số đường cầu hỗ trợ; nếu danh sách rỗng phải render
+trạng thái rỗng có hướng dẫn, không để vùng trắng không giải thích.
+
+Avoid: tạo nguồn dữ liệu thứ hai hoặc hiển thị điểm xếp hạng như xác suất đã
+hiệu chuẩn.
+
+Regression guard: `tests/test_path_ui_quick_select.py` và kiểm tra HTML tĩnh
+đảm bảo có số dự đoán hoặc thông báo trạng thái rỗng.
+
+Affected modules: `src/templates/path_ui_page.html.j2`, `src/build_docs.py`,
+`docs/soi-path-*.html`.
+
+Confidence: high
+
+Last verified: 2026-09-04
+
 ## REP-0012 — Không nuốt lỗi làm mới mô phỏng
 
 Context: pipeline dựng bảng mô phỏng xác suất cho ngày mục tiêu.
