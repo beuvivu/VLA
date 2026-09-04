@@ -607,7 +607,7 @@ def main() -> None:
 ![Mới nhất](https://img.shields.io/badge/MOI_NHAT-{latest.replace('-', '--')}-60a5fa?style=for-the-badge)
 ![Dự báo](https://img.shields.io/badge/DU_BAO-{target.replace('-', '--')}-a78bfa?style=for-the-badge)
 ![Meta lô tô](https://img.shields.io/badge/META_LO_TO-{'DANG_BAT' if meta_l.get('active') else 'NEN'}-22c55e?style=for-the-badge)
-![Meta đề](https://img.shields.io/badge/META_DE-{'DANG_BAT' if meta_d.get('active') else 'DA_CHAN'}-fb7185?style=for-the-badge)
+![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-{'DANG_BAT' if meta_d.get('active') else 'DA_CHAN'}-fb7185?style=for-the-badge)
 
 <sub>Tạo lúc {generated} · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
@@ -626,7 +626,7 @@ def main() -> None:
 
 | Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · thiếu {health.get('missing_count','—')}** | Meta lô tô **{'ĐANG BẬT' if meta_l.get('active') else 'TẮT'}** · Đề **{'ĐANG BẬT' if meta_d.get('active') else 'ĐÃ CHẶN'}** |
+| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · thiếu {health.get('missing_count','—')}** | Meta lô tô **{'ĐANG BẬT' if meta_l.get('active') else 'TẮT'}** · Đặc Biệt **{'ĐANG BẬT' if meta_d.get('active') else 'ĐÃ CHẶN'}** |
 
 ---
 

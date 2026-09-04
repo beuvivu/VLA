@@ -169,7 +169,7 @@ def main() -> None:
         baseline_prob = float(pack.get("baseline_prob", np.mean(raw_proba)))
         proba = trust * raw_proba + (1.0 - trust) * baseline_prob
 
-        # Đề is exactly one of 100 classes; normalize after conservative shrinkage.
+        # Đặc Biệt is exactly one of 100 classes; normalize after shrinkage.
         if mode == "de":
             s = float(proba.sum())
             if s > 0:

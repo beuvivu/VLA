@@ -211,7 +211,7 @@ def compute_head_tail_total(two_digit_df: pd.DataFrame, *, window_days: int = 20
 
 
 def compute_special_total_overdue(raw_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Overdue for 'tổng đề' and 'chạm đề' based on last-2-digits of special prize."""
+    """Overdue for 'tổng Đặc Biệt' and 'chạm Đặc Biệt' based on special prize."""
     if raw_df.empty:
         empty = pd.DataFrame(columns=["key", "last_seen", "days_since_last"])
         return empty, empty

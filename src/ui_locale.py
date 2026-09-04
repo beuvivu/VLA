@@ -12,7 +12,7 @@ from typing import Any
 
 MODE_LABELS = {
     "loto": "Lô tô",
-    "de": "Đề",
+    "de": "Đặc Biệt",
     "both": "Cả hai",
 }
 

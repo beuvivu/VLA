@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from ui_locale import column_label, localize_mapping_for_display, mode_label
+from ui_theme import tailwind_style_tag
 from web_security import security_meta_tags
 
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ def main() -> None:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
+  {tailwind_style_tag()}
   <title>Bảng điều khiển phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
@@ -138,7 +140,7 @@ def main() -> None:
     a {{ color: #0b57d0; text-decoration: none; }}
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
   <h1>Bảng điều khiển phân tích XSMB</h1>
   <div class="meta">Ngày dữ liệu mới nhất: <b>{latest}</b> &nbsp;|&nbsp; Tạo lúc: {gen}</div>
 
@@ -147,8 +149,8 @@ def main() -> None:
       <h2>Danh sách gợi ý (lô tô)</h2>
       <pre>{display_json(picks_loto)}</pre>
     </div>
-    <div class="card">
-      <h2>Danh sách gợi ý (đề / ĐB)</h2>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Danh sách gợi ý (Đặc Biệt / ĐB)</h2>
       <pre>{display_json(picks_de)}</pre>
     </div>
 
@@ -158,10 +160,10 @@ def main() -> None:
       <h3>Hiệu chỉnh (lô tô)</h3>
       <pre>{display_json(c_loto)}</pre>
     </div>
-    <div class="card">
-      <h2>Trọng số (đề)</h2>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Trọng số (Đặc Biệt)</h2>
       <pre>{display_json(w_de)}</pre>
-      <h3>Hiệu chỉnh (đề)</h3>
+      <h3>Hiệu chỉnh (Đặc Biệt)</h3>
       <pre>{display_json(c_de)}</pre>
     </div>
 
@@ -169,8 +171,8 @@ def main() -> None:
       <h2>Các xác suất lô tô cao nhất — xem trước</h2>
       {df_to_html(pred_loto)}
     </div>
-    <div class="card">
-      <h2>Các xác suất đề cao nhất — xem trước</h2>
+    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+      <h2>Các xác suất Đặc Biệt cao nhất — xem trước</h2>
       {df_to_html(pred_de)}
     </div>
   </div>
@@ -224,6 +226,7 @@ def main() -> None:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
+  {tailwind_style_tag()}
   <title>Chất lượng mô hình — Phân tích XSMB</title>
   <style>
     body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }}

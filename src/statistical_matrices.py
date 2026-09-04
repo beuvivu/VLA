@@ -870,7 +870,7 @@ def generate_statistics(
     created.append(_dump_table(first_freq, out_dir=out.data_dir, name="first_prize_year_frequency"))
     created.append(_dump_table(first_overdue, out_dir=out.data_dir, name="first_prize_overdue"))
 
-    # 5) Conditional tables: loto theo đặc biệt, đề theo đặc biệt, loto theo loto.
+    # 5) Conditional tables: loto theo đặc biệt, Đặc Biệt theo đặc biệt, loto theo loto.
     cond_de_loto, cond_de_de, cond_loto_loto = _conditional_tables(raw, sparse_loto, top=top_conditional)
     created.append(_dump_table(cond_de_loto, out_dir=out.data_dir, name="conditional_loto_after_special_top500"))
     created.append(_dump_table(cond_de_de, out_dir=out.data_dir, name="conditional_special_after_special_top500"))

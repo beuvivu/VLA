@@ -11,6 +11,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from ui_locale import mode_label, strategy_label
+from ui_theme import tailwind_style_tag
 from web_security import security_meta_tags
 
 
@@ -249,6 +250,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
+{tailwind_style_tag()}
 <title>Phòng nghiên cứu VLA</title>
 <style>
 :root{{--bg:#f5f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb}}
@@ -261,7 +263,7 @@ main{{max-width:1240px;margin:auto;padding:28px}}a{{color:var(--accent)}}.hero{{
 .card h2{{margin:0 0 7px}}.card p{{color:var(--muted);line-height:1.55}}.table-wrap{{overflow:auto}}table{{width:100%;border-collapse:collapse;font-size:12px}}
 th,td{{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}}th{{background:#f8fafc}}.warn{{padding:12px 14px;border-radius:14px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin:12px 0}}
 @media(max-width:850px){{.grid,.metrics{{grid-template-columns:1fr}}main{{padding:15px}}}}
-</style></head><body><main>
+</style></head><body class="bg-slate-50 text-slate-800"><main>
 <section class="hero"><div><a href="index.html" style="color:#bfdbfe">← Trang chính</a></div><h1>Phòng nghiên cứu khoa học</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
 <div class="warn">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
@@ -272,7 +274,7 @@ th,td{{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;whit
 <article class="card"><h2>Kiểm tra tương thích cũ · đúng ngữ nghĩa</h2><p>Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.</p><div class="table-wrap"><table><thead><tr><th>Chẩn đoán</th><th>Thống kê</th><th>p</th><th>Phương pháp / FDR</th></tr></thead><tbody>{_legacy_diagnostics(advanced)}</tbody></table></div></article>
 <article class="card"><h2>ĐB {html.escape(current_special or '—')} → Lô tô ngày kế</h2><p>Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.</p><div class="table-wrap"><table><thead><tr><th>Số</th><th>Cỡ mẫu</th><th>Số lần trúng</th><th>p thô</th><th>p EB</th><th>q</th></tr></thead><tbody>{_conditional_table(conditional,current_special)}</tbody></table></div></article>
 <article class="card"><h2>Phòng chiến lược · Lô tô</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_loto)}</tbody></table></div></article>
-<article class="card"><h2>Phòng chiến lược · Đề</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
+<article class="card"><h2>Phòng chiến lược · Đặc Biệt</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
 </section>
 <section class="card" style="margin-top:16px"><h2>Họ vị trí chéo độ trễ</h2><p>Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.</p><div class="table-wrap"><table><thead><tr><th>Phép biến đổi</th><th>Vị trí A</th><th>Trễ A</th><th>Vị trí B</th><th>Trễ B</th><th>Độ nâng trên tập giữ lại</th><th>Cổng</th></tr></thead><tbody>{_crosslag_table(cross_rules)}</tbody></table></div></section>
 <section class="card" style="margin-top:16px"><h2>Tường lửa nghiên cứu</h2><p>Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ liệu trên toàn họ.</p></section>

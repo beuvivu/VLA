@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
+from ui_theme import tailwind_style_tag
 from web_security import json_for_html_script, security_meta_tags
 
 
@@ -700,6 +701,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   {security_meta_tags()}
+  {tailwind_style_tag()}
   <title>Trung tâm phân tích xổ số</title>
   <style>
     :root {{
