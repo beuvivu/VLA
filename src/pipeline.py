@@ -272,6 +272,12 @@ def main() -> None:
             _py("src/validate_cau_keo_domain.py"),
             allow_fail=soft_fail,
         )
+        # Keep the machine-readable experiment report synchronized with the
+        # gate artifacts produced by this same daily run.
+        _run(
+            _py("src/build_domain_experiment_report.py"),
+            allow_fail=soft_fail,
+        )
         _run(
             _py(
                 "src/cau_position_evidence.py",

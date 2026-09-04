@@ -34,6 +34,12 @@ def test_embedded_alpha_is_rejected_not_repaired():
     assert _parse_result_from_prize_map(date(2026, 9, 1), prize_map=pmap) is None
 
 
+def test_digit_run_embedded_in_identifier_is_rejected():
+    pmap = _complete_map()
+    pmap["special"] = ["ABC12345XYZ"]
+    assert _parse_result_from_prize_map(date(2026, 9, 1), prize_map=pmap) is None
+
+
 def test_html_like_token_is_rejected_not_repaired():
     pmap = _complete_map()
     pmap["special"] = ["<b>12345</b>"]

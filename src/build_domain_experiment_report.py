@@ -39,6 +39,7 @@ def _records_for_mode(
     groups = list(dict(gate.get("feature_groups", {})).keys())
     screened = set(gate.get("screened_groups", []))
     generated_day = str(gate.get("generated_at", ""))[:10].replace("-", "")
+    promoted_groups = set(gate.get("production_selected_groups", []))
 
     for group in groups:
         confirmed_stage = group in screened
@@ -66,6 +67,7 @@ def _records_for_mode(
         val_ends = rows["val_end_exclusive"].dropna().astype(str)
         evaluation_end = val_ends.max() if not val_ends.empty else None
 
+        promoted = group in promoted_groups
         records.append(
             {
                 "experiment_id": (
@@ -98,13 +100,19 @@ def _records_for_mode(
                 "logloss_improvement": logloss_improvement,
                 "logloss_skill": logloss_skill,
                 "logloss_ci": None,
-                "promoted": False,
-                "rejection_reason": _rejection_reasons(
+                "promoted": promoted,
+                "rejection_reason": []
+                if promoted
+                else _rejection_reasons(
                     brier_skill=brier_skill,
                     logloss_skill=logloss_skill,
                     confirmed_stage=confirmed_stage,
                 ),
-                "ci_status": "not_computed_candidate_failed_before_final_gate",
+                "ci_status": (
+                    "passed_final_gate"
+                    if promoted
+                    else "not_computed_candidate_failed_before_final_gate"
+                ),
             }
         )
     return records
@@ -141,8 +149,8 @@ def build_report(*, data_dir: Path, output: Path) -> dict[str, object]:
                 bool(gate.get("domain_active")) for gate in gates.values()
             ),
             "note": (
-                "Không nhóm nào vượt xác nhận; holdout cuối chưa bị tiêu thụ "
-                "và production giữ nguyên baseline."
+                "Production chỉ dùng nhóm có trong cổng cuối; nhóm không đạt "
+                "vẫn là research-only."
             ),
         },
         "experiments": experiments,

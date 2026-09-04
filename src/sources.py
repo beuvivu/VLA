@@ -86,7 +86,11 @@ def _label_key(line: str) -> str | None:
 
 def _valid_tokens(text: str, key: str) -> list[str]:
     width = EXPECTED_WIDTHS[key]
-    return re.findall(rf"(?<!\d)[0-9]{{{width}}}(?!\d)", text)
+    # Require token boundaries, not merely digit boundaries.  Otherwise an
+    # embedded identifier such as ``ABC12345XYZ`` can masquerade as a prize.
+    return re.findall(
+        rf"(?<![A-Za-z0-9_])[0-9]{{{width}}}(?![A-Za-z0-9_])", text
+    )
 
 
 def _valid_prize_token(value: object, key: str) -> str | None:
