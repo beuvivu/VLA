@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "anchor_date": "2026-09-03",
+  "anchor_date": "2026-09-04",
   "lag_max": 30,
   "lag_semantics": "calendar days on a verified daily-contiguous history",
   "window_days": 2000,

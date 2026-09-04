@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "generated_at": "2026-09-03T14:59:17Z",
-  "predict_for_date": "2026-09-04",
+  "generated_at": "2026-09-04T14:56:16Z",
+  "predict_for_date": "2026-09-05",
   "top": 20,
   "features": [
     "number_value",
@@ -54,9 +54,12 @@
   "note": "AI/ML scores are calibrated historical ranking signals, not guaranteed future lottery outcomes.",
   "domain_challenger": {
     "schema_version": 1,
-    "active": false,
-    "trust": 0.0,
-    "selected_groups": [],
+    "active": true,
+    "trust": 0.05,
+    "selected_groups": [
+      "partner_cap50",
+      "bo"
+    ],
     "selected_features": [
       "number_value",
       "tens",
@@ -96,12 +99,33 @@
       "cond_loto_max_rate",
       "head_freq_7d",
       "tail_freq_7d",
-      "trend_7_vs_30"
+      "trend_7_vs_30",
+      "cap50_partner_hit_today",
+      "cap50_partner_freq_7d",
+      "cap50_partner_freq_30d",
+      "cap50_partner_freq_90d",
+      "cap50_partner_freq_365d",
+      "cap50_partner_gap",
+      "cap50_pair_freq_30_mean",
+      "cap50_pair_freq_90_mean",
+      "cap50_pair_freq_365_mean",
+      "cap50_pair_balance_30d",
+      "cap50_pair_balance_90d",
+      "cap50_pair_balance_365d",
+      "cap50_is_kep_bong",
+      "bo_family_size",
+      "bo_hit_today_rate",
+      "bo_freq_7d_mean",
+      "bo_freq_30d_mean",
+      "bo_freq_90d_mean",
+      "bo_freq_365d_mean",
+      "bo_gap_mean",
+      "bo_path_support_mean"
     ],
     "ablation_report": "cau_keo_domain_ablation_de.csv",
     "gate_report": "cau_keo_domain_gate_de.json",
-    "final_brier_skill": 0.0,
-    "final_logloss_skill": 0.0,
+    "final_brier_skill": 0.0002815427498319423,
+    "final_logloss_skill": 0.0024666335353129565,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening, confirmation, and the untouched combined final gate."
   }
 }

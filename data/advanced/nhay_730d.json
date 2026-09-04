@@ -46,7 +46,7 @@
   },
   {
     "value":85,
-    "days_1":69,
+    "days_1":70,
     "days_2":9,
     "days_3":3,
     "days_4_plus":0,
@@ -82,7 +82,7 @@
   },
   {
     "value":32,
-    "days_1":83,
+    "days_1":84,
     "days_2":12,
     "days_3":2,
     "days_4_plus":0,
@@ -91,12 +91,21 @@
   },
   {
     "value":87,
-    "days_1":83,
+    "days_1":84,
     "days_2":12,
     "days_3":2,
     "days_4_plus":0,
     "max_nhay":3,
     "value_str":"87"
+  },
+  {
+    "value":36,
+    "days_1":79,
+    "days_2":12,
+    "days_3":2,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"36"
   },
   {
     "value":38,
@@ -126,17 +135,8 @@
     "value_str":"01"
   },
   {
-    "value":36,
-    "days_1":79,
-    "days_2":11,
-    "days_3":2,
-    "days_4_plus":0,
-    "max_nhay":3,
-    "value_str":"36"
-  },
-  {
     "value":74,
-    "days_1":78,
+    "days_1":79,
     "days_2":11,
     "days_3":2,
     "days_4_plus":0,
@@ -217,7 +217,7 @@
   },
   {
     "value":57,
-    "days_1":83,
+    "days_1":84,
     "days_2":8,
     "days_3":2,
     "days_4_plus":0,
@@ -235,7 +235,7 @@
   },
   {
     "value":6,
-    "days_1":73,
+    "days_1":74,
     "days_2":5,
     "days_3":2,
     "days_4_plus":0,
@@ -271,7 +271,7 @@
   },
   {
     "value":14,
-    "days_1":91,
+    "days_1":92,
     "days_2":15,
     "days_3":1,
     "days_4_plus":0,
@@ -298,7 +298,7 @@
   },
   {
     "value":25,
-    "days_1":74,
+    "days_1":75,
     "days_2":14,
     "days_3":1,
     "days_4_plus":0,
@@ -361,7 +361,7 @@
   },
   {
     "value":66,
-    "days_1":72,
+    "days_1":73,
     "days_2":10,
     "days_3":1,
     "days_4_plus":0,
@@ -388,7 +388,7 @@
   },
   {
     "value":43,
-    "days_1":76,
+    "days_1":77,
     "days_2":9,
     "days_3":1,
     "days_4_plus":0,
@@ -505,7 +505,7 @@
   },
   {
     "value":11,
-    "days_1":81,
+    "days_1":82,
     "days_2":6,
     "days_3":1,
     "days_4_plus":0,
@@ -532,7 +532,7 @@
   },
   {
     "value":52,
-    "days_1":87,
+    "days_1":88,
     "days_2":17,
     "days_3":0,
     "days_4_plus":0,
@@ -585,6 +585,15 @@
     "value_str":"80"
   },
   {
+    "value":53,
+    "days_1":68,
+    "days_2":14,
+    "days_3":0,
+    "days_4_plus":0,
+    "max_nhay":2,
+    "value_str":"53"
+  },
+  {
     "value":9,
     "days_1":94,
     "days_2":13,
@@ -621,6 +630,15 @@
     "value_str":"90"
   },
   {
+    "value":96,
+    "days_1":77,
+    "days_2":13,
+    "days_3":0,
+    "days_4_plus":0,
+    "max_nhay":2,
+    "value_str":"96"
+  },
+  {
     "value":28,
     "days_1":76,
     "days_2":13,
@@ -630,26 +648,8 @@
     "value_str":"28"
   },
   {
-    "value":96,
-    "days_1":76,
-    "days_2":13,
-    "days_3":0,
-    "days_4_plus":0,
-    "max_nhay":2,
-    "value_str":"96"
-  },
-  {
-    "value":53,
-    "days_1":68,
-    "days_2":13,
-    "days_3":0,
-    "days_4_plus":0,
-    "max_nhay":2,
-    "value_str":"53"
-  },
-  {
     "value":88,
-    "days_1":89,
+    "days_1":90,
     "days_2":12,
     "days_3":0,
     "days_4_plus":0,
@@ -676,7 +676,7 @@
   },
   {
     "value":23,
-    "days_1":76,
+    "days_1":77,
     "days_2":12,
     "days_3":0,
     "days_4_plus":0,
@@ -694,7 +694,7 @@
   },
   {
     "value":95,
-    "days_1":98,
+    "days_1":99,
     "days_2":11,
     "days_3":0,
     "days_4_plus":0,
@@ -712,7 +712,7 @@
   },
   {
     "value":49,
-    "days_1":83,
+    "days_1":84,
     "days_2":11,
     "days_3":0,
     "days_4_plus":0,
@@ -766,7 +766,7 @@
   },
   {
     "value":50,
-    "days_1":88,
+    "days_1":89,
     "days_2":9,
     "days_3":0,
     "days_4_plus":0,
@@ -783,6 +783,15 @@
     "value_str":"67"
   },
   {
+    "value":72,
+    "days_1":80,
+    "days_2":9,
+    "days_3":0,
+    "days_4_plus":0,
+    "max_nhay":2,
+    "value_str":"72"
+  },
+  {
     "value":70,
     "days_1":77,
     "days_2":9,
@@ -793,7 +802,7 @@
   },
   {
     "value":99,
-    "days_1":73,
+    "days_1":74,
     "days_2":9,
     "days_3":0,
     "days_4_plus":0,
@@ -802,7 +811,7 @@
   },
   {
     "value":77,
-    "days_1":96,
+    "days_1":97,
     "days_2":8,
     "days_3":0,
     "days_4_plus":0,
@@ -837,6 +846,15 @@
     "value_str":"41"
   },
   {
+    "value":76,
+    "days_1":81,
+    "days_2":8,
+    "days_3":0,
+    "days_4_plus":0,
+    "max_nhay":2,
+    "value_str":"76"
+  },
+  {
     "value":93,
     "days_1":81,
     "days_2":8,
@@ -844,24 +862,6 @@
     "days_4_plus":0,
     "max_nhay":2,
     "value_str":"93"
-  },
-  {
-    "value":72,
-    "days_1":80,
-    "days_2":8,
-    "days_3":0,
-    "days_4_plus":0,
-    "max_nhay":2,
-    "value_str":"72"
-  },
-  {
-    "value":76,
-    "days_1":80,
-    "days_2":8,
-    "days_3":0,
-    "days_4_plus":0,
-    "max_nhay":2,
-    "value_str":"76"
   },
   {
     "value":35,

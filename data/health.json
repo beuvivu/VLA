@@ -1,9 +1,9 @@
 {
   "ok": true,
-  "latest_date": "2026-09-03",
-  "last_date": "2026-09-03",
+  "latest_date": "2026-09-04",
+  "last_date": "2026-09-04",
   "first_date": "2025-08-11",
-  "row_count": 389,
+  "row_count": 390,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
@@ -13,7 +13,7 @@
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 389,
+    "rows": 390,
     "bad_row_count": 0,
     "expected_sum_per_draw": 27,
     "bad_dates": []

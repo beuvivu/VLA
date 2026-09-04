@@ -14,13 +14,6 @@
     "conditional_rate":1.0
   },
   {
-    "prev_special_2d":"11",
-    "next_special_2d":"13",
-    "count":1,
-    "base_count":1,
-    "conditional_rate":1.0
-  },
-  {
     "prev_special_2d":"18",
     "next_special_2d":"78",
     "count":1,
@@ -114,6 +107,20 @@
   {
     "prev_special_2d":"10",
     "next_special_2d":"83",
+    "count":1,
+    "base_count":2,
+    "conditional_rate":0.5
+  },
+  {
+    "prev_special_2d":"11",
+    "next_special_2d":"13",
+    "count":1,
+    "base_count":2,
+    "conditional_rate":0.5
+  },
+  {
+    "prev_special_2d":"11",
+    "next_special_2d":"66",
     "count":1,
     "base_count":2,
     "conditional_rate":0.5
