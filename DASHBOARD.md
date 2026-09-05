@@ -10,7 +10,7 @@
 ![Meta lô tô](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-05T13:38:54Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-05T13:42:51Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -47,18 +47,18 @@
 | Giải sáu | 313 · 293 · 339 | 13 · 93 · 39 | Kết quả chuẩn đã xác minh |
 | Giải bảy | 88 · 59 · 31 · 21 | 88 · 59 · 31 · 21 | Kết quả chuẩn đã xác minh |
 
-### Dự đoán vui · 2026-09-05
+### Dự đoán vui · 2026-09-06
 
 | Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | 72399 | `99` 0.96% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 58477 | `77` 24.59% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 17311 · 61694 | `11` 24.18% · `94` 24.59% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải ba | 56784 · 83224 · 63985 · 13995 · 52885 · 20509 | `84` 24.54% · `24` 23.98% · `85` 23.50% · `95` 24.84% · `85` 23.50% · `09` 24.64% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải tư | 4650 · 7732 · 1156 · 8892 | `50` 24.71% · `32` 24.53% · `56` 23.65% · `92` 24.41% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải năm | 7285 · 7101 · 5605 · 8540 · 5533 · 2414 | `85` 23.50% · `01` 23.97% · `05` 24.24% · `40` 23.93% · `33` 24.05% · `14` 24.37% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 796 · 302 · 399 | `96` 24.00% · `02` 23.91% · `99` 23.74% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 97 · 21 · 03 · 38 | `97` 24.01% · `21` 24.11% · `03` 24.02% · `38` 24.35% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Đặc biệt | 36263 | `63` 0.98% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 86605 | `05` 24.17% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 96891 · 89538 | `91` 23.95% · `38` 23.97% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 20546 · 99891 · 31851 · 34573 · 89376 · 96775 | `46` 23.90% · `91` 23.95% · `51` 24.26% · `73` 23.72% · `76` 23.59% · `75` 23.44% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 0709 · 1495 · 5334 · 7974 | `09` 24.20% · `95` 24.14% · `34` 23.89% · `74` 23.39% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 0828 · 8832 · 1363 · 6420 · 7709 · 3787 | `28` 23.68% · `32` 23.91% · `63` 24.28% · `20` 23.88% · `09` 24.20% · `87` 24.32% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 674 · 156 · 202 | `74` 23.39% · `56` 23.42% · `02` 24.20% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 92 · 13 · 83 · 33 | `92` 24.19% · `13` 23.84% · `83` 24.92% · `33` 23.70% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
