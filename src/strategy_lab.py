@@ -158,14 +158,30 @@ def _cold(window: int, k: int) -> PredictFn:
 
 
 def _gan(k: int) -> PredictFn:
+    """Top-k longest-absent numbers as of day ``t``.
+
+    The scan-backwards-from-t implementation is O(t) per call and the lab calls
+    it once per day, so the strategy alone was O(n^2) — ~12.5M inner steps on a
+    5,000-day history.  "Index of the most recent hit at or before t" is a
+    running maximum over the whole history, so it is computed once, lazily, and
+    then read in O(1) per day.  Identical picks, including the lexsort tie-break.
+    """
+    cache: dict[int, np.ndarray] = {}
+
+    def last_seen_matrix(ctx: StrategyContext) -> np.ndarray:
+        key = id(ctx)
+        cached = cache.get(key)
+        if cached is None:
+            index = np.arange(len(ctx.presence), dtype=np.int64)[:, None]
+            cached = np.maximum.accumulate(
+                np.where(ctx.presence, index, np.int64(-1)), axis=0
+            )
+            cache.clear()  # only the active context is worth holding
+            cache[key] = cached
+        return cached
+
     def predict(ctx: StrategyContext, t: int) -> set[int]:
-        last = np.full(100, -1, dtype=int)
-        for s in range(t, -1, -1):
-            unseen = last < 0
-            if not unseen.any():
-                break
-            seen_today = ctx.presence[s] & unseen
-            last[seen_today] = s
+        last = last_seen_matrix(ctx)[t]
         gaps = np.where(last >= 0, t - last, t + 1)
         order = np.lexsort((np.arange(100), -gaps))
         return set(order[:k].astype(int).tolist())

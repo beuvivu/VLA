@@ -77,23 +77,29 @@ def learn_calibration(
     D = probs_by_day.shape[0]
     w_day = sample_weight_by_day if sample_weight_by_day is not None else np.ones(D, dtype=float)
 
+    if probs_by_day.ndim != 2 or probs_by_day.shape != y_by_day.shape:
+        raise ValueError("probs_by_day and y_by_day must share shape (days, 100)")
+    if D == 0:
+        # Nothing to fit: identity calibration rather than a degenerate optimum.
+        return CalibParams(mode=mode) if mode == "de" else CalibParams(mode="loto")
+
     if mode == "de":
         # y_by_day expected one-hot (exactly one 1 per day)
         y_idx = np.argmax(y_by_day, axis=1).astype(int)
+        # Temperature scaling is p**(1/T) renormalised. Doing it for all days at
+        # once removes a D-iteration Python loop from *every* objective and
+        # finite-difference gradient evaluation the optimizer makes.
+        log_p = np.log(clip01(np.asarray(probs_by_day, dtype=float), eps=1e-12))
+        rows = np.arange(log_p.shape[0])
 
         def loss_T(x: np.ndarray) -> float:
-            T = float(x[0])
-            T = float(np.clip(T, 0.3, 5.0))
-            ll = 0.0
-            tot = 0.0
-            for i in range(D):
-                p = clip01(probs_by_day[i], eps=1e-12)
-                logp = np.log(p) / T
-                pT = normalize_distribution(softmax_from_logp(logp))
-                ll_i = -np.log(clip01(pT[y_idx[i]], eps=1e-12))
-                ll += w_day[i] * ll_i
-                tot += w_day[i]
-            return float(ll / max(1e-12, tot))
+            T = float(np.clip(x[0], 0.3, 5.0))
+            scaled = log_p / T
+            scaled -= scaled.max(axis=1, keepdims=True)  # softmax stabilisation
+            expo = np.exp(scaled)
+            pT = expo / expo.sum(axis=1, keepdims=True)
+            ll = -np.log(np.clip(pT[rows, y_idx], 1e-12, 1.0))
+            return float(np.average(ll, weights=w_day))
 
         if minimize is None:
             # fallback coarse scan
