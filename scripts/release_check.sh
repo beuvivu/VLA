@@ -282,6 +282,12 @@ for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"
 print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
 PYFUN
 
+printf '%s\n' "== Model skill vs baseline =="
+# Báo động khi mô hình tệ hơn đường cơ sở quá ngưỡng. Đợt hồi quy 12/2025-01/2026
+# (kỹ năng lô tô khoảng -73% suốt 22 ngày) đã trôi qua tám tháng không ai phát
+# hiện vì không có bước đối chứng nào như thế này.
+python src/check_baseline_skill.py
+
 printf '%s\n' "== Post-build production consistency =="
 python src/production_audit.py \
   --consistency-only \

@@ -13,7 +13,9 @@ from ensemble_utils import (
     bernoulli_logloss,
     categorical_brier,
     categorical_logloss,
+    skill_score,
 )
+from xsmb_domain import baseline_rate
 
 
 def _latest_fully_labeled_day(df: pd.DataFrame) -> str | None:
@@ -99,6 +101,12 @@ def evaluate_latest_emitted(
     sub.sort_values("number", inplace=True)
     y = pd.to_numeric(sub["y"], errors="raise").astype(int).to_numpy()
 
+    # Đường cơ sở không thông tin, chấm bằng ĐÚNG các hàm đo dùng cho mô hình
+    # nên hai con số so sánh được trực tiếp. Thiếu nó thì không thể biết mô
+    # hình có hơn được một hằng số hay không — đợt hỏng 12/2025–01/2026 đã
+    # trôi qua tám tháng mà không ai phát hiện chính vì lý do này.
+    const = np.full_like(p, baseline_rate(mode), dtype=np.float64)
+
     if mode == "de":
         if int(y.sum()) != 1:
             print(
@@ -109,15 +117,23 @@ def evaluate_latest_emitted(
         y_idx = int(np.argmax(y))
         ll = categorical_logloss(p, y_idx)
         br = categorical_brier(p, y_idx)
+        base_ll = categorical_logloss(const, y_idx)
+        base_br = categorical_brier(const, y_idx)
     else:
         ll = bernoulli_logloss(p, y)
         br = bernoulli_brier(p, y)
+        base_ll = bernoulli_logloss(const, y)
+        base_br = bernoulli_brier(const, y)
 
     return {
         "mode": mode,
         "target_date": tdate,
         "logloss": float(ll),
         "brier": float(br),
+        "baseline_logloss": float(base_ll),
+        "baseline_brier": float(base_br),
+        "logloss_skill": skill_score(float(ll), float(base_ll)),
+        "brier_skill": skill_score(float(br), float(base_br)),
         "evaluation_source": "exact_emitted_prediction_artifact",
     }
 

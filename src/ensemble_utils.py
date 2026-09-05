@@ -119,6 +119,17 @@ def bernoulli_brier(p: np.ndarray, y: np.ndarray) -> float:
     return float(np.mean((p - y) ** 2))
 
 
+def skill_score(model: float, baseline: float) -> float:
+    """Phần cải thiện tương đối so với đường cơ sở.
+
+    Dương nghĩa là mô hình tốt hơn baseline, âm là tệ hơn. Trả 0 khi baseline
+    không dương để tránh chia cho số không.
+    """
+    if not np.isfinite(model) or not np.isfinite(baseline) or baseline <= 0.0:
+        return 0.0
+    return float((baseline - model) / baseline)
+
+
 def categorical_logloss(p: np.ndarray, y_true_idx: int) -> float:
     p = clip01(p, eps=1e-12)
     return float(-np.log(p[int(y_true_idx)]))
