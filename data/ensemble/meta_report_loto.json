@@ -34,10 +34,10 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 6,
-    "four_with_cau": 6,
-    "four_with_stat": 6,
-    "core_three": 218
+    "five_component": 7,
+    "four_with_cau": 7,
+    "four_with_stat": 7,
+    "core_three": 219
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
@@ -50,26 +50,25 @@
   },
   "quality_pass": true,
   "meta_trust": 0.15,
-  "validation_logloss": 0.5444798369838065,
-  "validation_brier": 0.179428191522033,
-  "baseline_validation_logloss": 0.642260729169895,
-  "baseline_validation_brier": 0.18954419186676272,
-  "logloss_skill": 0.15224485593641646,
-  "brier_skill": 0.05337014152267261,
+  "validation_logloss": 0.5445359889376588,
+  "validation_brier": 0.1794487104208588,
+  "baseline_validation_logloss": 0.6692604827285848,
+  "baseline_validation_brier": 0.19149646977512977,
+  "logloss_skill": 0.18636165889015666,
+  "brier_skill": 0.06291374127376026,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.14472415289412863,
-    "p_stable": 0.055275847105871245
+    "p_active": 0.14478745856641112,
+    "p_stable": 0.05521254143358889
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 4.5391140466903295,
-    "b": 0.9094057871802685,
+    "a": 4.829568394754238,
+    "b": 1.042314105980085,
     "temperature": 1.0
   },
-  "history_days": 218,
+  "history_days": 219,
   "selection_days": [
-    "2026-06-19",
     "2026-06-20",
     "2026-06-21",
     "2026-06-22",
@@ -98,10 +97,10 @@
     "2026-07-15",
     "2026-07-16",
     "2026-07-17",
-    "2026-07-18"
+    "2026-07-18",
+    "2026-07-19"
   ],
   "validation_days": [
-    "2026-07-19",
     "2026-07-20",
     "2026-07-21",
     "2026-07-22",
@@ -130,8 +129,9 @@
     "2026-09-01",
     "2026-09-02",
     "2026-09-03",
-    "2026-09-04"
+    "2026-09-04",
+    "2026-09-05"
   ],
-  "trained_through_target_date": "2026-09-04",
-  "trained_at_utc": "2026-09-05T08:18:29Z"
+  "trained_through_target_date": "2026-09-05",
+  "trained_at_utc": "2026-09-05T13:38:44Z"
 }

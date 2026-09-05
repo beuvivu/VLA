@@ -1,7 +1,7 @@
 {
   "mode": "loto",
-  "generated_at": "2026-09-05T08:17:25Z",
-  "predict_for_date": "2026-09-05",
+  "generated_at": "2026-09-05T13:37:34Z",
+  "predict_for_date": "2026-09-06",
   "top": 20,
   "features": [
     "number_value",
@@ -242,29 +242,28 @@
         "promoted": false,
         "rejection_reasons": [
           "negative_brier_skill",
-          "negative_logloss_skill",
           "brier_ci_crosses_zero",
           "logloss_ci_crosses_zero"
         ],
         "oos_dates": 30,
         "oos_rows": 3000,
-        "baseline_brier": 0.18115226282018912,
-        "challenger_brier": 0.18130743154471474,
-        "brier_improvement": -0.00015516872452561725,
-        "brier_skill": -0.0008565652016151573,
+        "baseline_brier": 0.18176971727452668,
+        "challenger_brier": 0.18176084908547052,
+        "brier_improvement": 8.86818905615483e-06,
+        "brier_skill": 4.8788044505571904e-05,
         "brier_improvement_ci": {
           "confidence_level": 0.95,
-          "lower": -0.0004560077907189853,
-          "upper": 0.00016223851190259655
+          "lower": -0.0004978088385252805,
+          "upper": 0.0004305443910412605
         },
-        "baseline_logloss": 0.5482855376235333,
-        "challenger_logloss": 0.5487212449584679,
-        "logloss_improvement": -0.00043570733493458746,
-        "logloss_skill": -0.000794672310386117,
+        "baseline_logloss": 0.5497747408186635,
+        "challenger_logloss": 0.5496941204026151,
+        "logloss_improvement": 8.062041604839365e-05,
+        "logloss_skill": 0.0001466426339055568,
         "logloss_improvement_ci": {
           "confidence_level": 0.95,
-          "lower": -0.0012636555185209647,
-          "upper": 0.00042568398361046385
+          "lower": -0.0013389981616560738,
+          "upper": 0.0012740586163232646
         },
         "bootstrap_replicates": 1000,
         "bootstrap_seed": 20260902,
@@ -275,29 +274,28 @@
       "promoted": false,
       "rejection_reasons": [
         "negative_brier_skill",
-        "negative_logloss_skill",
         "brier_ci_crosses_zero",
         "logloss_ci_crosses_zero"
       ],
       "oos_dates": 30,
       "oos_rows": 3000,
-      "baseline_brier": 0.18115226282018912,
-      "challenger_brier": 0.18130743154471474,
-      "brier_improvement": -0.00015516872452561725,
-      "brier_skill": -0.0008565652016151573,
+      "baseline_brier": 0.18176971727452668,
+      "challenger_brier": 0.18176084908547052,
+      "brier_improvement": 8.86818905615483e-06,
+      "brier_skill": 4.8788044505571904e-05,
       "brier_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -0.0004560077907189853,
-        "upper": 0.00016223851190259655
+        "lower": -0.0004978088385252805,
+        "upper": 0.0004305443910412605
       },
-      "baseline_logloss": 0.5482855376235333,
-      "challenger_logloss": 0.5487212449584679,
-      "logloss_improvement": -0.00043570733493458746,
-      "logloss_skill": -0.000794672310386117,
+      "baseline_logloss": 0.5497747408186635,
+      "challenger_logloss": 0.5496941204026151,
+      "logloss_improvement": 8.062041604839365e-05,
+      "logloss_skill": 0.0001466426339055568,
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -0.0012636555185209647,
-        "upper": 0.00042568398361046385
+        "lower": -0.0013389981616560738,
+        "upper": 0.0012740586163232646
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -305,8 +303,8 @@
     },
     "ablation_report": "cau_keo_domain_ablation_loto.csv",
     "gate_report": "cau_keo_domain_gate_loto.json",
-    "final_brier_skill": -0.0008565652016151573,
-    "final_logloss_skill": -0.000794672310386117,
+    "final_brier_skill": 4.8788044505571904e-05,
+    "final_logloss_skill": 0.0001466426339055568,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold."
   }
 }
