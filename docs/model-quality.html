@@ -6,434 +6,272 @@
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" http-equiv="Content-Security-Policy"/>
 <meta content="no-referrer" name="referrer"/>
-<style id="vla-tailwind-lite">*{box-sizing:border-box}
-.bg-slate-50{background-color:#f8fafc}.bg-white{background-color:#fff}
-.text-slate-800{color:#1e293b}.text-slate-600{color:#475569}.text-slate-400{color:#94a3b8}
-.text-indigo-600{color:#4f46e5}.text-blue-600{color:#2563eb}
-.border{border-width:1px}.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+<style id="vla-tailwind-lite">/* ---- 1. Design token ------------------------------------------------- */
+:root{
+--vla-bg:#f8fafc;--vla-surface:#fff;--vla-surface-2:#f8fafc;
+--vla-border:rgba(226,232,240,.75);--vla-border-strong:#e2e8f0;
+--vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;--vla-ink-muted:#94a3b8;
+--vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
+--vla-ok:#047857;--vla-ok-soft:#ecfdf5;--vla-ok-border:#a7f3d0;
+--vla-warn:#b45309;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
+--vla-bad:#be123c;--vla-bad-soft:#fff1f2;--vla-bad-border:#fecdd3;
+--vla-r-md:.5rem;--vla-r-lg:.75rem;--vla-r-xl:1rem;
+--vla-sh-sm:0 1px 2px rgba(15,23,42,.06);
+--vla-sh-md:0 4px 12px rgba(15,23,42,.10);
+--vla-sh-lg:0 10px 25px rgba(15,23,42,.14);
+--vla-font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--vla-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+
+/* ---- 2. Nền tảng ----------------------------------------------------- */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--vla-bg);color:var(--vla-ink-2);
+font-family:var(--vla-font);font-size:14px;line-height:1.6;
+-webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto}
+a{color:var(--vla-brand);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre,.mono{font-family:var(--vla-mono)}
+/* Chỉ áp màu chữ tiêu đề bên trong khung của chính hệ thống này. Đặt màu ở
+   cấp h1..h4 toàn cục sẽ đè lên các trang có hero/nền tối riêng và làm tiêu
+   đề của họ trùng màu nền. */
+h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:0 0 .5rem}
+.vla-shell h1,.vla-shell h2,.vla-shell h3,.vla-shell h4,
+.vla-card h2,.vla-card h3,.vla-header h1{color:var(--vla-ink)}
+h1{font-size:1.5rem;letter-spacing:-.015em}
+h2{font-size:1.125rem}
+h3{font-size:1rem}
+@media (min-width:768px){h1{font-size:1.875rem}h2{font-size:1.25rem}}
+
+/* ---- 3. Khung trang: container căn giữa, không tràn ngang ------------- */
+.vla-shell{width:100%;max-width:80rem;margin-inline:auto;padding:1.5rem 1rem 3rem}
+@media (min-width:640px){.vla-shell{padding-left:1.5rem;padding-right:1.5rem}}
+@media (min-width:1024px){.vla-shell{padding-left:2rem;padding-right:2rem;padding-top:2rem}}
+.vla-shell-wide{max-width:90rem}
+
+.vla-header{margin-bottom:1.5rem;padding-bottom:1.25rem;
+border-bottom:1px solid var(--vla-border)}
+.vla-header h1{margin-bottom:.35rem}
+.vla-sub{color:var(--vla-ink-soft);font-size:.875rem;margin:0}
+.vla-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .875rem;
+margin-top:.625rem;color:var(--vla-ink-soft);font-size:.8125rem}
+
+/* ---- 4. Lưới 12 cột: các ô luôn kéo đầy, không để khoảng trống lệch --- */
+.vla-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
+gap:1.25rem;align-items:stretch}
+.vla-grid>*{min-width:0}
+@media (min-width:768px){
+.vla-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+.vla-grid-1-md{grid-template-columns:repeat(1,minmax(0,1fr))}
+}
+@media (min-width:1024px){
+.vla-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+.vla-c3{grid-column:span 3/span 3}.vla-c4{grid-column:span 4/span 4}
+.vla-c5{grid-column:span 5/span 5}.vla-c6{grid-column:span 6/span 6}
+.vla-c7{grid-column:span 7/span 7}.vla-c8{grid-column:span 8/span 8}
+.vla-c9{grid-column:span 9/span 9}.vla-c12{grid-column:span 12/span 12}
+}
+/* Dưới lg mọi ô chiếm trọn hàng thay vì thu nhỏ lệch. */
+@media (max-width:1023px){[class*="vla-c"]{grid-column:auto}}
+
+/* ---- 5. Card --------------------------------------------------------- */
+.vla-card{display:flex;flex-direction:column;background:var(--vla-surface);
+border:1px solid var(--vla-border);border-radius:var(--vla-r-lg);
+box-shadow:var(--vla-sh-sm);overflow:hidden;
+transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
+.vla-card:hover{box-shadow:var(--vla-sh-md)}
+.vla-card-lift:hover{transform:translateY(-2px);box-shadow:var(--vla-sh-lg)}
+.vla-card-head{display:flex;flex-wrap:wrap;align-items:center;
+justify-content:space-between;gap:.75rem;padding:1rem 1.25rem;
+border-bottom:1px solid var(--vla-border)}
+.vla-card-head h2,.vla-card-head h3{margin:0}
+/* Thân card là flex dọc để khối nội dung cuối cùng kéo giãn lấp đầy chiều cao
+   hàng lưới, thay vì bỏ lại khoảng trắng dưới đáy card thấp hơn. */
+.vla-card-body{flex:1 1 auto;display:flex;flex-direction:column;gap:.75rem;
+min-height:0;padding:1.25rem}
+.vla-card-body>:first-child{margin-top:0}
+.vla-card-body>:last-child{margin-bottom:0}
+.vla-card-flush{padding:0}
+
+/* ---- 6. Bảng dữ liệu ------------------------------------------------- */
+/* Bóng mờ hai mép chỉ hiện khi bảng thực sự cuộn được, để nội dung bị che
+   đọc ra là "còn cuộn tiếp" chứ không phải bị cắt mất. */
+.vla-table-wrap{width:100%;flex:1 1 auto;min-height:0;
+overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+max-height:26rem;overscroll-behavior:contain;
+background:
+linear-gradient(to right,var(--vla-surface) 30%,rgba(255,255,255,0)) left center/2.5rem 100% no-repeat local,
+linear-gradient(to left,var(--vla-surface) 30%,rgba(255,255,255,0)) right center/2.5rem 100% no-repeat local,
+radial-gradient(farthest-side at 0 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) left center/.875rem 100% no-repeat scroll,
+radial-gradient(farthest-side at 100% 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) right center/.875rem 100% no-repeat scroll}
+.vla-table-wrap-tall{max-height:min(75vh,46rem)}
+.vla-table{width:100%;border-collapse:separate;border-spacing:0;
+font-size:.8125rem;font-variant-numeric:tabular-nums}
+.vla-table th,.vla-table td{padding:.625rem 1rem;text-align:left;
+vertical-align:middle;white-space:normal;overflow-wrap:anywhere}
+.vla-table thead th{position:sticky;top:0;z-index:1;
+background:rgba(248,250,252,.92);backdrop-filter:blur(8px);
+-webkit-backdrop-filter:blur(8px);
+color:var(--vla-ink-soft);font-weight:600;font-size:.6875rem;
+letter-spacing:.04em;text-transform:uppercase;
+border-bottom:1px solid var(--vla-border-strong)}
+.vla-table tbody tr{transition:background-color .15s ease-in-out}
+.vla-table tbody tr+tr td{border-top:1px solid rgba(241,245,249,.9)}
+.vla-table tbody tr:nth-child(even){background:rgba(248,250,252,.5)}
+.vla-table tbody tr:hover{background:rgba(238,242,255,.7)}
+.vla-table td{color:var(--vla-ink-2)}
+.vla-table .vla-al,.vla-table th.vla-al{text-align:left}
+.vla-table .vla-ac,.vla-table th.vla-ac{text-align:center;white-space:nowrap}
+.vla-table .vla-ar,.vla-table th.vla-ar{text-align:right;white-space:nowrap;
+font-variant-numeric:tabular-nums}
+.vla-table .vla-key{font-weight:600;color:var(--vla-ink)}
+.vla-table-empty{padding:2rem 1.25rem;text-align:center;color:var(--vla-ink-muted)}
+/* Bảng do pandas sinh (không có class trên ô) vẫn được canh nền tảng. */
+.vla-table-wrap>table{width:100%;border-collapse:separate;border-spacing:0;
+font-size:.8125rem}
+.vla-table-wrap>table th,.vla-table-wrap>table td{padding:.625rem 1rem;
+text-align:left;border-bottom:1px solid rgba(241,245,249,.9);white-space:nowrap}
+.vla-table-wrap>table thead th{position:sticky;top:0;background:rgba(248,250,252,.92);
+color:var(--vla-ink-soft);font-weight:600;font-size:.6875rem;
+letter-spacing:.04em;text-transform:uppercase}
+.vla-table-wrap>table tbody tr:hover{background:rgba(238,242,255,.7)}
+
+/* ---- 7. Badge / pill ------------------------------------------------- */
+.vla-badge{display:inline-flex;align-items:center;gap:.3rem;
+padding:.15rem .55rem;border-radius:999px;border:1px solid transparent;
+font-size:.75rem;font-weight:600;line-height:1.5;white-space:nowrap}
+.vla-badge-ok{background:var(--vla-ok-soft);color:var(--vla-ok);
+border-color:var(--vla-ok-border)}
+.vla-badge-warn{background:var(--vla-warn-soft);color:var(--vla-warn);
+border-color:var(--vla-warn-border)}
+.vla-badge-bad{background:var(--vla-bad-soft);color:var(--vla-bad);
+border-color:var(--vla-bad-border)}
+.vla-badge-brand{background:var(--vla-brand-soft);color:var(--vla-brand-ink);
+border-color:var(--vla-brand-border)}
+.vla-badge-mute{background:var(--vla-surface-2);color:var(--vla-ink-soft);
+border-color:var(--vla-border-strong)}
+
+/* ---- 8. Nav / liên kết trang ----------------------------------------- */
+.vla-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.5rem}
+.vla-nav a{display:inline-flex;align-items:center;padding:.375rem .75rem;
+border-radius:var(--vla-r-md);border:1px solid var(--vla-border);
+background:var(--vla-surface);color:var(--vla-ink-soft);
+font-size:.8125rem;font-weight:500;transition:all .15s ease-in-out}
+.vla-nav a:hover{border-color:var(--vla-brand-border);color:var(--vla-brand-ink);
+background:var(--vla-brand-soft);text-decoration:none}
+.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:#fff;
+border-color:var(--vla-brand)}
+
+/* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
+.vla-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
+.vla-tabs .tabbtn{padding:.5rem .9rem;border:1px solid var(--vla-border);
+border-radius:var(--vla-r-md);background:var(--vla-surface);
+color:var(--vla-ink-soft);font-family:inherit;font-size:.8125rem;
+font-weight:600;cursor:pointer;transition:all .15s ease-in-out}
+.vla-tabs .tabbtn:hover{border-color:var(--vla-brand-border);
+color:var(--vla-brand-ink);background:var(--vla-brand-soft)}
+.vla-tabs .tabbtn.active{background:var(--vla-brand);color:#fff;
+border-color:var(--vla-brand)}
+.panel{display:none}.panel.active{display:block}
+
+/* ---- 9. Khối phụ trợ ------------------------------------------------- */
+/* Giới hạn chiều cao: dữ liệu JSON dài không được kéo dài trang vô hạn. */
+.vla-pre{margin:0;padding:.875rem 1rem;background:var(--vla-surface-2);
+border:1px solid var(--vla-border);border-radius:var(--vla-r-md);
+font-family:var(--vla-mono);font-size:.75rem;line-height:1.6;
+flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto;white-space:pre;
+color:var(--vla-ink-soft);overscroll-behavior:contain}
+.vla-muted{color:var(--vla-ink-soft);font-size:.8125rem}
+.vla-note{padding:.75rem 1rem;background:var(--vla-brand-soft);
+border:1px solid var(--vla-brand-border);border-radius:var(--vla-r-md);
+color:var(--vla-brand-ink);font-size:.8125rem}
+.vla-stat{display:flex;flex-direction:column;gap:.2rem}
+.vla-stat-label{color:var(--vla-ink-soft);font-size:.75rem;font-weight:500;
+letter-spacing:.02em;text-transform:uppercase}
+.vla-stat-value{color:var(--vla-ink);font-size:1.5rem;font-weight:600;
+letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* ---- 10. Tiện ích kiểu Tailwind (giữ tương thích ngược) -------------- */
+.bg-slate-50{background-color:#f8fafc}.bg-slate-50\/50{background-color:rgba(248,250,252,.5)}
+.bg-white{background-color:#fff}.bg-indigo-600{background-color:#4f46e5}
+.text-slate-900{color:#0f172a}.text-slate-800{color:#1e293b}
+.text-slate-600{color:#475569}.text-slate-500{color:#64748b}.text-slate-400{color:#94a3b8}
+.text-indigo-600{color:#4f46e5}.text-blue-600{color:#2563eb}.text-white{color:#fff}
+.border{border-width:1px;border-style:solid}
+.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+.rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
 .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}
-.shadow-sm{box-shadow:0 1px 2px rgba(15,23,42,.06)}.shadow-md{box-shadow:0 4px 12px rgba(15,23,42,.10)}
-.flex{display:flex}.grid{display:grid}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}
-.justify-between{justify-content:space-between}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
-.p-4{padding:1rem}.p-6{padding:1.5rem}.px-4{padding-left:1rem;padding-right:1rem}
-.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.mb-6{margin-bottom:1.5rem}.mt-4{margin-top:1rem}
-.mx-auto{margin-left:auto;margin-right:auto}.max-w-6xl{max-width:72rem}.w-full{width:100%}
-.transition-all{transition-property:all}.duration-200{transition-duration:.2s}.ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}
-.hover\:shadow-lg:hover{box-shadow:0 10px 25px rgba(15,23,42,.14)}
+.shadow-sm{box-shadow:var(--vla-sh-sm)}.shadow-md{box-shadow:var(--vla-sh-md)}
+.flex{display:flex}.grid{display:grid}.hidden{display:none}
+.flex-wrap{flex-wrap:wrap}.flex-col{flex-direction:column}
+.items-center{align-items:center}.items-stretch{align-items:stretch}
+.justify-between{justify-content:space-between}.justify-center{justify-content:center}
+.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+.p-4{padding:1rem}.p-6{padding:1.5rem}
+.px-4{padding-left:1rem;padding-right:1rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mt-4{margin-top:1rem}
+.mx-auto{margin-left:auto;margin-right:auto}
+.max-w-6xl{max-width:72rem}.max-w-7xl{max-width:80rem}.w-full{width:100%}
+.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}
+.font-medium{font-weight:500}.font-semibold{font-weight:600}.font-bold{font-weight:700}
+.italic{font-style:italic}.underline{text-decoration-line:underline}
+.overflow-x-auto{overflow-x:auto}.table-auto{table-layout:auto}.table-fixed{table-layout:fixed}
+.transition-all{transition-property:all}.duration-200{transition-duration:.2s}
+.ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}
+.hover\:shadow-lg:hover{box-shadow:var(--vla-sh-lg)}
+.hover\:shadow-md:hover{box-shadow:var(--vla-sh-md)}
 .hover\:-translate-y-0\.5:hover{transform:translateY(-.125rem)}
-.underline{text-decoration-line:underline}.font-bold{font-weight:700}.italic{font-style:italic}
 @media (min-width:640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}
-@media (min-width:768px){.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
+@media (min-width:768px){
+.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.md\:flex-row{flex-direction:row}
+}
+@media (min-width:1024px){
+.lg\:px-8{padding-left:2rem;padding-right:2rem}
+.lg\:grid-cols-12{grid-template-columns:repeat(12,minmax(0,1fr))}
+.lg\:col-span-4{grid-column:span 4/span 4}
+.lg\:col-span-8{grid-column:span 8/span 8}
+}
+
+/* ---- 11. In ấn ------------------------------------------------------- */
+@media print{
+body{background:#fff}
+.vla-card{box-shadow:none;break-inside:avoid}
+.vla-table-wrap{max-height:none;overflow:visible}
+.vla-nav{display:none}
+}
+.vla-table.vla-r1 td:nth-child(1),.vla-table.vla-r1 th:nth-child(1){text-align:right;white-space:nowrap}
+.vla-table.vla-m1 td:nth-child(1),.vla-table.vla-m1 th:nth-child(1){text-align:center;white-space:nowrap}
+.vla-table.vla-r2 td:nth-child(2),.vla-table.vla-r2 th:nth-child(2){text-align:right;white-space:nowrap}
+.vla-table.vla-m2 td:nth-child(2),.vla-table.vla-m2 th:nth-child(2){text-align:center;white-space:nowrap}
+.vla-table.vla-r3 td:nth-child(3),.vla-table.vla-r3 th:nth-child(3){text-align:right;white-space:nowrap}
+.vla-table.vla-m3 td:nth-child(3),.vla-table.vla-m3 th:nth-child(3){text-align:center;white-space:nowrap}
+.vla-table.vla-r4 td:nth-child(4),.vla-table.vla-r4 th:nth-child(4){text-align:right;white-space:nowrap}
+.vla-table.vla-m4 td:nth-child(4),.vla-table.vla-m4 th:nth-child(4){text-align:center;white-space:nowrap}
+.vla-table.vla-r5 td:nth-child(5),.vla-table.vla-r5 th:nth-child(5){text-align:right;white-space:nowrap}
+.vla-table.vla-m5 td:nth-child(5),.vla-table.vla-m5 th:nth-child(5){text-align:center;white-space:nowrap}
+.vla-table.vla-r6 td:nth-child(6),.vla-table.vla-r6 th:nth-child(6){text-align:right;white-space:nowrap}
+.vla-table.vla-m6 td:nth-child(6),.vla-table.vla-m6 th:nth-child(6){text-align:center;white-space:nowrap}
+.vla-table.vla-r7 td:nth-child(7),.vla-table.vla-r7 th:nth-child(7){text-align:right;white-space:nowrap}
+.vla-table.vla-m7 td:nth-child(7),.vla-table.vla-m7 th:nth-child(7){text-align:center;white-space:nowrap}
+.vla-table.vla-r8 td:nth-child(8),.vla-table.vla-r8 th:nth-child(8){text-align:right;white-space:nowrap}
+.vla-table.vla-m8 td:nth-child(8),.vla-table.vla-m8 th:nth-child(8){text-align:center;white-space:nowrap}
+.vla-table.vla-r9 td:nth-child(9),.vla-table.vla-r9 th:nth-child(9){text-align:right;white-space:nowrap}
+.vla-table.vla-m9 td:nth-child(9),.vla-table.vla-m9 th:nth-child(9){text-align:center;white-space:nowrap}
+.vla-table.vla-r10 td:nth-child(10),.vla-table.vla-r10 th:nth-child(10){text-align:right;white-space:nowrap}
+.vla-table.vla-m10 td:nth-child(10),.vla-table.vla-m10 th:nth-child(10){text-align:center;white-space:nowrap}</style>
 <title>Chất lượng mô hình — Phân tích XSMB</title>
-<style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }
-    .card { border:1px solid #ddd; border-radius:12px; padding:16px; margin:14px 0; }
-    table { border-collapse:collapse; width:100%; }
-    th,td { border-bottom:1px solid #eee; padding:8px; text-align:left; font-size:13px; }
-    th { background:#fafafa; }
-    .muted { color:#666; font-size:13px; }
-    a { color:#0b57d0; text-decoration:none; }
-  </style>
 </head>
 <body>
-<h1>Chất lượng mô hình</h1>
-<p class="muted">Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.</p>
-<p><a href="index.html">Trang chính</a> · <a href="dashboard.html">Bảng điều khiển AI/ML</a> · <a href="statistics.html">Thống kê</a></p>
-<div class="card"><h2>Mới nhất</h2><table border="1" class="dataframe">
-<thead>
-<tr style="text-align: right;">
-<th>Loại</th>
-<th>Ngày mục tiêu</th>
-<th>LogLoss</th>
-<th>Brier</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-05</td>
-<td>4.471741</td>
-<td>0.987186</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-05</td>
-<td>0.551524</td>
-<td>0.182564</td>
-</tr>
-</tbody>
-</table></div>
-<div class="card"><h2>30 đánh giá gần nhất theo loại</h2><table border="1" class="dataframe">
-<thead>
-<tr style="text-align: right;">
-<th>Loại</th>
-<th>Ngày mục tiêu</th>
-<th>LogLoss</th>
-<th>Brier</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-20</td>
-<td>4.614117</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-21</td>
-<td>4.664482</td>
-<td>0.009912</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-22</td>
-<td>4.610696</td>
-<td>0.009901</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-23</td>
-<td>4.608937</td>
-<td>0.009901</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-24</td>
-<td>4.616844</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-25</td>
-<td>4.614117</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-26</td>
-<td>4.597726</td>
-<td>0.009899</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-27</td>
-<td>4.590301</td>
-<td>0.009897</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-28</td>
-<td>4.604485</td>
-<td>0.009900</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-29</td>
-<td>4.607880</td>
-<td>0.009901</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-30</td>
-<td>4.608350</td>
-<td>0.009901</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-07-31</td>
-<td>4.607616</td>
-<td>0.009901</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-01</td>
-<td>4.614117</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-02</td>
-<td>4.614117</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-03</td>
-<td>4.614117</td>
-<td>0.009902</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-04</td>
-<td>4.574695</td>
-<td>0.009894</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-05</td>
-<td>4.574455</td>
-<td>0.009894</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-06</td>
-<td>4.600855</td>
-<td>0.009899</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-07</td>
-<td>4.600855</td>
-<td>0.009899</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-08</td>
-<td>4.619624</td>
-<td>0.009903</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-09</td>
-<td>4.600855</td>
-<td>0.009899</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-10</td>
-<td>4.626144</td>
-<td>0.009904</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-11</td>
-<td>4.566952</td>
-<td>0.009892</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-12</td>
-<td>4.669645</td>
-<td>0.009913</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-08-31</td>
-<td>4.556583</td>
-<td>0.009890</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-01</td>
-<td>4.599814</td>
-<td>0.009899</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-02</td>
-<td>4.577061</td>
-<td>0.009895</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-03</td>
-<td>4.655684</td>
-<td>0.009911</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-04</td>
-<td>4.648059</td>
-<td>0.990882</td>
-</tr>
-<tr>
-<td>Đặc Biệt</td>
-<td>2026-09-05</td>
-<td>4.471741</td>
-<td>0.987186</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-20</td>
-<td>0.528064</td>
-<td>0.172014</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-21</td>
-<td>0.527789</td>
-<td>0.171914</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-22</td>
-<td>0.539198</td>
-<td>0.177071</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-23</td>
-<td>0.539208</td>
-<td>0.177075</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-24</td>
-<td>0.562592</td>
-<td>0.187596</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-25</td>
-<td>0.539908</td>
-<td>0.177328</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-26</td>
-<td>0.516161</td>
-<td>0.166676</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-27</td>
-<td>0.550249</td>
-<td>0.182098</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-28</td>
-<td>0.562977</td>
-<td>0.187737</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-29</td>
-<td>0.517574</td>
-<td>0.167189</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-30</td>
-<td>0.563151</td>
-<td>0.187797</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-07-31</td>
-<td>0.527456</td>
-<td>0.171791</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-01</td>
-<td>0.562690</td>
-<td>0.187630</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-02</td>
-<td>0.574188</td>
-<td>0.192819</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-03</td>
-<td>0.539850</td>
-<td>0.177307</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-04</td>
-<td>0.539743</td>
-<td>0.177269</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-05</td>
-<td>0.562891</td>
-<td>0.187701</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-06</td>
-<td>0.516063</td>
-<td>0.166642</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-07</td>
-<td>0.539387</td>
-<td>0.177141</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-08</td>
-<td>0.562460</td>
-<td>0.187548</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-09</td>
-<td>0.562660</td>
-<td>0.187619</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-10</td>
-<td>0.539194</td>
-<td>0.177069</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-11</td>
-<td>0.527900</td>
-<td>0.171954</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-12</td>
-<td>0.528865</td>
-<td>0.172309</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-08-31</td>
-<td>0.550734</td>
-<td>0.182265</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-01</td>
-<td>0.573491</td>
-<td>0.192565</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-02</td>
-<td>0.540364</td>
-<td>0.177491</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-03</td>
-<td>0.540620</td>
-<td>0.177593</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-04</td>
-<td>0.551244</td>
-<td>0.182461</td>
-</tr>
-<tr>
-<td>Lô tô</td>
-<td>2026-09-05</td>
-<td>0.551524</td>
-<td>0.182564</td>
-</tr>
-</tbody>
-</table></div>
+<div class="vla-shell">
+<header class="vla-header"><h1>Chất lượng mô hình</h1><p class="vla-sub">Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.</p></header>
+<nav class="vla-nav"><a href="index.html">Trang chính</a><a href="dashboard.html">Bảng điều khiển AI/ML</a><a href="statistics.html">Ma trận thống kê</a><a aria-current="page" href="model-quality.html">Chất lượng mô hình</a><a href="live.html">Kết quả trực tiếp</a></nav>
+<div class="vla-grid">
+<section class="vla-card vla-c12"><div class="vla-card-head"><h2>Mới nhất</h2></div><div class="vla-card-body vla-card-flush"><div class="vla-table-wrap"><table class="vla-table"><thead><tr><th class="vla-al" scope="col">Loại</th><th class="vla-ac" scope="col">Ngày mục tiêu</th><th class="vla-ar" scope="col">LogLoss</th><th class="vla-ar" scope="col">Brier</th></tr></thead><tbody><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-05</td><td class="vla-ar">4.471741</td><td class="vla-ar">0.987186</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-05</td><td class="vla-ar">0.551524</td><td class="vla-ar">0.182564</td></tr></tbody></table></div></div></section>
+<section class="vla-card vla-card-lift vla-c12"><div class="vla-card-head"><h2>30 đánh giá gần nhất theo loại</h2></div><div class="vla-card-body vla-card-flush"><div class="vla-table-wrap"><table class="vla-table"><thead><tr><th class="vla-al" scope="col">Loại</th><th class="vla-ac" scope="col">Ngày mục tiêu</th><th class="vla-ar" scope="col">LogLoss</th><th class="vla-ar" scope="col">Brier</th></tr></thead><tbody><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-20</td><td class="vla-ar">4.614117</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-21</td><td class="vla-ar">4.664482</td><td class="vla-ar">0.009912</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-22</td><td class="vla-ar">4.610696</td><td class="vla-ar">0.009901</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-23</td><td class="vla-ar">4.608937</td><td class="vla-ar">0.009901</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-24</td><td class="vla-ar">4.616844</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-25</td><td class="vla-ar">4.614117</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-26</td><td class="vla-ar">4.597726</td><td class="vla-ar">0.009899</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-27</td><td class="vla-ar">4.590301</td><td class="vla-ar">0.009897</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-28</td><td class="vla-ar">4.604485</td><td class="vla-ar">0.009900</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-29</td><td class="vla-ar">4.607880</td><td class="vla-ar">0.009901</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-30</td><td class="vla-ar">4.608350</td><td class="vla-ar">0.009901</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-07-31</td><td class="vla-ar">4.607616</td><td class="vla-ar">0.009901</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-01</td><td class="vla-ar">4.614117</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-02</td><td class="vla-ar">4.614117</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-03</td><td class="vla-ar">4.614117</td><td class="vla-ar">0.009902</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-04</td><td class="vla-ar">4.574695</td><td class="vla-ar">0.009894</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-05</td><td class="vla-ar">4.574455</td><td class="vla-ar">0.009894</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-06</td><td class="vla-ar">4.600855</td><td class="vla-ar">0.009899</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-07</td><td class="vla-ar">4.600855</td><td class="vla-ar">0.009899</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-08</td><td class="vla-ar">4.619624</td><td class="vla-ar">0.009903</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-09</td><td class="vla-ar">4.600855</td><td class="vla-ar">0.009899</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-10</td><td class="vla-ar">4.626144</td><td class="vla-ar">0.009904</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-11</td><td class="vla-ar">4.566952</td><td class="vla-ar">0.009892</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-12</td><td class="vla-ar">4.669645</td><td class="vla-ar">0.009913</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-08-31</td><td class="vla-ar">4.556583</td><td class="vla-ar">0.009890</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-01</td><td class="vla-ar">4.599814</td><td class="vla-ar">0.009899</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-02</td><td class="vla-ar">4.577061</td><td class="vla-ar">0.009895</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-03</td><td class="vla-ar">4.655684</td><td class="vla-ar">0.009911</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-04</td><td class="vla-ar">4.648059</td><td class="vla-ar">0.990882</td></tr><tr><td class="vla-al vla-key">Đặc Biệt</td><td class="vla-ac">2026-09-05</td><td class="vla-ar">4.471741</td><td class="vla-ar">0.987186</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-20</td><td class="vla-ar">0.528064</td><td class="vla-ar">0.172014</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-21</td><td class="vla-ar">0.527789</td><td class="vla-ar">0.171914</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-22</td><td class="vla-ar">0.539198</td><td class="vla-ar">0.177071</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-23</td><td class="vla-ar">0.539208</td><td class="vla-ar">0.177075</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-24</td><td class="vla-ar">0.562592</td><td class="vla-ar">0.187596</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-25</td><td class="vla-ar">0.539908</td><td class="vla-ar">0.177328</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-26</td><td class="vla-ar">0.516161</td><td class="vla-ar">0.166676</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-27</td><td class="vla-ar">0.550249</td><td class="vla-ar">0.182098</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-28</td><td class="vla-ar">0.562977</td><td class="vla-ar">0.187737</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-29</td><td class="vla-ar">0.517574</td><td class="vla-ar">0.167189</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-30</td><td class="vla-ar">0.563151</td><td class="vla-ar">0.187797</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-07-31</td><td class="vla-ar">0.527456</td><td class="vla-ar">0.171791</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-01</td><td class="vla-ar">0.562690</td><td class="vla-ar">0.187630</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-02</td><td class="vla-ar">0.574188</td><td class="vla-ar">0.192819</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-03</td><td class="vla-ar">0.539850</td><td class="vla-ar">0.177307</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-04</td><td class="vla-ar">0.539743</td><td class="vla-ar">0.177269</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-05</td><td class="vla-ar">0.562891</td><td class="vla-ar">0.187701</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-06</td><td class="vla-ar">0.516063</td><td class="vla-ar">0.166642</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-07</td><td class="vla-ar">0.539387</td><td class="vla-ar">0.177141</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-08</td><td class="vla-ar">0.562460</td><td class="vla-ar">0.187548</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-09</td><td class="vla-ar">0.562660</td><td class="vla-ar">0.187619</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-10</td><td class="vla-ar">0.539194</td><td class="vla-ar">0.177069</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-11</td><td class="vla-ar">0.527900</td><td class="vla-ar">0.171954</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-12</td><td class="vla-ar">0.528865</td><td class="vla-ar">0.172309</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-08-31</td><td class="vla-ar">0.550734</td><td class="vla-ar">0.182265</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-01</td><td class="vla-ar">0.573491</td><td class="vla-ar">0.192565</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-02</td><td class="vla-ar">0.540364</td><td class="vla-ar">0.177491</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-03</td><td class="vla-ar">0.540620</td><td class="vla-ar">0.177593</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-04</td><td class="vla-ar">0.551244</td><td class="vla-ar">0.182461</td></tr><tr><td class="vla-al vla-key">Lô tô</td><td class="vla-ac">2026-09-05</td><td class="vla-ar">0.551524</td><td class="vla-ar">0.182564</td></tr></tbody></table></div></div></section>
+</div>
+</div>
 <a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Phòng nghiên cứu</a></body>
 </html>

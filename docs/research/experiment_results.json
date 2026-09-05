@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-05T13:42:08Z",
+  "generated_at": "2026-09-05T15:36:05Z",
   "baseline": "HistGradientBoosting cầu-kèo với 39 đặc trưng production",
   "common_parameters": {
     "screening_folds": [
@@ -79,9 +79,9 @@
       "brier_skill": -3.9119455524934385e-05,
       "brier_ci": null,
       "baseline_logloss": 0.5456442907756546,
-      "challenger_logloss": 0.5456637091175632,
-      "logloss_improvement": -1.941834190866132e-05,
-      "logloss_skill": -3.558791365902022e-05,
+      "challenger_logloss": 0.5456637091175633,
+      "logloss_improvement": -1.941834190877234e-05,
+      "logloss_skill": -3.5587913659223694e-05,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
