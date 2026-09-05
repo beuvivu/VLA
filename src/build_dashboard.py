@@ -31,6 +31,7 @@ NAV: tuple[tuple[str, str], ...] = (
     ("dashboard.html", "Bảng điều khiển AI/ML"),
     ("statistics.html", "Ma trận thống kê"),
     ("model-quality.html", "Chất lượng mô hình"),
+    ("live.html", "Kết quả trực tiếp"),
 )
 
 

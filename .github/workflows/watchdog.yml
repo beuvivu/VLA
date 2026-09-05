@@ -123,7 +123,11 @@ jobs:
                   return None
 
           local_hm = now.hour * 60 + now.minute
-          live_window = 17 * 60 + 55 <= local_hm <= 18 * 60 + 55
+          # Khung phải phủ hết thời gian job live có thể còn chạy (bắt đầu 18:00
+          # giờ VN, ngân sách thăm dò 60 phút). Khung cũ đóng lúc 18:55 nên một
+          # job live chết sau mốc đó không được khởi động lại, dù kỳ quay muộn
+          # vẫn đang diễn ra.
+          live_window = 17 * 60 + 55 <= local_hm <= 19 * 60 + 10
           pages_window = 20 * 60 + 10 <= local_hm <= 20 * 60 + 35
 
           if live_window:

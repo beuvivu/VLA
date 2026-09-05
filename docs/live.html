@@ -7,134 +7,353 @@
   <meta name="referrer" content="no-referrer">
   <title>Kết quả XSMB trực tiếp</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Arial;margin:0;background:#08111f;color:#e5edf8}
-    .wrap{max-width:920px;margin:auto;padding:20px}
-    .card{background:#0d1b2d;border:1px solid #24354b;border-radius:16px;padding:16px;margin:12px 0}
-    .top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .muted{color:#93a4b8;font-size:13px}
+    :root{
+      --bg:#08111f;--card:#0d1b2d;--card-2:#122236;--line:#24354b;
+      --ink:#e8eff8;--ink-2:#aebed2;--ink-3:#8397ad;
+      --accent:#7aa7ff;--ok:#34d399;--ok-line:#1f6f52;
+      --warn:#fbbf24;--warn-line:#8b6b32;--hot:#fca5a5;
+    }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,Segoe UI,Arial;margin:0;background:var(--bg);color:var(--ink)}
+    .wrap{max-width:960px;margin:auto;padding:20px 16px 48px}
+    a{color:var(--accent)}
+    h1{margin:0;font-size:22px;letter-spacing:-.01em}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+    .top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+    .muted{color:var(--ink-2);font-size:13px}
     .bar{height:9px;background:#17283b;border-radius:10px;overflow:hidden}
-    .fill{height:100%;background:#e5edf8;width:0}
-    .grid{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;align-items:center}
-    .label{color:#9fb3c8;font-weight:700}
-    .nums{font:700 19px ui-monospace,Consolas,monospace;word-spacing:12px}
-    .special{font-size:27px}
-    .badge{display:inline-block;border:1px solid #39506a;border-radius:999px;padding:4px 9px;font-size:12px}
-    .ok{border-color:#4f8069}
-    .warn{border-color:#8b6b32}
-    .src{display:grid;grid-template-columns:30px 1fr 90px;gap:7px;font-size:12px;padding:4px 0;border-bottom:1px solid #17283b}
-    @media(max-width:600px){.grid{grid-template-columns:70px 1fr}.nums{font-size:16px}.special{font-size:22px}}
+    .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--ok));width:0;
+      transition:width .45s cubic-bezier(.4,0,.2,1)}
+    .badge{display:inline-block;border:1px solid var(--line);border-radius:999px;
+      padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+    .ok{border-color:var(--ok-line);color:var(--ok)}
+    .warn{border-color:var(--warn-line);color:var(--warn)}
+
+    /* ---- Bảng giải: khung 27 ô dựng sẵn nên không xê dịch bố cục ---- */
+    .prize{display:grid;grid-template-columns:104px 1fr;gap:10px 14px;
+      align-items:center;padding:9px 0;border-bottom:1px solid #16273a}
+    .prize:last-child{border-bottom:0}
+    .prize-label{display:flex;align-items:center;gap:8px;color:var(--ink-2);
+      font-weight:700;font-size:14px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#31465f;flex:none}
+    .prize.is-waiting .dot{background:var(--warn);animation:pulse 1.6s ease-in-out infinite}
+    .prize.is-live .dot{background:var(--accent);animation:pulse 1s ease-in-out infinite}
+    .prize.is-done .dot{background:var(--ok);animation:none}
+    .slots{display:flex;flex-wrap:wrap;gap:8px}
+    .slot{position:relative;min-width:var(--w,64px);height:38px;
+      display:flex;align-items:center;justify-content:center;
+      padding:0 10px;border-radius:10px;border:1px solid #1e3047;background:#0b1728;
+      font:700 19px ui-monospace,SFMono-Regular,Consolas,monospace;
+      letter-spacing:.06em;color:var(--ink);transition:border-color .25s,background .25s}
+    .slot.is-empty{color:#3b5271;background:#0a1523;border-style:dashed}
+    .slot.is-special{font-size:26px;min-width:112px;height:48px;color:var(--hot);
+      border-color:#5b2b32;background:#1a1017}
+    .slot.is-new{animation:reveal .5s cubic-bezier(.2,.8,.3,1) both}
+    .slot.is-fresh{border-color:var(--accent);box-shadow:0 0 0 2px rgba(122,167,255,.18)}
+    @keyframes reveal{
+      0%{opacity:0;transform:translateY(-8px) scale(.94);filter:blur(3px)}
+      60%{opacity:1;filter:blur(0)}
+      100%{opacity:1;transform:none}
+    }
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+    @media (prefers-reduced-motion: reduce){
+      .slot.is-new{animation:none}
+      .prize .dot{animation:none!important}
+      .fill{transition:none}
+    }
+
+    .src{display:grid;grid-template-columns:34px 1fr 78px;gap:8px;font-size:12px;
+      padding:5px 0;border-bottom:1px solid #17283b;color:var(--ink-2)}
+    .src:last-child{border-bottom:0}
+    .foot{display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+      color:var(--ink-3);font-size:12px;margin-top:10px}
+    @media(max-width:620px){
+      .prize{grid-template-columns:64px 1fr;gap:8px}
+      .slot{min-width:56px;height:34px;font-size:16px;padding:0 8px}
+      .slot.is-special{font-size:21px;min-width:92px;height:42px}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
+    <div class="top" style="margin-bottom:4px">
       <div>
-        <h1 style="margin:0">Kết quả XSMB gần thời gian thực</h1>
-        <div class="muted">Vận hành trên GitHub · đồng thuận nhiều nguồn theo từng ô · tự làm mới sau 10 giây</div>
+        <h1>Kết quả XSMB gần thời gian thực</h1>
+        <div class="muted">Vận hành trên GitHub · đồng thuận nhiều nguồn theo từng ô ·
+          các số hiện lần lượt ngay khi lấy được</div>
       </div>
-      <a href="index.html" style="color:#b7d4ff">Bảng điều khiển</a>
+      <a href="index.html">Bảng điều khiển</a>
     </div>
+
     <div class="card">
       <div class="top"><b id="status">Đang tải…</b><span class="badge" id="verify">—</span></div>
-      <div id="checked" class="muted" style="margin:7px 0">—</div>
+      <div id="checked" class="muted" style="margin:8px 0">—</div>
       <div class="bar"><div class="fill" id="bar"></div></div>
-      <div id="progress" class="muted" style="margin-top:7px">—</div>
+      <div class="foot">
+        <span id="progress">—</span>
+        <span id="cadence">—</span>
+      </div>
     </div>
-    <div class="card" id="results"></div>
+
+    <div class="card">
+      <div id="results" aria-live="polite" aria-atomic="false"></div>
+    </div>
+
     <div class="card">
       <b>Nguồn</b>
       <div id="sources" style="margin-top:8px"></div>
-      <div id="conflicts" class="muted" style="margin-top:8px"></div>
+      <div id="conflicts" class="muted" style="margin-top:10px"></div>
     </div>
   </div>
+
   <script>
-    const labels = {special:'ĐB',prize1:'G1',prize2:'G2',prize3:'G3',prize4:'G4',prize5:'G5',prize6:'G6',prize7:'G7'};
+  (function () {
+    'use strict';
+
+    // Cấu trúc giải XSMB: nhãn, số ô và số chữ số mỗi ô.
+    // Khớp EXPECTED_COUNTS / FIELD_WIDTHS phía Python (tổng 27 ô).
+    var PRIZES = [
+      {key:'special', label:'ĐB', count:1, digits:5},
+      {key:'prize1',  label:'G1', count:1, digits:5},
+      {key:'prize2',  label:'G2', count:2, digits:5},
+      {key:'prize3',  label:'G3', count:6, digits:5},
+      {key:'prize4',  label:'G4', count:4, digits:4},
+      {key:'prize5',  label:'G5', count:6, digits:4},
+      {key:'prize6',  label:'G6', count:3, digits:3},
+      {key:'prize7',  label:'G7', count:4, digits:2}
+    ];
+    var TOTAL_SLOTS = 27;
+
+    var REVEAL_STAGGER_MS = 170;   // giãn cách giữa hai số khi hiện tuần tự
+    var FRESH_HIGHLIGHT_MS = 6000; // thời gian giữ viền sáng cho số vừa về
+
+    var slotIndex = Object.create(null); // "prize3:2" -> {el, value}
+    var revealQueue = [];
+    var revealTimer = null;
+    var pollTimer = null;
+    var reduceMotion = false;
+    try {
+      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) { /* môi trường không hỗ trợ matchMedia */ }
+
+    function el(tag, className, text) {
+      var node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined && text !== null) node.textContent = String(text);
+      return node;
+    }
+
+    function clampNumber(value, min, max, fallback) {
+      var n = Number(value);
+      return isFinite(n) ? Math.min(max, Math.max(min, n)) : (fallback || 0);
+    }
+
+    // ---- Khung cố định -----------------------------------------------
+    // Dựng đủ 27 ô ngay từ đầu để chiều cao trang không đổi khi số về,
+    // tránh giật bố cục (layout shift) mỗi lần cập nhật.
+    function buildSkeleton() {
+      var frag = document.createDocumentFragment();
+      PRIZES.forEach(function (prize) {
+        var row = el('div', 'prize is-waiting');
+        row.setAttribute('data-prize', prize.key);
+        var label = el('div', 'prize-label');
+        label.append(el('span', 'dot'), el('span', '', prize.label));
+        var slots = el('div', 'slots');
+        for (var i = 0; i < prize.count; i++) {
+          var slot = el('div', 'slot is-empty', '·'.repeat(prize.digits));
+          if (prize.key === 'special') slot.classList.add('is-special');
+          slot.style.setProperty('--w', (prize.digits * 13 + 26) + 'px');
+          slot.setAttribute('aria-label', prize.label + ' vị trí ' + (i + 1));
+          slotIndex[prize.key + ':' + i] = {el: slot, value: null, digits: prize.digits};
+          slots.appendChild(slot);
+        }
+        row.append(label, slots);
+        frag.appendChild(row);
+      });
+      document.getElementById('results').replaceChildren(frag);
+    }
+
+    // ---- Hiện tuần tự -------------------------------------------------
+    // Mỗi lần poll chỉ đưa các ô CHUYỂN TỪ TRỐNG SANG CÓ SỐ vào hàng đợi,
+    // rồi nhả ra từng ô một. Nhờ vậy số xuất hiện lần lượt như trang tường
+    // thuật trực tiếp, thay vì đổ ập cả nhóm cùng lúc; các ô đã có sẵn
+    // không bị vẽ lại nên không nhấp nháy.
+    function queueReveal(entry, value) {
+      revealQueue.push({entry: entry, value: value});
+      if (revealTimer === null) drainQueue();
+    }
+
+    function drainQueue() {
+      var item = revealQueue.shift();
+      if (!item) { revealTimer = null; return; }
+      applyValue(item.entry, item.value);
+      revealTimer = window.setTimeout(drainQueue, reduceMotion ? 0 : REVEAL_STAGGER_MS);
+    }
+
+    function applyValue(entry, value) {
+      var node = entry.el;
+      entry.value = value;
+      node.textContent = value;
+      node.classList.remove('is-empty');
+      node.classList.add('is-new', 'is-fresh');
+      // Gỡ class animation sau khi chạy xong để lần sau còn kích hoạt lại được.
+      window.setTimeout(function () { node.classList.remove('is-new'); }, 600);
+      window.setTimeout(function () { node.classList.remove('is-fresh'); }, FRESH_HIGHLIGHT_MS);
+    }
+
+    function clearValue(entry) {
+      entry.value = null;
+      entry.el.textContent = '·'.repeat(entry.digits);
+      entry.el.classList.add('is-empty');
+      entry.el.classList.remove('is-new', 'is-fresh');
+    }
+
+    // So khớp dữ liệu mới với trạng thái đang hiển thị.
+    function syncPrizes(prizes) {
+      var filled = 0;
+      PRIZES.forEach(function (prize) {
+        var incoming = Array.isArray(prizes && prizes[prize.key]) ? prizes[prize.key] : [];
+        var present = 0;
+        for (var i = 0; i < prize.count; i++) {
+          var entry = slotIndex[prize.key + ':' + i];
+          var raw = incoming[i];
+          var value = (raw === undefined || raw === null || raw === '') ? null : String(raw);
+          if (value !== null) present++;
+          if (value === entry.value) continue;
+          if (value === null) {
+            clearValue(entry);           // nguồn rút lại giá trị: trả ô về trống
+          } else if (entry.value === null) {
+            queueReveal(entry, value);   // trống -> có số: hiện tuần tự
+          } else {
+            applyValue(entry, value);    // sửa giá trị đã hiển thị: đổi ngay
+          }
+        }
+        filled += present;
+        var row = document.querySelector('[data-prize="' + prize.key + '"]');
+        if (row) {
+          row.classList.toggle('is-done', present === prize.count);
+          row.classList.toggle('is-live', present > 0 && present < prize.count);
+          row.classList.toggle('is-waiting', present === 0);
+        }
+      });
+      return filled;
+    }
+
+    function renderSources(rows) {
+      var frag = document.createDocumentFragment();
+      (Array.isArray(rows) ? rows : []).forEach(function (source) {
+        var row = el('div', 'src');
+        row.append(
+          el('span', '', '#' + ((source && source.priority) || '—')),
+          el('span', '', (source && source.source) || 'Nguồn không xác định'),
+          el('span', '', ((source && source.received_values) || 0) + '/27')
+        );
+        frag.appendChild(row);
+      });
+      document.getElementById('sources').replaceChildren(frag);
+    }
+
+    // ---- Nhịp thăm dò thích ứng ---------------------------------------
+    // Giờ Việt Nam suy từ UTC nên không phụ thuộc múi giờ máy người xem.
+    // Vào khung quay số thì thăm dò dày, ngoài khung thì thưa để đỡ tốn
+    // băng thông và tránh bị giới hạn tần suất.
+    function vietnamMinutes() {
+      var now = new Date();
+      var utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+      return (utcMinutes + 7 * 60) % (24 * 60);
+    }
+
+    // Trạng thái dữ liệu quyết định nhịp, đồng hồ chỉ là gợi ý phụ: nếu kỳ quay
+    // bị lệch giờ hoặc kéo dài, "partial" vẫn giữ nhịp dày mà không cần đoán
+    // theo giờ. Ngược lại, khi chưa có gì thì đồng hồ giúp bắt đầu dày đúng lúc.
+    function nextDelayMs(status) {
+      if (status === 'complete_verified') return 300000; // đã xác minh: 5 phút
+      if (document.hidden) return 60000;                 // tab ẩn: giảm tải
+      if (status === 'partial') return 5000;             // đang về số
+      if (status === 'complete') return 15000;           // đủ số, chờ xác minh
+      var m = vietnamMinutes();
+      if (m >= 18 * 60 + 10 && m <= 18 * 60 + 50) return 5000;  // khung quay số
+      if (m >= 17 * 60 + 50 && m < 18 * 60 + 10) return 15000;  // sắp quay
+      if (m > 18 * 60 + 50 && m <= 19 * 60 + 30) return 20000;  // quay muộn
+      return 120000;                                            // ngoài khung
+    }
+
+    function describeDelay(ms) {
+      return ms >= 60000
+        ? 'làm mới mỗi ' + Math.round(ms / 60000) + ' phút'
+        : 'làm mới mỗi ' + Math.round(ms / 1000) + ' giây';
+    }
 
     function rawUrl() {
       if (window.LIVE_RAW_URL) return window.LIVE_RAW_URL;
-      const host = location.hostname;
+      var host = location.hostname;
       if (host.endsWith('.github.io')) {
-        const owner = host.split('.')[0];
-        const first = location.pathname.split('/').filter(Boolean)[0];
-        const repo = first || `${owner}.github.io`;
-        return `https://raw.githubusercontent.com/${owner}/${repo}/live/live.json`;
+        var owner = host.split('.')[0];
+        var first = location.pathname.split('/').filter(Boolean)[0];
+        var repo = first || (owner + '.github.io');
+        return 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/live/live.json';
       }
       return 'data/live.json';
     }
 
-    function boundedNumber(value, minimum, maximum, fallback = 0) {
-      const number = Number(value);
-      return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
-    }
+    var STATUS_LABELS = {
+      waiting: 'ĐANG CHỜ', partial: 'ĐANG CẬP NHẬT',
+      complete: 'HOÀN TẤT', complete_verified: 'ĐÃ XÁC MINH'
+    };
 
-    function textElement(tag, className, text) {
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      node.textContent = String(text ?? '');
-      return node;
-    }
-
-    function renderResults(prizes) {
-      const grid = textElement('div', 'grid', '');
-      for (const key of Object.keys(labels)) {
-        const rawValues = Array.isArray(prizes?.[key]) ? prizes[key] : [];
-        const values = rawValues.map(value => String(value)).join('  ') || '—';
-        grid.append(
-          textElement('div', 'label', labels[key]),
-          textElement('div', `nums ${key === 'special' ? 'special' : ''}`, values)
-        );
-      }
-      document.getElementById('results').replaceChildren(grid);
-    }
-
-    function renderSources(sourceStatus) {
-      const container = document.getElementById('sources');
-      const fragment = document.createDocumentFragment();
-      const rows = Array.isArray(sourceStatus) ? sourceStatus : [];
-      for (const source of rows) {
-        const row = textElement('div', 'src', '');
-        row.append(
-          textElement('span', '', `#${source?.priority ?? '—'}`),
-          textElement('span', '', source?.source ?? 'Nguồn không xác định'),
-          textElement('span', '', `${source?.received_values ?? 0}/27`)
-        );
-        fragment.appendChild(row);
-      }
-      container.replaceChildren(fragment);
+    function schedule(status) {
+      var delay = nextDelayMs(status);
+      document.getElementById('cadence').textContent = describeDelay(delay);
+      window.clearTimeout(pollTimer);
+      pollTimer = window.setTimeout(load, delay);
     }
 
     async function load() {
+      var status = 'waiting';
       try {
-        const response = await fetch(`${rawUrl()}?t=${Date.now()}`, {cache:'no-store'});
+        var response = await fetch(rawUrl() + '?t=' + Date.now(), {cache: 'no-store'});
         if (!response.ok) throw new Error(String(response.status));
-        const data = await response.json();
-        const statusLabels = {waiting:'ĐANG CHỜ',partial:'ĐANG CẬP NHẬT',complete:'HOÀN TẤT',complete_verified:'ĐÃ XÁC MINH'};
-        const state = String(data.status || 'waiting');
-        const progress = boundedNumber(data.progress_percent, 0, 100);
-        const verification = boundedNumber(data.verification_percent, 0, 100);
-        const received = boundedNumber(data.received_values, 0, 27);
+        var data = await response.json();
+        status = String(data.status || 'waiting');
 
-        document.getElementById('status').textContent = `${data.draw_date || ''} · ${statusLabels[state] || state.toUpperCase()}`;
-        document.getElementById('checked').textContent = `Cập nhật: ${data.checked_at_local || '-'}`;
-        document.getElementById('bar').style.width = `${progress}%`;
-        document.getElementById('progress').textContent = `${received}/27 giá trị · hoàn thành ${progress}%`;
-        const verify = document.getElementById('verify');
-        verify.textContent = `xác minh ${verification}%`;
-        verify.className = `badge ${data.verified_complete === true ? 'ok' : 'warn'}`;
+        var progress = clampNumber(data.progress_percent, 0, 100, 0);
+        var verification = clampNumber(data.verification_percent, 0, 100, 0);
 
-        renderResults(data.prizes);
-        renderSources(data.source_status);
-        const conflicts = Array.isArray(data.conflicts) ? data.conflicts.map(String) : [];
+        document.getElementById('status').textContent =
+          (data.draw_date || '') + ' · ' + (STATUS_LABELS[status] || status.toUpperCase());
+        document.getElementById('checked').textContent =
+          'Cập nhật: ' + (data.checked_at_local || '—');
+        document.getElementById('bar').style.width = progress + '%';
+
+        var shown = syncPrizes(data.prizes);
+        document.getElementById('progress').textContent =
+          shown + '/' + TOTAL_SLOTS + ' giá trị · hoàn thành ' + progress + '%';
+
+        var verify = document.getElementById('verify');
+        verify.textContent = 'xác minh ' + verification + '%';
+        verify.className = 'badge ' + (data.verified_complete === true ? 'ok' : 'warn');
+
+        var conflicts = Array.isArray(data.conflicts) ? data.conflicts.map(String) : [];
         document.getElementById('conflicts').textContent = conflicts.length
-          ? `Đang có bất đồng nguồn: ${conflicts.join(', ')}`
+          ? 'Đang có bất đồng nguồn: ' + conflicts.join(', ')
           : 'Không phát hiện bất đồng nguồn ở các ô đã xác minh.';
+        renderSources(data.source_status);
       } catch (error) {
         document.getElementById('status').textContent = 'Chưa lấy được dữ liệu trực tiếp';
+        document.getElementById('checked').textContent =
+          'Sẽ thử lại tự động. Kết quả đã xác minh vẫn xem được ở Bảng điều khiển.';
       }
+      schedule(status);
     }
 
+    // Quay lại tab thì lấy dữ liệu ngay thay vì đợi hết chu kỳ cũ.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) { window.clearTimeout(pollTimer); load(); }
+    });
+
+    buildSkeleton();
     load();
-    setInterval(load, 10000);
+  })();
   </script>
 </body>
 </html>

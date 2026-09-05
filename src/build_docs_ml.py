@@ -29,6 +29,7 @@ NAV: tuple[tuple[str, str], ...] = (
     ("ml_top10_de.html", "10 số Đặc Biệt"),
     ("soi-path-loto-active.html", "Cầu lô tô đang chạy"),
     ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy"),
+    ("live.html", "Kết quả trực tiếp"),
 )
 
 
