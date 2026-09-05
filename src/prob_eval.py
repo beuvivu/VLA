@@ -12,7 +12,12 @@ import pandas as pd
 
 from lottery import Lottery
 from path_models import PathParams, build_daily_targets
-from path_prob import predict_next_day
+from path_prob import (
+    fit_paths,
+    predict_from_fitted_paths_full,
+    prepare_path_history,
+)
+from xsmb_domain import baseline_rate
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -23,6 +28,12 @@ class EvalResult:
     day: date
     brier: float
     logloss: float
+    # A score is meaningless without something to beat.  Every evaluated day now
+    # also scores the no-information constant (1-0.99^27 for lô tô, 0.01 for ĐB).
+    # If the model cannot beat this, its ranking is noise however plausible the
+    # probabilities look.
+    baseline_brier: float = float("nan")
+    baseline_logloss: float = float("nan")
 
 
 def _safe_logloss(p: np.ndarray, y: np.ndarray, eps: float = 1e-12) -> float:
@@ -75,13 +86,37 @@ def evaluate(
     all_p: list[float] = []
     all_y: list[int] = []
 
+    # Every day of the walk-forward previously re-derived the digit matrix, the
+    # per-day target sets and the days x pairs table from the whole prefix.
+    # They do not depend on the anchor, so they are built once here; fit_paths
+    # still only reads rows up to its anchor index, so the walk-forward remains
+    # strictly causal.
+    prepared = prepare_path_history(df_raw, df_2d)
+
     for t in range(start, n):
         if t == 0:
             continue
-        hist_raw = df_raw.iloc[:t].copy()
-        hist_2d = df_2d.iloc[:t].copy()
+        anchor = dates[t - 1]
 
-        pred = predict_next_day(df_raw=hist_raw, df_2digits=hist_2d, params=params, mode=mode, kind=kind, top_numbers=100)
+        # BUG FIX: ``predict_next_day`` filters out numbers with no supporting
+        # path before returning, so the reconstructed vector had holes at
+        # probability 0.  For ĐB the vector had already been normalised *before*
+        # that filter, so the evaluated distribution did not sum to 1; any day
+        # whose winning number was filtered out scored a log-loss of ~27.6
+        # against a probability that the model never actually asserted.
+        # ``predict_from_fitted_paths_full`` always returns all 100 numbers.
+        stats_t, raw_by_date, dates_t = fit_paths(
+            params=params, mode=mode, anchor_date=anchor, prepared=prepared
+        )
+        pred = predict_from_fitted_paths_full(
+            stats=stats_t,
+            raw_by_date=raw_by_date,
+            dates=dates_t,
+            params=params,
+            kind=kind,
+            mode=mode,
+            anchor_date=anchor,
+        )
         if pred.empty:
             continue
 
@@ -97,7 +132,16 @@ def evaluate(
             y = np.zeros(100, dtype=np.float64)
             y[int(de_targets[t])] = 1.0
 
-        daily.append(EvalResult(day=dates[t], brier=_brier(p, y), logloss=_safe_logloss(p, y)))
+        const = np.full(100, baseline_rate(mode), dtype=np.float64)
+        daily.append(
+            EvalResult(
+                day=dates[t],
+                brier=_brier(p, y),
+                logloss=_safe_logloss(p, y),
+                baseline_brier=_brier(const, y),
+                baseline_logloss=_safe_logloss(const, y),
+            )
+        )
         all_p.extend(p.tolist())
         all_y.extend(y.tolist())
 
@@ -148,7 +192,18 @@ def main() -> None:
 
     out_dir = Path("data") / "prob_eval"
     out_dir.mkdir(parents=True, exist_ok=True)
-    daily_df = pd.DataFrame([{"day": r.day.isoformat(), "brier": r.brier, "logloss": r.logloss} for r in daily])
+    daily_df = pd.DataFrame(
+        [
+            {
+                "day": r.day.isoformat(),
+                "brier": r.brier,
+                "logloss": r.logloss,
+                "baseline_brier": r.baseline_brier,
+                "baseline_logloss": r.baseline_logloss,
+            }
+            for r in daily
+        ]
+    )
     daily_df.to_csv(out_dir / f"daily_{args.mode}_{args.kind}.csv", index=False)
     rel.to_csv(out_dir / f"reliability_{args.mode}_{args.kind}.csv", index=False)
 
@@ -158,8 +213,29 @@ def main() -> None:
     print("Saved:", out_dir / f"daily_{args.mode}_{args.kind}.csv")
     print("Saved:", out_dir / f"reliability_{args.mode}_{args.kind}.csv")
     print("Saved:", img_path)
-    print("Mean Brier:", float(daily_df["brier"].mean()) if not daily_df.empty else None)
-    print("Mean LogLoss:", float(daily_df["logloss"].mean()) if not daily_df.empty else None)
+    if daily_df.empty:
+        print("No evaluated days.")
+        return
+
+    # Report skill against the constant baseline with a paired 95% interval, so
+    # "the model looks reasonable" cannot be mistaken for "the model helps".
+    for metric in ("brier", "logloss"):
+        model = daily_df[metric].to_numpy(dtype=float)
+        base = daily_df[f"baseline_{metric}"].to_numpy(dtype=float)
+        diff = model - base
+        half_width = (
+            1.96 * float(np.std(diff, ddof=1)) / np.sqrt(len(diff)) if len(diff) > 1 else float("nan")
+        )
+        skill = 1.0 - model.mean() / base.mean() if base.mean() else float("nan")
+        verdict = (
+            "WORSE than constant" if diff.mean() - half_width > 0
+            else "BETTER than constant" if diff.mean() + half_width < 0
+            else "indistinguishable from constant"
+        )
+        print(
+            f"Mean {metric}: {model.mean():.6f}  baseline: {base.mean():.6f}  "
+            f"skill: {skill:+.4%}  paired diff: {diff.mean():+.6f} ± {half_width:.6f}  -> {verdict}"
+        )
 
 
 if __name__ == "__main__":

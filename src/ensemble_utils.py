@@ -36,7 +36,19 @@ def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
 
 
 def sigmoid(x: np.ndarray) -> np.ndarray:
-    return 1.0 / (1.0 + np.exp(-x))
+    """Numerically stable logistic.
+
+    ``1/(1+exp(-x))`` evaluates ``exp(+|x|)`` for negative inputs and overflows
+    to a RuntimeWarning (and, on some builds, a spurious ``inf``) once
+    ``x < -709``.  Branching on the sign keeps every exponent negative.
+    """
+    values = np.asarray(x, dtype=np.float64)
+    out = np.empty_like(values)
+    positive = values >= 0
+    out[positive] = 1.0 / (1.0 + np.exp(-values[positive]))
+    exp_x = np.exp(values[~positive])
+    out[~positive] = exp_x / (1.0 + exp_x)
+    return out
 
 
 def logit(p: np.ndarray, eps: float = 1e-12) -> np.ndarray:
@@ -113,6 +125,23 @@ def categorical_logloss(p: np.ndarray, y_true_idx: int) -> float:
 
 
 def categorical_brier(p: np.ndarray, y_true_idx: int) -> float:
-    y = np.zeros_like(p)
+    """Multi-class Brier score, ``sum_k (p_k - y_k)^2``.
+
+    This used ``np.mean`` rather than ``np.sum``, reporting a value 100x smaller
+    than the standard definition.  Rankings were unaffected (the two differ by a
+    constant factor), but two things were not:
+
+      * every published ĐB Brier figure was off by two orders of magnitude, and
+      * ``meta_predictor`` mixes the two in ``logloss + 0.20 * brier``, so the
+        Brier term contributed ~0.002 of its intended weight for ĐB while
+        contributing fully for lô tô (whose ``bernoulli_brier`` is genuinely a
+        mean over the 100 Bernoulli marginals).
+
+    ``bernoulli_brier`` is deliberately left as a mean: for lô tô the target is
+    100 independent Bernoulli marginals, and the mean is the conventional
+    per-marginal score there.
+    """
+    values = np.asarray(p, dtype=np.float64)
+    y = np.zeros_like(values)
     y[int(y_true_idx)] = 1.0
-    return float(np.mean((p - y) ** 2))
+    return float(np.sum((values - y) ** 2))

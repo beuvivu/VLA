@@ -118,13 +118,15 @@ def build_daily_targets(df_2digits: pd.DataFrame) -> tuple[list[date], list[set[
     dates: list[date] = [d.to_pydatetime().date() for d in pd.to_datetime(df_2digits["date"])]
     cols = [c for c in df_2digits.columns if c != "date"]
 
-    loto_targets: list[set[int]] = []
-    de_targets: list[int] = []
+    # ``iterrows`` materialised a pandas Series per draw and then indexed it 27
+    # times by label.  One numpy conversion plus per-row set() over the array is
+    # the same result with a fraction of the overhead — and this function is on
+    # the hot path of nearly every statistics module.
+    values = df_2digits[cols].to_numpy(dtype=np.int64, copy=False) % 100
+    special = (df_2digits["special"].to_numpy(dtype=np.int64, copy=False) % 100)
 
-    for _, r in df_2digits.iterrows():
-        vals = [int(r[c]) for c in cols]
-        loto_targets.append(set(vals))
-        de_targets.append(int(r["special"]) % 100)
+    loto_targets: list[set[int]] = [set(row.tolist()) for row in values]
+    de_targets: list[int] = special.tolist()
 
     return dates, loto_targets, de_targets
 

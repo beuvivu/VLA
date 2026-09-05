@@ -37,7 +37,8 @@ from sklearn.metrics import brier_score_loss, log_loss
 
 from calendar_alignment import require_daily_contiguous
 from lottery import Lottery, RepoPaths
-from ml_features import _pairs_indices, _path_support_matrix, _raw_digits_from_row
+from ml_features import _pairs_indices, _path_support_matrix
+from xsmb_domain import raw_digit_matrix
 from ml_models import PlattCalibratedClassifier
 
 Mode = Literal["loto", "de"]
@@ -368,7 +369,8 @@ def build_cau_keo_feature_frame(
 
     # Pair/path support from raw result digits. The raw/two date-axis equality
     # guard above proves that path_support[t] and hit[t] refer to the same day.
-    raw_digits = [_raw_digits_from_row(r) for _, r in raw.iterrows()]
+    # Vectorised digit extraction (was one zfill round-trip per draw).
+    raw_digits = list(raw_digit_matrix(raw))
     P = raw_digits[0].shape[0]
     I, J = _pairs_indices(P)
     path_support = _path_support_matrix(

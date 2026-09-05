@@ -69,7 +69,18 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
     rate = k / n
     variance = max(baseline * (1.0 - baseline), 1e-12)
     z = (rate - baseline) / np.sqrt(variance / n)
-    p_values = np.array([binomtest(int(x), n, baseline, alternative="two-sided").pvalue for x in k])
+    # ``binomtest`` is called once per number; distinct hit counts repeat heavily
+    # across 100 numbers, so memoising by count removes most of the calls
+    # without changing a single p-value.
+    cache: dict[int, float] = {}
+    p_values = np.empty(len(k), dtype=float)
+    for i, count in enumerate(k):
+        count = int(count)
+        if count not in cache:
+            cache[count] = float(
+                binomtest(count, n, baseline, alternative="two-sided").pvalue
+            )
+        p_values[i] = cache[count]
     q_values = _bh_fdr(p_values)
 
     a0 = max(1e-6, baseline * prior_strength)
@@ -82,7 +93,18 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
 
     lift = np.divide(rate, baseline, out=np.zeros_like(rate, dtype=float), where=baseline > 0)
     effect = rate - baseline
-    evidence = -np.log10(np.clip(q_values, 1e-12, 1.0)) * np.minimum(np.abs(z) / 3.0, 1.0)
+    # ``evidence_score`` used ``abs(z)``, so an unusually COLD number scored
+    # exactly like an equally unusual HOT one.  The table is then sorted by this
+    # score descending and rendered as the headline "signal" list, which put
+    # under-represented numbers at the top of a list readers take as hot.
+    # ``evidence_strength`` keeps the old two-sided magnitude (how surprising,
+    # in either direction); ``evidence_score`` now carries the sign of the
+    # deviation so hot and cold are separable.
+    evidence_strength = -np.log10(np.clip(q_values, 1e-12, 1.0)) * np.minimum(
+        np.abs(z) / 3.0, 1.0
+    )
+    evidence = np.sign(effect) * evidence_strength
+    direction = np.where(effect > 0, "over", np.where(effect < 0, "under", "flat"))
 
     out = pd.DataFrame(
         {
@@ -105,6 +127,8 @@ def number_significance(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, *, w
             "posterior_ci_low": ci_low,
             "posterior_ci_high": ci_high,
             "evidence_score": evidence,
+            "evidence_strength": evidence_strength,
+            "direction": direction,
             "fdr_05": q_values <= 0.05,
         }
     )
