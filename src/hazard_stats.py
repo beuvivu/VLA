@@ -32,9 +32,12 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
         return pd.DataFrame()
 
     max_gap = max(1, int(max_gap))
-    last_seen = np.full(100, -10**9, dtype=np.int64)
+    last_seen = np.full(100, -1, dtype=np.int64)
+    seen = np.zeros(100, dtype=bool)
     denom = np.zeros(max_gap + 1, dtype=np.int64)
     numer = np.zeros(max_gap + 1, dtype=np.int64)
+    left_censored_risk = 0
+    left_censored_hits = 0
 
     for t in range(n):
         day = int(ordinals[t])
@@ -42,16 +45,27 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
         for x in loto_targets[t]:
             hit_mask[int(x)] = True
 
+        # LEFT CENSORING: a number that has not appeared yet has no defined
+        # "days since previous hit".  Seeding ``last_seen`` with -1e9 clipped
+        # every such number into the terminal ``max_gap`` bucket, so the bucket
+        # that is supposed to describe genuinely long absences was diluted with
+        # numbers whose gap was simply unknown.  They are now excluded from the
+        # risk set until their first observed hit and reported separately.
         gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
-        denom += np.bincount(gaps, minlength=max_gap + 1)
+        denom += np.bincount(gaps[seen], minlength=max_gap + 1)
+        left_censored_risk += int((~seen).sum())
+
         hit_numbers = np.flatnonzero(hit_mask)
         if hit_numbers.size:
-            hit_gaps = gaps[hit_numbers]
-            numer += np.bincount(hit_gaps, minlength=max_gap + 1)
+            observed = hit_numbers[seen[hit_numbers]]
+            if observed.size:
+                numer += np.bincount(gaps[observed], minlength=max_gap + 1)
+            left_censored_hits += int(hit_numbers.size - observed.size)
             last_seen[hit_numbers] = day
+            seen[hit_numbers] = True
 
     p = numer / np.maximum(denom, 1)
-    return pd.DataFrame(
+    out = pd.DataFrame(
         {
             "gap": np.arange(max_gap + 1),
             "denom": denom,
@@ -60,6 +74,12 @@ def hazard_curve_loto(df_2d: pd.DataFrame, max_gap: int = 60) -> pd.DataFrame:
             "gap_unit": "calendar_days_since_previous_hit",
         }
     )
+    # The terminal bucket aggregates every gap >= max_gap, so label it honestly
+    # instead of letting readers treat it as "exactly max_gap days".
+    out["censored_bucket"] = out["gap"] == max_gap
+    out.attrs["left_censored_risk_days"] = left_censored_risk
+    out.attrs["left_censored_hits"] = left_censored_hits
+    return out
 
 
 def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
@@ -72,21 +92,32 @@ def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
         return pd.DataFrame()
 
     max_gap = max(1, int(max_gap))
-    last_seen = np.full(100, -10**9, dtype=np.int64)
+    last_seen = np.full(100, -1, dtype=np.int64)
+    seen = np.zeros(100, dtype=bool)
     denom = np.zeros(max_gap + 1, dtype=np.int64)
     numer = np.zeros(max_gap + 1, dtype=np.int64)
+    left_censored_risk = 0
+    left_censored_hits = 0
 
     for t in range(n):
         day = int(ordinals[t])
         x = int(de_targets[t])
+        # Same left-censoring correction as ``hazard_curve_loto``.  It bites
+        # harder here: a ĐB number needs ~100 draws on average for its first
+        # appearance, so with a short history a large share of the risk set has
+        # no defined gap at all.
         gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)
-        denom += np.bincount(gaps, minlength=max_gap + 1)
-        g = int(gaps[x])
-        numer[g] += 1
+        denom += np.bincount(gaps[seen], minlength=max_gap + 1)
+        left_censored_risk += int((~seen).sum())
+        if seen[x]:
+            numer[int(gaps[x])] += 1
+        else:
+            left_censored_hits += 1
         last_seen[x] = day
+        seen[x] = True
 
     p = numer / np.maximum(denom, 1)
-    return pd.DataFrame(
+    out = pd.DataFrame(
         {
             "gap": np.arange(max_gap + 1),
             "denom": denom,
@@ -95,6 +126,10 @@ def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
             "gap_unit": "calendar_days_since_previous_hit",
         }
     )
+    out["censored_bucket"] = out["gap"] == max_gap
+    out.attrs["left_censored_risk_days"] = left_censored_risk
+    out.attrs["left_censored_hits"] = left_censored_hits
+    return out
 
 
 def main() -> None:
