@@ -19,7 +19,12 @@ concurrency:
 jobs:
   live:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    # Phải lớn hơn MAX_SECONDS (60 phút) cộng thời gian checkout/cài đặt.
+    # Trước đây job bị giết ở phút 50 trong khi vòng thăm dò được cấp 60 phút,
+    # nên với kỳ quay muộn (sau 18:50 giờ VN) job chết giữa chừng và bước
+    # "kích hoạt hoàn tất dữ liệu ngày" — vốn có điều kiện verified == 'true' —
+    # không bao giờ chạy, khiến dữ liệu ngày phải chờ cron kế tiếp.
+    timeout-minutes: 70
     env:
       PYTHONPATH: ${{ github.workspace }}/src
       TZ: Asia/Ho_Chi_Minh

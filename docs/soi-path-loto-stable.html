@@ -6,12 +6,6 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>SOI CẦU LÔ TÔ — ỔN ĐỊNH</title>
-  <style id="vla-tailwind-lite">
-    .bg-slate-50{background-color:#f8fafc}.text-slate-800{color:#1e293b}.text-slate-600{color:#475569}
-    .bg-white{background:#fff}.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
-    .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.shadow-sm{box-shadow:0 1px 2px rgba(15,23,42,.06)}
-    .transition-all{transition:all .2s ease-in-out}.hover\:shadow-lg:hover{box-shadow:0 10px 25px rgba(15,23,42,.14)}
-  </style>
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
@@ -43,12 +37,16 @@
     .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
     .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
     .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    /* Card là flex dọc để nội dung cuối kéo giãn, và bảng gợi ý bị chặn chiều
+       cao, nhờ vậy hai card cùng hàng không lệch nhau một khoảng trống lớn. */
+    .grid{display:grid;grid-template-columns:1fr;gap:12px;align-items:stretch}
+    .grid>.card{display:flex;flex-direction:column;min-height:0}
+    .pick-scroll{flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto}
     @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body>
 <div class="wrap">
   <div class="top">
     <div>
@@ -71,7 +69,7 @@
           <a class="btn secondary" href="index.html">Trang tổng hợp</a>
         </div>
       </div>
-      <div style="margin-top:10px;overflow:auto">
+      <div class="pick-scroll" style="margin-top:10px">
         <table>
           <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
           <tbody>

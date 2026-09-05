@@ -985,17 +985,18 @@ def main() -> None:
     .metric-card strong {{ display: block; margin: 4px 0 2px; font-size: 23px; letter-spacing: -0.02em; }}
     .metric-card small {{ color: #e0e7ff; line-height: 1.4; }}
 
+    /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
+       khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
     .sticky-nav {{
       position: sticky;
       top: 0;
       z-index: 50;
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      overflow-x: auto;
       padding: 12px 0 14px;
       margin-bottom: 8px;
       backdrop-filter: blur(16px);
-      scrollbar-width: thin;
     }}
     .sticky-nav a {{
       white-space: nowrap;
@@ -1099,11 +1100,14 @@ def main() -> None:
       padding: 4px 2px 8px;
       scrollbar-width: thin;
     }}
+    /* Ma trận 10x10 phải hiện đủ cả 10 cột đuôi trong một card nửa bề ngang;
+       ngưỡng cũ (54px + 10x50px + min-width 660px) rộng hơn card nên cột
+       ĐUÔI 9 bị đẩy ra ngoài vùng nhìn. */
     .num-matrix {{
       display: grid;
-      grid-template-columns: 54px repeat(10, minmax(50px, 1fr));
-      gap: 5px;
-      min-width: 660px;
+      grid-template-columns: 40px repeat(10, minmax(38px, 1fr));
+      gap: 4px;
+      min-width: 464px;
     }}
     .axis {{
       display: grid;
