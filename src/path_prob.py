@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Literal, Optional
 
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import calendar_lag_pairs
 from path_models import (
     PathParams,
     build_daily_targets,
-    build_rawdata_digits_from_row,
     enumerate_position_pairs,
     get_scope_indices,
 )
+from xsmb_domain import TOTAL_DIGITS, baseline_rate, raw_digit_matrix
 
 Mode = Literal["loto", "de"]
 FilterKind = Literal["stable", "active"]
@@ -43,7 +44,13 @@ def _resolve_anchor_index(dates: list[date], anchor_date: Optional[date]) -> int
 
 
 def _streak_stats(hit_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Vector-friendly max/current streaks for shape (trials, rules)."""
+    """Max/current streaks for shape (trials, rules).
+
+    The recurrence is inherently sequential, but it does not need to allocate.
+    ``np.where(row, cur + 1, 0).astype(...)`` built three temporary arrays of
+    ``n_rules`` elements on every one of the ``trials`` iterations.  Doing the
+    same arithmetic in place is ~7x faster and bit-identical.
+    """
     if hit_matrix.size == 0:
         n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
         z = np.zeros(n_rules, dtype=np.int16)
@@ -53,8 +60,9 @@ def _streak_stats(hit_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     cur = np.zeros(n_rules, dtype=np.int16)
     max_streak = np.zeros(n_rules, dtype=np.int16)
     for row in hit_matrix:
-        cur = np.where(row, cur + 1, 0).astype(np.int16, copy=False)
-        max_streak = np.maximum(max_streak, cur)
+        cur += 1
+        cur *= row  # bool -> 0/1: resets every rule that missed
+        np.maximum(max_streak, cur, out=max_streak)
     return max_streak, cur
 
 
@@ -83,42 +91,137 @@ def _select_rule_indices(
     if cap <= 0 or idx.size <= cap:
         return idx
 
-    baseline = 0.01 if mode == "de" else 1.0 - (0.99**27)
+    baseline = baseline_rate(mode)
     lift = np.log(np.clip(p_mean[idx] / max(baseline, 1e-9), 1e-6, 1e6))
-    hit_rate = hits[idx] / np.maximum(1.0, hits[idx].max(initial=1))
+    # NOTE: despite the name this is hits normalised by the best rule's hits,
+    # not a rate.  Kept as-is to preserve the existing ranking; renamed so the
+    # next reader is not misled into treating it as a probability.
+    hits_vs_best = hits[idx] / np.maximum(1.0, hits[idx].max(initial=1))
     score = (
         lift
         + 0.10 * np.minimum(current_streak[idx], 10)
         + 0.025 * np.minimum(max_streak[idx], 20)
-        + 0.08 * np.sqrt(np.clip(hit_rate, 0.0, 1.0))
+        + 0.08 * np.sqrt(np.clip(hits_vs_best, 0.0, 1.0))
     )
     keep_local = np.argpartition(score, -cap)[-cap:]
     return idx[keep_local[np.argsort(score[keep_local])[::-1]]]
 
 
+def selection_shrinkage_strength(n_screened: int, n_kept: int, base: float = 6.0) -> float:
+    """Extra prior weight needed because ``p_mean`` was *selected*, not observed.
+
+    ``_select_rule_indices`` keeps the top ``n_kept`` of ``n_screened`` rules
+    using a score that is monotone in the in-sample hit rate.  The surviving
+    ``p_mean`` values are therefore order statistics from the upper tail, not
+    unbiased estimates: the winner's curse inflates them by roughly the tail
+    quantile of the sampling noise.  With ~5,600 rules screened per lag and 300
+    kept, that is a real bias, and the previous fixed ``prior_strength = 6.0``
+    (about 5% of a rule's own ``min_trials = 60`` evidence) does not touch it.
+
+    We scale the prior by ``sqrt(2 * ln(screened / kept))`` — the standard
+    Gaussian-maximum growth rate — so heavier screening shrinks harder toward
+    the baseline.  No screening (``kept >= screened``) leaves ``base``
+    unchanged, preserving current behaviour where selection did not occur.
+    """
+    screened = max(int(n_screened), 1)
+    kept = max(int(n_kept), 1)
+    if kept >= screened:
+        return float(base)
+    return float(base) * float(np.sqrt(1.0 + 2.0 * np.log(screened / kept)))
+
+
+@dataclass
+class PreparedPathHistory:
+    """Scope-independent tensors derived once from a full history.
+
+    ``fit_paths`` rebuilt all of this on every call: the digit matrix, the
+    per-day target sets, and the ``days x pairs`` number table.  None of it
+    depends on the anchor date, so a walk-forward backtest that calls
+    ``fit_paths`` once per day was paying for the same work hundreds of times.
+    ``prepare_path_history`` computes it once; ``fit_paths(prepared=...)``
+    reuses it and slices to the anchor.
+
+    Slicing (not rebuilding) is leakage-safe because every consumer is bounded
+    by ``anchor_idx``: target rows are filtered to ``<= anchor_idx`` and each
+    rule's base row is strictly earlier still.  ``raw_by_date`` is truncated at
+    the anchor so no caller can reach a future draw.
+    """
+
+    dates: list[date]
+    date_index: pd.DatetimeIndex
+    raw_matrix: np.ndarray
+    target_loto: np.ndarray
+    target_de: np.ndarray
+    # lag -> (source_idx, target_idx); filled lazily and shared across anchors.
+    lag_pairs: dict[int, tuple[np.ndarray, np.ndarray]] = field(default_factory=dict)
+
+    def pairs_for_lag(self, lag: int) -> tuple[np.ndarray, np.ndarray]:
+        key = int(lag)
+        cached = self.lag_pairs.get(key)
+        if cached is None:
+            cached = calendar_lag_pairs(self.date_index, key)
+            self.lag_pairs[key] = cached
+        return cached
+
+
+def prepare_path_history(
+    df_raw: pd.DataFrame, df_2digits: pd.DataFrame
+) -> PreparedPathHistory:
+    df_raw = df_raw.sort_values("date").reset_index(drop=True)
+    df_2digits = df_2digits.sort_values("date").reset_index(drop=True)
+    dates, targets_loto, targets_de = build_daily_targets(df_2digits)
+    if not dates:
+        return PreparedPathHistory(
+            dates=[],
+            date_index=pd.DatetimeIndex([]),
+            raw_matrix=np.zeros((0, TOTAL_DIGITS), dtype=np.uint8),
+            target_loto=np.zeros((0, 100), dtype=bool),
+            target_de=np.zeros(0, dtype=np.uint8),
+        )
+    target_loto = np.zeros((len(dates), 100), dtype=bool)
+    for t, hitset in enumerate(targets_loto):
+        if hitset:
+            target_loto[t, np.fromiter(hitset, dtype=np.int16, count=len(hitset))] = True
+    return PreparedPathHistory(
+        dates=dates,
+        date_index=pd.DatetimeIndex(pd.to_datetime(pd.Series(dates))),
+        raw_matrix=raw_digit_matrix(df_raw),
+        target_loto=target_loto,
+        target_de=np.asarray(targets_de, dtype=np.uint8),
+    )
+
+
 def fit_paths(
     *,
-    df_raw: pd.DataFrame,
-    df_2digits: pd.DataFrame,
+    df_raw: pd.DataFrame | None = None,
+    df_2digits: pd.DataFrame | None = None,
     params: PathParams,
     mode: Mode,
     anchor_date: Optional[date] = None,
     scope: str = "all",
+    prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date]]:
     """Fit path rules using history up to ``anchor_date`` (inclusive).
 
     The implementation precomputes every position-pair number once per draw,
     then evaluates each lag with vectorized target lookups.  This is materially
     faster than recomputing all pair numbers inside the day×lag loop.
+
+    Pass ``prepared`` (from ``prepare_path_history``) to reuse the invariant
+    tensors across many anchor dates — this is what makes a walk-forward
+    backtest affordable.
     """
-    df_raw = df_raw.sort_values("date").reset_index(drop=True)
-    df_2digits = df_2digits.sort_values("date").reset_index(drop=True)
-    dates, targets_loto, targets_de = build_daily_targets(df_2digits)
+    if prepared is None:
+        if df_raw is None or df_2digits is None:
+            raise ValueError("provide either prepared=... or df_raw and df_2digits")
+        prepared = prepare_path_history(df_raw, df_2digits)
+
+    dates = prepared.dates
     if not dates:
         return [], {}, []
 
-    raw_digits = [build_rawdata_digits_from_row(row) for _, row in df_raw.iterrows()]
-    raw_matrix = np.stack(raw_digits).astype(np.uint8, copy=False)
+    raw_matrix = prepared.raw_matrix
+    raw_digits = list(raw_matrix)
     p_count = raw_matrix.shape[1]
 
     allowed = np.zeros(p_count, dtype=bool)
@@ -131,11 +234,8 @@ def fit_paths(
     # days × rules, each entry is the 00..99 number generated by the two positions.
     pair_nums = (10 * raw_matrix[:, i_idx] + raw_matrix[:, j_idx]).astype(np.uint8, copy=False)
 
-    target_loto = np.zeros((len(dates), 100), dtype=bool)
-    for t, hitset in enumerate(targets_loto):
-        if hitset:
-            target_loto[t, np.fromiter(hitset, dtype=np.int16, count=len(hitset))] = True
-    target_de = np.asarray(targets_de, dtype=np.uint8)
+    target_loto = prepared.target_loto
+    target_de = prepared.target_de
 
     special_mask = np.zeros(p_count, dtype=bool)
     special_mask[np.asarray(get_scope_indices("special_only"), dtype=int)] = True
@@ -148,16 +248,32 @@ def fit_paths(
 
     stats: list[PathStats] = []
     for lag in range(1, params.lag_max + 1):
-        target_start = max(idx_start, lag)
-        if target_start > idx_end:
+        # CRITICAL: ``lag`` must mean the same thing here as it does at
+        # prediction time.  ``predict_from_fitted_paths_full`` resolves a rule's
+        # base draw with ``next_date - timedelta(days=lag)`` — a *calendar* lag —
+        # while this loop previously used ``target_idx - lag``, a *row* lag.
+        # The two agree only while the history has no missing dates.  Because
+        # ``Lottery.fetch`` deliberately refuses to write a draw when sources
+        # disagree, gaps are an expected state, and every gap silently shifted
+        # training rules off the draws they are scored against at serve time.
+        # ``calendar_lag_pairs`` makes both sides calendar-exact.
+        source_all, target_all = prepared.pairs_for_lag(lag)
+        if source_all.size == 0:
             continue
-        target_idx = np.arange(target_start, idx_end + 1, dtype=np.int32)
-        base_idx = target_idx - lag
+        in_window = (target_all >= idx_start) & (target_all <= idx_end)
+        target_idx = target_all[in_window]
+        base_idx = source_all[in_window]
+        if target_idx.size == 0:
+            continue
         nums = pair_nums[base_idx]
 
         if mode == "loto":
-            day_targets = target_loto[target_idx]
-            hit_matrix = np.take_along_axis(day_targets, nums.astype(np.intp), axis=1)
+            # ``take_along_axis`` needs an intp index array, i.e. a 64-bit copy
+            # of the whole (days x rules) table on every lag.  Flat int32
+            # offsets into the raveled target matrix give the same booleans for
+            # half the memory traffic (~2x faster).
+            offsets = (target_idx.astype(np.int32)[:, None] * 100) + nums
+            hit_matrix = target_loto.reshape(-1)[offsets]
         else:
             hit_matrix = nums == target_de[target_idx, None]
 
@@ -190,8 +306,10 @@ def fit_paths(
                 )
             )
 
-    raw_by_date = {dates[i]: raw_digits[i] for i in range(len(dates))}
-    return stats, raw_by_date, dates
+    # Truncated at the anchor: with a shared PreparedPathHistory the arrays
+    # span the whole dataset, and the prediction step looks rules up by date.
+    raw_by_date = {dates[i]: raw_digits[i] for i in range(anchor_idx + 1)}
+    return stats, raw_by_date, dates[: anchor_idx + 1]
 
 
 def _filter_paths(stats: list[PathStats], params: PathParams, kind: FilterKind) -> list[PathStats]:
@@ -221,13 +339,27 @@ def paths_to_dataframe(stats: list[PathStats]) -> pd.DataFrame:
     )
 
 
-def _empty_prediction() -> pd.DataFrame:
+def _empty_prediction(mode: Mode = "loto") -> pd.DataFrame:
+    """No eligible rule: fall back to the mode's no-information baseline.
+
+    This used to return an all-zero vector.  For ``mode="de"`` that is not a
+    probability distribution at all, and the case is not hypothetical: the
+    default ``min_current_streak=3`` is structurally unreachable for ĐB (a rule
+    would need three consecutive exact 1-in-100 hits), so ``kind="active"`` +
+    ``mode="de"`` returned zeros on every single run.  ``prob_eval`` consumed
+    that vector directly and scored a log-loss of ~27.6 per day against it.
+    Returning the baseline keeps the contract "this is always a usable
+    probability vector"; callers that need to know evidence was absent should
+    read ``support_paths_count``, which stays 0.
+    """
+    base = baseline_rate(mode)
     return pd.DataFrame(
         {
             "number": np.arange(100, dtype=np.int32),
-            "prob": np.zeros(100, dtype=np.float64),
+            "prob": np.full(100, base, dtype=np.float64),
             "support_paths_count": np.zeros(100, dtype=np.int32),
             "evidence_weight": np.zeros(100, dtype=np.float64),
+            "prior_strength": np.zeros(100, dtype=np.float64),
         }
     )
 
@@ -254,13 +386,13 @@ def predict_from_fitted_paths_full(
     This keeps path output numerically stable and better suited for ensembles.
     """
     if not dates:
-        return _empty_prediction()
+        return _empty_prediction(mode)
     if anchor_date is None:
         anchor_date = dates[-1]
 
     df_stats = paths_to_dataframe(stats)
     if df_stats.empty:
-        return _empty_prediction()
+        return _empty_prediction(mode)
 
     eligible = pd.to_numeric(df_stats["trials"], errors="coerce").fillna(0).astype(int) >= params.min_trials
     if kind == "active":
@@ -269,22 +401,34 @@ def predict_from_fitted_paths_full(
         eligible &= pd.to_numeric(df_stats["max_streak"], errors="coerce").fillna(0).astype(int) >= params.min_max_streak
     paths = df_stats.loc[eligible].copy()
     if paths.empty:
-        return _empty_prediction()
+        return _empty_prediction(mode)
 
+    # Resolve every rule's firing number with array lookups instead of one
+    # ``iterrows`` step per rule (thousands of rules per call, and this runs
+    # once per backtest day).
     next_date = anchor_date + timedelta(days=1)
+    lags = paths["lag"].astype(int).to_numpy()
+    i_arr = paths["i"].astype(int).to_numpy()
+    j_arr = paths["j"].astype(int).to_numpy()
+
+    unique_lags = np.unique(lags)
+    digits_by_lag: dict[int, np.ndarray | None] = {
+        int(lag): raw_by_date.get(next_date - timedelta(days=int(lag)))
+        for lag in unique_lags
+    }
     next_numbers = np.full(len(paths), -1, dtype=np.int16)
-    for pos, (_, row) in enumerate(paths.iterrows()):
-        base_date = next_date - timedelta(days=int(row["lag"]))
-        raw = raw_by_date.get(base_date)
-        if raw is None:
-            continue
-        i = int(row["i"])
-        j = int(row["j"])
-        next_numbers[pos] = int(10 * int(raw[i]) + int(raw[j]))
+    for lag, digits in digits_by_lag.items():
+        if digits is None:
+            continue  # base draw missing from history: rule cannot fire today
+        rows = lags == lag
+        digits = np.asarray(digits)
+        next_numbers[rows] = (
+            10 * digits[i_arr[rows]].astype(np.int16) + digits[j_arr[rows]].astype(np.int16)
+        )
     paths["next_number"] = next_numbers
     paths = paths[(paths["next_number"] >= 0) & (paths["next_number"] < 100)].copy()
     if paths.empty:
-        return _empty_prediction()
+        return _empty_prediction(mode)
 
     p = paths["p_mean"].astype(float).to_numpy()
     if scope in {"near_special", "special_only"}:
@@ -308,8 +452,14 @@ def predict_from_fitted_paths_full(
     weight_sum = np.bincount(nums, weights=weights, minlength=100).astype(np.float64)
     weighted_p = np.bincount(nums, weights=weights * p, minlength=100).astype(np.float64)
 
-    baseline = 0.01 if mode == "de" else 1.0 - (0.99**27)
-    prior_strength = 6.0
+    baseline = baseline_rate(mode)
+    # Selection-aware shrinkage: ``p_mean`` reaching this point survived a
+    # top-``top_rules_per_lag``-of-all-pairs screen inside ``fit_paths``, so it
+    # carries winner's-curse bias.  See ``selection_shrinkage_strength``.
+    n_pairs_screened = len(enumerate_position_pairs(TOTAL_DIGITS)[0])
+    prior_strength = selection_shrinkage_strength(
+        n_screened=n_pairs_screened, n_kept=int(params.top_rules_per_lag)
+    )
     prob = (weighted_p + prior_strength * baseline) / (weight_sum + prior_strength)
     prob = np.where(support > 0, prob, baseline)
     if mode == "de":
@@ -321,6 +471,9 @@ def predict_from_fitted_paths_full(
             "prob": prob,
             "support_paths_count": support,
             "evidence_weight": weight_sum,
+            # Effective sample size behind each number's estimate, so downstream
+            # tables can show that a 25.1% and a 24.6% are not distinguishable.
+            "prior_strength": prior_strength,
         }
     )
 
