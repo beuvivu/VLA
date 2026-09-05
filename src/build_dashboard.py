@@ -9,10 +9,29 @@ from pathlib import Path
 import pandas as pd
 
 from ui_locale import column_label, localize_mapping_for_display, mode_label
-from ui_theme import tailwind_style_tag
+from ui_theme import (
+    ALIGN_CENTER,
+    ALIGN_LEFT,
+    ALIGN_RIGHT,
+    card,
+    dataframe_table,
+    nav_links,
+    page_header,
+    shell_close,
+    shell_open,
+    tailwind_style_tag,
+)
 from web_security import security_meta_tags
 
 logger = logging.getLogger(__name__)
+
+# Liên kết điều hướng dùng chung cho hai trang do builder này sinh ra.
+NAV: tuple[tuple[str, str], ...] = (
+    ("index.html", "Trang chính"),
+    ("dashboard.html", "Bảng điều khiển AI/ML"),
+    ("statistics.html", "Ma trận thống kê"),
+    ("model-quality.html", "Chất lượng mô hình"),
+)
 
 
 def _read_json(p: Path) -> dict:
@@ -103,8 +122,8 @@ def main() -> None:
     def df_to_html(df: pd.DataFrame) -> str:
         if df.empty:
             return (
-                "<p><em>Chưa có dữ liệu.</em></p>"
-                "<p class='muted'>Tệp đầy đủ nằm trong <code>data/predict/</code>.</p>"
+                '<p class="vla-table-empty">Chưa có dữ liệu. '
+                "Tệp đầy đủ nằm trong <code>data/predict/</code>.</p>"
             )
         cols = [c for c in df.columns if c in ("number", "prob")]
         if not cols:
@@ -113,11 +132,61 @@ def main() -> None:
         if "prob" in df2.columns:
             df2["prob"] = df2["prob"].astype(float).map(lambda x: f"{x:.6f}")
         df2 = df2.rename(columns=column_label)
-        return df2.to_html(index=False, escape=True)
+        # Cột thứ hạng giúp bảng ba cột lấp đầy bề ngang thay vì để số và xác
+        # suất dính hai mép; hạng canh phải, số là khóa, xác suất canh phải.
+        df2.insert(0, "#", range(1, len(df2) + 1))
+        align = [ALIGN_RIGHT, ALIGN_LEFT] + [ALIGN_RIGHT] * (len(df2.columns) - 2)
+        return dataframe_table(df2, align=align, key_column=1)
 
     def display_json(payload: dict) -> str:
         localized = localize_mapping_for_display(payload)
         return html.escape(json.dumps(localized, ensure_ascii=False, indent=2))
+
+    # Mỗi hàng ghép đúng một cặp lô tô | Đặc Biệt (6/12 mỗi card). Hai card cùng
+    # hàng luôn cùng dạng nội dung nên cao bằng nhau, không sinh khoảng trống
+    # dưới đáy card thấp hơn như khi xếp lẫn bảng với khối JSON.
+    cards = "".join(
+        [
+            card(
+                df_to_html(pred_loto),
+                title="Xác suất lô tô cao nhất",
+                span=6,
+                flush=True,
+                lift=True,
+            ),
+            card(
+                df_to_html(pred_de),
+                title="Xác suất Đặc Biệt cao nhất",
+                span=6,
+                flush=True,
+                lift=True,
+            ),
+            card(
+                f'<pre class="vla-pre">{display_json(picks_loto)}</pre>',
+                title="Danh sách gợi ý (lô tô)",
+                span=6,
+            ),
+            card(
+                f'<pre class="vla-pre">{display_json(picks_de)}</pre>',
+                title="Danh sách gợi ý (Đặc Biệt / ĐB)",
+                span=6,
+            ),
+            card(
+                f'<pre class="vla-pre">{display_json(w_loto)}</pre>'
+                '<h3 class="mt-4">Hiệu chỉnh (lô tô)</h3>'
+                f'<pre class="vla-pre">{display_json(c_loto)}</pre>',
+                title="Trọng số (lô tô)",
+                span=6,
+            ),
+            card(
+                f'<pre class="vla-pre">{display_json(w_de)}</pre>'
+                '<h3 class="mt-4">Hiệu chỉnh (Đặc Biệt)</h3>'
+                f'<pre class="vla-pre">{display_json(c_de)}</pre>',
+                title="Trọng số (Đặc Biệt)",
+                span=6,
+            ),
+        ]
+    )
 
     dashboard_html = f"""<!doctype html>
 <html lang="vi">
@@ -127,59 +196,17 @@ def main() -> None:
   {security_meta_tags()}
   {tailwind_style_tag()}
   <title>Bảng điều khiển phân tích XSMB</title>
-  <style>
-    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }}
-    h1,h2,h3 {{ margin: 0.6em 0 0.4em; }}
-    .meta {{ color: #555; margin-bottom: 18px; }}
-    .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
-    .card {{ border: 1px solid #ddd; border-radius: 12px; padding: 14px 16px; }}
-    pre {{ background: #f7f7f7; padding: 10px; border-radius: 10px; overflow:auto; }}
-    table {{ border-collapse: collapse; width: 100%; }}
-    th, td {{ border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; font-size: 13px; }}
-    .muted {{ color: #666; font-size: 13px; }}
-    a {{ color: #0b57d0; text-decoration: none; }}
-  </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <h1>Bảng điều khiển phân tích XSMB</h1>
-  <div class="meta">Ngày dữ liệu mới nhất: <b>{latest}</b> &nbsp;|&nbsp; Tạo lúc: {gen}</div>
-
-  <div class="grid">
-    <div class="card">
-      <h2>Danh sách gợi ý (lô tô)</h2>
-      <pre>{display_json(picks_loto)}</pre>
-    </div>
-    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
-      <h2>Danh sách gợi ý (Đặc Biệt / ĐB)</h2>
-      <pre>{display_json(picks_de)}</pre>
-    </div>
-
-    <div class="card">
-      <h2>Trọng số (lô tô)</h2>
-      <pre>{display_json(w_loto)}</pre>
-      <h3>Hiệu chỉnh (lô tô)</h3>
-      <pre>{display_json(c_loto)}</pre>
-    </div>
-    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
-      <h2>Trọng số (Đặc Biệt)</h2>
-      <pre>{display_json(w_de)}</pre>
-      <h3>Hiệu chỉnh (Đặc Biệt)</h3>
-      <pre>{display_json(c_de)}</pre>
-    </div>
-
-    <div class="card">
-      <h2>Các xác suất lô tô cao nhất — xem trước</h2>
-      {df_to_html(pred_loto)}
-    </div>
-    <div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
-      <h2>Các xác suất Đặc Biệt cao nhất — xem trước</h2>
-      {df_to_html(pred_de)}
-    </div>
-  </div>
-
-  <p class="muted" style="margin-top:16px;">
-    Trang: <a href="index.html">Mục lục tài liệu</a> · <a href="statistics.html">Ma trận thống kê</a> · <a href="model-quality.html">Chất lượng mô hình</a>
-  </p>
+<body>
+{shell_open()}
+{page_header(
+    "Bảng điều khiển phân tích XSMB",
+    "Xác suất mô hình tổ hợp, trọng số đã học và danh sách gợi ý cho kỳ kế tiếp.",
+    [f"Ngày dữ liệu mới nhất: {latest}", f"Tạo lúc: {gen}"],
+)}
+{nav_links(NAV, current="dashboard.html")}
+<div class="vla-grid">{cards}</div>
+{shell_close()}
 </body>
 </html>
 """
@@ -195,8 +222,13 @@ def main() -> None:
     except Exception:
         quality = pd.DataFrame()
 
+    # Loại canh trái, ngày canh giữa, hai chỉ số lỗi canh phải.
+    quality_align = [ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT, ALIGN_RIGHT]
+
     if quality.empty:
-        quality_body = "<p><em>Chưa có đủ lịch sử đánh giá mô hình.</em></p>"
+        quality_body = (
+            '<p class="vla-table-empty">Chưa có đủ lịch sử đánh giá mô hình.</p>'
+        )
         latest_quality = ""
     else:
         q = quality.copy()
@@ -208,17 +240,25 @@ def main() -> None:
         latest_rows["logloss"] = latest_rows["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         latest_rows["brier"] = latest_rows["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         latest_rows["mode"] = latest_rows["mode"].map(mode_label)
-        latest_quality = latest_rows[["mode", "target_date", "logloss", "brier"]].rename(
-            columns=column_label
-        ).to_html(index=False, escape=True)
+        latest_quality = dataframe_table(
+            latest_rows[["mode", "target_date", "logloss", "brier"]].rename(
+                columns=column_label
+            ),
+            align=quality_align,
+            key_column=0,
+        )
 
         recent = q.groupby("mode", group_keys=False).tail(30).copy()
         recent["logloss"] = recent["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         recent["brier"] = recent["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
         recent["mode"] = recent["mode"].map(mode_label)
-        quality_body = recent[["mode", "target_date", "logloss", "brier"]].rename(
-            columns=column_label
-        ).to_html(index=False, escape=True)
+        quality_body = dataframe_table(
+            recent[["mode", "target_date", "logloss", "brier"]].rename(
+                columns=column_label
+            ),
+            align=quality_align,
+            key_column=0,
+        )
 
     quality_html = f"""<!doctype html>
 <html lang="vi">
@@ -228,22 +268,31 @@ def main() -> None:
   {security_meta_tags()}
   {tailwind_style_tag()}
   <title>Chất lượng mô hình — Phân tích XSMB</title>
-  <style>
-    body {{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:24px; color:#111; }}
-    .card {{ border:1px solid #ddd; border-radius:12px; padding:16px; margin:14px 0; }}
-    table {{ border-collapse:collapse; width:100%; }}
-    th,td {{ border-bottom:1px solid #eee; padding:8px; text-align:left; font-size:13px; }}
-    th {{ background:#fafafa; }}
-    .muted {{ color:#666; font-size:13px; }}
-    a {{ color:#0b57d0; text-decoration:none; }}
-  </style>
 </head>
 <body>
-  <h1>Chất lượng mô hình</h1>
-  <p class="muted">Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.</p>
-  <p><a href="index.html">Trang chính</a> · <a href="dashboard.html">Bảng điều khiển AI/ML</a> · <a href="statistics.html">Thống kê</a></p>
-  <div class="card"><h2>Mới nhất</h2>{latest_quality or '<p>Chưa có dữ liệu.</p>'}</div>
-  <div class="card"><h2>30 đánh giá gần nhất theo loại</h2>{quality_body}</div>
+{shell_open()}
+{page_header(
+    "Chất lượng mô hình",
+    "Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp "
+    "càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.",
+)}
+{nav_links(NAV, current="model-quality.html")}
+<div class="vla-grid">
+{card(
+    latest_quality or '<p class="vla-table-empty">Chưa có dữ liệu.</p>',
+    title="Mới nhất",
+    span=12,
+    flush=True,
+)}
+{card(
+    quality_body,
+    title="30 đánh giá gần nhất theo loại",
+    span=12,
+    flush=True,
+    lift=True,
+)}
+</div>
+{shell_close()}
 </body>
 </html>
 """
