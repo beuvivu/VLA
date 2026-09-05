@@ -1,0 +1,143 @@
+{
+  "schema_version": 2,
+  "draw_date": "2026-09-05",
+  "checked_at_utc": "2026-09-05T15:37:09Z",
+  "checked_at_local": "2026-09-05T22:37:09+07:00",
+  "status": "complete_verified",
+  "complete": true,
+  "verified_complete": true,
+  "received_values": 27,
+  "expected_values": 27,
+  "verified_values": 27,
+  "progress_percent": 100.0,
+  "verification_percent": 100.0,
+  "prizes": {
+    "special": [
+      "24037"
+    ],
+    "prize1": [
+      "26504"
+    ],
+    "prize2": [
+      "19394",
+      "38969"
+    ],
+    "prize3": [
+      "82903",
+      "37511",
+      "66329",
+      "99426",
+      "71193",
+      "60084"
+    ],
+    "prize4": [
+      "3797",
+      "1157",
+      "6770",
+      "9888"
+    ],
+    "prize5": [
+      "1258",
+      "9028",
+      "1021",
+      "5867",
+      "7290",
+      "4791"
+    ],
+    "prize6": [
+      "313",
+      "293",
+      "339"
+    ],
+    "prize7": [
+      "88",
+      "59",
+      "31",
+      "21"
+    ]
+  },
+  "conflicts": [],
+  "source_status": [
+    {
+      "priority": 1,
+      "source": "xoso.com.vn",
+      "provider_group": null,
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "error": null
+    },
+    {
+      "priority": 2,
+      "source": "mketqua.net",
+      "provider_group": null,
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "error": null
+    },
+    {
+      "priority": 3,
+      "source": "www.minhngoc.net.vn",
+      "provider_group": null,
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "error": null
+    },
+    {
+      "priority": 4,
+      "source": "xosominhngoc.com",
+      "provider_group": null,
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "error": null
+    },
+    {
+      "priority": 5,
+      "source": "xosodaiphat.com",
+      "provider_group": null,
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "error": null
+    },
+    {
+      "priority": 6,
+      "source": "hainhay.net",
+      "provider_group": null,
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "error": null
+    }
+  ],
+  "source_priority": [
+    "xoso.com.vn",
+    "mketqua.net",
+    "www.minhngoc.net.vn",
+    "xosominhngoc.com",
+    "xosodaiphat.com",
+    "hainhay.net"
+  ],
+  "slot_meta": {},
+  "canonical_reconciled": true,
+  "consensus": {
+    "agreement": 4,
+    "source_agreement": 5,
+    "independent_groups": [
+      "xoso",
+      "mketqua",
+      "minhngoc",
+      "xosodaiphat"
+    ],
+    "sources": [
+      "xoso.com.vn",
+      "mketqua.net",
+      "www.minhngoc.net.vn",
+      "xosominhngoc.com",
+      "xosodaiphat.com"
+    ]
+  }
+}
