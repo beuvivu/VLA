@@ -6,6 +6,24 @@
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" http-equiv="Content-Security-Policy"/>
 <meta content="no-referrer" name="referrer"/>
+<style id="vla-tailwind-lite">*{box-sizing:border-box}
+.bg-slate-50{background-color:#f8fafc}.bg-white{background-color:#fff}
+.text-slate-800{color:#1e293b}.text-slate-600{color:#475569}.text-slate-400{color:#94a3b8}
+.text-indigo-600{color:#4f46e5}.text-blue-600{color:#2563eb}
+.border{border-width:1px}.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+.rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}
+.shadow-sm{box-shadow:0 1px 2px rgba(15,23,42,.06)}.shadow-md{box-shadow:0 4px 12px rgba(15,23,42,.10)}
+.flex{display:flex}.grid{display:grid}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}
+.justify-between{justify-content:space-between}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+.p-4{padding:1rem}.p-6{padding:1.5rem}.px-4{padding-left:1rem;padding-right:1rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.mb-6{margin-bottom:1.5rem}.mt-4{margin-top:1rem}
+.mx-auto{margin-left:auto;margin-right:auto}.max-w-6xl{max-width:72rem}.w-full{width:100%}
+.transition-all{transition-property:all}.duration-200{transition-duration:.2s}.ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}
+.hover\:shadow-lg:hover{box-shadow:0 10px 25px rgba(15,23,42,.14)}
+.hover\:-translate-y-0\.5:hover{transform:translateY(-.125rem)}
+.underline{text-decoration-line:underline}.font-bold{font-weight:700}.italic{font-style:italic}
+@media (min-width:640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}
+@media (min-width:768px){.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
 <title>Bảng điều khiển phân tích XSMB</title>
 <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
@@ -20,16 +38,16 @@
     a { color: #0b57d0; text-decoration: none; }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 <h1>Bảng điều khiển phân tích XSMB</h1>
-<div class="meta">Ngày dữ liệu mới nhất: <b>2026-09-02</b>  |  Tạo lúc: 2026-09-03T15:51:04Z</div>
+<div class="meta">Ngày dữ liệu mới nhất: <b>2026-09-04</b>  |  Tạo lúc: 2026-09-05T01:20:17Z</div>
 <div class="grid">
 <div class="card">
 <h2>Danh sách gợi ý (lô tô)</h2>
 <pre>{
   "Loại": "Lô tô",
-  "Ngày neo": "2026-09-02",
-  "Ngày mục tiêu": "2026-09-03",
+  "Ngày neo": "2026-09-04",
+  "Ngày mục tiêu": "2026-09-05",
   "Trọng số": {
     "Trọng số ML": 0.25,
     "w_cau": 0.3,
@@ -71,49 +89,49 @@
     "trust": 0.15,
     "quality_pass": true,
     "Căn cứ": "validated stacked challenger blended into production",
-    "candidate": "meta_interaction",
-    "validation_logloss": 0.5439512120461029,
-    "baseline_validation_logloss": 0.6163043445560572,
-    "logloss_skill": 0.11739838141506609,
-    "brier_skill": 0.0379472336790464,
-    "trained_through_target_date": "2026-09-02"
+    "candidate": "meta_balanced",
+    "validation_logloss": 0.5444798369838065,
+    "baseline_validation_logloss": 0.6422815701188002,
+    "logloss_skill": 0.15227236415471745,
+    "brier_skill": 0.053372960966620364,
+    "trained_through_target_date": "2026-09-04"
   },
   "top4": [
-    "95",
     "83",
-    "52",
-    "50"
+    "95",
+    "62",
+    "52"
   ],
   "top8": [
-    "95",
     "83",
+    "95",
+    "62",
     "52",
-    "50",
     "54",
-    "64",
-    "61",
-    "51"
+    "50",
+    "91",
+    "64"
   ],
   "top10": [
-    "95",
     "83",
+    "95",
+    "62",
     "52",
-    "50",
     "54",
+    "50",
+    "91",
     "64",
-    "61",
-    "51",
-    "13",
-    "06"
+    "34",
+    "09"
   ]
 }</pre>
 </div>
-<div class="card">
-<h2>Danh sách gợi ý (đặc biệt / ĐB)</h2>
+<div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+<h2>Danh sách gợi ý (Đặc Biệt / ĐB)</h2>
 <pre>{
   "Loại": "Đặc Biệt",
-  "Ngày neo": "2026-09-02",
-  "Ngày mục tiêu": "2026-09-03",
+  "Ngày neo": "2026-09-04",
+  "Ngày mục tiêu": "2026-09-05",
   "Trọng số": {
     "Trọng số ML": 0.25,
     "w_cau": 0.3,
@@ -158,31 +176,31 @@
   },
   "top4": [
     "83",
-    "68",
-    "39",
-    "21"
+    "37",
+    "21",
+    "54"
   ],
   "top8": [
     "83",
-    "68",
-    "39",
+    "37",
     "21",
     "54",
-    "44",
-    "38",
-    "23"
+    "43",
+    "22",
+    "23",
+    "39"
   ],
   "top10": [
     "83",
-    "68",
-    "39",
+    "37",
     "21",
     "54",
-    "44",
-    "38",
+    "43",
+    "22",
     "23",
-    "42",
-    "37"
+    "39",
+    "38",
+    "42"
   ]
 }</pre>
 </div>
@@ -399,8 +417,8 @@
   }
 }</pre>
 </div>
-<div class="card">
-<h2>Trọng số (đặc biệt)</h2>
+<div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+<h2>Trọng số (Đặc Biệt)</h2>
 <pre>{
   "Loại": "Đặc Biệt",
   "learned_at_utc": "2026-08-11T13:25:35Z",
@@ -598,7 +616,7 @@
     "Trọng số cầu ổn định": 1.6836533665281683e-18
   }
 }</pre>
-<h3>Hiệu chỉnh (đặc biệt)</h3>
+<h3>Hiệu chỉnh (Đặc Biệt)</h3>
 <pre>{
   "Loại": "Đặc Biệt",
   "learned_at_utc": "2026-08-11T13:25:35Z",
@@ -623,90 +641,90 @@
 </thead>
 <tbody>
 <tr>
-<td>95</td>
-<td>0.251003</td>
+<td>83</td>
+<td>0.249933</td>
 </tr>
 <tr>
-<td>83</td>
-<td>0.250270</td>
+<td>95</td>
+<td>0.249144</td>
+</tr>
+<tr>
+<td>62</td>
+<td>0.248927</td>
 </tr>
 <tr>
 <td>52</td>
-<td>0.247853</td>
-</tr>
-<tr>
-<td>50</td>
-<td>0.246874</td>
+<td>0.248779</td>
 </tr>
 <tr>
 <td>54</td>
-<td>0.246407</td>
+<td>0.248219</td>
+</tr>
+<tr>
+<td>50</td>
+<td>0.247808</td>
+</tr>
+<tr>
+<td>91</td>
+<td>0.247763</td>
 </tr>
 <tr>
 <td>64</td>
-<td>0.246351</td>
+<td>0.247166</td>
 </tr>
 <tr>
-<td>61</td>
-<td>0.246274</td>
+<td>34</td>
+<td>0.247099</td>
 </tr>
 <tr>
-<td>51</td>
-<td>0.245872</td>
-</tr>
-<tr>
-<td>13</td>
-<td>0.245775</td>
-</tr>
-<tr>
-<td>6</td>
-<td>0.245519</td>
-</tr>
-<tr>
-<td>17</td>
-<td>0.245449</td>
+<td>9</td>
+<td>0.246823</td>
 </tr>
 <tr>
 <td>94</td>
-<td>0.245304</td>
+<td>0.246814</td>
 </tr>
 <tr>
-<td>80</td>
-<td>0.245259</td>
-</tr>
-<tr>
-<td>32</td>
-<td>0.245176</td>
-</tr>
-<tr>
-<td>19</td>
-<td>0.245164</td>
-</tr>
-<tr>
-<td>92</td>
-<td>0.244880</td>
-</tr>
-<tr>
-<td>60</td>
-<td>0.244846</td>
+<td>77</td>
+<td>0.246620</td>
 </tr>
 <tr>
 <td>27</td>
-<td>0.244752</td>
+<td>0.246312</td>
 </tr>
 <tr>
-<td>73</td>
-<td>0.244406</td>
+<td>84</td>
+<td>0.246043</td>
 </tr>
 <tr>
-<td>36</td>
-<td>0.244368</td>
+<td>32</td>
+<td>0.245837</td>
+</tr>
+<tr>
+<td>60</td>
+<td>0.245824</td>
+</tr>
+<tr>
+<td>68</td>
+<td>0.245796</td>
+</tr>
+<tr>
+<td>61</td>
+<td>0.245776</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.245442</td>
+</tr>
+<tr>
+<td>80</td>
+<td>0.245411</td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="card">
-<h2>Các xác suất đặc biệt cao nhất — xem trước</h2>
+<div class="card bg-white border border-slate-200/60 rounded-xl shadow-sm transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-0.5">
+<h2>Các xác suất Đặc Biệt cao nhất — xem trước</h2>
 <table border="1" class="dataframe">
 <thead>
 <tr style="text-align: right;">
@@ -717,83 +735,83 @@
 <tbody>
 <tr>
 <td>83</td>
-<td>0.012845</td>
-</tr>
-<tr>
-<td>68</td>
-<td>0.011812</td>
-</tr>
-<tr>
-<td>39</td>
-<td>0.011654</td>
-</tr>
-<tr>
-<td>21</td>
-<td>0.011626</td>
-</tr>
-<tr>
-<td>54</td>
-<td>0.011620</td>
-</tr>
-<tr>
-<td>44</td>
-<td>0.011512</td>
-</tr>
-<tr>
-<td>38</td>
-<td>0.011503</td>
-</tr>
-<tr>
-<td>23</td>
-<td>0.011408</td>
-</tr>
-<tr>
-<td>42</td>
-<td>0.011173</td>
+<td>0.011946</td>
 </tr>
 <tr>
 <td>37</td>
-<td>0.011136</td>
+<td>0.011792</td>
 </tr>
 <tr>
-<td>67</td>
-<td>0.011099</td>
+<td>21</td>
+<td>0.011685</td>
 </tr>
 <tr>
-<td>1</td>
-<td>0.010912</td>
+<td>54</td>
+<td>0.011464</td>
 </tr>
 <tr>
-<td>47</td>
-<td>0.010888</td>
-</tr>
-<tr>
-<td>17</td>
-<td>0.010843</td>
-</tr>
-<tr>
-<td>80</td>
-<td>0.010798</td>
-</tr>
-<tr>
-<td>63</td>
-<td>0.010798</td>
-</tr>
-<tr>
-<td>25</td>
-<td>0.010716</td>
-</tr>
-<tr>
-<td>16</td>
-<td>0.010692</td>
-</tr>
-<tr>
-<td>45</td>
-<td>0.010665</td>
+<td>43</td>
+<td>0.011397</td>
 </tr>
 <tr>
 <td>22</td>
-<td>0.010631</td>
+<td>0.011235</td>
+</tr>
+<tr>
+<td>23</td>
+<td>0.011214</td>
+</tr>
+<tr>
+<td>39</td>
+<td>0.011186</td>
+</tr>
+<tr>
+<td>38</td>
+<td>0.011115</td>
+</tr>
+<tr>
+<td>42</td>
+<td>0.010914</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0.010904</td>
+</tr>
+<tr>
+<td>17</td>
+<td>0.010823</td>
+</tr>
+<tr>
+<td>44</td>
+<td>0.010805</td>
+</tr>
+<tr>
+<td>67</td>
+<td>0.010803</td>
+</tr>
+<tr>
+<td>79</td>
+<td>0.010802</td>
+</tr>
+<tr>
+<td>90</td>
+<td>0.010784</td>
+</tr>
+<tr>
+<td>13</td>
+<td>0.010754</td>
+</tr>
+<tr>
+<td>68</td>
+<td>0.010722</td>
+</tr>
+<tr>
+<td>91</td>
+<td>0.010714</td>
+</tr>
+<tr>
+<td>16</td>
+<td>0.010640</td>
 </tr>
 </tbody>
 </table>

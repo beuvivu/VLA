@@ -4,15 +4,12 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 
 > Mục đích của hệ thống là phân tích dữ liệu lịch sử và nghiên cứu xác suất. Kết quả AI/ML là tín hiệu thống kê, không bảo đảm kết quả tương lai.
 
-Xem [SECURITY.md](SECURITY.md) để biết ranh giới tin cậy, quy tắc xử lý artifact
-mô hình, chính sách thu thập nguồn công khai và cách báo cáo lỗ hổng.
-
 ## Ảnh chụp dữ liệu mới nhất
 
 <!-- SNAPSHOT:BEGIN -->
 | Xổ số | Lô tô |
 | :------------: | :----------: |
-| <table><tr><td>Ngày</td><td>02-09-2026</td></tr><tr><td>Giải đặc biệt</td><td>44542</td></tr><tr><td>Giải nhất</td><td>70943</td></tr><tr><td>Giải nhì</td><td>20944, 30062</td></tr><tr><td>Giải ba</td><td>60516, 22853, 65620, 02493, 52067, 04270</td></tr><tr><td>Giải tư</td><td>3422, 1237, 4540, 1955</td></tr><tr><td>Giải năm</td><td>9150, 5572, 7077, 4767, 4522, 2340</td></tr><tr><td>Giải sáu</td><td>261, 232, 249</td></tr><tr><td>Giải bảy</td><td>15, 64, 32, 10</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td></td></tr><tr><td>1</td><td>6, 5, 0</td></tr><tr><td>2</td><td>0, 2, 2</td></tr><tr><td>3</td><td>7, 2, 2</td></tr><tr><td>4</td><td>2, 3, 4, 0, 0, 9</td></tr><tr><td>5</td><td>3, 5, 0</td></tr><tr><td>6</td><td>2, 7, 7, 1, 4</td></tr><tr><td>7</td><td>0, 2, 7</td></tr><tr><td>8</td><td></td></tr><tr><td>9</td><td>3</td></tr></table> |
+| <table><tr><td>Ngày</td><td>04-09-2026</td></tr><tr><td>Giải đặc biệt</td><td>50066</td></tr><tr><td>Giải nhất</td><td>71152</td></tr><tr><td>Giải nhì</td><td>34677, 11336</td></tr><tr><td>Giải ba</td><td>31123, 91287, 35599, 38872, 70150, 30636</td></tr><tr><td>Giải tư</td><td>8795, 2876, 3557, 6896</td></tr><tr><td>Giải năm</td><td>1372, 8325, 0353, 0211, 7949, 0185</td></tr><tr><td>Giải sáu</td><td>053, 732, 243</td></tr><tr><td>Giải bảy</td><td>06, 14, 74, 88</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td>6</td></tr><tr><td>1</td><td>1, 4</td></tr><tr><td>2</td><td>3, 5</td></tr><tr><td>3</td><td>6, 6, 2</td></tr><tr><td>4</td><td>9, 3</td></tr><tr><td>5</td><td>2, 0, 7, 3, 3</td></tr><tr><td>6</td><td>6</td></tr><tr><td>7</td><td>7, 2, 6, 2, 4</td></tr><tr><td>8</td><td>7, 5, 8</td></tr><tr><td>9</td><td>9, 5, 6</td></tr></table> |
 <!-- SNAPSHOT:END -->
 
 <!-- FUN_PREDICTION:BEGIN -->
@@ -24,44 +21,44 @@ mô hình, chính sách thu thập nguồn công khai và cách báo cáo lỗ h
 
 | Giải | Dự đoán vui |
 |---|---|
-| Đặc biệt | `03102` |
-| Giải nhất | `76384` |
-| Giải nhì | `66107` · `02399` |
-| Giải ba | `55192` · `64851` · `09021` · `38618` · `49128` · `86678` |
-| Giải tư | `7027` · `0542` · `7360` · `0661` |
-| Giải năm | `7286` · `5586` · `1564` · `1358` · `7202` · `5717` |
-| Giải sáu | `668` · `301` · `812` |
-| Giải bảy | `60` · `75` · `18` · `61` |
+| Đặc biệt | `70527` |
+| Giải nhất | `11027` |
+| Giải nhì | `98621` · `60903` |
+| Giải ba | `61949` · `00979` · `51437` · `39534` · `62312` · `07287` |
+| Giải tư | `1301` · `0223` · `7763` · `4934` |
+| Giải năm | `4199` · `9676` · `1377` · `5404` · `7269` · `6215` |
+| Giải sáu | `680` · `582` · `311` |
+| Giải bảy | `33` · `26` · `77` · `06` |
 
 ### Lô tô đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
-| 1 | **95** | **25.10%** |
-| 2 | **83** | **25.03%** |
-| 3 | **52** | **24.79%** |
-| 4 | **50** | **24.69%** |
-| 5 | **54** | **24.64%** |
-| 6 | **64** | **24.64%** |
-| 7 | **61** | **24.63%** |
-| 8 | **51** | **24.59%** |
-| 9 | **13** | **24.58%** |
-| 10 | **06** | **24.55%** |
+| 1 | **83** | **24.99%** |
+| 2 | **95** | **24.91%** |
+| 3 | **62** | **24.89%** |
+| 4 | **52** | **24.88%** |
+| 5 | **54** | **24.82%** |
+| 6 | **50** | **24.78%** |
+| 7 | **91** | **24.78%** |
+| 8 | **64** | **24.72%** |
+| 9 | **34** | **24.71%** |
+| 10 | **09** | **24.68%** |
 
 ### Đặc biệt đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
-| 1 | **83** | **1.284%** |
-| 2 | **68** | **1.181%** |
-| 3 | **39** | **1.165%** |
-| 4 | **21** | **1.163%** |
-| 5 | **54** | **1.162%** |
-| 6 | **44** | **1.151%** |
-| 7 | **38** | **1.150%** |
-| 8 | **23** | **1.141%** |
-| 9 | **42** | **1.117%** |
-| 10 | **37** | **1.114%** |
+| 1 | **83** | **1.195%** |
+| 2 | **37** | **1.179%** |
+| 3 | **21** | **1.168%** |
+| 4 | **54** | **1.146%** |
+| 5 | **43** | **1.140%** |
+| 6 | **22** | **1.123%** |
+| 7 | **23** | **1.121%** |
+| 8 | **39** | **1.119%** |
+| 9 | **38** | **1.112%** |
+| 10 | **42** | **1.091%** |
 
 > Xác suất ở bảng lô tô là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất ĐB là phân phối riêng cho 2 số cuối giải đặc biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.
 <!-- FUN_PREDICTION:END -->
@@ -194,8 +191,8 @@ Hệ thống vận hành tự động bằng GitHub Actions; không cần chạy
 | Gần thời gian thực chính | **18:00** | Mở cửa sổ trực tiếp trước giờ quay, thăm dò khoảng 15 giây/lần và kiểm chứng nhiều nguồn. |
 | Bộ giám sát trực tiếp | **17:55, 18:05, 18:15, 18:25, 18:45** | Nếu dữ liệu trực tiếp chưa có nhịp báo của ngày hiện tại, tự gọi lại quy trình trực tiếp. |
 | Hoàn tất hằng ngày | **18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00** | Thăm dò/tải, yêu cầu ≥2 nhóm nhà cung cấp độc lập, ghi dữ liệu chuẩn trước rồi mới chạy thống kê + AI/ML + dự báo + README + Pages. |
-| Phục hồi dữ liệu chuẩn | **19:35, 20:05** | Nếu dữ liệu chuẩn còn cũ hoặc kiểm toán artifact không đạt, tự gọi lại quy trình hoàn tất hằng ngày. |
-| Phục hồi Pages | **20:20** | Thử lại việc triển khai Pages độc lập khi dữ liệu chuẩn đã ổn. |
+| Phục hồi dữ liệu chuẩn | **19:05, 19:25, 19:45, 20:05** | Nếu dữ liệu chuẩn còn cũ hoặc kiểm toán artifact không đạt, tự gọi lại quy trình hoàn tất hằng ngày. |
+| Phục hồi Pages | **20:10–20:35** | Thử lại việc triển khai Pages độc lập khi dữ liệu chuẩn đã ổn. |
 | Lưới an toàn qua đêm | **07:15** | Kiểm tra lại dữ liệu chuẩn, dự báo, README, artifact mô hình, bảng điều khiển và đối soát dữ liệu trực tiếp. |
 | Hậu kiểm hoàn tất | Sau mỗi lượt hằng ngày thành công | Kiểm toán vận hành đầy đủ và đồng bộ nhánh `live` về đúng dữ liệu chuẩn `complete_verified`. |
 
@@ -240,10 +237,10 @@ Dữ liệu dẫn xuất:
 
 ## Thống kê 1 năm hiện tại
 
-- Tần suất lớn nhất: **123.0**
-- Tần suất nhỏ nhất: **82.0**
+- Tần suất lớn nhất: **122.0**
+- Tần suất nhỏ nhất: **81.0**
 - Trung bình: **98.55**
-- Độ lệch chuẩn: **10.41**
+- Độ lệch chuẩn: **10.14**
 
 ![Ma trận nhiệt tần suất](images/heatmap.jpg)
 

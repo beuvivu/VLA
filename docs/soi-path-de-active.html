@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
-  <title>SOI CẦU ĐỀ — ĐANG CHẠY</title>
+  <title>SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</title>
+  <style id="vla-tailwind-lite">
+    .bg-slate-50{background-color:#f8fafc}.text-slate-800{color:#1e293b}.text-slate-600{color:#475569}
+    .bg-white{background:#fff}.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+    .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.shadow-sm{box-shadow:0 1px 2px rgba(15,23,42,.06)}
+    .transition-all{transition:all .2s ease-in-out}.hover\:shadow-lg:hover{box-shadow:0 10px 25px rgba(15,23,42,.14)}
+  </style>
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
@@ -31,18 +37,23 @@
     .small{font-size:11px;color:var(--muted)}
     .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
     .btn.secondary{background:transparent;color:var(--text)}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #243041;border-radius:10px;background:rgba(30,41,59,.55);color:var(--text);text-decoration:none;transition:all .2s ease-in-out}
+    .quick-pick:hover{background:rgba(79,70,229,.22);border-color:rgba(129,140,248,.7);transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
+    .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
     .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}}
+    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 <div class="wrap">
   <div class="top">
     <div>
-      <h1 style="margin:0;font-size:20px">SOI CẦU ĐỀ — ĐANG CHẠY</h1>
-      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-09-02</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
+      <h1 style="margin:0;font-size:20px">SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</h1>
+      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-09-04</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
     </div>
     <div class="kpi">
       <span class="chip">Màu đỏ: về ĐB</span>
@@ -78,7 +89,9 @@
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
+      
       <div class="empty-state">Chưa có dữ liệu chọn nhanh cho ngày neo này. Hãy chạy lại bước tạo dữ liệu đường cầu.</div>
+      
       <div style="margin-top:10px" class="small">
         Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
       </div>
@@ -96,10 +109,6 @@
             <th>Tỷ lệ lịch sử</th>
             <th>Chuỗi liên tiếp</th>
             
-              <th class="mono">08-24</th>
-            
-              <th class="mono">08-25</th>
-            
               <th class="mono">08-26</th>
             
               <th class="mono">08-27</th>
@@ -115,6 +124,10 @@
               <th class="mono">09-01</th>
             
               <th class="mono">09-02</th>
+            
+              <th class="mono">09-03</th>
+            
+              <th class="mono">09-04</th>
             
           </tr>
         </thead>

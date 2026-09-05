@@ -1,6 +1,6 @@
 {
   "mode": "loto",
-  "generated_at": "2026-09-04T14:56:15Z",
+  "generated_at": "2026-09-05T01:18:51Z",
   "predict_for_date": "2026-09-05",
   "top": 20,
   "features": [
@@ -53,7 +53,7 @@
   },
   "note": "AI/ML scores are calibrated historical ranking signals, not guaranteed future lottery outcomes.",
   "domain_challenger": {
-    "schema_version": 1,
+    "schema_version": 3,
     "active": false,
     "trust": 0.0,
     "selected_groups": [],
@@ -98,10 +98,215 @@
       "tail_freq_7d",
       "trend_7_vs_30"
     ],
+    "feature_manifest": {
+      "schema_version": 1,
+      "baseline_features": [
+        "number_value",
+        "tens",
+        "ones",
+        "digit_total",
+        "weekday_next",
+        "month_next",
+        "freq_3d",
+        "freq_7d",
+        "freq_14d",
+        "freq_30d",
+        "freq_90d",
+        "freq_365d",
+        "gap",
+        "gap_log",
+        "hit_today",
+        "hit_yesterday",
+        "hit_2d_ago",
+        "loto_occ_today",
+        "loto_occ_7d",
+        "same_weekday_freq_364",
+        "month_to_date_freq",
+        "year_to_date_freq",
+        "path_support",
+        "path_support_log",
+        "reverse_hit_today",
+        "reverse_freq_7d",
+        "is_prev_special",
+        "is_reverse_prev_special",
+        "is_bong_prev_special",
+        "share_head_prev_special",
+        "share_tail_prev_special",
+        "same_total_prev_special",
+        "cham_overlap_prev_special",
+        "cond_de_rate",
+        "cond_loto_mean_rate",
+        "cond_loto_max_rate",
+        "head_freq_7d",
+        "tail_freq_7d",
+        "trend_7_vs_30"
+      ],
+      "feature_groups": {
+        "partner": [
+          "cap50_partner_hit_today",
+          "cap50_partner_freq_7d",
+          "cap50_partner_freq_30d",
+          "cap50_partner_freq_90d",
+          "cap50_partner_freq_365d",
+          "cap50_partner_gap"
+        ],
+        "cap_50": [
+          "cap50_pair_freq_30_mean",
+          "cap50_pair_freq_90_mean",
+          "cap50_pair_freq_365_mean",
+          "cap50_pair_balance_30d",
+          "cap50_pair_balance_90d",
+          "cap50_pair_balance_365d",
+          "cap50_is_kep_bong"
+        ],
+        "bo": [
+          "bo_family_size",
+          "bo_hit_today_rate",
+          "bo_freq_7d_mean",
+          "bo_freq_30d_mean",
+          "bo_freq_90d_mean",
+          "bo_freq_365d_mean",
+          "bo_gap_mean",
+          "bo_path_support_mean"
+        ],
+        "bong": [
+          "bong_duong_hit_today",
+          "bong_duong_freq_7d",
+          "bong_duong_freq_30d",
+          "bong_duong_gap",
+          "bong_am_hit_today",
+          "bong_am_freq_7d",
+          "bong_am_freq_30d",
+          "bong_am_gap"
+        ],
+        "cham": [
+          "cham_hit_today_rate",
+          "cham_freq_7d_mean",
+          "cham_freq_30d_mean",
+          "cham_freq_90d_mean",
+          "cham_gap_mean",
+          "cham_path_support_mean"
+        ],
+        "tong": [
+          "tong_hit_today_rate",
+          "tong_freq_7d_mean",
+          "tong_freq_30d_mean",
+          "tong_freq_90d_mean",
+          "tong_gap_mean",
+          "tong_path_support_mean"
+        ]
+      },
+      "promoted_groups": [],
+      "production_features": [
+        "number_value",
+        "tens",
+        "ones",
+        "digit_total",
+        "weekday_next",
+        "month_next",
+        "freq_3d",
+        "freq_7d",
+        "freq_14d",
+        "freq_30d",
+        "freq_90d",
+        "freq_365d",
+        "gap",
+        "gap_log",
+        "hit_today",
+        "hit_yesterday",
+        "hit_2d_ago",
+        "loto_occ_today",
+        "loto_occ_7d",
+        "same_weekday_freq_364",
+        "month_to_date_freq",
+        "year_to_date_freq",
+        "path_support",
+        "path_support_log",
+        "reverse_hit_today",
+        "reverse_freq_7d",
+        "is_prev_special",
+        "is_reverse_prev_special",
+        "is_bong_prev_special",
+        "share_head_prev_special",
+        "share_tail_prev_special",
+        "same_total_prev_special",
+        "cham_overlap_prev_special",
+        "cond_de_rate",
+        "cond_loto_mean_rate",
+        "cond_loto_max_rate",
+        "head_freq_7d",
+        "tail_freq_7d",
+        "trend_7_vs_30"
+      ],
+      "evaluation": {
+        "promoted": false,
+        "rejection_reasons": [
+          "negative_brier_skill",
+          "negative_logloss_skill",
+          "brier_ci_crosses_zero",
+          "logloss_ci_crosses_zero"
+        ],
+        "oos_dates": 30,
+        "oos_rows": 3000,
+        "baseline_brier": 0.18115226282018912,
+        "challenger_brier": 0.18130743154471474,
+        "brier_improvement": -0.00015516872452561725,
+        "brier_skill": -0.0008565652016151573,
+        "brier_improvement_ci": {
+          "confidence_level": 0.95,
+          "lower": -0.0004560077907189853,
+          "upper": 0.00016223851190259655
+        },
+        "baseline_logloss": 0.5482855376235333,
+        "challenger_logloss": 0.5487212449584679,
+        "logloss_improvement": -0.00043570733493458746,
+        "logloss_skill": -0.000794672310386117,
+        "logloss_improvement_ci": {
+          "confidence_level": 0.95,
+          "lower": -0.0012636555185209647,
+          "upper": 0.00042568398361046385
+        },
+        "bootstrap_replicates": 1000,
+        "bootstrap_seed": 20260902,
+        "holdout_consumed": true
+      }
+    },
+    "final_evaluation": {
+      "promoted": false,
+      "rejection_reasons": [
+        "negative_brier_skill",
+        "negative_logloss_skill",
+        "brier_ci_crosses_zero",
+        "logloss_ci_crosses_zero"
+      ],
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.18115226282018912,
+      "challenger_brier": 0.18130743154471474,
+      "brier_improvement": -0.00015516872452561725,
+      "brier_skill": -0.0008565652016151573,
+      "brier_improvement_ci": {
+        "confidence_level": 0.95,
+        "lower": -0.0004560077907189853,
+        "upper": 0.00016223851190259655
+      },
+      "baseline_logloss": 0.5482855376235333,
+      "challenger_logloss": 0.5487212449584679,
+      "logloss_improvement": -0.00043570733493458746,
+      "logloss_skill": -0.000794672310386117,
+      "logloss_improvement_ci": {
+        "confidence_level": 0.95,
+        "lower": -0.0012636555185209647,
+        "upper": 0.00042568398361046385
+      },
+      "bootstrap_replicates": 1000,
+      "bootstrap_seed": 20260902,
+      "holdout_consumed": true
+    },
     "ablation_report": "cau_keo_domain_ablation_loto.csv",
     "gate_report": "cau_keo_domain_gate_loto.json",
-    "final_brier_skill": -0.000542814785629897,
-    "final_logloss_skill": -0.00051341300894725,
-    "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening, confirmation, and the untouched combined final gate."
+    "final_brier_skill": -0.0008565652016151573,
+    "final_logloss_skill": -0.000794672310386117,
+    "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold."
   }
 }

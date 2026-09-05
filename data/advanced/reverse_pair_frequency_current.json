@@ -3,6 +3,19 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
+    "pair":"11-66",
+    "a":11,
+    "b":66,
+    "freq":2,
+    "days_hit":1,
+    "cooccur_days":1,
+    "avg_per_draw":2.0,
+    "rank_in_period":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-04",
+    "draws":1,
     "pair":"23-32",
     "a":23,
     "b":32,
@@ -94,19 +107,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"11-11",
-    "a":11,
-    "b":11,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"14-41",
     "a":14,
     "b":41,
@@ -120,9 +120,48 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
+    "pair":"22-77",
+    "a":22,
+    "b":77,
+    "freq":1,
+    "days_hit":1,
+    "cooccur_days":0,
+    "avg_per_draw":1.0,
+    "rank_in_period":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-04",
+    "draws":1,
+    "pair":"33-88",
+    "a":33,
+    "b":88,
+    "freq":1,
+    "days_hit":1,
+    "cooccur_days":0,
+    "avg_per_draw":1.0,
+    "rank_in_period":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-04",
+    "draws":1,
     "pair":"34-43",
     "a":34,
     "b":43,
+    "freq":1,
+    "days_hit":1,
+    "cooccur_days":0,
+    "avg_per_draw":1.0,
+    "rank_in_period":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-04",
+    "draws":1,
+    "pair":"44-99",
+    "a":44,
+    "b":99,
     "freq":1,
     "days_hit":1,
     "cooccur_days":0,
@@ -198,19 +237,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"66-66",
-    "a":66,
-    "b":66,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"67-76",
     "a":67,
     "b":76,
@@ -237,19 +263,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"77-77",
-    "a":77,
-    "b":77,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"78-87",
     "a":78,
     "b":87,
@@ -263,35 +276,9 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"88-88",
-    "a":88,
-    "b":88,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
-    "pair":"99-99",
-    "a":99,
-    "b":99,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
-    "pair":"00-00",
+    "pair":"00-55",
     "a":0,
-    "b":0,
+    "b":55,
     "freq":0,
     "days_hit":0,
     "cooccur_days":0,
@@ -484,19 +471,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"22-22",
-    "a":22,
-    "b":22,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"24-42",
     "a":24,
     "b":42,
@@ -549,19 +523,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"33-33",
-    "a":33,
-    "b":33,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"37-73",
     "a":37,
     "b":73,
@@ -601,19 +562,6 @@
     "period_kind":"day",
     "period_key":"2026-09-04",
     "draws":1,
-    "pair":"44-44",
-    "a":44,
-    "b":44,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
     "pair":"45-54",
     "a":45,
     "b":54,
@@ -643,19 +591,6 @@
     "pair":"48-84",
     "a":48,
     "b":84,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-04",
-    "draws":1,
-    "pair":"55-55",
-    "a":55,
-    "b":55,
     "freq":0,
     "days_hit":0,
     "cooccur_days":0,
@@ -718,6 +653,19 @@
     "period_kind":"week",
     "period_key":"2026-W36",
     "draws":5,
+    "pair":"22-77",
+    "a":22,
+    "b":77,
+    "freq":7,
+    "days_hit":5,
+    "cooccur_days":1,
+    "avg_per_draw":1.4,
+    "rank_in_period":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W36",
+    "draws":5,
     "pair":"26-62",
     "a":26,
     "b":62,
@@ -725,7 +673,7 @@
     "days_hit":4,
     "cooccur_days":1,
     "avg_per_draw":1.2,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"week",
@@ -738,7 +686,7 @@
     "days_hit":4,
     "cooccur_days":1,
     "avg_per_draw":1.2,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"week",
@@ -751,7 +699,7 @@
     "days_hit":4,
     "cooccur_days":1,
     "avg_per_draw":1.2,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"week",
@@ -764,7 +712,7 @@
     "days_hit":5,
     "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"week",
@@ -777,7 +725,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"week",
@@ -790,20 +738,20 @@
     "days_hit":4,
     "cooccur_days":1,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"week",
     "period_key":"2026-W36",
     "draws":5,
-    "pair":"77-77",
-    "a":77,
-    "b":77,
+    "pair":"44-99",
+    "a":44,
+    "b":99,
     "freq":5,
     "days_hit":5,
-    "cooccur_days":5,
+    "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"week",
@@ -816,7 +764,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.8,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"week",
@@ -829,7 +777,7 @@
     "days_hit":3,
     "cooccur_days":1,
     "avg_per_draw":0.8,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"week",
@@ -842,7 +790,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.8,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"week",
@@ -855,20 +803,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.8,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"44-44",
-    "a":44,
-    "b":44,
-    "freq":4,
-    "days_hit":4,
-    "cooccur_days":4,
-    "avg_per_draw":0.8,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"week",
@@ -881,7 +816,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.8,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"week",
@@ -894,7 +829,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -907,7 +842,20 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W36",
+    "draws":5,
+    "pair":"11-66",
+    "a":11,
+    "b":66,
+    "freq":3,
+    "days_hit":2,
+    "cooccur_days":1,
+    "avg_per_draw":0.6,
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -920,7 +868,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -933,7 +881,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -946,7 +894,20 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W36",
+    "draws":5,
+    "pair":"33-88",
+    "a":33,
+    "b":88,
+    "freq":3,
+    "days_hit":2,
+    "cooccur_days":1,
+    "avg_per_draw":0.6,
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -959,7 +920,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -972,7 +933,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -985,7 +946,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -998,7 +959,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -1011,7 +972,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -1024,7 +985,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.6,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"week",
@@ -1037,7 +998,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1050,20 +1011,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"11-11",
-    "a":11,
-    "b":11,
-    "freq":2,
-    "days_hit":2,
-    "cooccur_days":2,
-    "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1076,7 +1024,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1089,7 +1037,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1102,20 +1050,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"22-22",
-    "a":22,
-    "b":22,
-    "freq":2,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1128,7 +1063,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1141,7 +1076,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1154,7 +1089,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1167,7 +1102,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1180,7 +1115,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
@@ -1193,20 +1128,20 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.4,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"week",
     "period_key":"2026-W36",
     "draws":5,
-    "pair":"88-88",
-    "a":88,
-    "b":88,
-    "freq":2,
-    "days_hit":2,
-    "cooccur_days":2,
-    "avg_per_draw":0.4,
-    "rank_in_period":5
+    "pair":"00-55",
+    "a":0,
+    "b":55,
+    "freq":1,
+    "days_hit":1,
+    "cooccur_days":0,
+    "avg_per_draw":0.2,
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1219,7 +1154,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1232,7 +1167,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1245,7 +1180,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1258,7 +1193,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1271,7 +1206,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1284,33 +1219,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"33-33",
-    "a":33,
-    "b":33,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.2,
-    "rank_in_period":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"55-55",
-    "a":55,
-    "b":55,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1323,20 +1232,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"66-66",
-    "a":66,
-    "b":66,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.2,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"week",
@@ -1349,32 +1245,6 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.2,
-    "rank_in_period":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"99-99",
-    "a":99,
-    "b":99,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.2,
-    "rank_in_period":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W36",
-    "draws":5,
-    "pair":"00-00",
-    "a":0,
-    "b":0,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
     "rank_in_period":7
   },
   {
@@ -1388,7 +1258,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":7
+    "rank_in_period":8
   },
   {
     "period_kind":"week",
@@ -1401,7 +1271,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":7
+    "rank_in_period":8
   },
   {
     "period_kind":"week",
@@ -1414,7 +1284,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":7
+    "rank_in_period":8
   },
   {
     "period_kind":"week",
@@ -1427,7 +1297,20 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":7
+    "rank_in_period":8
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "draws":4,
+    "pair":"22-77",
+    "a":22,
+    "b":77,
+    "freq":6,
+    "days_hit":4,
+    "cooccur_days":1,
+    "avg_per_draw":1.5,
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -1440,7 +1323,7 @@
     "days_hit":3,
     "cooccur_days":1,
     "avg_per_draw":1.25,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -1453,7 +1336,7 @@
     "days_hit":3,
     "cooccur_days":1,
     "avg_per_draw":1.25,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -1466,7 +1349,7 @@
     "days_hit":4,
     "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"month",
@@ -1479,7 +1362,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"month",
@@ -1492,7 +1375,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"month",
@@ -1505,7 +1388,20 @@
     "days_hit":3,
     "cooccur_days":1,
     "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "draws":4,
+    "pair":"44-99",
+    "a":44,
+    "b":99,
+    "freq":4,
+    "days_hit":4,
+    "cooccur_days":0,
+    "avg_per_draw":1.0,
+    "rank_in_period":3
   },
   {
     "period_kind":"month",
@@ -1518,20 +1414,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":1.0,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"77-77",
-    "a":77,
-    "b":77,
-    "freq":4,
-    "days_hit":4,
-    "cooccur_days":4,
-    "avg_per_draw":1.0,
-    "rank_in_period":2
+    "rank_in_period":3
   },
   {
     "period_kind":"month",
@@ -1544,7 +1427,20 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "draws":4,
+    "pair":"11-66",
+    "a":11,
+    "b":66,
+    "freq":3,
+    "days_hit":2,
+    "cooccur_days":1,
+    "avg_per_draw":0.75,
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1557,7 +1453,7 @@
     "days_hit":2,
     "cooccur_days":1,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1570,7 +1466,20 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "draws":4,
+    "pair":"33-88",
+    "a":33,
+    "b":88,
+    "freq":3,
+    "days_hit":2,
+    "cooccur_days":1,
+    "avg_per_draw":0.75,
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1583,7 +1492,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1596,7 +1505,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1609,20 +1518,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"44-44",
-    "a":44,
-    "b":44,
-    "freq":3,
-    "days_hit":3,
-    "cooccur_days":3,
-    "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1635,7 +1531,7 @@
     "days_hit":3,
     "cooccur_days":0,
     "avg_per_draw":0.75,
-    "rank_in_period":3
+    "rank_in_period":4
   },
   {
     "period_kind":"month",
@@ -1648,7 +1544,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1661,7 +1557,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1674,7 +1570,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1687,20 +1583,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"11-11",
-    "a":11,
-    "b":11,
-    "freq":2,
-    "days_hit":2,
-    "cooccur_days":2,
-    "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1713,7 +1596,7 @@
     "days_hit":1,
     "cooccur_days":1,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1726,7 +1609,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1739,7 +1622,7 @@
     "days_hit":1,
     "cooccur_days":1,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1752,20 +1635,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"22-22",
-    "a":22,
-    "b":22,
-    "freq":2,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1778,7 +1648,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1791,7 +1661,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1804,7 +1674,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1817,7 +1687,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1830,7 +1700,7 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
@@ -1843,20 +1713,20 @@
     "days_hit":2,
     "cooccur_days":0,
     "avg_per_draw":0.5,
-    "rank_in_period":4
+    "rank_in_period":5
   },
   {
     "period_kind":"month",
     "period_key":"2026-09",
     "draws":4,
-    "pair":"88-88",
-    "a":88,
-    "b":88,
-    "freq":2,
-    "days_hit":2,
-    "cooccur_days":2,
-    "avg_per_draw":0.5,
-    "rank_in_period":4
+    "pair":"00-55",
+    "a":0,
+    "b":55,
+    "freq":1,
+    "days_hit":1,
+    "cooccur_days":0,
+    "avg_per_draw":0.25,
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1869,7 +1739,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1882,7 +1752,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1895,7 +1765,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1908,7 +1778,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1921,7 +1791,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1934,7 +1804,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1947,20 +1817,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"33-33",
-    "a":33,
-    "b":33,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1973,20 +1830,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"55-55",
-    "a":55,
-    "b":55,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -1999,7 +1843,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -2012,20 +1856,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"66-66",
-    "a":66,
-    "b":66,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -2038,7 +1869,7 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
+    "rank_in_period":6
   },
   {
     "period_kind":"month",
@@ -2051,32 +1882,6 @@
     "days_hit":1,
     "cooccur_days":0,
     "avg_per_draw":0.25,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"99-99",
-    "a":99,
-    "b":99,
-    "freq":1,
-    "days_hit":1,
-    "cooccur_days":1,
-    "avg_per_draw":0.25,
-    "rank_in_period":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-09",
-    "draws":4,
-    "pair":"00-00",
-    "a":0,
-    "b":0,
-    "freq":0,
-    "days_hit":0,
-    "cooccur_days":0,
-    "avg_per_draw":0.0,
     "rank_in_period":6
   },
   {
@@ -2090,7 +1895,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"month",
@@ -2103,7 +1908,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"month",
@@ -2116,7 +1921,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"month",
@@ -2129,7 +1934,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"month",
@@ -2142,7 +1947,7 @@
     "days_hit":0,
     "cooccur_days":0,
     "avg_per_draw":0.0,
-    "rank_in_period":6
+    "rank_in_period":7
   },
   {
     "period_kind":"year",
@@ -2247,6 +2052,19 @@
     "cooccur_days":12,
     "avg_per_draw":0.5789473684,
     "rank_in_period":7
+  },
+  {
+    "period_kind":"year",
+    "period_key":"2026",
+    "draws":247,
+    "pair":"33-88",
+    "a":33,
+    "b":88,
+    "freq":141,
+    "days_hit":103,
+    "cooccur_days":16,
+    "avg_per_draw":0.5708502024,
+    "rank_in_period":8
   },
   {
     "period_kind":"year",
@@ -2362,6 +2180,19 @@
     "freq":137,
     "days_hit":112,
     "cooccur_days":12,
+    "avg_per_draw":0.5546558704,
+    "rank_in_period":12
+  },
+  {
+    "period_kind":"year",
+    "period_key":"2026",
+    "draws":247,
+    "pair":"22-77",
+    "a":22,
+    "b":77,
+    "freq":137,
+    "days_hit":112,
+    "cooccur_days":11,
     "avg_per_draw":0.5546558704,
     "rank_in_period":12
   },
@@ -2590,6 +2421,19 @@
     "period_kind":"year",
     "period_key":"2026",
     "draws":247,
+    "pair":"11-66",
+    "a":11,
+    "b":66,
+    "freq":126,
+    "days_hit":99,
+    "cooccur_days":15,
+    "avg_per_draw":0.5101214575,
+    "rank_in_period":22
+  },
+  {
+    "period_kind":"year",
+    "period_key":"2026",
+    "draws":247,
     "pair":"58-85",
     "a":58,
     "b":85,
@@ -2622,6 +2466,19 @@
     "freq":125,
     "days_hit":103,
     "cooccur_days":10,
+    "avg_per_draw":0.5060728745,
+    "rank_in_period":23
+  },
+  {
+    "period_kind":"year",
+    "period_key":"2026",
+    "draws":247,
+    "pair":"44-99",
+    "a":44,
+    "b":99,
+    "freq":125,
+    "days_hit":104,
+    "cooccur_days":7,
     "avg_per_draw":0.5060728745,
     "rank_in_period":23
   },
@@ -2681,6 +2538,19 @@
     "period_kind":"year",
     "period_key":"2026",
     "draws":247,
+    "pair":"00-55",
+    "a":0,
+    "b":55,
+    "freq":121,
+    "days_hit":96,
+    "cooccur_days":7,
+    "avg_per_draw":0.4898785425,
+    "rank_in_period":26
+  },
+  {
+    "period_kind":"year",
+    "period_key":"2026",
+    "draws":247,
     "pair":"07-70",
     "a":7,
     "b":70,
@@ -2728,135 +2598,5 @@
     "cooccur_days":11,
     "avg_per_draw":0.4655870445,
     "rank_in_period":28
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"77-77",
-    "a":77,
-    "b":77,
-    "freq":76,
-    "days_hit":71,
-    "cooccur_days":71,
-    "avg_per_draw":0.3076923077,
-    "rank_in_period":29
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"33-33",
-    "a":33,
-    "b":33,
-    "freq":75,
-    "days_hit":61,
-    "cooccur_days":61,
-    "avg_per_draw":0.3036437247,
-    "rank_in_period":30
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"88-88",
-    "a":88,
-    "b":88,
-    "freq":66,
-    "days_hit":58,
-    "cooccur_days":58,
-    "avg_per_draw":0.2672064777,
-    "rank_in_period":31
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"11-11",
-    "a":11,
-    "b":11,
-    "freq":65,
-    "days_hit":60,
-    "cooccur_days":60,
-    "avg_per_draw":0.2631578947,
-    "rank_in_period":32
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"44-44",
-    "a":44,
-    "b":44,
-    "freq":64,
-    "days_hit":57,
-    "cooccur_days":57,
-    "avg_per_draw":0.2591093117,
-    "rank_in_period":33
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"55-55",
-    "a":55,
-    "b":55,
-    "freq":63,
-    "days_hit":53,
-    "cooccur_days":53,
-    "avg_per_draw":0.2550607287,
-    "rank_in_period":34
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"22-22",
-    "a":22,
-    "b":22,
-    "freq":61,
-    "days_hit":52,
-    "cooccur_days":52,
-    "avg_per_draw":0.2469635628,
-    "rank_in_period":35
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"66-66",
-    "a":66,
-    "b":66,
-    "freq":61,
-    "days_hit":54,
-    "cooccur_days":54,
-    "avg_per_draw":0.2469635628,
-    "rank_in_period":35
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"99-99",
-    "a":99,
-    "b":99,
-    "freq":61,
-    "days_hit":54,
-    "cooccur_days":54,
-    "avg_per_draw":0.2469635628,
-    "rank_in_period":35
-  },
-  {
-    "period_kind":"year",
-    "period_key":"2026",
-    "draws":247,
-    "pair":"00-00",
-    "a":0,
-    "b":0,
-    "freq":58,
-    "days_hit":50,
-    "cooccur_days":50,
-    "avg_per_draw":0.2348178138,
-    "rank_in_period":36
   }
 ]

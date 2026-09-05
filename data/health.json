@@ -14,6 +14,13 @@
   "sparse_check": {
     "ok": true,
     "rows": 390,
+    "missing_number_columns": [],
+    "extra_number_columns": [],
+    "invalid_value_row_count": 0,
+    "invalid_date_row_count": 0,
+    "duplicate_dates": [],
+    "missing_dates": [],
+    "extra_dates": [],
     "bad_row_count": 0,
     "expected_sum_per_draw": 27,
     "bad_dates": []
