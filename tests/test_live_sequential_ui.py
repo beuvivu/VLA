@@ -9,8 +9,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_PAGE = ROOT / "docs/live.html"
 LIVE_WORKFLOW = ROOT / ".github/workflows/live-results.yml"
@@ -64,12 +62,22 @@ def test_live_page_respects_reduced_motion() -> None:
     assert "prefers-reduced-motion" in page
 
 
+def _live_job_budget() -> tuple[int, int]:
+    """Trả về (giới hạn job, ngân sách thăm dò) tính bằng giây.
+
+    Đọc bằng regex thay vì PyYAML: dự án không khai báo PyYAML là phụ thuộc
+    nên thêm import chỉ để phục vụ một test sẽ làm hỏng CI.
+    """
+    workflow = LIVE_WORKFLOW.read_text(encoding="utf-8")
+    timeout = re.search(r"^\s*timeout-minutes:\s*(\d+)", workflow, re.MULTILINE)
+    budget = re.search(r"^\s*MAX_SECONDS:\s*\"?(\d+)\"?", workflow, re.MULTILINE)
+    assert timeout and budget, "không đọc được timeout-minutes / MAX_SECONDS"
+    return int(timeout.group(1)) * 60, int(budget.group(1))
+
+
 def test_live_workflow_timeout_outlasts_its_polling_budget() -> None:
     """Job bị giết trước khi vòng lặp kết thúc thì bước bàn giao daily không chạy."""
-    workflow = yaml.safe_load(LIVE_WORKFLOW.read_text(encoding="utf-8"))
-    job = workflow["jobs"]["live"]
-    timeout_seconds = int(job["timeout-minutes"]) * 60
-    max_seconds = int(job["env"]["MAX_SECONDS"])
+    timeout_seconds, max_seconds = _live_job_budget()
     assert timeout_seconds > max_seconds, (
         f"timeout {timeout_seconds}s phải lớn hơn ngân sách thăm dò {max_seconds}s"
     )
@@ -85,7 +93,6 @@ def test_watchdog_live_window_covers_the_whole_live_run() -> None:
     )
     assert match, "không tìm thấy định nghĩa live_window"
     end_minutes = int(match.group(1)) * 60 + int(match.group(2))
-    live_job = yaml.safe_load(LIVE_WORKFLOW.read_text(encoding="utf-8"))["jobs"]["live"]
     # Live bắt đầu 18:00 giờ VN; khung phải phủ tới lúc job kết thúc.
-    live_end = 18 * 60 + int(live_job["env"]["MAX_SECONDS"]) // 60
+    live_end = 18 * 60 + _live_job_budget()[1] // 60
     assert end_minutes >= live_end
