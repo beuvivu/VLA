@@ -388,7 +388,12 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
             )
         cells.append("".join(row_cells))
     header = "<div></div>" + "".join(f"<div class='matrix-head'>{i}</div>" for i in range(10))
-    return f"<div class='tiny-matrix'>{header}{''.join(cells)}</div>"
+    # Trên màn hẹp ma trận có min-width 430px; phải bọc trong .matrix-wrap để
+    # phần dư cuộn ngang trong khung thay vì đẩy cả trang tràn ra ngoài.
+    return (
+        f"<div class='matrix-wrap'><div class='tiny-matrix'>"
+        f"{header}{''.join(cells)}</div></div>"
+    )
 
 
 def _render_head_tail_lists(latest: Mapping[str, Any]) -> str:
@@ -1026,10 +1031,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       letter-spacing: .06em;
     }}
     .prize-list.mini .prize-number {{ min-width: 48px; color: #b91c1c; background: #fff1f2; }}
+    /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
+       (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
+       .matrix-wrap cuộn ngang phần dư. */
     .chuc-card {{
       position: sticky;
       top: 18px;
+      min-width: 0;
     }}
+    .result-combo > * {{ min-width: 0; }}
     .tiny-matrix, .matrix-grid {{
       display: grid;
       grid-template-columns: 26px repeat(10, minmax(38px, 1fr));
@@ -1349,8 +1359,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         max-width: min(100%, 1780px);
         padding: 32px clamp(28px, 3vw, 48px);
       }}
+      /* Bề rộng khả dụng của .main đã trừ .side-nav (~247px) nên ở màn 1440px
+         chỉ còn ~1062px. Ngưỡng cũ 760+18+360=1138px lớn hơn mức đó khiến
+         cả lưới tràn ra ngoài viewport. */
       .layout-top {{
-        grid-template-columns: minmax(760px, 1fr) minmax(360px, 440px);
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
       }}
       .right-rail {{
         position: sticky;
@@ -1423,8 +1436,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       .hero {{ padding: 22px; border-radius: 24px; }}
       .result-table th {{ width: 92px; }}
       .prize-number.special {{ font-size: 22px; min-width: 96px; }}
+      /* Cột cố định 38px làm ma trận rộng 402px, vượt bề ngang khả dụng của
+         màn hình nhỏ (~354px ở 390px) và đẩy cả trang tràn ngang. Cho cột co
+         lại theo khung để ma trận luôn vừa màn hình. */
       .tiny-matrix, .matrix-grid {{
-        grid-template-columns: 22px repeat(10, 38px);
+        grid-template-columns: 22px repeat(10, minmax(0, 1fr));
       }}
       .matrix-cell {{ min-height: 48px; }}
       .bar-row {{ grid-template-columns: 62px minmax(0, 1fr) 58px; }}
@@ -1563,8 +1579,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       max-width: min(100%, 1780px) !important;
       padding: 32px clamp(28px, 3vw, 48px) !important;
     }}
+    /* Cùng lý do như .layout-top ở trên: sau khi trừ sidebar 304px và padding,
+       .main không đủ 1138px nên ngưỡng cũ làm tràn ngang ngay ở 1440px. */
     body.desktop-view .layout-top {{
-      grid-template-columns: minmax(760px, 1fr) minmax(360px, 440px) !important;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
     }}
     body.desktop-view .right-rail {{
       position: sticky !important;

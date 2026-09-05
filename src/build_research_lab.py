@@ -11,7 +11,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from ui_locale import mode_label, strategy_label
-from ui_theme import tailwind_style_tag
+from ui_theme import card, shell_close, shell_open, tailwind_style_tag
 from web_security import security_meta_tags
 
 
@@ -247,38 +247,112 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     conditional = _read_csv(data_dir / "conditional" / "loto_nextday_given_special_long.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
 
+    def _table(title, desc, headers, align_cls, rows_html, span=6):
+        head = "".join(f"<th>{h}</th>" for h in headers)
+        body = (
+            f'<div class="vla-table-wrap"><table class="vla-table {align_cls}">'
+            f"<thead><tr>{head}</tr></thead><tbody>{rows_html}</tbody></table></div>"
+        )
+        intro = f'<p class="vla-muted">{desc}</p>' if desc else ""
+        return card(intro + body, title=title, span=span, lift=True)
+
+    cards = "".join([
+        _table(
+            "Chẩn đoán tính ngẫu nhiên và phụ thuộc",
+            "Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.",
+            ["Phép kiểm định", "Thống kê", "p", "q (FDR)", "FDR&lt;.05"],
+            "vla-r2 vla-r3 vla-r4 vla-m5",
+            _primary_tests(diagnostics),
+        ),
+        _table(
+            "Gan tổng / chạm",
+            "Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.",
+            ["Nhóm", "Gan ngày", "Lần cuối"],
+            "vla-r2 vla-m3",
+            _gap_table(touch, sums),
+        ),
+        _table(
+            "Kiểm tra tương thích cũ · đúng ngữ nghĩa",
+            "Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.",
+            ["Chẩn đoán", "Thống kê", "p", "Phương pháp / FDR"],
+            "vla-r2 vla-r3",
+            _legacy_diagnostics(advanced),
+        ),
+        _table(
+            f"ĐB {html.escape(current_special or chr(8212))} → Lô tô ngày kế",
+            "Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.",
+            ["Số", "Cỡ mẫu", "Số lần trúng", "p thô", "p EB", "q"],
+            "vla-r2 vla-r3 vla-r4 vla-r5 vla-r6",
+            _conditional_table(conditional, current_special),
+        ),
+        _table(
+            "Phòng chiến lược · Lô tô",
+            "",
+            ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
+            "vla-r3 vla-r4 vla-r5 vla-m6",
+            _strategy_table(strategy_loto),
+        ),
+        _table(
+            "Phòng chiến lược · Đặc Biệt",
+            "",
+            ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
+            "vla-r3 vla-r4 vla-r5 vla-m6",
+            _strategy_table(strategy_de),
+        ),
+        _table(
+            "Họ vị trí chéo độ trễ",
+            "Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. "
+            "Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, "
+            "kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có "
+            "nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.",
+            ["Phép biến đổi", "Vị trí A", "Trễ A", "Vị trí B", "Trễ B", "Độ nâng trên tập giữ lại", "Cổng"],
+            "vla-r3 vla-r5 vla-r6 vla-m7",
+            _crosslag_table(cross_rules),
+            span=12,
+        ),
+        card(
+            "<p class=\"vla-muted\">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, "
+            "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
+            "huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, "
+            "đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ "
+            "liệu trên toàn họ.</p>",
+            title="Tường lửa nghiên cứu",
+            span=12,
+        ),
+    ])
+
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
 {tailwind_style_tag()}
 <title>Phòng nghiên cứu VLA</title>
 <style>
-:root{{--bg:#f5f7fb;--panel:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#2563eb}}
-*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}}
-main{{max-width:1240px;margin:auto;padding:28px}}a{{color:var(--accent)}}.hero{{padding:28px;border-radius:28px;background:#0f172a;color:#fff;margin-bottom:18px}}
-.hero h1{{margin:0 0 10px;font-size:clamp(30px,5vw,54px)}}.hero p{{margin:0;max-width:900px;color:#cbd5e1;line-height:1.65}}
-.grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}}.metrics{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}}
-.metric-card,.card{{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 12px 30px rgba(15,23,42,.06)}}
-.metric-card span,.metric-card em{{display:block;color:var(--muted);font-style:normal;font-size:12px}}.metric-card strong{{display:block;font-size:34px;margin:5px 0}}
-.card h2{{margin:0 0 7px}}.card p{{color:var(--muted);line-height:1.55}}.table-wrap{{overflow:auto}}table{{width:100%;border-collapse:collapse;font-size:12px}}
-th,td{{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}}th{{background:#f8fafc}}.warn{{padding:12px 14px;border-radius:14px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin:12px 0}}
-@media(max-width:850px){{.grid,.metrics{{grid-template-columns:1fr}}main{{padding:15px}}}}
-</style></head><body class="bg-slate-50 text-slate-800"><main>
-<section class="hero"><div><a href="index.html" style="color:#bfdbfe">← Trang chính</a></div><h1>Phòng nghiên cứu khoa học</h1>
+.rl-hero{{padding:1.75rem;border-radius:var(--vla-r-xl);background:var(--vla-ink);
+color:#fff;margin-bottom:1.25rem}}
+.rl-hero h1{{color:#fff;margin:.5rem 0 .625rem;font-size:clamp(1.75rem,4vw,2.5rem)}}
+.rl-hero p{{margin:0;max-width:60rem;color:#cbd5e1;line-height:1.65}}
+.rl-hero a{{color:#bfdbfe}}
+.rl-metrics{{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
+gap:1rem;margin-bottom:1.5rem}}
+@media(min-width:640px){{.rl-metrics{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
+@media(min-width:1024px){{.rl-metrics{{grid-template-columns:repeat(4,minmax(0,1fr))}}}}
+.metric-card{{background:var(--vla-surface);border:1px solid var(--vla-border);
+border-radius:var(--vla-r-lg);padding:1.125rem;box-shadow:var(--vla-sh-sm)}}
+.metric-card span,.metric-card em{{display:block;color:var(--vla-ink-soft);
+font-style:normal;font-size:.75rem;line-height:1.5}}
+.metric-card strong{{display:block;font-size:2rem;font-weight:600;
+color:var(--vla-ink);margin:.25rem 0;letter-spacing:-.02em;
+font-variant-numeric:tabular-nums}}
+</style></head><body>
+{shell_open(wide=True)}
+<section class="rl-hero"><div><a href="index.html">← Trang chính</a></div>
+<h1>Phòng nghiên cứu khoa học</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
-<div class="warn">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
-<section class="metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
-<section class="grid">
-<article class="card"><h2>Chẩn đoán tính ngẫu nhiên và phụ thuộc</h2><p>Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.</p><div class="table-wrap"><table><thead><tr><th>Phép kiểm định</th><th>Thống kê</th><th>p</th><th>q (FDR)</th><th>FDR&lt;.05</th></tr></thead><tbody>{_primary_tests(diagnostics)}</tbody></table></div></article>
-<article class="card"><h2>Gan tổng / chạm</h2><p>Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.</p><div class="table-wrap"><table><thead><tr><th>Nhóm</th><th>Gan ngày</th><th>Lần cuối</th></tr></thead><tbody>{_gap_table(touch,sums)}</tbody></table></div></article>
-<article class="card"><h2>Kiểm tra tương thích cũ · đúng ngữ nghĩa</h2><p>Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.</p><div class="table-wrap"><table><thead><tr><th>Chẩn đoán</th><th>Thống kê</th><th>p</th><th>Phương pháp / FDR</th></tr></thead><tbody>{_legacy_diagnostics(advanced)}</tbody></table></div></article>
-<article class="card"><h2>ĐB {html.escape(current_special or '—')} → Lô tô ngày kế</h2><p>Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.</p><div class="table-wrap"><table><thead><tr><th>Số</th><th>Cỡ mẫu</th><th>Số lần trúng</th><th>p thô</th><th>p EB</th><th>q</th></tr></thead><tbody>{_conditional_table(conditional,current_special)}</tbody></table></div></article>
-<article class="card"><h2>Phòng chiến lược · Lô tô</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_loto)}</tbody></table></div></article>
-<article class="card"><h2>Phòng chiến lược · Đặc Biệt</h2><div class="table-wrap"><table><thead><tr><th>Chiến lược</th><th>Nhóm</th><th>Độ chính xác</th><th>Độ nâng</th><th>q</th><th>Cổng</th></tr></thead><tbody>{_strategy_table(strategy_de)}</tbody></table></div></article>
-</section>
-<section class="card" style="margin-top:16px"><h2>Họ vị trí chéo độ trễ</h2><p>Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.</p><div class="table-wrap"><table><thead><tr><th>Phép biến đổi</th><th>Vị trí A</th><th>Trễ A</th><th>Vị trí B</th><th>Trễ B</th><th>Độ nâng trên tập giữ lại</th><th>Cổng</th></tr></thead><tbody>{_crosslag_table(cross_rules)}</tbody></table></div></section>
-<section class="card" style="margin-top:16px"><h2>Tường lửa nghiên cứu</h2><p>Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ liệu trên toàn họ.</p></section>
-</main></body></html>"""
+<div class="vla-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
+<section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
+<div class="vla-grid">{cards}</div>
+{shell_close()}
+</body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
     out = docs_dir / "research-lab.html"
     out.write_text(page, encoding="utf-8")

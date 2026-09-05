@@ -58,7 +58,12 @@ img{max-width:100%;height:auto}
 a{color:var(--vla-brand);text-decoration:none}
 a:hover{text-decoration:underline}
 code,pre,.mono{font-family:var(--vla-mono)}
-h1,h2,h3,h4{color:var(--vla-ink);font-weight:600;line-height:1.25;margin:0 0 .5rem}
+/* Chỉ áp màu chữ tiêu đề bên trong khung của chính hệ thống này. Đặt màu ở
+   cấp h1..h4 toàn cục sẽ đè lên các trang có hero/nền tối riêng và làm tiêu
+   đề của họ trùng màu nền. */
+h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:0 0 .5rem}
+.vla-shell h1,.vla-shell h2,.vla-shell h3,.vla-shell h4,
+.vla-card h2,.vla-card h3,.vla-header h1{color:var(--vla-ink)}
 h1{font-size:1.5rem;letter-spacing:-.015em}
 h2{font-size:1.125rem}
 h3{font-size:1rem}
@@ -115,14 +120,21 @@ min-height:0;padding:1.25rem}
 .vla-card-flush{padding:0}
 
 /* ---- 6. Bảng dữ liệu ------------------------------------------------- */
+/* Bóng mờ hai mép chỉ hiện khi bảng thực sự cuộn được, để nội dung bị che
+   đọc ra là "còn cuộn tiếp" chứ không phải bị cắt mất. */
 .vla-table-wrap{width:100%;flex:1 1 auto;min-height:0;
 overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
-max-height:26rem;overscroll-behavior:contain}
+max-height:26rem;overscroll-behavior:contain;
+background:
+linear-gradient(to right,var(--vla-surface) 30%,rgba(255,255,255,0)) left center/2.5rem 100% no-repeat local,
+linear-gradient(to left,var(--vla-surface) 30%,rgba(255,255,255,0)) right center/2.5rem 100% no-repeat local,
+radial-gradient(farthest-side at 0 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) left center/.875rem 100% no-repeat scroll,
+radial-gradient(farthest-side at 100% 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) right center/.875rem 100% no-repeat scroll}
 .vla-table-wrap-tall{max-height:min(75vh,46rem)}
 .vla-table{width:100%;border-collapse:separate;border-spacing:0;
 font-size:.8125rem;font-variant-numeric:tabular-nums}
 .vla-table th,.vla-table td{padding:.625rem 1rem;text-align:left;
-vertical-align:middle;white-space:nowrap}
+vertical-align:middle;white-space:normal;overflow-wrap:anywhere}
 .vla-table thead th{position:sticky;top:0;z-index:1;
 background:rgba(248,250,252,.92);backdrop-filter:blur(8px);
 -webkit-backdrop-filter:blur(8px);
@@ -135,8 +147,8 @@ border-bottom:1px solid var(--vla-border-strong)}
 .vla-table tbody tr:hover{background:rgba(238,242,255,.7)}
 .vla-table td{color:var(--vla-ink-2)}
 .vla-table .vla-al,.vla-table th.vla-al{text-align:left}
-.vla-table .vla-ac,.vla-table th.vla-ac{text-align:center}
-.vla-table .vla-ar,.vla-table th.vla-ar{text-align:right;
+.vla-table .vla-ac,.vla-table th.vla-ac{text-align:center;white-space:nowrap}
+.vla-table .vla-ar,.vla-table th.vla-ar{text-align:right;white-space:nowrap;
 font-variant-numeric:tabular-nums}
 .vla-table .vla-key{font-weight:600;color:var(--vla-ink)}
 .vla-table-empty{padding:2rem 1.25rem;text-align:center;color:var(--vla-ink-muted)}
@@ -175,6 +187,18 @@ font-size:.8125rem;font-weight:500;transition:all .15s ease-in-out}
 background:var(--vla-brand-soft);text-decoration:none}
 .vla-nav a[aria-current="page"]{background:var(--vla-brand);color:#fff;
 border-color:var(--vla-brand)}
+
+/* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
+.vla-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
+.vla-tabs .tabbtn{padding:.5rem .9rem;border:1px solid var(--vla-border);
+border-radius:var(--vla-r-md);background:var(--vla-surface);
+color:var(--vla-ink-soft);font-family:inherit;font-size:.8125rem;
+font-weight:600;cursor:pointer;transition:all .15s ease-in-out}
+.vla-tabs .tabbtn:hover{border-color:var(--vla-brand-border);
+color:var(--vla-brand-ink);background:var(--vla-brand-soft)}
+.vla-tabs .tabbtn.active{background:var(--vla-brand);color:#fff;
+border-color:var(--vla-brand)}
+.panel{display:none}.panel.active{display:block}
 
 /* ---- 9. Khối phụ trợ ------------------------------------------------- */
 /* Giới hạn chiều cao: dữ liệu JSON dài không được kéo dài trang vô hạn. */
@@ -244,6 +268,28 @@ body{background:#fff}
 .vla-nav{display:none}
 }
 """.strip()
+
+
+def _column_align_rules(columns: int = 10) -> str:
+    """Sinh class căn lề theo vị trí cột.
+
+    Dùng cho bảng được ghép chuỗi ``<tr><td>`` thủ công, nơi không tiện gắn
+    class lên từng ô: chỉ cần thêm ``vla-r3`` (cột 3 canh phải) hoặc
+    ``vla-m2`` (cột 2 canh giữa) lên chính thẻ ``<table>``.
+    """
+
+    parts = []
+    for index in range(1, columns + 1):
+        for suffix, value in (("r", "right"), ("m", "center")):
+            parts.append(
+                f".vla-table.vla-{suffix}{index} td:nth-child({index}),"
+                f".vla-table.vla-{suffix}{index} th:nth-child({index})"
+                f"{{text-align:{value};white-space:nowrap}}"
+            )
+    return "\n".join(parts)
+
+
+TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}"
 
 
 def tailwind_style_tag() -> str:

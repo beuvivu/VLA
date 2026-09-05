@@ -163,3 +163,67 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid() -> None:
 def test_shell_open_offers_a_wide_variant() -> None:
     assert "vla-shell-wide" in shell_open(wide=True)
     assert "vla-shell-wide" not in shell_open()
+
+
+# --- Hồi quy cho các lỗi bố cục/tương phản đã sửa -------------------------
+
+
+def test_theme_does_not_force_heading_colour_globally() -> None:
+    """Màu tiêu đề phải giới hạn trong khung của hệ thống này.
+
+    Đặt màu ở cấp ``h1..h4`` toàn cục từng làm tiêu đề hero nền tối của trang
+    landing trùng màu nền (tương phản ~1:1).
+    """
+    assert "h1,h2,h3,h4{font-weight:600" in TAILWIND_LITE_CSS
+    assert ".vla-shell h1" in TAILWIND_LITE_CSS
+    # Không còn quy tắc gán màu trực tiếp cho h1..h4 không phạm vi.
+    assert "h1,h2,h3,h4{color:" not in TAILWIND_LITE_CSS
+
+
+def test_path_ui_template_does_not_apply_light_classes_to_dark_page() -> None:
+    """Trang soi cầu dùng nền tối; class chủ đề sáng làm chữ chìm vào nền."""
+    template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(
+        encoding="utf-8"
+    )
+    assert "<body>" in template
+    assert "bg-slate-50" not in template
+    assert "text-slate-800" not in template
+
+
+def test_statistics_matrix_fits_ten_tail_columns_in_a_half_width_card() -> None:
+    """Ngưỡng cũ 660px rộng hơn card nên cột ĐUÔI 9 bị đẩy khỏi vùng nhìn."""
+    source = (ROOT / "src/build_statistics_dashboard.py").read_text(
+        encoding="utf-8"
+    )
+    assert "grid-template-columns: 40px repeat(10, minmax(38px, 1fr));" in source
+    assert "min-width: 464px;" in source
+    assert "min-width: 660px;" not in source
+
+
+def test_statistics_section_nav_wraps_instead_of_hiding_links() -> None:
+    """Cuộn ngang khiến các mục nav cuối bị ẩn khỏi tầm nhìn."""
+    source = (ROOT / "src/build_statistics_dashboard.py").read_text(
+        encoding="utf-8"
+    )
+    nav = source[source.index(".sticky-nav {{") : source.index(".sticky-nav a {{")]
+    assert "flex-wrap: wrap;" in nav
+    assert "overflow-x: auto;" not in nav
+
+
+def test_landing_grid_items_can_shrink_below_their_content_width() -> None:
+    """Grid item mặc định min-width:auto làm ma trận 430px đẩy tràn trang."""
+    source = (ROOT / "src/build_landing_page.py").read_text(encoding="utf-8")
+    assert ".result-combo > * {{ min-width: 0; }}" in source
+    # Ma trận ngày phải nằm trong khung cuộn riêng.
+    assert "<div class='matrix-wrap'><div class='tiny-matrix'>" in source
+    # Ngưỡng cột cũ vượt bề rộng khả dụng của .main sau khi trừ sidebar.
+    assert "minmax(760px, 1fr) minmax(360px, 440px)" not in source
+
+
+def test_column_align_helpers_cover_expected_columns() -> None:
+    """Bảng ghép chuỗi thủ công canh lề qua class theo vị trí cột."""
+    for index in (1, 5, 10):
+        assert f".vla-table.vla-r{index} td:nth-child({index})" in TAILWIND_LITE_CSS
+        assert f".vla-table.vla-m{index} td:nth-child({index})" in TAILWIND_LITE_CSS
+    # Cột số canh phải phải giữ trên một dòng.
+    assert "text-align:right;white-space:nowrap" in TAILWIND_LITE_CSS
