@@ -10,24 +10,24 @@
     "w_stable": 0.125
   },
   "effective_weights": {
-    "w_ml": 0.2857142857142857,
-    "w_cau": 0.34285714285714286,
-    "w_stat": 0.2285714285714286,
-    "w_active": 0.0,
-    "w_stable": 0.14285714285714285
+    "w_ml": 0.25,
+    "w_cau": 0.3,
+    "w_stat": 0.2,
+    "w_active": 0.125,
+    "w_stable": 0.125
   },
   "component_availability": {
     "ml": true,
     "cau": true,
     "stat": true,
-    "active": false,
+    "active": true,
     "stable": true
   },
   "component_reasons": {
     "ml": "ok",
     "cau": "ok",
     "stat": "ok",
-    "active": "all_zero_probability_vector",
+    "active": "ok",
     "stable": "ok"
   },
   "calibration": {
@@ -35,14 +35,17 @@
     "a": 1.0,
     "b": 0.0,
     "temperature": 1.0,
-    "active": false,
-    "reason": "bypassed because one or more ensemble components are unavailable"
+    "active": true,
+    "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
     "active": false,
     "trust": 0.0,
     "quality_pass": false,
-    "reason": "stacked model requires all five ensemble components"
+    "reason": "validation gate rejected stacked challenger",
+    "validation_logloss": 4.600952520486883,
+    "baseline_validation_logloss": 4.6109063334174385,
+    "logloss_skill": 0.002158754095353266
   },
   "top4": [
     "83",
@@ -56,8 +59,8 @@
     "21",
     "54",
     "43",
-    "22",
     "23",
+    "38",
     "39"
   ],
   "top10": [
@@ -66,10 +69,10 @@
     "21",
     "54",
     "43",
-    "22",
     "23",
-    "39",
     "38",
-    "42"
+    "39",
+    "22",
+    "01"
   ]
 }
