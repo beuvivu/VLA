@@ -1,15 +1,204 @@
-# Legacy forensic audit matrix — PR #24
+# Legacy repository consolidation and retirement
 
-Date: 2026-09-02  
-Repository: `beuvivu/VLA`  
-Branch: `audit/legacy-feature-completeness`  
-Legacy repositories under revalidation:
+Consolidated record of how the three public predecessor repositories were
+audited, migrated into `beuvivu/VLA`, accepted for retirement, and then
+re-audited. It merges three previously separate documents (migration audit,
+retirement acceptance, forensic audit matrix) whose statuses contradicted each
+other when read in isolation.
+
+Repositories under consolidation:
 
 - `beuvivu/Vietnam-Lottery-Analysis`
 - `beuvivu/xsmb-analysis`
 - `beuvivu/xoso`
 
-## Status vocabulary
+## Contents
+
+- [Current status](#current-status)
+- [Timeline](#timeline)
+- [Stage 1 — Migration audit](#stage-1--migration-audit-2026-09-01)
+- [Stage 2 — Retirement acceptance](#stage-2--retirement-acceptance-2026-09-01)
+- [Stage 3 — Forensic re-audit](#stage-3--forensic-re-audit-2026-09-02)
+- [Capability audit matrix](#capability-audit-matrix)
+- [File-level closure for PR #24](#file-level-closure-for-pr-24)
+- [Promotion and safety policy](#promotion-and-safety-policy)
+- [Final approval gate](#final-approval-gate)
+
+## Current status
+
+> **`VERIFIED-PRE-MERGE`.** The 2026-09-01 retirement approval was **re-opened**
+> on 2026-09-02 because file-name/feature-level comparison did not prove semantic
+> equivalence. The re-audit findings are closed in code and verified by GitHub CI
+> run 120 on commit `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7` (148/148
+> regression tests, core gate, research gate). Post-merge production verification
+> remains mandatory under [gate 16](#final-approval-gate).
+
+## Timeline
+
+| Date | Stage | Outcome |
+| --- | --- | --- |
+| 2026-09-01 | Migration audit | Useful algorithms selectively migrated; PR #18 merged. |
+| 2026-09-01 | Retirement acceptance | `APPROVED FOR RETIREMENT` on production evidence. |
+| 2026-09-02 | Forensic re-audit (PR #24) | Approval **re-opened**; 10 silent-failure risks found and closed. |
+
+## Stage 1 — Migration audit (2026-09-01)
+
+### Findings per repository
+
+**Vietnam-Lottery-Analysis.** Most source modules are direct ancestors of modules
+already present in VLA. The current VLA implementations supersede the older path,
+ML, calibration, source, sync and dashboard code. The unique descriptive value
+retained is the VIP-style head table plus gap-by-digit-sum and gap-by-touch views.
+
+**xsmb-analysis.** An earlier snapshot of the same path/ML lineage. Its path
+backtest, conditional-next-day, Markov, hazard, pair statistics, probability
+evaluation and static path UI have newer or expanded equivalents in VLA. The
+descriptive VIP module is the same legacy feature family preserved through
+`src/descriptive_extensions.py`.
+
+**xoso.** The largest set of ideas not already represented in VLA. Retained and
+strengthened: canonical two-digit ontology (reverse, bóng, bộ, chạm, tổng, kép);
+randomness/dependence diagnostics; weekday-effect and serial-dependence
+falsification; chronological auto-discovery evaluation; multiple-testing control;
+max-statistic reality check for data snooping; standardized deterministic
+strategy registry; strategy agreement and diversity diagnostics; recency/evidence
+timelines.
+
+The original implementations were not copied wholesale. VLA uses
+chronology-preserving splits, training-only baselines, Benjamini-Hochberg FDR,
+explicit effect-size gates and circular-shift permutation tests so the research
+layer is harder to overfit.
+
+### Deliberately not migrated
+
+- Docker/cPanel/Passenger/systemd/server deployment stacks;
+- FastAPI/MySQL/SQLite server architecture;
+- duplicate source fetchers and parsers;
+- older base-ML/path implementations already superseded by VLA;
+- fixed or unvalidated betting heuristics promoted directly to production;
+- any rule that uses same-day/future information to score the next draw;
+- duplicate large historical artifacts that would unnecessarily increase
+  repository size.
+
+### VLA preservation layer
+
+| Module | Role |
+| --- | --- |
+| `src/number_reference.py` | One source of truth for two-digit combinatorics. |
+| `src/descriptive_extensions.py` | Head tables, tổng/chạm gaps, number and pair recency. |
+| `src/research_diagnostics.py` | FDR/permutation-based falsification diagnostics. |
+| `src/research_firewall.py` | 27×27 positional hypothesis search with chronological train/validation/holdout and reality check. |
+| `src/strategy_lab.py` | Standardized walk-forward comparison of deterministic strategy families, agreement curves and diversity. |
+| `src/build_research_lab.py` | Static GitHub Pages research interface. |
+| `scripts/research_release_check.sh` | Strict real-data CI gate for the research plane. |
+
+### Retirement criterion set at this stage
+
+The predecessor repositories were declared feature-preservation-safe to retire
+only after the consolidated migration PR passed both the core release check and
+the research-plane release check, was merged to `main`, and the post-merge
+production pipeline successfully regenerated the research artifacts and
+`docs/research-lab.html`. Stage 2 records the evidence that satisfied this
+criterion; Stage 3 later superseded it with a stricter gate.
+
+## Stage 2 — Retirement acceptance (2026-09-01)
+
+The scientific consolidation was merged through PR #18 (`Consolidate legacy
+algorithms into scientific Research Lab`) at commit
+`816c40ebd3acafa80dbcdbbcd1a8bc14a547aad9`.
+
+### Production acceptance evidence
+
+- Canonical XSMB date: `2026-09-01`
+- Data health: OK; 387 rows; no missing dates; no duplicate dates; sparse draw
+  total = 27
+- Canonical result was committed before downstream analytics
+- Strict statistics/AI/ML pipeline completed successfully
+- Research plane executed on real production history
+- `data/research/` and `data/descriptive_ext/` were generated on `main`
+- `docs/research-lab.html` was generated
+- Next-day prediction artifacts target `2026-09-02`
+- README/dashboard refresh completed
+- GitHub Pages deployment completed successfully
+- Explicit post-finalization workflow dispatch completed successfully
+- `live/live.json` was reconciled to canonical status `complete_verified`, 27/27
+  verified
+- The 2026-09-01 canonical result was independently sanity-checked against
+  additional public result sites outside VLA's configured source set and matched
+
+### Consensus safety hardening
+
+Merged through PR #23 (`Harden source consensus against equal-support ties`) at
+commit `8d7ab3182094c87cd35b4c7a7c8d73d3dbc1ac2e`.
+
+Canonical and live consensus now enforce a unique independent-provider winner.
+Configured source priority cannot promote a result through an equal-support
+verification tie. If two distinct results each reach the same
+independent-provider support at or above the required threshold (for example
+2-vs-2), neither is accepted as verified/canonical.
+
+Regression coverage includes:
+
+- equal 2-independent-vs-2-independent full-result tie => rejected;
+- equal-support live slot tie => provisional display only, never verified;
+- two genuinely independent providers vs two mirrors belonging to one provider
+  group => the independent winner is accepted;
+- existing provider-independence and parser/source-policy tests remain intact.
+
+### Runtime dependency check
+
+VLA does not require the three legacy repositories at runtime. There are no
+imports, workflow checkouts, downloads, or external repository dependencies
+needed from them for canonical collection, live operation, statistics, AI/ML,
+predictions, Research Lab, README/dashboard generation, or Pages deployment.
+
+### Retirement decision
+
+The three legacy repositories are functionally redundant with respect to the
+capabilities intentionally selected for preservation. They may be archived or
+deleted without removing a required VLA runtime dependency or losing the
+algorithms intentionally migrated into VLA.
+
+For maximum auditability, archiving the old repositories for a short retention
+period before permanent deletion is preferable. If permanent deletion is chosen
+immediately, this record, the tests and the retained implementations remain in
+VLA as the authoritative consolidated codebase.
+
+## Stage 3 — Forensic re-audit (2026-09-02)
+
+Branch `audit/legacy-feature-completeness`, PR #24.
+
+The Stage 2 approval was re-opened because file-name/feature-level comparison was
+not sufficient to prove semantic equivalence. The second pass found concrete
+silent-failure risks:
+
+1. missing ensemble component artifacts could be converted into legitimate
+   all-zero probability vectors;
+2. historical all-zero placeholders could be treated as fully available component
+   predictions by ensemble learners;
+3. structurally valid but stale prediction artifacts could be reused for the
+   wrong target date;
+4. several modules labeled row offsets as calendar days without enforcing daily
+   continuity;
+5. pipeline data validation ran after some analytics, allowing row-based
+   artifacts to be produced before a gap was detected;
+6. probability evaluation could reconstruct a historical prediction using a blend
+   that had never actually been emitted;
+7. three legacy next-day conditional matrices used row adjacency instead of exact
+   `+1 calendar day` transitions;
+8. the legacy statistics AI overlay could display yesterday's ML artifact as
+   today's signal;
+9. duplicate legacy CLIs/builders (`vip_stats.py`, `run_path.py`,
+   `build_markdown_dashboard.py`) maintained independent logic or ambiguous
+   artifacts;
+10. release and production audits did not explicitly gate the new
+    calendar/target-date contracts.
+
+These findings are closed in code and were verified by GitHub CI run 120 on
+commit `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7`: 148/148 regression tests
+passed, the core release gate passed, and the research-plane release gate passed.
+
+### Status vocabulary
 
 | Status | Meaning |
 | --- | --- |
@@ -19,23 +208,6 @@ Legacy repositories under revalidation:
 | `RESEARCH-ONLY` | Capability exists for falsification/descriptive analysis and is not allowed to alter production prediction weights automatically. |
 | `EXCLUDED` | Deliberately not retained because it is deployment-specific, duplicate generated state, or inferior to the canonical VLA implementation. |
 | `VERIFIED` | The capability and its release/research gates passed on the recorded final-head verification run; any later code change requires a new final-head run. |
-
-## Critical findings reopened after the 2026-09-01 retirement approval
-
-The earlier retirement acceptance was re-opened because file-name/feature-level comparison was not sufficient to prove semantic equivalence. The second pass found concrete silent-failure risks:
-
-1. missing ensemble component artifacts could be converted into legitimate all-zero probability vectors;
-2. historical all-zero placeholders could be treated as fully available component predictions by ensemble learners;
-3. structurally valid but stale prediction artifacts could be reused for the wrong target date;
-4. several modules labeled row offsets as calendar days without enforcing daily continuity;
-5. pipeline data validation ran after some analytics, allowing row-based artifacts to be produced before a gap was detected;
-6. probability evaluation could reconstruct a historical prediction using a blend that had never actually been emitted;
-7. three legacy next-day conditional matrices used row adjacency instead of exact `+1 calendar day` transitions;
-8. the legacy statistics AI overlay could display yesterday's ML artifact as today's signal;
-9. duplicate legacy CLIs/builders (`vip_stats.py`, `run_path.py`, `build_markdown_dashboard.py`) maintained independent logic or ambiguous artifacts;
-10. release and production audits did not explicitly gate the new calendar/target-date contracts.
-
-These findings are closed in code and were verified by GitHub CI run 120 on commit `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7`: 148/148 regression tests passed, the core release gate passed, and the research-plane release gate passed. This documentation-only status commit must itself pass the same CI before merge.
 
 ## Capability audit matrix
 
@@ -81,7 +253,7 @@ These findings are closed in code and were verified by GitHub CI run 120 on comm
 | Old scraper/parser stacks | legacy repositories | Not migrated where current VLA source adapters/consensus are newer and independently tested | source policy + parser/consensus tests | EXCLUDED / SUPERSEDED |
 | Duplicate generated legacy datasets | legacy repositories | Not treated as source code or authoritative history | canonical `data/xsmb*` + source audit | EXCLUDED |
 
-## File-level closure for PR #24 source changes
+## File-level closure for PR #24
 
 | File | Closure |
 | --- | --- |
@@ -121,29 +293,41 @@ These findings are closed in code and were verified by GitHub CI run 120 on comm
 
 ## Promotion and safety policy
 
-No result in `data/research/`, no legacy strategy, no conditional matrix, and no diagnostic p-value is automatically promoted into production prediction weights. Promotion requires a separate code change plus chronological out-of-sample evidence, multiple-testing control, effect-size persistence, calibration/quality gates and review of dependency/data-snooping risk.
+No result in `data/research/`, no legacy strategy, no conditional matrix, and no
+diagnostic p-value is automatically promoted into production prediction weights.
+Promotion requires a separate code change plus chronological out-of-sample
+evidence, multiple-testing control, effect-size persistence, calibration/quality
+gates and review of dependency/data-snooping risk.
 
-Missing or stale production inputs must degrade explicitly or fail. They must never be represented as apparently valid zero-probability models, silently reconstructed historical predictions, or wrong-date artifacts.
+Missing or stale production inputs must degrade explicitly or fail. They must
+never be represented as apparently valid zero-probability models, silently
+reconstructed historical predictions, or wrong-date artifacts.
+
+At the 2026-09-01 acceptance point, the Research Firewall and Strategy Lab remain
+conservative: exploratory patterns that do not clear the scientific gates do not
+affect production weights.
 
 ## Final approval gate
 
-PR #24 must remain Draft until **all** of the following are true on the same final head:
+PR #24 must remain Draft until **all** of the following are true on the same
+final head:
 
 1. `ruff`/compile gates pass;
 2. full `pytest` passes;
 3. source policy passes;
 4. canonical data validation passes;
 5. current production cầu-kèo artifacts are regenerated from the current code;
-6. exact-calendar conditional diagnostics report zero skipped boundaries on canonical history;
+6. exact-calendar conditional diagnostics report zero skipped boundaries on
+   canonical history;
 7. date-safe AI overlay targets exactly `latest canonical + 1 day`;
 8. higher-order dynamics report `calendar_contiguous=true` for Loto and ĐB;
 9. fresh base-ML train/predict smoke passes;
 10. stacked-ML challenger smoke passes;
-11. production model schema/date checks pass with the supervised anchor correctly one day behind its newest known target;
+11. production model schema/date checks pass with the supervised anchor correctly
+    one day behind its newest known target;
 12. Markdown/HTML builders pass;
 13. strict production consistency audit passes;
 14. research-plane release check passes;
 15. PR is mergeable against the latest `main`;
-16. after merge, strict daily finalization + Pages + post-finalization/live reconciliation pass on production.
-
-**Current decision:** `VERIFIED-PRE-MERGE`. GitHub CI run 120 passed both core and research gates on `5cab5fa3eff78d9fbd4975163cb9c521f65c55a7`. This documentation-only status commit must pass the same CI before PR #24 leaves Draft. Post-merge production verification remains mandatory under gate 16.
+16. after merge, strict daily finalization + Pages + post-finalization/live
+    reconciliation pass on production.

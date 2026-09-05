@@ -149,7 +149,7 @@ https://mketqua.net/tan-suat-cap-loto
 **Tên gọi khác:** đảo, AB-BA, cặp 50, kép-bóng.
 
 **Nguồn:** https://xosodaiphat.com/thong-ke-tan-suat-loto-cap.html;
-`docs/number-ontology-sources.md`
+[`../domain/number-ontology.md`](../domain/number-ontology.md)
 
 **Loại:** mô tả. **Đầu vào:** một số hai chữ số.
 
@@ -173,7 +173,7 @@ kép và `00-55`, `11-66`, `22-77`, `33-88`, `44-99`.
 **Tên gọi khác:** bộ/hệ, bóng dương, bóng âm.
 
 **Nguồn:** nhiều mô tả công khai được đối chiếu tại
-`docs/number-ontology-sources.md`.
+[`../domain/number-ontology.md`](../domain/number-ontology.md).
 
 **Loại:** mô tả. **Đầu vào:** chữ số hoặc số hai chữ số.
 
