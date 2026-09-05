@@ -227,3 +227,19 @@ def test_column_align_helpers_cover_expected_columns() -> None:
         assert f".vla-table.vla-m{index} td:nth-child({index})" in TAILWIND_LITE_CSS
     # Cột số canh phải phải giữ trên một dòng.
     assert "text-align:right;white-space:nowrap" in TAILWIND_LITE_CSS
+
+
+def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
+    """Kiểm chính file đã sinh, không chỉ template.
+
+    Sửa template là chưa đủ: trang trong ``docs/`` mới là thứ GitHub Pages phục
+    vụ. Lần trước template đã sửa nhưng HTML chưa sinh lại nên site vẫn chạy
+    bản chữ tối trên nền tối.
+    """
+    pages = sorted((ROOT / "docs").glob("soi-path-*.html"))
+    assert pages, "không tìm thấy trang soi cầu đã sinh"
+    for page in pages:
+        text = page.read_text(encoding="utf-8")
+        assert '<body class="bg-slate-50' not in text, page.name
+        assert "text-slate-800" not in text, page.name
+        assert "<body>" in text, page.name
