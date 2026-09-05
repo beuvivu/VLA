@@ -223,8 +223,30 @@ def main() -> None:
     except Exception:
         quality = pd.DataFrame()
 
-    # Loại canh trái, ngày canh giữa, hai chỉ số lỗi canh phải.
+    # Loại canh trái, ngày canh giữa, các chỉ số canh phải. Cột kỹ năng chỉ
+    # xuất hiện khi lịch sử đã mang đối chứng baseline.
+    has_skill = not quality.empty and "logloss_skill" in quality.columns
+    quality_columns = ["mode", "target_date", "logloss", "brier"]
     quality_align = [ALIGN_LEFT, ALIGN_CENTER, ALIGN_RIGHT, ALIGN_RIGHT]
+    if has_skill:
+        quality_columns += ["baseline_logloss", "logloss_skill"]
+        quality_align += [ALIGN_RIGHT, ALIGN_RIGHT]
+
+    def _format_quality(frame: pd.DataFrame) -> pd.DataFrame:
+        """Định dạng số và thêm cột kỹ năng nếu có đối chứng baseline."""
+        out = frame.copy()
+        for column in ("logloss", "brier", "baseline_logloss"):
+            if column in out.columns:
+                out[column] = pd.to_numeric(out[column], errors="coerce").map(
+                    lambda x: f"{x:.6f}" if pd.notna(x) else ""
+                )
+        if "logloss_skill" in out.columns:
+            # Dương = tốt hơn baseline. Hiển thị dấu để không ai phải đoán.
+            out["logloss_skill"] = pd.to_numeric(
+                out["logloss_skill"], errors="coerce"
+            ).map(lambda x: f"{x:+.2%}" if pd.notna(x) else "")
+        out["mode"] = out["mode"].map(mode_label)
+        return out[quality_columns].rename(columns=column_label)
 
     if quality.empty:
         quality_body = (
@@ -237,26 +259,16 @@ def main() -> None:
         q["logloss"] = pd.to_numeric(q["logloss"], errors="coerce")
         q["brier"] = pd.to_numeric(q["brier"], errors="coerce")
         q = q.sort_values(["mode", "target_date"])
-        latest_rows = q.groupby("mode", as_index=False).tail(1).copy()
-        latest_rows["logloss"] = latest_rows["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        latest_rows["brier"] = latest_rows["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        latest_rows["mode"] = latest_rows["mode"].map(mode_label)
         latest_quality = dataframe_table(
-            latest_rows[["mode", "target_date", "logloss", "brier"]].rename(
-                columns=column_label
-            ),
+            _format_quality(q.groupby("mode", as_index=False).tail(1)),
             align=quality_align,
             key_column=0,
         )
 
-        recent = q.groupby("mode", group_keys=False).tail(30).copy()
-        recent["logloss"] = recent["logloss"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        recent["brier"] = recent["brier"].map(lambda x: f"{x:.6f}" if pd.notna(x) else "")
-        recent["mode"] = recent["mode"].map(mode_label)
+        # _format_quality đã chọn cột và đổi sang nhãn hiển thị, nên không được
+        # chọn lại theo tên cột gốc ở đây.
         quality_body = dataframe_table(
-            recent[["mode", "target_date", "logloss", "brier"]].rename(
-                columns=column_label
-            ),
+            _format_quality(q.groupby("mode", group_keys=False).tail(30)),
             align=quality_align,
             key_column=0,
         )
