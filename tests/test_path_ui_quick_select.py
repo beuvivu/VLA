@@ -39,15 +39,23 @@ def test_quick_select_renders_top_numbers_from_prediction_rows() -> None:
     )
 
     assert 'aria-label="Danh sách chọn nhanh"' in html
-    assert '>14<' in html
-    assert '>07<' in html
+    assert ">14<" in html
+    assert ">07<" in html
     assert "25.43%" in html
     assert "27 đường cầu" in html
-    assert "Chưa có dữ liệu chọn nhanh" not in html
+    assert "không có đường cầu nào đủ điều kiện" not in html.lower()
 
 
 def test_quick_select_has_explicit_empty_state_when_no_predictions() -> None:
+    """Trạng thái rỗng phải nói vì sao trống, không đổ lỗi cho dữ liệu.
+
+    Thông điệp cũ bảo người đọc "hãy chạy lại bước tạo dữ liệu đường cầu". Với
+    ĐB thì rỗng là trạng thái đúng và thường gặp — tỉ lệ nền 1% khiến xác suất
+    trúng ba kỳ liên tiếp chỉ là 1e-6 — nên câu đó hướng người đọc đi sửa một
+    thứ không hỏng.
+    """
     html = _render_quick_select([])
 
     assert 'aria-label="Danh sách chọn nhanh"' not in html
-    assert "Chưa có dữ liệu chọn nhanh cho ngày neo này" in html
+    assert "không có đường cầu nào đủ điều kiện" in html.lower()
+    assert "chạy lại" not in html.lower()

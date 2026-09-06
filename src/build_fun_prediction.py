@@ -294,7 +294,7 @@ def _render_board(payload: dict[str, Any]) -> str:
             values.append(
                 f"<button class='fun-prize-number{cls}' data-mode='{item['mode']}' "
                 f"data-number='{html.escape(item['suffix'])}' "
-            f"title='2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
+                f"title='2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
                 f"{html.escape(item['value'])}</button>"
             )
         rows.append(
@@ -319,28 +319,28 @@ def _render_board(payload: dict[str, Any]) -> str:
   <div class="fun-prediction-head">
     <div>
       <div class="fun-eyebrow">🎲 Dự đoán vui · ngày kế tiếp</div>
-      <h3>Bảng mô phỏng XSMB {html.escape(str(payload['target_date']))}</h3>
-      <p>Đặt ngay dưới kết quả thực ngày {html.escape(str(payload['anchor_date']))}. Chỉ phần <b>2 số cuối</b> dùng xác suất từ mô hình; tiền tố giải là mô phỏng tất định.</p>
+      <h3>Bảng mô phỏng XSMB {html.escape(str(payload["target_date"]))}</h3>
+      <p>Đặt ngay dưới kết quả thực ngày {html.escape(str(payload["anchor_date"]))}. Chỉ phần <b>2 số cuối</b> dùng xác suất từ mô hình; tiền tố giải là mô phỏng tất định.</p>
     </div>
     <span class="fun-warning">Không phải kết quả thật</span>
   </div>
   <div class="fun-pred-grid">
     <div class="fun-board-wrap">
-      <table class="fun-result-table"><tbody>{''.join(rows)}</tbody></table>
-      <p class="fun-method">{html.escape(str(payload['method']))}</p>
+      <table class="fun-result-table"><tbody>{"".join(rows)}</tbody></table>
+      <p class="fun-method">{html.escape(str(payload["method"]))}</p>
     </div>
     <div class="fun-prob-panels">
       <article class="fun-prob-card">
         <div class="fun-prob-title"><span>Lô tô ngày mai</span><small>{html.escape(loto_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload['top_loto'], 'loto', 'Lô tô')}</div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "Lô tô")}</div>
       </article>
       <article class="fun-prob-card de">
         <div class="fun-prob-title"><span>Đặc biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload['top_de'], 'de', 'ĐB')}</div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_de"], "de", "ĐB")}</div>
       </article>
     </div>
   </div>
-  <div class="fun-disclaimer">⚠ {html.escape(str(payload['disclaimer']))}</div>
+  <div class="fun-disclaimer">⚠ {html.escape(str(payload["disclaimer"]))}</div>
 </div>
 """
 
@@ -417,9 +417,11 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
     if not path.exists() or path.stat().st_size == 0:
         return False
     soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-    target = soup.select_one("section#ket-qua")
+    # Bảng mô phỏng có chỗ riêng ngay sau khối ma trận, đúng thứ tự đọc mong
+    # muốn. Vẫn nhận section#ket-qua làm dự phòng để không vỡ với trang cũ.
+    target = soup.select_one("section#mo-phong") or soup.select_one("section#ket-qua")
     if target is None:
-        raise RuntimeError(f"Không tìm thấy section#ket-qua trong {path}")
+        raise RuntimeError(f"Không tìm thấy section#mo-phong hoặc section#ket-qua trong {path}")
 
     old_block = soup.find(id=BLOCK_ID)
     if old_block is not None:

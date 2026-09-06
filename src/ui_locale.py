@@ -39,6 +39,32 @@ GROUP_LABELS = {
 }
 
 COLUMN_LABELS = {
+    # Khóa của các khối JSON từng bị đổ thô ra trang Bảng điều khiển. Thiếu
+    # nhãn ở đây là lý do trang hiện "w_cau" cạnh "Ngày neo" — nửa dịch nửa không.
+    "w_cau": "Trọng số cầu",
+    "w_stat": "Trọng số thống kê",
+    "effective_weights": "Trọng số áp dụng thực tế",
+    "component_availability": "Thành phần có sẵn",
+    "component_reasons": "Lý do theo thành phần",
+    "calibration": "Hiệu chỉnh",
+    "meta": "Siêu dữ liệu",
+    "params": "Tham số",
+    "metric": "Chỉ số",
+    "temperature": "Nhiệt độ hiệu chỉnh",
+    "half_life_days": "Chu kỳ bán rã (ngày)",
+    "window_days": "Cửa sổ (ngày)",
+    "days_used": "Số ngày đã dùng",
+    "learned_at_utc": "Học lúc (UTC)",
+    "updated_at_utc": "Cập nhật lúc (UTC)",
+    "trust": "Mức tin cậy",
+    "quality_pass": "Đạt kiểm chất lượng",
+    "active": "Đang hoạt động",
+    "note": "Ghi chú",
+    "ml": "Học máy",
+    "cau": "Cầu vị trí",
+    "stat": "Thống kê",
+    "stable": "Cầu ổn định",
+
     "a": "Số A",
     "active_path_count": "Số cầu đang chạy",
     "ai_cau_score": "Điểm AI",

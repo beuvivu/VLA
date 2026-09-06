@@ -6,10 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>SOI CẦU LÔ TÔ — ĐANG CHẠY</title>
+  <link rel="stylesheet" href="assets/vla.css" />
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text);}
+    body{margin:0;font-family:var(--vla-font); background:var(--bg); color:var(--text);}
     a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
     .wrap{max-width:1200px;margin:0 auto;padding:20px}
     .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
@@ -292,6 +293,7 @@
   <div class="card" style="margin-top:12px; overflow:auto">
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
     <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
+    
     <div style="margin-top:10px; overflow:auto">
       <table>
         <thead>
@@ -10327,6 +10329,7 @@
         </tbody>
       </table>
     </div>
+    
   </div>
 
   <div class="small" style="margin-top:14px;color:var(--muted)">

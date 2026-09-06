@@ -13,26 +13,19 @@ from ui_theme import (
     ALIGN_CENTER,
     ALIGN_LEFT,
     ALIGN_RIGHT,
+    app_shell_close,
+    app_shell_open,
     card,
     dataframe_table,
-    nav_links,
+    definition_table,
     page_header,
-    shell_close,
-    shell_open,
-    tailwind_style_tag,
+    raw_details,
+    stylesheet_link,
+    write_stylesheet,
 )
 from web_security import security_meta_tags
 
 logger = logging.getLogger(__name__)
-
-# Liên kết điều hướng dùng chung cho hai trang do builder này sinh ra.
-NAV: tuple[tuple[str, str], ...] = (
-    ("index.html", "Trang chính"),
-    ("dashboard.html", "Bảng điều khiển AI/ML"),
-    ("statistics.html", "Ma trận thống kê"),
-    ("model-quality.html", "Chất lượng mô hình"),
-    ("live.html", "Kết quả trực tiếp"),
-)
 
 
 def _read_json(p: Path) -> dict:
@@ -72,6 +65,7 @@ def main() -> None:
     data_dir = root / "data"
     docs_dir = root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
+    write_stylesheet(docs_dir)
 
     latest = _latest_date(data_dir)
     gen = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -98,13 +92,9 @@ def main() -> None:
     if not c_de:
         c_de = {"note": "Chưa học được phép hiệu chỉnh"}
     if not picks_loto:
-        picks_loto = {
-            "note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"
-        }
+        picks_loto = {"note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"}
     if not picks_de:
-        picks_de = {
-            "note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"
-        }
+        picks_de = {"note": "Chưa tạo danh sách gợi ý; hãy chạy quy trình predict_nextday_2d.py"}
 
     def load_pred(mode: str) -> pd.DataFrame:
         pred_dir = data_dir / "predict"
@@ -139,9 +129,14 @@ def main() -> None:
         align = [ALIGN_RIGHT, ALIGN_LEFT] + [ALIGN_RIGHT] * (len(df2.columns) - 2)
         return dataframe_table(df2, align=align, key_column=1)
 
-    def display_json(payload: dict) -> str:
-        localized = localize_mapping_for_display(payload)
-        return html.escape(json.dumps(localized, ensure_ascii=False, indent=2))
+    def rendered(payload: dict) -> str:
+        """Bảng nhãn–giá trị, kèm JSON gốc gập lại phía dưới.
+
+        Trước đây bốn card này đổ thẳng JSON ra thẻ <pre>. Khối đó đọc được với
+        người viết ra nó và gần như vô nghĩa với người dùng trang — lại còn để
+        lộ tên khóa chưa dịch (w_cau, effective_weights) nằm cạnh nhãn đã dịch.
+        """
+        return definition_table(localize_mapping_for_display(payload)) + raw_details(payload)
 
     # Mỗi hàng ghép đúng một cặp lô tô | Đặc Biệt (6/12 mỗi card). Hai card cùng
     # hàng luôn cùng dạng nội dung nên cao bằng nhau, không sinh khoảng trống
@@ -163,26 +158,22 @@ def main() -> None:
                 lift=True,
             ),
             card(
-                f'<pre class="vla-pre">{display_json(picks_loto)}</pre>',
+                rendered(picks_loto),
                 title="Danh sách gợi ý (lô tô)",
                 span=6,
             ),
             card(
-                f'<pre class="vla-pre">{display_json(picks_de)}</pre>',
+                rendered(picks_de),
                 title="Danh sách gợi ý (Đặc Biệt / ĐB)",
                 span=6,
             ),
             card(
-                f'<pre class="vla-pre">{display_json(w_loto)}</pre>'
-                '<h3 class="mt-4">Hiệu chỉnh (lô tô)</h3>'
-                f'<pre class="vla-pre">{display_json(c_loto)}</pre>',
+                rendered(w_loto) + '<h3 class="mt-4">Hiệu chỉnh (lô tô)</h3>' + rendered(c_loto),
                 title="Trọng số (lô tô)",
                 span=6,
             ),
             card(
-                f'<pre class="vla-pre">{display_json(w_de)}</pre>'
-                '<h3 class="mt-4">Hiệu chỉnh (Đặc Biệt)</h3>'
-                f'<pre class="vla-pre">{display_json(c_de)}</pre>',
+                rendered(w_de) + '<h3 class="mt-4">Hiệu chỉnh (Đặc Biệt)</h3>' + rendered(c_de),
                 title="Trọng số (Đặc Biệt)",
                 span=6,
             ),
@@ -195,19 +186,20 @@ def main() -> None:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
-  {tailwind_style_tag()}
+  {stylesheet_link()}
   <title>Bảng điều khiển phân tích XSMB</title>
 </head>
 <body>
-{shell_open()}
-{page_header(
-    "Bảng điều khiển phân tích XSMB",
-    "Xác suất mô hình tổ hợp, trọng số đã học và danh sách gợi ý cho kỳ kế tiếp.",
-    [f"Ngày dữ liệu mới nhất: {latest}", f"Tạo lúc: {gen}"],
-)}
-{nav_links(NAV, current="dashboard.html")}
+{app_shell_open("dashboard.html")}
+{
+        page_header(
+            "Bảng điều khiển phân tích XSMB",
+            "Xác suất mô hình tổ hợp, trọng số đã học và danh sách gợi ý cho kỳ kế tiếp.",
+            [f"Ngày dữ liệu mới nhất: {latest}", f"Tạo lúc: {gen}"],
+        )
+    }
 <div class="vla-grid">{cards}</div>
-{shell_close()}
+{app_shell_close()}
 </body>
 </html>
 """
@@ -242,16 +234,14 @@ def main() -> None:
                 )
         if "logloss_skill" in out.columns:
             # Dương = tốt hơn baseline. Hiển thị dấu để không ai phải đoán.
-            out["logloss_skill"] = pd.to_numeric(
-                out["logloss_skill"], errors="coerce"
-            ).map(lambda x: f"{x:+.2%}" if pd.notna(x) else "")
+            out["logloss_skill"] = pd.to_numeric(out["logloss_skill"], errors="coerce").map(
+                lambda x: f"{x:+.2%}" if pd.notna(x) else ""
+            )
         out["mode"] = out["mode"].map(mode_label)
         return out[quality_columns].rename(columns=column_label)
 
     if quality.empty:
-        quality_body = (
-            '<p class="vla-table-empty">Chưa có đủ lịch sử đánh giá mô hình.</p>'
-        )
+        quality_body = '<p class="vla-table-empty">Chưa có đủ lịch sử đánh giá mô hình.</p>'
         latest_quality = ""
     else:
         q = quality.copy()
@@ -279,33 +269,38 @@ def main() -> None:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
-  {tailwind_style_tag()}
+  {stylesheet_link()}
   <title>Chất lượng mô hình — Phân tích XSMB</title>
 </head>
 <body>
-{shell_open()}
-{page_header(
-    "Chất lượng mô hình",
-    "Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp "
-    "càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.",
-)}
-{nav_links(NAV, current="model-quality.html")}
+{app_shell_open("model-quality.html")}
+{
+        page_header(
+            "Chất lượng mô hình",
+            "Đánh giá cuốn chiếu ngoài mẫu của mô hình tổ hợp. LogLoss/Brier càng thấp "
+            "càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.",
+        )
+    }
 <div class="vla-grid">
-{card(
-    latest_quality or '<p class="vla-table-empty">Chưa có dữ liệu.</p>',
-    title="Mới nhất",
-    span=12,
-    flush=True,
-)}
-{card(
-    quality_body,
-    title="30 đánh giá gần nhất theo loại",
-    span=12,
-    flush=True,
-    lift=True,
-)}
+{
+        card(
+            latest_quality or '<p class="vla-table-empty">Chưa có dữ liệu.</p>',
+            title="Mới nhất",
+            span=12,
+            flush=True,
+        )
+    }
+{
+        card(
+            quality_body,
+            title="30 đánh giá gần nhất theo loại",
+            span=12,
+            flush=True,
+            lift=True,
+        )
+    }
 </div>
-{shell_close()}
+{app_shell_close()}
 </body>
 </html>
 """

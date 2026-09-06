@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
 from ui_locale import mode_label, path_kind_label
+from xsmb_domain import baseline_rate
 from web_security import security_meta_tags
 
 
@@ -43,7 +45,9 @@ class UiRow:
 
 def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
     # files: ui_{mode}_{kind}_{YYYY-MM-DD}_{Nd}d.csv
-    pat = re.compile(rf"ui_{re.escape(mode)}_(?:active|stable)_(\d{{4}}-\d{{2}}-\d{{2}})_(\d+)d\.csv$")
+    pat = re.compile(
+        rf"ui_{re.escape(mode)}_(?:active|stable)_(\d{{4}}-\d{{2}}-\d{{2}})_(\d+)d\.csv$"
+    )
     dates: list[str] = []
     for p in path_ui_dir.glob(f"ui_{mode}_*_*.csv"):
         m = pat.search(p.name)
@@ -56,7 +60,9 @@ def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
     return sorted(dates)[-1]
 
 
-def _load_ui_csv(path_ui_dir: Path, mode: str, kind: str, anchor_date: str, display_days: int) -> pd.DataFrame:
+def _load_ui_csv(
+    path_ui_dir: Path, mode: str, kind: str, anchor_date: str, display_days: int
+) -> pd.DataFrame:
     p = path_ui_dir / f"ui_{mode}_{kind}_{anchor_date}_{display_days}d.csv"
     if not p.exists():
         raise FileNotFoundError(f"Thiếu tệp giao diện: {p}")
@@ -68,6 +74,45 @@ def _load_picks_csv(path_ui_dir: Path, mode: str, kind: str, anchor_date: str) -
     if not p.exists():
         raise FileNotFoundError(f"Thiếu tệp gợi ý: {p}")
     return pd.read_csv(p)
+
+
+def _empty_reason(path_ui_dir: Path, *, mode: str, kind: str, rows: int) -> dict[str, Any]:
+    """Vì sao trang này trống, và người đọc nên đi đâu tiếp.
+
+    Trả về rỗng khi trang có dữ liệu, nên template chỉ cần kiểm tra một biến.
+    """
+    if rows:
+        return {}
+
+    sibling = "stable" if kind == "active" else "active"
+    sibling_rows = 0
+    sibling_path = path_ui_dir / f"paths_{mode}_{sibling}.csv"
+    if sibling_path.exists():
+        try:
+            sibling_rows = len(pd.read_csv(sibling_path))
+        except Exception:
+            sibling_rows = 0
+
+    manifest = path_ui_dir / f"path_manifest_{mode}.json"
+    threshold = 3
+    if manifest.exists():
+        try:
+            payload = json.loads(manifest.read_text(encoding="utf-8"))
+            key = "min_current_streak" if kind == "active" else "min_max_streak"
+            threshold = int(payload.get(key, threshold))
+        except Exception:
+            pass
+
+    rate = baseline_rate(mode)
+    return {
+        "threshold": threshold,
+        "baseline_pct": round(rate * 100, 2),
+        "chance_pct": rate**threshold * 100,
+        "sibling_rows": sibling_rows,
+        "sibling_link": f"soi-path-{mode}-{sibling}.html",
+        "sibling_label": path_kind_label(sibling),
+        "is_de": mode == "de",
+    }
 
 
 def _render_page(
@@ -85,6 +130,7 @@ def _render_page(
     display_days: int,
     ui_df: pd.DataFrame,
     picks_df: pd.DataFrame,
+    empty_reason: dict[str, Any] | None = None,
 ) -> None:
     tpl = env.get_template("path_ui_page.html.j2")
 
@@ -96,7 +142,13 @@ def _render_page(
     # Prepare picks
     picks: list[PickRow] = []
     for _, r in picks_df.head(20).iterrows():
-        picks.append(PickRow(number=int(r["number"]), prob=float(r["prob"]), support_paths_count=int(r["support_paths_count"])))
+        picks.append(
+            PickRow(
+                number=int(r["number"]),
+                prob=float(r["prob"]),
+                support_paths_count=int(r["support_paths_count"]),
+            )
+        )
 
     # Rows
     rows: list[UiRow] = []
@@ -134,7 +186,19 @@ def _render_page(
             )
             cells.append(Cell(num=num, hit=hit, hitde=(hit and is_de), tooltip=tooltip))
 
-        rows.append(UiRow(path_id=path_id, lag=lag, i=i, j=j, i_label=i_label, j_label=j_label, p_mean=p_mean, streak=streak, cells=cells))
+        rows.append(
+            UiRow(
+                path_id=path_id,
+                lag=lag,
+                i=i,
+                j=j,
+                i_label=i_label,
+                j_label=j_label,
+                p_mean=p_mean,
+                streak=streak,
+                cells=cells,
+            )
+        )
 
     html = tpl.render(
         title=title,
@@ -148,6 +212,7 @@ def _render_page(
         index_link=index_link,
         anchor_date=anchor_date,
         display_days=display_days,
+        empty_reason=empty_reason or {},
         days=days,
         rows=rows,
         picks=picks,
@@ -175,6 +240,13 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             ui_df = _load_ui_csv(path_ui_dir, mode, kind, anchor_date, display_days)
             picks_df = _load_picks_csv(path_ui_dir, mode, kind, anchor_date)
 
+            # Một trang trống không kèm lời giải thích không phân biệt được với
+            # một trang hỏng. Với ĐB, tỉ lệ nền là 1% nên xác suất một đường cầu
+            # trúng ba kỳ liên tiếp là 1e-6: rỗng là trạng thái ĐÚNG và thường
+            # gặp, không phải sự cố. Thông điệp cũ ("hãy chạy lại bước tạo dữ
+            # liệu") hướng người đọc đi sửa một thứ không hỏng.
+            empty_reason = _empty_reason(path_ui_dir, mode=mode, kind=kind, rows=len(ui_df))
+
             out_name = f"soi-path-{mode}-{kind}.html"
             out_path = docs_dir / out_name
 
@@ -196,6 +268,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
                 display_days=display_days,
                 ui_df=ui_df,
                 picks_df=picks_df,
+                empty_reason=empty_reason,
             )
 
             index_items.append(

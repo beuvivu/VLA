@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
-from ui_theme import tailwind_style_tag
+from ui_theme import SITE_NAV, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
 
@@ -194,7 +194,9 @@ def _luminance(hex_color: str) -> float:
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
-def _style_for_value(value: float, min_value: float, max_value: float, palette: str) -> tuple[str, str]:
+def _style_for_value(
+    value: float, min_value: float, max_value: float, palette: str
+) -> tuple[str, str]:
     low, high = PALETTES.get(palette, PALETTES["blue"])
     span = max(max_value - min_value, 1e-9)
     t = (value - min_value) / span
@@ -262,8 +264,12 @@ def _matrix_from_df(df: pd.DataFrame, value_col: str) -> dict[str, float]:
     return values
 
 
-def _current_period_matrix(repo_root: Path, mode: str, period: str, value_col: str = "freq") -> dict[str, float]:
-    df = _read_csv(repo_root / "data" / "advanced" / f"period_snapshot_{mode}_current.csv", dtype=str)
+def _current_period_matrix(
+    repo_root: Path, mode: str, period: str, value_col: str = "freq"
+) -> dict[str, float]:
+    df = _read_csv(
+        repo_root / "data" / "advanced" / f"period_snapshot_{mode}_current.csv", dtype=str
+    )
     if not df.empty and "period_kind" in df.columns:
         df = df[df["period_kind"] == period]
     return _matrix_from_df(df, value_col)
@@ -297,7 +303,9 @@ def _sort_top(df: pd.DataFrame, col: str, limit: int = 12, ascending: bool = Fal
 def _load_explain_map(repo_root: Path) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {"loto": {}, "de": {}}
     for mode in ["loto", "de"]:
-        explain = _read_csv(repo_root / "data" / "ai_ml" / f"cau_number_explain_{mode}.csv", dtype=str)
+        explain = _read_csv(
+            repo_root / "data" / "ai_ml" / f"cau_number_explain_{mode}.csv", dtype=str
+        )
         if not explain.empty:
             for _, row in explain.iterrows():
                 number = _fmt2(row.get("number_str", row.get("number", "")))
@@ -315,12 +323,18 @@ def _load_explain_map(repo_root: Path) -> dict[str, dict[str, Any]]:
                     ],
                     "lines": [],
                 }
-        evidence = _read_csv(repo_root / "data" / "ai_ml" / f"cau_position_evidence_{mode}.csv", dtype=str)
+        evidence = _read_csv(
+            repo_root / "data" / "ai_ml" / f"cau_position_evidence_{mode}.csv", dtype=str
+        )
         if not evidence.empty:
             sort_cols = [c for c in ["number_str", "rule_score"] if c in evidence.columns]
             if sort_cols:
-                evidence["_score"] = pd.to_numeric(evidence.get("rule_score", 0), errors="coerce").fillna(0)
-                evidence = evidence.sort_values(["number_str", "_score"], ascending=[True, False]).drop(columns=["_score"])
+                evidence["_score"] = pd.to_numeric(
+                    evidence.get("rule_score", 0), errors="coerce"
+                ).fillna(0)
+                evidence = evidence.sort_values(
+                    ["number_str", "_score"], ascending=[True, False]
+                ).drop(columns=["_score"])
             for number, group in evidence.groupby(evidence["number_str"].map(_fmt2)):
                 if number not in result[mode]:
                     result[mode][number] = {
@@ -353,6 +367,34 @@ def _load_explain_map(repo_root: Path) -> dict[str, dict[str, Any]]:
     return result
 
 
+def _render_live_block(latest: Mapping[str, Any]) -> str:
+    """Khối quay trực tiếp, đặt ở vị trí ưu tiên hàng đầu.
+
+    Trang này là HTML tĩnh sinh sẵn, nên không thể tự biết lúc người dùng mở
+    trang là mấy giờ. Việc chuyển giữa "đang quay" và "đã có kết quả" do
+    JavaScript quyết định theo giờ Việt Nam ngay trên máy người xem — nếu để
+    phía dựng trang quyết định, mọi người mở trang sau đó sẽ thấy một trạng thái
+    đã cũ.
+    """
+    date_text = html.escape(str(latest.get("date") or "—"))
+    return f"""
+      <section id="live" class="section card" data-live-block>
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Quay thưởng</p>
+            <h3 id="live-title">Kết quả ngày {date_text}</h3>
+            <p id="live-note">Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.</p>
+          </div>
+          <a class="btn secondary" href="live.html">Mở trang quay trực tiếp</a>
+        </div>
+        <div id="live-status" class="live-status" role="status" aria-live="polite">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span id="live-status-text">Đang xác định trạng thái kỳ quay…</span>
+        </div>
+      </section>
+    """
+
+
 def _render_result_table(latest: Mapping[str, Any]) -> str:
     if not latest.get("groups"):
         return "<div class='empty'>Chưa có dữ liệu kết quả ngày.</div>"
@@ -366,7 +408,11 @@ def _render_result_table(latest: Mapping[str, Any]) -> str:
             f"<tr><th>{html.escape(str(group['label']))}</th>"
             f"<td><div class='prize-list {html.escape(str(group['kind']))}'>{prizes}</div></td></tr>"
         )
-    return "<table class='result-table'><tbody>" + "".join(rows) + "</tbody></table>"
+    return (
+        "<div class='result-scroll'><table class='result-table'><tbody>"
+        + "".join(rows)
+        + "</tbody></table></div>"
+    )
 
 
 def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
@@ -390,10 +436,7 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
     header = "<div></div>" + "".join(f"<div class='matrix-head'>{i}</div>" for i in range(10))
     # Trên màn hẹp ma trận có min-width 430px; phải bọc trong .matrix-wrap để
     # phần dư cuộn ngang trong khung thay vì đẩy cả trang tràn ra ngoài.
-    return (
-        f"<div class='matrix-wrap'><div class='tiny-matrix'>"
-        f"{header}{''.join(cells)}</div></div>"
-    )
+    return f"<div class='matrix-wrap'><div class='tiny-matrix'>{header}{''.join(cells)}</div></div>"
 
 
 def _render_head_tail_lists(latest: Mapping[str, Any]) -> str:
@@ -401,7 +444,10 @@ def _render_head_tail_lists(latest: Mapping[str, Any]) -> str:
         rows = []
         for digit in range(10):
             values = data.get(str(digit), [])
-            badges = "".join(f"<span class='mini-badge'>{html.escape(v)}</span>" for v in values) or "<span class='muted'>—</span>"
+            badges = (
+                "".join(f"<span class='mini-badge'>{html.escape(v)}</span>" for v in values)
+                or "<span class='muted'>—</span>"
+            )
             rows.append(f"<div class='head-tail-row'><b>{digit}</b><div>{badges}</div></div>")
         return f"<div class='head-tail-card'><h4>{html.escape(title)}</h4>{''.join(rows)}</div>"
 
@@ -455,7 +501,7 @@ def _render_matrix_card(
         </div>
       </div>
       <div class="matrix-wrap">
-        <div class="matrix-grid">{header}{''.join(cells)}</div>
+        <div class="matrix-grid">{header}{"".join(cells)}</div>
       </div>
       <div class="legend"><span style="background:{legend_low}"></span> Thấp <i></i> Cao <span style="background:{legend_high}"></span></div>
     </article>
@@ -574,16 +620,22 @@ def _render_table(
 
 def _render_special_board(repo_root: Path, kind: str) -> str:
     if kind == "week":
-        df = _read_csv(repo_root / "data" / "advanced" / "special_week_board.csv", dtype=str).tail(8)
+        df = _read_csv(repo_root / "data" / "advanced" / "special_week_board.csv", dtype=str).tail(
+            8
+        )
         title = "Bảng ĐB theo tuần"
         subtitle = "8 tuần gần nhất, chia theo thứ trong tuần."
         cols = ["week_key", "T2", "T3", "T4", "T5", "T6", "T7", "CN"]
     else:
-        df = _read_csv(repo_root / "data" / "advanced" / "special_month_board.csv", dtype=str).tail(4)
+        df = _read_csv(repo_root / "data" / "advanced" / "special_month_board.csv", dtype=str).tail(
+            4
+        )
         title = "Bảng ĐB theo tháng"
         subtitle = "4 tháng gần nhất, giữ đủ cột ngày 01–31."
         cols = ["month_key"] + [f"{i:02d}" for i in range(1, 32)]
-    return _render_table(title=title, subtitle=subtitle, df=df, columns=cols, limit=10, dense=True, searchable=False)
+    return _render_table(
+        title=title, subtitle=subtitle, df=df, columns=cols, limit=10, dense=True, searchable=False
+    )
 
 
 def _render_group_bars(repo_root: Path, period: str) -> str:
@@ -597,9 +649,7 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
         part = df[df.get("group_type", "") == group].copy()
         if not part.empty:
             group_label = GROUP_LABELS.get(group, group)
-            part["label"] = part["group_value"].map(
-                lambda x, label=group_label: f"{label} {x}"
-            )
+            part["label"] = part["group_value"].map(lambda x, label=group_label: f"{label} {x}")
         cards.append(
             _render_bar_card(
                 title=GROUP_LABELS.get(group, group),
@@ -620,25 +670,57 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     explain_map = _load_explain_map(repo_root)
     generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
 
-    loto_snapshot = _read_csv(repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str)
-    de_snapshot = _read_csv(repo_root / "data" / "advanced" / "period_snapshot_de_current.csv", dtype=str)
+    loto_snapshot = _read_csv(
+        repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
+    )
+    de_snapshot = _read_csv(
+        repo_root / "data" / "advanced" / "period_snapshot_de_current.csv", dtype=str
+    )
 
-    ai_loto = _sort_top(_read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str), "cau_score", 10)
-    ai_de = _sort_top(_read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str), "cau_score", 10)
-    loto_rhythm = _sort_top(_read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12)
-    de_rhythm = _sort_top(_read_csv(repo_root / "data" / "advanced" / "de_rhythm.csv", dtype=str), "current_gap", 12)
-    reverse_pairs = _read_csv(repo_root / "data" / "advanced" / "reverse_pair_frequency_current.csv", dtype=str)
+    ai_loto = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str),
+        "cau_score",
+        10,
+    )
+    ai_de = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str), "cau_score", 10
+    )
+    loto_rhythm = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
+    )
+    de_rhythm = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "de_rhythm.csv", dtype=str), "current_gap", 12
+    )
+    reverse_pairs = _read_csv(
+        repo_root / "data" / "advanced" / "reverse_pair_frequency_current.csv", dtype=str
+    )
     if not reverse_pairs.empty and "period_kind" in reverse_pairs.columns:
         reverse_pairs = reverse_pairs[reverse_pairs["period_kind"] == "month"]
     reverse_pairs = _sort_top(reverse_pairs, "freq", 12)
 
-    conditional_special = _read_csv(repo_root / "data" / "advanced" / "conditional_loto_after_special_top500.csv", dtype=str)
-    conditional_loto = _read_csv(repo_root / "data" / "advanced" / "conditional_loto_after_loto_top500.csv", dtype=str)
-    first_prize = _sort_top(_read_csv(repo_root / "data" / "advanced" / "first_prize_overdue.csv", dtype=str), "current_gap", 10)
+    conditional_special = _read_csv(
+        repo_root / "data" / "advanced" / "conditional_loto_after_special_top500.csv", dtype=str
+    )
+    conditional_loto = _read_csv(
+        repo_root / "data" / "advanced" / "conditional_loto_after_loto_top500.csv", dtype=str
+    )
+    first_prize = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "first_prize_overdue.csv", dtype=str),
+        "current_gap",
+        10,
+    )
     report_loto = _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_report_loto.csv", dtype=str)
     report_de = _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_report_de.csv", dtype=str)
-    evidence_loto = _sort_top(_read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_loto.csv", dtype=str), "rule_score", 10)
-    evidence_de = _sort_top(_read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_de.csv", dtype=str), "rule_score", 10)
+    evidence_loto = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_loto.csv", dtype=str),
+        "rule_score",
+        10,
+    )
+    evidence_de = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_de.csv", dtype=str),
+        "rule_score",
+        10,
+    )
 
     stat_cards_top = [
         (
@@ -672,6 +754,24 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         for idx, (sid, label, desc) in enumerate(NAV_ITEMS, start=1)
     )
 
+    # Liên kết sang các trang khác, gom theo đúng năm nhóm của SITE_NAV. Trước
+    # đây trang này chỉ có neo trong nội bộ, nên 12 trang còn lại của kho chỉ
+    # tới được bằng cách gõ tay URL — hai trang cầu ổn định thì không tới được
+    # từ bất cứ đâu.
+    external_nav = "\n".join(
+        f"<div class='side-group'>{group}</div>"
+        + "\n".join(
+            f"<a href='{href}'><span aria-hidden='true'>{icon}</span><b>{label}</b></a>"
+            for href, label, icon in items
+            if not href.startswith("index.html")
+        )
+        for group, items in SITE_NAV
+        if any(not h.startswith("index.html") for h, _, _ in items)
+    )
+    external_nav = f"<nav class='side-nav' aria-label='Trang khác'>{external_nav}</nav>"
+
+    live_block = _render_live_block(latest)
+
     stat_tiles = "\n".join(
         f"<div class='metric-tile {palette}'><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong><em>{html.escape(desc)}</em></div>"
         for label, value, desc, palette in stat_cards_top
@@ -687,18 +787,19 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     """
 
     ai_summary_rows = ai_loto.head(3).to_dict("records") if not ai_loto.empty else []
-    ai_pills = "".join(
-        f"<button class='signal-pill' data-mode='loto' data-number='{_fmt2(row.get('number_str', row.get('number', '')))}'>"
-        f"<b>{_fmt2(row.get('number_str', row.get('number', '')))}</b>"
-        f"<span>{html.escape(str(row.get('primary_reason', 'Tín hiệu AI/ML')))}</span>"
-        f"</button>"
-        for row in ai_summary_rows
-    ) or "<span class='muted'>Chưa có dữ liệu AI/ML.</span>"
-
-    data_json = json_for_html_script(
-        {"explain": explain_map, "generated_at": generated_at}
+    ai_pills = (
+        "".join(
+            f"<button class='signal-pill' data-mode='loto' data-number='{_fmt2(row.get('number_str', row.get('number', '')))}'>"
+            f"<b>{_fmt2(row.get('number_str', row.get('number', '')))}</b>"
+            f"<span>{html.escape(str(row.get('primary_reason', 'Tín hiệu AI/ML')))}</span>"
+            f"</button>"
+            for row in ai_summary_rows
+        )
+        or "<span class='muted'>Chưa có dữ liệu AI/ML.</span>"
     )
-    body_class = ' class="desktop-view"' if desktop_view else ''
+
+    data_json = json_for_html_script({"explain": explain_map, "generated_at": generated_at})
+    body_class = ' class="desktop-view"' if desktop_view else ""
 
     html_doc = f"""<!doctype html>
 <html lang="vi">
@@ -706,7 +807,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   {security_meta_tags()}
-  {tailwind_style_tag()}
+  {stylesheet_link()}
   <title>Trung tâm phân tích xổ số</title>
   <style>
     :root {{
@@ -734,15 +835,65 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         radial-gradient(circle at 75% 10%, rgba(124,58,237,.14), transparent 32rem),
         var(--bg);
       color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: var(--vla-font);
     }}
     a {{ color: inherit; text-decoration: none; }}
     button {{ font: inherit; }}
+    /* Chế độ tối cho bảng màu riêng của trang này. Chỉ định nghĩa lại token,
+       không lặp lại selector thành phần nào. Phủ cả ba trạng thái: chọn tay
+       sáng, chọn tay tối, và mặc định theo hệ điều hành. */
+    @media (prefers-color-scheme: dark) {{
+      :root:not([data-vla-theme="light"]) {{
+        --bg: #0b1220; --panel: #131c2e; --panel-2: #0f1727;
+        --ink: #e8eef6; --ink-soft: #93a4bb; --line: rgba(35,50,72,.9);
+        color-scheme: dark;
+      }}
+    }}
+    :root[data-vla-theme="dark"] {{
+      --bg: #0b1220; --panel: #131c2e; --panel-2: #0f1727;
+      --ink: #e8eef6; --ink-soft: #93a4bb; --line: rgba(35,50,72,.9);
+      color-scheme: dark;
+    }}
     .app {{
       display: grid;
-      grid-template-columns: 292px minmax(0, 1fr);
+      /* Chiều rộng là token nên thu gọn chỉ là đổi một giá trị, không phải đo
+         lại bố cục bằng JavaScript — nhờ vậy không có bước giật khung. */
+      --side-w: 292px;
+      --side-w-collapsed: 68px;
+      grid-template-columns: var(--side-w) minmax(0, 1fr);
       min-height: 100vh;
+      transition: grid-template-columns .22s ease;
     }}
+    .app[data-collapsed="true"] {{ grid-template-columns: var(--side-w-collapsed) minmax(0, 1fr); }}
+    .app > * {{ min-width: 0; }}
+    .side-toggle {{
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; flex: 0 0 auto; cursor: pointer;
+      border-radius: 10px; border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06); color: #e5e7eb; font-size: 15px; line-height: 1;
+    }}
+    .side-toggle:hover {{ background: rgba(255,255,255,.13); }}
+    .side-toggle:focus-visible {{ outline: 2px solid #93c5fd; outline-offset: 2px; }}
+    /* Nút thu gọn chỉ có biểu tượng; thiếu nhãn này thì trình đọc màn hình
+       chỉ thông báo "nút" mà không nói nút làm gì. */
+    .sr-only {{
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }}
+    .side-head {{ display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }}
+    .side-group {{
+      font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+      color: rgba(226,232,240,.55); font-weight: 700; padding: 14px 4px 4px; white-space: nowrap;
+    }}
+    .app[data-collapsed="true"] .brand > div:last-child,
+    .app[data-collapsed="true"] .nav-title,
+    .app[data-collapsed="true"] .side-group,
+    .app[data-collapsed="true"] .side-nav small {{
+      width: 0; height: 0; padding: 0; margin: 0; opacity: 0; overflow: hidden;
+    }}
+    .app[data-collapsed="true"] .sidebar {{ padding-inline: 10px; }}
+    .app[data-collapsed="true"] .side-head {{ justify-content: center; }}
+    @media (prefers-reduced-motion: reduce) {{ .app {{ transition: none; }} }}
     .sidebar {{
       position: sticky;
       top: 0;
@@ -785,7 +936,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       letter-spacing: .14em;
       font-weight: 800;
     }}
-    .side-nav {{ display: grid; gap: 8px; }}
+    .side-nav {{ display: grid; gap: 8px; min-width: 0; }}
+    .side-nav a {{ min-width: 0; }}
+    .side-nav b, .side-nav small {{ overflow: hidden; text-overflow: ellipsis; }}
+    .side-group {{ min-width: 0; overflow: hidden; text-overflow: ellipsis; }}
     .side-nav a {{
       display: grid;
       grid-template-columns: 28px 1fr;
@@ -977,6 +1131,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       gap: 16px;
       align-items: start;
     }}
+    /* Bảng kết quả có bề rộng tối thiểu do số giải quy định; ở 360px nó rộng
+       520px và trước đây đẩy cả trang tràn ngang 187px. Cho phần dư cuộn
+       trong khung riêng thay vì đẩy body. */
+    .result-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }}
     .result-table {{
       width: 100%;
       border-collapse: separate;
@@ -1272,12 +1430,53 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       padding: 5px 8px;
       cursor: pointer;
     }}
+    /* Hai khối nằm ngang, tự co giãn theo bề rộng còn lại và luôn bằng chiều
+       cao nhau. minmax(0,1fr) là phần chống vỡ khung: thiếu nó, một bảng rộng
+       bên trong sẽ đẩy cột phình ra và làm cả trang tràn ngang. */
+    .live-status {{
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 12px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      font-size: 13px; color: var(--ink-soft);
+    }}
+    .live-dot {{
+      width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+      background: #94a3b8;
+    }}
+    .live-status[data-state="live"] {{ border-color: #ef4444; color: #b91c1c; }}
+    .live-status[data-state="live"] .live-dot {{
+      background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
+    }}
+    .live-status[data-state="done"] .live-dot {{ background: #22c55e; }}
+    @keyframes live-pulse {{
+      0%, 100% {{ opacity: 1; transform: scale(1); }}
+      50% {{ opacity: .45; transform: scale(1.35); }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{
+      .live-status[data-state="live"] .live-dot {{ animation: none; }}
+    }}
+
+    .pair-row {{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }}
+    .pair-row > * {{ min-width: 0; margin: 0; }}
+    @media (max-width: 900px) {{ .pair-row {{ grid-template-columns: 1fr; }} }}
+
+    /* Ba khối căn cứ đường cầu. align-items:stretch thay cho start — chính
+       align-items:start trước đây khiến ba khối cao thấp lệch nhau và để lại
+       khoảng trống thò thụt dưới đáy khối ngắn hơn. */
     .inspector {{
       display: grid;
-      grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
-      align-items: start;
+      align-items: stretch;
     }}
+    .inspector > * {{ min-width: 0; display: flex; flex-direction: column; }}
+    @media (max-width: 1200px) {{ .inspector {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
     .inspect-panel {{
       background:
         radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
@@ -1615,17 +1814,24 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 <body{body_class}>
   <div class="app">
     <aside class="sidebar" aria-label="Menu thống kê">
-      <div class="brand">
-        <div class="brand-logo">AI</div>
-        <div>
-          <strong>Trung tâm phân tích xổ số</strong>
-          <small>Trang tổng hợp thống kê XSMB</small>
+      <div class="side-head">
+        <button class="side-toggle" id="side-toggle" type="button"
+                aria-expanded="true" aria-controls="side-nav" title="Thu gọn menu">
+          <span aria-hidden="true">☰</span><span class="sr-only">Thu gọn menu</span>
+        </button>
+        <div class="brand" style="margin:0">
+          <div class="brand-logo">AI</div>
+          <div>
+            <strong>Trung tâm phân tích xổ số</strong>
+            <small>Trang tổng hợp thống kê XSMB</small>
+          </div>
         </div>
       </div>
       <div class="nav-title">Trình đơn thống kê</div>
       <nav class="side-nav" id="side-nav">
         {nav}
       </nav>
+      {external_nav}
     </aside>
 
     <main class="main">
@@ -1647,44 +1853,61 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         </div>
       </section>
 
+      {live_block}
+
       <div class="metric-row">
         {stat_tiles}
       </div>
 
-      <div class="layout-top">
-        <section id="ket-qua" class="section card">
+      <section id="ket-qua" class="section card">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Kết quả hàng ngày</p>
+            <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3>
+            <p>Bảng kết quả giữ đủ số 0 đầu theo chuẩn từng giải; bấm vào số để xem căn cứ AI/ML và đường cầu.</p>
+          </div>
+        </div>
+        {_render_result_table(latest)}
+      </section>
+
+      <div class="pair-row">
+        <section id="chuc-don-vi" class="section card">
           <div class="card-head">
             <div>
-              <p class="eyebrow">Kết quả hàng ngày</p>
-              <h3>XSMB ngày {html.escape(str(latest.get('date') or '—'))}</h3>
-              <p>Bảng kết quả giữ đủ số 0 đầu theo chuẩn từng giải; bấm vào số để xem căn cứ AI/ML và đường cầu.</p>
+              <p class="eyebrow">Phân bổ chữ số</p>
+              <h3>Chục × đơn vị</h3>
+              <p>Các số đã về hôm nay gom theo hàng chục/đầu và hàng đơn vị/đuôi.</p>
             </div>
-          </div>
-          <div class="result-combo">
-            <div>
-              {_render_result_table(latest)}
-            </div>
-            <aside id="chuc-don-vi" class="chuc-card">
-              <div class="card-head">
-                <div>
-                  <p class="eyebrow">Chục × đơn vị</p>
-                  <h3>Ma trận lô tô ngày</h3>
-                  <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
-                </div>
-              </div>
-              {_render_daily_matrix(latest)}
-            </aside>
           </div>
           {_render_head_tail_lists(latest)}
         </section>
-
-        <aside class="right-rail">
-          <section id="ai-ml" class="section">
-            {_render_bar_card(title='AI/ML lô tô đứng đầu', subtitle='Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.', df=ai_loto, label_col='number_str', value_col='cau_score', palette='purple', mode='loto', number_col='number_str', limit=10, value_decimals=1)}
-          </section>
-          {_render_bar_card(title='AI/ML ĐB đứng đầu', subtitle='Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.', df=ai_de, label_col='number_str', value_col='cau_score', palette='orange', mode='de', number_col='number_str', limit=10, value_decimals=1)}
-        </aside>
+        <section id="ma-tran-ngay" class="section card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Chục × đơn vị</p>
+              <h3>Ma trận lô tô ngày</h3>
+              <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
+            </div>
+          </div>
+          {_render_daily_matrix(latest)}
+        </section>
       </div>
+
+      <section id="mo-phong" class="section"></section>
+
+      <section id="ai-ml" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Dự đoán vui</div>
+            <h2>Ngày mai</h2>
+            <p>Hai bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược.</p>
+          </div>
+        </div>
+        <div class="pair-row">
+          {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="purple", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
+          {_render_bar_card(title="Đặc biệt ngày mai", subtitle="Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.", df=ai_de, label_col="number_str", value_col="cau_score", palette="orange", mode="de", number_col="number_str", limit=10, value_decimals=1)}
+        </div>
+      </section>
 
       <section id="tan-suat-loto" class="section">
         <div class="section-title">
@@ -1695,10 +1918,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title='Lô tô ngày hiện tại', subtitle='Tần suất 00–99 trong ngày kết quả mới nhất.', values=_current_period_matrix(repo_root, 'loto', 'day'), palette='blue', mode='loto')}
-          {_render_matrix_card(title='Lô tô tuần hiện tại', subtitle='Cộng dồn lô tô trong tuần hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'week'), palette='green', mode='loto')}
-          {_render_matrix_card(title='Lô tô tháng hiện tại', subtitle='Cộng dồn lô tô trong tháng hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'month'), palette='orange', mode='loto')}
-          {_render_matrix_card(title='Lô tô năm hiện tại', subtitle='Cộng dồn lô tô trong năm hiện tại.', values=_current_period_matrix(repo_root, 'loto', 'year'), palette='purple', mode='loto')}
+          {_render_matrix_card(title="Lô tô ngày hiện tại", subtitle="Tần suất 00–99 trong ngày kết quả mới nhất.", values=_current_period_matrix(repo_root, "loto", "day"), palette="blue", mode="loto")}
+          {_render_matrix_card(title="Lô tô tuần hiện tại", subtitle="Cộng dồn lô tô trong tuần hiện tại.", values=_current_period_matrix(repo_root, "loto", "week"), palette="green", mode="loto")}
+          {_render_matrix_card(title="Lô tô tháng hiện tại", subtitle="Cộng dồn lô tô trong tháng hiện tại.", values=_current_period_matrix(repo_root, "loto", "month"), palette="orange", mode="loto")}
+          {_render_matrix_card(title="Lô tô năm hiện tại", subtitle="Cộng dồn lô tô trong năm hiện tại.", values=_current_period_matrix(repo_root, "loto", "year"), palette="purple", mode="loto")}
         </div>
       </section>
 
@@ -1711,10 +1934,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title='ĐB tháng hiện tại', subtitle='Tần suất 2 số cuối giải đặc biệt trong tháng.', values=_current_period_matrix(repo_root, 'de', 'month'), palette='orange', mode='de')}
-          {_render_matrix_card(title='ĐB năm hiện tại', subtitle='Tần suất 2 số cuối giải đặc biệt trong năm.', values=_current_period_matrix(repo_root, 'de', 'year'), palette='rose', mode='de')}
-          {_render_matrix_card(title='Điểm AI lô tô', subtitle='Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.', values=_ai_matrix(repo_root, 'loto'), palette='purple', mode='loto', decimals=1)}
-          {_render_matrix_card(title='Điểm AI ĐB', subtitle='Điểm AI/ML dành riêng cho 2 số cuối giải đặc biệt.', values=_ai_matrix(repo_root, 'de'), palette='rose', mode='de', decimals=1)}
+          {_render_matrix_card(title="ĐB tháng hiện tại", subtitle="Tần suất 2 số cuối giải đặc biệt trong tháng.", values=_current_period_matrix(repo_root, "de", "month"), palette="orange", mode="de")}
+          {_render_matrix_card(title="ĐB năm hiện tại", subtitle="Tần suất 2 số cuối giải đặc biệt trong năm.", values=_current_period_matrix(repo_root, "de", "year"), palette="rose", mode="de")}
+          {_render_matrix_card(title="Điểm AI lô tô", subtitle="Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.", values=_ai_matrix(repo_root, "loto"), palette="purple", mode="loto", decimals=1)}
+          {_render_matrix_card(title="Điểm AI ĐB", subtitle="Điểm AI/ML dành riêng cho 2 số cuối giải đặc biệt.", values=_ai_matrix(repo_root, "de"), palette="rose", mode="de", decimals=1)}
         </div>
       </section>
 
@@ -1727,10 +1950,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title='Gan lô tô hiện tại', subtitle='Số ngày chưa về của từng bộ lô tô.', values=_rhythm_matrix(repo_root, 'loto'), palette='green', mode='loto')}
-          {_render_matrix_card(title='Gan ĐB hiện tại', subtitle='Số ngày chưa về của từng bộ ĐB.', values=_rhythm_matrix(repo_root, 'de'), palette='rose', mode='de')}
-          {_render_bar_card(title='Gan lô tô đứng đầu', subtitle='Các bộ lô tô có khoảng gan hiện tại cao nhất.', df=loto_rhythm, label_col='number_str', value_col='current_gap', palette='green', mode='loto', number_col='number_str', limit=12, value_decimals=0)}
-          {_render_bar_card(title='Gan ĐB đứng đầu', subtitle='Các bộ ĐB có khoảng gan hiện tại cao nhất.', df=de_rhythm, label_col='number_str', value_col='current_gap', palette='rose', mode='de', number_col='number_str', limit=12, value_decimals=0)}
+          {_render_matrix_card(title="Gan lô tô hiện tại", subtitle="Số ngày chưa về của từng bộ lô tô.", values=_rhythm_matrix(repo_root, "loto"), palette="green", mode="loto")}
+          {_render_matrix_card(title="Gan ĐB hiện tại", subtitle="Số ngày chưa về của từng bộ ĐB.", values=_rhythm_matrix(repo_root, "de"), palette="rose", mode="de")}
+          {_render_bar_card(title="Gan lô tô đứng đầu", subtitle="Các bộ lô tô có khoảng gan hiện tại cao nhất.", df=loto_rhythm, label_col="number_str", value_col="current_gap", palette="green", mode="loto", number_col="number_str", limit=12, value_decimals=0)}
+          {_render_bar_card(title="Gan ĐB đứng đầu", subtitle="Các bộ ĐB có khoảng gan hiện tại cao nhất.", df=de_rhythm, label_col="number_str", value_col="current_gap", palette="rose", mode="de", number_col="number_str", limit=12, value_decimals=0)}
         </div>
       </section>
 
@@ -1743,8 +1966,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="two-col">
-          {_render_bar_card(title='Cặp lộn nổi bật trong tháng', subtitle='45 cặp đảo chiều và 5 cặp kép-bóng có tổng tần suất cao trong tháng hiện tại.', df=reverse_pairs, label_col='pair', value_col='freq', palette='sky', limit=12, value_decimals=0)}
-          {_render_table(title='Chi tiết cặp lộn', subtitle='Có thêm số ngày về và số ngày cùng về để tránh nhìn nhầm chỉ theo tần suất.', df=reverse_pairs, columns=['pair', 'freq', 'days_hit', 'cooccur_days', 'avg_per_draw', 'rank_in_period'], limit=12, dense=False)}
+          {_render_bar_card(title="Cặp lộn nổi bật trong tháng", subtitle="45 cặp đảo chiều và 5 cặp kép-bóng có tổng tần suất cao trong tháng hiện tại.", df=reverse_pairs, label_col="pair", value_col="freq", palette="sky", limit=12, value_decimals=0)}
+          {_render_table(title="Chi tiết cặp lộn", subtitle="Có thêm số ngày về và số ngày cùng về để tránh nhìn nhầm chỉ theo tần suất.", df=reverse_pairs, columns=["pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], limit=12, dense=False)}
         </div>
       </section>
 
@@ -1756,7 +1979,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
             <p>Các nhóm 0–9 nên hiển thị bằng biểu đồ thanh để so sánh trực tiếp giữa các nhóm.</p>
           </div>
         </div>
-        {_render_group_bars(repo_root, 'month')}
+        {_render_group_bars(repo_root, "month")}
       </section>
 
       <section id="db-tuan-thang" class="section">
@@ -1768,8 +1991,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="two-col">
-          {_render_special_board(repo_root, 'week')}
-          {_render_special_board(repo_root, 'month')}
+          {_render_special_board(repo_root, "week")}
+          {_render_special_board(repo_root, "month")}
         </div>
       </section>
 
@@ -1799,10 +2022,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
               <li>Bấm vào số để xem chi tiết.</li>
             </ul>
           </aside>
-          <div class="two-col">
-            {_render_table(title='Vị trí cầu lô tô nổi bật', subtitle='Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.', df=evidence_loto, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True)}
-            {_render_table(title='Vị trí cầu ĐB nổi bật', subtitle='Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.', df=evidence_de, columns=['number_str', 'rule_kind', 'lag_days', 'path_line', 'p_mean', 'hits', 'trials', 'current_streak', 'rule_score', 'reason'], limit=10, dense=False, searchable=True, number_mode='de')}
-          </div>
+          {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=evidence_loto, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True)}
+            {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=evidence_de, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de")}
         </div>
       </section>
 
@@ -1815,12 +2036,12 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="two-col">
-          {_render_table(title='Báo cáo kiểm định lô tô', subtitle='Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình lô tô.', df=report_loto, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
-          {_render_table(title='Báo cáo kiểm định ĐB', subtitle='Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình ĐB.', df=report_de, columns=['mode', 'top_k', 'validation_days', 'hit_any_days', 'hit_any_rate', 'avg_hits_per_day', 'val_brier', 'val_logloss'], limit=8, dense=False)}
-          {_render_table(title='Điều kiện ĐB hôm trước → lô tô hôm sau', subtitle='Các cặp điều kiện thường gặp, lọc theo số lần và tỷ lệ có điều kiện.', df=conditional_special, columns=['prev_special_2d', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
-          {_render_table(title='Điều kiện lô tô hôm trước → lô tô hôm sau', subtitle='Quan hệ chuyển tiếp giữa lô tô hôm trước và lô tô ngày sau.', df=conditional_loto, columns=['prev_loto', 'next_loto', 'count', 'base_count', 'conditional_rate'], limit=12, dense=False, searchable=True)}
-          {_render_table(title='Giải nhất lâu chưa về', subtitle='Một bảng phụ để đối chiếu giải nhất với nhịp chung.', df=first_prize, columns=['number_str', 'last_seen', 'current_gap', 'hit_count', 'mean_gap', 'max_gap'], limit=10, dense=False)}
-          {_render_table(title='Tần suất lô tô nổi bật tháng hiện tại', subtitle='Bảng hỗ trợ đọc số liệu bên cạnh ma trận.', df=_sort_top(loto_snapshot[loto_snapshot['period_kind'] == 'month'] if not loto_snapshot.empty and 'period_kind' in loto_snapshot.columns else loto_snapshot, 'freq', 10), columns=['number_str', 'freq', 'days_hit', 'hit_rate', 'avg_per_draw', 'z_score', 'rank_in_period'], limit=10, dense=False)}
+          {_render_table(title="Báo cáo kiểm định lô tô", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình lô tô.", df=report_loto, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
+          {_render_table(title="Báo cáo kiểm định ĐB", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình ĐB.", df=report_de, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
+          {_render_table(title="Điều kiện ĐB hôm trước → lô tô hôm sau", subtitle="Các cặp điều kiện thường gặp, lọc theo số lần và tỷ lệ có điều kiện.", df=conditional_special, columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Điều kiện lô tô hôm trước → lô tô hôm sau", subtitle="Quan hệ chuyển tiếp giữa lô tô hôm trước và lô tô ngày sau.", df=conditional_loto, columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Giải nhất lâu chưa về", subtitle="Một bảng phụ để đối chiếu giải nhất với nhịp chung.", df=first_prize, columns=["number_str", "last_seen", "current_gap", "hit_count", "mean_gap", "max_gap"], limit=10, dense=False)}
+          {_render_table(title="Tần suất lô tô nổi bật tháng hiện tại", subtitle="Bảng hỗ trợ đọc số liệu bên cạnh ma trận.", df=_sort_top(loto_snapshot[loto_snapshot["period_kind"] == "month"] if not loto_snapshot.empty and "period_kind" in loto_snapshot.columns else loto_snapshot, "freq", 10), columns=["number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], limit=10, dense=False)}
         </div>
       </section>
 
@@ -1833,6 +2054,70 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
   <script type="application/json" id="landing-data">{data_json}</script>
   <script>
     const APP_DATA = JSON.parse(document.getElementById('landing-data').textContent);
+
+    /* Sidebar thu gọn. Trạng thái lưu trong localStorage nên giữ nguyên khi
+       chuyển trang; mọi truy cập đều bọc try/catch vì trình duyệt ở chế độ
+       riêng tư có thể ném lỗi ngay khi đọc. */
+    /* Trạng thái kỳ quay tính theo giờ Việt Nam trên máy người xem, không phải
+       theo giờ lúc dựng trang: trang tĩnh dựng một lần rồi phục vụ suốt ngày,
+       nên một trạng thái ghi cứng sẽ sai với gần như mọi lượt xem. */
+    (function () {{
+      const box = document.getElementById('live-status');
+      const text = document.getElementById('live-status-text');
+      const note = document.getElementById('live-note');
+      if (!box || !text) return;
+
+      const DRAW_START = 18 * 60 + 10;   // 18:10 — bắt đầu quay các giải phụ
+      const DRAW_END = 18 * 60 + 40;     // 18:40 — thường đã xong giải ĐB
+
+      function vietnamMinutes() {{
+        const parts = new Intl.DateTimeFormat('en-GB', {{
+          timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false
+        }}).formatToParts(new Date());
+        const get = (k) => Number(parts.find((p) => p.type === k).value);
+        return get('hour') * 60 + get('minute');
+      }}
+
+      function refresh() {{
+        const m = vietnamMinutes();
+        if (m >= DRAW_START && m <= DRAW_END) {{
+          box.setAttribute('data-state', 'live');
+          text.textContent = 'Đang quay thưởng — mở trang trực tiếp để xem từng giải hiện dần.';
+          if (note) note.textContent = 'Kết quả bên dưới là của kỳ trước cho tới khi kỳ hôm nay hoàn tất.';
+        }} else {{
+          box.setAttribute('data-state', 'done');
+          text.textContent = 'Kỳ quay đã kết thúc. Bảng kết quả đầy đủ hiển thị bên dưới.';
+          if (note) note.textContent = 'Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.';
+        }}
+      }}
+
+      refresh();
+      window.setInterval(refresh, 30000);
+    }})();
+
+    (function () {{
+      const KEY = 'vla-sidebar-collapsed';
+      const app = document.querySelector('.app');
+      const btn = document.getElementById('side-toggle');
+      if (!app || !btn) return;
+      const read = () => {{
+        try {{ return window.localStorage.getItem(KEY) === 'true'; }} catch (e) {{ return false; }}
+      }};
+      const write = (v) => {{
+        try {{ window.localStorage.setItem(KEY, v ? 'true' : 'false'); }} catch (e) {{}}
+      }};
+      const apply = (c) => {{
+        app.setAttribute('data-collapsed', c ? 'true' : 'false');
+        btn.setAttribute('aria-expanded', c ? 'false' : 'true');
+        btn.setAttribute('title', c ? 'Mở rộng menu' : 'Thu gọn menu');
+      }};
+      apply(read());
+      btn.addEventListener('click', () => {{
+        const next = app.getAttribute('data-collapsed') !== 'true';
+        write(next);
+        apply(next);
+      }});
+    }})();
 
     function fmtPercent(value) {{
       const n = Number(value || 0);
@@ -1921,13 +2206,12 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 def build_landing_page(*, repo_root: Path) -> list[Path]:
     docs_dir = repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
-    html_doc = "\n".join(
-        line.rstrip() for line in _render_html(repo_root).splitlines()
-    ) + "\n"
-    desktop_doc = "\n".join(
-        line.rstrip()
-        for line in _render_html(repo_root, desktop_view=True).splitlines()
-    ) + "\n"
+    write_stylesheet(docs_dir)
+    html_doc = "\n".join(line.rstrip() for line in _render_html(repo_root).splitlines()) + "\n"
+    desktop_doc = (
+        "\n".join(line.rstrip() for line in _render_html(repo_root, desktop_view=True).splitlines())
+        + "\n"
+    )
     out_index = docs_dir / "index.html"
     out_landing = docs_dir / "landing.html"
     out_desktop = docs_dir / "landing_desktop.html"
@@ -1938,9 +2222,7 @@ def build_landing_page(*, repo_root: Path) -> list[Path]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Dựng trang tổng hợp thống kê hiện đại."
-    )
+    parser = argparse.ArgumentParser(description="Dựng trang tổng hợp thống kê hiện đại.")
     parser.add_argument("--repo-root", default=".", help="Thư mục gốc kho mã")
     args = parser.parse_args()
     outputs = build_landing_page(repo_root=Path(args.repo_root).resolve())
