@@ -261,9 +261,8 @@ class TemporalSequenceModel:
     cửa sổ trễ — vẫn là mô hình chuỗi, chỉ là tuyến tính và không có trạng thái.
 
     Cảnh báo về dung lượng, và đây là điểm quan trọng nhất của lớp này: một GRU
-    64 chiều trên đầu vào 100 chiều có khoảng 31 700 tham số, trong khi lịch sử
-    391 kỳ chỉ cho 39 100 quan sát nhị phân. Tỉ lệ tham số trên quan sát xấp xỉ
-    1:1.2. Ở tỉ lệ đó mô hình ghi nhớ tập huấn luyện chứ không học quy luật, và
+    64 chiều trên đầu vào 100 chiều có 38 372 tham số, trong khi lịch sử 391 kỳ
+    chỉ cho 39 100 quan sát nhị phân. Tỉ lệ tham số trên quan sát xấp xỉ 1:1.02. Ở tỉ lệ đó mô hình ghi nhớ tập huấn luyện chứ không học quy luật, và
     không có mức chính quy hóa nào sửa được — vấn đề nằm ở lượng thông tin trong
     dữ liệu, không phải ở siêu tham số. Lớp này giữ ``hidden_size`` nhỏ mặc định
     vì lý do đó.
@@ -295,12 +294,35 @@ class TemporalSequenceModel:
         self._model: Any = None
         self._linear_weights: np.ndarray | None = None
 
+    @staticmethod
+    def gru_parameter_count(hidden_size: int) -> int:
+        """Số tham số của một GRU một lớp cộng đầu ra tuyến tính.
+
+        Là hàm số học thuần, **không** phụ thuộc việc môi trường có PyTorch hay
+        không. Cảnh báo về dung lượng trong tài liệu lớp này là một khẳng định
+        về kiến trúc GRU, nên nó phải kiểm chứng được ở mọi môi trường — kể cả
+        nơi mô hình đang chạy bằng đường lui tuyến tính.
+
+        Args:
+            hidden_size: Số chiều trạng thái ẩn.
+
+        Returns:
+            Tổng số tham số: ba cổng × (trọng số vào + trọng số hồi tiếp + hai
+            véc-tơ chệch), cộng lớp tuyến tính đầu ra.
+        """
+        gates = 3 * (hidden_size * (NUMBER_SPACE + hidden_size) + 2 * hidden_size)
+        head = hidden_size * NUMBER_SPACE + NUMBER_SPACE
+        return int(gates + head)
+
     @property
     def parameter_count(self) -> int:
-        """Số tham số của mô hình, để so với lượng dữ liệu sẵn có."""
+        """Số tham số của mô hình **đang thực sự chạy**, để so với lượng dữ liệu.
+
+        Phụ thuộc backend: đường lui tuyến tính có ít tham số hơn GRU rất nhiều,
+        và báo cáo số của GRU khi đang chạy tuyến tính sẽ là nói sai.
+        """
         if self.backend == "torch":
-            gru = 3 * (self.hidden_size * (NUMBER_SPACE + self.hidden_size) + 2 * self.hidden_size)
-            return int(gru + self.hidden_size * NUMBER_SPACE + NUMBER_SPACE)
+            return self.gru_parameter_count(self.hidden_size)
         return int(self.lookback * NUMBER_SPACE + 1)
 
     def _windows(self, hits: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

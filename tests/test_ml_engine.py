@@ -647,9 +647,26 @@ class TestModels:
         assert probabilities.shape == (NUMBER_SPACE,)
         assert np.all(np.isfinite(probabilities))
 
-    def test_temporal_model_reports_its_capacity(self) -> None:
-        """Số tham số phải so được với lượng dữ liệu — đó là điểm cần biết."""
-        assert TemporalSequenceModel(hidden_size=64).parameter_count > 20_000
+    def test_gru_capacity_exceeds_the_available_observations(self) -> None:
+        """Cảnh báo dung lượng phải kiểm được ở MỌI môi trường, kể cả không torch.
+
+        Bản đầu của phép kiểm này gọi ``parameter_count``, vốn phân nhánh theo
+        backend, nên nó đạt trên máy có PyTorch và đổ trên CI (không có torch)
+        với 1 401 tham số của đường lui tuyến tính. Khẳng định cần kiểm là về
+        *kiến trúc GRU*, nên phải hỏi hàm số học thuần.
+        """
+        gru = TemporalSequenceModel.gru_parameter_count(64)
+        assert gru == 38_372
+        observations = 391 * NUMBER_SPACE
+        assert gru > 0.9 * observations, "GRU 64 chiều xấp xỉ một tham số cho mỗi quan sát"
+
+    def test_parameter_count_reports_the_backend_actually_running(self) -> None:
+        """Báo số tham số của GRU khi đang chạy tuyến tính là nói sai."""
+        model = TemporalSequenceModel(hidden_size=64, lookback=14)
+        if model.backend == "torch":
+            assert model.parameter_count == TemporalSequenceModel.gru_parameter_count(64)
+        else:
+            assert model.parameter_count == 14 * NUMBER_SPACE + 1
 
     def test_temporal_model_needs_more_days_than_the_lookback(self) -> None:
         with pytest.raises(ValueError, match="cần hơn"):

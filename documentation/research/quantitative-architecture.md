@@ -630,9 +630,12 @@ tiêu biến của RNN thuần.
 hạn tùy ý mà không cần đặc tả trước dạng của nó.
 
 **Nhược điểm — quyết định.** Một GRU 64 chiều với đầu vào 100 chiều có
-`3 × (64 × 164 + 64) ≈ 31 700` tham số. Dữ liệu có `391 × 100 = 39 100` quan
+`3 × (64 × 164 + 2 × 64) + 64 × 100 + 100 = 38 372` tham số — ba cổng nhân
+(trọng số vào + trọng số hồi tiếp + hai véc-tơ chệch), cộng lớp đầu ra. Dữ
+liệu có `391 × 100 = 39 100` quan
 sát nhị phân, và theo §0.2 chúng không phân biệt được với độc lập. Tỉ lệ tham
-số trên quan sát xấp xỉ **1:1.2**. Ở tỉ lệ đó mạng ghi nhớ tập huấn luyện chứ
+số trên quan sát xấp xỉ **1:1.02** — gần đúng một tham số cho mỗi quan sát. Ở
+tỉ lệ đó mạng ghi nhớ tập huấn luyện chứ
 không học quy luật, và không có phương pháp chính quy hóa nào cứu được — vấn đề
 không phải chọn siêu tham số mà là **lượng thông tin trong dữ liệu**.
 
@@ -642,13 +645,13 @@ huấn luyện thoải mái; không có PyTorch trong môi trường này.
 **Kết quả đo — đo bằng thứ có sẵn.** PyTorch không có, nhưng điều cần chứng
 minh không phụ thuộc vào kiến trúc hồi tiếp: đó là chuyện gì xảy ra khi số tham
 số vượt xa lượng thông tin. Mạng MLP hai lớp 64 nút (4 801 tham số, tức chỉ
-bằng **15%** dung lượng của GRU nói trên) đạt kỹ năng **−0.00168, t = −3.75** —
+bằng **12.5%** dung lượng của GRU nói trên) đạt kỹ năng **−0.00168, t = −3.75** —
 tệ hơn cây tăng cường gần gấp đôi, và xếp thứ ba từ dưới lên trong bảng.
 
 Đây là điểm quan trọng cần nói thẳng: **kết quả này không phải bằng chứng trực
 tiếp rằng GRU sẽ thất bại**; nó là bằng chứng rằng thang phương sai theo dung
 lượng — vốn đã hiện rõ qua tám mô hình khác — tiếp tục đúng ở dải dung lượng
-cao. Với số tham số của GRU cao hơn MLP này 6.6 lần, dự đoán
+cao. Với số tham số của GRU cao hơn MLP này 8.0 lần, dự đoán
 hợp lý là nó nằm xa hơn nữa về phía âm. Muốn kết luận chắc chắn thì phải cài
 PyTorch và đo.
 
