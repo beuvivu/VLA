@@ -1,0 +1,32 @@
+{
+  "generated_at_utc": "2026-09-06T03:32:45Z",
+  "significance_t": 1.96,
+  "modes": {
+    "loto": {
+      "mode": "loto",
+      "days": 210,
+      "refit_every": 7,
+      "logloss": 0.5482787780274809,
+      "baseline_logloss": 0.5482643787263967,
+      "brier": 0.18113603854070923,
+      "baseline_brier": 0.18113125226939764,
+      "logloss_skill": -2.626342626474492e-05,
+      "brier_skill": -2.6424326291700767e-05,
+      "paired_t_stat": -0.15941932481279245,
+      "beats_baseline": false
+    },
+    "de": {
+      "mode": "de",
+      "days": 210,
+      "refit_every": 7,
+      "logloss": 4.605147312497058,
+      "baseline_logloss": 4.605170185988092,
+      "brier": 0.9899995430283065,
+      "baseline_brier": 0.99,
+      "logloss_skill": 4.966915468898083e-06,
+      "brier_skill": 4.615875691772363e-07,
+      "paired_t_stat": 1.252700323098739,
+      "beats_baseline": false
+    }
+  }
+}
