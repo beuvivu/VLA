@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from bs4 import BeautifulSoup
+from jinja2 import Environment, FileSystemLoader
 
 from ui_theme import SITE_NAV, STYLESHEET_NAME, TAILWIND_LITE_CSS, nav_targets
 
@@ -211,9 +213,57 @@ def test_dashboard_labels_are_fully_vietnamese() -> None:
 # --- Lỗi 2: trạng thái rỗng -----------------------------------------------
 
 
+PATH_PAGES: tuple[str, ...] = (
+    "soi-path-loto-active.html",
+    "soi-path-loto-stable.html",
+    "soi-path-de-active.html",
+    "soi-path-de-stable.html",
+)
+
+
+def _render_path_page(*, rows: list, empty_reason: dict | None = None) -> str:
+    """Dựng trang đường cầu trực tiếp từ mẫu, không phụ thuộc dữ liệu của ngày.
+
+    Cần thiết vì trang nào rỗng là *tính chất của dữ liệu hôm đó*, không phải
+    của mã nguồn: hôm nay ĐB đang chạy có 4 đường cầu, hôm qua thì không. Kiểm
+    trạng thái rỗng bằng cách chỉ đích danh một tệp sinh ra sẽ hỏng mỗi lần
+    tình trạng dữ liệu đảo chiều — và nó đã hỏng đúng như vậy.
+    """
+    environment = Environment(loader=FileSystemLoader(str(ROOT / "src" / "templates")))
+    return environment.get_template("path_ui_page.html.j2").render(
+        title="Kiểm thử",
+        mode="de",
+        mode_label="Đặc Biệt",
+        kind="active",
+        kind_label="Đang chạy",
+        other_link=None,
+        other_kind_label="Ổn định",
+        other_mode_label="Đặc Biệt",
+        index_link=None,
+        anchor_date="2026-09-02",
+        display_days=10,
+        days=[],
+        rows=rows,
+        picks=[],
+        empty_reason=empty_reason or {},
+    )
+
+
 def test_empty_page_explains_itself_instead_of_blaming_the_data() -> None:
-    soup = _soup(DOCS / "soi-path-de-active.html")
-    empty = soup.find(class_="vla-empty")
+    """Trang rỗng phải nói rỗng là bình thường, không bảo người đọc chạy lại."""
+    html = _render_path_page(
+        rows=[],
+        empty_reason={
+            "threshold": 3,
+            "is_de": True,
+            "baseline_pct": 1.0,
+            "chance_pct": 0.0001,
+            "sibling_rows": 12,
+            "sibling_link": "soi-path-de-stable.html",
+            "sibling_label": "Cầu ĐB ổn định",
+        },
+    )
+    empty = BeautifulSoup(html, "html.parser").find(class_="vla-empty")
     assert empty is not None, "thiếu trạng thái rỗng"
     text = empty.get_text(" ", strip=True).lower()
     assert "không phải lỗi dữ liệu" in text
@@ -221,15 +271,67 @@ def test_empty_page_explains_itself_instead_of_blaming_the_data() -> None:
 
 
 def test_empty_state_points_to_where_the_data_actually_is() -> None:
-    soup = _soup(DOCS / "soi-path-de-active.html")
-    empty = soup.find(class_="vla-empty")
+    html = _render_path_page(
+        rows=[],
+        empty_reason={
+            "threshold": 3,
+            "is_de": True,
+            "baseline_pct": 1.0,
+            "chance_pct": 0.0001,
+            "sibling_rows": 12,
+            "sibling_link": "soi-path-de-stable.html",
+            "sibling_label": "Cầu ĐB ổn định",
+        },
+    )
+    empty = BeautifulSoup(html, "html.parser").find(class_="vla-empty")
     link = empty.find("a")
     assert link is not None and "stable" in link.get("href", "")
 
 
-def test_pages_with_data_do_not_show_an_empty_state() -> None:
-    for name in ("soi-path-loto-active.html", "soi-path-de-stable.html"):
-        assert _soup(DOCS / name).find(class_="vla-empty") is None, name
+def _path_table_rows(soup: BeautifulSoup) -> int:
+    """Số đường cầu trong bảng đường cầu, bỏ qua mọi bảng khác trên trang.
+
+    Phải tìm đúng bảng: trang còn có bảng tham số và bảng chọn nhanh, nên
+    ``soup.find("table")`` bắt nhầm và luôn báo là có dữ liệu.
+    """
+    for table in soup.find_all("table"):
+        header = table.find("th")
+        if header and "đường cầu" in header.get_text(strip=True).lower():
+            body = table.find("tbody")
+            return len(body.find_all("tr")) if body else 0
+    return 0
+
+
+def test_empty_state_appears_exactly_when_the_page_has_no_paths() -> None:
+    """Hợp đồng trên các trang thật: không có đường cầu ⇔ có trạng thái rỗng.
+
+    Kiểm hai chiều trên cả bốn trang thay vì chỉ định sẵn trang nào rỗng, nên
+    phép kiểm đúng với mọi tình trạng dữ liệu.
+    """
+    for name in PATH_PAGES:
+        soup = _soup(DOCS / name)
+        has_empty_state = soup.find(class_="vla-empty") is not None
+        path_count = _path_table_rows(soup)
+        assert has_empty_state == (path_count == 0), (
+            f"{name}: {path_count} đường cầu nhưng trạng thái rỗng={has_empty_state}"
+        )
+
+
+def test_a_page_with_paths_renders_no_empty_state() -> None:
+    row = SimpleNamespace(
+        path_id="G1P0-G2P1",
+        lag=1,
+        i=0,
+        j=1,
+        i_label="G1·0",
+        j_label="G2·1",
+        p_mean=0.2377,
+        streak=3,
+        cells=[SimpleNamespace(num=7, hit=True, hitde=False, tooltip="07")],
+    )
+    assert (
+        BeautifulSoup(_render_path_page(rows=[row]), "html.parser").find(class_="vla-empty") is None
+    )
 
 
 # --- Bố cục ----------------------------------------------------------------
