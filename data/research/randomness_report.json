@@ -1,0 +1,110 @@
+{
+  "generated_at_utc": "2026-09-06T13:23:27Z",
+  "days": 391,
+  "simulations": 2000,
+  "baseline": 0.23765728565289646,
+  "tests": [
+    {
+      "name": "Đồng đều biên (chi-square)",
+      "question": "Có con nào ra nhiều/ít hơn mức ngẫu nhiên không?",
+      "statistic": 116.06052855924979,
+      "null_mean": 98.95082883394903,
+      "null_sd": 13.991277646109767,
+      "z_score": 1.2228832961554486,
+      "p_value": 0.11144427786106946,
+      "significant_uncorrected": false
+    },
+    {
+      "name": "Chỉ số phân tán",
+      "question": "Các kỳ có 'vón cục' hơn mức đa thức không?",
+      "statistic": 0.08785568560077311,
+      "null_mean": 0.09655612934712977,
+      "null_sd": 0.006923015418205305,
+      "z_score": -1.2567419283044334,
+      "p_value": 0.21689155422288856,
+      "significant_uncorrected": false
+    },
+    {
+      "name": "Thông tin tương hỗ trễ-1",
+      "question": "Kết quả hôm qua có nói gì về hôm nay không? (bạc nhớ)",
+      "statistic": 0.001935336031760223,
+      "null_mean": 0.001867391670919151,
+      "null_sd": 2.703910793428818e-05,
+      "z_score": 2.5128181375729577,
+      "p_value": 0.009495252373813094,
+      "significant_uncorrected": true
+    },
+    {
+      "name": "Phân bố khoảng cách (KS)",
+      "question": "Nhịp gan có lệch khỏi phân bố hình học không?",
+      "statistic": 0.009638668698787156,
+      "null_mean": 0.0071017374342996166,
+      "null_sd": 0.0023420253291718037,
+      "z_score": 1.0832211047797076,
+      "p_value": 0.136431784107946,
+      "significant_uncorrected": false
+    },
+    {
+      "name": "Đỉnh phổ (Fisher g)",
+      "question": "Có chu kỳ tuần/tháng nào không?",
+      "statistic": 0.03049255257334665,
+      "null_mean": 0.02986921697447193,
+      "null_sd": 0.00581700383031824,
+      "z_score": 0.10715750187852602,
+      "p_value": 0.3868065967016492,
+      "significant_uncorrected": false
+    },
+    {
+      "name": "Hiệu ứng thứ trong tuần",
+      "question": "Tần suất có khác nhau theo thứ không?",
+      "statistic": 0.553571428571427,
+      "null_mean": 0.5474564935064934,
+      "null_sd": 0.16596142569416983,
+      "z_score": 0.036845520212643444,
+      "p_value": 0.4767616191904048,
+      "significant_uncorrected": false
+    },
+    {
+      "name": "Độ bền của 'số nóng'",
+      "question": "Con hay về nửa đầu có tiếp tục hay về nửa sau không?",
+      "statistic": 0.05393118383450089,
+      "null_mean": -0.0012028461641727444,
+      "null_sd": 0.09981585686292747,
+      "z_score": 0.5523574282830299,
+      "p_value": 0.6036981509245377,
+      "significant_uncorrected": false
+    }
+  ],
+  "significant_uncorrected": 1,
+  "bonferroni_threshold": 0.0071428571428571435,
+  "significant_after_bonferroni": 0,
+  "power": {
+    "một mô hình duy nhất": {
+      "hypotheses": 1,
+      "detectable_lift": 0.06030678159139543,
+      "relative_lift": 0.2537552401379976
+    },
+    "20 đặc trưng đã xây": {
+      "hypotheses": 20,
+      "detectable_lift": 0.08319699086480818,
+      "relative_lift": 0.3500712828401111
+    },
+    "một giả thuyết mỗi con số": {
+      "hypotheses": 100,
+      "detectable_lift": 0.09304328223900897,
+      "relative_lift": 0.3915019141256232
+    },
+    "họ cầu ghép chéo ngày": {
+      "hypotheses": 412164,
+      "detectable_lift": 0.1320214601994871,
+      "relative_lift": 0.5555119416465408
+    }
+  },
+  "replication": {
+    "first_half_days": 195,
+    "second_half_days": 196,
+    "first_half_z": 4.065202192575937,
+    "second_half_z": -0.19466341178306698,
+    "replicates": false
+  }
+}
