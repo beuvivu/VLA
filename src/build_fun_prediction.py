@@ -362,7 +362,7 @@ FUN_CSS = r"""
   margin-bottom: 14px;
 }
 .fun-prediction-head h3 { margin: 3px 0 5px; font-size: 20px; }
-.fun-prediction-head p { margin: 0; color: #64748b; font-size: 13px; line-height: 1.5; }
+.fun-prediction-head p { margin: 0; color: #55606f; font-size: 13px; line-height: 1.5; }
 .fun-eyebrow { color: #c2410c; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .fun-warning {
   white-space: nowrap;
@@ -384,17 +384,17 @@ FUN_CSS = r"""
 .fun-prize-number { border: 0; border-radius: 11px; min-width: 62px; padding: 7px 9px; cursor: pointer; background: #f8fafc; color: #0f172a; font-weight: 900; letter-spacing: .03em; }
 .fun-prize-number:hover { background: #e2e8f0; }
 .fun-prize-number.fun-special { background: #fff1f2; color: #be123c; font-size: 19px; min-width: 92px; }
-.fun-method { margin: 9px 2px 0; color: #94a3b8; font-size: 11px; line-height: 1.45; }
+.fun-method { margin: 9px 2px 0; color: #55606f; font-size: 11px; line-height: 1.45; }
 .fun-prob-panels { display: grid; gap: 12px; }
 .fun-prob-card { padding: 13px; border-radius: 16px; background: #f5f3ff; border: 1px solid #ddd6fe; }
 .fun-prob-card.de { background: #fff7ed; border-color: #fed7aa; }
 .fun-prob-title { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 9px; }
 .fun-prob-title span { font-size: 13px; font-weight: 900; color: #4c1d95; }
 .fun-prob-card.de .fun-prob-title span { color: #9a3412; }
-.fun-prob-title small { color: #64748b; text-align: right; font-size: 10px; line-height: 1.35; }
+.fun-prob-title small { color: #55606f; text-align: right; font-size: 10px; line-height: 1.35; }
 .fun-prob-list { display: grid; gap: 6px; }
 .fun-prob-row { display: grid; grid-template-columns: 28px 30px minmax(70px, 1fr) 67px; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; border: 0; border-radius: 10px; background: rgba(255,255,255,.82); cursor: pointer; color: #0f172a; }
-.fun-rank { color: #94a3b8; font-size: 10px; font-weight: 800; }
+.fun-rank { color: #55606f; font-size: 10px; font-weight: 800; }
 .fun-prob-row b { font-size: 14px; }
 .fun-prob-row strong { text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; }
 .fun-prob-track { height: 7px; overflow: hidden; border-radius: 99px; background: #e2e8f0; }

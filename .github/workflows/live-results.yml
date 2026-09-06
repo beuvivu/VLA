@@ -1,12 +1,35 @@
 name: Kết quả XSMB gần thời gian thực
 
+# Vì sao có nhiều mốc và vì sao chúng ở phút lẻ
+# --------------------------------------------------
+# GitHub chạy workflow theo lịch ở mức "cố gắng tốt nhất", và trên kho này độ
+# trễ đo được là 2,5–4,5 GIỜ: mốc 11:00 UTC (18:00 giờ VN, trước kỳ quay) thực
+# tế nổ lúc 13:39–15:27 UTC, tức 20:39–22:26 giờ VN. Khi đó kỳ quay đã xong từ
+# lâu nên vòng thăm dò lấy được kết quả hoàn tất ngay lần đầu rồi thoát sau ~20
+# giây — dữ liệu vẫn đúng nhưng về muộn vài tiếng, và người xem không thấy số
+# hiện dần.
+#
+# Hai biện pháp ở đây chỉ giảm xác suất trượt chứ KHÔNG loại bỏ được độ trễ:
+#   1. Nhiều mốc trải từ đầu giờ chiều: chỉ cần một mốc rơi đúng khung quay.
+#   2. Phút lẻ: hàng đợi của GitHub dồn nặng nhất ở phút :00 và :30.
+# Cách chắc chắn là gọi từ bộ lập lịch bên ngoài — xem repository_dispatch bên
+# dưới và hướng dẫn trong tài liệu.
 on:
   workflow_dispatch:
+  repository_dispatch:
+    # Cho phép một bộ lập lịch bên ngoài kích hoạt đúng giờ, không qua hàng đợi
+    # lịch của GitHub. Đây là đường duy nhất chạy đúng giờ một cách chắc chắn.
+    types: [live-window]
   schedule:
-    # GitHub cron is UTC.  11:00 UTC = 18:00 Asia/Ho_Chi_Minh (UTC+7).
-    # Start before the 18:15 draw so the first complete snapshot is published
-    # immediately when the final prize appears.
-    - cron: "0 11 * * *"
+    - cron: "37 6 * * *"
+    - cron: "43 7 * * *"
+    - cron: "17 8 * * *"
+    - cron: "53 8 * * *"
+    - cron: "23 9 * * *"
+    - cron: "47 9 * * *"
+    - cron: "13 10 * * *"
+    - cron: "41 10 * * *"
+    - cron: "7 11 * * *"
 
 permissions:
   contents: write
@@ -54,6 +77,27 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Nếu job khởi động TRƯỚC khung quay, chờ tới lúc bắt đầu rồi mới thăm
+          # dò, để số hiện dần đúng lúc thay vì đăng một ảnh chụp rỗng. Chỉ chờ
+          # tối đa 90 phút: mốc nào rơi quá sớm thì thoát để mốc sau xử lý, thay
+          # vì giữ runner hàng giờ.
+          window_start_min=$((18 * 60 + 8))
+          max_wait_seconds=$((90 * 60))
+          waited=0
+          while true; do
+            now_min=$(( $(date +%H) * 60 + $(date +%M) ))
+            (( now_min >= window_start_min )) && break
+            gap=$(( (window_start_min - now_min) * 60 ))
+            if (( gap > max_wait_seconds )); then
+              echo "Còn $((gap / 60)) phút mới tới khung quay — quá sớm, để mốc sau xử lý."
+              echo "verified=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "Chờ $((gap / 60)) phút tới khung quay 18:08 giờ Việt Nam…"
+            sleep "$gap"
+            waited=$((waited + gap))
+          done
 
           started="$(date +%s)"
           previous_payload_hash=""

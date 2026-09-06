@@ -4,6 +4,9 @@
 --vla-border:rgba(226,232,240,.75);--vla-border-strong:#e2e8f0;
 --vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;--vla-ink-muted:#94a3b8;
 --vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
+/* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --vla-brand: ở chế
+độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
+--vla-on-brand:#ffffff;
 --vla-ok:#047857;--vla-ok-soft:#ecfdf5;--vla-ok-border:#a7f3d0;
 --vla-warn:#b45309;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
 --vla-bad:#be123c;--vla-bad-soft:#fff1f2;--vla-bad-border:#fecdd3;
@@ -33,6 +36,7 @@ tính nào lên thẻ gốc. */
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
+--vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
 --vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
 --vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
@@ -47,6 +51,7 @@ color-scheme:dark;
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
+--vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
 --vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
 --vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
@@ -193,7 +198,7 @@ background:var(--vla-surface);color:var(--vla-ink-soft);
 font-size:.8125rem;font-weight:500;transition:all .15s ease-in-out}
 .vla-nav a:hover{border-color:var(--vla-brand-border);color:var(--vla-brand-ink);
 background:var(--vla-brand-soft);text-decoration:none}
-.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:#fff;
+.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:var(--vla-on-brand);
 border-color:var(--vla-brand)}
 
 /* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
@@ -204,7 +209,7 @@ color:var(--vla-ink-soft);font-family:inherit;font-size:.8125rem;
 font-weight:600;cursor:pointer;transition:all .15s ease-in-out}
 .vla-tabs .tabbtn:hover{border-color:var(--vla-brand-border);
 color:var(--vla-brand-ink);background:var(--vla-brand-soft)}
-.vla-tabs .tabbtn.active{background:var(--vla-brand);color:#fff;
+.vla-tabs .tabbtn.active{background:var(--vla-brand);color:var(--vla-on-brand);
 border-color:var(--vla-brand)}
 .panel{display:none}.panel.active{display:block}
 
@@ -292,8 +297,10 @@ background:var(--vla-brand-soft)}
 .vla-side-brand{font-family:var(--vla-font-display);font-weight:700;font-size:.9375rem;
 color:var(--vla-ink);white-space:nowrap;overflow:hidden}
 
+/* ink-muted (#94a3b8) chỉ đạt 2,56:1 trên nền trắng — dưới ngưỡng WCAG AA cho
+chữ nhỏ. ink-soft đạt 7,5:1 và vẫn giữ được thứ bậc thị giác so với nhãn liên kết. */
 .vla-side-group{font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase;
-color:var(--vla-ink-muted);font-weight:600;padding:.875rem .875rem .25rem;white-space:nowrap}
+color:var(--vla-ink-soft);font-weight:600;padding:.875rem .875rem .25rem;white-space:nowrap}
 .vla-side a{display:flex;align-items:center;gap:.625rem;padding:.4375rem .875rem;
 color:var(--vla-ink-2);font-size:.8125rem;white-space:nowrap;overflow:hidden;
 border-left:3px solid transparent;transition:background .15s ease-in-out}

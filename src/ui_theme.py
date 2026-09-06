@@ -17,7 +17,7 @@ import html
 import json
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 
 # Căn lề theo loại dữ liệu: số/chỉ số canh phải, trạng thái canh giữa.
@@ -39,6 +39,9 @@ TAILWIND_LITE_CSS = r"""
 --vla-border:rgba(226,232,240,.75);--vla-border-strong:#e2e8f0;
 --vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;--vla-ink-muted:#94a3b8;
 --vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
+/* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --vla-brand: ở chế
+độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
+--vla-on-brand:#ffffff;
 --vla-ok:#047857;--vla-ok-soft:#ecfdf5;--vla-ok-border:#a7f3d0;
 --vla-warn:#b45309;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
 --vla-bad:#be123c;--vla-bad-soft:#fff1f2;--vla-bad-border:#fecdd3;
@@ -68,6 +71,7 @@ tính nào lên thẻ gốc. */
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
+--vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
 --vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
 --vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
@@ -82,6 +86,7 @@ color-scheme:dark;
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
+--vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
 --vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
 --vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
@@ -228,7 +233,7 @@ background:var(--vla-surface);color:var(--vla-ink-soft);
 font-size:.8125rem;font-weight:500;transition:all .15s ease-in-out}
 .vla-nav a:hover{border-color:var(--vla-brand-border);color:var(--vla-brand-ink);
 background:var(--vla-brand-soft);text-decoration:none}
-.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:#fff;
+.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:var(--vla-on-brand);
 border-color:var(--vla-brand)}
 
 /* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
@@ -239,7 +244,7 @@ color:var(--vla-ink-soft);font-family:inherit;font-size:.8125rem;
 font-weight:600;cursor:pointer;transition:all .15s ease-in-out}
 .vla-tabs .tabbtn:hover{border-color:var(--vla-brand-border);
 color:var(--vla-brand-ink);background:var(--vla-brand-soft)}
-.vla-tabs .tabbtn.active{background:var(--vla-brand);color:#fff;
+.vla-tabs .tabbtn.active{background:var(--vla-brand);color:var(--vla-on-brand);
 border-color:var(--vla-brand)}
 .panel{display:none}.panel.active{display:block}
 
@@ -327,8 +332,10 @@ background:var(--vla-brand-soft)}
 .vla-side-brand{font-family:var(--vla-font-display);font-weight:700;font-size:.9375rem;
 color:var(--vla-ink);white-space:nowrap;overflow:hidden}
 
+/* ink-muted (#94a3b8) chỉ đạt 2,56:1 trên nền trắng — dưới ngưỡng WCAG AA cho
+chữ nhỏ. ink-soft đạt 7,5:1 và vẫn giữ được thứ bậc thị giác so với nhãn liên kết. */
 .vla-side-group{font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase;
-color:var(--vla-ink-muted);font-weight:600;padding:.875rem .875rem .25rem;white-space:nowrap}
+color:var(--vla-ink-soft);font-weight:600;padding:.875rem .875rem .25rem;white-space:nowrap}
 .vla-side a{display:flex;align-items:center;gap:.625rem;padding:.4375rem .875rem;
 color:var(--vla-ink-2);font-size:.8125rem;white-space:nowrap;overflow:hidden;
 border-left:3px solid transparent;transition:background .15s ease-in-out}
@@ -658,6 +665,56 @@ def card(
         f'{head}<div class="{body_class}">{body}</div>'
         "</section>"
     )
+
+
+#: Hai màu chữ dùng cho ô tô nền. Chọn giữa chúng theo tỉ lệ tương phản THỰC
+#: TẾ, không theo ngưỡng độ sáng: một ngưỡng cố định luôn để lọt một dải nền
+#: tầm trung mà cả hai màu đều không đạt chuẩn.
+_INK_LIGHT: Final[str] = "#ffffff"
+_INK_DARK: Final[str] = "#0f172a"
+_INK_DARKEST: Final[str] = "#000000"
+
+WCAG_AA_NORMAL: Final[float] = 4.5
+WCAG_AA_LARGE: Final[float] = 3.0
+
+
+def _srgb_luminance(hex_color: str) -> float:
+    """Độ sáng tương đối theo WCAG của một màu ``#rrggbb``."""
+    value = hex_color.lstrip("#")
+    if len(value) == 3:
+        value = "".join(ch * 2 for ch in value)
+    channels = [int(value[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def contrast_ratio(foreground: str, background: str) -> float:
+    """Tỉ lệ tương phản WCAG giữa hai màu ``#rrggbb`` (1.0 tới 21.0)."""
+    a, b = _srgb_luminance(foreground), _srgb_luminance(background)
+    lo, hi = min(a, b), max(a, b)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def readable_ink(background: str, *, minimum: float = WCAG_AA_NORMAL) -> str:
+    """Màu chữ đọc được trên ``background``, đảm bảo đạt ``minimum``.
+
+    Cách cũ dùng ngưỡng độ sáng cố định (``luminance < 0.42 → trắng``). Ngưỡng
+    kiểu đó bỏ sót cả một dải nền tầm trung: đo trên trang thật, chữ trắng nằm
+    trên nền xanh ``#8aacf5`` chỉ đạt 2,26:1 và trên nền cam ``#ea580c`` đạt
+    3,56:1 — đều dưới chuẩn AA cho chữ thường.
+
+    Chọn theo tỉ lệ thật thì luôn có lời giải: dải nền mà chữ trắng không đạt
+    và dải mà ``#0f172a`` không đạt chồng lấn nhau, nên thêm màu đen tuyền là
+    phủ kín mọi nền.
+    """
+    candidates = (_INK_LIGHT, _INK_DARK, _INK_DARKEST)
+    best = max(candidates, key=lambda ink: contrast_ratio(ink, background))
+    if contrast_ratio(best, background) >= minimum:
+        # Ưu tiên #0f172a hơn đen tuyền khi cả hai cùng đạt: mềm mắt hơn.
+        if best is _INK_DARKEST and contrast_ratio(_INK_DARK, background) >= minimum:
+            return _INK_DARK
+        return best
+    return best
 
 
 def _format_scalar(value: Any) -> str:

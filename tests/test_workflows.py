@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,9 +10,20 @@ def _text(name: str) -> str:
     return (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
 
 
+def _vietnam_minutes(cron: str) -> int:
+    """Phút trong ngày theo giờ Việt Nam của một biểu thức cron viết theo UTC."""
+    minute, hour = cron.split()[:2]
+    return ((int(hour) + 7) % 24) * 60 + int(minute)
+
+
 def test_live_workflow_uses_utc_schedule_and_subminute_poll_loop() -> None:
     text = _text("live-results.yml")
-    assert 'cron: "0 11 * * *"' in text  # 18:00 Vietnam (UTC+7)
+    crons = re.findall(r'cron: "([^"]+)"', text)
+    # Kiểm tính chất thay vì chuỗi cố định: phải có mốc đủ sớm để, kể cả khi
+    # GitHub trễ như đã đo (2,5–4,5 giờ), vẫn còn cơ hội rơi vào khung quay.
+    assert crons, "workflow live phải có ít nhất một mốc lịch"
+    assert min(_vietnam_minutes(c) for c in crons) <= 14 * 60
+    assert max(_vietnam_minutes(c) for c in crons) <= 18 * 60 + 15
     assert 'POLL_SECONDS: "15"' in text
     assert 'MAX_SECONDS: "3600"' in text
     assert "refs/heads/live" in text
@@ -23,19 +35,15 @@ def test_live_workflow_uses_utc_schedule_and_subminute_poll_loop() -> None:
 
 def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     text = _text("update-data.yml")
-    expected_utc_crons = (
-        "30 11 * * *",  # 18:30 Vietnam
-        "40 11 * * *",  # 18:40 Vietnam
-        "50 11 * * *",  # 18:50 Vietnam
-        "0 12 * * *",  # 19:00 Vietnam
-        "10 12 * * *",  # 19:10 Vietnam
-        "20 12 * * *",  # 19:20 Vietnam
-        "30 12 * * *",  # 19:30 Vietnam
-        "45 12 * * *",  # 19:45 Vietnam
-        "0 13 * * *",  # 20:00 Vietnam
-    )
-    for cron in expected_utc_crons:
-        assert f'cron: "{cron}"' in text
+    # Kiểm tính chất chứ không kiểm chuỗi cố định: cần đủ nhiều mốc phục hồi
+    # trải sau giờ quay, và không mốc nào rơi vào phút :00 hay :30 — hàng đợi
+    # lịch của GitHub dồn nặng nhất ở hai mốc đó.
+    crons = re.findall(r'cron: "([^"]+)"', text)
+    assert len(crons) >= 9
+    minutes = [_vietnam_minutes(c) for c in crons]
+    assert min(minutes) >= 18 * 60 + 30, "mốc đầu phải sau giờ quay 18:30"
+    assert max(minutes) >= 20 * 60, "cần mốc phục hồi muộn"
+    assert not [c for c in crons if int(c.split()[0]) in (0, 30)]
     assert "--cutoff 18:35" in text
     assert '"--consensus-min-recent", "2"' in text
     assert "Ghi nhận kết quả chuẩn ngay lập tức" in text
@@ -72,10 +80,7 @@ def test_daily_workflow_scopes_privileged_permissions_to_the_jobs_that_need_them
     assert "    permissions:\n      contents: write" in update
     assert "    permissions:\n      actions: write\n      contents: read" in trigger
     assert (
-        "    permissions:\n"
-        "      contents: read\n"
-        "      id-token: write\n"
-        "      pages: write"
+        "    permissions:\n      contents: read\n      id-token: write\n      pages: write"
     ) in deploy
 
 

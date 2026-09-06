@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
-from ui_theme import SITE_NAV, stylesheet_link, write_stylesheet
+from ui_theme import SITE_NAV, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
 
@@ -201,8 +201,10 @@ def _style_for_value(
     span = max(max_value - min_value, 1e-9)
     t = (value - min_value) / span
     bg = _mix(low, high, t)
-    fg = "#ffffff" if _luminance(bg) < 0.42 else "#0f172a"
-    return bg, fg
+    # Chọn màu chữ theo tỉ lệ tương phản thực tế thay vì ngưỡng độ sáng cố
+    # định. Ngưỡng cũ (luminance < 0.42) để lọt cả một dải nền tầm trung: đo
+    # trên trang thật, chữ trắng trên nền #8aacf5 chỉ đạt 2,26:1.
+    return bg, readable_ink(bg)
 
 
 def _df_to_rows(df: pd.DataFrame, columns: Sequence[str], limit: int = 12) -> list[dict[str, Any]]:
@@ -815,7 +817,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       --panel: #ffffff;
       --panel-soft: #f8fafc;
       --ink: #0f172a;
-      --muted: #64748b;
+      --muted: #55606f;
       --line: #e2e8f0;
       --blue: #2563eb;
       --sky: #0891b2;
@@ -839,21 +841,13 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     a {{ color: inherit; text-decoration: none; }}
     button {{ font: inherit; }}
-    /* Chế độ tối cho bảng màu riêng của trang này. Chỉ định nghĩa lại token,
-       không lặp lại selector thành phần nào. Phủ cả ba trạng thái: chọn tay
-       sáng, chọn tay tối, và mặc định theo hệ điều hành. */
-    @media (prefers-color-scheme: dark) {{
-      :root:not([data-vla-theme="light"]) {{
-        --bg: #0b1220; --panel: #131c2e; --panel-2: #0f1727;
-        --ink: #e8eef6; --ink-soft: #93a4bb; --line: rgba(35,50,72,.9);
-        color-scheme: dark;
-      }}
-    }}
-    :root[data-vla-theme="dark"] {{
-      --bg: #0b1220; --panel: #131c2e; --panel-2: #0f1727;
-      --ink: #e8eef6; --ink-soft: #93a4bb; --line: rgba(35,50,72,.9);
-      color-scheme: dark;
-    }}
+    /* Trang này CỐ Ý giữ một bảng màu sáng duy nhất, không theo chế độ tối của
+       hệ điều hành. Lý do: các ma trận nhiệt ở đây tô màu bằng hàm trộn hex
+       trong Python (_style_for_value), không đi qua biến CSS — nên đảo token
+       chỉ lật được phần khung mà không lật được phần dữ liệu, tạo ra bảng màu
+       lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
+       --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
+       Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
     .app {{
       display: grid;
       /* Chiều rộng là token nên thu gọn chỉ là đổi một giá trị, không phải đo
