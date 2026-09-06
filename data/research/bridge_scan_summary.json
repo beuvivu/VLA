@@ -1,0 +1,48 @@
+{
+  "generated_at_utc": "2026-09-06T03:19:49Z",
+  "days": 391,
+  "positions": 107,
+  "max_span": 3,
+  "q_value": 0.05,
+  "modes": {
+    "loto": {
+      "family_max_skill": 0.10849763847458715,
+      "hypotheses": 412164,
+      "days_evaluated": 388,
+      "baseline_single_bet": 0.23765728565289646,
+      "running_at_least_5_unscreened": 59152,
+      "survived_fdr": 0,
+      "observed_max_skill": null,
+      "null_max_skill_p95": null,
+      "reality_check_p_value": null,
+      "permutations": 0,
+      "verdict": "Không đường cầu nào sống sót: đã thử 412,164 giả thuyết, BH-FDR q=0.05 loại toàn bộ."
+    },
+    "loto_2_nhay": {
+      "family_max_skill": 0.08530450128197253,
+      "hypotheses": 412164,
+      "days_evaluated": 388,
+      "baseline_single_bet": 0.02974563628550453,
+      "running_at_least_5_unscreened": 31,
+      "survived_fdr": 0,
+      "observed_max_skill": null,
+      "null_max_skill_p95": null,
+      "reality_check_p_value": null,
+      "permutations": 0,
+      "verdict": "Không đường cầu nào sống sót: đã thử 412,164 giả thuyết, BH-FDR q=0.05 loại toàn bộ."
+    },
+    "de": {
+      "family_max_skill": 0.05721649484536148,
+      "hypotheses": 412164,
+      "days_evaluated": 388,
+      "baseline_single_bet": 0.01,
+      "running_at_least_5_unscreened": 0,
+      "survived_fdr": 0,
+      "observed_max_skill": null,
+      "null_max_skill_p95": null,
+      "reality_check_p_value": null,
+      "permutations": 0,
+      "verdict": "Không đường cầu nào sống sót: đã thử 412,164 giả thuyết, BH-FDR q=0.05 loại toàn bộ."
+    }
+  }
+}
