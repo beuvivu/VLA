@@ -16,6 +16,7 @@ forecasting guarantee.
 | [`research/method-catalog.md`](research/method-catalog.md) | Catalog of publicly observed Vietnamese lottery methods with mathematical definitions, parameters, leakage risk and VLA equivalents. |
 | [`research/source-comparison.md`](research/source-comparison.md) | Per-source public behaviour and the method comparison matrix. |
 | [`research/quantitative-architecture.md`](research/quantitative-architecture.md) | Quantitative research report: power analysis, seven Monte Carlo structure tests, eleven model families benchmarked walk-forward, backtesting protocol, evaluation metrics, and the proposed shrinkage-ensemble architecture. Written in Vietnamese. |
+| [`architecture/ml-engine.md`](architecture/ml-engine.md) | Technical blueprint for `src/ml_engine/`: input schema, module layout, discounted Thompson-sampling bandit, ADWIN/KS drift detection, walk-forward validation with Optuna, evaluation metrics and safe-mode fallback, with measured results. Written in Vietnamese. |
 | [`history/legacy-consolidation.md`](history/legacy-consolidation.md) | Consolidated migration, retirement acceptance and forensic re-audit record for the three predecessor repositories. |
 
 ## Related material outside this directory
