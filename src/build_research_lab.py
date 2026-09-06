@@ -11,7 +11,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 from ui_locale import mode_label, strategy_label
-from ui_theme import card, shell_close, shell_open, tailwind_style_tag
+from ui_theme import card, shell_close, shell_open, stylesheet_link, write_stylesheet
 from web_security import security_meta_tags
 
 
@@ -88,7 +88,7 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
     if cross:
         cards.append(
             '<article class="metric-card">'
-            '<span>Vị trí chéo độ trễ</span>'
+            "<span>Vị trí chéo độ trễ</span>"
             f"<strong>{int(cross.get('hypotheses', 0))}</strong>"
             f"<em>giả thuyết · qua cổng nghiên cứu {int(cross.get('research_gate_pass_count', 0))} · nối vào vận hành: Không</em>"
             "</article>"
@@ -96,7 +96,7 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
     if conditional:
         cards.append(
             '<article class="metric-card">'
-            '<span>ĐB → Loto ngày kế</span>'
+            "<span>ĐB → Loto ngày kế</span>"
             f"<strong>{html.escape(str(conditional.get('current_special_2d', '—')))}</strong>"
             f"<em>ĐB 2 số hiện tại · {int(conditional.get('rows', 0))} ô có điều kiện · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
             "</article>"
@@ -197,7 +197,9 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
     view = df[df["special"].astype(int) == state].copy()
     if view.empty:
         return '<tr><td colspan="6">Chưa đủ lịch sử cho trạng thái này</td></tr>'
-    view = view.sort_values(["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]).head(top)
+    view = view.sort_values(["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]).head(
+        top
+    )
     rows = []
     for _, r in view.iterrows():
         rows.append(
@@ -256,75 +258,85 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
         intro = f'<p class="vla-muted">{desc}</p>' if desc else ""
         return card(intro + body, title=title, span=span, lift=True)
 
-    cards = "".join([
-        _table(
-            "Chẩn đoán tính ngẫu nhiên và phụ thuộc",
-            "Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.",
-            ["Phép kiểm định", "Thống kê", "p", "q (FDR)", "FDR&lt;.05"],
-            "vla-r2 vla-r3 vla-r4 vla-m5",
-            _primary_tests(diagnostics),
-        ),
-        _table(
-            "Gan tổng / chạm",
-            "Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.",
-            ["Nhóm", "Gan ngày", "Lần cuối"],
-            "vla-r2 vla-m3",
-            _gap_table(touch, sums),
-        ),
-        _table(
-            "Kiểm tra tương thích cũ · đúng ngữ nghĩa",
-            "Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.",
-            ["Chẩn đoán", "Thống kê", "p", "Phương pháp / FDR"],
-            "vla-r2 vla-r3",
-            _legacy_diagnostics(advanced),
-        ),
-        _table(
-            f"ĐB {html.escape(current_special or chr(8212))} → Lô tô ngày kế",
-            "Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.",
-            ["Số", "Cỡ mẫu", "Số lần trúng", "p thô", "p EB", "q"],
-            "vla-r2 vla-r3 vla-r4 vla-r5 vla-r6",
-            _conditional_table(conditional, current_special),
-        ),
-        _table(
-            "Phòng chiến lược · Lô tô",
-            "",
-            ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
-            "vla-r3 vla-r4 vla-r5 vla-m6",
-            _strategy_table(strategy_loto),
-        ),
-        _table(
-            "Phòng chiến lược · Đặc Biệt",
-            "",
-            ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
-            "vla-r3 vla-r4 vla-r5 vla-m6",
-            _strategy_table(strategy_de),
-        ),
-        _table(
-            "Họ vị trí chéo độ trễ",
-            "Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. "
-            "Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, "
-            "kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có "
-            "nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.",
-            ["Phép biến đổi", "Vị trí A", "Trễ A", "Vị trí B", "Trễ B", "Độ nâng trên tập giữ lại", "Cổng"],
-            "vla-r3 vla-r5 vla-r6 vla-m7",
-            _crosslag_table(cross_rules),
-            span=12,
-        ),
-        card(
-            "<p class=\"vla-muted\">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, "
-            "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
-            "huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, "
-            "đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ "
-            "liệu trên toàn họ.</p>",
-            title="Tường lửa nghiên cứu",
-            span=12,
-        ),
-    ])
+    cards = "".join(
+        [
+            _table(
+                "Chẩn đoán tính ngẫu nhiên và phụ thuộc",
+                "Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.",
+                ["Phép kiểm định", "Thống kê", "p", "q (FDR)", "FDR&lt;.05"],
+                "vla-r2 vla-r3 vla-r4 vla-m5",
+                _primary_tests(diagnostics),
+            ),
+            _table(
+                "Gan tổng / chạm",
+                "Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.",
+                ["Nhóm", "Gan ngày", "Lần cuối"],
+                "vla-r2 vla-m3",
+                _gap_table(touch, sums),
+            ),
+            _table(
+                "Kiểm tra tương thích cũ · đúng ngữ nghĩa",
+                "Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.",
+                ["Chẩn đoán", "Thống kê", "p", "Phương pháp / FDR"],
+                "vla-r2 vla-r3",
+                _legacy_diagnostics(advanced),
+            ),
+            _table(
+                f"ĐB {html.escape(current_special or chr(8212))} → Lô tô ngày kế",
+                "Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.",
+                ["Số", "Cỡ mẫu", "Số lần trúng", "p thô", "p EB", "q"],
+                "vla-r2 vla-r3 vla-r4 vla-r5 vla-r6",
+                _conditional_table(conditional, current_special),
+            ),
+            _table(
+                "Phòng chiến lược · Lô tô",
+                "",
+                ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
+                "vla-r3 vla-r4 vla-r5 vla-m6",
+                _strategy_table(strategy_loto),
+            ),
+            _table(
+                "Phòng chiến lược · Đặc Biệt",
+                "",
+                ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
+                "vla-r3 vla-r4 vla-r5 vla-m6",
+                _strategy_table(strategy_de),
+            ),
+            _table(
+                "Họ vị trí chéo độ trễ",
+                "Khôi phục họ cầu dọc/chéo giữa các ngày khác nhau: ghép, lộn, bộ-bóng, chạm và tổng. "
+                "Mỗi quy tắc chỉ đọc ngày mục tiêu trừ độ trễ theo lịch, sau đó đi qua tập huấn luyện, "
+                "kiểm định và tập giữ lại chưa chạm cùng FDR/Bonferroni. “Qua cổng nghiên cứu” chỉ có "
+                "nghĩa là đáng xem tiếp, không phải đủ điều kiện vận hành.",
+                [
+                    "Phép biến đổi",
+                    "Vị trí A",
+                    "Trễ A",
+                    "Vị trí B",
+                    "Trễ B",
+                    "Độ nâng trên tập giữ lại",
+                    "Cổng",
+                ],
+                "vla-r3 vla-r5 vla-r6 vla-m7",
+                _crosslag_table(cross_rules),
+                span=12,
+            ),
+            card(
+                '<p class="vla-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
+                "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
+                "huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, "
+                "đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ "
+                "liệu trên toàn họ.</p>",
+                title="Tường lửa nghiên cứu",
+                span=12,
+            ),
+        ]
+    )
 
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
-{tailwind_style_tag()}
+{stylesheet_link()}
 <title>Phòng nghiên cứu VLA</title>
 <style>
 .rl-hero{{padding:1.75rem;border-radius:var(--vla-r-xl);background:var(--vla-ink);
@@ -354,9 +366,17 @@ font-variant-numeric:tabular-nums}}
 {shell_close()}
 </body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
+    write_stylesheet(docs_dir)
     out = docs_dir / "research-lab.html"
     out.write_text(page, encoding="utf-8")
-    for name in ("index.html", "landing.html", "landing_desktop.html", "statistics.html", "dashboard.html", "model-quality.html"):
+    for name in (
+        "index.html",
+        "landing.html",
+        "landing_desktop.html",
+        "statistics.html",
+        "dashboard.html",
+        "model-quality.html",
+    ):
         _inject_link(docs_dir / name)
     return out
 

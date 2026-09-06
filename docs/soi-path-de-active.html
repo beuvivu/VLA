@@ -6,10 +6,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</title>
+  <link rel="stylesheet" href="assets/vla.css" />
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
            --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text);}
+    body{margin:0;font-family:var(--vla-font); background:var(--bg); color:var(--text);}
     a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
     .wrap{max-width:1200px;margin:0 auto;padding:20px}
     .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
@@ -88,7 +89,7 @@
         <span><span class="dot none"></span>Không về</span>
       </div>
       
-      <div class="empty-state">Chưa có dữ liệu chọn nhanh cho ngày neo này. Hãy chạy lại bước tạo dữ liệu đường cầu.</div>
+      <div class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày neo này, nên chưa có danh sách chọn nhanh.</div>
       
       <div style="margin-top:10px" class="small">
         Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
@@ -99,41 +100,23 @@
   <div class="card" style="margin-top:12px; overflow:auto">
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
     <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
-    <div style="margin-top:10px; overflow:auto">
-      <table>
-        <thead>
-          <tr>
-            <th class="left">Đường cầu</th>
-            <th>Tỷ lệ lịch sử</th>
-            <th>Chuỗi liên tiếp</th>
-            
-              <th class="mono">08-27</th>
-            
-              <th class="mono">08-28</th>
-            
-              <th class="mono">08-29</th>
-            
-              <th class="mono">08-30</th>
-            
-              <th class="mono">08-31</th>
-            
-              <th class="mono">09-01</th>
-            
-              <th class="mono">09-02</th>
-            
-              <th class="mono">09-03</th>
-            
-              <th class="mono">09-04</th>
-            
-              <th class="mono">09-05</th>
-            
-          </tr>
-        </thead>
-        <tbody>
-          
-        </tbody>
-      </table>
+    
+    <div class="vla-empty" role="status">
+      <span class="vla-empty-icon" aria-hidden="true">◌</span>
+      <h3>Hôm nay không có đường cầu đang chạy nào</h3>
+      
+      <p>Đây là trạng thái bình thường, không phải lỗi dữ liệu. Bộ quét đã chạy đủ và kết luận không đường cầu nào đạt ngưỡng 3 nhịp liên tiếp.</p>
+      <div class="vla-empty-why">
+        
+        <p style="margin:0 0 .5rem">Với Đặc Biệt, tỉ lệ trúng của một con là <b>1.0%</b>, nên xác suất một đường cầu trúng 3 kỳ liên tiếp chỉ khoảng <b>0.000100%</b>. Rỗng là kết quả thường gặp, và hạ ngưỡng để “có dữ liệu” sẽ tạo ra tín hiệu giả.</p>
+        
+        
+        <p style="margin:0">Trang <a href="soi-path-de-stable.html">Ổn định</a> hiện có <b>144</b> đường cầu đủ điều kiện.</p>
+        
+      </div>
+      
     </div>
+    
   </div>
 
   <div class="small" style="margin-top:14px;color:var(--muted)">

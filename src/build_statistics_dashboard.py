@@ -24,6 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
+from ui_theme import stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
 WEEKDAY_COLS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
@@ -35,7 +36,9 @@ PERIOD_TITLES = {
 }
 
 
-def _read_csv(path: Path, *, dtype: dict[str, object] | str | None = None, nrows: int | None = None) -> pd.DataFrame:
+def _read_csv(
+    path: Path, *, dtype: dict[str, object] | str | None = None, nrows: int | None = None
+) -> pd.DataFrame:
     """Read a CSV defensively and return an empty DataFrame on bad/missing files."""
     try:
         if not path.exists() or path.stat().st_size == 0:
@@ -128,7 +131,15 @@ def _display_cell(value: object, col: str) -> str:
         return html.escape(str(value_label(value)))
     if col in {"hit_rate", "rate", "conditional_rate", "ml_prob"}:
         return html.escape(_fmt_value(value, decimals=3, percent=False))
-    if col in {"ai_ml_signal_score", "z_score", "z_score_current_year", "rhythm_pressure", "mean_gap", "avg_per_draw", "expected_freq"}:
+    if col in {
+        "ai_ml_signal_score",
+        "z_score",
+        "z_score_current_year",
+        "rhythm_pressure",
+        "mean_gap",
+        "avg_per_draw",
+        "expected_freq",
+    }:
         return html.escape(_fmt_value(value, decimals=2))
     if col.startswith("T") or (len(col) == 2 and col.isdigit()):
         return html.escape(_fmt2(value))
@@ -173,7 +184,10 @@ def _color_from_value(value: float, lo: float, hi: float, *, scheme: str) -> tup
     return f"rgb({r},{g},{b})", text
 
 
-def _empty_state(title: str = "Chưa có dữ liệu", hint: str = "Hãy chạy lại pipeline thống kê để sinh file CSV cần thiết.") -> str:
+def _empty_state(
+    title: str = "Chưa có dữ liệu",
+    hint: str = "Hãy chạy lại pipeline thống kê để sinh file CSV cần thiết.",
+) -> str:
     return f"""
     <div class="empty-state">
       <strong>{html.escape(title)}</strong>
@@ -204,9 +218,9 @@ def _number_map(df: pd.DataFrame, value_col: str) -> dict[int, float]:
     return values
 
 
-
-
-def _clickable_number(number: object, *, mode: str | None, source_title: str, source_value: str = "") -> str:
+def _clickable_number(
+    number: object, *, mode: str | None, source_title: str, source_value: str = ""
+) -> str:
     """Render a number pill that opens the evidence drawer when mode is known."""
     ns = _fmt2(number)
     if not ns:
@@ -248,7 +262,10 @@ def _evidence_payload(
     positions_de: pd.DataFrame,
 ) -> dict[str, dict[str, dict[str, object]]]:
     """Build compact JSON used by click-to-explain number panels."""
-    def build_mode(mode: str, cau: pd.DataFrame, explain: pd.DataFrame, positions: pd.DataFrame) -> dict[str, dict[str, object]]:
+
+    def build_mode(
+        mode: str, cau: pd.DataFrame, explain: pd.DataFrame, positions: pd.DataFrame
+    ) -> dict[str, dict[str, object]]:
         summary_lookup: dict[str, pd.Series] = {}
         if not explain.empty and "number_str" in explain.columns:
             for _, row in explain.iterrows():
@@ -281,7 +298,9 @@ def _evidence_payload(
                 tmp["_sort_score"] = pd.to_numeric(tmp["rule_score"], errors="coerce").fillna(0.0)
                 tmp = tmp.sort_values(["number_str", "_sort_score"], ascending=[True, False])
             for ns, group in tmp.groupby(tmp["number_str"].map(_fmt2), sort=True):
-                pos_groups[str(ns)] = [_row_dict_for_ui(row, pos_cols) for _, row in group.head(8).iterrows()]
+                pos_groups[str(ns)] = [
+                    _row_dict_for_ui(row, pos_cols) for _, row in group.head(8).iterrows()
+                ]
 
         payload: dict[str, dict[str, object]] = {}
         summary_cols = [
@@ -395,7 +414,7 @@ def _matrix(
             </div>
           </div>
           <div class="legend">
-            <span>Ít</span><i style="background:linear-gradient(90deg, {_color_from_value(lo, lo, hi, scheme=scheme)[0]}, {_color_from_value((lo+hi)/2, lo, hi, scheme=scheme)[0]}, {_color_from_value(hi, lo, hi, scheme=scheme)[0]});"></i><span>Nhiều</span>
+            <span>Ít</span><i style="background:linear-gradient(90deg, {_color_from_value(lo, lo, hi, scheme=scheme)[0]}, {_color_from_value((lo + hi) / 2, lo, hi, scheme=scheme)[0]}, {_color_from_value(hi, lo, hi, scheme=scheme)[0]});"></i><span>Nhiều</span>
           </div>
         </article>
         """
@@ -443,8 +462,21 @@ def _bar_chart(
         label = _display_cell(row.get(label_col, ""), label_col)
         val = float(row["_value_numeric"])
         value_text = f"{_fmt_value(val, decimals=decimals)}{suffix}"
-        if evidence_mode and label_col in {"number", "number_str", "a", "b", "prev_loto", "next_loto", "prev_special_2d"}:
-            label_html = _clickable_number(row.get(label_col, ""), mode=evidence_mode, source_title=title, source_value=value_text)
+        if evidence_mode and label_col in {
+            "number",
+            "number_str",
+            "a",
+            "b",
+            "prev_loto",
+            "next_loto",
+            "prev_special_2d",
+        }:
+            label_html = _clickable_number(
+                row.get(label_col, ""),
+                mode=evidence_mode,
+                source_title=title,
+                source_value=value_text,
+            )
         else:
             label_html = f"<span class='num-pill'>{label}</span>"
         width = max(4.0, min(100.0, val / max_v * 100.0)) if max_v > 0 else 0.0
@@ -460,7 +492,7 @@ def _bar_chart(
     <article class="viz-card">
       <div class="card-head"><span class="type-badge chart">Biểu đồ</span><h3>{html.escape(title)}</h3></div>
       <p>{html.escape(subtitle)}</p>
-      <div class="bar-list">{''.join(rows)}</div>
+      <div class="bar-list">{"".join(rows)}</div>
     </article>
     """
 
@@ -493,9 +525,13 @@ def _table(
     view = view.head(max_rows).copy()
     zfill = set(zfill_cols)
 
-    max_highlight = float(view["_highlight"].max()) if "_highlight" in view.columns and not view.empty else 0.0
+    max_highlight = (
+        float(view["_highlight"].max()) if "_highlight" in view.columns and not view.empty else 0.0
+    )
 
-    header = "".join(f"<th>{html.escape(_pretty_col(c))}</th>" for c in view.columns if c != "_highlight")
+    header = "".join(
+        f"<th>{html.escape(_pretty_col(c))}</th>" for c in view.columns if c != "_highlight"
+    )
     rows: list[str] = []
     for _, row in view.iterrows():
         cells: list[str] = []
@@ -529,7 +565,7 @@ def _table(
         <input type="search" placeholder="Lọc nhanh trong bảng..." aria-label="Lọc bảng" oninput="filterTable(this)" />
         <small>Hiển thị tối đa {max_rows} dòng đầu sau khi sắp xếp.</small>
       </div>
-      <div class="table-wrap"><table><thead><tr>{header}</tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr>{header}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
     </article>
     """
 
@@ -560,7 +596,9 @@ def _period_text(df: pd.DataFrame) -> str:
     return values[0] if values else ""
 
 
-def _latest_by_period(df: pd.DataFrame, period_kind: str, period_key: str | None = None) -> pd.DataFrame:
+def _latest_by_period(
+    df: pd.DataFrame, period_kind: str, period_key: str | None = None
+) -> pd.DataFrame:
     view = df.copy()
     if view.empty:
         return view
@@ -604,7 +642,7 @@ def _section(title: str, intro: str, body: str, anchor: str) -> str:
     <section class="section" id="{html.escape(anchor)}">
       <div class="section-head">
         <div>
-          <span class="eyebrow">{html.escape(anchor.replace('-', ' / '))}</span>
+          <span class="eyebrow">{html.escape(anchor.replace("-", " / "))}</span>
           <h2>{html.escape(title)}</h2>
           <p>{html.escape(intro)}</p>
         </div>
@@ -678,7 +716,9 @@ def main() -> None:
 
     metrics = [
         _metric_card("Ngày dữ liệu mới nhất", as_of or "N/A", "Theo manifest thống kê", "📅"),
-        _metric_card("Bảng/ma trận đã sinh", files_count or "N/A", "CSV/JSON trong data/advanced", "🧩"),
+        _metric_card(
+            "Bảng/ma trận đã sinh", files_count or "N/A", "CSV/JSON trong data/advanced", "🧩"
+        ),
         _metric_card("Số bộ được phủ", "00–99", "Bấm vào số để xem căn cứ cầu", "🔢"),
         _metric_card(
             "AI/ML",
@@ -688,27 +728,91 @@ def main() -> None:
         ),
     ]
 
-    matrix_body = """
+    matrix_body = (
+        """
     <div class="layout-grid four">
-    """ + "".join(
-        [
-            _matrix(loto_day, title=f"Loto {PERIOD_TITLES['day']}", subtitle=f"Tần suất loto trong {_period_text(loto_day) or 'ngày mới nhất'}.", value_col="freq", scheme="freq", evidence_mode="loto"),
-            _matrix(loto_week, title=f"Loto {PERIOD_TITLES['week']}", subtitle=f"So sánh 00–99 trong {_period_text(loto_week) or 'tuần hiện tại'}.", value_col="freq", scheme="freq", evidence_mode="loto"),
-            _matrix(loto_month, title=f"Loto {PERIOD_TITLES['month']}", subtitle=f"Đậm màu = về nhiều trong {_period_text(loto_month) or 'tháng hiện tại'}.", value_col="freq", scheme="hot", evidence_mode="loto"),
-            _matrix(loto_year, title=f"Loto {PERIOD_TITLES['year']}", subtitle=f"Tổng hợp từ đầu {_period_text(loto_year) or 'năm'} đến ngày dữ liệu mới nhất.", value_col="freq", scheme="hot", evidence_mode="loto"),
-        ]
-    ) + "</div>"
+    """
+        + "".join(
+            [
+                _matrix(
+                    loto_day,
+                    title=f"Loto {PERIOD_TITLES['day']}",
+                    subtitle=f"Tần suất loto trong {_period_text(loto_day) or 'ngày mới nhất'}.",
+                    value_col="freq",
+                    scheme="freq",
+                    evidence_mode="loto",
+                ),
+                _matrix(
+                    loto_week,
+                    title=f"Loto {PERIOD_TITLES['week']}",
+                    subtitle=f"So sánh 00–99 trong {_period_text(loto_week) or 'tuần hiện tại'}.",
+                    value_col="freq",
+                    scheme="freq",
+                    evidence_mode="loto",
+                ),
+                _matrix(
+                    loto_month,
+                    title=f"Loto {PERIOD_TITLES['month']}",
+                    subtitle=f"Đậm màu = về nhiều trong {_period_text(loto_month) or 'tháng hiện tại'}.",
+                    value_col="freq",
+                    scheme="hot",
+                    evidence_mode="loto",
+                ),
+                _matrix(
+                    loto_year,
+                    title=f"Loto {PERIOD_TITLES['year']}",
+                    subtitle=f"Tổng hợp từ đầu {_period_text(loto_year) or 'năm'} đến ngày dữ liệu mới nhất.",
+                    value_col="freq",
+                    scheme="hot",
+                    evidence_mode="loto",
+                ),
+            ]
+        )
+        + "</div>"
+    )
 
-    de_body = """
+    de_body = (
+        """
     <div class="layout-grid four">
-    """ + "".join(
-        [
-            _matrix(de_day, title=f"ĐB {PERIOD_TITLES['day']}", subtitle=f"2 số cuối giải đặc biệt trong {_period_text(de_day) or 'ngày mới nhất'}.", value_col="freq", scheme="de", evidence_mode="de"),
-            _matrix(de_week, title=f"ĐB {PERIOD_TITLES['week']}", subtitle=f"Phân bố ĐB theo {_period_text(de_week) or 'tuần hiện tại'}.", value_col="freq", scheme="de", evidence_mode="de"),
-            _matrix(de_month, title=f"ĐB {PERIOD_TITLES['month']}", subtitle=f"Tần suất ĐB trong {_period_text(de_month) or 'tháng hiện tại'}.", value_col="freq", scheme="de", evidence_mode="de"),
-            _matrix(de_year, title=f"ĐB {PERIOD_TITLES['year']}", subtitle=f"Tần suất ĐB từ đầu {_period_text(de_year) or 'năm'}.", value_col="freq", scheme="de", evidence_mode="de"),
-        ]
-    ) + "</div>"
+    """
+        + "".join(
+            [
+                _matrix(
+                    de_day,
+                    title=f"ĐB {PERIOD_TITLES['day']}",
+                    subtitle=f"2 số cuối giải đặc biệt trong {_period_text(de_day) or 'ngày mới nhất'}.",
+                    value_col="freq",
+                    scheme="de",
+                    evidence_mode="de",
+                ),
+                _matrix(
+                    de_week,
+                    title=f"ĐB {PERIOD_TITLES['week']}",
+                    subtitle=f"Phân bố ĐB theo {_period_text(de_week) or 'tuần hiện tại'}.",
+                    value_col="freq",
+                    scheme="de",
+                    evidence_mode="de",
+                ),
+                _matrix(
+                    de_month,
+                    title=f"ĐB {PERIOD_TITLES['month']}",
+                    subtitle=f"Tần suất ĐB trong {_period_text(de_month) or 'tháng hiện tại'}.",
+                    value_col="freq",
+                    scheme="de",
+                    evidence_mode="de",
+                ),
+                _matrix(
+                    de_year,
+                    title=f"ĐB {PERIOD_TITLES['year']}",
+                    subtitle=f"Tần suất ĐB từ đầu {_period_text(de_year) or 'năm'}.",
+                    value_col="freq",
+                    scheme="de",
+                    evidence_mode="de",
+                ),
+            ]
+        )
+        + "</div>"
+    )
 
     ai_body = f"""
     <div class="decision-grid">
@@ -839,16 +943,66 @@ def main() -> None:
     """
 
     sections = [
-        _section("Tần suất loto ngày / tuần / tháng / năm", "Các thống kê phủ 00–99 nên hiển thị bằng ma trận 10x10 để so sánh bằng màu thay vì đọc bảng dài.", matrix_body, "ma-tran-loto"),
-        _section("Tần suất ĐB ngày / tuần / tháng / năm", "ĐB có mật độ thấp hơn loto; ma trận vẫn giúp phát hiện vùng số nổi bật trong tháng/năm.", de_body, "ma-tran-db"),
-        _section("Cầu-kèo AI/ML và tín hiệu xếp hạng", "Phần AI/ML được trình bày bằng ma trận, biểu đồ xếp hạng, bảng giải thích và kết quả kiểm định để dễ so sánh lẫn kiểm chứng.", ai_body, "ai-ml"),
-        _section("Bảng vị trí đường cầu và căn cứ khi bấm số", "Mỗi số có bảng căn cứ riêng: vị trí chữ số, ngày gốc, độ trễ, hiệu suất lịch sử và nhận định AI/ML.", position_body, "can-cu-cau"),
-        _section("Gan, nhịp và chu kỳ", "Khoảng cách xuất hiện hiện tại nên hiển thị bằng ma trận nhiệt và biểu đồ xếp hạng để nhận biết số lâu chưa về.", rhythm_body, "gan-nhip"),
-        _section("Đầu, đuôi, tổng và nhóm ĐB", "Nhóm ít giá trị nên dùng biểu đồ thanh; bảng chỉ giữ phần chi tiết cần đối chiếu.", group_body, "dau-duoi-tong"),
-        _section("Cặp lộn và kép-bóng", "Cặp lộn gồm 45 cặp đảo chiều; năm cặp kép dùng quan hệ bóng (00-55, 11-66, 22-77, 33-88, 44-99).", pair_body, "cap-lon"),
-        _section("Bảng đặc biệt và giải nhất", "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng biểu đồ/bảng gan riêng.", board_body, "bang-db"),
-        _section("Điều kiện lịch sử", "Các bảng này có nhiều dòng và nhiều điều kiện, vì vậy giữ dạng bảng có lọc nhanh thay vì ép thành ma trận.", conditional_body, "dieu-kien"),
-        _section("Quy tắc chọn loại hiển thị", "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.", qa_body, "ui-ux"),
+        _section(
+            "Tần suất loto ngày / tuần / tháng / năm",
+            "Các thống kê phủ 00–99 nên hiển thị bằng ma trận 10x10 để so sánh bằng màu thay vì đọc bảng dài.",
+            matrix_body,
+            "ma-tran-loto",
+        ),
+        _section(
+            "Tần suất ĐB ngày / tuần / tháng / năm",
+            "ĐB có mật độ thấp hơn loto; ma trận vẫn giúp phát hiện vùng số nổi bật trong tháng/năm.",
+            de_body,
+            "ma-tran-db",
+        ),
+        _section(
+            "Cầu-kèo AI/ML và tín hiệu xếp hạng",
+            "Phần AI/ML được trình bày bằng ma trận, biểu đồ xếp hạng, bảng giải thích và kết quả kiểm định để dễ so sánh lẫn kiểm chứng.",
+            ai_body,
+            "ai-ml",
+        ),
+        _section(
+            "Bảng vị trí đường cầu và căn cứ khi bấm số",
+            "Mỗi số có bảng căn cứ riêng: vị trí chữ số, ngày gốc, độ trễ, hiệu suất lịch sử và nhận định AI/ML.",
+            position_body,
+            "can-cu-cau",
+        ),
+        _section(
+            "Gan, nhịp và chu kỳ",
+            "Khoảng cách xuất hiện hiện tại nên hiển thị bằng ma trận nhiệt và biểu đồ xếp hạng để nhận biết số lâu chưa về.",
+            rhythm_body,
+            "gan-nhip",
+        ),
+        _section(
+            "Đầu, đuôi, tổng và nhóm ĐB",
+            "Nhóm ít giá trị nên dùng biểu đồ thanh; bảng chỉ giữ phần chi tiết cần đối chiếu.",
+            group_body,
+            "dau-duoi-tong",
+        ),
+        _section(
+            "Cặp lộn và kép-bóng",
+            "Cặp lộn gồm 45 cặp đảo chiều; năm cặp kép dùng quan hệ bóng (00-55, 11-66, 22-77, 33-88, 44-99).",
+            pair_body,
+            "cap-lon",
+        ),
+        _section(
+            "Bảng đặc biệt và giải nhất",
+            "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng biểu đồ/bảng gan riêng.",
+            board_body,
+            "bang-db",
+        ),
+        _section(
+            "Điều kiện lịch sử",
+            "Các bảng này có nhiều dòng và nhiều điều kiện, vì vậy giữ dạng bảng có lọc nhanh thay vì ép thành ma trận.",
+            conditional_body,
+            "dieu-kien",
+        ),
+        _section(
+            "Quy tắc chọn loại hiển thị",
+            "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.",
+            qa_body,
+            "ui-ux",
+        ),
     ]
 
     html_doc = f"""<!doctype html>
@@ -858,6 +1012,7 @@ def main() -> None:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
   <title>Bảng điều khiển thống kê XSMB</title>
+  {stylesheet_link()}
   <style>
     :root {{
       --bg: #0b1020;
@@ -881,7 +1036,7 @@ def main() -> None:
     html {{ scroll-behavior: smooth; }}
     body {{
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: var(--vla-font);
       color: var(--text);
       background:
         radial-gradient(circle at 8% -8%, rgba(37,99,235,0.55), transparent 30%),
@@ -1572,7 +1727,7 @@ def main() -> None:
   </header>
 
   <main>
-    <div class="metric-grid">{''.join(metrics)}</div>
+    <div class="metric-grid">{"".join(metrics)}</div>
     <nav class="sticky-nav" aria-label="Điều hướng nhanh">
       <a href="#ma-tran-loto">Loto ngày/tuần/tháng/năm</a>
       <a href="#ma-tran-db">ĐB ngày/tuần/tháng/năm</a>
@@ -1586,10 +1741,10 @@ def main() -> None:
       <a href="#ui-ux">Quy tắc UI</a>
     </nav>
 
-    {''.join(sections)}
+    {"".join(sections)}
 
     <p class="footer-note">
-      Tạo lúc: {html.escape(generated)} · Dữ liệu đến: {html.escape(str(as_of or 'Không có'))}
+      Tạo lúc: {html.escape(generated)} · Dữ liệu đến: {html.escape(str(as_of or "Không có"))}
       · Manifest: <code>data/advanced/statistics_manifest.json</code>.
       Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
     </p>
@@ -1796,6 +1951,7 @@ def main() -> None:
 </html>
 """
     html_doc = "\n".join(line.rstrip() for line in html_doc.splitlines()) + "\n"
+    write_stylesheet(docs)
     (docs / "statistics.html").write_text(html_doc, encoding="utf-8")
     print("Wrote:", docs / "statistics.html")
 

@@ -15,7 +15,8 @@ from ui_theme import (
     page_header,
     shell_close,
     shell_open,
-    tailwind_style_tag,
+    stylesheet_link,
+    write_stylesheet,
 )
 from web_security import security_meta_tags
 
@@ -49,17 +50,11 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
             "",
         )
 
-    cols = [
-        c
-        for c in ["predict_for_date", "number", "prob_percent", "prob"]
-        if c in df.columns
-    ]
+    cols = [c for c in ["predict_for_date", "number", "prob_percent", "prob"] if c in df.columns]
     view = df[cols].copy()
 
     if "prob_percent" in view.columns:
-        view["prob_percent"] = (
-            view["prob_percent"].astype(float).map(lambda x: f"{x:.3f}%")
-        )
+        view["prob_percent"] = view["prob_percent"].astype(float).map(lambda x: f"{x:.3f}%")
     if "prob" in view.columns:
         view["prob"] = view["prob"].astype(float).map(lambda x: f"{x:.6f}")
 
@@ -89,7 +84,7 @@ def _base_page(body: str, page_title: str) -> str:
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   {security_meta_tags()}
-  {tailwind_style_tag()}
+  {stylesheet_link()}
   <title>{page_title}</title>
 </head>
 <body>
@@ -111,44 +106,53 @@ def build() -> None:
 
     loto_page = _base_page(
         body=f"""
-{page_header(
-    "Dự báo ML — 10 số lô tô đứng đầu",
-    "Xác suất mô hình học máy cho dải 00–99. Sau 18:35 (giờ Việt Nam) quy "
-    "trình sẽ cập nhật dự báo cho ngày hôm sau.",
-)}
+{
+            page_header(
+                "Dự báo ML — 10 số lô tô đứng đầu",
+                "Xác suất mô hình học máy cho dải 00–99. Sau 18:35 (giờ Việt Nam) quy "
+                "trình sẽ cập nhật dự báo cho ngày hôm sau.",
+            )
+        }
 {nav_links(NAV, current="ml_top10_loto.html")}
 <div class="vla-grid">
-{card(
-    loto_table,
-    title="10 số lô tô đứng đầu (00–99)",
-    aside=_date_badge(loto_date),
-    span=12,
-    flush=True,
-    lift=True,
-)}
+{
+            card(
+                loto_table,
+                title="10 số lô tô đứng đầu (00–99)",
+                aside=_date_badge(loto_date),
+                span=12,
+                flush=True,
+                lift=True,
+            )
+        }
 </div>
 """,
         page_title="ML — 10 số lô tô đứng đầu",
     )
+    write_stylesheet(DOCS_DIR)
     (DOCS_DIR / "ml_top10_loto.html").write_text(loto_page, encoding="utf-8")
 
     de_page = _base_page(
         body=f"""
-{page_header(
-    "Dự báo ML — 10 số Đặc Biệt đứng đầu",
-    "Hai số cuối giải Đặc Biệt. Mô hình chuẩn hóa xác suất thành phân phối "
-    "00–99 (tổng xấp xỉ 1).",
-)}
+{
+            page_header(
+                "Dự báo ML — 10 số Đặc Biệt đứng đầu",
+                "Hai số cuối giải Đặc Biệt. Mô hình chuẩn hóa xác suất thành phân phối "
+                "00–99 (tổng xấp xỉ 1).",
+            )
+        }
 {nav_links(NAV, current="ml_top10_de.html")}
 <div class="vla-grid">
-{card(
-    de_table,
-    title="10 số Đặc Biệt đứng đầu (2 số cuối ĐB)",
-    aside=_date_badge(de_date),
-    span=12,
-    flush=True,
-    lift=True,
-)}
+{
+            card(
+                de_table,
+                title="10 số Đặc Biệt đứng đầu (2 số cuối ĐB)",
+                aside=_date_badge(de_date),
+                span=12,
+                flush=True,
+                lift=True,
+            )
+        }
 </div>
 """,
         page_title="ML — 10 số Đặc Biệt đứng đầu",
@@ -156,11 +160,13 @@ def build() -> None:
     (DOCS_DIR / "ml_top10_de.html").write_text(de_page, encoding="utf-8")
 
     index_body = f"""
-{page_header(
-    "Bảng điều khiển phân tích xổ số",
-    "Dữ liệu lấy từ data/ml/predict_next_*_ml_top10.csv. Nếu chưa thấy số "
-    "mới, hãy chạy GitHub Actions sau 18:35 (giờ Việt Nam).",
-)}
+{
+        page_header(
+            "Bảng điều khiển phân tích xổ số",
+            "Dữ liệu lấy từ data/ml/predict_next_*_ml_top10.csv. Nếu chưa thấy số "
+            "mới, hãy chạy GitHub Actions sau 18:35 (giờ Việt Nam).",
+        )
+    }
 {nav_links(NAV, current="index.html")}
 <div class="vla-tabs">
   <button class="tabbtn active" data-tab="loto" type="button">LÔ (00–99)</button>
@@ -168,24 +174,28 @@ def build() -> None:
 </div>
 <div id="panel-loto" class="panel active">
   <div class="vla-grid">
-  {card(
-      loto_table,
-      title="10 số lô tô đứng đầu",
-      aside=_date_badge(loto_date),
-      span=12,
-      flush=True,
-  )}
+  {
+        card(
+            loto_table,
+            title="10 số lô tô đứng đầu",
+            aside=_date_badge(loto_date),
+            span=12,
+            flush=True,
+        )
+    }
   </div>
 </div>
 <div id="panel-de" class="panel">
   <div class="vla-grid">
-  {card(
-      de_table,
-      title="10 số Đặc Biệt đứng đầu",
-      aside=_date_badge(de_date),
-      span=12,
-      flush=True,
-  )}
+  {
+        card(
+            de_table,
+            title="10 số Đặc Biệt đứng đầu",
+            aside=_date_badge(de_date),
+            span=12,
+            flush=True,
+        )
+    }
   </div>
 </div>
 
