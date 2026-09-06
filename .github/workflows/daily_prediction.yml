@@ -1,0 +1,93 @@
+name: Dự đoán hằng ngày
+
+on:
+  schedule:
+    # 11:35 UTC = 18:35 Asia/Ho_Chi_Minh (UTC+7), ngay sau giờ quay thưởng 18:30.
+    - cron: "35 11 * * *"
+    # Kết quả kỳ mới thường vào kho muộn hơn mốc trên. Vài mốc dự phòng để lượt
+    # đầu trượt không đẩy dự đoán sang tận hôm sau.
+    - cron: "15 12 * * *"
+    - cron: "15 13 * * *"
+  workflow_run:
+    # Chạy ngay khi kết quả kỳ mới vừa vào kho, thay vì chờ mốc giờ kế tiếp.
+    workflows: ["Hoàn tất XSMB, thống kê và AI/ML"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Dùng chung nhóm với pipeline dữ liệu để hai quy trình xếp hàng thay vì cùng
+# ghi vào kho một lúc và đá nhau khi push.
+concurrency:
+  group: daily-xsmb-pipeline
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    name: Sinh dự đoán cho kỳ kế tiếp
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+      TZ: Asia/Ho_Chi_Minh
+      OMP_NUM_THREADS: "1"
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cài đặt thư viện phụ thuộc
+        run: pip install -r requirements.txt
+
+      - name: Sinh dự đoán
+        id: predict
+        run: |
+          set -euo pipefail
+          # Mã nguồn tự dừng sạch khi dữ liệu chưa về hoặc kỳ đích đã quay xong.
+          # Đó là kết quả hợp lệ của một lượt chạy sớm, không phải sự cố, nên
+          # lượt chạy được đánh dấu bỏ qua thay vì làm đỏ workflow.
+          if python src/run_daily_prediction.py; then
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "generated=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Chưa sinh được dự đoán ở lượt này; mốc giờ sau sẽ thử lại."
+          fi
+
+      - name: Ghi kết quả vào kho
+        if: steps.predict.outputs.generated == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/predictions_today.json
+          if git diff --cached --quiet; then
+            echo "Dự đoán không đổi so với lần chạy trước."
+            exit 0
+          fi
+
+          TARGET_DATE="$(python -c "import json;print(json.load(open('data/predictions_today.json'))['date'])")"
+          git commit -m "data: dự đoán cho kỳ ${TARGET_DATE}"
+
+          # Pipeline dữ liệu có thể vừa push trong lúc job này chạy; rebase rồi
+          # thử lại thay vì hỏng ở lần đẩy đầu tiên.
+          for attempt in 1 2 3 4; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" \
+               && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Đã đẩy ở lần thử ${attempt}."
+              exit 0
+            fi
+            sleep $((2 ** attempt))
+          done
+          echo "::error::Không đẩy được sau 4 lần thử."
+          exit 1

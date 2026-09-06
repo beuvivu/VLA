@@ -51,6 +51,7 @@ class PredictionBundle:
     disclaimer: str
     schema_version: str = SCHEMA_VERSION
     evidence: dict[str, Any] = field(default_factory=dict)
+    gan_flagged: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
