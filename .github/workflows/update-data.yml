@@ -13,6 +13,10 @@ on:
       - "requirements*.txt"
       - "pyproject.toml"
       - ".github/workflows/update-data.yml"
+  repository_dispatch:
+    # Đường chạy ĐÚNG GIỜ khi có bộ lập lịch bên ngoài gọi vào. Lịch của GitHub
+    # chỉ là "cố gắng tốt nhất": trên kho này đo được độ trễ 2,5–4 giờ.
+    types: [daily-finalize]
   workflow_dispatch:
     inputs:
       reason:
@@ -21,20 +25,23 @@ on:
         default: "manual"
         type: string
   schedule:
-    # IMPORTANT: keep schedules in UTC. Vietnam is UTC+7.
-    # Multiple independent start windows reduce the chance that a delayed/dropped
-    # GitHub scheduled event leaves the canonical daily result stale.
-    # Local VN fallback times: 18:30, 18:40, 18:50, 19:00, 19:10,
-    # 19:20, 19:30, 19:45 and 20:00.
-    - cron: "30 11 * * *"
-    - cron: "40 11 * * *"
-    - cron: "50 11 * * *"
-    - cron: "0 12 * * *"
-    - cron: "10 12 * * *"
-    - cron: "20 12 * * *"
-    - cron: "30 12 * * *"
-    - cron: "45 12 * * *"
-    - cron: "0 13 * * *"
+    # Lịch tính theo UTC; Việt Nam là UTC+7. Giờ VN tương ứng: 18:33, 18:41,
+    # 18:53, 19:07, 19:19, 19:27, 19:39, 19:51, 20:09.
+    #
+    # Phút lẻ là có chủ đích. Hàng đợi lịch của GitHub dồn nặng nhất ở phút :00
+    # và :30, và độ trễ đo được trên kho này là 2,5–4 giờ (mốc 11:30 UTC thực
+    # tế nổ lúc 13:57–15:27 UTC trong năm ngày liên tiếp). Rải ở phút lẻ giảm
+    # bớt xác suất trượt chứ KHÔNG loại bỏ được độ trễ — đường chạy đúng giờ
+    # chắc chắn là repository_dispatch ở trên.
+    - cron: "33 11 * * *"
+    - cron: "41 11 * * *"
+    - cron: "53 11 * * *"
+    - cron: "7 12 * * *"
+    - cron: "19 12 * * *"
+    - cron: "27 12 * * *"
+    - cron: "39 12 * * *"
+    - cron: "51 12 * * *"
+    - cron: "9 13 * * *"
 
 permissions:
   contents: read
@@ -104,7 +111,7 @@ jobs:
 
           event_name = os.environ.get("EVENT_NAME", "")
           dispatch_reason = os.environ.get("DISPATCH_REASON", "manual")
-          forced = event_name in {"workflow_dispatch", "push"}
+          forced = event_name in {"workflow_dispatch", "repository_dispatch", "push"}
           live_verified = event_name == "workflow_dispatch" and dispatch_reason == "live_verified"
           if live_verified:
               target = now.date()

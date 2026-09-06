@@ -9,7 +9,21 @@
   <link rel="stylesheet" href="assets/vla.css" />
   <style>
     :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
-           --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827; }
+           --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827;
+
+           /* Trang này luôn dùng bảng màu tối riêng, kể cả khi hệ điều hành đặt
+              chế độ sáng. Ánh xạ bảng đó lên token của biểu định kiểu chung để
+              MỌI thành phần dùng chung (.vla-empty, .vla-table, badge…) đọc
+              được trên nền tối. Thiếu bước này, khối trạng thái rỗng lấy màu
+              chữ #0f172a của chế độ sáng đặt lên card #0f172a — tỉ lệ tương
+              phản 1.00:1, tức chữ vô hình hoàn toàn. */
+           --vla-bg:#0b0f17; --vla-surface:#0f172a; --vla-surface-2:#111827;
+           --vla-ink:#f1f5f9; --vla-ink-2:#e5e7eb; --vla-ink-soft:#cbd5e1;
+           --vla-ink-muted:#94a3b8;
+           --vla-border:#1f2937; --vla-border-strong:#243041;
+           --vla-brand:#93c5fd; --vla-brand-ink:#bfdbfe; --vla-brand-soft:#172554;
+           --vla-brand-border:#1e3a8a;
+           color-scheme:dark; }
     body{margin:0;font-family:var(--vla-font); background:var(--bg); color:var(--text);}
     a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
     .wrap{max-width:1200px;margin:0 auto;padding:20px}

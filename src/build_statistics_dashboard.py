@@ -24,7 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
-from ui_theme import stylesheet_link, write_stylesheet
+from ui_theme import readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
 WEEKDAY_COLS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
@@ -179,8 +179,10 @@ def _color_from_value(value: float, lo: float, hi: float, *, scheme: str) -> tup
     else:
         c = _mix(stops[2], stops[3], (t - 0.72) / 0.28)
     r, g, b = c
-    luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
-    text = "#f8fafc" if luminance < 0.52 else "#0f172a"
+    # Ngưỡng độ sáng cố định không đảm bảo được chuẩn AA: đo trên trang thật,
+    # chữ #f8fafc trên nền #f66b18 chỉ đạt 2,85:1. Chọn theo tỉ lệ tương phản
+    # thực tế thì mọi nền trong dải đều đạt ít nhất 4,50:1.
+    text = readable_ink(f"#{r:02x}{g:02x}{b:02x}")
     return f"rgb({r},{g},{b})", text
 
 
@@ -1019,7 +1021,7 @@ def main() -> None:
       --surface: rgba(255,255,255,0.92);
       --surface-strong: #ffffff;
       --text: #111827;
-      --muted: #64748b;
+      --muted: #55606f;
       --line: rgba(15,23,42,0.10);
       --blue: #2563eb;
       --violet: #7c3aed;
@@ -1629,7 +1631,7 @@ def main() -> None:
     }}
     .evidence-metric span {{
       display: block;
-      color: #64748b;
+      color: #55606f;
       font-size: 11px;
       font-weight: 850;
       text-transform: uppercase;
