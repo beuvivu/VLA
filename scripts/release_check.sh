@@ -286,7 +286,12 @@ printf '%s\n' "== Model skill vs baseline =="
 # Báo động khi mô hình tệ hơn đường cơ sở quá ngưỡng. Đợt hồi quy 12/2025-01/2026
 # (kỹ năng lô tô khoảng -73% suốt 22 ngày) đã trôi qua tám tháng không ai phát
 # hiện vì không có bước đối chứng nào như thế này.
-python src/check_baseline_skill.py
+#
+# --require-baseline: lịch sử đã được sinh lại đối chứng cho toàn bộ 219 ngày,
+# nên thiếu cột baseline từ nay là dấu hiệu pipeline hỏng, không phải dữ liệu
+# chưa kịp tích. Không có cờ này, một thay đổi làm pipeline ngừng ghi đối chứng
+# sẽ tự tắt cổng trong im lặng - đúng lớp lỗi mà cổng sinh ra để chặn.
+python src/check_baseline_skill.py --require-baseline
 
 printf '%s\n' "== Post-build production consistency =="
 python src/production_audit.py \
