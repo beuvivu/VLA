@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
 from ui_locale import mode_label, path_kind_label
+from ui_theme import dock, nav_fallback
 from xsmb_domain import baseline_rate
 from web_security import security_meta_tags
 
@@ -216,6 +217,10 @@ def _render_page(
         days=days,
         rows=rows,
         picks=picks,
+        # Bốn trang soi cầu trước đây KHÔNG có phần tử <nav> nào: người đọc tới
+        # đó rồi không đi tiếp được đâu ngoài nút back của trình duyệt.
+        dock_html=dock(out_path.name),
+        nav_fallback_html=nav_fallback(),
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(html, encoding="utf-8")

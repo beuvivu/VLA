@@ -37,18 +37,42 @@ def test_pages_exist() -> None:
 # --- Font ------------------------------------------------------------------
 
 
-def test_shared_css_declares_aptos_first() -> None:
+def test_shared_css_declares_self_hosted_inter_first() -> None:
+    """Phông đầu chuỗi phải là phông ta THẬT SỰ phân phối được.
+
+    Bản trước khai báo Aptos, nhưng CSP đặt ``font-src 'self'`` và kho không có
+    tệp phông nào — nên trang chưa bao giờ hiển thị bằng Aptos trừ máy đã cài
+    sẵn Microsoft 365. Aptos cũng không được phép phân phối lại nên không thể
+    tự host hợp pháp.
+    """
     match = re.search(r"--vla-font:([^;]+);", TAILWIND_LITE_CSS)
     assert match, "không tìm thấy token --vla-font"
-    assert match.group(1).strip().startswith("Aptos")
+    assert match.group(1).strip().startswith('"Inter var"')
 
 
 def test_shared_css_has_a_real_fallback_chain() -> None:
-    """Aptos chỉ có trên máy cài Microsoft 365; thiếu fallback là hỏng bố cục."""
+    """Phông tải chậm hoặc hỏng thì vẫn phải có chuỗi dự phòng hợp lệ."""
     match = re.search(r"--vla-font:([^;]+);", TAILWIND_LITE_CSS)
     families = [f.strip().strip('"') for f in match.group(1).split(",")]
     assert "system-ui" in families
     assert families[-1] == "sans-serif"
+
+
+def test_font_face_points_at_a_file_that_exists() -> None:
+    """Khai báo @font-face trỏ tới tệp không tồn tại là một tham chiếu chết."""
+    match = re.search(r'src:url\("([^"]+)"\)', TAILWIND_LITE_CSS)
+    assert match, "không tìm thấy @font-face"
+    assert (DOCS / "assets" / match.group(1)).exists()
+
+
+def test_font_face_covers_the_whole_weight_range() -> None:
+    """Bản variable phải khai báo đủ dải, nếu không trình duyệt tự làm đậm giả."""
+    assert "font-weight:100 900" in TAILWIND_LITE_CSS
+
+
+def test_font_display_swap_avoids_invisible_text() -> None:
+    """Thiếu font-display:swap thì chữ vô hình trong lúc tải 172 KB phông."""
+    assert "font-display:swap" in TAILWIND_LITE_CSS
 
 
 def _effective_css(page: Path) -> str:
@@ -85,9 +109,22 @@ def test_no_page_loads_a_font_from_an_external_host() -> None:
         assert "@font-face" not in text, page.name
 
 
-def test_no_font_file_is_committed_to_docs() -> None:
-    for suffix in ("*.woff", "*.woff2", "*.ttf", "*.otf"):
-        assert not list(DOCS.rglob(suffix)), f"tệp font {suffix} không được phân phối lại"
+def test_only_the_licensed_font_is_distributed() -> None:
+    """Chỉ được phân phối phông có giấy phép cho phép, và phải kèm giấy phép.
+
+    Đảo ngược hẳn phép kiểm cũ ("không được có tệp phông nào"), vốn đúng khi
+    phông duy nhất được nhắc tới là Aptos — thứ không được phép redistribute.
+    Inter theo SIL OFL thì được, với điều kiện giữ nguyên văn bản giấy phép đi
+    kèm; đó chính là điều kiện phép kiểm này canh.
+    """
+    fonts = [f for suffix in ("*.woff", "*.woff2", "*.ttf", "*.otf") for f in DOCS.rglob(suffix)]
+    assert [f.name for f in fonts] == ["InterVariable.woff2"], (
+        f"chỉ phân phối phông đã cấp phép, thấy: {[f.name for f in fonts]}"
+    )
+    assert (DOCS / "assets" / "Inter-LICENSE.txt").exists(), "thiếu giấy phép đi kèm phông"
+    assert "SIL Open Font License" in (DOCS / "assets" / "Inter-LICENSE.txt").read_text(
+        encoding="utf-8"
+    )
 
 
 # --- Biểu định kiểu dùng chung --------------------------------------------
@@ -124,21 +161,79 @@ def test_dark_theme_covers_all_three_viewer_states() -> None:
 # --- Sidebar thu gọn -------------------------------------------------------
 
 
-def test_sidebar_state_persists_in_local_storage() -> None:
-    for name in ("index.html", "dashboard.html"):
-        text = (DOCS / name).read_text(encoding="utf-8")
-        assert "vla-sidebar-collapsed" in text, name
-        assert "localStorage" in text, name
+DOCK_PAGES = (
+    "index.html",
+    "dashboard.html",
+    "research-lab.html",
+    "soi-path-loto-active.html",
+)
 
 
-def test_sidebar_toggle_is_reachable_by_keyboard_and_screen_readers() -> None:
-    for name in ("index.html", "dashboard.html"):
+def test_sidebar_is_gone_from_every_page() -> None:
+    """Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết."""
+    for page in PAGES:
+        soup = _soup(page)
+        assert not soup.select(".sidebar, .vla-side"), f"{page.name} vẫn còn sidebar"
+
+
+def test_dock_replaces_it_on_the_main_pages() -> None:
+    for name in DOCK_PAGES:
         soup = _soup(DOCS / name)
-        button = soup.find("button", id=re.compile("toggle"))
-        assert button is not None, name
-        assert button.get("aria-expanded") is not None, name
-        # Nút chỉ có biểu tượng; thiếu nhãn ẩn thì chỉ nghe thấy "nút".
-        assert button.find(class_=re.compile("sr-only")) is not None, name
+        assert soup.select(".dock, .vla-dock"), f"{name} thiếu dock"
+
+
+def test_dock_shows_one_button_per_navigation_group() -> None:
+    """17 đích là quá nhiều cho một dock; gom theo 5 nhóm của SITE_NAV.
+
+    Trang landing có thêm một nhóm "Trên trang" chứa neo cuộn nội bộ, nên số
+    nút là 5 hoặc 6 — phép kiểm canh cận dưới và cận trên chứ không ghim cứng.
+    """
+    for name in DOCK_PAGES:
+        soup = _soup(DOCS / name)
+        buttons = soup.select(".dock-btn, .vla-dock-btn")
+        assert len(SITE_NAV) <= len(buttons) <= len(SITE_NAV) + 1, (
+            f"{name}: {len(buttons)} nút / {len(SITE_NAV)} nhóm"
+        )
+
+
+def test_dock_popovers_reach_every_destination() -> None:
+    """Mọi đích của SITE_NAV phải tới được; neo trong trang là phần thêm."""
+    for name in DOCK_PAGES:
+        soup = _soup(DOCS / name)
+        hrefs = {a.get("href") for a in soup.select(".dock-pop a, .vla-dock-pop a")}
+        expected = {href for _, items in SITE_NAV for href, _, _ in items}
+        assert expected <= hrefs, f"{name}: thiếu {sorted(expected - hrefs)}"
+
+
+def test_landing_dock_keeps_in_page_anchors() -> None:
+    """Bỏ sidebar cũng bỏ neo cuộn; trang này cao khoảng 12 000px."""
+    hrefs = {a.get("href") for a in _soup(DOCS / "index.html").select(".dock-pop a")}
+    anchors = {h for h in hrefs if h and h.startswith("#")}
+    assert len(anchors) >= 10, f"chỉ còn {len(anchors)} neo trong trang"
+    for required in ("#tong-quan", "#ket-qua", "#duong-cau", "#backtest"):
+        assert required in anchors, required
+
+
+def test_dock_popovers_open_on_focus_not_only_hover() -> None:
+    """Chỉ mở bằng :hover thì người dùng bàn phím không tới được mục con."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
+    assert "focus-within" in css
+
+
+def test_dock_magnification_uses_the_agreed_easing() -> None:
+    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
+    assert "cubic-bezier(.25, 1, .5, 1)" in css or "cubic-bezier(.25,1,.5,1)" in css
+
+
+def test_dock_motion_respects_reduced_motion_preference() -> None:
+    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
+    assert "prefers-reduced-motion" in css
+
+
+def test_no_page_is_a_navigation_dead_end() -> None:
+    """Bốn trang soi cầu, research-lab và live từng không có <nav> nào."""
+    for page in PAGES:
+        assert _soup(page).select("nav a"), f"{page.name} không có liên kết điều hướng nào"
 
 
 # --- Điều hướng ------------------------------------------------------------
@@ -338,14 +433,13 @@ def test_a_page_with_paths_renders_no_empty_state() -> None:
 
 
 def test_landing_section_order_matches_the_agreed_flow() -> None:
-    """Live → kết quả → chục×đơn vị + ma trận → mô phỏng → ngày mai → thống kê."""
+    """Live → (kết quả | chục×đơn vị) → ma trận full → ngày mai → thống kê."""
     ids = [s.get("id") for s in _soup(DOCS / "index.html").find_all("section")]
     expected = [
         "live",
         "ket-qua",
         "chuc-don-vi",
         "ma-tran-ngay",
-        "mo-phong",
         "ai-ml",
         "tan-suat-loto",
     ]
@@ -353,20 +447,67 @@ def test_landing_section_order_matches_the_agreed_flow() -> None:
     assert positions == sorted(positions), dict(zip(expected, positions, strict=True))
 
 
-def test_side_by_side_blocks_use_a_stretching_grid() -> None:
-    """align-items:start là nguyên nhân các khối cùng hàng cao thấp lệch nhau."""
+def test_top_row_pairs_results_with_digit_spread_and_stretches() -> None:
+    """Tầng 1: kết quả ~58% cạnh chục×đơn vị ~42%, cân bằng chiều cao."""
     css = (DOCS / "index.html").read_text(encoding="utf-8")
-    pair = re.search(r"\.pair-row\s*\{([^}]*)\}", css)
-    assert pair and "stretch" in pair.group(1)
-    inspector = re.search(r"\.inspector\s*\{([^}]*)\}", css)
-    assert inspector and "stretch" in inspector.group(1)
-    assert "align-items: start" not in inspector.group(1)
+    top = re.search(r"\.matrix-top\s*\{([^}]*)\}", css)
+    assert top, "thiếu lưới .matrix-top"
+    body = top.group(1).replace(" ", "")
+    assert "minmax(0,58fr)minmax(0,42fr)" in body
+    assert "stretch" in body
 
 
-def test_evidence_block_is_a_three_column_grid() -> None:
+def test_top_row_columns_cannot_be_pushed_open_by_wide_tables() -> None:
+    """1fr mặc định là minmax(auto,1fr); bảng rộng sẽ phá vỡ tỉ lệ 58/42."""
     css = (DOCS / "index.html").read_text(encoding="utf-8")
-    inspector = re.search(r"\.inspector\s*\{([^}]*)\}", css)
-    assert "repeat(3," in inspector.group(1).replace(" ", "")
+    for name in ("matrix-top", "next-day", "inspector"):
+        rule = re.search(rf"\.{name}\s*\{{([^}}]*)\}}", css)
+        assert rule and "minmax(0," in rule.group(1).replace(" ", ""), name
+
+
+def test_daily_matrix_spans_the_full_width() -> None:
+    soup = _soup(DOCS / "index.html")
+    matrix = soup.find(id="ma-tran-ngay")
+    assert matrix is not None
+    assert "matrix-full" in (matrix.get("class") or [])
+
+
+def test_next_day_predictions_sit_on_one_row() -> None:
+    """Ba bảng ngày mai phải cùng một hàng, không xếp chồng."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8")
+    rule = re.search(r"\.next-day\s*\{([^}]*)\}", css)
+    assert rule and "repeat(3," in rule.group(1).replace(" ", "")
+    children = _soup(DOCS / "index.html").select(".next-day > *")
+    assert len(children) == 3, f"kỳ vọng 3 bảng, thấy {len(children)}"
+
+
+def test_next_day_order_is_simulation_then_special_then_loto() -> None:
+    soup = _soup(DOCS / "index.html")
+    children = soup.select(".next-day > *")
+    assert children[0].get("id") == "mo-phong"
+    text = " ".join(c.get_text(" ", strip=True)[:80] for c in children[1:])
+    assert text.index("Đặc biệt") < text.index("Lô tô")
+
+
+def test_evidence_tables_are_merged_into_one_card() -> None:
+    """Hai cột 445px làm cột "Tỷ lệ" bị cắt và bỏ trống ~45% chiều cao."""
+    soup = _soup(DOCS / "index.html")
+    merged = soup.select(".basis-merged")
+    assert len(merged) == 1, "thiếu khối hợp nhất"
+    sections = soup.select(".basis-merged > section")
+    assert len(sections) == 2, f"khối hợp nhất phải có 2 phần, thấy {len(sections)}"
+
+
+def test_merged_card_divider_sits_only_between_sections() -> None:
+    """border-top cho mọi con sẽ vẽ một đường thừa trên phần đầu."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    assert ".basis-merged>section+section{border-top:" in css
+
+
+def test_analysis_row_keeps_the_left_panel_independent() -> None:
+    css = (DOCS / "index.html").read_text(encoding="utf-8")
+    rule = re.search(r"\.inspector\s*\{([^}]*)\}", css)
+    assert "minmax(0,34fr)minmax(0,66fr)" in rule.group(1).replace(" ", "")
 
 
 def test_wide_tables_scroll_inside_their_own_container() -> None:
@@ -413,3 +554,38 @@ def test_predictions_output_is_still_valid_json() -> None:
     if not path.exists():
         pytest.skip("chưa sinh dự đoán")
     json.loads(path.read_text(encoding="utf-8"))
+
+
+# --- Bảng chỉ số ------------------------------------------------------------
+
+
+def test_metric_panel_has_six_cards() -> None:
+    """Bốn thẻ để lại khoảng trống mất cân đối ở dải bên phải."""
+    tiles = _soup(DOCS / "index.html").select(".metric-tile")
+    assert len(tiles) == 6, f"kỳ vọng 6 thẻ chỉ số, thấy {len(tiles)}"
+
+
+def test_metric_grid_reflows_without_per_breakpoint_rules() -> None:
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    assert "grid-template-columns:repeat(auto-fit,minmax(190px,1fr))" in css
+
+
+def test_long_metric_values_do_not_wrap() -> None:
+    """Ngày "2026-09-06" ở cỡ 42px xuống hai dòng thành "2026-09-" / "06"."""
+    soup = _soup(DOCS / "index.html")
+    long_tiles = [t for t in soup.select(".metric-tile") if t.get("data-long") == "true"]
+    assert long_tiles, "không thẻ nào được đánh dấu giá trị dài"
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    assert '.metric-tile[data-long="true"]strong{font-size:' in css
+
+
+def test_empty_simulation_block_does_not_leave_a_blank_column() -> None:
+    """Bảng mô phỏng được chèn ở bước sau; nếu bước đó trượt thì cột phải xẹp.
+
+    Trước khi vào lưới ba cột, ``#mo-phong`` là một section riêng chiếm trọn
+    chiều ngang, nên rỗng thì nó tự xẹp và không ai thấy. Trong lưới, một
+    section rỗng vẫn giữ nguyên một phần ba chiều ngang.
+    """
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    assert ".next-day>section:empty{display:none" in css
+    assert ".next-day:has(>section:empty)" in css

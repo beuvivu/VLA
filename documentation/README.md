@@ -17,6 +17,7 @@ forecasting guarantee.
 | [`research/source-comparison.md`](research/source-comparison.md) | Per-source public behaviour and the method comparison matrix. |
 | [`research/quantitative-architecture.md`](research/quantitative-architecture.md) | Quantitative research report: power analysis, seven Monte Carlo structure tests, eleven model families benchmarked walk-forward, backtesting protocol, evaluation metrics, and the proposed shrinkage-ensemble architecture. Written in Vietnamese. |
 | [`architecture/ml-engine.md`](architecture/ml-engine.md) | Technical blueprint for `src/ml_engine/`: input schema, module layout, discounted Thompson-sampling bandit, ADWIN/KS drift detection, walk-forward validation with Optuna, evaluation metrics and safe-mode fallback, with measured results. Written in Vietnamese. |
+| [`architecture/ui-dock-redesign.md`](architecture/ui-dock-redesign.md) | UI/UX redesign: floating dock replacing the sidebar, self-hosted Inter, six-card metrics panel, two-tier data matrix, three-column prediction row, merged evidence card, with before/after measurements. Written in Vietnamese. |
 | [`history/legacy-consolidation.md`](history/legacy-consolidation.md) | Consolidated migration, retirement acceptance and forensic re-audit record for the three predecessor repositories. |
 
 ## Related material outside this directory
