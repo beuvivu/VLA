@@ -1,0 +1,185 @@
+name: Thu thập XSMB đúng giờ
+
+# ĐƯỜNG CHẠY ĐÚNG GIỜ CHO KỲ QUAY HÀNG NGÀY
+#
+# Vì sao có tệp này, khi đã có live-results.yml và update-data.yml
+# ------------------------------------------------------------------
+# Hai workflow kia phụ thuộc vào việc bộ lập lịch của GitHub nổ 9-10 lần mỗi
+# ngày. Đo thật trên kho này trong 7 ngày:
+#
+#   * live-results.yml: 9 mốc/ngày, kỳ vọng ~63 lần nổ, THỰC TẾ 10 lần.
+#   * Mốc sớm nhất ngày 06-09 nổ lúc 12:58 UTC, trong khi mốc đầu là 06:37
+#     UTC — trễ 6 giờ 21 phút.
+#   * Với update-data.yml, mốc 11:33 UTC nổ lúc 13:57-15:05 UTC suốt 5 ngày
+#     liên tiếp (trễ 2h24m - 3h32m), và có ngày chỉ 6/9 mốc nổ.
+#
+# Đó KHÔNG phải nghẽn hàng đợi runner: mọi lần chạy đều có
+# run_started_at == created_at, tức chờ hàng đợi bằng 0 giây, và job chỉ chạy
+# 30-60 giây. Độ trễ nằm hoàn toàn ở khâu GitHub TẠO lần chạy. Vì thế việc
+# rải phút lẻ (kho này đã làm: 33, 41, 53, 7, 19...) không cứu được gì.
+#
+# Tệp này đảo ngược sự phụ thuộc đó:
+#   1. Đường chính là repository_dispatch từ bộ hẹn giờ BÊN NGOÀI (xem
+#      documentation/operations/on-time-trigger.md). Không đụng tới bộ lập
+#      lịch của GitHub.
+#   2. Một lần chạy tự thăm dò trong vòng lặp tới khi đủ 27 ô, nên chỉ cần
+#      được đánh thức MỘT lần thay vì mười lần.
+#   3. Lịch cron bên dưới chỉ là lưới an toàn cuối, không phải đường chính.
+
+on:
+  repository_dispatch:
+    # Đường ĐÚNG GIỜ. Bộ hẹn giờ bên ngoài POST vào lúc 18:10 giờ Việt Nam.
+    types: [daily-collect]
+
+  workflow_dispatch:
+    inputs:
+      window_start:
+        description: "Giờ bắt đầu thăm dò (HH:MM, giờ VN)"
+        required: false
+        default: "18:15"
+        type: string
+      deadline:
+        description: "Giờ bỏ cuộc (HH:MM, giờ VN)"
+        required: false
+        default: "19:30"
+        type: string
+
+  schedule:
+    # LƯỚI AN TOÀN, không phải đường chính. Ba mốc là đủ: mốc đầu bắt trường
+    # hợp bộ lập lịch chạy đúng giờ, hai mốc sau bắt trường hợp nó trễ vài
+    # giờ như số liệu bên trên. Thêm mốc nữa không tăng độ tin cậy vì mọi mốc
+    # đều rơi cùng một cách khi GitHub quá tải — nó chỉ tăng số lần chạy thừa.
+    #
+    # Giờ UTC; Việt Nam là UTC+7.
+    - cron: "8 11 * * *"    # 18:08 giờ VN
+    - cron: "26 12 * * *"   # 19:26 giờ VN
+    - cron: "34 14 * * *"   # 21:34 giờ VN
+
+permissions:
+  contents: read
+
+concurrency:
+  # KHÔNG dùng chung nhóm với daily-xsmb-pipeline: workflow này KÍCH HOẠT
+  # pipeline đó, nên chung nhóm sẽ tự khoá chính mình.
+  group: daily-xsmb-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Thăm dò tới khi đủ 27 ô
+    runs-on: ubuntu-latest
+
+    # Chặn runner treo. Trường hợp xấu nhất là được đánh thức lúc 18:08 rồi
+    # thăm dò tới hạn 19:30 = 82 phút, cộng nới cho khâu cài đặt.
+    timeout-minutes: 95
+
+    env:
+      # Đặt TZ ở cấp job để MỌI bước — kể cả `date` trong shell — cùng một múi
+      # giờ. Đặt lẻ ở từng bước là cách sinh ra loại lỗi lệch 7 tiếng mà nhật
+      # ký không bao giờ chỉ ra được.
+      TZ: Asia/Ho_Chi_Minh
+      PYTHONPATH: ${{ github.workspace }}/src
+      PYTHONUNBUFFERED: "1"
+
+    outputs:
+      verified: ${{ steps.poll.outputs.verified }}
+      verified_slots: ${{ steps.poll.outputs.verified_slots }}
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v7
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài thư viện tối thiểu
+        # Chỉ requests. Lớp thăm dò không đụng tới pandas/sklearn, và cài cả
+        # requirements.txt sẽ thêm 2-3 phút vào đường găng ĐÚNG GIỜ.
+        run: python -m pip install --no-cache-dir --upgrade requests
+
+      - name: Ghi nhận thời điểm khởi động
+        # Chênh lệch giữa mốc lịch và dòng này CHÍNH LÀ độ trễ của bộ lập
+        # lịch. Ghi lại để còn đo được, thay vì đoán.
+        run: |
+          echo "Sự kiện kích hoạt : ${{ github.event_name }}"
+          echo "Giờ Việt Nam      : $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "Giờ UTC           : $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: Thăm dò kết quả
+        id: poll
+        # Không để bước này làm đỏ job: "chưa đủ số" là một kết cục hợp lệ khi
+        # nguồn chậm, và lưới an toàn phía sau sẽ thử lại. Đỏ giả làm người ta
+        # quen với việc bỏ qua cảnh báo.
+        continue-on-error: true
+        run: |
+          python src/crawler/fetch_results.py \
+            --window-start "${{ github.event.inputs.window_start || '18:15' }}" \
+            --deadline "${{ github.event.inputs.deadline || '19:30' }}" \
+            --timeout 8 \
+            --min-agreement 2 \
+            --json-out "${RUNNER_TEMP}/poll.json"
+
+      - name: Tải lên nhật ký thăm dò
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poll-summary-${{ github.run_id }}
+          path: ${{ runner.temp }}/poll.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Kích hoạt quy trình hoàn tất
+        if: steps.poll.outputs.verified == 'true'
+        env:
+          # GITHUB_TOKEN kích hoạt được workflow_dispatch trên kho này — đã
+          # kiểm chứng: 11 trong 13 lần chạy workflow_dispatch của
+          # update-data.yml có actor là github-actions[bot].
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+
+          repo = os.environ["REPOSITORY"]
+          branch = os.environ.get("DEFAULT_BRANCH") or "main"
+          url = (
+              f"https://api.github.com/repos/{repo}"
+              "/actions/workflows/update-data.yml/dispatches"
+          )
+          payload = json.dumps(
+              {"ref": branch, "inputs": {"reason": "live_verified"}}
+          ).encode("utf-8")
+          request = urllib.request.Request(
+              url,
+              data=payload,
+              method="POST",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+              },
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  print(f"Đã kích hoạt update-data.yml, HTTP {response.status}")
+          except urllib.error.HTTPError as exc:
+              print(f"Kích hoạt thất bại: HTTP {exc.code} {exc.read()[:400]!r}")
+              raise
+          PY
+
+      - name: Kết luận
+        if: always()
+        run: |
+          if [ "${{ steps.poll.outputs.verified }}" = "true" ]; then
+            echo "::notice::Đủ 27/27 ô lúc $(date '+%H:%M:%S %Z'); đã kích hoạt hoàn tất."
+          else
+            echo "::warning::Mới có ${{ steps.poll.outputs.verified_slots || 0 }}/27 ô. Mốc sau sẽ thử lại."
+          fi
