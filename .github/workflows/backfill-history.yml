@@ -85,16 +85,50 @@ jobs:
         run: bash scripts/number_integrity_check.sh
 
       - name: Ghi nhận dữ liệu mới
+        # Lần chạy kéo dài hàng giờ, trong khi quy trình hàng ngày đẩy commit
+        # vào nhánh chính vài lần mỗi giờ. Đến lúc ghi thì checkout của runner
+        # đã cũ và `git push` bị từ chối — ĐÃ XẢY RA THẬT, mất trọn một lần
+        # chạy đã lấy xong 1,5 giờ dữ liệu.
+        #
+        # Rebase không giải được: hai bên thêm dòng ở hai đầu khác nhau của
+        # cùng một tệp nên git thấy xung đột nội dung. Ở mức dữ liệu thì không
+        # có xung đột: mỗi bản ghi khoá theo ngày. Vì thế cất kết quả ra ngoài
+        # cây làm việc, đồng bộ với nhánh chính, rồi hợp nhất theo ngày.
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           if git diff --quiet -- data/; then
             echo "::notice::Không có kỳ nào mới."
             exit 0
           fi
-          rows=$(($(wc -l < data/xsmb.csv) - 1))
-          git add data/
-          git commit -m "data: bổ sung lịch sử KQXS (${{ inputs.start }} → ${{ inputs.end || 'hôm qua' }}), tổng ${rows} kỳ"
-          git push
-          echo "::notice::Đã ghi. Tổng số kỳ: ${rows}"
+
+          cp data/xsmb.json "${RUNNER_TEMP}/backfill-store.json"
+
+          for attempt in 1 2 3 4 5; do
+            git checkout -- data/
+            git fetch origin "${GITHUB_REF_NAME}"
+            git reset --hard "origin/${GITHUB_REF_NAME}"
+
+            python src/backfill_history.py --merge-store "${RUNNER_TEMP}/backfill-store.json"
+
+            if git diff --quiet -- data/; then
+              echo "::notice::Nhánh chính đã có đủ dữ liệu; không cần ghi."
+              exit 0
+            fi
+
+            rows=$(($(wc -l < data/xsmb.csv) - 1))
+            git add data/
+            git commit -m "data: bổ sung lịch sử KQXS (${{ inputs.start }} → ${{ inputs.end || 'hôm qua' }}), tổng ${rows} kỳ"
+            if git push; then
+              echo "::notice::Đã ghi ở lần thử ${attempt}. Tổng số kỳ: ${rows}"
+              exit 0
+            fi
+            echo "::warning::Lần thử ${attempt} bị từ chối; nhánh chính vừa tiến lên. Hợp nhất lại."
+            git reset --hard HEAD~1
+            sleep $((attempt * 10))
+          done
+
+          echo "::error::Không đẩy được sau 5 lần thử."
+          exit 1
