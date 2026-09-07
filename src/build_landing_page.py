@@ -62,6 +62,19 @@ PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
 
 PRETTY_COLS = COLUMN_LABELS
 
+
+#: Nhãn cột rút gọn cho hai bảng đường cầu. Tiêu đề dài như "Độ trễ (ngày)"
+#: hay "Chuỗi hiện tại" đặt sàn bề rộng cho cột chỉ chứa MỘT chữ số — đo được
+#: 99px và 102px cho ô hiện "13" và "3". Rút gọn ở đây thay vì sửa
+#: COLUMN_LABELS dùng chung, vì bảng thống kê bên trang khác còn chỗ rộng.
+PATH_TABLE_LABELS = {
+    "lag_days": "Độ trễ",
+    "current_streak": "Chuỗi",
+    "hit_ratio": "Trúng/Mẫu",
+    "p_mean": "Tỷ lệ",
+    "rule_score": "Điểm",
+}
+
 PALETTES = {
     "blue": ("#eff6ff", "#2563eb"),
     "sky": ("#ecfeff", "#0891b2"),
@@ -564,6 +577,28 @@ def _render_bar_card(
     """
 
 
+def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Gộp ``hits`` và ``trials`` thành một cột ``hit_ratio`` dạng ``9/391``.
+
+    Hai cột riêng tốn 158px để hiện "3" và "379" — bề rộng do TIÊU ĐỀ "Số lần
+    trúng" đặt sàn chứ không phải do dữ liệu. Gộp lại còn ~90px mà không mất
+    thông tin nào, và "trúng/mẫu" đúng là cách khung căn cứ bên trái đã dùng.
+
+    Args:
+        df: Bảng có hai cột ``hits`` và ``trials``.
+
+    Returns:
+        Bản sao có thêm cột ``hit_ratio``; trả nguyên bản nếu thiếu cột nguồn.
+    """
+    if df.empty or not {"hits", "trials"} <= set(df.columns):
+        return df
+    out = df.copy()
+    out["hit_ratio"] = [
+        f"{h}/{t}" for h, t in zip(out["hits"], out["trials"], strict=True)
+    ]
+    return out
+
+
 def _render_table(
     *,
     title: str,
@@ -574,31 +609,45 @@ def _render_table(
     dense: bool = False,
     searchable: bool = False,
     number_mode: str = "loto",
+    labels: Mapping[str, str] | None = None,
 ) -> str:
     rows = _df_to_rows(df, columns, limit=limit)
     if not rows:
         body = "<div class='empty'>Chưa có dữ liệu.</div>"
     else:
         table_cols = list(rows[0].keys())
-        thead = "".join(f"<th>{html.escape(_pretty_col(c))}</th>" for c in table_cols)
+        # Lớp theo tên cột để CSS chỉnh bề rộng từng cột. Cách thay thế là
+        # nth-child, nhưng chỉ số cột đổi theo mỗi lần gọi _render_table nên
+        # quy tắc sẽ trượt sang cột khác lúc nào không hay.
+        overrides = dict(labels or {})
+        thead = "".join(
+            f'<th class="col-{html.escape(c)}">'
+            f"{html.escape(overrides.get(c) or _pretty_col(c))}</th>"
+            for c in table_cols
+        )
         trs = []
         for row in rows:
             cells = []
             for c in table_cols:
                 value = row.get(c, "")
                 s = str(value)
-                if c.endswith("rate") or c in {"hit_any_rate", "prob"}:
+                cls = f' class="col-{html.escape(c)}"'
+                if c.endswith("rate") or c in {"hit_any_rate", "prob", "p_mean"}:
+                    # p_mean từng in nguyên 8 chữ số thập phân ("0.02544529"):
+                    # vừa rộng vô ích vừa không ai đọc tới số thứ tám.
                     s = _pct(value)
                 elif c in {"number", "number_str", "next_loto", "prev_loto", "prev_special_2d"}:
                     s = _fmt2(value)
                     s = f"<button class='num-link' data-mode='{number_mode}' data-number='{s}'>{s}</button>"
-                    cells.append(f"<td>{s}</td>")
+                    cells.append(f"<td{cls}>{s}</td>")
                     continue
+                elif c == "rule_score":
+                    s = _fmt_num(value, decimals=1)
                 elif c == "mode":
                     s = mode_label(value)
                 elif c in {"score_band", "period_kind", "stage", "status"}:
                     s = str(value_label(value))
-                cells.append(f"<td>{html.escape(s)}</td>")
+                cells.append(f"<td{cls}>{html.escape(s)}</td>")
             trs.append("<tr>" + "".join(cells) + "</tr>")
         search = (
             "<input class='table-filter' type='search' placeholder='Lọc nhanh trong bảng...' aria-label='Lọc bảng'/>"
@@ -1518,26 +1567,38 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     .inspector > * {{ min-width: 0; }}
 
-    /* Khoá chiều cao khối dữ liệu bằng đúng chiều cao khung căn cứ bên trái.
-       Trước đây khối phải cao 1409px so với 912px bên trái — lệch 497px, đủ để
-       phá vỡ cảm giác cân đối của cả trang.
+    /* Cân bằng hai cột bằng cách GIỮ khung trái trong tầm mắt, không phải bằng
+       cách nhồi khối phải vào chiều cao của nó.
 
-       Không có cách CSS trực tiếp nào nói "cao bằng ô bên cạnh". Thủ thuật:
-       cho ô phải position:relative rồi trải nội dung bằng position:absolute
-       inset:0. Nội dung tuyệt đối không tham gia tính chiều cao hàng, nên hàng
-       chỉ còn do cột trái quyết định, và khối dữ liệu lấp đầy đúng bằng đó rồi
-       tự cuộn bên trong. */
-    .basis-cell {{ position: relative; min-height: 480px; }}
-    .basis-cell > .basis-merged {{
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      overflow: hidden;
+       Bản trước khoá chiều cao khối phải bằng đúng khung trái (absolute
+       inset:0). Nó chữa được độ lệch 497px nhưng đẻ ra lỗi nặng hơn: hai bảng
+       dữ liệu cần 874px và 1082px bị ép vào 511px mỗi bảng, và vì .table-wrap
+       vốn đã có max-height + overflow riêng nên sinh ra HAI thanh cuộn lồng
+       nhau trên cùng một trục — cuộn một cái không biết cái nào chạy. Tệ hơn,
+       .table-wrap cao 520px nằm trong section cao 511px, tức con cao hơn cha
+       nên hàng cuối bị cắt ngang.
+
+       Cách đúng: khung trái là bảng chú giải cho khối phải, nên cho nó dính
+       theo màn hình (đúng khuôn mẫu .right-rail đã dùng trong trang này). Khối
+       phải chảy tự nhiên, không thanh cuộn trong, không cắt xén, và mắt vẫn
+       thấy cả hai cùng lúc. sticky đòi ô lưới KHÔNG bị kéo giãn, nên phải có
+       align-self:start — align-items:stretch của .inspector sẽ vô hiệu hoá
+       sticky nếu thiếu dòng này. */
+    .basis-cell {{ min-width: 0; }}
+    .inspector > .inspect-panel {{
+      align-self: start;
+      position: sticky;
+      top: 22px;
+      max-height: calc(100vh - 44px);
+      overflow: auto;
+      scrollbar-width: thin;
     }}
     @media (max-width: 1100px) {{
       .inspector {{ grid-template-columns: minmax(0, 1fr); }}
-      /* Khi xếp dọc thì không còn ô nào để cao bằng; trả về luồng bình thường. */
-      .basis-cell {{ min-height: 0; }}
-      .basis-cell > .basis-merged {{ position: static; max-height: 78vh; }}
+      /* Xếp dọc thì không còn gì để dính theo; trả về luồng bình thường. */
+      .inspector > .inspect-panel {{
+        position: static; max-height: none; overflow: visible;
+      }}
     }}
 
     /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
@@ -1548,20 +1609,50 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       background: #fff;
       overflow: hidden;
     }}
-    /* Hai phần chia đôi chiều cao khả dụng và mỗi phần tự cuộn. min-height:0
-       là bắt buộc trên flex item: mặc định là auto nên phần tử không co được
-       nhỏ hơn nội dung, và overflow bên trong sẽ không bao giờ kích hoạt. */
-    .basis-merged > section {{
-      padding: 20px 24px; flex: 1 1 0; min-height: 0; overflow: auto;
-    }}
+    /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
+       chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
+       nhiên là đọc được trọn vẹn, không cắt hàng nào. */
+    .basis-merged > section {{ padding: 20px 24px; }}
     .basis-merged > section + section {{ border-top: 1px solid var(--line); }}
     .basis-merged > section > * {{ margin: 0; border: 0; box-shadow: none; padding: 0; }}
-    /* Thanh cuộn mảnh, không chiếm chỗ thị giác của dữ liệu. */
-    .basis-merged > section {{ scrollbar-width: thin; }}
-    .basis-merged > section::-webkit-scrollbar {{ width: 8px; }}
-    .basis-merged > section::-webkit-scrollbar-thumb {{
-      background: rgba(100,116,139,.34); border-radius: 999px;
+    /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
+       hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
+    .basis-merged .table-wrap {{ max-height: none; }}
+
+    /* Bề rộng cột cho hai bảng đường cầu.
+
+       Bảng có 10 cột trong ~925px. Để trình duyệt tự chia thì "Đường cầu" và
+       "Căn cứ" — hai cột chữ dài nhất — bị bóp xuống ~90px và xuống 3-4 dòng,
+       kéo hàng cao 83px ở bảng trên và 104px ở bảng dưới. Hai bảng cạnh nhau
+       cao lệch nhau trông như lỗi dựng.
+
+       Chữa bằng cách nói rõ cột nào ưu tiên bề rộng, thay vì để thuật toán
+       chia đều cho cả cột chỉ chứa một con số. */
+    .basis-merged .col-path_line {{ min-width: 190px; width: 26%; }}
+    .basis-merged .col-reason {{ min-width: 170px; width: 22%; }}
+    .basis-merged .col-rule_kind {{ width: 1%; }}
+    /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
+       lớn ngay mà không phải đọc từng chữ số.
+
+       nowrap chỉ áp cho ô DỮ LIỆU, không áp cho tiêu đề. Áp cả hai thì những
+       tiêu đề dài như "Độ trễ (ngày)" hay "Chuỗi hiện tại" tự đặt sàn bề rộng
+       cho cột, đẩy bảng lên 1051px trong khung 927px và sinh cuộn ngang. Tiêu
+       đề xuống hai dòng là chuyện bình thường ở bảng dày; số bị ngắt dòng mới
+       là lỗi. */
+    .basis-merged th.col-lag_days,
+    .basis-merged th.col-p_mean,
+    .basis-merged th.col-hit_ratio,
+    .basis-merged th.col-current_streak,
+    .basis-merged th.col-rule_score {{ text-align: right; width: 1%; }}
+    .basis-merged td.col-lag_days,
+    .basis-merged td.col-p_mean,
+    .basis-merged td.col-hit_ratio,
+    .basis-merged td.col-current_streak,
+    .basis-merged td.col-rule_score {{
+      white-space: nowrap; text-align: right; width: 1%;
+      font-variant-numeric: tabular-nums;
     }}
+    .basis-merged .col-number_str {{ width: 1%; }}
 
     /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
        định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
@@ -2107,10 +2198,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           <div class="basis-cell">
             <div class="basis-merged">
             <section>
-              {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=evidence_de, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de")}
+              {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=_hit_ratio_column(evidence_de), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de", labels=PATH_TABLE_LABELS)}
             </section>
             <section>
-              {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=evidence_loto, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True)}
+              {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=_hit_ratio_column(evidence_loto), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, labels=PATH_TABLE_LABELS)}
             </section>
             </div>
           </div>

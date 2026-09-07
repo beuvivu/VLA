@@ -714,26 +714,99 @@ def test_icon_magnification_stays_in_the_agreed_range(page: Path) -> None:
     assert re.search(r"dock-ic\{[^}]*transition:transform[^;]*ease-in-out", css), page.name
 
 
-def test_evidence_card_is_locked_to_the_left_panel_height() -> None:
-    """Trước: bảng căn cứ cao 1409px cạnh bảng dữ liệu 912px — lệch 497px.
+def test_evidence_columns_are_balanced_by_a_sticky_panel() -> None:
+    """Cân bằng bằng cách GIỮ khung trái trong tầm mắt, không nhồi khối phải.
 
-    Ô lưới cho chiều cao, thẻ bên trong trải tuyệt đối theo ô đó; nếu thẻ tự
-    tính chiều cao theo nội dung thì nó lại kéo cả hàng dài ra như cũ.
+    Bản trước khoá chiều cao khối phải bằng khung trái (absolute inset:0). Nó
+    chữa được độ lệch 497px nhưng ép hai bảng cần 874px và 1082px vào 511px
+    mỗi bảng. sticky đòi ô lưới không bị kéo giãn, nên align-self:start là bắt
+    buộc — align-items:stretch của .inspector sẽ vô hiệu hoá sticky nếu thiếu.
     """
-    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
-    assert re.search(r"\.basis-cell\{[^}]*position:relative", css)
-    assert re.search(r"\.basis-cell>\.basis-merged\{[^}]*position:absolute", css)
-    assert re.search(r"\.basis-cell>\.basis-merged\{[^}]*inset:0", css)
+    css = _css(DOCS / "index.html")
+    rule = re.search(r"\.inspector>\.inspect-panel\{([^}]*)\}", css)
+    assert rule, "không tìm thấy quy tắc sticky cho khung căn cứ"
+    body = rule.group(1)
+    assert "position:sticky" in body
+    assert "align-self:start" in body, "thiếu align-self:start thì sticky không có tác dụng"
 
 
-def test_evidence_sections_scroll_inside_the_locked_frame() -> None:
-    """Khoá chiều cao mà không cho cuộn trong thì nội dung bị cắt mất."""
-    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+def test_evidence_card_no_longer_locks_its_height() -> None:
+    """Thủ thuật absolute inset:0 phải đi hẳn, không chỉ bị ghi đè ở đâu đó."""
+    css = _css(DOCS / "index.html")
+    assert not re.search(r"\.basis-cell>\.basis-merged\{[^}]*position:absolute", css)
+
+
+def test_evidence_tables_have_exactly_one_scroll_container() -> None:
+    """Đây là lỗi thật đã thấy trên màn hình: HAI thanh cuộn lồng nhau.
+
+    section cuộn (511px chứa 695px) trong khi .table-wrap bên trong cũng cuộn
+    (520px chứa 874px). Cuộn một cái thì không biết cái nào chạy, và .table-wrap
+    cao 520px nằm trong section cao 511px nên hàng cuối bị cắt ngang.
+    """
+    css = _css(DOCS / "index.html")
     rule = re.search(r"\.basis-merged>section\{([^}]*)\}", css)
     assert rule, "không tìm thấy quy tắc cho section trong thẻ gộp"
-    body = rule.group(1)
-    assert "overflow:auto" in body
-    assert "min-height:0" in body, "thiếu min-height:0 thì flex item không co lại được"
+    assert "overflow:auto" not in rule.group(1), (
+        "section không được cuộn: .table-wrap bên trong đã là thanh cuộn rồi"
+    )
+    assert re.search(r"\.basis-merged\.table-wrap\{[^}]*max-height:none", css), (
+        "bảng chỉ có 10 hàng nên để cao tự nhiên, không cần trần chiều cao"
+    )
+
+
+def test_path_tables_give_the_text_columns_room() -> None:
+    """Hàng cao 83px ở bảng trên và 104px ở bảng dưới vì hai cột chữ bị bóp
+    xuống ~90px và xuống 3-4 dòng."""
+    css = _css(DOCS / "index.html")
+    assert re.search(r"\.basis-merged\.col-path_line\{[^}]*min-width:190px", css)
+    assert re.search(r"\.basis-merged\.col-reason\{[^}]*min-width:170px", css)
+
+
+def test_only_data_cells_get_nowrap_not_headers() -> None:
+    """Cho cả <th> nowrap thì tiêu đề dài tự đặt sàn bề rộng cho cột, đẩy bảng
+    lên 1051px trong khung 927px và sinh cuộn ngang. Đo được khi thử."""
+    # _css() bỏ hết khoảng trắng, nên bắt vào bộ chọn CUỐI của mỗi danh sách —
+    # nó nằm ngay sát dấu ngoặc mở.
+    css = _css(DOCS / "index.html")
+    th_rule = re.search(r"th\.col-rule_score\{([^}]*)\}", css)
+    td_rule = re.search(r"td\.col-rule_score\{([^}]*)\}", css)
+    assert td_rule and "white-space:nowrap" in td_rule.group(1), "ô dữ liệu số phải nowrap"
+    assert th_rule and "white-space:nowrap" not in th_rule.group(1), (
+        "tiêu đề KHÔNG được nowrap — nó đặt sàn bề rộng cho cột một chữ số"
+    )
+
+
+def test_hits_and_trials_are_merged_into_one_column() -> None:
+    """Hai cột riêng tốn 158px để hiện "3" và "379"; bề rộng do tiêu đề "Số lần
+    trúng" đặt sàn chứ không phải do dữ liệu."""
+    soup = _soup(DOCS / "index.html")
+    merged = soup.find(class_="basis-merged")
+    assert merged is not None
+    headers = [th.get_text(strip=True) for th in merged.select("thead th")]
+    assert "Trúng/Mẫu" in headers
+    assert "Số lần trúng" not in headers and "Cỡ mẫu" not in headers
+
+
+def test_probability_column_is_not_eight_decimal_places() -> None:
+    """p_mean từng in nguyên "0.02544529" — rộng vô ích và không ai đọc tới số
+    thứ tám."""
+    soup = _soup(DOCS / "index.html")
+    merged = soup.find(class_="basis-merged")
+    values = [td.get_text(strip=True) for td in merged.select("td.col-p_mean")]
+    assert values, "không tìm thấy ô tỷ lệ nào"
+    for v in values:
+        assert v.endswith("%"), f"tỷ lệ phải ở dạng phần trăm, thấy {v!r}"
+        assert len(v) <= 7, f"tỷ lệ quá dài: {v!r}"
+
+
+def test_table_cells_carry_their_column_name() -> None:
+    """Lớp theo tên cột thay cho nth-child: chỉ số cột đổi theo mỗi lời gọi
+    _render_table nên quy tắc nth-child sẽ trượt sang cột khác lúc nào không
+    hay."""
+    merged = _soup(DOCS / "index.html").find(class_="basis-merged")
+    for col in ("number_str", "path_line", "reason", "rule_score"):
+        assert merged.select(f"th.col-{col}"), f"thiếu lớp trên tiêu đề {col}"
+        assert merged.select(f"td.col-{col}"), f"thiếu lớp trên ô dữ liệu {col}"
 
 
 def test_evidence_card_markup_has_the_wrapper_cell() -> None:
