@@ -30,6 +30,37 @@ def _soup(path: Path) -> BeautifulSoup:
     return BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
 
 
+def _css(path: Path) -> str:
+    """CSS thực sự áp lên một trang, đã bỏ hết khoảng trắng.
+
+    Trang landing nhúng thẳng CSS vào <style>; các trang dùng khung chung lại
+    liên kết tới biểu định kiểu dùng chung. Đọc mỗi phần thân trang sẽ không
+    thấy quy tắc nào của khung chung, nên khẳng định về CSS phải gộp cả hai
+    nguồn — nếu không, test hoặc bỏ sót trang hoặc báo sai.
+
+    Args:
+        path: Đường dẫn tệp HTML trong ``docs/``.
+
+    Returns:
+        Chuỗi CSS đã nối và nén khoảng trắng.
+    """
+    text = path.read_text(encoding="utf-8")
+    parts = [text]
+    for link in _soup(path).find_all("link", rel="stylesheet"):
+        href = link.get("href") or ""
+        sheet = path.parent / href
+        if sheet.exists() and sheet.suffix == ".css":
+            parts.append(sheet.read_text(encoding="utf-8"))
+    return "".join(parts).replace(" ", "").replace("\n", "")
+
+
+#: Các trang thực sự gắn dock, xét theo lớp trong HTML.
+DOCK_PAGES = [p for p in PAGES if "dock-inner" in p.read_text(encoding="utf-8")]
+
+#: Các trang có khối điều hướng dự phòng ở chân trang.
+FOOTER_PAGES = [p for p in PAGES if "nav-fallback" in p.read_text(encoding="utf-8")]
+
+
 def test_pages_exist() -> None:
     assert len(PAGES) >= 14, "thiếu trang đã sinh; hãy chạy lại bộ dựng"
 
@@ -161,14 +192,6 @@ def test_dark_theme_covers_all_three_viewer_states() -> None:
 # --- Sidebar thu gọn -------------------------------------------------------
 
 
-DOCK_PAGES = (
-    "index.html",
-    "dashboard.html",
-    "research-lab.html",
-    "soi-path-loto-active.html",
-)
-
-
 def test_sidebar_is_gone_from_every_page() -> None:
     """Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết."""
     for page in PAGES:
@@ -177,9 +200,9 @@ def test_sidebar_is_gone_from_every_page() -> None:
 
 
 def test_dock_replaces_it_on_the_main_pages() -> None:
-    for name in DOCK_PAGES:
-        soup = _soup(DOCS / name)
-        assert soup.select(".dock, .vla-dock"), f"{name} thiếu dock"
+    for page in DOCK_PAGES:
+        soup = _soup(page)
+        assert soup.select(".dock, .vla-dock"), f"{page.name} thiếu dock"
 
 
 def test_dock_shows_one_button_per_navigation_group() -> None:
@@ -188,21 +211,21 @@ def test_dock_shows_one_button_per_navigation_group() -> None:
     Trang landing có thêm một nhóm "Trên trang" chứa neo cuộn nội bộ, nên số
     nút là 5 hoặc 6 — phép kiểm canh cận dưới và cận trên chứ không ghim cứng.
     """
-    for name in DOCK_PAGES:
-        soup = _soup(DOCS / name)
+    for page in DOCK_PAGES:
+        soup = _soup(page)
         buttons = soup.select(".dock-btn, .vla-dock-btn")
         assert len(SITE_NAV) <= len(buttons) <= len(SITE_NAV) + 1, (
-            f"{name}: {len(buttons)} nút / {len(SITE_NAV)} nhóm"
+            f"{page.name}: {len(buttons)} nút / {len(SITE_NAV)} nhóm"
         )
 
 
 def test_dock_popovers_reach_every_destination() -> None:
     """Mọi đích của SITE_NAV phải tới được; neo trong trang là phần thêm."""
-    for name in DOCK_PAGES:
-        soup = _soup(DOCS / name)
+    for page in DOCK_PAGES:
+        soup = _soup(page)
         hrefs = {a.get("href") for a in soup.select(".dock-pop a, .vla-dock-pop a")}
         expected = {href for _, items in SITE_NAV for href, _, _ in items}
-        assert expected <= hrefs, f"{name}: thiếu {sorted(expected - hrefs)}"
+        assert expected <= hrefs, f"{page.name}: thiếu {sorted(expected - hrefs)}"
 
 
 def test_landing_dock_keeps_in_page_anchors() -> None:
@@ -221,8 +244,14 @@ def test_dock_popovers_open_on_focus_not_only_hover() -> None:
 
 
 def test_dock_magnification_uses_the_agreed_easing() -> None:
-    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
-    assert "cubic-bezier(.25, 1, .5, 1)" in css or "cubic-bezier(.25,1,.5,1)" in css
+    """Đường cong đã đổi từ cubic-bezier(.25,1,.5,1) sang ease-in-out.
+
+    Bản vẽ đầu dùng đường cong vọt-rồi-hãm cho cảm giác "nảy" kiểu macOS. Bản
+    sửa lỗi yêu cầu ease-in-out: vào và ra đối xứng, không vọt quá, hợp với
+    thanh dock đã thu gọn còn 54px nơi một cú nảy 4px trông như giật.
+    """
+    css = _css(DOCS / "index.html") + TAILWIND_LITE_CSS.replace(" ", "")
+    assert "transition:transform.24sease-in-out" in css
 
 
 def test_dock_motion_respects_reduced_motion_preference() -> None:
@@ -589,3 +618,177 @@ def test_empty_simulation_block_does_not_leave_a_blank_column() -> None:
     css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
     assert ".next-day>section:empty{display:none" in css
     assert ".next-day:has(>section:empty)" in css
+
+
+# --- Sáu lỗi bố cục đã báo -------------------------------------------------
+#
+# Mỗi test dưới đây khoá một số đo đã kiểm bằng Chromium, không phải một ý
+# thích: số đo "trước" ghi trong docstring là giá trị thật đo được lúc lỗi còn.
+
+
+def test_main_container_is_centred() -> None:
+    """Trước: mép trái 0px, mép phải 140px ở màn 1920px — lệch hẳn một phía."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    rule = re.search(r"\.main\{([^}]*)\}", css)
+    assert rule, "không tìm thấy quy tắc .main"
+    body = rule.group(1)
+    assert "margin:0auto" in body
+    assert "max-width:1600px" in body
+
+
+def test_main_max_width_is_declared_once_and_the_same_everywhere() -> None:
+    """Ba nơi khai báo .main từng lệch nhau (1600/1780/1600) nên màn rộng chạy
+    quá khung thiết kế 1440-1600px."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    widths = set(re.findall(r"\.main\{[^}]*?max-width:([^;}]+)", css))
+    widths |= set(re.findall(r"\.desktop-view\.main\{[^}]*?max-width:([^;}]+)", css))
+    for w in widths:
+        assert "1600px" in w, f"còn một khai báo max-width khác: {w}"
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_dock_bar_fits_the_agreed_height(page: Path) -> None:
+    """Trước: 108-114px. Nhãn cố định dưới icon là thứ đội chiều cao lên.
+
+    54px = icon 40 + đệm 6*2 + viền 1*2, nằm trong khoảng 48-56px của bản vẽ.
+    """
+    css = _css(page)
+    assert re.search(r"dock-ic\{[^}]*width:40px;height:40px", css), page.name
+    assert re.search(r"dock-inner\{[^}]*padding:6px10px", css), page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_dock_label_is_a_tooltip_not_a_fixed_row(page: Path) -> None:
+    """Nhãn phải ra khỏi luồng, nếu không nó cộng thẳng vào chiều cao thanh."""
+    css = _css(page)
+    assert re.search(r"dock-name\{[^}]*position:absolute", css), page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_dock_uses_glassmorphism_at_thirty_percent(page: Path) -> None:
+    """Trước: nền đục 84% + blur 20px — không nhìn thấy gì phía sau."""
+    css = _css(page)
+    rule = re.search(r"dock-inner\{([^}]*)\}", css)
+    assert rule, page.name
+    body = rule.group(1)
+    assert "blur(12px)" in body, page.name
+    assert re.search(r"rgba\(15,23,42,\.?3\d*\)|srgb[^;]*30%|30%,transparent", body), page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_dock_opaque_fallback_when_backdrop_filter_is_missing(page: Path) -> None:
+    """Nền 30% mà không có blur thì chữ nằm trên nội dung trang, đọc không nổi."""
+    css = _css(page)
+    assert "@supportsnot(backdrop-filter" in css, page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_submenu_has_a_hover_bridge_over_the_gap(page: Path) -> None:
+    """Trước: khe hở 10px giữa đáy popover và đỉnh nút làm menu tắt giữa đường.
+
+    Cầu ::after cao 18px phủ kín khe đó, nên :hover của nhóm không bao giờ đứt.
+    """
+    css = _css(page)
+    assert re.search(r"dock-pop::after\{[^}]*top:100%", css), page.name
+    assert re.search(r"dock-pop::after\{[^}]*height:18px", css), page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_submenu_closes_slower_than_it_opens(page: Path) -> None:
+    """Nửa sau của hover intent: mở ngay, đóng trễ, để con trỏ kịp băng qua."""
+    css = _css(page)
+    rule = re.search(r"dock-pop\{([^}]*)\}", css)
+    assert rule, page.name
+    assert re.search(r"visibility:?[^;]*\.4\ds|visibility0slinear\.4\ds", rule.group(1).replace(" ", "")), page.name
+
+
+@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
+def test_icon_magnification_stays_in_the_agreed_range(page: Path) -> None:
+    """Bản vẽ yêu cầu 1.15-1.2x, ease-in-out."""
+    css = _css(page)
+    scales = [float(s) for s in re.findall(r"dock-ic\{?[^}]*?\}?[^{]*?transform:scale\(([\d.]+)\)", css)]
+    scales += [float(s) for s in re.findall(r"transform:scale\(([\d.]+)\)", css)]
+    hits = [s for s in scales if 1.10 <= s <= 1.25]
+    assert hits, f"{page.name}: không thấy hệ số phóng nào trong khoảng"
+    assert all(1.15 <= s <= 1.20 for s in hits), f"{page.name}: {hits}"
+    assert re.search(r"dock-ic\{[^}]*transition:transform[^;]*ease-in-out", css), page.name
+
+
+def test_evidence_card_is_locked_to_the_left_panel_height() -> None:
+    """Trước: bảng căn cứ cao 1409px cạnh bảng dữ liệu 912px — lệch 497px.
+
+    Ô lưới cho chiều cao, thẻ bên trong trải tuyệt đối theo ô đó; nếu thẻ tự
+    tính chiều cao theo nội dung thì nó lại kéo cả hàng dài ra như cũ.
+    """
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    assert re.search(r"\.basis-cell\{[^}]*position:relative", css)
+    assert re.search(r"\.basis-cell>\.basis-merged\{[^}]*position:absolute", css)
+    assert re.search(r"\.basis-cell>\.basis-merged\{[^}]*inset:0", css)
+
+
+def test_evidence_sections_scroll_inside_the_locked_frame() -> None:
+    """Khoá chiều cao mà không cho cuộn trong thì nội dung bị cắt mất."""
+    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+    rule = re.search(r"\.basis-merged>section\{([^}]*)\}", css)
+    assert rule, "không tìm thấy quy tắc cho section trong thẻ gộp"
+    body = rule.group(1)
+    assert "overflow:auto" in body
+    assert "min-height:0" in body, "thiếu min-height:0 thì flex item không co lại được"
+
+
+def test_evidence_card_markup_has_the_wrapper_cell() -> None:
+    cell = _soup(DOCS / "index.html").find(class_="basis-cell")
+    assert cell is not None, "thiếu ô bọc .basis-cell"
+    assert cell.find(class_="basis-merged") is not None
+
+
+@pytest.mark.parametrize("page", FOOTER_PAGES, ids=lambda p: p.name)
+def test_footer_links_spread_across_the_full_width(page: Path) -> None:
+    """Trước: năm hàng rộng 1684px nhưng chữ dồn hết sang mép trái.
+
+    Lưới cột chứ không phải space-between trên từng <ul>: nhóm chỉ 2-4 mục thì
+    space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa.
+    """
+    css = _css(page)
+    rule = re.search(r"nav-fallback\{([^}]*)\}", css)
+    assert rule, page.name
+    body = rule.group(1)
+    assert "display:grid" in body, page.name
+    assert "repeat(auto-fit,minmax(min(180px,100%),1fr))" in body, page.name
+
+
+@pytest.mark.parametrize("page", FOOTER_PAGES, ids=lambda p: p.name)
+def test_each_footer_group_is_one_grid_cell(page: Path) -> None:
+    """Không bọc <section> thì <h2> và <ul> thành hai ô lưới rời nhau: tiêu đề
+    một cột, danh sách cột kế bên."""
+    nav = _soup(page).find(class_=re.compile(r"nav-fallback"))
+    assert nav is not None, page.name
+    children = [c for c in nav.find_all(recursive=False)]
+    assert children, page.name
+    assert all(c.name == "section" for c in children), (
+        f"{page.name}: con trực tiếp phải là <section>, thấy "
+        f"{sorted({c.name for c in children})}"
+    )
+    for sec in children:
+        assert sec.find("h2") is not None and sec.find("ul") is not None, page.name
+
+
+def test_site_nav_stores_plain_text_not_pre_escaped_html() -> None:
+    """Nguồn dữ liệu giữ ký tự thật; thoát HTML là việc của nơi kết xuất.
+
+    Lưu sẵn "&amp;" trong SITE_NAV làm nơi nào thoát thêm một lần nữa thì hiện
+    ra "&amp;" trên màn hình — và lỗi chỉ xuất hiện ở vài trang, tuỳ nơi đó có
+    thoát hay không.
+    """
+    for group, items in SITE_NAV:
+        assert "&amp;" not in group, group
+        for _href, label, _icon in items:
+            assert "&amp;" not in label, label
+
+
+@pytest.mark.parametrize("page", PAGES)
+def test_no_page_shows_a_raw_html_entity(page: Path) -> None:
+    """"&amp;amp;" trong nguồn nghĩa là người đọc thấy "&amp;" trên màn hình."""
+    text = page.read_text(encoding="utf-8")
+    assert "&amp;amp;" not in text, page.name
+    assert "&amp;lt;" not in text, page.name

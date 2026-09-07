@@ -243,3 +243,122 @@ thay thế.
   `build_fun_prediction.py` chèn vào kết quả cuối. Chỉ thứ tự trong
   `pipeline.py` giữ cho nó không hỏng; chạy sai thứ tự thì `#mo-phong` rỗng.
   CSS ở §3.4 làm hậu quả bớt tệ nhưng không sửa được nguyên nhân.
+
+---
+
+## 7. Vòng sửa thứ hai: sáu lỗi bố cục
+
+Sáu lỗi được báo sau khi bản dock đầu tiên lên `main`. Mỗi lỗi đo bằng Chromium
+trước khi sửa — cột "trước" dưới đây là số đo thật, không phải ước lượng.
+
+| # | Lỗi | Trước | Sau |
+|---|---|---|---|
+| 1 | Layout lệch phải | mép trái **0px** / phải **140px** @1920 | **160/160**, `.main` rộng 1600 |
+| 2 | Dock quá cao | **108–114px** | **54px** |
+| 2 | Kính mờ | nền **84%** đục, `blur(20px)` | **30%**, `blur(12px)`, viền 1px |
+| 3 | Menu con tắt giữa đường | khe hở **10px** không phủ | cầu `::after` **18px**, 0/24 bước mất menu |
+| 4 | Hai bảng lệch chiều cao | 912 vs **1409px** (lệch 497) | **0px**, cuộn trong 511/695 |
+| 5 | Footer dồn trái | 5 hàng rộng 1684px, chữ dồn mép trái | **5 cột đều nhau**, phủ hết 1504px |
+| 6 | `&amp;` hiện ra chữ | 1 nhãn trên vài trang | **0** trên 14/14 trang |
+
+### 7.1 Vì sao `max-width` phải khai một chỗ
+
+`.main` được khai ba nơi: lớp cơ sở (1600px), khối `@media (min-width:1181px)`
+(1780px) và `body.desktop-view` (1600px `!important`). Khối media thắng lớp cơ
+sở, nên màn 1920px chạy rộng 1780px — ngoài khung thiết kế 1440–1600px, dù hai
+khai báo kia đều đúng. Khối media nay chỉ nới `padding`; bề rộng do một chỗ
+quyết định. Một phép kiểm quét mọi khai báo `.main{...max-width}` và bắt tất cả
+phải là 1600px, nên lần sau thêm một khai báo lệch sẽ đỏ ngay.
+
+### 7.2 Nhãn dock là thứ đội chiều cao
+
+108px không phải do đệm mà do **nhãn chữ nằm dưới icon**: icon 44 + nhãn ~16 +
+đệm và khoảng cách. Thu nhỏ đệm chỉ được vài pixel. Đưa nhãn thành tooltip
+`position:absolute` mới lấy lại được cả dòng đó: 40 + 6×2 + 1×2 = **54px**.
+
+Khi popover đang mở thì tooltip bị ẩn — hai lớp nổi chồng nhau chỉ gây rối, và
+popover vốn đã nói rõ tên nhóm.
+
+Trên màn ≤640px `.dock-inner` có `overflow-x:auto`, tức là một ngữ cảnh cắt:
+tooltip nổi phía trên sẽ bị xén mất nửa. Màn cảm ứng không có trạng thái hover
+để hiện nó, nên ở đó nhãn `display:none`.
+
+### 7.3 Hover intent làm bằng CSS thuần
+
+Không có JavaScript. Ba mảnh ghép lại:
+
+1. **Cầu `::after` cao 18px** ngay dưới popover, phủ kín khe hở 10–14px. Con
+   trỏ đi từ nút lên vẫn nằm trong `:hover` của nhóm suốt chặng.
+2. **Vùng đệm quanh nhóm** (`.dock-group::after`, `z-index:-1`) tha thứ cho
+   đường chuột đi chéo ra ngoài mép nút.
+3. **Độ trễ bất đối xứng**: mở `0s`, đóng `.22s` với `visibility` trễ `.40s`.
+   Mở phải tức thì, đóng phải chậm — ngược lại là menu nhấp nháy.
+
+Phép đo: di chuột 24 bước từ tâm nút tới tâm popover trên **cả 5 trang có
+dock**, kiểm tra popover ở từng bước. Kết quả **0/24 bước mất menu** ở mọi
+nhóm, và popover vẫn đóng đúng khi con trỏ rời hẳn dock.
+
+### 7.4 Khoá chiều cao: ô lưới giữ, thẻ trải theo
+
+Cho `.basis-merged` một `height: 100%` là chưa đủ — thẻ vẫn tự tính chiều cao
+theo nội dung rồi kéo cả hàng dài ra. Cách chạy được là tách hai vai:
+
+* `.basis-cell` (ô lưới) **giữ** chiều cao, `position: relative`;
+* `.basis-merged` **trải** tuyệt đối theo ô đó (`position:absolute; inset:0`),
+  nên nội dung bên trong không còn quyền quyết định chiều cao;
+* mỗi `<section>` bên trong `flex:1 1 0; min-height:0; overflow:auto`.
+
+`min-height: 0` là mảnh dễ quên nhất: mặc định `min-height:auto` của flex item
+không cho nó co nhỏ hơn nội dung, và thanh cuộn trong sẽ không bao giờ xuất
+hiện.
+
+### 7.5 `space-between` không phải là "dàn đều"
+
+Yêu cầu ban đầu là `justify-content: space-between` trên chuỗi link. Làm đúng
+như vậy cho kết quả xấu: mỗi nhóm chỉ có 2–4 mục, nên `space-between` đẩy chúng
+dính hai mép container còn giữa trống hoác — đo được **228px chữ trên 1684px
+khung**.
+
+Cấu trúc mới bọc mỗi nhóm trong `<section>` và cho `.nav-fallback` thành lưới
+`repeat(auto-fit, minmax(min(180px,100%), 1fr))`. Đó mới là "dàn đều" theo
+nghĩa footer: 5 cột rộng bằng nhau phủ hết chiều ngang, tự xuống 2 hàng ở
+768px và 5 hàng ở 360px. Đo được **chênh lệch bề rộng giữa các cột = 0** ở cả
+bốn mốc màn hình.
+
+Bọc `<section>` là bắt buộc: không có nó thì `<h2>` và `<ul>` thành hai ô lưới
+rời nhau — tiêu đề một cột, danh sách cột kế bên.
+
+### 7.6 `&amp;` là lỗi ở nguồn dữ liệu
+
+`SITE_NAV` lưu sẵn chuỗi đã thoát HTML (`"Gan &amp; nhịp"`). Nơi kết xuất thì
+không nhất quán: `build_landing_page` thoát thêm lần nữa, `ui_theme.dock()`
+thì không — nên lỗi chỉ hiện ở một số trang, đúng kiểu khó lần.
+
+Sửa ở nguồn: `SITE_NAV` giữ ký tự thật, mọi nơi kết xuất đều gọi
+`html.escape()`. Thoát HTML là việc của ranh giới kết xuất, không phải của dữ
+liệu. `docs/live.html` viết tay được sửa trực tiếp vì không builder nào sinh nó.
+
+### 7.7 Tương phản sau khi hạ nền dock
+
+Nền 30% làm dấy lo chữ mất tương phản. Đo lại toàn site: **0 lỗi AA thuộc dock
+hoặc footer**. Tooltip trước đó dùng `rgba(15,23,42,.94)` — dưới ngưỡng đục
+0.95 của phép dò nên nó leo nhầm lên nền trang và báo 1.02:1; đổi thành màu đục
+`#0f172a` vừa bỏ báo giả vừa làm tooltip dễ đọc hơn thật.
+
+Tổng lỗi AA toàn site: **328 → 52**, trong đó 28 là bảng nhiệt `statistics.html`
+(§6) và 24 là báo giả ở hero gradient mà phép dò không đọc được nền.
+
+### 7.8 Vì sao không dùng Tailwind
+
+Yêu cầu nêu "HTML + Tailwind CSS". GitHub Pages phục vụ site này dưới CSP
+`script-src 'self'`, nên `cdn.tailwindcss.com` bị chặn thẳng và không có thông
+báo lỗi nào hiện ra. Bản dựng cũng không có bước Node để biên dịch Tailwind.
+Toàn bộ đặc tả được viết bằng CSS hiện đại tương đương — lưới `auto-fit`,
+`min()`/`clamp()`, `:has()`, `backdrop-filter` — chạy đúng trong CSP hiện hành.
+
+### 7.9 Còn tồn sau vòng này
+
+* **`statistics.html`, `live.html`, `ml_top10_*.html` chưa có dock.**
+  `statistics.html` chỉ liên kết ra `research-lab.html`, nên không phải ngõ cụt
+  nhưng đường về rất hẹp. Ba trang này do builder riêng sinh, gắn dock là việc
+  của một thay đổi khác.

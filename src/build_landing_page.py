@@ -861,17 +861,25 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
 
     /* Điều hướng dự phòng cuối trang. */
+    /* Dàn đều hết chiều ngang container thay vì dồn về trái. Năm hàng trước
+       đây đều rộng 1684px nhưng nội dung dồn cả sang mép trái.
+       Cách làm là lưới cột — mỗi nhóm SITE_NAV một cột bằng nhau — chứ không
+       phải space-between trên từng <ul>: nhóm chỉ có 2-4 mục thì
+       space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa. */
     .nav-fallback {{
       margin-top: 48px; padding-top: 24px;
       border-top: 1px solid var(--line); font-size: 13px;
+      display: grid; gap: 24px 32px;
+      grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
     }}
+    .nav-fallback > section {{ min-width: 0; }}
     .nav-fallback h2 {{
       font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
       color: var(--muted); margin: 0 0 8px; font-weight: 600;
     }}
     .nav-fallback ul {{
-      list-style: none; padding: 0; margin: 0 0 16px;
-      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 8px;
     }}
 
     /* ── Dock điều hướng nổi ──────────────────────────────────────────────
@@ -883,14 +891,17 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
       z-index: 60; max-width: calc(100vw - 32px);
     }}
+    /* Kính mờ 30%. Nền 84% trước đây gần như đục hẳn nên không còn là
+       glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
+       thanh vẫn tách khỏi nội dung phía sau. */
     .dock-inner {{
-      display: flex; align-items: flex-end; gap: 16px;
-      padding: 16px 24px; border-radius: 999px;
-      background: rgba(15, 23, 42, .84);
-      border: 1px solid rgba(255,255,255,.10);
-      box-shadow: 0 8px 32px rgba(15,23,42,.30), inset 0 1px 0 rgba(255,255,255,.07);
-      backdrop-filter: blur(20px) saturate(1.6);
-      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border-radius: 999px;
+      background: rgba(15, 23, 42, .30);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 36px rgba(15,23,42,.34), inset 0 1px 0 rgba(255,255,255,.10);
+      backdrop-filter: blur(12px) saturate(1.8);
+      -webkit-backdrop-filter: blur(12px) saturate(1.8);
     }}
     /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
        vẫn đọc được, đó là điều quan trọng. */
@@ -898,37 +909,74 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       .dock-inner {{ background: #0f172a; }}
     }}
     .dock-group {{ position: relative; }}
-    /* Nút phải co theo nhãn, không cố định 56px: nhãn dài nhất ("Tool nâng
-       cao", 77px) tràn 12px ra ngoài viên thuốc khi bị ép vào khung cứng. */
+    /* Nhãn chuyển thành tooltip thay vì chữ dưới icon: hai dòng làm thanh cao
+       114px, quá thô so với mức 48–56px cần đạt. */
     .dock-btn {{
-      display: grid; place-items: center; gap: 2px;
-      min-width: 56px; padding: 8px 6px;
-      background: none; border: 0; cursor: pointer; border-radius: 12px; color: #e5e7eb;
+      display: grid; place-items: center;
+      padding: 0; background: none; border: 0; cursor: pointer;
+      border-radius: 12px; color: #e5e7eb;
     }}
     .dock-ic {{
-      display: grid; place-items: center; width: 44px; height: 44px; font-size: 20px;
-      border-radius: 12px; background: rgba(255,255,255,.07);
-      border: 1px solid rgba(255,255,255,.10);
-      transition: transform .28s cubic-bezier(.25, 1, .5, 1), background .2s ease;
+      display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
+      border-radius: 11px; background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: transform .24s ease-in-out, background .2s ease-in-out;
     }}
-    .dock-name {{ font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }}
     .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{
-      transform: scale(1.18) translateY(-4px);
-      background: rgba(124,58,237,.34);
+      transform: scale(1.18);
+      background: rgba(124,58,237,.42);
     }}
     .dock-btn:focus-visible {{ outline: 2px solid #93c5fd; outline-offset: 2px; }}
+
+    /* Tooltip thay cho nhãn cố định. */
+    .dock-name {{
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      padding: 4px 9px; border-radius: 7px; white-space: nowrap;
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+      background: #0f172a; color: #f1f5f9;
+      border: 1px solid rgba(255,255,255,.12);
+      opacity: 0; pointer-events: none;
+      transition: opacity .18s ease-in-out, transform .18s ease-in-out;
+    }}
+    .dock-btn:hover .dock-name, .dock-btn:focus-visible .dock-name {{
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }}
+    /* Khi popover đang mở thì ẩn tooltip — hai lớp nổi chồng nhau gây rối. */
+    .dock-group:hover .dock-name, .dock-group:focus-within .dock-name {{ opacity: 0; }}
     .dock-pop {{
-      position: absolute; bottom: calc(100% + 16px); left: 50%;
+      position: absolute; bottom: calc(100% + 14px); left: 50%;
       transform: translateX(-50%) translateY(6px);
-      min-width: 224px; padding: 8px;
-      background: #fff; border: 1px solid var(--line);
-      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.22);
+      min-width: 232px; padding: 8px;
+      background: rgba(255,255,255,.97); border: 1px solid var(--line);
+      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.26);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity .2s ease, transform .2s cubic-bezier(.25,1,.5,1), visibility .2s;
+      /* Độ trễ khi ĐÓNG (0.22s) nhưng không trễ khi MỞ. Rê chuột ra ngoài
+         trong chớp mắt sẽ không làm menu tắt ngay, nên người dùng có thời gian
+         quay lại — đây là nửa thứ hai của cơ chế chống tắt đột ngột. */
+      transition: opacity .18s ease-in-out .22s,
+                  transform .18s ease-in-out .22s,
+                  visibility 0s linear .40s;
+    }}
+    /* CẦU NỐI HOVER. Giữa nút và popover có khe hở 14px; con trỏ đi qua khe đó
+       rời khỏi cả hai phần tử nên :hover tắt và menu biến mất giữa chừng —
+       đúng lỗi người dùng gặp. Phần tử giả này phủ kín khe, trong suốt, và
+       thuộc về .dock-pop nên hover trên nó vẫn tính là hover trong nhóm. */
+    .dock-pop::after {{
+      content: ""; position: absolute; left: 0; right: 0;
+      top: 100%; height: 18px;
+    }}
+    /* Mở rộng vùng bắt của cả nhóm xuống dưới nút, phòng khi con trỏ đi vòng. */
+    .dock-group::after {{
+      content: ""; position: absolute; left: -6px; right: -6px;
+      top: -18px; bottom: -6px; z-index: -1;
     }}
     .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop {{
       opacity: 1; visibility: visible; pointer-events: auto;
       transform: translateX(-50%) translateY(0);
+      /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
+      transition: opacity .18s ease-in-out, transform .18s ease-in-out, visibility 0s;
     }}
     .dock-pop a {{
       display: flex; align-items: center; gap: 8px; padding: 8px 16px;
@@ -946,9 +994,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{ transform: none; }}
     }}
 
+    /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
+       bị giới hạn bằng max-width ở lớp desktop-view, nên ở màn 1920px nó dính
+       sát mép trái và chừa 140px bên phải — lệch hẳn một phía. */
     .main {{
       min-width: 0;
-      padding: 28px;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 32px clamp(16px, 2.5vw, 40px);
     }}
     .hero {{
       position: relative;
@@ -1458,10 +1512,33 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       display: grid;
       grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
       gap: 24px;
-      align-items: start;
+      /* stretch để hai ô cùng cao; chiều cao hàng do CỘT TRÁI quyết định nhờ
+         thủ thuật ở .basis-cell ngay dưới. */
+      align-items: stretch;
     }}
     .inspector > * {{ min-width: 0; }}
-    @media (max-width: 1100px) {{ .inspector {{ grid-template-columns: minmax(0, 1fr); }} }}
+
+    /* Khoá chiều cao khối dữ liệu bằng đúng chiều cao khung căn cứ bên trái.
+       Trước đây khối phải cao 1409px so với 912px bên trái — lệch 497px, đủ để
+       phá vỡ cảm giác cân đối của cả trang.
+
+       Không có cách CSS trực tiếp nào nói "cao bằng ô bên cạnh". Thủ thuật:
+       cho ô phải position:relative rồi trải nội dung bằng position:absolute
+       inset:0. Nội dung tuyệt đối không tham gia tính chiều cao hàng, nên hàng
+       chỉ còn do cột trái quyết định, và khối dữ liệu lấp đầy đúng bằng đó rồi
+       tự cuộn bên trong. */
+    .basis-cell {{ position: relative; min-height: 480px; }}
+    .basis-cell > .basis-merged {{
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }}
+    @media (max-width: 1100px) {{
+      .inspector {{ grid-template-columns: minmax(0, 1fr); }}
+      /* Khi xếp dọc thì không còn ô nào để cao bằng; trả về luồng bình thường. */
+      .basis-cell {{ min-height: 0; }}
+      .basis-cell > .basis-merged {{ position: static; max-height: 78vh; }}
+    }}
 
     /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
        phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
@@ -1471,9 +1548,20 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       background: #fff;
       overflow: hidden;
     }}
-    .basis-merged > section {{ padding: 24px; }}
+    /* Hai phần chia đôi chiều cao khả dụng và mỗi phần tự cuộn. min-height:0
+       là bắt buộc trên flex item: mặc định là auto nên phần tử không co được
+       nhỏ hơn nội dung, và overflow bên trong sẽ không bao giờ kích hoạt. */
+    .basis-merged > section {{
+      padding: 20px 24px; flex: 1 1 0; min-height: 0; overflow: auto;
+    }}
     .basis-merged > section + section {{ border-top: 1px solid var(--line); }}
     .basis-merged > section > * {{ margin: 0; border: 0; box-shadow: none; padding: 0; }}
+    /* Thanh cuộn mảnh, không chiếm chỗ thị giác của dữ liệu. */
+    .basis-merged > section {{ scrollbar-width: thin; }}
+    .basis-merged > section::-webkit-scrollbar {{ width: 8px; }}
+    .basis-merged > section::-webkit-scrollbar-thumb {{
+      background: rgba(100,116,139,.34); border-radius: 999px;
+    }}
 
     /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
        định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
@@ -1583,8 +1671,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       text-align: center;
     }}
     @media (min-width: 1181px) {{
+      /* Chỉ nới padding ở màn rộng. max-width giữ nguyên 1600px của lớp cơ sở:
+         trước đây khối này ghi đè thành 1780px nên ba nơi khai báo .main lệch
+         nhau và màn 1920px chạy rộng hơn khung thiết kế 1440-1600px. */
       .main {{
-        max-width: min(100%, 1780px);
         padding: 32px clamp(28px, 3vw, 48px);
       }}
       /* Bề rộng khả dụng của .main đã trừ .side-nav (~247px) nên ở màn 1440px
@@ -1775,7 +1865,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       display: block !important;
     }}
     body.desktop-view .main {{
-      max-width: min(100%, 1780px) !important;
+      max-width: min(100%, 1600px) !important;
+      margin-inline: auto !important;
       padding: 32px clamp(28px, 3vw, 48px) !important;
     }}
     /* Cùng lý do như .layout-top ở trên: sau khi bỏ sidebar, .main dùng trọn
@@ -2013,13 +2104,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
                một đường mảnh. Trước đây chúng là hai cột hẹp 445px: cột "Tỷ lệ"
                bị cắt mất, ô nội dung xuống 5 dòng, và ~45% chiều cao mỗi cột
                bỏ trống. Gộp lại cho mỗi bảng gần 1090px và chia nhau chiều cao. -->
-          <div class="basis-merged">
+          <div class="basis-cell">
+            <div class="basis-merged">
             <section>
               {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=evidence_de, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de")}
             </section>
             <section>
               {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=evidence_loto, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True)}
             </section>
+            </div>
           </div>
         </div>
       </section>
@@ -2239,10 +2332,10 @@ def _render_nav_fallback() -> str:
     """
     parts = ['<nav class="nav-fallback" aria-label="Điều hướng đầy đủ">']
     for group, items in SITE_NAV:
-        parts.append(f"<h2>{html.escape(group)}</h2><ul>")
+        parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
         for href, label, _ in items:
             parts.append(f'<li><a href="{href}">{html.escape(label)}</a></li>')
-        parts.append("</ul>")
+        parts.append("</ul></section>")
     parts.append("</nav>")
     return "".join(parts)
 
