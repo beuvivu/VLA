@@ -182,3 +182,58 @@ giờ ngoài chết; chúng **không** phải đường chạy đúng giờ.
 Nói cách khác: nếu không dựng Bước 1–3, phần mã trong PR này **không** làm hệ
 thống chạy đúng giờ. Nó chỉ làm cho việc chạy đúng giờ trở nên khả thi và
 giảm số lần đánh thức cần thiết từ mười xuống một.
+
+---
+
+## 7. Thử lại có lùi mũ (bổ sung)
+
+Trong khung 18:15–18:40 cả nước cùng vào xem, nên `429 Too Many Requests` và
+`5xx` là chuyện thường. Bản đầu bỏ nguồn ngay lần hỏng đầu tiên — mất nguồn đó
+cho trọn một vòng thăm dò 60–90 giây.
+
+Nay mỗi yêu cầu được thử tối đa **3 lần**, chờ lùi mũ giữa các lần
+(0,5s → 1s → 2s, trần 4s) kèm **nhiễu ngẫu nhiên**.
+
+Nhiễu là phần bắt buộc chứ không phải trang trí: sáu nguồn chạy song song, nếu
+cùng thất bại rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng
+một thời điểm — đúng lúc máy chủ đang quá tải.
+
+Chỉ thử lại mã **thoáng qua**: `408, 425, 429, 500, 502, 503, 504`.
+`403` và `404` thì không — câu trả lời sẽ y hệt, thử lại chỉ tốn thời gian.
+
+`Retry-After` được tôn trọng nhưng vẫn bị kẹp theo trần: một số nơi trả về
+hàng trăm giây, chờ chừng đó thì hết cả kỳ quay.
+
+Ngân sách xấu nhất là `max_attempts × request_timeout` = 3 × 8 = 24 giây, và
+`PollConfig` **từ chối khởi tạo** nếu con số đó vượt chu kỳ thăm dò — nếu
+không, một nguồn chậm sẽ nuốt trọn vòng và vòng kế tiếp bị trượt.
+
+## 8. Chốt chặn silent fail
+
+`continue-on-error` ở bước thăm dò là cố ý: thiếu số ở mốc sớm là chuyện bình
+thường vì mốc sau sẽ thử lại, và để job đỏ mỗi lần như vậy sẽ làm người ta
+quen với việc bỏ qua cảnh báo.
+
+Nhưng ở **mốc lưới an toàn cuối cùng trong ngày** thì không còn lần thử nào
+nữa. Để job xanh lúc đó chính là silent fail: không ai biết dữ liệu đã hỏng
+cho tới khi tự mở trang ra xem. Nay bước kết luận so `github.event.schedule`
+với mốc cuối và `exit 1` nếu vẫn thiếu số.
+
+Một phép kiểm đối chiếu hằng số `LAST_CRON` với mốc cuối thật trong khối
+`schedule` — đổi lịch mà quên sửa hằng số thì chốt sẽ im lặng ngừng hoạt động,
+đúng kiểu hỏng không ai phát hiện.
+
+## 9. Hai điều KHÔNG cần sửa (đã kiểm chứng)
+
+Có hai lo ngại thường gặp không đúng với kho này:
+
+**Không có cào theo DOM/CSS selector.** `sources.py` dùng BeautifulSoup ĐÚNG
+MỘT việc: bóc thẻ để lấy văn bản thuần (`get_text`), rồi so khớp bằng biểu
+thức chính quy trên văn bản đó. Không có `select_one`, không `find_all` theo
+lớp CSS. Đây vốn đã là cách bền nhất: trang đổi khung HTML thì bản này không
+gãy.
+
+**Không có cache cứng nào chặn cập nhật.** Toàn bộ mã lấy dữ liệu không dùng
+`lru_cache` hay bộ nhớ đệm đĩa. Thứ duy nhất liên quan là đầu mục
+`Cache-Control: no-cache` gửi ĐI, tức yêu cầu phía kia đừng trả bản cũ — ngược
+lại với việc tự giữ bản cũ.

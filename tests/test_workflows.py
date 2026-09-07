@@ -108,3 +108,53 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
     assert "schedule:" not in text
     assert "actions: write" in text
     assert "scripts/purge_github_caches.py --confirm" in text
+
+
+# --- Thu thập đúng giờ ------------------------------------------------------
+
+
+def test_daily_update_prefers_dispatch_over_schedule() -> None:
+    """Lịch của GitHub trễ 2-6 giờ và rơi mốc trên kho này; đường đúng giờ
+    phải là repository_dispatch, cron chỉ là lưới an toàn."""
+    text = _text("daily_update.yml")
+    assert "repository_dispatch:" in text
+    assert "types: [daily-collect]" in text
+    crons = re.findall(r'cron: "([^"]+)"', text)
+    assert len(crons) <= 4, (
+        "thêm mốc không tăng độ tin cậy vì mọi mốc đều rơi cùng một cách khi "
+        "GitHub quá tải; nó chỉ tăng số lần chạy thừa"
+    )
+
+
+def test_last_backstop_guard_matches_the_actual_last_cron() -> None:
+    """Chốt chặn silent fail so chuỗi cron đã kích hoạt với một hằng số chép
+    tay. Đổi lịch mà quên sửa hằng số thì chốt im lặng ngừng hoạt động — đúng
+    kiểu hỏng mà không ai phát hiện."""
+    text = _text("daily_update.yml")
+    crons = re.findall(r'cron: "([^"]+)"', text)
+    guard = re.search(r'LAST_CRON:\s*"([^"]+)"', text)
+    assert guard, "thiếu hằng số LAST_CRON"
+    assert guard.group(1) == crons[-1], (
+        f"LAST_CRON={guard.group(1)!r} không khớp mốc cuối {crons[-1]!r}"
+    )
+
+
+def test_missing_data_at_the_last_backstop_fails_the_job() -> None:
+    """Job xanh trong khi không lấy được số nào chính là silent fail: không ai
+    biết dữ liệu hỏng cho tới khi tự mở trang ra xem."""
+    text = _text("daily_update.yml")
+    assert "::error::" in text
+    assert re.search(r'FIRED_CRON.*=.*LAST_CRON|"\$FIRED_CRON"\s*=\s*"\$LAST_CRON"', text)
+    assert "exit 1" in text
+
+
+def test_daily_update_sets_the_timezone_at_job_level() -> None:
+    """Đặt lẻ ở từng bước là cách sinh ra lỗi lệch 7 tiếng mà nhật ký không
+    bao giờ chỉ ra được."""
+    text = _text("daily_update.yml")
+    assert "TZ: Asia/Ho_Chi_Minh" in text
+
+
+def test_daily_update_bounds_the_runner() -> None:
+    text = _text("daily_update.yml")
+    assert re.search(r"timeout-minutes:\s*\d+", text)

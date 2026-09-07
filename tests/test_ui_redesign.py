@@ -501,11 +501,10 @@ def test_daily_matrix_spans_the_full_width() -> None:
     assert "matrix-full" in (matrix.get("class") or [])
 
 
-def test_next_day_predictions_sit_on_one_row() -> None:
-    """Ba bảng ngày mai phải cùng một hàng, không xếp chồng."""
-    css = (DOCS / "index.html").read_text(encoding="utf-8")
-    rule = re.search(r"\.next-day\s*\{([^}]*)\}", css)
-    assert rule and "repeat(3," in rule.group(1).replace(" ", "")
+def test_next_day_has_all_three_prediction_blocks() -> None:
+    """Ba khối phải cùng có mặt. Bố cục ba-cột-một-hàng của bản trước đã bị
+    thay bằng xếp dọc — xem test_next_day_cards_stack_vertically để biết lý
+    do đo được."""
     children = _soup(DOCS / "index.html").select(".next-day > *")
     assert len(children) == 3, f"kỳ vọng 3 bảng, thấy {len(children)}"
 
@@ -608,16 +607,13 @@ def test_long_metric_values_do_not_wrap() -> None:
     assert '.metric-tile[data-long="true"]strong{font-size:' in css
 
 
-def test_empty_simulation_block_does_not_leave_a_blank_column() -> None:
-    """Bảng mô phỏng được chèn ở bước sau; nếu bước đó trượt thì cột phải xẹp.
-
-    Trước khi vào lưới ba cột, ``#mo-phong`` là một section riêng chiếm trọn
-    chiều ngang, nên rỗng thì nó tự xẹp và không ai thấy. Trong lưới, một
-    section rỗng vẫn giữ nguyên một phần ba chiều ngang.
-    """
-    css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
+def test_empty_simulation_block_leaves_no_gap() -> None:
+    """Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
+    dựng; nếu bước đó trượt thì section rỗng vẫn chiếm một hàng của lưới và để
+    lại khoảng trống. Với lưới một cột thì chỉ cần ẩn nó — quy tắc :has thu
+    lưới còn hai cột của bản ba cột không còn nghĩa nữa."""
+    css = _css(DOCS / "index.html")
     assert ".next-day>section:empty{display:none" in css
-    assert ".next-day:has(>section:empty)" in css
 
 
 # --- Sáu lỗi bố cục đã báo -------------------------------------------------
@@ -865,3 +861,65 @@ def test_no_page_shows_a_raw_html_entity(page: Path) -> None:
     text = page.read_text(encoding="utf-8")
     assert "&amp;amp;" not in text, page.name
     assert "&amp;lt;" not in text, page.name
+
+
+# --- Khu dự đoán ngày mai: xếp dọc ----------------------------------------
+
+
+def test_next_day_cards_stack_vertically() -> None:
+    """Bản ba cột cho mỗi thẻ 485px ở 1920px và 435px ở 1440px.
+
+    Bảng mô phỏng bên trong cần tối thiểu 520px cho khung giải, nên nó bị ép
+    còn 131px và 81px — đo được tràn 389px và 439px, đúng thanh cuộn ngang
+    nhìn thấy dưới bảng.
+    """
+    css = _css(DOCS / "index.html")
+    rule = re.search(r"\.next-day\{([^}]*)\}", css)
+    assert rule, "không tìm thấy quy tắc .next-day"
+    body = rule.group(1)
+    assert "grid-template-columns:minmax(0,1fr)" in body, (
+        "khu này phải xếp dọc một cột"
+    )
+    assert "repeat(3," not in body and "repeat(2," not in body
+
+
+def test_next_day_order_is_simulation_then_special_then_loto_stacked() -> None:
+    """Thứ tự dọc: mô phỏng -> Đặc biệt -> Lô tô."""
+    grid = _soup(DOCS / "index.html").find(class_="next-day")
+    assert grid is not None
+    kids = [k for k in grid.find_all(recursive=False)]
+    assert kids[0].get("id") == "mo-phong"
+    titles = [k.get_text(" ", strip=True)[:60] for k in kids[1:]]
+    assert any("Đặc biệt ngày mai" in t for t in titles[:1]), titles
+    assert any("Lô tô ngày mai" in t for t in titles[1:2]), titles
+
+
+def test_bar_chart_uses_columns_instead_of_one_long_bar() -> None:
+    """Thẻ chiếm trọn 1504px sau khi xếp dọc; một thanh dài ~1400px không cho
+    biết thêm gì mà nhãn với trị số bị đẩy ra hai mép xa nhau."""
+    css = _css(DOCS / "index.html")
+    rule = re.search(r"\.bar-list\{([^}]*)\}", css)
+    assert rule, "không tìm thấy quy tắc .bar-list"
+    body = rule.group(1)
+    assert "repeat(auto-fit,minmax(min(100%,560px),1fr))" in body
+    assert "max-width" not in body, (
+        "giới hạn bề rộng sẽ bỏ trống nửa thẻ; phải chia cột"
+    )
+
+
+def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
+    """Khung giải cần 520px. Ở 1280px cột đầu chỉ còn 474px — đo được tràn
+    46px — nên ngưỡng chia ba cột phải là 1400px, không phải 1100px.
+
+    Kiểm ở NGUỒN chứ không ở docs/index.html: nhiều builder cùng ghi tệp đó và
+    khối <style> này chỉ có mặt khi build_fun_prediction chạy sau cùng, nên
+    khẳng định trên tệp đã dựng sẽ đỏ hay xanh tuỳ thứ tự test — một phép kiểm
+    như vậy không nói lên điều gì về mã.
+    """
+    css = (ROOT / "src" / "build_fun_prediction.py").read_text(encoding="utf-8")
+    css = css.replace(" ", "").replace("\n", "")
+    assert "@media(min-width:1400px)" in css
+    block = re.search(r"@media\(min-width:1400px\)\{(.*?\.fun-prob-panels\{[^}]*\})", css)
+    assert block, "không tìm thấy khối ba cột cho bảng mô phỏng"
+    assert "minmax(520px" in block.group(1)
+    assert "display:contents" in block.group(1)

@@ -696,8 +696,19 @@ def _write_excel(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = ws.dimensions
         for col_idx, col in enumerate(df.columns, start=1):
-            values = df.iloc[:500, col_idx - 1].astype(str).tolist()
-            width = min(max(10, max([len(str(col)), *[len(v) for v in values]]) + 2), 28)
+            # pandas 3.0 GIỮ giá trị thiếu là NaN qua astype(str) thay vì tạo
+            # chuỗi "nan" như 2.x, nên .tolist() trả về lẫn float. Mã cũ giả
+            # định mọi phần tử đều là chuỗi và vỡ bằng
+            # "TypeError: object of type 'float' has no len()".
+            #
+            # Ô thiếu hiển thị trống trong Excel nên nó đóng góp 0 vào bề rộng
+            # cột; đếm nó thành "nan" dài 3 ký tự là sai kể cả trên pandas 2.
+            column = df.iloc[:500, col_idx - 1]
+            lengths = [
+                0 if value is None or value != value else len(str(value))
+                for value in column.astype(str).tolist()
+            ]
+            width = min(max(10, max([len(str(col)), *lengths]) + 2), 28)
             ws.column_dimensions[get_column_letter(col_idx)].width = width
 
     wb.save(path)

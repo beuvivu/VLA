@@ -1394,7 +1394,20 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
     }}
-    .bar-list {{ display: grid; gap: 9px; }}
+    /* Sau khi xếp dọc, thẻ biểu đồ chiếm trọn 1504px. Kéo một thanh dài
+       ~1400px không cho biết thêm gì so với 560px, mà nhãn và trị số bị đẩy ra
+       hai mép xa nhau tới mức phải đưa mắt qua cả màn hình mới ghép được cặp.
+
+       Đổi thành nhiều CỘT thay vì giới hạn bề rộng rồi bỏ trống nửa thẻ: 10
+       mục thành 2 cột × 5 hàng, vừa lấp hết chiều ngang vừa giảm nửa chiều
+       cao. minmax(min(100%, 560px), 1fr) tự rơi về một cột khi hẹp mà không
+       cần media query cho từng mốc. */
+    .bar-list {{
+      display: grid;
+      gap: 9px 28px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+      grid-auto-flow: row;
+    }}
     .bar-row {{
       display: grid;
       grid-template-columns: 86px minmax(0, 1fr) 74px;
@@ -1668,23 +1681,26 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 
     .matrix-full {{ width: 100%; margin-bottom: 24px; }}
 
-    /* Ba bảng dự đoán ngày mai trên một hàng. */
+    /* Ba bảng dự đoán ngày mai XẾP DỌC.
+
+       Bản ba cột trước đây cho mỗi thẻ 485px ở màn 1920px và 435px ở 1440px.
+       Bảng mô phỏng bên trong cần tối thiểu 520px cho khung giải, nên nó bị
+       ép còn 131px và 81px — đo được tràn 389px và 439px, đúng cái thanh cuộn
+       ngang nhìn thấy dưới bảng. Đồng thời hai biểu đồ bị kéo cao 1255px cho
+       bằng thẻ mô phỏng, để lại một khoảng trắng lớn phía trên mỗi biểu đồ.
+
+       Xếp dọc giải quyết cả hai: mỗi thẻ có trọn chiều ngang, và không thẻ
+       nào phải cao theo thẻ khác. */
     .next-day {{
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 24px;
-      align-items: stretch;
     }}
-    .next-day > * {{ min-width: 0; margin: 0; display: flex; flex-direction: column; }}
-    .next-day > * > * {{ flex: 1 1 auto; }}
-    @media (max-width: 1240px) {{ .next-day {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
-    @media (max-width: 760px) {{ .next-day {{ grid-template-columns: minmax(0, 1fr); }} }}
+    .next-day > * {{ min-width: 0; margin: 0; }}
     /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
-       dựng. Nếu bước đó không chạy, section rỗng vẫn chiếm trọn một cột và để
-       lại một phần ba chiều ngang trống trơn — trước đây nó là section riêng
-       full-width nên tự xẹp. Ẩn nó đi và thu lưới còn hai cột. */
+       dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
+       lại khoảng trống; ẩn hẳn đi. */
     .next-day > section:empty {{ display: none; }}
-    .next-day:has(> section:empty) {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
     .inspect-panel {{
       background:
         radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),

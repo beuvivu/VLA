@@ -177,9 +177,30 @@ jobs:
 
       - name: Kết luận
         if: always()
+        env:
+          # Chuỗi cron của mốc đã kích hoạt lần chạy này; rỗng nếu chạy tay
+          # hoặc do repository_dispatch.
+          FIRED_CRON: ${{ github.event.schedule }}
+          # Mốc lưới an toàn CUỐI CÙNG trong ngày. Phải khớp chính xác với
+          # mốc cuối ở khối `schedule` phía trên.
+          LAST_CRON: "34 14 * * *"
         run: |
-          if [ "${{ steps.poll.outputs.verified }}" = "true" ]; then
+          set -euo pipefail
+          verified="${{ steps.poll.outputs.verified }}"
+          slots="${{ steps.poll.outputs.verified_slots || 0 }}"
+
+          if [ "$verified" = "true" ]; then
             echo "::notice::Đủ 27/27 ô lúc $(date '+%H:%M:%S %Z'); đã kích hoạt hoàn tất."
-          else
-            echo "::warning::Mới có ${{ steps.poll.outputs.verified_slots || 0 }}/27 ô. Mốc sau sẽ thử lại."
+            exit 0
           fi
+
+          # Thiếu số ở mốc SỚM là chuyện bình thường — mốc sau sẽ thử lại, nên
+          # chỉ cảnh báo. Nhưng thiếu số ở mốc CUỐI nghĩa là hôm nay không còn
+          # lần thử nào nữa: để job xanh lúc đó chính là silent fail, không ai
+          # biết dữ liệu đã hỏng cho tới khi tự mở trang ra xem.
+          if [ "$FIRED_CRON" = "$LAST_CRON" ]; then
+            echo "::error::Mốc cuối trong ngày mà mới có ${slots}/27 ô. Không còn lần thử nào cho kỳ hôm nay."
+            exit 1
+          fi
+
+          echo "::warning::Mới có ${slots}/27 ô. Mốc sau sẽ thử lại."

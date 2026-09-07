@@ -409,3 +409,163 @@ def test_a_silently_swallowed_error_still_reaches_the_stats(monkeypatch) -> None
     _, _, stats = poll_once([_SilentlyFailingSource()], TARGET, min_agreement=1)
     assert stats[0]["error"] is not None, "lỗi bị nuốt phải nổi lên nhật ký"
     assert "OSError" in stats[0]["error"]
+
+
+# --- Thử lại có lùi mũ ----------------------------------------------------
+#
+# 429 và 5xx là chuyện thường trong khung 18:15-18:40 khi cả nước cùng vào
+# xem. Bỏ nguồn ngay lần hỏng đầu là mất nó cho cả vòng thăm dò.
+
+
+class _FlakySession:
+    """Hỏng ``fail_times`` lần đầu rồi mới thành công."""
+
+    def __init__(self, fail_times: int, status: int = 503, boom: Exception | None = None,
+                 retry_after: str | None = None) -> None:
+        self.fail_times = fail_times
+        self.status = status
+        self.boom = boom
+        self.retry_after = retry_after
+        self.calls = 0
+
+    def get(self, url, timeout=None, **kwargs):
+        self.calls += 1
+        outer = self
+
+        class _Resp:
+            headers = {"Retry-After": outer.retry_after} if outer.retry_after else {}
+            status_code = outer.status if outer.calls <= outer.fail_times else 200
+            text = ""
+
+        if outer.calls <= outer.fail_times and outer.boom is not None:
+            raise outer.boom
+        return _Resp()
+
+
+def _wrap(inner, **kw):
+    naps: list[float] = []
+    kw.setdefault("max_attempts", 3)
+    session = _TimeoutCappedSession(inner, 8.0, sleeper=naps.append, **kw)
+    return session, naps
+
+
+def test_retries_a_transient_server_error_then_succeeds() -> None:
+    inner = _FlakySession(fail_times=2, status=503)
+    session, naps = _wrap(inner)
+    resp = session.get("http://x")
+    assert resp.status_code == 200
+    assert inner.calls == 3
+    assert len(naps) == 2, "phải chờ giữa các lần thử"
+
+
+def test_retries_rate_limiting() -> None:
+    """429 lúc cao điểm là lý do phổ biến nhất khiến một nguồn im lặng."""
+    inner = _FlakySession(fail_times=1, status=429)
+    session, _ = _wrap(inner)
+    assert session.get("http://x").status_code == 200
+    assert inner.calls == 2
+
+
+@pytest.mark.parametrize("status", [403, 404, 410])
+def test_does_not_retry_a_permanent_error(status) -> None:
+    """Thử lại 403/404 chỉ tốn thời gian: câu trả lời sẽ y hệt."""
+    inner = _FlakySession(fail_times=5, status=status)
+    session, naps = _wrap(inner)
+    assert session.get("http://x").status_code == status
+    assert inner.calls == 1
+    assert naps == []
+
+
+def test_retries_a_network_exception() -> None:
+    inner = _FlakySession(fail_times=1, status=200, boom=TimeoutError("quá hạn"))
+    session, _ = _wrap(inner)
+    assert session.get("http://x").status_code == 200
+    assert inner.calls == 2
+
+
+def test_gives_up_after_max_attempts_and_reraises() -> None:
+    inner = _FlakySession(fail_times=99, status=200, boom=OSError("mạng hỏng"))
+    session, naps = _wrap(inner, max_attempts=3)
+    with pytest.raises(OSError):
+        session.get("http://x")
+    assert inner.calls == 3
+    assert len(naps) == 2, "chờ giữa các lần, không chờ sau lần cuối"
+
+
+def test_backoff_grows_exponentially() -> None:
+    inner = _FlakySession(fail_times=99, status=503)
+    session, naps = _wrap(inner, max_attempts=4, backoff_base=1.0, backoff_cap=100.0)
+    session.get("http://x")
+    # Có nhiễu nên so theo khoảng: lần thứ n nằm trong [0.5, 1.0] * 2^(n-1).
+    assert 0.5 <= naps[0] <= 1.0
+    assert 1.0 <= naps[1] <= 2.0
+    assert 2.0 <= naps[2] <= 4.0
+
+
+def test_backoff_is_jittered_not_a_fixed_ladder() -> None:
+    """Sáu nguồn chạy song song; cùng hỏng rồi cùng chờ đúng một khoảng thì
+    lần thử sau lại dội vào cùng thời điểm máy chủ đang quá tải."""
+    seen = set()
+    for _ in range(12):
+        inner = _FlakySession(fail_times=99, status=503)
+        session, naps = _wrap(inner, max_attempts=2, backoff_base=1.0, backoff_cap=100.0)
+        session.get("http://x")
+        seen.add(round(naps[0], 6))
+    assert len(seen) > 1, "độ trễ phải có nhiễu, không phải bậc thang cố định"
+
+
+def test_backoff_respects_retry_after_but_caps_it() -> None:
+    """Có nơi trả Retry-After hàng trăm giây; chờ chừng đó thì hết cả kỳ quay."""
+    inner = _FlakySession(fail_times=99, status=429, retry_after="600")
+    session, naps = _wrap(inner, max_attempts=2, backoff_base=0.5, backoff_cap=4.0)
+    session.get("http://x")
+    assert naps[0] <= 4.0
+
+
+def test_retry_budget_must_fit_inside_the_poll_interval() -> None:
+    """Ngân sách xấu nhất vượt chu kỳ thăm dò thì một nguồn chậm nuốt trọn
+    vòng và vòng kế tiếp bị trượt."""
+    with pytest.raises(ValueError, match="ngân sách thử lại"):
+        PollConfig(
+            target=TARGET,
+            request_timeout=8.0,
+            max_attempts=20,          # 160s
+            interval_seconds=(60.0, 90.0),
+        )
+
+
+def test_default_config_has_a_feasible_retry_budget() -> None:
+    cfg = PollConfig(target=TARGET)
+    assert cfg.max_attempts * cfg.request_timeout <= cfg.interval_seconds[0]
+
+
+class _RequestingSource:
+    """Nguồn có THỰC SỰ gửi yêu cầu, rồi trả về một kỳ quay đầy đủ.
+
+    FakeSource không gọi ``http.get`` nên số lần thử của nó luôn là 0 — đúng
+    nhưng vô dụng cho phép kiểm này.
+    """
+
+    name = "co-goi.vn"
+
+    def fetch_partial(self, selected_date, http, *, live=False):
+        http.get("http://x", timeout=15)
+        return _full_prize_map()
+
+
+def test_attempt_count_reaches_the_stats_for_diagnosis(monkeypatch) -> None:
+    """Biết một nguồn phải thử 3 lần mới xong là tín hiệu nó đang chật vật."""
+    import crawler.fetch_results as mod
+
+    monkeypatch.setattr(mod, "build_session", lambda *a, **k: _FlakySession(fail_times=2, status=503))
+    monkeypatch.setattr(mod.time, "sleep", lambda _s: None)
+    _, _, stats = poll_once([_RequestingSource()], TARGET, min_agreement=1)
+    assert stats[0]["attempts"] == 3, "phải báo đủ số lần đã thử"
+
+
+def test_a_source_that_never_requests_reports_zero_attempts() -> None:
+    """0 nghĩa là "không gửi yêu cầu nào", khác hẳn "thử 1 lần" — giữ được
+    phân biệt đó thì nhật ký mới đọc được."""
+    full = _full_prize_map()
+    _, _, stats = poll_once([FakeSource("a.vn", [full])], TARGET, min_agreement=1)
+    assert stats[0]["attempts"] == 0
