@@ -599,6 +599,95 @@ def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+
+#: Xác suất HAI số cụ thể cùng về trong một kỳ, tính bằng bao hàm-loại trừ.
+#: Không phải bình phương của tỉ lệ đơn: hai biến cố không độc lập vì cùng
+#: rút từ 27 ô giải. P = 1 - 2(0.99)^27 + (0.98)^27.
+PAIR_COOCCURRENCE_RATE = 1.0 - 2.0 * (0.99**27) + (0.98**27)
+
+#: Cực đại của 4950 cặp trên dữ liệu NGẪU NHIÊN HOÀN TOÀN, đo bằng mô phỏng
+#: 400 lần lịch sử 393 kỳ: trung bình 39.8, khoảng 90% là 37-43.
+#: Đây là con số phải đặt cạnh cặp dẫn đầu, nếu không bảng sẽ chế ra tín hiệu.
+PAIR_CHANCE_MAX_MEAN = 39.8
+PAIR_CHANCE_MAX_BAND = (37, 43)
+
+
+def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
+    """Bảng tần suất cặp lô tô đồng xuất hiện, kèm mốc so sánh ngẫu nhiên.
+
+    ``src/pair_stats.py`` đã tính bảng này hàng ngày vào
+    ``data/pairs/top_unordered_pairs_top300.csv`` nhưng chưa trang nào hiển
+    thị nó.
+
+    Bảng bắt buộc kèm hai con số, nếu không nó gây hiểu sai: **kỳ vọng** của
+    một cặp bất kỳ, và **cực đại do ngẫu nhiên** trên toàn bộ 4950 cặp. Cặp
+    dẫn đầu hiện có 41 lần so với kỳ vọng 21.6 — nghe như quy luật, nhưng cực
+    đại trên dữ liệu ngẫu nhiên trung bình đã là 39.8. Thiếu cột so sánh thì
+    người đọc chỉ thấy "gấp đôi kỳ vọng".
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+        limit: Số cặp hiển thị.
+
+    Returns:
+        Chuỗi HTML của thẻ; chuỗi rỗng nếu chưa có dữ liệu.
+    """
+    df = _read_csv(repo_root / "data" / "pairs" / "top_unordered_pairs_top300.csv")
+    if df.empty or "count" not in df.columns:
+        return ""
+
+    n_draws = _history_days(repo_root)
+    expected = PAIR_COOCCURRENCE_RATE * n_draws if n_draws else 0.0
+
+    rows = []
+    for _, row in df.head(limit).iterrows():
+        count = _to_float(row.get("count"), default=0.0)
+        rows.append(
+            {
+                "pair": str(row.get("pair", "")),
+                "count": int(count),
+                "expected": f"{expected:.1f}",
+                "ratio": f"{count / expected:.2f}×" if expected else "—",
+            }
+        )
+
+    header = "".join(
+        f"<th>{html.escape(h)}</th>"
+        for h in ("Cặp số", "Số lần cùng về", "Kỳ vọng", "So kỳ vọng")
+    )
+    body = "".join(
+        "<tr>"
+        f"<td class='col-pair'>{html.escape(r['pair'])}</td>"
+        f"<td class='col-count'>{r['count']}</td>"
+        f"<td class='col-count'>{r['expected']}</td>"
+        f"<td class='col-count'>{html.escape(r['ratio'])}</td>"
+        "</tr>"
+        for r in rows
+    )
+    low, high = PAIR_CHANCE_MAX_BAND
+    return f"""
+    <article class="card">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Bảng dữ liệu</p>
+          <h3>Tần suất cặp lô tô</h3>
+          <p>Số lần hai con lô cùng về trong một kỳ, trên {n_draws} kỳ gần nhất.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="stat-table"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>
+      </div>
+      <p class="pair-note">
+        ⚠️ Có <b>4 950</b> cặp số, nên cặp dẫn đầu luôn cao hơn kỳ vọng kể cả khi
+        dữ liệu hoàn toàn ngẫu nhiên. Mô phỏng 400 lần lịch sử ngẫu nhiên
+        {n_draws} kỳ cho cực đại trung bình <b>{PAIR_CHANCE_MAX_MEAN}</b> lần
+        (khoảng 90%: {low}–{high}). Một cặp chỉ đáng chú ý khi vượt hẳn khoảng
+        đó — nằm trong khoảng nghĩa là không phân biệt được với ngẫu nhiên.
+      </p>
+    </article>
+    """
+
+
 def _render_table(
     *,
     title: str,
@@ -1667,6 +1756,25 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     .basis-merged .col-number_str {{ width: 1%; }}
 
+    /* Ghi chú cảnh báo đi kèm bảng cặp. Nó không phải phần trang trí: thiếu
+       nó thì bảng chỉ cho thấy "gấp đôi kỳ vọng" và người đọc kết luận có quy
+       luật, trong khi cực đại ngẫu nhiên đã ở mức đó rồi. */
+    .pair-note {{
+      margin: 14px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      font-size: 13px;
+      line-height: 1.6;
+    }}
+    .stat-table td.col-count {{
+      text-align: right; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }}
+    .stat-table td.col-pair {{ font-weight: 800; letter-spacing: .02em; }}
+
     /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
        định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
     .matrix-top {{
@@ -2092,6 +2200,17 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           {_render_bar_card(title="Đặc biệt ngày mai", subtitle="Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.", df=ai_de, label_col="number_str", value_col="cau_score", palette="orange", mode="de", number_col="number_str", limit=10, value_decimals=1)}
           {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="purple", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
         </div>
+      </section>
+
+      <section id="tan-suat-cap" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Cặp lô tô</div>
+            <h2>Tần suất cặp lô tô đồng xuất hiện</h2>
+            <p>Bảng này do <code>src/pair_stats.py</code> tính hàng ngày. Nó luôn đi kèm mốc ngẫu nhiên, vì với 4 950 cặp thì cặp dẫn đầu cao hơn kỳ vọng là chuyện đương nhiên.</p>
+          </div>
+        </div>
+        {_render_pair_frequency(repo_root)}
       </section>
 
       <section id="tan-suat-loto" class="section">
