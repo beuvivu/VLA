@@ -386,6 +386,22 @@ FUN_CSS = r"""
 .fun-prize-number.fun-special { background: #fff1f2; color: #be123c; font-size: 19px; min-width: 92px; }
 .fun-method { margin: 9px 2px 0; color: #55606f; font-size: 11px; line-height: 1.45; }
 .fun-prob-panels { display: grid; gap: 12px; }
+/* Khi thẻ xếp dọc nó có trọn chiều ngang trang. Giữ hai cột thì khung giải
+   cao 525px nằm cạnh cột phải cao 944px, để lại mảng trắng lớn dưới khung
+   giải. Trải ba cột lấp kín chiều ngang và giảm hẳn chiều cao thẻ.
+
+   Ngưỡng 1400px chứ không phải 1100px: khung giải cần tối thiểu 520px, mà ở
+   1280px cột đầu chỉ còn 474px — đo được tràn 46px. Phải đủ chỗ cho cả ba cột
+   thì mới chia ba.
+
+   Quy tắc này BẮT BUỘC nằm sau .fun-prob-panels{display:grid} bên trên: cùng
+   độ đặc hiệu nên khai sau mới thắng. */
+@media (min-width: 1400px) {
+  .fun-pred-grid {
+    grid-template-columns: minmax(520px, 1.15fr) minmax(280px, .8fr) minmax(280px, .8fr);
+  }
+  .fun-prob-panels { display: contents; }
+}
 .fun-prob-card { padding: 13px; border-radius: 16px; background: #f5f3ff; border: 1px solid #ddd6fe; }
 .fun-prob-card.de { background: #fff7ed; border-color: #fed7aa; }
 .fun-prob-title { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 9px; }
