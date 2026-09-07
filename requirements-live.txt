@@ -1,6 +1,6 @@
 # Minimal dependencies for the near-live GitHub Actions window.
 tzdata==2025.2
 pydantic==2.11.4
-requests>=2.32,<3.0
+requests>=2.34.2,<3.0
 beautifulsoup4==4.13.4
 lxml==5.4.0
