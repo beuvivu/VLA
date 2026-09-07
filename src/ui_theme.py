@@ -73,7 +73,7 @@ ngoài thang là một quyết định chưa được cân nhắc. */
 --fs-title:20px;--fs-metric:clamp(32px,2.2vw,44px);
 --fs-body:15px;--fs-label:12px;
 
---vla-dock-h:76px;
+--vla-dock-h:54px;
 color-scheme:light;
 }
 
@@ -357,11 +357,18 @@ overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 thập vẫn thấy mọi liên kết, nhưng để nguyên một bản phẳng ở cuối trang là rẻ
 và loại bỏ hoàn toàn rủi ro nếu CSS không tải được. */
 .vla-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
-border-top:1px solid var(--vla-border);font-size:13px}
+border-top:1px solid var(--vla-border);font-size:13px;
+display:grid;gap:var(--s3) var(--s4);
+grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}
+.vla-nav-fallback>section{min-width:0}
 .vla-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
 text-transform:uppercase;color:var(--vla-ink-soft);margin:0 0 var(--s1)}
-.vla-nav-fallback ul{list-style:none;padding:0;margin:0 0 var(--s2);
-display:flex;flex-wrap:wrap;gap:var(--s1) var(--s2)}
+/* Mỗi nhóm là một cột xếp dọc. Bản cũ dùng flex-wrap + space-between trên
+từng <ul>: với 2-4 mục thì space-between kéo giãn chúng ngang cả container,
+chữ dính hai mép còn giữa trống hoác. Lưới cột phân bố đều theo nghĩa footer
+thật sự — mỗi nhóm chiếm một phần bằng nhau của chiều ngang. */
+.vla-nav-fallback ul{list-style:none;padding:0;margin:0;
+display:flex;flex-direction:column;gap:var(--s1)}
 
 /* ---- 13. Lưới nội dung tự co giãn -----------------------------------
 Ba lớp cho ba nhu cầu bố cục cụ thể, tất cả đều align-items:stretch nên các ô
@@ -416,28 +423,43 @@ chồng lên nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon nh�
 popover khi hover hoặc focus. */
 .vla-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
 z-index:60;max-width:calc(100vw - var(--s4))}
-.vla-dock-inner{display:flex;align-items:flex-end;gap:var(--s2);
-padding:var(--s2) var(--s3);border-radius:var(--r-pill);
-background:color-mix(in srgb,var(--vla-surface) 84%,transparent);
+/* Nhãn nằm dưới icon đẩy dock lên 108px. Đưa nhãn thành tooltip nổi phía
+trên (xem .vla-dock-name) thì thanh chỉ còn icon: 40 + 6*2 viền = 54px, đúng
+khoảng 48-56px của bản thiết kế. Nền hạ từ 84% xuống 30% để thấy rõ nội dung
+trôi phía sau — đó mới là hiệu ứng kính. */
+.vla-dock-inner{position:relative;display:flex;align-items:center;gap:4px;
+padding:6px 10px;border-radius:var(--r-pill);
+background:color-mix(in srgb,var(--vla-surface) 30%,transparent);
 border:1px solid var(--hairline);
 box-shadow:0 8px 32px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.06);
-backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6)}
+backdrop-filter:blur(12px) saturate(1.8);-webkit-backdrop-filter:blur(12px) saturate(1.8)}
 /* Trình duyệt không có backdrop-filter sẽ thấy nền đặc thay vì trong suốt —
 vẫn đọc được, chỉ mất hiệu ứng kính. */
 @supports not (backdrop-filter:blur(1px)){
 .vla-dock-inner{background:var(--vla-surface)}
 }
 .vla-dock-group{position:relative}
-.vla-dock-btn{display:grid;place-items:center;gap:2px;width:56px;padding:var(--s1) 0;
+.vla-dock-btn{position:relative;display:grid;place-items:center;padding:0;
 background:none;border:0;color:var(--vla-ink-2);cursor:pointer;border-radius:var(--r-inner)}
-.vla-dock-ic{display:grid;place-items:center;width:44px;height:44px;font-size:20px;
+.vla-dock-ic{display:grid;place-items:center;width:40px;height:40px;font-size:18px;
 border-radius:var(--r-inner);background:var(--vla-surface-2);
 border:1px solid var(--hairline);
-transition:transform .28s cubic-bezier(.25,1,.5,1),background .2s ease}
-.vla-dock-name{font-size:11px;font-weight:600;letter-spacing:.02em;
-color:var(--vla-ink-soft);white-space:nowrap}
+transition:transform .24s ease-in-out,background .2s ease-in-out}
+/* Nhãn thành tooltip: ra khỏi luồng nên không cộng vào chiều cao thanh. */
+.vla-dock-name{position:absolute;bottom:calc(100% + 8px);left:50%;
+transform:translateX(-50%) translateY(4px);
+padding:3px 8px;border-radius:var(--r-inner);
+background:var(--vla-ink);color:var(--vla-surface);
+font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+opacity:0;visibility:hidden;pointer-events:none;
+transition:opacity .16s ease-in-out,transform .16s ease-in-out,visibility .16s}
+.vla-dock-btn:hover .vla-dock-name,.vla-dock-btn:focus-visible .vla-dock-name{
+opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+/* Nhóm nào có popover thì popover đã nói rõ tên nhóm — hiện thêm tooltip là
+thừa và hai lớp nổi chồng lên nhau. */
+.vla-dock-group:hover .vla-dock-name{opacity:0;visibility:hidden}
 .vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{
-transform:scale(1.18) translateY(-4px);background:var(--vla-brand-soft)}
+transform:scale(1.18);background:var(--vla-brand-soft)}
 .vla-dock-btn[aria-current="true"] .vla-dock-ic{
 background:var(--vla-brand);color:var(--vla-on-brand);border-color:transparent}
 .vla-dock-btn:focus-visible{outline:2px solid var(--vla-brand);outline-offset:2px}
@@ -450,10 +472,23 @@ transform:translateX(-50%) translateY(6px);min-width:220px;padding:var(--s1);
 background:var(--vla-surface);border:1px solid var(--vla-border);
 border-radius:var(--r-card);box-shadow:var(--vla-sh-lg);
 opacity:0;visibility:hidden;pointer-events:none;
-transition:opacity .2s ease,transform .2s cubic-bezier(.25,1,.5,1),visibility .2s}
+/* Độ trễ BẤT ĐỐI XỨNG. Mở gần như tức thì, nhưng đóng chậm .40s: con trỏ đi
+từ nút lên popover phải băng qua khe hở var(--s2), và nếu đóng ngay khi rời
+nút thì menu biến mất giữa đường. Đây là nửa sau của "hover intent"; nửa đầu
+là cầu nối ::after ngay bên dưới. */
+transition:opacity .18s ease-in-out .22s,transform .18s ease-in-out .22s,
+visibility 0s linear .40s}
+/* Cầu nối phủ kín khe hở giữa đáy popover và đỉnh nút, nên :hover của nhóm
+không bao giờ đứt khi con trỏ băng qua. */
+.vla-dock-pop::after{content:"";position:absolute;left:0;right:0;top:100%;
+height:18px}
+/* Vùng đệm quanh cả nhóm: tha thứ cho đường chuột đi chéo ra ngoài mép nút. */
+.vla-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
+top:-18px;bottom:-6px;z-index:-1}
 .vla-dock-group:hover .vla-dock-pop,
 .vla-dock-group:focus-within .vla-dock-pop{
-opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);
+transition-delay:0s,0s,0s}
 .vla-dock-pop a{display:flex;align-items:center;gap:var(--s1);
 padding:var(--s1) var(--s2);border-radius:var(--r-inner);
 color:var(--vla-ink-2);font-size:13px;white-space:nowrap}
@@ -469,10 +504,13 @@ color:var(--vla-brand-ink);font-weight:600}
 .vla-dock-inner{overflow-x:auto;justify-content:flex-start;
 scrollbar-width:none;border-radius:var(--r-card)}
 .vla-dock-inner::-webkit-scrollbar{display:none}
-.vla-dock-btn{width:52px}
+.vla-dock-btn{width:auto}
+/* Thanh cuộn ngang tạo ngữ cảnh cắt, nên tooltip nổi phía trên sẽ bị xén mất
+nửa trên. Ẩn hẳn: màn cảm ứng không có trạng thái hover để hiện nó. */
+.vla-dock-name{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-.vla-dock-ic,.vla-dock-pop{transition:none}
+.vla-dock-ic,.vla-dock-pop,.vla-dock-name{transition:none}
 .vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{transform:none}
 }
 
@@ -558,6 +596,13 @@ TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}"
 #: trang khác nhau và không bảng nào phủ hết 14 trang; hai trang soi cầu ổn định
 #: không được liên kết từ bất kỳ đâu. Một nguồn duy nhất khiến tình trạng đó
 #: không tái diễn được: thêm trang mà quên thêm vào menu sẽ bị test bắt.
+#: Nhãn ở đây là VĂN BẢN THUẦN, không phải HTML đã escape sẵn.
+#:
+#: Bản trước lưu "Gan &amp; nhịp" đã escape. Nơi dựng nào cũng gọi
+#: ``html.escape()`` một lần nữa nên thành "&amp;amp;" và hiện ra màn hình
+#: đúng chuỗi "Gan &amp; nhịp". Nơi nào quên escape thì lại hiện đúng — nên lỗi
+#: chỉ xuất hiện ở một số trang, càng khó truy. Escape thuộc về ranh giới dựng
+#: HTML, không thuộc về dữ liệu.
 SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
     (
         "Trực tiếp",
@@ -571,8 +616,8 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         (
             ("statistics.html", "Ma trận thống kê", "▦"),
             ("index.html#tan-suat-loto", "Tần suất lô tô", "◧"),
-            ("index.html#gan-nhip", "Gan &amp; nhịp", "◷"),
-            ("index.html#cap-lon", "Cặp lộn &amp; bóng", "⇅"),
+            ("index.html#gan-nhip", "Gan & nhịp", "◷"),
+            ("index.html#cap-lon", "Cặp lộn & bóng", "⇅"),
         ),
     ),
     (
@@ -718,7 +763,7 @@ def dock(current: str = "") -> str:
             parts.append(
                 f'<a href="{href}" role="menuitem"{mark}>'
                 f'<span aria-hidden="true">{item_icon}</span>'
-                f"<span>{label}</span></a>"
+                f"<span>{html.escape(label)}</span></a>"
             )
         parts.append("</div></div>")
     parts.append("</div></nav>")
@@ -756,10 +801,10 @@ def nav_fallback() -> str:
     """
     parts = ['<nav class="vla-nav-fallback" aria-label="Điều hướng đầy đủ">']
     for group, items in SITE_NAV:
-        parts.append(f"<h2>{html.escape(group)}</h2><ul>")
+        parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
         for href, label, _ in items:
-            parts.append(f'<li><a href="{href}">{label}</a></li>')
-        parts.append("</ul>")
+            parts.append(f'<li><a href="{href}">{html.escape(label)}</a></li>')
+        parts.append("</ul></section>")
     parts.append("</nav>")
     return "".join(parts)
 
