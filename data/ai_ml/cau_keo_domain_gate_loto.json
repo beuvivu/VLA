@@ -1,31 +1,31 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-09-07T10:59:15Z",
+  "generated_at": "2026-09-07T12:39:33Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
       "fold": 1,
-      "calib_start": "2026-04-09",
-      "val_start": "2026-05-09",
-      "val_end_exclusive": "2026-06-08"
+      "calib_start": "2026-04-10",
+      "val_start": "2026-05-10",
+      "val_end_exclusive": "2026-06-09"
     },
     {
       "fold": 2,
-      "calib_start": "2026-05-09",
-      "val_start": "2026-06-08",
-      "val_end_exclusive": "2026-07-08"
+      "calib_start": "2026-05-10",
+      "val_start": "2026-06-09",
+      "val_end_exclusive": "2026-07-09"
     },
     {
       "fold": 3,
-      "calib_start": "2026-06-08",
-      "val_start": "2026-07-08",
-      "val_end_exclusive": "2026-08-07"
+      "calib_start": "2026-06-09",
+      "val_start": "2026-07-09",
+      "val_end_exclusive": "2026-08-08"
     },
     {
       "fold": 4,
-      "calib_start": "2026-07-08",
-      "val_start": "2026-08-07",
+      "calib_start": "2026-07-09",
+      "val_start": "2026-08-08",
       "val_end_exclusive": null
     }
   ],
@@ -86,32 +86,52 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": 2.5535411569500382e-05,
-      "mean_logloss_skill": -1.0716121518288918e-05
+      "mean_brier_skill": -1.1534097465514882e-05,
+      "mean_logloss_skill": -1.938075003563342e-05
     },
     "cap_50": {
-      "mean_brier_skill": -0.00047837737790638874,
-      "mean_logloss_skill": -0.0004696280781240316
+      "mean_brier_skill": 0.00039621335467409345,
+      "mean_logloss_skill": 0.00033242879728694394
     },
     "bo": {
-      "mean_brier_skill": 5.736170353747571e-05,
-      "mean_logloss_skill": 2.489120944878292e-05
+      "mean_brier_skill": -2.3072678419814587e-05,
+      "mean_logloss_skill": -1.2530145886657278e-05
     },
     "bong": {
-      "mean_brier_skill": 4.9716517533653515e-05,
-      "mean_logloss_skill": 1.5437546067526153e-05
+      "mean_brier_skill": 0.00023765014864347335,
+      "mean_logloss_skill": 0.00018770541157632102
     },
     "cham": {
-      "mean_brier_skill": -0.00031878059534310517,
-      "mean_logloss_skill": -0.00031574329660184676
+      "mean_brier_skill": 5.4215136592194487e-05,
+      "mean_logloss_skill": 2.1524978459910428e-05
     },
     "tong": {
-      "mean_brier_skill": 7.364636325078455e-05,
-      "mean_logloss_skill": 3.8236401904834436e-05
+      "mean_brier_skill": 0.0002789468133222988,
+      "mean_logloss_skill": 0.00022451492946640885
     }
   },
-  "screened_groups": [],
-  "confirmation": {},
+  "screened_groups": [
+    "cap_50",
+    "bong",
+    "tong"
+  ],
+  "confirmation": {
+    "cap_50": {
+      "brier_skill": 6.027537603581569e-06,
+      "logloss_skill": -1.6692949862685182e-05,
+      "confirmed": false
+    },
+    "bong": {
+      "brier_skill": -0.000232971452065203,
+      "logloss_skill": -0.00019912415010412416,
+      "confirmed": false
+    },
+    "tong": {
+      "brier_skill": -0.0001690471363807714,
+      "logloss_skill": -0.0001796670714952516,
+      "confirmed": false
+    }
+  },
   "confirmed_groups": [],
   "selected_features": [
     "number_value",
@@ -321,15 +341,15 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": 2.093575343794214e-05,
-  "all_groups_confirmation_logloss_skill": 1.7152857645444254e-05,
+  "all_groups_confirmation_brier_skill": -0.000396697305980037,
+  "all_groups_confirmation_logloss_skill": -0.0003681575962795045,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
   "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold.",
   "reason": "no individual domain feature group survived confirmation",
-  "anchor_date": "2026-09-06",
-  "predict_for_date": "2026-09-07",
+  "anchor_date": "2026-09-07",
+  "predict_for_date": "2026-09-08",
   "production_selected_groups": [],
   "production_feature_count": 39,
   "baseline_feature_count": 39
