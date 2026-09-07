@@ -923,3 +923,52 @@ def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
     assert block, "không tìm thấy khối ba cột cho bảng mô phỏng"
     assert "minmax(520px" in block.group(1)
     assert "display:contents" in block.group(1)
+
+
+# --- Màn hình tần suất cặp lô tô -------------------------------------------
+
+
+def test_pair_frequency_screen_exists() -> None:
+    """src/pair_stats.py tính bảng này hàng ngày vào
+    data/pairs/top_unordered_pairs_top300.csv nhưng trước đây không trang nào
+    hiển thị nó."""
+    soup = _soup(DOCS / "index.html")
+    section = soup.find(id="tan-suat-cap")
+    assert section is not None, "thiếu khu tần suất cặp lô tô"
+    assert section.find("table") is not None
+
+
+def test_pair_table_shows_the_expected_count_beside_the_observed() -> None:
+    """Chỉ hiện số lần cùng về là gây hiểu sai: người đọc không có gì để so."""
+    section = _soup(DOCS / "index.html").find(id="tan-suat-cap")
+    headers = [th.get_text(strip=True) for th in section.select("thead th")]
+    assert "Kỳ vọng" in headers
+    assert "So kỳ vọng" in headers
+
+
+def test_pair_table_carries_the_chance_maximum_warning() -> None:
+    """Với 4950 cặp, cặp dẫn đầu cao hơn kỳ vọng là chuyện đương nhiên. Mô
+    phỏng 400 lần lịch sử ngẫu nhiên 393 kỳ cho cực đại trung bình 39.8, còn
+    quan sát thật là 41 — nằm gọn trong khoảng ngẫu nhiên. Thiếu ghi chú này
+    thì bảng chế ra một tín hiệu không tồn tại.
+    """
+    section = _soup(DOCS / "index.html").find(id="tan-suat-cap")
+    note = section.find(class_="pair-note")
+    assert note is not None, "thiếu ghi chú mốc ngẫu nhiên"
+    text = note.get_text(" ", strip=True)
+    assert "4 950" in text
+    assert "39.8" in text
+
+
+def test_pair_cooccurrence_rate_uses_inclusion_exclusion() -> None:
+    """P(hai số cùng về) KHÔNG phải bình phương của tỉ lệ đơn: hai biến cố
+    không độc lập vì cùng rút từ 27 ô giải."""
+    from build_landing_page import PAIR_COOCCURRENCE_RATE
+
+    single = 1.0 - 0.99**27
+    exact = 1.0 - 2.0 * (0.99**27) + (0.98**27)
+    assert PAIR_COOCCURRENCE_RATE == pytest.approx(exact, abs=1e-12)
+    assert PAIR_COOCCURRENCE_RATE != pytest.approx(single**2, abs=1e-6), (
+        "dùng bình phương là bỏ qua tính không độc lập"
+    )
+    assert PAIR_COOCCURRENCE_RATE == pytest.approx(0.0549, abs=5e-4)

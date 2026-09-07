@@ -1,0 +1,100 @@
+name: Bổ sung lịch sử KQXS
+
+# CHẠY TAY, KHÔNG CÓ LỊCH.
+#
+# Một lần chạy phủ nhiều năm sẽ gửi hàng nghìn yêu cầu tới các trang tin. Đó
+# là việc làm một lần rồi thôi, không phải việc hàng ngày, nên đặt lịch cho nó
+# vừa vô ích vừa dễ thành lạm dụng.
+#
+# Quy trình hàng ngày đã có workflow riêng (daily_update.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Ngày đầu (YYYY-MM-DD), không sớm hơn 2015-01-01"
+        required: true
+        type: string
+      end:
+        description: "Ngày cuối (YYYY-MM-DD). Bỏ trống = hôm qua"
+        required: false
+        default: ""
+        type: string
+      delay_min:
+        description: "Chờ tối thiểu giữa hai yêu cầu (giây)"
+        required: false
+        default: "1.5"
+        type: string
+      delay_max:
+        description: "Chờ tối đa giữa hai yêu cầu (giây)"
+        required: false
+        default: "3.0"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # Hai lần backfill chạy song song sẽ ghi đè lẫn nhau lên cùng tệp dữ liệu.
+  group: xsmb-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    name: Quét dải ngày và ghi vào kho
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    # Với nhịp chờ 1,5-3 giây, một năm (365 kỳ) mất khoảng 15 phút. Trần 6 giờ
+    # đủ cho khoảng 8 năm trong một lần chạy.
+    timeout-minutes: 360
+
+    env:
+      TZ: Asia/Ho_Chi_Minh
+      PYTHONPATH: ${{ github.workspace }}/src
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v7
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài thư viện
+        run: python -m pip install --no-cache-dir -r requirements.txt
+
+      - name: Số kỳ trước khi chạy
+        run: |
+          echo "Kỳ hiện có: $(($(wc -l < data/xsmb.csv) - 1))"
+
+      - name: Chạy bổ sung lịch sử
+        run: |
+          python src/backfill_history.py \
+            --start "${{ inputs.start }}" \
+            ${{ inputs.end && format('--end "{0}"', inputs.end) || '' }} \
+            --delay-min "${{ inputs.delay_min }}" \
+            --delay-max "${{ inputs.delay_max }}"
+
+      - name: Kiểm tính toàn vẹn dữ liệu sau khi bổ sung
+        # Backfill ghi thẳng vào nguồn sự thật của kho. Đẩy lên mà chưa kiểm
+        # thì một dải hỏng sẽ lặng lẽ làm lệch mọi thống kê phía sau.
+        run: bash scripts/number_integrity_check.sh
+
+      - name: Ghi nhận dữ liệu mới
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/; then
+            echo "::notice::Không có kỳ nào mới."
+            exit 0
+          fi
+          rows=$(($(wc -l < data/xsmb.csv) - 1))
+          git add data/
+          git commit -m "data: bổ sung lịch sử KQXS (${{ inputs.start }} → ${{ inputs.end || 'hôm qua' }}), tổng ${rows} kỳ"
+          git push
+          echo "::notice::Đã ghi. Tổng số kỳ: ${rows}"
