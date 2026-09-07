@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "arm_names": [
+    "baseline",
+    "frequency",
+    "gap_hazard",
+    "tabular_boosting",
+    "ranking_lambdamart",
+    "temporal_sequence"
+  ],
+  "discount": 0.98,
+  "prior_alpha": 0.9506291426115858,
+  "prior_beta": 3.049370857388414,
+  "policy": "thompson",
+  "seed": 0,
+  "total_updates": 192,
+  "arms": {
+    "baseline": {
+      "successes": 10.795566010792255,
+      "failures": 38.17077678156672,
+      "pulls": 192
+    },
+    "frequency": {
+      "successes": 11.337686730469956,
+      "failures": 37.628656061889025,
+      "pulls": 192
+    },
+    "gap_hazard": {
+      "successes": 11.122652552044826,
+      "failures": 37.843690240314146,
+      "pulls": 192
+    },
+    "tabular_boosting": {
+      "successes": 10.664733951750264,
+      "failures": 38.3016088406087,
+      "pulls": 192
+    },
+    "ranking_lambdamart": {
+      "successes": 11.394821603475515,
+      "failures": 37.571521188883466,
+      "pulls": 192
+    },
+    "temporal_sequence": {
+      "successes": 11.737273736527314,
+      "failures": 37.22906905583165,
+      "pulls": 192
+    }
+  },
+  "rng_state": {
+    "bit_generator": "PCG64",
+    "state": {
+      "state": 78218328552473557889262815379518621747,
+      "inc": 87136372517582989555478159403783844777
+    },
+    "has_uint32": 0,
+    "uinteger": 0
+  }
+}

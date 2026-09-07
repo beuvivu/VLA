@@ -199,7 +199,7 @@ def main() -> None:
         )
     }
 <div class="vla-grid">{cards}</div>
-{app_shell_close()}
+{app_shell_close("dashboard.html")}
 </body>
 </html>
 """
@@ -300,7 +300,7 @@ def main() -> None:
         )
     }
 </div>
-{app_shell_close()}
+{app_shell_close("model-quality.html")}
 </body>
 </html>
 """

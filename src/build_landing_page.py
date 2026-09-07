@@ -749,33 +749,29 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
             "Số bộ 00–99 xuất hiện trong ngày",
             "purple",
         ),
+        (
+            "Chuỗi ngày",
+            str(_history_days(repo_root)),
+            "Số kỳ liên tục trong data/xsmb.csv",
+            "blue",
+        ),
+        (
+            "Chất lượng mô hình",
+            _model_grade(repo_root),
+            "Hạng theo kỹ năng log-loss so với nền",
+            "green",
+        ),
     ]
 
-    nav = "\n".join(
-        f"<a href='#{sid}'><span>{idx:02d}</span><b>{html.escape(label)}</b><small>{html.escape(desc)}</small></a>"
-        for idx, (sid, label, desc) in enumerate(NAV_ITEMS, start=1)
-    )
-
-    # Liên kết sang các trang khác, gom theo đúng năm nhóm của SITE_NAV. Trước
-    # đây trang này chỉ có neo trong nội bộ, nên 12 trang còn lại của kho chỉ
-    # tới được bằng cách gõ tay URL — hai trang cầu ổn định thì không tới được
-    # từ bất cứ đâu.
-    external_nav = "\n".join(
-        f"<div class='side-group'>{group}</div>"
-        + "\n".join(
-            f"<a href='{href}'><span aria-hidden='true'>{icon}</span><b>{label}</b></a>"
-            for href, label, icon in items
-            if not href.startswith("index.html")
-        )
-        for group, items in SITE_NAV
-        if any(not h.startswith("index.html") for h, _, _ in items)
-    )
-    external_nav = f"<nav class='side-nav' aria-label='Trang khác'>{external_nav}</nav>"
+    dock_html = _render_dock()
+    nav_fallback = _render_nav_fallback()
 
     live_block = _render_live_block(latest)
 
     stat_tiles = "\n".join(
-        f"<div class='metric-tile {palette}'><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong><em>{html.escape(desc)}</em></div>"
+        f"<div class='metric-tile {palette}' data-long='{str(len(value) >= 9).lower()}'>"
+        f"<span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>"
+        f"<em>{html.escape(desc)}</em></div>"
         for label, value, desc, palette in stat_cards_top
     )
 
@@ -848,122 +844,108 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
        lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
        --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
        Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
+    /* Không còn cột sidebar. Sidebar cũ rộng 292px trên màn 1680px — 17,4%
+       chiều ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm.
+       Điều hướng chuyển sang dock nổi ở chân trang; toàn bộ phần đó trả về
+       cho nội dung. */
     .app {{
-      display: grid;
-      /* Chiều rộng là token nên thu gọn chỉ là đổi một giá trị, không phải đo
-         lại bố cục bằng JavaScript — nhờ vậy không có bước giật khung. */
-      --side-w: 292px;
-      --side-w-collapsed: 68px;
-      grid-template-columns: var(--side-w) minmax(0, 1fr);
       min-height: 100vh;
-      transition: grid-template-columns .22s ease;
+      padding-bottom: calc(76px + 32px);   /* chừa chỗ cho dock */
     }}
-    .app[data-collapsed="true"] {{ grid-template-columns: var(--side-w-collapsed) minmax(0, 1fr); }}
     .app > * {{ min-width: 0; }}
-    .side-toggle {{
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 34px; height: 34px; flex: 0 0 auto; cursor: pointer;
-      border-radius: 10px; border: 1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.06); color: #e5e7eb; font-size: 15px; line-height: 1;
-    }}
-    .side-toggle:hover {{ background: rgba(255,255,255,.13); }}
-    .side-toggle:focus-visible {{ outline: 2px solid #93c5fd; outline-offset: 2px; }}
-    /* Nút thu gọn chỉ có biểu tượng; thiếu nhãn này thì trình đọc màn hình
-       chỉ thông báo "nút" mà không nói nút làm gì. */
+    /* Nhãn chỉ dành cho trình đọc màn hình: dock dùng biểu tượng, và một nút
+       chỉ có icon sẽ được đọc thành "nút" trống nếu thiếu nhãn này. */
     .sr-only {{
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
     }}
-    .side-head {{ display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }}
-    .side-group {{
-      font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
-      color: rgba(226,232,240,.55); font-weight: 700; padding: 14px 4px 4px; white-space: nowrap;
+
+    /* Điều hướng dự phòng cuối trang. */
+    .nav-fallback {{
+      margin-top: 48px; padding-top: 24px;
+      border-top: 1px solid var(--line); font-size: 13px;
     }}
-    .app[data-collapsed="true"] .brand > div:last-child,
-    .app[data-collapsed="true"] .nav-title,
-    .app[data-collapsed="true"] .side-group,
-    .app[data-collapsed="true"] .side-nav small {{
-      width: 0; height: 0; padding: 0; margin: 0; opacity: 0; overflow: hidden;
+    .nav-fallback h2 {{
+      font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 8px; font-weight: 600;
     }}
-    .app[data-collapsed="true"] .sidebar {{ padding-inline: 10px; }}
-    .app[data-collapsed="true"] .side-head {{ justify-content: center; }}
-    @media (prefers-reduced-motion: reduce) {{ .app {{ transition: none; }} }}
-    .sidebar {{
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow: auto;
-      padding: 22px;
-      color: #e5e7eb;
-      background:
-        linear-gradient(180deg, rgba(15,23,42,.96), rgba(15,23,42,.91)),
-        radial-gradient(circle at 30% 0%, rgba(37,99,235,.55), transparent 16rem);
-      border-right: 1px solid rgba(255,255,255,.08);
+    .nav-fallback ul {{
+      list-style: none; padding: 0; margin: 0 0 16px;
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
     }}
-    .brand {{
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      padding: 12px;
+
+    /* ── Dock điều hướng nổi ──────────────────────────────────────────────
+       17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
+       tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
+       nhóm và mở popover khi hover HOẶC focus — chỉ hover thôi thì người dùng
+       bàn phím không bao giờ tới được các mục con. */
+    .dock {{
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      z-index: 60; max-width: calc(100vw - 32px);
+    }}
+    .dock-inner {{
+      display: flex; align-items: flex-end; gap: 16px;
+      padding: 16px 24px; border-radius: 999px;
+      background: rgba(15, 23, 42, .84);
       border: 1px solid rgba(255,255,255,.10);
-      border-radius: 18px;
-      background: rgba(255,255,255,.06);
-      margin-bottom: 18px;
+      box-shadow: 0 8px 32px rgba(15,23,42,.30), inset 0 1px 0 rgba(255,255,255,.07);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
     }}
-    .brand-logo {{
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa);
-      color: #fff;
-      font-weight: 900;
+    /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
+       vẫn đọc được, đó là điều quan trọng. */
+    @supports not (backdrop-filter: blur(1px)) {{
+      .dock-inner {{ background: #0f172a; }}
     }}
-    .brand strong {{ display: block; font-size: 14px; }}
-    .brand small {{ display: block; color: #94a3b8; margin-top: 2px; }}
-    .nav-title {{
-      margin: 20px 10px 8px;
-      font-size: 11px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: .14em;
-      font-weight: 800;
+    .dock-group {{ position: relative; }}
+    /* Nút phải co theo nhãn, không cố định 56px: nhãn dài nhất ("Tool nâng
+       cao", 77px) tràn 12px ra ngoài viên thuốc khi bị ép vào khung cứng. */
+    .dock-btn {{
+      display: grid; place-items: center; gap: 2px;
+      min-width: 56px; padding: 8px 6px;
+      background: none; border: 0; cursor: pointer; border-radius: 12px; color: #e5e7eb;
     }}
-    .side-nav {{ display: grid; gap: 8px; min-width: 0; }}
-    .side-nav a {{ min-width: 0; }}
-    .side-nav b, .side-nav small {{ overflow: hidden; text-overflow: ellipsis; }}
-    .side-group {{ min-width: 0; overflow: hidden; text-overflow: ellipsis; }}
-    .side-nav a {{
-      display: grid;
-      grid-template-columns: 28px 1fr;
-      gap: 10px;
-      padding: 11px 12px;
-      border: 1px solid transparent;
-      border-radius: 16px;
-      color: #cbd5e1;
-      transition: .18s ease;
+    .dock-ic {{
+      display: grid; place-items: center; width: 44px; height: 44px; font-size: 20px;
+      border-radius: 12px; background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.10);
+      transition: transform .28s cubic-bezier(.25, 1, .5, 1), background .2s ease;
     }}
-    .side-nav a span {{
-      width: 28px;
-      height: 28px;
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      background: rgba(148,163,184,.12);
-      color: #93c5fd;
-      font-size: 11px;
-      font-weight: 900;
+    .dock-name {{ font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }}
+    .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{
+      transform: scale(1.18) translateY(-4px);
+      background: rgba(124,58,237,.34);
     }}
-    .side-nav a b {{ font-size: 13px; }}
-    .side-nav a small {{ grid-column: 2; color: #94a3b8; line-height: 1.35; margin-top: 2px; }}
-    .side-nav a:hover,
-    .side-nav a.active {{
-      background: rgba(255,255,255,.08);
-      border-color: rgba(255,255,255,.12);
-      color: #fff;
-      transform: translateX(2px);
+    .dock-btn:focus-visible {{ outline: 2px solid #93c5fd; outline-offset: 2px; }}
+    .dock-pop {{
+      position: absolute; bottom: calc(100% + 16px); left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      min-width: 224px; padding: 8px;
+      background: #fff; border: 1px solid var(--line);
+      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.22);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .2s ease, transform .2s cubic-bezier(.25,1,.5,1), visibility .2s;
     }}
+    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop {{
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }}
+    .dock-pop a {{
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: 12px; color: #1e293b; font-size: 13px;
+      white-space: nowrap; text-decoration: none;
+    }}
+    .dock-pop a:hover {{ background: #f1f5f9; }}
+    @media (max-width: 640px) {{
+      .dock {{ left: 16px; right: 16px; transform: none; max-width: none; }}
+      .dock-inner {{ overflow-x: auto; justify-content: flex-start; border-radius: 16px; }}
+      .dock-btn {{ min-width: 52px; }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{
+      .dock-ic, .dock-pop {{ transition: none; }}
+      .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{ transform: none; }}
+    }}
+
     .main {{
       min-width: 0;
       padding: 28px;
@@ -1013,11 +995,13 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     .primary-action {{ background: #fff; color: #0f172a; }}
     .ghost-action {{ border: 1px solid rgba(255,255,255,.18); color: #e5e7eb; background: rgba(255,255,255,.07); }}
+    /* auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần một
+       media query riêng cho từng mốc. */
     .metric-row {{
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }}
     .metric-tile {{
       padding: 18px;
@@ -1043,7 +1027,14 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       background: currentColor;
     }}
     .metric-tile span {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; font-weight: 900; }}
-    .metric-tile strong {{ font-size: clamp(26px, 4vw, 42px); line-height: 1; letter-spacing: -.04em; }}
+    .metric-tile strong {{
+      font-size: clamp(26px, 4vw, 42px); line-height: 1; letter-spacing: -.04em;
+      font-variant-numeric: tabular-nums;
+    }}
+    /* Giá trị dài (ngày "2026-09-06" là 10 ký tự) không vừa một dòng ở cỡ 42px
+       trong thẻ 213px, và một ngày bị ngắt thành "2026-09-" / "06" thì vô
+       nghĩa. Hạ cỡ chữ theo độ dài thay vì cho xuống dòng. */
+    .metric-tile[data-long="true"] strong {{ font-size: clamp(20px, 2.1vw, 27px); }}
     .metric-tile em {{ font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.4; }}
     .metric-tile.blue {{ color: var(--blue); }}
     .metric-tile.orange {{ color: var(--orange); }}
@@ -1460,17 +1451,61 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     .pair-row > * {{ min-width: 0; margin: 0; }}
     @media (max-width: 900px) {{ .pair-row {{ grid-template-columns: 1fr; }} }}
 
-    /* Ba khối căn cứ đường cầu. align-items:stretch thay cho start — chính
-       align-items:start trước đây khiến ba khối cao thấp lệch nhau và để lại
-       khoảng trống thò thụt dưới đáy khối ngắn hơn. */
+    /* Khu căn cứ: khung chọn số độc lập bên trái, hai bảng đường cầu gộp
+       thành một khối bên phải. Bản ba cột trước đây cho mỗi bảng 445px — cột
+       "Tỷ lệ" bị cắt mất và ~45% chiều cao mỗi cột bỏ trống. */
     .inspector {{
       display: grid;
+      grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
+      gap: 24px;
+      align-items: start;
+    }}
+    .inspector > * {{ min-width: 0; }}
+    @media (max-width: 1100px) {{ .inspector {{ grid-template-columns: minmax(0, 1fr); }} }}
+
+    /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
+       phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
+    .basis-merged {{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      overflow: hidden;
+    }}
+    .basis-merged > section {{ padding: 24px; }}
+    .basis-merged > section + section {{ border-top: 1px solid var(--line); }}
+    .basis-merged > section > * {{ margin: 0; border: 0; box-shadow: none; padding: 0; }}
+
+    /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
+       định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
+    .matrix-top {{
+      display: grid;
+      grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }}
+    .matrix-top > * {{ min-width: 0; margin: 0; }}
+    @media (max-width: 1100px) {{ .matrix-top {{ grid-template-columns: minmax(0, 1fr); }} }}
+
+    .matrix-full {{ width: 100%; margin-bottom: 24px; }}
+
+    /* Ba bảng dự đoán ngày mai trên một hàng. */
+    .next-day {{
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
+      gap: 24px;
       align-items: stretch;
     }}
-    .inspector > * {{ min-width: 0; display: flex; flex-direction: column; }}
-    @media (max-width: 1200px) {{ .inspector {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+    .next-day > * {{ min-width: 0; margin: 0; display: flex; flex-direction: column; }}
+    .next-day > * > * {{ flex: 1 1 auto; }}
+    @media (max-width: 1240px) {{ .next-day {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+    @media (max-width: 760px) {{ .next-day {{ grid-template-columns: minmax(0, 1fr); }} }}
+    /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
+       dựng. Nếu bước đó không chạy, section rỗng vẫn chiếm trọn một cột và để
+       lại một phần ba chiều ngang trống trơn — trước đây nó là section riêng
+       full-width nên tự xẹp. Ẩn nó đi và thu lưới còn hai cột. */
+    .next-day > section:empty {{ display: none; }}
+    .next-day:has(> section:empty) {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
     .inspect-panel {{
       background:
         radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
@@ -1581,7 +1616,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         grid-column: 2;
         grid-row: 1 / span 3;
         align-self: stretch;
-        align-content: end;
+        /* align-content:end dồn ba viên xuống đáy, để lại 140px trống ở đầu
+           panel — 39% chiều cao khối. Căn giữa thì khoảng trống chia đều hai
+           đầu và khối cân về mặt thị giác. */
+        align-content: center;
         padding: 12px;
         border: 1px solid rgba(255,255,255,.16);
         border-radius: 22px;
@@ -1604,16 +1642,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       }}
     }}
     @media (max-width: 1180px) {{
-      .app {{ grid-template-columns: 1fr; }}
-      .sidebar {{
-        position: relative;
-        height: auto;
-        border-right: 0;
-        border-bottom: 1px solid rgba(255,255,255,.08);
-      }}
-      .side-nav {{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }}
       .main {{ padding: 18px; }}
       .layout-top {{ grid-template-columns: 1fr; }}
       .right-rail {{ position: static; max-height: none; overflow: visible; }}
@@ -1644,13 +1672,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         background:
           radial-gradient(circle at top, rgba(37,99,235,.16), transparent 24rem),
           var(--bg);
-      }}
-      .sidebar {{
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        padding: 10px;
-        border-bottom: 1px solid rgba(255,255,255,.10);
       }}
       .brand {{
         margin-bottom: 8px;
@@ -1747,21 +1768,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     body.desktop-view {{
       min-width: 1320px;
     }}
-    body.desktop-view .app {{
-      grid-template-columns: 304px minmax(980px, 1fr) !important;
-    }}
-    body.desktop-view .sidebar {{
-      position: sticky !important;
-      top: 0 !important;
-      height: 100vh !important;
-      border-right: 1px solid rgba(255,255,255,.08) !important;
-      border-bottom: 0 !important;
-    }}
-    body.desktop-view .side-nav {{
-      display: grid !important;
-      grid-template-columns: 1fr !important;
-      overflow: visible !important;
-    }}
     body.desktop-view .side-nav a {{
       min-width: 0 !important;
     }}
@@ -1772,8 +1778,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       max-width: min(100%, 1780px) !important;
       padding: 32px clamp(28px, 3vw, 48px) !important;
     }}
-    /* Cùng lý do như .layout-top ở trên: sau khi trừ sidebar 304px và padding,
-       .main không đủ 1138px nên ngưỡng cũ làm tràn ngang ngay ở 1440px. */
+    /* Cùng lý do như .layout-top ở trên: sau khi bỏ sidebar, .main dùng trọn
+       chiều ngang nên ngưỡng cột phải nới theo. */
     body.desktop-view .layout-top {{
       grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
     }}
@@ -1798,8 +1804,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       grid-template-columns: minmax(320px, .7fr) minmax(0, 1.3fr) !important;
     }}
     @media print {{
-      .sidebar, .hero-actions {{ display: none; }}
-      .app {{ display: block; }}
+      .dock, .hero-actions {{ display: none; }}
+      .app {{ padding-bottom: 0; }}
       body {{ background: #fff; }}
       .card, .metric-tile, .hero {{ box-shadow: none; }}
     }}
@@ -1807,27 +1813,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 </head>
 <body{body_class}>
   <div class="app">
-    <aside class="sidebar" aria-label="Menu thống kê">
-      <div class="side-head">
-        <button class="side-toggle" id="side-toggle" type="button"
-                aria-expanded="true" aria-controls="side-nav" title="Thu gọn menu">
-          <span aria-hidden="true">☰</span><span class="sr-only">Thu gọn menu</span>
-        </button>
-        <div class="brand" style="margin:0">
-          <div class="brand-logo">AI</div>
-          <div>
-            <strong>Trung tâm phân tích xổ số</strong>
-            <small>Trang tổng hợp thống kê XSMB</small>
-          </div>
-        </div>
-      </div>
-      <div class="nav-title">Trình đơn thống kê</div>
-      <nav class="side-nav" id="side-nav">
-        {nav}
-      </nav>
-      {external_nav}
-    </aside>
-
     <main class="main">
       <section id="tong-quan" class="hero section">
         <div class="hero-content">
@@ -1853,18 +1838,21 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         {stat_tiles}
       </div>
 
-      <section id="ket-qua" class="section card">
-        <div class="card-head">
-          <div>
-            <p class="eyebrow">Kết quả hàng ngày</p>
-            <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3>
-            <p>Bảng kết quả giữ đủ số 0 đầu theo chuẩn từng giải; bấm vào số để xem căn cứ AI/ML và đường cầu.</p>
+      <!-- Tầng 1: kết quả ngày (58%) cạnh phân bổ chục×đơn vị (42%), cân
+           bằng chiều cao. Trước đây bảng kết quả chiếm trọn chiều ngang rồi
+           đẩy hai bảng nhỏ xuống dưới, nên mắt phải cuộn giữa hai thứ vốn
+           được đọc cùng nhau. -->
+      <div class="matrix-top">
+        <section id="ket-qua" class="section card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Kết quả hàng ngày</p>
+              <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3>
+              <p>Bảng kết quả giữ đủ số 0 đầu theo chuẩn từng giải; bấm vào số để xem căn cứ AI/ML và đường cầu.</p>
+            </div>
           </div>
-        </div>
-        {_render_result_table(latest)}
-      </section>
-
-      <div class="pair-row">
+          {_render_result_table(latest)}
+        </section>
         <section id="chuc-don-vi" class="section card">
           <div class="card-head">
             <div>
@@ -1875,31 +1863,36 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
           {_render_head_tail_lists(latest)}
         </section>
-        <section id="ma-tran-ngay" class="section card">
-          <div class="card-head">
-            <div>
-              <p class="eyebrow">Chục × đơn vị</p>
-              <h3>Ma trận lô tô ngày</h3>
-              <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
-            </div>
-          </div>
-          {_render_daily_matrix(latest)}
-        </section>
       </div>
 
-      <section id="mo-phong" class="section"></section>
+      <!-- Tầng 2: ma trận trải hết chiều ngang. Ma trận 10×10 trong cột 637px
+           phải nén mỗi ô xuống dưới 60px; ở 1680px mỗi ô rộng gấp đôi. -->
+      <section id="ma-tran-ngay" class="section card matrix-full">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Chục × đơn vị</p>
+            <h3>Ma trận lô tô ngày</h3>
+            <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
+          </div>
+        </div>
+        {_render_daily_matrix(latest)}
+      </section>
 
+      <!-- Ba bảng dự đoán trên MỘT hàng. Khối mô phỏng trước đây là một
+           section rời phía trên, còn ĐB và lô tô nằm trong section khác, nên
+           ba thứ cùng nói về ngày mai bị tách làm hai vùng cuộn. -->
       <section id="ai-ml" class="section">
         <div class="section-title">
           <div>
             <div class="section-kicker">Dự đoán vui</div>
             <h2>Ngày mai</h2>
-            <p>Hai bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược.</p>
+            <p>Ba bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược.</p>
           </div>
         </div>
-        <div class="pair-row">
-          {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="purple", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
+        <div class="next-day">
+          <section id="mo-phong" class="section"></section>
           {_render_bar_card(title="Đặc biệt ngày mai", subtitle="Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.", df=ai_de, label_col="number_str", value_col="cau_score", palette="orange", mode="de", number_col="number_str", limit=10, value_decimals=1)}
+          {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="purple", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
         </div>
       </section>
 
@@ -2016,8 +2009,18 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
               <li>Bấm vào số để xem chi tiết.</li>
             </ul>
           </aside>
-          {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=evidence_loto, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True)}
-            {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=evidence_de, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de")}
+          <!-- Hai bảng gộp thành một khối, ĐB trên và lô tô dưới, ngăn bằng
+               một đường mảnh. Trước đây chúng là hai cột hẹp 445px: cột "Tỷ lệ"
+               bị cắt mất, ô nội dung xuống 5 dòng, và ~45% chiều cao mỗi cột
+               bỏ trống. Gộp lại cho mỗi bảng gần 1090px và chia nhau chiều cao. -->
+          <div class="basis-merged">
+            <section>
+              {_render_table(title="Vị trí cầu ĐB nổi bật", subtitle="Các đường cầu ĐB có điểm quy tắc cao nhất hiện tại.", df=evidence_de, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de")}
+            </section>
+            <section>
+              {_render_table(title="Vị trí cầu lô tô nổi bật", subtitle="Các đường cầu lô tô có điểm quy tắc cao nhất hiện tại.", df=evidence_loto, columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hits", "trials", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True)}
+            </section>
+          </div>
         </div>
       </section>
 
@@ -2042,7 +2045,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <div class="footer">
         Sinh lúc {html.escape(generated_at)}. AI/ML và cầu-kèo là tín hiệu thống kê từ lịch sử, không phải bảo đảm kết quả xổ số tương lai.
       </div>
+      {nav_fallback}
     </main>
+    {dock_html}
   </div>
 
   <script type="application/json" id="landing-data">{data_json}</script>
@@ -2089,29 +2094,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       window.setInterval(refresh, 30000);
     }})();
 
-    (function () {{
-      const KEY = 'vla-sidebar-collapsed';
-      const app = document.querySelector('.app');
-      const btn = document.getElementById('side-toggle');
-      if (!app || !btn) return;
-      const read = () => {{
-        try {{ return window.localStorage.getItem(KEY) === 'true'; }} catch (e) {{ return false; }}
-      }};
-      const write = (v) => {{
-        try {{ window.localStorage.setItem(KEY, v ? 'true' : 'false'); }} catch (e) {{}}
-      }};
-      const apply = (c) => {{
-        app.setAttribute('data-collapsed', c ? 'true' : 'false');
-        btn.setAttribute('aria-expanded', c ? 'false' : 'true');
-        btn.setAttribute('title', c ? 'Mở rộng menu' : 'Thu gọn menu');
-      }};
-      apply(read());
-      btn.addEventListener('click', () => {{
-        const next = app.getAttribute('data-collapsed') !== 'true';
-        write(next);
-        apply(next);
-      }});
-    }})();
 
     function fmtPercent(value) {{
       const n = Number(value || 0);
@@ -2195,6 +2177,117 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 </html>
 """
     return html_doc
+
+
+def _render_dock() -> str:
+    """Dựng dock điều hướng nổi từ :data:`SITE_NAV`.
+
+    Sidebar cũ rộng 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết
+    mà phần lớn thời gian không ai bấm. Dock trả toàn bộ phần đó cho nội dung.
+
+    17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
+    tooltip chồng nhau. ``SITE_NAV`` vốn đã chia 5 nhóm, nên dock hiện 5 icon
+    nhóm, mỗi icon mở một popover chứa các mục con.
+
+    Returns:
+        Chuỗi HTML của dock.
+    """
+    # Nhóm đầu tiên là các neo TRONG trang. Bỏ sidebar cũng bỏ luôn khả năng
+    # nhảy tới từng mục, mà trang này cao khoảng 12 000px — cuộn tay từ đầu tới
+    # phần kiểm định là hơn mười màn hình. SITE_NAV chỉ phủ 4 trong 12 neo đó.
+    groups: list[tuple[str, tuple[tuple[str, str, str], ...]]] = [
+        (
+            "Trên trang",
+            tuple((f"#{sid}", label, f"{index:02d}") for index, (sid, label, _) in enumerate(NAV_ITEMS, 1)),
+        ),
+        *SITE_NAV,
+    ]
+    parts = ['<nav class="dock" aria-label="Điều hướng chính"><div class="dock-inner">']
+    for group, items in groups:
+        group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
+        icon = "☰" if group == "Trên trang" else (items[0][2] if items else "•")
+        parts.append('<div class="dock-group">')
+        parts.append(
+            f'<button class="dock-btn" type="button" aria-haspopup="true"'
+            f' aria-controls="{group_id}">'
+            f'<span class="dock-ic" aria-hidden="true">{icon}</span>'
+            f'<span class="dock-name">{html.escape(group)}</span></button>'
+        )
+        parts.append(f'<div class="dock-pop" id="{group_id}" role="menu">')
+        for href, label, item_icon in items:
+            parts.append(
+                f'<a href="{href}" role="menuitem">'
+                f'<span aria-hidden="true">{item_icon}</span>'
+                f"<span>{html.escape(label)}</span></a>"
+            )
+        parts.append("</div></div>")
+    parts.append("</div></nav>")
+    return "".join(parts)
+
+
+def _render_nav_fallback() -> str:
+    """Điều hướng phẳng cuối trang, phòng khi CSS không tải được.
+
+    Popover của dock ẩn bằng ``visibility:hidden``. Nếu CSS không tải được vì
+    bất kỳ lý do gì thì trạng thái hiển thị rơi về mặc định của trình duyệt, và
+    không nên phụ thuộc vào điều đó cho việc điều hướng. Một danh sách phẳng
+    tốn vài trăm byte và loại bỏ hẳn rủi ro; nó cũng giữ nguyên khả năng dò của
+    trình thu thập, vốn là lý do sidebar cũ tồn tại.
+
+    Returns:
+        Chuỗi HTML của khối điều hướng dự phòng.
+    """
+    parts = ['<nav class="nav-fallback" aria-label="Điều hướng đầy đủ">']
+    for group, items in SITE_NAV:
+        parts.append(f"<h2>{html.escape(group)}</h2><ul>")
+        for href, label, _ in items:
+            parts.append(f'<li><a href="{href}">{html.escape(label)}</a></li>')
+        parts.append("</ul>")
+    parts.append("</nav>")
+    return "".join(parts)
+
+
+def _history_days(repo_root: Path) -> int:
+    """Số kỳ quay liên tục có trong tệp kết quả.
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+
+    Returns:
+        Số dòng dữ liệu, hoặc 0 nếu chưa đọc được tệp.
+    """
+    try:
+        return int(len(pd.read_csv(repo_root / "data" / "xsmb.csv")))
+    except Exception:  # pragma: no cover - phụ thuộc trạng thái tệp
+        return 0
+
+
+def _model_grade(repo_root: Path) -> str:
+    """Hạng chất lượng mô hình, quy từ kỹ năng log-loss đã đo.
+
+    Thẻ này cố ý KHÔNG hiện một con số phần trăm. Kỹ năng đo được nằm ở mức
+    một phần vạn, nên in ra "0,07%" sẽ gợi ý một độ chính xác mà phép đo không
+    có. Một chữ cái nói đúng điều cần nói: mô hình có vượt nền hay không.
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+
+    Returns:
+        Một trong ``"A"``, ``"B"``, ``"C"`` hoặc ``"—"`` khi chưa có số liệu.
+    """
+    try:
+        scores = json.loads(
+            (repo_root / "data" / "research" / "model_scores.json").read_text(encoding="utf-8")
+        )
+        modes = scores.get("modes", {})
+        beats = sum(1 for entry in modes.values() if entry.get("beats_baseline"))
+        if not modes:
+            return "—"
+        if beats == len(modes):
+            return "A"
+        return "B" if beats else "C"
+    except Exception:  # pragma: no cover - phụ thuộc trạng thái tệp
+        return "—"
 
 
 def build_landing_page(*, repo_root: Path) -> list[Path]:

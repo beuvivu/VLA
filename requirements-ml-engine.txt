@@ -1,0 +1,14 @@
+# Phụ thuộc tùy chọn cho src/ml_engine/.
+#
+# Tách khỏi requirements.txt có chủ đích: quy trình dự đoán hằng ngày không cần
+# những gói này, và ml_engine tự suy giảm sang đường lui đã được kiểm thử khi
+# thiếu chúng (xem src/ml_engine/capabilities.py). Cài tệp này để chạy đường
+# thực thi đầy đủ.
+#
+# torch và catboost KHÔNG có ở đây: torch chiếm khoảng 11 GB nên không hợp lý
+# cho CI, còn catboost trùng vai trò với lightgbm. Cả hai vẫn được dùng tự động
+# nếu môi trường đã có sẵn.
+lightgbm>=4.0,<5.0
+optuna>=4.0,<5.0
+shap>=0.45,<1.0
+river>=0.21,<1.0

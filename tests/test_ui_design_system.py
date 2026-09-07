@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -32,11 +33,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_theme_stays_self_contained_without_external_assets() -> None:
+    """Không tài nguyên nào được lấy từ tên miền khác.
+
+    Điều cần canh là *nguồn gốc*, không phải sự có mặt của ``url()``. CSP đặt
+    ``font-src 'self'`` nên một URL tương đối trỏ tới tệp cạnh biểu định kiểu
+    hoàn toàn hợp lệ — và đó chính là cách phông Inter được phân phối. Phép
+    kiểm cũ cấm mọi ``url()`` nên cũng cấm luôn cách làm đúng.
+    """
     style = tailwind_style_tag()
     assert "https://" not in style
     assert "http://" not in style
+    assert "//" not in style.replace("://", "")
     assert "@import" not in style
-    assert "url(" not in style
+    for url in re.findall(r'url\("?([^")]+)"?\)', style):
+        assert not url.startswith(("http", "//", "data:")), f"tài nguyên ngoài: {url}"
 
 
 def test_theme_keeps_layout_and_component_primitives() -> None:

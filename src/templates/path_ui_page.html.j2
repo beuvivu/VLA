@@ -23,6 +23,11 @@
            --vla-border:#1f2937; --vla-border-strong:#243041;
            --vla-brand:#93c5fd; --vla-brand-ink:#bfdbfe; --vla-brand-soft:#172554;
            --vla-brand-border:#1e3a8a;
+           /* --vla-on-brand PHẢI lật cùng --vla-brand. Bảng màu tối này đổi nền
+              thương hiệu sang xanh nhạt #93c5fd, nhưng để nguyên chữ-trên-nền
+              thương hiệu là #ffffff của chế độ sáng thì tỉ lệ chỉ còn 1,80:1.
+              Lỗi này nằm im cho tới khi có thành phần dùng tới token đó. */
+           --vla-on-brand:#0b1220;
            color-scheme:dark; }
     body{margin:0;font-family:var(--vla-font); background:var(--bg); color:var(--text);}
     a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
@@ -194,5 +199,7 @@
     Được tạo bởi <span class="mono">src/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
   </div>
 </div>
+{{ dock_html|safe }}
+{{ nav_fallback_html|safe }}
 </body>
 </html>

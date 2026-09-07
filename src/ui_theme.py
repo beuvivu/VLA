@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
@@ -37,7 +38,7 @@ TAILWIND_LITE_CSS = r"""
 :root{
 --vla-bg:#f8fafc;--vla-surface:#fff;--vla-surface-2:#f8fafc;
 --vla-border:rgba(226,232,240,.75);--vla-border-strong:#e2e8f0;
---vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;--vla-ink-muted:#94a3b8;
+--vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;
 --vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
 /* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --vla-brand: ở chế
 độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
@@ -49,15 +50,43 @@ TAILWIND_LITE_CSS = r"""
 --vla-sh-sm:0 1px 2px rgba(15,23,42,.06);
 --vla-sh-md:0 4px 12px rgba(15,23,42,.10);
 --vla-sh-lg:0 10px 25px rgba(15,23,42,.14);
-/* Aptos là font của Microsoft, phát hành kèm Microsoft 365. Giấy phép KHÔNG
-cho phép phân phối lại tệp font, và CSP của kho đặt font-src 'self' nên cũng
-không tải được từ host ngoài. Khai báo theo tên là cách đúng: máy có Microsoft
-365 hiển thị Aptos thật, máy khác lùi về font hệ thống mà không hỏng bố cục. */
---vla-font:Aptos,"Aptos Display","Segoe UI Variable Text",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
---vla-font-display:"Aptos Display",Aptos,var(--vla-font);
+/* Inter tự host. Bản trước khai báo Aptos theo tên, nhưng CSP đặt font-src
+'self' và kho KHÔNG có tệp font nào — nên trang chưa bao giờ hiển thị bằng
+Aptos trừ máy đã cài sẵn Microsoft 365; mọi máy khác rơi về font hệ thống.
+Aptos cũng không được phép phân phối lại nên không thể tự host hợp pháp.
+Inter theo giấy phép SIL OFL thì được, và bản variable cho đủ 9 độ đậm trong
+một tệp 172 KB đã cắt gọn còn Latin + tiếng Việt. */
+--vla-font:"Inter var",Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--vla-font-display:var(--vla-font);
 --vla-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
---vla-sidebar-w:15rem;--vla-sidebar-w-collapsed:3.75rem;
+
+/* Thang 8pt. Mọi padding/margin/gap chỉ được lấy từ đây — một giá trị nằm
+ngoài thang là một quyết định chưa được cân nhắc. */
+--s1:8px;--s2:16px;--s3:24px;--s4:32px;--s5:40px;--s6:48px;--s8:64px;
+
+/* Bo góc và viền hạt mịn */
+--r-card:16px;--r-inner:12px;--r-pill:999px;
+--hairline:rgba(15,23,42,.06);
+
+/* Thang chữ — số dùng tabular-nums để cột số không nhảy khi giá trị đổi */
+--fs-display:clamp(28px,2.4vw,40px);
+--fs-title:20px;--fs-metric:clamp(32px,2.2vw,44px);
+--fs-body:15px;--fs-label:12px;
+
+--vla-dock-h:76px;
 color-scheme:light;
+}
+
+/* ---- 1a. Phông tự host ------------------------------------------------
+Một khai báo cho cả dải 100–900 nhờ trục variable, nên không cần 9 tệp riêng.
+font-display:swap để chữ hiện ngay bằng font hệ thống rồi mới hoán đổi — 172 KB
+vẫn là 172 KB, nhưng người đọc không phải nhìn trang trắng trong lúc chờ. */
+@font-face{
+font-family:"Inter var";
+font-style:normal;
+font-weight:100 900;
+font-display:swap;
+src:url("InterVariable.woff2") format("woff2-variations");
 }
 
 /* ---- 1b. Chế độ tối ---------------------------------------------------
@@ -67,9 +96,9 @@ tay sáng, chọn tay tối, và mặc định "theo hệ điều hành" vốn k
 tính nào lên thẻ gốc. */
 @media (prefers-color-scheme:dark){
 :root:not([data-vla-theme="light"]){
---vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;
+--vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
---vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
+--vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
 --vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
@@ -82,9 +111,9 @@ color-scheme:dark;
 }
 }
 :root[data-vla-theme="dark"]{
---vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;
+--vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
---vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#93a4bb;--vla-ink-muted:#64748b;
+--vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
 --vla-on-brand:#0f172a;
 --vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
@@ -199,7 +228,7 @@ border-bottom:1px solid var(--vla-border-strong)}
 .vla-table .vla-ar,.vla-table th.vla-ar{text-align:right;white-space:nowrap;
 font-variant-numeric:tabular-nums}
 .vla-table .vla-key{font-weight:600;color:var(--vla-ink)}
-.vla-table-empty{padding:2rem 1.25rem;text-align:center;color:var(--vla-ink-muted)}
+.vla-table-empty{padding:var(--s4) var(--s3);text-align:center;color:var(--vla-ink-soft)}
 /* Bảng do pandas sinh (không có class trên ô) vẫn được canh nền tảng. */
 .vla-table-wrap>table{width:100%;border-collapse:separate;border-spacing:0;
 font-size:.8125rem}
@@ -308,65 +337,31 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .lg\:col-span-8{grid-column:span 8/span 8}
 }
 
-/* ---- 12. Khung ứng dụng có sidebar thu gọn ---------------------------
-Dùng grid-template-columns thay vì tính chiều rộng bằng JavaScript: chuyển
-trạng thái chỉ là một phép đổi giá trị token, nên không có bước đo lại bố cục
-và không giật khung. */
-.vla-app{display:grid;grid-template-columns:var(--vla-sidebar-w) minmax(0,1fr);
-min-height:100vh;transition:grid-template-columns .22s ease}
-.vla-app[data-collapsed="true"]{grid-template-columns:var(--vla-sidebar-w-collapsed) minmax(0,1fr)}
-.vla-app>*{min-width:0}
+/* ---- 12. Khung ứng dụng full-width -----------------------------------
+Không còn cột sidebar. Sidebar cũ chiếm 292px trên màn 1680px — 17,4% chiều
+ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm. Điều hướng
+chuyển sang dock nổi ở mục 15, và toàn bộ phần đó trả về cho nội dung. */
+.vla-app{min-height:100vh}
 
-.vla-side{position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;
-background:var(--vla-surface);border-right:1px solid var(--vla-border);
-padding:.75rem 0 1.5rem;display:flex;flex-direction:column;gap:.125rem}
-.vla-side-top{display:flex;align-items:center;gap:.5rem;padding:.25rem .75rem .75rem;
-border-bottom:1px solid var(--vla-border);margin-bottom:.5rem}
-.vla-side-toggle{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
-width:2rem;height:2rem;border-radius:var(--vla-r-md);border:1px solid var(--vla-border);
-background:var(--vla-surface);color:var(--vla-ink-soft);cursor:pointer;
-font:inherit;font-size:1rem;line-height:1;transition:all .15s ease-in-out}
-.vla-side-toggle:hover{border-color:var(--vla-brand-border);color:var(--vla-brand-ink);
-background:var(--vla-brand-soft)}
-.vla-side-toggle:focus-visible{outline:2px solid var(--vla-brand);outline-offset:2px}
-.vla-side-brand{font-family:var(--vla-font-display);font-weight:700;font-size:.9375rem;
-color:var(--vla-ink);white-space:nowrap;overflow:hidden}
-
-/* ink-muted (#94a3b8) chỉ đạt 2,56:1 trên nền trắng — dưới ngưỡng WCAG AA cho
-chữ nhỏ. ink-soft đạt 7,5:1 và vẫn giữ được thứ bậc thị giác so với nhãn liên kết. */
-.vla-side-group{font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase;
-color:var(--vla-ink-soft);font-weight:600;padding:.875rem .875rem .25rem;white-space:nowrap}
-.vla-side a{display:flex;align-items:center;gap:.625rem;padding:.4375rem .875rem;
-color:var(--vla-ink-2);font-size:.8125rem;white-space:nowrap;overflow:hidden;
-border-left:3px solid transparent;transition:background .15s ease-in-out}
-.vla-side a:hover{background:var(--vla-surface-2);text-decoration:none}
-.vla-side a[aria-current="page"]{background:var(--vla-brand-soft);color:var(--vla-brand-ink);
-font-weight:600;border-left-color:var(--vla-brand)}
-.vla-side-ic{flex:0 0 1.25rem;text-align:center;font-size:.875rem}
-.vla-side-label{overflow:hidden;text-overflow:ellipsis}
-/* Nhãn chỉ dành cho trình đọc màn hình: nút thu gọn chỉ có biểu tượng, nên
-nếu không có nhãn này thì người dùng trình đọc màn hình nghe thấy một nút trống. */
-.vla-raw{margin-top:.75rem}
+/* .vla-sr-only vẫn cần: dock dùng biểu tượng, và một vài nút chỉ có icon sẽ
+được trình đọc màn hình đọc thành nút trống nếu thiếu nhãn ẩn này. */
+.vla-raw{margin-top:var(--s2)}
 .vla-raw summary{cursor:pointer;font-size:.8125rem;color:var(--vla-ink-soft);
 padding:.375rem 0;user-select:none}
 .vla-raw summary:hover{color:var(--vla-brand-ink)}
-.vla-raw[open] summary{margin-bottom:.5rem}
+.vla-raw[open] summary{margin-bottom:var(--s1)}
 .vla-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
 overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-/* Khi thu gọn, nhãn biến mất nhưng biểu tượng giữ nguyên vị trí. */
-.vla-app[data-collapsed="true"] .vla-side-group{height:0;padding:0;opacity:0;overflow:hidden}
-.vla-app[data-collapsed="true"] .vla-side-label,
-.vla-app[data-collapsed="true"] .vla-side-brand{width:0;opacity:0;overflow:hidden}
-
-/* Trên mobile sidebar mặc định là dải biểu tượng; không có trạng thái nào ẩn
-hoàn toàn điều hướng, vì trang tĩnh không có nút quay lại nào khác. */
-@media (max-width:767px){
-.vla-app{grid-template-columns:var(--vla-sidebar-w-collapsed) minmax(0,1fr)}
-.vla-side-group{height:0;padding:0;opacity:0;overflow:hidden}
-.vla-side-label,.vla-side-brand{width:0;opacity:0;overflow:hidden}
-.vla-side-top{justify-content:center;padding-inline:.25rem}
-}
+/* Điều hướng dự phòng trong footer: dock là một <nav> đầy đủ nên trình thu
+thập vẫn thấy mọi liên kết, nhưng để nguyên một bản phẳng ở cuối trang là rẻ
+và loại bỏ hoàn toàn rủi ro nếu CSS không tải được. */
+.vla-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
+border-top:1px solid var(--vla-border);font-size:13px}
+.vla-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
+text-transform:uppercase;color:var(--vla-ink-soft);margin:0 0 var(--s1)}
+.vla-nav-fallback ul{list-style:none;padding:0;margin:0 0 var(--s2);
+display:flex;flex-wrap:wrap;gap:var(--s1) var(--s2)}
 
 /* ---- 13. Lưới nội dung tự co giãn -----------------------------------
 Ba lớp cho ba nhu cầu bố cục cụ thể, tất cả đều align-items:stretch nên các ô
@@ -410,6 +405,128 @@ body{background:#fff}
 .vla-table-wrap{max-height:none;overflow:visible}
 .vla-nav{display:none}
 }
+
+/* ---- 15. Dock điều hướng nổi ------------------------------------------
+Thay sidebar dọc. Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang chỉ
+để hiển thị 17 liên kết mà phần lớn thời gian không ai bấm. Dock trả lại toàn
+bộ phần đó cho nội dung.
+
+17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và tooltip
+chồng lên nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon nhóm và mở
+popover khi hover hoặc focus. */
+.vla-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
+z-index:60;max-width:calc(100vw - var(--s4))}
+.vla-dock-inner{display:flex;align-items:flex-end;gap:var(--s2);
+padding:var(--s2) var(--s3);border-radius:var(--r-pill);
+background:color-mix(in srgb,var(--vla-surface) 84%,transparent);
+border:1px solid var(--hairline);
+box-shadow:0 8px 32px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.06);
+backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6)}
+/* Trình duyệt không có backdrop-filter sẽ thấy nền đặc thay vì trong suốt —
+vẫn đọc được, chỉ mất hiệu ứng kính. */
+@supports not (backdrop-filter:blur(1px)){
+.vla-dock-inner{background:var(--vla-surface)}
+}
+.vla-dock-group{position:relative}
+.vla-dock-btn{display:grid;place-items:center;gap:2px;width:56px;padding:var(--s1) 0;
+background:none;border:0;color:var(--vla-ink-2);cursor:pointer;border-radius:var(--r-inner)}
+.vla-dock-ic{display:grid;place-items:center;width:44px;height:44px;font-size:20px;
+border-radius:var(--r-inner);background:var(--vla-surface-2);
+border:1px solid var(--hairline);
+transition:transform .28s cubic-bezier(.25,1,.5,1),background .2s ease}
+.vla-dock-name{font-size:11px;font-weight:600;letter-spacing:.02em;
+color:var(--vla-ink-soft);white-space:nowrap}
+.vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{
+transform:scale(1.18) translateY(-4px);background:var(--vla-brand-soft)}
+.vla-dock-btn[aria-current="true"] .vla-dock-ic{
+background:var(--vla-brand);color:var(--vla-on-brand);border-color:transparent}
+.vla-dock-btn:focus-visible{outline:2px solid var(--vla-brand);outline-offset:2px}
+
+/* Popover: mặc định ẩn khỏi CÂY TRỢ NĂNG lẫn thị giác. Dùng visibility chứ
+không dùng display:none để còn chuyển động được, và hidden-until-found sẽ làm
+trình đọc màn hình bỏ qua khi đóng. */
+.vla-dock-pop{position:absolute;bottom:calc(100% + var(--s2));left:50%;
+transform:translateX(-50%) translateY(6px);min-width:220px;padding:var(--s1);
+background:var(--vla-surface);border:1px solid var(--vla-border);
+border-radius:var(--r-card);box-shadow:var(--vla-sh-lg);
+opacity:0;visibility:hidden;pointer-events:none;
+transition:opacity .2s ease,transform .2s cubic-bezier(.25,1,.5,1),visibility .2s}
+.vla-dock-group:hover .vla-dock-pop,
+.vla-dock-group:focus-within .vla-dock-pop{
+opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+.vla-dock-pop a{display:flex;align-items:center;gap:var(--s1);
+padding:var(--s1) var(--s2);border-radius:var(--r-inner);
+color:var(--vla-ink-2);font-size:13px;white-space:nowrap}
+.vla-dock-pop a:hover{background:var(--vla-surface-2);text-decoration:none}
+.vla-dock-pop a[aria-current="page"]{background:var(--vla-brand-soft);
+color:var(--vla-brand-ink);font-weight:600}
+
+/* Dock che mất phần cuối trang nếu không chừa chỗ. */
+.vla-dock-space{padding-bottom:calc(var(--vla-dock-h) + var(--s4))}
+
+@media (max-width:640px){
+.vla-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
+.vla-dock-inner{overflow-x:auto;justify-content:flex-start;
+scrollbar-width:none;border-radius:var(--r-card)}
+.vla-dock-inner::-webkit-scrollbar{display:none}
+.vla-dock-btn{width:52px}
+}
+@media (prefers-reduced-motion:reduce){
+.vla-dock-ic,.vla-dock-pop{transition:none}
+.vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{transform:none}
+}
+
+/* ---- 16. Lưới KPI -----------------------------------------------------
+auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần media query
+nào cho từng mốc. */
+.vla-kpi-grid{display:grid;gap:var(--s2);
+grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.vla-kpi{display:flex;flex-direction:column;gap:var(--s1);
+padding:var(--s3);border-radius:var(--r-card);
+background:var(--vla-surface);border:1px solid var(--vla-border);
+box-shadow:var(--vla-sh-sm)}
+.vla-kpi-label{font-size:var(--fs-label);font-weight:600;letter-spacing:.06em;
+text-transform:uppercase;color:var(--vla-ink-soft)}
+.vla-kpi-value{font-size:var(--fs-metric);font-weight:700;line-height:1;
+color:var(--vla-ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.vla-kpi-sub{font-size:13px;color:var(--vla-ink-soft)}
+.vla-kpi-spark{margin-top:auto;padding-top:var(--s1);display:block;
+width:100%;height:32px;overflow:visible}
+.vla-kpi-spark polyline{fill:none;stroke:var(--vla-brand);stroke-width:1.75;
+stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.vla-kpi-delta{font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+.vla-kpi-delta[data-dir="up"]{color:var(--vla-ok)}
+.vla-kpi-delta[data-dir="down"]{color:var(--vla-bad)}
+.vla-kpi-delta[data-dir="flat"]{color:var(--vla-ink-soft)}
+
+/* ---- 17. Lưới ma trận dữ liệu hai tầng --------------------------------
+minmax(0,…) là BẮT BUỘC, không phải tuỳ chọn: 1fr mặc định là minmax(auto,1fr)
+và một bảng rộng sẽ đẩy cột phình ra, phá vỡ tỉ lệ 58/42 đã chọn. */
+.vla-matrix-top{display:grid;gap:var(--s3);align-items:stretch;
+grid-template-columns:minmax(0,58fr) minmax(0,42fr)}
+.vla-matrix-top>*{min-width:0}
+.vla-matrix-full{width:100%}
+@media (max-width:1100px){.vla-matrix-top{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- 18. Ba bảng dự đoán ngày mai, một hàng --------------------------- */
+.vla-next-day{display:grid;gap:var(--s3);align-items:stretch;
+grid-template-columns:repeat(3,minmax(0,1fr))}
+.vla-next-day>*{min-width:0;display:flex;flex-direction:column}
+.vla-next-day>*>.vla-card-body{flex:1 1 auto}
+@media (max-width:1240px){.vla-next-day{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.vla-next-day{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- 19. Khu căn cứ: trái độc lập, phải hợp nhất ---------------------- */
+.vla-basis{display:grid;gap:var(--s3);align-items:start;
+grid-template-columns:minmax(0,34fr) minmax(0,66fr)}
+.vla-basis>*{min-width:0}
+.vla-basis-merged{border:1px solid var(--vla-border);border-radius:var(--r-card);
+background:var(--vla-surface);overflow:hidden;box-shadow:var(--vla-sh-sm)}
+.vla-basis-merged>section{padding:var(--s3)}
+/* Đường phân cách chỉ nằm GIỮA hai phần, không nằm trên phần đầu. */
+.vla-basis-merged>section+section{border-top:1px solid var(--vla-border)}
+@media (max-width:1100px){.vla-basis{grid-template-columns:minmax(0,1fr)}}
+
 """.strip()
 
 
@@ -501,30 +618,6 @@ def nav_targets() -> set[str]:
 
 STYLESHEET_NAME = "assets/vla.css"
 
-#: Script điều khiển sidebar. Nội tuyến vì CSP cho phép 'unsafe-inline' cho
-#: script, và vì một tệp rời cho 30 dòng sẽ thêm một lượt tải cho mỗi trang.
-SIDEBAR_SCRIPT = """
-(function(){
-  var KEY='vla-sidebar-collapsed';
-  var app=document.getElementById('vla-app');
-  var btn=document.getElementById('vla-side-toggle');
-  if(!app||!btn){return;}
-  function read(){try{return window.localStorage.getItem(KEY)==='true';}catch(e){return false;}}
-  function write(v){try{window.localStorage.setItem(KEY,v?'true':'false');}catch(e){}}
-  function apply(c){
-    app.setAttribute('data-collapsed',c?'true':'false');
-    btn.setAttribute('aria-expanded',c?'false':'true');
-    btn.setAttribute('title',c?'Mở rộng menu':'Thu gọn menu');
-  }
-  apply(read());
-  btn.addEventListener('click',function(){
-    var next=app.getAttribute('data-collapsed')!=='true';
-    write(next);apply(next);
-  });
-})();
-""".strip()
-
-
 def write_stylesheet(docs_dir: Path) -> Path:
     """Ghi biểu định kiểu dùng chung ra ``docs/assets/vla.css``.
 
@@ -536,7 +629,48 @@ def write_stylesheet(docs_dir: Path) -> Path:
     target = Path(docs_dir) / STYLESHEET_NAME
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(TAILWIND_LITE_CSS, encoding="utf-8")
+    # Phông đi cùng biểu định kiểu: @font-face trong CSS trỏ tới tệp cạnh nó,
+    # nên ghi CSS mà quên phông sẽ tạo ra một tham chiếu chết.
+    write_font_assets(docs_dir)
     return target
+
+
+#: Thư mục chứa tài nguyên tĩnh đi kèm mã nguồn (phông chữ và giấy phép).
+ASSET_SOURCE_DIR: Final[Path] = Path(__file__).resolve().parent / "assets"
+
+#: Các tệp phải sao chép sang ``docs/assets/`` mỗi lần dựng trang.
+FONT_ASSETS: Final[tuple[str, ...]] = ("InterVariable.woff2", "Inter-LICENSE.txt")
+
+
+def write_font_assets(docs_dir: Path) -> list[Path]:
+    """Sao chép phông tự host và giấy phép sang ``docs/assets/``.
+
+    Phải sao chép chứ không thể trỏ tới ``src/``: GitHub Pages chỉ phục vụ thư
+    mục ``docs/``. Và phải kèm giấy phép — SIL OFL cho phép phân phối lại nhưng
+    yêu cầu giữ nguyên văn bản giấy phép đi cùng tệp phông.
+
+    Args:
+        docs_dir: Thư mục gốc của trang tĩnh.
+
+    Returns:
+        Danh sách tệp đã ghi.
+
+    Raises:
+        FileNotFoundError: Khi thiếu tệp nguồn — im lặng bỏ qua sẽ khiến trang
+            xuất bản mà không có phông, và lỗi chỉ lộ ra ở trình duyệt người
+            dùng dưới dạng chữ rơi về phông hệ thống.
+    """
+    target_dir = Path(docs_dir) / "assets"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for name in FONT_ASSETS:
+        source = ASSET_SOURCE_DIR / name
+        if not source.exists():
+            raise FileNotFoundError(f"thiếu tài nguyên phông: {source}")
+        target = target_dir / name
+        target.write_bytes(source.read_bytes())
+        written.append(target)
+    return written
 
 
 def stylesheet_link() -> str:
@@ -545,47 +679,104 @@ def stylesheet_link() -> str:
     return f'<link rel="stylesheet" href="{STYLESHEET_NAME}" />'
 
 
-def sidebar(current: str = "", *, brand: str = "Thống kê XSMB") -> str:
-    """Dựng menu trái thu gọn được, trạng thái lưu trong ``localStorage``."""
+def dock(current: str = "") -> str:
+    """Dựng dock điều hướng nổi ở giữa chân trang.
 
-    parts = [
-        '<aside class="vla-side" id="vla-side">',
-        '<div class="vla-side-top">',
-        '<button class="vla-side-toggle" id="vla-side-toggle" type="button"'
-        ' aria-expanded="true" aria-controls="vla-side" title="Thu gọn menu">'
-        '<span aria-hidden="true">☰</span>'
-        '<span class="vla-sr-only">Thu gọn menu</span></button>',
-        f'<span class="vla-side-brand">{html.escape(brand)}</span>',
-        "</div>",
-    ]
+    Thay cho sidebar dọc. Sidebar chiếm 292px trên màn 1680px — 17,4% chiều
+    ngang — chỉ để hiện 17 liên kết mà phần lớn thời gian không ai bấm.
+
+    17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
+    tooltip chồng nhau. :data:`SITE_NAV` vốn đã chia 5 nhóm, nên dock hiện 5
+    icon nhóm, mỗi icon mở một popover chứa các mục con.
+
+    Popover mở bằng ``:hover`` **và** ``:focus-within`` — chỉ hover thôi thì
+    người dùng bàn phím không bao giờ tới được các mục con.
+
+    Args:
+        current: Tên tệp trang hiện tại, để đánh dấu mục đang xem.
+
+    Returns:
+        Chuỗi HTML của dock.
+    """
+    parts = ['<nav class="vla-dock" aria-label="Điều hướng chính">', '<div class="vla-dock-inner">']
     for group, items in SITE_NAV:
-        parts.append(f'<p class="vla-side-group">{group}</p>')
-        for href, label, icon in items:
+        hrefs = {href.split("#", 1)[0] for href, _, _ in items}
+        active = " aria-current=\"true\"" if current and current in hrefs else ""
+        icon = items[0][2] if items else "•"
+        group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
+        parts.append('<div class="vla-dock-group">')
+        parts.append(
+            f'<button class="vla-dock-btn" type="button"{active}'
+            f' aria-haspopup="true" aria-controls="{group_id}">'
+            f'<span class="vla-dock-ic" aria-hidden="true">{icon}</span>'
+            f'<span class="vla-dock-name">{html.escape(group)}</span>'
+            "</button>"
+        )
+        parts.append(f'<div class="vla-dock-pop" id="{group_id}" role="menu">')
+        for href, label, item_icon in items:
             mark = ' aria-current="page"' if href == current else ""
             parts.append(
-                f'<a href="{href}"{mark}>'
-                f'<span class="vla-side-ic" aria-hidden="true">{icon}</span>'
-                f'<span class="vla-side-label">{label}</span></a>'
+                f'<a href="{href}" role="menuitem"{mark}>'
+                f'<span aria-hidden="true">{item_icon}</span>'
+                f"<span>{label}</span></a>"
             )
-    parts.append("</aside>")
+        parts.append("</div></div>")
+    parts.append("</div></nav>")
     return "".join(parts)
 
 
 def app_shell_open(current: str = "", *, wide: bool = False) -> str:
-    """Mở khung ứng dụng: sidebar bên trái, nội dung căn giữa bên phải."""
+    """Mở khung ứng dụng: nội dung chiếm trọn chiều ngang, dock ở chân trang.
 
+    Args:
+        current: Tên tệp trang hiện tại.
+        wide: Bỏ giới hạn chiều rộng tối đa của khung nội dung.
+
+    Returns:
+        Phần HTML mở khung; đóng bằng :func:`app_shell_close`.
+    """
     extra = " vla-shell-wide" if wide else ""
     return (
-        f'<div class="vla-app" id="vla-app" data-collapsed="false">'
-        f"{sidebar(current)}"
+        f'<div class="vla-app vla-dock-space" id="vla-app">'
         f'<main class="vla-shell{extra}">'
     )
 
 
-def app_shell_close() -> str:
-    """Đóng khung mở bởi :func:`app_shell_open` và gắn script sidebar."""
+def nav_fallback() -> str:
+    """Điều hướng phẳng đặt cuối trang, phòng khi CSS không tải được.
 
-    return f"</main></div><script>{SIDEBAR_SCRIPT}</script>"
+    Dock là một ``<nav>`` đầy đủ nên trình thu thập vẫn thấy mọi liên kết dù
+    popover đang ẩn. Nhưng popover ẩn bằng ``visibility:hidden``, nên nếu CSS
+    không tải được vì bất kỳ lý do gì thì trạng thái hiển thị sẽ là mặc định
+    của trình duyệt — và không nên phụ thuộc vào điều đó cho việc điều hướng.
+    Một danh sách phẳng ở cuối trang tốn vài trăm byte và loại bỏ hẳn rủi ro.
+
+    Returns:
+        Chuỗi HTML của khối điều hướng dự phòng.
+    """
+    parts = ['<nav class="vla-nav-fallback" aria-label="Điều hướng đầy đủ">']
+    for group, items in SITE_NAV:
+        parts.append(f"<h2>{html.escape(group)}</h2><ul>")
+        for href, label, _ in items:
+            parts.append(f'<li><a href="{href}">{label}</a></li>')
+        parts.append("</ul>")
+    parts.append("</nav>")
+    return "".join(parts)
+
+
+def app_shell_close(current: str = "") -> str:
+    """Đóng khung mở bởi :func:`app_shell_open` và gắn dock.
+
+    Dock đặt ở CUỐI phần thân chứ không phải đầu: thứ tự trong DOM là thứ tự
+    trình đọc màn hình đi qua, và nội dung nên đến trước điều hướng phụ.
+
+    Args:
+        current: Tên tệp trang hiện tại, chuyển tiếp cho :func:`dock`.
+
+    Returns:
+        Phần HTML đóng khung kèm dock.
+    """
+    return f"{nav_fallback()}</main>{dock(current)}</div>"
 
 
 def tailwind_style_tag() -> str:

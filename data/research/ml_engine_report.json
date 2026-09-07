@@ -1,0 +1,241 @@
+{
+  "generated_at_utc": "2026-09-06T18:24:09Z",
+  "capabilities": {
+    "lightgbm": true,
+    "catboost": true,
+    "optuna": true,
+    "shap": true,
+    "river": true,
+    "torch": true
+  },
+  "days": 192,
+  "baseline_rate": 0.23765728565289646,
+  "metrics": {
+    "logloss": 0.5487308425871953,
+    "brier": 0.18132640811682768,
+    "logloss_skill": -0.0006703564562660604,
+    "brier_skill": -0.0008315200799911051,
+    "paired_t": -1.7916395825618456,
+    "beats_baseline": false,
+    "hit_rate_at": {
+      "3": 0.7239583333333334,
+      "5": 1.2552083333333333,
+      "10": 2.4739583333333335,
+      "27": 6.625
+    },
+    "random_hit_rate_at": {
+      "3": 0.7129687499999999,
+      "5": 1.18828125,
+      "10": 2.3765625,
+      "27": 6.41671875
+    },
+    "precision_at": {
+      "3": 0.24131944444444442,
+      "5": 0.25104166666666666,
+      "10": 0.24739583333333334,
+      "27": 0.24537037037037032
+    },
+    "recall_at": {
+      "3": 0.030492747364350623,
+      "5": 0.05269595176864198,
+      "10": 0.10383908022834654,
+      "27": 0.2786014955002727
+    },
+    "profit_ratio": {
+      "3": -0.16062801932367152,
+      "5": -0.12681159420289856,
+      "10": -0.13949275362318844,
+      "27": -0.1465378421900161
+    }
+  },
+  "bandit": {
+    "arms": [
+      {
+        "arm": "temporal_sequence",
+        "posterior_mean": 0.2395465159616284,
+        "credible_low": 0.13571630275815802,
+        "credible_high": 0.3619810080230224,
+        "effective_n": 48.966342792358965,
+        "pulls": 192,
+        "beats_baseline": false
+      },
+      {
+        "arm": "ranking_lambdamart",
+        "posterior_mean": 0.23308104911989652,
+        "credible_low": 0.13056263563706616,
+        "credible_high": 0.35466261953592576,
+        "effective_n": 48.96634279235898,
+        "pulls": 192,
+        "beats_baseline": false
+      },
+      {
+        "arm": "frequency",
+        "posterior_mean": 0.23200234762771416,
+        "credible_low": 0.1297063963289139,
+        "credible_high": 0.3534379826622296,
+        "effective_n": 48.96634279235898,
+        "pulls": 192,
+        "beats_baseline": false
+      },
+      {
+        "arm": "gap_hazard",
+        "posterior_mean": 0.22794252081905356,
+        "credible_low": 0.1264932265345984,
+        "credible_high": 0.34881942876843675,
+        "effective_n": 48.96634279235897,
+        "pulls": 192,
+        "beats_baseline": false
+      },
+      {
+        "arm": "baseline",
+        "posterior_mean": 0.2217671550299744,
+        "credible_low": 0.12163466532439106,
+        "credible_high": 0.3417649443465618,
+        "effective_n": 48.96634279235898,
+        "pulls": 192,
+        "beats_baseline": false
+      },
+      {
+        "arm": "tabular_boosting",
+        "posterior_mean": 0.21929705699894964,
+        "credible_low": 0.11970126289916783,
+        "credible_high": 0.33893312065071546,
+        "effective_n": 48.966342792358965,
+        "pulls": 192,
+        "beats_baseline": false
+      }
+    ],
+    "max_effective_n": 49.99999999999996,
+    "power_floor": 0.060195730783668404
+  },
+  "drift": {
+    "backend": "river",
+    "detections": 0,
+    "days_in_safe_mode": 120
+  },
+  "safe_mode": {
+    "mode": "safe",
+    "reason": "Hit-Rate 7 kỳ = 0.1286 < ngưỡng 0.2377",
+    "threshold": 0.23765728565289646,
+    "recent_hit_rate": 0.12857142857142856,
+    "observations": 7,
+    "transitions": [
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2000 < ngưỡng 0.2377",
+        "day": 206
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2714)",
+        "day": 213
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
+        "day": 214
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2571)",
+        "day": 225
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
+        "day": 229
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3143)",
+        "day": 253
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
+        "day": 258
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2714)",
+        "day": 268
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2000 < ngưỡng 0.2377",
+        "day": 271
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3143)",
+        "day": 279
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
+        "day": 286
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
+        "day": 294
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
+        "day": 297
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2571)",
+        "day": 320
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
+        "day": 351
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
+        "day": 359
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
+        "day": 362
+      },
+      {
+        "to": "normal",
+        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
+        "day": 372
+      },
+      {
+        "to": "safe",
+        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
+        "day": 381
+      }
+    ]
+  },
+  "selected_features": [
+    "fourier_peak",
+    "cross_momentum",
+    "fourier_weekly",
+    "rate_30d",
+    "double_rate_90d",
+    "gap_over_mean",
+    "cross_hot_and_overdue",
+    "double_rate_30d",
+    "rate_180d",
+    "digit_span",
+    "digit_sum",
+    "rate_90d",
+    "cross_overdue_squared",
+    "gap_days",
+    "rate_14d",
+    "hit_lag_3",
+    "rate_7d",
+    "hit_lag_2",
+    "is_double_digit"
+  ]
+}
