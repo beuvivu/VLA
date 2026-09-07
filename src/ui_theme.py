@@ -640,6 +640,26 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         ),
     ),
     (
+        "Bảng đặc biệt",
+        (
+            ("bang-dac-biet.html", "Theo ngày", "▦"),
+            ("bang-dac-biet-thang.html", "Theo tháng", "▩"),
+            ("bang-dac-biet-nam.html", "Theo năm", "▨"),
+            ("chu-ky-dac-biet.html", "Chu kỳ đặc biệt", "◷"),
+            ("cau-dac-biet-theo-bo-so.html", "Cầu ĐB theo bộ số", "⌗"),
+            ("giai-db-ngay-mai.html", "Giải ĐB ngày mai", "◐"),
+        ),
+    ),
+    (
+        "Lô tô chi tiết",
+        (
+            ("tan-suat-loto.html", "Tần suất lô tô", "◧"),
+            ("tan-suat-cap-loto.html", "Tần suất cặp lô tô", "⇅"),
+            ("dau-duoi-loto.html", "Đầu đuôi lô tô", "⊞"),
+            ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "◫"),
+        ),
+    ),
+    (
         "Tool nâng cao",
         (
             ("research-lab.html", "Phòng nghiên cứu", "⚗"),
