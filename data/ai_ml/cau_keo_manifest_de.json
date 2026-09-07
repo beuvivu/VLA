@@ -1,6 +1,6 @@
 {
   "mode": "de",
-  "generated_at": "2026-09-07T16:04:20Z",
+  "generated_at": "2026-09-07T16:27:04Z",
   "predict_for_date": "2026-09-08",
   "top": 20,
   "features": [
@@ -258,13 +258,13 @@
           "upper": 2.9944221990856747e-06
         },
         "baseline_logloss": 0.055926130674958434,
-        "challenger_logloss": 0.055994949474702405,
-        "logloss_improvement": -6.88187997439707e-05,
-        "logloss_skill": -0.0012305303247947584,
+        "challenger_logloss": 0.0559949494747024,
+        "logloss_improvement": -6.881879974396377e-05,
+        "logloss_skill": -0.0012305303247946344,
         "logloss_improvement_ci": {
           "confidence_level": 0.95,
-          "lower": -0.000287804108231934,
-          "upper": 0.00013628622919015346
+          "lower": -0.00028780410823192013,
+          "upper": 0.0001362862291901531
         },
         "bootstrap_replicates": 1000,
         "bootstrap_seed": 20260902,
@@ -291,13 +291,13 @@
         "upper": 2.9944221990856747e-06
       },
       "baseline_logloss": 0.055926130674958434,
-      "challenger_logloss": 0.055994949474702405,
-      "logloss_improvement": -6.88187997439707e-05,
-      "logloss_skill": -0.0012305303247947584,
+      "challenger_logloss": 0.0559949494747024,
+      "logloss_improvement": -6.881879974396377e-05,
+      "logloss_skill": -0.0012305303247946344,
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -0.000287804108231934,
-        "upper": 0.00013628622919015346
+        "lower": -0.00028780410823192013,
+        "upper": 0.0001362862291901531
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -306,7 +306,7 @@
     "ablation_report": "cau_keo_domain_ablation_de.csv",
     "gate_report": "cau_keo_domain_gate_de.json",
     "final_brier_skill": -0.00011767195839009277,
-    "final_logloss_skill": -0.0012305303247947584,
+    "final_logloss_skill": -0.0012305303247946344,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold."
   }
 }
