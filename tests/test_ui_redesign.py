@@ -274,14 +274,30 @@ def test_navigation_covers_every_generated_page() -> None:
     assert not missing, f"trang không có trong điều hướng: {sorted(missing)}"
 
 
-def test_navigation_has_the_five_agreed_groups() -> None:
+def test_navigation_groups_are_the_agreed_set() -> None:
+    """Bảy nhóm. Hai nhóm "Bảng đặc biệt" và "Lô tô chi tiết" được thêm khi
+    dựng mười trang thống kê riêng; trước đó chỉ có năm."""
     assert [group for group, _ in SITE_NAV] == [
         "Trực tiếp",
         "Thống kê",
         "Cầu kèo",
         "Phỏng đoán",
+        "Bảng đặc biệt",
+        "Lô tô chi tiết",
         "Tool nâng cao",
     ]
+
+
+def test_every_navigation_group_has_entries() -> None:
+    """Một nhóm rỗng vẫn hiện nút trên dock nhưng popover trống trơn."""
+    for group, items in SITE_NAV:
+        assert items, f"nhóm {group!r} không có mục nào"
+
+
+def test_navigation_labels_are_unique_within_a_group() -> None:
+    for group, items in SITE_NAV:
+        labels = [label for _href, label, _icon in items]
+        assert len(labels) == len(set(labels)), f"nhãn trùng trong nhóm {group!r}"
 
 
 def test_landing_links_out_to_the_other_pages() -> None:
