@@ -1,146 +1,146 @@
 {
   "date": "2026-09-08",
-  "generated_at_local": "2026-09-08T12:56:32+07:00",
-  "generated_at_utc": "2026-09-08T05:56:32Z",
+  "generated_at_local": "2026-09-08T13:42:00+07:00",
+  "generated_at_utc": "2026-09-08T06:42:00Z",
   "top_lo_to": [
     {
       "number": "86",
-      "probability": 0.23904888694669182,
+      "probability": 0.23908437970241395,
       "baseline": 0.23765728565289646,
-      "lift": 0.0013916012937953692,
+      "lift": 0.001427094049517491,
       "contribution_reasons": {
-        "geometric": 0.8331,
-        "special_set": -0.0671,
-        "pattern_memory": 0.0606,
-        "double_hit": -0.0391
+        "geometric": 0.8521,
+        "special_set": -0.0835,
+        "double_hit": -0.0379,
+        "pattern_memory": 0.0265
       },
       "gan_days": 1,
       "gan_flagged": false
     },
     {
       "number": "89",
-      "probability": 0.23887982662744775,
+      "probability": 0.23873338105896974,
       "baseline": 0.23765728565289646,
-      "lift": 0.001222540974551295,
+      "lift": 0.0010760954060732852,
       "contribution_reasons": {
-        "pattern_memory": 0.7173,
-        "double_hit": 0.1589,
-        "special_set": 0.1238,
+        "pattern_memory": 0.9015,
+        "double_hit": 0.0767,
+        "special_set": -0.0218,
         "geometric": 0.0
       },
       "gan_days": 19,
       "gan_flagged": true
     },
     {
-      "number": "77",
-      "probability": 0.2387584094093545,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0011011237564580445,
-      "contribution_reasons": {
-        "double_hit": 0.6906,
-        "pattern_memory": 0.2312,
-        "special_set": 0.0783,
-        "geometric": 0.0
-      },
-      "gan_days": 0,
-      "gan_flagged": false
-    },
-    {
-      "number": "49",
-      "probability": 0.23845945633641694,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0008021706835204812,
-      "contribution_reasons": {
-        "double_hit": 0.5399,
-        "pattern_memory": 0.2721,
-        "special_set": 0.1881,
-        "geometric": 0.0
-      },
-      "gan_days": 0,
-      "gan_flagged": false
-    },
-    {
       "number": "54",
-      "probability": 0.23842245721183436,
+      "probability": 0.23859726651792776,
       "baseline": 0.23765728565289646,
-      "lift": 0.0007651715589379049,
+      "lift": 0.0009399808650313035,
       "contribution_reasons": {
-        "pattern_memory": 0.4277,
-        "special_set": 0.3089,
-        "double_hit": 0.2634,
+        "pattern_memory": 0.6244,
+        "double_hit": 0.2451,
+        "special_set": 0.1304,
         "geometric": 0.0
       },
       "gan_days": 12,
       "gan_flagged": false
     },
     {
-      "number": "03",
-      "probability": 0.2383169474888571,
+      "number": "93",
+      "probability": 0.23854424277028338,
       "baseline": 0.23765728565289646,
-      "lift": 0.0006596618359606399,
+      "lift": 0.0008869571173869273,
       "contribution_reasons": {
-        "special_set": 0.5446,
-        "double_hit": 0.4521,
-        "pattern_memory": -0.0033,
+        "geometric": 0.3751,
+        "special_set": 0.2402,
+        "double_hit": 0.2065,
+        "pattern_memory": 0.1782
+      },
+      "gan_days": 1,
+      "gan_flagged": false
+    },
+    {
+      "number": "77",
+      "probability": 0.23831876250578637,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0006614768528899195,
+      "contribution_reasons": {
+        "double_hit": 0.8462,
+        "special_set": -0.0967,
+        "pattern_memory": 0.0571,
         "geometric": 0.0
       },
       "gan_days": 0,
       "gan_flagged": false
     },
     {
-      "number": "84",
-      "probability": 0.23830019313152376,
-      "baseline": 0.23765728565289646,
-      "lift": 0.0006429074786273026,
-      "contribution_reasons": {
-        "special_set": 0.6057,
-        "double_hit": 0.3172,
-        "pattern_memory": 0.0771,
-        "geometric": 0.0
-      },
-      "gan_days": 2,
-      "gan_flagged": false
-    },
-    {
       "number": "69",
-      "probability": 0.23826551706954474,
+      "probability": 0.2382150142185318,
       "baseline": 0.23765728565289646,
-      "lift": 0.0006082314166482861,
+      "lift": 0.0005577285656353514,
       "contribution_reasons": {
-        "special_set": 0.5698,
-        "double_hit": 0.2535,
-        "pattern_memory": -0.1768,
+        "double_hit": 0.6848,
+        "pattern_memory": 0.2363,
+        "special_set": 0.079,
         "geometric": 0.0
       },
       "gan_days": 2,
       "gan_flagged": false
     },
     {
-      "number": "09",
-      "probability": 0.2382546037859408,
+      "number": "03",
+      "probability": 0.2381547210676489,
       "baseline": 0.23765728565289646,
-      "lift": 0.0005973181330443389,
+      "lift": 0.0004974354147524451,
       "contribution_reasons": {
-        "pattern_memory": 0.3962,
-        "double_hit": 0.3495,
-        "special_set": 0.2543,
+        "double_hit": 0.6637,
+        "special_set": 0.3282,
+        "pattern_memory": -0.0081,
+        "geometric": 0.0
+      },
+      "gan_days": 0,
+      "gan_flagged": false
+    },
+    {
+      "number": "82",
+      "probability": 0.2381533411098614,
+      "baseline": 0.23765728565289646,
+      "lift": 0.0004960554569649334,
+      "contribution_reasons": {
+        "pattern_memory": 0.9164,
+        "double_hit": 0.059,
+        "special_set": 0.0246,
         "geometric": 0.0
       },
       "gan_days": 10,
       "gan_flagged": false
     },
     {
-      "number": "02",
-      "probability": 0.238216574866274,
+      "number": "39",
+      "probability": 0.2381449091382777,
       "baseline": 0.23765728565289646,
-      "lift": 0.0005592892133775562,
+      "lift": 0.00048762348538125555,
       "contribution_reasons": {
-        "special_set": 0.4911,
-        "pattern_memory": 0.2995,
-        "double_hit": 0.2094,
+        "special_set": 0.4331,
+        "double_hit": 0.3477,
+        "pattern_memory": 0.2192,
         "geometric": 0.0
       },
-      "gan_days": 6,
+      "gan_days": 2,
+      "gan_flagged": false
+    },
+    {
+      "number": "33",
+      "probability": 0.23814303880669052,
+      "baseline": 0.23765728565289646,
+      "lift": 0.00048575315379406625,
+      "contribution_reasons": {
+        "double_hit": 0.6523,
+        "special_set": 0.2456,
+        "pattern_memory": 0.102,
+        "geometric": 0.0
+      },
+      "gan_days": 1,
       "gan_flagged": false
     }
   ],
@@ -148,14 +148,14 @@
     "top_numbers": [
       "88",
       "80",
+      "75",
       "89",
-      "00",
-      "30",
-      "27",
       "15",
-      "82",
+      "02",
+      "30",
       "54",
-      "02"
+      "27",
+      "18"
     ],
     "cham": [
       0,
@@ -169,7 +169,6 @@
       9
     ],
     "tong": [
-      0,
       2,
       3,
       6,
