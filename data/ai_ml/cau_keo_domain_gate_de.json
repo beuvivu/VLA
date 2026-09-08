@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-09-08T12:22:30Z",
+  "generated_at": "2026-09-08T13:00:48Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -86,28 +86,28 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": -5.858429047272223e-06,
-      "mean_logloss_skill": -6.230283113887295e-05
+      "mean_brier_skill": -5.8584290473598345e-06,
+      "mean_logloss_skill": -6.23028311389969e-05
     },
     "cap_50": {
-      "mean_brier_skill": 9.840862575138072e-06,
-      "mean_logloss_skill": 8.584860863788905e-05
+      "mean_brier_skill": 9.84086257505046e-06,
+      "mean_logloss_skill": 8.584860863776511e-05
     },
     "bo": {
-      "mean_brier_skill": -7.314908191049598e-05,
-      "mean_logloss_skill": -0.0006650296152920524
+      "mean_brier_skill": -7.314908191049599e-05,
+      "mean_logloss_skill": -0.0006650296152920525
     },
     "bong": {
-      "mean_brier_skill": -1.0170158434456934e-05,
-      "mean_logloss_skill": -0.00010184354897964452
+      "mean_brier_skill": -1.0170158434544546e-05,
+      "mean_logloss_skill": -0.00010184354897952065
     },
     "cham": {
-      "mean_brier_skill": -2.1630195515441525e-05,
-      "mean_logloss_skill": -0.0002056128870589269
+      "mean_brier_skill": -2.1630195515616756e-05,
+      "mean_logloss_skill": -0.0002056128870590509
     },
     "tong": {
-      "mean_brier_skill": -5.352784624819759e-05,
-      "mean_logloss_skill": -0.0004785829580988578
+      "mean_brier_skill": -5.352784624828521e-05,
+      "mean_logloss_skill": -0.0004785829580990438
     }
   },
   "screened_groups": [],
@@ -322,7 +322,7 @@
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
   "all_groups_confirmation_brier_skill": -0.0001022415152759449,
-  "all_groups_confirmation_logloss_skill": -0.0009232409456787307,
+  "all_groups_confirmation_logloss_skill": -0.0009232409456788548,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
