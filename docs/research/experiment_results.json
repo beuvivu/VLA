@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-08T00:42:16Z",
+  "generated_at": "2026-09-08T02:35:27Z",
   "baseline": "HistGradientBoosting cầu-kèo với 39 đặc trưng production",
   "common_parameters": {
     "screening_folds": [
@@ -332,9 +332,9 @@
       "brier_skill": -0.0002546838051215613,
       "brier_ci": null,
       "baseline_logloss": 0.055890814590940405,
-      "challenger_logloss": 0.05602045292240955,
-      "logloss_improvement": -0.00012963833146914516,
-      "logloss_skill": -0.002319492611048092,
+      "challenger_logloss": 0.056020452922409605,
+      "logloss_improvement": -0.00012963833146920067,
+      "logloss_skill": -0.0023194926110490853,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -368,9 +368,9 @@
       "brier_skill": -0.00016858635959350415,
       "brier_ci": null,
       "baseline_logloss": 0.055890814590940405,
-      "challenger_logloss": 0.055976353269140355,
-      "logloss_improvement": -8.553867819995065e-05,
-      "logloss_skill": -0.0015304603954334921,
+      "challenger_logloss": 0.0559763532691403,
+      "logloss_improvement": -8.553867819989514e-05,
+      "logloss_skill": -0.001530460395432499,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -438,9 +438,9 @@
       "brier_skill": -8.577654927378414e-05,
       "brier_ci": null,
       "baseline_logloss": 0.055890814590940405,
-      "challenger_logloss": 0.0559404344759984,
-      "logloss_improvement": -4.961988505799292e-05,
-      "logloss_skill": -0.0008878003554100289,
+      "challenger_logloss": 0.055940434475998446,
+      "logloss_improvement": -4.961988505804149e-05,
+      "logloss_skill": -0.0008878003554108979,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
