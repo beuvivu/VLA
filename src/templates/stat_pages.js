@@ -73,17 +73,83 @@ function setCount(rows) {
   el.textContent = `${rows.length} kỳ · ${first} → ${last}`;
 }
 
+/** Giải đặc biệt ĐỦ 5 CHỮ SỐ, nhấn hai số cuối.
+ *
+ * Trang gốc liệt kê trọn giải đặc biệt chứ không chỉ hai số cuối. Dữ liệu
+ * nhúng vốn đã giữ đủ 5 chữ số; bản trước cắt bớt ngay lúc dựng bảng nên
+ * người đọc mất phần đầu và không đối chiếu được với kết quả gốc.
+ */
+function specialFull(value) {
+  const s = String(value).padStart(5, "0");
+  return `<span class="sp-de">${s.slice(0, 3)}<b>${s.slice(3)}</b></span>`;
+}
+
+/** Hai số cuối, dùng cho phép ĐẾM chứ không phải để hiển thị. */
+function lastTwo(value) {
+  return String(value).padStart(5, "0").slice(-2);
+}
+
 /** Dựng bảng từ tiêu đề và các hàng. */
 function table(el, headers, rows, opts) {
   opts = opts || {};
   const thead = "<thead><tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr></thead>";
-  const body = rows.map((r) =>
+  const body = rows.map((r, y) =>
     "<tr>" + r.map((c, i) => {
-      const cls = opts.numeric && opts.numeric.includes(i) ? ' class="num"' : "";
-      return `<td${cls}>${c}</td>`;
+      const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
+      const key = `${el.id}:${y}:${i}`;
+      const on = MARKS.has(key) ? " marked" : "";
+      const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
+      return `<td class="cell${cls}${on}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
   el.innerHTML = thead + "<tbody>" + body + "</tbody>";
+}
+
+// --- Tô sáng ô để so sánh ---------------------------------------------------
+//
+// Các bảng này dài hàng chục hàng và người đọc thường muốn dõi theo vài ô rời
+// rạc — chẳng hạn cùng một ngày qua nhiều tháng. Không có cách đánh dấu thì họ
+// phải nhớ bằng mắt, và chỉ cần cuộn một cái là mất dấu.
+//
+// Lưu theo từng máy bằng localStorage: đây là tiện ích cá nhân, không phải dữ
+// liệu chung. Bọc try/catch vì cửa sổ ẩn danh và trình duyệt chặn lưu trữ sẽ
+// ném lỗi ngay ở lệnh đọc, và một trang trắng thì tệ hơn hẳn việc mất dấu.
+const MARK_KEY = "vla.marks." + (location.pathname.split("/").pop() || "index");
+let MARKS = new Set();
+try {
+  MARKS = new Set(JSON.parse(localStorage.getItem(MARK_KEY) || "[]"));
+} catch (e) { MARKS = new Set(); }
+
+function saveMarks() {
+  try { localStorage.setItem(MARK_KEY, JSON.stringify(Array.from(MARKS))); } catch (e) {}
+}
+
+function bindMarking() {
+  document.addEventListener("click", (ev) => {
+    const td = ev.target.closest("td.cell");
+    if (!td || !td.dataset.key) return;
+    const key = td.dataset.key;
+    if (MARKS.has(key)) { MARKS.delete(key); td.classList.remove("marked"); }
+    else { MARKS.add(key); td.classList.add("marked"); }
+    saveMarks();
+    updateMarkCount();
+  });
+
+  const clear = $("sp-clear-marks");
+  if (clear) {
+    clear.addEventListener("click", () => {
+      MARKS.clear();
+      saveMarks();
+      document.querySelectorAll("td.marked").forEach((td) => td.classList.remove("marked"));
+      updateMarkCount();
+    });
+  }
+  updateMarkCount();
+}
+
+function updateMarkCount() {
+  const el = $("sp-mark-count");
+  if (el) el.textContent = MARKS.size ? `${MARKS.size} ô đang đánh dấu` : "";
 }
 
 /** Màu nền heat-map: 0 = nhạt nhất, 1 = đậm nhất. */
@@ -123,6 +189,61 @@ function renderLotoFrequency() {
       k + 1, pad2(p[0]), p[1], expected.toFixed(1),
       expected ? (p[1] / expected).toFixed(2) + "×" : "—",
     ]), { numeric: [0, 2, 3, 4] });
+}
+
+// --- Số lộn -----------------------------------------------------------------
+//
+// "Lộn" là đảo hai chữ số: 01 <-> 10, 27 <-> 72. Chỉ có 45 cặp như vậy, vì
+// 10 số kép (00, 11, ... 99) đảo lại chính nó nên KHÔNG có số lộn.
+//
+// Kho từng gộp 10 số kép thành 5 họ "kép bóng" (00-55, 11-66, 22-77, 33-88,
+// 44-99) cho tròn 50 cặp. Nhưng BÓNG (0<->5, 1<->6, ...) là khái niệm khác hẳn
+// LỘN, nên bảng cũ trộn hai thứ và gọi chung là cặp lộn. Ở đây tách bạch: 45
+// cặp lộn thật, còn số kép liệt kê riêng đúng bản chất của nó.
+
+/** 45 cặp lộn thật, dạng [a, b] với a < b và b là a đảo chữ số. */
+function reversePairs() {
+  const out = [];
+  for (let a = 0; a < 100; a++) {
+    const b = (a % 10) * 10 + Math.floor(a / 10);
+    if (a < b) out.push([a, b]);
+  }
+  return out;   // đúng 45 cặp
+}
+
+/** 10 số kép: đảo lại chính nó. */
+function doubleNumbers() {
+  return Array.from({ length: 10 }, (_, d) => d * 11);
+}
+
+function renderReversePairs() {
+  const rows = selected();
+  setCount(rows);
+
+  const c = new Array(100).fill(0);
+  rows.forEach((r) => r.n.forEach((x) => { c[parseInt(x, 10)] += 1; }));
+
+  const pairs = reversePairs()
+    .map(([a, b]) => [a, b, c[a], c[b], c[a] + c[b]])
+    .sort((x, y) => y[4] - x[4]);
+
+  table($("sp-grid"),
+    ["Hạng", "Cặp lộn", "Về của số đầu", "Về của số lộn", "Tổng", "Lệch"],
+    pairs.map((p, k) => [
+      k + 1,
+      `${pad2(p[0])} ↔ ${pad2(p[1])}`,
+      p[2], p[3], p[4],
+      // Lệch giữa hai chiều: cặp lộn "cân" thì gần 0. Cột này mới là thứ đáng
+      // nhìn, vì tổng chỉ nói cặp đó gồm hai con hay về, không nói gì về LỘN.
+      (p[2] - p[3] > 0 ? "+" : "") + (p[2] - p[3]),
+    ]), { numeric: [0, 2, 3, 4, 5] });
+
+  const kep = $("sp-kep");
+  if (kep) {
+    const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
+    table(kep, ["Số kép", "Số lần về"],
+      ds.map((d) => [d[0], d[1]]), { numeric: [1] });
+  }
 }
 
 function renderPairFrequency() {
@@ -174,7 +295,7 @@ function specialGaps() {
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
   DRAWS.forEach((r, t) => {
-    const k = parseInt(r.s.slice(-2), 10);
+    const k = parseInt(lastTwo(r.s), 10);
     hits[k] += 1;
     if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
     last[k] = t;
@@ -236,7 +357,7 @@ function renderSpecialByDay() {
   const rows = DRAWS.filter((r) => r.d.slice(0, 4) === year);
   setCount(rows);
   const cell = {};
-  rows.forEach((r) => { cell[r.d.slice(5)] = r.s.slice(-2); });
+  rows.forEach((r) => { cell[r.d.slice(5)] = r.s; });
 
   const head = ["Ngày"].concat(Array.from({ length: 12 }, (_, m) => "T" + (m + 1)));
   const body = [];
@@ -244,7 +365,7 @@ function renderSpecialByDay() {
     const line = [String(day)];
     for (let m = 1; m <= 12; m++) {
       const v = cell[`${pad2(m)}-${pad2(day)}`];
-      line.push(v ? `<b>${v}</b>` : "");
+      line.push(v ? specialFull(v) : "");
     }
     body.push(line);
   }
@@ -258,7 +379,7 @@ function groupSpecial(keyOf, label) {
   rows.forEach((r) => {
     const k = keyOf(r.d);
     if (!groups.has(k)) groups.set(k, new Array(100).fill(0));
-    groups.get(k)[parseInt(r.s.slice(-2), 10)] += 1;
+    groups.get(k)[parseInt(lastTwo(r.s), 10)] += 1;
   });
   const keys = Array.from(groups.keys()).sort().reverse();
   const head = [label, "Số kỳ", "Về nhiều nhất", "Số lần", "Không về"];
@@ -275,8 +396,81 @@ function groupSpecial(keyOf, label) {
 // Khai báo bằng `function`, KHÔNG dùng `const`: boot() tra hàm qua
 // window[renderName], mà `const` ở cấp cao nhất của script cổ điển không tạo
 // thuộc tính trên window. Dùng const thì hai trang này im lặng không vẽ gì.
-function renderSpecialByMonth() { groupSpecial((d) => d.slice(0, 7), "Tháng"); }
-function renderSpecialByYear() { groupSpecial((d) => d.slice(0, 4), "Năm"); }
+// --- Bảng đặc biệt theo THÁNG: lịch theo tuần ------------------------------
+//
+// Trang gốc liệt kê trọn giải đặc biệt của từng ngày, không phải bảng thống
+// kê tổng hợp. Xếp theo lịch tuần (hàng = tuần, cột = thứ) vì người soi cầu
+// đối chiếu theo thứ trong tuần, và dạng này cho thấy ngay ngày nào khuyết.
+
+const WEEKDAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+
+/** Chỉ số thứ trong tuần, 0 = Thứ 2 (không phải Chủ nhật như getDay). */
+function mondayIndex(iso) {
+  return (new Date(iso + "T00:00:00Z").getUTCDay() + 6) % 7;
+}
+
+function fillPicker(id, values) {
+  const sel = $(id);
+  if (!sel) return null;
+  if (!sel.options.length) {
+    sel.innerHTML = values.map((v) => `<option>${v}</option>`).join("");
+    sel.value = values[values.length - 1];
+  }
+  return sel.value;
+}
+
+function renderSpecialByMonth() {
+  const months = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 7)))).sort();
+  const month = fillPicker("sp-month", months) || months[months.length - 1];
+  const rows = DRAWS.filter((r) => r.d.slice(0, 7) === month);
+  setCount(rows);
+
+  const byDate = {};
+  rows.forEach((r) => { byDate[r.d] = r.s; });
+
+  const [y, m] = month.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+  const body = [];
+  let week = new Array(7).fill("");
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${month}-${pad2(day)}`;
+    const idx = mondayIndex(iso);
+    const de = byDate[iso];
+    week[idx] = `<span class="sp-daynum">${day}</span>` +
+      (de ? specialFull(de) : '<span class="sp-none">—</span>');
+    if (idx === 6 || day === daysInMonth) {
+      body.push(week.slice());
+      week = new Array(7).fill("");
+    }
+  }
+  table($("sp-grid"), WEEKDAYS, body);
+}
+
+// --- Bảng đặc biệt theo NĂM: liệt kê theo tháng ----------------------------
+
+function renderSpecialByYear() {
+  const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
+  const year = fillPicker("sp-year", years) || years[years.length - 1];
+  const rows = DRAWS.filter((r) => r.d.slice(0, 4) === year);
+  setCount(rows);
+
+  const byDate = {};
+  rows.forEach((r) => { byDate[r.d] = r.s; });
+
+  // Hàng = ngày 1..31, cột = 12 tháng. Mỗi ô là TRỌN giải đặc biệt.
+  const head = ["Ngày"].concat(Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1)));
+  const body = [];
+  for (let day = 1; day <= 31; day++) {
+    const line = [`<b>${day}</b>`];
+    for (let m = 1; m <= 12; m++) {
+      const de = byDate[`${year}-${pad2(m)}-${pad2(day)}`];
+      line.push(de ? specialFull(de) : "");
+    }
+    body.push(line);
+  }
+  table($("sp-grid"), head, body);
+}
 
 function renderOverview() {
   const rows = selected();
@@ -319,7 +513,8 @@ function boot(renderName) {
     from.value = DRAWS[Math.max(0, DRAWS.length - 90)].d;
     to.value = DRAWS[DRAWS.length - 1].d;
   }
-  [from, to, $("sp-year")].forEach((el) => el && el.addEventListener("change", render));
+  [from, to, $("sp-year"), $("sp-month")].forEach(
+    (el) => el && el.addEventListener("change", render));
 
   document.querySelectorAll(".sp-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -333,5 +528,6 @@ function boot(renderName) {
       render();
     });
   });
+  bindMarking();
   render();
 }

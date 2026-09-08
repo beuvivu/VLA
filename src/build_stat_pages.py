@@ -137,40 +137,69 @@ def _range_controls(*, mode: str = "day") -> str:
         )
     )
     if mode == "preset":
-        return f'<div class="sp-controls"><div class="sp-chips">{presets}</div></div>'
+        # Thanh đánh dấu phải có ở MỌI trang, không chỉ trang dùng bộ chọn
+        # ngày: ô vẫn bấm được nên thiếu nút xoá là người dùng đánh dấu xong
+        # không gỡ ra được.
+        return (
+            '<div class="sp-controls"><div class="sp-chips">'
+            f'{presets}</div><span class="sp-count" id="sp-count"></span>'
+            f"{_mark_tools()}</div>"
+        )
     return f"""
     <div class="sp-controls">
       <label>Từ ngày <input type="date" id="sp-from"></label>
       <label>Đến ngày <input type="date" id="sp-to"></label>
       <div class="sp-chips">{presets}</div>
       <span class="sp-count" id="sp-count"></span>
+      {_mark_tools()}
     </div>
     """
+
+
+def _mark_tools() -> str:
+    """Thanh đánh dấu ô, dùng chung cho mọi trang.
+
+    Bảng ở đây dài hàng chục hàng và người đọc thường dõi theo vài ô rời rạc —
+    ví dụ cùng một ngày qua nhiều tháng. Không có cách đánh dấu thì chỉ cần
+    cuộn một cái là mất dấu.
+
+    Returns:
+        Chuỗi HTML của thanh công cụ.
+    """
+    return (
+        '<span class="sp-marktools">'
+        '<span class="sp-hint">Bấm vào ô bất kỳ để đánh dấu so sánh</span>'
+        '<span class="sp-mark-count" id="sp-mark-count"></span>'
+        '<button type="button" class="sp-chip" id="sp-clear-marks">Xoá đánh dấu</button>'
+        "</span>"
+    )
 
 
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
         title="Bảng đặc biệt theo ngày",
-        subtitle="Hai số cuối giải đặc biệt xếp theo ngày trong tháng và tháng trong năm.",
+        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ, xếp theo ngày trong tháng và tháng trong năm.",
         controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
-                 '<span class="sp-count" id="sp-count"></span></div>',
+                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderSpecialByDay",
     ),
     StatPage(
         slug="bang-dac-biet-thang",
         title="Bảng đặc biệt theo tháng",
-        subtitle="Tần suất hai số cuối giải đặc biệt gom theo từng tháng.",
-        controls=_range_controls(),
+        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ của từng ngày, xếp theo lịch tuần.",
+        controls='<div class="sp-controls"><label>Tháng <select id="sp-month"></select></label>'
+                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderSpecialByMonth",
     ),
     StatPage(
         slug="bang-dac-biet-nam",
         title="Bảng đặc biệt theo năm",
-        subtitle="Tần suất hai số cuối giải đặc biệt gom theo từng năm.",
-        controls=_range_controls(),
+        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ cả năm: hàng là ngày, cột là tháng.",
+        controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
+                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderSpecialByYear",
     ),
@@ -190,6 +219,16 @@ PAGES: tuple[StatPage, ...] = (
         controls=_range_controls(),
         body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderPairFrequency",
+    ),
+    StatPage(
+        slug="cap-lon-loto",
+        title="Cặp lộn lô tô",
+        subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
+        controls=_range_controls(),
+        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Số kép — đảo lại chính nó nên không có số lộn</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-kep"></table></div>',
+        render="renderReversePairs",
     ),
     StatPage(
         slug="dau-duoi-loto",

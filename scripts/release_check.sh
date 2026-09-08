@@ -269,6 +269,11 @@ print("OK cau-keo calendar-safe smoke")
 PYCAU
 
 printf '%s\n' "== Static GitHub Pages builders =="
+# build_docs.py dựng bốn trang soi-path. Trước đây nó KHÔNG nằm trong chuỗi
+# này, nên các trang đó là hiện vật cũ nằm im: mỗi lần đổi SITE_NAV là chúng
+# lệch khỏi phần còn lại và test điều hướng đỏ. Chạy TRƯỚC build_landing_page
+# vì cả hai cùng ghi docs/index.html và bản của landing mới là bản đúng.
+python src/build_docs.py
 python src/build_docs_ml.py
 python src/build_dashboard.py
 python src/build_markdown_dashboard.py
