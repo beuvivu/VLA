@@ -319,6 +319,24 @@ def test_repeated_draw_dates_finds_the_non_draw_days() -> None:
     )
 
 
+def test_repeated_draw_dates_spans_a_hole_in_the_history() -> None:
+    """So kề nhau là chưa đủ, và điều này đã hỏng thật trong sản xuất.
+
+    Sau khi dọn cụm Tết 2026, quy trình hàng ngày cào lại các ngày thiếu.
+    Với 2026-02-17 thì cả 02-16 lẫn 02-18 đều đã bị xoá nên không còn gì để
+    so — hai bản ghi bịa lọt lại vào kho đúng theo đường đó.
+    """
+    from backfill_history import repeated_draw_dates
+
+    records = [
+        {"date": "2026-02-15", "special": 22601},
+        {"date": "2026-02-17", "special": 22601},   # 02-16 đã bị dọn
+        {"date": "2026-02-19", "special": 22601},   # 02-18 đã bị dọn
+        {"date": "2026-02-20", "special": 77777},
+    ]
+    assert repeated_draw_dates(records) == ["2026-02-17", "2026-02-19"]
+
+
 def test_repeated_draw_dates_ignores_a_single_matching_field() -> None:
     """Chỉ trùng KHÍT toàn bộ giải mới là hiện vật. Trùng riêng giải đặc biệt
     là chuyện thường: xác suất 1/100000 mỗi ngày."""

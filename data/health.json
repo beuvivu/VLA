@@ -3,7 +3,7 @@
   "latest_date": "2026-09-07",
   "last_date": "2026-09-07",
   "first_date": "2020-01-01",
-  "row_count": 2394,
+  "row_count": 2392,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
@@ -13,7 +13,7 @@
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 2394,
+    "rows": 2392,
     "missing_number_columns": [],
     "extra_number_columns": [],
     "invalid_value_row_count": 0,
