@@ -146,3 +146,68 @@ def test_consensus_accepts_unique_two_group_winner_over_mirror_pair(tmp_path: Pa
     assert audit["agreement"] == 2
     assert audit["runner_up_agreement"] == 1
     assert audit["ambiguous_tie"] is False
+
+
+# --- Ngày không quay -------------------------------------------------------
+#
+# XSMB nghỉ dịp Tết và suốt đợt giãn cách 01-22/4/2020. Vào những ngày đó trang
+# nguồn vẫn trả kết quả gần nhất, nên trình cào ghi lại như thể đó là kỳ của
+# ngày ấy. Đo trên kho: 50 bản ghi bịa, trong đó 4 bản lọt qua CẢ kiểm đồng
+# thuận hai nguồn — sáu nguồn cùng đọc một trang tin nên ở dạng hỏng này chúng
+# không độc lập.
+
+
+def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
+    """Hai kỳ liền kề trùng khít có xác suất 10^-107 (107 chữ số giải). Không
+    phải "hiếm" mà là bất khả: trùng khít luôn là hiện vật."""
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    stale = _result(today, special=22601)
+
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    assert lot.fetch(today, min_agreement=1) is False, "ngày không quay bị ghi thành kỳ"
+    assert not lot.has_date(today)
+
+
+def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
+    """Đồng thuận hai nguồn KHÔNG cứu được: cả sáu nguồn cùng đọc một trang
+    tin nên chúng nhất trí về chính kết quả cũ. Bốn bản ghi đã lọt vào 393 kỳ
+    gốc đúng theo đường này."""
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    stale = _result(today, special=22601)
+
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    lot._sources = [FakeSource("a", stale), FakeSource("b", stale)]  # type: ignore[attr-defined]
+    assert lot.fetch(today, min_agreement=2) is False
+    assert not lot.has_date(today)
+    audit = lot._fetch_audit[today.isoformat()]
+    assert audit["accepted"] is False
+    assert "trùng khít" in audit["rejected_reason"]
+
+
+def test_looks_at_the_next_day_too_because_backfill_runs_backwards(tmp_path: Path) -> None:
+    """Backfill lấy từ mới về cũ: khi tới ngày D thì D+1 thường đã trong kho."""
+    earlier, later = date(2026, 2, 15), date(2026, 2, 16)
+    shared = _result(later, special=22601)
+
+    lot = _lottery(tmp_path, [FakeSource("a", shared)])
+    assert lot.fetch(later, min_agreement=1) is True
+
+    lot._sources = [FakeSource("a", _result(earlier, special=22601))]  # type: ignore[attr-defined]
+    assert lot.fetch(earlier, min_agreement=1) is False
+
+
+def test_a_genuinely_different_draw_is_still_accepted(tmp_path: Path) -> None:
+    """Chốt chặn không được rộng tay: chỉ trùng KHÍT mới bị loại."""
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    lot._sources = [FakeSource("a", _result(today, special=22602))]  # type: ignore[attr-defined]
+    assert lot.fetch(today, min_agreement=1) is True
+    assert lot.has_date(today)

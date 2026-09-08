@@ -5,6 +5,9 @@ import csv
 import json
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
+import pandas as pd
+
+from calendar_alignment import unexpected_gap_dates
 from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TZ, latest_complete_draw_date
 
 ROOT = Path(".")
@@ -140,14 +143,10 @@ def audit(
     if dates:
         if len(dates) != len(set(dates)):
             critical.append("duplicate_canonical_dates")
-        missing_days: list[str] = []
-        for prev, cur in zip(dates[:-1], dates[1:], strict=True):
-            gap = (cur - prev).days
-            if gap > 1:
-                missing_days.extend(
-                    (prev + timedelta(days=i)).isoformat()
-                    for i in range(1, gap)
-                )
+        # Ngày Tết và đợt giãn cách 2020 vốn không có kỳ quay. Trước đây kiểm
+        # tra này chỉ xanh vì 50 bản ghi bịa lấp vào chỗ trống — bất biến được
+        # bảo đảm bởi chính dữ liệu sai. Xem calendar_alignment.
+        missing_days = unexpected_gap_dates(pd.to_datetime(list(dates)))
         if missing_days:
             critical.append("canonical_gaps=" + ",".join(missing_days[-10:]))
 
@@ -230,15 +229,18 @@ def audit(
                 critical.append(
                     f"conditional_calendar_rows={cond.get('calendar_rows')} expected={len(dates)}"
                 )
-            if int(cond.get("exact_next_day_pairs", -1)) != max(0, len(dates) - 1):
+            # XSMB nghỉ quay dịp Tết và suốt đợt giãn cách 01-22/4/2020, nên
+            # chuỗi ngày CÓ ranh giới không liền kề — thực tế, không phải lỗi.
+            # Hai khẳng định cũ đòi đúng 0 ranh giới; chúng chỉ xanh chừng nào
+            # 50 bản ghi bịa còn lấp vào chỗ trống. Điều đáng kiểm là mỗi ranh
+            # giới đều được ghi nhận: cặp đếm được cộng ranh giới bỏ qua phải
+            # bằng tổng số chuyển tiếp có thể.
+            pairs = int(cond.get("exact_next_day_pairs", -1))
+            skipped = int(cond.get("skipped_nonconsecutive_boundaries", -1))
+            if pairs + skipped != max(0, len(dates) - 1):
                 critical.append(
-                    "conditional_next_pairs="
-                    f"{cond.get('exact_next_day_pairs')} expected={max(0, len(dates)-1)}"
-                )
-            if int(cond.get("skipped_nonconsecutive_boundaries", -1)) != 0:
-                critical.append(
-                    "conditional_nonconsecutive_boundaries="
-                    f"{cond.get('skipped_nonconsecutive_boundaries')}"
+                    f"conditional_next_pairs={pairs}+{skipped} "
+                    f"expected={max(0, len(dates)-1)}"
                 )
             if str(cond.get("calendar_end", ""))[:10] != latest.isoformat():
                 critical.append(

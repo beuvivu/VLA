@@ -5,7 +5,7 @@
     "number":4,
     "number_str":"04",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -13,7 +13,7 @@
     "number":5,
     "number_str":"05",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -21,7 +21,7 @@
     "number":6,
     "number_str":"06",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -29,7 +29,7 @@
     "number":10,
     "number_str":"10",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -37,7 +37,7 @@
     "number":12,
     "number_str":"12",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -45,7 +45,7 @@
     "number":15,
     "number_str":"15",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -53,7 +53,7 @@
     "number":21,
     "number_str":"21",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -61,7 +61,7 @@
     "number":40,
     "number_str":"40",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -69,7 +69,7 @@
     "number":43,
     "number_str":"43",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -77,7 +77,7 @@
     "number":44,
     "number_str":"44",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -85,7 +85,7 @@
     "number":49,
     "number_str":"49",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -93,7 +93,7 @@
     "number":50,
     "number_str":"50",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -101,7 +101,7 @@
     "number":54,
     "number_str":"54",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -109,7 +109,7 @@
     "number":58,
     "number_str":"58",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -117,7 +117,7 @@
     "number":64,
     "number_str":"64",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -125,7 +125,7 @@
     "number":71,
     "number_str":"71",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -133,15 +133,15 @@
     "number":74,
     "number_str":"74",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2020-01",
     "number":75,
     "number_str":"75",
-    "freq":5,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -149,7 +149,7 @@
     "number":80,
     "number_str":"80",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -157,7 +157,7 @@
     "number":82,
     "number_str":"82",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -165,7 +165,7 @@
     "number":89,
     "number_str":"89",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -173,7 +173,7 @@
     "number":96,
     "number_str":"96",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -181,7 +181,7 @@
     "number":97,
     "number_str":"97",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -605,7 +605,7 @@
     "number":2,
     "number_str":"02",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -613,14 +613,6 @@
     "number":3,
     "number_str":"03",
     "freq":1,
-    "rank_in_period":2
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2020-04",
-    "number":19,
-    "number_str":"19",
-    "freq":22,
     "rank_in_period":1
   },
   {
@@ -629,7 +621,7 @@
     "number":25,
     "number_str":"25",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -637,7 +629,7 @@
     "number":50,
     "number_str":"50",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -645,7 +637,7 @@
     "number":61,
     "number_str":"61",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -653,7 +645,7 @@
     "number":63,
     "number_str":"63",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -661,7 +653,7 @@
     "number":67,
     "number_str":"67",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -669,7 +661,7 @@
     "number":98,
     "number_str":"98",
     "freq":1,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -2565,7 +2557,7 @@
     "number":0,
     "number_str":"00",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2573,7 +2565,7 @@
     "number":3,
     "number_str":"03",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -2581,7 +2573,7 @@
     "number":7,
     "number_str":"07",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2589,7 +2581,7 @@
     "number":8,
     "number_str":"08",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2597,7 +2589,7 @@
     "number":10,
     "number_str":"10",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -2605,7 +2597,7 @@
     "number":13,
     "number_str":"13",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2613,7 +2605,7 @@
     "number":15,
     "number_str":"15",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2621,7 +2613,7 @@
     "number":18,
     "number_str":"18",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2629,7 +2621,7 @@
     "number":19,
     "number_str":"19",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2637,7 +2629,7 @@
     "number":20,
     "number_str":"20",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2645,15 +2637,15 @@
     "number":27,
     "number_str":"27",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2021-02",
     "number":29,
     "number_str":"29",
-    "freq":5,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2661,7 +2653,7 @@
     "number":30,
     "number_str":"30",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2669,7 +2661,7 @@
     "number":49,
     "number_str":"49",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2677,7 +2669,7 @@
     "number":55,
     "number_str":"55",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2685,7 +2677,7 @@
     "number":59,
     "number_str":"59",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2693,7 +2685,7 @@
     "number":77,
     "number_str":"77",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2701,7 +2693,7 @@
     "number":82,
     "number_str":"82",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2709,7 +2701,7 @@
     "number":86,
     "number_str":"86",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2717,7 +2709,7 @@
     "number":91,
     "number_str":"91",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2725,7 +2717,7 @@
     "number":92,
     "number_str":"92",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -2733,7 +2725,7 @@
     "number":98,
     "number_str":"98",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -4964,8 +4956,8 @@
     "period_key":"2022-01",
     "number":66,
     "number_str":"66",
-    "freq":2,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5037,7 +5029,7 @@
     "number":1,
     "number_str":"01",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5045,7 +5037,7 @@
     "number":4,
     "number_str":"04",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5053,7 +5045,7 @@
     "number":31,
     "number_str":"31",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5061,7 +5053,7 @@
     "number":34,
     "number_str":"34",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5069,7 +5061,7 @@
     "number":47,
     "number_str":"47",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5077,7 +5069,7 @@
     "number":51,
     "number_str":"51",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5085,7 +5077,7 @@
     "number":55,
     "number_str":"55",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5093,7 +5085,7 @@
     "number":58,
     "number_str":"58",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5101,7 +5093,7 @@
     "number":62,
     "number_str":"62",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5109,7 +5101,7 @@
     "number":64,
     "number_str":"64",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5117,15 +5109,7 @@
     "number":65,
     "number_str":"65",
     "freq":1,
-    "rank_in_period":3
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2022-02",
-    "number":66,
-    "number_str":"66",
-    "freq":3,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5133,7 +5117,7 @@
     "number":68,
     "number_str":"68",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5141,7 +5125,7 @@
     "number":72,
     "number_str":"72",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5149,7 +5133,7 @@
     "number":75,
     "number_str":"75",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5157,7 +5141,7 @@
     "number":80,
     "number_str":"80",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5165,7 +5149,7 @@
     "number":82,
     "number_str":"82",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5173,7 +5157,7 @@
     "number":84,
     "number_str":"84",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -5181,7 +5165,7 @@
     "number":96,
     "number_str":"96",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -5189,7 +5173,7 @@
     "number":98,
     "number_str":"98",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7285,7 +7269,7 @@
     "number":5,
     "number_str":"05",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7293,7 +7277,7 @@
     "number":14,
     "number_str":"14",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7301,7 +7285,7 @@
     "number":19,
     "number_str":"19",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7309,7 +7293,7 @@
     "number":21,
     "number_str":"21",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7317,7 +7301,7 @@
     "number":40,
     "number_str":"40",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -7325,7 +7309,7 @@
     "number":42,
     "number_str":"42",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7333,7 +7317,7 @@
     "number":49,
     "number_str":"49",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7341,7 +7325,7 @@
     "number":52,
     "number_str":"52",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7349,7 +7333,7 @@
     "number":57,
     "number_str":"57",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -7357,7 +7341,7 @@
     "number":59,
     "number_str":"59",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7365,7 +7349,7 @@
     "number":60,
     "number_str":"60",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7373,7 +7357,7 @@
     "number":61,
     "number_str":"61",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7381,7 +7365,7 @@
     "number":62,
     "number_str":"62",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7389,7 +7373,7 @@
     "number":63,
     "number_str":"63",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7397,7 +7381,7 @@
     "number":64,
     "number_str":"64",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7405,15 +7389,15 @@
     "number":65,
     "number_str":"65",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2023-01",
     "number":69,
     "number_str":"69",
-    "freq":5,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7421,7 +7405,7 @@
     "number":70,
     "number_str":"70",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7429,7 +7413,7 @@
     "number":71,
     "number_str":"71",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7437,7 +7421,7 @@
     "number":79,
     "number_str":"79",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -7445,7 +7429,7 @@
     "number":82,
     "number_str":"82",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -7453,7 +7437,7 @@
     "number":91,
     "number_str":"91",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -7461,7 +7445,7 @@
     "number":97,
     "number_str":"97",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10045,7 +10029,7 @@
     "number":0,
     "number_str":"00",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -10053,7 +10037,7 @@
     "number":1,
     "number_str":"01",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10061,7 +10045,7 @@
     "number":3,
     "number_str":"03",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10069,7 +10053,7 @@
     "number":6,
     "number_str":"06",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10077,7 +10061,7 @@
     "number":9,
     "number_str":"09",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10085,7 +10069,7 @@
     "number":31,
     "number_str":"31",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10093,7 +10077,7 @@
     "number":33,
     "number_str":"33",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10101,7 +10085,7 @@
     "number":34,
     "number_str":"34",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10109,7 +10093,7 @@
     "number":37,
     "number_str":"37",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10117,7 +10101,7 @@
     "number":44,
     "number_str":"44",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10125,7 +10109,7 @@
     "number":45,
     "number_str":"45",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -10133,15 +10117,15 @@
     "number":48,
     "number_str":"48",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2024-02",
     "number":52,
     "number_str":"52",
-    "freq":5,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10149,7 +10133,7 @@
     "number":53,
     "number_str":"53",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10157,7 +10141,7 @@
     "number":64,
     "number_str":"64",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10165,7 +10149,7 @@
     "number":67,
     "number_str":"67",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10173,7 +10157,7 @@
     "number":70,
     "number_str":"70",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10181,7 +10165,7 @@
     "number":74,
     "number_str":"74",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10189,7 +10173,7 @@
     "number":76,
     "number_str":"76",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10197,7 +10181,7 @@
     "number":84,
     "number_str":"84",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10205,7 +10189,7 @@
     "number":88,
     "number_str":"88",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10213,7 +10197,7 @@
     "number":89,
     "number_str":"89",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -10221,7 +10205,7 @@
     "number":94,
     "number_str":"94",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12309,7 +12293,7 @@
     "number":1,
     "number_str":"01",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12317,7 +12301,7 @@
     "number":4,
     "number_str":"04",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12325,7 +12309,7 @@
     "number":6,
     "number_str":"06",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12333,7 +12317,7 @@
     "number":7,
     "number_str":"07",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12341,15 +12325,15 @@
     "number":8,
     "number_str":"08",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2025-01",
     "number":9,
     "number_str":"09",
-    "freq":5,
-    "rank_in_period":1
+    "freq":1,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12357,7 +12341,7 @@
     "number":11,
     "number_str":"11",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12365,7 +12349,7 @@
     "number":15,
     "number_str":"15",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12373,7 +12357,7 @@
     "number":17,
     "number_str":"17",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12381,7 +12365,7 @@
     "number":19,
     "number_str":"19",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12389,7 +12373,7 @@
     "number":23,
     "number_str":"23",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12397,7 +12381,7 @@
     "number":29,
     "number_str":"29",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12405,7 +12389,7 @@
     "number":33,
     "number_str":"33",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12413,7 +12397,7 @@
     "number":46,
     "number_str":"46",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12421,7 +12405,7 @@
     "number":50,
     "number_str":"50",
     "freq":2,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",
@@ -12429,7 +12413,7 @@
     "number":51,
     "number_str":"51",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12437,7 +12421,7 @@
     "number":52,
     "number_str":"52",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12445,7 +12429,7 @@
     "number":56,
     "number_str":"56",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12453,7 +12437,7 @@
     "number":58,
     "number_str":"58",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12461,7 +12445,7 @@
     "number":62,
     "number_str":"62",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12469,7 +12453,7 @@
     "number":69,
     "number_str":"69",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12477,7 +12461,7 @@
     "number":75,
     "number_str":"75",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12485,7 +12469,7 @@
     "number":82,
     "number_str":"82",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12493,7 +12477,7 @@
     "number":87,
     "number_str":"87",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12501,7 +12485,7 @@
     "number":92,
     "number_str":"92",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -12509,7 +12493,7 @@
     "number":95,
     "number_str":"95",
     "freq":1,
-    "rank_in_period":3
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -15012,8 +14996,8 @@
     "period_key":"2026-02",
     "number":1,
     "number_str":"01",
-    "freq":6,
-    "rank_in_period":1
+    "freq":2,
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -15125,7 +15109,7 @@
     "number":77,
     "number_str":"77",
     "freq":3,
-    "rank_in_period":2
+    "rank_in_period":1
   },
   {
     "period_kind":"month",

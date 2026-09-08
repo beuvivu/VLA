@@ -8,7 +8,10 @@ daily series.  This prevents a missing canonical date from silently turning a
 2-day jump into a "next-day" transition.
 """
 
-from collections.abc import Sequence
+import json
+from collections.abc import Iterable, Sequence
+from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -68,11 +71,81 @@ def missing_calendar_dates(
     return missing.strftime("%Y-%m-%d").tolist()
 
 
+@lru_cache(maxsize=1)
+def known_non_draw_days() -> frozenset[str]:
+    """Những ngày XSMB không quay, đọc từ ``data/non_draw_days.json``.
+
+    XSMB nghỉ dịp Tết mỗi năm và suốt đợt giãn cách 01-22/4/2020. Vào những
+    ngày đó trang nguồn vẫn trả kết quả gần nhất, nên trình cào từng ghi lại
+    như thể đó là kỳ của ngày ấy — 50 bản ghi bịa, 4 trong số đó lọt qua cả
+    kiểm đồng thuận hai nguồn (sáu nguồn cùng đọc một trang tin nên ở dạng
+    hỏng này chúng không độc lập).
+
+    Chính dữ liệu bịa đó đã làm chuỗi ngày trông liền mạch. Sau khi loại
+    chúng, kiểm tra liền mạch phải phân biệt được hai việc khác hẳn nhau:
+
+    * **không quay** — hợp lệ, ngày đó không tồn tại kỳ nào;
+    * **cào hụt** — hỏng, phải báo lỗi.
+
+    Returns:
+        Tập ngày ``YYYY-MM-DD``; rỗng nếu chưa có tệp.
+    """
+    path = Path(__file__).resolve().parents[1] / "data" / "non_draw_days.json"
+    if not path.exists():
+        return frozenset()
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return frozenset(payload.get("ngay_khong_quay", ()))
+
+
+def unexpected_gap_dates(
+    dates: Sequence[object] | pd.Series | pd.Index,
+    *,
+    allow_missing: Iterable[str] | None = None,
+) -> list[str]:
+    """Ngày vắng mà KHÔNG giải thích được bằng lịch nghỉ quay.
+
+    Ba nơi trong kho từng tự kiểm chuỗi ngày liền mạch bằng mã riêng
+    (``calendar_alignment``, ``production_audit``, ``ml_engine.schema``). Cả ba
+    đều coi mọi ngày vắng là hỏng, nên chúng chỉ xanh chừng nào 50 bản ghi bịa
+    còn lấp vào chỗ trống — tức là bất biến được bảo đảm bởi chính dữ liệu sai.
+
+    Args:
+        dates: Chuỗi ngày cần kiểm.
+        allow_missing: Ngày được phép vắng; mặc định
+            :func:`known_non_draw_days`.
+
+    Returns:
+        Các ngày vắng cần báo động, tăng dần.
+    """
+    allowed = (
+        known_non_draw_days() if allow_missing is None else frozenset(allow_missing)
+    )
+    return [d for d in missing_calendar_dates(dates) if d not in allowed]
+
+
 def require_daily_contiguous(
-    dates: Sequence[object] | pd.Series | pd.Index, *, context: str = "time series"
+    dates: Sequence[object] | pd.Series | pd.Index,
+    *,
+    context: str = "time series",
+    allow_missing: Iterable[str] | None = None,
 ) -> pd.DatetimeIndex:
+    """Bắt buộc chuỗi ngày liền mạch, trừ những ngày vốn không có kỳ quay.
+
+    Args:
+        dates: Chuỗi ngày cần kiểm.
+        context: Tên ngữ cảnh, đưa vào thông báo lỗi.
+        allow_missing: Ngày được phép vắng. Mặc định lấy
+            :func:`known_non_draw_days`; truyền tập rỗng để đòi liền mạch
+            tuyệt đối.
+
+    Returns:
+        Chỉ mục ngày đã chuẩn hoá.
+
+    Raises:
+        ValueError: Nếu còn ngày vắng không nằm trong danh sách cho phép.
+    """
     idx = normalize_dates(dates)
-    missing = missing_calendar_dates(idx)
+    missing = unexpected_gap_dates(idx, allow_missing=allow_missing)
     if missing:
         raise ValueError(
             f"{context} requires contiguous calendar days; missing {len(missing)} date(s): "

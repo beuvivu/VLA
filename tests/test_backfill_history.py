@@ -298,6 +298,51 @@ def test_backfill_never_dumps_without_rebuilding_the_frames() -> None:
     )
 
 
+def test_repeated_draw_dates_finds_the_non_draw_days() -> None:
+    """Ngày XSMB không quay bị ghi thành kỳ vì nguồn trả kết quả gần nhất.
+
+    Đo trên kho thật: 50 bản ghi kiểu này, thành 8 cụm trùng đúng Tết mỗi năm
+    2020-2026 và 23 ngày giãn cách 01-22/4/2020. Bốn bản trong số đó đã lọt
+    qua cả kiểm đồng thuận hai nguồn.
+    """
+    from backfill_history import repeated_draw_dates
+
+    records = [
+        {"date": "2026-02-14", "special": 90630, "prize1": 11111},
+        {"date": "2026-02-15", "special": 22601, "prize1": 22222},
+        {"date": "2026-02-16", "special": 22601, "prize1": 22222},
+        {"date": "2026-02-17", "special": 22601, "prize1": 22222},
+        {"date": "2026-02-18", "special": 33333, "prize1": 44444},
+    ]
+    assert repeated_draw_dates(records) == ["2026-02-16", "2026-02-17"], (
+        "phải giữ bản ghi ĐẦU cụm — đó là kỳ thật cuối trước khi tạm ngừng"
+    )
+
+
+def test_repeated_draw_dates_ignores_a_single_matching_field() -> None:
+    """Chỉ trùng KHÍT toàn bộ giải mới là hiện vật. Trùng riêng giải đặc biệt
+    là chuyện thường: xác suất 1/100000 mỗi ngày."""
+    from backfill_history import repeated_draw_dates
+
+    records = [
+        {"date": "2026-01-01", "special": 12345, "prize1": 11111},
+        {"date": "2026-01-02", "special": 12345, "prize1": 99999},
+    ]
+    assert repeated_draw_dates(records) == []
+
+
+def test_repeated_draw_dates_is_order_independent() -> None:
+    """Backfill lấy từ mới về cũ nên bản ghi tới không theo thứ tự thời gian."""
+    from backfill_history import repeated_draw_dates
+
+    rows = [
+        {"date": "2026-02-17", "special": 22601},
+        {"date": "2026-02-15", "special": 22601},
+        {"date": "2026-02-16", "special": 22601},
+    ]
+    assert repeated_draw_dates(rows) == ["2026-02-16", "2026-02-17"]
+
+
 def test_fake_lottery_matches_the_real_api() -> None:
     """FakeLottery phải khớp chữ ký thật, nếu không cả tệp test này vô nghĩa.
 

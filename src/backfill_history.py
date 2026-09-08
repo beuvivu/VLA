@@ -273,6 +273,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             "trong lúc backfill chạy."
         ),
     )
+    parser.add_argument(
+        "--drop-repeats",
+        action="store_true",
+        help=(
+            "Loại các bản ghi trùng khít ngày liền trước rồi dựng lại kho, "
+            "sau đó thoát. Đó là ngày XSMB không quay (Tết, giãn cách 2020) "
+            "mà nguồn trả kết quả cũ."
+        ),
+    )
     parser.add_argument("--start", required=False, help="Ngày đầu YYYY-MM-DD")
     parser.add_argument("--end", default=None, help="Ngày cuối YYYY-MM-DD (mặc định: hôm qua)")
     parser.add_argument("--min-agreement", type=int, default=1)
@@ -299,8 +308,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info("Đã hợp nhất và dựng lại: %d kỳ", len(merged.get_dates()))
         return 0
 
+    if args.drop_repeats:
+        root = Path(__file__).resolve().parents[1]
+        canonical = root / "data" / "xsmb.json"
+        records = json.loads(canonical.read_text(encoding="utf-8"))
+        drop = set(repeated_draw_dates(records))
+        if not drop:
+            logger.info("Không có kỳ trùng khít nào.")
+            return 0
+        kept = [r for r in records if str(r["date"])[:10] not in drop]
+        canonical.write_text(json.dumps(kept, indent=2), encoding="utf-8")
+        cleaned = Lottery()
+        cleaned.load()
+        cleaned.generate_dataframes()
+        cleaned.dump()
+        logger.info(
+            "Đã loại %d kỳ không quay (%s → %s); còn %d kỳ",
+            len(drop), min(drop), max(drop), len(cleaned.get_dates()),
+        )
+        return 0
+
     if not args.start:
-        parser.error("--start là bắt buộc khi không dùng --merge-store")
+        parser.error("--start là bắt buộc khi không dùng --merge-store hoặc --drop-repeats")
 
     start = date.fromisoformat(args.start)
     end = date.fromisoformat(args.end) if args.end else vietnam_today() - timedelta(days=1)
@@ -326,6 +355,40 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.error("Không lấy được kỳ nào trong %d lần thử.", report.attempted)
         return 1
     return 0
+
+
+def repeated_draw_dates(records: Sequence[dict]) -> list[str]:
+    """Các ngày có kết quả TRÙNG KHÍT ngày liền trước — không phải kỳ quay.
+
+    XSMB nghỉ quay dịp Tết và trong đợt giãn cách 2020. Vào những ngày đó
+    trang nguồn vẫn trả kết quả gần nhất, nên trình cào ghi lại như thể đó là
+    kỳ của ngày ấy. Trên kho 2442 kỳ có 8 cụm như vậy: Tết mỗi năm 2020-2026
+    (5 ngày mỗi dịp) và 01-22/4/2020 (23 ngày, Chỉ thị 16).
+
+    Một kỳ có 107 chữ số giải, nên xác suất hai kỳ trùng khít do ngẫu nhiên là
+    10^-107. Không phải "hiếm" mà là bất khả: trùng khít luôn là hiện vật.
+
+    Bản ghi ĐẦU mỗi cụm được giữ vì đó là kỳ thật cuối cùng trước khi tạm
+    ngừng — kiểm chứng được: nội dung cụm khác với ngày liền trước cụm.
+
+    Args:
+        records: Bản ghi kho, mỗi phần tử có khoá ``date``.
+
+    Returns:
+        Danh sách ngày (``YYYY-MM-DD``) cần loại, theo thứ tự tăng dần.
+    """
+    def fingerprint(record: dict) -> tuple[str, ...]:
+        return tuple(str(v) for k, v in sorted(record.items()) if k != "date")
+
+    ordered = sorted(records, key=lambda r: str(r["date"])[:10])
+    drop: list[str] = []
+    previous: tuple[str, ...] | None = None
+    for record in ordered:
+        current = fingerprint(record)
+        if previous is not None and current == previous:
+            drop.append(str(record["date"])[:10])
+        previous = current
+    return drop
 
 
 def merge_stores(mine: Path, theirs: Path, out: Path) -> tuple[int, int, int]:
