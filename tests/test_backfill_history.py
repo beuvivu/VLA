@@ -29,6 +29,9 @@ class FakeLottery:
         self._raise_on = set(raise_on or ())
         self.dumps = 0
         self.fetch_calls: list[date] = []
+        # Bảng được chụp lúc nạp, đúng như Lottery.load() làm.
+        self._frame = set(self._have)
+        self.persisted: set[date] = set()
 
     def get_dates(self) -> set[date]:
         return set(self._have)
@@ -42,8 +45,20 @@ class FakeLottery:
         self._have.add(day)
         return True
 
+    def generate_dataframes(self) -> None:
+        """Chụp ``_have`` vào bảng, y như ``Lottery.generate_dataframes``."""
+        self._frame = set(self._have)
+
     def dump(self) -> None:
+        """Ghi **bảng đã chụp**, không phải ``_have``.
+
+        Đây là điểm mấu chốt: ``Lottery.dump`` ghi ``_raw_data`` chứ không
+        ghi ``_data``. Bản giả cũ chỉ đếm số lần gọi nên nó không thể lộ ra
+        lỗi mất dữ liệu — backfill dump mà quên dựng lại bảng thì ghi đè kho
+        bằng ảnh chụp cũ.
+        """
         self.dumps += 1
+        self.persisted = set(self._frame)
 
 
 def _run(lot, start, end, **kw):
@@ -233,6 +248,56 @@ def test_report_summary_is_one_readable_line() -> None:
 # --- Hợp đồng với Lottery thật ---------------------------------------------
 
 
+def test_persists_the_days_it_fetched_not_a_stale_snapshot() -> None:
+    """Kỳ đã lấy phải nằm trong tệp ghi ra, không chỉ trong bộ nhớ.
+
+    Lần chạy thật 34174095945 lấy 2049 kỳ, hỏng 0, báo "Kho: 393 → 2442 kỳ"
+    rồi ghi ra một tệp 393 kỳ: ``fetch`` thêm vào ``_data`` còn ``dump`` ghi
+    ``_raw_data``, và không ai gọi ``generate_dataframes`` ở giữa. Báo cáo
+    khi đó nói về bộ nhớ, còn đĩa thì trống — mất trọn 1 giờ 35 phút cào.
+    """
+    lot = FakeLottery()
+    days = {date(2026, 1, 1), date(2026, 1, 2), date(2026, 1, 3)}
+    rep = _run(lot, date(2026, 1, 1), date(2026, 1, 3))
+
+    assert rep.fetched == 3
+    assert lot.persisted == days, (
+        "kỳ đã lấy không có trong dữ liệu ghi ra — dump đã ghi đè bằng ảnh "
+        "chụp cũ"
+    )
+
+
+def test_every_checkpoint_persists_what_was_fetched_so_far() -> None:
+    """Checkpoint tồn tại để một lần chạy đứt không mất trắng. Checkpoint ghi
+    ảnh chụp cũ thì nó không cứu được gì mà còn che mất lỗi."""
+    lot = FakeLottery()
+    rep = _run(lot, date(2026, 1, 1), date(2026, 1, 10), checkpoint_every=3)
+
+    assert rep.checkpoints >= 3
+    assert len(lot.persisted) == 10
+
+
+def test_backfill_never_dumps_without_rebuilding_the_frames() -> None:
+    """Chặn tận gốc: mọi lời gọi ``dump`` trong backfill phải đi qua
+    ``_persist``, nơi duy nhất gọi ``generate_dataframes`` ngay trước đó."""
+    import re
+    from pathlib import Path
+
+    src = (
+        Path(__file__).resolve().parents[1] / "src" / "backfill_history.py"
+    ).read_text(encoding="utf-8")
+
+    body = src[src.index("def _persist(") :]
+    persist_body = body[: body.index("\ndef ", 1)]
+    assert "generate_dataframes()" in persist_body
+    assert persist_body.index("generate_dataframes()") < persist_body.index("dump()")
+
+    outside = src.replace(persist_body, "")
+    assert "lottery.dump()" not in outside, (
+        "còn lời gọi dump() không đi qua _persist — kỳ vừa lấy sẽ bị ghi đè"
+    )
+
+
 def test_fake_lottery_matches_the_real_api() -> None:
     """FakeLottery phải khớp chữ ký thật, nếu không cả tệp test này vô nghĩa.
 
@@ -243,7 +308,7 @@ def test_fake_lottery_matches_the_real_api() -> None:
 
     from lottery import Lottery
 
-    for name in ("fetch", "dump", "get_dates", "load"):
+    for name in ("fetch", "dump", "get_dates", "load", "generate_dataframes"):
         assert hasattr(Lottery, name), f"Lottery thiếu {name}"
         assert hasattr(FakeLottery, name) or name == "load", f"bản giả thiếu {name}"
 

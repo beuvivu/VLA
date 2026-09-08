@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
+from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 from ui_theme import SITE_NAV, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
@@ -600,18 +601,6 @@ def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
-#: Xác suất HAI số cụ thể cùng về trong một kỳ, tính bằng bao hàm-loại trừ.
-#: Không phải bình phương của tỉ lệ đơn: hai biến cố không độc lập vì cùng
-#: rút từ 27 ô giải. P = 1 - 2(0.99)^27 + (0.98)^27.
-PAIR_COOCCURRENCE_RATE = 1.0 - 2.0 * (0.99**27) + (0.98**27)
-
-#: Cực đại của 4950 cặp trên dữ liệu NGẪU NHIÊN HOÀN TOÀN, đo bằng mô phỏng
-#: 400 lần lịch sử 393 kỳ: trung bình 39.8, khoảng 90% là 37-43.
-#: Đây là con số phải đặt cạnh cặp dẫn đầu, nếu không bảng sẽ chế ra tín hiệu.
-PAIR_CHANCE_MAX_MEAN = 39.8
-PAIR_CHANCE_MAX_BAND = (37, 43)
-
-
 def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
     """Bảng tần suất cặp lô tô đồng xuất hiện, kèm mốc so sánh ngẫu nhiên.
 
@@ -620,10 +609,13 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
     thị nó.
 
     Bảng bắt buộc kèm hai con số, nếu không nó gây hiểu sai: **kỳ vọng** của
-    một cặp bất kỳ, và **cực đại do ngẫu nhiên** trên toàn bộ 4950 cặp. Cặp
-    dẫn đầu hiện có 41 lần so với kỳ vọng 21.6 — nghe như quy luật, nhưng cực
-    đại trên dữ liệu ngẫu nhiên trung bình đã là 39.8. Thiếu cột so sánh thì
-    người đọc chỉ thấy "gấp đôi kỳ vọng".
+    một cặp bất kỳ, và **cực đại do ngẫu nhiên** trên toàn bộ 4950 cặp. Ở 393
+    kỳ, cặp dẫn đầu có 41 lần so với kỳ vọng 21.6 — nghe như quy luật, nhưng
+    cực đại trên dữ liệu ngẫu nhiên trung bình đã là 39.9. Thiếu cột so sánh
+    thì người đọc chỉ thấy "gấp đôi kỳ vọng".
+
+    Cả hai mốc đều tính lại theo độ dài lịch sử thật
+    (:func:`pair_chance_maximum`), không đóng cứng.
 
     Args:
         repo_root: Thư mục gốc của kho.
@@ -664,7 +656,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
         "</tr>"
         for r in rows
     )
-    low, high = PAIR_CHANCE_MAX_BAND
+    chance_max, (low, high) = pair_chance_maximum(n_draws)
     return f"""
     <article class="card">
       <div class="card-head">
@@ -679,8 +671,8 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
       </div>
       <p class="pair-note">
         ⚠️ Có <b>4 950</b> cặp số, nên cặp dẫn đầu luôn cao hơn kỳ vọng kể cả khi
-        dữ liệu hoàn toàn ngẫu nhiên. Mô phỏng 400 lần lịch sử ngẫu nhiên
-        {n_draws} kỳ cho cực đại trung bình <b>{PAIR_CHANCE_MAX_MEAN}</b> lần
+        dữ liệu hoàn toàn ngẫu nhiên. Trên lịch sử ngẫu nhiên dài đúng
+        {n_draws} kỳ, cực đại trung bình là <b>{chance_max:.1f}</b> lần
         (khoảng 90%: {low}–{high}). Một cặp chỉ đáng chú ý khi vượt hẳn khoảng
         đó — nằm trong khoảng nghĩa là không phân biệt được với ngẫu nhiên.
       </p>

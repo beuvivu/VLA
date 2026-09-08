@@ -963,17 +963,66 @@ def test_pair_table_shows_the_expected_count_beside_the_observed() -> None:
 
 
 def test_pair_table_carries_the_chance_maximum_warning() -> None:
-    """Với 4950 cặp, cặp dẫn đầu cao hơn kỳ vọng là chuyện đương nhiên. Mô
-    phỏng 400 lần lịch sử ngẫu nhiên 393 kỳ cho cực đại trung bình 39.8, còn
-    quan sát thật là 41 — nằm gọn trong khoảng ngẫu nhiên. Thiếu ghi chú này
-    thì bảng chế ra một tín hiệu không tồn tại.
+    """Với 4950 cặp, cặp dẫn đầu cao hơn kỳ vọng là chuyện đương nhiên. Ở 393
+    kỳ, cực đại do ngẫu nhiên trung bình là 39.9 còn quan sát thật là 41 —
+    nằm gọn trong khoảng ngẫu nhiên. Thiếu ghi chú này thì bảng chế ra một
+    tín hiệu không tồn tại.
+
+    Mốc được đọc theo số kỳ mà trang tự khai, không so với hằng số: sau mỗi
+    lần bổ sung lịch sử con số phải đổi theo.
     """
+    from build_landing_page import pair_chance_maximum
+
     section = _soup(DOCS / "index.html").find(id="tan-suat-cap")
     note = section.find(class_="pair-note")
     assert note is not None, "thiếu ghi chú mốc ngẫu nhiên"
-    text = note.get_text(" ", strip=True)
+    text = re.sub(r"\s+", " ", note.get_text(" ", strip=True))
     assert "4 950" in text
-    assert "39.8" in text
+
+    n_draws = int(re.search(r"dài đúng ([\d]+) kỳ", text).group(1))
+    expected, (low, high) = pair_chance_maximum(n_draws)
+    assert f"{expected:.1f}" in text, (
+        f"ghi chú phải nêu cực đại ngẫu nhiên {expected:.1f} cho {n_draws} kỳ"
+    )
+    assert f"{low}–{high}" in text
+
+
+def test_pair_chance_maximum_scales_with_history_length() -> None:
+    """Mốc cực đại ngẫu nhiên KHÔNG được đóng cứng.
+
+    Trước đây nó là hằng số 39.8 đo trên 393 kỳ. Khi backfill nâng kho lên
+    ~2200 kỳ, số lần đồng xuất hiện kỳ vọng tăng tuyến tính theo N nên mốc
+    thật thành 161.8; giữ 39.8 thì mọi cặp đều vượt mốc và bảng tuyên bố
+    "bất thường" cho dữ liệu hoàn toàn ngẫu nhiên.
+    """
+    from build_landing_page import pair_chance_maximum
+
+    short_max, short_band = pair_chance_maximum(393)
+    long_max, long_band = pair_chance_maximum(2200)
+
+    assert short_max == pytest.approx(39.9, abs=0.2)
+    assert long_max == pytest.approx(161.8, abs=0.5)
+    assert long_max > 4 * short_max, "mốc phải tăng theo độ dài lịch sử"
+
+    for chance_max, (low, high) in ((short_max, short_band), (long_max, long_band)):
+        assert low < chance_max < high
+
+    assert pair_chance_maximum(0) == (0.0, (0, 0))
+
+
+def test_pair_chance_maximum_stays_above_the_per_pair_expectation() -> None:
+    """Cực đại của 4950 cặp phải cao hơn hẳn kỳ vọng của MỘT cặp — đó chính
+    là lý do bảng cần cột so sánh. Nếu hai con số xấp xỉ nhau thì phép hiệu
+    chỉnh so sánh bội đã hỏng."""
+    from build_landing_page import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
+
+    for n_draws in (393, 1200, 2200):
+        chance_max, _ = pair_chance_maximum(n_draws)
+        per_pair = PAIR_COOCCURRENCE_RATE * n_draws
+        assert chance_max > 1.3 * per_pair, (
+            f"{n_draws} kỳ: cực đại {chance_max:.1f} không tách khỏi kỳ vọng "
+            f"{per_pair:.1f}"
+        )
 
 
 def test_pair_cooccurrence_rate_uses_inclusion_exclusion() -> None:

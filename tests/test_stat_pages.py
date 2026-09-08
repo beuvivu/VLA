@@ -149,6 +149,43 @@ def test_all_ten_requested_pages_are_built() -> None:
 # --- Ghi chú mốc ngẫu nhiên ------------------------------------------------
 
 
+def test_pair_chance_note_scales_with_the_embedded_history() -> None:
+    """Ghi chú mốc ngẫu nhiên của trang tần suất cặp phải tính theo số kỳ thật.
+
+    Bản cũ đóng cứng "39,8 lần" đo trên 393 kỳ. Mốc đó tăng tuyến tính theo
+    độ dài lịch sử, nên sau khi bổ sung dữ liệu nó biến mọi cặp thành bất
+    thường nếu không tính lại.
+    """
+    from build_stat_pages import chance_note_context
+
+    short = chance_note_context(393)
+    long = chance_note_context(2200)
+
+    assert short["chance_max"] == "39,9"
+    assert long["chance_max"] == "161,8"
+    assert short["pair_expected"] == "21,6"
+    assert long["pair_expected"] == "120,7"
+
+
+def test_chance_notes_are_format_safe() -> None:
+    """Ghi chú đi qua ``str.format``; một dấu ngoặc nhọn lạc sẽ làm hỏng trang
+    lúc dựng chứ không phải lúc chạy test khác."""
+    from build_stat_pages import chance_note_context
+
+    context = chance_note_context(393)
+    for slug, note in CHANCE_NOTES.items():
+        note.format(**context)  # không được ném lỗi
+
+
+def test_baselines_come_from_the_single_source_of_truth() -> None:
+    """Hai mốc từng được chép lại trong từng trình dựng trang; chính bản chép
+    đó khiến 39,8 nằm lại sau khi lịch sử dài ra."""
+    from xsmb_domain import LOTO_BASELINE_RATE, PAIR_COOCCURRENCE_RATE
+
+    assert LOTO_BASELINE is LOTO_BASELINE_RATE
+    assert PAIR_BASELINE is PAIR_COOCCURRENCE_RATE
+
+
 @pytest.mark.parametrize("slug", sorted(CHANCE_NOTES))
 def test_ranking_pages_carry_a_chance_note(slug) -> None:
     """Bảng xếp hạng thiếu mốc ngẫu nhiên trông như quy luật trong khi đó là
