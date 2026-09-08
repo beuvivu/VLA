@@ -211,3 +211,33 @@ def test_a_genuinely_different_draw_is_still_accepted(tmp_path: Path) -> None:
     lot._sources = [FakeSource("a", _result(today, special=22602))]  # type: ignore[attr-defined]
     assert lot.fetch(today, min_agreement=1) is True
     assert lot.has_date(today)
+
+
+def test_rejects_a_repeat_even_when_the_days_between_were_removed(tmp_path: Path) -> None:
+    """So kề nhau là chưa đủ — bản đó đã thủng thật trong sản xuất.
+
+    Sau khi dọn cụm Tết 2026, quy trình hàng ngày cào lại các ngày thiếu. Với
+    2026-02-17 thì cả 02-16 lẫn 02-18 đều đã bị xoá nên không còn ngày liền kề
+    nào để so, và bản bịa lọt lại vào kho. Hai bản ghi quay lại đúng như vậy.
+
+    Trùng khít ở BẤT KỲ đâu trong lịch sử đều là hiện vật: xác suất 10^-107
+    không đổi theo khoảng cách ngày.
+    """
+    kept, refetched = date(2026, 2, 15), date(2026, 2, 17)  # 02-16 đã bị dọn
+    stale = _result(refetched, special=22601)
+
+    lot = _lottery(tmp_path, [FakeSource("a", _result(kept, special=22601))])
+    assert lot.fetch(kept, min_agreement=1) is True
+
+    lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
+    assert lot.fetch(refetched, min_agreement=1) is False
+    assert not lot.has_date(refetched)
+
+
+def test_refetching_the_same_date_is_not_treated_as_a_repeat(tmp_path: Path) -> None:
+    """Cào lại đúng ngày đã có phải là thao tác không đổi, không bị coi là bịa."""
+    d = date(2026, 2, 15)
+    lot = _lottery(tmp_path, [FakeSource("a", _result(d, special=22601))])
+    assert lot.fetch(d, min_agreement=1) is True
+    assert lot.fetch(d, min_agreement=1) is True
+    assert lot.has_date(d)

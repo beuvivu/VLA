@@ -382,12 +382,18 @@ def repeated_draw_dates(records: Sequence[dict]) -> list[str]:
 
     ordered = sorted(records, key=lambda r: str(r["date"])[:10])
     drop: list[str] = []
-    previous: tuple[str, ...] | None = None
+    # So với MỌI kỳ đã gặp, không chỉ kỳ liền trước. Bản chỉ so kề nhau đã
+    # thủng trong sản xuất: sau khi dọn cụm Tết 2026, quy trình hàng ngày cào
+    # lại các ngày thiếu và 2026-02-17 không còn ngày liền kề nào để so, nên
+    # bản bịa lọt lại vào kho.
+    seen: dict[tuple[str, ...], str] = {}
     for record in ordered:
         current = fingerprint(record)
-        if previous is not None and current == previous:
-            drop.append(str(record["date"])[:10])
-        previous = current
+        day = str(record["date"])[:10]
+        if current in seen:
+            drop.append(day)
+        else:
+            seen[current] = day
     return drop
 
 

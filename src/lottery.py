@@ -4,7 +4,7 @@ import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 import numpy as np
@@ -130,7 +130,7 @@ class Lottery:
         return tuple(int(payload[k]) for k in payload if k != "date")
 
     def _repeats_a_neighbour(self, selected_date: date, result: Result) -> date | None:
-        """Ngày liền kề đã lưu có kết quả TRÙNG KHÍT, nếu có.
+        """Ngày đã lưu nào có kết quả TRÙNG KHÍT với ứng viên, nếu có.
 
         XSMB nghỉ quay dịp Tết và trong đợt giãn cách 2020. Vào những ngày đó
         trang nguồn vẫn trả về kết quả gần nhất, nên trình cào ghi lại như thể
@@ -145,22 +145,26 @@ class Lottery:
         có 107 chữ số giải, nên xác suất trùng ngẫu nhiên là 10^-107 — không
         phải "hiếm", mà là bất khả. Trùng khít luôn là hiện vật.
 
-        Xét cả hai phía vì backfill lấy từ mới về cũ: khi tới ngày D thì D+1
-        thường đã nằm trong kho.
+        So với TOÀN BỘ kho chứ không chỉ hai ngày liền kề. Bản chỉ xét liền kề
+        đã thủng ngay trong sản xuất: sau khi dọn cụm Tết 2026, quy trình hàng
+        ngày cào lại các ngày thiếu, và với 2026-02-17 thì cả 02-16 lẫn 02-18
+        đều đã bị xoá — không còn gì để so, nên bản bịa lọt lại vào kho. Hai
+        bản ghi quay lại đúng theo đường đó.
+
+        Trùng khít ở BẤT KỲ đâu trong lịch sử cũng là hiện vật, nên không cần
+        giới hạn khoảng cách: xác suất 10^-107 không đổi theo độ trễ.
 
         Args:
             selected_date: Ngày đang lấy.
             result: Kết quả ứng viên.
 
         Returns:
-            Ngày liền kề trùng khít, hoặc ``None``.
+            Ngày đã lưu có kết quả trùng khít, hoặc ``None``.
         """
         signature = self._result_signature(result)
-        for delta in (-1, 1):
-            neighbour = selected_date + timedelta(days=delta)
-            other = self._data.get(neighbour)
-            if other is not None and self._result_signature(other) == signature:
-                return neighbour
+        for day, other in self._data.items():
+            if day != selected_date and self._result_signature(other) == signature:
+                return day
         return None
 
     def fetch(self, selected_date: date, *, min_agreement: int = 1) -> bool:
