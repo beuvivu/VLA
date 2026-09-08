@@ -24,12 +24,14 @@ kho**. Xem ``documentation/architecture/soi-cau-ml-mapping.md``. Đây là thay
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import random
 import sys
 import time
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 logger = logging.getLogger(__name__)
@@ -235,7 +237,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         phải thử mà không lấy được kỳ nào.
     """
     parser = argparse.ArgumentParser(description="Bổ sung lịch sử KQXS theo dải ngày.")
-    parser.add_argument("--start", required=True, help="Ngày đầu YYYY-MM-DD")
+    parser.add_argument(
+        "--merge-store",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Hợp nhất một bản kho đã lưu vào data/xsmb.json rồi dựng lại các "
+            "tệp dẫn xuất, sau đó thoát. Dùng khi nhánh chính đã tiến lên "
+            "trong lúc backfill chạy."
+        ),
+    )
+    parser.add_argument("--start", required=False, help="Ngày đầu YYYY-MM-DD")
     parser.add_argument("--end", default=None, help="Ngày cuối YYYY-MM-DD (mặc định: hôm qua)")
     parser.add_argument("--min-agreement", type=int, default=1)
     parser.add_argument("--checkpoint-every", type=int, default=25)
@@ -247,6 +259,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
     from lottery import Lottery, vietnam_today
+
+    if args.merge_store:
+        # Hợp nhất theo ngày rồi để Lottery dựng lại csv/json và các bảng
+        # dẫn xuất — không tự viết tệp dẫn xuất, vì định dạng của chúng là
+        # việc của Lottery.
+        root = Path(__file__).resolve().parents[1]
+        canonical = root / "data" / "xsmb.json"
+        merge_stores(Path(args.merge_store), canonical, canonical)
+        merged = Lottery()
+        merged.load()
+        merged.dump()
+        logger.info("Đã hợp nhất và dựng lại: %d kỳ", len(merged.get_dates()))
+        return 0
+
+    if not args.start:
+        parser.error("--start là bắt buộc khi không dùng --merge-store")
 
     start = date.fromisoformat(args.start)
     end = date.fromisoformat(args.end) if args.end else vietnam_today() - timedelta(days=1)
@@ -273,6 +301,44 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
     return 0
 
+
+def merge_stores(mine: Path, theirs: Path, out: Path) -> tuple[int, int, int]:
+    """Hợp nhất hai bản kho theo ngày, ưu tiên bản ``theirs``.
+
+    Vì sao cần: một lần backfill chạy 1,5 giờ, trong khi quy trình hàng ngày
+    đẩy commit vào nhánh chính vài lần mỗi giờ. Đến lúc ghi thì checkout của
+    runner đã cũ và ``git push`` bị từ chối — đã xảy ra thật, mất trọn một lần
+    chạy đã lấy xong dữ liệu.
+
+    Rebase không giải được: hai bên thêm dòng ở HAI ĐẦU khác nhau của cùng một
+    tệp (backfill thêm kỳ cũ, quy trình hàng ngày thêm kỳ mới), nên git thấy
+    xung đột nội dung. Nhưng ở mức dữ liệu thì không có xung đột nào cả: mỗi
+    bản ghi khoá theo ngày và hai tập gần như rời nhau.
+
+    ``theirs`` thắng khi trùng ngày, vì kỳ trên nhánh chính đã qua kiểm đồng
+    thuận hai nguồn còn backfill chỉ đòi một nguồn.
+
+    Args:
+        mine: Bản kho của lần backfill.
+        theirs: Bản kho hiện có trên nhánh chính.
+        out: Nơi ghi kết quả hợp nhất.
+
+    Returns:
+        Bộ ``(số bản ghi của mine, của theirs, của kết quả)``.
+    """
+    def _load(path: Path) -> dict[str, dict]:
+        if not path.exists():
+            return {}
+        rows = json.loads(path.read_text(encoding="utf-8"))
+        return {str(row["date"]): row for row in rows}
+
+    a, b = _load(mine), _load(theirs)
+    merged = {**a, **b}
+    ordered = [merged[k] for k in sorted(merged)]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(ordered, ensure_ascii=False), encoding="utf-8")
+    logger.info("hợp nhất: %d + %d -> %d bản ghi", len(a), len(b), len(ordered))
+    return len(a), len(b), len(ordered)
 
 if __name__ == "__main__":
     sys.exit(main())

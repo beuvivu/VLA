@@ -267,3 +267,91 @@ def test_backfill_only_uses_methods_the_real_lottery_has() -> None:
     assert used, "không tìm thấy lời gọi nào tới lottery"
     for name in used:
         assert hasattr(Lottery, name), f"backfill gọi lottery.{name}() nhưng Lottery không có"
+
+
+# --- Hợp nhất kho khi nhánh chính đã tiến lên ------------------------------
+#
+# Một lần backfill chạy 1,5 giờ; quy trình hàng ngày đẩy commit vài lần mỗi
+# giờ. Đến lúc ghi thì `git push` bị từ chối — đã xảy ra thật và mất trọn một
+# lần chạy đã lấy xong dữ liệu.
+
+
+def _store(tmp_path, name, dates):
+    import json
+    p = tmp_path / name
+    p.write_text(json.dumps([{"date": d, "special": 1} for d in dates]), encoding="utf-8")
+    return p
+
+
+def test_merge_keeps_records_from_both_sides(tmp_path) -> None:
+    """Backfill thêm kỳ CŨ, quy trình hàng ngày thêm kỳ MỚI — hai tập gần như
+    rời nhau, nên hợp nhất phải giữ cả hai."""
+    from backfill_history import merge_stores
+
+    mine = _store(tmp_path, "mine.json", ["2020-01-01", "2020-01-02"])
+    theirs = _store(tmp_path, "theirs.json", ["2026-09-07", "2026-09-08"])
+    out = tmp_path / "out.json"
+    assert merge_stores(mine, theirs, out) == (2, 2, 4)
+
+
+def test_merge_prefers_the_branch_copy_on_a_shared_date(tmp_path) -> None:
+    """Kỳ trên nhánh chính đã qua kiểm đồng thuận hai nguồn; backfill chỉ đòi
+    một nguồn."""
+    import json
+    from backfill_history import merge_stores
+
+    mine = tmp_path / "mine.json"
+    mine.write_text(json.dumps([{"date": "2026-01-01", "special": 111}]), encoding="utf-8")
+    theirs = tmp_path / "theirs.json"
+    theirs.write_text(json.dumps([{"date": "2026-01-01", "special": 999}]), encoding="utf-8")
+    out = tmp_path / "out.json"
+    merge_stores(mine, theirs, out)
+    assert json.loads(out.read_text())[0]["special"] == 999
+
+
+def test_merge_output_is_sorted_by_date(tmp_path) -> None:
+    """Lottery.load và bộ máy JS đều giả định thứ tự tăng dần."""
+    import json
+    from backfill_history import merge_stores
+
+    mine = _store(tmp_path, "mine.json", ["2020-05-05", "2020-01-01"])
+    theirs = _store(tmp_path, "theirs.json", ["2026-09-08", "2020-03-03"])
+    out = tmp_path / "out.json"
+    merge_stores(mine, theirs, out)
+    dates = [r["date"] for r in json.loads(out.read_text())]
+    assert dates == sorted(dates)
+
+
+def test_merge_tolerates_a_missing_branch_copy(tmp_path) -> None:
+    from backfill_history import merge_stores
+
+    mine = _store(tmp_path, "mine.json", ["2020-01-01"])
+    out = tmp_path / "out.json"
+    assert merge_stores(mine, tmp_path / "khong-ton-tai.json", out) == (1, 0, 1)
+
+
+def test_merge_stores_is_defined_before_the_main_guard() -> None:
+    """merge_stores từng bị đặt SAU khối `if __name__ == "__main__"`, nên
+    main() chạy trước khi def được thực thi và ném NameError ngay trên runner.
+    """
+    from pathlib import Path
+
+    src = (Path(__file__).resolve().parents[1] / "src" / "backfill_history.py").read_text(
+        encoding="utf-8"
+    )
+    assert src.index("def merge_stores") < src.index('if __name__ == "__main__"')
+
+
+def test_merge_store_flag_does_not_require_start() -> None:
+    """--merge-store là chế độ riêng, không quét ngày nào."""
+    import argparse
+    import backfill_history as mod
+
+    parser = argparse.ArgumentParser()
+    # Đọc lại đúng cách khai báo trong main() thay vì đoán.
+    src = mod.__file__
+    with open(src, encoding="utf-8") as handle:
+        text = handle.read()
+    assert '"--start", required=False' in text, "--start phải là tuỳ chọn"
+    assert "--merge-store" in text
+    del parser
