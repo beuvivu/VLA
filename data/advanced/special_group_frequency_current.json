@@ -1,82 +1,112 @@
 [
   {
     "period_kind":"day",
-    "period_key":"2026-09-07",
+    "period_key":"2026-09-08",
+    "group_type":"db_cham",
+    "group_value":7,
+    "freq":1,
+    "draws":1,
+    "rate":1.0,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-08",
+    "group_type":"db_cham",
+    "group_value":8,
+    "freq":1,
+    "draws":1,
+    "rate":1.0,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-08",
+    "group_type":"db_head",
+    "group_value":8,
+    "freq":1,
+    "draws":1,
+    "rate":1.0,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-08",
+    "group_type":"db_tail",
+    "group_value":7,
+    "freq":1,
+    "draws":1,
+    "rate":1.0,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-09-08",
+    "group_type":"db_total",
+    "group_value":5,
+    "freq":1,
+    "draws":1,
+    "rate":1.0,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
     "group_type":"db_cham",
     "group_value":0,
     "freq":1,
-    "draws":1,
-    "rate":1.0,
+    "draws":2,
+    "rate":0.5,
     "rank_in_period_group":1
   },
   {
-    "period_kind":"day",
-    "period_key":"2026-09-07",
+    "period_kind":"week",
+    "period_key":"2026-W37",
+    "group_type":"db_cham",
+    "group_value":7,
+    "freq":1,
+    "draws":2,
+    "rate":0.5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
+    "group_type":"db_cham",
+    "group_value":8,
+    "freq":1,
+    "draws":2,
+    "rate":0.5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
     "group_type":"db_cham",
     "group_value":9,
     "freq":1,
-    "draws":1,
-    "rate":1.0,
+    "draws":2,
+    "rate":0.5,
     "rank_in_period_group":1
   },
   {
-    "period_kind":"day",
-    "period_key":"2026-09-07",
+    "period_kind":"week",
+    "period_key":"2026-W37",
+    "group_type":"db_head",
+    "group_value":8,
+    "freq":1,
+    "draws":2,
+    "rate":0.5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
     "group_type":"db_head",
     "group_value":9,
     "freq":1,
-    "draws":1,
-    "rate":1.0,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-07",
-    "group_type":"db_tail",
-    "group_value":0,
-    "freq":1,
-    "draws":1,
-    "rate":1.0,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-09-07",
-    "group_type":"db_total",
-    "group_value":9,
-    "freq":1,
-    "draws":1,
-    "rate":1.0,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W37",
-    "group_type":"db_cham",
-    "group_value":0,
-    "freq":1,
-    "draws":1,
-    "rate":1.0,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W37",
-    "group_type":"db_cham",
-    "group_value":9,
-    "freq":1,
-    "draws":1,
-    "rate":1.0,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W37",
-    "group_type":"db_head",
-    "group_value":9,
-    "freq":1,
-    "draws":1,
-    "rate":1.0,
+    "draws":2,
+    "rate":0.5,
     "rank_in_period_group":1
   },
   {
@@ -85,8 +115,28 @@
     "group_type":"db_tail",
     "group_value":0,
     "freq":1,
-    "draws":1,
-    "rate":1.0,
+    "draws":2,
+    "rate":0.5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
+    "group_type":"db_tail",
+    "group_value":7,
+    "freq":1,
+    "draws":2,
+    "rate":0.5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W37",
+    "group_type":"db_total",
+    "group_value":5,
+    "freq":1,
+    "draws":2,
+    "rate":0.5,
     "rank_in_period_group":1
   },
   {
@@ -95,8 +145,8 @@
     "group_type":"db_total",
     "group_value":9,
     "freq":1,
-    "draws":1,
-    "rate":1.0,
+    "draws":2,
+    "rate":0.5,
     "rank_in_period_group":1
   },
   {
@@ -105,8 +155,8 @@
     "group_type":"db_cham",
     "group_value":0,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -115,8 +165,8 @@
     "group_type":"db_cham",
     "group_value":1,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -125,8 +175,8 @@
     "group_type":"db_cham",
     "group_value":2,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -135,8 +185,8 @@
     "group_type":"db_cham",
     "group_value":3,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -145,8 +195,8 @@
     "group_type":"db_cham",
     "group_value":4,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -155,8 +205,8 @@
     "group_type":"db_cham",
     "group_value":5,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -165,8 +215,8 @@
     "group_type":"db_cham",
     "group_value":6,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -174,9 +224,19 @@
     "period_key":"2026-09",
     "group_type":"db_cham",
     "group_value":7,
+    "freq":2,
+    "draws":8,
+    "rate":0.25,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "group_type":"db_cham",
+    "group_value":8,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -185,8 +245,8 @@
     "group_type":"db_cham",
     "group_value":9,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -195,8 +255,8 @@
     "group_type":"db_head",
     "group_value":1,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -205,8 +265,8 @@
     "group_type":"db_head",
     "group_value":2,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -215,8 +275,8 @@
     "group_type":"db_head",
     "group_value":3,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -225,8 +285,8 @@
     "group_type":"db_head",
     "group_value":4,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -235,8 +295,18 @@
     "group_type":"db_head",
     "group_value":6,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "group_type":"db_head",
+    "group_value":8,
+    "freq":1,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -245,8 +315,8 @@
     "group_type":"db_head",
     "group_value":9,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -255,8 +325,8 @@
     "group_type":"db_tail",
     "group_value":0,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -265,8 +335,8 @@
     "group_type":"db_tail",
     "group_value":1,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -275,8 +345,8 @@
     "group_type":"db_tail",
     "group_value":2,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -285,8 +355,8 @@
     "group_type":"db_tail",
     "group_value":5,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -295,8 +365,8 @@
     "group_type":"db_tail",
     "group_value":6,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -304,10 +374,10 @@
     "period_key":"2026-09",
     "group_type":"db_tail",
     "group_value":7,
-    "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
-    "rank_in_period_group":2
+    "freq":2,
+    "draws":8,
+    "rate":0.25,
+    "rank_in_period_group":1
   },
   {
     "period_kind":"month",
@@ -315,8 +385,8 @@
     "group_type":"db_total",
     "group_value":0,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -325,8 +395,8 @@
     "group_type":"db_total",
     "group_value":2,
     "freq":2,
-    "draws":7,
-    "rate":0.2857142857,
+    "draws":8,
+    "rate":0.25,
     "rank_in_period_group":1
   },
   {
@@ -335,8 +405,18 @@
     "group_type":"db_total",
     "group_value":3,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
+    "group_type":"db_total",
+    "group_value":5,
+    "freq":1,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -345,8 +425,8 @@
     "group_type":"db_total",
     "group_value":6,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -355,8 +435,8 @@
     "group_type":"db_total",
     "group_value":8,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -365,8 +445,8 @@
     "group_type":"db_total",
     "group_value":9,
     "freq":1,
-    "draws":7,
-    "rate":0.1428571429,
+    "draws":8,
+    "rate":0.125,
     "rank_in_period_group":2
   },
   {
@@ -375,8 +455,8 @@
     "group_type":"db_cham",
     "group_value":0,
     "freq":35,
-    "draws":246,
-    "rate":0.1422764228,
+    "draws":247,
+    "rate":0.1417004049,
     "rank_in_period_group":7
   },
   {
@@ -385,8 +465,8 @@
     "group_type":"db_cham",
     "group_value":1,
     "freq":44,
-    "draws":246,
-    "rate":0.1788617886,
+    "draws":247,
+    "rate":0.1781376518,
     "rank_in_period_group":5
   },
   {
@@ -395,8 +475,8 @@
     "group_type":"db_cham",
     "group_value":2,
     "freq":44,
-    "draws":246,
-    "rate":0.1788617886,
+    "draws":247,
+    "rate":0.1781376518,
     "rank_in_period_group":5
   },
   {
@@ -405,8 +485,8 @@
     "group_type":"db_cham",
     "group_value":3,
     "freq":58,
-    "draws":246,
-    "rate":0.2357723577,
+    "draws":247,
+    "rate":0.2348178138,
     "rank_in_period_group":1
   },
   {
@@ -415,8 +495,8 @@
     "group_type":"db_cham",
     "group_value":4,
     "freq":54,
-    "draws":246,
-    "rate":0.2195121951,
+    "draws":247,
+    "rate":0.2186234818,
     "rank_in_period_group":3
   },
   {
@@ -425,8 +505,8 @@
     "group_type":"db_cham",
     "group_value":5,
     "freq":45,
-    "draws":246,
-    "rate":0.1829268293,
+    "draws":247,
+    "rate":0.1821862348,
     "rank_in_period_group":4
   },
   {
@@ -435,8 +515,8 @@
     "group_type":"db_cham",
     "group_value":6,
     "freq":42,
-    "draws":246,
-    "rate":0.1707317073,
+    "draws":247,
+    "rate":0.1700404858,
     "rank_in_period_group":6
   },
   {
@@ -444,19 +524,19 @@
     "period_key":"2026",
     "group_type":"db_cham",
     "group_value":7,
-    "freq":44,
-    "draws":246,
-    "rate":0.1788617886,
-    "rank_in_period_group":5
+    "freq":45,
+    "draws":247,
+    "rate":0.1821862348,
+    "rank_in_period_group":4
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"db_cham",
     "group_value":8,
-    "freq":55,
-    "draws":246,
-    "rate":0.2235772358,
+    "freq":56,
+    "draws":247,
+    "rate":0.2267206478,
     "rank_in_period_group":2
   },
   {
@@ -465,8 +545,8 @@
     "group_type":"db_cham",
     "group_value":9,
     "freq":44,
-    "draws":246,
-    "rate":0.1788617886,
+    "draws":247,
+    "rate":0.1781376518,
     "rank_in_period_group":5
   },
   {
@@ -475,8 +555,8 @@
     "group_type":"db_head",
     "group_value":0,
     "freq":17,
-    "draws":246,
-    "rate":0.0691056911,
+    "draws":247,
+    "rate":0.0688259109,
     "rank_in_period_group":7
   },
   {
@@ -485,8 +565,8 @@
     "group_type":"db_head",
     "group_value":1,
     "freq":22,
-    "draws":246,
-    "rate":0.0894308943,
+    "draws":247,
+    "rate":0.0890688259,
     "rank_in_period_group":5
   },
   {
@@ -495,8 +575,8 @@
     "group_type":"db_head",
     "group_value":2,
     "freq":27,
-    "draws":246,
-    "rate":0.1097560976,
+    "draws":247,
+    "rate":0.1093117409,
     "rank_in_period_group":3
   },
   {
@@ -505,8 +585,8 @@
     "group_type":"db_head",
     "group_value":3,
     "freq":31,
-    "draws":246,
-    "rate":0.1260162602,
+    "draws":247,
+    "rate":0.1255060729,
     "rank_in_period_group":1
   },
   {
@@ -515,8 +595,8 @@
     "group_type":"db_head",
     "group_value":4,
     "freq":26,
-    "draws":246,
-    "rate":0.1056910569,
+    "draws":247,
+    "rate":0.1052631579,
     "rank_in_period_group":4
   },
   {
@@ -525,8 +605,8 @@
     "group_type":"db_head",
     "group_value":5,
     "freq":28,
-    "draws":246,
-    "rate":0.1138211382,
+    "draws":247,
+    "rate":0.1133603239,
     "rank_in_period_group":2
   },
   {
@@ -535,8 +615,8 @@
     "group_type":"db_head",
     "group_value":6,
     "freq":28,
-    "draws":246,
-    "rate":0.1138211382,
+    "draws":247,
+    "rate":0.1133603239,
     "rank_in_period_group":2
   },
   {
@@ -545,8 +625,8 @@
     "group_type":"db_head",
     "group_value":7,
     "freq":18,
-    "draws":246,
-    "rate":0.0731707317,
+    "draws":247,
+    "rate":0.0728744939,
     "rank_in_period_group":6
   },
   {
@@ -554,10 +634,10 @@
     "period_key":"2026",
     "group_type":"db_head",
     "group_value":8,
-    "freq":27,
-    "draws":246,
-    "rate":0.1097560976,
-    "rank_in_period_group":3
+    "freq":28,
+    "draws":247,
+    "rate":0.1133603239,
+    "rank_in_period_group":2
   },
   {
     "period_kind":"year",
@@ -565,8 +645,8 @@
     "group_type":"db_head",
     "group_value":9,
     "freq":22,
-    "draws":246,
-    "rate":0.0894308943,
+    "draws":247,
+    "rate":0.0890688259,
     "rank_in_period_group":5
   },
   {
@@ -575,9 +655,9 @@
     "group_type":"db_tail",
     "group_value":0,
     "freq":21,
-    "draws":246,
-    "rate":0.0853658537,
-    "rank_in_period_group":6
+    "draws":247,
+    "rate":0.0850202429,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"year",
@@ -585,9 +665,9 @@
     "group_type":"db_tail",
     "group_value":1,
     "freq":24,
-    "draws":246,
-    "rate":0.0975609756,
-    "rank_in_period_group":4
+    "draws":247,
+    "rate":0.0971659919,
+    "rank_in_period_group":3
   },
   {
     "period_kind":"year",
@@ -595,9 +675,9 @@
     "group_type":"db_tail",
     "group_value":2,
     "freq":21,
-    "draws":246,
-    "rate":0.0853658537,
-    "rank_in_period_group":6
+    "draws":247,
+    "rate":0.0850202429,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"year",
@@ -605,8 +685,8 @@
     "group_type":"db_tail",
     "group_value":3,
     "freq":30,
-    "draws":246,
-    "rate":0.1219512195,
+    "draws":247,
+    "rate":0.1214574899,
     "rank_in_period_group":2
   },
   {
@@ -615,8 +695,8 @@
     "group_type":"db_tail",
     "group_value":4,
     "freq":31,
-    "draws":246,
-    "rate":0.1260162602,
+    "draws":247,
+    "rate":0.1255060729,
     "rank_in_period_group":1
   },
   {
@@ -625,9 +705,9 @@
     "group_type":"db_tail",
     "group_value":5,
     "freq":21,
-    "draws":246,
-    "rate":0.0853658537,
-    "rank_in_period_group":6
+    "draws":247,
+    "rate":0.0850202429,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"year",
@@ -635,19 +715,19 @@
     "group_type":"db_tail",
     "group_value":6,
     "freq":16,
-    "draws":246,
-    "rate":0.0650406504,
-    "rank_in_period_group":7
+    "draws":247,
+    "rate":0.0647773279,
+    "rank_in_period_group":6
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"db_tail",
     "group_value":7,
-    "freq":29,
-    "draws":246,
-    "rate":0.1178861789,
-    "rank_in_period_group":3
+    "freq":30,
+    "draws":247,
+    "rate":0.1214574899,
+    "rank_in_period_group":2
   },
   {
     "period_kind":"year",
@@ -655,8 +735,8 @@
     "group_type":"db_tail",
     "group_value":8,
     "freq":30,
-    "draws":246,
-    "rate":0.1219512195,
+    "draws":247,
+    "rate":0.1214574899,
     "rank_in_period_group":2
   },
   {
@@ -665,9 +745,9 @@
     "group_type":"db_tail",
     "group_value":9,
     "freq":23,
-    "draws":246,
-    "rate":0.093495935,
-    "rank_in_period_group":5
+    "draws":247,
+    "rate":0.0931174089,
+    "rank_in_period_group":4
   },
   {
     "period_kind":"year",
@@ -675,8 +755,8 @@
     "group_type":"db_total",
     "group_value":0,
     "freq":26,
-    "draws":246,
-    "rate":0.1056910569,
+    "draws":247,
+    "rate":0.1052631579,
     "rank_in_period_group":3
   },
   {
@@ -685,8 +765,8 @@
     "group_type":"db_total",
     "group_value":1,
     "freq":26,
-    "draws":246,
-    "rate":0.1056910569,
+    "draws":247,
+    "rate":0.1052631579,
     "rank_in_period_group":3
   },
   {
@@ -695,8 +775,8 @@
     "group_type":"db_total",
     "group_value":2,
     "freq":24,
-    "draws":246,
-    "rate":0.0975609756,
+    "draws":247,
+    "rate":0.0971659919,
     "rank_in_period_group":5
   },
   {
@@ -705,8 +785,8 @@
     "group_type":"db_total",
     "group_value":3,
     "freq":23,
-    "draws":246,
-    "rate":0.093495935,
+    "draws":247,
+    "rate":0.0931174089,
     "rank_in_period_group":6
   },
   {
@@ -715,8 +795,8 @@
     "group_type":"db_total",
     "group_value":4,
     "freq":27,
-    "draws":246,
-    "rate":0.1097560976,
+    "draws":247,
+    "rate":0.1093117409,
     "rank_in_period_group":2
   },
   {
@@ -724,9 +804,9 @@
     "period_key":"2026",
     "group_type":"db_total",
     "group_value":5,
-    "freq":28,
-    "draws":246,
-    "rate":0.1138211382,
+    "freq":29,
+    "draws":247,
+    "rate":0.1174089069,
     "rank_in_period_group":1
   },
   {
@@ -735,8 +815,8 @@
     "group_type":"db_total",
     "group_value":6,
     "freq":25,
-    "draws":246,
-    "rate":0.1016260163,
+    "draws":247,
+    "rate":0.1012145749,
     "rank_in_period_group":4
   },
   {
@@ -745,8 +825,8 @@
     "group_type":"db_total",
     "group_value":7,
     "freq":19,
-    "draws":246,
-    "rate":0.0772357724,
+    "draws":247,
+    "rate":0.0769230769,
     "rank_in_period_group":7
   },
   {
@@ -755,8 +835,8 @@
     "group_type":"db_total",
     "group_value":8,
     "freq":24,
-    "draws":246,
-    "rate":0.0975609756,
+    "draws":247,
+    "rate":0.0971659919,
     "rank_in_period_group":5
   },
   {
@@ -765,8 +845,8 @@
     "group_type":"db_total",
     "group_value":9,
     "freq":24,
-    "draws":246,
-    "rate":0.0975609756,
+    "draws":247,
+    "rate":0.0971659919,
     "rank_in_period_group":5
   }
 ]

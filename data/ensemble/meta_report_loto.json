@@ -34,10 +34,10 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 9,
-    "four_with_cau": 9,
-    "four_with_stat": 9,
-    "core_three": 221
+    "five_component": 10,
+    "four_with_cau": 10,
+    "four_with_stat": 10,
+    "core_three": 222
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
@@ -50,26 +50,25 @@
   },
   "quality_pass": true,
   "meta_trust": 0.15,
-  "validation_logloss": 0.5461843619071524,
-  "validation_brier": 0.18018300750471578,
-  "baseline_validation_logloss": 0.6745806069452568,
-  "baseline_validation_brier": 0.19475417794795316,
-  "logloss_skill": 0.1903349187868426,
-  "brier_skill": 0.07481826883904608,
+  "validation_logloss": 0.5474491990767274,
+  "validation_brier": 0.18052727008178715,
+  "baseline_validation_logloss": 0.6828033929744682,
+  "baseline_validation_brier": 0.1957916617446889,
+  "logloss_skill": 0.1982330423229196,
+  "brier_skill": 0.07796241947630245,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.1445268391447929,
-    "p_stable": 0.05547316085520708
+    "p_active": 0.14464575456960158,
+    "p_stable": 0.055354245430398366
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 4.138082892711679,
-    "b": 0.7246365702702301,
+    "a": 4.053395635753884,
+    "b": 0.6855730352740455,
     "temperature": 1.0
   },
-  "history_days": 221,
+  "history_days": 222,
   "selection_days": [
-    "2026-06-22",
     "2026-06-23",
     "2026-06-24",
     "2026-06-25",
@@ -98,10 +97,10 @@
     "2026-07-18",
     "2026-07-19",
     "2026-07-20",
-    "2026-07-21"
+    "2026-07-21",
+    "2026-07-22"
   ],
   "validation_days": [
-    "2026-07-22",
     "2026-07-23",
     "2026-07-24",
     "2026-07-25",
@@ -130,8 +129,9 @@
     "2026-09-04",
     "2026-09-05",
     "2026-09-06",
-    "2026-09-07"
+    "2026-09-07",
+    "2026-09-08"
   ],
-  "trained_through_target_date": "2026-09-07",
-  "trained_at_utc": "2026-09-08T06:39:48Z"
+  "trained_through_target_date": "2026-09-08",
+  "trained_at_utc": "2026-09-08T11:50:58Z"
 }
