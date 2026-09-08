@@ -29,17 +29,20 @@ from typing import Sequence
 import pandas as pd
 
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link
+from xsmb_domain import (
+    LOTO_BASELINE_RATE,
+    PAIR_COOCCURRENCE_RATE,
+    pair_chance_maximum,
+)
 from web_security import json_for_html_script, security_meta_tags
 
 logger = logging.getLogger(__name__)
 
-#: Xác suất một con lô bất kỳ về trong một kỳ: 1 - (99/100)^27.
-LOTO_BASELINE = 1.0 - 0.99**27
-
-#: Xác suất HAI con cụ thể cùng về trong một kỳ, theo bao hàm-loại trừ.
-#: Không phải bình phương của tỉ lệ đơn: hai biến cố không độc lập vì cùng
-#: rút từ 27 ô giải.
-PAIR_BASELINE = 1.0 - 2.0 * (0.99**27) + (0.98**27)
+#: Hai mốc ngẫu nhiên lấy từ ``xsmb_domain`` chứ không tự tính lại: bản chép
+#: riêng ở đây từng khiến mốc cực đại 39,8 (đo trên 393 kỳ) nằm lại trong khi
+#: lịch sử đã dài ra.
+LOTO_BASELINE = LOTO_BASELINE_RATE
+PAIR_BASELINE = PAIR_COOCCURRENCE_RATE
 
 #: Độ rộng chữ số của từng giải. CSV lưu kiểu số nguyên nên mất số 0 ở đầu;
 #: đo được 10,3% số ô ngắn hơn độ rộng đúng. Thiếu bảng này thì mọi phép cắt
@@ -231,8 +234,12 @@ PAGES: tuple[StatPage, ...] = (
 
 #: Ghi chú mốc ngẫu nhiên cho từng trang. Trang xếp hạng nào cũng phải có,
 #: nếu không bảng trông như quy luật trong khi đó là mức ngẫu nhiên thường
-#: tạo ra. Con số lấy từ mô phỏng, ghi trong
+#: tạo ra. Cách suy ra ghi trong
 #: documentation/architecture/soi-cau-ml-mapping.md.
+#:
+#: Các chuỗi này là **khuôn ``str.format``**: mốc nào co giãn theo độ dài lịch
+#: sử thì để chỗ trống cho :func:`chance_note_context` điền, không đóng cứng.
+#: Ghi chú không có chỗ trống vẫn đi qua ``format`` nguyên vẹn.
 CHANCE_NOTES: dict[str, str] = {
     "tan-suat-loto": (
         "Kỳ vọng mỗi con là <b>1 − (0,99)²⁷ ≈ 23,77%</b> mỗi kỳ. Con dẫn đầu "
@@ -240,9 +247,10 @@ CHANCE_NOTES: dict[str, str] = {
         "nhiên — cột “So kỳ vọng” là để so, không phải để chọn."
     ),
     "tan-suat-cap-loto": (
-        "Có <b>4 950</b> cặp số. Mô phỏng 400 lần lịch sử ngẫu nhiên 393 kỳ cho "
-        "cực đại trung bình <b>39,8</b> lần (khoảng 90%: 37–43), trong khi kỳ "
-        "vọng mỗi cặp chỉ 21,6. Một cặp chỉ đáng chú ý khi vượt hẳn khoảng đó."
+        "Có <b>4 950</b> cặp số. Trên lịch sử ngẫu nhiên dài đúng {n_draws} kỳ, "
+        "cực đại trung bình là <b>{chance_max}</b> lần (khoảng 90%: {low}–{high}), "
+        "trong khi kỳ vọng mỗi cặp chỉ {pair_expected}. Một cặp chỉ đáng chú ý "
+        "khi vượt hẳn khoảng đó."
     ),
     "chu-ky-dac-biet": (
         "Giải đặc biệt có 100 kết quả hai số nên khoảng gan trung bình là 100 "
@@ -274,6 +282,25 @@ def _asset(name: str) -> str:
     return (Path(__file__).resolve().parent / "templates" / name).read_text(encoding="utf-8")
 
 
+def chance_note_context(n_draws: int) -> dict[str, str]:
+    """Các mốc ngẫu nhiên co giãn theo độ dài lịch sử, để điền vào ghi chú.
+
+    Args:
+        n_draws: Số kỳ trong lịch sử đang dựng.
+
+    Returns:
+        Từ điển thay thế cho ``str.format`` trên :data:`CHANCE_NOTES`.
+    """
+    chance_max, (low, high) = pair_chance_maximum(n_draws)
+    return {
+        "n_draws": f"{n_draws:,}".replace(",", " "),
+        "chance_max": f"{chance_max:.1f}".replace(".", ","),
+        "low": str(low),
+        "high": str(high),
+        "pair_expected": f"{PAIR_BASELINE * n_draws:.1f}".replace(".", ","),
+    }
+
+
 def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: str) -> str:
     """Dựng HTML hoàn chỉnh cho một trang thống kê.
 
@@ -285,7 +312,7 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     Returns:
         Chuỗi HTML đầy đủ.
     """
-    note = CHANCE_NOTES.get(page.slug, "")
+    note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">

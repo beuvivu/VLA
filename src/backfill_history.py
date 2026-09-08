@@ -16,9 +16,15 @@ một cách an toàn.
 * **Có nhịp chờ.** Nã 2000 yêu cầu liên tiếp vào một trang tin là hành vi lạm
   dụng và sẽ bị chặn IP. Mặc định chờ 1,5-3 giây giữa các kỳ.
 
-Ràng buộc quan trọng: **393 kỳ hiện có là trần cứng của mọi mô hình trong
-kho**. Xem ``documentation/architecture/soi-cau-ml-mapping.md``. Đây là thay
-đổi duy nhất làm dịch chuyển được kết quả của toàn bộ lớp phân tích.
+Ràng buộc quan trọng: **độ dài lịch sử là trần cứng của mọi mô hình trong
+kho** (393 kỳ trước lần bổ sung đầu tiên). Xem
+``documentation/architecture/soi-cau-ml-mapping.md``. Đây là thay đổi duy nhất
+làm dịch chuyển được kết quả của toàn bộ lớp phân tích.
+
+Hệ quả cần nhớ khi kho dài ra: mọi mốc ngẫu nhiên đều co giãn theo số kỳ.
+Cực đại do ngẫu nhiên của 4950 cặp lô tô là 39,9 ở 393 kỳ nhưng 161,8 ở 2200
+kỳ — xem :func:`xsmb_domain.pair_chance_maximum`. Mốc nào còn đóng cứng theo
+393 kỳ sẽ biến mọi cặp thành "bất thường" ngay sau lần bổ sung này.
 """
 
 from __future__ import annotations
@@ -115,6 +121,26 @@ def missing_dates(wanted: Iterable[date], have: set[date]) -> list[date]:
     return sorted({d for d in wanted if d not in have}, reverse=True)
 
 
+def _persist(lottery) -> None:
+    """Ghi kho ra đĩa, dựng lại bảng trước khi ghi.
+
+    ``Lottery.fetch`` chỉ thêm vào ``_data``; ``Lottery.dump`` lại ghi
+    ``_raw_data``, bảng chỉ được dựng bởi ``generate_dataframes``. Thiếu một
+    lệnh gọi ở giữa thì hàm ghi đè bảng cũ lên đĩa và **xoá đúng những kỳ vừa
+    lấy về**.
+
+    Đây không phải giả thiết: lần chạy thật 34174095945 lấy 2049 kỳ, hỏng 0,
+    báo "Kho: 393 → 2442 kỳ", rồi ghi ra một tệp 393 kỳ — mất trọn 1 giờ 35
+    phút cào dữ liệu. ``src/sync.py`` của quy trình hàng ngày luôn gọi cặp
+    này liền nhau; chỉ backfill bỏ sót.
+
+    Args:
+        lottery: Đối tượng ``Lottery`` đang giữ dữ liệu.
+    """
+    lottery.generate_dataframes()
+    lottery.dump()
+
+
 def backfill(
     lottery,
     start: date,
@@ -206,7 +232,7 @@ def backfill(
                 break
 
         if since_checkpoint >= checkpoint_every:
-            lottery.dump()
+            _persist(lottery)
             report.checkpoints += 1
             since_checkpoint = 0
             logger.info(
@@ -218,7 +244,7 @@ def backfill(
             sleeper(random.uniform(low, high))
 
     if since_checkpoint > 0:
-        lottery.dump()
+        _persist(lottery)
         report.checkpoints += 1
 
     report.elapsed_seconds = clock() - began

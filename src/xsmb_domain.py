@@ -67,6 +67,64 @@ LOTO_BASELINE_RATE: Final[float] = 1.0 - (1.0 - UNIFORM_TWO_DIGIT_RATE) ** LOTO_
 #: P(the special prize's last two digits equal a given number) under uniformity.
 DE_BASELINE_RATE: Final[float] = UNIFORM_TWO_DIGIT_RATE
 
+#: P(two *specific* numbers both appear in the same draw), by inclusion-exclusion.
+#: NOT the square of ``LOTO_BASELINE_RATE``: the two events are dependent because
+#: both are drawn from the same 27 prize slots.
+PAIR_COOCCURRENCE_RATE: Final[float] = (
+    1.0
+    - 2.0 * (1.0 - UNIFORM_TWO_DIGIT_RATE) ** LOTO_DRAWS_PER_DAY
+    + (1.0 - 2.0 * UNIFORM_TWO_DIGIT_RATE) ** LOTO_DRAWS_PER_DAY
+)
+
+#: Number of unordered pairs over 00..99 — the multiple-comparison width.
+PAIR_COUNT: Final[int] = 100 * 99 // 2
+
+
+def pair_chance_maximum(
+    n_draws: int,
+    *,
+    pair_count: int = PAIR_COUNT,
+    rate: float = PAIR_COOCCURRENCE_RATE,
+) -> tuple[float, tuple[int, int]]:
+    """Highest pair co-occurrence count expected from PURE CHANCE alone.
+
+    Any table ranking 4950 pairs must print this next to its leader, or it
+    manufactures a signal: the top of 4950 draws is far above the per-pair
+    expectation even when the data carries no structure at all.
+
+    The figure **scales with history length** and must never be frozen. It is
+    39.9 over 393 draws but 161.8 over 2200; a constant lifted from a short
+    history turns every pair into an anomaly the moment the archive grows.
+
+    Model: the maximum of ``pair_count`` independent ``Binomial(n_draws, rate)``
+    variables. Real pairs are dependent because they share numbers, but
+    simulating actual histories (200 runs, 27 slots drawn per draw) gives
+    39.7 / 96.0 / 161.0 at N = 393 / 1200 / 2200 against 39.9 / 96.6 / 161.8
+    for the independent model — under 1% apart. In exchange the result is
+    deterministic, with no RNG at page-build time.
+
+    Args:
+        n_draws: Number of draws in the history.
+        pair_count: How many pairs are ranked together.
+        rate: P(one specific pair co-occurs in one draw).
+
+    Returns:
+        ``(expected maximum, 90% band)``; ``(0.0, (0, 0))`` for an empty history.
+    """
+    if n_draws <= 0:
+        return 0.0, (0, 0)
+
+    from scipy.stats import binom
+
+    ceiling = int(binom.ppf(1.0 - 1e-12, n_draws, rate)) + 20
+    support = np.arange(ceiling + 1)
+    # P(max <= k) = F(k)^m for m independent pairs.
+    cdf_max = binom.cdf(support, n_draws, rate) ** pair_count
+    mean = float((1.0 - cdf_max).sum())
+    low = int(support[np.searchsorted(cdf_max, 0.05)])
+    high = int(support[np.searchsorted(cdf_max, 0.95)])
+    return mean, (low, high)
+
 
 def baseline_rate(mode: str) -> float:
     """Return the no-information hit probability for ``mode``."""
