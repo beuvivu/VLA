@@ -655,6 +655,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         (
             ("tan-suat-loto.html", "Tần suất lô tô", "◧"),
             ("tan-suat-cap-loto.html", "Tần suất cặp lô tô", "⇅"),
+            ("cap-lon-loto.html", "Cặp lộn lô tô", "🔁"),
             ("dau-duoi-loto.html", "Đầu đuôi lô tô", "⊞"),
             ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "◫"),
         ),

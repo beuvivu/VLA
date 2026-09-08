@@ -136,10 +136,10 @@ def test_page_slugs_are_unique() -> None:
 
 
 def test_all_ten_requested_pages_are_built() -> None:
-    """Mười trang tương ứng danh sách được yêu cầu."""
+    """Mười trang được yêu cầu, cộng trang cặp lộn tách ra riêng."""
     expected = {
         "bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam",
-        "tan-suat-loto", "tan-suat-cap-loto", "dau-duoi-loto",
+        "tan-suat-loto", "tan-suat-cap-loto", "cap-lon-loto", "dau-duoi-loto",
         "chu-ky-dac-biet", "cau-dac-biet-theo-bo-so", "giai-db-ngay-mai",
         "thong-ke-tong-hop",
     }
@@ -282,3 +282,119 @@ def test_embedded_payload_is_valid_json(draws) -> None:
     payload = json.loads(match.group(1).replace("\\u0026", "&"))
     assert len(payload) == 5
     assert set(payload[0]) == {"d", "s", "n"}
+
+
+# --- Giải đặc biệt đủ 5 chữ số ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "slug", ["bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"]
+)
+def test_special_tables_render_all_five_digits(slug) -> None:
+    """Bảng đặc biệt phải liệt kê TRỌN giải, không cắt còn hai số cuối.
+
+    Dữ liệu nhúng vốn giữ đủ 5 chữ số; bản trước cắt ngay lúc dựng bảng nên
+    người đọc mất ba chữ số đầu và không đối chiếu được với kết quả gốc.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function specialFull(" in js
+
+    body = js[js.index("function specialFull(") :]
+    body = body[: body.index("\n}") + 2]
+    assert "padStart(5" in body, "phải bù 0 cho giải mất số 0 đứng đầu"
+    assert "slice(0, 3)" in body and "slice(3)" in body, (
+        "phải hiện ba số đầu cùng hai số cuối, không chỉ hai số cuối"
+    )
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert "sp-de" in page, f"{slug} chưa dùng lớp hiển thị giải đủ 5 số"
+
+    # Hàm tồn tại là chưa đủ — phải được GỌI trong đúng hàm dựng của trang này.
+    render = {
+        "bang-dac-biet": "renderSpecialByDay",
+        "bang-dac-biet-thang": "renderSpecialByMonth",
+        "bang-dac-biet-nam": "renderSpecialByYear",
+    }[slug]
+    fn = js[js.index(f"function {render}(") :]
+    fn = fn[: fn.index("\nfunction ", 1)]
+    assert "specialFull(" in fn, f"{render} không gọi specialFull; giải bị cắt"
+    assert ".slice(-2)" not in fn, f"{render} còn cắt hai số cuối khi hiển thị"
+
+
+def test_counting_uses_last_two_digits_but_display_does_not() -> None:
+    """Đếm theo hai số cuối là ĐÚNG (lô tô là hai chữ số); cắt khi HIỂN THỊ mới
+    là sai. Hai việc khác nhau nên phải có hai hàm khác nhau."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function lastTwo(" in js
+    assert "r.s.slice(-2)" not in js, (
+        "còn chỗ cắt thẳng chuỗi giải; dùng lastTwo() để đếm hoặc "
+        "specialFull() để hiện"
+    )
+
+
+# --- Cặp lộn ----------------------------------------------------------------
+
+
+def test_reverse_pairs_are_true_reversals_not_kep_bong() -> None:
+    """"Lộn" là đảo hai chữ số: 01 <-> 10. Chỉ có 45 cặp, vì 10 số kép đảo lại
+    chính nó.
+
+    Kho từng gộp 10 số kép thành 5 họ "kép bóng" (00-55, 11-66, ...) cho tròn
+    50 cặp. BÓNG (0<->5, 1<->6) là khái niệm khác hẳn LỘN, nên bảng cũ trộn hai
+    thứ rồi gọi chung là cặp lộn.
+    """
+    pairs = []
+    for a in range(100):
+        b = (a % 10) * 10 + a // 10
+        if a < b:
+            pairs.append((a, b))
+
+    assert len(pairs) == 45
+    assert not any(a % 11 == 0 or b % 11 == 0 for a, b in pairs), (
+        "số kép không được xuất hiện trong cặp lộn"
+    )
+
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function reversePairs(" in js
+    assert "function doubleNumbers(" in js
+    assert "sp-kep" in js, "số kép phải liệt kê riêng, không trộn vào cặp lộn"
+
+
+def test_reverse_pair_page_exists_separately() -> None:
+    """Trang riêng cho tiện theo dõi, không nhét thêm vào trang tần suất cặp."""
+    assert "cap-lon-loto" in {p.slug for p in PAGES}
+    from ui_theme import SITE_NAV
+
+    links = [item[0] for group in SITE_NAV for item in group[1]]
+    assert "cap-lon-loto.html" in links, "trang mới phải vào được từ điều hướng"
+
+
+# --- Đánh dấu ô để so sánh --------------------------------------------------
+
+
+def test_cells_can_be_marked_for_comparison() -> None:
+    """Bảng dài hàng chục hàng; không có cách đánh dấu thì chỉ cần cuộn một cái
+    là mất dấu những ô đang muốn so."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function bindMarking(" in js
+    assert 'data-key=' in js, "ô phải có khoá ổn định để nhớ được"
+    assert "localStorage" in js
+
+    assert "try {" in js and "catch" in js, (
+        "cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc localStorage; không bọc thì "
+        "trang trắng"
+    )
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    assert "td.marked" in css
+
+
+@pytest.mark.parametrize("slug", sorted(p.slug for p in PAGES))
+def test_every_page_can_clear_its_marks(slug) -> None:
+    """Ô bấm được thì phải gỡ được.
+
+    Ba trang dùng bộ chọn dạng nút nhanh từng thiếu thanh công cụ này: ô vẫn
+    nhận click và vẫn lưu vào localStorage, nhưng không có nút xoá nên người
+    dùng đánh dấu xong thì mắc kẹt.
+    """
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert 'id="sp-clear-marks"' in page, f"{slug} thiếu nút xoá đánh dấu"
+    assert 'id="sp-mark-count"' in page, f"{slug} thiếu số đếm ô đã đánh dấu"

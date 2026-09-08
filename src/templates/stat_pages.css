@@ -67,3 +67,45 @@ line-height:1.65}
 :root:not([data-theme=light]) .sp-note{background:#3f2d0c;border-color:#78350f;color:#fde68a}
 @media (prefers-color-scheme: light){:root:not([data-theme=dark]) .sp-note{
 background:#fffbeb;border-color:#fde68a;color:#78350f}}
+
+/* --- Giải đặc biệt đủ 5 chữ số ------------------------------------------
+   Ba chữ số đầu để mờ, hai số cuối đậm: người soi cầu đọc hai số cuối, nhưng
+   vẫn cần trọn giải để đối chiếu với kết quả gốc. Bản trước cắt mất phần đầu
+   nên không đối chiếu được. */
+.sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: #94a3b8; }
+.sp-de b { color: #0f172a; font-weight: 800; }
+
+/* --- Đánh dấu ô để so sánh ----------------------------------------------- */
+.sp-table td.cell { cursor: pointer; }
+.sp-table td.cell:hover { outline: 2px solid rgba(124, 58, 237, .35); outline-offset: -2px; }
+.sp-table td.marked {
+  background: #fde68a !important;
+  box-shadow: inset 0 0 0 2px #d97706;
+  font-weight: 800;
+}
+.sp-table td.marked .sp-de,
+.sp-table td.marked .sp-de b { color: #78350f; }
+
+.sp-marktools { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
+.sp-hint { color: #64748b; font-size: 12px; }
+.sp-mark-count { color: #b45309; font-size: 12px; font-weight: 800; }
+.sp-subhead { margin: 22px 0 8px; font-size: 17px; }
+
+@media (prefers-color-scheme: dark) {
+  .sp-de { color: #64748b; }
+  .sp-de b { color: #e2e8f0; }
+  .sp-table td.marked { background: #78350f !important; box-shadow: inset 0 0 0 2px #f59e0b; }
+  .sp-table td.marked .sp-de,
+  .sp-table td.marked .sp-de b { color: #fef3c7; }
+}
+
+/* Lịch tuần của bảng đặc biệt theo tháng: số ngày nhỏ ở góc, giải bên dưới. */
+.sp-daynum {
+  display: block; font-size: 11px; font-weight: 800;
+  color: #64748b; margin-bottom: 2px;
+}
+.sp-none { color: #cbd5e1; }
+@media (prefers-color-scheme: dark) {
+  .sp-daynum { color: #94a3b8; }
+  .sp-none { color: #475569; }
+}
