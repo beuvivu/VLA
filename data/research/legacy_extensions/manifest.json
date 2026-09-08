@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-08T03:14:08Z",
+  "generated_at_utc": "2026-09-08T04:22:52Z",
   "anchor_date": "2026-09-07",
   "research_only": true,
   "rows": {
@@ -11,37 +11,37 @@
     "loto_transition_independence.csv": 100,
     "loto_acf_bartlett.csv": 600
   },
-  "transition_fdr_05_count": 0,
+  "transition_fdr_05_count": 5,
   "acf_fdr_05_count": 0,
-  "acf_bartlett_exceed_count": 26,
+  "acf_bartlett_exceed_count": 76,
   "ks_full_special": {
     "name": "ks_full_special_uniformity",
-    "statistic": 0.04123447837150129,
-    "p_value": 0.5029440584798366,
+    "statistic": 0.024751081081081094,
+    "p_value": 0.09870424243371845,
     "note": "H0: full five-digit special prize is Uniform[0,1) after scaling."
   },
   "ljung_box_even_tail_count": {
     "name": "ljung_box_even_tail_count",
-    "statistic": 8.362832051765743,
-    "p_value": 0.5934417373346748,
+    "statistic": 26.18760755005021,
+    "p_value": 0.003495891242676124,
     "lags": 10,
     "note": "H0: aggregate count of even-ending Loto entries has no serial autocorrelation through the tested lags."
   },
   "coverage": {
-    "draw_days": 393,
-    "average_distinct_loto_per_day": 23.81933842239186,
+    "draw_days": 2442,
+    "average_distinct_loto_per_day": 23.799344799344798,
     "all_time_distinct_numbers": 100,
     "unseen_numbers": [],
-    "first_full_coverage_day_from_start": 21,
+    "first_full_coverage_day_from_start": 14,
     "coverage_milestone_days_from_start": {
       "50": 3,
       "75": 5,
       "90": 8,
       "95": 11,
-      "99": 13,
-      "100": 21
+      "99": 14,
+      "100": 14
     },
-    "coupon_collector_expected_days_approx": 21.778008379792443,
+    "coupon_collector_expected_days_approx": 21.79630389565359,
     "coupon_note": "Heuristic context only: 100*H_100/average distinct numbers per draw assumes simplified independent coupon sampling and is not a prediction model."
   },
   "note": "Recovered legacy descriptive/falsification capabilities. These artifacts do not alter production ML, path, statistical or ensemble weights."

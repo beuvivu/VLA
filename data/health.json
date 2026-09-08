@@ -2,8 +2,8 @@
   "ok": true,
   "latest_date": "2026-09-07",
   "last_date": "2026-09-07",
-  "first_date": "2025-08-11",
-  "row_count": 393,
+  "first_date": "2020-01-01",
+  "row_count": 2442,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
@@ -13,7 +13,7 @@
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 393,
+    "rows": 2442,
     "missing_number_columns": [],
     "extra_number_columns": [],
     "invalid_value_row_count": 0,
@@ -28,165 +28,165 @@
   "leading_zero_examples": [
     {
       "column": "special",
-      "date": "2025-08-15",
-      "csv_value": 7177,
-      "excel_text": "07177"
+      "date": "2020-02-11",
+      "csv_value": 7696,
+      "excel_text": "07696"
     },
     {
       "column": "prize1",
-      "date": "2025-08-18",
-      "csv_value": 6825,
-      "excel_text": "06825"
+      "date": "2020-01-04",
+      "csv_value": 8119,
+      "excel_text": "08119"
     },
     {
       "column": "prize2_1",
-      "date": "2025-08-11",
-      "csv_value": 5225,
-      "excel_text": "05225"
+      "date": "2020-01-12",
+      "csv_value": 7376,
+      "excel_text": "07376"
     },
     {
       "column": "prize2_2",
-      "date": "2025-08-13",
-      "csv_value": 2817,
-      "excel_text": "02817"
+      "date": "2020-01-05",
+      "csv_value": 5073,
+      "excel_text": "05073"
     },
     {
       "column": "prize3_1",
-      "date": "2025-08-20",
-      "csv_value": 1035,
-      "excel_text": "01035"
+      "date": "2020-01-11",
+      "csv_value": 9815,
+      "excel_text": "09815"
     },
     {
       "column": "prize3_2",
-      "date": "2025-08-15",
-      "csv_value": 5178,
-      "excel_text": "05178"
+      "date": "2020-01-03",
+      "csv_value": 6706,
+      "excel_text": "06706"
     },
     {
       "column": "prize3_3",
-      "date": "2025-09-15",
-      "csv_value": 8686,
-      "excel_text": "08686"
+      "date": "2020-01-05",
+      "csv_value": 6164,
+      "excel_text": "06164"
     },
     {
       "column": "prize3_4",
-      "date": "2025-09-07",
-      "csv_value": 6797,
-      "excel_text": "06797"
+      "date": "2020-01-06",
+      "csv_value": 2069,
+      "excel_text": "02069"
     },
     {
       "column": "prize3_5",
-      "date": "2025-08-13",
-      "csv_value": 4963,
-      "excel_text": "04963"
+      "date": "2020-01-02",
+      "csv_value": 6210,
+      "excel_text": "06210"
     },
     {
       "column": "prize3_6",
-      "date": "2025-08-15",
-      "csv_value": 7484,
-      "excel_text": "07484"
+      "date": "2020-01-15",
+      "csv_value": 33,
+      "excel_text": "00033"
     },
     {
       "column": "prize4_1",
-      "date": "2025-08-17",
-      "csv_value": 946,
-      "excel_text": "0946"
+      "date": "2020-02-11",
+      "csv_value": 137,
+      "excel_text": "0137"
     },
     {
       "column": "prize4_2",
-      "date": "2025-08-20",
-      "csv_value": 635,
-      "excel_text": "0635"
+      "date": "2020-01-01",
+      "csv_value": 591,
+      "excel_text": "0591"
     },
     {
       "column": "prize4_3",
-      "date": "2025-08-13",
-      "csv_value": 735,
-      "excel_text": "0735"
+      "date": "2020-02-07",
+      "csv_value": 979,
+      "excel_text": "0979"
     },
     {
       "column": "prize4_4",
-      "date": "2025-08-24",
-      "csv_value": 662,
-      "excel_text": "0662"
+      "date": "2020-01-01",
+      "csv_value": 763,
+      "excel_text": "0763"
     },
     {
       "column": "prize5_1",
-      "date": "2025-08-24",
-      "csv_value": 23,
-      "excel_text": "0023"
+      "date": "2020-01-01",
+      "csv_value": 812,
+      "excel_text": "0812"
     },
     {
       "column": "prize5_2",
-      "date": "2025-08-11",
-      "csv_value": 931,
-      "excel_text": "0931"
+      "date": "2020-01-03",
+      "csv_value": 960,
+      "excel_text": "0960"
     },
     {
       "column": "prize5_3",
-      "date": "2025-08-14",
-      "csv_value": 220,
-      "excel_text": "0220"
+      "date": "2020-01-15",
+      "csv_value": 322,
+      "excel_text": "0322"
     },
     {
       "column": "prize5_4",
-      "date": "2025-08-29",
-      "csv_value": 693,
-      "excel_text": "0693"
+      "date": "2020-01-11",
+      "csv_value": 6,
+      "excel_text": "0006"
     },
     {
       "column": "prize5_5",
-      "date": "2025-08-11",
-      "csv_value": 431,
-      "excel_text": "0431"
+      "date": "2020-01-10",
+      "csv_value": 686,
+      "excel_text": "0686"
     },
     {
       "column": "prize5_6",
-      "date": "2025-08-14",
-      "csv_value": 575,
-      "excel_text": "0575"
+      "date": "2020-01-17",
+      "csv_value": 464,
+      "excel_text": "0464"
     },
     {
       "column": "prize6_1",
-      "date": "2025-08-13",
-      "csv_value": 76,
-      "excel_text": "076"
+      "date": "2020-02-14",
+      "csv_value": 69,
+      "excel_text": "069"
     },
     {
       "column": "prize6_2",
-      "date": "2025-08-11",
-      "csv_value": 16,
-      "excel_text": "016"
+      "date": "2020-01-02",
+      "csv_value": 31,
+      "excel_text": "031"
     },
     {
       "column": "prize6_3",
-      "date": "2025-08-24",
-      "csv_value": 28,
-      "excel_text": "028"
+      "date": "2020-01-30",
+      "csv_value": 51,
+      "excel_text": "051"
     },
     {
       "column": "prize7_1",
-      "date": "2025-08-29",
-      "csv_value": 8,
-      "excel_text": "08"
+      "date": "2020-01-05",
+      "csv_value": 0,
+      "excel_text": "00"
     },
     {
       "column": "prize7_2",
-      "date": "2025-08-28",
-      "csv_value": 3,
-      "excel_text": "03"
+      "date": "2020-01-21",
+      "csv_value": 6,
+      "excel_text": "06"
     },
     {
       "column": "prize7_3",
-      "date": "2025-08-12",
-      "csv_value": 7,
-      "excel_text": "07"
+      "date": "2020-01-03",
+      "csv_value": 2,
+      "excel_text": "02"
     },
     {
       "column": "prize7_4",
-      "date": "2025-08-13",
-      "csv_value": 6,
-      "excel_text": "06"
+      "date": "2020-01-04",
+      "csv_value": 7,
+      "excel_text": "07"
     }
   ],
   "calendar_contiguous_required": true,
