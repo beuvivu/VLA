@@ -10,7 +10,7 @@
 ![Meta lô tô](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-08T06:07:59Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-08T06:29:45Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -90,21 +90,21 @@
 
 | # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **83** | 24.344% | Thấp · disp 0.007 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **52** | 24.329% | Thấp · disp 0.011 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **64** | 24.243% | Thấp · disp 0.010 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **13** | 24.230% | Thấp · disp 0.009 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **62** | 24.208% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **17** | 24.189% | Trung bình · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | **61** | 24.174% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | **10** | 24.169% | Trung bình · disp 0.005 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | **54** | 24.159% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | **11** | 24.155% | Thấp · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | **95** | 24.143% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | **67** | 24.115% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | **32** | 24.098% | Trung bình · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | **50** | 24.093% | Thấp · disp 0.009 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | **77** | 24.085% | Thấp · disp 0.007 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | **83** | 24.375% | Thấp · disp 0.007 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **52** | 24.343% | Thấp · disp 0.011 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **13** | 24.245% | Thấp · disp 0.009 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **64** | 24.227% | Thấp · disp 0.009 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **62** | 24.209% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **61** | 24.193% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | **17** | 24.183% | Thấp · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | **10** | 24.170% | Trung bình · disp 0.005 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | **95** | 24.162% | Thấp · disp 0.008 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | **54** | 24.153% | Thấp · disp 0.007 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | **11** | 24.139% | Trung bình · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 12 | **32** | 24.116% | Trung bình · disp 0.006 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 13 | **67** | 24.110% | Cao · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 14 | **50** | 24.109% | Thấp · disp 0.009 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | **63** | 24.084% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 
 ### Lô tô · Ma trận nhiệt xác suất 00–99
 
@@ -112,46 +112,46 @@
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
-| ⬜ | 23.43% → 23.56% | Rất thấp so với các số khác trong cùng ma trận |
-| 🟦 | 23.56% → 23.69% | Thấp |
-| 🟩 | 23.69% → 23.82% | Dưới vùng trung tâm |
-| 🟨 | 23.82% → 23.95% | Trung tính / vùng giữa |
-| 🟧 | 23.95% → 24.08% | Trên vùng trung tâm |
-| 🟥 | 24.08% → 24.21% | Cao |
-| 🟪 | 24.21% → 24.34% | Rất cao so với các số khác trong cùng ma trận |
+| ⬜ | 23.43% → 23.57% | Rất thấp so với các số khác trong cùng ma trận |
+| 🟦 | 23.57% → 23.70% | Thấp |
+| 🟩 | 23.70% → 23.84% | Dưới vùng trung tâm |
+| 🟨 | 23.84% → 23.97% | Trung tính / vùng giữa |
+| 🟧 | 23.97% → 24.11% | Trên vùng trung tâm |
+| 🟥 | 24.11% → 24.24% | Cao |
+| 🟪 | 24.24% → 24.37% | Rất cao so với các số khác trong cùng ma trận |
 
 | Đầu\Đuôi | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **0x** | 🟩<br>`00`<br>**23.78%** | 🟦<br>`01`<br>**23.61%** | 🟩<br>`02`<br>**23.73%** | 🟨<br>`03`<br>**23.90%** | 🟨<br>`04`<br>**23.82%** | 🟩<br>`05`<br>**23.73%** | 🟧<br>`06`<br>**23.96%** | 🟩<br>`07`<br>**23.79%** | 🟩<br>`08`<br>**23.70%** | 🟨<br>`09`<br>**23.88%** |
-| **1x** | 🟥<br>`10`<br>**24.17%** | 🟥<br>`11`<br>**24.15%** | 🟩<br>`12`<br>**23.79%** | 🟪<br>`13`<br>**24.23%** | ⬜<br>`14`<br>**23.49%** | ⬜<br>`15`<br>**23.52%** | 🟩<br>`16`<br>**23.70%** | 🟥<br>`17`<br>**24.19%** | 🟧<br>`18`<br>**23.96%** | 🟨<br>`19`<br>**23.93%** |
-| **2x** | 🟨<br>`20`<br>**23.83%** | 🟧<br>`21`<br>**23.98%** | 🟦<br>`22`<br>**23.65%** | 🟦<br>`23`<br>**23.67%** | 🟩<br>`24`<br>**23.75%** | ⬜<br>`25`<br>**23.43%** | 🟧<br>`26`<br>**23.97%** | 🟨<br>`27`<br>**23.91%** | ⬜<br>`28`<br>**23.49%** | 🟦<br>`29`<br>**23.65%** |
-| **3x** | 🟦<br>`30`<br>**23.62%** | 🟧<br>`31`<br>**23.99%** | 🟥<br>`32`<br>**24.10%** | 🟧<br>`33`<br>**23.96%** | 🟧<br>`34`<br>**24.02%** | 🟩<br>`35`<br>**23.81%** | 🟧<br>`36`<br>**24.02%** | 🟧<br>`37`<br>**23.99%** | 🟧<br>`38`<br>**24.03%** | 🟦<br>`39`<br>**23.69%** |
-| **4x** | 🟩<br>`40`<br>**23.77%** | 🟩<br>`41`<br>**23.80%** | 🟩<br>`42`<br>**23.76%** | 🟩<br>`43`<br>**23.79%** | 🟩<br>`44`<br>**23.74%** | 🟦<br>`45`<br>**23.58%** | 🟩<br>`46`<br>**23.79%** | 🟨<br>`47`<br>**23.86%** | 🟨<br>`48`<br>**23.89%** | 🟩<br>`49`<br>**23.82%** |
-| **5x** | 🟥<br>`50`<br>**24.09%** | 🟩<br>`51`<br>**23.80%** | 🟪<br>`52`<br>**24.33%** | 🟩<br>`53`<br>**23.73%** | 🟥<br>`54`<br>**24.16%** | 🟩<br>`55`<br>**23.69%** | 🟦<br>`56`<br>**23.69%** | 🟦<br>`57`<br>**23.64%** | 🟦<br>`58`<br>**23.58%** | 🟦<br>`59`<br>**23.61%** |
-| **6x** | 🟩<br>`60`<br>**23.74%** | 🟥<br>`61`<br>**24.17%** | 🟥<br>`62`<br>**24.21%** | 🟧<br>`63`<br>**24.07%** | 🟪<br>`64`<br>**24.24%** | 🟦<br>`65`<br>**23.65%** | 🟨<br>`66`<br>**23.84%** | 🟥<br>`67`<br>**24.12%** | 🟧<br>`68`<br>**24.02%** | 🟨<br>`69`<br>**23.95%** |
-| **7x** | 🟧<br>`70`<br>**24.01%** | 🟩<br>`71`<br>**23.78%** | 🟨<br>`72`<br>**23.86%** | 🟧<br>`73`<br>**23.96%** | 🟩<br>`74`<br>**23.76%** | 🟦<br>`75`<br>**23.64%** | 🟧<br>`76`<br>**23.99%** | 🟥<br>`77`<br>**24.08%** | ⬜<br>`78`<br>**23.55%** | 🟩<br>`79`<br>**23.70%** |
-| **8x** | 🟧<br>`80`<br>**23.96%** | 🟧<br>`81`<br>**24.07%** | ⬜<br>`82`<br>**23.53%** | 🟪<br>`83`<br>**24.34%** | 🟨<br>`84`<br>**23.94%** | 🟦<br>`85`<br>**23.56%** | 🟩<br>`86`<br>**23.77%** | 🟩<br>`87`<br>**23.76%** | 🟨<br>`88`<br>**23.87%** | ⬜<br>`89`<br>**23.52%** |
-| **9x** | 🟧<br>`90`<br>**24.06%** | 🟧<br>`91`<br>**23.97%** | 🟨<br>`92`<br>**23.88%** | 🟨<br>`93`<br>**23.84%** | 🟧<br>`94`<br>**24.02%** | 🟥<br>`95`<br>**24.14%** | 🟧<br>`96`<br>**23.97%** | 🟩<br>`97`<br>**23.79%** | 🟦<br>`98`<br>**23.63%** | 🟨<br>`99`<br>**23.91%** |
+| **0x** | 🟩<br>`00`<br>**23.81%** | 🟦<br>`01`<br>**23.60%** | 🟩<br>`02`<br>**23.73%** | 🟨<br>`03`<br>**23.89%** | 🟩<br>`04`<br>**23.83%** | 🟩<br>`05`<br>**23.73%** | 🟧<br>`06`<br>**23.99%** | 🟩<br>`07`<br>**23.79%** | 🟩<br>`08`<br>**23.71%** | 🟨<br>`09`<br>**23.89%** |
+| **1x** | 🟥<br>`10`<br>**24.17%** | 🟥<br>`11`<br>**24.14%** | 🟩<br>`12`<br>**23.79%** | 🟪<br>`13`<br>**24.24%** | ⬜<br>`14`<br>**23.48%** | ⬜<br>`15`<br>**23.52%** | 🟦<br>`16`<br>**23.69%** | 🟥<br>`17`<br>**24.18%** | 🟨<br>`18`<br>**23.95%** | 🟨<br>`19`<br>**23.92%** |
+| **2x** | 🟩<br>`20`<br>**23.82%** | 🟧<br>`21`<br>**23.98%** | 🟦<br>`22`<br>**23.68%** | 🟦<br>`23`<br>**23.68%** | 🟩<br>`24`<br>**23.77%** | ⬜<br>`25`<br>**23.43%** | 🟧<br>`26`<br>**23.98%** | 🟨<br>`27`<br>**23.91%** | ⬜<br>`28`<br>**23.46%** | 🟦<br>`29`<br>**23.64%** |
+| **3x** | 🟦<br>`30`<br>**23.63%** | 🟧<br>`31`<br>**24.00%** | 🟥<br>`32`<br>**24.12%** | 🟧<br>`33`<br>**24.00%** | 🟧<br>`34`<br>**24.00%** | 🟩<br>`35`<br>**23.80%** | 🟧<br>`36`<br>**24.04%** | 🟧<br>`37`<br>**24.00%** | 🟧<br>`38`<br>**24.04%** | 🟦<br>`39`<br>**23.69%** |
+| **4x** | 🟩<br>`40`<br>**23.77%** | 🟩<br>`41`<br>**23.78%** | 🟩<br>`42`<br>**23.74%** | 🟨<br>`43`<br>**23.91%** | 🟩<br>`44`<br>**23.75%** | ⬜<br>`45`<br>**23.56%** | 🟩<br>`46`<br>**23.80%** | 🟨<br>`47`<br>**23.87%** | 🟨<br>`48`<br>**23.89%** | 🟩<br>`49`<br>**23.82%** |
+| **5x** | 🟥<br>`50`<br>**24.11%** | 🟩<br>`51`<br>**23.81%** | 🟪<br>`52`<br>**24.34%** | 🟩<br>`53`<br>**23.73%** | 🟥<br>`54`<br>**24.15%** | 🟦<br>`55`<br>**23.69%** | 🟦<br>`56`<br>**23.68%** | 🟦<br>`57`<br>**23.64%** | 🟦<br>`58`<br>**23.58%** | 🟦<br>`59`<br>**23.59%** |
+| **6x** | 🟩<br>`60`<br>**23.72%** | 🟥<br>`61`<br>**24.19%** | 🟥<br>`62`<br>**24.21%** | 🟧<br>`63`<br>**24.08%** | 🟥<br>`64`<br>**24.23%** | 🟦<br>`65`<br>**23.63%** | 🟨<br>`66`<br>**23.85%** | 🟥<br>`67`<br>**24.11%** | 🟧<br>`68`<br>**24.03%** | 🟨<br>`69`<br>**23.94%** |
+| **7x** | 🟧<br>`70`<br>**23.99%** | 🟩<br>`71`<br>**23.78%** | 🟨<br>`72`<br>**23.86%** | 🟨<br>`73`<br>**23.95%** | 🟩<br>`74`<br>**23.78%** | 🟦<br>`75`<br>**23.63%** | 🟧<br>`76`<br>**24.00%** | 🟧<br>`77`<br>**24.07%** | ⬜<br>`78`<br>**23.55%** | 🟦<br>`79`<br>**23.68%** |
+| **8x** | 🟨<br>`80`<br>**23.96%** | 🟧<br>`81`<br>**24.07%** | ⬜<br>`82`<br>**23.53%** | 🟪<br>`83`<br>**24.37%** | 🟨<br>`84`<br>**23.92%** | 🟦<br>`85`<br>**23.67%** | 🟩<br>`86`<br>**23.77%** | 🟩<br>`87`<br>**23.74%** | 🟨<br>`88`<br>**23.86%** | ⬜<br>`89`<br>**23.51%** |
+| **9x** | 🟧<br>`90`<br>**24.06%** | 🟨<br>`91`<br>**23.97%** | 🟧<br>`92`<br>**24.00%** | 🟨<br>`93`<br>**23.85%** | 🟧<br>`94`<br>**23.99%** | 🟥<br>`95`<br>**24.16%** | 🟧<br>`96`<br>**23.98%** | 🟩<br>`97`<br>**23.81%** | ⬜<br>`98`<br>**23.53%** | 🟨<br>`99`<br>**23.91%** |
 
 ### ĐB · Xác suất cao nhất
 
 | # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **83** | 1.128% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **37** | 1.114% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **38** | 1.108% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **54** | 1.106% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **39** | 1.103% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **80** | 1.100% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | **79** | 1.090% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | **21** | 1.072% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | **68** | 1.065% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | **67** | 1.060% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | **23** | 1.058% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | **96** | 1.056% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | **44** | 1.054% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | **47** | 1.048% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | **09** | 1.042% | Trung bình · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | **83** | 1.132% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **37** | 1.118% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **38** | 1.111% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **54** | 1.110% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **39** | 1.107% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **80** | 1.104% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | **79** | 1.094% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | **21** | 1.075% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | **68** | 1.068% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | **67** | 1.064% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | **23** | 1.062% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | **96** | 1.059% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | **44** | 1.058% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | **47** | 1.052% | Thấp · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | **09** | 1.046% | Trung bình · disp 0.001 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### ĐB · Ma trận nhiệt xác suất 00–99
 
@@ -159,26 +159,26 @@
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
-| ⬜ | 0.924% → 0.953% | Rất thấp so với các số khác trong cùng ma trận |
-| 🟦 | 0.953% → 0.982% | Thấp |
-| 🟩 | 0.982% → 1.011% | Dưới vùng trung tâm |
-| 🟨 | 1.011% → 1.041% | Trung tính / vùng giữa |
-| 🟧 | 1.041% → 1.070% | Trên vùng trung tâm |
-| 🟥 | 1.070% → 1.099% | Cao |
-| 🟪 | 1.099% → 1.128% | Rất cao so với các số khác trong cùng ma trận |
+| ⬜ | 0.917% → 0.948% | Rất thấp so với các số khác trong cùng ma trận |
+| 🟦 | 0.948% → 0.979% | Thấp |
+| 🟩 | 0.979% → 1.009% | Dưới vùng trung tâm |
+| 🟨 | 1.009% → 1.040% | Trung tính / vùng giữa |
+| 🟧 | 1.040% → 1.071% | Trên vùng trung tâm |
+| 🟥 | 1.071% → 1.101% | Cao |
+| 🟪 | 1.101% → 1.132% | Rất cao so với các số khác trong cùng ma trận |
 
 | Đầu\Đuôi | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **0x** | 🟧<br>`00`<br>**1.041%** | 🟩<br>`01`<br>**0.985%** | ⬜<br>`02`<br>**0.935%** | 🟦<br>`03`<br>**0.979%** | 🟨<br>`04`<br>**1.018%** | 🟦<br>`05`<br>**0.972%** | ⬜<br>`06`<br>**0.940%** | ⬜<br>`07`<br>**0.931%** | 🟦<br>`08`<br>**0.975%** | 🟧<br>`09`<br>**1.042%** |
-| **1x** | 🟩<br>`10`<br>**0.997%** | 🟨<br>`11`<br>**1.014%** | ⬜<br>`12`<br>**0.945%** | 🟨<br>`13`<br>**1.027%** | 🟦<br>`14`<br>**0.973%** | 🟦<br>`15`<br>**0.966%** | 🟩<br>`16`<br>**1.010%** | 🟨<br>`17`<br>**1.025%** | 🟨<br>`18`<br>**1.023%** | 🟩<br>`19`<br>**0.994%** |
-| **2x** | ⬜<br>`20`<br>**0.944%** | 🟥<br>`21`<br>**1.072%** | 🟨<br>`22`<br>**1.017%** | 🟧<br>`23`<br>**1.058%** | 🟩<br>`24`<br>**0.982%** | 🟨<br>`25`<br>**1.024%** | 🟦<br>`26`<br>**0.978%** | ⬜<br>`27`<br>**0.951%** | 🟨<br>`28`<br>**1.019%** | ⬜<br>`29`<br>**0.953%** |
-| **3x** | 🟦<br>`30`<br>**0.974%** | ⬜<br>`31`<br>**0.937%** | 🟩<br>`32`<br>**0.984%** | 🟩<br>`33`<br>**1.001%** | 🟩<br>`34`<br>**1.006%** | 🟨<br>`35`<br>**1.034%** | 🟩<br>`36`<br>**1.011%** | 🟪<br>`37`<br>**1.114%** | 🟪<br>`38`<br>**1.108%** | 🟪<br>`39`<br>**1.103%** |
-| **4x** | ⬜<br>`40`<br>**0.925%** | ⬜<br>`41`<br>**0.936%** | 🟨<br>`42`<br>**1.034%** | 🟩<br>`43`<br>**1.003%** | 🟧<br>`44`<br>**1.054%** | 🟩<br>`45`<br>**1.002%** | ⬜<br>`46`<br>**0.950%** | 🟧<br>`47`<br>**1.048%** | 🟩<br>`48`<br>**0.988%** | 🟦<br>`49`<br>**0.970%** |
-| **5x** | 🟦<br>`50`<br>**0.965%** | 🟨<br>`51`<br>**1.027%** | 🟦<br>`52`<br>**0.965%** | 🟨<br>`53`<br>**1.017%** | 🟪<br>`54`<br>**1.106%** | 🟩<br>`55`<br>**1.009%** | ⬜<br>`56`<br>**0.931%** | 🟨<br>`57`<br>**1.015%** | 🟦<br>`58`<br>**0.963%** | 🟩<br>`59`<br>**0.999%** |
-| **6x** | 🟨<br>`60`<br>**1.023%** | 🟨<br>`61`<br>**1.029%** | 🟦<br>`62`<br>**0.972%** | 🟩<br>`63`<br>**0.992%** | 🟩<br>`64`<br>**0.988%** | 🟨<br>`65`<br>**1.018%** | 🟨<br>`66`<br>**1.026%** | 🟧<br>`67`<br>**1.060%** | 🟧<br>`68`<br>**1.065%** | 🟦<br>`69`<br>**0.972%** |
-| **7x** | 🟨<br>`70`<br>**1.033%** | 🟩<br>`71`<br>**1.002%** | 🟩<br>`72`<br>**0.993%** | ⬜<br>`73`<br>**0.937%** | ⬜<br>`74`<br>**0.924%** | 🟦<br>`75`<br>**0.954%** | 🟩<br>`76`<br>**0.994%** | 🟦<br>`77`<br>**0.979%** | 🟨<br>`78`<br>**1.021%** | 🟥<br>`79`<br>**1.090%** |
-| **8x** | 🟪<br>`80`<br>**1.100%** | 🟦<br>`81`<br>**0.963%** | 🟩<br>`82`<br>**0.986%** | 🟪<br>`83`<br>**1.128%** | 🟦<br>`84`<br>**0.968%** | 🟦<br>`85`<br>**0.979%** | 🟦<br>`86`<br>**0.959%** | 🟦<br>`87`<br>**0.965%** | 🟩<br>`88`<br>**0.985%** | 🟨<br>`89`<br>**1.016%** |
-| **9x** | 🟨<br>`90`<br>**1.035%** | 🟨<br>`91`<br>**1.025%** | 🟦<br>`92`<br>**0.957%** | 🟦<br>`93`<br>**0.978%** | 🟩<br>`94`<br>**1.003%** | 🟦<br>`95`<br>**0.965%** | 🟧<br>`96`<br>**1.056%** | 🟩<br>`97`<br>**0.996%** | ⬜<br>`98`<br>**0.934%** | 🟦<br>`99`<br>**0.960%** |
+| **0x** | 🟧<br>`00`<br>**1.045%** | 🟦<br>`01`<br>**0.974%** | ⬜<br>`02`<br>**0.917%** | 🟩<br>`03`<br>**0.981%** | 🟨<br>`04`<br>**1.020%** | 🟦<br>`05`<br>**0.974%** | ⬜<br>`06`<br>**0.939%** | ⬜<br>`07`<br>**0.930%** | 🟦<br>`08`<br>**0.976%** | 🟧<br>`09`<br>**1.046%** |
+| **1x** | 🟩<br>`10`<br>**1.000%** | 🟨<br>`11`<br>**1.017%** | 🟦<br>`12`<br>**0.953%** | 🟨<br>`13`<br>**1.026%** | 🟦<br>`14`<br>**0.965%** | ⬜<br>`15`<br>**0.921%** | 🟨<br>`16`<br>**1.013%** | 🟨<br>`17`<br>**1.028%** | 🟨<br>`18`<br>**1.026%** | 🟩<br>`19`<br>**0.997%** |
+| **2x** | ⬜<br>`20`<br>**0.943%** | 🟥<br>`21`<br>**1.075%** | 🟨<br>`22`<br>**1.021%** | 🟧<br>`23`<br>**1.062%** | 🟩<br>`24`<br>**0.981%** | 🟨<br>`25`<br>**1.031%** | 🟩<br>`26`<br>**0.981%** | 🟦<br>`27`<br>**0.950%** | 🟨<br>`28`<br>**1.026%** | 🟦<br>`29`<br>**0.952%** |
+| **3x** | 🟦<br>`30`<br>**0.973%** | ⬜<br>`31`<br>**0.935%** | 🟩<br>`32`<br>**0.986%** | 🟩<br>`33`<br>**1.004%** | 🟩<br>`34`<br>**1.009%** | 🟨<br>`35`<br>**1.037%** | 🟨<br>`36`<br>**1.013%** | 🟪<br>`37`<br>**1.118%** | 🟪<br>`38`<br>**1.111%** | 🟪<br>`39`<br>**1.107%** |
+| **4x** | ⬜<br>`40`<br>**0.933%** | ⬜<br>`41`<br>**0.944%** | 🟨<br>`42`<br>**1.038%** | 🟩<br>`43`<br>**1.007%** | 🟧<br>`44`<br>**1.058%** | 🟨<br>`45`<br>**1.010%** | 🟦<br>`46`<br>**0.949%** | 🟧<br>`47`<br>**1.052%** | 🟦<br>`48`<br>**0.972%** | 🟦<br>`49`<br>**0.969%** |
+| **5x** | 🟦<br>`50`<br>**0.966%** | 🟩<br>`51`<br>**0.998%** | 🟦<br>`52`<br>**0.967%** | 🟨<br>`53`<br>**1.019%** | 🟪<br>`54`<br>**1.110%** | 🟨<br>`55`<br>**1.010%** | ⬜<br>`56`<br>**0.930%** | 🟨<br>`57`<br>**1.018%** | ⬜<br>`58`<br>**0.946%** | 🟩<br>`59`<br>**0.998%** |
+| **6x** | 🟨<br>`60`<br>**1.026%** | 🟨<br>`61`<br>**1.033%** | 🟦<br>`62`<br>**0.971%** | 🟩<br>`63`<br>**0.995%** | 🟩<br>`64`<br>**0.996%** | 🟨<br>`65`<br>**1.012%** | 🟨<br>`66`<br>**1.029%** | 🟧<br>`67`<br>**1.064%** | 🟧<br>`68`<br>**1.068%** | 🟦<br>`69`<br>**0.974%** |
+| **7x** | 🟨<br>`70`<br>**1.032%** | 🟩<br>`71`<br>**1.008%** | 🟩<br>`72`<br>**0.996%** | ⬜<br>`73`<br>**0.936%** | ⬜<br>`74`<br>**0.923%** | ⬜<br>`75`<br>**0.936%** | 🟩<br>`76`<br>**1.004%** | 🟩<br>`77`<br>**0.979%** | 🟨<br>`78`<br>**1.024%** | 🟥<br>`79`<br>**1.094%** |
+| **8x** | 🟪<br>`80`<br>**1.104%** | 🟦<br>`81`<br>**0.965%** | 🟦<br>`82`<br>**0.969%** | 🟪<br>`83`<br>**1.132%** | 🟦<br>`84`<br>**0.970%** | 🟦<br>`85`<br>**0.977%** | 🟦<br>`86`<br>**0.958%** | 🟦<br>`87`<br>**0.971%** | 🟦<br>`88`<br>**0.968%** | 🟨<br>`89`<br>**1.015%** |
+| **9x** | 🟨<br>`90`<br>**1.038%** | 🟨<br>`91`<br>**1.028%** | 🟦<br>`92`<br>**0.965%** | 🟩<br>`93`<br>**0.979%** | 🟩<br>`94`<br>**1.006%** | ⬜<br>`95`<br>**0.947%** | 🟧<br>`96`<br>**1.059%** | 🟩<br>`97`<br>**1.002%** | ⬜<br>`98`<br>**0.933%** | 🟦<br>`99`<br>**0.958%** |
 
 ---
 
@@ -462,61 +462,61 @@
 | Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
 | 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
-| 1 | 23.91% | 13555 / 56699 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 2 | 23.71% | 10203 / 43034 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 3 | 24.05% | 7869 / 32723 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 4 | 23.54% | 5827 / 24755 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | 23.85% | 4536 / 19018 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | 23.30% | 3392 / 14558 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | 23.60% | 2647 / 11214 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | 24.73% | 2127 / 8600 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 1 | 23.91% | 13550 / 56675 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 2 | 23.63% | 10152 / 42967 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 3 | 24.06% | 7864 / 32689 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | 23.56% | 5825 / 24729 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | 23.89% | 4541 / 19006 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | 23.32% | 3392 / 14545 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | 23.63% | 2649 / 11211 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | 24.78% | 2129 / 8592 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
 | 9 | 22.73% | 1475 / 6488 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | 23.52% | 1183 / 5029 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | 24.03% | 927 / 3858 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | 24.32% | 717 / 2948 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | 24.46% | 550 / 2249 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | 24.16% | 412 / 1705 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | 21.58% | 281 / 1302 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 16 | 23.59% | 243 / 1030 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 17 | 22.97% | 181 / 788 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 18 | 25.16% | 153 / 608 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | 23.60% | 1186 / 5026 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | 24.09% | 929 / 3856 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | 24.29% | 716 / 2948 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | 24.49% | 550 / 2246 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | 24.18% | 412 / 1704 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | 21.69% | 282 / 1300 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 16 | 23.76% | 244 / 1027 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 17 | 23.03% | 181 / 786 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 18 | 25.21% | 153 / 607 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
 | 19 | 22.15% | 101 / 456 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
 | 20 | 22.10% | 78 / 353 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
 | 21 | 22.10% | 61 / 276 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
 | 22 | 29.49% | 64 / 217 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
 | 23 | 24.02% | 43 / 179 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
 | 24 | 23.87% | 37 / 155 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 25 | 27.61% | 37 / 134 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
+| 25 | 26.87% | 36 / 134 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### Tỷ suất xuất hiện theo gan ĐB
 | Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
 | 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
-| 1 | 1.13% | 27 / 2384 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 2 | 1.02% | 24 / 2350 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 3 | 0.95% | 22 / 2318 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 4 | 1.40% | 32 / 2287 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | 1.15% | 26 / 2253 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | 0.94% | 21 / 2225 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | 1.04% | 23 / 2203 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | 1.15% | 25 / 2179 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | 1.02% | 22 / 2152 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | 0.80% | 17 / 2129 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | 1.00% | 21 / 2109 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 12 | 1.20% | 25 / 2086 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | 0.78% | 16 / 2060 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
-| 14 | 0.78% | 16 / 2043 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
-| 15 | 1.09% | 22 / 2026 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 16 | 0.95% | 19 / 2001 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 17 | 1.01% | 20 / 1981 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 18 | 1.07% | 21 / 1957 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 19 | 1.03% | 20 / 1935 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 20 | 0.94% | 18 / 1913 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 21 | 0.95% | 18 / 1895 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 22 | 0.80% | 15 / 1877 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
-| 23 | 1.08% | 20 / 1860 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
-| 24 | 0.92% | 17 / 1841 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
-| 25 | 1.04% | 19 / 1823 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 1 | 1.13% | 27 / 2383 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 2 | 0.94% | 22 / 2347 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 3 | 0.95% | 22 / 2316 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 4 | 1.40% | 32 / 2285 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | 1.16% | 26 / 2251 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | 0.94% | 21 / 2223 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 7 | 1.04% | 23 / 2201 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | 1.15% | 25 / 2178 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | 1.02% | 22 / 2151 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | 0.80% | 17 / 2128 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | 1.00% | 21 / 2108 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 12 | 1.20% | 25 / 2084 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | 0.78% | 16 / 2058 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 14 | 0.78% | 16 / 2041 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 15 | 1.09% | 22 / 2024 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 16 | 0.95% | 19 / 2000 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 17 | 1.01% | 20 / 1979 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 18 | 1.07% | 21 / 1956 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 19 | 1.03% | 20 / 1933 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 20 | 0.94% | 18 / 1911 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 21 | 0.95% | 18 / 1893 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 22 | 0.80% | 15 / 1875 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▱▱▱▱ |
+| 23 | 1.08% | 20 / 1859 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
+| 24 | 0.92% | 17 / 1839 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
+| 25 | 1.04% | 19 / 1822 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▱▱▱ |
 
 ---
 
@@ -767,21 +767,21 @@
 
 | # | Số | Độ nâng | P(trúng\|trúng) / P(trúng\|trượt) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **77** | 1.229 | P1 27.45% · P0 22.33% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **26** | 1.193 | P1 26.90% · P0 22.55% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **04** | 1.175 | P1 26.48% · P0 22.53% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **58** | 1.171 | P1 26.13% · P0 22.31% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **82** | 1.156 | P1 26.16% · P0 22.62% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | **52** | 1.155 | P1 26.99% · P0 23.37% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | **93** | 1.143 | P1 26.02% · P0 22.77% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | **73** | 1.133 | P1 24.33% · P0 21.48% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | **55** | 1.122 | P1 24.82% · P0 22.13% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | **20** | 1.112 | P1 25.31% · P0 22.77% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | **63** | 1.094 | P1 26.07% · P0 23.82% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | **22** | 1.093 | P1 25.82% · P0 23.63% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | **86** | 1.085 | P1 24.03% · P0 22.14% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | **11** | 1.083 | P1 26.23% · P0 24.21% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | **41** | 1.082 | P1 25.98% · P0 24.02% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | **77** | 1.223 | P1 27.32% · P0 22.33% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **26** | 1.193 | P1 26.90% · P0 22.56% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **04** | 1.175 | P1 26.48% · P0 22.54% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **58** | 1.173 | P1 26.13% · P0 22.27% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **82** | 1.159 | P1 26.20% · P0 22.62% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | **52** | 1.154 | P1 26.99% · P0 23.38% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | **93** | 1.145 | P1 26.02% · P0 22.73% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | **73** | 1.132 | P1 24.33% · P0 21.49% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | **55** | 1.121 | P1 24.82% · P0 22.14% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | **20** | 1.111 | P1 25.31% · P0 22.79% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | **63** | 1.096 | P1 26.07% · P0 23.78% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | **22** | 1.092 | P1 25.82% · P0 23.65% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | **86** | 1.087 | P1 24.03% · P0 22.10% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | **11** | 1.085 | P1 26.27% · P0 24.21% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | **41** | 1.077 | P1 25.86% · P0 24.02% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### Độ nâng chuyển tiếp lô tô · bỏ cặp tự thân
 | # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
@@ -1206,40 +1206,40 @@
 ### Phòng chiến lược · Lô tô ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | ĐB lặp lại | 1.109 | độ chính xác 26.35% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | Đồng thuận vị trí đầu–đuôi | 1.041 | độ chính xác 24.73% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | 5 số nóng nhất trong 30 ngày | 1.037 | độ chính xác 24.44% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | 5 số lạnh nhất trong 30 ngày | 1.030 | độ chính xác 24.48% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | Dàn đuôi ĐB | 1.025 | độ chính xác 24.37% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 6 | Dàn đầu ĐB | 1.019 | độ chính xác 24.21% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | Dàn tổng ĐB | 1.018 | độ chính xác 24.21% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | Kép bằng + lệch | 1.014 | độ chính xác 24.04% · q 0.574 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 9 | 5 số gan nhất | 1.009 | độ chính xác 23.97% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | Chạm đuôi ĐB | 1.004 | độ chính xác 23.86% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 11 | Sát kép | 1.003 | độ chính xác 23.74% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | Bóng ĐB | 1.002 | độ chính xác 23.83% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 13 | Lô rơi | 0.997 | độ chính xác 23.69% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | Bộ ĐB | 0.996 | độ chính xác 23.70% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | Ghép ĐB×G1 | 0.991 | độ chính xác 23.52% · q 0.757 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 1 | ĐB lặp lại | 1.103 | độ chính xác 26.22% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | Đồng thuận vị trí đầu–đuôi | 1.040 | độ chính xác 24.71% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | 5 số nóng nhất trong 30 ngày | 1.039 | độ chính xác 24.48% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | 5 số lạnh nhất trong 30 ngày | 1.039 | độ chính xác 24.70% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | Dàn đuôi ĐB | 1.024 | độ chính xác 24.34% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 6 | Dàn đầu ĐB | 1.020 | độ chính xác 24.23% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | Dàn tổng ĐB | 1.019 | độ chính xác 24.21% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | Kép bằng + lệch | 1.014 | độ chính xác 24.03% · q 0.563 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 9 | 5 số gan nhất | 1.012 | độ chính xác 24.05% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | Chạm đuôi ĐB | 1.004 | độ chính xác 23.86% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 11 | Bóng ĐB | 1.004 | độ chính xác 23.87% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | Sát kép | 1.002 | độ chính xác 23.71% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 13 | Ghép ĐB×G1 | 0.994 | độ chính xác 23.59% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | Bộ ĐB | 0.993 | độ chính xác 23.62% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | Chạm đầu ĐB | 0.992 | độ chính xác 23.57% · q 0.817 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### Phòng chiến lược · ĐB ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Đồng thuận vị trí đuôi–đuôi | 1.772 | độ chính xác 1.74% · q 0.026 | Qua cổng nghiên cứu | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | ĐB lặp lại | 1.626 | độ chính xác 1.62% · q 0.256 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | Đồng thuận vị trí đầu–đuôi | 1.579 | độ chính xác 1.56% · q 0.084 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | Ghép ĐB×G1 | 1.339 | độ chính xác 1.33% · q 0.336 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | Bóng ĐB | 1.245 | độ chính xác 1.26% · q 0.473 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 6 | Kép bằng + lệch | 1.229 | độ chính xác 1.14% · q 0.084 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | Dàn đầu ĐB | 1.229 | độ chính xác 1.23% · q 0.168 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | 5 số nóng nhất trong 90 ngày | 1.191 | độ chính xác 1.16% · q 0.336 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | Chạm đuôi ĐB | 1.185 | độ chính xác 1.19% · q 0.158 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | Lô lộn | 1.151 | độ chính xác 1.15% · q 0.168 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | Chạm đầu ĐB | 1.118 | độ chính xác 1.12% · q 0.268 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | Lô rơi | 1.114 | độ chính xác 1.11% · q 0.256 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 13 | 5 số nóng nhất trong 30 ngày | 1.095 | độ chính xác 1.08% · q 0.473 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 14 | ĐB lộn | 1.094 | độ chính xác 1.08% · q 0.621 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 15 | Dàn đuôi ĐB | 1.084 | độ chính xác 1.08% · q 0.473 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 1 | Đồng thuận vị trí đuôi–đuôi | 1.775 | độ chính xác 1.75% · q 0.025 | Qua cổng nghiên cứu | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | Đồng thuận vị trí đầu–đuôi | 1.583 | độ chính xác 1.57% · q 0.081 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | Ghép ĐB×G1 | 1.343 | độ chính xác 1.34% · q 0.354 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | ĐB lặp lại | 1.267 | độ chính xác 1.27% · q 0.543 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | Bóng ĐB | 1.247 | độ chính xác 1.27% · q 0.543 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 6 | Kép bằng + lệch | 1.231 | độ chính xác 1.14% · q 0.081 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 7 | Dàn đầu ĐB | 1.212 | độ chính xác 1.21% · q 0.214 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | 5 số nóng nhất trong 90 ngày | 1.197 | độ chính xác 1.16% · q 0.354 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | Chạm đuôi ĐB | 1.168 | độ chính xác 1.17% · q 0.185 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | Lô lộn | 1.153 | độ chính xác 1.15% · q 0.185 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | Chạm đầu ĐB | 1.111 | độ chính xác 1.11% · q 0.342 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | Lô rơi | 1.108 | độ chính xác 1.11% · q 0.326 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 13 | 5 số nóng nhất trong 30 ngày | 1.098 | độ chính xác 1.08% · q 0.543 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 14 | ĐB lộn | 1.095 | độ chính xác 1.08% · q 0.620 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 15 | Dàn đuôi ĐB | 1.049 | độ chính xác 1.05% · q 0.546 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
 
 ### Chẩn đoán
 | Lớp | Giá trị | So sánh | Ý nghĩa |
