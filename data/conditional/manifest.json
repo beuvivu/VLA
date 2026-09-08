@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-09-08T04:22:55Z",
+  "generated_at_utc": "2026-09-08T05:38:03Z",
   "anchor_date": "2026-09-07",
   "current_special_2d": "90",
   "research_only": true,
   "rows": 10000,
   "observed_special_states": 100,
-  "fdr_05_count": 27,
+  "fdr_05_count": 0,
   "prior_strength": 60.0,
   "note": "Conditional historical matrix only; it does not alter production prediction weights."
 }

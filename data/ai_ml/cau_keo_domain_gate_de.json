@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-09-08T04:26:23Z",
+  "generated_at": "2026-09-08T05:40:50Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -86,32 +86,40 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": -8.280122789553043e-05,
-      "mean_logloss_skill": -0.0007877689589144931
+      "mean_brier_skill": -3.0536397340200205e-05,
+      "mean_logloss_skill": -0.0003443468356467099
     },
     "cap_50": {
-      "mean_brier_skill": -2.3694430975008292e-05,
-      "mean_logloss_skill": -0.00022328244983407157
+      "mean_brier_skill": -5.3953758066292434e-05,
+      "mean_logloss_skill": -0.0005045295375261846
     },
     "bo": {
-      "mean_brier_skill": 3.9771313218615435e-06,
-      "mean_logloss_skill": -7.870605856979227e-06
+      "mean_brier_skill": -9.908670440064951e-05,
+      "mean_logloss_skill": -0.0009188715233250177
     },
     "bong": {
-      "mean_brier_skill": 7.752900984627766e-06,
-      "mean_logloss_skill": 7.398583046323657e-05
+      "mean_brier_skill": -7.457864288325208e-05,
+      "mean_logloss_skill": -0.0005549758433674259
     },
     "cham": {
-      "mean_brier_skill": -1.1864888796568521e-05,
-      "mean_logloss_skill": -0.00013449748588369772
+      "mean_brier_skill": 0.00023846986447215868,
+      "mean_logloss_skill": 0.002141247948954054
     },
     "tong": {
-      "mean_brier_skill": 6.067568975635957e-06,
-      "mean_logloss_skill": 3.0170717737507547e-05
+      "mean_brier_skill": -0.00010127431126747564,
+      "mean_logloss_skill": -0.0009075577046712893
     }
   },
-  "screened_groups": [],
-  "confirmation": {},
+  "screened_groups": [
+    "cham"
+  ],
+  "confirmation": {
+    "cham": {
+      "brier_skill": -0.00019472022646973278,
+      "logloss_skill": -0.0019968940540826853,
+      "confirmed": false
+    }
+  },
   "confirmed_groups": [],
   "selected_features": [
     "number_value",
@@ -321,8 +329,8 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": 5.492256882003172e-06,
-  "all_groups_confirmation_logloss_skill": 7.963212554380205e-05,
+  "all_groups_confirmation_brier_skill": 3.898245567038349e-05,
+  "all_groups_confirmation_logloss_skill": 0.00035511957934661965,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
