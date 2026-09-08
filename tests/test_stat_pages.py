@@ -167,6 +167,71 @@ def test_pair_chance_note_scales_with_the_embedded_history() -> None:
     assert long["pair_expected"] == "120,7"
 
 
+def test_pair_chance_grid_matches_the_exact_formula() -> None:
+    """Lưới tra là bảng dựng sẵn của chính công thức đóng, không phải số gõ tay."""
+    from build_stat_pages import PAIR_CHANCE_GRID_POINTS, pair_chance_grid
+    from xsmb_domain import pair_chance_maximum
+
+    grid = pair_chance_grid()
+    assert [row[0] for row in grid] == list(PAIR_CHANCE_GRID_POINTS)
+
+    for n, mean, low, high in grid:
+        exact_mean, (exact_low, exact_high) = pair_chance_maximum(int(n))
+        assert mean == pytest.approx(exact_mean, abs=0.005)
+        assert (low, high) == (exact_low, exact_high)
+
+    counts = [row[0] for row in grid]
+    means = [row[1] for row in grid]
+    assert counts == sorted(counts), "lưới phải tăng dần để nội suy được"
+    assert means == sorted(means), "cực đại phải tăng theo số kỳ"
+
+
+def test_pair_chance_grid_interpolates_within_one_percent() -> None:
+    """Trình duyệt nội suy tuyến tính trên lưới này. Lưới quá thưa thì mốc
+    hiển thị sai, mà sai ở đây nghĩa là bảng tuyên bố "bất thường" nhầm."""
+    from build_stat_pages import pair_chance_grid
+    from xsmb_domain import pair_chance_maximum
+
+    grid = pair_chance_grid()
+
+    def interpolate(n: int) -> float:
+        if n <= grid[0][0]:
+            return grid[0][1]
+        if n >= grid[-1][0]:
+            return grid[-1][1]
+        for (a_n, a_m, _, _), (b_n, b_m, _, _) in zip(grid, grid[1:]):
+            if a_n <= n <= b_n:
+                t = (n - a_n) / (b_n - a_n)
+                return a_m + t * (b_m - a_m)
+        raise AssertionError("ngoài lưới")
+
+    worst = max(
+        abs(interpolate(n) - pair_chance_maximum(n)[0]) / pair_chance_maximum(n)[0]
+        for n in range(10, 7300, 37)
+    )
+    assert worst < 0.01, f"sai số nội suy {worst:.2%} vượt 1%"
+
+
+def test_pair_page_recomputes_the_chance_note_for_the_filtered_range() -> None:
+    """Trang có bộ lọc 30/60/90/180/365 kỳ. Ghi chú cố định một con số là sai
+    ngay khi người dùng bấm lọc: ở "30 kỳ" mốc thật là 7,7 chứ không phải 39,8
+    của toàn bộ lịch sử — lệch 5 lần, và bảng đọc thành tín hiệu."""
+    html = (DOCS / "tan-suat-cap-loto.html").read_text(encoding="utf-8")
+    assert "__VLA_PAIR_CHANCE__" in html, "trang phải nhúng lưới tra cho trình duyệt"
+
+    note = _soup("tan-suat-cap-loto").select_one("#sp-chance")
+    assert note is not None, "ghi chú thiếu chỗ để JavaScript viết lại"
+
+    js = (
+        Path(__file__).resolve().parents[1] / "src" / "templates" / "stat_pages.js"
+    ).read_text(encoding="utf-8")
+    body = js[js.index("function renderPairFrequency()") :]
+    body = body[: body.index("\nfunction ", 1)]
+    assert "updateChanceNote(" in body, (
+        "renderPairFrequency phải cập nhật ghi chú, nếu không nó đứng yên khi lọc"
+    )
+
+
 def test_chance_notes_are_format_safe() -> None:
     """Ghi chú đi qua ``str.format``; một dấu ngoặc nhọn lạc sẽ làm hỏng trang
     lúc dựng chứ không phải lúc chạy test khác."""

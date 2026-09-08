@@ -6,6 +6,52 @@ const DRAWS = window.__VLA_DRAWS__ || [];
 const LOTO_BASELINE = 1 - Math.pow(0.99, 27);
 const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 
+// Mốc "cực đại do ngẫu nhiên" của 4950 cặp, tra theo số kỳ ĐANG CHỌN.
+//
+// Mốc này tăng theo độ dài lịch sử: 7,7 ở 30 kỳ, 39,9 ở 393, 177,2 ở 2442.
+// Ghi chú cố định một con số là sai ngay khi người dùng bấm bộ lọc — chọn
+// "30 kỳ" mà vẫn đọc mốc của toàn bộ lịch sử thì lệch tới 25 lần, và bảng
+// tuyên bố "bất thường" cho dữ liệu hoàn toàn ngẫu nhiên.
+//
+// Công thức đóng cần hàm phân phối nhị thức, quá nặng để tính lại trong
+// trình duyệt mỗi lần lọc. Thay vào đó dựng sẵn một lưới và nội suy tuyến
+// tính: 22 điểm cho sai số tối đa 0,67% (dưới 0,15% với mọi N >= 30).
+const PAIR_CHANCE_GRID = window.__VLA_PAIR_CHANCE__ || [];
+
+/** Cực đại ngẫu nhiên và khoảng 90% cho ``n`` kỳ; null nếu chưa có lưới. */
+function pairChanceMaximum(n) {
+  const g = PAIR_CHANCE_GRID;
+  if (!g.length || n <= 0) return null;
+  if (n <= g[0][0]) return { mean: g[0][1], low: g[0][2], high: g[0][3] };
+  const last = g[g.length - 1];
+  if (n >= last[0]) return { mean: last[1], low: last[2], high: last[3] };
+  for (let i = 0; i + 1 < g.length; i++) {
+    const a = g[i], b = g[i + 1];
+    if (n >= a[0] && n <= b[0]) {
+      const t = (n - a[0]) / (b[0] - a[0]);
+      return {
+        mean: a[1] + t * (b[1] - a[1]),
+        low: Math.round(a[2] + t * (b[2] - a[2])),
+        high: Math.round(a[3] + t * (b[3] - a[3])),
+      };
+    }
+  }
+  return null;
+}
+
+/** Viết lại ghi chú mốc ngẫu nhiên theo số kỳ đang chọn. */
+function updateChanceNote(nDraws) {
+  const el = $("sp-chance");
+  if (!el) return;
+  const c = pairChanceMaximum(nDraws);
+  if (!c) { el.textContent = "—"; return; }
+  const fmt = (x) => x.toFixed(1).replace(".", ",");
+  el.textContent =
+    `Trên lịch sử ngẫu nhiên dài đúng ${nDraws} kỳ, cực đại trung bình là ` +
+    `${fmt(c.mean)} lần (khoảng 90%: ${c.low}–${c.high}), trong khi kỳ vọng ` +
+    `mỗi cặp chỉ ${fmt(PAIR_BASELINE * nDraws)}.`;
+}
+
 const $ = (id) => document.getElementById(id);
 const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -82,6 +128,7 @@ function renderLotoFrequency() {
 function renderPairFrequency() {
   const rows = selected();
   setCount(rows);
+  updateChanceNote(rows.length);
   const co = new Map();
   rows.forEach((r) => {
     const uniq = Array.from(new Set(r.n)).sort();
