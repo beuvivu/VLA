@@ -4,7 +4,7 @@ import json
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 import numpy as np
@@ -129,6 +129,40 @@ class Lottery:
         payload = result.model_dump()
         return tuple(int(payload[k]) for k in payload if k != "date")
 
+    def _repeats_a_neighbour(self, selected_date: date, result: Result) -> date | None:
+        """Ngày liền kề đã lưu có kết quả TRÙNG KHÍT, nếu có.
+
+        XSMB nghỉ quay dịp Tết và trong đợt giãn cách 2020. Vào những ngày đó
+        trang nguồn vẫn trả về kết quả gần nhất, nên trình cào ghi lại như thể
+        đó là kỳ của ngày ấy. Đo trên kho: 50 bản ghi kiểu này, thành 8 cụm
+        trùng đúng vào Tết mỗi năm 2020-2026 và 23 ngày giãn cách 01-22/4/2020.
+
+        Kiểm đồng thuận hai nguồn không chặn được: cả sáu nguồn cùng đọc một
+        trang tin, nên trong dạng hỏng này chúng không độc lập. Bốn bản ghi
+        như vậy đã lọt vào 393 kỳ gốc trước khi bổ sung lịch sử.
+
+        Bất biến dùng để chặn: hai kỳ liền kề không bao giờ trùng khít. Một kỳ
+        có 107 chữ số giải, nên xác suất trùng ngẫu nhiên là 10^-107 — không
+        phải "hiếm", mà là bất khả. Trùng khít luôn là hiện vật.
+
+        Xét cả hai phía vì backfill lấy từ mới về cũ: khi tới ngày D thì D+1
+        thường đã nằm trong kho.
+
+        Args:
+            selected_date: Ngày đang lấy.
+            result: Kết quả ứng viên.
+
+        Returns:
+            Ngày liền kề trùng khít, hoặc ``None``.
+        """
+        signature = self._result_signature(result)
+        for delta in (-1, 1):
+            neighbour = selected_date + timedelta(days=delta)
+            other = self._data.get(neighbour)
+            if other is not None and self._result_signature(other) == signature:
+                return neighbour
+        return None
+
     def fetch(self, selected_date: date, *, min_agreement: int = 1) -> bool:
         """Fetch a draw, optionally requiring independent source agreement.
 
@@ -157,6 +191,14 @@ class Lottery:
 
             candidates.append((name, result))
             if min_agreement == 1:
+                twin = self._repeats_a_neighbour(selected_date, result)
+                if twin is not None:
+                    logger.warning(
+                        "Bỏ %s: trùng khít kỳ %s — ngày không quay, nguồn trả "
+                        "kết quả gần nhất",
+                        selected_date, twin,
+                    )
+                    return False
                 self._data[selected_date] = result
                 self._fetch_audit[selected_date.isoformat()] = {
                     "checked_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -227,6 +269,19 @@ class Lottery:
                 best_group_count,
             )
         if accepted:
+            twin = self._repeats_a_neighbour(selected_date, best[0][1])
+            if twin is not None:
+                # Đồng thuận không cứu được dạng hỏng này: cả sáu nguồn cùng
+                # đọc một trang tin nên chúng nhất trí về chính kết quả cũ.
+                logger.warning(
+                    "Bỏ %s dù có đồng thuận: trùng khít kỳ %s — ngày không quay",
+                    selected_date, twin,
+                )
+                self._fetch_audit[selected_date.isoformat()]["accepted"] = False
+                self._fetch_audit[selected_date.isoformat()]["rejected_reason"] = (
+                    f"trùng khít kỳ {twin.isoformat()}"
+                )
+                return False
             self._data[selected_date] = best[0][1]
             logger.info(
                 "Consensus accepted for %s: %d independent group(s), %d source(s): %s",

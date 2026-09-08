@@ -84,13 +84,31 @@ class TestObservationMatrix:
             )
 
     def test_rejects_a_gap_in_the_calendar(self) -> None:
-        """Đứt ngày phá vỡ giả định 'chỉ số hàng bằng thứ tự thời gian'."""
+        """Kỳ cào hụt vẫn phải bị chặn: đó là dữ liệu thiếu, không phải ngày nghỉ."""
         dates = pd.DatetimeIndex(
             list(pd.date_range("2025-01-01", periods=10, freq="D"))
             + list(pd.date_range("2025-01-15", periods=10, freq="D"))
         )
-        with pytest.raises(SchemaError, match="liên tục"):
+        with pytest.raises(SchemaError, match="thiếu kỳ"):
             ObservationMatrix(dates=dates, counts=synthetic_counts(20))
+
+    def test_accepts_a_gap_that_falls_on_known_non_draw_days(self) -> None:
+        """Ngày XSMB không quay không phải lỗi dữ liệu.
+
+        Tết 2025 nghỉ 28-31/01. Đòi liền mạch tuyệt đối thì chuỗi thật bị từ
+        chối, và trước đây nó chỉ lọt vì 50 bản ghi bịa lấp vào chỗ trống —
+        bất biến được bảo đảm bởi chính dữ liệu sai.
+        """
+        from calendar_alignment import known_non_draw_days
+
+        assert "2025-01-28" in known_non_draw_days(), "cần mốc Tết 2025 để test"
+
+        dates = pd.DatetimeIndex(
+            list(pd.date_range("2025-01-24", periods=4, freq="D"))
+            + list(pd.date_range("2025-02-01", periods=6, freq="D"))
+        )
+        matrix = ObservationMatrix(dates=dates, counts=synthetic_counts(10))
+        assert matrix.n_days == 10
 
     def test_rejects_negative_counts(self) -> None:
         counts = synthetic_counts(10).astype(np.int16)

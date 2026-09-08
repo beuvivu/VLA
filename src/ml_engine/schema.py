@@ -21,6 +21,7 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import unexpected_gap_dates
 from xsmb_domain import (
     FIELD_WIDTH_MAP,
     LOTO_BASELINE_RATE,
@@ -75,12 +76,16 @@ class ObservationMatrix:
             )
 
         if len(self.dates) > 1:
-            steps = self.dates.to_series().diff().dropna().dt.days.to_numpy()
-            if not np.all(steps == 1):
-                gap = int(np.flatnonzero(steps != 1)[0])
+            # Bước một ngày là điều kiện MẠNH HƠN mức cần thiết. Thứ bất biến
+            # thực sự cần là ``counts[:t]`` luôn là quá khứ chặt của hàng t,
+            # và điều đó vẫn đúng khi có ngày nghỉ quay: XSMB không quay dịp
+            # Tết và suốt đợt giãn cách 2020. Ràng buộc cũ chỉ thoả nhờ 50 bản
+            # ghi bịa lấp vào chỗ trống — bất biến được bảo đảm bởi dữ liệu sai.
+            gaps = unexpected_gap_dates(self.dates)
+            if gaps:
                 raise SchemaError(
-                    "dates phải liên tục từng ngày; đứt quãng sau "
-                    f"{self.dates[gap].date()} ({int(steps[gap])} ngày)"
+                    "dates thiếu kỳ ngoài lịch nghỉ quay; "
+                    f"{len(gaps)} ngày, bắt đầu từ {gaps[0]}"
                 )
 
     @property

@@ -64,14 +64,28 @@ from pathlib import Path
 
 import pandas as pd
 
+def _starts_a_gap(day: str, have: set[str]) -> bool:
+    """``day`` là ngày nghỉ ĐẦU TIÊN của một cụm, tức nơi chuỗi bị đứt một lần."""
+    prev = (pd.Timestamp(day) - pd.Timedelta(days=1)).date().isoformat()
+    return prev in have
+
 latest = pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).max().date()
 expected_target = (latest + timedelta(days=1)).isoformat()
 rows = len(pd.read_csv("data/xsmb.csv", usecols=["date"]))
 
+# XSMB nghỉ quay dịp Tết và suốt đợt giãn cách 01-22/4/2020, nên chuỗi ngày
+# CÓ ranh giới không liền kề — đó là thực tế, không phải lỗi. Ba khẳng định cũ
+# đòi 0 ranh giới bị bỏ qua; chúng chỉ xanh chừng nào 50 bản ghi bịa còn lấp
+# vào chỗ trống. Điều đáng kiểm là số ranh giới bỏ qua khớp đúng số ngày nghỉ
+# đã biết, và phép tính chỉ đếm chuyển tiếp +1 ngày thật.
+skip = sorted(json.loads(Path("data/non_draw_days.json").read_text(encoding="utf-8"))["ngay_khong_quay"])
+have = set(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"].astype(str))
+boundaries = sum(1 for d in skip if d not in have and _starts_a_gap(d, have))
+
 cond = json.loads(Path("data/advanced/conditional_matrices_diagnostics.json").read_text(encoding="utf-8"))
 assert cond["calendar_rows"] == rows, cond
-assert cond["exact_next_day_pairs"] == max(0, rows - 1), cond
-assert cond["skipped_nonconsecutive_boundaries"] == 0, cond
+assert cond["exact_next_day_pairs"] + cond["skipped_nonconsecutive_boundaries"] == max(0, rows - 1), cond
+assert cond["skipped_nonconsecutive_boundaries"] == boundaries, (cond, boundaries)
 for name in (
     "conditional_loto_after_special_top500.csv",
     "conditional_special_after_special_top500.csv",

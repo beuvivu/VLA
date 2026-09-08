@@ -9,6 +9,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from calendar_alignment import known_non_draw_days
+
 FIELD_WIDTHS: dict[str, int] = {
     "special": 5,
     "prize1": 5,
@@ -46,9 +48,20 @@ def _write(out_path: str, payload: dict[str, Any]) -> None:
 
 
 def _missing_dates(dates: pd.Series, *, start, end) -> list[str]:
+    """Ngày vắng trong dải, KHÔNG tính những ngày vốn không có kỳ quay.
+
+    XSMB nghỉ dịp Tết và suốt đợt giãn cách 01-22/4/2020. Trước đây kiểm tra
+    này chỉ xanh vì 50 bản ghi bịa lấp vào chỗ trống: nguồn trả kết quả gần
+    nhất cho ngày không quay, và trình cào ghi lại như thể đó là một kỳ. Xem
+    ``calendar_alignment.known_non_draw_days``.
+    """
     expected = pd.date_range(start=start, end=end, freq="D").date
     have = set(dates.tolist())
-    return [d.isoformat() for d in expected if d not in have]
+    skip = known_non_draw_days()
+    return [
+        d.isoformat() for d in expected
+        if d not in have and d.isoformat() not in skip
+    ]
 
 
 def _range_issues(df: pd.DataFrame) -> list[dict[str, Any]]:
