@@ -207,3 +207,38 @@ def test_daily_update_sets_the_timezone_at_job_level() -> None:
 def test_daily_update_bounds_the_runner() -> None:
     text = _text("daily_update.yml")
     assert re.search(r"timeout-minutes:\s*\d+", text)
+
+
+def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
+    """Trang mang dock mà không có trình dựng nào chạy lại sẽ thành hiện vật
+    chết: đổi SITE_NAV một lần là nó lệch khỏi phần còn lại và không ai dựng
+    lại được ngoài việc gọi tay.
+
+    Bốn trang soi-path đã ở tình trạng đó — build_docs.py không nằm trong
+    chuỗi phát hành, nên thêm một mục điều hướng là test dock đỏ mà không có
+    cách sửa nào ngoài chạy tay đúng trình dựng.
+    """
+    chain = (
+        Path(__file__).resolve().parents[1] / "scripts" / "release_check.sh"
+    ).read_text(encoding="utf-8")
+
+    builders = [
+        "build_docs.py",
+        "build_docs_ml.py",
+        "build_dashboard.py",
+        "build_statistics_dashboard.py",
+        "build_landing_page.py",
+        "build_fun_prediction.py",
+    ]
+    # So theo DÒNG, không theo chuỗi con: "#python src/x.py" vẫn chứa
+    # "python src/x.py", nên phép kiểm chuỗi con sẽ xanh cả khi dòng bị chú
+    # thích ra — tức là chốt chặn im lặng ngừng hoạt động.
+    lines = {line.strip() for line in chain.splitlines()}
+    for name in builders:
+        assert f"python src/{name}" in lines, f"{name} không nằm trong chuỗi phát hành"
+
+    # Thứ tự quan trọng: build_docs và build_docs_ml cùng ghi docs/index.html,
+    # và bản của build_landing_page mới là bản đúng.
+    assert chain.index("python src/build_docs.py") < chain.index(
+        "python src/build_landing_page.py"
+    ), "build_docs phải chạy trước build_landing_page, nếu không index.html bị ghi đè sai"
