@@ -120,10 +120,59 @@ def test_daily_update_prefers_dispatch_over_schedule() -> None:
     assert "repository_dispatch:" in text
     assert "types: [daily-collect]" in text
     crons = re.findall(r'cron: "([^"]+)"', text)
-    assert len(crons) <= 4, (
-        "thêm mốc không tăng độ tin cậy vì mọi mốc đều rơi cùng một cách khi "
-        "GitHub quá tải; nó chỉ tăng số lần chạy thừa"
+    assert len(crons) <= 8, "quá nhiều mốc chỉ tăng số lần chạy thừa"
+
+
+def test_cron_slots_sit_early_enough_for_the_measured_scheduler_delay() -> None:
+    """Mốc cron phải đặt theo ĐỘ TRỄ ĐO ĐƯỢC, không theo giờ mong muốn.
+
+    Đo trên 62 lần chạy theo lịch của kho này: trễ tối thiểu 49 phút, trung vị
+    144, tối đa 305. Lịch cũ đặt mốc sớm nhất ở 11:08 UTC (18:08 giờ VN) —
+    cộng 49 phút thì không đời nào chạy trước 18:57, tức lịch tự đặt trần cho
+    chính nó. Kỳ về sớm nhất quan sát được là 19:38, khớp đúng.
+
+    Mốc chính phải sớm hơn khung quay 11:15 UTC ít nhất bằng độ trễ TRUNG VỊ,
+    để ở ngày trung bình nó rơi đúng khung.
+    """
+    text = _text("daily_update.yml")
+    crons = re.findall(r'cron: "([^"]+)"', text)
+    minutes = sorted(int(c.split()[1]) * 60 + int(c.split()[0]) for c in crons)
+
+    window = 11 * 60 + 15          # 18:15 giờ VN
+    median_delay = 144             # phút, đo được
+
+    assert minutes[0] <= window - median_delay, (
+        f"mốc sớm nhất {minutes[0] // 60:02d}:{minutes[0] % 60:02d} UTC quá muộn; "
+        f"phải <= {(window - median_delay) // 60:02d}:{(window - median_delay) % 60:02d} "
+        "để ở độ trễ trung vị còn rơi đúng khung"
     )
+
+
+def test_early_arrivals_exit_instead_of_idling_the_runner() -> None:
+    """Bộ thăm dò chờ tới khung quay KHÔNG giới hạn, nên một job nổ lúc 15:39
+    sẽ nằm im 2h36m rồi chết vì timeout — đúng những gì lịch cũ vẫn làm. Phải
+    có trần chờ, và timeout phải đủ chứa trần đó cộng cả khung thăm dò."""
+    text = _text("daily_update.yml")
+    found = re.search(r'MAX_WAIT_MINUTES:\s*"(\d+)"', text)
+    assert found is not None, "thiếu trần chờ MAX_WAIT_MINUTES cho job đến quá sớm"
+
+    cap = int(found.group(1))
+    timeout = int(re.search(r"timeout-minutes:\s*(\d+)", text).group(1))
+    poll_window = 75  # 18:15 -> 19:30
+
+    assert timeout >= cap + poll_window, (
+        f"timeout {timeout} phút không đủ cho trần chờ {cap} cộng khung thăm dò "
+        f"{poll_window}; job sẽ bị giết giữa chừng"
+    )
+
+
+def test_gate_skips_when_todays_draw_is_already_stored() -> None:
+    """Mốc sau không được thăm dò lại kỳ mà mốc trước đã lấy xong: vừa tốn yêu
+    cầu vào nguồn tin, vừa giữ runner suốt cả khung."""
+    text = _text("daily_update.yml")
+    assert "data/xsmb.csv" in text
+    assert "run=false" in text
+    assert "steps.gate.outputs.run == 'true'" in text
 
 
 def test_last_backstop_guard_matches_the_actual_last_cron() -> None:

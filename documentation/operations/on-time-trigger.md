@@ -2,13 +2,40 @@
 
 ## 1. Kết luận ngắn
 
-Độ trễ **không** đến từ nghẽn hàng đợi runner, và **không** sửa được bằng cách
-đổi phút cron. Nó đến từ khâu GitHub *tạo* lần chạy theo lịch. Kho này đã rải
-phút lẻ từ trước và vẫn trễ 2–6 giờ.
+Độ trễ **không** đến từ nghẽn hàng đợi runner. Nó đến từ khâu GitHub *tạo* lần
+chạy theo lịch.
 
-Cách duy nhất chạy đúng giờ là **không phụ thuộc vào bộ lập lịch của GitHub**:
-một dịch vụ hẹn giờ bên ngoài gọi `repository_dispatch` lúc 18:10 giờ Việt Nam.
-Đường đó đã có sẵn trong mã từ trước — nhưng **chưa từng được gọi một lần nào**.
+Nhưng câu "không sửa được bằng cách đổi phút cron" — viết ở bản trước — **chỉ
+đúng một nửa**, và phần sai của nó đã khiến lịch nằm yên ở mức tệ suốt nhiều
+tuần. Rải *phút lẻ* trong cùng một giờ thì đúng là vô ích. Dời *cả khối* sớm
+lên theo độ trễ đo được thì không.
+
+### Đã tự động sửa (không cần bạn làm gì)
+
+Đo lại trên 62 lần chạy theo lịch: trễ tối thiểu **49 phút**, trung vị 144,
+tối đa 305 — và **chưa lần nào dưới 30 phút**. Lịch cũ đặt mốc sớm nhất ở
+`11:08 UTC` = 18:08 giờ VN, tức tự đặt trần cho chính nó: cộng 49 phút thì
+không đời nào chạy trước 18:57. Kỳ về sớm nhất quan sát được là 19:38, khớp
+đúng con số đó.
+
+Mốc đã được dời về `08:51 UTC` (15:51 giờ VN) và các mốc lân cận, kèm một
+bước chặn cho job đến quá sớm thoát ngay thay vì giữ runner rồi chết vì
+timeout. Mô phỏng trên chính 62 độ trễ đó, lấy mẫu **theo ngày** để giữ tương
+quan nội ngày:
+
+| | Lịch cũ | Lịch mới |
+|---|---|---|
+| Xuất bản trung vị | 19:16 | **18:15** |
+| Đúng khung 18:15–18:30 | 0,0 % | **88,4 %** |
+| Lỡ hẳn trong ngày | 91,1 % | 1,9 % |
+
+### Còn lại phần bạn phải làm (khoảng 5 phút, một lần)
+
+11,6 % còn lại là những ngày GitHub trễ cả khối — mọi mốc trong ngày cùng trễ
+209–305 phút, thêm mốc không cứu được. Chỉ có cách **không phụ thuộc vào bộ
+lập lịch của GitHub**: một dịch vụ hẹn giờ bên ngoài gọi `repository_dispatch`
+lúc 18:10 giờ Việt Nam. Đường đó đã có sẵn trong mã — nhưng **chưa từng được
+gọi một lần nào**. Mục 4 dưới đây là các bước làm.
 
 ## 2. Số liệu
 

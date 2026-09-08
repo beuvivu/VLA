@@ -51,9 +51,26 @@ on:
     # đều rơi cùng một cách khi GitHub quá tải — nó chỉ tăng số lần chạy thừa.
     #
     # Giờ UTC; Việt Nam là UTC+7.
-    - cron: "8 11 * * *"    # 18:08 giờ VN
-    - cron: "26 12 * * *"   # 19:26 giờ VN
-    - cron: "34 14 * * *"   # 21:34 giờ VN
+    # Đặt theo ĐỘ TRỄ ĐO ĐƯỢC, không theo giờ mong muốn. Trên 62 lần chạy
+    # theo lịch của kho này: trễ tối thiểu 49 phút, trung vị 144, phân vị 90
+    # là 223, tối đa 305. KHÔNG lần nào dưới 30 phút.
+    #
+    # Lịch cũ đặt khe sớm nhất ở 18:08 giờ VN — tức tự đặt trần cho chính nó:
+    # cộng 49 phút tối thiểu thì không đời nào chạy trước 18:57. Đo trên kho,
+    # kỳ về sớm nhất là 19:38, khớp đúng.
+    #
+    # Khe dưới đây lùi lại để ở độ trễ TRUNG VỊ, mốc 08:51 rơi đúng 18:15 giờ
+    # VN. Khe sớm hơn phục vụ ngày trễ ít, khe muộn hơn phục vụ ngày trễ nhiều.
+    # Nổ sớm là vô hại vì bộ thăm dò chờ tới khung quay; nổ quá sớm thì bước
+    # chặn phía dưới cho thoát ngay để khỏi giữ runner.
+    - cron: "50 7 * * *"    # 14:50 VN + trễ 2h24m -> 17:14
+    - cron: "20 8 * * *"    # 15:20 VN                -> 17:44
+    - cron: "51 8 * * *"    # 15:51 VN                -> 18:15  <- mốc chính
+    - cron: "20 9 * * *"    # 16:20 VN                -> 18:44
+    - cron: "50 9 * * *"    # 16:50 VN                -> 19:14
+    - cron: "20 10 * * *"   # 17:20 VN                -> 19:44
+    - cron: "50 10 * * *"   # 17:50 VN                -> 20:14
+    - cron: "34 14 * * *"   # 21:34 VN — lưới an toàn cuối
 
 permissions:
   contents: read
@@ -69,9 +86,9 @@ jobs:
     name: Thăm dò tới khi đủ 27 ô
     runs-on: ubuntu-latest
 
-    # Chặn runner treo. Trường hợp xấu nhất là được đánh thức lúc 18:08 rồi
-    # thăm dò tới hạn 19:30 = 82 phút, cộng nới cho khâu cài đặt.
-    timeout-minutes: 95
+    # Chặn runner treo. Xấu nhất: đến sớm đúng mức trần MAX_WAIT_MINUTES (75)
+    # rồi thăm dò tới hạn 19:30 (75 phút nữa), cộng nới cho khâu cài đặt.
+    timeout-minutes: 170
 
     env:
       # Đặt TZ ở cấp job để MỌI bước — kể cả `date` trong shell — cùng một múi
@@ -107,7 +124,46 @@ jobs:
           echo "Giờ Việt Nam      : $(date '+%Y-%m-%d %H:%M:%S %Z')"
           echo "Giờ UTC           : $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
+      - name: Có nên chạy tiếp không
+        id: gate
+        # Hai lý do để thoát sớm, cả hai đều là kết cục ĐÚNG chứ không phải lỗi.
+        #
+        # 1. Kỳ hôm nay đã nằm trong kho — một mốc trước đó đã làm xong. Tiếp
+        #    tục chỉ tốn yêu cầu vào nguồn tin và giữ runner vô ích.
+        # 2. Đến quá sớm. Bộ thăm dò chờ tới khung quay KHÔNG giới hạn, nên
+        #    một job nổ lúc 15:39 sẽ nằm im 2h36m rồi chết vì timeout — đúng
+        #    những gì lịch cũ vẫn làm hằng ngày. Trần 75 phút giữ phần chờ
+        #    trong mức job chịu được, và mốc muộn hơn sẽ lo phần còn lại.
+        env:
+          WINDOW_START: ${{ github.event.inputs.window_start || '18:15' }}
+          MAX_WAIT_MINUTES: "75"
+        run: |
+          set -euo pipefail
+
+          today="$(date '+%Y-%m-%d')"
+          if [ -f data/xsmb.csv ] && cut -d, -f1 data/xsmb.csv | grep -qx "$today"; then
+            echo "::notice::Kỳ ${today} đã có trong kho; không cần thăm dò."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          now_min=$(( $(date '+%-H') * 60 + $(date '+%-M') ))
+          # 10# ở CẢ hai vế: "08" không có tiền tố sẽ bị bash hiểu là bát phân
+          # và làm hỏng số học ngay khi ai đó đặt khung quay vào buổi sáng.
+          win_min=$(( 10#${WINDOW_START%%:*} * 60 + 10#${WINDOW_START##*:} ))
+          early=$(( win_min - now_min ))
+
+          if [ "$early" -gt "$MAX_WAIT_MINUTES" ]; then
+            echo "::notice::Còn ${early} phút mới tới ${WINDOW_START}, quá trần ${MAX_WAIT_MINUTES}. Mốc sau sẽ lo."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Chạy tiếp: còn ${early} phút tới khung quay (âm nghĩa là đã qua)."
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
       - name: Thăm dò kết quả
+        if: steps.gate.outputs.run == 'true'
         id: poll
         # Không để bước này làm đỏ job: "chưa đủ số" là một kết cục hợp lệ khi
         # nguồn chậm, và lưới an toàn phía sau sẽ thử lại. Đỏ giả làm người ta
@@ -188,6 +244,14 @@ jobs:
           set -euo pipefail
           verified="${{ steps.poll.outputs.verified }}"
           slots="${{ steps.poll.outputs.verified_slots || 0 }}"
+
+          # Bước chặn cho thoát sớm là kết cục ĐÚNG, không phải thiếu số: hoặc
+          # kỳ đã có trong kho, hoặc còn quá sớm và mốc sau sẽ lo. Báo đỏ ở đây
+          # sẽ dạy người ta bỏ qua cảnh báo của chính workflow này.
+          if [ "${{ steps.gate.outputs.run }}" != "true" ]; then
+            echo "::notice::Bỏ qua theo bước chặn; không thăm dò."
+            exit 0
+          fi
 
           if [ "$verified" = "true" ]; then
             echo "::notice::Đủ 27/27 ô lúc $(date '+%H:%M:%S %Z'); đã kích hoạt hoàn tất."
