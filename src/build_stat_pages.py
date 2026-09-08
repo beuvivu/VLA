@@ -6,13 +6,19 @@ Người dùng cần chọn dải ngày/tháng/năm tùy ý. Dựng sẵn mọi 
 khả thi, còn gọi API thì cần server — mà kho này phát hành site tĩnh trên
 GitHub Pages, không có tiến trình nào chạy.
 
-Lối thoát nằm ở kích thước dữ liệu: toàn bộ lịch sử là **35 KB** ở dạng hai
-chữ số. Nhúng thẳng vào trang rồi tính bằng JavaScript cho ra bộ lọc tức thì,
-không server, không độ trễ mạng. Đây là cách duy nhất thoả cả hai ràng buộc.
+Lối thoát nằm ở kích thước dữ liệu. Đo thực tế: **172 byte mỗi kỳ**, tức 66 KB
+thô cho 393 kỳ và khoảng 410 KB cho 2442 kỳ; qua gzip còn 16 KB và 99 KB
+(nén 4,1 lần). Nhúng thẳng vào trang rồi tính bằng JavaScript cho ra bộ lọc
+tức thì, không server, không độ trễ mạng. Đây là cách duy nhất thoả cả hai
+ràng buộc.
 
-Ngưỡng cần theo dõi: nhúng dữ liệu bắt đầu bất tiện quanh mốc vài MB. Với
-mức tăng hiện tại (một kỳ mỗi ngày, ~90 byte) thì mốc đó còn xa hàng chục
-năm.
+Ngưỡng cần theo dõi: nhúng dữ liệu bắt đầu bất tiện quanh mốc vài MB thô. Với
+một kỳ mỗi ngày thì từ 2442 kỳ còn khoảng 25 năm nữa mới chạm mốc đó.
+
+Cảnh báo đi kèm: mọi **mốc so sánh** hiển thị trên trang đều phải tính theo
+số kỳ đang chọn, không phải theo hằng số. Trang có bộ lọc 30/60/90/180/365
+kỳ, nên một con số đóng cứng sai ngay lần bấm đầu tiên — xem
+:func:`pair_chance_grid`.
 """
 
 from __future__ import annotations
@@ -246,11 +252,14 @@ CHANCE_NOTES: dict[str, str] = {
         "trong 100 con luôn cao hơn kỳ vọng kể cả khi dữ liệu hoàn toàn ngẫu "
         "nhiên — cột “So kỳ vọng” là để so, không phải để chọn."
     ),
+    # ``sp-chance`` được JavaScript viết lại theo dải ngày đang chọn. Nội dung
+    # dựng sẵn ở đây là bản dự phòng cho toàn bộ lịch sử, đúng khi chưa ai bấm
+    # bộ lọc và khi JavaScript không chạy.
     "tan-suat-cap-loto": (
-        "Có <b>4 950</b> cặp số. Trên lịch sử ngẫu nhiên dài đúng {n_draws} kỳ, "
-        "cực đại trung bình là <b>{chance_max}</b> lần (khoảng 90%: {low}–{high}), "
-        "trong khi kỳ vọng mỗi cặp chỉ {pair_expected}. Một cặp chỉ đáng chú ý "
-        "khi vượt hẳn khoảng đó."
+        "Có <b>4 950</b> cặp số. <span id=\"sp-chance\">Trên lịch sử ngẫu nhiên "
+        "dài đúng {n_draws} kỳ, cực đại trung bình là {chance_max} lần (khoảng "
+        "90%: {low}–{high}), trong khi kỳ vọng mỗi cặp chỉ {pair_expected}."
+        "</span> Một cặp chỉ đáng chú ý khi vượt hẳn khoảng đó."
     ),
     "chu-ky-dac-biet": (
         "Giải đặc biệt có 100 kết quả hai số nên khoảng gan trung bình là 100 "
@@ -280,6 +289,31 @@ def _asset(name: str) -> str:
         Nội dung tệp.
     """
     return (Path(__file__).resolve().parent / "templates" / name).read_text(encoding="utf-8")
+
+
+#: Các mốc số kỳ để dựng sẵn cực đại ngẫu nhiên cho trình duyệt tra.
+#:
+#: Trang cho phép lọc theo dải ngày, nên mốc phải đổi theo tập ĐANG CHỌN chứ
+#: không theo toàn bộ lịch sử. Công thức đóng cần hàm phân phối nhị thức, quá
+#: nặng để cài lại trong JavaScript; lưới này cho nội suy tuyến tính sai số
+#: tối đa 0,67%, và dưới 0,15% với mọi N >= 30.
+PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
+    10, 20, 30, 45, 60, 90, 120, 180, 270, 365, 550,
+    730, 1100, 1460, 1825, 2200, 2600, 3000, 3700, 4400, 5500, 7300,
+)
+
+
+def pair_chance_grid() -> list[list[float]]:
+    """Bảng tra ``[số kỳ, cực đại, cận dưới, cận trên]`` cho trình duyệt.
+
+    Returns:
+        Danh sách theo thứ tự số kỳ tăng dần, để nội suy tuyến tính.
+    """
+    grid: list[list[float]] = []
+    for n in PAIR_CHANCE_GRID_POINTS:
+        mean, (low, high) = pair_chance_maximum(n)
+        grid.append([n, round(mean, 2), low, high])
+    return grid
 
 
 def chance_note_context(n_draws: int) -> dict[str, str]:
@@ -334,7 +368,8 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên
 {len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
 {app_shell_close(f"{page.slug}.html")}
-<script>window.__VLA_DRAWS__={json_for_html_script(draws)};</script>
+<script>window.__VLA_DRAWS__={json_for_html_script(draws)};
+window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};</script>
 <script>
 {_asset("stat_pages.js")}
 boot({json.dumps(page.render)});
