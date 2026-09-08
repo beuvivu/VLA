@@ -30,3 +30,18 @@ data/tmp/
 data/excel/daily/
 logs/
 *.log
+
+# Bảng tần suất theo TỪNG NGÀY: ghi ra rồi không ai đọc.
+#
+# Đo trên main: 204 MB cho 10 tệp, và quy trình hàng ngày ghi đè toàn bộ mỗi
+# lần chạy — git thấy blob mới nên kho phình theo ngày chứ không theo dữ liệu.
+# Backfill làm nặng thêm 6 lần: period_frequency_loto_day.json đi từ 10,7 MB
+# lên 65,4 MB.
+#
+# Không nơi nào trong kho đọc chúng. Các trình dựng trang đọc bản
+# *_current.csv (nhỏ), còn statistics_ai_overlay tính lại trong bộ nhớ bằng
+# _period_frequency_from_sparse. Test cũng gọi hàm chứ không mở tệp.
+#
+# Vẫn được sinh ra mỗi lần chạy nên ai cần vẫn có; chỉ là không đưa vào lịch sử.
+data/advanced/*_day.json
+data/advanced/*_day.csv
