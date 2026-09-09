@@ -634,9 +634,7 @@ def _legend_body() -> str:
     Returns:
         Mã nguồn của riêng hàm đó.
     """
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
-    body = js[js.index("function renderLegend(") :]
-    return body[: body.index("\nfunction ", 1)]
+    return _js_function("renderLegend")
 
 
 def test_every_field_in_a_cell_is_named_and_explained() -> None:
@@ -741,7 +739,9 @@ def _js_function(name: str) -> str:
     """
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     body = js[js.index(f"function {name}(") :]
-    return body[: body.index("\nfunction ", 1)]
+    # Hàm cuối tệp không có "\nfunction " nào phía sau; cắt tới hết tệp.
+    end = body.find("\nfunction ", 1)
+    return body if end < 0 else body[:end]
 
 
 def test_pair_gan_counts_either_number_not_both() -> None:
@@ -802,3 +802,44 @@ def test_head_tail_page_has_the_three_per_day_matrices() -> None:
     page = (DOCS / "dau-duoi-loto.html").read_text(encoding="utf-8")
     for table_id in ("sp-day-head", "sp-day-tail", "sp-day-sum"):
         assert f'id="{table_id}"' in page, f"thiếu ma trận {table_id}"
+
+
+# --- Dải rỗng và ghi chú ------------------------------------------------------
+
+
+def test_empty_range_clears_the_tables_instead_of_keeping_stale_numbers() -> None:
+    """Bộ đếm báo "0 kỳ" mà bảng vẫn đủ hàng là trình bày số của dải TRƯỚC như
+    thể chúng thuộc về dải mới.
+
+    Tái hiện được trước khi sửa: chọn Từ ngày 09-09-2026 đến 01-01-2020 thì
+    bộ đếm ra "0 kỳ · — → —" còn ba bảng giữ nguyên 10/40/10 hàng của 90 kỳ
+    liền trước.
+    """
+    body = _js_function("table")
+    assert "sp-empty-row" in body, "table() phải dựng dòng báo dải rỗng"
+    assert "rows.length ?" in body, "phải rẽ nhánh theo số hàng"
+
+    tong = _js_function("renderSpecialByTong")
+    assert "if (!rows.length) {" in tong, "không được return trắng"
+    for table_id in ("sp-grid", "sp-trans", "sp-parity"):
+        head = tong[: tong.index("// 1. Gan theo tổng")]
+        assert table_id in head, f"nhánh rỗng phải dựng lại {table_id}"
+
+
+def test_notes_only_name_columns_the_tables_actually_render() -> None:
+    """Ghi chú hướng dẫn đọc một cột không tồn tại là hướng dẫn sai.
+
+    Ghi chú cũ bảo đọc cột "So mức ngẫu nhiên" và giá trị "quanh 1,0×", nhưng
+    ``renderSpecialByTong`` chỉ dựng "Tỉ lệ" và "Lệch chuẩn hoá" — không hề
+    tính tỉ số đó.
+    """
+    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+
+    assert "So mức ngẫu nhiên" not in builder, (
+        "không cột nào mang tên này; ghi chú phải nói theo cột thật"
+    )
+    # Các tên cột mà ghi chú có nhắc tới phải xuất hiện trong mã dựng bảng.
+    for column in ("Tỉ lệ", "Lệch chuẩn hoá"):
+        assert column in builder, f"ghi chú không còn nhắc {column}?"
+        assert f'"{column}"' in js, f"bảng không dựng cột {column}"

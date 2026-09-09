@@ -122,6 +122,13 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
 .sp-f-ngay { min-width: 34px; color: #94a3b8; }
 
+/* Dòng "dải rỗng": chiếm cả bảng, không gạch chéo như ô trống trong lịch —
+   đây là câu trả lời cho bộ lọc, không phải một ngày không quay. */
+.sp-empty-row {
+  padding: 18px 14px !important; text-align: center;
+  color: #64748b; font-size: 12.5px; font-style: italic;
+}
+
 /* Ô "0 lần": vẫn là dữ liệu, không phải ô trống, nên mờ chứ không gạch chéo. */
 .sp-zero { color: #94a3b8; font-weight: 400; }
 
@@ -176,6 +183,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
   .sp-zero { color: #475569; }
+  .sp-empty-row { color: #94a3b8; }
   .sp-legend { background: #1c1917; border-color: #78350f; }
   .sp-legend-head, .sp-lg-src { color: #fcd34d; }
   .sp-lg-item { background: #0f172a; border-color: #78350f; }

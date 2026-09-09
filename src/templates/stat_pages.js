@@ -267,7 +267,15 @@ function table(el, headers, rows, opts) {
       return `<td class="cell${cls}${on}${blank}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
-  el.innerHTML = thead + "<tbody>" + body + "</tbody>";
+
+  // Dải rỗng phải nói ra là rỗng. Không có nhánh này thì bảng giữ nguyên số
+  // liệu của dải TRƯỚC trong khi bộ đếm đã báo "0 kỳ" — số cũ được trình bày
+  // như thể thuộc về dải mới. Tái hiện được: chọn Từ ngày 09-09-2026 đến
+  // 01-01-2020 (dải ngược) thì bộ đếm ra "0 kỳ" mà ba bảng vẫn đủ 40 hàng.
+  const empty = `<tbody><tr><td class="sp-empty-row" colspan="${headers.length}">` +
+    "Không có kỳ nào trong dải đã chọn. Kiểm lại Từ ngày / Đến ngày — " +
+    "chọn ngược thứ tự cũng cho dải rỗng.</td></tr></tbody>";
+  el.innerHTML = thead + (rows.length ? "<tbody>" + body + "</tbody>" : empty);
 
   // Cột đầu chỉ được dính và tô nền khi nó là NHÃN HÀNG. Bảng lịch tuần có
   // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
@@ -1102,7 +1110,16 @@ function tongOf(special) {
 function renderSpecialByTong() {
   const rows = selected();
   setCount(rows);
-  if (!rows.length) return;
+  if (!rows.length) {
+    // Không return trắng: bảng sẽ giữ số liệu của dải trước. Dựng lại cả ba
+    // với đúng tiêu đề của chúng để table() gắn dòng "dải rỗng".
+    table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"], []);
+    table($("sp-trans"), ["Tổng hôm trước", "Tổng hôm sau", "Số lần",
+      "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"], []);
+    table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
+      "Hôm sau tổng lẻ"], []);
+    return;
+  }
 
   // 1. Gan theo tổng.
   const lastSeen = new Array(10).fill(-1);
