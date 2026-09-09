@@ -207,8 +207,32 @@ def test_live_page_never_builds_markup_from_strings() -> None:
 
 # --- Ô nhiệt trong trang đã dựng ----------------------------------------------
 
-#: Ô nhiệt phát ra dạng ``style="background:rgb(r,g,b);color:#rrggbb"``.
-_HEAT_CELL = re.compile(r'style="background:rgb\((\d+),(\d+),(\d+)\);color:(#[0-9a-fA-F]{6})"')
+#: Nội dung thuộc tính ``style`` của một ô nhiệt: ``background:rgb(r,g,b);color:#rrggbb``.
+#:
+#: Đọc GIÁ TRỊ thuộc tính chứ không khớp cả dấu nháy bao quanh. Bản đầu khớp
+#: ``style="background:...`` và nó xanh — nhưng chỉ vì đang đọc một
+#: docs/statistics.html cũ còn sót trong kho; trình dựng thật phát ra nháy đơn,
+#: nên dựng lại một cái là test tìm thấy 0 ô và tưởng trang hỏng.
+_HEAT_STYLE = re.compile(r"background:rgb\((\d+),\s*(\d+),\s*(\d+)\);color:(#[0-9a-fA-F]{6})")
+
+
+def _heat_cells(slug: str = "statistics") -> list[tuple[str, str]]:
+    """Các cặp (nền, chữ) của ô nhiệt trong một trang đã dựng.
+
+    Args:
+        slug: Tên trang, không kèm ``.html``.
+
+    Returns:
+        Danh sách cặp màu ``#rrggbb``.
+    """
+    soup = BeautifulSoup((DOCS / f"{slug}.html").read_text(encoding="utf-8"), "html.parser")
+    pairs = []
+    for el in soup.select("[style]"):
+        found = _HEAT_STYLE.search(str(el.get("style", "")))
+        if found:
+            red, green, blue, ink = found.groups()
+            pairs.append((f"#{int(red):02x}{int(green):02x}{int(blue):02x}", ink.lower()))
+    return pairs
 
 
 def test_every_heat_cell_in_the_built_page_reaches_aa() -> None:
@@ -225,15 +249,13 @@ def test_every_heat_cell_in_the_built_page_reaches_aa() -> None:
     nhất trong ô thì gặp màu pha do khử răng cưa; tắt chữ rồi lấy màu phổ biến
     nhất thì gặp nền của ô bên cạnh. Cặp màu trong markup thì không mơ hồ.
     """
-    page = (DOCS / "statistics.html").read_text(encoding="utf-8")
-    cells = _HEAT_CELL.findall(page)
+    cells = _heat_cells()
     # Không dùng skip: ô nhiệt biến mất khỏi trang cũng là một hồi quy, mà
     # skip thì im lặng đúng như khi mọi thứ vẫn tốt.
     assert len(cells) > 500, f"chỉ thấy {len(cells)} ô nhiệt, trang dựng hỏng?"
 
     failures = []
-    for red, green, blue, ink in cells:
-        background = f"#{int(red):02x}{int(green):02x}{int(blue):02x}"
+    for background, ink in cells:
         ratio = contrast_ratio(ink, background)
         if ratio < WCAG_AA_NORMAL:
             failures.append(
@@ -259,7 +281,7 @@ def test_heat_cells_do_not_hand_their_ink_to_a_child() -> None:
     """
     soup = BeautifulSoup((DOCS / "statistics.html").read_text(encoding="utf-8"), "html.parser")
     cells = [el for el in soup.select("[style]")
-             if "background:rgb" in str(el.get("style", ""))]
+             if _HEAT_STYLE.search(str(el.get("style", "")))]
     assert len(cells) > 500, f"chỉ thấy {len(cells)} ô nhiệt, trang dựng hỏng?"
 
     offenders = [
@@ -271,3 +293,31 @@ def test_heat_cells_do_not_hand_their_ink_to_a_child() -> None:
     assert not offenders, (
         "thẻ con tự đặt màu làm vô hiệu màu đã tính cho nền: " + "; ".join(offenders[:5])
     )
+
+
+# --- Trang không được là ngõ cụt ----------------------------------------------
+
+
+def test_statistics_page_can_reach_the_rest_of_the_site() -> None:
+    """statistics.html từng chỉ có ĐÚNG MỘT liên kết nội bộ.
+
+    Mọi mục điều hướng khác trên trang đều là neo ``#...`` trong chính nó, nên
+    ai mở thẳng trang này thì không có đường sang 14 trang thống kê, cũng không
+    về được trang chính. Bảng điều khiển hằng ngày trỏ tới đây, nên đó là ngõ
+    cụt ngay trên lối vào chính.
+    """
+    page = (DOCS / "statistics.html").read_text(encoding="utf-8")
+    soup = BeautifulSoup(page, "html.parser")
+    targets = {
+        a["href"].split("#", 1)[0]
+        for a in soup.find_all("a", href=True)
+        if a["href"].endswith(".html") or ".html#" in a["href"]
+    }
+    targets.discard("")
+
+    assert "index.html" in targets, "phải có đường về trang chính"
+    assert len(targets) >= 5, f"chỉ tới được {len(targets)} trang: {sorted(targets)}"
+
+    # Mọi đích phải tồn tại thật — liên kết gãy còn tệ hơn không có liên kết.
+    missing = sorted(t for t in targets if not (DOCS / t).exists())
+    assert not missing, f"liên kết trỏ tới trang không tồn tại: {missing}"
