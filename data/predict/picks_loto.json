@@ -45,9 +45,9 @@
     "reason": "validated stacked challenger blended into production",
     "candidate": "meta_shallow",
     "validation_logloss": 0.545956909006591,
-    "baseline_validation_logloss": 0.6574817799517984,
-    "logloss_skill": 0.16962427605732822,
-    "brier_skill": 0.07979575625330071,
+    "baseline_validation_logloss": 0.6574083295817015,
+    "logloss_skill": 0.16953150053031008,
+    "brier_skill": 0.0797754863531367,
     "trained_through_target_date": "2026-09-09"
   },
   "top4": [
