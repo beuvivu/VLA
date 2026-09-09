@@ -134,7 +134,14 @@ function specialCell(value, iso) {
   if (SHOWN.has("tong")) parts.push(`<i class="sp-f">${(dau + duoi) % 10}</i>`);
   if (SHOWN.has("dau")) parts.push(`<i class="sp-f">${dau}</i>`);
   if (SHOWN.has("duoi")) parts.push(`<i class="sp-f">${duoi}</i>`);
-  if (SHOWN.has("chanle")) parts.push(`<i class="sp-f">${duoi % 2 === 0 ? "C" : "L"}</i>`);
+  if (SHOWN.has("chanle")) {
+    // HAI ký tự: chẵn/lẻ của Đầu rồi của Đuôi. Hai trang tham chiếu khác nhau
+    // ở chỗ này — hainhay chỉ ghi một ký tự theo Đuôi, thongkemienbac ghi cả
+    // hai. Lấy bản hai ký tự vì nó chứa trọn thông tin của bản kia.
+    // Kiểm trên 15 ô thật: 49 -> "CL" (Đầu 4 chẵn, Đuôi 9 lẻ).
+    parts.push(`<i class="sp-f">${dau % 2 === 0 ? "C" : "L"}` +
+      `${duoi % 2 === 0 ? "C" : "L"}</i>`);
+  }
   if (SHOWN.has("bo")) parts.push(`<i class="sp-f">${BO_LOOKUP[+two] || ""}</i>`);
 
   // Gọi lại specialFull thay vì chép markup: hai bản dựng cùng một thứ là hai
@@ -826,5 +833,100 @@ function renderSpecialBridge() {
         `<p class="sp-db">Đặc biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
         `<div class="sp-lolist">${cells}</div></div>`;
     }).join("");
+  }
+}
+
+
+// --- Giải đặc biệt theo TỔNG ------------------------------------------------
+//
+// Tổng = (Đầu + Đuôi) mod 10, nên có 10 giá trị 0-9. Ba bảng, theo bố cục đọc
+// được từ trang tham chiếu:
+//   1. Gan theo tổng: tổng nào lâu chưa về nhất.
+//   2. Chuyển tổng: hôm qua tổng X thì hôm nay tổng Y với xác suất bao nhiêu.
+//   3. Chẵn/lẻ hôm sau, theo tổng hôm qua.
+//
+// Bảng 2 và 3 là thống kê MÔ TẢ trên lịch sử, không phải dự báo đã hiệu
+// chuẩn. Ghi chú mốc ngẫu nhiên đi kèm nói rõ điều đó: với 10 giá trị, mức
+// ngẫu nhiên là 10% mỗi ô, và lệch vài phần trăm trên vài trăm kỳ là chuyện
+// thường.
+
+function tongOf(special) {
+  const two = lastTwo(special);
+  return (+two[0] + +two[1]) % 10;
+}
+
+function renderSpecialByTong() {
+  const rows = selected();
+  setCount(rows);
+  if (!rows.length) return;
+
+  // 1. Gan theo tổng.
+  const lastSeen = new Array(10).fill(-1);
+  const hits = new Array(10).fill(0);
+  rows.forEach((r, i) => { const t = tongOf(r.s); lastSeen[t] = i; hits[t] += 1; });
+  const gan = Array.from({ length: 10 }, (_, t) => [
+    t,
+    lastSeen[t] < 0 ? "—" : rows[lastSeen[t]].d,
+    lastSeen[t] < 0 ? rows.length : rows.length - 1 - lastSeen[t],
+    hits[t],
+  ]).sort((a, b) => b[2] - a[2]);
+  table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"],
+    gan.map((g) => [`<b>${g[0]}</b>`, g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
+
+  // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
+  //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
+  //    thành "hôm sau" là bịa ra một chuyển tiếp không tồn tại.
+  const trans = Array.from({ length: 10 }, () => new Array(10).fill(0));
+  const fromTotal = new Array(10).fill(0);
+  for (let i = 1; i < rows.length; i++) {
+    const gap = (new Date(rows[i].d) - new Date(rows[i - 1].d)) / 86400000;
+    if (gap !== 1) continue;
+    const a = tongOf(rows[i - 1].s), b = tongOf(rows[i].s);
+    trans[a][b] += 1; fromTotal[a] += 1;
+  }
+
+  // Xếp theo TỈ LỆ là cách chắc chắn đẩy nhiễu lên đầu: một ô 3/9 cho 33 %
+  // và đứng trên mọi ô khác, dù ba lần thì chẳng nói lên điều gì. Xếp theo
+  // độ lệch CHUẨN HOÁ so với mức ngẫu nhiên 10 %, tức chia cho sai số chuẩn
+  // sqrt(p(1-p)/n) — cùng một độ lệch phần trăm trên mẫu lớn mới đáng kể.
+  const P0 = 0.1;
+  const flat = [];
+  for (let a = 0; a < 10; a++) {
+    if (!fromTotal[a]) continue;
+    for (let b = 0; b < 10; b++) {
+      const n = fromTotal[a];
+      const pct = 100 * trans[a][b] / n;
+      const se = Math.sqrt(P0 * (1 - P0) / n) * 100;
+      flat.push([a, b, trans[a][b], n, pct, se ? (pct - 10) / se : 0]);
+    }
+  }
+  flat.sort((x, y) => Math.abs(y[5]) - Math.abs(x[5]));
+
+  const tr = $("sp-trans");
+  if (tr) {
+    table(tr,
+      ["Tổng hôm trước", "Tổng hôm sau", "Số lần", "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"],
+      flat.slice(0, 40).map((f) => [
+        `<b>${f[0]}</b>`, `<b>${f[1]}</b>`, f[2], f[3],
+        f[4].toFixed(2).replace(".", ",") + " %",
+        (f[5] > 0 ? "+" : "") + f[5].toFixed(2).replace(".", ","),
+      ]), { numeric: [0, 1, 2, 3, 4, 5] });
+  }
+
+  // 3. Chẵn/lẻ của tổng hôm sau, theo tổng hôm trước.
+  const par = $("sp-parity");
+  if (par) {
+    const body = [];
+    for (let a = 0; a < 10; a++) {
+      if (!fromTotal[a]) continue;
+      let even = 0;
+      for (let b = 0; b < 10; b += 2) even += trans[a][b];
+      const pct = 100 * even / fromTotal[a];
+      body.push([`<b>${a}</b>`, fromTotal[a],
+        pct.toFixed(2).replace(".", ",") + " %",
+        (100 - pct).toFixed(2).replace(".", ",") + " %"]);
+    }
+    table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
+      body, { numeric: [0, 1, 2, 3] });
   }
 }

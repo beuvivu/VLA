@@ -253,6 +253,27 @@ PAGES: tuple[StatPage, ...] = (
         render="renderPairFrequency",
     ),
     StatPage(
+        slug="giai-dac-biet-theo-tong",
+        title="Giải đặc biệt theo tổng",
+        subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
+        controls=_range_controls(),
+        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Hôm trước tổng X thì hôm sau tổng Y</h3>'
+             '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
+             '10 giá trị. Cột "So mức ngẫu nhiên" là tỉ lệ chia cho 10 %; quanh 1,0× nghĩa '
+             'là không phân biệt được với ngẫu nhiên. Bảng xếp theo <b>lệch chuẩn hoá</b> '
+             'chứ không theo tỉ lệ: xếp theo tỉ lệ thì một ô 3/9 cho 33 % và đứng đầu bảng, '
+             'dù ba lần chẳng nói lên điều gì. Lệch chuẩn hoá chia độ lệch cho sai số chuẩn, '
+             'nên chỉ mẫu đủ lớn mới lên được. Quanh ±2 vẫn là mức thường gặp khi xét 100 ô. '
+             'Đây là thống kê MÔ TẢ trên lịch sử, '
+             'không phải xác suất đã hiệu chuẩn, và chỉ đếm các kỳ LIỀN KỀ thật — ranh giới '
+             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-trans"></table></div>'
+             '<h3 class="sp-subhead">Chẵn lẻ của tổng hôm sau</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-parity"></table></div>',
+        render="renderSpecialByTong",
+    ),
+    StatPage(
         slug="cau-giai-dac-biet",
         title="Cầu giải đặc biệt",
         subtitle="Tần suất hai số cuối giải ĐB theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",

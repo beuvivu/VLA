@@ -140,7 +140,7 @@ def test_all_ten_requested_pages_are_built() -> None:
     expected = {
         "bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam",
         "tan-suat-loto", "tan-suat-cap-loto", "cap-lon-loto", "dau-duoi-loto",
-        "cau-giai-dac-biet",
+        "cau-giai-dac-biet", "giai-dac-biet-theo-tong",
         "chu-ky-dac-biet", "cau-dac-biet-theo-bo-so", "giai-db-ngay-mai",
         "thong-ke-tong-hop",
     }
@@ -506,3 +506,54 @@ def test_matrix_caps_its_column_count() -> None:
     cap = int(re.search(r"MATRIX_MAX_DAYS = (\d+)", js).group(1))
     assert 30 <= cap <= 400, f"trần {cap} kỳ không hợp lý"
     assert "sp-matrix-note" in js, "phải báo cho người đọc biết đã cắt bớt"
+
+
+# --- Giải đặc biệt theo tổng ------------------------------------------------
+
+
+def test_parity_field_covers_both_digits() -> None:
+    """Chẵn/Lẻ là HAI ký tự: của Đầu rồi của Đuôi.
+
+    Hai trang tham chiếu khác nhau ở chỗ này — hainhay ghi một ký tự theo
+    Đuôi, thongkemienbac ghi cả hai. Kiểm trên 15 ô thật của thongkemienbac:
+    49 cho "CL" (Đầu 4 chẵn, Đuôi 9 lẻ). Bản một ký tự mất một nửa thông tin.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function specialCell(") :]
+    body = body[: body.index("\n}") + 2]
+    assert 'dau % 2 === 0 ? "C" : "L"' in body, "thiếu chẵn/lẻ của Đầu"
+    assert 'duoi % 2 === 0 ? "C" : "L"' in body, "thiếu chẵn/lẻ của Đuôi"
+
+
+def test_transition_table_ranks_by_standardised_deviation() -> None:
+    """Xếp bảng chuyển tổng theo TỈ LỆ là cách chắc chắn đẩy nhiễu lên đầu.
+
+    Đo trên trang vừa dựng: ô dẫn đầu là 3 lần trên 9 kỳ, cho 33 %. Ba lần
+    chẳng nói lên điều gì, nhưng nếu xếp theo tỉ lệ thì nó đứng trên mọi ô có
+    mẫu lớn. Chia cho sai số chuẩn thì mẫu nhỏ tự lùi xuống.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function renderSpecialByTong(") :]
+
+    assert "Math.sqrt(P0 * (1 - P0) / n)" in body, "thiếu sai số chuẩn"
+    assert "Math.abs(y[5]) - Math.abs(x[5])" in body, (
+        "phải xếp theo độ lệch chuẩn hoá, không theo tỉ lệ thô"
+    )
+    assert "Trên tổng số kỳ" in body, "phải hiện mẫu nền, nếu không tỉ lệ vô nghĩa"
+
+
+def test_transition_table_skips_non_consecutive_draws() -> None:
+    """Nối hai kỳ cách nhau nhiều ngày thành "hôm sau" là bịa ra một chuyển
+    tiếp không tồn tại. XSMB có ngày nghỉ quay, nên ranh giới đó phải bỏ."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function renderSpecialByTong(") :]
+    assert "gap !== 1" in body, "phải bỏ qua ranh giới ngày nghỉ quay"
+
+
+def test_tong_page_states_the_chance_level() -> None:
+    """Tổng có 10 giá trị nên mức ngẫu nhiên là 10 % mỗi ô. Thiếu con số đó
+    thì bảng đọc thành tín hiệu."""
+    text = _soup("giai-dac-biet-theo-tong").select_one(".sp-note").get_text(" ", strip=True)
+    assert "10 %" in text
+    assert "lệch chuẩn hoá" in text.lower()
+    assert "không phải xác suất đã hiệu chuẩn" in text
