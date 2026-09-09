@@ -98,7 +98,7 @@ def summarise_links(soup, base: str) -> None:
         if label and path not in seen:
             seen[path] = label
     print(f"    {len(seen)} đường dẫn nội bộ:")
-    for path, label in sorted(seen.items())[:60]:
+    for path, label in sorted(seen.items())[:80]:
         print(f"      {path:44s} {label}")
 
 
@@ -135,8 +135,12 @@ def main() -> int:
         if heads:
             print(f"  tiêu đề: {heads[:8]}")
 
-        print("  --- liên kết ---")
-        summarise_links(soup, url)
+        # Điều hướng lặp lại y hệt trên mọi trang của cùng một site, nên in
+        # cho từng trang là tự đẩy phần cấu trúc bảng ra khỏi cửa sổ log. Chỉ
+        # in ở trang ĐẦU, hoặc khi được yêu cầu rõ.
+        if i == 0 or os.environ.get("DUMP_LINKS") == "1":
+            print("  --- liên kết ---")
+            summarise_links(soup, url)
 
         print("  --- điều khiển ---")
         summarise_controls(soup)

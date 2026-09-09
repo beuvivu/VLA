@@ -22,6 +22,11 @@ on:
         default: >-
           https://hainhay.net/tan-suat-loto,https://hainhay.net/tan-suat-cap-loto,https://hainhay.net/bang-dac-biet,https://hainhay.net/bang-dac-biet-thang,https://hainhay.net/bang-dac-biet-nam,https://hainhay.net/cau-giai-dac-biet
         type: string
+      dump_links:
+        description: "In danh sách liên kết cho MỌI trang (1) hay chỉ trang đầu"
+        required: false
+        default: "0"
+        type: string
 
 permissions:
   contents: read
@@ -48,4 +53,5 @@ jobs:
       - name: Đọc và tóm tắt
         env:
           URLS: ${{ inputs.urls }}
+          DUMP_LINKS: ${{ inputs.dump_links }}
         run: python scripts/inspect_reference_pages.py
