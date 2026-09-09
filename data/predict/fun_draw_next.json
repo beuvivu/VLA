@@ -3,7 +3,7 @@
   "kind": "entertainment_simulation",
   "anchor_date": "2026-09-09",
   "target_date": "2026-09-10",
-  "seed": 4853543494072057184,
+  "seed": 4076090046743612409,
   "disclaimer": "Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế.",
   "method": "ĐB: lấy mẫu tất định có trọng số từ phân phối ĐB. Các giải khác: lấy mẫu tất định có trọng số từ phân phối lô tô. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp dữ liệu/mô hình để cùng đầu vào luôn cho cùng một bảng mô phỏng.",
   "groups": [
@@ -14,11 +14,11 @@
       "values": [
         {
           "field": "special",
-          "value": "15820",
-          "suffix": "20",
+          "value": "71016",
+          "suffix": "16",
           "mode": "de",
-          "model_prob": 0.0097671971458661,
-          "model_prob_percent": 0.97671971458661
+          "model_prob": 0.0101610917635436,
+          "model_prob_percent": 1.0161091763543602
         }
       ]
     },
@@ -29,11 +29,11 @@
       "values": [
         {
           "field": "prize1",
-          "value": "54111",
-          "suffix": "11",
+          "value": "08838",
+          "suffix": "38",
           "mode": "loto",
-          "model_prob": 0.2408889634262229,
-          "model_prob_percent": 24.08889634262229
+          "model_prob": 0.2383092934250557,
+          "model_prob_percent": 23.83092934250557
         }
       ]
     },
@@ -44,19 +44,19 @@
       "values": [
         {
           "field": "prize2_1",
-          "value": "11483",
-          "suffix": "83",
+          "value": "07700",
+          "suffix": "00",
           "mode": "loto",
-          "model_prob": 0.2404627194221662,
-          "model_prob_percent": 24.04627194221662
+          "model_prob": 0.238773982652677,
+          "model_prob_percent": 23.8773982652677
         },
         {
           "field": "prize2_2",
-          "value": "59346",
-          "suffix": "46",
+          "value": "65174",
+          "suffix": "74",
           "mode": "loto",
-          "model_prob": 0.2398878795748332,
-          "model_prob_percent": 23.98878795748332
+          "model_prob": 0.2348255106946735,
+          "model_prob_percent": 23.48255106946735
         }
       ]
     },
@@ -67,51 +67,51 @@
       "values": [
         {
           "field": "prize3_1",
-          "value": "12665",
-          "suffix": "65",
+          "value": "60179",
+          "suffix": "79",
           "mode": "loto",
-          "model_prob": 0.2369306489638343,
-          "model_prob_percent": 23.693064896383433
+          "model_prob": 0.2348931870619415,
+          "model_prob_percent": 23.48931870619415
         },
         {
           "field": "prize3_2",
-          "value": "68607",
-          "suffix": "07",
+          "value": "44729",
+          "suffix": "29",
           "mode": "loto",
-          "model_prob": 0.2400410825066425,
-          "model_prob_percent": 24.00410825066425
+          "model_prob": 0.2351918694150224,
+          "model_prob_percent": 23.51918694150224
         },
         {
           "field": "prize3_3",
-          "value": "38535",
-          "suffix": "35",
+          "value": "35647",
+          "suffix": "47",
           "mode": "loto",
-          "model_prob": 0.2393171876126022,
-          "model_prob_percent": 23.93171876126022
+          "model_prob": 0.2380066626045685,
+          "model_prob_percent": 23.80066626045685
         },
         {
           "field": "prize3_4",
-          "value": "02970",
-          "suffix": "70",
+          "value": "36885",
+          "suffix": "85",
           "mode": "loto",
-          "model_prob": 0.2421715574042292,
-          "model_prob_percent": 24.217155740422918
+          "model_prob": 0.2327255191294239,
+          "model_prob_percent": 23.27255191294239
         },
         {
           "field": "prize3_5",
-          "value": "27067",
-          "suffix": "67",
+          "value": "49563",
+          "suffix": "63",
           "mode": "loto",
-          "model_prob": 0.2396888840219662,
-          "model_prob_percent": 23.96888840219662
+          "model_prob": 0.2412077462742386,
+          "model_prob_percent": 24.12077462742386
         },
         {
           "field": "prize3_6",
-          "value": "35810",
-          "suffix": "10",
+          "value": "91758",
+          "suffix": "58",
           "mode": "loto",
-          "model_prob": 0.2406718726647957,
-          "model_prob_percent": 24.06718726647957
+          "model_prob": 0.2349371449483419,
+          "model_prob_percent": 23.49371449483419
         }
       ]
     },
@@ -122,35 +122,35 @@
       "values": [
         {
           "field": "prize4_1",
-          "value": "4807",
-          "suffix": "07",
+          "value": "1790",
+          "suffix": "90",
           "mode": "loto",
-          "model_prob": 0.2400410825066425,
-          "model_prob_percent": 24.00410825066425
+          "model_prob": 0.2419345230105066,
+          "model_prob_percent": 24.193452301050662
         },
         {
           "field": "prize4_2",
-          "value": "8052",
-          "suffix": "52",
+          "value": "4561",
+          "suffix": "61",
           "mode": "loto",
-          "model_prob": 0.2415051239888094,
-          "model_prob_percent": 24.15051239888094
+          "model_prob": 0.2415917525007884,
+          "model_prob_percent": 24.15917525007884
         },
         {
           "field": "prize4_3",
-          "value": "5521",
-          "suffix": "21",
+          "value": "8582",
+          "suffix": "82",
           "mode": "loto",
-          "model_prob": 0.2370102933163869,
-          "model_prob_percent": 23.70102933163869
+          "model_prob": 0.2332888872167035,
+          "model_prob_percent": 23.32888872167035
         },
         {
           "field": "prize4_4",
-          "value": "5097",
-          "suffix": "97",
+          "value": "9385",
+          "suffix": "85",
           "mode": "loto",
-          "model_prob": 0.2371800121094624,
-          "model_prob_percent": 23.71800121094624
+          "model_prob": 0.2327255191294239,
+          "model_prob_percent": 23.27255191294239
         }
       ]
     },
@@ -161,51 +161,51 @@
       "values": [
         {
           "field": "prize5_1",
-          "value": "0620",
-          "suffix": "20",
+          "value": "1670",
+          "suffix": "70",
           "mode": "loto",
-          "model_prob": 0.2379620959466403,
-          "model_prob_percent": 23.79620959466403
+          "model_prob": 0.2421715574042292,
+          "model_prob_percent": 24.217155740422918
         },
         {
           "field": "prize5_2",
-          "value": "4303",
-          "suffix": "03",
+          "value": "7368",
+          "suffix": "68",
           "mode": "loto",
-          "model_prob": 0.2376434651118719,
-          "model_prob_percent": 23.76434651118719
+          "model_prob": 0.239735704363197,
+          "model_prob_percent": 23.9735704363197
         },
         {
           "field": "prize5_3",
-          "value": "3451",
-          "suffix": "51",
+          "value": "2425",
+          "suffix": "25",
           "mode": "loto",
-          "model_prob": 0.2375818112462016,
-          "model_prob_percent": 23.758181124620158
+          "model_prob": 0.2351822667603726,
+          "model_prob_percent": 23.51822667603726
         },
         {
           "field": "prize5_4",
-          "value": "3020",
-          "suffix": "20",
+          "value": "4496",
+          "suffix": "96",
           "mode": "loto",
-          "model_prob": 0.2379620959466403,
-          "model_prob_percent": 23.79620959466403
+          "model_prob": 0.2403591060692469,
+          "model_prob_percent": 24.03591060692469
         },
         {
           "field": "prize5_5",
-          "value": "2094",
-          "suffix": "94",
+          "value": "2122",
+          "suffix": "22",
           "mode": "loto",
-          "model_prob": 0.2403537866619045,
-          "model_prob_percent": 24.03537866619045
+          "model_prob": 0.2371421431904798,
+          "model_prob_percent": 23.71421431904798
         },
         {
           "field": "prize5_6",
-          "value": "8152",
-          "suffix": "52",
+          "value": "0110",
+          "suffix": "10",
           "mode": "loto",
-          "model_prob": 0.2415051239888094,
-          "model_prob_percent": 24.15051239888094
+          "model_prob": 0.2406702760181915,
+          "model_prob_percent": 24.06702760181915
         }
       ]
     },
@@ -216,27 +216,27 @@
       "values": [
         {
           "field": "prize6_1",
-          "value": "113",
-          "suffix": "13",
+          "value": "172",
+          "suffix": "72",
           "mode": "loto",
-          "model_prob": 0.2409279687760791,
-          "model_prob_percent": 24.09279687760791
+          "model_prob": 0.2382366295896951,
+          "model_prob_percent": 23.82366295896951
         },
         {
           "field": "prize6_2",
-          "value": "468",
-          "suffix": "68",
+          "value": "574",
+          "suffix": "74",
           "mode": "loto",
-          "model_prob": 0.239735704363197,
-          "model_prob_percent": 23.9735704363197
+          "model_prob": 0.2348255106946735,
+          "model_prob_percent": 23.48255106946735
         },
         {
           "field": "prize6_3",
-          "value": "521",
-          "suffix": "21",
+          "value": "005",
+          "suffix": "05",
           "mode": "loto",
-          "model_prob": 0.2370102933163869,
-          "model_prob_percent": 23.70102933163869
+          "model_prob": 0.2367269124073548,
+          "model_prob_percent": 23.67269124073548
         }
       ]
     },
@@ -247,35 +247,35 @@
       "values": [
         {
           "field": "prize7_1",
-          "value": "34",
-          "suffix": "34",
+          "value": "76",
+          "suffix": "76",
           "mode": "loto",
-          "model_prob": 0.2429554550610838,
-          "model_prob_percent": 24.29554550610838
+          "model_prob": 0.2394522636222089,
+          "model_prob_percent": 23.94522636222089
         },
         {
           "field": "prize7_2",
-          "value": "81",
-          "suffix": "81",
+          "value": "97",
+          "suffix": "97",
           "mode": "loto",
-          "model_prob": 0.2395941179309833,
-          "model_prob_percent": 23.959411793098333
+          "model_prob": 0.2371760024192993,
+          "model_prob_percent": 23.71760024192993
         },
         {
           "field": "prize7_3",
-          "value": "12",
-          "suffix": "12",
+          "value": "55",
+          "suffix": "55",
           "mode": "loto",
-          "model_prob": 0.2358152796121664,
-          "model_prob_percent": 23.58152796121664
+          "model_prob": 0.2340501925141025,
+          "model_prob_percent": 23.40501925141025
         },
         {
           "field": "prize7_4",
-          "value": "32",
-          "suffix": "32",
+          "value": "27",
+          "suffix": "27",
           "mode": "loto",
-          "model_prob": 0.2409548897827623,
-          "model_prob_percent": 24.09548897827623
+          "model_prob": 0.2389532701161408,
+          "model_prob_percent": 23.89532701161408
         }
       ]
     }
@@ -284,245 +284,245 @@
     {
       "prize": "Đặc biệt",
       "field": "special",
-      "value": "15820",
-      "suffix": "20",
+      "value": "71016",
+      "suffix": "16",
       "mode": "de",
-      "model_prob": 0.0097671971458661,
-      "model_prob_percent": 0.97671971458661
+      "model_prob": 0.0101610917635436,
+      "model_prob_percent": 1.0161091763543602
     },
     {
       "prize": "Giải nhất",
       "field": "prize1",
-      "value": "54111",
-      "suffix": "11",
+      "value": "08838",
+      "suffix": "38",
       "mode": "loto",
-      "model_prob": 0.2408889634262229,
-      "model_prob_percent": 24.08889634262229
+      "model_prob": 0.2383092934250557,
+      "model_prob_percent": 23.83092934250557
     },
     {
       "prize": "Giải nhì",
       "field": "prize2_1",
-      "value": "11483",
-      "suffix": "83",
+      "value": "07700",
+      "suffix": "00",
       "mode": "loto",
-      "model_prob": 0.2404627194221662,
-      "model_prob_percent": 24.04627194221662
+      "model_prob": 0.238773982652677,
+      "model_prob_percent": 23.8773982652677
     },
     {
       "prize": "Giải nhì",
       "field": "prize2_2",
-      "value": "59346",
-      "suffix": "46",
+      "value": "65174",
+      "suffix": "74",
       "mode": "loto",
-      "model_prob": 0.2398878795748332,
-      "model_prob_percent": 23.98878795748332
+      "model_prob": 0.2348255106946735,
+      "model_prob_percent": 23.48255106946735
     },
     {
       "prize": "Giải ba",
       "field": "prize3_1",
-      "value": "12665",
-      "suffix": "65",
+      "value": "60179",
+      "suffix": "79",
       "mode": "loto",
-      "model_prob": 0.2369306489638343,
-      "model_prob_percent": 23.693064896383433
+      "model_prob": 0.2348931870619415,
+      "model_prob_percent": 23.48931870619415
     },
     {
       "prize": "Giải ba",
       "field": "prize3_2",
-      "value": "68607",
-      "suffix": "07",
+      "value": "44729",
+      "suffix": "29",
       "mode": "loto",
-      "model_prob": 0.2400410825066425,
-      "model_prob_percent": 24.00410825066425
+      "model_prob": 0.2351918694150224,
+      "model_prob_percent": 23.51918694150224
     },
     {
       "prize": "Giải ba",
       "field": "prize3_3",
-      "value": "38535",
-      "suffix": "35",
+      "value": "35647",
+      "suffix": "47",
       "mode": "loto",
-      "model_prob": 0.2393171876126022,
-      "model_prob_percent": 23.93171876126022
+      "model_prob": 0.2380066626045685,
+      "model_prob_percent": 23.80066626045685
     },
     {
       "prize": "Giải ba",
       "field": "prize3_4",
-      "value": "02970",
+      "value": "36885",
+      "suffix": "85",
+      "mode": "loto",
+      "model_prob": 0.2327255191294239,
+      "model_prob_percent": 23.27255191294239
+    },
+    {
+      "prize": "Giải ba",
+      "field": "prize3_5",
+      "value": "49563",
+      "suffix": "63",
+      "mode": "loto",
+      "model_prob": 0.2412077462742386,
+      "model_prob_percent": 24.12077462742386
+    },
+    {
+      "prize": "Giải ba",
+      "field": "prize3_6",
+      "value": "91758",
+      "suffix": "58",
+      "mode": "loto",
+      "model_prob": 0.2349371449483419,
+      "model_prob_percent": 23.49371449483419
+    },
+    {
+      "prize": "Giải tư",
+      "field": "prize4_1",
+      "value": "1790",
+      "suffix": "90",
+      "mode": "loto",
+      "model_prob": 0.2419345230105066,
+      "model_prob_percent": 24.193452301050662
+    },
+    {
+      "prize": "Giải tư",
+      "field": "prize4_2",
+      "value": "4561",
+      "suffix": "61",
+      "mode": "loto",
+      "model_prob": 0.2415917525007884,
+      "model_prob_percent": 24.15917525007884
+    },
+    {
+      "prize": "Giải tư",
+      "field": "prize4_3",
+      "value": "8582",
+      "suffix": "82",
+      "mode": "loto",
+      "model_prob": 0.2332888872167035,
+      "model_prob_percent": 23.32888872167035
+    },
+    {
+      "prize": "Giải tư",
+      "field": "prize4_4",
+      "value": "9385",
+      "suffix": "85",
+      "mode": "loto",
+      "model_prob": 0.2327255191294239,
+      "model_prob_percent": 23.27255191294239
+    },
+    {
+      "prize": "Giải năm",
+      "field": "prize5_1",
+      "value": "1670",
       "suffix": "70",
       "mode": "loto",
       "model_prob": 0.2421715574042292,
       "model_prob_percent": 24.217155740422918
     },
     {
-      "prize": "Giải ba",
-      "field": "prize3_5",
-      "value": "27067",
-      "suffix": "67",
-      "mode": "loto",
-      "model_prob": 0.2396888840219662,
-      "model_prob_percent": 23.96888840219662
-    },
-    {
-      "prize": "Giải ba",
-      "field": "prize3_6",
-      "value": "35810",
-      "suffix": "10",
-      "mode": "loto",
-      "model_prob": 0.2406718726647957,
-      "model_prob_percent": 24.06718726647957
-    },
-    {
-      "prize": "Giải tư",
-      "field": "prize4_1",
-      "value": "4807",
-      "suffix": "07",
-      "mode": "loto",
-      "model_prob": 0.2400410825066425,
-      "model_prob_percent": 24.00410825066425
-    },
-    {
-      "prize": "Giải tư",
-      "field": "prize4_2",
-      "value": "8052",
-      "suffix": "52",
-      "mode": "loto",
-      "model_prob": 0.2415051239888094,
-      "model_prob_percent": 24.15051239888094
-    },
-    {
-      "prize": "Giải tư",
-      "field": "prize4_3",
-      "value": "5521",
-      "suffix": "21",
-      "mode": "loto",
-      "model_prob": 0.2370102933163869,
-      "model_prob_percent": 23.70102933163869
-    },
-    {
-      "prize": "Giải tư",
-      "field": "prize4_4",
-      "value": "5097",
-      "suffix": "97",
-      "mode": "loto",
-      "model_prob": 0.2371800121094624,
-      "model_prob_percent": 23.71800121094624
-    },
-    {
-      "prize": "Giải năm",
-      "field": "prize5_1",
-      "value": "0620",
-      "suffix": "20",
-      "mode": "loto",
-      "model_prob": 0.2379620959466403,
-      "model_prob_percent": 23.79620959466403
-    },
-    {
       "prize": "Giải năm",
       "field": "prize5_2",
-      "value": "4303",
-      "suffix": "03",
-      "mode": "loto",
-      "model_prob": 0.2376434651118719,
-      "model_prob_percent": 23.76434651118719
-    },
-    {
-      "prize": "Giải năm",
-      "field": "prize5_3",
-      "value": "3451",
-      "suffix": "51",
-      "mode": "loto",
-      "model_prob": 0.2375818112462016,
-      "model_prob_percent": 23.758181124620158
-    },
-    {
-      "prize": "Giải năm",
-      "field": "prize5_4",
-      "value": "3020",
-      "suffix": "20",
-      "mode": "loto",
-      "model_prob": 0.2379620959466403,
-      "model_prob_percent": 23.79620959466403
-    },
-    {
-      "prize": "Giải năm",
-      "field": "prize5_5",
-      "value": "2094",
-      "suffix": "94",
-      "mode": "loto",
-      "model_prob": 0.2403537866619045,
-      "model_prob_percent": 24.03537866619045
-    },
-    {
-      "prize": "Giải năm",
-      "field": "prize5_6",
-      "value": "8152",
-      "suffix": "52",
-      "mode": "loto",
-      "model_prob": 0.2415051239888094,
-      "model_prob_percent": 24.15051239888094
-    },
-    {
-      "prize": "Giải sáu",
-      "field": "prize6_1",
-      "value": "113",
-      "suffix": "13",
-      "mode": "loto",
-      "model_prob": 0.2409279687760791,
-      "model_prob_percent": 24.09279687760791
-    },
-    {
-      "prize": "Giải sáu",
-      "field": "prize6_2",
-      "value": "468",
+      "value": "7368",
       "suffix": "68",
       "mode": "loto",
       "model_prob": 0.239735704363197,
       "model_prob_percent": 23.9735704363197
     },
     {
+      "prize": "Giải năm",
+      "field": "prize5_3",
+      "value": "2425",
+      "suffix": "25",
+      "mode": "loto",
+      "model_prob": 0.2351822667603726,
+      "model_prob_percent": 23.51822667603726
+    },
+    {
+      "prize": "Giải năm",
+      "field": "prize5_4",
+      "value": "4496",
+      "suffix": "96",
+      "mode": "loto",
+      "model_prob": 0.2403591060692469,
+      "model_prob_percent": 24.03591060692469
+    },
+    {
+      "prize": "Giải năm",
+      "field": "prize5_5",
+      "value": "2122",
+      "suffix": "22",
+      "mode": "loto",
+      "model_prob": 0.2371421431904798,
+      "model_prob_percent": 23.71421431904798
+    },
+    {
+      "prize": "Giải năm",
+      "field": "prize5_6",
+      "value": "0110",
+      "suffix": "10",
+      "mode": "loto",
+      "model_prob": 0.2406702760181915,
+      "model_prob_percent": 24.06702760181915
+    },
+    {
+      "prize": "Giải sáu",
+      "field": "prize6_1",
+      "value": "172",
+      "suffix": "72",
+      "mode": "loto",
+      "model_prob": 0.2382366295896951,
+      "model_prob_percent": 23.82366295896951
+    },
+    {
+      "prize": "Giải sáu",
+      "field": "prize6_2",
+      "value": "574",
+      "suffix": "74",
+      "mode": "loto",
+      "model_prob": 0.2348255106946735,
+      "model_prob_percent": 23.48255106946735
+    },
+    {
       "prize": "Giải sáu",
       "field": "prize6_3",
-      "value": "521",
-      "suffix": "21",
+      "value": "005",
+      "suffix": "05",
       "mode": "loto",
-      "model_prob": 0.2370102933163869,
-      "model_prob_percent": 23.70102933163869
+      "model_prob": 0.2367269124073548,
+      "model_prob_percent": 23.67269124073548
     },
     {
       "prize": "Giải bảy",
       "field": "prize7_1",
-      "value": "34",
-      "suffix": "34",
+      "value": "76",
+      "suffix": "76",
       "mode": "loto",
-      "model_prob": 0.2429554550610838,
-      "model_prob_percent": 24.29554550610838
+      "model_prob": 0.2394522636222089,
+      "model_prob_percent": 23.94522636222089
     },
     {
       "prize": "Giải bảy",
       "field": "prize7_2",
-      "value": "81",
-      "suffix": "81",
+      "value": "97",
+      "suffix": "97",
       "mode": "loto",
-      "model_prob": 0.2395941179309833,
-      "model_prob_percent": 23.959411793098333
+      "model_prob": 0.2371760024192993,
+      "model_prob_percent": 23.71760024192993
     },
     {
       "prize": "Giải bảy",
       "field": "prize7_3",
-      "value": "12",
-      "suffix": "12",
+      "value": "55",
+      "suffix": "55",
       "mode": "loto",
-      "model_prob": 0.2358152796121664,
-      "model_prob_percent": 23.58152796121664
+      "model_prob": 0.2340501925141025,
+      "model_prob_percent": 23.40501925141025
     },
     {
       "prize": "Giải bảy",
       "field": "prize7_4",
-      "value": "32",
-      "suffix": "32",
+      "value": "27",
+      "suffix": "27",
       "mode": "loto",
-      "model_prob": 0.2409548897827623,
-      "model_prob_percent": 24.09548897827623
+      "model_prob": 0.2389532701161408,
+      "model_prob_percent": 23.89532701161408
     }
   ],
   "top_loto": [
@@ -541,8 +541,8 @@
     {
       "rank": 3,
       "number": "34",
-      "prob": 0.2429554550610838,
-      "prob_percent": 24.29554550610838
+      "prob": 0.2429564690528216,
+      "prob_percent": 24.295646905282158
     },
     {
       "rank": 4,
@@ -621,8 +621,8 @@
     {
       "rank": 6,
       "number": "37",
-      "prob": 0.0109825982770195,
-      "prob_percent": 1.0982598277019502
+      "prob": 0.0109825982770196,
+      "prob_percent": 1.09825982770196
     },
     {
       "rank": 7,
