@@ -1,6 +1,6 @@
-"mode","top_k","validation_days","hit_any_days","hit_any_rate","avg_hits_per_day","interpretation"
-"de",5,60,6,0.1,0.1,"top-k contains actual target"
-"de",8,60,7,0.11666666666666667,0.11666666666666667,"top-k contains actual target"
-"de",10,60,7,0.11666666666666667,0.11666666666666667,"top-k contains actual target"
-"de",15,60,12,0.2,0.2,"top-k contains actual target"
-"de",20,60,14,0.23333333333333334,0.23333333333333334,"top-k contains actual target"
+"mode","top_k","validation_days","hit_any_days","hit_any_rate","avg_hits_per_day","interpretation","val_brier","val_logloss","calib_start","val_start","neg_ratio","features"
+"de",5,60,1,0.016666666666666666,0.016666666666666666,"top-k contains actual target",0.0099000588,0.0560045052,"2026-06-11","2026-07-11",22,39
+"de",8,60,3,0.05,0.05,"top-k contains actual target",0.0099000588,0.0560045052,"2026-06-11","2026-07-11",22,39
+"de",10,60,4,0.06666666666666667,0.06666666666666667,"top-k contains actual target",0.0099000588,0.0560045052,"2026-06-11","2026-07-11",22,39
+"de",15,60,5,0.08333333333333333,0.08333333333333333,"top-k contains actual target",0.0099000588,0.0560045052,"2026-06-11","2026-07-11",22,39
+"de",20,60,11,0.18333333333333332,0.18333333333333332,"top-k contains actual target",0.0099000588,0.0560045052,"2026-06-11","2026-07-11",22,39

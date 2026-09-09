@@ -1,7 +1,7 @@
 {
   "mode": "loto",
-  "anchor_date": "2026-09-08",
-  "target_date": "2026-09-09",
+  "anchor_date": "2026-09-09",
+  "target_date": "2026-09-10",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -43,39 +43,39 @@
     "trust": 0.15,
     "quality_pass": true,
     "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_interaction",
-    "validation_logloss": 0.5474491990767274,
-    "baseline_validation_logloss": 0.6828033929744682,
-    "logloss_skill": 0.1982330423229196,
-    "brier_skill": 0.07796241947630245,
-    "trained_through_target_date": "2026-09-08"
+    "candidate": "meta_shallow",
+    "validation_logloss": 0.545956909006591,
+    "baseline_validation_logloss": 0.6574817799517984,
+    "logloss_skill": 0.16962427605732822,
+    "brier_skill": 0.07979575625330071,
+    "trained_through_target_date": "2026-09-09"
   },
   "top4": [
+    "36",
     "17",
-    "50",
-    "52",
-    "83"
+    "34",
+    "95"
   ],
   "top8": [
+    "36",
     "17",
-    "50",
-    "52",
-    "83",
+    "34",
+    "95",
+    "70",
     "90",
-    "62",
-    "61",
-    "13"
+    "50",
+    "77"
   ],
   "top10": [
+    "36",
     "17",
-    "50",
-    "52",
-    "83",
-    "90",
-    "62",
-    "61",
-    "13",
+    "34",
     "95",
-    "70"
+    "70",
+    "90",
+    "50",
+    "77",
+    "61",
+    "52"
   ]
 }

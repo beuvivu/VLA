@@ -1,14 +1,14 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-09-09T04:43:09Z",
-  "anchor_date": "2026-09-08",
+  "generated_at_utc": "2026-09-09T11:51:37Z",
+  "anchor_date": "2026-09-09",
   "modes": {
     "loto": {
       "mode": "loto",
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
       "train_days": 1435,
-      "validation_days": 478,
+      "validation_days": 479,
       "holdout_days": 479,
       "fdr_significant_train": 0,
       "production_eligible_count": 0,
@@ -30,7 +30,7 @@
       "calendar_daily_contiguous": true,
       "hypotheses": 1458,
       "train_days": 1435,
-      "validation_days": 478,
+      "validation_days": 479,
       "holdout_days": 479,
       "fdr_significant_train": 0,
       "production_eligible_count": 0,
