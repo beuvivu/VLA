@@ -203,3 +203,71 @@ def test_live_page_never_builds_markup_from_strings() -> None:
     text = (DOCS / "live.html").read_text(encoding="utf-8")
     assert "innerHTML" not in text
     assert "insertAdjacentHTML" not in text
+
+
+# --- Ô nhiệt trong trang đã dựng ----------------------------------------------
+
+#: Ô nhiệt phát ra dạng ``style="background:rgb(r,g,b);color:#rrggbb"``.
+_HEAT_CELL = re.compile(r'style="background:rgb\((\d+),(\d+),(\d+)\);color:(#[0-9a-fA-F]{6})"')
+
+
+def test_every_heat_cell_in_the_built_page_reaches_aa() -> None:
+    """Kiểm trên MÀU ĐÃ PHÁT RA, không phải trên hàm chọn màu.
+
+    ``readable_ink`` đạt AA trên toàn dải nhiệt — đã có test riêng. Nhưng test
+    đó không nói gì về việc trang có thật sự dùng kết quả của nó hay không:
+    một chỗ gọi quên, một màu viết cứng, một nền đổi mà chữ giữ nguyên, đều
+    lọt qua. Ở đây đọc thẳng cặp nền–chữ trong tệp HTML đã dựng.
+
+    Ghi lại vì sao KHÔNG đo bằng điểm ảnh: bốn cách đo trên ảnh chụp đều cho
+    ra số khác nhau và đều sai — dò ``backgroundColor`` bỏ sót nền gradient;
+    chụp ``full_page`` làm trang dựng lại nên toạ độ lệch; lấy màu phổ biến
+    nhất trong ô thì gặp màu pha do khử răng cưa; tắt chữ rồi lấy màu phổ biến
+    nhất thì gặp nền của ô bên cạnh. Cặp màu trong markup thì không mơ hồ.
+    """
+    page = (DOCS / "statistics.html").read_text(encoding="utf-8")
+    cells = _HEAT_CELL.findall(page)
+    # Không dùng skip: ô nhiệt biến mất khỏi trang cũng là một hồi quy, mà
+    # skip thì im lặng đúng như khi mọi thứ vẫn tốt.
+    assert len(cells) > 500, f"chỉ thấy {len(cells)} ô nhiệt, trang dựng hỏng?"
+
+    failures = []
+    for red, green, blue, ink in cells:
+        background = f"#{int(red):02x}{int(green):02x}{int(blue):02x}"
+        ratio = contrast_ratio(ink, background)
+        if ratio < WCAG_AA_NORMAL:
+            failures.append(
+                f"nền {background} chữ {ink} = {ratio:.2f}, "
+                f"readable_ink nói {readable_ink(background)}"
+            )
+    assert not failures, (
+        f"{len(failures)}/{len(cells)} ô nhiệt dưới chuẩn AA:\n  "
+        + "\n  ".join(sorted(set(failures))[:8])
+    )
+
+
+def test_heat_cells_do_not_hand_their_ink_to_a_child() -> None:
+    """Màu chữ tính cho ô phải là màu chữ người đọc thấy.
+
+    Ô nhiệt đặt màu nội tuyến rồi để con thừa kế. Một thẻ con tự đặt màu sẽ
+    ghi đè màu đó, mà cặp nền–chữ trong markup vẫn trông đúng — test trên
+    xuống không bắt được.
+
+    Cắt chuỗi tới ``</td>`` là sai: ô nhiệt ở đây là ``div``, nên phép cắt
+    chạy sang tận ô kế tiếp rồi báo lỗi cho chính màu nội tuyến của ô đó.
+    Phải duyệt cây thật.
+    """
+    soup = BeautifulSoup((DOCS / "statistics.html").read_text(encoding="utf-8"), "html.parser")
+    cells = [el for el in soup.select("[style]")
+             if "background:rgb" in str(el.get("style", ""))]
+    assert len(cells) > 500, f"chỉ thấy {len(cells)} ô nhiệt, trang dựng hỏng?"
+
+    offenders = [
+        f"{kid.name} trong {cell.name}: {kid.get('style')}"
+        for cell in cells
+        for kid in cell.find_all(True)
+        if "color" in str(kid.get("style", ""))
+    ]
+    assert not offenders, (
+        "thẻ con tự đặt màu làm vô hiệu màu đã tính cho nền: " + "; ".join(offenders[:5])
+    )
