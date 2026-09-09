@@ -309,15 +309,35 @@ def test_special_tables_render_all_five_digits(slug) -> None:
     assert "sp-de" in page, f"{slug} chưa dùng lớp hiển thị giải đủ 5 số"
 
     # Hàm tồn tại là chưa đủ — phải được GỌI trong đúng hàm dựng của trang này.
+    # Theo CHUỖI GỌI, không ghim một tên hàm: bảng đặc biệt dựng ô qua
+    # specialCell(), và specialCell() dựng phần số qua specialFull(). Ghim tên
+    # cụ thể thì test đỏ mỗi lần tách hàm dù hành vi không đổi.
     render = {
-        "bang-dac-biet": "renderSpecialByDay",
+        "bang-dac-biet": "renderSpecialByWeek",
         "bang-dac-biet-thang": "renderSpecialByMonth",
         "bang-dac-biet-nam": "renderSpecialByYear",
     }[slug]
-    fn = js[js.index(f"function {render}(") :]
-    fn = fn[: fn.index("\nfunction ", 1)]
-    assert "specialFull(" in fn, f"{render} không gọi specialFull; giải bị cắt"
-    assert ".slice(-2)" not in fn, f"{render} còn cắt hai số cuối khi hiển thị"
+
+    def body_of(name: str) -> str:
+        chunk = js[js.index(f"function {name}(") :]
+        return chunk[: chunk.index("\nfunction ", 1)]
+
+    reached = set()
+    frontier = [render]
+    while frontier:
+        name = frontier.pop()
+        if name in reached:
+            continue
+        reached.add(name)
+        body = body_of(name)
+        assert ".slice(-2)" not in body, f"{name} còn cắt hai số cuối khi hiển thị"
+        for helper in ("specialCell", "specialFull", "weekGrid", "monthGrid"):
+            if f"{helper}(" in body:
+                frontier.append(helper)
+
+    assert "specialFull" in reached, (
+        f"{render} không dẫn tới specialFull qua bất kỳ đường nào; giải bị cắt"
+    )
 
 
 def test_counting_uses_last_two_digits_but_display_does_not() -> None:
@@ -398,3 +418,60 @@ def test_every_page_can_clear_its_marks(slug) -> None:
     page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
     assert 'id="sp-clear-marks"' in page, f"{slug} thiếu nút xoá đánh dấu"
     assert 'id="sp-mark-count"' in page, f"{slug} thiếu số đếm ô đã đánh dấu"
+
+
+# --- Ô bảng đặc biệt sáu trường ---------------------------------------------
+
+
+def test_bo_lookup_comes_from_the_domain_helper() -> None:
+    """Cột "Bộ" của trang tham chiếu chính là ``bo_family_id``.
+
+    Đo trên 24 ô thật lấy từ hainhay.net, hàm sẵn có của kho khớp 100%. Bảng
+    tra phải dựng SẴN từ hàm đó chứ không cài lại công thức trong JavaScript:
+    một bản chép thứ hai là một bản sẽ trôi khỏi bản gốc.
+    """
+    from build_stat_pages import bo_lookup
+    from number_reference import bo_family_id
+
+    table = bo_lookup()
+    assert len(table) == 100
+    for n in range(100):
+        assert table[n] == bo_family_id(f"{n:02d}")
+
+    # Mẫu thật quan sát được trên trang tham chiếu.
+    for two, expected in (("68", "13"), ("48", "34"), ("21", "12"), ("77", "22")):
+        assert table[int(two)] == expected
+
+    assert len(set(table)) == 15, "bộ số có đúng 15 họ"
+
+
+def test_special_cell_carries_all_six_reference_fields() -> None:
+    """Ô của trang tham chiếu là sáu trường, không phải một con số:
+    ``570 68 4 6 8 C 13`` = giải, Tổng, Đầu, Đuôi, Chẵn/Lẻ, Bộ."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function specialCell(" in js
+
+    body = js[js.index("function specialCell(") :]
+    body = body[: body.index("\n}") + 2]
+
+    assert "(dau + duoi) % 10" in body, "Tổng = (Đầu + Đuôi) mod 10"
+    assert 'duoi % 2 === 0 ? "C" : "L"' in body, "Chẵn/Lẻ xét theo Đuôi, không phải Đầu"
+    assert "BO_LOOKUP[" in body, "Bộ phải tra bảng dựng sẵn"
+
+    fields = js[js.index("const DE_FIELDS") :]
+    fields = fields[: fields.index("];") + 2]
+    for key in ("ngay", "tong", "dau", "duoi", "chanle", "bo"):
+        assert f'key: "{key}"' in fields, f"thiếu trường {key}"
+
+
+@pytest.mark.parametrize(
+    "slug", ["bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"]
+)
+def test_special_pages_can_toggle_each_field(slug) -> None:
+    """Trang tham chiếu có đúng sáu ô đánh dấu bật/tắt từng trường."""
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert 'id="sp-fields-toggle"' in page, f"{slug} thiếu hộp bật/tắt trường"
+
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "function bindFieldToggles(" in js
+    assert "__VLA_BO__" in page, f"{slug} chưa nhúng bảng tra bộ số"

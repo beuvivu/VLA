@@ -34,6 +34,7 @@ from typing import Sequence
 
 import pandas as pd
 
+from number_reference import bo_family_id
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link
 from xsmb_domain import (
     LOTO_BASELINE_RATE,
@@ -175,32 +176,44 @@ def _mark_tools() -> str:
     )
 
 
+#: Hộp bật/tắt sáu trường trong mỗi ô bảng đặc biệt. Trang tham chiếu có đúng
+#: sáu ô đánh dấu này; nội dung do JavaScript dựng từ DE_FIELDS.
+FIELD_TOGGLE = '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
+
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
-        title="Bảng đặc biệt theo ngày",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ, xếp theo ngày trong tháng và tháng trong năm.",
-        controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
-        render="renderSpecialByDay",
+        title="Bảng đặc biệt theo tuần",
+        subtitle="Giải đặc biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ.",
+        controls=_range_controls(),
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        render="renderSpecialByWeek",
     ),
     StatPage(
         slug="bang-dac-biet-thang",
         title="Bảng đặc biệt theo tháng",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ của từng ngày, xếp theo lịch tuần.",
-        controls='<div class="sp-controls"><label>Tháng <select id="sp-month"></select></label>'
+        subtitle="Cả năm theo ngày × tháng, kèm bảng cùng một tháng qua nhiều năm.",
+        controls='<div class="sp-controls">'
+                 '<label>Năm <select id="sp-year"></select></label>'
+                 '<label>Tháng <select id="sp-month"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Cùng tháng đã chọn, qua tất cả các năm có dữ liệu</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-multiyear"></table></div>',
         render="renderSpecialByMonth",
     ),
     StatPage(
         slug="bang-dac-biet-nam",
         title="Bảng đặc biệt theo năm",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ cả năm: hàng là ngày, cột là tháng.",
-        controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
+        subtitle="Cả năm, chọn Kiểu tháng (ngày × tháng) hoặc Kiểu tuần (tuần × thứ).",
+        controls='<div class="sp-controls">'
+                 '<label>Năm <select id="sp-year"></select></label>'
+                 '<label>Kiểu <select id="sp-mode"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderSpecialByYear",
     ),
     StatPage(
@@ -342,6 +355,23 @@ PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
 )
 
 
+def bo_lookup() -> list[str]:
+    """Bảng tra họ **bộ số** cho 00-99, dựng sẵn cho trình duyệt.
+
+    Bộ số gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì
+    6 có bóng 1 và 8 có bóng 3. Có 15 họ, nhãn là phần tử nhỏ nhất.
+
+    Trang tham chiếu hiển thị cột này trong mỗi ô bảng đặc biệt; đo trên 24 ô
+    thật thì :func:`number_reference.bo_family_id` khớp 100%, nên dựng sẵn từ
+    chính hàm đó thay vì cài lại công thức trong JavaScript — một bản chép
+    thứ hai là một bản sẽ trôi.
+
+    Returns:
+        Danh sách 100 nhãn, chỉ số là con số 00-99.
+    """
+    return [bo_family_id(f"{n:02d}") for n in range(100)]
+
+
 def pair_chance_grid() -> list[list[float]]:
     """Bảng tra ``[số kỳ, cực đại, cận dưới, cận trên]`` cho trình duyệt.
 
@@ -408,7 +438,8 @@ Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trê
 {len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
 {app_shell_close(f"{page.slug}.html")}
 <script>window.__VLA_DRAWS__={json_for_html_script(draws)};
-window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};</script>
+window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};
+window.__VLA_BO__={json_for_html_script(bo_lookup())};</script>
 <script>
 {_asset("stat_pages.js")}
 boot({json.dumps(page.render)});

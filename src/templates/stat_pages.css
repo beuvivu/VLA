@@ -109,3 +109,34 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-daynum { color: #94a3b8; }
   .sp-none { color: #475569; }
 }
+
+/* --- Ô bảng đặc biệt sáu trường ------------------------------------------
+   Giải nổi bật, các trường phụ (Tổng/Đầu/Đuôi/Chẵn lẻ/Bộ) nhỏ và mờ hơn để
+   mắt bắt được con số trước, chi tiết sau. */
+.sp-fields {
+  display: block; margin-top: 2px;
+  font-size: 10px; line-height: 1.25; color: #64748b;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.sp-f { font-style: normal; display: inline-block; min-width: 11px; text-align: center; }
+.sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
+.sp-f-ngay { min-width: 34px; color: #94a3b8; }
+
+.sp-fields-toggle {
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  margin: 0 0 12px; padding: 9px 12px;
+  border: 1px solid var(--line, #e2e8f0); border-radius: 12px; background: #f8fafc;
+}
+.sp-fchk {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; color: #334155; cursor: pointer;
+}
+.sp-fchk input { cursor: pointer; }
+
+@media (prefers-color-scheme: dark) {
+  .sp-fields { color: #94a3b8; }
+  .sp-f + .sp-f { border-left-color: #334155; }
+  .sp-f-ngay { color: #64748b; }
+  .sp-fields-toggle { background: #0f172a; }
+  .sp-fchk { color: #cbd5e1; }
+}
