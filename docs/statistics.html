@@ -97,6 +97,23 @@
     }
     .hero-actions a:hover { transform: translateY(-1px); background: rgba(255,255,255,0.18); }
 
+    /* Dải liên kết RA NGOÀI trang, tách khỏi các neo trong trang.
+       Trang này từng chỉ có đúng một liên kết nội bộ (research-lab.html): mọi
+       mục điều hướng khác đều là neo #... trong chính nó, nên ai mở thẳng
+       statistics.html thì không có đường sang 14 trang thống kê nào cả. */
+    .site-hop {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.16);
+    }
+    .site-hop b { font-size: 12px; letter-spacing: .04em; color: #bfdbfe; }
+    .site-hop a {
+      text-decoration: none; padding: 7px 12px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.14);
+      color: white; font-weight: 700; font-size: 13px;
+    }
+    .site-hop a:hover { background: rgba(255,255,255,0.24); }
+
     main {
       max-width: 1440px;
       margin: 0 auto;
@@ -717,6 +734,17 @@
 <a href="#gan-nhip">Gan / nhịp</a>
 <a href="#cap-lon">Cặp lộn</a>
 <a href="#bang-db">Bảng ĐB</a>
+</nav>
+<nav aria-label="Sang trang khác" class="site-hop">
+<b>SANG TRANG</b>
+<a href="index.html">Trang chính</a>
+<a href="dashboard.html">Bảng điều khiển</a>
+<a href="bang-dac-biet.html">Bảng ĐB theo tuần</a>
+<a href="tan-suat-loto.html">Tần suất lô tô</a>
+<a href="lo-gan.html">Lô gan</a>
+<a href="dau-duoi-loto.html">Đầu đuôi lô tô</a>
+<a href="giai-dac-biet-theo-tong.html">ĐB theo tổng</a>
+<a href="research-lab.html">Phòng nghiên cứu</a>
 </nav>
 </div>
 </header>
@@ -1394,7 +1422,7 @@
 </div>
 </section>
 <p class="footer-note">
-      Tạo lúc: 2026-09-09T15:25:44Z · Dữ liệu đến: 2026-09-09
+      Tạo lúc: 2026-09-09T15:29:21Z · Dữ liệu đến: 2026-09-09
       · Manifest: <code>data/advanced/statistics_manifest.json</code>.
       Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
     </p>

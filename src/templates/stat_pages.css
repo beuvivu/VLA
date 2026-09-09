@@ -122,6 +122,49 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
 .sp-f-ngay { min-width: 34px; color: #94a3b8; }
 
+/* Dòng "dải rỗng": chiếm cả bảng, không gạch chéo như ô trống trong lịch —
+   đây là câu trả lời cho bộ lọc, không phải một ngày không quay. */
+.sp-empty-row {
+  padding: 18px 14px !important; text-align: center;
+  color: #64748b; font-size: 12.5px; font-style: italic;
+}
+
+/* Ô "0 lần": vẫn là dữ liệu, không phải ô trống, nên mờ chứ không gạch chéo. */
+.sp-zero { color: #94a3b8; font-weight: 400; }
+
+/* --- Chú giải ô ----------------------------------------------------------
+   Sáu trường xếp thành lưới tự co: mỗi thẻ mang giá trị thật của kỳ gần nhất,
+   tên trường, rồi câu giải thích. Không giấu lời giải thích sau tooltip — trên
+   điện thoại không có chuột để trỏ vào. */
+.sp-legend {
+  margin: 0 0 10px; padding: 12px 14px;
+  border: 1px solid var(--line, #e2e8f0); border-radius: 12px;
+  background: #fffbeb; border-color: #fde68a;
+}
+.sp-legend-head { font-size: 12px; font-weight: 800; color: #92400e; margin-bottom: 8px; }
+.sp-legend-sample {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+  margin-bottom: 10px; font-size: 18px;
+}
+.sp-lg-src { font-size: 11px; font-weight: 700; color: #92400e; }
+.sp-legend-items {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.sp-lg-item {
+  display: block; padding: 7px 9px; border-radius: 9px;
+  background: #fff; border: 1px solid #fde68a;
+}
+.sp-lg-val {
+  display: inline-block; min-width: 22px; padding: 1px 5px; border-radius: 5px;
+  background: #fef3c7; color: #78350f; font-size: 13px; font-weight: 800;
+  font-variant-numeric: tabular-nums; text-align: center;
+}
+.sp-lg-lab { font-size: 12px; font-weight: 800; color: #0f172a; margin-left: 6px; }
+.sp-lg-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; color: #475569; }
+.sp-legend-rule { margin: 10px 0 0; font-size: 11.5px; line-height: 1.55; color: #475569; }
+.sp-legend-rule b { color: #78350f; }
+
 .sp-fields-toggle {
   display: flex; flex-wrap: wrap; gap: 6px 14px;
   margin: 0 0 12px; padding: 9px 12px;
@@ -139,6 +182,15 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-f-ngay { color: #64748b; }
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
+  .sp-zero { color: #475569; }
+  .sp-empty-row { color: #94a3b8; }
+  .sp-legend { background: #1c1917; border-color: #78350f; }
+  .sp-legend-head, .sp-lg-src { color: #fcd34d; }
+  .sp-lg-item { background: #0f172a; border-color: #78350f; }
+  .sp-lg-val { background: #78350f; color: #fef3c7; }
+  .sp-lg-lab { color: #e2e8f0; }
+  .sp-lg-hint, .sp-legend-rule { color: #94a3b8; }
+  .sp-legend-rule b { color: #fcd34d; }
 }
 
 /* --- Bộ chọn con số 00-99 ------------------------------------------------- */
@@ -194,3 +246,69 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
 .sp-matrix-note { margin: 0 0 10px; color: #64748b; font-size: 12px; }
 @media (prefers-color-scheme: dark) { .sp-matrix-note { color: #94a3b8; } }
+
+/* =========================================================================
+   Bảng dạng lưới cho các trang thống kê mới
+   =========================================================================
+   Bản trước chỉ kẻ border-bottom, nên một vùng ô trống — ngày XSMB không quay,
+   hoặc ô ngoài tháng — trông như lỗi hiển thị chứ không phải khoảng trống có
+   thật. Ba việc dưới đây sửa điều đó.                                       */
+
+/* 1. LƯỚI ĐỦ. Kẻ cả dọc lẫn ngang để mỗi ô là một khung nhìn thấy được. */
+.sp-table.sp-grid-lines { border-collapse: separate; border-spacing: 0; }
+.sp-table.sp-grid-lines th,
+.sp-table.sp-grid-lines td {
+  border-right: 1px solid var(--vla-border);
+  border-bottom: 1px solid var(--vla-border);
+}
+.sp-table.sp-grid-lines th:first-child,
+.sp-table.sp-grid-lines td:first-child { border-left: 1px solid var(--vla-border); }
+.sp-table.sp-grid-lines thead th { border-top: 1px solid var(--vla-border); }
+.sp-table.sp-grid-lines tr:last-child td { border-bottom: 1px solid var(--vla-border); }
+
+/* Bo góc khung ngoài: viền vuông trông như bảng tính chưa xong. */
+.sp-table.sp-grid-lines thead th:first-child { border-top-left-radius: .55rem; }
+.sp-table.sp-grid-lines thead th:last-child { border-top-right-radius: .55rem; }
+.sp-table.sp-grid-lines tr:last-child td:first-child { border-bottom-left-radius: .55rem; }
+.sp-table.sp-grid-lines tr:last-child td:last-child { border-bottom-right-radius: .55rem; }
+
+/* 2. Ô TRỐNG tự nói ra rằng nó trống. Vạch chéo mờ đọc được ngay cả khi in ra
+      hoặc khi người dùng không phân biệt được màu. */
+.sp-table td.is-empty {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 5px,
+    var(--vla-border) 5px, var(--vla-border) 7px);
+  opacity: .75;
+}
+
+/* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì
+      mọi con số thành vô nghĩa. */
+.sp-table.sp-grid-lines.has-rowhead td:first-child,
+.sp-table.sp-grid-lines.has-rowhead th:first-child {
+  position: sticky; left: 0; z-index: 2;
+  background: var(--vla-surface-2);
+  font-weight: 700;
+}
+.sp-table.sp-grid-lines.has-rowhead thead th:first-child { z-index: 3; }
+
+/* Tiêu đề cột đang trỏ tới. Không có nó thì đọc lệch cột là chuyện thường. */
+.sp-table th.col-hint {
+  background: var(--vla-brand);
+  color: #fff;
+}
+
+/* Sọc ngang nhạt: đếm hàng bằng mắt trên bảng 100 hàng. */
+.sp-table.sp-grid-lines tbody tr:nth-child(even) td:not(.is-empty):not(.marked) {
+  background: color-mix(in srgb, var(--vla-surface-2) 45%, transparent);
+}
+.sp-table.sp-grid-lines tbody tr:hover td:not(.marked) {
+  background: color-mix(in srgb, var(--vla-brand) 8%, transparent);
+}
+
+/* Ô đánh dấu phải thắng mọi nền ở trên. */
+.sp-table.sp-grid-lines td.marked { background: #fde68a; }
+
+@media (prefers-color-scheme: dark) {
+  .sp-table.sp-grid-lines td.marked { background: #78350f; }
+  .sp-table td.is-empty { opacity: .35; }
+}

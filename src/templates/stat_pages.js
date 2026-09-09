@@ -105,12 +105,21 @@ function specialFull(value) {
 const BO_LOOKUP = window.__VLA_BO__ || [];
 
 const DE_FIELDS = [
-  { key: "ngay", label: "Ngày" },
-  { key: "tong", label: "Tổng" },
-  { key: "dau", label: "Đầu" },
-  { key: "duoi", label: "Đuôi" },
-  { key: "chanle", label: "Chẵn lẻ" },
-  { key: "bo", label: "Bộ" },
+  { key: "ngay", label: "Ngày", hint: "Ngày quay, dạng ngày-tháng" },
+  { key: "tong", label: "Tổng", hint: "(Đầu + Đuôi) chia lấy dư 10" },
+  { key: "dau", label: "Đầu", hint: "Chữ số hàng chục của hai số cuối" },
+  { key: "duoi", label: "Đuôi", hint: "Chữ số hàng đơn vị của hai số cuối" },
+  {
+    key: "chanle",
+    label: "Chẵn lẻ",
+    hint: "Hai ký tự: chẵn/lẻ của Đầu, rồi của Đuôi. 68 cho CC vì 6 và 8 đều chẵn",
+  },
+  {
+    key: "bo",
+    label: "Bộ",
+    hint: "Họ bộ số: gom một con với bóng dương và số lộn của nó. " +
+      "68 thuộc bộ 13 vì bóng của 6 là 1, bóng của 8 là 3. Có 15 họ",
+  },
 ];
 
 const FIELD_KEY = "vla.defields." + (location.pathname.split("/").pop() || "index");
@@ -127,15 +136,30 @@ function specialCell(value, iso) {
   const dau = +two[0];
   const duoi = +two[1];
 
+  // Mỗi trường mang title riêng: người đọc trỏ vào con số là biết nó là gì,
+  // không phải đối chiếu ngược lên hàng chú giải rồi đếm cột.
+  const tip = (key) => (DE_FIELDS.find((f) => f.key === key) || {}).hint || "";
   const parts = [];
   if (iso && SHOWN.has("ngay")) {
-    parts.push(`<i class="sp-f sp-f-ngay">${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
+    parts.push(`<i class="sp-f sp-f-ngay" title="Ngày ${iso}">` +
+      `${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
   }
-  if (SHOWN.has("tong")) parts.push(`<i class="sp-f">${(dau + duoi) % 10}</i>`);
-  if (SHOWN.has("dau")) parts.push(`<i class="sp-f">${dau}</i>`);
-  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f">${duoi}</i>`);
-  if (SHOWN.has("chanle")) parts.push(`<i class="sp-f">${duoi % 2 === 0 ? "C" : "L"}</i>`);
-  if (SHOWN.has("bo")) parts.push(`<i class="sp-f">${BO_LOOKUP[+two] || ""}</i>`);
+  if (SHOWN.has("tong")) {
+    parts.push(`<i class="sp-f" title="Tổng — ${tip("tong")}">${(dau + duoi) % 10}</i>`);
+  }
+  if (SHOWN.has("dau")) parts.push(`<i class="sp-f" title="Đầu — ${tip("dau")}">${dau}</i>`);
+  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f" title="Đuôi — ${tip("duoi")}">${duoi}</i>`);
+  if (SHOWN.has("chanle")) {
+    // HAI ký tự: chẵn/lẻ của Đầu rồi của Đuôi. Hai trang tham chiếu khác nhau
+    // ở chỗ này — hainhay chỉ ghi một ký tự theo Đuôi, thongkemienbac ghi cả
+    // hai. Lấy bản hai ký tự vì nó chứa trọn thông tin của bản kia.
+    // Kiểm trên 15 ô thật: 49 -> "CL" (Đầu 4 chẵn, Đuôi 9 lẻ).
+    parts.push(`<i class="sp-f" title="Chẵn/Lẻ — ${tip("chanle")}">` +
+      `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}</i>`);
+  }
+  if (SHOWN.has("bo")) {
+    parts.push(`<i class="sp-f" title="Bộ — ${tip("bo")}">${BO_LOOKUP[+two] || ""}</i>`);
+  }
 
   // Gọi lại specialFull thay vì chép markup: hai bản dựng cùng một thứ là hai
   // bản sẽ lệch nhau khi ai đó sửa một bên.
@@ -143,12 +167,73 @@ function specialCell(value, iso) {
     (parts.length ? `<span class="sp-fields">${parts.join("")}</span>` : "");
 }
 
+/** Hàng chú giải sáu trường, dựng từ một ô THẬT của kỳ gần nhất.
+ *
+ * Câu hỏi đầu tiên người đọc đặt ra trước bảng này là "chữ nhỏ dưới mỗi ô
+ * nghĩa là gì". Trước đây trang có sáu ô bật/tắt nhưng không nói trường nào
+ * đứng ở đâu, nên muốn biết thì phải đoán. Chú giải lấy đúng kỳ mới nhất thay
+ * vì một ví dụ bịa: số trong chú giải trùng với số ở hàng đầu bảng, đối chiếu
+ * được ngay.
+ */
+function renderLegend() {
+  const box = $("sp-legend");
+  if (!box) return;
+  const last = DRAWS.length ? DRAWS[DRAWS.length - 1] : null;
+  if (!last) { box.innerHTML = ""; return; }
+
+  const s = String(last.s).padStart(5, "0");
+  const two = s.slice(3);
+  const dau = +two[0];
+  const duoi = +two[1];
+  const iso = last.d;
+  const val = {
+    ngay: `${iso.slice(8)}-${iso.slice(5, 7)}`,
+    tong: String((dau + duoi) % 10),
+    dau: String(dau),
+    duoi: String(duoi),
+    chanle: `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}`,
+    bo: BO_LOOKUP[+two] || "—",
+  };
+  // Liệt kê đủ các con cùng bộ với ô mẫu. Ví dụ cố định kiểu "68 thuộc bộ 13"
+  // vô dụng khi kỳ mới nhất ra 04 — bộ của 04 chính là 04, câu giải thích đọc
+  // thành lặp lại. Đọc thẳng bảng tra ra danh sách thì ví dụ nào cũng nói được
+  // điều gì đó, và vẫn chỉ có một nguồn duy nhất là bảng dựng phía Python.
+  const bo = BO_LOOKUP[+two];
+  const family = [];
+  for (let n = 0; n < 100 && bo; n += 1) {
+    if (BO_LOOKUP[n] === bo) family.push(pad2(n));
+  }
+  const items = DE_FIELDS.map((f) =>
+    `<span class="sp-lg-item" title="${f.hint}">` +
+    `<b class="sp-lg-val">${val[f.key]}</b>` +
+    `<span class="sp-lg-lab">${f.label}</span>` +
+    `<span class="sp-lg-hint">${f.hint}</span></span>`
+  ).join("");
+
+  box.innerHTML =
+    '<div class="sp-legend-head">Đọc một ô: chữ nhỏ dưới mỗi giải là gì</div>' +
+    `<div class="sp-legend-sample">${specialFull(s)}` +
+    `<span class="sp-lg-src">giải đặc biệt kỳ ` +
+    `${iso.slice(8)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}, hai số cuối ` +
+    `<b>${two}</b> — sáu trường dưới đây tách ra từ chính ô này</span></div>` +
+    `<div class="sp-legend-items">${items}</div>` +
+    '<p class="sp-legend-rule">' +
+    `Tổng = (Đầu + Đuôi) chia lấy dư 10 = (${dau} + ${duoi}) mod 10 = <b>${val.tong}</b>. ` +
+    (bo
+      ? `Bộ gom một con với bóng dương (0↔5, 1↔6, 2↔7, 3↔8, 4↔9) và số lộn của nó: ` +
+        `${two} nằm ở bộ <b>${bo}</b>, gồm ${family.join(" ")}. Cả thảy 15 bộ. `
+      : "") +
+    "Bật/tắt từng trường bằng các ô dưới đây; lựa chọn được nhớ lại cho lần sau." +
+    "</p>";
+}
+
 /** Gắn sáu ô đánh dấu bật/tắt trường. */
 function bindFieldToggles(render) {
   const box = $("sp-fields-toggle");
   if (!box) return;
   box.innerHTML = DE_FIELDS.map((f) =>
-    `<label class="sp-fchk"><input type="checkbox" data-field="${f.key}"` +
+    `<label class="sp-fchk" title="${f.hint}">` +
+    `<input type="checkbox" data-field="${f.key}"` +
     `${SHOWN.has(f.key) ? " checked" : ""}> ${f.label}</label>`
   ).join("");
   box.addEventListener("change", (ev) => {
@@ -174,11 +259,28 @@ function table(el, headers, rows, opts) {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
       const key = `${el.id}:${y}:${i}`;
       const on = MARKS.has(key) ? " marked" : "";
+      // Ô rỗng phải TỰ NÓI ra rằng ngày đó không có kỳ. Không đánh dấu thì một
+      // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
+      // "không về" với "chưa tải xong".
+      const blank = (c === "" || c === null || c === undefined) ? " is-empty" : "";
       const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
-      return `<td class="cell${cls}${on}" data-key="${key}"${style}>${c}</td>`;
+      return `<td class="cell${cls}${on}${blank}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
-  el.innerHTML = thead + "<tbody>" + body + "</tbody>";
+
+  // Dải rỗng phải nói ra là rỗng. Không có nhánh này thì bảng giữ nguyên số
+  // liệu của dải TRƯỚC trong khi bộ đếm đã báo "0 kỳ" — số cũ được trình bày
+  // như thể thuộc về dải mới. Tái hiện được: chọn Từ ngày 09-09-2026 đến
+  // 01-01-2020 (dải ngược) thì bộ đếm ra "0 kỳ" mà ba bảng vẫn đủ 40 hàng.
+  const empty = `<tbody><tr><td class="sp-empty-row" colspan="${headers.length}">` +
+    "Không có kỳ nào trong dải đã chọn. Kiểm lại Từ ngày / Đến ngày — " +
+    "chọn ngược thứ tự cũng cho dải rỗng.</td></tr></tbody>";
+  el.innerHTML = thead + (rows.length ? "<tbody>" + body + "</tbody>" : empty);
+
+  // Cột đầu chỉ được dính và tô nền khi nó là NHÃN HÀNG. Bảng lịch tuần có
+  // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
+  // không tồn tại, và mắt đọc lệch ngay.
+  el.classList.toggle("has-rowhead", opts.rowHead !== false);
 }
 
 // --- Tô sáng ô để so sánh ---------------------------------------------------
@@ -198,6 +300,31 @@ try {
 
 function saveMarks() {
   try { localStorage.setItem(MARK_KEY, JSON.stringify(Array.from(MARKS))); } catch (e) {}
+}
+
+// Bảng ma trận rộng tới 120 cột; mắt lạc cột là chuyện thường. Trỏ vào ô nào
+// thì làm nổi tiêu đề cột đó. Gắn MỘT trình xử lý trên document thay vì trên
+// từng ô: 100 x 120 ô là 12 000 trình xử lý.
+function bindColumnHint() {
+  let lastTable = null, lastIndex = -1;
+  const clear = () => {
+    if (lastTable && lastIndex >= 0) {
+      const th = lastTable.querySelectorAll("thead th")[lastIndex];
+      if (th) th.classList.remove("col-hint");
+    }
+    lastTable = null; lastIndex = -1;
+  };
+  document.addEventListener("mouseover", (ev) => {
+    const td = ev.target.closest("td");
+    const tb = td && td.closest("table");
+    if (!td || !tb) { clear(); return; }
+    const i = td.cellIndex;
+    if (tb === lastTable && i === lastIndex) return;
+    clear();
+    const th = tb.querySelectorAll("thead th")[i];
+    if (th) { th.classList.add("col-hint"); lastTable = tb; lastIndex = i; }
+  });
+  document.addEventListener("mouseleave", clear, true);
 }
 
 function bindMarking() {
@@ -516,6 +643,26 @@ function renderHeadTail() {
   };
   build($("sp-head"), head, "Chữ số đầu");
   build($("sp-tail"), tail, "Chữ số đuôi");
+
+  // Ba ma trận NGÀY x chữ số, đúng bố cục trang tham chiếu. Bảng gộp phía
+  // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
+  // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
+  //
+  // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng đặc biệt.
+  const perDay = (pick, label, el) => {
+    const recent = rows.slice(-20).reverse();
+    const headers = ["Ngày"].concat(
+      Array.from({ length: 10 }, (_, d) => `${label} ${d}`));
+    table(el, headers, recent.map((r) => {
+      const count = new Array(10).fill(0);
+      r.n.forEach((x) => { count[pick(+x[0], +x[1])] += 1; });
+      return [viDate(r.d)].concat(
+        count.map((v) => (v ? `${v} lần` : '<span class="sp-zero">0</span>')));
+    }), { numeric: Array.from({ length: 10 }, (_, i) => i + 1) });
+  };
+  perDay((d) => d, "Đầu", $("sp-day-head"));
+  perDay((_, u) => u, "Đuôi", $("sp-day-tail"));
+  perDay((d, u) => (d + u) % 10, "Tổng", $("sp-day-sum"));
 }
 
 function specialGaps() {
@@ -531,6 +678,116 @@ function specialGaps() {
   });
   const n = DRAWS.length;
   return { last, maxGap, hits, current: last.map((t) => (t < 0 ? n : n - 1 - t)), n };
+}
+
+// --- Lô gan -----------------------------------------------------------------
+//
+// Bố cục đọc được từ trang tham chiếu (thongkemienbac, thong-ke-lo-gan):
+//   1. Lô gan hiện tại: Bộ số | Ngày ra cuối cùng | Số ngày gan | Gan cực đại
+//   2. Gan cực đại của cả 00-99, tách hai bảng 00-49 và 50-99
+//   3. Cặp lô gan: Cặp số | Ngày ra gần đây | Số ngày gan | Gan cực đại
+//
+// "Gan" đếm theo KỲ chứ không theo ngày lịch. Hai cách này chỉ trùng nhau khi
+// ngày nào cũng quay; XSMB nghỉ Tết và nghỉ 01-22/04/2020, nên đếm theo ngày
+// lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
+
+/** Gan của từng con 00-99 trên lô tô (27 con mỗi kỳ). */
+function lotoGaps() {
+  const last = new Array(100).fill(-1);
+  const maxGap = new Array(100).fill(0);
+  const hits = new Array(100).fill(0);
+  DRAWS.forEach((r, t) => {
+    // Một con có thể về nhiều lần trong cùng một kỳ. Với gan thì kỳ đó tính
+    // MỘT lần — về hai nháy không làm con số bớt gan hơn về một nháy.
+    const seen = new Set(r.n.map((x) => parseInt(x, 10)));
+    seen.forEach((k) => {
+      hits[k] += 1;
+      if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
+      last[k] = t;
+    });
+  });
+  const n = DRAWS.length;
+  const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
+  return { last, maxGap, current, hits };
+}
+
+/** Gan của 50 cặp lô tô: cặp về khi MỘT TRONG HAI con có mặt trong kỳ.
+ *
+ * Định nghĩa này đọc ra từ chính số liệu trang tham chiếu, không phải đoán.
+ * Bản đầu tôi lấy "cả hai con cùng về", và nó sai:
+ *
+ *   cặp     họ in          "cả hai"        "một trong hai"
+ *   24-42   02-09, gan 7   23-08, gan 17   02-09, gan 7   <- khớp
+ *   23-32   04-09, gan 5   04-09, gan 5    04-09, gan 5
+ *   29-92   05-09, gan 4   18-08, gan 22   05-09, gan 4   <- khớp
+ *
+ * Cách "cả hai" trùng đúng một dòng, và trùng là do tình cờ. Nó cũng mâu thuẫn
+ * với thống kê: hai con cùng về một kỳ có xác suất 5,49% nên gan cực đại phải
+ * cỡ 100 kỳ, trong khi họ in 11-17. Đánh cặp lộn là đánh cả hai con nên trúng
+ * một con là trúng — "một trong hai" mới là nghĩa người chơi dùng.
+ *
+ * CAP50 chứa SỐ NGUYÊN, còn ``r.n`` chứa chuỗi hai ký tự. So thẳng hai kiểu đó
+ * thì 0 không bao giờ bằng "00": bản đầu báo cả 50 cặp "chưa từng về" trên
+ * 2394 kỳ — kết quả vô lý mà bảng vẫn dựng ra bình thường, không lỗi nào.
+ */
+function pairGaps() {
+  const last = new Array(CAP50.length).fill(-1);
+  const maxGap = new Array(CAP50.length).fill(0);
+  const hits = new Array(CAP50.length).fill(0);
+  DRAWS.forEach((r, t) => {
+    const seen = new Set(r.n.map((x) => parseInt(x, 10)));
+    CAP50.forEach((pair, i) => {
+      if (!seen.has(pair[0]) && !seen.has(pair[1])) return;
+      hits[i] += 1;
+      if (last[i] >= 0) maxGap[i] = Math.max(maxGap[i], t - last[i]);
+      last[i] = t;
+    });
+  });
+  const n = DRAWS.length;
+  const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
+  return { last, maxGap, current, hits };
+}
+
+/** Ngày dạng dd-mm-yyyy như trang tham chiếu, từ chuỗi ISO. */
+function viDate(d) {
+  return `${d.slice(8)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
+}
+
+/** Ngày của một kỳ theo chỉ số. */
+function drawDate(i) {
+  return i < 0 ? "chưa từng" : viDate(DRAWS[i].d);
+}
+
+function renderLoGan() {
+  const g = lotoGaps();
+  setCount(DRAWS);
+
+  // 1. Gan hiện tại, giảm dần.
+  const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  table($("sp-grid"),
+    ["Bộ số", "Ngày ra cuối cùng", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    order.map((p) => [
+      pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+    ]), { numeric: [2, 3, 4] });
+
+  // 2. Gan cực đại, tách đôi để đọc cạnh nhau như trang tham chiếu.
+  const half = (el, from, to) => table(el, ["Bộ số", "Gan cực đại"],
+    Array.from({ length: to - from }, (_, k) => {
+      const i = from + k;
+      return [pad2(i), g.maxGap[i] ? `${g.maxGap[i]} kỳ` : "—"];
+    }), { numeric: [1] });
+  half($("sp-max-lo"), 0, 50);
+  half($("sp-max-hi"), 50, 100);
+
+  // 3. Cặp lô gan.
+  const pg = pairGaps();
+  const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  table($("sp-pair-gan"),
+    ["Cặp số", "Ngày ra gần đây", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    pairOrder.map((p) => [
+      `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
+      pg.maxGap[p[0]] || "—", pg.hits[p[0]],
+    ]), { numeric: [2, 3, 4] });
 }
 
 function renderSpecialCycle() {
@@ -650,7 +907,7 @@ function weekGrid(rows) {
 function renderSpecialByWeek() {
   const rows = selected();
   setCount(rows);
-  table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+  table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
 }
 
 /** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
@@ -709,7 +966,7 @@ function renderSpecialByYear() {
   setCount(rows);
 
   if (mode === "Kiểu tuần") {
-    table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+    table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
   } else {
     table($("sp-grid"), MONTH_HEAD, monthGrid(year));
   }
@@ -772,6 +1029,8 @@ function boot(renderName) {
     });
   });
   bindMarking();
+  bindColumnHint();
+  renderLegend();
   bindFieldToggles(render);
   bindPicker(render);
   render();
@@ -826,5 +1085,109 @@ function renderSpecialBridge() {
         `<p class="sp-db">Đặc biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
         `<div class="sp-lolist">${cells}</div></div>`;
     }).join("");
+  }
+}
+
+
+// --- Giải đặc biệt theo TỔNG ------------------------------------------------
+//
+// Tổng = (Đầu + Đuôi) mod 10, nên có 10 giá trị 0-9. Ba bảng, theo bố cục đọc
+// được từ trang tham chiếu:
+//   1. Gan theo tổng: tổng nào lâu chưa về nhất.
+//   2. Chuyển tổng: hôm qua tổng X thì hôm nay tổng Y với xác suất bao nhiêu.
+//   3. Chẵn/lẻ hôm sau, theo tổng hôm qua.
+//
+// Bảng 2 và 3 là thống kê MÔ TẢ trên lịch sử, không phải dự báo đã hiệu
+// chuẩn. Ghi chú mốc ngẫu nhiên đi kèm nói rõ điều đó: với 10 giá trị, mức
+// ngẫu nhiên là 10% mỗi ô, và lệch vài phần trăm trên vài trăm kỳ là chuyện
+// thường.
+
+function tongOf(special) {
+  const two = lastTwo(special);
+  return (+two[0] + +two[1]) % 10;
+}
+
+function renderSpecialByTong() {
+  const rows = selected();
+  setCount(rows);
+  if (!rows.length) {
+    // Không return trắng: bảng sẽ giữ số liệu của dải trước. Dựng lại cả ba
+    // với đúng tiêu đề của chúng để table() gắn dòng "dải rỗng".
+    table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"], []);
+    table($("sp-trans"), ["Tổng hôm trước", "Tổng hôm sau", "Số lần",
+      "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"], []);
+    table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
+      "Hôm sau tổng lẻ"], []);
+    return;
+  }
+
+  // 1. Gan theo tổng.
+  const lastSeen = new Array(10).fill(-1);
+  const hits = new Array(10).fill(0);
+  rows.forEach((r, i) => { const t = tongOf(r.s); lastSeen[t] = i; hits[t] += 1; });
+  const gan = Array.from({ length: 10 }, (_, t) => [
+    t,
+    lastSeen[t] < 0 ? "—" : rows[lastSeen[t]].d,
+    lastSeen[t] < 0 ? rows.length : rows.length - 1 - lastSeen[t],
+    hits[t],
+  ]).sort((a, b) => b[2] - a[2]);
+  table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"],
+    gan.map((g) => [`<b>${g[0]}</b>`, g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
+
+  // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
+  //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
+  //    thành "hôm sau" là bịa ra một chuyển tiếp không tồn tại.
+  const trans = Array.from({ length: 10 }, () => new Array(10).fill(0));
+  const fromTotal = new Array(10).fill(0);
+  for (let i = 1; i < rows.length; i++) {
+    const gap = (new Date(rows[i].d) - new Date(rows[i - 1].d)) / 86400000;
+    if (gap !== 1) continue;
+    const a = tongOf(rows[i - 1].s), b = tongOf(rows[i].s);
+    trans[a][b] += 1; fromTotal[a] += 1;
+  }
+
+  // Xếp theo TỈ LỆ là cách chắc chắn đẩy nhiễu lên đầu: một ô 3/9 cho 33 %
+  // và đứng trên mọi ô khác, dù ba lần thì chẳng nói lên điều gì. Xếp theo
+  // độ lệch CHUẨN HOÁ so với mức ngẫu nhiên 10 %, tức chia cho sai số chuẩn
+  // sqrt(p(1-p)/n) — cùng một độ lệch phần trăm trên mẫu lớn mới đáng kể.
+  const P0 = 0.1;
+  const flat = [];
+  for (let a = 0; a < 10; a++) {
+    if (!fromTotal[a]) continue;
+    for (let b = 0; b < 10; b++) {
+      const n = fromTotal[a];
+      const pct = 100 * trans[a][b] / n;
+      const se = Math.sqrt(P0 * (1 - P0) / n) * 100;
+      flat.push([a, b, trans[a][b], n, pct, se ? (pct - 10) / se : 0]);
+    }
+  }
+  flat.sort((x, y) => Math.abs(y[5]) - Math.abs(x[5]));
+
+  const tr = $("sp-trans");
+  if (tr) {
+    table(tr,
+      ["Tổng hôm trước", "Tổng hôm sau", "Số lần", "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"],
+      flat.slice(0, 40).map((f) => [
+        `<b>${f[0]}</b>`, `<b>${f[1]}</b>`, f[2], f[3],
+        f[4].toFixed(2).replace(".", ",") + " %",
+        (f[5] > 0 ? "+" : "") + f[5].toFixed(2).replace(".", ","),
+      ]), { numeric: [0, 1, 2, 3, 4, 5] });
+  }
+
+  // 3. Chẵn/lẻ của tổng hôm sau, theo tổng hôm trước.
+  const par = $("sp-parity");
+  if (par) {
+    const body = [];
+    for (let a = 0; a < 10; a++) {
+      if (!fromTotal[a]) continue;
+      let even = 0;
+      for (let b = 0; b < 10; b += 2) even += trans[a][b];
+      const pct = 100 * even / fromTotal[a];
+      body.push([`<b>${a}</b>`, fromTotal[a],
+        pct.toFixed(2).replace(".", ",") + " %",
+        (100 - pct).toFixed(2).replace(".", ",") + " %"]);
+    }
+    table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
+      body, { numeric: [0, 1, 2, 3] });
   }
 }

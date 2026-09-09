@@ -136,13 +136,13 @@ def test_page_slugs_are_unique() -> None:
 
 
 def test_all_ten_requested_pages_are_built() -> None:
-    """Mười trang được yêu cầu, cộng trang cặp lộn tách ra riêng."""
+    """Mười trang được yêu cầu, cộng cặp lộn và lô gan tách ra riêng."""
     expected = {
         "bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam",
         "tan-suat-loto", "tan-suat-cap-loto", "cap-lon-loto", "dau-duoi-loto",
-        "cau-giai-dac-biet",
+        "cau-giai-dac-biet", "giai-dac-biet-theo-tong",
         "chu-ky-dac-biet", "cau-dac-biet-theo-bo-so", "giai-db-ngay-mai",
-        "thong-ke-tong-hop",
+        "thong-ke-tong-hop", "lo-gan",
     }
     assert {p.slug for p in PAGES} == expected
 
@@ -506,3 +506,354 @@ def test_matrix_caps_its_column_count() -> None:
     cap = int(re.search(r"MATRIX_MAX_DAYS = (\d+)", js).group(1))
     assert 30 <= cap <= 400, f"trần {cap} kỳ không hợp lý"
     assert "sp-matrix-note" in js, "phải báo cho người đọc biết đã cắt bớt"
+
+
+# --- Giải đặc biệt theo tổng ------------------------------------------------
+
+
+def test_parity_field_covers_both_digits() -> None:
+    """Chẵn/Lẻ là HAI ký tự: của Đầu rồi của Đuôi.
+
+    Hai trang tham chiếu khác nhau ở chỗ này — hainhay ghi một ký tự theo
+    Đuôi, thongkemienbac ghi cả hai. Kiểm trên 15 ô thật của thongkemienbac:
+    49 cho "CL" (Đầu 4 chẵn, Đuôi 9 lẻ). Bản một ký tự mất một nửa thông tin.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function specialCell(") :]
+    body = body[: body.index("\n}") + 2]
+    assert 'dau % 2 === 0 ? "C" : "L"' in body, "thiếu chẵn/lẻ của Đầu"
+    assert 'duoi % 2 === 0 ? "C" : "L"' in body, "thiếu chẵn/lẻ của Đuôi"
+
+
+def test_transition_table_ranks_by_standardised_deviation() -> None:
+    """Xếp bảng chuyển tổng theo TỈ LỆ là cách chắc chắn đẩy nhiễu lên đầu.
+
+    Đo trên trang vừa dựng: ô dẫn đầu là 3 lần trên 9 kỳ, cho 33 %. Ba lần
+    chẳng nói lên điều gì, nhưng nếu xếp theo tỉ lệ thì nó đứng trên mọi ô có
+    mẫu lớn. Chia cho sai số chuẩn thì mẫu nhỏ tự lùi xuống.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function renderSpecialByTong(") :]
+
+    assert "Math.sqrt(P0 * (1 - P0) / n)" in body, "thiếu sai số chuẩn"
+    assert "Math.abs(y[5]) - Math.abs(x[5])" in body, (
+        "phải xếp theo độ lệch chuẩn hoá, không theo tỉ lệ thô"
+    )
+    assert "Trên tổng số kỳ" in body, "phải hiện mẫu nền, nếu không tỉ lệ vô nghĩa"
+
+
+def test_transition_table_skips_non_consecutive_draws() -> None:
+    """Nối hai kỳ cách nhau nhiều ngày thành "hôm sau" là bịa ra một chuyển
+    tiếp không tồn tại. XSMB có ngày nghỉ quay, nên ranh giới đó phải bỏ."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function renderSpecialByTong(") :]
+    assert "gap !== 1" in body, "phải bỏ qua ranh giới ngày nghỉ quay"
+
+
+def test_tong_page_states_the_chance_level() -> None:
+    """Tổng có 10 giá trị nên mức ngẫu nhiên là 10 % mỗi ô. Thiếu con số đó
+    thì bảng đọc thành tín hiệu."""
+    text = _soup("giai-dac-biet-theo-tong").select_one(".sp-note").get_text(" ", strip=True)
+    assert "10 %" in text
+    assert "lệch chuẩn hoá" in text.lower()
+    assert "không phải xác suất đã hiệu chuẩn" in text
+
+
+# --- Lưới bảng ---------------------------------------------------------------
+
+
+def test_empty_cells_are_marked_so_they_read_as_gaps() -> None:
+    """Ô rỗng phải tự nói ra rằng ngày đó không có kỳ.
+
+    Bản trước chỉ kẻ ``border-bottom``, nên một vùng ô trống — ngày XSMB không
+    quay, hoặc ngày ngoài tháng — trông như lỗi hiển thị. Người đọc không phân
+    biệt được "không về" với "chưa tải xong".
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "is-empty" in js, "ô rỗng phải được gắn lớp riêng"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    assert "td.is-empty" in css
+    assert "repeating-linear-gradient" in css, (
+        "vạch chéo đọc được cả khi in ra và khi không phân biệt được màu"
+    )
+
+
+def test_grid_lines_run_both_ways() -> None:
+    """Chỉ kẻ ngang thì các ô trong một hàng dính vào nhau thành một dải."""
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    block = css[css.index(".sp-table.sp-grid-lines th,") :]
+    block = block[: block.index("}") + 1]
+    assert "border-right" in block, "thiếu đường dọc"
+    assert "border-bottom" in block, "thiếu đường ngang"
+
+
+def test_row_head_styling_is_opt_out_for_calendar_tables() -> None:
+    """Cột đầu chỉ dính và tô nền khi nó là NHÃN HÀNG.
+
+    Bảng lịch tuần có cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa
+    ra một cột tiêu đề không tồn tại, và mắt đọc lệch ngay.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "has-rowhead" in js
+    assert "rowHead: false" in js, "lịch tuần phải tắt cột nhãn"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    assert ".sp-table.sp-grid-lines.has-rowhead td:first-child" in css, (
+        "kiểu cột nhãn phải gắn với has-rowhead, không áp cho mọi bảng"
+    )
+
+
+@pytest.mark.parametrize(
+    "slug", ["bang-dac-biet", "bang-dac-biet-nam", "tan-suat-loto", "giai-dac-biet-theo-tong"]
+)
+def test_tables_use_the_grid_style(slug) -> None:
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert "sp-grid-lines" in page, f"{slug} chưa dùng kiểu bảng lưới"
+
+
+def test_column_hint_uses_one_delegated_handler() -> None:
+    """Ma trận rộng tới 120 cột và 100 hàng. Gắn trình xử lý lên từng ô là
+    12 000 trình xử lý; uỷ quyền một cái trên document là đủ."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function bindColumnHint(") :]
+    body = body[: body.index("\nfunction ", 1)]
+    assert 'document.addEventListener("mouseover"' in body
+    assert "querySelectorAll" in body
+    assert ".forEach(" not in body.split("addEventListener")[0], (
+        "không được gắn trình xử lý cho từng ô"
+    )
+
+
+# --- Chú giải ô ---------------------------------------------------------------
+
+
+def _legend_body() -> str:
+    """Thân hàm ``renderLegend`` trong tệp JavaScript.
+
+    Returns:
+        Mã nguồn của riêng hàm đó.
+    """
+    return _js_function("renderLegend")
+
+
+def test_every_field_in_a_cell_is_named_and_explained() -> None:
+    """Sáu chữ nhỏ dưới mỗi giải phải có tên và lời giải thích.
+
+    Người dùng phải hỏi mới biết chúng là gì — nghĩa là trang thiếu chú giải.
+    Sáu ô bật/tắt có sẵn chỉ nêu tên trường, không nói trường nào đứng ở đâu
+    trong ô, cũng không nói cách tính.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    block = js[js.index("const DE_FIELDS = [") :]
+    block = block[: block.index("\n];")]
+    for key in ("ngay", "tong", "dau", "duoi", "chanle", "bo"):
+        assert f'key: "{key}"' in block, f"thiếu trường {key}"
+    assert block.count("hint:") == 6, "mỗi trường phải có một câu giải thích"
+
+
+def test_legend_states_the_two_rules_a_reader_cannot_guess() -> None:
+    """Đầu và Đuôi đọc thẳng ra được; Tổng và Bộ thì không.
+
+    Tổng là phép cộng rồi lấy dư — nhìn số 4 cạnh 0 và 4 không đoán ra. Bộ là
+    một quy ước riêng của giới chơi số, càng không.
+    """
+    body = _legend_body()
+    assert "mod 10" in body, "phải nêu công thức Tổng"
+    assert "bóng dương" in body, "phải nêu cách gom Bộ"
+    assert "0↔5" in body, "phải liệt kê cặp bóng để tự kiểm được"
+
+
+def test_legend_example_comes_from_real_data_not_a_made_up_cell() -> None:
+    """Ví dụ phải là kỳ gần nhất, để đối chiếu thẳng với hàng đầu bảng.
+
+    Một ví dụ bịa buộc người đọc tin lời trang nói; một ví dụ có thật thì họ
+    tự kiểm được bằng chính bảng đang mở.
+    """
+    body = _legend_body()
+    assert "DRAWS[DRAWS.length - 1]" in body, "phải lấy kỳ mới nhất"
+    assert "specialFull(" in body, "ô mẫu phải dựng bằng đúng hàm dựng ô thật"
+
+
+def test_legend_lists_the_whole_bo_family_so_the_example_always_teaches() -> None:
+    """Bộ của 04 chính là 04. Câu "04 nằm ở bộ 04" không dạy được gì.
+
+    Kỳ mới nhất đổi mỗi ngày, nên ví dụ phải tự đứng vững với mọi con số:
+    liệt kê đủ các con cùng bộ thì trường hợp trùng tên cũng vẫn nói ra được
+    quan hệ bóng và lộn.
+    """
+    body = _legend_body()
+    assert "BO_LOOKUP[n] === bo" in body, "phải quét bảng tra ra cả họ"
+    assert "family.join(" in body, "phải in danh sách ra chú giải"
+
+
+def test_legend_does_not_keep_a_second_copy_of_the_field_names() -> None:
+    """Chú giải và ô dữ liệu phải đọc chung một nguồn.
+
+    Chép nhãn sang Python hoặc sang một mảng thứ hai là tạo bản sẽ trôi: sửa
+    ``DE_FIELDS`` mà quên sửa bản kia thì chú giải nói sai về chính cái ô nó
+    đang chú giải.
+    """
+    body = _legend_body()
+    assert "DE_FIELDS.map(" in body, "chú giải phải sinh từ DE_FIELDS"
+
+    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    block = builder[builder.index("FIELD_TOGGLE = (") :]
+    block = block[: block.index("\n)")]
+    assert 'id="sp-legend"' in block, "trang phải có chỗ để đặt chú giải"
+    assert 'id="sp-legend"></div>' in block, "khối chú giải phải rỗng trong HTML"
+    for label in ("Ngày", "Tổng", "Đầu", "Đuôi", "Chẵn lẻ", "Bộ"):
+        assert label not in block, f"nhãn {label} bị chép sang Python"
+
+
+@pytest.mark.parametrize("slug", ["bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"])
+def test_special_pages_carry_the_legend(slug) -> None:
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert 'id="sp-legend"' in page, f"{slug} chưa có chú giải ô"
+    assert ".sp-lg-hint" in page, f"{slug} chưa có kiểu cho chú giải"
+
+
+def test_hints_are_not_hidden_behind_hover_only() -> None:
+    """Điện thoại không có chuột để trỏ vào. Lời giải thích phải nằm sẵn
+    trong trang, ``title`` chỉ là lối tắt thêm cho chuột."""
+    body = _legend_body()
+    assert "sp-lg-hint" in body, "lời giải thích phải được in ra thành thẻ"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    block = css[css.index(".sp-lg-hint {") :]
+    block = block[: block.index("}") + 1]
+    assert "display: block" in block, "chú giải phải luôn hiện"
+
+
+# --- Lô gan --------------------------------------------------------------------
+
+
+def _js_function(name: str) -> str:
+    """Mã nguồn của một hàm trong tệp JavaScript.
+
+    Args:
+        name: Tên hàm.
+
+    Returns:
+        Phần mã từ dòng khai báo tới hàm kế tiếp.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index(f"function {name}(") :]
+    # Hàm cuối tệp không có "\nfunction " nào phía sau; cắt tới hết tệp.
+    end = body.find("\nfunction ", 1)
+    return body if end < 0 else body[:end]
+
+
+def test_pair_gan_counts_either_number_not_both() -> None:
+    """Cặp về khi MỘT TRONG HAI con có mặt, không phải cả hai.
+
+    Đọc ra từ số liệu trang tham chiếu chứ không đoán: họ in 24-42 ra gần nhất
+    02-09-2026 và 29-92 ra 05-09-2026. Cách "cả hai con cùng về" cho 23-08 và
+    18-08 — lệch hẳn. Cách "một trong hai" khớp cả ba dòng họ in.
+
+    Thống kê cũng nói vậy: hai con cùng về một kỳ có xác suất 5,49%, gan cực
+    đại phải cỡ 100 kỳ, trong khi trang tham chiếu in 11-17.
+    """
+    assert "&& !seen.has(pair[1])" in _js_function("pairGaps"), (
+        "phải là 'không con nào về' mới bỏ qua; dùng || là hoá thành 'cả hai'"
+    )
+    # Chú thích nằm TRÊN dòng khai báo nên không thuộc thân hàm.
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "MỘT TRONG HAI" in js, "phải ghi lại định nghĩa đã kiểm chứng"
+
+
+def test_gan_compares_numbers_with_numbers() -> None:
+    """CAP50 chứa số nguyên, ``r.n`` chứa chuỗi hai ký tự.
+
+    So thẳng hai kiểu thì 0 không bao giờ bằng "00", và bảng vẫn dựng ra bình
+    thường — chỉ là mọi cặp đều "chưa từng về" trên hơn 2000 kỳ. Không lỗi nào
+    được ném ra, nên chỉ nhìn số mới thấy.
+    """
+    for name in ("lotoGaps", "pairGaps"):
+        assert "parseInt(x, 10)" in _js_function(name), (
+            f"{name} phải quy chuỗi về số trước khi so"
+        )
+
+
+def test_gan_counts_a_draw_once_even_if_the_number_repeats() -> None:
+    """Một con về hai nháy trong cùng kỳ không làm nó bớt gan hơn về một nháy."""
+    assert "new Set(" in _js_function("lotoGaps"), "phải khử trùng trong cùng một kỳ"
+
+
+def test_lo_gan_page_has_all_four_reference_tables() -> None:
+    """Trang tham chiếu có bốn khối; thiếu khối nào là thiếu chức năng đó."""
+    page = (DOCS / "lo-gan.html").read_text(encoding="utf-8")
+    for table_id in ("sp-grid", "sp-max-lo", "sp-max-hi", "sp-pair-gan"):
+        assert f'id="{table_id}"' in page, f"thiếu bảng {table_id}"
+
+
+def test_lo_gan_page_says_gan_is_counted_in_draws_not_calendar_days() -> None:
+    """Hai cách đếm chỉ trùng nhau khi ngày nào cũng quay, mà XSMB thì không."""
+    page = (DOCS / "lo-gan.html").read_text(encoding="utf-8")
+    assert "kỳ quay" in page and "ngày lịch" in page, (
+        "trang phải nói rõ gan đếm theo kỳ"
+    )
+    assert "lịch sử" in page, "phải nói gan cực đại phụ thuộc độ dài lịch sử"
+
+
+def test_head_tail_page_has_the_three_per_day_matrices() -> None:
+    """Bảng gộp trả lời 'chữ số nào hay ra'; ma trận trả lời 'hôm nào ra mấy
+    lần'. Trang tham chiếu có cả ba ma trận Đầu, Đuôi và Tổng."""
+    page = (DOCS / "dau-duoi-loto.html").read_text(encoding="utf-8")
+    for table_id in ("sp-day-head", "sp-day-tail", "sp-day-sum"):
+        assert f'id="{table_id}"' in page, f"thiếu ma trận {table_id}"
+
+
+# --- Dải rỗng và ghi chú ------------------------------------------------------
+
+
+def test_empty_range_clears_the_tables_instead_of_keeping_stale_numbers() -> None:
+    """Bộ đếm báo "0 kỳ" mà bảng vẫn đủ hàng là trình bày số của dải TRƯỚC như
+    thể chúng thuộc về dải mới.
+
+    Tái hiện được trước khi sửa: chọn Từ ngày 09-09-2026 đến 01-01-2020 thì
+    bộ đếm ra "0 kỳ · — → —" còn ba bảng giữ nguyên 10/40/10 hàng của 90 kỳ
+    liền trước.
+    """
+    body = _js_function("table")
+    assert "sp-empty-row" in body, "table() phải dựng dòng báo dải rỗng"
+    assert "rows.length ?" in body, "phải rẽ nhánh theo số hàng"
+
+    tong = _js_function("renderSpecialByTong")
+    assert "if (!rows.length) {" in tong, "không được return trắng"
+    for table_id in ("sp-grid", "sp-trans", "sp-parity"):
+        head = tong[: tong.index("// 1. Gan theo tổng")]
+        assert table_id in head, f"nhánh rỗng phải dựng lại {table_id}"
+
+
+def test_notes_only_name_columns_the_tables_actually_render() -> None:
+    """Ghi chú hướng dẫn đọc một cột không tồn tại là hướng dẫn sai.
+
+    Ghi chú cũ bảo đọc cột "So mức ngẫu nhiên" và giá trị "quanh 1,0×", nhưng
+    ``renderSpecialByTong`` chỉ dựng "Tỉ lệ" và "Lệch chuẩn hoá" — không hề
+    tính tỉ số đó.
+    """
+    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+
+    assert "So mức ngẫu nhiên" not in builder, (
+        "không cột nào mang tên này; ghi chú phải nói theo cột thật"
+    )
+    # Các tên cột mà ghi chú có nhắc tới phải xuất hiện trong mã dựng bảng.
+    for column in ("Tỉ lệ", "Lệch chuẩn hoá"):
+        assert column in builder, f"ghi chú không còn nhắc {column}?"
+        assert f'"{column}"' in js, f"bảng không dựng cột {column}"
+
+
+def test_cycle_page_explains_it_counts_draws_not_calendar_days() -> None:
+    """Cùng một con số, hai cách đếm cho hai kết quả — phải nói rõ đang dùng cách nào.
+
+    Đối chiếu với trang tham chiếu: cả hai cùng xếp 98, 58, 15 lên đầu, nhưng
+    họ in 568/473/431 còn ta in 565/470/428. Không phải sai lệch dữ liệu: 98 ra
+    lần cuối 17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026
+    không quay còn đúng 565 kỳ. Người đọc so hai trang mà không có ghi chú này
+    sẽ tưởng một bên hỏng.
+    """
+    page = (DOCS / "chu-ky-dac-biet.html").read_text(encoding="utf-8")
+    assert "kỳ quay" in page, "phải nói rõ đếm theo kỳ"
+    assert "565" in page, "phải kèm ví dụ đối chiếu được bằng số thật"
