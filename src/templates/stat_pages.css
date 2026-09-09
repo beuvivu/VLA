@@ -140,3 +140,57 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
 }
+
+/* --- Bộ chọn con số 00-99 ------------------------------------------------- */
+.sp-picker { margin-bottom: 12px; }
+.sp-pick-quick { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.sp-pick-quick button {
+  padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line, #e2e8f0);
+  background: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.sp-pick-grid {
+  display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px;
+}
+.sp-pick {
+  padding: 4px 0; border-radius: 6px; border: 1px solid var(--line, #e2e8f0);
+  background: #f1f5f9; color: #94a3b8; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-variant-numeric: tabular-nums;
+}
+.sp-pick.on { background: #7c3aed; border-color: #6d28d9; color: #fff; }
+
+/* Ma trận dày: chữ nhỏ, cột hẹp, luôn cuộn trong khung của nó. */
+.sp-table.sp-dense td, .sp-table.sp-dense th {
+  padding: 2px 4px; font-size: 11px; text-align: center;
+}
+.sp-table.sp-dense th { white-space: nowrap; }
+
+@media (max-width: 860px) { .sp-pick-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
+@media (prefers-color-scheme: dark) {
+  .sp-pick-quick button { background: #1e293b; color: #e2e8f0; }
+  .sp-pick { background: #1e293b; color: #64748b; }
+}
+
+/* --- Cầu giải đặc biệt ---------------------------------------------------- */
+.sp-times { display: block; font-style: normal; font-size: 10px; color: #64748b; }
+.sp-recent { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.sp-draw { padding: 14px; border: 1px solid var(--line, #e2e8f0); border-radius: 14px; background: #f8fafc; }
+.sp-draw h4 { margin: 0 0 8px; font-size: 14px; }
+.sp-db { margin: 0 0 10px; font-size: 13px; color: #475569; }
+.sp-db b { font-size: 22px; color: #0f172a; letter-spacing: .04em; }
+.sp-lolist { display: flex; flex-wrap: wrap; gap: 5px; }
+.sp-lo {
+  min-width: 26px; padding: 3px 5px; border-radius: 7px; background: #fff;
+  border: 1px solid var(--line, #e2e8f0); text-align: center;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+@media (prefers-color-scheme: dark) {
+  .sp-times { color: #94a3b8; }
+  .sp-draw { background: #0f172a; }
+  .sp-db b { color: #e2e8f0; }
+  .sp-lo { background: #1e293b; }
+}
+
+/* Ghi chú kích thước ma trận. Lớp RIÊNG, không dùng .sp-note: lớp đó dành cho
+   ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
+.sp-matrix-note { margin: 0 0 10px; color: #64748b; font-size: 12px; }
+@media (prefers-color-scheme: dark) { .sp-matrix-note { color: #94a3b8; } }

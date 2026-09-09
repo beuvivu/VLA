@@ -140,6 +140,7 @@ def test_all_ten_requested_pages_are_built() -> None:
     expected = {
         "bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam",
         "tan-suat-loto", "tan-suat-cap-loto", "cap-lon-loto", "dau-duoi-loto",
+        "cau-giai-dac-biet",
         "chu-ky-dac-biet", "cau-dac-biet-theo-bo-so", "giai-db-ngay-mai",
         "thong-ke-tong-hop",
     }
@@ -475,3 +476,33 @@ def test_special_pages_can_toggle_each_field(slug) -> None:
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function bindFieldToggles(" in js
     assert "__VLA_BO__" in page, f"{slug} chưa nhúng bảng tra bộ số"
+
+
+def test_matrix_note_does_not_shadow_the_chance_note() -> None:
+    """Ghi chú kích thước ma trận phải có lớp RIÊNG.
+
+    Bản đầu dùng chung lớp ``.sp-note``, và vì nó rỗng trong HTML tĩnh lại
+    đứng trước, ``select_one('.sp-note')`` bắt phải nó thay vì ghi chú mốc
+    ngẫu nhiên — đúng thứ mà mọi bảng xếp hạng trong kho này dựa vào để không
+    chế ra tín hiệu.
+    """
+    for slug in ("tan-suat-loto", "tan-suat-cap-loto"):
+        page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+        assert 'class="sp-matrix-note"' in page
+        assert 'class="sp-note" id="sp-matrix-note"' not in page
+
+        note = _soup(slug).select_one(".sp-note")
+        assert note is not None and len(note.get_text(strip=True)) > 60, (
+            f"{slug}: ghi chú mốc ngẫu nhiên bị che"
+        )
+
+
+def test_matrix_caps_its_column_count() -> None:
+    """Chọn "Tất cả" trên kho 2392 kỳ cho 239 000 ô và trình duyệt nghẹn.
+    Phải có trần, và phải nói ra trên trang thay vì để người dùng ngồi nhìn
+    trang treo."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "MATRIX_MAX_DAYS" in js
+    cap = int(re.search(r"MATRIX_MAX_DAYS = (\d+)", js).group(1))
+    assert 30 <= cap <= 400, f"trần {cap} kỳ không hợp lý"
+    assert "sp-matrix-note" in js, "phải báo cho người đọc biết đã cắt bớt"
