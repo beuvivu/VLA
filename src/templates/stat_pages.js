@@ -181,11 +181,20 @@ function table(el, headers, rows, opts) {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
       const key = `${el.id}:${y}:${i}`;
       const on = MARKS.has(key) ? " marked" : "";
+      // Ô rỗng phải TỰ NÓI ra rằng ngày đó không có kỳ. Không đánh dấu thì một
+      // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
+      // "không về" với "chưa tải xong".
+      const blank = (c === "" || c === null || c === undefined) ? " is-empty" : "";
       const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
-      return `<td class="cell${cls}${on}" data-key="${key}"${style}>${c}</td>`;
+      return `<td class="cell${cls}${on}${blank}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
   el.innerHTML = thead + "<tbody>" + body + "</tbody>";
+
+  // Cột đầu chỉ được dính và tô nền khi nó là NHÃN HÀNG. Bảng lịch tuần có
+  // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
+  // không tồn tại, và mắt đọc lệch ngay.
+  el.classList.toggle("has-rowhead", opts.rowHead !== false);
 }
 
 // --- Tô sáng ô để so sánh ---------------------------------------------------
@@ -205,6 +214,31 @@ try {
 
 function saveMarks() {
   try { localStorage.setItem(MARK_KEY, JSON.stringify(Array.from(MARKS))); } catch (e) {}
+}
+
+// Bảng ma trận rộng tới 120 cột; mắt lạc cột là chuyện thường. Trỏ vào ô nào
+// thì làm nổi tiêu đề cột đó. Gắn MỘT trình xử lý trên document thay vì trên
+// từng ô: 100 x 120 ô là 12 000 trình xử lý.
+function bindColumnHint() {
+  let lastTable = null, lastIndex = -1;
+  const clear = () => {
+    if (lastTable && lastIndex >= 0) {
+      const th = lastTable.querySelectorAll("thead th")[lastIndex];
+      if (th) th.classList.remove("col-hint");
+    }
+    lastTable = null; lastIndex = -1;
+  };
+  document.addEventListener("mouseover", (ev) => {
+    const td = ev.target.closest("td");
+    const tb = td && td.closest("table");
+    if (!td || !tb) { clear(); return; }
+    const i = td.cellIndex;
+    if (tb === lastTable && i === lastIndex) return;
+    clear();
+    const th = tb.querySelectorAll("thead th")[i];
+    if (th) { th.classList.add("col-hint"); lastTable = tb; lastIndex = i; }
+  });
+  document.addEventListener("mouseleave", clear, true);
 }
 
 function bindMarking() {
@@ -657,7 +691,7 @@ function weekGrid(rows) {
 function renderSpecialByWeek() {
   const rows = selected();
   setCount(rows);
-  table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+  table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
 }
 
 /** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
@@ -716,7 +750,7 @@ function renderSpecialByYear() {
   setCount(rows);
 
   if (mode === "Kiểu tuần") {
-    table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+    table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
   } else {
     table($("sp-grid"), MONTH_HEAD, monthGrid(year));
   }
@@ -779,6 +813,7 @@ function boot(renderName) {
     });
   });
   bindMarking();
+  bindColumnHint();
   bindFieldToggles(render);
   bindPicker(render);
   render();

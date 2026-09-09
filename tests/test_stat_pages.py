@@ -557,3 +557,69 @@ def test_tong_page_states_the_chance_level() -> None:
     assert "10 %" in text
     assert "lệch chuẩn hoá" in text.lower()
     assert "không phải xác suất đã hiệu chuẩn" in text
+
+
+# --- Lưới bảng ---------------------------------------------------------------
+
+
+def test_empty_cells_are_marked_so_they_read_as_gaps() -> None:
+    """Ô rỗng phải tự nói ra rằng ngày đó không có kỳ.
+
+    Bản trước chỉ kẻ ``border-bottom``, nên một vùng ô trống — ngày XSMB không
+    quay, hoặc ngày ngoài tháng — trông như lỗi hiển thị. Người đọc không phân
+    biệt được "không về" với "chưa tải xong".
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "is-empty" in js, "ô rỗng phải được gắn lớp riêng"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    assert "td.is-empty" in css
+    assert "repeating-linear-gradient" in css, (
+        "vạch chéo đọc được cả khi in ra và khi không phân biệt được màu"
+    )
+
+
+def test_grid_lines_run_both_ways() -> None:
+    """Chỉ kẻ ngang thì các ô trong một hàng dính vào nhau thành một dải."""
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    block = css[css.index(".sp-table.sp-grid-lines th,") :]
+    block = block[: block.index("}") + 1]
+    assert "border-right" in block, "thiếu đường dọc"
+    assert "border-bottom" in block, "thiếu đường ngang"
+
+
+def test_row_head_styling_is_opt_out_for_calendar_tables() -> None:
+    """Cột đầu chỉ dính và tô nền khi nó là NHÃN HÀNG.
+
+    Bảng lịch tuần có cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa
+    ra một cột tiêu đề không tồn tại, và mắt đọc lệch ngay.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "has-rowhead" in js
+    assert "rowHead: false" in js, "lịch tuần phải tắt cột nhãn"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    assert ".sp-table.sp-grid-lines.has-rowhead td:first-child" in css, (
+        "kiểu cột nhãn phải gắn với has-rowhead, không áp cho mọi bảng"
+    )
+
+
+@pytest.mark.parametrize(
+    "slug", ["bang-dac-biet", "bang-dac-biet-nam", "tan-suat-loto", "giai-dac-biet-theo-tong"]
+)
+def test_tables_use_the_grid_style(slug) -> None:
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert "sp-grid-lines" in page, f"{slug} chưa dùng kiểu bảng lưới"
+
+
+def test_column_hint_uses_one_delegated_handler() -> None:
+    """Ma trận rộng tới 120 cột và 100 hàng. Gắn trình xử lý lên từng ô là
+    12 000 trình xử lý; uỷ quyền một cái trên document là đủ."""
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function bindColumnHint(") :]
+    body = body[: body.index("\nfunction ", 1)]
+    assert 'document.addEventListener("mouseover"' in body
+    assert "querySelectorAll" in body
+    assert ".forEach(" not in body.split("addEventListener")[0], (
+        "không được gắn trình xử lý cho từng ô"
+    )
