@@ -122,6 +122,39 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
 .sp-f-ngay { min-width: 34px; color: #94a3b8; }
 
+/* --- Chú giải ô ----------------------------------------------------------
+   Sáu trường xếp thành lưới tự co: mỗi thẻ mang giá trị thật của kỳ gần nhất,
+   tên trường, rồi câu giải thích. Không giấu lời giải thích sau tooltip — trên
+   điện thoại không có chuột để trỏ vào. */
+.sp-legend {
+  margin: 0 0 10px; padding: 12px 14px;
+  border: 1px solid var(--line, #e2e8f0); border-radius: 12px;
+  background: #fffbeb; border-color: #fde68a;
+}
+.sp-legend-head { font-size: 12px; font-weight: 800; color: #92400e; margin-bottom: 8px; }
+.sp-legend-sample {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+  margin-bottom: 10px; font-size: 18px;
+}
+.sp-lg-src { font-size: 11px; font-weight: 700; color: #92400e; }
+.sp-legend-items {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.sp-lg-item {
+  display: block; padding: 7px 9px; border-radius: 9px;
+  background: #fff; border: 1px solid #fde68a;
+}
+.sp-lg-val {
+  display: inline-block; min-width: 22px; padding: 1px 5px; border-radius: 5px;
+  background: #fef3c7; color: #78350f; font-size: 13px; font-weight: 800;
+  font-variant-numeric: tabular-nums; text-align: center;
+}
+.sp-lg-lab { font-size: 12px; font-weight: 800; color: #0f172a; margin-left: 6px; }
+.sp-lg-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; color: #475569; }
+.sp-legend-rule { margin: 10px 0 0; font-size: 11.5px; line-height: 1.55; color: #475569; }
+.sp-legend-rule b { color: #78350f; }
+
 .sp-fields-toggle {
   display: flex; flex-wrap: wrap; gap: 6px 14px;
   margin: 0 0 12px; padding: 9px 12px;
@@ -139,6 +172,13 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-f-ngay { color: #64748b; }
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
+  .sp-legend { background: #1c1917; border-color: #78350f; }
+  .sp-legend-head, .sp-lg-src { color: #fcd34d; }
+  .sp-lg-item { background: #0f172a; border-color: #78350f; }
+  .sp-lg-val { background: #78350f; color: #fef3c7; }
+  .sp-lg-lab { color: #e2e8f0; }
+  .sp-lg-hint, .sp-legend-rule { color: #94a3b8; }
+  .sp-legend-rule b { color: #fcd34d; }
 }
 
 /* --- Bộ chọn con số 00-99 ------------------------------------------------- */

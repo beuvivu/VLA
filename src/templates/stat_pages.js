@@ -105,12 +105,21 @@ function specialFull(value) {
 const BO_LOOKUP = window.__VLA_BO__ || [];
 
 const DE_FIELDS = [
-  { key: "ngay", label: "Ngày" },
-  { key: "tong", label: "Tổng" },
-  { key: "dau", label: "Đầu" },
-  { key: "duoi", label: "Đuôi" },
-  { key: "chanle", label: "Chẵn lẻ" },
-  { key: "bo", label: "Bộ" },
+  { key: "ngay", label: "Ngày", hint: "Ngày quay, dạng ngày-tháng" },
+  { key: "tong", label: "Tổng", hint: "(Đầu + Đuôi) chia lấy dư 10" },
+  { key: "dau", label: "Đầu", hint: "Chữ số hàng chục của hai số cuối" },
+  { key: "duoi", label: "Đuôi", hint: "Chữ số hàng đơn vị của hai số cuối" },
+  {
+    key: "chanle",
+    label: "Chẵn lẻ",
+    hint: "Hai ký tự: chẵn/lẻ của Đầu, rồi của Đuôi. 68 cho CC vì 6 và 8 đều chẵn",
+  },
+  {
+    key: "bo",
+    label: "Bộ",
+    hint: "Họ bộ số: gom một con với bóng dương và số lộn của nó. " +
+      "68 thuộc bộ 13 vì bóng của 6 là 1, bóng của 8 là 3. Có 15 họ",
+  },
 ];
 
 const FIELD_KEY = "vla.defields." + (location.pathname.split("/").pop() || "index");
@@ -127,22 +136,30 @@ function specialCell(value, iso) {
   const dau = +two[0];
   const duoi = +two[1];
 
+  // Mỗi trường mang title riêng: người đọc trỏ vào con số là biết nó là gì,
+  // không phải đối chiếu ngược lên hàng chú giải rồi đếm cột.
+  const tip = (key) => (DE_FIELDS.find((f) => f.key === key) || {}).hint || "";
   const parts = [];
   if (iso && SHOWN.has("ngay")) {
-    parts.push(`<i class="sp-f sp-f-ngay">${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
+    parts.push(`<i class="sp-f sp-f-ngay" title="Ngày ${iso}">` +
+      `${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
   }
-  if (SHOWN.has("tong")) parts.push(`<i class="sp-f">${(dau + duoi) % 10}</i>`);
-  if (SHOWN.has("dau")) parts.push(`<i class="sp-f">${dau}</i>`);
-  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f">${duoi}</i>`);
+  if (SHOWN.has("tong")) {
+    parts.push(`<i class="sp-f" title="Tổng — ${tip("tong")}">${(dau + duoi) % 10}</i>`);
+  }
+  if (SHOWN.has("dau")) parts.push(`<i class="sp-f" title="Đầu — ${tip("dau")}">${dau}</i>`);
+  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f" title="Đuôi — ${tip("duoi")}">${duoi}</i>`);
   if (SHOWN.has("chanle")) {
     // HAI ký tự: chẵn/lẻ của Đầu rồi của Đuôi. Hai trang tham chiếu khác nhau
     // ở chỗ này — hainhay chỉ ghi một ký tự theo Đuôi, thongkemienbac ghi cả
     // hai. Lấy bản hai ký tự vì nó chứa trọn thông tin của bản kia.
     // Kiểm trên 15 ô thật: 49 -> "CL" (Đầu 4 chẵn, Đuôi 9 lẻ).
-    parts.push(`<i class="sp-f">${dau % 2 === 0 ? "C" : "L"}` +
-      `${duoi % 2 === 0 ? "C" : "L"}</i>`);
+    parts.push(`<i class="sp-f" title="Chẵn/Lẻ — ${tip("chanle")}">` +
+      `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}</i>`);
   }
-  if (SHOWN.has("bo")) parts.push(`<i class="sp-f">${BO_LOOKUP[+two] || ""}</i>`);
+  if (SHOWN.has("bo")) {
+    parts.push(`<i class="sp-f" title="Bộ — ${tip("bo")}">${BO_LOOKUP[+two] || ""}</i>`);
+  }
 
   // Gọi lại specialFull thay vì chép markup: hai bản dựng cùng một thứ là hai
   // bản sẽ lệch nhau khi ai đó sửa một bên.
@@ -150,12 +167,73 @@ function specialCell(value, iso) {
     (parts.length ? `<span class="sp-fields">${parts.join("")}</span>` : "");
 }
 
+/** Hàng chú giải sáu trường, dựng từ một ô THẬT của kỳ gần nhất.
+ *
+ * Câu hỏi đầu tiên người đọc đặt ra trước bảng này là "chữ nhỏ dưới mỗi ô
+ * nghĩa là gì". Trước đây trang có sáu ô bật/tắt nhưng không nói trường nào
+ * đứng ở đâu, nên muốn biết thì phải đoán. Chú giải lấy đúng kỳ mới nhất thay
+ * vì một ví dụ bịa: số trong chú giải trùng với số ở hàng đầu bảng, đối chiếu
+ * được ngay.
+ */
+function renderLegend() {
+  const box = $("sp-legend");
+  if (!box) return;
+  const last = DRAWS.length ? DRAWS[DRAWS.length - 1] : null;
+  if (!last) { box.innerHTML = ""; return; }
+
+  const s = String(last.s).padStart(5, "0");
+  const two = s.slice(3);
+  const dau = +two[0];
+  const duoi = +two[1];
+  const iso = last.d;
+  const val = {
+    ngay: `${iso.slice(8)}-${iso.slice(5, 7)}`,
+    tong: String((dau + duoi) % 10),
+    dau: String(dau),
+    duoi: String(duoi),
+    chanle: `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}`,
+    bo: BO_LOOKUP[+two] || "—",
+  };
+  // Liệt kê đủ các con cùng bộ với ô mẫu. Ví dụ cố định kiểu "68 thuộc bộ 13"
+  // vô dụng khi kỳ mới nhất ra 04 — bộ của 04 chính là 04, câu giải thích đọc
+  // thành lặp lại. Đọc thẳng bảng tra ra danh sách thì ví dụ nào cũng nói được
+  // điều gì đó, và vẫn chỉ có một nguồn duy nhất là bảng dựng phía Python.
+  const bo = BO_LOOKUP[+two];
+  const family = [];
+  for (let n = 0; n < 100 && bo; n += 1) {
+    if (BO_LOOKUP[n] === bo) family.push(pad2(n));
+  }
+  const items = DE_FIELDS.map((f) =>
+    `<span class="sp-lg-item" title="${f.hint}">` +
+    `<b class="sp-lg-val">${val[f.key]}</b>` +
+    `<span class="sp-lg-lab">${f.label}</span>` +
+    `<span class="sp-lg-hint">${f.hint}</span></span>`
+  ).join("");
+
+  box.innerHTML =
+    '<div class="sp-legend-head">Đọc một ô: chữ nhỏ dưới mỗi giải là gì</div>' +
+    `<div class="sp-legend-sample">${specialFull(s)}` +
+    `<span class="sp-lg-src">giải đặc biệt kỳ ` +
+    `${iso.slice(8)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}, hai số cuối ` +
+    `<b>${two}</b> — sáu trường dưới đây tách ra từ chính ô này</span></div>` +
+    `<div class="sp-legend-items">${items}</div>` +
+    '<p class="sp-legend-rule">' +
+    `Tổng = (Đầu + Đuôi) chia lấy dư 10 = (${dau} + ${duoi}) mod 10 = <b>${val.tong}</b>. ` +
+    (bo
+      ? `Bộ gom một con với bóng dương (0↔5, 1↔6, 2↔7, 3↔8, 4↔9) và số lộn của nó: ` +
+        `${two} nằm ở bộ <b>${bo}</b>, gồm ${family.join(" ")}. Cả thảy 15 bộ. `
+      : "") +
+    "Bật/tắt từng trường bằng các ô dưới đây; lựa chọn được nhớ lại cho lần sau." +
+    "</p>";
+}
+
 /** Gắn sáu ô đánh dấu bật/tắt trường. */
 function bindFieldToggles(render) {
   const box = $("sp-fields-toggle");
   if (!box) return;
   box.innerHTML = DE_FIELDS.map((f) =>
-    `<label class="sp-fchk"><input type="checkbox" data-field="${f.key}"` +
+    `<label class="sp-fchk" title="${f.hint}">` +
+    `<input type="checkbox" data-field="${f.key}"` +
     `${SHOWN.has(f.key) ? " checked" : ""}> ${f.label}</label>`
   ).join("");
   box.addEventListener("change", (ev) => {
@@ -814,6 +892,7 @@ function boot(renderName) {
   });
   bindMarking();
   bindColumnHint();
+  renderLegend();
   bindFieldToggles(render);
   bindPicker(render);
   render();

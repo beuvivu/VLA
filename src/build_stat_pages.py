@@ -176,9 +176,17 @@ def _mark_tools() -> str:
     )
 
 
-#: Hộp bật/tắt sáu trường trong mỗi ô bảng đặc biệt. Trang tham chiếu có đúng
-#: sáu ô đánh dấu này; nội dung do JavaScript dựng từ DE_FIELDS.
-FIELD_TOGGLE = '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
+#: Chú giải ô + hộp bật/tắt sáu trường trong mỗi ô bảng đặc biệt.
+#:
+#: Trang tham chiếu có đúng sáu ô đánh dấu này nhưng không giải thích trường
+#: nào đứng ở đâu. Người đọc phải hỏi mới biết chữ nhỏ dưới mỗi giải là gì, nên
+#: ở đây đặt thêm hàng chú giải phía trên. Cả hai khối đều rỗng trong HTML:
+#: JavaScript dựng chúng từ DE_FIELDS, một nguồn duy nhất cho cả ô lẫn chú
+#: giải — chép nhãn sang Python là tạo bản thứ hai sẽ trôi khỏi bản gốc.
+FIELD_TOGGLE = (
+    '<div class="sp-legend" id="sp-legend"></div>'
+    '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
+)
 
 PAGES: tuple[StatPage, ...] = (
     StatPage(

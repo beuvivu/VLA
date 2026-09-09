@@ -623,3 +623,105 @@ def test_column_hint_uses_one_delegated_handler() -> None:
     assert ".forEach(" not in body.split("addEventListener")[0], (
         "không được gắn trình xử lý cho từng ô"
     )
+
+
+# --- Chú giải ô ---------------------------------------------------------------
+
+
+def _legend_body() -> str:
+    """Thân hàm ``renderLegend`` trong tệp JavaScript.
+
+    Returns:
+        Mã nguồn của riêng hàm đó.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index("function renderLegend(") :]
+    return body[: body.index("\nfunction ", 1)]
+
+
+def test_every_field_in_a_cell_is_named_and_explained() -> None:
+    """Sáu chữ nhỏ dưới mỗi giải phải có tên và lời giải thích.
+
+    Người dùng phải hỏi mới biết chúng là gì — nghĩa là trang thiếu chú giải.
+    Sáu ô bật/tắt có sẵn chỉ nêu tên trường, không nói trường nào đứng ở đâu
+    trong ô, cũng không nói cách tính.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    block = js[js.index("const DE_FIELDS = [") :]
+    block = block[: block.index("\n];")]
+    for key in ("ngay", "tong", "dau", "duoi", "chanle", "bo"):
+        assert f'key: "{key}"' in block, f"thiếu trường {key}"
+    assert block.count("hint:") == 6, "mỗi trường phải có một câu giải thích"
+
+
+def test_legend_states_the_two_rules_a_reader_cannot_guess() -> None:
+    """Đầu và Đuôi đọc thẳng ra được; Tổng và Bộ thì không.
+
+    Tổng là phép cộng rồi lấy dư — nhìn số 4 cạnh 0 và 4 không đoán ra. Bộ là
+    một quy ước riêng của giới chơi số, càng không.
+    """
+    body = _legend_body()
+    assert "mod 10" in body, "phải nêu công thức Tổng"
+    assert "bóng dương" in body, "phải nêu cách gom Bộ"
+    assert "0↔5" in body, "phải liệt kê cặp bóng để tự kiểm được"
+
+
+def test_legend_example_comes_from_real_data_not_a_made_up_cell() -> None:
+    """Ví dụ phải là kỳ gần nhất, để đối chiếu thẳng với hàng đầu bảng.
+
+    Một ví dụ bịa buộc người đọc tin lời trang nói; một ví dụ có thật thì họ
+    tự kiểm được bằng chính bảng đang mở.
+    """
+    body = _legend_body()
+    assert "DRAWS[DRAWS.length - 1]" in body, "phải lấy kỳ mới nhất"
+    assert "specialFull(" in body, "ô mẫu phải dựng bằng đúng hàm dựng ô thật"
+
+
+def test_legend_lists_the_whole_bo_family_so_the_example_always_teaches() -> None:
+    """Bộ của 04 chính là 04. Câu "04 nằm ở bộ 04" không dạy được gì.
+
+    Kỳ mới nhất đổi mỗi ngày, nên ví dụ phải tự đứng vững với mọi con số:
+    liệt kê đủ các con cùng bộ thì trường hợp trùng tên cũng vẫn nói ra được
+    quan hệ bóng và lộn.
+    """
+    body = _legend_body()
+    assert "BO_LOOKUP[n] === bo" in body, "phải quét bảng tra ra cả họ"
+    assert "family.join(" in body, "phải in danh sách ra chú giải"
+
+
+def test_legend_does_not_keep_a_second_copy_of_the_field_names() -> None:
+    """Chú giải và ô dữ liệu phải đọc chung một nguồn.
+
+    Chép nhãn sang Python hoặc sang một mảng thứ hai là tạo bản sẽ trôi: sửa
+    ``DE_FIELDS`` mà quên sửa bản kia thì chú giải nói sai về chính cái ô nó
+    đang chú giải.
+    """
+    body = _legend_body()
+    assert "DE_FIELDS.map(" in body, "chú giải phải sinh từ DE_FIELDS"
+
+    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    block = builder[builder.index("FIELD_TOGGLE = (") :]
+    block = block[: block.index("\n)")]
+    assert 'id="sp-legend"' in block, "trang phải có chỗ để đặt chú giải"
+    assert 'id="sp-legend"></div>' in block, "khối chú giải phải rỗng trong HTML"
+    for label in ("Ngày", "Tổng", "Đầu", "Đuôi", "Chẵn lẻ", "Bộ"):
+        assert label not in block, f"nhãn {label} bị chép sang Python"
+
+
+@pytest.mark.parametrize("slug", ["bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"])
+def test_special_pages_carry_the_legend(slug) -> None:
+    page = (DOCS / f"{slug}.html").read_text(encoding="utf-8")
+    assert 'id="sp-legend"' in page, f"{slug} chưa có chú giải ô"
+    assert ".sp-lg-hint" in page, f"{slug} chưa có kiểu cho chú giải"
+
+
+def test_hints_are_not_hidden_behind_hover_only() -> None:
+    """Điện thoại không có chuột để trỏ vào. Lời giải thích phải nằm sẵn
+    trong trang, ``title`` chỉ là lối tắt thêm cho chuột."""
+    body = _legend_body()
+    assert "sp-lg-hint" in body, "lời giải thích phải được in ra thành thẻ"
+
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    block = css[css.index(".sp-lg-hint {") :]
+    block = block[: block.index("}") + 1]
+    assert "display: block" in block, "chú giải phải luôn hiện"
