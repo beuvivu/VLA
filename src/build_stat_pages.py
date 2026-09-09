@@ -34,6 +34,7 @@ from typing import Sequence
 
 import pandas as pd
 
+from number_reference import all_cap_loto_50, bo_family_id
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link
 from xsmb_domain import (
     LOTO_BASELINE_RATE,
@@ -175,50 +176,93 @@ def _mark_tools() -> str:
     )
 
 
+#: Hộp bật/tắt sáu trường trong mỗi ô bảng đặc biệt. Trang tham chiếu có đúng
+#: sáu ô đánh dấu này; nội dung do JavaScript dựng từ DE_FIELDS.
+FIELD_TOGGLE = '<div class="sp-fields-toggle" id="sp-fields-toggle"></div>'
+
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
-        title="Bảng đặc biệt theo ngày",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ, xếp theo ngày trong tháng và tháng trong năm.",
-        controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
-        render="renderSpecialByDay",
+        title="Bảng đặc biệt theo tuần",
+        subtitle="Giải đặc biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ.",
+        controls=_range_controls(),
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        render="renderSpecialByWeek",
     ),
     StatPage(
         slug="bang-dac-biet-thang",
         title="Bảng đặc biệt theo tháng",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ của từng ngày, xếp theo lịch tuần.",
-        controls='<div class="sp-controls"><label>Tháng <select id="sp-month"></select></label>'
+        subtitle="Cả năm theo ngày × tháng, kèm bảng cùng một tháng qua nhiều năm.",
+        controls='<div class="sp-controls">'
+                 '<label>Năm <select id="sp-year"></select></label>'
+                 '<label>Tháng <select id="sp-month"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Cùng tháng đã chọn, qua tất cả các năm có dữ liệu</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-multiyear"></table></div>',
         render="renderSpecialByMonth",
     ),
     StatPage(
         slug="bang-dac-biet-nam",
         title="Bảng đặc biệt theo năm",
-        subtitle="Giải đặc biệt ĐỦ 5 CHỮ SỐ cả năm: hàng là ngày, cột là tháng.",
-        controls='<div class="sp-controls"><label>Năm <select id="sp-year"></select></label>'
+        subtitle="Cả năm, chọn Kiểu tháng (ngày × tháng) hoặc Kiểu tuần (tuần × thứ).",
+        controls='<div class="sp-controls">'
+                 '<label>Năm <select id="sp-year"></select></label>'
+                 '<label>Kiểu <select id="sp-mode"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        body=FIELD_TOGGLE
+             + '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderSpecialByYear",
     ),
     StatPage(
         slug="tan-suat-loto",
         title="Tần suất lô tô",
-        subtitle="Số lần mỗi con 00–99 về trong dải đã chọn, kèm mốc kỳ vọng.",
-        controls=_range_controls(),
-        body='<div id="sp-matrix" class="sp-matrix"></div>'
+        subtitle="Ma trận con lô × từng kỳ, đổi được chiều, chọn con để so sánh.",
+        controls='<div class="sp-controls">'
+                 '<label>Từ ngày <input type="date" id="sp-from"></label>'
+                 '<label>Đến ngày <input type="date" id="sp-to"></label>'
+                 '<label>Chiều <select id="sp-orient">'
+                 '<option>Xem theo chiều ngang</option>'
+                 '<option>Xem theo chiều dọc</option></select></label>'
+                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+        body='<div class="sp-picker" id="sp-picker"></div>'
+             '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
+             '<div class="sp-scroll"><table class="sp-table sp-dense" id="sp-matrix-grid"></table></div>'
+             '<h3 class="sp-subhead">Xếp hạng trên trọn dải đã chọn</h3>'
+             '<div id="sp-matrix" class="sp-matrix"></div>'
              '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderLotoFrequency",
     ),
     StatPage(
         slug="tan-suat-cap-loto",
         title="Tần suất cặp lô tô",
-        subtitle="Số lần hai con lô cùng về trong một kỳ, kèm mốc cực đại ngẫu nhiên.",
-        controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
+        subtitle="Ma trận 50 họ cặp × từng kỳ, đổi được chiều; kèm bảng đồng xuất hiện.",
+        controls='<div class="sp-controls">'
+                 '<label>Từ ngày <input type="date" id="sp-from"></label>'
+                 '<label>Đến ngày <input type="date" id="sp-to"></label>'
+                 '<label>Chiều <select id="sp-orient">'
+                 '<option>Xem theo chiều ngang</option>'
+                 '<option>Xem theo chiều dọc</option></select></label>'
+                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+        body='<p class="sp-matrix-note" id="sp-matrix-note"></p>'
+             '<div class="sp-scroll"><table class="sp-table sp-dense" id="sp-matrix-grid"></table></div>'
+             '<h3 class="sp-subhead">Cặp đồng xuất hiện nhiều nhất trên trọn dải</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>',
         render="renderPairFrequency",
+    ),
+    StatPage(
+        slug="cau-giai-dac-biet",
+        title="Cầu giải đặc biệt",
+        subtitle="Tần suất hai số cuối giải ĐB theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
+        controls=_range_controls(),
+        body='<div class="sp-scroll"><table class="sp-table" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Cặp lộn của giải đặc biệt</h3>'
+             '<div class="sp-scroll"><table class="sp-table" id="sp-lon"></table></div>'
+             '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
+             '<div id="sp-recent" class="sp-recent"></div>',
+        render="renderSpecialBridge",
     ),
     StatPage(
         slug="cap-lon-loto",
@@ -342,6 +386,38 @@ PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
 )
 
 
+def cap_loto_50() -> list[list[int]]:
+    """50 họ cặp lô tô, lấy từ ``number_reference.all_cap_loto_50``.
+
+    Trang tham chiếu dùng đúng bộ này: 45 cặp lộn thật cộng 5 cặp ghép hai số
+    kép qua bóng (``00-55``, ``11-66``, ``22-77``, ``33-88``, ``44-99``). Đọc
+    được từ chính trang họ nên đây là bằng chứng chứ không phải suy đoán.
+
+    Returns:
+        50 cặp ``[nhỏ, lớn]``, sắp theo phần tử nhỏ.
+    """
+    pairs = [sorted(int(m) for m in family) for family in all_cap_loto_50()]
+    pairs.sort()
+    return pairs
+
+
+def bo_lookup() -> list[str]:
+    """Bảng tra họ **bộ số** cho 00-99, dựng sẵn cho trình duyệt.
+
+    Bộ số gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì
+    6 có bóng 1 và 8 có bóng 3. Có 15 họ, nhãn là phần tử nhỏ nhất.
+
+    Trang tham chiếu hiển thị cột này trong mỗi ô bảng đặc biệt; đo trên 24 ô
+    thật thì :func:`number_reference.bo_family_id` khớp 100%, nên dựng sẵn từ
+    chính hàm đó thay vì cài lại công thức trong JavaScript — một bản chép
+    thứ hai là một bản sẽ trôi.
+
+    Returns:
+        Danh sách 100 nhãn, chỉ số là con số 00-99.
+    """
+    return [bo_family_id(f"{n:02d}") for n in range(100)]
+
+
 def pair_chance_grid() -> list[list[float]]:
     """Bảng tra ``[số kỳ, cực đại, cận dưới, cận trên]`` cho trình duyệt.
 
@@ -408,7 +484,9 @@ Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trê
 {len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
 {app_shell_close(f"{page.slug}.html")}
 <script>window.__VLA_DRAWS__={json_for_html_script(draws)};
-window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};</script>
+window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};
+window.__VLA_BO__={json_for_html_script(bo_lookup())};
+window.__VLA_CAP50__={json_for_html_script(cap_loto_50())};</script>
 <script>
 {_asset("stat_pages.js")}
 boot({json.dumps(page.render)});

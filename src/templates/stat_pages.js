@@ -84,6 +84,82 @@ function specialFull(value) {
   return `<span class="sp-de">${s.slice(0, 3)}<b>${s.slice(3)}</b></span>`;
 }
 
+// --- Ô bảng đặc biệt: sáu trường ------------------------------------------
+//
+// Trang tham chiếu không hiện mỗi con số mà là sáu trường, và có sáu ô đánh
+// dấu để bật/tắt từng trường. Giải mã từ dữ liệu thật của họ, kiểm trên 24 ô:
+//
+//   '570 68 4 6 8 C 13'
+//    │   │  │ │ │ │ └─ Bộ
+//    │   │  │ │ │ └─── Chẵn/Lẻ  (theo Đuôi)
+//    │   │  │ │ └───── Đuôi     (chữ số hàng đơn vị)
+//    │   │  │ └─────── Đầu      (chữ số hàng chục)
+//    │   │  └───────── Tổng     ((Đầu + Đuôi) mod 10)
+//    │   └──────────── hai số cuối
+//    └──────────────── ba số đầu
+//
+// Bộ gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì 6 có
+// bóng 1 và 8 có bóng 3. Bảng tra dựng sẵn phía Python từ
+// number_reference.bo_family_id, không cài lại công thức ở đây — một bản chép
+// thứ hai là một bản sẽ trôi khỏi bản gốc.
+const BO_LOOKUP = window.__VLA_BO__ || [];
+
+const DE_FIELDS = [
+  { key: "ngay", label: "Ngày" },
+  { key: "tong", label: "Tổng" },
+  { key: "dau", label: "Đầu" },
+  { key: "duoi", label: "Đuôi" },
+  { key: "chanle", label: "Chẵn lẻ" },
+  { key: "bo", label: "Bộ" },
+];
+
+const FIELD_KEY = "vla.defields." + (location.pathname.split("/").pop() || "index");
+let SHOWN = new Set(DE_FIELDS.map((f) => f.key));
+try {
+  const saved = localStorage.getItem(FIELD_KEY);
+  if (saved) SHOWN = new Set(JSON.parse(saved));
+} catch (e) { /* cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc */ }
+
+/** Ô bảng đặc biệt đầy đủ: giải 5 số cộng các trường đang bật. */
+function specialCell(value, iso) {
+  const s = String(value).padStart(5, "0");
+  const two = s.slice(3);
+  const dau = +two[0];
+  const duoi = +two[1];
+
+  const parts = [];
+  if (iso && SHOWN.has("ngay")) {
+    parts.push(`<i class="sp-f sp-f-ngay">${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
+  }
+  if (SHOWN.has("tong")) parts.push(`<i class="sp-f">${(dau + duoi) % 10}</i>`);
+  if (SHOWN.has("dau")) parts.push(`<i class="sp-f">${dau}</i>`);
+  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f">${duoi}</i>`);
+  if (SHOWN.has("chanle")) parts.push(`<i class="sp-f">${duoi % 2 === 0 ? "C" : "L"}</i>`);
+  if (SHOWN.has("bo")) parts.push(`<i class="sp-f">${BO_LOOKUP[+two] || ""}</i>`);
+
+  // Gọi lại specialFull thay vì chép markup: hai bản dựng cùng một thứ là hai
+  // bản sẽ lệch nhau khi ai đó sửa một bên.
+  return specialFull(s) +
+    (parts.length ? `<span class="sp-fields">${parts.join("")}</span>` : "");
+}
+
+/** Gắn sáu ô đánh dấu bật/tắt trường. */
+function bindFieldToggles(render) {
+  const box = $("sp-fields-toggle");
+  if (!box) return;
+  box.innerHTML = DE_FIELDS.map((f) =>
+    `<label class="sp-fchk"><input type="checkbox" data-field="${f.key}"` +
+    `${SHOWN.has(f.key) ? " checked" : ""}> ${f.label}</label>`
+  ).join("");
+  box.addEventListener("change", (ev) => {
+    const key = ev.target.dataset.field;
+    if (!key) return;
+    if (ev.target.checked) SHOWN.add(key); else SHOWN.delete(key);
+    try { localStorage.setItem(FIELD_KEY, JSON.stringify(Array.from(SHOWN))); } catch (e) {}
+    render();
+  });
+}
+
 /** Hai số cuối, dùng cho phép ĐẾM chứ không phải để hiển thị. */
 function lastTwo(value) {
   return String(value).padStart(5, "0").slice(-2);
@@ -168,9 +244,119 @@ function countLoto(rows) {
 
 // --- Từng trang ------------------------------------------------------------
 
+// --- Ma trận tần suất: số × ngày -------------------------------------------
+//
+// Bố cục của trang tham chiếu: một chiều là 100 con lô, chiều kia là từng kỳ,
+// ô là số lần con đó về trong kỳ đó. Đổi được chiều ngang/dọc, và có bộ chọn
+// để chỉ hiện những con đang quan tâm.
+//
+// Trần cột là ràng buộc thật, không phải lười: chọn "Tất cả" trên kho 2392 kỳ
+// cho 239 000 ô và trình duyệt nghẹn. Cắt còn MATRIX_MAX_DAYS kỳ gần nhất và
+// nói rõ trên trang, thay vì để trang treo mà không ai hiểu vì sao.
+const MATRIX_MAX_DAYS = 120;
+
+const PICK_KEY = "vla.picked." + (location.pathname.split("/").pop() || "index");
+let PICKED = null;   // null = hiện tất cả
+try {
+  const saved = localStorage.getItem(PICK_KEY);
+  if (saved) PICKED = new Set(JSON.parse(saved));
+} catch (e) { PICKED = null; }
+
+function savePicked() {
+  try {
+    if (PICKED) localStorage.setItem(PICK_KEY, JSON.stringify(Array.from(PICKED)));
+    else localStorage.removeItem(PICK_KEY);
+  } catch (e) {}
+}
+
+function isPicked(n) {
+  return PICKED === null || PICKED.has(n);
+}
+
+/** Lưới 00-99 bấm để chọn, kèm bốn nút nhanh. */
+function bindPicker(render) {
+  const box = $("sp-picker");
+  if (!box) return;
+  const draw = () => {
+    box.innerHTML =
+      '<div class="sp-pick-quick">' +
+      '<button type="button" data-pick="all">Tất cả</button>' +
+      '<button type="button" data-pick="none">Bỏ hết</button>' +
+      '<button type="button" data-pick="even">Số chẵn</button>' +
+      '<button type="button" data-pick="odd">Số lẻ</button>' +
+      "</div><div class='sp-pick-grid'>" +
+      Array.from({ length: 100 }, (_, n) =>
+        `<button type="button" class="sp-pick${isPicked(n) ? " on" : ""}" ` +
+        `data-num="${n}">${pad2(n)}</button>`).join("") + "</div>";
+  };
+  draw();
+
+  box.addEventListener("click", (ev) => {
+    const quick = ev.target.dataset.pick;
+    if (quick) {
+      if (quick === "all") PICKED = null;
+      else if (quick === "none") PICKED = new Set();
+      else {
+        PICKED = new Set();
+        for (let n = 0; n < 100; n++) {
+          if ((n % 2 === 0) === (quick === "even")) PICKED.add(n);
+        }
+      }
+      savePicked(); draw(); render();
+      return;
+    }
+    const num = ev.target.dataset.num;
+    if (num === undefined) return;
+    const n = +num;
+    if (PICKED === null) PICKED = new Set(Array.from({ length: 100 }, (_, i) => i));
+    if (PICKED.has(n)) PICKED.delete(n); else PICKED.add(n);
+    savePicked(); draw(); render();
+  });
+}
+
+/** Ma trận số × ngày; đổi chiều theo bộ chọn. */
+function renderLotoMatrix(rows) {
+  const grid = $("sp-matrix-grid");
+  if (!grid) return;
+
+  const shown = rows.slice(-MATRIX_MAX_DAYS);
+  const nums = Array.from({ length: 100 }, (_, n) => n).filter(isPicked);
+
+  const note = $("sp-matrix-note");
+  if (note) {
+    note.textContent = rows.length > shown.length
+      ? `Ma trận hiện ${shown.length} kỳ gần nhất trong ${rows.length} kỳ đã chọn ` +
+        `(trần ${MATRIX_MAX_DAYS} để trang không treo). Bảng xếp hạng bên dưới ` +
+        "dùng trọn dải."
+      : `${shown.length} kỳ × ${nums.length} con.`;
+  }
+  if (!nums.length) { grid.innerHTML = ""; return; }
+
+  const per = shown.map((r) => {
+    const c = new Array(100).fill(0);
+    r.n.forEach((x) => { c[parseInt(x, 10)] += 1; });
+    return c;
+  });
+
+  const vertical = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
+  if (vertical) {
+    const head = ["Ngày"].concat(nums.map(pad2));
+    const body = shown.map((r, i) =>
+      [`<b>${r.d.slice(8)}-${r.d.slice(5, 7)}</b>`]
+        .concat(nums.map((n) => per[i][n] || ""))).reverse();
+    table(grid, head, body);
+  } else {
+    const head = ["Số"].concat(shown.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`).reverse());
+    const body = nums.map((n) =>
+      [`<b>${pad2(n)}</b>`].concat(per.map((c) => c[n] || "").reverse()));
+    table(grid, head, body);
+  }
+}
+
 function renderLotoFrequency() {
   const rows = selected();
   setCount(rows);
+  renderLotoMatrix(rows);
   const counts = countLoto(rows);
   const expected = LOTO_BASELINE * rows.length;
   const max = Math.max(...counts, 1);
@@ -246,9 +432,52 @@ function renderReversePairs() {
   }
 }
 
+// --- Ma trận 50 họ cặp × ngày ----------------------------------------------
+//
+// Bộ 50 họ lấy từ number_reference.all_cap_loto_50 và nhúng sẵn: 45 cặp lộn
+// thật cộng 5 cặp ghép hai số kép qua bóng (00-55, 11-66, 22-77, 33-88,
+// 44-99). Đọc từ chính trang tham chiếu thấy họ dùng đúng bộ này, nên đây là
+// bằng chứng chứ không phải suy đoán.
+const CAP50 = window.__VLA_CAP50__ || [];
+
+function renderPairMatrix(rows) {
+  const grid = $("sp-matrix-grid");
+  if (!grid || !CAP50.length) return;
+
+  const shown = rows.slice(-MATRIX_MAX_DAYS);
+  const note = $("sp-matrix-note");
+  if (note) {
+    note.textContent = rows.length > shown.length
+      ? `Ma trận hiện ${shown.length} kỳ gần nhất trong ${rows.length} kỳ đã chọn ` +
+        `(trần ${MATRIX_MAX_DAYS} để trang không treo).`
+      : `${shown.length} kỳ × ${CAP50.length} họ cặp.`;
+  }
+
+  // Mỗi ô: số lần HAI con của họ đó về trong kỳ, cộng lại.
+  const per = shown.map((r) => {
+    const c = new Array(100).fill(0);
+    r.n.forEach((x) => { c[parseInt(x, 10)] += 1; });
+    return CAP50.map(([a, b]) => c[a] + c[b]);
+  });
+
+  const label = ([a, b]) => `${pad2(a)}-${pad2(b)}`;
+  const day = (r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`;
+
+  if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
+    table(grid, ["Ngày"].concat(CAP50.map(label)),
+      shown.map((r, i) => [`<b>${day(r)}</b>`]
+        .concat(per[i].map((v) => v || ""))).reverse());
+  } else {
+    table(grid, ["Cặp"].concat(shown.map(day).reverse()),
+      CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
+        .concat(per.map((c) => c[j] || "").reverse())));
+  }
+}
+
 function renderPairFrequency() {
   const rows = selected();
   setCount(rows);
+  renderPairMatrix(rows);
   updateChanceNote(rows.length);
   const co = new Map();
   rows.forEach((r) => {
@@ -346,31 +575,6 @@ function renderTomorrow() {
     ]), { numeric: [0, 2, 3, 4] });
 }
 
-function renderSpecialByDay() {
-  const sel = $("sp-year");
-  const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
-  if (sel && !sel.options.length) {
-    sel.innerHTML = years.map((y) => `<option>${y}</option>`).join("");
-    sel.value = years[years.length - 1];
-  }
-  const year = sel ? sel.value : years[years.length - 1];
-  const rows = DRAWS.filter((r) => r.d.slice(0, 4) === year);
-  setCount(rows);
-  const cell = {};
-  rows.forEach((r) => { cell[r.d.slice(5)] = r.s; });
-
-  const head = ["Ngày"].concat(Array.from({ length: 12 }, (_, m) => "T" + (m + 1)));
-  const body = [];
-  for (let day = 1; day <= 31; day++) {
-    const line = [String(day)];
-    for (let m = 1; m <= 12; m++) {
-      const v = cell[`${pad2(m)}-${pad2(day)}`];
-      line.push(v ? specialFull(v) : "");
-    }
-    body.push(line);
-  }
-  table($("sp-grid"), head, body);
-}
 
 function groupSpecial(keyOf, label) {
   const rows = selected();
@@ -396,11 +600,14 @@ function groupSpecial(keyOf, label) {
 // Khai báo bằng `function`, KHÔNG dùng `const`: boot() tra hàm qua
 // window[renderName], mà `const` ở cấp cao nhất của script cổ điển không tạo
 // thuộc tính trên window. Dùng const thì hai trang này im lặng không vẽ gì.
-// --- Bảng đặc biệt theo THÁNG: lịch theo tuần ------------------------------
+// --- Ba bảng đặc biệt ------------------------------------------------------
 //
-// Trang gốc liệt kê trọn giải đặc biệt của từng ngày, không phải bảng thống
-// kê tổng hợp. Xếp theo lịch tuần (hàng = tuần, cột = thứ) vì người soi cầu
-// đối chiếu theo thứ trong tuần, và dạng này cho thấy ngay ngày nào khuyết.
+// Bố cục lấy theo trang tham chiếu, đọc được cấu trúc thật bằng
+// .github/workflows/inspect-reference-pages.yml:
+//
+//   bang-dac-biet        53 hàng x 7 cột, hàng = tuần ISO, cột = Thứ 2..CN
+//   bang-dac-biet-thang  31 x 12 cho một năm, cộng bảng "cùng tháng nhiều năm"
+//   bang-dac-biet-nam    chọn Kiểu tuần (53x7) hoặc Kiểu tháng (31x12)
 
 const WEEKDAYS = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
 
@@ -409,67 +616,103 @@ function mondayIndex(iso) {
   return (new Date(iso + "T00:00:00Z").getUTCDay() + 6) % 7;
 }
 
-function fillPicker(id, values) {
+/** Thứ Hai của tuần chứa ``iso``, dạng ISO. */
+function weekStart(iso) {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - mondayIndex(iso));
+  return d.toISOString().slice(0, 10);
+}
+
+function fillPicker(id, values, prefer) {
   const sel = $(id);
   if (!sel) return null;
   if (!sel.options.length) {
     sel.innerHTML = values.map((v) => `<option>${v}</option>`).join("");
-    sel.value = values[values.length - 1];
+    sel.value = prefer !== undefined ? prefer : values[values.length - 1];
   }
   return sel.value;
 }
 
-function renderSpecialByMonth() {
-  const months = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 7)))).sort();
-  const month = fillPicker("sp-month", months) || months[months.length - 1];
-  const rows = DRAWS.filter((r) => r.d.slice(0, 7) === month);
-  setCount(rows);
-
+/** Lưới tuần: hàng = tuần, cột = thứ. Dùng cho cả trang tuần và Kiểu tuần. */
+function weekGrid(rows) {
   const byDate = {};
   rows.forEach((r) => { byDate[r.d] = r.s; });
 
-  const [y, m] = month.split("-").map(Number);
-  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
-
-  const body = [];
-  let week = new Array(7).fill("");
-  for (let day = 1; day <= daysInMonth; day++) {
-    const iso = `${month}-${pad2(day)}`;
-    const idx = mondayIndex(iso);
-    const de = byDate[iso];
-    week[idx] = `<span class="sp-daynum">${day}</span>` +
-      (de ? specialFull(de) : '<span class="sp-none">—</span>');
-    if (idx === 6 || day === daysInMonth) {
-      body.push(week.slice());
-      week = new Array(7).fill("");
-    }
-  }
-  table($("sp-grid"), WEEKDAYS, body);
+  const weeks = new Map();
+  rows.forEach((r) => {
+    const w = weekStart(r.d);
+    if (!weeks.has(w)) weeks.set(w, new Array(7).fill(""));
+    weeks.get(w)[mondayIndex(r.d)] = specialCell(byDate[r.d], r.d);
+  });
+  return Array.from(weeks.keys()).sort().map((w) => weeks.get(w));
 }
 
-// --- Bảng đặc biệt theo NĂM: liệt kê theo tháng ----------------------------
+function renderSpecialByWeek() {
+  const rows = selected();
+  setCount(rows);
+  table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+}
+
+/** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
+function monthGrid(year) {
+  const byDate = {};
+  DRAWS.filter((r) => r.d.slice(0, 4) === year).forEach((r) => { byDate[r.d] = r.s; });
+
+  const body = [];
+  for (let day = 1; day <= 31; day++) {
+    const line = [`<b>${pad2(day)}</b>`];
+    for (let m = 1; m <= 12; m++) {
+      const de = byDate[`${year}-${pad2(m)}-${pad2(day)}`];
+      line.push(de ? specialCell(de, null) : "");
+    }
+    body.push(line);
+  }
+  return body;
+}
+
+const MONTH_HEAD = ["Ngày"].concat(
+  Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1)));
+
+function renderSpecialByMonth() {
+  const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
+  const year = fillPicker("sp-year", years) || years[years.length - 1];
+  const months = Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1));
+  const monthLabel = fillPicker("sp-month", months, months[new Date().getMonth()]);
+  const month = months.indexOf(monthLabel) + 1;
+
+  const inYear = DRAWS.filter((r) => r.d.slice(0, 4) === year);
+  setCount(inYear);
+  table($("sp-grid"), MONTH_HEAD, monthGrid(year));
+
+  // Bảng thứ hai: CÙNG MỘT THÁNG qua tất cả các năm có dữ liệu. Đây là cách
+  // đọc mà bảng một năm không cho thấy — điểm rơi theo ngày lặp qua nhiều năm.
+  const grid = $("sp-multiyear");
+  if (!grid) return;
+  const byYear = new Map();
+  DRAWS.filter((r) => +r.d.slice(5, 7) === month).forEach((r) => {
+    const y = r.d.slice(0, 4);
+    if (!byYear.has(y)) byYear.set(y, new Array(31).fill(""));
+    byYear.get(y)[+r.d.slice(8) - 1] = specialCell(r.s, null);
+  });
+  const head = ["Năm"].concat(Array.from({ length: 31 }, (_, i) => String(i + 1)));
+  const body = Array.from(byYear.keys()).sort().reverse()
+    .map((y) => [`<b>${y}</b>`].concat(byYear.get(y)));
+  table(grid, head, body);
+}
 
 function renderSpecialByYear() {
   const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
   const year = fillPicker("sp-year", years) || years[years.length - 1];
+  const mode = fillPicker("sp-mode", ["Kiểu tháng", "Kiểu tuần"], "Kiểu tháng");
+
   const rows = DRAWS.filter((r) => r.d.slice(0, 4) === year);
   setCount(rows);
 
-  const byDate = {};
-  rows.forEach((r) => { byDate[r.d] = r.s; });
-
-  // Hàng = ngày 1..31, cột = 12 tháng. Mỗi ô là TRỌN giải đặc biệt.
-  const head = ["Ngày"].concat(Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1)));
-  const body = [];
-  for (let day = 1; day <= 31; day++) {
-    const line = [`<b>${day}</b>`];
-    for (let m = 1; m <= 12; m++) {
-      const de = byDate[`${year}-${pad2(m)}-${pad2(day)}`];
-      line.push(de ? specialFull(de) : "");
-    }
-    body.push(line);
+  if (mode === "Kiểu tuần") {
+    table($("sp-grid"), WEEKDAYS, weekGrid(rows));
+  } else {
+    table($("sp-grid"), MONTH_HEAD, monthGrid(year));
   }
-  table($("sp-grid"), head, body);
 }
 
 function renderOverview() {
@@ -513,7 +756,7 @@ function boot(renderName) {
     from.value = DRAWS[Math.max(0, DRAWS.length - 90)].d;
     to.value = DRAWS[DRAWS.length - 1].d;
   }
-  [from, to, $("sp-year"), $("sp-month")].forEach(
+  [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient")].forEach(
     (el) => el && el.addEventListener("change", render));
 
   document.querySelectorAll(".sp-chip").forEach((btn) => {
@@ -529,5 +772,59 @@ function boot(renderName) {
     });
   });
   bindMarking();
+  bindFieldToggles(render);
+  bindPicker(render);
   render();
+}
+
+
+// --- Cầu giải đặc biệt -------------------------------------------------------
+//
+// Ba khối, theo đúng bố cục đọc được từ trang tham chiếu:
+//   1. Ma trận 10x10 tần suất hai số cuối giải ĐB, xếp theo Đầu 0-9.
+//   2. Cặp lộn thật kèm số lần, sắp giảm dần.
+//   3. Kết quả ba kỳ gần nhất, đủ các giải.
+
+function renderSpecialBridge() {
+  const rows = selected();
+  setCount(rows);
+
+  const count = new Array(100).fill(0);
+  rows.forEach((r) => { count[parseInt(lastTwo(r.s), 10)] += 1; });
+
+  // 1. Ma trận Đầu 0-9 x Đuôi 0-9.
+  const head = ["Đầu"].concat(Array.from({ length: 10 }, (_, d) => String(d)));
+  const body = Array.from({ length: 10 }, (_, tens) =>
+    [`<b>Đầu ${tens}</b>`].concat(Array.from({ length: 10 }, (_, ones) => {
+      const n = tens * 10 + ones;
+      return count[n]
+        ? `<b>${pad2(n)}</b><i class="sp-times">${count[n]} lần</i>`
+        : `<span class="sp-none">${pad2(n)}</span>`;
+    })));
+  table($("sp-grid"), head, body);
+
+  // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
+  const lon = $("sp-lon");
+  if (lon) {
+    const pairs = reversePairs()
+      .map(([a, b]) => [a, b, count[a] + count[b]])
+      .filter((p) => p[2] > 0)
+      .sort((x, y) => y[2] - x[2]);
+    table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"],
+      pairs.map((p, k) => [k + 1, `${pad2(p[0])} - ${pad2(p[1])}`, p[2]]),
+      { numeric: [0, 2] });
+  }
+
+  // 3. Ba kỳ gần nhất, đủ giải.
+  const recent = $("sp-recent");
+  if (recent) {
+    const last = DRAWS.slice(-3).reverse();
+    recent.innerHTML = last.map((r) => {
+      const cells = r.n.map((x) => `<span class="sp-lo">${x}</span>`).join("");
+      return `<div class="sp-draw"><h4>Kết quả ngày ${r.d.slice(8)}-` +
+        `${r.d.slice(5, 7)}-${r.d.slice(0, 4)}</h4>` +
+        `<p class="sp-db">Đặc biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
+        `<div class="sp-lolist">${cells}</div></div>`;
+    }).join("");
+  }
 }
