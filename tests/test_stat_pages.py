@@ -843,3 +843,17 @@ def test_notes_only_name_columns_the_tables_actually_render() -> None:
     for column in ("Tỉ lệ", "Lệch chuẩn hoá"):
         assert column in builder, f"ghi chú không còn nhắc {column}?"
         assert f'"{column}"' in js, f"bảng không dựng cột {column}"
+
+
+def test_cycle_page_explains_it_counts_draws_not_calendar_days() -> None:
+    """Cùng một con số, hai cách đếm cho hai kết quả — phải nói rõ đang dùng cách nào.
+
+    Đối chiếu với trang tham chiếu: cả hai cùng xếp 98, 58, 15 lên đầu, nhưng
+    họ in 568/473/431 còn ta in 565/470/428. Không phải sai lệch dữ liệu: 98 ra
+    lần cuối 17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026
+    không quay còn đúng 565 kỳ. Người đọc so hai trang mà không có ghi chú này
+    sẽ tưởng một bên hỏng.
+    """
+    page = (DOCS / "chu-ky-dac-biet.html").read_text(encoding="utf-8")
+    assert "kỳ quay" in page, "phải nói rõ đếm theo kỳ"
+    assert "565" in page, "phải kèm ví dụ đối chiếu được bằng số thật"

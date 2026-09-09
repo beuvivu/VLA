@@ -345,7 +345,11 @@ PAGES: tuple[StatPage, ...] = (
         title="Chu kỳ giải đặc biệt",
         subtitle="Số kỳ chưa về của từng con 00–99 ở giải đặc biệt, và chu kỳ dài nhất trong lịch sử.",
         controls=_range_controls(mode="preset"),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+        body='<p class="sp-note">Đếm theo <b>kỳ quay</b>, không theo ngày lịch, nên số ở '
+             'đây nhỏ hơn trang nào đếm theo ngày. Ví dụ đối chiếu được: con 98 ra lần cuối '
+             '17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026 không quay '
+             'còn <b>565 kỳ</b> — đúng con số cột "Chưa về".</p>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
         render="renderSpecialCycle",
     ),
     StatPage(
