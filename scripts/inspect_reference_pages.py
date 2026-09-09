@@ -77,6 +77,31 @@ def summarise_controls(soup) -> None:
         print(f"    nút/liên kết: {buttons[:16]}")
 
 
+def summarise_links(soup, base: str) -> None:
+    """Liệt kê đường dẫn nội bộ, để biết site có những trang nào.
+
+    Dò cấu trúc mà không biết đường dẫn thì phải đoán, và đoán sai thì tốn
+    thêm một lượt gọi vào trang tin của người ta.
+    """
+    host = base.split("/")[2]
+    seen: dict[str, str] = {}
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if href.startswith("http") and host not in href:
+            continue
+        path = href.split("?")[0].split("#")[0]
+        if path.startswith("http"):
+            path = "/" + path.split("/", 3)[-1] if path.count("/") > 2 else "/"
+        if not path.startswith("/") or path in ("/", ""):
+            continue
+        label = a.get_text(" ", strip=True)[:40]
+        if label and path not in seen:
+            seen[path] = label
+    print(f"    {len(seen)} đường dẫn nội bộ:")
+    for path, label in sorted(seen.items())[:60]:
+        print(f"      {path:44s} {label}")
+
+
 def main() -> int:
     urls = [u.strip() for u in os.environ.get("URLS", "").split(",") if u.strip()]
     if not urls:
@@ -109,6 +134,9 @@ def main() -> int:
         heads = [h.get_text(" ", strip=True) for h in soup.find_all(["h1", "h2", "h3"])]
         if heads:
             print(f"  tiêu đề: {heads[:8]}")
+
+        print("  --- liên kết ---")
+        summarise_links(soup, url)
 
         print("  --- điều khiển ---")
         summarise_controls(soup)
