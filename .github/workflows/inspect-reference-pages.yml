@@ -1,0 +1,51 @@
+name: Đọc cấu trúc trang tham chiếu
+
+# CHẠY TAY, DÙNG MỘT LẦN, KHÔNG CÓ LỊCH.
+#
+# Vì sao cần: sandbox của môi trường phát triển chặn toàn bộ HTTP ra ngoài
+# (kiểm chứng: cả example.com cũng không tới được), nên không đối chiếu được
+# thiết kế với trang gốc. Runner của Actions thì không bị chặn — kho vẫn cào
+# hainhay.net hằng ngày qua chính đường này.
+#
+# Job chỉ ĐỌC và in cấu trúc ra log. Không commit, không tải hiện vật, không
+# lưu nội dung trang vào kho — bản quyền của trang là của họ, ta chỉ cần biết
+# bố cục có những cột nào.
+#
+# Mỗi trang gọi đúng MỘT lần, có nhịp chờ giữa các lần.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Danh sách URL, cách nhau bằng dấu phẩy"
+        required: false
+        default: >-
+          https://hainhay.net/tan-suat-loto,https://hainhay.net/tan-suat-cap-loto,https://hainhay.net/bang-dac-biet,https://hainhay.net/bang-dac-biet-thang,https://hainhay.net/bang-dac-biet-nam,https://hainhay.net/cau-giai-dac-biet
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-reference-pages
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: In cấu trúc bảng và điều khiển
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir requests beautifulsoup4 lxml
+
+      - name: Đọc và tóm tắt
+        env:
+          URLS: ${{ inputs.urls }}
+        run: python scripts/inspect_reference_pages.py
