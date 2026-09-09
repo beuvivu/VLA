@@ -311,8 +311,34 @@ PAGES: tuple[StatPage, ...] = (
         body='<div class="sp-duo">'
              '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines" id="sp-head"></table></div>'
              '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines" id="sp-tail"></table></div>'
-             "</div>",
+             '</div>'
+             '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐẦU</h3>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-head"></table></div>'
+             '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐUÔI (đít)</h3>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-tail"></table></div>'
+             '<h3 class="sp-subhead">20 kỳ gần nhất theo TỔNG</h3>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-sum"></table></div>',
         render="renderHeadTail",
+    ),
+    StatPage(
+        slug="lo-gan",
+        title="Lô gan miền Bắc",
+        subtitle="Số kỳ chưa về của từng con lô tô, gan cực đại trong lịch sử, và cặp lô gan.",
+        controls=_range_controls(mode="preset"),
+        body='<p class="sp-note">Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: '
+             'XSMB nghỉ Tết và nghỉ 01–22/04/2020, đếm theo ngày lịch sẽ thổi phồng '
+             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> chỉ tính '
+             'trong kho lịch sử của trang này, nên có thể lệch với trang khác có '
+             'lịch sử dài ngắn khác.</p>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+             '<h3 class="sp-subhead">Gan cực đại từ trước đến nay, cả 00–99</h3>'
+             '<div class="sp-duo">'
+             '<div><table class="sp-table sp-grid-lines" id="sp-max-lo"></table></div>'
+             '<div><table class="sp-table sp-grid-lines" id="sp-max-hi"></table></div>'
+             '</div>'
+             '<h3 class="sp-subhead">Cặp lô gan — cặp về khi một trong hai con có mặt trong kỳ</h3>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-pair-gan"></table></div>',
+        render="renderLoGan",
     ),
     StatPage(
         slug="chu-ky-dac-biet",

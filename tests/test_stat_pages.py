@@ -136,13 +136,13 @@ def test_page_slugs_are_unique() -> None:
 
 
 def test_all_ten_requested_pages_are_built() -> None:
-    """Mười trang được yêu cầu, cộng trang cặp lộn tách ra riêng."""
+    """Mười trang được yêu cầu, cộng cặp lộn và lô gan tách ra riêng."""
     expected = {
         "bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam",
         "tan-suat-loto", "tan-suat-cap-loto", "cap-lon-loto", "dau-duoi-loto",
         "cau-giai-dac-biet", "giai-dac-biet-theo-tong",
         "chu-ky-dac-biet", "cau-dac-biet-theo-bo-so", "giai-db-ngay-mai",
-        "thong-ke-tong-hop",
+        "thong-ke-tong-hop", "lo-gan",
     }
     assert {p.slug for p in PAGES} == expected
 
@@ -725,3 +725,80 @@ def test_hints_are_not_hidden_behind_hover_only() -> None:
     block = css[css.index(".sp-lg-hint {") :]
     block = block[: block.index("}") + 1]
     assert "display: block" in block, "chú giải phải luôn hiện"
+
+
+# --- Lô gan --------------------------------------------------------------------
+
+
+def _js_function(name: str) -> str:
+    """Mã nguồn của một hàm trong tệp JavaScript.
+
+    Args:
+        name: Tên hàm.
+
+    Returns:
+        Phần mã từ dòng khai báo tới hàm kế tiếp.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    body = js[js.index(f"function {name}(") :]
+    return body[: body.index("\nfunction ", 1)]
+
+
+def test_pair_gan_counts_either_number_not_both() -> None:
+    """Cặp về khi MỘT TRONG HAI con có mặt, không phải cả hai.
+
+    Đọc ra từ số liệu trang tham chiếu chứ không đoán: họ in 24-42 ra gần nhất
+    02-09-2026 và 29-92 ra 05-09-2026. Cách "cả hai con cùng về" cho 23-08 và
+    18-08 — lệch hẳn. Cách "một trong hai" khớp cả ba dòng họ in.
+
+    Thống kê cũng nói vậy: hai con cùng về một kỳ có xác suất 5,49%, gan cực
+    đại phải cỡ 100 kỳ, trong khi trang tham chiếu in 11-17.
+    """
+    assert "&& !seen.has(pair[1])" in _js_function("pairGaps"), (
+        "phải là 'không con nào về' mới bỏ qua; dùng || là hoá thành 'cả hai'"
+    )
+    # Chú thích nằm TRÊN dòng khai báo nên không thuộc thân hàm.
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "MỘT TRONG HAI" in js, "phải ghi lại định nghĩa đã kiểm chứng"
+
+
+def test_gan_compares_numbers_with_numbers() -> None:
+    """CAP50 chứa số nguyên, ``r.n`` chứa chuỗi hai ký tự.
+
+    So thẳng hai kiểu thì 0 không bao giờ bằng "00", và bảng vẫn dựng ra bình
+    thường — chỉ là mọi cặp đều "chưa từng về" trên hơn 2000 kỳ. Không lỗi nào
+    được ném ra, nên chỉ nhìn số mới thấy.
+    """
+    for name in ("lotoGaps", "pairGaps"):
+        assert "parseInt(x, 10)" in _js_function(name), (
+            f"{name} phải quy chuỗi về số trước khi so"
+        )
+
+
+def test_gan_counts_a_draw_once_even_if_the_number_repeats() -> None:
+    """Một con về hai nháy trong cùng kỳ không làm nó bớt gan hơn về một nháy."""
+    assert "new Set(" in _js_function("lotoGaps"), "phải khử trùng trong cùng một kỳ"
+
+
+def test_lo_gan_page_has_all_four_reference_tables() -> None:
+    """Trang tham chiếu có bốn khối; thiếu khối nào là thiếu chức năng đó."""
+    page = (DOCS / "lo-gan.html").read_text(encoding="utf-8")
+    for table_id in ("sp-grid", "sp-max-lo", "sp-max-hi", "sp-pair-gan"):
+        assert f'id="{table_id}"' in page, f"thiếu bảng {table_id}"
+
+
+def test_lo_gan_page_says_gan_is_counted_in_draws_not_calendar_days() -> None:
+    """Hai cách đếm chỉ trùng nhau khi ngày nào cũng quay, mà XSMB thì không."""
+    page = (DOCS / "lo-gan.html").read_text(encoding="utf-8")
+    assert "kỳ quay" in page and "ngày lịch" in page, (
+        "trang phải nói rõ gan đếm theo kỳ"
+    )
+    assert "lịch sử" in page, "phải nói gan cực đại phụ thuộc độ dài lịch sử"
+
+
+def test_head_tail_page_has_the_three_per_day_matrices() -> None:
+    """Bảng gộp trả lời 'chữ số nào hay ra'; ma trận trả lời 'hôm nào ra mấy
+    lần'. Trang tham chiếu có cả ba ma trận Đầu, Đuôi và Tổng."""
+    page = (DOCS / "dau-duoi-loto.html").read_text(encoding="utf-8")
+    for table_id in ("sp-day-head", "sp-day-tail", "sp-day-sum"):
+        assert f'id="{table_id}"' in page, f"thiếu ma trận {table_id}"

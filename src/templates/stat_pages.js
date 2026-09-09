@@ -635,6 +635,26 @@ function renderHeadTail() {
   };
   build($("sp-head"), head, "Chữ số đầu");
   build($("sp-tail"), tail, "Chữ số đuôi");
+
+  // Ba ma trận NGÀY x chữ số, đúng bố cục trang tham chiếu. Bảng gộp phía
+  // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
+  // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
+  //
+  // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng đặc biệt.
+  const perDay = (pick, label, el) => {
+    const recent = rows.slice(-20).reverse();
+    const headers = ["Ngày"].concat(
+      Array.from({ length: 10 }, (_, d) => `${label} ${d}`));
+    table(el, headers, recent.map((r) => {
+      const count = new Array(10).fill(0);
+      r.n.forEach((x) => { count[pick(+x[0], +x[1])] += 1; });
+      return [viDate(r.d)].concat(
+        count.map((v) => (v ? `${v} lần` : '<span class="sp-zero">0</span>')));
+    }), { numeric: Array.from({ length: 10 }, (_, i) => i + 1) });
+  };
+  perDay((d) => d, "Đầu", $("sp-day-head"));
+  perDay((_, u) => u, "Đuôi", $("sp-day-tail"));
+  perDay((d, u) => (d + u) % 10, "Tổng", $("sp-day-sum"));
 }
 
 function specialGaps() {
@@ -650,6 +670,116 @@ function specialGaps() {
   });
   const n = DRAWS.length;
   return { last, maxGap, hits, current: last.map((t) => (t < 0 ? n : n - 1 - t)), n };
+}
+
+// --- Lô gan -----------------------------------------------------------------
+//
+// Bố cục đọc được từ trang tham chiếu (thongkemienbac, thong-ke-lo-gan):
+//   1. Lô gan hiện tại: Bộ số | Ngày ra cuối cùng | Số ngày gan | Gan cực đại
+//   2. Gan cực đại của cả 00-99, tách hai bảng 00-49 và 50-99
+//   3. Cặp lô gan: Cặp số | Ngày ra gần đây | Số ngày gan | Gan cực đại
+//
+// "Gan" đếm theo KỲ chứ không theo ngày lịch. Hai cách này chỉ trùng nhau khi
+// ngày nào cũng quay; XSMB nghỉ Tết và nghỉ 01-22/04/2020, nên đếm theo ngày
+// lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
+
+/** Gan của từng con 00-99 trên lô tô (27 con mỗi kỳ). */
+function lotoGaps() {
+  const last = new Array(100).fill(-1);
+  const maxGap = new Array(100).fill(0);
+  const hits = new Array(100).fill(0);
+  DRAWS.forEach((r, t) => {
+    // Một con có thể về nhiều lần trong cùng một kỳ. Với gan thì kỳ đó tính
+    // MỘT lần — về hai nháy không làm con số bớt gan hơn về một nháy.
+    const seen = new Set(r.n.map((x) => parseInt(x, 10)));
+    seen.forEach((k) => {
+      hits[k] += 1;
+      if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
+      last[k] = t;
+    });
+  });
+  const n = DRAWS.length;
+  const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
+  return { last, maxGap, current, hits };
+}
+
+/** Gan của 50 cặp lô tô: cặp về khi MỘT TRONG HAI con có mặt trong kỳ.
+ *
+ * Định nghĩa này đọc ra từ chính số liệu trang tham chiếu, không phải đoán.
+ * Bản đầu tôi lấy "cả hai con cùng về", và nó sai:
+ *
+ *   cặp     họ in          "cả hai"        "một trong hai"
+ *   24-42   02-09, gan 7   23-08, gan 17   02-09, gan 7   <- khớp
+ *   23-32   04-09, gan 5   04-09, gan 5    04-09, gan 5
+ *   29-92   05-09, gan 4   18-08, gan 22   05-09, gan 4   <- khớp
+ *
+ * Cách "cả hai" trùng đúng một dòng, và trùng là do tình cờ. Nó cũng mâu thuẫn
+ * với thống kê: hai con cùng về một kỳ có xác suất 5,49% nên gan cực đại phải
+ * cỡ 100 kỳ, trong khi họ in 11-17. Đánh cặp lộn là đánh cả hai con nên trúng
+ * một con là trúng — "một trong hai" mới là nghĩa người chơi dùng.
+ *
+ * CAP50 chứa SỐ NGUYÊN, còn ``r.n`` chứa chuỗi hai ký tự. So thẳng hai kiểu đó
+ * thì 0 không bao giờ bằng "00": bản đầu báo cả 50 cặp "chưa từng về" trên
+ * 2394 kỳ — kết quả vô lý mà bảng vẫn dựng ra bình thường, không lỗi nào.
+ */
+function pairGaps() {
+  const last = new Array(CAP50.length).fill(-1);
+  const maxGap = new Array(CAP50.length).fill(0);
+  const hits = new Array(CAP50.length).fill(0);
+  DRAWS.forEach((r, t) => {
+    const seen = new Set(r.n.map((x) => parseInt(x, 10)));
+    CAP50.forEach((pair, i) => {
+      if (!seen.has(pair[0]) && !seen.has(pair[1])) return;
+      hits[i] += 1;
+      if (last[i] >= 0) maxGap[i] = Math.max(maxGap[i], t - last[i]);
+      last[i] = t;
+    });
+  });
+  const n = DRAWS.length;
+  const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
+  return { last, maxGap, current, hits };
+}
+
+/** Ngày dạng dd-mm-yyyy như trang tham chiếu, từ chuỗi ISO. */
+function viDate(d) {
+  return `${d.slice(8)}-${d.slice(5, 7)}-${d.slice(0, 4)}`;
+}
+
+/** Ngày của một kỳ theo chỉ số. */
+function drawDate(i) {
+  return i < 0 ? "chưa từng" : viDate(DRAWS[i].d);
+}
+
+function renderLoGan() {
+  const g = lotoGaps();
+  setCount(DRAWS);
+
+  // 1. Gan hiện tại, giảm dần.
+  const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  table($("sp-grid"),
+    ["Bộ số", "Ngày ra cuối cùng", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    order.map((p) => [
+      pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+    ]), { numeric: [2, 3, 4] });
+
+  // 2. Gan cực đại, tách đôi để đọc cạnh nhau như trang tham chiếu.
+  const half = (el, from, to) => table(el, ["Bộ số", "Gan cực đại"],
+    Array.from({ length: to - from }, (_, k) => {
+      const i = from + k;
+      return [pad2(i), g.maxGap[i] ? `${g.maxGap[i]} kỳ` : "—"];
+    }), { numeric: [1] });
+  half($("sp-max-lo"), 0, 50);
+  half($("sp-max-hi"), 50, 100);
+
+  // 3. Cặp lô gan.
+  const pg = pairGaps();
+  const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  table($("sp-pair-gan"),
+    ["Cặp số", "Ngày ra gần đây", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    pairOrder.map((p) => [
+      `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
+      pg.maxGap[p[0]] || "—", pg.hits[p[0]],
+    ]), { numeric: [2, 3, 4] });
 }
 
 function renderSpecialCycle() {

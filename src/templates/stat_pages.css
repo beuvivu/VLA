@@ -122,6 +122,9 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
 .sp-f-ngay { min-width: 34px; color: #94a3b8; }
 
+/* Ô "0 lần": vẫn là dữ liệu, không phải ô trống, nên mờ chứ không gạch chéo. */
+.sp-zero { color: #94a3b8; font-weight: 400; }
+
 /* --- Chú giải ô ----------------------------------------------------------
    Sáu trường xếp thành lưới tự co: mỗi thẻ mang giá trị thật của kỳ gần nhất,
    tên trường, rồi câu giải thích. Không giấu lời giải thích sau tooltip — trên
@@ -172,6 +175,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-f-ngay { color: #64748b; }
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
+  .sp-zero { color: #475569; }
   .sp-legend { background: #1c1917; border-color: #78350f; }
   .sp-legend-head, .sp-lg-src { color: #fcd34d; }
   .sp-lg-item { background: #0f172a; border-color: #78350f; }
