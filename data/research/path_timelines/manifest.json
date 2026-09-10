@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "anchor_date": "2026-09-09",
+  "anchor_date": "2026-09-10",
   "recent_timeline_length": 20,
   "research_only": true,
   "modes": {
@@ -12,7 +12,7 @@
     },
     "de": {
       "status": "ok",
-      "rows": 325,
+      "rows": 324,
       "source": "cau_position_evidence_de.csv",
       "output": "path_timeline_de.csv"
     }

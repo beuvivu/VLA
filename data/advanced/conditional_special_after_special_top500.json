@@ -385,6 +385,13 @@
     "conditional_rate":0.1
   },
   {
+    "prev_special_2d":"04",
+    "next_special_2d":"81",
+    "count":3,
+    "base_count":31,
+    "conditional_rate":0.0967741935
+  },
+  {
     "prev_special_2d":"57",
     "next_special_2d":"69",
     "count":3,
@@ -1442,48 +1449,6 @@
     "conditional_rate":0.0689655172
   },
   {
-    "prev_special_2d":"04",
-    "next_special_2d":"03",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
-    "prev_special_2d":"04",
-    "next_special_2d":"25",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
-    "prev_special_2d":"04",
-    "next_special_2d":"39",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
-    "prev_special_2d":"04",
-    "next_special_2d":"41",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
-    "prev_special_2d":"04",
-    "next_special_2d":"60",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
-    "prev_special_2d":"04",
-    "next_special_2d":"81",
-    "count":2,
-    "base_count":30,
-    "conditional_rate":0.0666666667
-  },
-  {
     "prev_special_2d":"47",
     "next_special_2d":"25",
     "count":2,
@@ -1671,6 +1636,41 @@
     "count":1,
     "base_count":15,
     "conditional_rate":0.0666666667
+  },
+  {
+    "prev_special_2d":"04",
+    "next_special_2d":"03",
+    "count":2,
+    "base_count":31,
+    "conditional_rate":0.064516129
+  },
+  {
+    "prev_special_2d":"04",
+    "next_special_2d":"25",
+    "count":2,
+    "base_count":31,
+    "conditional_rate":0.064516129
+  },
+  {
+    "prev_special_2d":"04",
+    "next_special_2d":"39",
+    "count":2,
+    "base_count":31,
+    "conditional_rate":0.064516129
+  },
+  {
+    "prev_special_2d":"04",
+    "next_special_2d":"41",
+    "count":2,
+    "base_count":31,
+    "conditional_rate":0.064516129
+  },
+  {
+    "prev_special_2d":"04",
+    "next_special_2d":"60",
+    "count":2,
+    "base_count":31,
+    "conditional_rate":0.064516129
   },
   {
     "prev_special_2d":"18",
