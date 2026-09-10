@@ -2,7 +2,20 @@ name: Kiểm thử liên tục
 
 on:
   push:
-    branches: ["main", "master"]
+    # Nhánh làm việc phải tự có tín hiệu, không chờ một PR nào mở.
+    #
+    # Trước đây danh sách chỉ có main/master, nên đẩy lên nhánh claude/** không
+    # khớp `push` và chỉ còn trông vào `pull_request`. Đo được: sáu lần đẩy
+    # liên tiếp lên một nhánh ĐANG CÓ PR MỞ không sinh lần chạy nào suốt hơn 45
+    # phút. Nhánh im lặng không đỏ, chỉ là không có gì chạy — nhìn hệt như đang
+    # chờ, nên phải kích hoạt tay từng lần mới biết mã có xanh hay không.
+    #
+    # Thêm `push` khiến một lần đẩy khớp CẢ HAI sự kiện. `concurrency` không
+    # gộp được chúng: github.ref là refs/heads/... với push nhưng
+    # refs/pull/N/merge với pull_request, tức hai nhóm khác nhau. Đã quan sát
+    # thấy hai lần chạy song song trên đúng một commit. Chặn ở điều kiện job
+    # bên dưới, không phải ở đây.
+    branches: ["main", "master", "claude/**"]
   pull_request:
   workflow_dispatch:
 
@@ -15,6 +28,13 @@ concurrency:
 
 jobs:
   test:
+    # Nhánh trong kho đã được `push` phủ, nên để `pull_request` chạy nữa là
+    # chạy hai lần cùng một commit, tốn gấp đôi runner mà không thêm tín hiệu
+    # nào. Chỉ fork mới cần `pull_request`: nhánh của fork không sinh sự kiện
+    # `push` trên kho này.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
     name: Kiểm thử thống kê, AI/ML và quy trình nghiên cứu
     runs-on: ubuntu-latest
     timeout-minutes: 45

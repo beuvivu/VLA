@@ -163,6 +163,46 @@ def test_workflows_accept_an_external_on_time_trigger(name: str) -> None:
     assert "repository_dispatch:" in text, name
 
 
+def test_ci_runs_on_pushes_to_working_branches() -> None:
+    """Nhánh làm việc phải tự có tín hiệu, không chờ một PR nào mở.
+
+    Danh sách cũ chỉ có main/master, nên đẩy lên ``claude/**`` không khớp
+    ``push`` và chỉ còn trông vào ``pull_request``. Đo được trong một phiên:
+    sáu lần đẩy liên tiếp lên nhánh ĐANG CÓ PR MỞ không sinh lần chạy nào suốt
+    hơn 45 phút. Nhánh im lặng không đỏ — chỉ là không có gì chạy — nên nhìn
+    hệt như đang chờ, và phải kích hoạt tay mới biết mã có xanh không.
+    """
+    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
+    branches = re.search(r"push:.*?branches:\s*\[([^\]]+)\]", text, re.S)
+    assert branches, "ci.yml phải chạy trên push"
+    listed = {b.strip().strip('"\'') for b in branches.group(1).split(",")}
+    assert "claude/**" in listed, f"nhánh làm việc không được phủ: {sorted(listed)}"
+    assert "main" in listed, f"nhánh chính không được phủ: {sorted(listed)}"
+
+
+def test_ci_does_not_run_the_same_commit_twice() -> None:
+    """Thêm ``push`` khiến một lần đẩy khớp CẢ HAI sự kiện.
+
+    ``concurrency`` KHÔNG gộp được hai lần chạy đó: ``github.ref`` là
+    ``refs/heads/...`` với ``push`` nhưng ``refs/pull/N/merge`` với
+    ``pull_request``, tức hai nhóm khác nhau. Quan sát trực tiếp trên PR #58:
+    hai lần chạy song song trên đúng một commit, dù khối ``concurrency`` vẫn ở
+    nguyên đó.
+
+    Nên phải chặn ở điều kiện job: nhánh trong kho đã có ``push`` phủ, chỉ fork
+    mới cần ``pull_request`` vì nhánh fork không sinh ``push`` trên kho này.
+    """
+    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
+    block = text[text.index("jobs:") :]
+    block = block[: block.index("steps:")]
+    assert "github.event_name != 'pull_request'" in block, (
+        "job phải bỏ qua pull_request của nhánh trong kho"
+    )
+    assert "head.repo.full_name != github.repository" in block, (
+        "vẫn phải chạy cho PR đến từ fork"
+    )
+
+
 def test_live_workflow_waits_for_the_draw_window_when_it_starts_early() -> None:
     text = (WORKFLOWS / "live-results.yml").read_text(encoding="utf-8")
     assert "window_start_min" in text
