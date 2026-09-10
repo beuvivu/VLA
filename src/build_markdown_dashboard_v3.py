@@ -888,7 +888,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 </div>
 '''
     out_path.write_text(md,encoding="utf-8")
-    print(f"Đã ghi {OUT} ({OUT.stat().st_size:,} byte)")
+    print(f"Đã ghi {out_path} ({out_path.stat().st_size:,} byte)")
 
 
 if __name__ == "__main__":

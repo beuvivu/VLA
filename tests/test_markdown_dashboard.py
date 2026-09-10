@@ -62,3 +62,25 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
 
     assert "Complete Data Catalog" not in text
     assert len(text) > 70_000
+
+
+def test_redirected_build_reports_the_path_it_actually_wrote(tmp_path: Path) -> None:
+    """Ghi một nơi mà báo cáo một nơi khác là nói dối người gọi.
+
+    Bản đầu của ``--output`` ghi đúng chỗ mới nhưng dòng cuối vẫn in và
+    ``stat()`` đường dẫn mặc định. Hai hậu quả: lệnh in ra kích thước của một
+    tệp cũ chẳng liên quan, và nếu DASHBOARD.md của kho không tồn tại thì nó
+    ném FileNotFoundError SAU KHI đã ghi xong — bản dựng chuyển hướng hỏng vì
+    một tệp nó không hề đụng tới.
+    """
+    output = tmp_path / "board.md"
+    result = subprocess.run(
+        [sys.executable, "src/build_markdown_dashboard_v3.py", "--output", str(output)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert str(output) in result.stdout, result.stdout
+    assert "DASHBOARD.md" not in result.stdout, (
+        "báo cáo đường dẫn mặc định trong khi ghi ra chỗ khác"
+    )
