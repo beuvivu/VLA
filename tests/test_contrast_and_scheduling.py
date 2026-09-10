@@ -180,18 +180,27 @@ def test_ci_runs_on_pushes_to_working_branches() -> None:
     assert "main" in listed, f"nhánh chính không được phủ: {sorted(listed)}"
 
 
-def test_ci_does_not_run_the_same_ref_twice_at_once() -> None:
-    """Thêm ``push`` khiến một lần đẩy khớp cả hai sự kiện.
+def test_ci_does_not_run_the_same_commit_twice() -> None:
+    """Thêm ``push`` khiến một lần đẩy khớp CẢ HAI sự kiện.
 
-    Không có ``concurrency`` gom theo ref thì mỗi lần đẩy lên nhánh có PR sẽ
-    chạy song song hai lần cùng một bộ kiểm thử — tốn gấp đôi runner cho đúng
-    một commit.
+    ``concurrency`` KHÔNG gộp được hai lần chạy đó: ``github.ref`` là
+    ``refs/heads/...`` với ``push`` nhưng ``refs/pull/N/merge`` với
+    ``pull_request``, tức hai nhóm khác nhau. Quan sát trực tiếp trên PR #58:
+    hai lần chạy song song trên đúng một commit, dù khối ``concurrency`` vẫn ở
+    nguyên đó.
+
+    Nên phải chặn ở điều kiện job: nhánh trong kho đã có ``push`` phủ, chỉ fork
+    mới cần ``pull_request`` vì nhánh fork không sinh ``push`` trên kho này.
     """
     text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
-    block = text[text.index("concurrency:") :]
-    block = block[: block.index("\njobs:")]
-    assert "github.ref" in block, "phải gom theo ref"
-    assert "cancel-in-progress: true" in block, "lần chạy cũ phải nhường chỗ"
+    block = text[text.index("jobs:") :]
+    block = block[: block.index("steps:")]
+    assert "github.event_name != 'pull_request'" in block, (
+        "job phải bỏ qua pull_request của nhánh trong kho"
+    )
+    assert "head.repo.full_name != github.repository" in block, (
+        "vẫn phải chạy cho PR đến từ fork"
+    )
 
 
 def test_live_workflow_waits_for_the_draw_window_when_it_starts_early() -> None:
