@@ -5,10 +5,20 @@ import sys
 from pathlib import Path
 
 
-def test_markdown_dashboard_builder_runs_on_repository_data() -> None:
-    subprocess.run([sys.executable, "src/build_markdown_dashboard_v3.py"], check=True)
+def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> None:
+    # Ghi ra tệp tạm: dựng thẳng vào DASHBOARD.md của kho thì mỗi lần chạy
+    # pytest là cây làm việc bẩn.
+    dashboard = tmp_path / "DASHBOARD.md"
+    subprocess.run(
+        [
+            sys.executable,
+            "src/build_markdown_dashboard_v3.py",
+            "--output",
+            str(dashboard),
+        ],
+        check=True,
+    )
 
-    dashboard = Path("DASHBOARD.md")
     assert dashboard.is_file()
     text = dashboard.read_text(encoding="utf-8")
 

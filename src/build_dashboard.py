@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import argparse
+
 import html
 import json
 import logging
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -60,10 +63,22 @@ def _latest_date(data_dir: Path) -> str:
     return ""
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
+    """Điểm vào dòng lệnh.
+
+    Args:
+        argv: Tham số dòng lệnh.
+
+    ``--docs-dir`` để test dựng được vào thư mục tạm thay vì ghi đè docs/ của
+    kho thật. Cùng tên tham số với build_stat_pages.py.
+    """
+    parser = argparse.ArgumentParser(description="Dựng bảng điều khiển và trang chất lượng mô hình.")
+    parser.add_argument("--docs-dir", default="docs")
+    args = parser.parse_args(argv)
+
     root = Path(".")
     data_dir = root / "data"
-    docs_dir = root / "docs"
+    docs_dir = Path(args.docs_dir)
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
 

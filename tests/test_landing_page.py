@@ -6,14 +6,14 @@ from build_landing_page import _fmt2, build_landing_page
 from web_security import json_for_html_script
 
 
-def test_landing_page_contains_navigation_and_sections() -> None:
+def test_landing_page_contains_navigation_and_sections(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
-    outputs = build_landing_page(repo_root=repo_root)
+    outputs = build_landing_page(repo_root=repo_root, docs_dir=tmp_path)
 
-    assert (repo_root / "docs" / "index.html") in outputs
-    assert (repo_root / "docs" / "landing.html") in outputs
+    assert (tmp_path / "index.html") in outputs
+    assert (tmp_path / "landing.html") in outputs
 
-    html = (repo_root / "docs" / "landing.html").read_text(encoding="utf-8")
+    html = (tmp_path / "landing.html").read_text(encoding="utf-8")
 
     for section_id in [
         "tong-quan",
@@ -42,20 +42,22 @@ def test_landing_page_contains_navigation_and_sections() -> None:
     assert "statistics.html" in html
 
 
-def test_landing_page_is_self_contained() -> None:
+def test_landing_page_is_self_contained(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
-    build_landing_page(repo_root=repo_root)
-    html = (repo_root / "docs" / "landing.html").read_text(encoding="utf-8")
+    build_landing_page(repo_root=repo_root, docs_dir=tmp_path)
+    html = (tmp_path / "landing.html").read_text(encoding="utf-8")
 
     assert "https://cdn" not in html
     assert "http://cdn" not in html
     assert "<script type=\"application/json\" id=\"landing-data\">" in html
 
 
-def test_landing_page_escapes_embedded_data_and_avoids_untrusted_inner_html() -> None:
+def test_landing_page_escapes_embedded_data_and_avoids_untrusted_inner_html(
+    tmp_path: Path,
+) -> None:
     repo_root = Path(__file__).resolve().parents[1]
-    build_landing_page(repo_root=repo_root)
-    rendered = (repo_root / "docs" / "landing.html").read_text(encoding="utf-8")
+    build_landing_page(repo_root=repo_root, docs_dir=tmp_path)
+    rendered = (tmp_path / "landing.html").read_text(encoding="utf-8")
 
     payload = json_for_html_script({"value": "</script><img src=x onerror=alert(1)>&"})
     assert "</script>" not in payload
