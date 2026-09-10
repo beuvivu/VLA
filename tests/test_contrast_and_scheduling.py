@@ -163,6 +163,37 @@ def test_workflows_accept_an_external_on_time_trigger(name: str) -> None:
     assert "repository_dispatch:" in text, name
 
 
+def test_ci_runs_on_pushes_to_working_branches() -> None:
+    """Nhánh làm việc phải tự có tín hiệu, không chờ một PR nào mở.
+
+    Danh sách cũ chỉ có main/master, nên đẩy lên ``claude/**`` không khớp
+    ``push`` và chỉ còn trông vào ``pull_request``. Đo được trong một phiên:
+    sáu lần đẩy liên tiếp lên nhánh ĐANG CÓ PR MỞ không sinh lần chạy nào suốt
+    hơn 45 phút. Nhánh im lặng không đỏ — chỉ là không có gì chạy — nên nhìn
+    hệt như đang chờ, và phải kích hoạt tay mới biết mã có xanh không.
+    """
+    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
+    branches = re.search(r"push:.*?branches:\s*\[([^\]]+)\]", text, re.S)
+    assert branches, "ci.yml phải chạy trên push"
+    listed = {b.strip().strip('"\'') for b in branches.group(1).split(",")}
+    assert "claude/**" in listed, f"nhánh làm việc không được phủ: {sorted(listed)}"
+    assert "main" in listed, f"nhánh chính không được phủ: {sorted(listed)}"
+
+
+def test_ci_does_not_run_the_same_ref_twice_at_once() -> None:
+    """Thêm ``push`` khiến một lần đẩy khớp cả hai sự kiện.
+
+    Không có ``concurrency`` gom theo ref thì mỗi lần đẩy lên nhánh có PR sẽ
+    chạy song song hai lần cùng một bộ kiểm thử — tốn gấp đôi runner cho đúng
+    một commit.
+    """
+    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
+    block = text[text.index("concurrency:") :]
+    block = block[: block.index("\njobs:")]
+    assert "github.ref" in block, "phải gom theo ref"
+    assert "cancel-in-progress: true" in block, "lần chạy cũ phải nhường chỗ"
+
+
 def test_live_workflow_waits_for_the_draw_window_when_it_starts_early() -> None:
     text = (WORKFLOWS / "live-results.yml").read_text(encoding="utf-8")
     assert "window_start_min" in text

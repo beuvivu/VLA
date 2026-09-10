@@ -2,7 +2,18 @@ name: Kiểm thử liên tục
 
 on:
   push:
-    branches: ["main", "master"]
+    # Nhánh làm việc phải tự có tín hiệu, không chờ một PR nào mở.
+    #
+    # Trước đây danh sách chỉ có main/master, nên đẩy lên nhánh claude/** không
+    # khớp `push` và chỉ còn trông vào `pull_request`. Đo được: sáu lần đẩy
+    # liên tiếp lên một nhánh ĐANG CÓ PR MỞ không sinh lần chạy nào suốt hơn 45
+    # phút. Nhánh im lặng không đỏ, chỉ là không có gì chạy — nhìn hệt như đang
+    # chờ, nên phải kích hoạt tay từng lần mới biết mã có xanh hay không.
+    #
+    # `concurrency` phía dưới gom theo github.ref nên một lần đẩy sinh tối đa
+    # một lần chạy sống; bản `push` và bản `pull_request` của cùng một ref
+    # không chạy song song.
+    branches: ["main", "master", "claude/**"]
   pull_request:
   workflow_dispatch:
 
