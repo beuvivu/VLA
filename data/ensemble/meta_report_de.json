@@ -59,7 +59,7 @@
   "baseline_weights": {
     "p_ml": 0.8000000000000003,
     "p_active": 0.1404527351227181,
-    "p_stable": 0.05954726487728171
+    "p_stable": 0.059547264877281715
   },
   "baseline_calibration": {
     "mode": "de",
@@ -133,5 +133,5 @@
     "2026-09-10"
   ],
   "trained_through_target_date": "2026-09-10",
-  "trained_at_utc": "2026-09-10T13:51:40Z"
+  "trained_at_utc": "2026-09-10T14:00:36Z"
 }
