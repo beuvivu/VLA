@@ -13,17 +13,21 @@ from build_domain_experiment_report import _records_for_mode
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_domain_experiment_report_matches_current_gated_artifacts() -> None:
+def test_domain_experiment_report_matches_current_gated_artifacts(tmp_path: Path) -> None:
+    # Ghi ra tệp tạm: dựng thẳng vào docs/research/ thì mỗi lần chạy pytest là
+    # cây làm việc bẩn.
+    output = tmp_path / "experiment_results.json"
     subprocess.run(
-        [sys.executable, "src/build_domain_experiment_report.py"],
+        [
+            sys.executable,
+            "src/build_domain_experiment_report.py",
+            "--output",
+            str(output),
+        ],
         cwd=ROOT,
         check=True,
     )
-    report = json.loads(
-        (ROOT / "docs/research/experiment_results.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    report = json.loads(output.read_text(encoding="utf-8"))
 
     assert report["schema_version"] == 2
     expected_count = 0

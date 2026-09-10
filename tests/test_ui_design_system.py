@@ -157,11 +157,18 @@ def _grid_rows_do_not_overflow(page: Path) -> None:
             assert span <= 12, f"{page.name}: span {span} vượt 12 cột"
 
 
-def test_generated_dashboard_pages_use_the_shared_shell_and_grid() -> None:
-    subprocess.run([sys.executable, "src/build_dashboard.py"], cwd=ROOT, check=True)
+def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path) -> None:
+    # Dựng vào thư mục tạm: chạy thẳng vào docs/ của kho khiến mỗi lần chạy
+    # pytest là cây làm việc bẩn, và bẩn theo dạng "ngược pha" vì chuỗi builder
+    # đầy đủ cho ra HTML khác với một builder chạy lẻ.
+    subprocess.run(
+        [sys.executable, "src/build_dashboard.py", "--docs-dir", str(tmp_path)],
+        cwd=ROOT,
+        check=True,
+    )
 
     for name in ("dashboard.html", "model-quality.html"):
-        page = ROOT / "docs" / name
+        page = tmp_path / name
         text = page.read_text(encoding="utf-8")
         assert "vla-shell" in text, name
         assert "https://" not in text, name

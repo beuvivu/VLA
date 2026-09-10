@@ -2601,8 +2601,22 @@ def _model_grade(repo_root: Path) -> str:
         return "—"
 
 
-def build_landing_page(*, repo_root: Path) -> list[Path]:
-    docs_dir = repo_root / "docs"
+def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list[Path]:
+    """Dựng trang tổng hợp và ghi ra ``docs_dir``.
+
+    Args:
+        repo_root: Thư mục gốc kho, nơi ĐỌC dữ liệu.
+        docs_dir: Thư mục ghi kết quả. Mặc định ``repo_root/docs``.
+
+    Returns:
+        Danh sách tệp đã ghi.
+
+    Tách nơi ghi khỏi nơi đọc để test dựng được vào thư mục tạm. Trước đây hai
+    thứ này dính làm một, nên chạy bộ kiểm thử là ghi đè docs/ của kho thật:
+    cây làm việc bẩn sau mỗi lần chạy pytest, và bẩn theo dạng "ngược pha" vì
+    chuỗi builder đầy đủ cho ra HTML khác với một builder chạy lẻ.
+    """
+    docs_dir = docs_dir if docs_dir is not None else repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
     html_doc = "\n".join(line.rstrip() for line in _render_html(repo_root).splitlines()) + "\n"

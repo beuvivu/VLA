@@ -242,3 +242,57 @@ def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
     assert chain.index("python src/build_docs.py") < chain.index(
         "python src/build_landing_page.py"
     ), "build_docs phải chạy trước build_landing_page, nếu không index.html bị ghi đè sai"
+
+
+def test_builders_let_callers_redirect_their_output() -> None:
+    """Mọi trình dựng phải cho phép đổi nơi ghi, để test không đụng vào kho.
+
+    Không có đường đó thì test buộc phải dựng thẳng vào ``docs/`` và
+    ``DASHBOARD.md`` của kho thật: chạy ``pytest`` một lần là cây làm việc bẩn
+    8 tệp. Tệ hơn là bẩn theo dạng "ngược pha" — chuỗi builder đầy đủ cho ra
+    HTML khác với một builder chạy lẻ (``<!DOCTYPE html>`` so với
+    ``<!doctype html>``), nên tệp đã commit có thể nằm lại ở bản cũ mà không ai
+    thấy. Đúng chuyện đó đã xảy ra với ``docs/statistics.html``.
+    """
+    root = Path(__file__).resolve().parents[1]
+    required = {
+        "build_dashboard.py": "--docs-dir",
+        "build_stat_pages.py": "--docs-dir",
+        "build_markdown_dashboard_v3.py": "--output",
+        "build_domain_experiment_report.py": "--output",
+    }
+    for name, flag in required.items():
+        source = (root / "src" / name).read_text(encoding="utf-8")
+        assert f'"{flag}"' in source, f"{name} thiếu {flag}"
+
+    landing = (root / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    assert "docs_dir: Path | None = None" in landing, (
+        "build_landing_page phải nhận docs_dir để tách nơi ghi khỏi nơi đọc"
+    )
+
+
+def test_no_test_builds_into_the_repository_docs_tree() -> None:
+    """Test dựng trang phải ghi vào thư mục tạm, không vào kho.
+
+    Kiểm ở mức nguồn vì kiểm ở mức hành vi cần chạy trọn bộ rồi soi git — quá
+    chậm để làm một test.
+    """
+    root = Path(__file__).resolve().parents[1]
+    offenders: list[str] = []
+    for path in sorted((root / "tests").glob("test_*.py")):
+        text = path.read_text(encoding="utf-8")
+        # Khớp theo ĐƯỜNG DẪN "src/<tên>", không theo tên trần: tên trần còn
+        # xuất hiện trong các danh sách kiểm tra chuỗi phát hành, và khớp nó
+        # sẽ báo nhầm những dòng chẳng gọi gì cả.
+        for builder, flag in (
+            ("src/build_dashboard.py", "--docs-dir"),
+            ("src/build_markdown_dashboard_v3.py", "--output"),
+            ("src/build_domain_experiment_report.py", "--output"),
+        ):
+            for line_no, line in enumerate(text.splitlines(), 1):
+                if builder not in line:
+                    continue
+                window = "\n".join(text.splitlines()[line_no - 1 : line_no + 6])
+                if flag not in window:
+                    offenders.append(f"{path.name}:{line_no} gọi {builder} không kèm {flag}")
+    assert not offenders, "test ghi thẳng vào kho: " + "; ".join(offenders)

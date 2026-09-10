@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import math
@@ -574,7 +575,19 @@ def _diagnostics() -> str:
     ])
 
 
-def main() -> None:
+def main(argv: Sequence[str] | None = None) -> None:
+    """Điểm vào dòng lệnh.
+
+    Args:
+        argv: Tham số dòng lệnh.
+
+    ``--output`` để test dựng được ra tệp tạm thay vì ghi đè DASHBOARD.md của
+    kho thật; chạy bộ kiểm thử không được làm bẩn cây làm việc.
+    """
+    parser = argparse.ArgumentParser(description="Dựng DASHBOARD.md.")
+    parser.add_argument("--output", default=str(OUT))
+    args = parser.parse_args(argv)
+    out_path = Path(args.output)
     health=_read_json(DATA/"health.json")
     xsmb=_read_csv(DATA/"xsmb.csv")
     fun=_read_json(DATA/"predict"/"fun_draw_next.json")
@@ -874,8 +887,8 @@ def main() -> None:
 
 </div>
 '''
-    OUT.write_text(md,encoding="utf-8")
-    print(f"Đã ghi {OUT} ({OUT.stat().st_size:,} byte)")
+    out_path.write_text(md,encoding="utf-8")
+    print(f"Đã ghi {out_path} ({out_path.stat().st_size:,} byte)")
 
 
 if __name__ == "__main__":

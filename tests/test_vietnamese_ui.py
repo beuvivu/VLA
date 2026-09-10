@@ -35,11 +35,17 @@ def test_local_tailwind_theme_is_csp_safe_and_has_required_utilities() -> None:
     assert "https://" not in style
 
 
-def test_dashboard_builder_renders_vietnamese_without_shadowing_html_module() -> None:
-    subprocess.run([sys.executable, "src/build_dashboard.py"], cwd=ROOT, check=True)
+def test_dashboard_builder_renders_vietnamese_without_shadowing_html_module(
+    tmp_path: Path,
+) -> None:
+    subprocess.run(
+        [sys.executable, "src/build_dashboard.py", "--docs-dir", str(tmp_path)],
+        cwd=ROOT,
+        check=True,
+    )
 
-    dashboard = _visible_text(ROOT / "docs/dashboard.html")
-    quality = _visible_text(ROOT / "docs/model-quality.html")
+    dashboard = _visible_text(tmp_path / "dashboard.html")
+    quality = _visible_text(tmp_path / "model-quality.html")
     assert "Bảng điều khiển phân tích XSMB" in dashboard
     assert "Chất lượng mô hình" in quality
     assert "Latest data date" not in dashboard
