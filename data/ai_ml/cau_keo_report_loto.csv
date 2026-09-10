@@ -1,6 +1,6 @@
-"mode","top_k","validation_days","hit_any_days","hit_any_rate","avg_hits_per_day","interpretation","val_brier","val_logloss","calib_start","val_start","neg_ratio","features"
-"loto",5,60,48,0.8,1.2666666666666666,"top-k contains at least one actual loto",0.1805524424,0.5469707963,"2026-06-12","2026-07-12",8,39
-"loto",8,60,52,0.8666666666666667,1.95,"top-k contains at least one actual loto",0.1805524424,0.5469707963,"2026-06-12","2026-07-12",8,39
-"loto",10,60,55,0.9166666666666666,2.35,"top-k contains at least one actual loto",0.1805524424,0.5469707963,"2026-06-12","2026-07-12",8,39
-"loto",15,60,59,0.9833333333333333,3.75,"top-k contains at least one actual loto",0.1805524424,0.5469707963,"2026-06-12","2026-07-12",8,39
-"loto",20,60,59,0.9833333333333333,4.716666666666667,"top-k contains at least one actual loto",0.1805524424,0.5469707963,"2026-06-12","2026-07-12",8,39
+"mode","top_k","validation_days","hit_any_days","hit_any_rate","avg_hits_per_day","interpretation"
+"loto",5,60,48,0.8,1.2666666666666666,"top-k contains at least one actual loto"
+"loto",8,60,52,0.8666666666666667,1.95,"top-k contains at least one actual loto"
+"loto",10,60,55,0.9166666666666666,2.35,"top-k contains at least one actual loto"
+"loto",15,60,59,0.9833333333333333,3.75,"top-k contains at least one actual loto"
+"loto",20,60,59,0.9833333333333333,4.716666666666667,"top-k contains at least one actual loto"
