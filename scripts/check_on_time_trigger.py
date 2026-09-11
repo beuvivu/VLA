@@ -53,7 +53,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
 
 #: Workflow mang đường đúng giờ. Bộ hẹn giờ ngoài POST ``daily-collect``
@@ -68,24 +68,96 @@ STATE_ALIVE = "đang chạy"
 STATE_DEAD = "ĐÃ CHẾT"
 
 
-def fetch_runs(repository: str, token: str, *, per_page: int = 100) -> list[dict]:
-    """Lấy các lần chạy gần nhất của workflow đúng giờ.
+def fetch_dispatch_runs(
+    repository: str,
+    token: str,
+    *,
+    since: datetime,
+    max_pages: int = 5,
+    fetch_page: Callable[[str], dict] | None = None,
+) -> list[dict]:
+    """Lấy các lần chạy do bộ hẹn giờ ngoài kích hoạt, tới hết cửa sổ tra cứu.
 
     Args:
         repository: Dạng ``chủ/kho``.
         token: Token có quyền đọc Actions.
-        per_page: Số lần chạy cần lấy.
+        since: Chỉ cần lịch sử từ mốc này trở lại đây.
+        max_pages: Trần số trang, để một kho bận không làm treo watchdog.
+        fetch_page: Hàm lấy một trang, dùng để kiểm thử.
 
     Returns:
-        Danh sách lần chạy, mới nhất trước.
+        Danh sách lần chạy ``repository_dispatch``, mới nhất trước.
+
+    Hai lớp bảo vệ, vì thiếu lớp nào cũng đủ làm chuông tự tắt:
+
+    **Lọc theo ``event``.** Truy vấn không lọc trả về tối đa 100 lần chạy của
+    MỌI loại sự kiện. ``daily_update.yml`` có 8 mốc cron mỗi ngày, nên 100 lần
+    chạy chỉ phủ 12,5 ngày. Sau khi bộ hẹn giờ chết quá chừng ấy ngày, lần gọi
+    cuối cùng của nó bị đẩy khỏi trang đầu — và script sẽ kết luận "chưa dựng
+    bao giờ" rồi thoát 0. Chuông tắt đúng lúc sự cố nghiêm trọng nhất.
+
+    **Phân trang.** Lọc theo ``event`` là đủ khi bộ hẹn giờ chạy mỗi ngày một
+    lần (100 lần gọi ≈ 100 ngày > cửa sổ 45 ngày). Nhưng nếu ai đó đặt nó chạy
+    mỗi giờ thì 100 lần gọi chỉ còn 4 ngày, và lỗ hổng cũ quay lại nguyên vẹn.
+    Đi tiếp cho tới khi vượt qua ``since`` thì không phụ thuộc vào nhịp gọi.
+    """
+    if fetch_page is None:
+        fetch_page = lambda url: _get_json(url, token)  # noqa: E731
+
+    collected: list[dict] = []
+    for page in range(1, max_pages + 1):
+        url = (
+            f"https://api.github.com/repos/{repository}"
+            f"/actions/workflows/{WORKFLOW}/runs"
+            f"?event={DISPATCH_EVENT}&per_page=100&page={page}"
+        )
+        payload = fetch_page(url)
+        runs = payload.get("workflow_runs")
+        if not isinstance(runs, list) or not runs:
+            break
+        collected.extend(runs)
+        if _oldest_start(runs) is not None and _oldest_start(runs) < since:
+            # Trang này đã chạm quá mốc tra cứu; trang sau còn cũ hơn.
+            break
+        if len(runs) < 100:
+            break
+    return collected
+
+
+def _oldest_start(runs: Sequence[dict]) -> datetime | None:
+    """Mốc bắt đầu cũ nhất trong một trang, hoặc ``None`` nếu không đọc được."""
+    oldest: datetime | None = None
+    for run in runs:
+        started = _started_at(run)
+        if started is not None and (oldest is None or started < oldest):
+            oldest = started
+    return oldest
+
+
+def _started_at(run: dict) -> datetime | None:
+    """Mốc bắt đầu của một lần chạy, hoặc ``None`` nếu thiếu/sai định dạng."""
+    raw = str(run.get("run_started_at") or run.get("created_at") or "")
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _get_json(url: str, token: str) -> dict:
+    """Gọi API GitHub và trả về JSON.
+
+    Args:
+        url: Địa chỉ đầy đủ.
+        token: Token Bearer.
+
+    Returns:
+        Phần thân đã giải mã.
 
     Raises:
         RuntimeError: Khi API trả về lỗi.
     """
-    url = (
-        f"https://api.github.com/repos/{repository}"
-        f"/actions/workflows/{WORKFLOW}/runs?per_page={per_page}"
-    )
     request = urllib.request.Request(
         url,
         headers={
@@ -96,13 +168,11 @@ def fetch_runs(repository: str, token: str, *, per_page: int = 100) -> list[dict
     )
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
-            payload = json.load(response)
+            return json.load(response)
     except urllib.error.HTTPError as exc:  # pragma: no cover - phụ thuộc mạng
         raise RuntimeError(f"API trả về HTTP {exc.code}: {exc.read()[:200]!r}") from exc
     except urllib.error.URLError as exc:  # pragma: no cover - phụ thuộc mạng
         raise RuntimeError(f"Không gọi được API: {exc.reason}") from exc
-    runs = payload.get("workflow_runs")
-    return list(runs) if isinstance(runs, list) else []
 
 
 def classify(
@@ -129,12 +199,8 @@ def classify(
     for run in runs:
         if run.get("event") != DISPATCH_EVENT:
             continue
-        raw = str(run.get("run_started_at") or run.get("created_at") or "")
-        if not raw:
-            continue
-        try:
-            started = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        except ValueError:
+        started = _started_at(run)
+        if started is None:
             continue
         if started < lookback_before:
             continue
@@ -212,7 +278,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     try:
-        runs = fetch_runs(args.repository, token)
+        runs = fetch_dispatch_runs(
+            args.repository,
+            token,
+            since=datetime.now(UTC) - timedelta(days=args.lookback_days),
+        )
     except RuntimeError as exc:
         # Không gọi được API là sự cố của phép kiểm, không phải bằng chứng
         # rằng đường đúng giờ đã chết. Báo rồi thoát êm.

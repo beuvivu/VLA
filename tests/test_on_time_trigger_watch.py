@@ -97,3 +97,82 @@ def test_watchdog_actually_runs_the_check() -> None:
         Path(__file__).resolve().parents[1] / ".github/workflows/watchdog.yml"
     ).read_text(encoding="utf-8")
     assert "check_on_time_trigger.py" in workflow
+
+
+# --- Chuông không được tự tắt ---------------------------------------------
+
+
+def _page(runs, size=100):
+    return {"workflow_runs": runs[:size]}
+
+
+def test_scheduled_runs_cannot_crowd_the_dispatch_signal_off_page_one() -> None:
+    """Truy vấn phải LỌC theo event, nếu không chuông tự tắt.
+
+    ``daily_update.yml`` có 8 mốc cron mỗi ngày. Một truy vấn không lọc trả về
+    tối đa 100 lần chạy của mọi loại sự kiện, tức chỉ phủ 12,5 ngày. Sau khi
+    bộ hẹn giờ chết quá chừng ấy ngày, lần gọi cuối cùng của nó bị đẩy khỏi
+    trang đầu — classify() thấy 0 lần gọi và trả về "chưa dựng", thoát 0.
+
+    Chuông tắt đúng vào lúc sự cố trở nên nghiêm trọng nhất. Đó là hỏng tệ hơn
+    không có phép kiểm, vì nó làm người ta tin rằng mình đang được che.
+    """
+    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+
+    seen_urls = []
+
+    def fake(url):
+        seen_urls.append(url)
+        # Nếu truy vấn có lọc, API chỉ trả về đúng các lần dispatch — kể cả
+        # khi lịch sử xen kẽ hàng trăm lần chạy theo lịch.
+        return _page([_run(20), _run(21), _run(22)])
+
+    runs = fetch_dispatch_runs(
+        "beuvivu/VLA", "t", since=NOW - timedelta(days=45), fetch_page=fake
+    )
+    assert "event=repository_dispatch" in seen_urls[0], (
+        "thiếu bộ lọc thì 8 lần chạy theo lịch mỗi ngày sẽ đẩy tín hiệu khỏi trang đầu"
+    )
+    state, _ = _classify(runs)
+    assert state == STATE_DEAD, "im 20 ngày phải là ĐÃ CHẾT, không phải 'chưa dựng'"
+
+
+def test_pagination_continues_until_the_lookback_cutoff() -> None:
+    """Lọc theo event là chưa đủ nếu bộ hẹn giờ chạy dày hơn mỗi ngày một lần.
+
+    Mỗi ngày một lần thì 100 lần gọi ≈ 100 ngày, thừa cho cửa sổ 45 ngày. Đặt
+    nó chạy mỗi giờ thì 100 lần gọi chỉ còn hơn 4 ngày — và lỗ hổng cũ quay
+    lại nguyên vẹn. Phải đi tiếp cho tới khi vượt mốc tra cứu.
+    """
+    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+
+    # Gọi mỗi giờ: trang 1 chỉ phủ hơn 4 ngày, lần gọi cũ nhất nằm ở trang 2.
+    hourly = [_run(i / 24) for i in range(100)]
+    older = [_run(30), _run(31)]
+    pages = {1: _page(hourly), 2: _page(older)}
+    calls = []
+
+    def fake(url):
+        page = int(url.rsplit("page=", 1)[1])
+        calls.append(page)
+        return pages.get(page, {"workflow_runs": []})
+
+    runs = fetch_dispatch_runs(
+        "beuvivu/VLA", "t", since=NOW - timedelta(days=45), fetch_page=fake
+    )
+    assert calls == [1, 2], f"phải đi tiếp sang trang 2, thực tế gọi {calls}"
+    assert len(runs) == 102
+
+
+def test_pagination_stops_once_it_passes_the_cutoff() -> None:
+    """Không đi mãi: chạm quá mốc tra cứu là dừng."""
+    from check_on_time_trigger import fetch_dispatch_runs  # noqa: PLC0415
+
+    calls = []
+
+    def fake(url):
+        calls.append(int(url.rsplit("page=", 1)[1]))
+        return _page([_run(50), _run(60)])
+
+    fetch_dispatch_runs("beuvivu/VLA", "t", since=NOW - timedelta(days=45), fetch_page=fake)
+    assert calls == [1], f"trang đầu đã quá mốc, không được gọi tiếp: {calls}"
