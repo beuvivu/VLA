@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "anchor_date": "2026-09-10",
-  "target_date": "2026-09-11",
+  "anchor_date": "2026-09-11",
+  "target_date": "2026-09-12",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -43,36 +43,36 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.602019787845562,
-    "baseline_validation_logloss": 4.606145211238103,
-    "logloss_skill": 0.0008956346800520487
+    "validation_logloss": 4.600491781629331,
+    "baseline_validation_logloss": 4.605583501154043,
+    "logloss_skill": 0.0011055536227789764
   },
   "top4": [
     "54",
-    "51",
-    "39",
-    "04"
+    "37",
+    "04",
+    "83"
   ],
   "top8": [
     "54",
-    "51",
-    "39",
+    "37",
     "04",
+    "83",
     "38",
-    "36",
-    "23",
-    "83"
+    "21",
+    "39",
+    "87"
   ],
   "top10": [
     "54",
-    "51",
-    "39",
-    "04",
-    "38",
-    "36",
-    "23",
-    "83",
     "37",
-    "68"
+    "04",
+    "83",
+    "38",
+    "21",
+    "39",
+    "87",
+    "80",
+    "90"
   ]
 }

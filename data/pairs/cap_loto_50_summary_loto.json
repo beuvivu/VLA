@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-11T04:40:05Z",
+  "generated_at": "2026-09-11T11:47:03Z",
   "mode": "loto",
   "history_start": "2020-01-01",
-  "history_end": "2026-09-10",
-  "history_days": 2395,
+  "history_end": "2026-09-11",
+  "history_days": 2396,
   "pair_count": 50,
   "reverse_pair_count": 45,
   "kep_bong_pair_count": 5,
@@ -15,13 +15,11 @@
     "33-88",
     "44-99"
   ],
-  "kep_bong_mean_member_rate_gap_365d": 0.01972602739726028,
-  "kep_bong_mean_member_balance_365d": 0.9183715790727607,
-  "kep_bong_mean_phi": -0.01183574175769308,
-  "reverse_mean_member_rate_gap_365d": 0.03031963470319634,
-  "reverse_mean_member_balance_365d": 0.8843009679472492,
-  "current_cau_scores_aligned": true,
-  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities",
-  "kep_bong_mean_current_cau_score_gap": 12.351299999999998,
-  "kep_bong_mean_current_cau_score_balance": 0.7147608483236719
+  "kep_bong_mean_member_rate_gap_365d": 0.018082191780821905,
+  "kep_bong_mean_member_balance_365d": 0.9241800402060321,
+  "kep_bong_mean_phi": -0.012028419286109936,
+  "reverse_mean_member_rate_gap_365d": 0.029954337899543375,
+  "reverse_mean_member_balance_365d": 0.8856943308193198,
+  "current_cau_scores_aligned": false,
+  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities"
 }
