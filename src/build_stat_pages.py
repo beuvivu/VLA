@@ -37,6 +37,7 @@ import pandas as pd
 from number_reference import all_cap_loto_50, bo_family_id
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link
 from xsmb_domain import (
+    FIELD_WIDTHS,
     LOTO_BASELINE_RATE,
     PAIR_COOCCURRENCE_RATE,
     pair_chance_maximum,
@@ -101,22 +102,22 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
     frame = pd.read_csv(path, dtype=str).fillna("")
     frame = frame.sort_values("date").reset_index(drop=True)
 
-    prize_cols = [c for c in frame.columns if c != "date"]
     draws: list[dict[str, object]] = []
     for _, row in frame.iterrows():
         two_digits: list[str] = []
         special = ""
-        for col in prize_cols:
-            base = col.split("_")[0]
-            width = PRIZE_WIDTH[base]
+        for col, width in FIELD_WIDTHS:
             # zfill là bắt buộc: CSV lưu số nguyên nên "05225" thành "5225".
-            digits = str(row[col]).strip().zfill(width)
+            raw = str(row.get(col, "")).strip()
+            if not raw or not raw.isascii() or not raw.isdigit():
+                continue
+            digits = raw.zfill(width)
             if len(digits) != width or not digits.isdigit():
                 continue
             two_digits.append(digits[-2:])
             if col == "special":
                 special = digits
-        if len(two_digits) == 27:
+        if len(two_digits) == 27 and special:
             draws.append({"d": str(row["date"]), "s": special, "n": two_digits})
     return draws
 
@@ -227,17 +228,23 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="tan-suat-loto",
         title="Tần suất lô tô",
-        subtitle="Ma trận con lô × từng kỳ, đổi được chiều, chọn con để so sánh.",
+        subtitle="Lô tô 00–99 × ngày quay · số nháy thực tế và giải đặc biệt. Ngày mới nhất bên trái.",
         controls='<div class="sp-controls">'
                  '<label>Từ ngày <input type="date" id="sp-from"></label>'
                  '<label>Đến ngày <input type="date" id="sp-to"></label>'
-                 '<label>Chiều <select id="sp-orient">'
-                 '<option>Xem theo chiều ngang</option>'
-                 '<option>Xem theo chiều dọc</option></select></label>'
+                 '<button type="button" data-lfm-theme="light">Light</button>'
+                 '<button type="button" data-lfm-theme="dark">Dark</button>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-picker" id="sp-picker"></div>'
              '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
-             '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines" id="sp-matrix-grid"></table></div>'
+             '<section class="loto-frequency-matrix" aria-label="Ma trận tần suất lô tô">'
+             '<div class="lfm-legend" id="lfm-legend" aria-label="Chú giải"></div>'
+             '<p>Chạm để giữ giao điểm; chạm lại hoặc Escape để bỏ. Phím mũi tên để di chuyển.</p>'
+             '<div class="lfm-toolbar"><button type="button" id="lfm-clear">Bỏ giao điểm</button>'
+             '<button type="button" id="lfm-mark">Đánh dấu ô đang chọn</button>'
+             '<output id="lfm-detail" aria-live="polite">Chọn ô để xem chi tiết.</output></div>'
+             '<div class="lfm-scroll" tabindex="0" aria-label="Cuộn ma trận theo hai chiều">'
+             '<table class="lfm-table" id="sp-matrix-grid"></table></div></section>'
              '<h3 class="sp-subhead">Xếp hạng trên trọn dải đã chọn</h3>'
              '<div id="sp-matrix" class="sp-matrix"></div>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
@@ -522,14 +529,22 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     """
     note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
+    is_loto = page.slug == "tan-suat-loto"
+    matrix_css = _asset("loto_frequency_matrix.css") if is_loto else ""
+    matrix_js = _asset("loto_frequency_matrix.js") if is_loto else ""
+    theme_init = ('<script>try { document.documentElement.dataset.theme = '
+                  'localStorage.getItem("vla.theme") === "dark" ? "dark" : "light"; '
+                  '} catch(e) { document.documentElement.dataset.theme = "light"; }</script>') if is_loto else ""
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
+{theme_init}
 {stylesheet_link()}
 <title>{page.title} · VLA</title>
 <style>
 {_asset("stat_pages.css")}
+{matrix_css}
 </style></head><body>
 {app_shell_open(f"{page.slug}.html", wide=True)}
 <div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
@@ -548,13 +563,14 @@ window.__VLA_BO__={json_for_html_script(bo_lookup())};
 window.__VLA_CAP50__={json_for_html_script(cap_loto_50())};</script>
 <script>
 {_asset("stat_pages.js")}
+{matrix_js}
 boot({json.dumps(page.render)});
 </script>
 </body></html>
 """
 
 
-def build(repo_root: Path, docs_dir: Path) -> list[Path]:
+def build(repo_root: Path, docs_dir: Path, *, slug: str | None = None) -> list[Path]:
     """Dựng toàn bộ trang thống kê.
 
     Args:
@@ -572,6 +588,8 @@ def build(repo_root: Path, docs_dir: Path) -> list[Path]:
     generated = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     written: list[Path] = []
     for page in PAGES:
+        if slug is not None and page.slug != slug:
+            continue
         target = docs_dir / f"{page.slug}.html"
         target.write_text(render_page(page, draws, generated=generated), encoding="utf-8")
         written.append(target)
@@ -590,11 +608,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(description="Dựng các trang thống kê riêng biệt.")
     parser.add_argument("--docs-dir", default="docs")
+    parser.add_argument("--page", choices=[page.slug for page in PAGES], help="Chỉ dựng trang đã chọn")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     root = Path(__file__).resolve().parents[1]
-    files = build(root, root / args.docs_dir)
+    files = build(root, root / args.docs_dir, slug=args.page)
     logger.info("Xong: %d trang", len(files))
     return 0
 
