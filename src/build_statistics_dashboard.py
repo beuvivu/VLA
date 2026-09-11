@@ -1037,7 +1037,7 @@ def main() -> None:
       --surface-2: #F7F8FE;
       --text: #161C2D;
       --muted: #5A6480;
-      --faint: #8B94AE;
+      --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
       --line: #E7EAF6;
       --line-soft: #F0F2FB;
 
@@ -1086,7 +1086,7 @@ def main() -> None:
       margin: 18px clamp(16px, 5vw, 72px) 0;
       padding: 34px clamp(20px, 4vw, 44px) 24px;
       border-radius: var(--radius-xl);
-      background: linear-gradient(135deg, var(--brand-2) 0%, var(--brand) 54%, var(--brand-3) 100%);
+      background: linear-gradient(135deg, var(--brand) 0%, #4C3BC4 54%, #5B2E9E 100%);
       box-shadow: var(--shadow-brand);
       color: white;
       overflow: hidden;
