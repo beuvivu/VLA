@@ -164,12 +164,24 @@ def _color_from_value(value: float, lo: float, hi: float, *, scheme: str) -> tup
         t = (value - lo) / (hi - lo)
     t = max(0.0, min(1.0, float(t)))
 
+    # Màu PHÂN TÍCH tách hẳn khỏi màu THƯƠNG HIỆU. Nền trang và điều hướng
+    # dùng indigo; nếu một thang nhiệt cũng là indigo thì "ô đang chọn" và "ô
+    # giá trị cao" trông như nhau. Bảng cũ có freq xanh lam và ai tím — cả hai
+    # đều nằm trong họ indigo, nên đã đổi sang năm sắc ngoài họ đó.
+    #
+    # Mỗi thang là MỘT sắc chạy nhạt -> đậm. Bảng cũ có "hot" đi hổ phách ->
+    # cam -> ĐỎ, tức đổi sắc giữa chừng; thang tuần tự đổi sắc là thang đọc sai
+    # thứ tự.
+    #
+    # Sàn tương phản của mọi thang liên tục là ~4,5:1, không phải do chọn màu
+    # mà do cấu trúc: thang nào cũng đi qua độ sáng mà cả chữ trắng lẫn chữ đen
+    # đều chỉ đạt chừng đó. Bậc giữa được dò để sàn cao nhất có thể.
     palettes = {
-        "freq": [(248, 250, 252), (191, 219, 254), (37, 99, 235), (30, 64, 175)],
-        "hot": [(255, 251, 235), (253, 186, 116), (249, 115, 22), (220, 38, 38)],
-        "gap": [(240, 253, 250), (153, 246, 228), (20, 184, 166), (15, 118, 110)],
-        "ai": [(245, 243, 255), (196, 181, 253), (124, 58, 237), (76, 29, 149)],
-        "de": [(255, 247, 237), (254, 215, 170), (234, 88, 12), (154, 52, 18)],
+        "freq": [(234, 250, 244), (168, 227, 205), (27, 143, 109), (10, 79, 61)],
+        "hot": [(255, 238, 240), (247, 179, 186), (207, 59, 59), (118, 31, 34)],
+        "gap": [(255, 248, 232), (250, 223, 160), (174, 131, 0), (111, 74, 0)],
+        "ai": [(253, 238, 245), (242, 182, 208), (194, 71, 127), (111, 39, 73)],
+        "de": [(255, 242, 233), (251, 189, 151), (217, 89, 38), (124, 47, 15)],
     }
     stops = palettes.get(scheme, palettes["freq"])
     if t <= 0.35:
@@ -757,7 +769,7 @@ def main() -> None:
                     title=f"Loto {PERIOD_TITLES['month']}",
                     subtitle=f"Đậm màu = về nhiều trong {_period_text(loto_month) or 'tháng hiện tại'}.",
                     value_col="freq",
-                    scheme="hot",
+                    scheme="freq",
                     evidence_mode="loto",
                 ),
                 _matrix(
@@ -765,7 +777,7 @@ def main() -> None:
                     title=f"Loto {PERIOD_TITLES['year']}",
                     subtitle=f"Tổng hợp từ đầu {_period_text(loto_year) or 'năm'} đến ngày dữ liệu mới nhất.",
                     value_col="freq",
-                    scheme="hot",
+                    scheme="freq",
                     evidence_mode="loto",
                 ),
             ]
@@ -1017,21 +1029,37 @@ def main() -> None:
   {stylesheet_link()}
   <style>
     :root {{
-      --bg: #0b1020;
-      --surface: rgba(255,255,255,0.92);
+      /* Nền và bề mặt */
+      --bg: #F2F4FF;
+      --bg-2: #E6EAFB;
+      --surface: #ffffff;
       --surface-strong: #ffffff;
-      --text: #111827;
-      --muted: #55606f;
-      --line: rgba(15,23,42,0.10);
-      --blue: #2563eb;
-      --violet: #7c3aed;
-      --orange: #f97316;
-      --rose: #e11d48;
-      --green: #0f766e;
-      --shadow: 0 28px 70px rgba(2,6,23,0.28);
-      --radius-xl: 30px;
-      --radius-lg: 22px;
-      --radius-md: 16px;
+      --surface-2: #F7F8FE;
+      --text: #161C2D;
+      --muted: #5A6480;
+      --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
+      --line: #E7EAF6;
+      --line-soft: #F0F2FB;
+
+      /* THƯƠNG HIỆU — chỉ dùng cho điều hướng và hành động chính.
+         Không một dấu hiệu mã hoá dữ liệu nào được lấy màu từ đây. */
+      --brand: #4F46E5;
+      --brand-2: #6366F1;
+      --brand-3: #818CF8;
+      --brand-wash: #EEF0FF;
+      --brand-ink: #3730A3;
+
+      /* PHÂN TÍCH — trạng thái, độc lập với thương hiệu. Thang nhiệt nằm
+         trong palettes của _color_from_value, không phải ở đây. */
+      --good: #0ca30c;
+      --warn: #fab219;
+      --crit: #d03b3b;
+
+      --shadow: 0 1px 2px rgba(22,28,45,0.04), 0 8px 26px rgba(22,28,45,0.06);
+      --shadow-brand: 0 10px 30px rgba(79,70,229,0.26);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
     }}
 
     * {{ box-sizing: border-box; }}
@@ -1044,14 +1072,22 @@ def main() -> None:
         radial-gradient(circle at 8% -8%, rgba(37,99,235,0.55), transparent 30%),
         radial-gradient(circle at 90% 6%, rgba(124,58,237,0.42), transparent 28%),
         radial-gradient(circle at 55% 16%, rgba(249,115,22,0.20), transparent 30%),
-        linear-gradient(135deg, #020617 0%, #0b1020 52%, #111827 100%);
+        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
       min-height: 100vh;
     }}
 
     a {{ color: inherit; }}
+    /* Hero là một DẢI có khung chứ không phải vùng tràn ra nền trang. Nền
+       trang nay sáng, nên chữ trắng chỉ đúng khi nó nằm trên chính dải
+       gradient này. */
     .hero {{
       position: relative;
-      padding: 40px clamp(18px, 5vw, 72px) 18px;
+      margin: 18px clamp(16px, 5vw, 72px) 0;
+      padding: 34px clamp(20px, 4vw, 44px) 24px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, var(--brand) 0%, #4C3BC4 54%, #5B2E9E 100%);
+      box-shadow: var(--shadow-brand);
       color: white;
       overflow: hidden;
     }}
@@ -1073,18 +1109,19 @@ def main() -> None:
       font-weight: 700;
     }}
     .hero h1 {{
-      margin: 16px 0 12px;
-      max-width: 980px;
-      font-size: clamp(34px, 6vw, 78px);
-      line-height: 0.95;
-      letter-spacing: -0.07em;
+      margin: 14px 0 10px;
+      max-width: 820px;
+      font-size: clamp(28px, 3.4vw, 44px);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+      text-wrap: balance;
     }}
     .hero p {{
-      max-width: 980px;
+      max-width: 74ch;
       margin: 0;
-      color: #dbeafe;
-      line-height: 1.7;
-      font-size: clamp(15px, 1.5vw, 18px);
+      color: rgba(255,255,255,0.86);
+      line-height: 1.65;
+      font-size: clamp(13px, 1.1vw, 14.5px);
     }}
     .hero-actions {{
       display: flex;
@@ -1137,27 +1174,28 @@ def main() -> None:
       display: flex;
       gap: 14px;
       align-items: center;
-      padding: 16px;
-      border-radius: 24px;
-      color: white;
-      background: linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
-      border: 1px solid rgba(255,255,255,0.16);
-      backdrop-filter: blur(16px);
-      box-shadow: 0 18px 48px rgba(2,6,23,0.18);
+      padding: 15px 16px;
+      border-radius: var(--radius-lg);
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
     }}
     .metric-icon {{
       display: grid;
       place-items: center;
       width: 46px;
       height: 46px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.16);
+      border-radius: var(--radius-md);
+      background: var(--brand-wash);
+      color: var(--brand);
       font-size: 22px;
       flex: 0 0 auto;
     }}
-    .metric-card p {{ margin: 0; color: #bfdbfe; font-weight: 750; font-size: 13px; }}
+    .metric-card p {{ margin: 0; color: var(--faint); font-weight: 750; font-size: 12px;
+      letter-spacing: .06em; text-transform: uppercase; }}
     .metric-card strong {{ display: block; margin: 4px 0 2px; font-size: 23px; letter-spacing: -0.02em; }}
-    .metric-card small {{ color: #e0e7ff; line-height: 1.4; }}
+    .metric-card small {{ color: var(--muted); line-height: 1.4; }}
 
     /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
        khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
@@ -1170,19 +1208,25 @@ def main() -> None:
       gap: 8px;
       padding: 12px 0 14px;
       margin-bottom: 8px;
+      background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--bg) 94%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 94%, transparent) 72%,
+        transparent 100%);
       backdrop-filter: blur(16px);
     }}
     .sticky-nav a {{
       white-space: nowrap;
       text-decoration: none;
-      color: #e0e7ff;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(15,23,42,0.52);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: var(--surface);
       padding: 9px 12px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 760;
     }}
+
+    .sticky-nav a:hover {{ background: var(--brand-wash); color: var(--brand-ink); border-color: transparent; }}
 
     .section {{
       margin: 18px 0 24px;
