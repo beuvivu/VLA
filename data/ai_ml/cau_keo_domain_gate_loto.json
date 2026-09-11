@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-09-11T15:03:19Z",
+  "generated_at": "2026-09-11T15:13:10Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -91,10 +91,10 @@
     },
     "cap_50": {
       "mean_brier_skill": -0.00020053271074128805,
-      "mean_logloss_skill": -0.0001788021113658858
+      "mean_logloss_skill": -0.00017880211136578485
     },
     "bo": {
-      "mean_brier_skill": -0.0002226729388135441,
+      "mean_brier_skill": -0.00022267293881362036,
       "mean_logloss_skill": -0.00019822949116344844
     },
     "bong": {
@@ -102,8 +102,8 @@
       "mean_logloss_skill": -0.00011913004844583036
     },
     "cham": {
-      "mean_brier_skill": -0.0002512725990617614,
-      "mean_logloss_skill": -0.00022510999201757174
+      "mean_brier_skill": -0.0002512725990616851,
+      "mean_logloss_skill": -0.0002251099920174708
     },
     "tong": {
       "mean_brier_skill": -0.00012218127657515627,
