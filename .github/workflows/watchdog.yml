@@ -41,6 +41,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      # Lưới cron che mất việc đường đúng giờ đã chết: dữ liệu vẫn về, chỉ là
+      # muộn, nên không có bước nào khác đỏ lên. Bước này là thứ duy nhất nhìn
+      # vào SỰ VẮNG MẶT của repository_dispatch.
+      #
+      # continue-on-error: bộ hẹn giờ ngoài chết không phải lý do để chặn
+      # đường phục hồi phía dưới chạy — nhưng bước đỏ vẫn hiện rõ trong Actions.
+      - name: Đường chạy đúng giờ còn sống không
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: python scripts/check_on_time_trigger.py
+
       - name: Kiểm toán production và kích hoạt phục hồi khi cần
         env:
           GH_TOKEN: ${{ github.token }}

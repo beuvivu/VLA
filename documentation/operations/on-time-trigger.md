@@ -198,6 +198,24 @@ Cần thấy `"event": "repository_dispatch"` với `createdAt` quanh `11:10 UTC
 Mỗi lần chạy còn đính kèm `poll-summary-<run_id>.json` với số ô đã xác minh,
 số vòng và độ trễ từng nguồn.
 
+### Sau đó thì không cần nhớ nữa
+
+Rủi ro thật không nằm ở lúc dựng mà ở **90 ngày sau**, khi token hết hạn. Lúc
+đó lưới cron vẫn đưa dữ liệu về — muộn, nhưng về — nên không có gì đỏ lên. Bản
+dự phòng chạy đủ tốt để giấu việc bản chính đã hỏng.
+
+`watchdog.yml` nay chạy `scripts/check_on_time_trigger.py` mỗi lần, và nó nhìn
+vào **sự vắng mặt** của `repository_dispatch`:
+
+| Trạng thái | Nghĩa là | Mã thoát |
+|---|---|---|
+| `chưa dựng` | Chưa từng gọi lần nào — hiện trạng đã biết, không phải hồi quy | 0 |
+| `đang chạy` | Có gọi trong 3 ngày gần nhất | 0 |
+| `ĐÃ CHẾT` | Từng gọi, rồi im quá 3 ngày — token gần như chắc chắn đã hết hạn | 1 |
+
+Chỉ trạng thái thứ ba mới đỏ. Nếu nó đỏ mỗi ngày ngay từ đầu thì chỉ dạy người
+ta bỏ qua cảnh báo, nên "chưa dựng" được báo cáo chứ không báo động.
+
 ## 6. Điều chưa sửa được
 
 **Lịch cron của GitHub vẫn sẽ trễ và vẫn rơi mốc.** Không có cách nào sửa từ
