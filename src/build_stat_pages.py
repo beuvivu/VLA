@@ -234,12 +234,22 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Đến ngày <input type="date" id="sp-to"></label>'
                  '<button type="button" data-lfm-theme="light">Light</button>'
                  '<button type="button" data-lfm-theme="dark">Dark</button>'
+                 '<div class="lfm-toolbar" role="group" aria-label="Số ngày quay">'
+                 '<button type="button" data-lfm-range="7">7 ngày</button>'
+                 '<button type="button" data-lfm-range="14">14 ngày</button>'
+                 '<button type="button" data-lfm-range="30">30 ngày</button>'
+                 '<button type="button" data-lfm-range="60">60 ngày</button></div>'
+                 '<div class="lfm-toolbar" role="group" aria-label="Mật độ ô">'
+                 '<button type="button" data-lfm-density="comfortable">Comfortable</button>'
+                 '<button type="button" data-lfm-density="compact">Compact</button></div>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-picker" id="sp-picker"></div>'
              '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
              '<section class="loto-frequency-matrix" aria-label="Ma trận tần suất lô tô">'
              '<div class="lfm-legend" id="lfm-legend" aria-label="Chú giải"></div>'
              '<p>Chạm để giữ giao điểm; chạm lại hoặc Escape để bỏ. Phím mũi tên để di chuyển.</p>'
+             '<p class="lfm-heat-note">Σ: tổng nháy / số ngày về. ↻: số lượt lặp = tổng lượt − số khác nhau.'
+             ' Màu nhiệt thấp → cao trong dải đang chọn; không phải xác suất. Dải tùy chọn tối đa 60 kỳ.</p>'
              '<div class="lfm-toolbar"><button type="button" id="lfm-clear">Bỏ giao điểm</button>'
              '<button type="button" id="lfm-mark">Đánh dấu ô đang chọn</button>'
              '<output id="lfm-detail" aria-live="polite">Chọn ô để xem chi tiết.</output></div>'
@@ -534,7 +544,8 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     matrix_js = _asset("loto_frequency_matrix.js") if is_loto else ""
     theme_init = ('<script>try { document.documentElement.dataset.theme = '
                   'localStorage.getItem("vla.theme") === "dark" ? "dark" : "light"; '
-                  '} catch(e) { document.documentElement.dataset.theme = "light"; }</script>') if is_loto else ""
+                  '} catch(e) { document.documentElement.dataset.theme = "light"; } '
+                  'document.documentElement.dataset.vlaTheme = document.documentElement.dataset.theme;</script>') if is_loto else ""
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

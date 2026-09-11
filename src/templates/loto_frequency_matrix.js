@@ -2,7 +2,7 @@
 function lfmDraw(draw) {
   const counts = Array(100).fill(0);
   (draw.n || []).forEach(n => { if (/^\d{2}$/.test(n)) counts[+n]++; });
-  const special = /^\d{5}$/.test(draw.s) ? draw.s.slice(-2) : null;
+  const special = typeof draw.s === 'string' && /^\d{5}$/.test(draw.s) ? draw.s.slice(-2) : null;
   return {date:draw.d, counts, special};
 }
 function lfmState(count, special) { return special ? "special" : count ? `hit${Math.min(count,5)}` : "miss"; }
@@ -10,7 +10,34 @@ function lfmCard(number, count, special) {
   return `<span class="lfm-card lfm-${lfmState(count,special)}">${count || special ? number : ""}` +
     `${special || count > 1 ? `<small>${special ? "★ " : ""}${count > 1 ? count + "×" : ""}</small>` : ""}</span>`;
 }
-let lfmActive = null, lfmLocked = false, lfmAxes = [], lfmColumns = [];
+function lfmPreference(key, allowed, fallback) {
+  try { const value=localStorage.getItem(key); return allowed.includes(value) ? value : fallback; }
+  catch(e) { return fallback; }
+}
+function lfmSave(key,value) { try { localStorage.setItem(key,value); } catch(e) {} }
+function lfmLatest(rows,days) { return rows.slice(-days); }
+function lfmSummary(draws) {
+  return {
+    rows:Array.from({length:100},(_,n)=>({total:draws.reduce((s,d)=>s+d.counts[n],0),days:draws.filter(d=>d.counts[n]>0).length})),
+    columns:draws.map(d=>{
+      const total=d.counts.reduce((a,b)=>a+b,0), unique=d.counts.filter(n=>n>0).length;
+      return {total,unique,repeats:total-unique};
+    })
+  };
+}
+function lfmNormalize(values) {
+  const min=Math.min(...values),max=Math.max(...values);
+  return values.map(v=>max===min ? 0 : (v-min)/(max-min));
+}
+let lfmRange = +lfmPreference('vla.lotoMatrix.range',['7','14','30','60'],'30');
+const lfmOriginalSelected = selected;
+selected = function() {
+  const rows=lfmRange ? lfmLatest(DRAWS,lfmRange) : lfmLatest(lfmOriginalSelected(),60);
+  if(lfmRange && rows.length) { $('sp-from').value=rows[0].d; $('sp-to').value=rows[rows.length-1].d; }
+  document.querySelectorAll('[data-lfm-range]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.lfmRange===lfmRange)));
+  return rows;
+};
+let lfmActive = null, lfmFocus = null, lfmLocked = false, lfmAxes = [], lfmColumns = [];
 function lfmClear() {
   lfmAxes.forEach(el => el.classList.remove("lfm-axis", "lfm-active"));
   lfmAxes = []; lfmActive = null; lfmLocked = false;
@@ -23,19 +50,26 @@ function lfmSelect(cell) {
   lfmAxes = [...cell.parentElement.children, ...(lfmColumns[+cell.dataset.column] || [])];
   lfmAxes.forEach(el => el.classList.add("lfm-axis"));
   cell.classList.add("lfm-active");
-  const old = $("sp-matrix-grid").querySelector('[tabindex="0"]');
-  if (old) old.tabIndex = -1;
-  cell.tabIndex = 0;
+  if (lfmFocus) lfmFocus.tabIndex = -1;
+  cell.tabIndex = 0; lfmFocus = cell;
   $("lfm-detail").textContent = cell.getAttribute("aria-label");
 }
 renderLotoMatrix = function(rows) {
   const grid = $("sp-matrix-grid");
   lfmClear();
-  const shown = rows.slice(-MATRIX_MAX_DAYS).reverse().map(lfmDraw);
-  $("sp-matrix-note").textContent = `${shown.length} / ${rows.length} kỳ · 100 số · ngày mới nhất bên trái.`;
-  grid.innerHTML = `<caption>Nháy lô tô theo ngày · ${shown.length} kỳ</caption><thead><tr><th scope="col">Số</th>` +
+  const shown = rows.slice(-60).reverse().map(lfmDraw);
+  const summary=lfmSummary(shown), rowHeat=lfmNormalize(summary.rows.map(r=>r.total)), colHeat=lfmNormalize(summary.columns.map(c=>c.repeats));
+  const equalRows=new Set(summary.rows.map(r=>r.total)).size<=1, equalCols=new Set(summary.columns.map(c=>c.repeats)).size<=1;
+  const heatAttrs = (v) => `class="lfm-summary${v>.6?' lfm-heat-high':''}" style="--heat:${v}"`;
+  const available=`${shown.length}${lfmRange ? ' / '+lfmRange : ''} ngày khả dụng`;
+  $("sp-count").textContent=`${available} · ${rows[0]?.d || '—'} → ${rows[rows.length-1]?.d || '—'}`;
+  $("sp-matrix-note").textContent = `${available} · 100 số · ngày mới nhất bên trái.${lfmRange ? '' : ' Tối đa 60 kỳ cuối trong dải tùy chọn.'}`;
+  grid.innerHTML = `<caption>Nháy lô tô theo ngày · ${available}</caption><thead><tr><th scope="col">Số</th><th scope="col">Σ Nháy</th>` +
     shown.map(d => `<th scope="col" title="${d.date}">${d.date.slice(8)}/${d.date.slice(5,7)}<br>${d.date.slice(0,4)}</th>`).join("") +
+    '</tr><tr><th scope="row">↻ Lặp</th><th>Trong kỳ</th>' + summary.columns.map((s,c)=>
+      `<th ${heatAttrs(colHeat[c])} data-repeats="${s.repeats}" data-unique="${s.unique}" data-total="${s.total}" title="${shown[c].date}: ${s.unique} số khác nhau · ${s.repeats} lượt lặp · ${s.total} lượt hợp lệ${equalCols?' · Các giá trị bằng nhau: màu trung tính':''}">↻ ${s.repeats}<small>${s.unique} số</small></th>`).join('') +
     '</tr></thead><tbody>' + Array.from({length:100}, (_,n) => `<tr><th scope="row"${isPicked(n) ? '' : ' class="lfm-unpicked"'}>${pad2(n)}</th>` +
+      `<td ${heatAttrs(rowHeat[n])} data-row-total="${summary.rows[n].total}" data-days-hit="${summary.rows[n].days}" title="Tổng số nháy trong dải đang chọn${equalRows?' · Các giá trị bằng nhau: màu trung tính':''}">Σ ${summary.rows[n].total}<small>${summary.rows[n].days} ngày</small></td>` +
       shown.map((d,c) => {
         const number = pad2(n), count = d.counts[n], special = d.special === number;
         const label = `Số ${number} · ${d.date.split("-").reverse().join("/")} · ${count} nháy${special ? " · ★ Giải Đặc Biệt" : " · Không phải giải đặc biệt"}`;
@@ -45,14 +79,29 @@ renderLotoMatrix = function(rows) {
           `data-is-special="${special}" data-key="${key}" aria-label="${label}" title="${label}">` +
           lfmCard(number,count,special) + '</td>';
       }).join("") + '</tr>').join("") + '</tbody>';
-  lfmColumns = shown.map((_,c) => Array.from(grid.rows, row => row.cells[c+1]));
+  lfmColumns = shown.map((_,c) => Array.from(grid.rows, row => row.cells[c+2]));
+  lfmFocus = grid.tBodies[0].rows[0]?.cells[2] || null;
 };
 function lfmInit() {
   const grid = $("sp-matrix-grid");
+  const root=document.querySelector('.loto-frequency-matrix');
+  const density=value=>{
+    root.dataset.density=value;
+    document.querySelectorAll('[data-lfm-density]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lfmDensity===value)));
+  };
+  density(lfmPreference('vla.lotoMatrix.density',['comfortable','compact'],'comfortable'));
+  document.querySelectorAll('[data-lfm-density]').forEach(b=>b.addEventListener('click',()=>{
+    density(b.dataset.lfmDensity); lfmSave('vla.lotoMatrix.density',b.dataset.lfmDensity);
+  }));
+  document.querySelectorAll('[data-lfm-range]').forEach(b=>b.addEventListener('click',()=>{
+    lfmRange=+b.dataset.lfmRange; lfmSave('vla.lotoMatrix.range',String(lfmRange)); renderLotoFrequency();
+  }));
+  ['sp-from','sp-to'].forEach(id=>$(id).addEventListener('change',()=>{lfmRange=null;}));
   $("lfm-legend").innerHTML = [["Đặc biệt",1,true],["Không về",0,false],...[1,2,3,4,5].map(n=>[n===5?"≥5 nháy":`${n} nháy`,n,false])]
     .map(([label,count,special])=>`<span>${lfmCard("",count,special)}${label}</span>`).join("");
   const theme = value => {
     document.documentElement.dataset.theme = value;
+    document.documentElement.dataset.vlaTheme = value;
     document.querySelectorAll('[data-lfm-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lfmTheme===value)));
   };
   theme(document.documentElement.dataset.theme || "light");
