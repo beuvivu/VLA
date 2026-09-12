@@ -67,3 +67,26 @@ def test_landing_page_escapes_embedded_data_and_avoids_untrusted_inner_html(
     assert "li.innerHTML =" not in rendered
     assert "Content-Security-Policy" in rendered
     assert 'name="referrer" content="no-referrer"' in rendered
+
+
+def test_landing_variants_share_snapshot_across_minute_boundary(tmp_path, monkeypatch):
+    import hashlib
+    from datetime import UTC, datetime
+    import build_landing_page as landing
+
+    instants = iter([
+        datetime(2026, 9, 12, 12, 0, 59, tzinfo=UTC),
+        datetime(2026, 9, 12, 12, 1, 0, tzinfo=UTC),
+    ])
+
+    class AdvancingClock:
+        @staticmethod
+        def now(tz):
+            return next(instants)
+
+    monkeypatch.setattr(landing, "datetime", AdvancingClock)
+    landing.build_landing_page(repo_root=Path(__file__).resolve().parents[1], docs_dir=tmp_path)
+    normal = (tmp_path / "index.html").read_text()
+    desktop = (tmp_path / "landing_desktop.html").read_text().replace(' class="desktop-view"', '', 1)
+    assert hashlib.sha256(normal.encode()).digest() == hashlib.sha256(desktop.encode()).digest()
+    assert '2026-09-12 12:00 UTC' in normal

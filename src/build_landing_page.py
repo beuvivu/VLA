@@ -2707,10 +2707,9 @@ def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
     html_doc = "\n".join(line.rstrip() for line in _render_html(repo_root).splitlines()) + "\n"
-    desktop_doc = (
-        "\n".join(line.rstrip() for line in _render_html(repo_root, desktop_view=True).splitlines())
-        + "\n"
-    )
+    # Reuse one snapshot so crossing a minute or a data refresh cannot make
+    # the desktop variant disagree with the default page.
+    desktop_doc = html_doc.replace("<body>", '<body class="desktop-view">', 1)
     out_index = docs_dir / "index.html"
     out_landing = docs_dir / "landing.html"
     out_desktop = docs_dir / "landing_desktop.html"
