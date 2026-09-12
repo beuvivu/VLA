@@ -497,14 +497,18 @@ def test_top_row_pairs_results_with_digit_spread_and_stretches() -> None:
     """Tầng 1: Kết quả | Chục | Đơn vị trên một hàng, ba cột KHÔNG chia đều.
 
     Chia đều là cách một bố cục ba cột hỏng: nó cho khối cần nhiều nhất đúng
-    bằng khối cần ít nhất. Bảng kết quả cần 520px để mỗi giải nằm gọn một
+    bằng khối cần ít nhất.
+
+    Sàn lấy từ bề rộng THỰC SỰ CẦN, không phải bề rộng thoải mái: đo ở khung
+    980px với 420/230 thì bảng kết quả rộng 398px và không cuộn. Bộ cũ
+    520/284 đẩy ngưỡng một hàng lên 1250px, bỏ trống cả dải 960-1250px. Bảng kết quả cần 520px để mỗi giải nằm gọn một
     dòng; hai bảng chữ số chỉ cần 284px.
     """
     css = (DOCS / "index.html").read_text(encoding="utf-8")
     top = re.search(r"\.matrix-top\s*\{([^}]*)\}", css)
     assert top, "thiếu lưới .matrix-top"
     body = top.group(1).replace(" ", "")
-    assert "minmax(520px,2.1fr)minmax(284px,1fr)minmax(284px,1fr)" in body
+    assert "minmax(420px,2.1fr)minmax(230px,1fr)minmax(230px,1fr)" in body
     assert "stretch" in body
 
 

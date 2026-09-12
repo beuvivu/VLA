@@ -1849,15 +1849,24 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
        Tổng sàn: 520 + 284 + 284 + 48 (hai khe) = 1136px. */
     .matrix-top {{
       display: grid;
-      grid-template-columns: minmax(520px, 2.1fr) minmax(284px, 1fr) minmax(284px, 1fr);
+      grid-template-columns: minmax(420px, 2.1fr) minmax(230px, 1fr) minmax(230px, 1fr);
       gap: 24px;
       align-items: stretch;
       margin-bottom: 24px;
     }}
     .matrix-top > * {{ min-width: 0; margin: 0; }}
-    /* Dưới sàn thì hạ dần, không nhảy thẳng xuống một cột: bảng kết quả lên
+    /* Sàn 420/230 chứ không phải 520/284. Bộ cũ lấy từ bề rộng THOẢI MÁI của
+       bảng kết quả, không phải bề rộng nó THỰC SỰ CẦN, nên một hàng chỉ xuất
+       hiện từ 1250px trở lên — cả dải 960-1250px không được hưởng gì.
+
+       Đo ở khung 980px với sàn 420/230: bảng kết quả rộng 398px, KHÔNG cuộn,
+       không tràn trang. Giá phải trả là bảng cao 616 -> 662px (+7%) và hàng
+       huy hiệu chữ số xuống hai dòng (37 -> 64px). Đổi lại, bố cục đúng chạy
+       được từ 960px thay vì 1250px.
+
+       Dưới 960px thì hạ dần, không nhảy thẳng xuống một cột: bảng kết quả lên
        trọn hàng, hai bảng chữ số vẫn cạnh nhau vì chúng vốn để đọc cùng nhau. */
-    @media (max-width: 1220px) {{
+    @media (max-width: 959px) {{
       .matrix-top {{ grid-template-columns: minmax(284px, 1fr) minmax(284px, 1fr); }}
       .matrix-top > #ket-qua {{ grid-column: 1 / -1; }}
     }}
