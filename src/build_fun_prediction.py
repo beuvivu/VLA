@@ -374,7 +374,8 @@ FUN_CSS = r"""
   font-size: 11px;
   font-weight: 900;
 }
-.fun-pred-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 16px; align-items: start; }
+.fun-pred-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.fun-pred-grid > *, .fun-prob-panels > * { min-width: 0; }
 .fun-board-wrap { min-width: 0; overflow-x: auto; }
 .fun-result-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; background: #fff; }
 .fun-result-table th { width: 112px; padding: 11px 12px; text-align: left; background: #fff7ed; color: #7c2d12; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
@@ -386,6 +387,19 @@ FUN_CSS = r"""
 .fun-prize-number.fun-special { background: #fff1f2; color: #be123c; font-size: 19px; min-width: 92px; }
 .fun-method { margin: 9px 2px 0; color: #55606f; font-size: 11px; line-height: 1.45; }
 .fun-prob-panels { display: grid; gap: 12px; }
+@media (min-width: 641px) {
+  .fun-prob-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .fun-pred-grid { grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr)); }
+  .fun-prob-panels { display: contents; }
+}
+@media (min-width: 1024px) and (max-width: 1249px) {
+  .fun-result-table { min-width: 0; }
+  .fun-result-table th { width: 76px; padding: 8px; }
+  .fun-result-table td { padding: 8px; }
+  .fun-prize-number { min-width: 0; padding: 7px; }
+}
 /* Khi thẻ xếp dọc nó có trọn chiều ngang trang. Giữ hai cột thì khung giải
    cao 525px nằm cạnh cột phải cao 944px, để lại mảng trắng lớn dưới khung
    giải. Trải ba cột lấp kín chiều ngang và giảm hẳn chiều cao thẻ.
@@ -408,12 +422,12 @@ FUN_CSS = r"""
 }
 .fun-prob-card { padding: 13px; border-radius: 16px; background: #f5f3ff; border: 1px solid #ddd6fe; }
 .fun-prob-card.de { background: #fff7ed; border-color: #fed7aa; }
-.fun-prob-title { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 9px; }
+.fun-prob-title { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-bottom: 9px; }
 .fun-prob-title span { font-size: 13px; font-weight: 900; color: #4c1d95; }
 .fun-prob-card.de .fun-prob-title span { color: #9a3412; }
-.fun-prob-title small { color: #55606f; text-align: right; font-size: 10px; line-height: 1.35; }
+.fun-prob-title small { color: #55606f; text-align: left; font-size: 10px; line-height: 1.35; }
 .fun-prob-list { display: grid; gap: 6px; }
-.fun-prob-row { display: grid; grid-template-columns: 28px 30px minmax(70px, 1fr) 67px; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; border: 0; border-radius: 10px; background: rgba(255,255,255,.82); cursor: pointer; color: #0f172a; }
+.fun-prob-row { display: grid; grid-template-columns: 28px 30px minmax(0, 1fr) 67px; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; border: 0; border-radius: 10px; background: rgba(255,255,255,.82); cursor: pointer; color: #0f172a; }
 .fun-rank { color: #55606f; font-size: 10px; font-weight: 800; }
 .fun-prob-row b { font-size: 14px; }
 .fun-prob-row strong { text-align: right; font-size: 11px; font-variant-numeric: tabular-nums; }
