@@ -2049,9 +2049,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       .result-table {{
         min-width: 520px;
       }}
+      /* minmax chứ không phải 36px cứng. min-width:430px là để ma trận vẫn
+         cuộn được trên máy hẹp; nhưng cột cứng thì có SÀN mà không có TRẦN,
+         nên khi khung rộng hơn 430px các cột đứng yên ở 36px và phần dôi ra
+         thành một mảng trắng bên phải. Đo ở khung 600px: lưới rộng 546px,
+         cột chiếm 444px — thừa 102px. minmax(36px, 1fr) giữ nguyên hành vi
+         cuộn khi chật và cho cột giãn lấp đầy khi rộng. */
       .tiny-matrix, .matrix-grid {{
         min-width: 430px;
-        grid-template-columns: 24px repeat(10, 36px);
+        grid-template-columns: 24px repeat(10, minmax(36px, 1fr));
       }}
       .matrix-cell {{
         min-height: 46px;

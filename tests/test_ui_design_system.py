@@ -521,3 +521,21 @@ def test_special_prize_is_red_in_both_themes() -> None:
     dark = css[css.index("@media (prefers-color-scheme: dark)") :]
     assert "#FDA4AF" in dark, "chế độ tối đánh mất màu đỏ của giải đặc biệt"
     assert contrast_ratio("#FDA4AF", "#4C0519") >= WCAG_AA_NORMAL
+
+
+def test_matrix_columns_always_have_a_ceiling_of_one_fr() -> None:
+    """Cột ma trận không được đặt cứng.
+
+    Một khai báo như ``repeat(10, 36px)`` có SÀN mà không có TRẦN: cột đứng
+    yên ở 36px dù khung rộng bao nhiêu, và phần dôi ra thành mảng trắng bên
+    phải. Đo ở khung 600px trước khi sửa: lưới rộng 546px, cột chiếm 444px —
+    thừa 102px, đúng khoảng trắng người dùng nhìn thấy.
+
+    ``minmax(<sàn>, 1fr)`` giữ nguyên hành vi cuộn khi khung chật (nhờ
+    ``min-width`` trên chính lưới) và cho cột giãn lấp đầy khi khung rộng.
+    """
+    source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    tracks = re.findall(r"grid-template-columns:\s*\d+px\s+repeat\(10,\s*([^)]+)\)", source)
+    assert tracks, "không tìm thấy khai báo cột ma trận nào"
+    fixed = [t for t in tracks if "1fr" not in t]
+    assert not fixed, f"cột ma trận đặt cứng, không giãn được: {fixed}"
