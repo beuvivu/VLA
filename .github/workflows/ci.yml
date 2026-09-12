@@ -15,7 +15,7 @@ on:
     # refs/pull/N/merge với pull_request, tức hai nhóm khác nhau. Đã quan sát
     # thấy hai lần chạy song song trên đúng một commit. Chặn ở điều kiện job
     # bên dưới, không phải ở đây.
-    branches: ["main", "master", "claude/**"]
+    branches: ["main", "master", "claude/**", "codex/**"]
   pull_request:
   workflow_dispatch:
 

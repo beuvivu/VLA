@@ -1701,23 +1701,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     .inspector > * {{ min-width: 0; }}
 
-    /* Cân bằng hai cột bằng cách GIỮ khung trái trong tầm mắt, không phải bằng
-       cách nhồi khối phải vào chiều cao của nó.
-
-       Bản trước khoá chiều cao khối phải bằng đúng khung trái (absolute
-       inset:0). Nó chữa được độ lệch 497px nhưng đẻ ra lỗi nặng hơn: hai bảng
-       dữ liệu cần 874px và 1082px bị ép vào 511px mỗi bảng, và vì .table-wrap
-       vốn đã có max-height + overflow riêng nên sinh ra HAI thanh cuộn lồng
-       nhau trên cùng một trục — cuộn một cái không biết cái nào chạy. Tệ hơn,
-       .table-wrap cao 520px nằm trong section cao 511px, tức con cao hơn cha
-       nên hàng cuối bị cắt ngang.
-
-       Cách đúng: khung trái là bảng chú giải cho khối phải, nên cho nó dính
-       theo màn hình (đúng khuôn mẫu .right-rail đã dùng trong trang này). Khối
-       phải chảy tự nhiên, không thanh cuộn trong, không cắt xén, và mắt vẫn
-       thấy cả hai cùng lúc. sticky đòi ô lưới KHÔNG bị kéo giãn, nên phải có
-       align-self:start — align-items:stretch của .inspector sẽ vô hiệu hoá
-       sticky nếu thiếu dòng này. */
     .basis-cell {{ min-width: 0; }}
     /* KHÔNG còn sticky. sticky có nghĩa khi khung là chú giải nằm CẠNH một
        khối cuộn dài; nay nó nằm TRÊN, nên dính lại chỉ tổ che mất hai bảng
@@ -1750,19 +1733,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
        hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
     .basis-merged .table-wrap {{ max-height: none; }}
-    /* Ngưỡng xếp dọc lấy từ số đo, không phải từ một con số tròn.
-       min-content của bảng (sau khi thu cột) là 703px. Hai bảng cạnh nhau
-       cần 1430px vùng nội dung, tức khung ~1530px. Đo mức cuộn còn lại:
-
-         1920 / 1600   bảng 703px   cuộn 0-4px
-         1440          bảng 628px   cuộn 70px   (~10% bị che)
-         1280          bảng 553px   cuộn 145px  (~20% bị che)
-         1101          bảng 484px   cuộn 214px  (~30%, hẹp hơn cả bố cục 445px
-                                                 từng làm cắt cột "Tỷ lệ")
-
-       Dừng ở 1280: dưới mức đó phần bị che vượt một phần năm bảng, và xếp dọc
-       cho mỗi bảng trọn chiều ngang thì hơn hẳn. */
-    @media (max-width: 1279px) {{
+    /* Máy tính: Đặc Biệt bên trái, lô tô bên phải; mỗi bảng tự cuộn ngang. */
+    @media (max-width: 1023px) {{
       .basis-merged {{ grid-template-columns: minmax(0, 1fr); }}
       .basis-merged > section + section {{
         border-left: 0; border-top: 1px solid var(--line);
@@ -1840,34 +1812,19 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     }}
     .stat-table td.col-pair {{ font-weight: 800; letter-spacing: .02em; }}
 
-    /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
-       định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
-    /* Kết quả | Chục | Đơn vị trên MỘT hàng.
-       Ba cột KHÔNG chia đều: bảng kết quả cần 520px để mỗi giải nằm gọn một
-       dòng, hai bảng chữ số chỉ cần 284px. Chia đều là cách bố cục ba cột
-       trước đây hỏng — nó cho khối cần nhiều nhất đúng bằng khối cần ít nhất.
-       Tổng sàn: 520 + 284 + 284 + 48 (hai khe) = 1136px. */
+    /* Kết quả | Chục | Đơn vị: bảng kết quả chiếm phần lớn chiều ngang.
+       Sàn bằng 0 để nội dung bảng không đẩy rộng toàn trang. */
     .matrix-top {{
       display: grid;
-      grid-template-columns: minmax(420px, 2.1fr) minmax(230px, 1fr) minmax(230px, 1fr);
+      grid-template-columns: minmax(0, 2.1fr) repeat(2, minmax(0, 1fr));
       gap: 24px;
       align-items: stretch;
       margin-bottom: 24px;
     }}
     .matrix-top > * {{ min-width: 0; margin: 0; }}
-    /* Sàn 420/230 chứ không phải 520/284. Bộ cũ lấy từ bề rộng THOẢI MÁI của
-       bảng kết quả, không phải bề rộng nó THỰC SỰ CẦN, nên một hàng chỉ xuất
-       hiện từ 1250px trở lên — cả dải 960-1250px không được hưởng gì.
-
-       Đo ở khung 980px với sàn 420/230: bảng kết quả rộng 398px, KHÔNG cuộn,
-       không tràn trang. Giá phải trả là bảng cao 616 -> 662px (+7%) và hàng
-       huy hiệu chữ số xuống hai dòng (37 -> 64px). Đổi lại, bố cục đúng chạy
-       được từ 960px thay vì 1250px.
-
-       Dưới 960px thì hạ dần, không nhảy thẳng xuống một cột: bảng kết quả lên
-       trọn hàng, hai bảng chữ số vẫn cạnh nhau vì chúng vốn để đọc cùng nhau. */
+    /* Tablet: kết quả trọn hàng, chục và đơn vị ở hàng kế tiếp. */
     @media (max-width: 959px) {{
-      .matrix-top {{ grid-template-columns: minmax(284px, 1fr) minmax(284px, 1fr); }}
+      .matrix-top {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
       .matrix-top > #ket-qua {{ grid-column: 1 / -1; }}
     }}
     @media (max-width: 640px) {{ .matrix-top {{ grid-template-columns: minmax(0, 1fr); }} }}
@@ -1902,6 +1859,21 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       border: 1px solid rgba(226,232,240,.9);
       padding: 18px;
       box-shadow: 0 16px 42px rgba(15,23,42,.07);
+    }}
+    .inspect-panel > * {{ min-width: 0; }}
+    .inspect-panel p, .position-list li {{ overflow-wrap: anywhere; }}
+    .inspect-paths h4 {{ margin: 0 0 10px; }}
+    @media (min-width: 1024px) {{
+      .inspect-panel {{
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        gap: 24px;
+        align-items: start;
+      }}
+      .inspect-paths .position-list {{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 0;
+      }}
     }}
     .inspect-number {{
       display: flex;
@@ -1944,7 +1916,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       font-weight: 900;
     }}
     .inspect-meta strong {{ display: block; margin-top: 3px; font-size: 18px; }}
-    .position-list {{ display: grid; gap: 8px; margin-top: 10px; }}
+    .position-list {{ display: grid; gap: 8px; margin-top: 10px; padding: 0; }}
     .position-list li {{
       list-style: none;
       padding: 10px;
@@ -2410,11 +2382,12 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           <div>
             <div class="section-kicker">Bấm để xem căn cứ</div>
             <h2>Vị trí đường cầu và căn cứ tạo số liệu</h2>
-            <p>Bấm vào bất kỳ số nào trên ma trận, bảng kết quả hoặc bảng xếp hạng AI/ML để cập nhật khung bên trái với lý do, điểm, xác suất và các đường cầu vị trí.</p>
+            <p>Bấm vào bất kỳ số nào trên ma trận, bảng kết quả hoặc bảng xếp hạng AI/ML để cập nhật khung căn cứ phía trên với lý do, điểm, xác suất và các đường cầu vị trí.</p>
           </div>
         </div>
         <div class="inspector">
           <aside class="inspect-panel" id="number-inspector">
+            <div class="inspect-overview">
             <div class="inspect-number">
               <b id="inspect-num">--</b>
               <div><span id="inspect-mode">Chưa chọn</span><h3 id="inspect-title">Chọn một số trên trang</h3></div>
@@ -2426,15 +2399,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
             </div>
             <p><b>Lý do chính:</b> <span id="inspect-reason">—</span></p>
             <p><b>Bằng chứng:</b> <span id="inspect-evidence">—</span></p>
+            </div>
+            <div class="inspect-paths">
             <h4>Đường cầu vị trí nổi bật</h4>
             <ul class="position-list" id="inspect-lines">
               <li>Bấm vào số để xem chi tiết.</li>
             </ul>
+            </div>
           </aside>
-          <!-- Hai bảng gộp thành một khối, ĐB trên và lô tô dưới, ngăn bằng
-               một đường mảnh. Trước đây chúng là hai cột hẹp 445px: cột "Tỷ lệ"
-               bị cắt mất, ô nội dung xuống 5 dòng, và ~45% chiều cao mỗi cột
-               bỏ trống. Gộp lại cho mỗi bảng gần 1090px và chia nhau chiều cao. -->
+          <!-- Hai bảng dữ liệu ngang hàng: Đặc Biệt trước, lô tô sau. -->
           <div class="basis-cell">
             <div class="basis-merged">
             <section>
@@ -2597,6 +2570,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     const firstSignal = document.querySelector('[data-number]');
     if (firstSignal) showNumber(firstSignal.dataset.mode || 'loto', firstSignal.dataset.number);
   </script>
+<a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Phòng nghiên cứu</a>
 </body>
 </html>
 """
