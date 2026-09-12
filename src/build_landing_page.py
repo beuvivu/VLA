@@ -455,7 +455,21 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
     return f"<div class='matrix-wrap'><div class='tiny-matrix'>{header}{''.join(cells)}</div></div>"
 
 
-def _render_head_tail_lists(latest: Mapping[str, Any]) -> str:
+def _render_head_tail_lists(latest: Mapping[str, Any], which: str | None = None) -> str:
+    """Danh sách số đã về gom theo hàng chục hoặc hàng đơn vị.
+
+    Args:
+        latest: Bản ghi kỳ gần nhất.
+        which: ``"heads"`` hoặc ``"tails"`` để lấy riêng một bảng; bỏ trống thì
+            trả về cả hai trong một lưới, như trước.
+
+    Returns:
+        Chuỗi HTML.
+
+    Tách được từng bảng vì bố cục mới xếp Kết quả / Chục / Đơn vị thành ba thẻ
+    ngang hàng, mà ba thẻ thì cần ba khối rời — không thể là một thẻ chứa hai.
+    """
+
     def block(title: str, data: Mapping[str, Sequence[str]]) -> str:
         rows = []
         for digit in range(10):
@@ -465,8 +479,15 @@ def _render_head_tail_lists(latest: Mapping[str, Any]) -> str:
                 or "<span class='muted'>—</span>"
             )
             rows.append(f"<div class='head-tail-row'><b>{digit}</b><div>{badges}</div></div>")
-        return f"<div class='head-tail-card'><h4>{html.escape(title)}</h4>{''.join(rows)}</div>"
+        head = f"<h4>{html.escape(title)}</h4>" if title else ""
+        return f"<div class='head-tail-card'>{head}{''.join(rows)}</div>"
 
+    # Khi tách thành thẻ riêng, tiêu đề đã nằm ở đầu thẻ — giữ thêm <h4> bên
+    # trong là nói hai lần cùng một câu.
+    if which == "heads":
+        return block("", latest.get("heads", {}))
+    if which == "tails":
+        return block("", latest.get("tails", {}))
     return (
         "<div class='head-tail-grid'>"
         + block("Theo hàng chục / đầu", latest.get("heads", {}))
@@ -1657,16 +1678,21 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     .pair-row > * {{ min-width: 0; margin: 0; }}
     @media (max-width: 900px) {{ .pair-row {{ grid-template-columns: 1fr; }} }}
 
-    /* Khu căn cứ: khung chọn số độc lập bên trái, hai bảng đường cầu gộp
-       thành một khối bên phải. Bản ba cột trước đây cho mỗi bảng 445px — cột
-       "Tỷ lệ" bị cắt mất và ~45% chiều cao mỗi cột bỏ trống. */
+    /* Khu căn cứ xếp theo TẦNG, không theo cột.
+
+       Tầng 1: khung căn cứ trải hết chiều ngang.
+       Tầng 2: bảng cầu ĐB và bảng cầu lô tô cạnh nhau, ĐB bên trái.
+
+       Đánh đổi phải nói rõ: min-content của mỗi bảng cầu đo được 796px, nên
+       hai bảng cạnh nhau cần 1616px vùng nội dung. Dưới mức đó mỗi bảng tự
+       cuộn ngang trong thẻ của nó để xem đủ 9 cột. Bố cục cũ cho mỗi bảng
+       trọn ~1090px nên không phải cuộn — đây là cái giá của việc xếp ngang,
+       và nó là lựa chọn có chủ ý chứ không phải sơ suất. */
     .inspector {{
       display: grid;
-      grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: 24px;
-      /* stretch để hai ô cùng cao; chiều cao hàng do CỘT TRÁI quyết định nhờ
-         thủ thuật ở .basis-cell ngay dưới. */
-      align-items: stretch;
+      align-items: start;
     }}
     .inspector > * {{ min-width: 0; }}
 
@@ -1688,21 +1714,17 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
        align-self:start — align-items:stretch của .inspector sẽ vô hiệu hoá
        sticky nếu thiếu dòng này. */
     .basis-cell {{ min-width: 0; }}
-    .inspector > .inspect-panel {{
-      align-self: start;
-      position: sticky;
-      top: 22px;
-      max-height: calc(100vh - 44px);
-      overflow: auto;
-      scrollbar-width: thin;
+    /* KHÔNG còn sticky. sticky có nghĩa khi khung là chú giải nằm CẠNH một
+       khối cuộn dài; nay nó nằm TRÊN, nên dính lại chỉ tổ che mất hai bảng
+       bên dưới. max-height cũng bỏ: trải ngang thì nội dung tự vừa. */
+    .inspector > .inspect-panel {{ align-self: start; }}
+    /* Hai bảng cầu cạnh nhau, ĐB trước. */
+    .basis-merged {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
     }}
-    @media (max-width: 1100px) {{
-      .inspector {{ grid-template-columns: minmax(0, 1fr); }}
-      /* Xếp dọc thì không còn gì để dính theo; trả về luồng bình thường. */
-      .inspector > .inspect-panel {{
-        position: static; max-height: none; overflow: visible;
-      }}
-    }}
+    .basis-merged > section {{ min-width: 0; }}
 
     /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
        phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
@@ -1716,11 +1738,31 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
        chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
        nhiên là đọc được trọn vẹn, không cắt hàng nào. */
     .basis-merged > section {{ padding: 20px 24px; }}
-    .basis-merged > section + section {{ border-top: 1px solid var(--line); }}
+    /* Cạnh nhau thì vách ngăn phải DỌC. Giữ border-top cho nhánh xếp dọc
+       bên dưới, nếu không hai bảng chồng lên nhau mà không có gì ngăn. */
+    .basis-merged > section + section {{ border-left: 1px solid var(--line); }}
     .basis-merged > section > * {{ margin: 0; border: 0; box-shadow: none; padding: 0; }}
     /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
        hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
     .basis-merged .table-wrap {{ max-height: none; }}
+    /* Ngưỡng xếp dọc lấy từ số đo, không phải từ một con số tròn.
+       min-content của bảng (sau khi thu cột) là 703px. Hai bảng cạnh nhau
+       cần 1430px vùng nội dung, tức khung ~1530px. Đo mức cuộn còn lại:
+
+         1920 / 1600   bảng 703px   cuộn 0-4px
+         1440          bảng 628px   cuộn 70px   (~10% bị che)
+         1280          bảng 553px   cuộn 145px  (~20% bị che)
+         1101          bảng 484px   cuộn 214px  (~30%, hẹp hơn cả bố cục 445px
+                                                 từng làm cắt cột "Tỷ lệ")
+
+       Dừng ở 1280: dưới mức đó phần bị che vượt một phần năm bảng, và xếp dọc
+       cho mỗi bảng trọn chiều ngang thì hơn hẳn. */
+    @media (max-width: 1279px) {{
+      .basis-merged {{ grid-template-columns: minmax(0, 1fr); }}
+      .basis-merged > section + section {{
+        border-left: 0; border-top: 1px solid var(--line);
+      }}
+    }}
 
     /* Bề rộng cột cho hai bảng đường cầu.
 
@@ -1733,6 +1775,23 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
        chia đều cho cả cột chỉ chứa một con số. */
     .basis-merged .col-path_line {{ min-width: 190px; width: 26%; }}
     .basis-merged .col-reason {{ min-width: 170px; width: 22%; }}
+    /* Khi hai bảng đứng CẠNH nhau, mỗi bảng chỉ còn ~751px. Hai sàn 190/170
+       ở trên vốn chỉnh cho bảng ~925px, và chúng chính là thứ đặt min-content
+       của bảng lên 796px — dư 45px, đủ để cắt mất cột "Căn cứ".
+
+       Dò từng cặp giá trị, đo cả mức cuộn lẫn chiều cao hàng:
+
+         190/170  cuộn 95px   hàng 83,4px
+         160/140  cuộn 35px   hàng 83,4px
+         140/120  cuộn  0px   hàng 104,2px
+
+       Chọn 140/120. Hàng cao thêm 25% và bảng cao 874 -> 1082px, nhưng bảng
+       hiện đủ MỌI cột ngay khi nhìn. Một bảng cao hơn vẫn đọc được; một bảng
+       giấu mất cột thì phải biết là có cái gì đó ở bên phải mới đi tìm. */
+    @media (min-width: 1280px) {{
+      .basis-merged .col-path_line {{ min-width: 140px; }}
+      .basis-merged .col-reason {{ min-width: 120px; }}
+    }}
     .basis-merged .col-rule_kind {{ width: 1%; }}
     /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
        lớn ngay mà không phải đọc từng chữ số.
@@ -1778,28 +1837,39 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
 
     /* Tầng 1 của ma trận dữ liệu: 58/42. minmax(0,…) là bắt buộc — 1fr mặc
        định là minmax(auto,1fr) và bảng kết quả sẽ đẩy cột phình ra. */
+    /* Kết quả | Chục | Đơn vị trên MỘT hàng.
+       Ba cột KHÔNG chia đều: bảng kết quả cần 520px để mỗi giải nằm gọn một
+       dòng, hai bảng chữ số chỉ cần 284px. Chia đều là cách bố cục ba cột
+       trước đây hỏng — nó cho khối cần nhiều nhất đúng bằng khối cần ít nhất.
+       Tổng sàn: 520 + 284 + 284 + 48 (hai khe) = 1136px. */
     .matrix-top {{
       display: grid;
-      grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+      grid-template-columns: minmax(520px, 2.1fr) minmax(284px, 1fr) minmax(284px, 1fr);
       gap: 24px;
       align-items: stretch;
       margin-bottom: 24px;
     }}
     .matrix-top > * {{ min-width: 0; margin: 0; }}
-    @media (max-width: 1100px) {{ .matrix-top {{ grid-template-columns: minmax(0, 1fr); }} }}
+    /* Dưới sàn thì hạ dần, không nhảy thẳng xuống một cột: bảng kết quả lên
+       trọn hàng, hai bảng chữ số vẫn cạnh nhau vì chúng vốn để đọc cùng nhau. */
+    @media (max-width: 1220px) {{
+      .matrix-top {{ grid-template-columns: minmax(284px, 1fr) minmax(284px, 1fr); }}
+      .matrix-top > #ket-qua {{ grid-column: 1 / -1; }}
+    }}
+    @media (max-width: 640px) {{ .matrix-top {{ grid-template-columns: minmax(0, 1fr); }} }}
 
     .matrix-full {{ width: 100%; margin-bottom: 24px; }}
 
-    /* Ba bảng dự đoán ngày mai XẾP DỌC.
+    /* Ba thẻ dự đoán ngày mai XẾP DỌC — giữ nguyên, và lý do vẫn đứng vững.
 
-       Bản ba cột trước đây cho mỗi thẻ 485px ở màn 1920px và 435px ở 1440px.
-       Bảng mô phỏng bên trong cần tối thiểu 520px cho khung giải, nên nó bị
-       ép còn 131px và 81px — đo được tràn 389px và 439px, đúng cái thanh cuộn
-       ngang nhìn thấy dưới bảng. Đồng thời hai biểu đồ bị kéo cao 1255px cho
-       bằng thẻ mô phỏng, để lại một khoảng trắng lớn phía trên mỗi biểu đồ.
+       Bản ba cột cho mỗi thẻ 485px ở màn 1920px, trong khi thẻ mô phỏng cần
+       1112px: lưới bên trong nó tự chia ba cột (khung giải 520 + hai bảng xác
+       suất 280 mỗi bảng + khe). Ép xuống 485px thì lưới ấy TRÀN RA NGOÀI thẻ,
+       vì overflow-x của nó là visible chứ không phải auto — nội dung đi ra
+       khỏi khung chứ không sinh thanh cuộn.
 
-       Xếp dọc giải quyết cả hai: mỗi thẻ có trọn chiều ngang, và không thẻ
-       nào phải cao theo thẻ khác. */
+       Việc xếp ngang "mô phỏng | ĐB | lô tô" thuộc về BÊN TRONG khối mô phỏng
+       (.fun-pred-grid trong build_fun_prediction.py), không phải ở tầng này. */
     .next-day {{
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -2170,11 +2240,21 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           <div class="card-head">
             <div>
               <p class="eyebrow">Phân bổ chữ số</p>
-              <h3>Chục × đơn vị</h3>
-              <p>Các số đã về hôm nay gom theo hàng chục/đầu và hàng đơn vị/đuôi.</p>
+              <h3>Theo hàng chục</h3>
+              <p>Các số đã về hôm nay gom theo hàng chục/đầu.</p>
             </div>
           </div>
-          {_render_head_tail_lists(latest)}
+          {_render_head_tail_lists(latest, "heads")}
+        </section>
+        <section id="don-vi" class="section card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Phân bổ chữ số</p>
+              <h3>Theo hàng đơn vị</h3>
+              <p>Các số đã về hôm nay gom theo hàng đơn vị/đuôi.</p>
+            </div>
+          </div>
+          {_render_head_tail_lists(latest, "tails")}
         </section>
       </div>
 

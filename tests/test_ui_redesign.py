@@ -492,22 +492,40 @@ def test_landing_section_order_matches_the_agreed_flow() -> None:
     assert positions == sorted(positions), dict(zip(expected, positions, strict=True))
 
 
+
 def test_top_row_pairs_results_with_digit_spread_and_stretches() -> None:
-    """Tầng 1: kết quả ~58% cạnh chục×đơn vị ~42%, cân bằng chiều cao."""
+    """Tầng 1: Kết quả | Chục | Đơn vị trên một hàng, ba cột KHÔNG chia đều.
+
+    Chia đều là cách một bố cục ba cột hỏng: nó cho khối cần nhiều nhất đúng
+    bằng khối cần ít nhất. Bảng kết quả cần 520px để mỗi giải nằm gọn một
+    dòng; hai bảng chữ số chỉ cần 284px.
+    """
     css = (DOCS / "index.html").read_text(encoding="utf-8")
     top = re.search(r"\.matrix-top\s*\{([^}]*)\}", css)
     assert top, "thiếu lưới .matrix-top"
     body = top.group(1).replace(" ", "")
-    assert "minmax(0,58fr)minmax(0,42fr)" in body
+    assert "minmax(520px,2.1fr)minmax(284px,1fr)minmax(284px,1fr)" in body
     assert "stretch" in body
 
 
+
 def test_top_row_columns_cannot_be_pushed_open_by_wide_tables() -> None:
-    """1fr mặc định là minmax(auto,1fr); bảng rộng sẽ phá vỡ tỉ lệ 58/42."""
+    """Mọi rãnh lưới phải có SÀN tường minh.
+
+    ``1fr`` trần trụi là ``minmax(auto, 1fr)``: một bảng rộng nằm trong rãnh
+    đó sẽ tự nới rãnh ra và phá vỡ tỉ lệ đã định. Sàn có thể là ``0`` (cho
+    phép co hết cỡ, kèm cuộn bên trong) hoặc một số đo cụ thể — miễn là được
+    nói ra, không phải ``auto``.
+    """
     css = (DOCS / "index.html").read_text(encoding="utf-8")
     for name in ("matrix-top", "next-day", "inspector"):
         rule = re.search(rf"\.{name}\s*\{{([^}}]*)\}}", css)
-        assert rule and "minmax(0," in rule.group(1).replace(" ", ""), name
+        assert rule, name
+        cols = re.search(r"grid-template-columns:([^;]*)", rule.group(1))
+        assert cols, f"{name}: không khai grid-template-columns"
+        tracks = cols.group(1).replace(" ", "")
+        assert "minmax(" in tracks, f"{name}: rãnh thiếu sàn tường minh ({tracks})"
+        assert not re.search(r"(^|\))[0-9.]+fr", tracks), f"{name}: còn rãnh fr trần ({tracks})"
 
 
 def test_daily_matrix_spans_the_full_width() -> None:
@@ -542,16 +560,35 @@ def test_evidence_tables_are_merged_into_one_card() -> None:
     assert len(sections) == 2, f"khối hợp nhất phải có 2 phần, thấy {len(sections)}"
 
 
+
 def test_merged_card_divider_sits_only_between_sections() -> None:
-    """border-top cho mọi con sẽ vẽ một đường thừa trên phần đầu."""
+    """Vách ngăn phải theo đúng HƯỚNG xếp.
+
+    Hai bảng đường cầu nay đứng cạnh nhau ở màn rộng và xếp dọc ở màn hẹp.
+    Vách dọc cho nhánh cạnh nhau, vách ngang cho nhánh xếp dọc; dùng nhầm
+    hướng thì hai bảng dính vào nhau mà không có gì ngăn.
+    """
     css = (DOCS / "index.html").read_text(encoding="utf-8").replace(" ", "")
-    assert ".basis-merged>section+section{border-top:" in css
+    assert ".basis-merged>section+section{border-left:" in css
+    assert "border-top:1pxsolidvar(--line)" in css
+
 
 
 def test_analysis_row_keeps_the_left_panel_independent() -> None:
+    """Khu căn cứ xếp theo TẦNG, không theo cột.
+
+    Tầng 1 là khung căn cứ trải hết chiều ngang; tầng 2 là hai bảng đường cầu
+    cạnh nhau, ĐB bên trái. Một cột duy nhất ở .inspector chính là cái tạo ra
+    hai tầng ấy.
+    """
     css = (DOCS / "index.html").read_text(encoding="utf-8")
     rule = re.search(r"\.inspector\s*\{([^}]*)\}", css)
-    assert "minmax(0,34fr)minmax(0,66fr)" in rule.group(1).replace(" ", "")
+    assert rule, "thiếu lưới .inspector"
+    assert "minmax(0,1fr)" in rule.group(1).replace(" ", "")
+
+    basis = re.search(r"\.basis-merged\s*\{([^}]*)\}", css)
+    assert basis, "thiếu lưới .basis-merged"
+    assert "minmax(0,1fr)minmax(0,1fr)" in basis.group(1).replace(" ", "")
 
 
 def test_wide_tables_scroll_inside_their_own_container() -> None:
@@ -726,20 +763,19 @@ def test_icon_magnification_stays_in_the_agreed_range(page: Path) -> None:
     assert re.search(r"dock-ic\{[^}]*transition:transform[^;]*ease-in-out", css), page.name
 
 
-def test_evidence_columns_are_balanced_by_a_sticky_panel() -> None:
-    """Cân bằng bằng cách GIỮ khung trái trong tầm mắt, không nhồi khối phải.
 
-    Bản trước khoá chiều cao khối phải bằng khung trái (absolute inset:0). Nó
-    chữa được độ lệch 497px nhưng ép hai bảng cần 874px và 1082px vào 511px
-    mỗi bảng. sticky đòi ô lưới không bị kéo giãn, nên align-self:start là bắt
-    buộc — align-items:stretch của .inspector sẽ vô hiệu hoá sticky nếu thiếu.
+def test_evidence_columns_are_balanced_by_a_sticky_panel() -> None:
+    """Khung căn cứ KHÔNG còn dính, và đó là chủ ý.
+
+    sticky có nghĩa khi khung là chú giải nằm CẠNH một khối cuộn dài. Nay nó
+    nằm TRÊN hai bảng, nên dính lại chỉ tổ che mất chính thứ nó giải thích.
     """
     css = _css(DOCS / "index.html")
     rule = re.search(r"\.inspector>\.inspect-panel\{([^}]*)\}", css)
-    assert rule, "không tìm thấy quy tắc sticky cho khung căn cứ"
+    assert rule, "không tìm thấy quy tắc cho khung căn cứ"
     body = rule.group(1)
-    assert "position:sticky" in body
-    assert "align-self:start" in body, "thiếu align-self:start thì sticky không có tác dụng"
+    assert "position:sticky" not in body
+    assert "align-self:start" in body
 
 
 def test_evidence_card_no_longer_locks_its_height() -> None:
@@ -923,22 +959,32 @@ def test_bar_chart_uses_columns_instead_of_one_long_bar() -> None:
     )
 
 
+
 def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
-    """Khung giải cần 520px. Ở 1280px cột đầu chỉ còn 474px — đo được tràn
-    46px — nên ngưỡng chia ba cột phải là 1400px, không phải 1100px.
+    """Bảng mô phỏng: bảng giải | Đặc biệt | Lô tô, và sàn 520px phải còn.
+
+    Sàn thật của bố cục ba cột là 520 + 280 + 280 + 32 = 1112px BỀ RỘNG THẺ.
+    Khối chiếm trọn chiều ngang trang, nên khung 1250px cho thẻ 1114px — vừa
+    đủ. Ngưỡng cũ 1400px bỏ phí cả dải 1250-1400.
+
+    Bỏ sàn 520px là lỗi nặng chứ không phải chuyện thẩm mỹ: overflow-x của
+    .fun-pred-grid là visible, nên thiếu chỗ thì nội dung TRÀN RA NGOÀI thẻ
+    chứ không sinh thanh cuộn.
 
     Kiểm ở NGUỒN chứ không ở docs/index.html: nhiều builder cùng ghi tệp đó và
-    khối <style> này chỉ có mặt khi build_fun_prediction chạy sau cùng, nên
-    khẳng định trên tệp đã dựng sẽ đỏ hay xanh tuỳ thứ tự test — một phép kiểm
-    như vậy không nói lên điều gì về mã.
+    khối <style> này chỉ có mặt khi build_fun_prediction chạy sau cùng.
     """
-    css = (ROOT / "src" / "build_fun_prediction.py").read_text(encoding="utf-8")
-    css = css.replace(" ", "").replace("\n", "")
-    assert "@media(min-width:1400px)" in css
-    block = re.search(r"@media\(min-width:1400px\)\{(.*?\.fun-prob-panels\{[^}]*\})", css)
+    src = (ROOT / "src" / "build_fun_prediction.py").read_text(encoding="utf-8")
+    flat = src.replace(" ", "").replace("\n", "")
+    assert "@media(min-width:1250px)" in flat
+    block = re.search(r"@media\(min-width:1250px\)\{(.*?\.fun-prob-panels\{[^}]*\})", flat)
     assert block, "không tìm thấy khối ba cột cho bảng mô phỏng"
     assert "minmax(520px" in block.group(1)
     assert "display:contents" in block.group(1)
+
+    # Thứ tự đọc theo DOM: Đặc biệt trước Lô tô. Xáo bằng CSS order sẽ làm thứ
+    # tự nhìn và thứ tự trình đọc màn hình lệch nhau.
+    assert src.index("Đặc biệt ngày mai") < src.index("Lô tô ngày mai")
 
 
 # --- Màn hình tần suất cặp lô tô -------------------------------------------

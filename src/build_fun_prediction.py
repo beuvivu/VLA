@@ -330,13 +330,13 @@ def _render_board(payload: dict[str, Any]) -> str:
       <p class="fun-method">{html.escape(str(payload["method"]))}</p>
     </div>
     <div class="fun-prob-panels">
-      <article class="fun-prob-card">
-        <div class="fun-prob-title"><span>Lô tô ngày mai</span><small>{html.escape(loto_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "Lô tô")}</div>
-      </article>
       <article class="fun-prob-card de">
         <div class="fun-prob-title"><span>Đặc biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
         <div class="fun-prob-list">{_prob_badges(payload["top_de"], "de", "ĐB")}</div>
+      </article>
+      <article class="fun-prob-card">
+        <div class="fun-prob-title"><span>Lô tô ngày mai</span><small>{html.escape(loto_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "Lô tô")}</div>
       </article>
     </div>
   </div>
@@ -396,7 +396,11 @@ FUN_CSS = r"""
 
    Quy tắc này BẮT BUỘC nằm sau .fun-prob-panels{display:grid} bên trên: cùng
    độ đặc hiệu nên khai sau mới thắng. */
-@media (min-width: 1400px) {
+/* Sàn thật của bố cục ba cột: 520 + 280 + 280 + 32 (hai khe) = 1112px BỀ
+   RỘNG THẺ. Khối này chiếm trọn chiều ngang trang, và ở khung 1250px thẻ đo
+   được 1114px — vừa đủ. Ngưỡng cũ 1400px thận trọng quá tay: từ 1250 tới
+   1400 bố cục rơi về hai cột dù thừa chỗ cho ba. */
+@media (min-width: 1250px) {
   .fun-pred-grid {
     grid-template-columns: minmax(520px, 1.15fr) minmax(280px, .8fr) minmax(280px, .8fr);
   }
