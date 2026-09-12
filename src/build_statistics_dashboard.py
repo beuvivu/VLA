@@ -1556,9 +1556,15 @@ def main() -> None:
       gap: 6px;
       padding: 18px;
       border-radius: 18px;
-      background: repeating-linear-gradient(135deg, #f8fafc, #f8fafc 12px, #f1f5f9 12px, #f1f5f9 24px);
-      border: 1px dashed #cbd5e1;
-      color: #475569;
+      /* Vân cũ vẽ #f1f5f9 trên #f8fafc — đo được 1,05:1, tức là không nhìn
+         thấy gì và khối rỗng trông như một mảng trắng bị lỗi. Dùng cùng nền
+         chìm và cùng vân với ô trống của các trang thống kê (1,79:1). */
+      background-color: #E2E8F0;
+      background-image: repeating-linear-gradient(
+        135deg, transparent, transparent 6px,
+        rgba(100, 116, 139, .38) 6px, rgba(100, 116, 139, .38) 9px);
+      border: 1px dashed #94A3B8;
+      color: #334155;
     }}
     .empty-state strong {{ color: #0f172a; }}
     .empty-state span {{ font-size: 13px; line-height: 1.5; }}

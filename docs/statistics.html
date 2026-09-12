@@ -537,9 +537,15 @@
       gap: 6px;
       padding: 18px;
       border-radius: 18px;
-      background: repeating-linear-gradient(135deg, #f8fafc, #f8fafc 12px, #f1f5f9 12px, #f1f5f9 24px);
-      border: 1px dashed #cbd5e1;
-      color: #475569;
+      /* Vân cũ vẽ #f1f5f9 trên #f8fafc — đo được 1,05:1, tức là không nhìn
+         thấy gì và khối rỗng trông như một mảng trắng bị lỗi. Dùng cùng nền
+         chìm và cùng vân với ô trống của các trang thống kê (1,79:1). */
+      background-color: #E2E8F0;
+      background-image: repeating-linear-gradient(
+        135deg, transparent, transparent 6px,
+        rgba(100, 116, 139, .38) 6px, rgba(100, 116, 139, .38) 9px);
+      border: 1px dashed #94A3B8;
+      color: #334155;
     }
     .empty-state strong { color: #0f172a; }
     .empty-state span { font-size: 13px; line-height: 1.5; }
@@ -1454,7 +1460,7 @@
 </div>
 </section>
 <p class="footer-note">
-      Tạo lúc: 2026-09-12T01:32:31Z · Dữ liệu đến: 2026-09-11
+      Tạo lúc: 2026-09-12T01:53:55Z · Dữ liệu đến: 2026-09-11
       · Manifest: <code>data/advanced/statistics_manifest.json</code>.
       Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
     </p>

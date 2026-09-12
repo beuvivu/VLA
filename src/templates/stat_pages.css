@@ -1,5 +1,5 @@
-.sp-controls{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:center;
-padding:1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--vla-r-lg);
+.sp-controls{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;align-items:center;
+padding:1rem 1.5rem;margin-bottom:1.5rem;border-radius:var(--vla-r-lg);
 background:var(--vla-surface);border:1px solid var(--vla-border);
 box-shadow:var(--vla-sh-sm)}
 .sp-controls label{display:flex;align-items:center;gap:.5rem;font-size:.8125rem;
@@ -48,7 +48,7 @@ border-bottom:1px solid var(--vla-border);white-space:nowrap}
 
 /* Ma trận 00-99. auto-fill giữ ô vuông ở mọi bề rộng mà không cần media query. */
 .sp-matrix{display:grid;grid-template-columns:repeat(auto-fill,minmax(3.25rem,1fr));
-gap:.25rem;margin-bottom:1.25rem}
+gap:.5rem;margin-bottom:1.5rem}
 .sp-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
 padding:.45rem .25rem;border-radius:var(--vla-r-md);border:1px solid var(--vla-border);
 background:var(--vla-surface);line-height:1.2;box-shadow:var(--vla-sh-sm)}
@@ -58,14 +58,14 @@ font-variant-numeric:tabular-nums}
 
 .sp-bar{display:block;height:.5rem;border-radius:999px;background:var(--vla-brand);
 min-width:2px}
-.sp-duo{display:grid;gap:1.25rem;
+.sp-duo{display:grid;gap:1.5rem;
 grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}
 .sp-duo h3{margin:0 0 .625rem;font-size:1rem}
 .sp-duo>div{border:1px solid var(--vla-border);border-radius:var(--vla-r-lg);
 background:var(--vla-surface);padding:1rem;overflow-x:auto;
 box-shadow:var(--vla-sh-sm)}
 
-.sp-kpi{display:grid;gap:.75rem;margin-bottom:1.25rem;
+.sp-kpi{display:grid;gap:1rem;margin-bottom:1.5rem;
 grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))}
 .sp-kpi-card{padding:.875rem 1rem;border-radius:var(--vla-r-lg);
 background:var(--vla-surface);border:1px solid var(--vla-border);
@@ -77,19 +77,24 @@ color:var(--vla-ink);font-variant-numeric:tabular-nums}
 
 /* Ghi chú mốc ngẫu nhiên. Không phải trang trí: thiếu nó thì bảng xếp hạng
    trông như quy luật trong khi đó là mức ngẫu nhiên thường tạo ra. */
-.sp-note{margin:1.25rem 0 0;padding:.875rem 1rem;border-radius:var(--vla-r-lg);
+.sp-note{margin:1.5rem 0 0;padding:1rem;border-radius:var(--vla-r-lg);
 background:#fffbeb;border:1px solid #fde68a;color:#78350f;font-size:.8125rem;
 line-height:1.65}
 :root:not([data-theme=light]) .sp-note{background:#3f2d0c;border-color:#78350f;color:#fde68a}
 @media (prefers-color-scheme: light){:root:not([data-theme=dark]) .sp-note{
 background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
-/* --- Giải đặc biệt đủ 5 chữ số ------------------------------------------
-   Ba chữ số đầu để mờ, hai số cuối đậm: người soi cầu đọc hai số cuối, nhưng
-   vẫn cần trọn giải để đối chiếu với kết quả gốc. Bản trước cắt mất phần đầu
-   nên không đối chiếu được. */
+/* --- Giải ĐẶC BIỆT -------------------------------------------------------
+   Ba chữ số đầu để mờ nhưng vẫn hiện đủ, để đối chiếu được với kết quả gốc.
+   Giải ĐẶC BIỆT. Ba chữ số đầu để mờ, hai số cuối là thứ người soi cầu đọc —
+   và giải đặc biệt luôn mang màu đỏ, không phụ thuộc số nháy hay bất cứ điều
+   gì khác. Đỏ #BE123C trên #FFE4E6 đo được 5,24:1. */
 .sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--vla-ink-soft); }
-.sp-de b { color: var(--vla-ink); font-weight: 800; }
+.sp-de b {
+  color: #BE123C; font-weight: 800;
+  padding: 0 4px; border-radius: 6px;
+  background: #FFE4E6; border: 1px solid #FDA4AF;
+}
 
 /* --- Đánh dấu ô để so sánh ----------------------------------------------- */
 .sp-table td.cell { cursor: pointer; }
@@ -102,14 +107,16 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table td.marked .sp-de,
 .sp-table td.marked .sp-de b { color: #78350f; }
 
-.sp-marktools { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
+.sp-marktools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
 .sp-hint { color: var(--vla-ink-soft); font-size: 12px; }
 .sp-mark-count { color: var(--vla-warn); font-size: 12px; font-weight: 800; }
-.sp-subhead { margin: 22px 0 8px; font-size: 17px; }
+.sp-subhead { margin: 24px 0 8px; font-size: 17px; }
 
 @media (prefers-color-scheme: dark) {
-  .sp-de { color: #64748b; }
-  .sp-de b { color: #e2e8f0; }
+  .sp-de { color: #94a3b8; }
+  /* Vẫn đỏ ở chế độ tối, chỉ đổi sắc độ cho hợp nền: #FDA4AF trên #4C0519
+     đo được 8,27:1. Giữ nguyên #BE123C ở đây thì chữ chìm hẳn (2,49:1). */
+  .sp-de b { color: #FDA4AF; background: #4C0519; border-color: #9F1239; }
   .sp-table td.marked { background: #78350f !important; box-shadow: inset 0 0 0 2px #f59e0b; }
   .sp-table td.marked .sp-de,
   .sp-table td.marked .sp-de b { color: #fef3c7; }
@@ -153,7 +160,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    tên trường, rồi câu giải thích. Không giấu lời giải thích sau tooltip — trên
    điện thoại không có chuột để trỏ vào. */
 .sp-legend {
-  margin: 0 0 10px; padding: 12px 14px;
+  margin: 0 0 16px; padding: 16px;
   border: 1px solid var(--vla-border); border-radius: var(--vla-r-lg);
   background: #fffbeb; border-color: #fde68a;
 }
@@ -183,7 +190,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
 .sp-fields-toggle {
   display: flex; flex-wrap: wrap; gap: 6px 14px;
-  margin: 0 0 12px; padding: 9px 12px;
+  margin: 0 0 16px; padding: 8px 16px;
   border: 1px solid var(--vla-border); border-radius: var(--vla-r-lg);
   background: var(--vla-surface-2); box-shadow: var(--vla-sh-sm);
 }
@@ -211,7 +218,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 }
 
 /* --- Bộ chọn con số 00-99 ------------------------------------------------- */
-.sp-picker { margin-bottom: 12px; }
+.sp-picker { margin-bottom: 16px; }
 .sp-pick-quick { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .sp-pick-quick button {
   padding: 5px 11px; border-radius: 999px; border: 1px solid var(--vla-border);
@@ -232,9 +239,25 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    trả lời cho "tôi vừa bỏ những con nào". */
 .sp-pick:not(.on) { text-decoration: line-through; }
 
-/* Ma trận dày: chữ nhỏ, cột hẹp, luôn cuộn trong khung của nó. */
+/* Ma trận dày: chữ nhỏ, cột hẹp, luôn cuộn trong khung của nó.
+
+   Kích thước CỐ ĐỊNH. Trước đây bề rộng ô chạy từ 26 tới 44px tuỳ nội dung —
+   ô chứa "1" hẹp hơn ô chứa "12" — nên lưới răng cưa và mắt không dóng thẳng
+   được theo cột. table-layout:fixed cắt hẳn liên hệ giữa nội dung và bề rộng.
+
+   48px chứ không phải 40: nhãn ngày rộng nhất ("04-08", Inter 11px đậm) đo
+   được 34,6px, cộng padding 8px là 42,6px. Đặt 40px thì 52 trên 90 tiêu đề bị
+   cắt thành "04-…" — bảng tự giấu mất nhãn của chính nó. */
+.sp-table.sp-dense { table-layout: fixed; }
 .sp-table.sp-dense td, .sp-table.sp-dense th {
+  width: 48px; min-width: 48px; max-width: 48px; height: 24px;
   padding: 2px 4px; font-size: 11px; text-align: center;
+  overflow: hidden; text-overflow: ellipsis;
+}
+/* Cột nhãn hàng cần rộng hơn: nó mang "Đầu 7" hoặc "00-55", không phải một
+   chữ số. Không nới ra thì nhãn bị cắt mất và bảng tự phản bội chính nó. */
+.sp-table.sp-dense td:first-child, .sp-table.sp-dense th:first-child {
+  width: 64px; min-width: 64px; max-width: 64px;
 }
 .sp-table.sp-dense th { white-space: nowrap; }
 
@@ -246,8 +269,8 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
 /* --- Cầu giải đặc biệt ---------------------------------------------------- */
 .sp-times { display: block; font-style: normal; font-size: 10px; color: var(--vla-ink-soft); }
-.sp-recent { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.sp-draw { padding: 14px; border: 1px solid var(--vla-border);
+.sp-recent { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.sp-draw { padding: 16px; border: 1px solid var(--vla-border);
   border-radius: var(--vla-r-lg); background: var(--vla-surface-2);
   box-shadow: var(--vla-sh-sm); }
 .sp-draw h4 { margin: 0 0 8px; font-size: 14px; }
@@ -268,7 +291,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
 /* Ghi chú kích thước ma trận. Lớp RIÊNG, không dùng .sp-note: lớp đó dành cho
    ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
-.sp-matrix-note { margin: 0 0 10px; color: var(--vla-ink-soft); font-size: 12px; }
+.sp-matrix-note { margin: 0 0 8px; color: var(--vla-ink-soft); font-size: 12px; }
 @media (prefers-color-scheme: dark) { .sp-matrix-note { color: #94a3b8; } }
 
 /* =========================================================================
@@ -296,13 +319,83 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table.sp-grid-lines tr:last-child td:first-child { border-bottom-left-radius: .55rem; }
 .sp-table.sp-grid-lines tr:last-child td:last-child { border-bottom-right-radius: .55rem; }
 
-/* 2. Ô TRỐNG tự nói ra rằng nó trống. Vạch chéo mờ đọc được ngay cả khi in ra
-      hoặc khi người dùng không phân biệt được màu. */
+/* 2. BA TRẠNG THÁI Ô, phân biệt bằng BA dấu hiệu chứ không riêng màu ---------
+
+   Trước đây ô trống và ô có về đứng trên cùng một nền trắng — đo được 1,00:1 —
+   và chỉ khác nhau ở một vạch chéo vẽ bằng --vla-border (#E7EAF6). Mắt phải
+   dò từng ô mới tách được hai loại, trên bảng 100x90 thì đó là mỏi mắt thật
+   chứ không phải chuyện thẩm mỹ.
+
+   Nay: ô trống CHÌM (nền đặc xám + vạch chéo đậm gấp hơn hai lần), ô có về
+   NỔI (nền sáng + viền + bóng). Ba dấu hiệu cùng lúc: nền, vân, và độ nổi. */
 .sp-table td.is-empty {
+  background-color: #E2E8F0;
   background-image: repeating-linear-gradient(
-    45deg, transparent, transparent 5px,
-    var(--vla-border) 5px, var(--vla-border) 7px);
-  opacity: .75;
+    45deg, transparent, transparent 4px,
+    rgba(100, 116, 139, .38) 4px, rgba(100, 116, 139, .38) 6px);
+  box-shadow: none;
+}
+
+/* Ô CÓ VỀ. Bóng rất mỏng — một ma trận có tới vài nghìn ô, bóng dày là phải
+   trả giá bằng thời gian vẽ lại mỗi lần cuộn. */
+.sp-table td.sp-hit {
+  background-color: var(--vla-surface);
+  box-shadow: inset 0 0 0 1px var(--vla-border-strong), 0 1px 1.5px rgba(22,28,45,.07);
+  font-weight: 700;
+}
+
+/* --- Phân cấp SỐ NHÁY ------------------------------------------------------
+   Nền pastel + chữ đậm cùng tông. Mọi cặp đã đo với chữ 11px (ngưỡng AA 4,5):
+
+     1 nháy   #FFFFFF / #161C2D   16,96:1
+     2 nháy   #DBEAFE / #1D4ED8    5,49:1
+     3 nháy   #D1FAE5 / #047857    4,84:1
+     4 nháy   #FFEDD5 / #9A3412    6,38:1
+     5+ nháy  #5B21B6 / #FFFFFF    8,98:1
+
+   Một điều cần nói thẳng: xanh dương -> xanh lá -> cam KHÔNG có trật tự tri
+   giác, người đọc không tự suy ra 3 nhiều hơn 2. Đây là quy ước quen thuộc
+   của các trang XSMB nên giữ, nhưng phải kèm chú giải .sp-nhay-legend —
+   thiếu nó thì bảng màu chỉ là màu, không phải thông tin.
+
+   Cấp 5+ là cấp duy nhất đảo nền/chữ. Cố ý: nó hiếm nhất và phải bật ra khỏi
+   trang ngay từ cái liếc đầu tiên (7,29:1 so với ô trống). */
+.sp-table td.sp-n1 { background-color: #FFFFFF; color: #161C2D; }
+.sp-table td.sp-n2 { background-color: #DBEAFE; color: #1D4ED8; }
+.sp-table td.sp-n3 { background-color: #D1FAE5; color: #047857; }
+.sp-table td.sp-n4 { background-color: #FFEDD5; color: #9A3412; }
+.sp-table td.sp-n5 {
+  background-color: #5B21B6; color: #FFFFFF;
+  box-shadow: inset 0 0 0 1px #4C1D95, 0 1px 3px rgba(91,33,182,.34);
+}
+
+.sp-nhay-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+  margin: 0 0 16px; padding: 8px 16px;
+  border: 1px solid var(--vla-border); border-radius: var(--vla-r-lg);
+  background: var(--vla-surface); box-shadow: var(--vla-sh-sm);
+  font-size: 12px;
+}
+.sp-nhay-legend > b { font-weight: 800; color: var(--vla-ink); }
+.sp-nl { display: inline-flex; align-items: center; gap: 6px; }
+.sp-nl i {
+  display: inline-grid; place-items: center; font-style: normal;
+  min-width: 24px; height: 24px; padding: 0 6px; border-radius: 8px;
+  font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.sp-nl span { color: var(--vla-ink-2); font-weight: 600; }
+/* Quy tắc cấp nháy ở trên neo vào "td", nên ô mẫu trong chú giải — vốn là
+   thẻ <i> — không với tới được. Khai lại cho đúng nơi nó sống. */
+.sp-nl i.sp-n1 { background: #FFFFFF; color: #161C2D; box-shadow: inset 0 0 0 1px var(--vla-border-strong); }
+.sp-nl i.sp-n2 { background: #DBEAFE; color: #1D4ED8; }
+.sp-nl i.sp-n3 { background: #D1FAE5; color: #047857; }
+.sp-nl i.sp-n4 { background: #FFEDD5; color: #9A3412; }
+.sp-nl i.sp-n5 { background: #5B21B6; color: #FFFFFF; }
+.sp-nl i.sp-empty-key {
+  background-color: #E2E8F0;
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 4px,
+    rgba(100, 116, 139, .38) 4px, rgba(100, 116, 139, .38) 6px);
 }
 
 /* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì
@@ -321,11 +414,38 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   color: #fff;
 }
 
-/* Sọc ngang nhạt: đếm hàng bằng mắt trên bảng 100 hàng. */
-.sp-table.sp-grid-lines tbody tr:nth-child(even) td:not(.is-empty):not(.marked) {
+/* Dóng chữ thập. Nửa theo CỘT đã có từ trước, nửa theo HÀNG thì không — mà
+   trên ma trận 100 hàng thì dóng ngược lại mới là việc khó hơn. Dùng nền
+   thương hiệu rất nhạt, KHÔNG đổi màu nền của ô dữ liệu: ô đang mã hoá số
+   nháy bằng nền, đè lên là xoá mất dữ liệu. Vì vậy chỉ ô nhãn và ô trống
+   nhận nền, còn cả hàng được đánh dấu bằng một đường viền ngang. */
+.sp-table.sp-crosshair tbody tr.row-hint > td {
+  border-top-color: var(--vla-brand-border);
+  border-bottom-color: var(--vla-brand-border);
+}
+.sp-table.sp-crosshair tbody tr.row-hint > td:first-child {
+  background: var(--vla-brand);
+  color: var(--vla-on-brand);
+}
+.sp-table.sp-crosshair tbody tr.row-hint > td.is-empty {
+  background-color: var(--vla-brand-soft);
+}
+/* Ô đang trỏ tới: viền trong đậm, không đổi nền. */
+.sp-table.sp-crosshair td.cell-hint {
+  box-shadow: inset 0 0 0 2px var(--vla-brand);
+}
+
+/* Sọc ngang nhạt: đếm hàng bằng mắt trên bảng 100 hàng.
+
+   KHÔNG áp lên bảng có mã màu số nháy. Hai quy tắc này cùng vẽ `background`
+   lên đúng ô mà cấp nháy đang dùng để mang dữ liệu, và chúng cụ thể hơn nên
+   chúng thắng — đo được: ô "4 nháy" nằm ở hàng chẵn mất sạch nền cam, tức là
+   một nửa số hàng bị xoá thông tin. Trợ giúp điều hướng phải nhường dữ liệu;
+   trên bảng ấy việc dóng hàng do .row-hint lo bằng viền, không bằng nền. */
+.sp-table.sp-grid-lines:not(.sp-nhay) tbody tr:nth-child(even) td:not(.is-empty):not(.marked) {
   background: color-mix(in srgb, var(--vla-surface-2) 45%, transparent);
 }
-.sp-table.sp-grid-lines tbody tr:hover td:not(.marked) {
+.sp-table.sp-grid-lines:not(.sp-nhay) tbody tr:hover td:not(.marked) {
   background: color-mix(in srgb, var(--vla-brand) 8%, transparent);
 }
 

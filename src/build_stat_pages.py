@@ -210,7 +210,7 @@ PAGES: tuple[StatPage, ...] = (
         subtitle="Giải đặc biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ.",
         controls=_range_controls(),
         body=FIELD_TOGGLE
-             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialByWeek",
     ),
     StatPage(
@@ -222,9 +222,9 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Tháng <select id="sp-month"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
-             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Cùng tháng đã chọn, qua tất cả các năm có dữ liệu</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-multiyear"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-multiyear"></table></div>',
         render="renderSpecialByMonth",
     ),
     StatPage(
@@ -236,7 +236,7 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Kiểu <select id="sp-mode"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
-             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialByYear",
     ),
     StatPage(
@@ -252,10 +252,10 @@ PAGES: tuple[StatPage, ...] = (
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-picker" id="sp-picker"></div>'
              '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
-             '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines" id="sp-matrix-grid"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Xếp hạng trên trọn dải đã chọn</h3>'
              '<div id="sp-matrix" class="sp-matrix"></div>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderLotoFrequency",
     ),
     StatPage(
@@ -270,9 +270,9 @@ PAGES: tuple[StatPage, ...] = (
                  '<option>Xem theo chiều dọc</option></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<p class="sp-matrix-note" id="sp-matrix-note"></p>'
-             '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines" id="sp-matrix-grid"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp đồng xuất hiện nhiều nhất trên trọn dải</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderPairFrequency",
     ),
     StatPage(
@@ -280,7 +280,7 @@ PAGES: tuple[StatPage, ...] = (
         title="Giải đặc biệt theo tổng",
         subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Hôm trước tổng X thì hôm sau tổng Y</h3>'
              '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
              '10 giá trị. Cột <b>Tỉ lệ</b> quanh 10 % nghĩa là không phân biệt được với '
@@ -291,9 +291,9 @@ PAGES: tuple[StatPage, ...] = (
              'Đây là thống kê MÔ TẢ trên lịch sử, '
              'không phải xác suất đã hiệu chuẩn, và chỉ đếm các kỳ LIỀN KỀ thật — ranh giới '
              'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-trans"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div>'
              '<h3 class="sp-subhead">Chẵn lẻ của tổng hôm sau</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-parity"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div>',
         render="renderSpecialByTong",
     ),
     StatPage(
@@ -301,9 +301,9 @@ PAGES: tuple[StatPage, ...] = (
         title="Cầu giải đặc biệt",
         subtitle="Tần suất hai số cuối giải ĐB theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp lộn của giải đặc biệt</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-lon"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-lon"></table></div>'
              '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
              '<div id="sp-recent" class="sp-recent"></div>',
         render="renderSpecialBridge",
@@ -313,9 +313,9 @@ PAGES: tuple[StatPage, ...] = (
         title="Cặp lộn lô tô",
         subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Số kép — đảo lại chính nó nên không có số lộn</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-kep"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div>',
         render="renderReversePairs",
     ),
     StatPage(
@@ -324,15 +324,15 @@ PAGES: tuple[StatPage, ...] = (
         subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ lô tô trong dải đã chọn.",
         controls=_range_controls(),
         body='<div class="sp-duo">'
-             '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines" id="sp-head"></table></div>'
-             '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines" id="sp-tail"></table></div>'
+             '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
+             '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-tail"></table></div>'
              '</div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐẦU</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-head"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-head"></table></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐUÔI (đít)</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-tail"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-tail"></table></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo TỔNG</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-day-sum"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-sum"></table></div>',
         render="renderHeadTail",
     ),
     StatPage(
@@ -345,14 +345,14 @@ PAGES: tuple[StatPage, ...] = (
              'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> chỉ tính '
              'trong kho lịch sử của trang này, nên có thể lệch với trang khác có '
              'lịch sử dài ngắn khác.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Gan cực đại từ trước đến nay, cả 00–99</h3>'
              '<div class="sp-duo">'
-             '<div><table class="sp-table sp-grid-lines" id="sp-max-lo"></table></div>'
-             '<div><table class="sp-table sp-grid-lines" id="sp-max-hi"></table></div>'
+             '<div><table class="sp-table sp-grid-lines sp-crosshair" id="sp-max-lo"></table></div>'
+             '<div><table class="sp-table sp-grid-lines sp-crosshair" id="sp-max-hi"></table></div>'
              '</div>'
              '<h3 class="sp-subhead">Cặp lô gan — cặp về khi một trong hai con có mặt trong kỳ</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-pair-gan"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-pair-gan"></table></div>',
         render="renderLoGan",
     ),
     StatPage(
@@ -364,7 +364,7 @@ PAGES: tuple[StatPage, ...] = (
              'đây nhỏ hơn trang nào đếm theo ngày. Ví dụ đối chiếu được: con 98 ra lần cuối '
              '17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026 không quay '
              'còn <b>565 kỳ</b> — đúng con số cột "Chưa về".</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialCycle",
     ),
     StatPage(
@@ -372,7 +372,7 @@ PAGES: tuple[StatPage, ...] = (
         title="Cầu giải đặc biệt theo bộ số",
         subtitle="Điểm rơi của từng bộ số ở giải đặc biệt: lần về gần nhất, khoảng cách và số lần.",
         controls=_range_controls(mode="preset"),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialBySet",
     ),
     StatPage(
@@ -380,7 +380,7 @@ PAGES: tuple[StatPage, ...] = (
         title="Giải đặc biệt ngày mai",
         subtitle="Xếp hạng tham khảo cho kỳ kế tiếp, dựng từ chu kỳ và tần suất lịch sử.",
         controls=_range_controls(mode="preset"),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderTomorrow",
     ),
     StatPage(
@@ -389,7 +389,7 @@ PAGES: tuple[StatPage, ...] = (
         subtitle="Bảng tổng hợp đa chiều: tần suất, chu kỳ gan, đầu đuôi và tổng trên cùng một dải.",
         controls=_range_controls(),
         body='<div id="sp-kpi" class="sp-kpi"></div>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines" id="sp-grid"></table></div>',
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderOverview",
     ),
 )

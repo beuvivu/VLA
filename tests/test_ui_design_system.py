@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-import re
 from pathlib import Path
 
 import pandas as pd
@@ -17,10 +16,12 @@ from bs4 import BeautifulSoup
 
 from ui_theme import (
     ALIGN_CENTER,
+    WCAG_AA_NORMAL,
     ALIGN_LEFT,
     ALIGN_RIGHT,
     TAILWIND_LITE_CSS,
     card,
+    contrast_ratio,
     dataframe_table,
     nav_links,
     page_header,
@@ -395,3 +396,128 @@ def test_scroll_box_hugs_its_table_instead_of_stretching() -> None:
     rule = css[start : css.index("}", start)]
     assert "width:fit-content" in rule
     assert "max-width:100%" in rule
+
+
+# --- Kết quả rà soát giao diện: khoá từng mục lại ---------------------------
+#
+# Mỗi phép kiểm dưới đây tương ứng một mục ĐÃ TRƯỢT trong lần rà soát, kèm con
+# số đo được lúc trượt. Ghi số vào đây để lần sau ai đọc cũng biết ngưỡng này
+# từ đâu ra, thay vì tưởng là con số tuỳ ý.
+
+STAT_CSS = "src/templates/stat_pages.css"
+
+
+def _stat_css() -> str:
+    return (ROOT / STAT_CSS).read_text(encoding="utf-8")
+
+
+def test_empty_cell_sinks_with_solid_fill_and_visible_hatch() -> None:
+    """Ô KHÔNG VỀ phải có nền đặc và vân đủ đậm để nhìn thấy.
+
+    Trước: nền trong suốt, vân vẽ bằng --vla-border (#E7EAF6). Đo trên trang
+    đã dựng, ô trống và ô có về cùng đứng trên nền trắng — 1,00:1 — nên mắt
+    phải dò từng ô. Trên bảng 100x90 đó là mỏi mắt thật.
+    """
+    css = _stat_css()
+    start = css.index("td.is-empty {")
+    rule = css[start : css.index("}", start)]
+    assert "background-color: #E2E8F0" in rule
+    assert "rgba(100, 116, 139, .38)" in rule
+
+
+def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
+    """Ô CÓ VỀ phải nổi: nền riêng, viền trong, và bóng."""
+    css = _stat_css()
+    start = css.index("td.sp-hit {")
+    rule = css[start : css.index("}", start)]
+    assert "background-color: var(--vla-surface)" in rule
+    assert "inset 0 0 0 1px" in rule
+
+
+def test_every_nhay_tier_has_a_distinct_pair_that_passes_aa() -> None:
+    """Năm cấp số nháy, mỗi cấp một cặp nền/chữ riêng, tất cả đạt AA."""
+    css = _stat_css()
+    expected = {
+        "sp-n1": ("#FFFFFF", "#161C2D"),
+        "sp-n2": ("#DBEAFE", "#1D4ED8"),
+        "sp-n3": ("#D1FAE5", "#047857"),
+        "sp-n4": ("#FFEDD5", "#9A3412"),
+        "sp-n5": ("#5B21B6", "#FFFFFF"),
+    }
+    seen = set()
+    for cls, (bg, fg) in expected.items():
+        start = css.index(f"td.{cls} {{")
+        rule = css[start : css.index("}", start)]
+        assert bg in rule and fg in rule, f"{cls} sai cặp màu"
+        assert contrast_ratio(fg, bg) >= WCAG_AA_NORMAL, f"{cls} trượt AA"
+        seen.add(bg)
+    assert len(seen) == 5, "hai cấp dùng chung một nền thì không còn phân cấp"
+
+
+def test_nhay_legend_exists_because_the_ramp_has_no_perceptual_order() -> None:
+    """Phải có chú giải.
+
+    Xanh dương -> xanh lá -> cam không có trật tự tri giác: người đọc không
+    tự suy ra 3 nháy nhiều hơn 2. Thiếu chú giải thì bảng màu chỉ là màu.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert "renderNhayLegend" in js
+    assert "sp-nhay-legend" in _stat_css()
+
+
+def test_zebra_and_hover_never_repaint_a_data_coloured_cell() -> None:
+    """Trợ giúp điều hướng không được đè lên nền đang mang dữ liệu.
+
+    Sọc ngựa vằn và nền hover cùng vẽ ``background`` lên đúng ô mà cấp nháy
+    đang dùng, và chúng cụ thể hơn nên chúng thắng: đo được ô "4 nháy" ở hàng
+    chẵn mất sạch nền cam. Một nửa số hàng bị xoá thông tin.
+    """
+    css = _stat_css()
+    for selector in ("tbody tr:nth-child(even) td", "tbody tr:hover td"):
+        idx = css.index(selector)
+        head = css[css.rindex("\n", 0, idx) : idx]
+        assert ":not(.sp-nhay)" in head, f"{selector} chưa tránh bảng mã màu nháy"
+
+
+def test_matrix_cells_have_a_fixed_size() -> None:
+    """Ô ma trận không được co giãn theo nội dung.
+
+    Đo được bề rộng chạy từ 26 tới 44px, nên lưới răng cưa và mắt không dóng
+    thẳng theo cột được. 48px chứ không phải 40: nhãn ngày rộng nhất đo được
+    34,6px + padding 8px, đặt 40 thì 52/90 tiêu đề bị cắt.
+    """
+    css = _stat_css()
+    assert "table-layout: fixed" in css
+    start = css.index(".sp-table.sp-dense td, .sp-table.sp-dense th {")
+    rule = css[start : css.index("}", start)]
+    assert "width: 48px" in rule and "height: 24px" in rule
+
+
+def test_crosshair_covers_the_row_as_well_as_the_column() -> None:
+    """Dóng chữ thập phải có đủ hai nửa.
+
+    Nửa theo cột đã có từ trước; nửa theo hàng thì không — mà trên ma trận
+    100 hàng thì dóng ngược lại mới là việc khó hơn.
+    """
+    css = _stat_css()
+    assert "tbody tr.row-hint" in css
+    assert "td.cell-hint" in css
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert 'classList.add("row-hint")' in js
+
+
+def test_special_prize_is_red_in_both_themes() -> None:
+    """Giải ĐẶC BIỆT luôn đỏ, đậm, có nền và viền đỏ nhạt — ở cả hai chế độ.
+
+    Chế độ tối từng ghi đè về #e2e8f0, tức là mất hẳn màu đỏ. Giữ nguyên
+    #BE123C ở nền tối thì chìm (2,49:1), nên dùng #FDA4AF trên #4C0519 (8,27:1).
+    """
+    css = _stat_css()
+    start = css.index(".sp-de b {")
+    rule = css[start : css.index("}", start)]
+    assert "#BE123C" in rule and "#FFE4E6" in rule and "font-weight: 800" in rule
+    assert contrast_ratio("#BE123C", "#FFE4E6") >= WCAG_AA_NORMAL
+
+    dark = css[css.index("@media (prefers-color-scheme: dark)") :]
+    assert "#FDA4AF" in dark, "chế độ tối đánh mất màu đỏ của giải đặc biệt"
+    assert contrast_ratio("#FDA4AF", "#4C0519") >= WCAG_AA_NORMAL

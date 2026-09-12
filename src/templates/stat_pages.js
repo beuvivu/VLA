@@ -263,8 +263,18 @@ function table(el, headers, rows, opts) {
       // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
       // "không về" với "chưa tải xong".
       const blank = (c === "" || c === null || c === undefined) ? " is-empty" : "";
+      // Ô CÓ VỀ phải nổi lên khỏi nền, không chỉ khác ở chỗ có chữ. Và khi
+      // bảng mang nghĩa "số nháy" thì con số ấy còn quyết định cấp màu.
+      let state = "";
+      if (!blank && i > 0) {
+        state = " sp-hit";
+        if (opts.nhay) {
+          const k = parseInt(c, 10);
+          if (k >= 1) state += ` sp-n${Math.min(k, 5)}`;
+        }
+      }
       const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
-      return `<td class="cell${cls}${on}${blank}" data-key="${key}"${style}>${c}</td>`;
+      return `<td class="cell${cls}${on}${blank}${state}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
 
@@ -281,6 +291,9 @@ function table(el, headers, rows, opts) {
   // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
   // không tồn tại, và mắt đọc lệch ngay.
   el.classList.toggle("has-rowhead", opts.rowHead !== false);
+  // Bảng mang mã màu số nháy tự khai ra, để sọc ngựa vằn và nền hover
+  // tránh đường — chúng cụ thể hơn nên nếu không tránh thì chúng thắng.
+  el.classList.toggle("sp-nhay", !!opts.nhay);
 }
 
 // --- Tô sáng ô để so sánh ---------------------------------------------------
@@ -305,24 +318,31 @@ function saveMarks() {
 // Bảng ma trận rộng tới 120 cột; mắt lạc cột là chuyện thường. Trỏ vào ô nào
 // thì làm nổi tiêu đề cột đó. Gắn MỘT trình xử lý trên document thay vì trên
 // từng ô: 100 x 120 ô là 12 000 trình xử lý.
+// Dóng CHỮ THẬP. Bản trước chỉ đánh dấu cột; trên ma trận 100 hàng thì dóng
+// ngược lại theo hàng mới là việc khó hơn, và nó không hề có.
 function bindColumnHint() {
-  let lastTable = null, lastIndex = -1;
+  let lastTable = null, lastIndex = -1, lastRow = null, lastCell = null;
   const clear = () => {
     if (lastTable && lastIndex >= 0) {
       const th = lastTable.querySelectorAll("thead th")[lastIndex];
       if (th) th.classList.remove("col-hint");
     }
-    lastTable = null; lastIndex = -1;
+    if (lastRow) lastRow.classList.remove("row-hint");
+    if (lastCell) lastCell.classList.remove("cell-hint");
+    lastTable = null; lastIndex = -1; lastRow = null; lastCell = null;
   };
   document.addEventListener("mouseover", (ev) => {
     const td = ev.target.closest("td");
     const tb = td && td.closest("table");
     if (!td || !tb) { clear(); return; }
     const i = td.cellIndex;
-    if (tb === lastTable && i === lastIndex) return;
+    if (tb === lastTable && i === lastIndex && td === lastCell) return;
     clear();
     const th = tb.querySelectorAll("thead th")[i];
     if (th) { th.classList.add("col-hint"); lastTable = tb; lastIndex = i; }
+    const tr = td.parentElement;
+    if (tr) { tr.classList.add("row-hint"); lastRow = tr; }
+    td.classList.add("cell-hint"); lastCell = td;
   });
   document.addEventListener("mouseleave", clear, true);
 }
@@ -465,19 +485,45 @@ function renderLotoMatrix(rows) {
     return c;
   });
 
+  // Con số trong mỗi ô CHÍNH LÀ số nháy của con lô đó trong kỳ đó, nên bảng
+  // này là chỗ duy nhất mà phân cấp màu theo nháy mang đúng nghĩa.
+  const opts = { nhay: true };
   const vertical = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
   if (vertical) {
     const head = ["Ngày"].concat(nums.map(pad2));
     const body = shown.map((r, i) =>
       [`<b>${r.d.slice(8)}-${r.d.slice(5, 7)}</b>`]
         .concat(nums.map((n) => per[i][n] || ""))).reverse();
-    table(grid, head, body);
+    table(grid, head, body, opts);
   } else {
     const head = ["Số"].concat(shown.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`).reverse());
     const body = nums.map((n) =>
       [`<b>${pad2(n)}</b>`].concat(per.map((c) => c[n] || "").reverse()));
-    table(grid, head, body);
+    table(grid, head, body, opts);
   }
+  renderNhayLegend(grid);
+}
+
+/** Chú giải phân cấp số nháy.
+ *
+ * Bắt buộc phải có: xanh dương -> xanh lá -> cam không có trật tự tri giác,
+ * nên nếu không nói ra ánh xạ thì người đọc chỉ thấy màu chứ không đọc được
+ * thông tin. Đặt NGAY TRÊN ma trận, không giấu sau tooltip — điện thoại
+ * không có chuột để trỏ vào.
+ */
+function renderNhayLegend(grid) {
+  const host = grid && grid.parentElement;
+  if (!host || host.querySelector(".sp-nhay-legend")) return;
+  const tiers = [
+    [1, "1 nháy"], [2, "2 nháy"], [3, "3 nháy"], [4, "4 nháy"], [5, "5 nháy trở lên"],
+  ];
+  const box = document.createElement("div");
+  box.className = "sp-nhay-legend";
+  box.innerHTML = "<b>Số nháy</b>" + tiers.map(([k, label]) =>
+    `<span class="sp-nl"><i class="sp-n${k}">${k === 5 ? "5+" : k}</i>` +
+    `<span>${label}</span></span>`).join("") +
+    '<span class="sp-nl"><i class="sp-empty-key"></i><span>không về</span></span>';
+  host.insertBefore(box, grid);
 }
 
 function renderLotoFrequency() {
