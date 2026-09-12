@@ -2186,9 +2186,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       max-height: calc(100vh - 44px) !important;
       overflow: auto !important;
     }}
-    body.desktop-view .result-combo {{
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) !important;
-    }}
     body.desktop-view .matrix-two,
     body.desktop-view .two-col {{
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2197,8 +2194,15 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     body.desktop-view .three-col {{
       grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }}
+    /* Chế độ máy tính đi theo lớp nền, không dựng lại bố cục riêng.
+       Khu căn cứ nay xếp theo TẦNG (khung căn cứ trải ngang ở trên, hai bảng
+       đường cầu cạnh nhau ở dưới), nên ép nó về hai cột ở đây là quay ngược
+       lại bố cục cũ — và !important khiến việc quay ngược đó thắng tuyệt đối.
+
+       Lớp desktop-view đặt min-width 1320px, tức luôn rộng hơn mọi ngưỡng của
+       lớp nền, nên lớp nền tự cho ra bố cục đúng mà không cần ghi đè gì. */
     body.desktop-view .inspector {{
-      grid-template-columns: minmax(320px, .7fr) minmax(0, 1.3fr) !important;
+      grid-template-columns: minmax(0, 1fr) !important;
     }}
     @media print {{
       .dock, .hero-actions {{ display: none; }}

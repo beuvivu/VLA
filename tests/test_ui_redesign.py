@@ -1087,3 +1087,63 @@ def test_pair_cooccurrence_rate_uses_inclusion_exclusion() -> None:
         "dùng bình phương là bỏ qua tính không độc lập"
     )
     assert PAIR_COOCCURRENCE_RATE == pytest.approx(0.0549, abs=5e-4)
+
+
+def test_desktop_view_never_overrides_a_layout_the_base_sheet_defines() -> None:
+    """Chế độ máy tính không được dựng lại bố cục bằng ``!important``.
+
+    Đây là lỗi đã xảy ra thật, và nó câm lặng theo đúng nghĩa xấu nhất: khi
+    khu căn cứ đổi sang xếp theo TẦNG ở lớp nền, quy tắc
+
+        body.desktop-view .inspector {
+          grid-template-columns: minmax(320px, .7fr) minmax(0, 1.3fr) !important;
+        }
+
+    vẫn còn nguyên. !important khiến nó thắng tuyệt đối, nên landing_desktop.html
+    giữ y bố cục hai cột cũ trong khi index.html đã đổi. Người dùng mở đúng trang
+    đó qua nút "Mở giao diện máy tính" trên hero và báo "vẫn y hệt như cũ" —
+    hoàn toàn chính xác, còn mọi phép kiểm lúc ấy đều xanh vì chúng chỉ đọc
+    index.html.
+
+    Lớp desktop-view đặt ``min-width: 1320px``, tức luôn rộng hơn mọi ngưỡng của
+    lớp nền, nên lớp nền tự cho ra bố cục đúng. Ghi đè cột ở đây chỉ có thể làm
+    hai trang lệch nhau.
+    """
+    css = _css(ROOT / "src" / "build_landing_page.py")
+    overrides = re.findall(
+        r"body\.desktop-view\s*([^{]+)\{([^}]*grid-template-columns[^}]*)\}", css
+    )
+    for selector, body in overrides:
+        target = selector.strip().lstrip(".")
+        if target not in {"inspector", "matrix-top", "basis-merged", "next-day", "fun-pred-grid"}:
+            continue
+        tracks = re.search(r"grid-template-columns:([^;!]*)", body)
+        assert tracks, f"{selector}: không đọc được rãnh"
+        assert tracks.group(1).count("minmax") <= 1, (
+            f"body.desktop-view {selector} dựng lại bố cục nhiều cột; "
+            "lớp nền đã lo phần này và !important ở đây sẽ lật ngược nó"
+        )
+
+
+def test_desktop_page_differs_from_the_default_one_only_by_its_body_class() -> None:
+    """``landing_desktop.html`` chỉ khác ``index.html`` ở đúng lớp trên thẻ body.
+
+    Hai tệp do cùng một builder sinh ra và dùng CHUNG một biểu định kiểu, nên
+    mọi khác biệt về bố cục giữa chúng chỉ có thể đến từ các quy tắc
+    ``body.desktop-view`` — đúng chỗ mà phép kiểm ngay bên trên canh giữ.
+
+    Neo sự thật đó lại: nếu về sau ai đó dựng riêng một biểu định kiểu cho
+    trang máy tính, hai trang có thể trôi khỏi nhau theo những cách mà phép
+    kiểm kia không nhìn thấy, và phép kiểm này sẽ đỏ trước.
+    """
+    docs = ROOT / "docs"
+    default, desktop = docs / "index.html", docs / "landing_desktop.html"
+    if not (default.exists() and desktop.exists()):
+        return
+    marker = ' class="desktop-view"'
+    body = desktop.read_text(encoding="utf-8")
+    assert marker in body, "trang máy tính thiếu lớp desktop-view"
+    assert body.replace(marker, "", 1) == default.read_text(encoding="utf-8"), (
+        "hai trang khác nhau nhiều hơn một lớp trên thẻ body — "
+        "chúng đã có bố cục riêng, và phép kiểm ghi đè desktop-view không phủ được nữa"
+    )
