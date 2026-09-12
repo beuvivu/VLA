@@ -34,42 +34,41 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 13,
-    "four_with_cau": 13,
-    "four_with_stat": 13,
-    "core_three": 225
+    "five_component": 14,
+    "four_with_cau": 14,
+    "four_with_stat": 14,
+    "core_three": 226
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
-    "name": "meta_interaction",
-    "max_depth": 3,
-    "learning_rate": 0.05,
-    "max_iter": 170,
-    "l2_regularization": 1.5,
-    "min_samples_leaf": 40
+    "name": "meta_shallow",
+    "max_depth": 2,
+    "learning_rate": 0.04,
+    "max_iter": 180,
+    "l2_regularization": 0.9,
+    "min_samples_leaf": 35
   },
   "quality_pass": true,
   "meta_trust": 0.15,
-  "validation_logloss": 0.546339388082914,
-  "validation_brier": 0.18023703588345535,
-  "baseline_validation_logloss": 0.663032213840577,
-  "baseline_validation_brier": 0.19767367353832616,
-  "logloss_skill": 0.17599872724392418,
-  "brier_skill": 0.08820920531681264,
+  "validation_logloss": 0.5474305723356474,
+  "validation_brier": 0.180734098516435,
+  "baseline_validation_logloss": 0.6760194312373532,
+  "baseline_validation_brier": 0.19976819265766385,
+  "logloss_skill": 0.19021473786092657,
+  "brier_skill": 0.09528090477269802,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.1447552134536371,
-    "p_stable": 0.05524478654636286
+    "p_active": 0.1449201426431442,
+    "p_stable": 0.05507985735685571
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 3.0609415777158153,
-    "b": 0.23239956645146678,
+    "a": 3.095511795132021,
+    "b": 0.24670340948236466,
     "temperature": 1.0
   },
-  "history_days": 225,
+  "history_days": 226,
   "selection_days": [
-    "2026-06-26",
     "2026-06-27",
     "2026-06-28",
     "2026-06-29",
@@ -98,10 +97,10 @@
     "2026-07-22",
     "2026-07-23",
     "2026-07-24",
-    "2026-07-25"
+    "2026-07-25",
+    "2026-07-26"
   ],
   "validation_days": [
-    "2026-07-26",
     "2026-07-27",
     "2026-07-28",
     "2026-07-29",
@@ -130,8 +129,9 @@
     "2026-09-08",
     "2026-09-09",
     "2026-09-10",
-    "2026-09-11"
+    "2026-09-11",
+    "2026-09-12"
   ],
-  "trained_through_target_date": "2026-09-11",
-  "trained_at_utc": "2026-09-12T06:27:48Z"
+  "trained_through_target_date": "2026-09-12",
+  "trained_at_utc": "2026-09-12T11:44:39Z"
 }

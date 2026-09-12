@@ -1,59 +1,17 @@
 [
   {
     "mode":"loto",
-    "number":82,
-    "number_str":"82",
-    "hit_count":561,
-    "last_seen":"2026-08-28",
-    "current_gap":14,
-    "min_gap":1,
-    "mean_gap":4.3393,
-    "median_gap":3.0,
-    "max_gap":32,
-    "last_10_intervals":"1|1|6|2|3|7|1|6|5|5",
-    "rhythm_pressure":3.2263
-  },
-  {
-    "mode":"loto",
     "number":9,
     "number_str":"09",
     "hit_count":574,
     "last_seen":"2026-08-28",
-    "current_gap":14,
+    "current_gap":15,
     "min_gap":1,
     "mean_gap":4.2408,
     "median_gap":3.0,
     "max_gap":25,
     "last_10_intervals":"4|3|5|5|2|7|1|1|2|3",
-    "rhythm_pressure":3.3012
-  },
-  {
-    "mode":"loto",
-    "number":51,
-    "number_str":"51",
-    "hit_count":547,
-    "last_seen":"2026-09-01",
-    "current_gap":10,
-    "min_gap":1,
-    "mean_gap":4.4597,
-    "median_gap":3.0,
-    "max_gap":31,
-    "last_10_intervals":"3|5|2|5|1|4|1|4|2|2",
-    "rhythm_pressure":2.2423
-  },
-  {
-    "mode":"loto",
-    "number":98,
-    "number_str":"98",
-    "hit_count":548,
-    "last_seen":"2026-09-01",
-    "current_gap":10,
-    "min_gap":1,
-    "mean_gap":4.4461,
-    "median_gap":3.0,
-    "max_gap":32,
-    "last_10_intervals":"6|10|4|1|5|2|3|18|3|6",
-    "rhythm_pressure":2.2492
+    "rhythm_pressure":3.537
   },
   {
     "mode":"loto",
@@ -61,13 +19,13 @@
     "number_str":"80",
     "hit_count":561,
     "last_seen":"2026-09-01",
-    "current_gap":10,
+    "current_gap":11,
     "min_gap":1,
     "mean_gap":4.3339,
     "median_gap":3.0,
     "max_gap":41,
     "last_10_intervals":"1|5|1|6|3|4|4|3|3|1",
-    "rhythm_pressure":2.3074
+    "rhythm_pressure":2.5381
   },
   {
     "mode":"loto",
@@ -75,13 +33,13 @@
     "number_str":"55",
     "hit_count":544,
     "last_seen":"2026-09-02",
-    "current_gap":9,
+    "current_gap":10,
     "min_gap":1,
     "mean_gap":4.4788,
     "median_gap":3.0,
     "max_gap":43,
     "last_10_intervals":"2|7|14|4|2|12|3|6|3|7",
-    "rhythm_pressure":2.0095
+    "rhythm_pressure":2.2327
   },
   {
     "mode":"loto",
@@ -89,13 +47,13 @@
     "number_str":"61",
     "hit_count":589,
     "last_seen":"2026-09-02",
-    "current_gap":9,
+    "current_gap":10,
     "min_gap":1,
     "mean_gap":4.1378,
     "median_gap":3.0,
     "max_gap":24,
     "last_10_intervals":"1|4|6|2|3|1|5|1|2|4",
-    "rhythm_pressure":2.1751
+    "rhythm_pressure":2.4168
   },
   {
     "mode":"loto",
@@ -103,27 +61,13 @@
     "number_str":"56",
     "hit_count":553,
     "last_seen":"2026-09-03",
-    "current_gap":8,
+    "current_gap":9,
     "min_gap":1,
     "mean_gap":4.4149,
     "median_gap":3.0,
     "max_gap":29,
     "last_10_intervals":"4|8|4|4|2|1|8|12|1|5",
-    "rhythm_pressure":1.8121
-  },
-  {
-    "mode":"loto",
-    "number":23,
-    "number_str":"23",
-    "hit_count":548,
-    "last_seen":"2026-09-04",
-    "current_gap":7,
-    "min_gap":1,
-    "mean_gap":4.4534,
-    "median_gap":3.0,
-    "max_gap":26,
-    "last_10_intervals":"1|11|8|1|1|1|17|4|2|9",
-    "rhythm_pressure":1.5718
+    "rhythm_pressure":2.0386
   },
   {
     "mode":"loto",
@@ -131,13 +75,13 @@
     "number_str":"25",
     "hit_count":569,
     "last_seen":"2026-09-04",
-    "current_gap":7,
+    "current_gap":8,
     "min_gap":1,
     "mean_gap":4.2835,
     "median_gap":3.0,
     "max_gap":39,
     "last_10_intervals":"2|9|13|2|8|1|4|5|10|12",
-    "rhythm_pressure":1.6342
+    "rhythm_pressure":1.8677
   },
   {
     "mode":"loto",
@@ -145,13 +89,13 @@
     "number_str":"32",
     "hit_count":587,
     "last_seen":"2026-09-04",
-    "current_gap":7,
+    "current_gap":8,
     "min_gap":1,
     "mean_gap":4.1485,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"1|2|10|1|1|3|1|4|3|2",
-    "rhythm_pressure":1.6874
+    "rhythm_pressure":1.9284
   },
   {
     "mode":"loto",
@@ -159,13 +103,13 @@
     "number_str":"29",
     "hit_count":542,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.5083,
     "median_gap":3.0,
     "max_gap":36,
     "last_10_intervals":"3|4|4|2|5|2|2|12|1|5",
-    "rhythm_pressure":1.3309
+    "rhythm_pressure":1.5527
   },
   {
     "mode":"loto",
@@ -173,13 +117,13 @@
     "number_str":"69",
     "hit_count":557,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.3849,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"1|4|1|2|1|4|1|7|5|5",
-    "rhythm_pressure":1.3683
+    "rhythm_pressure":1.5964
   },
   {
     "mode":"loto",
@@ -187,27 +131,13 @@
     "number_str":"59",
     "hit_count":558,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.3716,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"1|1|10|5|13|1|12|8|8|8",
-    "rhythm_pressure":1.3725
-  },
-  {
-    "mode":"loto",
-    "number":21,
-    "number_str":"21",
-    "hit_count":571,
-    "last_seen":"2026-09-05",
-    "current_gap":6,
-    "min_gap":1,
-    "mean_gap":4.2719,
-    "median_gap":3.0,
-    "max_gap":28,
-    "last_10_intervals":"9|1|3|4|5|5|4|1|1|4",
-    "rhythm_pressure":1.4045
+    "rhythm_pressure":1.6012
   },
   {
     "mode":"loto",
@@ -215,13 +145,13 @@
     "number_str":"67",
     "hit_count":581,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.2052,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"7|2|3|12|1|2|5|4|1|2",
-    "rhythm_pressure":1.4268
+    "rhythm_pressure":1.6646
   },
   {
     "mode":"loto",
@@ -229,13 +159,13 @@
     "number_str":"88",
     "hit_count":584,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.1818,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"6|1|1|5|1|1|8|5|1|1",
-    "rhythm_pressure":1.4348
+    "rhythm_pressure":1.6739
   },
   {
     "mode":"loto",
@@ -243,13 +173,13 @@
     "number_str":"91",
     "hit_count":595,
     "last_seen":"2026-09-05",
-    "current_gap":6,
+    "current_gap":7,
     "min_gap":1,
     "mean_gap":4.1061,
     "median_gap":3.0,
     "max_gap":23,
     "last_10_intervals":"5|13|7|4|3|6|9|5|1|10",
-    "rhythm_pressure":1.4613
+    "rhythm_pressure":1.7048
   },
   {
     "mode":"loto",
@@ -257,13 +187,13 @@
     "number_str":"85",
     "hit_count":522,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.6718,
     "median_gap":4.0,
     "max_gap":33,
     "last_10_intervals":"2|2|1|6|1|24|6|6|5|2",
-    "rhythm_pressure":1.0703
+    "rhythm_pressure":1.2843
   },
   {
     "mode":"loto",
@@ -271,13 +201,13 @@
     "number_str":"73",
     "hit_count":528,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.6262,
     "median_gap":3.0,
     "max_gap":37,
     "last_10_intervals":"3|4|2|1|3|2|3|5|2|3",
-    "rhythm_pressure":1.0808
+    "rhythm_pressure":1.297
   },
   {
     "mode":"loto",
@@ -285,13 +215,13 @@
     "number_str":"45",
     "hit_count":541,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.5093,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"5|6|12|2|2|16|6|8|2|10",
-    "rhythm_pressure":1.1088
+    "rhythm_pressure":1.3306
   },
   {
     "mode":"loto",
@@ -299,13 +229,13 @@
     "number_str":"58",
     "hit_count":556,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.3964,
     "median_gap":3.0,
     "max_gap":29,
     "last_10_intervals":"6|3|5|2|7|3|17|8|13|1",
-    "rhythm_pressure":1.1373
+    "rhythm_pressure":1.3648
   },
   {
     "mode":"loto",
@@ -313,27 +243,13 @@
     "number_str":"17",
     "hit_count":558,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.3573,
     "median_gap":3.0,
     "max_gap":26,
     "last_10_intervals":"3|1|3|2|5|1|2|1|4|5",
-    "rhythm_pressure":1.1475
-  },
-  {
-    "mode":"loto",
-    "number":1,
-    "number_str":"01",
-    "hit_count":559,
-    "last_seen":"2026-09-06",
-    "current_gap":5,
-    "min_gap":1,
-    "mean_gap":4.371,
-    "median_gap":3.0,
-    "max_gap":35,
-    "last_10_intervals":"3|2|2|5|13|2|2|18|5|8",
-    "rhythm_pressure":1.1439
+    "rhythm_pressure":1.377
   },
   {
     "mode":"loto",
@@ -341,13 +257,13 @@
     "number_str":"26",
     "hit_count":563,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.3185,
     "median_gap":3.0,
     "max_gap":37,
     "last_10_intervals":"1|1|4|5|1|3|5|3|2|1",
-    "rhythm_pressure":1.1578
+    "rhythm_pressure":1.3894
   },
   {
     "mode":"loto",
@@ -355,13 +271,13 @@
     "number_str":"76",
     "hit_count":577,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.2344,
     "median_gap":3.0,
     "max_gap":40,
     "last_10_intervals":"6|2|4|1|6|2|2|1|6|2",
-    "rhythm_pressure":1.1808
+    "rhythm_pressure":1.417
   },
   {
     "mode":"loto",
@@ -369,13 +285,13 @@
     "number_str":"68",
     "hit_count":601,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.0667,
     "median_gap":3.0,
     "max_gap":25,
     "last_10_intervals":"2|9|11|1|1|1|3|2|4|5",
-    "rhythm_pressure":1.2295
+    "rhythm_pressure":1.4754
   },
   {
     "mode":"loto",
@@ -383,13 +299,13 @@
     "number_str":"79",
     "hit_count":604,
     "last_seen":"2026-09-06",
-    "current_gap":5,
+    "current_gap":6,
     "min_gap":1,
     "mean_gap":4.0431,
     "median_gap":3.0,
     "max_gap":25,
     "last_10_intervals":"1|6|2|13|2|7|2|17|1|10",
-    "rhythm_pressure":1.2367
+    "rhythm_pressure":1.484
   },
   {
     "mode":"loto",
@@ -397,13 +313,13 @@
     "number_str":"28",
     "hit_count":534,
     "last_seen":"2026-09-07",
-    "current_gap":4,
+    "current_gap":5,
     "min_gap":1,
     "mean_gap":4.5797,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"10|4|5|8|13|9|6|6|1|1",
-    "rhythm_pressure":0.8734
+    "rhythm_pressure":1.0918
   },
   {
     "mode":"loto",
@@ -411,13 +327,13 @@
     "number_str":"16",
     "hit_count":575,
     "last_seen":"2026-09-07",
-    "current_gap":4,
+    "current_gap":5,
     "min_gap":1,
     "mean_gap":4.2439,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"6|10|14|9|4|2|7|2|4|1",
-    "rhythm_pressure":0.9425
+    "rhythm_pressure":1.1782
   },
   {
     "mode":"loto",
@@ -425,41 +341,13 @@
     "number_str":"96",
     "hit_count":578,
     "last_seen":"2026-09-07",
-    "current_gap":4,
+    "current_gap":5,
     "min_gap":1,
     "mean_gap":4.2149,
     "median_gap":3.0,
     "max_gap":29,
     "last_10_intervals":"14|5|4|6|2|1|3|3|2|1",
-    "rhythm_pressure":0.949
-  },
-  {
-    "mode":"loto",
-    "number":19,
-    "number_str":"19",
-    "hit_count":587,
-    "last_seen":"2026-09-07",
-    "current_gap":4,
-    "min_gap":1,
-    "mean_gap":4.1638,
-    "median_gap":3.0,
-    "max_gap":25,
-    "last_10_intervals":"5|2|2|5|6|2|3|5|3|6",
-    "rhythm_pressure":0.9607
-  },
-  {
-    "mode":"loto",
-    "number":49,
-    "number_str":"49",
-    "hit_count":595,
-    "last_seen":"2026-09-07",
-    "current_gap":4,
-    "min_gap":1,
-    "mean_gap":4.1044,
-    "median_gap":3.0,
-    "max_gap":26,
-    "last_10_intervals":"8|2|5|2|4|3|3|5|2|3",
-    "rhythm_pressure":0.9746
+    "rhythm_pressure":1.1863
   },
   {
     "mode":"loto",
@@ -467,13 +355,13 @@
     "number_str":"15",
     "hit_count":541,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.5167,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"2|2|1|1|3|6|3|9|8|6",
-    "rhythm_pressure":0.6642
+    "rhythm_pressure":0.8856
   },
   {
     "mode":"loto",
@@ -481,13 +369,13 @@
     "number_str":"03",
     "hit_count":554,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.4159,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"8|13|2|1|1|2|5|2|2|1",
-    "rhythm_pressure":0.6794
+    "rhythm_pressure":0.9058
   },
   {
     "mode":"loto",
@@ -495,27 +383,13 @@
     "number_str":"44",
     "hit_count":556,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.391,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"3|6|1|3|12|2|1|1|1|5",
-    "rhythm_pressure":0.6832
-  },
-  {
-    "mode":"loto",
-    "number":35,
-    "number_str":"35",
-    "hit_count":561,
-    "last_seen":"2026-09-08",
-    "current_gap":3,
-    "min_gap":1,
-    "mean_gap":4.3554,
-    "median_gap":3.0,
-    "max_gap":39,
-    "last_10_intervals":"8|1|2|1|1|2|3|2|11|2",
-    "rhythm_pressure":0.6888
+    "rhythm_pressure":0.911
   },
   {
     "mode":"loto",
@@ -523,27 +397,13 @@
     "number_str":"40",
     "hit_count":562,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.3333,
     "median_gap":3.0,
     "max_gap":26,
     "last_10_intervals":"12|1|2|7|1|1|1|9|5|1",
-    "rhythm_pressure":0.6923
-  },
-  {
-    "mode":"loto",
-    "number":93,
-    "number_str":"93",
-    "hit_count":562,
-    "last_seen":"2026-09-08",
-    "current_gap":3,
-    "min_gap":1,
-    "mean_gap":4.3458,
-    "median_gap":3.0,
-    "max_gap":25,
-    "last_10_intervals":"4|1|14|5|2|1|1|3|1|2",
-    "rhythm_pressure":0.6903
+    "rhythm_pressure":0.9231
   },
   {
     "mode":"loto",
@@ -551,13 +411,13 @@
     "number_str":"50",
     "hit_count":566,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.3186,
     "median_gap":3.0,
     "max_gap":41,
     "last_10_intervals":"1|1|4|7|5|3|2|2|3|1",
-    "rhythm_pressure":0.6947
+    "rhythm_pressure":0.9262
   },
   {
     "mode":"loto",
@@ -565,13 +425,13 @@
     "number_str":"22",
     "hit_count":577,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.224,
     "median_gap":3.0,
     "max_gap":30,
     "last_10_intervals":"1|1|1|5|4|2|5|1|5|6",
-    "rhythm_pressure":0.7102
+    "rhythm_pressure":0.947
   },
   {
     "mode":"loto",
@@ -579,13 +439,13 @@
     "number_str":"38",
     "hit_count":577,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.2378,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"12|2|5|2|1|2|1|1|9|2",
-    "rhythm_pressure":0.7079
+    "rhythm_pressure":0.9439
   },
   {
     "mode":"loto",
@@ -593,13 +453,13 @@
     "number_str":"60",
     "hit_count":581,
     "last_seen":"2026-09-08",
-    "current_gap":3,
+    "current_gap":4,
     "min_gap":1,
     "mean_gap":4.2069,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"3|3|6|4|1|7|4|4|9|9",
-    "rhythm_pressure":0.7131
+    "rhythm_pressure":0.9508
   },
   {
     "mode":"loto",
@@ -607,13 +467,13 @@
     "number_str":"86",
     "hit_count":541,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.5222,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"5|1|3|2|2|7|6|3|10|3",
-    "rhythm_pressure":0.4423
+    "rhythm_pressure":0.6634
   },
   {
     "mode":"loto",
@@ -621,13 +481,13 @@
     "number_str":"87",
     "hit_count":550,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.4499,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"5|5|2|2|2|6|3|9|4|1",
-    "rhythm_pressure":0.4494
+    "rhythm_pressure":0.6742
   },
   {
     "mode":"loto",
@@ -635,13 +495,13 @@
     "number_str":"07",
     "hit_count":556,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.3982,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"12|17|3|3|1|2|2|1|8|1",
-    "rhythm_pressure":0.4547
+    "rhythm_pressure":0.6821
   },
   {
     "mode":"loto",
@@ -649,13 +509,13 @@
     "number_str":"20",
     "hit_count":558,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.3806,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"1|1|1|5|6|3|3|2|4|3",
-    "rhythm_pressure":0.4566
+    "rhythm_pressure":0.6848
   },
   {
     "mode":"loto",
@@ -663,27 +523,13 @@
     "number_str":"30",
     "hit_count":559,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.3746,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"7|5|4|5|5|4|14|2|10|9",
-    "rhythm_pressure":0.4572
-  },
-  {
-    "mode":"loto",
-    "number":4,
-    "number_str":"04",
-    "hit_count":560,
-    "last_seen":"2026-09-09",
-    "current_gap":2,
-    "min_gap":1,
-    "mean_gap":4.3685,
-    "median_gap":3.0,
-    "max_gap":42,
-    "last_10_intervals":"3|3|1|5|3|2|3|5|8|4",
-    "rhythm_pressure":0.4578
+    "rhythm_pressure":0.6858
   },
   {
     "mode":"loto",
@@ -691,27 +537,13 @@
     "number_str":"77",
     "hit_count":562,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.3529,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"9|1|1|1|1|1|1|1|3|2",
-    "rhythm_pressure":0.4595
-  },
-  {
-    "mode":"loto",
-    "number":65,
-    "number_str":"65",
-    "hit_count":563,
-    "last_seen":"2026-09-09",
-    "current_gap":2,
-    "min_gap":1,
-    "mean_gap":4.3274,
-    "median_gap":3.0,
-    "max_gap":42,
-    "last_10_intervals":"4|1|6|1|3|1|21|4|4|14",
-    "rhythm_pressure":0.4622
+    "rhythm_pressure":0.6892
   },
   {
     "mode":"loto",
@@ -719,13 +551,13 @@
     "number_str":"57",
     "hit_count":567,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.2968,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"5|8|2|2|5|21|4|1|2|2",
-    "rhythm_pressure":0.4655
+    "rhythm_pressure":0.6982
   },
   {
     "mode":"loto",
@@ -733,27 +565,13 @@
     "number_str":"18",
     "hit_count":582,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.2031,
     "median_gap":3.0,
     "max_gap":29,
     "last_10_intervals":"1|6|1|4|5|1|2|3|4|6",
-    "rhythm_pressure":0.4758
-  },
-  {
-    "mode":"loto",
-    "number":62,
-    "number_str":"62",
-    "hit_count":585,
-    "last_seen":"2026-09-09",
-    "current_gap":2,
-    "min_gap":1,
-    "mean_gap":4.1764,
-    "median_gap":3.0,
-    "max_gap":27,
-    "last_10_intervals":"1|6|2|2|2|1|1|5|1|1",
-    "rhythm_pressure":0.4789
+    "rhythm_pressure":0.7138
   },
   {
     "mode":"loto",
@@ -761,13 +579,13 @@
     "number_str":"63",
     "hit_count":586,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.1761,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"2|5|2|1|4|16|1|5|1|2",
-    "rhythm_pressure":0.4789
+    "rhythm_pressure":0.7184
   },
   {
     "mode":"loto",
@@ -775,13 +593,13 @@
     "number_str":"11",
     "hit_count":591,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":4.139,
     "median_gap":3.0,
     "max_gap":39,
     "last_10_intervals":"5|6|1|6|4|4|1|1|2|2",
-    "rhythm_pressure":0.4832
+    "rhythm_pressure":0.7248
   },
   {
     "mode":"loto",
@@ -789,13 +607,13 @@
     "number_str":"13",
     "hit_count":625,
     "last_seen":"2026-09-09",
-    "current_gap":2,
+    "current_gap":3,
     "min_gap":1,
     "mean_gap":3.9054,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"2|4|12|1|3|6|2|1|5|4",
-    "rhythm_pressure":0.5121
+    "rhythm_pressure":0.7682
   },
   {
     "mode":"loto",
@@ -803,13 +621,13 @@
     "number_str":"37",
     "hit_count":544,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.4972,
     "median_gap":4.0,
     "max_gap":30,
     "last_10_intervals":"1|25|3|4|2|4|3|1|2|2",
-    "rhythm_pressure":0.2224
+    "rhythm_pressure":0.4447
   },
   {
     "mode":"loto",
@@ -817,13 +635,13 @@
     "number_str":"24",
     "hit_count":546,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.4661,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"4|3|3|1|7|4|8|1|3|14",
-    "rhythm_pressure":0.2239
+    "rhythm_pressure":0.4478
   },
   {
     "mode":"loto",
@@ -831,13 +649,13 @@
     "number_str":"34",
     "hit_count":547,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.4744,
     "median_gap":3.0,
     "max_gap":35,
     "last_10_intervals":"3|2|1|6|2|1|1|3|4|3",
-    "rhythm_pressure":0.2235
+    "rhythm_pressure":0.447
   },
   {
     "mode":"loto",
@@ -845,27 +663,13 @@
     "number_str":"78",
     "hit_count":548,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.457,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"11|5|1|10|4|2|5|15|1|10",
-    "rhythm_pressure":0.2244
-  },
-  {
-    "mode":"loto",
-    "number":14,
-    "number_str":"14",
-    "hit_count":561,
-    "last_seen":"2026-09-10",
-    "current_gap":1,
-    "min_gap":1,
-    "mean_gap":4.3625,
-    "median_gap":3.0,
-    "max_gap":38,
-    "last_10_intervals":"8|1|20|1|3|3|1|6|12|6",
-    "rhythm_pressure":0.2292
+    "rhythm_pressure":0.4487
   },
   {
     "mode":"loto",
@@ -873,41 +677,13 @@
     "number_str":"72",
     "hit_count":569,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.294,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"1|7|1|2|5|10|1|3|2|6",
-    "rhythm_pressure":0.2329
-  },
-  {
-    "mode":"loto",
-    "number":84,
-    "number_str":"84",
-    "hit_count":572,
-    "last_seen":"2026-09-10",
-    "current_gap":1,
-    "min_gap":1,
-    "mean_gap":4.2802,
-    "median_gap":3.0,
-    "max_gap":26,
-    "last_10_intervals":"2|2|2|12|1|2|6|1|4|5",
-    "rhythm_pressure":0.2336
-  },
-  {
-    "mode":"loto",
-    "number":81,
-    "number_str":"81",
-    "hit_count":577,
-    "last_seen":"2026-09-10",
-    "current_gap":1,
-    "min_gap":1,
-    "mean_gap":4.2431,
-    "median_gap":3.0,
-    "max_gap":28,
-    "last_10_intervals":"5|1|4|1|2|4|6|2|2|12",
-    "rhythm_pressure":0.2357
+    "rhythm_pressure":0.4658
   },
   {
     "mode":"loto",
@@ -915,13 +691,13 @@
     "number_str":"06",
     "hit_count":578,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.2322,
     "median_gap":3.0,
     "max_gap":28,
     "last_10_intervals":"7|4|4|2|4|2|13|4|1|1",
-    "rhythm_pressure":0.2363
+    "rhythm_pressure":0.4726
   },
   {
     "mode":"loto",
@@ -929,13 +705,13 @@
     "number_str":"46",
     "hit_count":579,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.2284,
     "median_gap":3.0,
     "max_gap":26,
     "last_10_intervals":"6|4|1|7|10|3|3|3|4|3",
-    "rhythm_pressure":0.2365
+    "rhythm_pressure":0.473
   },
   {
     "mode":"loto",
@@ -943,13 +719,13 @@
     "number_str":"48",
     "hit_count":581,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.2121,
     "median_gap":3.0,
     "max_gap":38,
     "last_10_intervals":"14|1|2|7|1|2|2|7|2|1",
-    "rhythm_pressure":0.2374
+    "rhythm_pressure":0.4748
   },
   {
     "mode":"loto",
@@ -957,13 +733,13 @@
     "number_str":"70",
     "hit_count":584,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.1921,
     "median_gap":3.0,
     "max_gap":26,
     "last_10_intervals":"1|1|2|1|1|1|3|3|1|1",
-    "rhythm_pressure":0.2385
+    "rhythm_pressure":0.4771
   },
   {
     "mode":"loto",
@@ -971,13 +747,13 @@
     "number_str":"66",
     "hit_count":585,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.1781,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"2|2|5|4|10|3|8|4|5|6",
-    "rhythm_pressure":0.2393
+    "rhythm_pressure":0.4787
   },
   {
     "mode":"loto",
@@ -985,13 +761,13 @@
     "number_str":"94",
     "hit_count":587,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.1706,
     "median_gap":3.0,
     "max_gap":24,
     "last_10_intervals":"5|8|1|1|3|2|2|1|6|5",
-    "rhythm_pressure":0.2398
+    "rhythm_pressure":0.4795
   },
   {
     "mode":"loto",
@@ -999,41 +775,13 @@
     "number_str":"36",
     "hit_count":590,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.1494,
     "median_gap":3.0,
     "max_gap":33,
     "last_10_intervals":"2|10|2|1|2|6|3|10|5|1",
-    "rhythm_pressure":0.241
-  },
-  {
-    "mode":"loto",
-    "number":43,
-    "number_str":"43",
-    "hit_count":590,
-    "last_seen":"2026-09-10",
-    "current_gap":1,
-    "min_gap":1,
-    "mean_gap":4.146,
-    "median_gap":3.0,
-    "max_gap":32,
-    "last_10_intervals":"7|5|1|5|2|2|4|1|1|6",
-    "rhythm_pressure":0.2412
-  },
-  {
-    "mode":"loto",
-    "number":42,
-    "number_str":"42",
-    "hit_count":599,
-    "last_seen":"2026-09-10",
-    "current_gap":1,
-    "min_gap":1,
-    "mean_gap":4.0769,
-    "median_gap":3.0,
-    "max_gap":27,
-    "last_10_intervals":"9|2|1|1|3|6|1|4|10|8",
-    "rhythm_pressure":0.2453
+    "rhythm_pressure":0.482
   },
   {
     "mode":"loto",
@@ -1041,13 +789,13 @@
     "number_str":"95",
     "hit_count":603,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.0532,
     "median_gap":3.0,
     "max_gap":35,
     "last_10_intervals":"2|7|4|2|1|3|4|4|1|1",
-    "rhythm_pressure":0.2467
+    "rhythm_pressure":0.4934
   },
   {
     "mode":"loto",
@@ -1055,27 +803,13 @@
     "number_str":"92",
     "hit_count":607,
     "last_seen":"2026-09-10",
-    "current_gap":1,
+    "current_gap":2,
     "min_gap":1,
     "mean_gap":4.0215,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"3|2|3|2|2|8|1|6|7|16",
-    "rhythm_pressure":0.2487
-  },
-  {
-    "mode":"loto",
-    "number":27,
-    "number_str":"27",
-    "hit_count":535,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.5693,
-    "median_gap":3.0,
-    "max_gap":33,
-    "last_10_intervals":"2|6|1|1|6|2|4|18|2|1",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.4973
   },
   {
     "mode":"loto",
@@ -1083,13 +817,13 @@
     "number_str":"00",
     "hit_count":536,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.5626,
     "median_gap":3.0,
     "max_gap":38,
     "last_10_intervals":"3|1|3|1|1|3|2|17|1|2",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2192
   },
   {
     "mode":"loto",
@@ -1097,13 +831,13 @@
     "number_str":"05",
     "hit_count":557,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.3975,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"1|3|1|1|5|6|3|18|2|8",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2274
   },
   {
     "mode":"loto",
@@ -1111,27 +845,13 @@
     "number_str":"53",
     "hit_count":559,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.3817,
     "median_gap":3.0,
     "max_gap":37,
     "last_10_intervals":"3|3|14|8|3|9|3|2|6|1",
-    "rhythm_pressure":0.0
-  },
-  {
-    "mode":"loto",
-    "number":39,
-    "number_str":"39",
-    "hit_count":562,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.3547,
-    "median_gap":3.0,
-    "max_gap":30,
-    "last_10_intervals":"4|4|17|4|9|2|2|2|3|3",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2282
   },
   {
     "mode":"loto",
@@ -1139,13 +859,13 @@
     "number_str":"47",
     "hit_count":562,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.3529,
     "median_gap":3.0,
     "max_gap":28,
     "last_10_intervals":"4|4|6|2|5|8|6|3|4|1",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2297
   },
   {
     "mode":"loto",
@@ -1153,13 +873,13 @@
     "number_str":"33",
     "hit_count":565,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.3351,
     "median_gap":3.0,
     "max_gap":32,
     "last_10_intervals":"2|11|1|2|1|2|4|9|3|5",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2307
   },
   {
     "mode":"loto",
@@ -1167,13 +887,13 @@
     "number_str":"31",
     "hit_count":567,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.318,
     "median_gap":3.0,
     "max_gap":26,
     "last_10_intervals":"23|1|4|6|7|4|5|4|2|4",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2316
   },
   {
     "mode":"loto",
@@ -1181,13 +901,13 @@
     "number_str":"89",
     "hit_count":567,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.3198,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"1|16|1|3|6|1|2|20|2|1",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2315
   },
   {
     "mode":"loto",
@@ -1195,27 +915,13 @@
     "number_str":"74",
     "hit_count":571,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.2825,
     "median_gap":3.0,
     "max_gap":36,
     "last_10_intervals":"1|3|3|1|20|1|2|12|3|7",
-    "rhythm_pressure":0.0
-  },
-  {
-    "mode":"loto",
-    "number":2,
-    "number_str":"02",
-    "hit_count":573,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.271,
-    "median_gap":3.0,
-    "max_gap":25,
-    "last_10_intervals":"5|1|1|3|2|10|6|3|3|10",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2335
   },
   {
     "mode":"loto",
@@ -1223,13 +929,13 @@
     "number_str":"83",
     "hit_count":573,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.2622,
     "median_gap":3.0,
     "max_gap":27,
     "last_10_intervals":"3|2|3|5|2|1|4|4|3|13",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2346
   },
   {
     "mode":"loto",
@@ -1237,13 +943,13 @@
     "number_str":"08",
     "hit_count":574,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.26,
     "median_gap":3.0,
     "max_gap":24,
     "last_10_intervals":"13|1|1|2|7|6|5|4|1|3",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2347
   },
   {
     "mode":"loto",
@@ -1251,41 +957,13 @@
     "number_str":"75",
     "hit_count":574,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.2635,
     "median_gap":3.0,
     "max_gap":34,
     "last_10_intervals":"2|2|1|3|1|4|2|16|13|8",
-    "rhythm_pressure":0.0
-  },
-  {
-    "mode":"loto",
-    "number":99,
-    "number_str":"99",
-    "hit_count":575,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.2596,
-    "median_gap":3.0,
-    "max_gap":28,
-    "last_10_intervals":"2|1|2|4|1|2|5|2|4|1",
-    "rhythm_pressure":0.0
-  },
-  {
-    "mode":"loto",
-    "number":52,
-    "number_str":"52",
-    "hit_count":579,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.2197,
-    "median_gap":3.0,
-    "max_gap":31,
-    "last_10_intervals":"5|1|6|5|2|1|2|3|3|4",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2345
   },
   {
     "mode":"loto",
@@ -1293,13 +971,13 @@
     "number_str":"12",
     "hit_count":583,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.201,
     "median_gap":3.0,
     "max_gap":24,
     "last_10_intervals":"1|2|1|7|3|5|7|8|5|5",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.238
   },
   {
     "mode":"loto",
@@ -1307,13 +985,13 @@
     "number_str":"54",
     "hit_count":583,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.1959,
     "median_gap":3.0,
     "max_gap":37,
     "last_10_intervals":"7|1|2|1|1|1|2|1|4|16",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2383
   },
   {
     "mode":"loto",
@@ -1321,13 +999,13 @@
     "number_str":"71",
     "hit_count":584,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.1887,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"1|6|23|7|1|2|7|4|2|2",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2387
   },
   {
     "mode":"loto",
@@ -1335,13 +1013,13 @@
     "number_str":"41",
     "hit_count":588,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.1652,
     "median_gap":3.0,
     "max_gap":38,
     "last_10_intervals":"2|1|2|4|8|12|1|8|2|2",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2401
   },
   {
     "mode":"loto",
@@ -1349,13 +1027,13 @@
     "number_str":"97",
     "hit_count":590,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.146,
     "median_gap":3.0,
     "max_gap":30,
     "last_10_intervals":"2|7|1|3|8|12|2|2|4|2",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2412
   },
   {
     "mode":"loto",
@@ -1363,27 +1041,13 @@
     "number_str":"64",
     "hit_count":603,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.0615,
     "median_gap":3.0,
     "max_gap":31,
     "last_10_intervals":"1|1|2|6|2|1|1|3|1|4",
-    "rhythm_pressure":0.0
-  },
-  {
-    "mode":"loto",
-    "number":90,
-    "number_str":"90",
-    "hit_count":603,
-    "last_seen":"2026-09-11",
-    "current_gap":0,
-    "min_gap":1,
-    "mean_gap":4.0482,
-    "median_gap":3.0,
-    "max_gap":31,
-    "last_10_intervals":"1|1|7|7|2|4|1|14|2|4",
-    "rhythm_pressure":0.0
+    "rhythm_pressure":0.2462
   },
   {
     "mode":"loto",
@@ -1391,12 +1055,348 @@
     "number_str":"10",
     "hit_count":607,
     "last_seen":"2026-09-11",
-    "current_gap":0,
+    "current_gap":1,
     "min_gap":1,
     "mean_gap":4.0347,
     "median_gap":3.0,
     "max_gap":23,
     "last_10_intervals":"1|4|7|7|7|2|1|1|6|2",
+    "rhythm_pressure":0.2479
+  },
+  {
+    "mode":"loto",
+    "number":27,
+    "number_str":"27",
+    "hit_count":536,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.5626,
+    "median_gap":3.0,
+    "max_gap":33,
+    "last_10_intervals":"6|1|1|6|2|4|18|2|1|1",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":51,
+    "number_str":"51",
+    "hit_count":548,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.4717,
+    "median_gap":3.0,
+    "max_gap":31,
+    "last_10_intervals":"5|2|5|1|4|1|4|2|2|11",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":23,
+    "number_str":"23",
+    "hit_count":549,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.4599,
+    "median_gap":3.0,
+    "max_gap":26,
+    "last_10_intervals":"11|8|1|1|1|17|4|2|9|8",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":98,
+    "number_str":"98",
+    "hit_count":549,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.458,
+    "median_gap":3.0,
+    "max_gap":32,
+    "last_10_intervals":"10|4|1|5|2|3|18|3|6|11",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":1,
+    "number_str":"01",
+    "hit_count":560,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3739,
+    "median_gap":3.0,
+    "max_gap":35,
+    "last_10_intervals":"2|2|5|13|2|2|18|5|8|6",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":4,
+    "number_str":"04",
+    "hit_count":561,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3661,
+    "median_gap":3.0,
+    "max_gap":42,
+    "last_10_intervals":"3|1|5|3|2|3|5|8|4|3",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":14,
+    "number_str":"14",
+    "hit_count":562,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3583,
+    "median_gap":3.0,
+    "max_gap":38,
+    "last_10_intervals":"1|20|1|3|3|1|6|12|6|2",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":35,
+    "number_str":"35",
+    "hit_count":562,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3547,
+    "median_gap":3.0,
+    "max_gap":39,
+    "last_10_intervals":"1|2|1|1|2|3|2|11|2|4",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":82,
+    "number_str":"82",
+    "hit_count":562,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3583,
+    "median_gap":3.0,
+    "max_gap":32,
+    "last_10_intervals":"1|6|2|3|7|1|6|5|5|15",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":39,
+    "number_str":"39",
+    "hit_count":563,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3488,
+    "median_gap":3.0,
+    "max_gap":30,
+    "last_10_intervals":"4|17|4|9|2|2|2|3|3|1",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":93,
+    "number_str":"93",
+    "hit_count":563,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.3452,
+    "median_gap":3.0,
+    "max_gap":25,
+    "last_10_intervals":"1|14|5|2|1|1|3|1|2|4",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":65,
+    "number_str":"65",
+    "hit_count":564,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.325,
+    "median_gap":3.0,
+    "max_gap":42,
+    "last_10_intervals":"1|6|1|3|1|21|4|4|14|3",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":21,
+    "number_str":"21",
+    "hit_count":572,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2767,
+    "median_gap":3.0,
+    "max_gap":28,
+    "last_10_intervals":"1|3|4|5|5|4|1|1|4|7",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":84,
+    "number_str":"84",
+    "hit_count":573,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2762,
+    "median_gap":3.0,
+    "max_gap":26,
+    "last_10_intervals":"2|2|12|1|2|6|1|4|5|2",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":2,
+    "number_str":"02",
+    "hit_count":574,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2653,
+    "median_gap":3.0,
+    "max_gap":25,
+    "last_10_intervals":"1|1|3|2|10|6|3|3|10|1",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":99,
+    "number_str":"99",
+    "hit_count":576,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2539,
+    "median_gap":3.0,
+    "max_gap":28,
+    "last_10_intervals":"1|2|4|1|2|5|2|4|1|1",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":81,
+    "number_str":"81",
+    "hit_count":578,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2392,
+    "median_gap":3.0,
+    "max_gap":28,
+    "last_10_intervals":"1|4|1|2|4|6|2|2|12|2",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":52,
+    "number_str":"52",
+    "hit_count":580,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.2142,
+    "median_gap":3.0,
+    "max_gap":31,
+    "last_10_intervals":"1|6|5|2|1|2|3|3|4|1",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":62,
+    "number_str":"62",
+    "hit_count":586,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.1744,
+    "median_gap":3.0,
+    "max_gap":27,
+    "last_10_intervals":"6|2|2|2|1|1|5|1|1|3",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":19,
+    "number_str":"19",
+    "hit_count":588,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.1652,
+    "median_gap":3.0,
+    "max_gap":25,
+    "last_10_intervals":"2|2|5|6|2|3|5|3|6|5",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":43,
+    "number_str":"43",
+    "hit_count":591,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.1424,
+    "median_gap":3.0,
+    "max_gap":32,
+    "last_10_intervals":"5|1|5|2|2|4|1|1|6|2",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":49,
+    "number_str":"49",
+    "hit_count":596,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.1059,
+    "median_gap":3.0,
+    "max_gap":26,
+    "last_10_intervals":"2|5|2|4|3|3|5|2|3|5",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":42,
+    "number_str":"42",
+    "hit_count":600,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.0735,
+    "median_gap":3.0,
+    "max_gap":27,
+    "last_10_intervals":"2|1|1|3|6|1|4|10|8|2",
+    "rhythm_pressure":0.0
+  },
+  {
+    "mode":"loto",
+    "number":90,
+    "number_str":"90",
+    "hit_count":604,
+    "last_seen":"2026-09-12",
+    "current_gap":0,
+    "min_gap":1,
+    "mean_gap":4.0431,
+    "median_gap":3.0,
+    "max_gap":31,
+    "last_10_intervals":"1|7|7|2|4|1|14|2|4|1",
     "rhythm_pressure":0.0
   }
 ]
