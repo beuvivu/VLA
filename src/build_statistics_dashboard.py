@@ -1081,20 +1081,24 @@ def main() -> None:
     /* Hero là một DẢI có khung chứ không phải vùng tràn ra nền trang. Nền
        trang nay sáng, nên chữ trắng chỉ đúng khi nó nằm trên chính dải
        gradient này. */
+    .statistics-shell {{
+      width: 100%;
+      max-width: 1440px;
+      margin-inline: auto;
+      padding: 18px clamp(16px, 5vw, 72px) 56px;
+    }}
     .hero {{
       position: relative;
-      margin: 18px clamp(16px, 5vw, 72px) 0;
-      padding: 34px clamp(20px, 4vw, 44px) 24px;
+      margin: 0;
+      padding: clamp(22px, 3vw, 36px);
       border-radius: var(--radius-xl);
-      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
-      box-shadow: var(--shadow-brand);
+      background: linear-gradient(120deg, #312E81 0%, #4338CA 62%, #5B3AB5 100%);
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: 0 8px 24px rgba(49,46,129,.14);
       color: white;
       overflow: hidden;
     }}
-    .hero-inner {{
-      max-width: 1280px;
-      margin: 0 auto;
-    }}
+    .hero-inner {{ width: 100%; min-width: 0; }}
     .hero-kicker {{
       display: inline-flex;
       gap: 8px;
@@ -1111,8 +1115,8 @@ def main() -> None:
     .hero h1 {{
       margin: 14px 0 10px;
       max-width: 820px;
-      font-size: clamp(28px, 3.4vw, 44px);
-      line-height: 1.06;
+      font-size: clamp(28px, 3vw, 40px);
+      line-height: 1.15;
       letter-spacing: -0.035em;
       text-wrap: balance;
     }}
@@ -1158,11 +1162,7 @@ def main() -> None:
     }}
     .site-hop a:hover {{ background: rgba(255,255,255,0.24); }}
 
-    main {{
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 0 clamp(16px, 5vw, 72px) 56px;
-    }}
+    main {{ width: 100%; min-width: 0; padding: 0; }}
 
     .metric-grid {{
       display: grid;
@@ -1201,32 +1201,45 @@ def main() -> None:
        khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
     .sticky-nav {{
       position: sticky;
-      top: 0;
+      top: 12px;
       z-index: 50;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      padding: 12px 0 14px;
-      margin-bottom: 8px;
-      background: linear-gradient(to bottom,
-        color-mix(in srgb, var(--bg) 94%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 94%, transparent) 72%,
-        transparent 100%);
-      backdrop-filter: blur(16px);
+      align-items: center;
+      gap: 6px;
+      padding: 12px;
+      margin: 0 0 24px;
+      border: 1px solid #DDE2F0;
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,.98);
+      box-shadow: 0 2px 4px rgba(22,28,45,.03), 0 8px 24px rgba(22,28,45,.05);
     }}
     .sticky-nav a {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
       white-space: nowrap;
       text-decoration: none;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      background: var(--surface);
+      color: #475569;
+      border: 1px solid transparent;
+      background: transparent;
       padding: 9px 12px;
-      border-radius: 999px;
+      border-radius: 10px;
       font-size: 13px;
-      font-weight: 760;
+      font-weight: 700;
+      transition: background .15s ease, color .15s ease, border-color .15s ease;
     }}
-
-    .sticky-nav a:hover {{ background: var(--brand-wash); color: var(--brand-ink); border-color: transparent; }}
+    .sticky-nav a:hover, .sticky-nav a:focus-visible {{
+      background: var(--brand-wash);
+      color: var(--brand-ink);
+      border-color: #D8DDFB;
+    }}
+    .sticky-nav a:focus-visible, .hero a:focus-visible {{
+      outline: 3px solid #A5B4FC;
+      outline-offset: 3px;
+    }}
+    .section[id] {{ scroll-margin-top: 150px; }}
 
     .section {{
       margin: 18px 0 24px;
@@ -1759,6 +1772,14 @@ def main() -> None:
       .layout-grid.two, .layout-grid.three, .layout-grid.four, .decision-grid {{ grid-template-columns: 1fr; }}
     }}
     @media (max-width: 680px) {{
+      .statistics-shell {{ padding-top: 16px; }}
+      .hero {{ border-radius: var(--radius-lg); }}
+      .hero-kicker {{ border-radius: 12px; line-height: 1.5; }}
+      .hero-actions {{ gap: 8px; }}
+      .hero-actions a {{ padding: 9px 12px; font-size: 13px; }}
+      .sticky-nav {{ position: static; padding: 8px; gap: 4px; }}
+      .sticky-nav a {{ white-space: normal; text-align: center; padding: 8px 10px; }}
+      .section[id] {{ scroll-margin-top: 16px; }}
       .hero h1 {{ letter-spacing: -0.045em; }}
       .metric-grid {{ grid-template-columns: 1fr; }}
       .section-head {{ padding: 20px 16px 6px; }}
@@ -1774,14 +1795,14 @@ def main() -> None:
   </style>
 </head>
 <body>
+  <div class="statistics-shell">
   <header class="hero">
     <div class="hero-inner">
       <span class="hero-kicker">📊 XSMB · Ma trận thống kê · Cầu-kèo AI/ML</span>
-      <h1>Bảng điều khiển thống kê xổ số dễ nhìn, hiện đại và tự chứa dữ liệu.</h1>
+      <h1>Thống kê xổ số miền Bắc</h1>
       <p>
-        Giao diện này ưu tiên khả năng so sánh: dữ liệu 00–99 được đưa vào ma trận nhiệt,
-        dữ liệu xếp hạng được đưa vào biểu đồ thanh, còn bảng chỉ dùng cho thông tin cần đối chiếu chi tiết.
-        Các tín hiệu AI/ML là thống kê xác suất từ lịch sử, không phải cam kết kết quả tương lai.
+        Theo dõi ma trận tần suất, nhịp xuất hiện và căn cứ thống kê của từng số.
+        Các tín hiệu AI/ML được tính từ lịch sử, không bảo đảm kết quả tương lai.
       </p>
       <nav class="hero-actions">
         <a href="#ma-tran-loto">Ma trận loto</a>
@@ -1829,6 +1850,7 @@ def main() -> None:
       Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
     </p>
   </main>
+  </div>
 
   <div id="evidenceBackdrop" class="evidence-backdrop" onclick="closeEvidence()" aria-hidden="true"></div>
   <aside id="evidenceDrawer" class="evidence-drawer" aria-hidden="true" aria-label="Căn cứ đường cầu">
