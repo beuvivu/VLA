@@ -51,20 +51,20 @@
   "quality_pass": true,
   "meta_trust": 0.15,
   "validation_logloss": 0.546339388082914,
-  "validation_brier": 0.1802370358834554,
-  "baseline_validation_logloss": 0.6630792912569732,
-  "baseline_validation_brier": 0.19767691205219165,
-  "logloss_skill": 0.17605722982655647,
-  "brier_skill": 0.08822414306093407,
+  "validation_brier": 0.18023703588345535,
+  "baseline_validation_logloss": 0.663032213840577,
+  "baseline_validation_brier": 0.19767367353832616,
+  "logloss_skill": 0.17599872724392418,
+  "brier_skill": 0.08820920531681264,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.14475476576988897,
-    "p_stable": 0.055245234230110934
+    "p_active": 0.1447552134536371,
+    "p_stable": 0.05524478654636286
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 3.0617172138987625,
-    "b": 0.23275383049594864,
+    "a": 3.0609415777158153,
+    "b": 0.23239956645146678,
     "temperature": 1.0
   },
   "history_days": 225,
@@ -133,5 +133,5 @@
     "2026-09-11"
   ],
   "trained_through_target_date": "2026-09-11",
-  "trained_at_utc": "2026-09-12T02:39:12Z"
+  "trained_at_utc": "2026-09-12T03:52:02Z"
 }
