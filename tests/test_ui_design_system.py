@@ -616,3 +616,28 @@ def test_one_measure_uses_one_hue_across_its_time_windows() -> None:
             assert pal, f"{name}: không tìm thấy palette sau {sub!r}"
             seen.add(pal.group(1))
         assert len(seen) == 1, f"{name} dùng {len(seen)} sắc cho một phép đo: {sorted(seen)}"
+
+
+def test_design_system_doc_only_cites_tests_that_exist() -> None:
+    """Tài liệu hệ thiết kế phải dẫn đúng tên phép kiểm đang tồn tại.
+
+    Tài liệu ấy sinh ra vì các quy tắc từng chỉ nằm trong chú thích mã, và một
+    thay đổi sau đó đã hạ một ngưỡng rồi tạo ra vùng lệch — không phải vì bất
+    đồng ý kiến mà vì lý do nằm ở chỗ không ai đọc tới.
+
+    Một tài liệu dẫn tên phép kiểm không còn tồn tại thì tệ hơn không có tài
+    liệu: nó khiến người đọc tin rằng quy tắc đang được canh giữ. Phép kiểm này
+    làm tài liệu đỏ ngay khi ai đó đổi tên một phép kiểm mà quên sửa nó.
+    """
+    doc = ROOT / "documentation" / "architecture" / "ui-design-system.md"
+    assert doc.exists(), "thiếu tài liệu hệ thiết kế"
+
+    cited = set(re.findall(r"test_[a-z0-9_]+", doc.read_text(encoding="utf-8")))
+    assert len(cited) >= 15, f"tài liệu chỉ dẫn {len(cited)} phép kiểm — có vẻ đã bị cắt"
+
+    defined = set()
+    for path in (ROOT / "tests").glob("test_*.py"):
+        defined |= set(re.findall(r"^def (test_[a-z0-9_]+)", path.read_text(encoding="utf-8"), re.M))
+
+    missing = sorted(cited - defined - {"test_design_system_doc_only_cites_tests_that_exist"})
+    assert not missing, f"tài liệu dẫn phép kiểm không tồn tại: {missing}"
