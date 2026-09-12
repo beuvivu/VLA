@@ -1733,8 +1733,20 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
        hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
     .basis-merged .table-wrap {{ max-height: none; }}
-    /* Máy tính: Đặc Biệt bên trái, lô tô bên phải; mỗi bảng tự cuộn ngang. */
-    @media (max-width: 1023px) {{
+    /* Ngưỡng xếp dọc PHẢI khớp với ngưỡng thu hẹp cột ngay bên dưới (1280px).
+       Khi hai ngưỡng lệch nhau — cạnh nhau từ 1024px nhưng cột chỉ thu từ
+       1280px — thì cả dải 1024-1279px rơi vào trạng thái xấu nhất: hai bảng
+       đã bị chia đôi bề ngang mà cột vẫn giữ sàn rộng. Đo phần bị che:
+
+         1440   628px/bảng   che 10%
+         1280   553px/bảng   che 21%
+         1265   546px/bảng   che 32%   <- lệch ngưỡng bắt đầu cắn ở đây
+         1100   483px/bảng   che 40%
+         1024   445px/bảng   che 44%
+
+       445px chính là con số mà chú thích gốc ghi là đã làm cột "Tỷ lệ" bị
+       cắt. Dưới 1280 thì xếp dọc, mỗi bảng được trọn chiều ngang. */
+    @media (max-width: 1279px) {{
       .basis-merged {{ grid-template-columns: minmax(0, 1fr); }}
       .basis-merged > section + section {{
         border-left: 0; border-top: 1px solid var(--line);
