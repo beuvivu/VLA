@@ -51,6 +51,13 @@ logger = logging.getLogger(__name__)
 LOTO_BASELINE = LOTO_BASELINE_RATE
 PAIR_BASELINE = PAIR_COOCCURRENCE_RATE
 
+#: Dải mặc định khi mở trang, tính theo SỐ KỲ. Giá trị thật nằm trong
+#: ``stat_pages.js`` (``DRAWS.length - 90``); ở đây chỉ để tô sáng đúng nút.
+#: ``test_default_range_chip_matches_the_javascript_default`` giữ hai bên khớp
+#: nhau, vì lệch thì thanh điều khiển nói một đằng còn ô ngày một nẻo — đúng
+#: trạng thái trước đây, khi không nút nào sáng cả.
+DEFAULT_RANGE_DRAWS = 90
+
 #: Độ rộng chữ số của từng giải. CSV lưu kiểu số nguyên nên mất số 0 ở đầu;
 #: đo được 10,3% số ô ngắn hơn độ rộng đúng. Thiếu bảng này thì mọi phép cắt
 #: chữ số theo vị trí đều lệch.
@@ -130,8 +137,16 @@ def _range_controls(*, mode: str = "day") -> str:
     Returns:
         Chuỗi HTML.
     """
+    # Nút nào đang thật sự có hiệu lực phụ thuộc vào kiểu thanh điều khiển.
+    # Trang kiểu ``day`` có hai ô ngày, và stat_pages.js đặt sẵn chúng ở
+    # ``DRAWS.length - 90``. Trang kiểu ``preset`` KHÔNG có ô ngày nào, nên
+    # nhánh đó trong JS không chạy và dải mặc định là toàn bộ lịch sử.
+    # Tô sáng 90 kỳ ở cả hai kiểu thì trang preset sẽ khoe "90 kỳ" trong khi
+    # đang hiển thị 2 396 kỳ.
+    active = DEFAULT_RANGE_DRAWS if mode == "day" else 0
     presets = "".join(
-        f'<button class="sp-chip" data-days="{d}">{label}</button>'
+        f'<button class="sp-chip{" on" if d == active else ""}"'
+        f' data-days="{d}">{label}</button>'
         for d, label in (
             (30, "30 kỳ"), (60, "60 kỳ"), (90, "90 kỳ"),
             (180, "180 kỳ"), (365, "1 năm"), (0, "Tất cả"),
@@ -171,7 +186,7 @@ def _mark_tools() -> str:
         '<span class="sp-marktools">'
         '<span class="sp-hint">Bấm vào ô bất kỳ để đánh dấu so sánh</span>'
         '<span class="sp-mark-count" id="sp-mark-count"></span>'
-        '<button type="button" class="sp-chip" id="sp-clear-marks">Xoá đánh dấu</button>'
+        '<button type="button" class="sp-btn" id="sp-clear-marks">Xoá đánh dấu</button>'
         "</span>"
     )
 

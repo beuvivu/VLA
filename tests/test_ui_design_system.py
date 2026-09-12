@@ -343,3 +343,55 @@ def test_shared_stylesheet_reaches_the_page_the_user_actually_opens() -> None:
     if not index.exists():  # kho mới sao chép, chưa dựng docs
         return
     assert "assets/vla.css" in index.read_text(encoding="utf-8")
+
+
+def test_stat_page_surfaces_are_elevated_like_the_rest_of_the_system() -> None:
+    """Các khối "thẻ" của nhóm trang thống kê phải có bóng nổi.
+
+    ``stat_pages.css`` là chủ thể tạo kiểu THỨ TƯ của kho — nó cấp phát
+    ``.sp-*`` cho 14 trang thống kê. Lần đổi giao diện trước bỏ sót nó, nên
+    nhóm trang nhận được mặt đất mới mà thành phần bên trên vẫn phẳng lì.
+    """
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    for block in (".sp-controls{", ".sp-scroll{", ".sp-kpi-card{", ".sp-cell{"):
+        start = css.index(block)
+        rule = css[start : css.index("}", start)]
+        assert "box-shadow" in rule, f"{block} thiếu bóng nổi"
+
+
+def test_stat_page_css_takes_every_colour_from_a_token() -> None:
+    """Không hex cứng nào của bảng màu cũ còn sót ở chế độ sáng.
+
+    Đây chính là lý do nhóm trang "trông y như cũ": các giá trị slate viết
+    thẳng không đi qua token nên chúng không theo nền mới. Khối chế độ tối
+    được miễn — ở đó hex là lựa chọn có chủ đích.
+    """
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    light, depth = [], 0
+    for line in css.splitlines():
+        if "prefers-color-scheme: dark" in line:
+            depth = 1
+            continue
+        if depth:
+            depth += line.count("{") - line.count("}")
+            depth = max(depth, 0)
+            continue
+        light.append(line)
+
+    stale = {"#94a3b8", "#64748b", "#cbd5e1", "#334155", "#475569", "#f1f5f9", "#e2e8f0"}
+    found = sorted({c for c in stale if c in "\n".join(light)})
+    assert not found, f"còn hex của bảng màu cũ ở chế độ sáng: {found}"
+
+
+def test_scroll_box_hugs_its_table_instead_of_stretching() -> None:
+    """Hộp trắng phải ôm lấy bảng.
+
+    ``.sp-table`` cố ý dùng ``width:auto`` để cột không giãn ra cả gang tay,
+    nhưng hộp chứa là ``display:block`` nên nó vẫn nở hết khung: trang Lô gan
+    có bảng 5 cột rộng ~500px nằm giữa một mảng trắng rộng 1330px.
+    """
+    css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+    start = css.index(".sp-scroll{")
+    rule = css[start : css.index("}", start)]
+    assert "width:fit-content" in rule
+    assert "max-width:100%" in rule

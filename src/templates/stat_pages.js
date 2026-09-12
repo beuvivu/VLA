@@ -414,7 +414,7 @@ function bindPicker(render) {
       "</div><div class='sp-pick-grid'>" +
       Array.from({ length: 100 }, (_, n) =>
         `<button type="button" class="sp-pick${isPicked(n) ? " on" : ""}" ` +
-        `data-num="${n}">${pad2(n)}</button>`).join("") + "</div>";
+        `aria-pressed="${isPicked(n)}" data-num="${n}">${pad2(n)}</button>`).join("") + "</div>";
   };
   draw();
 
@@ -1016,9 +1016,13 @@ function boot(renderName) {
   [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient")].forEach(
     (el) => el && el.addEventListener("change", render));
 
-  document.querySelectorAll(".sp-chip").forEach((btn) => {
+  // Chỉ nút BÊN TRONG .sp-chips. "Xoá đánh dấu" từng dùng chung lớp .sp-chip
+  // nên nó cũng dính bộ xử lý này: dataset.days là undefined -> parseInt ra
+  // NaN -> nhánh "Tất cả" -> bấm xoá đánh dấu thì dải ngày âm thầm nhảy từ
+  // 90 kỳ lên 2 396 kỳ. Người dùng không hề yêu cầu điều đó.
+  document.querySelectorAll(".sp-chips .sp-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".sp-chip").forEach((b) => b.classList.remove("on"));
+      document.querySelectorAll(".sp-chips .sp-chip").forEach((b) => b.classList.remove("on"));
       btn.classList.add("on");
       const days = parseInt(btn.dataset.days, 10);
       if (from && to && DRAWS.length) {

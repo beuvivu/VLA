@@ -1,22 +1,36 @@
 .sp-controls{display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;align-items:center;
 padding:1rem 1.25rem;margin-bottom:1.25rem;border-radius:var(--vla-r-lg);
-background:var(--vla-surface);border:1px solid var(--vla-border)}
+background:var(--vla-surface);border:1px solid var(--vla-border);
+box-shadow:var(--vla-sh-sm)}
 .sp-controls label{display:flex;align-items:center;gap:.5rem;font-size:.8125rem;
 font-weight:600;color:var(--vla-ink-2)}
-.sp-controls input,.sp-controls select{padding:.4rem .6rem;border-radius:.5rem;
+.sp-controls input,.sp-controls select{padding:.4rem .6rem;border-radius:var(--vla-r-md);
 border:1px solid var(--vla-border);background:var(--vla-surface);color:var(--vla-ink);
 font:inherit;font-size:.8125rem}
 .sp-chips{display:flex;flex-wrap:wrap;gap:.375rem}
 .sp-chip{padding:.35rem .7rem;border-radius:999px;border:1px solid var(--vla-border);
 background:var(--vla-surface-2);color:var(--vla-ink-2);font-size:.75rem;font-weight:700;
 cursor:pointer;transition:background .15s ease-in-out,color .15s ease-in-out}
-.sp-chip:hover{background:var(--vla-brand-soft)}
-.sp-chip.on{background:var(--vla-brand);color:var(--vla-on-brand);border-color:transparent}
+.sp-chip:hover{border-color:var(--vla-brand-border)}
+.sp-chip.on{background:var(--vla-brand-soft);color:var(--vla-brand-ink);
+border-color:var(--vla-brand-border)}
+.sp-chip:not(.on){background:var(--vla-surface-2);color:var(--vla-ink-soft)}
 .sp-count{margin-left:auto;font-size:.75rem;color:var(--vla-ink-soft);
 font-variant-numeric:tabular-nums}
 
-.sp-scroll{overflow-x:auto;border:1px solid var(--vla-border);
-border-radius:var(--vla-r-lg);background:var(--vla-surface)}
+/* Nút HÀNH ĐỘNG, không phải nút lọc. Trước đây nó đội lớp .sp-chip và vì thế
+   dính cả bộ xử lý chọn dải: bấm "Xoá đánh dấu" thì dải ngày âm thầm nhảy từ
+   90 kỳ lên toàn bộ lịch sử. Lớp riêng khiến sự nhầm lẫn đó không tái diễn. */
+.sp-btn{padding:.35rem .7rem;border-radius:999px;border:1px solid var(--vla-border);
+background:var(--vla-surface);color:var(--vla-ink-2);font:inherit;font-size:.75rem;
+font-weight:700;cursor:pointer;box-shadow:var(--vla-sh-sm);
+transition:border-color .15s ease-in-out,background .15s ease-in-out}
+.sp-btn:hover{border-color:var(--vla-brand-border);background:var(--vla-brand-soft);
+color:var(--vla-brand-ink)}
+
+.sp-scroll{overflow-x:auto;width:fit-content;max-width:100%;
+border:1px solid var(--vla-border);border-radius:var(--vla-r-lg);
+background:var(--vla-surface);box-shadow:var(--vla-sh-sm)}
 /* width:auto chứ không phải 100%. Bảng xếp hạng chỉ có 5 cột: ép nó rộng
 hết khung 1330px thì mỗi cột giãn ra ~270px và con số nằm cách tiêu đề của nó
 cả gang tay, mắt phải rà ngang mới ghép được cặp. Để cột tự co theo nội dung
@@ -36,8 +50,8 @@ border-bottom:1px solid var(--vla-border);white-space:nowrap}
 .sp-matrix{display:grid;grid-template-columns:repeat(auto-fill,minmax(3.25rem,1fr));
 gap:.25rem;margin-bottom:1.25rem}
 .sp-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;
-padding:.45rem .25rem;border-radius:.5rem;border:1px solid var(--vla-border);
-background:var(--vla-surface);line-height:1.2}
+padding:.45rem .25rem;border-radius:var(--vla-r-md);border:1px solid var(--vla-border);
+background:var(--vla-surface);line-height:1.2;box-shadow:var(--vla-sh-sm)}
 .sp-cell b{font-size:.8125rem;font-weight:800;color:var(--vla-ink)}
 .sp-cell i{font-style:normal;font-size:.6875rem;color:var(--vla-ink-soft);
 font-variant-numeric:tabular-nums}
@@ -48,12 +62,14 @@ min-width:2px}
 grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))}
 .sp-duo h3{margin:0 0 .625rem;font-size:1rem}
 .sp-duo>div{border:1px solid var(--vla-border);border-radius:var(--vla-r-lg);
-background:var(--vla-surface);padding:1rem;overflow-x:auto}
+background:var(--vla-surface);padding:1rem;overflow-x:auto;
+box-shadow:var(--vla-sh-sm)}
 
 .sp-kpi{display:grid;gap:.75rem;margin-bottom:1.25rem;
 grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))}
 .sp-kpi-card{padding:.875rem 1rem;border-radius:var(--vla-r-lg);
-background:var(--vla-surface);border:1px solid var(--vla-border)}
+background:var(--vla-surface);border:1px solid var(--vla-border);
+box-shadow:var(--vla-sh-sm)}
 .sp-kpi-card span{display:block;font-size:.6875rem;color:var(--vla-ink-soft);
 text-transform:uppercase;letter-spacing:.05em}
 .sp-kpi-card strong{display:block;margin-top:.25rem;font-size:1.375rem;
@@ -72,8 +88,8 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    Ba chữ số đầu để mờ, hai số cuối đậm: người soi cầu đọc hai số cuối, nhưng
    vẫn cần trọn giải để đối chiếu với kết quả gốc. Bản trước cắt mất phần đầu
    nên không đối chiếu được. */
-.sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: #94a3b8; }
-.sp-de b { color: #0f172a; font-weight: 800; }
+.sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--vla-ink-soft); }
+.sp-de b { color: var(--vla-ink); font-weight: 800; }
 
 /* --- Đánh dấu ô để so sánh ----------------------------------------------- */
 .sp-table td.cell { cursor: pointer; }
@@ -87,8 +103,8 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table td.marked .sp-de b { color: #78350f; }
 
 .sp-marktools { display: inline-flex; align-items: center; gap: 10px; margin-left: auto; }
-.sp-hint { color: #64748b; font-size: 12px; }
-.sp-mark-count { color: #b45309; font-size: 12px; font-weight: 800; }
+.sp-hint { color: var(--vla-ink-soft); font-size: 12px; }
+.sp-mark-count { color: var(--vla-warn); font-size: 12px; font-weight: 800; }
 .sp-subhead { margin: 22px 0 8px; font-size: 17px; }
 
 @media (prefers-color-scheme: dark) {
@@ -102,12 +118,12 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 /* Lịch tuần của bảng đặc biệt theo tháng: số ngày nhỏ ở góc, giải bên dưới. */
 .sp-daynum {
   display: block; font-size: 11px; font-weight: 800;
-  color: #64748b; margin-bottom: 2px;
+  color: var(--vla-ink-soft); margin-bottom: 2px;
 }
-.sp-none { color: #cbd5e1; }
+.sp-none { color: var(--vla-ink-soft); }
 @media (prefers-color-scheme: dark) {
   .sp-daynum { color: #94a3b8; }
-  .sp-none { color: #475569; }
+  .sp-none { color: var(--vla-ink-soft); }
 }
 
 /* --- Ô bảng đặc biệt sáu trường ------------------------------------------
@@ -115,22 +131,22 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    mắt bắt được con số trước, chi tiết sau. */
 .sp-fields {
   display: block; margin-top: 2px;
-  font-size: 10px; line-height: 1.25; color: #64748b;
+  font-size: 10px; line-height: 1.25; color: var(--vla-ink-soft);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .sp-f { font-style: normal; display: inline-block; min-width: 11px; text-align: center; }
-.sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid #e2e8f0; }
-.sp-f-ngay { min-width: 34px; color: #94a3b8; }
+.sp-f + .sp-f { margin-left: 3px; padding-left: 3px; border-left: 1px solid var(--vla-border); }
+.sp-f-ngay { min-width: 34px; color: var(--vla-ink-soft); }
 
 /* Dòng "dải rỗng": chiếm cả bảng, không gạch chéo như ô trống trong lịch —
    đây là câu trả lời cho bộ lọc, không phải một ngày không quay. */
 .sp-empty-row {
   padding: 18px 14px !important; text-align: center;
-  color: #64748b; font-size: 12.5px; font-style: italic;
+  color: var(--vla-ink-soft); font-size: 12.5px; font-style: italic;
 }
 
 /* Ô "0 lần": vẫn là dữ liệu, không phải ô trống, nên mờ chứ không gạch chéo. */
-.sp-zero { color: #94a3b8; font-weight: 400; }
+.sp-zero { color: var(--vla-ink-soft); font-weight: 400; }
 
 /* --- Chú giải ô ----------------------------------------------------------
    Sáu trường xếp thành lưới tự co: mỗi thẻ mang giá trị thật của kỳ gần nhất,
@@ -138,7 +154,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    điện thoại không có chuột để trỏ vào. */
 .sp-legend {
   margin: 0 0 10px; padding: 12px 14px;
-  border: 1px solid var(--line, #e2e8f0); border-radius: 12px;
+  border: 1px solid var(--vla-border); border-radius: var(--vla-r-lg);
   background: #fffbeb; border-color: #fde68a;
 }
 .sp-legend-head { font-size: 12px; font-weight: 800; color: #92400e; margin-bottom: 8px; }
@@ -152,7 +168,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 .sp-lg-item {
-  display: block; padding: 7px 9px; border-radius: 9px;
+  display: block; padding: 7px 9px; border-radius: var(--vla-r-md);
   background: #fff; border: 1px solid #fde68a;
 }
 .sp-lg-val {
@@ -160,19 +176,20 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   background: #fef3c7; color: #78350f; font-size: 13px; font-weight: 800;
   font-variant-numeric: tabular-nums; text-align: center;
 }
-.sp-lg-lab { font-size: 12px; font-weight: 800; color: #0f172a; margin-left: 6px; }
-.sp-lg-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; color: #475569; }
-.sp-legend-rule { margin: 10px 0 0; font-size: 11.5px; line-height: 1.55; color: #475569; }
+.sp-lg-lab { font-size: 12px; font-weight: 800; color: var(--vla-ink); margin-left: 6px; }
+.sp-lg-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; color: var(--vla-ink-soft); }
+.sp-legend-rule { margin: 10px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--vla-ink-soft); }
 .sp-legend-rule b { color: #78350f; }
 
 .sp-fields-toggle {
   display: flex; flex-wrap: wrap; gap: 6px 14px;
   margin: 0 0 12px; padding: 9px 12px;
-  border: 1px solid var(--line, #e2e8f0); border-radius: 12px; background: #f8fafc;
+  border: 1px solid var(--vla-border); border-radius: var(--vla-r-lg);
+  background: var(--vla-surface-2); box-shadow: var(--vla-sh-sm);
 }
 .sp-fchk {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; font-weight: 700; color: #334155; cursor: pointer;
+  font-size: 12px; font-weight: 700; color: var(--vla-ink-2); cursor: pointer;
 }
 .sp-fchk input { cursor: pointer; }
 
@@ -197,18 +214,23 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-picker { margin-bottom: 12px; }
 .sp-pick-quick { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .sp-pick-quick button {
-  padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line, #e2e8f0);
-  background: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+  padding: 5px 11px; border-radius: 999px; border: 1px solid var(--vla-border);
+  background: var(--vla-surface); font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .sp-pick-grid {
   display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px;
 }
 .sp-pick {
-  padding: 4px 0; border-radius: 6px; border: 1px solid var(--line, #e2e8f0);
-  background: #f1f5f9; color: #94a3b8; font-size: 11px; font-weight: 700;
+  padding: 4px 0; border-radius: var(--vla-r-md); border: 1px solid var(--vla-border);
+  background: var(--vla-surface-2); color: var(--vla-ink-soft); font-size: 11px; font-weight: 700;
   cursor: pointer; font-variant-numeric: tabular-nums;
 }
-.sp-pick.on { background: #7c3aed; border-color: #6d28d9; color: #fff; }
+.sp-pick.on { background: var(--vla-brand-soft); border-color: var(--vla-brand-border);
+  color: var(--vla-brand-ink); }
+/* Con số bị bỏ ra: mờ đi VÀ gạch ngang. Chỉ đổi màu thì người không phân
+   biệt được màu không đọc ra trạng thái — và ở đây trạng thái chính là câu
+   trả lời cho "tôi vừa bỏ những con nào". */
+.sp-pick:not(.on) { text-decoration: line-through; }
 
 /* Ma trận dày: chữ nhỏ, cột hẹp, luôn cuộn trong khung của nó. */
 .sp-table.sp-dense td, .sp-table.sp-dense th {
@@ -223,16 +245,18 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 }
 
 /* --- Cầu giải đặc biệt ---------------------------------------------------- */
-.sp-times { display: block; font-style: normal; font-size: 10px; color: #64748b; }
+.sp-times { display: block; font-style: normal; font-size: 10px; color: var(--vla-ink-soft); }
 .sp-recent { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.sp-draw { padding: 14px; border: 1px solid var(--line, #e2e8f0); border-radius: 14px; background: #f8fafc; }
+.sp-draw { padding: 14px; border: 1px solid var(--vla-border);
+  border-radius: var(--vla-r-lg); background: var(--vla-surface-2);
+  box-shadow: var(--vla-sh-sm); }
 .sp-draw h4 { margin: 0 0 8px; font-size: 14px; }
-.sp-db { margin: 0 0 10px; font-size: 13px; color: #475569; }
-.sp-db b { font-size: 22px; color: #0f172a; letter-spacing: .04em; }
+.sp-db { margin: 0 0 10px; font-size: 13px; color: var(--vla-ink-soft); }
+.sp-db b { font-size: 22px; color: var(--vla-ink); letter-spacing: .04em; }
 .sp-lolist { display: flex; flex-wrap: wrap; gap: 5px; }
 .sp-lo {
-  min-width: 26px; padding: 3px 5px; border-radius: 7px; background: #fff;
-  border: 1px solid var(--line, #e2e8f0); text-align: center;
+  min-width: 26px; padding: 3px 5px; border-radius: var(--vla-r-md); background: var(--vla-surface);
+  border: 1px solid var(--vla-border); text-align: center;
   font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
 @media (prefers-color-scheme: dark) {
@@ -244,7 +268,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
 /* Ghi chú kích thước ma trận. Lớp RIÊNG, không dùng .sp-note: lớp đó dành cho
    ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
-.sp-matrix-note { margin: 0 0 10px; color: #64748b; font-size: 12px; }
+.sp-matrix-note { margin: 0 0 10px; color: var(--vla-ink-soft); font-size: 12px; }
 @media (prefers-color-scheme: dark) { .sp-matrix-note { color: #94a3b8; } }
 
 /* =========================================================================

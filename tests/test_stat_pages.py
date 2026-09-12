@@ -857,3 +857,62 @@ def test_cycle_page_explains_it_counts_draws_not_calendar_days() -> None:
     page = (DOCS / "chu-ky-dac-biet.html").read_text(encoding="utf-8")
     assert "kỳ quay" in page, "phải nói rõ đếm theo kỳ"
     assert "565" in page, "phải kèm ví dụ đối chiếu được bằng số thật"
+
+
+# --- Nút hành động thôi đội lốt nút lọc -----------------------------------
+
+
+def test_clear_marks_button_is_not_a_range_filter_chip() -> None:
+    """"Xoá đánh dấu" không được mang lớp ``.sp-chip``.
+
+    Nó từng mang, và hậu quả không dừng ở thẩm mỹ: bộ xử lý chọn dải trong
+    ``stat_pages.js`` bắt mọi ``.sp-chip``, nên nút này cũng lọt vào. Nó không
+    có ``data-days`` nên ``parseInt`` trả về ``NaN``, rơi vào nhánh "Tất cả",
+    và một cú bấm để gỡ đánh dấu lại âm thầm kéo dải từ 90 kỳ lên 2 396 kỳ.
+    """
+    source = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    marker = 'id="sp-clear-marks"'
+    line = next(ln for ln in source.splitlines() if marker in ln)
+    assert 'class="sp-btn"' in line
+    assert "sp-chip" not in line
+
+
+def test_range_handler_only_binds_buttons_inside_the_filter_group() -> None:
+    """Bộ xử lý chọn dải phải neo vào ``.sp-chips``, không quét cả trang.
+
+    Đây là lớp chặn thứ hai cho cùng một lỗi: kể cả khi ai đó lại gắn
+    ``.sp-chip`` lên một nút nằm ngoài nhóm lọc, nút ấy cũng không đổi được
+    dải ngày.
+    """
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert 'querySelectorAll(".sp-chip")' not in js
+    assert 'querySelectorAll(".sp-chips .sp-chip")' in js
+
+
+def test_default_range_chip_matches_the_javascript_default() -> None:
+    """Nút sáng sẵn phải trùng dải mà JavaScript thật sự đặt.
+
+    ``stat_pages.js`` mở trang kiểu ``day`` ở ``DRAWS.length - 90``. Hằng số
+    phía Python chỉ để tô sáng nút; lệch nhau thì thanh điều khiển nói một
+    đằng còn ô ngày một nẻo.
+    """
+    from build_stat_pages import DEFAULT_RANGE_DRAWS
+
+    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+    assert f"DRAWS.length - {DEFAULT_RANGE_DRAWS}" in js
+
+
+def test_preset_pages_highlight_all_history_not_ninety_draws() -> None:
+    """Trang kiểu ``preset`` không có ô ngày, nên mặc định là TOÀN BỘ lịch sử.
+
+    Tô sáng "90 kỳ" ở đây thì trang khoe 90 trong khi đang hiển thị 2 396.
+    """
+    from build_stat_pages import _range_controls
+
+    preset = _range_controls(mode="preset")
+    assert '<button class="sp-chip on" data-days="0">Tất cả</button>' in preset
+    assert 'class="sp-chip on" data-days="90"' not in preset
+
+    day = _range_controls(mode="day")
+    assert '<button class="sp-chip on" data-days="90">90 kỳ</button>' in day
+    assert 'class="sp-chip on" data-days="0"' not in day
