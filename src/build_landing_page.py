@@ -939,19 +939,26 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
   <title>Trung tâm phân tích xổ số</title>
   <style>
     :root {{
-      --bg: #f5f7fb;
+      --bg: #F2F4FF;
+      --bg-2: #E6EAFB;
       --panel: #ffffff;
-      --panel-soft: #f8fafc;
-      --ink: #0f172a;
-      --muted: #55606f;
-      --line: #e2e8f0;
+      --panel-soft: #F7F8FE;
+      --ink: #161C2D;
+      --muted: #5A6480;
+      --line: #E7EAF6;
+      /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
+         màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
+         với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
+      --brand: #4F46E5;
       --blue: #2563eb;
       --sky: #0891b2;
       --green: #059669;
       --orange: #ea580c;
       --purple: #7c3aed;
       --rose: #e11d48;
-      --shadow: 0 22px 70px rgba(15, 23, 42, .10);
+      --shadow: 0 1px 2px rgba(22, 28, 45, .04), 0 8px 26px rgba(22, 28, 45, .06);
+      --shadow-lg: 0 4px 8px rgba(22, 28, 45, .06), 0 22px 60px rgba(22, 28, 45, .13);
+      --shadow-brand: 0 10px 30px rgba(79, 70, 229, .26);
       --radius: 24px;
     }}
     * {{ box-sizing: border-box; }}
@@ -959,9 +966,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     body {{
       margin: 0;
       background:
-        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 34rem),
-        radial-gradient(circle at 75% 10%, rgba(124,58,237,.14), transparent 32rem),
-        var(--bg);
+        radial-gradient(1200px 620px at 10% -8%, rgba(129,140,248,.20), transparent 60%),
+        radial-gradient(900px 520px at 92% 2%, rgba(99,102,241,.15), transparent 62%),
+        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      background-color: var(--bg);
       color: var(--ink);
       font-family: var(--vla-font);
     }}
@@ -1141,11 +1150,11 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       padding: 30px;
       margin-bottom: 20px;
       color: #fff;
-      background:
-        linear-gradient(135deg, rgba(15,23,42,.98), rgba(30,41,59,.92)),
-        radial-gradient(circle at 10% 10%, rgba(37,99,235,.8), transparent 22rem),
-        radial-gradient(circle at 80% 20%, rgba(124,58,237,.75), transparent 20rem);
-      box-shadow: var(--shadow);
+      /* Ba chặng đã dò trắng trên toàn dải: 6,29:1 / 7,69:1 / 9,02:1. Chọn
+         chặng bằng cách nhìn ba ô màu thì không đủ — lần trước làm thế và hai
+         trong ba chặng trượt chuẩn với chữ trắng. */
+      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+      box-shadow: var(--shadow-brand);
     }}
     .hero::after {{
       content: "";
@@ -1154,7 +1163,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       top: -12rem;
       width: 32rem;
       height: 32rem;
-      background: radial-gradient(circle, rgba(96,165,250,.32), transparent 70%);
+      background: radial-gradient(circle, rgba(165,180,252,.28), transparent 70%);
       pointer-events: none;
     }}
     .hero-content {{ position: relative; z-index: 1; display: grid; gap: 18px; }}
@@ -1165,7 +1174,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       line-height: .98;
       letter-spacing: -.045em;
     }}
-    .hero p {{ max-width: 820px; margin: 0; color: #cbd5e1; font-size: 16px; line-height: 1.65; }}
+    .hero p {{ max-width: 820px; margin: 0; color: #E4E5FC; font-size: 16px; line-height: 1.65; }}
     .hero-actions {{ display: flex; gap: 10px; flex-wrap: wrap; }}
     .primary-action, .ghost-action {{
       display: inline-flex;
@@ -2115,7 +2124,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
       <section id="tong-quan" class="hero section">
         <div class="hero-content">
           <div>
-            <p class="eyebrow" style="color:#93c5fd">Bảng điều khiển tổng hợp</p>
+            <p class="eyebrow" style="color:#D5D8FC">Bảng điều khiển tổng hợp</p>
             <h1>Trung tâm thống kê xổ số: kết quả ngày, ma trận, cầu vị trí và tín hiệu AI/ML.</h1>
           </div>
           <p>

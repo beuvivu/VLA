@@ -260,3 +260,86 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
         assert "<body>" in text, page.name
+
+
+# --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------
+#
+# Ba chủ thể tạo kiểu độc lập nhau cùng tồn tại trong kho:
+#
+#   src/ui_theme.py                  -> docs/assets/vla.css -> 28 trang
+#   src/build_landing_page.py        -> :root riêng         -> trang chủ
+#   src/build_statistics_dashboard.py-> CSS nội tuyến riêng  -> 1 trang
+#
+# Một lần đổi giao diện chỉ chạm vào chủ thể thứ ba đã xảy ra rồi: trang
+# statistics đổi hẳn sang nền periwinkle, còn trang chủ — trang người dùng
+# thực sự mở — giữ nguyên hero navy cũ. Nhìn từ phía người dùng thì đó là
+# "không có gì thay đổi cả", và không một test nào đỏ.
+#
+# Hai phép kiểm dưới đây neo ba chủ thể vào cùng một mặt đất và cùng một dốc
+# thương hiệu, nên lần sau sửa lệch một chủ thể sẽ đỏ ngay tại chỗ sửa.
+
+#: Mặt đất của trang ở chế độ sáng. Mọi chủ thể tạo kiểu phải khai cùng giá trị.
+PAGE_GROUND = ("#F2F4FF", "#E6EAFB")
+
+#: Dốc thương hiệu dành riêng cho điều hướng và hành động chính.
+BRAND_RAMP = ("#4F46E5", "#4C3BC4", "#5B2E9E")
+
+
+def _light_root(css: str) -> str:
+    """Khối ``:root`` đầu tiên — khối của chế độ sáng."""
+    match = re.search(r":root\s*\{(.*?)\}", css, re.S)
+    assert match is not None, "không tìm thấy khối :root"
+    return match.group(1)
+
+
+def test_every_style_owner_declares_the_same_page_ground() -> None:
+    """Trang chủ, biểu định kiểu chung và trang thống kê đứng trên cùng nền.
+
+    Đây là phép kiểm bắt được lỗi "đổi giao diện mà người dùng không thấy gì
+    khác": nó so ba chủ thể với nhau chứ không so từng chủ thể với chính nó.
+    """
+    shared = _light_root(TAILWIND_LITE_CSS)
+    assert f"--vla-bg:{PAGE_GROUND[0]}" in shared.replace(" ", "")
+    assert f"--vla-bg-2:{PAGE_GROUND[1]}" in shared.replace(" ", "")
+
+    landing = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    landing_root = _light_root(landing)
+    assert f"--bg:{PAGE_GROUND[0]}" in landing_root.replace(" ", "")
+    assert f"--bg-2:{PAGE_GROUND[1]}" in landing_root.replace(" ", "")
+
+    stats = (ROOT / "src" / "build_statistics_dashboard.py").read_text(encoding="utf-8")
+    stats_root = _light_root(stats)
+    assert f"--bg:{PAGE_GROUND[0]}" in stats_root.replace(" ", "")
+    assert f"--bg-2:{PAGE_GROUND[1]}" in stats_root.replace(" ", "")
+
+
+def test_brand_ramp_is_identical_wherever_it_is_declared() -> None:
+    """Dốc thương hiệu chỉ có MỘT bộ chặng.
+
+    Ba chặng này đã được dò tương phản trên toàn dải với chữ trắng
+    (6,29 / 7,69 / 9,02 : 1). Khai một bộ chặng thứ hai ở nơi khác là mở lại
+    khả năng một chặng chưa ai đo lọt vào trang.
+    """
+    for name in ("build_landing_page.py", "build_statistics_dashboard.py"):
+        source = (ROOT / "src" / name).read_text(encoding="utf-8")
+        ramps = re.findall(
+            r"(?<!repeating-)linear-gradient\(135deg,\s*(#[0-9A-Fa-f]{6})[^)]*?(#[0-9A-Fa-f]{6})"
+            r"[^)]*?(#[0-9A-Fa-f]{6})\s*100%\)",
+            source,
+        )
+        assert ramps, f"{name}: không tìm thấy dốc thương hiệu"
+        for ramp in ramps:
+            assert tuple(c.upper() for c in ramp) == BRAND_RAMP, f"{name}: dốc lạ {ramp}"
+
+
+def test_shared_stylesheet_reaches_the_page_the_user_actually_opens() -> None:
+    """``index.html`` phải nạp biểu định kiểu chung.
+
+    Trang chủ có ``:root`` riêng nên dễ tưởng nó tự lo hết phần tạo kiểu. Thực
+    tế nó vẫn lấy phông, bảng, thẻ và nav từ ``vla.css``; mất liên kết đó thì
+    trang vỡ mà các test dựng trang vẫn xanh.
+    """
+    index = ROOT / "docs" / "index.html"
+    if not index.exists():  # kho mới sao chép, chưa dựng docs
+        return
+    assert "assets/vla.css" in index.read_text(encoding="utf-8")

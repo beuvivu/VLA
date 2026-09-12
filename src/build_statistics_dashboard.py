@@ -1086,7 +1086,7 @@ def main() -> None:
       margin: 18px clamp(16px, 5vw, 72px) 0;
       padding: 34px clamp(20px, 4vw, 44px) 24px;
       border-radius: var(--radius-xl);
-      background: linear-gradient(135deg, var(--brand) 0%, #4C3BC4 54%, #5B2E9E 100%);
+      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
       box-shadow: var(--shadow-brand);
       color: white;
       overflow: hidden;
@@ -1618,7 +1618,7 @@ def main() -> None:
       color: white;
       background:
         radial-gradient(circle at 10% 0%, rgba(255,255,255,0.25), transparent 34%),
-        linear-gradient(135deg, #1d4ed8, #7c3aed 58%, #c026d3);
+        linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
     }}
     .evidence-head-row {{
       display: flex;

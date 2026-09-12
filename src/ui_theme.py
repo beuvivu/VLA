@@ -36,20 +36,33 @@ _ALIGN_CLASS = {
 TAILWIND_LITE_CSS = r"""
 /* ---- 1. Design token ------------------------------------------------- */
 :root{
---vla-bg:#f8fafc;--vla-surface:#fff;--vla-surface-2:#f8fafc;
---vla-border:rgba(226,232,240,.75);--vla-border-strong:#e2e8f0;
---vla-ink:#0f172a;--vla-ink-2:#1e293b;--vla-ink-soft:#475569;
+--vla-bg:#F2F4FF;--vla-bg-2:#E6EAFB;--vla-surface:#fff;--vla-surface-2:#F7F8FE;
+--vla-border:#E7EAF6;--vla-border-strong:#D8DDF0;
+--vla-ink:#161C2D;--vla-ink-2:#28304A;--vla-ink-soft:#5A6480;
+/* Lưới sáng periwinkle phủ trên nền dốc. Tách thành token riêng để chế độ
+   tối tắt hẳn nó đi thay vì phải viết lại quy tắc body. */
+--vla-bg-mesh:radial-gradient(1200px 620px at 10% -8%,rgba(129,140,248,.20),transparent 60%),
+radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
+/* THƯƠNG HIỆU — chỉ dành cho điều hướng và hành động chính. Không một dấu
+   hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
+   --vla-ok/warn/bad và ở các thang nhiệt của từng trang. */
 --vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
+--vla-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
 /* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --vla-brand: ở chế
 độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
 --vla-on-brand:#ffffff;
 --vla-ok:#047857;--vla-ok-soft:#ecfdf5;--vla-ok-border:#a7f3d0;
---vla-warn:#b45309;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
+--vla-warn:#a94e08;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
 --vla-bad:#be123c;--vla-bad-soft:#fff1f2;--vla-bad-border:#fecdd3;
---vla-r-md:.5rem;--vla-r-lg:.75rem;--vla-r-xl:1rem;
---vla-sh-sm:0 1px 2px rgba(15,23,42,.06);
---vla-sh-md:0 4px 12px rgba(15,23,42,.10);
---vla-sh-lg:0 10px 25px rgba(15,23,42,.14);
+/* 18-24px cho bề mặt nổi; .75rem giữ lại cho chi tiết nhỏ bên trong, vì bo
+   18px lên một ô 32px thì góc ăn hết cạnh. */
+--vla-r-md:.75rem;--vla-r-lg:1.125rem;--vla-r-xl:1.5rem;
+/* Bóng hai lớp, ám lạnh theo màu mực: một lớp sát để tách khỏi nền, một lớp
+   toả rộng rất nhạt để bề mặt trông nổi lên chứ không bị viền đen. */
+--vla-sh-sm:0 1px 2px rgba(22,28,45,.04),0 8px 26px rgba(22,28,45,.06);
+--vla-sh-md:0 2px 4px rgba(22,28,45,.05),0 14px 38px rgba(22,28,45,.09);
+--vla-sh-lg:0 4px 8px rgba(22,28,45,.06),0 22px 60px rgba(22,28,45,.13);
+--vla-sh-brand:0 10px 30px rgba(79,70,229,.26);
 /* Inter tự host. Bản trước khai báo Aptos theo tên, nhưng CSP đặt font-src
 'self' và kho KHÔNG có tệp font nào — nên trang chưa bao giờ hiển thị bằng
 Aptos trừ máy đã cài sẵn Microsoft 365; mọi máy khác rơi về font hệ thống.
@@ -96,7 +109,8 @@ tay sáng, chọn tay tối, và mặc định "theo hệ điều hành" vốn k
 tính nào lên thẻ gốc. */
 @media (prefers-color-scheme:dark){
 :root:not([data-vla-theme="light"]){
---vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
+--vla-bg:#0b1220;--vla-bg-2:#0b1220;--vla-bg-mesh:none;
+--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
@@ -107,11 +121,13 @@ tính nào lên thẻ gốc. */
 --vla-sh-sm:0 1px 2px rgba(0,0,0,.4);
 --vla-sh-md:0 4px 12px rgba(0,0,0,.45);
 --vla-sh-lg:0 10px 25px rgba(0,0,0,.5);
+--vla-sh-brand:0 10px 30px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 }
 :root[data-vla-theme="dark"]{
---vla-bg:#0b1220;--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
+--vla-bg:#0b1220;--vla-bg-2:#0b1220;--vla-bg-mesh:none;
+--vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
 --vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
 --vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
 --vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
@@ -122,13 +138,19 @@ color-scheme:dark;
 --vla-sh-sm:0 1px 2px rgba(0,0,0,.4);
 --vla-sh-md:0 4px 12px rgba(0,0,0,.45);
 --vla-sh-lg:0 10px 25px rgba(0,0,0,.5);
+--vla-sh-brand:0 10px 30px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 
 /* ---- 2. Nền tảng ----------------------------------------------------- */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--vla-bg);color:var(--vla-ink-2);
+/* Nền ba lớp: hai vầng periwinkle rồi mới tới dốc nền. background-attachment
+   ghim cố định để vầng sáng không trôi theo khi cuộn — trang dài 1,7 MB mà
+   để nó trôi thì phần dưới rơi hẳn vào mảng tối nhất của dốc. */
+body{margin:0;color:var(--vla-ink-2);
+background:var(--vla-bg-mesh),linear-gradient(162deg,var(--vla-bg) 0%,var(--vla-bg-2) 100%);
+background-attachment:fixed;background-color:var(--vla-bg);
 font-family:var(--vla-font);font-size:14px;line-height:1.6;
 -webkit-font-smoothing:antialiased}
 img{max-width:100%;height:auto}
