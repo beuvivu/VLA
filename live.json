@@ -1,0 +1,856 @@
+{
+  "schema_version": 2,
+  "draw_date": "2026-09-12",
+  "checked_at_utc": "2026-09-12T14:03:47Z",
+  "checked_at_local": "2026-09-12T21:03:47+07:00",
+  "status": "complete_verified",
+  "complete": true,
+  "verified_complete": true,
+  "received_values": 27,
+  "expected_values": 27,
+  "verified_values": 27,
+  "progress_percent": 100.0,
+  "verification_percent": 100.0,
+  "prizes": {
+    "special": [
+      "58851"
+    ],
+    "prize1": [
+      "93635"
+    ],
+    "prize2": [
+      "62249",
+      "19402"
+    ],
+    "prize3": [
+      "15181",
+      "68352",
+      "76599",
+      "77021",
+      "54082",
+      "85899"
+    ],
+    "prize4": [
+      "5804",
+      "9984",
+      "3399",
+      "1827"
+    ],
+    "prize5": [
+      "2462",
+      "9390",
+      "4742",
+      "1298",
+      "8565",
+      "6114"
+    ],
+    "prize6": [
+      "119",
+      "998",
+      "793"
+    ],
+    "prize7": [
+      "01",
+      "39",
+      "43",
+      "23"
+    ]
+  },
+  "conflicts": [],
+  "source_status": [
+    {
+      "priority": 1,
+      "source": "xoso.com.vn",
+      "provider_group": "xoso",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": 1114,
+      "error": null
+    },
+    {
+      "priority": 2,
+      "source": "mketqua.net",
+      "provider_group": "mketqua",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": 671,
+      "error": null
+    },
+    {
+      "priority": 3,
+      "source": "www.minhngoc.net.vn",
+      "provider_group": "minhngoc",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": 1440,
+      "error": null
+    },
+    {
+      "priority": 4,
+      "source": "xosominhngoc.com",
+      "provider_group": "minhngoc",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": 1252,
+      "error": null
+    },
+    {
+      "priority": 5,
+      "source": "xosodaiphat.com",
+      "provider_group": "xosodaiphat",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": 433,
+      "error": null
+    },
+    {
+      "priority": 6,
+      "source": "hainhay.net",
+      "provider_group": "hainhay",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": 1951,
+      "error": null
+    }
+  ],
+  "source_priority": [
+    "xoso.com.vn",
+    "mketqua.net",
+    "www.minhngoc.net.vn",
+    "xosominhngoc.com",
+    "xosodaiphat.com",
+    "hainhay.net"
+  ],
+  "slot_meta": {
+    "special[0]": {
+      "value": "58851",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "58851": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize1[0]": {
+      "value": "93635",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "93635": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize2[0]": {
+      "value": "62249",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "62249": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize2[1]": {
+      "value": "19402",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "19402": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[0]": {
+      "value": "15181",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "15181": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[1]": {
+      "value": "68352",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "68352": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[2]": {
+      "value": "76599",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "76599": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[3]": {
+      "value": "77021",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "77021": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[4]": {
+      "value": "54082",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "54082": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize3[5]": {
+      "value": "85899",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "85899": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize4[0]": {
+      "value": "5804",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "5804": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize4[1]": {
+      "value": "9984",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "9984": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize4[2]": {
+      "value": "3399",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "3399": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize4[3]": {
+      "value": "1827",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "1827": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[0]": {
+      "value": "2462",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "2462": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[1]": {
+      "value": "9390",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "9390": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[2]": {
+      "value": "4742",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "4742": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[3]": {
+      "value": "1298",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "1298": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[4]": {
+      "value": "8565",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "8565": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize5[5]": {
+      "value": "6114",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "6114": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize6[0]": {
+      "value": "119",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "119": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize6[1]": {
+      "value": "998",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "998": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize6[2]": {
+      "value": "793",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "793": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize7[0]": {
+      "value": "01",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "01": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize7[1]": {
+      "value": "39",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "39": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize7[2]": {
+      "value": "43",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "43": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    },
+    "prize7[3]": {
+      "value": "23",
+      "verified": true,
+      "ambiguous_tie": false,
+      "support": [
+        "xoso.com.vn",
+        "mketqua.net",
+        "www.minhngoc.net.vn",
+        "xosominhngoc.com",
+        "xosodaiphat.com"
+      ],
+      "support_groups": [
+        "xoso",
+        "mketqua",
+        "minhngoc",
+        "xosodaiphat"
+      ],
+      "observations": {
+        "23": [
+          "xoso.com.vn",
+          "mketqua.net",
+          "www.minhngoc.net.vn",
+          "xosominhngoc.com",
+          "xosodaiphat.com"
+        ]
+      }
+    }
+  },
+  "note": "GitHub near-live snapshot. Single-source values are provisional; canonical history is promoted only after complete multi-source consensus."
+}
