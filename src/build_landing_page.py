@@ -798,7 +798,12 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     if "period_kind" in df.columns:
         df = df[df["period_kind"] == period]
     cards = []
-    for group, palette in [("head", "blue"), ("tail", "green"), ("total", "orange")]:
+    # Ba nhóm này đều là TẦN SUẤT LÔ TÔ, chỉ khác cách gom (đầu / đuôi / tổng),
+    # nên chúng dùng chung sắc với bốn ma trận tần suất lô tô. Ba sắc khác nhau
+    # ngụ ý ba loại dữ liệu khác nhau — ở đây thì không phải. Riêng "blue" còn
+    # lệch đúng 22° khỏi sắc thương hiệu 243°, tức là một dấu hiệu MÃ HOÁ DỮ
+    # LIỆU mang màu của điều hướng.
+    for group, palette in [("head", "green"), ("tail", "green"), ("total", "green")]:
         part = df[df.get("group_type", "") == group].copy()
         if not part.empty:
             group_label = GROUP_LABELS.get(group, group)
@@ -2285,7 +2290,7 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         <div class="next-day">
           <section id="mo-phong" class="section"></section>
           {_render_bar_card(title="Đặc biệt ngày mai", subtitle="Tín hiệu ĐB theo AI/ML, dùng để tham khảo xác suất tương đối.", df=ai_de, label_col="number_str", value_col="cau_score", palette="orange", mode="de", number_col="number_str", limit=10, value_decimals=1)}
-          {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="purple", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
+          {_render_bar_card(title="Lô tô ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="sky", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
         </div>
       </section>
 
@@ -2309,10 +2314,10 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title="Lô tô ngày hiện tại", subtitle="Tần suất 00–99 trong ngày kết quả mới nhất.", values=_current_period_matrix(repo_root, "loto", "day"), palette="blue", mode="loto")}
+          {_render_matrix_card(title="Lô tô ngày hiện tại", subtitle="Tần suất 00–99 trong ngày kết quả mới nhất.", values=_current_period_matrix(repo_root, "loto", "day"), palette="green", mode="loto")}
           {_render_matrix_card(title="Lô tô tuần hiện tại", subtitle="Cộng dồn lô tô trong tuần hiện tại.", values=_current_period_matrix(repo_root, "loto", "week"), palette="green", mode="loto")}
-          {_render_matrix_card(title="Lô tô tháng hiện tại", subtitle="Cộng dồn lô tô trong tháng hiện tại.", values=_current_period_matrix(repo_root, "loto", "month"), palette="orange", mode="loto")}
-          {_render_matrix_card(title="Lô tô năm hiện tại", subtitle="Cộng dồn lô tô trong năm hiện tại.", values=_current_period_matrix(repo_root, "loto", "year"), palette="purple", mode="loto")}
+          {_render_matrix_card(title="Lô tô tháng hiện tại", subtitle="Cộng dồn lô tô trong tháng hiện tại.", values=_current_period_matrix(repo_root, "loto", "month"), palette="green", mode="loto")}
+          {_render_matrix_card(title="Lô tô năm hiện tại", subtitle="Cộng dồn lô tô trong năm hiện tại.", values=_current_period_matrix(repo_root, "loto", "year"), palette="green", mode="loto")}
         </div>
       </section>
 
@@ -2326,8 +2331,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
         </div>
         <div class="matrix-two">
           {_render_matrix_card(title="ĐB tháng hiện tại", subtitle="Tần suất 2 số cuối giải đặc biệt trong tháng.", values=_current_period_matrix(repo_root, "de", "month"), palette="orange", mode="de")}
-          {_render_matrix_card(title="ĐB năm hiện tại", subtitle="Tần suất 2 số cuối giải đặc biệt trong năm.", values=_current_period_matrix(repo_root, "de", "year"), palette="rose", mode="de")}
-          {_render_matrix_card(title="Điểm AI lô tô", subtitle="Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.", values=_ai_matrix(repo_root, "loto"), palette="purple", mode="loto", decimals=1)}
+          {_render_matrix_card(title="ĐB năm hiện tại", subtitle="Tần suất 2 số cuối giải đặc biệt trong năm.", values=_current_period_matrix(repo_root, "de", "year"), palette="orange", mode="de")}
+          {_render_matrix_card(title="Điểm AI lô tô", subtitle="Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.", values=_ai_matrix(repo_root, "loto"), palette="sky", mode="loto", decimals=1)}
           {_render_matrix_card(title="Điểm AI ĐB", subtitle="Điểm AI/ML dành riêng cho 2 số cuối giải đặc biệt.", values=_ai_matrix(repo_root, "de"), palette="rose", mode="de", decimals=1)}
         </div>
       </section>
@@ -2341,9 +2346,9 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title="Gan lô tô hiện tại", subtitle="Số ngày chưa về của từng bộ lô tô.", values=_rhythm_matrix(repo_root, "loto"), palette="green", mode="loto")}
+          {_render_matrix_card(title="Gan lô tô hiện tại", subtitle="Số ngày chưa về của từng bộ lô tô.", values=_rhythm_matrix(repo_root, "loto"), palette="sky", mode="loto")}
           {_render_matrix_card(title="Gan ĐB hiện tại", subtitle="Số ngày chưa về của từng bộ ĐB.", values=_rhythm_matrix(repo_root, "de"), palette="rose", mode="de")}
-          {_render_bar_card(title="Gan lô tô đứng đầu", subtitle="Các bộ lô tô có khoảng gan hiện tại cao nhất.", df=loto_rhythm, label_col="number_str", value_col="current_gap", palette="green", mode="loto", number_col="number_str", limit=12, value_decimals=0)}
+          {_render_bar_card(title="Gan lô tô đứng đầu", subtitle="Các bộ lô tô có khoảng gan hiện tại cao nhất.", df=loto_rhythm, label_col="number_str", value_col="current_gap", palette="sky", mode="loto", number_col="number_str", limit=12, value_decimals=0)}
           {_render_bar_card(title="Gan ĐB đứng đầu", subtitle="Các bộ ĐB có khoảng gan hiện tại cao nhất.", df=de_rhythm, label_col="number_str", value_col="current_gap", palette="rose", mode="de", number_col="number_str", limit=12, value_decimals=0)}
         </div>
       </section>

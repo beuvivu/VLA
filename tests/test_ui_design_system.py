@@ -539,3 +539,80 @@ def test_matrix_columns_always_have_a_ceiling_of_one_fr() -> None:
     assert tracks, "không tìm thấy khai báo cột ma trận nào"
     fixed = [t for t in tracks if "1fr" not in t]
     assert not fixed, f"cột ma trận đặt cứng, không giãn được: {fixed}"
+
+
+# --- Màu dữ liệu của trang chủ ---------------------------------------------
+#
+# Hai bất biến, cùng một gốc: MÀU LÀ MỘT KÊNH MANG NGHĨA, nên hai sắc khác
+# nhau phải có nghĩa là hai thứ khác nhau, và sắc của điều hướng không được
+# mượn cho dữ liệu.
+
+#: Sắc của màu thương hiệu #4F46E5, tính theo HSV.
+BRAND_HUE = 243.0
+
+#: Dưới ngưỡng này thì mắt đọc một dấu hiệu dữ liệu thành "màu thương hiệu".
+BRAND_HUE_GUARD = 40.0
+
+
+def _hsv(hex6: str) -> tuple[float, float, float]:
+    import colorsys
+
+    r, g, b = (int(hex6[i : i + 2], 16) for i in (0, 2, 4))
+    return colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+
+
+def test_landing_data_marks_never_borrow_the_brand_hue() -> None:
+    """Không dấu hiệu mã hoá dữ liệu nào được mang sắc của thương hiệu.
+
+    Đo trên TRANG ĐÃ DỰNG, không trên mã nguồn: màu ô sinh ra bằng cách trộn
+    hex trong Python nên đọc bảng màu ở nguồn không nói được ô thật ra màu gì.
+
+    Ba bảng màu từng vi phạm — blue 22°, purple 19°, slate 28° — và chúng nằm
+    ở ma trận tần suất, thẻ điểm AI và ba thẻ đầu/đuôi/tổng. Khi "đang chọn"
+    và "giá trị cao" cùng một màu thì người đọc không tách được hai thứ.
+    """
+    html_text = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    offenders: list[str] = []
+    checked = 0
+    for match in re.finditer(r"background:\s*#([0-9a-fA-F]{6})", html_text):
+        hue, sat, val = _hsv(match.group(1).lower())
+        if sat < 0.35 or val < 0.25:  # chữ và viền xám, không phải mảng dữ liệu
+            continue
+        checked += 1
+        delta = abs(hue * 360 - BRAND_HUE)
+        delta = min(delta, 360 - delta)
+        if delta < BRAND_HUE_GUARD:
+            offenders.append(f"#{match.group(1)} lệch {delta:.0f}°")
+
+    assert checked > 100, f"chỉ kiểm được {checked} dấu hiệu — bộ lọc hỏng"
+    assert not offenders, f"dấu hiệu dữ liệu mang sắc thương hiệu: {sorted(set(offenders))}"
+
+
+def test_one_measure_uses_one_hue_across_its_time_windows() -> None:
+    """Bốn ma trận tần suất lô tô là MỘT phép đo qua bốn cửa sổ thời gian.
+
+    Chúng từng mang bốn sắc — lam, lục, cam, tím — nên trông như bốn loại dữ
+    liệu. Hai ma trận tần suất ĐB cũng mắc đúng lỗi đó ở quy mô nhỏ hơn.
+    """
+    source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+
+    groups = {
+        "tần suất lô tô": [
+            "Tần suất 00–99 trong ngày kết quả mới nhất.",
+            "Cộng dồn lô tô trong tuần hiện tại.",
+            "Cộng dồn lô tô trong tháng hiện tại.",
+            "Cộng dồn lô tô trong năm hiện tại.",
+        ],
+        "tần suất ĐB": [
+            "Tần suất 2 số cuối giải đặc biệt trong tháng.",
+            "Tần suất 2 số cuối giải đặc biệt trong năm.",
+        ],
+    }
+    for name, subtitles in groups.items():
+        seen = set()
+        for sub in subtitles:
+            start = source.index(sub)
+            pal = re.search(r'palette="([a-z]+)"', source[start:])
+            assert pal, f"{name}: không tìm thấy palette sau {sub!r}"
+            seen.add(pal.group(1))
+        assert len(seen) == 1, f"{name} dùng {len(seen)} sắc cho một phép đo: {sorted(seen)}"
