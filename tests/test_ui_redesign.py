@@ -6,6 +6,7 @@ ba lỗi đã sửa để chúng không quay lại một cách âm thầm.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -1134,7 +1135,10 @@ def test_desktop_page_differs_from_the_default_one_only_by_its_body_class() -> N
     marker = ' class="desktop-view"'
     body = desktop.read_text(encoding="utf-8")
     assert marker in body, "trang máy tính thiếu lớp desktop-view"
-    assert body.replace(marker, "", 1) == default.read_text(encoding="utf-8"), (
+    # A digest comparison avoids quadratic assertion diffs for these large pages.
+    assert hashlib.sha256(body.replace(marker, "", 1).encode()).hexdigest() == hashlib.sha256(
+        default.read_bytes()
+    ).hexdigest(), (
         "hai trang khác nhau nhiều hơn một lớp trên thẻ body — "
         "chúng đã có bố cục riêng, và phép kiểm ghi đè desktop-view không phủ được nữa"
     )
