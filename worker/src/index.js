@@ -18,6 +18,30 @@
 import { collectSnapshot } from "./snapshot.js";
 
 const KV_KEY = "live.json";
+const LOCK_KEY = "collect-lock";
+
+// Chặn KHUẾCH ĐẠI YÊU CẦU.
+//
+// Nhánh "KV rỗng thì thu thập ngay" là đúng cho lần gọi đầu sau khi triển
+// khai. Nhưng nếu KV ghi hỏng — hết hạn mức, cấu hình sai, sự cố nền tảng —
+// thì nó biến thành: mỗi người xem, 5 giây một lần, kéo theo sáu lượt gọi ra
+// trang nguồn. Mười người xem là 720 lượt/phút dội vào đúng lúc các trang ấy
+// đang tải nặng nhất trong ngày.
+//
+// Khoá ngắn hạn này giữ cho tối đa một vòng thu thập theo yêu cầu mỗi 10
+// giây, bất kể có bao nhiêu người xem. Cron vẫn chạy bình thường.
+const ONDEMAND_LOCK_SECONDS = 10;
+
+// Lớp chặn THỨ HAI, trong bộ nhớ.
+//
+// Khoá ở trên nằm trong KV, nên nếu chính KV là thứ đang hỏng thì khoá cũng
+// hỏng theo và chốt chặn bốc hơi đúng lúc cần nhất. Đo được: với KV ghi hỏng,
+// 12 lượt truy cập sinh 72 lượt gọi ra nguồn.
+//
+// Biến này sống trong một isolate của Worker, không dùng chung giữa các
+// isolate — nên nó KHÔNG thay được khoá KV, chỉ chặn đỡ khi khoá kia mất tác
+// dụng. Hai lớp cùng hỏng thì mới khuếch đại được.
+let lastOnDemandAttemptMs = 0;
 
 // Ảnh chụp đã xác minh thì không đổi nữa, nên cho phép đệm lâu hơn. Khi đang
 // về số thì phải thật ngắn, nếu không trang live sẽ hiện số cũ.
@@ -41,21 +65,54 @@ function jsonResponse(body, { status = 200, cacheControl = "no-store" } = {}) {
   });
 }
 
+function requireKv(env) {
+  if (!env || !env.LIVE || typeof env.LIVE.get !== "function") {
+    // Quên bước tạo KV là lỗi cấu hình hay gặp nhất. Không nói rõ thì nó hiện
+    // ra dưới dạng "Cannot read properties of undefined", vô nghĩa với người
+    // vừa triển khai lần đầu.
+    throw new Error(
+      "thiếu ràng buộc KV 'LIVE' — chạy `npx wrangler kv namespace create LIVE` "
+      + "rồi điền id vào worker/wrangler.toml (xem documentation/operations/live-worker.md)",
+    );
+  }
+  return env.LIVE;
+}
+
 async function refresh(env) {
+  const kv = requireKv(env);
   const snapshot = await collectSnapshot({
     minAgreement: Number(env.MIN_AGREEMENT ?? 2),
   });
-  await env.LIVE.put(KV_KEY, JSON.stringify(snapshot), {
+  await kv.put(KV_KEY, JSON.stringify(snapshot), {
     // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
     expirationTtl: 60 * 60 * 36,
   });
   return snapshot;
 }
 
+/** Thu thập theo yêu cầu, hai lớp khoá — trả `null` khi vòng khác vừa chạy. */
+async function refreshOnDemand(env) {
+  const kv = requireKv(env);
+  const now = Date.now();
+  if (now - lastOnDemandAttemptMs < ONDEMAND_LOCK_SECONDS * 1000) return null;
+  // Đặt mốc TRƯỚC khi gọi nguồn, không phải sau: các lượt truy cập đến trong
+  // lúc vòng thu thập đang chạy cũng phải bị chặn, chứ không chỉ các lượt đến
+  // sau khi nó xong.
+  lastOnDemandAttemptMs = now;
+  if (await kv.get(LOCK_KEY)) return null;
+  await kv.put(LOCK_KEY, "1", { expirationTtl: ONDEMAND_LOCK_SECONDS });
+  return await refresh(env);
+}
+
 export default {
   // Cron của nền tảng gọi vào đây. Đây là toàn bộ phần "tự chạy đúng giờ".
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(refresh(env));
+    // Nuốt lỗi CÓ CHỦ Ý: một lượt cron hỏng không được làm hỏng lượt sau, và
+    // trong khung quay số lượt sau chỉ cách một phút. Vẫn ghi log để `wrangler
+    // tail` thấy được.
+    ctx.waitUntil(refresh(env).catch((error) => {
+      console.error("lượt thu thập theo lịch hỏng:", error?.message || error);
+    }));
   },
 
   async fetch(request, env, ctx) {
@@ -76,7 +133,7 @@ export default {
     }
 
     if (url.pathname === "/health") {
-      const stored = await env.LIVE.get(KV_KEY);
+      const stored = await requireKv(env).get(KV_KEY);
       const parsed = stored ? JSON.parse(stored) : null;
       return jsonResponse({
         ok: true,
@@ -91,7 +148,7 @@ export default {
       return jsonResponse({ error: "not found" }, { status: 404 });
     }
 
-    const stored = await env.LIVE.get(KV_KEY);
+    const stored = await requireKv(env).get(KV_KEY);
     if (stored) {
       const status = (() => {
         try { return JSON.parse(stored).status; } catch { return "waiting"; }
@@ -103,7 +160,13 @@ export default {
 
     // Chưa có ảnh chụp nào: thu thập ngay thay vì trả rỗng. Xảy ra ở lần gọi
     // đầu sau khi triển khai, hoặc khi KV vừa hết hạn.
-    const snapshot = await refresh(env);
+    const snapshot = await refreshOnDemand(env);
+    if (snapshot === null) {
+      // Một vòng khác vừa chạy trong 10 giây qua. Trả trạng thái chờ thay vì
+      // gọi nguồn lần nữa; trang sẽ tự thăm dò lại sau vài giây.
+      return jsonResponse({ schema_version: 2, status: "waiting" },
+        { cacheControl: "public, max-age=3" });
+    }
     return jsonResponse(snapshot, {
       cacheControl: `public, max-age=${cacheSeconds(snapshot.status)}`,
     });

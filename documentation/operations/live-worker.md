@@ -146,7 +146,9 @@ Bốn phép kiểm đối chiếu chạy trong CI, mỗi phép khoá một tần
 | `test_worker_snapshot_parity.py` | **Toàn bộ payload live.json**, 120 ca |
 | `test_worker_sources_parity.py` | Danh mục nguồn, thứ tự ưu tiên, địa chỉ |
 
-Cả bốn đều đã kiểm ngược: đột biến trên bản JS làm chúng đỏ (10 + 10 + 10 đột
+| `test_worker_handler.py` | Hành vi vận hành: chặn khuếch đại, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
+
+Bốn phép đầu đều đã kiểm ngược: đột biến trên bản JS làm chúng đỏ (10 + 10 + 10 đột
 biến, tất cả bị bắt). Hai phép kiểm này đã bắt được lỗi thật ngay trong lúc
 viết: bảng nhóm nguồn độc lập thiếu bốn mục, và `mketqua.net` quên nối ngày
 vào địa chỉ.
@@ -156,6 +158,24 @@ Ngoại lệ đã biết: trong `consensus.js`, thứ tự hai phần tử đầ
 nguồn hiện tại — đo trên 9 630 ô sinh ngẫu nhiên, 0 ô mà chúng phân định. Phép
 đối chiếu không phân biệt được chúng; chốt chặn ở đó là chú thích trong mã,
 không phải phép kiểm. Ghi rõ để không ai tưởng là đã được khoá.
+
+### Chặn khuếch đại yêu cầu
+
+Nhánh "KV rỗng thì thu thập ngay" là đúng cho lần gọi đầu sau khi triển khai.
+Nhưng nếu KV ghi hỏng, nó biến thành: mỗi người xem, 5 giây một lần, dội sáu
+lượt vào trang nguồn — đúng lúc các trang ấy tải nặng nhất trong ngày. Mười
+người xem là hơn 700 lượt mỗi phút.
+
+Có **hai** lớp khoá, và cần cả hai:
+
+| Lớp | Phạm vi | Mất tác dụng khi |
+|---|---|---|
+| Khoá trong KV | Toàn cầu | Chính KV đang hỏng |
+| Mốc trong bộ nhớ | Một isolate | Isolate bị tái tạo |
+
+Bản đầu chỉ có lớp KV. Đo được: với KV ghi hỏng, 12 lượt truy cập sinh **72**
+lượt gọi ra nguồn — tức chốt chặn bốc hơi đúng lúc cần nhất. Sau khi thêm lớp
+thứ hai: 12 lượt truy cập, **6** lượt gọi, đúng một vòng thu thập.
 
 ## 6. Điều CHƯA kiểm chứng được
 

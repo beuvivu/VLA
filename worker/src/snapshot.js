@@ -7,9 +7,13 @@
 // `collectSnapshot` là phần có tác dụng phụ: gọi sáu nguồn rồi giao cho phần
 // thuần. Phần ấy không đối chiếu được vì phụ thuộc mạng thật.
 
-import { EXPECTED_COUNTS, PRIZE_ORDER, emptyPrizeMap } from "./prize_map.js";
+import {
+  EXPECTED_COUNTS,
+  PRIZE_ORDER,
+  emptyPrizeMap,
+  extractPartialPrizeMap,
+} from "./prize_map.js";
 import { sourceConsensusPartial, sourceIndependenceKey } from "./consensus.js";
-import { extractPartialPrizeMap } from "./prize_map.js";
 import { SOURCES } from "./sources.js";
 
 export const VIETNAM_OFFSET_MINUTES = 7 * 60;
