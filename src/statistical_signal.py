@@ -27,6 +27,7 @@ from scipy.stats import beta as beta_dist
 
 from calendar_alignment import require_daily_contiguous
 from ensemble_utils import normalize_distribution
+from hierarchical_pooling import PoolingFit, fit_pooling
 from lottery import Lottery
 from number_dynamics import build_dynamics_signal, export_dynamics
 
@@ -57,35 +58,61 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
     )
 
 
+def _eb_posterior(
+    counts: np.ndarray, trials: float, prior_strength: float | None
+) -> np.ndarray:
+    """Hậu nghiệm Beta-Binomial, HỌC độ co ngót riêng cho từng phép đo.
+
+    Mỗi hậu nghiệm trả lời một câu hỏi gộp KHÁC NHAU, nên phải có κ riêng:
+
+    * ``ewm`` hỏi "các con có khác nhau về tần suất chung không?"
+    * ``weekday`` hỏi "các con có khác nhau về tần suất RIÊNG thứ ấy không?"
+    * mỗi cửa sổ hỏi câu tương tự trên đúng cửa sổ của nó.
+
+    Dùng chung một κ học từ tần suất chung là sai, và cái sai ấy có hướng rõ
+    ràng: tần suất chung đồng nhất kéo κ lên rất lớn, rồi κ ấy nghiền nát một
+    nhịp theo thứ có thật. Phép kiểm nhịp thứ Hai bắt được đúng điều này.
+    """
+    if trials <= 0.0:
+        return np.full(counts.shape, 1.0 / max(counts.size, 1), dtype=float)
+    if prior_strength is None:
+        fit = fit_pooling(counts, float(trials))
+        kappa, mean = fit.prior_strength, fit.pooled_rate
+    else:
+        kappa = float(prior_strength)
+        mean = float(counts.sum() / (trials * counts.size))
+    a0 = max(1e-6, mean * kappa)
+    b0 = max(1e-6, (1.0 - mean) * kappa)
+    return (a0 + counts) / (a0 + b0 + trials)
+
+
 def _loto_signal(
     hit: np.ndarray,
     dates: pd.Series,
     target_weekday: int,
     *,
     half_life: int,
-    prior_strength: float,
+    prior_strength: float | None,
 ) -> pd.DataFrame:
     n = hit.shape[0]
     baseline = float(hit.mean())
-    a0 = max(1e-6, baseline * prior_strength)
-    b0 = max(1e-6, (1 - baseline) * prior_strength)
 
     w = _exp_weights(n, half_life)
     weighted_hits = (hit * w[:, None]).sum(axis=0)
     weighted_trials = float(w.sum())
-    ewm = (a0 + weighted_hits) / (a0 + b0 + weighted_trials)
+    ewm = _eb_posterior(weighted_hits, weighted_trials, prior_strength)
 
     weekday_mask = dates.dt.weekday.to_numpy() == int(target_weekday)
     weekday_hit = hit[weekday_mask]
     wk_hits = weekday_hit.sum(axis=0) if len(weekday_hit) else np.zeros(100)
     wk_n = int(len(weekday_hit))
-    weekday = (a0 + wk_hits) / (a0 + b0 + wk_n)
+    weekday = _eb_posterior(wk_hits, float(wk_n), prior_strength)
 
     window_probs: dict[int, np.ndarray] = {}
     for window in (30, 90, 365):
         h = hit[-min(window, n) :]
-        window_probs[window] = (a0 + h.sum(axis=0)) / (
-            a0 + b0 + len(h)
+        window_probs[window] = _eb_posterior(
+            h.sum(axis=0), float(len(h)), prior_strength
         )
 
     stack = np.vstack([_logit(window_probs[w]) for w in (30, 90, 365)])
@@ -98,6 +125,16 @@ def _loto_signal(
 
     ess = _effective_n(w)
     weighted_rate = weighted_hits / max(weighted_trials, 1e-12)
+    # Khoảng khả tín phải dùng ĐÚNG tiên nghiệm của phép đo `ewm`, không phải
+    # một tiên nghiệm khác — nếu không, khoảng và ước lượng điểm nói hai
+    # chuyện khác nhau về cùng một con số.
+    ewm_kappa = (
+        fit_pooling(weighted_hits, weighted_trials).prior_strength
+        if prior_strength is None
+        else float(prior_strength)
+    )
+    a0 = max(1e-6, baseline * ewm_kappa)
+    b0 = max(1e-6, (1 - baseline) * ewm_kappa)
     alpha = a0 + weighted_rate * ess
     beta = b0 + (1 - weighted_rate) * ess
     ci_low = beta_dist.ppf(0.025, alpha, beta)
@@ -123,10 +160,26 @@ def _loto_signal(
 
 
 def _de_posterior(
-    onehot: np.ndarray, weights: np.ndarray, prior_strength: float
+    onehot: np.ndarray, weights: np.ndarray, prior_strength: float | None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    prior = np.full(100, prior_strength / 100.0, dtype=float)
+    """Hậu nghiệm Dirichlet-Multinomial cho đề, độ tập trung HỌC được nếu None.
+
+    Đề là bài toán một-trong-một-trăm nên tiên nghiệm là Dirichlet đối xứng với
+    tổng độ tập trung ``κ``. Câu hỏi gộp vẫn y hệt chế độ lô tô — "các con có
+    khác nhau thật hay chỉ dao động?" — nên dùng cùng bộ ước lượng, chỉ khác ở
+    chỗ chia đều κ cho 100 loại.
+    """
     counts = (onehot * weights[:, None]).sum(axis=0)
+    total_weight = float(weights.sum())
+    if prior_strength is None:
+        kappa = (
+            fit_pooling(counts, total_weight).prior_strength
+            if total_weight > 0.0 and counts.size >= 3
+            else 100.0
+        )
+    else:
+        kappa = float(prior_strength)
+    prior = np.full(100, kappa / 100.0, dtype=float)
     alpha = prior + counts
     total = float(alpha.sum())
     p = alpha / total
@@ -141,7 +194,7 @@ def _de_signal(
     target_weekday: int,
     *,
     half_life: int,
-    prior_strength: float,
+    prior_strength: float | None,
 ) -> pd.DataFrame:
     n = onehot.shape[0]
     uniform = np.full(100, 0.01, dtype=float)
@@ -260,11 +313,33 @@ def _blend_dynamics(
     return merged, dyn_diag
 
 
+#: ``None`` nghĩa là HỌC độ co ngót từ dữ liệu thay vì đặt tay.
+#:
+#: Giá trị cũ là 80, và nó được chọn bằng cảm tính. Đo walk-forward trên 938 kỳ
+#: của chính kho này: κ học được có trung vị 1 000 000 (chạm trần) và nhỏ nhất
+#: 23 626 — tức dữ liệu đòi co ngót mạnh hơn 80 từ ba trăm tới hơn mười nghìn
+#: lần. Brier: gộp hoàn toàn 0,18138190; học κ 0,18138272; đặt tay 80
+#: 0,18149968; không gộp 0,18150858.
+#:
+#: Vẫn nhận một số cụ thể để ép, phục vụ tái lập kết quả cũ.
+LEARN_PRIOR_STRENGTH: float | None = None
+
+
+def _resolve_prior_strength(
+    observations: np.ndarray, prior_strength: float | None
+) -> tuple[float, PoolingFit | None]:
+    """Trả về độ co ngót sẽ dùng, kèm bằng chứng nếu nó được HỌC."""
+    if prior_strength is not None:
+        return float(prior_strength), None
+    fit = fit_pooling(observations.sum(axis=0), float(observations.shape[0]))
+    return fit.prior_strength, fit
+
+
 def build_statistical_signal(
     mode: str,
     *,
     half_life: int = 45,
-    prior_strength: float = 80.0,
+    prior_strength: float | None = LEARN_PRIOR_STRENGTH,
 ) -> tuple[pd.DataFrame, dict]:
     lot = Lottery()
     lot.load()
@@ -292,6 +367,7 @@ def build_statistical_signal(
         hit = np.zeros((len(de), 100), dtype=np.int8)
         hit[np.arange(len(de)), de] = 1
         dates = two["date"]
+        _strength, pooling = _resolve_prior_strength(hit, prior_strength)
         df = _de_signal(
             hit,
             dates,
@@ -304,6 +380,9 @@ def build_statistical_signal(
             sparse.drop(columns=["date"]).to_numpy(dtype=int) > 0
         ).astype(np.int8)
         dates = sparse["date"]
+        # `_resolve_prior_strength` ở đây chỉ để BÁO CÁO độ co ngót tổng thể;
+        # từng phép đo bên trong tự học κ của riêng nó.
+        _strength, pooling = _resolve_prior_strength(hit, prior_strength)
         df = _loto_signal(
             hit,
             dates,
@@ -330,7 +409,22 @@ def build_statistical_signal(
         "target_date": target.isoformat(),
         "history_days": int(len(two)),
         "half_life_days": half_life,
-        "prior_strength": prior_strength,
+        "prior_strength": _strength,
+        "prior_strength_learned": pooling is not None,
+        # Số tham số HIỆU DỤNG là con số nối thẳng tới công suất thống kê: báo
+        # cáo ngẫu nhiên đo được ngưỡng phát hiện +15,8 % tương đối với 100 giả
+        # thuyết, nhưng chỉ +10,3 % với một. Co ngót kéo 100 xuống gần 1, tức
+        # hạ ngưỡng ấy khoảng một phần ba — đó mới là phần thắng thật, không
+        # phải vài phần trăm nghìn Brier.
+        "pooling": None if pooling is None else {
+            "pooled_rate": pooling.pooled_rate,
+            "shrinkage": pooling.shrinkage,
+            "effective_parameters": pooling.effective_parameters,
+            "fully_pooled": pooling.fully_pooled,
+            "between_variance": pooling.between_variance,
+            "within_variance": pooling.within_variance,
+            "verdict": pooling.describe(),
+        },
         "mean_stability": float(df["stability"].mean()),
         "min_stability": float(df["stability"].min()),
         "max_stability": float(df["stability"].max()),
@@ -353,7 +447,9 @@ def main() -> None:
     )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     ap.add_argument("--half-life", type=int, default=45)
-    ap.add_argument("--prior-strength", type=float, default=80.0)
+    # Mặc định là HỌC (không truyền cờ). Truyền một số để ép, phục vụ tái lập
+    # kết quả của các bản chạy cũ.
+    ap.add_argument("--prior-strength", type=float, default=None)
     ap.add_argument("--out-dir", default="data/statistical_signal")
     ap.add_argument("--dynamics-out-dir", default="data/number_dynamics")
     args = ap.parse_args()

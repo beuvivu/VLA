@@ -252,14 +252,54 @@ thay vì 0,5 khi một lớp vắng mặt — 0,5 đọc thành "đoán mò", c�
 Phép kiểm đi kèm chứng minh bằng số vì sao nó chỉ là chỉ số phụ: hai bộ xác
 suất có **cùng AUC tuyệt đối** mà Brier chênh nhau hơn hai lần.
 
-### Tầng 2 — có thể có giá trị, cần thận trọng
+### Tầng 2 — gộp thông tin: ĐÃ TRIỂN KHAI
 
-5. **Gộp thông tin (partial pooling / hierarchical).** Đây là hướng DUY NHẤT
-   thực sự nâng công suất thống kê: thay vì 100 mô hình độc lập cho 100 con,
-   dùng một mô hình phân cấp có hiệu ứng ngẫu nhiên theo con số, co về trung
-   bình chung. Nó giảm số tham số hiệu dụng, tức giảm số giả thuyết hiệu dụng.
-6. **Embedding cặp vị trí–giá trị**, nhưng học có ràng buộc chiều thấp (8–16)
-   và phải qua cùng cổng ý nghĩa như mọi đặc trưng khác.
+**5. Học độ co ngót thay vì đặt tay** — `src/hierarchical_pooling.py`
+
+`statistical_signal.py` vốn ĐÃ là Beta-Binomial phân cấp: nó dựng tiên nghiệm
+Beta quanh tần suất nền với `prior_strength = 80`. Vấn đề duy nhất là con số 80
+được chọn bằng cảm tính. Nay nó được ước lượng từ chính dữ liệu bằng Bayes thực
+nghiệm (phương pháp mô men trên phương sai giữa/trong đơn vị).
+
+Đo walk-forward trên 938 kỳ của chính kho này, chế độ **lô tô**:
+
+| Cách | Brier |
+|---|---|
+| gộp hoàn toàn (1 tham số) | **0,18138190** |
+| gộp một phần (học κ) | 0,18138272 |
+| `prior_strength = 80` (đặt tay) | 0,18149968 |
+| không gộp (MLE riêng) | 0,18150858 |
+
+Chế độ **đề** cho cùng thứ tự: 0,0099000000 / 0,0099000179 / 0,0099048218 /
+0,0099052394.
+
+κ học được có trung vị **1 000 000** (chạm trần) và nhỏ nhất 23 626 — tức dữ
+liệu đòi co ngót mạnh hơn 80 từ ba trăm tới hơn mười nghìn lần. Con số 80 đặt
+tay chỉ nhỉnh hơn việc **không gộp gì cả**.
+
+Trên toàn bộ lịch sử, cả hai chế độ đều kết luận **co ngót hoàn toàn**: phương
+sai giữa 100 con số không vượt nổi dao động nhị thức nội bộ. Số tham số hiệu
+dụng **1,20 trên 100**.
+
+Đó mới là phần thắng thật, và nó nối thẳng vào bảng công suất ở mục 1.2: ngưỡng
+phát hiện với 100 giả thuyết là +15,8 % tương đối, với một giả thuyết là
++10,3 %. Kéo 100 tham số xuống ~1 là hạ ngưỡng ấy khoảng một phần ba — lớn hơn
+nhiều lần so với vài phần trăm nghìn Brier.
+
+**Mỗi phép đo học κ RIÊNG.** Bản đầu dùng một κ chung học từ tần suất tổng thể,
+và cái sai ấy có hướng rõ ràng: tần suất chung đồng nhất kéo κ lên rất lớn, rồi
+κ ấy nghiền nát một nhịp theo thứ **có thật**. Đo trên tín hiệu thứ Hai cài
+sẵn: biên tách tụt từ 1,87 lần xuống 1,08 lần. Sau khi tách κ theo từng phép
+đo, biên tách lên **2,24 lần** — tức mô hình nay **nhạy hơn** ở chỗ có tín hiệu
+đồng thời **dè dặt hơn** ở chỗ không có. Đó chính là điều gộp phân cấp phải làm.
+
+**6. Embedding cặp vị trí–giá trị** — chưa triển khai.
+
+Khác với hạng mục 5, embedding **thêm** tham số chứ không bớt, nên nó đi ngược
+lập luận công suất trừ khi số chiều bị ràng buộc rất chặt (8–16) và phải qua
+cùng cổng ý nghĩa như mọi đặc trưng khác. Với số đo hiện tại — co ngót hoàn
+toàn, tham số hiệu dụng 1,20 — dữ liệu đang nói rằng không có cấu trúc theo
+từng con số để mà nhúng.
 
 ### Tầng 3 — kỳ vọng giá trị âm với dữ liệu hiện tại
 
