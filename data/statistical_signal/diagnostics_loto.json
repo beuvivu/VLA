@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-09-13T14:04:28Z",
+  "generated_at_utc": "2026-09-13T14:14:23Z",
   "anchor_date": "2026-09-13",
   "target_date": "2026-09-14",
   "history_days": 2398,
@@ -12,7 +12,7 @@
   "max_stability": 0.9958182950567855,
   "dynamics_weight_in_stat_signal": 0.3,
   "global_dynamics_reliability": 0.7611183502590801,
-  "regime_js_divergence_30_vs_180": 0.010280287199501175,
+  "regime_js_divergence_30_vs_180": 0.010280287199501177,
   "transition_active_mean_trials": 567.2857142857143,
   "calendar_contiguous": true,
   "interpretation": "Empirical-Bayes + higher-order dynamics component. Markov, transition, hazard, lag and regime evidence is shrinkage-regularized, calendar-validated, and used only as probabilistic ranking support."
