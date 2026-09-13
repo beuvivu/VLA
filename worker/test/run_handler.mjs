@@ -132,6 +132,53 @@ const SCENARIOS = {
     };
   },
 
+  // Sau khi kỳ đã xác minh xong, cron không được gọi nguồn nữa.
+  async settled_stops_collecting() {
+    const counter = { calls: 0 };
+    // Trả trọn một kỳ để đạt complete_verified ngay vòng đầu.
+    const full = "<div>ĐB 83772</div><div>G1 68785</div>"
+      + "<div>G2 50518 27452</div>"
+      + "<div>G3 57053 92810 56241 65128 33811 42264</div>"
+      + "<div>G4 4753 1152 6777 3507</div>"
+      + "<div>G5 9460 2913 3232 2999 3670 5129</div>"
+      + "<div>G6 939 751 594</div><div>G7 66 21 34 78</div>";
+    globalThis.fetch = async () => {
+      counter.calls += 1;
+      return new Response(full, { status: 200 });
+    };
+    const kv = new FakeKV();
+    const env = { LIVE: kv, MIN_AGREEMENT: "2" };
+
+    const ctx = newCtx();
+    await worker.scheduled({}, env, ctx);
+    await Promise.all(ctx.pending);
+    const afterFirst = counter.calls;
+    const status = JSON.parse(await kv.get("live.json")).status;
+
+    // Thêm năm lượt cron nữa, như trong khung quay số thật.
+    for (let i = 0; i < 5; i += 1) {
+      const c = newCtx();
+      await worker.scheduled({}, env, c);
+      await Promise.all(c.pending);
+    }
+    const afterFive = counter.calls;
+
+    // Ảnh chụp của NGÀY KHÁC không được chặn thu thập hôm nay.
+    const stale = JSON.parse(await kv.get("live.json"));
+    stale.draw_date = "2000-01-01";
+    await kv.put("live.json", JSON.stringify(stale));
+    const c = newCtx();
+    await worker.scheduled({}, env, c);
+    await Promise.all(c.pending);
+
+    return {
+      status,
+      outbound_after_first_cron: afterFirst,
+      outbound_after_six_crons: afterFive,
+      outbound_after_stale_date: counter.calls,
+    };
+  },
+
   async routing() {
     globalThis.fetch = makeFetch({ calls: 0 });
     const env = { LIVE: new FakeKV() };

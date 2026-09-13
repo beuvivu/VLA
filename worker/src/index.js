@@ -15,7 +15,7 @@
 // Nó vẫn ghi lịch sử vào kho, nhưng trễ bao nhiêu cũng không ảnh hưởng trang
 // live nữa.
 
-import { collectSnapshot } from "./snapshot.js";
+import { collectSnapshot, drawDate } from "./snapshot.js";
 
 const KV_KEY = "live.json";
 const LOCK_KEY = "collect-lock";
@@ -78,8 +78,31 @@ function requireKv(env) {
   return env.LIVE;
 }
 
-async function refresh(env) {
+/**
+ * Kỳ hôm nay đã xác minh xong thì không còn gì để thu thập nữa.
+ *
+ * Cron chạy mỗi phút suốt khung quay số. Không có chốt này thì sau khi đủ 27 ô
+ * và đã xác minh, nó vẫn gọi sáu nguồn thêm vài chục lần nữa mà không thêm
+ * được thông tin gì — chỉ tốn hạn mức và dội vào đúng những trang đang tải
+ * nặng nhất trong ngày.
+ *
+ * So theo NGÀY QUAY chứ không chỉ theo trạng thái: ảnh chụp đã xác minh của
+ * hôm qua không được phép chặn việc thu thập hôm nay.
+ */
+function alreadySettled(stored, nowUtcMs) {
+  if (!stored) return false;
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed.status === "complete_verified"
+      && parsed.draw_date === drawDate(nowUtcMs);
+  } catch {
+    return false;
+  }
+}
+
+async function refresh(env, { force = false } = {}) {
   const kv = requireKv(env);
+  if (!force && alreadySettled(await kv.get(KV_KEY), Date.now())) return null;
   const snapshot = await collectSnapshot({
     minAgreement: Number(env.MIN_AGREEMENT ?? 2),
   });
@@ -101,7 +124,10 @@ async function refreshOnDemand(env) {
   lastOnDemandAttemptMs = now;
   if (await kv.get(LOCK_KEY)) return null;
   await kv.put(LOCK_KEY, "1", { expirationTtl: ONDEMAND_LOCK_SECONDS });
-  return await refresh(env);
+  // Ép chạy: tới nhánh này thì KV chắc chắn chưa có ảnh chụp, nên chốt
+  // "đã xong" bên trong `refresh` không có gì để so và sẽ luôn cho qua —
+  // nhưng nói rõ ý định vẫn hơn để nó phụ thuộc vào điều đó.
+  return await refresh(env, { force: true });
 }
 
 export default {

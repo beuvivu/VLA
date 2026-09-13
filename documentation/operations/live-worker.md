@@ -150,7 +150,7 @@ Bốn phép kiểm đối chiếu chạy trong CI, mỗi phép khoá một tần
 | `test_worker_snapshot_parity.py` | **Toàn bộ payload live.json**, 120 ca |
 | `test_worker_sources_parity.py` | Danh mục nguồn, thứ tự ưu tiên, địa chỉ |
 
-| `test_worker_handler.py` | Hành vi vận hành: chặn khuếch đại, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
+| `test_worker_handler.py` | Hành vi vận hành: chặn khuếch đại, dừng khi đã xong, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
 
 Bốn phép đầu đều đã kiểm ngược: đột biến trên bản JS làm chúng đỏ (10 + 10 + 10 đột
 biến, tất cả bị bắt). Hai phép kiểm này đã bắt được lỗi thật ngay trong lúc
@@ -181,6 +181,16 @@ Bản đầu chỉ có lớp KV. Đo được: với KV ghi hỏng, 12 lượt t
 lượt gọi ra nguồn — tức chốt chặn bốc hơi đúng lúc cần nhất. Sau khi thêm lớp
 thứ hai: 12 lượt truy cập, **6** lượt gọi, đúng một vòng thu thập.
 
+### Dừng khi kỳ đã xong
+
+Cron chạy mỗi phút suốt khung quay số. Sau khi đủ 27 ô và đã xác minh, không
+còn gì để thu thập, nên Worker dừng gọi nguồn cho tới ngày hôm sau — đo được:
+vòng cron đầu tiên 6 lượt gọi, năm vòng tiếp theo 0 lượt.
+
+Chốt so theo **ngày quay**, không chỉ theo trạng thái. So theo trạng thái thôi
+thì ảnh chụp đã xác minh của hôm qua sẽ chặn luôn việc thu thập hôm nay, và hệ
+thống đứng im vĩnh viễn sau đúng một ngày thành công.
+
 ## 6. Điều CHƯA kiểm chứng được
 
 **Bộ phân tích chưa từng chạy trên HTML thật trong môi trường dựng.** Proxy
@@ -198,7 +208,7 @@ trang quay về đúng hành vi hôm nay, không mất gì.
 
 ## 7. Hạn mức và chi phí
 
-Gói Workers Free: 100 000 lượt gọi/ngày. Cron gọi ~85 lượt/ngày. KV free:
+Gói Workers Free: 100 000 lượt gọi/ngày. Cron gọi tối đa ~64 lượt/ngày, và thường ít hơn nhiều vì dừng ngay khi kỳ đã xác minh xong. KV free:
 1 000 lượt ghi/ngày (ta dùng ~85) và 100 000 lượt đọc/ngày.
 
 Lượt đọc là chỗ duy nhất có thể chạm trần: mỗi người xem thăm dò 5 giây/lần

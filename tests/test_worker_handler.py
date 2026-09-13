@@ -112,6 +112,28 @@ def test_a_missing_kv_binding_says_exactly_what_to_do() -> None:
     assert "live-worker.md" in message
 
 
+def test_a_settled_draw_stops_the_cron_from_calling_sources_again() -> None:
+    """Cron chạy mỗi phút suốt khung quay số; đã xong thì không gọi nữa.
+
+    Không có chốt này thì sau khi đủ 27 ô và đã xác minh, cron vẫn gọi sáu
+    nguồn thêm vài chục lần nữa mà không thêm được thông tin gì — chỉ tốn hạn
+    mức và dội vào đúng những trang đang tải nặng nhất trong ngày.
+
+    Chốt so theo NGÀY QUAY chứ không chỉ theo trạng thái, nếu không ảnh chụp
+    đã xác minh của hôm qua sẽ chặn luôn việc thu thập hôm nay — hệ thống đứng
+    im vĩnh viễn sau đúng một ngày thành công.
+    """
+    out = _scenario("settled_stops_collecting")
+    assert out["status"] == "complete_verified"
+    assert out["outbound_after_first_cron"] == SOURCES_PER_COLLECTION
+    assert out["outbound_after_six_crons"] == SOURCES_PER_COLLECTION, (
+        "năm lượt cron sau khi đã xác minh không được gọi nguồn lần nào nữa"
+    )
+    assert out["outbound_after_stale_date"] == SOURCES_PER_COLLECTION * 2, (
+        "ảnh chụp của NGÀY KHÁC phải cho thu thập lại, không được chặn"
+    )
+
+
 def test_routing_and_methods() -> None:
     out = _scenario("routing")
     assert out["unknown_path"] == 404
