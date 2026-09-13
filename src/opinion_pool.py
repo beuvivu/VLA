@@ -56,6 +56,21 @@ _EPS: Final[float] = 1e-6
 #: Dưới ngưỡng này, cắt thêm lát giữ riêng sẽ làm hỏng chính phép khớp.
 MIN_SELECTION_DAYS: Final[int] = 60
 DEFAULT_HOLDOUT: Final[float] = 0.30
+#: Số sai số chuẩn mà một ứng viên phải VƯỢT QUA để soán ngôi bản đương nhiệm.
+#:
+#: 1 SE (~68 % tin cậy) là quá lỏng cho một thay đổi kiến trúc. Đo thật trên
+#: dữ liệu của kho, 90 kỳ giữ riêng, thống kê t cặp đôi so với trộn số học:
+#:
+#:     s=0    t = -1,13      s=0,7  t = -1,24      s=1,5  t = +1,32
+#:     s=0,3  t = -1,17      s=1    t = -1,37      s=2    t = +1,40
+#:     s=0,5  t = -1,20
+#:
+#: Không ứng viên nào đạt |t| >= 2. Ở ngưỡng 1 SE, bộ chọn đã chọn ``s = 0`` —
+#: tức VỨT SẠCH tín hiệu và trả về đúng tần suất nền — trên một chênh lệch
+#: Brier 7e-6. Một thay đổi kiến trúc phải TỰ CHỨNG MINH, không được thắng nhờ
+#: nhiễu.
+SIGNIFICANCE_SIGMAS = 2.0
+
 #: Dải tìm độ sắc. Trên 3 là tự tin tới mức mọi thành phần phải độc lập hoàn
 #: toàn mới biện minh được, và dữ liệu ở đây chưa bao giờ nói vậy.
 SHARPNESS_GRID: Final[tuple[float, ...]] = (
@@ -198,17 +213,36 @@ def fit_pool(
             kind="log", weights=w, baseline=baseline, sharpness=sharpness
         )
 
-    scores = {
-        name: _brier(
-            labels[split:],
-            np.vstack([apply_pool(mode, day, params) for day in cube[split:]]),
+    # Giữ sai số TỪNG KỲ, không chỉ trung bình: phép so cặp đôi bên dưới cần
+    # chúng, và không có nó thì bộ chọn quyết định theo chữ số thập phân cuối.
+    per_day: dict[str, np.ndarray] = {}
+    for name, params in candidates.items():
+        pooled = np.vstack([apply_pool(mode, day, params) for day in cube[split:]])
+        per_day[name] = np.mean((pooled - labels[split:]) ** 2, axis=1)
+    scores = {name: float(errors.mean()) for name, errors in per_day.items()}
+
+    # So CẶP ĐÔI có sai số chuẩn — cùng lý do và cùng cách làm với bộ chọn chu
+    # kỳ bán rã. Đây không phải chi tiết trang trí: đo thật trên dữ liệu của
+    # kho, bộ chọn không có phép so này đã chọn ``log s=0`` — tức VỨT SẠCH tín
+    # hiệu và trả về đúng tần suất nền — dựa trên chênh lệch Brier 1e-6.
+    #
+    # Chênh lệch không đo được thì giữ hành vi hiện tại. Đó là lựa chọn có chủ
+    # ý: một thay đổi kiến trúc phải TỰ CHỨNG MINH, không được thắng nhờ nhiễu.
+    names = list(candidates)
+    best_name = min(names, key=lambda n: (scores[n], names.index(n)))
+    best_errors = per_day[best_name]
+    n_days = max(best_errors.size, 1)
+
+    tied = []
+    for name in names:
+        delta = per_day[name] - best_errors
+        standard_error = (
+            float(np.std(delta, ddof=1) / np.sqrt(n_days)) if n_days > 1 else 0.0
         )
-        for name, params in candidates.items()
-    }
-    # Hoà điểm thì trộn số học thắng: nó là hành vi hiện tại, và không đổi khi
-    # không đo được lợi ích là lựa chọn có chủ ý.
-    best = min(candidates, key=lambda name: (scores[name], list(candidates).index(name)))
-    chosen = candidates[best]
+        if float(delta.mean()) <= SIGNIFICANCE_SIGMAS * standard_error + 1e-12:
+            tied.append(name)
+    # Thứ tự chèn đặt "linear" đầu tiên, nên khi hoà nó thắng.
+    chosen = candidates[tied[0]]
     return chosen, PoolAudit(
         chosen=chosen.kind,
         sharpness=chosen.sharpness,

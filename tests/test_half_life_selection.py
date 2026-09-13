@@ -36,16 +36,36 @@ def _stationary(days: int, rate: float = 0.2377, seed: int = 0) -> np.ndarray:
     return (rng.random((days, 100)) < rate).astype(float)
 
 
-def test_a_stationary_history_is_given_the_longest_useful_window() -> None:
-    """Không có trôi thì dữ liệu càng nhiều càng tốt.
+def test_stationary_heterogeneity_earns_a_longer_window() -> None:
+    """Có khác biệt thật và không trôi thì dữ liệu càng nhiều càng tốt.
 
     Chu kỳ ngắn vứt bỏ phần lớn lịch sử; ở mức 45 kỳ trên 2 398 kỳ, cỡ mẫu
-    hiệu dụng chỉ còn 130. Khi không có gì thay đổi theo thời gian, vứt như
-    vậy là mất trắng.
+    hiệu dụng chỉ còn 130 — và ở mức ấy thành phần `ewm` thu hồi ĐÚNG 0 % của
+    một tín hiệu gấp đôi tần suất nền.
+
+    Phải có khác biệt THẬT giữa các con số thì phép so mới có gì để đo. Bản
+    đầu tôi viết ca này với dữ liệu đồng nhất hoàn toàn, và ở ngưỡng 2 SE nó
+    đúng là không chọn gì — vì quả thật không chu kỳ nào hơn được chu kỳ nào
+    khi mọi con số giống hệt nhau.
+    """
+    rng = np.random.default_rng(7)
+    rates = np.clip(rng.normal(0.2377, 0.06, size=100), 0.05, 0.6)
+    hit = (rng.random((900, 100)) < rates[None, :]).astype(float)
+
+    chosen, scores = select_half_life(hit)
+    assert scores is not None
+    assert chosen > HALF_LIFE_GRID[0], f"chọn {chosen}; lẽ ra phải dài hơn 45"
+
+
+def test_homogeneous_noise_keeps_the_incumbent_window() -> None:
+    """Không có gì để đo thì KHÔNG đổi — ngưỡng 2 SE phải chặn ở đây.
+
+    Đây là nửa còn lại của cổng: mọi con số cùng tỉ lệ nên mọi chu kỳ đều
+    tương đương, và một thay đổi kiến trúc không được thắng nhờ nhiễu.
     """
     chosen, scores = select_half_life(_stationary(900))
     assert scores is not None
-    assert chosen > HALF_LIFE_GRID[0], f"chọn {chosen}; lẽ ra phải dài hơn 45"
+    assert chosen == HALF_LIFE_GRID[0], f"chọn {chosen}; không gì hơn được 45"
 
 
 def test_a_drifting_history_is_given_a_short_window() -> None:

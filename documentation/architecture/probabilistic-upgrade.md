@@ -316,6 +316,98 @@ Nếu vẫn muốn thử tầng 3, điều kiện tối thiểu để kết qu�
 trước** (pre-registration) giả thuyết và tiêu chí thành công trước khi nhìn dữ
 liệu kiểm, cộng cổng tái lặp ở mục 1.
 
+## 4b. Nâng cấp kiến trúc liên kết — kết quả đo
+
+### Khảo sát: bốn tầng trộn lồng nhau, 32 hằng số, 5 được học
+
+```
+Tầng 1  number_dynamics    0,20·base + 0,20·markov2 + 0,17·hazard
+                         + 0,20·trans + 0,13·lag + 0,10·regime
+Tầng 2  statistical_signal 0,55·ewm + 0,25·weekday + 0,20·p90
+                           rồi trộn dynamics ở 0,30 (lô tô) / 0,20 (đề)
+Tầng 3  _blend_linear      w_ml + w_cau + w_stat + w_active + w_stable
+Tầng 4  blend_predictions  p_linear vs p_meta theo meta_trust
+```
+
+Chỉ 5 trọng số tầng 3 từng được học. `stat ↔ dynamics = 0,681` không phải trùng
+hợp — dynamics nằm SẴN trong stat ở trọng số cứng 0,30, nên trọng số hiệu dụng
+của nó là 0,06 và bộ học không nhìn thấy. `cau_keo ↔ stat = −0,026`: gần trực
+giao, và là chỗ duy nhất việc hợp tín hiệu còn dư địa thật.
+
+### Giới hạn cấu trúc của trộn số học
+
+`Σ wᵢpᵢ` luôn nằm trong `[min pᵢ, max pᵢ]`. Đo trên đầu ra thật: thành phần sắc
+nhất có dải **73,0 %** của tần suất nền, đầu ra chỉ còn **23,0 %**.
+
+Với tín hiệu **tiêm** +25 % vào một con, 180 kỳ giữ riêng:
+
+| Phép hợp | Thu hồi tín hiệu |
+|---|---|
+| log-odds s=3 | 20,3 % |
+| log-odds s=2 | 13,4 % |
+| **trộn số học (đang dùng)** | **6,8 %** |
+| log-odds s=0,7 | 4,7 % |
+
+Kiến trúc hiện tại vứt bỏ **93 %** của một tín hiệu có thật.
+
+### Nhưng trên dữ liệu THẬT, không gì đủ bằng chứng để đổi
+
+Thống kê t cặp đôi so với trộn số học, 90 kỳ giữ riêng:
+
+| | t | | t |
+|---|---|---|---|
+| s=0 | −1,13 | s=1 | −1,37 |
+| s=0,3 | −1,17 | s=1,5 | +1,32 |
+| s=0,5 | −1,20 | s=2 | +1,40 |
+| s=0,7 | −1,24 | | |
+
+**Không ứng viên nào đạt \|t\| ≥ 2.** Lý do: Brier trung bình trên cả 100 con,
+nên cải thiện một con gần như không lay chuyển nó. Thu hồi tín hiệu và Brier đo
+hai thứ khác nhau, và Brier mới là proper scoring rule.
+
+Vì thế `SIGNIFICANCE_SIGMAS = 2.0`: **bản đương nhiệm chỉ bị soán ngôi khi ứng
+viên vượt 2 sai số chuẩn.** Ở ngưỡng 1 SE, bộ chọn đã chọn `s = 0` — tức vứt
+sạch tín hiệu và trả về đúng tần suất nền — trên một chênh lệch Brier 7e-6.
+
+Kết quả: **trên dữ liệu thật, phép hợp giữ nguyên trộn số học.** Bộ chọn vẫn
+chạy mỗi lần và sẽ tự đổi nếu bằng chứng đủ mạnh — đo được: với thành phần là
+quan sát độc lập về cùng một tỉ lệ thật, nó chuyển sang log-odds với độ sắc > 1.
+
+### Chu kỳ bán rã: hằng số duy nhất đổi được bằng bằng chứng
+
+Chẩn đoán từ chính khung đo: thành phần `ewm` — trọng số lớn nhất tầng 2 (0,55)
+— thu hồi **0,0 %** của tín hiệu tiêm +100 %, trong khi `weekday` thu 48,9 %.
+Truy ra `half_life = 45` cho cỡ mẫu hiệu dụng 130 trên 2 398 kỳ.
+
+| bán rã | ESS | Brier | ngụy tín hiệu | thu hồi @+100 % |
+|---|---|---|---|---|
+| 45 | 130 | 0,18134089 | 0,00001 | 0,0 % |
+| 180 | 519 | 0,18133923 | 0,00002 | 36,0 % |
+| 365 | 1031 | 0,18133891 | 0,00003 | 63,9 % |
+| ∞ | 2398 | 0,18133866 | 0,00009 | 90,4 % |
+
+Cổng hai chiều, đo trực tiếp:
+
+| Tiêm | Chu kỳ chọn |
+|---|---|
+| không | **45** (giữ nguyên) |
+| +25 % | **1460** |
+| +100 % | **1460** |
+
+Giữ bản đương nhiệm khi không có gì, nhảy sang cửa sổ dài nhất ngay khi có tín
+hiệu thật. Trên dữ liệu thật hiện tại nó giữ 45 — nhưng nay đó là **kết luận đo
+được**, không còn là hằng số đặt tay.
+
+### Điều này có nghĩa gì
+
+Đợt nâng cấp kiến trúc **không đổi hành vi sản xuất trên dữ liệu hôm nay**, và
+đó là kết quả đúng: không thay đổi nào tự chứng minh được ở mức 2 SE.
+
+Thứ đã đổi là: ba hằng số từng đặt tay (`prior_strength`, `half_life`, cách
+hợp) nay được **kiểm tra lại mỗi lần chạy** trên lát giữ riêng cắt theo thời
+gian. Nếu tín hiệu xuất hiện, hệ thống chuyển sang cấu hình thu hồi nó — đo
+được là 0 % → 36 % ngay ở mức tiêm +25 %.
+
 ## 5. Checklist rủi ro kỹ thuật
 
 ### Rò rỉ dữ liệu (look-ahead bias)

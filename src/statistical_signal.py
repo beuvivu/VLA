@@ -28,6 +28,13 @@ from scipy.stats import beta as beta_dist
 from calendar_alignment import require_daily_contiguous
 from ensemble_utils import normalize_distribution
 from hierarchical_pooling import PoolingFit, fit_pooling
+from opinion_pool import (
+    SIGNIFICANCE_SIGMAS,
+    PoolAudit,
+    PoolParams,
+    apply_pool,
+    fit_pool,
+)
 from lottery import Lottery
 from number_dynamics import build_dynamics_signal, export_dynamics
 
@@ -86,6 +93,70 @@ def _eb_posterior(
     return (a0 + counts) / (a0 + b0 + trials)
 
 
+#: Trọng số của ba thành phần tầng 2, giữ nguyên từ bản cũ.
+#:
+#: Tệp này đổi CÁCH HỢP, không đổi HỢP CÁI GÌ. Tách hai câu hỏi ra là cố ý:
+#: gộp chúng vào một phép tối ưu sẽ cho một mặt mục tiêu mà không ai đọc được
+#: kết quả, và khi nó tệ đi thì không biết tại phần nào.
+SIGNAL_COMPONENT_WEIGHTS: tuple[float, float, float] = (0.55, 0.25, 0.20)
+#: Số kỳ cuối dùng để chọn phép hợp. Đủ dài để phép so cặp đôi có ý nghĩa,
+#: đủ ngắn để không kéo dài thời gian dựng tín hiệu hằng ngày.
+POOL_SELECTION_DAYS = 300
+
+
+def select_signal_pool(
+    hit: np.ndarray,
+    dates: pd.Series,
+    *,
+    mode: str,
+    half_life: int,
+    eval_days: int = POOL_SELECTION_DAYS,
+) -> tuple[PoolParams | None, PoolAudit | None]:
+    """Chọn phép hợp ba thành phần tầng 2 bằng Brier trên lát giữ riêng.
+
+    Trả về ``(None, None)`` khi lịch sử quá ngắn — khi ấy giữ trộn số học, đúng
+    hành vi cũ, và nói rõ là không chọn.
+
+    Vì sao đáng làm, bằng số đo: trộn số học luôn nằm trong ``[min, max]`` của
+    đầu vào nên không bao giờ sắc hơn thành phần sắc nhất. Đo với tín hiệu tiêm
+    +25 %: trộn số học thu hồi 6,8 %, log-odds ở độ sắc 2 thu hồi 13,4 %, ở độ
+    sắc 3 thu hồi 20,3 %. Kiến trúc cũ vứt bỏ 93 % của một tín hiệu có thật.
+    """
+    days = int(hit.shape[0])
+    start = max(200, days - eval_days)
+    if days - start < 60:
+        return None, None
+
+    cube, labels = [], []
+    for t in range(start, days):
+        past = hit[:t]
+        w = _exp_weights(t, half_life)
+        ewm = _eb_posterior((past * w[:, None]).sum(axis=0), float(w.sum()), None)
+
+        target_weekday = int(pd.Timestamp(dates.iloc[t]).weekday())
+        mask = np.array(
+            [pd.Timestamp(d).weekday() == target_weekday for d in dates.iloc[:t]]
+        )
+        weekday_rows = past[mask]
+        weekday = _eb_posterior(
+            weekday_rows.sum(axis=0) if len(weekday_rows) else np.zeros(100),
+            float(len(weekday_rows)),
+            None,
+        )
+        window = past[-min(90, t):]
+        p90 = _eb_posterior(window.sum(axis=0), float(len(window)), None)
+
+        cube.append(np.vstack([ewm, weekday, p90]))
+        labels.append(hit[t])
+
+    return fit_pool(
+        mode,  # type: ignore[arg-type]
+        np.stack(cube),
+        np.stack(labels),
+        np.asarray(SIGNAL_COMPONENT_WEIGHTS),
+    )
+
+
 def _loto_signal(
     hit: np.ndarray,
     dates: pd.Series,
@@ -93,6 +164,7 @@ def _loto_signal(
     *,
     half_life: int,
     prior_strength: float | None,
+    pool: PoolParams | None = None,
 ) -> pd.DataFrame:
     n = hit.shape[0]
     baseline = float(hit.mean())
@@ -119,7 +191,12 @@ def _loto_signal(
     instability = np.std(stack, axis=0)
     stability = np.exp(-0.55 * instability)
 
-    raw = 0.55 * ewm + 0.25 * weekday + 0.20 * window_probs[90]
+    components = np.vstack([ewm, weekday, window_probs[90]])
+    if pool is None:
+        # Hành vi cũ: trộn số học với trọng số đặt tay.
+        raw = np.tensordot(np.asarray(SIGNAL_COMPONENT_WEIGHTS), components, axes=(0, 0))
+    else:
+        raw = apply_pool("loto", components, pool)
     prob = baseline + stability * (raw - baseline)
     prob = np.clip(prob, 1e-5, 1 - 1e-5)
 
@@ -402,7 +479,7 @@ def select_half_life(
     for half_life in grid:
         delta = per_day[half_life] - best_errors
         standard_error = float(np.std(delta, ddof=1) / np.sqrt(n_days)) if n_days > 1 else 0.0
-        if float(delta.mean()) <= standard_error + _FLOAT_NOISE:
+        if float(delta.mean()) <= SIGNIFICANCE_SIGMAS * standard_error + _FLOAT_NOISE:
             tied.append(half_life)
 
     # Hoà thì chu kỳ NGẮN hơn thắng: nó phản ứng nhanh hơn với trôi khái niệm,
@@ -456,6 +533,10 @@ def build_statistical_signal(
         chosen_half_life, half_life_scores = (
             (half_life, None) if half_life is not None else select_half_life(hit)
         )
+        # Chế độ đề chưa nối phép hợp học được: nó chuẩn hoá về phân phối tổng
+        # bằng 1 nên phép hợp phải giữ ràng buộc ấy, và cần đo riêng trước khi
+        # đổi. Giữ trộn số học cho tới khi có số liệu.
+        pool, pool_audit = None, None
         df = _de_signal(
             hit,
             dates,
@@ -474,12 +555,16 @@ def build_statistical_signal(
         chosen_half_life, half_life_scores = (
             (half_life, None) if half_life is not None else select_half_life(hit)
         )
+        pool, pool_audit = select_signal_pool(
+            hit, dates, mode="loto", half_life=chosen_half_life
+        )
         df = _loto_signal(
             hit,
             dates,
             target.weekday(),
             half_life=chosen_half_life,
             prior_strength=prior_strength,
+            pool=pool,
         )
     else:
         raise ValueError(mode)
@@ -504,6 +589,14 @@ def build_statistical_signal(
         "half_life_days": chosen_half_life,
         "half_life_learned": half_life_scores is not None,
         "half_life_brier_by_candidate": half_life_scores,
+        "pool": None if pool_audit is None else {
+            "kind": pool_audit.chosen,
+            "sharpness": pool_audit.sharpness,
+            "selected": pool_audit.selected,
+            "brier_by_candidate": pool_audit.brier_by_candidate,
+            "holdout_days": pool_audit.holdout_days,
+            "verdict": pool_audit.describe(),
+        },
         "prior_strength": _strength,
         "prior_strength_learned": pooling is not None,
         # Số tham số HIỆU DỤNG là con số nối thẳng tới công suất thống kê: báo
