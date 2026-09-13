@@ -1,9 +1,9 @@
 {
   "name": "weekday_vs_full_special_tail",
-  "statistic": 55.882121348818615,
-  "p_value": 0.40397655058184473,
+  "statistic": 55.999252637816475,
+  "p_value": 0.3997225347254278,
   "dof": 54,
-  "min_expected_cell": 32.00876095118899,
+  "min_expected_cell": 31.995412844036696,
   "table": [
     [
       29,
@@ -87,7 +87,7 @@
       33,
       33,
       45,
-      41
+      42
     ]
   ],
   "weekday_order": [
