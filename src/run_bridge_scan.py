@@ -17,6 +17,7 @@ import pandas as pd
 
 from bridges import BridgeScanner, DigitTensor
 from bridges.firewall import DEFAULT_PERMUTATIONS, DEFAULT_Q_VALUE, FirewallGate
+from bridges.replication import DEFAULT_HOLDOUT_FRACTION, ReplicationGate
 from bridges.spec import TARGET_TYPES
 
 DEFAULT_STREAK = 5
@@ -37,9 +38,18 @@ def run(
     q_value: float,
     permutations: int,
     min_streak: int = DEFAULT_STREAK,
+    holdout_fraction: float = DEFAULT_HOLDOUT_FRACTION,
 ) -> dict[str, object]:
     tensor = DigitTensor.from_raw(pd.read_csv(raw_path))
     gate = FirewallGate(q_value=q_value, permutations=permutations)
+    # Cổng tái lập chạy BÊN CẠNH cổng cũ, không thay nó: `survived_fdr` giữ
+    # nguyên ý nghĩa "qua BH-FDR trên toàn lịch sử", còn `replicated` là con số
+    # chặt hơn hẳn — chọn ở đoạn đầu, chứng minh lại ở đoạn chưa từng thấy.
+    replication = ReplicationGate(
+        holdout_fraction=holdout_fraction,
+        alpha=q_value,
+        firewall=FirewallGate(q_value=q_value, permutations=permutations),
+    )
 
     summary: dict[str, object] = {
         "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -47,6 +57,7 @@ def run(
         "positions": tensor.n_positions,
         "max_span": max_span,
         "q_value": q_value,
+        "holdout_fraction": holdout_fraction,
         "modes": {},
     }
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -55,6 +66,7 @@ def run(
         scanner = BridgeScanner(max_span=max_span)
         result = scanner.scan(tensor, target_type=target_type)
         survivors = gate.screen(result, tensor, scanner)
+        verdict, _discovery = replication.screen(tensor, scanner, target_type=target_type)
 
         # Con số "chạy dài mà không sống sót" là kết quả chính của báo cáo:
         # nó đo trực tiếp lượng phát hiện giả mà một bộ quét không có cổng
@@ -75,10 +87,25 @@ def run(
             "reality_check_p_value": survivors.reality_check_p_value,
             "permutations": survivors.permutations,
             "verdict": survivors.describe(),
+            # Cổng tái lập: chọn trên đoạn đầu, chấm điểm trên đoạn giữ riêng.
+            # Đây là con số đáng tin nhất trong cả khối, vì nó là duy nhất
+            # được đo trên dữ liệu chưa từng tham gia vào việc chọn.
+            "replication": {
+                "conclusive": verdict.conclusive,
+                "discovered_on_discovery_half": verdict.discovered,
+                "replicated": verdict.replicated,
+                "discovery_days": verdict.discovery_days,
+                "replication_days": verdict.replication_days,
+                "split_date": verdict.split_date,
+                "verdict": verdict.describe(),
+            },
         }
         if not survivors.is_empty:
             survivors.bridges.to_csv(out_dir / f"bridge_survivors_{target_type}.csv", index=False)
+        if not verdict.is_empty:
+            verdict.bridges.to_csv(out_dir / f"bridge_replicated_{target_type}.csv", index=False)
         print(f"[{target_type}] {survivors.describe()}")
+        print(f"[{target_type}] {verdict.describe()}")
 
     (out_dir / "bridge_scan_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, default=_json_safe).replace(

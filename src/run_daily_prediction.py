@@ -63,6 +63,12 @@ def _research_evidence(research_dir: Path) -> dict[str, object]:
                 "hypotheses": item["hypotheses"],
                 "running_unscreened": item.get("running_at_least_5_unscreened"),
                 "survived_fdr": item["survived_fdr"],
+                # Con số chặt nhất trong khối: số đường cầu chứng minh lại được
+                # mình trên đoạn dữ liệu chưa từng tham gia vào việc chọn.
+                # Kèm theo mẫu số, vì "3 đường tái lập" mà không nói đã quét
+                # bao nhiêu giả thuyết là cách trình bày sai lệch nhất ở đây.
+                "replicated_out_of_sample": item.get("replication", {}).get("replicated"),
+                "replication_conclusive": item.get("replication", {}).get("conclusive"),
             }
             for mode, item in payload.get("modes", {}).items()
         }
