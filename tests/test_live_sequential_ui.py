@@ -22,10 +22,44 @@ def test_live_page_keeps_security_contract() -> None:
     page = _page()
     assert ".innerHTML" not in page
     assert "insertAdjacentHTML" not in page
-    assert "connect-src 'self' https://raw.githubusercontent.com" in page
-    # Không nạp tài nguyên ngoài ngoài đúng một nguồn dữ liệu đã khai báo.
+
+    # Hợp đồng đã nới CÓ CHỦ Ý khi thêm Worker đúng giờ, và chỉ nới đúng chừng
+    # này: hai miền nền tảng Worker, cạnh nguồn dự phòng cũ. Danh sách vẫn là
+    # danh sách trắng đóng — thêm bất kỳ miền nào khác thì phép kiểm đỏ.
+    assert (
+        "connect-src 'self' https://raw.githubusercontent.com "
+        "https://*.workers.dev https://*.deno.dev;"
+    ) in page
+    assert "default-src 'self'" in page
+    assert "object-src 'none'" in page
+    assert "form-action 'none'" in page
+
+    # Không nạp tài nguyên ngoài nào khác. Ký tự đại diện trong CSP không lọt
+    # vào tập này vì biểu thức không khớp "*", nên URL cụ thể nào xuất hiện
+    # trong trang — kể cả trong chú thích — đều lộ ra ở đây.
     external = set(re.findall(r"https://[a-z0-9.\-]+", page))
     assert external == {"https://raw.githubusercontent.com"}
+
+
+def test_live_page_falls_back_when_the_worker_is_unreachable() -> None:
+    """Worker là thành phần NGOÀI, nên trang không được phụ thuộc vào nó.
+
+    Nó có thể chết, hết hạn gói miễn phí, hoặc bị nguồn chặn. Khi ấy trang
+    phải lùi về live.json do GitHub Actions ghi — trễ, nhưng có — chứ không
+    được trắng. Thứ tự cũng quan trọng: Worker ĐI TRƯỚC, vì nó mới là đường
+    đúng giờ.
+    """
+    page = _page()
+    assert "window.LIVE_WORKER_URL" in page
+    assert "function candidateUrls" in page
+    assert "function fetchSnapshot" in page
+
+    block = page.split("function candidateUrls")[1].split("}")[0]
+    assert block.index("LIVE_WORKER_URL") < block.index("rawUrl()"), (
+        "Worker phải được thử TRƯỚC nguồn dự phòng"
+    )
+    # Chưa dán địa chỉ Worker thì trang chạy y như trước khi có Worker.
+    assert "window.LIVE_WORKER_URL = '';" in page
 
 
 def test_live_page_declares_all_twenty_seven_prize_slots() -> None:

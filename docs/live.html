@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self' https://raw.githubusercontent.com; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self' https://raw.githubusercontent.com https://*.workers.dev https://*.deno.dev; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
   <meta name="referrer" content="no-referrer">
   <title>Kết quả XSMB trực tiếp</title>
   <style>
@@ -120,6 +120,14 @@
     </div>
   </div>
 
+  <script>
+  // ĐỊA CHỈ WORKER — dán vào sau khi triển khai.
+  // Dạng: window.LIVE_WORKER_URL = '<dia-chi-worker-cua-ban>/live.json';
+  // Để trống thì trang chạy y như trước: đọc live.json do GitHub Actions ghi.
+  // Địa chỉ đầy đủ và các bước triển khai ở
+  // documentation/operations/live-worker.md.
+  window.LIVE_WORKER_URL = '';
+  </script>
   <script>
   (function () {
     'use strict';
@@ -310,6 +318,37 @@
       return 'data/live.json';
     }
 
+    // Hai nguồn, theo thứ tự, KHÔNG phải một.
+    //
+    // Worker có đồng hồ riêng nên chạy đúng 18:15; live.json trên nhánh `live`
+    // do GitHub Actions ghi nên trễ, đo được là 2h50m-4h40m. Vì thế Worker đi
+    // trước. Nhưng Worker là một thành phần ngoài có thể chết, hết hạn miễn
+    // phí, hoặc bị nguồn chặn — nên phải còn đường lùi, và đường lùi ấy là
+    // đúng cái pipeline đang chạy hôm nay.
+    //
+    // Trang KHÔNG bao giờ trắng chỉ vì thành phần mới hỏng.
+    function candidateUrls() {
+      var urls = [];
+      if (window.LIVE_WORKER_URL) urls.push(String(window.LIVE_WORKER_URL));
+      urls.push(rawUrl());
+      return urls;
+    }
+
+    async function fetchSnapshot() {
+      var lastError = null;
+      var urls = candidateUrls();
+      for (var i = 0; i < urls.length; i += 1) {
+        try {
+          var response = await fetch(urls[i] + '?t=' + Date.now(), {cache: 'no-store'});
+          if (!response.ok) throw new Error(String(response.status));
+          return await response.json();
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error('không có nguồn nào trả lời');
+    }
+
     var STATUS_LABELS = {
       waiting: 'ĐANG CHỜ', partial: 'ĐANG CẬP NHẬT',
       complete: 'HOÀN TẤT', complete_verified: 'ĐÃ XÁC MINH'
@@ -325,9 +364,7 @@
     async function load() {
       var status = 'waiting';
       try {
-        var response = await fetch(rawUrl() + '?t=' + Date.now(), {cache: 'no-store'});
-        if (!response.ok) throw new Error(String(response.status));
-        var data = await response.json();
+        var data = await fetchSnapshot();
         status = String(data.status || 'waiting');
 
         var progress = clampNumber(data.progress_percent, 0, 100, 0);

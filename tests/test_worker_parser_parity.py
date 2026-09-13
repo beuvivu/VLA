@@ -30,14 +30,32 @@ CORPUS = ROOT / "tests" / "fixtures" / "prize_pages.json"
 RUNNER = ROOT / "worker" / "test" / "run_parser.mjs"
 
 
+def _require_node() -> str:
+    """Trả về đường dẫn ``node``; ngoài CI thì bỏ qua, trong CI thì HỎNG.
+
+    Bỏ qua trong CI là chốt chặn giả: bộ kiểm vẫn xanh trong khi phép so hai
+    bản mã chưa hề chạy. Ngoài CI thì bỏ qua là hợp lý — không phải máy nào
+    cũng cài Node.
+    """
+    import os
+
+    node = shutil.which("node")
+    if node is None:
+        if os.environ.get("CI"):
+            raise AssertionError(
+                "CI phải có node để chạy phép kiểm đối chiếu Python/JS; "
+                "xem bước 'Thiết lập Node' trong .github/workflows/ci.yml"
+            )
+        pytest.skip("không có node trên máy chạy kiểm")
+    return node
+
+
 def _load_corpus() -> dict[str, str]:
     return json.loads(CORPUS.read_text(encoding="utf-8"))
 
 
 def _javascript_results() -> dict[str, dict[str, list[str]]]:
-    node = shutil.which("node")
-    if node is None:
-        pytest.skip("không có node trên máy chạy kiểm")
+    node = _require_node()
     proc = subprocess.run(
         [node, str(RUNNER), str(CORPUS)],
         capture_output=True,

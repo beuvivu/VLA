@@ -56,6 +56,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Thiết lập Node 22
+        # Bốn phép kiểm đối chiếu Python/JS gọi `node` để chạy bản mã của
+        # Worker. Runner ubuntu-latest tình cờ có sẵn Node, nhưng trông vào
+        # thứ tình cờ thì một ngày nào đó nó biến mất và các phép kiểm ấy tự
+        # BỎ QUA — chốt chặn giả còn tệ hơn không có chốt. Ghim tường minh.
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Cài đặt thư viện phụ thuộc
         run: |
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
