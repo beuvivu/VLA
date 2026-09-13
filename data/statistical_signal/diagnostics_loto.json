@@ -1,11 +1,42 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-09-13T17:12:23Z",
+  "generated_at_utc": "2026-09-13T17:49:05Z",
   "anchor_date": "2026-09-13",
   "target_date": "2026-09-14",
   "history_days": 2398,
   "half_life_days": 45,
+  "half_life_learned": true,
+  "half_life_brier_by_candidate": {
+    "45": 0.18145449655033213,
+    "90": 0.18145337340078646,
+    "180": 0.1814527990756205,
+    "365": 0.18145250803519078,
+    "730": 0.18145239768942323,
+    "1460": 0.1814523681435644
+  },
+  "pool": {
+    "kind": "linear",
+    "sharpness": 1.0,
+    "selected": true,
+    "brier_by_candidate": {
+      "linear": 0.1806669740314718,
+      "log(s=0)": 0.18065900453514736,
+      "log(s=0.1)": 0.18065964230925005,
+      "log(s=0.2)": 0.18066031394825013,
+      "log(s=0.3)": 0.1806610194094324,
+      "log(s=0.5)": 0.1806625316275586,
+      "log(s=0.7)": 0.1806641786222108,
+      "log(s=0.85)": 0.18066550211004942,
+      "log(s=1)": 0.18066690107392924,
+      "log(s=1.2)": 0.1806688835178138,
+      "log(s=1.5)": 0.18067210754639026,
+      "log(s=2)": 0.18067814572698154,
+      "log(s=3)": 0.180692695992069
+    },
+    "holdout_days": 90,
+    "verdict": "Chọn 'linear' (độ sắc 1) theo Brier trên 90 kỳ giữ riêng (log(s=0) 0.180659, log(s=0.1) 0.180660, log(s=0.2) 0.180660, log(s=0.3) 0.180661)."
+  },
   "prior_strength": 1000000.0,
   "prior_strength_learned": true,
   "pooling": {
@@ -22,7 +53,7 @@
   "max_stability": 0.9985868224588303,
   "dynamics_weight_in_stat_signal": 0.3,
   "global_dynamics_reliability": 0.7611183502590801,
-  "regime_js_divergence_30_vs_180": 0.010280287199501175,
+  "regime_js_divergence_30_vs_180": 0.010280287199501177,
   "transition_active_mean_trials": 567.2857142857143,
   "calendar_contiguous": true,
   "interpretation": "Empirical-Bayes + higher-order dynamics component. Markov, transition, hazard, lag and regime evidence is shrinkage-regularized, calendar-validated, and used only as probabilistic ranking support."

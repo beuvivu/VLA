@@ -1,11 +1,21 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at_utc": "2026-09-13T17:12:23Z",
+  "generated_at_utc": "2026-09-13T17:49:06Z",
   "anchor_date": "2026-09-13",
   "target_date": "2026-09-14",
   "history_days": 2398,
   "half_life_days": 45,
+  "half_life_learned": true,
+  "half_life_brier_by_candidate": {
+    "45": 0.009900000468590079,
+    "90": 0.009900000353786211,
+    "180": 0.009900000447692025,
+    "365": 0.009900000867695305,
+    "730": 0.00990000119562115,
+    "1460": 0.009900001289892397
+  },
+  "pool": null,
   "prior_strength": 1000000.0,
   "prior_strength_learned": true,
   "pooling": {
