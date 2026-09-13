@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Đồng hồ và nguồn phát live.json cho XSMB — chạy đúng giờ quay số, không phụ thuộc bộ lập lịch của GitHub.",
   "scripts": {
+    "setup": "node setup.mjs",
+    "setup:dry": "node setup.mjs --dry-run",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "tail": "wrangler tail"

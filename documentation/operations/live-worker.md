@@ -68,71 +68,64 @@ dùng `fetch`, `Response` và đúng hai API riêng của nền tảng (`env.LIV
 handler `scheduled`), nên chuyển sang Deno Deploy là sửa khoảng 20 dòng trong
 `index.js`, không phải viết lại.
 
-## 4. Triển khai (một lần, ~5 phút)
+## 4. Triển khai: một lệnh
 
-Không cần token GitHub. Không cần thẻ tín dụng.
+Không cần token GitHub. Không cần thẻ tín dụng. Không phải chép–dán gì.
 
-### Bước 1 — Tài khoản
+### Bước 1 — Tài khoản Cloudflare
 
 Đăng ký tại <https://dash.cloudflare.com/sign-up>. Gói Workers Free là đủ.
 
-### Bước 2 — Tạo kho KV
-
-Worker không có bộ nhớ riêng giữa các lượt chạy, nên không có kho này thì cron
-thu thập xong sẽ mất trắng.
+### Bước 2 — Chạy một lệnh
 
 ```bash
 cd worker
-npx wrangler login
-npx wrangler kv namespace create LIVE
+npm run setup
 ```
 
-Wrangler bản cũ dùng cú pháp hai chấm — nếu lệnh trên báo không nhận diện được,
-dùng `npx wrangler kv:namespace create LIVE`.
+Kịch bản tự làm cả năm việc:
 
-Lệnh cuối in ra một `id`. Mở `worker/wrangler.toml` và thay
-`THAY_BANG_ID_KV_CUA_BAN` bằng `id` ấy.
+1. đăng nhập Cloudflare (mở trình duyệt nếu chưa),
+2. tạo kho KV, **tự đọc id, tự điền** vào `wrangler.toml`,
+3. triển khai Worker, **tự đọc địa chỉ, tự điền** vào `docs/live.html`,
+4. gọi `/health` để xác minh Worker sống thật,
+5. ép một lượt thu thập và báo mấy nguồn trả lời được.
 
-### Bước 3 — Triển khai
+Chạy lại nhiều lần đều an toàn — bước nào xong rồi thì bỏ qua.
+
+Muốn xem trước mà không đụng vào gì:
 
 ```bash
-npx wrangler deploy
+npm run setup:dry
 ```
 
-In ra địa chỉ dạng `https://vla-live.<ten-cua-ban>.workers.dev`.
+Bản thử khô không gọi mạng và không sửa tệp nào.
 
-### Bước 4 — Kiểm ngay
+### Bước 3 — Commit
+
+Kịch bản in ra đúng ba dòng cần chạy:
 
 ```bash
-curl -s https://vla-live.<ten-cua-ban>.workers.dev/health
+git add worker/wrangler.toml docs/live.html
+git commit -m "worker: trỏ trang live vào Worker đã triển khai"
+git push
 ```
 
-Ngoài khung quay số thì `has_snapshot` có thể là `false` — đó là bình thường.
-Gọi `/live.json` sẽ ép thu thập ngay một lượt:
+### Nếu kịch bản dừng giữa chừng
+
+Nó **không** báo "xong" khi thất bại. Mọi phép bóc dữ liệu từ đầu ra của
+wrangler đều ném lỗi kèm nguyên văn đầu ra, để bạn thấy ngay chỗ hỏng. Trường
+hợp cần làm tay, chỉ có hai giá trị:
+
+* id kho KV → thay `THAY_BANG_ID_KV_CUA_BAN` trong `worker/wrangler.toml`
+* địa chỉ Worker → điền vào `window.LIVE_WORKER_URL` trong `docs/live.html`,
+  nhớ thêm đuôi `/live.json`
+
+### Theo dõi
 
 ```bash
-curl -s https://vla-live.<ten-cua-ban>.workers.dev/live.json | head -20
+cd worker && npx wrangler tail
 ```
-
-Cần thấy `"schema_version": 2` và danh sách `source_status` sáu dòng. Nếu mọi
-dòng đều có `error` thì xem mục 6.
-
-### Bước 5 — Trỏ trang live vào Worker
-
-Mở `docs/live.html`, tìm dòng gần đầu:
-
-```js
-window.LIVE_WORKER_URL = '';
-```
-
-Điền địa chỉ vừa có, kèm đuôi `/live.json`:
-
-```js
-window.LIVE_WORKER_URL = 'https://vla-live.<ten-cua-ban>.workers.dev/live.json';
-```
-
-Commit và đẩy lên `main`. Để trống dòng ấy thì trang chạy **y như trước** —
-đọc `live.json` do GitHub Actions ghi.
 
 ## 5. Chống trôi lệch giữa hai bản mã
 
@@ -151,6 +144,7 @@ Bốn phép kiểm đối chiếu chạy trong CI, mỗi phép khoá một tần
 | `test_worker_sources_parity.py` | Danh mục nguồn, thứ tự ưu tiên, địa chỉ |
 
 | `test_worker_handler.py` | Hành vi vận hành: chặn khuếch đại, dừng khi đã xong, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
+| `test_worker_setup.py` | Bộ cài đặt một lệnh: bóc id/địa chỉ từ mọi dạng đầu ra wrangler, vá đúng dòng gán, chạy lại an toàn, thử khô không đụng tệp |
 
 Bốn phép đầu đều đã kiểm ngược: đột biến trên bản JS làm chúng đỏ (10 + 10 + 10 đột
 biến, tất cả bị bắt). Hai phép kiểm này đã bắt được lỗi thật ngay trong lúc
@@ -221,5 +215,6 @@ khi đang về số, 60 giây khi đã xác minh) nên biên Cloudflare đỡ ph
 cd worker && npx wrangler delete
 ```
 
-Rồi xoá nội dung `window.LIVE_WORKER_URL` trong `docs/live.html`. Hệ thống trở
+Rồi xoá nội dung `window.LIVE_WORKER_URL` trong `docs/live.html` (đặt lại
+thành `''`). Hệ thống trở
 lại đúng trạng thái trước khi có Worker.
