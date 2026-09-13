@@ -5,7 +5,7 @@ compatibility_date = "2026-09-01"
 # ĐỒNG HỒ. Giờ UTC; Việt Nam là UTC+7.
 #
 # 11:08-11:59 UTC = 18:08-18:59 giờ VN, mỗi phút một lần trong khung quay số.
-# 12:00-12:30 UTC = 19:00-19:30 giờ VN, thưa hơn, phòng kỳ quay muộn.
+# 12:00-12:55 UTC = 19:00-19:55 giờ VN, năm phút một lần, phòng kỳ quay muộn.
 #
 # Khác hẳn cron của GitHub: lịch của Cloudflare nổ đúng phút đã đặt. Đó là
 # toàn bộ lý do thành phần này tồn tại.
@@ -24,6 +24,7 @@ MIN_AGREEMENT = "2"
 # Nơi cất ảnh chụp giữa các lần cron gọi. Worker không có bộ nhớ riêng giữa
 # các lượt chạy, nên không có chỗ này thì cron thu thập xong sẽ mất trắng.
 # Tạo bằng: npx wrangler kv namespace create LIVE
+# (wrangler cũ dùng cú pháp hai chấm: npx wrangler kv:namespace create LIVE)
 [[kv_namespaces]]
 binding = "LIVE"
 id = "THAY_BANG_ID_KV_CUA_BAN"

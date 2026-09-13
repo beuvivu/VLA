@@ -1,5 +1,15 @@
 # Chạy đúng giờ 18:15–18:30: chẩn đoán và cách sửa
 
+> **Đã có cách khác, không cần token.** Tài liệu này viết trước khi
+> [`live-worker.md`](live-worker.md) ra đời. Worker ở đó có đồng hồ riêng, tự
+> đọc nguồn và tự phát `live.json`, nên **không cần** fine-grained PAT và
+> không cần gia hạn 90 ngày một lần. Nếu bạn chỉ cần trang live chạy đúng giờ
+> thì đọc tài liệu kia; tài liệu này vẫn đúng cho đường `repository_dispatch`
+> (thứ kích hoạt cả pipeline ghi lịch sử vào kho).
+>
+> **Một số đo trong tài liệu này đã lỗi thời.** Xem mục 2.6.
+
+
 ## 1. Kết luận ngắn
 
 Độ trễ **không** đến từ nghẽn hàng đợi runner. Nó đến từ khâu GitHub *tạo* lần
@@ -78,6 +88,30 @@ repository_dispatch runs của update-data.yml:  total_count = 0
 
 Van thoát hiểm đã được hàn sẵn vào mã nhưng chưa ai mở. Đó là toàn bộ khoảng
 cách giữa hiện trạng và mục tiêu.
+
+### 2.6 Đo lại tháng 9/2026 — phần suy rộng sai
+
+Đo lại trên **`daily_update.yml`**, 4 ngày 09–12/09/2026, 32 mốc lịch:
+
+| | Tài liệu này giả định | Đo lại |
+|---|---|---|
+| Tỷ lệ mốc nổ | bị bỏ nhiều | **32/32 = 100 %** |
+| Trễ tối thiểu | 49 phút | **2h50m** |
+| Trễ trung vị | 2h24m | **4h04m** |
+
+Hai điều cần đính chính:
+
+**Mốc lịch của `daily_update.yml` không bị bỏ.** Con số "63 kỳ vọng, 10 thực
+tế" ở mục 2.2 đo trên `live-results.yml`, một workflow khác. Suy rộng nó sang
+`daily_update.yml` là sai, và chính tôi đã suy rộng như vậy.
+
+**Nhưng độ trễ đã trôi.** Lịch được chỉnh cho độ trễ trung vị 144 phút; độ trễ
+thật giờ là ~244 phút. Ngày 12/09, mốc "chính" `08:51 UTC` nổ lúc `12:22 UTC`
+= **19:22 giờ VN**, và không mốc nào rơi trước 18:43. Bảng mô phỏng ở mục 1
+("88,4 % đúng khung") tính trên dải trễ cũ nên không còn đúng.
+
+Dải trễ đã tự trôi một lần và sẽ trôi nữa. Chỉnh lại mốc là cải thiện, không
+phải đảm bảo — đó là lý do [`live-worker.md`](live-worker.md) tồn tại.
 
 ## 3. Kiến trúc sau khi sửa
 

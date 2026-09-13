@@ -40,6 +40,7 @@ Worker mới là đảm bảo.
 
 ```
 Cron Cloudflare ──mỗi phút 18:08-18:59 ICT──▶ scheduled()
+                 (và 5 phút/lần 19:00-19:55)
                                                  │ đọc 6 nguồn, đồng thuận
                                                  ▼
                                              Workers KV
@@ -85,6 +86,9 @@ cd worker
 npx wrangler login
 npx wrangler kv namespace create LIVE
 ```
+
+Wrangler bản cũ dùng cú pháp hai chấm — nếu lệnh trên báo không nhận diện được,
+dùng `npx wrangler kv:namespace create LIVE`.
 
 Lệnh cuối in ra một `id`. Mở `worker/wrangler.toml` và thay
 `THAY_BANG_ID_KV_CUA_BAN` bằng `id` ấy.
