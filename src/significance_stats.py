@@ -18,7 +18,7 @@ import pandas as pd
 from scipy.stats import beta as beta_dist
 from scipy.stats import binomtest, chisquare
 
-from lottery import Lottery, RepoPaths
+from lottery import Lottery
 
 
 def _bh_fdr(p_values: np.ndarray) -> np.ndarray:

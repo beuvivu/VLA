@@ -10,7 +10,7 @@ def _raw_rows() -> pd.DataFrame:
     dates = pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03"])
     specials = [12000, 12012, 34034]
     rows = []
-    for d, special in zip(dates, specials):
+    for d, special in zip(dates, specials, strict=True):
         row = {"date": d}
         for field, _width in FIELD_WIDTHS:
             row[field] = 0

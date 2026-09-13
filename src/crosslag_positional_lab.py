@@ -25,7 +25,7 @@ import argparse
 import json
 import math
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -34,7 +34,7 @@ import pandas as pd
 from scipy import stats
 
 from lottery import Lottery
-from number_reference import BONG, bo
+from number_reference import bo
 from research_diagnostics import bh_fdr
 
 Operator = Literal["concat", "lon", "bo", "cham", "tong"]

@@ -36,7 +36,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
 
 from calendar_alignment import require_daily_contiguous
-from lottery import Lottery, RepoPaths
+from lottery import Lottery
 from ml_features import _pairs_indices, _path_support_matrix
 from xsmb_domain import raw_digit_matrix
 from ml_models import PlattCalibratedClassifier

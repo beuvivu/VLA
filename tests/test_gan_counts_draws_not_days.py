@@ -134,7 +134,6 @@ def test_the_two_recency_weightings_use_different_units_on_purpose() -> None:
     Phép kiểm này không phán cách nào đúng — nó chỉ chặn việc một người sửa
     một hàm theo hiểu biết về hàm kia.
     """
-    import numpy as np
 
     from learn_ensemble_weights import _day_weights
     from meta_predictor import _recency_row_weights

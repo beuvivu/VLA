@@ -6,7 +6,6 @@ import pandas as pd
 
 from ui_locale import column_label
 from ui_theme import (
-    ALIGN_CENTER,
     ALIGN_LEFT,
     ALIGN_RIGHT,
     card,

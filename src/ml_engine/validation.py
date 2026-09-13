@@ -297,8 +297,16 @@ class WalkForwardValidator:
                     if kind == "int"
                     else float(rng.uniform(float(low), float(high)))
                 )
+            # ruff B023 báo nhầm ở đây. Closure chỉ sai khi lambda được gọi
+            # SAU khi vòng lặp đã sang vòng kế; nhưng ``evaluate`` gọi
+            # ``model_factory()`` đồng bộ ngay trong thân nó và trả về trước
+            # khi vòng lặp tiếp tục, nên ``params`` luôn là dict của đúng
+            # vòng này. ``params`` cũng được GÁN LẠI (không mutate) mỗi
+            # vòng, nên ``best_params`` giữ tham chiếu dict cũ vẫn an toàn.
             report = self.evaluate(
-                lambda: TabularBooster(**params), start=tune_start, stop=tune_stop
+                lambda: TabularBooster(**params),  # noqa: B023
+                start=tune_start,
+                stop=tune_stop,
             )
             if report.logloss < best_loss:
                 best_loss, best_params = report.logloss, params

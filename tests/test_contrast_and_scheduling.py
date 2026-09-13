@@ -18,7 +18,6 @@ import pytest
 from bs4 import BeautifulSoup
 
 from ui_theme import (
-    WCAG_AA_LARGE,
     WCAG_AA_NORMAL,
     contrast_ratio,
     readable_ink,

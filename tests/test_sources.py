@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
 
 from sources import (
     EXPECTED_COUNTS,

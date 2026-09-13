@@ -162,6 +162,7 @@ def test_runner_refuses_to_predict_a_draw_that_already_happened(
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
     )
     assert result.returncode == 1
     assert "hậu đoán" in result.stderr
@@ -183,6 +184,7 @@ def test_runner_refuses_stale_data(tmp_path: Path) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
     )
     assert result.returncode == 1
     assert "cũ hơn" in result.stderr

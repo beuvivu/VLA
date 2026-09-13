@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 import pytest
 
 import cau_keo_ml
 from cau_keo_feature_groups import ALL_DOMAIN_FEATURES, augment_domain_features
 from cau_keo_ml import FEATURE_COLS, CauKeoConfig
-from ml_features import FIELD_WIDTHS
+from xsmb_domain import FIELD_WIDTHS  # nguồn gốc, không qua re-export
 
 
 class _FakeLottery:

@@ -14,7 +14,7 @@ import requests
 from dtos import Result, ResultList
 from excel_export import export_excel_outputs
 from sources import HttpClient, Source, default_sources, source_independence_key
-from time_policy import VIETNAM_TZ, vietnam_date
+from time_policy import vietnam_date
 
 logger = logging.getLogger(__name__)
 

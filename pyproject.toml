@@ -3,14 +3,42 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-# CI blocks only correctness-critical diagnostics.
-# Style/formatting rules are intentionally non-blocking for this legacy analytical codebase.
+# CI chặn các chẩn đoán về TÍNH ĐÚNG. Quy tắc văn phong/định dạng vẫn cố ý
+# không chặn với kho phân tích kế thừa này.
+#
+# Bộ cũ chỉ có bốn nhóm "lỗi chí mạng", và hai bug số liệu tìm được trong đợt
+# rà soát đều nằm ngoài tầm với của nó. Các nhóm thêm vào dưới đây đều đã được
+# đưa về 0 vi phạm trước khi bật, nên chúng chặn HỒI QUY chứ không tạo nợ:
+#
+#   F     pyflakes đầy đủ — biến/import thừa thường là dấu vết của một nhánh
+#         logic bị bỏ rơi. Một bảng tổng hợp chết và một lời gọi CSV bị vứt đã
+#         lộ ra theo đúng đường này.
+#   B     bugbear — closure bắt biến vòng lặp, zip() lệch độ dài âm thầm cắt
+#         phần dư, biến vòng lặp không dùng.
+#   DTZ   datetime thiếu múi giờ. Kho này chốt kỳ quay lúc 18:35 giờ Việt Nam;
+#         một datetime naive lọt vào là lệch ngày.
+#   PLE   nhóm "error" của pylint.
+#   NPY   khuyến cáo API numpy đã lỗi thời.
+#   W     cảnh báo pycodestyle.
+#   PLW1510  subprocess.run thiếu check= — tiến trình con hỏng mà không ai
+#         biết, đúng lớp lỗi "thất bại im lặng" kho này từng mắc.
 select = [
   "E9",   # fatal syntax/runtime parse errors
-  "F63",  # invalid comparisons / assertions
-  "F7",   # syntax-related pyflakes errors
-  "F82",  # undefined names
+  "F",    # pyflakes đầy đủ
+  "B",    # flake8-bugbear
+  "DTZ",  # flake8-datetimez
+  "PLE",  # pylint error
+  "NPY",  # numpy
+  "W",    # pycodestyle warning
+  "PLW1510",  # subprocess.run thiếu check=
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Các test chính sách thời gian CỐ Ý truyền datetime không múi giờ để kiểm
+# đúng đường TỪ CHỐI — vietnam_date và latest_complete_draw_date đều ném
+# ValueError khi thiếu tzinfo, và đó là hành vi đang được khẳng định.
+"tests/test_time_policy.py" = ["DTZ001"]
+"tests/test_security_hardening.py" = ["DTZ001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]

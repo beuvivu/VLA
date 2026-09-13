@@ -8,6 +8,8 @@ khả thi. Bộ test vì thế kiểm cả cấu trúc trang lẫn tính đúng 
 
 from __future__ import annotations
 
+import itertools
+
 import json
 import re
 from pathlib import Path
@@ -200,7 +202,7 @@ def test_pair_chance_grid_interpolates_within_one_percent() -> None:
             return grid[0][1]
         if n >= grid[-1][0]:
             return grid[-1][1]
-        for (a_n, a_m, _, _), (b_n, b_m, _, _) in zip(grid, grid[1:]):
+        for (a_n, a_m, _, _), (b_n, b_m, _, _) in itertools.pairwise(grid):
             if a_n <= n <= b_n:
                 t = (n - a_n) / (b_n - a_n)
                 return a_m + t * (b_m - a_m)
@@ -239,7 +241,7 @@ def test_chance_notes_are_format_safe() -> None:
     from build_stat_pages import chance_note_context
 
     context = chance_note_context(393)
-    for slug, note in CHANCE_NOTES.items():
+    for note in CHANCE_NOTES.values():
         note.format(**context)  # không được ném lỗi
 
 

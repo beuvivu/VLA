@@ -12,7 +12,7 @@ def _two(dates: list[str]) -> pd.DataFrame:
     for t, d in enumerate(dates):
         vals = [(10 * t + i) % 100 for i in range(27)]
         vals[0] = t % 2  # two repeating special states 00/01
-        rows.append({"date": d, **dict(zip(cols, vals))})
+        rows.append({"date": d, **dict(zip(cols, vals, strict=True))})
     return pd.DataFrame(rows)
 
 

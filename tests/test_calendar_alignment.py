@@ -25,13 +25,13 @@ def _two_digit_frame(dates: list[str]) -> pd.DataFrame:
 def test_calendar_pairs_skip_missing_day() -> None:
     dates = pd.to_datetime(["2026-08-01", "2026-08-02", "2026-08-04", "2026-08-05"])
     src, dst = consecutive_next_pairs(dates)
-    assert list(zip(src.tolist(), dst.tolist())) == [(0, 1), (2, 3)]
+    assert list(zip(src.tolist(), dst.tolist(), strict=True)) == [(0, 1), (2, 3)]
 
 
 def test_exact_multi_day_lag_is_date_based_not_row_based() -> None:
     dates = pd.to_datetime(["2026-08-01", "2026-08-03", "2026-08-04"])
     src, dst = calendar_lag_pairs(dates, 2)
-    assert list(zip(src.tolist(), dst.tolist())) == [(0, 1)]
+    assert list(zip(src.tolist(), dst.tolist(), strict=True)) == [(0, 1)]
 
 
 def test_contiguity_guard_reports_gap() -> None:

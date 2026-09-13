@@ -185,6 +185,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
     )
     assert result.returncode == 0
     assert "BỎ QUA" in result.stdout
@@ -200,6 +201,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
     )
     assert strict.returncode == 1
 
@@ -212,6 +214,7 @@ def test_gate_cli_fails_on_a_real_regression(tmp_path: Path) -> None:
         cwd=ROOT,
         capture_output=True,
         text=True,
+        check=False,  # test tự khẳng định returncode, có chỗ chờ 1
     )
     assert result.returncode == 1
     assert "LỖI" in result.stdout

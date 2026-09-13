@@ -29,7 +29,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from datetime import date, datetime, time as dtime, timedelta
+from datetime import date, datetime, time as dtime
 from pathlib import Path
 from typing import Sequence
 from zoneinfo import ZoneInfo

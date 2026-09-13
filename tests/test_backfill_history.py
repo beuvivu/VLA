@@ -280,7 +280,6 @@ def test_every_checkpoint_persists_what_was_fetched_so_far() -> None:
 def test_backfill_never_dumps_without_rebuilding_the_frames() -> None:
     """Chặn tận gốc: mọi lời gọi ``dump`` trong backfill phải đi qua
     ``_persist``, nơi duy nhất gọi ``generate_dataframes`` ngay trước đó."""
-    import re
     from pathlib import Path
 
     src = (

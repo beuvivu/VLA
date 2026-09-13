@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 
 from ml_features import (
-    FIELD_WIDTHS,
     FeatureParams,
     build_ml_table_from_history,
     _pairs_indices,
@@ -11,6 +10,11 @@ from ml_features import (
     _path_support_matrix,
     _validate_aligned_histories,
 )
+
+# FIELD_WIDTHS thuộc về xsmb_domain. Trước đây test lấy nó qua ml_features —
+# một re-export tình cờ, và linter đã gỡ đúng dòng import ấy vì trong chính
+# ml_features nó không được dùng. Trỏ thẳng nguồn gốc thì không vỡ lại được.
+from xsmb_domain import FIELD_WIDTHS
 
 
 def test_vectorized_path_support_matches_single_day_reference() -> None:

@@ -11,7 +11,6 @@ from scipy.signal import lfilter
 from calendar_alignment import normalize_dates
 from lottery import Lottery
 from xsmb_domain import (
-    FIELD_WIDTHS,
     position_pairs as _pairs_indices,
     raw_digit_matrix,
     reverse_indices as _reverse_indices,
