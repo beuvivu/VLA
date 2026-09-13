@@ -51,11 +51,32 @@ def _select_recent_complete_days(df: pd.DataFrame, window_days: int) -> list[str
     return complete if window_days <= 0 else complete[-window_days:]
 
 
-def _day_weights(days: list[str], half_life_days: int) -> np.ndarray:
-    if half_life_days <= 0:
+def _day_weights(days: list[str], half_life_draws: int) -> np.ndarray:
+    """Trọng số giảm dần theo độ tuổi, tính bằng SỐ KỲ chứ không phải ngày lịch.
+
+    Args:
+        days: Danh sách ngày quay đã sắp tăng dần; chỉ độ DÀI được dùng.
+        half_life_draws: Sau ngần này KỲ thì trọng số còn một nửa.
+
+    Returns:
+        Mảng trọng số đã chuẩn hoá về trung bình 1.
+
+    Cờ dòng lệnh mang tên ``--half-life-days`` nhưng ``age`` ở đây là khoảng
+    cách CHỈ SỐ HÀNG, tức số kỳ quay. Hai đơn vị không đổi lẫn nhau được: lịch
+    sử trải 2 446 ngày lịch trên 2 397 kỳ, và tuổi theo lịch lớn hơn tuổi theo
+    kỳ trung vị 12 đơn vị, tối đa 50. Đo trên chính dữ liệu này, đặt nửa đời 30
+    thì hai cách cho trọng số lệch trung vị 9,6 % và tối đa 44,6 %.
+
+    Đếm theo kỳ là lựa chọn hợp lý cho xổ số — mỗi kỳ là một quan sát, và một
+    đợt nghỉ Tết không làm quan sát nào cũ đi. Nhưng ``meta_predictor
+    ._recency_row_weights`` nhận tham số CÙNG TÊN mà lại tính
+    ``(latest - d).days``, tức ngày lịch thật. Ghi rõ ở cả hai nơi để không ai
+    đọc một chỗ rồi suy ra chỗ kia.
+    """
+    if half_life_draws <= 0:
         return np.ones(len(days), dtype=float)
     age = np.arange(len(days) - 1, -1, -1, dtype=float)
-    lam = np.log(2.0) / float(half_life_days)
+    lam = np.log(2.0) / float(half_life_draws)
     w = np.exp(-lam * age)
     return w / np.mean(w)
 
@@ -137,6 +158,8 @@ def main() -> None:
     ap.add_argument("--out-dir", default="data/ensemble")
     ap.add_argument("--window-days", type=int, default=180)
     ap.add_argument("--min-days", type=int, default=20)
+    # Tên cờ giữ nguyên vì pipeline.py và scripts/release_check.sh đang truyền
+    # nó; đơn vị THẬT là số kỳ quay, xem chú thích của _day_weights.
     ap.add_argument("--half-life-days", type=int, default=45)
     args = ap.parse_args()
 

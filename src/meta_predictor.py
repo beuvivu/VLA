@@ -289,6 +289,12 @@ def _candidate_configs() -> list[dict[str, object]]:
 
 
 def _recency_row_weights(dates: pd.Series, half_life_days: float) -> np.ndarray:
+    """Trọng số giảm dần theo NGÀY LỊCH thật, không phải theo số kỳ.
+
+    Khác với ``learn_ensemble_weights._day_weights`` vốn nhận tham số cùng tên
+    nhưng đếm theo chỉ số hàng, tức số kỳ. Hai đơn vị lệch nhau trung vị 12 và
+    tối đa 50 trên lịch sử hiện có. Đừng sao chép công thức giữa hai nơi.
+    """
     d = pd.DatetimeIndex(pd.to_datetime(dates))
     latest = pd.Timestamp(d.max())
     ages = np.asarray((latest - d).days, dtype=np.float64)

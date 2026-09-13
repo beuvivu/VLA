@@ -831,9 +831,6 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
     loto_snapshot = _read_csv(
         repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
     )
-    de_snapshot = _read_csv(
-        repo_root / "data" / "advanced" / "period_snapshot_de_current.csv", dtype=str
-    )
 
     ai_loto = _sort_top(
         _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str),
@@ -2343,8 +2340,8 @@ def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
           </div>
         </div>
         <div class="matrix-two">
-          {_render_matrix_card(title="Gan lô tô hiện tại", subtitle="Số ngày chưa về của từng bộ lô tô.", values=_rhythm_matrix(repo_root, "loto"), palette="sky", mode="loto")}
-          {_render_matrix_card(title="Gan ĐB hiện tại", subtitle="Số ngày chưa về của từng bộ ĐB.", values=_rhythm_matrix(repo_root, "de"), palette="rose", mode="de")}
+          {_render_matrix_card(title="Gan lô tô hiện tại", subtitle="Số kỳ chưa về của từng bộ lô tô.", values=_rhythm_matrix(repo_root, "loto"), palette="sky", mode="loto")}
+          {_render_matrix_card(title="Gan ĐB hiện tại", subtitle="Số kỳ chưa về của từng bộ ĐB.", values=_rhythm_matrix(repo_root, "de"), palette="rose", mode="de")}
           {_render_bar_card(title="Gan lô tô đứng đầu", subtitle="Các bộ lô tô có khoảng gan hiện tại cao nhất.", df=loto_rhythm, label_col="number_str", value_col="current_gap", palette="sky", mode="loto", number_col="number_str", limit=12, value_decimals=0)}
           {_render_bar_card(title="Gan ĐB đứng đầu", subtitle="Các bộ ĐB có khoảng gan hiện tại cao nhất.", df=de_rhythm, label_col="number_str", value_col="current_gap", palette="rose", mode="de", number_col="number_str", limit=12, value_decimals=0)}
         </div>

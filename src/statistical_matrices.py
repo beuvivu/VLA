@@ -253,14 +253,14 @@ def _rhythm_from_sparse(sparse_df: pd.DataFrame, *, mode: str) -> pd.DataFrame:
         return pd.DataFrame()
 
     dates = pd.to_datetime(df["date"]).dt.normalize().to_numpy()
-    as_of = pd.to_datetime(df["date"]).max().normalize()
     mat = df[NUMBER_COLS].to_numpy(dtype=int, copy=False)
     rows: list[dict[str, object]] = []
 
     for n in NUMBER_COLS:
         idx = np.where(mat[:, n] > 0)[0]
         if idx.size == 0:
-            current_gap = int((as_of - pd.to_datetime(dates[0])).days)
+            # Chưa từng về: gan bằng trọn số kỳ đã quan sát.
+            current_gap = int(mat.shape[0])
             rows.append(
                 {
                     "mode": mode,
@@ -280,8 +280,19 @@ def _rhythm_from_sparse(sparse_df: pd.DataFrame, *, mode: str) -> pd.DataFrame:
             continue
 
         hit_dates = pd.to_datetime(dates[idx]).normalize()
-        gaps = np.diff(hit_dates).astype("timedelta64[D]").astype(int) if len(hit_dates) >= 2 else np.array([], dtype=int)
-        current_gap = int((as_of - hit_dates[-1]).days)
+        # Gan đếm theo KỲ QUAY, không theo ngày lịch.
+        #
+        # ``idx`` là chỉ số hàng, mà mỗi hàng là một kỳ, nên hiệu của chúng
+        # chính là số kỳ. Bản cũ lấy hiệu của NGÀY (np.diff(hit_dates)) nên mọi
+        # đợt nghỉ đều cộng thẳng vào gan: lịch sử có 8 đợt, và đo trên chính
+        # data/xsmb.csv thì mốc 2020-04-23 cho con 00 gan thật 6 kỳ nhưng đếm
+        # theo lịch ra 29. Trang lo-gan.html đã đếm theo kỳ và nói rõ trên
+        # trang; bảng này nuôi bốn builder khác nên hai mặt từng lệch định nghĩa.
+        #
+        # rhythm_pressure là tỉ số current_gap / mean_gap: chỉ có nghĩa khi hai
+        # vế CÙNG đơn vị, nên nó cũng phải đi theo.
+        gaps = np.diff(idx).astype(int) if idx.size >= 2 else np.array([], dtype=int)
+        current_gap = int(mat.shape[0] - 1 - idx[-1])
         mean_gap = float(np.mean(gaps)) if gaps.size else None
         pressure = (current_gap / mean_gap) if mean_gap and mean_gap > 0 else None
         rows.append(
@@ -418,8 +429,6 @@ def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> p
 
     df["period_key"] = _period_series(df["date"], period)
     count_by_period = df.groupby("period_key", sort=True)[NUMBER_COLS].sum()
-    bool_df = (df[NUMBER_COLS] > 0).assign(period_key=df["period_key"])
-    days_by_period = bool_df.groupby("period_key", sort=True)[NUMBER_COLS].sum()
     draws = df.groupby("period_key", sort=True)["date"].nunique()
 
     # ``all_cap_loto_50`` is the single source of truth for cặp lộn/reverse

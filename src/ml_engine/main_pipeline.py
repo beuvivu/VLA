@@ -344,7 +344,7 @@ class ContinuousLearningPipeline:
         }
         self.bandit.update_batch(rewards)
 
-        score = self.tracker.add(probabilities, outcome)
+        self.tracker.add(probabilities, outcome)  # ghi nhận, giá trị trả về không dùng
         verdict = self.drift.update(1.0 - hits_in_top_k / self.config.top_k)
         self.safe_mode.observe(
             hits_in_top_k / self.config.top_k, drifted=verdict.drifted, day_index=day

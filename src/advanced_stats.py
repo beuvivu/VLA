@@ -145,14 +145,25 @@ def compute_cycle_stats(sparse_df: pd.DataFrame, *, window_days: int = 365 * 2) 
         target,
         lookback_days=window_days,
     )
+    # Gan đếm theo KỲ QUAY, không theo ngày lịch.
+    #
+    # XSMB nghỉ Tết hằng năm và nghỉ 01-22/04/2020; lịch sử có 8 đợt nghỉ. Đếm
+    # theo ngày lịch thì mọi con lô đều bị cộng thêm đúng số ngày nghỉ ấy ngay
+    # sau mỗi đợt. Đo trên chính data/xsmb.csv: mốc 2020-04-23, con 00 có gan
+    # thật 6 kỳ nhưng đếm theo lịch ra 29 — thổi phồng gần năm lần.
+    #
+    # Bảng này nuôi bốn builder (trang chủ, statistics, statistical_matrices,
+    # markdown dashboard), trong khi trang lo-gan.html đếm theo kỳ và nói rõ
+    # điều đó ngay trên trang. Hai mặt cùng một khái niệm mà lệch định nghĩa
+    # thì luôn có một mặt sai; bản theo kỳ mới là bản đúng nghiệp vụ.
     out = canonical.rename(
         columns={
             "number": "value",
             "hit_draws": "hits",
-            "current_gap_calendar_days": "current_gap",
-            "minimum_interval_calendar_days": "min_gap",
-            "maximum_interval_calendar_days": "max_gap",
-            "mean_interval_calendar_days": "mean_gap",
+            "current_gap_draws": "current_gap",
+            "minimum_interval_draws": "min_gap",
+            "maximum_interval_draws": "max_gap",
+            "mean_interval_draws": "mean_gap",
             "number_str": "value_str",
         }
     )[["value", "hits", "current_gap", "min_gap", "max_gap", "mean_gap", "value_str"]]

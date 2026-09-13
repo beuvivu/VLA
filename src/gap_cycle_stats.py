@@ -88,6 +88,7 @@ def _gap_row(
         "interval_q75_draws": (
             float(np.quantile(interval_draws, 0.75)) if interval_draws.size else float("nan")
         ),
+        "minimum_interval_draws": _safe_stat(interval_draws, "min"),
         "maximum_interval_draws": _safe_stat(interval_draws, "max"),
         "minimum_interval_calendar_days": _safe_stat(interval_calendar, "min"),
         "maximum_interval_calendar_days": _safe_stat(interval_calendar, "max"),

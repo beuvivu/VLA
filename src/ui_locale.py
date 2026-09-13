@@ -51,7 +51,9 @@ COLUMN_LABELS = {
     "params": "Tham số",
     "metric": "Chỉ số",
     "temperature": "Nhiệt độ hiệu chỉnh",
-    "half_life_days": "Chu kỳ bán rã (ngày)",
+    # Giá trị này do learn_ensemble_weights sinh ra và nó đếm theo SỐ KỲ
+    # quay, không theo ngày lịch — xem chú thích của _day_weights.
+    "half_life_days": "Chu kỳ bán rã (kỳ)",
     "window_days": "Cửa sổ (ngày)",
     "days_used": "Số ngày đã dùng",
     "learned_at_utc": "Học lúc (UTC)",
@@ -198,7 +200,6 @@ COLUMN_LABELS = {
     "w_active": "Trọng số cầu đang chạy",
     "w_ml": "Trọng số ML",
     "w_stable": "Trọng số cầu ổn định",
-    "note": "Ghi chú",
     "week_key": "Tuần",
     "month_key": "Tháng",
     "z_score": "Điểm chuẩn hóa Z",

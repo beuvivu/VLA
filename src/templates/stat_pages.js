@@ -729,9 +729,9 @@ function specialGaps() {
 // --- Lô gan -----------------------------------------------------------------
 //
 // Bố cục đọc được từ trang tham chiếu (thongkemienbac, thong-ke-lo-gan):
-//   1. Lô gan hiện tại: Bộ số | Ngày ra cuối cùng | Số ngày gan | Gan cực đại
+//   1. Lô gan hiện tại: Bộ số | Ngày ra cuối cùng | Số kỳ gan | Gan cực đại
 //   2. Gan cực đại của cả 00-99, tách hai bảng 00-49 và 50-99
-//   3. Cặp lô gan: Cặp số | Ngày ra gần đây | Số ngày gan | Gan cực đại
+//   3. Cặp lô gan: Cặp số | Ngày ra gần đây | Số kỳ gan | Gan cực đại
 //
 // "Gan" đếm theo KỲ chứ không theo ngày lịch. Hai cách này chỉ trùng nhau khi
 // ngày nào cũng quay; XSMB nghỉ Tết và nghỉ 01-22/04/2020, nên đếm theo ngày
@@ -811,7 +811,7 @@ function renderLoGan() {
   // 1. Gan hiện tại, giảm dần.
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   table($("sp-grid"),
-    ["Bộ số", "Ngày ra cuối cùng", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     order.map((p) => [
       pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
     ]), { numeric: [2, 3, 4] });
@@ -829,7 +829,7 @@ function renderLoGan() {
   const pg = pairGaps();
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   table($("sp-pair-gan"),
-    ["Cặp số", "Ngày ra gần đây", "Số ngày gan", "Gan cực đại", "Tổng lần về"],
+    ["Cặp số", "Ngày ra gần đây", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     pairOrder.map((p) => [
       `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
       pg.maxGap[p[0]] || "—", pg.hits[p[0]],

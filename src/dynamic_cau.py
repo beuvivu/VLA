@@ -153,7 +153,6 @@ def normalize_raw_draws(raw_history: pd.DataFrame) -> tuple[NormalizedDraw, ...]
     work["date"] = pd.to_datetime(work["date"], errors="raise").dt.normalize()
     work = work.sort_values("date").reset_index(drop=True)
     normalize_dates(work["date"])
-    positions = all_source_positions()
     draws: list[NormalizedDraw] = []
     for _, row in work.iterrows():
         digits: dict[PositionRef, int] = {}
