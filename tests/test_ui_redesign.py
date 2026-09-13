@@ -1134,7 +1134,28 @@ def test_desktop_page_differs_from_the_default_one_only_by_its_body_class() -> N
     marker = ' class="desktop-view"'
     body = desktop.read_text(encoding="utf-8")
     assert marker in body, "trang máy tính thiếu lớp desktop-view"
-    assert body.replace(marker, "", 1) == default.read_text(encoding="utf-8"), (
-        "hai trang khác nhau nhiều hơn một lớp trên thẻ body — "
-        "chúng đã có bố cục riêng, và phép kiểm ghi đè desktop-view không phủ được nữa"
+
+    stripped = body.replace(marker, "", 1)
+    expected = default.read_text(encoding="utf-8")
+    if stripped == expected:
+        return
+
+    # So bằng DIGEST chứ không so thẳng hai chuỗi. Mỗi trang nặng ~800 KB; nếu
+    # khẳng định thất bại trên chuỗi thô thì pytest dựng diff của hai khối ấy
+    # và treo hàng phút — đo được một test riêng lẻ vượt 120 s, đủ làm cả bộ
+    # test trông như bị treo. Tự tìm điểm lệch đầu tiên rồi báo đúng vùng đó.
+    import hashlib
+
+    first = next(
+        (i for i, (x, y) in enumerate(zip(stripped, expected, strict=False)) if x != y),
+        min(len(stripped), len(expected)),
+    )
+    raise AssertionError(
+        "hai trang khác nhau nhiều hơn một lớp trên thẻ body — chúng đã có bố cục "
+        "riêng, và phép kiểm ghi đè desktop-view không phủ được nữa.\n"
+        f"  digest index           : {hashlib.sha256(expected.encode()).hexdigest()[:16]}\n"
+        f"  digest landing_desktop : {hashlib.sha256(stripped.encode()).hexdigest()[:16]}\n"
+        f"  lệch từ ký tự {first}\n"
+        f"  index           : {expected[first - 40:first + 60]!r}\n"
+        f"  landing_desktop : {stripped[first - 40:first + 60]!r}"
     )

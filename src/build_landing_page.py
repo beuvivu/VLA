@@ -823,10 +823,29 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     return "<div class='three-col'>" + "".join(cards) + "</div>"
 
 
-def _render_html(repo_root: Path, *, desktop_view: bool = False) -> str:
+def _render_html(
+    repo_root: Path, *, desktop_view: bool = False, generated_at: str | None = None
+) -> str:
+    """Dựng một bản trang tổng hợp.
+
+    Args:
+        repo_root: Thư mục gốc kho mã.
+        desktop_view: Gắn lớp ``desktop-view`` lên thẻ body.
+        generated_at: Mốc thời gian đã chốt sẵn. Bỏ trống thì lấy giờ hiện tại.
+
+    Returns:
+        Chuỗi HTML hoàn chỉnh.
+
+    ``generated_at`` phải nhận được từ bên ngoài vì hàm này được gọi HAI lần
+    cho hai bản của cùng một trang. Trước đây mỗi lần gọi tự lấy giờ riêng, nên
+    một lần dựng vắt qua ranh giới phút sẽ sinh ra hai trang ghi hai thời điểm
+    khác nhau — tái hiện được: index.html ghi "09:23 UTC" còn
+    landing_desktop.html ghi "09:24 UTC" cho cùng một lần chạy.
+    """
     latest = _latest_draw(repo_root)
     explain_map = _load_explain_map(repo_root)
-    generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
+    if generated_at is None:
+        generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     loto_snapshot = _read_csv(
         repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
@@ -2715,9 +2734,21 @@ def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list
     docs_dir = docs_dir if docs_dir is not None else repo_root / "docs"
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
-    html_doc = "\n".join(line.rstrip() for line in _render_html(repo_root).splitlines()) + "\n"
+    # MỘT mốc thời gian cho cả hai bản: chúng là cùng một lần dựng.
+    stamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
+    html_doc = (
+        "\n".join(
+            line.rstrip() for line in _render_html(repo_root, generated_at=stamp).splitlines()
+        )
+        + "\n"
+    )
     desktop_doc = (
-        "\n".join(line.rstrip() for line in _render_html(repo_root, desktop_view=True).splitlines())
+        "\n".join(
+            line.rstrip()
+            for line in _render_html(
+                repo_root, desktop_view=True, generated_at=stamp
+            ).splitlines()
+        )
         + "\n"
     )
     out_index = docs_dir / "index.html"
