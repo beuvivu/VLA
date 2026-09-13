@@ -1,101 +1,101 @@
-"number","number_str","freq_7d","days_hit_7d","freq_30d","days_hit_30d","freq_365d","days_hit_365d","current_gap","mean_gap","rhythm_pressure","ml_prob","freq_current_year","z_score_current_year","ai_ml_signal_score","score_band","note"
-18,"18",0,0,1,1,1,1,29,76.6333,0.3784,0.01029067,1,-0.9579,54.1336,"high","statistical ranking signal only; not a guaranteed prediction"
-30,"30",0,0,0,0,2,2,206,77.25,2.6667,0.01019373,2,-0.3235,52.2469,"high","statistical ranking signal only; not a guaranteed prediction"
-23,"23",0,0,1,1,6,6,23,92.6,0.2484,0.01010725,5,1.5796,51.0419,"high","statistical ranking signal only; not a guaranteed prediction"
-98,"98",0,0,0,0,0,0,568,93.8421,6.0527,0.01004251,0,-1.5923,50.7117,"high","statistical ranking signal only; not a guaranteed prediction"
-83,"83",0,0,1,1,9,9,25,92.0,0.2717,0.01006506,6,2.214,50.708,"high","statistical ranking signal only; not a guaranteed prediction"
-73,"73",0,0,0,0,1,1,314,146.3571,2.1454,0.0101777,0,-1.5923,50.0398,"high","statistical ranking signal only; not a guaranteed prediction"
-21,"21",0,0,1,1,6,6,11,95.24,0.1155,0.01012775,4,0.9452,49.2499,"medium","statistical ranking signal only; not a guaranteed prediction"
-28,"28",0,0,0,0,5,5,49,126.5294,0.3873,0.01016412,4,0.9452,48.7494,"medium","statistical ranking signal only; not a guaranteed prediction"
-11,"11",0,0,1,1,2,2,9,103.0909,0.0873,0.01019404,2,-0.3235,48.5995,"medium","statistical ranking signal only; not a guaranteed prediction"
-17,"17",0,0,1,1,5,5,19,83.4286,0.2277,0.01006898,5,1.5796,47.8913,"medium","statistical ranking signal only; not a guaranteed prediction"
-37,"37",0,0,2,2,7,7,7,128.5294,0.0545,0.00996228,6,2.214,46.9276,"medium","statistical ranking signal only; not a guaranteed prediction"
-25,"25",0,0,0,0,4,4,39,94.5,0.4127,0.01018124,3,0.3108,46.7824,"medium","statistical ranking signal only; not a guaranteed prediction"
-4,"04",1,1,1,1,6,6,3,79.7333,0.0376,0.01006328,5,1.5796,46.7438,"medium","statistical ranking signal only; not a guaranteed prediction"
-85,"85",0,0,0,0,3,3,65,117.1667,0.5548,0.0101607,3,0.3108,46.3306,"medium","statistical ranking signal only; not a guaranteed prediction"
-51,"51",1,1,1,1,6,6,0,97.0417,0.0,0.01002022,6,2.214,46.1223,"medium","statistical ranking signal only; not a guaranteed prediction"
-22,"22",0,0,0,0,4,4,35,104.9091,0.3336,0.01013261,4,0.9452,45.6839,"medium","statistical ranking signal only; not a guaranteed prediction"
-38,"38",0,0,1,1,9,9,20,80.75,0.2477,0.00999095,6,2.214,44.7278,"medium","statistical ranking signal only; not a guaranteed prediction"
-93,"93",0,0,0,0,4,4,97,83.04,1.1681,0.01011743,3,0.3108,44.376,"medium","statistical ranking signal only; not a guaranteed prediction"
-1,"01",0,0,0,0,5,5,63,113.15,0.5568,0.0101303,3,0.3108,43.8798,"medium","statistical ranking signal only; not a guaranteed prediction"
-54,"54",0,0,0,0,8,8,51,75.4516,0.6759,0.00998763,7,2.8483,43.6915,"medium","statistical ranking signal only; not a guaranteed prediction"
-92,"92",0,0,0,0,6,6,126,90.9565,1.3853,0.01012338,2,-0.3235,43.2573,"medium","statistical ranking signal only; not a guaranteed prediction"
-36,"36",0,0,0,0,7,7,82,67.8485,1.2086,0.01011139,3,0.3108,43.2461,"medium","statistical ranking signal only; not a guaranteed prediction"
-68,"68",0,0,1,1,8,8,15,77.3,0.194,0.00996951,6,2.214,42.8416,"medium","statistical ranking signal only; not a guaranteed prediction"
-95,"95",0,0,0,0,2,2,177,105.6,1.6761,0.01012338,1,-0.9579,42.6449,"medium","statistical ranking signal only; not a guaranteed prediction"
-13,"13",0,0,1,1,3,3,21,80.4643,0.261,0.01006898,3,0.3108,42.2651,"medium","statistical ranking signal only; not a guaranteed prediction"
-86,"86",0,0,0,0,4,4,230,90.5909,2.5389,0.01004251,2,-0.3235,41.5492,"medium","statistical ranking signal only; not a guaranteed prediction"
-15,"15",0,0,0,0,0,0,431,88.1364,4.8901,0.01000032,0,-1.5923,41.4026,"medium","statistical ranking signal only; not a guaranteed prediction"
-19,"19",0,0,0,0,3,3,59,77.6207,0.7601,0.01013742,2,-0.3235,41.4001,"medium","statistical ranking signal only; not a guaranteed prediction"
-94,"94",0,0,0,0,4,4,62,86.5,0.7168,0.01005584,4,0.9452,40.9054,"medium","statistical ranking signal only; not a guaranteed prediction"
-7,"07",0,0,0,0,1,1,359,133.8667,2.6818,0.0100291,0,-1.5923,40.4707,"medium","statistical ranking signal only; not a guaranteed prediction"
-84,"84",0,0,0,0,3,3,88,148.4545,0.5928,0.01010501,2,-0.3235,40.1576,"medium","statistical ranking signal only; not a guaranteed prediction"
-24,"24",0,0,0,0,4,4,176,79.7778,2.2061,0.01000032,3,0.3108,38.7505,"medium","statistical ranking signal only; not a guaranteed prediction"
-31,"31",0,0,0,0,0,0,363,132.2143,2.7455,0.01000032,0,-1.5923,38.4097,"medium","statistical ranking signal only; not a guaranteed prediction"
-45,"45",0,0,1,1,3,3,16,111.619,0.1433,0.01005368,2,-0.3235,37.999,"medium","statistical ranking signal only; not a guaranteed prediction"
-14,"14",0,0,0,0,6,6,91,116.8947,0.7785,0.01000032,4,0.9452,37.8664,"medium","statistical ranking signal only; not a guaranteed prediction"
-39,"39",0,0,1,1,6,6,26,79.9286,0.3253,0.00993429,5,1.5796,37.7307,"medium","statistical ranking signal only; not a guaranteed prediction"
-88,"88",0,0,0,0,5,5,167,85.5417,1.9523,0.01002429,2,-0.3235,37.3604,"medium","statistical ranking signal only; not a guaranteed prediction"
-90,"90",1,1,1,1,5,5,5,117.0526,0.0427,0.01001475,3,0.3108,37.3463,"medium","statistical ranking signal only; not a guaranteed prediction"
-16,"16",0,0,0,0,3,3,48,128.0,0.375,0.01009026,2,-0.3235,37.2501,"medium","statistical ranking signal only; not a guaranteed prediction"
-91,"91",0,0,0,0,4,4,32,110.9524,0.2884,0.01005852,3,0.3108,36.9362,"medium","statistical ranking signal only; not a guaranteed prediction"
-99,"99",0,0,0,0,2,2,61,122.6667,0.4973,0.01011124,1,-0.9579,36.5963,"medium","statistical ranking signal only; not a guaranteed prediction"
-42,"42",0,0,1,1,4,4,10,105.1905,0.0951,0.00995923,4,0.9452,36.1079,"medium","statistical ranking signal only; not a guaranteed prediction"
-2,"02",0,0,0,0,1,1,306,117.9412,2.5945,0.01000032,0,-1.5923,35.9009,"medium","statistical ranking signal only; not a guaranteed prediction"
-27,"27",0,0,0,0,2,2,238,111.7778,2.1292,0.01000032,1,-0.9579,35.7651,"medium","statistical ranking signal only; not a guaranteed prediction"
-43,"43",0,0,1,1,6,6,24,107.7273,0.2228,0.0099777,3,0.3108,35.3029,"medium","statistical ranking signal only; not a guaranteed prediction"
-72,"72",0,0,1,1,3,3,13,152.2667,0.0854,0.01005611,1,-0.9579,35.1983,"medium","statistical ranking signal only; not a guaranteed prediction"
-76,"76",0,0,0,0,3,3,141,85.1154,1.6566,0.01001079,2,-0.3235,35.1668,"medium","statistical ranking signal only; not a guaranteed prediction"
-58,"58",0,0,0,0,0,0,473,100.6842,4.6979,0.00989505,0,-1.5923,35.0695,"medium","statistical ranking signal only; not a guaranteed prediction"
-48,"48",0,0,0,0,5,5,143,82.0,1.7439,0.00989793,5,1.5796,35.0548,"medium","statistical ranking signal only; not a guaranteed prediction"
-61,"61",0,0,1,1,4,4,17,88.0,0.1932,0.0099777,3,0.3108,34.9948,"medium","statistical ranking signal only; not a guaranteed prediction"
-52,"52",1,1,1,1,5,5,1,102.5,0.0098,0.0099856,3,0.3108,34.9042,"medium","statistical ranking signal only; not a guaranteed prediction"
-32,"32",0,0,0,0,3,3,86,94.625,0.9089,0.01000032,3,0.3108,34.7892,"medium","statistical ranking signal only; not a guaranteed prediction"
-44,"44",0,0,1,1,3,3,12,112.9524,0.1062,0.0099777,3,0.3108,34.7748,"medium","statistical ranking signal only; not a guaranteed prediction"
-47,"47",0,0,0,0,5,5,40,80.0345,0.4998,0.00998804,4,0.9452,34.6674,"medium","statistical ranking signal only; not a guaranteed prediction"
-6,"06",0,0,0,0,2,2,159,138.75,1.1459,0.0100291,1,-0.9579,34.525,"medium","statistical ranking signal only; not a guaranteed prediction"
-0,"00",0,0,0,0,3,3,46,97.2609,0.473,0.01001813,3,0.3108,34.4129,"medium","statistical ranking signal only; not a guaranteed prediction"
-12,"12",0,0,0,0,3,3,130,102.7727,1.2649,0.01000323,2,-0.3235,34.0954,"medium","statistical ranking signal only; not a guaranteed prediction"
-33,"33",0,0,1,1,5,5,22,98.65,0.223,0.00996228,3,0.3108,34.0164,"medium","statistical ranking signal only; not a guaranteed prediction"
-89,"89",0,0,0,0,3,3,66,100.2609,0.6583,0.00999475,3,0.3108,33.4764,"medium","statistical ranking signal only; not a guaranteed prediction"
-97,"97",0,0,0,0,4,4,68,96.1667,0.7071,0.00998607,3,0.3108,32.8894,"medium","statistical ranking signal only; not a guaranteed prediction"
-29,"29",0,0,0,0,3,3,172,98.5238,1.7458,0.01000032,1,-0.9579,32.8601,"medium","statistical ranking signal only; not a guaranteed prediction"
-56,"56",0,0,0,0,0,0,422,105.5625,3.9976,0.00989505,0,-1.5923,32.8247,"medium","statistical ranking signal only; not a guaranteed prediction"
-9,"09",0,0,0,0,2,2,41,79.4828,0.5158,0.01007232,1,-0.9579,32.691,"medium","statistical ranking signal only; not a guaranteed prediction"
-5,"05",0,0,0,0,6,6,96,100.0,0.96,0.01000323,2,-0.3235,32.5989,"medium","statistical ranking signal only; not a guaranteed prediction"
-8,"08",0,0,0,0,5,5,94,112.3158,0.8369,0.01000032,2,-0.3235,32.2842,"medium","statistical ranking signal only; not a guaranteed prediction"
-74,"74",0,0,0,0,2,2,225,144.2,1.5603,0.00996286,1,-0.9579,32.2815,"medium","statistical ranking signal only; not a guaranteed prediction"
-82,"82",0,0,0,0,2,2,158,88.92,1.7769,0.00999983,1,-0.9579,32.2061,"medium","statistical ranking signal only; not a guaranteed prediction"
-20,"20",0,0,0,0,2,2,155,109.8421,1.4111,0.01000032,1,-0.9579,32.1119,"medium","statistical ranking signal only; not a guaranteed prediction"
-35,"35",1,1,1,1,3,3,6,101.4783,0.0591,0.00998061,2,-0.3235,31.8797,"medium","statistical ranking signal only; not a guaranteed prediction"
-75,"75",0,0,0,0,2,2,135,111.95,1.2059,0.00996286,2,-0.3235,31.1774,"medium","statistical ranking signal only; not a guaranteed prediction"
-3,"03",0,0,0,0,2,2,87,105.8095,0.8222,0.01002617,1,-0.9579,31.1288,"medium","statistical ranking signal only; not a guaranteed prediction"
-81,"81",1,1,1,1,4,4,2,103.55,0.0193,0.00993516,3,0.3108,31.0281,"medium","statistical ranking signal only; not a guaranteed prediction"
-70,"70",0,0,0,0,3,3,53,77.2414,0.6862,0.01000449,2,-0.3235,30.8042,"medium","statistical ranking signal only; not a guaranteed prediction"
-96,"96",0,0,1,1,3,3,27,84.2857,0.3203,0.00995302,2,-0.3235,30.6591,"medium","statistical ranking signal only; not a guaranteed prediction"
-63,"63",0,0,0,0,4,4,58,118.2105,0.4907,0.00996228,3,0.3108,30.6009,"medium","statistical ranking signal only; not a guaranteed prediction"
-87,"87",1,1,1,1,3,3,4,122.8947,0.0325,0.00992541,3,0.3108,30.358,"medium","statistical ranking signal only; not a guaranteed prediction"
-62,"62",0,0,0,0,4,4,227,86.2917,2.6306,0.00989505,2,-0.3235,29.9563,"medium","statistical ranking signal only; not a guaranteed prediction"
-55,"55",0,0,0,0,5,5,85,90.84,0.9357,0.00989793,4,0.9452,29.6449,"medium","statistical ranking signal only; not a guaranteed prediction"
-66,"66",0,0,1,1,3,3,8,114.65,0.0698,0.00994421,2,-0.3235,29.1383,"medium","statistical ranking signal only; not a guaranteed prediction"
-10,"10",0,0,0,0,2,2,43,137.5882,0.3125,0.01002347,1,-0.9579,28.9817,"medium","statistical ranking signal only; not a guaranteed prediction"
-59,"59",0,0,0,0,5,5,138,83.6538,1.6497,0.00989505,3,0.3108,28.8962,"medium","statistical ranking signal only; not a guaranteed prediction"
-57,"57",0,0,0,0,2,2,33,72.1333,0.4575,0.00998763,2,-0.3235,28.6135,"medium","statistical ranking signal only; not a guaranteed prediction"
-49,"49",0,0,0,0,2,2,190,88.12,2.1562,0.00989505,2,-0.3235,28.3278,"medium","statistical ranking signal only; not a guaranteed prediction"
-60,"60",0,0,0,0,3,3,38,95.625,0.3974,0.00997906,2,-0.3235,28.1676,"medium","statistical ranking signal only; not a guaranteed prediction"
-69,"69",0,0,0,0,3,3,121,76.0714,1.5906,0.00989505,3,0.3108,28.1479,"medium","statistical ranking signal only; not a guaranteed prediction"
-80,"80",0,0,1,1,4,4,18,73.9688,0.2433,0.0098444,4,0.9452,27.5356,"medium","statistical ranking signal only; not a guaranteed prediction"
-67,"67",0,0,0,0,4,4,37,81.6786,0.453,0.00992613,3,0.3108,26.8667,"medium","statistical ranking signal only; not a guaranteed prediction"
-53,"53",0,0,0,0,5,5,77,95.2273,0.8086,0.00989505,3,0.3108,26.2113,"medium","statistical ranking signal only; not a guaranteed prediction"
-34,"34",0,0,0,0,2,2,44,89.3846,0.4923,0.00997906,1,-0.9579,25.5746,"medium","statistical ranking signal only; not a guaranteed prediction"
-46,"46",0,0,0,0,3,3,174,94.3478,1.8442,0.00989793,1,-0.9579,24.9907,"low","statistical ranking signal only; not a guaranteed prediction"
-78,"78",0,0,1,1,4,4,28,99.5217,0.2813,0.009803,4,0.9452,24.7578,"low","statistical ranking signal only; not a guaranteed prediction"
-50,"50",0,0,0,0,5,5,107,90.8,1.1784,0.00989505,2,-0.3235,24.6746,"low","statistical ranking signal only; not a guaranteed prediction"
-64,"64",0,0,0,0,3,3,132,75.0333,1.7592,0.00987709,2,-0.3235,24.3796,"low","statistical ranking signal only; not a guaranteed prediction"
-41,"41",0,0,0,0,1,1,129,113.9474,1.1321,0.00989505,1,-0.9579,22.7857,"low","statistical ranking signal only; not a guaranteed prediction"
-40,"40",0,0,0,0,2,2,128,118.1579,1.0833,0.00989505,1,-0.9579,22.7417,"low","statistical ranking signal only; not a guaranteed prediction"
-79,"79",0,0,0,0,6,6,36,62.2778,0.5781,0.00989204,2,-0.3235,21.3155,"low","statistical ranking signal only; not a guaranteed prediction"
-26,"26",0,0,0,0,3,3,31,105.5,0.2938,0.00992875,1,-0.9579,21.0918,"low","statistical ranking signal only; not a guaranteed prediction"
-77,"77",0,0,0,0,3,3,207,67.8148,3.0524,0.00971169,3,0.3108,17.6823,"low","statistical ranking signal only; not a guaranteed prediction"
-65,"65",0,0,0,0,3,3,71,71.6452,0.991,0.00977679,2,-0.3235,13.8985,"low","statistical ranking signal only; not a guaranteed prediction"
-71,"71",0,0,0,0,2,2,69,96.2917,0.7166,0.00973259,1,-0.9579,7.5183,"low","statistical ranking signal only; not a guaranteed prediction"
+number,number_str,freq_7d,days_hit_7d,freq_30d,days_hit_30d,freq_365d,days_hit_365d,current_gap,mean_gap,rhythm_pressure,freq_current_year,z_score_current_year,ml_prob,ai_ml_signal_score,ml_available,ml_source,target_date,score_band,note
+18,18,0,0,1,1,1,1,29,76.6333,0.3784,1,-0.9579,0.01029067,54.1336,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+30,30,0,0,0,0,2,2,206,77.25,2.6667,2,-0.3235,0.01019373,52.2469,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+23,23,0,0,1,1,6,6,23,92.6,0.2484,5,1.5796,0.01010725,51.0419,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+98,98,0,0,0,0,0,0,568,93.8421,6.0527,0,-1.5923,0.01004251,50.7117,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+83,83,0,0,1,1,9,9,25,92.0,0.2717,6,2.214,0.01006506,50.708,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+73,73,0,0,0,0,1,1,314,146.3571,2.1454,0,-1.5923,0.0101777,50.0398,True,cau_keo,2026-09-13,high,date-verified ML + current descriptive statistics; ranking signal only
+21,21,0,0,1,1,6,6,11,95.24,0.1155,4,0.9452,0.01012775,49.2499,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+28,28,0,0,0,0,5,5,49,126.5294,0.3873,4,0.9452,0.01016412,48.7494,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+11,11,0,0,1,1,2,2,9,103.0909,0.0873,2,-0.3235,0.01019404,48.5995,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+17,17,0,0,1,1,5,5,19,83.4286,0.2277,5,1.5796,0.01006898,47.8913,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+37,37,0,0,2,2,7,7,7,128.5294,0.0545,6,2.214,0.00996228,46.9276,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+25,25,0,0,0,0,4,4,39,94.5,0.4127,3,0.3108,0.01018124,46.7824,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+4,04,1,1,1,1,6,6,3,79.7333,0.0376,5,1.5796,0.01006328,46.7438,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+85,85,0,0,0,0,3,3,65,117.1667,0.5548,3,0.3108,0.0101607,46.3306,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+51,51,1,1,1,1,6,6,0,97.0417,0.0,6,2.214,0.01002022,46.1223,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+22,22,0,0,0,0,4,4,35,104.9091,0.3336,4,0.9452,0.01013261,45.6839,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+38,38,0,0,1,1,9,9,20,80.75,0.2477,6,2.214,0.00999095,44.7278,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+93,93,0,0,0,0,4,4,97,83.04,1.1681,3,0.3108,0.01011743,44.376,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+1,01,0,0,0,0,5,5,63,113.15,0.5568,3,0.3108,0.0101303,43.8798,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+54,54,0,0,0,0,8,8,51,75.4516,0.6759,7,2.8483,0.00998763,43.6915,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+92,92,0,0,0,0,6,6,126,90.9565,1.3853,2,-0.3235,0.01012338,43.2573,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+36,36,0,0,0,0,7,7,82,67.8485,1.2086,3,0.3108,0.01011139,43.2461,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+68,68,0,0,1,1,8,8,15,77.3,0.194,6,2.214,0.00996951,42.8416,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+95,95,0,0,0,0,2,2,177,105.6,1.6761,1,-0.9579,0.01012338,42.6449,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+13,13,0,0,1,1,3,3,21,80.4643,0.261,3,0.3108,0.01006898,42.2651,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+86,86,0,0,0,0,4,4,230,90.5909,2.5389,2,-0.3235,0.01004251,41.5492,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+15,15,0,0,0,0,0,0,431,88.1364,4.8901,0,-1.5923,0.01000032,41.4026,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+19,19,0,0,0,0,3,3,59,77.6207,0.7601,2,-0.3235,0.01013742,41.4001,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+94,94,0,0,0,0,4,4,62,86.5,0.7168,4,0.9452,0.01005584,40.9054,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+7,07,0,0,0,0,1,1,359,133.8667,2.6818,0,-1.5923,0.0100291,40.4707,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+84,84,0,0,0,0,3,3,88,148.4545,0.5928,2,-0.3235,0.01010501,40.1576,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+24,24,0,0,0,0,4,4,176,79.7778,2.2061,3,0.3108,0.01000032,38.7505,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+31,31,0,0,0,0,0,0,363,132.2143,2.7455,0,-1.5923,0.01000032,38.4097,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+45,45,0,0,1,1,3,3,16,111.619,0.1433,2,-0.3235,0.01005368,37.999,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+14,14,0,0,0,0,6,6,91,116.8947,0.7785,4,0.9452,0.01000032,37.8664,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+39,39,0,0,1,1,6,6,26,79.9286,0.3253,5,1.5796,0.00993429,37.7307,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+88,88,0,0,0,0,5,5,167,85.5417,1.9523,2,-0.3235,0.01002429,37.3604,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+90,90,1,1,1,1,5,5,5,117.0526,0.0427,3,0.3108,0.01001475,37.3463,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+16,16,0,0,0,0,3,3,48,128.0,0.375,2,-0.3235,0.01009026,37.2501,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+91,91,0,0,0,0,4,4,32,110.9524,0.2884,3,0.3108,0.01005852,36.9362,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+99,99,0,0,0,0,2,2,61,122.6667,0.4973,1,-0.9579,0.01011124,36.5963,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+42,42,0,0,1,1,4,4,10,105.1905,0.0951,4,0.9452,0.00995923,36.1079,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+2,02,0,0,0,0,1,1,306,117.9412,2.5945,0,-1.5923,0.01000032,35.9009,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+27,27,0,0,0,0,2,2,238,111.7778,2.1292,1,-0.9579,0.01000032,35.7651,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+43,43,0,0,1,1,6,6,24,107.7273,0.2228,3,0.3108,0.0099777,35.3029,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+72,72,0,0,1,1,3,3,13,152.2667,0.0854,1,-0.9579,0.01005611,35.1983,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+76,76,0,0,0,0,3,3,141,85.1154,1.6566,2,-0.3235,0.01001079,35.1668,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+58,58,0,0,0,0,0,0,473,100.6842,4.6979,0,-1.5923,0.00989505,35.0695,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+48,48,0,0,0,0,5,5,143,82.0,1.7439,5,1.5796,0.00989793,35.0548,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+61,61,0,0,1,1,4,4,17,88.0,0.1932,3,0.3108,0.0099777,34.9948,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+52,52,1,1,1,1,5,5,1,102.5,0.0098,3,0.3108,0.0099856,34.9042,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+32,32,0,0,0,0,3,3,86,94.625,0.9089,3,0.3108,0.01000032,34.7892,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+44,44,0,0,1,1,3,3,12,112.9524,0.1062,3,0.3108,0.0099777,34.7748,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+47,47,0,0,0,0,5,5,40,80.0345,0.4998,4,0.9452,0.00998804,34.6674,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+6,06,0,0,0,0,2,2,159,138.75,1.1459,1,-0.9579,0.0100291,34.525,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+0,00,0,0,0,0,3,3,46,97.2609,0.473,3,0.3108,0.01001813,34.4129,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+12,12,0,0,0,0,3,3,130,102.7727,1.2649,2,-0.3235,0.01000323,34.0954,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+33,33,0,0,1,1,5,5,22,98.65,0.223,3,0.3108,0.00996228,34.0164,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+89,89,0,0,0,0,3,3,66,100.2609,0.6583,3,0.3108,0.00999475,33.4764,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+97,97,0,0,0,0,4,4,68,96.1667,0.7071,3,0.3108,0.00998607,32.8894,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+29,29,0,0,0,0,3,3,172,98.5238,1.7458,1,-0.9579,0.01000032,32.8601,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+56,56,0,0,0,0,0,0,422,105.5625,3.9976,0,-1.5923,0.00989505,32.8247,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+9,09,0,0,0,0,2,2,41,79.4828,0.5158,1,-0.9579,0.01007232,32.691,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+5,05,0,0,0,0,6,6,96,100.0,0.96,2,-0.3235,0.01000323,32.5989,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+8,08,0,0,0,0,5,5,94,112.3158,0.8369,2,-0.3235,0.01000032,32.2842,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+74,74,0,0,0,0,2,2,225,144.2,1.5603,1,-0.9579,0.00996286,32.2815,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+82,82,0,0,0,0,2,2,158,88.92,1.7769,1,-0.9579,0.00999983,32.2061,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+20,20,0,0,0,0,2,2,155,109.8421,1.4111,1,-0.9579,0.01000032,32.1119,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+35,35,1,1,1,1,3,3,6,101.4783,0.0591,2,-0.3235,0.00998061,31.8797,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+75,75,0,0,0,0,2,2,135,111.95,1.2059,2,-0.3235,0.00996286,31.1774,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+3,03,0,0,0,0,2,2,87,105.8095,0.8222,1,-0.9579,0.01002617,31.1288,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+81,81,1,1,1,1,4,4,2,103.55,0.0193,3,0.3108,0.00993516,31.0281,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+70,70,0,0,0,0,3,3,53,77.2414,0.6862,2,-0.3235,0.01000449,30.8042,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+96,96,0,0,1,1,3,3,27,84.2857,0.3203,2,-0.3235,0.00995302,30.6591,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+63,63,0,0,0,0,4,4,58,118.2105,0.4907,3,0.3108,0.00996228,30.6009,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+87,87,1,1,1,1,3,3,4,122.8947,0.0325,3,0.3108,0.00992541,30.358,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+62,62,0,0,0,0,4,4,227,86.2917,2.6306,2,-0.3235,0.00989505,29.9563,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+55,55,0,0,0,0,5,5,85,90.84,0.9357,4,0.9452,0.00989793,29.6449,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+66,66,0,0,1,1,3,3,8,114.65,0.0698,2,-0.3235,0.00994421,29.1383,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+10,10,0,0,0,0,2,2,43,137.5882,0.3125,1,-0.9579,0.01002347,28.9817,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+59,59,0,0,0,0,5,5,138,83.6538,1.6497,3,0.3108,0.00989505,28.8962,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+57,57,0,0,0,0,2,2,33,72.1333,0.4575,2,-0.3235,0.00998763,28.6135,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+49,49,0,0,0,0,2,2,190,88.12,2.1562,2,-0.3235,0.00989505,28.3278,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+60,60,0,0,0,0,3,3,38,95.625,0.3974,2,-0.3235,0.00997906,28.1676,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+69,69,0,0,0,0,3,3,121,76.0714,1.5906,3,0.3108,0.00989505,28.1479,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+80,80,0,0,1,1,4,4,18,73.9688,0.2433,4,0.9452,0.0098444,27.5356,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+67,67,0,0,0,0,4,4,37,81.6786,0.453,3,0.3108,0.00992613,26.8667,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+53,53,0,0,0,0,5,5,77,95.2273,0.8086,3,0.3108,0.00989505,26.2113,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+34,34,0,0,0,0,2,2,44,89.3846,0.4923,1,-0.9579,0.00997906,25.5746,True,cau_keo,2026-09-13,medium,date-verified ML + current descriptive statistics; ranking signal only
+46,46,0,0,0,0,3,3,174,94.3478,1.8442,1,-0.9579,0.00989793,24.9907,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+78,78,0,0,1,1,4,4,28,99.5217,0.2813,4,0.9452,0.009803,24.7578,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+50,50,0,0,0,0,5,5,107,90.8,1.1784,2,-0.3235,0.00989505,24.6746,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+64,64,0,0,0,0,3,3,132,75.0333,1.7592,2,-0.3235,0.00987709,24.3796,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+41,41,0,0,0,0,1,1,129,113.9474,1.1321,1,-0.9579,0.00989505,22.7857,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+40,40,0,0,0,0,2,2,128,118.1579,1.0833,1,-0.9579,0.00989505,22.7417,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+79,79,0,0,0,0,6,6,36,62.2778,0.5781,2,-0.3235,0.00989204,21.3155,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+26,26,0,0,0,0,3,3,31,105.5,0.2938,1,-0.9579,0.00992875,21.0918,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+77,77,0,0,0,0,3,3,207,67.8148,3.0524,3,0.3108,0.00971169,17.6823,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+65,65,0,0,0,0,3,3,71,71.6452,0.991,2,-0.3235,0.00977679,13.8985,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
+71,71,0,0,0,0,2,2,69,96.2917,0.7166,1,-0.9579,0.00973259,7.5183,True,cau_keo,2026-09-13,low,date-verified ML + current descriptive statistics; ranking signal only
