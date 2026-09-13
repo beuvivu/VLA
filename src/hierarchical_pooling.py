@@ -105,8 +105,23 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
         raise ValueError("successes và trials phải cùng hình dạng")
     if np.any(n <= 0):
         raise ValueError("mọi đơn vị phải có ít nhất một phép thử")
-    if np.any(counts < 0) or np.any(counts > n):
+    # Dung sai cho sai số cộng dấu chấm động.
+    #
+    # Với số lần thành công CÓ TRỌNG SỐ, ``counts`` và ``trials`` được cộng
+    # theo hai thứ tự khác nhau, nên một đơn vị trúng MỌI kỳ có thể cho
+    # ``counts`` nhỉnh hơn ``trials`` ở chữ số cuối. Đó là đầu vào hoàn toàn
+    # hợp lệ, và từ chối nó là từ chối nhầm — phép kiểm chọn chu kỳ bán rã đã
+    # nổ đúng vì chuyện này.
+    tolerance = 1e-9 * np.maximum(np.abs(n), 1.0)
+    if np.any(counts < -tolerance) or np.any(counts > n + tolerance):
         raise ValueError("số lần thành công phải nằm trong [0, số phép thử]")
+    # Kẹp này là phòng thủ và KHÔNG quan sát được từ bên ngoài — đã kiểm ngược:
+    # gỡ nó đi không phép kiểm nào đỏ. Lý do là chốt ``pooled <= 0 or pooled >= 1``
+    # phía dưới đã bắt cùng một biên, nên một giá trị lệch 1e-15 vẫn rơi vào
+    # nhánh co ngót hoàn toàn y hệt. Giữ lại để ``rates`` không mang giá trị vô
+    # nghĩa nếu ai đó thêm phép tính khác vào giữa; ghi rõ ở đây rằng phép kiểm
+    # không tách được dòng này.
+    counts = np.clip(counts, 0.0, n)
 
     rates = counts / n
     # Trung bình CÓ TRỌNG SỐ theo số phép thử: đơn vị được thử nhiều hơn mang

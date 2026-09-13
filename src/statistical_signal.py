@@ -324,6 +324,91 @@ def _blend_dynamics(
 #: Vẫn nhận một số cụ thể để ép, phục vụ tái lập kết quả cũ.
 LEARN_PRIOR_STRENGTH: float | None = None
 
+#: Lưới chu kỳ bán rã để chọn, tính bằng KỲ QUAY.
+#:
+#: Giá trị cũ là 45, cũng đặt tay. Đo walk-forward 300 kỳ cuối trên dữ liệu
+#: thật, kèm phép tiêm tín hiệu +100 % vào một con:
+#:
+#:   bán rã   ESS    Brier         ngụy tín hiệu   thu hồi tín hiệu
+#:       45   130    0,18134089    0,00001          0,0 %
+#:      180   519    0,18133923    0,00002         36,0 %
+#:      365  1031    0,18133891    0,00003         63,9 %
+#:        ∞  2398    0,18133866    0,00009         90,4 %
+#:
+#: Brier tốt lên ĐƠN ĐIỆU theo chu kỳ dài hơn, còn ngụy tín hiệu tăng chín lần
+#: nhưng vẫn ở mức 0,009 điểm phần trăm trên nền 23,77 %. Ở mức 45, thành phần
+#: `ewm` — vốn mang trọng số lớn nhất của tầng này — thu hồi ĐÚNG 0 % của một
+#: tín hiệu gấp đôi tần suất nền. Nó đang mù hoàn toàn.
+#:
+#: ``None`` nghĩa là chọn từ lưới này bằng Brier trên lát giữ riêng.
+HALF_LIFE_GRID: tuple[int, ...] = (45, 90, 180, 365, 730, 1460)
+LEARN_HALF_LIFE: int | None = None
+#: Dưới ngưỡng này thì cắt lát giữ riêng làm hỏng chính phép khớp.
+MIN_HALF_LIFE_SELECTION_DAYS = 200
+HALF_LIFE_HOLDOUT = 0.25
+#: Sàn tuyệt đối cho phép so cặp đôi: dưới mức này là nhiễu cộng dấu chấm
+#: động chứ không phải chênh lệch. Chỉ dùng khi sai số chuẩn bằng 0 (mọi kỳ
+#: cho chênh lệch giống hệt nhau).
+_FLOAT_NOISE = 1e-12
+
+
+def select_half_life(
+    hit: np.ndarray,
+    *,
+    grid: tuple[int, ...] = HALF_LIFE_GRID,
+    holdout_fraction: float = HALF_LIFE_HOLDOUT,
+) -> tuple[int, dict[str, float] | None]:
+    """Chọn chu kỳ bán rã bằng Brier trên lát giữ riêng cắt theo THỜI GIAN.
+
+    Trả về ``(chu kỳ, điểm từng ứng viên)``; phần thứ hai là ``None`` khi lịch
+    sử quá ngắn để chọn — khi ấy giữ giá trị đầu lưới và nói rõ là không chọn,
+    thay vì chọn bừa trên vài chục kỳ.
+    """
+    days = int(hit.shape[0])
+    split = int(round(days * (1.0 - holdout_fraction)))
+    if days < MIN_HALF_LIFE_SELECTION_DAYS or split <= 1 or days - split <= 1:
+        return int(grid[0]), None
+
+    per_day: dict[int, np.ndarray] = {}
+    for half_life in grid:
+        errors = []
+        for t in range(split, days):
+            past = hit[:t]
+            w = _exp_weights(t, half_life)
+            p = _eb_posterior((past * w[:, None]).sum(axis=0), float(w.sum()), None)
+            errors.append(float(np.mean((p - hit[t]) ** 2)))
+        per_day[half_life] = np.asarray(errors, dtype=float)
+    scores = {str(hl): float(errors.mean()) for hl, errors in per_day.items()}
+
+    # So CẶP ĐÔI có sai số chuẩn, không so với một dung sai đặt tay.
+    #
+    # Câu hỏi đúng không phải "chênh bao nhiêu" mà "chênh ấy có ĐO ĐƯỢC không".
+    # Hai lý do buộc phải hỏi như vậy:
+    #
+    # * Dung sai tương đối sụp đổ khi Brier gần 0 — với dữ liệu mà mọi con đều
+    #   trúng, ``|best| * 1e-6`` bằng 0 nên không gì hoà, và bộ chọn quay lại
+    #   quyết định theo chữ số cuối.
+    # * Đo thật ở chế độ đề: cả sáu ứng viên cho 0,00990000 giống hệt tới tám
+    #   chữ số. Chọn giữa chúng là chọn theo nhiễu dấu chấm động.
+    #
+    # Phép so cặp đôi tận dụng việc mọi ứng viên được chấm trên CÙNG các kỳ:
+    # phương sai của chênh lệch nhỏ hơn hẳn phương sai của từng bản, nên phép
+    # kiểm nhạy hơn nhiều so với việc so hai trung bình độc lập.
+    best_hl = min(grid, key=lambda hl: (scores[str(hl)], hl))
+    best_errors = per_day[best_hl]
+    n_days = max(best_errors.size, 1)
+
+    tied = []
+    for half_life in grid:
+        delta = per_day[half_life] - best_errors
+        standard_error = float(np.std(delta, ddof=1) / np.sqrt(n_days)) if n_days > 1 else 0.0
+        if float(delta.mean()) <= standard_error + _FLOAT_NOISE:
+            tied.append(half_life)
+
+    # Hoà thì chu kỳ NGẮN hơn thắng: nó phản ứng nhanh hơn với trôi khái niệm,
+    # nên khi không đo được khác biệt thì chọn bản linh hoạt hơn.
+    return int(min(tied)), scores
+
 
 def _resolve_prior_strength(
     observations: np.ndarray, prior_strength: float | None
@@ -338,7 +423,7 @@ def _resolve_prior_strength(
 def build_statistical_signal(
     mode: str,
     *,
-    half_life: int = 45,
+    half_life: int | None = LEARN_HALF_LIFE,
     prior_strength: float | None = LEARN_PRIOR_STRENGTH,
 ) -> tuple[pd.DataFrame, dict]:
     lot = Lottery()
@@ -368,11 +453,14 @@ def build_statistical_signal(
         hit[np.arange(len(de)), de] = 1
         dates = two["date"]
         _strength, pooling = _resolve_prior_strength(hit, prior_strength)
+        chosen_half_life, half_life_scores = (
+            (half_life, None) if half_life is not None else select_half_life(hit)
+        )
         df = _de_signal(
             hit,
             dates,
             target.weekday(),
-            half_life=half_life,
+            half_life=chosen_half_life,
             prior_strength=prior_strength,
         )
     elif mode == "loto":
@@ -383,11 +471,14 @@ def build_statistical_signal(
         # `_resolve_prior_strength` ở đây chỉ để BÁO CÁO độ co ngót tổng thể;
         # từng phép đo bên trong tự học κ của riêng nó.
         _strength, pooling = _resolve_prior_strength(hit, prior_strength)
+        chosen_half_life, half_life_scores = (
+            (half_life, None) if half_life is not None else select_half_life(hit)
+        )
         df = _loto_signal(
             hit,
             dates,
             target.weekday(),
-            half_life=half_life,
+            half_life=chosen_half_life,
             prior_strength=prior_strength,
         )
     else:
@@ -408,7 +499,11 @@ def build_statistical_signal(
         "anchor_date": anchor.isoformat(),
         "target_date": target.isoformat(),
         "history_days": int(len(two)),
-        "half_life_days": half_life,
+        # Tên trường giữ nguyên để không phá bản tóm tắt cũ, nhưng đơn vị là
+        # KỲ QUAY chứ không phải ngày lịch — xem ghi chú ở HALF_LIFE_GRID.
+        "half_life_days": chosen_half_life,
+        "half_life_learned": half_life_scores is not None,
+        "half_life_brier_by_candidate": half_life_scores,
         "prior_strength": _strength,
         "prior_strength_learned": pooling is not None,
         # Số tham số HIỆU DỤNG là con số nối thẳng tới công suất thống kê: báo
@@ -446,7 +541,8 @@ def main() -> None:
         )
     )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
-    ap.add_argument("--half-life", type=int, default=45)
+    # Mặc định là CHỌN từ lưới; truyền số để ép.
+    ap.add_argument("--half-life", type=int, default=None)
     # Mặc định là HỌC (không truyền cờ). Truyền một số để ép, phục vụ tái lập
     # kết quả của các bản chạy cũ.
     ap.add_argument("--prior-strength", type=float, default=None)
