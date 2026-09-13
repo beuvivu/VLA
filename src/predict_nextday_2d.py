@@ -146,11 +146,17 @@ def _load_calibration(data_dir: Path, mode: str) -> CalibParams:
         ):
             return CalibParams(mode=mode)
         p = j.get("params") or {}
+        # Nút isotonic là tùy chọn: tệp ghi trước khi có chúng vẫn nạp nguyên
+        # vẹn thành phép hiệu chuẩn tham số. Nút HỎNG thì `CalibParams` ném
+        # ValueError và khối `except` bên dưới rơi về hiệu chuẩn đồng nhất —
+        # đúng cách fail-closed của hàm này.
         return CalibParams(
             mode=mode,
             a=float(p.get("a", 1.0)),
             b=float(p.get("b", 0.0)),
             temperature=float(p.get("temperature", 1.0)),
+            isotonic_x=tuple(float(v) for v in p.get("isotonic_x", ())),
+            isotonic_y=tuple(float(v) for v in p.get("isotonic_y", ())),
         )
     except (AttributeError, TypeError, ValueError):
         return CalibParams(mode=mode)

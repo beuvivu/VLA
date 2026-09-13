@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from calibration import learn_calibration
+from calibration import select_calibration
 from ensemble_components import COMPONENT_KEYS, availability_from_history_day
 from ensemble_utils import (
     EnsembleWeights,
@@ -214,7 +214,13 @@ def main() -> None:
         + best_w.w_active * arrays["p_active"]
         + best_w.w_stable * arrays["p_stable"]
     )
-    calib = learn_calibration(args.mode, p_blend, y, sample_weight_by_day=w_day)
+    # Chọn phương pháp hiệu chuẩn bằng SỐ ĐO thay vì mặc định cứng.
+    #
+    # Ứng viên `identity` là điểm chính: trước đây không gì kiểm xem phép hiệu
+    # chuẩn có LÀM TỆ ĐI hay không, và một cửa sổ lệch hoặc trôi khái niệm có
+    # thể khiến nó đẩy xác suất đi sai hướng mãi mà không ai biết. Cửa sổ quá
+    # ngắn thì bộ chọn tự giữ nguyên hành vi cũ và ghi `selected: false`.
+    calib, calib_audit = select_calibration(args.mode, p_blend, y, w_day)
     calib_path = out_dir / f"calibration_{args.mode}.json"
     calib_payload = {
         "schema_version": 6,
@@ -224,9 +230,17 @@ def main() -> None:
         "half_life_days": args.half_life_days,
         "component_availability_required": True,
         "params": calib.as_dict(),
+        "selection": {
+            "chosen": calib_audit.chosen,
+            "selected": calib_audit.selected,
+            "brier_by_candidate": calib_audit.brier_by_candidate,
+            "fit_days": calib_audit.fit_days,
+            "holdout_days": calib_audit.holdout_days,
+        },
     }
     calib_path.write_text(json.dumps(calib_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[OK] calibration -> {calib_path}")
+    print(f"[OK] {calib_audit.describe()}")
 
 
 if __name__ == "__main__":

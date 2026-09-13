@@ -169,7 +169,7 @@ nhiều kiến trúc đề xuất bỏ qua nó.
 | Loss tùy biến (Focal / Brier) | **CHƯA CÓ trong sản xuất** — demo ở mục 1.3 |
 | Platt scaling | **ĐÃ CÓ** |
 | Temperature scaling | **ĐÃ CÓ** (chế độ đề) |
-| Isotonic Regression | **CHƯA CÓ** — và mục 1.3 cho thấy nó **thua** Platt ở đây |
+| Isotonic Regression | **ĐÃ CÓ** — là ứng viên trong `select_calibration`, lưu được dưới dạng nút |
 
 ### 3.3 Học liên tục
 
@@ -195,7 +195,7 @@ online learning vào sẽ tạo ra một vấn đề mới để rồi phải gi
 | Log Loss | **ĐÃ CÓ** (332) |
 | Reliability diagram | **ĐÃ CÓ** (30) |
 | Precision@K / Recall@K | **ĐÃ CÓ** |
-| AUC-ROC | **CHƯA CÓ** |
+| AUC-ROC | **ĐÃ CÓ** — `MetaMetrics.auc_roc`, khớp `sklearn` kể cả khi có hoà |
 | Walk-forward validation | **ĐÃ CÓ** — `ml_engine/validation.py` |
 | Chống rò rỉ | **ĐÃ CÓ, có kiểm ngược** — đột biến kết quả tương lai không được đổi đặc trưng quá khứ |
 
@@ -206,21 +206,51 @@ chỉ số chính, và cả hai đã có.
 
 ## 4. Ba tầng ưu tiên
 
-### Tầng 1 — giá trị thật, rủi ro thấp (nên làm)
+### Tầng 1 — ĐÃ TRIỂN KHAI
 
-1. **Cổng tái lặp bắt buộc.** Báo cáo ngẫu nhiên cho thấy tín hiệu duy nhất
-   sống sót Bonferroni đã **không tái lặp** giữa hai nửa dữ liệu. Biến phép
-   kiểm tái lặp thành cổng chặn: quy tắc nào không tái lặp thì không được vào
-   ensemble, bất kể p-value đẹp đến đâu.
-2. **Ghi nhận số giả thuyết vào nhật ký mỗi lần chạy.** Hiện `randomness_report`
-   tính công suất theo họ giả thuyết, nhưng con số ấy không đi kèm từng dự
-   đoán. Gắn "quét bao nhiêu quy tắc để ra kết quả này" vào đầu ra khiến việc
-   đọc kết quả trung thực hơn nhiều.
-3. **Chọn phương pháp hiệu chuẩn bằng số đo, không bằng niềm tin.** Thử Platt,
-   temperature và isotonic trên lát hiệu chuẩn rồi giữ cái tốt nhất trên lát
-   kiểm. Mục 1.3 cho thấy isotonic thua, nhưng điều đó có thể đổi khi dữ liệu
-   dài thêm — nên hãy để số liệu quyết định mỗi lần chạy.
-4. **Thêm AUC-ROC như chỉ số PHỤ**, kèm ghi chú rõ nó không đo hiệu chuẩn.
+**1. Cổng tái lập** — `src/bridges/replication.py`
+
+Quét + BH-FDR + kiểm data snooping **chỉ trên đoạn phát hiện**, rồi chấm điểm
+các đường sống sót trên đoạn giữ riêng vốn chưa từng tham gia vào việc chọn.
+Hiệu chỉnh đa kiểm định ở đoạn sau chạy trên đúng số đường đã đăng ký trước,
+không phải 412 164.
+
+Chạy thật trên `data/xsmb.csv`: cắt tại 2024-01-17 (1439/959 kỳ), 228 giây cho
+cả ba chế độ, **0 đường qua FDR, 0 đường tái lập**. Bộ quét không nằm trong
+quy trình hằng ngày nên chi phí này không chạm đường găng.
+
+Không đường nào trong dữ liệu thật sống sót nổi đoạn phát hiện, nên đường tái
+lập được kiểm bằng tín hiệu cài vào dữ liệu tổng hợp. Ca quyết định cài tín
+hiệu **chỉ ở nửa đầu**: mọi cổng trước đó đều cho qua, chỉ cổng này bắt được.
+
+**2. Mẫu số đi kèm mọi con số** — `run_bridge_scan.py`, `run_daily_prediction.py`
+
+`bridge_scan_summary.json` nay mang cả khối `replication`, và bằng chứng kèm
+dự đoán mang `replicated_out_of_sample` cạnh `hypotheses`. "3 đường tái lập"
+mà không nói đã quét bao nhiêu giả thuyết là cách trình bày sai lệch nhất ở
+đây, nên hai con số không bao giờ tách nhau.
+
+**3. Chọn hiệu chuẩn bằng số đo** — `calibration.select_calibration`
+
+Ba ứng viên — `identity`, `parametric` (Platt hoặc temperature), `isotonic` —
+khớp trên lát đầu, chấm bằng Brier trên lát cuối cắt theo thời gian, giữ cái
+thắng. Hoà điểm thì phương pháp đơn giản hơn thắng.
+
+Ứng viên `identity` mới là điểm chính: trước đây **không gì kiểm xem phép hiệu
+chuẩn có làm tệ đi hay không**. Cửa sổ dưới 60 kỳ thì bộ chọn giữ nguyên hành
+vi cũ và ghi `selected: false` thay vì chọn bừa.
+
+Isotonic nay lưu được dưới dạng nút đơn điệu trong `CalibParams`; tệp hiệu
+chuẩn ghi trước khi có trường này vẫn nạp nguyên vẹn.
+
+**4. AUC-ROC như chỉ số phụ** — `MetaMetrics.auc_roc`
+
+Khớp `sklearn.metrics.roc_auc_score` tuyệt đối, kể cả khi có hoà. Trả `NaN`
+thay vì 0,5 khi một lớp vắng mặt — 0,5 đọc thành "đoán mò", còn sự thật là
+"không đo được".
+
+Phép kiểm đi kèm chứng minh bằng số vì sao nó chỉ là chỉ số phụ: hai bộ xác
+suất có **cùng AUC tuyệt đối** mà Brier chênh nhau hơn hai lần.
 
 ### Tầng 2 — có thể có giá trị, cần thận trọng
 

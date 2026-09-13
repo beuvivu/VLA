@@ -22,7 +22,7 @@ import pandas as pd
 from scipy.optimize import minimize
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from calibration import apply_calibration, learn_calibration
+from calibration import apply_calibration, select_calibration
 from ensemble_utils import (
     bernoulli_brier,
     bernoulli_logloss,
@@ -50,6 +50,16 @@ COMPONENT_TIERS = [
 class MetaMetrics:
     logloss: float
     brier: float
+    # AUC-ROC là chỉ số PHỤ, và phải đọc đúng vai trò ấy.
+    #
+    # Nó đo khả năng XẾP HẠNG và bất biến với MỌI phép biến đổi đơn điệu —
+    # nghĩa là một mô hình hiệu chuẩn sai bét vẫn có thể đạt AUC hoàn hảo. Với
+    # bài toán mà giá trị nằm ở độ ĐÚNG của xác suất, `brier` và `logloss` mới
+    # là chỉ số quyết định; AUC chỉ trả lời câu hỏi khác: "thứ tự có đúng
+    # không". Giữ riêng và ghi rõ để không ai dùng nó thay hai chỉ số kia.
+    #
+    # NaN khi không tính được (một lớp vắng mặt hoàn toàn trong đoạn đánh giá).
+    auc_roc: float = float("nan")
 
 
 def meta_feature_columns(component_cols: list[str]) -> list[str]:
@@ -394,6 +404,38 @@ def _matrix_by_day(df: pd.DataFrame, column: str, days: list[str]) -> np.ndarray
     return grid.to_numpy(dtype=float)
 
 
+def _roc_auc(probs: np.ndarray, labels: np.ndarray) -> float:
+    """AUC-ROC bằng thứ hạng Mann-Whitney, xử lý hoà bằng thứ hạng trung bình.
+
+    Tự tính thay vì gọi sklearn: hàm này chạy trên mảng đã phẳng sẵn ở đây, và
+    một phụ thuộc thêm cho mười dòng số học là không đáng. Công thức thứ hạng
+    cho đúng kết quả của `sklearn.metrics.roc_auc_score`, kể cả khi có hoà.
+    """
+    p = np.asarray(probs, dtype=float).reshape(-1)
+    y = np.asarray(labels, dtype=float).reshape(-1) > 0.5
+    positives = int(y.sum())
+    negatives = int(y.size - positives)
+    if positives == 0 or negatives == 0:
+        # Chỉ một lớp: AUC không xác định. Trả NaN thay vì 0.5 — 0.5 đọc thành
+        # "đoán mò", còn sự thật là "không đo được".
+        return float("nan")
+    order = np.argsort(p, kind="mergesort")
+    ranks = np.empty(p.size, dtype=float)
+    ranks[order] = np.arange(1, p.size + 1, dtype=float)
+    # Hoà nhận thứ hạng trung bình, nếu không AUC phụ thuộc thứ tự sắp xếp.
+    sorted_p = p[order]
+    start = 0
+    while start < sorted_p.size:
+        stop = start + 1
+        while stop < sorted_p.size and sorted_p[stop] == sorted_p[start]:
+            stop += 1
+        if stop - start > 1:
+            ranks[order[start:stop]] = ranks[order[start:stop]].mean()
+        start = stop
+    rank_sum = float(ranks[y].sum())
+    return (rank_sum - positives * (positives + 1) / 2.0) / (positives * negatives)
+
+
 def _evaluate(mode: str, probs: np.ndarray, y: np.ndarray) -> MetaMetrics:
     if mode == "de":
         ll: list[float] = []
@@ -403,12 +445,20 @@ def _evaluate(mode: str, probs: np.ndarray, y: np.ndarray) -> MetaMetrics:
             idx = int(np.argmax(y[i]))
             ll.append(categorical_logloss(p, idx))
             br.append(categorical_brier(p, idx))
-        return MetaMetrics(logloss=float(np.mean(ll)), brier=float(np.mean(br)))
+        return MetaMetrics(
+            logloss=float(np.mean(ll)),
+            brier=float(np.mean(br)),
+            auc_roc=_roc_auc(probs, y),
+        )
 
     p = clip01(probs, eps=1e-6)
     ll = [bernoulli_logloss(p[i], y[i]) for i in range(len(p))]
     br = [bernoulli_brier(p[i], y[i]) for i in range(len(p))]
-    return MetaMetrics(logloss=float(np.mean(ll)), brier=float(np.mean(br)))
+    return MetaMetrics(
+        logloss=float(np.mean(ll)),
+        brier=float(np.mean(br)),
+        auc_roc=_roc_auc(p, y),
+    )
 
 
 def _row_probs_to_day_matrix(
@@ -505,7 +555,8 @@ def _baseline_validation(
     p_pre = _blend_arrays(arrays_pre, component_cols, weights)
     if mode == "de":
         p_pre = np.vstack([normalize_distribution(row) for row in p_pre])
-    calib = learn_calibration(mode, p_pre, y_pre, sample_weight_by_day=day_w)
+    # Bộ chọn có đo; xem ghi chú trong learn_ensemble_weights.py.
+    calib, _calib_audit = select_calibration(mode, p_pre, y_pre, day_w)
 
     val = history[_date_strings(history["target_date"]).isin(val_days)].copy()
     arrays_val = {
