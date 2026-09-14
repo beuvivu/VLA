@@ -6,6 +6,7 @@ ba lỗi đã sửa để chúng không quay lại một cách âm thầm.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from pathlib import Path
@@ -24,6 +25,15 @@ PAGES = sorted(DOCS.glob("*.html"))
 #: landing.html và landing_desktop.html là hai biến thể của index.html (cùng nội
 #: dung, khác chế độ hiển thị), không phải đích điều hướng riêng.
 INDEX_ALIASES = {"landing.html", "landing_desktop.html"}
+
+
+#: Thân ``<script>`` không bao giờ là CSS.
+#:
+#: Không chỉ khối ``application/json``: bảy trang khác nhúng dữ liệu bằng
+#: ``<script>`` thường, và mỗi trang để lại một đoạn ~320 000 ký tự không có
+#: dấu ngoặc nhọn nào. Bỏ cả thân script là cách duy nhất khoá được tính chất
+#: ấy cho mọi trang, thay vì vá từng kiểu nhúng.
+_SCRIPT_BODY = re.compile(r"<script\b[^>]*>.*?</script>", re.S | re.I)
 
 
 def _soup(path: Path) -> BeautifulSoup:
@@ -45,6 +55,14 @@ def _css(path: Path) -> str:
         Chuỗi CSS đã nối và nén khoảng trắng.
     """
     text = path.read_text(encoding="utf-8")
+    # Bỏ thân script. Nó KHÔNG phải CSS, và để lại là để những khối dữ liệu
+    # vài trăm KB không có dấu ngoặc nhọn nào lọt vào chuỗi mà hàng chục biểu
+    # thức chính quy trong tệp này quét qua. Trang Sổ kết quả nhúng 2 399 kỳ
+    # dưới dạng mảng chuỗi phẳng: đoạn dài nhất không có "}" là 299 315 ký tự,
+    # so với 10 007 ở bản cũ. Một biểu thức có quay lui bình phương gặp đoạn
+    # dài gấp 30 lần thì tốn công gấp ~900 lần — riêng tệp kiểm này đi từ dưới
+    # một phút lên hơn 15 phút, và cả bộ kiểm từ 182 giây lên 40 phút.
+    text = _SCRIPT_BODY.sub("", text)
     parts = [text]
     for link in _soup(path).find_all("link", rel="stylesheet"):
         href = link.get("href") or ""
@@ -59,6 +77,57 @@ DOCK_PAGES = [p for p in PAGES if "dock-inner" in p.read_text(encoding="utf-8")]
 
 #: Các trang có khối điều hướng dự phòng ở chân trang.
 FOOTER_PAGES = [p for p in PAGES if "nav-fallback" in p.read_text(encoding="utf-8")]
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_the_css_under_test_carries_no_script_body(page: Path) -> None:
+    """Thân ``<script>`` không phải CSS và không được lọt vào chuỗi đem quét."""
+    assert "<script" not in _css(page), f"{page.name}: thân script lọt vào chuỗi CSS"
+
+
+def test_no_regex_here_nests_unbounded_lazy_quantifiers() -> None:
+    r"""Chốt chặn cho một lỗi đã làm bộ kiểm chậm gấp mười ba lần.
+
+    Biểu thức từng nằm trong ``test_icon_magnification_stays_in_the_agreed_range``:
+
+        dock-ic\{?[^}]*?\}?[^{]*?transform:scale\(([\d.]+)\)
+
+    Hai lượng từ không chặn lồng nhau, cách nhau bởi một dấu tuỳ chọn — công
+    thức của quay lui bình phương. Nó chạy được nhiều tháng chỉ vì mọi trang
+    đều rải dấu ngoặc nhọn đủ dày để chặn phần quét lại.
+
+    Rồi trang Sổ kết quả đổi cách nhúng dữ liệu, từ mảng ĐỐI TƯỢNG sang mảng
+    CHUỖI phẳng:
+
+        bản cũ    7 691 dấu }    đoạn dài nhất không có }:  10 007 ký tự
+        bản mới     249 dấu }    đoạn dài nhất không có }: 299 315 ký tự
+
+    Dữ liệu mới hợp lệ và còn nhỏ hơn một nửa. Thứ hỏng là biểu thức — nó chỉ
+    tình cờ được các dấu ngoặc che cho. Riêng tệp này đi từ dưới một phút lên
+    hơn 15 phút, cả bộ kiểm từ 182 giây lên 40 phút, và nó KHÔNG hề đỏ: chỉ
+    chậm, nên không ai bị báo gì.
+
+    Phép kiểm này khoá đúng hình dạng ấy. Không bắt được mọi biểu thức nguy
+    hiểm, nhưng bắt được cái đã thật sự xảy ra, và nói rõ vì sao.
+    """
+    # Soi bằng ``ast`` chứ không quét văn bản: bản đầu của phép kiểm này quét
+    # cả tệp, và khớp ngay vào chính VÍ DỤ trong docstring của nó.
+    hazard = re.compile(r"\[\^.\]\*\?\\?.\?\[\^.\]\*\?")
+    tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+    patterns: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute)
+                and isinstance(func.value, ast.Name) and func.value.id == "re"):
+            continue
+        for argument in node.args[:1]:
+            if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
+                patterns.append(argument.value)
+    assert patterns, "không tìm thấy biểu thức nào — phép soi đã hỏng"
+    risky = [pattern for pattern in patterns if hazard.search(pattern)]
+    assert not risky, f"biểu thức có nguy cơ quay lui bình phương: {risky}"
 
 
 def test_pages_exist() -> None:
@@ -750,8 +819,13 @@ def test_submenu_closes_slower_than_it_opens(page: Path) -> None:
 def test_icon_magnification_stays_in_the_agreed_range(page: Path) -> None:
     """Bản vẽ yêu cầu 1.15-1.2x, ease-in-out."""
     css = _css(page)
-    scales = [float(s) for s in re.findall(r"dock-ic\{?[^}]*?\}?[^{]*?transform:scale\(([\d.]+)\)", css)]
-    scales += [float(s) for s in re.findall(r"transform:scale\(([\d.]+)\)", css)]
+    # Trước đây ở đây còn một biểu thức nữa:
+    #     dock-ic\{?[^}]*?\}?[^{]*?transform:scale\(([\d.]+)\)
+    # Nó có hai lượng từ không chặn lồng nhau, cách nhau bởi một dấu tuỳ
+    # chọn — công thức của quay lui bình phương. Và nó THỪA: mọi kết quả của
+    # nó đều đã nằm trong biểu thức dưới (đã đối chiếu trên cả bốn trang có
+    # dock). Bỏ đi không đổi kết quả, chỉ bỏ đi cái bẫy.
+    scales = [float(s) for s in re.findall(r"transform:scale\(([\d.]+)\)", css)]
     hits = [s for s in scales if 1.10 <= s <= 1.25]
     assert hits, f"{page.name}: không thấy hệ số phóng nào trong khoảng"
     assert all(1.15 <= s <= 1.20 for s in hits), f"{page.name}: {hits}"
