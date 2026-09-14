@@ -21,14 +21,14 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 
 | Giải | Dự đoán vui |
 |---|---|
-| Đặc biệt | `06669` |
-| Giải nhất | `00653` |
-| Giải nhì | `11621` · `87523` |
-| Giải ba | `36835` · `10419` · `90627` · `77295` · `22343` · `72416` |
-| Giải tư | `9645` · `6842` · `7793` · `6182` |
-| Giải năm | `7499` · `7247` · `2802` · `4360` · `9976` · `3913` |
-| Giải sáu | `453` · `529` · `255` |
-| Giải bảy | `21` · `46` · `79` · `17` |
+| Đặc biệt | `24464` |
+| Giải nhất | `01384` |
+| Giải nhì | `22015` · `19897` |
+| Giải ba | `20646` · `44292` · `92116` · `97657` · `87408` · `78954` |
+| Giải tư | `7345` · `4243` · `8345` · `9464` |
+| Giải năm | `6378` · `4313` · `3728` · `8806` · `1373` · `9352` |
+| Giải sáu | `326` · `970` · `786` |
+| Giải bảy | `12` · `72` · `58` · `88` |
 
 ### Lô tô đứng đầu cho ngày mai
 
@@ -43,7 +43,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 | 7 | **71** | **24.07%** |
 | 8 | **81** | **24.05%** |
 | 9 | **40** | **24.05%** |
-| 10 | **93** | **24.03%** |
+| 10 | **48** | **24.03%** |
 
 ### Đặc biệt đứng đầu cho ngày mai
 
@@ -206,7 +206,6 @@ Các quy trình phục hồi kiểm tra trạng thái trước khi gọi để t
 
 - `docs/index.html` — trang tổng hợp/bảng điều khiển chính.
 - `docs/live.html` — kết quả gần thời gian thực và xác minh nguồn.
-- `docs/so-ket-qua-truyen-thong.html` — sổ kết quả 30/60/90/100 ngày, lọc ngày và xuất CSV/XLSX.
 - `docs/statistics.html` — thống kê/ma trận nâng cao.
 - `docs/dashboard.html` — bảng điều khiển mô hình tổ hợp AI/ML.
 - `docs/model-quality.html` — LogLoss/Brier cuốn chiếu.
