@@ -137,7 +137,7 @@ class Lottery:
         đó là kỳ của ngày ấy. Đo trên kho: 50 bản ghi kiểu này, thành 8 cụm
         trùng đúng vào Tết mỗi năm 2020-2026 và 23 ngày giãn cách 01-22/4/2020.
 
-        Kiểm đồng thuận hai nguồn không chặn được: cả sáu nguồn cùng đọc một
+        Kiểm đồng thuận hai nguồn không chặn được: cả bảy nguồn cùng đọc một
         trang tin, nên trong dạng hỏng này chúng không độc lập. Bốn bản ghi
         như vậy đã lọt vào 393 kỳ gốc trước khi bổ sung lịch sử.
 
@@ -275,7 +275,7 @@ class Lottery:
         if accepted:
             twin = self._repeats_a_neighbour(selected_date, best[0][1])
             if twin is not None:
-                # Đồng thuận không cứu được dạng hỏng này: cả sáu nguồn cùng
+                # Đồng thuận không cứu được dạng hỏng này: cả bảy nguồn cùng
                 # đọc một trang tin nên chúng nhất trí về chính kết quả cũ.
                 logger.warning(
                     "Bỏ %s dù có đồng thuận: trùng khít kỳ %s — ngày không quay",

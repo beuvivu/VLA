@@ -25,8 +25,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "worker" / "test" / "run_handler.mjs"
 
-#: Sáu nguồn, nên MỘT vòng thu thập là đúng sáu lượt gọi ra ngoài.
-SOURCES_PER_COLLECTION = 6
+#: Bảy nguồn, nên MỘT vòng thu thập là đúng bảy lượt gọi ra ngoài.
+SOURCES_PER_COLLECTION = 7
 
 
 def _require_node() -> str:
@@ -87,7 +87,7 @@ def test_the_scheduled_run_writes_once_and_reads_come_from_storage() -> None:
 
 
 def test_every_source_failing_still_publishes_a_waiting_snapshot() -> None:
-    """Sáu nguồn cùng chặn là kịch bản đã lường trước, không phải sự cố.
+    """Bảy nguồn cùng chặn là kịch bản đã lường trước, không phải sự cố.
 
     Worker gọi từ mạng trung tâm dữ liệu nên có thể bị chặn. Khi ấy nó vẫn
     phải ghi một ảnh chụp trạng thái "waiting" kèm lỗi từng nguồn — có thế thì

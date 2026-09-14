@@ -273,7 +273,7 @@ cho trọn một vòng thăm dò 60–90 giây.
 Nay mỗi yêu cầu được thử tối đa **3 lần**, chờ lùi mũ giữa các lần
 (0,5s → 1s → 2s, trần 4s) kèm **nhiễu ngẫu nhiên**.
 
-Nhiễu là phần bắt buộc chứ không phải trang trí: sáu nguồn chạy song song, nếu
+Nhiễu là phần bắt buộc chứ không phải trang trí: bảy nguồn chạy song song, nếu
 cùng thất bại rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng
 một thời điểm — đúng lúc máy chủ đang quá tải.
 

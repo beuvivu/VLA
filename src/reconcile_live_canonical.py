@@ -28,6 +28,7 @@ SOURCE_PRIORITY = [
     "xosominhngoc.com",
     "xosodaiphat.com",
     "hainhay.net",
+    "xskt.vn",
 ]
 
 

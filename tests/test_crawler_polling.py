@@ -503,7 +503,7 @@ def test_backoff_grows_exponentially() -> None:
 
 
 def test_backoff_is_jittered_not_a_fixed_ladder() -> None:
-    """Sáu nguồn chạy song song; cùng hỏng rồi cùng chờ đúng một khoảng thì
+    """Bảy nguồn chạy song song; cùng hỏng rồi cùng chờ đúng một khoảng thì
     lần thử sau lại dội vào cùng thời điểm máy chủ đang quá tải."""
     seen = set()
     for _ in range(12):

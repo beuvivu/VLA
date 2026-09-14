@@ -53,6 +53,7 @@ SOURCE_NAMES = [
     "xosominhngoc.com",
     "xosodaiphat.com",
     "hainhay.net",
+    "xskt.vn",
 ]
 
 

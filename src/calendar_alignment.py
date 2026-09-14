@@ -78,7 +78,7 @@ def known_non_draw_days() -> frozenset[str]:
     XSMB nghỉ dịp Tết mỗi năm và suốt đợt giãn cách 01-22/4/2020. Vào những
     ngày đó trang nguồn vẫn trả kết quả gần nhất, nên trình cào từng ghi lại
     như thể đó là kỳ của ngày ấy — 50 bản ghi bịa, 4 trong số đó lọt qua cả
-    kiểm đồng thuận hai nguồn (sáu nguồn cùng đọc một trang tin nên ở dạng
+    kiểm đồng thuận hai nguồn (bảy nguồn cùng đọc một trang tin nên ở dạng
     hỏng này chúng không độc lập).
 
     Chính dữ liệu bịa đó đã làm chuỗi ngày trông liền mạch. Sau khi loại

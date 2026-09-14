@@ -8,8 +8,10 @@
 //
 //   1. đăng nhập Cloudflare nếu chưa
 //   2. tạo kho KV, tự đọc id, tự điền vào wrangler.toml
-//   3. triển khai Worker, tự đọc địa chỉ, tự điền vào docs/live.html
-//   4. gọi thử /health để xác minh nó sống thật
+//   3. triển khai Worker và tự đọc địa chỉ
+//   4. tự điền địa chỉ vào docs/live.html
+//   5. tự điền REST endpoint vào trang Sổ kết quả
+//   6. gọi thử /health, /live.json và API để xác minh
 //
 // Chạy lại nhiều lần đều an toàn: bước nào đã xong thì bỏ qua.
 // Thêm `--dry-run` để xem nó ĐỊNH làm gì mà không đụng vào đâu.
@@ -21,9 +23,11 @@ import { fileURLToPath } from "node:url";
 
 import {
   currentLiveWorkerUrl,
+  currentTraditionalResultsApiUrl,
   extractKvId,
   extractWorkerUrl,
   patchLiveWorkerUrl,
+  patchTraditionalResultsApiUrl,
   patchWranglerKvId,
 } from "./setup/patch.mjs";
 
@@ -31,6 +35,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "..");
 const WRANGLER_TOML = join(HERE, "wrangler.toml");
 const LIVE_HTML = join(REPO, "docs", "live.html");
+const RESULTS_HTML = join(REPO, "docs", "so-ket-qua-truyen-thong.html");
 const DRY = process.argv.includes("--dry-run");
 
 let step = 0;
@@ -132,11 +137,27 @@ heading("Trỏ docs/live.html vào Worker");
   }
 }
 
-// --- 5. Xác minh -----------------------------------------------------------
+// --- 5. Trỏ trang Sổ kết quả vào cùng Worker -------------------------------
+
+heading("Trỏ Sổ kết quả vào REST API");
+{
+  const html = readFileSync(RESULTS_HTML, "utf-8");
+  const current = currentTraditionalResultsApiUrl(html);
+  if (DRY) {
+    note(`(thử khô) sẽ điền endpoint vào Sổ kết quả (hiện: ${current || "trống"})`);
+  } else if (current && current.startsWith(workerUrl)) {
+    ok("đã trỏ đúng rồi — bỏ qua");
+  } else {
+    writeFileSync(RESULTS_HTML, patchTraditionalResultsApiUrl(html, workerUrl), "utf-8");
+    ok(`đã điền: ${workerUrl}/api/v1/traditional-results`);
+  }
+}
+
+// --- 6. Xác minh -----------------------------------------------------------
 
 heading("Gọi thử để xác minh");
 if (DRY) {
-  note("(thử khô) sẽ gọi /health và /live.json");
+  note("(thử khô) sẽ gọi /health, /live.json và API Sổ kết quả");
 } else {
   // Worker vừa lên có thể cần vài giây để lan ra biên.
   let health = null;
@@ -169,6 +190,14 @@ if (DRY) {
   } catch (error) {
     note(`chưa gọi được /live.json (${error.message}) — thử lại sau vài phút`);
   }
+  try {
+    const url = `${workerUrl}/api/v1/traditional-results?province=hanoi&days=30`;
+    const result = await (await fetch(url, { cache: "no-store" })).json();
+    if (!Array.isArray(result.data)) fail("API Sổ kết quả trả dữ liệu không hợp lệ");
+    ok(`API Sổ kết quả trả ${result.data.length} kỳ`);
+  } catch (error) {
+    note(`chưa gọi được API Sổ kết quả (${error.message}) — thử lại sau vài phút`);
+  }
 }
 
 // --- Xong ------------------------------------------------------------------
@@ -179,7 +208,7 @@ if (DRY) {
 } else {
   say("XONG. Còn đúng một việc cho bạn:");
   say("");
-  say("    git add worker/wrangler.toml docs/live.html");
+  say("    git add worker/wrangler.toml docs/live.html docs/so-ket-qua-truyen-thong.html");
   say('    git commit -m "worker: trỏ trang live vào Worker đã triển khai"');
   say("    git push");
   say("");

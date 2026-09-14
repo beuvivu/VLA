@@ -2,7 +2,7 @@
 
 Vì sao cần công cụ riêng
 ------------------------
-``Lottery.fetch`` đã lấy được một kỳ bất kỳ trong quá khứ, và 5 trong 6 nguồn
+``Lottery.fetch`` đã lấy được một kỳ bất kỳ trong quá khứ, và 6 trong 7 nguồn
 có URL lưu trữ theo ngày. Thứ còn thiếu chỉ là trình điều khiển quét dải ngày
 một cách an toàn.
 

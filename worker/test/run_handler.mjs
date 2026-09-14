@@ -114,7 +114,7 @@ const SCENARIOS = {
     };
   },
 
-  // Sáu nguồn cùng chặn: lượt cron không được đổ, và vẫn phải ghi ảnh chụp.
+  // Bảy nguồn cùng chặn: lượt cron không được đổ, và vẫn phải ghi ảnh chụp.
   async all_sources_down() {
     globalThis.fetch = makeFetch({ calls: 0 }, { fail: true });
     const kv = new FakeKV();

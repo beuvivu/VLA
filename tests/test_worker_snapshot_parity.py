@@ -50,7 +50,7 @@ def _require_node() -> str:
 
 SOURCE_NAMES = [
     "xoso.com.vn", "mketqua.net", "www.minhngoc.net.vn",
-    "xosominhngoc.com", "xosodaiphat.com", "hainhay.net",
+    "xosominhngoc.com", "xosodaiphat.com", "hainhay.net", "xskt.vn",
 ]
 TOTAL_SLOTS = sum(EXPECTED_COUNTS.values())
 

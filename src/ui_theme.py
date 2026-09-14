@@ -631,6 +631,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         (
             ("live.html", "Kết quả trực tiếp", "◉"),
             ("index.html", "Kết quả hôm nay", "▤"),
+            ("so-ket-qua-truyen-thong.html", "Sổ kết quả", "▥"),
         ),
     ),
     (

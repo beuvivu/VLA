@@ -4,7 +4,7 @@
 // payload live.json. Tách ra như vậy để `tests/test_worker_snapshot_parity.py`
 // so được nó với bản Python mà không cần mạng.
 //
-// `collectSnapshot` là phần có tác dụng phụ: gọi sáu nguồn rồi giao cho phần
+// `collectSnapshot` là phần có tác dụng phụ: gọi bảy nguồn rồi giao cho phần
 // thuần. Phần ấy không đối chiếu được vì phụ thuộc mạng thật.
 
 import {
@@ -119,7 +119,7 @@ const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
 /**
  * Thử lại có lùi mũ kèm nhiễu, khớp chính sách của `src/sources.py`.
  *
- * Nhiễu là bắt buộc chứ không phải trang trí: sáu nguồn chạy song song, nếu
+ * Nhiễu là bắt buộc chứ không phải trang trí: bảy nguồn chạy song song, nếu
  * cùng hỏng rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng một
  * thời điểm — đúng lúc máy chủ đang quá tải.
  */

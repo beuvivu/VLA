@@ -73,6 +73,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 4. `xosominhngoc.com`
 5. `xosodaiphat.com`
 6. `hainhay.net`
+7. `xskt.vn`
 
 Kết quả mới không được ghi thẳng vào lịch sử chỉ vì một trang web đã hiển thị. Với kỳ quay gần nhất, hệ thống chuẩn hóa đúng độ dài từng giải, đối chiếu toàn bộ 27 giá trị và yêu cầu **ít nhất 2 nhóm nhà cung cấp độc lập** đồng thuận. Hai tên miền Minh Ngọc được coi là cùng một nhóm nhà cung cấp để tránh đếm trang phản chiếu như hai xác nhận độc lập.
 
@@ -81,7 +82,7 @@ Dữ liệu trực tiếp là tạm thời và được giữ tách biệt khỏ
 ## Chức năng chính
 
 - Thu thập đa nguồn, thử lại, kiểm toán nguồn và cổng sức khỏe dữ liệu.
-- XSMB gần thời gian thực bằng GitHub Actions: 6 nguồn được tải song song, hợp nhất từng ô giải và cập nhật JSON trực tiếp khi dữ liệu thay đổi.
+- XSMB gần thời gian thực bằng GitHub Actions: 7 nguồn được tải song song, hợp nhất từng ô giải và cập nhật JSON trực tiếp khi dữ liệu thay đổi.
 - Bộ phân tích cú pháp nghiêm ngặt: không chèn số 0 vào chỗ trống hoặc số đang quay chưa đủ độ dài.
 - Thống kê tần suất, gan, chu kỳ, nháy, đầu/đuôi/tổng, chạm, cặp lộn, lô rơi, ma trận ngày/tuần/tháng/năm.
 - Kiểm định thống kê với co Bayes, khoảng tin cậy, kiểm soát nhiều phép thử/FDR và chẩn đoán entropy/dịch chuyển.
@@ -137,7 +138,7 @@ Vào:
 Lần chạy đầu sẽ:
 
 1. Nạp lịch sử đã ghi nhận.
-2. Đồng bộ ngày thiếu từ 6 nguồn.
+2. Đồng bộ ngày thiếu từ 7 nguồn.
 3. Chỉ đưa kết quả mới vào dữ liệu chuẩn khi vượt cổng kiểm định/đồng thuận.
 4. Chạy thống kê và kiểm định.
 5. Khớp lại đường cầu.
@@ -157,7 +158,7 @@ Workflow:
 
 `Kết quả XSMB gần thời gian thực`
 
-được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 6 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
+được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 7 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
 
 `docs/live.html` đọc JSON gốc từ nhánh `live`, vì vậy không phải dựng lại toàn bộ GitHub Pages mỗi lần có thêm một giải.
 
@@ -205,6 +206,7 @@ Các quy trình phục hồi kiểm tra trạng thái trước khi gọi để t
 
 - `docs/index.html` — trang tổng hợp/bảng điều khiển chính.
 - `docs/live.html` — kết quả gần thời gian thực và xác minh nguồn.
+- `docs/so-ket-qua-truyen-thong.html` — sổ kết quả 30/60/90/100 ngày, lọc ngày và xuất CSV/XLSX.
 - `docs/statistics.html` — thống kê/ma trận nâng cao.
 - `docs/dashboard.html` — bảng điều khiển mô hình tổ hợp AI/ML.
 - `docs/model-quality.html` — LogLoss/Brier cuốn chiếu.
