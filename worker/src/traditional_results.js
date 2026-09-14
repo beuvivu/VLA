@@ -37,7 +37,6 @@ const PRIZE_LABELS = {
   prize5: "Giải Năm",
   prize6: "Giải Sáu",
   prize7: "Giải Bảy",
-  prize8: "Giải Tám",
 };
 
 const INTERNAL_FIELDS = {
@@ -102,7 +101,7 @@ export function parseTraditionalQuery(url, { nowUtcMs = Date.now() } = {}) {
   const region = url.searchParams.get("region") || "north";
   const province = url.searchParams.get("province") || "hanoi";
   if (region !== "north" || province !== "hanoi") {
-    throw new Error("Phiên bản hiện tại chỉ hỗ trợ Miền Bắc / Hà Nội.");
+    throw new Error("Sổ kết quả chỉ hỗ trợ Miền Bắc / Hà Nội.");
   }
 
   const fromRaw = url.searchParams.get("from");

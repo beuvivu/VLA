@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -67,12 +67,17 @@ def _head_tail(prizes: dict[str, list[str]]) -> dict[str, dict[str, list[str]]]:
 
 def _draw(row: dict[str, str]) -> dict[str, object] | None:
     draw_date = str(row.get("date", ""))[:10]
-    if len(draw_date) != 10:
+    try:
+        date.fromisoformat(draw_date)
+    except ValueError:
         return None
     prizes: dict[str, list[str]] = {}
     for key in PRIZE_ORDER:
         width = PRIZE_WIDTHS[key]
-        values = [str(row.get(field, "")).strip().zfill(width) for field in PRIZE_FIELDS[key]]
+        raw = [row.get(field) for field in PRIZE_FIELDS[key]]
+        if any(value is None or not str(value).strip() for value in raw):
+            return None
+        values = [str(value).strip().zfill(width) for value in raw]
         if any(len(value) != width or not value.isascii() or not value.isdigit() for value in values):
             return None
         prizes[key] = values

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
+
+import pytest
 
 from bs4 import BeautifulSoup
 
-from build_traditional_results import embedded_payload, load_draws, render_page
+from build_traditional_results import _draw, embedded_payload, load_draws, render_page
 from ui_theme import nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,8 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_embedded_schema_preserves_widths_and_head_tail_counts() -> None:
     draws = load_draws(ROOT, limit=2)
     assert len(draws) == 2
-    assert draws[0]["draw_date"] == "2026-09-13"
-    assert draws[0]["prizes"][0]["values"] == ["83799"]
+    with (ROOT / "data" / "xsmb.csv").open() as stream:
+        latest = max(csv.DictReader(stream), key=lambda row: row["date"])
+    assert draws[0]["draw_date"] == latest["date"][:10]
+    assert draws[0]["prizes"][0]["values"] == [latest["special"].zfill(5)]
     assert all(len(value) == prize["width"] for prize in draws[0]["prizes"] for value in prize["values"])
     assert sum(len(values) for values in draws[0]["head_tail"]["heads"].values()) == 27
     assert sum(len(values) for values in draws[0]["head_tail"]["tails"].values()) == 27
@@ -58,3 +63,11 @@ def test_generated_page_is_in_navigation_and_exists() -> None:
 def test_builder_output_is_deterministic_for_a_fixed_timestamp() -> None:
     payload = embedded_payload(load_draws(ROOT, limit=5), generated="2026-09-13T13:00:00Z")
     assert render_page(payload) == render_page(payload)
+
+
+@pytest.mark.parametrize("value", [None, "", "   "])
+def test_incomplete_draw_is_not_fabricated_as_zero(value) -> None:
+    with (ROOT / "data" / "xsmb.csv").open() as stream:
+        row = next(csv.DictReader(stream))
+    row["prize7_1"] = value
+    assert _draw(row) is None

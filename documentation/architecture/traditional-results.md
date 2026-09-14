@@ -1,10 +1,9 @@
 # Sổ kết quả truyền thống — schema và luồng dữ liệu
 
-## Phạm vi bản 1
+## Phạm vi Miền Bắc
 
-Bản 1 phục vụ `north/hanoi` vì CSDL chuẩn của VLA hiện có schema XSMB 27 số.
-Hợp đồng API đã dùng mảng giải và thuộc tính `width`, nên có thể thêm tỉnh
-Miền Trung/Miền Nam và `prize8` mà không đổi cấu trúc bao ngoài.
+Chỉ phục vụ Miền Bắc (`north/hanoi`), theo schema XSMB 27 số và 8 hạng giải
+từ Đặc Biệt đến Giải Bảy. API từ chối khu vực ngoài Miền Bắc.
 
 ## REST endpoint
 
