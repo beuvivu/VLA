@@ -408,6 +408,99 @@ hợp) nay được **kiểm tra lại mỗi lần chạy** trên lát giữ ri�
 gian. Nếu tín hiệu xuất hiện, hệ thống chuyển sang cấu hình thu hồi nó — đo
 được là 0 % → 36 % ngay ở mức tiêm +25 %.
 
+## 4c. Nhóm B — học các hằng số co ngót
+
+Ba việc trong nhóm B. Hai việc đã làm và đo được là tốt hơn; việc thứ ba **dừng
+lại**, kèm số liệu chứng minh lý do dừng.
+
+### B1 — mười một hằng số κ trong `number_dynamics`: ĐÃ ĐỔI
+
+Đường nền từng con trước đây co ngót với κ đặt tay `max(20, κ·0,5)` = 22,5; năm
+ước lượng có điều kiện dùng mười hằng số theo chế độ (45/160, 35/100, 60/180,
+45/120, 35/100). Nay tất cả được học bằng Bayes thực nghiệm.
+
+Walk-forward qua chính `build_dynamics_signal`, t cặp đôi (âm là tốt hơn):
+
+| | đặt tay | học | t |
+|---|---|---|---|
+| đường nền, lô tô, 400 kỳ | 0,18143488 | 0,18132998 | **−3,09** |
+| năm thành phần, lô tô, 500 kỳ | 0,18149960 | 0,18145090 | **−2,90** |
+| năm thành phần, lô tô, 1000 kỳ | 0,18139358 | 0,18134064 | **−4,05** |
+| năm thành phần, đề, 500 kỳ | 0,00990056 | 0,00990003 | −1,22 |
+| năm thành phần, đề, 1000 kỳ | 0,00990057 | 0,00990005 | −1,64 |
+
+Ở chế độ **đề** phép học không vượt ngưỡng 2 SE — đó là hoà, không phải thắng.
+Vẫn dùng cho cả hai chế độ vì thay đổi này **bớt** mười một hằng số chứ không
+thêm tham số nào.
+
+Kết luận đáng chú ý hơn Brier: trên dữ liệu ngẫu nhiên thuần, ba trong năm ước
+lượng có điều kiện co ngót **hoàn toàn** (lệch tuyệt đối khỏi đường nền, trung
+vị / lớn nhất):
+
+| thành phần | học | đặt tay |
+|---|---|---|
+| chuyển trạng thái | 0,00000 / 0,00000 | 0,00499 / 0,01990 |
+| Markov bậc hai | 0,00000 / 0,00002 | 0,01400 / 0,06184 |
+| nhân độ trễ | 0,00018 / 0,01344 | 0,00914 / 0,03315 |
+
+### B2 — bảng đề → lô tô ngày sau: ĐÃ ĐỔI
+
+Khớp 1 792 cặp đầu, chấm điểm 598 cặp đuôi mà phép khớp chưa từng thấy:
+
+| | Brier | log-loss | t |
+|---|---|---|---|
+| κ = 60 (đặt tay) | 0,18208903 | 0,550738 | — |
+| co ngót hoàn toàn | 0,18162217 | 0,549427 | −6,02 |
+| **học κ** | 0,18166797 | 0,549560 | **−6,15** |
+
+Trung vị κ học được là 1 000 000 — co ngót hoàn toàn. Với dữ liệu hiện có,
+"đề về s hôm nay" **không** phân biệt được phân phối lô tô ngày mai so với
+phân phối chung; BH-FDR trên chính bảng ấy cũng cho đúng 0 ô có ý nghĩa.
+
+### B3 — không gian trạng thái cho tần suất nền: **DỪNG**
+
+Ý định là thay tần suất nền toàn cục tĩnh bằng một mô hình mức cục bộ một tham
+số, để nó trôi theo thời gian. Đo trước khi viết, và số liệu nói không.
+
+**Thứ nhất — không có trôi chậm.** Phương sai của trung bình trượt 90 kỳ:
+quan sát 2,137e-06, so với 2 000 lần hoán vị thời gian cho 2,399e-06.
+p một phía = **0,656**. Chuỗi thật trôi **ít hơn** chuỗi xáo trộn ngẫu nhiên.
+
+**Thứ hai — không có tự tương quan.** Trên 2 399 kỳ (SE ≈ 0,0204):
+
+| trễ | 1 | 2 | 7 | 30 | 90 | 365 |
+|---|---|---|---|---|---|---|
+| z | −1,05 | +0,10 | −0,03 | −2,41 | +0,78 | +0,43 |
+
+Một giá trị vượt 2 trên sáu phép thử là đúng mức kỳ vọng ngẫu nhiên.
+
+**Thứ ba, và quyết định — mọi bộ lọc đều tệ hơn.** So ngoài mẫu trên 1 999 kỳ
+với trung bình toàn cục mở rộng dần (MSE 2,31085e-04); **dấu dương là tệ hơn**:
+
+| α | MSE | chênh | t |
+|---|---|---|---|
+| 0,001 | 2,31144e-04 | +5,86e-08 | +0,69 |
+| 0,003 | 2,31423e-04 | +3,38e-07 | +1,80 |
+| 0,01 | 2,32393e-04 | +1,31e-06 | **+2,36** |
+| 0,03 | 2,34889e-04 | +3,80e-06 | **+3,34** |
+| 0,1 | 2,44022e-04 | +1,29e-05 | **+5,59** |
+| 0,2 | 2,58089e-04 | +2,70e-05 | **+7,63** |
+| 0,3 | 2,73978e-04 | +4,29e-05 | **+9,43** |
+| 0,5 | 3,12416e-04 | +8,13e-05 | **+12,63** |
+
+Thiệt hại tăng **đơn điệu** theo độ nhạy. Đó không phải "chưa chỉnh đúng tham
+số" — đó là hình dạng của một mô hình đang đuổi theo nhiễu. Một mô hình không
+gian trạng thái sẽ thêm ít nhất một tham số phương sai trạng thái để làm tệ đi
+một đại lượng vốn đã hằng số.
+
+Có một lý do cơ học đứng sau: số giải mỗi kỳ là **cố định**, nên tần suất nền
+chỉ xê dịch được qua số con trùng trong cùng một kỳ. Nó bị chặn chặt từ trong
+thiết kế trò chơi, không phải từ dữ liệu.
+
+**Kết luận: giữ trung bình toàn cục. Đã khoá bằng phép kiểm hồi quy**
+(`tests/test_global_rate_is_stationary.py`) để lần sau ai muốn thêm mô hình
+động thì phải đo lại trước.
+
 ## 5. Checklist rủi ro kỹ thuật
 
 ### Rò rỉ dữ liệu (look-ahead bias)
