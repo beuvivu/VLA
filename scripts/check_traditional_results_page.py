@@ -214,78 +214,150 @@ def main() -> int:
         print(f"  nút xem thêm: {before} -> {after} thẻ")
         if after != before + 100:
             failures.append(f"nút xem thêm dựng {after - before} thẻ, mong đợi 100")
-        # --- 5. Đánh dấu số bằng cú nhấp -----------------------------------
+        # --- 5. Bảng lô tô theo đầu ----------------------------------------
+        #
+        # Trả TOÀN BỘ trạng thái về mặc định trước: phép quét ở trên kết thúc
+        # ở bề rộng 390 px với cả hai bảng phụ ĐANG ẨN. Không đặt lại thì
+        # bảng lô tô có bề rộng 0 và mọi phép so kích thước đạt một cách rỗng
+        # tuếch — bản đầu của đoạn này in ra "kéo giãn 0/0px" rồi báo đạt.
+        page.set_viewport_size({"width": 1440, "height": 1000})
         page.evaluate(
             "() => { const p = document.getElementById('tr-period');"
             " p.value = '30'; p.dispatchEvent(new Event('change', {bubbles: true}));"
             " const r = document.querySelector(\"input[name=tr-layout][value='1']\");"
-            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true})); }"
+            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true}));"
+            " for (const id of ['tr-toggle-headtail', 'tr-toggle-loto', 'tr-toggle-tail']) {"
+            "   const c = document.getElementById(id); c.checked = true;"
+            "   c.dispatchEvent(new Event('change', {bubbles: true})); } }"
         )
         page.wait_for_timeout(300)
-        cell = page.query_selector(".tr-day .tr-prize-row[data-prize=prize3] .tr-number")
-        key = cell.inner_text().strip()[-2:]
-        marked = "() => document.querySelectorAll('[data-marked]').length"
-        background = "(el) => getComputedStyle(el).backgroundColor"
+        table = page.evaluate(
+            "() => { const t = document.querySelector('.tr-day .tr-head-tail table');"
+            " const wrap = t.closest('.tr-head-tail-scroll').getBoundingClientRect();"
+            " return { columns: [...t.querySelectorAll('th')].map(x => x.textContent.trim()),"
+            "   cells_per_row: t.querySelector('tbody tr').children.length,"
+            "   head_colour: getComputedStyle(t.querySelector('.tr-digit')).color,"
+            "   special_colour: getComputedStyle(document.querySelector("
+            "     '.tr-prize-row[data-prize=special] .tr-prize-label')).color,"
+            "   table_width: Math.round(t.getBoundingClientRect().width),"
+            "   frame_width: Math.round(wrap.width) }; }"
+        )
+        if table["columns"] != ["Đầu", "Đuôi tương ứng"]:
+            failures.append(f"bảng lô tô phải còn đúng hai cột, đang là {table['columns']}")
+        if table["cells_per_row"] != 2:
+            failures.append(f"mỗi hàng phải có 2 ô, đang có {table['cells_per_row']}")
+        if table["head_colour"] != table["special_colour"]:
+            failures.append(
+                f"màu số đầu {table['head_colour']} phải trùng màu giải đặc biệt "
+                f"{table['special_colour']}")
+        # Chặn phép so rỗng: bảng bị ẩn cho bề rộng 0, và `0 < -3` là sai nên
+        # phép so dưới sẽ "đạt" mà không kiểm được gì.
+        if table["frame_width"] < 200:
+            failures.append(
+                f"khung bảng lô tô chỉ rộng {table['frame_width']}px — có lẽ đang bị ẩn")
+        elif table["table_width"] < table["frame_width"] - 3:
+            failures.append(
+                f"bảng chưa kéo giãn kín khung: {table['table_width']}/{table['frame_width']}")
+        print(f"  bảng lô tô: {table['columns']}, kéo giãn "
+              f"{table['table_width']}/{table['frame_width']}px, màu khớp giải đặc biệt")
 
-        plain = page.evaluate(background, cell)
-        if page.evaluate(marked) != 0:
-            failures.append("ban đầu không được có ô nào đánh dấu sẵn")
+        # --- 6. Đánh dấu: chế độ mặc định là MỘT Ô --------------------------
+        marked = "() => document.querySelectorAll('[data-marked]').length"
+        pair_mode = page.query_selector("#tr-pair-mode")
+        if pair_mode.is_checked():
+            failures.append("chế độ đánh dấu cặp phải TẮT mặc định")
+        cell = page.query_selector(".tr-day .tr-prize-row[data-prize=prize3] .tr-number")
+        pair = cell.inner_text().strip()[-2:]
+        plain = page.evaluate("(el) => getComputedStyle(el).backgroundColor", cell)
 
         cell.click()
-        page.wait_for_timeout(120)
-        first = page.evaluate(marked)
-        if first == 0:
-            failures.append("bấm lần 1 không đánh dấu gì")
-        if page.evaluate(background, cell) == plain:
+        page.wait_for_timeout(150)
+        single = page.evaluate(marked)
+        if single != 1:
+            failures.append(f"mặc định phải sáng ĐÚNG một ô, đang sáng {single}")
+        if page.evaluate("(el) => getComputedStyle(el).backgroundColor", cell) == plain:
             failures.append("bấm lần 1 không đổi màu nền")
         if not page.is_visible("#tr-mark-clear"):
             failures.append("có đánh dấu thì nút bỏ đánh dấu phải hiện")
-        elsewhere = page.evaluate(
-            "(k) => { const days = [...document.querySelectorAll('.tr-day')]; let n = 0;"
-            " for (let i = 1; i < days.length; i += 1)"
-            "   for (const c of days[i].querySelectorAll('.tr-number[data-marked]'))"
-            "     if (c.textContent.trim().slice(-2) === k) n += 1;"
-            " return n; }", key)
-        if elsewhere == 0:
-            failures.append(f"số {key} ở các kỳ khác phải cùng sáng lên")
-        print(f"  đánh dấu số {key}: {first} ô sáng, {elsewhere} trong đó ở kỳ khác")
 
         cell.click()
-        # Chờ QUÁ thời gian hiệu ứng chuyển màu (120 ms) rồi mới đo.
-        # Đo đúng ở mốc 120 ms bắt được phần đuôi của hiệu ứng —
-        # `rgba(253, 230, 138, 0.016)` — và báo hỏng nhầm. Trạng thái đã đúng
-        # ngay lập tức; chỉ màu là còn đang tan.
+        # Chờ QUÁ thời gian hiệu ứng chuyển màu (120 ms) rồi mới đo màu.
         page.wait_for_timeout(400)
         if page.evaluate(marked) != 0:
             failures.append("bấm lần 2 phải bỏ đánh dấu")
-        if page.evaluate(background, cell) != plain:
+        if page.evaluate("(el) => getComputedStyle(el).backgroundColor", cell) != plain:
             failures.append("bấm lần 2 phải trả màu nền về ban đầu")
-        if page.is_visible("#tr-mark-clear"):
-            failures.append("hết đánh dấu thì nút phải ẩn lại")
+
+        mini = page.query_selector(".tr-day .tr-mini")
+        mini.click()
+        page.wait_for_timeout(150)
+        if page.evaluate(marked) != 1:
+            failures.append("ô mini ở chế độ mặc định cũng chỉ được sáng một ô")
+        mini.click()
+        page.wait_for_timeout(150)
+        print("  mặc định: bấm ô giải và ô mini đều sáng đúng một ô")
+
+        # --- 7. Đánh dấu: chế độ CẶP TRÙNG ----------------------------------
+        pair_mode.check()
+        page.wait_for_timeout(100)
+        cell.click()
+        page.wait_for_timeout(200)
+        group = page.evaluate(
+            "(want) => { const lit = [...document.querySelectorAll('[data-marked]')];"
+            " return { total: lit.length,"
+            "   all_same_pair: lit.every(n =>"
+            "     (n.dataset.value || n.textContent.trim().slice(-2)) === want),"
+            "   minis: lit.filter(n => n.classList.contains('tr-mini')).length }; }", pair)
+        if group["total"] <= 1:
+            failures.append("chế độ cặp phải làm sáng nhiều ô")
+        if not group["all_same_pair"]:
+            failures.append("có ô sáng không đúng cặp số")
+        if group["minis"] == 0:
+            failures.append(
+                "ô mini cùng cặp phải sáng theo — bản trước khoá mini bằng MỘT chữ số "
+                "nên nó không bao giờ khớp với ô giải")
+        print(f"  chế độ cặp: cặp {pair} làm sáng {group['total']} ô "
+              f"({group['minis']} trong đó là ô mini)")
 
         cell.click()
+        page.wait_for_timeout(200)
+        if page.evaluate(marked) != 0:
+            failures.append("bấm lại ô đang sáng theo cặp phải tắt CẢ NHÓM")
+
+        # --- 8. Đổi chế độ không được xoá dấu đã có -------------------------
+        pair_mode.uncheck()
         page.wait_for_timeout(100)
+        cell.click()
+        page.wait_for_timeout(150)
+        states = [page.evaluate(marked)]
+        pair_mode.check()
+        page.wait_for_timeout(150)
+        states.append(page.evaluate(marked))
+        pair_mode.uncheck()
+        page.wait_for_timeout(150)
+        states.append(page.evaluate(marked))
+        if states != [1, 1, 1]:
+            failures.append(f"đổi chế độ không được làm mất dấu đã có: {states}")
+        print("  đổi chế độ giữ nguyên dấu đã đánh")
+
         page.evaluate(
             "() => { const r = document.querySelector(\"input[name=tr-layout][value='3']\");"
-            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true}));"
-            " const p = document.getElementById('tr-period');"
-            " p.value = '60'; p.dispatchEvent(new Event('change', {bubbles: true})); }"
+            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true})); }"
         )
-        page.wait_for_timeout(350)
+        page.wait_for_timeout(300)
         if page.evaluate(marked) == 0:
             failures.append("đánh dấu phải sống qua lần dựng lại danh sách")
         page.click("#tr-mark-clear")
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(150)
         if page.evaluate(marked) != 0:
             failures.append("nút bỏ đánh dấu không xoá hết")
-        print("  bật/tắt, sống qua dựng lại, và xoá sạch: đạt")
 
         page.evaluate("() => document.querySelector('.tr-number').focus()")
         page.keyboard.press("Enter")
-        page.wait_for_timeout(120)
+        page.wait_for_timeout(150)
         if page.evaluate(marked) == 0:
             failures.append("phím Enter phải đánh dấu được")
-        print("  bàn phím Enter: đạt")
+        print("  sống qua dựng lại, xoá sạch, bàn phím Enter: đạt")
 
         browser.close()
 

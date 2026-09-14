@@ -164,18 +164,24 @@ color:var(--tr-mark-ink);outline:1px solid var(--tr-mark-line);outline-offset:-1
 
 .tr-head-tail,.tr-loto{min-width:0}
 .tr-head-tail h3,.tr-loto h3{margin:0 0 8px;font-size:13px}
-.tr-head-tail-scroll{overflow-x:auto;border:1px solid var(--vla-border);border-radius:12px}
-.tr-head-tail table{width:100%;border-collapse:collapse;font-size:var(--tr-mini-fs);
-font-variant-numeric:tabular-nums}
-.tr-head-tail th{padding:8px 6px;background:var(--vla-surface-2);color:var(--vla-ink-soft);font-weight:800;
+.tr-head-tail-scroll{border:1px solid var(--vla-border);border-radius:12px;overflow:hidden}
+/* Bảng chỉ còn hai cột nên nó KÉO GIÃN kín khung: cột "Đầu" vừa đủ một chữ
+   số, cột đuôi ăn hết phần còn lại. `table-layout:fixed` để cột đuôi không co
+   lại theo nội dung khi một hàng có ít số. */
+.tr-head-tail table{width:100%;table-layout:fixed;border-collapse:collapse;
+font-size:var(--tr-mini-fs);font-variant-numeric:tabular-nums}
+.tr-head-tail th{padding:8px 10px;background:var(--vla-surface-2);color:var(--vla-ink-soft);font-weight:800;
 text-align:left;border-bottom:1px solid var(--vla-border)}
-.tr-head-tail td{padding:6px;border-bottom:1px solid var(--vla-border);vertical-align:top}
+.tr-head-tail th:first-child{width:56px;text-align:center}
+.tr-head-tail td{padding:7px 10px;border-bottom:1px solid var(--vla-border);vertical-align:middle}
 .tr-head-tail tr:last-child td{border-bottom:0}
-.tr-digit{width:28px;text-align:center!important;color:var(--vla-brand);font-weight:900}
-.tr-digit-list{display:flex;gap:3px;flex-wrap:wrap;min-width:60px}
+/* Chữ số đầu dùng đúng màu của giải đặc biệt. */
+.tr-digit{width:56px;text-align:center!important;color:var(--vla-bad);
+background:var(--vla-bad-soft);font-weight:900;font-size:calc(var(--tr-mini-fs) + 3px)}
+.tr-digit-list{display:flex;gap:4px;flex-wrap:wrap;min-width:0}
 .tr-dash{color:var(--vla-ink-soft)}
-.tr-mini{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;
-border-radius:5px;background:var(--vla-brand-soft);color:var(--vla-brand-ink);font-weight:800}
+.tr-mini{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;
+border-radius:6px;background:var(--vla-brand-soft);color:var(--vla-brand-ink);font-weight:800}
 .tr-loto-list{display:flex;flex-wrap:wrap;gap:4px}
 .tr-loto-item{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;
 padding:0 5px;border:1px solid var(--vla-border);border-radius:7px;background:var(--vla-surface-2);

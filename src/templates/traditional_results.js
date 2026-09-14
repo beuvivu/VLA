@@ -28,6 +28,7 @@
   const emptyDetail = document.getElementById("tr-empty-detail");
   const statusNode = document.getElementById("tr-source-status");
   const submit = form.querySelector('button[type="submit"]');
+  const pairMode = document.getElementById("tr-pair-mode");
   const clearButton = document.getElementById("tr-mark-clear");
   const moreNode = document.getElementById("tr-more");
   const moreButton = document.getElementById("tr-more-btn");
@@ -118,45 +119,50 @@
 
   // ---- Dựng giao diện ---------------------------------------------------
 
-  function renderDigitList(values) {
+  /** Dãy đuôi của một chữ số đầu.
+   *
+   *  Ô hiển thị MỘT chữ số đuôi, nhưng giá trị để đánh dấu là cả CẶP
+   *  ``đầu + đuôi``. Bản trước lấy chính nội dung ô làm khoá, tức một chữ số
+   *  đơn lẻ — bấm ô "2" làm sáng 159 ô mini ở mọi hàng đầu khác nhau và
+   *  KHÔNG ô giải nào. Đó không phải cặp lô tô, nên nó vô nghĩa với người
+   *  soi cầu.
+   */
+  function renderDigitList(draw, headDigit, tails) {
     const box = el("div", "tr-digit-list");
-    if (!values || values.length === 0) {
+    if (!tails || tails.length === 0) {
       box.append(el("span", "tr-dash", "—"));
       return box;
     }
-    for (const value of values) {
-      const mini = el("span", "tr-mini", value);
+    tails.forEach((tail, index) => {
+      const mini = el("span", "tr-mini", tail);
+      mini.dataset.value = `${headDigit}${tail}`;
+      mini.dataset.cell = `${draw.date}|d${headDigit}|${index}`;
       mini.tabIndex = 0;
       mini.setAttribute("role", "button");
+      mini.setAttribute("aria-label", `Đánh dấu số ${headDigit}${tail}`);
       box.append(mini);
-    }
+    });
     return box;
   }
 
   function renderHeadTail(draw) {
     const section = el("section", "tr-head-tail");
-    section.append(el("h3", "", "Lô tô đầu / đuôi"));
+    section.append(el("h3", "", "Lô tô theo đầu"));
     const scroll = el("div", "tr-head-tail-scroll");
     const table = el("table");
     const thead = el("thead");
     const headRow = el("tr");
-    for (const label of ["Đầu", "Đuôi tương ứng", "Đuôi", "Đầu tương ứng"]) {
-      headRow.append(el("th", "", label));
-    }
+    for (const label of ["Đầu", "Đuôi tương ứng"]) headRow.append(el("th", "", label));
     thead.append(headRow);
     table.append(thead);
     const tbody = el("tbody");
-    const { heads, tails } = headTail(draw);
+    const { heads } = headTail(draw);
     for (let digit = 0; digit <= 9; digit += 1) {
       const row = el("tr");
       row.append(el("td", "tr-digit", String(digit)));
-      const headCell = el("td");
-      headCell.append(renderDigitList(heads[digit]));
-      row.append(headCell);
-      row.append(el("td", "tr-digit", String(digit)));
-      const tailCell = el("td");
-      tailCell.append(renderDigitList(tails[digit]));
-      row.append(tailCell);
+      const cell = el("td", "tr-tails");
+      cell.append(renderDigitList(draw, digit, heads[digit]));
+      row.append(cell);
       tbody.append(row);
     }
     table.append(tbody);
@@ -182,8 +188,9 @@
       row.append(el("div", "tr-prize-label", prize.name));
       const numbers = el("div", "tr-number-grid");
       numbers.style.setProperty("--count", String(prize.values.length));
-      for (const value of prize.values) {
+      prize.values.forEach((value, index) => {
         const number = el("div", "tr-number");
+        number.dataset.cell = `${draw.date}|${prize.code}|${index}`;
         number.tabIndex = 0;
         number.setAttribute("role", "button");
         number.setAttribute("aria-label", `Đánh dấu số ${value.slice(-2)}`);
@@ -194,7 +201,7 @@
           number.textContent = value;
         }
         numbers.append(number);
-      }
+      });
       row.append(numbers);
       section.append(row);
     }
@@ -313,48 +320,85 @@
   // có tới hàng chục nghìn ô số và danh sách được dựng lại mỗi lần đổi bộ lọc;
   // gắn từng ô sẽ tốn bằng đó lượt đăng ký mỗi lần dựng.
   //
-  // Đánh dấu lưu theo GIÁ TRỊ SỐ chứ không theo phần tử, vì hai lý do:
+  // HAI kho đánh dấu, không phải một:
   //
-  //   1. Bấm con 27 ở một kỳ thì con 27 ở MỌI kỳ đang xem cùng sáng lên —
-  //      đó chính là việc người soi cầu muốn làm, dò một số qua nhiều ngày.
-  //   2. Dựng lại danh sách (đổi bố cục, xem thêm, đổi khoảng) không làm mất
-  //      dấu, vì dấu không nằm trên phần tử đã bị xoá.
-  const marked = new Set();
+  //   markedCells   khoá theo Ô CỤ THỂ — "ngày | giải | vị trí". Đây là chế
+  //                 độ mặc định: bấm ô nào thì đúng ô ấy đổi màu.
+  //   markedValues  khoá theo CẶP SỐ hai chữ số. Chỉ dùng khi người xem bật
+  //                 ô "Tự động đánh dấu cặp trùng".
+  //
+  // Vì sao tách đôi thay vì một kho có cờ: một ô có thể đang sáng vì chính nó
+  // được bấm, HOẶC vì cặp số của nó đang được đánh dấu. Gộp vào một kho thì
+  // không phân biệt được hai trường hợp ấy, và cú bấm tiếp theo sẽ xử lý sai.
+  //
+  // Cả hai đều khoá theo DỮ LIỆU chứ không theo phần tử, nên dựng lại danh
+  // sách — đổi bố cục, xem thêm, đổi khoảng — không làm mất dấu.
+  const markedCells = new Set();
+  const markedValues = new Set();
 
-  /** Giá trị dùng để đánh dấu: hai số cuối, đúng đơn vị người ta soi. */
-  function markKey(node) {
+  /** Cặp hai chữ số của một ô. Ô giải lấy hai số cuối; ô mini đã mang sẵn. */
+  function markValue(node) {
+    if (node.dataset.value) return node.dataset.value;
     const text = (node.textContent || "").trim();
     return /^\d+$/.test(text) ? text.slice(-2) : null;
   }
 
+  function markCell(node) {
+    return node.dataset.cell || null;
+  }
+
+  function isMarked(node) {
+    if (markedCells.has(markCell(node))) return true;
+    const value = markValue(node);
+    return value !== null && markedValues.has(value);
+  }
+
   function paintMarks(root = resultsNode) {
     for (const node of root.querySelectorAll(".tr-number, .tr-mini")) {
-      const key = markKey(node);
-      if (key !== null && marked.has(key)) node.dataset.marked = "";
+      if (isMarked(node)) node.dataset.marked = "";
       else delete node.dataset.marked;
     }
-    clearButton.hidden = marked.size === 0;
-    clearButton.textContent = `Bỏ đánh dấu (${marked.size})`;
+    const total = markedCells.size + markedValues.size;
+    clearButton.hidden = total === 0;
+    clearButton.textContent = `Bỏ đánh dấu (${total})`;
+  }
+
+  /** Một cú bấm, bốn nhánh — và thứ tự giữa chúng là phần quan trọng.
+   *
+   *  Quy tắc bao trùm: **bấm vào ô đang sáng thì nó tắt**, bất kể nó sáng vì
+   *  lý do gì. Nếu nó sáng theo cặp thì cả cặp cùng tắt — đúng như lúc nó
+   *  sáng lên. Hai nhánh tắt phải đứng TRƯỚC hai nhánh bật, nếu không một ô
+   *  đang sáng theo cặp sẽ bị thêm dấu ô chồng lên và bấm mãi không tắt.
+   */
+  function toggleMark(node) {
+    const value = markValue(node);
+    const cell = markCell(node);
+    if (value !== null && markedValues.has(value)) markedValues.delete(value);
+    else if (cell !== null && markedCells.has(cell)) markedCells.delete(cell);
+    else if (pairMode.checked && value !== null) markedValues.add(value);
+    else if (cell !== null) markedCells.add(cell);
+    else return false;
+    return true;
   }
 
   resultsNode.addEventListener("click", (event) => {
     const node = event.target.closest(".tr-number, .tr-mini");
     if (!node || !resultsNode.contains(node)) return;
-    const key = markKey(node);
-    if (key === null) return;
-    if (marked.has(key)) marked.delete(key);
-    else marked.add(key);
-    paintMarks();
+    if (toggleMark(node)) paintMarks();
   });
 
   // Bàn phím: ô số phải bấm được bằng Enter/Space, không chỉ bằng chuột.
   resultsNode.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     const node = event.target.closest(".tr-number, .tr-mini");
-    if (!node || markKey(node) === null) return;
+    if (!node || !resultsNode.contains(node)) return;
     event.preventDefault();
     node.click();
   });
+
+  // Đổi chế độ KHÔNG xoá dấu đã có. Người xem bật chế độ cặp, đánh vài dấu,
+  // rồi tắt đi — những dấu ấy phải còn nguyên, vì họ không hề bỏ chọn chúng.
+  pairMode.addEventListener("change", () => paintMarks());
 
   // ---- Tuỳ chọn hiển thị ------------------------------------------------
 
@@ -543,7 +587,11 @@
   }
   document.getElementById("tr-export-csv").addEventListener("click", exportCsv);
   document.getElementById("tr-export-xlsx").addEventListener("click", exportXlsx);
-  clearButton.addEventListener("click", () => { marked.clear(); paintMarks(); });
+  clearButton.addEventListener("click", () => {
+    markedCells.clear();
+    markedValues.clear();
+    paintMarks();
+  });
   moreButton.addEventListener("click", () => appendPage(PAGE_SIZE));
   document.getElementById("tr-print").addEventListener("click", () => {
     // In thì phải có đủ. Không dựng nốt thì bản in chỉ có lô đầu tiên, mà

@@ -421,22 +421,74 @@ def test_marking_uses_one_delegated_listener_not_one_per_cell() -> None:
     assert "addEventListener" not in body, "không gắn sự kiện lên từng ô"
 
 
-def test_marking_is_keyed_by_value_so_the_same_number_lights_up_everywhere() -> None:
-    """Bấm con 27 ở một kỳ thì con 27 ở mọi kỳ đang xem cùng sáng.
+def test_marking_keeps_two_separate_stores_not_one() -> None:
+    """Một ô có thể sáng vì CHÍNH NÓ được bấm, hoặc vì CẶP SỐ của nó được đánh dấu.
 
-    Đó chính là việc người soi cầu muốn làm — dò một số qua nhiều ngày. Lưu
-    theo phần tử thì dựng lại danh sách là mất dấu.
+    Gộp hai trường hợp ấy vào một kho thì không phân biệt được, và cú bấm kế
+    tiếp sẽ xử lý sai: ô đang sáng theo cặp bị thêm dấu ô chồng lên, bấm mãi
+    không tắt.
     """
-    assert "const marked = new Set();" in JS_CODE
-    assert "text.slice(-2)" in JS_CODE
-    assert "marked.has(key)" in JS_CODE and "marked.delete(key)" in JS_CODE
+    assert "const markedCells = new Set();" in JS_CODE
+    assert "const markedValues = new Set();" in JS_CODE
+    assert "markedCells.has(markCell(node))" in JS_CODE
+    assert "markedValues.has(value)" in JS_CODE
+
+
+def test_the_default_mode_marks_exactly_the_cell_that_was_clicked() -> None:
+    """Mặc định là đánh dấu MỘT Ô, không lan sang các ô cùng cặp.
+
+    Chỉ khi ``pairMode`` được tích thì cú bấm mới ghi vào kho theo cặp.
+    """
+    body = JS_CODE[JS_CODE.index("function toggleMark("):]
+    body = body[:body.index("\n  }")]
+    assert "pairMode.checked && value !== null) markedValues.add(value)" in body
+    assert "markedCells.add(cell)" in body
+
+
+def test_clicking_a_lit_cell_turns_it_off_whatever_lit_it() -> None:
+    """Hai nhánh TẮT phải đứng trước hai nhánh BẬT.
+
+    Nếu không, một ô đang sáng theo cặp sẽ bị thêm dấu ô chồng lên và không
+    bao giờ tắt được bằng cách bấm vào chính nó.
+    """
+    body = JS_CODE[JS_CODE.index("function toggleMark("):]
+    body = body[:body.index("\n  }")]
+    order = [
+        body.index("markedValues.delete(value)"),
+        body.index("markedCells.delete(cell)"),
+        body.index("markedValues.add(value)"),
+        body.index("markedCells.add(cell)"),
+    ]
+    assert order == sorted(order), "nhánh bật đang đứng trước nhánh tắt"
+
+
+def test_a_mini_cell_carries_the_whole_two_digit_pair() -> None:
+    """Ô mini hiện MỘT chữ số đuôi, nhưng giá trị của nó là cả cặp đầu+đuôi.
+
+    Bản trước lấy chính nội dung ô làm khoá — tức một chữ số đơn lẻ. Đo trong
+    trình duyệt: bấm ô "2" làm sáng 159 ô mini rải khắp mọi hàng đầu khác
+    nhau, và KHÔNG ô giải nào. Đó không phải cặp lô tô.
+    """
+    assert "mini.dataset.value = `${headDigit}${tail}`;" in JS_CODE
+    assert "if (node.dataset.value) return node.dataset.value;" in JS_CODE
+
+
+def test_switching_mode_does_not_erase_existing_marks() -> None:
+    """Người xem không hề bỏ chọn gì khi họ chỉ đổi chế độ."""
+    assert 'pairMode.addEventListener("change", () => paintMarks());' in JS_CODE
 
 
 def test_marks_survive_a_rerender() -> None:
-    """`appendPage` phải sơn lại dấu, nếu không thì "xem thêm" ra các thẻ trắng."""
+    """`appendPage` phải sơn lại dấu, nếu không thì "xem thêm" ra các thẻ trắng.
+
+    Dấu khoá theo DỮ LIỆU (ngày | giải | vị trí, hoặc cặp số) chứ không theo
+    phần tử, nên phần tử bị xoá cũng không làm mất dấu.
+    """
     body = JS_CODE[JS_CODE.index("function appendPage("):]
     body = body[:body.index("\n  }")]
     assert "paintMarks()" in body
+    assert "number.dataset.cell = `${draw.date}|${prize.code}|${index}`;" in JS_CODE
+    assert "mini.dataset.cell = `${draw.date}|d${headDigit}|${index}`;" in JS_CODE
 
 
 def test_marked_cells_are_outlined_not_bordered() -> None:
@@ -457,8 +509,45 @@ def test_there_is_a_way_to_clear_every_mark_at_once() -> None:
     button = soup.select_one("#tr-mark-clear")
     assert button is not None
     assert button.has_attr("hidden")
-    assert "clearButton.hidden = marked.size === 0" in JS_CODE
-    assert "marked.clear()" in JS_CODE
+    assert "clearButton.hidden = total === 0" in JS_CODE
+    assert "const total = markedCells.size + markedValues.size;" in JS_CODE
+    # Nút phải dọn CẢ HAI kho — quên một kho thì bấm xong vẫn còn ô sáng.
+    assert "markedCells.clear()" in JS_CODE
+    assert "markedValues.clear()" in JS_CODE
+
+
+def test_the_loto_table_keeps_only_the_head_side() -> None:
+    """Bỏ hẳn nửa "Đuôi tương ứng"; còn hai cột và kéo giãn kín khung."""
+    assert '["Đầu", "Đuôi tương ứng"]' in JS_CODE
+    assert "Đầu tương ứng" not in JS_CODE
+    rule = re.search(r"\.tr-head-tail table\{([^}]*)\}", CSS_CODE)
+    assert rule is not None
+    assert "width:100%" in rule.group(1)
+    assert "table-layout:fixed" in rule.group(1), (
+        "không cố định bố cục thì cột đuôi co lại theo nội dung ở hàng ít số"
+    )
+
+
+def test_the_head_digit_uses_the_special_prize_colour() -> None:
+    """Cùng một biến màu, không phải một mã màu chép lại.
+
+    Chép mã màu thì hai chỗ sẽ trôi lệch nhau ở lần đổi bảng màu tiếp theo.
+    """
+    rule = re.search(r"^\.tr-digit\{([^}]*)\}", CSS_CODE, re.M)
+    assert rule is not None
+    assert "color:var(--vla-bad)" in rule.group(1)
+    special = re.search(
+        r'\.tr-prize-row\[data-prize="special"\] \.tr-prize-label\{([^}]*)\}', CSS_CODE)
+    assert special is not None
+    assert "color:var(--vla-bad)" in special.group(1)
+
+
+def test_the_pair_mode_checkbox_exists_and_starts_unchecked() -> None:
+    """Chế độ mặc định phải là đánh dấu một ô, nên ô chọn phải bắt đầu ở trạng thái TẮT."""
+    soup = BeautifulSoup(render_page(embedded_payload(load_rows(ROOT, limit=3), generated="x")), "html.parser")
+    box = soup.select_one("#tr-pair-mode[type=checkbox]")
+    assert box is not None
+    assert not box.has_attr("checked"), "chế độ cặp không được bật sẵn"
 
 
 def test_number_cells_are_reachable_by_keyboard() -> None:
