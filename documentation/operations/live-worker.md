@@ -41,7 +41,7 @@ Worker mới là đảm bảo.
 ```
 Cron Cloudflare ──mỗi phút 18:08-18:59 ICT──▶ scheduled()
                  (và 5 phút/lần 19:00-19:55)
-                                                 │ đọc 6 nguồn, đồng thuận
+                                                 │ đọc 7 nguồn, đồng thuận
                                                  ▼
                                              Workers KV
                                                  │
@@ -193,7 +193,7 @@ phép kiểm ở mục 5 chạy trên mẫu dựng tay và dữ liệu sinh ra, 
 trang thật hôm nay.
 
 **Các nguồn có thể chặn IP trung tâm dữ liệu.** Worker gọi từ mạng Cloudflare,
-không phải từ máy gia đình. Có sáu nguồn nên xác suất chặn hết là thấp, nhưng
+không phải từ máy gia đình. Có bảy nguồn nên xác suất chặn hết là thấp, nhưng
 tôi không đo được từ đây. Bước 4 là phép thử thật đầu tiên: nếu cả sáu dòng
 `source_status` đều có `error`, đó chính là hiện tượng này.
 

@@ -290,6 +290,7 @@ jobs:
           test -s docs/dashboard.html
           test -s docs/model-quality.html
           test -s docs/live.html
+          test -s docs/so-ket-qua-truyen-thong.html
           test -s DASHBOARD.md
 
       - name: Ghi nhận phân tích và bảng điều khiển đã hoàn tất

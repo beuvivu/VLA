@@ -363,6 +363,7 @@ def main() -> None:
         # Trang thống kê chi tiết: nhúng lịch sử và tính bằng JS phía
         # trình duyệt, nên phải chạy SAU khi dữ liệu đã chốt.
         _run(_py("src/build_stat_pages.py"), allow_fail=soft_fail)
+        _run(_py("src/build_traditional_results.py"), allow_fail=soft_fail)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 
     _run(

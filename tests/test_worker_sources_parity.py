@@ -74,14 +74,14 @@ def test_source_order_and_urls_match_the_python_catalogue() -> None:
     assert javascript == python
 
 
-def test_only_hainhay_trims_the_page_before_parsing() -> None:
-    """hainhay.net là sổ cái cuộn nên phải cắt; năm nguồn kia thì không.
+def test_only_rolling_ledgers_trim_the_page_before_parsing() -> None:
+    """Hai sổ cái cuộn phải cắt; các nguồn theo ngày thì không.
 
     Cắt nhầm một nguồn không cần cắt sẽ âm thầm bỏ mất phần đầu bảng giải.
     """
     javascript = _javascript_sources()
     co_cat = {row["name"] for row in javascript if row["has_select_section"]}
-    assert co_cat == {"hainhay.net"}
+    assert co_cat == {"hainhay.net", "xskt.vn"}
 
 
 def test_ci_sets_up_node_explicitly() -> None:

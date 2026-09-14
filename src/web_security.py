@@ -3,6 +3,7 @@ from __future__ import annotations
 """Security helpers shared by the static HTML builders."""
 
 import json
+import re
 from typing import Any
 
 
@@ -20,10 +21,21 @@ CONTENT_SECURITY_POLICY = (
 )
 
 
-def security_meta_tags() -> str:
-    """Return defense-in-depth policy tags for self-contained static pages."""
+def security_meta_tags(*, connect_sources: tuple[str, ...] = ()) -> str:
+    """Return defense-in-depth policy tags for self-contained static pages.
+
+    ``connect_sources`` is intentionally restricted to literal HTTPS origins
+    or wildcard HTTPS hostnames.  Builders may therefore opt into a Worker
+    API without turning arbitrary data into CSP text.
+    """
+
+    for source in connect_sources:
+        if re.fullmatch(r"https://(?:\*\.)?[A-Za-z0-9.-]+(?::\d+)?", source) is None:
+            raise ValueError(f"invalid CSP connect source: {source!r}")
+    connect = " ".join(("'self'", *connect_sources))
+    policy = CONTENT_SECURITY_POLICY.replace("connect-src 'self'", f"connect-src {connect}")
     return (
-        f'<meta http-equiv="Content-Security-Policy" content="{CONTENT_SECURITY_POLICY}" />\n'
+        f'<meta http-equiv="Content-Security-Policy" content="{policy}" />\n'
         '<meta name="referrer" content="no-referrer" />'
     )
 

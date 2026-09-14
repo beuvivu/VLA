@@ -24,6 +24,7 @@ const SOURCE_INDEPENDENCE_GROUP = {
   "xosominhngoc.com": "minhngoc",
   "xosodaiphat.com": "xosodaiphat",
   "hainhay.net": "hainhay",
+  "xskt.vn": "xskt",
 };
 
 export function sourceIndependenceKey(sourceName) {

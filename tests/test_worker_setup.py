@@ -108,6 +108,13 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     once = _run([
         {"fn": "patchWranglerKvId", "args": [toml, KV_ID]},
         {"fn": "patchLiveWorkerUrl", "args": [html, url]},
+        {
+            "fn": "patchTraditionalResultsApiUrl",
+            "args": [
+                (ROOT / "docs" / "so-ket-qua-truyen-thong.html").read_text(encoding="utf-8"),
+                url,
+            ],
+        },
     ], tmp_path)
     assert all(r["ok"] for r in once), once
 
@@ -142,6 +149,16 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert twice[1]["value"] == patched_html
     assert twice[0]["value"].count("[[kv_namespaces]]") == 1
 
+    patched_results = once[2]["value"]
+    assert (
+        f"window.VLA_RESULTS_API_URL = '{url}/api/v1/traditional-results';"
+        in patched_results
+    )
+    repeated = _run([
+        {"fn": "patchTraditionalResultsApiUrl", "args": [patched_results, url]},
+    ], tmp_path)[0]
+    assert repeated["value"] == patched_results
+
 
 def test_a_trailing_slash_in_the_worker_url_does_not_double_up(tmp_path: Path) -> None:
     html = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
@@ -161,7 +178,11 @@ def test_the_dry_run_touches_nothing(tmp_path: Path) -> None:
     """
     before = {
         path: (ROOT / path).read_bytes()
-        for path in ("worker/wrangler.toml", "docs/live.html")
+        for path in (
+            "worker/wrangler.toml",
+            "docs/live.html",
+            "docs/so-ket-qua-truyen-thong.html",
+        )
     }
     proc = subprocess.run(
         [_require_node(), str(SETUP), "--dry-run"],

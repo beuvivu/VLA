@@ -34,7 +34,34 @@ def test_source_policy_exact_priority_and_no_removed_provider() -> None:
         "xosominhngoc.com",
         "xosodaiphat.com",
         "hainhay.net",
+        "xskt.vn",
     ]
+
+
+def test_xskt_rolling_ledger_selects_the_requested_date_only() -> None:
+    from datetime import date
+
+    from sources import XsktVnSource
+
+    html = """
+    <h2>XSMB chủ nhật ngày 13-09-2026</h2>
+    <div>ĐB 83799</div><div>G1 63029</div><div>G7 21 88 40 27</div>
+    <h2>XSMB thứ 7 ngày 12-09-2026</h2>
+    <div>ĐB 58851</div><div>G1 93635</div><div>G7 01 39 43 23</div>
+    """
+    source = XsktVnSource()
+    section = source.select_section(html, date(2026, 9, 12))
+    assert "58851" in section
+    assert "83799" not in section
+
+
+def test_xskt_rolling_ledger_fails_closed_when_date_is_absent() -> None:
+    from datetime import date
+
+    from sources import XsktVnSource
+
+    source = XsktVnSource()
+    assert source.select_section("<h2>XSMB ngày 13-09-2026</h2>", date(2026, 9, 12)) == ""
 
 
 def test_generic_parser_accepts_complete_exact_width_block() -> None:

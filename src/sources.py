@@ -325,6 +325,42 @@ class HainhaySource(_TextPageSource):
         return text[start:end]
 
 
+@dataclass(frozen=True)
+class XsktVnSource(_TextPageSource):
+    """Nguồn bù lịch sử từ sổ kết quả công khai của xskt.vn.
+
+    Trang xskt.vn là một sổ cái cuộn chứa nhiều kỳ trong cùng một tài liệu.
+    Vì vậy phải cắt đúng khối ngày được yêu cầu trước khi đưa qua bộ bóc giải
+    dùng chung; nếu không, mọi ngày thiếu đều có nguy cơ nhận kết quả mới nhất.
+    """
+
+    name: str = "xskt.vn"
+
+    def date_url(self, selected_date: date) -> str:
+        # Dùng sổ cuộn thay vì gửi một lượt HTTP riêng cho từng ngày thiếu.
+        # Tên đường dẫn do xskt.vn đặt; nguồn có thể chỉ trả một phần dải ngày,
+        # vì vậy ngày không xuất hiện luôn được giữ là thiếu, không đoán bừa.
+        return "https://xskt.vn/xsmb-500-ngay/"
+
+    def live_url(self, selected_date: date) -> str:
+        return "https://xskt.vn/"
+
+    def select_section(self, html: str, selected_date: date) -> str:
+        text = BeautifulSoup(html, "lxml").get_text("\n", strip=True)
+        tokens = (
+            selected_date.strftime("%d-%m-%Y"),
+            f"{selected_date.day}-{selected_date.month}-{selected_date.year}",
+            selected_date.strftime("%d/%m/%Y"),
+        )
+        starts = [text.find(token) for token in tokens if text.find(token) >= 0]
+        if not starts:
+            return ""
+        start = min(starts)
+        # Một kỳ XSMB đầy đủ ngắn hơn rất nhiều; 8 000 ký tự đủ rộng để giữ
+        # cả markup rời rạc nhưng vẫn dừng trước các bảng thống kê kế tiếp.
+        return text[start : min(len(text), start + 8000)]
+
+
 def default_sources() -> list[Source]:
     """Canonical source policy, in the exact business-priority order."""
     return [
@@ -334,6 +370,7 @@ def default_sources() -> list[Source]:
         XosoMinhNgocSource(),
         XosoDaiPhatSource(),
         HainhaySource(),
+        XsktVnSource(),
     ]
 
 
@@ -346,6 +383,7 @@ SOURCE_INDEPENDENCE_GROUP = {
     "xosominhngoc.com": "minhngoc",
     "xosodaiphat.com": "xosodaiphat",
     "hainhay.net": "hainhay",
+    "xskt.vn": "xskt",
 }
 
 

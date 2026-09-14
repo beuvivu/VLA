@@ -44,6 +44,21 @@ function hainhaySection(html, date) {
   return text.slice(start, end);
 }
 
+// xskt.vn cũng là sổ cái cuộn. Cắt từ đúng ngày được yêu cầu; trả chuỗi rỗng
+// khi trang không có ngày ấy để bộ bóc không rơi ngược về kỳ mới nhất.
+function xsktSection(html, date) {
+  const text = htmlToLines(html).join("\n");
+  const tokens = [
+    dmy(date, "-"),
+    `${date.day}-${date.month}-${date.year}`,
+    dmy(date, "/"),
+  ];
+  const starts = tokens.map((token) => text.indexOf(token)).filter((at) => at >= 0);
+  if (starts.length === 0) return "";
+  const start = Math.min(...starts);
+  return text.slice(start, Math.min(text.length, start + 8000));
+}
+
 export const SOURCES = [
   {
     name: "xoso.com.vn",
@@ -78,6 +93,12 @@ export const SOURCES = [
     dateUrl: () => "https://www.hainhay.net/so-ket-qua-truyen-thong/300",
     liveUrl: () => "https://www.hainhay.net/",
     selectSection: hainhaySection,
+  },
+  {
+    name: "xskt.vn",
+    dateUrl: () => "https://xskt.vn/xsmb-500-ngay/",
+    liveUrl: () => "https://xskt.vn/",
+    selectSection: xsktSection,
   },
 ];
 

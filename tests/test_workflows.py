@@ -229,6 +229,7 @@ def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
         "build_statistics_dashboard.py",
         "build_landing_page.py",
         "build_fun_prediction.py",
+        "build_traditional_results.py",
     ]
     # So theo DÒNG, không theo chuỗi con: "#python src/x.py" vẫn chứa
     # "python src/x.py", nên phép kiểm chuỗi con sẽ xanh cả khi dòng bị chú

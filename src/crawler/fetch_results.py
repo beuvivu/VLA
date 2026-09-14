@@ -53,7 +53,7 @@ TOTAL_SLOTS = sum(EXPECTED_COUNTS.values())
 
 #: Hạn cho MỖI yêu cầu HTTP. Đặt chặt là có chủ đích: trong khung 18:15-18:30
 #: các trang kết quả quá tải, và một nguồn treo 20 giây sẽ nuốt trọn một chu
-#: kỳ thăm dò. Sáu nguồn chạy song song nên mất một nguồn không sao; chờ nó
+#: kỳ thăm dò. Bảy nguồn chạy song song nên mất một nguồn không sao; chờ nó
 #: mới là mất.
 DEFAULT_REQUEST_TIMEOUT = 8.0
 
@@ -173,7 +173,7 @@ class _TimeoutCappedSession:
         """Thời gian chờ trước lần thử kế tiếp.
 
         Lũy thừa cơ số 2 kèm nhiễu ngẫu nhiên. Nhiễu là phần bắt buộc chứ
-        không phải trang trí: sáu nguồn chạy song song, nếu cùng thất bại rồi
+        không phải trang trí: bảy nguồn chạy song song, nếu cùng thất bại rồi
         cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng một thời
         điểm — đúng lúc máy chủ đang quá tải.
 

@@ -8,7 +8,7 @@
 // khiến mã "tự chạy lúc 18:15" nếu đồng hồ không nằm ở đâu đó.
 //
 // Worker này LÀ cái đồng hồ ấy. Cron của nền tảng gọi `scheduled()` mỗi phút
-// trong khung quay số; nó đọc sáu nguồn, dựng live.json rồi cất vào KV.
+// trong khung quay số; nó đọc bảy nguồn, dựng live.json rồi cất vào KV.
 // Trình duyệt đọc thẳng từ `fetch()` bên dưới.
 //
 // Hệ quả quan trọng: GitHub Actions không còn nằm trên đường găng ĐÚNG GIỜ.
@@ -16,6 +16,7 @@
 // live nữa.
 
 import { collectSnapshot, drawDate } from "./snapshot.js";
+import { handleTraditionalResults } from "./traditional_results.js";
 
 const KV_KEY = "live.json";
 const LOCK_KEY = "collect-lock";
@@ -82,7 +83,7 @@ function requireKv(env) {
  * Kỳ hôm nay đã xác minh xong thì không còn gì để thu thập nữa.
  *
  * Cron chạy mỗi phút suốt khung quay số. Không có chốt này thì sau khi đủ 27 ô
- * và đã xác minh, nó vẫn gọi sáu nguồn thêm vài chục lần nữa mà không thêm
+ * và đã xác minh, nó vẫn gọi bảy nguồn thêm vài chục lần nữa mà không thêm
  * được thông tin gì — chỉ tốn hạn mức và dội vào đúng những trang đang tải
  * nặng nhất trong ngày.
  *
@@ -143,6 +144,10 @@ export default {
 
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/v1/traditional-results") {
+      return handleTraditionalResults(request, env, ctx);
+    }
 
     if (request.method === "OPTIONS") {
       return new Response(null, {

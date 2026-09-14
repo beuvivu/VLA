@@ -37,6 +37,7 @@ expected = [
     "xosominhngoc.com",
     "xosodaiphat.com",
     "hainhay.net",
+    "xskt.vn",
 ]
 actual = [s.name for s in default_sources()]
 assert actual == expected, (actual, expected)
@@ -280,6 +281,7 @@ python src/build_markdown_dashboard.py
 python src/build_statistics_dashboard.py
 python src/build_landing_page.py
 python src/build_fun_prediction.py
+python src/build_traditional_results.py
 python src/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
@@ -358,6 +360,7 @@ required=(
   docs/statistics.html
   docs/dashboard.html
   docs/model-quality.html
+  docs/so-ket-qua-truyen-thong.html
 )
 for path in "${required[@]}"; do
   test -s "$path" || { echo "Missing/empty output: $path" >&2; exit 3; }
