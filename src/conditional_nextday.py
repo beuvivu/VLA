@@ -9,15 +9,37 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
+from hierarchical_pooling import fit_shrinkage_to_prior_rows
 from lottery import Lottery
 from path_models import build_daily_targets
 from research_diagnostics import bh_fdr
 
 
+#: ``None`` nghĩa là HỌC độ co ngót theo từng con đề, thay cho hằng số 60.
+#:
+#: Đo trên chính bảng này (khớp 1 792 cặp đầu, chấm điểm 598 cặp đuôi mà phép
+#: khớp chưa từng thấy):
+#:
+#:     κ = 60 (đặt tay)    Brier 0,18208903   log-loss 0,550738
+#:     co ngót hoàn toàn   Brier 0,18162217   log-loss 0,549427   t = -6,02
+#:     HỌC κ               Brier 0,18166797   log-loss 0,549560   t = -6,15
+#:
+#: Bảng này là bằng chứng mô tả, không vào bộ hợp thành, nên không có Brier
+#: của bộ hợp thành để gác — phải chấm điểm chính ``p_eb`` trên phần đuôi.
+#:
+#: Trung vị κ học được là 1 000 000, tức co ngót HOÀN TOÀN. Nói thẳng điều đó
+#: nghĩa là gì: với dữ liệu hiện có, "đề về s hôm nay" KHÔNG phân biệt được
+#: phân phối lô tô ngày mai so với phân phối chung. Cả bảng 10 000 dòng là
+#: nhiễu, và hằng số 60 đã khiến nó trông như có nội dung. Giữ nguyên phép
+#: học chứ không chốt cứng co ngót hoàn toàn, để nếu về sau có tín hiệu thật
+#: thì nó tự nổi lên.
+LEARN_CONDITIONAL_PRIOR: float | None = None
+
+
 def compute_loto_nextday_given_special(
     df_2d: pd.DataFrame,
     *,
-    prior_strength: float = 60.0,
+    prior_strength: float | None = LEARN_CONDITIONAL_PRIOR,
 ) -> pd.DataFrame:
     """Estimate P(Loto=x at t+1 | De_2d at t=s) for all observed s,x.
 
@@ -47,6 +69,7 @@ def compute_loto_nextday_given_special(
         "baseline",
         "effect_raw",
         "lift_raw",
+        "prior_strength",
         "p_value",
         "q_value_fdr",
         "fdr_05",
@@ -78,6 +101,15 @@ def compute_loto_nextday_given_special(
         return pd.DataFrame(columns=columns)
 
     baseline = global_hits.astype(float) / float(eligible_pairs)
+    if prior_strength is None:
+        # Mỗi con đề là một câu hỏi riêng — "đề về s thì kéo theo gì" — nên
+        # nó phải có độ co ngót riêng. Gộp cả 10 000 ô vào một κ sẽ dìm chết
+        # một quan hệ thật nếu chỉ vài hàng có tín hiệu.
+        row_prior = fit_shrinkage_to_prior_rows(
+            hits.astype(float), np.maximum(trials, 1).astype(float), baseline
+        )
+    else:
+        row_prior = np.full(100, float(prior_strength))
     rows: list[dict[str, object]] = []
     p_values: list[float] = []
     for s in range(100):
@@ -88,7 +120,8 @@ def compute_loto_nextday_given_special(
             h = int(hits[s, x])
             p_raw = h / tr
             base = float(baseline[x])
-            p_eb = (h + prior_strength * base) / (tr + prior_strength)
+            k = float(row_prior[s])
+            p_eb = (h + k * base) / (tr + k)
             if 0.0 < base < 1.0:
                 p_value = float(stats.binom.sf(h - 1, tr, base))
             elif base <= 0.0:
@@ -111,6 +144,7 @@ def compute_loto_nextday_given_special(
                     "baseline": base,
                     "effect_raw": float(p_raw - base),
                     "lift_raw": float(p_raw / base) if base > 0 else None,
+                    "prior_strength": k,
                     "p_value": p_value,
                 }
             )
@@ -126,7 +160,12 @@ def compute_loto_nextday_given_special(
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--top", type=int, default=20, help="Top numbers per special to export")
-    ap.add_argument("--prior-strength", type=float, default=60.0)
+    ap.add_argument(
+        "--prior-strength",
+        type=float,
+        default=None,
+        help="Ép độ co ngót; bỏ trống thì học từ dữ liệu",
+    )
     ap.add_argument("--out-dir", type=str, default="data/conditional")
     args = ap.parse_args()
 
@@ -139,10 +178,10 @@ def main() -> None:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    long_df = compute_loto_nextday_given_special(
-        df_2d,
-        prior_strength=max(0.0, float(args.prior_strength)),
+    forced_prior = (
+        None if args.prior_strength is None else max(0.0, float(args.prior_strength))
     )
+    long_df = compute_loto_nextday_given_special(df_2d, prior_strength=forced_prior)
     long_path = out_dir / "loto_nextday_given_special_long.csv"
     long_df.to_csv(long_path, index=False)
 
@@ -175,7 +214,10 @@ def main() -> None:
         "rows": int(len(long_df)),
         "observed_special_states": int(long_df["special"].nunique()) if not long_df.empty else 0,
         "fdr_05_count": int(long_df["fdr_05"].sum()) if not long_df.empty else 0,
-        "prior_strength": float(max(0.0, args.prior_strength)),
+        "prior_strength_learned": forced_prior is None,
+        "prior_strength_median": (
+            float(long_df["prior_strength"].median()) if not long_df.empty else None
+        ),
         "note": "Conditional historical matrix only; it does not alter production prediction weights.",
     }
     (out_dir / "manifest.json").write_text(

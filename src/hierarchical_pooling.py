@@ -245,6 +245,21 @@ def fit_shrinkage_to_prior_rows(
     câu hỏi riêng — "con số này về thì nó kéo theo gì" — nên nó phải có độ co
     ngót riêng.
 
+    Phải đọc kết quả cho đúng — đây là chỗ dễ nhầm nhất: κ HỮU HẠN KHÔNG PHẢI
+    một phát hiện. Ước lượng mô men của phương sai vượt là không chệch quanh
+    giá trị thật bằng không, nên dưới giả thuyết vô hiệu nó rơi về phía dương
+    khoảng một nửa số lần. Đo trực tiếp, 40 lần bốc mỗi cỡ mẫu, dữ liệu nhị
+    thức thuần:
+
+        số kỳ mỗi hàng      5     12     24     60    240
+        tỉ lệ hàng κ hữu hạn   0,472  0,485  0,475  0,481  0,490
+
+    Tỉ lệ ấy KHÔNG giảm khi thêm dữ liệu, vì nó là phân phối dấu của một ước
+    lượng không chệch ở biên, chứ không phải sai số thống kê. Chỉ ĐỘ LỚN của κ
+    mới mang thông tin: phương sai vượt bé tí thì κ khổng lồ và hậu nghiệm vẫn
+    nằm nguyên trên tiên nghiệm. Đừng bao giờ báo cáo "hàng này có κ hữu hạn"
+    như một kết luận.
+
     ``successes`` hình ``(n_rows, n_units)``; ``trials`` hình ``(n_rows,)``
     hoặc ``(n_rows, n_units)``; ``prior_mean`` hình ``(n_units,)``.
     """
