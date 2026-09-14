@@ -27,13 +27,20 @@
     "lag": true,
     "regime": true
   },
+  "transition_pool": {
+    "kind": "arithmetic",
+    "t_statistic": -1.0290420395452482,
+    "holdout_days": 600,
+    "brier_arithmetic": 0.009907172584100964,
+    "brier_logodds": 0.009907172584100964
+  },
   "transition_active_mean_trials": 23.0,
   "regime_js_divergence_30_vs_180": 0.03774674653243085,
   "entropy_recent": 4.448107428919503,
   "entropy_long": 4.444683237655447,
   "global_dynamics_reliability": 0.668267689407414,
   "hazard_nonzero_bins": 200,
-  "generated_at_utc": "2026-09-14T13:53:26Z",
+  "generated_at_utc": "2026-09-14T14:07:50Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
   "anchor_date": "2026-09-14"
 }

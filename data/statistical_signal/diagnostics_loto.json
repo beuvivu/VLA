@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-09-14T13:53:24Z",
+  "generated_at_utc": "2026-09-14T14:07:48Z",
   "anchor_date": "2026-09-14",
   "target_date": "2026-09-15",
   "history_days": 2399,
@@ -48,7 +48,7 @@
     "within_variance": 7.556079656412422e-05,
     "verdict": "Co ngót HOÀN TOÀN: 100 đơn vị không phân biệt được nhau trên 2399 kỳ (phương sai giữa các đơn vị 0.000e+00 không vượt phương sai trong nội bộ 7.556e-05). Tham số hiệu dụng: 1.24 trên 100."
   },
-  "mean_stability": 0.9962739018201495,
+  "mean_stability": 0.9962739018201493,
   "min_stability": 0.993974562704191,
   "max_stability": 0.9977916616413625,
   "dynamics_weight_in_stat_signal": 0.3,
