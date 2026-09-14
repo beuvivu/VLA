@@ -22,7 +22,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Final, Literal
 
 import numpy as np
 import pandas as pd
@@ -36,6 +36,7 @@ from hierarchical_pooling import (
     pooled_posterior,
 )
 from ensemble_utils import normalize_distribution
+from opinion_pool import SIGNIFICANCE_SIGMAS
 from lottery import Lottery
 
 Mode = Literal["loto", "de"]
@@ -389,6 +390,100 @@ def _cooccurrence_phi(hit: np.ndarray, shrink_strength: float = 60.0) -> np.ndar
     return np.clip(phi, -1.0, 1.0)
 
 
+
+#: Chọn phép hợp các hàng nguồn trên một lát giữ riêng cắt theo thời gian.
+POOL_HOLDOUT: Final[float] = 0.25
+MIN_POOL_SELECTION_DAYS: Final[int] = 400
+POOL_KINDS: Final[tuple[str, ...]] = ("arithmetic", "logodds")
+
+
+def _pool_active_rows(
+    kind: str, trans: np.ndarray, base: np.ndarray, active: np.ndarray
+) -> np.ndarray:
+    """Hợp các hàng nguồn đang hoạt động thành một véc-tơ theo từng con.
+
+    Hai phép hợp, và khác biệt giữa chúng là khác biệt VỀ CẤU TRÚC chứ không
+    phải về tham số:
+
+    * ``arithmetic`` — trung bình các hậu nghiệm. Kết quả luôn nằm giữa giá
+      trị nhỏ nhất và lớn nhất của đầu vào, nên nó KHÔNG THỂ sắc hơn bất kỳ
+      hàng nào. Với 24 hàng đang hoạt động mà chỉ một hàng mang tin, tin ấy bị
+      pha loãng 24 lần.
+    * ``logodds`` — cộng độ lệch log-odds quanh đường nền. Sắc được, và đó vừa
+      là ưu điểm vừa là rủi ro: nó cũng khuếch đại 23 hàng chỉ mang nhiễu.
+
+    Không có phép nào đúng sẵn, nên phép chọn là việc của ``select_transition_pool``.
+    """
+    if not active.size:
+        return base.copy()
+    if kind == "arithmetic":
+        return trans[active].mean(axis=0)
+    base_logit = np.log(
+        np.clip(base, 1e-9, 1 - 1e-9) / (1.0 - np.clip(base, 1e-9, 1 - 1e-9))
+    )
+    rows = np.clip(trans[active], 1e-9, 1 - 1e-9)
+    deviation = (np.log(rows / (1.0 - rows)) - base_logit[None, :]).sum(axis=0)
+    return 1.0 / (1.0 + np.exp(-(base_logit + deviation)))
+
+
+def select_transition_pool(
+    hit: np.ndarray, *, holdout_fraction: float = POOL_HOLDOUT
+) -> tuple[str, dict]:
+    """Giữ phép trung bình số học trừ khi log-odds thắng được 2 SE.
+
+    Cắt theo thời gian: ước lượng ma trận chuyển trạng thái trên phần đầu, chấm
+    điểm cả hai phép hợp trên phần đuôi mà phép ước lượng chưa từng thấy.
+
+    Đo trên dữ liệu thật có tiêm quan hệ 12 → 34, cùng một định nghĩa tiêm
+    (P(34 về | 12 về hôm trước) = tần suất nền × (1 + X), nền = 0,2378):
+
+        tiêm     chọn        t       p(34) của bên thắng    34 về thật
+          0 %    số học    +5,84            0,2372             0,254
+         25 %    số học    +5,80            0,2374             0,297
+         50 %    số học    +5,37            0,2383             0,348
+        100 %    số học    +4,11            0,2426             0,464
+        200 %    log-odds  -4,81            0,6053             0,768
+
+    Trên dữ liệu hôm nay nó giữ trung bình số học, và giữ với biên rất rộng.
+    Nhưng nó KHÔNG phải hằng số đặt tay nữa: khi tín hiệu đủ mạnh để việc làm
+    sắc bù được nhiễu nó khuếch đại, phép chọn tự đổi.
+    """
+    h = np.asarray(hit, dtype=np.int8)
+    n = len(h)
+    empty = {"kind": "arithmetic", "t_statistic": None, "holdout_days": 0}
+    if n < MIN_POOL_SELECTION_DAYS:
+        return "arithmetic", empty
+    cut = int(n * (1.0 - holdout_fraction))
+    if cut < 2 or n - cut < 2:
+        return "arithmetic", empty
+    trans, _, _, base, _ = transition_posterior(h[:cut], prior_strength=None)
+
+    errors = {kind: [] for kind in POOL_KINDS}
+    for t in range(cut, n):
+        active = np.where(h[t - 1] > 0)[0]
+        y = h[t].astype(np.float64)
+        for kind in POOL_KINDS:
+            p = _clip_prob(_pool_active_rows(kind, trans, base, active))
+            errors[kind].append(float(np.mean((p - y) ** 2)))
+
+    incumbent = np.asarray(errors["arithmetic"])
+    challenger = np.asarray(errors["logodds"])
+    delta = challenger - incumbent
+    standard_error = float(np.std(delta, ddof=1) / np.sqrt(delta.size))
+    t_statistic = float(delta.mean() / standard_error) if standard_error else 0.0
+    diagnostics = {
+        "kind": "arithmetic",
+        "t_statistic": t_statistic,
+        "holdout_days": int(delta.size),
+        "brier_arithmetic": float(incumbent.mean()),
+        "brier_logodds": float(challenger.mean()),
+    }
+    if delta.mean() < -SIGNIFICANCE_SIGMAS * standard_error:
+        diagnostics["kind"] = "logodds"
+        return "logodds", diagnostics
+    return "arithmetic", diagnostics
+
+
 def build_dynamics_signal(
     hit: np.ndarray,
     *,
@@ -431,16 +526,14 @@ def build_dynamics_signal(
         h, prior_strength=transition_prior
     )
     active = np.where(h[-1] > 0)[0]
-    if active.size:
-        trans_raw = trans[active].mean(axis=0)
-        active_trials = float(np.mean(trials[active]))
-        trans_rel = active_trials / (
-            active_trials + float(np.median(transition_priors[active]))
-        )
-    else:
-        trans_raw = base.copy()
-        trans_rel = 0.0
-    trans_current = base + trans_rel * (trans_raw - base)
+    # KHÔNG co ngót thêm một lần nữa ở đây. ``trans`` đã là hậu nghiệm co ngót
+    # theo κ RIÊNG của từng hàng nguồn; nhân thêm một cổng dựng từ κ trung vị
+    # là co ngót hai lần bằng một đại lượng không có nghĩa thống kê nào — và
+    # nó đã đo được là xoá sạch tín hiệu: với quan hệ tiêm 12 → 34 mà bộ ước
+    # lượng tìm ra đúng (0,8729 so với nền 0,3539), cổng ấy đóng lại ở mức
+    # 0,0006 và trả xác suất về ĐÚNG BẰNG đường nền.
+    pool_kind, pool_diagnostics = select_transition_pool(h)
+    trans_current = _pool_active_rows(pool_kind, trans, base, active)
 
     markov2, markov_state, markov_rel, markov_priors = _markov2_current(
         h, prior_strength=markov_prior
@@ -534,6 +627,7 @@ def build_dynamics_signal(
             "regime_long": float(regime_long_prior),
         },
         "component_priors_learned": learned_flags,
+        "transition_pool": pool_diagnostics,
         "transition_active_mean_trials": float(
             np.mean(trials[active]) if active.size else 0.0
         ),
