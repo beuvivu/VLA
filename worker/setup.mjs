@@ -23,11 +23,9 @@ import { fileURLToPath } from "node:url";
 
 import {
   currentLiveWorkerUrl,
-  currentTraditionalResultsApiUrl,
   extractKvId,
   extractWorkerUrl,
   patchLiveWorkerUrl,
-  patchTraditionalResultsApiUrl,
   patchWranglerKvId,
 } from "./setup/patch.mjs";
 
@@ -35,7 +33,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "..");
 const WRANGLER_TOML = join(HERE, "wrangler.toml");
 const LIVE_HTML = join(REPO, "docs", "live.html");
-const RESULTS_HTML = join(REPO, "docs", "so-ket-qua-truyen-thong.html");
 const DRY = process.argv.includes("--dry-run");
 
 let step = 0;
@@ -137,27 +134,11 @@ heading("Trỏ docs/live.html vào Worker");
   }
 }
 
-// --- 5. Trỏ trang Sổ kết quả vào cùng Worker -------------------------------
-
-heading("Trỏ Sổ kết quả vào REST API");
-{
-  const html = readFileSync(RESULTS_HTML, "utf-8");
-  const current = currentTraditionalResultsApiUrl(html);
-  if (DRY) {
-    note(`(thử khô) sẽ điền endpoint vào Sổ kết quả (hiện: ${current || "trống"})`);
-  } else if (current && current.startsWith(workerUrl)) {
-    ok("đã trỏ đúng rồi — bỏ qua");
-  } else {
-    writeFileSync(RESULTS_HTML, patchTraditionalResultsApiUrl(html, workerUrl), "utf-8");
-    ok(`đã điền: ${workerUrl}/api/v1/traditional-results`);
-  }
-}
-
-// --- 6. Xác minh -----------------------------------------------------------
+// --- 5. Xác minh -----------------------------------------------------------
 
 heading("Gọi thử để xác minh");
 if (DRY) {
-  note("(thử khô) sẽ gọi /health, /live.json và API Sổ kết quả");
+  note("(thử khô) sẽ gọi /health, /live.json và REST API Sổ kết quả");
 } else {
   // Worker vừa lên có thể cần vài giây để lan ra biên.
   let health = null;
@@ -175,7 +156,10 @@ if (DRY) {
   try {
     const snap = await (await fetch(`${workerUrl}/live.json`, { cache: "no-store" })).json();
     const rows = snap.source_status || [];
-    const alive = rows.filter((r) => !r.error).length;
+    // Bản chụp công khai đã ẩn danh nguồn: không còn `error`, chỉ còn cờ
+    // `failed`. Đọc `r.error` thì mọi hàng đều tính là sống, và cảnh báo
+    // "không nguồn nào trả lời" sẽ KHÔNG BAO GIỜ hiện ra.
+    const alive = rows.filter((r) => !r.failed).length;
     ok(`${alive}/${rows.length} nguồn trả lời được`);
     if (rows.length > 0 && alive === 0) {
       say("");
@@ -183,7 +167,9 @@ if (DRY) {
       say("      tâm dữ liệu — đây là rủi ro đã ghi ở mục 6 của");
       say("      documentation/operations/live-worker.md.");
       say("      Lỗi của từng nguồn:");
-      for (const row of rows) say(`        ${row.source}: ${row.error}`);
+      for (const row of rows) {
+        say(`        ${row.source_code} (${row.tier}): ${row.received_values}/27 giá trị`);
+      }
       say("      Muốn quay lại như cũ: xoá nội dung window.LIVE_WORKER_URL");
       say("      trong docs/live.html rồi đẩy lên.");
     }
@@ -208,7 +194,7 @@ if (DRY) {
 } else {
   say("XONG. Còn đúng một việc cho bạn:");
   say("");
-  say("    git add worker/wrangler.toml docs/live.html docs/so-ket-qua-truyen-thong.html");
+  say("    git add worker/wrangler.toml docs/live.html");
   say('    git commit -m "worker: trỏ trang live vào Worker đã triển khai"');
   say("    git push");
   say("");

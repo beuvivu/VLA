@@ -108,13 +108,6 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     once = _run([
         {"fn": "patchWranglerKvId", "args": [toml, KV_ID]},
         {"fn": "patchLiveWorkerUrl", "args": [html, url]},
-        {
-            "fn": "patchTraditionalResultsApiUrl",
-            "args": [
-                (ROOT / "docs" / "so-ket-qua-truyen-thong.html").read_text(encoding="utf-8"),
-                url,
-            ],
-        },
     ], tmp_path)
     assert all(r["ok"] for r in once), once
 
@@ -149,15 +142,35 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert twice[1]["value"] == patched_html
     assert twice[0]["value"].count("[[kv_namespaces]]") == 1
 
-    patched_results = once[2]["value"]
-    assert (
-        f"window.VLA_RESULTS_API_URL = '{url}/api/v1/traditional-results';"
-        in patched_results
-    )
-    repeated = _run([
-        {"fn": "patchTraditionalResultsApiUrl", "args": [patched_results, url]},
-    ], tmp_path)[0]
-    assert repeated["value"] == patched_results
+
+
+def test_the_setup_script_no_longer_touches_the_results_page() -> None:
+    """Trang Sổ kết quả nay tự chứa dữ liệu, không gọi API nào.
+
+    Đây là phép kiểm hồi quy cho một lỗi THẬT đã lọt vào kho: khi trang bỏ
+    `window.VLA_RESULTS_API_URL`, bộ cài đặt vẫn đi tìm dòng gán ấy và chết
+    với "không tìm thấy dòng gán". Bộ kiểm đầy đủ bắt được; lượt chạy rút gọn
+    203 phép kiểm của tôi thì không, vì nó không gồm tệp này.
+    """
+    setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
+    patch = (ROOT / "worker" / "setup" / "patch.mjs").read_text(encoding="utf-8")
+    assert "so-ket-qua-truyen-thong" not in setup
+    assert "VLA_RESULTS_API_URL" not in setup
+    assert "VLA_RESULTS_API_URL" not in patch, "hàm vá đã chết phải gỡ, không để lại"
+
+
+def test_the_verification_step_reads_the_anonymised_snapshot_fields() -> None:
+    """Bản chụp công khai đã ẩn danh nguồn, và bước xác minh phải đọc theo.
+
+    Lỗi thứ hai cùng loại: bước xác minh lọc `!r.error`, nhưng trường `error`
+    đã bị thay bằng cờ `failed`. Mọi hàng đều tính là "sống", nên cảnh báo
+    "không nguồn nào trả lời" sẽ không bao giờ hiện ra — đúng lúc nó cần nhất.
+    """
+    setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
+    assert "(r) => !r.failed" in setup
+    assert "!r.error" not in setup
+    assert "row.error" not in setup
+    assert "row.source_code" in setup
 
 
 def test_a_trailing_slash_in_the_worker_url_does_not_double_up(tmp_path: Path) -> None:

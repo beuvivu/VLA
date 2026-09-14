@@ -1,8 +1,8 @@
 // Chạy các phép biến đổi của bộ cài đặt trên bộ ca dùng chung.
 import { readFileSync } from "node:fs";
 import {
-  currentLiveWorkerUrl, currentTraditionalResultsApiUrl, extractKvId, extractWorkerUrl,
-  patchLiveWorkerUrl, patchTraditionalResultsApiUrl, patchWranglerKvId,
+  currentLiveWorkerUrl, extractKvId, extractWorkerUrl,
+  patchLiveWorkerUrl, patchWranglerKvId,
 } from "../setup/patch.mjs";
 
 const cases = JSON.parse(readFileSync(process.argv[2], "utf-8"));
@@ -12,9 +12,7 @@ const call = (fn, args) => {
 };
 const FNS = {
   extractKvId, extractWorkerUrl, patchWranglerKvId,
-  patchLiveWorkerUrl, patchTraditionalResultsApiUrl,
-  currentLiveWorkerUrl,
-  currentTraditionalResultsApiUrl,
+  patchLiveWorkerUrl, currentLiveWorkerUrl,
 };
 process.stdout.write(JSON.stringify(
   cases.map((c) => call(FNS[c.fn], c.args)), null, 2));

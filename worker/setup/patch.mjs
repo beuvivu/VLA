@@ -81,37 +81,6 @@ export function patchLiveWorkerUrl(html, url) {
   return String(html).replace(ASSIGNMENT_LINE(), `$1${target}$3`);
 }
 
-const RESULTS_API_ASSIGNMENT_LINE = () => (
-  /^(?![ \t]*\/\/)([ \t]*window\.VLA_RESULTS_API_URL\s*=\s*')([^']*)(';)/m
-);
-
-/** Điền endpoint Sổ kết quả của cùng Worker vào trang tra cứu. */
-export function patchTraditionalResultsApiUrl(html, url) {
-  if (!/^https:\/\/\S+$/.test(url)) {
-    throw new Error(`địa chỉ Worker không hợp lệ: ${url}`);
-  }
-  if (!RESULTS_API_ASSIGNMENT_LINE().test(String(html))) {
-    throw new Error(
-      "không tìm thấy dòng gán window.VLA_RESULTS_API_URL trong "
-      + "docs/so-ket-qua-truyen-thong.html",
-    );
-  }
-  const target = url.replace(/\/+$/, "") + "/api/v1/traditional-results";
-  return String(html).replace(RESULTS_API_ASSIGNMENT_LINE(), `$1${target}$3`);
-}
-
-/** Đọc endpoint Sổ kết quả hiện tại, hoặc chuỗi rỗng khi chưa cấu hình. */
-export function currentTraditionalResultsApiUrl(html) {
-  const match = RESULTS_API_ASSIGNMENT_LINE().exec(String(html));
-  if (!match) {
-    throw new Error(
-      "không tìm thấy dòng gán window.VLA_RESULTS_API_URL trong "
-      + "docs/so-ket-qua-truyen-thong.html",
-    );
-  }
-  return match[2];
-}
-
 /**
  * Dòng GÁN thật, không phải dòng chú thích ví dụ.
  *

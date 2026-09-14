@@ -52,6 +52,73 @@ Lệch nhau thì trang vẫn dựng được nhưng **cắt sai chuỗi và hi�
 - Xuất CSV (BOM UTF-8) và Excel `.xlsx` thật (gói OOXML dựng tại chỗ, không
   CDN), cộng nút in với `@media print` bỏ hết phần điều khiển.
 
+### Bố cục nhiều cột: vì sao chia cột lại làm vỡ chữ số
+
+`.tr-number-grid` từng dùng `grid-template-columns: repeat(var(--count), minmax(64px, 1fr))`.
+`minmax(64px, …)` là một **sàn cứng**: sáu số giải ba luôn đòi 6 × 64 = 384 px,
+bất kể khung rộng bao nhiêu. Đo trên Chromium 1440 px:
+
+| Bố cục | Rộng thẻ | Lưới số tràn | Ô bị cắt chữ |
+|---|---|---|---|
+| 1 cột | 1376 px | 0 | 0 |
+| 2 cột | 679 px | 0 | 0 |
+| **3 cột** | 447 px | **56 px** | **6** |
+| **4 cột** | 331 px | **172 px** | **6** |
+
+`.tr-day { overflow: hidden }` **cắt** phần tràn thay vì làm trang cuộn — nên
+phép kiểm "trang có cuộn ngang không" vẫn xanh trong khi giao diện đã vỡ. Phải
+đo ở **cấp phần tử** (`grid.scrollWidth - grid.clientWidth`, và
+`cell.scrollWidth > cell.clientWidth`).
+
+Cách sửa gồm hai phần:
+
+1. `minmax(0, 1fr)` — bỏ sàn pixel, ô luôn vừa khung.
+2. Kích thước ô chạy theo **biến đặt lại cho từng bố cục**:
+
+   | | nhãn | cỡ chữ | cao ô | đặc biệt |
+   |---|---|---|---|---|
+   | 1 cột | 112 px | `clamp(16px,1.5vw,22px)` | 58 px | `clamp(24px,2.6vw,36px)` |
+   | 2 cột | 88 px | 15 px | 46 px | 26 px |
+   | 3 cột | 66 px | 12,5 px | 38 px | 21 px |
+   | 4 cột | 54 px | 11 px | 34 px | 17 px |
+
+   Thứ tự phải **đơn điệu** — càng nhiều cột chữ càng nhỏ — và có phép kiểm
+   khoá điều đó, để một lần chỉnh tay không đưa lỗi vỡ quay lại.
+
+Dưới 760 px mọi bố cục đều về một cột, nên bộ biến được đặt lại về mức một
+cột; nếu không, chọn "4 cột" trên điện thoại sẽ cho chữ bé tí trong cột rộng.
+
+### Bảng trong là một khối có viền riêng
+
+`.tr-prizes` nay có `border` + `border-radius` của chính nó, thụt vào nhờ
+`padding: 14px` trên `.tr-day-grid`. Một thay đổi cấu trúc thay cho ba bản vá
+riêng lẻ:
+
+* cạnh phải bảng trong không còn dính khung ngoài;
+* giải 7 có đường kẻ đóng bảng — chính là cạnh dưới của viền ấy;
+* ở bố cục 2/3/4 cột, bảng vẫn có ranh giới rõ dù đường kẻ dọc phân cách giữa
+  hai cột đã không còn.
+
+Đệm nằm trên **một** quy tắc nên bốn phía bằng nhau. Hai bản vá trước đặt
+`padding-bottom` riêng trên từng cột: bản thứ nhất để hai bên lệch 31 px so
+với 15 px, bản thứ hai bỏ sót tổ hợp "≤ 900 px + ẩn cả hai bảng phụ" và chân
+bảng tụt về 2 px.
+
+### Đánh dấu số bằng cú nhấp
+
+Bấm một ô để tô vàng, bấm lại để bỏ. Ba quyết định thiết kế:
+
+* **Một bộ bắt sự kiện** đặt trên vùng kết quả, không gắn từng ô — vùng này có
+  tới hàng chục nghìn ô và được dựng lại mỗi lần đổi bộ lọc.
+* **Lưu theo giá trị** (hai số cuối) trong một `Set`, không theo phần tử. Bấm
+  con 27 ở một kỳ thì con 27 ở **mọi kỳ đang xem** cùng sáng — đó chính là
+  việc người soi cầu muốn làm. Và dấu sống qua mọi lần dựng lại.
+* **`outline` chứ không `border`** — viền làm ô rộng thêm và đẩy cả lưới lệch;
+  `outline` vẽ đè, không chiếm chỗ.
+
+Ô số có `tabIndex`/`role="button"` và nhận Enter/Space, nên dùng được bằng bàn
+phím. Nút "Bỏ đánh dấu (n)" ẩn khi chưa có dấu nào.
+
 ### Kiểm chứng bằng trình duyệt thật
 
 `scripts/check_traditional_results_page.py` mở trang trong Chromium và đo.

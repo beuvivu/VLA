@@ -228,6 +228,7 @@ def render_page(payload: dict[str, object]) -> str:
       <label class="tr-chip"><input type="checkbox" id="tr-toggle-loto" checked><span>Dãy lô tô</span></label>
       <label class="tr-chip"><input type="checkbox" id="tr-toggle-tail" checked><span>Tô đậm 2 số cuối</span></label>
     </fieldset>
+    <button class="tr-btn tr-mark-clear" id="tr-mark-clear" type="button" hidden>Bỏ đánh dấu</button>
   </div>
 </section>
 

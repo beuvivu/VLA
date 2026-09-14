@@ -29,16 +29,41 @@ MEASURE = """() => {
   const box = day.getBoundingClientRect();
   const gaps = [];
   for (const node of day.querySelectorAll(
-      '.tr-prize-row:last-child, .tr-head-tail-scroll, .tr-loto-list')) {
+      '.tr-prizes, .tr-head-tail-scroll, .tr-loto-list')) {
     const rect = node.getBoundingClientRect();
     if (rect.height > 0) gaps.push(Math.round(box.bottom - rect.bottom));
   }
+  // Tràn BÊN TRONG lưới số, và chữ bị cắt trong chính ô.
+  //
+  // Bản đầu chỉ kiểm `documentElement.scrollWidth` — tức trang có cuộn ngang
+  // không. `.tr-day{overflow:hidden}` CẮT phần tràn thay vì làm trang cuộn,
+  // nên phép kiểm ấy xanh trong khi bố cục 3 và 4 cột tràn 56 px và 172 px,
+  // sáu ô số bị cắt mất chữ. Phải đo ở CẤP PHẦN TỬ.
+  let gridOverflow = 0;
+  let clippedCells = 0;
+  let narrowest = Infinity;
+  for (const grid of day.querySelectorAll('.tr-number-grid')) {
+    gridOverflow = Math.max(gridOverflow, grid.scrollWidth - grid.clientWidth);
+    for (const cell of grid.children) {
+      narrowest = Math.min(narrowest, Math.round(cell.getBoundingClientRect().width));
+      if (cell.scrollWidth > cell.clientWidth + 1) clippedCells += 1;
+    }
+  }
+  // Cạnh phải bảng trong không được dính vào khung ngoài.
+  const prizes = day.querySelector('.tr-prizes').getBoundingClientRect();
   return {
     min_gap: Math.min(...gaps),
     gaps,
+    grid_overflow: gridOverflow,
+    clipped_cells: clippedCells,
+    narrowest_cell: narrowest,
+    right_inset: Math.round(box.right - prizes.right),
+    left_inset: Math.round(prizes.left - box.left),
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   };
 }"""
+
+MIN_SIDE_INSET_PX = 8
 
 
 def _chromium(playwright):
@@ -94,6 +119,18 @@ def main() -> int:
                                 f"{label}: chân bảng chỉ {found['min_gap']}px {found['gaps']}")
                         if found["overflow"]:
                             failures.append(f"{label}: trang cuộn ngang")
+                        if found["grid_overflow"] > 0:
+                            failures.append(
+                                f"{label}: lưới số tràn {found['grid_overflow']}px")
+                        if found["clipped_cells"] > 0:
+                            failures.append(
+                                f"{label}: {found['clipped_cells']} ô bị cắt mất chữ")
+                        for side in ("left_inset", "right_inset"):
+                            if found[side] < MIN_SIDE_INSET_PX:
+                                failures.append(
+                                    f"{label}: bảng trong dính cạnh "
+                                    f"{'trái' if side.startswith('left') else 'phải'} "
+                                    f"({found[side]}px)")
         print(f"đã quét {scanned} tổ hợp bố cục × công tắc × bề rộng")
 
         # --- 2. Tra cứu quá khứ, đối chiếu SỐ THẬT --------------------------
@@ -177,6 +214,79 @@ def main() -> int:
         print(f"  nút xem thêm: {before} -> {after} thẻ")
         if after != before + 100:
             failures.append(f"nút xem thêm dựng {after - before} thẻ, mong đợi 100")
+        # --- 5. Đánh dấu số bằng cú nhấp -----------------------------------
+        page.evaluate(
+            "() => { const p = document.getElementById('tr-period');"
+            " p.value = '30'; p.dispatchEvent(new Event('change', {bubbles: true}));"
+            " const r = document.querySelector(\"input[name=tr-layout][value='1']\");"
+            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true})); }"
+        )
+        page.wait_for_timeout(300)
+        cell = page.query_selector(".tr-day .tr-prize-row[data-prize=prize3] .tr-number")
+        key = cell.inner_text().strip()[-2:]
+        marked = "() => document.querySelectorAll('[data-marked]').length"
+        background = "(el) => getComputedStyle(el).backgroundColor"
+
+        plain = page.evaluate(background, cell)
+        if page.evaluate(marked) != 0:
+            failures.append("ban đầu không được có ô nào đánh dấu sẵn")
+
+        cell.click()
+        page.wait_for_timeout(120)
+        first = page.evaluate(marked)
+        if first == 0:
+            failures.append("bấm lần 1 không đánh dấu gì")
+        if page.evaluate(background, cell) == plain:
+            failures.append("bấm lần 1 không đổi màu nền")
+        if not page.is_visible("#tr-mark-clear"):
+            failures.append("có đánh dấu thì nút bỏ đánh dấu phải hiện")
+        elsewhere = page.evaluate(
+            "(k) => { const days = [...document.querySelectorAll('.tr-day')]; let n = 0;"
+            " for (let i = 1; i < days.length; i += 1)"
+            "   for (const c of days[i].querySelectorAll('.tr-number[data-marked]'))"
+            "     if (c.textContent.trim().slice(-2) === k) n += 1;"
+            " return n; }", key)
+        if elsewhere == 0:
+            failures.append(f"số {key} ở các kỳ khác phải cùng sáng lên")
+        print(f"  đánh dấu số {key}: {first} ô sáng, {elsewhere} trong đó ở kỳ khác")
+
+        cell.click()
+        # Chờ QUÁ thời gian hiệu ứng chuyển màu (120 ms) rồi mới đo.
+        # Đo đúng ở mốc 120 ms bắt được phần đuôi của hiệu ứng —
+        # `rgba(253, 230, 138, 0.016)` — và báo hỏng nhầm. Trạng thái đã đúng
+        # ngay lập tức; chỉ màu là còn đang tan.
+        page.wait_for_timeout(400)
+        if page.evaluate(marked) != 0:
+            failures.append("bấm lần 2 phải bỏ đánh dấu")
+        if page.evaluate(background, cell) != plain:
+            failures.append("bấm lần 2 phải trả màu nền về ban đầu")
+        if page.is_visible("#tr-mark-clear"):
+            failures.append("hết đánh dấu thì nút phải ẩn lại")
+
+        cell.click()
+        page.wait_for_timeout(100)
+        page.evaluate(
+            "() => { const r = document.querySelector(\"input[name=tr-layout][value='3']\");"
+            " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true}));"
+            " const p = document.getElementById('tr-period');"
+            " p.value = '60'; p.dispatchEvent(new Event('change', {bubbles: true})); }"
+        )
+        page.wait_for_timeout(350)
+        if page.evaluate(marked) == 0:
+            failures.append("đánh dấu phải sống qua lần dựng lại danh sách")
+        page.click("#tr-mark-clear")
+        page.wait_for_timeout(120)
+        if page.evaluate(marked) != 0:
+            failures.append("nút bỏ đánh dấu không xoá hết")
+        print("  bật/tắt, sống qua dựng lại, và xoá sạch: đạt")
+
+        page.evaluate("() => document.querySelector('.tr-number').focus()")
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(120)
+        if page.evaluate(marked) == 0:
+            failures.append("phím Enter phải đánh dấu được")
+        print("  bàn phím Enter: đạt")
+
         browser.close()
 
     if failures:

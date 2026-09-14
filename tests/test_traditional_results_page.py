@@ -34,6 +34,13 @@ from ui_theme import nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = (ROOT / "src" / "templates" / "traditional_results.css").read_text(encoding="utf-8")
+#: CSS đã bỏ chú thích.
+#:
+#: Cùng lý do với ``JS_CODE``: phép kiểm "chuỗi X không có trong tệp" sẽ
+#: khớp vào một dòng CHÚ THÍCH giải thích chính chuỗi ấy. Đã xảy ra hai
+#: lần trong tệp này — lần này là chú thích nhắc tới ``minmax(64px,1fr)``
+#: để giải thích vì sao nó bị bỏ.
+CSS_CODE = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
 JS = (ROOT / "src" / "templates" / "traditional_results.js").read_text(encoding="utf-8")
 
 
@@ -213,31 +220,29 @@ def test_the_information_boxes_use_the_requested_labels() -> None:
 # --- Giao diện: khoá lại các quy tắc phép đo đã chứng minh là cần ----------
 
 
-def test_the_result_columns_reserve_space_below_the_last_row() -> None:
-    """Lỗi chân bảng lấn lề.
+def test_one_padding_rule_now_gives_every_side_the_same_gap() -> None:
+    """Chân bảng lấn lề — và hai bản vá trước đó của chính tôi.
 
-    Đo trong Chromium: bản cũ để chân bảng cách cạnh dưới đúng 1 px. Đệm phải
-    nằm trên hai CỘT chứ không trên ``.tr-day``, để đường kẻ dọc phân cách
-    vẫn chạy hết chiều cao khung.
+    Bản gốc: cột giải không có đệm nào, chân bảng cách cạnh dưới đúng 1 px
+    (đo trong Chromium), trong khi cột phải có 14 px — hai bên lệch hẳn.
+
+    Bản vá thứ nhất: đặt ``padding-bottom`` riêng trên từng cột. Đỡ được chỗ
+    dính, nhưng hai bên vẫn lệch (31 px so với 15 px) vì cột thấp hơn nhận
+    thêm phần dư khi bị kéo giãn.
+
+    Bản vá thứ hai: ở ``max-width:900px`` cột giải được đặt ``padding-bottom:0``
+    vì cột phụ xếp xuống dưới — nhưng khi ẩn cả hai bảng phụ thì không còn gì
+    nằm dưới, và chân tụt về 2 px.
+
+    Nay chỉ còn MỘT quy tắc: đệm bốn phía trên ``.tr-day-grid``. Không có
+    nhánh riêng nào để bỏ sót.
     """
-    # Neo vào ĐẦU DÒNG. Bản đầu của phép kiểm này dùng regex không neo, nên
-    # nó khớp nhầm quy tắc `.tr-results[...] .tr-prizes{padding-bottom:14px}`
-    # ở media query hẹp — và một đột biến đưa quy tắc chính về 0 vẫn xanh.
-    assert re.search(r"^\.tr-prizes\{[^}]*padding-bottom:14px", CSS, re.M)
-    assert re.search(r"^\.tr-day-side\{[^}]*padding-bottom:14px", CSS, re.M)
-
-
-def test_hiding_both_side_tables_still_leaves_a_footer_gap_on_narrow_screens() -> None:
-    """Nhánh này là lỗi bản sửa ĐẦU TIÊN của tôi, và chỉ phép quét mới thấy.
-
-    Ở ``max-width:900px`` cột giải được đặt ``padding-bottom:0`` vì cột phụ
-    xếp xuống dưới và tự lo khoảng trống. Khi cả hai bảng phụ bị ẩn thì không
-    còn gì nằm dưới, và chân bảng tụt về 2 px — đúng lỗi ban đầu, chỉ khác là
-    nó chỉ xuất hiện ở một tổ hợp cụ thể.
-    """
-    narrow = re.search(r"@media \(max-width:900px\)\{(.*?)\n@media", CSS, re.S)
-    assert narrow is not None
-    assert '[data-headtail="off"][data-loto="off"] .tr-prizes{padding-bottom:14px' in narrow.group(1)
+    grid = re.search(r"^\.tr-day-grid\{([^}]*)\}", CSS_CODE, re.M)
+    assert grid is not None
+    assert "padding:14px" in grid.group(1)
+    assert "padding-bottom" not in CSS_CODE, (
+        "không còn nhánh đệm riêng — đó là cách hai bản vá trước bỏ sót một tổ hợp"
+    )
 
 
 def test_a_broken_embedded_payload_refuses_to_render_anything() -> None:
@@ -324,3 +329,139 @@ def test_exports_cover_the_whole_selection_not_just_what_is_rendered() -> None:
     block = block[:block.index("\n  }")]
     assert "for (const draw of current)" in block
     assert "querySelector" not in block
+
+
+# --- Bố cục nhiều cột: lỗi vỡ chữ số --------------------------------------
+
+
+def test_the_number_grid_has_no_pixel_floor_that_can_overflow() -> None:
+    """ĐÂY là dòng sửa lỗi vỡ 3/4 cột.
+
+    `minmax(64px,1fr)` là một sàn CỨNG: sáu số giải ba cần 6×64 = 384px, còn
+    thẻ ở bố cục 4 cột chỉ rộng 331px. Lưới tràn, và `.tr-day{overflow:hidden}`
+    CẮT phần thừa thay vì làm trang cuộn — nên phép kiểm "trang có cuộn ngang
+    không" của tôi vẫn xanh trong khi giao diện đã vỡ. Đo ở cấp phần tử:
+
+        bố cục 1   tràn   0px   0 ô bị cắt
+        bố cục 2   tràn   0px   0 ô bị cắt
+        bố cục 3   tràn  56px   6 ô bị cắt
+        bố cục 4   tràn 172px   6 ô bị cắt
+    """
+    grid = re.search(r"^\.tr-number-grid\{([^}]*)\}", CSS_CODE, re.M)
+    assert grid is not None
+    assert "minmax(0,1fr)" in grid.group(1), "sàn pixel làm lưới tràn ở 3/4 cột"
+    assert "minmax(64px" not in CSS_CODE
+
+
+@pytest.mark.parametrize("layout", ["2", "3", "4"])
+def test_each_column_layout_sets_its_own_cell_metrics(layout: str) -> None:
+    """Cỡ chữ và đệm ô phải co theo bố cục, không dùng chung một giá trị."""
+    block = re.search(rf'\.tr-results\[data-layout="{layout}"\]\{{([^}}]*)\}}', CSS)
+    assert block is not None, f"bố cục {layout} không có bộ biến riêng"
+    body = block.group(1)
+    for token in ("--tr-label-w", "--tr-num-fs", "--tr-num-h", "--tr-sp-fs"):
+        assert token in body, f"bố cục {layout} thiếu {token}"
+
+
+def test_narrower_layouts_use_smaller_type_than_wider_ones() -> None:
+    """Thứ tự phải đơn điệu: càng nhiều cột thì chữ càng nhỏ.
+
+    Không có chốt này thì một lần chỉnh tay có thể đặt bố cục 4 cột chữ to hơn
+    bố cục 3 cột, và lỗi vỡ quay lại y như cũ.
+    """
+    sizes = {}
+    for layout in ("2", "3", "4"):
+        block = re.search(rf'\.tr-results\[data-layout="{layout}"\]\{{([^}}]*)\}}', CSS)
+        found = re.search(r"--tr-num-fs:([\d.]+)px", block.group(1))
+        assert found is not None, f"bố cục {layout} phải đặt cỡ chữ bằng px"
+        sizes[layout] = float(found.group(1))
+    assert sizes["2"] > sizes["3"] > sizes["4"], sizes
+
+
+# --- Đường kẻ và khoảng cách bảng trong / khung ngoài ----------------------
+
+
+def test_the_inner_table_is_a_bordered_block_inset_from_the_card() -> None:
+    """Một thay đổi cấu trúc giải quyết cùng lúc ba khiếu nại.
+
+    Bảng giải nay có viền riêng và thụt vào nhờ đệm của `.tr-day-grid`:
+
+    * cạnh phải bảng trong không còn dính khung ngoài;
+    * giải 7 có đường kẻ đóng bảng (chính là cạnh dưới của viền ấy);
+    * ở bố cục 2/3/4 cột, bảng vẫn có ranh giới rõ dù đường kẻ dọc phân cách
+      giữa hai cột đã không còn.
+    """
+    prizes = re.search(r"^\.tr-prizes\{([^}]*)\}", CSS, re.M)
+    assert prizes is not None
+    assert "border:1px solid" in prizes.group(1)
+    assert "border-radius" in prizes.group(1)
+    grid = re.search(r"^\.tr-day-grid\{([^}]*)\}", CSS, re.M)
+    assert grid is not None
+    assert "padding:14px" in grid.group(1), "đệm bốn phía giữ bảng trong khỏi cạnh khung"
+    assert "gap:14px" in grid.group(1)
+
+
+def test_the_last_prize_row_does_not_double_up_the_closing_line() -> None:
+    """Viền của `.tr-prizes` đã vẽ cạnh dưới; hàng cuối kẻ thêm sẽ thành hai nét."""
+    assert re.search(r"^\.tr-prize-row:last-child\{border-bottom:0\}", CSS, re.M)
+
+
+# --- Đánh dấu số ------------------------------------------------------------
+
+
+def test_marking_uses_one_delegated_listener_not_one_per_cell() -> None:
+    """Vùng kết quả có hàng chục nghìn ô và được dựng lại mỗi lần đổi bộ lọc.
+
+    Gắn sự kiện từng ô nghĩa là bằng đó lượt đăng ký mỗi lần dựng.
+    """
+    assert 'resultsNode.addEventListener("click"' in JS_CODE
+    assert 'closest(".tr-number, .tr-mini")' in JS_CODE
+    body = JS_CODE[JS_CODE.index("function renderPrizes("):]
+    body = body[:body.index("\n  }")]
+    assert "addEventListener" not in body, "không gắn sự kiện lên từng ô"
+
+
+def test_marking_is_keyed_by_value_so_the_same_number_lights_up_everywhere() -> None:
+    """Bấm con 27 ở một kỳ thì con 27 ở mọi kỳ đang xem cùng sáng.
+
+    Đó chính là việc người soi cầu muốn làm — dò một số qua nhiều ngày. Lưu
+    theo phần tử thì dựng lại danh sách là mất dấu.
+    """
+    assert "const marked = new Set();" in JS_CODE
+    assert "text.slice(-2)" in JS_CODE
+    assert "marked.has(key)" in JS_CODE and "marked.delete(key)" in JS_CODE
+
+
+def test_marks_survive_a_rerender() -> None:
+    """`appendPage` phải sơn lại dấu, nếu không thì "xem thêm" ra các thẻ trắng."""
+    body = JS_CODE[JS_CODE.index("function appendPage("):]
+    body = body[:body.index("\n  }")]
+    assert "paintMarks()" in body
+
+
+def test_marked_cells_are_outlined_not_bordered() -> None:
+    """`border` làm ô rộng thêm và đẩy cả lưới lệch; `outline` vẽ đè, không chiếm chỗ."""
+    rule = re.search(r"\.tr-number\[data-marked\][^{]*\{([^}]*)\}", CSS)
+    assert rule is not None
+    assert "outline:" in rule.group(1)
+    assert re.search(r"(^|;)border:", rule.group(1)) is None
+
+
+def test_there_is_a_way_to_clear_every_mark_at_once() -> None:
+    """Đánh dấu lan sang mọi kỳ đang xem, nên bỏ từng ô là không khả thi.
+
+    Nút phải ẩn khi chưa đánh dấu gì và hiện kèm SỐ LƯỢNG khi đã có — người
+    xem cần biết mình đang giữ bao nhiêu dấu mà không phải cuộn đi tìm.
+    """
+    soup = BeautifulSoup(render_page(embedded_payload(load_rows(ROOT, limit=3), generated="x")), "html.parser")
+    button = soup.select_one("#tr-mark-clear")
+    assert button is not None
+    assert button.has_attr("hidden")
+    assert "clearButton.hidden = marked.size === 0" in JS_CODE
+    assert "marked.clear()" in JS_CODE
+
+
+def test_number_cells_are_reachable_by_keyboard() -> None:
+    assert "number.tabIndex = 0;" in JS_CODE
+    assert 'resultsNode.addEventListener("keydown"' in JS_CODE
+    assert 'setAttribute("role", "button")' in JS_CODE

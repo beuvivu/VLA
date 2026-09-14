@@ -28,6 +28,7 @@
   const emptyDetail = document.getElementById("tr-empty-detail");
   const statusNode = document.getElementById("tr-source-status");
   const submit = form.querySelector('button[type="submit"]');
+  const clearButton = document.getElementById("tr-mark-clear");
   const moreNode = document.getElementById("tr-more");
   const moreButton = document.getElementById("tr-more-btn");
   const toggleHeadTail = document.getElementById("tr-toggle-headtail");
@@ -123,7 +124,12 @@
       box.append(el("span", "tr-dash", "—"));
       return box;
     }
-    for (const value of values) box.append(el("span", "tr-mini", value));
+    for (const value of values) {
+      const mini = el("span", "tr-mini", value);
+      mini.tabIndex = 0;
+      mini.setAttribute("role", "button");
+      box.append(mini);
+    }
     return box;
   }
 
@@ -178,6 +184,9 @@
       numbers.style.setProperty("--count", String(prize.values.length));
       for (const value of prize.values) {
         const number = el("div", "tr-number");
+        number.tabIndex = 0;
+        number.setAttribute("role", "button");
+        number.setAttribute("aria-label", `Đánh dấu số ${value.slice(-2)}`);
         if (prize.code === "special") {
           number.append(document.createTextNode(value.slice(0, -2)));
           number.append(el("span", "tr-special-tail", value.slice(-2)));
@@ -257,6 +266,7 @@
     for (let i = shown; i < until; i += 1) fragment.append(renderDraw(current[i]));
     shown = until;
     moreNode.before(fragment);
+    paintMarks();
     moreNode.hidden = shown >= current.length;
     moreButton.textContent = `Xem thêm ${Math.min(PAGE_SIZE, current.length - shown)} kỳ`
       + ` (còn ${current.length - shown})`;
@@ -296,6 +306,55 @@
       submit.disabled = false;
     }
   }
+
+  // ---- Đánh dấu số bằng cú nhấp (soi cầu) -------------------------------
+  //
+  // Dùng MỘT bộ bắt sự kiện đặt trên vùng kết quả, không gắn từng ô. Vùng này
+  // có tới hàng chục nghìn ô số và danh sách được dựng lại mỗi lần đổi bộ lọc;
+  // gắn từng ô sẽ tốn bằng đó lượt đăng ký mỗi lần dựng.
+  //
+  // Đánh dấu lưu theo GIÁ TRỊ SỐ chứ không theo phần tử, vì hai lý do:
+  //
+  //   1. Bấm con 27 ở một kỳ thì con 27 ở MỌI kỳ đang xem cùng sáng lên —
+  //      đó chính là việc người soi cầu muốn làm, dò một số qua nhiều ngày.
+  //   2. Dựng lại danh sách (đổi bố cục, xem thêm, đổi khoảng) không làm mất
+  //      dấu, vì dấu không nằm trên phần tử đã bị xoá.
+  const marked = new Set();
+
+  /** Giá trị dùng để đánh dấu: hai số cuối, đúng đơn vị người ta soi. */
+  function markKey(node) {
+    const text = (node.textContent || "").trim();
+    return /^\d+$/.test(text) ? text.slice(-2) : null;
+  }
+
+  function paintMarks(root = resultsNode) {
+    for (const node of root.querySelectorAll(".tr-number, .tr-mini")) {
+      const key = markKey(node);
+      if (key !== null && marked.has(key)) node.dataset.marked = "";
+      else delete node.dataset.marked;
+    }
+    clearButton.hidden = marked.size === 0;
+    clearButton.textContent = `Bỏ đánh dấu (${marked.size})`;
+  }
+
+  resultsNode.addEventListener("click", (event) => {
+    const node = event.target.closest(".tr-number, .tr-mini");
+    if (!node || !resultsNode.contains(node)) return;
+    const key = markKey(node);
+    if (key === null) return;
+    if (marked.has(key)) marked.delete(key);
+    else marked.add(key);
+    paintMarks();
+  });
+
+  // Bàn phím: ô số phải bấm được bằng Enter/Space, không chỉ bằng chuột.
+  resultsNode.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const node = event.target.closest(".tr-number, .tr-mini");
+    if (!node || markKey(node) === null) return;
+    event.preventDefault();
+    node.click();
+  });
 
   // ---- Tuỳ chọn hiển thị ------------------------------------------------
 
@@ -484,6 +543,7 @@
   }
   document.getElementById("tr-export-csv").addEventListener("click", exportCsv);
   document.getElementById("tr-export-xlsx").addEventListener("click", exportXlsx);
+  clearButton.addEventListener("click", () => { marked.clear(); paintMarks(); });
   moreButton.addEventListener("click", () => appendPage(PAGE_SIZE));
   document.getElementById("tr-print").addEventListener("click", () => {
     // In thì phải có đủ. Không dựng nốt thì bản in chỉ có lô đầu tiên, mà
