@@ -164,3 +164,128 @@ def pooled_posterior(
     a0 = fit.prior_strength * fit.pooled_rate
     b0 = fit.prior_strength * (1.0 - fit.pooled_rate)
     return (a0 + counts) / (a0 + b0 + n)
+
+
+def fit_shrinkage_to_prior(
+    successes: np.ndarray,
+    trials: np.ndarray | float,
+    prior_mean: np.ndarray | float,
+) -> float:
+    """Học κ khi TÂM co ngót đã cho trước theo từng đơn vị.
+
+    ``fit_pooling`` giả định mọi đơn vị co về một tỉ lệ chung duy nhất. Năm
+    ước lượng có điều kiện trong ``number_dynamics`` không như vậy: chúng co
+    về đường nền RIÊNG của từng con số. Câu hỏi ở đây khác hẳn — không phải
+    "các con số có khác nhau không" mà "điều kiện hoá có dịch chuyển được con
+    số khỏi đường nền của chính nó không".
+
+    Vẫn là phương pháp mô men, chỉ đổi tâm:
+
+    * Nếu điều kiện hoá không mang thông tin, độ lệch ``rᵢ - mᵢ`` chỉ phản ánh
+      dao động nhị thức ``mᵢ(1-mᵢ)/nᵢ``.
+    * Phần vượt quá mức ấy mới là bằng chứng điều kiện hoá có tác dụng.
+
+    Không có phần vượt thì trả ``MAX_PRIOR_STRENGTH`` — nghĩa là bỏ hẳn ước
+    lượng có điều kiện và giữ nguyên đường nền. Đó là câu trả lời đúng chứ
+    không phải trường hợp suy biến.
+
+    Đơn vị không có phép thử nào bị loại: chúng không nói được gì, và để
+    chúng vào thì ``0/0`` sẽ giả vờ là một độ lệch bằng không.
+    """
+    counts = np.asarray(successes, dtype=float).reshape(-1)
+    n = np.asarray(trials, dtype=float)
+    if n.ndim == 0:
+        n = np.full(counts.size, float(n))
+    n = n.reshape(-1)
+    m = np.asarray(prior_mean, dtype=float)
+    if m.ndim == 0:
+        m = np.full(counts.size, float(m))
+    m = m.reshape(-1)
+    if n.shape != counts.shape or m.shape != counts.shape:
+        raise ValueError("successes, trials và prior_mean phải cùng hình dạng")
+
+    usable = np.isfinite(counts) & np.isfinite(n) & np.isfinite(m) & (n > 0)
+    if int(usable.sum()) < MIN_NUMBERS:
+        return MAX_PRIOR_STRENGTH
+
+    counts = counts[usable]
+    n = n[usable]
+    m = np.clip(m[usable], 1e-9, 1.0 - 1e-9)
+    counts = np.clip(counts, 0.0, n)
+
+    rates = counts / n
+    deviation = float(np.mean((rates - m) ** 2))
+    within = float(np.mean(m * (1.0 - m) / n))
+    between = deviation - within
+
+    centre = float(np.mean(m))
+    if not np.isfinite(between) or between <= 0.0:
+        return MAX_PRIOR_STRENGTH
+    kappa = centre * (1.0 - centre) / between - 1.0
+    if not np.isfinite(kappa):
+        return MAX_PRIOR_STRENGTH
+    return float(np.clip(kappa, 1e-6, MAX_PRIOR_STRENGTH))
+
+
+def fit_shrinkage_to_prior_rows(
+    successes: np.ndarray,
+    trials: np.ndarray,
+    prior_mean: np.ndarray,
+) -> np.ndarray:
+    """Như ``fit_shrinkage_to_prior`` nhưng học κ RIÊNG cho từng hàng.
+
+    Vì sao phải tách hàng, nói bằng con số đã đo: ma trận chuyển trạng thái có
+    100×100 ô. Gộp cả 10 000 ô vào một κ duy nhất thì một quan hệ TẤT ĐỊNH
+    12 → 34 chỉ là 1 phần 10 000 của mô men bậc hai — nó chìm nghỉm, κ sập về
+    co ngót hoàn toàn, và tín hiệu thật bị xoá sạch. Một phép kiểm tiêm tín
+    hiệu đã bắt đúng chuyện này.
+
+    Tách theo hàng nguồn thì cùng quan hệ ấy là 1 phần 100, đủ để nhô lên khỏi
+    dao động nhị thức. Câu hỏi cũng đúng hơn về mặt thống kê: mỗi hàng là một
+    câu hỏi riêng — "con số này về thì nó kéo theo gì" — nên nó phải có độ co
+    ngót riêng.
+
+    ``successes`` hình ``(n_rows, n_units)``; ``trials`` hình ``(n_rows,)``
+    hoặc ``(n_rows, n_units)``; ``prior_mean`` hình ``(n_units,)``.
+    """
+    counts = np.asarray(successes, dtype=float)
+    if counts.ndim != 2:
+        raise ValueError("successes phải có hai chiều (n_rows, n_units)")
+    n_rows, n_units = counts.shape
+    n = np.asarray(trials, dtype=float)
+    if n.ndim == 1:
+        n = np.broadcast_to(n[:, None], counts.shape)
+    if n.shape != counts.shape:
+        raise ValueError("trials phải phát sóng được về hình của successes")
+    m = np.asarray(prior_mean, dtype=float).reshape(-1)
+    if m.size != n_units:
+        raise ValueError("prior_mean phải cùng số đơn vị với successes")
+    m = np.clip(m, 1e-9, 1.0 - 1e-9)
+
+    out = np.full(n_rows, MAX_PRIOR_STRENGTH, dtype=float)
+    usable = np.isfinite(counts) & np.isfinite(n) & (n > 0)
+    enough = usable.sum(axis=1) >= MIN_NUMBERS
+    if not np.any(enough):
+        return out
+
+    safe_n = np.where(usable, n, 1.0)
+    rates = np.where(usable, np.clip(counts, 0.0, safe_n) / safe_n, 0.0)
+    dev = np.where(usable, (rates - m[None, :]) ** 2, 0.0)
+    within_cell = np.where(usable, m[None, :] * (1.0 - m[None, :]) / safe_n, 0.0)
+    k = usable.sum(axis=1)
+    k_safe = np.maximum(k, 1)
+
+    between = dev.sum(axis=1) / k_safe - within_cell.sum(axis=1) / k_safe
+    centre = np.where(
+        k > 0, (np.where(usable, m[None, :], 0.0)).sum(axis=1) / k_safe, 0.5
+    )
+    good = enough & np.isfinite(between) & (between > 0.0)
+    kappa = np.divide(
+        centre * (1.0 - centre),
+        np.where(good, between, 1.0),
+        out=np.full(n_rows, np.inf),
+        where=good,
+    ) - 1.0
+    out[good] = np.clip(kappa[good], 1e-6, MAX_PRIOR_STRENGTH)
+    out[~np.isfinite(out)] = MAX_PRIOR_STRENGTH
+    return out

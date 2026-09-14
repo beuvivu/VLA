@@ -24,7 +24,9 @@ def _dates(days: int) -> pd.DatetimeIndex:
 
 def test_transition_matrix_recovers_injected_relationship() -> None:
     hit = _synthetic_loto()
-    _, lift, trials, _ = transition_posterior(hit, prior_strength=30.0)
+    _, lift, trials, _, kappa = transition_posterior(hit, prior_strength=30.0)
+    assert kappa.shape == (100,)
+    assert (kappa == 30.0).all()
     assert lift.shape == (100, 100)
     assert trials[12] > 20
     assert lift[12, 34] > 1.15
