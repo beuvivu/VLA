@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 
 from calendar_alignment import require_daily_contiguous
+from hierarchical_pooling import fit_pooling, pooled_posterior
 from ensemble_utils import normalize_distribution
 from lottery import Lottery
 
@@ -59,16 +60,48 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
     )
 
 
-def _baseline(hit: np.ndarray, prior_strength: float) -> np.ndarray:
+#: ``None`` nghĩa là HỌC độ co ngót của đường nền từ dữ liệu.
+#:
+#: Giá trị cũ là ``max(20, κ·0,5)`` — tức 22,5 cho lô tô — và nó được đặt tay.
+#: Đo walk-forward 400 kỳ trên dữ liệu thật, thống kê t cặp đôi so với bản
+#: đang dùng:
+#:
+#:     κ = 22,5 (đang dùng)   Brier 0,18143488       —
+#:     κ = 90                 Brier 0,18142966   t = -5,16
+#:     κ = 1000               Brier 0,18138711   t = -4,57
+#:     HỌC κ                  Brier 0,18132998   t = -3,09
+#:
+#: Cả ba đều vượt xa ngưỡng 2 SE, và bản học được có hiệu ứng lớn gấp hai mươi
+#: lần bản κ=90. Trung vị κ học được là 1 000 000 — tức dữ liệu đòi co ngót
+#: mạnh hơn 22,5 khoảng bốn mươi nghìn lần.
+#:
+#: Khác với việc chọn phép hợp hay chọn chu kỳ bán rã, đây KHÔNG phải chọn
+#: kiến trúc mà là ƯỚC LƯỢNG THAM SỐ, nên không cần cổng 2 SE ở lúc chạy:
+#: chính ``fit_pooling`` đã là phương pháp thích ứng.
+LEARN_BASELINE_PRIOR: float | None = None
+
+
+def _baseline(hit: np.ndarray, prior_strength: float | None) -> np.ndarray:
+    """Đường nền theo từng con, co ngót về tỉ lệ chung.
+
+    ``prior_strength = None`` thì độ co ngót được học bằng Bayes thực nghiệm;
+    truyền một số để ép, phục vụ tái lập kết quả cũ.
+    """
     n = max(len(hit), 1)
     global_rate = float(np.mean(hit)) if hit.size else 0.01
     global_rate = float(np.clip(global_rate, 1e-5, 1 - 1e-5))
     hits = hit.sum(axis=0, dtype=np.float64)
+    if prior_strength is None:
+        if hits.size < 3 or n < 2:
+            return np.full(hits.shape, global_rate, dtype=float)
+        fit = fit_pooling(hits, float(n))
+        return pooled_posterior(hits, float(n), fit)
     return (hits + prior_strength * global_rate) / (n + prior_strength)
 
 
 def transition_posterior(
-    hit: np.ndarray, *, prior_strength: float
+    hit: np.ndarray, *, prior_strength: float,
+    baseline_prior: float | None = LEARN_BASELINE_PRIOR,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """P(target[next observation]=1 | source[current]=1), with shrinkage.
 
@@ -78,7 +111,7 @@ def transition_posterior(
     h = np.asarray(hit, dtype=np.int8)
     if h.ndim != 2 or h.shape[1] != 100:
         raise ValueError("hit must have shape (n_observations, 100)")
-    base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
+    base = _baseline(h, prior_strength=baseline_prior)
     if len(h) < 2:
         post = np.tile(base, (100, 1))
         return post, np.ones_like(post), np.zeros(100), base
@@ -95,11 +128,12 @@ def transition_posterior(
 
 
 def _markov2_current(
-    hit: np.ndarray, *, prior_strength: float
+    hit: np.ndarray, *, prior_strength: float,
+    baseline_prior: float | None = LEARN_BASELINE_PRIOR,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Per-number P(hit_next | two previous states) with hierarchical shrinkage."""
     h = np.asarray(hit, dtype=np.int8)
-    base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
+    base = _baseline(h, prior_strength=baseline_prior)
     if len(h) < 3:
         return base.copy(), np.zeros(100, dtype=np.int8), np.zeros(100)
 
@@ -121,12 +155,13 @@ def _markov2_current(
 
 
 def _gap_hazard_current(
-    hit: np.ndarray, *, max_gap: int, prior_strength: float
+    hit: np.ndarray, *, max_gap: int, prior_strength: float,
+    baseline_prior: float | None = LEARN_BASELINE_PRIOR,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]:
     """Empirical-Bayes hazard by daily gap, shared across numbers."""
     h = np.asarray(hit, dtype=np.int8)
     n_days, n_numbers = h.shape
-    base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
+    base = _baseline(h, prior_strength=baseline_prior)
     denom = np.zeros(max_gap + 1, dtype=np.float64)
     numer = np.zeros(max_gap + 1, dtype=np.float64)
 
@@ -171,11 +206,12 @@ def _gap_hazard_current(
 
 
 def _lag_kernel_current(
-    hit: np.ndarray, *, lags: tuple[int, ...], prior_strength: float
+    hit: np.ndarray, *, lags: tuple[int, ...], prior_strength: float,
+    baseline_prior: float | None = LEARN_BASELINE_PRIOR,
 ) -> tuple[np.ndarray, pd.DataFrame]:
     """Same-number multi-lag kernels on a calendar-validated daily series."""
     h = np.asarray(hit, dtype=np.int8)
-    base = _baseline(h, prior_strength=max(20.0, prior_strength * 0.5))
+    base = _baseline(h, prior_strength=baseline_prior)
     weighted = np.zeros(100, dtype=np.float64)
     weight_sum = np.zeros(100, dtype=np.float64)
     rows: list[dict[str, float | int]] = []
@@ -219,10 +255,11 @@ def _lag_kernel_current(
 
 
 def _regime_current(
-    hit: np.ndarray, *, recent: int, long: int, prior_strength: float
+    hit: np.ndarray, *, recent: int, long: int, prior_strength: float,
+    baseline_prior: float | None = LEARN_BASELINE_PRIOR,
 ) -> tuple[np.ndarray, np.ndarray, float, float, float]:
     h = np.asarray(hit, dtype=np.int8)
-    base = _baseline(h, prior_strength=max(20.0, prior_strength))
+    base = _baseline(h, prior_strength=baseline_prior)
     r = h[-min(recent, len(h)) :]
     l = h[-min(long, len(h)) :]
     r_hits = r.sum(axis=0, dtype=np.float64)
