@@ -114,7 +114,9 @@ const SCENARIOS = {
     };
   },
 
-  // Bảy nguồn cùng chặn: lượt cron không được đổ, và vẫn phải ghi ảnh chụp.
+  // Mọi nguồn cùng chặn: lượt cron không được đổ, và vẫn phải ghi ảnh chụp.
+  // Tầng chính hỏng thì tầng dự phòng phải được kích hoạt, nên bản chụp
+  // phải có đủ CẢ TÁM hàng nguồn chứ không phải hai.
   async all_sources_down() {
     globalThis.fetch = makeFetch({ calls: 0 }, { fail: true });
     const kv = new FakeKV();
@@ -128,7 +130,10 @@ const SCENARIOS = {
       scheduled_threw: threw,
       wrote_snapshot: parsed !== null,
       status: parsed?.status ?? null,
-      errors: parsed ? parsed.source_status.filter((r) => r.error).length : 0,
+      // Bản chụp đã ẩn danh nên không còn trường `error`; cờ `failed` thay nó.
+      errors: parsed ? parsed.source_status.filter((r) => r.failed).length : 0,
+      source_rows: parsed ? parsed.source_status.length : 0,
+      fallback_activated: parsed?.failover?.fallback_activated ?? null,
     };
   },
 

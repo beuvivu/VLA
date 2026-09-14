@@ -4,7 +4,7 @@
 // payload live.json. Tách ra như vậy để `tests/test_worker_snapshot_parity.py`
 // so được nó với bản Python mà không cần mạng.
 //
-// `collectSnapshot` là phần có tác dụng phụ: gọi bảy nguồn rồi giao cho phần
+// `collectSnapshot` là phần có tác dụng phụ: gọi nguồn rồi giao cho phần
 // thuần. Phần ấy không đối chiếu được vì phụ thuộc mạng thật.
 
 import {
@@ -14,7 +14,12 @@ import {
   extractPartialPrizeMap,
 } from "./prize_map.js";
 import { sourceConsensusPartial, sourceIndependenceKey } from "./consensus.js";
-import { SOURCES } from "./sources.js";
+import {
+  FALLBACK_SOURCES,
+  PRIMARY_SOURCES,
+  SOURCES,
+  publicSourceCode,
+} from "./sources.js";
 
 export const VIETNAM_OFFSET_MINUTES = 7 * 60;
 
@@ -69,7 +74,7 @@ export function roundHalfEven(value, digits = 1) {
   return rounded / factor;
 }
 
-export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement = 2 }) {
+export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement = 2, failover = null }) {
   const [merged, meta] = sourceConsensusPartial(partials, { minAgreement });
   const received = meta.received_slots;
   const expected = meta.total_slots;
@@ -105,8 +110,8 @@ export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement =
     prizes: merged,
     conflicts,
     source_status: sourceStatus,
-    source_priority: SOURCES.map((s) => s.name),
     slot_meta: meta.slot_meta,
+    failover,
     note: "GitHub near-live snapshot. Single-source values are provisional; "
       + "canonical history is promoted only after complete multi-source consensus.",
   };
@@ -119,7 +124,7 @@ const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
 /**
  * Thử lại có lùi mũ kèm nhiễu, khớp chính sách của `src/sources.py`.
  *
- * Nhiễu là bắt buộc chứ không phải trang trí: bảy nguồn chạy song song, nếu
+ * Nhiễu là bắt buộc chứ không phải trang trí: các nguồn chạy song song, nếu
  * cùng hỏng rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng một
  * thời điểm — đúng lúc máy chủ đang quá tải.
  */
@@ -162,45 +167,178 @@ async function fetchWithRetry(url, { attempts = 3, timeoutMs = 8000, fetchImpl =
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const jitter = (ms) => ms * (0.75 + Math.random() * 0.5);
 
+function totalExpected() {
+  let expected = 0;
+  for (const key of PRIZE_ORDER) expected += EXPECTED_COUNTS[key];
+  return expected;
+}
+
+function receivedCount(prizeMap) {
+  let received = 0;
+  for (const key of PRIZE_ORDER) received += (prizeMap[key] || []).length;
+  return received;
+}
+
+/**
+ * Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được.
+ * Đếm theo nhóm, không theo tên miền: hai trang cùng thương hiệu không phải
+ * hai lời chứng độc lập.
+ */
+export function independentGroupCount(results) {
+  const groups = new Set();
+  for (const r of results) {
+    if (receivedCount(r.prizeMap) > 0) groups.add(sourceIndependenceKey(r.name));
+  }
+  return groups.size;
+}
+
+/**
+ * Tầng chính có đủ để KHÔNG cần gọi dự phòng hay không. Khớp
+ * `sources.primary_tier_is_sufficient` bên Python.
+ */
+export function primaryTierIsSufficient(results, minAgreement = 2) {
+  const groups = independentGroupCount(results);
+  if (groups < minAgreement) {
+    return { sufficient: false, reason: `chỉ có ${groups} nhóm độc lập, cần ${minAgreement}` };
+  }
+  const usable = results.filter((r) => receivedCount(r.prizeMap) > 0);
+  const [, meta] = sourceConsensusPartial(
+    usable.map((r) => [r.name, r.prizeMap]),
+    { minAgreement },
+  );
+  if (meta.conflicts.length > 0) {
+    return { sufficient: false, reason: `tầng chính bất đồng ở ${meta.conflicts.length} ô` };
+  }
+  return { sufficient: true, reason: "tầng chính đủ" };
+}
+
+async function fetchOne(source, tier, priority, date, fetchImpl) {
+  const started = Date.now();
+  let prizeMap = emptyPrizeMap();
+  let error = null;
+  let best = 0;
+  const expected = totalExpected();
+  // Thử lần lượt các đường dẫn ứng viên; giữ bản bóc được nhiều giá trị nhất.
+  for (const url of source.liveUrls(date)) {
+    try {
+      const html = await fetchWithRetry(url, { fetchImpl });
+      const section = source.selectSection ? source.selectSection(html, date) : html;
+      const candidate = extractPartialPrizeMap(section);
+      const score = receivedCount(candidate);
+      if (score > best) {
+        prizeMap = candidate;
+        best = score;
+        error = null;
+      }
+      if (best === expected) break;
+    } catch (err) {
+      if (best === 0) {
+        error = `${err?.name || "Error"}: ${String(err?.message || err).slice(0, 120)}`;
+      }
+    }
+  }
+  return {
+    priority,
+    name: source.name,
+    prizeMap,
+    status: {
+      priority,
+      tier,
+      source: source.name,
+      provider_group: sourceIndependenceKey(source.name),
+      received_values: best,
+      complete: best === expected,
+      latency_ms: Date.now() - started,
+      error,
+    },
+  };
+}
+
 export async function collectSnapshot({ nowUtcMs, minAgreement = 2, fetchImpl = fetch } = {}) {
   const now = nowUtcMs ?? Date.now();
   const date = vietnamParts(now);
 
-  const results = await Promise.all(SOURCES.map(async (source, index) => {
-    const started = Date.now();
-    let prizeMap = emptyPrizeMap();
-    let error = null;
-    try {
-      const html = await fetchWithRetry(source.liveUrl(date), { fetchImpl });
-      const section = source.selectSection ? source.selectSection(html, date) : html;
-      prizeMap = extractPartialPrizeMap(section);
-    } catch (err) {
-      error = `${err?.name || "Error"}: ${String(err?.message || err).slice(0, 120)}`;
-    }
-    let received = 0;
-    for (const key of PRIZE_ORDER) received += (prizeMap[key] || []).length;
-    let expected = 0;
-    for (const key of PRIZE_ORDER) expected += EXPECTED_COUNTS[key];
-    return {
-      priority: index + 1,
-      name: source.name,
-      prizeMap,
-      status: {
-        priority: index + 1,
-        source: source.name,
-        provider_group: sourceIndependenceKey(source.name),
-        received_values: received,
-        complete: received === expected,
-        latency_ms: Date.now() - started,
-        error,
-      },
-    };
-  }));
+  // Tầng chính trước. Chỉ chạm tới dự phòng khi tầng chính không đủ để xác
+  // minh — thiếu nhóm độc lập, hoặc hai nguồn chính bất đồng.
+  const results = await Promise.all(
+    PRIMARY_SOURCES.map((source, i) => fetchOne(source, "primary", i + 1, date, fetchImpl)),
+  );
+  const verdict = primaryTierIsSufficient(results, minAgreement);
+  const failover = {
+    primary_attempted: PRIMARY_SOURCES.length,
+    primary_usable_groups: independentGroupCount(results),
+    fallback_activated: !verdict.sufficient,
+    reason: verdict.reason,
+    fallback_attempted: 0,
+  };
+  if (!verdict.sufficient) {
+    const offset = PRIMARY_SOURCES.length;
+    const extra = await Promise.all(
+      FALLBACK_SOURCES.map((source, i) =>
+        fetchOne(source, "fallback", offset + i + 1, date, fetchImpl)),
+    );
+    results.push(...extra);
+    failover.fallback_attempted = FALLBACK_SOURCES.length;
+    failover.usable_groups = independentGroupCount(results);
+  }
+  results.sort((a, b) => a.priority - b.priority);
 
   return buildSnapshot({
     partials: results.map((r) => [r.name, r.prizeMap]),
     sourceStatus: results.map((r) => r.status),
     nowUtcMs: now,
     minAgreement,
+    failover,
   });
+}
+
+// --- Ẩn nguồn khỏi mọi thứ ra tới trình duyệt -------------------------------
+// Khớp `sources.anonymise_snapshot` bên Python. Tên nguồn nằm rải ở bốn chỗ
+// trong cùng một bản chụp; bỏ sót một chỗ là lộ hết, nên phép ẩn danh là MỘT
+// hàm duy nhất kiểm được.
+
+const GROUP_CODE = Object.fromEntries(
+  [...new Set(SOURCES.map((s) => sourceIndependenceKey(s.name)))]
+    .map((group, i) => [group, `G${i + 1}`]),
+);
+
+export function publicGroupCode(nameOrGroup) {
+  const key = sourceIndependenceKey(nameOrGroup);
+  return Object.prototype.hasOwnProperty.call(GROUP_CODE, key) ? GROUP_CODE[key] : "?";
+}
+
+export function anonymiseSnapshot(payload) {
+  const out = { ...payload };
+  if (Array.isArray(out.source_status)) {
+    out.source_status = out.source_status.map((raw) => {
+      const row = { ...raw };
+      const name = String(row.source ?? "");
+      delete row.source;
+      delete row.provider_group;
+      const error = row.error;
+      delete row.error;
+      row.source_code = publicSourceCode(name);
+      row.provider_code = publicGroupCode(name);
+      row.failed = error !== null && error !== undefined;
+      return row;
+    });
+  }
+  if ("source_priority" in out) {
+    out.source_priority = SOURCES.map((s) => publicSourceCode(s.name));
+  }
+  if (out.slot_meta && typeof out.slot_meta === "object") {
+    const meta = {};
+    for (const [slot, raw] of Object.entries(out.slot_meta)) {
+      const row = { ...raw };
+      row.support = (row.support || []).map(publicSourceCode);
+      row.support_groups = (row.support_groups || []).map(publicGroupCode);
+      row.observations = Object.fromEntries(
+        Object.entries(row.observations || {})
+          .map(([value, names]) => [value, names.map(publicSourceCode)]),
+      );
+      meta[slot] = row;
+    }
+    out.slot_meta = meta;
+  }
+  return out;
 }

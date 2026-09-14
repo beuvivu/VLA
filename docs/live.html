@@ -261,13 +261,18 @@
       return filled;
     }
 
+    // Chỉ hiện MÃ ẩn danh, không bao giờ hiện tên miền. Dữ liệu tới đây đã
+    // được ẩn danh từ phía máy chủ; đoạn này là lớp chặn thứ hai — nếu một
+    // trường tên miền lọt vào tải trọng thì nó vẫn không được vẽ ra.
     function renderSources(rows) {
       var frag = document.createDocumentFragment();
-      (Array.isArray(rows) ? rows : []).forEach(function (source) {
+      (Array.isArray(rows) ? rows : []).forEach(function (source, index) {
+        var code = (source && source.source_code) || ('#' + (index + 1));
+        var tier = source && source.tier === 'fallback' ? 'dự phòng' : 'chính';
         var row = el('div', 'src');
         row.append(
-          el('span', '', '#' + ((source && source.priority) || '—')),
-          el('span', '', (source && source.source) || 'Nguồn không xác định'),
+          el('span', '', code),
+          el('span', '', source && source.failed ? tier + ' · lỗi' : tier),
           el('span', '', ((source && source.received_values) || 0) + '/27')
         );
         frag.appendChild(row);

@@ -153,7 +153,7 @@ def test_consensus_accepts_unique_two_group_winner_over_mirror_pair(tmp_path: Pa
 # XSMB nghỉ dịp Tết và suốt đợt giãn cách 01-22/4/2020. Vào những ngày đó trang
 # nguồn vẫn trả kết quả gần nhất, nên trình cào ghi lại như thể đó là kỳ của
 # ngày ấy. Đo trên kho: 50 bản ghi bịa, trong đó 4 bản lọt qua CẢ kiểm đồng
-# thuận hai nguồn — bảy nguồn cùng đọc một trang tin nên ở dạng hỏng này chúng
+# thuận hai nguồn — mọi nguồn cùng đọc một trang tin nên ở dạng hỏng này chúng
 # không độc lập.
 
 
@@ -172,7 +172,7 @@ def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
 
 
 def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
-    """Đồng thuận hai nguồn KHÔNG cứu được: cả bảy nguồn cùng đọc một trang
+    """Đồng thuận hai nguồn KHÔNG cứu được: mọi nguồn cùng đọc một trang
     tin nên chúng nhất trí về chính kết quả cũ. Bốn bản ghi đã lọt vào 393 kỳ
     gốc đúng theo đường này."""
     yesterday, today = date(2026, 2, 15), date(2026, 2, 16)

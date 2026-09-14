@@ -6,6 +6,8 @@ from sources import (
     PRIZE_ORDER,
     default_sources,
     extract_partial_prize_map,
+    fallback_sources,
+    primary_sources,
     source_consensus_partial,
 )
 
@@ -26,16 +28,26 @@ COMPLETE = """
 
 
 def test_source_policy_exact_priority_and_no_removed_provider() -> None:
-    names = [s.name for s in default_sources()]
-    assert names == [
+    """Thứ tự ưu tiên là chính sách, không phải chi tiết cài đặt.
+
+    Nó quyết định giá trị nào được hiện tạm khi chưa đủ đồng thuận, nên một
+    thay đổi thứ tự phải là thay đổi CÓ CHỦ Ý và nhìn thấy được trong diff.
+    """
+    assert [s.name for s in primary_sources()] == [
+        "xosothudo.com.vn",
         "xoso.com.vn",
+    ]
+    assert [s.name for s in fallback_sources()] == [
+        "xskt.vn",
         "mketqua.net",
         "www.minhngoc.net.vn",
         "xosominhngoc.com",
         "xosodaiphat.com",
         "hainhay.net",
-        "xskt.vn",
     ]
+    assert [s.name for s in default_sources()] == (
+        [s.name for s in primary_sources()] + [s.name for s in fallback_sources()]
+    )
 
 
 def test_xskt_rolling_ledger_selects_the_requested_date_only() -> None:
@@ -184,3 +196,93 @@ def test_slot_consensus_accepts_unique_independent_winner_over_mirrors() -> None
     assert slot["verified"] is True
     assert slot["ambiguous_tie"] is False
     assert slot["support_groups"] == ["xoso", "xosodaiphat"]
+
+
+def test_a_source_tries_every_candidate_url_until_one_parses() -> None:
+    """Nguồn có nhiều mẫu đường dẫn phải thử lần lượt, không dừng ở cái đầu.
+
+    Mẫu đường dẫn của nguồn ưu tiên số một CHƯA kiểm chứng được từ môi trường
+    phát triển (sandbox chặn mọi HTTP ra ngoài, đo được cả example.com cũng
+    trả 000). Chốt cứng một phỏng đoán sẽ hỏng ÂM THẦM: trang trả 404, bộ bóc
+    nhận chuỗi rỗng, nguồn báo "không có gì" thay vì "sai địa chỉ".
+    """
+    from datetime import date
+
+    from sources import XosoThuDoSource
+
+    ngay = date(2026, 9, 5)
+    source = XosoThuDoSource()
+    urls = source.date_urls(ngay)
+    assert len(urls) > 1
+
+    hit_on = urls[-1]
+    seen: list[str] = []
+
+    class Http:
+        def get(self, url, timeout=20):
+            seen.append(url)
+            class R:
+                status_code = 200
+                text = COMPLETE if url == hit_on else "<html>404</html>"
+            return R()
+
+    prize_map = source.fetch_partial(ngay, Http())
+    assert seen == list(urls), "phải thử đủ mọi ứng viên trước khi bỏ cuộc"
+    assert prize_map["special"] == ["83772"]
+
+
+def test_a_complete_first_candidate_stops_the_remaining_requests() -> None:
+    """Bóc đủ 27 giá trị thì dừng — không gọi thừa vào trang nguồn."""
+    from datetime import date
+
+    from sources import XosoThuDoSource
+
+    seen: list[str] = []
+
+    class Http:
+        def get(self, url, timeout=20):
+            seen.append(url)
+            class R:
+                status_code = 200
+                text = COMPLETE
+            return R()
+
+    XosoThuDoSource().fetch_partial(date(2026, 9, 5), Http())
+    assert len(seen) == 1
+
+
+def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
+    """Giữ bản bóc được NHIỀU NHẤT, không phải bản cuối cùng bóc được.
+
+    Trang tường thuật trực tiếp thường mới có vài giải; trang theo ngày thì
+    đủ. Thứ tự ứng viên KHÔNG đảm bảo trang đầy đủ đứng cuối, nên "giữ bản
+    cuối khác rỗng" là sai — và nó sai âm thầm, vì kết quả vẫn hợp lệ, chỉ
+    thiếu giải.
+
+    Bản đầu của phép kiểm này đặt trang đầy đủ ở CUỐI, nên một đột biến đổi
+    "giữ bản nhiều nhất" thành "giữ bản cuối" vẫn xanh.
+    """
+    from datetime import date
+
+    from sources import XosoThuDoSource
+
+    ngay = date(2026, 9, 5)
+    source = XosoThuDoSource()
+    urls = source.live_urls(ngay)
+    assert len(urls) > 2
+
+    rich = ("<div>ĐB 83772</div><div>G1 68785</div>"
+            "<div>G2 50518 27452</div>"
+            "<div>G7 66 21 34 78</div>")
+
+    class Http:
+        def get(self, url, timeout=20):
+            class R:
+                status_code = 200
+                # Ứng viên ĐẦU giàu nhất; các ứng viên sau vẫn bóc được nhưng ít hơn.
+                text = rich if url == urls[0] else "<div>ĐB 11111</div>"
+            return R()
+
+    prize_map = source.fetch_partial(ngay, Http(), live=True)
+    assert prize_map["special"] == ["83772"], "đã lấy nhầm bản nghèo hơn ở cuối"
+    assert prize_map["prize7"] == ["66", "21", "34", "78"]

@@ -59,47 +59,92 @@ function xsktSection(html, date) {
   return text.slice(start, Math.min(text.length, start + 8000));
 }
 
-export const SOURCES = [
+// xosothudo.com.vn là nguồn ưu tiên số một. Mẫu đường dẫn CHƯA kiểm chứng
+// được từ môi trường phát triển (sandbox chặn toàn bộ HTTP ra ngoài), nên nguồn
+// này khai báo nhiều ứng viên và thử lần lượt thay vì chốt cứng một phỏng đoán.
+const THU_DO_DATE_URLS = (d) => [
+  `https://xosothudo.com.vn/xsmb-${dmy(d, "-")}.html`,
+  `https://xosothudo.com.vn/ket-qua-xo-so-mien-bac/${dmy(d, "-")}.html`,
+  `https://xosothudo.com.vn/xsmb/${dmy(d, "-")}.html`,
+];
+
+// Tầng ưu tiên MỘT. Chỉ hai nguồn này được gọi ở lượt đầu.
+export const PRIMARY_SOURCES = [
+  {
+    name: "xosothudo.com.vn",
+    tier: "primary",
+    dateUrls: THU_DO_DATE_URLS,
+    liveUrls: (d) => [
+      "https://xosothudo.com.vn/tuong-thuat-truc-tiep-xsmb.html",
+      "https://xosothudo.com.vn/xsmb-truc-tiep.html",
+      ...THU_DO_DATE_URLS(d),
+    ],
+  },
   {
     name: "xoso.com.vn",
-    dateUrl: (d) => `https://xoso.com.vn/xsmb-${dmy(d, "-")}.html`,
-    liveUrl: () => "https://xoso.com.vn/tuong-thuat-mien-bac/xsmb-tructiep.html",
-  },
-  {
-    name: "mketqua.net",
-    // Trang theo NGÀY xác định hơn sổ cái cuộn, nên phải nối ngày vào — bản
-    // đầu tôi viết thiếu đoạn ấy và phép kiểm đối chiếu danh mục bắt được.
-    dateUrl: (d) => "https://mketqua.net/x%E1%BB%95-s%E1%BB%91-Truy%E1%BB%81n-Th%E1%BB%91ng/"
-      + `${dmy(d, "-")}.html`,
-    liveUrl: () => "https://mketqua.net/xo-so-truyen-thong.php",
-  },
-  {
-    name: "www.minhngoc.net.vn",
-    dateUrl: (d) => `https://www.minhngoc.net.vn/ket-qua-xo-so/mien-bac/${dmy(d, "-")}.html`,
-    liveUrl: () => "https://www.minhngoc.net.vn/xo-so-truc-tiep/mien-bac.html",
-  },
-  {
-    name: "xosominhngoc.com",
-    dateUrl: (d) => `https://www.xosominhngoc.com/kqxs/mien-bac/${dmy(d, "-")}.html`,
-    liveUrl: () => "https://www.xosominhngoc.com/xo-so-truc-tiep/mien-bac.html",
-  },
-  {
-    name: "xosodaiphat.com",
-    dateUrl: (d) => `https://xosodaiphat.com/xsmb-${dmy(d, "-")}.html`,
-    liveUrl: (d) => `https://xosodaiphat.com/xsmb-${dmy(d, "-")}.html`,
-  },
-  {
-    name: "hainhay.net",
-    dateUrl: () => "https://www.hainhay.net/so-ket-qua-truyen-thong/300",
-    liveUrl: () => "https://www.hainhay.net/",
-    selectSection: hainhaySection,
-  },
-  {
-    name: "xskt.vn",
-    dateUrl: () => "https://xskt.vn/xsmb-500-ngay/",
-    liveUrl: () => "https://xskt.vn/",
-    selectSection: xsktSection,
+    tier: "primary",
+    dateUrls: (d) => [`https://xoso.com.vn/xsmb-${dmy(d, "-")}.html`],
+    liveUrls: () => ["https://xoso.com.vn/tuong-thuat-mien-bac/xsmb-tructiep.html"],
   },
 ];
 
+// Tầng DỰ PHÒNG. Chỉ chạm tới khi tầng chính không đủ để xác minh.
+export const FALLBACK_SOURCES = [
+  {
+    name: "xskt.vn",
+    tier: "fallback",
+    dateUrls: () => ["https://xskt.vn/xsmb-500-ngay/"],
+    liveUrls: () => ["https://xskt.vn/"],
+    selectSection: xsktSection,
+  },
+  {
+    name: "mketqua.net",
+    tier: "fallback",
+    // Trang theo NGÀY xác định hơn sổ cái cuộn, nên phải nối ngày vào — bản
+    // đầu tôi viết thiếu đoạn ấy và phép kiểm đối chiếu danh mục bắt được.
+    dateUrls: (d) => ["https://mketqua.net/x%E1%BB%95-s%E1%BB%91-Truy%E1%BB%81n-Th%E1%BB%91ng/"
+      + `${dmy(d, "-")}.html`],
+    liveUrls: () => ["https://mketqua.net/xo-so-truyen-thong.php"],
+  },
+  {
+    name: "www.minhngoc.net.vn",
+    tier: "fallback",
+    dateUrls: (d) => [`https://www.minhngoc.net.vn/ket-qua-xo-so/mien-bac/${dmy(d, "-")}.html`],
+    liveUrls: () => ["https://www.minhngoc.net.vn/xo-so-truc-tiep/mien-bac.html"],
+  },
+  {
+    name: "xosominhngoc.com",
+    tier: "fallback",
+    dateUrls: (d) => [`https://www.xosominhngoc.com/kqxs/mien-bac/${dmy(d, "-")}.html`],
+    liveUrls: () => ["https://www.xosominhngoc.com/xo-so-truc-tiep/mien-bac.html"],
+  },
+  {
+    name: "xosodaiphat.com",
+    tier: "fallback",
+    dateUrls: (d) => [`https://xosodaiphat.com/xsmb-${dmy(d, "-")}.html`],
+    liveUrls: (d) => [`https://xosodaiphat.com/xsmb-${dmy(d, "-")}.html`],
+  },
+  {
+    name: "hainhay.net",
+    tier: "fallback",
+    dateUrls: () => ["https://www.hainhay.net/so-ket-qua-truyen-thong/300"],
+    liveUrls: () => ["https://www.hainhay.net/"],
+    selectSection: hainhaySection,
+  },
+];
+
+export const SOURCES = [...PRIMARY_SOURCES, ...FALLBACK_SOURCES];
+
 export const SOURCE_NAMES = SOURCES.map((s) => s.name);
+
+// Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
+export const SOURCE_PUBLIC_CODE = Object.fromEntries([
+  ...PRIMARY_SOURCES.map((s, i) => [s.name, `P${i + 1}`]),
+  ...FALLBACK_SOURCES.map((s, i) => [s.name, `F${i + 1}`]),
+]);
+
+export function publicSourceCode(name) {
+  return Object.prototype.hasOwnProperty.call(SOURCE_PUBLIC_CODE, name)
+    ? SOURCE_PUBLIC_CODE[name]
+    : "?";
+}

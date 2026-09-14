@@ -8,14 +8,14 @@
 // khiến mã "tự chạy lúc 18:15" nếu đồng hồ không nằm ở đâu đó.
 //
 // Worker này LÀ cái đồng hồ ấy. Cron của nền tảng gọi `scheduled()` mỗi phút
-// trong khung quay số; nó đọc bảy nguồn, dựng live.json rồi cất vào KV.
+// trong khung quay số; nó đọc nguồn, dựng live.json rồi cất vào KV.
 // Trình duyệt đọc thẳng từ `fetch()` bên dưới.
 //
 // Hệ quả quan trọng: GitHub Actions không còn nằm trên đường găng ĐÚNG GIỜ.
 // Nó vẫn ghi lịch sử vào kho, nhưng trễ bao nhiêu cũng không ảnh hưởng trang
 // live nữa.
 
-import { collectSnapshot, drawDate } from "./snapshot.js";
+import { anonymiseSnapshot, collectSnapshot, drawDate } from "./snapshot.js";
 import { handleTraditionalResults } from "./traditional_results.js";
 
 const KV_KEY = "live.json";
@@ -83,7 +83,7 @@ function requireKv(env) {
  * Kỳ hôm nay đã xác minh xong thì không còn gì để thu thập nữa.
  *
  * Cron chạy mỗi phút suốt khung quay số. Không có chốt này thì sau khi đủ 27 ô
- * và đã xác minh, nó vẫn gọi bảy nguồn thêm vài chục lần nữa mà không thêm
+ * và đã xác minh, nó vẫn gọi nguồn thêm vài chục lần nữa mà không thêm
  * được thông tin gì — chỉ tốn hạn mức và dội vào đúng những trang đang tải
  * nặng nhất trong ngày.
  *
@@ -104,9 +104,12 @@ function alreadySettled(stored, nowUtcMs) {
 async function refresh(env, { force = false } = {}) {
   const kv = requireKv(env);
   if (!force && alreadySettled(await kv.get(KV_KEY), Date.now())) return null;
-  const snapshot = await collectSnapshot({
+  // Ẩn danh TRƯỚC khi ghi vào KV, không phải lúc trả lời. Mọi đường đọc đều
+  // đi qua KV, nên ẩn ở đây là ẩn ở mọi nơi — kể cả những đường sẽ thêm về
+  // sau. Chi tiết từng nguồn vẫn xem được bằng `wrangler tail`, không công khai.
+  const snapshot = anonymiseSnapshot(await collectSnapshot({
     minAgreement: Number(env.MIN_AGREEMENT ?? 2),
-  });
+  }));
   await kv.put(KV_KEY, JSON.stringify(snapshot), {
     // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
     expirationTtl: 60 * 60 * 36,

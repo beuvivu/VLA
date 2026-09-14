@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import default_sources
+from sources import SOURCE_PUBLIC_CODE, default_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE = ROOT / "worker" / "test" / "run_sources.mjs"
@@ -48,7 +48,7 @@ def _require_node() -> str:
     return node
 
 
-def _javascript_sources() -> list[dict[str, str]]:
+def _javascript_payload() -> dict:
     node = _require_node()
     proc = subprocess.run(
         [node, str(PROBE), NGAY.isoformat()],
@@ -58,20 +58,34 @@ def _javascript_sources() -> list[dict[str, str]]:
     return json.loads(proc.stdout)
 
 
+def _javascript_sources() -> list[dict[str, object]]:
+    return _javascript_payload()["sources"]
+
+
 def test_source_order_and_urls_match_the_python_catalogue() -> None:
     python = [
         {
             "name": s.name,
-            "date_url": s.date_url(NGAY),
-            "live_url": s.live_url(NGAY),
+            "tier": "primary" if i < 2 else "fallback",
+            "date_urls": list(s.date_urls(NGAY)),
+            "live_urls": list(s.live_urls(NGAY)),
         }
-        for s in default_sources()
+        for i, s in enumerate(default_sources())
     ]
     javascript = [
         {k: v for k, v in row.items() if k != "has_select_section"}
         for row in _javascript_sources()
     ]
     assert javascript == python
+
+
+def test_the_public_code_table_matches_entry_for_entry() -> None:
+    """Mã ẩn danh phải khớp hai bên.
+
+    Lệch mã thì trang live hiện "P1" cho nguồn này còn nhật ký ghi "P1" cho
+    nguồn kia — và cả hai vẫn trông hợp lệ, nên không gì báo.
+    """
+    assert _javascript_payload()["public_codes"] == SOURCE_PUBLIC_CODE
 
 
 def test_only_rolling_ledgers_trim_the_page_before_parsing() -> None:

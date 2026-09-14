@@ -115,12 +115,24 @@ def _cases(count: int = 120) -> list[dict]:
 
 
 def _python_payload(case: dict, monkeypatch: pytest.MonkeyPatch) -> dict:
+    """Đưa MỌI nguồn giả vào tầng chính, tầng dự phòng để rỗng.
+
+    Phép kiểm này so cách DỰNG bản chụp từ một tập quan sát cho trước, không
+    so chiến lược gọi nguồn — bên JS nhận thẳng ``partials`` chứ không đi
+    mạng. Chiến lược chuyển nguồn có phép đối chiếu riêng ở
+    ``test_source_failover_parity.py``.
+    """
+    import sources as sources_module
+
     fakes = [_FakeSource(name, pmap) for name, pmap in case["partials"]]
-    monkeypatch.setattr(live_sync, "default_sources", lambda: fakes)
+    monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes)
+    monkeypatch.setattr(sources_module, "fallback_sources", list)
     monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
-    return live_sync.fetch_snapshot(
+    payload = live_sync.fetch_snapshot(
         now=case["now"], min_agreement=case["min_agreement"]
     )
+    payload.pop("failover", None)
+    return payload
 
 
 def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
@@ -131,6 +143,7 @@ def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
             "source_status": [
                 {
                     "priority": i + 1,
+                    "tier": "primary",
                     "source": name,
                     "provider_group": source_independence_key(name),
                     "received_values": sum(len(pmap.get(k, [])) for k in PRIZE_ORDER),
@@ -152,7 +165,12 @@ def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
         capture_output=True, text=True, timeout=180, check=False,
     )
     assert proc.returncode == 0, f"bản JS hỏng:\n{proc.stderr}"
-    return json.loads(proc.stdout)
+    payloads = json.loads(proc.stdout)
+    # ``buildSnapshot`` không tính nhật ký chuyển nguồn — ``collectSnapshot``
+    # mới tính. Bỏ ở cả hai bên để phép so này chỉ nói về cách DỰNG bản chụp.
+    for payload in payloads:
+        payload.pop("failover", None)
+    return payloads
 
 
 def _normalise_numbers(value):

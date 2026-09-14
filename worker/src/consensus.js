@@ -18,6 +18,7 @@ import {
 // Minh Ngọc nên tính là MỘT nhà cung cấp độc lập. Đếm chúng là hai sẽ cho một
 // nguồn duy nhất quyền tự xác minh chính mình.
 const SOURCE_INDEPENDENCE_GROUP = {
+  "xosothudo.com.vn": "xosothudo",
   "xoso.com.vn": "xoso",
   "mketqua.net": "mketqua",
   "www.minhngoc.net.vn": "minhngoc",

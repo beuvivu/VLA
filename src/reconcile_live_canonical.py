@@ -7,6 +7,12 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from sources import (
+    FALLBACK_SOURCE_NAMES,
+    PRIMARY_SOURCE_NAMES,
+    anonymise_snapshot,
+    public_source_code,
+)
 from time_policy import VIETNAM_TZ, iso_local, iso_utc
 
 TZ = VIETNAM_TZ
@@ -21,15 +27,12 @@ FIELDS = {
     "prize7": ["prize7_1", "prize7_2", "prize7_3", "prize7_4"],
 }
 WIDTHS = {"special": 5, "prize1": 5, "prize2": 5, "prize3": 5, "prize4": 4, "prize5": 4, "prize6": 3, "prize7": 2}
-SOURCE_PRIORITY = [
-    "xoso.com.vn",
-    "mketqua.net",
-    "www.minhngoc.net.vn",
-    "xosominhngoc.com",
-    "xosodaiphat.com",
-    "hainhay.net",
-    "xskt.vn",
-]
+#: Lấy từ ``sources`` chứ KHÔNG chép lại.
+#:
+#: Bản trước chép tay danh sách này. Một bản chép tay thì không bao giờ sai ở
+#: lúc viết — nó sai ở lần đổi chính sách nguồn tiếp theo, khi một bên đổi còn
+#: bên kia thì không, và không có gì báo.
+SOURCE_PRIORITY = list(PRIMARY_SOURCE_NAMES) + list(FALLBACK_SOURCE_NAMES)
 
 
 def _latest_row(path: Path) -> dict[str, str]:
@@ -60,16 +63,21 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
         prizes[group] = [_fmt(row[field], WIDTHS[group]) for field in fields]
 
     now_local = datetime.now(TZ)
-    accepted_sources = list(evidence.get("sources", []))
+    # ``data/source_audit.json`` lưu MÃ ẩn danh chứ không lưu tên miền, nên
+    # phép so phải quy về mã — so thẳng tên sẽ luôn cho "không nguồn nào
+    # tham gia" mà không báo lỗi gì.
+    accepted_codes = set(evidence.get("sources", []))
     source_status = []
     for idx, source in enumerate(SOURCE_PRIORITY, start=1):
+        participated = public_source_code(source) in accepted_codes
         source_status.append(
             {
                 "priority": idx,
+                "tier": "primary" if source in PRIMARY_SOURCE_NAMES else "fallback",
                 "source": source,
                 "provider_group": None,
-                "received_values": 27 if source in accepted_sources else 0,
-                "complete": source in accepted_sources,
+                "received_values": 27 if participated else 0,
+                "complete": participated,
                 "latency_ms": None,
                 "error": None,
             }
@@ -97,8 +105,8 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
         "consensus": {
             "agreement": int(evidence.get("agreement", 0)),
             "source_agreement": int(evidence.get("source_agreement", 0)),
+            # Nhật ký đã lưu sẵn mã ẩn danh, không ánh xạ lại lần nữa.
             "independent_groups": list(evidence.get("independent_groups", [])),
-            "sources": accepted_sources,
         },
     }
 
@@ -110,7 +118,9 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    payload = build_payload(canonical=Path(args.canonical), audit_path=Path(args.audit))
+    payload = anonymise_snapshot(
+        build_payload(canonical=Path(args.canonical), audit_path=Path(args.audit))
+    )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -13,7 +13,14 @@ import requests
 
 from dtos import Result, ResultList
 from excel_export import export_excel_outputs
-from sources import HttpClient, Source, default_sources, source_independence_key
+from sources import (
+    HttpClient,
+    Source,
+    default_sources,
+    public_group_code,
+    public_source_code,
+    source_independence_key,
+)
 from time_policy import vietnam_date
 
 logger = logging.getLogger(__name__)
@@ -137,7 +144,7 @@ class Lottery:
         đó là kỳ của ngày ấy. Đo trên kho: 50 bản ghi kiểu này, thành 8 cụm
         trùng đúng vào Tết mỗi năm 2020-2026 và 23 ngày giãn cách 01-22/4/2020.
 
-        Kiểm đồng thuận hai nguồn không chặn được: cả bảy nguồn cùng đọc một
+        Kiểm đồng thuận hai nguồn không chặn được: mọi nguồn cùng đọc một
         trang tin, nên trong dạng hỏng này chúng không độc lập. Bốn bản ghi
         như vậy đã lọt vào 393 kỳ gốc trước khi bổ sung lịch sử.
 
@@ -211,7 +218,9 @@ class Lottery:
                     "agreement": 1,
                     "runner_up_agreement": 0,
                     "ambiguous_tie": False,
-                    "sources": [name],
+                    # Mã ẩn danh, không phải tên miền: tệp nhật ký này nằm
+                    # trong kho công khai.
+                    "sources": [public_source_code(name)],
                     "candidates": 1,
                 }
                 return True
@@ -260,9 +269,9 @@ class Lottery:
             "ambiguous_tie": ambiguous_tie,
             "source_agreement": len(best),
             "independent_groups": list(
-                dict.fromkeys(source_independence_key(name) for name, _ in best)
+                dict.fromkeys(public_group_code(name) for name, _ in best)
             ),
-            "sources": [name for name, _ in best],
+            "sources": [public_source_code(name) for name, _ in best],
             "candidates": len(candidates),
             "distinct_results": len(grouped),
         }
@@ -275,7 +284,7 @@ class Lottery:
         if accepted:
             twin = self._repeats_a_neighbour(selected_date, best[0][1])
             if twin is not None:
-                # Đồng thuận không cứu được dạng hỏng này: cả bảy nguồn cùng
+                # Đồng thuận không cứu được dạng hỏng này: mọi nguồn cùng
                 # đọc một trang tin nên chúng nhất trí về chính kết quả cũ.
                 logger.warning(
                     "Bỏ %s dù có đồng thuận: trùng khít kỳ %s — ngày không quay",

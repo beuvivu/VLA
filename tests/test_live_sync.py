@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import live_sync
+import sources
 from sources import PRIZE_ORDER
 
 
@@ -14,6 +15,17 @@ class FakeSource:
 
     def fetch_partial(self, selected_date, http, *, live=False):
         return self.pmap
+
+
+def _use(monkeypatch, primary, fallback) -> None:
+    """Thay hai TẦNG nguồn, không phải danh sách phẳng.
+
+    ``fetch_with_failover`` tra ``primary_sources``/``fallback_sources`` ngay
+    tại lúc gọi, nên vá ở module ``sources`` là đủ cho cả hai bên.
+    """
+    monkeypatch.setattr(sources, "primary_sources", lambda: list(primary))
+    monkeypatch.setattr(sources, "fallback_sources", lambda: list(fallback))
+    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
 
 
 def _map() -> dict[str, list[str]]:
@@ -30,8 +42,7 @@ def _map() -> dict[str, list[str]]:
 
 def test_live_snapshot_marks_complete_only_when_two_sources_verify_every_slot(monkeypatch) -> None:
     p = _map()
-    monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", p)])
-    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
+    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", p)], [])
     now = datetime(2026, 8, 30, 18, 30, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
     out = live_sync.fetch_snapshot(now=now)
     assert out["status"] == "complete_verified"
@@ -43,8 +54,7 @@ def test_live_snapshot_marks_complete_only_when_two_sources_verify_every_slot(mo
 
 def test_live_snapshot_normalizes_utc_clock_before_selecting_date(monkeypatch) -> None:
     p = _map()
-    monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", p)])
-    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
+    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", p)], [])
     out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 11, 30, tzinfo=UTC))
     assert out["draw_date"] == "2026-08-30"
     assert out["status"] == "complete_verified"
@@ -53,8 +63,7 @@ def test_live_snapshot_normalizes_utc_clock_before_selecting_date(monkeypatch) -
 def test_live_single_source_is_provisional_not_canonical_verified(monkeypatch) -> None:
     p = _map()
     empty = {k: [] for k in PRIZE_ORDER}
-    monkeypatch.setattr(live_sync, "default_sources", lambda: [FakeSource("a", p), FakeSource("b", empty)])
-    monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
+    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", empty)], [])
     now = datetime(2026, 8, 30, 18, 25, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
     out = live_sync.fetch_snapshot(now=now)
     assert out["complete"] is True

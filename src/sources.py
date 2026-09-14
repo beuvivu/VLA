@@ -223,16 +223,38 @@ class _TextPageSource:
     def live_url(self, selected_date: date) -> str:
         return self.date_url(selected_date)
 
+    def date_urls(self, selected_date: date) -> tuple[str, ...]:
+        """Các đường dẫn ứng viên cho một kỳ, thử theo thứ tự.
+
+        Hầu hết nguồn chỉ có một mẫu đã kiểm chứng nên trả về đúng một phần
+        tử. Nhiều phần tử dành cho nguồn mà mẫu đường dẫn CHƯA kiểm chứng
+        được từ môi trường này: thử lần lượt cho tới khi có khối giải bóc
+        được, thay vì chốt cứng một phỏng đoán rồi hỏng âm thầm.
+        """
+        return (self.date_url(selected_date),)
+
+    def live_urls(self, selected_date: date) -> tuple[str, ...]:
+        return (self.live_url(selected_date),)
+
     def select_section(self, html: str, selected_date: date) -> str:
         return html
 
     def fetch_partial(self, selected_date: date, http: HttpClient, *, live: bool = False) -> dict[str, list[str]]:
-        url = self.live_url(selected_date) if live else self.date_url(selected_date)
-        html = _request_page(http, url, timeout=15 if live else 20)
-        if not html:
-            return {k: [] for k in PRIZE_ORDER}
-        section = self.select_section(html, selected_date)
-        return extract_partial_prize_map(section)
+        urls = self.live_urls(selected_date) if live else self.date_urls(selected_date)
+        empty = {k: [] for k in PRIZE_ORDER}
+        best = empty
+        best_score = 0
+        for url in urls:
+            html = _request_page(http, url, timeout=15 if live else 20)
+            if not html:
+                continue
+            prize_map = extract_partial_prize_map(self.select_section(html, selected_date))
+            score = sum(len(prize_map[k]) for k in PRIZE_ORDER)
+            if score > best_score:
+                best, best_score = prize_map, score
+            if best_score == sum(EXPECTED_COUNTS.values()):
+                break
+        return best
 
     def fetch(self, selected_date: date, http: HttpClient) -> Result | None:
         prize_map = self.fetch_partial(selected_date, http, live=False)
@@ -361,20 +383,102 @@ class XsktVnSource(_TextPageSource):
         return text[start : min(len(text), start + 8000)]
 
 
+@dataclass(frozen=True)
+class XosoThuDoSource(_TextPageSource):
+    """Nguồn ưu tiên số một.
+
+    Mẫu đường dẫn CHƯA kiểm chứng được từ môi trường phát triển: sandbox chặn
+    toàn bộ HTTP ra ngoài (đã đo: ``example.com`` cũng trả 000). Vì vậy nguồn
+    này khai báo nhiều ứng viên và thử lần lượt, thay vì chốt cứng một phỏng
+    đoán rồi hỏng âm thầm.
+
+    Rủi ro được chặn ở tầng dưới chứ không phải ở đây: một nguồn không bóc
+    được gì thì đóng góp rỗng, và ``source_consensus_partial`` đòi ít nhất hai
+    NHÓM nhà cung cấp độc lập khớp nhau mới đánh dấu đã xác minh. Nguồn hỏng
+    làm mất bằng chứng, không làm sai dữ liệu.
+
+    Kiểm chứng bằng ``.github/workflows/inspect-reference-pages.yml`` — runner
+    của Actions gọi ra ngoài được. Khi biết mẫu đúng, rút danh sách còn một.
+    """
+
+    name: str = "xosothudo.com.vn"
+
+    def date_url(self, selected_date: date) -> str:
+        return self.date_urls(selected_date)[0]
+
+    def date_urls(self, selected_date: date) -> tuple[str, ...]:
+        return (
+            f"https://xosothudo.com.vn/xsmb-{selected_date:%d-%m-%Y}.html",
+            f"https://xosothudo.com.vn/ket-qua-xo-so-mien-bac/{selected_date:%d-%m-%Y}.html",
+            f"https://xosothudo.com.vn/xsmb/{selected_date:%d-%m-%Y}.html",
+        )
+
+    def live_urls(self, selected_date: date) -> tuple[str, ...]:
+        return (
+            "https://xosothudo.com.vn/tuong-thuat-truc-tiep-xsmb.html",
+            "https://xosothudo.com.vn/xsmb-truc-tiep.html",
+            *self.date_urls(selected_date),
+        )
+
+
+#: Hai tầng ưu tiên. Thứ tự trong mỗi tuple CHÍNH LÀ thứ tự ưu tiên khi các
+#: nguồn bất đồng, và cũng là thứ tự gọi.
+PRIMARY_SOURCE_NAMES: tuple[str, ...] = ("xosothudo.com.vn", "xoso.com.vn")
+FALLBACK_SOURCE_NAMES: tuple[str, ...] = (
+    "xskt.vn",
+    "mketqua.net",
+    "www.minhngoc.net.vn",
+    "xosominhngoc.com",
+    "xosodaiphat.com",
+    "hainhay.net",
+)
+
+#: Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
+#:
+#: Không phải để làm đẹp: yêu cầu là KHÔNG để lộ tên miền nguồn trên giao diện
+#: hay trong network request của client. Mã phải ỔN ĐỊNH để còn đối chiếu được
+#: giữa các kỳ, nên nó bám theo tầng và vị trí chứ không băm ngẫu nhiên.
+SOURCE_PUBLIC_CODE: dict[str, str] = {
+    **{name: f"P{i}" for i, name in enumerate(PRIMARY_SOURCE_NAMES, start=1)},
+    **{name: f"F{i}" for i, name in enumerate(FALLBACK_SOURCE_NAMES, start=1)},
+}
+
+
+def public_source_code(source_name: str) -> str:
+    """Mã ẩn danh của một nguồn. Tên lạ trả "?" chứ không trả chính tên."""
+    return SOURCE_PUBLIC_CODE.get(source_name, "?")
+
+
+def _source_registry() -> dict[str, Source]:
+    return {
+        "xosothudo.com.vn": XosoThuDoSource(),
+        "xoso.com.vn": XosoComVnSource(),
+        "xskt.vn": XsktVnSource(),
+        "mketqua.net": MketquaSource(),
+        "www.minhngoc.net.vn": MinhNgocSource(),
+        "xosominhngoc.com": XosoMinhNgocSource(),
+        "xosodaiphat.com": XosoDaiPhatSource(),
+        "hainhay.net": HainhaySource(),
+    }
+
+
+def primary_sources() -> list[Source]:
+    registry = _source_registry()
+    return [registry[name] for name in PRIMARY_SOURCE_NAMES]
+
+
+def fallback_sources() -> list[Source]:
+    registry = _source_registry()
+    return [registry[name] for name in FALLBACK_SOURCE_NAMES]
+
+
 def default_sources() -> list[Source]:
-    """Canonical source policy, in the exact business-priority order."""
-    return [
-        XosoComVnSource(),
-        MketquaSource(),
-        MinhNgocSource(),
-        XosoMinhNgocSource(),
-        XosoDaiPhatSource(),
-        HainhaySource(),
-        XsktVnSource(),
-    ]
+    """Toàn bộ nguồn, đúng thứ tự ưu tiên: tầng chính trước, dự phòng sau."""
+    return primary_sources() + fallback_sources()
 
 
 SOURCE_INDEPENDENCE_GROUP = {
+    "xosothudo.com.vn": "xosothudo",
     "xoso.com.vn": "xoso",
     "mketqua.net": "mketqua",
     # These two domains are Minh Ngọc-branded mirrors and therefore count as
@@ -498,3 +602,211 @@ def source_consensus_partial(
         "conflicts": conflicts,
         "slot_meta": slot_meta,
     }
+
+
+# --- Cơ chế chuyển nguồn -----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SourceObservation:
+    """Một lượt gọi tới một nguồn, kèm đủ dữ kiện để giải thích vì sao."""
+
+    name: str
+    tier: str
+    priority: int
+    prize_map: dict[str, list[str]]
+    error: str | None = None
+    latency_ms: int = 0
+
+    @property
+    def usable(self) -> bool:
+        """Có bóc được ít nhất một giá trị giải hay không.
+
+        Trạng thái HTTP 200 mà trang đổi bố cục thì vẫn là hỏng. Đếm theo giá
+        trị bóc được, không đếm theo mã trạng thái.
+        """
+        return any(self.prize_map.get(key) for key in PRIZE_ORDER)
+
+
+def independent_group_count(observations: list[SourceObservation]) -> int:
+    """Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được.
+
+    Đếm theo nhóm chứ không theo tên miền: hai trang cùng thương hiệu Minh Ngọc
+    không phải hai lời chứng độc lập.
+    """
+    return len(
+        {source_independence_key(o.name) for o in observations if o.usable}
+    )
+
+
+def primary_tier_is_sufficient(
+    observations: list[SourceObservation], *, min_agreement: int = 2
+) -> tuple[bool, str]:
+    """Tầng chính có đủ để KHÔNG cần gọi dự phòng hay không, kèm lý do.
+
+    Hai điều kiện, và điều kiện thứ hai mới là điều dễ bỏ sót:
+
+    1. Đủ ``min_agreement`` nhóm độc lập trả về dữ liệu dùng được. Thiếu nhóm
+       thì không thể xác minh, dù trang có trả HTTP 200.
+    2. Các nhóm ấy KHÔNG bất đồng ở bất kỳ ô nào. Hai nguồn chính đều chạy tốt
+       mà nói hai số khác nhau thì cũng không xác minh được gì — và im lặng
+       chấp nhận một trong hai theo thứ tự ưu tiên là cách một số sai lọt vào
+       lịch sử. Trường hợp này phải gọi thêm nguồn để phá thế hoà.
+
+    Thiếu giá trị KHÔNG phải bất đồng: lúc đang quay số các nguồn về số lệch
+    nhịp nhau là chuyện bình thường, và ``source_consensus_partial`` chỉ tính
+    xung đột khi hai nguồn đưa ra hai GIÁ TRỊ khác nhau cho cùng một ô.
+    """
+    groups = independent_group_count(observations)
+    if groups < min_agreement:
+        return False, f"chỉ có {groups} nhóm độc lập, cần {min_agreement}"
+    _, meta = source_consensus_partial(
+        [(o.name, o.prize_map) for o in observations if o.usable],
+        min_agreement=min_agreement,
+    )
+    conflicts = meta["conflicts"]
+    if conflicts:
+        return False, f"tầng chính bất đồng ở {len(conflicts)} ô"
+    return True, "tầng chính đủ"
+
+
+def fetch_with_failover(
+    fetch_one,
+    *,
+    min_agreement: int = 2,
+    run_batch=None,
+) -> tuple[list[SourceObservation], dict[str, object]]:
+    """Gọi tầng chính trước; chỉ chạm tới dự phòng khi tầng chính không đủ.
+
+    ``fetch_one(source, tier, priority) -> SourceObservation`` do bên gọi cung
+    cấp, nên hàm này không tự quyết định cách đi mạng và kiểm thử được bằng
+    hàm giả. ``run_batch(jobs)`` cho phép bên gọi chạy song song; mặc định
+    chạy tuần tự.
+
+    Trả về mọi quan sát đã thực hiện, theo đúng thứ tự ưu tiên, kèm nhật ký
+    nói rõ dự phòng có được kích hoạt hay không và vì sao.
+    """
+    if run_batch is None:
+        def run_batch(jobs):
+            return [fetch_one(*job) for job in jobs]
+
+    primary_jobs = [
+        (source, "primary", index)
+        for index, source in enumerate(primary_sources(), start=1)
+    ]
+    observations = list(run_batch(primary_jobs))
+    sufficient, reason = primary_tier_is_sufficient(
+        observations, min_agreement=min_agreement
+    )
+    log: dict[str, object] = {
+        "primary_attempted": len(primary_jobs),
+        "primary_usable_groups": independent_group_count(observations),
+        "fallback_activated": not sufficient,
+        "reason": reason,
+        "fallback_attempted": 0,
+    }
+    if sufficient:
+        return observations, log
+
+    offset = len(primary_jobs)
+    fallback_jobs = [
+        (source, "fallback", offset + index)
+        for index, source in enumerate(fallback_sources(), start=1)
+    ]
+    observations.extend(run_batch(fallback_jobs))
+    log["fallback_attempted"] = len(fallback_jobs)
+    log["usable_groups"] = independent_group_count(observations)
+    return observations, log
+
+
+# --- Ẩn nguồn khỏi mọi thứ ra tới trình duyệt --------------------------------
+#
+# Vì sao phải có một tầng riêng thay vì "nhớ đừng in tên ra": tên nguồn nằm rải
+# ở bốn chỗ khác nhau trong cùng một bản chụp — ``source_status``,
+# ``source_priority``, và bên trong ``slot_meta`` là ``support``,
+# ``support_groups`` cùng các khoá của ``observations``. Bỏ sót một chỗ là lộ
+# hết, nên phép ẩn danh phải là MỘT hàm duy nhất có thể kiểm được, và có một
+# phép kiểm quét toàn bộ tải trọng tìm tên miền.
+
+#: Mã nhóm nhà cung cấp, ẩn danh và ổn định.
+SOURCE_PUBLIC_GROUP_CODE: dict[str, str] = {
+    key: f"G{index}"
+    for index, key in enumerate(
+        dict.fromkeys(
+            SOURCE_INDEPENDENCE_GROUP[name]
+            for name in (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES)
+        ),
+        start=1,
+    )
+}
+
+
+def public_group_code(source_name_or_group: str) -> str:
+    """Mã nhóm ẩn danh. Nhận cả tên nguồn lẫn khoá nhóm."""
+    key = SOURCE_INDEPENDENCE_GROUP.get(source_name_or_group, source_name_or_group)
+    return SOURCE_PUBLIC_GROUP_CODE.get(key, "?")
+
+
+def anonymise_slot_meta(slot_meta: dict[str, object]) -> dict[str, object]:
+    """Thay mọi tên nguồn trong siêu dữ liệu từng ô bằng mã ẩn danh."""
+    out: dict[str, object] = {}
+    for slot, raw in slot_meta.items():
+        meta = dict(raw) if isinstance(raw, dict) else {}
+        meta["support"] = [public_source_code(n) for n in meta.get("support", [])]
+        meta["support_groups"] = [
+            public_group_code(g) for g in meta.get("support_groups", [])
+        ]
+        observations = meta.get("observations", {})
+        meta["observations"] = {
+            value: [public_source_code(n) for n in names]
+            for value, names in (
+                observations.items() if isinstance(observations, dict) else []
+            )
+        }
+        out[slot] = meta
+    return out
+
+
+def anonymise_source_status(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Bỏ tên miền khỏi bảng trạng thái nguồn, giữ mọi thứ còn lại.
+
+    ``error`` bị bỏ hẳn chứ không cắt ngắn: thông điệp lỗi của thư viện HTTP
+    hầu như luôn kèm tên miền hoặc địa chỉ IP. Lý do hỏng vẫn giữ được ở dạng
+    cờ ``failed``, đủ để người xem biết có nguồn trục trặc.
+    """
+    out: list[dict[str, object]] = []
+    for raw in rows:
+        row = dict(raw)
+        name = str(row.pop("source", ""))
+        row.pop("provider_group", None)
+        error = row.pop("error", None)
+        row["source_code"] = public_source_code(name)
+        row["provider_code"] = public_group_code(name)
+        row["failed"] = error is not None
+        out.append(row)
+    return out
+
+
+def anonymise_snapshot(payload: dict[str, object]) -> dict[str, object]:
+    """Bản chụp công khai: giữ nguyên mọi con số, bỏ sạch danh tính nguồn."""
+    public = dict(payload)
+    status = public.get("source_status")
+    if isinstance(status, list):
+        public["source_status"] = anonymise_source_status(status)
+    if "source_priority" in public:
+        public["source_priority"] = [
+            public_source_code(name)
+            for name in (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES)
+        ]
+    slot_meta = public.get("slot_meta")
+    if isinstance(slot_meta, dict):
+        public["slot_meta"] = anonymise_slot_meta(slot_meta)
+    return public
+
+
+def known_source_domains() -> tuple[str, ...]:
+    """Mọi chuỗi định danh nguồn mà tải trọng công khai KHÔNG được chứa."""
+    names = (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES)
+    groups = tuple(dict.fromkeys(SOURCE_INDEPENDENCE_GROUP[n] for n in names))
+    bare = tuple(n.removeprefix("www.").split(".")[0] for n in names)
+    return tuple(dict.fromkeys(names + groups + bare))

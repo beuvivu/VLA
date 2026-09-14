@@ -41,7 +41,7 @@ Worker mới là đảm bảo.
 ```
 Cron Cloudflare ──mỗi phút 18:08-18:59 ICT──▶ scheduled()
                  (và 5 phút/lần 19:00-19:55)
-                                                 │ đọc 7 nguồn, đồng thuận
+                                                 │ đọc 2 nguồn chính, đồng thuận
                                                  ▼
                                              Workers KV
                                                  │
@@ -185,22 +185,98 @@ Chốt so theo **ngày quay**, không chỉ theo trạng thái. So theo trạng 
 thì ảnh chụp đã xác minh của hôm qua sẽ chặn luôn việc thu thập hôm nay, và hệ
 thống đứng im vĩnh viễn sau đúng một ngày thành công.
 
-## 6. Điều CHƯA kiểm chứng được
+## 6. Chính sách nguồn: hai tầng, ẩn danh
+
+### Thứ tự ưu tiên
+
+| Tầng | Mã | Nguồn |
+|---|---|---|
+| Chính | `P1` | `xosothudo.com.vn` |
+| Chính | `P2` | `xoso.com.vn` |
+| Dự phòng | `F1` | `xskt.vn` |
+| Dự phòng | `F2` | `mketqua.net` |
+| Dự phòng | `F3` | `www.minhngoc.net.vn` |
+| Dự phòng | `F4` | `xosominhngoc.com` |
+| Dự phòng | `F5` | `xosodaiphat.com` |
+| Dự phòng | `F6` | `hainhay.net` |
+
+Danh sách nằm ở **một chỗ duy nhất**: `PRIMARY_SOURCE_NAMES` và
+`FALLBACK_SOURCE_NAMES` trong `src/sources.py`. Bản JS
+(`worker/src/sources.js`) bị `tests/test_worker_sources_parity.py` buộc khớp
+từng mục, và `src/reconcile_live_canonical.py` nhập lại thay vì chép —
+bản chép tay trước đó là thứ đã bị gỡ.
+
+### Khi nào tầng dự phòng được gọi
+
+Chỉ khi tầng chính **không đủ để xác minh**. Hai điều kiện, và điều kiện thứ
+hai mới là điều dễ bỏ sót:
+
+1. Không đủ hai **nhóm nhà cung cấp độc lập** trả về dữ liệu bóc được. Trạng
+   thái HTTP 200 mà trang đổi bố cục thì vẫn tính là hỏng.
+2. Hai nguồn chính **bất đồng** ở bất kỳ ô nào. Cả hai đều chạy tốt mà nói hai
+   số khác nhau thì cũng không xác minh được gì, và im lặng lấy nguồn ưu tiên
+   cao hơn là cách một số sai lọt vào lịch sử.
+
+Thiếu giá trị **không phải** bất đồng: lúc đang quay số các nguồn về số lệch
+nhịp nhau là bình thường. Nếu coi đó là bất đồng thì suốt cả kỳ quay, mỗi lượt
+thăm dò 5 giây sẽ kích hoạt cả sáu nguồn dự phòng.
+
+Quyết định này nằm ở `sources.primary_tier_is_sufficient` và
+`snapshot.js::primaryTierIsSufficient`, và `tests/test_source_failover_parity.py`
+buộc hai bên cho cùng kết luận trên từng ca.
+
+### Ẩn nguồn
+
+Không thứ gì ra tới trình duyệt được mang tên miền nguồn. Bản chụp công khai
+chỉ có mã `P1`/`F3` và mã nhóm `G1`…`G7`; thông điệp lỗi bị **bỏ hẳn** chứ
+không cắt ngắn, vì tên miền thường nằm ngay đầu chuỗi.
+
+Phép ẩn danh chạy ở **ranh giới ghi**, không phải lúc hiển thị:
+
+* Worker ẩn danh **trước khi ghi vào KV**, nên mọi đường đọc — kể cả đường
+  thêm về sau — đều an toàn theo cấu trúc.
+* `live_sync.py` và `reconcile_live_canonical.py` ẩn danh trước khi ghi tệp.
+* `data/source_audit.json` lưu mã, không lưu tên miền.
+
+`tests/test_source_privacy.py` **quét toàn bộ tải trọng** tìm mọi chuỗi định
+danh nguồn, thay vì kiểm từng khoá — tên nguồn nằm rải ở bốn chỗ khác nhau
+trong cùng một bản chụp, nên phép kiểm liệt kê sẽ xanh trong khi khoá thứ năm
+ai đó vừa thêm thì lộ.
+
+Chi tiết từng nguồn vẫn xem được khi cần: `wrangler tail` cho Worker, và nhật
+ký chạy của Actions — cả hai đều không công khai.
+
+### Mẫu đường dẫn của nguồn mới chưa được đối chiếu
+
+`xosothudo.com.vn` là nguồn mới, và sandbox phát triển chặn toàn bộ HTTP ra
+ngoài (đo được: `example.com` cũng trả `000`), nên **mẫu đường dẫn của nó chưa
+được đối chiếu với trang thật**. Vì vậy nguồn này khai báo **nhiều đường dẫn
+ứng viên** và thử lần lượt, giữ bản bóc được nhiều giá trị nhất.
+
+Rủi ro được chặn ở tầng dưới: một nguồn không bóc được gì thì đóng góp rỗng,
+và phép đồng thuận đòi hai nhóm độc lập khớp nhau mới đánh dấu đã xác minh.
+Nguồn hỏng làm **mất bằng chứng**, không làm **sai dữ liệu**.
+
+Để xác minh, chạy workflow `inspect-reference-pages.yml` với địa chỉ cần kiểm
+— runner của Actions gọi ra ngoài được. Khi biết mẫu đúng, rút danh sách ứng
+viên còn một.
+
+## 7. Điều CHƯA kiểm chứng được
 
 **Bộ phân tích chưa từng chạy trên HTML thật trong môi trường dựng.** Proxy
-của môi trường phát triển chặn toàn bộ sáu trang nguồn (`curl` trả `000`). Mọi
+của môi trường phát triển chặn toàn bộ các trang nguồn (`curl` trả `000`). Mọi
 phép kiểm ở mục 5 chạy trên mẫu dựng tay và dữ liệu sinh ra, **không** phải
 trang thật hôm nay.
 
 **Các nguồn có thể chặn IP trung tâm dữ liệu.** Worker gọi từ mạng Cloudflare,
-không phải từ máy gia đình. Có bảy nguồn nên xác suất chặn hết là thấp, nhưng
-tôi không đo được từ đây. Bước 4 là phép thử thật đầu tiên: nếu cả sáu dòng
-`source_status` đều có `error`, đó chính là hiện tượng này.
+không phải từ máy gia đình. Có tám nguồn nên xác suất chặn hết là thấp, nhưng
+tôi không đo được từ đây. Bước 4 là phép thử thật đầu tiên: nếu mọi dòng
+`source_status` đều có `failed: true`, đó chính là hiện tượng này.
 
 Nếu gặp: đường lùi vẫn nguyên vẹn. Xoá nội dung `window.LIVE_WORKER_URL` là
 trang quay về đúng hành vi hôm nay, không mất gì.
 
-## 7. Hạn mức và chi phí
+## 8. Hạn mức và chi phí
 
 Gói Workers Free: 100 000 lượt gọi/ngày. Cron gọi tối đa ~64 lượt/ngày, và thường ít hơn nhiều vì dừng ngay khi kỳ đã xác minh xong. KV free:
 1 000 lượt ghi/ngày (ta dùng ~85) và 100 000 lượt đọc/ngày.
@@ -209,7 +285,7 @@ Lượt đọc là chỗ duy nhất có thể chạm trần: mỗi người xem 
 trong 40 phút là ~480 lượt. Worker đặt `Cache-Control` theo trạng thái (3 giây
 khi đang về số, 60 giây khi đã xác minh) nên biên Cloudflare đỡ phần lớn.
 
-## 8. Gỡ bỏ
+## 9. Gỡ bỏ
 
 ```bash
 cd worker && npx wrangler delete
