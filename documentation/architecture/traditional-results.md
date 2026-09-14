@@ -1,5 +1,73 @@
 # Sổ kết quả truyền thống — schema và luồng dữ liệu
 
+## Trang tĩnh: toàn bộ lịch sử nhúng sẵn, không gọi mạng
+
+`docs/so-ket-qua-truyen-thong.html` **không** gọi REST endpoint mô tả ở dưới.
+Nó mang sẵn toàn bộ lịch sử ở dạng nén và chạy hoàn toàn trong trình duyệt.
+Endpoint vẫn còn trên Worker cho các bên gọi khác; phần này nói về TRANG.
+
+### Vì sao đổi: đây là nguyên nhân lỗi "không tra cứu được quá khứ"
+
+Bản trước nhúng `limit=500` kỳ ở dạng JSON đầy đủ. Đo được:
+
+| | Số kỳ | Dung lượng | Dải phủ |
+|---|---|---|---|
+| Bản cũ, JSON đầy đủ | 500 | 658 KB | 2025-04-29 → 2026-09-14 |
+| Bản mới, dạng nén | 2 399 | 281 KB | 2020-01-01 → 2026-09-14 |
+
+Nhỏ hơn **2,3 lần** mà phủ nhiều hơn **4,8 lần**. Logic lọc ngày của bản cũ
+vốn đúng — nó lọc đúng, trả về rỗng, rồi hiện "Chưa có kết quả trong khoảng
+đã chọn", đọc như thể hôm ấy không quay. Hai ô chọn ngày cũng không có
+`min`/`max`, nên trình duyệt cho chọn cả năm 1999.
+
+### Định dạng nén
+
+Mỗi kỳ là **một chuỗi 117 ký tự**: `YYYY-MM-DD` + 107 chữ số giải, ghép theo
+đúng thứ tự và độ rộng của `PRIZE_SPEC`.
+
+```
+2026-09-14 83772 68785 50518 27452 … 66 21 34 78
+└ 10 ký tự ┘└──────────── 107 chữ số ────────────┘
+```
+
+Mọi thứ bị bỏ đi đều suy lại được ở trình duyệt:
+
+| Bỏ đi | Suy lại bằng |
+|---|---|
+| `head_tail` (20 mảng mỗi kỳ) | `headTail()` tính từ chính các giải |
+| nhãn và độ rộng giải | `const PRIZES` — hằng số, giống nhau mọi kỳ |
+| `region`/`province`/`status`/`source` | giống hệt nhau ở cả 2 399 kỳ |
+
+Bảng `PRIZE_SPEC` bên Python và `const PRIZES` bên JS phải khớp từng mục.
+Lệch nhau thì trang vẫn dựng được nhưng **cắt sai chuỗi và hiện số rác** —
+`tests/test_traditional_results_page.py` khoá điều đó.
+
+### Tính năng
+
+- 12 mốc khoảng thời gian: 10/30/60/90/100/120/200/300/500/1000 kỳ, toàn bộ
+  lịch sử, hoặc chọn khoảng ngày. Mốc đếm theo **số kỳ** chứ không theo ngày
+  lịch: XSMB nghỉ quay dịp Tết, nên "lùi 30 ngày lịch" có thể chỉ ra 27 kỳ.
+- 4 bố cục cột (1/2/3/4), như bốn nút chọn bố cục của trang tham chiếu.
+- 3 công tắc ẩn/hiện: bảng đầu đuôi, dãy lô tô 27 số, tô đậm hai số cuối.
+- Xuất CSV (BOM UTF-8) và Excel `.xlsx` thật (gói OOXML dựng tại chỗ, không
+  CDN), cộng nút in với `@media print` bỏ hết phần điều khiển.
+
+### Kiểm chứng bằng trình duyệt thật
+
+`scripts/check_traditional_results_page.py` mở trang trong Chromium và đo.
+Hai lỗi chỉ lộ ra khi render, không đọc CSS mà thấy được:
+
+1. Chân bảng lấn lề: bản cũ đo được **1 px** giữa hàng giải cuối và cạnh
+   dưới khung. Cột phải có 14 px đệm còn cột trái không có gì.
+2. Bản sửa đầu tiên vẫn để chân tụt về **2 px**, nhưng chỉ ở tổ hợp
+   "màn hình ≤ 900 px + ẩn cả hai bảng phụ" — quy tắc `padding-bottom:0` ở
+   media query giả định luôn có cột phụ nằm dưới. Phép quét 96 tổ hợp
+   (6 bề rộng × 4 bố cục × 4 trạng thái công tắc) bắt được ngay.
+
+Kịch bản cũng đối chiếu **số giải đặc biệt thật** của từng kỳ với
+`data/xsmb.csv`, chứ không chỉ đếm số dòng.
+
+
 ## Phạm vi Miền Bắc
 
 Chỉ phục vụ Miền Bắc (`north/hanoi`), theo schema XSMB 27 số và 8 hạng giải

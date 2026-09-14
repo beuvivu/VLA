@@ -21,15 +21,17 @@ background:var(--vla-surface);box-shadow:var(--vla-sh-sm)}
 .tr-filter h2{margin:3px 0 0;font-size:20px}.tr-section-kicker{color:var(--vla-brand)!important;margin:0}
 .tr-source-status{margin:0;max-width:520px;text-align:right;color:var(--vla-ink-soft);font-size:12px}
 .tr-source-status[data-state="error"]{color:var(--vla-bad)}
-.tr-source-status[data-state="loading"]{color:var(--vla-brand)}
-.tr-form{display:grid;grid-template-columns:minmax(190px,1fr) minmax(180px,.8fr) minmax(250px,1.2fr) auto;
+.tr-form{display:grid;grid-template-columns:minmax(210px,.9fr) minmax(260px,1.2fr) auto;
 gap:16px;align-items:end}
 .tr-form label{display:grid;gap:7px;color:var(--vla-ink-soft);font-size:12px;font-weight:700}
-.tr-form select,.tr-form input{width:100%;height:44px;padding:0 12px;border:1px solid var(--vla-border-strong);
-border-radius:12px;background:var(--vla-surface-2);color:var(--vla-ink);font:inherit;font-weight:600;outline:none}
-.tr-form select:focus,.tr-form input:focus{border-color:var(--vla-brand);box-shadow:0 0 0 3px var(--vla-brand-soft)}
+.tr-form select,.tr-form input[type=date]{width:100%;height:44px;padding:0 12px;
+border:1px solid var(--vla-border-strong);border-radius:12px;background:var(--vla-surface-2);
+color:var(--vla-ink);font:inherit;font-weight:600;outline:none}
+.tr-form select:focus,.tr-form input[type=date]:focus{border-color:var(--vla-brand);
+box-shadow:0 0 0 3px var(--vla-brand-soft)}
 .tr-custom-dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tr-actions{display:flex;gap:8px;flex-wrap:wrap}.tr-btn{min-height:44px;padding:0 16px;border:1px solid var(--vla-border-strong);
+.tr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tr-btn{min-height:44px;padding:0 16px;border:1px solid var(--vla-border-strong);
 border-radius:12px;background:var(--vla-surface);color:var(--vla-ink-2);font:inherit;font-weight:800;cursor:pointer;
 transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 .tr-btn:hover{transform:translateY(-1px);border-color:var(--vla-brand-border);box-shadow:var(--vla-sh-sm)}
@@ -37,24 +39,65 @@ transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 .tr-btn-primary{border-color:transparent;background:var(--vla-brand);color:var(--vla-on-brand);box-shadow:var(--vla-sh-brand)}
 .tr-btn:disabled{opacity:.55;cursor:wait;transform:none}
 
+/* Hàng tuỳ chọn hiển thị: bố cục cột và các công tắc ẩn/hiện. */
+.tr-view-options{display:flex;flex-wrap:wrap;gap:12px 28px;margin-top:20px;padding-top:18px;
+border-top:1px solid var(--vla-border)}
+.tr-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0;padding:0;border:0}
+.tr-chips legend{float:left;margin-right:10px;padding:0;color:var(--vla-ink-soft);
+font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:30px}
+.tr-chip{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;
+border:1px solid var(--vla-border-strong);border-radius:999px;background:var(--vla-surface-2);
+color:var(--vla-ink-2);font-size:12px;font-weight:700;cursor:pointer;user-select:none;
+transition:border-color .16s ease,background .16s ease,color .16s ease}
+.tr-chip input{margin:0;accent-color:var(--vla-brand)}
+.tr-chip:hover{border-color:var(--vla-brand-border)}
+.tr-chip:has(input:checked){border-color:var(--vla-brand);background:var(--vla-brand-soft);color:var(--vla-brand-ink)}
+.tr-chip:has(input:focus-visible){outline:3px solid var(--vla-brand-border);outline-offset:2px}
+
 .tr-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
 .tr-summary>div{display:grid;gap:4px;padding:16px 18px;border:1px solid var(--vla-border);border-radius:16px;
 background:var(--vla-surface);box-shadow:var(--vla-sh-sm)}
 .tr-summary span{color:var(--vla-ink-soft);font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
 .tr-summary strong{color:var(--vla-ink);font-size:22px;font-variant-numeric:tabular-nums}
 
-.tr-results{display:grid;gap:18px}.tr-day{border:1px solid var(--vla-border);border-radius:20px;
+/* Lưới nhiều cột theo lựa chọn bố cục. */
+.tr-results{display:grid;gap:18px}
+.tr-results[data-layout="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tr-results[data-layout="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tr-results[data-layout="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+/* Nhiều cột thì khung hẹp lại, nên xếp bảng phụ xuống dưới thay vì cạnh bên. */
+.tr-results:not([data-layout="1"]) .tr-day-grid{grid-template-columns:1fr}
+.tr-results:not([data-layout="1"]) .tr-prizes{border-right:0;border-bottom:1px solid var(--vla-border)}
+.tr-results[data-headtail="off"] .tr-head-tail{display:none}
+.tr-results[data-loto="off"] .tr-loto{display:none}
+/* Ẩn cả hai bảng phụ thì cột bên phải rỗng — bỏ luôn cột, đừng để khoảng trắng. */
+.tr-results[data-headtail="off"][data-loto="off"] .tr-day-grid{grid-template-columns:1fr}
+.tr-results[data-headtail="off"][data-loto="off"] .tr-prizes{border-right:0}
+.tr-results[data-headtail="off"][data-loto="off"] .tr-day-side{display:none}
+.tr-results[data-tail="off"] .tr-special-tail{background:none;color:inherit;box-shadow:none;padding:0}
+
+.tr-day{display:flex;flex-direction:column;border:1px solid var(--vla-border);border-radius:20px;
 background:var(--vla-surface);box-shadow:var(--vla-sh-sm);overflow:hidden}
 .tr-day-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;
 border-bottom:1px solid var(--vla-border);background:var(--vla-surface-2)}
-.tr-day-title{display:grid;gap:2px}.tr-day-title h2{margin:0;font-size:17px}.tr-day-title time{color:var(--vla-ink-soft);font-size:12px}
+.tr-day-title{display:grid;gap:2px}.tr-day-title h2{margin:0;font-size:17px}
+.tr-day-title time{color:var(--vla-ink-soft);font-size:12px}
 .tr-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:4px 10px;border-radius:999px;
 font-size:11px;font-weight:800;white-space:nowrap;background:var(--vla-ok-soft);color:var(--vla-ok);border:1px solid var(--vla-ok-border)}
-.tr-badge[data-source="xskt_fallback"]{background:var(--vla-warn-soft);color:var(--vla-warn);border-color:var(--vla-warn-border)}
-.tr-day-grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(290px,4fr);gap:0}
-.tr-prizes{border-right:1px solid var(--vla-border)}
-.tr-prize-row{display:grid;grid-template-columns:112px minmax(0,1fr);min-height:58px;border-bottom:1px solid var(--vla-border)}
-.tr-prize-row:last-child{border-bottom:0}.tr-prize-label{display:flex;align-items:center;padding:10px 16px;
+
+/* SỬA LỖI CHÂN BẢNG LẤN LỀ.
+   Trước đây `.tr-prizes` không có đệm nào, nên hàng giải cuối cùng nằm sát
+   ngay cạnh dưới của khung — trong khi cột bên phải lại có 14px đệm, làm hai
+   bên lệch hẳn nhau. Đệm dưới đặt trên chính hai cột (chứ không trên
+   `.tr-day`) để đường kẻ dọc phân cách vẫn chạy hết chiều cao. */
+.tr-day-grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(290px,4fr);gap:0;
+align-items:stretch;flex:1}
+.tr-prizes{display:flex;flex-direction:column;padding-bottom:14px;border-right:1px solid var(--vla-border)}
+.tr-day-side{display:flex;flex-direction:column;gap:4px;padding-bottom:14px;min-width:0}
+.tr-prize-row{display:grid;grid-template-columns:112px minmax(0,1fr);min-height:58px;
+border-bottom:1px solid var(--vla-border)}
+.tr-prize-row:last-child{border-bottom:0}
+.tr-prize-label{display:flex;align-items:center;padding:10px 16px;
 border-right:1px solid var(--vla-border);background:var(--vla-surface-2);font-size:12px;font-weight:800;color:var(--vla-ink-soft)}
 .tr-number-grid{display:grid;grid-template-columns:repeat(var(--count),minmax(64px,1fr));align-items:stretch}
 .tr-number{display:flex;align-items:center;justify-content:center;min-height:58px;padding:8px 5px;
@@ -67,30 +110,63 @@ font-variant-numeric:tabular-nums;letter-spacing:.02em}
 box-shadow:inset 0 0 0 1px #fecaca}
 :root[data-vla-theme="dark"] .tr-special-tail{background:#451a1a;color:#fca5a5;box-shadow:inset 0 0 0 1px #7f1d1d}
 
-.tr-head-tail{padding:14px}.tr-head-tail h3{margin:0 0 10px;font-size:13px}
+.tr-head-tail,.tr-loto{padding:14px 14px 0}
+.tr-head-tail h3,.tr-loto h3{margin:0 0 10px;font-size:13px}
 .tr-head-tail-scroll{overflow-x:auto;border:1px solid var(--vla-border);border-radius:12px}
 .tr-head-tail table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
 .tr-head-tail th{padding:8px 6px;background:var(--vla-surface-2);color:var(--vla-ink-soft);font-weight:800;
 text-align:left;border-bottom:1px solid var(--vla-border)}
 .tr-head-tail td{padding:6px;border-bottom:1px solid var(--vla-border);vertical-align:top}
-.tr-head-tail tr:last-child td{border-bottom:0}.tr-digit{width:28px;text-align:center!important;color:var(--vla-brand);font-weight:900}
+.tr-head-tail tr:last-child td{border-bottom:0}
+.tr-digit{width:28px;text-align:center!important;color:var(--vla-brand);font-weight:900}
 .tr-digit-list{display:flex;gap:3px;flex-wrap:wrap;min-width:78px}
+.tr-dash{color:var(--vla-ink-soft)}
 .tr-mini{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;
 border-radius:5px;background:var(--vla-brand-soft);color:var(--vla-brand-ink);font-weight:800}
+.tr-loto-list{display:flex;flex-wrap:wrap;gap:4px}
+.tr-loto-item{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;
+padding:0 5px;border:1px solid var(--vla-border);border-radius:7px;background:var(--vla-surface-2);
+color:var(--vla-ink-2);font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Nút "xem thêm" trải hết mọi cột của lưới, đứng cuối danh sách. */
+.tr-more{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0 8px}
+.tr-more .tr-btn{min-width:240px}
+
 .tr-empty{display:grid;place-items:center;gap:4px;min-height:220px;padding:32px;border:1px dashed var(--vla-border-strong);
 border-radius:20px;background:var(--vla-surface);text-align:center;color:var(--vla-ink-soft)}
 .tr-empty strong{color:var(--vla-ink);font-size:17px}
 
-@media (max-width:1180px){.tr-form{grid-template-columns:1fr 1fr}.tr-actions{grid-column:1/-1}.tr-custom-dates{min-width:0}}
-@media (max-width:900px){.tr-day-grid{grid-template-columns:1fr}.tr-prizes{border-right:0;border-bottom:1px solid var(--vla-border)}
-.tr-head-tail{padding:16px}.tr-summary{grid-template-columns:1fr 1fr}}
+@media (max-width:1400px){.tr-results[data-layout="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1180px){.tr-form{grid-template-columns:1fr 1fr}.tr-actions{grid-column:1/-1}.tr-custom-dates{min-width:0}
+.tr-results[data-layout="3"],.tr-results[data-layout="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.tr-day-grid{grid-template-columns:1fr}
+.tr-prizes{border-right:0;border-bottom:1px solid var(--vla-border);padding-bottom:0}
+/* Khi hai bảng phụ bị ẩn thì KHÔNG còn gì nằm dưới để tạo khoảng trống, nên
+   cột giải phải tự giữ đệm. Bỏ sót nhánh này thì chân bảng tụt về 2px —
+   đúng lỗi ban đầu, chỉ khác là nó chỉ xuất hiện ở một tổ hợp cụ thể. Phép
+   quét 96 trạng thái trong `tests/test_traditional_results_layout.py` bắt
+   được nó; đọc mắt thường thì không. */
+.tr-results[data-headtail="off"][data-loto="off"] .tr-prizes{padding-bottom:14px;border-bottom:0}
+.tr-summary{grid-template-columns:1fr 1fr}}
+@media (max-width:760px){.tr-results[data-layout="2"],.tr-results[data-layout="3"],
+.tr-results[data-layout="4"]{grid-template-columns:1fr}}
 @media (max-width:640px){.tr-hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:18px}
 .tr-trust{width:100%}.tr-filter{padding:18px}.tr-filter-head{display:grid}.tr-source-status{text-align:left}
 .tr-form{grid-template-columns:1fr}.tr-custom-dates{grid-template-columns:1fr 1fr}.tr-actions{grid-column:auto}.tr-btn{flex:1 1 auto}
+.tr-view-options{gap:10px 16px}.tr-chips legend{float:none;width:100%;line-height:1.4;margin:0 0 4px}
 .tr-summary{grid-template-columns:1fr 1fr;gap:8px}.tr-summary>div{padding:12px}.tr-summary strong{font-size:18px}
 .tr-day-head{align-items:flex-start;padding:14px 16px}.tr-day-title h2{font-size:15px}.tr-badge{font-size:10px}
 .tr-prize-row{grid-template-columns:76px minmax(0,1fr);min-height:52px}.tr-prize-label{padding:8px;font-size:11px}
-.tr-number{min-width:54px;min-height:52px;font-size:15px}.tr-number-grid{overflow-x:auto;grid-template-columns:repeat(var(--count),minmax(54px,1fr))}
+.tr-number{min-width:54px;min-height:52px;font-size:15px}
+.tr-number-grid{overflow-x:auto;grid-template-columns:repeat(var(--count),minmax(54px,1fr))}
 .tr-prize-row[data-prize="special"] .tr-number{min-height:66px}.tr-prize-row[data-prize="special"]{min-height:66px}}
 @media (max-width:390px){.tr-custom-dates{grid-template-columns:1fr}.tr-summary{grid-template-columns:1fr 1fr}}
-@media (prefers-reduced-motion:reduce){.tr-btn{transition:none}}
+@media (prefers-reduced-motion:reduce){.tr-btn,.tr-chip{transition:none}}
+
+/* In sổ: bỏ mọi thứ điều khiển, giữ đúng phần kết quả. */
+@media print{
+.tr-hero,.tr-filter,.tr-summary{display:none!important}
+.tr-results{display:block!important}
+.tr-day{break-inside:avoid;page-break-inside:avoid;margin-bottom:12px;box-shadow:none;border-color:#999}
+.tr-badge{display:none}
+}

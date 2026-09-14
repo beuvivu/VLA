@@ -1,10 +1,22 @@
 (() => {
   "use strict";
 
-  const EXPECTED = {
-    special: [1, 5], prize1: [1, 5], prize2: [2, 5], prize3: [6, 5],
-    prize4: [4, 4], prize5: [6, 4], prize6: [3, 3], prize7: [4, 2],
-  };
+  // Bản sao của PRIZE_SPEC bên Python: mã, nhãn, số lượng, độ rộng.
+  // `tests/test_traditional_results_page.py` buộc hai bản khớp nhau — lệch
+  // nhau thì trang vẫn dựng được nhưng cắt sai chuỗi và hiện số rác.
+  const PRIZES = [
+    ["special", "Đặc Biệt", 1, 5],
+    ["prize1", "Giải Nhất", 1, 5],
+    ["prize2", "Giải Nhì", 2, 5],
+    ["prize3", "Giải Ba", 6, 5],
+    ["prize4", "Giải Tư", 4, 4],
+    ["prize5", "Giải Năm", 6, 4],
+    ["prize6", "Giải Sáu", 3, 3],
+    ["prize7", "Giải Bảy", 4, 2],
+  ];
+  const DATE_WIDTH = 10;
+  const ROW_WIDTH = DATE_WIDTH + PRIZES.reduce((sum, [, , n, w]) => sum + n * w, 0);
+
   const embedded = JSON.parse(document.getElementById("tr-embedded-data").textContent);
   const form = document.getElementById("tr-form");
   const period = document.getElementById("tr-period");
@@ -13,9 +25,30 @@
   const toInput = document.getElementById("tr-to");
   const resultsNode = document.getElementById("tr-results");
   const emptyNode = document.getElementById("tr-empty");
+  const emptyDetail = document.getElementById("tr-empty-detail");
   const statusNode = document.getElementById("tr-source-status");
   const submit = form.querySelector('button[type="submit"]');
+  const moreNode = document.getElementById("tr-more");
+  const moreButton = document.getElementById("tr-more-btn");
+  const toggleHeadTail = document.getElementById("tr-toggle-headtail");
+  const toggleLoto = document.getElementById("tr-toggle-loto");
+  const toggleTail = document.getElementById("tr-toggle-tail");
+
   let current = [];
+  let shown = 0;
+
+  // Dựng dần thay vì dựng hết một lượt.
+  //
+  // Đo trên Chromium máy bàn: 2 399 kỳ sinh 545 060 nút DOM và mất 2 622 ms
+  // để dựng — trên điện thoại tầm trung con số ấy còn tệ hơn nhiều lần. Bộ
+  // lọc vẫn chọn TRỌN khoảng (và xuất file vẫn xuất trọn), chỉ phần hiển thị
+  // là dựng theo lô.
+  //
+  //     30 kỳ      6 811 nút     68 ms
+  //    300 kỳ     68 178 nút    347 ms
+  //  1 000 kỳ    227 227 nút  1 091 ms
+  //  2 399 kỳ    545 060 nút  2 622 ms
+  const PAGE_SIZE = 100;
 
   const el = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -24,28 +57,55 @@
     return node;
   };
 
-  function validDraw(draw) {
-    if (!draw || !/^\d{4}-\d{2}-\d{2}$/.test(draw.draw_date || "")) return false;
-    if (!Array.isArray(draw.prizes) || draw.prizes.length !== 8) return false;
-    const seen = new Set();
-    for (const prize of draw.prizes) {
-      const shape = EXPECTED[prize?.code];
-      if (!shape || seen.has(prize.code) || prize.width !== shape[1]) return false;
-      seen.add(prize.code);
-      if (!Array.isArray(prize.values) || prize.values.length !== shape[0]) return false;
-      if (prize.values.some((value) => !new RegExp(`^[0-9]{${shape[1]}}$`).test(value))) return false;
+  // ---- Giải mã một dòng nén -------------------------------------------
+  // Một dòng là `YYYY-MM-DD` + 107 chữ số. Cắt theo đúng bảng độ rộng ở
+  // trên, và từ chối mọi dòng sai độ dài thay vì cắt bừa.
+
+  function decode(row) {
+    if (typeof row !== "string" || row.length !== ROW_WIDTH) return null;
+    const date = row.slice(0, DATE_WIDTH);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    const digits = row.slice(DATE_WIDTH);
+    if (!/^\d+$/.test(digits)) return null;
+    const prizes = [];
+    let cursor = 0;
+    for (const [code, name, count, width] of PRIZES) {
+      const values = [];
+      for (let i = 0; i < count; i += 1) {
+        values.push(digits.slice(cursor, cursor + width));
+        cursor += width;
+      }
+      prizes.push({ code, name, width, values });
     }
-    return seen.size === Object.keys(EXPECTED).length;
+    return { date, prizes };
   }
 
-  function validPayload(payload) {
-    return payload && payload.schema_version === 1 && Array.isArray(payload.data)
-      && payload.data.every(validDraw);
+  /** Bảng đầu/đuôi tính TẠI TRÌNH DUYỆT thay vì nhúng sẵn — 20 mảng mỗi kỳ
+   *  nhân 2 399 kỳ là phần lớn dung lượng của bản trước. */
+  function headTail(draw) {
+    const heads = Array.from({ length: 10 }, () => []);
+    const tails = Array.from({ length: 10 }, () => []);
+    for (const prize of draw.prizes) {
+      for (const value of prize.values) {
+        const two = value.slice(-2);
+        heads[Number(two[0])].push(two[1]);
+        tails[Number(two[1])].push(two[0]);
+      }
+    }
+    for (let i = 0; i < 10; i += 1) { heads[i].sort(); tails[i].sort(); }
+    return { heads, tails };
   }
 
-  function sourceText(source) {
-    return source?.kind === "xskt_fallback" ? "Bù từ xskt.vn" : "CSDL VLA";
+  /** Toàn bộ 27 số lô tô của một kỳ, tăng dần. */
+  function lotoNumbers(draw) {
+    const out = [];
+    for (const prize of draw.prizes) {
+      for (const value of prize.values) out.push(value.slice(-2));
+    }
+    return out.sort();
   }
+
+  const ALL = embedded.rows.map(decode).filter((draw) => draw !== null);
 
   function formatDate(value, withWeekday = false) {
     const options = withWeekday
@@ -55,10 +115,12 @@
       .format(new Date(`${value}T12:00:00+07:00`));
   }
 
+  // ---- Dựng giao diện ---------------------------------------------------
+
   function renderDigitList(values) {
     const box = el("div", "tr-digit-list");
-    if (!Array.isArray(values) || values.length === 0) {
-      box.append(el("span", "", "—"));
+    if (!values || values.length === 0) {
+      box.append(el("span", "tr-dash", "—"));
       return box;
     }
     for (const value of values) box.append(el("span", "tr-mini", value));
@@ -78,22 +140,31 @@
     thead.append(headRow);
     table.append(thead);
     const tbody = el("tbody");
+    const { heads, tails } = headTail(draw);
     for (let digit = 0; digit <= 9; digit += 1) {
-      const key = String(digit);
       const row = el("tr");
-      row.append(el("td", "tr-digit", key));
-      const headValues = el("td");
-      headValues.append(renderDigitList(draw.head_tail?.heads?.[key] || []));
-      row.append(headValues);
-      row.append(el("td", "tr-digit", key));
-      const tailValues = el("td");
-      tailValues.append(renderDigitList(draw.head_tail?.tails?.[key] || []));
-      row.append(tailValues);
+      row.append(el("td", "tr-digit", String(digit)));
+      const headCell = el("td");
+      headCell.append(renderDigitList(heads[digit]));
+      row.append(headCell);
+      row.append(el("td", "tr-digit", String(digit)));
+      const tailCell = el("td");
+      tailCell.append(renderDigitList(tails[digit]));
+      row.append(tailCell);
       tbody.append(row);
     }
     table.append(tbody);
     scroll.append(table);
     section.append(scroll);
+    return section;
+  }
+
+  function renderLoto(draw) {
+    const section = el("section", "tr-loto");
+    section.append(el("h3", "", "Dãy lô tô (27 số)"));
+    const list = el("div", "tr-loto-list");
+    for (const value of lotoNumbers(draw)) list.append(el("span", "tr-loto-item", value));
+    section.append(list);
     return section;
   }
 
@@ -125,118 +196,128 @@
     const article = el("article", "tr-day");
     const header = el("header", "tr-day-head");
     const title = el("div", "tr-day-title");
-    title.append(el("h2", "", `Xổ số ${draw.province?.name || "Hà Nội"}`));
-    const time = el("time", "", formatDate(draw.draw_date, true));
-    time.dateTime = draw.draw_date;
+    title.append(el("h2", "", "Xổ số Miền Bắc"));
+    const time = el("time", "", formatDate(draw.date, true));
+    time.dateTime = draw.date;
     title.append(time);
     header.append(title);
-    const badge = el("span", "tr-badge", sourceText(draw.source));
-    badge.dataset.source = draw.source?.kind || "vla_db";
-    header.append(badge);
+    header.append(el("span", "tr-badge", "Đã đối chiếu"));
     article.append(header);
     const grid = el("div", "tr-day-grid");
     grid.append(renderPrizes(draw));
-    grid.append(renderHeadTail(draw));
+    const side = el("div", "tr-day-side");
+    side.append(renderHeadTail(draw));
+    side.append(renderLoto(draw));
+    grid.append(side);
     article.append(grid);
     return article;
   }
 
-  function counts(rows) {
-    return rows.reduce((out, draw) => {
-      if (draw.source?.kind === "xskt_fallback") out.xskt += 1;
-      else out.vla += 1;
-      return out;
-    }, { vla: 0, xskt: 0 });
+  // ---- Chọn khoảng ------------------------------------------------------
+  //
+  // Mốc nhanh đếm theo SỐ KỲ chứ không theo ngày lịch. XSMB nghỉ quay dịp Tết
+  // và đợt giãn cách 2020, nên "lùi 30 ngày lịch" có thể chỉ ra 27 kỳ — và
+  // người xem không hiểu vì sao chọn 30 lại được 27. Đếm theo kỳ thì luôn ra
+  // đúng số đã chọn, chừng nào lịch sử còn đủ.
+
+  function selectRows() {
+    if (period.value === "custom") {
+      if (!fromInput.value || !toInput.value) {
+        throw new Error("Vui lòng chọn đủ từ ngày và đến ngày.");
+      }
+      if (fromInput.value > toInput.value) {
+        throw new Error("Từ ngày không được sau đến ngày.");
+      }
+      return ALL.filter((d) => d.date >= fromInput.value && d.date <= toInput.value);
+    }
+    if (period.value === "all") return ALL.slice();
+    const amount = Number(period.value);
+    return Number.isFinite(amount) && amount > 0 ? ALL.slice(0, amount) : ALL.slice(0, 30);
   }
 
-  function render(rows, message = "") {
-    current = rows.filter(validDraw).sort((a, b) => b.draw_date.localeCompare(a.draw_date));
-    resultsNode.replaceChildren();
+  function emptyMessage() {
+    const first = ALL.at(-1)?.date;
+    const last = ALL[0]?.date;
+    if (!first) return "Chưa nạp được dữ liệu nào.";
+    if (period.value !== "custom") return "Hãy chọn khoảng khác.";
+    // Nói rõ vì sao rỗng. Bản trước chỉ hiện "Chưa có kết quả trong khoảng đã
+    // chọn", đọc như thể hôm ấy không quay — trong khi thật ra ngày đã chọn
+    // nằm ngoài dải dữ liệu.
+    if (toInput.value < first || fromInput.value > last) {
+      return `Khoảng đã chọn nằm ngoài dải dữ liệu. Sổ hiện có từ `
+        + `${formatDate(first)} đến ${formatDate(last)}.`;
+    }
+    return `Không có kỳ nào trong khoảng này. Sổ hiện có từ `
+      + `${formatDate(first)} đến ${formatDate(last)}.`;
+  }
+
+  function appendPage(count) {
     const fragment = document.createDocumentFragment();
-    for (const draw of current) fragment.append(renderDraw(draw));
-    resultsNode.append(fragment);
+    const until = Math.min(shown + count, current.length);
+    for (let i = shown; i < until; i += 1) fragment.append(renderDraw(current[i]));
+    shown = until;
+    moreNode.before(fragment);
+    moreNode.hidden = shown >= current.length;
+    moreButton.textContent = `Xem thêm ${Math.min(PAGE_SIZE, current.length - shown)} kỳ`
+      + ` (còn ${current.length - shown})`;
+  }
+
+  /** Dựng nốt phần còn lại — dùng trước khi in, vì trình duyệt chỉ in thứ đã có. */
+  function renderEverything() {
+    if (shown < current.length) appendPage(current.length - shown);
+  }
+
+  function render(rows, message) {
+    current = rows;
+    shown = 0;
+    resultsNode.replaceChildren(moreNode);
+    appendPage(PAGE_SIZE);
     emptyNode.hidden = current.length !== 0;
-    const sourceCounts = counts(current);
+    if (current.length === 0) emptyDetail.textContent = emptyMessage();
     document.getElementById("tr-result-count").textContent = String(current.length);
-    document.getElementById("tr-latest").textContent = current[0]
-      ? formatDate(current[0].draw_date) : "—";
-    document.getElementById("tr-vla-count").textContent = String(sourceCounts.vla);
-    document.getElementById("tr-xskt-count").textContent = String(sourceCounts.xskt);
-    statusNode.textContent = message || "Đang dùng dữ liệu chuẩn đã nhúng từ VLA.";
+    document.getElementById("tr-latest").textContent =
+      current[0] ? formatDate(current[0].date) : "—";
+    document.getElementById("tr-oldest").textContent =
+      current.at(-1) ? formatDate(current.at(-1).date) : "—";
+    document.getElementById("tr-total-count").textContent = String(ALL.length);
+    statusNode.textContent = message
+      || `Đang hiển thị ${current.length} kỳ trong tổng số ${ALL.length} kỳ đã lưu.`;
     statusNode.dataset.state = "ready";
   }
 
-  function rangeForLocal() {
-    if (period.value === "custom") {
-      if (!fromInput.value || !toInput.value) throw new Error("Vui lòng chọn đủ từ ngày và đến ngày.");
-      if (fromInput.value > toInput.value) throw new Error("Từ ngày không được sau đến ngày.");
-      return embedded.data.filter((draw) => draw.draw_date >= fromInput.value && draw.draw_date <= toInput.value);
-    }
-    const amount = Number(period.value);
-    const latest = embedded.data[0]?.draw_date;
-    if (!latest) return [];
-    const from = new Date(`${latest}T00:00:00Z`);
-    from.setUTCDate(from.getUTCDate() - amount + 1);
-    const lower = from.toISOString().slice(0, 10);
-    return embedded.data.filter((draw) => draw.draw_date >= lower && draw.draw_date <= latest);
-  }
-
-  function apiUrl() {
-    const configured = String(window.VLA_RESULTS_API_URL || "").trim();
-    if (!configured) return null;
-    const url = new URL(configured, window.location.href);
-    url.searchParams.set("region", "north");
-    url.searchParams.set("province", document.getElementById("tr-province").value);
-    if (period.value === "custom") {
-      if (!fromInput.value || !toInput.value) throw new Error("Vui lòng chọn đủ từ ngày và đến ngày.");
-      url.searchParams.set("from", fromInput.value);
-      url.searchParams.set("to", toInput.value);
-      url.searchParams.delete("days");
-    } else {
-      url.searchParams.set("days", period.value);
-      url.searchParams.delete("from");
-      url.searchParams.delete("to");
-    }
-    return url;
-  }
-
-  async function refresh() {
+  function refresh() {
     submit.disabled = true;
-    statusNode.textContent = "Đang kiểm tra CSDL VLA và các ngày còn thiếu…";
-    statusNode.dataset.state = "loading";
     try {
-      const url = apiUrl();
-      if (!url) {
-        render(rangeForLocal(), "Worker chưa cấu hình; đang dùng CSDL VLA đã nhúng trong trang.");
-        return;
-      }
-      const response = await fetch(url, { headers: { Accept: "application/json" } });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error || `HTTP ${response.status}`);
-      if (!validPayload(payload)) throw new Error("API trả dữ liệu sai hợp đồng schema_version=1.");
-      const vla = payload.meta?.source_counts?.vla_db || 0;
-      const xskt = payload.meta?.source_counts?.xskt_fallback || 0;
-      render(payload.data, `Đã tải ${payload.data.length} kỳ: ${vla} từ VLA, ${xskt} kỳ bù từ xskt.vn.`);
+      render(selectRows());
     } catch (error) {
-      render(rangeForLocal(), `Không kết nối được API; đã chuyển sang dữ liệu VLA nhúng. ${error.message}`);
+      render([], error.message);
       statusNode.dataset.state = "error";
     } finally {
       submit.disabled = false;
     }
   }
 
+  // ---- Tuỳ chọn hiển thị ------------------------------------------------
+
+  function applyLayout() {
+    const picked = form.parentElement.querySelector('input[name="tr-layout"]:checked');
+    resultsNode.dataset.layout = picked ? picked.value : "1";
+  }
+
+  function applyToggles() {
+    resultsNode.dataset.headtail = toggleHeadTail.checked ? "on" : "off";
+    resultsNode.dataset.loto = toggleLoto.checked ? "on" : "off";
+    resultsNode.dataset.tail = toggleTail.checked ? "on" : "off";
+  }
+
+  // ---- Xuất dữ liệu -----------------------------------------------------
+
   function exportRows() {
-    const rows = [["Ngày", "Khu vực", "Tỉnh/Thành", "Giải", "Thứ tự", "Kết quả", "Nguồn"]];
+    const rows = [["Ngày", "Khu vực", "Giải", "Thứ tự", "Kết quả"]];
     for (const draw of current) {
       for (const prize of draw.prizes) {
         prize.values.forEach((value, index) => rows.push([
-          draw.draw_date,
-          draw.region?.name || "Miền Bắc",
-          draw.province?.name || "Hà Nội",
-          prize.name,
-          String(index + 1),
-          value,
-          sourceText(draw.source),
+          draw.date, "Miền Bắc", prize.name, String(index + 1), value,
         ]));
       }
     }
@@ -244,8 +325,8 @@
   }
 
   function download(blob, extension) {
-    const first = current.at(-1)?.draw_date || "khong-co-du-lieu";
-    const last = current[0]?.draw_date || "khong-co-du-lieu";
+    const first = current.at(-1)?.date || "khong-co-du-lieu";
+    const last = current[0]?.date || "khong-co-du-lieu";
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `so-ket-qua-${first}-${last}.${extension}`;
@@ -261,7 +342,7 @@
   }
 
   function exportCsv() {
-    const text = "\ufeff" + exportRows().map((row) => row.map(csvCell).join(",")).join("\r\n");
+    const text = "﻿" + exportRows().map((row) => row.map(csvCell).join(",")).join("\r\n");
     download(new Blob([text], { type: "text/csv;charset=utf-8" }), "csv");
   }
 
@@ -335,6 +416,8 @@
 
   function exportXlsx() {
     const rows = exportRows();
+    const columns = rows[0].length;
+    const lastColumn = String.fromCharCode(64 + columns);
     const sheetRows = rows.map((row, rowIndex) => `<row r="${rowIndex + 1}">${row.map((value, columnIndex) => (
       `<c r="${String.fromCharCode(65 + columnIndex)}${rowIndex + 1}" t="inlineStr"${rowIndex === 0 ? ' s="1"' : ""}><is><t>${xml(value)}</t></is></c>`
     )).join("")}</row>`).join("");
@@ -372,10 +455,10 @@
         + '</styleSheet>'],
       ["xl/worksheets/sheet1.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        + `<dimension ref="A1:G${rows.length}"/>`
+        + `<dimension ref="A1:${lastColumn}${rows.length}"/>`
         + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
-        + '<cols><col min="1" max="1" width="14" customWidth="1"/><col min="2" max="7" width="18" customWidth="1"/></cols>'
-        + `<sheetData>${sheetRows}</sheetData><autoFilter ref="A1:G${rows.length}"/>`
+        + `<cols><col min="1" max="1" width="14" customWidth="1"/><col min="2" max="${columns}" width="18" customWidth="1"/></cols>`
+        + `<sheetData>${sheetRows}</sheetData><autoFilter ref="A1:${lastColumn}${rows.length}"/>`
         + '</worksheet>'],
     ];
     download(new Blob([zip(files)], {
@@ -383,23 +466,38 @@
     }), "xlsx");
   }
 
+  // ---- Nối sự kiện ------------------------------------------------------
+
   period.addEventListener("change", () => {
     customDates.hidden = period.value !== "custom";
-    if (period.value === "custom" && !toInput.value) {
-      toInput.value = embedded.data[0]?.draw_date || "";
-      const from = embedded.data[Math.min(29, embedded.data.length - 1)];
-      fromInput.value = from?.draw_date || toInput.value;
-    }
+    refresh();
   });
   form.addEventListener("submit", (event) => { event.preventDefault(); refresh(); });
+  for (const input of [fromInput, toInput]) {
+    input.addEventListener("change", () => { if (period.value === "custom") refresh(); });
+  }
+  for (const radio of document.querySelectorAll('input[name="tr-layout"]')) {
+    radio.addEventListener("change", applyLayout);
+  }
+  for (const toggle of [toggleHeadTail, toggleLoto, toggleTail]) {
+    toggle.addEventListener("change", applyToggles);
+  }
   document.getElementById("tr-export-csv").addEventListener("click", exportCsv);
   document.getElementById("tr-export-xlsx").addEventListener("click", exportXlsx);
+  moreButton.addEventListener("click", () => appendPage(PAGE_SIZE));
+  document.getElementById("tr-print").addEventListener("click", () => {
+    // In thì phải có đủ. Không dựng nốt thì bản in chỉ có lô đầu tiên, mà
+    // trên giấy thì không ai thấy được là đang thiếu.
+    renderEverything();
+    window.print();
+  });
 
-  if (!validPayload(embedded)) {
+  if (embedded.schema_version !== 2 || ALL.length === 0) {
     statusNode.textContent = "Dữ liệu nhúng không hợp lệ; vui lòng dựng lại trang.";
     statusNode.dataset.state = "error";
     return;
   }
-  render(rangeForLocal());
-  if (window.VLA_RESULTS_API_URL) refresh();
+  applyLayout();
+  applyToggles();
+  refresh();
 })();
