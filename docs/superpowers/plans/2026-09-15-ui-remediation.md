@@ -1,264 +1,118 @@
-# Nine-page UI Remediation Implementation Plan
+# VLA Master Bento UI Remediation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Sửa và đồng bộ chín trang VLA được chỉ định theo Master Design System, loại bỏ overflow/dock overlap và giảm chiều cao bảng bằng bố cục Bento mà không mất dữ liệu.
+**Goal:** Chuẩn hóa toàn bộ màn hình VLA được chỉ định theo Soft Modern UI + Bento Grid, sửa overflow/dock overlap, giảm dàn trải dọc và tạo Research Lab mang bản sắc High-Tech Data Lab mà không thay đổi logic dữ liệu.
 
-**Architecture:** Chỉnh tại nguồn sinh trang: stat-page builder/template cho bốn trang thống kê, Jinja template chung cho bốn trang soi cầu, builder riêng cho dashboard và research lab; live chỉ tinh chỉnh khi audit xác nhận cần. Thêm các contract test dựa trên class/markup ổn định để pipeline hằng ngày tái sinh trang vẫn giữ thiết kế.
+**Architecture:** Giữ các builder chịu trách nhiệm dữ liệu/semantic HTML. Áp dụng một lớp presentation idempotent tại output boundary: `page_output.write_page()` gọi `ui_page_refinements.refine_page(path, html)` trước khi strip comment và ghi vào `docs/`. Cách này bảo đảm mọi lần daily build đều tái áp dụng Master Design System và tránh nhân bản CSS/markup trong nhiều builder.
 
-**Tech Stack:** Python 3.11, Jinja2, HTML/CSS/vanilla JS, pytest/BeautifulSoup, GitHub Pages.
+**Tech Stack:** Python 3.11, HTML/CSS/vanilla JS, Jinja2, pytest, GitHub Actions, GitHub Pages.
 
 **Spec:** `documentation/architecture/ui-remediation-20260915.md`
 
 ## Global Constraints
 
-- Giữ `assets/ui.css` làm stylesheet nền chuẩn và không tham chiếu `assets/vla.css`.
-- Không thay đổi thuật toán/statistical semantics/ML outputs.
-- Không cắt dữ liệu; giảm dàn trải bằng Bento, bounded scroll, sticky header và progressive disclosure.
-- Dock/footer phải có safe area trên desktop/mobile và không chặn pointer/touch.
-- Chỉnh builder/template nguồn thay vì vá trực tiếp HTML sinh ra khi nguồn tương ứng tồn tại.
+- Giữ `assets/ui.css` làm stylesheet nền chuẩn; không khôi phục `assets/vla.css`.
+- Không thay đổi thuật toán, xác suất, model, prediction artifact hoặc statistical semantics.
+- Giữ nguyên element ID và JavaScript data hook hiện có.
+- Không cắt dữ liệu; giảm chiều dài bằng Bento grid, bounded scroll và responsive hierarchy.
+- Dùng nền `#F4F5FF → #EAEBFF → #E8ECFF`, glass cards và Indigo accent cho Light Mode.
+- Dock/footer phải có `safe-area-inset-bottom` và không chặn touch/pointer.
+- Refinement phải idempotent.
 
 ---
 
-### Task 1: Khóa lỗi bằng UI contract tests
+### Task 1: Establish an output-boundary visual compositor
 
 **Files:**
-- Create: `tests/test_targeted_ui_remediation.py`
-
-**Interfaces:**
-- Consumes: builder/template source and generated `docs/*.html`.
-- Produces: regression contracts for stat-page page classes, path dock safe area, dashboard command center and research-lab instrument shell.
-
-- [ ] **Step 1: Write failing tests**
-
-```python
-def test_path_template_reserves_dock_safe_area():
-    html = Path("src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
-    assert "ui-dock-space" in html
-    assert "path-shell" in html
-
-
-def test_stat_pages_expose_page_slug_for_scoped_layout():
-    source = Path("src/build_stat_pages.py").read_text(encoding="utf-8")
-    assert 'sp-page sp-page-{page.slug}' in source
-
-
-def test_dashboard_has_command_center_shell():
-    source = Path("src/build_dashboard.py").read_text(encoding="utf-8")
-    assert "ai-command-center" in source
-
-
-def test_research_lab_has_experiment_pipeline():
-    source = Path("src/build_research_lab.py").read_text(encoding="utf-8")
-    assert "rl-pipeline" in source
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `pytest -q tests/test_targeted_ui_remediation.py`
-Expected: FAIL on the new class/markup contracts before implementation.
-
-- [ ] **Step 3: Commit failing tests**
-
-```bash
-git add tests/test_targeted_ui_remediation.py
-git commit -m "test(ui): lock targeted page remediation contracts"
-```
-
----
-
-### Task 2: Rebuild detailed statistics layouts
-
-**Files:**
-- Modify: `src/build_stat_pages.py`
-- Modify: `src/templates/stat_pages.css`
+- Create: `src/ui_page_refinements.py`
+- Modify: `src/page_output.py`
 - Test: `tests/test_targeted_ui_remediation.py`
 
 **Interfaces:**
-- Consumes: existing `StatPage.slug`, table IDs and `stat_pages.js` renderers.
-- Produces: body class `sp-page sp-page-<slug>` and scoped layouts without changing JS IDs/data.
+- Consumes: final semantic HTML plus destination filename.
+- Produces: `refine_page(path: Path | str, page: str) -> str`.
 
-- [ ] **Step 1: Add a stable page slug class**
-
-Change non-frequency and frequency bodies so each generated page has `sp-page sp-page-{page.slug}` in addition to any existing body class. This provides a safe selector boundary instead of relying on `:has()` or global table rules.
-
-- [ ] **Step 2: Implement scoped CSS**
-
-Add selectors with these contracts:
-
-```css
-.sp-page-bang-dac-biet .sp-scroll{width:100%}
-.sp-page-bang-dac-biet #sp-grid{width:100%;table-layout:fixed}
-
-.sp-page-lo-gan #sp-grid,
-.sp-page-lo-gan #sp-pair-gan{width:100%}
-.sp-page-lo-gan .sp-scroll{width:100%;max-height:32rem;overflow:auto}
-
-.sp-page-dau-duoi-loto .sp-recent-grid{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem
-}
-.sp-page-dau-duoi-loto .sp-recent-grid .sp-scroll{width:100%;max-height:32rem;overflow:auto}
-
-.sp-page-giai-dac-biet-theo-tong .sp-scroll{width:100%;overflow:auto}
-```
-
-At responsive breakpoints, collapse three recent panels to one column and preserve horizontal scroll inside each panel.
-
-- [ ] **Step 3: Adjust only structural markup**
-
-Wrap the three recent Head/Tail/Sum tables in `dau-duoi-loto` inside `.sp-recent-grid`. Add Bento card wrappers/section labels to `lo-gan` and `giai-dac-biet-theo-tong` while preserving all existing element IDs.
-
-- [ ] **Step 4: Build and verify**
-
-Run:
-`python src/build_stat_pages.py --docs-dir /tmp/vla-stat-pages`
-then `pytest -q tests/test_targeted_ui_remediation.py tests/test_ui_design_system.py`.
-Expected: generated pages keep all data hooks and satisfy targeted layout contracts.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/build_stat_pages.py src/templates/stat_pages.css tests/test_targeted_ui_remediation.py
-git commit -m "fix(ui): rebalance detailed statistics pages"
-```
+- [x] **Step 1:** Add failing structural contracts for target screens.
+- [x] **Step 2:** Implement `refine_page` as filename-scoped, idempotent presentation composition.
+- [x] **Step 3:** Route `write_page()` through the compositor before `strip_comments()`.
+- [x] **Step 4:** Verify unrelated pages remain byte-for-byte unchanged by the compositor.
 
 ---
 
-### Task 3: Redesign path pages and eliminate dock/footer overflow
+### Task 2: Rebuild detailed statistics screens
 
 **Files:**
-- Modify: `src/templates/path_ui_page.html.j2`
+- Modify through compositor: `src/ui_page_refinements.py`
 - Test: `tests/test_targeted_ui_remediation.py`
 
-**Interfaces:**
-- Consumes: `dock_html`, `nav_fallback_html`, `rows`, `picks`, `days`, `empty_reason` from `build_docs.py`.
-- Produces: a shared `path-shell` for `soi-path-loto-*` and `soi-path-de-*` with dock-safe bottom spacing and bounded table regions.
+**Targets:** `bang-dac-biet.html`, `lo-gan.html`, `dau-duoi-loto.html`, `giai-dac-biet-theo-tong.html`, `cau-dac-biet-theo-bo-so.html`, `giai-db-ngay-mai.html`, `cap-lon-loto.html`.
 
-- [ ] **Step 1: Add dock-safe app shell**
-
-Use `<body class="ui-app ui-dock-space path-page">` and a `.path-shell` container with `padding-bottom: calc(var(--ui-dock-h, 64px) + env(safe-area-inset-bottom) + 2rem)`.
-
-- [ ] **Step 2: Convert top content to Bento hierarchy**
-
-Create a compact hero/status band, a two-column prediction/quick-pick grid and a full-width route matrix card. Keep all existing Jinja loops and visible explanatory text.
-
-- [ ] **Step 3: Bound the route matrix**
-
-Use `.path-table-scroll{max-height:min(66vh,52rem);overflow:auto}` with sticky headers. Footer/nav fallback must be outside the bounded table and above the dock safe area.
-
-- [ ] **Step 4: Build and test**
-
-Run: `python src/build_docs.py --display-days 10`
-Then: `pytest -q tests/test_targeted_ui_remediation.py tests/test_dock_on_mobile.py`.
-Expected: both active pages and stable siblings share the same fixed template contract; no fixed dock can overlap the footer/content area.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/templates/path_ui_page.html.j2 tests/test_targeted_ui_remediation.py
-git commit -m "fix(ui): rebuild path pages with dock-safe bento layout"
-```
+- [x] **Step 1:** Make weekly special table full-width with fixed table layout and mobile overflow.
+- [x] **Step 2:** Bound Lô gan table regions to internal scroll and retain two-column desktop Bento hierarchy.
+- [x] **Step 3:** Transform the three recent Head/Tail/Sum tables into a responsive 3-card grid.
+- [x] **Step 4:** Bound Special-by-sum transition/parity tables to prevent viewport breakage.
+- [x] **Step 5:** Apply the same glass/Bento/scroll contract to the three additional requested statistic pages.
 
 ---
 
-### Task 4: Upgrade AI/ML dashboard
+### Task 3: Normalize all path-analysis screens
 
 **Files:**
-- Modify: `src/build_dashboard.py`
+- Modify through compositor: `src/ui_page_refinements.py`
+- Existing source retained: `src/templates/path_ui_page.html.j2`, `src/build_docs.py`
 - Test: `tests/test_targeted_ui_remediation.py`
 
-**Interfaces:**
-- Consumes: existing predictions, picks, weights and calibration payloads.
-- Produces: `ai-command-center`, hero/status strip, two signal panels and model-health panels; model-quality builder output remains semantically unchanged.
+**Targets:** `soi-path-loto-active.html`, `soi-path-de-active.html` and their stable siblings.
 
-- [ ] **Step 1: Introduce scoped dashboard CSS and hero**
-
-Add an `ai-command-center` wrapper, an eyebrow/status row, latest-data badge, and subdued glass/Bento surfaces using shared tokens.
-
-- [ ] **Step 2: Reorganize existing content**
-
-Keep both top-20 tables and all JSON-derived definitions. Place LOTO and Đặc Biệt next-day signals as the primary visual pair; place picks/weights/calibration below in balanced panels.
-
-- [ ] **Step 3: Verify output**
-
-Run: `python src/build_dashboard.py --docs-dir /tmp/vla-dashboard`
-Then: `pytest -q tests/test_targeted_ui_remediation.py tests/test_ui_design_system.py`.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/build_dashboard.py tests/test_targeted_ui_remediation.py
-git commit -m "feat(ui): turn ml dashboard into command center"
-```
+- [x] **Step 1:** Add `path-shell`, `path-hero`, `path-overview` and dock-safe body contract.
+- [x] **Step 2:** Convert the formerly dark page to the shared light Soft Modern palette.
+- [x] **Step 3:** Add bounded route-table scroll with sticky header.
+- [x] **Step 4:** Apply miss-cell hatch and Đặc Biệt palette without changing cell logic.
+- [x] **Step 5:** Preserve the shared template contract across LOTO/Đặc Biệt active/stable pages.
 
 ---
 
-### Task 5: Turn Research Lab into an experiment workspace and audit Live
+### Task 4: Upgrade realtime and AI/ML command surfaces
 
 **Files:**
-- Modify: `src/build_research_lab.py`
-- Modify only if needed: `docs/live.html` and the source path responsible for preserving its custom markup
+- Modify through compositor: `src/ui_page_refinements.py`
+- Existing builders/logic retained: `docs/live.html`, `src/build_dashboard.py`
 - Test: `tests/test_targeted_ui_remediation.py`
 
-**Interfaces:**
-- Consumes: existing diagnostic/firewall/strategy/cross-lag/conditional datasets.
-- Produces: `rl-pipeline`, research-firewall status area, instrument-style panels and explicit experiment stages; live retains realtime semantics.
-
-- [ ] **Step 1: Add the research pipeline**
-
-Render five stages: `Giả thuyết → Huấn luyện → Kiểm định → Tập giữ lại → Cổng vận hành`, with the production gate visually separated from exploratory results.
-
-- [ ] **Step 2: Group laboratory instruments**
-
-Use Bento sections for `Research Firewall`, diagnostics, strategy chambers, cross-lag/bóng bridge experiments and legacy observations. Keep all existing tables and cautionary copy.
-
-- [ ] **Step 3: Audit Live**
-
-Confirm live has shared stylesheet, adequate dock-safe bottom spacing, no full-width overflow and consistent card radii/spacing. Only make a scoped visual refinement if a concrete mismatch remains; do not disturb polling/reveal logic.
-
-- [ ] **Step 4: Build and verify**
-
-Run:
-`python src/build_research_lab.py --data-dir data --docs-dir /tmp/vla-research`
-then targeted tests and dock tests.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/build_research_lab.py tests/test_targeted_ui_remediation.py
-git commit -m "feat(ui): rebuild research lab as experiment workspace"
-```
+- [x] **Step 1:** Convert `live.html` to 12-column Realtime Bento while preserving polling, reveal and consensus logic.
+- [x] **Step 2:** Keep Special red/pastel, empty hatch, verification badge and source-health hierarchy readable in Light Mode.
+- [x] **Step 3:** Convert `dashboard.html` to an AI/ML glass Command Center with status widgets and Indigo emphasis.
+- [x] **Step 4:** Keep all prediction/pick/weight/calibration content semantically unchanged.
 
 ---
 
-### Task 6: Full verification, generated artifacts, PR and merge gate
+### Task 5: Build the Research Lab identity
 
 **Files:**
-- Generated as appropriate: `docs/*.html`, `docs/assets/ui.css`
-- No algorithm files should change.
+- Modify through compositor: `src/ui_page_refinements.py`
+- Existing data builder retained: `src/build_research_lab.py`
+- Test: `tests/test_targeted_ui_remediation.py`
 
-**Interfaces:**
-- Consumes: all previous tasks.
-- Produces: a merge-ready UI-only change set.
+- [x] **Step 1:** Keep the global page light but use a dark cyber-lab hero.
+- [x] **Step 2:** Add `LIVE AI PROCESSING`, subtle LED accents and monospace instrumentation labels.
+- [x] **Step 3:** Add the five-stage research pipeline: Giả thuyết → Huấn luyện → Kiểm định → Tập giữ lại → Cổng vận hành.
+- [x] **Step 4:** Add AI Parameters, Backtest Runner, Number × Bóng Matrix and Confidence Gate experiment modules.
+- [x] **Step 5:** Add a reduced-motion-safe scanning effect and explicitly state that the gauge is not hit probability.
+- [x] **Step 6:** Lock valid sibling hierarchy between hero, pipeline and experiment console.
 
-- [ ] **Step 1: Regenerate all docs using the production builders/pipeline with sync/ML skipped where safe**
+---
 
-Run the same doc builders used by `src/pipeline.py`; verify that generated targets include all nine pages.
+### Task 6: Verification, PR and merge gate
 
-- [ ] **Step 2: Run regression tests**
+**Files:**
+- `tests/test_targeted_ui_remediation.py`
+- `documentation/architecture/ui-remediation-20260915.md`
+- this plan
 
-Run:
-`pytest -q tests/test_targeted_ui_remediation.py tests/test_published_ui_contract.py tests/test_dock_on_mobile.py tests/test_ui_design_system.py`.
-Expected: all pass.
-
-- [ ] **Step 3: Inspect diff scope**
-
-Confirm no statistical formulas, model artifacts or unrelated dependencies changed.
-
-- [ ] **Step 4: Create PR and inspect CI status**
-
-Do not report skipped checks as green. Resolve actual failures before merge.
-
-- [ ] **Step 5: Squash merge after verification**
-
-Merge only when source contracts and generated output are consistent; report exact PR, merge SHA and any live-site verification limitation.
+- [x] **Step 1:** Inspect diff scope and confirm algorithm/model/data source files are untouched.
+- [x] **Step 2:** Add idempotence and no-op regression contracts.
+- [ ] **Step 3:** Run the latest branch CI to completion; older runs cancelled by newer commits do not count.
+- [ ] **Step 4:** Confirm PR is mergeable against current `main` and inspect final diff.
+- [ ] **Step 5:** Squash merge only after fresh CI success.
+- [ ] **Step 6:** Verify the resulting `main` commit and Pages/pipeline deployment state; do not claim pixel verification unless directly observed.
