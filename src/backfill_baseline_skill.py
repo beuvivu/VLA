@@ -11,10 +11,10 @@ trong ``data/history/pred_{mode}.csv`` cho cả 219 ngày, nên baseline tính l
 được đúng bằng giá trị mà pipeline sẽ ghi nếu nó đã có mặt từ đầu — dùng đúng
 các hàm đo của mô hình, nên hai con số so sánh trực tiếp được.
 
-Điều kiện tính: ngày phải có đủ 100 số 0–99, nhãn ``y`` chỉ nhận 0/1, và với ĐB
+Điều kiện tính: ngày phải có đủ 100 số 0–99, nhãn ``y`` chỉ nhận 0/1, và với Đặc Biệt
 phải có đúng một nhãn dương. Ngày không đạt bị bỏ trống chứ không đoán bừa.
 
-Một cái bẫy riêng với Brier ĐB: ``categorical_brier`` từng dùng ``mean`` thay vì
+Một cái bẫy riêng với Brier Đặc Biệt: ``categorical_brier`` từng dùng ``mean`` thay vì
 ``sum``, nên các dòng ghi trước bản sửa nhỏ hơn quy ước hiện hành đúng 100 lần.
 Đem baseline tính theo quy ước mới chia cho điểm mô hình theo quy ước cũ sẽ cho
 kỹ năng ~+99% — mô hình trông vượt trội ngoạn mục vì lệch đơn vị, đúng loại tín
@@ -79,13 +79,13 @@ def load_labels(history_path: Path) -> dict[str, np.ndarray]:
 def brier_is_comparable(mode: str, logloss: float, brier: float) -> bool:
     """Điểm Brier đã lưu có cùng quy ước với baseline hiện hành không.
 
-    Với ĐB, logloss đã lưu xác định xác suất mà mô hình đặt lên số trúng:
+    Với Đặc Biệt, logloss đã lưu xác định xác suất mà mô hình đặt lên số trúng:
     ``p = exp(-logloss)``. Theo quy ước ``sum`` hiện hành, riêng số hạng của số
     trúng đã là ``(1 - p)^2``, nên Brier bắt buộc ``>= (1 - p)^2``. Điểm ghi theo
     quy ước ``mean`` cũ nhỏ hơn 100 lần nên rơi thẳng xuống dưới cận đó và bị
     loại — không cần biết nó được ghi ngày nào.
 
-    Lô tô dùng ``bernoulli_brier`` (trung bình trên 100 biên) và chưa từng đổi
+    LOTO dùng ``bernoulli_brier`` (trung bình trên 100 biên) và chưa từng đổi
     quy ước, nên luôn so sánh được.
     """
     if mode != "de":
@@ -137,7 +137,7 @@ def backfill(
             continue
         metrics = baseline_metrics(mode, y)
         if metrics is None:
-            skipped.append(f"{mode} {day}: hợp đồng nhãn ĐB không hợp lệ")
+            skipped.append(f"{mode} {day}: hợp đồng nhãn Đặc Biệt không hợp lệ")
             continue
 
         base_ll, base_br = metrics

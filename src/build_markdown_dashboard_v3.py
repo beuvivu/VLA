@@ -33,7 +33,7 @@ HEAT_MEANING = [
 BAR_WIDTH = 10
 
 PRIZE_GROUPS: list[tuple[str, list[str], int]] = [
-    ("Đặc biệt", ["special"], 5),
+    ("Đặc Biệt", ["special"], 5),
     ("Giải nhất", ["prize1"], 5),
     ("Giải nhì", ["prize2_1", "prize2_2"], 5),
     ("Giải ba", [f"prize3_{i}" for i in range(1, 7)], 5),
@@ -254,7 +254,7 @@ def _daily_board(df: pd.DataFrame) -> tuple[str, str]:
     for label, cols, width in PRIZE_GROUPS:
         vals = " · ".join(_fmt_code(row.get(c), width) for c in cols)
         suffix = " · ".join(_fmt2(str(_fmt_code(row.get(c), width))[-2:]) for c in cols)
-        rows.append([label, f"**{vals}**" if label == "Đặc biệt" else vals, suffix, "Kết quả chuẩn đã xác minh"])
+        rows.append([label, f"**{vals}**" if label == "Đặc Biệt" else vals, suffix, "Kết quả chuẩn đã xác minh"])
     return day, _md_table(["Giải", "Kết quả", "2 số cuối", "Ý nghĩa"], rows)
 
 
@@ -281,7 +281,7 @@ def _recent_results(df: pd.DataFrame, n: int = 10) -> str:
     rows = []
     for _, r in df.tail(n).iloc[::-1].iterrows():
         rows.append([r.get("date", ""), f"**{_fmt_code(r.get('special'),5)}**", _fmt_code(r.get("prize1"),5), " · ".join(_fmt_code(r.get(f"prize7_{i}"),2) for i in range(1,5)), "Đối chiếu xu hướng gần nhất"])
-    return _md_table(["Ngày", "ĐB", "G1", "G7", "Ý nghĩa"], rows)
+    return _md_table(["Ngày", "Đặc Biệt", "G1", "G7", "Ý nghĩa"], rows)
 
 
 def _prediction(mode: str, target: str) -> pd.DataFrame:
@@ -381,7 +381,7 @@ def _special_group_table(df: pd.DataFrame, kind: str = "month") -> str:
     if view.empty:
         return "_Chưa có dữ liệu._"
     rows = []
-    labels = {"db_head":"Đầu ĐB","db_tail":"Đuôi ĐB","db_cham":"Chạm ĐB","db_total":"Tổng ĐB"}
+    labels = {"db_head":"Đầu Đặc Biệt","db_tail":"Đuôi Đặc Biệt","db_cham":"Chạm Đặc Biệt","db_total":"Tổng Đặc Biệt"}
     for group, label in labels.items():
         g = view[view["group_type"].astype(str) == group].copy()
         if g.empty:
@@ -570,8 +570,8 @@ def _diagnostics() -> str:
     dd=_read_json(DATA/"number_dynamics"/"diagnostics_de.json")
     return _md_table(["Lớp","Giá trị","So sánh","Ý nghĩa"],[
         ["Sức khỏe dữ liệu","✅ ĐẠT" if health.get("ok") else "⚠️ CẦN KIỂM TRA",f"số dòng {health.get('row_count','—')} · thiếu {health.get('missing_count','—')}","Tính toàn vẹn dữ liệu chuẩn"],
-        ["Động lực lô tô",_fmt_num(dl.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dl.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
-        ["Động lực ĐB",_fmt_num(dd.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dd.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
+        ["Động lực LOTO",_fmt_num(dl.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dl.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
+        ["Động lực Đặc Biệt",_fmt_num(dd.get("global_dynamics_reliability"),3),f"JS 30/180 {_fmt_num(dd.get('regime_js_divergence_30_vs_180'),4)}","Độ tin cậy + dịch chuyển chế độ"],
     ])
 
 
@@ -619,7 +619,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 ![Dữ liệu](https://img.shields.io/badge/DU_LIEU-{'TOT' if health.get('ok') else 'KIEM_TRA'}-34d399?style=for-the-badge)
 ![Mới nhất](https://img.shields.io/badge/MOI_NHAT-{latest.replace('-', '--')}-60a5fa?style=for-the-badge)
 ![Dự báo](https://img.shields.io/badge/DU_BAO-{target.replace('-', '--')}-a78bfa?style=for-the-badge)
-![Meta lô tô](https://img.shields.io/badge/META_LO_TO-{'DANG_BAT' if meta_l.get('active') else 'NEN'}-22c55e?style=for-the-badge)
+![Meta LOTO](https://img.shields.io/badge/META_LO_TO-{'DANG_BAT' if meta_l.get('active') else 'NEN'}-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-{'DANG_BAT' if meta_d.get('active') else 'DA_CHAN'}-fb7185?style=for-the-badge)
 
 <sub>Tạo lúc {generated} · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
@@ -639,7 +639,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 | Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · thiếu {health.get('missing_count','—')}** | Meta lô tô **{'ĐANG BẬT' if meta_l.get('active') else 'TẮT'}** · Đặc Biệt **{'ĐANG BẬT' if meta_d.get('active') else 'ĐÃ CHẶN'}** |
+| **{latest}** | **{target}** | **{health.get('row_count',len(xsmb))} kỳ · thiếu {health.get('missing_count','—')}** | Meta LOTO **{'ĐANG BẬT' if meta_l.get('active') else 'TẮT'}** · Đặc Biệt **{'ĐANG BẬT' if meta_d.get('active') else 'ĐÃ CHẶN'}** |
 
 ---
 
@@ -663,73 +663,73 @@ def main(argv: Sequence[str] | None = None) -> None:
 <a id="probability-arena"></a>
 ## 🔮 Khu vực xác suất
 
-### Lô tô · Xác suất cao nhất
+### LOTO · Xác suất cao nhất
 
 {_bar_legend()}
 
 {_forecast_table(pred_l,'loto')}
 
-### Lô tô · Ma trận nhiệt xác suất 00–99
+### LOTO · Ma trận nhiệt xác suất 00–99
 
-{_number_matrix(pred_l,'prob',percent=True,decimals=2,metric='Xác suất cuối lô tô')}
+{_number_matrix(pred_l,'prob',percent=True,decimals=2,metric='Xác suất cuối LOTO')}
 
-### ĐB · Xác suất cao nhất
+### Đặc Biệt · Xác suất cao nhất
 
 {_forecast_table(pred_d,'de')}
 
-### ĐB · Ma trận nhiệt xác suất 00–99
+### Đặc Biệt · Ma trận nhiệt xác suất 00–99
 
-{_number_matrix(pred_d,'prob',percent=True,decimals=3,metric='Xác suất cuối ĐB')}
+{_number_matrix(pred_d,'prob',percent=True,decimals=3,metric='Xác suất cuối Đặc Biệt')}
 
 ---
 
 <a id="frequency-heatmaps-0099"></a>
 ## 🔥 Ma trận nhiệt tần suất 00–99
 
-### Lô tô · tháng
-{_number_matrix(_period(snap_l,'month'),'freq',decimals=0,metric='Tần suất lô tô tháng')}
+### LOTO · tháng
+{_number_matrix(_period(snap_l,'month'),'freq',decimals=0,metric='Tần suất LOTO tháng')}
 
-### ĐB · tháng
-{_number_matrix(_period(snap_d,'month'),'freq',decimals=0,metric='Tần suất ĐB tháng')}
+### Đặc Biệt · tháng
+{_number_matrix(_period(snap_d,'month'),'freq',decimals=0,metric='Tần suất Đặc Biệt tháng')}
 
-### Lô tô · năm
-{_number_matrix(_period(snap_l,'year'),'freq',decimals=0,metric='Tần suất lô tô năm')}
+### LOTO · năm
+{_number_matrix(_period(snap_l,'year'),'freq',decimals=0,metric='Tần suất LOTO năm')}
 
-### ĐB · năm
-{_number_matrix(_period(snap_d,'year'),'freq',decimals=0,metric='Tần suất ĐB năm')}
+### Đặc Biệt · năm
+{_number_matrix(_period(snap_d,'year'),'freq',decimals=0,metric='Tần suất Đặc Biệt năm')}
 
-### Lô tô · tuần
-{_number_matrix(_period(snap_l,'week'),'freq',decimals=0,metric='Tần suất lô tô tuần')}
+### LOTO · tuần
+{_number_matrix(_period(snap_l,'week'),'freq',decimals=0,metric='Tần suất LOTO tuần')}
 
-### ĐB · tuần
-{_number_matrix(_period(snap_d,'week'),'freq',decimals=0,metric='Tần suất ĐB tuần')}
+### Đặc Biệt · tuần
+{_number_matrix(_period(snap_d,'week'),'freq',decimals=0,metric='Tần suất Đặc Biệt tuần')}
 
 ---
 
 <a id="gap--rhythm"></a>
 ## ⏳ Gan và nhịp
 
-### Ma trận nhiệt gan lô tô
-{_number_matrix(rhythm_l,'current_gap',decimals=0,metric='Gan hiện tại của lô tô')}
+### Ma trận nhiệt gan LOTO
+{_number_matrix(rhythm_l,'current_gap',decimals=0,metric='Gan hiện tại của LOTO')}
 
-### Gan lô tô đứng đầu
+### Gan LOTO đứng đầu
 {_bar_legend()}
 
 {_gap_table(rhythm_l)}
 
-### Ma trận nhiệt gan ĐB
-{_number_matrix(rhythm_d,'current_gap',decimals=0,metric='Gan hiện tại của ĐB')}
+### Ma trận nhiệt gan Đặc Biệt
+{_number_matrix(rhythm_d,'current_gap',decimals=0,metric='Gan hiện tại của Đặc Biệt')}
 
-### Gan ĐB đứng đầu
+### Gan Đặc Biệt đứng đầu
 {_gap_table(rhythm_d)}
 
 ### Gan giải nhất
 {_gap_table(first,12)}
 
-### Tỷ suất xuất hiện theo gan lô tô
+### Tỷ suất xuất hiện theo gan LOTO
 {_hazard_table(hazard_l)}
 
-### Tỷ suất xuất hiện theo gan ĐB
+### Tỷ suất xuất hiện theo gan Đặc Biệt
 {_hazard_table(hazard_d)}
 
 ---
@@ -737,31 +737,31 @@ def main(argv: Sequence[str] | None = None) -> None:
 <a id="aiml--dynamics"></a>
 ## 🤖 AI/ML và động lực
 
-### Cầu-kèo lô tô · ma trận nhiệt điểm
-{_number_matrix(cau_l,'cau_score',decimals=1,metric='Điểm cầu-kèo ML lô tô')}
+### Cầu-kèo LOTO · ma trận nhiệt điểm
+{_number_matrix(cau_l,'cau_score',decimals=1,metric='Điểm cầu-kèo ML LOTO')}
 
-### Cầu-kèo lô tô đứng đầu
+### Cầu-kèo LOTO đứng đầu
 {_balanced_rank(cau_l,score_col='cau_score',label_col='number_str',compare_col='primary_reason',meaning_fn=cau_mean)}
 
-### Cầu-kèo ĐB · ma trận nhiệt điểm
-{_number_matrix(cau_d,'cau_score',decimals=1,metric='Điểm cầu-kèo ML ĐB')}
+### Cầu-kèo Đặc Biệt · ma trận nhiệt điểm
+{_number_matrix(cau_d,'cau_score',decimals=1,metric='Điểm cầu-kèo ML Đặc Biệt')}
 
-### Cầu-kèo ĐB đứng đầu
+### Cầu-kèo Đặc Biệt đứng đầu
 {_balanced_rank(cau_d,score_col='cau_score',label_col='number_str',compare_col='primary_reason',meaning_fn=cau_mean)}
 
-### AI/ML tổng hợp · Lô tô
-{_number_matrix(sig_l,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp lô tô')}
+### AI/ML tổng hợp · LOTO
+{_number_matrix(sig_l,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp LOTO')}
 
-### AI/ML tổng hợp · ĐB
-{_number_matrix(sig_d,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp ĐB')}
+### AI/ML tổng hợp · Đặc Biệt
+{_number_matrix(sig_d,'ai_ml_signal_score',decimals=1,metric='AI/ML tổng hợp Đặc Biệt')}
 
-### Động lực bậc cao · Lô tô
-{_number_matrix(dyn_l,'prob',percent=True,decimals=2,metric='Xác suất động lực lô tô')}
+### Động lực bậc cao · LOTO
+{_number_matrix(dyn_l,'prob',percent=True,decimals=2,metric='Xác suất động lực LOTO')}
 
 {_dynamics(dyn_l)}
 
-### Động lực bậc cao · ĐB
-{_number_matrix(dyn_d,'prob',percent=True,decimals=3,metric='Xác suất động lực ĐB')}
+### Động lực bậc cao · Đặc Biệt
+{_number_matrix(dyn_d,'prob',percent=True,decimals=3,metric='Xác suất động lực Đặc Biệt')}
 
 {_dynamics(dyn_d)}
 
@@ -770,27 +770,27 @@ def main(argv: Sequence[str] | None = None) -> None:
 <a id="markov--transition--dependency"></a>
 ## 🧬 Markov · chuyển tiếp · phụ thuộc
 
-### Markov bậc 1 · Lô tô
+### Markov bậc 1 · LOTO
 {_bar_legend()}
 
 {_markov(markov)}
 
-### Độ nâng chuyển tiếp lô tô · bỏ cặp tự thân
+### Độ nâng chuyển tiếp LOTO · bỏ cặp tự thân
 {_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_loto.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
-### Độ nâng chuyển tiếp ĐB · bỏ cặp tự thân
+### Độ nâng chuyển tiếp Đặc Biệt · bỏ cặp tự thân
 {_wide_top_pairs(DATA/'number_dynamics'/'transition_lift_lag1_de.csv',top_n=20,metric_name='Độ nâng chuyển tiếp')}
 
-### Đồng xuất hiện Phi lô tô · bỏ đường chéo tự thân
+### Đồng xuất hiện Phi LOTO · bỏ đường chéo tự thân
 {_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_loto.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
-### Đồng xuất hiện Phi ĐB · bỏ đường chéo tự thân
+### Đồng xuất hiện Phi Đặc Biệt · bỏ đường chéo tự thân
 {_wide_top_pairs(DATA/'number_dynamics'/'cooccurrence_phi_de.csv',top_n=20,metric_name='Đồng xuất hiện Phi')}
 
-### Phụ thuộc đa độ trễ lô tô
+### Phụ thuộc đa độ trễ LOTO
 {_lag_dependency(DATA/'number_dynamics'/'lag_dependency_loto.csv')}
 
-### Phụ thuộc đa độ trễ ĐB
+### Phụ thuộc đa độ trễ Đặc Biệt
 {_lag_dependency(DATA/'number_dynamics'/'lag_dependency_de.csv')}
 
 ---
@@ -798,16 +798,16 @@ def main(argv: Sequence[str] | None = None) -> None:
 <a id="structure--pairs"></a>
 ## 🧩 Cấu trúc và cặp số
 
-### Đầu lô tô · tháng
+### Đầu LOTO · tháng
 {_group_table(hht,'month','head',10)}
 
-### Đuôi lô tô · tháng
+### Đuôi LOTO · tháng
 {_group_table(hht,'month','tail',10)}
 
-### Tổng lô tô · tháng
+### Tổng LOTO · tháng
 {_group_table(hht,'month','total',19)}
 
-### Cấu trúc ĐB · tháng
+### Cấu trúc Đặc Biệt · tháng
 {_special_group_table(sg,'month')}
 
 ### Cặp lộn · tháng
@@ -816,24 +816,24 @@ def main(argv: Sequence[str] | None = None) -> None:
 ---
 
 <a id="special-boards--conditional"></a>
-## 📆 Bảng đặc biệt và quan hệ có điều kiện
+## 📆 Bảng Đặc Biệt và quan hệ có điều kiện
 
-### ĐB theo tuần
+### Đặc Biệt theo tuần
 {_week_board(ADV/'special_week_board.csv',10)}
 
-### ĐB theo tháng · lịch 7 cột
+### Đặc Biệt theo tháng · lịch 7 cột
 
-> Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối ĐB`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
+> Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối Đặc Biệt`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
 
 {_month_calendar(ADV/'special_month_board.csv',4)}
 
-### ĐB hôm trước → lô tô hôm sau
+### Đặc Biệt hôm trước → LOTO hôm sau
 {_conditional(ADV/'conditional_loto_after_special_top500.csv')}
 
-### Lô tô hôm trước → lô tô hôm sau
+### LOTO hôm trước → LOTO hôm sau
 {_conditional(ADV/'conditional_loto_after_loto_top500.csv')}
 
-### ĐB hôm trước → ĐB hôm sau
+### Đặc Biệt hôm trước → Đặc Biệt hôm sau
 {_conditional(ADV/'conditional_special_after_special_top500.csv')}
 
 ---
@@ -841,22 +841,22 @@ def main(argv: Sequence[str] | None = None) -> None:
 <a id="significance--research"></a>
 ## 🧪 Mức ý nghĩa và nghiên cứu
 
-### Lô tô · mức ý nghĩa 30 ngày
+### LOTO · mức ý nghĩa 30 ngày
 {_significance(DATA/'significance'/'number_significance_loto_30d.csv')}
 
-### Lô tô · mức ý nghĩa 90 ngày
+### LOTO · mức ý nghĩa 90 ngày
 {_significance(DATA/'significance'/'number_significance_loto_90d.csv')}
 
-### ĐB · mức ý nghĩa 30 ngày
+### Đặc Biệt · mức ý nghĩa 30 ngày
 {_significance(DATA/'significance'/'number_significance_de_30d.csv')}
 
-### ĐB · mức ý nghĩa 90 ngày
+### Đặc Biệt · mức ý nghĩa 90 ngày
 {_significance(DATA/'significance'/'number_significance_de_90d.csv')}
 
-### Phòng chiến lược · Lô tô ngoài mẫu
+### Phòng chiến lược · LOTO ngoài mẫu
 {_strategy(DATA/'research'/'strategy_lab_loto.csv')}
 
-### Phòng chiến lược · ĐB ngoài mẫu
+### Phòng chiến lược · Đặc Biệt ngoài mẫu
 {_strategy(DATA/'research'/'strategy_lab_de.csv')}
 
 ### Chẩn đoán

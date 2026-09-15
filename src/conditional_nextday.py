@@ -29,7 +29,7 @@ from research_diagnostics import bh_fdr
 #:
 #: Trung vị κ học được là 1 000 000, tức co ngót HOÀN TOÀN. Nói thẳng điều đó
 #: nghĩa là gì: với dữ liệu hiện có, "đề về s hôm nay" KHÔNG phân biệt được
-#: phân phối lô tô ngày mai so với phân phối chung. Cả bảng 10 000 dòng là
+#: phân phối LOTO ngày mai so với phân phối chung. Cả bảng 10 000 dòng là
 #: nhiễu, và hằng số 60 đã khiến nó trông như có nội dung. Giữ nguyên phép
 #: học chứ không chốt cứng co ngót hoàn toàn, để nếu về sau có tín hiệu thật
 #: thì nó tự nổi lên.

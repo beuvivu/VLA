@@ -21,14 +21,15 @@ from ui_theme import (
     write_stylesheet,
 )
 from web_security import security_meta_tags
+from page_output import write_page
 
 
 TEST_LABELS = {
-    "de_suffix_uniformity": "Độ đồng đều của hai số cuối giải đặc biệt",
+    "de_suffix_uniformity": "Độ đồng đều của hai số cuối giải Đặc Biệt",
     "all_prize_suffix_uniformity": "Độ đồng đều của hai số cuối mọi giải",
-    "de_runs_independence": "Tính độc lập của chuỗi giải đặc biệt",
-    "weekday_vs_de_tail": "Quan hệ thứ trong tuần với đuôi đặc biệt",
-    "loto_repeat_dependency": "Phụ thuộc lặp lại của lô tô",
+    "de_runs_independence": "Tính độc lập của chuỗi giải Đặc Biệt",
+    "weekday_vs_de_tail": "Quan hệ thứ trong tuần với đuôi Đặc Biệt",
+    "loto_repeat_dependency": "Phụ thuộc lặp lại của LOTO",
 }
 
 CATEGORY_LABELS = {
@@ -39,7 +40,7 @@ CATEGORY_LABELS = {
     "position": "Vị trí",
     "recency": "Gần đây",
     "repeat": "Lặp lại",
-    "special": "Giải đặc biệt",
+    "special": "Giải Đặc Biệt",
     "sum": "Tổng",
     "touch": "Chạm",
 }
@@ -104,9 +105,9 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
     if conditional:
         cards.append(
             '<article class="metric-card">'
-            "<span>ĐB → Loto ngày kế</span>"
+            "<span>Đặc Biệt → Loto ngày kế</span>"
             f"<strong>{html.escape(str(conditional.get('current_special_2d', '—')))}</strong>"
-            f"<em>ĐB 2 số hiện tại · {int(conditional.get('rows', 0))} ô có điều kiện · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
+            f"<em>Đặc Biệt 2 số hiện tại · {int(conditional.get('rows', 0))} ô có điều kiện · FDR&lt;.05: {int(conditional.get('fdr_05_count', 0))}</em>"
             "</article>"
         )
     return "".join(cards)
@@ -148,8 +149,8 @@ def _gap_table(touch: pd.DataFrame, sums: pd.DataFrame, top: int = 6) -> str:
 
 def _legacy_diagnostics(advanced: dict) -> str:
     tests = [
-        ("Chuyển tiếp lô tô tổng hợp 2×2", advanced.get("aggregate_transition", {})),
-        ("Thứ trong tuần × đuôi ĐB 7×10", advanced.get("weekday_special_tail", {})),
+        ("Chuyển tiếp LOTO tổng hợp 2×2", advanced.get("aggregate_transition", {})),
+        ("Thứ trong tuần × đuôi Đặc Biệt 7×10", advanced.get("weekday_special_tail", {})),
     ]
     rows = []
     for label, item in tests:
@@ -163,7 +164,7 @@ def _legacy_diagnostics(advanced: dict) -> str:
         )
     rows.append(
         "<tr>"
-        "<td>ACF/Bartlett toàn giải đặc biệt</td>"
+        "<td>ACF/Bartlett toàn giải Đặc Biệt</td>"
         f"<td>{int(advanced.get('full_special_acf_rows', 0))} độ trễ</td>"
         "<td>—</td>"
         f"<td>{int(advanced.get('full_special_acf_fdr_05', 0))} độ trễ có FDR&lt;.05</td>"
@@ -201,7 +202,7 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
     try:
         state = int(current_special)
     except Exception:
-        return '<tr><td colspan="6">Chưa có trạng thái ĐB hiện tại</td></tr>'
+        return '<tr><td colspan="6">Chưa có trạng thái Đặc Biệt hiện tại</td></tr>'
     view = df[df["special"].astype(int) == state].copy()
     if view.empty:
         return '<tr><td colspan="6">Chưa đủ lịch sử cho trạng thái này</td></tr>'
@@ -260,10 +261,10 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     def _table(title, desc, headers, align_cls, rows_html, span=6):
         head = "".join(f"<th>{h}</th>" for h in headers)
         body = (
-            f'<div class="vla-table-wrap"><table class="vla-table {align_cls}">'
+            f'<div class="ui-table-wrap"><table class="ui-table {align_cls}">'
             f"<thead><tr>{head}</tr></thead><tbody>{rows_html}</tbody></table></div>"
         )
-        intro = f'<p class="vla-muted">{desc}</p>' if desc else ""
+        intro = f'<p class="ui-muted">{desc}</p>' if desc else ""
         return card(intro + body, title=title, span=span, lift=True)
 
     cards = "".join(
@@ -272,42 +273,42 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 "Chẩn đoán tính ngẫu nhiên và phụ thuộc",
                 "Các phép kiểm định chính được hiệu chỉnh bằng Benjamini–Hochberg FDR.",
                 ["Phép kiểm định", "Thống kê", "p", "q (FDR)", "FDR&lt;.05"],
-                "vla-r2 vla-r3 vla-r4 vla-m5",
+                "ui-r2 ui-r3 ui-r4 ui-m5",
                 _primary_tests(diagnostics),
             ),
             _table(
                 "Gan tổng / chạm",
                 "Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.",
                 ["Nhóm", "Gan ngày", "Lần cuối"],
-                "vla-r2 vla-m3",
+                "ui-r2 ui-m3",
                 _gap_table(touch, sums),
             ),
             _table(
                 "Kiểm tra tương thích cũ · đúng ngữ nghĩa",
                 "Các kiểm định đặt câu hỏi thống kê khác với bộ kiểm tra hiện đại nên được giữ riêng để không làm mất ngữ nghĩa.",
                 ["Chẩn đoán", "Thống kê", "p", "Phương pháp / FDR"],
-                "vla-r2 vla-r3",
+                "ui-r2 ui-r3",
                 _legacy_diagnostics(advanced),
             ),
             _table(
-                f"ĐB {html.escape(current_special or chr(8212))} → Lô tô ngày kế",
+                f"Đặc Biệt {html.escape(current_special or chr(8212))} → LOTO ngày kế",
                 "Ma trận có điều kiện chỉ dùng cặp ngày lịch liên tiếp; pEB được co về xác suất nền biên và q là BH-FDR.",
                 ["Số", "Cỡ mẫu", "Số lần trúng", "p thô", "p EB", "q"],
-                "vla-r2 vla-r3 vla-r4 vla-r5 vla-r6",
+                "ui-r2 ui-r3 ui-r4 ui-r5 ui-r6",
                 _conditional_table(conditional, current_special),
             ),
             _table(
-                "Phòng chiến lược · Lô tô",
+                "Phòng chiến lược · LOTO",
                 "",
                 ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
-                "vla-r3 vla-r4 vla-r5 vla-m6",
+                "ui-r3 ui-r4 ui-r5 ui-m6",
                 _strategy_table(strategy_loto),
             ),
             _table(
                 "Phòng chiến lược · Đặc Biệt",
                 "",
                 ["Chiến lược", "Nhóm", "Độ chính xác", "Độ nâng", "q", "Cổng"],
-                "vla-r3 vla-r4 vla-r5 vla-m6",
+                "ui-r3 ui-r4 ui-r5 ui-m6",
                 _strategy_table(strategy_de),
             ),
             _table(
@@ -325,12 +326,12 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                     "Độ nâng trên tập giữ lại",
                     "Cổng",
                 ],
-                "vla-r3 vla-r5 vla-r6 vla-m7",
+                "ui-r3 ui-r5 ui-r6 ui-m7",
                 _crosslag_table(cross_rules),
                 span=12,
             ),
             card(
-                '<p class="vla-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
+                '<p class="ui-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
                 "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
                 "huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, "
                 "đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ "
@@ -345,13 +346,13 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
 {stylesheet_link()}
-<title>Phòng nghiên cứu VLA</title>
+<title>Phòng nghiên cứu</title>
 <style>
-/* Dải tiêu đề cố ý tối ở CẢ hai chế độ màu, nên KHÔNG dùng var(--vla-ink):
+/* Dải tiêu đề cố ý tối ở CẢ hai chế độ màu, nên KHÔNG dùng var(--ui-ink):
    token đó lật thành màu sáng ở chế độ tối, để lại chữ trắng trên nền sáng —
    đo được 1,17:1, gần như không đọc nổi. Giá trị cố định là đúng ở đây vì
    thành phần này không đổi theo chế độ. */
-.rl-hero{{padding:1.75rem;border-radius:var(--vla-r-xl);background:#0f172a;
+.rl-hero{{padding:1.75rem;border-radius:var(--ui-r-xl);background:#0f172a;
 color:#fff;margin-bottom:1.25rem}}
 .rl-hero h1{{color:#fff;margin:.5rem 0 .625rem;font-size:clamp(1.75rem,4vw,2.5rem)}}
 .rl-hero p{{margin:0;max-width:60rem;color:#cbd5e1;line-height:1.65}}
@@ -360,27 +361,27 @@ color:#fff;margin-bottom:1.25rem}}
 gap:1rem;margin-bottom:1.5rem}}
 @media(min-width:640px){{.rl-metrics{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
 @media(min-width:1024px){{.rl-metrics{{grid-template-columns:repeat(4,minmax(0,1fr))}}}}
-.metric-card{{background:var(--vla-surface);border:1px solid var(--vla-border);
-border-radius:var(--vla-r-lg);padding:1.125rem;box-shadow:var(--vla-sh-sm)}}
-.metric-card span,.metric-card em{{display:block;color:var(--vla-ink-soft);
+.metric-card{{background:var(--ui-surface);border:1px solid var(--ui-border);
+border-radius:var(--ui-r-lg);padding:1.125rem;box-shadow:var(--ui-sh-sm)}}
+.metric-card span,.metric-card em{{display:block;color:var(--ui-ink-soft);
 font-style:normal;font-size:.75rem;line-height:1.5}}
 .metric-card strong{{display:block;font-size:2rem;font-weight:600;
-color:var(--vla-ink);margin:.25rem 0;letter-spacing:-.02em;
+color:var(--ui-ink);margin:.25rem 0;letter-spacing:-.02em;
 font-variant-numeric:tabular-nums}}
 </style></head><body>
 {shell_open(wide=True)}
 <section class="rl-hero"><div><a href="index.html">← Trang chính</a></div>
 <h1>Phòng nghiên cứu khoa học</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
-<div class="vla-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
+<div class="ui-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
 <section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
-<div class="vla-grid">{cards}</div>
+<div class="ui-grid">{cards}</div>
 {nav_fallback()}{shell_close()}{dock("research-lab.html")}
 </body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)
     out = docs_dir / "research-lab.html"
-    out.write_text(page, encoding="utf-8")
+    write_page(out, page)
     for name in (
         "index.html",
         "landing.html",

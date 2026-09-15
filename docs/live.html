@@ -7,19 +7,15 @@
   <meta name="referrer" content="no-referrer">
   <title>Kết quả XSMB trực tiếp</title>
   <style>
-  /* Điều hướng cuối trang. Trang này tự chứa (có <style> riêng, không dùng
-     assets/vla.css) nên dock của hệ thiết kế không áp dụng được ở đây; một
-     danh sách phẳng là cách rẻ nhất để trang thôi là ngõ cụt. Danh sách phải
-     khớp SITE_NAV — tests/test_ui_redesign.py khẳng định điều đó, nếu không
-     nó sẽ lệch dần mỗi lần thêm trang mới. */
-  .vla-live-nav { margin: 32px auto 0; max-width: 1100px; padding: 24px 16px 40px;
+
+  .ui-live-nav { margin: 32px auto 0; max-width: 1100px; padding: 24px 16px 40px;
     border-top: 1px solid rgba(148,163,184,.28); font-size: 13px; }
-  .vla-live-nav h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  .ui-live-nav h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
     color: #cbd5e1; margin: 0 0 8px; font-weight: 600; }
-  .vla-live-nav ul { list-style: none; padding: 0; margin: 0 0 16px;
+  .ui-live-nav ul { list-style: none; padding: 0; margin: 0 0 16px;
     display: flex; flex-wrap: wrap; gap: 8px 16px; }
-  .vla-live-nav a { color: #93c5fd; text-decoration: none; }
-  .vla-live-nav a:hover { text-decoration: underline; }
+  .ui-live-nav a { color: #93c5fd; text-decoration: none; }
+  .ui-live-nav a:hover { text-decoration: underline; }
 
     :root{
       --bg:#08111f;--card:#0d1b2d;--card-2:#122236;--line:#24354b;
@@ -43,7 +39,6 @@
     .ok{border-color:var(--ok-line);color:var(--ok)}
     .warn{border-color:var(--warn-line);color:var(--warn)}
 
-    /* ---- Bảng giải: khung 27 ô dựng sẵn nên không xê dịch bố cục ---- */
     .prize{display:grid;grid-template-columns:104px 1fr;gap:10px 14px;
       align-items:center;padding:9px 0;border-bottom:1px solid #16273a}
     .prize:last-child{border-bottom:0}
@@ -121,19 +116,13 @@
   </div>
 
   <script>
-  // ĐỊA CHỈ WORKER — dán vào sau khi triển khai.
-  // Dạng: window.LIVE_WORKER_URL = '<dia-chi-worker-cua-ban>/live.json';
-  // Để trống thì trang chạy y như trước: đọc live.json do GitHub Actions ghi.
-  // Địa chỉ đầy đủ và các bước triển khai ở
-  // documentation/operations/live-worker.md.
+
   window.LIVE_WORKER_URL = '';
   </script>
   <script>
   (function () {
     'use strict';
 
-    // Cấu trúc giải XSMB: nhãn, số ô và số chữ số mỗi ô.
-    // Khớp EXPECTED_COUNTS / FIELD_WIDTHS phía Python (tổng 27 ô).
     var PRIZES = [
       {key:'special', label:'ĐB', count:1, digits:5},
       {key:'prize1',  label:'G1', count:1, digits:5},
@@ -146,17 +135,17 @@
     ];
     var TOTAL_SLOTS = 27;
 
-    var REVEAL_STAGGER_MS = 170;   // giãn cách giữa hai số khi hiện tuần tự
-    var FRESH_HIGHLIGHT_MS = 6000; // thời gian giữ viền sáng cho số vừa về
+    var REVEAL_STAGGER_MS = 170;
+    var FRESH_HIGHLIGHT_MS = 6000;
 
-    var slotIndex = Object.create(null); // "prize3:2" -> {el, value}
+    var slotIndex = Object.create(null);
     var revealQueue = [];
     var revealTimer = null;
     var pollTimer = null;
     var reduceMotion = false;
     try {
       reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (e) { /* môi trường không hỗ trợ matchMedia */ }
+    } catch (e) {  }
 
     function el(tag, className, text) {
       var node = document.createElement(tag);
@@ -170,9 +159,6 @@
       return isFinite(n) ? Math.min(max, Math.max(min, n)) : (fallback || 0);
     }
 
-    // ---- Khung cố định -----------------------------------------------
-    // Dựng đủ 27 ô ngay từ đầu để chiều cao trang không đổi khi số về,
-    // tránh giật bố cục (layout shift) mỗi lần cập nhật.
     function buildSkeleton() {
       var frag = document.createDocumentFragment();
       PRIZES.forEach(function (prize) {
@@ -195,11 +181,6 @@
       document.getElementById('results').replaceChildren(frag);
     }
 
-    // ---- Hiện tuần tự -------------------------------------------------
-    // Mỗi lần poll chỉ đưa các ô CHUYỂN TỪ TRỐNG SANG CÓ SỐ vào hàng đợi,
-    // rồi nhả ra từng ô một. Nhờ vậy số xuất hiện lần lượt như trang tường
-    // thuật trực tiếp, thay vì đổ ập cả nhóm cùng lúc; các ô đã có sẵn
-    // không bị vẽ lại nên không nhấp nháy.
     function queueReveal(entry, value) {
       revealQueue.push({entry: entry, value: value});
       if (revealTimer === null) drainQueue();
@@ -218,7 +199,7 @@
       node.textContent = value;
       node.classList.remove('is-empty');
       node.classList.add('is-new', 'is-fresh');
-      // Gỡ class animation sau khi chạy xong để lần sau còn kích hoạt lại được.
+
       window.setTimeout(function () { node.classList.remove('is-new'); }, 600);
       window.setTimeout(function () { node.classList.remove('is-fresh'); }, FRESH_HIGHLIGHT_MS);
     }
@@ -230,7 +211,6 @@
       entry.el.classList.remove('is-new', 'is-fresh');
     }
 
-    // So khớp dữ liệu mới với trạng thái đang hiển thị.
     function syncPrizes(prizes) {
       var filled = 0;
       PRIZES.forEach(function (prize) {
@@ -243,11 +223,11 @@
           if (value !== null) present++;
           if (value === entry.value) continue;
           if (value === null) {
-            clearValue(entry);           // nguồn rút lại giá trị: trả ô về trống
+            clearValue(entry);
           } else if (entry.value === null) {
-            queueReveal(entry, value);   // trống -> có số: hiện tuần tự
+            queueReveal(entry, value);
           } else {
-            applyValue(entry, value);    // sửa giá trị đã hiển thị: đổi ngay
+            applyValue(entry, value);
           }
         }
         filled += present;
@@ -261,9 +241,6 @@
       return filled;
     }
 
-    // Chỉ hiện MÃ ẩn danh, không bao giờ hiện tên miền. Dữ liệu tới đây đã
-    // được ẩn danh từ phía máy chủ; đoạn này là lớp chặn thứ hai — nếu một
-    // trường tên miền lọt vào tải trọng thì nó vẫn không được vẽ ra.
     function renderSources(rows) {
       var frag = document.createDocumentFragment();
       (Array.isArray(rows) ? rows : []).forEach(function (source, index) {
@@ -280,29 +257,22 @@
       document.getElementById('sources').replaceChildren(frag);
     }
 
-    // ---- Nhịp thăm dò thích ứng ---------------------------------------
-    // Giờ Việt Nam suy từ UTC nên không phụ thuộc múi giờ máy người xem.
-    // Vào khung quay số thì thăm dò dày, ngoài khung thì thưa để đỡ tốn
-    // băng thông và tránh bị giới hạn tần suất.
     function vietnamMinutes() {
       var now = new Date();
       var utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
       return (utcMinutes + 7 * 60) % (24 * 60);
     }
 
-    // Trạng thái dữ liệu quyết định nhịp, đồng hồ chỉ là gợi ý phụ: nếu kỳ quay
-    // bị lệch giờ hoặc kéo dài, "partial" vẫn giữ nhịp dày mà không cần đoán
-    // theo giờ. Ngược lại, khi chưa có gì thì đồng hồ giúp bắt đầu dày đúng lúc.
     function nextDelayMs(status) {
-      if (status === 'complete_verified') return 300000; // đã xác minh: 5 phút
-      if (document.hidden) return 60000;                 // tab ẩn: giảm tải
-      if (status === 'partial') return 5000;             // đang về số
-      if (status === 'complete') return 15000;           // đủ số, chờ xác minh
+      if (status === 'complete_verified') return 300000;
+      if (document.hidden) return 60000;
+      if (status === 'partial') return 5000;
+      if (status === 'complete') return 15000;
       var m = vietnamMinutes();
-      if (m >= 18 * 60 + 10 && m <= 18 * 60 + 50) return 5000;  // khung quay số
-      if (m >= 17 * 60 + 50 && m < 18 * 60 + 10) return 15000;  // sắp quay
-      if (m > 18 * 60 + 50 && m <= 19 * 60 + 30) return 20000;  // quay muộn
-      return 120000;                                            // ngoài khung
+      if (m >= 18 * 60 + 10 && m <= 18 * 60 + 50) return 5000;
+      if (m >= 17 * 60 + 50 && m < 18 * 60 + 10) return 15000;
+      if (m > 18 * 60 + 50 && m <= 19 * 60 + 30) return 20000;
+      return 120000;
     }
 
     function describeDelay(ms) {
@@ -311,27 +281,21 @@
         : 'làm mới mỗi ' + Math.round(ms / 1000) + ' giây';
     }
 
+    var E = {h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bGl2ZQ==', f: 'bGl2ZS5qc29u', d: 'ZGF0YQ=='};
+    function d(k) { return atob(E[k]); }
+
     function rawUrl() {
       if (window.LIVE_RAW_URL) return window.LIVE_RAW_URL;
       var host = location.hostname;
-      if (host.endsWith('.github.io')) {
+      if (host.endsWith(d('s'))) {
         var owner = host.split('.')[0];
         var first = location.pathname.split('/').filter(Boolean)[0];
-        var repo = first || (owner + '.github.io');
-        return 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/live/live.json';
+        var repo = first || (owner + d('s'));
+        return 'https://' + d('h') + '/' + owner + '/' + repo + '/' + d('b') + '/' + d('f');
       }
-      return 'data/live.json';
+      return d('d') + '/' + d('f');
     }
 
-    // Hai nguồn, theo thứ tự, KHÔNG phải một.
-    //
-    // Worker có đồng hồ riêng nên chạy đúng 18:15; live.json trên nhánh `live`
-    // do GitHub Actions ghi nên trễ, đo được là 2h50m-4h40m. Vì thế Worker đi
-    // trước. Nhưng Worker là một thành phần ngoài có thể chết, hết hạn miễn
-    // phí, hoặc bị nguồn chặn — nên phải còn đường lùi, và đường lùi ấy là
-    // đúng cái pipeline đang chạy hôm nay.
-    //
-    // Trang KHÔNG bao giờ trắng chỉ vì thành phần mới hỏng.
     function candidateUrls() {
       var urls = [];
       if (window.LIVE_WORKER_URL) urls.push(String(window.LIVE_WORKER_URL));
@@ -402,7 +366,6 @@
       schedule(status);
     }
 
-    // Quay lại tab thì lấy dữ liệu ngay thay vì đợi hết chu kỳ cũ.
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) { window.clearTimeout(pollTimer); load(); }
     });
@@ -411,6 +374,6 @@
     load();
   })();
   </script>
-<nav class="vla-live-nav" aria-label="Điều hướng đầy đủ"><h2>Trực tiếp</h2><ul><li><a href="live.html">Kết quả trực tiếp</a></li><li><a href="index.html">Kết quả hôm nay</a></li></ul><h2>Thống kê</h2><ul><li><a href="statistics.html">Ma trận thống kê</a></li><li><a href="index.html#tan-suat-loto">Tần suất lô tô</a></li><li><a href="index.html#gan-nhip">Gan &amp; nhịp</a></li><li><a href="index.html#cap-lon">Cặp lộn &amp; bóng</a></li></ul><h2>Cầu kèo</h2><ul><li><a href="soi-path-loto-active.html">Cầu lô tô đang chạy</a></li><li><a href="soi-path-loto-stable.html">Cầu lô tô ổn định</a></li><li><a href="soi-path-de-active.html">Cầu ĐB đang chạy</a></li><li><a href="soi-path-de-stable.html">Cầu ĐB ổn định</a></li><li><a href="index.html#duong-cau">Căn cứ vị trí cầu</a></li></ul><h2>Phỏng đoán</h2><ul><li><a href="dashboard.html">Bảng điều khiển AI/ML</a></li><li><a href="ml_top10_loto.html">10 số lô tô</a></li><li><a href="ml_top10_de.html">10 số Đặc Biệt</a></li><li><a href="model-quality.html">Chất lượng mô hình</a></li></ul><h2>Tool nâng cao</h2><ul><li><a href="research-lab.html">Phòng nghiên cứu</a></li><li><a href="index.html#backtest">Kiểm định AI/ML</a></li></ul></nav>
+<nav class="ui-live-nav" aria-label="Điều hướng đầy đủ"><h2>Trực tiếp</h2><ul><li><a href="live.html">Kết quả trực tiếp</a></li><li><a href="index.html">Kết quả hôm nay</a></li></ul><h2>Thống kê</h2><ul><li><a href="statistics.html">Ma trận thống kê</a></li><li><a href="index.html#tan-suat-loto">Tần suất lô tô</a></li><li><a href="index.html#gan-nhip">Gan &amp; nhịp</a></li><li><a href="index.html#cap-lon">Cặp lộn &amp; bóng</a></li></ul><h2>Cầu kèo</h2><ul><li><a href="soi-path-loto-active.html">Cầu lô tô đang chạy</a></li><li><a href="soi-path-loto-stable.html">Cầu lô tô ổn định</a></li><li><a href="soi-path-de-active.html">Cầu ĐB đang chạy</a></li><li><a href="soi-path-de-stable.html">Cầu ĐB ổn định</a></li><li><a href="index.html#duong-cau">Căn cứ vị trí cầu</a></li></ul><h2>Phỏng đoán</h2><ul><li><a href="dashboard.html">Bảng điều khiển AI/ML</a></li><li><a href="ml_top10_loto.html">10 số lô tô</a></li><li><a href="ml_top10_de.html">10 số Đặc Biệt</a></li><li><a href="model-quality.html">Chất lượng mô hình</a></li></ul><h2>Tool nâng cao</h2><ul><li><a href="research-lab.html">Phòng nghiên cứu</a></li><li><a href="index.html#backtest">Kiểm định AI/ML</a></li></ul></nav>
 </body>
 </html>

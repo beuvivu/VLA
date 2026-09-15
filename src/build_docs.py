@@ -14,6 +14,7 @@ from ui_locale import mode_label, path_kind_label
 from ui_theme import dock, nav_fallback
 from xsmb_domain import baseline_rate
 from web_security import security_meta_tags
+from page_output import write_page
 
 
 @dataclass
@@ -223,7 +224,7 @@ def _render_page(
         nav_fallback_html=nav_fallback(),
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(html, encoding="utf-8")
+    write_page(out_path, html)
 
 
 def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
@@ -246,7 +247,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             picks_df = _load_picks_csv(path_ui_dir, mode, kind, anchor_date)
 
             # Một trang trống không kèm lời giải thích không phân biệt được với
-            # một trang hỏng. Với ĐB, tỉ lệ nền là 1% nên xác suất một đường cầu
+            # một trang hỏng. Với Đặc Biệt, tỉ lệ nền là 1% nên xác suất một đường cầu
             # trúng ba kỳ liên tiếp là 1e-6: rỗng là trạng thái ĐÚNG và thường
             # gặp, không phải sự cố. Thông điệp cũ ("hãy chạy lại bước tạo dữ
             # liệu") hướng người đọc đi sửa một thứ không hỏng.
@@ -299,7 +300,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
         "</style></head><body><div class='wrap'>"
         "<h1 style='margin:0;font-size:20px'>Bảng điều khiển soi cầu</h1>"
         "<div class='small'>Biên ngày / số ngày cầu chạy theo cách trình bày của trang soi cầu. "
-        "Màu đỏ: về ĐB · Màu cam: loto đã về.</div>"
+        "Màu đỏ: về Đặc Biệt · Màu cam: loto đã về.</div>"
     ]
     for it in index_items:
         idx_html.append(
@@ -308,7 +309,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             f"Số ngày: {it['display_days']}</div></div>"
         )
     idx_html.append("</div></body></html>")
-    (docs_dir / "index.html").write_text("\n".join(idx_html), encoding="utf-8")
+    write_page((docs_dir / "index.html"), "\n".join(idx_html))
 
 
 def main() -> None:

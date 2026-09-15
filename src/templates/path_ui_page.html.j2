@@ -13,23 +13,23 @@
 
            /* Trang này luôn dùng bảng màu tối riêng, kể cả khi hệ điều hành đặt
               chế độ sáng. Ánh xạ bảng đó lên token của biểu định kiểu chung để
-              MỌI thành phần dùng chung (.vla-empty, .vla-table, badge…) đọc
+              MỌI thành phần dùng chung (.ui-empty, .ui-table, badge…) đọc
               được trên nền tối. Thiếu bước này, khối trạng thái rỗng lấy màu
               chữ #0f172a của chế độ sáng đặt lên card #0f172a — tỉ lệ tương
               phản 1.00:1, tức chữ vô hình hoàn toàn. */
-           --vla-bg:#0b0f17; --vla-surface:#0f172a; --vla-surface-2:#111827;
-           --vla-ink:#f1f5f9; --vla-ink-2:#e5e7eb; --vla-ink-soft:#cbd5e1;
-           --vla-ink-muted:#94a3b8;
-           --vla-border:#1f2937; --vla-border-strong:#243041;
-           --vla-brand:#93c5fd; --vla-brand-ink:#bfdbfe; --vla-brand-soft:#172554;
-           --vla-brand-border:#1e3a8a;
-           /* --vla-on-brand PHẢI lật cùng --vla-brand. Bảng màu tối này đổi nền
+           --ui-bg:#0b0f17; --ui-surface:#0f172a; --ui-surface-2:#111827;
+           --ui-ink:#f1f5f9; --ui-ink-2:#e5e7eb; --ui-ink-soft:#cbd5e1;
+           --ui-ink-muted:#94a3b8;
+           --ui-border:#1f2937; --ui-border-strong:#243041;
+           --ui-brand:#93c5fd; --ui-brand-ink:#bfdbfe; --ui-brand-soft:#172554;
+           --ui-brand-border:#1e3a8a;
+           /* --ui-on-brand PHẢI lật cùng --ui-brand. Bảng màu tối này đổi nền
               thương hiệu sang xanh nhạt #93c5fd, nhưng để nguyên chữ-trên-nền
               thương hiệu là #ffffff của chế độ sáng thì tỉ lệ chỉ còn 1,80:1.
               Lỗi này nằm im cho tới khi có thành phần dùng tới token đó. */
-           --vla-on-brand:#0b1220;
+           --ui-on-brand:#0b1220;
            color-scheme:dark; }
-    body{margin:0;font-family:var(--vla-font); background:var(--bg); color:var(--text);}
+    body{margin:0;font-family:var(--ui-font); background:var(--bg); color:var(--text);}
     a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
     .wrap{max-width:1200px;margin:0 auto;padding:20px}
     .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
@@ -74,7 +74,7 @@
       <div class="small">Ngày neo (biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Loại: <b>{{ mode_label }}</b> · Trạng thái: <b>{{ kind_label }}</b></div>
     </div>
     <div class="kpi">
-      <span class="chip">Màu đỏ: về ĐB</span>
+      <span class="chip">Màu đỏ: về Đặc Biệt</span>
       <span class="chip">Màu cam: loto đã về</span>
       <span class="chip">Gợi ý ô: độ trễ + vị trí dữ liệu gốc</span>
     </div>
@@ -108,9 +108,9 @@
 
     <div class="card">
       <b>Chọn nhanh</b>
-      <div class="small" style="margin-top:6px">Các tệp CSV/JSON đã được xuất vào <span class="mono">data/path_ui</span> và <span class="mono">data/path</span>. Đây là trang tĩnh mô phỏng cách trình bày trên web.</div>
+      <div class="small" style="margin-top:6px">Trang tĩnh, dữ liệu dựng sẵn.</div>
       <div class="legend">
-        <span><span class="dot hitde"></span>Về ĐB</span>
+        <span><span class="dot hitde"></span>Về Đặc Biệt</span>
         <span><span class="dot hit"></span>Về loto</span>
         <span><span class="dot none"></span>Không về</span>
       </div>
@@ -137,12 +137,12 @@
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
     <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
     {% if not rows %}
-    <div class="vla-empty" role="status">
-      <span class="vla-empty-icon" aria-hidden="true">◌</span>
+    <div class="ui-empty" role="status">
+      <span class="ui-empty-icon" aria-hidden="true">◌</span>
       <h3>Hôm nay không có đường cầu {{ kind_label|lower }} nào</h3>
       {% if empty_reason %}
       <p>Đây là trạng thái bình thường, không phải lỗi dữ liệu. Bộ quét đã chạy đủ và kết luận không đường cầu nào đạt ngưỡng {{ empty_reason.threshold }} nhịp liên tiếp.</p>
-      <div class="vla-empty-why">
+      <div class="ui-empty-why">
         {% if empty_reason.is_de %}
         <p style="margin:0 0 .5rem">Với Đặc Biệt, tỉ lệ trúng của một con là <b>{{ empty_reason.baseline_pct }}%</b>, nên xác suất một đường cầu trúng {{ empty_reason.threshold }} kỳ liên tiếp chỉ khoảng <b>{{ "%.6f"|format(empty_reason.chance_pct) }}%</b>. Rỗng là kết quả thường gặp, và hạ ngưỡng để “có dữ liệu” sẽ tạo ra tín hiệu giả.</p>
         {% else %}

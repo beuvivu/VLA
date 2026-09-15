@@ -1,7 +1,7 @@
 """Cầu Đặc Biệt: bộ số, chạm, tổng, đầu/đuôi, bóng — và dàn đề tinh gọn.
 
 Phân tích giải Đặc Biệt theo các trục mà giới soi cầu dùng, rồi quy mỗi trục về
-một đặc trưng trên 100 con: con này có cùng chạm/tổng/bộ với các giải ĐB gần đây
+một đặc trưng trên 100 con: con này có cùng chạm/tổng/bộ với các giải Đặc Biệt gần đây
 đến mức nào, so với mức mà một con bất kỳ đạt được do ngẫu nhiên.
 
 ``build_dan`` xuất dàn đề tinh gọn từ phong độ tuần của các trục chạm và tổng.
@@ -57,7 +57,7 @@ def touches(number: int) -> tuple[int, int]:
 
 @dataclass
 class SpecialSetExtractor:
-    """Phong độ của các trục ĐB, quy về đặc trưng trên từng con."""
+    """Phong độ của các trục Đặc Biệt, quy về đặc trưng trên từng con."""
 
     window_days: int = 7
     name: str = "special_set"
@@ -80,7 +80,7 @@ class SpecialSetExtractor:
             return out
 
         numbers = np.arange(NUMBER_SPACE)
-        # Mỗi trục: tỉ lệ ngày gần đây mà giải ĐB chia sẻ đặc điểm đó với con này.
+        # Mỗi trục: tỉ lệ ngày gần đây mà giải Đặc Biệt chia sẻ đặc điểm đó với con này.
         out[:, 0] = self._share(recent, numbers, lambda x: np.stack([_HEAD[x], _TAIL[x]], axis=-1))
         out[:, 1] = self._equal_rate(_SUM[recent], _SUM[numbers])
         out[:, 2] = self._equal_rate(_BO_ID[recent], _BO_ID[numbers])
@@ -95,7 +95,7 @@ class SpecialSetExtractor:
 
     @staticmethod
     def _share(recent: np.ndarray, numbers: np.ndarray, key) -> np.ndarray:
-        """Tỉ lệ ngày mà con này dùng chung ít nhất một chạm với giải ĐB."""
+        """Tỉ lệ ngày mà con này dùng chung ít nhất một chạm với giải Đặc Biệt."""
         recent_keys = key(recent)
         number_keys = key(numbers)
         shared = (number_keys[:, None, :, None] == recent_keys[None, :, None, :]).any(axis=(2, 3))
@@ -103,7 +103,7 @@ class SpecialSetExtractor:
 
     @staticmethod
     def _shadow_rate(recent: np.ndarray, numbers: np.ndarray) -> np.ndarray:
-        """Tỉ lệ ngày mà con này là bóng âm hoặc bóng dương của giải ĐB."""
+        """Tỉ lệ ngày mà con này là bóng âm hoặc bóng dương của giải Đặc Biệt."""
         duong = _BONG_DUONG[recent]
         am = _BONG_AM[recent]
         match = (numbers[:, None] == duong[None, :]) | (numbers[:, None] == am[None, :])

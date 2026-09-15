@@ -15,7 +15,7 @@ from sources import (
 COMPLETE = """
 <html><body>
 <h2>XSMB 30/08/2026</h2>
-<div>ĐB 83772</div>
+<div>Đặc Biệt 83772</div>
 <div>G1 68785</div>
 <div>G2 50518 27452</div>
 <div>G3 57053 92810 56241 65128 33811 42264</div>
@@ -57,9 +57,9 @@ def test_xskt_rolling_ledger_selects_the_requested_date_only() -> None:
 
     html = """
     <h2>XSMB chủ nhật ngày 13-09-2026</h2>
-    <div>ĐB 83799</div><div>G1 63029</div><div>G7 21 88 40 27</div>
+    <div>Đặc Biệt 83799</div><div>G1 63029</div><div>G7 21 88 40 27</div>
     <h2>XSMB thứ 7 ngày 12-09-2026</h2>
-    <div>ĐB 58851</div><div>G1 93635</div><div>G7 01 39 43 23</div>
+    <div>Đặc Biệt 58851</div><div>G1 93635</div><div>G7 01 39 43 23</div>
     """
     source = XsktVnSource()
     section = source.select_section(html, date(2026, 9, 12))
@@ -85,18 +85,18 @@ def test_generic_parser_accepts_complete_exact_width_block() -> None:
 
 
 def test_generic_parser_never_zero_fills_short_live_placeholders() -> None:
-    p = extract_partial_prize_map("<div>ĐB 8377</div><div>G1 —</div><div>G6 93 751</div><div>G7 6 21</div>")
+    p = extract_partial_prize_map("<div>Đặc Biệt 8377</div><div>G1 —</div><div>G6 93 751</div><div>G7 6 21</div>")
     assert p["prize7"] == ["21"]
     assert p["prize6"] == ["751"]
     assert p["special"] == []
 
 
 def test_generic_parser_rejects_unicode_digits_before_consensus() -> None:
-    p = extract_partial_prize_map("<div>ĐB １２３４５</div><div>G7 １２ 34</div>")
+    p = extract_partial_prize_map("<div>Đặc Biệt １２３４５</div><div>G7 １２ 34</div>")
     assert p["special"] == []
     assert p["prize7"] == ["34"]
 
-    mixed = extract_partial_prize_map("<div>ĐB １12345２</div><div>G7 １12２</div>")
+    mixed = extract_partial_prize_map("<div>Đặc Biệt １12345２</div><div>G7 １12２</div>")
     assert mixed["special"] == []
     assert mixed["prize7"] == []
 
@@ -134,7 +134,7 @@ def test_slot_consensus_uses_priority_only_for_provisional_values() -> None:
 def test_parser_accepts_xosodaiphat_dotted_g_labels() -> None:
     html = """
     <table>
-      <tr><td>G.ĐB</td><td>07523</td></tr>
+      <tr><td>G.Đặc Biệt</td><td>07523</td></tr>
       <tr><td>G.1</td><td>03402</td></tr>
       <tr><td>G.2</td><td>71264 70743</td></tr>
       <tr><td>G.3</td><td>23922 98532 50759 33811 64437 25606</td></tr>
@@ -271,7 +271,7 @@ def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
     urls = source.live_urls(ngay)
     assert len(urls) > 2
 
-    rich = ("<div>ĐB 83772</div><div>G1 68785</div>"
+    rich = ("<div>Đặc Biệt 83772</div><div>G1 68785</div>"
             "<div>G2 50518 27452</div>"
             "<div>G7 66 21 34 78</div>")
 
@@ -280,7 +280,7 @@ def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
             class R:
                 status_code = 200
                 # Ứng viên ĐẦU giàu nhất; các ứng viên sau vẫn bóc được nhưng ít hơn.
-                text = rich if url == urls[0] else "<div>ĐB 11111</div>"
+                text = rich if url == urls[0] else "<div>Đặc Biệt 11111</div>"
             return R()
 
     prize_map = source.fetch_partial(ngay, Http(), live=True)

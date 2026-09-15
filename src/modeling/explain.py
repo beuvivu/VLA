@@ -6,7 +6,7 @@ xấp xỉ: chỉ có 2^4 = 16 liên minh, và mỗi liên minh là một lượ
 phân bổ Shapley thật, không phải ước lượng có sai số không nêu.
 
 Cách "tắt" một nhóm là thay các cột của nó bằng trung vị trên toàn tập huấn
-luyện, tức đưa nhóm đó về mức "không mang thông tin gì đặc biệt về con này".
+luyện, tức đưa nhóm đó về mức "không mang thông tin gì Đặc Biệt về con này".
 Đây là quy ước phải nêu rõ: Shapley luôn được định nghĩa tương đối với một nền
 tham chiếu, và chọn nền khác sẽ cho phân bổ khác.
 """

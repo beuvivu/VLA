@@ -103,7 +103,7 @@ def hazard_curve_de(df_2d: pd.DataFrame, max_gap: int = 200) -> pd.DataFrame:
         day = int(ordinals[t])
         x = int(de_targets[t])
         # Same left-censoring correction as ``hazard_curve_loto``.  It bites
-        # harder here: a ĐB number needs ~100 draws on average for its first
+        # harder here: a Đặc Biệt number needs ~100 draws on average for its first
         # appearance, so with a short history a large share of the risk set has
         # no defined gap at all.
         gaps = np.clip(day - last_seen, 0, max_gap).astype(np.int32)

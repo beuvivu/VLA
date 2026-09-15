@@ -1,6 +1,6 @@
 """Đường nền của ``number_dynamics`` học độ co ngót thay vì đặt tay.
 
-Giá trị cũ là ``max(20, κ·0,5)`` — 22,5 cho lô tô — và nó được chọn bằng cảm
+Giá trị cũ là ``max(20, κ·0,5)`` — 22,5 cho LOTO — và nó được chọn bằng cảm
 tính. Đo walk-forward 400 kỳ trên dữ liệu thật, thống kê t cặp đôi:
 
     κ = 22,5 (đang dùng)   Brier 0,18143488       —

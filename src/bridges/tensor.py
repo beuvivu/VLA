@@ -28,7 +28,7 @@ from xsmb_domain import (
 NUMBER_SPACE: Final[int] = 100
 
 #: Chỉ số cột của hai chữ số cuối mỗi giải trong luồng chữ số phẳng.
-#: Hai chữ số cuối của một giải chính là con lô tô mà giải đó sinh ra.
+#: Hai chữ số cuối của một giải chính là con LOTO mà giải đó sinh ra.
 _LAST_TWO: Final[tuple[tuple[int, int], ...]] = tuple(
     (offset + width - 2, offset + width - 1)
     for offset, width in zip(
@@ -92,7 +92,7 @@ class DigitTensor:
         values = raw_digit_matrix(frame)
         labels = tuple(build_position_labels())
 
-        # Hai chữ số cuối của mỗi giải là con lô tô của giải đó; đếm bằng
+        # Hai chữ số cuối của mỗi giải là con LOTO của giải đó; đếm bằng
         # bincount theo hàng thay vì vòng lặp Python trên từng ngày.
         n_days = values.shape[0]
         pairs = np.empty((n_days, len(_LAST_TWO)), dtype=np.int16)

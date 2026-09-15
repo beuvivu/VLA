@@ -297,7 +297,7 @@ def main() -> int:
         # "Lô tô" chứ không phải "Đuôi tương ứng": ô nay chứa CẶP hai chữ số,
         # nên nhãn cũ mô tả sai thứ nằm bên dưới nó. Trùng luôn nhãn của trang
         # tham chiếu (đã đọc cấu trúc: cột `['Đầu', 'Lô tô']`).
-        if table["columns"] != ["Đầu", "Lô tô"]:
+        if table["columns"] != ["Đầu", "LOTO"]:
             failures.append(f"bảng lô tô phải còn đúng hai cột, đang là {table['columns']}")
         if table["cells_per_row"] != 2:
             failures.append(f"mỗi hàng phải có 2 ô, đang có {table['cells_per_row']}")

@@ -52,7 +52,7 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
                 "ai_cau_score": ["42.5"],
                 "ai_prob_percent": ["12.3"],
                 "path_lines_count": ["1"],
-                "top_position_1": ["L1: Giải ĐB · số 1(0) + Giải nhất · số 2(0) → 00"],
+                "top_position_1": ["L1: Giải Đặc Biệt · số 1(0) + Giải nhất · số 2(0) → 00"],
             }
         ),
         explain_de=pd.DataFrame(),
@@ -62,11 +62,11 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
                 "rule_kind": ["active"],
                 "lag_days": ["1"],
                 "base_date": ["2026-08-11"],
-                "pos_i_label": ["Giải ĐB · số 1"],
+                "pos_i_label": ["Giải Đặc Biệt · số 1"],
                 "digit_i": ["0"],
                 "pos_j_label": ["Giải nhất · số 2"],
                 "digit_j": ["0"],
-                "path_line": ["L1: Giải ĐB · số 1(0) + Giải nhất · số 2(0) → 00"],
+                "path_line": ["L1: Giải Đặc Biệt · số 1(0) + Giải nhất · số 2(0) → 00"],
                 "p_mean": ["0.25"],
                 "hits": ["10"],
                 "trials": ["40"],
@@ -79,7 +79,7 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
         positions_de=pd.DataFrame(),
     )
     assert payload["loto"]["00"]["summary"]["ai_cau_score"] == "42.5"
-    assert payload["loto"]["00"]["positions"][0]["pos_i_label"] == "Giải ĐB · số 1"
+    assert payload["loto"]["00"]["positions"][0]["pos_i_label"] == "Giải Đặc Biệt · số 1"
 
 
 # --- Banner, thẻ AI/ML và chân trang ---------------------------------------

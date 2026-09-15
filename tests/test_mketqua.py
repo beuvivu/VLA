@@ -29,7 +29,7 @@ class TestMketquaParsing(unittest.TestCase):
         html_text = """
         Thứ ba ngày 11-08-2026
         Ký tự | 3ES
-        Đặc biệt | 92191
+        Đặc Biệt | 92191
         Giải nhất | 64720
         Giải nhì | 08936 35676
         Giải ba | 58345 86863 36851 91550 59891 01824
@@ -39,7 +39,7 @@ class TestMketquaParsing(unittest.TestCase):
         Giải bảy | 22 92 40 00
 
         Thứ hai ngày 10-08-2026
-        Đặc biệt | 92957
+        Đặc Biệt | 92957
         """
         src = MketquaSource()
         res = src.fetch(date(2026, 8, 11), DummyHttp(html_text))

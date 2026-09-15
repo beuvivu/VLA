@@ -1,14 +1,14 @@
 """Cổng báo động khi mô hình sản xuất tệ hơn đường cơ sở quá ngưỡng.
 
-Lý do tồn tại: trong 12/2025–01/2026 mô hình lô tô cho logloss ~0,95 so với
+Lý do tồn tại: trong 12/2025–01/2026 mô hình LOTO cho logloss ~0,95 so với
 đường cơ sở ~0,55 (điểm kỹ năng khoảng −73%) và tình trạng đó kéo dài 22 ngày
 mà không ai phát hiện, suốt tám tháng. Không có gì đối chứng với baseline thì
 một hồi quy nghiêm trọng trông y hệt vận hành bình thường.
 
 Ngưỡng mặc định lấy từ số liệu thật của kho:
 
-* vận hành bình thường (197 ngày từ 02/2026): kỹ năng lô tô −0,82%, ĐB −0,09%
-* đợt hỏng (22 ngày 12/2025–01/2026): kỹ năng lô tô −72,6%, ĐB −5,14%
+* vận hành bình thường (197 ngày từ 02/2026): kỹ năng LOTO −0,82%, Đặc Biệt −0,09%
+* đợt hỏng (22 ngày 12/2025–01/2026): kỹ năng LOTO −72,6%, Đặc Biệt −5,14%
 
 Ngưỡng −10% nằm giữa hai vùng đó với biên rất rộng về cả hai phía, nên bắt được
 sự cố cỡ đó mà không báo giả khi hệ thống chạy bình thường.

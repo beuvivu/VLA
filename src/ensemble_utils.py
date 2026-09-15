@@ -142,13 +142,13 @@ def categorical_brier(p: np.ndarray, y_true_idx: int) -> float:
     than the standard definition.  Rankings were unaffected (the two differ by a
     constant factor), but two things were not:
 
-      * every published ĐB Brier figure was off by two orders of magnitude, and
+      * every published Đặc Biệt Brier figure was off by two orders of magnitude, and
       * ``meta_predictor`` mixes the two in ``logloss + 0.20 * brier``, so the
-        Brier term contributed ~0.002 of its intended weight for ĐB while
-        contributing fully for lô tô (whose ``bernoulli_brier`` is genuinely a
+        Brier term contributed ~0.002 of its intended weight for Đặc Biệt while
+        contributing fully for LOTO (whose ``bernoulli_brier`` is genuinely a
         mean over the 100 Bernoulli marginals).
 
-    ``bernoulli_brier`` is deliberately left as a mean: for lô tô the target is
+    ``bernoulli_brier`` is deliberately left as a mean: for LOTO the target is
     100 independent Bernoulli marginals, and the mean is the conventional
     per-marginal score there.
     """

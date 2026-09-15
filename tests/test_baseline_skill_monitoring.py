@@ -1,6 +1,6 @@
 """Kiểm thử ba lớp đối chứng đường cơ sở cho mô hình sản xuất.
 
-Bối cảnh: trong 12/2025–01/2026 mô hình lô tô cho logloss ~0,95 so với đường cơ
+Bối cảnh: trong 12/2025–01/2026 mô hình LOTO cho logloss ~0,95 so với đường cơ
 sở ~0,55 suốt 22 ngày, và không ai phát hiện trong tám tháng vì lịch sử đánh
 giá không mang đối chứng nào. Ba lớp dưới đây bịt đúng lỗ hổng đó:
 
@@ -302,7 +302,7 @@ def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path)
 
 
 def _label_frame(mode: str, days: list[str]) -> pd.DataFrame:
-    """Nhãn hợp lệ: lô tô 27 số trúng, ĐB đúng một số trúng."""
+    """Nhãn hợp lệ: LOTO 27 số trúng, Đặc Biệt đúng một số trúng."""
     rows = []
     for day in days:
         y = [0] * 100
@@ -403,7 +403,7 @@ def test_backfill_skips_days_it_cannot_score_instead_of_guessing(
 
 
 def test_backfill_rejects_invalid_labels(tmp_path: Path) -> None:
-    """Nhãn không đủ 100 số, không nhị phân, hoặc ĐB nhiều hơn một số trúng."""
+    """Nhãn không đủ 100 số, không nhị phân, hoặc Đặc Biệt nhiều hơn một số trúng."""
     short = _label_frame("loto", ["2026-03-01"]).head(50)
     assert load_labels_from(short, tmp_path / "a", "loto") == {}
 
@@ -421,16 +421,16 @@ def test_brier_convention_mismatch_is_detected_without_a_hardcoded_date() -> Non
     """``categorical_brier`` từng dùng mean thay vì sum, lệch đúng 100 lần.
 
     Chia baseline quy ước mới cho điểm mô hình quy ước cũ cho kỹ năng ~+99% —
-    mô hình trông vượt trội ngoạn mục vì lệch đơn vị. Bất biến phát hiện: với ĐB,
+    mô hình trông vượt trội ngoạn mục vì lệch đơn vị. Bất biến phát hiện: với Đặc Biệt,
     ``p = exp(-logloss)`` nên Brier theo quy ước sum bắt buộc ``>= (1 - p)^2``.
     """
-    logloss = 4.614117  # một ngày ĐB thật trong lịch sử kho
+    logloss = 4.614117  # một ngày Đặc Biệt thật trong lịch sử kho
     winner = float(np.exp(-logloss))
     correct = (1.0 - winner) ** 2 + 99 * (0.01**2)
 
     assert brier_is_comparable("de", logloss, correct)
     assert not brier_is_comparable("de", logloss, correct / 100)
-    # Lô tô chưa từng đổi quy ước nên không bị chặn.
+    # LOTO chưa từng đổi quy ước nên không bị chặn.
     assert brier_is_comparable("loto", 0.5478, 0.1826)
     assert not brier_is_comparable("de", float("nan"), correct)
 

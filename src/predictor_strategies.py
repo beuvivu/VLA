@@ -34,7 +34,7 @@ from xsmb_domain import baseline_rate
 NUMBER_SPACE: Final[int] = 100
 _EPS: Final[float] = 1e-9
 
-# Phần nền đều luôn được giữ lại trong phân phối ĐB, nên xác suất nhỏ nhất không
+# Phần nền đều luôn được giữ lại trong phân phối Đặc Biệt, nên xác suất nhỏ nhất không
 # bao giờ xuống 0 (sàn = _MIN_UNIFORM_SHARE / 100).
 _MIN_UNIFORM_SHARE: Final[float] = 1e-4
 
@@ -196,7 +196,7 @@ def finalize(scores: np.ndarray, ctx: PredictionContext, confidence: float) -> n
     raw = np.clip(scores.astype(np.float64), 0.0, None)
 
     if ctx.mode == "de":
-        # ĐB là phân phối phân loại: đúng một số trúng nên tổng phải bằng 1.
+        # Đặc Biệt là phân phối phân loại: đúng một số trúng nên tổng phải bằng 1.
         total = raw.sum()
         shaped = raw / total if total > _EPS else np.full(NUMBER_SPACE, 1.0 / NUMBER_SPACE)
         # Luôn giữ lại một phần nền đều: không thuật toán nào được phép tuyên bố
@@ -206,7 +206,7 @@ def finalize(scores: np.ndarray, ctx: PredictionContext, confidence: float) -> n
         blended = effective * shaped + (1.0 - effective) * (1.0 / NUMBER_SPACE)
         return blended / blended.sum()
 
-    # Lô tô là đa nhãn: mỗi số có xác suất riêng, không ràng buộc tổng.
+    # LOTO là đa nhãn: mỗi số có xác suất riêng, không ràng buộc tổng.
     # Chuẩn hoá quanh trung bình để điểm thô giữ đúng mức nền trung bình.
     mean = raw.mean()
     shaped = raw * (base / mean) if mean > _EPS else np.full(NUMBER_SPACE, base)

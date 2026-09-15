@@ -10,7 +10,7 @@ It combines modern ML with lottery-domain statistical signals:
 - current gap/rhythm pressure
 - same-weekday seasonality
 - previous-special relations: same/reverse/chạm/tổng/bóng
-- conditional transitions: ĐB hôm nay -> tomorrow target, loto hôm nay -> tomorrow target
+- conditional transitions: Đặc Biệt hôm nay -> tomorrow target, loto hôm nay -> tomorrow target
 - raw-result digit pair/path support
 - lô rơi style support from numbers appearing in today's result
 
@@ -714,7 +714,7 @@ def _reason_candidates(
     if float(row.get("path_support", 0.0)) >= quantiles.get("path_support", 1.0):
         reasons.append("cầu rawdata mạnh")
     if float(row.get("cond_de_rate", 0.0)) >= quantiles.get("cond_de_rate", 1.0):
-        reasons.append("hợp điều kiện ĐB hôm trước")
+        reasons.append("hợp điều kiện Đặc Biệt hôm trước")
     if float(row.get("cond_loto_max_rate", 0.0)) >= quantiles.get(
         "cond_loto_max_rate", 1.0
     ):
@@ -726,11 +726,11 @@ def _reason_candidates(
     if int(float(row.get("reverse_hit_today", 0))) == 1:
         reasons.append("cặp lộn vừa chạm")
     if int(float(row.get("is_reverse_prev_special", 0))) == 1:
-        reasons.append("đảo của ĐB gần nhất")
+        reasons.append("đảo của Đặc Biệt gần nhất")
     if int(float(row.get("is_bong_prev_special", 0))) == 1:
-        reasons.append("bóng của ĐB gần nhất")
+        reasons.append("bóng của Đặc Biệt gần nhất")
     if int(float(row.get("cham_overlap_prev_special", 0))) == 1:
-        reasons.append("cùng chạm ĐB gần nhất")
+        reasons.append("cùng chạm Đặc Biệt gần nhất")
     if float(row.get("gap", 0.0)) >= quantiles.get("gap", 1.0):
         reasons.append("gan/nhịp cao")
     if float(row.get("freq_30d", 0.0)) >= quantiles.get("freq_30d", 1.0):
@@ -811,7 +811,7 @@ def _add_ai_judgement(pred: pd.DataFrame, *, mode: Mode) -> pd.DataFrame:
         evidence.append(
             f"ML={float(row['ml_prob_raw']):.4f}; "
             f"cầu={int(float(row['path_support']))}; "
-            f"ĐB→x={float(row['cond_de_rate']):.3f}; "
+            f"Đặc Biệt→x={float(row['cond_de_rate']):.3f}; "
             f"loto→x={float(row['cond_loto_max_rate']):.3f}; "
             f"gap={int(float(row['gap']))}; "
             f"f30={int(float(row['freq_30d']))}"
@@ -1004,7 +1004,7 @@ def run(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Train/predict explainable AI/ML cầu-kèo ranking for loto and ĐB."
+        description="Train/predict explainable AI/ML cầu-kèo ranking for loto and Đặc Biệt."
     )
     parser.add_argument("--mode", choices=["loto", "de", "both"], default="both")
     parser.add_argument("--models-dir", default="models")

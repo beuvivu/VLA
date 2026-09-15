@@ -54,13 +54,13 @@ class FeatureContext:
         return self.tensor.values[start:stop]
 
     def hits(self, days: int | None = None) -> np.ndarray:
-        """Ma trận trúng lô tô ``(ngày, 100)`` trong cửa sổ."""
+        """Ma trận trúng LOTO ``(ngày, 100)`` trong cửa sổ."""
         stop = self.anchor_index + 1
         start = 0 if days is None else max(0, stop - days)
         return self.tensor.loto_hits()[start:stop]
 
     def counts(self, days: int | None = None) -> np.ndarray:
-        """Số nháy lô tô ``(ngày, 100)`` trong cửa sổ."""
+        """Số nháy LOTO ``(ngày, 100)`` trong cửa sổ."""
         stop = self.anchor_index + 1
         start = 0 if days is None else max(0, stop - days)
         return self.tensor.loto_counts[start:stop]

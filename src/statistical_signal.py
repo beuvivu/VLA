@@ -242,7 +242,7 @@ def _de_posterior(
     """Hậu nghiệm Dirichlet-Multinomial cho đề, độ tập trung HỌC được nếu None.
 
     Đề là bài toán một-trong-một-trăm nên tiên nghiệm là Dirichlet đối xứng với
-    tổng độ tập trung ``κ``. Câu hỏi gộp vẫn y hệt chế độ lô tô — "các con có
+    tổng độ tập trung ``κ``. Câu hỏi gộp vẫn y hệt chế độ LOTO — "các con có
     khác nhau thật hay chỉ dao động?" — nên dùng cùng bộ ước lượng, chỉ khác ở
     chỗ chia đều κ cho 100 loại.
     """

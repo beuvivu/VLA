@@ -804,7 +804,7 @@ def generate_statistics(
         heat_de = _matrix_for_key(freq_de[p], key)
         if not heat_de.empty and period in {"month", "year"}:
             img = out.images_dir / f"period_de_current_{period}_heatmap.jpg"
-            save_heatmap(heat_de, title=f"Tần suất ĐB 2 số — {label}", out_path=img, cmap="YlOrRd", cbar_label="Số lần")
+            save_heatmap(heat_de, title=f"Tần suất Đặc Biệt 2 số — {label}", out_path=img, cmap="YlOrRd", cbar_label="Số lần")
 
     weekly_mat = _period_matrix(sparse_loto, period="week", last_n=min(recent_weeks, 16))
     if not weekly_mat.empty:
@@ -836,7 +836,7 @@ def generate_statistics(
     )
     save_heatmap(
         _to_10x10_from_number_metric(rhythm_de, metric="current_gap"),
-        title="Nhịp ĐB — số ngày chưa về",
+        title="Nhịp Đặc Biệt — số ngày chưa về",
         out_path=out.images_dir / "de_rhythm_current_gap_heatmap.jpg",
         cmap="YlOrRd",
         cbar_label="Số ngày",
@@ -899,7 +899,7 @@ def generate_statistics(
     created.append(_dump_table(first_freq, out_dir=out.data_dir, name="first_prize_year_frequency"))
     created.append(_dump_table(first_overdue, out_dir=out.data_dir, name="first_prize_overdue"))
 
-    # 5) Conditional tables: loto theo đặc biệt, Đặc Biệt theo đặc biệt, loto theo loto.
+    # 5) Conditional tables: loto theo Đặc Biệt, Đặc Biệt theo Đặc Biệt, loto theo loto.
     cond_de_loto, cond_de_de, cond_loto_loto = _conditional_tables(raw, sparse_loto, top=top_conditional)
     created.append(_dump_table(cond_de_loto, out_dir=out.data_dir, name="conditional_loto_after_special_top500"))
     created.append(_dump_table(cond_de_de, out_dir=out.data_dir, name="conditional_special_after_special_top500"))
@@ -932,7 +932,7 @@ def generate_statistics(
     )
     save_heatmap(
         _to_10x10_from_number_metric(signal_de, metric="ai_ml_signal_score"),
-        title="AI/ML signal ĐB — score tổng hợp",
+        title="AI/ML signal Đặc Biệt — score tổng hợp",
         out_path=out.images_dir / "ai_ml_signal_de_heatmap.jpg",
         cmap="YlOrRd",
         cbar_label="Signal score",

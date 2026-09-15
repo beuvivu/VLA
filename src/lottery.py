@@ -327,7 +327,7 @@ class Lottery:
         self._raw_data.iloc[:, 1:] = self._raw_data.iloc[:, 1:].astype("int64")
         self._raw_data.sort_values("date", inplace=True, ignore_index=True)
 
-        # 2-digit view (lô tô) - vectorised.
+        # 2-digit view (LOTO) - vectorised.
         self._2_digits_data = self._raw_data.copy(deep=True)
         self._2_digits_data.iloc[:, 1:] = self._2_digits_data.iloc[:, 1:] % 100
 

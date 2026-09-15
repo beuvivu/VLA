@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from typing import Any
 
 MODE_LABELS = {
-    "loto": "Lô tô",
+    "loto": "LOTO",
     "de": "Đặc Biệt",
     "both": "Cả hai",
 }
@@ -32,10 +32,10 @@ GROUP_LABELS = {
     "head": "Đầu / hàng chục",
     "tail": "Đuôi / hàng đơn vị",
     "total": "Tổng",
-    "db_cham": "Chạm ĐB",
-    "db_head": "Đầu ĐB",
-    "db_tail": "Đuôi ĐB",
-    "db_total": "Tổng ĐB",
+    "db_cham": "Chạm Đặc Biệt",
+    "db_head": "Đầu Đặc Biệt",
+    "db_tail": "Đuôi Đặc Biệt",
+    "db_total": "Tổng Đặc Biệt",
 }
 
 COLUMN_LABELS = {
@@ -126,13 +126,13 @@ COLUMN_LABELS = {
     "hit_count": "Số lần về",
     "hit_rate": "Tỷ lệ ngày về",
     "hits": "Số lần trúng",
-    "is_bong_prev_special": "Bóng ĐB trước",
-    "is_reverse_prev_special": "Đảo ĐB trước",
+    "is_bong_prev_special": "Bóng Đặc Biệt trước",
+    "is_reverse_prev_special": "Đảo Đặc Biệt trước",
     "lag_days": "Độ trễ (ngày)",
     "last_seen": "Lần về gần nhất",
     "logloss": "LogLoss",
     "logloss_skill": "Kỹ năng LogLoss",
-    "loto_occ_today": "Số lần lô tô hôm nay",
+    "loto_occ_today": "Số lần LOTO hôm nay",
     "max_current_streak": "Chuỗi hiện tại dài nhất",
     "max_gap": "Gan lớn nhất",
     "max_path_p_mean": "Xác suất cầu lớn nhất",
@@ -143,7 +143,7 @@ COLUMN_LABELS = {
     "ml_prob": "Xác suất ML",
     "ml_prob_raw": "Xác suất ML thô",
     "mode": "Loại",
-    "next_loto": "Lô tô ngày sau",
+    "next_loto": "LOTO ngày sau",
     "number": "Số",
     "number_str": "Bộ số",
     "p_mean": "Tỷ lệ lịch sử",
@@ -158,8 +158,8 @@ COLUMN_LABELS = {
     "pos_j_label": "Vị trí B",
     "predict_for_date": "Ngày dự báo",
     "positive_skill_threshold": "Ngưỡng kỹ năng dương",
-    "prev_loto": "Lô tô ngày trước",
-    "prev_special_2d": "ĐB ngày trước",
+    "prev_loto": "LOTO ngày trước",
+    "prev_special_2d": "Đặc Biệt ngày trước",
     "primary_reason": "Nhận định chính",
     "prob": "Xác suất",
     "prob_percent": "Xác suất (%)",

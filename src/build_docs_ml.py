@@ -18,6 +18,7 @@ from ui_theme import (
     write_stylesheet,
 )
 from web_security import security_meta_tags
+from page_output import write_page
 
 
 DOCS_DIR = Path("docs")
@@ -25,9 +26,9 @@ ML_DIR = Path("data/ml")
 
 NAV: tuple[tuple[str, str], ...] = (
     ("index.html", "Bảng điều khiển"),
-    ("ml_top10_loto.html", "10 số lô tô"),
+    ("ml_top10_loto.html", "10 số LOTO"),
     ("ml_top10_de.html", "10 số Đặc Biệt"),
-    ("soi-path-loto-active.html", "Cầu lô tô đang chạy"),
+    ("soi-path-loto-active.html", "Cầu LOTO đang chạy"),
     ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy"),
     ("live.html", "Kết quả trực tiếp"),
 )
@@ -44,7 +45,7 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
 
     if df.empty:
         return (
-            '<p class="vla-table-empty">Chưa có dữ liệu. '
+            '<p class="ui-table-empty">Chưa có dữ liệu. '
             "Hãy chạy workflow (sync + ml_predict) trước.</p>",
             "",
         )
@@ -73,7 +74,7 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
 def _date_badge(gen_date: str) -> str:
     if not gen_date:
         return ""
-    return f'<span class="vla-badge vla-badge-brand">Dự báo cho {gen_date}</span>'
+    return f'<span class="ui-badge ui-badge-brand">Dự báo cho {gen_date}</span>'
 
 
 def _base_page(body: str, page_title: str) -> str:
@@ -107,17 +108,17 @@ def build() -> None:
         body=f"""
 {
             page_header(
-                "Dự báo ML — 10 số lô tô đứng đầu",
+                "Dự báo ML — 10 số LOTO đứng đầu",
                 "Xác suất mô hình học máy cho dải 00–99. Sau 18:35 (giờ Việt Nam) quy "
                 "trình sẽ cập nhật dự báo cho ngày hôm sau.",
             )
         }
 {nav_links(NAV, current="ml_top10_loto.html")}
-<div class="vla-grid">
+<div class="ui-grid">
 {
             card(
                 loto_table,
-                title="10 số lô tô đứng đầu (00–99)",
+                title="10 số LOTO đứng đầu (00–99)",
                 aside=_date_badge(loto_date),
                 span=12,
                 flush=True,
@@ -126,10 +127,10 @@ def build() -> None:
         }
 </div>
 """,
-        page_title="ML — 10 số lô tô đứng đầu",
+        page_title="ML — 10 số LOTO đứng đầu",
     )
     write_stylesheet(DOCS_DIR)
-    (DOCS_DIR / "ml_top10_loto.html").write_text(loto_page, encoding="utf-8")
+    write_page((DOCS_DIR / "ml_top10_loto.html"), loto_page)
 
     de_page = _base_page(
         body=f"""
@@ -141,11 +142,11 @@ def build() -> None:
             )
         }
 {nav_links(NAV, current="ml_top10_de.html")}
-<div class="vla-grid">
+<div class="ui-grid">
 {
             card(
                 de_table,
-                title="10 số Đặc Biệt đứng đầu (2 số cuối ĐB)",
+                title="10 số Đặc Biệt đứng đầu (2 số cuối Đặc Biệt)",
                 aside=_date_badge(de_date),
                 span=12,
                 flush=True,
@@ -156,7 +157,7 @@ def build() -> None:
 """,
         page_title="ML — 10 số Đặc Biệt đứng đầu",
     )
-    (DOCS_DIR / "ml_top10_de.html").write_text(de_page, encoding="utf-8")
+    write_page((DOCS_DIR / "ml_top10_de.html"), de_page)
 
     index_body = f"""
 {
@@ -167,16 +168,16 @@ def build() -> None:
         )
     }
 {nav_links(NAV, current="index.html")}
-<div class="vla-tabs">
+<div class="ui-tabs">
   <button class="tabbtn active" data-tab="loto" type="button">LÔ (00–99)</button>
-  <button class="tabbtn" data-tab="de" type="button">ĐẶC BIỆT (2 số cuối ĐB)</button>
+  <button class="tabbtn" data-tab="de" type="button">ĐẶC BIỆT (2 số cuối Đặc Biệt)</button>
 </div>
 <div id="panel-loto" class="panel active">
-  <div class="vla-grid">
+  <div class="ui-grid">
   {
         card(
             loto_table,
-            title="10 số lô tô đứng đầu",
+            title="10 số LOTO đứng đầu",
             aside=_date_badge(loto_date),
             span=12,
             flush=True,
@@ -185,7 +186,7 @@ def build() -> None:
   </div>
 </div>
 <div id="panel-de" class="panel">
-  <div class="vla-grid">
+  <div class="ui-grid">
   {
         card(
             de_table,
@@ -212,9 +213,7 @@ def build() -> None:
 </script>
 """
 
-    (DOCS_DIR / "index.html").write_text(
-        _base_page(index_body, "Bảng điều khiển xổ số"), encoding="utf-8"
-    )
+    write_page(DOCS_DIR / "index.html", _base_page(index_body, "Bảng điều khiển xổ số"))
 
 
 if __name__ == "__main__":

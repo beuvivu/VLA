@@ -26,7 +26,7 @@ WIDTHS = {
 }
 
 GROUPS: list[tuple[str, list[str]]] = [
-    ("Giải đặc biệt", ["special"]),
+    ("Giải Đặc Biệt", ["special"]),
     ("Giải nhất", ["prize1"]),
     ("Giải nhì", ["prize2_1", "prize2_2"]),
     ("Giải ba", ["prize3_1", "prize3_2", "prize3_3", "prize3_4", "prize3_5", "prize3_6"]),
@@ -72,7 +72,7 @@ def _build_loto_table(latest_2d: pd.Series) -> str:
         try:
             nums.append(int(v))
         except (TypeError, ValueError) as exc:
-            logger.debug("Bỏ qua giá trị lô tô không hợp lệ %r: %s", v, exc)
+            logger.debug("Bỏ qua giá trị LOTO không hợp lệ %r: %s", v, exc)
             continue
 
     tails_by_head: dict[int, list[int]] = {h: [] for h in range(10)}
@@ -92,7 +92,7 @@ def _build_loto_table(latest_2d: pd.Series) -> str:
 def _render_block(lottery_html: str, loto_html: str) -> str:
     return (
         "<!-- SNAPSHOT:BEGIN -->\n"
-        "| Xổ số | Lô tô |\n"
+        "| Xổ số | LOTO |\n"
         "| :------------: | :----------: |\n"
         f"| {lottery_html} | {loto_html} |\n"
         "<!-- SNAPSHOT:END -->\n"
@@ -106,7 +106,7 @@ def _replace_between_markers(text: str, new_block: str) -> str:
         return pre.rstrip() + "\n\n" + new_block + post.lstrip()
 
     pat = re.compile(
-        r"\| Lottery \(Xổ số\) \| Loto \(Lô tô\) \|\n\| :\-+:\s*\| :\-+:\s*\|\n\|\s*<table>.*?</table>\s*\|\s*<table>.*?</table>\s*\|\n",
+        r"\| Lottery \(Xổ số\) \| Loto \(LOTO\) \|\n\| :\-+:\s*\| :\-+:\s*\|\n\|\s*<table>.*?</table>\s*\|\s*<table>.*?</table>\s*\|\n",
         re.DOTALL,
     )
     if pat.search(text):
@@ -182,11 +182,11 @@ def _render_fun_prediction_block(payload: dict[str, Any]) -> str:
         f"> **Ngày neo:** kết quả thực đến **{anchor}**. **Không phải kết quả thật.** {disclaimer}\n\n"
         "### Bảng mô phỏng đầy đủ\n\n"
         f"{prize_table}\n\n"
-        "### Lô tô đứng đầu cho ngày mai\n\n"
+        "### LOTO đứng đầu cho ngày mai\n\n"
         f"{loto_table}\n\n"
-        "### Đặc biệt đứng đầu cho ngày mai\n\n"
+        "### Đặc Biệt đứng đầu cho ngày mai\n\n"
         f"{de_table}\n\n"
-        "> Xác suất ở bảng lô tô là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất ĐB là phân phối riêng cho 2 số cuối giải đặc biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.\n"
+        "> Xác suất ở bảng LOTO là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất Đặc Biệt là phân phối riêng cho 2 số cuối giải Đặc Biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.\n"
         "<!-- FUN_PREDICTION:END -->\n"
     )
 

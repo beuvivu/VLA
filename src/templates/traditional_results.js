@@ -99,7 +99,7 @@
     return { heads, tails };
   }
 
-  /** Toàn bộ 27 số lô tô của một kỳ, tăng dần. */
+  /** Toàn bộ 27 số LOTO của một kỳ, tăng dần. */
   function lotoNumbers(draw) {
     const out = [];
     for (const prize of draw.prizes) {
@@ -156,7 +156,7 @@
    *  Ô hiển thị MỘT chữ số đuôi, nhưng giá trị để đánh dấu là cả CẶP
    *  ``đầu + đuôi``. Bản trước lấy chính nội dung ô làm khoá, tức một chữ số
    *  đơn lẻ — bấm ô "2" làm sáng 159 ô mini ở mọi hàng đầu khác nhau và
-   *  KHÔNG ô giải nào. Đó không phải cặp lô tô, nên nó vô nghĩa với người
+   *  KHÔNG ô giải nào. Đó không phải cặp LOTO, nên nó vô nghĩa với người
    *  soi cầu.
    */
   function renderDigitList(draw, headDigit, tails) {
@@ -169,7 +169,7 @@
       // Hiện TRỌN cặp hai chữ số, không phải mỗi chữ số đuôi.
       //
       // Đã đọc cấu trúc bảng loto của trang tham chiếu: hai cột `['Đầu',
-      // 'Lô tô']`, và ô nội dung là `'02; 08;'` — tức cặp đầy đủ.
+      // 'LOTO']`, và ô nội dung là `'02; 08;'` — tức cặp đầy đủ.
       //
       // Việc này còn chữa một chỗ vô lý sẵn có của trang ta: ô mini vốn đã
       // mang cặp đầy đủ trong `data-value` để đánh dấu, nhưng người xem chỉ
@@ -190,12 +190,12 @@
 
   function renderHeadTail(draw) {
     const section = el("section", "tr-head-tail");
-    section.append(el("h3", "", "Bảng lô tô theo đầu"));
+    section.append(el("h3", "", "Bảng LOTO theo đầu"));
     const scroll = el("div", "tr-head-tail-scroll");
     const table = el("table");
     const thead = el("thead");
     const headRow = el("tr");
-    for (const label of ["Đầu", "Lô tô"]) headRow.append(el("th", "", label));
+    for (const label of ["Đầu", "LOTO"]) headRow.append(el("th", "", label));
     thead.append(headRow);
     table.append(thead);
     const tbody = el("tbody");
@@ -216,7 +216,7 @@
 
   function renderLoto(draw) {
     const section = el("section", "tr-loto");
-    section.append(el("h3", "", "Dãy lô tô (27 số)"));
+    section.append(el("h3", "", "Dãy LOTO (27 số)"));
     const list = el("div", "tr-loto-list");
     for (const value of lotoNumbers(draw)) list.append(el("span", "tr-loto-item", value));
     section.append(list);

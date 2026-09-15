@@ -528,7 +528,7 @@ def test_a_mini_cell_carries_the_whole_two_digit_pair() -> None:
 
     Bản trước lấy chính nội dung ô làm khoá — tức một chữ số đơn lẻ. Đo trong
     trình duyệt: bấm ô "2" làm sáng 159 ô mini rải khắp mọi hàng đầu khác
-    nhau, và KHÔNG ô giải nào. Đó không phải cặp lô tô.
+    nhau, và KHÔNG ô giải nào. Đó không phải cặp LOTO.
 
     Nay ô còn HIỆN luôn cả cặp, nên cái thấy và cái được đánh dấu là một.
     """
@@ -583,11 +583,11 @@ def test_there_is_a_way_to_clear_every_mark_at_once() -> None:
 def test_the_loto_table_keeps_only_the_head_side() -> None:
     """Bỏ hẳn nửa "Đuôi tương ứng"; còn hai cột và kéo giãn kín khung.
 
-    Nhãn cột thứ hai nay là "Lô tô" chứ không phải "Đuôi tương ứng": ô bên
+    Nhãn cột thứ hai nay là "LOTO" chứ không phải "Đuôi tương ứng": ô bên
     dưới chứa CẶP hai chữ số, nên nhãn cũ mô tả sai nội dung. Trùng luôn nhãn
-    của trang tham chiếu (đã đọc cấu trúc: cột ``['Đầu', 'Lô tô']``).
+    của trang tham chiếu (đã đọc cấu trúc: cột ``['Đầu', 'LOTO']``).
     """
-    assert '["Đầu", "Lô tô"]' in JS_CODE
+    assert '["Đầu", "LOTO"]' in JS_CODE
     assert "Đuôi tương ứng" not in JS_CODE
     assert "Đầu tương ứng" not in JS_CODE
     rule = re.search(r"\.tr-head-tail table\{([^}]*)\}", CSS_CODE)
@@ -605,11 +605,11 @@ def test_the_head_digit_uses_the_special_prize_colour() -> None:
     """
     rule = re.search(r"^\.tr-digit\{([^}]*)\}", CSS_CODE, re.M)
     assert rule is not None
-    assert "color:var(--vla-bad)" in rule.group(1)
+    assert "color:var(--ui-bad)" in rule.group(1)
     special = re.search(
         r'\.tr-prize-row\[data-prize="special"\] \.tr-prize-label\{([^}]*)\}', CSS_CODE)
     assert special is not None
-    assert "color:var(--vla-bad)" in special.group(1)
+    assert "color:var(--ui-bad)" in special.group(1)
 
 
 def test_the_pair_mode_checkbox_exists_and_starts_unchecked() -> None:
@@ -690,7 +690,7 @@ def test_the_status_line_says_how_many_draws_the_weekday_filter_started_from() -
     assert "weekdayLabel()" in body and "selectRange()" in body, body
 
 
-# --- Bảng lô tô đầu ---------------------------------------------------------
+# --- Bảng LOTO đầu ---------------------------------------------------------
 
 
 def test_a_loto_cell_shows_the_whole_pair_not_just_the_tail_digit() -> None:
@@ -753,8 +753,8 @@ def test_no_layout_falls_back_to_unreadably_small_loto_type(layout: str) -> None
 def test_the_head_column_keeps_the_special_prize_red() -> None:
     rule = re.search(r"^\.tr-digit\{[^}]*\}", CSS_CODE, flags=re.M)
     assert rule is not None, "không thấy quy tắc .tr-digit"
-    assert "color:var(--vla-bad)" in rule.group(0), rule.group(0)
+    assert "color:var(--ui-bad)" in rule.group(0), rule.group(0)
     special = re.search(
         r"^\.tr-prize-row\[data-prize=\"special\"\] \.tr-prize-label\{[^}]*\}",
         CSS_CODE, flags=re.M)
-    assert special is not None and "color:var(--vla-bad)" in special.group(0), special
+    assert special is not None and "color:var(--ui-bad)" in special.group(0), special

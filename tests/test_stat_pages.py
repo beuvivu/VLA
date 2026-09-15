@@ -111,7 +111,7 @@ def test_page_has_its_title_and_controls(page) -> None:
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.slug)
 def test_page_embeds_the_history(page) -> None:
     text = (DOCS / f"{page.slug}.html").read_text(encoding="utf-8")
-    assert "__VLA_DRAWS__" in text, "trang phải nhúng lịch sử để lọc phía trình duyệt"
+    assert "__D_DRAWS__" in text, "trang phải nhúng lịch sử để lọc phía trình duyệt"
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.slug)
@@ -220,7 +220,7 @@ def test_pair_page_recomputes_the_chance_note_for_the_filtered_range() -> None:
     ngay khi người dùng bấm lọc: ở "30 kỳ" mốc thật là 7,7 chứ không phải 39,8
     của toàn bộ lịch sử — lệch 5 lần, và bảng đọc thành tín hiệu."""
     html = (DOCS / "tan-suat-cap-loto.html").read_text(encoding="utf-8")
-    assert "__VLA_PAIR_CHANCE__" in html, "trang phải nhúng lưới tra cho trình duyệt"
+    assert "__D_PAIR_CHANCE__" in html, "trang phải nhúng lưới tra cho trình duyệt"
 
     note = _soup("tan-suat-cap-loto").select_one("#sp-chance")
     assert note is not None, "ghi chú thiếu chỗ để JavaScript viết lại"
@@ -280,21 +280,21 @@ def test_render_page_is_deterministic_apart_from_the_timestamp(draws) -> None:
 
 def test_embedded_payload_is_valid_json(draws) -> None:
     html = render_page(PAGES[0], draws[:5], generated="2026-01-01T00:00:00Z")
-    match = re.search(r"__VLA_DRAWS__=(\[.*?\]);", html, re.S)
+    match = re.search(r"__D_DRAWS__=(\[.*?\]);", html, re.S)
     assert match, "không tìm thấy khối dữ liệu nhúng"
     payload = json.loads(match.group(1).replace("\\u0026", "&"))
     assert len(payload) == 5
     assert set(payload[0]) == {"d", "s", "n"}
 
 
-# --- Giải đặc biệt đủ 5 chữ số ---------------------------------------------
+# --- Giải Đặc Biệt đủ 5 chữ số ---------------------------------------------
 
 
 @pytest.mark.parametrize(
     "slug", ["bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"]
 )
 def test_special_tables_render_all_five_digits(slug) -> None:
-    """Bảng đặc biệt phải liệt kê TRỌN giải, không cắt còn hai số cuối.
+    """Bảng Đặc Biệt phải liệt kê TRỌN giải, không cắt còn hai số cuối.
 
     Dữ liệu nhúng vốn giữ đủ 5 chữ số; bản trước cắt ngay lúc dựng bảng nên
     người đọc mất ba chữ số đầu và không đối chiếu được với kết quả gốc.
@@ -312,7 +312,7 @@ def test_special_tables_render_all_five_digits(slug) -> None:
     assert "sp-de" in page, f"{slug} chưa dùng lớp hiển thị giải đủ 5 số"
 
     # Hàm tồn tại là chưa đủ — phải được GỌI trong đúng hàm dựng của trang này.
-    # Theo CHUỖI GỌI, không ghim một tên hàm: bảng đặc biệt dựng ô qua
+    # Theo CHUỖI GỌI, không ghim một tên hàm: bảng Đặc Biệt dựng ô qua
     # specialCell(), và specialCell() dựng phần số qua specialFull(). Ghim tên
     # cụ thể thì test đỏ mỗi lần tách hàm dù hành vi không đổi.
     render = {
@@ -344,7 +344,7 @@ def test_special_tables_render_all_five_digits(slug) -> None:
 
 
 def test_counting_uses_last_two_digits_but_display_does_not() -> None:
-    """Đếm theo hai số cuối là ĐÚNG (lô tô là hai chữ số); cắt khi HIỂN THỊ mới
+    """Đếm theo hai số cuối là ĐÚNG (LOTO là hai chữ số); cắt khi HIỂN THỊ mới
     là sai. Hai việc khác nhau nên phải có hai hàm khác nhau."""
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function lastTwo(" in js
@@ -423,7 +423,7 @@ def test_every_page_can_clear_its_marks(slug) -> None:
     assert 'id="sp-mark-count"' in page, f"{slug} thiếu số đếm ô đã đánh dấu"
 
 
-# --- Ô bảng đặc biệt sáu trường ---------------------------------------------
+# --- Ô bảng Đặc Biệt sáu trường ---------------------------------------------
 
 
 def test_bo_lookup_comes_from_the_domain_helper() -> None:
@@ -477,7 +477,7 @@ def test_special_pages_can_toggle_each_field(slug) -> None:
 
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function bindFieldToggles(" in js
-    assert "__VLA_BO__" in page, f"{slug} chưa nhúng bảng tra bộ số"
+    assert "__D_BO__" in page, f"{slug} chưa nhúng bảng tra bộ số"
 
 
 def test_matrix_note_does_not_shadow_the_chance_note() -> None:
@@ -510,7 +510,7 @@ def test_matrix_caps_its_column_count() -> None:
     assert "sp-matrix-note" in js, "phải báo cho người đọc biết đã cắt bớt"
 
 
-# --- Giải đặc biệt theo tổng ------------------------------------------------
+# --- Giải Đặc Biệt theo tổng ------------------------------------------------
 
 
 def test_parity_field_covers_both_digits() -> None:

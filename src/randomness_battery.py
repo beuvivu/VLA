@@ -16,7 +16,7 @@ Giá trị p lấy bằng Monte Carlo
 -------------------------------
 
 Mọi giá trị p đều hiệu chuẩn bằng mô phỏng chứ không dùng phân phối tiệm cận.
-Lý do: với 391 kỳ, xấp xỉ tiệm cận của một số thống kê (đặc biệt là kiểm định
+Lý do: với 391 kỳ, xấp xỉ tiệm cận của một số thống kê (Đặc Biệt là kiểm định
 chuỗi và kiểm định phổ) lệch đáng kể, và đúng chiều làm ta tin nhầm có tín
 hiệu. Mô phỏng thì đúng theo định nghĩa, chỉ tốn thời gian.
 """

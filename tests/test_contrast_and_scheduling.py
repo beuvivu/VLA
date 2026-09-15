@@ -78,7 +78,7 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
     1,00:1 — chữ vô hình hoàn toàn.
     """
     template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
-    for token in ("--vla-ink:", "--vla-ink-soft:", "--vla-surface:", "--vla-bg:"):
+    for token in ("--ui-ink:", "--ui-ink-soft:", "--ui-surface:", "--ui-bg:"):
         assert token in template, token
 
 
@@ -88,28 +88,28 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
 )
 def test_dark_page_empty_and_body_text_are_light(page: Path) -> None:
     text = (DOCS / page).read_text(encoding="utf-8")
-    match = re.search(r"--vla-ink:\s*(#[0-9a-fA-F]{6})", text)
-    assert match, "trang tối phải khai báo lại --vla-ink"
+    match = re.search(r"--ui-ink:\s*(#[0-9a-fA-F]{6})", text)
+    assert match, "trang tối phải khai báo lại --ui-ink"
     # Trên nền card #0f172a, màu chữ phải sáng để đạt chuẩn.
     assert contrast_ratio(match.group(1), "#0f172a") >= WCAG_AA_NORMAL
 
 
 def test_inverse_surfaces_do_not_use_a_theme_flipping_token() -> None:
-    """``var(--vla-ink)`` lật thành màu sáng ở chế độ tối.
+    """``var(--ui-ink)`` lật thành màu sáng ở chế độ tối.
 
     Dùng nó làm NỀN cho dải tiêu đề chữ trắng cho ra 1,17:1 khi hệ ở chế độ tối.
     """
     source = (ROOT / "src/build_research_lab.py").read_text(encoding="utf-8")
     hero = re.search(r"\.rl-hero\{\{[^}]*\}\}", source)
     assert hero, "không tìm thấy .rl-hero"
-    assert "background:var(--vla-ink)" not in hero.group(0).replace(" ", "")
+    assert "background:var(--ui-ink)" not in hero.group(0).replace(" ", "")
 
 
 def test_text_on_brand_background_flips_with_the_theme() -> None:
     """Nền thương hiệu sáng lên ở chế độ tối; chữ trắng chỉ còn 2,75:1."""
     from ui_theme import TAILWIND_LITE_CSS
 
-    assert "--vla-on-brand" in TAILWIND_LITE_CSS
+    assert "--ui-on-brand" in TAILWIND_LITE_CSS
     assert contrast_ratio("#ffffff", "#4f46e5") >= WCAG_AA_NORMAL
     assert contrast_ratio("#0f172a", "#8b93f8") >= WCAG_AA_NORMAL
 

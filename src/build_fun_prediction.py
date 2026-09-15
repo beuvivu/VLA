@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Dựng và chèn bảng mô phỏng XSMB tất định cho ngày kế tiếp.
 
-The production models predict only the two-digit Loto/ĐB universe.  This module
+The production models predict only the two-digit Loto/Đặc Biệt universe.  This module
 turns those probabilities into a clearly-labelled entertainment simulation of a
 full XSMB prize board while preserving the model probabilities as the auditable
 part of the output.  Prefix digits are synthetic and must never be interpreted as
@@ -22,6 +22,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
+from page_output import write_page
 
 
 SCHEMA_VERSION = 1
@@ -29,7 +30,7 @@ STYLE_ID = "fun-prediction-style"
 BLOCK_ID = "du-doan-vui"
 
 PRIZE_GROUPS: list[tuple[str, str, list[str], int]] = [
-    ("special", "Đặc biệt", ["special"], 5),
+    ("special", "Đặc Biệt", ["special"], 5),
     ("prize1", "Giải nhất", ["prize1"], 5),
     ("prize2", "Giải nhì", ["prize2_1", "prize2_2"], 5),
     (
@@ -93,9 +94,9 @@ def load_prediction_inputs(data_dir: Path) -> PredictionInputs:
     anchor_loto = str(picks_loto.get("anchor_date", ""))
     anchor_de = str(picks_de.get("anchor_date", ""))
     if not target_loto or target_loto != target_de:
-        raise ValueError(f"Ngày mục tiêu lô tô/ĐB không khớp: {target_loto!r} và {target_de!r}")
+        raise ValueError(f"Ngày mục tiêu LOTO/Đặc Biệt không khớp: {target_loto!r} và {target_de!r}")
     if not anchor_loto or anchor_loto != anchor_de:
-        raise ValueError(f"Ngày neo lô tô/ĐB không khớp: {anchor_loto!r} và {anchor_de!r}")
+        raise ValueError(f"Ngày neo LOTO/Đặc Biệt không khớp: {anchor_loto!r} và {anchor_de!r}")
 
     loto = _prob_frame(pred_dir / f"predict_next_loto_all_{target_loto}.csv")
     de = _prob_frame(pred_dir / f"predict_next_de_all_{target_loto}.csv")
@@ -195,8 +196,8 @@ def build_fun_draw(inputs: PredictionInputs) -> dict[str, Any]:
             "xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế."
         ),
         "method": (
-            "ĐB: lấy mẫu tất định có trọng số từ phân phối ĐB. Các giải khác: lấy mẫu tất định "
-            "có trọng số từ phân phối lô tô. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp "
+            "Đặc Biệt: lấy mẫu tất định có trọng số từ phân phối Đặc Biệt. Các giải khác: lấy mẫu tất định "
+            "có trọng số từ phân phối LOTO. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp "
             "dữ liệu/mô hình để cùng đầu vào luôn cho cùng một bảng mô phỏng."
         ),
         "groups": groups,
@@ -330,12 +331,12 @@ def _render_board(payload: dict[str, Any]) -> str:
     </div>
     <div class="fun-prob-panels">
       <article class="fun-prob-card de">
-        <div class="fun-prob-title"><span>Đặc biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload["top_de"], "de", "ĐB")}</div>
+        <div class="fun-prob-title"><span>Đặc Biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_de"], "de", "Đặc Biệt")}</div>
       </article>
       <article class="fun-prob-card">
-        <div class="fun-prob-title"><span>Lô tô ngày mai</span><small>{html.escape(loto_state)}</small></div>
-        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "Lô tô")}</div>
+        <div class="fun-prob-title"><span>LOTO ngày mai</span><small>{html.escape(loto_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "LOTO")}</div>
       </article>
     </div>
   </div>
@@ -475,7 +476,7 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
         raise RuntimeError("Không dựng được khối HTML mô phỏng vui")
     target.append(block)
     rendered = "\n".join(line.rstrip() for line in str(soup).splitlines()) + "\n"
-    path.write_text(rendered, encoding="utf-8")
+    write_page(path, rendered)
     return True
 
 

@@ -14,7 +14,7 @@ def _sample_payload() -> dict:
         "groups": [
             {
                 "key": "special",
-                "label": "Đặc biệt",
+                "label": "Đặc Biệt",
                 "values": [{"value": "30972", "suffix": "72", "model_prob_percent": 1.01}],
             },
             {

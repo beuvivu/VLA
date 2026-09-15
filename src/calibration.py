@@ -278,7 +278,7 @@ def select_calibration(
       hiệu chuẩn có LÀM TỆ ĐI hay không; một cửa sổ lệch hoặc trôi khái niệm
       có thể khiến phép khớp tham số đẩy xác suất đi sai hướng, và không có
       ứng viên này thì điều đó không bao giờ lộ ra.
-    * ``parametric`` — Platt (lô tô) hoặc temperature (đề), hành vi hiện tại.
+    * ``parametric`` — Platt (LOTO) hoặc temperature (đề), hành vi hiện tại.
     * ``isotonic`` — đơn điệu không tham số, mạnh hơn nhưng dễ bám nhiễu.
 
     Chấm bằng Brier vì nó là proper scoring rule: tối ưu nó là tối ưu thẳng

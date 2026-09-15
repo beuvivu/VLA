@@ -32,6 +32,7 @@ from typing import Sequence
 
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link
 from web_security import json_for_html_script, security_meta_tags
+from page_output import write_page
 
 #: Thứ tự giải, nhãn và độ rộng. Bên JS giữ một bản y hệt; chúng phải khớp
 #: nhau và ``tests/test_traditional_results_page.py`` kiểm điều đó.
@@ -211,7 +212,7 @@ def render_page(payload: dict[str, object]) -> str:
   <div>
     <p class="tr-eyebrow">KẾT QUẢ XỔ SỐ KIẾN THIẾT MIỀN BẮC</p>
     <h1>Sổ kết quả truyền thống</h1>
-    <p>Tra cứu đầy đủ các giải và bảng lô tô đầu đuôi của mọi kỳ quay, từ
+    <p>Tra cứu đầy đủ các giải và bảng LOTO đầu đuôi của mọi kỳ quay, từ
     {earliest} đến {latest}.</p>
   </div>
   <div class="tr-trust" aria-label="Phạm vi dữ liệu">
@@ -253,7 +254,7 @@ def render_page(payload: dict[str, object]) -> str:
     <fieldset class="tr-chips">
       <legend>Hiển thị</legend>
       <label class="tr-chip"><input type="checkbox" id="tr-toggle-headtail" checked><span>Bảng đầu đuôi</span></label>
-      <label class="tr-chip"><input type="checkbox" id="tr-toggle-loto" checked><span>Dãy lô tô</span></label>
+      <label class="tr-chip"><input type="checkbox" id="tr-toggle-loto" checked><span>Dãy LOTO</span></label>
       <label class="tr-chip"><input type="checkbox" id="tr-toggle-tail" checked><span>Tô đậm 2 số cuối</span></label>
     </fieldset>
     <fieldset class="tr-chips">
@@ -297,7 +298,7 @@ def build(repo_root: Path, docs_dir: Path, *, generated: str | None = None) -> P
     stamp = generated or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     docs_dir.mkdir(parents=True, exist_ok=True)
     target = docs_dir / "so-ket-qua-truyen-thong.html"
-    target.write_text(render_page(embedded_payload(rows, generated=stamp)), encoding="utf-8")
+    write_page(target, render_page(embedded_payload(rows, generated=stamp)))
     return target
 
 

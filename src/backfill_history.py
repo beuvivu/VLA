@@ -22,7 +22,7 @@ kho** (393 kỳ trước lần bổ sung đầu tiên). Xem
 làm dịch chuyển được kết quả của toàn bộ lớp phân tích.
 
 Hệ quả cần nhớ khi kho dài ra: mọi mốc ngẫu nhiên đều co giãn theo số kỳ.
-Cực đại do ngẫu nhiên của 4950 cặp lô tô là 39,9 ở 393 kỳ nhưng 161,8 ở 2200
+Cực đại do ngẫu nhiên của 4950 cặp LOTO là 39,9 ở 393 kỳ nhưng 161,8 ở 2200
 kỳ — xem :func:`xsmb_domain.pair_chance_maximum`. Mốc nào còn đóng cứng theo
 393 kỳ sẽ biến mọi cặp thành "bất thường" ngay sau lần bổ sung này.
 """

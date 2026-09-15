@@ -1,4 +1,4 @@
-"""Đấu trường chung cho các họ mô hình dự đoán lô tô.
+"""Đấu trường chung cho các họ mô hình dự đoán LOTO.
 
 Vì sao cần một đấu trường thay vì so từng bài báo cáo rời
 ----------------------------------------------------------
@@ -688,7 +688,7 @@ class ShrinkageEnsemble:
     trọng số cao nhất, kể cả khi mọi mô hình đều vô dụng. Cấu trúc đó không có
     cách nào diễn đạt câu "không cái nào đáng tin".
 
-    Ở đây nền là một thành phần đặc biệt: nó giữ toàn bộ trọng số cho tới khi
+    Ở đây nền là một thành phần Đặc Biệt: nó giữ toàn bộ trọng số cho tới khi
     một mô hình chứng minh được điều ngược lại. Về mặt Bayes, đây là trung bình
     hóa mô hình với tiên nghiệm spike-and-slab đặt khối lượng dương tại "không
     có hiệu ứng".

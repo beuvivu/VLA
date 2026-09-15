@@ -79,7 +79,7 @@ def _fmt2(n: int | float | str) -> str:
 
 
 FIELD_DISPLAY_NAMES = {
-    "special": "Giải ĐB",
+    "special": "Giải Đặc Biệt",
     "prize1": "Giải nhất",
     "prize2_1": "Giải nhì 1",
     "prize2_2": "Giải nhì 2",

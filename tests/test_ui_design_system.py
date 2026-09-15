@@ -52,11 +52,11 @@ def test_theme_stays_self_contained_without_external_assets() -> None:
 
 def test_theme_keeps_layout_and_component_primitives() -> None:
     for token in (
-        ".vla-shell",
-        ".vla-card",
-        ".vla-table",
-        ".vla-badge",
-        ".vla-grid",
+        ".ui-shell",
+        ".ui-card",
+        ".ui-table",
+        ".ui-badge",
+        ".ui-grid",
     ):
         assert token in TAILWIND_LITE_CSS, token
     # Container căn giữa và có padding tăng dần theo breakpoint.
@@ -73,30 +73,30 @@ def test_render_table_aligns_columns_by_declared_type() -> None:
     )
     soup = BeautifulSoup(html_out, "html.parser")
     cells = soup.find_all("td")
-    assert "vla-al" in cells[0]["class"]
-    assert "vla-ac" in cells[1]["class"]
-    assert "vla-ar" in cells[2]["class"]
+    assert "ui-al" in cells[0]["class"]
+    assert "ui-ac" in cells[1]["class"]
+    assert "ui-ar" in cells[2]["class"]
     # Bảng luôn nằm trong vùng cuộn ngang riêng.
-    assert soup.find("div", class_="vla-table-wrap") is not None
+    assert soup.find("div", class_="ui-table-wrap") is not None
 
 
 def test_render_table_infers_alignment_from_cell_values() -> None:
     """Fallback suy luận theo giá trị: số canh phải, chữ canh trái."""
     soup = BeautifulSoup(
         render_table(
-            ["Nhãn", "Số", "Xác suất"], [["Lô tô", "83", "0.2491"]]
+            ["Nhãn", "Số", "Xác suất"], [["LOTO", "83", "0.2491"]]
         ),
         "html.parser",
     )
     cells = soup.find_all("td")
-    assert "vla-al" in cells[0]["class"]
+    assert "ui-al" in cells[0]["class"]
     # Chuỗi chữ số vẫn là giá trị số nên được canh phải khi không khai báo align.
-    assert "vla-ar" in cells[1]["class"]
-    assert "vla-ar" in cells[2]["class"]
+    assert "ui-ar" in cells[1]["class"]
+    assert "ui-ar" in cells[2]["class"]
 
 
 def test_explicit_align_overrides_numeric_inference_for_key_columns() -> None:
-    """Cột khóa dạng số (ví dụ số lô tô) canh trái được khi khai báo rõ."""
+    """Cột khóa dạng số (ví dụ số LOTO) canh trái được khi khai báo rõ."""
     soup = BeautifulSoup(
         render_table(
             ["Số", "Xác suất"],
@@ -107,9 +107,9 @@ def test_explicit_align_overrides_numeric_inference_for_key_columns() -> None:
         "html.parser",
     )
     cells = soup.find_all("td")
-    assert "vla-al" in cells[0]["class"]
-    assert "vla-key" in cells[0]["class"]
-    assert "vla-ar" in cells[1]["class"]
+    assert "ui-al" in cells[0]["class"]
+    assert "ui-key" in cells[0]["class"]
+    assert "ui-ar" in cells[1]["class"]
 
 
 def test_render_table_escapes_untrusted_cell_content() -> None:
@@ -119,8 +119,8 @@ def test_render_table_escapes_untrusted_cell_content() -> None:
 
 
 def test_dataframe_table_reports_empty_frames_instead_of_raising() -> None:
-    assert "vla-table-empty" in dataframe_table(pd.DataFrame())
-    assert "vla-table-empty" in dataframe_table(None)
+    assert "ui-table-empty" in dataframe_table(pd.DataFrame())
+    assert "ui-table-empty" in dataframe_table(None)
 
 
 def test_dataframe_table_renders_every_row_and_column() -> None:
@@ -131,9 +131,9 @@ def test_dataframe_table_renders_every_row_and_column() -> None:
 
 
 def test_card_span_is_clamped_into_the_twelve_column_grid() -> None:
-    assert "vla-c8" in card("x", span=8)
-    assert "vla-c12" in card("x", span=99)
-    assert "vla-c1" in card("x", span=-3)
+    assert "ui-c8" in card("x", span=8)
+    assert "ui-c12" in card("x", span=99)
+    assert "ui-c1" in card("x", span=-3)
 
 
 def test_page_header_and_nav_escape_input() -> None:
@@ -145,13 +145,13 @@ def test_page_header_and_nav_escape_input() -> None:
 def _grid_rows_do_not_overflow(page: Path) -> None:
     """Tổng span của các card trong một lưới không được vượt 12 cột."""
     soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
-    for grid in soup.find_all("div", class_="vla-grid"):
+    for grid in soup.find_all("div", class_="ui-grid"):
         used = 0
-        for section in grid.find_all("section", class_="vla-card", recursive=False):
+        for section in grid.find_all("section", class_="ui-card", recursive=False):
             spans = [
                 int(m.group(1))
                 for cls in section.get("class", [])
-                if (m := re.fullmatch(r"vla-c(\d+)", cls))
+                if (m := re.fullmatch(r"ui-c(\d+)", cls))
             ]
             span = spans[0] if spans else 12
             used = span if used + span > 12 else used + span
@@ -171,7 +171,7 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
     for name in ("dashboard.html", "model-quality.html"):
         page = tmp_path / name
         text = page.read_text(encoding="utf-8")
-        assert "vla-shell" in text, name
+        assert "ui-shell" in text, name
         assert "https://" not in text, name
         # Không còn body margin cứng của bản cũ.
         assert "margin: 24px" not in text and "margin:24px" not in text, name
@@ -179,8 +179,8 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
 
 
 def test_shell_open_offers_a_wide_variant() -> None:
-    assert "vla-shell-wide" in shell_open(wide=True)
-    assert "vla-shell-wide" not in shell_open()
+    assert "ui-shell-wide" in shell_open(wide=True)
+    assert "ui-shell-wide" not in shell_open()
 
 
 # --- Hồi quy cho các lỗi bố cục/tương phản đã sửa -------------------------
@@ -193,7 +193,7 @@ def test_theme_does_not_force_heading_colour_globally() -> None:
     landing trùng màu nền (tương phản ~1:1).
     """
     assert "h1,h2,h3,h4{font-weight:600" in TAILWIND_LITE_CSS
-    assert ".vla-shell h1" in TAILWIND_LITE_CSS
+    assert ".ui-shell h1" in TAILWIND_LITE_CSS
     # Không còn quy tắc gán màu trực tiếp cho h1..h4 không phạm vi.
     assert "h1,h2,h3,h4{color:" not in TAILWIND_LITE_CSS
 
@@ -241,8 +241,8 @@ def test_landing_grid_items_can_shrink_below_their_content_width() -> None:
 def test_column_align_helpers_cover_expected_columns() -> None:
     """Bảng ghép chuỗi thủ công canh lề qua class theo vị trí cột."""
     for index in (1, 5, 10):
-        assert f".vla-table.vla-r{index} td:nth-child({index})" in TAILWIND_LITE_CSS
-        assert f".vla-table.vla-m{index} td:nth-child({index})" in TAILWIND_LITE_CSS
+        assert f".ui-table.ui-r{index} td:nth-child({index})" in TAILWIND_LITE_CSS
+        assert f".ui-table.ui-m{index} td:nth-child({index})" in TAILWIND_LITE_CSS
     # Cột số canh phải phải giữ trên một dòng.
     assert "text-align:right;white-space:nowrap" in TAILWIND_LITE_CSS
 
@@ -300,8 +300,8 @@ def test_every_style_owner_declares_the_same_page_ground() -> None:
     khác": nó so ba chủ thể với nhau chứ không so từng chủ thể với chính nó.
     """
     shared = _light_root(TAILWIND_LITE_CSS)
-    assert f"--vla-bg:{PAGE_GROUND[0]}" in shared.replace(" ", "")
-    assert f"--vla-bg-2:{PAGE_GROUND[1]}" in shared.replace(" ", "")
+    assert f"--ui-bg:{PAGE_GROUND[0]}" in shared.replace(" ", "")
+    assert f"--ui-bg-2:{PAGE_GROUND[1]}" in shared.replace(" ", "")
 
     landing = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
     landing_root = _light_root(landing)
@@ -414,7 +414,7 @@ def _stat_css() -> str:
 def test_empty_cell_sinks_with_solid_fill_and_visible_hatch() -> None:
     """Ô KHÔNG VỀ phải có nền đặc và vân đủ đậm để nhìn thấy.
 
-    Trước: nền trong suốt, vân vẽ bằng --vla-border (#E7EAF6). Đo trên trang
+    Trước: nền trong suốt, vân vẽ bằng --ui-border (#E7EAF6). Đo trên trang
     đã dựng, ô trống và ô có về cùng đứng trên nền trắng — 1,00:1 — nên mắt
     phải dò từng ô. Trên bảng 100x90 đó là mỏi mắt thật.
     """
@@ -430,7 +430,7 @@ def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
     css = _stat_css()
     start = css.index("td.sp-hit {")
     rule = css[start : css.index("}", start)]
-    assert "background-color: var(--vla-surface)" in rule
+    assert "background-color: var(--ui-surface)" in rule
     assert "inset 0 0 0 1px" in rule
 
 
@@ -519,7 +519,7 @@ def test_special_prize_is_red_in_both_themes() -> None:
     assert contrast_ratio("#BE123C", "#FFE4E6") >= WCAG_AA_NORMAL
 
     dark = css[css.index("@media (prefers-color-scheme: dark)") :]
-    assert "#FDA4AF" in dark, "chế độ tối đánh mất màu đỏ của giải đặc biệt"
+    assert "#FDA4AF" in dark, "chế độ tối đánh mất màu đỏ của giải Đặc Biệt"
     assert contrast_ratio("#FDA4AF", "#4C0519") >= WCAG_AA_NORMAL
 
 
@@ -589,23 +589,23 @@ def test_landing_data_marks_never_borrow_the_brand_hue() -> None:
 
 
 def test_one_measure_uses_one_hue_across_its_time_windows() -> None:
-    """Bốn ma trận tần suất lô tô là MỘT phép đo qua bốn cửa sổ thời gian.
+    """Bốn ma trận tần suất LOTO là MỘT phép đo qua bốn cửa sổ thời gian.
 
     Chúng từng mang bốn sắc — lam, lục, cam, tím — nên trông như bốn loại dữ
-    liệu. Hai ma trận tần suất ĐB cũng mắc đúng lỗi đó ở quy mô nhỏ hơn.
+    liệu. Hai ma trận tần suất Đặc Biệt cũng mắc đúng lỗi đó ở quy mô nhỏ hơn.
     """
     source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
 
     groups = {
-        "tần suất lô tô": [
+        "tần suất LOTO": [
             "Tần suất 00–99 trong ngày kết quả mới nhất.",
-            "Cộng dồn lô tô trong tuần hiện tại.",
-            "Cộng dồn lô tô trong tháng hiện tại.",
-            "Cộng dồn lô tô trong năm hiện tại.",
+            "Cộng dồn LOTO trong tuần hiện tại.",
+            "Cộng dồn LOTO trong tháng hiện tại.",
+            "Cộng dồn LOTO trong năm hiện tại.",
         ],
-        "tần suất ĐB": [
-            "Tần suất 2 số cuối giải đặc biệt trong tháng.",
-            "Tần suất 2 số cuối giải đặc biệt trong năm.",
+        "tần suất Đặc Biệt": [
+            "Tần suất 2 số cuối giải Đặc Biệt trong tháng.",
+            "Tần suất 2 số cuối giải Đặc Biệt trong năm.",
         ],
     }
     for name, subtitles in groups.items():

@@ -55,7 +55,7 @@ def test_empirical_bayes_probability_shrinks_toward_baseline():
 
 
 def _noise_two(days: int, seed: int = 4) -> pd.DataFrame:
-    """Lịch sử vô tín hiệu: đề và lô tô ngày hôm sau độc lập hoàn toàn."""
+    """Lịch sử vô tín hiệu: đề và LOTO ngày hôm sau độc lập hoàn toàn."""
     rng = np.random.default_rng(seed)
     cols = ["special"] + [f"p{i}" for i in range(1, 27)]
     dates = pd.date_range("2020-01-01", periods=days, freq="D").strftime("%Y-%m-%d")

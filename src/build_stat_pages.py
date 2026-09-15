@@ -42,6 +42,7 @@ from xsmb_domain import (
     pair_chance_maximum,
 )
 from web_security import json_for_html_script, security_meta_tags
+from page_output import write_page
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
         repo_root: Thư mục gốc của kho.
 
     Returns:
-        Danh sách kỳ quay, mỗi phần tử ``{"d": ngày, "s": ĐB 5 chữ số,
+        Danh sách kỳ quay, mỗi phần tử ``{"d": ngày, "s": Đặc Biệt 5 chữ số,
         "n": [27 số hai chữ số]}``, sắp xếp tăng dần theo ngày.
 
     Raises:
@@ -191,7 +192,7 @@ def _mark_tools() -> str:
     )
 
 
-#: Chú giải ô + hộp bật/tắt sáu trường trong mỗi ô bảng đặc biệt.
+#: Chú giải ô + hộp bật/tắt sáu trường trong mỗi ô bảng Đặc Biệt.
 #:
 #: Trang tham chiếu có đúng sáu ô đánh dấu này nhưng không giải thích trường
 #: nào đứng ở đâu. Người đọc phải hỏi mới biết chữ nhỏ dưới mỗi giải là gì, nên
@@ -206,8 +207,8 @@ FIELD_TOGGLE = (
 PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="bang-dac-biet",
-        title="Bảng đặc biệt theo tuần",
-        subtitle="Giải đặc biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ.",
+        title="Bảng Đặc Biệt theo tuần",
+        subtitle="Giải Đặc Biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ.",
         controls=_range_controls(),
         body=FIELD_TOGGLE
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
@@ -215,7 +216,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="bang-dac-biet-thang",
-        title="Bảng đặc biệt theo tháng",
+        title="Bảng Đặc Biệt theo tháng",
         subtitle="Cả năm theo ngày × tháng, kèm bảng cùng một tháng qua nhiều năm.",
         controls='<div class="sp-controls">'
                  '<label>Năm <select id="sp-year"></select></label>'
@@ -229,7 +230,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="bang-dac-biet-nam",
-        title="Bảng đặc biệt theo năm",
+        title="Bảng Đặc Biệt theo năm",
         subtitle="Cả năm, chọn Kiểu tháng (ngày × tháng) hoặc Kiểu tuần (tuần × thứ).",
         controls='<div class="sp-controls">'
                  '<label>Năm <select id="sp-year"></select></label>'
@@ -241,7 +242,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="tan-suat-loto",
-        title="Tần suất lô tô",
+        title="Tần suất LOTO",
         subtitle="Ma trận con lô × từng kỳ, đổi được chiều, chọn con để so sánh.",
         controls='<div class="sp-controls">'
                  '<label>Từ ngày <input type="date" id="sp-from"></label>'
@@ -260,7 +261,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="tan-suat-cap-loto",
-        title="Tần suất cặp lô tô",
+        title="Tần suất cặp LOTO",
         subtitle="Ma trận 50 họ cặp × từng kỳ, đổi được chiều; kèm bảng đồng xuất hiện.",
         controls='<div class="sp-controls">'
                  '<label>Từ ngày <input type="date" id="sp-from"></label>'
@@ -277,7 +278,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="giai-dac-biet-theo-tong",
-        title="Giải đặc biệt theo tổng",
+        title="Giải Đặc Biệt theo tổng",
         subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
         controls=_range_controls(),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
@@ -298,11 +299,11 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="cau-giai-dac-biet",
-        title="Cầu giải đặc biệt",
-        subtitle="Tần suất hai số cuối giải ĐB theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
+        title="Cầu giải Đặc Biệt",
+        subtitle="Tần suất hai số cuối giải Đặc Biệt theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
         controls=_range_controls(),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Cặp lộn của giải đặc biệt</h3>'
+             '<h3 class="sp-subhead">Cặp lộn của giải Đặc Biệt</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-lon"></table></div>'
              '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
              '<div id="sp-recent" class="sp-recent"></div>',
@@ -310,7 +311,7 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="cap-lon-loto",
-        title="Cặp lộn lô tô",
+        title="Cặp lộn LOTO",
         subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
         controls=_range_controls(),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
@@ -320,8 +321,8 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="dau-duoi-loto",
-        title="Đầu đuôi lô tô",
-        subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ lô tô trong dải đã chọn.",
+        title="Đầu đuôi LOTO",
+        subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn.",
         controls=_range_controls(),
         body='<div class="sp-duo">'
              '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
@@ -338,7 +339,7 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="lo-gan",
         title="Lô gan miền Bắc",
-        subtitle="Số kỳ chưa về của từng con lô tô, gan cực đại trong lịch sử, và cặp lô gan.",
+        subtitle="Số kỳ chưa về của từng con LOTO, gan cực đại trong lịch sử, và cặp lô gan.",
         controls=_range_controls(mode="preset"),
         body='<p class="sp-note">Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: '
              'XSMB nghỉ Tết và nghỉ 01–22/04/2020, đếm theo ngày lịch sẽ thổi phồng '
@@ -357,8 +358,8 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="chu-ky-dac-biet",
-        title="Chu kỳ giải đặc biệt",
-        subtitle="Số kỳ chưa về của từng con 00–99 ở giải đặc biệt, và chu kỳ dài nhất trong lịch sử.",
+        title="Chu kỳ giải Đặc Biệt",
+        subtitle="Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử.",
         controls=_range_controls(mode="preset"),
         body='<p class="sp-note">Đếm theo <b>kỳ quay</b>, không theo ngày lịch, nên số ở '
              'đây nhỏ hơn trang nào đếm theo ngày. Ví dụ đối chiếu được: con 98 ra lần cuối '
@@ -369,15 +370,15 @@ PAGES: tuple[StatPage, ...] = (
     ),
     StatPage(
         slug="cau-dac-biet-theo-bo-so",
-        title="Cầu giải đặc biệt theo bộ số",
-        subtitle="Điểm rơi của từng bộ số ở giải đặc biệt: lần về gần nhất, khoảng cách và số lần.",
+        title="Cầu giải Đặc Biệt theo bộ số",
+        subtitle="Điểm rơi của từng bộ số ở giải Đặc Biệt: lần về gần nhất, khoảng cách và số lần.",
         controls=_range_controls(mode="preset"),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialBySet",
     ),
     StatPage(
         slug="giai-db-ngay-mai",
-        title="Giải đặc biệt ngày mai",
+        title="Giải Đặc Biệt ngày mai",
         subtitle="Xếp hạng tham khảo cho kỳ kế tiếp, dựng từ chu kỳ và tần suất lịch sử.",
         controls=_range_controls(mode="preset"),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
@@ -419,7 +420,7 @@ CHANCE_NOTES: dict[str, str] = {
         "</span> Một cặp chỉ đáng chú ý khi vượt hẳn khoảng đó."
     ),
     "chu-ky-dac-biet": (
-        "Giải đặc biệt có 100 kết quả hai số nên khoảng gan trung bình là 100 "
+        "Giải Đặc Biệt có 100 kết quả hai số nên khoảng gan trung bình là 100 "
         "kỳ. Gan dài không làm con số “sắp về”: mỗi kỳ vẫn là 1/100 độc lập "
         "với lịch sử."
     ),
@@ -461,7 +462,7 @@ PAIR_CHANCE_GRID_POINTS: tuple[int, ...] = (
 
 
 def cap_loto_50() -> list[list[int]]:
-    """50 họ cặp lô tô, lấy từ ``number_reference.all_cap_loto_50``.
+    """50 họ cặp LOTO, lấy từ ``number_reference.all_cap_loto_50``.
 
     Trang tham chiếu dùng đúng bộ này: 45 cặp lộn thật cộng 5 cặp ghép hai số
     kép qua bóng (``00-55``, ``11-66``, ``22-77``, ``33-88``, ``44-99``). Đọc
@@ -481,7 +482,7 @@ def bo_lookup() -> list[str]:
     Bộ số gom một con với bóng-dương và số lộn của nó: 68 thuộc bộ 13 vì
     6 có bóng 1 và 8 có bóng 3. Có 15 họ, nhãn là phần tử nhỏ nhất.
 
-    Trang tham chiếu hiển thị cột này trong mỗi ô bảng đặc biệt; đo trên 24 ô
+    Trang tham chiếu hiển thị cột này trong mỗi ô bảng Đặc Biệt; đo trên 24 ô
     thật thì :func:`number_reference.bo_family_id` khớp 100%, nên dựng sẵn từ
     chính hàm đó thay vì cài lại công thức trong JavaScript — một bản chép
     thứ hai là một bản sẽ trôi.
@@ -542,25 +543,25 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
 {stylesheet_link()}
-<title>{page.title} · VLA</title>
+<title>{page.title}</title>
 <style>
 {_asset("stat_pages.css")}
 </style></head><body>
 {app_shell_open(f"{page.slug}.html", wide=True)}
 <div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
 <h1>{page.title}</h1>
-<p class="vla-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
+<p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
 {page.controls}
 {page.body}
 {note_html}
-<p class="vla-muted" style="margin-top:1.5rem;font-size:.75rem">
+<p class="ui-muted" style="margin-top:1.5rem;font-size:.75rem">
 Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên
 {len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
 {app_shell_close(f"{page.slug}.html")}
-<script>window.__VLA_DRAWS__={json_for_html_script(draws)};
-window.__VLA_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};
-window.__VLA_BO__={json_for_html_script(bo_lookup())};
-window.__VLA_CAP50__={json_for_html_script(cap_loto_50())};</script>
+<script>window.__D_DRAWS__={json_for_html_script(draws)};
+window.__D_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};
+window.__D_BO__={json_for_html_script(bo_lookup())};
+window.__D_CAP50__={json_for_html_script(cap_loto_50())};</script>
 <script>
 {_asset("stat_pages.js")}
 boot({json.dumps(page.render)});
@@ -588,7 +589,7 @@ def build(repo_root: Path, docs_dir: Path) -> list[Path]:
     written: list[Path] = []
     for page in PAGES:
         target = docs_dir / f"{page.slug}.html"
-        target.write_text(render_page(page, draws, generated=generated), encoding="utf-8")
+        write_page(target, render_page(page, draws, generated=generated))
         written.append(target)
         logger.info("đã ghi %s", target.name)
     return written

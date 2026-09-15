@@ -1,4 +1,4 @@
-"""Kiểm hệ 50 cặp lô tô — module trước đó ở mức phủ 0 %.
+"""Kiểm hệ 50 cặp LOTO — module trước đó ở mức phủ 0 %.
 
 Hệ này chia trọn 00-99 thành 45 cặp đảo cộng 5 cặp kép-bóng. Nó KHÔNG giả
 định quan hệ miền là dự báo được; nó đo xem hai thành viên một cặp có hành xử
@@ -181,7 +181,7 @@ def test_a_number_drawn_twice_in_one_draw_still_counts_as_one_hit_day() -> None:
 
 
 def test_de_matrix_marks_exactly_one_number_per_draw() -> None:
-    """Mỗi kỳ có đúng một giải đặc biệt, lấy hai số cuối."""
+    """Mỗi kỳ có đúng một giải Đặc Biệt, lấy hai số cuối."""
     _dates, _loto, de = _hit_matrices(
         _frame([("2026-01-01", [95, 52]), ("2026-01-02", [7, 88])])
     )
@@ -325,14 +325,14 @@ def test_de_mode_reads_only_the_special_prize(
     """Ở chế độ đề, mỗi kỳ chỉ có ĐÚNG một con trúng dù kỳ ấy có ba con lô.
 
     Hệ quả kiểm được: không cặp nào có thể "cả hai cùng về", vì hai thành viên
-    là hai con khác nhau mà mỗi kỳ chỉ có một ĐB. Cột ``pair_both_hit_days``
+    là hai con khác nhau mà mỗi kỳ chỉ có một Đặc Biệt. Cột ``pair_both_hit_days``
     khác 0 ở chế độ đề nghĩa là ma trận đề đã nhiễm dữ liệu lô.
     """
     df, _summary = build_stats("de", data_dir=tmp_path)
     assert int(df["a_hit_days"].sum() + df["b_hit_days"].sum()) == 3, "ba kỳ, ba con đề"
     assert int(df["pair_both_hit_days"].sum()) == 0
 
-    # ĐB ba kỳ lần lượt là 07, 07, 70.
+    # Đặc Biệt ba kỳ lần lượt là 07, 07, 70.
     row = df[df["pair_id"] == "07-70"].iloc[0]
     assert int(row["a_hit_days"]) == 2
     assert int(row["b_hit_days"]) == 1

@@ -15,12 +15,12 @@ def _render_quick_select(picks: list[SimpleNamespace]) -> str:
     return template.render(
         title="Kiểm thử",
         mode="loto",
-        mode_label="Lô tô",
+        mode_label="LOTO",
         kind="active",
         kind_label="Đang chạy",
         other_link=None,
         other_kind_label="Ổn định",
-        other_mode_label="Lô tô",
+        other_mode_label="LOTO",
         index_link=None,
         anchor_date="2026-09-02",
         display_days=10,
@@ -50,7 +50,7 @@ def test_quick_select_has_explicit_empty_state_when_no_predictions() -> None:
     """Trạng thái rỗng phải nói vì sao trống, không đổ lỗi cho dữ liệu.
 
     Thông điệp cũ bảo người đọc "hãy chạy lại bước tạo dữ liệu đường cầu". Với
-    ĐB thì rỗng là trạng thái đúng và thường gặp — tỉ lệ nền 1% khiến xác suất
+    Đặc Biệt thì rỗng là trạng thái đúng và thường gặp — tỉ lệ nền 1% khiến xác suất
     trúng ba kỳ liên tiếp chỉ là 1e-6 — nên câu đó hướng người đọc đi sửa một
     thứ không hỏng.
     """

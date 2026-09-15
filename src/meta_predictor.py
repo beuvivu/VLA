@@ -104,7 +104,7 @@ def _safe_prob(x: np.ndarray, mode: str) -> np.ndarray:
         raise ValueError("probability values must be non-empty and finite")
     if mode == "de":
         if bool((arr < 0.0).any()):
-            raise ValueError("ĐB probability weights must be non-negative")
+            raise ValueError("Đặc Biệt probability weights must be non-negative")
         return normalize_distribution(arr)
     if bool(((arr < 0.0) | (arr > 1.0)).any()):
         raise ValueError("loto probabilities must be inside [0, 1]")

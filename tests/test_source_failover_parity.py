@@ -60,7 +60,7 @@ CASES: list[tuple[str, list[tuple[str, dict[str, list[str]]]], int]] = [
     ("một nguồn chết", [("xosothudo.com.vn", FULL), ("xoso.com.vn", EMPTY)], 2),
     ("cả hai chết", [("xosothudo.com.vn", EMPTY), ("xoso.com.vn", EMPTY)], 2),
     (
-        "hai nguồn BẤT ĐỒNG ở giải đặc biệt",
+        "hai nguồn BẤT ĐỒNG ở giải Đặc Biệt",
         [("xosothudo.com.vn", FULL), ("xoso.com.vn", _differs("special", 0, "11111"))],
         2,
     ),

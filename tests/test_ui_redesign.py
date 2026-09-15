@@ -145,14 +145,14 @@ def test_shared_css_declares_self_hosted_inter_first() -> None:
     sẵn Microsoft 365. Aptos cũng không được phép phân phối lại nên không thể
     tự host hợp pháp.
     """
-    match = re.search(r"--vla-font:([^;]+);", TAILWIND_LITE_CSS)
-    assert match, "không tìm thấy token --vla-font"
+    match = re.search(r"--ui-font:([^;]+);", TAILWIND_LITE_CSS)
+    assert match, "không tìm thấy token --ui-font"
     assert match.group(1).strip().startswith('"Inter var"')
 
 
 def test_shared_css_has_a_real_fallback_chain() -> None:
     """Phông tải chậm hoặc hỏng thì vẫn phải có chuỗi dự phòng hợp lệ."""
-    match = re.search(r"--vla-font:([^;]+);", TAILWIND_LITE_CSS)
+    match = re.search(r"--ui-font:([^;]+);", TAILWIND_LITE_CSS)
     families = [f.strip().strip('"') for f in match.group(1).split(",")]
     assert "system-ui" in families
     assert families[-1] == "sans-serif"
@@ -254,8 +254,8 @@ def test_pages_link_the_shared_stylesheet_instead_of_inlining_it() -> None:
 def test_dark_theme_covers_all_three_viewer_states() -> None:
     """Mặc định "theo hệ điều hành" không gắn thuộc tính nào lên thẻ gốc."""
     assert "prefers-color-scheme:dark" in TAILWIND_LITE_CSS.replace(" ", "")
-    assert 'data-vla-theme="dark"' in TAILWIND_LITE_CSS
-    assert 'not([data-vla-theme="light"])' in TAILWIND_LITE_CSS.replace(" ", "")
+    assert 'data-ui-theme="dark"' in TAILWIND_LITE_CSS
+    assert 'not([data-ui-theme="light"])' in TAILWIND_LITE_CSS.replace(" ", "")
 
 
 # --- Sidebar thu gọn -------------------------------------------------------
@@ -265,13 +265,13 @@ def test_sidebar_is_gone_from_every_page() -> None:
     """Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết."""
     for page in PAGES:
         soup = _soup(page)
-        assert not soup.select(".sidebar, .vla-side"), f"{page.name} vẫn còn sidebar"
+        assert not soup.select(".sidebar, .ui-side"), f"{page.name} vẫn còn sidebar"
 
 
 def test_dock_replaces_it_on_the_main_pages() -> None:
     for page in DOCK_PAGES:
         soup = _soup(page)
-        assert soup.select(".dock, .vla-dock"), f"{page.name} thiếu dock"
+        assert soup.select(".dock, .ui-dock"), f"{page.name} thiếu dock"
 
 
 def test_dock_shows_one_button_per_navigation_group() -> None:
@@ -282,7 +282,7 @@ def test_dock_shows_one_button_per_navigation_group() -> None:
     """
     for page in DOCK_PAGES:
         soup = _soup(page)
-        buttons = soup.select(".dock-btn, .vla-dock-btn")
+        buttons = soup.select(".dock-btn, .ui-dock-btn")
         assert len(SITE_NAV) <= len(buttons) <= len(SITE_NAV) + 1, (
             f"{page.name}: {len(buttons)} nút / {len(SITE_NAV)} nhóm"
         )
@@ -292,7 +292,7 @@ def test_dock_popovers_reach_every_destination() -> None:
     """Mọi đích của SITE_NAV phải tới được; neo trong trang là phần thêm."""
     for page in DOCK_PAGES:
         soup = _soup(page)
-        hrefs = {a.get("href") for a in soup.select(".dock-pop a, .vla-dock-pop a")}
+        hrefs = {a.get("href") for a in soup.select(".dock-pop a, .ui-dock-pop a")}
         expected = {href for _, items in SITE_NAV for href, _, _ in items}
         assert expected <= hrefs, f"{page.name}: thiếu {sorted(expected - hrefs)}"
 
@@ -344,15 +344,15 @@ def test_navigation_covers_every_generated_page() -> None:
 
 
 def test_navigation_groups_are_the_agreed_set() -> None:
-    """Bảy nhóm. Hai nhóm "Bảng đặc biệt" và "Lô tô chi tiết" được thêm khi
+    """Bảy nhóm. Hai nhóm "Bảng Đặc Biệt" và "LOTO chi tiết" được thêm khi
     dựng mười trang thống kê riêng; trước đó chỉ có năm."""
     assert [group for group, _ in SITE_NAV] == [
         "Trực tiếp",
         "Thống kê",
         "Cầu kèo",
         "Phỏng đoán",
-        "Bảng đặc biệt",
-        "Lô tô chi tiết",
+        "Bảng Đặc Biệt",
+        "LOTO chi tiết",
         "Tool nâng cao",
     ]
 
@@ -434,7 +434,7 @@ def _render_path_page(*, rows: list, empty_reason: dict | None = None) -> str:
     """Dựng trang đường cầu trực tiếp từ mẫu, không phụ thuộc dữ liệu của ngày.
 
     Cần thiết vì trang nào rỗng là *tính chất của dữ liệu hôm đó*, không phải
-    của mã nguồn: hôm nay ĐB đang chạy có 4 đường cầu, hôm qua thì không. Kiểm
+    của mã nguồn: hôm nay Đặc Biệt đang chạy có 4 đường cầu, hôm qua thì không. Kiểm
     trạng thái rỗng bằng cách chỉ đích danh một tệp sinh ra sẽ hỏng mỗi lần
     tình trạng dữ liệu đảo chiều — và nó đã hỏng đúng như vậy.
     """
@@ -469,10 +469,10 @@ def test_empty_page_explains_itself_instead_of_blaming_the_data() -> None:
             "chance_pct": 0.0001,
             "sibling_rows": 12,
             "sibling_link": "soi-path-de-stable.html",
-            "sibling_label": "Cầu ĐB ổn định",
+            "sibling_label": "Cầu Đặc Biệt ổn định",
         },
     )
-    empty = BeautifulSoup(html, "html.parser").find(class_="vla-empty")
+    empty = BeautifulSoup(html, "html.parser").find(class_="ui-empty")
     assert empty is not None, "thiếu trạng thái rỗng"
     text = empty.get_text(" ", strip=True).lower()
     assert "không phải lỗi dữ liệu" in text
@@ -489,10 +489,10 @@ def test_empty_state_points_to_where_the_data_actually_is() -> None:
             "chance_pct": 0.0001,
             "sibling_rows": 12,
             "sibling_link": "soi-path-de-stable.html",
-            "sibling_label": "Cầu ĐB ổn định",
+            "sibling_label": "Cầu Đặc Biệt ổn định",
         },
     )
-    empty = BeautifulSoup(html, "html.parser").find(class_="vla-empty")
+    empty = BeautifulSoup(html, "html.parser").find(class_="ui-empty")
     link = empty.find("a")
     assert link is not None and "stable" in link.get("href", "")
 
@@ -519,7 +519,7 @@ def test_empty_state_appears_exactly_when_the_page_has_no_paths() -> None:
     """
     for name in PATH_PAGES:
         soup = _soup(DOCS / name)
-        has_empty_state = soup.find(class_="vla-empty") is not None
+        has_empty_state = soup.find(class_="ui-empty") is not None
         path_count = _path_table_rows(soup)
         assert has_empty_state == (path_count == 0), (
             f"{name}: {path_count} đường cầu nhưng trạng thái rỗng={has_empty_state}"
@@ -539,7 +539,7 @@ def test_a_page_with_paths_renders_no_empty_state() -> None:
         cells=[SimpleNamespace(num=7, hit=True, hitde=False, tooltip="07")],
     )
     assert (
-        BeautifulSoup(_render_path_page(rows=[row]), "html.parser").find(class_="vla-empty") is None
+        BeautifulSoup(_render_path_page(rows=[row]), "html.parser").find(class_="ui-empty") is None
     )
 
 
@@ -612,7 +612,7 @@ def test_next_day_order_is_simulation_then_special_then_loto() -> None:
     children = soup.select(".next-day > *")
     assert children[0].get("id") == "mo-phong"
     text = " ".join(c.get_text(" ", strip=True)[:80] for c in children[1:])
-    assert text.index("Đặc biệt") < text.index("Lô tô")
+    assert text.index("Đặc Biệt") < text.index("LOTO")
 
 
 def test_evidence_tables_are_merged_into_one_card() -> None:
@@ -642,7 +642,7 @@ def test_analysis_row_keeps_the_left_panel_independent() -> None:
     """Khu căn cứ xếp theo TẦNG, không theo cột.
 
     Tầng 1 là khung căn cứ trải hết chiều ngang; tầng 2 là hai bảng đường cầu
-    cạnh nhau, ĐB bên trái. Một cột duy nhất ở .inspector chính là cái tạo ra
+    cạnh nhau, Đặc Biệt bên trái. Một cột duy nhất ở .inspector chính là cái tạo ra
     hai tầng ấy.
     """
     css = (DOCS / "index.html").read_text(encoding="utf-8")
@@ -664,7 +664,7 @@ def test_wide_tables_scroll_inside_their_own_container() -> None:
 
 def test_shared_grids_never_let_a_child_force_the_page_wider() -> None:
     """minmax(0,1fr) là phần chống vỡ khung; thiếu nó cột phình theo nội dung."""
-    for cls in (".vla-duo", ".vla-trio", ".vla-row"):
+    for cls in (".ui-duo", ".ui-trio", ".ui-row"):
         block = re.search(re.escape(cls) + r"\s*\{([^}]*)\}", TAILWIND_LITE_CSS)
         assert block, cls
         assert "minmax(" in block.group(1), cls
@@ -689,8 +689,8 @@ def test_live_state_is_decided_on_the_viewer_clock_not_at_build_time() -> None:
 
 
 def test_shared_css_provides_empty_and_loading_states() -> None:
-    assert ".vla-empty" in TAILWIND_LITE_CSS
-    assert ".vla-skeleton" in TAILWIND_LITE_CSS
+    assert ".ui-empty" in TAILWIND_LITE_CSS
+    assert ".ui-skeleton" in TAILWIND_LITE_CSS
     assert "prefers-reduced-motion" in TAILWIND_LITE_CSS
 
 
@@ -1005,14 +1005,14 @@ def test_next_day_cards_stack_vertically() -> None:
 
 
 def test_next_day_order_is_simulation_then_special_then_loto_stacked() -> None:
-    """Thứ tự dọc: mô phỏng -> Đặc biệt -> Lô tô."""
+    """Thứ tự dọc: mô phỏng -> Đặc Biệt -> LOTO."""
     grid = _soup(DOCS / "index.html").find(class_="next-day")
     assert grid is not None
     kids = [k for k in grid.find_all(recursive=False)]
     assert kids[0].get("id") == "mo-phong"
     titles = [k.get_text(" ", strip=True)[:60] for k in kids[1:]]
-    assert any("Đặc biệt ngày mai" in t for t in titles[:1]), titles
-    assert any("Lô tô ngày mai" in t for t in titles[1:2]), titles
+    assert any("Đặc Biệt ngày mai" in t for t in titles[:1]), titles
+    assert any("LOTO ngày mai" in t for t in titles[1:2]), titles
 
 
 def test_bar_chart_uses_columns_instead_of_one_long_bar() -> None:
@@ -1030,7 +1030,7 @@ def test_bar_chart_uses_columns_instead_of_one_long_bar() -> None:
 
 
 def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
-    """Bảng mô phỏng: bảng giải | Đặc biệt | Lô tô, và sàn 520px phải còn.
+    """Bảng mô phỏng: bảng giải | Đặc Biệt | LOTO, và sàn 520px phải còn.
 
     Sàn thật của bố cục ba cột là 520 + 280 + 280 + 32 = 1112px BỀ RỘNG THẺ.
     Khối chiếm trọn chiều ngang trang, nên khung 1250px cho thẻ 1114px — vừa
@@ -1051,12 +1051,12 @@ def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
     assert "minmax(520px" in block.group(1)
     assert "display:contents" in block.group(1)
 
-    # Thứ tự đọc theo DOM: Đặc biệt trước Lô tô. Xáo bằng CSS order sẽ làm thứ
+    # Thứ tự đọc theo DOM: Đặc Biệt trước LOTO. Xáo bằng CSS order sẽ làm thứ
     # tự nhìn và thứ tự trình đọc màn hình lệch nhau.
-    assert src.index("Đặc biệt ngày mai") < src.index("Lô tô ngày mai")
+    assert src.index("Đặc Biệt ngày mai") < src.index("LOTO ngày mai")
 
 
-# --- Màn hình tần suất cặp lô tô -------------------------------------------
+# --- Màn hình tần suất cặp LOTO -------------------------------------------
 
 
 def test_pair_frequency_screen_exists() -> None:
@@ -1065,7 +1065,7 @@ def test_pair_frequency_screen_exists() -> None:
     hiển thị nó."""
     soup = _soup(DOCS / "index.html")
     section = soup.find(id="tan-suat-cap")
-    assert section is not None, "thiếu khu tần suất cặp lô tô"
+    assert section is not None, "thiếu khu tần suất cặp LOTO"
     assert section.find("table") is not None
 
 

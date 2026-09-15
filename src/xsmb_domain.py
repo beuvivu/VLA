@@ -51,7 +51,7 @@ FIELD_WIDTHS: Final[tuple[tuple[str, int], ...]] = (
 FIELD_WIDTH_MAP: Final[dict[str, int]] = dict(FIELD_WIDTHS)
 PRIZE_FIELDS: Final[tuple[str, ...]] = tuple(name for name, _ in FIELD_WIDTHS)
 
-#: Number of two-digit lô tô values produced by one draw (one per prize field).
+#: Number of two-digit LOTO values produced by one draw (one per prize field).
 LOTO_DRAWS_PER_DAY: Final[int] = len(FIELD_WIDTHS)
 
 #: Total positional digits in the flattened "rawdata" stream.

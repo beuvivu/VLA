@@ -35,7 +35,7 @@ def _scanner() -> BridgeScanner:
 
 
 def _raw_frame(specials: list[int], rng: np.random.Generator) -> pd.DataFrame:
-    """Bảng kết quả thô với dãy giải ĐB cho trước, các giải khác ngẫu nhiên."""
+    """Bảng kết quả thô với dãy giải Đặc Biệt cho trước, các giải khác ngẫu nhiên."""
     rows = []
     for offset, special in enumerate(specials):
         row: dict[str, object] = {
@@ -51,7 +51,7 @@ def _raw_frame(specials: list[int], rng: np.random.Generator) -> pd.DataFrame:
 
 
 def _planted_specials(n: int, rng: np.random.Generator, *, plant_until: int) -> list[int]:
-    """Dãy ĐB mà hai số cuối sao chép hai số ĐẦU của kỳ trước.
+    """Dãy Đặc Biệt mà hai số cuối sao chép hai số ĐẦU của kỳ trước.
 
     Đường cầu (vị trí 0, vị trí 1, độ trễ 1, bóng thực, ghép) vì thế trúng
     100 % ở mọi kỳ được cài, và 1 % ở các kỳ còn lại.

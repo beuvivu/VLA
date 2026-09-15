@@ -69,7 +69,7 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
 
 #: ``None`` nghĩa là HỌC độ co ngót của đường nền từ dữ liệu.
 #:
-#: Giá trị cũ là ``max(20, κ·0,5)`` — tức 22,5 cho lô tô — và nó được đặt tay.
+#: Giá trị cũ là ``max(20, κ·0,5)`` — tức 22,5 cho LOTO — và nó được đặt tay.
 #: Đo walk-forward 400 kỳ trên dữ liệu thật, thống kê t cặp đôi so với bản
 #: đang dùng:
 #:
@@ -102,8 +102,8 @@ LEARN_BASELINE_PRIOR: float | None = None
 #: Đo walk-forward qua chính ``build_dynamics_signal``, thống kê t cặp đôi
 #: (âm là tốt hơn):
 #:
-#:     lô tô,  n = 500    đặt tay 0,18149960   học 0,18145090   t = -2,90
-#:     lô tô,  n = 1000   đặt tay 0,18139358   học 0,18134064   t = -4,05
+#:     LOTO,  n = 500    đặt tay 0,18149960   học 0,18145090   t = -2,90
+#:     LOTO,  n = 1000   đặt tay 0,18139358   học 0,18134064   t = -4,05
 #:     đề,     n = 500    đặt tay 0,00990056   học 0,00990003   t = -1,22
 #:     đề,     n = 1000   đặt tay 0,00990057   học 0,00990005   t = -1,64
 #:
@@ -112,7 +112,7 @@ LEARN_BASELINE_PRIOR: float | None = None
 #: đảo chiều, nhưng với dữ liệu hiện có thì đó vẫn là hoà chứ không phải
 #: thắng. Lý do vẫn dùng phép học cho cả hai chế độ: thay đổi này BỚT mười
 #: hằng số đặt tay chứ không thêm tham số nào, nên quy tắc "thêm phức tạp
-#: mà không tăng biên tách thì dừng" không áp vào đây; và ở chế độ lô tô nó
+#: mà không tăng biên tách thì dừng" không áp vào đây; và ở chế độ LOTO nó
 #: thắng dứt khoát.
 #:
 #: Điều đáng chú ý nhất không nằm ở Brier mà ở chỗ κ học được bằng bao nhiêu.

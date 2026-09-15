@@ -87,7 +87,7 @@ def _research_evidence(research_dir: Path) -> dict[str, object]:
 
 
 def _special_axes(ctx: FeatureContext, probabilities: np.ndarray) -> dict[str, object]:
-    """Chạm, tổng và dàn đề rút ra từ phân phối ĐB."""
+    """Chạm, tổng và dàn đề rút ra từ phân phối Đặc Biệt."""
     extractor = SpecialSetExtractor()
     order = np.lexsort((np.arange(100), -probabilities))
     top = order[:10]
@@ -204,7 +204,7 @@ def main() -> int:
     )
     path = bundle.to_json(Path(args.out))
     logger.info(
-        "đã ghi %s cho ngày %s: %d con lô tô, %d con bị đánh dấu gan",
+        "đã ghi %s cho ngày %s: %d con LOTO, %d con bị đánh dấu gan",
         path,
         bundle.date,
         len(bundle.top_lo_to),

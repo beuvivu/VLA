@@ -40,7 +40,7 @@ FIELD_WIDTHS: dict[str, int] = {
 }
 
 PRIZE_GROUPS: list[tuple[str, list[str]]] = [
-    ("Đặc biệt", ["special"]),
+    ("Đặc Biệt", ["special"]),
     ("Giải nhất", ["prize1"]),
     ("Giải nhì", ["prize2_1", "prize2_2"]),
     (

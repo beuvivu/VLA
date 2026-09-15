@@ -228,7 +228,7 @@ def build_conditional_tables(
     *,
     top: int = 500,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
-    """Build ĐB→Loto, ĐB→ĐB and Loto→Loto using exact next-calendar-day pairs."""
+    """Build Đặc Biệt→Loto, Đặc Biệt→Đặc Biệt and Loto→Loto using exact next-calendar-day pairs."""
     raw = _prepare_raw(raw_df)
     sparse = _prepare_sparse(sparse_df)
     if raw.empty or sparse.empty:

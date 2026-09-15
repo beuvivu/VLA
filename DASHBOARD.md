@@ -7,10 +7,10 @@
 ![Dữ liệu](https://img.shields.io/badge/DU_LIEU-TOT-34d399?style=for-the-badge)
 ![Mới nhất](https://img.shields.io/badge/MOI_NHAT-2026--09--14-60a5fa?style=for-the-badge)
 ![Dự báo](https://img.shields.io/badge/DU_BAO-2026--09--15-a78bfa?style=for-the-badge)
-![Meta lô tô](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
+![Meta LOTO](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-15T03:04:36Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-15T05:21:27Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -27,7 +27,7 @@
 
 | Ngày dữ liệu chuẩn | Ngày dự báo | Bộ dữ liệu | Trạng thái mô hình |
 | --- | --- | --- | --- |
-| **2026-09-14** | **2026-09-15** | **2399 kỳ · thiếu 0** | Meta lô tô **ĐANG BẬT** · Đặc Biệt **ĐÃ CHẶN** |
+| **2026-09-14** | **2026-09-15** | **2399 kỳ · thiếu 0** | Meta LOTO **ĐANG BẬT** · Đặc Biệt **ĐÃ CHẶN** |
 
 ---
 
@@ -38,7 +38,7 @@
 
 | Giải | Kết quả | 2 số cuối | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | **74522** | 22 | Kết quả chuẩn đã xác minh |
+| Đặc Biệt | **74522** | 22 | Kết quả chuẩn đã xác minh |
 | Giải nhất | 70592 | 92 | Kết quả chuẩn đã xác minh |
 | Giải nhì | 57489 · 68602 | 89 · 02 | Kết quả chuẩn đã xác minh |
 | Giải ba | 86718 · 84988 · 37198 · 60351 · 72717 · 29855 | 18 · 88 · 98 · 51 · 17 · 55 | Kết quả chuẩn đã xác minh |
@@ -51,18 +51,18 @@
 
 | Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc biệt | 94809 | `09` 1.00% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 25963 | `63` 23.85% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 05027 · 09704 | `27` 23.93% · `04` 23.84% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải ba | 54251 · 01149 · 77056 · 16521 · 76438 · 00826 | `51` 23.84% · `49` 23.80% · `56` 23.84% · `21` 23.82% · `38` 23.77% · `26` 23.85% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải tư | 5231 · 2409 · 8069 · 1710 | `31` 23.91% · `09` 23.86% · `69` 23.83% · `10` 23.77% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải năm | 6369 · 5614 · 0162 · 2579 · 0539 · 0365 | `69` 23.83% · `14` 23.85% · `62` 23.95% · `79` 23.86% · `39` 23.89% · `65` 23.82% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 195 · 236 · 051 | `95` 23.76% · `36` 23.94% · `51` 23.84% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 80 · 99 · 16 · 60 | `80` 23.87% · `99` 23.88% · `16` 23.85% · `60` 23.78% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Đặc Biệt | 68631 | `31` 1.00% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 72471 | `71` 23.77% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 68124 · 07130 | `24` 23.78% · `30` 23.80% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 64086 · 05987 · 60001 · 30843 · 73766 · 05045 | `86` 23.83% · `87` 23.77% · `01` 23.78% · `43` 23.83% · `66` 23.86% · `45` 23.91% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 1061 · 9401 · 3208 · 6957 | `61` 23.86% · `01` 23.78% · `08` 23.87% · `57` 23.72% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 5038 · 0393 · 0851 · 6379 · 1099 · 0063 | `38` 23.77% · `93` 23.82% · `51` 23.84% · `79` 23.86% · `99` 23.88% · `63` 23.85% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 400 · 723 · 428 | `00` 23.84% · `23` 23.82% · `28` 23.82% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 05 · 18 · 22 · 45 | `05` 23.88% · `18` 23.78% · `22` 23.90% · `45` 23.91% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
-| Ngày | ĐB | G1 | G7 | Ý nghĩa |
+| Ngày | Đặc Biệt | G1 | G7 | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | 2026-09-14 | **74522** | 70592 | 75 · 94 · 24 · 31 | Đối chiếu xu hướng gần nhất |
 | 2026-09-13 | **83799** | 63029 | 21 · 88 · 40 · 27 | Đối chiếu xu hướng gần nhất |
@@ -80,7 +80,7 @@
 <a id="probability-arena"></a>
 ## 🔮 Khu vực xác suất
 
-### Lô tô · Xác suất cao nhất
+### LOTO · Xác suất cao nhất
 
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
@@ -106,9 +106,9 @@
 | 14 | **39** | 23.895% | Cao · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 15 | **89** | 23.894% | Trung bình · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Lô tô · Ma trận nhiệt xác suất 00–99
+### LOTO · Ma trận nhiệt xác suất 00–99
 
-> **Cách đọc màu – Xác suất cuối lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+> **Cách đọc màu – Xác suất cuối LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -133,7 +133,7 @@
 | **8x** | 🟨<br>`80`<br>**23.87%** | 🟥<br>`81`<br>**23.93%** | 🟨<br>`82`<br>**23.87%** | 🟩<br>`83`<br>**23.84%** | 🟩<br>`84`<br>**23.81%** | 🟩<br>`85`<br>**23.83%** | 🟩<br>`86`<br>**23.83%** | 🟦<br>`87`<br>**23.77%** | 🟩<br>`88`<br>**23.82%** | 🟧<br>`89`<br>**23.89%** |
 | **9x** | 🟧<br>`90`<br>**23.89%** | 🟨<br>`91`<br>**23.86%** | 🟧<br>`92`<br>**23.90%** | 🟩<br>`93`<br>**23.82%** | 🟩<br>`94`<br>**23.82%** | ⬜<br>`95`<br>**23.76%** | 🟨<br>`96`<br>**23.85%** | 🟨<br>`97`<br>**23.88%** | 🟨<br>`98`<br>**23.84%** | 🟨<br>`99`<br>**23.88%** |
 
-### ĐB · Xác suất cao nhất
+### Đặc Biệt · Xác suất cao nhất
 
 | # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
@@ -153,9 +153,9 @@
 | 14 | **65** | 1.008% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
 | 15 | **20** | 1.008% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▱ |
 
-### ĐB · Ma trận nhiệt xác suất 00–99
+### Đặc Biệt · Ma trận nhiệt xác suất 00–99
 
-> **Cách đọc màu – Xác suất cuối ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+> **Cách đọc màu – Xác suất cuối Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -185,8 +185,8 @@
 <a id="frequency-heatmaps-0099"></a>
 ## 🔥 Ma trận nhiệt tần suất 00–99
 
-### Lô tô · tháng
-> **Cách đọc màu – Tần suất lô tô tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### LOTO · tháng
+> **Cách đọc màu – Tần suất LOTO tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -211,8 +211,8 @@
 | **8x** | ⬜<br>`80`<br>**1** | ⬜<br>`81`<br>**2** | ⬜<br>`82`<br>**1** | 🟦<br>`83`<br>**3** | 🟨<br>`84`<br>**5** | 🟦<br>`85`<br>**3** | ⬜<br>`86`<br>**2** | 🟨<br>`87`<br>**5** | 🟥<br>`88`<br>**7** | 🟩<br>`89`<br>**4** |
 | **9x** | 🟩<br>`90`<br>**4** | ⬜<br>`91`<br>**1** | ⬜<br>`92`<br>**2** | 🟪<br>`93`<br>**9** | 🟩<br>`94`<br>**4** | 🟩<br>`95`<br>**4** | 🟨<br>`96`<br>**5** | 🟨<br>`97`<br>**5** | 🟩<br>`98`<br>**4** | 🟪<br>`99`<br>**8** |
 
-### ĐB · tháng
-> **Cách đọc màu – Tần suất ĐB tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Đặc Biệt · tháng
+> **Cách đọc màu – Tần suất Đặc Biệt tháng:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -237,8 +237,8 @@
 | **8x** | ⬜<br>`80`<br>**0** | 🟪<br>`81`<br>**1** | ⬜<br>`82`<br>**0** | ⬜<br>`83`<br>**0** | ⬜<br>`84`<br>**0** | ⬜<br>`85`<br>**0** | ⬜<br>`86`<br>**0** | 🟪<br>`87`<br>**1** | ⬜<br>`88`<br>**0** | ⬜<br>`89`<br>**0** |
 | **9x** | 🟪<br>`90`<br>**1** | ⬜<br>`91`<br>**0** | ⬜<br>`92`<br>**0** | ⬜<br>`93`<br>**0** | ⬜<br>`94`<br>**0** | ⬜<br>`95`<br>**0** | ⬜<br>`96`<br>**0** | ⬜<br>`97`<br>**0** | ⬜<br>`98`<br>**0** | 🟪<br>`99`<br>**1** |
 
-### Lô tô · năm
-> **Cách đọc màu – Tần suất lô tô năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### LOTO · năm
+> **Cách đọc màu – Tần suất LOTO năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -263,8 +263,8 @@
 | **8x** | 🟨<br>`80`<br>**70** | 🟧<br>`81`<br>**78** | 🟦<br>`82`<br>**60** | 🟥<br>`83`<br>**81** | 🟩<br>`84`<br>**69** | 🟩<br>`85`<br>**66** | ⬜<br>`86`<br>**59** | 🟧<br>`87`<br>**76** | 🟩<br>`88`<br>**67** | 🟩<br>`89`<br>**67** |
 | **9x** | 🟨<br>`90`<br>**74** | 🟪<br>`91`<br>**91** | 🟧<br>`92`<br>**79** | 🟦<br>`93`<br>**64** | 🟧<br>`94`<br>**79** | 🟧<br>`95`<br>**77** | 🟦<br>`96`<br>**64** | 🟩<br>`97`<br>**69** | 🟦<br>`98`<br>**62** | 🟩<br>`99`<br>**68** |
 
-### ĐB · năm
-> **Cách đọc màu – Tần suất ĐB năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Đặc Biệt · năm
+> **Cách đọc màu – Tần suất Đặc Biệt năm:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -289,8 +289,8 @@
 | **8x** | 🟧<br>`80`<br>**4** | 🟨<br>`81`<br>**3** | 🟦<br>`82`<br>**1** | 🟪<br>`83`<br>**6** | 🟩<br>`84`<br>**2** | 🟨<br>`85`<br>**3** | 🟩<br>`86`<br>**2** | 🟨<br>`87`<br>**3** | 🟩<br>`88`<br>**2** | 🟨<br>`89`<br>**3** |
 | **9x** | 🟨<br>`90`<br>**3** | 🟨<br>`91`<br>**3** | 🟩<br>`92`<br>**2** | 🟨<br>`93`<br>**3** | 🟧<br>`94`<br>**4** | 🟦<br>`95`<br>**1** | 🟩<br>`96`<br>**2** | 🟨<br>`97`<br>**3** | ⬜<br>`98`<br>**0** | 🟩<br>`99`<br>**2** |
 
-### Lô tô · tuần
-> **Cách đọc màu – Tần suất lô tô tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### LOTO · tuần
+> **Cách đọc màu – Tần suất LOTO tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -315,8 +315,8 @@
 | **8x** | ⬜<br>`80`<br>**0** | ⬜<br>`81`<br>**0** | ⬜<br>`82`<br>**0** | ⬜<br>`83`<br>**0** | ⬜<br>`84`<br>**0** | ⬜<br>`85`<br>**0** | ⬜<br>`86`<br>**0** | ⬜<br>`87`<br>**0** | 🟨<br>`88`<br>**1** | 🟨<br>`89`<br>**1** |
 | **9x** | ⬜<br>`90`<br>**0** | ⬜<br>`91`<br>**0** | 🟨<br>`92`<br>**1** | 🟨<br>`93`<br>**1** | 🟨<br>`94`<br>**1** | ⬜<br>`95`<br>**0** | 🟨<br>`96`<br>**1** | ⬜<br>`97`<br>**0** | 🟨<br>`98`<br>**1** | ⬜<br>`99`<br>**0** |
 
-### ĐB · tuần
-> **Cách đọc màu – Tần suất ĐB tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Đặc Biệt · tuần
+> **Cách đọc màu – Tần suất Đặc Biệt tuần:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -346,8 +346,8 @@
 <a id="gap--rhythm"></a>
 ## ⏳ Gan và nhịp
 
-### Ma trận nhiệt gan lô tô
-> **Cách đọc màu – Gan hiện tại của lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Ma trận nhiệt gan LOTO
+> **Cách đọc màu – Gan hiện tại của LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -372,7 +372,7 @@
 | **8x** | 🟪<br>`80`<br>**13** | 🟦<br>`81`<br>**2** | 🟦<br>`82`<br>**2** | 🟦<br>`83`<br>**3** | ⬜<br>`84`<br>**1** | ⬜<br>`85`<br>**1** | 🟩<br>`86`<br>**5** | 🟩<br>`87`<br>**5** | ⬜<br>`88`<br>**0** | ⬜<br>`89`<br>**0** |
 | **9x** | 🟦<br>`90`<br>**2** | 🟧<br>`91`<br>**9** | ⬜<br>`92`<br>**0** | ⬜<br>`93`<br>**0** | ⬜<br>`94`<br>**0** | 🟩<br>`95`<br>**4** | ⬜<br>`96`<br>**0** | 🟦<br>`97`<br>**3** | ⬜<br>`98`<br>**0** | ⬜<br>`99`<br>**1** |
 
-### Gan lô tô đứng đầu
+### Gan LOTO đứng đầu
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
 | ▰▰▱▱▱▱▱▱▱▱ | Thấp | Giá trị nhỏ tương đối trong chính bảng đang xem |
@@ -397,8 +397,8 @@
 | 14 | **15** | 6 | TB 4.42 · lớn nhất 23 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 | 15 | **03** | 6 | TB 4.33 · lớn nhất 32 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 
-### Ma trận nhiệt gan ĐB
-> **Cách đọc màu – Gan hiện tại của ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Ma trận nhiệt gan Đặc Biệt
+> **Cách đọc màu – Gan hiện tại của Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -423,7 +423,7 @@
 | **8x** | ⬜<br>`80`<br>**20** | ⬜<br>`81`<br>**4** | 🟦<br>`82`<br>**160** | ⬜<br>`83`<br>**27** | 🟦<br>`84`<br>**90** | ⬜<br>`85`<br>**67** | 🟩<br>`86`<br>**232** | ⬜<br>`87`<br>**6** | 🟩<br>`88`<br>**169** | ⬜<br>`89`<br>**68** |
 | **9x** | ⬜<br>`90`<br>**7** | ⬜<br>`91`<br>**34** | 🟦<br>`92`<br>**128** | 🟦<br>`93`<br>**99** | ⬜<br>`94`<br>**64** | 🟩<br>`95`<br>**179** | ⬜<br>`96`<br>**29** | ⬜<br>`97`<br>**70** | 🟪<br>`98`<br>**570** | ⬜<br>`99`<br>**1** |
 
-### Gan ĐB đứng đầu
+### Gan Đặc Biệt đứng đầu
 | # | Số | Gan hiện tại | So sánh lịch sử | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **98** | 570 | TB 93.84 · lớn nhất 278 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▰▰▰▰▰ |
@@ -458,7 +458,7 @@
 | 11 | **34** | 240 | TB 78.54 · lớn nhất 291 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 | 12 | **47** | 238 | TB 73.79 · lớn nhất 404 | Gan hiện tại vượt gan trung bình | ▰▰▰▰▰▱▱▱▱▱ |
 
-### Tỷ suất xuất hiện theo gan lô tô
+### Tỷ suất xuất hiện theo gan LOTO
 | Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
 | 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
@@ -488,7 +488,7 @@
 | 24 | 23.87% | 37 / 155 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▱▱ |
 | 25 | 26.87% | 36 / 134 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Tỷ suất xuất hiện theo gan ĐB
+### Tỷ suất xuất hiện theo gan Đặc Biệt
 | Mức gan | Tỷ suất xuất hiện | Trúng / số lần quan sát | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- |
 | 0 | 0.00% | 0 / 0 | Xác suất thực nghiệm có điều kiện tại mức gan này | ▱▱▱▱▱▱▱▱▱▱ |
@@ -523,8 +523,8 @@
 <a id="aiml--dynamics"></a>
 ## 🤖 AI/ML và động lực
 
-### Cầu-kèo lô tô · ma trận nhiệt điểm
-> **Cách đọc màu – Điểm cầu-kèo ML lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Cầu-kèo LOTO · ma trận nhiệt điểm
+> **Cách đọc màu – Điểm cầu-kèo ML LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -549,7 +549,7 @@
 | **8x** | ⬜<br>`80`<br>**27.0** | ⬜<br>`81`<br>**27.9** | 🟩<br>`82`<br>**40.1** | 🟩<br>`83`<br>**36.9** | 🟦<br>`84`<br>**31.1** | ⬜<br>`85`<br>**21.6** | 🟦<br>`86`<br>**28.8** | 🟦<br>`87`<br>**29.9** | 🟨<br>`88`<br>**43.5** | 🟨<br>`89`<br>**48.0** |
 | **9x** | 🟧<br>`90`<br>**54.5** | 🟨<br>`91`<br>**45.2** | 🟧<br>`92`<br>**55.2** | 🟧<br>`93`<br>**54.5** | 🟨<br>`94`<br>**46.5** | 🟦<br>`95`<br>**35.8** | 🟧<br>`96`<br>**50.7** | 🟥<br>`97`<br>**59.6** | 🟨<br>`98`<br>**45.0** | 🟧<br>`99`<br>**54.0** |
 
-### Cầu-kèo lô tô đứng đầu
+### Cầu-kèo LOTO đứng đầu
 | # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **39** | 71.629 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
@@ -568,8 +568,8 @@
 | 14 | **02** | 52.669 | ML xác suất cao + cùng chạm ĐB gầ… | ML xác suất cao + cùng chạm ĐB gần nh… | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **09** | 52.289 | hợp điều kiện ĐB hôm trước + tần … | hợp điều kiện ĐB hôm trước + tần suất… | ▰▰▰▰▰▰▰▱▱▱ |
 
-### Cầu-kèo ĐB · ma trận nhiệt điểm
-> **Cách đọc màu – Điểm cầu-kèo ML ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Cầu-kèo Đặc Biệt · ma trận nhiệt điểm
+> **Cách đọc màu – Điểm cầu-kèo ML Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -594,7 +594,7 @@
 | **8x** | 🟦<br>`80`<br>**29.0** | 🟩<br>`81`<br>**36.9** | 🟩<br>`82`<br>**32.2** | 🟨<br>`83`<br>**38.0** | 🟨<br>`84`<br>**39.5** | 🟧<br>`85`<br>**44.8** | 🟨<br>`86`<br>**42.5** | 🟦<br>`87`<br>**28.8** | 🟨<br>`88`<br>**37.9** | 🟩<br>`89`<br>**36.0** |
 | **9x** | 🟧<br>`90`<br>**45.9** | 🟧<br>`91`<br>**46.9** | 🟨<br>`92`<br>**40.7** | 🟨<br>`93`<br>**41.9** | 🟨<br>`94`<br>**38.6** | 🟩<br>`95`<br>**35.2** | 🟨<br>`96`<br>**38.5** | 🟨<br>`97`<br>**39.8** | 🟨<br>`98`<br>**43.5** | 🟦<br>`99`<br>**25.5** |
 
-### Cầu-kèo ĐB đứng đầu
+### Cầu-kèo Đặc Biệt đứng đầu
 | # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **00** | 63.114 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
@@ -613,8 +613,8 @@
 | 14 | **36** | 42.986 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **28** | 42.840 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▱▱▱ |
 
-### AI/ML tổng hợp · Lô tô
-> **Cách đọc màu – AI/ML tổng hợp lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### AI/ML tổng hợp · LOTO
+> **Cách đọc màu – AI/ML tổng hợp LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -639,8 +639,8 @@
 | **8x** | 🟩<br>`80`<br>**34.6** | 🟩<br>`81`<br>**30.6** | 🟨<br>`82`<br>**36.4** | 🟨<br>`83`<br>**40.9** | 🟦<br>`84`<br>**28.4** | 🟦<br>`85`<br>**25.2** | 🟦<br>`86`<br>**26.7** | 🟨<br>`87`<br>**38.0** | 🟨<br>`88`<br>**38.3** | 🟧<br>`89`<br>**44.7** |
 | **9x** | 🟩<br>`90`<br>**34.8** | 🟨<br>`91`<br>**38.1** | 🟩<br>`92`<br>**35.8** | 🟨<br>`93`<br>**41.0** | 🟨<br>`94`<br>**37.8** | 🟦<br>`95`<br>**28.8** | 🟩<br>`96`<br>**29.4** | 🟨<br>`97`<br>**37.5** | 🟨<br>`98`<br>**38.5** | 🟥<br>`99`<br>**55.2** |
 
-### AI/ML tổng hợp · ĐB
-> **Cách đọc màu – AI/ML tổng hợp ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### AI/ML tổng hợp · Đặc Biệt
+> **Cách đọc màu – AI/ML tổng hợp Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -665,8 +665,8 @@
 | **8x** | 🟨<br>`80`<br>**35.2** | 🟥<br>`81`<br>**44.1** | 🟩<br>`82`<br>**24.1** | 🟪<br>`83`<br>**50.0** | 🟧<br>`84`<br>**41.4** | 🟪<br>`85`<br>**56.5** | 🟧<br>`86`<br>**42.0** | 🟨<br>`87`<br>**32.7** | 🟨<br>`88`<br>**32.2** | 🟧<br>`89`<br>**39.0** |
 | **9x** | 🟥<br>`90`<br>**45.4** | 🟨<br>`91`<br>**36.7** | 🟧<br>`92`<br>**38.1** | 🟨<br>`93`<br>**36.4** | 🟨<br>`94`<br>**36.8** | 🟨<br>`95`<br>**36.8** | 🟨<br>`96`<br>**35.3** | 🟨<br>`97`<br>**35.8** | 🟥<br>`98`<br>**48.5** | 🟦<br>`99`<br>**22.3** |
 
-### Động lực bậc cao · Lô tô
-> **Cách đọc màu – Xác suất động lực lô tô:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Động lực bậc cao · LOTO
+> **Cách đọc màu – Xác suất động lực LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -709,8 +709,8 @@
 | 14 | **35** | 23.81% | nền 23.78% · Δ 0.03% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
 | 15 | **25** | 23.81% | nền 23.78% · Δ 0.03% | Động lực cao hơn nền | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Động lực bậc cao · ĐB
-> **Cách đọc màu – Xác suất động lực ĐB:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
+### Động lực bậc cao · Đặc Biệt
+> **Cách đọc màu – Xác suất động lực Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
 
 | Màu | Khoảng giá trị | Ý nghĩa |
 | --- | --- | --- |
@@ -758,7 +758,7 @@
 <a id="markov--transition--dependency"></a>
 ## 🧬 Markov · chuyển tiếp · phụ thuộc
 
-### Markov bậc 1 · Lô tô
+### Markov bậc 1 · LOTO
 | Ký hiệu | Mức | Ý nghĩa |
 | --- | --- | --- |
 | ▰▰▱▱▱▱▱▱▱▱ | Thấp | Giá trị nhỏ tương đối trong chính bảng đang xem |
@@ -783,7 +783,7 @@
 | 14 | **11** | 1.082 | P1 26.18% · P0 24.20% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
 | 15 | **50** | 1.077 | P1 25.00% · P0 23.22% | Có tính duy trì dương | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Độ nâng chuyển tiếp lô tô · bỏ cặp tự thân
+### Độ nâng chuyển tiếp LOTO · bỏ cặp tự thân
 | # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `37` → **`71`** | 1.0401 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
@@ -807,7 +807,7 @@
 | 19 | `89` → **`71`** | 1.0257 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
 | 20 | `96` → **`03`** | 1.0253 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Độ nâng chuyển tiếp ĐB · bỏ cặp tự thân
+### Độ nâng chuyển tiếp Đặc Biệt · bỏ cặp tự thân
 | # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `27` → **`34`** | 4.8842 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▰▰▰▰▰ |
@@ -831,7 +831,7 @@
 | 19 | `73` → **`49`** | 2.4088 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▱▱▱▱▱ |
 | 20 | `73` → **`57`** | 2.4080 | Độ nâng chuyển tiếp | Quan hệ dương mạnh | ▰▰▰▰▰▱▱▱▱▱ |
 
-### Đồng xuất hiện Phi lô tô · bỏ đường chéo tự thân
+### Đồng xuất hiện Phi LOTO · bỏ đường chéo tự thân
 | # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `15` → **`84`** | 0.0629 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▰▰ |
@@ -855,7 +855,7 @@
 | 19 | `06` → **`89`** | 0.0495 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
 | 20 | `89` → **`06`** | 0.0495 | Đồng xuất hiện Phi | Đồng xuất hiện dương mạnh hơn các cặp khác | ▰▰▰▰▰▰▰▰▱▱ |
 
-### Đồng xuất hiện Phi ĐB · bỏ đường chéo tự thân
+### Đồng xuất hiện Phi Đặc Biệt · bỏ đường chéo tự thân
 | # | Quan hệ | Giá trị | Chỉ số | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `31` → **`84`** | -0.0055 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▰▰▰▰▰▰▰▰▰▱ |
@@ -879,7 +879,7 @@
 | 19 | `28` → **`84`** | -0.0060 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▰▰▰▰▰▰▰▰▰▰ |
 | 20 | `37` → **`84`** | -0.0060 | Đồng xuất hiện Phi | Đồng xuất hiện âm | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Phụ thuộc đa độ trễ lô tô
+### Phụ thuộc đa độ trễ LOTO
 | # | Số | Độ nâng so với nền | Điều kiện | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **13** | 1.020 | trễ 14.0 · trước=trượt · mẫu=623 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
@@ -903,7 +903,7 @@
 | 19 | **44** | 1.009 | trễ 14.0 · trước=trượt · mẫu=552 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
 | 20 | **59** | 1.009 | trễ 14.0 · trước=trượt · mẫu=557 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
 
-### Phụ thuộc đa độ trễ ĐB
+### Phụ thuộc đa độ trễ Đặc Biệt
 | # | Số | Độ nâng so với nền | Điều kiện | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **25** | 2.770 | trễ 7.0 · trước=trượt · mẫu=25 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▰ |
@@ -932,7 +932,7 @@
 <a id="structure--pairs"></a>
 ## 🧩 Cấu trúc và cặp số
 
-### Đầu lô tô · tháng
+### Đầu LOTO · tháng
 | # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 9 | 46 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
@@ -946,7 +946,7 @@
 | 9 | 8 | 33 | hạng 9 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
 | 10 | 5 | 32 | hạng 10 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
 
-### Đuôi lô tô · tháng
+### Đuôi LOTO · tháng
 | # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 7 | 48 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
@@ -960,7 +960,7 @@
 | 9 | 1 | 33 | hạng 9 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▱▱▱ |
 | 10 | 5 | 27 | hạng 10 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
 
-### Tổng lô tô · tháng
+### Tổng LOTO · tháng
 | # | Nhóm | Tần suất | Xếp hạng | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 2 | 52 | hạng 1 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▰▰▰▰ |
@@ -974,13 +974,13 @@
 | 9 | 9 | 32 | hạng 7 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
 | 10 | 1 | 30 | hạng 8 | Tần suất tương đối trong kỳ | ▰▰▰▰▰▰▱▱▱▱ |
 
-### Cấu trúc ĐB · tháng
+### Cấu trúc Đặc Biệt · tháng
 | Nhóm | Phân bố nổi bật | Phạm vi | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đầu ĐB | **2** (2) · **9** (2) · **3** (2) · **8** (2) · **5** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Đuôi ĐB | **1** (4) · **2** (3) · **7** (2) · **0** (1) · **4** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Chạm ĐB | **1** (4) · **2** (4) · **5** (3) · **0** (2) · **3** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
-| Tổng ĐB | **2** (2) · **9** (2) · **4** (2) · **8** (2) · **6** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Đầu Đặc Biệt | **2** (2) · **9** (2) · **3** (2) · **8** (2) · **5** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Đuôi Đặc Biệt | **1** (4) · **2** (3) · **7** (2) · **0** (1) · **4** (1) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Chạm Đặc Biệt | **1** (4) · **2** (4) · **5** (3) · **0** (2) · **3** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
+| Tổng Đặc Biệt | **2** (2) · **9** (2) · **4** (2) · **8** (2) · **6** (2) | 5 nhóm đầu | Nhìn cấu trúc phân bố thay vì một số đơn lẻ |
 
 ### Cặp lộn · tháng
 | # | Cặp lộn | Tần suất | So sánh | Ý nghĩa | Thanh so sánh |
@@ -1004,9 +1004,9 @@
 ---
 
 <a id="special-boards--conditional"></a>
-## 📆 Bảng đặc biệt và quan hệ có điều kiện
+## 📆 Bảng Đặc Biệt và quan hệ có điều kiện
 
-### ĐB theo tuần
+### Đặc Biệt theo tuần
 | Tuần | T2 | T3 | T4 | T5 | T6 | T7 | CN |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-W38 | 22 |  |  |  |  |  |  |
@@ -1020,9 +1020,9 @@
 | 2026-W30 | 28 | 70 | 54 | 54 | 38 | 28 | 16 |
 | 2026-W29 | 99 | 47 | 19 | 63 | 39 | 90 | 38 |
 
-### ĐB theo tháng · lịch 7 cột
+### Đặc Biệt theo tháng · lịch 7 cột
 
-> Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối ĐB`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
+> Thay cho bảng 31 cột trước đây. Mỗi ô là `ngày / 2 số cuối Đặc Biệt`, nhờ đó bề ngang ổn định và không làm vỡ phần cuối trang.
 
 #### 2026-09
 
@@ -1065,7 +1065,7 @@
 | **22**<br>`36` | **23**<br>`37` | **24**<br>`51` | **25**<br>`16` | **26**<br>`04` | **27**<br>`53` | **28**<br>`52` |
 | **29**<br>`42` | **30**<br>`68` |  |  |  |  |  |
 
-### ĐB hôm trước → lô tô hôm sau
+### Đặc Biệt hôm trước → LOTO hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `41` → **`02`** | 70.00% | n=20 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1084,7 +1084,7 @@
 | 14 | `01` → **`19`** | 55.00% | n=20 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 15 | `20` → **`30`** | 55.00% | n=20 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 
-### Lô tô hôm trước → lô tô hôm sau
+### LOTO hôm trước → LOTO hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `55` → **`79`** | 30.26% | n=542 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1103,7 +1103,7 @@
 | 14 | `75` → **`95`** | 29.02% | n=572 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 15 | `51` → **`36`** | 28.99% | n=545 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 
-### ĐB hôm trước → ĐB hôm sau
+### Đặc Biệt hôm trước → Đặc Biệt hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `37` → **`88`** | 16.67% | n=18 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1127,7 +1127,7 @@
 <a id="significance--research"></a>
 ## 🧪 Mức ý nghĩa và nghiên cứu
 
-### Lô tô · mức ý nghĩa 30 ngày
+### LOTO · mức ý nghĩa 30 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **70** | 1.944 | p 0.0084 · q 0.6079 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1146,7 +1146,7 @@
 | 14 | **01** | 0.556 | p 0.2040 · q 0.9292 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▱▱▱▱▱▱▱▱▱ |
 | 15 | **82** | 0.556 | p 0.2040 · q 0.9292 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▱▱▱▱▱▱▱▱▱ |
 
-### Lô tô · mức ý nghĩa 90 ngày
+### LOTO · mức ý nghĩa 90 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **95** | 1.453 | p 0.0247 · q 0.8206 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1165,7 +1165,7 @@
 | 14 | **14** | 0.703 | p 0.1364 · q 0.8206 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▱▱▱ |
 | 15 | **98** | 0.703 | p 0.1364 · q 0.8206 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▱▱▱ |
 
-### ĐB · mức ý nghĩa 30 ngày
+### Đặc Biệt · mức ý nghĩa 30 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **37** | 6.667 | p 0.0361 · q 0.8976 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1184,7 +1184,7 @@
 | 14 | **43** | 3.333 | p 0.2603 · q 0.8976 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 | 15 | **44** | 3.333 | p 0.2603 · q 0.8976 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▱▱▱▱▱▱ |
 
-### ĐB · mức ý nghĩa 90 ngày
+### Đặc Biệt · mức ý nghĩa 90 ngày
 | # | Số | Độ nâng | p / q (FDR) | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **37** | 3.333 | p 0.0619 · q 0.9472 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1203,7 +1203,7 @@
 | 14 | **47** | 2.222 | p 0.2273 · q 0.9472 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▱▱▱▱▱ |
 | 15 | **51** | 2.222 | p 0.2273 · q 0.9472 | Chưa đủ bằng chứng sau hiệu chỉnh đa kiểm định | ▰▰▰▰▰▱▱▱▱▱ |
 
-### Phòng chiến lược · Lô tô ngoài mẫu
+### Phòng chiến lược · LOTO ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | ĐB lặp lại | 1.099 | độ chính xác 26.13% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1222,7 +1222,7 @@
 | 14 | Bộ ĐB | 0.991 | độ chính xác 23.58% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 15 | Chạm đầu ĐB | 0.990 | độ chính xác 23.52% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 
-### Phòng chiến lược · ĐB ngoài mẫu
+### Phòng chiến lược · Đặc Biệt ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Đồng thuận vị trí đuôi–đuôi | 1.832 | độ chính xác 1.80% · q 0.011 | Qua cổng nghiên cứu | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1245,8 +1245,8 @@
 | Lớp | Giá trị | So sánh | Ý nghĩa |
 | --- | --- | --- | --- |
 | Sức khỏe dữ liệu | ✅ ĐẠT | số dòng 2399 · thiếu 0 | Tính toàn vẹn dữ liệu chuẩn |
-| Động lực lô tô | 0.761 | JS 30/180 0.0102 | Độ tin cậy + dịch chuyển chế độ |
-| Động lực ĐB | 0.668 | JS 30/180 0.0377 | Độ tin cậy + dịch chuyển chế độ |
+| Động lực LOTO | 0.761 | JS 30/180 0.0102 | Độ tin cậy + dịch chuyển chế độ |
+| Động lực Đặc Biệt | 0.668 | JS 30/180 0.0377 | Độ tin cậy + dịch chuyển chế độ |
 
 ---
 

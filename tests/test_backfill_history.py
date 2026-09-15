@@ -337,7 +337,7 @@ def test_repeated_draw_dates_spans_a_hole_in_the_history() -> None:
 
 
 def test_repeated_draw_dates_ignores_a_single_matching_field() -> None:
-    """Chỉ trùng KHÍT toàn bộ giải mới là hiện vật. Trùng riêng giải đặc biệt
+    """Chỉ trùng KHÍT toàn bộ giải mới là hiện vật. Trùng riêng giải Đặc Biệt
     là chuyện thường: xác suất 1/100000 mỗi ngày."""
     from backfill_history import repeated_draw_dates
 

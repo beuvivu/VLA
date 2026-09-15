@@ -21,7 +21,7 @@ sót:
 Ngưỡng hòa vốn là con số quan trọng nhất trong tệp này
 -------------------------------------------------------
 
-Với luật chi trả lô tô thông thường (đặt 23, trúng được 80), tỉ lệ trúng cần để
+Với luật chi trả LOTO thông thường (đặt 23, trúng được 80), tỉ lệ trúng cần để
 hòa vốn là ``23/80 = 28.75%``, trong khi nền là 23.77%. Nghĩa là hệ thống phải
 đạt mức cải thiện **tương đối +21%** chỉ để *không lỗ*.
 
@@ -46,7 +46,7 @@ _EPSILON: Final[float] = 1e-6
 #: Các mức K mặc định cho Hit-Rate@K.
 DEFAULT_K_VALUES: Final[tuple[int, ...]] = (3, 5, 10, 27)
 
-#: Luật chi trả lô tô thông thường, đơn vị nghìn đồng cho một điểm.
+#: Luật chi trả LOTO thông thường, đơn vị nghìn đồng cho một điểm.
 DEFAULT_STAKE: Final[float] = 23.0
 DEFAULT_PAYOUT: Final[float] = 80.0
 

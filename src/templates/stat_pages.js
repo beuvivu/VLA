@@ -2,7 +2,7 @@
 // Toàn bộ lịch sử được nhúng vào trang nên mọi bộ lọc là tức thì, không gọi
 // mạng. Xem docstring của src/build_stat_pages.py để biết vì sao.
 "use strict";
-const DRAWS = window.__VLA_DRAWS__ || [];
+const DRAWS = window.__D_DRAWS__ || [];
 const LOTO_BASELINE = 1 - Math.pow(0.99, 27);
 const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 
@@ -16,7 +16,7 @@ const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 // Công thức đóng cần hàm phân phối nhị thức, quá nặng để tính lại trong
 // trình duyệt mỗi lần lọc. Thay vào đó dựng sẵn một lưới và nội suy tuyến
 // tính: 22 điểm cho sai số tối đa 0,67% (dưới 0,15% với mọi N >= 30).
-const PAIR_CHANCE_GRID = window.__VLA_PAIR_CHANCE__ || [];
+const PAIR_CHANCE_GRID = window.__D_PAIR_CHANCE__ || [];
 
 /** Cực đại ngẫu nhiên và khoảng 90% cho ``n`` kỳ; null nếu chưa có lưới. */
 function pairChanceMaximum(n) {
@@ -73,9 +73,9 @@ function setCount(rows) {
   el.textContent = `${rows.length} kỳ · ${first} → ${last}`;
 }
 
-/** Giải đặc biệt ĐỦ 5 CHỮ SỐ, nhấn hai số cuối.
+/** Giải Đặc Biệt ĐỦ 5 CHỮ SỐ, nhấn hai số cuối.
  *
- * Trang gốc liệt kê trọn giải đặc biệt chứ không chỉ hai số cuối. Dữ liệu
+ * Trang gốc liệt kê trọn giải Đặc Biệt chứ không chỉ hai số cuối. Dữ liệu
  * nhúng vốn đã giữ đủ 5 chữ số; bản trước cắt bớt ngay lúc dựng bảng nên
  * người đọc mất phần đầu và không đối chiếu được với kết quả gốc.
  */
@@ -84,7 +84,7 @@ function specialFull(value) {
   return `<span class="sp-de">${s.slice(0, 3)}<b>${s.slice(3)}</b></span>`;
 }
 
-// --- Ô bảng đặc biệt: sáu trường ------------------------------------------
+// --- Ô bảng Đặc Biệt: sáu trường ------------------------------------------
 //
 // Trang tham chiếu không hiện mỗi con số mà là sáu trường, và có sáu ô đánh
 // dấu để bật/tắt từng trường. Giải mã từ dữ liệu thật của họ, kiểm trên 24 ô:
@@ -102,7 +102,7 @@ function specialFull(value) {
 // bóng 1 và 8 có bóng 3. Bảng tra dựng sẵn phía Python từ
 // number_reference.bo_family_id, không cài lại công thức ở đây — một bản chép
 // thứ hai là một bản sẽ trôi khỏi bản gốc.
-const BO_LOOKUP = window.__VLA_BO__ || [];
+const BO_LOOKUP = window.__D_BO__ || [];
 
 const DE_FIELDS = [
   { key: "ngay", label: "Ngày", hint: "Ngày quay, dạng ngày-tháng" },
@@ -129,7 +129,7 @@ try {
   if (saved) SHOWN = new Set(JSON.parse(saved));
 } catch (e) { /* cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc */ }
 
-/** Ô bảng đặc biệt đầy đủ: giải 5 số cộng các trường đang bật. */
+/** Ô bảng Đặc Biệt đầy đủ: giải 5 số cộng các trường đang bật. */
 function specialCell(value, iso) {
   const s = String(value).padStart(5, "0");
   const two = s.slice(3);
@@ -213,7 +213,7 @@ function renderLegend() {
   box.innerHTML =
     '<div class="sp-legend-head">Đọc một ô: chữ nhỏ dưới mỗi giải là gì</div>' +
     `<div class="sp-legend-sample">${specialFull(s)}` +
-    `<span class="sp-lg-src">giải đặc biệt kỳ ` +
+    `<span class="sp-lg-src">giải Đặc Biệt kỳ ` +
     `${iso.slice(8)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}, hai số cuối ` +
     `<b>${two}</b> — sáu trường dưới đây tách ra từ chính ô này</span></div>` +
     `<div class="sp-legend-items">${items}</div>` +
@@ -611,7 +611,7 @@ function renderReversePairs() {
 // thật cộng 5 cặp ghép hai số kép qua bóng (00-55, 11-66, 22-77, 33-88,
 // 44-99). Đọc từ chính trang tham chiếu thấy họ dùng đúng bộ này, nên đây là
 // bằng chứng chứ không phải suy đoán.
-const CAP50 = window.__VLA_CAP50__ || [];
+const CAP50 = window.__D_CAP50__ || [];
 
 function renderPairMatrix(rows) {
   const grid = $("sp-matrix-grid");
@@ -694,7 +694,7 @@ function renderHeadTail() {
   // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
   // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
   //
-  // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng đặc biệt.
+  // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng Đặc Biệt.
   const perDay = (pick, label, el) => {
     const recent = rows.slice(-20).reverse();
     const headers = ["Ngày"].concat(
@@ -737,7 +737,7 @@ function specialGaps() {
 // ngày nào cũng quay; XSMB nghỉ Tết và nghỉ 01-22/04/2020, nên đếm theo ngày
 // lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
 
-/** Gan của từng con 00-99 trên lô tô (27 con mỗi kỳ). */
+/** Gan của từng con 00-99 trên LOTO (27 con mỗi kỳ). */
 function lotoGaps() {
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
@@ -757,7 +757,7 @@ function lotoGaps() {
   return { last, maxGap, current, hits };
 }
 
-/** Gan của 50 cặp lô tô: cặp về khi MỘT TRONG HAI con có mặt trong kỳ.
+/** Gan của 50 cặp LOTO: cặp về khi MỘT TRONG HAI con có mặt trong kỳ.
  *
  * Định nghĩa này đọc ra từ chính số liệu trang tham chiếu, không phải đoán.
  * Bản đầu tôi lấy "cả hai con cùng về", và nó sai:
@@ -903,7 +903,7 @@ function groupSpecial(keyOf, label) {
 // Khai báo bằng `function`, KHÔNG dùng `const`: boot() tra hàm qua
 // window[renderName], mà `const` ở cấp cao nhất của script cổ điển không tạo
 // thuộc tính trên window. Dùng const thì hai trang này im lặng không vẽ gì.
-// --- Ba bảng đặc biệt ------------------------------------------------------
+// --- Ba bảng Đặc Biệt ------------------------------------------------------
 //
 // Bố cục lấy theo trang tham chiếu, đọc được cấu trúc thật bằng
 // .github/workflows/inspect-reference-pages.yml:
@@ -1033,12 +1033,12 @@ function renderOverview() {
       ["Số kỳ trong dải", rows.length],
       ["Kỳ vọng mỗi con", expected.toFixed(1) + " lần"],
       ["Về nhiều nhất", pad2(hottest) + " (" + counts[hottest] + ")"],
-      ["Gan ĐB lâu nhất", pad2(coldest) + " (" + s.current[coldest] + " kỳ)"],
+      ["Gan Đặc Biệt lâu nhất", pad2(coldest) + " (" + s.current[coldest] + " kỳ)"],
     ].map((p) => `<div class="sp-kpi-card"><span>${p[0]}</span><strong>${p[1]}</strong></div>`).join("");
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   table($("sp-grid"),
-    ["Hạng", "Số", "Lần về", "So kỳ vọng", "Gan ĐB (kỳ)", "Chu kỳ ĐB dài nhất"],
+    ["Hạng", "Số", "Lần về", "So kỳ vọng", "Gan Đặc Biệt (kỳ)", "Chu kỳ Đặc Biệt dài nhất"],
     order.slice(0, 40).map((p, k) => [
       k + 1, pad2(p[0]), p[1],
       expected ? (p[1] / expected).toFixed(2) + "×" : "—",
@@ -1087,10 +1087,10 @@ function boot(renderName) {
 }
 
 
-// --- Cầu giải đặc biệt -------------------------------------------------------
+// --- Cầu giải Đặc Biệt -------------------------------------------------------
 //
 // Ba khối, theo đúng bố cục đọc được từ trang tham chiếu:
-//   1. Ma trận 10x10 tần suất hai số cuối giải ĐB, xếp theo Đầu 0-9.
+//   1. Ma trận 10x10 tần suất hai số cuối giải Đặc Biệt, xếp theo Đầu 0-9.
 //   2. Cặp lộn thật kèm số lần, sắp giảm dần.
 //   3. Kết quả ba kỳ gần nhất, đủ các giải.
 
@@ -1132,14 +1132,14 @@ function renderSpecialBridge() {
       const cells = r.n.map((x) => `<span class="sp-lo">${x}</span>`).join("");
       return `<div class="sp-draw"><h4>Kết quả ngày ${r.d.slice(8)}-` +
         `${r.d.slice(5, 7)}-${r.d.slice(0, 4)}</h4>` +
-        `<p class="sp-db">Đặc biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
+        `<p class="sp-db">Đặc Biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
         `<div class="sp-lolist">${cells}</div></div>`;
     }).join("");
   }
 }
 
 
-// --- Giải đặc biệt theo TỔNG ------------------------------------------------
+// --- Giải Đặc Biệt theo TỔNG ------------------------------------------------
 //
 // Tổng = (Đầu + Đuôi) mod 10, nên có 10 giá trị 0-9. Ba bảng, theo bố cục đọc
 // được từ trang tham chiếu:

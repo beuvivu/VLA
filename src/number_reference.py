@@ -445,20 +445,20 @@ def validate_ontology() -> None:
     }, "unexpected bộ family identifiers")
 
     pairs = all_cap_loto_50()
-    _require_ontology(len(pairs) == 50, "cặp lô tô 50 must contain 50 pairs")
-    _require_ontology(all(len(p) == 2 for p in pairs), "every cặp lô tô 50 item must be a pair")
+    _require_ontology(len(pairs) == 50, "cặp LOTO 50 must contain 50 pairs")
+    _require_ontology(all(len(p) == 2 for p in pairs), "every cặp LOTO 50 item must be a pair")
     pair_flat = [n for pair in pairs for n in pair]
     _require_ontology(
         len(pair_flat) == 100 and len(set(pair_flat)) == 100,
-        "cặp lô tô 50 must partition 00..99",
+        "cặp LOTO 50 must partition 00..99",
     )
     _require_ontology(
         set(pair_flat) == {f"{n:02d}" for n in range(100)},
-        "cặp lô tô 50 must cover 00..99",
+        "cặp LOTO 50 must cover 00..99",
     )
     _require_ontology(
         sum(cap_loto_50_kind(min(p)) == "kep_bong" for p in pairs) == 5,
-        "cặp lô tô 50 must contain five kép-bóng pairs",
+        "cặp LOTO 50 must contain five kép-bóng pairs",
     )
     _require_ontology(set(cap_loto_50_id(f"{d}{d}") for d in range(10)) == {
         "00-55", "11-66", "22-77", "33-88", "44-99"

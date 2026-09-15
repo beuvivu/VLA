@@ -32,7 +32,7 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
         "## 🤖 AI/ML và động lực",
         "## 🧬 Markov · chuyển tiếp · phụ thuộc",
         "## 🧩 Cấu trúc và cặp số",
-        "## 📆 Bảng đặc biệt và quan hệ có điều kiện",
+        "## 📆 Bảng Đặc Biệt và quan hệ có điều kiện",
         "## 🧪 Mức ý nghĩa và nghiên cứu",
         "Màu | Khoảng giá trị | Ý nghĩa",
         "Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh",
@@ -58,7 +58,7 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
     # board is replaced by calendar-shaped 7-column tables and lag panels render.
     assert "| month_key | 01 | 02 | 03 | 04 | 05 |" not in text
     assert "Multi-lag dependency Loto\n_Chưa có dữ liệu._" not in text
-    assert "Multi-lag dependency ĐB\n_Chưa có dữ liệu._" not in text
+    assert "Multi-lag dependency Đặc Biệt\n_Chưa có dữ liệu._" not in text
 
     assert "Complete Data Catalog" not in text
     assert len(text) > 70_000

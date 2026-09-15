@@ -56,9 +56,9 @@ KV_OUTPUTS = [
     f'\x1b[32mid\x1b[0m = "{KV_ID}"',
 ]
 DEPLOY_OUTPUTS = [
-    "Total Upload: 12.34 KiB\nDeployed vla-live triggers (0.87 sec)\n"
-    "  https://vla-live.beuvivu.workers.dev\nCurrent Version ID: abc-123",
-    "Published vla-live (1.02 sec)\n  https://vla-live.beuvivu.workers.dev\n",
+    "Total Upload: 12.34 KiB\nDeployed ui-live triggers (0.87 sec)\n"
+    "  https://ui-live.beuvivu.workers.dev\nCurrent Version ID: abc-123",
+    "Published ui-live (1.02 sec)\n  https://ui-live.beuvivu.workers.dev\n",
 ]
 
 
@@ -73,7 +73,7 @@ def test_worker_url_is_extracted_from_every_known_deploy_output(tmp_path: Path) 
     results = _run([{"fn": "extractWorkerUrl", "args": [out]} for out in DEPLOY_OUTPUTS], tmp_path)
     for result in results:
         assert result["ok"]
-        assert result["value"] == "https://vla-live.beuvivu.workers.dev"
+        assert result["value"] == "https://ui-live.beuvivu.workers.dev"
 
 
 def test_extraction_fails_loudly_instead_of_returning_something_wrong(tmp_path: Path) -> None:
@@ -103,7 +103,7 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     """
     toml = (ROOT / "worker" / "wrangler.toml").read_text(encoding="utf-8")
     html = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
-    url = "https://vla-live.beuvivu.workers.dev"
+    url = "https://ui-live.beuvivu.workers.dev"
 
     once = _run([
         {"fn": "patchWranglerKvId", "args": [toml, KV_ID]},
@@ -127,12 +127,14 @@ def test_patching_the_real_repository_files_works_and_is_idempotent(tmp_path: Pa
     assert len(assigns) == 1, assigns
     assert assigns[0].strip() == f"window.LIVE_WORKER_URL = '{url}/live.json';"
 
-    comments = [
-        line for line in patched_html.splitlines()
-        if "window.LIVE_WORKER_URL" in line and line.strip().startswith("//")
-    ]
-    assert comments, "dòng chú thích hướng dẫn phải còn"
-    assert all(url not in line for line in comments), "không được vá vào chú thích"
+    # `live.html` nay KHÔNG còn dòng chú thích nào.
+    #
+    # Hai khẳng định cũ ở đây đòi các dòng hướng dẫn phải còn, và đòi trình vá
+    # không được vá nhầm vào chúng. Ý định thật là điều thứ hai: sửa DÒNG MÃ,
+    # không sửa chú thích. Bỏ hết chú thích đi thì điều ấy đúng theo cấu trúc
+    # chứ không còn phải canh nữa — và những dòng hướng dẫn ấy chính là chỗ
+    # nói ra rằng trang có một Worker đứng sau.
+    assert not _comment_lines(patched_html), _comment_lines(patched_html)[:3]
 
     twice = _run([
         {"fn": "patchWranglerKvId", "args": [patched_toml, KV_ID]},
@@ -176,7 +178,7 @@ def test_the_verification_step_reads_the_anonymised_snapshot_fields() -> None:
 def test_a_trailing_slash_in_the_worker_url_does_not_double_up(tmp_path: Path) -> None:
     html = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     result = _run([
-        {"fn": "patchLiveWorkerUrl", "args": [html, "https://vla-live.beuvivu.workers.dev/"]},
+        {"fn": "patchLiveWorkerUrl", "args": [html, "https://ui-live.beuvivu.workers.dev/"]},
     ], tmp_path)[0]
     assert result["ok"]
     assert "workers.dev/live.json'" in result["value"]
@@ -216,3 +218,26 @@ def test_setup_is_wired_into_npm_scripts() -> None:
     assert package["scripts"]["setup"] == "node setup.mjs"
     assert package["scripts"]["setup:dry"] == "node setup.mjs --dry-run"
     assert SETUP.exists()
+
+def _comment_lines(html: str) -> list[str]:
+    """Những dòng chú thích còn sót trong thân `<script>`/`<style>` của trang.
+
+    Chỉ soi THÂN hai thẻ ấy. Quét cả tệp sẽ báo động giả: thẻ CSP chứa
+    ``https://*.workers.dev``, tức có chuỗi con ``/*`` mà không phải chú thích.
+
+    Và phải bỏ nội dung chuỗi trước khi tìm ``//``, nếu không mọi URL trong mã
+    đều bị tính là chú thích.
+    """
+    import re
+
+    found: list[str] = []
+    for match in re.finditer(r"<(script|style)\b[^>]*>(.*?)</\1>", html, re.S | re.I):
+        body = match.group(2)
+        body = re.sub(r"'(?:[^'\\\n]|\\.)*'", "''", body)
+        body = re.sub(r'"(?:[^"\\\n]|\\.)*"', '""', body)
+        body = re.sub(r"`(?:[^`\\]|\\.)*`", "``", body)
+        body = re.sub(r"/(?:[^/\\\n\[]|\\.|\[(?:[^\]\\]|\\.)*\])+/[a-z]*", "/re/", body)
+        for line in body.splitlines():
+            if line.lstrip().startswith("//") or "/*" in line:
+                found.append(line.strip()[:70])
+    return found

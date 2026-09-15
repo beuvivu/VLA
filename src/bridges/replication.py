@@ -238,7 +238,7 @@ class ReplicationGate:
 
         # DÙNG LẠI hàm đuôi của bộ quét, không viết lại.
         #
-        # Bản đầu tôi viết ở đây chỉ dùng xấp xỉ chuẩn. Với lô tô (tỉ lệ nền
+        # Bản đầu tôi viết ở đây chỉ dùng xấp xỉ chuẩn. Với LOTO (tỉ lệ nền
         # 0,24) thì đúng, nhưng với ĐỀ (tỉ lệ nền ~0,01) đó là vùng biến cố
         # hiếm, nơi xấp xỉ chuẩn thổi phồng đuôi và biến dao động thường thành
         # "tái lập". Hàm gốc tự chuyển sang Poisson đúng ở chế độ ấy — và một

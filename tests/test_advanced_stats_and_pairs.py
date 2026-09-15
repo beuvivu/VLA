@@ -52,7 +52,7 @@ def _two_digit_frame(rows: list[tuple[str, list[int]]]) -> pd.DataFrame:
     Cột ``special`` là bắt buộc chứ không phải trang trí: ``build_daily_targets``
     đọc thẳng ``df["special"]`` để dựng dãy đề, nên khung thiếu cột ấy sẽ nổ
     ``KeyError`` trước khi chạm tới phép đếm cặp. Giá trị ĐẦU TIÊN của mỗi kỳ
-    đóng vai giải đặc biệt, và vì mọi cột khác ``date`` đều được gom vào tập lô
+    đóng vai giải Đặc Biệt, và vì mọi cột khác ``date`` đều được gom vào tập lô
     nên tập lô của một kỳ đúng bằng tập các giá trị liệt kê.
     """
     width = max(len(values) for _, values in rows)
@@ -230,11 +230,11 @@ def test_lo_roi_window_counts_draws_not_calendar_days() -> None:
     assert int(out.loc[33, "count_in_window"]) == 2
 
 
-# --- Tổng ĐB và chạm ĐB ----------------------------------------------------
+# --- Tổng Đặc Biệt và chạm Đặc Biệt ----------------------------------------------------
 
 
 def test_special_total_and_cham_read_only_the_last_two_digits() -> None:
-    """Tổng ĐB và chạm ĐB đều tính trên HAI SỐ CUỐI của giải đặc biệt."""
+    """Tổng Đặc Biệt và chạm Đặc Biệt đều tính trên HAI SỐ CUỐI của giải Đặc Biệt."""
     raw = pd.DataFrame(
         [
             {"date": "2026-01-01", "special": 12395},  # hai số cuối 95 -> tổng 4

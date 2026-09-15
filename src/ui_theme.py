@@ -27,51 +27,51 @@ ALIGN_CENTER = "center"
 ALIGN_RIGHT = "right"
 
 _ALIGN_CLASS = {
-    ALIGN_LEFT: "vla-al",
-    ALIGN_CENTER: "vla-ac",
-    ALIGN_RIGHT: "vla-ar",
+    ALIGN_LEFT: "ui-al",
+    ALIGN_CENTER: "ui-ac",
+    ALIGN_RIGHT: "ui-ar",
 }
 
 
 TAILWIND_LITE_CSS = r"""
 /* ---- 1. Design token ------------------------------------------------- */
 :root{
---vla-bg:#F2F4FF;--vla-bg-2:#E6EAFB;--vla-surface:#fff;--vla-surface-2:#F7F8FE;
---vla-border:#E7EAF6;--vla-border-strong:#D8DDF0;
---vla-ink:#161C2D;--vla-ink-2:#28304A;--vla-ink-soft:#5A6480;
+--ui-bg:#F2F4FF;--ui-bg-2:#E6EAFB;--ui-surface:#fff;--ui-surface-2:#F7F8FE;
+--ui-border:#E7EAF6;--ui-border-strong:#D8DDF0;
+--ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;
 /* Lưới sáng periwinkle phủ trên nền dốc. Tách thành token riêng để chế độ
    tối tắt hẳn nó đi thay vì phải viết lại quy tắc body. */
---vla-bg-mesh:radial-gradient(1200px 620px at 10% -8%,rgba(129,140,248,.20),transparent 60%),
+--ui-bg-mesh:radial-gradient(1200px 620px at 10% -8%,rgba(129,140,248,.20),transparent 60%),
 radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
 /* THƯƠNG HIỆU — chỉ dành cho điều hướng và hành động chính. Không một dấu
    hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
-   --vla-ok/warn/bad và ở các thang nhiệt của từng trang. */
---vla-brand:#4f46e5;--vla-brand-ink:#4338ca;--vla-brand-soft:#eef2ff;--vla-brand-border:#c7d2fe;
---vla-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
-/* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --vla-brand: ở chế
+   --ui-ok/warn/bad và ở các thang nhiệt của từng trang. */
+--ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+--ui-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
+/* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --ui-brand: ở chế
 độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
---vla-on-brand:#ffffff;
---vla-ok:#047857;--vla-ok-soft:#ecfdf5;--vla-ok-border:#a7f3d0;
---vla-warn:#a94e08;--vla-warn-soft:#fffbeb;--vla-warn-border:#fde68a;
---vla-bad:#be123c;--vla-bad-soft:#fff1f2;--vla-bad-border:#fecdd3;
+--ui-on-brand:#ffffff;
+--ui-ok:#047857;--ui-ok-soft:#ecfdf5;--ui-ok-border:#a7f3d0;
+--ui-warn:#a94e08;--ui-warn-soft:#fffbeb;--ui-warn-border:#fde68a;
+--ui-bad:#be123c;--ui-bad-soft:#fff1f2;--ui-bad-border:#fecdd3;
 /* 18-24px cho bề mặt nổi; .75rem giữ lại cho chi tiết nhỏ bên trong, vì bo
    18px lên một ô 32px thì góc ăn hết cạnh. */
---vla-r-md:.75rem;--vla-r-lg:1.125rem;--vla-r-xl:1.5rem;
+--ui-r-md:.75rem;--ui-r-lg:1.125rem;--ui-r-xl:1.5rem;
 /* Bóng hai lớp, ám lạnh theo màu mực: một lớp sát để tách khỏi nền, một lớp
    toả rộng rất nhạt để bề mặt trông nổi lên chứ không bị viền đen. */
---vla-sh-sm:0 1px 2px rgba(22,28,45,.04),0 8px 26px rgba(22,28,45,.06);
---vla-sh-md:0 2px 4px rgba(22,28,45,.05),0 14px 38px rgba(22,28,45,.09);
---vla-sh-lg:0 4px 8px rgba(22,28,45,.06),0 22px 60px rgba(22,28,45,.13);
---vla-sh-brand:0 10px 30px rgba(79,70,229,.26);
+--ui-sh-sm:0 1px 2px rgba(22,28,45,.04),0 8px 26px rgba(22,28,45,.06);
+--ui-sh-md:0 2px 4px rgba(22,28,45,.05),0 14px 38px rgba(22,28,45,.09);
+--ui-sh-lg:0 4px 8px rgba(22,28,45,.06),0 22px 60px rgba(22,28,45,.13);
+--ui-sh-brand:0 10px 30px rgba(79,70,229,.26);
 /* Inter tự host. Bản trước khai báo Aptos theo tên, nhưng CSP đặt font-src
 'self' và kho KHÔNG có tệp font nào — nên trang chưa bao giờ hiển thị bằng
 Aptos trừ máy đã cài sẵn Microsoft 365; mọi máy khác rơi về font hệ thống.
 Aptos cũng không được phép phân phối lại nên không thể tự host hợp pháp.
 Inter theo giấy phép SIL OFL thì được, và bản variable cho đủ 9 độ đậm trong
 một tệp 172 KB đã cắt gọn còn Latin + tiếng Việt. */
---vla-font:"Inter var",Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
---vla-font-display:var(--vla-font);
---vla-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+--ui-font:"Inter var",Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--ui-font-display:var(--ui-font);
+--ui-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
 
 /* Thang 8pt. Mọi padding/margin/gap chỉ được lấy từ đây — một giá trị nằm
 ngoài thang là một quyết định chưa được cân nhắc. */
@@ -86,7 +86,7 @@ ngoài thang là một quyết định chưa được cân nhắc. */
 --fs-title:20px;--fs-metric:clamp(32px,2.2vw,44px);
 --fs-body:15px;--fs-label:12px;
 
---vla-dock-h:54px;
+--ui-dock-h:54px;
 color-scheme:light;
 }
 
@@ -108,37 +108,37 @@ phần đã lấy màu qua token nên đổi ở đây là đủ. Ba trạng th�
 tay sáng, chọn tay tối, và mặc định "theo hệ điều hành" vốn không gắn thuộc
 tính nào lên thẻ gốc. */
 @media (prefers-color-scheme:dark){
-:root:not([data-vla-theme="light"]){
---vla-bg:#0b1220;--vla-bg-2:#0b1220;--vla-bg-mesh:none;
---vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
---vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
---vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
---vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
---vla-on-brand:#0f172a;
---vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
---vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
---vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
---vla-sh-sm:0 1px 2px rgba(0,0,0,.4);
---vla-sh-md:0 4px 12px rgba(0,0,0,.45);
---vla-sh-lg:0 10px 25px rgba(0,0,0,.5);
---vla-sh-brand:0 10px 30px rgba(0,0,0,.5);
+:root:not([data-ui-theme="light"]){
+--ui-bg:#0b1220;--ui-bg-2:#0b1220;--ui-bg-mesh:none;
+--ui-surface:#131c2e;--ui-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
+--ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
+--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
+--ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-on-brand:#0f172a;
+--ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
+--ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
+--ui-bad:#fb7185;--ui-bad-soft:#2a1119;--ui-bad-border:#4d2030;
+--ui-sh-sm:0 1px 2px rgba(0,0,0,.4);
+--ui-sh-md:0 4px 12px rgba(0,0,0,.45);
+--ui-sh-lg:0 10px 25px rgba(0,0,0,.5);
+--ui-sh-brand:0 10px 30px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 }
-:root[data-vla-theme="dark"]{
---vla-bg:#0b1220;--vla-bg-2:#0b1220;--vla-bg-mesh:none;
---vla-surface:#131c2e;--vla-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
---vla-border:rgba(35,50,72,.9);--vla-border-strong:#233248;
---vla-ink:#e8eef6;--vla-ink-2:#cbd7e6;--vla-ink-soft:#97a8be;
---vla-brand:#8b93f8;--vla-brand-ink:#a5abfa;--vla-brand-soft:#1b1f3d;--vla-brand-border:#343b6b;
---vla-on-brand:#0f172a;
---vla-ok:#4ade80;--vla-ok-soft:#0f2018;--vla-ok-border:#1f4034;
---vla-warn:#fbbf24;--vla-warn-soft:#231a08;--vla-warn-border:#4a3714;
---vla-bad:#fb7185;--vla-bad-soft:#2a1119;--vla-bad-border:#4d2030;
---vla-sh-sm:0 1px 2px rgba(0,0,0,.4);
---vla-sh-md:0 4px 12px rgba(0,0,0,.45);
---vla-sh-lg:0 10px 25px rgba(0,0,0,.5);
---vla-sh-brand:0 10px 30px rgba(0,0,0,.5);
+:root[data-ui-theme="dark"]{
+--ui-bg:#0b1220;--ui-bg-2:#0b1220;--ui-bg-mesh:none;
+--ui-surface:#131c2e;--ui-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
+--ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
+--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
+--ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-on-brand:#0f172a;
+--ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
+--ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
+--ui-bad:#fb7185;--ui-bad-soft:#2a1119;--ui-bad-border:#4d2030;
+--ui-sh-sm:0 1px 2px rgba(0,0,0,.4);
+--ui-sh-md:0 4px 12px rgba(0,0,0,.45);
+--ui-sh-lg:0 10px 25px rgba(0,0,0,.5);
+--ui-sh-brand:0 10px 30px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 
@@ -148,172 +148,172 @@ html{-webkit-text-size-adjust:100%}
 /* Nền ba lớp: hai vầng periwinkle rồi mới tới dốc nền. background-attachment
    ghim cố định để vầng sáng không trôi theo khi cuộn — trang dài 1,7 MB mà
    để nó trôi thì phần dưới rơi hẳn vào mảng tối nhất của dốc. */
-body{margin:0;color:var(--vla-ink-2);
-background:var(--vla-bg-mesh),linear-gradient(162deg,var(--vla-bg) 0%,var(--vla-bg-2) 100%);
-background-attachment:fixed;background-color:var(--vla-bg);
-font-family:var(--vla-font);font-size:14px;line-height:1.6;
+body{margin:0;color:var(--ui-ink-2);
+background:var(--ui-bg-mesh),linear-gradient(162deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);
+background-attachment:fixed;background-color:var(--ui-bg);
+font-family:var(--ui-font);font-size:14px;line-height:1.6;
 -webkit-font-smoothing:antialiased}
 img{max-width:100%;height:auto}
-a{color:var(--vla-brand);text-decoration:none}
+a{color:var(--ui-brand);text-decoration:none}
 a:hover{text-decoration:underline}
-code,pre,.mono{font-family:var(--vla-mono)}
+code,pre,.mono{font-family:var(--ui-mono)}
 /* Chỉ áp màu chữ tiêu đề bên trong khung của chính hệ thống này. Đặt màu ở
    cấp h1..h4 toàn cục sẽ đè lên các trang có hero/nền tối riêng và làm tiêu
    đề của họ trùng màu nền. */
 h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:0 0 .5rem}
-.vla-shell h1,.vla-shell h2,.vla-shell h3,.vla-shell h4,
-.vla-card h2,.vla-card h3,.vla-header h1{color:var(--vla-ink)}
+.ui-shell h1,.ui-shell h2,.ui-shell h3,.ui-shell h4,
+.ui-card h2,.ui-card h3,.ui-header h1{color:var(--ui-ink)}
 h1{font-size:1.5rem;letter-spacing:-.015em}
 h2{font-size:1.125rem}
 h3{font-size:1rem}
 @media (min-width:768px){h1{font-size:1.875rem}h2{font-size:1.25rem}}
 
 /* ---- 3. Khung trang: container căn giữa, không tràn ngang ------------- */
-.vla-shell{width:100%;max-width:80rem;margin-inline:auto;padding:1.5rem 1rem 3rem}
-@media (min-width:640px){.vla-shell{padding-left:1.5rem;padding-right:1.5rem}}
-@media (min-width:1024px){.vla-shell{padding-left:2rem;padding-right:2rem;padding-top:2rem}}
-.vla-shell-wide{max-width:90rem}
+.ui-shell{width:100%;max-width:80rem;margin-inline:auto;padding:1.5rem 1rem 3rem}
+@media (min-width:640px){.ui-shell{padding-left:1.5rem;padding-right:1.5rem}}
+@media (min-width:1024px){.ui-shell{padding-left:2rem;padding-right:2rem;padding-top:2rem}}
+.ui-shell-wide{max-width:90rem}
 
-.vla-header{margin-bottom:1.5rem;padding-bottom:1.25rem;
-border-bottom:1px solid var(--vla-border)}
-.vla-header h1{margin-bottom:.35rem}
-.vla-sub{color:var(--vla-ink-soft);font-size:.875rem;margin:0}
-.vla-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .875rem;
-margin-top:.625rem;color:var(--vla-ink-soft);font-size:.8125rem}
+.ui-header{margin-bottom:1.5rem;padding-bottom:1.25rem;
+border-bottom:1px solid var(--ui-border)}
+.ui-header h1{margin-bottom:.35rem}
+.ui-sub{color:var(--ui-ink-soft);font-size:.875rem;margin:0}
+.ui-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .875rem;
+margin-top:.625rem;color:var(--ui-ink-soft);font-size:.8125rem}
 
 /* ---- 4. Lưới 12 cột: các ô luôn kéo đầy, không để khoảng trống lệch --- */
-.vla-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
+.ui-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
 gap:1.25rem;align-items:stretch}
-.vla-grid>*{min-width:0}
+.ui-grid>*{min-width:0}
 @media (min-width:768px){
-.vla-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
-.vla-grid-1-md{grid-template-columns:repeat(1,minmax(0,1fr))}
+.ui-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+.ui-grid-1-md{grid-template-columns:repeat(1,minmax(0,1fr))}
 }
 @media (min-width:1024px){
-.vla-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
-.vla-c3{grid-column:span 3/span 3}.vla-c4{grid-column:span 4/span 4}
-.vla-c5{grid-column:span 5/span 5}.vla-c6{grid-column:span 6/span 6}
-.vla-c7{grid-column:span 7/span 7}.vla-c8{grid-column:span 8/span 8}
-.vla-c9{grid-column:span 9/span 9}.vla-c12{grid-column:span 12/span 12}
+.ui-grid{grid-template-columns:repeat(12,minmax(0,1fr))}
+.ui-c3{grid-column:span 3/span 3}.ui-c4{grid-column:span 4/span 4}
+.ui-c5{grid-column:span 5/span 5}.ui-c6{grid-column:span 6/span 6}
+.ui-c7{grid-column:span 7/span 7}.ui-c8{grid-column:span 8/span 8}
+.ui-c9{grid-column:span 9/span 9}.ui-c12{grid-column:span 12/span 12}
 }
 /* Dưới lg mọi ô chiếm trọn hàng thay vì thu nhỏ lệch. */
-@media (max-width:1023px){[class*="vla-c"]{grid-column:auto}}
+@media (max-width:1023px){[class*="ui-c"]{grid-column:auto}}
 
 /* ---- 5. Card --------------------------------------------------------- */
-.vla-card{display:flex;flex-direction:column;background:var(--vla-surface);
-border:1px solid var(--vla-border);border-radius:var(--vla-r-lg);
-box-shadow:var(--vla-sh-sm);overflow:hidden;
+.ui-card{display:flex;flex-direction:column;background:var(--ui-surface);
+border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
+box-shadow:var(--ui-sh-sm);overflow:hidden;
 transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,0,.2,1)}
-.vla-card:hover{box-shadow:var(--vla-sh-md)}
-.vla-card-lift:hover{transform:translateY(-2px);box-shadow:var(--vla-sh-lg)}
-.vla-card-head{display:flex;flex-wrap:wrap;align-items:center;
+.ui-card:hover{box-shadow:var(--ui-sh-md)}
+.ui-card-lift:hover{transform:translateY(-2px);box-shadow:var(--ui-sh-lg)}
+.ui-card-head{display:flex;flex-wrap:wrap;align-items:center;
 justify-content:space-between;gap:.75rem;padding:1rem 1.25rem;
-border-bottom:1px solid var(--vla-border)}
-.vla-card-head h2,.vla-card-head h3{margin:0}
+border-bottom:1px solid var(--ui-border)}
+.ui-card-head h2,.ui-card-head h3{margin:0}
 /* Thân card là flex dọc để khối nội dung cuối cùng kéo giãn lấp đầy chiều cao
    hàng lưới, thay vì bỏ lại khoảng trắng dưới đáy card thấp hơn. */
-.vla-card-body{flex:1 1 auto;display:flex;flex-direction:column;gap:.75rem;
+.ui-card-body{flex:1 1 auto;display:flex;flex-direction:column;gap:.75rem;
 min-height:0;padding:1.25rem}
-.vla-card-body>:first-child{margin-top:0}
-.vla-card-body>:last-child{margin-bottom:0}
-.vla-card-flush{padding:0}
+.ui-card-body>:first-child{margin-top:0}
+.ui-card-body>:last-child{margin-bottom:0}
+.ui-card-flush{padding:0}
 
 /* ---- 6. Bảng dữ liệu ------------------------------------------------- */
 /* Bóng mờ hai mép chỉ hiện khi bảng thực sự cuộn được, để nội dung bị che
    đọc ra là "còn cuộn tiếp" chứ không phải bị cắt mất. */
-.vla-table-wrap{width:100%;flex:1 1 auto;min-height:0;
+.ui-table-wrap{width:100%;flex:1 1 auto;min-height:0;
 overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
 max-height:26rem;overscroll-behavior:contain;
 background:
-linear-gradient(to right,var(--vla-surface) 30%,rgba(255,255,255,0)) left center/2.5rem 100% no-repeat local,
-linear-gradient(to left,var(--vla-surface) 30%,rgba(255,255,255,0)) right center/2.5rem 100% no-repeat local,
+linear-gradient(to right,var(--ui-surface) 30%,rgba(255,255,255,0)) left center/2.5rem 100% no-repeat local,
+linear-gradient(to left,var(--ui-surface) 30%,rgba(255,255,255,0)) right center/2.5rem 100% no-repeat local,
 radial-gradient(farthest-side at 0 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) left center/.875rem 100% no-repeat scroll,
 radial-gradient(farthest-side at 100% 50%,rgba(15,23,42,.14),rgba(15,23,42,0)) right center/.875rem 100% no-repeat scroll}
-.vla-table-wrap-tall{max-height:min(75vh,46rem)}
-.vla-table{width:100%;border-collapse:separate;border-spacing:0;
+.ui-table-wrap-tall{max-height:min(75vh,46rem)}
+.ui-table{width:100%;border-collapse:separate;border-spacing:0;
 font-size:.8125rem;font-variant-numeric:tabular-nums}
-.vla-table th,.vla-table td{padding:.625rem 1rem;text-align:left;
+.ui-table th,.ui-table td{padding:.625rem 1rem;text-align:left;
 vertical-align:middle;white-space:normal;overflow-wrap:anywhere}
-.vla-table thead th{position:sticky;top:0;z-index:1;
+.ui-table thead th{position:sticky;top:0;z-index:1;
 background:rgba(248,250,252,.92);backdrop-filter:blur(8px);
 -webkit-backdrop-filter:blur(8px);
-color:var(--vla-ink-soft);font-weight:600;font-size:.6875rem;
+color:var(--ui-ink-soft);font-weight:600;font-size:.6875rem;
 letter-spacing:.04em;text-transform:uppercase;
-border-bottom:1px solid var(--vla-border-strong)}
-.vla-table tbody tr{transition:background-color .15s ease-in-out}
-.vla-table tbody tr+tr td{border-top:1px solid rgba(241,245,249,.9)}
-.vla-table tbody tr:nth-child(even){background:rgba(248,250,252,.5)}
-.vla-table tbody tr:hover{background:rgba(238,242,255,.7)}
-.vla-table td{color:var(--vla-ink-2)}
-.vla-table .vla-al,.vla-table th.vla-al{text-align:left}
-.vla-table .vla-ac,.vla-table th.vla-ac{text-align:center;white-space:nowrap}
-.vla-table .vla-ar,.vla-table th.vla-ar{text-align:right;white-space:nowrap;
+border-bottom:1px solid var(--ui-border-strong)}
+.ui-table tbody tr{transition:background-color .15s ease-in-out}
+.ui-table tbody tr+tr td{border-top:1px solid rgba(241,245,249,.9)}
+.ui-table tbody tr:nth-child(even){background:rgba(248,250,252,.5)}
+.ui-table tbody tr:hover{background:rgba(238,242,255,.7)}
+.ui-table td{color:var(--ui-ink-2)}
+.ui-table .ui-al,.ui-table th.ui-al{text-align:left}
+.ui-table .ui-ac,.ui-table th.ui-ac{text-align:center;white-space:nowrap}
+.ui-table .ui-ar,.ui-table th.ui-ar{text-align:right;white-space:nowrap;
 font-variant-numeric:tabular-nums}
-.vla-table .vla-key{font-weight:600;color:var(--vla-ink)}
-.vla-table-empty{padding:var(--s4) var(--s3);text-align:center;color:var(--vla-ink-soft)}
+.ui-table .ui-key{font-weight:600;color:var(--ui-ink)}
+.ui-table-empty{padding:var(--s4) var(--s3);text-align:center;color:var(--ui-ink-soft)}
 /* Bảng do pandas sinh (không có class trên ô) vẫn được canh nền tảng. */
-.vla-table-wrap>table{width:100%;border-collapse:separate;border-spacing:0;
+.ui-table-wrap>table{width:100%;border-collapse:separate;border-spacing:0;
 font-size:.8125rem}
-.vla-table-wrap>table th,.vla-table-wrap>table td{padding:.625rem 1rem;
+.ui-table-wrap>table th,.ui-table-wrap>table td{padding:.625rem 1rem;
 text-align:left;border-bottom:1px solid rgba(241,245,249,.9);white-space:nowrap}
-.vla-table-wrap>table thead th{position:sticky;top:0;background:rgba(248,250,252,.92);
-color:var(--vla-ink-soft);font-weight:600;font-size:.6875rem;
+.ui-table-wrap>table thead th{position:sticky;top:0;background:rgba(248,250,252,.92);
+color:var(--ui-ink-soft);font-weight:600;font-size:.6875rem;
 letter-spacing:.04em;text-transform:uppercase}
-.vla-table-wrap>table tbody tr:hover{background:rgba(238,242,255,.7)}
+.ui-table-wrap>table tbody tr:hover{background:rgba(238,242,255,.7)}
 
 /* ---- 7. Badge / pill ------------------------------------------------- */
-.vla-badge{display:inline-flex;align-items:center;gap:.3rem;
+.ui-badge{display:inline-flex;align-items:center;gap:.3rem;
 padding:.15rem .55rem;border-radius:999px;border:1px solid transparent;
 font-size:.75rem;font-weight:600;line-height:1.5;white-space:nowrap}
-.vla-badge-ok{background:var(--vla-ok-soft);color:var(--vla-ok);
-border-color:var(--vla-ok-border)}
-.vla-badge-warn{background:var(--vla-warn-soft);color:var(--vla-warn);
-border-color:var(--vla-warn-border)}
-.vla-badge-bad{background:var(--vla-bad-soft);color:var(--vla-bad);
-border-color:var(--vla-bad-border)}
-.vla-badge-brand{background:var(--vla-brand-soft);color:var(--vla-brand-ink);
-border-color:var(--vla-brand-border)}
-.vla-badge-mute{background:var(--vla-surface-2);color:var(--vla-ink-soft);
-border-color:var(--vla-border-strong)}
+.ui-badge-ok{background:var(--ui-ok-soft);color:var(--ui-ok);
+border-color:var(--ui-ok-border)}
+.ui-badge-warn{background:var(--ui-warn-soft);color:var(--ui-warn);
+border-color:var(--ui-warn-border)}
+.ui-badge-bad{background:var(--ui-bad-soft);color:var(--ui-bad);
+border-color:var(--ui-bad-border)}
+.ui-badge-brand{background:var(--ui-brand-soft);color:var(--ui-brand-ink);
+border-color:var(--ui-brand-border)}
+.ui-badge-mute{background:var(--ui-surface-2);color:var(--ui-ink-soft);
+border-color:var(--ui-border-strong)}
 
 /* ---- 8. Nav / liên kết trang ----------------------------------------- */
-.vla-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.5rem}
-.vla-nav a{display:inline-flex;align-items:center;padding:.375rem .75rem;
-border-radius:var(--vla-r-md);border:1px solid var(--vla-border);
-background:var(--vla-surface);color:var(--vla-ink-soft);
+.ui-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.5rem}
+.ui-nav a{display:inline-flex;align-items:center;padding:.375rem .75rem;
+border-radius:var(--ui-r-md);border:1px solid var(--ui-border);
+background:var(--ui-surface);color:var(--ui-ink-soft);
 font-size:.8125rem;font-weight:500;transition:all .15s ease-in-out}
-.vla-nav a:hover{border-color:var(--vla-brand-border);color:var(--vla-brand-ink);
-background:var(--vla-brand-soft);text-decoration:none}
-.vla-nav a[aria-current="page"]{background:var(--vla-brand);color:var(--vla-on-brand);
-border-color:var(--vla-brand)}
+.ui-nav a:hover{border-color:var(--ui-brand-border);color:var(--ui-brand-ink);
+background:var(--ui-brand-soft);text-decoration:none}
+.ui-nav a[aria-current="page"]{background:var(--ui-brand);color:var(--ui-on-brand);
+border-color:var(--ui-brand)}
 
 /* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
-.vla-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
-.vla-tabs .tabbtn{padding:.5rem .9rem;border:1px solid var(--vla-border);
-border-radius:var(--vla-r-md);background:var(--vla-surface);
-color:var(--vla-ink-soft);font-family:inherit;font-size:.8125rem;
+.ui-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
+.ui-tabs .tabbtn{padding:.5rem .9rem;border:1px solid var(--ui-border);
+border-radius:var(--ui-r-md);background:var(--ui-surface);
+color:var(--ui-ink-soft);font-family:inherit;font-size:.8125rem;
 font-weight:600;cursor:pointer;transition:all .15s ease-in-out}
-.vla-tabs .tabbtn:hover{border-color:var(--vla-brand-border);
-color:var(--vla-brand-ink);background:var(--vla-brand-soft)}
-.vla-tabs .tabbtn.active{background:var(--vla-brand);color:var(--vla-on-brand);
-border-color:var(--vla-brand)}
+.ui-tabs .tabbtn:hover{border-color:var(--ui-brand-border);
+color:var(--ui-brand-ink);background:var(--ui-brand-soft)}
+.ui-tabs .tabbtn.active{background:var(--ui-brand);color:var(--ui-on-brand);
+border-color:var(--ui-brand)}
 .panel{display:none}.panel.active{display:block}
 
 /* ---- 9. Khối phụ trợ ------------------------------------------------- */
 /* Giới hạn chiều cao: dữ liệu JSON dài không được kéo dài trang vô hạn. */
-.vla-pre{margin:0;padding:.875rem 1rem;background:var(--vla-surface-2);
-border:1px solid var(--vla-border);border-radius:var(--vla-r-md);
-font-family:var(--vla-mono);font-size:.75rem;line-height:1.6;
+.ui-pre{margin:0;padding:.875rem 1rem;background:var(--ui-surface-2);
+border:1px solid var(--ui-border);border-radius:var(--ui-r-md);
+font-family:var(--ui-mono);font-size:.75rem;line-height:1.6;
 flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto;white-space:pre;
-color:var(--vla-ink-soft);overscroll-behavior:contain}
-.vla-muted{color:var(--vla-ink-soft);font-size:.8125rem}
-.vla-note{padding:.75rem 1rem;background:var(--vla-brand-soft);
-border:1px solid var(--vla-brand-border);border-radius:var(--vla-r-md);
-color:var(--vla-brand-ink);font-size:.8125rem}
-.vla-stat{display:flex;flex-direction:column;gap:.2rem}
-.vla-stat-label{color:var(--vla-ink-soft);font-size:.75rem;font-weight:500;
+color:var(--ui-ink-soft);overscroll-behavior:contain}
+.ui-muted{color:var(--ui-ink-soft);font-size:.8125rem}
+.ui-note{padding:.75rem 1rem;background:var(--ui-brand-soft);
+border:1px solid var(--ui-brand-border);border-radius:var(--ui-r-md);
+color:var(--ui-brand-ink);font-size:.8125rem}
+.ui-stat{display:flex;flex-direction:column;gap:.2rem}
+.ui-stat-label{color:var(--ui-ink-soft);font-size:.75rem;font-weight:500;
 letter-spacing:.02em;text-transform:uppercase}
-.vla-stat-value{color:var(--vla-ink);font-size:1.5rem;font-weight:600;
+.ui-stat-value{color:var(--ui-ink);font-size:1.5rem;font-weight:600;
 letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
 /* ---- 10. Tiện ích kiểu Tailwind (giữ tương thích ngược) -------------- */
@@ -326,7 +326,7 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .border-slate-200\/60{border-color:rgba(226,232,240,.6)}
 .rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
 .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}
-.shadow-sm{box-shadow:var(--vla-sh-sm)}.shadow-md{box-shadow:var(--vla-sh-md)}
+.shadow-sm{box-shadow:var(--ui-sh-sm)}.shadow-md{box-shadow:var(--ui-sh-md)}
 .flex{display:flex}.grid{display:grid}.hidden{display:none}
 .flex-wrap{flex-wrap:wrap}.flex-col{flex-direction:column}
 .items-center{align-items:center}.items-stretch{align-items:stretch}
@@ -344,8 +344,8 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .overflow-x-auto{overflow-x:auto}.table-auto{table-layout:auto}.table-fixed{table-layout:fixed}
 .transition-all{transition-property:all}.duration-200{transition-duration:.2s}
 .ease-in-out{transition-timing-function:cubic-bezier(.4,0,.2,1)}
-.hover\:shadow-lg:hover{box-shadow:var(--vla-sh-lg)}
-.hover\:shadow-md:hover{box-shadow:var(--vla-sh-md)}
+.hover\:shadow-lg:hover{box-shadow:var(--ui-sh-lg)}
+.hover\:shadow-md:hover{box-shadow:var(--ui-sh-md)}
 .hover\:-translate-y-0\.5:hover{transform:translateY(-.125rem)}
 @media (min-width:640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}
 @media (min-width:768px){
@@ -363,76 +363,76 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 Không còn cột sidebar. Sidebar cũ chiếm 292px trên màn 1680px — 17,4% chiều
 ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm. Điều hướng
 chuyển sang dock nổi ở mục 15, và toàn bộ phần đó trả về cho nội dung. */
-.vla-app{min-height:100vh}
+.ui-app{min-height:100vh}
 
-/* .vla-sr-only vẫn cần: dock dùng biểu tượng, và một vài nút chỉ có icon sẽ
+/* .ui-sr-only vẫn cần: dock dùng biểu tượng, và một vài nút chỉ có icon sẽ
 được trình đọc màn hình đọc thành nút trống nếu thiếu nhãn ẩn này. */
-.vla-raw{margin-top:var(--s2)}
-.vla-raw summary{cursor:pointer;font-size:.8125rem;color:var(--vla-ink-soft);
+.ui-raw{margin-top:var(--s2)}
+.ui-raw summary{cursor:pointer;font-size:.8125rem;color:var(--ui-ink-soft);
 padding:.375rem 0;user-select:none}
-.vla-raw summary:hover{color:var(--vla-brand-ink)}
-.vla-raw[open] summary{margin-bottom:var(--s1)}
-.vla-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+.ui-raw summary:hover{color:var(--ui-brand-ink)}
+.ui-raw[open] summary{margin-bottom:var(--s1)}
+.ui-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
 overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* Điều hướng dự phòng trong footer: dock là một <nav> đầy đủ nên trình thu
 thập vẫn thấy mọi liên kết, nhưng để nguyên một bản phẳng ở cuối trang là rẻ
 và loại bỏ hoàn toàn rủi ro nếu CSS không tải được. */
-.vla-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
-border-top:1px solid var(--vla-border);font-size:13px;
+.ui-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
+border-top:1px solid var(--ui-border);font-size:13px;
 display:grid;gap:var(--s3) var(--s4);
 grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}
-.vla-nav-fallback>section{min-width:0}
-.vla-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
-text-transform:uppercase;color:var(--vla-ink-soft);margin:0 0 var(--s1)}
+.ui-nav-fallback>section{min-width:0}
+.ui-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
+text-transform:uppercase;color:var(--ui-ink-soft);margin:0 0 var(--s1)}
 /* Mỗi nhóm là một cột xếp dọc. Bản cũ dùng flex-wrap + space-between trên
 từng <ul>: với 2-4 mục thì space-between kéo giãn chúng ngang cả container,
 chữ dính hai mép còn giữa trống hoác. Lưới cột phân bố đều theo nghĩa footer
 thật sự — mỗi nhóm chiếm một phần bằng nhau của chiều ngang. */
-.vla-nav-fallback ul{list-style:none;padding:0;margin:0;
+.ui-nav-fallback ul{list-style:none;padding:0;margin:0;
 display:flex;flex-direction:column;gap:var(--s1)}
 
 /* ---- 13. Lưới nội dung tự co giãn -----------------------------------
 Ba lớp cho ba nhu cầu bố cục cụ thể, tất cả đều align-items:stretch nên các ô
 cùng hàng luôn bằng chiều cao và không sinh khoảng trống thò thụt. */
-.vla-row{display:grid;gap:1.25rem;align-items:stretch;
+.ui-row{display:grid;gap:1.25rem;align-items:stretch;
 grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))}
-.vla-row>*{min-width:0}
-.vla-duo{display:grid;gap:1.25rem;align-items:stretch;grid-template-columns:minmax(0,1fr)}
-@media (min-width:768px){.vla-duo{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.vla-trio{display:grid;gap:1.25rem;align-items:stretch;grid-template-columns:minmax(0,1fr)}
-@media (min-width:768px){.vla-trio{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (min-width:1200px){.vla-trio{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.vla-duo>*,.vla-trio>*{min-width:0;display:flex;flex-direction:column}
-.vla-duo>*>.vla-card-body,.vla-trio>*>.vla-card-body{flex:1 1 auto}
+.ui-row>*{min-width:0}
+.ui-duo{display:grid;gap:1.25rem;align-items:stretch;grid-template-columns:minmax(0,1fr)}
+@media (min-width:768px){.ui-duo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ui-trio{display:grid;gap:1.25rem;align-items:stretch;grid-template-columns:minmax(0,1fr)}
+@media (min-width:768px){.ui-trio{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1200px){.ui-trio{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ui-duo>*,.ui-trio>*{min-width:0;display:flex;flex-direction:column}
+.ui-duo>*>.ui-card-body,.ui-trio>*>.ui-card-body{flex:1 1 auto}
 
 /* ---- 14. Trạng thái rỗng và đang tải ---------------------------------
 Một trang trống không kèm lời giải thích không phân biệt được với một trang
 hỏng. Khối này luôn nói RÕ vì sao trống và chỉ ra lối đi tiếp. */
-.vla-empty{display:flex;flex-direction:column;align-items:center;text-align:center;
-gap:.625rem;padding:2.5rem 1.5rem;color:var(--vla-ink-soft)}
-.vla-empty-icon{font-size:1.75rem;line-height:1;opacity:.55}
-.vla-empty h3{margin:0;font-size:1rem;color:var(--vla-ink)}
-.vla-empty p{margin:0;max-width:46ch;font-size:.875rem}
-.vla-empty-why{background:var(--vla-surface-2);border:1px solid var(--vla-border);
-border-radius:var(--vla-r-md);padding:.75rem 1rem;font-size:.8125rem;
+.ui-empty{display:flex;flex-direction:column;align-items:center;text-align:center;
+gap:.625rem;padding:2.5rem 1.5rem;color:var(--ui-ink-soft)}
+.ui-empty-icon{font-size:1.75rem;line-height:1;opacity:.55}
+.ui-empty h3{margin:0;font-size:1rem;color:var(--ui-ink)}
+.ui-empty p{margin:0;max-width:46ch;font-size:.875rem}
+.ui-empty-why{background:var(--ui-surface-2);border:1px solid var(--ui-border);
+border-radius:var(--ui-r-md);padding:.75rem 1rem;font-size:.8125rem;
 text-align:left;max-width:52ch;margin-top:.25rem}
-.vla-skeleton{background:linear-gradient(90deg,var(--vla-surface-2) 25%,
-var(--vla-border-strong) 37%,var(--vla-surface-2) 63%);
-background-size:400% 100%;animation:vla-shimmer 1.4s ease infinite;
-border-radius:var(--vla-r-md);height:1rem;margin:.5rem 0}
-@keyframes vla-shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.ui-skeleton{background:linear-gradient(90deg,var(--ui-surface-2) 25%,
+var(--ui-border-strong) 37%,var(--ui-surface-2) 63%);
+background-size:400% 100%;animation:ui-shimmer 1.4s ease infinite;
+border-radius:var(--ui-r-md);height:1rem;margin:.5rem 0}
+@keyframes ui-shimmer{0%{background-position:100% 50%}100%{background-position:0 50%}}
 @media (prefers-reduced-motion:reduce){
-.vla-skeleton{animation:none}
-.vla-app{transition:none}
+.ui-skeleton{animation:none}
+.ui-app{transition:none}
 }
 
 /* ---- 11. In ấn ------------------------------------------------------- */
 @media print{
 body{background:#fff}
-.vla-card{box-shadow:none;break-inside:avoid}
-.vla-table-wrap{max-height:none;overflow:visible}
-.vla-nav{display:none}
+.ui-card{box-shadow:none;break-inside:avoid}
+.ui-table-wrap{max-height:none;overflow:visible}
+.ui-nav{display:none}
 }
 
 /* ---- 15. Dock điều hướng nổi ------------------------------------------
@@ -443,56 +443,56 @@ bộ phần đó cho nội dung.
 17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và tooltip
 chồng lên nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon nhóm và mở
 popover khi hover hoặc focus. */
-.vla-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
+.ui-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
 z-index:60;max-width:calc(100vw - var(--s4))}
 /* Nhãn nằm dưới icon đẩy dock lên 108px. Đưa nhãn thành tooltip nổi phía
-trên (xem .vla-dock-name) thì thanh chỉ còn icon: 40 + 6*2 viền = 54px, đúng
+trên (xem .ui-dock-name) thì thanh chỉ còn icon: 40 + 6*2 viền = 54px, đúng
 khoảng 48-56px của bản thiết kế. Nền hạ từ 84% xuống 30% để thấy rõ nội dung
 trôi phía sau — đó mới là hiệu ứng kính. */
-.vla-dock-inner{position:relative;display:flex;align-items:center;gap:4px;
+.ui-dock-inner{position:relative;display:flex;align-items:center;gap:4px;
 padding:6px 10px;border-radius:var(--r-pill);
-background:color-mix(in srgb,var(--vla-surface) 30%,transparent);
+background:color-mix(in srgb,var(--ui-surface) 30%,transparent);
 border:1px solid var(--hairline);
 box-shadow:0 8px 32px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.06);
 backdrop-filter:blur(12px) saturate(1.8);-webkit-backdrop-filter:blur(12px) saturate(1.8)}
 /* Trình duyệt không có backdrop-filter sẽ thấy nền đặc thay vì trong suốt —
 vẫn đọc được, chỉ mất hiệu ứng kính. */
 @supports not (backdrop-filter:blur(1px)){
-.vla-dock-inner{background:var(--vla-surface)}
+.ui-dock-inner{background:var(--ui-surface)}
 }
-.vla-dock-group{position:relative}
-.vla-dock-btn{position:relative;display:grid;place-items:center;padding:0;
-background:none;border:0;color:var(--vla-ink-2);cursor:pointer;border-radius:var(--r-inner)}
-.vla-dock-ic{display:grid;place-items:center;width:40px;height:40px;font-size:18px;
-border-radius:var(--r-inner);background:var(--vla-surface-2);
+.ui-dock-group{position:relative}
+.ui-dock-btn{position:relative;display:grid;place-items:center;padding:0;
+background:none;border:0;color:var(--ui-ink-2);cursor:pointer;border-radius:var(--r-inner)}
+.ui-dock-ic{display:grid;place-items:center;width:40px;height:40px;font-size:18px;
+border-radius:var(--r-inner);background:var(--ui-surface-2);
 border:1px solid var(--hairline);
 transition:transform .24s ease-in-out,background .2s ease-in-out}
 /* Nhãn thành tooltip: ra khỏi luồng nên không cộng vào chiều cao thanh. */
-.vla-dock-name{position:absolute;bottom:calc(100% + 8px);left:50%;
+.ui-dock-name{position:absolute;bottom:calc(100% + 8px);left:50%;
 transform:translateX(-50%) translateY(4px);
 padding:3px 8px;border-radius:var(--r-inner);
-background:var(--vla-ink);color:var(--vla-surface);
+background:var(--ui-ink);color:var(--ui-surface);
 font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
 opacity:0;visibility:hidden;pointer-events:none;
 transition:opacity .16s ease-in-out,transform .16s ease-in-out,visibility .16s}
-.vla-dock-btn:hover .vla-dock-name,.vla-dock-btn:focus-visible .vla-dock-name{
+.ui-dock-btn:hover .ui-dock-name,.ui-dock-btn:focus-visible .ui-dock-name{
 opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
 /* Nhóm nào có popover thì popover đã nói rõ tên nhóm — hiện thêm tooltip là
 thừa và hai lớp nổi chồng lên nhau. */
-.vla-dock-group:hover .vla-dock-name{opacity:0;visibility:hidden}
-.vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{
-transform:scale(1.18);background:var(--vla-brand-soft)}
-.vla-dock-btn[aria-current="true"] .vla-dock-ic{
-background:var(--vla-brand);color:var(--vla-on-brand);border-color:transparent}
-.vla-dock-btn:focus-visible{outline:2px solid var(--vla-brand);outline-offset:2px}
+.ui-dock-group:hover .ui-dock-name{opacity:0;visibility:hidden}
+.ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{
+transform:scale(1.18);background:var(--ui-brand-soft)}
+.ui-dock-btn[aria-current="true"] .ui-dock-ic{
+background:var(--ui-brand);color:var(--ui-on-brand);border-color:transparent}
+.ui-dock-btn:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
 
 /* Popover: mặc định ẩn khỏi CÂY TRỢ NĂNG lẫn thị giác. Dùng visibility chứ
 không dùng display:none để còn chuyển động được, và hidden-until-found sẽ làm
 trình đọc màn hình bỏ qua khi đóng. */
-.vla-dock-pop{position:absolute;bottom:calc(100% + var(--s2));left:50%;
+.ui-dock-pop{position:absolute;bottom:calc(100% + var(--s2));left:50%;
 transform:translateX(-50%) translateY(6px);min-width:220px;padding:var(--s1);
-background:var(--vla-surface);border:1px solid var(--vla-border);
-border-radius:var(--r-card);box-shadow:var(--vla-sh-lg);
+background:var(--ui-surface);border:1px solid var(--ui-border);
+border-radius:var(--r-card);box-shadow:var(--ui-sh-lg);
 opacity:0;visibility:hidden;pointer-events:none;
 /* Độ trễ BẤT ĐỐI XỨNG. Mở gần như tức thì, nhưng đóng chậm .40s: con trỏ đi
 từ nút lên popover phải băng qua khe hở var(--s2), và nếu đóng ngay khi rời
@@ -502,90 +502,90 @@ transition:opacity .18s ease-in-out .22s,transform .18s ease-in-out .22s,
 visibility 0s linear .40s}
 /* Cầu nối phủ kín khe hở giữa đáy popover và đỉnh nút, nên :hover của nhóm
 không bao giờ đứt khi con trỏ băng qua. */
-.vla-dock-pop::after{content:"";position:absolute;left:0;right:0;top:100%;
+.ui-dock-pop::after{content:"";position:absolute;left:0;right:0;top:100%;
 height:18px}
 /* Vùng đệm quanh cả nhóm: tha thứ cho đường chuột đi chéo ra ngoài mép nút. */
-.vla-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
+.ui-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
 top:-18px;bottom:-6px;z-index:-1}
-.vla-dock-group:hover .vla-dock-pop,
-.vla-dock-group:focus-within .vla-dock-pop{
+.ui-dock-group:hover .ui-dock-pop,
+.ui-dock-group:focus-within .ui-dock-pop{
 opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);
 transition-delay:0s,0s,0s}
-.vla-dock-pop a{display:flex;align-items:center;gap:var(--s1);
+.ui-dock-pop a{display:flex;align-items:center;gap:var(--s1);
 padding:var(--s1) var(--s2);border-radius:var(--r-inner);
-color:var(--vla-ink-2);font-size:13px;white-space:nowrap}
-.vla-dock-pop a:hover{background:var(--vla-surface-2);text-decoration:none}
-.vla-dock-pop a[aria-current="page"]{background:var(--vla-brand-soft);
-color:var(--vla-brand-ink);font-weight:600}
+color:var(--ui-ink-2);font-size:13px;white-space:nowrap}
+.ui-dock-pop a:hover{background:var(--ui-surface-2);text-decoration:none}
+.ui-dock-pop a[aria-current="page"]{background:var(--ui-brand-soft);
+color:var(--ui-brand-ink);font-weight:600}
 
 /* Dock che mất phần cuối trang nếu không chừa chỗ. */
-.vla-dock-space{padding-bottom:calc(var(--vla-dock-h) + var(--s4))}
+.ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
 
 @media (max-width:640px){
-.vla-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
-.vla-dock-inner{overflow-x:auto;justify-content:flex-start;
+.ui-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
+.ui-dock-inner{overflow-x:auto;justify-content:flex-start;
 scrollbar-width:none;border-radius:var(--r-card)}
-.vla-dock-inner::-webkit-scrollbar{display:none}
-.vla-dock-btn{width:auto}
+.ui-dock-inner::-webkit-scrollbar{display:none}
+.ui-dock-btn{width:auto}
 /* Thanh cuộn ngang tạo ngữ cảnh cắt, nên tooltip nổi phía trên sẽ bị xén mất
 nửa trên. Ẩn hẳn: màn cảm ứng không có trạng thái hover để hiện nó. */
-.vla-dock-name{display:none}
+.ui-dock-name{display:none}
 }
 @media (prefers-reduced-motion:reduce){
-.vla-dock-ic,.vla-dock-pop,.vla-dock-name{transition:none}
-.vla-dock-btn:hover .vla-dock-ic,.vla-dock-btn:focus-visible .vla-dock-ic{transform:none}
+.ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
+.ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{transform:none}
 }
 
 /* ---- 16. Lưới KPI -----------------------------------------------------
 auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần media query
 nào cho từng mốc. */
-.vla-kpi-grid{display:grid;gap:var(--s2);
+.ui-kpi-grid{display:grid;gap:var(--s2);
 grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
-.vla-kpi{display:flex;flex-direction:column;gap:var(--s1);
+.ui-kpi{display:flex;flex-direction:column;gap:var(--s1);
 padding:var(--s3);border-radius:var(--r-card);
-background:var(--vla-surface);border:1px solid var(--vla-border);
-box-shadow:var(--vla-sh-sm)}
-.vla-kpi-label{font-size:var(--fs-label);font-weight:600;letter-spacing:.06em;
-text-transform:uppercase;color:var(--vla-ink-soft)}
-.vla-kpi-value{font-size:var(--fs-metric);font-weight:700;line-height:1;
-color:var(--vla-ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.vla-kpi-sub{font-size:13px;color:var(--vla-ink-soft)}
-.vla-kpi-spark{margin-top:auto;padding-top:var(--s1);display:block;
+background:var(--ui-surface);border:1px solid var(--ui-border);
+box-shadow:var(--ui-sh-sm)}
+.ui-kpi-label{font-size:var(--fs-label);font-weight:600;letter-spacing:.06em;
+text-transform:uppercase;color:var(--ui-ink-soft)}
+.ui-kpi-value{font-size:var(--fs-metric);font-weight:700;line-height:1;
+color:var(--ui-ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ui-kpi-sub{font-size:13px;color:var(--ui-ink-soft)}
+.ui-kpi-spark{margin-top:auto;padding-top:var(--s1);display:block;
 width:100%;height:32px;overflow:visible}
-.vla-kpi-spark polyline{fill:none;stroke:var(--vla-brand);stroke-width:1.75;
+.ui-kpi-spark polyline{fill:none;stroke:var(--ui-brand);stroke-width:1.75;
 stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.vla-kpi-delta{font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
-.vla-kpi-delta[data-dir="up"]{color:var(--vla-ok)}
-.vla-kpi-delta[data-dir="down"]{color:var(--vla-bad)}
-.vla-kpi-delta[data-dir="flat"]{color:var(--vla-ink-soft)}
+.ui-kpi-delta{font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+.ui-kpi-delta[data-dir="up"]{color:var(--ui-ok)}
+.ui-kpi-delta[data-dir="down"]{color:var(--ui-bad)}
+.ui-kpi-delta[data-dir="flat"]{color:var(--ui-ink-soft)}
 
 /* ---- 17. Lưới ma trận dữ liệu hai tầng --------------------------------
 minmax(0,…) là BẮT BUỘC, không phải tuỳ chọn: 1fr mặc định là minmax(auto,1fr)
 và một bảng rộng sẽ đẩy cột phình ra, phá vỡ tỉ lệ 58/42 đã chọn. */
-.vla-matrix-top{display:grid;gap:var(--s3);align-items:stretch;
+.ui-matrix-top{display:grid;gap:var(--s3);align-items:stretch;
 grid-template-columns:minmax(0,58fr) minmax(0,42fr)}
-.vla-matrix-top>*{min-width:0}
-.vla-matrix-full{width:100%}
-@media (max-width:1100px){.vla-matrix-top{grid-template-columns:minmax(0,1fr)}}
+.ui-matrix-top>*{min-width:0}
+.ui-matrix-full{width:100%}
+@media (max-width:1100px){.ui-matrix-top{grid-template-columns:minmax(0,1fr)}}
 
 /* ---- 18. Ba bảng dự đoán ngày mai, một hàng --------------------------- */
-.vla-next-day{display:grid;gap:var(--s3);align-items:stretch;
+.ui-next-day{display:grid;gap:var(--s3);align-items:stretch;
 grid-template-columns:repeat(3,minmax(0,1fr))}
-.vla-next-day>*{min-width:0;display:flex;flex-direction:column}
-.vla-next-day>*>.vla-card-body{flex:1 1 auto}
-@media (max-width:1240px){.vla-next-day{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:760px){.vla-next-day{grid-template-columns:minmax(0,1fr)}}
+.ui-next-day>*{min-width:0;display:flex;flex-direction:column}
+.ui-next-day>*>.ui-card-body{flex:1 1 auto}
+@media (max-width:1240px){.ui-next-day{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.ui-next-day{grid-template-columns:minmax(0,1fr)}}
 
 /* ---- 19. Khu căn cứ: trái độc lập, phải hợp nhất ---------------------- */
-.vla-basis{display:grid;gap:var(--s3);align-items:start;
+.ui-basis{display:grid;gap:var(--s3);align-items:start;
 grid-template-columns:minmax(0,34fr) minmax(0,66fr)}
-.vla-basis>*{min-width:0}
-.vla-basis-merged{border:1px solid var(--vla-border);border-radius:var(--r-card);
-background:var(--vla-surface);overflow:hidden;box-shadow:var(--vla-sh-sm)}
-.vla-basis-merged>section{padding:var(--s3)}
+.ui-basis>*{min-width:0}
+.ui-basis-merged{border:1px solid var(--ui-border);border-radius:var(--r-card);
+background:var(--ui-surface);overflow:hidden;box-shadow:var(--ui-sh-sm)}
+.ui-basis-merged>section{padding:var(--s3)}
 /* Đường phân cách chỉ nằm GIỮA hai phần, không nằm trên phần đầu. */
-.vla-basis-merged>section+section{border-top:1px solid var(--vla-border)}
-@media (max-width:1100px){.vla-basis{grid-template-columns:minmax(0,1fr)}}
+.ui-basis-merged>section+section{border-top:1px solid var(--ui-border)}
+@media (max-width:1100px){.ui-basis{grid-template-columns:minmax(0,1fr)}}
 
 """.strip()
 
@@ -594,16 +594,16 @@ def _column_align_rules(columns: int = 10) -> str:
     """Sinh class căn lề theo vị trí cột.
 
     Dùng cho bảng được ghép chuỗi ``<tr><td>`` thủ công, nơi không tiện gắn
-    class lên từng ô: chỉ cần thêm ``vla-r3`` (cột 3 canh phải) hoặc
-    ``vla-m2`` (cột 2 canh giữa) lên chính thẻ ``<table>``.
+    class lên từng ô: chỉ cần thêm ``ui-r3`` (cột 3 canh phải) hoặc
+    ``ui-m2`` (cột 2 canh giữa) lên chính thẻ ``<table>``.
     """
 
     parts = []
     for index in range(1, columns + 1):
         for suffix, value in (("r", "right"), ("m", "center")):
             parts.append(
-                f".vla-table.vla-{suffix}{index} td:nth-child({index}),"
-                f".vla-table.vla-{suffix}{index} th:nth-child({index})"
+                f".ui-table.ui-{suffix}{index} td:nth-child({index}),"
+                f".ui-table.ui-{suffix}{index} th:nth-child({index})"
                 f"{{text-align:{value};white-space:nowrap}}"
             )
     return "\n".join(parts)
@@ -638,7 +638,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         "Thống kê",
         (
             ("statistics.html", "Ma trận thống kê", "▦"),
-            ("index.html#tan-suat-loto", "Tần suất lô tô", "◧"),
+            ("index.html#tan-suat-loto", "Tần suất LOTO", "◧"),
             ("index.html#gan-nhip", "Gan & nhịp", "◷"),
             ("index.html#cap-lon", "Cặp lộn & bóng", "⇅"),
         ),
@@ -646,10 +646,10 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
     (
         "Cầu kèo",
         (
-            ("soi-path-loto-active.html", "Cầu lô tô đang chạy", "⟋"),
-            ("soi-path-loto-stable.html", "Cầu lô tô ổn định", "⟊"),
-            ("soi-path-de-active.html", "Cầu ĐB đang chạy", "⟍"),
-            ("soi-path-de-stable.html", "Cầu ĐB ổn định", "⟌"),
+            ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "⟋"),
+            ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "⟊"),
+            ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "⟍"),
+            ("soi-path-de-stable.html", "Cầu Đặc Biệt ổn định", "⟌"),
             ("index.html#duong-cau", "Căn cứ vị trí cầu", "⌗"),
         ),
     ),
@@ -657,31 +657,31 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         "Phỏng đoán",
         (
             ("dashboard.html", "Bảng điều khiển AI/ML", "◈"),
-            ("ml_top10_loto.html", "10 số lô tô", "①"),
+            ("ml_top10_loto.html", "10 số LOTO", "①"),
             ("ml_top10_de.html", "10 số Đặc Biệt", "②"),
             ("model-quality.html", "Chất lượng mô hình", "✓"),
         ),
     ),
     (
-        "Bảng đặc biệt",
+        "Bảng Đặc Biệt",
         (
             ("bang-dac-biet.html", "Theo ngày", "▦"),
             ("bang-dac-biet-thang.html", "Theo tháng", "▩"),
             ("bang-dac-biet-nam.html", "Theo năm", "▨"),
-            ("chu-ky-dac-biet.html", "Chu kỳ đặc biệt", "◷"),
-            ("cau-dac-biet-theo-bo-so.html", "Cầu ĐB theo bộ số", "⌗"),
-            ("giai-db-ngay-mai.html", "Giải ĐB ngày mai", "◐"),
+            ("chu-ky-dac-biet.html", "Chu kỳ Đặc Biệt", "◷"),
+            ("cau-dac-biet-theo-bo-so.html", "Cầu Đặc Biệt theo bộ số", "⌗"),
+            ("giai-db-ngay-mai.html", "Giải Đặc Biệt ngày mai", "◐"),
         ),
     ),
     (
-        "Lô tô chi tiết",
+        "LOTO chi tiết",
         (
-            ("tan-suat-loto.html", "Tần suất lô tô", "◧"),
-            ("tan-suat-cap-loto.html", "Tần suất cặp lô tô", "⇅"),
-            ("cap-lon-loto.html", "Cặp lộn lô tô", "🔁"),
-            ("cau-giai-dac-biet.html", "Cầu giải đặc biệt", "🎯"),
-            ("giai-dac-biet-theo-tong.html", "ĐB theo tổng", "Σ"),
-            ("dau-duoi-loto.html", "Đầu đuôi lô tô", "⊞"),
+            ("tan-suat-loto.html", "Tần suất LOTO", "◧"),
+            ("tan-suat-cap-loto.html", "Tần suất cặp LOTO", "⇅"),
+            ("cap-lon-loto.html", "Cặp lộn LOTO", "🔁"),
+            ("cau-giai-dac-biet.html", "Cầu giải Đặc Biệt", "🎯"),
+            ("giai-dac-biet-theo-tong.html", "Đặc Biệt theo tổng", "Σ"),
+            ("dau-duoi-loto.html", "Đầu đuôi LOTO", "⊞"),
             ("lo-gan.html", "Lô gan", "⏳"),
             ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "◫"),
         ),
@@ -790,21 +790,21 @@ def dock(current: str = "") -> str:
     Returns:
         Chuỗi HTML của dock.
     """
-    parts = ['<nav class="vla-dock" aria-label="Điều hướng chính">', '<div class="vla-dock-inner">']
+    parts = ['<nav class="ui-dock" aria-label="Điều hướng chính">', '<div class="ui-dock-inner">']
     for group, items in SITE_NAV:
         hrefs = {href.split("#", 1)[0] for href, _, _ in items}
         active = " aria-current=\"true\"" if current and current in hrefs else ""
         icon = items[0][2] if items else "•"
         group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
-        parts.append('<div class="vla-dock-group">')
+        parts.append('<div class="ui-dock-group">')
         parts.append(
-            f'<button class="vla-dock-btn" type="button"{active}'
+            f'<button class="ui-dock-btn" type="button"{active}'
             f' aria-haspopup="true" aria-controls="{group_id}">'
-            f'<span class="vla-dock-ic" aria-hidden="true">{icon}</span>'
-            f'<span class="vla-dock-name">{html.escape(group)}</span>'
+            f'<span class="ui-dock-ic" aria-hidden="true">{icon}</span>'
+            f'<span class="ui-dock-name">{html.escape(group)}</span>'
             "</button>"
         )
-        parts.append(f'<div class="vla-dock-pop" id="{group_id}" role="menu">')
+        parts.append(f'<div class="ui-dock-pop" id="{group_id}" role="menu">')
         for href, label, item_icon in items:
             mark = ' aria-current="page"' if href == current else ""
             parts.append(
@@ -827,10 +827,10 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     Returns:
         Phần HTML mở khung; đóng bằng :func:`app_shell_close`.
     """
-    extra = " vla-shell-wide" if wide else ""
+    extra = " ui-shell-wide" if wide else ""
     return (
-        f'<div class="vla-app vla-dock-space" id="vla-app">'
-        f'<main class="vla-shell{extra}">'
+        f'<div class="ui-app ui-dock-space" id="ui-app">'
+        f'<main class="ui-shell{extra}">'
     )
 
 
@@ -846,7 +846,7 @@ def nav_fallback() -> str:
     Returns:
         Chuỗi HTML của khối điều hướng dự phòng.
     """
-    parts = ['<nav class="vla-nav-fallback" aria-label="Điều hướng đầy đủ">']
+    parts = ['<nav class="ui-nav-fallback" aria-label="Điều hướng đầy đủ">']
     for group, items in SITE_NAV:
         parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
         for href, label, _ in items:
@@ -874,14 +874,14 @@ def app_shell_close(current: str = "") -> str:
 def tailwind_style_tag() -> str:
     """Trả về thẻ style CSP-safe; không gọi CDN bên ngoài."""
 
-    return f'<style id="vla-tailwind-lite">{TAILWIND_LITE_CSS}</style>'
+    return f'<style id="ui-tailwind-lite">{TAILWIND_LITE_CSS}</style>'
 
 
 def shell_open(*, wide: bool = False) -> str:
     """Mở container căn giữa dùng chung cho mọi trang."""
 
-    extra = " vla-shell-wide" if wide else ""
-    return f'<div class="vla-shell{extra}">'
+    extra = " ui-shell-wide" if wide else ""
+    return f'<div class="ui-shell{extra}">'
 
 
 def shell_close() -> str:
@@ -894,15 +894,15 @@ def page_header(title: str, subtitle: str = "", meta: Iterable[str] = ()) -> str
     """Dựng khối tiêu đề trang thống nhất (đã escape)."""
 
     parts = [
-        '<header class="vla-header">',
+        '<header class="ui-header">',
         f"<h1>{html.escape(title)}</h1>",
     ]
     if subtitle:
-        parts.append(f'<p class="vla-sub">{html.escape(subtitle)}</p>')
+        parts.append(f'<p class="ui-sub">{html.escape(subtitle)}</p>')
     items = [html.escape(str(m)) for m in meta if str(m).strip()]
     if items:
         cells = "".join(f"<span>{item}</span>" for item in items)
-        parts.append(f'<div class="vla-meta">{cells}</div>')
+        parts.append(f'<div class="ui-meta">{cells}</div>')
     parts.append("</header>")
     return "".join(parts)
 
@@ -916,7 +916,7 @@ def nav_links(links: Sequence[tuple[str, str]], current: str = "") -> str:
     for href, label in links:
         mark = ' aria-current="page"' if href == current else ""
         items.append(f'<a href="{html.escape(href)}"{mark}>{html.escape(label)}</a>')
-    return f'<nav class="vla-nav">{"".join(items)}</nav>'
+    return f'<nav class="ui-nav">{"".join(items)}</nav>'
 
 
 def card(
@@ -934,15 +934,15 @@ def card(
     card để bảng chạm sát viền; ``lift`` bật hiệu ứng nâng khi rê chuột.
     """
 
-    classes = ["vla-card"]
+    classes = ["ui-card"]
     if lift:
-        classes.append("vla-card-lift")
+        classes.append("ui-card-lift")
     if span:
-        classes.append(f"vla-c{max(1, min(12, int(span)))}")
+        classes.append(f"ui-c{max(1, min(12, int(span)))}")
     head = ""
     if title or aside:
-        head = f'<div class="vla-card-head"><h2>{html.escape(title)}</h2>{aside}</div>'
-    body_class = "vla-card-body vla-card-flush" if flush else "vla-card-body"
+        head = f'<div class="ui-card-head"><h2>{html.escape(title)}</h2>{aside}</div>'
+    body_class = "ui-card-body ui-card-flush" if flush else "ui-card-body"
     return (
         f'<section class="{" ".join(classes)}">'
         f'{head}<div class="{body_class}">{body}</div>'
@@ -1053,17 +1053,17 @@ def definition_table(
 
     walk(payload)
     if not rows:
-        return '<p class="vla-table-empty">Chưa có dữ liệu.</p>'
+        return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
 
     body = "".join(
-        f'<tr><td class="vla-al vla-key">{html.escape(label)}</td>'
-        f'<td class="vla-ar">{html.escape(value)}</td></tr>'
+        f'<tr><td class="ui-al ui-key">{html.escape(label)}</td>'
+        f'<td class="ui-ar">{html.escape(value)}</td></tr>'
         for label, value in rows
     )
     return (
-        '<div class="vla-table-wrap"><table class="vla-table">'
-        '<thead><tr><th class="vla-al" scope="col">Mục</th>'
-        '<th class="vla-ar" scope="col">Giá trị</th></tr></thead>'
+        '<div class="ui-table-wrap"><table class="ui-table">'
+        '<thead><tr><th class="ui-al" scope="col">Mục</th>'
+        '<th class="ui-ar" scope="col">Giá trị</th></tr></thead>'
         f"<tbody>{body}</tbody></table></div>"
     )
 
@@ -1073,8 +1073,8 @@ def raw_details(payload: Any, *, summary: str = "Xem dữ liệu gốc (JSON)") 
 
     text = json.dumps(payload, ensure_ascii=False, indent=2)
     return (
-        f'<details class="vla-raw"><summary>{html.escape(summary)}</summary>'
-        f'<pre class="vla-pre">{html.escape(text)}</pre></details>'
+        f'<details class="ui-raw"><summary>{html.escape(summary)}</summary>'
+        f'<pre class="ui-pre">{html.escape(text)}</pre></details>'
     )
 
 
@@ -1109,7 +1109,7 @@ def render_table(
 
     body_rows = [list(r) for r in rows]
     if not body_rows:
-        return f'<p class="vla-table-empty">{html.escape(empty)}</p>'
+        return f'<p class="ui-table-empty">{html.escape(empty)}</p>'
 
     width = len(headers)
     if align is None:
@@ -1119,7 +1119,7 @@ def render_table(
             for index in range(width)
         ]
     classes = [
-        _ALIGN_CLASS.get(align[i] if i < len(align) else ALIGN_LEFT, "vla-al") for i in range(width)
+        _ALIGN_CLASS.get(align[i] if i < len(align) else ALIGN_LEFT, "ui-al") for i in range(width)
     ]
 
     head = "".join(
@@ -1127,7 +1127,7 @@ def render_table(
         for i, h in enumerate(headers)
     )
     out = [
-        '<div class="vla-table-wrap"><table class="vla-table">',
+        '<div class="ui-table-wrap"><table class="ui-table">',
         f"<thead><tr>{head}</tr></thead><tbody>",
     ]
     for row in body_rows:
@@ -1136,7 +1136,7 @@ def render_table(
             value = row[index] if index < len(row) else ""
             cell_class = classes[index]
             if index == key_column:
-                cell_class += " vla-key"
+                cell_class += " ui-key"
             cells.append(f'<td class="{cell_class}">{html.escape(str(value))}</td>')
         out.append(f"<tr>{''.join(cells)}</tr>")
     out.append("</tbody></table></div>")
@@ -1153,7 +1153,7 @@ def dataframe_table(
     """Bọc :func:`render_table` cho ``pandas.DataFrame`` đã định dạng sẵn."""
 
     if frame is None or getattr(frame, "empty", True):
-        return f'<p class="vla-table-empty">{html.escape(empty)}</p>'
+        return f'<p class="ui-table-empty">{html.escape(empty)}</p>'
     headers = [str(c) for c in frame.columns]
     rows = frame.astype(object).where(frame.notna(), "").values.tolist()
     return render_table(headers, rows, align=align, empty=empty, key_column=key_column)
@@ -1162,4 +1162,4 @@ def dataframe_table(
 def table_wrap(inner_html: str) -> str:
     """Bọc bảng HTML có sẵn (ví dụ ``DataFrame.to_html``) vào vùng cuộn chuẩn."""
 
-    return f'<div class="vla-table-wrap">{inner_html}</div>'
+    return f'<div class="ui-table-wrap">{inner_html}</div>'

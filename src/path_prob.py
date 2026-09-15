@@ -344,7 +344,7 @@ def _empty_prediction(mode: Mode = "loto") -> pd.DataFrame:
 
     This used to return an all-zero vector.  For ``mode="de"`` that is not a
     probability distribution at all, and the case is not hypothetical: the
-    default ``min_current_streak=3`` is structurally unreachable for ĐB (a rule
+    default ``min_current_streak=3`` is structurally unreachable for Đặc Biệt (a rule
     would need three consecutive exact 1-in-100 hits), so ``kind="active"`` +
     ``mode="de"`` returned zeros on every single run.  ``prob_eval`` consumed
     that vector directly and scored a log-loss of ~27.6 per day against it.

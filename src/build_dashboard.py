@@ -26,6 +26,7 @@ from ui_theme import (
     write_stylesheet,
 )
 from web_security import security_meta_tags
+from page_output import write_page
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     def df_to_html(df: pd.DataFrame) -> str:
         if df.empty:
             return (
-                '<p class="vla-table-empty">Chưa có dữ liệu. '
+                '<p class="ui-table-empty">Chưa có dữ liệu. '
                 "Tệp đầy đủ nằm trong <code>data/predict/</code>.</p>"
             )
         cols = [c for c in df.columns if c in ("number", "prob")]
@@ -152,14 +153,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         """
         return definition_table(localize_mapping_for_display(payload)) + raw_details(payload)
 
-    # Mỗi hàng ghép đúng một cặp lô tô | Đặc Biệt (6/12 mỗi card). Hai card cùng
+    # Mỗi hàng ghép đúng một cặp LOTO | Đặc Biệt (6/12 mỗi card). Hai card cùng
     # hàng luôn cùng dạng nội dung nên cao bằng nhau, không sinh khoảng trống
     # dưới đáy card thấp hơn như khi xếp lẫn bảng với khối JSON.
     cards = "".join(
         [
             card(
                 df_to_html(pred_loto),
-                title="Xác suất lô tô cao nhất",
+                title="Xác suất LOTO cao nhất",
                 span=6,
                 flush=True,
                 lift=True,
@@ -173,17 +174,17 @@ def main(argv: Sequence[str] | None = None) -> None:
             ),
             card(
                 rendered(picks_loto),
-                title="Danh sách gợi ý (lô tô)",
+                title="Danh sách gợi ý (LOTO)",
                 span=6,
             ),
             card(
                 rendered(picks_de),
-                title="Danh sách gợi ý (Đặc Biệt / ĐB)",
+                title="Danh sách gợi ý (Đặc Biệt / Đặc Biệt)",
                 span=6,
             ),
             card(
-                rendered(w_loto) + '<h3 class="mt-4">Hiệu chỉnh (lô tô)</h3>' + rendered(c_loto),
-                title="Trọng số (lô tô)",
+                rendered(w_loto) + '<h3 class="mt-4">Hiệu chỉnh (LOTO)</h3>' + rendered(c_loto),
+                title="Trọng số (LOTO)",
                 span=6,
             ),
             card(
@@ -212,12 +213,12 @@ def main(argv: Sequence[str] | None = None) -> None:
             [f"Ngày dữ liệu mới nhất: {latest}", f"Tạo lúc: {gen}"],
         )
     }
-<div class="vla-grid">{cards}</div>
+<div class="ui-grid">{cards}</div>
 {app_shell_close("dashboard.html")}
 </body>
 </html>
 """
-    (docs_dir / "dashboard.html").write_text(dashboard_html, encoding="utf-8")
+    write_page((docs_dir / "dashboard.html"), dashboard_html)
     print("Wrote:", docs_dir / "dashboard.html")
 
     # GitHub Pages publishes only docs/. Keep model-quality data self-contained
@@ -255,7 +256,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         return out[quality_columns].rename(columns=column_label)
 
     if quality.empty:
-        quality_body = '<p class="vla-table-empty">Chưa có đủ lịch sử đánh giá mô hình.</p>'
+        quality_body = '<p class="ui-table-empty">Chưa có đủ lịch sử đánh giá mô hình.</p>'
         latest_quality = ""
     else:
         q = quality.copy()
@@ -295,10 +296,10 @@ def main(argv: Sequence[str] | None = None) -> None:
             "càng tốt; đây là thước đo xác suất, không phải cam kết kết quả.",
         )
     }
-<div class="vla-grid">
+<div class="ui-grid">
 {
         card(
-            latest_quality or '<p class="vla-table-empty">Chưa có dữ liệu.</p>',
+            latest_quality or '<p class="ui-table-empty">Chưa có dữ liệu.</p>',
             title="Mới nhất",
             span=12,
             flush=True,
@@ -318,7 +319,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 </body>
 </html>
 """
-    (docs_dir / "model-quality.html").write_text(quality_html, encoding="utf-8")
+    write_page((docs_dir / "model-quality.html"), quality_html)
     print("Wrote:", docs_dir / "model-quality.html")
 
 

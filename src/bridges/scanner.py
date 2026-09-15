@@ -116,7 +116,7 @@ def target_baseline_rate(target_type: str, set_size: int = 1) -> float:
         return float(min(1.0, m * UNIFORM_TWO_DIGIT_RATE))
     if target_type == TARGET_LOTO_2_NHAY:
         return _two_nhay_rate(m)
-    # Lô tô: xác suất ít nhất một con trong bộ xuất hiện ở 27 lượt.
+    # LOTO: xác suất ít nhất một con trong bộ xuất hiện ở 27 lượt.
     return float(1.0 - (1.0 - m * UNIFORM_TWO_DIGIT_RATE) ** LOTO_DRAWS_PER_DAY)
 
 
@@ -140,10 +140,10 @@ def _tail_probability(
     """P(số lần trúng >= quan sát) dưới giả thiết không có tín hiệu.
 
     Chọn xấp xỉ theo chế độ chứ không dùng một công thức cho mọi trường hợp.
-    Với ĐB, kỳ vọng chỉ khoảng 3,9 lần trúng trên 386 ngày — vùng biến cố hiếm,
+    Với Đặc Biệt, kỳ vọng chỉ khoảng 3,9 lần trúng trên 386 ngày — vùng biến cố hiếm,
     nơi xấp xỉ chuẩn thổi phồng đuôi và biến dao động thường thành phát hiện.
     Poisson là xấp xỉ đúng cho tổng các Bernoulli hiếm và độc lập không đồng
-    nhất; với lô tô (tỉ lệ nền 0,24) thì chuẩn có hiệu chỉnh liên tục mới đúng.
+    nhất; với LOTO (tỉ lệ nền 0,24) thì chuẩn có hiệu chỉnh liên tục mới đúng.
     """
     rare = float(np.max(day_rate)) <= _RARE_EVENT_RATE
     if rare:

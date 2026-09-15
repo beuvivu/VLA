@@ -45,7 +45,7 @@ def _random_history(days: int, seed: int = 7) -> pd.DataFrame:
 def test_tensor_matches_the_draw_contract() -> None:
     tensor = DigitTensor.from_raw(_random_history(60))
     assert tensor.n_positions == 107
-    # Mỗi kỳ sinh đúng 27 con lô tô, một con mỗi giải.
+    # Mỗi kỳ sinh đúng 27 con LOTO, một con mỗi giải.
     assert set(tensor.loto_counts.sum(axis=1).tolist()) == {LOTO_DRAWS_PER_DAY}
     assert tensor.loto_hits().dtype == bool
     assert ((tensor.de_index >= 0) & (tensor.de_index < 100)).all()
@@ -113,7 +113,7 @@ def test_baseline_rate_grows_with_the_number_of_bets() -> None:
     assert rates == sorted(rates)
     assert rates[0] == pytest.approx(0.2374, abs=1e-3)
     assert rates[-1] == pytest.approx(0.8947, abs=1e-3)
-    # ĐB loại trừ nhau nên tỉ lệ tăng tuyến tính.
+    # Đặc Biệt loại trừ nhau nên tỉ lệ tăng tuyến tính.
     assert target_baseline_rate("de", 8) == pytest.approx(0.08)
 
 
@@ -163,14 +163,14 @@ def test_precision_tracks_the_expected_rate_under_pure_noise() -> None:
 
 
 def _plant_bridge(days: int, seed: int = 3) -> pd.DataFrame:
-    """Cài một đường cầu chắc chắn: hai chữ số đầu của ĐB hôm trước ra prize7_1.
+    """Cài một đường cầu chắc chắn: hai chữ số đầu của Đặc Biệt hôm trước ra prize7_1.
 
     Vị trí nguồn 0 và 1 là ``special.d0`` và ``special.d1``, nên cặp
     (0, 1, lag 1, concat) sẽ trúng mọi ngày.
     """
     frame = _random_history(days, seed=seed)
     special = frame["special"].to_numpy()
-    planted = (special // 1000) % 100  # hai chữ số đầu của giải ĐB 5 chữ số
+    planted = (special // 1000) % 100  # hai chữ số đầu của giải Đặc Biệt 5 chữ số
     frame.loc[1:, "prize7_1"] = planted[:-1]
     return frame
 

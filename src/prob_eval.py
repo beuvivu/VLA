@@ -29,7 +29,7 @@ class EvalResult:
     brier: float
     logloss: float
     # A score is meaningless without something to beat.  Every evaluated day now
-    # also scores the no-information constant (1-0.99^27 for lô tô, 0.01 for ĐB).
+    # also scores the no-information constant (1-0.99^27 for LOTO, 0.01 for Đặc Biệt).
     # If the model cannot beat this, its ranking is noise however plausible the
     # probabilities look.
     baseline_brier: float = float("nan")
@@ -100,7 +100,7 @@ def evaluate(
 
         # BUG FIX: ``predict_next_day`` filters out numbers with no supporting
         # path before returning, so the reconstructed vector had holes at
-        # probability 0.  For ĐB the vector had already been normalised *before*
+        # probability 0.  For Đặc Biệt the vector had already been normalised *before*
         # that filter, so the evaluated distribution did not sum to 1; any day
         # whose winning number was filtered out scored a log-loss of ~27.6
         # against a probability that the model never actually asserted.

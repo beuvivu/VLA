@@ -1,8 +1,8 @@
-"""Mô hình xếp chồng cho lô tô và Đặc Biệt.
+"""Mô hình xếp chồng cho LOTO và Đặc Biệt.
 
 Bố cục dữ liệu theo đúng hợp đồng mà kho đang dùng trong ``data/history/``: mỗi
 hàng là một cặp (ngày, con số), nhãn là "con đó có về ở ngày kế tiếp không". Nhờ
-vậy lô tô là bài toán phân loại nhị phân đa nhãn còn ĐB là phân loại một-trong-
+vậy LOTO là bài toán phân loại nhị phân đa nhãn còn Đặc Biệt là phân loại một-trong-
 trăm, và cả hai dùng chung một đường đặc trưng.
 
 Chống học thuộc: mọi phép chia đều theo thời gian. ``TimeSeriesSplit`` sinh dự
@@ -178,7 +178,7 @@ class StackedEnsemble:
     def predict_day(self, matrix: FeatureMatrix) -> np.ndarray:
         """Phân phối xác suất trên 100 con cho một ngày.
 
-        Với ĐB phải là phân phối phân loại tổng bằng 1, và luôn giữ lại một phần
+        Với Đặc Biệt phải là phân phối phân loại tổng bằng 1, và luôn giữ lại một phần
         nền đều: không mô hình nào được phép tuyên bố một con là bất khả thi, vì
         xác suất 0 mà con đó về sẽ cho log-loss bùng nổ.
         """
@@ -202,7 +202,7 @@ def _clone(estimator: object) -> object:
 
 
 class LotoModel(StackedEnsemble):
-    """Dự đoán lô tô — đa nhãn, mỗi con một xác suất độc lập."""
+    """Dự đoán LOTO — đa nhãn, mỗi con một xác suất độc lập."""
 
     def __init__(self, **kwargs: object) -> None:
         super().__init__(mode="loto", **kwargs)  # type: ignore[arg-type]

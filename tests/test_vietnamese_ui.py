@@ -19,7 +19,7 @@ def _visible_text(path: Path) -> str:
 
 
 def test_shared_display_labels_keep_machine_keys_out_of_the_ui() -> None:
-    assert mode_label("loto") == "Lô tô"
+    assert mode_label("loto") == "LOTO"
     assert mode_label("de") == "Đặc Biệt"
     assert path_kind_label("active") == "Đang chạy"
     assert column_label("current_gap") == "Gan hiện tại"
@@ -31,7 +31,7 @@ def test_local_tailwind_theme_is_csp_safe_and_has_required_utilities() -> None:
     assert "text-slate-800" in TAILWIND_LITE_CSS
     assert "hover\\:shadow-lg:hover" in TAILWIND_LITE_CSS
     style = tailwind_style_tag()
-    assert 'id="vla-tailwind-lite"' in style
+    assert 'id="ui-tailwind-lite"' in style
     assert "https://" not in style
 
 

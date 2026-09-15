@@ -102,7 +102,7 @@ def _valid_prize_token(value: object, key: str) -> str | None:
 def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
     """Extract the best labelled XSMB prize block from page text.
 
-    The six configured sources use slightly different labels (ĐB/G1/1, etc.).
+    The six configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
     This parser finds candidate prize blocks, enforces exact prize widths and
     returns partial values without zero-filling.  It is therefore safe for live
     pages where some prizes are not available yet.

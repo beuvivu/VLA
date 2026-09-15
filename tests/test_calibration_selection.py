@@ -1,6 +1,6 @@
 """Chọn phương pháp hiệu chuẩn bằng số đo, không bằng giả định.
 
-Trước tệp này, mã luôn dùng Platt cho lô tô và temperature cho đề, vô điều
+Trước tệp này, mã luôn dùng Platt cho LOTO và temperature cho đề, vô điều
 kiện. Không nơi nào kiểm xem phép hiệu chuẩn có LÀM TỆ ĐI hay không — mà một
 cửa sổ lệch hoặc trôi khái niệm hoàn toàn có thể khiến nó đẩy xác suất đi sai
 hướng.
