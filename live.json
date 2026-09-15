@@ -1,0 +1,164 @@
+{
+  "schema_version": 2,
+  "draw_date": "2026-09-15",
+  "checked_at_utc": "2026-09-15T20:57:34Z",
+  "checked_at_local": "2026-09-16T03:57:34+07:00",
+  "status": "complete_verified",
+  "complete": true,
+  "verified_complete": true,
+  "received_values": 27,
+  "expected_values": 27,
+  "verified_values": 27,
+  "progress_percent": 100.0,
+  "verification_percent": 100.0,
+  "prizes": {
+    "special": [
+      "31429"
+    ],
+    "prize1": [
+      "56141"
+    ],
+    "prize2": [
+      "63539",
+      "52989"
+    ],
+    "prize3": [
+      "87180",
+      "30479",
+      "53919",
+      "09896",
+      "01566",
+      "70239"
+    ],
+    "prize4": [
+      "5782",
+      "5790",
+      "0227",
+      "0122"
+    ],
+    "prize5": [
+      "1322",
+      "7963",
+      "3404",
+      "1478",
+      "1458",
+      "8914"
+    ],
+    "prize6": [
+      "719",
+      "652",
+      "339"
+    ],
+    "prize7": [
+      "27",
+      "15",
+      "44",
+      "13"
+    ]
+  },
+  "conflicts": [],
+  "source_status": [
+    {
+      "priority": 1,
+      "tier": "primary",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "source_code": "P1",
+      "provider_code": "G1",
+      "failed": false
+    },
+    {
+      "priority": 2,
+      "tier": "primary",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "P2",
+      "provider_code": "G2",
+      "failed": false
+    },
+    {
+      "priority": 3,
+      "tier": "fallback",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "source_code": "F1",
+      "provider_code": "G3",
+      "failed": false
+    },
+    {
+      "priority": 4,
+      "tier": "fallback",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "F2",
+      "provider_code": "G4",
+      "failed": false
+    },
+    {
+      "priority": 5,
+      "tier": "fallback",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "F3",
+      "provider_code": "G5",
+      "failed": false
+    },
+    {
+      "priority": 6,
+      "tier": "fallback",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "F4",
+      "provider_code": "G5",
+      "failed": false
+    },
+    {
+      "priority": 7,
+      "tier": "fallback",
+      "received_values": 27,
+      "complete": true,
+      "latency_ms": null,
+      "source_code": "F5",
+      "provider_code": "G6",
+      "failed": false
+    },
+    {
+      "priority": 8,
+      "tier": "fallback",
+      "received_values": 0,
+      "complete": false,
+      "latency_ms": null,
+      "source_code": "F6",
+      "provider_code": "G7",
+      "failed": false
+    }
+  ],
+  "source_priority": [
+    "P1",
+    "P2",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+  ],
+  "slot_meta": {},
+  "canonical_reconciled": true,
+  "consensus": {
+    "agreement": 4,
+    "source_agreement": 5,
+    "independent_groups": [
+      "G2",
+      "G4",
+      "G5",
+      "G6"
+    ]
+  }
+}
