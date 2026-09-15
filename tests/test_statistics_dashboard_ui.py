@@ -130,15 +130,39 @@ def test_the_banner_heading_is_the_short_title_with_no_blurb_under_it() -> None:
     assert "<p>" not in hero_markup, hero_markup
 
 
-def test_the_ai_card_has_no_surface_of_its_own() -> None:
-    """`background: none` là chưa đủ: viền và đổ bóng vẫn vẽ ra một khung nổi."""
-    assert 'value="Cầu - Kèo & Xếp Hạng"' in BUILDER_CODE or '"Cầu - Kèo & Xếp Hạng"' in BUILDER_CODE
-    assert "cầu-kèo + xếp hạng" not in BUILDER_CODE
-    assert "plain=True" in BUILDER_CODE
-    rule = re.search(r"\.metric-card-plain \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
-    assert rule is not None, "thiếu quy tắc .metric-card-plain"
-    for declaration in ("background: none", "border: 0", "box-shadow: none"):
-        assert declaration in rule.group(1), (declaration, rule.group(1))
+def test_every_metric_card_holds_a_value_not_a_section_name() -> None:
+    """Ô lớn của thẻ số liệu là chỗ cho MỘT GIÁ TRỊ.
+
+    Thẻ AI/ML từng đặt vào đó một cái tên mục ("Cầu - Kèo & Xếp Hạng"). Nó
+    không phải giá trị nào cả, nên xuống hai dòng và phá nhịp cả hàng trong
+    khi ba thẻ kia chỉ một dòng. Bỏ nền thẻ đi không chữa được chuyện ấy — nó
+    chỉ làm thẻ trông như bị lỗi dựng hình.
+    """
+    block = BUILDER_CODE[BUILDER_CODE.index("    metrics = ["):]
+    block = block[: block.index("\n    ]")]
+    assert "Cầu - Kèo & Xếp Hạng" not in block, block
+    assert "cầu-kèo + xếp hạng" not in block, block
+    assert "target_date or" in block, block
+    assert "Tín hiệu AI/ML cho kỳ" in block, block
+
+
+def test_the_metric_row_keeps_one_single_surface_treatment() -> None:
+    """Bốn thẻ cùng một hàng thì phải cùng một bề mặt.
+
+    Một thẻ thiếu nền giữa ba thẻ có nền đọc như lỗi dựng hình, không phải
+    như một lựa chọn thiết kế.
+    """
+    assert "metric-card-plain" not in BUILDER_CODE, "biến thể phẳng đã bỏ"
+    assert "plain=True" not in BUILDER_CODE
+    assert "plain: bool" not in BUILDER_CODE, "tham số chết còn sót lại"
+
+
+def test_a_long_metric_value_shrinks_instead_of_wrapping() -> None:
+    """Xuống dòng làm lệch nhịp hàng; co chữ thì không."""
+    rule = re.search(r"\.metric-card strong \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    assert rule is not None
+    assert "clamp(" in rule.group(1), rule.group(1)
+    assert "font-size: 23px" not in rule.group(1), rule.group(1)
 
 
 def test_the_footer_keeps_only_the_two_timestamps() -> None:

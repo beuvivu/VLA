@@ -584,11 +584,9 @@ def _table(
     """
 
 
-def _metric_card(label: str, value: object, hint: str, icon: str, *, plain: bool = False) -> str:
-    """``plain`` bỏ nền/viền/đổ bóng riêng để thẻ nằm thẳng trên nền trang."""
-    classes = "metric-card metric-card-plain" if plain else "metric-card"
+def _metric_card(label: str, value: object, hint: str, icon: str) -> str:
     return f"""
-    <article class="{classes}">
+    <article class="metric-card">
       <span class="metric-icon">{html.escape(icon)}</span>
       <div>
         <p>{html.escape(label)}</p>
@@ -730,18 +728,30 @@ def main() -> None:
         )
     )
 
+    # Ô lớn của thẻ số liệu là chỗ cho MỘT GIÁ TRỊ. Thẻ AI/ML trước đây đặt
+    # vào đó một cái TÊN MỤC ("Cầu - Kèo & Xếp Hạng") — không phải giá trị
+    # nào cả, nên nó xuống hai dòng và phá nhịp cả hàng, trong khi ba thẻ kia
+    # chỉ có một dòng. Bỏ nền đi không chữa được chuyện ấy; nó chỉ khiến thẻ
+    # trông như bị lỗi dựng hình.
+    #
+    # Giá trị đúng cho thẻ này là KỲ MÀ TÍN HIỆU ĐANG TÍNH CHO. Nó là một số
+    # liệu thật, đặt cạnh "dữ liệu đến" thì thành một câu có nghĩa: dữ liệu
+    # tới ngày 14, tín hiệu tính cho ngày 15.
+    target_date = ""
+    if not cau_loto.empty and "predict_for_date" in cau_loto.columns:
+        target_date = str(cau_loto["predict_for_date"].iloc[0] or "")
+
     metrics = [
-        _metric_card("Ngày dữ liệu mới nhất", as_of or "N/A", "Theo manifest thống kê", "📅"),
+        _metric_card("Dữ liệu tính đến", as_of or "N/A", "Theo manifest thống kê", "📅"),
         _metric_card(
             "Bảng/ma trận đã sinh", files_count or "N/A", "CSV/JSON trong data/advanced", "🧩"
         ),
         _metric_card("Số bộ được phủ", "00–99", "Bấm vào số để xem căn cứ cầu", "🔢"),
         _metric_card(
-            "AI/ML",
-            "Cầu - Kèo & Xếp Hạng",
-            "Có xác suất, điểm, lý do, kiểm định và vị trí cầu",
+            "Tín hiệu AI/ML cho kỳ",
+            target_date or "N/A",
+            "Cầu-kèo, xếp hạng và căn cứ",
             "🤖",
-            plain=True,
         ),
     ]
 
@@ -1217,17 +1227,14 @@ def main() -> None:
       font-size: 22px;
       flex: 0 0 auto;
     }}
-    /* Biến thể phẳng: nằm thẳng trên nền trang, không có bề mặt riêng.
-       `background: none` là chưa đủ — `border` và `box-shadow` vẫn vẽ ra một
-       khung nổi, nên phải gỡ cả ba. */
-    .metric-card-plain {{
-      background: none;
-      border: 0;
-      box-shadow: none;
-    }}
     .metric-card p {{ margin: 0; color: var(--faint); font-weight: 750; font-size: 12px;
       letter-spacing: .06em; text-transform: uppercase; }}
-    .metric-card strong {{ display: block; margin: 4px 0 2px; font-size: 23px; letter-spacing: -0.02em; }}
+    /* Cỡ chữ CO theo khung thay vì cố định 23px. Một giá trị dài hơn dự kiến
+       sẽ nhỏ lại chứ không xuống dòng — xuống dòng là thứ làm lệch nhịp cả
+       hàng, vì ba thẻ kia chỉ có một dòng. */
+    .metric-card strong {{ display: block; margin: 4px 0 2px;
+      font-size: clamp(19px, 1.5vw, 23px); line-height: 1.15;
+      letter-spacing: -0.02em; text-wrap: balance; }}
     .metric-card small {{ color: var(--muted); line-height: 1.4; }}
 
     /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
