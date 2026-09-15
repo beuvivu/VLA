@@ -584,9 +584,11 @@ def _table(
     """
 
 
-def _metric_card(label: str, value: object, hint: str, icon: str) -> str:
+def _metric_card(label: str, value: object, hint: str, icon: str, *, plain: bool = False) -> str:
+    """``plain`` bỏ nền/viền/đổ bóng riêng để thẻ nằm thẳng trên nền trang."""
+    classes = "metric-card metric-card-plain" if plain else "metric-card"
     return f"""
-    <article class="metric-card">
+    <article class="{classes}">
       <span class="metric-icon">{html.escape(icon)}</span>
       <div>
         <p>{html.escape(label)}</p>
@@ -736,9 +738,10 @@ def main() -> None:
         _metric_card("Số bộ được phủ", "00–99", "Bấm vào số để xem căn cứ cầu", "🔢"),
         _metric_card(
             "AI/ML",
-            "cầu-kèo + xếp hạng",
+            "Cầu - Kèo & Xếp Hạng",
             "Có xác suất, điểm, lý do, kiểm định và vị trí cầu",
             "🤖",
+            plain=True,
         ),
     ]
 
@@ -1029,6 +1032,22 @@ def main() -> None:
   {stylesheet_link()}
   <style>
     :root {{
+      /* Cột nội dung của trang — KHAI BÁO MỘT CHỖ.
+         Trước đây `main` và `.hero` mỗi bên tự viết số của mình: `main` dùng
+         cột có `max-width`, còn hero canh lề bằng `margin`. Hai hệ canh lề
+         khác nhau trên cùng một trang, nên độ lệch ĐỔI DẤU theo bề rộng —
+         đo được:
+
+             vw=1920  hero [  72..1848]  thân [ 240..1680]  hero thò ra 168px/bên
+             vw=1440  hero [  72..1368]  thân [   0..1440]  hero thụt vào  72px/bên
+             vw= 640  hero [  32.. 608]  thân [   0.. 640]  hero thụt vào  32px/bên
+
+         Trang KHÔNG hề cuộn ngang ở bất kỳ mức nào và `box-sizing` vốn đã là
+         `border-box`, nên đây không phải lỗi tràn khung theo nghĩa kỹ thuật;
+         nó là hai hệ toạ độ không nói chuyện với nhau. */
+      --page-max: 1440px;
+      --page-gutter: clamp(16px, 5vw, 72px);
+
       /* Nền và bề mặt */
       --bg: #F2F4FF;
       --bg-2: #E6EAFB;
@@ -1083,7 +1102,13 @@ def main() -> None:
        gradient này. */
     .hero {{
       position: relative;
-      margin: 18px clamp(16px, 5vw, 72px) 0;
+      /* Khớp ĐÚNG hộp nội dung của `main`, ở mọi bề rộng.
+         `width` lo phần màn hẹp (trừ đi hai lề), `max-width` lo phần màn rộng
+         (dừng lại đúng chỗ cột nội dung dừng), `auto` canh giữa. Cả ba đều
+         tính từ cùng hai biến mà `main` dùng, nên không thể lệch pha nữa. */
+      width: calc(100% - 2 * var(--page-gutter));
+      max-width: calc(var(--page-max) - 2 * var(--page-gutter));
+      margin: 18px auto 0;
       padding: 34px clamp(20px, 4vw, 44px) 24px;
       border-radius: var(--radius-xl);
       background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
@@ -1109,7 +1134,7 @@ def main() -> None:
       font-weight: 700;
     }}
     .hero h1 {{
-      margin: 14px 0 10px;
+      margin: 14px 0 0;
       max-width: 820px;
       font-size: clamp(28px, 3.4vw, 44px);
       line-height: 1.06;
@@ -1159,9 +1184,9 @@ def main() -> None:
     .site-hop a:hover {{ background: rgba(255,255,255,0.24); }}
 
     main {{
-      max-width: 1440px;
+      max-width: var(--page-max);
       margin: 0 auto;
-      padding: 0 clamp(16px, 5vw, 72px) 56px;
+      padding: 0 var(--page-gutter) 56px;
     }}
 
     .metric-grid {{
@@ -1191,6 +1216,14 @@ def main() -> None:
       color: var(--brand);
       font-size: 22px;
       flex: 0 0 auto;
+    }}
+    /* Biến thể phẳng: nằm thẳng trên nền trang, không có bề mặt riêng.
+       `background: none` là chưa đủ — `border` và `box-shadow` vẫn vẽ ra một
+       khung nổi, nên phải gỡ cả ba. */
+    .metric-card-plain {{
+      background: none;
+      border: 0;
+      box-shadow: none;
     }}
     .metric-card p {{ margin: 0; color: var(--faint); font-weight: 750; font-size: 12px;
       letter-spacing: .06em; text-transform: uppercase; }}
@@ -1777,12 +1810,7 @@ def main() -> None:
   <header class="hero">
     <div class="hero-inner">
       <span class="hero-kicker">📊 XSMB · Ma trận thống kê · Cầu-kèo AI/ML</span>
-      <h1>Bảng điều khiển thống kê xổ số dễ nhìn, hiện đại và tự chứa dữ liệu.</h1>
-      <p>
-        Giao diện này ưu tiên khả năng so sánh: dữ liệu 00–99 được đưa vào ma trận nhiệt,
-        dữ liệu xếp hạng được đưa vào biểu đồ thanh, còn bảng chỉ dùng cho thông tin cần đối chiếu chi tiết.
-        Các tín hiệu AI/ML là thống kê xác suất từ lịch sử, không phải cam kết kết quả tương lai.
-      </p>
+      <h1>Bảng Điều Khiển Thống Kê Xổ Số</h1>
       <nav class="hero-actions">
         <a href="#ma-tran-loto">Ma trận loto</a>
         <a href="#ma-tran-db">Ma trận ĐB</a>
@@ -1824,10 +1852,44 @@ def main() -> None:
     {"".join(sections)}
 
     <p class="footer-note">
-      Tạo lúc: {html.escape(generated)} · Dữ liệu đến: {html.escape(str(as_of or "Không có"))}
-      · Manifest: <code>data/advanced/statistics_manifest.json</code>.
-      Bảng điều khiển này không dùng ảnh ngoài/CDN nên có thể mở trực tiếp tệp HTML mà không bị mất ma trận.
+      Tạo lúc: <time id="footerBuilt" datetime="{html.escape(generated)}">{html.escape(generated)}</time>
+      · Dữ liệu đến: <time datetime="{html.escape(str(as_of or ""))}">{html.escape(str(as_of or "Không có"))}</time>
     </p>
+    <script>
+      // Cập nhật phần "Tạo lúc" theo đồng hồ hệ thống của máy đang xem.
+      //
+      // MỘT ĐIỀU PHẢI NÓI RÕ: việc này biến "Tạo lúc" từ một dữ kiện nguồn
+      // gốc (trang được dựng lúc nào) thành thời điểm NGƯỜI XEM MỞ TRANG.
+      // Hai thứ đó khác nhau, và trên một bảng thống kê thì nguồn gốc là thứ
+      // có giá trị kiểm chứng. Nên mốc dựng thật vẫn được giữ nguyên trong
+      // thuộc tính `data-built` để còn đối chiếu được, không bị xoá đi.
+      //
+      // Và KHÔNG áp dụng cho "Dữ liệu đến". Ngày đó nói dữ liệu có tới đâu;
+      // cho nó chạy theo đồng hồ máy sẽ là một lời khẳng định SAI về độ mới
+      // của dữ liệu — đúng loại sai lầm mà cả bộ kiểm toán của kho này sinh
+      // ra để chặn. Nó nằm im theo manifest.
+      (function () {{
+        var node = document.getElementById("footerBuilt");
+        if (!node) return;
+        node.dataset.built = node.getAttribute("datetime") || "";
+        function tick() {{
+          var now = new Date();
+          // Giờ ĐỊA PHƯƠNG kèm độ lệch múi giờ, không phải `toISOString()` —
+          // hàm ấy quy về UTC, nên máy ở Việt Nam sẽ hiện lùi 7 tiếng và đọc
+          // như trang vừa dựng vào đêm qua.
+          var pad = function (n) {{ return String(n).padStart(2, "0"); }};
+          var off = -now.getTimezoneOffset();
+          var sign = off >= 0 ? "+" : "-";
+          var stamp = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate())
+            + "T" + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
+            + sign + pad(Math.floor(Math.abs(off) / 60)) + ":" + pad(Math.abs(off) % 60);
+          node.textContent = stamp;
+          node.setAttribute("datetime", stamp);
+        }}
+        tick();
+        setInterval(tick, 1000);
+      }})();
+    </script>
   </main>
 
   <div id="evidenceBackdrop" class="evidence-backdrop" onclick="closeEvidence()" aria-hidden="true"></div>

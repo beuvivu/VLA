@@ -80,3 +80,104 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
     )
     assert payload["loto"]["00"]["summary"]["ai_cau_score"] == "42.5"
     assert payload["loto"]["00"]["positions"][0]["pos_i_label"] == "Giải ĐB · số 1"
+
+
+# --- Banner, thẻ AI/ML và chân trang ---------------------------------------
+
+import re
+from pathlib import Path
+
+BUILDER = (Path(__file__).resolve().parents[1] / "src" / "build_statistics_dashboard.py"
+           ).read_text(encoding="utf-8")
+#: Mã đã bỏ chú thích. Các phép kiểm bên dưới hỏi "chuỗi X còn/không còn trong
+#: tệp" — mà chú thích của chính bản sửa lại NHẮC TỚI chuỗi cũ để giải thích vì
+#: sao nó bị bỏ. Không cắt chú thích thì phép kiểm khớp vào lời giải thích và
+#: xanh vĩnh viễn.
+BUILDER_CODE = re.sub(r"/\*.*?\*/", "", re.sub(r"^\s*#.*$", "", BUILDER, flags=re.M), flags=re.S)
+BUILDER_CODE = "\n".join(
+    line for line in BUILDER_CODE.splitlines() if not line.lstrip().startswith("//")
+)
+
+
+def test_the_banner_uses_the_same_content_column_as_the_page_body() -> None:
+    """Hero và thân trang phải tính từ CÙNG hai biến, không phải hai bộ số.
+
+    Trước đây `main` dùng cột có `max-width` còn `.hero` canh lề bằng `margin`,
+    nên độ lệch đổi dấu theo bề rộng — đo được: hero thò ra 168px mỗi bên ở
+    1920px, nhưng thụt vào 72px mỗi bên ở 1440px. Trang không hề cuộn ngang ở
+    bất kỳ mức nào, nên đây không phải lỗi tràn khung; nó là hai hệ toạ độ
+    không nói chuyện với nhau.
+    """
+    assert "--page-max:" in BUILDER_CODE and "--page-gutter:" in BUILDER_CODE
+    hero = re.search(r"\.hero \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    main = re.search(r"\n    main \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    assert hero is not None and main is not None
+    for block, name in ((hero.group(1), "hero"), (main.group(1), "main")):
+        assert "var(--page-max)" in block, f"{name} phải dùng biến chung"
+        assert "var(--page-gutter)" in block, f"{name} phải dùng biến chung"
+    # Con số cứng quay lại là bệnh cũ tái phát.
+    assert "1440px" not in hero.group(1), hero.group(1)
+    assert "clamp(16px, 5vw, 72px)" not in hero.group(1), hero.group(1)
+    assert "margin: 18px auto 0" in hero.group(1), hero.group(1)
+
+
+def test_the_banner_heading_is_the_short_title_with_no_blurb_under_it() -> None:
+    assert "<h1>Bảng Điều Khiển Thống Kê Xổ Số</h1>" in BUILDER_CODE
+    assert "dễ nhìn, hiện đại và tự chứa dữ liệu" not in BUILDER_CODE
+    assert "Giao diện này ưu tiên khả năng so sánh" not in BUILDER_CODE
+    hero_markup = BUILDER_CODE[BUILDER_CODE.index('<header class="hero">'):]
+    hero_markup = hero_markup[: hero_markup.index("</header>")]
+    assert "<p>" not in hero_markup, hero_markup
+
+
+def test_the_ai_card_has_no_surface_of_its_own() -> None:
+    """`background: none` là chưa đủ: viền và đổ bóng vẫn vẽ ra một khung nổi."""
+    assert 'value="Cầu - Kèo & Xếp Hạng"' in BUILDER_CODE or '"Cầu - Kèo & Xếp Hạng"' in BUILDER_CODE
+    assert "cầu-kèo + xếp hạng" not in BUILDER_CODE
+    assert "plain=True" in BUILDER_CODE
+    rule = re.search(r"\.metric-card-plain \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    assert rule is not None, "thiếu quy tắc .metric-card-plain"
+    for declaration in ("background: none", "border: 0", "box-shadow: none"):
+        assert declaration in rule.group(1), (declaration, rule.group(1))
+
+
+def test_the_footer_keeps_only_the_two_timestamps() -> None:
+    footer = BUILDER_CODE[BUILDER_CODE.index('<p class="footer-note">'):]
+    footer = footer[: footer.index("</p>")]
+    assert "Tạo lúc:" in footer and "Dữ liệu đến:" in footer
+    assert "Manifest" not in footer, footer
+    assert "CDN" not in footer, footer
+
+
+def test_the_footer_clock_never_rewrites_the_data_date() -> None:
+    """Đồng hồ chỉ được chạm vào "Tạo lúc".
+
+    Cho "Dữ liệu đến" chạy theo đồng hồ máy sẽ là một lời khẳng định SAI về độ
+    mới của dữ liệu — mỗi lần mở trang, ngày ấy lại nhảy lên hôm nay dù kho
+    không hề có thêm kỳ nào. Đó đúng là loại sai lầm mà cả bộ kiểm toán của
+    kho này sinh ra để chặn.
+    """
+    script = BUILDER_CODE[BUILDER_CODE.index('var node = document.getElementById("footerBuilt")'):]
+    script = script[: script.index("</script>")]
+    assert "footerBuilt" in script
+    # Chỉ MỘT phần tử được ghi đè, và nó là phần tử "Tạo lúc".
+    assert len(re.findall(r"getElementById\(", script)) == 1, script
+    assert "as_of" not in script and "Dữ liệu đến" not in script, script
+    # Mốc dựng thật phải còn đọc được, không bị xoá.
+    assert "node.dataset.built" in script, script
+
+
+def test_the_footer_clock_shows_local_time_not_utc() -> None:
+    """`toISOString()` quy về UTC, nên máy ở Việt Nam hiện lùi 7 tiếng.
+
+    Đã đo trong Chromium: cùng một thời điểm, trang hiện
+    ``2026-09-15T09:37:11+07:00`` còn ``toISOString()`` cho
+    ``2026-09-15T02:37:12Z``. Ở ``America/Los_Angeles`` nó còn sai cả NGÀY
+    (15/09 thay vì 14/09).
+    """
+    script = BUILDER_CODE[BUILDER_CODE.index('var node = document.getElementById("footerBuilt")'):]
+    script = script[: script.index("</script>")]
+    assert "toISOString" not in script, script
+    assert "getTimezoneOffset()" in script, script
+    for call in ("getFullYear()", "getMonth()", "getDate()", "getHours()"):
+        assert call in script, call
