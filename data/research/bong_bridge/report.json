@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-15T17:38:26Z",
+  "generated_at_utc": "2026-09-15T20:46:16Z",
   "anchor_date": "2026-09-15",
   "research_only": true,
   "production_wired": false,
@@ -40,11 +40,13 @@
         "permutations": 60,
         "base_rate": 0.23781132698059082,
         "observed_max_lift": 1.234528660774231,
-        "null_max_lift_mean": 1.2289749026298522,
-        "null_max_lift_p95": 1.254046243429184,
-        "null_max_lift_max": 1.2694382667541504,
-        "p_value": 0.35,
-        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn"
+        "null_max_lift_mean": 1.2288057565689088,
+        "null_max_lift_p95": 1.253668212890625,
+        "null_max_lift_max": 1.2691563367843628,
+        "null_exceed_count": 19,
+        "p_value": 0.32786885245901637,
+        "p_value_upper_95": 0.42917040859845956,
+        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn; nền tính lại từng lượt"
       }
     },
     "de": {
@@ -68,8 +70,10 @@
         "null_max_lift_mean": 2.4553459803263347,
         "null_max_lift_p95": 2.6452831149101255,
         "null_max_lift_max": 2.7169811725616455,
-        "p_value": 0.43333333333333335,
-        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn"
+        "null_exceed_count": 26,
+        "p_value": 0.4426229508196721,
+        "p_value_upper_95": 0.5475609181927903,
+        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn; nền tính lại từng lượt"
       }
     }
   },
