@@ -19,6 +19,7 @@ from pathlib import Path
 
 from page_output import write_page
 import numpy as np
+import pandas as pd
 
 from ui_locale import mode_label
 from ui_theme import (
@@ -293,9 +294,20 @@ def skill_chart(skill: dict, label: str) -> str:
 
 
 
-def _num(value: float, digits: int = 7) -> str:
-    """Số thập phân theo quy ước Việt Nam: dấu phẩy làm dấu thập phân."""
-    return f"{value:.{digits}f}".replace(".", ",")
+def _num(value, digits: int = 7) -> str:
+    """Số thập phân theo quy ước Việt Nam: dấu phẩy làm dấu thập phân.
+
+    Báo cáo cắt ngắn hoặc hỏng sẽ cho ``None`` ở chỗ chờ một con số. Trang
+    phải hiện dấu gạch chứ không được ném ``TypeError`` — một trang chẩn đoán
+    sập vì thiếu một trường thì đúng lúc cần nhất lại không đọc được gì.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if number != number:
+        return "—"
+    return f"{number:.{digits}f}".replace(".", ",")
 
 
 def _count(value: int) -> str:
@@ -388,6 +400,41 @@ def coverage_cards(coverage: dict) -> str:
 
 
 
+def _staleness(data_dir: Path, report: dict) -> str:
+    """Báo cáo có cũ hơn lịch sử đánh giá hiện có không.
+
+    Bước chẩn đoán chạy với ``allow_fail`` trong pipeline, nên khi nó hỏng thì
+    builder vẫn dựng trang từ ``report.json`` của lần chạy trước và xuất bản
+    như thường. Không có phép đối chiếu này thì một hỏng hóc lặng lẽ có thể
+    kéo dài nhiều ngày — đúng cách mà bộ ``post-finalization`` từng đỏ 130 lần
+    liên tiếp mà không ai thấy.
+
+    Returns:
+        Chuỗi mô tả độ lệch, hoặc chuỗi rỗng khi báo cáo còn đúng thời.
+    """
+    history = data_dir / "prob_eval" / "ensemble_history.csv"
+    if not history.exists():
+        return ""
+    try:
+        latest = str(pd.read_csv(history, usecols=["target_date"])["target_date"].max())
+    except (ValueError, KeyError, OSError):
+        return ""
+    covered = report.get("covers_through")
+    if not covered:
+        return (
+            "Báo cáo không ghi ngày chấm cuối cùng, nên không đối chiếu được với lịch sử "
+            f"đánh giá (mới nhất {html.escape(latest)}). Nhiều khả năng nó do một phiên bản "
+            "cũ hơn sinh ra."
+        )
+    if str(covered) < latest:
+        return (
+            f"Báo cáo chỉ chấm tới {html.escape(str(covered))} trong khi lịch sử đánh giá đã "
+            f"có tới {html.escape(latest)}. Bước chẩn đoán nhiều khả năng đã hỏng ở lần chạy "
+            "gần nhất và trang này đang hiện số liệu cũ."
+        )
+    return ""
+
+
 def build(data_dir: Path, docs_dir: Path) -> Path:
     """Dựng ``docs/model-quality.html`` từ báo cáo chẩn đoán."""
     report_path = data_dir / "model_quality" / "report.json"
@@ -395,6 +442,16 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     modes = report.get("modes", {})
 
     blocks = []
+    stale = _staleness(data_dir, report)
+    if stale:
+        blocks.append(
+            card(
+                f'<p class="ui-muted">{html.escape(stale)}</p>',
+                title="⚠ Báo cáo chẩn đoán đang cũ hơn dữ liệu",
+                span=12,
+                lift=True,
+            )
+        )
     if report.get("brier_rows_rescaled"):
         blocks.append(
             card(

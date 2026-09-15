@@ -213,3 +213,124 @@ def test_the_published_page_reports_out_of_sample_lift() -> None:
     section = html[start : start + 4000]
     for column in ("Độ nâng (huấn luyện)", "Kiểm định", "Giữ lại"):
         assert column in section, f"thiếu cột {column!r}"
+
+
+def test_monte_carlo_p_value_never_claims_certainty_from_a_finite_sample() -> None:
+    """``b/B`` trả về 0,0000 khi không mẫu nhiễu nào vượt — tức khẳng định xác
+    suất BẰNG 0 từ 60 lần rút ngẫu nhiên.
+
+    Đó đúng là con số tạo ra một "phát hiện" giả: nó biến bằng chứng chỉ đủ
+    nói ``p < 0,0487`` thành một tuyên bố tuyệt đối. Ước lượng đúng là
+    ``(1+b)/(1+B)``, không bao giờ chạm 0, và phải đi kèm cận trên thật của
+    chính nó.
+    """
+    days = 320
+    digits, targets = _synthetic(days, seed=77)
+    for t in range(1, days):                      # cấy một đường cầu áp đảo
+        targets[t, digits[t - 1, 0], digits[t - 1, 1]] = 1.0
+    check = lab.reality_check(
+        digits, targets, day_index=np.arange(3, days), lag_pairs=((1, 1),),
+        permutations=20, seed=4,
+    )
+    assert check["null_exceed_count"] == 0, "ca kiểm phải thật sự không có mẫu nào vượt"
+    assert check["p_value"] > 0.0, "ước lượng không bao giờ được trả về 0"
+    assert check["p_value"] == pytest.approx(1.0 / 21.0)
+    assert check["p_value_upper_95"] > check["p_value"], "cận trên phải nới ra, không thắt lại"
+    assert check["p_value_upper_95"] == pytest.approx(1.0 - 0.05 ** (1 / 20), rel=1e-6)
+
+
+def test_null_lift_uses_the_baseline_of_the_window_it_actually_scored() -> None:
+    """Lift của nhiễu phải chia cho nền của CHÍNH cửa sổ đã dịch.
+
+    Biên độ của lỗi này nhỏ ở cấu hình thật — cửa sổ chấm phủ gần trọn chuỗi
+    nên dịch vòng hầu như không đổi nền, đo được chỉ 0,71%. Nhưng nó là lỗi
+    có thật, sửa không tốn gì, và với cửa sổ ngắn thì nó lớn hẳn lên. Nên
+    phép kiểm ở đây TẤT ĐỊNH chứ không thống kê: dựng lại đúng dãy dịch theo
+    cùng hạt giống rồi so khớp từng con số, vì một sai lệch 0,7% thì không
+    khẳng định thống kê nào bắt nổi.
+    """
+    days, window = 240, 40
+    rng = np.random.default_rng(12)
+    digits = rng.integers(0, 10, (days, lab.N_SLOTS)).astype(np.int8)
+    targets = np.zeros((days, 10, 10), np.float32)
+    for t in range(days):                     # bậc thang: nửa đầu thưa, nửa sau dày
+        rate = 0.05 if t < days // 2 else 0.40
+        targets[t] = (rng.random((10, 10)) < rate).astype(np.float32)
+
+    day_index = np.arange(3, window)          # cửa sổ NGẮN -> dịch đổi nền rất mạnh
+    check = lab.reality_check(
+        digits, targets, day_index=day_index, lag_pairs=((1, 1),),
+        permutations=8, seed=6,
+    )
+
+    base = float(targets[day_index].mean())
+    replay = np.random.default_rng(6)
+    correct, naive = [], []
+    for _ in range(8):
+        shift = int(replay.integers(1, days))
+        rolled = np.roll(targets, shift, axis=0)
+        shifted_base = float(rolled[day_index].mean())
+        if shifted_base <= 0.0:
+            continue
+        trial = lab.scan_family(digits, rolled, day_index=day_index, lag_pairs=((1, 1),))
+        peak = float(trial.hits.max() / trial.trials)
+        correct.append(peak / shifted_base)
+        naive.append(peak / base)
+
+    # Ngưỡng 1e-6 chứ không phải 1e-9: lõi quét là một phép nhân ma trận
+    # float32, và BLAS đa luồng cộng dồn theo thứ tự không tất định nên hai
+    # lượt chạy cùng dữ liệu lệch nhau ở chữ số thứ tám. Đó là giới hạn tái
+    # lập của phép tính, không phải khác biệt logic — và vẫn chặt hơn ba bậc
+    # so với khoảng cách giữa hai cách chia.
+    assert check["null_max_lift_mean"] == pytest.approx(float(np.mean(correct)), rel=1e-6)
+    gap = abs(float(np.mean(naive)) - float(np.mean(correct))) / float(np.mean(correct))
+    assert gap > 1e-2, f"ca kiểm phải thật sự phân biệt hai cách chia, chênh mới {gap:.2%}"
+    assert check["null_max_lift_mean"] != pytest.approx(float(np.mean(naive)), rel=1e-3)
+
+
+def test_a_family_too_small_to_score_reports_nothing_instead_of_crashing() -> None:
+    """Dữ liệu quá ngắn để sinh luật nào là trạng thái HỢP LỆ.
+
+    Bảng rỗng có mọi cột ở kiểu object và ``nlargest`` ném ``TypeError`` chứ
+    không trả về bảng rỗng — một bước pipeline chạy với ``allow_fail`` sẽ nuốt
+    mất lỗi ấy và để lại báo cáo của hôm trước.
+    """
+    digits, targets = _synthetic(60)
+    empty = pd.DataFrame(
+        columns=["lift", "q_value_fdr", "op_a", "op_b", "lag_a", "lag_b", "slot_a", "slot_b"]
+    )
+    out = lab.follow_through(
+        digits, targets, (np.arange(3, 20), np.arange(20, 40), np.arange(40, 60)), empty, 50
+    )
+    assert out.empty
+    assert "validation_lift" in out.columns, "bảng rỗng vẫn phải giữ đúng hợp đồng cột"
+    assert lab._first(out, "validation_lift") is None
+    assert lab._mean(out, "holdout_lift") is None
+
+
+def test_negative_prize_values_are_rejected_at_the_door() -> None:
+    """``zfill`` biến −5 thành "000-5" — dài đúng bằng ô nên lọt phép kiểm độ
+    dài, rồi vỡ mãi sâu bên trong bằng một thông báo không chỉ ra được cột nào.
+    """
+    row = {"date": pd.Timestamp("2026-01-01")}
+    for prize, (count, _) in lab.PRIZE_LAYOUT.items():
+        for index in range(1, count + 1):
+            row[prize if count == 1 else f"{prize}_{index}"] = 7
+    row["prize7_1"] = -5
+    with pytest.raises(ValueError, match="prize7_1.*âm"):
+        lab.digit_matrix(pd.DataFrame([row]))
+
+
+def test_reality_check_refuses_a_window_with_no_wins_at_all() -> None:
+    """Nền bằng 0 thì lift là phép chia cho 0 — phải từ chối, không trả về vô cực."""
+    digits, _ = _synthetic(80)
+    empty_targets = np.zeros((80, 10, 10), np.float32)
+    # Khớp thông báo CỦA ĐÚNG cổng này. Biểu thức "nền bằng 0" còn khớp cả
+    # cổng "mọi lượt hoán vị đều cho nền bằng 0" ở cuối hàm, nên bỏ cổng đầu
+    # đi mà phép kiểm vẫn xanh — đã đo bằng đột biến.
+    with pytest.raises(ValueError, match="không có kỳ nào trúng"):
+        lab.reality_check(digits, empty_targets, day_index=np.arange(3, 80),
+                          lag_pairs=((1, 1),), permutations=3, seed=1)
+    with pytest.raises(ValueError, match="ít nhất một lần hoán vị"):
+        lab.reality_check(digits, _synthetic(80)[1], day_index=np.arange(3, 80),
+                          lag_pairs=((1, 1),), permutations=0, seed=1)

@@ -200,3 +200,32 @@ def test_the_published_page_explains_why_not_only_how_much() -> None:
         assert needle in html, needle
     assert "artifact đã phát hành" in html, "trang phải nói rõ nguồn của con số"
     assert "<svg" in html, "trang phải có hình, không chỉ bảng"
+
+
+def test_the_page_detects_a_report_older_than_the_data(tmp_path: Path) -> None:
+    """Bước chẩn đoán chạy với ``allow_fail``, nên khi nó hỏng thì builder vẫn
+    dựng trang từ báo cáo của lần trước và xuất bản như thường.
+
+    Không có phép đối chiếu này thì một hỏng hóc lặng lẽ kéo dài nhiều ngày —
+    đúng cách mà bộ ``post-finalization`` từng đỏ 130 lần liên tiếp mà không
+    ai thấy.
+    """
+    data_dir = tmp_path / "data"
+    (data_dir / "prob_eval").mkdir(parents=True)
+    pd.DataFrame({"target_date": ["2026-09-10", "2026-09-15"]}).to_csv(
+        data_dir / "prob_eval" / "ensemble_history.csv", index=False
+    )
+    assert page._staleness(data_dir, {"covers_through": "2026-09-15"}) == ""
+    stale = page._staleness(data_dir, {"covers_through": "2026-09-01"})
+    assert "2026-09-01" in stale and "2026-09-15" in stale, stale
+    assert "chẩn đoán nhiều khả năng đã hỏng" in stale
+    assert "không ghi ngày chấm cuối cùng" in page._staleness(data_dir, {})
+
+
+def test_the_page_renders_a_dash_instead_of_crashing_on_a_truncated_report() -> None:
+    """Trang chẩn đoán sập vì thiếu một trường thì đúng lúc cần nhất lại không
+    đọc được gì."""
+    assert page._num(None) == "—"
+    assert page._num(float("nan")) == "—"
+    assert page._num("không phải số") == "—"
+    assert page._num(0.5, 3) == "0,500"

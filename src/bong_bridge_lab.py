@@ -111,7 +111,15 @@ def digit_matrix(raw: pd.DataFrame) -> np.ndarray:
         count, width = PRIZE_LAYOUT[prize]
         for index in range(1, count + 1):
             column = prize if count == 1 else f"{prize}_{index}"
-            text = raw[column].astype("int64").astype(str).str.zfill(width)
+            values = raw[column].astype("int64")
+            # Chặn giá trị âm ngay tại cửa. Không chặn thì `zfill` sinh ra
+            # chuỗi kiểu "000-5", dài đúng bằng width nên lọt phép kiểm độ
+            # dài, rồi vỡ mãi sâu bên trong bằng "invalid literal for int()
+            # with base 10: '-'" — một thông báo không chỉ ra được cột nào.
+            if (values < 0).any():
+                bad_column = raw.loc[values < 0, column].iloc[0]
+                raise ValueError(f"{column}: giá trị âm {bad_column!r} không phải số trúng")
+            text = values.astype(str).str.zfill(width)
             if (text.str.len() != width).any():
                 bad = text[text.str.len() != width].iloc[0]
                 raise ValueError(f"{column}: giá trị {bad!r} dài hơn {width} chữ số")
@@ -221,7 +229,6 @@ def usable_days(dates: pd.Series, lag_pairs, warmup: int) -> np.ndarray:
     """
     stamps = pd.to_datetime(dates).dt.normalize()
     position = {stamp: i for i, stamp in enumerate(stamps)}
-    max_lag = max(max(pair) for pair in lag_pairs)
     keep: list[int] = []
     for i in range(warmup, len(stamps)):
         if all(
@@ -233,7 +240,6 @@ def usable_days(dates: pd.Series, lag_pairs, warmup: int) -> np.ndarray:
             keep.append(i)
     if not keep:
         raise ValueError("không còn kỳ nào tra đủ mọi lag")
-    del max_lag
     return np.asarray(keep, dtype=np.int64)
 
 
@@ -284,6 +290,21 @@ def rule_table(result: ScanResult, base_rate: float) -> pd.DataFrame:
     return table
 
 
+def _clopper_pearson_upper(successes: int, trials: int, confidence: float = 0.95) -> float:
+    """Cận trên Clopper-Pearson một phía cho một tỉ lệ nhị thức.
+
+    Phép kiểm hoán vị chỉ ước lượng p bằng một mẫu hữu hạn, nên bản thân con
+    số p ấy có sai số. Không kèm cận trên thì một lượt chạy 60 lần hoán vị
+    trông dứt khoát y hệt một lượt chạy 10 000 lần, trong khi hai kết luận
+    khác hẳn nhau về độ chắc.
+    """
+    if trials <= 0:
+        return 1.0
+    if successes >= trials:
+        return 1.0
+    return float(stats.beta.ppf(confidence, successes + 1, trials - successes))
+
+
 def reality_check(
     digits: np.ndarray,
     targets: np.ndarray,
@@ -301,8 +322,12 @@ def reality_check(
     phỏng nhị thức độc lập sẽ cho đuôi rộng hơn thực tế và làm phép kiểm mất
     hiệu lực theo hướng khó thấy.
     """
+    if permutations < 1:
+        raise ValueError("cần ít nhất một lần hoán vị mới nói được gì")
     rng = np.random.default_rng(seed)
     base = float(targets[day_index].mean())
+    if base <= 0.0:
+        raise ValueError("tỉ lệ nền bằng 0: không có kỳ nào trúng, không tính lift được")
     observed = scan_family(digits, targets, day_index=day_index, lag_pairs=lag_pairs)
     observed_max = float(observed.hits.max() / observed.trials / base)
 
@@ -311,19 +336,39 @@ def reality_check(
     for _ in range(permutations):
         shift = int(rng.integers(1, total))
         shifted = np.roll(targets, shift, axis=0)
+        # Nền phải tính lại TRÊN CHÍNH CỬA SỔ ĐÃ DỊCH. Dùng nền gốc cho lift
+        # của nhiễu là so hai thứ khác mẫu số: trên dữ liệu có xu hướng, nền
+        # của cửa sổ dịch lệch tới 0,8% so với nền gốc — cùng bậc với chính
+        # cái lift đang đi tìm, nên nó bẻ cong kết luận theo hướng khó thấy.
+        shifted_base = float(shifted[day_index].mean())
+        if shifted_base <= 0.0:
+            continue
         trial = scan_family(digits, shifted, day_index=day_index, lag_pairs=lag_pairs)
-        null_max.append(float(trial.hits.max() / trial.trials / base))
+        null_max.append(float(trial.hits.max() / trial.trials / shifted_base))
 
-    nulls = np.asarray(null_max)
+    nulls = np.asarray(null_max, dtype=float)
+    if nulls.size == 0:
+        raise ValueError("mọi lượt hoán vị đều cho nền bằng 0")
+    exceed = int((nulls >= observed_max).sum())
+    draws = int(nulls.size)
     return {
-        "permutations": permutations,
+        "permutations": draws,
         "base_rate": base,
         "observed_max_lift": observed_max,
         "null_max_lift_mean": float(nulls.mean()),
         "null_max_lift_p95": float(np.quantile(nulls, 0.95)),
         "null_max_lift_max": float(nulls.max()),
-        "p_value": float((nulls >= observed_max).mean()),
-        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn",
+        "null_exceed_count": exceed,
+        # Ước lượng (1+b)/(1+B), KHÔNG phải b/B. Với b/B, một lượt chạy không
+        # có mẫu nhiễu nào vượt sẽ báo p = 0,0000 — tức khẳng định xác suất
+        # bằng 0 từ 60 lần rút ngẫu nhiên. Đó đúng là kiểu con số tạo ra một
+        # "phát hiện" giả. Ước lượng cộng một là ước lượng không chệch cho
+        # phép kiểm Monte Carlo và không bao giờ trả về 0.
+        "p_value": (1.0 + exceed) / (1.0 + draws),
+        # Và kèm cận trên thật của nó: 0/60 chỉ cho phép kết luận p < 0,0487,
+        # sát ngay mức 0,05 chứ không hề dứt khoát.
+        "p_value_upper_95": _clopper_pearson_upper(exceed, draws),
+        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn; nền tính lại từng lượt",
     }
 
 
@@ -346,7 +391,15 @@ def follow_through(digits, targets, splits, table: pd.DataFrame, top: int) -> pd
     duy nhất tách được lợi thế thật khỏi ảo giác chọn lọc — một luật lift 1,18
     chọn bằng hậu nghiệm sẽ rơi về nền ở lát sau nếu nó chỉ là nhiễu.
     """
-    train, valid, holdout = splits
+    _, valid, holdout = splits
+    columns = ["op_a", "op_b", "lag_a", "lag_b", "slot_a", "slot_b", "train_lift",
+               "train_q_fdr", "validation_lift", "holdout_lift",
+               "validation_days", "holdout_days"]
+    # Bảng rỗng có mọi cột ở kiểu object, và `nlargest` ném TypeError chứ
+    # không trả về bảng rỗng. Dữ liệu quá ngắn để sinh luật nào là trạng thái
+    # HỢP LỆ — phòng thí nghiệm phải báo "không có gì", không phải sập.
+    if table.empty or "lift" not in table.columns:
+        return pd.DataFrame(columns=columns)
     best = table.nlargest(top, "lift").copy()
     base_valid = float(targets[valid].mean())
     base_holdout = float(targets[holdout].mean())
@@ -365,8 +418,25 @@ def follow_through(digits, targets, splits, table: pd.DataFrame, top: int) -> pd
                 "holdout_days": n_h,
             }
         )
-    del train
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _first(frame: pd.DataFrame, column: str) -> float | None:
+    """Giá trị đầu tiên, hoặc ``None`` khi bảng rỗng.
+
+    Báo cáo ghi ra JSON, nên bảng rỗng phải thành ``null`` đọc được chứ không
+    thành ``IndexError`` làm hỏng cả bước dựng.
+    """
+    if frame.empty or column not in frame.columns:
+        return None
+    return float(frame[column].iloc[0])
+
+
+def _mean(frame: pd.DataFrame, column: str) -> float | None:
+    """Trung bình cột, hoặc ``None`` khi bảng rỗng."""
+    if frame.empty or column not in frame.columns:
+        return None
+    return float(frame[column].mean())
 
 
 def build(
@@ -415,11 +485,11 @@ def build(
             "holdout_days": int(len(splits[2])),
             "fdr_05_count": int((table["q_value_fdr"] < 0.05).sum()),
             "bonferroni_05_count": int((table["p_bonferroni"] < 0.05).sum()),
-            "best_train_lift": float(table["lift"].max()),
-            "best_train_followed_validation_lift": float(survivors["validation_lift"].iloc[0]),
-            "best_train_followed_holdout_lift": float(survivors["holdout_lift"].iloc[0]),
-            "top_mean_validation_lift": float(survivors["validation_lift"].mean()),
-            "top_mean_holdout_lift": float(survivors["holdout_lift"].mean()),
+            "best_train_lift": float(table["lift"].max()) if not table.empty else None,
+            "best_train_followed_validation_lift": _first(survivors, "validation_lift"),
+            "best_train_followed_holdout_lift": _first(survivors, "holdout_lift"),
+            "top_mean_validation_lift": _mean(survivors, "validation_lift"),
+            "top_mean_holdout_lift": _mean(survivors, "holdout_lift"),
             "reality_check": check,
         }
 

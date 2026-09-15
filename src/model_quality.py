@@ -344,9 +344,14 @@ def build(data_dir: Path) -> Path:
             "skill": skill_series(history, mode),
         }
 
+    # Ngày chấm cuối cùng, để trang phát hiện được báo cáo cũ. Bước chẩn đoán
+    # chạy với `allow_fail`, nên khi nó hỏng thì builder vẫn dựng trang từ
+    # `report.json` của hôm trước và xuất bản mà không có dấu hiệu nào.
+    covered = [block["last_day"] for block in modes.values() if block.get("last_day")]
     report = {
         "schema_version": SCHEMA_VERSION,
         "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "covers_through": max(covered) if covered else None,
         "brier_rows_rescaled": converted,
         "coverage": coverage(history),
         "modes": modes,
