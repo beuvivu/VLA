@@ -63,7 +63,7 @@ root = Path("data/research")
 diag = json.loads((root / "scientific_diagnostics.json").read_text(encoding="utf-8"))
 assert diag["draw_days"] >= 365
 assert len(diag["primary_tests"]) == 5
-for item in diag["primary_tests"]:
+for item in diag.get("primary_tests", []):
     q = item.get("q_value_fdr")
     if q is not None:
         assert 0.0 <= float(q) <= 1.0
@@ -191,7 +191,9 @@ assert "Tường lửa nghiên cứu" in text
 for name in ("index.html", "landing.html", "landing_desktop.html"):
     path = Path("docs") / name
     if path.exists():
-        assert path.read_text(encoding="utf-8").count('id="research-lab-link"') == 1, name
+        nav = path.read_text(encoding="utf-8")
+        assert 'href="research-lab.html"' in nav, name
+        assert 'id="research-lab-link"' not in nav, name
 print("OK trang nghiên cứu")
 PYPAGE
 

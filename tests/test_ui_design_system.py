@@ -254,20 +254,17 @@ def test_column_align_helpers_cover_expected_columns() -> None:
     assert "text-align:right;white-space:nowrap" in TAILWIND_LITE_CSS
 
 
-def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
-    """Kiểm chính file đã sinh, không chỉ template.
-
-    Sửa template là chưa đủ: trang trong ``docs/`` mới là thứ GitHub Pages phục
-    vụ. Lần trước template đã sửa nhưng HTML chưa sinh lại nên site vẫn chạy
-    bản chữ tối trên nền tối.
-    """
+def test_published_path_pages_use_master_light_theme_contract() -> None:
+    """Kiểm file Pages thật: dùng path-page mới, không quay lại utility cũ."""
     pages = sorted((ROOT / "docs").glob("soi-path-*.html"))
     assert pages, "không tìm thấy trang soi cầu đã sinh"
     for page in pages:
         text = page.read_text(encoding="utf-8")
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
-        assert "<body>" in text, page.name
+        assert "path-page" in text, page.name
+        assert "--bg:#F4F5FF" in text, page.name
+        assert 'id="vla-targeted-ui-refinement"' in text, page.name
 
 
 # --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------

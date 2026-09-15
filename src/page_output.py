@@ -18,6 +18,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from ui_page_refinements import refine_page
+
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 
 _HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
@@ -25,8 +27,8 @@ _BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
 
 #: Từ khoá mà sau nó, dấu ``/`` mở đầu một HẰNG REGEX chứ không phải phép chia.
 #:
-#: Bản đầu của tệp này chỉ nhìn KÝ TỰ đứng trước. Với ``return /[",]/`` nó
-#: thấy chữ ``n`` cuối từ ``return``, kết luận là phép chia, rồi dấu ``"``
+#: Bản đầu của tệp này chỉ nhìn KÝ TỰ đứng trước. Với ``return /[\",]/`` nó
+#: thấy chữ ``n`` cuối từ ``return``, kết luận là phép chia, rồi dấu ``\"``
 #: bên trong lớp ký tự mở trạng thái chuỗi — và mọi thứ sau đó lệch pha, chú
 #: thích không còn được bóc.
 #:
@@ -215,8 +217,9 @@ def strip_css(css: str) -> str:
 
 
 def write_page(path: Path, html: str) -> None:
-    """Ghi một trang ra đĩa, đã bóc sạch chú thích."""
-    path.write_text(strip_comments(html), encoding="utf-8")
+    """Ghi một trang ra đĩa sau refinement giao diện và bóc chú thích."""
+    refined = refine_page(path, html)
+    path.write_text(strip_comments(refined), encoding="utf-8")
 
 
 def write_stylesheet_text(path: Path, css: str) -> None:
