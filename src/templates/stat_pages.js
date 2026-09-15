@@ -327,9 +327,10 @@ function table(el, headers, rows, opts) {
   // số đánh dấu ở chiều này vẫn sáng khi đổi sang chiều kia.
   const thead = "<thead><tr>" + headers.map((h, i) => {
     const headKey = opts.headKey && opts.headKey(i);
-    if (!headKey) return `<th>${h}</th>`;
+    const extra = opts.headExtra ? opts.headExtra(i) : "";
+    if (!headKey) return `<th>${h}${extra}</th>`;
     const on = MARKS.has(headKey) ? " marked" : "";
-    return `<th class="cell${on}" data-key="${headKey}">${h}</th>`;
+    return `<th class="cell${on}" data-key="${headKey}">${h}${extra}</th>`;
   }).join("") + "</tr></thead>";
   const body = rows.map((r, y) =>
     "<tr>" + r.map((c, i) => {
@@ -361,8 +362,13 @@ function table(el, headers, rows, opts) {
         }
       }
       const waiting = opts.pending && (opts.pending(y, i) || {}).pending ? " sp-pending" : "";
+      const gan = !waiting && blank && opts.gan && opts.gan(y, i) ? " sp-gan" : "";
+      const de = !blank && opts.de && opts.de(y, i) ? " sp-de-hit" : "";
+      const tip = opts.title ? opts.title(y, i) : "";
+      const titleAttr = tip ? ` title="${tip}"` : "";
       const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
-      return `<td class="cell${cls}${on}${blank}${state}${waiting}" data-key="${key}"${style}>${c}</td>`;
+      const extra = opts.cellExtra ? opts.cellExtra(y, i) : "";
+      return `<td class="cell${cls}${on}${blank}${state}${waiting}${gan}${de}" data-key="${key}"${titleAttr}${style}>${c}${extra}</td>`;
     }).join("") + "</tr>"
   ).join("");
 
@@ -576,6 +582,8 @@ function countLoto(rows) {
 // Nên trần đặt ở 300: đủ cho mốc dài nhất người dùng hỏi tới, và còn cách xa
 // điểm mà trình duyệt bắt đầu nghẹn.
 const MATRIX_MAX_DAYS = 300;
+let MATRIX_GAN = new Array(100).fill(0);
+let MATRIX_RECENT = new Array(100).fill(0);
 
 const PICK_KEY = "sp.picked." + (location.pathname.split("/").pop() || "index");
 let PICKED = null;   // null = hiện tất cả
@@ -629,10 +637,16 @@ function bindPicker(render) {
     }
     const num = ev.target.dataset.num;
     if (num === undefined) return;
-    const n = +num;
-    if (PICKED === null) PICKED = new Set(Array.from({ length: 100 }, (_, i) => i));
-    if (PICKED.has(n)) PICKED.delete(n); else PICKED.add(n);
-    savePicked(); draw(); render();
+    // Bấm một con số 00-99 MỞ POPUP chu kỳ gan, không lọc ngay.
+    //
+    // Hai yêu cầu đụng nhau ở đây: "bấm số thì hiện popup" và "bấm ô thì đổi
+    // màu, bấm lại thì bỏ". Chúng không thể cùng nằm trên một phần tử. Ô trên
+    // MA TRẬN giữ việc đổi màu (đó là thứ vừa được sửa và người dùng đang
+    // dùng); chip 00-99 nằm NGOÀI ma trận nên nhận việc mở popup.
+    //
+    // Việc lọc không mất đi — nó chuyển vào trong popup, sau khi người xem
+    // đã thấy chu kỳ gan rồi mới quyết định có lọc hay không.
+    openGanPopup(pad2(+num));
   });
 }
 
@@ -671,6 +685,33 @@ function renderLotoMatrix(rows) {
   // triệu phép quét tuyến tính, tức tự tạo ra một vấn đề hiệu năng khi đang
   // đi sửa lỗi khác.
   const byDate = shown.map((r, i) => ({ d: r.d, c: per[i] })).reverse();
+  // Số kỳ GAN của mỗi con: đếm từ kỳ mới nhất lùi lại tới lần về gần nhất.
+  // `byDate` đã xếp mới-nhất-trước nên chỉ cần quét tới lần đầu gặp giá trị > 0.
+  const ganOf = new Array(100).fill(byDate.length);
+  for (let n = 0; n < 100; n += 1) {
+    for (let k = 0; k < byDate.length; k += 1) {
+      if (byDate[k].c[n]) { ganOf[n] = k; break; }
+    }
+  }
+  // Tổng lần về trong 30 kỳ gần nhất — nguồn cho biểu đồ cột mini.
+  const recent30 = new Array(100).fill(0);
+  for (let k = 0; k < Math.min(30, byDate.length); k += 1) {
+    for (let n = 0; n < 100; n += 1) recent30[n] += byDate[k].c[n] || 0;
+  }
+  MATRIX_GAN = ganOf;
+  MATRIX_RECENT = recent30;
+
+  // Sắp xếp CON SỐ, không phải sắp xếp ngày. Ngày luôn theo trục thời gian;
+  // đảo nó đi thì ma trận mất nghĩa. Thứ người ta muốn đổi thứ tự là dãy số.
+  const sort = ($("sp-sort") || {}).value || "num";
+  if (sort !== "num") {
+    const totalOf = (n) => byDate.reduce((sum, r) => sum + (r.c[n] || 0), 0);
+    const score = sort.startsWith("gan") ? (n) => ganOf[n] : totalOf;
+    const dir = sort.endsWith("-asc") ? 1 : -1;
+    // Hoà nhau thì giữ thứ tự 00 -> 99, để bảng không nhảy lung tung giữa các
+    // lần dựng khi nhiều con cùng điểm.
+    nums.sort((a, b) => (score(a) - score(b)) * dir || a - b);
+  }
   // Kỳ hôm nay chưa quay thì vẫn CÓ MẶT trên bảng, dưới dạng ô chờ. Bỏ hẳn nó
   // đi thì bảng trông như hôm nay không tồn tại; để nó trắng như ô "không về"
   // thì tệ hơn, vì đó là một lời khẳng định SAI — chưa quay không phải là
@@ -678,6 +719,28 @@ function renderLotoMatrix(rows) {
   const waiting = pendingDay(shown);
   if (waiting) byDate.unshift({ d: waiting, c: new Array(100).fill(null), pending: true });
   opts.pending = (y, i) => (vertical ? byDate[y] : byDate[i - 1]);
+  // Ô nằm trong KHOẢNG GAN: chỉ số kỳ nhỏ hơn vị trí lần về gần nhất.
+  // Ô mà con số ấy chính là hai số cuối GIẢI ĐẶC BIỆT của kỳ đó.
+  const deOf = new Map();
+  shown.forEach((r) => deOf.set(r.d, String(r.s || "").slice(-2)));
+  opts.de = (y, i) => {
+    if (i === 0) return false;
+    const day = vertical ? byDate[y] : byDate[i - 1];
+    const num = vertical ? nums[i - 1] : nums[y];
+    return !!day && deOf.get(day.d) === pad2(num);
+  };
+  opts.gan = (y, i) => {
+    if (i === 0) return false;
+    const day = vertical ? y : i - 1;
+    const num = vertical ? nums[i - 1] : nums[y];
+    return day < ganOf[num];
+  };
+  // Tooltip: số ngày chưa ra tính tới hôm nay.
+  opts.title = (y, i) => {
+    if (i === 0) return "";
+    const num = vertical ? nums[i - 1] : nums[y];
+    return `Số ${pad2(num)} — số ngày chưa ra tính đến ngày hiện tại: ${ganOf[num]} ngày`;
+  };
   if (vertical) {
     const head = ["Ngày"].concat(nums.map(pad2));
     const body = byDate.map((r) =>
@@ -688,6 +751,8 @@ function renderLotoMatrix(rows) {
       : `m|n${pad2(nums[i - 1])}|d${byDate[y].d}`);
     // Chiều dọc: tiêu đề cột LÀ con số. Cùng khoá với nhãn hàng ở chiều ngang.
     opts.headKey = (i) => (i === 0 ? null : `m|n${pad2(nums[i - 1])}`);
+    // Cột mini phía trên con số: tổng lần về trong 30 kỳ gần nhất.
+    opts.headExtra = (i) => (i === 0 ? "" : miniBar(recent30[nums[i - 1]]));
     table(grid, head, body, opts);
   } else {
     const head = ["Số"].concat(byDate.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`));
@@ -698,9 +763,109 @@ function renderLotoMatrix(rows) {
       : `m|n${pad2(nums[y])}|d${byDate[i - 1].d}`);
     // Chiều ngang: tiêu đề cột là NGÀY. Cùng khoá với nhãn hàng ở chiều dọc.
     opts.headKey = (i) => (i === 0 ? null : `m|d${byDate[i - 1].d}`);
+    // Chiều ngang, con số là NHÃN HÀNG nên cột mini đi kèm nhãn hàng.
+    opts.cellExtra = (y, i) => (i === 0 ? miniBar(recent30[nums[y]]) : "");
     table(grid, head, body, opts);
   }
   renderNhayLegend(grid);
+}
+
+// --- Chu kỳ gan: tính, và popup chi tiết ------------------------------------
+
+/** Mọi chu kỳ gan của một con, theo chế độ.
+ *
+ *  `mode`: "loto" đọc 27 con lô của kỳ; "de" chỉ đọc hai số cuối giải đặc
+ *  biệt. Hai chế độ cho hai chuỗi hoàn toàn khác nhau, nên không tái dùng
+ *  kết quả của nhau được.
+ *
+ *  Trả về `{hits, cycles, current, max}` — `cycles` là độ dài từng quãng
+ *  trượt GIỮA hai lần về, `current` là quãng đang chạy tính tới kỳ mới nhất.
+ */
+function ganCycles(pair, mode) {
+  const hits = [];
+  for (let i = 0; i < DRAWS.length; i += 1) {
+    const r = DRAWS[i];
+    const on = mode === "de"
+      ? String(r.s || "").slice(-2) === pair
+      : (r.n || []).indexOf(pair) >= 0;
+    if (on) hits.push(i);
+  }
+  const cycles = [];
+  for (let k = 1; k < hits.length; k += 1) cycles.push(hits[k] - hits[k - 1] - 1);
+  const current = hits.length ? DRAWS.length - 1 - hits[hits.length - 1] : DRAWS.length;
+  return {
+    hits, cycles, current,
+    max: cycles.length ? Math.max(...cycles) : 0,
+    dates: hits.slice(-8).reverse().map((i) => DRAWS[i].d),
+  };
+}
+
+function openGanPopup(pair) {
+  const host = $("sp-gan-modal");
+  if (!host) return;
+  const mode = (host.dataset.mode === "de") ? "de" : "loto";
+  const g = ganCycles(pair, mode);
+  const tab = (value, label) =>
+    `<button type="button" class="sp-btn${mode === value ? " on" : ""}" data-gmode="${value}">${label}</button>`;
+  host.querySelector(".sp-modal-body").innerHTML =
+    `<div class="sp-modal-tabs">${tab("loto", "Lô tô")}${tab("de", "Giải Đặc Biệt")}</div>` +
+    `<div class="sp-modal-kpi">` +
+    `<div><span>Gan hiện tại</span><strong>${g.current}</strong></div>` +
+    `<div><span>Gan cực đại</span><strong>${g.max}</strong></div>` +
+    `<div><span>Số lần về</span><strong>${g.hits.length}</strong></div>` +
+    `<div><span>Số chu kỳ</span><strong>${g.cycles.length}</strong></div>` +
+    "</div>" +
+    `<p class="sp-hint">Các kỳ về gần nhất</p>` +
+    `<div class="sp-modal-days">${g.dates.map((d) => `<span>${d}</span>`).join("") || "<span>—</span>"}</div>` +
+    `<p class="sp-hint">Độ dài 12 chu kỳ gan gần nhất (số kỳ trượt giữa hai lần về)</p>` +
+    `<div class="sp-modal-days">${g.cycles.slice(-12).reverse().map((c) => `<span>${c}</span>`).join("") || "<span>—</span>"}</div>` +
+    // Nút lọc CHỈ có nghĩa ở trang có lưới chọn 00-99. Trang tần suất cặp lọc
+    // theo HỌ CẶP, nên một nút "chỉ xem số 07" ở đó bấm vào không đổi gì — và
+    // một nút không làm gì thì tệ hơn hẳn việc không có nút.
+    ($("sp-picker")
+      ? `<div class="sp-modal-tabs"><button type="button" class="sp-btn" data-gfilter="${pair}">` +
+        `Chỉ xem số ${pair} trên ma trận</button></div>`
+      : "");
+  host.querySelector(".sp-modal-title").textContent = `Chu kỳ gan · số ${pair}`;
+  host.dataset.pair = pair;
+  host.hidden = false;
+}
+
+function bindGanPopup(render) {
+  const host = $("sp-gan-modal");
+  if (!host) return;
+  // `render` là THAM SỐ, không phải biến toàn cục. Bản đầu tôi gọi thẳng
+  // `render()` trong đây và nó ném "render is not defined" — nút lọc trong
+  // popup im lặng không làm gì, mà lỗi chỉ hiện trong console nên nhìn từ
+  // giao diện thì y như nút hỏng vô cớ.
+  const redraw = typeof render === "function" ? render : () => {};
+  host.addEventListener("click", (ev) => {
+    if (ev.target === host || ev.target.dataset.close !== undefined) { host.hidden = true; return; }
+    const gmode = ev.target.dataset.gmode;
+    if (gmode) { host.dataset.mode = gmode; openGanPopup(host.dataset.pair); return; }
+    const only = ev.target.dataset.gfilter;
+    if (only !== undefined) {
+      PICKED = new Set([Number(only)]);
+      savePicked(); host.hidden = true; redraw();
+    }
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "Escape") host.hidden = true;
+  });
+}
+
+/** Cột mini: một vạch cao theo tổng lần về trong 30 kỳ.
+ *
+ *  Vẽ bằng một `<i>` có chiều cao tính sẵn, KHÔNG dùng SVG hay canvas: bảng
+ *  có tới 100 tiêu đề và mỗi tiêu đề một biểu đồ, nên mỗi nút thừa đều nhân
+ *  lên trăm lần. Một phần tử một thuộc tính là đủ để đọc được xu hướng.
+ *
+ *  Trần 30: 30 kỳ × tối đa vài nháy, nhưng thực tế hiếm khi quá 12. Cắt ở 12
+ *  để dải giữa còn phân biệt được, thay vì dồn hết vào một phần tư dưới.
+ */
+function miniBar(total) {
+  const pct = Math.max(6, Math.min(100, Math.round((total / 12) * 100)));
+  return `<i class="sp-mini-bar" style="--h:${pct}%" aria-hidden="true"></i>`;
 }
 
 /** Chú giải phân cấp số nháy.
@@ -1279,7 +1444,36 @@ function boot(renderName) {
     from.value = DRAWS[Math.max(0, DRAWS.length - 90)].d;
     to.value = DRAWS[DRAWS.length - 1].d;
   }
-  [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient"), $("sp-weekday")].forEach(
+  // Trang tần suất CẶP không có lưới chọn 00-99, nên popup chu kỳ gan không
+  // có đường vào. Một ô chọn nhỏ đưa tính năng ấy tới cả hai trang mà không
+  // phải nhét lưới 100 nút vào trang vốn làm việc theo họ cặp.
+  const ganPick = $("sp-gan-pick");
+  if (ganPick) {
+    ganPick.addEventListener("change", () => {
+      if (ganPick.value) { openGanPopup(ganPick.value); ganPick.value = ""; }
+    });
+  }
+
+  const quick = $("sp-quick");
+  if (quick) {
+    quick.addEventListener("click", (ev) => {
+      const days = ev.target.dataset.days;
+      if (!days) return;
+      // Đặt mốc bằng cách lùi từ KỲ MỚI NHẤT CÓ DỮ LIỆU, không lùi từ hôm nay:
+      // lùi từ hôm nay sẽ hụt mất mấy kỳ mỗi khi kho chưa cập nhật tới hôm nay.
+      const latest = DRAWS.length ? DRAWS[DRAWS.length - 1].d : "";
+      if (!latest) return;
+      const [y, m, d] = latest.split("-").map(Number);
+      const start = new Date(Date.UTC(y, m - 1, d));
+      start.setUTCDate(start.getUTCDate() - (Number(days) - 1));
+      if (from) from.value = start.toISOString().slice(0, 10);
+      if (to) to.value = latest;
+      render();
+    });
+  }
+
+  [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient"), $("sp-weekday"),
+   $("sp-sort")].forEach(
     (el) => el && el.addEventListener("change", render));
 
   // Chỉ nút BÊN TRONG .sp-chips. "Xoá đánh dấu" từng dùng chung lớp .sp-chip
@@ -1299,6 +1493,7 @@ function boot(renderName) {
     });
   });
   bindMarking();
+  bindGanPopup(render);
   bindColumnHint();
   renderLegend();
   bindFieldToggles(render);

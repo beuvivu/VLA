@@ -205,6 +205,61 @@ WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
 )
 
 
+#: Mốc ngày nhanh. Trần 300 là ràng buộc đo được: 300 kỳ dựng trong 894 ms,
+#: còn 500 kỳ mất 4 113 ms nên không đưa vào danh sách.
+QUICK_RANGES: tuple[tuple[str, str], ...] = (
+    ("30", "30 ngày"), ("60", "60 ngày"), ("90", "90 ngày"),
+    ("100", "100 ngày"), ("200", "200 ngày"), ("300", "300 ngày"),
+)
+
+#: Thứ tự sắp xếp con số trên ma trận.
+SORT_CHOICES: tuple[tuple[str, str], ...] = (
+    ("num", "00 → 99"),
+    ("hit-desc", "Về nhiều nhất"),
+    ("hit-asc", "Về ít nhất"),
+    ("gan-desc", "Gan nhiều nhất"),
+    ("gan-asc", "Gan ít nhất"),
+)
+
+
+def _gan_picker() -> str:
+    """Ô chọn số để mở popup chu kỳ gan.
+
+    Trang tần suất cặp không có lưới 00-99, nên nếu chỉ gắn popup vào lưới ấy
+    thì tính năng chỉ tồn tại ở một trong hai trang.
+    """
+    options = "".join(f'<option value="{n:02d}">{n:02d}</option>' for n in range(100))
+    return ('<label>Chu kỳ gan <select id="sp-gan-pick">'
+            f'<option value="">Chọn số…</option>{options}</select></label>')
+
+
+def _gan_modal() -> str:
+    """Khung popup chu kỳ gan. MỘT hàm cho mọi trang, không chép hai bản."""
+    return (
+        '<div class="sp-gan-modal" id="sp-gan-modal" hidden>'
+        '<div class="sp-modal-card" role="dialog" aria-modal="true">'
+        '<div class="sp-modal-head"><b class="sp-modal-title"></b>'
+        '<button type="button" class="sp-btn" data-close>Đóng</button></div>'
+        '<div class="sp-modal-body"></div></div></div>'
+    )
+
+
+def _quick_ranges() -> str:
+    buttons = "".join(
+        f'<button type="button" class="sp-btn" data-days="{value}">{label}</button>'
+        for value, label in QUICK_RANGES
+    )
+    return f'<span class="sp-quick" id="sp-quick">{buttons}</span>'
+
+
+def _sort_menu() -> str:
+    options = "".join(
+        f'<option value="{value}"{" selected" if value == "num" else ""}>{label}</option>'
+        for value, label in SORT_CHOICES
+    )
+    return f'<label>Sắp xếp <select id="sp-sort">{options}</select></label>'
+
+
 def _weekday_filter() -> str:
     options = "".join(
         f'<option value="{value}"{" selected" if value == "all" else ""}>{label}</option>'
@@ -271,9 +326,10 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Chiều <select id="sp-orient">'
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
-                 + _weekday_filter() +
+                 + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<div class="sp-picker" id="sp-picker"></div>'
+        body=_gan_modal() +
+             '<div class="sp-picker" id="sp-picker"></div>'
              '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
              '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Xếp hạng trên trọn dải đã chọn</h3>'
@@ -291,9 +347,10 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Chiều <select id="sp-orient">'
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
-                 + _weekday_filter() +
+                 + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
-        body='<p class="sp-matrix-note" id="sp-matrix-note"></p>'
+        body=_gan_modal() +
+             '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
              '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp đồng xuất hiện nhiều nhất trên trọn dải</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',

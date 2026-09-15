@@ -222,7 +222,13 @@ def test_the_weekday_filter_exists_and_is_wired_to_rerender() -> None:
     body = _block(JS_CODE, "function selected")
     assert "weekdayOf(r.d) === want" in body, body
     # Đổi ô chọn phải dựng lại bảng; thiếu dòng này thì ô có mà bấm không ăn.
-    assert '$("sp-weekday")].forEach' in JS_CODE
+    #
+    # Soi DANH SÁCH, không soi chuỗi liền kề: thêm một ô điều khiển nữa vào
+    # cùng mảng là chuỗi ghim cũ vỡ, dù hành vi không đổi chút nào.
+    wiring = JS_CODE[JS_CODE.index("[from, to, $(\"sp-year\")"):]
+    wiring = wiring[: wiring.index(".forEach")]
+    for control in ("sp-weekday", "sp-sort", "sp-orient"):
+        assert f'$("{control}")' in wiring, (control, wiring)
 
 
 def test_weekday_is_computed_without_the_viewer_timezone() -> None:
@@ -347,3 +353,115 @@ def test_a_marked_header_actually_changes_colour() -> None:
     rule = _block(css, ".sp-table td.marked,")
     assert "th.marked" in rule, rule
     assert "!important" in rule, rule
+
+
+# --- Thang màu nháy, khoảng gan, biểu đồ mini, popup -------------------------
+
+
+def test_the_nhay_ramp_uses_the_requested_hues_where_they_pass_aa() -> None:
+    """Giữ ĐÚNG mã màu được yêu cầu ở những cấp đạt chuẩn, chỉ đổi cấp trượt.
+
+    Đo với chữ trắng: #8E44AD 5,87 đạt · #D63031 4,85 đạt · #E84393 3,71
+    TRƯỢT · #D9534F 3,96 TRƯỢT. Hai cấp trượt được thay bằng sắc cùng tông
+    nhưng tối hơn (#C2185B 5,87 và #C0392B 5,44); ba cấp còn lại giữ nguyên.
+    """
+    css = _without_media(CSS_CODE)
+    assert "background-color: #FFFF00" in css, "1 nháy phải là vàng chanh"
+    assert "background-color: #8E44AD" in css, "2 nháy giữ đúng tím được yêu cầu"
+    assert "background-color: #D63031" in css, "4+ nháy giữ đúng đỏ rực được yêu cầu"
+    # Hai mã trượt AA không được có mặt.
+    assert "#E84393" not in css, "sắc hồng này trượt AA (3,71) với chữ trắng"
+    assert "#D9534F" not in css, "sắc đỏ này trượt AA (3,96) với chữ trắng"
+
+
+def test_the_gan_run_reads_differently_from_an_ordinary_miss() -> None:
+    """Ô trống giữa hai lần về, và cả dải trống tới hôm nay, là HAI thứ khác nhau.
+
+    Một ô trống lẻ chỉ là kỳ trượt. Cả dải chạy từ lần về cuối tới hôm nay
+    CHÍNH LÀ nhịp gan — thứ người soi cầu đi tìm. Cùng một màu thì phải tự
+    đếm bằng mắt.
+    """
+    body = _block(JS_CODE, "function renderLotoMatrix")
+    assert "const ganOf" in body, body[:300]
+    assert "day < ganOf[num]" in body, "phải đánh dấu đúng dải tới lần về gần nhất"
+    rule = _block(_without_media(CSS_CODE), ".sp-table td.sp-gan {")
+    assert "background-color" in rule and "inset" in rule, rule
+
+
+def test_the_hover_tooltip_states_the_gan_day_count() -> None:
+    body = _block(JS_CODE, "function renderLotoMatrix")
+    assert "số ngày chưa ra tính đến ngày hiện tại" in body, body[:400]
+    assert "ganOf[num]" in body
+
+
+def test_the_header_chart_is_one_element_per_number_not_an_svg() -> None:
+    """100 tiêu đề × một biểu đồ, nên mỗi nút thừa nhân lên trăm lần."""
+    body = _block(JS_CODE, "function miniBar")
+    assert "<i class=\"sp-mini-bar\"" in body, body
+    assert "<svg" not in body and "canvas" not in body, body
+
+
+def test_the_gan_popup_covers_both_loto_and_special_prize() -> None:
+    body = _block(JS_CODE, "function ganCycles")
+    # Hai chế độ đọc hai trường KHÁC NHAU của cùng một kỳ.
+    assert 'mode === "de"' in body, body
+    assert "String(r.s || \"\").slice(-2)" in body, body
+    assert "(r.n || []).indexOf(pair)" in body, body
+    assert "data-gmode" in JS_CODE, "popup phải có nút đổi chế độ"
+
+
+def test_the_popup_is_reachable_on_both_pages() -> None:
+    """Trang tần suất cặp không có lưới 00-99, nên chỉ gắn popup vào lưới ấy
+    là để tính năng chỉ tồn tại ở một trong hai trang."""
+    assert "sp-gan-pick" in BUILDER, "thiếu ô chọn số để mở popup"
+    # Đếm CHỖ GỌI, không đếm cả dòng `def`. Bản đầu đếm cả định nghĩa nên ra 3
+    # và phép kiểm đỏ oan trên mã đang đúng.
+    calls = BUILDER.replace("def _gan_picker()", "").replace("def _gan_modal()", "")
+    assert calls.count("_gan_picker()") == 2, "cả hai trang phải có"
+    assert calls.count("_gan_modal()") == 2
+
+
+def test_the_popup_filter_button_only_shows_where_it_does_something() -> None:
+    """Trang cặp lọc theo HỌ CẶP, nên nút "chỉ xem số 07" ở đó không đổi gì."""
+    body = _block(JS_CODE, "function openGanPopup")
+    assert '$("sp-picker")' in body, body[-500:]
+
+
+def test_the_popup_can_redraw_the_matrix_it_filters() -> None:
+    """`render` là THAM SỐ, không phải biến toàn cục.
+
+    Gọi thẳng `render()` trong `bindGanPopup` ném "render is not defined", và
+    lỗi ấy chỉ hiện trong console — nhìn từ giao diện thì y như nút hỏng vô cớ.
+    """
+    assert "function bindGanPopup(render)" in JS_CODE
+    assert "bindGanPopup(render);" in JS_CODE
+    body = _block(JS_CODE, "function bindGanPopup")
+    assert "redraw()" in body and "render()" not in body.replace("bindGanPopup(render)", ""), body
+
+
+def test_sorting_reorders_numbers_and_never_the_days() -> None:
+    """Ngày luôn theo trục thời gian; đảo nó đi thì ma trận mất nghĩa."""
+    body = _block(JS_CODE, "function renderLotoMatrix")
+    assert "nums.sort(" in body, body[:400]
+    assert "byDate.sort(" not in body, "không được sắp xếp lại trục ngày"
+    # Hoà nhau thì giữ 00 -> 99 để bảng không nhảy giữa các lần dựng.
+    assert "|| a - b" in body, body[:400]
+    assert BUILDER.count("SORT_CHOICES") >= 1
+
+
+def test_quick_ranges_count_back_from_the_newest_draw_not_from_today() -> None:
+    """Lùi từ hôm nay sẽ hụt mấy kỳ mỗi khi kho chưa cập nhật tới hôm nay."""
+    assert "sp-quick" in BUILDER
+    body = JS_CODE[JS_CODE.index('const quick = $("sp-quick");'):]
+    body = body[: body.index("\n  }") + 4]
+    assert "DRAWS[DRAWS.length - 1].d" in body, body
+    assert "new Date()" not in body, body
+
+
+def test_marks_survive_a_reload_because_they_live_in_local_storage() -> None:
+    assert "localStorage.getItem(MARK_KEY)" in JS_CODE
+    assert "localStorage.setItem(MARK_KEY" in JS_CODE
+    # Bọc try/catch: cửa sổ ẩn danh ném lỗi ngay ở lệnh đọc, và một trang
+    # trắng thì tệ hơn hẳn việc mất dấu.
+    body = JS_CODE[JS_CODE.index("let MARKS = new Set();"):]
+    assert "catch" in body[:600], body[:600]

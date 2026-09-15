@@ -453,14 +453,16 @@ def test_every_nhay_tier_has_a_distinct_pair_that_passes_aa() -> None:
     # xanh lá, cam, tím) có năm sắc nhưng không có trật tự tri giác: nhìn một ô
     # xanh lá không đoán được nó nhiều hay ít nháy hơn ô xanh dương.
     #
-    # Đỏ dùng #C62828 chứ không phải #D9534F của trang mẫu: đo ra #D9534F
-    # trượt AA với CẢ HAI màu chữ — 3,96 với chữ trắng, 4,28 với chữ đen.
+    # Giữ ĐÚNG mã màu được yêu cầu ở những cấp đạt chuẩn, chỉ đổi cấp trượt.
+    # Đo với chữ trắng: #8E44AD 5,87 đạt, #D63031 4,85 đạt; còn #E84393 chỉ
+    # 3,71 và #D9534F chỉ 3,96 nên phải thay bằng sắc cùng tông nhưng tối hơn
+    # (#C2185B 5,87 và #C0392B 5,44).
     expected = {
         "sp-n1": ("#FFFF00", "#161C2D"),
-        "sp-n2": ("#FF9900", "#161C2D"),
-        "sp-n3": ("#C62828", "#FFFFFF"),
-        "sp-n4": ("#991B1B", "#FFFFFF"),
-        "sp-n5": ("#7F1D1D", "#FFFFFF"),
+        "sp-n2": ("#8E44AD", "#FFFFFF"),
+        "sp-n3": ("#C2185B", "#FFFFFF"),
+        "sp-n4": ("#D63031", "#FFFFFF"),
+        "sp-n5": ("#A61B1B", "#FFFFFF"),
     }
     seen = set()
     for cls, (bg, fg) in expected.items():
