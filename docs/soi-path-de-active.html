@@ -55,10 +55,38 @@
     @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
   </style>
+<style id="vla-targeted-ui-refinement">
+.path-page{
+  --bg:#F4F5FF;--card:rgba(255,255,255,.86);--text:#0f172a;--muted:#64748b;
+  --line:#dbe3f0;--hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eef2ff;
+  --ui-bg:#F4F5FF;--ui-surface:rgba(255,255,255,.9);--ui-surface-2:#f8fafc;
+  --ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-border:#dbe3f0;
+  --ui-brand:#4f46e5;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+  min-height:100vh;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2rem);
+  background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);color:#0f172a
+}
+.path-page a{color:#4338ca}
+.path-page .path-shell{max-width:1280px;margin-inline:auto;padding:clamp(1rem,2.5vw,2rem);padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.25rem)}
+.path-page .path-hero{padding:1.15rem 1.2rem;border:1px solid rgba(255,255,255,.92);border-radius:20px;background:rgba(255,255,255,.84);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.path-page .path-hero h1{font-size:clamp(1.3rem,2.5vw,2rem)!important;letter-spacing:-.03em;color:#0f172a}
+.path-page .path-hero .small{color:#64748b}
+.path-page .path-overview{gap:1rem;margin-top:1rem!important;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr)}
+.path-page .card{border-radius:20px;border-color:rgba(255,255,255,.92);background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.path-page .card b,.path-page .quick-number{color:#0f172a}.path-page .small{color:#64748b}.path-page .chip{background:#eef2ff;border-color:#dbe3f0;color:#475569}
+.path-page .btn{background:#4f46e5;color:#fff;border-color:#4f46e5}.path-page .btn.secondary{background:#fff;color:#334155;border-color:#dbe3f0}
+.path-page .quick-pick{min-height:3.15rem;border-radius:14px;background:#fff;border-color:#dbe3f0;color:#0f172a}.path-page .quick-pick:hover{background:#eef2ff;border-color:#a5b4fc}
+.path-page .dot.none{background:#94a3b8}.path-page table{background:transparent}.path-page th{background:rgba(248,250,252,.96);color:#334155}.path-page td{color:#0f172a;border-color:#e2e8f0}.path-page tr:hover td{background:#f8faff}
+.path-page .cell{background:#fff;border-color:#dbe3f0;color:#0f172a}.path-page .cell.none{background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.32) 7px 8px);color:#475569}.path-page .cell.hit{background:#fff7ed;border-color:#fdba74;color:#9a3412}.path-page .cell.hitde{background:#FEE2E2;border-color:#f87171;color:#DC2626;font-weight:800}
+.path-page .path-table-scroll{max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid #dbe3f0;border-radius:14px;background:#fff}
+.path-page .path-table-scroll table{margin:0}.path-page .path-table-scroll th{top:0;z-index:3;box-shadow:0 1px 0 #dbe3f0}
+.path-page .ui-nav-fallback{margin-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem)}
+@media(max-width:979px){.path-page .path-overview{grid-template-columns:1fr}.path-page .path-table-scroll{max-height:58vh}}
+@media(max-width:640px){.path-page .path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}.path-page .path-hero{padding:.9rem;border-radius:16px}.path-page .card{border-radius:16px;padding:12px}.path-page .quick-grid{grid-template-columns:1fr 1fr}}
+</style>
 </head>
-<body>
-<div class="wrap">
-  <div class="top">
+<body class="ui-dock-space path-page">
+<div class="wrap path-shell">
+  <div class="top path-hero">
     <div>
       <h1 style="margin:0;font-size:20px">SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</h1>
       <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-09-15</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
@@ -70,7 +98,7 @@
     </div>
   </div>
 
-  <div class="grid" style="margin-top:12px">
+  <div class="grid path-overview" style="margin-top:12px">
     <div class="card">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện (Đang chạy).</div></div>
