@@ -162,7 +162,7 @@ _RESEARCH_CSS = r"""
 .rl-stage:not(:last-child)::after{content:"→";position:absolute;right:-.52rem;top:50%;transform:translateY(-50%);z-index:2;color:#64748b;font-weight:900}.rl-stage span{display:block;font-size:.64rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.rl-stage strong{display:block;margin-top:.3rem;font-size:.86rem;color:#0f172a}.rl-stage:last-child{border-color:#c7d2fe;background:#eef2ff}
 .rl-console{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.85rem;margin:0 0 1.25rem}.rl-console-card{position:relative;overflow:hidden;min-height:9rem;padding:1rem;border:1px solid rgba(99,102,241,.24);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(248,250,252,.84));box-shadow:0 10px 34px rgba(30,41,59,.05)}
 .rl-console-card::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(56,189,248,.08)}.rl-console-card::after{content:"";position:absolute;left:0;right:0;top:-30%;height:32%;background:linear-gradient(180deg,transparent,rgba(56,189,248,.10),transparent);animation:rl-scan 5s linear infinite;pointer-events:none}
-.rl-console-card span{display:block;font:800 .62rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#6366f1}.rl-console-card strong{display:block;margin:.45rem 0 .35rem;font-size:1rem;color:#0f172a}.rl-console-card p{margin:0;color:#64748b;font-size:.75rem;line-height:1.55}.rl-gauge{width:3rem;height:3rem;margin-top:.55rem;border-radius:50%;background:conic-gradient(#4f46e5 0 28%,#22c55e 28% 58%,#38bdf8 58% 76%,#e2e8f0 76%);box-shadow:inset 0 0 0 8px #fff}
+.rl-console-card span{display:block;font:800 .62rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:#6366f1}.rl-console-card strong{display:block;margin:.45rem 0 .35rem;font-size:1rem;color:#0f172a}.rl-console-card p{margin:0;color:#64748b;font-size:.75rem;line-height:1.55}.rl-gauge{width:3rem;height:3rem;margin-top:.55rem;border-radius:50%;background:conic-gradient(#4f46e5 0 18%,#e2e8f0 18% 25%,#22c55e 25% 43%,#e2e8f0 43% 50%,#38bdf8 50% 68%,#e2e8f0 68% 75%,#818cf8 75% 93%,#e2e8f0 93%);box-shadow:inset 0 0 0 8px #fff}
 .rl-instruments>.ui-card{position:relative;overflow:hidden;border-color:rgba(99,102,241,.18);background:rgba(255,255,255,.88);box-shadow:0 8px 30px rgba(15,23,42,.045)}.rl-instruments>.ui-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#4f46e5,#38bdf8)}
 .research-workspace .metric-card{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(248,250,252,.9));border-color:rgba(255,255,255,.95)}.research-workspace .metric-card::after{content:"";position:absolute;right:.85rem;top:.85rem;width:.46rem;height:.46rem;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.1)}
 @keyframes rl-scan{0%{transform:translateY(-140%)}100%{transform:translateY(480%)}}
@@ -296,7 +296,7 @@ def _refine_research(page: str) -> str:
         )
         page = page.replace(
             '</section>\n<div class="ui-note"',
-            f'{pipeline}\n<div class="ui-note"',
+            f'</section>{pipeline}\n<div class="ui-note"',
             1,
         )
     return _append_style(page, _RESEARCH_CSS)
