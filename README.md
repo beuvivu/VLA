@@ -7,9 +7,9 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 ## Ảnh chụp dữ liệu mới nhất
 
 <!-- SNAPSHOT:BEGIN -->
-| Xổ số | Lô tô |
+| Xổ số | LOTO |
 | :------------: | :----------: |
-| <table><tr><td>Ngày</td><td>14-09-2026</td></tr><tr><td>Giải đặc biệt</td><td>74522</td></tr><tr><td>Giải nhất</td><td>70592</td></tr><tr><td>Giải nhì</td><td>57489, 68602</td></tr><tr><td>Giải ba</td><td>86718, 84988, 37198, 60351, 72717, 29855</td></tr><tr><td>Giải tư</td><td>0529, 0808, 7371, 8648</td></tr><tr><td>Giải năm</td><td>3457, 1096, 4779, 9172, 9648, 3493</td></tr><tr><td>Giải sáu</td><td>956, 313, 547</td></tr><tr><td>Giải bảy</td><td>75, 94, 24, 31</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td>2, 8</td></tr><tr><td>1</td><td>8, 7, 3</td></tr><tr><td>2</td><td>2, 9, 4</td></tr><tr><td>3</td><td>1</td></tr><tr><td>4</td><td>8, 8, 7</td></tr><tr><td>5</td><td>1, 5, 7, 6</td></tr><tr><td>6</td><td></td></tr><tr><td>7</td><td>1, 9, 2, 5</td></tr><tr><td>8</td><td>9, 8</td></tr><tr><td>9</td><td>2, 8, 6, 3, 4</td></tr></table> |
+| <table><tr><td>Ngày</td><td>14-09-2026</td></tr><tr><td>Giải Đặc Biệt</td><td>74522</td></tr><tr><td>Giải nhất</td><td>70592</td></tr><tr><td>Giải nhì</td><td>57489, 68602</td></tr><tr><td>Giải ba</td><td>86718, 84988, 37198, 60351, 72717, 29855</td></tr><tr><td>Giải tư</td><td>0529, 0808, 7371, 8648</td></tr><tr><td>Giải năm</td><td>3457, 1096, 4779, 9172, 9648, 3493</td></tr><tr><td>Giải sáu</td><td>956, 313, 547</td></tr><tr><td>Giải bảy</td><td>75, 94, 24, 31</td></tr></table> | <table><tr><td>Đầu</td><td>Đuôi</td></tr><tr><td>0</td><td>2, 8</td></tr><tr><td>1</td><td>8, 7, 3</td></tr><tr><td>2</td><td>2, 9, 4</td></tr><tr><td>3</td><td>1</td></tr><tr><td>4</td><td>8, 8, 7</td></tr><tr><td>5</td><td>1, 5, 7, 6</td></tr><tr><td>6</td><td></td></tr><tr><td>7</td><td>1, 9, 2, 5</td></tr><tr><td>8</td><td>9, 8</td></tr><tr><td>9</td><td>2, 8, 6, 3, 4</td></tr></table> |
 <!-- SNAPSHOT:END -->
 
 <!-- FUN_PREDICTION:BEGIN -->
@@ -21,7 +21,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 
 | Giải | Dự đoán vui |
 |---|---|
-| Đặc biệt | `68631` |
+| Đặc Biệt | `68631` |
 | Giải nhất | `72471` |
 | Giải nhì | `68124` · `07130` |
 | Giải ba | `64086` · `05987` · `60001` · `30843` · `73766` · `05045` |
@@ -30,7 +30,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 | Giải sáu | `400` · `723` · `428` |
 | Giải bảy | `05` · `18` · `22` · `45` |
 
-### Lô tô đứng đầu cho ngày mai
+### LOTO đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
@@ -45,7 +45,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 | 9 | **31** | **23.91%** |
 | 10 | **45** | **23.91%** |
 
-### Đặc biệt đứng đầu cho ngày mai
+### Đặc Biệt đứng đầu cho ngày mai
 
 | # | Số | Xác suất mô hình |
 |---:|:---:|---:|
@@ -60,7 +60,7 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 | 9 | **55** | **1.016%** |
 | 10 | **83** | **1.015%** |
 
-> Xác suất ở bảng lô tô là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất ĐB là phân phối riêng cho 2 số cuối giải đặc biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.
+> Xác suất ở bảng LOTO là xác suất mô hình cho số 00–99 xuất hiện trong kỳ; xác suất Đặc Biệt là phân phối riêng cho 2 số cuối giải Đặc Biệt. Các chữ số tiền tố trong bảng mô phỏng đầy đủ được sinh tất định để tạo bảng vui, không phải dự báo xác suất cho toàn bộ số 3–5 chữ số.
 <!-- FUN_PREDICTION:END -->
 
 ## Kiến trúc vận hành

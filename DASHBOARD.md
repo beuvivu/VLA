@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-15T05:27:10Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-15T07:33:16Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -554,19 +554,19 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | **39** | 71.629 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **62** | 70.005 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **32** | 66.487 | ML xác suất cao + cùng chạm ĐB gầ… | ML xác suất cao + cùng chạm ĐB gần nh… | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | **32** | 66.487 | ML xác suất cao + cùng chạm Đặc B… | ML xác suất cao + cùng chạm Đặc Biệt … | ▰▰▰▰▰▰▰▰▰▱ |
 | 4 | **33** | 64.838 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | **97** | 59.645 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **97** | 59.645 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▱▱ |
 | 6 | **52** | 58.229 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▰▱▱ |
 | 7 | **92** | 55.206 | ML xác suất cao + hợp điều kiện l… | ML xác suất cao + hợp điều kiện loto … | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | **66** | 54.969 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | **93** | 54.546 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | **66** | 54.969 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | **93** | 54.546 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▱▱ |
 | 10 | **90** | 54.474 | hợp điều kiện loto hôm trước + tầ… | hợp điều kiện loto hôm trước + tần su… | ▰▰▰▰▰▰▰▰▱▱ |
 | 11 | **99** | 54.016 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện loto… | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | **03** | 52.987 | hợp điều kiện ĐB hôm trước + hợp … | hợp điều kiện ĐB hôm trước + hợp điều… | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **36** | 52.859 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **02** | 52.669 | ML xác suất cao + cùng chạm ĐB gầ… | ML xác suất cao + cùng chạm ĐB gần nh… | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | **09** | 52.289 | hợp điều kiện ĐB hôm trước + tần … | hợp điều kiện ĐB hôm trước + tần suất… | ▰▰▰▰▰▰▰▱▱▱ |
+| 12 | **03** | 52.987 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + hợ… | ▰▰▰▰▰▰▰▱▱▱ |
+| 13 | **36** | 52.859 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **02** | 52.669 | ML xác suất cao + cùng chạm Đặc B… | ML xác suất cao + cùng chạm Đặc Biệt … | ▰▰▰▰▰▰▰▱▱▱ |
+| 15 | **09** | 52.289 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + tầ… | ▰▰▰▰▰▰▰▱▱▱ |
 
 ### Cầu-kèo Đặc Biệt · ma trận nhiệt điểm
 > **Cách đọc màu – Điểm cầu-kèo ML Đặc Biệt:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
@@ -598,20 +598,20 @@
 | # | Đối tượng | Giá trị | So sánh / căn cứ | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | **00** | 63.114 | ML xác suất cao + cầu rawdata mạnh | ML xác suất cao + cầu rawdata mạnh | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **31** | 57.563 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | **67** | 54.408 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | **21** | 52.117 | hợp điều kiện ĐB hôm trước + cùng… | hợp điều kiện ĐB hôm trước + cùng thứ… | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | **11** | 47.937 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | **09** | 47.559 | hợp điều kiện ĐB hôm trước + hợp … | hợp điều kiện ĐB hôm trước + hợp điều… | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | **91** | 46.865 | hợp điều kiện ĐB hôm trước + cùng… | hợp điều kiện ĐB hôm trước + cùng thứ… | ▰▰▰▰▰▰▰▱▱▱ |
-| 8 | **78** | 46.728 | hợp điều kiện ĐB hôm trước + cùng… | hợp điều kiện ĐB hôm trước + cùng thứ… | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **90** | 45.870 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **66** | 45.409 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
-| 11 | **85** | 44.758 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▱▱▱ |
-| 12 | **63** | 44.657 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
-| 13 | **98** | 43.464 | hợp điều kiện ĐB hôm trước + gan/… | hợp điều kiện ĐB hôm trước + gan/nhịp… | ▰▰▰▰▰▰▰▱▱▱ |
-| 14 | **36** | 42.986 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện ĐB h… | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | **28** | 42.840 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện ĐB hô… | ▰▰▰▰▰▰▰▱▱▱ |
+| 2 | **31** | 57.563 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | **67** | 54.408 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▰▰▱ |
+| 4 | **21** | 52.117 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | **11** | 47.937 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | **09** | 47.559 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + hợ… | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | **91** | 46.865 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▱▱▱ |
+| 8 | **78** | 46.728 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + cù… | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | **90** | 45.870 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **66** | 45.409 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▱▱▱ |
+| 11 | **85** | 44.758 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▱▱▱ |
+| 12 | **63** | 44.657 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▱▱▱ |
+| 13 | **98** | 43.464 | hợp điều kiện Đặc Biệt hôm trước … | hợp điều kiện Đặc Biệt hôm trước + ga… | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | **36** | 42.986 | cầu rawdata mạnh + hợp điều kiện … | cầu rawdata mạnh + hợp điều kiện Đặc … | ▰▰▰▰▰▰▰▱▱▱ |
+| 15 | **28** | 42.840 | ML xác suất cao + hợp điều kiện Đ… | ML xác suất cao + hợp điều kiện Đặc B… | ▰▰▰▰▰▰▰▱▱▱ |
 
 ### AI/ML tổng hợp · LOTO
 > **Cách đọc màu – AI/ML tổng hợp LOTO:** màu chỉ biểu thị **mức tương đối trong chính ma trận này**, không tự động đồng nghĩa với khả năng chắc chắn.
@@ -914,9 +914,9 @@
 | 6 | **31** | 1.874 | trễ 28.0 · trước=trượt · mẫu=15 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 7 | **02** | 1.818 | trễ 28.0 · trước=trượt · mẫu=18 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 8 | **16** | 1.800 | trễ 28.0 · trước=trượt · mẫu=19 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
-| 9 | **58** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
-| 10 | **14** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | **40** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 9 | **40** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 10 | **58** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | **14** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 12 | **81** | 1.782 | trễ 28.0 · trước=trượt · mẫu=20 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 13 | **95** | 1.765 | trễ 28.0 · trước=trượt · mẫu=21 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
 | 14 | **42** | 1.765 | trễ 28.0 · trước=trượt · mẫu=21 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▱▱▱▱ |
@@ -1074,9 +1074,9 @@
 | 4 | `75` → **`90`** | 60.00% | n=20 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 5 | `56` → **`94`** | 58.82% | n=17 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 6 | `06` → **`31`** | 58.82% | n=17 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | `84` → **`61`** | 58.33% | n=12 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | `84` → **`97`** | 58.33% | n=12 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 8 | `84` → **`41`** | 58.33% | n=12 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | `84` → **`97`** | 58.33% | n=12 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | `84` → **`61`** | 58.33% | n=12 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 10 | `33` → **`80`** | 57.14% | n=21 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 11 | `86` → **`29`** | 56.52% | n=23 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 12 | `72` → **`80`** | 56.25% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
@@ -1107,20 +1107,20 @@
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `37` → **`88`** | 16.67% | n=18 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `27` → **`34`** | 15.79% | n=19 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 3 | `16` → **`36`** | 15.79% | n=19 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 2 | `16` → **`36`** | 15.79% | n=19 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
+| 3 | `27` → **`34`** | 15.79% | n=19 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 4 | `87` → **`71`** | 15.00% | n=20 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | `45` → **`54`** | 13.64% | n=22 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | `52` → **`33`** | 13.64% | n=22 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | `73` → **`57`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | `73` → **`49`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | `31` → **`64`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 10 | `31` → **`15`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 11 | `74` → **`42`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 12 | `74` → **`26`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 13 | `00` → **`97`** | 12.50% | n=24 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | `72` → **`66`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 15 | `07` → **`46`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | `52` → **`33`** | 13.64% | n=22 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | `45` → **`54`** | 13.64% | n=22 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | `73` → **`49`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | `73` → **`57`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | `31` → **`15`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 10 | `31` → **`64`** | 13.33% | n=15 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 11 | `00` → **`97`** | 12.50% | n=24 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 12 | `07` → **`46`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 13 | `72` → **`66`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 14 | `74` → **`26`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 15 | `74` → **`42`** | 12.50% | n=16 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 
 ---
 
@@ -1206,21 +1206,21 @@
 ### Phòng chiến lược · LOTO ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | ĐB lặp lại | 1.099 | độ chính xác 26.13% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | Đặc Biệt lặp lại | 1.099 | độ chính xác 26.13% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | 5 số lạnh nhất trong 30 ngày | 1.041 | độ chính xác 24.76% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 3 | Đồng thuận vị trí đầu–đuôi | 1.037 | độ chính xác 24.62% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 4 | 5 số nóng nhất trong 30 ngày | 1.036 | độ chính xác 24.43% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 5 | Dàn đuôi ĐB | 1.026 | độ chính xác 24.38% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 5 | Dàn đuôi Đặc Biệt | 1.026 | độ chính xác 24.38% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 6 | 5 số gan nhất | 1.025 | độ chính xác 24.36% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 7 | Dàn tổng ĐB | 1.019 | độ chính xác 24.22% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 8 | Dàn đầu ĐB | 1.017 | độ chính xác 24.16% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 7 | Dàn tổng Đặc Biệt | 1.019 | độ chính xác 24.22% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 8 | Dàn đầu Đặc Biệt | 1.017 | độ chính xác 24.16% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 9 | Kép bằng + lệch | 1.013 | độ chính xác 24.03% · q 0.538 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 10 | Chạm đuôi ĐB | 1.006 | độ chính xác 23.93% · q 0.720 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 10 | Chạm đuôi Đặc Biệt | 1.006 | độ chính xác 23.93% · q 0.720 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 11 | Sát kép | 1.000 | độ chính xác 23.66% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 12 | Bóng ĐB | 1.000 | độ chính xác 23.78% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 12 | Bóng Đặc Biệt | 1.000 | độ chính xác 23.78% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 | 13 | Ghép ĐB×G1 | 0.991 | độ chính xác 23.52% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 14 | Bộ ĐB | 0.991 | độ chính xác 23.58% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
-| 15 | Chạm đầu ĐB | 0.990 | độ chính xác 23.52% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 14 | Bộ Đặc Biệt | 0.991 | độ chính xác 23.58% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
+| 15 | Chạm đầu Đặc Biệt | 0.990 | độ chính xác 23.52% · q 0.856 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▰▰▱ |
 
 ### Phòng chiến lược · Đặc Biệt ngoài mẫu
 | # | Chiến lược | Độ nâng ngoài mẫu | Tập giữ lại | Ý nghĩa | Thanh so sánh |
@@ -1228,18 +1228,18 @@
 | 1 | Đồng thuận vị trí đuôi–đuôi | 1.832 | độ chính xác 1.80% · q 0.011 | Qua cổng nghiên cứu | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | Đồng thuận vị trí đầu–đuôi | 1.699 | độ chính xác 1.68% · q 0.032 | Qua cổng nghiên cứu | ▰▰▰▰▰▰▰▰▰▱ |
 | 3 | Ghép ĐB×G1 | 1.341 | độ chính xác 1.33% · q 0.368 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 4 | ĐB lặp lại | 1.263 | độ chính xác 1.26% · q 0.548 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 5 | Bóng ĐB | 1.243 | độ chính xác 1.26% · q 0.548 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 4 | Đặc Biệt lặp lại | 1.263 | độ chính xác 1.26% · q 0.548 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 5 | Bóng Đặc Biệt | 1.243 | độ chính xác 1.26% · q 0.548 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
 | 6 | Kép bằng + lệch | 1.236 | độ chính xác 1.14% · q 0.062 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
-| 7 | Dàn đầu ĐB | 1.209 | độ chính xác 1.21% · q 0.247 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
+| 7 | Dàn đầu Đặc Biệt | 1.209 | độ chính xác 1.21% · q 0.247 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
 | 8 | 5 số nóng nhất trong 90 ngày | 1.191 | độ chính xác 1.15% · q 0.368 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▰▱▱▱ |
 | 9 | Lô lộn | 1.172 | độ chính xác 1.17% · q 0.128 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 10 | Chạm đuôi ĐB | 1.145 | độ chính xác 1.15% · q 0.247 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 11 | Chạm đầu ĐB | 1.106 | độ chính xác 1.11% · q 0.368 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 12 | ĐB lộn | 1.091 | độ chính xác 1.08% · q 0.625 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 10 | Chạm đuôi Đặc Biệt | 1.145 | độ chính xác 1.15% · q 0.247 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 11 | Chạm đầu Đặc Biệt | 1.106 | độ chính xác 1.11% · q 0.368 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 12 | Đặc Biệt lộn | 1.091 | độ chính xác 1.08% · q 0.625 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
 | 13 | 5 số nóng nhất trong 30 ngày | 1.091 | độ chính xác 1.08% · q 0.548 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
 | 14 | Lô rơi | 1.090 | độ chính xác 1.09% · q 0.368 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
-| 15 | Dàn đuôi ĐB | 1.027 | độ chính xác 1.03% · q 0.625 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
+| 15 | Dàn đuôi Đặc Biệt | 1.027 | độ chính xác 1.03% · q 0.625 | Chỉ nghiên cứu; chưa qua FDR/cổng | ▰▰▰▰▰▰▱▱▱▱ |
 
 ### Chẩn đoán
 | Lớp | Giá trị | So sánh | Ý nghĩa |
