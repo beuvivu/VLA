@@ -28,21 +28,67 @@ printf '%s\n' "== Unit/regression tests =="
 python -m pytest -q
 
 printf '%s\n' "== Source policy =="
+# Cổng này TỪNG chép cứng bảy tên miền vào đây. Hai lượt đổi chính sách nguồn
+# sau đó, bản chép lệch khỏi `src/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
+# một bản sao danh sách luôn sinh ra. Danh sách đã có chỗ khai báo duy nhất
+# (`PRIMARY_SOURCE_NAMES`/`FALLBACK_SOURCE_NAMES`) và đã được ghim bởi
+# `tests/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
+# đơn lẻ không tự kiểm được: đăng ký, mã ẩn danh, nhóm độc lập và danh sách
+# đen chống lộ nguồn phải phủ khớp nhau.
 python - <<'PYSOURCE'
-from sources import default_sources, source_independence_key
-expected = [
-    "xoso.com.vn",
-    "mketqua.net",
-    "www.minhngoc.net.vn",
-    "xosominhngoc.com",
-    "xosodaiphat.com",
-    "hainhay.net",
-    "xskt.vn",
-]
-actual = [s.name for s in default_sources()]
-assert actual == expected, (actual, expected)
+from sources import (
+    FALLBACK_SOURCE_NAMES,
+    PRIMARY_SOURCE_NAMES,
+    SOURCE_INDEPENDENCE_GROUP,
+    SOURCE_PUBLIC_CODE,
+    default_sources,
+    fallback_sources,
+    known_source_domains,
+    primary_sources,
+    source_independence_key,
+)
+from sources import _source_registry
+
+primary = list(PRIMARY_SOURCE_NAMES)
+fallback = list(FALLBACK_SOURCE_NAMES)
+listed = primary + fallback
+
+assert len(set(listed)) == len(listed), listed
+assert not (set(primary) & set(fallback)), (primary, fallback)
+
+# Không còn nguồn mồ côi: xoá một nguồn khỏi chính sách mà để lại lớp cào của
+# nó trong đăng ký là "xoá chưa tới nơi", và lần sau có người gọi lại được.
+registry = _source_registry()
+assert sorted(registry) == sorted(listed), (sorted(registry), sorted(listed))
+for name, source in registry.items():
+    assert source.name == name, (name, source.name)
+
+assert [s.name for s in primary_sources()] == primary
+assert [s.name for s in fallback_sources()] == fallback
+assert [s.name for s in default_sources()] == listed, "tầng chính phải đứng trước tầng dự phòng"
+
+# Ẩn danh hoá: mọi nguồn phải có mã, mã không được trùng, và không mã nào
+# được chính là tên miền.
+assert sorted(SOURCE_PUBLIC_CODE) == sorted(listed), sorted(SOURCE_PUBLIC_CODE)
+codes = [SOURCE_PUBLIC_CODE[n] for n in listed]
+assert len(set(codes)) == len(codes), codes
+assert all(c not in n for c, n in zip(codes, listed)), codes
+
+# Danh sách đen chống lộ nguồn phải phủ HẾT tên miền thật, nếu không phép
+# ẩn danh hoá sẽ để lọt đúng cái nó sinh ra để chặn.
+blacklist = set(known_source_domains())
+missing = [n for n in listed if n not in blacklist]
+assert not missing, missing
+
+assert sorted(SOURCE_INDEPENDENCE_GROUP) == sorted(listed), sorted(SOURCE_INDEPENDENCE_GROUP)
 assert source_independence_key("www.minhngoc.net.vn") == source_independence_key("xosominhngoc.com")
-print("OK", actual)
+
+# Tầng chính phải TỰ đạt được ngưỡng xác minh 2 nhóm độc lập; nếu không thì
+# mọi kỳ quay đều phải rơi xuống tầng dự phòng và thứ tự ưu tiên là vô nghĩa.
+primary_groups = {source_independence_key(n) for n in primary}
+assert len(primary_groups) >= 2, primary_groups
+
+print("OK source policy", len(primary), "chính /", len(fallback), "dự phòng")
 PYSOURCE
 
 printf '%s\n' "== Data integrity + canonical statistics =="
