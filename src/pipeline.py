@@ -192,6 +192,14 @@ def main() -> None:
         allow_fail=True,
         timeout_s=600,
     )
+    # Cầu bóng trên toàn bộ 107 ô chữ số: họ rộng gấp 15,7 lần họ cross-lag,
+    # vì nó nối được chữ số nằm bất kỳ đâu bên trong số đầy đủ chứ không chỉ
+    # hai chữ số cuối. Quét hết 206 082 giả thuyết mất khoảng 15 giây.
+    _run(
+        _py("src/bong_bridge_lab.py", "--permutations", "60", "--top", "50"),
+        allow_fail=True,
+        timeout_s=600,
+    )
 
     if not args.skip_path:
         for mode in ["loto", "de"]:

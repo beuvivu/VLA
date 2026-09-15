@@ -82,7 +82,7 @@ def _primary_tests(diag: dict) -> str:
     return "".join(rows) or '<tr><td colspan="5">Chưa có dữ liệu</td></tr>'
 
 
-def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
+def _firewall_cards(report: dict, cross: dict, conditional: dict, bong: dict) -> str:
     cards = []
     for mode, item in report.get("modes", {}).items():
         reality = item.get("reality_check", {})
@@ -99,6 +99,18 @@ def _firewall_cards(report: dict, cross: dict, conditional: dict) -> str:
             "<span>Vị trí chéo độ trễ</span>"
             f"<strong>{int(cross.get('hypotheses', 0))}</strong>"
             f"<em>giả thuyết · qua cổng nghiên cứu {int(cross.get('research_gate_pass_count', 0))} · nối vào vận hành: Không</em>"
+            "</article>"
+        )
+    if bong:
+        loto = bong.get("modes", {}).get("loto", {})
+        check = loto.get("reality_check", {})
+        cards.append(
+            '<article class="metric-card">'
+            "<span>Cầu bóng · 107 ô chữ số</span>"
+            f"<strong>{int(loto.get('hypotheses', 0)):,}</strong>".replace(",", ".")
+            + f"<em>giả thuyết · qua FDR .05: {int(loto.get('fdr_05_count', 0))} · "
+            f"độ nâng tốt nhất {loto.get('best_train_lift', 0):.3f} so với nhiễu "
+            f"{check.get('null_max_lift_mean', 0):.3f} · p={check.get('p_value', 0):.2f}</em>"
             "</article>"
         )
     if conditional:
@@ -195,6 +207,32 @@ def _crosslag_table(df: pd.DataFrame, top: int = 10) -> str:
     return "".join(rows)
 
 
+def _bong_bridge_table(df: pd.DataFrame, top: int = 10) -> str:
+    """Các đường cầu mạnh nhất trên tập huấn luyện, kèm số phận ngoài mẫu.
+
+    Cột quan trọng nhất là hai cột cuối. Một đường cầu có thật thì độ nâng của
+    nó phải giữ được khi sang những kỳ chưa từng dùng để chọn nó.
+    """
+    if df.empty:
+        return '<tr><td colspan="5">Chưa có dữ liệu</td></tr>'
+    rows = []
+    for _, r in df.head(top).iterrows():
+        source = (
+            f"{html.escape(str(r['slot_a']))} ({html.escape(str(r['op_a']))}, lag {int(r['lag_a'])})"
+            f" + {html.escape(str(r['slot_b']))} ({html.escape(str(r['op_b']))}, lag {int(r['lag_b'])})"
+        )
+        rows.append(
+            "<tr>"
+            f"<td>{source}</td>"
+            f"<td>{_fmt(r.get('train_lift'), 3)}</td>"
+            f"<td>{_fmt(r.get('validation_lift'), 3)}</td>"
+            f"<td>{_fmt(r.get('holdout_lift'), 3)}</td>"
+            f"<td>{_fmt(r.get('train_q_fdr'), 3)}</td>"
+            "</tr>"
+        )
+    return "".join(rows)
+
+
 def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) -> str:
     if df.empty:
         return '<tr><td colspan="6">Chưa có dữ liệu</td></tr>'
@@ -236,6 +274,8 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     advanced = _read_json(research / "legacy_advanced" / "manifest.json")
     cross_report = _read_json(research / "crosslag_positional" / "report.json")
     cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules.csv")
+    bong_report = _read_json(research / "bong_bridge" / "report.json")
+    bong_rules = _read_csv(research / "bong_bridge" / "top_rules_loto.csv")
     conditional_manifest = _read_json(data_dir / "conditional" / "manifest.json")
     conditional = _read_csv(data_dir / "conditional" / "loto_nextday_given_special_long.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
@@ -278,6 +318,20 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 ["Số", "Cỡ mẫu", "Số lần trúng", "p thô", "p EB", "q"],
                 "ui-r2 ui-r3 ui-r4 ui-r5 ui-r6",
                 _conditional_table(conditional, current_special),
+            ),
+            _table(
+                "Cầu bóng trên toàn bộ 107 ô chữ số",
+                "Họ cầu rộng nhất dự án từng quét: nối một chữ số BẤT KỲ bên trong số đầy đủ "
+                "của kỳ trước với một chữ số bất kỳ khác, mỗi chữ số được phép đi qua bóng dương "
+                "hoặc bóng âm. 206.082 giả thuyết, gấp 15,7 lần họ vị trí chéo. "
+                "Ngũ hành không có cột riêng vì Kim 2–7, Mộc 5–0, Thủy 1–6, Hỏa 3–8, Thổ 4–9 "
+                "chính là ánh xạ bóng dương, chỉ khác tên gọi. "
+                "Hai cột cuối mới là thứ đáng đọc: chúng chấm lại đúng những đường cầu ấy trên "
+                "những kỳ chưa từng dùng để chọn ra chúng.",
+                ["Đường cầu", "Độ nâng (huấn luyện)", "Kiểm định", "Giữ lại", "q"],
+                "ui-r2 ui-r3 ui-r4 ui-r5",
+                _bong_bridge_table(bong_rules),
+                span=12,
             ),
             _table(
                 "Phòng chiến lược · LOTO",
@@ -356,7 +410,7 @@ font-variant-numeric:tabular-nums}}
 <h1>Phòng nghiên cứu khoa học</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
 <div class="ui-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
-<section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest)}</section>
+<section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report)}</section>
 <div class="ui-grid">{cards}</div>
 {nav_fallback()}{shell_close()}{dock("research-lab.html")}
 </body></html>"""

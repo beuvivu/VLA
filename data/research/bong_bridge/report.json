@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-09-15T16:18:38Z",
+  "anchor_date": "2026-09-15",
+  "research_only": true,
+  "production_wired": false,
+  "digit_slots": 107,
+  "lag_pairs": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "digit_ops": [
+    "goc",
+    "duong",
+    "am"
+  ],
+  "top_inspected": 50,
+  "modes": {
+    "loto": {
+      "mode": "loto",
+      "hypotheses": 206082,
+      "base_rate": 0.23781132698059082,
+      "train_days": 1325,
+      "validation_days": 442,
+      "holdout_days": 441,
+      "fdr_05_count": 0,
+      "bonferroni_05_count": 0,
+      "best_train_lift": 1.2345286887211162,
+      "best_train_followed_validation_lift": 0.9973404475418871,
+      "best_train_followed_holdout_lift": 0.913242001582573,
+      "top_mean_validation_lift": 1.0034194750316663,
+      "top_mean_holdout_lift": 0.9668949691755492,
+      "reality_check": {
+        "permutations": 60,
+        "base_rate": 0.23781132698059082,
+        "observed_max_lift": 1.234528660774231,
+        "null_max_lift_mean": 1.2289749026298522,
+        "null_max_lift_p95": 1.254046243429184,
+        "null_max_lift_max": 1.2694382667541504,
+        "p_value": 0.35,
+        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn"
+      }
+    },
+    "de": {
+      "mode": "de",
+      "hypotheses": 206082,
+      "base_rate": 0.009999999776482582,
+      "train_days": 1325,
+      "validation_days": 442,
+      "holdout_days": 441,
+      "fdr_05_count": 0,
+      "bonferroni_05_count": 0,
+      "best_train_lift": 2.490566093404339,
+      "best_train_followed_validation_lift": 1.357466093690148,
+      "best_train_followed_holdout_lift": 0.45351474936586955,
+      "top_mean_validation_lift": 1.0497737791203812,
+      "top_mean_holdout_lift": 1.14739231589565,
+      "reality_check": {
+        "permutations": 60,
+        "base_rate": 0.009999999776482582,
+        "observed_max_lift": 2.4905662536621094,
+        "null_max_lift_mean": 2.4553459803263347,
+        "null_max_lift_p95": 2.6452831149101255,
+        "null_max_lift_max": 2.7169811725616455,
+        "p_value": 0.43333333333333335,
+        "method": "dịch vòng chuỗi kết quả, giữ nguyên chữ số nguồn"
+      }
+    }
+  },
+  "note": "Họ cầu bóng trên toàn bộ 107 ô chữ số. Không có đường nối tự động nào sang trọng số vận hành; một luật qua được cổng chỉ có nghĩa là đáng xem xét thêm."
+}
