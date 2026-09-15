@@ -486,7 +486,8 @@ PAGES: tuple[StatPage, ...] = (
 #: Ghi chú không có chỗ trống vẫn đi qua ``format`` nguyên vẹn.
 CHANCE_NOTES: dict[str, str] = {
     "tan-suat-loto": (
-        "Kỳ vọng mỗi con là <b>1 − (0,99)²⁷ ≈ 23,77%</b> mỗi kỳ. Con dẫn đầu "
+        "Kỳ vọng tổng số nháy mỗi con là <b>27/100 = 0,27 nháy/kỳ</b>. "
+        "Xác suất về ít nhất một lần là 1 − (0,99)²⁷ ≈ 23,77% mỗi kỳ. Con dẫn đầu "
         "trong 100 con luôn cao hơn kỳ vọng kể cả khi dữ liệu hoàn toàn ngẫu "
         "nhiên — cột “So kỳ vọng” là để so, không phải để chọn."
     ),
@@ -605,6 +606,72 @@ def chance_note_context(n_draws: int) -> dict[str, str]:
     }
 
 
+
+def frequency_bento_layout(page: StatPage, note_html: str) -> str:
+    """Bento layout for the two frequency pages; controls keep existing IDs."""
+    pairs = page.slug == "tan-suat-cap-loto"
+    label = "cặp số" if pairs else "số lô tô"
+    picker = (
+        '<div id="bf-pair-picker"></div>' if pairs
+        else '<div class="sp-picker" id="sp-picker"></div>'
+    )
+    matrix = "Tổng quan 00–99" if not pairs else "Đọc ma trận cặp số"
+    overview = (
+        '<div id="sp-matrix" class="sp-matrix"></div>' if not pairs
+        else '<p>Mỗi ô cộng số lần xuất hiện của hai thành viên trong cùng kỳ. '
+             'Ví dụ 12 về 2 lần và 21 về 1 lần: ô 12–21 hiển thị <b>3</b>.</p>'
+             '<p>Ngôi sao đỏ cho biết một thành viên là hai số cuối Giải Đặc Biệt. '
+             '50 họ gồm 45 cặp đảo và 5 cặp kép bóng.</p>'
+             '<p>Bảng đồng xuất hiện tính số kỳ <b>cả hai số cùng về</b>, '
+             'trên toàn bộ 4.950 cặp khác nhau.</p>'
+    )
+    return f"""
+<div class="bf-topline"><a href="index.html">← Trang chính</a><span class="bf-live" id="bf-source">Dữ liệu XSMB · Miền Bắc</span></div>
+<header class="bf-hero">
+  <div><p class="bf-eyebrow">THỐNG KÊ / MIỀN BẮC</p><h1>{page.title}</h1>
+  <p>Nhìn rõ từng nhịp số. So sánh tần suất theo ngày trong một không gian gọn gàng.</p></div>
+  <a class="bf-demo-link" id="bf-demo-link" href="?demo=1">Xem dữ liệu minh họa ↗</a>
+</header>
+<nav class="bf-tabs" aria-label="Loại thống kê">
+  <a href="tan-suat-loto.html" {'aria-current="page"' if not pairs else ''}>Tần suất lô tô <span>00–99</span></a>
+  <a href="tan-suat-cap-loto.html" {'aria-current="page"' if pairs else ''}>Tần suất cặp <span>50 họ cặp</span></a>
+</nav>
+<div id="bf-demo-banner" class="bf-demo-banner" hidden>DỮ LIỆU MINH HỌA · Các kỳ và kết quả được giả lập để kiểm tra giao diện.</div>
+<section class="bf-kpis" aria-label="Tổng quan dải đã chọn" id="bf-kpis"></section>
+<section class="bf-card bf-filters" aria-labelledby="bf-filter-title">
+  <div class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Bộ lọc &amp; lựa chọn</h2></div><span>Cập nhật ngay khi thay đổi</span></div>
+  {page.controls}
+  <details class="bf-selection"><summary>Chọn {label} để so sánh <span id="bf-selection-count"></span></summary>{picker}</details>
+</section>
+<section class="bf-card bf-matrix-card" aria-labelledby="bf-matrix-title">
+  <div class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note"></span></div>
+  <div class="bf-legend" aria-label="Chú thích số nháy">
+    <span><i class="bf-swatch is-empty"></i>Không về</span>
+    <span><i class="bf-swatch sp-n1">1</i>1 nháy</span>
+    <span><i class="bf-swatch sp-n2">2</i>2 nháy</span>
+    <span><i class="bf-swatch sp-n3">3</i>3 nháy</span>
+    <span><i class="bf-swatch sp-n4">4</i>4 nháy</span>
+    <span><i class="bf-swatch sp-n5">5+</i>≥ 5 nháy</span>
+    <span><i class="bf-swatch sp-de-hit">★</i>Đặc Biệt · ưu tiên</span>
+    <span><i class="bf-swatch bf-wait">…</i>Chờ kết quả</span>
+  </div>
+  <div class="sp-scroll bf-matrix-scroll" role="region" aria-label="Ma trận cuộn ngang và dọc" tabindex="0">
+    <table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid" aria-label="Ma trận tần suất theo ngày"></table>
+  </div>
+  <div class="bf-matrix-footer"><span id="bf-cell-status" role="status" aria-live="polite">Rê chuột hoặc chạm vào ô để dóng hàng và cột.</span><span>↔ Cuộn để xem thêm · Phím mũi tên để di chuyển</span></div>
+</section>
+<div class="bf-bottom">
+  <section class="bf-card bf-ranking"><div class="bf-card-heading"><div><span class="bf-step">03</span><h2>{'Xếp hạng đồng xuất hiện' if pairs else 'Xếp hạng tần suất'}</h2></div><span>Trọn dải đã chọn</span></div>
+    <div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>
+  </section>
+  <aside class="bf-card bf-summary"><div class="bf-card-heading"><h2>{matrix}</h2></div>{overview}
+    <details class="bf-method"><summary>Cách đọc &amp; mốc so sánh</summary>{note_html}</details>
+    <p class="bf-tip">★ Màu Đặc Biệt luôn ưu tiên, kể cả khi số về nhiều nháy. Số trong ô vẫn là tổng số nháy.</p>
+  </aside>
+</div>
+{_gan_modal()}
+"""
+
 def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: str) -> str:
     """Dựng HTML hoàn chỉnh cho một trang thống kê.
 
@@ -618,6 +685,14 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     """
     note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
+    bento = page.slug in {"tan-suat-loto", "tan-suat-cap-loto"}
+    content = frequency_bento_layout(page, note_html) if bento else f"""
+<div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
+<h1>{page.title}</h1>
+<p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
+{page.controls}
+{page.body}
+{note_html}"""
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -626,14 +701,10 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 <title>{page.title}</title>
 <style>
 {_asset("stat_pages.css")}
-</style></head><body>
+{_asset("frequency_bento.css") if bento else ""}
+</style></head><body class="{'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
-<div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
-<h1>{page.title}</h1>
-<p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
-{page.controls}
-{page.body}
-{note_html}
+{content}
 <p class="ui-muted" style="margin-top:1.5rem;font-size:.75rem">
 Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên
 {len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
@@ -643,7 +714,10 @@ window.__D_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};
 window.__D_BO__={json_for_html_script(bo_lookup())};
 window.__D_CAP50__={json_for_html_script(cap_loto_50())};</script>
 <script>
+{_asset("frequency_demo.js") if bento else ""}
 {_asset("stat_pages.js")}
+{_asset("frequency_bento.js") if bento else ""}
+{f'installFrequencyBento({json.dumps(page.render)});' if bento else ""}
 boot({json.dumps(page.render)});
 </script>
 </body></html>

@@ -2,7 +2,7 @@
 // Toàn bộ lịch sử được nhúng vào trang nên mọi bộ lọc là tức thì, không gọi
 // mạng. Xem docstring của src/build_stat_pages.py để biết vì sao.
 "use strict";
-const DRAWS = window.__D_DRAWS__ || [];
+const DRAWS = window.__D_DEMO_DRAWS__ || window.__D_DRAWS__ || [];
 const LOTO_BASELINE = 1 - Math.pow(0.99, 27);
 const PAIR_BASELINE = 1 - 2 * Math.pow(0.99, 27) + Math.pow(0.98, 27);
 
@@ -402,7 +402,7 @@ function table(el, headers, rows, opts) {
 // Đổi tên kho có CHỦ Ý. Dấu lưu theo lược đồ cũ là khoá vị trí, nên nếu nạp
 // lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
-const MARK_KEY = "sp.marks.v2." + (location.pathname.split("/").pop() || "index");
+const MARK_KEY = "sp.marks.v2." + (window.__D_DEMO_DRAWS__ ? "demo." : "") + (location.pathname.split("/").pop() || "index");
 // HAI kho, không phải một.
 //
 //   MARKS       khoá theo Ô CỤ THỂ. Đây là chế độ mặc định: bấm ô nào thì
@@ -585,7 +585,7 @@ const MATRIX_MAX_DAYS = 300;
 let MATRIX_GAN = new Array(100).fill(0);
 let MATRIX_RECENT = new Array(100).fill(0);
 
-const PICK_KEY = "sp.picked." + (location.pathname.split("/").pop() || "index");
+const PICK_KEY = "sp.picked." + (window.__D_DEMO_DRAWS__ ? "demo." : "") + (location.pathname.split("/").pop() || "index");
 let PICKED = null;   // null = hiện tất cả
 try {
   const saved = localStorage.getItem(PICK_KEY);
