@@ -255,6 +255,67 @@ def test_a_broken_embedded_payload_refuses_to_render_anything() -> None:
     assert "Dữ liệu nhúng không hợp lệ" in JS_CODE
 
 
+def test_the_hidden_attribute_is_made_to_actually_hide() -> None:
+    """Ô "Chưa có kết quả" từng nằm lì dưới trang kể cả khi đang hiện 30 kỳ.
+
+    Thuộc tính ``hidden`` của HTML chỉ ẩn được nhờ một dòng ``display:none``
+    trong biểu định kiểu mặc định của trình duyệt — và BẤT KỲ quy tắc
+    ``display`` nào của tác giả cũng thắng nó. Ba phần tử của trang rơi vào
+    đúng bẫy ấy, đo trong Chromium:
+
+        #tr-custom-dates   .tr-custom-dates{display:grid}    cao  70px
+        #tr-more           .tr-more{display:flex}            cao  56px
+        #tr-empty          .tr-empty{display:grid}           cao 220px
+
+    Cả ba đều mang ``hidden`` đúng lúc, nên mọi phép kiểm soi THUỘC TÍNH đều
+    xanh — kể cả phép kiểm của tôi. Chỉ phép đo thứ người dùng THẤY mới bắt
+    được, và `scripts/check_traditional_results_page.py` nay làm việc đó.
+    """
+    assert "[hidden]{display:none!important}" in CSS_CODE
+
+
+def test_every_element_that_sets_a_display_and_uses_hidden_is_covered() -> None:
+    """Chốt chặn diện rộng: bất kỳ phần tử nào vừa mang ``hidden`` vừa có quy
+    tắc ``display`` riêng đều phải được dòng chặn ở trên phủ.
+
+    Không liệt kê từng phần tử, vì danh sách ấy sẽ lạc hậu ngay khi thêm phần
+    tử mới — đúng cách ``#tr-more`` thừa hưởng lỗi này lúc tôi thêm nó vào.
+    """
+    html = render_page(embedded_payload(load_rows(ROOT, limit=3), generated="x"))
+    soup = BeautifulSoup(html, "html.parser")
+    hidden_ids = {node.get("id") for node in soup.select("[hidden]") if node.get("id")}
+    assert hidden_ids, "trang phải có ít nhất một phần tử dùng `hidden`"
+    # Dòng chặn dùng bộ chọn thuộc tính nên nó phủ mọi phần tử, kể cả phần tử
+    # thêm sau này — chỉ cần chắc nó có mặt và mang `!important`.
+    rule = re.search(r"\[hidden\]\{([^}]*)\}", CSS_CODE)
+    assert rule is not None
+    assert "display:none!important" in rule.group(1)
+
+
+def test_the_filter_row_does_not_break_when_the_date_box_hides() -> None:
+    """Ô chọn ngày chỉ hiện ở chế độ "Chọn khoảng ngày", nên số phần tử trong
+    hàng thay đổi.
+
+    Lưới ba cột cố định dồn hai phần tử còn lại vào cột 1-2 và kéo giãn méo
+    mó — đo được ô chọn rộng 554px và cụm nút 739px khi ẩn ô ngày. Flex xếp
+    theo số phần tử thật.
+    """
+    rule = re.search(r"^\.tr-form\{([^}]*)\}", CSS_CODE, re.M)
+    assert rule is not None
+    assert "display:flex" in rule.group(1)
+    assert "flex-wrap:wrap" in rule.group(1)
+    assert "grid-template-columns" not in rule.group(1)
+
+
+def test_the_empty_panel_packs_its_two_lines_together() -> None:
+    """``place-items:center`` canh giữa TỪNG HÀNG trong phần chia của nó, nên
+    nhan đề và dòng giải thích bị đẩy xa nhau cả trăm pixel."""
+    rule = re.search(r"^\.tr-empty\{([^}]*)\}", CSS_CODE, re.M)
+    assert rule is not None
+    assert "align-content:center" in rule.group(1)
+    assert "place-items:center" not in rule.group(1)
+
+
 def test_the_page_can_be_printed_without_the_controls() -> None:
     assert "@media print{" in CSS
     printing = CSS[CSS.index("@media print{"):]

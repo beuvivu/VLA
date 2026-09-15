@@ -1,3 +1,24 @@
+/* `hidden` phải THẬT SỰ ẩn.
+   ==========================================================================
+   Thuộc tính `hidden` của HTML chỉ ẩn được nhờ một dòng `display:none` trong
+   biểu định kiểu mặc định của trình duyệt — và BẤT KỲ quy tắc `display` nào
+   của tác giả cũng thắng nó. Trang này có ba phần tử rơi vào đúng bẫy ấy:
+
+       #tr-custom-dates   .tr-custom-dates{display:grid}   cao 70px
+       #tr-more           .tr-more{display:flex}           cao 56px
+       #tr-empty          .tr-empty{display:grid}          cao 220px
+
+   Cả ba đều mang `hidden` đúng lúc, và cả ba đều hiện ra suốt. Ô "Chưa có
+   kết quả trong khoảng đã chọn" nằm lì dưới trang kể cả khi đang hiện 30 kỳ,
+   với dòng giải thích rỗng — người xem không hiểu nó là gì.
+
+   Đây là lỗi có từ trước với hai phần tử đầu; `#tr-more` là tôi thêm vào và
+   thừa hưởng đúng khiếm khuyết ấy. Phép kiểm của tôi không bắt được vì chúng
+   soi THUỘC TÍNH `hidden` chứ không soi thứ người dùng THẤY.
+
+   Một dòng chặn cả lớp lỗi này, cho mọi phần tử hiện có lẫn sau này. */
+[hidden]{display:none!important}
+
 .tr-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
 margin-bottom:24px;padding:32px;border:1px solid rgba(255,255,255,.16);border-radius:24px;
 background:linear-gradient(135deg,#312e81 0%,#4338ca 52%,#6d28d9 100%);
@@ -21,16 +42,20 @@ background:var(--vla-surface);box-shadow:var(--vla-sh-sm)}
 .tr-filter h2{margin:3px 0 0;font-size:20px}.tr-section-kicker{color:var(--vla-brand)!important;margin:0}
 .tr-source-status{margin:0;max-width:520px;text-align:right;color:var(--vla-ink-soft);font-size:12px}
 .tr-source-status[data-state="error"]{color:var(--vla-bad)}
-.tr-form{display:grid;grid-template-columns:minmax(210px,.9fr) minmax(260px,1.2fr) auto;
-gap:16px;align-items:end}
+/* Flex chứ không phải lưới cố định ba cột: ô chọn ngày chỉ hiện ở chế độ
+   "Chọn khoảng ngày", nên số phần tử trong hàng thay đổi. Lưới ba cột dồn hai
+   phần tử còn lại vào cột 1-2 và kéo giãn méo mó — đo được ô chọn rộng 554px
+   và cụm nút 739px khi ẩn ô ngày. */
+.tr-form{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end}
+.tr-form>label{flex:0 1 240px;min-width:190px}
 .tr-form label{display:grid;gap:7px;color:var(--vla-ink-soft);font-size:12px;font-weight:700}
 .tr-form select,.tr-form input[type=date]{width:100%;height:44px;padding:0 12px;
 border:1px solid var(--vla-border-strong);border-radius:12px;background:var(--vla-surface-2);
 color:var(--vla-ink);font:inherit;font-weight:600;outline:none}
 .tr-form select:focus,.tr-form input[type=date]:focus{border-color:var(--vla-brand);
 box-shadow:0 0 0 3px var(--vla-brand-soft)}
-.tr-custom-dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tr-custom-dates{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1 1 300px;min-width:0}
+.tr-actions{display:flex;gap:8px;flex-wrap:wrap;flex:1 1 auto;justify-content:flex-end}
 .tr-btn{min-height:44px;padding:0 16px;border:1px solid var(--vla-border-strong);
 border-radius:12px;background:var(--vla-surface);color:var(--vla-ink-2);font:inherit;font-weight:800;cursor:pointer;
 transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
@@ -191,12 +216,17 @@ color:var(--vla-ink-2);font-size:12px;font-weight:800;font-variant-numeric:tabul
 .tr-more{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0 8px}
 .tr-more .tr-btn{min-width:240px}
 
-.tr-empty{display:grid;place-items:center;gap:4px;min-height:220px;padding:32px;border:1px dashed var(--vla-border-strong);
+/* `align-content:center` chứ không phải `place-items:center`: cái sau canh
+   giữa TỪNG HÀNG trong phần chia của nó, nên nhan đề và dòng giải thích bị
+   đẩy xa nhau cả trăm pixel trong khung cao 200px. */
+.tr-empty{display:grid;align-content:center;justify-items:center;gap:8px;
+min-height:200px;padding:32px;border:1px dashed var(--vla-border-strong);
 border-radius:20px;background:var(--vla-surface);text-align:center;color:var(--vla-ink-soft)}
 .tr-empty strong{color:var(--vla-ink);font-size:17px}
+.tr-empty span{max-width:46ch;line-height:1.5}
 
 @media (max-width:1400px){.tr-results[data-layout="4"]{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (max-width:1180px){.tr-form{grid-template-columns:1fr 1fr}.tr-actions{grid-column:1/-1}.tr-custom-dates{min-width:0}
+@media (max-width:1180px){.tr-actions{flex:1 1 100%;justify-content:flex-start}
 .tr-results[data-layout="3"],.tr-results[data-layout="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){.tr-day-grid{grid-template-columns:1fr}
 .tr-summary{grid-template-columns:1fr 1fr}}
@@ -204,7 +234,7 @@ border-radius:20px;background:var(--vla-surface);text-align:center;color:var(--v
 .tr-results[data-layout="4"]{grid-template-columns:1fr}}
 @media (max-width:640px){.tr-hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:18px}
 .tr-trust{width:100%}.tr-filter{padding:18px}.tr-filter-head{display:grid}.tr-source-status{text-align:left}
-.tr-form{grid-template-columns:1fr}.tr-custom-dates{grid-template-columns:1fr 1fr}.tr-actions{grid-column:auto}.tr-btn{flex:1 1 auto}
+.tr-form>label,.tr-custom-dates{flex:1 1 100%}.tr-custom-dates{grid-template-columns:1fr 1fr}.tr-btn{flex:1 1 auto}
 .tr-view-options{gap:10px 16px}.tr-chips legend{float:none;width:100%;line-height:1.4;margin:0 0 4px}
 .tr-summary{grid-template-columns:1fr 1fr;gap:8px}.tr-summary>div{padding:12px}.tr-summary strong{font-size:18px}
 .tr-day-head{align-items:flex-start;padding:14px 16px}.tr-day-title h2{font-size:15px}.tr-badge{font-size:10px}

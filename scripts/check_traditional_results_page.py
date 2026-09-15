@@ -188,7 +188,12 @@ def main() -> int:
             state = page.evaluate(
                 "() => ({ selected: Number(document.getElementById('tr-result-count').textContent),"
                 " rendered: document.querySelectorAll('.tr-day').length,"
-                " more: !document.getElementById('tr-more').hidden })"
+                # Soi thứ NHÌN THẤY, không soi thuộc tính. `hidden` chỉ ẩn được
+                # nhờ `display:none` mặc định của trình duyệt, và bất kỳ quy tắc
+                # `display` nào của tác giả cũng thắng nó — đúng lỗi đã để ô
+                # "Chưa có kết quả" nằm lì dưới trang suốt.
+                " more: getComputedStyle(document.getElementById('tr-more'))"
+                "   .display !== 'none' })"
             )
             print(f"  mốc {preset:>4} -> chọn {state['selected']} kỳ, "
                   f"dựng {state['rendered']}, còn nút xem thêm: {state['more']}")
@@ -214,6 +219,39 @@ def main() -> int:
         print(f"  nút xem thêm: {before} -> {after} thẻ")
         if after != before + 100:
             failures.append(f"nút xem thêm dựng {after - before} thẻ, mong đợi 100")
+        # --- 4b. `hidden` phải THẬT SỰ ẩn -----------------------------------
+        #
+        # Thuộc tính `hidden` chỉ ẩn nhờ một dòng `display:none` trong biểu
+        # định kiểu mặc định của trình duyệt, và BẤT KỲ quy tắc `display` nào
+        # của tác giả cũng thắng nó. Ba phần tử của trang từng rơi vào bẫy ấy:
+        # ô chọn ngày (70px), nút xem thêm (56px) và ô "Chưa có kết quả"
+        # (220px) — cả ba mang `hidden` đúng lúc và cả ba hiện ra suốt.
+        #
+        # Quét ở MỌI trạng thái dưới đây, vì phần tử nào mang `hidden` còn tuỳ
+        # bộ lọc đang chọn.
+        leaked: list[str] = []
+        for setup in (
+            "p.value = '30'",
+            "p.value = 'all'",
+            "p.value = 'custom'",
+        ):
+            page.evaluate(
+                "(code) => { const p = document.getElementById('tr-period');"
+                " eval(code); p.dispatchEvent(new Event('change', {bubbles: true})); }",
+                setup,
+            )
+            page.wait_for_timeout(250)
+            leaked += page.evaluate(
+                "(label) => [...document.querySelectorAll('[hidden]')]"
+                "  .filter(e => getComputedStyle(e).display !== 'none')"
+                "  .map(e => `${label}: #${e.id || e.className} vẫn hiện"
+                " (${Math.round(e.getBoundingClientRect().height)}px)`)",
+                setup,
+            )
+        if leaked:
+            failures.extend(leaked)
+        print("  mọi phần tử mang `hidden` đều thật sự bị ẩn ở 3 trạng thái bộ lọc")
+
         # --- 5. Bảng lô tô theo đầu ----------------------------------------
         #
         # Trả TOÀN BỘ trạng thái về mặc định trước: phép quét ở trên kết thúc
