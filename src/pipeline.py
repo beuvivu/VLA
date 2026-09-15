@@ -360,6 +360,11 @@ def main() -> None:
         )
         _run(_py("src/build_docs_ml.py"), allow_fail=soft_fail)
         _run(_py("src/build_dashboard.py"), allow_fail=soft_fail)
+        # Chẩn đoán trước, dựng trang sau: trang Chất lượng mô hình đọc thẳng
+        # `data/model_quality/report.json` nên đảo thứ tự sẽ xuất bản báo cáo
+        # của ngày hôm trước mà không có dấu hiệu gì.
+        _run(_py("src/model_quality.py"), allow_fail=soft_fail)
+        _run(_py("src/build_model_quality.py"), allow_fail=soft_fail)
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)

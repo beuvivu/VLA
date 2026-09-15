@@ -240,23 +240,33 @@ def _quality_headers(page: Path) -> list[str]:
     return [th.get_text(strip=True) for th in table.find_all("th")] if table else []
 
 
-def _build_quality_page(docs_dir: Path) -> list[str]:
-    """Dựng trang chất lượng vào ``docs_dir`` rồi đọc tiêu đề cột.
-
-    Args:
-        docs_dir: Thư mục đầu ra, nên là thư mục tạm.
-
-    Returns:
-        Danh sách nhãn cột.
+def _build_quality_page(docs_dir: Path) -> str:
+    """Dựng trang chất lượng vào ``docs_dir`` rồi trả về HTML của nó.
 
     Dựng thẳng vào docs/ của kho thì mỗi lần chạy pytest là cây làm việc bẩn.
     """
+    # Trang đã tách khỏi build_dashboard: chẩn đoán chạy trước, dựng trang sau.
+    # Chẩn đoán phải ghi vào thư mục dữ liệu TẠM, nếu không nó đè
+    # data/model_quality/report.json của kho bằng số liệu giả của phép kiểm.
+    data_dir = docs_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    for relative in ("prob_eval/ensemble_history.csv", "history/pred_loto.csv",
+                     "history/pred_de.csv", "ensemble/weights_loto.json",
+                     "ensemble/weights_de.json"):
+        source = ROOT / "data" / relative
+        target = data_dir / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(source.read_bytes())
     subprocess.run(
-        [sys.executable, "src/build_dashboard.py", "--docs-dir", str(docs_dir)],
-        cwd=ROOT,
-        check=True,
+        [sys.executable, "src/model_quality.py", "--data-dir", str(data_dir)],
+        cwd=ROOT, check=True,
     )
-    return _quality_headers(docs_dir / "model-quality.html")
+    subprocess.run(
+        [sys.executable, "src/build_model_quality.py",
+         "--data-dir", str(data_dir), "--docs-dir", str(docs_dir)],
+        cwd=ROOT, check=True,
+    )
+    return (docs_dir / "model-quality.html").read_text(encoding="utf-8")
 
 
 def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path) -> None:
@@ -281,15 +291,17 @@ def test_quality_page_shows_skill_only_when_the_data_supports_it(tmp_path: Path)
         ]
         frame["brier_skill"] = 0.0
         frame.to_csv(history, index=False)
-        headers = _build_quality_page(tmp_path)
-        assert any("Kỹ năng" in h for h in headers), headers
-        assert any("đường cơ sở" in h for h in headers), headers
+        page = _build_quality_page(tmp_path / "co-doi-chung")
+        assert "Kỹ năng theo thời gian" in page
+        assert "Chưa đủ lịch sử" not in page
 
-        # Không có đối chứng thì trang phải dựng được và lùi về bốn cột.
-        stripped = frame.drop(columns=list(BASELINE_COLUMNS))
-        stripped.to_csv(history, index=False)
-        headers = _build_quality_page(tmp_path)
-        assert not any("Kỹ năng" in h for h in headers), headers
+        # Không có đối chứng thì trang phải DỰNG ĐƯỢC và nói rõ là chưa đủ dữ
+        # liệu, chứ không vỡ. Trang chẩn đoán mà sập khi thiếu một cột thì
+        # đúng lúc cần nhất lại là lúc không có gì để đọc.
+        frame.drop(columns=list(BASELINE_COLUMNS)).to_csv(history, index=False)
+        page = _build_quality_page(tmp_path / "thieu-doi-chung")
+        assert "Chưa đủ lịch sử" in page
+        assert "Độ phân giải" in page, "phần phân rã không phụ thuộc đối chứng"
     finally:
         # Chỉ trả lại tệp lịch sử. Trước đây còn dựng lại docs/ ở đây để dọn
         # trang đã sinh từ dữ liệu giả — nhưng nay bản dựng đi vào thư mục tạm

@@ -8,6 +8,8 @@
 radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
 
 --ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+
+--ui-chart-1:#4f46e5;
 --ui-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
 
 --ui-on-brand:#ffffff;
@@ -54,6 +56,7 @@ src:url("InterVariable.woff2") format("woff2-variations");
 --ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
 --ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
 --ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-chart-1:#7b83ee;
 --ui-on-brand:#0f172a;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
@@ -71,6 +74,7 @@ color-scheme:dark;
 --ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
 --ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
 --ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-chart-1:#7b83ee;
 --ui-on-brand:#0f172a;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;

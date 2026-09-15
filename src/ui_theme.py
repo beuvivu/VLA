@@ -49,6 +49,12 @@ radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
    hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
    --ui-ok/warn/bad và ở các thang nhiệt của từng trang. */
 --ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+/* Màu ĐÁNH DẤU DỮ LIỆU của biểu đồ, tách khỏi --ui-brand.
+Dải sáng của nền tối yêu cầu OKLCH L trong khoảng 0,48-0,67 để nét mảnh còn
+đọc được; --ui-brand ở nền tối là #8b93f8 với L=0,70, nằm ngoài dải. Dùng
+chung một token thì hoặc hỏng nhãn hiệu, hoặc hỏng biểu đồ. Cả hai bước dưới
+đây đã qua bộ kiểm dải sáng, sàn sắc độ và tương phản với nền tương ứng. */
+--ui-chart-1:#4f46e5;
 --ui-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
 /* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --ui-brand: ở chế
 độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
@@ -116,6 +122,7 @@ tính nào lên thẻ gốc. */
 --ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
 --ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
 --ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-chart-1:#7b83ee;
 --ui-on-brand:#0f172a;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
@@ -133,6 +140,7 @@ color-scheme:dark;
 --ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
 --ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
 --ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-chart-1:#7b83ee;
 --ui-on-brand:#0f172a;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;

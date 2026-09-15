@@ -167,6 +167,13 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
         cwd=ROOT,
         check=True,
     )
+    # Trang Chất lượng mô hình đã tách sang builder riêng. Nó chỉ ĐỌC báo cáo
+    # chẩn đoán sẵn có trong data/ và ghi vào thư mục tạm, nên không làm bẩn kho.
+    subprocess.run(
+        [sys.executable, "src/build_model_quality.py", "--docs-dir", str(tmp_path)],
+        cwd=ROOT,
+        check=True,
+    )
 
     for name in ("dashboard.html", "model-quality.html"):
         page = tmp_path / name
