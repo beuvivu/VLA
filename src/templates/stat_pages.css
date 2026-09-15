@@ -101,11 +101,17 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   background: #FFE4E6; border: 1px solid #FDA4AF;
 }
 
-/* --- Đánh dấu ô để so sánh ----------------------------------------------- */
-.sp-table td.cell { cursor: pointer; }
-.sp-table td.cell:hover { outline: 2px solid rgba(124, 58, 237, .35); outline-offset: -2px; }
-.sp-table td.marked {
+/* --- Đánh dấu ô để so sánh -----------------------------------------------
+   `th` cũng nằm trong danh sách: ở chiều dọc, CON SỐ là tiêu đề cột chứ không
+   phải nhãn hàng, nên bỏ `th` ra là bỏ luôn thứ người dùng bấm vào. */
+.sp-table td.cell,
+.sp-table th.cell { cursor: pointer; }
+.sp-table td.cell:hover,
+.sp-table th.cell:hover { outline: 2px solid rgba(124, 58, 237, .35); outline-offset: -2px; }
+.sp-table td.marked,
+.sp-table th.marked {
   background: #fde68a !important;
+  color: #78350f !important;
   box-shadow: inset 0 0 0 2px #d97706;
   font-weight: 800;
 }
@@ -122,7 +128,9 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   /* Vẫn đỏ ở chế độ tối, chỉ đổi sắc độ cho hợp nền: #FDA4AF trên #4C0519
      đo được 8,27:1. Giữ nguyên #BE123C ở đây thì chữ chìm hẳn (2,49:1). */
   .sp-de b { color: #FDA4AF; background: #4C0519; border-color: #9F1239; }
-  .sp-table td.marked { background: #78350f !important; box-shadow: inset 0 0 0 2px #f59e0b; }
+  .sp-table td.marked,
+  .sp-table th.marked { background: #78350f !important; color: #fef3c7 !important;
+    box-shadow: inset 0 0 0 2px #f59e0b; }
   .sp-table td.marked .sp-de,
   .sp-table td.marked .sp-de b { color: #fef3c7; }
 }

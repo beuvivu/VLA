@@ -283,3 +283,67 @@ def test_the_matrix_does_not_touch_the_frame_it_sits_in() -> None:
     assert "padding-bottom" in rule, rule
     # Đệm NGANG sẽ đẩy mốc `sticky` lệch khỏi cạnh khung.
     assert "padding-left" not in rule and "padding:" not in rule, rule
+
+
+def test_the_number_is_clickable_in_both_orientations() -> None:
+    """Bố cục hai chiều BẤT ĐỐI XỨNG, và đó là chỗ lỗi nằm.
+
+    Cùng một con số:
+
+        chiều ngang  -> nhãn HÀNG   -> <td class="cell">  bấm được
+        chiều dọc    -> tiêu đề CỘT -> <th> trần          KHÔNG bấm được
+
+    Trình xử lý khớp `closest("td.cell")` nên `<th>` không bao giờ trúng.
+    Người dùng thấy đúng thế: bấm số ở chiều ngang thì đổi màu, ở chiều dọc
+    thì không.
+
+    Phép kiểm trước của tôi bấm vào Ô DỮ LIỆU chứ không bấm vào CON SỐ, nên
+    nó xanh trong khi lỗi còn nguyên — một phép kiểm đo sai thứ thì tệ hơn
+    không có, vì nó cấp giấy chứng nhận cho một bản vá chưa xong.
+    """
+    # Soi TRONG THÂN `table()`, không soi cả tệp. Chuỗi "opts.headKey" còn xuất
+    # hiện ở các hàm dựng ma trận, nên một phép kiểm soi cả tệp vẫn xanh khi
+    # `table()` bị đổi thành `const headKey = null` — tức lỗi gốc được khôi
+    # phục nguyên vẹn mà bộ kiểm cấp giấy chứng nhận. Đột biến đã bắt đúng
+    # chỗ ấy ở vòng đầu.
+    builder = _block(JS_CODE, "function table(")
+    assert "opts.headKey && opts.headKey(i)" in builder, builder[:400]
+    assert 'data-key="${headKey}"' in builder, builder[:400]
+    assert '<th class="cell' in builder, builder[:400]
+    assert 'closest("td.cell, th.cell")' in JS_CODE, "trình xử lý phải nhận cả th"
+    assert 'querySelectorAll("td.cell, th.cell")' in JS_CODE, "paintMarks phải quét cả th"
+    for name in ("renderLotoMatrix", "renderPairMatrix"):
+        block = _block(JS_CODE, f"function {name}")
+        vertical, horizontal = block.split("} else {")
+        for branch, side in ((vertical, "dọc"), (horizontal, "ngang")):
+            assert "headKey" in branch, (name, side)
+
+
+def test_a_number_keeps_one_identity_whichever_axis_it_sits_on() -> None:
+    """Con số phải mang CÙNG khoá dù nó là nhãn hàng hay tiêu đề cột.
+
+    Khác khoá thì đánh dấu ở chiều này sẽ không sáng ở chiều kia, và người
+    dùng lại thấy "mất dấu khi đổi chiều".
+    """
+    loto = _block(JS_CODE, "function renderLotoMatrix")
+    vertical, horizontal = loto.split("} else {")
+    # Chiều dọc: số là TIÊU ĐỀ. Chiều ngang: số là NHÃN HÀNG. Cùng dạng `m|n..`.
+    assert re.search(r"headKey = \(i\) => \(i === 0 \? null : `m\|n\$\{pad2\(nums\[i - 1\]\)\}`\)",
+                     vertical), vertical
+    assert re.search(r"i === 0\s*\n?\s*\?\s*`m\|n\$\{pad2\(nums\[y\]\)\}`", horizontal), horizontal
+    pair = _block(JS_CODE, "function renderPairMatrix")
+    vertical, horizontal = pair.split("} else {")
+    assert "`p|c${label(CAP50[i - 1])}`" in vertical, vertical
+    assert "`p|c${label(CAP50[y])}`" in horizontal, horizontal
+
+
+def test_a_marked_header_actually_changes_colour() -> None:
+    """Gắn được lớp `marked` mà không có quy tắc cho `th` thì vẫn không đổi màu.
+
+    `th` có nền riêng (`var(--ui-surface-2)`), nên một quy tắc chỉ nhắm `td`
+    sẽ bị nền ấy đè và người dùng vẫn thấy "bấm không lên màu".
+    """
+    css = _without_media(CSS_CODE)
+    rule = _block(css, ".sp-table td.marked,")
+    assert "th.marked" in rule, rule
+    assert "!important" in rule, rule

@@ -315,7 +315,22 @@ function lastTwo(value) {
 /** Dựng bảng từ tiêu đề và các hàng. */
 function table(el, headers, rows, opts) {
   opts = opts || {};
-  const thead = "<thead><tr>" + headers.map((h) => `<th>${h}</th>`).join("") + "</tr></thead>";
+  // Tiêu đề cột cũng phải ĐÁNH DẤU ĐƯỢC.
+  //
+  // Bố cục hai chiều là bất đối xứng: cùng một con số, ở chiều ngang nó là
+  // NHÃN HÀNG (`<td class="cell">`, bấm được), còn ở chiều dọc nó là TIÊU ĐỀ
+  // CỘT (`<th>` trần, không class, không khoá). Trình xử lý khớp
+  // `closest("td.cell")` nên `<th>` không bao giờ trúng — và người dùng thấy
+  // đúng thế: bấm vào số ở chiều ngang thì ăn, ở chiều dọc thì không.
+  //
+  // Khoá của tiêu đề dùng CÙNG lược đồ danh tính với nhãn hàng, nên một con
+  // số đánh dấu ở chiều này vẫn sáng khi đổi sang chiều kia.
+  const thead = "<thead><tr>" + headers.map((h, i) => {
+    const headKey = opts.headKey && opts.headKey(i);
+    if (!headKey) return `<th>${h}</th>`;
+    const on = MARKS.has(headKey) ? " marked" : "";
+    return `<th class="cell${on}" data-key="${headKey}">${h}</th>`;
+  }).join("") + "</tr></thead>";
   const body = rows.map((r, y) =>
     "<tr>" + r.map((c, i) => {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
@@ -466,7 +481,7 @@ function isMarked(td) {
 }
 
 function paintMarks() {
-  document.querySelectorAll("td.cell").forEach((td) => {
+  document.querySelectorAll("td.cell, th.cell").forEach((td) => {
     td.classList.toggle("marked", isMarked(td));
   });
   updateMarkCount();
@@ -489,7 +504,7 @@ function toggleMark(td) {
 
 function bindMarking() {
   document.addEventListener("click", (ev) => {
-    const td = ev.target.closest("td.cell");
+    const td = ev.target.closest("td.cell, th.cell");
     if (!td || !td.dataset.key) return;
     toggleMark(td);
     saveMarks();
@@ -671,6 +686,8 @@ function renderLotoMatrix(rows) {
     opts.key = (y, i) => (i === 0
       ? `m|d${byDate[y].d}`
       : `m|n${pad2(nums[i - 1])}|d${byDate[y].d}`);
+    // Chiều dọc: tiêu đề cột LÀ con số. Cùng khoá với nhãn hàng ở chiều ngang.
+    opts.headKey = (i) => (i === 0 ? null : `m|n${pad2(nums[i - 1])}`);
     table(grid, head, body, opts);
   } else {
     const head = ["Số"].concat(byDate.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`));
@@ -679,6 +696,8 @@ function renderLotoMatrix(rows) {
     opts.key = (y, i) => (i === 0
       ? `m|n${pad2(nums[y])}`
       : `m|n${pad2(nums[y])}|d${byDate[i - 1].d}`);
+    // Chiều ngang: tiêu đề cột là NGÀY. Cùng khoá với nhãn hàng ở chiều dọc.
+    opts.headKey = (i) => (i === 0 ? null : `m|d${byDate[i - 1].d}`);
     table(grid, head, body, opts);
   }
   renderNhayLegend(grid);
@@ -831,16 +850,20 @@ function renderPairMatrix(rows) {
   if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
     table(grid, ["Ngày"].concat(CAP50.map(label)),
       byDate.map((r) => [`<b>${r.t}</b>`].concat(r.c.map((v) => v || ""))),
-      { pending: pendingAt, key: (y, i) => (i === 0
-        ? `p|d${byDate[y].d}`
-        : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
+      { pending: pendingAt,
+        headKey: (i) => (i === 0 ? null : `p|c${label(CAP50[i - 1])}`),
+        key: (y, i) => (i === 0
+          ? `p|d${byDate[y].d}`
+          : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
   } else {
     table(grid, ["Cặp"].concat(byDate.map((r) => r.t)),
       CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
         .concat(byDate.map((r) => r.c[j] || ""))),
-      { pending: pendingAt, key: (y, i) => (i === 0
-        ? `p|c${label(CAP50[y])}`
-        : `p|c${label(CAP50[y])}|d${byDate[i - 1].d}`) });
+      { pending: pendingAt,
+        headKey: (i) => (i === 0 ? null : `p|d${byDate[i - 1].d}`),
+        key: (y, i) => (i === 0
+          ? `p|c${label(CAP50[y])}`
+          : `p|c${label(CAP50[y])}|d${byDate[i - 1].d}`) });
   }
 }
 
