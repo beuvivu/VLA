@@ -508,7 +508,8 @@ height:18px}
 .ui-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
 top:-18px;bottom:-6px;z-index:-1}
 .ui-dock-group:hover .ui-dock-pop,
-.ui-dock-group:focus-within .ui-dock-pop{
+.ui-dock-group:focus-within .ui-dock-pop,
+.ui-dock-group.ui-open .ui-dock-pop{
 opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);
 transition-delay:0s,0s,0s}
 .ui-dock-pop a{display:flex;align-items:center;gap:var(--s1);
@@ -518,19 +519,68 @@ color:var(--ui-ink-2);font-size:13px;white-space:nowrap}
 .ui-dock-pop a[aria-current="page"]{background:var(--ui-brand-soft);
 color:var(--ui-brand-ink);font-weight:600}
 
+/* MÀN HẸP: dock không được cuộn ngang, và menu con neo vào CẢ DẢI DOCK.
+   ========================================================================
+   Hai lỗi chồng lên nhau khiến dock chết hẳn trên điện thoại.
+
+   Lỗi 1 — menu lòi ra ngoài viền. Menu rộng cố định 220px canh giữa theo nút
+   của nó. Máy bàn thì dock nằm giữa màn rộng nên không sao; điện thoại thì
+   dock chiếm gần trọn bề ngang, nên các nhóm ở HAI ĐẦU đẩy menu ra ngoài:
+
+       390px   3/7 nhóm hỏng   #0 lòi trái 63px · #1 lòi trái 19px · #6 lòi phải 31px
+       360px   4/7 nhóm hỏng   thêm #5 lòi phải 17px, #6 thành 61px
+
+   Lỗi 2 — KHÔNG ô nào chạm tới được, kể cả ô nằm gọn trong màn. Đo được 0/9
+   liên kết nhận cú chạm trên điện thoại trong khi máy bàn 9/9. Nguyên nhân
+   là `.ui-dock-inner` cũ mang `overflow-x:auto`: hộp cuộn CẮT mọi hậu duệ
+   nằm ngoài nó, mà inner chỉ cao 54px còn menu bung lên phía trên. Menu bị
+   xén sạch — `elementFromPoint` giữa menu trả về nội dung trang chứ không
+   phải liên kết, dù computed style vẫn báo `visibility:visible`.
+
+   `position:fixed` KHÔNG thoát ra được: `.ui-dock-inner` có `backdrop-filter`,
+   mà backdrop-filter biến phần tử thành khối chứa cho cả hậu duệ `fixed`. Đo
+   để chắc: tắt riêng `backdrop-filter` → chạm được; tắt riêng `overflow-x` →
+   cũng chạm được; để cả hai → không. Phải gỡ đúng một trong hai, và gỡ hộp
+   cuộn mới là gỡ đúng gốc.
+
+   Nên bỏ hẳn cuộn ngang: cho mỗi nhóm `flex:1 1 0` để N nhóm luôn vừa khít
+   bề ngang. Không còn ngữ cảnh cắt thì menu chỉ cần `absolute` lấy
+   `.ui-dock-inner` làm gốc toạ độ rồi căng `left:0;right:0` — hết cả hai lỗi
+   bằng cùng một thay đổi. Cuộn ngang với thanh cuộn ẩn vốn cũng là cách điều
+   hướng tồi trên màn cảm ứng: không có gì báo rằng còn nhóm phía sau. */
+@media (max-width:640px){
+.ui-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
+.ui-dock-inner{justify-content:space-between;gap:2px;padding:6px;
+border-radius:var(--r-card)}
+.ui-dock-group{position:static;flex:1 1 0;min-width:0}
+.ui-dock-btn{width:100%}
+.ui-dock-ic{width:100%;max-width:40px;margin-left:auto;margin-right:auto}
+/* Màn cảm ứng không có trạng thái hover để hiện tooltip, mà tên nhóm đã nằm
+sẵn trong menu con. */
+.ui-dock-name{display:none}
+.ui-dock-pop{position:absolute;left:0;right:0;min-width:0;
+transform:translateY(6px);max-height:min(60vh,420px);overflow-y:auto}
+/* Trên màn cảm ứng, MỘT CÚ CHẠM phải mở và cú chạm thứ hai phải đóng. Nhưng
+chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu mở mãi
+và cú chạm thứ hai không đóng được gì. Ở màn hẹp, chỉ `.ui-open` (do kịch bản
+đặt) mới là công tắc. Có `.ui-js` đứng đầu để khi không có JavaScript thì
+`:focus-within` của quy tắc gốc vẫn còn tác dụng. */
+.ui-js .ui-dock-group:hover .ui-dock-pop,
+.ui-js .ui-dock-group:focus-within .ui-dock-pop{
+opacity:0;visibility:hidden;pointer-events:none;transform:translateY(6px)}
+.ui-js .ui-dock-group.ui-open .ui-dock-pop,
+.ui-dock-group.ui-open .ui-dock-pop{
+opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
+/* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn cảm
+ứng không có hover, còn `z-index:-1` của vùng đệm lại đẩy nó xuống dưới dải
+dock nên nó nuốt mất cú chạm ở rìa nút. */
+.ui-dock-pop::after{content:none}
+.ui-dock-group::after{content:none}
+}
+
 /* Dock che mất phần cuối trang nếu không chừa chỗ. */
 .ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
 
-@media (max-width:640px){
-.ui-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
-.ui-dock-inner{overflow-x:auto;justify-content:flex-start;
-scrollbar-width:none;border-radius:var(--r-card)}
-.ui-dock-inner::-webkit-scrollbar{display:none}
-.ui-dock-btn{width:auto}
-/* Thanh cuộn ngang tạo ngữ cảnh cắt, nên tooltip nổi phía trên sẽ bị xén mất
-nửa trên. Ẩn hẳn: màn cảm ứng không có trạng thái hover để hiện nó. */
-.ui-dock-name{display:none}
-}
 @media (prefers-reduced-motion:reduce){
 .ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
 .ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{transform:none}
@@ -771,6 +821,54 @@ def stylesheet_link() -> str:
     return f'<link rel="stylesheet" href="{STYLESHEET_NAME}" />'
 
 
+def dock_script(prefix: str = "ui-dock") -> str:
+    """Kịch bản điều khiển dock, nhúng thẳng vào trang.
+
+    Dock vốn chỉ mở bằng ``:hover``/``:focus-within``. Màn cảm ứng KHÔNG CÓ
+    hover, còn ``:focus-within`` thì mở được nhưng không đóng được: chạm lần
+    hai vào nút chẳng thay đổi gì vì nút vẫn đang giữ focus. Vậy nên cần một
+    công tắc tường minh — lớp ``ui-open`` — dùng chung cho chạm và bàn phím.
+
+    Kịch bản cũng gắn ``ui-js`` lên ``<html>``. Biểu định kiểu dựa vào lớp đó
+    để chỉ tắt ``:focus-within`` KHI có JavaScript; không có JavaScript thì
+    hành vi cũ vẫn còn, tốt hơn là chẳng còn gì.
+
+    Kèm theo là ``aria-expanded``: nút mang ``aria-haspopup`` mà không báo
+    trạng thái đóng/mở thì trình đọc màn hình không biết menu đang ra sao.
+
+    Args:
+        prefix: Tiền tố lớp của dock — ``ui-dock`` cho khung dùng chung,
+            ``dock`` cho dock riêng của trang chủ.
+
+    Returns:
+        Thẻ ``<script>`` đã đóng gói.
+    """
+    root, group, btn = f".{prefix}", f".{prefix}-group", f".{prefix}-btn"
+    return (
+        "<script>(function(){"
+        f'var d=document.querySelector("{root}");if(!d)return;'
+        'document.documentElement.classList.add("ui-js");'
+        f'var gs=Array.prototype.slice.call(d.querySelectorAll("{group}"));'
+        'function set(g,o){g.classList.toggle("ui-open",o);'
+        f'var b=g.querySelector("{btn}");'
+        'if(b)b.setAttribute("aria-expanded",o?"true":"false")}'
+        "function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}"
+        'd.addEventListener("click",function(e){'
+        f'var b=e.target.closest&&e.target.closest("{btn}");if(!b)return;'
+        f'var g=b.closest("{group}");if(!g)return;'
+        'var o=!g.classList.contains("ui-open");shut(g);set(g,o)});'
+        'document.addEventListener("click",function(e){'
+        f'if(!(e.target.closest&&e.target.closest("{root}")))shut(null)}});'
+        'document.addEventListener("keydown",function(e){'
+        'if(e.key!=="Escape")return;'
+        f'var g=d.querySelector("{group}.ui-open");if(!g)return;'
+        f'var b=g.querySelector("{btn}");shut(null);if(b)b.focus()}});'
+        'd.addEventListener("focusout",function(e){'
+        "if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})"
+        "})();</script>"
+    )
+
+
 def dock(current: str = "") -> str:
     """Dựng dock điều hướng nổi ở giữa chân trang.
 
@@ -799,7 +897,8 @@ def dock(current: str = "") -> str:
         parts.append('<div class="ui-dock-group">')
         parts.append(
             f'<button class="ui-dock-btn" type="button"{active}'
-            f' aria-haspopup="true" aria-controls="{group_id}">'
+            f' aria-haspopup="true" aria-expanded="false"'
+            f' aria-controls="{group_id}">'
             f'<span class="ui-dock-ic" aria-hidden="true">{icon}</span>'
             f'<span class="ui-dock-name">{html.escape(group)}</span>'
             "</button>"
@@ -814,6 +913,7 @@ def dock(current: str = "") -> str:
             )
         parts.append("</div></div>")
     parts.append("</div></nav>")
+    parts.append(dock_script())
     return "".join(parts)
 
 

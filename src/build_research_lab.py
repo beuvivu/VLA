@@ -8,7 +8,6 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from bs4 import BeautifulSoup
 
 from ui_locale import mode_label, strategy_label
 from ui_theme import (
@@ -224,23 +223,6 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
     return "".join(rows)
 
 
-def _inject_link(path: Path) -> None:
-    if not path.exists() or path.stat().st_size == 0:
-        return
-    soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-    if soup.find(id="research-lab-link") is not None or soup.body is None:
-        return
-    link = soup.new_tag("a", href="research-lab.html", id="research-lab-link")
-    link.string = "🧪 Phòng nghiên cứu"
-    link["style"] = (
-        "position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;"
-        "border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;"
-        "font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)"
-    )
-    soup.body.append(link)
-    path.write_text(str(soup), encoding="utf-8")
-
-
 def build(data_dir: Path, docs_dir: Path) -> Path:
     research = data_dir / "research"
     desc = data_dir / "descriptive_ext"
@@ -382,15 +364,14 @@ font-variant-numeric:tabular-nums}}
     write_stylesheet(docs_dir)
     out = docs_dir / "research-lab.html"
     write_page(out, page)
-    for name in (
-        "index.html",
-        "landing.html",
-        "landing_desktop.html",
-        "statistics.html",
-        "dashboard.html",
-        "model-quality.html",
-    ):
-        _inject_link(docs_dir / name)
+    # Trước đây mỗi trang trên đây bị chèn thêm một "viên thuốc" nổi
+    # `#research-lab-link` ở `right:16px;bottom:16px;z-index:9999`. Trên máy
+    # bàn dock nằm giữa màn nên không đụng nhau; trên điện thoại dock căng
+    # hết bề ngang, và viên thuốc đè đúng lên nút nhóm cuối cùng — đo được nó
+    # CHẶN HẲN cú chạm vào nút đó, trình duyệt báo "intercepts pointer
+    # events". Mà `research-lab.html` vốn đã nằm trong SITE_NAV nên đã có sẵn
+    # trong menu con của mọi dock: viên thuốc chỉ là bản sao, đổi lấy việc
+    # làm hỏng điều hướng trên điện thoại.
     return out
 
 

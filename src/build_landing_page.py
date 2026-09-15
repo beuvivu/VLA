@@ -21,7 +21,7 @@ import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
-from ui_theme import SITE_NAV, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import SITE_NAV, dock_script, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -1077,6 +1077,7 @@ def _render_html(
        glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
        thanh vẫn tách khỏi nội dung phía sau. */
     .dock-inner {{
+      position: relative;
       display: flex; align-items: center; gap: 4px;
       padding: 6px 10px; border-radius: 999px;
       background: rgba(15, 23, 42, .30);
@@ -1154,7 +1155,8 @@ def _render_html(
       content: ""; position: absolute; left: -6px; right: -6px;
       top: -18px; bottom: -6px; z-index: -1;
     }}
-    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop {{
+    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop,
+    .dock-group.ui-open .dock-pop {{
       opacity: 1; visibility: visible; pointer-events: auto;
       transform: translateX(-50%) translateY(0);
       /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
@@ -1166,10 +1168,47 @@ def _render_html(
       white-space: nowrap; text-decoration: none;
     }}
     .dock-pop a:hover {{ background: #f1f5f9; }}
+    /* MÀN HẸP. `.dock-inner` từng mang `overflow-x: auto`, và một hộp cuộn
+       thì CẮT mọi hậu duệ nằm ngoài nó. Inner chỉ cao 54px còn menu con bung
+       lên phía trên, nên menu bị xén sạch: đo được 0/9 liên kết nhận được cú
+       chạm trên điện thoại trong khi máy bàn 9/9. `position: fixed` không
+       thoát ra được vì `backdrop-filter` của inner biến nó thành khối chứa
+       cho cả hậu duệ `fixed`. Bỏ hẳn cuộn ngang mới là gỡ đúng gốc: cho mỗi
+       nhóm `flex: 1 1 0` để N nhóm luôn vừa khít bề ngang, rồi căng menu
+       `left: 0; right: 0` theo cả dải dock. Cách này cũng xử lý luôn lỗi menu
+       rộng cố định 232px lòi ra ngoài viền ở các nhóm đầu và cuối. */
     @media (max-width: 640px) {{
       .dock {{ left: 16px; right: 16px; transform: none; max-width: none; }}
-      .dock-inner {{ overflow-x: auto; justify-content: flex-start; border-radius: 16px; }}
-      .dock-btn {{ min-width: 52px; }}
+      .dock-inner {{ justify-content: space-between; gap: 2px; padding: 6px;
+        border-radius: 16px; }}
+      .dock-group {{ position: static; flex: 1 1 0; min-width: 0; }}
+      .dock-btn {{ width: 100%; }}
+      .dock-ic {{ width: 100%; max-width: 40px; margin: 0 auto; }}
+      /* Màn cảm ứng không có hover để hiện tooltip, mà tên nhóm đã nằm sẵn
+         trong menu con. */
+      .dock-name {{ display: none; }}
+      .dock-pop {{ left: 0; right: 0; min-width: 0;
+        transform: translateY(6px);
+        max-height: min(60vh, 420px); overflow-y: auto; }}
+      /* Chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu
+         mở mãi và cú chạm thứ hai không đóng được gì. Ở màn hẹp chỉ `.ui-open`
+         (do kịch bản đặt) mới là công tắc. `.ui-js` đứng đầu để khi không có
+         JavaScript thì hành vi cũ vẫn còn. */
+      .ui-js .dock-group:hover .dock-pop,
+      .ui-js .dock-group:focus-within .dock-pop {{
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transform: translateY(6px);
+      }}
+      .ui-js .dock-group.ui-open .dock-pop,
+      .dock-group.ui-open .dock-pop {{
+        opacity: 1; visibility: visible; pointer-events: auto;
+        transform: translateY(0);
+      }}
+      /* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn
+         cảm ứng không có hover, còn `z-index: -1` của vùng đệm lại đẩy nó
+         xuống dưới dải dock nên nó nuốt mất cú chạm ở rìa nút. */
+      .dock-pop::after {{ content: none; }}
+      .dock-group::after {{ content: none; }}
     }}
     @media (prefers-reduced-motion: reduce) {{
       .dock-ic, .dock-pop {{ transition: none; }}
@@ -2599,7 +2638,6 @@ def _render_html(
     const firstSignal = document.querySelector('[data-number]');
     if (firstSignal) showNumber(firstSignal.dataset.mode || 'loto', firstSignal.dataset.number);
   </script>
-<a href="research-lab.html" id="research-lab-link" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:999px;background:#0f172a;color:#fff;text-decoration:none;font:700 12px/1.2 system-ui;box-shadow:0 10px 28px rgba(15,23,42,.25)">🧪 Phòng nghiên cứu</a>
 </body>
 </html>
 """
@@ -2636,7 +2674,7 @@ def _render_dock() -> str:
         parts.append('<div class="dock-group">')
         parts.append(
             f'<button class="dock-btn" type="button" aria-haspopup="true"'
-            f' aria-controls="{group_id}">'
+            f' aria-expanded="false" aria-controls="{group_id}">'
             f'<span class="dock-ic" aria-hidden="true">{icon}</span>'
             f'<span class="dock-name">{html.escape(group)}</span></button>'
         )
@@ -2649,6 +2687,7 @@ def _render_dock() -> str:
             )
         parts.append("</div></div>")
     parts.append("</div></nav>")
+    parts.append(dock_script("dock"))
     return "".join(parts)
 
 
