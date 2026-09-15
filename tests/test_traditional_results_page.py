@@ -213,7 +213,7 @@ def test_no_brand_name_or_removed_wording_survives_on_the_page() -> None:
 
 def test_the_information_boxes_use_the_requested_labels() -> None:
     html = render_page(embedded_payload(load_rows(ROOT, limit=3), generated="x"))
-    assert "Sổ KQ XSMB" in html
+    assert "SỔ KẾT QUẢ XSMB" in html
     assert "Dữ liệu máy chủ" in html
 
 

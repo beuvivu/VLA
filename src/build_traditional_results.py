@@ -216,7 +216,7 @@ def render_page(payload: dict[str, object]) -> str:
   </div>
   <div class="tr-trust" aria-label="Phạm vi dữ liệu">
     <span class="tr-status-dot" aria-hidden="true"></span>
-    <strong>Sổ KQ XSMB</strong><small>{payload.get("total_draws", 0)} kỳ đã lưu</small>
+    <strong>SỔ KẾT QUẢ XSMB</strong><small>{payload.get("total_draws", 0)} kỳ đã lưu</small>
   </div>
 </header>
 
