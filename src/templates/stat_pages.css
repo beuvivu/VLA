@@ -319,21 +319,43 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table.sp-grid-lines tr:last-child td:first-child { border-bottom-left-radius: .55rem; }
 .sp-table.sp-grid-lines tr:last-child td:last-child { border-bottom-right-radius: .55rem; }
 
-/* 2. BA TRẠNG THÁI Ô, phân biệt bằng BA dấu hiệu chứ không riêng màu ---------
+/* 2. BA TRẠNG THÁI Ô, phân biệt bằng ĐỘ SÁNG và ĐỘ NỔI -----------------------
 
    Trước đây ô trống và ô có về đứng trên cùng một nền trắng — đo được 1,00:1 —
    và chỉ khác nhau ở một vạch chéo vẽ bằng --ui-border (#E7EAF6). Mắt phải
    dò từng ô mới tách được hai loại, trên bảng 100x90 thì đó là mỏi mắt thật
    chứ không phải chuyện thẩm mỹ.
 
-   Nay: ô trống CHÌM (nền đặc xám + vạch chéo đậm gấp hơn hai lần), ô có về
-   NỔI (nền sáng + viền + bóng). Ba dấu hiệu cùng lúc: nền, vân, và độ nổi. */
+   Bản sau đó chữa bằng cách làm vạch chéo ĐẬM hơn. Nó tách được hai loại,
+   nhưng đổi một vấn đề mỏi mắt lấy một vấn đề mỏi mắt khác: phần lớn ô trong
+   ma trận là ô không về, nên màn hình đầy vạch chéo li ti.
+
+   Nay: ô không về PHẲNG và TỐI NHẤT bảng, ô có về sáng dần theo số nháy và
+   có viền + bóng mỏng. Thứ tự sáng-tối đọc được cả khi mù màu, mà không cần
+   vẽ thêm vân gì lên hàng nghìn ô. */
+/* Ô KHÔNG VỀ: một mảng phẳng, im lặng.
+   ------------------------------------------------------------------------
+   Bản trước dùng sọc chéo `repeating-linear-gradient`. Trên ma trận 100x120
+   thì phần lớn ô là ô không về, nên màn hình đầy những vạch chéo li ti — mắt
+   phải lọc chúng ra khỏi thứ đáng nhìn, và nhìn lâu thì mỏi.
+   Sọc ấy vốn để phân biệt được cả khi không nhận màu; vai trò đó nay do ĐỘ
+   SÁNG đảm nhiệm: ô không về là ô TỐI NHẤT bảng, ô có về thì sáng dần theo
+   số nháy. Thứ tự sáng-tối đọc được cả khi mù màu. */
 .sp-table td.is-empty {
-  background-color: #E2E8F0;
-  background-image: repeating-linear-gradient(
-    45deg, transparent, transparent 4px,
-    rgba(100, 116, 139, .38) 4px, rgba(100, 116, 139, .38) 6px);
+  background-color: #0B1220;
+  background-image: none;
   box-shadow: none;
+}
+/* Chế độ sáng cần giá trị RIÊNG, không phải chỉ đảo lại.
+   Thang màu ô có về (sp-n1..sp-n5) là màu SÁNG CỐ ĐỊNH, không đổi theo chế
+   độ; còn ô có về không có nháy thì bám --ui-surface nên ĐỔI theo chế độ.
+   Vì thế không có một màu nào luôn tối nhất bảng, và điều phải giữ là ô rỗng
+   TÁCH BẠCH khỏi ô có về.
+   Đã đo: để #E2E8F0 ở đây thì ô rỗng sáng 231,3 còn ô có về 232,3 — chênh
+   một đơn vị, tức mắt thường không tách được. Chính vạch chéo cũ đang gánh
+   việc phân biệt ấy, nên bỏ vạch mà không bù độ sáng là dựng lại đúng lỗi cũ. */
+@media (prefers-color-scheme: light) {
+  .sp-table td.is-empty { background-color: #CBD5E1; }
 }
 
 /* Ô CÓ VỀ. Bóng rất mỏng — một ma trận có tới vài nghìn ô, bóng dày là phải
@@ -391,11 +413,15 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-nl i.sp-n3 { background: #D1FAE5; color: #047857; }
 .sp-nl i.sp-n4 { background: #FFEDD5; color: #9A3412; }
 .sp-nl i.sp-n5 { background: #5B21B6; color: #FFFFFF; }
+/* Chú giải phải hiện ĐÚNG thứ nó chú giải. Để lại sọc ở đây trong khi ô thật
+   đã phẳng thì chú giải nói sai về chính bảng nó đang giải thích. */
 .sp-nl i.sp-empty-key {
-  background-color: #E2E8F0;
-  background-image: repeating-linear-gradient(
-    45deg, transparent, transparent 4px,
-    rgba(100, 116, 139, .38) 4px, rgba(100, 116, 139, .38) 6px);
+  background-color: #0B1220;
+  background-image: none;
+  box-shadow: inset 0 0 0 1px var(--ui-border-strong);
+}
+@media (prefers-color-scheme: light) {
+  .sp-nl i.sp-empty-key { background-color: #CBD5E1; }
 }
 
 /* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì

@@ -93,17 +93,33 @@ Canh: `test_zebra_and_hover_never_repaint_a_data_coloured_cell`,
 
 ## 6. Ba trạng thái ô ma trận
 
-Phân biệt bằng **ba** dấu hiệu, không riêng màu: nền, vân, độ nổi.
+Phân biệt bằng **hai** dấu hiệu, không riêng màu: độ sáng và độ nổi.
 
-- **Không về** — nền đặc `#E2E8F0` + vân chéo `rgba(100,116,139,.38)`.
-- **Có về** — nền sáng + vòng trong + bóng mỏng.
+- **Không về** — nền phẳng, sẫm: `#0B1220` ở chế độ tối, `#CBD5E1` ở chế độ
+  sáng. Không vân, không bóng.
+- **Có về** — nền sáng hơn + vòng viền trong + bóng mỏng.
 - **Giải ĐẶC BIỆT** — luôn đỏ, ở cả hai chế độ: `#BE123C`/`#FFE4E6` (5,24:1)
   sáng, `#FDA4AF`/`#4C0519` (8,27:1) tối. Giữ `#BE123C` ở nền tối thì chìm còn
   2,49:1.
 
 Trước khi sửa, ô trống và ô có về cùng đứng trên nền trắng — **1,00:1**.
 
-Canh: `test_empty_cell_sinks_with_solid_fill_and_visible_hatch`,
+Bản sau đó chữa bằng vân chéo. Nó tách được hai loại nhưng đổi một vấn đề mỏi
+mắt lấy một vấn đề khác: phần lớn ô trong ma trận là ô không về, nên màn hình
+đầy vạch chéo li ti. Nay việc phân biệt do độ sáng gánh, đo trên trang đã dựng:
+
+| trang | chế độ | không về | có về |
+|---|---|---|---|
+| tần suất LOTO | tối | 17,5 | 232,3 |
+| tần suất LOTO | sáng | 211,7 | 232,3 |
+| tần suất cặp | tối | 17,5 | 27,4 |
+| tần suất cặp | sáng | 211,7 | 255 |
+
+Trang tần suất cặp không dùng thang số nháy (cố ý: giá trị ô là tổng lần về
+của **hai** con, không phải số nháy của một con), nên ở chế độ tối chênh lệch
+chỉ 9,9 — vòng viền trong là thứ gánh phần còn lại.
+
+Canh: `test_empty_cell_sinks_by_tone_and_elevation_not_by_hatching`,
 `test_hit_cell_rises_with_fill_ring_and_shadow`,
 `test_special_prize_is_red_in_both_themes`.
 

@@ -257,7 +257,17 @@ function table(el, headers, rows, opts) {
   const body = rows.map((r, y) =>
     "<tr>" + r.map((c, i) => {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
-      const key = `${el.id}:${y}:${i}`;
+      // Khoá theo DANH TÍNH ô khi người gọi cung cấp được, chứ không theo vị trí.
+      //
+      // Bảng ma trận ĐỔI CHIỀU được, tức nó bị chuyển vị. Khoá vị trí
+      // `id:hàng:cột` vì thế trỏ sang một ô hoàn toàn khác sau khi đổi chiều:
+      // đã đo, một dấu đặt ở chiều dọc mang khoá `sp-matrix-grid:0:0` và sang
+      // chiều ngang thì khoá ấy rơi vào ô nhãn "00".
+      //
+      // Hệ quả nhìn thấy được là bấm KHÔNG ĂN: cú bấm rơi trúng một ô đang
+      // mang dấu lạc thì nó GỠ dấu thay vì thêm, nên người dùng thấy chiều
+      // dọc "không bấm được" trong khi chiều ngang thì được.
+      const key = opts.key ? opts.key(y, i) : `${el.id}:${y}:${i}`;
       const on = MARKS.has(key) ? " marked" : "";
       // Ô rỗng phải TỰ NÓI ra rằng ngày đó không có kỳ. Không đánh dấu thì một
       // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
@@ -305,7 +315,10 @@ function table(el, headers, rows, opts) {
 // Lưu theo từng máy bằng localStorage: đây là tiện ích cá nhân, không phải dữ
 // liệu chung. Bọc try/catch vì cửa sổ ẩn danh và trình duyệt chặn lưu trữ sẽ
 // ném lỗi ngay ở lệnh đọc, và một trang trắng thì tệ hơn hẳn việc mất dấu.
-const MARK_KEY = "vla.marks." + (location.pathname.split("/").pop() || "index");
+// Đổi tên kho có CHỦ Ý. Dấu lưu theo lược đồ cũ là khoá vị trí, nên nếu nạp
+// lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
+// lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
+const MARK_KEY = "sp.marks.v2." + (location.pathname.split("/").pop() || "index");
 let MARKS = new Set();
 try {
   MARKS = new Set(JSON.parse(localStorage.getItem(MARK_KEY) || "[]"));
@@ -489,16 +502,29 @@ function renderLotoMatrix(rows) {
   // này là chỗ duy nhất mà phân cấp màu theo nháy mang đúng nghĩa.
   const opts = { nhay: true };
   const vertical = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
+  // Danh tính một ô là CẶP (con số, ngày kỳ) — thứ không đổi khi chuyển vị.
+  // Ô nhãn hàng (cột 0) mang danh tính của chính thực thể nó gán nhãn.
+  // Đảo MỘT lần và giữ luôn chỉ số gốc. Bản đầu tôi viết `shown.indexOf(r)`
+  // ngay trong vòng dựng ô — trên ma trận 100 ngày × 100 số thì đó là một
+  // triệu phép quét tuyến tính, tức tự tạo ra một vấn đề hiệu năng khi đang
+  // đi sửa lỗi khác.
+  const byDate = shown.map((r, i) => ({ d: r.d, c: per[i] })).reverse();
   if (vertical) {
     const head = ["Ngày"].concat(nums.map(pad2));
-    const body = shown.map((r, i) =>
+    const body = byDate.map((r) =>
       [`<b>${r.d.slice(8)}-${r.d.slice(5, 7)}</b>`]
-        .concat(nums.map((n) => per[i][n] || ""))).reverse();
+        .concat(nums.map((n) => r.c[n] || "")));
+    opts.key = (y, i) => (i === 0
+      ? `m|d${byDate[y].d}`
+      : `m|n${pad2(nums[i - 1])}|d${byDate[y].d}`);
     table(grid, head, body, opts);
   } else {
-    const head = ["Số"].concat(shown.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`).reverse());
+    const head = ["Số"].concat(byDate.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`));
     const body = nums.map((n) =>
-      [`<b>${pad2(n)}</b>`].concat(per.map((c) => c[n] || "").reverse()));
+      [`<b>${pad2(n)}</b>`].concat(byDate.map((r) => r.c[n] || "")));
+    opts.key = (y, i) => (i === 0
+      ? `m|n${pad2(nums[y])}`
+      : `m|n${pad2(nums[y])}|d${byDate[i - 1].d}`);
     table(grid, head, body, opts);
   }
   renderNhayLegend(grid);
@@ -636,14 +662,22 @@ function renderPairMatrix(rows) {
   const label = ([a, b]) => `${pad2(a)}-${pad2(b)}`;
   const day = (r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`;
 
+  // Cùng lỗi với ma trận lô tô: bảng này cũng chuyển vị được, nên khoá đánh
+  // dấu phải theo danh tính (họ cặp, ngày kỳ) chứ không theo vị trí ô.
+  const byDate = shown.map((r, i) => ({ d: r.d, t: day(r), c: per[i] })).reverse();
   if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
     table(grid, ["Ngày"].concat(CAP50.map(label)),
-      shown.map((r, i) => [`<b>${day(r)}</b>`]
-        .concat(per[i].map((v) => v || ""))).reverse());
+      byDate.map((r) => [`<b>${r.t}</b>`].concat(r.c.map((v) => v || ""))),
+      { key: (y, i) => (i === 0
+        ? `p|d${byDate[y].d}`
+        : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
   } else {
-    table(grid, ["Cặp"].concat(shown.map(day).reverse()),
+    table(grid, ["Cặp"].concat(byDate.map((r) => r.t)),
       CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
-        .concat(per.map((c) => c[j] || "").reverse())));
+        .concat(byDate.map((r) => r.c[j] || ""))),
+      { key: (y, i) => (i === 0
+        ? `p|c${label(CAP50[y])}`
+        : `p|c${label(CAP50[y])}|d${byDate[i - 1].d}`) });
   }
 }
 

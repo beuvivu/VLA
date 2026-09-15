@@ -411,18 +411,30 @@ def _stat_css() -> str:
     return (ROOT / STAT_CSS).read_text(encoding="utf-8")
 
 
-def test_empty_cell_sinks_with_solid_fill_and_visible_hatch() -> None:
-    """Ô KHÔNG VỀ phải có nền đặc và vân đủ đậm để nhìn thấy.
+def test_empty_cell_sinks_by_tone_and_elevation_not_by_hatching() -> None:
+    """Ô KHÔNG VỀ phải TÁCH BẠCH khỏi ô có về — nhưng không bằng vạch chéo.
 
-    Trước: nền trong suốt, vân vẽ bằng --ui-border (#E7EAF6). Đo trên trang
-    đã dựng, ô trống và ô có về cùng đứng trên nền trắng — 1,00:1 — nên mắt
-    phải dò từng ô. Trên bảng 100x90 đó là mỏi mắt thật.
+    Điều cần giữ vẫn là điều cũ: ô trống và ô có về từng cùng đứng trên nền
+    trắng (1,00:1) nên mắt phải dò từng ô, và trên bảng 100x90 đó là mỏi mắt
+    thật.
+
+    Cách chữa thì đổi. Vân chéo tách được hai loại, nhưng đổi một vấn đề mỏi
+    mắt lấy một vấn đề khác: phần lớn ô trong ma trận là ô không về, nên màn
+    hình đầy vạch li ti. Nay việc phân biệt do ĐỘ SÁNG và ĐỘ NỔI gánh — ô
+    trống phẳng và sẫm, ô có về sáng hơn và có vòng viền trong.
+
+    Hai dấu hiệu, không phải một, nên vẫn đọc được khi không phân biệt màu.
     """
     css = _stat_css()
     start = css.index("td.is-empty {")
     rule = css[start : css.index("}", start)]
-    assert "background-color: #E2E8F0" in rule
-    assert "rgba(100, 116, 139, .38)" in rule
+    assert "background-image: none" in rule, rule
+    assert "gradient" not in rule, rule
+    assert "box-shadow: none" in rule, rule
+    found = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule)
+    assert found, rule
+    red, green, blue = (int(found.group(1)[i:i + 2], 16) for i in (1, 3, 5))
+    assert 0.2126 * red + 0.7152 * green + 0.0722 * blue < 40, found.group(1)
 
 
 def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
