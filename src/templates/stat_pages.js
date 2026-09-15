@@ -1012,11 +1012,36 @@ function renderPairMatrix(rows) {
   }
   const verticalPair = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
   const pendingAt = (y, i) => (verticalPair ? byDate[y] : byDate[i - 1]);
+  // Cùng hai thứ với ma trận lô tô, tính theo HỌ CẶP: số kỳ gan và tổng lần
+  // về trong 30 kỳ gần nhất. Trần biểu đồ cao gấp đôi vì mỗi ô cộng lần về
+  // của HAI con, nên giá trị điển hình cũng gấp đôi.
+  const ganPair = new Array(CAP50.length).fill(byDate.length);
+  const recentPair = new Array(CAP50.length).fill(0);
+  for (let j = 0; j < CAP50.length; j += 1) {
+    for (let k = 0; k < byDate.length; k += 1) {
+      if (byDate[k].c[j]) { ganPair[j] = k; break; }
+    }
+    for (let k = 0; k < Math.min(30, byDate.length); k += 1) {
+      recentPair[j] += byDate[k].c[j] || 0;
+    }
+  }
+  const pairGan = (y, i) => {
+    if (i === 0) return false;
+    const day = verticalPair ? y : i - 1;
+    const idx = verticalPair ? i - 1 : y;
+    return day < ganPair[idx];
+  };
+  const pairTip = (y, i) => {
+    if (i === 0) return "";
+    const idx = verticalPair ? i - 1 : y;
+    return `Cặp ${label(CAP50[idx])} — số ngày chưa ra tính đến ngày hiện tại: ${ganPair[idx]} ngày`;
+  };
   if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
     table(grid, ["Ngày"].concat(CAP50.map(label)),
       byDate.map((r) => [`<b>${r.t}</b>`].concat(r.c.map((v) => v || ""))),
-      { pending: pendingAt,
+      { pending: pendingAt, gan: pairGan, title: pairTip,
         headKey: (i) => (i === 0 ? null : `p|c${label(CAP50[i - 1])}`),
+        headExtra: (i) => (i === 0 ? "" : miniBar(recentPair[i - 1] / 2)),
         key: (y, i) => (i === 0
           ? `p|d${byDate[y].d}`
           : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
@@ -1024,8 +1049,9 @@ function renderPairMatrix(rows) {
     table(grid, ["Cặp"].concat(byDate.map((r) => r.t)),
       CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
         .concat(byDate.map((r) => r.c[j] || ""))),
-      { pending: pendingAt,
+      { pending: pendingAt, gan: pairGan, title: pairTip,
         headKey: (i) => (i === 0 ? null : `p|d${byDate[i - 1].d}`),
+        cellExtra: (y, i) => (i === 0 ? miniBar(recentPair[y] / 2) : ""),
         key: (y, i) => (i === 0
           ? `p|c${label(CAP50[y])}`
           : `p|c${label(CAP50[y])}|d${byDate[i - 1].d}`) });

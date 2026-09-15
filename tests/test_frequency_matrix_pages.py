@@ -465,3 +465,17 @@ def test_marks_survive_a_reload_because_they_live_in_local_storage() -> None:
     # trắng thì tệ hơn hẳn việc mất dấu.
     body = JS_CODE[JS_CODE.index("let MARKS = new Set();"):]
     assert "catch" in body[:600], body[:600]
+
+
+def test_both_matrices_get_the_chart_the_gan_run_and_the_tooltip() -> None:
+    """Yêu cầu nói rõ áp cho CẢ HAI trang.
+
+    Bản đầu tôi chỉ nối vào ma trận lô tô; trang tần suất cặp đo ra 0 cột
+    mini — tức một nửa yêu cầu im lặng không được làm.
+    """
+    pair = _block(JS_CODE, "function renderPairMatrix")
+    assert "miniBar(recentPair[" in pair, pair[:400]
+    assert "gan: pairGan" in pair, pair[:400]
+    assert "title: pairTip" in pair, pair[:400]
+    # Trần biểu đồ phải khác: mỗi ô cặp cộng lần về của HAI con.
+    assert "/ 2)" in pair, "giá trị cặp gấp đôi nên phải chia lại khi vẽ"
