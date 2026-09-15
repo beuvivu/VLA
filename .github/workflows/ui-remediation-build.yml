@@ -30,6 +30,42 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel setuptools
           python -m pip install -r requirements-dev.txt
+      - name: Align path-page regression contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('tests/test_ui_design_system.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
+              """Kiểm chính file đã sinh, không chỉ template.
+
+              Sửa template là chưa đủ: trang trong ``docs/`` mới là thứ GitHub Pages phục
+              vụ. Lần trước template đã sửa nhưng HTML chưa sinh lại nên site vẫn chạy
+              bản chữ tối trên nền tối.
+              """
+              pages = sorted((ROOT / "docs").glob("soi-path-*.html"))
+              assert pages, "không tìm thấy trang soi cầu đã sinh"
+              for page in pages:
+                  text = page.read_text(encoding="utf-8")
+                  assert '<body class="bg-slate-50' not in text, page.name
+                  assert "text-slate-800" not in text, page.name
+                  assert "<body>" in text, page.name
+          '''
+          new = '''def test_published_path_pages_use_master_light_theme_contract() -> None:
+              """Kiểm file Pages thật: dùng path-page mới, không quay lại utility cũ."""
+              pages = sorted((ROOT / "docs").glob("soi-path-*.html"))
+              assert pages, "không tìm thấy trang soi cầu đã sinh"
+              for page in pages:
+                  text = page.read_text(encoding="utf-8")
+                  assert '<body class="bg-slate-50' not in text, page.name
+                  assert "text-slate-800" not in text, page.name
+                  assert "path-page" in text, page.name
+                  assert "--bg:#F4F5FF" in text, page.name
+                  assert 'id="vla-targeted-ui-refinement"' in text, page.name
+          '''
+          assert old in text, 'stale path-page contract changed unexpectedly'
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Regenerate published UI
         env:
           PYTHONPATH: ${{ github.workspace }}/src
@@ -57,11 +93,11 @@ jobs:
               assert 'id="vla-targeted-ui-refinement"' in text, name
           print('verified targeted published HTML:', len(targets))
           PY
-      - name: Commit regenerated docs
+      - name: Commit regenerated docs and corrected contract
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs
+          git add docs tests/test_ui_design_system.py
           if git diff --cached --quiet; then
             echo 'No generated docs changes.'
             exit 0
