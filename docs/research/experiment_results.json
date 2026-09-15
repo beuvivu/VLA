@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-09-15T11:25:00Z",
+  "generated_at": "2026-09-15T12:09:06Z",
   "baseline": "HistGradientBoosting cầu-kèo với 39 đặc trưng production",
   "common_parameters": {
     "screening_folds": [
@@ -31,8 +31,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -40,19 +40,20 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.1814485986029324,
-      "brier_improvement": 1.3876434171999907e-06,
-      "brier_skill": 7.647525612462852e-06,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.18127822554957015,
+      "brier_improvement": -6.91305558306321e-06,
+      "brier_skill": -3.813651199382429e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.5489715610301853,
-      "logloss_improvement": 3.4152386039210114e-06,
-      "logloss_skill": 6.221118906244721e-06,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5485956805191603,
+      "logloss_improvement": -1.8596648688196105e-05,
+      "logloss_skill": -3.38997913602003e-05,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
-        "insufficient_support"
+        "negative_brier_skill",
+        "negative_logloss_skill"
       ],
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
@@ -66,8 +67,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -75,15 +76,15 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.18152183907885927,
-      "brier_improvement": -7.185283250968344e-05,
-      "brier_skill": -0.00039599249355759585,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.18139251244707255,
+      "brier_improvement": -0.00012119995308546017,
+      "brier_skill": -0.0006686107769506025,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.5491706073853373,
-      "logloss_improvement": -0.0001956311165480784,
-      "logloss_skill": -0.0003563570745568801,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5489227093823343,
+      "logloss_improvement": -0.00034562551186223534,
+      "logloss_skill": -0.000630040010828894,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -102,8 +103,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -111,15 +112,15 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.18145557346037838,
-      "brier_improvement": -5.587214028796028e-06,
-      "brier_skill": -3.079203335518815e-05,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.18129638677275223,
+      "brier_improvement": -2.5074278765135904e-05,
+      "brier_skill": -0.0001383245833008885,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.548990250072493,
-      "logloss_improvement": -1.5273803703808042e-05,
-      "logloss_skill": -2.78224042334667e-05,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5486440187227637,
+      "logloss_improvement": -6.693485229158913e-05,
+      "logloss_skill": -0.0001220153999495056,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -138,8 +139,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -147,15 +148,15 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.1814323482544338,
-      "brier_improvement": 1.7637991915786522e-05,
-      "brier_skill": 9.720580464437133e-05,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.18127091804786388,
+      "brier_improvement": 3.9444612320860273e-07,
+      "brier_skill": 2.1759986055250015e-06,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.5489262650513317,
-      "logloss_improvement": 4.871121745753104e-05,
-      "logloss_skill": 8.873121647293637e-05,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5485750435076303,
+      "logloss_improvement": 2.0403628417930975e-06,
+      "logloss_skill": 3.719373086818297e-06,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -173,8 +174,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -182,15 +183,15 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.18150163898545396,
-      "brier_improvement": -5.165273910437418e-05,
-      "brier_skill": -0.0002846665363437763,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.18129074344921386,
+      "brier_improvement": -1.9430955226773516e-05,
+      "brier_skill": -0.00010719266584125415,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.5491176908066557,
-      "logloss_improvement": -0.00014271453786651733,
-      "logloss_skill": -0.0002599654702596889,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5486306753161436,
+      "logloss_improvement": -5.359144567151919e-05,
+      "logloss_skill": -9.769173238773677e-05,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -209,8 +210,8 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-05-18",
+        "end_exclusive": "2026-07-17"
       },
       "folds": [
         1,
@@ -218,15 +219,15 @@
       ],
       "oos_dates": 60,
       "oos_rows": 6000,
-      "baseline_brier": 0.1814499862463496,
-      "challenger_brier": 0.18144587844609045,
-      "brier_improvement": 4.1078002591399265e-06,
-      "brier_skill": 2.263874659964361e-05,
+      "baseline_brier": 0.1812713124939871,
+      "challenger_brier": 0.1812631087570185,
+      "brier_improvement": 8.203736968581676e-06,
+      "brier_skill": 4.525667550872839e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.5489749762687892,
-      "challenger_logloss": 0.5489643275390297,
-      "logloss_improvement": 1.0648729759532571e-05,
-      "logloss_skill": 1.9397477516932826e-05,
+      "baseline_logloss": 0.5485770838704721,
+      "challenger_logloss": 0.5485542411616839,
+      "logloss_improvement": 2.284270878816219e-05,
+      "logloss_skill": 4.163992528998117e-05,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
@@ -244,27 +245,27 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.009900145670864849,
-      "brier_improvement": -1.2143082334797883e-07,
-      "brier_skill": -1.22657096996633e-05,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.0098998090368282,
+      "brier_improvement": -3.8438064199966537e-07,
+      "brier_skill": -3.882858401871507e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.056008920071332804,
-      "logloss_improvement": -6.176996047199679e-06,
-      "logloss_skill": -0.00011029809805737229,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.0559933956673887,
+      "logloss_improvement": -1.8783824977303132e-05,
+      "logloss_skill": -0.0003355775834620584,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
+        "unstable_across_folds",
         "negative_brier_skill",
         "negative_logloss_skill"
       ],
@@ -280,27 +281,27 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.00990018332976765,
-      "brier_improvement": -1.5908972614969707e-07,
-      "brier_skill": -1.6069629961737365e-05,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.0099000609895104,
+      "brier_improvement": -6.363333241998781e-07,
+      "brier_skill": -6.427982901028801e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.05601083550402455,
-      "logloss_improvement": -8.092428738948332e-06,
-      "logloss_skill": -0.0001445005779104341,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.0560047467050596,
+      "logloss_improvement": -3.0134862648203975e-05,
+      "logloss_skill": -0.0005383666211575423,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
+        "unstable_across_folds",
         "negative_brier_skill",
         "negative_logloss_skill"
       ],
@@ -316,28 +317,29 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.009899048395768249,
-      "brier_improvement": 9.758442732522854e-07,
-      "brier_skill": 9.856988726405327e-05,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.0098999016032455,
+      "brier_improvement": -4.769470593000286e-07,
+      "brier_skill": -4.817927060053758e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.05598009905371145,
-      "logloss_improvement": 2.2644021574154405e-05,
-      "logloss_skill": 0.000404337722238241,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.0559967547594453,
+      "logloss_improvement": -2.2142917033902976e-05,
+      "logloss_skill": -0.0003955885767683968,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
-        "insufficient_support"
+        "unstable_across_folds",
+        "negative_brier_skill",
+        "negative_logloss_skill"
       ],
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
@@ -351,27 +353,27 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.0099000249357104,
-      "brier_improvement": -6.956688992226789e-10,
-      "brier_skill": -7.02694137261792e-08,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.009900037505842,
+      "brier_improvement": -6.128496558011065e-07,
+      "brier_skill": -6.19076034300775e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.05600279348449175,
-      "logloss_improvement": -5.0409206142632e-08,
-      "logloss_skill": -9.001203043726965e-07,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.056004479256807,
+      "logloss_improvement": -2.986741439560403e-05,
+      "logloss_skill": -0.000533588593337485,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
+        "unstable_across_folds",
         "negative_brier_skill",
         "negative_logloss_skill"
       ],
@@ -387,28 +389,29 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.0098995749724041,
-      "brier_improvement": 4.492676374014126e-07,
-      "brier_skill": 4.538045832093127e-05,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.0099036031676611,
+      "brier_improvement": -4.178511474901142e-06,
+      "brier_skill": -0.0004220963965102729,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.0559802419958523,
-      "logloss_improvement": 2.2501079433301374e-05,
-      "logloss_skill": 0.0004017853090348222,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.0561940888521104,
+      "logloss_improvement": -0.0002194770096990012,
+      "logloss_skill": -0.0039210099449533955,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
-        "insufficient_support"
+        "unstable_across_folds",
+        "negative_brier_skill",
+        "negative_logloss_skill"
       ],
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
@@ -422,28 +425,29 @@
         "positive_skill_threshold": 0.0001
       },
       "evaluation_period": {
-        "start": "2026-05-17",
-        "end_exclusive": "2026-07-16"
+        "start": "2026-07-17",
+        "end_exclusive": "2026-08-16"
       },
       "folds": [
-        1,
-        2
+        3
       ],
-      "oos_dates": 60,
-      "oos_rows": 6000,
-      "baseline_brier": 0.009900024240041501,
-      "challenger_brier": 0.0098998747434007,
-      "brier_improvement": 1.494966408010362e-07,
-      "brier_skill": 1.5100633814247056e-05,
+      "oos_dates": 30,
+      "oos_rows": 3000,
+      "baseline_brier": 0.0098994246561862,
+      "challenger_brier": 0.0098999561849921,
+      "brier_improvement": -5.315288058999057e-07,
+      "brier_skill": -5.369289876535913e-05,
       "brier_ci": null,
-      "baseline_logloss": 0.056002743075285605,
-      "challenger_logloss": 0.05599509665044015,
-      "logloss_improvement": 7.646424845457467e-06,
-      "logloss_skill": 0.00013653661277231055,
+      "baseline_logloss": 0.0559746118424114,
+      "challenger_logloss": 0.0559993296425406,
+      "logloss_improvement": -2.4717800129199496e-05,
+      "logloss_skill": -0.0004415894870122363,
       "logloss_ci": null,
       "promoted": false,
       "rejection_reason": [
-        "insufficient_support"
+        "unstable_across_folds",
+        "negative_brier_skill",
+        "negative_logloss_skill"
       ],
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     }

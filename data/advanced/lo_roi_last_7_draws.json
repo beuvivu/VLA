@@ -1,9 +1,15 @@
 [
   {
     "value":27,
-    "count_in_window":6,
+    "count_in_window":7,
     "days_in_window":5,
     "value_str":"27"
+  },
+  {
+    "value":39,
+    "count_in_window":6,
+    "days_in_window":4,
+    "value_str":"39"
   },
   {
     "value":99,
@@ -18,28 +24,22 @@
     "value_str":"48"
   },
   {
-    "value":62,
-    "count_in_window":5,
-    "days_in_window":4,
-    "value_str":"62"
-  },
-  {
-    "value":39,
-    "count_in_window":4,
-    "days_in_window":4,
-    "value_str":"39"
-  },
-  {
     "value":89,
     "count_in_window":4,
     "days_in_window":4,
     "value_str":"89"
   },
   {
-    "value":0,
+    "value":4,
     "count_in_window":4,
     "days_in_window":3,
-    "value_str":"00"
+    "value_str":"04"
+  },
+  {
+    "value":62,
+    "count_in_window":4,
+    "days_in_window":3,
+    "value_str":"62"
   },
   {
     "value":24,
@@ -48,28 +48,34 @@
     "value_str":"24"
   },
   {
-    "value":87,
-    "count_in_window":4,
-    "days_in_window":2,
-    "value_str":"87"
-  },
-  {
     "value":2,
     "count_in_window":3,
     "days_in_window":3,
     "value_str":"02"
   },
   {
-    "value":6,
+    "value":13,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"06"
+    "value_str":"13"
   },
   {
-    "value":8,
+    "value":14,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"08"
+    "value_str":"14"
+  },
+  {
+    "value":29,
+    "count_in_window":3,
+    "days_in_window":3,
+    "value_str":"29"
+  },
+  {
+    "value":41,
+    "count_in_window":3,
+    "days_in_window":3,
+    "value_str":"41"
   },
   {
     "value":47,
@@ -78,10 +84,10 @@
     "value_str":"47"
   },
   {
-    "value":70,
+    "value":52,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"70"
+    "value_str":"52"
   },
   {
     "value":71,
@@ -96,34 +102,34 @@
     "value_str":"75"
   },
   {
+    "value":79,
+    "count_in_window":3,
+    "days_in_window":3,
+    "value_str":"79"
+  },
+  {
     "value":84,
     "count_in_window":3,
     "days_in_window":3,
     "value_str":"84"
   },
   {
-    "value":93,
+    "value":90,
     "count_in_window":3,
     "days_in_window":3,
-    "value_str":"93"
+    "value_str":"90"
   },
   {
-    "value":95,
-    "count_in_window":3,
-    "days_in_window":3,
-    "value_str":"95"
-  },
-  {
-    "value":4,
+    "value":0,
     "count_in_window":3,
     "days_in_window":2,
-    "value_str":"04"
+    "value_str":"00"
   },
   {
-    "value":7,
+    "value":19,
     "count_in_window":3,
     "days_in_window":2,
-    "value_str":"07"
+    "value_str":"19"
   },
   {
     "value":22,
@@ -138,22 +144,10 @@
     "value_str":"30"
   },
   {
-    "value":40,
-    "count_in_window":3,
-    "days_in_window":2,
-    "value_str":"40"
-  },
-  {
     "value":57,
     "count_in_window":3,
     "days_in_window":2,
     "value_str":"57"
-  },
-  {
-    "value":60,
-    "count_in_window":3,
-    "days_in_window":2,
-    "value_str":"60"
   },
   {
     "value":88,
@@ -186,6 +180,18 @@
     "value_str":"05"
   },
   {
+    "value":6,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"06"
+  },
+  {
+    "value":8,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"08"
+  },
+  {
     "value":10,
     "count_in_window":2,
     "days_in_window":2,
@@ -196,18 +202,6 @@
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"12"
-  },
-  {
-    "value":13,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"13"
-  },
-  {
-    "value":14,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"14"
   },
   {
     "value":18,
@@ -222,40 +216,16 @@
     "value_str":"21"
   },
   {
-    "value":29,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"29"
-  },
-  {
     "value":31,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"31"
   },
   {
-    "value":35,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"35"
-  },
-  {
     "value":36,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"36"
-  },
-  {
-    "value":37,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"37"
-  },
-  {
-    "value":41,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"41"
   },
   {
     "value":42,
@@ -276,16 +246,16 @@
     "value_str":"51"
   },
   {
-    "value":52,
-    "count_in_window":2,
-    "days_in_window":2,
-    "value_str":"52"
-  },
-  {
     "value":53,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"53"
+  },
+  {
+    "value":63,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"63"
   },
   {
     "value":65,
@@ -294,16 +264,28 @@
     "value_str":"65"
   },
   {
+    "value":66,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"66"
+  },
+  {
+    "value":70,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"70"
+  },
+  {
     "value":72,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"72"
   },
   {
-    "value":79,
+    "value":78,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"79"
+    "value_str":"78"
   },
   {
     "value":81,
@@ -312,10 +294,10 @@
     "value_str":"81"
   },
   {
-    "value":90,
+    "value":82,
     "count_in_window":2,
     "days_in_window":2,
-    "value_str":"90"
+    "value_str":"82"
   },
   {
     "value":92,
@@ -324,10 +306,34 @@
     "value_str":"92"
   },
   {
+    "value":93,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"93"
+  },
+  {
+    "value":95,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"95"
+  },
+  {
+    "value":96,
+    "count_in_window":2,
+    "days_in_window":2,
+    "value_str":"96"
+  },
+  {
     "value":97,
     "count_in_window":2,
     "days_in_window":2,
     "value_str":"97"
+  },
+  {
+    "value":7,
+    "count_in_window":2,
+    "days_in_window":1,
+    "value_str":"07"
   },
   {
     "value":9,
@@ -336,9 +342,9 @@
     "value_str":"09"
   },
   {
-    "value":15,
+    "value":40,
     "count_in_window":2,
     "days_in_window":1,
-    "value_str":"15"
+    "value_str":"40"
   }
 ]
