@@ -297,3 +297,170 @@ def test_no_test_builds_into_the_repository_docs_tree() -> None:
                 if flag not in window:
                     offenders.append(f"{path.name}:{line_no} gọi {builder} không kèm {flag}")
     assert not offenders, "test ghi thẳng vào kho: " + "; ".join(offenders)
+
+
+# --------------------------------------------------------------------------
+# Phụ thuộc của workflow
+#
+# Một việc gọi `python src/X.py` mà không cài thư viện X cần sẽ chết ở dòng
+# `import`. Lớp lỗi này ĐẶC BIỆT khó thấy vì nó hầu như không làm việc đỏ:
+#
+#   - `post-finalization.yml` đỏ 130 lượt liên tiếp mà không ai để ý, vì nó
+#     chỉ chạy bằng workflow_dispatch;
+#   - `watchdog.yml` đọc mã thoát khác 0 thành "production hỏng" rồi kích hoạt
+#     phục hồi giả — việc vẫn XANH;
+#   - `daily_update.yml` đặt `continue-on-error: true` cho bước thăm dò, nên
+#     trình cào chết vẫn cho ra một lượt chạy XANH không thu được gì.
+#
+# Cả ba đều do một thay đổi ở tầng thư viện thêm import mới vào một kịch bản
+# mà không ai nghĩ tới workflow gọi nó. Phép kiểm này đi ngược lại: từ mỗi
+# workflow, truy toàn bộ cây import rồi đối chiếu với thứ thật sự được cài.
+# --------------------------------------------------------------------------
+
+import ast
+import sys
+
+SRC = ROOT / "src"
+
+#: Tên module khi import khác tên gói khi cài.
+_IMPORT_TO_DISTRIBUTION = {
+    "bs4": "beautifulsoup4",
+    "sklearn": "scikit-learn",
+    "yaml": "pyyaml",
+    "dateutil": "python-dateutil",
+    "PIL": "pillow",
+    "cv2": "opencv-python",
+}
+
+
+def _resolve_local(module: str, *search: Path) -> Path | None:
+    """Đường dẫn của một module CÙNG KHO, hoặc None nếu là thư viện ngoài."""
+    for directory in search:
+        for candidate in (directory / f"{module}.py", directory / module / "__init__.py"):
+            if candidate.is_file():
+                return candidate
+    return None
+
+
+def _third_party_closure(path: Path, seen: set[Path] | None = None) -> set[str]:
+    """Mọi gói NGOÀI mà ``path`` cần, kể cả qua nhiều lớp import cùng kho.
+
+    Truy đệ quy chứ không chỉ đọc đầu tệp: cả ba lỗi thật ở trên đều là import
+    GIÁN TIẾP (`production_audit` -> `calendar_alignment` -> pandas,
+    `fetch_results` -> `sources` -> bs4). Một phép kiểm chỉ nhìn tệp gọi trực
+    tiếp sẽ xanh qua cả ba.
+    """
+    seen = set() if seen is None else seen
+    if path in seen:
+        return set()
+    seen.add(path)
+
+    found: set[str] = set()
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            roots = [alias.name.split(".")[0] for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            roots = [node.module.split(".")[0]]
+        else:
+            continue
+        for root in roots:
+            if root in sys.stdlib_module_names:
+                continue
+            # Thư mục chứa kịch bản nằm trên sys.path khi chạy `python src/a/b.py`,
+            # nên anh em cùng thư mục cũng là module cục bộ.
+            local = _resolve_local(root, path.parent, SRC)
+            if local is not None:
+                found |= _third_party_closure(local, seen)
+            else:
+                found.add(_IMPORT_TO_DISTRIBUTION.get(root, root).lower())
+    return found
+
+
+def _requirement_names(name: str, seen: set[str] | None = None) -> set[str]:
+    """Tên gói trong một tệp requirements, đi theo cả các dòng ``-r``."""
+    seen = set() if seen is None else seen
+    if name in seen:
+        return set()
+    seen.add(name)
+    path = ROOT / name
+    if not path.is_file():
+        return set()
+    names: set[str] = set()
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#")[0].strip()
+        if not line:
+            continue
+        if line.startswith("-r "):
+            names |= _requirement_names(line[3:].strip(), seen)
+            continue
+        names.add(re.split(r"[<>=!~\[]", line)[0].strip().lower())
+    return names
+
+
+def _installed_by(run_text: str) -> set[str]:
+    installed: set[str] = set()
+    for match in re.finditer(r"pip install([^\n]*)", run_text):
+        args = match.group(1)
+        for req in re.findall(r"-r\s+(\S+)", args):
+            installed |= _requirement_names(req)
+        for token in args.split():
+            if token.startswith("-") or "/" in token:
+                continue
+            if token in {"pip", "wheel", "setuptools"}:
+                continue
+            installed.add(re.split(r"[<>=!~\[]", token)[0].strip().lower())
+    return installed
+
+
+def _jobs_running_python() -> list[tuple[str, str, set[Path], set[str]]]:
+    import yaml
+
+    out: list[tuple[str, str, set[Path], set[str]]] = []
+    for workflow in sorted((ROOT / ".github/workflows").glob("*.yml")):
+        document = yaml.safe_load(workflow.read_text(encoding="utf-8")) or {}
+        for job_name, job in (document.get("jobs") or {}).items():
+            run_text = "\n".join(
+                step["run"]
+                for step in (job or {}).get("steps", [])
+                if isinstance(step, dict) and isinstance(step.get("run"), str)
+            )
+            # Khớp RỘNG, mọi lần nhắc tới `src/....py`, chứ không chỉ dạng
+            # `python src/x.py`: `watchdog.yml` gọi kịch bản qua
+            # `subprocess.run([sys.executable, "src/production_audit.py", ...])`
+            # bên trong một heredoc, và đó chính là việc bị hỏng lâu nhất.
+            scripts = {
+                ROOT / rel
+                for rel in set(re.findall(r"(src/[\w/]+\.py)", run_text))
+                if (ROOT / rel).is_file()
+            }
+            if scripts:
+                out.append((workflow.name, job_name, scripts, _installed_by(run_text)))
+    return out
+
+
+def test_the_audit_actually_finds_the_jobs_that_run_python() -> None:
+    """Chốt chặn cho chính chốt chặn: bộ dò phải THẤY các việc đã biết.
+
+    Một phép kiểm phụ thuộc mà dò trượt thì xanh vĩnh viễn và vô dụng — nguy
+    hiểm hơn không có. Ba việc dưới đây từng hỏng thật, mỗi việc gọi kịch bản
+    theo một kiểu khác nhau (trực tiếp, thư mục con, qua subprocess).
+    """
+    seen = {(workflow, job) for workflow, job, _, _ in _jobs_running_python()}
+    for expected in (
+        ("post-finalization.yml", "reconcile"),
+        ("daily_update.yml", "collect"),
+        ("watchdog.yml", "audit-and-recover"),
+    ):
+        assert expected in seen, (expected, sorted(seen))
+
+
+def test_every_workflow_installs_what_its_python_scripts_import() -> None:
+    offenders: list[str] = []
+    for workflow, job_name, scripts, installed in _jobs_running_python():
+        needed: set[str] = set()
+        for script in scripts:
+            needed |= _third_party_closure(script)
+        missing = sorted(needed - installed)
+        if missing:
+            offenders.append(f"{workflow}:{job_name} thiếu {missing}")
+    assert not offenders, "workflow chạy Python mà không cài đủ: " + "; ".join(offenders)

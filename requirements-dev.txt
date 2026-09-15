@@ -1,4 +1,8 @@
 -r requirements.txt
 -r requirements-ml-engine.txt
 pytest>=9.1.1,<10
+# Phép kiểm phụ thuộc workflow đọc YAML. Trước đây gói này chỉ có mặt nhờ ăn
+# theo một gói khác — đúng kiểu phụ thuộc không khai báo mà bộ kiểm này sinh
+# ra để bắt, nên khai báo tường minh.
+PyYAML>=6,<7
 ruff==0.11.10

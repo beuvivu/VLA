@@ -112,9 +112,22 @@ jobs:
           python-version: "3.11"
 
       - name: Cài thư viện tối thiểu
-        # Chỉ requests. Lớp thăm dò không đụng tới pandas/sklearn, và cài cả
-        # requirements.txt sẽ thêm 2-3 phút vào đường găng ĐÚNG GIỜ.
-        run: python -m pip install --no-cache-dir --upgrade requests
+        # Lớp thăm dò không đụng tới pandas/sklearn, và cài cả requirements.txt
+        # sẽ thêm 2-3 phút vào đường găng ĐÚNG GIỜ. Nhưng "chỉ requests" là
+        # THIẾU: `fetch_results.py` nạp `sources` (bs4) và `dtos` (pydantic)
+        # ngay lúc import, nên nó sẽ chết ở dòng `import` đầu tiên.
+        #
+        # Lỗi này chưa từng nổ vì cổng "có nên chạy tiếp không" đóng ở CẢ 54
+        # lần chạy — bước thăm dò luôn bị bỏ qua. Ngày cổng mở thì nó nổ, và
+        # `continue-on-error: true` sẽ giữ việc XANH trong khi không cào được
+        # gì: hỏng im lặng, đúng thứ khó thấy nhất.
+        #
+        # `requirements-live.txt` là danh sách tối thiểu ĐÃ CÓ cho khung gần
+        # trực tiếp (live-results.yml dùng chính nó), toàn wheel nhỏ — không
+        # thêm một danh sách chép tay nào nữa.
+        run: |
+          python -m pip install --no-cache-dir --upgrade pip
+          python -m pip install --no-cache-dir -r requirements-live.txt
 
       - name: Ghi nhận thời điểm khởi động
         # Chênh lệch giữa mốc lịch và dòng này CHÍNH LÀ độ trễ của bộ lập

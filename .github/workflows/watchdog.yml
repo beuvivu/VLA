@@ -41,6 +41,22 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cài đặt thư viện phụ thuộc
+        # Việc này gọi `src/production_audit.py`, mà kịch bản ấy nạp pandas từ
+        # 0f5f890. Không có bước cài, nó chết ở dòng import — và bộ giám sát
+        # ĐỌC NHẦM mã thoát khác 0 thành "production hỏng", rồi kích hoạt một
+        # lượt phục hồi GIẢ. Nhật ký lượt chạy #122 cho thấy đúng chuỗi đó:
+        #
+        #     [INFO] canonical latest=2026-09-14 expected=2026-09-14
+        #     ModuleNotFoundError: No module named 'pandas'
+        #     [RECOVERY] dispatched update-data.yml
+        #
+        # Kho dữ liệu HOÀN TOÀN đúng, vậy mà cả đường phục hồi vẫn nổ, còn việc
+        # thì báo XANH. Nó chạy 20 phút một lần kể từ 08/09.
+        run: |
+          python -m pip install --upgrade --no-cache-dir pip wheel setuptools
+          python -m pip install --no-cache-dir -r requirements.txt
+
       # Lưới cron che mất việc đường đúng giờ đã chết: dữ liệu vẫn về, chỉ là
       # muộn, nên không có bước nào khác đỏ lên. Bước này là thứ duy nhất nhìn
       # vào SỰ VẮNG MẶT của repository_dispatch.

@@ -30,6 +30,20 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cài đặt thư viện phụ thuộc
+        # Việc này TỪNG chạy không cần cài gì: cả hai kịch bản khi ấy chỉ dùng
+        # thư viện chuẩn. Hai thay đổi sau đó phá vỡ giả định im lặng ấy —
+        # `production_audit.py` nhận thêm pandas qua `calendar_alignment`
+        # (0f5f890), và `reconcile_live_canonical.py` nhận thêm bs4/requests
+        # qua `sources` (đợt đổi chính sách nguồn). Việc này đỏ 130 lượt liên
+        # tiếp kể từ 08/09 mà không ai thấy, vì nó chỉ chạy bằng dispatch.
+        #
+        # Cài thẳng `requirements.txt` chứ không chép một danh sách gọn hơn:
+        # một danh sách chép tay thứ ba sẽ lệch đúng như thế lần sau.
+        run: |
+          python -m pip install --upgrade --no-cache-dir pip wheel setuptools
+          python -m pip install --no-cache-dir -r requirements.txt
+
       - name: Chạy kiểm toán production nghiêm ngặt
         run: |
           audit_path="$(mktemp "${RUNNER_TEMP}/production-audit.XXXXXX.json")"
