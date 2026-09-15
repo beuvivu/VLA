@@ -708,10 +708,10 @@ def nav_targets() -> set[str]:
     }
 
 
-STYLESHEET_NAME = "assets/vla.css"
+STYLESHEET_NAME = "assets/ui.css"
 
 def write_stylesheet(docs_dir: Path) -> Path:
-    """Ghi biểu định kiểu dùng chung ra ``docs/assets/vla.css``.
+    """Ghi biểu định kiểu dùng chung ra ``docs/assets/ui.css``.
 
     Trước đây toàn bộ CSS nội tuyến trong từng trang: khoảng 250 KB lặp lại
     trên 14 trang, không trang nào dùng lại được cache của trang nào. Một tệp

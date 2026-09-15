@@ -186,10 +186,31 @@ def _mark_tools() -> str:
     return (
         '<span class="sp-marktools">'
         '<span class="sp-hint">Bấm vào ô bất kỳ để đánh dấu so sánh</span>'
+        '<label class="sp-chip sp-chip-check">'
+        '<input type="checkbox" id="sp-pair-mode">'
+        '<span>Tự động đánh dấu cặp trùng</span></label>'
         '<span class="sp-mark-count" id="sp-mark-count"></span>'
         '<button type="button" class="sp-btn" id="sp-clear-marks">Xoá đánh dấu</button>'
         "</span>"
     )
+
+
+#: Lọc theo thứ trong tuần. Giá trị là chỉ số thứ chuẩn JavaScript
+#: (Chủ nhật = 0); thứ tự hiển thị bắt đầu từ Thứ hai vì tuần của người Việt
+#: bắt đầu từ đó — hai chuyện ấy không cần trùng nhau.
+WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
+    ("all", "Tất cả các thứ"),
+    ("1", "Thứ hai"), ("2", "Thứ ba"), ("3", "Thứ tư"), ("4", "Thứ năm"),
+    ("5", "Thứ sáu"), ("6", "Thứ bảy"), ("0", "Chủ nhật"),
+)
+
+
+def _weekday_filter() -> str:
+    options = "".join(
+        f'<option value="{value}"{" selected" if value == "all" else ""}>{label}</option>'
+        for value, label in WEEKDAY_CHOICES
+    )
+    return f'<label>Thứ <select id="sp-weekday">{options}</select></label>'
 
 
 #: Chú giải ô + hộp bật/tắt sáu trường trong mỗi ô bảng Đặc Biệt.
@@ -250,6 +271,7 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Chiều <select id="sp-orient">'
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
+                 + _weekday_filter() +
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<div class="sp-picker" id="sp-picker"></div>'
              '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
@@ -269,6 +291,7 @@ PAGES: tuple[StatPage, ...] = (
                  '<label>Chiều <select id="sp-orient">'
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
+                 + _weekday_filter() +
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body='<p class="sp-matrix-note" id="sp-matrix-note"></p>'
              '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'

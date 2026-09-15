@@ -20,8 +20,24 @@ CSS_CODE = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
 
 
 def _block(source: str, start: str) -> str:
-    body = source[source.index(start):]
-    return body[: body.index("\n}") + 2]
+    """Trọn một khối từ ``start`` tới dấu ngoặc đóng khớp với nó.
+
+    Bản đầu tìm ``"\n}"``, tức giả định khối luôn đóng ngoặc trên dòng riêng.
+    CSS của trang này viết nén, nhiều quy tắc đóng ngay cuối dòng
+    (``box-shadow:var(--ui-sh-sm)}``), nên phép tìm ấy chạy tuột sang các quy
+    tắc phía sau và nuốt vào cả những khai báo không thuộc khối — phép kiểm
+    khi ấy nói về một khối khác với khối nó tưởng.
+    """
+    begin = source.index(start)
+    brace = source.index("{", begin)
+    depth, i = 1, brace + 1
+    while i < len(source) and depth:
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+        i += 1
+    return source[begin:i]
 
 
 def test_a_cell_keeps_its_key_when_the_matrix_is_transposed() -> None:
@@ -82,8 +98,16 @@ def test_old_positional_marks_are_dropped_rather_than_reinterpreted() -> None:
 
 
 def test_empty_cells_carry_no_stripe_pattern() -> None:
+    # Lấy quy tắc NỀN, không phải bản đè trong `@media`. Bản đè chỉ đặt lại
+    # màu, nên soi nhầm nó thì phép kiểm đòi `background-image: none` ở một
+    # chỗ vốn không có lý do khai nó — báo đỏ oan trên mã đang đúng.
+    #
+    # Cắt tại `@media` ĐẦU TIÊN là không đủ: tệp có nhiều khối `@media` và
+    # khối đầu nằm TRƯỚC quy tắc cần soi, nên lát cắt ấy rỗng. Phải bỏ trọn
+    # từng khối bằng cách đếm ngoặc.
+    base = _without_media(CSS_CODE)
     for selector in (".sp-table td.is-empty", ".sp-nl i.sp-empty-key"):
-        rule = _block(CSS_CODE, selector + " {")
+        rule = _block(base, selector + " {")
         assert "background-image: none" in rule, rule
         assert "gradient" not in rule, rule
     assert "repeating-linear-gradient" not in CSS_CODE
@@ -106,9 +130,17 @@ def test_the_empty_cell_has_a_dark_tone_and_a_light_mode_counterpart() -> None:
         r"@media \(prefers-color-scheme: light\) \{\s*\.sp-table td\.is-empty \{"
         r"\s*background-color:\s*(#[0-9A-Fa-f]{6})", CSS_CODE)
     assert light, "chế độ sáng phải có giá trị riêng"
-    red, green, blue = (int(light.group(1)[i:i + 2], 16) for i in (1, 3, 5))
-    luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
-    assert 150 < luminance < 225, (light.group(1), luminance)
+    # Ở chế độ sáng, ô không về nay là TRẮNG — đúng lối trang mẫu, và làm được
+    # vì cấp 1 nháy đã chuyển sang vàng nên không còn chiếm màu trắng.
+    #
+    # Trắng và vàng chênh rất ít về ĐỘ SÁNG (tỉ số 1,07) dù khác hẳn về sắc,
+    # nên phép kiểm KHÔNG được dựa vào độ sáng ở đây. Điều phải canh là ô có
+    # về còn vòng viền trong mà ô không về không có — xem phép kiểm bên dưới.
+    assert light.group(1).upper() == "#FFFFFF", light.group(1)
+    tier_one = re.search(r"\.sp-table td\.sp-n1 \{[^}]*background-color:\s*(#[0-9A-Fa-f]{6})",
+                         CSS_CODE)
+    assert tier_one and tier_one.group(1).upper() != "#FFFFFF", (
+        "cấp 1 nháy không được trùng màu ô không về")
 
 
 def test_a_hit_cell_keeps_a_ring_that_an_empty_cell_does_not_have() -> None:
@@ -121,3 +153,133 @@ def test_a_hit_cell_keeps_a_ring_that_an_empty_cell_does_not_have() -> None:
     assert "box-shadow: none" in _block(CSS_CODE, ".sp-table td.is-empty {")
     hit = _block(CSS_CODE, ".sp-table td.sp-hit {")
     assert "inset" in hit, hit
+
+
+def _without_media(css: str) -> str:
+    """Bỏ trọn mọi khối ``@media``, giữ lại phần quy tắc nền."""
+    out: list[str] = []
+    i = 0
+    while i < len(css):
+        at = css.find("@media", i)
+        if at == -1:
+            out.append(css[i:])
+            break
+        out.append(css[i:at])
+        brace = css.find("{", at)
+        if brace == -1:
+            break
+        depth, j = 1, brace + 1
+        while j < len(css) and depth:
+            if css[j] == "{":
+                depth += 1
+            elif css[j] == "}":
+                depth -= 1
+            j += 1
+        i = j
+    return "".join(out)
+
+
+# --- Kỳ chưa quay, lọc thứ, chế độ cặp --------------------------------------
+
+BUILDER = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+
+
+def test_the_pending_draw_is_shown_as_waiting_not_as_a_miss() -> None:
+    """Kỳ hôm nay chưa quay phải HIỆN RA, và hiện khác hẳn ô "không về".
+
+    Bỏ nó đi thì bảng trông như hôm nay không tồn tại. Để nó trắng như ô
+    "không về" thì tệ hơn: đó là một lời khẳng định SAI — chưa quay không
+    phải là không về.
+    """
+    assert "function pendingDay" in JS_CODE
+    assert "pending: true" in JS_CODE
+    rule = _block(_without_media(CSS_CODE), ".sp-table td.sp-pending,")
+    assert "dashed" in rule, rule
+    assert "#E0E0E0" in rule, rule
+
+
+def test_today_is_read_in_vietnam_time_not_the_viewer_clock() -> None:
+    """Người xem ở bờ Tây nước Mỹ lúc 19h ngày 14 đang là 09h ngày 15 ở VN."""
+    body = _block(JS_CODE, "function todayInVietnam")
+    assert "Asia/Ho_Chi_Minh" in body, body
+    assert "en-CA" in body, "định dạng phải cho ra YYYY-MM-DD"
+
+
+def test_the_pending_column_obeys_the_weekday_filter() -> None:
+    """Cột chờ được chèn SAU khi lọc, nên nếu không tự kiểm thì nó lách qua.
+
+    Đã đo: lọc "Thứ hai" và lọc "Chủ nhật" đều hiện cột 15-09, trong khi
+    15-09-2026 là thứ Ba.
+    """
+    body = _block(JS_CODE, "function pendingDay")
+    assert 'sp-weekday' in body, body
+    assert "weekdayOf(today)" in body, body
+
+
+def test_the_weekday_filter_exists_and_is_wired_to_rerender() -> None:
+    assert "sp-weekday" in BUILDER, "thiếu ô chọn thứ trong HTML"
+    assert BUILDER.count('("0", "Chủ nhật")') == 1
+    body = _block(JS_CODE, "function selected")
+    assert "weekdayOf(r.d) === want" in body, body
+    # Đổi ô chọn phải dựng lại bảng; thiếu dòng này thì ô có mà bấm không ăn.
+    assert '$("sp-weekday")].forEach' in JS_CODE
+
+
+def test_weekday_is_computed_without_the_viewer_timezone() -> None:
+    """`getDay()` đọc theo múi giờ máy người xem nên sai ngoài Việt Nam."""
+    body = _block(JS_CODE, "function weekdayOf")
+    assert "Date.UTC(" in body and "getUTCDay()" in body, body
+    assert "getDay(" not in body.replace("getUTCDay(", ""), body
+
+
+def test_pair_mode_is_opt_in_and_keeps_two_separate_stores() -> None:
+    """Hai kho, không phải một.
+
+    Một ô có thể đang sáng vì chính nó được bấm, HOẶC vì cặp số của nó đang
+    được đánh dấu. Gộp vào một kho thì không phân biệt được, và cú bấm tiếp
+    theo xử lý sai.
+    """
+    assert 'id="sp-pair-mode"' in BUILDER
+    assert "let PAIR_MARKS = new Set();" in JS_CODE
+    body = _block(JS_CODE, "function toggleMark")
+    # Hai nhánh TẮT phải đứng trước hai nhánh BẬT.
+    assert body.index("PAIR_MARKS.delete") < body.index("PAIR_MARKS.add"), body
+    assert body.index("MARKS.delete") < body.index("MARKS.add"), body
+    # Bật chế độ cặp là tuỳ chọn: mặc định không tích.
+    assert 'id="sp-pair-mode">' in BUILDER and 'id="sp-pair-mode" checked' not in BUILDER
+
+
+def test_the_pair_is_read_from_the_key_not_from_the_cell_text() -> None:
+    """Chữ trong ô là SỐ NHÁY ("1", "2"), không phải con lô.
+
+    Lấy nhầm nó thì bấm ô "2" sẽ làm sáng mọi ô có 2 nháy — một tập hợp
+    chẳng có nghĩa gì với người soi cầu.
+    """
+    body = _block(JS_CODE, "function markPair")
+    assert "dataset.key" in body, body
+    assert "textContent" not in body, body
+
+
+def test_switching_pair_mode_off_does_not_erase_existing_marks() -> None:
+    """Người xem không hề bỏ chọn gì khi họ chỉ tắt một tuỳ chọn."""
+    body = _block(JS_CODE, "function bindMarking")
+    assert 'pairBox.addEventListener("change", paintMarks)' in body, body
+    assert "PAIR_MARKS.clear()" not in body.split('addEventListener("change"')[1].split("\n")[0]
+
+
+def test_the_day_cap_reaches_the_longest_preset_people_ask_for() -> None:
+    """Trần 120 cũ âm thầm cắt mốc 300 ngày xuống còn 120.
+
+    Chi phí dựng đã đo lại trong Chromium: 300 ngày cho 30 300 ô trong 894 ms,
+    còn 500 ngày mới là chỗ gãy (4 113 ms).
+    """
+    found = re.search(r"const MATRIX_MAX_DAYS = (\d+);", JS_CODE)
+    assert found and int(found.group(1)) >= 300, found
+
+
+def test_the_matrix_does_not_touch_the_frame_it_sits_in() -> None:
+    """Đo trước khi sửa: hàng cuối cách chân khung đúng 1px, tức dính viền."""
+    rule = _block(_without_media(CSS_CODE), ".sp-scroll{")
+    assert "padding-bottom" in rule, rule
+    # Đệm NGANG sẽ đẩy mốc `sticky` lệch khỏi cạnh khung.
+    assert "padding-left" not in rule and "padding:" not in rule, rule

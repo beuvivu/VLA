@@ -267,7 +267,7 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
 #
 # Ba chủ thể tạo kiểu độc lập nhau cùng tồn tại trong kho:
 #
-#   src/ui_theme.py                  -> docs/assets/vla.css -> 28 trang
+#   src/ui_theme.py                  -> docs/assets/ui.css -> 28 trang
 #   src/build_landing_page.py        -> :root riêng         -> trang chủ
 #   src/build_statistics_dashboard.py-> CSS nội tuyến riêng  -> 1 trang
 #
@@ -337,13 +337,13 @@ def test_shared_stylesheet_reaches_the_page_the_user_actually_opens() -> None:
     """``index.html`` phải nạp biểu định kiểu chung.
 
     Trang chủ có ``:root`` riêng nên dễ tưởng nó tự lo hết phần tạo kiểu. Thực
-    tế nó vẫn lấy phông, bảng, thẻ và nav từ ``vla.css``; mất liên kết đó thì
+    tế nó vẫn lấy phông, bảng, thẻ và nav từ ``ui.css``; mất liên kết đó thì
     trang vỡ mà các test dựng trang vẫn xanh.
     """
     index = ROOT / "docs" / "index.html"
     if not index.exists():  # kho mới sao chép, chưa dựng docs
         return
-    assert "assets/vla.css" in index.read_text(encoding="utf-8")
+    assert "assets/ui.css" in index.read_text(encoding="utf-8")
 
 
 def test_stat_page_surfaces_are_elevated_like_the_rest_of_the_system() -> None:
@@ -449,12 +449,18 @@ def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
 def test_every_nhay_tier_has_a_distinct_pair_that_passes_aa() -> None:
     """Năm cấp số nháy, mỗi cấp một cặp nền/chữ riêng, tất cả đạt AA."""
     css = _stat_css()
+    # Thang VÀNG -> CAM -> ĐỎ theo lối trang mẫu. Thang cũ (trắng, xanh dương,
+    # xanh lá, cam, tím) có năm sắc nhưng không có trật tự tri giác: nhìn một ô
+    # xanh lá không đoán được nó nhiều hay ít nháy hơn ô xanh dương.
+    #
+    # Đỏ dùng #C62828 chứ không phải #D9534F của trang mẫu: đo ra #D9534F
+    # trượt AA với CẢ HAI màu chữ — 3,96 với chữ trắng, 4,28 với chữ đen.
     expected = {
-        "sp-n1": ("#FFFFFF", "#161C2D"),
-        "sp-n2": ("#DBEAFE", "#1D4ED8"),
-        "sp-n3": ("#D1FAE5", "#047857"),
-        "sp-n4": ("#FFEDD5", "#9A3412"),
-        "sp-n5": ("#5B21B6", "#FFFFFF"),
+        "sp-n1": ("#FFFF00", "#161C2D"),
+        "sp-n2": ("#FF9900", "#161C2D"),
+        "sp-n3": ("#C62828", "#FFFFFF"),
+        "sp-n4": ("#991B1B", "#FFFFFF"),
+        "sp-n5": ("#7F1D1D", "#FFFFFF"),
     }
     seen = set()
     for cls, (bg, fg) in expected.items():

@@ -28,7 +28,12 @@ transition:border-color .15s ease-in-out,background .15s ease-in-out}
 .sp-btn:hover{border-color:var(--ui-brand-border);background:var(--ui-brand-soft);
 color:var(--ui-brand-ink)}
 
+/* `padding-bottom` chứ không phải đệm bốn phía: cột đầu và hàng tiêu đề đều
+   `position:sticky`, mà đệm ngang sẽ đẩy mốc dính lệch khỏi cạnh khung và để
+   lộ một dải nội dung trôi qua bên dưới chúng. Đo trước khi sửa: hàng cuối
+   cách chân khung đúng 1px, tức đang dính viền. */
 .sp-scroll{overflow-x:auto;width:fit-content;max-width:100%;
+padding-bottom:10px;
 border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
 background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
 /* width:auto chứ không phải 100%. Bảng xếp hạng chỉ có 5 cột: ép nó rộng
@@ -354,8 +359,14 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    Đã đo: để #E2E8F0 ở đây thì ô rỗng sáng 231,3 còn ô có về 232,3 — chênh
    một đơn vị, tức mắt thường không tách được. Chính vạch chéo cũ đang gánh
    việc phân biệt ấy, nên bỏ vạch mà không bù độ sáng là dựng lại đúng lỗi cũ. */
+/* Chế độ sáng trả ô không về về NỀN TRẮNG, đúng lối trang mẫu.
+   Trước đây phải dùng xám #CBD5E1 vì cấp 1 nháy chiếm mất màu trắng; nay 1
+   nháy là vàng nên trắng rảnh ra. Vàng và trắng chênh rất ít về ĐỘ SÁNG
+   (1,07) dù khác hẳn về sắc — nên vòng viền trong của ô có về vẫn là dấu
+   hiệu thứ hai bắt buộc, không phải trang trí. */
 @media (prefers-color-scheme: light) {
-  .sp-table td.is-empty { background-color: #CBD5E1; }
+  .sp-table td.is-empty { background-color: #FFFFFF; }
+  .sp-nl i.sp-empty-key { background-color: #FFFFFF; }
 }
 
 /* Ô CÓ VỀ. Bóng rất mỏng — một ma trận có tới vài nghìn ô, bóng dày là phải
@@ -382,12 +393,26 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
    Cấp 5+ là cấp duy nhất đảo nền/chữ. Cố ý: nó hiếm nhất và phải bật ra khỏi
    trang ngay từ cái liếc đầu tiên (7,29:1 so với ô trống). */
-.sp-table td.sp-n1 { background-color: #FFFFFF; color: #161C2D; }
-.sp-table td.sp-n2 { background-color: #DBEAFE; color: #1D4ED8; }
-.sp-table td.sp-n3 { background-color: #D1FAE5; color: #047857; }
-.sp-table td.sp-n4 { background-color: #FFEDD5; color: #9A3412; }
+/* Thang nháy theo lối Rồng Bạch Kim: VÀNG -> CAM -> ĐỎ.
+   ------------------------------------------------------------------------
+   Thang cũ (trắng, xanh dương, xanh lá, cam, tím) có năm sắc nhưng KHÔNG có
+   trật tự tri giác: nhìn một ô xanh lá không đoán được nó nhiều hay ít nháy
+   hơn ô xanh dương. Thang vàng-cam-đỏ thì đọc được ngay vì nó là thang nhiệt.
+
+   Và nó gỡ luôn một vướng cũ: cấp 1 nháy trước đây là NỀN TRẮNG, trùng với
+   ô không về nên phải nhờ vân chéo mới tách được. Nay 1 nháy là vàng, trắng
+   trả về cho ô không về, và vân chéo không còn cần thiết.
+
+   ĐỎ dùng #C62828 chứ không phải #D9534F như trang mẫu: đo ra #D9534F trượt
+   AA với CẢ HAI màu chữ — 3,96 với chữ trắng và 4,28 với chữ đen, tức không
+   có màu chữ nào đọc được trên nó. #C62828 đạt 5,62 với chữ trắng và là sắc
+   gần #D9534F nhất trong các ứng viên đạt chuẩn. */
+.sp-table td.sp-n1 { background-color: #FFFF00; color: #161C2D; }
+.sp-table td.sp-n2 { background-color: #FF9900; color: #161C2D; }
+.sp-table td.sp-n3 { background-color: #C62828; color: #FFFFFF; }
+.sp-table td.sp-n4 { background-color: #991B1B; color: #FFFFFF; }
 .sp-table td.sp-n5 {
-  background-color: #5B21B6; color: #FFFFFF;
+  background-color: #7F1D1D; color: #FFFFFF;
   box-shadow: inset 0 0 0 1px #4C1D95, 0 1px 3px rgba(91,33,182,.34);
 }
 
@@ -408,11 +433,11 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-nl span { color: var(--ui-ink-2); font-weight: 600; }
 /* Quy tắc cấp nháy ở trên neo vào "td", nên ô mẫu trong chú giải — vốn là
    thẻ <i> — không với tới được. Khai lại cho đúng nơi nó sống. */
-.sp-nl i.sp-n1 { background: #FFFFFF; color: #161C2D; box-shadow: inset 0 0 0 1px var(--ui-border-strong); }
-.sp-nl i.sp-n2 { background: #DBEAFE; color: #1D4ED8; }
-.sp-nl i.sp-n3 { background: #D1FAE5; color: #047857; }
-.sp-nl i.sp-n4 { background: #FFEDD5; color: #9A3412; }
-.sp-nl i.sp-n5 { background: #5B21B6; color: #FFFFFF; }
+.sp-nl i.sp-n1 { background: #FFFF00; color: #161C2D; }
+.sp-nl i.sp-n2 { background: #FF9900; color: #161C2D; }
+.sp-nl i.sp-n3 { background: #C62828; color: #FFFFFF; }
+.sp-nl i.sp-n4 { background: #991B1B; color: #FFFFFF; }
+.sp-nl i.sp-n5 { background: #7F1D1D; color: #FFFFFF; }
 /* Chú giải phải hiện ĐÚNG thứ nó chú giải. Để lại sọc ở đây trong khi ô thật
    đã phẳng thì chú giải nói sai về chính bảng nó đang giải thích. */
 .sp-nl i.sp-empty-key {
@@ -482,3 +507,29 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   .sp-table.sp-grid-lines td.marked { background: #78350f; }
   .sp-table td.is-empty { opacity: .35; }
 }
+
+/* Ô của kỳ CHƯA QUAY: xám tro, viền nét đứt.
+   ------------------------------------------------------------------------
+   Phải phân biệt được 100% với dữ liệu quá khứ, nên dùng HAI dấu hiệu chứ
+   không riêng màu: nền xám tro và viền NÉT ĐỨT. Nét đứt là thứ duy nhất trên
+   bảng này dùng kiểu viền khác, nên nó không lẫn vào đâu được — kể cả khi in
+   trắng đen hoặc khi người xem không phân biệt màu. */
+.sp-table td.sp-pending,
+.sp-table th.sp-pending {
+  background-color: #E0E0E0 !important;
+  background-image: none !important;
+  color: var(--ui-ink-soft);
+  box-shadow: none !important;
+  outline: 1px dashed var(--ui-border-strong);
+  outline-offset: -2px;
+}
+@media (prefers-color-scheme: dark) {
+  .sp-table td.sp-pending,
+  .sp-table th.sp-pending {
+    background-color: #263243 !important;
+    color: #CBD5E1;
+    outline-color: #64748B;
+    /* Hex ở khối chế độ tối là lựa chọn có chủ đích, không phải sót token. */
+  }
+}
+.sp-pending-note { color: var(--ui-ink-soft); font-size: 12px; }

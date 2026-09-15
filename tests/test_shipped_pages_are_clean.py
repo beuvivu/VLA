@@ -68,9 +68,13 @@ def test_no_page_spells_out_where_the_data_lives(page: Path) -> None:
     """
     html = page.read_text(encoding="utf-8", errors="replace")
     body = re.sub(r"<meta[^>]+Content-Security-Policy[^>]*>", "", html, flags=re.I)
+    # `vla` trần, không phải `vla-`. Danh sách trước chỉ chặn dạng có gạch nối
+    # nên bỏ lọt hai thứ thật: tên tệp `assets/vla.css` gửi thẳng ra trang
+    # trong một thẻ <link>, và các khoá localStorage `vla.picked.` /
+    # `vla.defields.`. Chặn theo tiền tố thì không còn khe nào.
     for token in ("githubusercontent", "github.io", "github.com", "beuvivu",
                   "workers.dev", "deno.dev", "data/xsmb", "data/advanced",
-                  "data/path", "data/live"):
+                  "data/path", "data/live", "vla", "VLA"):
         assert token not in body, f"{page.name} lộ {token!r}"
 
 

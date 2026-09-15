@@ -56,13 +56,75 @@ const $ = (id) => document.getElementById(id);
 const pad2 = (n) => String(n).padStart(2, "0");
 
 /** Các kỳ nằm trong dải đang chọn. */
+/** Thứ trong tuần của nhãn ngày `YYYY-MM-DD`, chuẩn JS (Chủ nhật = 0).
+ *
+ *  KHÔNG dùng `new Date(d).getDay()`. `getDay()` đọc theo múi giờ MÁY NGƯỜI
+ *  XEM, không phải múi giờ đã dựng nên mốc. Đã đo trong Chromium với
+ *  2026-09-14 (thứ Hai ở Việt Nam): cả `new Date(d).getDay()` lẫn
+ *  `new Date(d + "T12:00:00+07:00").getDay()` đều trả 0 (Chủ nhật) khi người
+ *  xem ở America/Los_Angeles hoặc Pacific/Honolulu — bộ lọc "Thứ hai" khi ấy
+ *  trả về toàn kỳ Chủ nhật, âm thầm, không báo lỗi.
+ *
+ *  Ngày quay là một NHÃN LỊCH chứ không phải một thời điểm. `Date.UTC` dựng
+ *  mốc từ ba con số rời và `getUTCDay()` đọc lại cũng bằng UTC, nên múi giờ
+ *  người xem không chen vào được ở cả hai đầu.
+ */
+function weekdayOf(value) {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
 function selected() {
   const from = $("sp-from") && $("sp-from").value;
   const to = $("sp-to") && $("sp-to").value;
   let rows = DRAWS;
   if (from) rows = rows.filter((r) => r.d >= from);
   if (to) rows = rows.filter((r) => r.d <= to);
+  // Lọc thứ chạy SAU khi đã chốt khoảng, không phải trước: yêu cầu là "các
+  // ngày Thứ 2 TRONG khoảng đã chọn".
+  const weekday = $("sp-weekday");
+  if (weekday && weekday.value !== "all") {
+    const want = Number(weekday.value);
+    if (Number.isInteger(want) && want >= 0 && want <= 6) {
+      rows = rows.filter((r) => weekdayOf(r.d) === want);
+    }
+  }
   return rows;
+}
+
+/** Nhãn ngày hôm nay theo giờ Việt Nam, hoặc "" nếu không dựng được.
+ *
+ *  Phải quy về múi giờ Việt Nam chứ không dùng đồng hồ máy: người xem ở bờ
+ *  Tây nước Mỹ lúc 19h ngày 14 đang là 09h ngày 15 ở Việt Nam, nên "hôm nay"
+ *  của họ lệch một ngày so với lịch quay.
+ */
+function todayInVietnam() {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date());
+  } catch (err) {
+    return "";
+  }
+}
+
+/** Kỳ hôm nay đã có kết quả chưa. Trả về nhãn ngày nếu CHƯA, "" nếu rồi.
+ *
+ *  Cột chờ phải TÔN TRỌNG bộ lọc thứ. Nó được chèn vào sau khi lọc xong, nên
+ *  nếu không tự kiểm thì nó lách qua: đã đo, lọc "Thứ hai" và lọc "Chủ nhật"
+ *  đều hiện cột 15-09, trong khi 15-09-2026 là thứ Ba. Một cột chờ nằm sai
+ *  thứ thì phá đúng cái mục đích người ta bật bộ lọc lên.
+ */
+function pendingDay(rows) {
+  const today = todayInVietnam();
+  if (!today) return "";
+  const latest = rows.length ? rows[rows.length - 1].d : "";
+  if (today <= latest) return "";
+  const weekday = $("sp-weekday");
+  if (weekday && weekday.value !== "all" && weekdayOf(today) !== Number(weekday.value)) {
+    return "";
+  }
+  return today;
 }
 
 function setCount(rows) {
@@ -122,7 +184,7 @@ const DE_FIELDS = [
   },
 ];
 
-const FIELD_KEY = "vla.defields." + (location.pathname.split("/").pop() || "index");
+const FIELD_KEY = "sp.defields." + (location.pathname.split("/").pop() || "index");
 let SHOWN = new Set(DE_FIELDS.map((f) => f.key));
 try {
   const saved = localStorage.getItem(FIELD_KEY);
@@ -283,8 +345,9 @@ function table(el, headers, rows, opts) {
           if (k >= 1) state += ` sp-n${Math.min(k, 5)}`;
         }
       }
+      const waiting = opts.pending && (opts.pending(y, i) || {}).pending ? " sp-pending" : "";
       const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
-      return `<td class="cell${cls}${on}${blank}${state}" data-key="${key}"${style}>${c}</td>`;
+      return `<td class="cell${cls}${on}${blank}${state}${waiting}" data-key="${key}"${style}>${c}</td>`;
     }).join("") + "</tr>"
   ).join("");
 
@@ -319,13 +382,33 @@ function table(el, headers, rows, opts) {
 // lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_KEY = "sp.marks.v2." + (location.pathname.split("/").pop() || "index");
+// HAI kho, không phải một.
+//
+//   MARKS       khoá theo Ô CỤ THỂ. Đây là chế độ mặc định: bấm ô nào thì
+//               đúng ô ấy đổi màu, không ô nào khác.
+//   PAIR_MARKS  khoá theo CẶP SỐ. Chỉ dùng khi bật "tự động đánh dấu cặp
+//               trùng".
+//
+// Vì sao tách đôi thay vì một kho có cờ: một ô có thể đang sáng vì chính nó
+// được bấm, HOẶC vì cặp số của nó đang được đánh dấu. Gộp lại thì không phân
+// biệt được hai trường hợp ấy và cú bấm tiếp theo xử lý sai.
 let MARKS = new Set();
+let PAIR_MARKS = new Set();
 try {
-  MARKS = new Set(JSON.parse(localStorage.getItem(MARK_KEY) || "[]"));
-} catch (e) { MARKS = new Set(); }
+  const saved = JSON.parse(localStorage.getItem(MARK_KEY) || "{}");
+  if (Array.isArray(saved)) MARKS = new Set(saved);
+  else {
+    MARKS = new Set(saved.cells || []);
+    PAIR_MARKS = new Set(saved.pairs || []);
+  }
+} catch (e) { MARKS = new Set(); PAIR_MARKS = new Set(); }
 
 function saveMarks() {
-  try { localStorage.setItem(MARK_KEY, JSON.stringify(Array.from(MARKS))); } catch (e) {}
+  try {
+    localStorage.setItem(MARK_KEY, JSON.stringify({
+      cells: Array.from(MARKS), pairs: Array.from(PAIR_MARKS),
+    }));
+  } catch (e) {}
 }
 
 // Bảng ma trận rộng tới 120 cột; mắt lạc cột là chuyện thường. Trỏ vào ô nào
@@ -360,24 +443,71 @@ function bindColumnHint() {
   document.addEventListener("mouseleave", clear, true);
 }
 
+/** Cặp hai chữ số mà một ô đại diện, hoặc null nếu ô không mang cặp nào.
+ *
+ *  Đọc từ KHOÁ chứ không từ chữ trong ô: chữ trong ô là SỐ NHÁY ("1", "2"),
+ *  không phải con lô. Lấy nhầm nó thì bấm ô "2" sẽ làm sáng mọi ô có 2 nháy
+ *  — một tập hợp chẳng có nghĩa gì với người soi cầu.
+ */
+function markPair(td) {
+  const found = /\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/.exec(td.dataset.key || "");
+  return found ? found[1] : null;
+}
+
+function pairModeOn() {
+  const box = $("sp-pair-mode");
+  return !!(box && box.checked);
+}
+
+function isMarked(td) {
+  if (MARKS.has(td.dataset.key)) return true;
+  const pair = markPair(td);
+  return pair !== null && PAIR_MARKS.has(pair);
+}
+
+function paintMarks() {
+  document.querySelectorAll("td.cell").forEach((td) => {
+    td.classList.toggle("marked", isMarked(td));
+  });
+  updateMarkCount();
+}
+
+/** Một cú bấm, bốn nhánh — và thứ tự giữa chúng là phần quan trọng.
+ *
+ *  Quy tắc bao trùm: bấm vào ô ĐANG SÁNG thì nó tắt, bất kể nó sáng vì lý do
+ *  gì. Hai nhánh tắt phải đứng TRƯỚC hai nhánh bật; nếu không, một ô đang
+ *  sáng theo cặp sẽ bị chồng thêm dấu ô và bấm mãi không tắt.
+ */
+function toggleMark(td) {
+  const key = td.dataset.key;
+  const pair = markPair(td);
+  if (pair !== null && PAIR_MARKS.has(pair)) PAIR_MARKS.delete(pair);
+  else if (MARKS.has(key)) MARKS.delete(key);
+  else if (pairModeOn() && pair !== null) PAIR_MARKS.add(pair);
+  else MARKS.add(key);
+}
+
 function bindMarking() {
   document.addEventListener("click", (ev) => {
     const td = ev.target.closest("td.cell");
     if (!td || !td.dataset.key) return;
-    const key = td.dataset.key;
-    if (MARKS.has(key)) { MARKS.delete(key); td.classList.remove("marked"); }
-    else { MARKS.add(key); td.classList.add("marked"); }
+    toggleMark(td);
     saveMarks();
-    updateMarkCount();
+    paintMarks();
   });
+
+  // Đổi chế độ KHÔNG xoá dấu đã có: người xem bật chế độ cặp, đánh vài dấu,
+  // rồi tắt đi — những dấu ấy phải còn nguyên vì họ không hề bỏ chọn chúng.
+  const pairBox = $("sp-pair-mode");
+  if (pairBox) pairBox.addEventListener("change", paintMarks);
 
   const clear = $("sp-clear-marks");
   if (clear) {
     clear.addEventListener("click", () => {
       MARKS.clear();
+      PAIR_MARKS.clear();
       saveMarks();
-      document.querySelectorAll("td.marked").forEach((td) => td.classList.remove("marked"));
-      updateMarkCount();
+      paintMarks();
     });
   }
   updateMarkCount();
@@ -385,7 +515,14 @@ function bindMarking() {
 
 function updateMarkCount() {
   const el = $("sp-mark-count");
-  if (el) el.textContent = MARKS.size ? `${MARKS.size} ô đang đánh dấu` : "";
+  const total = MARKS.size + PAIR_MARKS.size;
+  if (el) {
+    el.textContent = total
+      ? (PAIR_MARKS.size
+        ? `${MARKS.size} ô + ${PAIR_MARKS.size} cặp đang đánh dấu`
+        : `${MARKS.size} ô đang đánh dấu`)
+      : "";
+  }
 }
 
 /** Màu nền heat-map: 0 = nhạt nhất, 1 = đậm nhất. */
@@ -411,11 +548,21 @@ function countLoto(rows) {
 // để chỉ hiện những con đang quan tâm.
 //
 // Trần cột là ràng buộc thật, không phải lười: chọn "Tất cả" trên kho 2392 kỳ
-// cho 239 000 ô và trình duyệt nghẹn. Cắt còn MATRIX_MAX_DAYS kỳ gần nhất và
-// nói rõ trên trang, thay vì để trang treo mà không ai hiểu vì sao.
-const MATRIX_MAX_DAYS = 120;
+// cho 239 000 ô và trình duyệt nghẹn.
+//
+// Nhưng trần 120 cũ thận trọng quá mức — đã đo lại chi phí dựng thật trong
+// Chromium, cùng máy, cùng trang:
+//
+//        30 ngày    3 030 ô    106 ms
+//       120 ngày   12 120 ô    352 ms
+//       300 ngày   30 300 ô    894 ms      <- vẫn dưới một giây
+//       500 ngày   50 500 ô  4 113 ms      <- chỗ gãy thật
+//
+// Nên trần đặt ở 300: đủ cho mốc dài nhất người dùng hỏi tới, và còn cách xa
+// điểm mà trình duyệt bắt đầu nghẹn.
+const MATRIX_MAX_DAYS = 300;
 
-const PICK_KEY = "vla.picked." + (location.pathname.split("/").pop() || "index");
+const PICK_KEY = "sp.picked." + (location.pathname.split("/").pop() || "index");
 let PICKED = null;   // null = hiện tất cả
 try {
   const saved = localStorage.getItem(PICK_KEY);
@@ -509,6 +656,13 @@ function renderLotoMatrix(rows) {
   // triệu phép quét tuyến tính, tức tự tạo ra một vấn đề hiệu năng khi đang
   // đi sửa lỗi khác.
   const byDate = shown.map((r, i) => ({ d: r.d, c: per[i] })).reverse();
+  // Kỳ hôm nay chưa quay thì vẫn CÓ MẶT trên bảng, dưới dạng ô chờ. Bỏ hẳn nó
+  // đi thì bảng trông như hôm nay không tồn tại; để nó trắng như ô "không về"
+  // thì tệ hơn, vì đó là một lời khẳng định SAI — chưa quay không phải là
+  // không về. `opts.pending` khiến `table()` gắn lớp riêng cho hàng/cột ấy.
+  const waiting = pendingDay(shown);
+  if (waiting) byDate.unshift({ d: waiting, c: new Array(100).fill(null), pending: true });
+  opts.pending = (y, i) => (vertical ? byDate[y] : byDate[i - 1]);
   if (vertical) {
     const head = ["Ngày"].concat(nums.map(pad2));
     const body = byDate.map((r) =>
@@ -665,17 +819,26 @@ function renderPairMatrix(rows) {
   // Cùng lỗi với ma trận lô tô: bảng này cũng chuyển vị được, nên khoá đánh
   // dấu phải theo danh tính (họ cặp, ngày kỳ) chứ không theo vị trí ô.
   const byDate = shown.map((r, i) => ({ d: r.d, t: day(r), c: per[i] })).reverse();
+  const waiting = pendingDay(shown);
+  if (waiting) {
+    byDate.unshift({
+      d: waiting, t: `${waiting.slice(8)}-${waiting.slice(5, 7)}`,
+      c: new Array(CAP50.length).fill(null), pending: true,
+    });
+  }
+  const verticalPair = ($("sp-orient") || {}).value === "Xem theo chiều dọc";
+  const pendingAt = (y, i) => (verticalPair ? byDate[y] : byDate[i - 1]);
   if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
     table(grid, ["Ngày"].concat(CAP50.map(label)),
       byDate.map((r) => [`<b>${r.t}</b>`].concat(r.c.map((v) => v || ""))),
-      { key: (y, i) => (i === 0
+      { pending: pendingAt, key: (y, i) => (i === 0
         ? `p|d${byDate[y].d}`
         : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
   } else {
     table(grid, ["Cặp"].concat(byDate.map((r) => r.t)),
       CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
         .concat(byDate.map((r) => r.c[j] || ""))),
-      { key: (y, i) => (i === 0
+      { pending: pendingAt, key: (y, i) => (i === 0
         ? `p|c${label(CAP50[y])}`
         : `p|c${label(CAP50[y])}|d${byDate[i - 1].d}`) });
   }
@@ -1093,7 +1256,7 @@ function boot(renderName) {
     from.value = DRAWS[Math.max(0, DRAWS.length - 90)].d;
     to.value = DRAWS[DRAWS.length - 1].d;
   }
-  [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient")].forEach(
+  [from, to, $("sp-year"), $("sp-month"), $("sp-mode"), $("sp-orient"), $("sp-weekday")].forEach(
     (el) => el && el.addEventListener("change", render));
 
   // Chỉ nút BÊN TRONG .sp-chips. "Xoá đánh dấu" từng dùng chung lớp .sp-chip
