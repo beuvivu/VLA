@@ -139,6 +139,7 @@ def test_research_lab_has_cyber_experiment_workspace_without_fake_probability() 
     assert "Ma trận ma sát số &amp; bóng" in out
     assert "CONFIDENCE SCORE GAUGE" in out
     assert "Gauge là trạng thái cổng kiểm chứng, không phải xác suất trúng" in out
+    assert '</section><section class="rl-pipeline"' in out
     assert '<div class="ui-note">' in out
     for label in ("Giả thuyết", "Huấn luyện", "Kiểm định", "Tập giữ lại", "Cổng vận hành"):
         assert label in out
