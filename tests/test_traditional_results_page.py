@@ -524,13 +524,16 @@ def test_clicking_a_lit_cell_turns_it_off_whatever_lit_it() -> None:
 
 
 def test_a_mini_cell_carries_the_whole_two_digit_pair() -> None:
-    """Ô mini hiện MỘT chữ số đuôi, nhưng giá trị của nó là cả cặp đầu+đuôi.
+    """Giá trị đánh dấu của ô mini là cả cặp đầu+đuôi, không phải một chữ số.
 
     Bản trước lấy chính nội dung ô làm khoá — tức một chữ số đơn lẻ. Đo trong
     trình duyệt: bấm ô "2" làm sáng 159 ô mini rải khắp mọi hàng đầu khác
     nhau, và KHÔNG ô giải nào. Đó không phải cặp lô tô.
+
+    Nay ô còn HIỆN luôn cả cặp, nên cái thấy và cái được đánh dấu là một.
     """
-    assert "mini.dataset.value = `${headDigit}${tail}`;" in JS_CODE
+    assert "const pair = `${headDigit}${tail}`;" in JS_CODE
+    assert "mini.dataset.value = pair;" in JS_CODE
     assert "if (node.dataset.value) return node.dataset.value;" in JS_CODE
 
 
@@ -578,8 +581,14 @@ def test_there_is_a_way_to_clear_every_mark_at_once() -> None:
 
 
 def test_the_loto_table_keeps_only_the_head_side() -> None:
-    """Bỏ hẳn nửa "Đuôi tương ứng"; còn hai cột và kéo giãn kín khung."""
-    assert '["Đầu", "Đuôi tương ứng"]' in JS_CODE
+    """Bỏ hẳn nửa "Đuôi tương ứng"; còn hai cột và kéo giãn kín khung.
+
+    Nhãn cột thứ hai nay là "Lô tô" chứ không phải "Đuôi tương ứng": ô bên
+    dưới chứa CẶP hai chữ số, nên nhãn cũ mô tả sai nội dung. Trùng luôn nhãn
+    của trang tham chiếu (đã đọc cấu trúc: cột ``['Đầu', 'Lô tô']``).
+    """
+    assert '["Đầu", "Lô tô"]' in JS_CODE
+    assert "Đuôi tương ứng" not in JS_CODE
     assert "Đầu tương ứng" not in JS_CODE
     rule = re.search(r"\.tr-head-tail table\{([^}]*)\}", CSS_CODE)
     assert rule is not None
@@ -615,3 +624,137 @@ def test_number_cells_are_reachable_by_keyboard() -> None:
     assert "number.tabIndex = 0;" in JS_CODE
     assert 'resultsNode.addEventListener("keydown"' in JS_CODE
     assert 'setAttribute("role", "button")' in JS_CODE
+
+
+# --- Lọc theo thứ trong tuần ------------------------------------------------
+#
+# Đã đọc cấu trúc trang tham chiếu `mketqua.net/so-ket-qua` qua
+# `inspect-reference-pages.yml`: nó có `select 'dow'` với 8 lựa chọn
+# ("Chủ nhật, Thứ hai, Thứ ba…"), tức "tất cả" cộng bảy thứ.
+
+
+def test_the_weekday_filter_offers_all_seven_days_plus_an_off_switch() -> None:
+    payload = embedded_payload(load_rows(ROOT, limit=5), generated="2026-01-01T00:00:00+07:00")
+    soup = BeautifulSoup(render_page(payload), "html.parser")
+    select = soup.select_one("#tr-weekday")
+    assert select is not None, "phải có ô chọn thứ trong tuần"
+    values = [option["value"] for option in select.select("option")]
+    assert values[0] == "all", values
+    # Bảy thứ, đủ và không trùng. Chỉ đếm 8 lựa chọn là chưa đủ: tám ô cùng
+    # trỏ vào "thứ hai" vẫn đếm ra tám.
+    assert sorted(values[1:]) == [str(day) for day in range(7)], values
+    labels = [option.get_text(strip=True) for option in select.select("option")]
+    assert labels[1] == "Thứ hai" and labels[-1] == "Chủ nhật", labels
+
+
+def test_the_weekday_is_computed_without_the_viewer_timezone() -> None:
+    """`getDay()` đọc theo múi giờ MÁY NGƯỜI XEM, nên nó sai ngoài Việt Nam.
+
+    Đã đo trong Chromium với 2026-09-14 (thứ Hai ở Việt Nam): cả
+    ``new Date(d).getDay()`` lẫn ``new Date(d + "T12:00:00+07:00").getDay()``
+    đều trả 0 (Chủ nhật) khi người xem ở ``America/Los_Angeles`` hoặc
+    ``Pacific/Honolulu``. Bộ lọc "Thứ hai" khi ấy trả về toàn kỳ Chủ nhật,
+    và không có gì báo lỗi cả.
+    """
+    body = JS_CODE[JS_CODE.index("function weekdayOf"):]
+    body = body[: body.index("\n  }") + 4]
+    assert "Date.UTC(" in body and "getUTCDay()" in body, body
+    # `getDay(` phải vắng mặt: nó chính là cái bẫy.
+    assert "getDay(" not in body.replace("getUTCDay(", ""), body
+
+
+def test_the_weekday_filter_narrows_the_range_rather_than_replacing_it() -> None:
+    """Yêu cầu là "các ngày Thứ 2 TRONG KHOẢNG đã chọn", nên khoảng chốt trước."""
+    body = JS_CODE[JS_CODE.index("function selectRows"):]
+    body = body[: body.index("\n  }") + 4]
+    assert "selectRange()" in body, body
+    assert "weekdayOf(draw.date) === want" in body, body
+
+
+def test_a_weekday_filter_that_finds_nothing_says_so_in_its_own_words() -> None:
+    """Rỗng vì lọc thứ khác hẳn rỗng vì khoảng sai, nên lời giải thích phải khác.
+
+    Không có nhánh riêng thì người xem chọn "Thứ tư" trong một khoảng ba ngày
+    sẽ đọc được "Hãy chọn khoảng khác" — một lời khuyên trỏ sai hướng.
+    """
+    body = JS_CODE[JS_CODE.index("function emptyMessage"):]
+    body = body[: body.index("\n  }") + 4]
+    assert "weekdayLabel()" in body, body
+    assert body.index('weekday.value !== "all"') < body.index('period.value !== "custom"'), body
+
+
+def test_the_status_line_says_how_many_draws_the_weekday_filter_started_from() -> None:
+    """"4 kỳ" sau khi chọn "30 kỳ gần nhất" trông như trang hỏng nếu không nói rõ."""
+    body = JS_CODE[JS_CODE.index("function statusLine"):]
+    body = body[: body.index("\n  }") + 4]
+    assert "weekdayLabel()" in body and "selectRange()" in body, body
+
+
+# --- Bảng lô tô đầu ---------------------------------------------------------
+
+
+def test_a_loto_cell_shows_the_whole_pair_not_just_the_tail_digit() -> None:
+    """Trang tham chiếu hiện `02; 08;` — cặp đủ, không phải chữ số đuôi rời.
+
+    Đây cũng là chỗ khiến tính năng đánh dấu từng khó hiểu: ô mini vốn đã mang
+    cặp đầy đủ trong ``data-value``, nhưng người xem chỉ THẤY một chữ số.
+    """
+    body = JS_CODE[JS_CODE.index("function renderDigitList"):]
+    body = body[: body.index("\n  }") + 4]
+    assert 'el("span", "tr-mini", pair)' in body, body
+    assert "const pair = `${headDigit}${tail}`;" in body, body
+
+
+def test_the_loto_type_scales_with_the_column_not_the_viewport() -> None:
+    """`vw` đo MÀN HÌNH; cái bó hẹp chữ lại là CỘT.
+
+    Màn hình 1440px giữ nguyên bề rộng dù người xem chọn 1 hay 4 cột, nên một
+    `clamp(...,vw,...)` trả về đúng một giá trị cho cả bốn bố cục — tức là
+    không giải quyết gì. `cqw` đo container, nên nó bám đúng thứ cần bám.
+    """
+    block = CSS_CODE[CSS_CODE.index("@supports (container-type:inline-size)"):]
+    block = block[: block.index("\n}") + 2]
+    assert "cqw" in block, block
+    assert "vw" not in block.replace("cqw", ""), block
+    # Container query chỉ chạy khi có một container để đo.
+    assert "container-type:inline-size" in CSS_CODE.replace("@supports (container-type:inline-size)", "")
+
+
+def test_browsers_without_container_queries_still_get_a_size() -> None:
+    """`@supports` là phần ĐÈ; giá trị nền phải tự đứng được một mình.
+
+    Nếu cỡ chữ chỉ tồn tại bên trong `@supports`, trình duyệt không hỗ trợ sẽ
+    nhận `font-size: var(--tr-mini-fs)` với biến rỗng — chữ về cỡ mặc định,
+    và không ai thấy vì trình duyệt của người viết thì có hỗ trợ.
+    """
+    guarded = CSS_CODE[CSS_CODE.index("@supports (container-type:inline-size)"):]
+    base = CSS_CODE[: CSS_CODE.index("@supports (container-type:inline-size)")]
+    for token in ("--tr-mini-fs", "--tr-digit-fs", "--tr-digit-w", "--tr-mini-w", "--tr-mini-h"):
+        assert token in base, f"{token} phải có giá trị nền ngoài @supports"
+        assert token in guarded, f"{token} phải được đè bên trong @supports"
+
+
+@pytest.mark.parametrize("layout", ["1", "2", "3", "4"])
+def test_no_layout_falls_back_to_unreadably_small_loto_type(layout: str) -> None:
+    """Sàn cỡ chữ cho ĐƯỜNG LUI, không chỉ cho nhánh container query.
+
+    Bản trước để 9px ở bố cục 4 cột — nhỏ hơn cả cỡ chữ chú thích của trang.
+    """
+    if layout == "1":
+        block = CSS_CODE[CSS_CODE.index(".tr-results{display:grid"):]
+    else:
+        block = CSS_CODE[CSS_CODE.index(f'.tr-results[data-layout="{layout}"]{{'):]
+    block = block[: block.index("}")]
+    found = re.search(r"--tr-mini-fs:([\d.]+)px", block)
+    assert found is not None, block
+    assert float(found.group(1)) >= 11.0, (layout, found.group(1))
+
+
+def test_the_head_column_keeps_the_special_prize_red() -> None:
+    rule = re.search(r"^\.tr-digit\{[^}]*\}", CSS_CODE, flags=re.M)
+    assert rule is not None, "không thấy quy tắc .tr-digit"
+    assert "color:var(--vla-bad)" in rule.group(0), rule.group(0)
+    special = re.search(
+        r"^\.tr-prize-row\[data-prize=\"special\"\] \.tr-prize-label\{[^}]*\}",
+        CSS_CODE, flags=re.M)
+    assert special is not None and "color:var(--vla-bad)" in special.group(0), special

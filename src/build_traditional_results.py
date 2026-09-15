@@ -146,6 +146,24 @@ PERIOD_PRESETS: tuple[tuple[str, str], ...] = (
     ("custom", "Chọn khoảng ngày"),
 )
 
+#: Lọc theo thứ trong tuần. Trang tham chiếu có một ô `select name="dow"`
+#: với tám lựa chọn (đã đọc cấu trúc trang: "Chủ nhật, Thứ hai, Thứ ba…"),
+#: tức là "tất cả" cộng bảy thứ.
+#:
+#: GIÁ TRỊ là chỉ số thứ theo chuẩn JavaScript (Chủ nhật = 0). THỨ TỰ hiển
+#: thị thì bắt đầu từ Thứ hai, vì tuần của người Việt bắt đầu từ Thứ hai —
+#: không cần phải trùng thứ tự với giá trị.
+WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
+    ("all", "Tất cả các thứ"),
+    ("1", "Thứ hai"),
+    ("2", "Thứ ba"),
+    ("3", "Thứ tư"),
+    ("4", "Thứ năm"),
+    ("5", "Thứ sáu"),
+    ("6", "Thứ bảy"),
+    ("0", "Chủ nhật"),
+)
+
 #: Số cột hiển thị. Trang tham chiếu dùng bốn nút chọn bố cục.
 LAYOUT_CHOICES: tuple[tuple[str, str], ...] = (
     ("1", "1 cột"),
@@ -159,6 +177,13 @@ def _period_options() -> str:
     return "".join(
         f'<option value="{value}"{" selected" if value == "30" else ""}>{label}</option>'
         for value, label in PERIOD_PRESETS
+    )
+
+
+def _weekday_options() -> str:
+    return "".join(
+        f'<option value="{value}"{" selected" if value == "all" else ""}>{label}</option>'
+        for value, label in WEEKDAY_CHOICES
     )
 
 
@@ -203,6 +228,9 @@ def render_page(payload: dict[str, object]) -> str:
   <form id="tr-form" class="tr-form">
     <label>Khoảng thời gian
       <select id="tr-period" name="period">{_period_options()}</select>
+    </label>
+    <label>Thứ trong tuần
+      <select id="tr-weekday" name="weekday">{_weekday_options()}</select>
     </label>
     <div class="tr-custom-dates" id="tr-custom-dates" hidden>
       <label>Từ ngày<input id="tr-from" name="from" type="date"

@@ -21,6 +21,20 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PAGE = ROOT / "docs" / "so-ket-qua-truyen-thong.html"
 WIDTHS = (1440, 1180, 900, 760, 640, 390)
+
+#: Sàn cỡ chữ của ô cặp lô tô, mọi bố cục. Bản trước tụt xuống 9px ở bố cục
+#: 4 cột — đó là lý do có yêu cầu "tăng cỡ chữ".
+MIN_LOTO_PAIR_FS = 11.0
+
+
+def _weekday(value: str) -> int:
+    """Thứ của một nhãn ngày `YYYY-MM-DD`, không dính múi giờ."""
+    from datetime import date as _date
+
+    year, month, day = (int(part) for part in value.split("-"))
+    # `isoweekday()` cho thứ Hai = 1 … Chủ nhật = 7; JavaScript dùng Chủ
+    # nhật = 0, nên đưa về cùng quy ước với trang.
+    return _date(year, month, day).isoweekday() % 7
 MIN_FOOTER_GAP_PX = 8
 
 MEASURE = """() => {
@@ -280,7 +294,10 @@ def main() -> int:
             "   table_width: Math.round(t.getBoundingClientRect().width),"
             "   frame_width: Math.round(wrap.width) }; }"
         )
-        if table["columns"] != ["Đầu", "Đuôi tương ứng"]:
+        # "Lô tô" chứ không phải "Đuôi tương ứng": ô nay chứa CẶP hai chữ số,
+        # nên nhãn cũ mô tả sai thứ nằm bên dưới nó. Trùng luôn nhãn của trang
+        # tham chiếu (đã đọc cấu trúc: cột `['Đầu', 'Lô tô']`).
+        if table["columns"] != ["Đầu", "Lô tô"]:
             failures.append(f"bảng lô tô phải còn đúng hai cột, đang là {table['columns']}")
         if table["cells_per_row"] != 2:
             failures.append(f"mỗi hàng phải có 2 ô, đang có {table['cells_per_row']}")
@@ -396,6 +413,154 @@ def main() -> int:
         if page.evaluate(marked) == 0:
             failures.append("phím Enter phải đánh dấu được")
         print("  sống qua dựng lại, xoá sạch, bàn phím Enter: đạt")
+
+        # --- Bộ lọc thứ trong tuần ------------------------------------
+        #
+        # Kiểm bằng cách ĐỌC LẠI NGÀY trên các thẻ đang hiện rồi tự tính thứ,
+        # chứ không hỏi lại chính hàm của trang — hỏi lại thì hai bên cùng sai
+        # vẫn "khớp".
+        #
+        # Chạy ở HAI múi giờ. `getDay()` đọc theo múi giờ máy người xem, nên
+        # một bản cài đặt hỏng vẫn đúng ở Việt Nam và chỉ sai ở nửa kia địa
+        # cầu — đo một múi giờ là bỏ lọt đúng lỗi ấy. Đã đo: với 2026-09-14
+        # (thứ Hai), `new Date(d).getDay()` trả 0 ở America/Los_Angeles.
+        print("\nBộ lọc thứ trong tuần:")
+        before_weekday = len(failures)
+        weekday_js = """() => {
+          const days = [...document.querySelectorAll(".tr-day time")].map((t) => {
+            const [y, m, d] = t.dateTime.split("-").map(Number);
+            return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+          });
+          const labels = [...document.querySelectorAll(".tr-day time")]
+            .map((t) => t.textContent.split(",")[0].trim().toLowerCase());
+          return {count: days.length, days: [...new Set(days)],
+                  labels: [...new Set(labels)]};
+        }"""
+        names = {0: "chủ nhật", 1: "thứ hai", 2: "thứ ba", 3: "thứ tư",
+                 4: "thứ năm", 5: "thứ sáu", 6: "thứ bảy"}
+        for timezone in ("Asia/Ho_Chi_Minh", "America/Los_Angeles"):
+            context = browser.new_context(viewport={"width": 1440, "height": 1000},
+                                          timezone_id=timezone)
+            tz_page = context.new_page()
+            tz_page.on("pageerror", lambda exc: failures.append(f"lỗi JS: {exc}"))
+            tz_page.goto(PAGE.resolve().as_uri(), wait_until="load")
+            tz_page.wait_for_timeout(700)
+            tz_page.select_option("#tr-period", "500")
+            tz_page.wait_for_timeout(300)
+            for value, name in names.items():
+                tz_page.select_option("#tr-weekday", str(value))
+                tz_page.wait_for_timeout(200)
+                found = tz_page.evaluate(weekday_js)
+                label = f"{timezone} {name}"
+                if found["count"] == 0:
+                    failures.append(f"{label}: không kỳ nào hiện ra")
+                    continue
+                if found["days"] != [value]:
+                    failures.append(
+                        f"{label}: lọc ra các thứ {found['days']}, phải chỉ có [{value}]")
+                # Nhãn NGƯỜI XEM THẤY phải khớp thứ đã lọc. Logic đúng mà nhãn
+                # lệch thì với người dùng vẫn là hỏng.
+                if found["labels"] != [name]:
+                    failures.append(
+                        f"{label}: nhãn trên thẻ là {found['labels']}, phải là ['{name}']")
+            # Rỗng vì lọc thứ phải nói khác rỗng vì khoảng sai.
+            tz_page.select_option("#tr-period", "custom")
+            tz_page.wait_for_timeout(200)
+            tz_page.fill("#tr-from", dates[-3])
+            tz_page.fill("#tr-to", dates[-1])
+            tz_page.dispatch_event("#tr-to", "change")
+            tz_page.wait_for_timeout(250)
+            in_range = tz_page.evaluate("() => document.querySelectorAll('.tr-day').length")
+            missing = next(
+                (d for d in range(7)
+                 if d not in {_weekday(x) for x in dates[-3:]}), None)
+            if missing is not None:
+                tz_page.select_option("#tr-weekday", str(missing))
+                tz_page.wait_for_timeout(250)
+                state = tz_page.evaluate("""() => ({
+                  n: document.querySelectorAll('.tr-day').length,
+                  shown: getComputedStyle(document.getElementById('tr-empty')).display !== 'none',
+                  detail: document.getElementById('tr-empty-detail').textContent,
+                })""")
+                if state["n"] != 0 or not state["shown"]:
+                    failures.append(f"{timezone}: lọc thứ rỗng nhưng không hiện ô giải thích")
+                elif names[missing] not in state["detail"].lower():
+                    failures.append(
+                        f"{timezone}: lời giải thích không nhắc tới thứ đã chọn:"
+                        f" {state['detail']!r}")
+            context.close()
+        # Đếm lỗi CỦA RIÊNG mục này. Bản đầu tôi viết `if not failures`, tức
+        # đọc danh sách lỗi toàn cục — nó in "xem lỗi bên dưới" cho mục này
+        # trong khi lỗi thật nằm ở một mục hoàn toàn khác. Một dòng báo cáo
+        # chỉ sai chỗ thôi cũng đủ làm người đọc đi tìm nhầm hướng.
+        print(f"  7 thứ × 2 múi giờ, nhãn khớp, nhánh rỗng có giải thích:"
+              f" {'đạt' if len(failures) == before_weekday else 'KHÔNG ĐẠT'}")
+
+        # --- Bảng lô tô: cỡ chữ, cặp đầy đủ, không vỡ khi nhiều cột --------
+        print("\nBảng lô tô theo đầu:")
+        before_loto = len(failures)
+        loto_js = """() => {
+          const digit = document.querySelector(".tr-digit");
+          const mini = document.querySelector(".tr-mini");
+          const cs = (n) => getComputedStyle(n);
+          let overflow = 0, clipped = 0;
+          for (const d of document.querySelectorAll(".tr-day")) {
+            overflow = Math.max(overflow, d.scrollWidth - d.clientWidth);
+          }
+          for (const n of document.querySelectorAll(".tr-mini")) {
+            if (n.scrollWidth > n.clientWidth + 1) clipped += 1;
+          }
+          const pairs = [...document.querySelectorAll(".tr-mini")].map((n) => n.textContent.trim());
+          return {
+            digitFs: parseFloat(cs(digit).fontSize), digitColor: cs(digit).color,
+            miniFs: parseFloat(cs(mini).fontSize),
+            notPairs: pairs.filter((v) => !/^\d{2}$/.test(v)).slice(0, 4),
+            overflow, clipped,
+          };
+        }"""
+        page.set_viewport_size({"width": 1440, "height": 1000})
+        page.select_option("#tr-period", "30")
+        page.select_option("#tr-weekday", "all")
+        page.wait_for_timeout(300)
+        special_color = page.evaluate(
+            "() => getComputedStyle(document.querySelector("
+            "'.tr-prize-row[data-prize=special] .tr-prize-label')).color")
+        for width in (1440, 1180, 900, 640):
+            page.set_viewport_size({"width": width, "height": 1000})
+            for layout in ("1", "2", "3", "4"):
+                page.evaluate(
+                    "(value) => { const r = document.querySelector("
+                    "`input[name=tr-layout][value='${value}']`);"
+                    " r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true})); }",
+                    layout,
+                )
+                page.wait_for_timeout(120)
+                found = page.evaluate(loto_js)
+                label = f"rộng={width} bố cục={layout}"
+                if found["overflow"] > 0:
+                    failures.append(f"{label}: thẻ tràn ngang {found['overflow']}px")
+                if found["clipped"]:
+                    failures.append(f"{label}: {found['clipped']} ô lô tô bị cắt chữ")
+                if found["notPairs"]:
+                    failures.append(
+                        f"{label}: ô lô tô phải là cặp hai chữ số, thấy {found['notPairs']}")
+                # Ngưỡng đọc được. Bản trước để 9px ở bố cục 4 cột — nhỏ hơn
+                # cả cỡ chữ chú thích, và đó chính là thứ được yêu cầu sửa.
+                if found["miniFs"] < MIN_LOTO_PAIR_FS:
+                    failures.append(
+                        f"{label}: cỡ chữ cặp lô tô {found['miniFs']}px"
+                        f" < {MIN_LOTO_PAIR_FS}px")
+                if found["digitFs"] <= found["miniFs"]:
+                    failures.append(
+                        f"{label}: cột Đầu ({found['digitFs']}px) phải to hơn"
+                        f" ô cặp ({found['miniFs']}px)")
+                if found["digitColor"] != special_color:
+                    failures.append(
+                        f"{label}: cột Đầu màu {found['digitColor']},"
+                        f" phải trùng màu giải đặc biệt {special_color}")
+        print(f"  16 tổ hợp: cặp đủ hai chữ số, cỡ chữ >= {MIN_LOTO_PAIR_FS}px,"
+              f" cột Đầu đỏ, không tràn/không cắt:"
+              f" {'đạt' if len(failures) == before_loto else 'KHÔNG ĐẠT'}")
 
         browser.close()
 

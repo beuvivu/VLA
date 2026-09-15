@@ -101,19 +101,23 @@ background:var(--vla-surface);box-shadow:var(--vla-sh-sm)}
 --tr-label-w:112px;--tr-label-fs:12px;--tr-label-pad:10px 16px;
 --tr-num-fs:clamp(16px,1.5vw,22px);--tr-num-h:58px;--tr-num-pad:8px 4px;
 --tr-sp-fs:clamp(24px,2.6vw,36px);--tr-sp-h:74px;
---tr-side-min:290px;--tr-mini-fs:11px}
+--tr-side-min:290px;
+--tr-mini-fs:13px;--tr-digit-fs:19px;--tr-digit-w:52px;--tr-mini-w:34px;--tr-mini-h:26px}
 .tr-results[data-layout="2"]{grid-template-columns:repeat(2,minmax(0,1fr));
 --tr-label-w:88px;--tr-label-fs:11px;--tr-label-pad:8px 10px;
 --tr-num-fs:15px;--tr-num-h:46px;--tr-num-pad:6px 2px;
---tr-sp-fs:26px;--tr-sp-h:58px}
+--tr-sp-fs:26px;--tr-sp-h:58px;
+--tr-mini-fs:12.5px;--tr-digit-fs:18px;--tr-digit-w:48px;--tr-mini-w:33px;--tr-mini-h:25px}
 .tr-results[data-layout="3"]{grid-template-columns:repeat(3,minmax(0,1fr));
 --tr-label-w:66px;--tr-label-fs:10px;--tr-label-pad:6px 7px;
 --tr-num-fs:12.5px;--tr-num-h:38px;--tr-num-pad:4px 1px;
---tr-sp-fs:21px;--tr-sp-h:48px;--tr-mini-fs:10px}
+--tr-sp-fs:21px;--tr-sp-h:48px;
+--tr-mini-fs:12px;--tr-digit-fs:17px;--tr-digit-w:46px;--tr-mini-w:32px;--tr-mini-h:24px}
 .tr-results[data-layout="4"]{grid-template-columns:repeat(4,minmax(0,1fr));
 --tr-label-w:54px;--tr-label-fs:9px;--tr-label-pad:5px 5px;
 --tr-num-fs:11px;--tr-num-h:34px;--tr-num-pad:3px 1px;
---tr-sp-fs:17px;--tr-sp-h:42px;--tr-mini-fs:9px}
+--tr-sp-fs:17px;--tr-sp-h:42px;
+--tr-mini-fs:11px;--tr-digit-fs:16px;--tr-digit-w:42px;--tr-mini-w:30px;--tr-mini-h:23px}
 /* Nhiều cột thì khung hẹp lại, nên xếp bảng phụ xuống dưới thay vì cạnh bên. */
 .tr-results:not([data-layout="1"]) .tr-day-grid{grid-template-columns:1fr}
 .tr-results[data-headtail="off"] .tr-head-tail{display:none}
@@ -187,30 +191,78 @@ color:var(--tr-mark-ink);outline:1px solid var(--tr-mark-line);outline-offset:-1
 @media (prefers-reduced-motion:reduce){.tr-number,.tr-mini{transition:none}}
 .tr-mark-clear{margin-left:auto}
 
+/* ---- Bảng lô tô đầu: cỡ chữ theo BỀ RỘNG CỘT, không theo màn hình ------
+   Yêu cầu: chữ số to hơn, nhưng không được vỡ khi chọn 2/3/4 cột. Hai cách
+   làm quen thuộc đều hỏng đúng ở chỗ ấy:
+
+   * cỡ chữ cố định — to vừa mắt ở một cột thì tràn ở bốn cột;
+   * `clamp(...,vw,...)` — `vw` đo MÀN HÌNH, mà cái đang bó hẹp chữ lại là
+     CỘT. Màn hình 1440px giữ nguyên bề rộng dù người xem chọn 1 hay 4 cột,
+     nên `vw` trả về đúng một giá trị cho cả bốn bố cục: chính xác là điều
+     không được phép.
+
+   `cqw` đo bề rộng của container gần nhất có `container-type`. Đặt nó lên
+   `.tr-day-side` thì chữ bám theo bề rộng THẬT của cột phụ. Không cần khai
+   một bảng số riêng cho từng bố cục nữa: đổi bố cục làm cột hẹp đi, chữ tự
+   co theo, kể cả những bố cục chưa nghĩ ra.
+
+   Đã kiểm Chromium 141 trong chính môi trường dựng: `CSS.supports` trả true
+   và `6cqw` của 300px cho đúng 18px.
+
+   `@supports` bên dưới giữ đường lui cho trình duyệt không có container
+   query — ở đó `--tr-mini-fs` (đặt theo từng bố cục) vẫn làm việc như cũ. */
 .tr-head-tail,.tr-loto{min-width:0}
+.tr-day-side{container-type:inline-size;container-name:tr-side}
 .tr-head-tail h3,.tr-loto h3{margin:0 0 8px;font-size:13px}
 .tr-head-tail-scroll{border:1px solid var(--vla-border);border-radius:12px;overflow:hidden}
-/* Bảng chỉ còn hai cột nên nó KÉO GIÃN kín khung: cột "Đầu" vừa đủ một chữ
-   số, cột đuôi ăn hết phần còn lại. `table-layout:fixed` để cột đuôi không co
-   lại theo nội dung khi một hàng có ít số. */
+/* Bảng hai cột KÉO GIÃN kín khung: cột "Đầu" vừa đủ một chữ số, cột lô tô ăn
+   hết phần còn lại. `table-layout:fixed` để cột lô tô không co theo nội dung
+   khi một hàng có ít số. */
 .tr-head-tail table{width:100%;table-layout:fixed;border-collapse:collapse;
-font-size:var(--tr-mini-fs);font-variant-numeric:tabular-nums}
-.tr-head-tail th{padding:8px 10px;background:var(--vla-surface-2);color:var(--vla-ink-soft);font-weight:800;
+font-variant-numeric:tabular-nums}
+.tr-head-tail th{padding:7px 10px;background:var(--vla-surface-2);color:var(--vla-ink-soft);
+font-size:var(--tr-mini-fs);font-weight:800;letter-spacing:.03em;text-transform:uppercase;
 text-align:left;border-bottom:1px solid var(--vla-border)}
-.tr-head-tail th:first-child{width:56px;text-align:center}
-.tr-head-tail td{padding:7px 10px;border-bottom:1px solid var(--vla-border);vertical-align:middle}
+.tr-head-tail th:first-child{width:var(--tr-digit-w);text-align:center;color:var(--vla-bad)}
+.tr-head-tail td{padding:5px 8px;border-bottom:1px solid var(--vla-border);vertical-align:middle}
 .tr-head-tail tr:last-child td{border-bottom:0}
-/* Chữ số đầu dùng đúng màu của giải đặc biệt. */
-.tr-digit{width:56px;text-align:center!important;color:var(--vla-bad);
-background:var(--vla-bad-soft);font-weight:900;font-size:calc(var(--tr-mini-fs) + 3px)}
-.tr-digit-list{display:flex;gap:4px;flex-wrap:wrap;min-width:0}
-.tr-dash{color:var(--vla-ink-soft)}
-.tr-mini{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;
-border-radius:6px;background:var(--vla-brand-soft);color:var(--vla-brand-ink);font-weight:800}
+
+/* Cột "Đầu" đỏ như giải đặc biệt, và đỏ ĐẬM hơn phần còn lại: nó là trục để
+   dò mắt xuống bảng, nên phải bắt mắt trước mọi thứ khác trong bảng. */
+.tr-digit{width:var(--tr-digit-w);text-align:center!important;
+color:var(--vla-bad);background:var(--vla-bad-soft);
+font-weight:900;font-size:var(--tr-digit-fs);line-height:1.1;
+letter-spacing:.02em;font-variant-numeric:tabular-nums}
+
+/* Lưới chứ không phải flex-wrap: các cặp xếp thẳng cột giữa các hàng đầu, nên
+   mắt dò dọc được. `auto-fill` + `minmax` tự chọn số cột vừa khung, không cần
+   biết trước cột rộng bao nhiêu. */
+.tr-digit-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tr-mini-w),1fr));
+gap:4px;min-width:0}
+.tr-dash{color:var(--vla-ink-soft);grid-column:1/-1}
+.tr-mini{display:inline-flex;align-items:center;justify-content:center;
+min-width:0;min-height:var(--tr-mini-h);padding:0 2px;
+border-radius:7px;background:var(--vla-brand-soft);color:var(--vla-brand-ink);
+font-size:var(--tr-mini-fs);font-weight:800;font-variant-numeric:tabular-nums;
+letter-spacing:.02em}
 .tr-loto-list{display:flex;flex-wrap:wrap;gap:4px}
 .tr-loto-item{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;
 padding:0 5px;border:1px solid var(--vla-border);border-radius:7px;background:var(--vla-surface-2);
 color:var(--vla-ink-2);font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Đè bằng container query: khi trình duyệt biết `cqw`, cỡ chữ chuyển sang
+   bám bề rộng cột thay vì các con số cố định ở trên. Các con số ấy trở thành
+   đường lui, không phải nguồn chân lý.
+
+   `clamp` giữ hai đầu: sàn để chữ không bé đến mức không đọc được ở cột hẹp,
+   trần để nó không phình ra lố ở cột rộng. Phần giữa mới là phần co giãn. */
+@supports (container-type:inline-size){
+  .tr-head-tail{--tr-mini-fs:clamp(11.5px,4.4cqw,16px);
+  --tr-digit-fs:clamp(15px,6cqw,24px);
+  --tr-digit-w:clamp(40px,13cqw,58px);
+  --tr-mini-w:clamp(29px,9.6cqw,42px);
+  --tr-mini-h:clamp(22px,7cqw,30px)}
+}
 
 /* Nút "xem thêm" trải hết mọi cột của lưới, đứng cuối danh sách. */
 .tr-more{grid-column:1/-1;display:flex;justify-content:center;padding:4px 0 8px}
@@ -245,7 +297,8 @@ border-radius:20px;background:var(--vla-surface);text-align:center;color:var(--v
 .tr-results,.tr-results[data-layout="2"],.tr-results[data-layout="3"],.tr-results[data-layout="4"]{
 --tr-label-w:72px;--tr-label-fs:10px;--tr-label-pad:6px 8px;
 --tr-num-fs:14px;--tr-num-h:46px;--tr-num-pad:5px 1px;
---tr-sp-fs:24px;--tr-sp-h:56px;--tr-side-min:0;--tr-mini-fs:10px}}
+--tr-sp-fs:24px;--tr-sp-h:56px;--tr-side-min:0;
+--tr-mini-fs:12.5px;--tr-digit-fs:18px;--tr-digit-w:46px;--tr-mini-w:32px;--tr-mini-h:25px}}
 @media (max-width:390px){.tr-custom-dates{grid-template-columns:1fr}.tr-summary{grid-template-columns:1fr 1fr}
 .tr-results,.tr-results[data-layout="2"],.tr-results[data-layout="3"],.tr-results[data-layout="4"]{
 --tr-label-w:58px;--tr-label-fs:9px;--tr-num-fs:12px;--tr-num-h:40px;--tr-sp-fs:20px;--tr-sp-h:48px}}

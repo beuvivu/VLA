@@ -20,6 +20,7 @@
   const embedded = JSON.parse(document.getElementById("tr-embedded-data").textContent);
   const form = document.getElementById("tr-form");
   const period = document.getElementById("tr-period");
+  const weekday = document.getElementById("tr-weekday");
   const customDates = document.getElementById("tr-custom-dates");
   const fromInput = document.getElementById("tr-from");
   const toInput = document.getElementById("tr-to");
@@ -109,6 +110,37 @@
 
   const ALL = embedded.rows.map(decode).filter((draw) => draw !== null);
 
+  /** Thứ trong tuần của một ngày `YYYY-MM-DD`, theo chuẩn JS (Chủ nhật = 0).
+   *
+   *  ĐỌC KỸ CHỖ NÀY. Hai cách viết hiển nhiên đều SAI:
+   *
+   *      new Date(value).getDay()                     // sai
+   *      new Date(value + "T12:00:00+07:00").getDay() // cũng sai
+   *
+   *  `getDay()` trả về thứ theo múi giờ CỦA MÁY NGƯỜI XEM, không phải theo
+   *  múi giờ đã dựng nên mốc thời gian. Đã đo trong Chromium với ngày
+   *  2026-09-14 (thứ Hai ở Việt Nam):
+   *
+   *      múi giờ người xem      +07 trưa   new Date(d)   Date.UTC
+   *      Asia/Ho_Chi_Minh          1 ✓         1 ✓          1 ✓
+   *      Europe/London             1 ✓         1 ✓          1 ✓
+   *      America/Los_Angeles       0 ✗         0 ✗          1 ✓
+   *      Pacific/Honolulu          0 ✗         0 ✗          1 ✓
+   *      Australia/Sydney          1 ✓         1 ✓          1 ✓
+   *
+   *  Người xem ở bờ Tây nước Mỹ sẽ thấy mọi kỳ lệch một ngày, và bộ lọc
+   *  "Thứ hai" trả về toàn các kỳ Chủ nhật — sai âm thầm, không báo lỗi.
+   *
+   *  `Date.UTC` dựng mốc từ ba con số rời, và `getUTCDay()` đọc lại cũng
+   *  bằng UTC, nên múi giờ người xem không chen vào được ở cả hai đầu. Ngày
+   *  quay XSMB vốn là một NHÃN LỊCH, không phải một thời điểm — đối xử với
+   *  nó như nhãn mới đúng.
+   */
+  function weekdayOf(value) {
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  }
+
   function formatDate(value, withWeekday = false) {
     const options = withWeekday
       ? { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }
@@ -134,12 +166,23 @@
       return box;
     }
     tails.forEach((tail, index) => {
-      const mini = el("span", "tr-mini", tail);
-      mini.dataset.value = `${headDigit}${tail}`;
+      // Hiện TRỌN cặp hai chữ số, không phải mỗi chữ số đuôi.
+      //
+      // Đã đọc cấu trúc bảng loto của trang tham chiếu: hai cột `['Đầu',
+      // 'Lô tô']`, và ô nội dung là `'02; 08;'` — tức cặp đầy đủ.
+      //
+      // Việc này còn chữa một chỗ vô lý sẵn có của trang ta: ô mini vốn đã
+      // mang cặp đầy đủ trong `data-value` để đánh dấu, nhưng người xem chỉ
+      // THẤY một chữ số. Bấm vào ô hiện chữ "2" rồi thấy các ô giải chứa
+      // "32" sáng lên thì không cách nào đoán ra vì sao. Nay cái thấy và cái
+      // được đánh dấu là một.
+      const pair = `${headDigit}${tail}`;
+      const mini = el("span", "tr-mini", pair);
+      mini.dataset.value = pair;
       mini.dataset.cell = `${draw.date}|d${headDigit}|${index}`;
       mini.tabIndex = 0;
       mini.setAttribute("role", "button");
-      mini.setAttribute("aria-label", `Đánh dấu số ${headDigit}${tail}`);
+      mini.setAttribute("aria-label", `Đánh dấu số ${pair}`);
       box.append(mini);
     });
     return box;
@@ -147,12 +190,12 @@
 
   function renderHeadTail(draw) {
     const section = el("section", "tr-head-tail");
-    section.append(el("h3", "", "Lô tô theo đầu"));
+    section.append(el("h3", "", "Bảng lô tô theo đầu"));
     const scroll = el("div", "tr-head-tail-scroll");
     const table = el("table");
     const thead = el("thead");
     const headRow = el("tr");
-    for (const label of ["Đầu", "Đuôi tương ứng"]) headRow.append(el("th", "", label));
+    for (const label of ["Đầu", "Lô tô"]) headRow.append(el("th", "", label));
     thead.append(headRow);
     table.append(thead);
     const tbody = el("tbody");
@@ -236,7 +279,7 @@
   // người xem không hiểu vì sao chọn 30 lại được 27. Đếm theo kỳ thì luôn ra
   // đúng số đã chọn, chừng nào lịch sử còn đủ.
 
-  function selectRows() {
+  function selectRange() {
     if (period.value === "custom") {
       if (!fromInput.value || !toInput.value) {
         throw new Error("Vui lòng chọn đủ từ ngày và đến ngày.");
@@ -251,10 +294,45 @@
     return Number.isFinite(amount) && amount > 0 ? ALL.slice(0, amount) : ALL.slice(0, 30);
   }
 
+  /** Lọc thứ CHẠY SAU khi đã chốt khoảng, không phải trước.
+   *
+   *  Thứ tự này là một lựa chọn có hệ quả thấy được, nên nói rõ: yêu cầu là
+   *  "hiển thị sổ kết quả của riêng các ngày Thứ 2 TRONG KHOẢNG THỜI GIAN ĐÃ
+   *  CHỌN". Vậy khoảng là cái được chốt trước, thứ lọc bên trong nó.
+   *
+   *  Hệ quả: chọn "30 kỳ gần nhất" + "Thứ hai" thì ra khoảng 4 kỳ, không phải
+   *  30 kỳ thứ Hai. Con số ấy đúng theo định nghĩa trên nhưng dễ làm người xem
+   *  ngỡ ngàng, nên dòng trạng thái phải nói rõ đã lọc từ bao nhiêu kỳ —
+   *  xem `statusLine()`. Im lặng ở đây mới là cái sai.
+   */
+  function selectRows() {
+    const rows = selectRange();
+    if (weekday.value === "all") return rows;
+    const want = Number(weekday.value);
+    if (!Number.isInteger(want) || want < 0 || want > 6) return rows;
+    return rows.filter((draw) => weekdayOf(draw.date) === want);
+  }
+
+  /** Nhãn của thứ đang chọn, lấy thẳng từ ô chọn để không phải chép danh sách
+   *  tên thứ lần thứ hai ở đây. */
+  function weekdayLabel() {
+    return weekday.options[weekday.selectedIndex]?.textContent || "";
+  }
+
   function emptyMessage() {
     const first = ALL.at(-1)?.date;
     const last = ALL[0]?.date;
     if (!first) return "Chưa nạp được dữ liệu nào.";
+    // Rỗng vì lọc thứ là chuyện khác hẳn với rỗng vì khoảng sai, và phải nói
+    // khác nhau. `selectRange()` có kỳ mà kết quả rỗng thì thủ phạm là ô thứ.
+    if (weekday.value !== "all") {
+      let inRange = 0;
+      try { inRange = selectRange().length; } catch { inRange = 0; }
+      if (inRange > 0) {
+        return `Khoảng đã chọn có ${inRange} kỳ nhưng không kỳ nào rơi vào `
+          + `${weekdayLabel()}. Hãy mở rộng khoảng hoặc chọn thứ khác.`;
+      }
+    }
     if (period.value !== "custom") return "Hãy chọn khoảng khác.";
     // Nói rõ vì sao rỗng. Bản trước chỉ hiện "Chưa có kết quả trong khoảng đã
     // chọn", đọc như thể hôm ấy không quay — trong khi thật ra ngày đã chọn
@@ -297,9 +375,20 @@
     document.getElementById("tr-oldest").textContent =
       current.at(-1) ? formatDate(current.at(-1).date) : "—";
     document.getElementById("tr-total-count").textContent = String(ALL.length);
-    statusNode.textContent = message
-      || `Đang hiển thị ${current.length} kỳ trong tổng số ${ALL.length} kỳ đã lưu.`;
+    statusNode.textContent = message || statusLine();
     statusNode.dataset.state = "ready";
+  }
+
+  /** Khi có lọc thứ, nói luôn đã lọc từ bao nhiêu kỳ — nếu không, "4 kỳ"
+   *  sau khi chọn "30 kỳ gần nhất" trông như trang bị hỏng. */
+  function statusLine() {
+    if (weekday.value === "all") {
+      return `Đang hiển thị ${current.length} kỳ trong tổng số ${ALL.length} kỳ đã lưu.`;
+    }
+    let inRange = current.length;
+    try { inRange = selectRange().length; } catch { /* giữ nguyên */ }
+    return `Đang hiển thị ${current.length} kỳ ${weekdayLabel()}, lọc từ `
+      + `${inRange} kỳ của khoảng đã chọn (tổng kho ${ALL.length} kỳ).`;
   }
 
   function refresh() {
@@ -575,6 +664,7 @@
     customDates.hidden = period.value !== "custom";
     refresh();
   });
+  weekday.addEventListener("change", refresh);
   form.addEventListener("submit", (event) => { event.preventDefault(); refresh(); });
   for (const input of [fromInput, toInput]) {
     input.addEventListener("change", () => { if (period.value === "custom") refresh(); });
