@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-__all__ = ["strip_comments", "write_page"]
+__all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 
 _HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
 _BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
@@ -205,6 +205,26 @@ def strip_comments(html: str) -> str:
     return _tidy("".join(parts))
 
 
+def strip_css(css: str) -> str:
+    """Bóc chú thích khỏi một biểu định kiểu độc lập.
+
+    Cùng bộ máy đã dùng cho thẻ ``<style>`` bên trong trang, chỉ khác là gọi
+    thẳng cho tệp ``.css`` rời.
+    """
+    return _tidy(_strip_css(css))
+
+
 def write_page(path: Path, html: str) -> None:
     """Ghi một trang ra đĩa, đã bóc sạch chú thích."""
     path.write_text(strip_comments(html), encoding="utf-8")
+
+
+def write_stylesheet_text(path: Path, css: str) -> None:
+    """Ghi một biểu định kiểu rời, đã bóc sạch chú thích.
+
+    Biểu định kiểu dùng chung cũng là thứ gửi thẳng tới trình duyệt của khách
+    y như trang HTML, nhưng trước đây nó không đi qua bộ bóc chú thích: nó
+    được ghi bằng ``write_text`` trần. Kết quả là 55 chú thích tiếng Việt mô
+    tả nội tình bản dựng vẫn nằm trong tệp 37 KB mà mọi trang đều tải.
+    """
+    path.write_text(strip_css(css), encoding="utf-8")

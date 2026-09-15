@@ -1,4 +1,4 @@
-"""Trang đã xuất bản: không chú thích, không lộ nơi lưu trữ.
+"""Thứ đã xuất bản: không chú thích, không lộ nơi lưu trữ.
 
 Quét THẲNG `docs/` chứ không hỏi `page_output`. Một phép kiểm chỉ gọi lại
 hàm bóc chú thích thì chỉ chứng minh hàm ấy tự nhất quán; nó xanh y hệt khi
@@ -16,6 +16,26 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = sorted((ROOT / "docs").glob("*.html"))
+
+#: Biểu định kiểu RỜI. Nó tới trình duyệt của khách y hệt trang HTML, nên
+#: chịu đúng những ràng buộc ấy — nhưng suốt đợt dọn dẹp nó nằm ngoài tầm
+#: quét: tệp này chỉ mở `*.html`, còn `write_stylesheet` thì ghi bằng
+#: `write_text` trần thay vì đi qua bộ bóc chú thích. Kết quả là 55 chú thích
+#: tiếng Việt mô tả nội tình bản dựng vẫn nằm trong tệp 37 KB mà MỌI trang
+#: đều tải, trong khi toàn bộ phép kiểm báo xanh.
+SHEETS = sorted((ROOT / "docs").rglob("*.css"))
+
+#: Những chuỗi không được xuất hiện trong thứ gửi ra ngoài.
+#:
+#: `vla` trần, không phải `vla-`. Danh sách trước chỉ chặn dạng có gạch nối
+#: nên bỏ lọt hai thứ thật: tên tệp `assets/vla.css` gửi thẳng ra trang trong
+#: một thẻ <link>, và các khoá localStorage `vla.picked.` / `vla.defields.`.
+#: Chặn theo tiền tố thì không còn khe nào.
+LEAK_TOKENS = (
+    "githubusercontent", "github.io", "github.com", "beuvivu",
+    "workers.dev", "deno.dev", "data/xsmb", "data/advanced",
+    "data/path", "data/live", "vla", "VLA",
+)
 
 _SCRIPT = re.compile(r'<script(?![^>]*application/json)[^>]*>(.*?)</script>', re.S | re.I)
 _STYLE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
@@ -68,14 +88,27 @@ def test_no_page_spells_out_where_the_data_lives(page: Path) -> None:
     """
     html = page.read_text(encoding="utf-8", errors="replace")
     body = re.sub(r"<meta[^>]+Content-Security-Policy[^>]*>", "", html, flags=re.I)
-    # `vla` trần, không phải `vla-`. Danh sách trước chỉ chặn dạng có gạch nối
-    # nên bỏ lọt hai thứ thật: tên tệp `assets/vla.css` gửi thẳng ra trang
-    # trong một thẻ <link>, và các khoá localStorage `vla.picked.` /
-    # `vla.defields.`. Chặn theo tiền tố thì không còn khe nào.
-    for token in ("githubusercontent", "github.io", "github.com", "beuvivu",
-                  "workers.dev", "deno.dev", "data/xsmb", "data/advanced",
-                  "data/path", "data/live", "vla", "VLA"):
+    for token in LEAK_TOKENS:
         assert token not in body, f"{page.name} lộ {token!r}"
+
+
+@pytest.mark.parametrize("sheet", SHEETS, ids=lambda p: p.name)
+def test_no_comment_survives_into_a_published_stylesheet(sheet: Path) -> None:
+    """Biểu định kiểu rời phải sạch hệt thẻ ``<style>`` trong trang.
+
+    Dùng ``_without_strings`` chứ không dùng ``_without_literals``: luật bóc
+    hằng regex của JavaScript nuốt luôn chú thích CSS, nên áp nhầm hàm thì
+    phép kiểm xanh trong khi tệp vẫn bẩn.
+    """
+    assert "/*" not in _without_strings(sheet.read_text(encoding="utf-8", errors="replace")), sheet.name
+
+
+@pytest.mark.parametrize("sheet", SHEETS, ids=lambda p: p.name)
+def test_no_stylesheet_spells_out_where_the_data_lives(sheet: Path) -> None:
+    """Không có ngoại lệ CSP ở đây: biểu định kiểu không mang thẻ chính sách."""
+    body = sheet.read_text(encoding="utf-8", errors="replace")
+    for token in LEAK_TOKENS:
+        assert token not in body, f"{sheet.name} lộ {token!r}"
 
 
 def test_the_only_place_a_real_host_may_appear_is_the_policy_header() -> None:

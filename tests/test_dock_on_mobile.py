@@ -16,9 +16,10 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 
-#: Mọi trang có gắn dock, kể cả dock riêng của trang chủ (lớp ``dock-*``) lẫn
-#: dock của khung dùng chung (lớp ``ui-dock-*``).
-DOCK_PAGES = sorted(p for p in DOCS.glob("*.html") if "dock-inner" in p.read_text(encoding="utf-8"))
+#: MỌI trang đã xuất bản. Không lọc theo "trang nào có dock": lọc như thế thì
+#: phép kiểm tự định nghĩa phạm vi của mình, và một trang đánh rơi dock sẽ
+#: lặng lẽ rơi khỏi danh sách thay vì làm phép kiểm đỏ.
+DOCK_PAGES = sorted(DOCS.glob("*.html"))
 
 #: Ngưỡng màn hẹp của bản thiết kế.
 MOBILE_AT = "@media (max-width:640px){"
@@ -101,6 +102,22 @@ def _has_class(selector: str, name: str) -> bool:
     lần chạy đầu — test báo xanh trong khi quy tắc không còn khớp gì cả.
     """
     return re.search(rf"\.{re.escape(name)}(?![\w-])", selector) is not None
+
+
+def test_every_published_page_carries_the_dock() -> None:
+    """Dock là điều hướng CHÍNH của cả trang, nên trang nào thiếu là ngõ cụt.
+
+    Bốn trang từng thiếu: ``live.html`` (viết tay, không builder nào sinh ra),
+    ``statistics.html`` (có điều hướng riêng), và hai trang ML mở bằng khung
+    không dock. Cả bốn đều là ĐÍCH ĐẾN trong :data:`SITE_NAV` — vào được mà
+    không có lối ra nào ngoài nút Back.
+    """
+    missing = [
+        page.name
+        for page in DOCK_PAGES
+        if not BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser").select(".ui-dock, .dock")
+    ]
+    assert not missing, f"thiếu dock: {missing}"
 
 
 @pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)

@@ -1,51 +1,36 @@
-/* ---- 1. Design token ------------------------------------------------- */
+
 :root{
 --ui-bg:#F2F4FF;--ui-bg-2:#E6EAFB;--ui-surface:#fff;--ui-surface-2:#F7F8FE;
 --ui-border:#E7EAF6;--ui-border-strong:#D8DDF0;
 --ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;
-/* Lưới sáng periwinkle phủ trên nền dốc. Tách thành token riêng để chế độ
-   tối tắt hẳn nó đi thay vì phải viết lại quy tắc body. */
+
 --ui-bg-mesh:radial-gradient(1200px 620px at 10% -8%,rgba(129,140,248,.20),transparent 60%),
 radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
-/* THƯƠNG HIỆU — chỉ dành cho điều hướng và hành động chính. Không một dấu
-   hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
-   --ui-ok/warn/bad và ở các thang nhiệt của từng trang. */
+
 --ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
 --ui-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
-/* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --ui-brand: ở chế
-độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
+
 --ui-on-brand:#ffffff;
 --ui-ok:#047857;--ui-ok-soft:#ecfdf5;--ui-ok-border:#a7f3d0;
 --ui-warn:#a94e08;--ui-warn-soft:#fffbeb;--ui-warn-border:#fde68a;
 --ui-bad:#be123c;--ui-bad-soft:#fff1f2;--ui-bad-border:#fecdd3;
-/* 18-24px cho bề mặt nổi; .75rem giữ lại cho chi tiết nhỏ bên trong, vì bo
-   18px lên một ô 32px thì góc ăn hết cạnh. */
+
 --ui-r-md:.75rem;--ui-r-lg:1.125rem;--ui-r-xl:1.5rem;
-/* Bóng hai lớp, ám lạnh theo màu mực: một lớp sát để tách khỏi nền, một lớp
-   toả rộng rất nhạt để bề mặt trông nổi lên chứ không bị viền đen. */
+
 --ui-sh-sm:0 1px 2px rgba(22,28,45,.04),0 8px 26px rgba(22,28,45,.06);
 --ui-sh-md:0 2px 4px rgba(22,28,45,.05),0 14px 38px rgba(22,28,45,.09);
 --ui-sh-lg:0 4px 8px rgba(22,28,45,.06),0 22px 60px rgba(22,28,45,.13);
 --ui-sh-brand:0 10px 30px rgba(79,70,229,.26);
-/* Inter tự host. Bản trước khai báo Aptos theo tên, nhưng CSP đặt font-src
-'self' và kho KHÔNG có tệp font nào — nên trang chưa bao giờ hiển thị bằng
-Aptos trừ máy đã cài sẵn Microsoft 365; mọi máy khác rơi về font hệ thống.
-Aptos cũng không được phép phân phối lại nên không thể tự host hợp pháp.
-Inter theo giấy phép SIL OFL thì được, và bản variable cho đủ 9 độ đậm trong
-một tệp 172 KB đã cắt gọn còn Latin + tiếng Việt. */
+
 --ui-font:"Inter var",Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
 --ui-font-display:var(--ui-font);
 --ui-mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
 
-/* Thang 8pt. Mọi padding/margin/gap chỉ được lấy từ đây — một giá trị nằm
-ngoài thang là một quyết định chưa được cân nhắc. */
 --s1:8px;--s2:16px;--s3:24px;--s4:32px;--s5:40px;--s6:48px;--s8:64px;
 
-/* Bo góc và viền hạt mịn */
 --r-card:16px;--r-inner:12px;--r-pill:999px;
 --hairline:rgba(15,23,42,.06);
 
-/* Thang chữ — số dùng tabular-nums để cột số không nhảy khi giá trị đổi */
 --fs-display:clamp(28px,2.4vw,40px);
 --fs-title:20px;--fs-metric:clamp(32px,2.2vw,44px);
 --fs-body:15px;--fs-label:12px;
@@ -54,10 +39,6 @@ ngoài thang là một quyết định chưa được cân nhắc. */
 color-scheme:light;
 }
 
-/* ---- 1a. Phông tự host ------------------------------------------------
-Một khai báo cho cả dải 100–900 nhờ trục variable, nên không cần 9 tệp riêng.
-font-display:swap để chữ hiện ngay bằng font hệ thống rồi mới hoán đổi — 172 KB
-vẫn là 172 KB, nhưng người đọc không phải nhìn trang trắng trong lúc chờ. */
 @font-face{
 font-family:"Inter var";
 font-style:normal;
@@ -66,11 +47,6 @@ font-display:swap;
 src:url("InterVariable.woff2") format("woff2-variations");
 }
 
-/* ---- 1b. Chế độ tối ---------------------------------------------------
-Chỉ định nghĩa lại token, không lặp lại selector thành phần nào: mọi thành
-phần đã lấy màu qua token nên đổi ở đây là đủ. Ba trạng thái được phủ — chọn
-tay sáng, chọn tay tối, và mặc định "theo hệ điều hành" vốn không gắn thuộc
-tính nào lên thẻ gốc. */
 @media (prefers-color-scheme:dark){
 :root:not([data-ui-theme="light"]){
 --ui-bg:#0b1220;--ui-bg-2:#0b1220;--ui-bg-mesh:none;
@@ -106,12 +82,9 @@ color-scheme:dark;
 color-scheme:dark;
 }
 
-/* ---- 2. Nền tảng ----------------------------------------------------- */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-/* Nền ba lớp: hai vầng periwinkle rồi mới tới dốc nền. background-attachment
-   ghim cố định để vầng sáng không trôi theo khi cuộn — trang dài 1,7 MB mà
-   để nó trôi thì phần dưới rơi hẳn vào mảng tối nhất của dốc. */
+
 body{margin:0;color:var(--ui-ink-2);
 background:var(--ui-bg-mesh),linear-gradient(162deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);
 background-attachment:fixed;background-color:var(--ui-bg);
@@ -121,9 +94,7 @@ img{max-width:100%;height:auto}
 a{color:var(--ui-brand);text-decoration:none}
 a:hover{text-decoration:underline}
 code,pre,.mono{font-family:var(--ui-mono)}
-/* Chỉ áp màu chữ tiêu đề bên trong khung của chính hệ thống này. Đặt màu ở
-   cấp h1..h4 toàn cục sẽ đè lên các trang có hero/nền tối riêng và làm tiêu
-   đề của họ trùng màu nền. */
+
 h1,h2,h3,h4{font-weight:600;line-height:1.25;margin:0 0 .5rem}
 .ui-shell h1,.ui-shell h2,.ui-shell h3,.ui-shell h4,
 .ui-card h2,.ui-card h3,.ui-header h1{color:var(--ui-ink)}
@@ -132,7 +103,6 @@ h2{font-size:1.125rem}
 h3{font-size:1rem}
 @media (min-width:768px){h1{font-size:1.875rem}h2{font-size:1.25rem}}
 
-/* ---- 3. Khung trang: container căn giữa, không tràn ngang ------------- */
 .ui-shell{width:100%;max-width:80rem;margin-inline:auto;padding:1.5rem 1rem 3rem}
 @media (min-width:640px){.ui-shell{padding-left:1.5rem;padding-right:1.5rem}}
 @media (min-width:1024px){.ui-shell{padding-left:2rem;padding-right:2rem;padding-top:2rem}}
@@ -145,7 +115,6 @@ border-bottom:1px solid var(--ui-border)}
 .ui-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .875rem;
 margin-top:.625rem;color:var(--ui-ink-soft);font-size:.8125rem}
 
-/* ---- 4. Lưới 12 cột: các ô luôn kéo đầy, không để khoảng trống lệch --- */
 .ui-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
 gap:1.25rem;align-items:stretch}
 .ui-grid>*{min-width:0}
@@ -160,10 +129,9 @@ gap:1.25rem;align-items:stretch}
 .ui-c7{grid-column:span 7/span 7}.ui-c8{grid-column:span 8/span 8}
 .ui-c9{grid-column:span 9/span 9}.ui-c12{grid-column:span 12/span 12}
 }
-/* Dưới lg mọi ô chiếm trọn hàng thay vì thu nhỏ lệch. */
+
 @media (max-width:1023px){[class*="ui-c"]{grid-column:auto}}
 
-/* ---- 5. Card --------------------------------------------------------- */
 .ui-card{display:flex;flex-direction:column;background:var(--ui-surface);
 border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
 box-shadow:var(--ui-sh-sm);overflow:hidden;
@@ -174,17 +142,13 @@ transition:box-shadow .2s cubic-bezier(.4,0,.2,1),transform .2s cubic-bezier(.4,
 justify-content:space-between;gap:.75rem;padding:1rem 1.25rem;
 border-bottom:1px solid var(--ui-border)}
 .ui-card-head h2,.ui-card-head h3{margin:0}
-/* Thân card là flex dọc để khối nội dung cuối cùng kéo giãn lấp đầy chiều cao
-   hàng lưới, thay vì bỏ lại khoảng trắng dưới đáy card thấp hơn. */
+
 .ui-card-body{flex:1 1 auto;display:flex;flex-direction:column;gap:.75rem;
 min-height:0;padding:1.25rem}
 .ui-card-body>:first-child{margin-top:0}
 .ui-card-body>:last-child{margin-bottom:0}
 .ui-card-flush{padding:0}
 
-/* ---- 6. Bảng dữ liệu ------------------------------------------------- */
-/* Bóng mờ hai mép chỉ hiện khi bảng thực sự cuộn được, để nội dung bị che
-   đọc ra là "còn cuộn tiếp" chứ không phải bị cắt mất. */
 .ui-table-wrap{width:100%;flex:1 1 auto;min-height:0;
 overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
 max-height:26rem;overscroll-behavior:contain;
@@ -215,7 +179,7 @@ border-bottom:1px solid var(--ui-border-strong)}
 font-variant-numeric:tabular-nums}
 .ui-table .ui-key{font-weight:600;color:var(--ui-ink)}
 .ui-table-empty{padding:var(--s4) var(--s3);text-align:center;color:var(--ui-ink-soft)}
-/* Bảng do pandas sinh (không có class trên ô) vẫn được canh nền tảng. */
+
 .ui-table-wrap>table{width:100%;border-collapse:separate;border-spacing:0;
 font-size:.8125rem}
 .ui-table-wrap>table th,.ui-table-wrap>table td{padding:.625rem 1rem;
@@ -225,7 +189,6 @@ color:var(--ui-ink-soft);font-weight:600;font-size:.6875rem;
 letter-spacing:.04em;text-transform:uppercase}
 .ui-table-wrap>table tbody tr:hover{background:rgba(238,242,255,.7)}
 
-/* ---- 7. Badge / pill ------------------------------------------------- */
 .ui-badge{display:inline-flex;align-items:center;gap:.3rem;
 padding:.15rem .55rem;border-radius:999px;border:1px solid transparent;
 font-size:.75rem;font-weight:600;line-height:1.5;white-space:nowrap}
@@ -240,7 +203,6 @@ border-color:var(--ui-brand-border)}
 .ui-badge-mute{background:var(--ui-surface-2);color:var(--ui-ink-soft);
 border-color:var(--ui-border-strong)}
 
-/* ---- 8. Nav / liên kết trang ----------------------------------------- */
 .ui-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.5rem}
 .ui-nav a{display:inline-flex;align-items:center;padding:.375rem .75rem;
 border-radius:var(--ui-r-md);border:1px solid var(--ui-border);
@@ -251,7 +213,6 @@ background:var(--ui-brand-soft);text-decoration:none}
 .ui-nav a[aria-current="page"]{background:var(--ui-brand);color:var(--ui-on-brand);
 border-color:var(--ui-brand)}
 
-/* ---- 8b. Tab: giữ nguyên hook .tabbtn/.panel cho script sẵn có -------- */
 .ui-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.25rem}
 .ui-tabs .tabbtn{padding:.5rem .9rem;border:1px solid var(--ui-border);
 border-radius:var(--ui-r-md);background:var(--ui-surface);
@@ -263,8 +224,6 @@ color:var(--ui-brand-ink);background:var(--ui-brand-soft)}
 border-color:var(--ui-brand)}
 .panel{display:none}.panel.active{display:block}
 
-/* ---- 9. Khối phụ trợ ------------------------------------------------- */
-/* Giới hạn chiều cao: dữ liệu JSON dài không được kéo dài trang vô hạn. */
 .ui-pre{margin:0;padding:.875rem 1rem;background:var(--ui-surface-2);
 border:1px solid var(--ui-border);border-radius:var(--ui-r-md);
 font-family:var(--ui-mono);font-size:.75rem;line-height:1.6;
@@ -280,7 +239,6 @@ letter-spacing:.02em;text-transform:uppercase}
 .ui-stat-value{color:var(--ui-ink);font-size:1.5rem;font-weight:600;
 letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
-/* ---- 10. Tiện ích kiểu Tailwind (giữ tương thích ngược) -------------- */
 .bg-slate-50{background-color:#f8fafc}.bg-slate-50\/50{background-color:rgba(248,250,252,.5)}
 .bg-white{background-color:#fff}.bg-indigo-600{background-color:#4f46e5}
 .text-slate-900{color:#0f172a}.text-slate-800{color:#1e293b}
@@ -323,14 +281,8 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .lg\:col-span-8{grid-column:span 8/span 8}
 }
 
-/* ---- 12. Khung ứng dụng full-width -----------------------------------
-Không còn cột sidebar. Sidebar cũ chiếm 292px trên màn 1680px — 17,4% chiều
-ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm. Điều hướng
-chuyển sang dock nổi ở mục 15, và toàn bộ phần đó trả về cho nội dung. */
 .ui-app{min-height:100vh}
 
-/* .ui-sr-only vẫn cần: dock dùng biểu tượng, và một vài nút chỉ có icon sẽ
-được trình đọc màn hình đọc thành nút trống nếu thiếu nhãn ẩn này. */
 .ui-raw{margin-top:var(--s2)}
 .ui-raw summary{cursor:pointer;font-size:.8125rem;color:var(--ui-ink-soft);
 padding:.375rem 0;user-select:none}
@@ -339,9 +291,6 @@ padding:.375rem 0;user-select:none}
 .ui-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
 overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-/* Điều hướng dự phòng trong footer: dock là một <nav> đầy đủ nên trình thu
-thập vẫn thấy mọi liên kết, nhưng để nguyên một bản phẳng ở cuối trang là rẻ
-và loại bỏ hoàn toàn rủi ro nếu CSS không tải được. */
 .ui-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
 border-top:1px solid var(--ui-border);font-size:13px;
 display:grid;gap:var(--s3) var(--s4);
@@ -349,16 +298,10 @@ grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}
 .ui-nav-fallback>section{min-width:0}
 .ui-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
 text-transform:uppercase;color:var(--ui-ink-soft);margin:0 0 var(--s1)}
-/* Mỗi nhóm là một cột xếp dọc. Bản cũ dùng flex-wrap + space-between trên
-từng <ul>: với 2-4 mục thì space-between kéo giãn chúng ngang cả container,
-chữ dính hai mép còn giữa trống hoác. Lưới cột phân bố đều theo nghĩa footer
-thật sự — mỗi nhóm chiếm một phần bằng nhau của chiều ngang. */
+
 .ui-nav-fallback ul{list-style:none;padding:0;margin:0;
 display:flex;flex-direction:column;gap:var(--s1)}
 
-/* ---- 13. Lưới nội dung tự co giãn -----------------------------------
-Ba lớp cho ba nhu cầu bố cục cụ thể, tất cả đều align-items:stretch nên các ô
-cùng hàng luôn bằng chiều cao và không sinh khoảng trống thò thụt. */
 .ui-row{display:grid;gap:1.25rem;align-items:stretch;
 grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))}
 .ui-row>*{min-width:0}
@@ -370,9 +313,6 @@ grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))}
 .ui-duo>*,.ui-trio>*{min-width:0;display:flex;flex-direction:column}
 .ui-duo>*>.ui-card-body,.ui-trio>*>.ui-card-body{flex:1 1 auto}
 
-/* ---- 14. Trạng thái rỗng và đang tải ---------------------------------
-Một trang trống không kèm lời giải thích không phân biệt được với một trang
-hỏng. Khối này luôn nói RÕ vì sao trống và chỉ ra lối đi tiếp. */
 .ui-empty{display:flex;flex-direction:column;align-items:center;text-align:center;
 gap:.625rem;padding:2.5rem 1.5rem;color:var(--ui-ink-soft)}
 .ui-empty-icon{font-size:1.75rem;line-height:1;opacity:.55}
@@ -391,7 +331,6 @@ border-radius:var(--ui-r-md);height:1rem;margin:.5rem 0}
 .ui-app{transition:none}
 }
 
-/* ---- 11. In ấn ------------------------------------------------------- */
 @media print{
 body{background:#fff}
 .ui-card{box-shadow:none;break-inside:avoid}
@@ -399,28 +338,16 @@ body{background:#fff}
 .ui-nav{display:none}
 }
 
-/* ---- 15. Dock điều hướng nổi ------------------------------------------
-Thay sidebar dọc. Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang chỉ
-để hiển thị 17 liên kết mà phần lớn thời gian không ai bấm. Dock trả lại toàn
-bộ phần đó cho nội dung.
-
-17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và tooltip
-chồng lên nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon nhóm và mở
-popover khi hover hoặc focus. */
 .ui-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
 z-index:60;max-width:calc(100vw - var(--s4))}
-/* Nhãn nằm dưới icon đẩy dock lên 108px. Đưa nhãn thành tooltip nổi phía
-trên (xem .ui-dock-name) thì thanh chỉ còn icon: 40 + 6*2 viền = 54px, đúng
-khoảng 48-56px của bản thiết kế. Nền hạ từ 84% xuống 30% để thấy rõ nội dung
-trôi phía sau — đó mới là hiệu ứng kính. */
+
 .ui-dock-inner{position:relative;display:flex;align-items:center;gap:4px;
 padding:6px 10px;border-radius:var(--r-pill);
 background:color-mix(in srgb,var(--ui-surface) 30%,transparent);
 border:1px solid var(--hairline);
 box-shadow:0 8px 32px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.06);
 backdrop-filter:blur(12px) saturate(1.8);-webkit-backdrop-filter:blur(12px) saturate(1.8)}
-/* Trình duyệt không có backdrop-filter sẽ thấy nền đặc thay vì trong suốt —
-vẫn đọc được, chỉ mất hiệu ứng kính. */
+
 @supports not (backdrop-filter:blur(1px)){
 .ui-dock-inner{background:var(--ui-surface)}
 }
@@ -431,7 +358,7 @@ background:none;border:0;color:var(--ui-ink-2);cursor:pointer;border-radius:var(
 border-radius:var(--r-inner);background:var(--ui-surface-2);
 border:1px solid var(--hairline);
 transition:transform .24s ease-in-out,background .2s ease-in-out}
-/* Nhãn thành tooltip: ra khỏi luồng nên không cộng vào chiều cao thanh. */
+
 .ui-dock-name{position:absolute;bottom:calc(100% + 8px);left:50%;
 transform:translateX(-50%) translateY(4px);
 padding:3px 8px;border-radius:var(--r-inner);
@@ -441,8 +368,7 @@ opacity:0;visibility:hidden;pointer-events:none;
 transition:opacity .16s ease-in-out,transform .16s ease-in-out,visibility .16s}
 .ui-dock-btn:hover .ui-dock-name,.ui-dock-btn:focus-visible .ui-dock-name{
 opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
-/* Nhóm nào có popover thì popover đã nói rõ tên nhóm — hiện thêm tooltip là
-thừa và hai lớp nổi chồng lên nhau. */
+
 .ui-dock-group:hover .ui-dock-name{opacity:0;visibility:hidden}
 .ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{
 transform:scale(1.18);background:var(--ui-brand-soft)}
@@ -450,25 +376,18 @@ transform:scale(1.18);background:var(--ui-brand-soft)}
 background:var(--ui-brand);color:var(--ui-on-brand);border-color:transparent}
 .ui-dock-btn:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
 
-/* Popover: mặc định ẩn khỏi CÂY TRỢ NĂNG lẫn thị giác. Dùng visibility chứ
-không dùng display:none để còn chuyển động được, và hidden-until-found sẽ làm
-trình đọc màn hình bỏ qua khi đóng. */
 .ui-dock-pop{position:absolute;bottom:calc(100% + var(--s2));left:50%;
 transform:translateX(-50%) translateY(6px);min-width:220px;padding:var(--s1);
 background:var(--ui-surface);border:1px solid var(--ui-border);
 border-radius:var(--r-card);box-shadow:var(--ui-sh-lg);
 opacity:0;visibility:hidden;pointer-events:none;
-/* Độ trễ BẤT ĐỐI XỨNG. Mở gần như tức thì, nhưng đóng chậm .40s: con trỏ đi
-từ nút lên popover phải băng qua khe hở var(--s2), và nếu đóng ngay khi rời
-nút thì menu biến mất giữa đường. Đây là nửa sau của "hover intent"; nửa đầu
-là cầu nối ::after ngay bên dưới. */
+
 transition:opacity .18s ease-in-out .22s,transform .18s ease-in-out .22s,
 visibility 0s linear .40s}
-/* Cầu nối phủ kín khe hở giữa đáy popover và đỉnh nút, nên :hover của nhóm
-không bao giờ đứt khi con trỏ băng qua. */
+
 .ui-dock-pop::after{content:"";position:absolute;left:0;right:0;top:100%;
 height:18px}
-/* Vùng đệm quanh cả nhóm: tha thứ cho đường chuột đi chéo ra ngoài mép nút. */
+
 .ui-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
 top:-18px;bottom:-6px;z-index:-1}
 .ui-dock-group:hover .ui-dock-pop,
@@ -483,35 +402,6 @@ color:var(--ui-ink-2);font-size:13px;white-space:nowrap}
 .ui-dock-pop a[aria-current="page"]{background:var(--ui-brand-soft);
 color:var(--ui-brand-ink);font-weight:600}
 
-/* MÀN HẸP: dock không được cuộn ngang, và menu con neo vào CẢ DẢI DOCK.
-   ========================================================================
-   Hai lỗi chồng lên nhau khiến dock chết hẳn trên điện thoại.
-
-   Lỗi 1 — menu lòi ra ngoài viền. Menu rộng cố định 220px canh giữa theo nút
-   của nó. Máy bàn thì dock nằm giữa màn rộng nên không sao; điện thoại thì
-   dock chiếm gần trọn bề ngang, nên các nhóm ở HAI ĐẦU đẩy menu ra ngoài:
-
-       390px   3/7 nhóm hỏng   #0 lòi trái 63px · #1 lòi trái 19px · #6 lòi phải 31px
-       360px   4/7 nhóm hỏng   thêm #5 lòi phải 17px, #6 thành 61px
-
-   Lỗi 2 — KHÔNG ô nào chạm tới được, kể cả ô nằm gọn trong màn. Đo được 0/9
-   liên kết nhận cú chạm trên điện thoại trong khi máy bàn 9/9. Nguyên nhân
-   là `.ui-dock-inner` cũ mang `overflow-x:auto`: hộp cuộn CẮT mọi hậu duệ
-   nằm ngoài nó, mà inner chỉ cao 54px còn menu bung lên phía trên. Menu bị
-   xén sạch — `elementFromPoint` giữa menu trả về nội dung trang chứ không
-   phải liên kết, dù computed style vẫn báo `visibility:visible`.
-
-   `position:fixed` KHÔNG thoát ra được: `.ui-dock-inner` có `backdrop-filter`,
-   mà backdrop-filter biến phần tử thành khối chứa cho cả hậu duệ `fixed`. Đo
-   để chắc: tắt riêng `backdrop-filter` → chạm được; tắt riêng `overflow-x` →
-   cũng chạm được; để cả hai → không. Phải gỡ đúng một trong hai, và gỡ hộp
-   cuộn mới là gỡ đúng gốc.
-
-   Nên bỏ hẳn cuộn ngang: cho mỗi nhóm `flex:1 1 0` để N nhóm luôn vừa khít
-   bề ngang. Không còn ngữ cảnh cắt thì menu chỉ cần `absolute` lấy
-   `.ui-dock-inner` làm gốc toạ độ rồi căng `left:0;right:0` — hết cả hai lỗi
-   bằng cùng một thay đổi. Cuộn ngang với thanh cuộn ẩn vốn cũng là cách điều
-   hướng tồi trên màn cảm ứng: không có gì báo rằng còn nhóm phía sau. */
 @media (max-width:640px){
 .ui-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
 .ui-dock-inner{justify-content:space-between;gap:2px;padding:6px;
@@ -519,30 +409,22 @@ border-radius:var(--r-card)}
 .ui-dock-group{position:static;flex:1 1 0;min-width:0}
 .ui-dock-btn{width:100%}
 .ui-dock-ic{width:100%;max-width:40px;margin-left:auto;margin-right:auto}
-/* Màn cảm ứng không có trạng thái hover để hiện tooltip, mà tên nhóm đã nằm
-sẵn trong menu con. */
+
 .ui-dock-name{display:none}
 .ui-dock-pop{position:absolute;left:0;right:0;min-width:0;
 transform:translateY(6px);max-height:min(60vh,420px);overflow-y:auto}
-/* Trên màn cảm ứng, MỘT CÚ CHẠM phải mở và cú chạm thứ hai phải đóng. Nhưng
-chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu mở mãi
-và cú chạm thứ hai không đóng được gì. Ở màn hẹp, chỉ `.ui-open` (do kịch bản
-đặt) mới là công tắc. Có `.ui-js` đứng đầu để khi không có JavaScript thì
-`:focus-within` của quy tắc gốc vẫn còn tác dụng. */
+
 .ui-js .ui-dock-group:hover .ui-dock-pop,
 .ui-js .ui-dock-group:focus-within .ui-dock-pop{
 opacity:0;visibility:hidden;pointer-events:none;transform:translateY(6px)}
 .ui-js .ui-dock-group.ui-open .ui-dock-pop,
 .ui-dock-group.ui-open .ui-dock-pop{
 opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
-/* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn cảm
-ứng không có hover, còn `z-index:-1` của vùng đệm lại đẩy nó xuống dưới dải
-dock nên nó nuốt mất cú chạm ở rìa nút. */
+
 .ui-dock-pop::after{content:none}
 .ui-dock-group::after{content:none}
 }
 
-/* Dock che mất phần cuối trang nếu không chừa chỗ. */
 .ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
 
 @media (prefers-reduced-motion:reduce){
@@ -550,9 +432,6 @@ dock nên nó nuốt mất cú chạm ở rìa nút. */
 .ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{transform:none}
 }
 
-/* ---- 16. Lưới KPI -----------------------------------------------------
-auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần media query
-nào cho từng mốc. */
 .ui-kpi-grid{display:grid;gap:var(--s2);
 grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 .ui-kpi{display:flex;flex-direction:column;gap:var(--s1);
@@ -573,16 +452,12 @@ stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
 .ui-kpi-delta[data-dir="down"]{color:var(--ui-bad)}
 .ui-kpi-delta[data-dir="flat"]{color:var(--ui-ink-soft)}
 
-/* ---- 17. Lưới ma trận dữ liệu hai tầng --------------------------------
-minmax(0,…) là BẮT BUỘC, không phải tuỳ chọn: 1fr mặc định là minmax(auto,1fr)
-và một bảng rộng sẽ đẩy cột phình ra, phá vỡ tỉ lệ 58/42 đã chọn. */
 .ui-matrix-top{display:grid;gap:var(--s3);align-items:stretch;
 grid-template-columns:minmax(0,58fr) minmax(0,42fr)}
 .ui-matrix-top>*{min-width:0}
 .ui-matrix-full{width:100%}
 @media (max-width:1100px){.ui-matrix-top{grid-template-columns:minmax(0,1fr)}}
 
-/* ---- 18. Ba bảng dự đoán ngày mai, một hàng --------------------------- */
 .ui-next-day{display:grid;gap:var(--s3);align-items:stretch;
 grid-template-columns:repeat(3,minmax(0,1fr))}
 .ui-next-day>*{min-width:0;display:flex;flex-direction:column}
@@ -590,14 +465,13 @@ grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:1240px){.ui-next-day{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:760px){.ui-next-day{grid-template-columns:minmax(0,1fr)}}
 
-/* ---- 19. Khu căn cứ: trái độc lập, phải hợp nhất ---------------------- */
 .ui-basis{display:grid;gap:var(--s3);align-items:start;
 grid-template-columns:minmax(0,34fr) minmax(0,66fr)}
 .ui-basis>*{min-width:0}
 .ui-basis-merged{border:1px solid var(--ui-border);border-radius:var(--r-card);
 background:var(--ui-surface);overflow:hidden;box-shadow:var(--ui-sh-sm)}
 .ui-basis-merged>section{padding:var(--s3)}
-/* Đường phân cách chỉ nằm GIỮA hai phần, không nằm trên phần đầu. */
+
 .ui-basis-merged>section+section{border-top:1px solid var(--ui-border)}
 @media (max-width:1100px){.ui-basis{grid-template-columns:minmax(0,1fr)}}
 .ui-table.ui-r1 td:nth-child(1),.ui-table.ui-r1 th:nth-child(1){text-align:right;white-space:nowrap}

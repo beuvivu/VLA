@@ -20,6 +20,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
 
+from page_output import write_page, write_stylesheet_text
+
 
 # Căn lề theo loại dữ liệu: số/chỉ số canh phải, trạng thái canh giữa.
 ALIGN_LEFT = "left"
@@ -770,7 +772,7 @@ def write_stylesheet(docs_dir: Path) -> Path:
     """
     target = Path(docs_dir) / STYLESHEET_NAME
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(TAILWIND_LITE_CSS, encoding="utf-8")
+    write_stylesheet_text(target, TAILWIND_LITE_CSS)
     # Phông đi cùng biểu định kiểu: @font-face trong CSS trỏ tới tệp cạnh nó,
     # nên ghi CSS mà quên phông sẽ tạo ra một tham chiếu chết.
     write_font_assets(docs_dir)
@@ -934,7 +936,7 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     )
 
 
-def nav_fallback() -> str:
+def nav_fallback(class_name: str = "ui-nav-fallback") -> str:
     """Điều hướng phẳng đặt cuối trang, phòng khi CSS không tải được.
 
     Dock là một ``<nav>`` đầy đủ nên trình thu thập vẫn thấy mọi liên kết dù
@@ -943,10 +945,14 @@ def nav_fallback() -> str:
     của trình duyệt — và không nên phụ thuộc vào điều đó cho việc điều hướng.
     Một danh sách phẳng ở cuối trang tốn vài trăm byte và loại bỏ hẳn rủi ro.
 
+    Args:
+        class_name: Lớp của thẻ ``<nav>``. Trang trực tiếp có bảng màu riêng
+            và định kiểu khối này bằng lớp ``ui-live-nav`` của chính nó.
+
     Returns:
         Chuỗi HTML của khối điều hướng dự phòng.
     """
-    parts = ['<nav class="ui-nav-fallback" aria-label="Điều hướng đầy đủ">']
+    parts = [f'<nav class="{class_name}" aria-label="Điều hướng đầy đủ">']
     for group, items in SITE_NAV:
         parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
         for href, label, _ in items:
@@ -954,6 +960,67 @@ def nav_fallback() -> str:
         parts.append("</ul></section>")
     parts.append("</nav>")
     return "".join(parts)
+
+
+#: Vá riêng cho trang trực tiếp, chèn vào cuối thẻ ``<style>`` của chính nó.
+#:
+#: Trang này có bảng màu tối riêng và trước đây không dùng biểu định kiểu dùng
+#: chung. Gắn dock thì phải nạp biểu định kiểu ấy, và nó mang theo quy tắc
+#: ``body{font-size:14px;line-height:1.6}`` cùng ``a{text-decoration:none}`` —
+#: hai thứ trang không tự khai báo nên chúng lọt xuống toàn bộ nội dung: đo
+#: được trang cao thêm 235px và liên kết ở đầu trang mất gạch chân.
+#:
+#: Ghim lại theo ``.wrap`` chứ không theo ``body``: ``.wrap`` bọc đúng phần
+#: nội dung của trang, còn dải dock và khối điều hướng cuối trang nằm NGOÀI
+#: nó nên vẫn giữ nguyên định kiểu dùng chung.
+_LIVE_PATCH = (
+    ".wrap{font-size:16px;line-height:normal}"
+    ".wrap a{text-decoration:underline}"
+    ".ui-live-nav{padding-bottom:calc(var(--ui-dock-h,54px) + 40px)}"
+)
+
+#: Khối điều hướng phẳng viết tay của trang trực tiếp.
+_LIVE_NAV = re.compile(r'<nav class="ui-live-nav".*?</nav>', re.S)
+
+#: Dock đã gắn ở lượt dựng trước, để lượt sau thay chứ không chồng thêm.
+_LIVE_DOCK = re.compile(r'<nav class="ui-dock".*?</nav>\s*(?:<script>.*?</script>)?', re.S)
+
+
+def refresh_live_page(docs_dir: Path) -> Path | None:
+    """Gắn dock và làm mới điều hướng cho ``live.html``.
+
+    ``live.html`` là trang DUY NHẤT không do builder nào sinh ra: nó được viết
+    tay và commit thẳng. Cái giá của việc đó đã hiện rõ — khối điều hướng
+    trong tệp là bản chép tay của một :data:`SITE_NAV` cũ, nên nó vừa thiếu
+    hai nhóm mới, vừa còn nguyên cách gọi "lô tô" và "ĐB" mà cả dự án đã
+    chuẩn hoá thành "LOTO" và "Đặc Biệt". Chép tay lần nữa là lặp lại đúng
+    lỗi ấy, nên ở đây sinh lại từ nguồn.
+
+    Hàm chạy được nhiều lần cho cùng một kết quả: dock cũ bị thay chứ không
+    bị chồng thêm.
+
+    Args:
+        docs_dir: Thư mục gốc của trang tĩnh.
+
+    Returns:
+        Đường dẫn tệp đã ghi, hoặc ``None`` nếu tệp không tồn tại.
+    """
+    path = Path(docs_dir) / "live.html"
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    if STYLESHEET_NAME not in text:
+        text = text.replace("<style>", f"{stylesheet_link()}\n  <style>", 1)
+    text = _LIVE_DOCK.sub("", text)
+    text = _LIVE_NAV.sub(lambda _: nav_fallback("ui-live-nav"), text)
+    if _LIVE_PATCH not in text:
+        # Phải chèn vào đúng thẻ `<style>` của trang, và chèn CUỐI: quy tắc
+        # `.ui-live-nav` của trang dùng lối viết gộp `padding` nên nó đè mất
+        # mọi `padding-bottom` đến từ nơi khác.
+        text = text.replace("</style>", f"{_LIVE_PATCH}\n  </style>", 1)
+    text = text.replace("</body>", f'{dock("live.html")}\n</body>', 1)
+    write_page(path, text)
+    return path
 
 
 def app_shell_close(current: str = "") -> str:

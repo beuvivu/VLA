@@ -16,6 +16,7 @@ import pytest
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 
+from page_output import strip_css
 from ui_theme import SITE_NAV, STYLESHEET_NAME, TAILWIND_LITE_CSS, nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -192,8 +193,23 @@ def _effective_css(page: Path) -> str:
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
-def test_every_page_resolves_to_the_aptos_stack(page: Path) -> None:
-    assert "Aptos" in _effective_css(page)
+def test_every_page_resolves_to_the_self_hosted_font_stack(page: Path) -> None:
+    """Phép kiểm này trước đây tên là "aptos stack" và chỉ khẳng định
+    ``"Aptos" in css``.
+
+    Nó xanh suốt — nhưng vì một lý do sai. Trang KHÔNG dùng Aptos: chuỗi
+    "Aptos" duy nhất trong biểu định kiểu nằm trong một CHÚ THÍCH giải thích
+    rằng Aptos đã bị bỏ, vì ``font-src 'self'`` chặn nguồn ngoài còn giấy
+    phép Aptos thì cấm phân phối lại nên không tự host hợp pháp được. Phép
+    kiểm khớp đúng đoạn văn nói rằng điều nó khẳng định là sai.
+
+    Bóc chú thích khỏi tệp xuất bản làm lộ ra chuyện đó. Nay kiểm đúng thứ
+    thực sự áp lên trang: biến phông trỏ tới Inter tự host, và tệp phông đi
+    kèm được khai báo.
+    """
+    css = _effective_css(page).replace(" ", "")
+    assert '--ui-font:"Intervar"' in css, page.name
+    assert "InterVariable.woff2" in css, page.name
 
 
 def test_no_page_loads_a_font_from_an_external_host() -> None:
@@ -235,7 +251,16 @@ def test_shared_stylesheet_is_written() -> None:
 
 
 def test_shared_stylesheet_matches_the_source() -> None:
-    assert (DOCS / STYLESHEET_NAME).read_text(encoding="utf-8") == TAILWIND_LITE_CSS
+    """Tệp đã xuất bản là bản nguồn ĐÃ BÓC CHÚ THÍCH, không phải bản thô.
+
+    Biểu định kiểu dùng chung cũng gửi thẳng tới trình duyệt của khách y như
+    trang HTML, nên nó chịu đúng luật "không chú thích" ấy — trước đây nó
+    được ghi bằng ``write_text`` trần nên 55 chú thích tiếng Việt mô tả nội
+    tình bản dựng vẫn nằm trong tệp 37 KB mà mọi trang đều tải.
+    """
+    shipped = (DOCS / STYLESHEET_NAME).read_text(encoding="utf-8")
+    assert shipped == strip_css(TAILWIND_LITE_CSS)
+    assert "/*" not in shipped
 
 
 def test_pages_link_the_shared_stylesheet_instead_of_inlining_it() -> None:

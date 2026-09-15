@@ -128,6 +128,10 @@ def test_no_internal_link_is_broken() -> None:
             if not href or href.startswith(("http://", "https://", "mailto:")):
                 continue
             target, _, fragment = href.partition("#")
+            # `?demo=1` trỏ về CHÍNH trang đang đứng, chỉ đổi tham số truy vấn.
+            # Cắt phần truy vấn ra trước khi tra tên tệp, nếu không phép kiểm
+            # đi tìm một tệp tên "?demo=1" và báo chết một liên kết vẫn sống.
+            target = target.partition("?")[0]
             if target and target not in pages and not (DOCS / target).exists():
                 broken.append(f"{page.name} -> {href}")
             elif not target and fragment and fragment not in ids:

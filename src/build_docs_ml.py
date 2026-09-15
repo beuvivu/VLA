@@ -10,10 +10,10 @@ from ui_theme import (
     ALIGN_RIGHT,
     card,
     dataframe_table,
+    app_shell_close,
+    app_shell_open,
     nav_links,
     page_header,
-    shell_close,
-    shell_open,
     stylesheet_link,
     write_stylesheet,
 )
@@ -77,7 +77,18 @@ def _date_badge(gen_date: str) -> str:
     return f'<span class="ui-badge ui-badge-brand">Dự báo cho {gen_date}</span>'
 
 
-def _base_page(body: str, page_title: str) -> str:
+def _base_page(body: str, page_title: str, current: str = "") -> str:
+    """Khung trang ML, dùng chung khung ứng dụng có dock như mọi trang khác.
+
+    Trước đây hai trang ML mở bằng :func:`shell_open` trần, nên chúng là đích
+    ĐẾN của dock mà bản thân lại không có dock: vào rồi thì lối ra duy nhất là
+    nút Back hoặc dải ``nav_links`` ba mục ở đầu trang.
+
+    Args:
+        body: Phần thân trang.
+        page_title: Tiêu đề cho thẻ ``<title>``.
+        current: Tên tệp trang hiện tại, để dock đánh dấu mục đang xem.
+    """
     return f"""<!doctype html>
 <html lang="vi">
 <head>
@@ -88,9 +99,9 @@ def _base_page(body: str, page_title: str) -> str:
   <title>{page_title}</title>
 </head>
 <body>
-{shell_open()}
+{app_shell_open(current)}
 {body}
-{shell_close()}
+{app_shell_close(current)}
 </body>
 </html>"""
 
@@ -128,6 +139,7 @@ def build() -> None:
 </div>
 """,
         page_title="ML — 10 số LOTO đứng đầu",
+        current="ml_top10_loto.html",
     )
     write_stylesheet(DOCS_DIR)
     write_page((DOCS_DIR / "ml_top10_loto.html"), loto_page)
@@ -156,6 +168,7 @@ def build() -> None:
 </div>
 """,
         page_title="ML — 10 số Đặc Biệt đứng đầu",
+        current="ml_top10_de.html",
     )
     write_page((DOCS_DIR / "ml_top10_de.html"), de_page)
 
@@ -213,7 +226,7 @@ def build() -> None:
 </script>
 """
 
-    write_page(DOCS_DIR / "index.html", _base_page(index_body, "Bảng điều khiển xổ số"))
+    write_page(DOCS_DIR / "index.html", _base_page(index_body, "Bảng điều khiển xổ số", "index.html"))
 
 
 if __name__ == "__main__":

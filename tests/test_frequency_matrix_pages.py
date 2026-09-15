@@ -412,13 +412,17 @@ def test_the_gan_popup_covers_both_loto_and_special_prize() -> None:
 
 def test_the_popup_is_reachable_on_both_pages() -> None:
     """Trang tần suất cặp không có lưới 00-99, nên chỉ gắn popup vào lưới ấy
-    là để tính năng chỉ tồn tại ở một trong hai trang."""
-    assert "sp-gan-pick" in BUILDER, "thiếu ô chọn số để mở popup"
-    # Đếm CHỖ GỌI, không đếm cả dòng `def`. Bản đầu đếm cả định nghĩa nên ra 3
-    # và phép kiểm đỏ oan trên mã đang đúng.
-    calls = BUILDER.replace("def _gan_picker()", "").replace("def _gan_modal()", "")
-    assert calls.count("_gan_picker()") == 2, "cả hai trang phải có"
-    assert calls.count("_gan_modal()") == 2
+    là để tính năng chỉ tồn tại ở một trong hai trang.
+
+    Kiểm trên TRANG ĐÃ DỰNG chứ không đếm chỗ gọi trong mã builder. Bản trước
+    ghim cứng "đúng hai chỗ gọi ``_gan_modal()``", nên khi trang thứ ba dùng
+    lại cùng cái popup thì phép kiểm đỏ lên trong khi cả hai trang nó canh
+    vẫn có đủ popup — nó đo số dòng mã, không đo thứ người dùng nhận được.
+    """
+    for name in ("tan-suat-loto.html", "tan-suat-cap-loto.html"):
+        page = (ROOT / "docs" / name).read_text(encoding="utf-8")
+        assert 'id="sp-gan-modal"' in page, f"{name}: thiếu khung popup chu kỳ gan"
+        assert "sp-gan-pick" in page, f"{name}: thiếu ô chọn số để mở popup"
 
 
 def test_the_popup_filter_button_only_shows_where_it_does_something() -> None:

@@ -24,7 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
-from ui_theme import readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import dock, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -1197,7 +1197,10 @@ def main() -> None:
     main {{
       max-width: var(--page-max);
       margin: 0 auto;
-      padding: 0 var(--page-gutter) 56px;
+      /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
+         `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
+         để trang vẫn đúng nếu tệp ấy không tải được. */
+      padding: 0 var(--page-gutter) calc(var(--ui-dock-h, 54px) + 40px);
     }}
 
     .metric-grid {{
@@ -2097,6 +2100,7 @@ def main() -> None:
       if (event.key === 'Escape') closeEvidence();
     }});
   </script>
+{dock("statistics.html")}
 </body>
 </html>
 """

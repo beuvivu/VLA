@@ -11,7 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
 from ui_locale import mode_label, path_kind_label
-from ui_theme import dock, nav_fallback
+from ui_theme import dock, nav_fallback, refresh_live_page
 from xsmb_domain import baseline_rate
 from web_security import security_meta_tags
 from page_output import write_page
@@ -310,6 +310,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
         )
     idx_html.append("</div></body></html>")
     write_page((docs_dir / "index.html"), "\n".join(idx_html))
+    refresh_live_page(docs_dir)
 
 
 def main() -> None:
