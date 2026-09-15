@@ -8,19 +8,41 @@ thay đổi sau đó đã hạ một ngưỡng rồi tạo ra vùng lệch — k
 ý kiến, mà vì lý do nằm ở chỗ không ai đọc tới. Sửa một quy tắc ở đây thì sửa
 luôn phép kiểm tương ứng, và ghi lại số đo mới.
 
-## 1. Bốn chủ thể tạo kiểu
+## 1. Một nền dùng chung, các lớp phủ có phạm vi
 
-Kho có **bốn** nơi phát sinh CSS độc lập. Một thay đổi giao diện chỉ chạm một
-nơi sẽ không nhìn thấy được ở ba nơi còn lại.
+Kiến trúc hiện tại **không còn là nhiều hệ CSS độc lập**. Mọi trang HTML xuất
+bản trong `docs/` phải nạp cùng một nền từ:
 
-| Chủ thể | Phủ |
-|---|---|
-| `src/ui_theme.py` → `docs/assets/vla.css` | 28 trang, gồm trang chủ |
-| `src/templates/stat_pages.css` (nhúng thẳng) | 14 trang thống kê |
-| `src/build_landing_page.py` (`:root` riêng) | `index` / `landing` / `landing_desktop` |
-| `src/build_statistics_dashboard.py` (nội tuyến) | `statistics.html` |
+```
+src/ui_theme.py -> docs/assets/ui.css
+```
 
-Canh: `test_every_style_owner_declares_the_same_page_ground`,
+Tại thời điểm chốt 15-09-2026, nền này được nạp trên toàn bộ **29 trang HTML**
+đã xuất bản. Số 29 chỉ là ảnh chụp hiện trạng, không phải hằng số cần ghim vào
+kiểm thử: thêm trang mới thì trang đó tự động rơi vào phạm vi kiểm tra.
+
+Các trang vẫn được phép có **scoped overlay** cho nhu cầu dữ liệu riêng, nhưng
+overlay chỉ được bổ sung lên shared base, không được thay thế nó:
+
+| Lớp | Phủ | Vai trò |
+|---|---|---|
+| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dock, dark mode |
+| `src/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
+| `src/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
+| `src/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
+| CSS nội tuyến của `live.html` | `live.html` | bảng màu tối của trang trực tiếp; dock/base vẫn lấy từ `ui.css` |
+
+`live.html` là ngoại lệ duy nhất còn được lưu như trang viết tay; hàm
+`ui_theme.refresh_live_page()` chịu trách nhiệm đồng bộ dock và điều hướng của
+nó từ `SITE_NAV` để trang này không trôi khỏi hệ thống.
+
+Tên stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên cũ và
+không được dùng lại.
+
+Canh: `test_every_published_page_loads_the_shared_design_system`,
+`test_no_published_page_references_the_retired_stylesheet_name`,
+`test_every_published_page_carries_the_dock`,
+`test_every_style_owner_declares_the_same_page_ground`,
 `test_brand_ramp_is_identical_wherever_it_is_declared`.
 
 ## 2. Màu thương hiệu tách khỏi màu dữ liệu
@@ -58,7 +80,7 @@ Canh: `test_one_measure_uses_one_hue_across_its_time_windows`.
 
 ## 4. Thang liên tục và thang phân cấp
 
-Thang **liên tục** (nhạt → đậm) không được đổi sắc giữa chừng: đổi sắc là đọc
+Thang **liên tục** (nhạt -> đậm) không được đổi sắc giữa chừng: đổi sắc là đọc
 sai thứ tự. Trần tương phản của một thang liên tục với ba lựa chọn mực
 (`#ffffff` / `#0f172a` / `#000000`) là khoảng **4,5:1** — đó là giới hạn cấu
 trúc, không phải lỗi cấu hình.
@@ -73,7 +95,7 @@ Thang **phân cấp số nháy** là ngoại lệ có chủ ý, theo quy ước 
 5+ nháy  #5B21B6 / #FFFFFF    8,98:1
 ```
 
-Xanh dương → xanh lá → cam **không có trật tự tri giác**, nên bảng màu này
+Xanh dương -> xanh lá -> cam **không có trật tự tri giác**, nên bảng màu này
 BẮT BUỘC đi kèm chú giải; thiếu chú giải thì nó chỉ là màu, không phải thông tin.
 
 Canh: `test_every_nhay_tier_has_a_distinct_pair_that_passes_aa`,
@@ -131,7 +153,7 @@ cuộn bên trong) hoặc một số đo cụ thể — miễn là được **n�
 
 Sàn cụ thể phải lấy từ bề rộng khối **thực sự cần**, không phải bề rộng thoải
 mái của nó. Sàn quá tay đẩy ngưỡng lên cao và bỏ trống cả một dải bề rộng; sàn
-cụ thể ở nơi không cần thì gây tràn trang (đo được `minmax(420px,…)` cho
+cụ thể ở nơi không cần thì gây tràn trang (đo được `minmax(420px,...)` cho
 `.matrix-top` làm tràn **+46px** ở khung 900px).
 
 Canh: `test_top_row_columns_cannot_be_pushed_open_by_wide_tables`,
