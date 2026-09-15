@@ -21,10 +21,27 @@ def _doc(body: str, *, head: str = "") -> str:
     return f"<!doctype html><html><head>{head}</head><body>{body}</body></html>"
 
 
-def test_page_output_routes_every_page_through_refinement_layer() -> None:
-    source = (ROOT / "src" / "page_output.py").read_text(encoding="utf-8")
-    assert "from ui_page_refinements import refine_page" in source
-    assert "refine_page(path, html)" in source
+def test_page_output_routes_every_page_through_refinement_layer(tmp_path: Path, monkeypatch) -> None:
+    import page_output
+
+    calls: dict[str, object] = {}
+
+    def fake_refine(path: Path, html: str) -> str:
+        calls["path"] = path
+        calls["html"] = html
+        return "<!doctype html><html><body>refined-output</body></html>"
+
+    monkeypatch.setattr(page_output, "refine_page", fake_refine)
+    target = tmp_path / "sample.html"
+    original = "<!doctype html><html><!-- remove-me --><body>original</body></html>"
+
+    page_output.write_page(target, original)
+
+    written = target.read_text(encoding="utf-8")
+    assert calls == {"path": target, "html": original}
+    assert "refined-output" in written
+    assert "original" not in written
+    assert "<!--" not in written
 
 
 def test_weekly_special_fills_the_box_without_global_table_regression() -> None:
