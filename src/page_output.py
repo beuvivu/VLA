@@ -34,7 +34,7 @@ _DETAIL_STAT_PAGES = frozenset({
     "giai-db-ngay-mai.html",
     "cap-lon-loto.html",
 })
-_SOURCE_DETAIL_STYLE_ID = "vla-source-detail-layout"
+_SOURCE_DETAIL_STYLE_ID = "ui-source-detail-layout"
 
 #: Từ khoá mà sau nó, dấu ``/`` mở đầu một HẰNG REGEX chứ không phải phép chia.
 #:
