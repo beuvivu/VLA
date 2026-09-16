@@ -8,69 +8,60 @@
   <title>{{ title }}</title>
   <link rel="stylesheet" href="assets/ui.css" />
   <style>
-    :root{ --bg:#0b0f17; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --line:#1f2937;
-           --hit:#f59e0b; --hitde:#ef4444; --ok:#22c55e; --chip:#111827;
-
-           /* Trang này luôn dùng bảng màu tối riêng, kể cả khi hệ điều hành đặt
-              chế độ sáng. Ánh xạ bảng đó lên token của biểu định kiểu chung để
-              MỌI thành phần dùng chung (.ui-empty, .ui-table, badge…) đọc
-              được trên nền tối. Thiếu bước này, khối trạng thái rỗng lấy màu
-              chữ #0f172a của chế độ sáng đặt lên card #0f172a — tỉ lệ tương
-              phản 1.00:1, tức chữ vô hình hoàn toàn. */
-           --ui-bg:#0b0f17; --ui-surface:#0f172a; --ui-surface-2:#111827;
-           --ui-ink:#f1f5f9; --ui-ink-2:#e5e7eb; --ui-ink-soft:#cbd5e1;
-           --ui-ink-muted:#94a3b8;
-           --ui-border:#1f2937; --ui-border-strong:#243041;
-           --ui-brand:#93c5fd; --ui-brand-ink:#bfdbfe; --ui-brand-soft:#172554;
-           --ui-brand-border:#1e3a8a;
-           /* --ui-on-brand PHẢI lật cùng --ui-brand. Bảng màu tối này đổi nền
-              thương hiệu sang xanh nhạt #93c5fd, nhưng để nguyên chữ-trên-nền
-              thương hiệu là #ffffff của chế độ sáng thì tỉ lệ chỉ còn 1,80:1.
-              Lỗi này nằm im cho tới khi có thành phần dùng tới token đó. */
-           --ui-on-brand:#0b1220;
-           color-scheme:dark; }
-    body{margin:0;font-family:var(--ui-font); background:var(--bg); color:var(--text);}
-    a{color:#93c5fd;text-decoration:none} a:hover{text-decoration:underline}
-    .wrap{max-width:1200px;margin:0 auto;padding:20px}
-    .top{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
-    .kpi{display:flex;gap:10px;flex-wrap:wrap}
-    .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted)}
-    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    :root{
+      --bg:#F4F5FF;--card:rgba(255,255,255,.90);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;
+      --hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eef2ff;
+      --ui-bg:#F4F5FF;--ui-surface:rgba(255,255,255,.94);--ui-surface-2:#f8fafc;
+      --ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-ink-muted:#64748b;
+      --ui-border:#dbe3f0;--ui-border-strong:#cbd5e1;
+      --ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+      --ui-on-brand:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--ui-font);background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);color:var(--text)}
+    a{color:#4338ca;text-decoration:none}a:hover{text-decoration:underline}
+    .path-shell{max-width:1280px;margin:0 auto;padding:clamp(16px,2.4vw,28px);padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 36px)}
+    .path-hero{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:18px 20px;border:1px solid rgba(255,255,255,.96);border-radius:22px;background:rgba(255,255,255,.88);box-shadow:0 12px 36px rgba(15,23,42,.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .path-hero h1{letter-spacing:-.03em}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.96);border-radius:20px;padding:16px;box-shadow:0 10px 32px rgba(15,23,42,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .kpi{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid #dbe3f0;border-radius:999px;padding:6px 10px;font-size:12px;color:#475569;font-weight:700}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:#475569}
     .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
-    .dot.hit{background:var(--hit)} .dot.hitde{background:var(--hitde)} .dot.none{background:#334155}
-    table{width:100%;border-collapse:separate;border-spacing:0}
-    th,td{border-bottom:1px solid var(--line);padding:8px 8px;text-align:center;font-size:12px}
-    th{position:sticky;top:0;background:rgba(15,23,42,.98);z-index:1}
-    td.left,th.left{text-align:left}
-    tr:hover td{background:rgba(255,255,255,.03)}
-    .cell{display:inline-flex;gap:6px;align-items:center;justify-content:center;min-width:42px;padding:4px 6px;border-radius:8px;border:1px solid #243041}
-    .cell.hit{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.35)}
-    .cell.hitde{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.35)}
-    .cell.none{background:rgba(148,163,184,.06)}
-    .small{font-size:11px;color:var(--muted)}
-    .btn{display:inline-block;background:#1d4ed8;color:white;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
-    .btn.secondary{background:transparent;color:var(--text)}
+    .dot.hit{background:var(--hit)}.dot.hitde{background:var(--hitde)}.dot.none{background:#94a3b8}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:transparent;font-variant-numeric:tabular-nums}
+    th,td{border-bottom:1px solid #e2e8f0;padding:9px 8px;text-align:center;font-size:12px}
+    th{position:sticky;top:0;background:rgba(248,250,252,.98);color:#334155;z-index:3}
+    td{color:#0f172a}td.left,th.left{text-align:left}tr:hover td{background:#f8faff}
+    .cell{display:inline-flex;gap:6px;align-items:center;justify-content:center;min-width:42px;padding:5px 7px;border-radius:9px;border:1px solid #dbe3f0;background:#fff;color:#0f172a}
+    .cell.hit{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+    .cell.hitde{background:#FEE2E2;border-color:#f87171;color:#DC2626;font-weight:800}
+    .cell.none{background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.34) 7px 8px);color:#475569}
+    .small{font-size:11px;color:var(--muted);line-height:1.5}
+    .btn{display:inline-block;background:#4f46e5;color:#fff;padding:8px 11px;border-radius:10px;border:1px solid #4f46e5;font-weight:700}
+    .btn:hover{text-decoration:none;background:#4338ca}.btn.secondary{background:#fff;color:#334155;border-color:#dbe3f0}.btn.secondary:hover{background:#eef2ff}
+    .path-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr);gap:14px;align-items:stretch;margin-top:14px}
+    .path-overview>.card{display:flex;flex-direction:column;min-height:0}
     .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border:1px solid #243041;border-radius:10px;background:rgba(30,41,59,.55);color:var(--text);text-decoration:none;transition:all .2s ease-in-out}
-    .quick-pick:hover{background:rgba(79,70,229,.22);border-color:rgba(129,140,248,.7);transform:translateY(-1px);text-decoration:none}
-    .quick-number{font-size:16px;font-weight:700;letter-spacing:.04em}
-    .quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
-    .empty-state{margin-top:10px;padding:10px;border:1px dashed #475569;border-radius:10px;color:var(--muted);font-size:12px}
-    /* Card là flex dọc để nội dung cuối kéo giãn, và bảng gợi ý bị chặn chiều
-       cao, nhờ vậy hai card cùng hàng không lệch nhau một khoảng trống lớn. */
-    .grid{display:grid;grid-template-columns:1fr;gap:12px;align-items:stretch}
-    .grid>.card{display:flex;flex-direction:column;min-height:0}
-    .pick-scroll{flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto}
-    @media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;border:1px solid #dbe3f0;border-radius:12px;background:#fff;color:var(--text);text-decoration:none;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+    .quick-pick:hover{background:#eef2ff;border-color:#a5b4fc;transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:800;letter-spacing:.04em}.quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
+    .empty-state{margin-top:10px;padding:10px;border:1px dashed #cbd5e1;border-radius:10px;color:var(--muted);font-size:12px;background:#f8fafc}
+    .pick-scroll{flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto;border:1px solid #e2e8f0;border-radius:12px}
+    .path-matrix-card{margin-top:14px;overflow:hidden}
+    .path-table-scroll{margin-top:10px;max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid #dbe3f0;border-radius:14px;background:#fff}
+    .path-table-scroll table{margin:0;min-width:max-content}.path-table-scroll th{top:0;box-shadow:0 1px 0 #dbe3f0}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .path-footer{margin-top:14px;color:var(--muted);padding-bottom:8px}
+    @media(max-width:979px){.path-overview{grid-template-columns:1fr}.path-table-scroll{max-height:58vh}}
+    @media(max-width:640px){.path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 32px)}.path-hero{padding:14px;border-radius:16px}.card{border-radius:16px;padding:13px}.quick-grid{grid-template-columns:1fr}.kpi{width:100%}.chip{font-size:11px}}
   </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="top">
+<body class="ui-app ui-dock-space path-page">
+<div class="wrap path-shell">
+  <div class="top path-hero">
     <div>
-      <h1 style="margin:0;font-size:20px">{{ title }}</h1>
+      <h1 style="margin:0;font-size:clamp(20px,3vw,30px)">{{ title }}</h1>
       <div class="small">Ngày neo (biên ngày cầu chạy): <b>{{ anchor_date }}</b> · Số ngày cầu chạy: <b>{{ display_days }}</b> · Loại: <b>{{ mode_label }}</b> · Trạng thái: <b>{{ kind_label }}</b></div>
     </div>
     <div class="kpi">
@@ -80,11 +71,11 @@
     </div>
   </div>
 
-  <div class="grid" style="margin-top:12px">
+  <div class="grid path-overview" style="margin-top:12px">
     <div class="card">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện ({{ kind_label }}).</div></div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind_label }} ({{ other_mode_label }})</a>{% endif %}
           {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Trang tổng hợp</a>{% endif %}
         </div>
@@ -133,7 +124,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px; overflow:auto">
+  <div class="card path-matrix-card" style="margin-top:12px; overflow:hidden">
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
     <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
     {% if not rows %}
@@ -157,8 +148,8 @@
       {% endif %}
     </div>
     {% else %}
-    <div style="margin-top:10px; overflow:auto">
-      <table>
+    <div class="path-table-scroll" style="margin-top:10px; overflow:auto">
+      <table id="path-table">
         <thead>
           <tr>
             <th class="left">Đường cầu</th>
@@ -195,7 +186,7 @@
     {% endif %}
   </div>
 
-  <div class="small" style="margin-top:14px;color:var(--muted)">
+  <div class="small path-footer" style="margin-top:14px;color:var(--muted)">
     Được tạo bởi <span class="mono">src/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
   </div>
 </div>
