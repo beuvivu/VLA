@@ -606,6 +606,25 @@ def test_row_head_styling_is_opt_out_for_calendar_tables() -> None:
     )
 
 
+def test_week_grid_marks_all_weekdays_as_data_cells() -> None:
+    """Lưới tuần có đủ bảy cột dữ liệu, kể cả cột Thứ 2.
+
+    ``table()`` dùng chung cho bảng có nhãn hàng, nhưng lịch tuần truyền
+    ``rowHead: false``. Nếu vẫn dùng ``i > 0`` thì cột đầu bị mất nền/độ nổi
+    của ô có dữ liệu và toàn tuần nhìn lệch tông.
+    """
+    body = _js_function("table")
+    assert "const isDataCell = opts.rowHead === false || i > 0;" in body
+    assert "if (!blank && isDataCell) {" in body
+
+
+def test_weekly_detail_layout_does_not_single_out_first_weekday() -> None:
+    """Bảy ngày trong bảng tuần phải cùng căn giữa."""
+    css = (ROOT / "src" / "templates" / "stat_detail_pages.css").read_text(encoding="utf-8")
+    assert ".sp-page-bang-dac-biet #sp-grid th,.sp-page-bang-dac-biet #sp-grid td{text-align:center" in css
+    assert ".sp-page-bang-dac-biet #sp-grid td:first-child{text-align:left}" not in css
+
+
 @pytest.mark.parametrize(
     "slug", ["bang-dac-biet", "bang-dac-biet-nam", "tan-suat-loto", "giai-dac-biet-theo-tong"]
 )
