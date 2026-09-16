@@ -360,12 +360,33 @@ class TestBanditSerialisation:
         restored = DiscountedThompsonSamplingMAB.load_json(path)
         assert restored.to_dict()["arms"] == original.to_dict()["arms"]
 
-    def test_pickle_file_round_trip(self, tmp_path) -> None:
-        original = self._trained()
-        restored = DiscountedThompsonSamplingMAB.load_pickle(
-            original.save_pickle(tmp_path / "mab.pkl")
-        )
-        assert restored.to_dict()["arms"] == original.to_dict()["arms"]
+    def test_no_pickle_entry_point_survives_on_the_bandit(self) -> None:
+        """``pickle.load`` là nguyên thuỷ thực thi mã tuỳ ý.
+
+        Cặp ``save_pickle``/``load_pickle`` không có nơi gọi nào trong
+        production — pipeline dùng ``load_json`` — nên nó chỉ là một khẩu súng
+        đã lên đạn không ai cần. Phép kiểm này giữ cho nó không quay lại: thêm
+        một đường nạp pickle mà không ai để ý là cách cửa hậu ấy trở về.
+        """
+        import ast
+        import pathlib
+
+        import ml_engine.bandit as module
+
+        for name in ("save_pickle", "load_pickle"):
+            assert not hasattr(DiscountedThompsonSamplingMAB, name), name
+
+        # Quét bằng AST chứ không so chuỗi: chữ "pickle" xuất hiện hợp lệ trong
+        # chính đoạn chú thích giải thích vì sao nó bị gỡ, nên phép kiểm theo
+        # chuỗi sẽ đỏ vì lý do sai. AST chỉ thấy lệnh nhập thật.
+        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
+        imported = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module.split(".")[0])
+        assert "pickle" not in imported, f"mô-đun nạp lại pickle: {sorted(imported)}"
 
     def test_missing_file_raises_a_clear_error(self, tmp_path) -> None:
         with pytest.raises(BanditError, match="không tìm thấy"):

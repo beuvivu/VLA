@@ -7,7 +7,7 @@ import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
-from typing import Protocol
+from typing import Final, Protocol
 
 from bs4 import BeautifulSoup
 
@@ -203,7 +203,40 @@ def _parse_result_from_prize_map(selected_date: date, *, prize_map: dict[str, li
     )
 
 
+#: Trần kích thước một trang nguồn, tính bằng byte.
+#:
+#: Trang kết quả thật nặng vài trăm KB, nên 8 MiB đã rộng gấp hơn hai chục lần
+#: mà vẫn chặn được trường hợp một nguồn bị chiếm hoặc hỏng trả về thân phản
+#: hồi vô hạn. Hạn thời gian KHÔNG thay được trần này: trong 20 giây một máy
+#: chủ vẫn kịp đẩy hàng gigabyte, và runner nuốt trọn vào bộ nhớ.
+MAX_PAGE_BYTES: Final[int] = 8 * 1024 * 1024
+
+
+def _declared_length(resp: object) -> int | None:
+    """Số byte mà máy chủ TỰ KHAI trong ``Content-Length``, nếu có."""
+    headers = getattr(resp, "headers", None)
+    if headers is None or not hasattr(headers, "get"):
+        return None
+    try:
+        return int(headers.get("Content-Length"))
+    except (TypeError, ValueError):
+        return None
+
+
 def _request_page(http: HttpClient, url: str, *, timeout: int = 20) -> str:
+    """Lấy một trang nguồn, có trần kích thước.
+
+    Nguồn là bên NGOÀI và không đáng tin theo mặc định: dự án có sẵn cả một
+    chính sách nguồn nhiều tầng vì đúng lý do ấy. Nhưng thân phản hồi thì trước
+    nay đọc thẳng vào bộ nhớ, không giới hạn.
+
+    Trần chặn chắc phần PHÂN TÍCH trong mọi trường hợp, và chặn cả phần CẤP
+    PHÁT khi máy chủ khai đúng ``Content-Length``. Chặn cấp phát trong mọi
+    trường hợp thì phải chuyển cả lớp khách sang đọc theo luồng — đắt hơn
+    nhiều, và không tương xứng với mối đe doạ ở đây khi mọi nguồn đều qua TLS
+    còn token của CI chỉ có quyền đọc. Ghi rõ giới hạn này thay vì để người
+    đọc tưởng nó kín.
+    """
     try:
         resp = http.get(url, timeout=timeout)
     except Exception as exc:  # noqa: BLE001
@@ -211,7 +244,19 @@ def _request_page(http: HttpClient, url: str, *, timeout: int = 20) -> str:
         return ""
     if _get_status_code(resp) != 200:
         return ""
-    return _get_text(resp)
+
+    declared = _declared_length(resp)
+    if declared is not None and declared > MAX_PAGE_BYTES:
+        logger.warning("bỏ qua trang quá lớn: khai %d byte, trần %d", declared, MAX_PAGE_BYTES)
+        return ""
+
+    text = _get_text(resp)
+    # Một byte UTF-8 không bao giờ nhỏ hơn một ký tự, nên so theo số ký tự là
+    # cách kiểm rẻ và luôn thiên về phía an toàn.
+    if len(text) > MAX_PAGE_BYTES:
+        logger.warning("bỏ qua trang quá lớn: %d ký tự, trần %d", len(text), MAX_PAGE_BYTES)
+        return ""
+    return text
 
 
 class _TextPageSource:

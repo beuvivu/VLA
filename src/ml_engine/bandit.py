@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import json
 import logging
-import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Literal
@@ -491,43 +490,16 @@ class DiscountedThompsonSamplingMAB:
         except json.JSONDecodeError as error:
             raise BanditError(f"trạng thái bandit hỏng: {source}") from error
 
-    def save_pickle(self, path: str | Path) -> Path:
-        """Ghi trạng thái bằng ``pickle``.
-
-        JSON là định dạng nên dùng để lưu lâu dài vì đọc được và không thực thi
-        mã khi nạp. ``pickle`` có ở đây theo đặc tả, và chỉ nên dùng cho tệp do
-        chính hệ thống sinh ra.
-
-        Args:
-            path: Đường dẫn tệp đích.
-
-        Returns:
-            Đường dẫn đã ghi.
-        """
-        target = Path(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        with target.open("wb") as handle:
-            pickle.dump(self.to_dict(), handle, protocol=pickle.HIGHEST_PROTOCOL)
-        return target
-
-    @classmethod
-    def load_pickle(cls, path: str | Path) -> DiscountedThompsonSamplingMAB:
-        """Nạp trạng thái từ tệp ``pickle`` do chính hệ thống sinh ra.
-
-        Args:
-            path: Đường dẫn tệp nguồn.
-
-        Returns:
-            Bandit đã khôi phục.
-
-        Raises:
-            BanditError: Khi tệp không tồn tại hoặc nội dung hỏng.
-        """
-        source = Path(path)
-        if not source.exists():
-            raise BanditError(f"không tìm thấy trạng thái bandit: {source}")
-        with source.open("rb") as handle:
-            return cls.from_dict(pickle.load(handle))
+    # `save_pickle`/`load_pickle` đã được gỡ bỏ.
+    #
+    # `pickle.load` là nguyên thuỷ THỰC THI MÃ TUỲ Ý: nạp một tệp do người khác
+    # đặt được đồng nghĩa với trao quyền chạy mã. Cặp hàm này không có nơi gọi
+    # nào trong production — pipeline dùng `load_json` với
+    # `data/ml_engine/bandit_state.json` — nên nó chỉ là một khẩu súng đã lên
+    # đạn nằm trong nhà mà không ai cần. Đặc quyền tối thiểu: gỡ hẳn thay vì
+    # bọc thêm cảnh báo, vì cảnh báo không ngăn được lần dùng sau.
+    #
+    # JSON giữ nguyên mọi thứ hệ thống này cần lưu và không thực thi gì khi nạp.
 
     def report(self, baseline: float) -> list[dict[str, Any]]:
         """Bảng tóm tắt từng cánh tay để ghi nhật ký và hiển thị.

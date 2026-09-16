@@ -182,10 +182,28 @@ jobs:
         # nguồn chậm, và lưới an toàn phía sau sẽ thử lại. Đỏ giả làm người ta
         # quen với việc bỏ qua cảnh báo.
         continue-on-error: true
+        # Đầu vào workflow_dispatch là văn bản tự do và runner thay ${{ }} TRƯỚC
+        # khi shell nhìn thấy dòng lệnh, nên dấu nháy trong YAML không bảo vệ
+        # được gì: một giá trị dạng  18:15" ; curl ... | sh ; echo "  trở thành
+        # một lệnh độc lập. Đưa qua env rồi tham chiếu "$VAR" thì shell nhận
+        # chuỗi làm DỮ LIỆU chứ không làm cú pháp. Chính tệp này đã dùng đúng
+        # cách ấy ở bước phía trên.
+        env:
+          WINDOW_START: ${{ github.event.inputs.window_start || '18:15' }}
+          DEADLINE: ${{ github.event.inputs.deadline || '19:30' }}
         run: |
+          set -euo pipefail
+          # Chốt chặn thứ hai: hình dạng HH:MM. Ngay cả khi cách truyền đổi
+          # về lối cũ, một giá trị không phải giờ cũng không đi xa hơn đây.
+          for value in "$WINDOW_START" "$DEADLINE"; do
+            if ! printf '%s' "$value" | grep -Eq '^([01][0-9]|2[0-3]):[0-5][0-9]$'; then
+              echo "Giá trị giờ không hợp lệ: $value" >&2
+              exit 1
+            fi
+          done
           python src/crawler/fetch_results.py \
-            --window-start "${{ github.event.inputs.window_start || '18:15' }}" \
-            --deadline "${{ github.event.inputs.deadline || '19:30' }}" \
+            --window-start "$WINDOW_START" \
+            --deadline "$DEADLINE" \
             --timeout 8 \
             --min-agreement 2 \
             --json-out "${RUNNER_TEMP}/poll.json"
