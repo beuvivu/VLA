@@ -20,8 +20,16 @@ WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
 #: Ngữ cảnh do người ngoài quyết định nội dung. `github.event_name` và
 #: `repository.default_branch` không nằm ở đây: chúng lấy giá trị từ một tập
 #: cố định do GitHub đặt, không phải văn bản tự do.
+#:
+#: PHẢI bắt cả dạng RÚT GỌN ``${{ inputs.x }}``, không chỉ dạng đầy đủ
+#: ``${{ github.event.inputs.x }}``. Bản đầu của biểu thức này chỉ có dạng đầy
+#: đủ, và nó bỏ lọt trọn vẹn ``backfill-history.yml`` — nơi bốn đầu vào nội
+#: suy thẳng vào ``run:`` và job lại mang token ``contents: write``, tức nặng
+#: hơn hẳn ca nó bắt được. Một phép kiểm an ninh bắt hụt đúng dạng phổ biến
+#: nhất thì tệ hơn không có, vì nó phát ra cảm giác an toàn.
 UNTRUSTED = re.compile(
-    r"\$\{\{\s*github\.event\.(inputs|client_payload|issue|pull_request|comment|head_commit)"
+    r"\$\{\{\s*(?:github\.event\.)?"
+    r"(inputs|client_payload|issue|pull_request|comment|head_commit)\."
 )
 
 

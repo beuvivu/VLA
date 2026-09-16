@@ -13,8 +13,24 @@ from pathlib import Path
 
 __all__ = ["refine_page"]
 
-_STYLE_ID = "vla-targeted-ui-refinement"
-_STYLE_RE = re.compile(rf'<style id="{re.escape(_STYLE_ID)}">.*?</style>', re.I | re.S)
+# Id KHÔNG được mang tên dự án: nó đi thẳng vào HTML của mọi trang đã xuất
+# bản, và bộ kiểm chống lộ nguồn cấm đúng chuỗi ấy. Bản trước là
+# "vla-targeted-ui-refinement" và nó làm đỏ phép kiểm trên 15 trang.
+_STYLE_ID = "ui-targeted-refinement"
+#: Id CŨ, giữ lại CHỈ để gỡ khối đã nằm sẵn trong trang đã xuất bản.
+#:
+#: `_append_style` thay khối cũ bằng khối mới, nhưng nó tìm theo id. Đổi id mà
+#: không nhận ra id cũ thì khối cũ không khớp gì cả, nó nằm lại vĩnh viễn và
+#: trang vừa mang id mới vừa còn nguyên id cũ — tức phép đổi tên không đạt
+#: được điều duy nhất nó cần đạt. Đã đo: 5 trang giữ nguyên chuỗi cấm sau khi
+#: dựng lại.
+_LEGACY_STYLE_IDS = ("vla-targeted-ui-refinement",)
+_STYLE_RE = re.compile(
+    "<style id=\"(?:"
+    + "|".join(re.escape(name) for name in (_STYLE_ID, *_LEGACY_STYLE_IDS))
+    + ")\">.*?</style>",
+    re.I | re.S,
+)
 _BODY_RE = re.compile(r"<body(?P<attrs>[^>]*)>", re.I)
 _CLASS_RE = re.compile(r'class=(?P<q>["\'])(?P<value>.*?)(?P=q)', re.I | re.S)
 
