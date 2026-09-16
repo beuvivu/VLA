@@ -1,13 +1,13 @@
 {
   "date": "2026-09-17",
-  "generated_at_local": "2026-09-16T22:49:05+07:00",
-  "generated_at_utc": "2026-09-16T15:49:05Z",
+  "generated_at_local": "2026-09-16T23:45:17+07:00",
+  "generated_at_utc": "2026-09-16T16:45:17Z",
   "top_lo_to": [
     {
       "number": "13",
-      "probability": 0.2389569586465103,
+      "probability": 0.2389569586451838,
       "baseline": 0.23765728565289646,
-      "lift": 0.0012996729936138318,
+      "lift": 0.0012996729922873373,
       "contribution_reasons": {
         "pattern_memory": 0.5418,
         "special_set": 0.2505,
@@ -19,9 +19,9 @@
     },
     {
       "number": "68",
-      "probability": 0.23889760414883174,
+      "probability": 0.23889760414748928,
       "baseline": 0.23765728565289646,
-      "lift": 0.001240318495935283,
+      "lift": 0.0012403184945928292,
       "contribution_reasons": {
         "pattern_memory": 0.7121,
         "special_set": 0.2323,
@@ -33,9 +33,9 @@
     },
     {
       "number": "90",
-      "probability": 0.23878419695276268,
+      "probability": 0.23878419695145472,
       "baseline": 0.23765728565289646,
-      "lift": 0.0011269112998662234,
+      "lift": 0.0011269112985582697,
       "contribution_reasons": {
         "double_hit": 0.7514,
         "special_set": 0.1393,
@@ -47,9 +47,9 @@
     },
     {
       "number": "87",
-      "probability": 0.2387610157859854,
+      "probability": 0.23876101578466094,
       "baseline": 0.23765728565289646,
-      "lift": 0.0011037301330889537,
+      "lift": 0.0011037301317644854,
       "contribution_reasons": {
         "pattern_memory": 0.6606,
         "special_set": 0.2088,
@@ -61,9 +61,9 @@
     },
     {
       "number": "14",
-      "probability": 0.23874877086018242,
+      "probability": 0.23874877085889837,
       "baseline": 0.23765728565289646,
-      "lift": 0.0010914852072859693,
+      "lift": 0.0010914852060019131,
       "contribution_reasons": {
         "double_hit": 0.6758,
         "special_set": -0.1761,
@@ -75,9 +75,9 @@
     },
     {
       "number": "76",
-      "probability": 0.23874033338066605,
+      "probability": 0.23874033337932163,
       "baseline": 0.23765728565289646,
-      "lift": 0.0010830477277695982,
+      "lift": 0.0010830477264251737,
       "contribution_reasons": {
         "pattern_memory": 0.449,
         "special_set": 0.3163,
@@ -89,9 +89,9 @@
     },
     {
       "number": "70",
-      "probability": 0.2387242406530186,
+      "probability": 0.23872424065168837,
       "baseline": 0.23765728565289646,
-      "lift": 0.0010669550001221328,
+      "lift": 0.0010669549987919191,
       "contribution_reasons": {
         "double_hit": 0.4852,
         "special_set": 0.4343,
@@ -103,9 +103,9 @@
     },
     {
       "number": "77",
-      "probability": 0.23872385118839662,
+      "probability": 0.23872385118707198,
       "baseline": 0.23765728565289646,
-      "lift": 0.0010665655355001635,
+      "lift": 0.0010665655341755287,
       "contribution_reasons": {
         "pattern_memory": 0.4552,
         "special_set": 0.3927,
@@ -117,9 +117,9 @@
     },
     {
       "number": "73",
-      "probability": 0.23867565924279402,
+      "probability": 0.2386756592414553,
       "baseline": 0.23765728565289646,
-      "lift": 0.0010183735898975643,
+      "lift": 0.0010183735885588574,
       "contribution_reasons": {
         "pattern_memory": 0.6106,
         "special_set": 0.3649,
@@ -131,9 +131,9 @@
     },
     {
       "number": "25",
-      "probability": 0.23862325438253465,
+      "probability": 0.23862325438120768,
       "baseline": 0.23765728565289646,
-      "lift": 0.0009659687296381947,
+      "lift": 0.0009659687283112284,
       "contribution_reasons": {
         "pattern_memory": 0.6188,
         "double_hit": 0.3133,
