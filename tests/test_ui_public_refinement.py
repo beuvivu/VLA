@@ -24,6 +24,7 @@ def test_weekly_special_table_gets_full_width_contract() -> None:
     assert "sp-page-bang-dac-biet" in out
     assert ".sp-page-bang-dac-biet .sp-scroll{width:100%" in out
     assert "table-layout:fixed" in out
+    assert ".sp-page-bang-dac-biet #sp-grid td:first-child{text-align:left}" not in out
 
 
 def test_long_statistics_pages_get_bounded_scroll() -> None:

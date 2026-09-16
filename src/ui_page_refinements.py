@@ -13,18 +13,11 @@ from pathlib import Path
 
 __all__ = ["refine_page"]
 
-# Id KHÔNG được mang tên dự án: nó đi thẳng vào HTML của mọi trang đã xuất
-# bản, và bộ kiểm chống lộ nguồn cấm đúng chuỗi ấy. Bản trước là
-# "vla-targeted-ui-refinement" và nó làm đỏ phép kiểm trên 15 trang.
-_STYLE_ID = "ui-targeted-refinement"
-#: Id CŨ, giữ lại CHỈ để gỡ khối đã nằm sẵn trong trang đã xuất bản.
-#:
-#: `_append_style` thay khối cũ bằng khối mới, nhưng nó tìm theo id. Đổi id mà
-#: không nhận ra id cũ thì khối cũ không khớp gì cả, nó nằm lại vĩnh viễn và
-#: trang vừa mang id mới vừa còn nguyên id cũ — tức phép đổi tên không đạt
-#: được điều duy nhất nó cần đạt. Đã đo: 5 trang giữ nguyên chuỗi cấm sau khi
-#: dựng lại.
-_LEGACY_STYLE_IDS = ("vla-targeted-ui-refinement",)
+# Id không mang tên dự án: nó đi thẳng vào HTML của mọi trang đã xuất bản.
+_STYLE_ID = "ui-targeted-ui-refinement"
+# Nhận diện các id từng được xuất ra để lần dựng tiếp theo gỡ được khối cũ,
+# tránh giữ lại song song nhiều bản CSS trên cùng một trang.
+_LEGACY_STYLE_IDS = ("vla-targeted-ui-refinement", "ui-targeted-refinement")
 _STYLE_RE = re.compile(
     "<style id=\"(?:"
     + "|".join(re.escape(name) for name in (_STYLE_ID, *_LEGACY_STYLE_IDS))
@@ -67,7 +60,6 @@ _STAT_CSS = rf"""
 .sp-page-bang-dac-biet .sp-scroll{{width:100%;max-width:100%;overflow:auto}}
 .sp-page-bang-dac-biet #sp-grid{{width:100%;min-width:760px;table-layout:fixed}}
 .sp-page-bang-dac-biet #sp-grid th,.sp-page-bang-dac-biet #sp-grid td{{text-align:center;padding:.76rem .55rem}}
-.sp-page-bang-dac-biet #sp-grid th:first-child,.sp-page-bang-dac-biet #sp-grid td:first-child{{text-align:left}}
 
 .sp-page-lo-gan .sp-scroll{{width:100%;max-width:100%;max-height:34rem;overflow:auto;overscroll-behavior:contain}}
 .sp-page-lo-gan #sp-grid,.sp-page-lo-gan #sp-pair-gan{{width:100%}}

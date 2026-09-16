@@ -1,0 +1,54 @@
+.sp-page{
+  min-height:100vh;
+  background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);
+}
+.sp-page .ui-shell-wide{max-width:1280px;margin-inline:auto;padding-inline:clamp(1rem,2.4vw,2rem)}
+.sp-page h1{letter-spacing:-.03em}
+.sp-page .sp-controls{width:100%;margin:1rem 0 1.25rem;padding:1rem 1.1rem;background:rgba(255,255,255,.9);border-color:rgba(255,255,255,.98);box-shadow:0 10px 32px rgba(15,23,42,.055);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.sp-page .sp-scroll,.sp-page .sp-duo>div,.sp-page .sp-recent-card{background:rgba(255,255,255,.92);border-color:rgba(255,255,255,.98);box-shadow:0 10px 32px rgba(15,23,42,.05);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.sp-detail-hero{margin-bottom:1rem;padding:1.25rem 1.35rem;border:1px solid rgba(255,255,255,.98);border-radius:22px;background:rgba(255,255,255,.9);box-shadow:0 10px 34px rgba(15,23,42,.055);backdrop-filter:blur(16px)}
+.sp-detail-hero h1{margin:.35rem 0 .4rem;font-size:clamp(1.55rem,2.5vw,2.25rem)}
+.sp-detail-hero p{margin:0;max-width:64rem;color:#64748b;line-height:1.65}
+.sp-detail-content{min-width:0}
+.sp-page .sp-subhead{display:flex;align-items:center;gap:.55rem;margin:1.35rem 0 .7rem;letter-spacing:-.015em}
+.sp-page .sp-subhead::before{content:"";width:.45rem;height:.45rem;border-radius:50%;background:#4f46e5;box-shadow:0 0 0 5px #e0e7ff}
+.sp-page .sp-table th{background:#f8fafc;color:#334155}
+.sp-page .sp-table tbody tr:hover{background:#f8faff}
+.sp-page .sp-note{border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.035)}
+
+.sp-page-bang-dac-biet .sp-scroll{width:100%;max-width:100%;overflow:auto}
+.sp-page-bang-dac-biet #sp-grid{width:100%;min-width:760px;table-layout:fixed}
+.sp-page-bang-dac-biet #sp-grid th,.sp-page-bang-dac-biet #sp-grid td{text-align:center;padding:.76rem .55rem}
+
+.sp-page-lo-gan .sp-scroll{width:100%;max-width:100%;max-height:34rem;overflow:auto;overscroll-behavior:contain}
+.sp-page-lo-gan #sp-grid,.sp-page-lo-gan #sp-pair-gan{width:100%}
+.sp-page-lo-gan .sp-duo{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.sp-page-lo-gan .sp-duo>div{max-height:30rem;overflow:auto;overscroll-behavior:contain}
+.sp-page-lo-gan .sp-duo .sp-table{width:100%}
+
+.sp-page-dau-duoi-loto .sp-duo{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.sp-page-dau-duoi-loto .sp-duo .sp-table{width:100%}
+.sp-page-dau-duoi-loto .sp-recent-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-top:1.25rem;align-items:start}
+.sp-page-dau-duoi-loto .sp-recent-card{min-width:0;padding:1rem;border:1px solid rgba(255,255,255,.98);border-radius:18px}
+.sp-page-dau-duoi-loto .sp-recent-card .sp-subhead{margin:.1rem 0 .75rem;font-size:.9rem}
+.sp-page-dau-duoi-loto .sp-recent-card .sp-scroll{width:100%;max-width:100%;max-height:32rem;overflow:auto;box-shadow:none;border:0}
+.sp-page-dau-duoi-loto .sp-recent-card .sp-table{width:100%}
+
+.sp-page-giai-dac-biet-theo-tong .sp-scroll{width:100%;max-width:100%;overflow:auto}
+.sp-page-giai-dac-biet-theo-tong #sp-grid,.sp-page-giai-dac-biet-theo-tong #sp-trans,.sp-page-giai-dac-biet-theo-tong #sp-parity{width:100%;min-width:max-content}
+.sp-page-giai-dac-biet-theo-tong .sp-scroll:has(#sp-trans){max-height:38rem;overflow:auto;overscroll-behavior:contain}
+.sp-page-giai-dac-biet-theo-tong .sp-note{max-width:none}
+
+.sp-page-cau-dac-biet-theo-bo-so .sp-scroll,.sp-page-giai-db-ngay-mai .sp-scroll,.sp-page-cap-lon-loto .sp-scroll{width:100%;max-width:100%;max-height:38rem;overflow:auto;overscroll-behavior:contain}
+.sp-page-cau-dac-biet-theo-bo-so #sp-grid,.sp-page-giai-db-ngay-mai #sp-grid,.sp-page-cap-lon-loto #sp-grid,.sp-page-cap-lon-loto #sp-kep{width:100%}
+
+@media(max-width:900px){
+  .sp-page-lo-gan .sp-duo,.sp-page-dau-duoi-loto .sp-duo,.sp-page-dau-duoi-loto .sp-recent-grid{grid-template-columns:1fr}
+  .sp-page-bang-dac-biet #sp-grid{min-width:680px}
+}
+@media(max-width:640px){
+  .sp-page .ui-shell-wide{padding-inline:12px}
+  .sp-page .sp-controls{padding:.85rem;border-radius:16px}
+  .sp-page .sp-scroll{border-radius:16px}
+  .sp-detail-hero{padding:1rem;border-radius:17px}
+}

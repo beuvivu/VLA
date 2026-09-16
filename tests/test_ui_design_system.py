@@ -210,7 +210,7 @@ def test_path_ui_template_does_not_apply_light_classes_to_dark_page() -> None:
     template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(
         encoding="utf-8"
     )
-    assert "<body>" in template
+    assert '<body class="ui-app ui-dock-space path-page">' in template
     assert "bg-slate-50" not in template
     assert "text-slate-800" not in template
 
@@ -267,14 +267,7 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
         text = page.read_text(encoding="utf-8")
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
-        # Cấm LỚP CHỦ ĐỀ SÁNG trên thẻ body, không cấm mọi lớp. Bản trước đòi
-        # `"<body>"` trần — một cách đo gián tiếp, và nó đỏ ngay khi trang
-        # nhận những lớp hoàn toàn chính đáng như `ui-dock-space path-page`.
-        body_tag = re.search(r"<body[^>]*>", text)
-        assert body_tag, page.name
-        assert not re.search(r"\b(bg|text)-slate-\d", body_tag.group(0)), (
-            page.name, body_tag.group(0)
-        )
+        assert '<body class="ui-dock-space path-page">' in text, page.name
 
 
 # --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------

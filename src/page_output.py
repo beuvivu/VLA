@@ -25,6 +25,17 @@ __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 _HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
 _BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
 
+_DETAIL_STAT_PAGES = frozenset({
+    "bang-dac-biet.html",
+    "lo-gan.html",
+    "dau-duoi-loto.html",
+    "giai-dac-biet-theo-tong.html",
+    "cau-dac-biet-theo-bo-so.html",
+    "giai-db-ngay-mai.html",
+    "cap-lon-loto.html",
+})
+_SOURCE_DETAIL_STYLE_ID = "ui-source-detail-layout"
+
 #: Từ khoá mà sau nó, dấu ``/`` mở đầu một HẰNG REGEX chứ không phải phép chia.
 #:
 #: Bản đầu của tệp này chỉ nhìn KÝ TỰ đứng trước. Với ``return /[\",]/`` nó
@@ -204,9 +215,25 @@ def strip_css(css: str) -> str:
     return _tidy(_strip_css(css))
 
 
+def _inject_source_detail_style(path: Path, html: str) -> str:
+    """Đưa stylesheet chi tiết do source sở hữu vào đúng nhóm trang thống kê.
+
+    Đây là lớp chống hồi quy cho các trang thống kê dài. CSS sống trong
+    ``src/templates/stat_detail_pages.css`` để review/test được như mã nguồn,
+    thay vì chỉ tồn tại trong một chuỗi hậu xử lý khó nhận biết trên Pages.
+    """
+    if path.name not in _DETAIL_STAT_PAGES or f'id="{_SOURCE_DETAIL_STYLE_ID}"' in html:
+        return html
+    css_path = Path(__file__).resolve().parent / "templates" / "stat_detail_pages.css"
+    css = css_path.read_text(encoding="utf-8")
+    style = f'<style id="{_SOURCE_DETAIL_STYLE_ID}">{css}</style>'
+    return html.replace("</head>", f"{style}\n</head>", 1)
+
+
 def write_page(path: Path, html: str) -> None:
     """Ghi trang đã áp dụng refinement giao diện và bóc sạch chú thích."""
     refined = refine_page(path, html)
+    refined = _inject_source_detail_style(path, refined)
     path.write_text(strip_comments(refined), encoding="utf-8")
 
 

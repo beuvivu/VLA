@@ -354,7 +354,10 @@ function table(el, headers, rows, opts) {
       // Ô CÓ VỀ phải nổi lên khỏi nền, không chỉ khác ở chỗ có chữ. Và khi
       // bảng mang nghĩa "số nháy" thì con số ấy còn quyết định cấp màu.
       let state = "";
-      if (!blank && i > 0) {
+      // Lịch tuần không có cột nhãn: cả bảy cột đều là dữ liệu thật, kể cả
+      // cột Thứ 2. Các bảng còn lại mặc định giữ cột đầu làm nhãn hàng.
+      const isDataCell = opts.rowHead === false || i > 0;
+      if (!blank && isDataCell) {
         state = " sp-hit";
         if (opts.nhay) {
           const k = parseInt(c, 10);
