@@ -194,7 +194,8 @@ def main() -> None:
     )
     # Cầu bóng trên toàn bộ 107 ô chữ số: họ rộng gấp 15,7 lần họ cross-lag,
     # vì nó nối được chữ số nằm bất kỳ đâu bên trong số đầy đủ chứ không chỉ
-    # hai chữ số cuối. Quét hết 206 082 giả thuyết mất khoảng 15 giây.
+    # hai chữ số cuối. Quét hết 206 082 giả thuyết mất khoảng 48 giây trên
+    # lịch sử 4 207 kỳ (đo 2026-09-16; là 15 giây hồi kho còn 2 401 kỳ).
     _run(
         _py("src/bong_bridge_lab.py", "--permutations", "60", "--top", "50"),
         allow_fail=True,
