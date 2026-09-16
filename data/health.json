@@ -2,8 +2,8 @@
   "ok": true,
   "latest_date": "2026-09-16",
   "last_date": "2026-09-16",
-  "first_date": "2020-01-01",
-  "row_count": 2401,
+  "first_date": "2015-01-01",
+  "row_count": 4207,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
@@ -13,7 +13,7 @@
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 2401,
+    "rows": 4207,
     "missing_number_columns": [],
     "extra_number_columns": [],
     "invalid_value_row_count": 0,
@@ -28,165 +28,165 @@
   "leading_zero_examples": [
     {
       "column": "special",
-      "date": "2020-02-11",
-      "csv_value": 7696,
-      "excel_text": "07696"
+      "date": "2015-01-07",
+      "csv_value": 8008,
+      "excel_text": "08008"
     },
     {
       "column": "prize1",
-      "date": "2020-01-04",
-      "csv_value": 8119,
-      "excel_text": "08119"
+      "date": "2015-01-02",
+      "csv_value": 9339,
+      "excel_text": "09339"
     },
     {
       "column": "prize2_1",
-      "date": "2020-01-12",
-      "csv_value": 7376,
-      "excel_text": "07376"
+      "date": "2015-02-10",
+      "csv_value": 534,
+      "excel_text": "00534"
     },
     {
       "column": "prize2_2",
-      "date": "2020-01-05",
-      "csv_value": 5073,
-      "excel_text": "05073"
+      "date": "2015-01-03",
+      "csv_value": 5156,
+      "excel_text": "05156"
     },
     {
       "column": "prize3_1",
-      "date": "2020-01-11",
-      "csv_value": 9815,
-      "excel_text": "09815"
+      "date": "2015-01-05",
+      "csv_value": 4669,
+      "excel_text": "04669"
     },
     {
       "column": "prize3_2",
-      "date": "2020-01-03",
-      "csv_value": 6706,
-      "excel_text": "06706"
+      "date": "2015-01-08",
+      "csv_value": 1603,
+      "excel_text": "01603"
     },
     {
       "column": "prize3_3",
-      "date": "2020-01-05",
-      "csv_value": 6164,
-      "excel_text": "06164"
+      "date": "2015-01-05",
+      "csv_value": 4974,
+      "excel_text": "04974"
     },
     {
       "column": "prize3_4",
-      "date": "2020-01-06",
-      "csv_value": 2069,
-      "excel_text": "02069"
+      "date": "2015-01-09",
+      "csv_value": 3170,
+      "excel_text": "03170"
     },
     {
       "column": "prize3_5",
-      "date": "2020-01-02",
-      "csv_value": 6210,
-      "excel_text": "06210"
+      "date": "2015-01-03",
+      "csv_value": 5955,
+      "excel_text": "05955"
     },
     {
       "column": "prize3_6",
-      "date": "2020-01-15",
-      "csv_value": 33,
-      "excel_text": "00033"
+      "date": "2015-01-28",
+      "csv_value": 4387,
+      "excel_text": "04387"
     },
     {
       "column": "prize4_1",
-      "date": "2020-02-11",
-      "csv_value": 137,
-      "excel_text": "0137"
+      "date": "2015-01-04",
+      "csv_value": 844,
+      "excel_text": "0844"
     },
     {
       "column": "prize4_2",
-      "date": "2020-01-01",
-      "csv_value": 591,
-      "excel_text": "0591"
+      "date": "2015-01-20",
+      "csv_value": 511,
+      "excel_text": "0511"
     },
     {
       "column": "prize4_3",
-      "date": "2020-02-07",
-      "csv_value": 979,
-      "excel_text": "0979"
+      "date": "2015-01-08",
+      "csv_value": 868,
+      "excel_text": "0868"
     },
     {
       "column": "prize4_4",
-      "date": "2020-01-01",
-      "csv_value": 763,
-      "excel_text": "0763"
+      "date": "2015-01-06",
+      "csv_value": 435,
+      "excel_text": "0435"
     },
     {
       "column": "prize5_1",
-      "date": "2020-01-01",
-      "csv_value": 812,
-      "excel_text": "0812"
-    },
-    {
-      "column": "prize5_2",
-      "date": "2020-01-03",
-      "csv_value": 960,
-      "excel_text": "0960"
-    },
-    {
-      "column": "prize5_3",
-      "date": "2020-01-15",
+      "date": "2015-01-02",
       "csv_value": 322,
       "excel_text": "0322"
     },
     {
+      "column": "prize5_2",
+      "date": "2015-01-01",
+      "csv_value": 895,
+      "excel_text": "0895"
+    },
+    {
+      "column": "prize5_3",
+      "date": "2015-01-21",
+      "csv_value": 1,
+      "excel_text": "0001"
+    },
+    {
       "column": "prize5_4",
-      "date": "2020-01-11",
-      "csv_value": 6,
-      "excel_text": "0006"
+      "date": "2015-01-05",
+      "csv_value": 229,
+      "excel_text": "0229"
     },
     {
       "column": "prize5_5",
-      "date": "2020-01-10",
-      "csv_value": 686,
-      "excel_text": "0686"
+      "date": "2015-01-08",
+      "csv_value": 608,
+      "excel_text": "0608"
     },
     {
       "column": "prize5_6",
-      "date": "2020-01-17",
-      "csv_value": 464,
-      "excel_text": "0464"
+      "date": "2015-01-13",
+      "csv_value": 273,
+      "excel_text": "0273"
     },
     {
       "column": "prize6_1",
-      "date": "2020-02-14",
-      "csv_value": 69,
-      "excel_text": "069"
+      "date": "2015-01-01",
+      "csv_value": 19,
+      "excel_text": "019"
     },
     {
       "column": "prize6_2",
-      "date": "2020-01-02",
-      "csv_value": 31,
-      "excel_text": "031"
+      "date": "2015-01-12",
+      "csv_value": 49,
+      "excel_text": "049"
     },
     {
       "column": "prize6_3",
-      "date": "2020-01-30",
-      "csv_value": 51,
-      "excel_text": "051"
+      "date": "2015-01-15",
+      "csv_value": 22,
+      "excel_text": "022"
     },
     {
       "column": "prize7_1",
-      "date": "2020-01-05",
-      "csv_value": 0,
-      "excel_text": "00"
+      "date": "2015-01-30",
+      "csv_value": 9,
+      "excel_text": "09"
     },
     {
       "column": "prize7_2",
-      "date": "2020-01-21",
+      "date": "2015-01-19",
       "csv_value": 6,
       "excel_text": "06"
     },
     {
       "column": "prize7_3",
-      "date": "2020-01-03",
+      "date": "2015-01-05",
       "csv_value": 2,
       "excel_text": "02"
     },
     {
       "column": "prize7_4",
-      "date": "2020-01-04",
-      "csv_value": 7,
-      "excel_text": "07"
+      "date": "2015-01-19",
+      "csv_value": 4,
+      "excel_text": "04"
     }
   ],
   "calendar_contiguous_required": true,

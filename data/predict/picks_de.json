@@ -43,36 +43,36 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.601107380506509,
-    "baseline_validation_logloss": 4.6059836686262425,
-    "logloss_skill": 0.0010586854992449268
+    "validation_logloss": 4.601107380506508,
+    "baseline_validation_logloss": 4.605983668626717,
+    "logloss_skill": 0.0010586854993480665
   },
   "top4": [
     "65",
-    "89",
-    "72",
-    "40"
+    "41",
+    "20",
+    "89"
   ],
   "top8": [
     "65",
+    "41",
+    "20",
     "89",
-    "72",
-    "40",
-    "75",
-    "85",
     "37",
-    "20"
+    "24",
+    "76",
+    "85"
   ],
   "top10": [
     "65",
-    "89",
-    "72",
-    "40",
-    "75",
-    "85",
-    "37",
+    "41",
     "20",
+    "89",
+    "37",
+    "24",
+    "76",
+    "85",
     "88",
-    "33"
+    "64"
   ]
 }

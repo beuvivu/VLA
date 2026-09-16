@@ -1,31 +1,31 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at_utc": "2026-09-16T12:52:42Z",
+  "generated_at_utc": "2026-09-16T13:47:06Z",
   "anchor_date": "2026-09-16",
   "target_date": "2026-09-17",
-  "history_days": 2401,
+  "history_days": 4207,
   "half_life_days": 45,
   "half_life_learned": true,
   "half_life_brier_by_candidate": {
-    "45": 0.009900000434931631,
-    "90": 0.009900000334153837,
-    "180": 0.009900000437746987,
-    "365": 0.009900000853594328,
-    "730": 0.009900001200903901,
-    "1460": 0.009900001341203024
+    "45": 0.009900000396232286,
+    "90": 0.009900000464697288,
+    "180": 0.00990000074775981,
+    "365": 0.009900001060041928,
+    "730": 0.009900001001782021,
+    "1460": 0.009900000651189162
   },
   "pool": null,
   "prior_strength": 1000000.0,
   "prior_strength_learned": true,
   "pooling": {
     "pooled_rate": 0.01,
-    "shrinkage": 0.9976047509928662,
-    "effective_parameters": 1.2371296517062498,
+    "shrinkage": 0.9958106247018792,
+    "effective_parameters": 1.4147481545139593,
     "fully_pooled": true,
     "between_variance": 0.0,
-    "within_variance": 4.1232819658475646e-06,
-    "verdict": "Co ngót HOÀN TOÀN: 100 đơn vị không phân biệt được nhau trên 2401 kỳ (phương sai giữa các đơn vị 0.000e+00 không vượt phương sai trong nội bộ 4.123e-06). Tham số hiệu dụng: 1.24 trên 100."
+    "within_variance": 2.353220822438793e-06,
+    "verdict": "Co ngót HOÀN TOÀN: 100 đơn vị không phân biệt được nhau trên 4207 kỳ (phương sai giữa các đơn vị 0.000e+00 không vượt phương sai trong nội bộ 2.353e-06). Tham số hiệu dụng: 1.41 trên 100."
   },
   "mean_stability": 0.999984520369091,
   "min_stability": 0.9999845203690906,
@@ -33,7 +33,7 @@
   "dynamics_weight_in_stat_signal": 0.2,
   "global_dynamics_reliability": 0.6543776877760978,
   "regime_js_divergence_30_vs_180": 0.04227449915925978,
-  "transition_active_mean_trials": 22.0,
+  "transition_active_mean_trials": 38.0,
   "calendar_contiguous": true,
   "interpretation": "Empirical-Bayes + higher-order dynamics component. Markov, transition, hazard, lag and regime evidence is shrinkage-regularized, calendar-validated, and used only as probabilistic ranking support."
 }

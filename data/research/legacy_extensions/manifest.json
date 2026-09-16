@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-16T12:52:49Z",
+  "generated_at_utc": "2026-09-16T13:47:19Z",
   "anchor_date": "2026-09-16",
   "research_only": true,
   "rows": {
@@ -13,35 +13,35 @@
   },
   "transition_fdr_05_count": 0,
   "acf_fdr_05_count": 0,
-  "acf_bartlett_exceed_count": 31,
+  "acf_bartlett_exceed_count": 29,
   "ks_full_special": {
     "name": "ks_full_special_uniformity",
-    "statistic": 0.02259544773011246,
-    "p_value": 0.1696088629316912,
+    "statistic": 0.021754145471832687,
+    "p_value": 0.03675660691919469,
     "note": "H0: full five-digit special prize is Uniform[0,1) after scaling."
   },
   "ljung_box_even_tail_count": {
     "name": "ljung_box_even_tail_count",
-    "statistic": 14.476338661287322,
-    "p_value": 0.15235168889019396,
+    "statistic": 6.942796707388421,
+    "p_value": 0.7308340371017472,
     "lags": 10,
     "note": "H0: aggregate count of even-ending Loto entries has no serial autocorrelation through the tested lags."
   },
   "coverage": {
-    "draw_days": 2401,
-    "average_distinct_loto_per_day": 23.78259058725531,
+    "draw_days": 4207,
+    "average_distinct_loto_per_day": 23.830045162823865,
     "all_time_distinct_numbers": 100,
     "unseen_numbers": [],
-    "first_full_coverage_day_from_start": 14,
+    "first_full_coverage_day_from_start": 23,
     "coverage_milestone_days_from_start": {
       "50": 3,
-      "75": 5,
-      "90": 8,
-      "95": 11,
-      "99": 14,
-      "100": 14
+      "75": 6,
+      "90": 11,
+      "95": 13,
+      "99": 20,
+      "100": 23
     },
-    "coupon_collector_expected_days_approx": 21.811658820799146,
+    "coupon_collector_expected_days_approx": 21.76822361097412,
     "coupon_note": "Heuristic context only: 100*H_100/average distinct numbers per draw assumes simplified independent coupon sampling and is not a prediction model."
   },
   "note": "Recovered legacy descriptive/falsification capabilities. These artifacts do not alter production ML, path, statistical or ensemble weights."
