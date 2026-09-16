@@ -965,7 +965,7 @@ def test_footer_links_spread_across_the_full_width(page: Path) -> None:
     space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa.
     """
     css = _css(page)
-    rule = re.search(r"nav-fallback\{([^}]*)\}", css)
+    rule = re.search(r"(?:^|\})\.ui-nav-fallback\{([^}]*)\}", css)
     assert rule, page.name
     body = rule.group(1)
     assert "display:grid" in body, page.name
