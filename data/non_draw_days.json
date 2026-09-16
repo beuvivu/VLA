@@ -2,6 +2,26 @@
   "_ghi_chu": "Những ngày XSMB KHÔNG quay. Vào các ngày này trang nguồn vẫn trả kết quả gần nhất, nên trình cào từng ghi lại như thể đó là kỳ của ngày ấy — 50 bản ghi bịa, trong đó 4 bản đã lọt qua cả kiểm đồng thuận hai nguồn. Danh sách này cho phép kiểm tra chuỗi ngày phân biệt 'không quay' (hợp lệ) với 'cào hụt' (phải báo lỗi).",
   "_phat_hien": "Suy ra từ dữ liệu chứ không tra lịch: hai kỳ liền kề trùng khít có xác suất 10^-107 (107 chữ số giải), nên trùng khít luôn là hiện vật.",
   "ngay_khong_quay": [
+    "2015-02-17",
+    "2015-02-18",
+    "2015-02-19",
+    "2015-02-20",
+    "2016-02-06",
+    "2016-02-07",
+    "2016-02-08",
+    "2016-02-09",
+    "2017-01-26",
+    "2017-01-27",
+    "2017-01-28",
+    "2017-01-29",
+    "2018-02-14",
+    "2018-02-15",
+    "2018-02-16",
+    "2018-02-17",
+    "2019-02-03",
+    "2019-02-04",
+    "2019-02-05",
+    "2019-02-06",
     "2020-01-24",
     "2020-01-25",
     "2020-01-26",
@@ -52,5 +72,6 @@
     "2026-02-17",
     "2026-02-18",
     "2026-02-19"
-  ]
+  ],
+  "_nguon_2015_2019": "20 ngày 2015-2019 do lần backfill 2026-09-16 (run 35086529783) tự phát hiện: trình cào ĐÃ hỏi nguồn từng ngày, nguồn trả về bộ số TRÙNG KHÍT với kỳ quay thật kế tiếp (2015-02-21, 2016-02-10, 2017-01-30, ...), nên bị loại theo đúng quy tắc 10^-107 ở trên. Đây là 'không quay', không phải 'cào hụt'."
 }
