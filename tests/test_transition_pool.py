@@ -131,21 +131,40 @@ def test_the_transition_component_is_not_shrunk_a_second_time(real) -> None:
 def test_the_gate_holds_the_incumbent_when_the_challenger_merely_leads(real) -> None:
     """Dẫn trước KHÔNG phải thắng — đó là toàn bộ ý nghĩa của cổng 2 SE.
 
-    Ở mức tiêm +150 % (hạt giống 0 và 1), log-odds đã tốt hơn về trung bình
-    nhưng chỉ ở mức t = -1,60 và t = -1,16. Nếu bỏ cổng và chỉ cần "tốt hơn là
-    đổi" thì kiến trúc sẽ đổi ở đây, và đổi kiến trúc theo một chênh lệch
-    dưới hai sai số chuẩn là cách nhiễu tự phong mình thành phát hiện.
+    Nếu bỏ cổng và chỉ cần "tốt hơn là đổi" thì kiến trúc sẽ đổi ở đây, và đổi
+    kiến trúc theo một chênh lệch dưới hai sai số chuẩn là cách nhiễu tự phong
+    mình thành phát hiện.
 
-    Đo ở các mức lân cận, ba hạt giống (dương nghĩa là log-odds tệ hơn):
+    MỨC TIÊM PHẢI HIỆU CHUẨN LẠI THEO ĐỘ DÀI LỊCH SỬ. Cùng một quan hệ được
+    tiêm vào sẽ cho t lớn hơn khi có nhiều kỳ hơn — đó là năng lực thống kê,
+    không phải quan hệ mạnh lên. Khi kho dài từ 2 401 lên 4 207 kỳ, mức +150 %
+    cũ nhảy từ t = -1,60 sang t = -3,79, tức kịch bản "mới chỉ dẫn" biến thành
+    kịch bản "đã vượt cổng" và phép kiểm mất đối tượng. Cổng KHÔNG hỏng; cách
+    dựng kịch bản mới cần đo lại.
+
+    Bảng đo trên 4 207 kỳ (dương nghĩa là log-odds tệ hơn; ← đánh dấu vượt cổng):
+
+        mức      hạt 0   hạt 1   hạt 2   hạt 3   hạt 4
+        +100 %   +0,88   -0,81   -0,74   -0,85   -0,38
+        +110 %   -0,25   -1,62   -1,69   -1,81   -1,36   ← cả 5 hạt đều "chỉ dẫn"
+        +115 %   -0,79   -1,79   -2,21   -2,06   -1,89
+        +120 %   -1,39   -2,32   -2,55   -2,20   -2,44   ←
+        +130 %   -1,86   -2,75   -2,83   -2,81   -2,88   ←
+
+    Bảng cũ, đo trên 2 401 kỳ, giữ lại để thấy độ nhạy theo độ dài lịch sử:
 
         +120 %   +2,16   +0,60   +1,15
         +140 %   -0,00   -0,89   +0,73
         +150 %   -1,60   -1,16   -0,03
-        +160 %   -2,65   -1,44   -0,53   ← hạt 0 vượt cổng, đổi
+        +160 %   -2,65   -1,44   -0,53
+
+    Chọn hạt 1 và hạt 3 ở mức +110 %: cả hai dẫn RÕ (không phải sát 0 như hạt
+    0), và hạt 3 ở -1,81 nằm ngay sát trong cổng — đúng trường hợp đáng kiểm
+    nhất.
     """
     _, hit = real
-    for seed, expected_t in ((0, -1.60), (1, -1.16)):
-        kind, diagnostics = nd.select_transition_pool(_inject(hit, 1.5, seed=seed))
+    for seed, expected_t in ((1, -1.62), (3, -1.81)):
+        kind, diagnostics = nd.select_transition_pool(_inject(hit, 1.10, seed=seed))
         t_statistic = diagnostics["t_statistic"]
         assert t_statistic < 0.0, "cần trường hợp log-odds ĐANG dẫn mới kiểm được"
         assert t_statistic > -nd.SIGNIFICANCE_SIGMAS, "cần dẫn mà CHƯA đủ 2 SE"
