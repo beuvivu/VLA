@@ -24,6 +24,7 @@ def test_weekly_special_table_gets_full_width_contract() -> None:
     assert "sp-page-bang-dac-biet" in out
     assert ".sp-page-bang-dac-biet .sp-scroll{width:100%" in out
     assert "table-layout:fixed" in out
+    assert ".sp-page-bang-dac-biet #sp-grid td:first-child{text-align:left}" not in out
 
 
 def test_long_statistics_pages_get_bounded_scroll() -> None:
@@ -71,5 +72,5 @@ def test_refinement_is_idempotent() -> None:
     src = _doc('<div class="wrap"><div class="top" style="margin-bottom:4px"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>')
     once = refine_page("live.html", src)
     twice = refine_page("live.html", once)
-    assert twice.count('id="vla-targeted-ui-refinement"') == 1
+    assert twice.count('id="ui-targeted-ui-refinement"') == 1
     assert twice.count("live-status-card") == once.count("live-status-card")
