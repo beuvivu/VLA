@@ -129,11 +129,13 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
     return draws
 
 
-def _range_controls(*, mode: str = "day") -> str:
+def _range_controls(*, mode: str = "day", pairs: bool = True) -> str:
     """Thanh chọn dải thời gian.
 
     Args:
         mode: ``day`` cho hai ô chọn ngày, ``preset`` cho các nút nhanh.
+        pairs: Có ô tick "Tự động đánh dấu cặp trùng" hay không. Đặt ``False``
+            cho trang mà không ô nào mang số hai chữ số.
 
     Returns:
         Chuỗi HTML.
@@ -160,7 +162,7 @@ def _range_controls(*, mode: str = "day") -> str:
         return (
             '<div class="sp-controls"><div class="sp-chips">'
             f'{presets}</div><span class="sp-count" id="sp-count"></span>'
-            f"{_mark_tools()}</div>"
+            f"{_mark_tools(pairs=pairs)}</div>"
         )
     return f"""
     <div class="sp-controls">
@@ -168,27 +170,38 @@ def _range_controls(*, mode: str = "day") -> str:
       <label>Đến ngày <input type="date" id="sp-to"></label>
       <div class="sp-chips">{presets}</div>
       <span class="sp-count" id="sp-count"></span>
-      {_mark_tools()}
+      {_mark_tools(pairs=pairs)}
     </div>
     """
 
 
-def _mark_tools() -> str:
+def _mark_tools(*, pairs: bool = True) -> str:
     """Thanh đánh dấu ô, dùng chung cho mọi trang.
 
     Bảng ở đây dài hàng chục hàng và người đọc thường dõi theo vài ô rời rạc —
     ví dụ cùng một ngày qua nhiều tháng. Không có cách đánh dấu thì chỉ cần
     cuộn một cái là mất dấu.
 
+    Args:
+        pairs: Có ô tick "Tự động đánh dấu cặp trùng" hay không.
+
+            Ô tick ấy đánh dấu MỌI ô mang cùng số hai chữ số. Trang Đầu/Đuôi
+            và trang theo Tổng chỉ có chữ số đơn 0-9, nên ở đó nó không thể
+            làm gì — và một nút bấm vào không thấy gì xảy ra thì tệ hơn là
+            không có nút. Bày ra ở đó chính là lỗi người dùng đã báo.
+
     Returns:
         Chuỗi HTML của thanh công cụ.
     """
-    return (
-        '<span class="sp-marktools">'
-        '<span class="sp-hint">Bấm vào ô bất kỳ để đánh dấu so sánh</span>'
+    pair_box = (
         '<label class="sp-chip sp-chip-check">'
         '<input type="checkbox" id="sp-pair-mode">'
         '<span>Tự động đánh dấu cặp trùng</span></label>'
+    ) if pairs else ""
+    return (
+        '<span class="sp-marktools">'
+        '<span class="sp-hint">Bấm vào ô bất kỳ để đánh dấu so sánh</span>'
+        f'{pair_box}'
         '<span class="sp-mark-count" id="sp-mark-count"></span>'
         '<button type="button" class="sp-btn" id="sp-clear-marks">Xoá đánh dấu</button>'
         "</span>"
@@ -371,7 +384,7 @@ PAGES: tuple[StatPage, ...] = (
         slug="giai-dac-biet-theo-tong",
         title="Giải Đặc Biệt theo tổng",
         subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
-        controls=_range_controls(),
+        controls=_range_controls(pairs=False),
         body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Hôm trước tổng X thì hôm sau tổng Y</h3>'
              '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
@@ -414,7 +427,7 @@ PAGES: tuple[StatPage, ...] = (
         slug="dau-duoi-loto",
         title="Đầu đuôi LOTO",
         subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn.",
-        controls=_range_controls(),
+        controls=_range_controls(pairs=False),
         body='<div class="sp-duo">'
              '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
              '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-tail"></table></div>'

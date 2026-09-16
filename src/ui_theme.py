@@ -385,23 +385,6 @@ padding:.375rem 0;user-select:none}
 .ui-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
 overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-/* Điều hướng dự phòng trong footer: dock là một <nav> đầy đủ nên trình thu
-thập vẫn thấy mọi liên kết, nhưng để nguyên một bản phẳng ở cuối trang là rẻ
-và loại bỏ hoàn toàn rủi ro nếu CSS không tải được. */
-.ui-nav-fallback{margin-top:var(--s6);padding-top:var(--s3);
-border-top:1px solid var(--ui-border);font-size:13px;
-display:grid;gap:var(--s3) var(--s4);
-grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr))}
-.ui-nav-fallback>section{min-width:0}
-.ui-nav-fallback h2{font-size:var(--fs-label);letter-spacing:.06em;
-text-transform:uppercase;color:var(--ui-ink-soft);margin:0 0 var(--s1)}
-/* Mỗi nhóm là một cột xếp dọc. Bản cũ dùng flex-wrap + space-between trên
-từng <ul>: với 2-4 mục thì space-between kéo giãn chúng ngang cả container,
-chữ dính hai mép còn giữa trống hoác. Lưới cột phân bố đều theo nghĩa footer
-thật sự — mỗi nhóm chiếm một phần bằng nhau của chiều ngang. */
-.ui-nav-fallback ul{list-style:none;padding:0;margin:0;
-display:flex;flex-direction:column;gap:var(--s1)}
-
 /* ---- 13. Lưới nội dung tự co giãn -----------------------------------
 Ba lớp cho ba nhu cầu bố cục cụ thể, tất cả đều align-items:stretch nên các ô
 cùng hàng luôn bằng chiều cao và không sinh khoảng trống thò thụt. */
@@ -944,32 +927,6 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     )
 
 
-def nav_fallback(class_name: str = "ui-nav-fallback") -> str:
-    """Điều hướng phẳng đặt cuối trang, phòng khi CSS không tải được.
-
-    Dock là một ``<nav>`` đầy đủ nên trình thu thập vẫn thấy mọi liên kết dù
-    popover đang ẩn. Nhưng popover ẩn bằng ``visibility:hidden``, nên nếu CSS
-    không tải được vì bất kỳ lý do gì thì trạng thái hiển thị sẽ là mặc định
-    của trình duyệt — và không nên phụ thuộc vào điều đó cho việc điều hướng.
-    Một danh sách phẳng ở cuối trang tốn vài trăm byte và loại bỏ hẳn rủi ro.
-
-    Args:
-        class_name: Lớp của thẻ ``<nav>``. Trang trực tiếp có bảng màu riêng
-            và định kiểu khối này bằng lớp ``ui-live-nav`` của chính nó.
-
-    Returns:
-        Chuỗi HTML của khối điều hướng dự phòng.
-    """
-    parts = [f'<nav class="{class_name}" aria-label="Điều hướng đầy đủ">']
-    for group, items in SITE_NAV:
-        parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
-        for href, label, _ in items:
-            parts.append(f'<li><a href="{href}">{html.escape(label)}</a></li>')
-        parts.append("</ul></section>")
-    parts.append("</nav>")
-    return "".join(parts)
-
-
 #: Vá riêng cho trang trực tiếp, chèn vào cuối thẻ ``<style>`` của chính nó.
 #:
 #: Trang này có bảng màu tối riêng và trước đây không dùng biểu định kiểu dùng
@@ -984,7 +941,6 @@ def nav_fallback(class_name: str = "ui-nav-fallback") -> str:
 _LIVE_PATCH = (
     ".wrap{font-size:16px;line-height:normal}"
     ".wrap a{text-decoration:underline}"
-    ".ui-live-nav{padding-bottom:calc(var(--ui-dock-h,54px) + 40px)}"
 )
 
 #: Khối điều hướng phẳng viết tay của trang trực tiếp.
@@ -1020,11 +976,13 @@ def refresh_live_page(docs_dir: Path) -> Path | None:
     if STYLESHEET_NAME not in text:
         text = text.replace("<style>", f"{stylesheet_link()}\n  <style>", 1)
     text = _LIVE_DOCK.sub("", text)
-    text = _LIVE_NAV.sub(lambda _: nav_fallback("ui-live-nav"), text)
+    # Trang trực tiếp có khối điều hướng phẳng viết tay của riêng nó. Trước
+    # đây nó được THAY bằng bản dựng từ SITE_NAV; nay menu chân trang đã gỡ
+    # khỏi toàn bộ trang nên khối này bị xoá hẳn, không thay nữa.
+    text = _LIVE_NAV.sub("", text)
     if _LIVE_PATCH not in text:
-        # Phải chèn vào đúng thẻ `<style>` của trang, và chèn CUỐI: quy tắc
-        # `.ui-live-nav` của trang dùng lối viết gộp `padding` nên nó đè mất
-        # mọi `padding-bottom` đến từ nơi khác.
+        # Phải chèn vào đúng thẻ `<style>` của trang, và chèn CUỐI: trang có
+        # biểu định kiểu riêng nên chèn sớm sẽ bị chính nó đè mất.
         text = text.replace("</style>", f"{_LIVE_PATCH}\n  </style>", 1)
     text = text.replace("</body>", f'{dock("live.html")}\n</body>', 1)
     write_page(path, text)
@@ -1043,7 +1001,7 @@ def app_shell_close(current: str = "") -> str:
     Returns:
         Phần HTML đóng khung kèm dock.
     """
-    return f"{nav_fallback()}</main>{dock(current)}</div>"
+    return f"</main>{dock(current)}</div>"
 
 
 def tailwind_style_tag() -> str:

@@ -937,7 +937,6 @@ def _render_html(
     ]
 
     dock_html = _render_dock()
-    nav_fallback = _render_nav_fallback()
 
     live_block = _render_live_block(latest)
 
@@ -1043,27 +1042,6 @@ def _render_html(
     }}
 
     /* Điều hướng dự phòng cuối trang. */
-    /* Dàn đều hết chiều ngang container thay vì dồn về trái. Năm hàng trước
-       đây đều rộng 1684px nhưng nội dung dồn cả sang mép trái.
-       Cách làm là lưới cột — mỗi nhóm SITE_NAV một cột bằng nhau — chứ không
-       phải space-between trên từng <ul>: nhóm chỉ có 2-4 mục thì
-       space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa. */
-    .nav-fallback {{
-      margin-top: 48px; padding-top: 24px;
-      border-top: 1px solid var(--line); font-size: 13px;
-      display: grid; gap: 24px 32px;
-      grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
-    }}
-    .nav-fallback > section {{ min-width: 0; }}
-    .nav-fallback h2 {{
-      font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
-      color: var(--muted); margin: 0 0 8px; font-weight: 600;
-    }}
-    .nav-fallback ul {{
-      list-style: none; padding: 0; margin: 0;
-      display: flex; flex-direction: column; gap: 8px;
-    }}
-
     /* ── Dock điều hướng nổi ──────────────────────────────────────────────
        17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
        tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
@@ -2510,7 +2488,6 @@ def _render_html(
       <div class="footer">
         Sinh lúc {html.escape(generated_at)}. AI/ML và cầu-kèo là tín hiệu thống kê từ lịch sử, không phải bảo đảm kết quả xổ số tương lai.
       </div>
-      {nav_fallback}
     </main>
     {dock_html}
   </div>
@@ -2688,28 +2665,6 @@ def _render_dock() -> str:
         parts.append("</div></div>")
     parts.append("</div></nav>")
     parts.append(dock_script("dock"))
-    return "".join(parts)
-
-
-def _render_nav_fallback() -> str:
-    """Điều hướng phẳng cuối trang, phòng khi CSS không tải được.
-
-    Popover của dock ẩn bằng ``visibility:hidden``. Nếu CSS không tải được vì
-    bất kỳ lý do gì thì trạng thái hiển thị rơi về mặc định của trình duyệt, và
-    không nên phụ thuộc vào điều đó cho việc điều hướng. Một danh sách phẳng
-    tốn vài trăm byte và loại bỏ hẳn rủi ro; nó cũng giữ nguyên khả năng dò của
-    trình thu thập, vốn là lý do sidebar cũ tồn tại.
-
-    Returns:
-        Chuỗi HTML của khối điều hướng dự phòng.
-    """
-    parts = ['<nav class="nav-fallback" aria-label="Điều hướng đầy đủ">']
-    for group, items in SITE_NAV:
-        parts.append(f"<section><h2>{html.escape(group)}</h2><ul>")
-        for href, label, _ in items:
-            parts.append(f'<li><a href="{href}">{html.escape(label)}</a></li>')
-        parts.append("</ul></section>")
-    parts.append("</nav>")
     return "".join(parts)
 
 

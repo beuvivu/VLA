@@ -329,8 +329,10 @@ function table(el, headers, rows, opts) {
     const headKey = opts.headKey && opts.headKey(i);
     const extra = opts.headExtra ? opts.headExtra(i) : "";
     if (!headKey) return `<th>${h}${extra}</th>`;
-    const on = MARKS.has(headKey) ? " marked" : "";
-    return `<th class="cell${on}" data-key="${headKey}">${h}${extra}</th>`;
+    const hPair = opts.headPairOf ? opts.headPairOf(i) : pairInKey(headKey);
+    const hKey = hPair && !pairInKey(headKey) ? `${headKey}|n${hPair}` : headKey;
+    const on = (MARKS.has(hKey) || (hPair && PAIR_MARKS.has(hPair))) ? " marked" : "";
+    return `<th class="cell${on}" data-key="${hKey}">${h}${extra}</th>`;
   }).join("") + "</tr></thead>";
   const body = rows.map((r, y) =>
     "<tr>" + r.map((c, i) => {
@@ -345,8 +347,13 @@ function table(el, headers, rows, opts) {
       // Hệ quả nhìn thấy được là bấm KHÔNG ĂN: cú bấm rơi trúng một ô đang
       // mang dấu lạc thì nó GỠ dấu thay vì thêm, nên người dùng thấy chiều
       // dọc "không bấm được" trong khi chiều ngang thì được.
-      const key = opts.key ? opts.key(y, i) : `${el.id}:${y}:${i}`;
-      const on = MARKS.has(key) ? " marked" : "";
+      const baseKey = opts.key ? opts.key(y, i) : `${el.id}:${y}:${i}`;
+      // Cặp hai chữ số mà ô này ĐẠI DIỆN, do chính hàm vẽ khai báo. Không có
+      // nó thì khoá chỉ mang vị trí, `markPair` không đọc ra gì, và ô tick
+      // "Tự động đánh dấu cặp trùng" lặng lẽ không làm gì cả.
+      const pair = opts.pairOf ? opts.pairOf(y, i) : pairInKey(baseKey);
+      const key = pair && !pairInKey(baseKey) ? `${baseKey}|n${pair}` : baseKey;
+      const on = (MARKS.has(key) || (pair && PAIR_MARKS.has(pair))) ? " marked" : "";
       // Ô rỗng phải TỰ NÓI ra rằng ngày đó không có kỳ. Không đánh dấu thì một
       // vùng trống trông như lỗi hiển thị, và người đọc không phân biệt được
       // "không về" với "chưa tải xong".
@@ -405,7 +412,21 @@ function table(el, headers, rows, opts) {
 // Đổi tên kho có CHỦ Ý. Dấu lưu theo lược đồ cũ là khoá vị trí, nên nếu nạp
 // lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
-const MARK_KEY = "sp.marks.v2." + (window.__D_DEMO_DRAWS__ ? "demo." : "") + (location.pathname.split("/").pop() || "index");
+const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
+const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index");
+
+// Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
+// thứ được đánh dấu có bản chất khác nhau.
+//
+// Khoá ô là `sp-grid:12:3`: nó chỉ có nghĩa bên trong đúng bảng đã sinh ra nó,
+// nên mang sang trang khác là vô nghĩa. Còn "34" là 34 ở mọi trang.
+//
+// Trước đây cả hai dùng chung khoá theo trang, và hệ quả đo được là ô tick
+// "Tự động đánh dấu cặp trùng" KHÔNG làm được gì trên năm trang mà mỗi con chỉ
+// hiện một lần (chu kỳ, bộ số, ngày mai, tổng hợp, cặp lộn): đánh dấu theo cặp
+// ở đó sáng đúng một ô, y hệt đánh dấu thường. Giá trị thật của chế độ này là
+// dõi MỘT con qua NHIỀU trang, và phạm vi theo trang đã cắt mất đúng điều đó.
+const PAIR_KEY = "sp.pairmarks.v1." + MARK_SCOPE;
 // HAI kho, không phải một.
 //
 //   MARKS       khoá theo Ô CỤ THỂ. Đây là chế độ mặc định: bấm ô nào thì
@@ -420,18 +441,16 @@ let MARKS = new Set();
 let PAIR_MARKS = new Set();
 try {
   const saved = JSON.parse(localStorage.getItem(MARK_KEY) || "{}");
-  if (Array.isArray(saved)) MARKS = new Set(saved);
-  else {
-    MARKS = new Set(saved.cells || []);
-    PAIR_MARKS = new Set(saved.pairs || []);
-  }
-} catch (e) { MARKS = new Set(); PAIR_MARKS = new Set(); }
+  MARKS = new Set(Array.isArray(saved) ? saved : (saved.cells || []));
+} catch (e) { MARKS = new Set(); }
+try {
+  PAIR_MARKS = new Set(JSON.parse(localStorage.getItem(PAIR_KEY) || "[]"));
+} catch (e) { PAIR_MARKS = new Set(); }
 
 function saveMarks() {
   try {
-    localStorage.setItem(MARK_KEY, JSON.stringify({
-      cells: Array.from(MARKS), pairs: Array.from(PAIR_MARKS),
-    }));
+    localStorage.setItem(MARK_KEY, JSON.stringify({ cells: Array.from(MARKS) }));
+    localStorage.setItem(PAIR_KEY, JSON.stringify(Array.from(PAIR_MARKS)));
   } catch (e) {}
 }
 
@@ -473,9 +492,44 @@ function bindColumnHint() {
  *  không phải con lô. Lấy nhầm nó thì bấm ô "2" sẽ làm sáng mọi ô có 2 nháy
  *  — một tập hợp chẳng có nghĩa gì với người soi cầu.
  */
-function markPair(td) {
-  const found = /\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/.exec(td.dataset.key || "");
+const PAIR_IN_KEY = /\|(?:n|c)([0-9]{2}(?:-[0-9]{2})?)/;
+
+/** Cặp đã nằm sẵn trong khoá, hoặc null. Dùng chung cho table() và markPair(). */
+function pairInKey(key) {
+  const found = PAIR_IN_KEY.exec(key || "");
   return found ? found[1] : null;
+}
+
+/** Chuẩn hoá một con số thành cặp hai chữ số cho khoá, hoặc null nếu không phải.
+ *
+ *  Nhận cả số nguyên (34), chuỗi đã đệm ("07"), và cặp lộn ("34 - 66").
+ *  Trả null cho chữ số đơn 0-9 và cho mọi thứ không phải số: trang Đầu/Đuôi và
+ *  trang theo Tổng chỉ có chữ số đơn, gắn cặp ở đó là bịa ra một danh tính
+ *  không tồn tại.
+ */
+function asPair(value) {
+  if (value === null || value === undefined) return null;
+  const raw = String(value).replace(/<[^>]*>/g, "").trim();
+  const two = /^([0-9]{2})$/.exec(raw);
+  if (two) return two[1];
+  const both = /^([0-9]{2})\s*-\s*([0-9]{2})$/.exec(raw);
+  if (both) return `${both[1]}-${both[2]}`;
+  return null;
+}
+
+function markPair(td) {
+  return pairInKey(td.dataset.key);
+}
+
+/** ``opts.pairOf`` cho bảng danh sách: cặp nằm ở một số cột đã biết.
+ *
+ *  Bảng danh sách mỗi con chỉ hiện MỘT lần trong một bảng, nhưng cùng con ấy
+ *  lại xuất hiện ở các bảng khác trên cùng trang (gan hiện tại / gan cực đại /
+ *  cặp lô gan). Đánh dấu theo cặp là cách duy nhất để dõi một con qua cả ba.
+ */
+function pairCols(body, ...cols) {
+  const want = new Set(cols);
+  return (y, i) => (want.has(i) ? asPair((body[y] || [])[i]) : null);
 }
 
 function pairModeOn() {
@@ -909,12 +963,13 @@ function renderLotoFrequency() {
     ).join("");
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  const rankBody = order.map((p, k) => [
+    k + 1, pad2(p[0]), p[1], expected.toFixed(1),
+    expected ? (p[1] / expected).toFixed(2) + "×" : "—",
+  ]);
   table($("sp-grid"),
     ["Hạng", "Số", "Số lần về", "Kỳ vọng", "So kỳ vọng"],
-    order.map((p, k) => [
-      k + 1, pad2(p[0]), p[1], expected.toFixed(1),
-      expected ? (p[1] / expected).toFixed(2) + "×" : "—",
-    ]), { numeric: [0, 2, 3, 4] });
+    rankBody, { numeric: [0, 2, 3, 4], pairOf: pairCols(rankBody, 1) });
 }
 
 // --- Số lộn -----------------------------------------------------------------
@@ -962,13 +1017,20 @@ function renderReversePairs() {
       // Lệch giữa hai chiều: cặp lộn "cân" thì gần 0. Cột này mới là thứ đáng
       // nhìn, vì tổng chỉ nói cặp đó gồm hai con hay về, không nói gì về LỘN.
       (p[2] - p[3] > 0 ? "+" : "") + (p[2] - p[3]),
-    ]), { numeric: [0, 2, 3, 4, 5] });
+    ]), {
+      numeric: [0, 2, 3, 4, 5],
+      // Ô hiện "01 ↔ 10", KHÔNG phải dạng "01-10" mà asPair() nhận. Khai
+      // thẳng từ dữ liệu thay vì nới lỏng asPair(): dấu ↔ mang nghĩa LỘN, còn
+      // dấu - trong khoá mang nghĩa HỌ CẶP; trộn hai thứ là dựng lại đúng lỗi
+      // mà chú thích "lộn khác bóng" ở trên đã cảnh báo.
+      pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
+    });
 
   const kep = $("sp-kep");
   if (kep) {
     const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
-    table(kep, ["Số kép", "Số lần về"],
-      ds.map((d) => [d[0], d[1]]), { numeric: [1] });
+    table(kep, ["Số kép", "Số lần về"], ds,
+      { numeric: [1], pairOf: pairCols(ds, 0) });
   }
 }
 
@@ -1075,12 +1137,13 @@ function renderPairFrequency() {
   });
   const expected = PAIR_BASELINE * rows.length;
   const top = Array.from(co.entries()).sort((a, b) => b[1] - a[1]).slice(0, 50);
+  const topBody = top.map((p, k) => [
+    k + 1, p[0], p[1], expected.toFixed(1),
+    expected ? (p[1] / expected).toFixed(2) + "×" : "—",
+  ]);
   table($("sp-grid"),
     ["Hạng", "Cặp số", "Số lần cùng về", "Kỳ vọng", "So kỳ vọng"],
-    top.map((p, k) => [
-      k + 1, p[0], p[1], expected.toFixed(1),
-      expected ? (p[1] / expected).toFixed(2) + "×" : "—",
-    ]), { numeric: [0, 2, 3, 4] });
+    topBody, { numeric: [0, 2, 3, 4], pairOf: pairCols(topBody, 1) });
 }
 
 function renderHeadTail() {
@@ -1224,40 +1287,45 @@ function renderLoGan() {
 
   // 1. Gan hiện tại, giảm dần.
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  const ganBody = order.map((p) => [
+    pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+  ]);
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
-    order.map((p) => [
-      pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
-    ]), { numeric: [2, 3, 4] });
+    ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
 
   // 2. Gan cực đại, tách đôi để đọc cạnh nhau như trang tham chiếu.
-  const half = (el, from, to) => table(el, ["Bộ số", "Gan cực đại"],
-    Array.from({ length: to - from }, (_, k) => {
+  const half = (el, from, to) => {
+    const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
       return [pad2(i), g.maxGap[i] ? `${g.maxGap[i]} kỳ` : "—"];
-    }), { numeric: [1] });
+    });
+    table(el, ["Bộ số", "Gan cực đại"], body,
+      { numeric: [1], pairOf: pairCols(body, 0) });
+  };
   half($("sp-max-lo"), 0, 50);
   half($("sp-max-hi"), 50, 100);
 
   // 3. Cặp lô gan.
   const pg = pairGaps();
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  const pairBody = pairOrder.map((p) => [
+    `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
+    pg.maxGap[p[0]] || "—", pg.hits[p[0]],
+  ]);
   table($("sp-pair-gan"),
     ["Cặp số", "Ngày ra gần đây", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
-    pairOrder.map((p) => [
-      `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
-      pg.maxGap[p[0]] || "—", pg.hits[p[0]],
-    ]), { numeric: [2, 3, 4] });
+    pairBody, { numeric: [2, 3, 4], pairOf: pairCols(pairBody, 0) });
 }
 
 function renderSpecialCycle() {
   const s = specialGaps();
   setCount(DRAWS);
   const order = s.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  const body = order.map((p, k) => [k + 1, pad2(p[0]), p[1], s.maxGap[p[0]] || "—", s.hits[p[0]]]);
   table($("sp-grid"),
     ["Hạng", "Số", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
-    order.map((p, k) => [k + 1, pad2(p[0]), p[1], s.maxGap[p[0]] || "—", s.hits[p[0]]]),
-    { numeric: [0, 2, 3, 4] });
+    body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
 }
 
 function renderSpecialBySet() {
@@ -1271,7 +1339,7 @@ function renderSpecialBySet() {
   rows.sort((a, b) => b[2] - a[2]);
   table($("sp-grid"),
     ["Bộ số", "Về gần nhất", "Chưa về (kỳ)", "Chu kỳ dài nhất", "Tổng lần về"],
-    rows, { numeric: [2, 3, 4] });
+    rows, { numeric: [2, 3, 4], pairOf: pairCols(rows, 0) });
 }
 
 function renderTomorrow() {
@@ -1285,11 +1353,12 @@ function renderTomorrow() {
     scored.push([i, s.current[i] / ceiling, s.current[i], s.maxGap[i]]);
   }
   scored.sort((a, b) => b[1] - a[1]);
+  const body = scored.slice(0, 30).map((p, k) => [
+    k + 1, pad2(p[0]), p[1].toFixed(2), p[2], p[3] || "—",
+  ]);
   table($("sp-grid"),
     ["Hạng", "Số", "Chưa về / chu kỳ dài nhất", "Chưa về", "Chu kỳ dài nhất"],
-    scored.slice(0, 30).map((p, k) => [
-      k + 1, pad2(p[0]), p[1].toFixed(2), p[2], p[3] || "—",
-    ]), { numeric: [0, 2, 3, 4] });
+    body, { numeric: [0, 2, 3, 4], pairOf: pairCols(body, 1) });
 }
 
 
@@ -1356,18 +1425,29 @@ function weekGrid(rows) {
   rows.forEach((r) => { byDate[r.d] = r.s; });
 
   const weeks = new Map();
+  const pairs = new Map();
   rows.forEach((r) => {
     const w = weekStart(r.d);
-    if (!weeks.has(w)) weeks.set(w, new Array(7).fill(""));
+    if (!weeks.has(w)) {
+      weeks.set(w, new Array(7).fill(""));
+      pairs.set(w, new Array(7).fill(null));
+    }
     weeks.get(w)[mondayIndex(r.d)] = specialCell(byDate[r.d], r.d);
+    pairs.get(w)[mondayIndex(r.d)] = lastTwo(byDate[r.d]);
   });
-  return Array.from(weeks.keys()).sort().map((w) => weeks.get(w));
+  const order = Array.from(weeks.keys()).sort();
+  return {
+    body: order.map((w) => weeks.get(w)),
+    pairs: order.map((w) => pairs.get(w)),
+  };
 }
 
 function renderSpecialByWeek() {
   const rows = selected();
   setCount(rows);
-  table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
+  const grid = weekGrid(rows);
+  table($("sp-grid"), WEEKDAYS, grid.body,
+    { rowHead: false, pairOf: (y, i) => (grid.pairs[y] || [])[i] || null });
 }
 
 /** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
@@ -1376,15 +1456,19 @@ function monthGrid(year) {
   DRAWS.filter((r) => r.d.slice(0, 4) === year).forEach((r) => { byDate[r.d] = r.s; });
 
   const body = [];
+  const pairs = [];
   for (let day = 1; day <= 31; day++) {
     const line = [`<b>${pad2(day)}</b>`];
+    const pline = [null];
     for (let m = 1; m <= 12; m++) {
       const de = byDate[`${year}-${pad2(m)}-${pad2(day)}`];
       line.push(de ? specialCell(de, null) : "");
+      pline.push(de ? lastTwo(de) : null);
     }
     body.push(line);
+    pairs.push(pline);
   }
-  return body;
+  return { body, pairs };
 }
 
 const MONTH_HEAD = ["Ngày"].concat(
@@ -1403,16 +1487,23 @@ function renderSpecialYearByDay() {
   setCount(inMonth);
 
   const byYear = new Map();
+  const pairByYear = new Map();
   inMonth.forEach((r) => {
     const year = r.d.slice(0, 4);
-    if (!byYear.has(year)) byYear.set(year, new Array(31).fill(""));
+    if (!byYear.has(year)) {
+      byYear.set(year, new Array(31).fill(""));
+      pairByYear.set(year, new Array(31).fill(null));
+    }
     byYear.get(year)[+r.d.slice(8) - 1] = specialCell(r.s, null);
+    pairByYear.get(year)[+r.d.slice(8) - 1] = lastTwo(r.s);
   });
 
   const head = ["Năm"].concat(Array.from({ length: 31 }, (_, i) => String(i + 1)));
-  const body = Array.from(byYear.keys()).sort().reverse()
-    .map((year) => [`<b>${year}</b>`].concat(byYear.get(year)));
-  table($("sp-grid"), head, body);
+  const order = Array.from(byYear.keys()).sort().reverse();
+  const body = order.map((year) => [`<b>${year}</b>`].concat(byYear.get(year)));
+  const pairs = order.map((year) => [null].concat(pairByYear.get(year)));
+  table($("sp-grid"), head, body,
+    { pairOf: (y, i) => (pairs[y] || [])[i] || null });
 }
 
 function renderSpecialDayByMonth() {
@@ -1420,7 +1511,9 @@ function renderSpecialDayByMonth() {
   const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
   const year = fillPicker("sp-year", years) || years[years.length - 1];
   setCount(DRAWS.filter((r) => r.d.slice(0, 4) === year));
-  table($("sp-grid"), MONTH_HEAD, monthGrid(year));
+  const grid = monthGrid(year);
+  table($("sp-grid"), MONTH_HEAD, grid.body,
+    { pairOf: (y, i) => (grid.pairs[y] || [])[i] || null });
 }
 
 function renderOverview() {
@@ -1442,13 +1535,14 @@ function renderOverview() {
     ].map((p) => `<div class="sp-kpi-card"><span>${p[0]}</span><strong>${p[1]}</strong></div>`).join("");
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
+  const body = order.slice(0, 40).map((p, k) => [
+    k + 1, pad2(p[0]), p[1],
+    expected ? (p[1] / expected).toFixed(2) + "×" : "—",
+    s.current[p[0]], s.maxGap[p[0]] || "—",
+  ]);
   table($("sp-grid"),
     ["Hạng", "Số", "Lần về", "So kỳ vọng", "Gan Đặc Biệt (kỳ)", "Chu kỳ Đặc Biệt dài nhất"],
-    order.slice(0, 40).map((p, k) => [
-      k + 1, pad2(p[0]), p[1],
-      expected ? (p[1] / expected).toFixed(2) + "×" : "—",
-      s.current[p[0]], s.maxGap[p[0]] || "—",
-    ]), { numeric: [0, 2, 3, 4, 5] });
+    body, { numeric: [0, 2, 3, 4, 5], pairOf: pairCols(body, 1) });
 }
 
 // --- Khởi động -------------------------------------------------------------
@@ -1545,7 +1639,10 @@ function renderSpecialBridge() {
         ? `<b>${pad2(n)}</b><i class="sp-times">${count[n]} lần</i>`
         : `<span class="sp-none">${pad2(n)}</span>`;
     })));
-  table($("sp-grid"), head, body);
+  // Ô ma trận LÀ con số: hàng là Đầu, cột là Đuôi, nên cặp suy thẳng từ toạ độ
+  // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
+  table($("sp-grid"), head, body,
+    { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
 
   // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
@@ -1554,9 +1651,9 @@ function renderSpecialBridge() {
       .map(([a, b]) => [a, b, count[a] + count[b]])
       .filter((p) => p[2] > 0)
       .sort((x, y) => y[2] - x[2]);
-    table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"],
-      pairs.map((p, k) => [k + 1, `${pad2(p[0])} - ${pad2(p[1])}`, p[2]]),
-      { numeric: [0, 2] });
+    const lonBody = pairs.map((p, k) => [k + 1, `${pad2(p[0])} - ${pad2(p[1])}`, p[2]]);
+    table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"], lonBody,
+      { numeric: [0, 2], pairOf: pairCols(lonBody, 1) });
   }
 
   // 3. Ba kỳ gần nhất, đủ giải.

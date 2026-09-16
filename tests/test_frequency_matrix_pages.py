@@ -314,8 +314,19 @@ def test_the_number_is_clickable_in_both_orientations() -> None:
     # chỗ ấy ở vòng đầu.
     builder = _block(JS_CODE, "function table(")
     assert "opts.headKey && opts.headKey(i)" in builder, builder[:400]
-    assert 'data-key="${headKey}"' in builder, builder[:400]
-    assert '<th class="cell' in builder, builder[:400]
+    # Ghim NGỮ NGHĨA, không ghim tên biến. Bản trước đòi đúng chuỗi
+    # `data-key="${headKey}"`; khi `table()` được thêm bước gắn cặp, khoá phát
+    # ra đổi tên biến thành `hKey` và phép kiểm đỏ oan trong khi tiêu đề cột
+    # vẫn bấm được y nguyên (đo trong trình duyệt: 91 `th.cell[data-key]`, bấm
+    # một cái thì số ô sáng 0 -> 1). Thứ đáng đòi là: tiêu đề CÓ mang khoá, và
+    # khoá ấy suy ra từ `headKey`.
+    assert re.search(r'<th class="cell\$\{on\}" data-key="\$\{h?[Kk]ey\}"', builder), (
+        "tiêu đề cột phải là ô bấm được và phải mang data-key", builder[:400],
+    )
+    assert "if (!headKey) return" in builder, (
+        "không có headKey thì phải trả về <th> trần; thiếu nhánh này nghĩa là "
+        "khoá tiêu đề không còn bắt nguồn từ opts.headKey", builder[:400],
+    )
     assert 'closest("td.cell, th.cell")' in JS_CODE, "trình xử lý phải nhận cả th"
     assert 'querySelectorAll("td.cell, th.cell")' in JS_CODE, "paintMarks phải quét cả th"
     for name in ("renderLotoMatrix", "renderPairMatrix"):

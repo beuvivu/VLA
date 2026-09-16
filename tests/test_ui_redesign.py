@@ -76,8 +76,6 @@ def _css(path: Path) -> str:
 #: Các trang thực sự gắn dock, xét theo lớp trong HTML.
 DOCK_PAGES = [p for p in PAGES if "dock-inner" in p.read_text(encoding="utf-8")]
 
-#: Các trang có khối điều hướng dự phòng ở chân trang.
-FOOTER_PAGES = [p for p in PAGES if "nav-fallback" in p.read_text(encoding="utf-8")]
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
@@ -957,42 +955,23 @@ def test_evidence_card_markup_has_the_wrapper_cell() -> None:
     assert cell.find(class_="basis-merged") is not None
 
 
-@pytest.mark.parametrize("page", FOOTER_PAGES, ids=lambda p: p.name)
-def test_footer_links_spread_across_the_full_width(page: Path) -> None:
-    """Trước: năm hàng rộng 1684px nhưng chữ dồn hết sang mép trái.
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_no_page_ships_a_footer_navigation_block(page: Path) -> None:
+    """Menu chân trang đã gỡ khỏi toàn bộ trang theo yêu cầu.
 
-    Lưới cột chứ không phải space-between trên từng <ul>: nhóm chỉ 2-4 mục thì
-    space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa.
+    Hai phép kiểm trước ở đây ghim CÁCH BÀY của khối ấy (lưới cột, mỗi nhóm một
+    ``<section>``). Khối không còn nên chúng mất đối tượng: pytest tham số hoá
+    trên danh sách rỗng và báo "skipped" — xanh mà không kiểm gì. Thay bằng
+    bất biến ngược lại, và bất biến này duyệt MỌI trang nên nó không thể rỗng.
+
+    Dock vẫn là một ``<nav>`` đầy đủ nên mọi liên kết vẫn nằm trong HTML cho
+    trình thu thập. Thứ mất đi là bản dự phòng khi CSS không tải được — đó là
+    đánh đổi có chủ ý, không phải sơ suất.
     """
-    # Duyệt MỌI quy tắc `nav-fallback`, không chỉ quy tắc đầu tiên. Một bộ chọn
-    # có nhiều quy tắc là chuyện bình thường của CSS, và `_css()` nối thân trang
-    # TRƯỚC biểu định kiểu chung — nên chỉ cần trang thêm một quy tắc nội tuyến
-    # (các trang soi-path có `.ui-nav-fallback{margin-bottom:...}` để chừa chỗ
-    # cho dock) là `re.search` bắt trúng quy tắc ấy và phép kiểm đỏ oan, dù lưới
-    # vẫn nằm nguyên trong biểu định kiểu chung.
-    css = _css(page)
-    bodies = [m.group(1) for m in re.finditer(r"nav-fallback\{([^}]*)\}", css)]
-    assert bodies, page.name
-    assert any("display:grid" in body for body in bodies), (page.name, bodies)
-    assert any(
-        "repeat(auto-fit,minmax(min(180px,100%),1fr))" in body for body in bodies
-    ), (page.name, bodies)
-
-
-@pytest.mark.parametrize("page", FOOTER_PAGES, ids=lambda p: p.name)
-def test_each_footer_group_is_one_grid_cell(page: Path) -> None:
-    """Không bọc <section> thì <h2> và <ul> thành hai ô lưới rời nhau: tiêu đề
-    một cột, danh sách cột kế bên."""
-    nav = _soup(page).find(class_=re.compile(r"nav-fallback"))
-    assert nav is not None, page.name
-    children = [c for c in nav.find_all(recursive=False)]
-    assert children, page.name
-    assert all(c.name == "section" for c in children), (
-        f"{page.name}: con trực tiếp phải là <section>, thấy "
-        f"{sorted({c.name for c in children})}"
+    text = page.read_text(encoding="utf-8")
+    assert "nav-fallback" not in text, (
+        f"{page.name} vẫn còn khối điều hướng chân trang"
     )
-    for sec in children:
-        assert sec.find("h2") is not None and sec.find("ul") is not None, page.name
 
 
 def test_site_nav_stores_plain_text_not_pre_escaped_html() -> None:

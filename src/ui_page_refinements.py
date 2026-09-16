@@ -101,7 +101,6 @@ _PATH_CSS = rf"""
 .path-page .cell{{background:#fff;border-color:#dbe3f0;color:#0f172a}}.path-page .cell.none{{background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.32) 7px 8px);color:#475569}}.path-page .cell.hit{{background:#fff7ed;border-color:#fdba74;color:#9a3412}}.path-page .cell.hitde{{background:#FEE2E2;border-color:#f87171;color:#DC2626;font-weight:800}}
 .path-page .path-table-scroll{{max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid #dbe3f0;border-radius:14px;background:#fff}}
 .path-page .path-table-scroll table{{margin:0}}.path-page .path-table-scroll th{{position:sticky;top:0;z-index:3;box-shadow:0 1px 0 #dbe3f0}}
-.path-page .ui-nav-fallback{{margin-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem)}}
 @media(max-width:979px){{.path-page .path-overview{{grid-template-columns:1fr}}.path-page .path-table-scroll{{max-height:58vh}}}}
 @media(max-width:640px){{.path-page .path-shell{{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}}.path-page .path-hero{{padding:.9rem;border-radius:16px}}.path-page .card{{border-radius:16px;padding:12px}}.path-page .quick-grid{{grid-template-columns:1fr 1fr}}}}
 """
