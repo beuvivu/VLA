@@ -59,12 +59,11 @@ def test_dashboard_builder_owns_command_center_structure() -> None:
     assert ".ai-command-center .ui-header" in source
 
 
-def test_research_builder_owns_experiment_lab_structure() -> None:
+def test_research_builder_owns_core_lab_structure() -> None:
     source = (ROOT / "src" / "build_research_lab.py").read_text(encoding="utf-8")
 
-    assert '<body class="research-workspace">' in source
-    assert 'class="rl-pipeline"' in source
-    assert 'class="rl-console"' in source
-    assert 'class="ui-grid rl-instruments"' in source
-    assert "LIVE AI PROCESSING" in source
-    assert "Gauge là trạng thái cổng kiểm chứng, không phải xác suất trúng" in source
+    assert 'class="rl-hero"' in source
+    assert 'class="rl-metrics"' in source
+    assert 'class="metric-card"' in source
+    assert "Tường lửa nghiên cứu" in source
+    assert "không được nối vào trọng số vận hành" in source
