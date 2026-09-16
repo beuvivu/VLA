@@ -47,3 +47,24 @@ def test_detail_statistics_stylesheet_covers_every_reported_layout_problem() -> 
     assert ".sp-page-cau-dac-biet-theo-bo-so .sp-scroll" in source
     assert ".sp-page-giai-db-ngay-mai .sp-scroll" in source
     assert ".sp-page-cap-lon-loto .sp-scroll" in source
+
+
+def test_dashboard_builder_owns_command_center_structure() -> None:
+    source = (ROOT / "src" / "build_dashboard.py").read_text(encoding="utf-8")
+
+    assert '<body class="ai-command-center">' in source
+    assert 'class="ai-status-strip"' in source
+    assert 'class="ui-grid ai-signal-grid"' in source
+    assert "AI/ML Command Center" in source
+    assert ".ai-command-center .ui-header" in source
+
+
+def test_research_builder_owns_experiment_lab_structure() -> None:
+    source = (ROOT / "src" / "build_research_lab.py").read_text(encoding="utf-8")
+
+    assert '<body class="research-workspace">' in source
+    assert 'class="rl-pipeline"' in source
+    assert 'class="rl-console"' in source
+    assert 'class="ui-grid rl-instruments"' in source
+    assert "LIVE AI PROCESSING" in source
+    assert "Gauge là trạng thái cổng kiểm chứng, không phải xác suất trúng" in source
