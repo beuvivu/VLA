@@ -1,6 +1,6 @@
 {
   "mode": "loto",
-  "generated_at": "2026-09-16T12:06:10Z",
+  "generated_at": "2026-09-16T12:54:52Z",
   "predict_for_date": "2026-09-17",
   "top": 20,
   "features": [
@@ -248,13 +248,13 @@
         ],
         "oos_dates": 30,
         "oos_rows": 3000,
-        "baseline_brier": 0.18194579928650664,
+        "baseline_brier": 0.18194579928650667,
         "challenger_brier": 0.1819370051176968,
-        "brier_improvement": 8.794168809833636e-06,
-        "brier_skill": 4.83340030070473e-05,
+        "brier_improvement": 8.794168809861391e-06,
+        "brier_skill": 4.833400300719984e-05,
         "brier_improvement_ci": {
           "confidence_level": 0.95,
-          "lower": -6.988184808041295e-05,
+          "lower": -6.988184808041433e-05,
           "upper": 9.736885107989172e-05
         },
         "baseline_logloss": 0.5501128055243638,
@@ -281,13 +281,13 @@
       ],
       "oos_dates": 30,
       "oos_rows": 3000,
-      "baseline_brier": 0.18194579928650664,
+      "baseline_brier": 0.18194579928650667,
       "challenger_brier": 0.1819370051176968,
-      "brier_improvement": 8.794168809833636e-06,
-      "brier_skill": 4.83340030070473e-05,
+      "brier_improvement": 8.794168809861391e-06,
+      "brier_skill": 4.833400300719984e-05,
       "brier_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -6.988184808041295e-05,
+        "lower": -6.988184808041433e-05,
         "upper": 9.736885107989172e-05
       },
       "baseline_logloss": 0.5501128055243638,
@@ -305,7 +305,7 @@
     },
     "ablation_report": "cau_keo_domain_ablation_loto.csv",
     "gate_report": "cau_keo_domain_gate_loto.json",
-    "final_brier_skill": 4.83340030070473e-05,
+    "final_brier_skill": 4.833400300719984e-05,
     "final_logloss_skill": 4.9201171039947585e-05,
     "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold."
   }

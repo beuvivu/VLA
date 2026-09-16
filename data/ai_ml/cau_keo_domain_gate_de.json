@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-09-16T12:07:17Z",
+  "generated_at": "2026-09-16T12:55:56Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -87,15 +87,15 @@
   "screen_summary": {
     "partner": {
       "mean_brier_skill": -4.385984760274905e-06,
-      "mean_logloss_skill": -4.366505496226713e-05
+      "mean_logloss_skill": -4.366505496245299e-05
     },
     "cap_50": {
       "mean_brier_skill": 3.7479493740247016e-05,
       "mean_logloss_skill": 0.0003387168902338288
     },
     "bo": {
-      "mean_brier_skill": 3.612020468197807e-06,
-      "mean_logloss_skill": 3.868419623611591e-05
+      "mean_brier_skill": 3.6120204681101935e-06,
+      "mean_logloss_skill": 3.868419623611587e-05
     },
     "bong": {
       "mean_brier_skill": -3.054448131078119e-05,
@@ -322,7 +322,7 @@
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
   "all_groups_confirmation_brier_skill": 1.833943262796262e-05,
-  "all_groups_confirmation_logloss_skill": 0.00016386209432940713,
+  "all_groups_confirmation_logloss_skill": 0.00016386209432915934,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
