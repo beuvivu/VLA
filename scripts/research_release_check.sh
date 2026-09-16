@@ -191,7 +191,9 @@ assert "Tường lửa nghiên cứu" in text
 for name in ("index.html", "landing.html", "landing_desktop.html"):
     path = Path("docs") / name
     if path.exists():
-        assert path.read_text(encoding="utf-8").count('id="research-lab-link"') == 1, name
+        text = path.read_text(encoding="utf-8")
+        assert 'id="research-lab-link"' not in text, name
+        assert 'href="research-lab.html"' in text, name
 print("OK trang nghiên cứu")
 PYPAGE
 
