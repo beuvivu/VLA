@@ -13,7 +13,7 @@ from pathlib import Path
 
 __all__ = ["refine_page"]
 
-_STYLE_ID = "vla-targeted-ui-refinement"
+_STYLE_ID = "ui-targeted-ui-refinement"
 _STYLE_RE = re.compile(rf'<style id="{re.escape(_STYLE_ID)}">.*?</style>', re.I | re.S)
 _BODY_RE = re.compile(r"<body(?P<attrs>[^>]*)>", re.I)
 _CLASS_RE = re.compile(r'class=(?P<q>["\'])(?P<value>.*?)(?P=q)', re.I | re.S)
@@ -51,7 +51,6 @@ _STAT_CSS = rf"""
 .sp-page-bang-dac-biet .sp-scroll{{width:100%;max-width:100%;overflow:auto}}
 .sp-page-bang-dac-biet #sp-grid{{width:100%;min-width:760px;table-layout:fixed}}
 .sp-page-bang-dac-biet #sp-grid th,.sp-page-bang-dac-biet #sp-grid td{{text-align:center;padding:.76rem .55rem}}
-.sp-page-bang-dac-biet #sp-grid th:first-child,.sp-page-bang-dac-biet #sp-grid td:first-child{{text-align:left}}
 
 .sp-page-lo-gan .sp-scroll{{width:100%;max-width:100%;max-height:34rem;overflow:auto;overscroll-behavior:contain}}
 .sp-page-lo-gan #sp-grid,.sp-page-lo-gan #sp-pair-gan{{width:100%}}
