@@ -267,7 +267,7 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
         text = page.read_text(encoding="utf-8")
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
-        assert '<body class="ui-dock-space path-page">' in text, page.name
+        assert '<body class="ui-app ui-dock-space path-page">' in text, page.name
 
 
 # --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------
