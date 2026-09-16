@@ -1248,20 +1248,6 @@
 | Động lực LOTO | 0.764 | JS 30/180 0.0095 | Độ tin cậy + dịch chuyển chế độ |
 | Động lực Đặc Biệt | 0.666 | JS 30/180 0.0386 | Độ tin cậy + dịch chuyển chế độ |
 
----
-
-## 🔎 Kiểm toán và liên kết chi tiết
-
-| Tài nguyên | Mục đích | Ý nghĩa |
-| --- | --- | --- |
-| [`data/xsmb.csv`](data/xsmb.csv) | Dữ liệu chuẩn | Dữ liệu kết quả chuẩn |
-| [`data/source_audit.json`](data/source_audit.json) | Đồng thuận nguồn | Kiểm tra nguồn xác minh |
-| [Thống kê HTML](docs/statistics.html) | Tương tác | Bảng điều khiển thống kê có tương tác |
-| [AI/ML HTML](docs/dashboard.html) | Tương tác | Bảng điều khiển AI/ML |
-| [Phòng nghiên cứu](docs/research-lab.html) | Nghiên cứu | Bác bỏ giả thuyết / ngoài mẫu / FDR |
-| [Kết quả gần thời gian thực](docs/live.html) | Trực tiếp | Trạng thái kết quả trực tiếp |
-
----
 
 <div align="center">
 
