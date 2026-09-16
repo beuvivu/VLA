@@ -18,6 +18,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from ui_page_refinements import refine_page
+
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 
 _HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
@@ -25,8 +27,8 @@ _BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
 
 #: Từ khoá mà sau nó, dấu ``/`` mở đầu một HẰNG REGEX chứ không phải phép chia.
 #:
-#: Bản đầu của tệp này chỉ nhìn KÝ TỰ đứng trước. Với ``return /[",]/`` nó
-#: thấy chữ ``n`` cuối từ ``return``, kết luận là phép chia, rồi dấu ``"``
+#: Bản đầu của tệp này chỉ nhìn KÝ TỰ đứng trước. Với ``return /[\",]/`` nó
+#: thấy chữ ``n`` cuối từ ``return``, kết luận là phép chia, rồi dấu ``\"``
 #: bên trong lớp ký tự mở trạng thái chuỗi — và mọi thứ sau đó lệch pha, chú
 #: thích không còn được bóc.
 #:
@@ -68,10 +70,7 @@ def _strip_css(text: str) -> str:
 def _strip_js(text: str) -> str:
     out: list[str] = []
     i, n = 0, len(text)
-    # Ngăn xếp cho chuỗi mẫu: `${...}` có thể lồng chuỗi mẫu khác bên trong.
     template_depth: list[int] = []
-    #: Token có nghĩa gần nhất đã ghi ra. Chỉ cần đủ để phân biệt phép chia
-    #: với hằng regex, nên "chuỗi" và "số" gộp chung thành một loại.
     previous = ""
 
     def starts_regex() -> bool:
@@ -79,7 +78,6 @@ def _strip_js(text: str) -> str:
             return True
         if previous in _REGEX_AFTER_KEYWORD:
             return True
-        # Sau một giá trị (định danh, số, chuỗi, `)`, `]`) thì `/` là phép chia.
         if previous in (")", "]", "value"):
             return False
         return not (previous[0] in _IDENT_CHARS)
@@ -129,7 +127,6 @@ def _strip_js(text: str) -> str:
             if template_depth[-1] == 0:
                 template_depth.pop()
                 out.append(ch); i += 1
-                # Trở lại thân chuỗi mẫu sau khi đóng `${...}`.
                 while i < n:
                     c = text[i]; out.append(c)
                     if c == "\\" and i + 1 < n:
@@ -141,7 +138,6 @@ def _strip_js(text: str) -> str:
                         break
                 continue
         if ch == "/" and starts_regex():
-            # Hằng biểu thức chính quy: sao chép nguyên vẹn, kể cả `//` bên trong.
             out.append(ch); i += 1
             in_class = False
             while i < n:
@@ -169,7 +165,6 @@ def _strip_js(text: str) -> str:
             while i < n and text[i] in _IDENT_CHARS:
                 out.append(text[i]); i += 1
             previous = text[start:i]
-            # Số đứng trước `/` thì đó là phép chia, như mọi giá trị khác.
             if previous[0].isdigit():
                 previous = "value"
             continue
@@ -189,7 +184,6 @@ def _tidy(text: str) -> str:
 def strip_comments(html: str) -> str:
     def replace(match: re.Match[str]) -> str:
         tag, attrs, body = match.group(1), match.group(2), match.group(3)
-        # Tải trọng JSON không phải mã; `//` trong đó là dữ liệu.
         if "application/json" in attrs.lower():
             return match.group(0)
         cleaned = _strip_css(body) if tag.lower() == "style" else _strip_js(body)
@@ -206,25 +200,16 @@ def strip_comments(html: str) -> str:
 
 
 def strip_css(css: str) -> str:
-    """Bóc chú thích khỏi một biểu định kiểu độc lập.
-
-    Cùng bộ máy đã dùng cho thẻ ``<style>`` bên trong trang, chỉ khác là gọi
-    thẳng cho tệp ``.css`` rời.
-    """
+    """Bóc chú thích khỏi một biểu định kiểu độc lập."""
     return _tidy(_strip_css(css))
 
 
 def write_page(path: Path, html: str) -> None:
-    """Ghi một trang ra đĩa, đã bóc sạch chú thích."""
-    path.write_text(strip_comments(html), encoding="utf-8")
+    """Ghi trang đã áp dụng refinement giao diện và bóc sạch chú thích."""
+    refined = refine_page(path, html)
+    path.write_text(strip_comments(refined), encoding="utf-8")
 
 
 def write_stylesheet_text(path: Path, css: str) -> None:
-    """Ghi một biểu định kiểu rời, đã bóc sạch chú thích.
-
-    Biểu định kiểu dùng chung cũng là thứ gửi thẳng tới trình duyệt của khách
-    y như trang HTML, nhưng trước đây nó không đi qua bộ bóc chú thích: nó
-    được ghi bằng ``write_text`` trần. Kết quả là 55 chú thích tiếng Việt mô
-    tả nội tình bản dựng vẫn nằm trong tệp 37 KB mà mọi trang đều tải.
-    """
+    """Ghi một biểu định kiểu rời, đã bóc sạch chú thích."""
     path.write_text(strip_css(css), encoding="utf-8")
