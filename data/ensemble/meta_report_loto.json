@@ -34,10 +34,10 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 17,
-    "four_with_cau": 17,
-    "four_with_stat": 17,
-    "core_three": 229
+    "five_component": 18,
+    "four_with_cau": 18,
+    "four_with_stat": 18,
+    "core_three": 230
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
@@ -50,26 +50,25 @@
   },
   "quality_pass": true,
   "meta_trust": 0.15,
-  "validation_logloss": 0.5476014439950553,
-  "validation_brier": 0.18075179860627225,
-  "baseline_validation_logloss": 0.7488625612815029,
-  "baseline_validation_brier": 0.20603984194270264,
-  "logloss_skill": 0.26875574730566887,
-  "brier_skill": 0.1227337542972039,
+  "validation_logloss": 0.546749661809583,
+  "validation_brier": 0.1803739357655481,
+  "baseline_validation_logloss": 0.7992972473529352,
+  "baseline_validation_brier": 0.20869200433324178,
+  "logloss_skill": 0.3159620358755447,
+  "brier_skill": 0.1356931170322896,
   "baseline_weights": {
     "p_ml": 0.8,
-    "p_active": 0.14576474031276204,
-    "p_stable": 0.054235259687238
+    "p_active": 0.1456466454085721,
+    "p_stable": 0.05435335459142791
   },
   "baseline_calibration": {
     "mode": "loto",
-    "a": 3.667664959144081,
-    "b": 0.5105524109449595,
+    "a": 4.1077556731971905,
+    "b": 0.711772691374124,
     "temperature": 1.0
   },
-  "history_days": 229,
+  "history_days": 230,
   "selection_days": [
-    "2026-06-30",
     "2026-07-01",
     "2026-07-02",
     "2026-07-03",
@@ -98,10 +97,10 @@
     "2026-07-26",
     "2026-07-27",
     "2026-07-28",
-    "2026-07-29"
+    "2026-07-29",
+    "2026-07-30"
   ],
   "validation_days": [
-    "2026-07-30",
     "2026-07-31",
     "2026-08-01",
     "2026-08-02",
@@ -130,8 +129,9 @@
     "2026-09-12",
     "2026-09-13",
     "2026-09-14",
-    "2026-09-15"
+    "2026-09-15",
+    "2026-09-16"
   ],
-  "trained_through_target_date": "2026-09-15",
-  "trained_at_utc": "2026-09-16T11:18:31Z"
+  "trained_through_target_date": "2026-09-16",
+  "trained_at_utc": "2026-09-16T12:10:25Z"
 }
