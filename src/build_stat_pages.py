@@ -290,31 +290,42 @@ PAGES: tuple[StatPage, ...] = (
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialByWeek",
     ),
+    # HAI TRANG NÀY TỪNG HIỆN ĐÚNG CÙNG MỘT BẢNG.
+    #
+    # Cả hai gọi `table($("sp-grid"), MONTH_HEAD, monthGrid(year))` — cùng lưới
+    # ngày × tháng, cùng năm, cùng từng ô. Người dùng mở hai đường dẫn khác
+    # nhau và thấy hai trang y hệt. Trang "theo năm" còn có bộ chọn Kiểu mà
+    # nhánh "Kiểu tuần" của nó lại dựng đúng cùng một lệnh với trang "theo
+    # tuần", nên nó là hai trang kia mặc áo khác.
+    #
+    # Nay mỗi trang mang tên đúng TRỤC mà bảng trải ra:
+    #
+    #     theo tuần   hàng = tuần   cột = thứ trong tuần   (dải ngày tuỳ chọn)
+    #     theo tháng  hàng = ngày   cột = THÁNG 1-12       (chọn năm)
+    #     theo năm    hàng = NĂM    cột = ngày 1-31        (chọn tháng)
+    #
+    # Ba trục, ba trang, không chồng lấn.
     StatPage(
         slug="bang-dac-biet-thang",
         title="Bảng Đặc Biệt theo tháng",
-        subtitle="Cả năm theo ngày × tháng, kèm bảng cùng một tháng qua nhiều năm.",
+        subtitle="Trọn một năm: hàng là ngày trong tháng, cột là tháng.",
         controls='<div class="sp-controls">'
                  '<label>Năm <select id="sp-year"></select></label>'
-                 '<label>Tháng <select id="sp-month"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
-             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Cùng tháng đã chọn, qua tất cả các năm có dữ liệu</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-multiyear"></table></div>',
-        render="renderSpecialByMonth",
+             + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
+        render="renderSpecialDayByMonth",
     ),
     StatPage(
         slug="bang-dac-biet-nam",
         title="Bảng Đặc Biệt theo năm",
-        subtitle="Cả năm, chọn Kiểu tháng (ngày × tháng) hoặc Kiểu tuần (tuần × thứ).",
+        subtitle="Một tháng soi qua mọi năm: hàng là năm, cột là ngày trong tháng.",
         controls='<div class="sp-controls">'
-                 '<label>Năm <select id="sp-year"></select></label>'
-                 '<label>Kiểu <select id="sp-mode"></select></label>'
+                 '<label>Tháng <select id="sp-month"></select></label>'
                  '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
-        render="renderSpecialByYear",
+        render="renderSpecialYearByDay",
     ),
     StatPage(
         slug="tan-suat-loto",
