@@ -72,12 +72,37 @@ jobs:
           echo "Kỳ hiện có: $(($(wc -l < data/xsmb.csv) - 1))"
 
       - name: Chạy bổ sung lịch sử
+        # Đầu vào workflow_dispatch là văn bản tự do, và runner thay ${{ }}
+        # TRƯỚC khi shell nhìn thấy dòng lệnh — dấu nháy trong YAML không bảo
+        # vệ được gì. Job này lại mang token `contents: write`, nên một giá trị
+        # dạng  2015-01-01" ; <lệnh> ; echo "  vừa chạy được mã tuỳ ý vừa có
+        # quyền ghi vào kho. Đưa qua env thì shell nhận chuỗi làm DỮ LIỆU.
+        env:
+          START: ${{ inputs.start }}
+          END: ${{ inputs.end }}
+          DELAY_MIN: ${{ inputs.delay_min }}
+          DELAY_MAX: ${{ inputs.delay_max }}
         run: |
-          python src/backfill_history.py \
-            --start "${{ inputs.start }}" \
-            ${{ inputs.end && format('--end "{0}"', inputs.end) || '' }} \
-            --delay-min "${{ inputs.delay_min }}" \
-            --delay-max "${{ inputs.delay_max }}"
+          set -euo pipefail
+          # Chốt chặn thứ hai: hình dạng. Ngay cả khi cách truyền đổi về lối
+          # cũ, một giá trị không phải ngày hay số cũng không đi xa hơn đây.
+          if ! printf '%s' "$START" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "Ngày đầu không hợp lệ: $START" >&2; exit 1
+          fi
+          if [ -n "$END" ] && ! printf '%s' "$END" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "Ngày cuối không hợp lệ: $END" >&2; exit 1
+          fi
+          for delay in "$DELAY_MIN" "$DELAY_MAX"; do
+            if ! printf '%s' "$delay" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
+              echo "Nhịp chờ không hợp lệ: $delay" >&2; exit 1
+            fi
+          done
+
+          args=(--start "$START" --delay-min "$DELAY_MIN" --delay-max "$DELAY_MAX")
+          if [ -n "$END" ]; then
+            args+=(--end "$END")
+          fi
+          python src/backfill_history.py "${args[@]}"
 
       - name: Kiểm tính toàn vẹn dữ liệu sau khi bổ sung
         # Backfill ghi thẳng vào nguồn sự thật của kho. Đẩy lên mà chưa kiểm
@@ -94,6 +119,9 @@ jobs:
         # cùng một tệp nên git thấy xung đột nội dung. Ở mức dữ liệu thì không
         # có xung đột: mỗi bản ghi khoá theo ngày. Vì thế cất kết quả ra ngoài
         # cây làm việc, đồng bộ với nhánh chính, rồi hợp nhất theo ngày.
+        env:
+          START: ${{ inputs.start }}
+          END: ${{ inputs.end }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -120,7 +148,7 @@ jobs:
 
             rows=$(($(wc -l < data/xsmb.csv) - 1))
             git add data/
-            git commit -m "data: bổ sung lịch sử KQXS (${{ inputs.start }} → ${{ inputs.end || 'hôm qua' }}), tổng ${rows} kỳ"
+            git commit -m "data: bổ sung lịch sử KQXS (${START} → ${END:-hôm qua}), tổng ${rows} kỳ"
             if git push; then
               echo "::notice::Đã ghi ở lần thử ${attempt}. Tổng số kỳ: ${rows}"
               exit 0

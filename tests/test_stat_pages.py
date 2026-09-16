@@ -315,11 +315,11 @@ def test_special_tables_render_all_five_digits(slug) -> None:
     # Theo CHUỖI GỌI, không ghim một tên hàm: bảng Đặc Biệt dựng ô qua
     # specialCell(), và specialCell() dựng phần số qua specialFull(). Ghim tên
     # cụ thể thì test đỏ mỗi lần tách hàm dù hành vi không đổi.
-    render = {
-        "bang-dac-biet": "renderSpecialByWeek",
-        "bang-dac-biet-thang": "renderSpecialByMonth",
-        "bang-dac-biet-nam": "renderSpecialByYear",
-    }[slug]
+    # Lấy tên hàm dựng từ chính PAGES, không chép lại vào một dict ở đây.
+    # Chú thích ngay dưới đã nói "không ghim một tên hàm" — nhưng dict cũ làm
+    # đúng điều ấy, và nó đỏ ngay lần đầu hai hàm được đổi tên dù hành vi
+    # không đổi một chút nào. Một nguồn sự thật thì không trôi khỏi nhau được.
+    render = next(page.render for page in PAGES if page.slug == slug)
 
     def body_of(name: str) -> str:
         chunk = js[js.index(f"function {name}(") :]
@@ -937,3 +937,118 @@ def test_preset_pages_highlight_all_history_not_ninety_draws() -> None:
     day = _range_controls(mode="day")
     assert '<button class="sp-chip on" data-days="90">90 kỳ</button>' in day
     assert 'class="sp-chip on" data-days="0"' not in day
+
+
+# --- Ba trang Đặc Biệt phải là ba cách đọc khác nhau ------------------------
+
+#: Ba trang bảng Đặc Biệt. Chúng dùng chung bộ khung nên rất dễ trôi về cùng
+#: một nội dung mà không ai thấy.
+SPECIAL_SLUGS = ("bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam")
+
+JS_SOURCE = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+
+
+def _render_body(function_name: str) -> str:
+    """Thân của một hàm dựng bảng trong ``stat_pages.js``.
+
+    Cắt từ đầu hàm tới hàm kế tiếp. Các hàm này nằm ở mức cao nhất của tệp và
+    không lồng nhau, nên mốc ``\\nfunction `` là ranh giới đúng.
+    """
+    start = JS_SOURCE.index(f"function {function_name}()")
+    following = JS_SOURCE.find("\nfunction ", start + 1)
+    return JS_SOURCE[start : following if following != -1 else len(JS_SOURCE)]
+
+
+def _primary_table_axes(function_name: str) -> list[str]:
+    """TRỤC của mọi bảng chính (``sp-grid``) mà một hàm dựng tạo ra.
+
+    So theo ĐỐI SỐ ĐẦU — hàng tiêu đề — chứ không so cả lệnh gọi. Bản đầu so
+    nguyên văn lệnh, và một đột biến đổi ``monthGrid(year)`` thành
+    ``monthGrid("2026")`` lọt qua: hai chuỗi khác nhau trong khi hai bảng vẫn
+    trải đúng cùng một trục. Hàng tiêu đề mới là thứ định danh cách đọc.
+
+    Tiêu đề viết dưới dạng biến cục bộ được thay bằng chính định nghĩa của nó,
+    nếu không mọi hàm dùng một biến tên ``head`` đều trông giống nhau.
+    """
+    body = _render_body(function_name)
+    axes = []
+    for match in re.finditer(r'table\(\$\("sp-grid"\),\s*([A-Za-z_$][\w$]*|\[[^\]]*\][^,;]*)', body):
+        head = match.group(1).strip()
+        if re.fullmatch(r"[a-z_$][\w$]*", head):          # biến cục bộ -> nở ra
+            local = re.search(rf"const\s+{re.escape(head)}\s*=\s*([^;]+);", body, re.S)
+            if local:
+                head = local.group(1)
+        axes.append(re.sub(r"\s+", " ", head).strip())
+    return axes
+
+
+def test_the_three_special_pages_do_not_render_the_same_primary_table() -> None:
+    """Trang "theo tháng" và "theo năm" từng hiện ĐÚNG CÙNG một bảng.
+
+    Cả hai gọi ``table($("sp-grid"), MONTH_HEAD, monthGrid(year))`` — cùng lưới
+    ngày × tháng, cùng năm, cùng từng ô. Người dùng mở hai đường dẫn khác nhau
+    và thấy hai trang y hệt. Tệ hơn, tên trang ngược với nội dung: bộ chọn
+    Tháng của trang "theo tháng" chỉ điều khiển một bảng phụ nằm dưới lưới cả
+    năm.
+
+    Phép kiểm này khoá lại điều kiện thật: ba trang phải là ba cách đọc khác
+    nhau, không phải ba đường dẫn tới một cách đọc.
+    """
+    by_page = {
+        slug: _primary_table_axes(page.render)
+        for slug, page in ((p.slug, p) for p in PAGES)
+        if slug in SPECIAL_SLUGS
+    }
+    assert set(by_page) == set(SPECIAL_SLUGS), by_page
+
+    seen: dict[str, str] = {}
+    for slug, axes in by_page.items():
+        assert axes, f"{slug}: không dựng bảng chính nào"
+        for axis in axes:
+            if axis in seen and seen[axis] != slug:
+                pytest.fail(f"{slug} trải đúng cùng trục với {seen[axis]}: {axis}")
+            seen.setdefault(axis, slug)
+
+
+def test_each_special_page_title_matches_the_axis_it_actually_shows() -> None:
+    """Tên trang phải nói đúng trục mà bảng thật sự trải ra.
+
+    Trang "theo tháng" mà hiện lưới cả năm là đặt tên sai, và đó chính là thứ
+    làm hai trang trông như một.
+    """
+    # Trục nào nằm ở ĐẦU CỘT thì trang mang tên trục ấy, khớp cách bố trí của
+    # trang tham chiếu:
+    #     theo tháng -> cột là Tháng 1-12, chọn Năm
+    #     theo năm   -> hàng là Năm,       chọn Tháng
+    expected = {
+        "bang-dac-biet": ("tuần", ("weekGrid", "WEEKDAYS")),
+        "bang-dac-biet-thang": ("tháng", ("monthGrid", "sp-year")),
+        "bang-dac-biet-nam": ("năm", ("byYear", "sp-month")),
+    }
+    for page in PAGES:
+        if page.slug not in expected:
+            continue
+        word, markers = expected[page.slug]
+        assert page.title.lower().endswith(word), f"{page.slug}: {page.title!r}"
+        body = _render_body(page.render)
+        for marker in markers:
+            assert marker in body, f"{page.slug} thiếu {marker!r} trong {page.render}"
+
+
+def test_each_special_page_has_exactly_the_one_picker_its_axis_needs() -> None:
+    """Bộ chọn phải điều khiển BẢNG CHÍNH, và chỉ một bộ chọn cho mỗi trục.
+
+    Bản cũ của trang "theo tháng" có cả ``sp-year`` lẫn ``sp-month`` trong khi
+    bảng chính chỉ nghe theo ``sp-year`` — bộ chọn Tháng gần như vô nghĩa với
+    thứ người đọc nhìn thấy trước tiên. Trang "theo năm" thì có thêm bộ chọn
+    ``sp-mode`` mà một nhánh của nó tái tạo nguyên trang "theo tuần".
+    """
+    month_page = next(p for p in PAGES if p.slug == "bang-dac-biet-thang")
+    assert 'id="sp-year"' in month_page.controls, "cột là tháng nên phải chọn NĂM"
+    assert 'id="sp-month"' not in month_page.controls
+    assert "sp-multiyear" not in month_page.body, "không còn bảng phụ"
+
+    year_page = next(p for p in PAGES if p.slug == "bang-dac-biet-nam")
+    assert 'id="sp-month"' in year_page.controls, "hàng là năm nên phải chọn THÁNG"
+    assert 'id="sp-year"' not in year_page.controls
+    assert 'id="sp-mode"' not in year_page.controls, "bỏ bộ chọn Kiểu để không trùng trang tuần"

@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ui_page_refinements import refine_page  # noqa: E402
+from ui_page_refinements import _LEGACY_STYLE_IDS, _STYLE_ID, refine_page  # noqa: E402
 
 
 def _doc(body: str) -> str:
@@ -72,5 +72,27 @@ def test_refinement_is_idempotent() -> None:
     src = _doc('<div class="wrap"><div class="top" style="margin-bottom:4px"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>')
     once = refine_page("live.html", src)
     twice = refine_page("live.html", once)
-    assert twice.count('id="ui-targeted-ui-refinement"') == 1
+    # Lấy id từ hằng số của mô-đun, không chép chuỗi vào đây. Bản trước ghim
+    # cứng "vla-targeted-ui-refinement" nên nó đỏ ngay khi id đổi tên, dù hành
+    # vi idempotent không suy suyển gì.
+    assert twice.count(f'id="{_STYLE_ID}"') == 1
     assert twice.count("live-status-card") == once.count("live-status-card")
+
+
+def test_refinement_replaces_a_block_left_by_an_older_style_id() -> None:
+    """Đổi id mà không nhận ra id CŨ thì khối cũ nằm lại vĩnh viễn.
+
+    `_append_style` tìm khối để thay THEO ID. Id cũ không còn khớp gì cả, nên
+    trang vừa mang id mới vừa giữ nguyên id cũ — và id cũ chứa tên dự án, thứ
+    mà bộ kiểm chống lộ nguồn cấm. Đã đo: 5 trang vẫn còn chuỗi cấm sau khi
+    dựng lại, cho tới khi phép gỡ nhận cả hai id.
+    """
+    assert _LEGACY_STYLE_IDS, "phải giữ danh sách id cũ để còn gỡ được"
+    legacy = _LEGACY_STYLE_IDS[0]
+    stale = _doc(
+        f'<style id="{legacy}">.cu{{color:red}}</style>'
+        '<div class="wrap"><div class="card"></div></div>'
+    )
+    out = refine_page("live.html", stale)
+    assert legacy not in out, "khối mang id cũ phải bị gỡ, không được nằm lại"
+    assert out.count(f'id="{_STYLE_ID}"') == 1

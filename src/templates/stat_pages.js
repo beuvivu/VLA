@@ -1390,46 +1390,37 @@ function monthGrid(year) {
 const MONTH_HEAD = ["Ngày"].concat(
   Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1)));
 
-function renderSpecialByMonth() {
-  const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
-  const year = fillPicker("sp-year", years) || years[years.length - 1];
+function renderSpecialYearByDay() {
+  // Hàng là NĂM, cột là ngày 1-31, cho MỘT tháng đã chọn. Tên hàm nói theo BỐ
+  // CỤC chứ không theo tên trang: hai trang này từng hiện đúng cùng một bảng
+  // và tên trang thì ngược với nội dung, nên đặt tên theo trục mà bảng trải ra
+  // là cách duy nhất để lần sau không lẫn lại.
   const months = Array.from({ length: 12 }, (_, m) => "Tháng " + (m + 1));
   const monthLabel = fillPicker("sp-month", months, months[new Date().getMonth()]);
   const month = months.indexOf(monthLabel) + 1;
 
-  const inYear = DRAWS.filter((r) => r.d.slice(0, 4) === year);
-  setCount(inYear);
-  table($("sp-grid"), MONTH_HEAD, monthGrid(year));
+  const inMonth = DRAWS.filter((r) => +r.d.slice(5, 7) === month);
+  setCount(inMonth);
 
-  // Bảng thứ hai: CÙNG MỘT THÁNG qua tất cả các năm có dữ liệu. Đây là cách
-  // đọc mà bảng một năm không cho thấy — điểm rơi theo ngày lặp qua nhiều năm.
-  const grid = $("sp-multiyear");
-  if (!grid) return;
   const byYear = new Map();
-  DRAWS.filter((r) => +r.d.slice(5, 7) === month).forEach((r) => {
-    const y = r.d.slice(0, 4);
-    if (!byYear.has(y)) byYear.set(y, new Array(31).fill(""));
-    byYear.get(y)[+r.d.slice(8) - 1] = specialCell(r.s, null);
+  inMonth.forEach((r) => {
+    const year = r.d.slice(0, 4);
+    if (!byYear.has(year)) byYear.set(year, new Array(31).fill(""));
+    byYear.get(year)[+r.d.slice(8) - 1] = specialCell(r.s, null);
   });
+
   const head = ["Năm"].concat(Array.from({ length: 31 }, (_, i) => String(i + 1)));
   const body = Array.from(byYear.keys()).sort().reverse()
-    .map((y) => [`<b>${y}</b>`].concat(byYear.get(y)));
-  table(grid, head, body);
+    .map((year) => [`<b>${year}</b>`].concat(byYear.get(year)));
+  table($("sp-grid"), head, body);
 }
 
-function renderSpecialByYear() {
+function renderSpecialDayByMonth() {
+  // Hàng là ngày 1-31, cột là THÁNG 1-12, cho MỘT năm đã chọn.
   const years = Array.from(new Set(DRAWS.map((r) => r.d.slice(0, 4)))).sort();
   const year = fillPicker("sp-year", years) || years[years.length - 1];
-  const mode = fillPicker("sp-mode", ["Kiểu tháng", "Kiểu tuần"], "Kiểu tháng");
-
-  const rows = DRAWS.filter((r) => r.d.slice(0, 4) === year);
-  setCount(rows);
-
-  if (mode === "Kiểu tuần") {
-    table($("sp-grid"), WEEKDAYS, weekGrid(rows), { rowHead: false });
-  } else {
-    table($("sp-grid"), MONTH_HEAD, monthGrid(year));
-  }
+  setCount(DRAWS.filter((r) => r.d.slice(0, 4) === year));
+  table($("sp-grid"), MONTH_HEAD, monthGrid(year));
 }
 
 function renderOverview() {

@@ -964,12 +964,19 @@ def test_footer_links_spread_across_the_full_width(page: Path) -> None:
     Lưới cột chứ không phải space-between trên từng <ul>: nhóm chỉ 2-4 mục thì
     space-between đẩy chúng dính hai mép và chừa khoảng trống lớn ở giữa.
     """
+    # Duyệt MỌI quy tắc `nav-fallback`, không chỉ quy tắc đầu tiên. Một bộ chọn
+    # có nhiều quy tắc là chuyện bình thường của CSS, và `_css()` nối thân trang
+    # TRƯỚC biểu định kiểu chung — nên chỉ cần trang thêm một quy tắc nội tuyến
+    # (các trang soi-path có `.ui-nav-fallback{margin-bottom:...}` để chừa chỗ
+    # cho dock) là `re.search` bắt trúng quy tắc ấy và phép kiểm đỏ oan, dù lưới
+    # vẫn nằm nguyên trong biểu định kiểu chung.
     css = _css(page)
-    rule = re.search(r"(?:^|\})\.ui-nav-fallback\{([^}]*)\}", css)
-    assert rule, page.name
-    body = rule.group(1)
-    assert "display:grid" in body, page.name
-    assert "repeat(auto-fit,minmax(min(180px,100%),1fr))" in body, page.name
+    bodies = [m.group(1) for m in re.finditer(r"nav-fallback\{([^}]*)\}", css)]
+    assert bodies, page.name
+    assert any("display:grid" in body for body in bodies), (page.name, bodies)
+    assert any(
+        "repeat(auto-fit,minmax(min(180px,100%),1fr))" in body for body in bodies
+    ), (page.name, bodies)
 
 
 @pytest.mark.parametrize("page", FOOTER_PAGES, ids=lambda p: p.name)

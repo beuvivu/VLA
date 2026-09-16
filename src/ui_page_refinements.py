@@ -13,8 +13,17 @@ from pathlib import Path
 
 __all__ = ["refine_page"]
 
+# Id không mang tên dự án: nó đi thẳng vào HTML của mọi trang đã xuất bản.
 _STYLE_ID = "ui-targeted-ui-refinement"
-_STYLE_RE = re.compile(rf'<style id="{re.escape(_STYLE_ID)}">.*?</style>', re.I | re.S)
+# Nhận diện các id từng được xuất ra để lần dựng tiếp theo gỡ được khối cũ,
+# tránh giữ lại song song nhiều bản CSS trên cùng một trang.
+_LEGACY_STYLE_IDS = ("vla-targeted-ui-refinement", "ui-targeted-refinement")
+_STYLE_RE = re.compile(
+    "<style id=\"(?:"
+    + "|".join(re.escape(name) for name in (_STYLE_ID, *_LEGACY_STYLE_IDS))
+    + ")\">.*?</style>",
+    re.I | re.S,
+)
 _BODY_RE = re.compile(r"<body(?P<attrs>[^>]*)>", re.I)
 _CLASS_RE = re.compile(r'class=(?P<q>["\'])(?P<value>.*?)(?P=q)', re.I | re.S)
 
