@@ -86,12 +86,12 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
     "page",
     ["soi-path-de-active.html", "soi-path-loto-active.html"],
 )
-def test_dark_page_empty_and_body_text_are_light(page: Path) -> None:
+def test_path_page_text_contrasts_with_the_light_surface(page: Path) -> None:
     text = (DOCS / page).read_text(encoding="utf-8")
     match = re.search(r"--ui-ink:\s*(#[0-9a-fA-F]{6})", text)
-    assert match, "trang tối phải khai báo lại --ui-ink"
-    # Trên nền card #0f172a, màu chữ phải sáng để đạt chuẩn.
-    assert contrast_ratio(match.group(1), "#0f172a") >= WCAG_AA_NORMAL
+    assert match, "trang soi cầu phải khai báo --ui-ink"
+    # Các trang soi cầu hiện dùng surface sáng, nên chữ phải tương phản đủ với màu trắng.
+    assert contrast_ratio(match.group(1), "#ffffff") >= WCAG_AA_NORMAL
 
 
 def test_inverse_surfaces_do_not_use_a_theme_flipping_token() -> None:
