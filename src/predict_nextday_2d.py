@@ -18,7 +18,7 @@ from ensemble_utils import (
     EnsembleWeights,
     clip01,
     load_ensemble_weights,
-    normalize_distribution,
+    floor_distribution,
 )
 from meta_predictor import META_SCHEMA_VERSION, blend_predictions, predict_meta
 
@@ -266,7 +266,12 @@ def main() -> None:
 
     p_linear_raw = _blend_linear(vectors, effective_weights)
     if args.mode == "de":
-        p_linear_raw = clip01(normalize_distribution(p_linear_raw), eps=1e-12)
+        # Sàn xác suất: không con nào bị tuyên bố bất khả thi. `p_stable` là
+        # ĐIỂM XẾP HẠNG chứ không phải phân phối — nó gán đúng 0 cho trung vị
+        # 58/100 con mỗi kỳ, và trong 128/231 kỳ lịch sử gán 0 cho chính con
+        # đã về. Hôm nay các thành phần khác che hết chỗ 0 ấy, nhưng đó là may
+        # chứ không phải thiết kế; nó đã hỏng suốt 212 kỳ khi cầu/thống kê vắng.
+        p_linear_raw = floor_distribution(p_linear_raw)
     else:
         p_linear_raw = clip01(p_linear_raw, eps=1e-6)
 

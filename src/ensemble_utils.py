@@ -39,6 +39,48 @@ def normalize_distribution(p: np.ndarray) -> np.ndarray:
     return values / s
 
 
+#: Sàn xác suất, tính theo tỉ lệ của mức đều. Với 100 con, ``0.05`` nghĩa là
+#: không con nào được nhận dưới 5% của 1/100, tức 0,0005.
+#:
+#: Vì sao cần sàn: một thành phần có thể là ĐIỂM XẾP HẠNG chứ không phải phân
+#: phối. Đo được trên lịch sử: ``p_stable`` của Đặc Biệt gán ĐÚNG 0 cho trung
+#: vị 58/100 con mỗi kỳ, và trong 128 trong 231 kỳ nó gán 0 cho chính con đã
+#: về. Gán xác suất 0 cho biến cố rồi biến cố xảy ra là phát biểu tệ nhất có
+#: thể — logloss bằng vô cực.
+#:
+#: Hôm nay đường dự đoán KHÔNG hỏng: cả 100 con nằm trong [0,009773; 0,010236]
+#: vì `p_cau`/`p_stat` đã có từ 2026-08-12 và che hết chỗ 0 của `stable`. Nhưng
+#: đó là may, không phải thiết kế — nó đã hỏng suốt 212 kỳ khi hai thành phần
+#: ấy vắng, và chỉ cần một tệp thiếu là hỏng lại.
+PROBABILITY_FLOOR_SHARE: Final[float] = 0.05
+
+
+def floor_distribution(
+    p: np.ndarray, *, share: float = PROBABILITY_FLOOR_SHARE
+) -> np.ndarray:
+    """Chuẩn hoá và đặt SÀN, để không kết cục nào bị tuyên bố là bất khả thi.
+
+    Trộn với phân phối đều theo tỉ lệ ``share`` — đúng dạng làm trơn
+    Laplace/Jeffreys. Giữ nguyên thứ hạng của mọi con, chỉ chặn đuôi dưới.
+
+    Đo được: là phép KHÔNG LÀM GÌ khi đầu vào đã lành (dự đoán 2026-09-18 đổi
+    không quá 5% tương đối), nhưng chặn đứng trường hợp thảm hoạ.
+
+    Args:
+        p: Vector xác suất chưa hoặc đã chuẩn hoá.
+        share: Tỉ lệ khối lượng dành cho phân phối đều.
+
+    Returns:
+        Phân phối đã chuẩn hoá, mọi phần tử ``>= share / n``.
+    """
+    if not 0.0 <= share < 1.0:
+        raise ValueError("share must lie in [0, 1)")
+    values = normalize_distribution(p)
+    if share == 0.0:
+        return values
+    return (1.0 - share) * values + share / values.size
+
+
 def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     return np.clip(p, eps, 1.0 - eps)
 

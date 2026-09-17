@@ -39,8 +39,8 @@ from ensemble_components import COMPONENT_KEYS, availability_from_history_day
 from ensemble_utils import (
     EnsembleWeights,
     clip01,
+    floor_distribution,
     load_ensemble_weights,
-    normalize_distribution,
 )
 from xsmb_domain import baseline_rate
 
@@ -128,7 +128,9 @@ def ensemble_probabilities(history: pd.DataFrame, weights: EnsembleWeights, mode
             continue
         effective /= effective.sum()
         blend = sum(w * v for w, v in zip(effective, vectors))
-        blend = normalize_distribution(blend) if mode == "de" else clip01(blend, eps=1e-6)
+        # Phải dùng ĐÚNG phép chốt của sản xuất, kể cả sàn xác suất — nếu không,
+        # trang Chất lượng lại chấm điểm một mô hình khác mô hình được xuất bản.
+        blend = floor_distribution(blend) if mode == "de" else clip01(blend, eps=1e-6)
         days.append(str(day))
         probs.append(blend)
         labels.append(pd.to_numeric(sub["y"], errors="coerce").to_numpy(dtype=float))
