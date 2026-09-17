@@ -442,33 +442,49 @@ def _reverse_pair_frequency(sparse_df: pd.DataFrame, *, period: PeriodKind) -> p
     if len(pairs) != 50 or any(a == b for a, b in pairs):
         raise RuntimeError("canonical cặp-loto ontology must contain 50 distinct pairs")
 
-    rows: list[dict[str, object]] = []
-    for period_key in count_by_period.index:
-        for a, b in pairs:
-            freq = int(
-                count_by_period.loc[period_key, a]
-                + count_by_period.loc[period_key, b]
-            )
-            a_hit = df.loc[df["period_key"] == period_key, a] > 0
-            b_hit = df.loc[df["period_key"] == period_key, b] > 0
-            days_hit = int((a_hit | b_hit).sum())
-            cooccur_days = int((a_hit & b_hit).sum())
-            rows.append(
+    # Bản trước lồng hai vòng `kỳ × 50 cặp` và MỖI lượt quét lại toàn bảng bằng
+    # `df.loc[df["period_key"] == period_key, a]`. Với P kỳ và N hàng, chi phí là
+    # O(P · 50 · N); ở period="day" thì P ≈ N nên nó là O(50 · N²). Profile trên
+    # lịch sử 4 207 kỳ: hàm này chiếm 606,8s trong 630,8s (96,2%), 151,7s mỗi
+    # lần gọi, phần lớn nằm ở so sánh CHUỖI của `period_key`.
+    #
+    # Ở đây gom một lần rồi tính cả 50 cặp cùng lúc trên ma trận boolean
+    # (hàng × 50), nên chi phí là O(N · 50) — một lượt duy nhất qua dữ liệu.
+    a_index = np.fromiter((a for a, _ in pairs), dtype=np.intp, count=len(pairs))
+    b_index = np.fromiter((b for _, b in pairs), dtype=np.intp, count=len(pairs))
+    pair_labels = [f"{a:02d}-{b:02d}" for a, b in pairs]
+
+    hit_matrix = df[NUMBER_COLS].to_numpy() > 0
+    period_keys = count_by_period.index.to_numpy()
+    counts = count_by_period.to_numpy()
+    draw_counts = draws.to_numpy()
+    group_positions = df.groupby("period_key", sort=True).indices
+
+    frames: list[pd.DataFrame] = []
+    for row_index, period_key in enumerate(period_keys):
+        member_rows = hit_matrix[group_positions[period_key]]
+        a_hit = member_rows[:, a_index]
+        b_hit = member_rows[:, b_index]
+        freq = counts[row_index, a_index] + counts[row_index, b_index]
+        period_draws = max(int(draw_counts[row_index]), 1)
+        frames.append(
+            pd.DataFrame(
                 {
                     "period_kind": period,
                     "period_key": period_key,
-                    "draws": int(draws.loc[period_key]),
-                    "pair": f"{a:02d}-{b:02d}",
-                    "a": a,
-                    "b": b,
-                    "freq": freq,
-                    "days_hit": days_hit,
-                    "cooccur_days": cooccur_days,
-                    "avg_per_draw": freq / max(int(draws.loc[period_key]), 1),
+                    "draws": int(draw_counts[row_index]),
+                    "pair": pair_labels,
+                    "a": a_index.astype(int),
+                    "b": b_index.astype(int),
+                    "freq": freq.astype(int),
+                    "days_hit": (a_hit | b_hit).sum(axis=0).astype(int),
+                    "cooccur_days": (a_hit & b_hit).sum(axis=0).astype(int),
+                    "avg_per_draw": freq / period_draws,
                 }
             )
+        )
 
-    out = pd.DataFrame(rows)
+    out = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     out["rank_in_period"] = out.groupby("period_key")["freq"].rank(method="dense", ascending=False).astype(int)
     return out.sort_values(["period_key", "rank_in_period", "pair"]).reset_index(drop=True)
 

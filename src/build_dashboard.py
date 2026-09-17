@@ -7,6 +7,8 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
+from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, load_ensemble_weights
+
 import pandas as pd
 
 from page_output import write_page
@@ -77,6 +79,38 @@ def _latest_date(data_dir: Path) -> str:
     return ""
 
 
+def _effective_weights(data_dir: Path, mode: str) -> dict:
+    """Trọng số ĐANG CÓ HIỆU LỰC, kèm xuất xứ.
+
+    Thẻ này từng hiện nguyên văn ``weights_<mode>.json``. Tệp ấy là bản cũ
+    3 thành phần không có ``schema_version``, nên ``load_ensemble_weights``
+    LOẠI nó và dự đoán thật chạy bằng mặc định. Kết quả: hai thẻ cạnh nhau
+    trên cùng trang nói hai bộ trọng số khác nhau cho cùng một mô hình —
+    thẻ này ghi ``w_ml 0,9987`` trong khi danh sách gợi ý ghi ``w_ml 0,25``.
+
+    Bản dự phòng cũ ở đây còn khai một bộ mặc định THỨ BA (0,4/0,3/0,3, chỉ
+    ba thành phần) mà không nơi nào khác dùng.
+    """
+    effective = load_ensemble_weights(data_dir, mode)
+    stored = _read_json(data_dir / "ensemble" / f"weights_{mode}.json")
+    learned = effective.as_dict() != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    payload: dict = {"mode": mode, "weights": effective.as_dict()}
+    if learned:
+        payload["nguon"] = "đã học"
+        for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
+            if key in stored:
+                payload[key] = stored[key]
+        payload["days_used"] = len(stored.get("days_used", []))
+    else:
+        payload["nguon"] = "mặc định đặt tay — chưa học được trọng số"
+        payload["ly_do"] = (
+            "tệp trọng số thiếu hoặc sai lược đồ"
+            if stored
+            else "chưa có tệp trọng số"
+        )
+    return payload
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Dựng bảng điều khiển và trang chất lượng mô hình.")
     parser.add_argument("--docs-dir", default="docs")
@@ -93,15 +127,11 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     picks_loto = _read_json(data_dir / "predict" / "picks_loto.json")
     picks_de = _read_json(data_dir / "predict" / "picks_de.json")
-    w_loto = _read_json(data_dir / "ensemble" / "weights_loto.json")
-    w_de = _read_json(data_dir / "ensemble" / "weights_de.json")
+    w_loto = _effective_weights(data_dir, "loto")
+    w_de = _effective_weights(data_dir, "de")
     c_loto = _read_json(data_dir / "ensemble" / "calibration_loto.json")
     c_de = _read_json(data_dir / "ensemble" / "calibration_de.json")
 
-    if not w_loto:
-        w_loto = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "Chưa học được trọng số vì chưa đủ ngày có nhãn"}
-    if not w_de:
-        w_de = {"weights": {"w_ml": 0.4, "w_active": 0.3, "w_stable": 0.3}, "note": "Chưa học được trọng số vì chưa đủ ngày có nhãn"}
     if not c_loto:
         c_loto = {"note": "Chưa học được phép hiệu chỉnh"}
     if not c_de:

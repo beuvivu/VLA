@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Iterable
+from numbers import Integral
+from pathlib import Path
+from typing import Final, Iterable
 
 import numpy as np
 import pandas as pd
+
+#: Trọng số khi CHƯA học được: cầu 0,30 / thống kê 0,20 / ML 0,25 / hai nhánh
+#: cầu 0,125 mỗi bên. Đây là giá trị đặt tay, không phải kết quả tối ưu.
+#: Phiên bản lược đồ tối thiểu của ``weights_<mode>.json`` được phép dùng.
+MIN_WEIGHTS_SCHEMA: Final[int] = 5
 
 
 def ensure_full_probs(df: pd.DataFrame) -> np.ndarray:
@@ -91,6 +99,60 @@ class EnsembleWeights:
     def as_dict(self) -> dict:
         w = self.normalized()
         return {"w_ml": w.w_ml, "w_cau": w.w_cau, "w_stat": w.w_stat, "w_active": w.w_active, "w_stable": w.w_stable}
+
+
+DEFAULT_ENSEMBLE_WEIGHTS = EnsembleWeights(
+    w_ml=0.25, w_cau=0.30, w_stat=0.20, w_active=0.125, w_stable=0.125
+)
+
+
+def load_ensemble_weights(data_dir: Path, mode: str) -> EnsembleWeights:
+    """Trọng số tổ hợp đang có hiệu lực cho ``mode``, hoặc mặc định.
+
+    NGUỒN SỰ THẬT DUY NHẤT, và đó là toàn bộ lý do hàm này tồn tại. Trước đây
+    hai nơi tự đọc tệp theo hai cách: ``predict_nextday_2d`` canh
+    ``schema_version >= 5`` và đòi có ``w_stat``, còn ``model_quality`` đọc
+    thẳng không canh gì. Tệp trên đĩa là bản cũ 3 thành phần không có
+    ``schema_version``, nên hai nơi nhận hai vector khác nhau:
+
+        trang Chất lượng   w_ml 0,9987  cầu 0     thống kê 0
+        dự đoán thật       w_ml 0,2500  cầu 0,30  thống kê 0,20
+
+    Lệch 0,75 — ba phần tư khối lượng trọng số. Hệ quả: trang Chất lượng mô
+    hình chấm điểm hiệu chuẩn, độ nhọn và phân rã Murphy cho một mô hình
+    KHÔNG được xuất bản.
+
+    Args:
+        data_dir: Thư mục ``data`` của kho.
+        mode: ``loto`` hoặc ``de``.
+
+    Returns:
+        Trọng số đã chuẩn hoá; mặc định nếu tệp thiếu, sai lược đồ, hoặc hỏng.
+    """
+    path = Path(data_dir) / "ensemble" / f"weights_{mode}.json"
+    if not path.exists():
+        return DEFAULT_ENSEMBLE_WEIGHTS
+
+    try:
+        blob = json.loads(path.read_text(encoding="utf-8"))
+        weights = blob.get("weights", {})
+        schema = blob.get("schema_version")
+        if (
+            isinstance(schema, bool)
+            or not isinstance(schema, Integral)
+            or schema < MIN_WEIGHTS_SCHEMA
+            or "w_stat" not in weights
+        ):
+            return DEFAULT_ENSEMBLE_WEIGHTS
+        return EnsembleWeights(
+            w_ml=float(weights.get("w_ml", DEFAULT_ENSEMBLE_WEIGHTS.w_ml)),
+            w_cau=float(weights.get("w_cau", DEFAULT_ENSEMBLE_WEIGHTS.w_cau)),
+            w_stat=float(weights.get("w_stat", DEFAULT_ENSEMBLE_WEIGHTS.w_stat)),
+            w_active=float(weights.get("w_active", DEFAULT_ENSEMBLE_WEIGHTS.w_active)),
+            w_stable=float(weights.get("w_stable", DEFAULT_ENSEMBLE_WEIGHTS.w_stable)),
+        ).normalized()
+    except (AttributeError, KeyError, OSError, TypeError, ValueError, json.JSONDecodeError):
+        return DEFAULT_ENSEMBLE_WEIGHTS
 
 
 def weight_grid(step: float = 0.10) -> Iterable[EnsembleWeights]:

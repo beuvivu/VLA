@@ -9,7 +9,8 @@ import pytest
 import ml_predict
 from calibration import CalibParams
 from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION
-from predict_nextday_2d import _load_calibration, _load_weights
+from ensemble_utils import load_ensemble_weights
+from predict_nextday_2d import _load_calibration
 from lottery import Lottery, RepoPaths, vietnam_today
 
 
@@ -199,7 +200,7 @@ def test_invalid_ensemble_configuration_falls_back_safely(tmp_path: Path) -> Non
         encoding="utf-8",
     )
 
-    assert _load_weights(tmp_path, "loto").as_dict() == {
+    assert load_ensemble_weights(tmp_path, "loto").as_dict() == {
         "w_ml": 0.25,
         "w_cau": 0.30,
         "w_stat": 0.20,
@@ -212,7 +213,7 @@ def test_invalid_ensemble_configuration_falls_back_safely(tmp_path: Path) -> Non
         '{"schema_version":5.5,"weights":{"w_ml":1,"w_stat":1}}',
         encoding="utf-8",
     )
-    assert _load_weights(tmp_path, "loto").as_dict() == {
+    assert load_ensemble_weights(tmp_path, "loto").as_dict() == {
         "w_ml": 0.25,
         "w_cau": 0.30,
         "w_stat": 0.20,

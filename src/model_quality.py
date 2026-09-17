@@ -36,7 +36,12 @@ import numpy as np
 import pandas as pd
 
 from ensemble_components import COMPONENT_KEYS
-from ensemble_utils import EnsembleWeights, clip01, normalize_distribution
+from ensemble_utils import (
+    EnsembleWeights,
+    clip01,
+    load_ensemble_weights,
+    normalize_distribution,
+)
 from xsmb_domain import baseline_rate
 
 SCHEMA_VERSION = 1
@@ -322,16 +327,7 @@ def build(data_dir: Path) -> Path:
     modes = {}
     for mode in MODES:
         predictions = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")
-        weights_blob = json.loads(
-            (data_dir / "ensemble" / f"weights_{mode}.json").read_text(encoding="utf-8")
-        )["weights"]
-        weights = EnsembleWeights(
-            w_ml=float(weights_blob.get("w_ml", 0.0)),
-            w_cau=float(weights_blob.get("w_cau", 0.0)),
-            w_stat=float(weights_blob.get("w_stat", 0.0)),
-            w_active=float(weights_blob.get("w_active", 0.0)),
-            w_stable=float(weights_blob.get("w_stable", 0.0)),
-        )
+        weights = load_ensemble_weights(data_dir, mode)
         days, probabilities, labels = ensemble_probabilities(predictions, weights, mode)
         modes[mode] = {
             "mode": mode,

@@ -57,6 +57,8 @@ COLUMN_LABELS = {
     "window_days": "Cửa sổ (ngày)",
     "days_used": "Số ngày đã dùng",
     "learned_at_utc": "Học lúc (UTC)",
+    "nguon": "Xuất xứ trọng số",
+    "ly_do": "Lý do",
     "updated_at_utc": "Cập nhật lúc (UTC)",
     "trust": "Mức tin cậy",
     "quality_pass": "Đạt kiểm chất lượng",

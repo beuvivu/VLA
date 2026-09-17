@@ -1,0 +1,173 @@
+from __future__ import annotations
+
+"""Trọng số tổ hợp phải có MỘT nguồn sự thật duy nhất.
+
+Trước đây hai nơi tự đọc ``data/ensemble/weights_<mode>.json`` theo hai cách:
+``predict_nextday_2d`` canh ``schema_version >= 5`` và đòi có ``w_stat``, còn
+``model_quality`` đọc thẳng không canh gì. Tệp trên đĩa là bản cũ 3 thành phần
+không có ``schema_version``, nên hai nơi nhận hai vector khác nhau — lệch 0,75,
+tức ba phần tư khối lượng trọng số.
+
+Hệ quả là trang Chất lượng mô hình chấm hiệu chuẩn, độ nhọn và phân rã Murphy
+cho một mô hình KHÔNG được xuất bản. Đây là lớp lỗi im lặng: không ngoại lệ,
+không cảnh báo, chỉ là hai con số không nói về cùng một thứ.
+"""
+
+import json
+from pathlib import Path
+
+import pytest
+
+from ensemble_utils import (
+    DEFAULT_ENSEMBLE_WEIGHTS,
+    MIN_WEIGHTS_SCHEMA,
+    load_ensemble_weights,
+)
+
+KEYS = ("w_ml", "w_cau", "w_stat", "w_active", "w_stable")
+REPO = Path(__file__).resolve().parents[1]
+
+
+def _write(tmp_path: Path, mode: str, blob: object) -> Path:
+    directory = tmp_path / "ensemble"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / f"weights_{mode}.json").write_text(
+        json.dumps(blob, ensure_ascii=False), encoding="utf-8"
+    )
+    return tmp_path
+
+
+def test_no_module_rebuilds_weights_from_a_raw_json_blob() -> None:
+    """Chỉ ``ensemble_utils`` được phép suy trọng số ra từ JSON.
+
+    Bản trước của phép kiểm này chỉ đòi tệp CÓ CHỨA chuỗi
+    ``load_ensemble_weights`` — mà một dòng ``import`` đã đủ làm nó xanh. Đột
+    biến trả ``model_quality`` về đọc thô đã lọt qua nguyên vẹn. Nên ở đây
+    ghim ĐẶC TÍNH thật: dựng ``EnsembleWeights`` từ các khoá ``w_*`` bóc ra
+    khỏi một blob là việc của một nơi duy nhất.
+    """
+    offenders = []
+    for path in sorted((REPO / "src").rglob("*.py")):
+        if path.name == "ensemble_utils.py":
+            continue
+        source = path.read_text(encoding="utf-8")
+        builds = "EnsembleWeights(" in source and '.get("w_' in source
+        if builds:
+            offenders.append(path.relative_to(REPO).as_posix())
+    assert not offenders, (
+        "các tệp này tự suy trọng số ra từ JSON thô thay vì gọi "
+        f"load_ensemble_weights(): {offenders}"
+    )
+
+
+def test_every_reader_of_the_weights_path_goes_through_the_shared_loader() -> None:
+    """Đọc tệp để lấy SIÊU DỮ LIỆU thì được; lấy trọng số thì không.
+
+    ``build_dashboard`` vẫn đọc blob để hiện ``learned_at_utc``/``metric``, nên
+    phép kiểm không cấm việc mở tệp — nó đòi tệp nào mở thì phải THẬT SỰ gọi
+    hàm chung, chứ không chỉ nhắc tên nó trong dòng import.
+    """
+    import re as _re
+
+    offenders = []
+    for path in sorted((REPO / "src").rglob("*.py")):
+        if path.name == "ensemble_utils.py":
+            continue
+        source = path.read_text(encoding="utf-8")
+        if not ('f"weights_{mode}.json"' in source or '"weights_loto.json"' in source):
+            continue
+        calls = _re.findall(r"load_ensemble_weights\s*\(", source)
+        if not calls:
+            offenders.append(path.relative_to(REPO).as_posix())
+    assert not offenders, (
+        "các tệp này mở tệp trọng số nhưng không hề GỌI load_ensemble_weights(): "
+        f"{offenders}"
+    )
+
+
+def test_the_shipped_weights_file_is_read_the_same_way_everywhere() -> None:
+    """Đọc tệp THẬT trong kho: mọi nơi phải nhận đúng một vector."""
+    first = load_ensemble_weights(REPO / "data", "loto")
+    again = load_ensemble_weights(REPO / "data", "loto")
+    assert first.as_dict() == again.as_dict()
+    total = sum(getattr(first, k) for k in KEYS)
+    assert total == pytest.approx(1.0), f"trọng số phải chuẩn hoá về 1, thấy {total}"
+
+
+@pytest.mark.parametrize(
+    ("label", "blob"),
+    [
+        ("thiếu schema_version", {"weights": {k: 0.2 for k in KEYS}}),
+        ("schema quá cũ", {"schema_version": MIN_WEIGHTS_SCHEMA - 1,
+                           "weights": {k: 0.2 for k in KEYS}}),
+        ("schema là bool", {"schema_version": True, "weights": {k: 0.2 for k in KEYS}}),
+        ("thiếu w_stat", {"schema_version": MIN_WEIGHTS_SCHEMA,
+                          "weights": {"w_ml": 1.0}}),
+        ("weights không phải dict", {"schema_version": MIN_WEIGHTS_SCHEMA, "weights": 7}),
+        ("gốc là danh sách", [1, 2, 3]),
+    ],
+)
+def test_an_unusable_file_falls_back_to_the_declared_default(
+    tmp_path: Path, label: str, blob: object
+) -> None:
+    """Tệp không dùng được phải rơi về mặc định KHAI BÁO, không về 0 hay rác."""
+    data_dir = _write(tmp_path, "loto", blob)
+    got = load_ensemble_weights(data_dir, "loto")
+    assert got.as_dict() == DEFAULT_ENSEMBLE_WEIGHTS.as_dict(), label
+
+
+def test_a_missing_file_falls_back_to_the_declared_default(tmp_path: Path) -> None:
+    assert (
+        load_ensemble_weights(tmp_path, "loto").as_dict()
+        == DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    )
+
+
+def test_corrupt_json_does_not_crash_the_pipeline(tmp_path: Path) -> None:
+    directory = tmp_path / "ensemble"
+    directory.mkdir(parents=True)
+    (directory / "weights_loto.json").write_text("{ khong phai json", encoding="utf-8")
+    assert (
+        load_ensemble_weights(tmp_path, "loto").as_dict()
+        == DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    )
+
+
+def test_a_valid_file_is_honoured_and_normalised(tmp_path: Path) -> None:
+    """Chốt chặn ngược: cổng canh không được chặn cả tệp HỢP LỆ."""
+    data_dir = _write(tmp_path, "de", {
+        "schema_version": MIN_WEIGHTS_SCHEMA,
+        "weights": {"w_ml": 2.0, "w_cau": 2.0, "w_stat": 2.0,
+                    "w_active": 2.0, "w_stable": 2.0},
+    })
+    got = load_ensemble_weights(data_dir, "de")
+    assert got.as_dict() != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    for key in KEYS:
+        assert getattr(got, key) == pytest.approx(0.2), key
+
+
+def test_the_dashboard_card_shows_the_weights_that_are_actually_in_force() -> None:
+    """Hai thẻ cạnh nhau không được nói hai bộ trọng số khác nhau.
+
+    Thẻ "Trọng số" từng hiện nguyên văn tệp trên đĩa, mà tệp ấy bị
+    ``load_ensemble_weights`` LOẠI. Nên thẻ ghi ``w_ml 0,9987`` trong khi danh
+    sách gợi ý — dựng từ chính phép dự đoán — ghi ``w_ml 0,25``.
+    """
+    from build_dashboard import _effective_weights
+
+    for mode in ("loto", "de"):
+        card = _effective_weights(REPO / "data", mode)
+        effective = load_ensemble_weights(REPO / "data", mode)
+        assert card["weights"] == effective.as_dict(), mode
+        assert card["nguon"] in {"đã học", "mặc định đặt tay — chưa học được trọng số"}
+
+
+def test_the_card_says_plainly_when_the_weights_were_never_learned() -> None:
+    """Hiện số mà không nói xuất xứ là để người đọc tưởng chúng đã được học."""
+    from build_dashboard import _effective_weights
+
+    card = _effective_weights(REPO / "data", "loto")
+    learned = card["weights"] != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    assert (card["nguon"] == "đã học") == learned, card["nguon"]
+    if not learned:
+        assert card.get("ly_do"), "phải nêu lý do khi chưa học được"

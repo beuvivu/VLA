@@ -14,7 +14,12 @@ import pandas as pd
 
 from calibration import CalibParams, apply_calibration
 from ensemble_components import COMPONENT_KEYS, probability_component, renormalize_available_weights
-from ensemble_utils import EnsembleWeights, clip01, normalize_distribution
+from ensemble_utils import (
+    EnsembleWeights,
+    clip01,
+    load_ensemble_weights,
+    normalize_distribution,
+)
 from meta_predictor import META_SCHEMA_VERSION, blend_predictions, predict_meta
 
 Mode = Literal["loto", "de"]
@@ -97,39 +102,6 @@ def _load_probs(
         for key, component in components.items()
     }
     return vectors, available, reasons
-
-
-def _load_weights(data_dir: Path, mode: str) -> EnsembleWeights:
-    default = EnsembleWeights(
-        w_ml=0.25,
-        w_cau=0.30,
-        w_stat=0.20,
-        w_active=0.125,
-        w_stable=0.125,
-    )
-    f = data_dir / "ensemble" / f"weights_{mode}.json"
-    if not f.exists():
-        return default
-    try:
-        j = json.loads(f.read_text(encoding="utf-8"))
-        w = j.get("weights", {})
-        schema_version = j.get("schema_version")
-        if (
-            isinstance(schema_version, bool)
-            or not isinstance(schema_version, Integral)
-            or schema_version < 5
-            or "w_stat" not in w
-        ):
-            return default
-        return EnsembleWeights(
-            w_ml=float(w.get("w_ml", default.w_ml)),
-            w_cau=float(w.get("w_cau", default.w_cau)),
-            w_stat=float(w.get("w_stat", default.w_stat)),
-            w_active=float(w.get("w_active", default.w_active)),
-            w_stable=float(w.get("w_stable", default.w_stable)),
-        ).normalized()
-    except (AttributeError, TypeError, ValueError):
-        return default
 
 
 def _load_calibration(data_dir: Path, mode: str) -> CalibParams:
@@ -287,7 +259,7 @@ def main() -> None:
     anchor = _latest_anchor_date(data_dir / "xsmb.csv")
     target = anchor + timedelta(days=1)
 
-    configured_weights = _load_weights(data_dir, args.mode)
+    configured_weights = load_ensemble_weights(data_dir, args.mode)
     calib = _load_calibration(data_dir, args.mode)
     vectors, available, reasons = _load_probs(data_dir, args.mode, anchor)
     effective_weights = renormalize_available_weights(configured_weights, available)
