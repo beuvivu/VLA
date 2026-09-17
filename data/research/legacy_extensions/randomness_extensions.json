@@ -2,7 +2,7 @@
   "ks_full_special": {
     "name": "ks_full_special_uniformity",
     "statistic": 0.021854410646387823,
-    "p_value": 0.03539254056233232,
+    "p_value": 0.0353925405623321,
     "note": "H0: full five-digit special prize is Uniform[0,1) after scaling."
   },
   "ljung_box_even_tail_count": {
