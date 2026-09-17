@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at_utc": "2026-09-17T14:23:24Z",
+  "generated_at_utc": "2026-09-17T14:30:37Z",
   "anchor_date": "2026-09-17",
   "target_date": "2026-09-18",
   "history_days": 4208,
@@ -28,8 +28,8 @@
     "verdict": "Co ngót HOÀN TOÀN: 100 đơn vị không phân biệt được nhau trên 4208 kỳ (phương sai giữa các đơn vị 0.000e+00 không vượt phương sai trong nội bộ 2.353e-06). Tham số hiệu dụng: 1.41 trên 100."
   },
   "mean_stability": 0.999998287035263,
-  "min_stability": 0.9999982870352626,
-  "max_stability": 0.9999982870352626,
+  "min_stability": 0.9999982870352627,
+  "max_stability": 0.9999982870352627,
   "dynamics_weight_in_stat_signal": 0.2,
   "global_dynamics_reliability": 0.649174574059134,
   "regime_js_divergence_30_vs_180": 0.04400274675112423,
