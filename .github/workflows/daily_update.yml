@@ -210,7 +210,7 @@ jobs:
 
       - name: Tải lên nhật ký thăm dò
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: poll-summary-${{ github.run_id }}
           path: ${{ runner.temp }}/poll.json
