@@ -144,13 +144,18 @@ def test_ensemble_renormalizes_weights_over_available_components_only() -> None:
     rows = []
     for number in range(100):
         rows.append(
-            {"target_date": "2026-01-01", "number": number, "p_ml": 0.30,
+            {"target_date": "2026-01-01", "number": number, "p_ml": 0.25,
              "p_cau": np.nan, "p_stat": np.nan, "p_active": 0.10, "p_stable": 0.10, "y": 0.0}
         )
     weights = mq.EnsembleWeights(w_ml=0.5, w_cau=0.3, w_stat=0.1, w_active=0.05, w_stable=0.05)
     _, probabilities, _ = mq.ensemble_probabilities(pd.DataFrame(rows), weights, "loto")
-    # ml 0,5 và active/stable 0,05 còn lại -> 0,5/0,6·0,30 + 0,1/0,6·0,10
-    assert probabilities[0][0] == pytest.approx(0.5 / 0.6 * 0.30 + 0.1 / 0.6 * 0.10)
+    # ml 0,5 và active/stable 0,05 còn lại -> 0,5/0,6·0,25 + 0,1/0,6·0,10
+    #
+    # p_ml dùng 0,25 chứ không phải 0,30 như bản trước: 0,30 cho cả 100 con là
+    # tổng 30, vượt trần 27 giải của một kỳ — dữ liệu BẤT KHẢ THI về vật lý.
+    # Cổng canh tổng biên thêm sau đã loại nó và làm phép kiểm này đỏ, đúng
+    # việc của nó.
+    assert probabilities[0][0] == pytest.approx(0.5 / 0.6 * 0.25 + 0.1 / 0.6 * 0.10)
 
 
 def test_skill_chart_pins_off_scale_points_instead_of_dropping_them() -> None:

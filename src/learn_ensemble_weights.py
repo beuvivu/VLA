@@ -25,7 +25,9 @@ from ensemble_utils import (
 COMPONENT_COLS = [f"p_{key}" for key in COMPONENT_KEYS]
 
 
-def _select_recent_complete_days(df: pd.DataFrame, window_days: int) -> list[str]:
+def _select_recent_complete_days(
+    df: pd.DataFrame, window_days: int, *, mode: str | None = None
+) -> list[str]:
     """Select only fully labeled days with five genuinely available components.
 
     Explicit ``has_*`` flags are honored for new history.  Legacy history without
@@ -44,7 +46,7 @@ def _select_recent_complete_days(df: pd.DataFrame, window_days: int) -> list[str
         numbers = pd.to_numeric(sub.get("number"), errors="coerce")
         if numbers.isna().any() or set(numbers.astype(int).tolist()) != set(range(100)):
             continue
-        available = availability_from_history_day(sub)
+        available = availability_from_history_day(sub, mode=mode)
         if all(available.get(key, False) for key in COMPONENT_KEYS):
             complete.append(str(day))
 
@@ -203,7 +205,7 @@ def main() -> None:
         print(f"[SKIP] history not found: {hist}")
         return
     df = pd.read_csv(hist)
-    days = _select_recent_complete_days(df, args.window_days)
+    days = _select_recent_complete_days(df, args.window_days, mode=args.mode)
     if len(days) < args.min_days:
         print(f"[SKIP] five-component labeled history not mature: {len(days)} < {args.min_days}; keeping current/default weights")
         return

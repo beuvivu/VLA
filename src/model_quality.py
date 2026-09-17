@@ -35,7 +35,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ensemble_components import COMPONENT_KEYS
+from ensemble_components import COMPONENT_KEYS, availability_from_history_day
 from ensemble_utils import (
     EnsembleWeights,
     clip01,
@@ -108,14 +108,19 @@ def ensemble_probabilities(history: pd.DataFrame, weights: EnsembleWeights, mode
     raw = np.array([getattr(weights, f"w_{key}") for key in COMPONENT_KEYS], dtype=float)
     days, probs, labels = [], [], []
 
-    for day, sub in history.groupby("target_date", sort=True):
-        sub = sub.sort_values("number")
+    for day, group in history.groupby("target_date", sort=True):
+        sub = group.sort_values("number")
         if len(sub) != 100 or sub["y"].isna().any():
             continue
+        # Cùng MỘT cổng canh với đường dự đoán thật. Trước đây chỗ này chỉ đòi
+        # hữu hạn, nên 212 trong 231 ngày lịch sử loto ghi p_active/p_stable ở
+        # thang "gần 1,0 cho mọi con" vẫn được coi là dùng được — và Brier báo
+        # 0,3133 trong khi trên dữ liệu sạch con số thật là 0,1802.
+        available = availability_from_history_day(sub, mode=mode)
         vectors, mask = [], []
         for index, key in enumerate(COMPONENT_KEYS):
             values = pd.to_numeric(sub[columns[key]], errors="coerce").to_numpy(dtype=float)
-            usable = bool(np.isfinite(values).all()) and raw[index] > 0.0
+            usable = bool(available.get(key, False)) and raw[index] > 0.0
             vectors.append(np.nan_to_num(values))
             mask.append(1.0 if usable else 0.0)
         effective = raw * np.asarray(mask)

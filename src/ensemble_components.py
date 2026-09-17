@@ -9,7 +9,7 @@ only normalize/weight artifacts that satisfy the 00..99 and date contracts.
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Literal
+from typing import Final, Literal
 
 import numpy as np
 import pandas as pd
@@ -71,6 +71,47 @@ def _artifact_date_reason(
     return None
 
 
+#: Số giải trong một kỳ XSMB. Đây là trần CỨNG cho số con phân biệt: 27 giải
+#: thì nhiều nhất cũng chỉ ra 27 con khác nhau.
+LOTO_PRIZE_SLOTS: Final[int] = 27
+
+#: Số con PHÂN BIỆT kỳ vọng: 27 giải rút từ 100 số hai chữ số, nên
+#: ``100 · (1 − (99/100)^27) = 23,7657``. Tổng xác suất biên của một mô hình
+#: loto đúng phải bằng chính đại lượng này.
+LOTO_EXPECTED_MARGINAL_SUM: Final[float] = 100.0 * (
+    1.0 - (99.0 / 100.0) ** LOTO_PRIZE_SLOTS
+)
+
+
+def loto_marginal_sum_is_plausible(total: float) -> bool:
+    """Tổng xác suất biên loto có vượt trần luật chơi hay không.
+
+    Trần là 27, suy thẳng từ luật chơi: một kỳ có 27 giải nên nhiều nhất cũng
+    chỉ ra 27 con phân biệt, tức tổng ``P(con i về)`` không thể vượt 27.
+
+    CHỈ chặn phía TRÊN, và đó là điều đã cân nhắc. Bản đầu của hàm này còn đặt
+    ngưỡng dưới bằng một nửa giá trị kỳ vọng — con số ấy tôi TỰ ĐẶT, không suy
+    ra từ đâu, và nó loại oan một mô hình thiếu tự tin (phép kiểm
+    ``test_ensemble_renormalizes_weights_over_available_components_only`` với
+    vector tổng 10 đã bắt đúng chỗ đó). Tổng THẤP là một lựa chọn mô hình;
+    tổng vượt 27 là bất khả thi về mặt vật lý.
+
+    Lỗi cần chặn nằm ở phía trên: 212 trong 231 ngày lịch sử loto ghi
+    ``p_active``/``p_stable`` ở thang "gần 1,0 cho mọi con", tổng ≈ 100. Cổng
+    canh cũ chỉ kiểm từng phần tử trong ``[0, 1]`` nên vector ấy qua sạch.
+
+    Hệ quả đo được: trang Chất lượng mô hình báo Brier 0,3133 cho loto, trong
+    khi trên dữ liệu sạch con số thật là 0,1802.
+
+    Args:
+        total: Tổng của vector 100 phần tử.
+
+    Returns:
+        ``True`` nếu tổng không vượt trần luật chơi.
+    """
+    return bool(float(total) <= float(LOTO_PRIZE_SLOTS))
+
+
 def probability_component(
     df: pd.DataFrame,
     *,
@@ -117,15 +158,20 @@ def probability_component(
         return ComponentVector(missing, False, "probability_out_of_range_or_nonfinite")
 
     p = p[np.argsort(n)]
-    if float(np.sum(p)) <= 0.0:
+    total = float(np.sum(p))
+    if total <= 0.0:
         return ComponentVector(missing, False, "all_zero_probability_vector")
+    if mode == "loto" and not loto_marginal_sum_is_plausible(total):
+        return ComponentVector(missing, False, "loto_marginal_sum_implausible")
 
     if mode == "de":
         p = normalize_distribution(p)
     return ComponentVector(np.asarray(p, dtype=np.float64), True, "ok")
 
 
-def availability_from_history_day(sub: pd.DataFrame) -> dict[str, bool]:
+def availability_from_history_day(
+    sub: pd.DataFrame, *, mode: Mode | None = None
+) -> dict[str, bool]:
     if len(sub) != 100 or "number" not in sub.columns:
         return {key: False for key in COMPONENT_KEYS}
 
@@ -154,6 +200,8 @@ def availability_from_history_day(sub: pd.DataFrame) -> dict[str, bool]:
             and np.all((values >= 0.0) & (values <= 1.0))
             and float(values.sum()) > 0.0
         )
+        if valid and mode == "loto":
+            valid = loto_marginal_sum_is_plausible(float(values.sum()))
         if has_col in sub.columns:
             flags = _strict_bool_flags(sub[has_col])
             valid = valid and flags is not None and bool(flags.all())
