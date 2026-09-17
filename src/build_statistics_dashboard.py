@@ -667,6 +667,1010 @@ def _section(title: str, intro: str, body: str, anchor: str) -> str:
     """
 
 
+#: 773 dòng văn bản nhúng, trích khỏi f-string của ``main``.
+#:
+#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
+#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
+_DASHBOARD_CSS = """\
+    :root {
+      /* Cột nội dung của trang — KHAI BÁO MỘT CHỖ.
+         Trước đây `main` và `.hero` mỗi bên tự viết số của mình: `main` dùng
+         cột có `max-width`, còn hero canh lề bằng `margin`. Hai hệ canh lề
+         khác nhau trên cùng một trang, nên độ lệch ĐỔI DẤU theo bề rộng —
+         đo được:
+
+             vw=1920  hero [  72..1848]  thân [ 240..1680]  hero thò ra 168px/bên
+             vw=1440  hero [  72..1368]  thân [   0..1440]  hero thụt vào  72px/bên
+             vw= 640  hero [  32.. 608]  thân [   0.. 640]  hero thụt vào  32px/bên
+
+         Trang KHÔNG hề cuộn ngang ở bất kỳ mức nào và `box-sizing` vốn đã là
+         `border-box`, nên đây không phải lỗi tràn khung theo nghĩa kỹ thuật;
+         nó là hai hệ toạ độ không nói chuyện với nhau. */
+      --page-max: 1440px;
+      --page-gutter: clamp(16px, 5vw, 72px);
+
+      /* Nền và bề mặt */
+      --bg: #F2F4FF;
+      --bg-2: #E6EAFB;
+      --surface: #ffffff;
+      --surface-strong: #ffffff;
+      --surface-2: #F7F8FE;
+      --text: #161C2D;
+      --muted: #5A6480;
+      --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
+      --line: #E7EAF6;
+      --line-soft: #F0F2FB;
+
+      /* THƯƠNG HIỆU — chỉ dùng cho điều hướng và hành động chính.
+         Không một dấu hiệu mã hoá dữ liệu nào được lấy màu từ đây. */
+      --brand: #4F46E5;
+      --brand-2: #6366F1;
+      --brand-3: #818CF8;
+      --brand-wash: #EEF0FF;
+      --brand-ink: #3730A3;
+
+      /* PHÂN TÍCH — trạng thái, độc lập với thương hiệu. Thang nhiệt nằm
+         trong palettes của _color_from_value, không phải ở đây. */
+      --good: #0ca30c;
+      --warn: #fab219;
+      --crit: #d03b3b;
+
+      --shadow: 0 1px 2px rgba(22,28,45,0.04), 0 8px 26px rgba(22,28,45,0.06);
+      --shadow-brand: 0 10px 30px rgba(79,70,229,0.26);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--ui-font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% -8%, rgba(37,99,235,0.55), transparent 30%),
+        radial-gradient(circle at 90% 6%, rgba(124,58,237,0.42), transparent 28%),
+        radial-gradient(circle at 55% 16%, rgba(249,115,22,0.20), transparent 30%),
+        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; }
+    /* Hero là một DẢI có khung chứ không phải vùng tràn ra nền trang. Nền
+       trang nay sáng, nên chữ trắng chỉ đúng khi nó nằm trên chính dải
+       gradient này. */
+    .hero {
+      position: relative;
+      /* Khớp ĐÚNG hộp nội dung của `main`, ở mọi bề rộng.
+         `width` lo phần màn hẹp (trừ đi hai lề), `max-width` lo phần màn rộng
+         (dừng lại đúng chỗ cột nội dung dừng), `auto` canh giữa. Cả ba đều
+         tính từ cùng hai biến mà `main` dùng, nên không thể lệch pha nữa. */
+      width: calc(100% - 2 * var(--page-gutter));
+      max-width: calc(var(--page-max) - 2 * var(--page-gutter));
+      margin: 18px auto 0;
+      padding: 34px clamp(20px, 4vw, 44px) 24px;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+      box-shadow: var(--shadow-brand);
+      color: white;
+      overflow: hidden;
+    }
+    .hero-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .hero-kicker {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(14px);
+      color: #dbeafe;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hero h1 {
+      margin: 14px 0 0;
+      max-width: 820px;
+      font-size: clamp(28px, 3.4vw, 44px);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+      text-wrap: balance;
+    }
+    .hero p {
+      max-width: 74ch;
+      margin: 0;
+      color: rgba(255,255,255,0.86);
+      line-height: 1.65;
+      font-size: clamp(13px, 1.1vw, 14.5px);
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .hero-actions a {
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.10);
+      color: white;
+      font-weight: 750;
+      transition: transform .15s ease, background .15s ease;
+    }
+    .hero-actions a:hover { transform: translateY(-1px); background: rgba(255,255,255,0.18); }
+
+    /* Dải liên kết RA NGOÀI trang, tách khỏi các neo trong trang.
+       Trang này từng chỉ có đúng một liên kết nội bộ (research-lab.html): mọi
+       mục điều hướng khác đều là neo #... trong chính nó, nên ai mở thẳng
+       statistics.html thì không có đường sang 14 trang thống kê nào cả. */
+    .site-hop {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.16);
+    }
+    .site-hop b { font-size: 12px; letter-spacing: .04em; color: #bfdbfe; }
+    .site-hop a {
+      text-decoration: none; padding: 7px 12px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.14);
+      color: white; font-weight: 700; font-size: 13px;
+    }
+    .site-hop a:hover { background: rgba(255,255,255,0.24); }
+
+    main {
+      max-width: var(--page-max);
+      margin: 0 auto;
+      /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
+         `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
+         để trang vẫn đúng nếu tệp ấy không tải được. */
+      padding: 0 var(--page-gutter) calc(var(--ui-dock-h, 54px) + 40px);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 22px;
+    }
+    .metric-card {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 15px 16px;
+      border-radius: var(--radius-lg);
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .metric-icon {
+      display: grid;
+      place-items: center;
+      width: 46px;
+      height: 46px;
+      border-radius: var(--radius-md);
+      background: var(--brand-wash);
+      color: var(--brand);
+      font-size: 22px;
+      flex: 0 0 auto;
+    }
+    .metric-card p { margin: 0; color: var(--faint); font-weight: 750; font-size: 12px;
+      letter-spacing: .06em; text-transform: uppercase; }
+    /* Cỡ chữ CO theo khung thay vì cố định 23px. Một giá trị dài hơn dự kiến
+       sẽ nhỏ lại chứ không xuống dòng — xuống dòng là thứ làm lệch nhịp cả
+       hàng, vì ba thẻ kia chỉ có một dòng. */
+    .metric-card strong { display: block; margin: 4px 0 2px;
+      font-size: clamp(19px, 1.5vw, 23px); line-height: 1.15;
+      letter-spacing: -0.02em; text-wrap: balance; }
+    .metric-card small { color: var(--muted); line-height: 1.4; }
+
+    /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
+       khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
+    .sticky-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 0 14px;
+      margin-bottom: 8px;
+      background: linear-gradient(to bottom,
+        color-mix(in srgb, var(--bg) 94%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 94%, transparent) 72%,
+        transparent 100%);
+      backdrop-filter: blur(16px);
+    }
+    .sticky-nav a {
+      white-space: nowrap;
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .sticky-nav a:hover { background: var(--brand-wash); color: var(--brand-ink); border-color: transparent; }
+
+    .section {
+      margin: 18px 0 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 24px 24px 8px;
+    }
+    .eyebrow {
+      color: var(--blue);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: .12em;
+      font-weight: 900;
+    }
+    .section h2 {
+      margin: 6px 0 8px;
+      font-size: clamp(24px, 3.2vw, 40px);
+      line-height: 1.05;
+      letter-spacing: -0.05em;
+    }
+    .section-head p {
+      margin: 0;
+      max-width: 960px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .layout-grid {
+      display: grid;
+      gap: 16px;
+      padding: 16px 20px 22px;
+    }
+    .layout-grid.one { grid-template-columns: 1fr; }
+    .layout-grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .layout-grid.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .layout-grid.four { grid-template-columns: repeat(2, minmax(0,1fr)); }
+
+    .viz-card {
+      min-width: 0;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: var(--surface-strong);
+      border: 1px solid rgba(15,23,42,0.08);
+      box-shadow: 0 14px 36px rgba(15,23,42,0.06);
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .viz-card h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -0.025em;
+    }
+    .viz-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .type-badge.matrix { background: #dbeafe; color: #1d4ed8; }
+    .type-badge.chart { background: #fef3c7; color: #b45309; }
+    .type-badge.table { background: #ede9fe; color: #6d28d9; }
+
+    .matrix-scroll {
+      overflow-x: auto;
+      padding: 4px 2px 8px;
+      scrollbar-width: thin;
+    }
+    /* Ma trận 10x10 phải hiện đủ cả 10 cột đuôi trong một card nửa bề ngang;
+       ngưỡng cũ (54px + 10x50px + min-width 660px) rộng hơn card nên cột
+       ĐUÔI 9 bị đẩy ra ngoài vùng nhìn. */
+    .num-matrix {
+      display: grid;
+      grid-template-columns: 40px repeat(10, minmax(38px, 1fr));
+      gap: 4px;
+      min-width: 464px;
+    }
+    .axis {
+      display: grid;
+      place-items: center;
+      min-height: 32px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+    .row-axis { writing-mode: horizontal-tb; }
+    .corner { background: #e2e8f0; color: #334155; }
+    .matrix-cell {
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .matrix-cell b {
+      font-size: 14px;
+      letter-spacing: .04em;
+    }
+    .matrix-cell span {
+      font-size: 12px;
+      font-weight: 850;
+      opacity: .96;
+    }
+
+    .matrix-cell.is-clickable {
+      cursor: pointer;
+      outline: none;
+      transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+    }
+    .matrix-cell.is-clickable:hover,
+    .matrix-cell.is-clickable:focus {
+      transform: translateY(-2px);
+      filter: saturate(1.12);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.28);
+    }
+    .num-click {
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+    .num-click:hover,
+    .num-click:focus {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(37,99,235,0.18);
+    }
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .legend i {
+      display: block;
+      flex: 1;
+      max-width: 260px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,0.08);
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 9px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(58px, auto) 1fr minmax(60px, auto);
+      align-items: center;
+      gap: 10px;
+    }
+    .bar-track {
+      position: relative;
+      height: 26px;
+      border-radius: 999px;
+      background: #eef2ff;
+      overflow: hidden;
+      border: 1px solid rgba(15,23,42,0.06);
+    }
+    .bar-track i {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 999px;
+    }
+    .bar-row > b {
+      text-align: right;
+      color: #334155;
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+    }
+
+    .num-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      border: 1px solid #bae6fd;
+      font-weight: 900;
+      letter-spacing: .04em;
+      font-variant-numeric: tabular-nums;
+    }
+    .band {
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .band-low { background: #e2e8f0; color: #334155; }
+    .band-medium { background: #dcfce7; color: #166534; }
+    .band-high { background: #fef3c7; color: #92400e; }
+    .band-very-high { background: #fee2e2; color: #991b1b; }
+
+    .table-tools {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 0 10px;
+    }
+    .table-tools input {
+      width: min(320px, 100%);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      outline: none;
+      font: inherit;
+      background: #f8fafc;
+    }
+    .table-tools input:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+      background: white;
+    }
+    .table-tools small { color: var(--muted); }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 560px;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: white;
+      scrollbar-width: thin;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #eef2f7;
+      white-space: nowrap;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    tr:hover td { background: #f8fafc; }
+    .compact table { font-size: 12px; }
+    .compact th, .compact td { padding: 8px 9px; text-align: center; }
+    .compact th:first-child, .compact td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background: inherit;
+      z-index: 1;
+      font-weight: 850;
+      color: #334155;
+    }
+    .compact th:first-child { z-index: 3; background: #f8fafc; }
+
+    .mini-bar {
+      position: relative;
+      min-width: 94px;
+      height: 25px;
+      border-radius: 999px;
+      background: #eff6ff;
+      overflow: hidden;
+      border: 1px solid rgba(37,99,235,0.10);
+    }
+    .mini-bar i {
+      position: absolute;
+      inset: 0 auto 0 0;
+      background: linear-gradient(90deg, #93c5fd, #2563eb);
+      border-radius: 999px;
+    }
+    .mini-bar b {
+      position: relative;
+      z-index: 1;
+      display: block;
+      line-height: 23px;
+      padding-left: 8px;
+      color: #0f172a;
+      font-size: 12px;
+    }
+
+    .empty-state {
+      display: grid;
+      gap: 6px;
+      padding: 18px;
+      border-radius: 18px;
+      /* Vân cũ vẽ #f1f5f9 trên #f8fafc — đo được 1,05:1, tức là không nhìn
+         thấy gì và khối rỗng trông như một mảng trắng bị lỗi. Dùng cùng nền
+         chìm và cùng vân với ô trống của các trang thống kê (1,79:1). */
+      background-color: #E2E8F0;
+      background-image: repeating-linear-gradient(
+        135deg, transparent, transparent 6px,
+        rgba(100, 116, 139, .38) 6px, rgba(100, 116, 139, .38) 9px);
+      border: 1px dashed #94A3B8;
+      color: #334155;
+    }
+    .empty-state strong { color: #0f172a; }
+    .empty-state span { font-size: 13px; line-height: 1.5; }
+
+    .decision-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      padding: 16px 20px 0;
+    }
+    .decision-grid article {
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(15,23,42,0.08);
+      background: white;
+    }
+    .decision-grid b {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .decision-grid span {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+
+    .evidence-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 110;
+      display: none;
+      background: rgba(2,6,23,0.52);
+      backdrop-filter: blur(6px);
+    }
+    .evidence-backdrop.open { display: block; }
+    .evidence-drawer {
+      position: fixed;
+      z-index: 120;
+      top: 0;
+      right: 0;
+      width: min(620px, 100vw);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+      box-shadow: -36px 0 90px rgba(2,6,23,0.35);
+      transform: translateX(104%);
+      transition: transform .22s ease;
+      border-left: 1px solid rgba(15,23,42,0.12);
+    }
+    .evidence-drawer.open { transform: translateX(0); }
+    .evidence-head {
+      padding: 20px 22px 14px;
+      color: white;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255,255,255,0.25), transparent 34%),
+        linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+    }
+    .evidence-head-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .evidence-number {
+      display: inline-grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.24);
+      font-size: 30px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.26);
+    }
+    .evidence-head h2 {
+      margin: 10px 0 6px;
+      font-size: 24px;
+      letter-spacing: -0.035em;
+    }
+    .evidence-head p {
+      margin: 0;
+      color: #e0e7ff;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+    .evidence-close {
+      border: 1px solid rgba(255,255,255,0.24);
+      background: rgba(255,255,255,0.12);
+      color: white;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+    }
+    .evidence-body {
+      overflow: auto;
+      padding: 18px 20px 26px;
+      display: grid;
+      gap: 14px;
+    }
+    .evidence-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: 0 14px 36px rgba(15,23,42,0.06);
+    }
+    .evidence-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+    .evidence-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .evidence-metric {
+      padding: 11px;
+      border-radius: 15px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+    }
+    .evidence-metric span {
+      display: block;
+      color: #55606f;
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .evidence-metric b {
+      display: block;
+      margin-top: 3px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+    .evidence-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #334155;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+    .evidence-table-wrap {
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      max-height: 360px;
+    }
+    .evidence-table {
+      min-width: 720px;
+      font-size: 12px;
+    }
+    .evidence-table th,
+    .evidence-table td {
+      padding: 8px 9px;
+    }
+    .evidence-empty {
+      padding: 14px;
+      border-radius: 14px;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .footer-note {
+      color: #cbd5e1;
+      padding: 10px 0 0;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .footer-note code {
+      color: #e0f2fe;
+      background: rgba(255,255,255,0.10);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 1180px) {
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .layout-grid.two, .layout-grid.three, .layout-grid.four, .decision-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .hero h1 { letter-spacing: -0.045em; }
+      .metric-grid { grid-template-columns: 1fr; }
+      .section-head { padding: 20px 16px 6px; }
+      .layout-grid, .decision-grid { padding-left: 14px; padding-right: 14px; }
+      .viz-card { padding: 14px; border-radius: 20px; }
+      .table-tools { align-items: stretch; flex-direction: column; }
+      .bar-row { grid-template-columns: 52px 1fr 52px; gap: 7px; }
+      .num-pill { min-width: 36px; padding: 4px 7px; }
+      .evidence-metrics { grid-template-columns: 1fr; }
+      .evidence-head { padding: 18px 16px 12px; }
+      .evidence-body { padding: 14px 14px 22px; }
+    }"""
+
+#: 33 dòng văn bản nhúng, trích khỏi f-string của ``main``.
+#:
+#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
+#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
+_DASHBOARD_SCRIPT_MAIN = """\
+      // Cập nhật phần "Tạo lúc" theo đồng hồ hệ thống của máy đang xem.
+      //
+      // MỘT ĐIỀU PHẢI NÓI RÕ: việc này biến "Tạo lúc" từ một dữ kiện nguồn
+      // gốc (trang được dựng lúc nào) thành thời điểm NGƯỜI XEM MỞ TRANG.
+      // Hai thứ đó khác nhau, và trên một bảng thống kê thì nguồn gốc là thứ
+      // có giá trị kiểm chứng. Nên mốc dựng thật vẫn được giữ nguyên trong
+      // thuộc tính `data-built` để còn đối chiếu được, không bị xoá đi.
+      //
+      // Và KHÔNG áp dụng cho "Dữ liệu đến". Ngày đó nói dữ liệu có tới đâu;
+      // cho nó chạy theo đồng hồ máy sẽ là một lời khẳng định SAI về độ mới
+      // của dữ liệu — đúng loại sai lầm mà cả bộ kiểm toán của kho này sinh
+      // ra để chặn. Nó nằm im theo manifest.
+      (function () {
+        var node = document.getElementById("footerBuilt");
+        if (!node) return;
+        node.dataset.built = node.getAttribute("datetime") || "";
+        function tick() {
+          var now = new Date();
+          // Giờ ĐỊA PHƯƠNG kèm độ lệch múi giờ, không phải `toISOString()` —
+          // hàm ấy quy về UTC, nên máy ở Việt Nam sẽ hiện lùi 7 tiếng và đọc
+          // như trang vừa dựng vào đêm qua.
+          var pad = function (n) { return String(n).padStart(2, "0"); };
+          var off = -now.getTimezoneOffset();
+          var sign = off >= 0 ? "+" : "-";
+          var stamp = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate())
+            + "T" + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
+            + sign + pad(Math.floor(Math.abs(off) / 60)) + ":" + pad(Math.abs(off) % 60);
+          node.textContent = stamp;
+          node.setAttribute("datetime", stamp);
+        }
+        tick();
+        setInterval(tick, 1000);
+      })();"""
+
+#: 179 dòng văn bản nhúng, trích khỏi f-string của ``main``.
+#:
+#: Không nội suy biến nào (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên
+#: mọi dấu ngoặc phải viết đôi — cú pháp bị bóp méo chỉ vì chỗ đặt.
+_DASHBOARD_SCRIPT_EVIDENCE = """\
+    function filterTable(input) {
+      const card = input.closest('.table-card');
+      if (!card) return;
+      const query = input.value.trim().toLowerCase();
+      const rows = card.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    const CAU_EVIDENCE = JSON.parse(document.getElementById('cauEvidenceData')?.textContent || '{}');
+
+    function handleEvidenceKey(event, element) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        showNumberEvidence(element);
+      }
+    }
+
+    function valueOrDash(value) {
+      if (value === undefined || value === null || value === '' || value === 'nan' || value === 'NaN') return '—';
+      return String(value);
+    }
+
+    function modeLabel(mode) {
+      return mode === 'de' ? 'Đặc Biệt' : 'loto';
+    }
+
+    function createEvidenceElement(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function metric(label, value) {
+      const node = createEvidenceElement('div', 'evidence-metric');
+      node.append(
+        createEvidenceElement('span', '', label),
+        createEvidenceElement('b', '', valueOrDash(value))
+      );
+      return node;
+    }
+
+    function renderPositionRows(positions) {
+      if (!positions || !positions.length) {
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm điểm AI, tần suất, gan/nhịp và kết quả kiểm định trước khi đánh giá.'
+        );
+      }
+      const headers = ['Loại', 'Trễ', 'Ngày gốc', 'Vị trí A', 'Số A', 'Vị trí B', 'Số B', 'Tỷ lệ', 'Trúng/Mẫu', 'Chuỗi', 'Điểm', 'Căn cứ'];
+      const wrap = createEvidenceElement('div', 'evidence-table-wrap');
+      const table = createEvidenceElement('table', 'evidence-table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      headers.forEach(function(header) {
+        headerRow.appendChild(createEvidenceElement('th', '', header));
+      });
+      thead.appendChild(headerRow);
+      const tbody = document.createElement('tbody');
+      positions.forEach(function(p) {
+        const cells = [
+          p.rule_kind,
+          p.lag_days,
+          p.base_date,
+          p.pos_i_label,
+          p.digit_i,
+          p.pos_j_label,
+          p.digit_j,
+          p.p_mean,
+          valueOrDash(p.hits) + '/' + valueOrDash(p.trials),
+          valueOrDash(p.current_streak) + ' / ' + valueOrDash(p.max_streak),
+          p.rule_score,
+          p.reason
+        ];
+        const row = document.createElement('tr');
+        cells.forEach(function(cell) {
+          row.appendChild(createEvidenceElement('td', '', valueOrDash(cell)));
+        });
+        tbody.appendChild(row);
+      });
+      table.append(thead, tbody);
+      wrap.appendChild(table);
+      return wrap;
+    }
+
+    function renderTopLines(summary) {
+      const lines = [summary.top_position_1, summary.top_position_2, summary.top_position_3].filter(function(x) {
+        return x && String(x).trim() && String(x) !== 'nan' && String(x) !== 'NaN';
+      });
+      if (!lines.length) {
+        return createEvidenceElement(
+          'div',
+          'evidence-empty',
+          'Chưa có vị trí nổi bật đủ ngưỡng; khung này vẫn hiển thị bằng chứng AI/thống kê để đối chiếu.'
+        );
+      }
+      const list = createEvidenceElement('ol', 'evidence-list');
+      lines.forEach(function(line) {
+        list.appendChild(createEvidenceElement('li', '', line));
+      });
+      return list;
+    }
+
+    function evidenceSection(title, content) {
+      const section = createEvidenceElement('section', 'evidence-card');
+      section.append(createEvidenceElement('h3', '', title), content);
+      return section;
+    }
+
+    function evidenceParagraph(label, value) {
+      const paragraph = document.createElement('p');
+      paragraph.style.cssText = 'margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;';
+      paragraph.append(
+        createEvidenceElement('b', '', label + ': '),
+        document.createTextNode(valueOrDash(value))
+      );
+      return paragraph;
+    }
+
+    function showNumberEvidence(element) {
+      const number = element.dataset.number || '--';
+      const mode = element.dataset.mode || 'loto';
+      const sourceTitle = element.dataset.sourceTitle || 'Bảng thống kê';
+      const sourceValue = element.dataset.sourceValue || '';
+      const item = ((CAU_EVIDENCE[mode] || {})[number]) || {};
+      const summary = item.summary || {};
+      const positions = item.positions || [];
+
+      document.getElementById('evidenceNumber').textContent = number;
+      document.getElementById('evidenceTitle').textContent = 'Căn cứ số ' + number + ' · ' + modeLabel(mode);
+      document.getElementById('evidenceSubtitle').textContent = sourceTitle + (sourceValue ? ' · Giá trị đang xem: ' + sourceValue : '');
+
+      const score = summary.ai_cau_score || summary.cau_score;
+      const prob = summary.ai_prob_percent || summary.prob_percent;
+      const evidence = summary.ai_evidence || summary.evidence || '';
+      const metrics = createEvidenceElement('div', 'evidence-metrics');
+      metrics.append(
+        metric('Điểm AI', score),
+        metric('Xác suất hiển thị', prob ? prob + '%' : ''),
+        metric('Số đường cầu', summary.path_lines_count),
+        metric('Đang chạy', summary.active_path_count),
+        metric('Cầu bền', summary.stable_path_count),
+        metric('Chuỗi dài nhất', summary.max_streak)
+      );
+      const aiContent = document.createDocumentFragment();
+      aiContent.append(
+        metrics,
+        evidenceParagraph('Lý do', summary.primary_reason),
+        evidenceParagraph('Bằng chứng', evidence)
+      );
+      const explanation = createEvidenceElement('p', '', valueOrDash(summary.explain_text));
+      explanation.style.cssText = 'margin:0;color:#334155;line-height:1.65;font-size:13px;';
+
+      document.getElementById('evidenceContent').replaceChildren(
+        evidenceSection('AI/ML nhận định', aiContent),
+        evidenceSection('Vị trí tạo số nổi bật', renderTopLines(summary)),
+        evidenceSection('Bảng vị trí đường cầu', renderPositionRows(positions)),
+        evidenceSection('Diễn giải ngắn', explanation)
+      );
+      document.getElementById('evidenceBackdrop').classList.add('open');
+      const drawer = document.getElementById('evidenceDrawer');
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeEvidence() {
+      document.getElementById('evidenceBackdrop').classList.remove('open');
+      const drawer = document.getElementById('evidenceDrawer');
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closeEvidence();
+    });"""
+
+
 def main() -> None:
     root = Path(".")
     data_dir = root / "data"
@@ -1042,779 +2046,7 @@ def main() -> None:
   <title>Bảng điều khiển thống kê XSMB</title>
   {stylesheet_link()}
   <style>
-    :root {{
-      /* Cột nội dung của trang — KHAI BÁO MỘT CHỖ.
-         Trước đây `main` và `.hero` mỗi bên tự viết số của mình: `main` dùng
-         cột có `max-width`, còn hero canh lề bằng `margin`. Hai hệ canh lề
-         khác nhau trên cùng một trang, nên độ lệch ĐỔI DẤU theo bề rộng —
-         đo được:
-
-             vw=1920  hero [  72..1848]  thân [ 240..1680]  hero thò ra 168px/bên
-             vw=1440  hero [  72..1368]  thân [   0..1440]  hero thụt vào  72px/bên
-             vw= 640  hero [  32.. 608]  thân [   0.. 640]  hero thụt vào  32px/bên
-
-         Trang KHÔNG hề cuộn ngang ở bất kỳ mức nào và `box-sizing` vốn đã là
-         `border-box`, nên đây không phải lỗi tràn khung theo nghĩa kỹ thuật;
-         nó là hai hệ toạ độ không nói chuyện với nhau. */
-      --page-max: 1440px;
-      --page-gutter: clamp(16px, 5vw, 72px);
-
-      /* Nền và bề mặt */
-      --bg: #F2F4FF;
-      --bg-2: #E6EAFB;
-      --surface: #ffffff;
-      --surface-strong: #ffffff;
-      --surface-2: #F7F8FE;
-      --text: #161C2D;
-      --muted: #5A6480;
-      --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
-      --line: #E7EAF6;
-      --line-soft: #F0F2FB;
-
-      /* THƯƠNG HIỆU — chỉ dùng cho điều hướng và hành động chính.
-         Không một dấu hiệu mã hoá dữ liệu nào được lấy màu từ đây. */
-      --brand: #4F46E5;
-      --brand-2: #6366F1;
-      --brand-3: #818CF8;
-      --brand-wash: #EEF0FF;
-      --brand-ink: #3730A3;
-
-      /* PHÂN TÍCH — trạng thái, độc lập với thương hiệu. Thang nhiệt nằm
-         trong palettes của _color_from_value, không phải ở đây. */
-      --good: #0ca30c;
-      --warn: #fab219;
-      --crit: #d03b3b;
-
-      --shadow: 0 1px 2px rgba(22,28,45,0.04), 0 8px 26px rgba(22,28,45,0.06);
-      --shadow-brand: 0 10px 30px rgba(79,70,229,0.26);
-      --radius-xl: 24px;
-      --radius-lg: 18px;
-      --radius-md: 12px;
-    }}
-
-    * {{ box-sizing: border-box; }}
-    html {{ scroll-behavior: smooth; }}
-    body {{
-      margin: 0;
-      font-family: var(--ui-font);
-      color: var(--text);
-      background:
-        radial-gradient(circle at 8% -8%, rgba(37,99,235,0.55), transparent 30%),
-        radial-gradient(circle at 90% 6%, rgba(124,58,237,0.42), transparent 28%),
-        radial-gradient(circle at 55% 16%, rgba(249,115,22,0.20), transparent 30%),
-        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
-      background-attachment: fixed;
-      min-height: 100vh;
-    }}
-
-    a {{ color: inherit; }}
-    /* Hero là một DẢI có khung chứ không phải vùng tràn ra nền trang. Nền
-       trang nay sáng, nên chữ trắng chỉ đúng khi nó nằm trên chính dải
-       gradient này. */
-    .hero {{
-      position: relative;
-      /* Khớp ĐÚNG hộp nội dung của `main`, ở mọi bề rộng.
-         `width` lo phần màn hẹp (trừ đi hai lề), `max-width` lo phần màn rộng
-         (dừng lại đúng chỗ cột nội dung dừng), `auto` canh giữa. Cả ba đều
-         tính từ cùng hai biến mà `main` dùng, nên không thể lệch pha nữa. */
-      width: calc(100% - 2 * var(--page-gutter));
-      max-width: calc(var(--page-max) - 2 * var(--page-gutter));
-      margin: 18px auto 0;
-      padding: 34px clamp(20px, 4vw, 44px) 24px;
-      border-radius: var(--radius-xl);
-      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
-      box-shadow: var(--shadow-brand);
-      color: white;
-      overflow: hidden;
-    }}
-    .hero-inner {{
-      max-width: 1280px;
-      margin: 0 auto;
-    }}
-    .hero-kicker {{
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      padding: 8px 12px;
-      border: 1px solid rgba(255,255,255,0.18);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.10);
-      backdrop-filter: blur(14px);
-      color: #dbeafe;
-      font-size: 13px;
-      font-weight: 700;
-    }}
-    .hero h1 {{
-      margin: 14px 0 0;
-      max-width: 820px;
-      font-size: clamp(28px, 3.4vw, 44px);
-      line-height: 1.06;
-      letter-spacing: -0.035em;
-      text-wrap: balance;
-    }}
-    .hero p {{
-      max-width: 74ch;
-      margin: 0;
-      color: rgba(255,255,255,0.86);
-      line-height: 1.65;
-      font-size: clamp(13px, 1.1vw, 14.5px);
-    }}
-    .hero-actions {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
-    }}
-    .hero-actions a {{
-      text-decoration: none;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.22);
-      background: rgba(255,255,255,0.10);
-      color: white;
-      font-weight: 750;
-      transition: transform .15s ease, background .15s ease;
-    }}
-    .hero-actions a:hover {{ transform: translateY(-1px); background: rgba(255,255,255,0.18); }}
-
-    /* Dải liên kết RA NGOÀI trang, tách khỏi các neo trong trang.
-       Trang này từng chỉ có đúng một liên kết nội bộ (research-lab.html): mọi
-       mục điều hướng khác đều là neo #... trong chính nó, nên ai mở thẳng
-       statistics.html thì không có đường sang 14 trang thống kê nào cả. */
-    .site-hop {{
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-      margin-top: 14px; padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.16);
-    }}
-    .site-hop b {{ font-size: 12px; letter-spacing: .04em; color: #bfdbfe; }}
-    .site-hop a {{
-      text-decoration: none; padding: 7px 12px; border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.14);
-      color: white; font-weight: 700; font-size: 13px;
-    }}
-    .site-hop a:hover {{ background: rgba(255,255,255,0.24); }}
-
-    main {{
-      max-width: var(--page-max);
-      margin: 0 auto;
-      /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
-         `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
-         để trang vẫn đúng nếu tệp ấy không tải được. */
-      padding: 0 var(--page-gutter) calc(var(--ui-dock-h, 54px) + 40px);
-    }}
-
-    .metric-grid {{
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      margin: 18px 0 22px;
-    }}
-    .metric-card {{
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      padding: 15px 16px;
-      border-radius: var(--radius-lg);
-      color: var(--text);
-      background: var(--surface);
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow);
-    }}
-    .metric-icon {{
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      border-radius: var(--radius-md);
-      background: var(--brand-wash);
-      color: var(--brand);
-      font-size: 22px;
-      flex: 0 0 auto;
-    }}
-    .metric-card p {{ margin: 0; color: var(--faint); font-weight: 750; font-size: 12px;
-      letter-spacing: .06em; text-transform: uppercase; }}
-    /* Cỡ chữ CO theo khung thay vì cố định 23px. Một giá trị dài hơn dự kiến
-       sẽ nhỏ lại chứ không xuống dòng — xuống dòng là thứ làm lệch nhịp cả
-       hàng, vì ba thẻ kia chỉ có một dòng. */
-    .metric-card strong {{ display: block; margin: 4px 0 2px;
-      font-size: clamp(19px, 1.5vw, 23px); line-height: 1.15;
-      letter-spacing: -0.02em; text-wrap: balance; }}
-    .metric-card small {{ color: var(--muted); line-height: 1.4; }}
-
-    /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
-       khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
-    .sticky-nav {{
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 12px 0 14px;
-      margin-bottom: 8px;
-      background: linear-gradient(to bottom,
-        color-mix(in srgb, var(--bg) 94%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 94%, transparent) 72%,
-        transparent 100%);
-      backdrop-filter: blur(16px);
-    }}
-    .sticky-nav a {{
-      white-space: nowrap;
-      text-decoration: none;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      background: var(--surface);
-      padding: 9px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 760;
-    }}
-
-    .sticky-nav a:hover {{ background: var(--brand-wash); color: var(--brand-ink); border-color: transparent; }}
-
-    .section {{
-      margin: 18px 0 24px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius-xl);
-      background: var(--surface);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }}
-    .section-head {{
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 24px 24px 8px;
-    }}
-    .eyebrow {{
-      color: var(--blue);
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: .12em;
-      font-weight: 900;
-    }}
-    .section h2 {{
-      margin: 6px 0 8px;
-      font-size: clamp(24px, 3.2vw, 40px);
-      line-height: 1.05;
-      letter-spacing: -0.05em;
-    }}
-    .section-head p {{
-      margin: 0;
-      max-width: 960px;
-      color: var(--muted);
-      line-height: 1.65;
-    }}
-
-    .layout-grid {{
-      display: grid;
-      gap: 16px;
-      padding: 16px 20px 22px;
-    }}
-    .layout-grid.one {{ grid-template-columns: 1fr; }}
-    .layout-grid.two {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
-    .layout-grid.three {{ grid-template-columns: repeat(3, minmax(0,1fr)); }}
-    .layout-grid.four {{ grid-template-columns: repeat(2, minmax(0,1fr)); }}
-
-    .viz-card {{
-      min-width: 0;
-      padding: 16px;
-      border-radius: var(--radius-lg);
-      background: var(--surface-strong);
-      border: 1px solid rgba(15,23,42,0.08);
-      box-shadow: 0 14px 36px rgba(15,23,42,0.06);
-    }}
-    .card-head {{
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }}
-    .viz-card h3 {{
-      margin: 0;
-      font-size: 18px;
-      letter-spacing: -0.025em;
-    }}
-    .viz-card p {{
-      margin: 0 0 12px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }}
-    .type-badge {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 72px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }}
-    .type-badge.matrix {{ background: #dbeafe; color: #1d4ed8; }}
-    .type-badge.chart {{ background: #fef3c7; color: #b45309; }}
-    .type-badge.table {{ background: #ede9fe; color: #6d28d9; }}
-
-    .matrix-scroll {{
-      overflow-x: auto;
-      padding: 4px 2px 8px;
-      scrollbar-width: thin;
-    }}
-    /* Ma trận 10x10 phải hiện đủ cả 10 cột đuôi trong một card nửa bề ngang;
-       ngưỡng cũ (54px + 10x50px + min-width 660px) rộng hơn card nên cột
-       ĐUÔI 9 bị đẩy ra ngoài vùng nhìn. */
-    .num-matrix {{
-      display: grid;
-      grid-template-columns: 40px repeat(10, minmax(38px, 1fr));
-      gap: 4px;
-      min-width: 464px;
-    }}
-    .axis {{
-      display: grid;
-      place-items: center;
-      min-height: 32px;
-      border-radius: 12px;
-      background: #f1f5f9;
-      color: #475569;
-      font-size: 11px;
-      font-weight: 850;
-      text-transform: uppercase;
-    }}
-    .row-axis {{ writing-mode: horizontal-tb; }}
-    .corner {{ background: #e2e8f0; color: #334155; }}
-    .matrix-cell {{
-      min-height: 52px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 2px;
-      border-radius: 14px;
-      border: 1px solid rgba(15,23,42,0.08);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
-    }}
-    .matrix-cell b {{
-      font-size: 14px;
-      letter-spacing: .04em;
-    }}
-    .matrix-cell span {{
-      font-size: 12px;
-      font-weight: 850;
-      opacity: .96;
-    }}
-
-    .matrix-cell.is-clickable {{
-      cursor: pointer;
-      outline: none;
-      transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
-    }}
-    .matrix-cell.is-clickable:hover,
-    .matrix-cell.is-clickable:focus {{
-      transform: translateY(-2px);
-      filter: saturate(1.12);
-      box-shadow: 0 12px 28px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.28);
-    }}
-    .num-click {{
-      border: 0;
-      cursor: pointer;
-      font: inherit;
-    }}
-    .num-click:hover,
-    .num-click:focus {{
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(37,99,235,0.18);
-    }}
-    .legend {{
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 750;
-    }}
-    .legend i {{
-      display: block;
-      flex: 1;
-      max-width: 260px;
-      height: 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(15,23,42,0.08);
-    }}
-
-    .bar-list {{
-      display: grid;
-      gap: 9px;
-    }}
-    .bar-row {{
-      display: grid;
-      grid-template-columns: minmax(58px, auto) 1fr minmax(60px, auto);
-      align-items: center;
-      gap: 10px;
-    }}
-    .bar-track {{
-      position: relative;
-      height: 26px;
-      border-radius: 999px;
-      background: #eef2ff;
-      overflow: hidden;
-      border: 1px solid rgba(15,23,42,0.06);
-    }}
-    .bar-track i {{
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      border-radius: 999px;
-    }}
-    .bar-row > b {{
-      text-align: right;
-      color: #334155;
-      font-variant-numeric: tabular-nums;
-      font-size: 13px;
-    }}
-
-    .num-pill {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 42px;
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: #e0f2fe;
-      color: #075985;
-      border: 1px solid #bae6fd;
-      font-weight: 900;
-      letter-spacing: .04em;
-      font-variant-numeric: tabular-nums;
-    }}
-    .band {{
-      padding: 4px 9px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 12px;
-      text-transform: uppercase;
-    }}
-    .band-low {{ background: #e2e8f0; color: #334155; }}
-    .band-medium {{ background: #dcfce7; color: #166534; }}
-    .band-high {{ background: #fef3c7; color: #92400e; }}
-    .band-very-high {{ background: #fee2e2; color: #991b1b; }}
-
-    .table-tools {{
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      justify-content: space-between;
-      margin: 0 0 10px;
-    }}
-    .table-tools input {{
-      width: min(320px, 100%);
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid #cbd5e1;
-      outline: none;
-      font: inherit;
-      background: #f8fafc;
-    }}
-    .table-tools input:focus {{
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
-      background: white;
-    }}
-    .table-tools small {{ color: var(--muted); }}
-
-    .table-wrap {{
-      overflow: auto;
-      max-height: 560px;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      background: white;
-      scrollbar-width: thin;
-    }}
-    table {{
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      font-size: 13px;
-    }}
-    th, td {{
-      padding: 9px 10px;
-      border-bottom: 1px solid #eef2f7;
-      white-space: nowrap;
-      text-align: left;
-      vertical-align: middle;
-    }}
-    th {{
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: #f8fafc;
-      color: #334155;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }}
-    tr:hover td {{ background: #f8fafc; }}
-    .compact table {{ font-size: 12px; }}
-    .compact th, .compact td {{ padding: 8px 9px; text-align: center; }}
-    .compact th:first-child, .compact td:first-child {{
-      text-align: left;
-      position: sticky;
-      left: 0;
-      background: inherit;
-      z-index: 1;
-      font-weight: 850;
-      color: #334155;
-    }}
-    .compact th:first-child {{ z-index: 3; background: #f8fafc; }}
-
-    .mini-bar {{
-      position: relative;
-      min-width: 94px;
-      height: 25px;
-      border-radius: 999px;
-      background: #eff6ff;
-      overflow: hidden;
-      border: 1px solid rgba(37,99,235,0.10);
-    }}
-    .mini-bar i {{
-      position: absolute;
-      inset: 0 auto 0 0;
-      background: linear-gradient(90deg, #93c5fd, #2563eb);
-      border-radius: 999px;
-    }}
-    .mini-bar b {{
-      position: relative;
-      z-index: 1;
-      display: block;
-      line-height: 23px;
-      padding-left: 8px;
-      color: #0f172a;
-      font-size: 12px;
-    }}
-
-    .empty-state {{
-      display: grid;
-      gap: 6px;
-      padding: 18px;
-      border-radius: 18px;
-      /* Vân cũ vẽ #f1f5f9 trên #f8fafc — đo được 1,05:1, tức là không nhìn
-         thấy gì và khối rỗng trông như một mảng trắng bị lỗi. Dùng cùng nền
-         chìm và cùng vân với ô trống của các trang thống kê (1,79:1). */
-      background-color: #E2E8F0;
-      background-image: repeating-linear-gradient(
-        135deg, transparent, transparent 6px,
-        rgba(100, 116, 139, .38) 6px, rgba(100, 116, 139, .38) 9px);
-      border: 1px dashed #94A3B8;
-      color: #334155;
-    }}
-    .empty-state strong {{ color: #0f172a; }}
-    .empty-state span {{ font-size: 13px; line-height: 1.5; }}
-
-    .decision-grid {{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      padding: 16px 20px 0;
-    }}
-    .decision-grid article {{
-      padding: 16px;
-      border-radius: 22px;
-      border: 1px solid rgba(15,23,42,0.08);
-      background: white;
-    }}
-    .decision-grid b {{
-      display: block;
-      font-size: 18px;
-      margin-bottom: 6px;
-      letter-spacing: -0.02em;
-    }}
-    .decision-grid span {{
-      color: var(--muted);
-      line-height: 1.55;
-      font-size: 13px;
-    }}
-
-
-    .evidence-backdrop {{
-      position: fixed;
-      inset: 0;
-      z-index: 110;
-      display: none;
-      background: rgba(2,6,23,0.52);
-      backdrop-filter: blur(6px);
-    }}
-    .evidence-backdrop.open {{ display: block; }}
-    .evidence-drawer {{
-      position: fixed;
-      z-index: 120;
-      top: 0;
-      right: 0;
-      width: min(620px, 100vw);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f8fafc;
-      box-shadow: -36px 0 90px rgba(2,6,23,0.35);
-      transform: translateX(104%);
-      transition: transform .22s ease;
-      border-left: 1px solid rgba(15,23,42,0.12);
-    }}
-    .evidence-drawer.open {{ transform: translateX(0); }}
-    .evidence-head {{
-      padding: 20px 22px 14px;
-      color: white;
-      background:
-        radial-gradient(circle at 10% 0%, rgba(255,255,255,0.25), transparent 34%),
-        linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
-    }}
-    .evidence-head-row {{
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }}
-    .evidence-number {{
-      display: inline-grid;
-      place-items: center;
-      width: 74px;
-      height: 74px;
-      border-radius: 24px;
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.24);
-      font-size: 30px;
-      font-weight: 950;
-      letter-spacing: .04em;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.26);
-    }}
-    .evidence-head h2 {{
-      margin: 10px 0 6px;
-      font-size: 24px;
-      letter-spacing: -0.035em;
-    }}
-    .evidence-head p {{
-      margin: 0;
-      color: #e0e7ff;
-      line-height: 1.55;
-      font-size: 13px;
-    }}
-    .evidence-close {{
-      border: 1px solid rgba(255,255,255,0.24);
-      background: rgba(255,255,255,0.12);
-      color: white;
-      width: 38px;
-      height: 38px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 22px;
-      line-height: 1;
-    }}
-    .evidence-body {{
-      overflow: auto;
-      padding: 18px 20px 26px;
-      display: grid;
-      gap: 14px;
-    }}
-    .evidence-card {{
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      padding: 15px;
-      box-shadow: 0 14px 36px rgba(15,23,42,0.06);
-    }}
-    .evidence-card h3 {{
-      margin: 0 0 10px;
-      font-size: 16px;
-      letter-spacing: -0.02em;
-    }}
-    .evidence-metrics {{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }}
-    .evidence-metric {{
-      padding: 11px;
-      border-radius: 15px;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-    }}
-    .evidence-metric span {{
-      display: block;
-      color: #55606f;
-      font-size: 11px;
-      font-weight: 850;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }}
-    .evidence-metric b {{
-      display: block;
-      margin-top: 3px;
-      font-size: 16px;
-      color: #0f172a;
-    }}
-    .evidence-list {{
-      margin: 0;
-      padding-left: 18px;
-      color: #334155;
-      line-height: 1.55;
-      font-size: 13px;
-    }}
-    .evidence-table-wrap {{
-      overflow: auto;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      max-height: 360px;
-    }}
-    .evidence-table {{
-      min-width: 720px;
-      font-size: 12px;
-    }}
-    .evidence-table th,
-    .evidence-table td {{
-      padding: 8px 9px;
-    }}
-    .evidence-empty {{
-      padding: 14px;
-      border-radius: 14px;
-      background: #fff7ed;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
-      font-size: 13px;
-      line-height: 1.55;
-    }}
-
-    .footer-note {{
-      color: #cbd5e1;
-      padding: 10px 0 0;
-      font-size: 13px;
-      line-height: 1.6;
-    }}
-    .footer-note code {{
-      color: #e0f2fe;
-      background: rgba(255,255,255,0.10);
-      padding: 2px 6px;
-      border-radius: 8px;
-    }}
-
-    @media (max-width: 1180px) {{
-      .metric-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-      .layout-grid.two, .layout-grid.three, .layout-grid.four, .decision-grid {{ grid-template-columns: 1fr; }}
-    }}
-    @media (max-width: 680px) {{
-      .hero h1 {{ letter-spacing: -0.045em; }}
-      .metric-grid {{ grid-template-columns: 1fr; }}
-      .section-head {{ padding: 20px 16px 6px; }}
-      .layout-grid, .decision-grid {{ padding-left: 14px; padding-right: 14px; }}
-      .viz-card {{ padding: 14px; border-radius: 20px; }}
-      .table-tools {{ align-items: stretch; flex-direction: column; }}
-      .bar-row {{ grid-template-columns: 52px 1fr 52px; gap: 7px; }}
-      .num-pill {{ min-width: 36px; padding: 4px 7px; }}
-      .evidence-metrics {{ grid-template-columns: 1fr; }}
-      .evidence-head {{ padding: 18px 16px 12px; }}
-      .evidence-body {{ padding: 14px 14px 22px; }}
-    }}
+{_DASHBOARD_CSS}
   </style>
 </head>
 <body>
@@ -1867,39 +2099,7 @@ def main() -> None:
       · Dữ liệu đến: <time datetime="{html.escape(str(as_of or ""))}">{html.escape(str(as_of or "Không có"))}</time>
     </p>
     <script>
-      // Cập nhật phần "Tạo lúc" theo đồng hồ hệ thống của máy đang xem.
-      //
-      // MỘT ĐIỀU PHẢI NÓI RÕ: việc này biến "Tạo lúc" từ một dữ kiện nguồn
-      // gốc (trang được dựng lúc nào) thành thời điểm NGƯỜI XEM MỞ TRANG.
-      // Hai thứ đó khác nhau, và trên một bảng thống kê thì nguồn gốc là thứ
-      // có giá trị kiểm chứng. Nên mốc dựng thật vẫn được giữ nguyên trong
-      // thuộc tính `data-built` để còn đối chiếu được, không bị xoá đi.
-      //
-      // Và KHÔNG áp dụng cho "Dữ liệu đến". Ngày đó nói dữ liệu có tới đâu;
-      // cho nó chạy theo đồng hồ máy sẽ là một lời khẳng định SAI về độ mới
-      // của dữ liệu — đúng loại sai lầm mà cả bộ kiểm toán của kho này sinh
-      // ra để chặn. Nó nằm im theo manifest.
-      (function () {{
-        var node = document.getElementById("footerBuilt");
-        if (!node) return;
-        node.dataset.built = node.getAttribute("datetime") || "";
-        function tick() {{
-          var now = new Date();
-          // Giờ ĐỊA PHƯƠNG kèm độ lệch múi giờ, không phải `toISOString()` —
-          // hàm ấy quy về UTC, nên máy ở Việt Nam sẽ hiện lùi 7 tiếng và đọc
-          // như trang vừa dựng vào đêm qua.
-          var pad = function (n) {{ return String(n).padStart(2, "0"); }};
-          var off = -now.getTimezoneOffset();
-          var sign = off >= 0 ? "+" : "-";
-          var stamp = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate())
-            + "T" + pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds())
-            + sign + pad(Math.floor(Math.abs(off) / 60)) + ":" + pad(Math.abs(off) % 60);
-          node.textContent = stamp;
-          node.setAttribute("datetime", stamp);
-        }}
-        tick();
-        setInterval(tick, 1000);
-      }})();
+{_DASHBOARD_SCRIPT_MAIN}
     </script>
   </main>
 
@@ -1920,185 +2120,7 @@ def main() -> None:
 
   <script id="cauEvidenceData" type="application/json">{evidence_json}</script>
   <script>
-    function filterTable(input) {{
-      const card = input.closest('.table-card');
-      if (!card) return;
-      const query = input.value.trim().toLowerCase();
-      const rows = card.querySelectorAll('tbody tr');
-      rows.forEach(row => {{
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-      }});
-    }}
-
-    const CAU_EVIDENCE = JSON.parse(document.getElementById('cauEvidenceData')?.textContent || '{{}}');
-
-    function handleEvidenceKey(event, element) {{
-      if (event.key === 'Enter' || event.key === ' ') {{
-        event.preventDefault();
-        showNumberEvidence(element);
-      }}
-    }}
-
-    function valueOrDash(value) {{
-      if (value === undefined || value === null || value === '' || value === 'nan' || value === 'NaN') return '—';
-      return String(value);
-    }}
-
-    function modeLabel(mode) {{
-      return mode === 'de' ? 'Đặc Biệt' : 'loto';
-    }}
-
-    function createEvidenceElement(tag, className, text) {{
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;
-      return node;
-    }}
-
-    function metric(label, value) {{
-      const node = createEvidenceElement('div', 'evidence-metric');
-      node.append(
-        createEvidenceElement('span', '', label),
-        createEvidenceElement('b', '', valueOrDash(value))
-      );
-      return node;
-    }}
-
-    function renderPositionRows(positions) {{
-      if (!positions || !positions.length) {{
-        return createEvidenceElement(
-          'div',
-          'evidence-empty',
-          'Chưa có đường cầu vị trí đạt ngưỡng cho số này. Hãy xem thêm điểm AI, tần suất, gan/nhịp và kết quả kiểm định trước khi đánh giá.'
-        );
-      }}
-      const headers = ['Loại', 'Trễ', 'Ngày gốc', 'Vị trí A', 'Số A', 'Vị trí B', 'Số B', 'Tỷ lệ', 'Trúng/Mẫu', 'Chuỗi', 'Điểm', 'Căn cứ'];
-      const wrap = createEvidenceElement('div', 'evidence-table-wrap');
-      const table = createEvidenceElement('table', 'evidence-table');
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      headers.forEach(function(header) {{
-        headerRow.appendChild(createEvidenceElement('th', '', header));
-      }});
-      thead.appendChild(headerRow);
-      const tbody = document.createElement('tbody');
-      positions.forEach(function(p) {{
-        const cells = [
-          p.rule_kind,
-          p.lag_days,
-          p.base_date,
-          p.pos_i_label,
-          p.digit_i,
-          p.pos_j_label,
-          p.digit_j,
-          p.p_mean,
-          valueOrDash(p.hits) + '/' + valueOrDash(p.trials),
-          valueOrDash(p.current_streak) + ' / ' + valueOrDash(p.max_streak),
-          p.rule_score,
-          p.reason
-        ];
-        const row = document.createElement('tr');
-        cells.forEach(function(cell) {{
-          row.appendChild(createEvidenceElement('td', '', valueOrDash(cell)));
-        }});
-        tbody.appendChild(row);
-      }});
-      table.append(thead, tbody);
-      wrap.appendChild(table);
-      return wrap;
-    }}
-
-    function renderTopLines(summary) {{
-      const lines = [summary.top_position_1, summary.top_position_2, summary.top_position_3].filter(function(x) {{
-        return x && String(x).trim() && String(x) !== 'nan' && String(x) !== 'NaN';
-      }});
-      if (!lines.length) {{
-        return createEvidenceElement(
-          'div',
-          'evidence-empty',
-          'Chưa có vị trí nổi bật đủ ngưỡng; khung này vẫn hiển thị bằng chứng AI/thống kê để đối chiếu.'
-        );
-      }}
-      const list = createEvidenceElement('ol', 'evidence-list');
-      lines.forEach(function(line) {{
-        list.appendChild(createEvidenceElement('li', '', line));
-      }});
-      return list;
-    }}
-
-    function evidenceSection(title, content) {{
-      const section = createEvidenceElement('section', 'evidence-card');
-      section.append(createEvidenceElement('h3', '', title), content);
-      return section;
-    }}
-
-    function evidenceParagraph(label, value) {{
-      const paragraph = document.createElement('p');
-      paragraph.style.cssText = 'margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;';
-      paragraph.append(
-        createEvidenceElement('b', '', label + ': '),
-        document.createTextNode(valueOrDash(value))
-      );
-      return paragraph;
-    }}
-
-    function showNumberEvidence(element) {{
-      const number = element.dataset.number || '--';
-      const mode = element.dataset.mode || 'loto';
-      const sourceTitle = element.dataset.sourceTitle || 'Bảng thống kê';
-      const sourceValue = element.dataset.sourceValue || '';
-      const item = ((CAU_EVIDENCE[mode] || {{}})[number]) || {{}};
-      const summary = item.summary || {{}};
-      const positions = item.positions || [];
-
-      document.getElementById('evidenceNumber').textContent = number;
-      document.getElementById('evidenceTitle').textContent = 'Căn cứ số ' + number + ' · ' + modeLabel(mode);
-      document.getElementById('evidenceSubtitle').textContent = sourceTitle + (sourceValue ? ' · Giá trị đang xem: ' + sourceValue : '');
-
-      const score = summary.ai_cau_score || summary.cau_score;
-      const prob = summary.ai_prob_percent || summary.prob_percent;
-      const evidence = summary.ai_evidence || summary.evidence || '';
-      const metrics = createEvidenceElement('div', 'evidence-metrics');
-      metrics.append(
-        metric('Điểm AI', score),
-        metric('Xác suất hiển thị', prob ? prob + '%' : ''),
-        metric('Số đường cầu', summary.path_lines_count),
-        metric('Đang chạy', summary.active_path_count),
-        metric('Cầu bền', summary.stable_path_count),
-        metric('Chuỗi dài nhất', summary.max_streak)
-      );
-      const aiContent = document.createDocumentFragment();
-      aiContent.append(
-        metrics,
-        evidenceParagraph('Lý do', summary.primary_reason),
-        evidenceParagraph('Bằng chứng', evidence)
-      );
-      const explanation = createEvidenceElement('p', '', valueOrDash(summary.explain_text));
-      explanation.style.cssText = 'margin:0;color:#334155;line-height:1.65;font-size:13px;';
-
-      document.getElementById('evidenceContent').replaceChildren(
-        evidenceSection('AI/ML nhận định', aiContent),
-        evidenceSection('Vị trí tạo số nổi bật', renderTopLines(summary)),
-        evidenceSection('Bảng vị trí đường cầu', renderPositionRows(positions)),
-        evidenceSection('Diễn giải ngắn', explanation)
-      );
-      document.getElementById('evidenceBackdrop').classList.add('open');
-      const drawer = document.getElementById('evidenceDrawer');
-      drawer.classList.add('open');
-      drawer.setAttribute('aria-hidden', 'false');
-    }}
-
-    function closeEvidence() {{
-      document.getElementById('evidenceBackdrop').classList.remove('open');
-      const drawer = document.getElementById('evidenceDrawer');
-      drawer.classList.remove('open');
-      drawer.setAttribute('aria-hidden', 'true');
-    }}
-
-    document.addEventListener('keydown', function(event) {{
-      if (event.key === 'Escape') closeEvidence();
-    }});
+{_DASHBOARD_SCRIPT_EVIDENCE}
   </script>
 {dock("statistics.html")}
 </body>

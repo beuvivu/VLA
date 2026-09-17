@@ -93,6 +93,28 @@ BUILDER = (Path(__file__).resolve().parents[1] / "src" / "build_statistics_dashb
 #: tệp" — mà chú thích của chính bản sửa lại NHẮC TỚI chuỗi cũ để giải thích vì
 #: sao nó bị bỏ. Không cắt chú thích thì phép kiểm khớp vào lời giải thích và
 #: xanh vĩnh viễn.
+import build_statistics_dashboard as bsd
+
+#: Biểu định kiểu đã trích khỏi f-string: quy tắc CSS ở đây mang cú pháp CSS
+#: THẬT (một lớp ngoặc), nên phép kiểm không còn phụ thuộc chỗ đặt khối.
+DASHBOARD_CSS = bsd._DASHBOARD_CSS
+
+
+def _without_comments(code: str) -> str:
+    """Bỏ chú thích trước khi quét, đúng như ``BUILDER_CODE`` vẫn làm.
+
+    Phép kiểm ở đây đòi những chuỗi KHÔNG được xuất hiện ("as_of",
+    "Dữ liệu đến"). Một chú thích nhắc tới chúng là hợp lệ — chính khối JS này
+    có một chú thích giải thích vì sao mốc dựng thật được giữ lại — nên quét cả
+    chú thích sẽ báo lỗi cho một đoạn mã đúng.
+    """
+    return "\n".join(
+        line for line in code.splitlines() if not line.lstrip().startswith("//")
+    )
+
+
+DASHBOARD_SCRIPT_MAIN = _without_comments(bsd._DASHBOARD_SCRIPT_MAIN)
+
 BUILDER_CODE = re.sub(r"/\*.*?\*/", "", re.sub(r"^\s*#.*$", "", BUILDER, flags=re.M), flags=re.S)
 BUILDER_CODE = "\n".join(
     line for line in BUILDER_CODE.splitlines() if not line.lstrip().startswith("//")
@@ -108,9 +130,14 @@ def test_the_banner_uses_the_same_content_column_as_the_page_body() -> None:
     bất kỳ mức nào, nên đây không phải lỗi tràn khung; nó là hai hệ toạ độ
     không nói chuyện với nhau.
     """
-    assert "--page-max:" in BUILDER_CODE and "--page-gutter:" in BUILDER_CODE
-    hero = re.search(r"\.hero \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
-    main = re.search(r"\n    main \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    # Đòi quy tắc CSS, không đòi cách nó được MÃ HOÁ. Bản trước regex nguồn
+    # builder tìm ".hero {{...}}" với dấu ngoặc viết đôi — đúng chỉ khi khối CSS
+    # còn nằm trong f-string của `main`. Sau khi CSS được trích ra hằng số
+    # `_DASHBOARD_CSS`, dấu ngoặc trở lại đơn và phép kiểm đỏ oan dù quy tắc vẫn
+    # nằm nguyên trong trang dựng ra.
+    assert "--page-max:" in DASHBOARD_CSS and "--page-gutter:" in DASHBOARD_CSS
+    hero = re.search(r"\.hero \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
+    main = re.search(r"\n\s*main \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
     assert hero is not None and main is not None
     for block, name in ((hero.group(1), "hero"), (main.group(1), "main")):
         assert "var(--page-max)" in block, f"{name} phải dùng biến chung"
@@ -159,7 +186,7 @@ def test_the_metric_row_keeps_one_single_surface_treatment() -> None:
 
 def test_a_long_metric_value_shrinks_instead_of_wrapping() -> None:
     """Xuống dòng làm lệch nhịp hàng; co chữ thì không."""
-    rule = re.search(r"\.metric-card strong \{\{(.*?)\}\}", BUILDER_CODE, flags=re.S)
+    rule = re.search(r"\.metric-card strong \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
     assert rule is not None
     assert "clamp(" in rule.group(1), rule.group(1)
     assert "font-size: 23px" not in rule.group(1), rule.group(1)
@@ -181,8 +208,12 @@ def test_the_footer_clock_never_rewrites_the_data_date() -> None:
     không hề có thêm kỳ nào. Đó đúng là loại sai lầm mà cả bộ kiểm toán của
     kho này sinh ra để chặn.
     """
-    script = BUILDER_CODE[BUILDER_CODE.index('var node = document.getElementById("footerBuilt")'):]
-    script = script[: script.index("</script>")]
+    # Đọc thẳng khối JS của đồng hồ chân trang. Bản trước cắt nguồn builder từ
+    # dòng getElementById("footerBuilt") tới "</script>"; sau khi JS được trích
+    # ra hằng số, thẻ đóng không còn trong cùng chuỗi nên phép cắt tràn sang
+    # khối JS thứ hai (_DASHBOARD_SCRIPT_EVIDENCE, có 9 lần getElementById) và
+    # phép đếm "chỉ MỘT phần tử bị ghi đè" đỏ oan.
+    script = DASHBOARD_SCRIPT_MAIN
     assert "footerBuilt" in script
     # Chỉ MỘT phần tử được ghi đè, và nó là phần tử "Tạo lúc".
     assert len(re.findall(r"getElementById\(", script)) == 1, script

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""CSS và JavaScript của trang tổng hợp phải là HẰNG SỐ, không nằm trong f-string.
+"""CSS và JavaScript của các trang dựng phải là HẰNG SỐ, không nằm trong f-string.
 
 ``_render_html`` từng dài 1 795 dòng — 65% cả tệp trong một hàm — và 1 370
 dòng trong đó là CSS (1 250) cùng JavaScript (120) nhúng thẳng vào f-string.
@@ -21,25 +21,36 @@ from pathlib import Path
 import pytest
 
 import build_landing_page as blp
+import build_statistics_dashboard as bsd
 
 SOURCE = Path(blp.__file__).read_text(encoding="utf-8")
 DOUBLED_BRACE = re.compile(r"\{\{|\}\}")
 
 
-def _function_length(name: str) -> int:
-    tree = ast.parse(SOURCE)
+def _function_length(name: str, source: str | None = None) -> int:
+    tree = ast.parse(source if source is not None else SOURCE)
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef) and node.name == name:
             return node.end_lineno - node.lineno + 1
     raise AssertionError(f"không tìm thấy hàm {name}")
 
 
+BLOCKS = [
+    (blp, "_LANDING_CSS", 800, ":root"),
+    (blp, "_LANDING_SCRIPT", 60, "function"),
+    (bsd, "_DASHBOARD_CSS", 500, "{"),
+    (bsd, "_DASHBOARD_SCRIPT_MAIN", 20, "function"),
+    (bsd, "_DASHBOARD_SCRIPT_EVIDENCE", 120, "function"),
+]
+
+
 @pytest.mark.parametrize(
-    ("name", "minimum_lines", "marker"),
-    [("_LANDING_CSS", 800, ":root"), ("_LANDING_SCRIPT", 60, "function")],
+    ("module", "name", "minimum_lines", "marker"),
+    BLOCKS,
+    ids=[f"{m.__name__.split('_')[-1]}:{n}" for m, n, _, _ in BLOCKS],
 )
-def test_the_block_lives_in_a_module_constant(name, minimum_lines, marker) -> None:
-    block = getattr(blp, name, None)
+def test_the_block_lives_in_a_module_constant(module, name, minimum_lines, marker) -> None:
+    block = getattr(module, name, None)
     assert isinstance(block, str), f"{name} phải là hằng số chuỗi cấp module"
     assert len(block.splitlines()) >= minimum_lines, (
         f"{name} chỉ còn {len(block.splitlines())} dòng — khối có vẻ đã bị gộp "
@@ -48,14 +59,18 @@ def test_the_block_lives_in_a_module_constant(name, minimum_lines, marker) -> No
     assert marker in block, f"{name} không mang dấu hiệu nội dung mong đợi"
 
 
-@pytest.mark.parametrize("name", ["_LANDING_CSS", "_LANDING_SCRIPT"])
-def test_the_extracted_block_has_no_doubled_braces(name) -> None:
+@pytest.mark.parametrize(
+    ("module", "name"),
+    [(m, n) for m, n, _, _ in BLOCKS],
+    ids=[f"{m.__name__.split('_')[-1]}:{n}" for m, n, _, _ in BLOCKS],
+)
+def test_the_extracted_block_has_no_doubled_braces(module, name) -> None:
     """Đây là LỢI ÍCH THẬT của việc trích: cú pháp trở lại đúng.
 
     Còn dấu ngoặc đôi nghĩa là khối vẫn đang được viết cho f-string, tức việc
     trích chưa đi tới đâu.
     """
-    block = getattr(blp, name)
+    block = getattr(module, name)
     doubled = DOUBLED_BRACE.findall(block)
     assert not doubled, (
         f"{name} còn {len(doubled)} dấu ngoặc viết đôi — khối vẫn mang cú pháp "
@@ -63,12 +78,20 @@ def test_the_extracted_block_has_no_doubled_braces(name) -> None:
     )
 
 
-def test_the_render_function_is_no_longer_the_whole_file() -> None:
-    """Ngưỡng 700 nằm giữa 1 795 (trước) và 429 (sau), nên nó phân biệt được."""
-    length = _function_length("_render_html")
-    assert length < 700, (
-        f"_render_html dài {length} dòng; CSS hoặc JavaScript có vẻ đã bị nhúng "
-        "trở lại vào thân hàm"
+@pytest.mark.parametrize(
+    ("module", "function", "was", "ceiling"),
+    [(blp, "_render_html", 1795, 700), (bsd, "main", 1441, 700)],
+    ids=["landing:_render_html", "dashboard:main"],
+)
+def test_the_render_function_is_no_longer_the_whole_file(
+    module, function, was, ceiling
+) -> None:
+    """Ngưỡng 700 nằm giữa số dòng TRƯỚC và SAU, nên nó phân biệt được hai bên."""
+    source = Path(module.__file__).read_text(encoding="utf-8")
+    length = _function_length(function, source)
+    assert length < ceiling, (
+        f"{function} dài {length} dòng (trước khi trích: {was}); CSS hoặc "
+        "JavaScript có vẻ đã bị nhúng trở lại vào thân hàm"
     )
 
 

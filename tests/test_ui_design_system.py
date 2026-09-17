@@ -229,10 +229,12 @@ def test_statistics_matrix_fits_ten_tail_columns_in_a_half_width_card() -> None:
 
 def test_statistics_section_nav_wraps_instead_of_hiding_links() -> None:
     """Cuộn ngang khiến các mục nav cuối bị ẩn khỏi tầm nhìn."""
-    source = (ROOT / "src/build_statistics_dashboard.py").read_text(
-        encoding="utf-8"
-    )
-    nav = source[source.index(".sticky-nav {{") : source.index(".sticky-nav a {{")]
+    # Cùng lý do như test_landing_grid_items_...: đòi quy tắc, không đòi cách
+    # mã hoá. Dấu ngoặc viết đôi chỉ đúng khi CSS còn nằm trong f-string.
+    import build_statistics_dashboard as bsd
+
+    source = bsd._DASHBOARD_CSS
+    nav = source[source.index(".sticky-nav {") : source.index(".sticky-nav a {")]
     assert "flex-wrap: wrap;" in nav
     assert "overflow-x: auto;" not in nav
 
