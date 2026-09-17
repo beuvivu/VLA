@@ -91,6 +91,74 @@ def test_temporal_partitions_reject_same_date_crossing_boundaries() -> None:
         )
 
 
+def test_temporal_partitions_reject_training_after_calibration() -> None:
+    """Train phải đi TRƯỚC calibration, không chỉ là không trùng ngày.
+
+    Phép kiểm này bổ sung một chỗ hở thật: xoá hẳn hai dòng canh thứ tự thời
+    gian trong ``assert_temporal_partitions`` mà bộ kiểm vẫn xanh trọn vẹn.
+    Đột biến đã chứng minh điều đó, và đây đúng là nơi một lỗi rò rỉ
+    train/test sẽ ẩn mình — các phân vùng không trùng ngày nào nhưng vẫn
+    xen kẽ nhau về thời gian.
+    """
+    # Calibration phải có ÍT NHẤT HAI ngày, và bao quanh đuôi của train:
+    #
+    #     train        05, 06        max = 06
+    #     calibration  02, 09        min = 02   max = 09
+    #
+    # Với một ngày calibration duy nhất thì min trùng max, nên đột biến đổi
+    # `calibration_values.min()` thành `.max()` không thể bị phát hiện — đã
+    # kiểm và nó lọt qua. Dàn như trên thì bản đúng đỏ (06 >= 02) còn bản đột
+    # biến im lặng (06 < 09).
+    dates = np.array([
+        "2026-01-05", "2026-01-06", "2026-01-02", "2026-01-09", "2026-01-20",
+    ])
+    with pytest.raises(ValueError, match="training dates must precede calibration"):
+        assert_temporal_partitions(
+            dates,
+            [True, True, False, False, False],
+            [False, False, True, True, False],
+            [False, False, False, False, True],
+        )
+
+
+def test_temporal_partitions_reject_calibration_after_test() -> None:
+    """Calibration phải đi TRƯỚC test, cùng lý do như trên."""
+    dates = np.array(["2026-01-01", "2026-01-02", "2026-01-09", "2026-01-05"])
+    with pytest.raises(ValueError, match="calibration dates must precede test"):
+        assert_temporal_partitions(
+            dates,
+            [True, True, False, False],
+            [False, False, True, False],
+            [False, False, False, True],
+        )
+
+
+def test_temporal_partitions_accept_a_correctly_ordered_split() -> None:
+    """Chốt chặn ngược: phép canh không được chặn cả phân vùng ĐÚNG."""
+    dates = np.array(["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"])
+    assert_temporal_partitions(
+        dates,
+        [True, True, False, False],
+        [False, False, True, False],
+        [False, False, False, True],
+    )
+
+
+def test_temporal_partitions_ignore_the_clock_within_a_day() -> None:
+    """Chuẩn hoá về ngày phải giữ: hai mốc cùng ngày khác giờ vẫn là TRÙNG."""
+    dates = np.array([
+        "2026-01-01 09:00", "2026-01-02 08:00",
+        "2026-01-02 19:30", "2026-01-03 06:00",
+    ])
+    with pytest.raises(ValueError, match="same draw date"):
+        assert_temporal_partitions(
+            dates,
+            [True, True, False, False],
+            [False, False, True, False],
+            [False, False, False, True],
+        )
+
+
 def test_rejected_feature_cannot_affect_allowlisted_inference() -> None:
     class FirstColumnModel:
         def predict_proba(self, values: np.ndarray) -> np.ndarray:

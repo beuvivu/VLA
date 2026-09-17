@@ -199,16 +199,25 @@ def assert_temporal_partitions(
     if np.sum(np.column_stack(masks), axis=1).max() > 1:
         raise ValueError("a row belongs to more than one temporal partition")
 
-    train_dates, calibration_dates, test_dates = [set(d[mask]) for mask in masks]
-    if (
-        train_dates & calibration_dates
-        or train_dates & test_dates
-        or calibration_dates & test_dates
-    ):
+    # So sánh trên int64 nano-giây, KHÔNG dựng set của Timestamp.
+    #
+    # `set(d[mask])` duyệt DatetimeIndex từng phần tử và bọc mỗi mốc thành một
+    # `pd.Timestamp`. Profile cau_keo_domain_challenger: 6 812 834 lượt
+    # `DatetimeIndex.__iter__` (8,7s) cộng 1 464 780 lượt `_box_func` (2,5s),
+    # và chính listcomp này chiếm 10,8 trong 75,9 giây. Ba phép kiểm dưới đây
+    # đều là phép giao và so min/max — làm được trọn bằng vector.
+    stamps = d.to_numpy(dtype="datetime64[ns]").astype("int64")
+    train_values, calibration_values, test_values = (stamps[mask] for mask in masks)
+    overlaps = (
+        np.intersect1d(train_values, calibration_values).size
+        or np.intersect1d(train_values, test_values).size
+        or np.intersect1d(calibration_values, test_values).size
+    )
+    if overlaps:
         raise ValueError("the same draw date cannot cross temporal partitions")
-    if max(train_dates) >= min(calibration_dates):
+    if train_values.max() >= calibration_values.min():
         raise ValueError("training dates must precede calibration dates")
-    if max(calibration_dates) >= min(test_dates):
+    if calibration_values.max() >= test_values.min():
         raise ValueError("calibration dates must precede test dates")
 
 
