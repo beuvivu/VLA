@@ -30,6 +30,8 @@ from ui_theme import (
     tailwind_style_tag,
 )
 
+import build_landing_page as blp
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -238,7 +240,12 @@ def test_statistics_section_nav_wraps_instead_of_hiding_links() -> None:
 def test_landing_grid_items_can_shrink_below_their_content_width() -> None:
     """Grid item mặc định min-width:auto làm ma trận 430px đẩy tràn trang."""
     source = (ROOT / "src/build_landing_page.py").read_text(encoding="utf-8")
-    assert ".result-combo > * {{ min-width: 0; }}" in source
+    # Đòi đúng quy tắc CSS, không đòi cách nó được MÃ HOÁ. Bản trước ghim chuỗi
+    # ".result-combo > * {{ min-width: 0; }}" với dấu ngoặc viết đôi — đúng chỉ
+    # khi khối CSS còn nằm trong f-string. Khi CSS được trích ra hằng số
+    # _LANDING_CSS thì dấu ngoặc trở lại đơn và phép kiểm đỏ oan, dù quy tắc
+    # vẫn nằm nguyên trong trang dựng ra.
+    assert ".result-combo > * { min-width: 0; }" in blp._LANDING_CSS
     # Ma trận ngày phải nằm trong khung cuộn riêng.
     assert "<div class='matrix-wrap'><div class='tiny-matrix'>" in source
     # Ngưỡng cột cũ vượt bề rộng khả dụng của .main sau khi trừ sidebar.

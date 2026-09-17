@@ -824,6 +824,1395 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     return "<div class='three-col'>" + "".join(cards) + "</div>"
 
 
+#: Biểu định kiểu của trang tổng hợp.
+#:
+#: Trước đây 1 250 dòng CSS này nằm TRONG f-string của ``_render_html``,
+#: chiếm 76% một hàm dài 1 795 dòng. Nằm trong f-string nghĩa là mọi dấu
+#: ngoặc CSS phải viết đôi (``{{``/``}}``) — cú pháp CSS bị bóp méo chỉ vì
+#: chỗ đặt, và mỗi lần sửa một quy tắc là một lần phải nhớ nhân đôi.
+#:
+#: Khối này KHÔNG nội suy biến nào (đã kiểm: 0 chỗ), nên nó là văn bản
+#: thuần và thuộc về một hằng số, không thuộc về thân hàm.
+_LANDING_CSS = """\
+    :root {
+      --bg: #F2F4FF;
+      --bg-2: #E6EAFB;
+      --panel: #ffffff;
+      --panel-soft: #F7F8FE;
+      --ink: #161C2D;
+      --muted: #5A6480;
+      --line: #E7EAF6;
+      /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
+         màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
+         với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
+      --brand: #4F46E5;
+      --blue: #2563eb;
+      --sky: #0891b2;
+      --green: #059669;
+      --orange: #ea580c;
+      --purple: #7c3aed;
+      --rose: #e11d48;
+      --shadow: 0 1px 2px rgba(22, 28, 45, .04), 0 8px 26px rgba(22, 28, 45, .06);
+      --shadow-lg: 0 4px 8px rgba(22, 28, 45, .06), 0 22px 60px rgba(22, 28, 45, .13);
+      --shadow-brand: 0 10px 30px rgba(79, 70, 229, .26);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 620px at 10% -8%, rgba(129,140,248,.20), transparent 60%),
+        radial-gradient(900px 520px at 92% 2%, rgba(99,102,241,.15), transparent 62%),
+        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: var(--ui-font);
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    /* Trang này CỐ Ý giữ một bảng màu sáng duy nhất, không theo chế độ tối của
+       hệ điều hành. Lý do: các ma trận nhiệt ở đây tô màu bằng hàm trộn hex
+       trong Python (_style_for_value), không đi qua biến CSS — nên đảo token
+       chỉ lật được phần khung mà không lật được phần dữ liệu, tạo ra bảng màu
+       lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
+       --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
+       Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
+    /* Không còn cột sidebar. Sidebar cũ rộng 292px trên màn 1680px — 17,4%
+       chiều ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm.
+       Điều hướng chuyển sang dock nổi ở chân trang; toàn bộ phần đó trả về
+       cho nội dung. */
+    .app {
+      min-height: 100vh;
+      padding-bottom: calc(76px + 32px);   /* chừa chỗ cho dock */
+    }
+    .app > * { min-width: 0; }
+    /* Nhãn chỉ dành cho trình đọc màn hình: dock dùng biểu tượng, và một nút
+       chỉ có icon sẽ được đọc thành "nút" trống nếu thiếu nhãn này. */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    /* Điều hướng dự phòng cuối trang. */
+    /* ── Dock điều hướng nổi ──────────────────────────────────────────────
+       17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
+       tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
+       nhóm và mở popover khi hover HOẶC focus — chỉ hover thôi thì người dùng
+       bàn phím không bao giờ tới được các mục con. */
+    .dock {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      z-index: 60; max-width: calc(100vw - 32px);
+    }
+    /* Kính mờ 30%. Nền 84% trước đây gần như đục hẳn nên không còn là
+       glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
+       thanh vẫn tách khỏi nội dung phía sau. */
+    .dock-inner {
+      position: relative;
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border-radius: 999px;
+      background: rgba(15, 23, 42, .30);
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 10px 36px rgba(15,23,42,.34), inset 0 1px 0 rgba(255,255,255,.10);
+      backdrop-filter: blur(12px) saturate(1.8);
+      -webkit-backdrop-filter: blur(12px) saturate(1.8);
+    }
+    /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
+       vẫn đọc được, đó là điều quan trọng. */
+    @supports not (backdrop-filter: blur(1px)) {
+      .dock-inner { background: #0f172a; }
+    }
+    .dock-group { position: relative; }
+    /* Nhãn chuyển thành tooltip thay vì chữ dưới icon: hai dòng làm thanh cao
+       114px, quá thô so với mức 48–56px cần đạt. */
+    .dock-btn {
+      display: grid; place-items: center;
+      padding: 0; background: none; border: 0; cursor: pointer;
+      border-radius: 12px; color: #e5e7eb;
+    }
+    .dock-ic {
+      display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
+      border-radius: 11px; background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: transform .24s ease-in-out, background .2s ease-in-out;
+    }
+    .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {
+      transform: scale(1.18);
+      background: rgba(124,58,237,.42);
+    }
+    .dock-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+
+    /* Tooltip thay cho nhãn cố định. */
+    .dock-name {
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      padding: 4px 9px; border-radius: 7px; white-space: nowrap;
+      font-size: 11px; font-weight: 600; letter-spacing: .02em;
+      background: #0f172a; color: #f1f5f9;
+      border: 1px solid rgba(255,255,255,.12);
+      opacity: 0; pointer-events: none;
+      transition: opacity .18s ease-in-out, transform .18s ease-in-out;
+    }
+    .dock-btn:hover .dock-name, .dock-btn:focus-visible .dock-name {
+      opacity: 1; transform: translateX(-50%) translateY(0);
+    }
+    /* Khi popover đang mở thì ẩn tooltip — hai lớp nổi chồng nhau gây rối. */
+    .dock-group:hover .dock-name, .dock-group:focus-within .dock-name { opacity: 0; }
+    .dock-pop {
+      position: absolute; bottom: calc(100% + 14px); left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      min-width: 232px; padding: 8px;
+      background: rgba(255,255,255,.97); border: 1px solid var(--line);
+      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.26);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      /* Độ trễ khi ĐÓNG (0.22s) nhưng không trễ khi MỞ. Rê chuột ra ngoài
+         trong chớp mắt sẽ không làm menu tắt ngay, nên người dùng có thời gian
+         quay lại — đây là nửa thứ hai của cơ chế chống tắt đột ngột. */
+      transition: opacity .18s ease-in-out .22s,
+                  transform .18s ease-in-out .22s,
+                  visibility 0s linear .40s;
+    }
+    /* CẦU NỐI HOVER. Giữa nút và popover có khe hở 14px; con trỏ đi qua khe đó
+       rời khỏi cả hai phần tử nên :hover tắt và menu biến mất giữa chừng —
+       đúng lỗi người dùng gặp. Phần tử giả này phủ kín khe, trong suốt, và
+       thuộc về .dock-pop nên hover trên nó vẫn tính là hover trong nhóm. */
+    .dock-pop::after {
+      content: ""; position: absolute; left: 0; right: 0;
+      top: 100%; height: 18px;
+    }
+    /* Mở rộng vùng bắt của cả nhóm xuống dưới nút, phòng khi con trỏ đi vòng. */
+    .dock-group::after {
+      content: ""; position: absolute; left: -6px; right: -6px;
+      top: -18px; bottom: -6px; z-index: -1;
+    }
+    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop,
+    .dock-group.ui-open .dock-pop {
+      opacity: 1; visibility: visible; pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+      /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
+      transition: opacity .18s ease-in-out, transform .18s ease-in-out, visibility 0s;
+    }
+    .dock-pop a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: 12px; color: #1e293b; font-size: 13px;
+      white-space: nowrap; text-decoration: none;
+    }
+    .dock-pop a:hover { background: #f1f5f9; }
+    /* MÀN HẸP. `.dock-inner` từng mang `overflow-x: auto`, và một hộp cuộn
+       thì CẮT mọi hậu duệ nằm ngoài nó. Inner chỉ cao 54px còn menu con bung
+       lên phía trên, nên menu bị xén sạch: đo được 0/9 liên kết nhận được cú
+       chạm trên điện thoại trong khi máy bàn 9/9. `position: fixed` không
+       thoát ra được vì `backdrop-filter` của inner biến nó thành khối chứa
+       cho cả hậu duệ `fixed`. Bỏ hẳn cuộn ngang mới là gỡ đúng gốc: cho mỗi
+       nhóm `flex: 1 1 0` để N nhóm luôn vừa khít bề ngang, rồi căng menu
+       `left: 0; right: 0` theo cả dải dock. Cách này cũng xử lý luôn lỗi menu
+       rộng cố định 232px lòi ra ngoài viền ở các nhóm đầu và cuối. */
+    @media (max-width: 640px) {
+      .dock { left: 16px; right: 16px; transform: none; max-width: none; }
+      .dock-inner { justify-content: space-between; gap: 2px; padding: 6px;
+        border-radius: 16px; }
+      .dock-group { position: static; flex: 1 1 0; min-width: 0; }
+      .dock-btn { width: 100%; }
+      .dock-ic { width: 100%; max-width: 40px; margin: 0 auto; }
+      /* Màn cảm ứng không có hover để hiện tooltip, mà tên nhóm đã nằm sẵn
+         trong menu con. */
+      .dock-name { display: none; }
+      .dock-pop { left: 0; right: 0; min-width: 0;
+        transform: translateY(6px);
+        max-height: min(60vh, 420px); overflow-y: auto; }
+      /* Chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu
+         mở mãi và cú chạm thứ hai không đóng được gì. Ở màn hẹp chỉ `.ui-open`
+         (do kịch bản đặt) mới là công tắc. `.ui-js` đứng đầu để khi không có
+         JavaScript thì hành vi cũ vẫn còn. */
+      .ui-js .dock-group:hover .dock-pop,
+      .ui-js .dock-group:focus-within .dock-pop {
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transform: translateY(6px);
+      }
+      .ui-js .dock-group.ui-open .dock-pop,
+      .dock-group.ui-open .dock-pop {
+        opacity: 1; visibility: visible; pointer-events: auto;
+        transform: translateY(0);
+      }
+      /* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn
+         cảm ứng không có hover, còn `z-index: -1` của vùng đệm lại đẩy nó
+         xuống dưới dải dock nên nó nuốt mất cú chạm ở rìa nút. */
+      .dock-pop::after { content: none; }
+      .dock-group::after { content: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dock-ic, .dock-pop { transition: none; }
+      .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic { transform: none; }
+    }
+
+    /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
+       bị giới hạn bằng max-width ở lớp desktop-view, nên ở màn 1920px nó dính
+       sát mép trái và chừa 140px bên phải — lệch hẳn một phía. */
+    .main {
+      min-width: 0;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 32px clamp(16px, 2.5vw, 40px);
+    }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 32px;
+      padding: 30px;
+      margin-bottom: 20px;
+      color: #fff;
+      /* Ba chặng đã dò trắng trên toàn dải: 6,29:1 / 7,69:1 / 9,02:1. Chọn
+         chặng bằng cách nhìn ba ô màu thì không đủ — lần trước làm thế và hai
+         trong ba chặng trượt chuẩn với chữ trắng. */
+      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+      box-shadow: var(--shadow-brand);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -12rem;
+      top: -12rem;
+      width: 32rem;
+      height: 32rem;
+      background: radial-gradient(circle, rgba(165,180,252,.28), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; display: grid; gap: 18px; }
+    .hero h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+    .hero p { max-width: 820px; margin: 0; color: #E4E5FC; font-size: 16px; line-height: 1.65; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .primary-action, .ghost-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 15px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .primary-action { background: #fff; color: #0f172a; }
+    .ghost-action { border: 1px solid rgba(255,255,255,.18); color: #e5e7eb; background: rgba(255,255,255,.07); }
+    /* auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần một
+       media query riêng cho từng mốc. */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-tile {
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid rgba(226,232,240,.8);
+      box-shadow: 0 14px 34px rgba(15,23,42,.06);
+      min-height: 124px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-tile::before {
+      content: "";
+      position: absolute;
+      inset: auto 16px 14px auto;
+      width: 70px;
+      height: 70px;
+      border-radius: 999px;
+      opacity: .12;
+      background: currentColor;
+    }
+    .metric-tile span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; font-weight: 900; }
+    .metric-tile strong {
+      font-size: clamp(26px, 4vw, 42px); line-height: 1; letter-spacing: -.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Giá trị dài (ngày "2026-09-06" là 10 ký tự) không vừa một dòng ở cỡ 42px
+       trong thẻ 213px, và một ngày bị ngắt thành "2026-09-" / "06" thì vô
+       nghĩa. Hạ cỡ chữ theo độ dài thay vì cho xuống dòng. */
+    .metric-tile[data-long="true"] strong { font-size: clamp(20px, 2.1vw, 27px); }
+    .metric-tile em { font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .metric-tile.blue { color: var(--blue); }
+    .metric-tile.orange { color: var(--orange); }
+    .metric-tile.green { color: var(--green); }
+    .metric-tile.purple { color: var(--purple); }
+    .layout-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(330px, .72fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .right-rail { display: grid; gap: 18px; }
+    .section {
+      scroll-margin-top: 20px;
+      margin-top: 18px;
+    }
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 30px 0 14px;
+    }
+    .section-title h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: -.035em;
+    }
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+      line-height: 1.55;
+    }
+    .section-title .section-kicker {
+      font-size: 11px;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 900;
+    }
+    .card {
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(226,232,240,.85);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 42px rgba(15,23,42,.07);
+      padding: 18px;
+      min-width: 0;
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--blue);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 900;
+    }
+    .card h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+    .card-head p:not(.eyebrow), .card > p {
+      color: var(--muted);
+      margin: 5px 0 0;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+    .result-combo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, .45fr);
+      gap: 16px;
+      align-items: start;
+    }
+    /* Bảng kết quả có bề rộng tối thiểu do số giải quy định; ở 360px nó rộng
+       520px và trước đây đẩy cả trang tràn ngang 187px. Cho phần dư cuộn
+       trong khung riêng thay vì đẩy body. */
+    .result-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    .result-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+    .result-table th {
+      width: 118px;
+      text-align: left;
+      vertical-align: middle;
+      padding: 14px;
+      color: #334155;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .result-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .result-table tr:last-child th, .result-table tr:last-child td { border-bottom: 0; }
+    .prize-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .prize-number {
+      border: 0;
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      min-width: 68px;
+      min-height: 38px;
+      padding: 6px 10px;
+      border-radius: 13px;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 900;
+      letter-spacing: .03em;
+      box-shadow: inset 0 -1px 0 rgba(15,23,42,.08);
+    }
+    .prize-number.special {
+      min-width: 116px;
+      min-height: 52px;
+      background: linear-gradient(135deg, #fee2e2, #ffedd5);
+      color: #b91c1c;
+      font-size: 28px;
+      letter-spacing: .06em;
+    }
+    .prize-list.mini .prize-number { min-width: 48px; color: #b91c1c; background: #fff1f2; }
+    /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
+       (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
+       .matrix-wrap cuộn ngang phần dư. */
+    .chuc-card {
+      position: sticky;
+      top: 18px;
+      min-width: 0;
+    }
+    .result-combo > * { min-width: 0; }
+    .tiny-matrix, .matrix-grid {
+      display: grid;
+      grid-template-columns: 26px repeat(10, minmax(38px, 1fr));
+      gap: 6px;
+      align-items: stretch;
+    }
+    .tiny-matrix {
+      grid-template-columns: 22px repeat(10, minmax(27px, 1fr));
+      gap: 4px;
+    }
+    .matrix-axis, .matrix-head {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .tiny-matrix-cell, .matrix-cell {
+      border: 1px solid rgba(15,23,42,.06);
+      border-radius: 12px;
+      cursor: pointer;
+      min-width: 0;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .matrix-cell {
+      min-height: 52px;
+      padding: 7px 4px;
+      display: grid;
+      place-items: center;
+      gap: 2px;
+    }
+    .tiny-matrix-cell {
+      min-height: 42px;
+      padding: 4px 2px;
+      display: grid;
+      place-items: center;
+      gap: 1px;
+    }
+    .tiny-matrix-cell b, .cell-number {
+      font-weight: 950;
+      letter-spacing: -.02em;
+    }
+    .tiny-matrix-cell span, .cell-value {
+      font-size: 10px;
+      opacity: .88;
+      font-weight: 750;
+    }
+    .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(15,23,42,.12);
+      border-color: rgba(37,99,235,.35);
+    }
+    .matrix-wrap { overflow: auto; padding-bottom: 4px; }
+    .legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend span { width: 32px; height: 10px; border-radius: 99px; border: 1px solid rgba(15,23,42,.08); }
+    .legend i { width: 50px; height: 1px; background: var(--line); }
+    .head-tail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .head-tail-card {
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      padding: 12px;
+    }
+    .head-tail-card h4 { margin: 0 0 8px; font-size: 13px; }
+    .head-tail-row {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 5px 0;
+      border-top: 1px solid rgba(226,232,240,.75);
+    }
+    .head-tail-row:first-of-type { border-top: 0; }
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 3px 7px;
+      margin: 1px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .matrix-two, .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .matrix-three, .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    /* Sau khi xếp dọc, thẻ biểu đồ chiếm trọn 1504px. Kéo một thanh dài
+       ~1400px không cho biết thêm gì so với 560px, mà nhãn và trị số bị đẩy ra
+       hai mép xa nhau tới mức phải đưa mắt qua cả màn hình mới ghép được cặp.
+
+       Đổi thành nhiều CỘT thay vì giới hạn bề rộng rồi bỏ trống nửa thẻ: 10
+       mục thành 2 cột × 5 hàng, vừa lấp hết chiều ngang vừa giảm nửa chiều
+       cao. minmax(min(100%, 560px), 1fr) tự rơi về một cột khi hẹp mà không
+       cần media query cho từng mốc. */
+    .bar-list {
+      display: grid;
+      gap: 9px 28px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+      grid-auto-flow: row;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr) 74px;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .bar-label {
+      font-weight: 900;
+      color: #0f172a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bar-track {
+      height: 13px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .bar-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+    .bar-value {
+      color: var(--muted);
+      text-align: right;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .signal-pills { display: grid; gap: 8px; }
+    .signal-pill {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+    }
+    .signal-pill b {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: #f5f3ff;
+      color: var(--purple);
+      font-size: 18px;
+    }
+    .signal-pill span {
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      max-height: 520px;
+    }
+    .stat-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 640px;
+      background: #fff;
+    }
+    .stat-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 10px 11px;
+      text-align: left;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      color: #334155;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .stat-table td {
+      padding: 10px 11px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #0f172a;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    .stat-table.dense th, .stat-table.dense td {
+      padding: 7px 8px;
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .table-filter {
+      width: 100%;
+      margin: 0 0 10px;
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .num-link {
+      border: 0;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 900;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    /* Hai khối nằm ngang, tự co giãn theo bề rộng còn lại và luôn bằng chiều
+       cao nhau. minmax(0,1fr) là phần chống vỡ khung: thiếu nó, một bảng rộng
+       bên trong sẽ đẩy cột phình ra và làm cả trang tràn ngang. */
+    .live-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 12px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      font-size: 13px; color: var(--ink-soft);
+    }
+    .live-dot {
+      width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+      background: #94a3b8;
+    }
+    .live-status[data-state="live"] { border-color: #ef4444; color: #b91c1c; }
+    .live-status[data-state="live"] .live-dot {
+      background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
+    }
+    .live-status[data-state="done"] .live-dot { background: #22c55e; }
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .45; transform: scale(1.35); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .live-status[data-state="live"] .live-dot { animation: none; }
+    }
+
+    .pair-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .pair-row > * { min-width: 0; margin: 0; }
+    @media (max-width: 900px) { .pair-row { grid-template-columns: 1fr; } }
+
+    /* Khu căn cứ xếp theo TẦNG, không theo cột.
+
+       Tầng 1: khung căn cứ trải hết chiều ngang.
+       Tầng 2: bảng cầu Đặc Biệt và bảng cầu LOTO cạnh nhau, Đặc Biệt bên trái.
+
+       Đánh đổi phải nói rõ: min-content của mỗi bảng cầu đo được 796px, nên
+       hai bảng cạnh nhau cần 1616px vùng nội dung. Dưới mức đó mỗi bảng tự
+       cuộn ngang trong thẻ của nó để xem đủ 9 cột. Bố cục cũ cho mỗi bảng
+       trọn ~1090px nên không phải cuộn — đây là cái giá của việc xếp ngang,
+       và nó là lựa chọn có chủ ý chứ không phải sơ suất. */
+    .inspector {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .inspector > * { min-width: 0; }
+
+    .basis-cell { min-width: 0; }
+    /* KHÔNG còn sticky. sticky có nghĩa khi khung là chú giải nằm CẠNH một
+       khối cuộn dài; nay nó nằm TRÊN, nên dính lại chỉ tổ che mất hai bảng
+       bên dưới. max-height cũng bỏ: trải ngang thì nội dung tự vừa. */
+    .inspector > .inspect-panel { align-self: start; }
+    /* Hai bảng cầu cạnh nhau, Đặc Biệt trước. */
+    .basis-merged {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
+    }
+    .basis-merged > section { min-width: 0; }
+
+    /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
+       phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
+    .basis-merged {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      overflow: hidden;
+    }
+    /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
+       chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
+       nhiên là đọc được trọn vẹn, không cắt hàng nào. */
+    .basis-merged > section { padding: 20px 24px; }
+    /* Cạnh nhau thì vách ngăn phải DỌC. Giữ border-top cho nhánh xếp dọc
+       bên dưới, nếu không hai bảng chồng lên nhau mà không có gì ngăn. */
+    .basis-merged > section + section { border-left: 1px solid var(--line); }
+    .basis-merged > section > * { margin: 0; border: 0; box-shadow: none; padding: 0; }
+    /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
+       hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
+    .basis-merged .table-wrap { max-height: none; }
+    /* Ngưỡng xếp dọc PHẢI khớp với ngưỡng thu hẹp cột ngay bên dưới (1280px).
+       Khi hai ngưỡng lệch nhau — cạnh nhau từ 1024px nhưng cột chỉ thu từ
+       1280px — thì cả dải 1024-1279px rơi vào trạng thái xấu nhất: hai bảng
+       đã bị chia đôi bề ngang mà cột vẫn giữ sàn rộng. Đo phần bị che:
+
+         1440   628px/bảng   che 10%
+         1280   553px/bảng   che 21%
+         1265   546px/bảng   che 32%   <- lệch ngưỡng bắt đầu cắn ở đây
+         1100   483px/bảng   che 40%
+         1024   445px/bảng   che 44%
+
+       445px chính là con số mà chú thích gốc ghi là đã làm cột "Tỷ lệ" bị
+       cắt. Dưới 1280 thì xếp dọc, mỗi bảng được trọn chiều ngang. */
+    @media (max-width: 1279px) {
+      .basis-merged { grid-template-columns: minmax(0, 1fr); }
+      .basis-merged > section + section {
+        border-left: 0; border-top: 1px solid var(--line);
+      }
+    }
+
+    /* Bề rộng cột cho hai bảng đường cầu.
+
+       Bảng có 10 cột trong ~925px. Để trình duyệt tự chia thì "Đường cầu" và
+       "Căn cứ" — hai cột chữ dài nhất — bị bóp xuống ~90px và xuống 3-4 dòng,
+       kéo hàng cao 83px ở bảng trên và 104px ở bảng dưới. Hai bảng cạnh nhau
+       cao lệch nhau trông như lỗi dựng.
+
+       Chữa bằng cách nói rõ cột nào ưu tiên bề rộng, thay vì để thuật toán
+       chia đều cho cả cột chỉ chứa một con số. */
+    .basis-merged .col-path_line { min-width: 190px; width: 26%; }
+    .basis-merged .col-reason { min-width: 170px; width: 22%; }
+    /* Khi hai bảng đứng CẠNH nhau, mỗi bảng chỉ còn ~751px. Hai sàn 190/170
+       ở trên vốn chỉnh cho bảng ~925px, và chúng chính là thứ đặt min-content
+       của bảng lên 796px — dư 45px, đủ để cắt mất cột "Căn cứ".
+
+       Dò từng cặp giá trị, đo cả mức cuộn lẫn chiều cao hàng:
+
+         190/170  cuộn 95px   hàng 83,4px
+         160/140  cuộn 35px   hàng 83,4px
+         140/120  cuộn  0px   hàng 104,2px
+
+       Chọn 140/120. Hàng cao thêm 25% và bảng cao 874 -> 1082px, nhưng bảng
+       hiện đủ MỌI cột ngay khi nhìn. Một bảng cao hơn vẫn đọc được; một bảng
+       giấu mất cột thì phải biết là có cái gì đó ở bên phải mới đi tìm. */
+    @media (min-width: 1280px) {
+      .basis-merged .col-path_line { min-width: 140px; }
+      .basis-merged .col-reason { min-width: 120px; }
+    }
+    .basis-merged .col-rule_kind { width: 1%; }
+    /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
+       lớn ngay mà không phải đọc từng chữ số.
+
+       nowrap chỉ áp cho ô DỮ LIỆU, không áp cho tiêu đề. Áp cả hai thì những
+       tiêu đề dài như "Độ trễ (ngày)" hay "Chuỗi hiện tại" tự đặt sàn bề rộng
+       cho cột, đẩy bảng lên 1051px trong khung 927px và sinh cuộn ngang. Tiêu
+       đề xuống hai dòng là chuyện bình thường ở bảng dày; số bị ngắt dòng mới
+       là lỗi. */
+    .basis-merged th.col-lag_days,
+    .basis-merged th.col-p_mean,
+    .basis-merged th.col-hit_ratio,
+    .basis-merged th.col-current_streak,
+    .basis-merged th.col-rule_score { text-align: right; width: 1%; }
+    .basis-merged td.col-lag_days,
+    .basis-merged td.col-p_mean,
+    .basis-merged td.col-hit_ratio,
+    .basis-merged td.col-current_streak,
+    .basis-merged td.col-rule_score {
+      white-space: nowrap; text-align: right; width: 1%;
+      font-variant-numeric: tabular-nums;
+    }
+    .basis-merged .col-number_str { width: 1%; }
+
+    /* Ghi chú cảnh báo đi kèm bảng cặp. Nó không phải phần trang trí: thiếu
+       nó thì bảng chỉ cho thấy "gấp đôi kỳ vọng" và người đọc kết luận có quy
+       luật, trong khi cực đại ngẫu nhiên đã ở mức đó rồi. */
+    .pair-note {
+      margin: 14px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .stat-table td.col-count {
+      text-align: right; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-table td.col-pair { font-weight: 800; letter-spacing: .02em; }
+
+    /* Kết quả | Chục | Đơn vị: bảng kết quả chiếm phần lớn chiều ngang.
+       Sàn bằng 0 để nội dung bảng không đẩy rộng toàn trang. */
+    .matrix-top {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+    .matrix-top > * { min-width: 0; margin: 0; }
+    /* Tablet: kết quả trọn hàng, chục và đơn vị ở hàng kế tiếp. */
+    @media (max-width: 959px) {
+      .matrix-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .matrix-top > #ket-qua { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) { .matrix-top { grid-template-columns: minmax(0, 1fr); } }
+
+    .matrix-full { width: 100%; margin-bottom: 24px; }
+
+    /* Ba thẻ dự đoán ngày mai XẾP DỌC — giữ nguyên, và lý do vẫn đứng vững.
+
+       Bản ba cột cho mỗi thẻ 485px ở màn 1920px, trong khi thẻ mô phỏng cần
+       1112px: lưới bên trong nó tự chia ba cột (khung giải 520 + hai bảng xác
+       suất 280 mỗi bảng + khe). Ép xuống 485px thì lưới ấy TRÀN RA NGOÀI thẻ,
+       vì overflow-x của nó là visible chứ không phải auto — nội dung đi ra
+       khỏi khung chứ không sinh thanh cuộn.
+
+       Việc xếp ngang "mô phỏng | Đặc Biệt | LOTO" thuộc về BÊN TRONG khối mô phỏng
+       (.fun-pred-grid trong build_fun_prediction.py), không phải ở tầng này. */
+    .next-day {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+    .next-day > * { min-width: 0; margin: 0; }
+    /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
+       dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
+       lại khoảng trống; ẩn hẳn đi. */
+    .next-day > section:empty { display: none; }
+    .inspect-panel {
+      background:
+        radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
+        #fff;
+      border-radius: var(--radius);
+      border: 1px solid rgba(226,232,240,.9);
+      padding: 18px;
+      box-shadow: 0 16px 42px rgba(15,23,42,.07);
+    }
+    .inspect-panel > * { min-width: 0; }
+    .inspect-panel p, .position-list li { overflow-wrap: anywhere; }
+    .inspect-paths h4 { margin: 0 0 10px; }
+    @media (min-width: 1024px) {
+      .inspect-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        gap: 24px;
+        align-items: start;
+      }
+      .inspect-paths .position-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 0;
+      }
+    }
+    .inspect-number {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .inspect-number b {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ede9fe, #dbeafe);
+      color: #5b21b6;
+      font-size: 28px;
+      letter-spacing: -.05em;
+    }
+    .inspect-number span { color: var(--muted); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .inspect-panel h3 { margin: 0 0 8px; font-size: 22px; }
+    .inspect-panel p { color: #475569; line-height: 1.55; margin: 8px 0; }
+    .inspect-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .inspect-meta div {
+      padding: 10px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .inspect-meta span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 900;
+    }
+    .inspect-meta strong { display: block; margin-top: 3px; font-size: 18px; }
+    .position-list { display: grid; gap: 8px; margin-top: 10px; padding: 0; }
+    .position-list li {
+      list-style: none;
+      padding: 10px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .empty, .muted { color: var(--muted); }
+    .empty {
+      padding: 22px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      text-align: center;
+    }
+    .footer {
+      margin: 32px 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    @media (min-width: 1181px) {
+      /* Chỉ nới padding ở màn rộng. max-width giữ nguyên 1600px của lớp cơ sở:
+         trước đây khối này ghi đè thành 1780px nên ba nơi khai báo .main lệch
+         nhau và màn 1920px chạy rộng hơn khung thiết kế 1440-1600px. */
+      .main {
+        padding: 32px clamp(28px, 3vw, 48px);
+      }
+      /* Bề rộng khả dụng của .main đã trừ .side-nav (~247px) nên ở màn 1440px
+         chỉ còn ~1062px. Ngưỡng cũ 760+18+360=1138px lớn hơn mức đó khiến
+         cả lưới tràn ra ngoài viewport. */
+      .layout-top {
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      }
+      .right-rail {
+        position: sticky;
+        top: 22px;
+        max-height: calc(100vh - 44px);
+        overflow: auto;
+        padding-right: 2px;
+      }
+      .result-combo {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      }
+      .hero-content {
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+        align-items: end;
+      }
+      .hero-content > div:first-child,
+      .hero-content > p,
+      .hero-actions {
+        grid-column: 1;
+      }
+      .hero .signal-pills {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        align-self: stretch;
+        /* align-content:end dồn ba viên xuống đáy, để lại 140px trống ở đầu
+           panel — 39% chiều cao khối. Căn giữa thì khoảng trống chia đều hai
+           đầu và khối cân về mặt thị giác. */
+        align-content: center;
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 22px;
+        background: rgba(255,255,255,.08);
+        backdrop-filter: blur(18px);
+      }
+      .section-title {
+        padding-right: min(10vw, 180px);
+      }
+    }
+    @media (min-width: 1440px) {
+      .matrix-two {
+        grid-template-columns: repeat(2, minmax(520px, 1fr));
+      }
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .three-col {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 1180px) {
+      .main { padding: 18px; }
+      .layout-top { grid-template-columns: 1fr; }
+      .right-rail { position: static; max-height: none; overflow: visible; }
+      .chuc-card { position: static; }
+      .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
+      .result-combo, .matrix-two, .matrix-three, .two-col, .three-col, .inspector {
+        grid-template-columns: 1fr;
+      }
+      .side-nav { grid-template-columns: 1fr; }
+      .metric-row { grid-template-columns: 1fr; }
+      .hero { padding: 22px; border-radius: 24px; }
+      .result-table th { width: 92px; }
+      .prize-number.special { font-size: 22px; min-width: 96px; }
+      /* Cột cố định 38px làm ma trận rộng 402px, vượt bề ngang khả dụng của
+         màn hình nhỏ (~354px ở 390px) và đẩy cả trang tràn ngang. Cho cột co
+         lại theo khung để ma trận luôn vừa màn hình. */
+      .tiny-matrix, .matrix-grid {
+        grid-template-columns: 22px repeat(10, minmax(0, 1fr));
+      }
+      .matrix-cell { min-height: 48px; }
+      .bar-row { grid-template-columns: 62px minmax(0, 1fr) 58px; }
+      .head-tail-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      body {
+        background:
+          radial-gradient(circle at top, rgba(37,99,235,.16), transparent 24rem),
+          var(--bg);
+      }
+      .brand {
+        margin-bottom: 8px;
+        padding: 9px;
+      }
+      .brand-logo { width: 34px; height: 34px; border-radius: 12px; }
+      .brand small { display: none; }
+      .nav-title { display: none; }
+      .side-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+      }
+      .side-nav a {
+        min-width: 164px;
+        grid-template-columns: 24px 1fr;
+        gap: 8px;
+        padding: 8px;
+        scroll-snap-align: start;
+      }
+      .side-nav a span {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 10px;
+      }
+      .side-nav a b { font-size: 12px; }
+      .side-nav a small { display: none; }
+      .main { padding: 12px; }
+      .hero {
+        padding: 18px;
+        margin-bottom: 12px;
+        border-radius: 22px;
+      }
+      .hero h1 {
+        font-size: clamp(26px, 8vw, 34px);
+        line-height: 1.05;
+      }
+      .hero p {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .hero-actions a {
+        width: 100%;
+      }
+      .card {
+        padding: 14px;
+        border-radius: 20px;
+      }
+      .section-title {
+        display: block;
+        margin: 24px 0 12px;
+      }
+      .section-title h2 {
+        font-size: 24px;
+      }
+      .card-head {
+        display: block;
+      }
+      .result-combo > div:first-child,
+      .matrix-wrap,
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .result-table {
+        min-width: 520px;
+      }
+      /* minmax chứ không phải 36px cứng. min-width:430px là để ma trận vẫn
+         cuộn được trên máy hẹp; nhưng cột cứng thì có SÀN mà không có TRẦN,
+         nên khi khung rộng hơn 430px các cột đứng yên ở 36px và phần dôi ra
+         thành một mảng trắng bên phải. Đo ở khung 600px: lưới rộng 546px,
+         cột chiếm 444px — thừa 102px. minmax(36px, 1fr) giữ nguyên hành vi
+         cuộn khi chật và cho cột giãn lấp đầy khi rộng. */
+      .tiny-matrix, .matrix-grid {
+        min-width: 430px;
+        grid-template-columns: 24px repeat(10, minmax(36px, 1fr));
+      }
+      .matrix-cell {
+        min-height: 46px;
+        border-radius: 11px;
+      }
+      .tiny-matrix-cell {
+        min-height: 38px;
+        border-radius: 10px;
+      }
+      .inspect-meta {
+        grid-template-columns: 1fr;
+      }
+      .stat-table {
+        min-width: 620px;
+      }
+      .footer {
+        margin-bottom: 70px;
+      }
+    }
+    body.desktop-view {
+      min-width: 1320px;
+    }
+    body.desktop-view .side-nav a {
+      min-width: 0 !important;
+    }
+    body.desktop-view .side-nav a small {
+      display: block !important;
+    }
+    body.desktop-view .main {
+      max-width: min(100%, 1600px) !important;
+      margin-inline: auto !important;
+      padding: 32px clamp(28px, 3vw, 48px) !important;
+    }
+    /* Cùng lý do như .layout-top ở trên: sau khi bỏ sidebar, .main dùng trọn
+       chiều ngang nên ngưỡng cột phải nới theo. */
+    body.desktop-view .layout-top {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
+    }
+    body.desktop-view .right-rail {
+      position: sticky !important;
+      top: 22px !important;
+      max-height: calc(100vh - 44px) !important;
+      overflow: auto !important;
+    }
+    body.desktop-view .matrix-two,
+    body.desktop-view .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    body.desktop-view .matrix-three,
+    body.desktop-view .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    /* Chế độ máy tính đi theo lớp nền, không dựng lại bố cục riêng.
+       Khu căn cứ nay xếp theo TẦNG (khung căn cứ trải ngang ở trên, hai bảng
+       đường cầu cạnh nhau ở dưới), nên ép nó về hai cột ở đây là quay ngược
+       lại bố cục cũ — và !important khiến việc quay ngược đó thắng tuyệt đối.
+
+       Lớp desktop-view đặt min-width 1320px, tức luôn rộng hơn mọi ngưỡng của
+       lớp nền, nên lớp nền tự cho ra bố cục đúng mà không cần ghi đè gì. */
+    body.desktop-view .inspector {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    @media print {
+      .dock, .hero-actions { display: none; }
+      .app { padding-bottom: 0; }
+      body { background: #fff; }
+      .card, .metric-tile, .hero { box-shadow: none; }
+    }"""
+
+
+#: Mã JavaScript của trang tổng hợp.
+#:
+#: Cùng lý do như ``_LANDING_CSS``: 120 dòng này không nội suy biến nào
+#: (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên mọi dấu ngoặc khối và
+#: mọi object literal phải viết đôi — cú pháp JavaScript bị bóp méo chỉ vì
+#: chỗ đặt.
+_LANDING_SCRIPT = """\
+    const APP_DATA = JSON.parse(document.getElementById('landing-data').textContent);
+
+    /* Sidebar thu gọn. Trạng thái lưu trong localStorage nên giữ nguyên khi
+       chuyển trang; mọi truy cập đều bọc try/catch vì trình duyệt ở chế độ
+       riêng tư có thể ném lỗi ngay khi đọc. */
+    /* Trạng thái kỳ quay tính theo giờ Việt Nam trên máy người xem, không phải
+       theo giờ lúc dựng trang: trang tĩnh dựng một lần rồi phục vụ suốt ngày,
+       nên một trạng thái ghi cứng sẽ sai với gần như mọi lượt xem. */
+    (function () {
+      const box = document.getElementById('live-status');
+      const text = document.getElementById('live-status-text');
+      const note = document.getElementById('live-note');
+      if (!box || !text) return;
+
+      const DRAW_START = 18 * 60 + 10;   // 18:10 — bắt đầu quay các giải phụ
+      const DRAW_END = 18 * 60 + 40;     // 18:40 — thường đã xong giải Đặc Biệt
+
+      function vietnamMinutes() {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(new Date());
+        const get = (k) => Number(parts.find((p) => p.type === k).value);
+        return get('hour') * 60 + get('minute');
+      }
+
+      function refresh() {
+        const m = vietnamMinutes();
+        if (m >= DRAW_START && m <= DRAW_END) {
+          box.setAttribute('data-state', 'live');
+          text.textContent = 'Đang quay thưởng — mở trang trực tiếp để xem từng giải hiện dần.';
+          if (note) note.textContent = 'Kết quả bên dưới là của kỳ trước cho tới khi kỳ hôm nay hoàn tất.';
+        } else {
+          box.setAttribute('data-state', 'done');
+          text.textContent = 'Kỳ quay đã kết thúc. Bảng kết quả đầy đủ hiển thị bên dưới.';
+          if (note) note.textContent = 'Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.';
+        }
+      }
+
+      refresh();
+      window.setInterval(refresh, 30000);
+    })();
+
+
+    function fmtPercent(value) {
+      const n = Number(value || 0);
+      if (!Number.isFinite(n)) return '—';
+      return (n > 1 ? n : n * 100).toFixed(1) + '%';
+    }
+
+    function showNumber(mode, number) {
+      const n = String(number || '').padStart(2, '0').slice(-2);
+      const m = mode || 'loto';
+      const data = (APP_DATA.explain && APP_DATA.explain[m] && APP_DATA.explain[m][n]) || null;
+      document.getElementById('inspect-num').textContent = n;
+      document.getElementById('inspect-mode').textContent = m === 'de' ? 'Đặc Biệt' : 'Loto';
+      document.getElementById('inspect-title').textContent = data ? 'Căn cứ thống kê cho số ' + n : 'Chưa có căn cứ cho số ' + n;
+      document.getElementById('inspect-score').textContent = data && data.score ? Number(data.score).toFixed(1) : '—';
+      document.getElementById('inspect-prob').textContent = data && data.prob ? fmtPercent(data.prob) : '—';
+      document.getElementById('inspect-reason').textContent = data && data.reason ? data.reason : 'Chưa có lý do AI/ML nổi bật.';
+      document.getElementById('inspect-evidence').textContent = data && data.evidence ? data.evidence : 'Chưa có bằng chứng định lượng.';
+      document.getElementById('inspect-summary').textContent = data && data.summary ? data.summary : 'Số này chưa nằm trong nhóm giải thích AI/ML hoặc chưa có đường cầu vị trí đủ mạnh.';
+      const list = document.getElementById('inspect-lines');
+      list.replaceChildren();
+      const lines = data && Array.isArray(data.lines) ? data.lines : [];
+      if (!lines.length) {
+        const li = document.createElement('li');
+        li.textContent = 'Chưa có đường cầu vị trí đủ điều kiện hiển thị.';
+        list.appendChild(li);
+      } else {
+        lines.forEach(line => {
+          const li = document.createElement('li');
+          const title = document.createElement('b');
+          title.textContent = line.path_line || 'Đường cầu';
+          const metrics = document.createElement('span');
+          metrics.textContent = 'Loại: ' + (line.kind || '—') +
+            ' · Lag: ' + (line.lag || '—') +
+            ' · P: ' + (line.p_mean || '—') +
+            ' · Trúng/Mẫu: ' + (line.hits || '—') + '/' + (line.trials || '—') +
+            ' · Nhịp: ' + (line.streak || '—') +
+            ' · Điểm: ' + (line.score || '—');
+          const reason = document.createElement('span');
+          reason.textContent = line.reason || '';
+          li.append(title, document.createElement('br'), metrics, document.createElement('br'), reason);
+          list.appendChild(li);
+        });
+      }
+    }
+
+    document.querySelectorAll('[data-number]').forEach(el => {
+      el.addEventListener('click', () => {
+        showNumber(el.dataset.mode || 'loto', el.dataset.number);
+      });
+    });
+
+    const navLinks = [...document.querySelectorAll('.side-nav a')];
+    const sections = navLinks
+      .map(a => document.querySelector(a.getAttribute('href')))
+      .filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+
+    document.querySelectorAll('.table-filter').forEach(input => {
+      input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        const table = input.parentElement.querySelector('table');
+        if (!table) return;
+        table.querySelectorAll('tbody tr').forEach(tr => {
+          tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+    });
+
+    const firstSignal = document.querySelector('[data-number]');
+    if (firstSignal) showNumber(firstSignal.dataset.mode || 'loto', firstSignal.dataset.number);"""
+
+
 def _render_html(
     repo_root: Path, *, desktop_view: bool = False, generated_at: str | None = None
 ) -> str:
@@ -980,1254 +2369,7 @@ def _render_html(
   {stylesheet_link()}
   <title>Trung tâm phân tích xổ số</title>
   <style>
-    :root {{
-      --bg: #F2F4FF;
-      --bg-2: #E6EAFB;
-      --panel: #ffffff;
-      --panel-soft: #F7F8FE;
-      --ink: #161C2D;
-      --muted: #5A6480;
-      --line: #E7EAF6;
-      /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
-         màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
-         với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
-      --brand: #4F46E5;
-      --blue: #2563eb;
-      --sky: #0891b2;
-      --green: #059669;
-      --orange: #ea580c;
-      --purple: #7c3aed;
-      --rose: #e11d48;
-      --shadow: 0 1px 2px rgba(22, 28, 45, .04), 0 8px 26px rgba(22, 28, 45, .06);
-      --shadow-lg: 0 4px 8px rgba(22, 28, 45, .06), 0 22px 60px rgba(22, 28, 45, .13);
-      --shadow-brand: 0 10px 30px rgba(79, 70, 229, .26);
-      --radius: 24px;
-    }}
-    * {{ box-sizing: border-box; }}
-    html {{ scroll-behavior: smooth; }}
-    body {{
-      margin: 0;
-      background:
-        radial-gradient(1200px 620px at 10% -8%, rgba(129,140,248,.20), transparent 60%),
-        radial-gradient(900px 520px at 92% 2%, rgba(99,102,241,.15), transparent 62%),
-        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
-      background-attachment: fixed;
-      background-color: var(--bg);
-      color: var(--ink);
-      font-family: var(--ui-font);
-    }}
-    a {{ color: inherit; text-decoration: none; }}
-    button {{ font: inherit; }}
-    /* Trang này CỐ Ý giữ một bảng màu sáng duy nhất, không theo chế độ tối của
-       hệ điều hành. Lý do: các ma trận nhiệt ở đây tô màu bằng hàm trộn hex
-       trong Python (_style_for_value), không đi qua biến CSS — nên đảo token
-       chỉ lật được phần khung mà không lật được phần dữ liệu, tạo ra bảng màu
-       lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
-       --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
-       Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
-    /* Không còn cột sidebar. Sidebar cũ rộng 292px trên màn 1680px — 17,4%
-       chiều ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm.
-       Điều hướng chuyển sang dock nổi ở chân trang; toàn bộ phần đó trả về
-       cho nội dung. */
-    .app {{
-      min-height: 100vh;
-      padding-bottom: calc(76px + 32px);   /* chừa chỗ cho dock */
-    }}
-    .app > * {{ min-width: 0; }}
-    /* Nhãn chỉ dành cho trình đọc màn hình: dock dùng biểu tượng, và một nút
-       chỉ có icon sẽ được đọc thành "nút" trống nếu thiếu nhãn này. */
-    .sr-only {{
-      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-    }}
-
-    /* Điều hướng dự phòng cuối trang. */
-    /* ── Dock điều hướng nổi ──────────────────────────────────────────────
-       17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-       tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
-       nhóm và mở popover khi hover HOẶC focus — chỉ hover thôi thì người dùng
-       bàn phím không bao giờ tới được các mục con. */
-    .dock {{
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-      z-index: 60; max-width: calc(100vw - 32px);
-    }}
-    /* Kính mờ 30%. Nền 84% trước đây gần như đục hẳn nên không còn là
-       glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
-       thanh vẫn tách khỏi nội dung phía sau. */
-    .dock-inner {{
-      position: relative;
-      display: flex; align-items: center; gap: 4px;
-      padding: 6px 10px; border-radius: 999px;
-      background: rgba(15, 23, 42, .30);
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: 0 10px 36px rgba(15,23,42,.34), inset 0 1px 0 rgba(255,255,255,.10);
-      backdrop-filter: blur(12px) saturate(1.8);
-      -webkit-backdrop-filter: blur(12px) saturate(1.8);
-    }}
-    /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
-       vẫn đọc được, đó là điều quan trọng. */
-    @supports not (backdrop-filter: blur(1px)) {{
-      .dock-inner {{ background: #0f172a; }}
-    }}
-    .dock-group {{ position: relative; }}
-    /* Nhãn chuyển thành tooltip thay vì chữ dưới icon: hai dòng làm thanh cao
-       114px, quá thô so với mức 48–56px cần đạt. */
-    .dock-btn {{
-      display: grid; place-items: center;
-      padding: 0; background: none; border: 0; cursor: pointer;
-      border-radius: 12px; color: #e5e7eb;
-    }}
-    .dock-ic {{
-      display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
-      border-radius: 11px; background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      transition: transform .24s ease-in-out, background .2s ease-in-out;
-    }}
-    .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{
-      transform: scale(1.18);
-      background: rgba(124,58,237,.42);
-    }}
-    .dock-btn:focus-visible {{ outline: 2px solid #93c5fd; outline-offset: 2px; }}
-
-    /* Tooltip thay cho nhãn cố định. */
-    .dock-name {{
-      position: absolute; bottom: calc(100% + 8px); left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      padding: 4px 9px; border-radius: 7px; white-space: nowrap;
-      font-size: 11px; font-weight: 600; letter-spacing: .02em;
-      background: #0f172a; color: #f1f5f9;
-      border: 1px solid rgba(255,255,255,.12);
-      opacity: 0; pointer-events: none;
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out;
-    }}
-    .dock-btn:hover .dock-name, .dock-btn:focus-visible .dock-name {{
-      opacity: 1; transform: translateX(-50%) translateY(0);
-    }}
-    /* Khi popover đang mở thì ẩn tooltip — hai lớp nổi chồng nhau gây rối. */
-    .dock-group:hover .dock-name, .dock-group:focus-within .dock-name {{ opacity: 0; }}
-    .dock-pop {{
-      position: absolute; bottom: calc(100% + 14px); left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      min-width: 232px; padding: 8px;
-      background: rgba(255,255,255,.97); border: 1px solid var(--line);
-      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.26);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      opacity: 0; visibility: hidden; pointer-events: none;
-      /* Độ trễ khi ĐÓNG (0.22s) nhưng không trễ khi MỞ. Rê chuột ra ngoài
-         trong chớp mắt sẽ không làm menu tắt ngay, nên người dùng có thời gian
-         quay lại — đây là nửa thứ hai của cơ chế chống tắt đột ngột. */
-      transition: opacity .18s ease-in-out .22s,
-                  transform .18s ease-in-out .22s,
-                  visibility 0s linear .40s;
-    }}
-    /* CẦU NỐI HOVER. Giữa nút và popover có khe hở 14px; con trỏ đi qua khe đó
-       rời khỏi cả hai phần tử nên :hover tắt và menu biến mất giữa chừng —
-       đúng lỗi người dùng gặp. Phần tử giả này phủ kín khe, trong suốt, và
-       thuộc về .dock-pop nên hover trên nó vẫn tính là hover trong nhóm. */
-    .dock-pop::after {{
-      content: ""; position: absolute; left: 0; right: 0;
-      top: 100%; height: 18px;
-    }}
-    /* Mở rộng vùng bắt của cả nhóm xuống dưới nút, phòng khi con trỏ đi vòng. */
-    .dock-group::after {{
-      content: ""; position: absolute; left: -6px; right: -6px;
-      top: -18px; bottom: -6px; z-index: -1;
-    }}
-    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop,
-    .dock-group.ui-open .dock-pop {{
-      opacity: 1; visibility: visible; pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-      /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out, visibility 0s;
-    }}
-    .dock-pop a {{
-      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-      border-radius: 12px; color: #1e293b; font-size: 13px;
-      white-space: nowrap; text-decoration: none;
-    }}
-    .dock-pop a:hover {{ background: #f1f5f9; }}
-    /* MÀN HẸP. `.dock-inner` từng mang `overflow-x: auto`, và một hộp cuộn
-       thì CẮT mọi hậu duệ nằm ngoài nó. Inner chỉ cao 54px còn menu con bung
-       lên phía trên, nên menu bị xén sạch: đo được 0/9 liên kết nhận được cú
-       chạm trên điện thoại trong khi máy bàn 9/9. `position: fixed` không
-       thoát ra được vì `backdrop-filter` của inner biến nó thành khối chứa
-       cho cả hậu duệ `fixed`. Bỏ hẳn cuộn ngang mới là gỡ đúng gốc: cho mỗi
-       nhóm `flex: 1 1 0` để N nhóm luôn vừa khít bề ngang, rồi căng menu
-       `left: 0; right: 0` theo cả dải dock. Cách này cũng xử lý luôn lỗi menu
-       rộng cố định 232px lòi ra ngoài viền ở các nhóm đầu và cuối. */
-    @media (max-width: 640px) {{
-      .dock {{ left: 16px; right: 16px; transform: none; max-width: none; }}
-      .dock-inner {{ justify-content: space-between; gap: 2px; padding: 6px;
-        border-radius: 16px; }}
-      .dock-group {{ position: static; flex: 1 1 0; min-width: 0; }}
-      .dock-btn {{ width: 100%; }}
-      .dock-ic {{ width: 100%; max-width: 40px; margin: 0 auto; }}
-      /* Màn cảm ứng không có hover để hiện tooltip, mà tên nhóm đã nằm sẵn
-         trong menu con. */
-      .dock-name {{ display: none; }}
-      .dock-pop {{ left: 0; right: 0; min-width: 0;
-        transform: translateY(6px);
-        max-height: min(60vh, 420px); overflow-y: auto; }}
-      /* Chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu
-         mở mãi và cú chạm thứ hai không đóng được gì. Ở màn hẹp chỉ `.ui-open`
-         (do kịch bản đặt) mới là công tắc. `.ui-js` đứng đầu để khi không có
-         JavaScript thì hành vi cũ vẫn còn. */
-      .ui-js .dock-group:hover .dock-pop,
-      .ui-js .dock-group:focus-within .dock-pop {{
-        opacity: 0; visibility: hidden; pointer-events: none;
-        transform: translateY(6px);
-      }}
-      .ui-js .dock-group.ui-open .dock-pop,
-      .dock-group.ui-open .dock-pop {{
-        opacity: 1; visibility: visible; pointer-events: auto;
-        transform: translateY(0);
-      }}
-      /* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn
-         cảm ứng không có hover, còn `z-index: -1` của vùng đệm lại đẩy nó
-         xuống dưới dải dock nên nó nuốt mất cú chạm ở rìa nút. */
-      .dock-pop::after {{ content: none; }}
-      .dock-group::after {{ content: none; }}
-    }}
-    @media (prefers-reduced-motion: reduce) {{
-      .dock-ic, .dock-pop {{ transition: none; }}
-      .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {{ transform: none; }}
-    }}
-
-    /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
-       bị giới hạn bằng max-width ở lớp desktop-view, nên ở màn 1920px nó dính
-       sát mép trái và chừa 140px bên phải — lệch hẳn một phía. */
-    .main {{
-      min-width: 0;
-      width: 100%;
-      max-width: 1600px;
-      margin: 0 auto;
-      padding: 32px clamp(16px, 2.5vw, 40px);
-    }}
-    .hero {{
-      position: relative;
-      overflow: hidden;
-      border-radius: 32px;
-      padding: 30px;
-      margin-bottom: 20px;
-      color: #fff;
-      /* Ba chặng đã dò trắng trên toàn dải: 6,29:1 / 7,69:1 / 9,02:1. Chọn
-         chặng bằng cách nhìn ba ô màu thì không đủ — lần trước làm thế và hai
-         trong ba chặng trượt chuẩn với chữ trắng. */
-      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
-      box-shadow: var(--shadow-brand);
-    }}
-    .hero::after {{
-      content: "";
-      position: absolute;
-      right: -12rem;
-      top: -12rem;
-      width: 32rem;
-      height: 32rem;
-      background: radial-gradient(circle, rgba(165,180,252,.28), transparent 70%);
-      pointer-events: none;
-    }}
-    .hero-content {{ position: relative; z-index: 1; display: grid; gap: 18px; }}
-    .hero h1 {{
-      max-width: 900px;
-      margin: 0;
-      font-size: clamp(30px, 5vw, 58px);
-      line-height: .98;
-      letter-spacing: -.045em;
-    }}
-    .hero p {{ max-width: 820px; margin: 0; color: #E4E5FC; font-size: 16px; line-height: 1.65; }}
-    .hero-actions {{ display: flex; gap: 10px; flex-wrap: wrap; }}
-    .primary-action, .ghost-action {{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 42px;
-      padding: 10px 15px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 800;
-    }}
-    .primary-action {{ background: #fff; color: #0f172a; }}
-    .ghost-action {{ border: 1px solid rgba(255,255,255,.18); color: #e5e7eb; background: rgba(255,255,255,.07); }}
-    /* auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần một
-       media query riêng cho từng mốc. */
-    .metric-row {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }}
-    .metric-tile {{
-      padding: 18px;
-      border-radius: 22px;
-      background: var(--panel);
-      border: 1px solid rgba(226,232,240,.8);
-      box-shadow: 0 14px 34px rgba(15,23,42,.06);
-      min-height: 124px;
-      display: grid;
-      gap: 8px;
-      align-content: start;
-      position: relative;
-      overflow: hidden;
-    }}
-    .metric-tile::before {{
-      content: "";
-      position: absolute;
-      inset: auto 16px 14px auto;
-      width: 70px;
-      height: 70px;
-      border-radius: 999px;
-      opacity: .12;
-      background: currentColor;
-    }}
-    .metric-tile span {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; font-weight: 900; }}
-    .metric-tile strong {{
-      font-size: clamp(26px, 4vw, 42px); line-height: 1; letter-spacing: -.04em;
-      font-variant-numeric: tabular-nums;
-    }}
-    /* Giá trị dài (ngày "2026-09-06" là 10 ký tự) không vừa một dòng ở cỡ 42px
-       trong thẻ 213px, và một ngày bị ngắt thành "2026-09-" / "06" thì vô
-       nghĩa. Hạ cỡ chữ theo độ dài thay vì cho xuống dòng. */
-    .metric-tile[data-long="true"] strong {{ font-size: clamp(20px, 2.1vw, 27px); }}
-    .metric-tile em {{ font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.4; }}
-    .metric-tile.blue {{ color: var(--blue); }}
-    .metric-tile.orange {{ color: var(--orange); }}
-    .metric-tile.green {{ color: var(--green); }}
-    .metric-tile.purple {{ color: var(--purple); }}
-    .layout-top {{
-      display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(330px, .72fr);
-      gap: 18px;
-      align-items: start;
-    }}
-    .right-rail {{ display: grid; gap: 18px; }}
-    .section {{
-      scroll-margin-top: 20px;
-      margin-top: 18px;
-    }}
-    .section-title {{
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 16px;
-      margin: 30px 0 14px;
-    }}
-    .section-title h2 {{
-      margin: 0;
-      font-size: clamp(22px, 3vw, 34px);
-      letter-spacing: -.035em;
-    }}
-    .section-title p {{
-      margin: 6px 0 0;
-      color: var(--muted);
-      max-width: 780px;
-      line-height: 1.55;
-    }}
-    .section-title .section-kicker {{
-      font-size: 11px;
-      color: var(--blue);
-      text-transform: uppercase;
-      letter-spacing: .15em;
-      font-weight: 900;
-    }}
-    .card {{
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(18px);
-      border: 1px solid rgba(226,232,240,.85);
-      border-radius: var(--radius);
-      box-shadow: 0 16px 42px rgba(15,23,42,.07);
-      padding: 18px;
-      min-width: 0;
-    }}
-    .card-head {{
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 14px;
-    }}
-    .eyebrow {{
-      margin: 0 0 5px;
-      color: var(--blue);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .14em;
-      font-weight: 900;
-    }}
-    .card h3 {{
-      margin: 0;
-      font-size: 18px;
-      letter-spacing: -.02em;
-    }}
-    .card-head p:not(.eyebrow), .card > p {{
-      color: var(--muted);
-      margin: 5px 0 0;
-      line-height: 1.45;
-      font-size: 13px;
-    }}
-    .result-combo {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(260px, .45fr);
-      gap: 16px;
-      align-items: start;
-    }}
-    /* Bảng kết quả có bề rộng tối thiểu do số giải quy định; ở 360px nó rộng
-       520px và trước đây đẩy cả trang tràn ngang 187px. Cho phần dư cuộn
-       trong khung riêng thay vì đẩy body. */
-    .result-scroll {{ overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }}
-    .result-table {{
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-    }}
-    .result-table th {{
-      width: 118px;
-      text-align: left;
-      vertical-align: middle;
-      padding: 14px;
-      color: #334155;
-      background: #f8fafc;
-      border-bottom: 1px solid var(--line);
-      font-size: 13px;
-    }}
-    .result-table td {{
-      padding: 12px;
-      border-bottom: 1px solid var(--line);
-      background: #fff;
-    }}
-    .result-table tr:last-child th, .result-table tr:last-child td {{ border-bottom: 0; }}
-    .prize-list {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }}
-    .prize-number {{
-      border: 0;
-      cursor: pointer;
-      display: inline-grid;
-      place-items: center;
-      min-width: 68px;
-      min-height: 38px;
-      padding: 6px 10px;
-      border-radius: 13px;
-      background: #f1f5f9;
-      color: #0f172a;
-      font-weight: 900;
-      letter-spacing: .03em;
-      box-shadow: inset 0 -1px 0 rgba(15,23,42,.08);
-    }}
-    .prize-number.special {{
-      min-width: 116px;
-      min-height: 52px;
-      background: linear-gradient(135deg, #fee2e2, #ffedd5);
-      color: #b91c1c;
-      font-size: 28px;
-      letter-spacing: .06em;
-    }}
-    .prize-list.mini .prize-number {{ min-width: 48px; color: #b91c1c; background: #fff1f2; }}
-    /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
-       (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
-       .matrix-wrap cuộn ngang phần dư. */
-    .chuc-card {{
-      position: sticky;
-      top: 18px;
-      min-width: 0;
-    }}
-    .result-combo > * {{ min-width: 0; }}
-    .tiny-matrix, .matrix-grid {{
-      display: grid;
-      grid-template-columns: 26px repeat(10, minmax(38px, 1fr));
-      gap: 6px;
-      align-items: stretch;
-    }}
-    .tiny-matrix {{
-      grid-template-columns: 22px repeat(10, minmax(27px, 1fr));
-      gap: 4px;
-    }}
-    .matrix-axis, .matrix-head {{
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 900;
-    }}
-    .tiny-matrix-cell, .matrix-cell {{
-      border: 1px solid rgba(15,23,42,.06);
-      border-radius: 12px;
-      cursor: pointer;
-      min-width: 0;
-      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-    }}
-    .matrix-cell {{
-      min-height: 52px;
-      padding: 7px 4px;
-      display: grid;
-      place-items: center;
-      gap: 2px;
-    }}
-    .tiny-matrix-cell {{
-      min-height: 42px;
-      padding: 4px 2px;
-      display: grid;
-      place-items: center;
-      gap: 1px;
-    }}
-    .tiny-matrix-cell b, .cell-number {{
-      font-weight: 950;
-      letter-spacing: -.02em;
-    }}
-    .tiny-matrix-cell span, .cell-value {{
-      font-size: 10px;
-      opacity: .88;
-      font-weight: 750;
-    }}
-    .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {{
-      transform: translateY(-1px);
-      box-shadow: 0 12px 22px rgba(15,23,42,.12);
-      border-color: rgba(37,99,235,.35);
-    }}
-    .matrix-wrap {{ overflow: auto; padding-bottom: 4px; }}
-    .legend {{
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 12px;
-      color: var(--muted);
-      font-size: 12px;
-    }}
-    .legend span {{ width: 32px; height: 10px; border-radius: 99px; border: 1px solid rgba(15,23,42,.08); }}
-    .legend i {{ width: 50px; height: 1px; background: var(--line); }}
-    .head-tail-grid {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 14px;
-    }}
-    .head-tail-card {{
-      border-radius: 18px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      padding: 12px;
-    }}
-    .head-tail-card h4 {{ margin: 0 0 8px; font-size: 13px; }}
-    .head-tail-row {{
-      display: grid;
-      grid-template-columns: 26px minmax(0, 1fr);
-      gap: 8px;
-      align-items: start;
-      padding: 5px 0;
-      border-top: 1px solid rgba(226,232,240,.75);
-    }}
-    .head-tail-row:first-of-type {{ border-top: 0; }}
-    .mini-badge {{
-      display: inline-flex;
-      align-items: center;
-      min-height: 22px;
-      padding: 3px 7px;
-      margin: 1px;
-      border-radius: 999px;
-      background: #e0f2fe;
-      color: #075985;
-      font-size: 12px;
-      font-weight: 850;
-    }}
-    .matrix-two, .two-col {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-    }}
-    .matrix-three, .three-col {{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-    }}
-    /* Sau khi xếp dọc, thẻ biểu đồ chiếm trọn 1504px. Kéo một thanh dài
-       ~1400px không cho biết thêm gì so với 560px, mà nhãn và trị số bị đẩy ra
-       hai mép xa nhau tới mức phải đưa mắt qua cả màn hình mới ghép được cặp.
-
-       Đổi thành nhiều CỘT thay vì giới hạn bề rộng rồi bỏ trống nửa thẻ: 10
-       mục thành 2 cột × 5 hàng, vừa lấp hết chiều ngang vừa giảm nửa chiều
-       cao. minmax(min(100%, 560px), 1fr) tự rơi về một cột khi hẹp mà không
-       cần media query cho từng mốc. */
-    .bar-list {{
-      display: grid;
-      gap: 9px 28px;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
-      grid-auto-flow: row;
-    }}
-    .bar-row {{
-      display: grid;
-      grid-template-columns: 86px minmax(0, 1fr) 74px;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 8px;
-      border: 1px solid transparent;
-      border-radius: 14px;
-      background: transparent;
-      text-align: left;
-      cursor: pointer;
-    }}
-    .bar-label {{
-      font-weight: 900;
-      color: #0f172a;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }}
-    .bar-track {{
-      height: 13px;
-      border-radius: 999px;
-      background: #e2e8f0;
-      overflow: hidden;
-    }}
-    .bar-fill {{
-      display: block;
-      height: 100%;
-      border-radius: inherit;
-    }}
-    .bar-value {{
-      color: var(--muted);
-      text-align: right;
-      font-size: 12px;
-      font-weight: 850;
-    }}
-    .signal-pills {{ display: grid; gap: 8px; }}
-    .signal-pill {{
-      display: grid;
-      grid-template-columns: 46px 1fr;
-      gap: 10px;
-      align-items: center;
-      padding: 9px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: #fff;
-      text-align: left;
-      cursor: pointer;
-    }}
-    .signal-pill b {{
-      display: grid;
-      place-items: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      background: #f5f3ff;
-      color: var(--purple);
-      font-size: 18px;
-    }}
-    .signal-pill span {{
-      color: #334155;
-      font-size: 13px;
-      line-height: 1.35;
-      font-weight: 700;
-    }}
-    .table-wrap {{
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      max-height: 520px;
-    }}
-    .stat-table {{
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      min-width: 640px;
-      background: #fff;
-    }}
-    .stat-table th {{
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      padding: 10px 11px;
-      text-align: left;
-      background: #f8fafc;
-      border-bottom: 1px solid var(--line);
-      color: #334155;
-      font-size: 12px;
-      white-space: nowrap;
-    }}
-    .stat-table td {{
-      padding: 10px 11px;
-      border-bottom: 1px solid #f1f5f9;
-      color: #0f172a;
-      font-size: 13px;
-      vertical-align: top;
-    }}
-    .stat-table.dense th, .stat-table.dense td {{
-      padding: 7px 8px;
-      font-size: 12px;
-      text-align: center;
-      white-space: nowrap;
-    }}
-    .table-filter {{
-      width: 100%;
-      margin: 0 0 10px;
-      min-height: 42px;
-      padding: 0 14px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      outline: none;
-      background: #fff;
-    }}
-    .num-link {{
-      border: 0;
-      border-radius: 10px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-weight: 900;
-      padding: 5px 8px;
-      cursor: pointer;
-    }}
-    /* Hai khối nằm ngang, tự co giãn theo bề rộng còn lại và luôn bằng chiều
-       cao nhau. minmax(0,1fr) là phần chống vỡ khung: thiếu nó, một bảng rộng
-       bên trong sẽ đẩy cột phình ra và làm cả trang tràn ngang. */
-    .live-status {{
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-radius: 12px;
-      background: var(--panel-2); border: 1px solid var(--line);
-      font-size: 13px; color: var(--ink-soft);
-    }}
-    .live-dot {{
-      width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
-      background: #94a3b8;
-    }}
-    .live-status[data-state="live"] {{ border-color: #ef4444; color: #b91c1c; }}
-    .live-status[data-state="live"] .live-dot {{
-      background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
-    }}
-    .live-status[data-state="done"] .live-dot {{ background: #22c55e; }}
-    @keyframes live-pulse {{
-      0%, 100% {{ opacity: 1; transform: scale(1); }}
-      50% {{ opacity: .45; transform: scale(1.35); }}
-    }}
-    @media (prefers-reduced-motion: reduce) {{
-      .live-status[data-state="live"] .live-dot {{ animation: none; }}
-    }}
-
-    .pair-row {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-      align-items: stretch;
-      margin-bottom: 18px;
-    }}
-    .pair-row > * {{ min-width: 0; margin: 0; }}
-    @media (max-width: 900px) {{ .pair-row {{ grid-template-columns: 1fr; }} }}
-
-    /* Khu căn cứ xếp theo TẦNG, không theo cột.
-
-       Tầng 1: khung căn cứ trải hết chiều ngang.
-       Tầng 2: bảng cầu Đặc Biệt và bảng cầu LOTO cạnh nhau, Đặc Biệt bên trái.
-
-       Đánh đổi phải nói rõ: min-content của mỗi bảng cầu đo được 796px, nên
-       hai bảng cạnh nhau cần 1616px vùng nội dung. Dưới mức đó mỗi bảng tự
-       cuộn ngang trong thẻ của nó để xem đủ 9 cột. Bố cục cũ cho mỗi bảng
-       trọn ~1090px nên không phải cuộn — đây là cái giá của việc xếp ngang,
-       và nó là lựa chọn có chủ ý chứ không phải sơ suất. */
-    .inspector {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
-      align-items: start;
-    }}
-    .inspector > * {{ min-width: 0; }}
-
-    .basis-cell {{ min-width: 0; }}
-    /* KHÔNG còn sticky. sticky có nghĩa khi khung là chú giải nằm CẠNH một
-       khối cuộn dài; nay nó nằm TRÊN, nên dính lại chỉ tổ che mất hai bảng
-       bên dưới. max-height cũng bỏ: trải ngang thì nội dung tự vừa. */
-    .inspector > .inspect-panel {{ align-self: start; }}
-    /* Hai bảng cầu cạnh nhau, Đặc Biệt trước. */
-    .basis-merged {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 0;
-    }}
-    .basis-merged > section {{ min-width: 0; }}
-
-    /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
-       phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
-    .basis-merged {{
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-      overflow: hidden;
-    }}
-    /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
-       chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
-       nhiên là đọc được trọn vẹn, không cắt hàng nào. */
-    .basis-merged > section {{ padding: 20px 24px; }}
-    /* Cạnh nhau thì vách ngăn phải DỌC. Giữ border-top cho nhánh xếp dọc
-       bên dưới, nếu không hai bảng chồng lên nhau mà không có gì ngăn. */
-    .basis-merged > section + section {{ border-left: 1px solid var(--line); }}
-    .basis-merged > section > * {{ margin: 0; border: 0; box-shadow: none; padding: 0; }}
-    /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
-       hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
-    .basis-merged .table-wrap {{ max-height: none; }}
-    /* Ngưỡng xếp dọc PHẢI khớp với ngưỡng thu hẹp cột ngay bên dưới (1280px).
-       Khi hai ngưỡng lệch nhau — cạnh nhau từ 1024px nhưng cột chỉ thu từ
-       1280px — thì cả dải 1024-1279px rơi vào trạng thái xấu nhất: hai bảng
-       đã bị chia đôi bề ngang mà cột vẫn giữ sàn rộng. Đo phần bị che:
-
-         1440   628px/bảng   che 10%
-         1280   553px/bảng   che 21%
-         1265   546px/bảng   che 32%   <- lệch ngưỡng bắt đầu cắn ở đây
-         1100   483px/bảng   che 40%
-         1024   445px/bảng   che 44%
-
-       445px chính là con số mà chú thích gốc ghi là đã làm cột "Tỷ lệ" bị
-       cắt. Dưới 1280 thì xếp dọc, mỗi bảng được trọn chiều ngang. */
-    @media (max-width: 1279px) {{
-      .basis-merged {{ grid-template-columns: minmax(0, 1fr); }}
-      .basis-merged > section + section {{
-        border-left: 0; border-top: 1px solid var(--line);
-      }}
-    }}
-
-    /* Bề rộng cột cho hai bảng đường cầu.
-
-       Bảng có 10 cột trong ~925px. Để trình duyệt tự chia thì "Đường cầu" và
-       "Căn cứ" — hai cột chữ dài nhất — bị bóp xuống ~90px và xuống 3-4 dòng,
-       kéo hàng cao 83px ở bảng trên và 104px ở bảng dưới. Hai bảng cạnh nhau
-       cao lệch nhau trông như lỗi dựng.
-
-       Chữa bằng cách nói rõ cột nào ưu tiên bề rộng, thay vì để thuật toán
-       chia đều cho cả cột chỉ chứa một con số. */
-    .basis-merged .col-path_line {{ min-width: 190px; width: 26%; }}
-    .basis-merged .col-reason {{ min-width: 170px; width: 22%; }}
-    /* Khi hai bảng đứng CẠNH nhau, mỗi bảng chỉ còn ~751px. Hai sàn 190/170
-       ở trên vốn chỉnh cho bảng ~925px, và chúng chính là thứ đặt min-content
-       của bảng lên 796px — dư 45px, đủ để cắt mất cột "Căn cứ".
-
-       Dò từng cặp giá trị, đo cả mức cuộn lẫn chiều cao hàng:
-
-         190/170  cuộn 95px   hàng 83,4px
-         160/140  cuộn 35px   hàng 83,4px
-         140/120  cuộn  0px   hàng 104,2px
-
-       Chọn 140/120. Hàng cao thêm 25% và bảng cao 874 -> 1082px, nhưng bảng
-       hiện đủ MỌI cột ngay khi nhìn. Một bảng cao hơn vẫn đọc được; một bảng
-       giấu mất cột thì phải biết là có cái gì đó ở bên phải mới đi tìm. */
-    @media (min-width: 1280px) {{
-      .basis-merged .col-path_line {{ min-width: 140px; }}
-      .basis-merged .col-reason {{ min-width: 120px; }}
-    }}
-    .basis-merged .col-rule_kind {{ width: 1%; }}
-    /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
-       lớn ngay mà không phải đọc từng chữ số.
-
-       nowrap chỉ áp cho ô DỮ LIỆU, không áp cho tiêu đề. Áp cả hai thì những
-       tiêu đề dài như "Độ trễ (ngày)" hay "Chuỗi hiện tại" tự đặt sàn bề rộng
-       cho cột, đẩy bảng lên 1051px trong khung 927px và sinh cuộn ngang. Tiêu
-       đề xuống hai dòng là chuyện bình thường ở bảng dày; số bị ngắt dòng mới
-       là lỗi. */
-    .basis-merged th.col-lag_days,
-    .basis-merged th.col-p_mean,
-    .basis-merged th.col-hit_ratio,
-    .basis-merged th.col-current_streak,
-    .basis-merged th.col-rule_score {{ text-align: right; width: 1%; }}
-    .basis-merged td.col-lag_days,
-    .basis-merged td.col-p_mean,
-    .basis-merged td.col-hit_ratio,
-    .basis-merged td.col-current_streak,
-    .basis-merged td.col-rule_score {{
-      white-space: nowrap; text-align: right; width: 1%;
-      font-variant-numeric: tabular-nums;
-    }}
-    .basis-merged .col-number_str {{ width: 1%; }}
-
-    /* Ghi chú cảnh báo đi kèm bảng cặp. Nó không phải phần trang trí: thiếu
-       nó thì bảng chỉ cho thấy "gấp đôi kỳ vọng" và người đọc kết luận có quy
-       luật, trong khi cực đại ngẫu nhiên đã ở mức đó rồi. */
-    .pair-note {{
-      margin: 14px 0 0;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #78350f;
-      font-size: 13px;
-      line-height: 1.6;
-    }}
-    .stat-table td.col-count {{
-      text-align: right; white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }}
-    .stat-table td.col-pair {{ font-weight: 800; letter-spacing: .02em; }}
-
-    /* Kết quả | Chục | Đơn vị: bảng kết quả chiếm phần lớn chiều ngang.
-       Sàn bằng 0 để nội dung bảng không đẩy rộng toàn trang. */
-    .matrix-top {{
-      display: grid;
-      grid-template-columns: minmax(0, 2.1fr) repeat(2, minmax(0, 1fr));
-      gap: 24px;
-      align-items: stretch;
-      margin-bottom: 24px;
-    }}
-    .matrix-top > * {{ min-width: 0; margin: 0; }}
-    /* Tablet: kết quả trọn hàng, chục và đơn vị ở hàng kế tiếp. */
-    @media (max-width: 959px) {{
-      .matrix-top {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-      .matrix-top > #ket-qua {{ grid-column: 1 / -1; }}
-    }}
-    @media (max-width: 640px) {{ .matrix-top {{ grid-template-columns: minmax(0, 1fr); }} }}
-
-    .matrix-full {{ width: 100%; margin-bottom: 24px; }}
-
-    /* Ba thẻ dự đoán ngày mai XẾP DỌC — giữ nguyên, và lý do vẫn đứng vững.
-
-       Bản ba cột cho mỗi thẻ 485px ở màn 1920px, trong khi thẻ mô phỏng cần
-       1112px: lưới bên trong nó tự chia ba cột (khung giải 520 + hai bảng xác
-       suất 280 mỗi bảng + khe). Ép xuống 485px thì lưới ấy TRÀN RA NGOÀI thẻ,
-       vì overflow-x của nó là visible chứ không phải auto — nội dung đi ra
-       khỏi khung chứ không sinh thanh cuộn.
-
-       Việc xếp ngang "mô phỏng | Đặc Biệt | LOTO" thuộc về BÊN TRONG khối mô phỏng
-       (.fun-pred-grid trong build_fun_prediction.py), không phải ở tầng này. */
-    .next-day {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
-    }}
-    .next-day > * {{ min-width: 0; margin: 0; }}
-    /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
-       dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
-       lại khoảng trống; ẩn hẳn đi. */
-    .next-day > section:empty {{ display: none; }}
-    .inspect-panel {{
-      background:
-        radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
-        #fff;
-      border-radius: var(--radius);
-      border: 1px solid rgba(226,232,240,.9);
-      padding: 18px;
-      box-shadow: 0 16px 42px rgba(15,23,42,.07);
-    }}
-    .inspect-panel > * {{ min-width: 0; }}
-    .inspect-panel p, .position-list li {{ overflow-wrap: anywhere; }}
-    .inspect-paths h4 {{ margin: 0 0 10px; }}
-    @media (min-width: 1024px) {{
-      .inspect-panel {{
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-        gap: 24px;
-        align-items: start;
-      }}
-      .inspect-paths .position-list {{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin: 0;
-      }}
-    }}
-    .inspect-number {{
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }}
-    .inspect-number b {{
-      display: grid;
-      place-items: center;
-      width: 64px;
-      height: 64px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #ede9fe, #dbeafe);
-      color: #5b21b6;
-      font-size: 28px;
-      letter-spacing: -.05em;
-    }}
-    .inspect-number span {{ color: var(--muted); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }}
-    .inspect-panel h3 {{ margin: 0 0 8px; font-size: 22px; }}
-    .inspect-panel p {{ color: #475569; line-height: 1.55; margin: 8px 0; }}
-    .inspect-meta {{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin: 14px 0;
-    }}
-    .inspect-meta div {{
-      padding: 10px;
-      border-radius: 14px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-    }}
-    .inspect-meta span {{
-      display: block;
-      color: var(--muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      font-weight: 900;
-    }}
-    .inspect-meta strong {{ display: block; margin-top: 3px; font-size: 18px; }}
-    .position-list {{ display: grid; gap: 8px; margin-top: 10px; padding: 0; }}
-    .position-list li {{
-      list-style: none;
-      padding: 10px;
-      border-radius: 14px;
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      color: #334155;
-      font-size: 13px;
-      line-height: 1.45;
-    }}
-    .empty, .muted {{ color: var(--muted); }}
-    .empty {{
-      padding: 22px;
-      border-radius: 18px;
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
-      text-align: center;
-    }}
-    .footer {{
-      margin: 32px 0 8px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-      text-align: center;
-    }}
-    @media (min-width: 1181px) {{
-      /* Chỉ nới padding ở màn rộng. max-width giữ nguyên 1600px của lớp cơ sở:
-         trước đây khối này ghi đè thành 1780px nên ba nơi khai báo .main lệch
-         nhau và màn 1920px chạy rộng hơn khung thiết kế 1440-1600px. */
-      .main {{
-        padding: 32px clamp(28px, 3vw, 48px);
-      }}
-      /* Bề rộng khả dụng của .main đã trừ .side-nav (~247px) nên ở màn 1440px
-         chỉ còn ~1062px. Ngưỡng cũ 760+18+360=1138px lớn hơn mức đó khiến
-         cả lưới tràn ra ngoài viewport. */
-      .layout-top {{
-        grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-      }}
-      .right-rail {{
-        position: sticky;
-        top: 22px;
-        max-height: calc(100vh - 44px);
-        overflow: auto;
-        padding-right: 2px;
-      }}
-      .result-combo {{
-        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-      }}
-      .hero-content {{
-        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
-        align-items: end;
-      }}
-      .hero-content > div:first-child,
-      .hero-content > p,
-      .hero-actions {{
-        grid-column: 1;
-      }}
-      .hero .signal-pills {{
-        grid-column: 2;
-        grid-row: 1 / span 3;
-        align-self: stretch;
-        /* align-content:end dồn ba viên xuống đáy, để lại 140px trống ở đầu
-           panel — 39% chiều cao khối. Căn giữa thì khoảng trống chia đều hai
-           đầu và khối cân về mặt thị giác. */
-        align-content: center;
-        padding: 12px;
-        border: 1px solid rgba(255,255,255,.16);
-        border-radius: 22px;
-        background: rgba(255,255,255,.08);
-        backdrop-filter: blur(18px);
-      }}
-      .section-title {{
-        padding-right: min(10vw, 180px);
-      }}
-    }}
-    @media (min-width: 1440px) {{
-      .matrix-two {{
-        grid-template-columns: repeat(2, minmax(520px, 1fr));
-      }}
-      .two-col {{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }}
-      .three-col {{
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }}
-    }}
-    @media (max-width: 1180px) {{
-      .main {{ padding: 18px; }}
-      .layout-top {{ grid-template-columns: 1fr; }}
-      .right-rail {{ position: static; max-height: none; overflow: visible; }}
-      .chuc-card {{ position: static; }}
-      .metric-row {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-    }}
-    @media (max-width: 860px) {{
-      .result-combo, .matrix-two, .matrix-three, .two-col, .three-col, .inspector {{
-        grid-template-columns: 1fr;
-      }}
-      .side-nav {{ grid-template-columns: 1fr; }}
-      .metric-row {{ grid-template-columns: 1fr; }}
-      .hero {{ padding: 22px; border-radius: 24px; }}
-      .result-table th {{ width: 92px; }}
-      .prize-number.special {{ font-size: 22px; min-width: 96px; }}
-      /* Cột cố định 38px làm ma trận rộng 402px, vượt bề ngang khả dụng của
-         màn hình nhỏ (~354px ở 390px) và đẩy cả trang tràn ngang. Cho cột co
-         lại theo khung để ma trận luôn vừa màn hình. */
-      .tiny-matrix, .matrix-grid {{
-        grid-template-columns: 22px repeat(10, minmax(0, 1fr));
-      }}
-      .matrix-cell {{ min-height: 48px; }}
-      .bar-row {{ grid-template-columns: 62px minmax(0, 1fr) 58px; }}
-      .head-tail-grid {{ grid-template-columns: 1fr; }}
-    }}
-    @media (max-width: 640px) {{
-      body {{
-        background:
-          radial-gradient(circle at top, rgba(37,99,235,.16), transparent 24rem),
-          var(--bg);
-      }}
-      .brand {{
-        margin-bottom: 8px;
-        padding: 9px;
-      }}
-      .brand-logo {{ width: 34px; height: 34px; border-radius: 12px; }}
-      .brand small {{ display: none; }}
-      .nav-title {{ display: none; }}
-      .side-nav {{
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-      }}
-      .side-nav a {{
-        min-width: 164px;
-        grid-template-columns: 24px 1fr;
-        gap: 8px;
-        padding: 8px;
-        scroll-snap-align: start;
-      }}
-      .side-nav a span {{
-        width: 24px;
-        height: 24px;
-        border-radius: 8px;
-        font-size: 10px;
-      }}
-      .side-nav a b {{ font-size: 12px; }}
-      .side-nav a small {{ display: none; }}
-      .main {{ padding: 12px; }}
-      .hero {{
-        padding: 18px;
-        margin-bottom: 12px;
-        border-radius: 22px;
-      }}
-      .hero h1 {{
-        font-size: clamp(26px, 8vw, 34px);
-        line-height: 1.05;
-      }}
-      .hero p {{
-        font-size: 14px;
-        line-height: 1.55;
-      }}
-      .hero-actions a {{
-        width: 100%;
-      }}
-      .card {{
-        padding: 14px;
-        border-radius: 20px;
-      }}
-      .section-title {{
-        display: block;
-        margin: 24px 0 12px;
-      }}
-      .section-title h2 {{
-        font-size: 24px;
-      }}
-      .card-head {{
-        display: block;
-      }}
-      .result-combo > div:first-child,
-      .matrix-wrap,
-      .table-wrap {{
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }}
-      .result-table {{
-        min-width: 520px;
-      }}
-      /* minmax chứ không phải 36px cứng. min-width:430px là để ma trận vẫn
-         cuộn được trên máy hẹp; nhưng cột cứng thì có SÀN mà không có TRẦN,
-         nên khi khung rộng hơn 430px các cột đứng yên ở 36px và phần dôi ra
-         thành một mảng trắng bên phải. Đo ở khung 600px: lưới rộng 546px,
-         cột chiếm 444px — thừa 102px. minmax(36px, 1fr) giữ nguyên hành vi
-         cuộn khi chật và cho cột giãn lấp đầy khi rộng. */
-      .tiny-matrix, .matrix-grid {{
-        min-width: 430px;
-        grid-template-columns: 24px repeat(10, minmax(36px, 1fr));
-      }}
-      .matrix-cell {{
-        min-height: 46px;
-        border-radius: 11px;
-      }}
-      .tiny-matrix-cell {{
-        min-height: 38px;
-        border-radius: 10px;
-      }}
-      .inspect-meta {{
-        grid-template-columns: 1fr;
-      }}
-      .stat-table {{
-        min-width: 620px;
-      }}
-      .footer {{
-        margin-bottom: 70px;
-      }}
-    }}
-    body.desktop-view {{
-      min-width: 1320px;
-    }}
-    body.desktop-view .side-nav a {{
-      min-width: 0 !important;
-    }}
-    body.desktop-view .side-nav a small {{
-      display: block !important;
-    }}
-    body.desktop-view .main {{
-      max-width: min(100%, 1600px) !important;
-      margin-inline: auto !important;
-      padding: 32px clamp(28px, 3vw, 48px) !important;
-    }}
-    /* Cùng lý do như .layout-top ở trên: sau khi bỏ sidebar, .main dùng trọn
-       chiều ngang nên ngưỡng cột phải nới theo. */
-    body.desktop-view .layout-top {{
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
-    }}
-    body.desktop-view .right-rail {{
-      position: sticky !important;
-      top: 22px !important;
-      max-height: calc(100vh - 44px) !important;
-      overflow: auto !important;
-    }}
-    body.desktop-view .matrix-two,
-    body.desktop-view .two-col {{
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }}
-    body.desktop-view .matrix-three,
-    body.desktop-view .three-col {{
-      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }}
-    /* Chế độ máy tính đi theo lớp nền, không dựng lại bố cục riêng.
-       Khu căn cứ nay xếp theo TẦNG (khung căn cứ trải ngang ở trên, hai bảng
-       đường cầu cạnh nhau ở dưới), nên ép nó về hai cột ở đây là quay ngược
-       lại bố cục cũ — và !important khiến việc quay ngược đó thắng tuyệt đối.
-
-       Lớp desktop-view đặt min-width 1320px, tức luôn rộng hơn mọi ngưỡng của
-       lớp nền, nên lớp nền tự cho ra bố cục đúng mà không cần ghi đè gì. */
-    body.desktop-view .inspector {{
-      grid-template-columns: minmax(0, 1fr) !important;
-    }}
-    @media print {{
-      .dock, .hero-actions {{ display: none; }}
-      .app {{ padding-bottom: 0; }}
-      body {{ background: #fff; }}
-      .card, .metric-tile, .hero {{ box-shadow: none; }}
-    }}
+{_LANDING_CSS}
   </style>
 </head>
 <body{body_class}>
@@ -2494,126 +2636,7 @@ def _render_html(
 
   <script type="application/json" id="landing-data">{data_json}</script>
   <script>
-    const APP_DATA = JSON.parse(document.getElementById('landing-data').textContent);
-
-    /* Sidebar thu gọn. Trạng thái lưu trong localStorage nên giữ nguyên khi
-       chuyển trang; mọi truy cập đều bọc try/catch vì trình duyệt ở chế độ
-       riêng tư có thể ném lỗi ngay khi đọc. */
-    /* Trạng thái kỳ quay tính theo giờ Việt Nam trên máy người xem, không phải
-       theo giờ lúc dựng trang: trang tĩnh dựng một lần rồi phục vụ suốt ngày,
-       nên một trạng thái ghi cứng sẽ sai với gần như mọi lượt xem. */
-    (function () {{
-      const box = document.getElementById('live-status');
-      const text = document.getElementById('live-status-text');
-      const note = document.getElementById('live-note');
-      if (!box || !text) return;
-
-      const DRAW_START = 18 * 60 + 10;   // 18:10 — bắt đầu quay các giải phụ
-      const DRAW_END = 18 * 60 + 40;     // 18:40 — thường đã xong giải Đặc Biệt
-
-      function vietnamMinutes() {{
-        const parts = new Intl.DateTimeFormat('en-GB', {{
-          timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false
-        }}).formatToParts(new Date());
-        const get = (k) => Number(parts.find((p) => p.type === k).value);
-        return get('hour') * 60 + get('minute');
-      }}
-
-      function refresh() {{
-        const m = vietnamMinutes();
-        if (m >= DRAW_START && m <= DRAW_END) {{
-          box.setAttribute('data-state', 'live');
-          text.textContent = 'Đang quay thưởng — mở trang trực tiếp để xem từng giải hiện dần.';
-          if (note) note.textContent = 'Kết quả bên dưới là của kỳ trước cho tới khi kỳ hôm nay hoàn tất.';
-        }} else {{
-          box.setAttribute('data-state', 'done');
-          text.textContent = 'Kỳ quay đã kết thúc. Bảng kết quả đầy đủ hiển thị bên dưới.';
-          if (note) note.textContent = 'Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.';
-        }}
-      }}
-
-      refresh();
-      window.setInterval(refresh, 30000);
-    }})();
-
-
-    function fmtPercent(value) {{
-      const n = Number(value || 0);
-      if (!Number.isFinite(n)) return '—';
-      return (n > 1 ? n : n * 100).toFixed(1) + '%';
-    }}
-
-    function showNumber(mode, number) {{
-      const n = String(number || '').padStart(2, '0').slice(-2);
-      const m = mode || 'loto';
-      const data = (APP_DATA.explain && APP_DATA.explain[m] && APP_DATA.explain[m][n]) || null;
-      document.getElementById('inspect-num').textContent = n;
-      document.getElementById('inspect-mode').textContent = m === 'de' ? 'Đặc Biệt' : 'Loto';
-      document.getElementById('inspect-title').textContent = data ? 'Căn cứ thống kê cho số ' + n : 'Chưa có căn cứ cho số ' + n;
-      document.getElementById('inspect-score').textContent = data && data.score ? Number(data.score).toFixed(1) : '—';
-      document.getElementById('inspect-prob').textContent = data && data.prob ? fmtPercent(data.prob) : '—';
-      document.getElementById('inspect-reason').textContent = data && data.reason ? data.reason : 'Chưa có lý do AI/ML nổi bật.';
-      document.getElementById('inspect-evidence').textContent = data && data.evidence ? data.evidence : 'Chưa có bằng chứng định lượng.';
-      document.getElementById('inspect-summary').textContent = data && data.summary ? data.summary : 'Số này chưa nằm trong nhóm giải thích AI/ML hoặc chưa có đường cầu vị trí đủ mạnh.';
-      const list = document.getElementById('inspect-lines');
-      list.replaceChildren();
-      const lines = data && Array.isArray(data.lines) ? data.lines : [];
-      if (!lines.length) {{
-        const li = document.createElement('li');
-        li.textContent = 'Chưa có đường cầu vị trí đủ điều kiện hiển thị.';
-        list.appendChild(li);
-      }} else {{
-        lines.forEach(line => {{
-          const li = document.createElement('li');
-          const title = document.createElement('b');
-          title.textContent = line.path_line || 'Đường cầu';
-          const metrics = document.createElement('span');
-          metrics.textContent = 'Loại: ' + (line.kind || '—') +
-            ' · Lag: ' + (line.lag || '—') +
-            ' · P: ' + (line.p_mean || '—') +
-            ' · Trúng/Mẫu: ' + (line.hits || '—') + '/' + (line.trials || '—') +
-            ' · Nhịp: ' + (line.streak || '—') +
-            ' · Điểm: ' + (line.score || '—');
-          const reason = document.createElement('span');
-          reason.textContent = line.reason || '';
-          li.append(title, document.createElement('br'), metrics, document.createElement('br'), reason);
-          list.appendChild(li);
-        }});
-      }}
-    }}
-
-    document.querySelectorAll('[data-number]').forEach(el => {{
-      el.addEventListener('click', () => {{
-        showNumber(el.dataset.mode || 'loto', el.dataset.number);
-      }});
-    }});
-
-    const navLinks = [...document.querySelectorAll('.side-nav a')];
-    const sections = navLinks
-      .map(a => document.querySelector(a.getAttribute('href')))
-      .filter(Boolean);
-    const observer = new IntersectionObserver(entries => {{
-      entries.forEach(entry => {{
-        if (entry.isIntersecting) {{
-          navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
-        }}
-      }});
-    }}, {{ rootMargin: '-30% 0px -60% 0px', threshold: 0 }});
-    sections.forEach(section => observer.observe(section));
-
-    document.querySelectorAll('.table-filter').forEach(input => {{
-      input.addEventListener('input', () => {{
-        const q = input.value.trim().toLowerCase();
-        const table = input.parentElement.querySelector('table');
-        if (!table) return;
-        table.querySelectorAll('tbody tr').forEach(tr => {{
-          tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
-        }});
-      }});
-    }});
-
-    const firstSignal = document.querySelector('[data-number]');
-    if (firstSignal) showNumber(firstSignal.dataset.mode || 'loto', firstSignal.dataset.number);
+{_LANDING_SCRIPT}
   </script>
 </body>
 </html>
