@@ -332,96 +332,34 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table.sp-grid-lines tr:last-child td:first-child { border-bottom-left-radius: .55rem; }
 .sp-table.sp-grid-lines tr:last-child td:last-child { border-bottom-right-radius: .55rem; }
 
-/* 2. BA TRẠNG THÁI Ô, phân biệt bằng ĐỘ SÁNG và ĐỘ NỔI -----------------------
-
-   Trước đây ô trống và ô có về đứng trên cùng một nền trắng — đo được 1,00:1 —
-   và chỉ khác nhau ở một vạch chéo vẽ bằng --ui-border (#E7EAF6). Mắt phải
-   dò từng ô mới tách được hai loại, trên bảng 100x90 thì đó là mỏi mắt thật
-   chứ không phải chuyện thẩm mỹ.
-
-   Bản sau đó chữa bằng cách làm vạch chéo ĐẬM hơn. Nó tách được hai loại,
-   nhưng đổi một vấn đề mỏi mắt lấy một vấn đề mỏi mắt khác: phần lớn ô trong
-   ma trận là ô không về, nên màn hình đầy vạch chéo li ti.
-
-   Nay: ô không về PHẲNG và TỐI NHẤT bảng, ô có về sáng dần theo số nháy và
-   có viền + bóng mỏng. Thứ tự sáng-tối đọc được cả khi mù màu, mà không cần
-   vẽ thêm vân gì lên hàng nghìn ô. */
-/* Ô KHÔNG VỀ: một mảng phẳng, im lặng.
-   ------------------------------------------------------------------------
-   Bản trước dùng sọc chéo `repeating-linear-gradient`. Trên ma trận 100x120
-   thì phần lớn ô là ô không về, nên màn hình đầy những vạch chéo li ti — mắt
-   phải lọc chúng ra khỏi thứ đáng nhìn, và nhìn lâu thì mỏi.
-   Sọc ấy vốn để phân biệt được cả khi không nhận màu; vai trò đó nay do ĐỘ
-   SÁNG đảm nhiệm: ô không về là ô TỐI NHẤT bảng, ô có về thì sáng dần theo
-   số nháy. Thứ tự sáng-tối đọc được cả khi mù màu. */
+/* Empty, data and pending are different states. A data cell retains an
+   inset ring as a second cue; empty cells are quiet, flat and darker. */
 .sp-table td.is-empty {
   background-color: #0B1220;
   background-image: none;
   box-shadow: none;
 }
-/* Chế độ sáng cần giá trị RIÊNG, không phải chỉ đảo lại.
-   Thang màu ô có về (sp-n1..sp-n5) là màu SÁNG CỐ ĐỊNH, không đổi theo chế
-   độ; còn ô có về không có nháy thì bám --ui-surface nên ĐỔI theo chế độ.
-   Vì thế không có một màu nào luôn tối nhất bảng, và điều phải giữ là ô rỗng
-   TÁCH BẠCH khỏi ô có về.
-   Đã đo: để #E2E8F0 ở đây thì ô rỗng sáng 231,3 còn ô có về 232,3 — chênh
-   một đơn vị, tức mắt thường không tách được. Chính vạch chéo cũ đang gánh
-   việc phân biệt ấy, nên bỏ vạch mà không bù độ sáng là dựng lại đúng lỗi cũ. */
-/* Chế độ sáng trả ô không về về NỀN TRẮNG, đúng lối trang mẫu.
-   Trước đây phải dùng xám #CBD5E1 vì cấp 1 nháy chiếm mất màu trắng; nay 1
-   nháy là vàng nên trắng rảnh ra. Vàng và trắng chênh rất ít về ĐỘ SÁNG
-   (1,07) dù khác hẳn về sắc — nên vòng viền trong của ô có về vẫn là dấu
-   hiệu thứ hai bắt buộc, không phải trang trí. */
 @media (prefers-color-scheme: light) {
-  .sp-table td.is-empty { background-color: #FFFFFF; }
-  .sp-nl i.sp-empty-key { background-color: #FFFFFF; }
+  .sp-table td.is-empty { background-color: #E2E8F0; }
+  .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 }
-
-/* Ô CÓ VỀ. Bóng rất mỏng — một ma trận có tới vài nghìn ô, bóng dày là phải
-   trả giá bằng thời gian vẽ lại mỗi lần cuộn. */
+:root[data-ui-theme="light"] .sp-table td.is-empty,
+body.sp-page .sp-table td.is-empty { background-color: #E2E8F0; }
 .sp-table td.sp-hit {
   background-color: var(--ui-surface);
   box-shadow: inset 0 0 0 1px var(--ui-border-strong), 0 1px 1.5px rgba(22,28,45,.07);
   font-weight: 700;
 }
-
-/* --- Phân cấp SỐ NHÁY ------------------------------------------------------
-   Nền pastel + chữ đậm cùng tông. Mọi cặp đã đo với chữ 11px (ngưỡng AA 4,5):
-
-     1 nháy   #FFFFFF / #161C2D   16,96:1
-     2 nháy   #DBEAFE / #1D4ED8    5,49:1
-     3 nháy   #D1FAE5 / #047857    4,84:1
-     4 nháy   #FFEDD5 / #9A3412    6,38:1
-     5+ nháy  #5B21B6 / #FFFFFF    8,98:1
-
-   Một điều cần nói thẳng: xanh dương -> xanh lá -> cam KHÔNG có trật tự tri
-   giác, người đọc không tự suy ra 3 nhiều hơn 2. Đây là quy ước quen thuộc
-   của các trang XSMB nên giữ, nhưng phải kèm chú giải .sp-nhay-legend —
-   thiếu nó thì bảng màu chỉ là màu, không phải thông tin.
-
-   Cấp 5+ là cấp duy nhất đảo nền/chữ. Cố ý: nó hiếm nhất và phải bật ra khỏi
-   trang ngay từ cái liếc đầu tiên (7,29:1 so với ô trống). */
-/* Thang nháy theo lối Rồng Bạch Kim: VÀNG -> CAM -> ĐỎ.
-   ------------------------------------------------------------------------
-   Thang cũ (trắng, xanh dương, xanh lá, cam, tím) có năm sắc nhưng KHÔNG có
-   trật tự tri giác: nhìn một ô xanh lá không đoán được nó nhiều hay ít nháy
-   hơn ô xanh dương. Thang vàng-cam-đỏ thì đọc được ngay vì nó là thang nhiệt.
-
-   Và nó gỡ luôn một vướng cũ: cấp 1 nháy trước đây là NỀN TRẮNG, trùng với
-   ô không về nên phải nhờ vân chéo mới tách được. Nay 1 nháy là vàng, trắng
-   trả về cho ô không về, và vân chéo không còn cần thiết.
-
-   ĐỎ dùng #C62828 chứ không phải #D9534F như trang mẫu: đo ra #D9534F trượt
-   AA với CẢ HAI màu chữ — 3,96 với chữ trắng và 4,28 với chữ đen, tức không
-   có màu chữ nào đọc được trên nó. #C62828 đạt 5,62 với chữ trắng và là sắc
-   gần #D9534F nhất trong các ứng viên đạt chuẩn. */
-.sp-table td.sp-n1 { background-color: #FFFF00; color: #161C2D; }
-.sp-table td.sp-n2 { background-color: #8E44AD; color: #FFFFFF; }
-.sp-table td.sp-n3 { background-color: #C2185B; color: #FFFFFF; }
-.sp-table td.sp-n4 { background-color: #D63031; color: #FFFFFF; font-weight: 800; }
+/* Muted tiers, each with AA text contrast. The numeric count remains the
+   primary encoding; matching legend swatches appear beside every matrix. */
+.sp-table td.sp-n1 { background-color: #FFF3CC; color: #714D0C; }
+.sp-table td.sp-n2 { background-color: #E0F2FE; color: #075985; }
+.sp-table td.sp-n3 { background-color: #DCFCE7; color: #166534; }
+.sp-table td.sp-n4 { background-color: #F3E8FF; color: #6B21A8; font-weight: 800; }
 .sp-table td.sp-n5 {
-  background-color: #A61B1B; color: #FFFFFF;
-  box-shadow: inset 0 0 0 1px #4C1D95, 0 1px 3px rgba(91,33,182,.34);
+  background-color: #FFE4E6; color: #9F1239;
+  box-shadow: inset 0 0 0 1px #FDA4AF;
+  font-weight: 800;
 }
 
 .sp-nhay-legend {
@@ -441,11 +379,11 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-nl span { color: var(--ui-ink-2); font-weight: 600; }
 /* Quy tắc cấp nháy ở trên neo vào "td", nên ô mẫu trong chú giải — vốn là
    thẻ <i> — không với tới được. Khai lại cho đúng nơi nó sống. */
-.sp-nl i.sp-n1 { background: #FFFF00; color: #161C2D; }
-.sp-nl i.sp-n2 { background: #8E44AD; color: #FFFFFF; }
-.sp-nl i.sp-n3 { background: #C2185B; color: #FFFFFF; }
-.sp-nl i.sp-n4 { background: #D63031; color: #FFFFFF; }
-.sp-nl i.sp-n5 { background: #A61B1B; color: #FFFFFF; }
+.sp-nl i.sp-n1 { background: #FFF3CC; color: #714D0C; }
+.sp-nl i.sp-n2 { background: #E0F2FE; color: #075985; }
+.sp-nl i.sp-n3 { background: #DCFCE7; color: #166534; }
+.sp-nl i.sp-n4 { background: #F3E8FF; color: #6B21A8; }
+.sp-nl i.sp-n5 { background: #FFE4E6; color: #9F1239; }
 .sp-nl i.sp-de-key { background: #C0392B; color: #FFFFFF; }
 .sp-nl i.sp-gan-key { background: #F1F3F8; box-shadow: inset 0 0 0 1px var(--ui-border-strong); }
 /* Chú giải phải hiện ĐÚNG thứ nó chú giải. Để lại sọc ở đây trong khi ô thật
@@ -456,8 +394,10 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   box-shadow: inset 0 0 0 1px var(--ui-border-strong);
 }
 @media (prefers-color-scheme: light) {
-  .sp-nl i.sp-empty-key { background-color: #CBD5E1; }
+  .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 }
+:root[data-ui-theme="light"] .sp-nl i.sp-empty-key,
+body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 
 /* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì
       mọi con số thành vô nghĩa. */

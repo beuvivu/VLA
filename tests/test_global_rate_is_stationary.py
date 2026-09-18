@@ -121,9 +121,9 @@ def test_a_local_level_filter_is_worse_than_the_plain_running_mean(base_rate) ->
     điệu theo độ nhạy, và ở hai mức nhạy thật thiệt hại phải có ý nghĩa.
     """
     t_stats = [_filter_penalty(base_rate, alpha) for alpha in ALPHAS]
-    shown = ", ".join(f"α={a}: {t:+.2f}" for a, t in zip(ALPHAS, t_stats))
+    shown = ", ".join(f"α={a}: {t:+.2f}" for a, t in zip(ALPHAS, t_stats, strict=True))
 
-    for alpha, t_stat in zip(ALPHAS, t_stats):
+    for alpha, t_stat in zip(ALPHAS, t_stats, strict=True):
         assert t_stat > -2.0, (
             f"bộ lọc mức cục bộ α={alpha} nay TỐT HƠN trung bình chạy "
             f"({t_stat:+.2f} SE); phải đo lại quyết định dừng B3 trước khi "
@@ -135,7 +135,7 @@ def test_a_local_level_filter_is_worse_than_the_plain_running_mean(base_rate) ->
         f"'đuổi theo nhiễu' vốn là lý do dừng B3. Toàn bảng: {shown}"
     )
 
-    for alpha, t_stat in zip(ALPHAS[1:], t_stats[1:]):
+    for alpha, t_stat in zip(ALPHAS[1:], t_stats[1:], strict=True):
         assert t_stat > 2.0, (
             f"ở mức nhạy thật α={alpha}, thiệt hại không còn có ý nghĩa "
             f"({t_stat:+.2f} SE). Toàn bảng: {shown}"

@@ -157,7 +157,8 @@ def leave_one_out(
     full_logloss = _logloss(full, labels, mode)
     full_brier = _brier(full, labels)
 
-    indices = rng.integers(0, n_days, size=(BOOTSTRAP_DRAWS, n_days))
+    # Preserve the seeded RNG sequence used by existing published reports.
+    rng.integers(0, n_days, size=(BOOTSTRAP_DRAWS, n_days))
     rows: list[dict[str, object]] = []
 
     for position, key in enumerate(COMPONENT_KEYS):

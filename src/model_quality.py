@@ -127,7 +127,7 @@ def ensemble_probabilities(history: pd.DataFrame, weights: EnsembleWeights, mode
         if effective.sum() <= 0.0:
             continue
         effective /= effective.sum()
-        blend = sum(w * v for w, v in zip(effective, vectors))
+        blend = sum(w * v for w, v in zip(effective, vectors, strict=True))
         # Phải dùng ĐÚNG phép chốt của sản xuất, kể cả sàn xác suất — nếu không,
         # trang Chất lượng lại chấm điểm một mô hình khác mô hình được xuất bản.
         blend = floor_distribution(blend) if mode == "de" else clip01(blend, eps=1e-6)
@@ -279,6 +279,7 @@ def skill_series(history: pd.DataFrame, mode: str) -> dict:
                 usable["target_date"].astype(str),
                 series,
                 np.cumsum(series) / np.arange(1, len(series) + 1),
+                strict=True,
             )
         ],
     }

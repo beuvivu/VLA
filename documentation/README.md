@@ -11,6 +11,7 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`qa/2026-09-18-visual-system.md`](qa/2026-09-18-visual-system.md) | Rà soát và đồng bộ giao diện 29 trang, bảo toàn chức năng, kiểm thử và giới hạn kiểm chứng. |
 | [`domain/number-ontology.md`](domain/number-ontology.md) | Canonical two-digit number relations (lộn, bóng, bộ, chạm, tổng, cặp 50), their provenance, generated data contracts and Excel integrity rules. |
 | [`research/algorithm-definitions.md`](research/algorithm-definitions.md) | Data/time semantics, canonical number relations and safety contracts for the analysis layer. |
 | [`research/method-catalog.md`](research/method-catalog.md) | Catalog of publicly observed Vietnamese lottery methods with mathematical definitions, parameters, leakage risk and VLA equivalents. |
