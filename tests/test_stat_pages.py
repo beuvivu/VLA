@@ -576,9 +576,11 @@ def test_empty_cells_are_marked_so_they_read_as_gaps() -> None:
 
     css = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
     assert "td.is-empty" in css
-    assert "repeating-linear-gradient" in css, (
-        "vạch chéo đọc được cả khi in ra và khi không phân biệt được màu"
-    )
+    # Empty cells use a flat tone; hits retain a ring as a non-color cue.
+    empty = re.search(r"\.sp-table td\.is-empty\s*\{([^}]+)\}", css).group(1)
+    hit = re.search(r"\.sp-table td\.sp-hit\s*\{([^}]+)\}", css).group(1)
+    assert "box-shadow: none" in empty
+    assert "inset" in hit
 
 
 def test_grid_lines_run_both_ways() -> None:

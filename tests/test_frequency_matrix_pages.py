@@ -130,16 +130,11 @@ def test_the_empty_cell_has_a_dark_tone_and_a_light_mode_counterpart() -> None:
         r"@media \(prefers-color-scheme: light\) \{\s*\.sp-table td\.is-empty \{"
         r"\s*background-color:\s*(#[0-9A-Fa-f]{6})", CSS_CODE)
     assert light, "chế độ sáng phải có giá trị riêng"
-    # Ở chế độ sáng, ô không về nay là TRẮNG — đúng lối trang mẫu, và làm được
-    # vì cấp 1 nháy đã chuyển sang vàng nên không còn chiếm màu trắng.
-    #
-    # Trắng và vàng chênh rất ít về ĐỘ SÁNG (tỉ số 1,07) dù khác hẳn về sắc,
-    # nên phép kiểm KHÔNG được dựa vào độ sáng ở đây. Điều phải canh là ô có
-    # về còn vòng viền trong mà ô không về không có — xem phép kiểm bên dưới.
-    assert light.group(1).upper() == "#FFFFFF", light.group(1)
+    # Empty calendar cells must not look like the ordinary white data cells.
+    assert light.group(1).upper() != "#FFFFFF", light.group(1)
     tier_one = re.search(r"\.sp-table td\.sp-n1 \{[^}]*background-color:\s*(#[0-9A-Fa-f]{6})",
                          CSS_CODE)
-    assert tier_one and tier_one.group(1).upper() != "#FFFFFF", (
+    assert tier_one and tier_one.group(1).upper() != light.group(1).upper(), (
         "cấp 1 nháy không được trùng màu ô không về")
 
 
@@ -369,21 +364,25 @@ def test_a_marked_header_actually_changes_colour() -> None:
 # --- Thang màu nháy, khoảng gan, biểu đồ mini, popup -------------------------
 
 
-def test_the_nhay_ramp_uses_the_requested_hues_where_they_pass_aa() -> None:
-    """Giữ ĐÚNG mã màu được yêu cầu ở những cấp đạt chuẩn, chỉ đổi cấp trượt.
+def test_nhay_cells_and_legend_share_readable_pastel_colors() -> None:
+    """Every tier must be readable and its legend must match the actual cell."""
+    def luminance(hex_color: str) -> float:
+        rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        linear = [x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in rgb]
+        return sum(x * w for x, w in zip(linear, (.2126, .7152, .0722), strict=True))
 
-    Đo với chữ trắng: #8E44AD 5,87 đạt · #D63031 4,85 đạt · #E84393 3,71
-    TRƯỢT · #D9534F 3,96 TRƯỢT. Hai cấp trượt được thay bằng sắc cùng tông
-    nhưng tối hơn (#C2185B 5,87 và #C0392B 5,44); ba cấp còn lại giữ nguyên.
-    """
     css = _without_media(CSS_CODE)
-    assert "background-color: #FFFF00" in css, "1 nháy phải là vàng chanh"
-    assert "background-color: #8E44AD" in css, "2 nháy giữ đúng tím được yêu cầu"
-    assert "background-color: #D63031" in css, "4+ nháy giữ đúng đỏ rực được yêu cầu"
-    # Hai mã trượt AA không được có mặt.
-    assert "#E84393" not in css, "sắc hồng này trượt AA (3,71) với chữ trắng"
-    assert "#D9534F" not in css, "sắc đỏ này trượt AA (3,96) với chữ trắng"
-
+    colors = set()
+    for tier in range(1, 6):
+        rule = _block(css, f".sp-table td.sp-n{tier} {{")
+        legend = _block(css, f".sp-nl i.sp-n{tier} {{")
+        bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+        fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+        assert min(int(bg[i:i + 2], 16) for i in (1, 3, 5)) >= 200
+        assert (max(luminance(bg), luminance(fg)) + .05) / (min(luminance(bg), luminance(fg)) + .05) >= 4.5
+        assert bg in legend and fg in legend
+        colors.add(bg)
+    assert len(colors) == 5
 
 def test_the_gan_run_reads_differently_from_an_ordinary_miss() -> None:
     """Ô trống giữa hai lần về, và cả dải trống tới hôm nay, là HAI thứ khác nhau.

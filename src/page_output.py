@@ -16,6 +16,7 @@ dự án này. Nên phải quét theo TRẠNG THÁI.
 from __future__ import annotations
 
 import re
+from html import escape
 from pathlib import Path
 
 from ui_page_refinements import refine_page
@@ -234,7 +235,35 @@ def write_page(path: Path, html: str) -> None:
     """Ghi trang đã áp dụng refinement giao diện và bóc sạch chú thích."""
     refined = refine_page(path, html)
     refined = _inject_source_detail_style(path, refined)
+    refined = _attach_visual_system(path, refined)
     path.write_text(strip_comments(refined), encoding="utf-8")
+
+
+def _attach_visual_system(path: Path, html: str) -> str:
+    """Publish the final shared skin without reserializing scripts or DOM hooks.
+
+    Page-specific CSS comes first; this small, cacheable stylesheet reconciles
+    their shells and surfaces. Fragments are deliberately left untouched.
+    """
+    if "</head>" not in html or not re.search(r"<body\b", html, re.I):
+        return html
+    css = Path(__file__).with_name("templates") / "ui_visual_system.css"
+    target = path.parent / "assets" / "ui-visual-system.css"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    write_stylesheet_text(target, css.read_text(encoding="utf-8"))
+    head, rest = html.split("</head>", 1)
+    head = re.sub(r'<link\b[^>]*\bdata-ui-visual-system\b[^>]*>\s*', "", head)
+    link = '<link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system>'
+    html = head.rstrip() + "\n" + link + "\n</head>" + rest
+    page_key = "index" if path.stem in {"landing", "landing_desktop"} else path.stem
+    html = re.sub(
+        r'(<body\b[^>]*\bdata-ui-page=")[^"]*(")',
+        lambda match: match[1] + escape(page_key, quote=True) + match[2],
+        html, count=1, flags=re.I,
+    )
+    if not re.search(r'<body\b[^>]*\bdata-ui-page=', html, re.I):
+        html = re.sub(r"<body\b", f'<body data-ui-page="{escape(page_key, quote=True)}"', html, count=1, flags=re.I)
+    return html
 
 
 def write_stylesheet_text(path: Path, css: str) -> None:

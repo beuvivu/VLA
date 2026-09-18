@@ -19,6 +19,9 @@ on:
   schedule:
     - cron: '43 15 * * 4'
 
+# Default to no token permissions; the analysis job declares its required scope.
+permissions: {}
+
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})

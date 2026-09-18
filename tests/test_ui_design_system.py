@@ -276,7 +276,8 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
         text = page.read_text(encoding="utf-8")
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
-        assert '<body class="ui-app ui-dock-space path-page">' in text, page.name
+        body = BeautifulSoup(text, "html.parser").body
+        assert {"ui-app", "ui-dock-space", "path-page"} <= set(body.get("class", [])), page.name
 
 
 # --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------
@@ -465,26 +466,12 @@ def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
 def test_every_nhay_tier_has_a_distinct_pair_that_passes_aa() -> None:
     """Năm cấp số nháy, mỗi cấp một cặp nền/chữ riêng, tất cả đạt AA."""
     css = _stat_css()
-    # Thang VÀNG -> CAM -> ĐỎ theo lối trang mẫu. Thang cũ (trắng, xanh dương,
-    # xanh lá, cam, tím) có năm sắc nhưng không có trật tự tri giác: nhìn một ô
-    # xanh lá không đoán được nó nhiều hay ít nháy hơn ô xanh dương.
-    #
-    # Giữ ĐÚNG mã màu được yêu cầu ở những cấp đạt chuẩn, chỉ đổi cấp trượt.
-    # Đo với chữ trắng: #8E44AD 5,87 đạt, #D63031 4,85 đạt; còn #E84393 chỉ
-    # 3,71 và #D9534F chỉ 3,96 nên phải thay bằng sắc cùng tông nhưng tối hơn
-    # (#C2185B 5,87 và #C0392B 5,44).
-    expected = {
-        "sp-n1": ("#FFFF00", "#161C2D"),
-        "sp-n2": ("#8E44AD", "#FFFFFF"),
-        "sp-n3": ("#C2185B", "#FFFFFF"),
-        "sp-n4": ("#D63031", "#FFFFFF"),
-        "sp-n5": ("#A61B1B", "#FFFFFF"),
-    }
     seen = set()
-    for cls, (bg, fg) in expected.items():
+    for cls in ("sp-n1", "sp-n2", "sp-n3", "sp-n4", "sp-n5"):
         start = css.index(f"td.{cls} {{")
         rule = css[start : css.index("}", start)]
-        assert bg in rule and fg in rule, f"{cls} sai cặp màu"
+        bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+        fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
         assert contrast_ratio(fg, bg) >= WCAG_AA_NORMAL, f"{cls} trượt AA"
         seen.add(bg)
     assert len(seen) == 5, "hai cấp dùng chung một nền thì không còn phân cấp"

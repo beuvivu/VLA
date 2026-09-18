@@ -10,7 +10,6 @@ cho nhau chứ không thay nhau.
 """
 
 import os
-import re
 from pathlib import Path
 
 import pytest
