@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-DANG_BAT-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DANG_BAT-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-18T11:48:47Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-18T12:28:32Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -47,18 +47,18 @@
 | Giải sáu | 132 · 842 · 745 | 32 · 42 · 45 | Kết quả chuẩn đã xác minh |
 | Giải bảy | 40 · 93 · 79 · 82 | 40 · 93 · 79 · 82 | Kết quả chuẩn đã xác minh |
 
-### Dự đoán vui · 2026-09-18
+### Dự đoán vui · 2026-09-19
 
 | Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc Biệt | 26097 | `97` 1.00% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 11800 | `00` 23.82% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 52154 · 24978 | `54` 23.80% · `78` 23.85% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải ba | 49251 · 53682 · 38135 · 43792 · 99227 · 53709 | `51` 23.88% · `82` 23.77% · `35` 23.79% · `92` 23.87% · `27` 23.88% · `09` 23.88% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải tư | 7283 · 8822 · 1279 · 9802 | `83` 23.89% · `22` 23.89% · `79` 23.82% · `02` 23.94% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải năm | 7445 · 3628 · 1004 · 9969 · 2757 · 1633 | `45` 23.85% · `28` 23.83% · `04` 23.89% · `69` 24.04% · `57` 23.89% · `33` 23.91% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 863 · 648 · 197 | `63` 23.91% · `48` 23.83% · `97` 23.80% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 77 · 68 · 37 · 53 | `77` 23.90% · `68` 23.74% · `37` 23.97% · `53` 23.95% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Đặc Biệt | 79912 | `12` 1.02% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 37899 | `99` 23.60% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 58834 · 70413 | `34` 23.57% · `13` 23.56% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 16654 · 95585 · 02959 · 93319 · 98962 · 21228 | `54` 23.57% · `85` 23.56% · `59` 23.59% · `19` 23.55% · `62` 23.59% · `28` 23.53% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 5210 · 2245 · 2851 · 0380 | `10` 23.53% · `45` 23.56% · `51` 23.57% · `80` 23.56% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 2948 · 0302 · 5758 · 6576 · 4668 · 1689 | `48` 23.55% · `02` 23.57% · `58` 23.56% · `76` 23.56% · `68` 23.55% · `89` 23.58% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 918 · 514 · 183 | `18` 23.55% · `14` 23.56% · `83` 23.54% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 55 · 91 · 60 · 94 | `55` 23.53% · `91` 23.53% · `60` 23.56% · `94` 23.55% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
@@ -94,7 +94,7 @@
 | 2 | **99** | 23.599% | Thấp · disp 0.004 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
 | 3 | **59** | 23.595% | Thấp · disp 0.004 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
 | 4 | **32** | 23.591% | Thấp · disp 0.004 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **62** | 23.587% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **62** | 23.587% | Trung bình · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 6 | **52** | 23.585% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 7 | **89** | 23.576% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 8 | **42** | 23.573% | Trung bình · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
@@ -914,8 +914,8 @@
 | 6 | **62** | 2.324 | trễ 7.0 · trước=trượt · mẫu=50 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▰▰▱ |
 | 7 | **42** | 1.905 | trễ 28.0 · trước=trượt · mẫu=37 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 8 | **87** | 1.885 | trễ 7.0 · trước=trượt · mẫu=41 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 9 | **83** | 1.874 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
-| 10 | **33** | 1.874 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 9 | **33** | 1.874 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
+| 10 | **83** | 1.874 | trễ 7.0 · trước=trượt · mẫu=42 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 11 | **21** | 1.873 | trễ 28.0 · trước=trượt · mẫu=40 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 12 | **15** | 1.863 | trễ 28.0 · trước=trượt · mẫu=41 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
 | 13 | **97** | 1.843 | trễ 7.0 · trước=trượt · mẫu=45 | Tín hiệu tăng so với nền | ▰▰▰▰▰▰▰▱▱▱ |
@@ -1071,10 +1071,10 @@
 | 1 | `37` → **`52`** | 50.00% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | `42` → **`96`** | 50.00% | n=38 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 3 | `53` → **`07`** | 48.65% | n=37 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `27` → **`55`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `27` → **`93`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | `06` → **`13`** | 48.28% | n=29 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | `06` → **`31`** | 48.28% | n=29 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `27` → **`93`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `27` → **`55`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | `06` → **`31`** | 48.28% | n=29 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | `06` → **`13`** | 48.28% | n=29 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 8 | `82` → **`70`** | 47.83% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 9 | `47` → **`22`** | 47.73% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 10 | `33` → **`80`** | 47.62% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1109,18 +1109,18 @@
 | 1 | `27` → **`34`** | 11.43% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | `72` → **`66`** | 10.71% | n=28 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
 | 3 | `88` → **`93`** | 10.64% | n=47 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▱ |
-| 4 | `45` → **`54`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 5 | `60` → **`83`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 6 | `37` → **`53`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 7 | `37` → **`88`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 4 | `60` → **`83`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 5 | `45` → **`54`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 6 | `37` → **`88`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 7 | `37` → **`53`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 8 | `74` → **`42`** | 9.09% | n=33 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 9 | `04` → **`81`** | 9.09% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 10 | `97` → **`98`** | 8.89% | n=45 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 11 | `08` → **`81`** | 8.70% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 12 | `01` → **`57`** | 8.70% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 13 | `41` → **`61`** | 8.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 14 | `38` → **`97`** | 8.33% | n=48 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
-| 15 | `85` → **`39`** | 8.33% | n=36 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
+| 14 | `85` → **`39`** | 8.33% | n=36 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
+| 15 | `38` → **`97`** | 8.33% | n=48 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▱▱▱ |
 
 ---
 
