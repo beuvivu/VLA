@@ -1,7 +1,7 @@
 {
   "schema_version": 6,
   "mode": "loto",
-  "learned_at_utc": "2026-09-19T06:25:49Z",
+  "learned_at_utc": "2026-09-19T11:42:01Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -24,12 +24,13 @@
     "2026-09-15",
     "2026-09-16",
     "2026-09-17",
-    "2026-09-18"
+    "2026-09-18",
+    "2026-09-19"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 0.5451625617875785,
-    "brier": 0.17972269780651767
+    "logloss": 0.5442034404727764,
+    "brier": 0.17929146665464477
   },
   "weights": {
     "w_ml": 0.25,

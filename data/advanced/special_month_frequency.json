@@ -28954,6 +28954,14 @@
   {
     "period_kind":"month",
     "period_key":"2026-09",
+    "number":12,
+    "number_str":"12",
+    "freq":1,
+    "rank_in_period":1
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-09",
     "number":21,
     "number_str":"21",
     "freq":1,
