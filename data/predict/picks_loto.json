@@ -33,7 +33,7 @@
   "calibration": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.0708966727839777,
+    "b": -1.0708966089646323,
     "temperature": 1.0,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
@@ -45,9 +45,9 @@
     "reason": "validated stacked challenger blended into production",
     "candidate": "meta_shallow",
     "validation_logloss": 0.5441514251685086,
-    "baseline_validation_logloss": 0.8957080555597515,
-    "logloss_skill": 0.39249019611813807,
-    "brier_skill": 0.16182482858830982,
+    "baseline_validation_logloss": 0.8957065671427963,
+    "logloss_skill": 0.3924891866046146,
+    "brier_skill": 0.1618246881036861,
     "trained_through_target_date": "2026-09-19"
   },
   "top4": [
