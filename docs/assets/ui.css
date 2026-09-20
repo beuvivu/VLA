@@ -1,4 +1,6 @@
-/* VLA core — 3 parts keep each file <10KB for fast parse; @import is fallback when HTML has single link */
+/* Fallback for HTML still linking only assets/ui.css.
+   Prefer parallel links from css_links.stylesheet_link() / path template.
+   @import is sequential — keep only as compatibility shim. */
 @import url("ui-part1.css");
 @import url("ui-part2.css");
 @import url("ui-part3.css");
