@@ -1,1 +1,11 @@
-PLACEHOLDER_WILL_REPLACE
+@import url("ui-part1.css");
+@import url("ui-part2.css");
+@import url("ui-part3.css");
+
+/* safety */
+.app,.ui-app{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+.matrix-scroll,.sp-scroll,.ui-table-wrap{max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.matrix-cell:empty,.tiny-matrix-cell:not(.is-hit){background:#E8ECF4;color:#94A3B8}
+.dock,.ui-dock{pointer-events:none}
+.dock-inner,.ui-dock-inner,.dock-btn,.ui-dock-btn,.dock-pop,.ui-dock-pop{pointer-events:auto}
+@media (max-width:640px){.dock,.ui-dock{left:12px!important;right:12px!important;transform:none!important;max-width:none!important}}
