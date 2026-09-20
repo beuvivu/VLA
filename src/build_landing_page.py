@@ -446,8 +446,8 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
             label = f"{value} lần" if value else "0"
             row_cells.append(
                 f"<button class='tiny-matrix-cell{active}' data-mode='loto' data-number='{n}' "
-                f"style='background:{bg};color:{fg}' title='{n}: {label}'>"
-                f"<b>{n}</b><span>{label}</span></button>"
+                f"data-value='{html.escape(str(label))}' "
+                f"style='background:{bg};color:{fg}' title='{n}: {label}'>{n}</button>"
             )
         cells.append("".join(row_cells))
     header = "<div></div>" + "".join(f"<div class='matrix-head'>{i}</div>" for i in range(10))
@@ -523,8 +523,9 @@ def _render_matrix_card(
                 val_label = f"{val_label}{value_suffix}"
             row.append(
                 f"<button class='matrix-cell' data-mode='{mode}' data-number='{n}' "
+                f"data-value='{html.escape(val_label)}' "
                 f"style='background:{bg};color:{fg}' title='{html.escape(title)} · {n}: {html.escape(val_label)}'>"
-                f"<span class='cell-number'>{n}</span><span class='cell-value'>{html.escape(val_label)}</span></button>"
+                f"{n}</button>"
             )
         cells.append("".join(row))
     header = "<div></div>" + "".join(f"<div class='matrix-axis'>{i}</div>" for i in range(10))
@@ -1328,14 +1329,31 @@ _LANDING_CSS = """\
       place-items: center;
       gap: 1px;
     }
-    .tiny-matrix-cell b, .cell-number {
+    .tiny-matrix-cell, .matrix-cell {
       font-weight: 950;
       letter-spacing: -.02em;
+      line-height: 1.15;
     }
-    .tiny-matrix-cell span, .cell-value {
+    .tiny-matrix-cell::after, .matrix-cell::after {
+      content: attr(data-value);
+      display: block;
       font-size: 10px;
       opacity: .88;
       font-weight: 750;
+      letter-spacing: 0;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    article.card, section.section.card {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 280px;
+    }
+    #tong-quan, #live, #ket-qua {
+      content-visibility: visible;
+      contain-intrinsic-size: auto;
     }
     .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {
       transform: translateY(-1px);
