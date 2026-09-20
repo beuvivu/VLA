@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; upgrade-insecure-requests; script-src 'self'; style-src 'self' 'sha256-VF9MJbKnOBjKez4WL/ILmmxiDLza0QVniMuXuoH0odc=' 'sha256-jCpOFbSU5tmQ/WymvQGXDodHniiGK0HmOWjm8DuMpVQ='" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
 <meta name="referrer" content="no-referrer" />
   <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/critical.css" />
@@ -43,7 +43,7 @@
 .ai-signal-grid>.ui-card:nth-child(-n+2){position:relative;overflow:hidden;border-color:#c7d2fe;box-shadow:0 14px 36px rgba(79,70,229,.08)}.ai-signal-grid>.ui-card:nth-child(-n+2)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#4f46e5,#818cf8)}
 @media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" data-async-css="1" data-ui-visual-system>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="all" data-async-css="1" data-ui-visual-system>
 <noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
 <body data-ui-page="dashboard" class="ai-command-center">
