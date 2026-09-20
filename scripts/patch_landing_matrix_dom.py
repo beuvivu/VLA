@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Patch src/build_landing_page.py to emit flat matrix cells (one-time / idempotent)."""
+"""Patch src/build_landing_page.py to emit flat matrix cells (idempotent)."""
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,7 +89,7 @@ def main() -> None:
     elif "content: attr(data-value)" in text:
         print("CSS already has data-value ::after")
     else:
-        print("CSS block mismatch — check manually")
+        print("CSS block mismatch")
     if text != orig:
         TARGET.write_text(text, encoding="utf-8")
         print(f"wrote {TARGET} ({len(orig)} -> {len(text)})")
