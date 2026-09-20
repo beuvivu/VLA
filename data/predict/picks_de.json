@@ -3,18 +3,18 @@
   "anchor_date": "2026-09-20",
   "target_date": "2026-09-21",
   "weights": {
-    "w_ml": 0.28130764778407436,
-    "w_cau": 0.3670028899955084,
-    "w_stat": 0.0,
-    "w_active": 0.02348131927024579,
-    "w_stable": 0.3282081429501716
+    "w_ml": 0.2813076477840743,
+    "w_cau": 0.3670028899955083,
+    "w_stat": 2.5641950159785443e-17,
+    "w_active": 0.023481319270246048,
+    "w_stable": 0.3282081429501714
   },
   "effective_weights": {
     "w_ml": 0.2813076477840743,
-    "w_cau": 0.36700288999550834,
-    "w_stat": 0.0,
-    "w_active": 0.023481319270245785,
-    "w_stable": 0.32820814295017153
+    "w_cau": 0.3670028899955083,
+    "w_stat": 2.5641950159785443e-17,
+    "w_active": 0.023481319270246048,
+    "w_stable": 0.3282081429501714
   },
   "component_availability": {
     "ml": true,
@@ -43,9 +43,9 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.603112690052253,
+    "validation_logloss": 4.603112690052252,
     "baseline_validation_logloss": 4.60461945778934,
-    "logloss_skill": 0.0003272295899584554
+    "logloss_skill": 0.00032722958995867746
   },
   "top4": [
     "07",
