@@ -1,87 +1,87 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-20T10:40:13Z",
+  "generated_at_utc": "2026-09-20T11:49:26Z",
   "start_date": "2015-01-01",
-  "end_date": "2026-09-19",
-  "draw_days": 4210,
+  "end_date": "2026-09-20",
+  "draw_days": 4211,
   "permutations": 127,
   "primary_tests": [
     {
       "name": "de_suffix_uniformity",
-      "statistic": 85.29691211401425,
-      "p_value": 0.8351738615935461,
-      "q_value_fdr": 0.8359375,
+      "statistic": 85.6278793635716,
+      "p_value": 0.8286566132373224,
+      "q_value_fdr": 0.875,
       "fdr_05": false
     },
     {
       "name": "all_prize_suffix_uniformity",
-      "statistic": 92.32427201548342,
-      "p_value": 0.669254339543081,
-      "q_value_fdr": 0.8359375,
+      "statistic": 92.13339841860383,
+      "p_value": 0.6743907273242211,
+      "q_value_fdr": 0.875,
       "fdr_05": false
     },
     {
       "name": "de_runs_independence",
-      "statistic": -0.23204197091439765,
-      "p_value": 0.8165054152247644,
-      "q_value_fdr": 0.8359375,
+      "statistic": -0.24756477859897214,
+      "p_value": 0.8044711650993549,
+      "q_value_fdr": 0.875,
       "fdr_05": false
     },
     {
       "name": "weekday_vs_de_tail",
-      "statistic": 43.88611675003751,
-      "p_value": 0.8359375,
-      "q_value_fdr": 0.8359375,
+      "statistic": 44.25739759235879,
+      "p_value": 0.875,
+      "q_value_fdr": 0.875,
       "fdr_05": false
     },
     {
       "name": "loto_repeat_dependency",
-      "statistic": 0.0011593899653120632,
-      "p_value": 0.453125,
-      "q_value_fdr": 0.8359375,
+      "statistic": 0.0011554240224445622,
+      "p_value": 0.53125,
+      "q_value_fdr": 0.875,
       "fdr_05": false
     }
   ],
-  "de_entropy_ratio": 0.9977701542524755,
-  "all_prize_entropy_ratio": 0.9999118069113719,
+  "de_entropy_ratio": 0.997762340852887,
+  "all_prize_entropy_ratio": 0.9999120168373761,
   "weekday_test": {
-    "statistic": 43.88611675003751,
-    "p_value_asymptotic": 0.8355541505120511,
-    "p_value_permutation": 0.8359375,
-    "min_expected_cell": 57.1021377672209,
+    "statistic": 44.25739759235879,
+    "p_value_asymptotic": 0.8252177464912193,
+    "p_value_permutation": 0.875,
+    "min_expected_cell": 57.08857753502731,
     "method": "weekday labels permuted; DE tail distribution preserved"
   },
   "loto_repeat_test": {
-    "effect": 0.0011593899653120632,
-    "p_value": 0.453125,
-    "null_mean": 0.00011296494480652693,
-    "null_std": 0.001527844416703867,
+    "effect": 0.0011554240224445622,
+    "p_value": 0.53125,
+    "null_mean": 0.0002890434509499823,
+    "null_std": 0.001810618014930322,
     "method": "two-sided day-level circular-shift permutation"
   },
   "coverage": [
     {
       "window_days": 7,
-      "observed_mean_distinct": 85.04733587059943,
+      "observed_mean_distinct": 85.04732461355529,
       "observed_min_distinct": 75,
       "observed_max_distinct": 95,
-      "expected_from_empirical_marginals": 85.10272151554177,
-      "mean_minus_expected": -0.05538564494234777
+      "expected_from_empirical_marginals": 85.10289127078025,
+      "mean_minus_expected": -0.055566657224957794
     },
     {
       "window_days": 14,
-      "observed_mean_distinct": 97.73719323326185,
+      "observed_mean_distinct": 97.73725583611244,
       "observed_min_distinct": 92,
       "observed_max_distinct": 100,
-      "expected_from_empirical_marginals": 97.77366397681934,
-      "mean_minus_expected": -0.03647074355748714
+      "expected_from_empirical_marginals": 97.77375741436624,
+      "mean_minus_expected": -0.03650157825380518
     },
     {
       "window_days": 30,
-      "observed_mean_distinct": 99.97273379574264,
+      "observed_mean_distinct": 99.97274031563845,
       "observed_min_distinct": 99,
       "observed_max_distinct": 100,
-      "expected_from_empirical_marginals": 99.97076459717049,
-      "mean_minus_expected": 0.001969198572155051
+      "expected_from_empirical_marginals": 99.97077029035903,
+      "mean_minus_expected": 0.001970025279419474
     }
   ],
   "acf_significant_lags_fdr05": [],

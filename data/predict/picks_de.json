@@ -1,20 +1,20 @@
 {
   "mode": "de",
-  "anchor_date": "2026-09-19",
-  "target_date": "2026-09-20",
+  "anchor_date": "2026-09-20",
+  "target_date": "2026-09-21",
   "weights": {
-    "w_ml": 0.25,
-    "w_cau": 0.3,
-    "w_stat": 0.2,
-    "w_active": 0.125,
-    "w_stable": 0.125
+    "w_ml": 0.28130764778407436,
+    "w_cau": 0.3670028899955084,
+    "w_stat": 0.0,
+    "w_active": 0.02348131927024579,
+    "w_stable": 0.3282081429501716
   },
   "effective_weights": {
-    "w_ml": 0.25,
-    "w_cau": 0.3,
-    "w_stat": 0.2,
-    "w_active": 0.125,
-    "w_stable": 0.125
+    "w_ml": 0.2813076477840743,
+    "w_cau": 0.36700288999550834,
+    "w_stat": 0.0,
+    "w_active": 0.023481319270245785,
+    "w_stable": 0.32820814295017153
   },
   "component_availability": {
     "ml": true,
@@ -34,7 +34,7 @@
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 1.0,
+    "temperature": 0.3,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
   },
@@ -43,36 +43,36 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.601713012679579,
-    "baseline_validation_logloss": 4.6046666721834555,
-    "logloss_skill": 0.0006414491458673899
+    "validation_logloss": 4.603112690052253,
+    "baseline_validation_logloss": 4.60461945778934,
+    "logloss_skill": 0.0003272295899584554
   },
   "top4": [
-    "48",
-    "76",
+    "07",
+    "65",
     "89",
-    "94"
+    "85"
   ],
   "top8": [
-    "48",
-    "76",
+    "07",
+    "65",
     "89",
-    "94",
-    "39",
-    "75",
-    "06",
-    "65"
+    "85",
+    "20",
+    "37",
+    "73",
+    "88"
   ],
   "top10": [
-    "48",
-    "76",
-    "89",
-    "94",
-    "39",
-    "75",
-    "06",
+    "07",
     "65",
-    "49",
-    "86"
+    "89",
+    "85",
+    "20",
+    "37",
+    "73",
+    "88",
+    "04",
+    "08"
   ]
 }

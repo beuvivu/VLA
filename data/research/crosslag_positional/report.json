@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-20T10:40:38Z",
-  "anchor_date": "2026-09-19",
+  "generated_at_utc": "2026-09-20T11:49:50Z",
+  "anchor_date": "2026-09-20",
   "research_only": true,
   "production_wired": false,
   "positions": 27,
@@ -26,7 +26,7 @@
   "warmup_rows": 180,
   "train_end_date": "2022-04-06",
   "validation_end_date": "2024-06-28",
-  "holdout_days": 805,
+  "holdout_days": 806,
   "train_fdr_05_count": 0,
   "train_bonferroni_05_count": 0,
   "research_gate_pass_count": 0,

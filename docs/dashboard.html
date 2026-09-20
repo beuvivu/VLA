@@ -3,9 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; upgrade-insecure-requests; script-src 'self'; style-src 'self' 'sha256-VF9MJbKnOBjKez4WL/ILmmxiDLza0QVniMuXuoH0odc=' 'sha256-jCpOFbSU5tmQ/WymvQGXDodHniiGK0HmOWjm8DuMpVQ='" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'; upgrade-insecure-requests" />
 <meta name="referrer" content="no-referrer" />
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/critical.css" />
+  <link rel="preload" href="assets/ui.css" as="style" />
+  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
+  <link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />
+  <script src="assets/css-async.js" defer></script>
   <noscript>
+  <link rel="stylesheet" href="assets/ui.css" />
   </noscript>
   <style id="ai-command-center-source">
 .ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
@@ -23,17 +30,6 @@
 @media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
 </style>
   <title>Bang dieu khien phan tich XSMB</title>
-  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="assets/critical.css" />
-  <link rel="preload" href="assets/ui.css" as="style" />
-  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
-  <link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />
-  <link rel="stylesheet" href="assets/ui-visual-system.css" media="print" data-async-css="1" data-ui-visual-system />
-  <script src="assets/css-async.js" defer></script>
-  <noscript>
-  <link rel="stylesheet" href="assets/ui.css" />
-  <link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />
-  </noscript>
 <style id="ui-targeted-ui-refinement">
 .ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
 .ai-command-center .ui-shell{max-width:1280px}
@@ -47,16 +43,17 @@
 .ai-signal-grid>.ui-card:nth-child(-n+2){position:relative;overflow:hidden;border-color:#c7d2fe;box-shadow:0 14px 36px rgba(79,70,229,.08)}.ai-signal-grid>.ui-card:nth-child(-n+2)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#4f46e5,#818cf8)}
 @media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
 </style>
-<noscript></noscript>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
 <body data-ui-page="dashboard" class="ai-command-center">
 <div class="ui-app ui-dock-space" id="ui-app"><main class="ui-shell">
-<header class="ui-header"><h1>Bang dieu khien phan tich XSMB</h1><p class="ui-sub">Xac suat mo hinh to hop, trong so da hoc va danh sach goi y.</p><div class="ui-meta"><span>Ngay du lieu moi nhat: 2026-09-19</span><span>Tao luc: 2026-09-20T10:44:03Z</span></div></header>
+<header class="ui-header"><h1>Bang dieu khien phan tich XSMB</h1><p class="ui-sub">Xac suat mo hinh to hop, trong so da hoc va danh sach goi y.</p><div class="ui-meta"><span>Ngay du lieu moi nhat: 2026-09-20</span><span>Tao luc: 2026-09-20T11:53:11Z</span></div></header>
 <section class="ai-status-strip" aria-label="AI/ML"><div class="ai-status-item"><span>Space</span><strong>AI/ML Command Center</strong></div><div class="ai-status-item"><span>Signals</span><strong>Prob · Picks · Rank</strong></div><div class="ai-status-item"><span>Control</span><strong>Weights · Calibration</strong></div></section>
-<div class="ui-grid ai-signal-grid"><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xac suat LOTO cao nhat</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">94</td><td class="ui-ar">0.235219</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">59</td><td class="ui-ar">0.235199</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">99</td><td class="ui-ar">0.235179</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">89</td><td class="ui-ar">0.235168</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">72</td><td class="ui-ar">0.235150</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">52</td><td class="ui-ar">0.235113</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">62</td><td class="ui-ar">0.235095</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">32</td><td class="ui-ar">0.235084</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">63</td><td class="ui-ar">0.235076</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">33</td><td class="ui-ar">0.235065</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">39</td><td class="ui-ar">0.235059</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">53</td><td class="ui-ar">0.235049</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">22</td><td class="ui-ar">0.235042</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">69</td><td class="ui-ar">0.235039</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">2</td><td class="ui-ar">0.235035</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">9</td><td class="ui-ar">0.235032</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">30</td><td class="ui-ar">0.235018</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">96</td><td class="ui-ar">0.235017</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">49</td><td class="ui-ar">0.235013</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">12</td><td class="ui-ar">0.235010</td></tr></tbody></table></div></div></section><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xac suat Dac Biet cao nhat</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">48</td><td class="ui-ar">0.010299</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">76</td><td class="ui-ar">0.010242</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">89</td><td class="ui-ar">0.010179</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">94</td><td class="ui-ar">0.010166</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">39</td><td class="ui-ar">0.010117</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">75</td><td class="ui-ar">0.010102</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">6</td><td class="ui-ar">0.010099</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">65</td><td class="ui-ar">0.010094</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">49</td><td class="ui-ar">0.010094</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">86</td><td class="ui-ar">0.010090</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">3</td><td class="ui-ar">0.010083</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">63</td><td class="ui-ar">0.010079</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">74</td><td class="ui-ar">0.010076</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">95</td><td class="ui-ar">0.010073</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">27</td><td class="ui-ar">0.010069</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">57</td><td class="ui-ar">0.010068</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">15</td><td class="ui-ar">0.010066</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">31</td><td class="ui-ar">0.010064</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">51</td><td class="ui-ar">0.010062</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">67</td><td class="ui-ar">0.010062</td></tr></tbody></table></div></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sach goi y (LOTO)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-19</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-20</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">-1.0709</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0.15</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validated stacked challenger blended into production</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · candidate</td><td class="ui-ar">meta_shallow</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">0.544151</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">0.895707</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">0.392489</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng Brier</td><td class="ui-ar">0.161825</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · trained_through_target_date</td><td class="ui-ar">2026-09-19</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">94, 59, 99, 89</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">94, 59, 99, 89, 72, 52 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">94, 59, 99, 89, 72, 52 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+<div class="ui-grid ai-signal-grid"><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xac suat LOTO cao nhat</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">26</td><td class="ui-ar">0.235129</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">7</td><td class="ui-ar">0.234718</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">52</td><td class="ui-ar">0.233990</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">74</td><td class="ui-ar">0.233864</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">83</td><td class="ui-ar">0.233841</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">46</td><td class="ui-ar">0.233835</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">91</td><td class="ui-ar">0.233832</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">6</td><td class="ui-ar">0.233830</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">32</td><td class="ui-ar">0.233814</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">47</td><td class="ui-ar">0.233792</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">86</td><td class="ui-ar">0.233783</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">29</td><td class="ui-ar">0.233779</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">96</td><td class="ui-ar">0.233777</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">0</td><td class="ui-ar">0.233770</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">38</td><td class="ui-ar">0.233766</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">62</td><td class="ui-ar">0.233760</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">73</td><td class="ui-ar">0.233758</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">92</td><td class="ui-ar">0.233752</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">54</td><td class="ui-ar">0.233744</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">55</td><td class="ui-ar">0.233742</td></tr></tbody></table></div></div></section><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xac suat Dac Biet cao nhat</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">7</td><td class="ui-ar">0.011997</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">65</td><td class="ui-ar">0.011498</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">89</td><td class="ui-ar">0.011465</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">85</td><td class="ui-ar">0.011318</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">20</td><td class="ui-ar">0.010914</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">37</td><td class="ui-ar">0.010906</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">73</td><td class="ui-ar">0.010755</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">88</td><td class="ui-ar">0.010724</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">4</td><td class="ui-ar">0.010641</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">8</td><td class="ui-ar">0.010618</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">98</td><td class="ui-ar">0.010613</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">36</td><td class="ui-ar">0.010549</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">35</td><td class="ui-ar">0.010526</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">81</td><td class="ui-ar">0.010488</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">5</td><td class="ui-ar">0.010484</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">63</td><td class="ui-ar">0.010446</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">77</td><td class="ui-ar">0.010444</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">76</td><td class="ui-ar">0.010429</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">23</td><td class="ui-ar">0.010427</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">95</td><td class="ui-ar">0.010425</td></tr></tbody></table></div></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sach goi y (LOTO)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-20</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-21</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">-1.06901</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0.15</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validated stacked challenger blended into production</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · candidate</td><td class="ui-ar">meta_interaction</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">0.544751</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">0.928324</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">0.413189</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng Brier</td><td class="ui-ar">0.169319</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · trained_through_target_date</td><td class="ui-ar">2026-09-20</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">26, 07, 52, 74</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">26, 07, 52, 74, 83, 46 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">26, 07, 52, 74, 83, 46 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
   &quot;mode&quot;: &quot;loto&quot;,
-  &quot;anchor_date&quot;: &quot;2026-09-19&quot;,
-  &quot;target_date&quot;: &quot;2026-09-20&quot;,
+  &quot;anchor_date&quot;: &quot;2026-09-20&quot;,
+  &quot;target_date&quot;: &quot;2026-09-21&quot;,
   &quot;weights&quot;: {
     &quot;w_ml&quot;: 0.25,
     &quot;w_cau&quot;: 0.3,
@@ -88,7 +85,7 @@
   &quot;calibration&quot;: {
     &quot;mode&quot;: &quot;loto&quot;,
     &quot;a&quot;: 0.1,
-    &quot;b&quot;: -1.0708966089646323,
+    &quot;b&quot;: -1.0690059898463902,
     &quot;temperature&quot;: 1.0,
     &quot;active&quot;: true,
     &quot;reason&quot;: &quot;calibration matches full five-component ensemble&quot;
@@ -98,58 +95,58 @@
     &quot;trust&quot;: 0.15,
     &quot;quality_pass&quot;: true,
     &quot;reason&quot;: &quot;validated stacked challenger blended into production&quot;,
-    &quot;candidate&quot;: &quot;meta_shallow&quot;,
-    &quot;validation_logloss&quot;: 0.5441514251685086,
-    &quot;baseline_validation_logloss&quot;: 0.8957065671427963,
-    &quot;logloss_skill&quot;: 0.3924891866046146,
-    &quot;brier_skill&quot;: 0.1618246881036861,
-    &quot;trained_through_target_date&quot;: &quot;2026-09-19&quot;
+    &quot;candidate&quot;: &quot;meta_interaction&quot;,
+    &quot;validation_logloss&quot;: 0.5447505591055285,
+    &quot;baseline_validation_logloss&quot;: 0.9283238296853292,
+    &quot;logloss_skill&quot;: 0.41318908156200107,
+    &quot;brier_skill&quot;: 0.16931925482217913,
+    &quot;trained_through_target_date&quot;: &quot;2026-09-20&quot;
   },
   &quot;top4&quot;: [
-    &quot;94&quot;,
-    &quot;59&quot;,
-    &quot;99&quot;,
-    &quot;89&quot;
+    &quot;26&quot;,
+    &quot;07&quot;,
+    &quot;52&quot;,
+    &quot;74&quot;
   ],
   &quot;top8&quot;: [
-    &quot;94&quot;,
-    &quot;59&quot;,
-    &quot;99&quot;,
-    &quot;89&quot;,
-    &quot;72&quot;,
+    &quot;26&quot;,
+    &quot;07&quot;,
     &quot;52&quot;,
-    &quot;62&quot;,
-    &quot;32&quot;
+    &quot;74&quot;,
+    &quot;83&quot;,
+    &quot;46&quot;,
+    &quot;91&quot;,
+    &quot;06&quot;
   ],
   &quot;top10&quot;: [
-    &quot;94&quot;,
-    &quot;59&quot;,
-    &quot;99&quot;,
-    &quot;89&quot;,
-    &quot;72&quot;,
+    &quot;26&quot;,
+    &quot;07&quot;,
     &quot;52&quot;,
-    &quot;62&quot;,
+    &quot;74&quot;,
+    &quot;83&quot;,
+    &quot;46&quot;,
+    &quot;91&quot;,
+    &quot;06&quot;,
     &quot;32&quot;,
-    &quot;63&quot;,
-    &quot;33&quot;
+    &quot;47&quot;
   ]
-}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sach goi y (Dac Biet)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-19</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-20</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validation gate rejected stacked challenger</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">4.60171</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">4.60467</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">0.000641449</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">48, 76, 89, 94</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">48, 76, 89, 94, 39, 75 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">48, 76, 89, 94, 39, 75 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sach goi y (Dac Biet)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-20</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-21</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.281308</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.367003</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.0234813</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.328208</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.281308</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.367003</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.0234813</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.328208</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validation gate rejected stacked challenger</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">4.60311</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">4.60462</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">0.00032723</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">07, 65, 89, 85</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">07, 65, 89, 85, 20, 37 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">07, 65, 89, 85, 20, 37 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
   &quot;mode&quot;: &quot;de&quot;,
-  &quot;anchor_date&quot;: &quot;2026-09-19&quot;,
-  &quot;target_date&quot;: &quot;2026-09-20&quot;,
+  &quot;anchor_date&quot;: &quot;2026-09-20&quot;,
+  &quot;target_date&quot;: &quot;2026-09-21&quot;,
   &quot;weights&quot;: {
-    &quot;w_ml&quot;: 0.25,
-    &quot;w_cau&quot;: 0.3,
-    &quot;w_stat&quot;: 0.2,
-    &quot;w_active&quot;: 0.125,
-    &quot;w_stable&quot;: 0.125
+    &quot;w_ml&quot;: 0.28130764778407436,
+    &quot;w_cau&quot;: 0.3670028899955084,
+    &quot;w_stat&quot;: 0.0,
+    &quot;w_active&quot;: 0.02348131927024579,
+    &quot;w_stable&quot;: 0.3282081429501716
   },
   &quot;effective_weights&quot;: {
-    &quot;w_ml&quot;: 0.25,
-    &quot;w_cau&quot;: 0.3,
-    &quot;w_stat&quot;: 0.2,
-    &quot;w_active&quot;: 0.125,
-    &quot;w_stable&quot;: 0.125
+    &quot;w_ml&quot;: 0.2813076477840743,
+    &quot;w_cau&quot;: 0.36700288999550834,
+    &quot;w_stat&quot;: 0.0,
+    &quot;w_active&quot;: 0.023481319270245785,
+    &quot;w_stable&quot;: 0.32820814295017153
   },
   &quot;component_availability&quot;: {
     &quot;ml&quot;: true,
@@ -169,7 +166,7 @@
     &quot;mode&quot;: &quot;de&quot;,
     &quot;a&quot;: 1.0,
     &quot;b&quot;: 0.0,
-    &quot;temperature&quot;: 1.0,
+    &quot;temperature&quot;: 0.3,
     &quot;active&quot;: true,
     &quot;reason&quot;: &quot;calibration matches full five-component ensemble&quot;
   },
@@ -178,37 +175,37 @@
     &quot;trust&quot;: 0.0,
     &quot;quality_pass&quot;: false,
     &quot;reason&quot;: &quot;validation gate rejected stacked challenger&quot;,
-    &quot;validation_logloss&quot;: 4.601713012679579,
-    &quot;baseline_validation_logloss&quot;: 4.6046666721834555,
-    &quot;logloss_skill&quot;: 0.0006414491458673899
+    &quot;validation_logloss&quot;: 4.603112690052253,
+    &quot;baseline_validation_logloss&quot;: 4.60461945778934,
+    &quot;logloss_skill&quot;: 0.0003272295899584554
   },
   &quot;top4&quot;: [
-    &quot;48&quot;,
-    &quot;76&quot;,
+    &quot;07&quot;,
+    &quot;65&quot;,
     &quot;89&quot;,
-    &quot;94&quot;
+    &quot;85&quot;
   ],
   &quot;top8&quot;: [
-    &quot;48&quot;,
-    &quot;76&quot;,
+    &quot;07&quot;,
+    &quot;65&quot;,
     &quot;89&quot;,
-    &quot;94&quot;,
-    &quot;39&quot;,
-    &quot;75&quot;,
-    &quot;06&quot;,
-    &quot;65&quot;
+    &quot;85&quot;,
+    &quot;20&quot;,
+    &quot;37&quot;,
+    &quot;73&quot;,
+    &quot;88&quot;
   ],
   &quot;top10&quot;: [
-    &quot;48&quot;,
-    &quot;76&quot;,
-    &quot;89&quot;,
-    &quot;94&quot;,
-    &quot;39&quot;,
-    &quot;75&quot;,
-    &quot;06&quot;,
+    &quot;07&quot;,
     &quot;65&quot;,
-    &quot;49&quot;,
-    &quot;86&quot;
+    &quot;89&quot;,
+    &quot;85&quot;,
+    &quot;20&quot;,
+    &quot;37&quot;,
+    &quot;73&quot;,
+    &quot;88&quot;,
+    &quot;04&quot;,
+    &quot;08&quot;
   ]
 }</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Trong so (LOTO)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Xuất xứ trọng số</td><td class="ui-ar">mac dinh dat tay</td></tr><tr><td class="ui-al ui-key">Lý do</td><td class="ui-ar">tep trong so thieu hoac sai luoc do</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
   &quot;mode&quot;: &quot;loto&quot;,
@@ -221,50 +218,65 @@
   },
   &quot;nguon&quot;: &quot;mac dinh dat tay&quot;,
   &quot;ly_do&quot;: &quot;tep trong so thieu hoac sai luoc do&quot;
-}</pre></details><h3 class="mt-4">Hieu chinh (LOTO)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Phiên bản lược đồ</td><td class="ui-ar">6</td></tr><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-20T10:43:49Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Yêu cầu thành phần có sẵn</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">-1.0709</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Phương pháp được chọn</td><td class="ui-ar">Hiệu chỉnh tham số</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Đã so sánh phương pháp</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày huấn luyện</td><td class="ui-ar">21</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày kiểm định riêng</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+}</pre></details><h3 class="mt-4">Hieu chinh (LOTO)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Phiên bản lược đồ</td><td class="ui-ar">6</td></tr><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-20T11:52:57Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Yêu cầu thành phần có sẵn</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">-1.06901</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Phương pháp được chọn</td><td class="ui-ar">Hiệu chỉnh tham số</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Đã so sánh phương pháp</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày huấn luyện</td><td class="ui-ar">22</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày kiểm định riêng</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
   &quot;schema_version&quot;: 6,
   &quot;mode&quot;: &quot;loto&quot;,
-  &quot;learned_at_utc&quot;: &quot;2026-09-20T10:43:49Z&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-20T11:52:57Z&quot;,
   &quot;window_days&quot;: 180,
   &quot;half_life_days&quot;: 45,
   &quot;component_availability_required&quot;: true,
   &quot;params&quot;: {
     &quot;mode&quot;: &quot;loto&quot;,
     &quot;a&quot;: 0.1,
-    &quot;b&quot;: -1.0708966089646323,
+    &quot;b&quot;: -1.0690059898463902,
     &quot;temperature&quot;: 1.0
   },
   &quot;selection&quot;: {
     &quot;chosen&quot;: &quot;parametric&quot;,
     &quot;selected&quot;: false,
     &quot;brier_by_candidate&quot;: {},
-    &quot;fit_days&quot;: 21,
+    &quot;fit_days&quot;: 22,
     &quot;holdout_days&quot;: 0
   }
-}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Trong so (Dac Biet)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Xuất xứ trọng số</td><td class="ui-ar">mac dinh dat tay</td></tr><tr><td class="ui-al ui-key">Lý do</td><td class="ui-ar">tep trong so thieu hoac sai luoc do</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Trong so (Dac Biet)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.281308</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.367003</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.0234813</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.328208</td></tr><tr><td class="ui-al ui-key">Xuất xứ trọng số</td><td class="ui-ar">da hoc</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-20T11:53:04Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Chỉ số · LogLoss</td><td class="ui-ar">4.59452</td></tr><tr><td class="ui-al ui-key">Chỉ số · Brier</td><td class="ui-ar">0.989782</td></tr><tr><td class="ui-al ui-key">Số ngày đã dùng</td><td class="ui-ar">20</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
   &quot;mode&quot;: &quot;de&quot;,
   &quot;weights&quot;: {
-    &quot;w_ml&quot;: 0.25,
-    &quot;w_cau&quot;: 0.3,
-    &quot;w_stat&quot;: 0.2,
-    &quot;w_active&quot;: 0.125,
-    &quot;w_stable&quot;: 0.125
+    &quot;w_ml&quot;: 0.28130764778407436,
+    &quot;w_cau&quot;: 0.3670028899955084,
+    &quot;w_stat&quot;: 0.0,
+    &quot;w_active&quot;: 0.02348131927024579,
+    &quot;w_stable&quot;: 0.3282081429501716
   },
-  &quot;nguon&quot;: &quot;mac dinh dat tay&quot;,
-  &quot;ly_do&quot;: &quot;tep trong so thieu hoac sai luoc do&quot;
-}</pre></details><h3 class="mt-4">Hieu chinh (Dac Biet)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-08-11T13:25:35Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">5</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
-  &quot;mode&quot;: &quot;de&quot;,
-  &quot;learned_at_utc&quot;: &quot;2026-08-11T13:25:35Z&quot;,
+  &quot;nguon&quot;: &quot;da hoc&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-20T11:53:04Z&quot;,
   &quot;window_days&quot;: 180,
   &quot;half_life_days&quot;: 45,
+  &quot;metric&quot;: {
+    &quot;logloss&quot;: 4.594517006745305,
+    &quot;brier&quot;: 0.9897818229818547
+  },
+  &quot;days_used&quot;: 20
+}</pre></details><h3 class="mt-4">Hieu chinh (Dac Biet)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Phiên bản lược đồ</td><td class="ui-ar">6</td></tr><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-20T11:53:04Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Yêu cầu thành phần có sẵn</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Phương pháp được chọn</td><td class="ui-ar">Hiệu chỉnh tham số</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Đã so sánh phương pháp</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày huấn luyện</td><td class="ui-ar">20</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày kiểm định riêng</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;schema_version&quot;: 6,
+  &quot;mode&quot;: &quot;de&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-20T11:53:04Z&quot;,
+  &quot;window_days&quot;: 180,
+  &quot;half_life_days&quot;: 45,
+  &quot;component_availability_required&quot;: true,
   &quot;params&quot;: {
     &quot;mode&quot;: &quot;de&quot;,
     &quot;a&quot;: 1.0,
     &quot;b&quot;: 0.0,
-    &quot;temperature&quot;: 5.0
+    &quot;temperature&quot;: 0.3
+  },
+  &quot;selection&quot;: {
+    &quot;chosen&quot;: &quot;parametric&quot;,
+    &quot;selected&quot;: false,
+    &quot;brier_by_candidate&quot;: {},
+    &quot;fit_days&quot;: 20,
+    &quot;holdout_days&quot;: 0
   }
 }</pre></details></div></section></div>
-</main><nav class="ui-dock" aria-label="Điều hướng chính"><div class="ui-dock-inner"><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tr-c-ti-p"><span class="ui-dock-ic" aria-hidden="true">◉</span><span class="ui-dock-name">Trực tiếp</span></button><div class="ui-dock-pop" id="dock-tr-c-ti-p" role="menu"><a href="live.html" role="menuitem"><span aria-hidden="true">◉</span><span>Kết quả trực tiếp</span></a><a href="index.html" role="menuitem"><span aria-hidden="true">▤</span><span>Kết quả hôm nay</span></a><a href="so-ket-qua-truyen-thong.html" role="menuitem"><span aria-hidden="true">▥</span><span>Sổ kết quả</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-th-ng-k"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Thống kê</span></button><div class="ui-dock-pop" id="dock-th-ng-k" role="menu"><a href="statistics.html" role="menuitem"><span aria-hidden="true">▦</span><span>Ma trận thống kê</span></a><a href="index.html#tan-suat-loto" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="index.html#gan-nhip" role="menuitem"><span aria-hidden="true">◷</span><span>Gan &amp; nhịp</span></a><a href="index.html#cap-lon" role="menuitem"><span aria-hidden="true">⇅</span><span>Cặp lộn &amp; bóng</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-c-u-k-o"><span class="ui-dock-ic" aria-hidden="true">⟋</span><span class="ui-dock-name">Cầu kèo</span></button><div class="ui-dock-pop" id="dock-c-u-k-o" role="menu"><a href="soi-path-loto-active.html" role="menuitem"><span aria-hidden="true">⟋</span><span>Cầu LOTO đang chạy</span></a><a href="soi-path-loto-stable.html" role="menuitem"><span aria-hidden="true">⟊</span><span>Cầu LOTO ổn định</span></a><a href="soi-path-de-active.html" role="menuitem"><span aria-hidden="true">⟍</span><span>Cầu Đặc Biệt đang chạy</span></a><a href="soi-path-de-stable.html" role="menuitem"><span aria-hidden="true">⟌</span><span>Cầu Đặc Biệt ổn định</span></a><a href="index.html#duong-cau" role="menuitem"><span aria-hidden="true">⌗</span><span>Căn cứ vị trí cầu</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-current="true" aria-haspopup="true" aria-expanded="false" aria-controls="dock-ph-ng-o-n"><span class="ui-dock-ic" aria-hidden="true">◈</span><span class="ui-dock-name">Phỏng đoán</span></button><div class="ui-dock-pop" id="dock-ph-ng-o-n" role="menu"><a href="dashboard.html" role="menuitem" aria-current="page"><span aria-hidden="true">◈</span><span>Bảng điều khiển AI/ML</span></a><a href="ml_top10_loto.html" role="menuitem"><span aria-hidden="true">①</span><span>10 số LOTO</span></a><a href="ml_top10_de.html" role="menuitem"><span aria-hidden="true">②</span><span>10 số Đặc Biệt</span></a><a href="model-quality.html" role="menuitem"><span aria-hidden="true">✓</span><span>Chất lượng mô hình</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-b-ng-c-bi-t"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Bảng Đặc Biệt</span></button><div class="ui-dock-pop" id="dock-b-ng-c-bi-t" role="menu"><a href="bang-dac-biet.html" role="menuitem"><span aria-hidden="true">▦</span><span>Theo ngày</span></a><a href="bang-dac-biet-thang.html" role="menuitem"><span aria-hidden="true">▩</span><span>Theo tháng</span></a><a href="bang-dac-biet-nam.html" role="menuitem"><span aria-hidden="true">▨</span><span>Theo năm</span></a><a href="chu-ky-dac-biet.html" role="menuitem"><span aria-hidden="true">◷</span><span>Chu kỳ Đặc Biệt</span></a><a href="cau-dac-biet-theo-bo-so.html" role="menuitem"><span aria-hidden="true">⌗</span><span>Cầu Đặc Biệt theo bộ số</span></a><a href="giai-db-ngay-mai.html" role="menuitem"><span aria-hidden="true">◐</span><span>Giải Đặc Biệt ngày mai</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-loto-chi-ti-t"><span class="ui-dock-ic" aria-hidden="true">◧</span><span class="ui-dock-name">LOTO chi tiết</span></button><div class="ui-dock-pop" id="dock-loto-chi-ti-t" role="menu"><a href="tan-suat-loto.html" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="tan-suat-cap-loto.html" role="menuitem"><span aria-hidden="true">⇅</span><span>Tần suất cặp LOTO</span></a><a href="cap-lon-loto.html" role="menuitem"><span aria-hidden="true">🔁</span><span>Cặp lộn LOTO</span></a><a href="cau-giai-dac-biet.html" role="menuitem"><span aria-hidden="true">🎯</span><span>Cầu giải Đặc Biệt</span></a><a href="giai-dac-biet-theo-tong.html" role="menuitem"><span aria-hidden="true">Σ</span><span>Đặc Biệt theo tổng</span></a><a href="dau-duoi-loto.html" role="menuitem"><span aria-hidden="true">⊞</span><span>Đầu đuôi LOTO</span></a><a href="lo-gan.html" role="menuitem"><span aria-hidden="true">⏳</span><span>Lô gan</span></a><a href="thong-ke-tong-hop.html" role="menuitem"><span aria-hidden="true">◫</span><span>Thống kê tổng hợp</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tool-n-ng-cao"><span class="ui-dock-ic" aria-hidden="true">⚗</span><span class="ui-dock-name">Tool nâng cao</span></button><div class="ui-dock-pop" id="dock-tool-n-ng-cao" role="menu"><a href="research-lab.html" role="menuitem"><span aria-hidden="true">⚗</span><span>Phòng nghiên cứu</span></a><a href="index.html#backtest" role="menuitem"><span aria-hidden="true">⟳</span><span>Kiểm định AI/ML</span></a></div></div></div></nav><script src="assets/ui-dock.js" defer></script></div>
-<script src="assets/apply-data-styles.js" defer></script>
+</main><nav class="ui-dock" aria-label="Điều hướng chính"><div class="ui-dock-inner"><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tr-c-ti-p"><span class="ui-dock-ic" aria-hidden="true">◉</span><span class="ui-dock-name">Trực tiếp</span></button><div class="ui-dock-pop" id="dock-tr-c-ti-p" role="menu"><a href="live.html" role="menuitem"><span aria-hidden="true">◉</span><span>Kết quả trực tiếp</span></a><a href="index.html" role="menuitem"><span aria-hidden="true">▤</span><span>Kết quả hôm nay</span></a><a href="so-ket-qua-truyen-thong.html" role="menuitem"><span aria-hidden="true">▥</span><span>Sổ kết quả</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-th-ng-k"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Thống kê</span></button><div class="ui-dock-pop" id="dock-th-ng-k" role="menu"><a href="statistics.html" role="menuitem"><span aria-hidden="true">▦</span><span>Ma trận thống kê</span></a><a href="index.html#tan-suat-loto" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="index.html#gan-nhip" role="menuitem"><span aria-hidden="true">◷</span><span>Gan &amp; nhịp</span></a><a href="index.html#cap-lon" role="menuitem"><span aria-hidden="true">⇅</span><span>Cặp lộn &amp; bóng</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-c-u-k-o"><span class="ui-dock-ic" aria-hidden="true">⟋</span><span class="ui-dock-name">Cầu kèo</span></button><div class="ui-dock-pop" id="dock-c-u-k-o" role="menu"><a href="soi-path-loto-active.html" role="menuitem"><span aria-hidden="true">⟋</span><span>Cầu LOTO đang chạy</span></a><a href="soi-path-loto-stable.html" role="menuitem"><span aria-hidden="true">⟊</span><span>Cầu LOTO ổn định</span></a><a href="soi-path-de-active.html" role="menuitem"><span aria-hidden="true">⟍</span><span>Cầu Đặc Biệt đang chạy</span></a><a href="soi-path-de-stable.html" role="menuitem"><span aria-hidden="true">⟌</span><span>Cầu Đặc Biệt ổn định</span></a><a href="index.html#duong-cau" role="menuitem"><span aria-hidden="true">⌗</span><span>Căn cứ vị trí cầu</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-current="true" aria-haspopup="true" aria-expanded="false" aria-controls="dock-ph-ng-o-n"><span class="ui-dock-ic" aria-hidden="true">◈</span><span class="ui-dock-name">Phỏng đoán</span></button><div class="ui-dock-pop" id="dock-ph-ng-o-n" role="menu"><a href="dashboard.html" role="menuitem" aria-current="page"><span aria-hidden="true">◈</span><span>Bảng điều khiển AI/ML</span></a><a href="ml_top10_loto.html" role="menuitem"><span aria-hidden="true">①</span><span>10 số LOTO</span></a><a href="ml_top10_de.html" role="menuitem"><span aria-hidden="true">②</span><span>10 số Đặc Biệt</span></a><a href="model-quality.html" role="menuitem"><span aria-hidden="true">✓</span><span>Chất lượng mô hình</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-b-ng-c-bi-t"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Bảng Đặc Biệt</span></button><div class="ui-dock-pop" id="dock-b-ng-c-bi-t" role="menu"><a href="bang-dac-biet.html" role="menuitem"><span aria-hidden="true">▦</span><span>Theo ngày</span></a><a href="bang-dac-biet-thang.html" role="menuitem"><span aria-hidden="true">▩</span><span>Theo tháng</span></a><a href="bang-dac-biet-nam.html" role="menuitem"><span aria-hidden="true">▨</span><span>Theo năm</span></a><a href="chu-ky-dac-biet.html" role="menuitem"><span aria-hidden="true">◷</span><span>Chu kỳ Đặc Biệt</span></a><a href="cau-dac-biet-theo-bo-so.html" role="menuitem"><span aria-hidden="true">⌗</span><span>Cầu Đặc Biệt theo bộ số</span></a><a href="giai-db-ngay-mai.html" role="menuitem"><span aria-hidden="true">◐</span><span>Giải Đặc Biệt ngày mai</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-loto-chi-ti-t"><span class="ui-dock-ic" aria-hidden="true">◧</span><span class="ui-dock-name">LOTO chi tiết</span></button><div class="ui-dock-pop" id="dock-loto-chi-ti-t" role="menu"><a href="tan-suat-loto.html" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="tan-suat-cap-loto.html" role="menuitem"><span aria-hidden="true">⇅</span><span>Tần suất cặp LOTO</span></a><a href="cap-lon-loto.html" role="menuitem"><span aria-hidden="true">🔁</span><span>Cặp lộn LOTO</span></a><a href="cau-giai-dac-biet.html" role="menuitem"><span aria-hidden="true">🎯</span><span>Cầu giải Đặc Biệt</span></a><a href="giai-dac-biet-theo-tong.html" role="menuitem"><span aria-hidden="true">Σ</span><span>Đặc Biệt theo tổng</span></a><a href="dau-duoi-loto.html" role="menuitem"><span aria-hidden="true">⊞</span><span>Đầu đuôi LOTO</span></a><a href="lo-gan.html" role="menuitem"><span aria-hidden="true">⏳</span><span>Lô gan</span></a><a href="thong-ke-tong-hop.html" role="menuitem"><span aria-hidden="true">◫</span><span>Thống kê tổng hợp</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tool-n-ng-cao"><span class="ui-dock-ic" aria-hidden="true">⚗</span><span class="ui-dock-name">Tool nâng cao</span></button><div class="ui-dock-pop" id="dock-tool-n-ng-cao" role="menu"><a href="research-lab.html" role="menuitem"><span aria-hidden="true">⚗</span><span>Phòng nghiên cứu</span></a><a href="index.html#backtest" role="menuitem"><span aria-hidden="true">⟳</span><span>Kiểm định AI/ML</span></a></div></div></div></nav><script>(function(){var d=document.querySelector(".ui-dock");if(!d)return;document.documentElement.classList.add("ui-js");var gs=Array.prototype.slice.call(d.querySelectorAll(".ui-dock-group"));function set(g,o){g.classList.toggle("ui-open",o);var b=g.querySelector(".ui-dock-btn");if(b)b.setAttribute("aria-expanded",o?"true":"false")}function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}d.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ui-dock-btn");if(!b)return;var g=b.closest(".ui-dock-group");if(!g)return;var o=!g.classList.contains("ui-open");shut(g);set(g,o)});document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".ui-dock")))shut(null)});document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;var g=d.querySelector(".ui-dock-group.ui-open");if(!g)return;var b=g.querySelector(".ui-dock-btn");shut(null);if(b)b.focus()});d.addEventListener("focusout",function(e){if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})})();</script></div>
 </body>
 </html>
