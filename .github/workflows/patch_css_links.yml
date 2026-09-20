@@ -1,0 +1,26 @@
+name: Patch CSS links (parallel)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_docs_css_links.py'
+      - 'docs/assets/ui-part*.css'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Patch docs HTML links
+        run: python scripts/patch_docs_css_links.py
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/*.html
+          git diff --staged --quiet || git commit -m "perf(html): parallel CSS links (auto-patch)"
+          git push
