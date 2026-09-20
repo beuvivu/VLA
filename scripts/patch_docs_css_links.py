@@ -3,17 +3,18 @@
 
 Removes every managed stylesheet/preload/critical block, then injects:
   1. Font preload
-  2. Critical CSS inline (~2.3KB) for first paint
+  2. Auto critical CSS inline (from css_links / extract_critical_css)
   3. Preload full sheets
   4. Non-blocking full CSS (media=print → onload media=all)
   5. noscript fallback
+
+Re-run via workflow or: python scripts/patch_docs_css_links.py
 """
 from __future__ import annotations
 import re
 import sys
 from pathlib import Path
 
-# Match ANY link tag that references our CSS/font assets (any attribute order)
 LINK_MANAGED = re.compile(
     r"<link\b(?=[^>]*\bhref\s*=\s*[\"']assets/(?:ui(?:-part[123])?\.css|ui-visual-system\.css|InterVariable\.woff2)[\"'])[^>]*>\s*",
     re.I,
