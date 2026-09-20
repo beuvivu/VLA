@@ -6,16 +6,10 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>SOI CẦU LOTO — ỔN ĐỊNH</title>
-  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
-  <style id="ui-critical">:root{--ui-bg:#F2F4FF;--ui-bg-2:#E6EAFB;--ui-surface:#fff;--ui-surface-2:#F7F8FE;--ui-border:#E7EAF6;--ui-border-strong:#D8DDF0;--ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;--ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;--ui-on-brand:#ffffff;--ui-r-md:.75rem;--ui-r-lg:1.125rem;--ui-r-xl:1.5rem;--ui-font:InterVariable,Inter,system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;--s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.25rem;--s6:1.5rem;--s8:2rem;--ui-page-max:80rem;--ui-page-gutter:clamp(1rem,2.5vw,2rem);--ui-dock-h:4.25rem;--ui-font:system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif}*,::before,::after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;color:var(--ui-ink-2);background:linear-gradient(162deg,#F2F4FF,#E6EAFB);background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}.ui-app,.app{min-height:100vh;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}.ui-shell,.main,.path-shell{width:100%;max-width:var(--ui-page-max);margin-inline:auto;padding:1.5rem var(--ui-page-gutter) 3rem;min-width:0}.ui-header,header.ui-header,.path-hero{margin-bottom:1.25rem;padding:1.25rem 1.5rem;border-radius:var(--ui-r-xl);background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.8)}.ui-header h1,h1{margin:0 0 .35rem;font-size:clamp(1.35rem,2.4vw,1.875rem);font-weight:600;letter-spacing:-.02em;color:var(--ui-ink);line-height:1.25}.ui-sub{color:var(--ui-ink-soft);font-size:.875rem;margin:0}.ui-nav{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.5rem}.ui-nav a{display:inline-flex;padding:.375rem .75rem;border-radius:.75rem;border:1px solid var(--ui-border);background:var(--ui-surface);color:var(--ui-ink-soft);font-size:.8125rem;font-weight:500;text-decoration:none}.ui-card,.card{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.8);border-radius:var(--ui-r-xl);overflow:hidden}.ui-card-head{padding:1rem 1.25rem;border-bottom:1px solid var(--ui-border)}.ui-card-body{padding:1.25rem}.ui-grid{display:grid;gap:1.25rem}.ui-table-wrap{overflow:auto;max-width:100%}.ui-badge{display:inline-flex;padding:.15rem .55rem;border-radius:999px;font-size:.75rem;font-weight:600}.ui-badge-brand{background:var(--ui-brand-soft);color:var(--ui-brand-ink)}.ui-dock,.dock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;pointer-events:none}.ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + env(safe-area-inset-bottom,0px) + 1rem)}@media (max-width:640px){.ui-shell,.main{padding-left:14px;padding-right:14px}.ui-dock,.dock{left:12px;right:12px;transform:none;max-width:none}}</style>
   <link rel="preload" href="assets/ui.css" as="style" />
   <link rel="preload" href="assets/ui-visual-system.css" as="style" />
-  <link rel="stylesheet" href="assets/ui.css" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system />
-  <noscript>
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/ui.css" />
-  <link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />
-  </noscript>
   <style>
     :root{
       --bg:#F4F5FF;--card:rgba(255,255,255,.90);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;
@@ -83,7 +77,8 @@
 @media(max-width:979px){.path-page .path-overview{grid-template-columns:1fr}.path-page .path-table-scroll{max-height:58vh}}
 @media(max-width:640px){.path-page .path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}.path-page .path-hero{padding:.9rem;border-radius:16px}.path-page .card{border-radius:16px;padding:12px}.path-page .quick-grid{grid-template-columns:1fr 1fr}}
 </style>
-<noscript></noscript>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
 <body data-ui-page="soi-path-loto-stable" class="ui-app ui-dock-space path-page">
 <div class="wrap path-shell">
@@ -151,8 +146,8 @@
             <tr>
               <td>6</td>
               <td class="mono">86</td>
-              <td>24.58</td>
-              <td>107</td>
+              <td>24.57</td>
+              <td>106</td>
             </tr>
 
             <tr>
@@ -294,9 +289,9 @@
           <span class="quick-meta"><b>24.58%</b><br>97 đường cầu</span>
         </div>
 
-        <div class="quick-pick" title="Số 86 · điểm 24.58% · hỗ trợ 107 đường cầu">
+        <div class="quick-pick" title="Số 86 · điểm 24.57% · hỗ trợ 106 đường cầu">
           <span class="quick-number mono">86</span>
-          <span class="quick-meta"><b>24.58%</b><br>107 đường cầu</span>
+          <span class="quick-meta"><b>24.57%</b><br>106 đường cầu</span>
         </div>
 
         <div class="quick-pick" title="Số 67 · điểm 24.57% · hỗ trợ 129 đường cầu">
@@ -1656,36 +1651,6 @@
 
           <tr>
             <td class="left">
-              <div class="mono">L8-[12,55]</div>
-              <div class="small">trễ=8 · A=12 (prize2_1.d2) · B=55 (prize4_2.d1)</div>
-            </td>
-            <td>26.94</td>
-            <td class="mono">dài nhất=8 / hiện tại=0</td>
-
-                <td title="2026-09-10 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=92"><span class="cell hit mono">92</span></td>
-
-                <td title="2026-09-11 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=12"><span class="cell hit mono">12</span></td>
-
-                <td title="2026-09-12 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=68"><span class="cell none mono">68</span></td>
-
-                <td title="2026-09-13 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=31"><span class="cell none mono">31</span></td>
-
-                <td title="2026-09-14 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=92"><span class="cell hit mono">92</span></td>
-
-                <td title="2026-09-15 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=70"><span class="cell none mono">70</span></td>
-
-                <td title="2026-09-16 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=55"><span class="cell none mono">55</span></td>
-
-                <td title="2026-09-17 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=38"><span class="cell hit mono">38</span></td>
-
-                <td title="2026-09-18 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=15"><span class="cell none mono">15</span></td>
-
-                <td title="2026-09-19 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=53"><span class="cell none mono">53</span></td>
-
-          </tr>
-
-          <tr>
-            <td class="left">
               <div class="mono">L8-[91,98]</div>
               <div class="small">trễ=8 · A=91 (prize6_1.d1) · B=98 (prize6_3.d2)</div>
             </td>
@@ -1711,6 +1676,36 @@
                 <td title="2026-09-18 · trễ=8 · vị trí A=91 (prize6_1.d1) · vị trí B=98 (prize6_3.d2) · số=84"><span class="cell none mono">84</span></td>
 
                 <td title="2026-09-19 · trễ=8 · vị trí A=91 (prize6_1.d1) · vị trí B=98 (prize6_3.d2) · số=25"><span class="cell none mono">25</span></td>
+
+          </tr>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L8-[12,55]</div>
+              <div class="small">trễ=8 · A=12 (prize2_1.d2) · B=55 (prize4_2.d1)</div>
+            </td>
+            <td>26.94</td>
+            <td class="mono">dài nhất=8 / hiện tại=0</td>
+
+                <td title="2026-09-10 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=92"><span class="cell hit mono">92</span></td>
+
+                <td title="2026-09-11 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=12"><span class="cell hit mono">12</span></td>
+
+                <td title="2026-09-12 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=68"><span class="cell none mono">68</span></td>
+
+                <td title="2026-09-13 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=31"><span class="cell none mono">31</span></td>
+
+                <td title="2026-09-14 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=92"><span class="cell hit mono">92</span></td>
+
+                <td title="2026-09-15 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=70"><span class="cell none mono">70</span></td>
+
+                <td title="2026-09-16 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=55"><span class="cell none mono">55</span></td>
+
+                <td title="2026-09-17 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=38"><span class="cell hit mono">38</span></td>
+
+                <td title="2026-09-18 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=15"><span class="cell none mono">15</span></td>
+
+                <td title="2026-09-19 · trễ=8 · vị trí A=12 (prize2_1.d2) · vị trí B=55 (prize4_2.d1) · số=53"><span class="cell none mono">53</span></td>
 
           </tr>
 
@@ -3126,36 +3121,6 @@
 
           <tr>
             <td class="left">
-              <div class="mono">L20-[51,78]</div>
-              <div class="small">trễ=20 · A=51 (prize4_1.d1) · B=78 (prize5_4.d0)</div>
-            </td>
-            <td>26.69</td>
-            <td class="mono">dài nhất=6 / hiện tại=2</td>
-
-                <td title="2026-09-10 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=07"><span class="cell none mono">07</span></td>
-
-                <td title="2026-09-11 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=77"><span class="cell none mono">77</span></td>
-
-                <td title="2026-09-12 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=80"><span class="cell none mono">80</span></td>
-
-                <td title="2026-09-13 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=28"><span class="cell hit mono">28</span></td>
-
-                <td title="2026-09-14 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=85"><span class="cell none mono">85</span></td>
-
-                <td title="2026-09-15 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=38"><span class="cell none mono">38</span></td>
-
-                <td title="2026-09-16 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=80"><span class="cell none mono">80</span></td>
-
-                <td title="2026-09-17 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=08"><span class="cell none mono">08</span></td>
-
-                <td title="2026-09-18 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=32"><span class="cell hit mono">32</span></td>
-
-                <td title="2026-09-19 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=72"><span class="cell hit mono">72</span></td>
-
-          </tr>
-
-          <tr>
-            <td class="left">
               <div class="mono">L20-[0,100]</div>
               <div class="small">trễ=20 · A=0 (special.d0) · B=100 (prize7_1.d1)</div>
             </td>
@@ -3181,6 +3146,36 @@
                 <td title="2026-09-18 · trễ=20 · vị trí A=0 (special.d0) · vị trí B=100 (prize7_1.d1) · số=92"><span class="cell hit mono">92</span></td>
 
                 <td title="2026-09-19 · trễ=20 · vị trí A=0 (special.d0) · vị trí B=100 (prize7_1.d1) · số=86"><span class="cell hit mono">86</span></td>
+
+          </tr>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L20-[51,78]</div>
+              <div class="small">trễ=20 · A=51 (prize4_1.d1) · B=78 (prize5_4.d0)</div>
+            </td>
+            <td>26.69</td>
+            <td class="mono">dài nhất=6 / hiện tại=2</td>
+
+                <td title="2026-09-10 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=07"><span class="cell none mono">07</span></td>
+
+                <td title="2026-09-11 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=77"><span class="cell none mono">77</span></td>
+
+                <td title="2026-09-12 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=80"><span class="cell none mono">80</span></td>
+
+                <td title="2026-09-13 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=28"><span class="cell hit mono">28</span></td>
+
+                <td title="2026-09-14 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=85"><span class="cell none mono">85</span></td>
+
+                <td title="2026-09-15 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=38"><span class="cell none mono">38</span></td>
+
+                <td title="2026-09-16 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=80"><span class="cell none mono">80</span></td>
+
+                <td title="2026-09-17 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=08"><span class="cell none mono">08</span></td>
+
+                <td title="2026-09-18 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=32"><span class="cell hit mono">32</span></td>
+
+                <td title="2026-09-19 · trễ=20 · vị trí A=51 (prize4_1.d1) · vị trí B=78 (prize5_4.d0) · số=72"><span class="cell hit mono">72</span></td>
 
           </tr>
 
@@ -4536,36 +4531,6 @@
 
           <tr>
             <td class="left">
-              <div class="mono">L16-[27,49]</div>
-              <div class="small">trễ=16 · A=27 (prize3_2.d2) · B=49 (prize3_6.d4)</div>
-            </td>
-            <td>26.54</td>
-            <td class="mono">dài nhất=5 / hiện tại=1</td>
-
-                <td title="2026-09-10 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=56"><span class="cell none mono">56</span></td>
-
-                <td title="2026-09-11 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=81"><span class="cell none mono">81</span></td>
-
-                <td title="2026-09-12 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=62"><span class="cell hit mono">62</span></td>
-
-                <td title="2026-09-13 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=35"><span class="cell none mono">35</span></td>
-
-                <td title="2026-09-14 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=81"><span class="cell none mono">81</span></td>
-
-                <td title="2026-09-15 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=84"><span class="cell none mono">84</span></td>
-
-                <td title="2026-09-16 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=62"><span class="cell none mono">62</span></td>
-
-                <td title="2026-09-17 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=71"><span class="cell none mono">71</span></td>
-
-                <td title="2026-09-18 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=80"><span class="cell none mono">80</span></td>
-
-                <td title="2026-09-19 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=98"><span class="cell hit mono">98</span></td>
-
-          </tr>
-
-          <tr>
-            <td class="left">
               <div class="mono">L16-[59,60]</div>
               <div class="small">trễ=16 · A=59 (prize4_3.d1) · B=60 (prize4_3.d2)</div>
             </td>
@@ -4591,6 +4556,36 @@
                 <td title="2026-09-18 · trễ=16 · vị trí A=59 (prize4_3.d1) · vị trí B=60 (prize4_3.d2) · số=54"><span class="cell none mono">54</span></td>
 
                 <td title="2026-09-19 · trễ=16 · vị trí A=59 (prize4_3.d1) · vị trí B=60 (prize4_3.d2) · số=56"><span class="cell hit mono">56</span></td>
+
+          </tr>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L16-[27,49]</div>
+              <div class="small">trễ=16 · A=27 (prize3_2.d2) · B=49 (prize3_6.d4)</div>
+            </td>
+            <td>26.54</td>
+            <td class="mono">dài nhất=5 / hiện tại=1</td>
+
+                <td title="2026-09-10 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=56"><span class="cell none mono">56</span></td>
+
+                <td title="2026-09-11 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=81"><span class="cell none mono">81</span></td>
+
+                <td title="2026-09-12 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=62"><span class="cell hit mono">62</span></td>
+
+                <td title="2026-09-13 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=35"><span class="cell none mono">35</span></td>
+
+                <td title="2026-09-14 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=81"><span class="cell none mono">81</span></td>
+
+                <td title="2026-09-15 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=84"><span class="cell none mono">84</span></td>
+
+                <td title="2026-09-16 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=62"><span class="cell none mono">62</span></td>
+
+                <td title="2026-09-17 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=71"><span class="cell none mono">71</span></td>
+
+                <td title="2026-09-18 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=80"><span class="cell none mono">80</span></td>
+
+                <td title="2026-09-19 · trễ=16 · vị trí A=27 (prize3_2.d2) · vị trí B=49 (prize3_6.d4) · số=98"><span class="cell hit mono">98</span></td>
 
           </tr>
 
@@ -4986,36 +4981,6 @@
 
           <tr>
             <td class="left">
-              <div class="mono">L13-[27,106]</div>
-              <div class="small">trễ=13 · A=27 (prize3_2.d2) · B=106 (prize7_4.d1)</div>
-            </td>
-            <td>26.49</td>
-            <td class="mono">dài nhất=6 / hiện tại=1</td>
-
-                <td title="2026-09-10 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=37"><span class="cell hit mono">37</span></td>
-
-                <td title="2026-09-11 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=81"><span class="cell none mono">81</span></td>
-
-                <td title="2026-09-12 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=88"><span class="cell none mono">88</span></td>
-
-                <td title="2026-09-13 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=60"><span class="cell hit mono">60</span></td>
-
-                <td title="2026-09-14 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=78"><span class="cell none mono">78</span></td>
-
-                <td title="2026-09-15 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=80"><span class="cell hit mono">80</span></td>
-
-                <td title="2026-09-16 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=91"><span class="cell hit mono">91</span></td>
-
-                <td title="2026-09-17 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=28"><span class="cell none mono">28</span></td>
-
-                <td title="2026-09-18 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=51"><span class="cell none mono">51</span></td>
-
-                <td title="2026-09-19 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=83"><span class="cell hit mono">83</span></td>
-
-          </tr>
-
-          <tr>
-            <td class="left">
               <div class="mono">L13-[51,54]</div>
               <div class="small">trễ=13 · A=51 (prize4_1.d1) · B=54 (prize4_2.d0)</div>
             </td>
@@ -5041,6 +5006,36 @@
                 <td title="2026-09-18 · trễ=13 · vị trí A=51 (prize4_1.d1) · vị trí B=54 (prize4_2.d0) · số=71"><span class="cell none mono">71</span></td>
 
                 <td title="2026-09-19 · trễ=13 · vị trí A=51 (prize4_1.d1) · vị trí B=54 (prize4_2.d0) · số=52"><span class="cell hit mono">52</span></td>
+
+          </tr>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L13-[27,106]</div>
+              <div class="small">trễ=13 · A=27 (prize3_2.d2) · B=106 (prize7_4.d1)</div>
+            </td>
+            <td>26.49</td>
+            <td class="mono">dài nhất=6 / hiện tại=1</td>
+
+                <td title="2026-09-10 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=37"><span class="cell hit mono">37</span></td>
+
+                <td title="2026-09-11 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=81"><span class="cell none mono">81</span></td>
+
+                <td title="2026-09-12 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=88"><span class="cell none mono">88</span></td>
+
+                <td title="2026-09-13 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=60"><span class="cell hit mono">60</span></td>
+
+                <td title="2026-09-14 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=78"><span class="cell none mono">78</span></td>
+
+                <td title="2026-09-15 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=80"><span class="cell hit mono">80</span></td>
+
+                <td title="2026-09-16 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=91"><span class="cell hit mono">91</span></td>
+
+                <td title="2026-09-17 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=28"><span class="cell none mono">28</span></td>
+
+                <td title="2026-09-18 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=51"><span class="cell none mono">51</span></td>
+
+                <td title="2026-09-19 · trễ=13 · vị trí A=27 (prize3_2.d2) · vị trí B=106 (prize7_4.d1) · số=83"><span class="cell hit mono">83</span></td>
 
           </tr>
 
@@ -5106,36 +5101,6 @@
 
           <tr>
             <td class="left">
-              <div class="mono">L23-[5,86]</div>
-              <div class="small">trễ=23 · A=5 (prize1.d0) · B=86 (prize5_6.d0)</div>
-            </td>
-            <td>26.49</td>
-            <td class="mono">dài nhất=5 / hiện tại=1</td>
-
-                <td title="2026-09-10 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=52"><span class="cell none mono">52</span></td>
-
-                <td title="2026-09-11 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=01"><span class="cell none mono">01</span></td>
-
-                <td title="2026-09-12 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=02"><span class="cell hit mono">02</span></td>
-
-                <td title="2026-09-13 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=87"><span class="cell none mono">87</span></td>
-
-                <td title="2026-09-14 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=89"><span class="cell hit mono">89</span></td>
-
-                <td title="2026-09-15 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=56"><span class="cell none mono">56</span></td>
-
-                <td title="2026-09-16 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=00"><span class="cell none mono">00</span></td>
-
-                <td title="2026-09-17 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=79"><span class="cell none mono">79</span></td>
-
-                <td title="2026-09-18 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=80"><span class="cell none mono">80</span></td>
-
-                <td title="2026-09-19 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=75"><span class="cell hit mono">75</span></td>
-
-          </tr>
-
-          <tr>
-            <td class="left">
               <div class="mono">L23-[35,50]</div>
               <div class="small">trễ=23 · A=35 (prize3_4.d0) · B=50 (prize4_1.d0)</div>
             </td>
@@ -5161,6 +5126,36 @@
                 <td title="2026-09-18 · trễ=23 · vị trí A=35 (prize3_4.d0) · vị trí B=50 (prize4_1.d0) · số=17"><span class="cell none mono">17</span></td>
 
                 <td title="2026-09-19 · trễ=23 · vị trí A=35 (prize3_4.d0) · vị trí B=50 (prize4_1.d0) · số=52"><span class="cell hit mono">52</span></td>
+
+          </tr>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L23-[5,86]</div>
+              <div class="small">trễ=23 · A=5 (prize1.d0) · B=86 (prize5_6.d0)</div>
+            </td>
+            <td>26.49</td>
+            <td class="mono">dài nhất=5 / hiện tại=1</td>
+
+                <td title="2026-09-10 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=52"><span class="cell none mono">52</span></td>
+
+                <td title="2026-09-11 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=01"><span class="cell none mono">01</span></td>
+
+                <td title="2026-09-12 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=02"><span class="cell hit mono">02</span></td>
+
+                <td title="2026-09-13 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=87"><span class="cell none mono">87</span></td>
+
+                <td title="2026-09-14 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=89"><span class="cell hit mono">89</span></td>
+
+                <td title="2026-09-15 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=56"><span class="cell none mono">56</span></td>
+
+                <td title="2026-09-16 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=00"><span class="cell none mono">00</span></td>
+
+                <td title="2026-09-17 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=79"><span class="cell none mono">79</span></td>
+
+                <td title="2026-09-18 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=80"><span class="cell none mono">80</span></td>
+
+                <td title="2026-09-19 · trễ=23 · vị trí A=5 (prize1.d0) · vị trí B=86 (prize5_6.d0) · số=75"><span class="cell hit mono">75</span></td>
 
           </tr>
 
