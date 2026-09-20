@@ -1,14 +1,14 @@
 {
   "schema_version": 6,
   "mode": "loto",
-  "learned_at_utc": "2026-09-20T14:16:14Z",
+  "learned_at_utc": "2026-09-20T14:26:57Z",
   "window_days": 180,
   "half_life_days": 45,
   "component_availability_required": true,
   "params": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.0690058343428386,
+    "b": -1.0690059898463902,
     "temperature": 1.0
   },
   "selection": {
