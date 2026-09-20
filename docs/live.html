@@ -6,173 +6,93 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer">
   <title>Kết quả XSMB trực tiếp</title>
-  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="assets/critical.css" />
-  <link rel="preload" href="assets/ui.css" as="style" />
-  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
   <link rel="stylesheet" href="assets/ui.css" />
-  <script src="assets/css-async.js" defer></script>
-  <noscript>
-  <link rel="stylesheet" href="assets/ui.css" />
-  </noscript>
+  <link rel="stylesheet" href="assets/ui-visual-system.css" media="all" data-ui-visual-system />
   <style>
-  .ui-live-nav { margin: 32px auto 0; max-width: 1100px; padding: 24px 16px 40px;
-    border-top: 1px solid rgba(148,163,184,.28); font-size: 13px; }
-  .ui-live-nav h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
-    color: #cbd5e1; margin: 0 0 8px; font-weight: 600; }
-  .ui-live-nav ul { list-style: none; padding: 0; margin: 0 0 16px;
-    display: flex; flex-wrap: wrap; gap: 8px 16px; }
-  .ui-live-nav a { color: #93c5fd; text-decoration: none; }
-  .ui-live-nav a:hover { text-decoration: underline; }
-
-    :root{
-      --bg:#08111f;--card:#0d1b2d;--card-2:#122236;--line:#24354b;
-      --ink:#e8eff8;--ink-2:#aebed2;--ink-3:#8397ad;
-      --accent:#7aa7ff;--ok:#34d399;--ok-line:#1f6f52;
-      --warn:#fbbf24;--warn-line:#8b6b32;--hot:#fca5a5;
-    }
     *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
-    .wrap{max-width:960px;margin:auto;padding:20px 16px 48px}
-    a{color:var(--accent)}
-    h1{margin:0;font-size:22px;letter-spacing:-.01em}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+    body.live-console{
+      margin:0;
+      min-height:100vh;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);
+      color:#0f172a;
+      padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem);
+    }
+    .wrap{
+      max-width:1280px;margin:0 auto;padding:24px 18px 36px;
+      display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;
+    }
+    .wrap>.top{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;
+      padding:1rem 1.15rem;border:1px solid rgba(255,255,255,.94);border-radius:20px;
+      background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.05)}
+    h1{margin:0;font-size:clamp(1.25rem,2.5vw,1.5rem);letter-spacing:-.02em}
+    .muted{color:#475569;font-size:13px}
+    a{color:#4f46e5;text-decoration:none}
+    a:hover{text-decoration:underline}
+    .card{
+      margin:0;padding:16px;border-radius:20px;
+      background:rgba(255,255,255,.9);border:1px solid #dbe3f0;
+      box-shadow:0 8px 30px rgba(15,23,42,.045);
+    }
+    .live-status-card{grid-column:span 4;align-self:start}
+    .live-results-card{grid-column:span 8;grid-row:2/span 2}
+    .live-sources-card{grid-column:span 4;align-self:start}
     .top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
-    .muted{color:var(--ink-2);font-size:13px}
-    .bar{height:9px;background:#17283b;border-radius:10px;overflow:hidden}
-    .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--ok));width:0;
-      transition:width .45s cubic-bezier(.4,0,.2,1)}
-    .badge{display:inline-block;border:1px solid var(--line);border-radius:999px;
-      padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
-    .ok{border-color:var(--ok-line);color:var(--ok)}
-    .warn{border-color:var(--warn-line);color:var(--warn)}
-
-    .prize{display:grid;grid-template-columns:104px 1fr;gap:10px 14px;
-      align-items:center;padding:9px 0;border-bottom:1px solid #16273a}
+    .bar{height:9px;background:#e2e8f0;border-radius:10px;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,#4f46e5,#059669);width:0;transition:width .45s ease}
+    .badge{display:inline-block;border:1px solid #dbe3f0;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+    .badge.ok{border-color:#a7f3d0;color:#059669}
+    .badge.warn{border-color:#fed7aa;color:#d97706}
+    .foot{display:flex;gap:14px;flex-wrap:wrap;color:#64748b;font-size:12px;margin-top:10px}
+    #results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+    .prize{display:grid;grid-template-columns:104px 1fr;gap:10px 14px;align-items:center;padding:9px 0;border-bottom:1px solid #e2e8f0}
     .prize:last-child{border-bottom:0}
-    .prize-label{display:flex;align-items:center;gap:8px;color:var(--ink-2);
-      font-weight:700;font-size:14px}
-    .dot{width:7px;height:7px;border-radius:50%;background:#31465f;flex:none}
-    .prize.is-waiting .dot{background:var(--warn);animation:pulse 1.6s ease-in-out infinite}
-    .prize.is-live .dot{background:var(--accent);animation:pulse 1s ease-in-out infinite}
-    .prize.is-done .dot{background:var(--ok);animation:none}
+    .prize[data-prize=special],.prize[data-prize=prize3],.prize[data-prize=prize5],.prize[data-prize=prize7]{grid-column:1/-1}
+    .prize-label{display:flex;align-items:center;gap:8px;color:#475569;font-weight:700;font-size:14px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#94a3b8;flex:none}
+    .prize.is-waiting .dot{background:#d97706;animation:pulse 1.6s ease-in-out infinite}
+    .prize.is-live .dot{background:#4f46e5;animation:pulse 1s ease-in-out infinite}
+    .prize.is-done .dot{background:#059669;animation:none}
     .slots{display:flex;flex-wrap:wrap;gap:8px}
-    .slot{position:relative;min-width:var(--w,64px);height:38px;
-      display:flex;align-items:center;justify-content:center;
-      padding:0 10px;border-radius:10px;border:1px solid #1e3047;background:#0b1728;
-      font:700 19px ui-monospace,SFMono-Regular,Consolas,monospace;
-      letter-spacing:.06em;color:var(--ink);transition:border-color .25s,background .25s}
-    .slot.is-empty{color:#5b7ba6;background:#0a1523;border-style:dashed}
-    .slot.is-special{font-size:26px;min-width:112px;height:48px;color:var(--hot);
-      border-color:#5b2b32;background:#1a1017}
+    .slot{position:relative;min-width:var(--w,64px);height:38px;display:flex;align-items:center;justify-content:center;
+      padding:0 10px;border-radius:10px;border:1px solid #dbe3f0;background:#fff;
+      font:700 19px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.06em;color:#0f172a}
+    .slot.is-empty{color:#64748b;background:#E2E8F0;border-style:dashed;
+      background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.38) 7px 8px)}
+    .slot.is-special{font-size:26px;min-width:112px;height:48px;color:#DC2626;border-color:#f87171;background:#FEE2E2}
     .slot.is-new{animation:reveal .5s cubic-bezier(.2,.8,.3,1) both}
-    .slot.is-fresh{border-color:var(--accent);box-shadow:0 0 0 2px rgba(122,167,255,.18)}
-    @keyframes reveal{
-      0%{opacity:0;transform:translateY(-8px) scale(.94);filter:blur(3px)}
-      60%{opacity:1;filter:blur(0)}
-      100%{opacity:1;transform:none}
-    }
+    .slot.is-fresh{border-color:#4f46e5;box-shadow:0 0 0 2px rgba(79,70,229,.18)}
+    @keyframes reveal{0%{opacity:0;transform:translateY(-8px) scale(.94)}100%{opacity:1;transform:none}}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-    @media (prefers-reduced-motion: reduce){
-      .slot.is-new{animation:none}
-      .prize .dot{animation:none!important}
-      .fill{transition:none}
-    }
-
-    .src{display:grid;grid-template-columns:34px 1fr 78px;gap:8px;font-size:12px;
-      padding:5px 0;border-bottom:1px solid #17283b;color:var(--ink-2)}
+    .src{display:grid;grid-template-columns:34px 1fr 78px;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid #e2e8f0;color:#475569}
     .src:last-child{border-bottom:0}
-    .foot{display:flex;gap:14px;flex-wrap:wrap;align-items:center;
-      color:var(--ink-3);font-size:12px;margin-top:10px}
+    @media(max-width:900px){
+      .live-status-card,.live-results-card,.live-sources-card{grid-column:1/-1;grid-row:auto}
+      #results{grid-template-columns:1fr}
+      .prize{grid-column:1/-1!important}
+    }
     @media(max-width:620px){
-      .prize{grid-template-columns:64px 1fr;gap:8px}
-      .slot{min-width:56px;height:34px;font-size:16px;padding:0 8px}
+      .wrap{padding:12px;gap:10px}
+      .card{border-radius:16px;padding:13px}
+      .prize{grid-template-columns:64px 1fr}
+      .slot{min-width:56px;height:34px;font-size:16px}
       .slot.is-special{font-size:21px;min-width:92px;height:42px}
     }
-  .wrap{font-size:16px;line-height:normal}.wrap a{text-decoration:underline}.ui-live-nav{padding-bottom:calc(var(--ui-dock-h,54px) + 40px)}
+    @media(prefers-reduced-motion:reduce){
+      .slot.is-new{animation:none}.prize .dot{animation:none!important}.fill{transition:none}
+    }
   </style>
-<style id="ui-targeted-ui-refinement">
-/* Light theme must win over legacy dark body rules */
-body.live-console {
-  background: linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%) !important;
-  color: #0f172a !important;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
-  min-height: 100vh;
-  padding-bottom: calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem);
-}
-body.live-console .wrap {
-  max-width: 1280px !important;
-  margin: 0 auto !important;
-  display: grid !important;
-  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
-  gap: 14px !important;
-  padding: 24px 18px 36px !important;
-}
-body.live-console .card {
-  background: rgba(255,255,255,.9) !important;
-  border: 1px solid #dbe3f0 !important;
-  border-radius: 18px !important;
-  color: #0f172a !important;
-  margin: 0 !important;
-}
-body.live-console .muted { color: #475569 !important; }
-body.live-console a { color: #4f46e5 !important; }
-body.live-console .bar { background: #e2e8f0 !important; }
-body.live-console .slot {
-  background: #fff !important;
-  border: 1px solid #dbe3f0 !important;
-  color: #0f172a !important;
-}
-body.live-console .slot.is-empty {
-  color: #64748b !important;
-  background-color: #E2E8F0 !important;
-  background-image: repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.38) 7px 8px) !important;
-  border-color: #cbd5e1 !important;
-  border-style: dashed !important;
-}
-body.live-console .slot.is-special {
-  color: #DC2626 !important;
-  border-color: #f87171 !important;
-  background: #FEE2E2 !important;
-}
-.live-console{--bg:#F4F5FF;--card:rgba(255,255,255,.9);--card-2:#f8fafc;--line:#dbe3f0;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#4f46e5;--ok:#059669;--ok-line:#a7f3d0;--warn:#d97706;--warn-line:#fed7aa;--hot:#DC2626}
-.live-console .wrap>.top{grid-column:1/-1;padding:1rem 1.15rem;border:1px solid rgba(255,255,255,.94);border-radius:20px;background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px)}
-.live-console .card{box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px)}
-.live-console .live-status-card{grid-column:span 4;align-self:start}
-.live-console .live-results-card{grid-column:span 8;grid-row:2/span 2}
-.live-console .live-sources-card{grid-column:span 4;align-self:start}
-.live-console #results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
-.live-console .prize[data-prize=special],.live-console .prize[data-prize=prize3],.live-console .prize[data-prize=prize5],.live-console .prize[data-prize=prize7]{grid-column:1/-1}
-.live-console .prize{border-bottom-color:#e2e8f0;color:#0f172a}
-.live-console .prize-label{color:#475569}
-.live-console .dot{background:#94a3b8}
-.live-console .src{border-bottom-color:#e2e8f0;color:#475569}
-.live-console .foot{color:#64748b}
-.live-console .ui-live-nav{margin-top:1rem;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}
-@media(max-width:900px){
-  .live-console .live-status-card,.live-console .live-results-card,.live-console .live-sources-card{grid-column:1/-1;grid-row:auto}
-  .live-console #results{grid-template-columns:1fr}
-  .live-console .prize{grid-column:1/-1!important}
-}
-@media(max-width:620px){
-  body.live-console .wrap{padding:12px 12px 28px !important;gap:10px !important}
-  body.live-console .card{border-radius:16px !important;padding:13px !important}
-}
-</style>
-<link rel="stylesheet" href="assets/ui-visual-system.css" media="all" data-ui-visual-system>
-<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
 <body data-ui-page="live" class="live-console">
   <div class="wrap">
-    <div class="top live-hero" style="margin-bottom:4px">
+    <div class="top live-hero">
       <div>
         <h1>Kết quả XSMB gần thời gian thực</h1>
-        <div class="muted">Vận hành trên GitHub · đồng thuận nhiều nguồn theo từng ô ·
-          các số hiện lần lượt ngay khi lấy được</div>
+        <div class="muted">Vận hành trên GitHub · đồng thuận nhiều nguồn theo từng ô · các số hiện lần lượt ngay khi lấy được</div>
       </div>
       <a href="index.html">Bảng điều khiển</a>
     </div>
-
     <div class="card live-status-card">
       <div class="top"><b id="status">Đang tải…</b><span class="badge" id="verify">—</span></div>
       <div id="checked" class="muted" style="margin:8px 0">—</div>
@@ -182,21 +102,17 @@ body.live-console .slot.is-special {
         <span id="cadence">—</span>
       </div>
     </div>
-
     <div class="card live-results-card">
       <div id="results" aria-live="polite" aria-atomic="false"></div>
     </div>
-
     <div class="card live-sources-card">
       <b>Nguồn</b>
       <div id="sources" style="margin-top:8px"></div>
       <div id="conflicts" class="muted" style="margin-top:10px"></div>
     </div>
   </div>
-
-  <script>
-  window.LIVE_WORKER_URL = '';
-  </script>
+  <script>window.LIVE_WORKER_URL='';</script>
   <script src="assets/live-board.js" defer></script>
+  <script src="assets/ui-dock.js" defer></script>
 </body>
 </html>
