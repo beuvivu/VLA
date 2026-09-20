@@ -5,4 +5,4 @@ pytest>=9.1.1,<10
 # theo một gói khác — đúng kiểu phụ thuộc không khai báo mà bộ kiểm này sinh
 # ra để bắt, nên khai báo tường minh.
 PyYAML>=6,<7
-ruff==0.11.10
+ruff==0.16.8
