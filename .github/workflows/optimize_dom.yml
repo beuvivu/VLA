@@ -1,0 +1,26 @@
+name: Optimize index DOM
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/optimize_index_dom.py"
+      - "src/build_landing_page.py"
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Flatten matrix DOM on index
+        run: python scripts/optimize_index_dom.py
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/landing.html docs/landing_desktop.html || true
+          git diff --staged --quiet || git commit -m "perf(dom): flatten matrix cells + content-visibility on index"
+          git push
