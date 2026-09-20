@@ -6,10 +6,17 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
   <meta name="referrer" content="no-referrer" />
   <title>SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</title>
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/critical.css" />
   <link rel="preload" href="assets/ui.css" as="style" />
   <link rel="preload" href="assets/ui-visual-system.css" as="style" />
-  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />
+  <link rel="stylesheet" href="assets/ui-visual-system.css" media="print" data-async-css="1" data-ui-visual-system />
+  <script src="assets/css-async.js" defer></script>
+  <noscript>
   <link rel="stylesheet" href="assets/ui.css" />
+  <link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />
+  </noscript>
   <style>
     :root{
       --bg:#F4F5FF;--card:rgba(255,255,255,.90);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;
@@ -77,8 +84,7 @@
 @media(max-width:979px){.path-page .path-overview{grid-template-columns:1fr}.path-page .path-table-scroll{max-height:58vh}}
 @media(max-width:640px){.path-page .path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}.path-page .path-hero{padding:.9rem;border-radius:16px}.path-page .card{border-radius:16px;padding:12px}.path-page .quick-grid{grid-template-columns:1fr 1fr}}
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
-<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
+<noscript></noscript>
 </head>
 <body data-ui-page="soi-path-de-active" class="ui-app ui-dock-space path-page">
 <div class="wrap path-shell">
