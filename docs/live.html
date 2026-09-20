@@ -10,21 +10,12 @@
   <link rel="stylesheet" href="assets/critical.css" />
   <link rel="preload" href="assets/ui.css" as="style" />
   <link rel="preload" href="assets/ui-visual-system.css" as="style" />
-  <link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />
+  <link rel="stylesheet" href="assets/ui.css" />
   <script src="assets/css-async.js" defer></script>
   <noscript>
   <link rel="stylesheet" href="assets/ui.css" />
   </noscript>
-  <noscript>
-  </noscript>
-  <noscript>
-  </noscript>
-  <noscript>
-  </noscript>
-  <noscript>
-  </noscript>
   <style>
-
   .ui-live-nav { margin: 32px auto 0; max-width: 1100px; padding: 24px 16px 40px;
     border-top: 1px solid rgba(148,163,184,.28); font-size: 13px; }
   .ui-live-nav h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
@@ -41,7 +32,7 @@
       --warn:#fbbf24;--warn-line:#8b6b32;--hot:#fca5a5;
     }
     *{box-sizing:border-box}
-    body{font-family:Aptos,"Aptos Display","Segoe UI Variable Text",system-ui,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
     .wrap{max-width:960px;margin:auto;padding:20px 16px 48px}
     a{color:var(--accent)}
     h1{margin:0;font-size:22px;letter-spacing:-.01em}
@@ -101,32 +92,74 @@
   .wrap{font-size:16px;line-height:normal}.wrap a{text-decoration:underline}.ui-live-nav{padding-bottom:calc(var(--ui-dock-h,54px) + 40px)}
   </style>
 <style id="ui-targeted-ui-refinement">
-.live-console{--bg:#F4F5FF;--card:rgba(255,255,255,.9);--card-2:#f8fafc;--line:#dbe3f0;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#4f46e5;--ok:#059669;--ok-line:#a7f3d0;--warn:#d97706;--warn-line:#fed7aa;--hot:#DC2626;min-height:100vh;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem);background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);color:#0f172a}
-.live-console .wrap{max-width:1280px;padding:24px 18px 36px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+/* Light theme must win over legacy dark body rules */
+body.live-console {
+  background: linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%) !important;
+  color: #0f172a !important;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+  min-height: 100vh;
+  padding-bottom: calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 1rem);
+}
+body.live-console .wrap {
+  max-width: 1280px !important;
+  margin: 0 auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  padding: 24px 18px 36px !important;
+}
+body.live-console .card {
+  background: rgba(255,255,255,.9) !important;
+  border: 1px solid #dbe3f0 !important;
+  border-radius: 18px !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+}
+body.live-console .muted { color: #475569 !important; }
+body.live-console a { color: #4f46e5 !important; }
+body.live-console .bar { background: #e2e8f0 !important; }
+body.live-console .slot {
+  background: #fff !important;
+  border: 1px solid #dbe3f0 !important;
+  color: #0f172a !important;
+}
+body.live-console .slot.is-empty {
+  color: #64748b !important;
+  background-color: #E2E8F0 !important;
+  background-image: repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.38) 7px 8px) !important;
+  border-color: #cbd5e1 !important;
+  border-style: dashed !important;
+}
+body.live-console .slot.is-special {
+  color: #DC2626 !important;
+  border-color: #f87171 !important;
+  background: #FEE2E2 !important;
+}
+.live-console{--bg:#F4F5FF;--card:rgba(255,255,255,.9);--card-2:#f8fafc;--line:#dbe3f0;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#4f46e5;--ok:#059669;--ok-line:#a7f3d0;--warn:#d97706;--warn-line:#fed7aa;--hot:#DC2626}
 .live-console .wrap>.top{grid-column:1/-1;padding:1rem 1.15rem;border:1px solid rgba(255,255,255,.94);border-radius:20px;background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px)}
-.live-console .card{margin:0;border-color:rgba(255,255,255,.94);border-radius:20px;background:rgba(255,255,255,.9);box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px)}
-.live-console .live-status-card{grid-column:span 4;align-self:start}.live-console .live-results-card{grid-column:span 8;grid-row:2/span 2}.live-console .live-sources-card{grid-column:span 4;align-self:start}
-.live-console #results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.live-console .prize[data-prize=special],.live-console .prize[data-prize=prize3],.live-console .prize[data-prize=prize5],.live-console .prize[data-prize=prize7]{grid-column:1/-1}
-.live-console .slot{background:#fff;border-color:#dbe3f0;color:#0f172a}.live-console .slot.is-empty{color:#64748b;background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.38) 7px 8px);border-color:#cbd5e1}.live-console .slot.is-special{color:#DC2626;border-color:#f87171;background:#FEE2E2}
+.live-console .card{box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px)}
+.live-console .live-status-card{grid-column:span 4;align-self:start}
+.live-console .live-results-card{grid-column:span 8;grid-row:2/span 2}
+.live-console .live-sources-card{grid-column:span 4;align-self:start}
+.live-console #results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}
+.live-console .prize[data-prize=special],.live-console .prize[data-prize=prize3],.live-console .prize[data-prize=prize5],.live-console .prize[data-prize=prize7]{grid-column:1/-1}
+.live-console .prize{border-bottom-color:#e2e8f0;color:#0f172a}
+.live-console .prize-label{color:#475569}
+.live-console .dot{background:#94a3b8}
+.live-console .src{border-bottom-color:#e2e8f0;color:#475569}
+.live-console .foot{color:#64748b}
 .live-console .ui-live-nav{margin-top:1rem;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}
-@media(max-width:900px){.live-console .live-status-card,.live-console .live-results-card,.live-console .live-sources-card{grid-column:1/-1;grid-row:auto}.live-console #results{grid-template-columns:1fr}.live-console .prize{grid-column:1/-1!important}}
-@media(max-width:620px){.live-console .wrap{padding:12px 12px 28px;gap:10px}.live-console .card{border-radius:16px;padding:13px}}
+@media(max-width:900px){
+  .live-console .live-status-card,.live-console .live-results-card,.live-console .live-sources-card{grid-column:1/-1;grid-row:auto}
+  .live-console #results{grid-template-columns:1fr}
+  .live-console .prize{grid-column:1/-1!important}
+}
+@media(max-width:620px){
+  body.live-console .wrap{padding:12px 12px 28px !important;gap:10px !important}
+  body.live-console .card{border-radius:16px !important;padding:13px !important}
+}
 </style>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<noscript></noscript>
-<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="all" data-ui-visual-system>
 <noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
 <body data-ui-page="live" class="live-console">
@@ -162,269 +195,8 @@
   </div>
 
   <script>
-
   window.LIVE_WORKER_URL = '';
   </script>
-  <script>
-  (function () {
-    'use strict';
-
-    var PRIZES = [
-      {key:'special', label:'ĐB', count:1, digits:5},
-      {key:'prize1',  label:'G1', count:1, digits:5},
-      {key:'prize2',  label:'G2', count:2, digits:5},
-      {key:'prize3',  label:'G3', count:6, digits:5},
-      {key:'prize4',  label:'G4', count:4, digits:4},
-      {key:'prize5',  label:'G5', count:6, digits:4},
-      {key:'prize6',  label:'G6', count:3, digits:3},
-      {key:'prize7',  label:'G7', count:4, digits:2}
-    ];
-    var TOTAL_SLOTS = 27;
-
-    var REVEAL_STAGGER_MS = 170;
-    var FRESH_HIGHLIGHT_MS = 6000;
-
-    var slotIndex = Object.create(null);
-    var revealQueue = [];
-    var revealTimer = null;
-    var pollTimer = null;
-    var reduceMotion = false;
-    try {
-      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (e) {  }
-
-    function el(tag, className, text) {
-      var node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined && text !== null) node.textContent = String(text);
-      return node;
-    }
-
-    function clampNumber(value, min, max, fallback) {
-      var n = Number(value);
-      return isFinite(n) ? Math.min(max, Math.max(min, n)) : (fallback || 0);
-    }
-
-    function buildSkeleton() {
-      var frag = document.createDocumentFragment();
-      PRIZES.forEach(function (prize) {
-        var row = el('div', 'prize is-waiting');
-        row.setAttribute('data-prize', prize.key);
-        var label = el('div', 'prize-label');
-        label.append(el('span', 'dot'), el('span', '', prize.label));
-        var slots = el('div', 'slots');
-        for (var i = 0; i < prize.count; i++) {
-          var slot = el('div', 'slot is-empty', '·'.repeat(prize.digits));
-          if (prize.key === 'special') slot.classList.add('is-special');
-          slot.style.setProperty('--w', (prize.digits * 13 + 26) + 'px');
-          slot.setAttribute('aria-label', prize.label + ' vị trí ' + (i + 1));
-          slotIndex[prize.key + ':' + i] = {el: slot, value: null, digits: prize.digits};
-          slots.appendChild(slot);
-        }
-        row.append(label, slots);
-        frag.appendChild(row);
-      });
-      document.getElementById('results').replaceChildren(frag);
-    }
-
-    function queueReveal(entry, value) {
-      revealQueue.push({entry: entry, value: value});
-      if (revealTimer === null) drainQueue();
-    }
-
-    function drainQueue() {
-      var item = revealQueue.shift();
-      if (!item) { revealTimer = null; return; }
-      applyValue(item.entry, item.value);
-      revealTimer = window.setTimeout(drainQueue, reduceMotion ? 0 : REVEAL_STAGGER_MS);
-    }
-
-    function applyValue(entry, value) {
-      var node = entry.el;
-      entry.value = value;
-      node.textContent = value;
-      node.classList.remove('is-empty');
-      node.classList.add('is-new', 'is-fresh');
-
-      window.setTimeout(function () { node.classList.remove('is-new'); }, 600);
-      window.setTimeout(function () { node.classList.remove('is-fresh'); }, FRESH_HIGHLIGHT_MS);
-    }
-
-    function clearValue(entry) {
-      entry.value = null;
-      entry.el.textContent = '·'.repeat(entry.digits);
-      entry.el.classList.add('is-empty');
-      entry.el.classList.remove('is-new', 'is-fresh');
-    }
-
-    function syncPrizes(prizes) {
-      var filled = 0;
-      PRIZES.forEach(function (prize) {
-        var incoming = Array.isArray(prizes && prizes[prize.key]) ? prizes[prize.key] : [];
-        var present = 0;
-        for (var i = 0; i < prize.count; i++) {
-          var entry = slotIndex[prize.key + ':' + i];
-          var raw = incoming[i];
-          var value = (raw === undefined || raw === null || raw === '') ? null : String(raw);
-          if (value !== null) present++;
-          if (value === entry.value) continue;
-          if (value === null) {
-            clearValue(entry);
-          } else if (entry.value === null) {
-            queueReveal(entry, value);
-          } else {
-            applyValue(entry, value);
-          }
-        }
-        filled += present;
-        var row = document.querySelector('[data-prize="' + prize.key + '"]');
-        if (row) {
-          row.classList.toggle('is-done', present === prize.count);
-          row.classList.toggle('is-live', present > 0 && present < prize.count);
-          row.classList.toggle('is-waiting', present === 0);
-        }
-      });
-      return filled;
-    }
-
-    function renderSources(rows) {
-      var frag = document.createDocumentFragment();
-      (Array.isArray(rows) ? rows : []).forEach(function (source, index) {
-        var code = (source && source.source_code) || ('#' + (index + 1));
-        var tier = source && source.tier === 'fallback' ? 'dự phòng' : 'chính';
-        var row = el('div', 'src');
-        row.append(
-          el('span', '', code),
-          el('span', '', source && source.failed ? tier + ' · lỗi' : tier),
-          el('span', '', ((source && source.received_values) || 0) + '/27')
-        );
-        frag.appendChild(row);
-      });
-      document.getElementById('sources').replaceChildren(frag);
-    }
-
-    function vietnamMinutes() {
-      var now = new Date();
-      var utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-      return (utcMinutes + 7 * 60) % (24 * 60);
-    }
-
-    function nextDelayMs(status) {
-      if (status === 'complete_verified') return 300000;
-      if (document.hidden) return 60000;
-      if (status === 'partial') return 5000;
-      if (status === 'complete') return 15000;
-      var m = vietnamMinutes();
-      if (m >= 18 * 60 + 10 && m <= 18 * 60 + 50) return 5000;
-      if (m >= 17 * 60 + 50 && m < 18 * 60 + 10) return 15000;
-      if (m > 18 * 60 + 50 && m <= 19 * 60 + 30) return 20000;
-      return 120000;
-    }
-
-    function describeDelay(ms) {
-      return ms >= 60000
-        ? 'làm mới mỗi ' + Math.round(ms / 60000) + ' phút'
-        : 'làm mới mỗi ' + Math.round(ms / 1000) + ' giây';
-    }
-
-    var E = {h: 'cmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbQ==', s: 'LmdpdGh1Yi5pbw==', b: 'bGl2ZQ==', f: 'bGl2ZS5qc29u', d: 'ZGF0YQ=='};
-    function d(k) { return atob(E[k]); }
-
-    function rawUrl() {
-      if (window.LIVE_RAW_URL) return window.LIVE_RAW_URL;
-      var host = location.hostname;
-      if (host.endsWith(d('s'))) {
-        var owner = host.split('.')[0];
-        var first = location.pathname.split('/').filter(Boolean)[0];
-        var repo = first || (owner + d('s'));
-        return 'https://' + d('h') + '/' + owner + '/' + repo + '/' + d('b') + '/' + d('f');
-      }
-      return d('d') + '/' + d('f');
-    }
-
-    function candidateUrls() {
-      var urls = [];
-      if (window.LIVE_WORKER_URL) urls.push(String(window.LIVE_WORKER_URL));
-      urls.push(rawUrl());
-      return urls;
-    }
-
-    async function fetchSnapshot() {
-      var lastError = null;
-      var urls = candidateUrls();
-      for (var i = 0; i < urls.length; i += 1) {
-        try {
-          var response = await fetch(urls[i] + '?t=' + Date.now(), {cache: 'no-store'});
-          if (!response.ok) throw new Error(String(response.status));
-          return await response.json();
-        } catch (error) {
-          lastError = error;
-        }
-      }
-      throw lastError || new Error('không có nguồn nào trả lời');
-    }
-
-    var STATUS_LABELS = {
-      waiting: 'ĐANG CHỜ', partial: 'ĐANG CẬP NHẬT',
-      complete: 'HOÀN TẤT', complete_verified: 'ĐÃ XÁC MINH'
-    };
-
-    function schedule(status) {
-      var delay = nextDelayMs(status);
-      document.getElementById('cadence').textContent = describeDelay(delay);
-      window.clearTimeout(pollTimer);
-      pollTimer = window.setTimeout(load, delay);
-    }
-
-    async function load() {
-      var status = 'waiting';
-      try {
-        var data = await fetchSnapshot();
-        status = String(data.status || 'waiting');
-
-        var progress = clampNumber(data.progress_percent, 0, 100, 0);
-        var verification = clampNumber(data.verification_percent, 0, 100, 0);
-
-        document.getElementById('status').textContent =
-          (data.draw_date || '') + ' · ' + (STATUS_LABELS[status] || status.toUpperCase());
-        document.getElementById('checked').textContent =
-          'Cập nhật: ' + (data.checked_at_local || '—');
-        document.getElementById('bar').style.width = progress + '%';
-
-        var shown = syncPrizes(data.prizes);
-        document.getElementById('progress').textContent =
-          shown + '/' + TOTAL_SLOTS + ' giá trị · hoàn thành ' + progress + '%';
-
-        var verify = document.getElementById('verify');
-        verify.textContent = 'xác minh ' + verification + '%';
-        verify.className = 'badge ' + (data.verified_complete === true ? 'ok' : 'warn');
-
-        var conflicts = Array.isArray(data.conflicts) ? data.conflicts.map(String) : [];
-        document.getElementById('conflicts').textContent = conflicts.length
-          ? 'Đang có bất đồng nguồn: ' + conflicts.join(', ')
-          : 'Không phát hiện bất đồng nguồn ở các ô đã xác minh.';
-        renderSources(data.source_status);
-      } catch (error) {
-        document.getElementById('status').textContent = 'Chưa lấy được dữ liệu trực tiếp';
-        document.getElementById('checked').textContent =
-          'Sẽ thử lại tự động. Kết quả đã xác minh vẫn xem được ở Bảng điều khiển.';
-      }
-      schedule(status);
-    }
-
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) { window.clearTimeout(pollTimer); load(); }
-    });
-
-    buildSkeleton();
-    load();
-  })();
-  </script>
-
-<script src="assets/ui-dock.js" defer></script>
-<script src="assets/apply-data-styles.js" defer></script>
-
-<script src="assets/ui-dock.js" defer></script>
-<nav class="ui-dock" aria-label="Điều hướng chính"><div class="ui-dock-inner"><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-current="true" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tr-c-ti-p"><span class="ui-dock-ic" aria-hidden="true">◉</span><span class="ui-dock-name">Trực tiếp</span></button><div class="ui-dock-pop" id="dock-tr-c-ti-p" role="menu"><a href="live.html" role="menuitem" aria-current="page"><span aria-hidden="true">◉</span><span>Kết quả trực tiếp</span></a><a href="index.html" role="menuitem"><span aria-hidden="true">▤</span><span>Kết quả hôm nay</span></a><a href="so-ket-qua-truyen-thong.html" role="menuitem"><span aria-hidden="true">▥</span><span>Sổ kết quả</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-th-ng-k"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Thống kê</span></button><div class="ui-dock-pop" id="dock-th-ng-k" role="menu"><a href="statistics.html" role="menuitem"><span aria-hidden="true">▦</span><span>Ma trận thống kê</span></a><a href="index.html#tan-suat-loto" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="index.html#gan-nhip" role="menuitem"><span aria-hidden="true">◷</span><span>Gan &amp; nhịp</span></a><a href="index.html#cap-lon" role="menuitem"><span aria-hidden="true">⇅</span><span>Cặp lộn &amp; bóng</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-c-u-k-o"><span class="ui-dock-ic" aria-hidden="true">⟋</span><span class="ui-dock-name">Cầu kèo</span></button><div class="ui-dock-pop" id="dock-c-u-k-o" role="menu"><a href="soi-path-loto-active.html" role="menuitem"><span aria-hidden="true">⟋</span><span>Cầu LOTO đang chạy</span></a><a href="soi-path-loto-stable.html" role="menuitem"><span aria-hidden="true">⟊</span><span>Cầu LOTO ổn định</span></a><a href="soi-path-de-active.html" role="menuitem"><span aria-hidden="true">⟍</span><span>Cầu Đặc Biệt đang chạy</span></a><a href="soi-path-de-stable.html" role="menuitem"><span aria-hidden="true">⟌</span><span>Cầu Đặc Biệt ổn định</span></a><a href="index.html#duong-cau" role="menuitem"><span aria-hidden="true">⌗</span><span>Căn cứ vị trí cầu</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-ph-ng-o-n"><span class="ui-dock-ic" aria-hidden="true">◈</span><span class="ui-dock-name">Phỏng đoán</span></button><div class="ui-dock-pop" id="dock-ph-ng-o-n" role="menu"><a href="dashboard.html" role="menuitem"><span aria-hidden="true">◈</span><span>Bảng điều khiển AI/ML</span></a><a href="ml_top10_loto.html" role="menuitem"><span aria-hidden="true">①</span><span>10 số LOTO</span></a><a href="ml_top10_de.html" role="menuitem"><span aria-hidden="true">②</span><span>10 số Đặc Biệt</span></a><a href="model-quality.html" role="menuitem"><span aria-hidden="true">✓</span><span>Chất lượng mô hình</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-b-ng-c-bi-t"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Bảng Đặc Biệt</span></button><div class="ui-dock-pop" id="dock-b-ng-c-bi-t" role="menu"><a href="bang-dac-biet.html" role="menuitem"><span aria-hidden="true">▦</span><span>Theo ngày</span></a><a href="bang-dac-biet-thang.html" role="menuitem"><span aria-hidden="true">▩</span><span>Theo tháng</span></a><a href="bang-dac-biet-nam.html" role="menuitem"><span aria-hidden="true">▨</span><span>Theo năm</span></a><a href="chu-ky-dac-biet.html" role="menuitem"><span aria-hidden="true">◷</span><span>Chu kỳ Đặc Biệt</span></a><a href="cau-dac-biet-theo-bo-so.html" role="menuitem"><span aria-hidden="true">⌗</span><span>Cầu Đặc Biệt theo bộ số</span></a><a href="giai-db-ngay-mai.html" role="menuitem"><span aria-hidden="true">◐</span><span>Giải Đặc Biệt ngày mai</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-loto-chi-ti-t"><span class="ui-dock-ic" aria-hidden="true">◧</span><span class="ui-dock-name">LOTO chi tiết</span></button><div class="ui-dock-pop" id="dock-loto-chi-ti-t" role="menu"><a href="tan-suat-loto.html" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="tan-suat-cap-loto.html" role="menuitem"><span aria-hidden="true">⇅</span><span>Tần suất cặp LOTO</span></a><a href="cap-lon-loto.html" role="menuitem"><span aria-hidden="true">🔁</span><span>Cặp lộn LOTO</span></a><a href="cau-giai-dac-biet.html" role="menuitem"><span aria-hidden="true">🎯</span><span>Cầu giải Đặc Biệt</span></a><a href="giai-dac-biet-theo-tong.html" role="menuitem"><span aria-hidden="true">Σ</span><span>Đặc Biệt theo tổng</span></a><a href="dau-duoi-loto.html" role="menuitem"><span aria-hidden="true">⊞</span><span>Đầu đuôi LOTO</span></a><a href="lo-gan.html" role="menuitem"><span aria-hidden="true">⏳</span><span>Lô gan</span></a><a href="thong-ke-tong-hop.html" role="menuitem"><span aria-hidden="true">◫</span><span>Thống kê tổng hợp</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tool-n-ng-cao"><span class="ui-dock-ic" aria-hidden="true">⚗</span><span class="ui-dock-name">Tool nâng cao</span></button><div class="ui-dock-pop" id="dock-tool-n-ng-cao" role="menu"><a href="research-lab.html" role="menuitem"><span aria-hidden="true">⚗</span><span>Phòng nghiên cứu</span></a><a href="index.html#backtest" role="menuitem"><span aria-hidden="true">⟳</span><span>Kiểm định AI/ML</span></a></div></div></div></nav><script>(function(){var d=document.querySelector(".ui-dock");if(!d)return;document.documentElement.classList.add("ui-js");var gs=Array.prototype.slice.call(d.querySelectorAll(".ui-dock-group"));function set(g,o){g.classList.toggle("ui-open",o);var b=g.querySelector(".ui-dock-btn");if(b)b.setAttribute("aria-expanded",o?"true":"false")}function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}d.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ui-dock-btn");if(!b)return;var g=b.closest(".ui-dock-group");if(!g)return;var o=!g.classList.contains("ui-open");shut(g);set(g,o)});document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".ui-dock")))shut(null)});document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;var g=d.querySelector(".ui-dock-group.ui-open");if(!g)return;var b=g.querySelector(".ui-dock-btn");shut(null);if(b)b.focus()});d.addEventListener("focusout",function(e){if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})})();</script>
+  <script src="assets/live-board.js" defer></script>
 </body>
 </html>
