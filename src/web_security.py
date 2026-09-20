@@ -6,7 +6,9 @@ import json
 import re
 from typing import Any
 
-
+# Strict CSP — no unsafe-inline for scripts or styles.
+# Remaining page-specific <style>/<script> blocks should use CSP hashes
+# (see scripts/patch_csp_no_inline.py) or be moved to assets/*.
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
     "base-uri 'none'; "
@@ -16,19 +18,14 @@ CONTENT_SECURITY_POLICY = (
     "frame-src 'none'; "
     "img-src 'self' data:; "
     "object-src 'none'; "
-    "script-src 'self' 'unsafe-inline'; "
-    "style-src 'self' 'unsafe-inline'"
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "upgrade-insecure-requests"
 )
 
 
 def security_meta_tags(*, connect_sources: tuple[str, ...] = ()) -> str:
-    """Return defense-in-depth policy tags for self-contained static pages.
-
-    ``connect_sources`` is intentionally restricted to literal HTTPS origins
-    or wildcard HTTPS hostnames.  Builders may therefore opt into a Worker
-    API without turning arbitrary data into CSP text.
-    """
-
+    """Return defense-in-depth policy tags for self-contained static pages."""
     for source in connect_sources:
         if re.fullmatch(r"https://(?:\*\.)?[A-Za-z0-9.-]+(?::\d+)?", source) is None:
             raise ValueError(f"invalid CSP connect source: {source!r}")
@@ -49,4 +46,13 @@ def json_for_html_script(payload: Any) -> str:
         .replace(">", "\\u003e")
         .replace("\u2028", "\\u2028")
         .replace("\u2029", "\\u2029")
+    )
+
+
+def security_script_tags() -> str:
+    """External scripts required when CSP disallows unsafe-inline."""
+    return (
+        '<script src="assets/css-async.js" defer></script>\n'
+        '<script src="assets/apply-data-styles.js" defer></script>\n'
+        '<script src="assets/ui-dock.js" defer></script>'
     )
