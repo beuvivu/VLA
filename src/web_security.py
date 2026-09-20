@@ -6,9 +6,9 @@ import json
 import re
 from typing import Any
 
-# Strict CSP — no unsafe-inline for scripts or styles.
-# Remaining page-specific <style>/<script> blocks should use CSP hashes
-# (see scripts/patch_csp_no_inline.py) or be moved to assets/*.
+# Practical CSP for static pages that still embed page CSS/JS inline.
+# (Landing matrix styles + APP_DATA script live in the HTML document.)
+# External assets remain limited to 'self'; no frames/objects.
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; "
     "base-uri 'none'; "
@@ -18,9 +18,8 @@ CONTENT_SECURITY_POLICY = (
     "frame-src 'none'; "
     "img-src 'self' data:; "
     "object-src 'none'; "
-    "script-src 'self'; "
-    "style-src 'self'; "
-    "upgrade-insecure-requests"
+    "script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline'"
 )
 
 
@@ -50,9 +49,8 @@ def json_for_html_script(payload: Any) -> str:
 
 
 def security_script_tags() -> str:
-    """External scripts required when CSP disallows unsafe-inline."""
+    """Optional external helpers (dock / async CSS). Safe with either CSP mode."""
     return (
         '<script src="assets/css-async.js" defer></script>\n'
-        '<script src="assets/apply-data-styles.js" defer></script>\n'
         '<script src="assets/ui-dock.js" defer></script>'
     )
