@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
 <meta name="referrer" content="no-referrer" />
-  <link rel="stylesheet" href="assets/ui-part1.css" />
-  <link rel="stylesheet" href="assets/ui-part2.css" />
-  <link rel="stylesheet" href="assets/ui-part3.css" />
   <style id="ai-command-center-source">
 .ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
 .ai-command-center .ui-shell{max-width:1280px}
@@ -24,6 +21,11 @@
 @media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
 </style>
   <title>Bang dieu khien phan tich XSMB</title>
+  <link rel="preload" href="assets/ui.css" as="style" />
+  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/ui.css" />
+  <link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />
 <style id="ui-targeted-ui-refinement">
 .ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
 .ai-command-center .ui-shell{max-width:1280px}
@@ -37,7 +39,6 @@
 .ai-signal-grid>.ui-card:nth-child(-n+2){position:relative;overflow:hidden;border-color:#c7d2fe;box-shadow:0 14px 36px rgba(79,70,229,.08)}.ai-signal-grid>.ui-card:nth-child(-n+2)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#4f46e5,#818cf8)}
 @media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
 </style>
-<link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system>
 </head>
 <body data-ui-page="dashboard" class="ai-command-center">
 <div class="ui-app ui-dock-space" id="ui-app"><main class="ui-shell">
