@@ -354,6 +354,13 @@ def main() -> None:
     for mode in ["loto", "de"]:
         _run(_py("src/prob_eval_history.py", "--mode", mode), allow_fail=soft_fail)
 
+    # Log tầm quan trọng đặc trưng chạy SAU khi trọng số và dự đoán đã cập nhật,
+    # vì nó đo đóng góp của từng thành phần bằng phép bỏ-một-thành-phần trên
+    # chính vector đang có hiệu lực. Module này từng không được gọi ở đâu cả:
+    # `data/feature_attribution/report.json` là ảnh chụp chạy tay một lần, nên
+    # nó mô tả một bộ trọng số đã bị thay từ lâu mà không dấu hiệu gì.
+    _run(_py("src/feature_attribution.py"), allow_fail=soft_fail)
+
     if not args.skip_docs:
         _run(
             _py("src/build_docs.py", "--display-days", str(args.display_days)),

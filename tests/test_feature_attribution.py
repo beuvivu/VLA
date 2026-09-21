@@ -12,6 +12,8 @@ Bản đầu của module này có ba lỗi, cả ba lộ ra khi đọc kỹ đ�
 3. Bootstrap lấy mẫu trên toàn bộ ngày kể cả ngày không so được.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -184,3 +186,23 @@ def test_the_floor_is_a_no_op_on_a_healthy_distribution() -> None:
 def test_an_invalid_floor_share_is_refused(share: float) -> None:
     with pytest.raises(ValueError, match="share"):
         floor_distribution(np.full(100, 0.01), share=share)
+
+
+def test_the_log_is_actually_produced_by_the_pipeline() -> None:
+    """Một module không ai gọi thì sinh ra một báo cáo không bao giờ đúng.
+
+    `feature_attribution.py` từng không xuất hiện ở đâu trong `pipeline.py`,
+    `scripts/` hay `.github/workflows/`, nên tệp `report.json` trên đĩa là ảnh
+    chụp chạy tay một lần: nó mô tả bộ trọng số của ngày chạy tay ấy, và im
+    lặng mô tả sai kể từ lần trọng số đổi tiếp theo.
+
+    Ghim thứ tự chứ không chỉ ghim sự tồn tại: phép bỏ-một-thành-phần đo trên
+    vector ĐANG có hiệu lực, nên nó phải chạy sau bộ học trọng số.
+    """
+    pipeline = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(
+        encoding="utf-8"
+    )
+    assert "src/feature_attribution.py" in pipeline, "pipeline không gọi log tầm quan trọng"
+    assert pipeline.index("src/learn_ensemble_weights.py") < pipeline.index(
+        "src/feature_attribution.py"
+    ), "log tầm quan trọng phải chạy SAU bộ học trọng số"
