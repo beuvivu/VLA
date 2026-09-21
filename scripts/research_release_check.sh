@@ -179,22 +179,9 @@ for mode in ("loto", "de"):
 print("OK research artifacts")
 PYRESEARCH
 
-printf '%s\n' "== Trang nghiên cứu tĩnh =="
-python src/build_research_lab.py
-python - <<'PYPAGE'
-from pathlib import Path
-page = Path("docs/research-lab.html")
-assert page.is_file() and page.stat().st_size > 1000
-text = page.read_text(encoding="utf-8")
-assert "Phòng nghiên cứu khoa học" in text
-assert "Tường lửa nghiên cứu" in text
-for name in ("index.html", "landing.html", "landing_desktop.html"):
-    path = Path("docs") / name
-    if path.exists():
-        text = path.read_text(encoding="utf-8")
-        assert 'id="research-lab-link"' not in text, name
-        assert 'href="research-lab.html"' in text, name
-print("OK trang nghiên cứu")
-PYPAGE
+# Khối "Trang nghiên cứu tĩnh" đã bỏ cùng tầng trình bày: nó chạy
+# `build_research_lab.py` rồi soi `docs/research-lab.html`, cả hai không còn
+# tồn tại. Các phép kiểm hiện vật nghiên cứu ở trên vẫn nguyên vì chúng đọc
+# `data/`, không đọc trang.
 
 echo "OK kiểm tra phát hành lớp nghiên cứu"

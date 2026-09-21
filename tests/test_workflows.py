@@ -63,13 +63,6 @@ def test_watchdog_and_post_finalization_use_utc7_cutoff_and_recovery() -> None:
     assert "--cutoff 18:35" in _text("post-finalization.yml")
 
 
-def test_dashboard_refresh_checks_vietnamese_contract() -> None:
-    text = _text("dashboard-refresh.yml")
-    for marker in ("lịch 7 cột", "Độ nâng so với nền", "Kiểm toán và liên kết chi tiết"):
-        assert marker in text
-    assert "Lift vs baseline" not in text
-
-
 def test_daily_workflow_scopes_privileged_permissions_to_the_jobs_that_need_them() -> None:
     text = _text("update-data.yml")
     top, jobs = text.split("jobs:\n", 1)
@@ -96,7 +89,9 @@ def test_pages_use_official_actions_deployment_flow() -> None:
 def test_production_refreshes_do_not_restore_package_caches() -> None:
     # Live/daily jobs must not restore an old runner cache while repairing a
     # stale data snapshot.  CI may retain its dependency cache for speed.
-    for name in ("ci.yml", "live-results.yml", "update-data.yml", "dashboard-refresh.yml"):
+    # `dashboard-refresh.yml` đã bị xóa cùng tầng trình bày — nó chỉ chạy lại
+    # các trình dựng trang.
+    for name in ("ci.yml", "live-results.yml", "update-data.yml"):
         text = _text(name)
         assert "cache:" not in text
         assert "--no-cache-dir" in text
@@ -209,67 +204,22 @@ def test_daily_update_bounds_the_runner() -> None:
     assert re.search(r"timeout-minutes:\s*\d+", text)
 
 
-def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
-    """Trang mang dock mà không có trình dựng nào chạy lại sẽ thành hiện vật
-    chết: đổi SITE_NAV một lần là nó lệch khỏi phần còn lại và không ai dựng
-    lại được ngoài việc gọi tay.
+def test_report_builders_let_callers_redirect_their_output() -> None:
+    """Trình dựng báo cáo phải cho phép đổi nơi ghi, để test không đụng vào kho.
 
-    Bốn trang soi-path đã ở tình trạng đó — build_docs.py không nằm trong
-    chuỗi phát hành, nên thêm một mục điều hướng là test dock đỏ mà không có
-    cách sửa nào ngoài chạy tay đúng trình dựng.
-    """
-    chain = (
-        Path(__file__).resolve().parents[1] / "scripts" / "release_check.sh"
-    ).read_text(encoding="utf-8")
+    Không có đường đó thì test buộc phải ghi thẳng vào kho thật: chạy
+    ``pytest`` một lần là cây làm việc bẩn. Tệ hơn là bẩn theo dạng "ngược
+    pha" — tệp đã commit có thể nằm lại ở bản cũ mà không ai thấy.
 
-    builders = [
-        "build_docs.py",
-        "build_docs_ml.py",
-        "build_dashboard.py",
-        "build_statistics_dashboard.py",
-        "build_landing_page.py",
-        "build_fun_prediction.py",
-        "build_traditional_results.py",
-    ]
-    # So theo DÒNG, không theo chuỗi con: "#python src/x.py" vẫn chứa
-    # "python src/x.py", nên phép kiểm chuỗi con sẽ xanh cả khi dòng bị chú
-    # thích ra — tức là chốt chặn im lặng ngừng hoạt động.
-    lines = {line.strip() for line in chain.splitlines()}
-    for name in builders:
-        assert f"python src/{name}" in lines, f"{name} không nằm trong chuỗi phát hành"
-
-    # Thứ tự quan trọng: build_docs và build_docs_ml cùng ghi docs/index.html,
-    # và bản của build_landing_page mới là bản đúng.
-    assert chain.index("python src/build_docs.py") < chain.index(
-        "python src/build_landing_page.py"
-    ), "build_docs phải chạy trước build_landing_page, nếu không index.html bị ghi đè sai"
-
-
-def test_builders_let_callers_redirect_their_output() -> None:
-    """Mọi trình dựng phải cho phép đổi nơi ghi, để test không đụng vào kho.
-
-    Không có đường đó thì test buộc phải dựng thẳng vào ``docs/`` và
-    ``DASHBOARD.md`` của kho thật: chạy ``pytest`` một lần là cây làm việc bẩn
-    8 tệp. Tệ hơn là bẩn theo dạng "ngược pha" — chuỗi builder đầy đủ cho ra
-    HTML khác với một builder chạy lẻ (``<!DOCTYPE html>`` so với
-    ``<!doctype html>``), nên tệp đã commit có thể nằm lại ở bản cũ mà không ai
-    thấy. Đúng chuyện đó đã xảy ra với ``docs/statistics.html``.
+    Danh sách này từng gồm bốn trình dựng trang; ba trong đó đã bị xóa cùng
+    tầng trình bày. Bất biến giữ nguyên cho phần còn lại, và mọi trình dựng
+    báo cáo mới phải vào đây.
     """
     root = Path(__file__).resolve().parents[1]
-    required = {
-        "build_dashboard.py": "--docs-dir",
-        "build_stat_pages.py": "--docs-dir",
-        "build_markdown_dashboard_v3.py": "--output",
-        "build_domain_experiment_report.py": "--output",
-    }
+    required = {"build_domain_experiment_report.py": "--output"}
     for name, flag in required.items():
         source = (root / "src" / name).read_text(encoding="utf-8")
         assert f'"{flag}"' in source, f"{name} thiếu {flag}"
-
-    landing = (root / "src" / "build_landing_page.py").read_text(encoding="utf-8")
-    assert "docs_dir: Path | None = None" in landing, (
-        "build_landing_page phải nhận docs_dir để tách nơi ghi khỏi nơi đọc"
-    )
 
 
 def test_no_test_builds_into_the_repository_docs_tree() -> None:
@@ -285,11 +235,7 @@ def test_no_test_builds_into_the_repository_docs_tree() -> None:
         # Khớp theo ĐƯỜNG DẪN "src/<tên>", không theo tên trần: tên trần còn
         # xuất hiện trong các danh sách kiểm tra chuỗi phát hành, và khớp nó
         # sẽ báo nhầm những dòng chẳng gọi gì cả.
-        for builder, flag in (
-            ("src/build_dashboard.py", "--docs-dir"),
-            ("src/build_markdown_dashboard_v3.py", "--output"),
-            ("src/build_domain_experiment_report.py", "--output"),
-        ):
+        for builder, flag in (("src/build_domain_experiment_report.py", "--output"),):
             for line_no, line in enumerate(text.splitlines(), 1):
                 if builder not in line:
                     continue

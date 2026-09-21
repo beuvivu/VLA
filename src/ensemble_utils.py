@@ -197,6 +197,72 @@ def load_ensemble_weights(data_dir: Path, mode: str) -> EnsembleWeights:
         return DEFAULT_ENSEMBLE_WEIGHTS
 
 
+def weights_provenance(data_dir: Path, mode: str) -> dict:
+    """Trọng số đang có hiệu lực, kèm LÝ DO vì sao nó là nó.
+
+    Ba xuất xứ, không phải hai, và phải đọc từ hồ sơ chứ không suy từ giá trị:
+
+    * ``da_hoc`` — vector đã học và đã vượt cổng thẩm định ngoài mẫu.
+    * ``bi_tu_choi`` — cổng ĐÃ ĐO rồi từ chối đề bạt, nên tệp mang đúng trọng
+      số mặc định. Tệp hoàn toàn lành.
+    * ``khong_co_ho_so`` — không có tệp, sai lược đồ, hoặc tệp ghi trước khi
+      có cổng.
+
+    Hai trạng thái giữa cho CÙNG một bộ trọng số hiển thị, nên phép suy từ giá
+    trị không phân biệt được chúng: nó báo "tệp trọng số thiếu hoặc sai lược
+    đồ" cho một tệp hợp lệ lược đồ 7 — đổ lỗi cho tệp trong khi tệp không có
+    lỗi gì, và che mất việc hệ thống đã đo và đã từ chối.
+
+    Hàm này sống ở tầng dữ liệu chứ không ở tầng trình bày. Nó từng là
+    ``build_dashboard._effective_weights``, nên nó biến mất cùng giao diện —
+    trong khi sự thật nó mô tả thì không phụ thuộc vào giao diện nào.
+
+    Args:
+        data_dir: Thư mục ``data`` của kho.
+        mode: ``loto`` hoặc ``de``.
+
+    Returns:
+        Trọng số đang hiệu lực, mã xuất xứ, lý do, và số đo thẩm định nếu có.
+    """
+    effective = load_ensemble_weights(data_dir, mode)
+    path = Path(data_dir) / "ensemble" / f"weights_{mode}.json"
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        stored = {}
+    if not isinstance(stored, dict):
+        stored = {}
+
+    out: dict = {"mode": mode, "weights": effective.as_dict()}
+    promotion = stored.get("promotion")
+
+    if not isinstance(promotion, dict):
+        out["xuat_xu"] = "khong_co_ho_so"
+        out["ly_do"] = (
+            "tep trong so thieu hoac sai luoc do" if stored else "chua co tep trong so"
+        )
+        return out
+
+    if promotion.get("promoted"):
+        out["xuat_xu"] = "da_hoc"
+    else:
+        out["xuat_xu"] = "bi_tu_choi"
+    out["ly_do"] = str(promotion.get("reason", ""))
+
+    for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
+        if key in stored:
+            out[key] = stored[key]
+    days_used = stored.get("days_used")
+    out["days_used"] = len(days_used) if isinstance(days_used, list) else 0
+    out["tham_dinh"] = {
+        "so_ky_khop": promotion.get("train_days"),
+        "so_ky_tham_dinh": promotion.get("validation_days"),
+        "logloss_ngoai_mau": promotion.get("validation_logloss"),
+        "loi_tuong_doi": promotion.get("relative_gain"),
+    }
+    return out
+
+
 def weight_grid(step: float = 0.10) -> Iterable[EnsembleWeights]:
     """Simplex grid for five ensemble components (fallback when scipy is absent)."""
     k = int(round(1.0 / step))

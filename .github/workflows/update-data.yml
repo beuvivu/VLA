@@ -285,12 +285,9 @@ jobs:
           test -s models/ml_de.joblib
           test -s models/cau_keo_loto.joblib
           test -s models/cau_keo_de.joblib
-          test -s docs/index.html
-          test -s docs/statistics.html
-          test -s docs/dashboard.html
-          test -s docs/model-quality.html
-          test -s docs/live.html
-          test -s docs/so-ket-qua-truyen-thong.html
+          # Tầng trình bày đã bị xóa theo yêu cầu, chờ giao diện mới; sáu
+          # phép kiểm trang ở đây không còn đối tượng nào để kiểm.
+          test -f docs/.nojekyll
           test -s DASHBOARD.md
 
       - name: Ghi nhận phân tích và bảng điều khiển đã hoàn tất

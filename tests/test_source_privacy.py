@@ -161,19 +161,60 @@ def test_the_reconciled_public_payload_carries_no_domain_names(tmp_path) -> None
     assert _leaks(json.loads(out.read_text(encoding="utf-8"))) == []
 
 
-def test_the_live_page_never_renders_a_source_field() -> None:
+def page_source_leaks(page: str) -> list[str]:
+    """Dấu hiệu trang vẽ danh tính nguồn ra trình duyệt.
+
+    So KHỚP TRỌN thuộc tính, không so chuỗi con: ``source.source_code`` chứa
+    ``source.source`` như một chuỗi con nên phép so chuỗi con báo động giả —
+    bản đầu của phép kiểm này đã đỏ đúng vì thế.
+    """
+    leaks = []
+    if re.search(r"\bsource\.source\b(?!_)", page):
+        leaks.append("source.source")
+    leaks.extend(d for d in known_source_domains() if d in page)
+    return leaks
+
+
+def test_the_leak_rule_separates_the_field_from_its_lookalike() -> None:
+    """Luật phải tự kiểm được, vì hiện KHÔNG còn trang nào để quét.
+
+    Tầng trình bày đã bị xóa nên phép kiểm dưới quét qua tập rỗng và xanh
+    miễn phí; một phép kiểm rỗng không phân biệt được với một phép kiểm đã bị
+    tháo. Ca quan trọng nhất là ``source.source_code`` — nó PHẢI được cho qua,
+    vì cấm nó là cấm luôn cách gọi hợp lệ.
+    """
+    assert page_source_leaks("render(source.source)") == ["source.source"]
+    assert page_source_leaks("render(source.source_code)") == []
+    assert page_source_leaks("<p>không có gì</p>") == []
+
+    # Lấy theo thứ tự đã sắp, không lấy phần tử đầu của một set: thứ tự set
+    # thay đổi giữa các lần chạy nên phép kiểm sẽ chập chờn.
+    domains = sorted(known_source_domains())
+    assert domains, "known_source_domains() rỗng thì luật này vô nghĩa"
+    # So bằng "có mặt" chứ không bằng bằng nhau: danh sách tên miền có các mục
+    # LỒNG nhau ("xosothudo.com.vn", "xosothudo", "xoso"), nên một URL khớp
+    # nhiều mục cùng lúc. Đòi khớp đúng một mục là đòi sai.
+    leaks = page_source_leaks(f"<a href='https://{domains[0]}'>")
+    assert domains[0] in leaks, leaks
+
+
+def test_no_published_page_renders_a_source_field() -> None:
     """Lớp chặn thứ hai, ở phía trình duyệt.
 
     Dữ liệu tới đây đã ẩn danh từ máy chủ. Nhưng nếu về sau một trường tên
     miền lọt vào tải trọng, trang vẫn không được vẽ nó ra.
+
+    Dò mọi trang trong ``docs/`` thay vì ghim ``docs/live.html``: bản trước
+    ghim đúng một tệp, nên khi tầng trình bày bị xóa thì phép kiểm nổ, và khi
+    giao diện mới lên thì không ai nhớ thêm trang mới vào — bất biến riêng tư
+    im lặng ngừng hoạt động. Tập hiện RỖNG; hai phép kiểm trên giữ cho luật
+    còn sống trong lúc chờ giao diện mới.
     """
-    page = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
-    # Phải so KHỚP TRỌN thuộc tính: "source.source_code" chứa "source.source"
-    # như một chuỗi con, nên phép so chuỗi con báo động giả — bản đầu của
-    # phép kiểm này đã đỏ đúng vì thế.
-    assert re.search(r"\bsource\.source\b(?!_)", page) is None
-    assert "source.source_code" in page
-    assert not [d for d in known_source_domains() if d in page]
+    offenders: list[str] = []
+    for path in sorted((ROOT / "docs").rglob("*.html")):
+        for leak in page_source_leaks(path.read_text(encoding="utf-8", errors="replace")):
+            offenders.append(f"{path.relative_to(ROOT)}: {leak}")
+    assert not offenders, "trang vẽ danh tính nguồn: " + "; ".join(offenders)
 
 
 def _complete_result(day):
