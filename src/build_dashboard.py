@@ -80,19 +80,44 @@ def _latest_date(data_dir: Path) -> str:
 
 
 def _effective_weights(data_dir: Path, mode: str) -> dict:
+    """Trọng số đang có hiệu lực, kèm lý do vì sao nó là nó.
+
+    Ba xuất xứ, không phải hai. Bản trước suy xuất xứ bằng cách so với mặc
+    định, nên kể từ khi bộ học có cổng đề bạt thì nó nói SAI: một tệp hợp lệ,
+    lược đồ 7, mang đúng trọng số mặc định vì cổng đã TỪ CHỐI đề bạt lại bị
+    báo là "tệp trọng số thiếu hoặc sai lược đồ". Xuất xứ phải đọc từ khối
+    ``promotion`` chứ không suy từ giá trị.
+    """
     effective = load_ensemble_weights(data_dir, mode)
     stored = _read_json(data_dir / "ensemble" / f"weights_{mode}.json")
-    learned = effective.as_dict() != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    promotion = stored.get("promotion") if isinstance(stored, dict) else None
     payload: dict = {"mode": mode, "weights": effective.as_dict()}
-    if learned:
-        payload["nguon"] = "da hoc"
-        for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
-            if key in stored:
-                payload[key] = stored[key]
-        payload["days_used"] = len(stored.get("days_used", []))
+
+    if not isinstance(promotion, dict):
+        learned = effective.as_dict() != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+        payload["nguon"] = "da hoc (chua co cong de bat)" if learned else "mac dinh dat tay"
+        if not learned:
+            payload["ly_do"] = (
+                "tep trong so thieu hoac sai luoc do" if stored else "chua co tep trong so"
+            )
+            return payload
+    elif promotion.get("promoted"):
+        payload["nguon"] = "da hoc va vuot cong ngoai mau"
     else:
-        payload["nguon"] = "mac dinh dat tay"
-        payload["ly_do"] = "tep trong so thieu hoac sai luoc do" if stored else "chua co tep trong so"
+        payload["nguon"] = "mac dinh, cong tu choi de bat"
+        payload["ly_do"] = str(promotion.get("reason", ""))
+
+    for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
+        if key in stored:
+            payload[key] = stored[key]
+    payload["days_used"] = len(stored.get("days_used", []))
+    if isinstance(promotion, dict):
+        payload["tham_dinh"] = {
+            "so_ky_khop": promotion.get("train_days"),
+            "so_ky_tham_dinh": promotion.get("validation_days"),
+            "logloss_ngoai_mau": promotion.get("validation_logloss"),
+            "loi_tuong_doi": promotion.get("relative_gain"),
+        }
     return payload
 
 

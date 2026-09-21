@@ -1,7 +1,7 @@
 {
-  "schema_version": 6,
+  "schema_version": 7,
   "mode": "loto",
-  "learned_at_utc": "2026-09-20T16:00:27Z",
+  "learned_at_utc": "2026-09-21T12:18:32Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -32,6 +32,21 @@
   "metric": {
     "logloss": 0.5445791066882258,
     "brier": 0.17946039980384298
+  },
+  "promotion": {
+    "promoted": false,
+    "reason": "biên thắng +0.0000% chưa đạt sàn 0.20%",
+    "baseline": "mac_dinh",
+    "train_days": 13,
+    "validation_days": 9,
+    "validation_logloss": {
+      "mac_dinh": 0.5408802051654187,
+      "dang_hieu_luc": 0.5408802051654187,
+      "ung_vien": 0.5408802051654187
+    },
+    "relative_gain": 0.0,
+    "delta_ci95_low": 0.0,
+    "delta_ci95_high": 0.0
   },
   "weights": {
     "w_ml": 0.25,

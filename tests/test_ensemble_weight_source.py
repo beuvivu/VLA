@@ -159,15 +159,110 @@ def test_the_dashboard_card_shows_the_weights_that_are_actually_in_force() -> No
         card = _effective_weights(REPO / "data", mode)
         effective = load_ensemble_weights(REPO / "data", mode)
         assert card["weights"] == effective.as_dict(), mode
-        assert card["nguon"] in {"đã học", "mặc định đặt tay — chưa học được trọng số"}
+        assert card["nguon"], mode
 
 
-def test_the_card_says_plainly_when_the_weights_were_never_learned() -> None:
-    """Hiện số mà không nói xuất xứ là để người đọc tưởng chúng đã được học."""
+def test_the_card_states_the_provenance_the_stored_record_actually_supports() -> None:
+    """Xuất xứ phải khớp KHỐI ``promotion`` trên đĩa, không suy từ giá trị.
+
+    Bản trước đoán xuất xứ bằng cách so trọng số với mặc định. Kể từ khi bộ
+    học có cổng đề bạt thì phép đoán ấy nói sai: một tệp hợp lệ, lược đồ 7,
+    mang đúng mặc định vì cổng đã TỪ CHỐI lại bị báo là "tệp trọng số thiếu
+    hoặc sai lược đồ" — tức đổ lỗi cho tệp trong khi tệp hoàn toàn lành.
+
+    Phép kiểm này không ghim mặt CHỮ của câu xuất xứ, vì chữ là chuyện trình
+    bày. Nó ghim quan hệ: đã đề bạt thì không được nói là mặc định, và ngược
+    lại.
+    """
     from build_dashboard import _effective_weights
 
-    card = _effective_weights(REPO / "data", "loto")
-    learned = card["weights"] != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
-    assert (card["nguon"] == "đã học") == learned, card["nguon"]
-    if not learned:
-        assert card.get("ly_do"), "phải nêu lý do khi chưa học được"
+    for mode in ("loto", "de"):
+        card = _effective_weights(REPO / "data", mode)
+        stored = json.loads(
+            (REPO / "data" / "ensemble" / f"weights_{mode}.json").read_text(encoding="utf-8")
+        )
+        promoted = bool(stored.get("promotion", {}).get("promoted"))
+        says_default = "mac dinh" in card["nguon"]
+
+        assert says_default != promoted, f"{mode}: xuất xứ '{card['nguon']}' trái với hồ sơ đề bạt"
+        if promoted:
+            assert card["weights"] != DEFAULT_ENSEMBLE_WEIGHTS.as_dict(), mode
+        else:
+            assert card["weights"] == DEFAULT_ENSEMBLE_WEIGHTS.as_dict(), mode
+            assert card.get("ly_do"), f"{mode}: từ chối mà không nêu lý do"
+
+
+def test_a_refused_promotion_is_not_reported_as_a_broken_file(tmp_path: Path) -> None:
+    """Tệp lành mà cổng từ chối KHÁC tệp hỏng, và thẻ phải phân biệt được.
+
+    Hai trạng thái này cho cùng một bộ trọng số hiển thị, nên nếu thẻ nói
+    giống nhau thì người đọc không thể biết hệ thống đã ĐO rồi từ chối hay
+    chưa đo được gì.
+    """
+    from build_dashboard import _effective_weights
+
+    ens = tmp_path / "ensemble"
+    ens.mkdir(parents=True)
+
+    def card_for(blob: dict | None) -> dict:
+        path = ens / "weights_loto.json"
+        if blob is None:
+            path.unlink(missing_ok=True)
+        else:
+            path.write_text(json.dumps(blob), encoding="utf-8")
+        return _effective_weights(tmp_path, "loto")
+
+    refused = card_for(
+        {
+            "schema_version": 7,
+            "weights": DEFAULT_ENSEMBLE_WEIGHTS.as_dict(),
+            "days_used": ["2026-09-01"],
+            "promotion": {
+                "promoted": False,
+                "reason": "biên thắng +0.0055% chưa đạt sàn 0.20%",
+                "train_days": 12,
+                "validation_days": 8,
+                "validation_logloss": {"mac_dinh": 4.6},
+                "relative_gain": 5.5e-05,
+            },
+        }
+    )
+    missing = card_for(None)
+
+    assert refused["weights"] == missing["weights"] == DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    assert refused["nguon"] != missing["nguon"]
+    assert "0.20%" in refused["ly_do"]
+    assert refused["tham_dinh"]["so_ky_tham_dinh"] == 8
+    assert "tham_dinh" not in missing
+
+
+def test_a_promoted_vector_is_reported_as_learned(tmp_path: Path) -> None:
+    """Đề bạt thật thì thẻ phải nói là đã học, kèm số đo ngoài mẫu."""
+    from build_dashboard import _effective_weights
+
+    ens = tmp_path / "ensemble"
+    ens.mkdir(parents=True)
+    (ens / "weights_de.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 7,
+                "weights": {"w_ml": 0.1, "w_cau": 0.6, "w_stat": 0.1, "w_active": 0.1, "w_stable": 0.1},
+                "days_used": ["2026-09-01", "2026-09-02"],
+                "promotion": {
+                    "promoted": True,
+                    "reason": "thắng đường cơ sở ngoài mẫu",
+                    "train_days": 24,
+                    "validation_days": 16,
+                    "validation_logloss": {"mac_dinh": 4.6, "ung_vien": 4.1},
+                    "relative_gain": 0.108,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    card = _effective_weights(tmp_path, "de")
+    assert "mac dinh" not in card["nguon"]
+    assert card["weights"]["w_cau"] == pytest.approx(0.6)
+    assert card["days_used"] == 2
+    assert card["tham_dinh"]["loi_tuong_doi"] == pytest.approx(0.108)
