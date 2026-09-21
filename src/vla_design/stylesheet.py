@@ -20,6 +20,8 @@ người đọc chọn sáng mà máy đặt tối sẽ ra trang tối — tức
 động, đúng loại lỗi khó hiểu nhất với người dùng.
 """
 
+from vla_design.component_css import component_css
+from vla_design.shell_css import shell_css
 from vla_design.tokens import (
     DARK,
     LIGHT,
@@ -170,3 +172,13 @@ a:hover {{ color: var(--vla-primary-hover); }}
   }}
 }}
 """
+
+
+def full_css() -> str:
+    """Toàn bộ CSS của VLA: nền tảng rồi khung ứng dụng.
+
+    Thứ tự quan trọng: nền tảng khai biến, khung dùng biến. Đảo lại thì mọi
+    ``var(--vla-*)`` trong khung rơi về rỗng và trang mất màu — mà trình duyệt
+    KHÔNG báo lỗi cho biến CSS không xác định, nên nó là lỗi im lặng.
+    """
+    return foundation_css() + shell_css() + component_css()

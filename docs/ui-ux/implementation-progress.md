@@ -11,9 +11,9 @@ kèm theo.** "Đã viết CSS" không phải là xong.
 |---|---|---|
 | 1 — Discovery | **XONG** | 29 trang khôi phục từ git history; 864 tệp dữ liệu / 473 MB trong 23 thư mục; không có `package.json`, không bước build JS |
 | 2 — Design research | **XONG CÓ GIỚI HẠN** | Cả 5 reference + trang production bị chặn 403 CONNECT. Nguồn thay thế: mô tả của chủ dự án trong spec. Xem mục 23.2 |
-| 3 — Master Design System | **NỀN TẢNG XONG** | `src/vla_design/tokens.py` + `stylesheet.py`; 27 cặp tương phản × 2 bảng màu đều đạt WCAG AA, biên thấp nhất 1,025x; 13 phép kiểm, 20 đột biến đều chết |
-| 4 — Global App Shell | CHƯA BẮT ĐẦU | |
-| 5 — Page-by-page | CHƯA BẮT ĐẦU | 0/29 trang |
+| 3 — Master Design System | **XONG** | `src/vla_design/tokens.py` + `stylesheet.py`; 27 cặp tương phản × 2 bảng màu đều đạt WCAG AA, biên thấp nhất 1,025x; 13 phép kiểm, 20 đột biến đều chết. Tầng component (thẻ, KPI, bảng, badge, nút, trạng thái rỗng/lỗi/skeleton) hoàn thành cùng PHASE 4 |
+| 4 — Global App Shell | **XONG** | `navigation.py` (7 nhóm / 29 trang, đối chiếu khít 29 tệp cũ), `shell.py`, `shell_css.py`, `component_css.py`, `icons.py` (21 hình tự vẽ), `assets/vla-shell.js`; 20 phép kiểm Chromium ở 7 viewport, 12 đột biến đều chết |
+| 5 — Page-by-page | CHƯA BẮT ĐẦU | 0/29 trang. Có `docs/_shell-preview.html` là hiện vật QA của khung, KHÔNG phải trang sản phẩm |
 | 6 — Specialized analytics | CHƯA BẮT ĐẦU | |
 | 7 — Regression & QA | CHƯA BẮT ĐẦU | Mốc nền: 1127 xanh / 0 đỏ tại `18b709c4` |
 | 8 — Final verification | CHƯA BẮT ĐẦU | |
@@ -59,6 +59,80 @@ Dark Mode được thiết kế riêng, không đảo ngược: nền navy sâu 
 chiều tương phản ĐẢO — chữ trên mảng màu nhấn là màu nền tối, không phải
 trắng (chữ trắng trên `primary` Dark Mode chỉ đạt 3,06:1; chữ `#0A0D18` đạt
 6,34:1).
+
+## PHASE 4 — những gì TRÌNH DUYỆT tìm ra
+
+Chromium mở trang ở 7 viewport và tìm ra **3 lỗi code thật** mà đọc CSS không
+thấy:
+
+| Lỗi | Nguyên nhân |
+|---|---|
+| Nút ba gạch vẫn hiện ở 1440px | `.vla-btn { display: inline-flex }` khai SAU khối `@media` ẩn `.vla-menu-button`. Cùng độ đặc hiệu một lớp thì luật sau thắng → hai đường điều hướng cùng lúc. Sửa: đặt luật ẩn ở CUỐI và dùng hai lớp `.vla-btn.vla-menu-button` |
+| Liên kết điều hướng cao **39px** | Chỉ dùng `padding` cho ra 39px — thiếu ĐÚNG một pixel so với ngưỡng vùng chạm 40px của mục X. Sửa: `min-height: 40px` |
+| `frame-ancestors` ghi lỗi console | Chỉ thị ấy **bị bỏ qua** khi giao qua `<meta>`; Chromium ghi thẳng cảnh báo. Nó chỉ hoạt động qua HTTP header mà GitHub Pages không cho đặt |
+
+Và **3 lỗi nữa chỉ lộ ra khi xem ẢNH CHỤP THẬT**, không phép đo nào bắt được:
+
+| Lỗi | Sửa |
+|---|---|
+| Tiêu đề lặp hai lần (topbar + `<h1>`) | Trên màn 375px nó ăn 64px để nhắc lại thứ cách đó 40px. Topbar giờ hiện TÊN NHÓM — không lặp, và trên điện thoại sidebar đóng nên đó là thông tin duy nhất nói đang ở nhánh nào |
+| 4 thẻ KPI xếp dọc trên điện thoại | Chiếm ~580px chiều cao để hiện 4 con số. Lưới KPI riêng: 1 cột ở 320px, **2 cột từ 360px**, 4 cột từ 1280px |
+| Mốc 380px loại đúng 375px | Mốc đầu tôi chọn là 380 — nó loại chiều rộng "Mobile" trong bảng viewport của chính spec, tức hạng thiết bị phổ biến nhất |
+
+**Và một lỗi thật ở ĐÚNG 1024px**, tìm ra vì tôi đo lại bằng đại lượng đúng:
+lưới KPI bật 4 cột từ 1024px nhưng sidebar ăn 264px nên mỗi thẻ còn 159px, và
+`2026-09-21` ở 2rem **xuống hai dòng** — chiều cao thẻ nhảy 143→181px, đúng
+thứ mục 5.2 cấm. Đã chuyển mốc 4 cột lên 1280px.
+
+Phép đo ĐẦU của tôi ở chỗ này **sai đại lượng**: tôi kiểm `scrollWidth` và
+thấy "không tràn" nên tưởng ổn. Con số không tràn ngang vì nó *xuống dòng*
+được. Phải đếm số dòng. Đo sai đại lượng thì kết luận đúng cũng là tình cờ.
+
+### Một tệp kiểm RỖNG đã ẩn trong màu xanh
+
+Sau lần xóa giao diện, bộ kiểm báo **1 127 xanh / 0 đỏ** — đúng, nhưng trong
+đó `tests/test_dock_on_mobile.py` (7 phép kiểm) xanh CHỈ VÌ nó parametrize
+qua 0 trang. Nó thức dậy ngay khi trang đầu tiên xuất hiện và đòi thành phần
+`.ui-dock` đã bị xóa cùng UI cũ.
+
+Đã xóa tệp ấy, và thêm chốt chặn cho cả LỚP lỗi này:
+`test_the_published_tree_holds_at_least_one_page` — `docs/` trống là nó đỏ,
+nói ra sự rỗng thay vì để nó ẩn. Đã xác minh bằng đột biến: bỏ trang đi thì
+nó đỏ ngay.
+
+**Giới hạn còn lại từ lỗi `frame-ancestors`:** VLA **không được bảo vệ khỏi bị nhúng
+iframe**. Muốn có `frame-ancestors` phải đưa trang qua một CDN cho phép đặt
+header (ví dụ Cloudflare) — đó là quyết định hạ tầng, không phải của tầng
+giao diện.
+
+Và **2 lỗi trong phép kiểm của tôi**, không phải trong trang: tôi đo ngay sau
+`click()` và sau `focus()` trong khi transition 120–180ms còn đang chạy, nên
+nó báo drawer "không mở" và liên kết bỏ qua "vẫn ẩn" — cả hai đều sai.
+
+Thêm **một chú thích của tôi bị phép đo phủ nhận**: tôi viết rằng
+`min-width: 0` ở các tổ tiên là chỗ giữ cuộn ngang nằm trong bảng. Đột biến
+cho thấy không phải — bỏ nó ở cả bốn chỗ, hay bỏ cả `overflow-x` của khung
+bảng, đều không làm trang tràn ngang, vì `<table>` khai `inline-size: 100%`
+nên hộp của nó không vượt khung chứa. Đã sửa chú thích thành "phòng ngự", và
+đã xác minh phép kiểm tràn ngang **có** bắt được tràn thật (chèn phần tử rộng
+3000px → cả 7 viewport đỏ).
+
+Nửa "bảng cuộn" của phép kiểm cũng quá lỏng: `scrollWidth > clientWidth` vẫn
+đúng khi `overflow: visible`, tức nội dung rộng hơn mà **không cuộn được**.
+Đã siết thành đặt `scrollLeft` rồi đọc lại.
+
+### Đã dựng
+
+| Thành phần | Chi tiết |
+|---|---|
+| Điều hướng | 7 nhóm, 27 trang trong sidebar + 2 biến thể trang chủ ngoài sidebar = 29, đối chiếu khít danh sách tệp cũ |
+| Sidebar | `position: fixed` (không phải cột lưới — cột lưới cuộn mất khỏi màn hình trên trang dài); drawer có nền mờ dưới 1024px |
+| Nhóm điều hướng | `<details>`/`<summary>` — mở bằng bàn phím sẵn, trình đọc màn hình hiểu sẵn, chạy được khi JS lỗi |
+| Mục đang mở | **Bốn kênh độc lập**: nền nhạt, dải bên trái, chữ đậm, `aria-current="page"` — mục XII cấm dùng màu làm kênh duy nhất |
+| Chủ đề | Xoay 3 trạng thái (hệ thống / sáng / tối); trạng thái "hệ thống" KHÔNG đặt `data-theme` vì đặt nó là ghi đè `prefers-color-scheme`; vùng `aria-live` thông báo |
+| Drawer | Vòng focus, `inert` cho nội dung phía sau, Esc đóng, khoá cuộn body, nhả tất cả khi đóng hoặc khi kéo rộng qua 1024px |
+| Icon | 21 hình SVG tự vẽ, một khung nhìn 24×24, nét 1,75, `currentColor` — không thư viện ngoài |
+| CSP | `default-src 'none'` rồi mở từng thứ; đây là lý do mọi CSS/JS là tệp riêng, không nội tuyến |
 
 ## Giới hạn đã biết
 

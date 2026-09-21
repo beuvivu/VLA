@@ -95,6 +95,29 @@ def test_the_markup_discovery_actually_finds_markup(tmp_path: Path) -> None:
     assert names == {"trang.html", "dung_trang.py"}
 
 
+def test_the_published_tree_holds_at_least_one_page() -> None:
+    """Chốt chặn cho cả một LỚP lỗi: phép kiểm cấp trang hoá rỗng trong im lặng.
+
+    Mọi phép kiểm duyệt ``docs/**/*.html`` đều xanh miễn phí khi ``docs/``
+    không có trang nào. Đó không phải giả thuyết — nó đã xảy ra: sau khi tầng
+    trình bày bị xóa ngày 2026-09-21, bộ kiểm báo 1 127 xanh / 0 đỏ, nhưng
+    trong số đó ``tests/test_dock_on_mobile.py`` (7 phép kiểm) xanh CHỈ VÌ nó
+    parametrize qua 0 trang. Nó thức dậy ngay khi trang đầu tiên xuất hiện và
+    đòi một thành phần đã bị xóa cùng giao diện cũ.
+
+    Một phép kiểm quét tập rỗng không phân biệt được với một phép kiểm đã bị
+    tháo. Bất biến này đứng thay cho tất cả chúng: hễ ``docs/`` còn trang thì
+    mọi phép kiểm cấp trang còn có đối tượng, và hễ nó trống thì CHÍNH phép
+    kiểm này đỏ — nói ra sự rỗng thay vì để nó ẩn trong màu xanh.
+    """
+    pages = sorted((ROOT / "docs").rglob("*.html"))
+    assert pages, (
+        "docs/ không có trang HTML nào. Mọi phép kiểm duyệt trang đã xuất bản "
+        "hiện quét qua tập rỗng và xanh miễn phí — xem lại chúng trước khi tin "
+        "vào màu xanh của bộ kiểm."
+    )
+
+
 def test_nothing_that_emits_markup_uses_an_untrusted_dom_sink() -> None:
     """Không nguồn nào đưa thẻ tới trình duyệt được dùng cách ghi phân tích chuỗi.
 
