@@ -64,6 +64,33 @@ def test_no_untrusted_context_is_interpolated_into_a_shell_block(workflow: Path)
     assert not offenders, f"{workflow.name} nội suy ngữ cảnh không tin cậy vào shell: {offenders}"
 
 
+def jobs_without_token_scope(document: dict) -> list[str]:
+    """Các job nhận phạm vi ``GITHUB_TOKEN`` mặc định rộng.
+
+    Khai ở cấp TÀI LIỆU thì mọi job được che, nên trả về rỗng. Không khai ở
+    cấp tài liệu thì từng job phải tự khai; thiếu một job là job ấy nhận phạm
+    vi mặc định, đúng điều bất biến này cấm.
+
+    Tách hàm ra vì kho hiện KHÔNG có workflow nào khai một phần — mọi workflow
+    hoặc khai ở cấp tài liệu, hoặc khai đủ mọi job. Đo bằng đột biến: nới
+    ``all`` thành ``any`` thì không phép kiểm nào đỏ. Nên luật phải ghim trên
+    tài liệu dựng sẵn, chứ không chỉ chạy qua tệp thật.
+
+    Args:
+        document: Workflow đã nạp bằng ``yaml.safe_load``.
+
+    Returns:
+        Tên các job thiếu khai báo; rỗng nghĩa là đạt. ``["<không có job>"]``
+        khi tài liệu không khai ở cấp nào và cũng không có job nào.
+    """
+    if "permissions" in document:
+        return []
+    jobs = document.get("jobs") or {}
+    if not jobs:
+        return ["<không có job>"]
+    return [name for name, job in jobs.items() if "permissions" not in (job or {})]
+
+
 @pytest.mark.parametrize("workflow", WORKFLOWS, ids=lambda p: p.name)
 def test_every_workflow_declares_its_token_scope(workflow: Path) -> None:
     """Không khai báo thì ``GITHUB_TOKEN`` nhận phạm vi mặc định rộng.
@@ -71,9 +98,48 @@ def test_every_workflow_declares_its_token_scope(workflow: Path) -> None:
     Đặc quyền tối thiểu là thứ giữ cho một lỗi thực thi mã KHÔNG leo thang
     thành chiếm quyền kho — đúng lý do mà lỗi chèn lệnh ở trên tuy có thật
     nhưng không phải thảm hoạ.
+
+    Nhận cả khai báo ở cấp JOB, vì nó hẹp hơn cấp tài liệu chứ không lỏng
+    hơn. Bản trước chỉ nhận cấp tài liệu nên cáo buộc SAI bốn workflow
+    (`patch_css_links`, `optimize_dom`, `patch_csp`, `hotfix_ui_csp`) là
+    "không khai báo permissions" trong khi cả bốn đều khai `contents: write`
+    ngay trong job của mình. Bốn phép kiểm đỏ vô cớ làm mờ những phép kiểm đỏ
+    có thật.
     """
     document = yaml.safe_load(workflow.read_text(encoding="utf-8"))
-    assert "permissions" in document, f"{workflow.name} không khai báo permissions"
+    thieu = jobs_without_token_scope(document)
+    assert not thieu, f"{workflow.name}: job thiếu khai báo permissions: {thieu}"
+
+
+@pytest.mark.parametrize(
+    ("document", "expected"),
+    [
+        ({"permissions": {"contents": "read"}, "jobs": {"a": {}}}, []),
+        ({"jobs": {"a": {"permissions": {"contents": "write"}}}}, []),
+        (
+            {
+                "jobs": {
+                    "a": {"permissions": {"contents": "read"}},
+                    "b": {"runs-on": "ubuntu-latest"},
+                }
+            },
+            ["b"],
+        ),
+        ({"jobs": {"a": None}}, ["a"]),
+        ({"name": "chỉ có tên"}, ["<không có job>"]),
+    ],
+    ids=["cấp tài liệu", "cấp job", "một job thiếu", "job rỗng", "không có job"],
+)
+def test_the_token_scope_rule_requires_every_job_not_merely_one(
+    document: dict, expected: list[str]
+) -> None:
+    """Một job khai mà job kia không khai thì KHÔNG đạt.
+
+    Ca "một job thiếu" là ca duy nhất phân biệt ``all`` với ``any``, và kho
+    không có tệp thật nào ở hình dạng ấy — nới thành ``any`` mà chỉ chạy qua
+    tệp thật thì suite vẫn xanh. Nên nó được dựng sẵn ở đây.
+    """
+    assert jobs_without_token_scope(document) == expected
 
 
 class _Response:
