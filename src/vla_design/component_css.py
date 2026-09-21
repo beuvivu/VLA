@@ -167,6 +167,96 @@ def component_css() -> str:
 
 .vla-table td.vla-num, .vla-table th.vla-num { text-align: end; }
 
+/* Thân thẻ SÁT MÉP cho bảng: bảng đã có đệm ô riêng, cộng thêm 20px đệm thẻ
+   mỗi bên là phí chỗ trên một trang toàn bảng. */
+.vla-card-body--flush { padding: 0; }
+.vla-card-body--flush .vla-table-scroll { border: 0; border-radius: 0; }
+.vla-card-body--flush .vla-card-note { padding: var(--vla-space-12) var(--vla-space-20); margin: 0; border-block-start: 1px solid var(--vla-border); }
+
+.vla-source-note {
+  margin-block-start: var(--vla-space-16);
+  font-size: var(--vla-font-support-size);
+  color: var(--vla-text-muted);
+}
+
+/* Tên tệp và định danh dài phải NGẮT ĐƯỢC. Đo ở 320px: một chuỗi
+   `conditional_special_after_special_top500.json` rộng 337px không có chỗ
+   ngắt nào, nên nó đẩy cả trang tràn ngang — đúng một trang trong hai mươi
+   chín, và chỉ ở viewport hẹp nhất. `anywhere` chứ không phải `break-word`:
+   `break-word` không ngắt được một token không có ranh giới từ. */
+.vla-source-note code,
+.vla-card-body code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.vla-source-note code {
+  padding: 1px 5px;
+  border-radius: var(--vla-radius-sm);
+  background: var(--vla-surface-secondary);
+  border: 1px solid var(--vla-border);
+}
+
+/* Cảnh báo. Dùng `info` chứ không dùng `warning`: đây là lời nói rõ bản chất
+   số liệu, không phải báo động. Màu vàng cho một thông tin thường trực sẽ
+   làm mòn chính màu vàng khi thật sự cần cảnh báo. */
+.vla-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vla-space-12);
+  padding: var(--vla-space-12) var(--vla-space-16);
+  margin-block-end: var(--vla-space-20);
+  border: 1px solid var(--vla-border);
+  border-inline-start: 3px solid var(--vla-info-ink);
+  border-radius: var(--vla-radius-md);
+  background: var(--vla-info-soft);
+  color: var(--vla-info-ink);
+  font-size: var(--vla-font-body-sm-size);
+}
+
+.vla-disclaimer-icon { flex: 0 0 auto; margin-block-start: 2px; }
+
+/* Danh sách siêu dữ liệu: nhãn và giá trị theo cặp. `<dl>` chứ không phải
+   bảng — đây là cặp khoá/giá trị, không phải dữ liệu nhiều chiều, và trình
+   đọc màn hình đọc `<dl>` đúng quan hệ ấy. */
+.vla-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--vla-space-8) var(--vla-space-16);
+  margin: var(--vla-space-16) 0 0;
+}
+.vla-meta > div { min-width: 0; }
+.vla-meta dt { font-size: var(--vla-font-support-size); color: var(--vla-text-muted); }
+.vla-meta dd { margin: 2px 0 0; font-size: var(--vla-font-body-sm-size); font-variant-numeric: tabular-nums; }
+
+.vla-origin { margin: var(--vla-space-16) 0 0; }
+
+/* Thẻ dẫn vào từng nhánh ở trang chủ. */
+.vla-nav-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--vla-space-12);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.vla-nav-card a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+  padding: var(--vla-space-12) var(--vla-space-16);
+  border: 1px solid var(--vla-border);
+  border-radius: var(--vla-radius-md);
+  background: var(--vla-surface-secondary);
+  color: var(--vla-text-primary);
+  text-decoration: none;
+  transition: border-color var(--vla-motion-fast) var(--vla-motion-ease),
+              background var(--vla-motion-fast) var(--vla-motion-ease);
+}
+.vla-nav-card a:hover { border-color: var(--vla-primary); background: var(--vla-primary-soft); }
+.vla-nav-card span { font-size: var(--vla-font-support-size); color: var(--vla-text-muted); }
+
 /* ========================= Trạng thái phản hồi ========================= */
 
 /* Ba trạng thái này KHÔNG phải trang trí. Mục VIII cấm che lỗi tải dữ liệu

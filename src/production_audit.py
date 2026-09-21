@@ -40,9 +40,14 @@ REQUIRED_PATHS = [
     "models/cau_keo_de.joblib",
     "models/meta_loto.joblib",
     "models/meta_de.joblib",
-    # Năm trang trong `docs/` và `DASHBOARD.md` đã bỏ khỏi danh sách cùng tầng
-    # trình bày. `README.md` giữ lại vì `update_readme.py` vẫn dựng nó từ
-    # `data/predict/fun_draw_next.json`.
+    # Trang đã xuất bản trở lại danh sách bắt buộc cùng giao diện mới.
+    "docs/index.html",
+    "docs/dashboard.html",
+    "docs/statistics.html",
+    "docs/model-quality.html",
+    "docs/research-lab.html",
+    "docs/assets/vla.css",
+    "docs/assets/vla-shell.js",
     "README.md",
 ]
 

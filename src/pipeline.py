@@ -374,11 +374,11 @@ def main() -> None:
     _run(_py("src/model_quality.py"), allow_fail=soft_fail)
 
     if not args.skip_docs:
-        # Tầng trình bày đã được xóa sạch theo yêu cầu, chờ giao diện mới. Mười
-        # một builder cũ (`build_docs`, `build_dashboard`, `build_landing_page`,
-        # `build_stat_pages`, ...) và toàn bộ `docs/` không còn tồn tại; xem
-        # git history nếu cần tra lại. README vẫn được cập nhật vì nó là tài
-        # liệu của kho, không phải giao diện web.
+        # MỘT trình dựng cho cả hai mươi chín trang, thay cho mười một trình
+        # dựng rời của giao diện cũ. Một phép kiểm đối chiếu danh sách trang
+        # dựng được với mô hình điều hướng, nên thiếu một trang là bộ kiểm đỏ
+        # chứ không phải một liên kết chết mà không ai thấy.
+        _run(_py("src/build_site.py"), allow_fail=soft_fail)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 
     _run(

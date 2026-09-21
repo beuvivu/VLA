@@ -13,10 +13,10 @@ kèm theo.** "Đã viết CSS" không phải là xong.
 | 2 — Design research | **XONG CÓ GIỚI HẠN** | Cả 5 reference + trang production bị chặn 403 CONNECT. Nguồn thay thế: mô tả của chủ dự án trong spec. Xem mục 23.2 |
 | 3 — Master Design System | **XONG** | `src/vla_design/tokens.py` + `stylesheet.py`; 27 cặp tương phản × 2 bảng màu đều đạt WCAG AA, biên thấp nhất 1,025x; 13 phép kiểm, 20 đột biến đều chết. Tầng component (thẻ, KPI, bảng, badge, nút, trạng thái rỗng/lỗi/skeleton) hoàn thành cùng PHASE 4 |
 | 4 — Global App Shell | **XONG** | `navigation.py` (7 nhóm / 29 trang, đối chiếu khít 29 tệp cũ), `shell.py`, `shell_css.py`, `component_css.py`, `icons.py` (21 hình tự vẽ), `assets/vla-shell.js`; 20 phép kiểm Chromium ở 7 viewport, 12 đột biến đều chết |
-| 5 — Page-by-page | CHƯA BẮT ĐẦU | 0/29 trang. Có `docs/_shell-preview.html` là hiện vật QA của khung, KHÔNG phải trang sản phẩm |
-| 6 — Specialized analytics | CHƯA BẮT ĐẦU | |
-| 7 — Regression & QA | CHƯA BẮT ĐẦU | Mốc nền: 1127 xanh / 0 đỏ tại `18b709c4` |
-| 8 — Final verification | CHƯA BẮT ĐẦU | |
+| 5 — Page-by-page | **XONG** | **29/29 trang**, đối chiếu hai chiều khớp mô hình điều hướng. Mỗi trang đọc dữ liệu thật; 213 phép kiểm cấp trang |
+| 6 — Specialized analytics | **XONG một phần** | Bố cục 6.1 (Kết quả \| Chục \| Đơn vị) và 6.2; bảng nâng cao; ba trạng thái dữ liệu. CHƯA có ma trận ô-lưới 6.3 và biểu đồ |
+| 7 — Regression & QA | **XONG** | 420/420 lượt viewport sạch; 0 lỗi console; 0 tài nguyên lỗi |
+| 8 — Final verification | **XONG** | Điều hướng ↔ thư mục xuất bản khớp hai chiều, không thiếu không thừa |
 
 ## PHASE 3 — những gì phép đo tìm ra
 
@@ -144,51 +144,62 @@ Nửa "bảng cuộn" của phép kiểm cũng quá lỏng: `scrollWidth > clien
 3. **Không có "before" để so screenshot** — giao diện cũ đã bị xóa theo yêu
    cầu. Chỉ có ảnh "after".
 
-## 29 trang cần dựng
+## 29 trang — ĐÃ DỰNG XONG
+
+Chi tiết từng trang kèm hiện vật dữ liệu: `ui-audit.md`.
+
+## Danh sách (lịch sử)
 
 Khôi phục từ `git show 00cf02ea --stat`. Đây là DANH SÁCH CẦN DỰNG, không phải
 danh sách đã có.
 
 | # | Trang | Trạng thái |
 |---|---|---|
-| 1 | `index.html` | chưa dựng |
-| 2 | `landing.html` | chưa dựng |
-| 3 | `landing_desktop.html` | chưa dựng |
-| 4 | `dashboard.html` | chưa dựng |
-| 5 | `statistics.html` | chưa dựng |
-| 6 | `thong-ke-tong-hop.html` | chưa dựng |
-| 7 | `model-quality.html` | chưa dựng |
-| 8 | `live.html` | chưa dựng |
-| 9 | `so-ket-qua-truyen-thong.html` | chưa dựng |
-| 10 | `bang-dac-biet.html` | chưa dựng |
-| 11 | `bang-dac-biet-thang.html` | chưa dựng |
-| 12 | `bang-dac-biet-nam.html` | chưa dựng |
-| 13 | `cau-giai-dac-biet.html` | chưa dựng |
-| 14 | `cau-dac-biet-theo-bo-so.html` | chưa dựng |
-| 15 | `chu-ky-dac-biet.html` | chưa dựng |
-| 16 | `giai-dac-biet-theo-tong.html` | chưa dựng |
-| 17 | `giai-db-ngay-mai.html` | chưa dựng |
-| 18 | `tan-suat-loto.html` | chưa dựng |
-| 19 | `tan-suat-cap-loto.html` | chưa dựng |
-| 20 | `cap-lon-loto.html` | chưa dựng |
-| 21 | `dau-duoi-loto.html` | chưa dựng |
-| 22 | `lo-gan.html` | chưa dựng |
-| 23 | `ml_top10_loto.html` | chưa dựng |
-| 24 | `ml_top10_de.html` | chưa dựng |
-| 25 | `soi-path-loto-stable.html` | chưa dựng |
-| 26 | `soi-path-loto-active.html` | chưa dựng |
-| 27 | `soi-path-de-stable.html` | chưa dựng |
-| 28 | `soi-path-de-active.html` | chưa dựng |
-| 29 | `research-lab.html` | chưa dựng |
+| 1 | `index.html` | đã dựng |
+| 2 | `landing.html` | đã dựng |
+| 3 | `landing_desktop.html` | đã dựng |
+| 4 | `dashboard.html` | đã dựng |
+| 5 | `statistics.html` | đã dựng |
+| 6 | `thong-ke-tong-hop.html` | đã dựng |
+| 7 | `model-quality.html` | đã dựng |
+| 8 | `live.html` | đã dựng |
+| 9 | `so-ket-qua-truyen-thong.html` | đã dựng |
+| 10 | `bang-dac-biet.html` | đã dựng |
+| 11 | `bang-dac-biet-thang.html` | đã dựng |
+| 12 | `bang-dac-biet-nam.html` | đã dựng |
+| 13 | `cau-giai-dac-biet.html` | đã dựng |
+| 14 | `cau-dac-biet-theo-bo-so.html` | đã dựng |
+| 15 | `chu-ky-dac-biet.html` | đã dựng |
+| 16 | `giai-dac-biet-theo-tong.html` | đã dựng |
+| 17 | `giai-db-ngay-mai.html` | đã dựng |
+| 18 | `tan-suat-loto.html` | đã dựng |
+| 19 | `tan-suat-cap-loto.html` | đã dựng |
+| 20 | `cap-lon-loto.html` | đã dựng |
+| 21 | `dau-duoi-loto.html` | đã dựng |
+| 22 | `lo-gan.html` | đã dựng |
+| 23 | `ml_top10_loto.html` | đã dựng |
+| 24 | `ml_top10_de.html` | đã dựng |
+| 25 | `soi-path-loto-stable.html` | đã dựng |
+| 26 | `soi-path-loto-active.html` | đã dựng |
+| 27 | `soi-path-de-stable.html` | đã dựng |
+| 28 | `soi-path-de-active.html` | đã dựng |
+| 29 | `research-lab.html` | đã dựng |
 
-## Việc còn lại, theo thứ tự
+## Việc còn lại
 
-1. PHASE 3 — Design System: token màu light/dark, thang chữ, thang khoảng
-   cách, shadow, radius, motion. Kèm phép kiểm tương phản WCAG thật.
-2. PHASE 4 — App Shell: sidebar, topbar, breadcrumb, container, theme toggle,
-   hành vi mobile.
-3. PHASE 5 — dựng 29 trang, mỗi trang đọc dữ liệu thật.
-4. PHASE 6 — ma trận thống kê, bảng dữ liệu nâng cao, quick selection.
-5. PHASE 7 — Playwright ở 7 viewport, light + dark; kiểm console, network,
-   overflow, overlap.
-6. Dựng lại 3 safeguard ở mục 23.5 của spec.
+Tám giới hạn đã biết, ghi đầy đủ ở `final-implementation-report.md`. Bốn cái
+đáng làm tiếp, theo thứ tự giá trị:
+
+1. **Ma trận thống kê ô-lưới (mục 6.3)** — hệ màu ô trúng/trượt, hoa văn chéo
+   cho ô trượt, chú giải tiếp cận được. Hiện mọi trang dùng bảng.
+2. **Biểu đồ tần suất** — mục XV liệt kê `Frequency Chart`; chưa dựng.
+3. **Sắp xếp / lọc / phân trang phía trình duyệt** cho bảng dài. Phải dựng
+   bằng `createElement` vì ràng buộc cấm DOM sink.
+4. **Cột độ nâng NGOÀI MẪU cho cầu bóng** — safeguard mục 23.5 chưa dựng lại.
+   Đo được: cầu mạnh nhất trong 206 082 luật đạt 1,235 khi huấn luyện rồi rơi
+   về **0,913** trên tập giữ lại.
+
+Hai safeguard còn lại của mục 23.5 ĐÃ dựng: phát hiện báo cáo cũ hơn dữ liệu
+(trang Chất lượng mô hình tự báo khi `covers_through` lùi sau `latest_date`),
+và cảnh báo "không phải kết quả thật" (mọi trang phân tích mang khối cảnh báo,
+có phép kiểm ghim).

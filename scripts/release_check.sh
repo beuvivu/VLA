@@ -315,11 +315,9 @@ for mode in ("loto", "de"):
 print("OK cau-keo calendar-safe smoke")
 PYCAU
 
-printf '%s\n' "== Du lieu mo phong vui =="
-# Tầng trình bày đã bị xóa theo yêu cầu, chờ giao diện mới. Tám lời gọi trình
-# dựng trang ở đây (`build_docs`, `build_dashboard`, `build_landing_page`, ...)
-# và toàn bộ `docs/` không còn tồn tại; xem git history nếu cần tra lại.
+printf '%s\n' "== Du lieu mo phong vui va dung site =="
 python src/fun_draw_simulation.py
+python src/build_site.py
 python src/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
