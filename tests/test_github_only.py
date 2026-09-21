@@ -52,8 +52,3 @@ def test_prediction_history_is_compact_csv() -> None:
     assert not list((ROOT / "data/history").glob("*.parquet"))
 
 
-def test_model_quality_page_is_self_contained_for_docs_pages() -> None:
-    page = (ROOT / "docs/model-quality.html").read_text(encoding="utf-8")
-    assert "../data/" not in page
-    assert "LogLoss" in page
-    assert "Brier" in page

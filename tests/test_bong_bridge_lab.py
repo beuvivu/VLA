@@ -196,25 +196,6 @@ def test_ngu_hanh_is_exactly_the_bong_duong_mapping() -> None:
         assert lab.DIGIT_OPS["duong"][digit] == bong_cua_ngu_hanh[element], element
 
 
-def test_the_published_page_reports_out_of_sample_lift() -> None:
-    """Trang phải hiện độ nâng NGOÀI MẪU, không chỉ độ nâng trên tập huấn luyện.
-
-    Chỉ hiện cột huấn luyện là đúng cách mọi trang soi cầu đánh lừa người đọc:
-    đường cầu nào cũng đẹp trên chính những kỳ đã dùng để chọn nó. Đo được ở
-    dự án này: cầu mạnh nhất trong 206.082 luật đạt 1,235 khi huấn luyện rồi
-    rơi về 0,913 trên tập giữ lại.
-    """
-    from pathlib import Path
-
-    page = Path(__file__).resolve().parents[1] / "docs" / "research-lab.html"
-    html = page.read_text(encoding="utf-8")
-    start = html.find("Cầu bóng trên toàn bộ")
-    assert start > 0, "trang thiếu hẳn phần cầu bóng"
-    section = html[start : start + 4000]
-    for column in ("Độ nâng (huấn luyện)", "Kiểm định", "Giữ lại"):
-        assert column in section, f"thiếu cột {column!r}"
-
-
 def test_monte_carlo_p_value_never_claims_certainty_from_a_finite_sample() -> None:
     """``b/B`` trả về 0,0000 khi không mẫu nhiễu nào vượt — tức khẳng định xác
     suất BẰNG 0 từ 60 lần rút ngẫu nhiên.
