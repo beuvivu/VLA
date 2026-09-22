@@ -40,7 +40,10 @@ UA = (
 )
 #: Chặn trên số biểu định kiểu và dung lượng mỗi tệp. Một trang mẫu thương mại
 #: hay kéo theo hàng chục tệp; đọc hết vừa chậm vừa không thêm thông tin.
-MAX_SHEETS = 8
+#: Đọc tới 16 biểu định kiểu. Mức 8 cũ quá thấp cho một dashboard: đã đo trên
+#: NexLink, trang nạp MƯỜI tệp và tám cái đầu toàn là thư viện icon/widget,
+#: nên bản đọc thu về 0 biến chủ đề và 0 quy tắc body.
+MAX_SHEETS = 16
 MAX_BYTES = 3_000_000
 TOP = 24
 
