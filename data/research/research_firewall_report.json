@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-09-22T14:52:33Z",
+  "generated_at_utc": "2026-09-22T15:32:49Z",
   "anchor_date": "2026-09-22",
   "modes": {
     "loto": {
@@ -15,11 +15,11 @@
       "minimum_lift_gate": 1.03,
       "minimum_effect_gate": 0.004,
       "reality_check": {
-        "permutations": 15,
-        "observed_max_skill": 0.05937342032680218,
-        "null_max_skill_mean": 0.06245791974697997,
-        "null_max_skill_p95": 0.07037141027655092,
-        "p_value": 0.75,
+        "permutations": 63,
+        "observed_max_skill": 0.04596058692904412,
+        "null_max_skill_mean": 0.04366908055713579,
+        "null_max_skill_p95": 0.05242514046595946,
+        "p_value": 0.296875,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
@@ -37,11 +37,11 @@
       "minimum_lift_gate": 1.03,
       "minimum_effect_gate": 0.0005,
       "reality_check": {
-        "permutations": 15,
-        "observed_max_skill": 0.01789044200982244,
-        "null_max_skill_mean": 0.018138068253368597,
-        "null_max_skill_p95": 0.020594182092935395,
-        "p_value": 0.625,
+        "permutations": 63,
+        "observed_max_skill": 0.012083112958065734,
+        "null_max_skill_mean": 0.011825306876308008,
+        "null_max_skill_p95": 0.013971250472232716,
+        "p_value": 0.328125,
         "method": "max-statistic circular shift on explicitly contiguous daily outcomes"
       },
       "gate_pass": false,
