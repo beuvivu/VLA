@@ -40,14 +40,12 @@ REQUIRED_PATHS = [
     "models/cau_keo_de.joblib",
     "models/meta_loto.joblib",
     "models/meta_de.joblib",
-    # Trang đã xuất bản trở lại danh sách bắt buộc cùng giao diện mới.
     "docs/index.html",
-    "docs/dashboard.html",
+    "docs/live.html",
     "docs/statistics.html",
+    "docs/dashboard.html",
     "docs/model-quality.html",
-    "docs/research-lab.html",
-    "docs/assets/vla.css",
-    "docs/assets/vla-shell.js",
+    "DASHBOARD.md",
     "README.md",
 ]
 
@@ -307,15 +305,18 @@ def audit(
             critical.append(f"readme_invalid={exc}")
 
         if check_docs:
-            # Ba trang tổng hợp và dấu `id="du-doan-vui"` đã bỏ cùng tầng trình
-            # bày. Điều cần canh giờ là dấu trong README, vì `update_readme.py`
-            # là nơi DUY NHẤT còn chèn bảng mô phỏng — và phép kiểm dấu ấy đã
-            # có ngay phía trên, ngoài cờ này.
-            #
-            # Giữ cờ `check_docs` thay vì bỏ: nó còn nằm trong `--skip-docs` của
-            # dòng lệnh và trong tải trọng `docs_checked`, và giao diện mới sẽ
-            # cần lại đúng chỗ này.
-            pass
+            for page in (
+                "docs/index.html",
+                "docs/landing.html",
+                "docs/landing_desktop.html",
+            ):
+                p = ROOT / page
+                if not p.exists() or p.stat().st_size == 0:
+                    critical.append(f"landing_page_missing={page}")
+                    continue
+                text = p.read_text(encoding="utf-8", errors="replace")
+                if text.count('id="du-doan-vui"') != 1:
+                    critical.append(f"fun_board_marker_invalid={page}")
 
     try:
         health = _json("data/health.json")

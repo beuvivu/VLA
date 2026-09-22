@@ -65,7 +65,7 @@ def main() -> None:
         "--window-days", type=int, default=2000, help="History window for ML/path features."
     )
     ap.add_argument(
-        "--display-days", type=int, default=10, help="Số kỳ gần nhất mà run_path_ui dựng."
+        "--display-days", type=int, default=10, help="Recent days rendered in dashboard pages."
     )
     ap.add_argument("--lag-max", type=int, default=30)
     ap.add_argument("--top-numbers", type=int, default=30)
@@ -361,24 +361,30 @@ def main() -> None:
     # nó mô tả một bộ trọng số đã bị thay từ lâu mà không dấu hiệu gì.
     _run(_py("src/feature_attribution.py"), allow_fail=soft_fail)
 
-    # Mô phỏng vui: bước DỮ LIỆU, cứng, vì nó gắn ngày. Nuốt lỗi ở đây để lại
-    # bảng của hôm trước mà không dấu hiệu gì. Trước đây nằm trong khối
-    # `--skip-docs` dưới tên `build_fun_prediction.py` và còn chèn vào ba trang
-    # HTML; phần chèn đã bỏ cùng tầng trình bày, phép lấy mẫu thì giữ.
-    _run(_py("src/fun_draw_simulation.py"), allow_fail=False)
-
-    # Chẩn đoán chất lượng mô hình là bước DỮ LIỆU, không phải bước dựng trang.
-    # Nó từng nằm trong khối `--skip-docs` cùng mười một builder, nên bỏ qua
-    # phần trang cũng bỏ luôn phép chấm điểm mô hình — hai việc không liên quan
-    # gì đến nhau bị một cờ điều khiển chung.
-    _run(_py("src/model_quality.py"), allow_fail=soft_fail)
-
     if not args.skip_docs:
-        # MỘT trình dựng cho cả hai mươi chín trang, thay cho mười một trình
-        # dựng rời của giao diện cũ. Một phép kiểm đối chiếu danh sách trang
-        # dựng được với mô hình điều hướng, nên thiếu một trang là bộ kiểm đỏ
-        # chứ không phải một liên kết chết mà không ai thấy.
-        _run(_py("src/build_site.py"), allow_fail=soft_fail)
+        _run(
+            _py("src/build_docs.py", "--display-days", str(args.display_days)),
+            allow_fail=soft_fail,
+        )
+        _run(_py("src/build_docs_ml.py"), allow_fail=soft_fail)
+        _run(_py("src/build_dashboard.py"), allow_fail=soft_fail)
+        # Chẩn đoán trước, dựng trang sau: trang Chất lượng mô hình đọc thẳng
+        # `data/model_quality/report.json` nên đảo thứ tự sẽ xuất bản báo cáo
+        # của ngày hôm trước mà không có dấu hiệu gì.
+        _run(_py("src/model_quality.py"), allow_fail=soft_fail)
+        _run(_py("src/build_model_quality.py"), allow_fail=soft_fail)
+        _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
+        _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
+        _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)
+        # This is a user-visible, date-bound snapshot.  Swallowing a builder
+        # error here leaves yesterday's simulation in place and makes the UI
+        # appear frozen, so it is a hard step even in non-strict research runs.
+        _run(_py("src/build_fun_prediction.py"), allow_fail=False)
+        _run(_py("src/build_research_lab.py"), allow_fail=True)
+        # Trang thống kê chi tiết: nhúng lịch sử và tính bằng JS phía
+        # trình duyệt, nên phải chạy SAU khi dữ liệu đã chốt.
+        _run(_py("src/build_stat_pages.py"), allow_fail=soft_fail)
+        _run(_py("src/build_traditional_results.py"), allow_fail=soft_fail)
         _run(_py("src/update_readme.py"), allow_fail=soft_fail)
 
     _run(

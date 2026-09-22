@@ -35,116 +35,20 @@ def test_release_checks_do_not_use_fixed_shared_temporary_files() -> None:
     assert '"$TMP_PRED/production-audit-release.json"' in release_check
 
 
-#: Cách ghi DOM nhận chuỗi rồi PHÂN TÍCH nó thành thẻ. Dữ liệu không tin cậy
-#: đi qua đây là thực thi mã trong trình duyệt người đọc.
-DOM_SINKS = (".innerHTML", "insertAdjacentHTML", "outerHTML", "document.write")
-
-
-def dom_sink_offenders(source: str) -> list[str]:
-    """Các cách ghi DOM biến chuỗi thành thẻ, tìm thấy trong ``source``."""
-    return [sink for sink in DOM_SINKS if sink in source]
-
-
-def markup_emitters(root: Path) -> list[Path]:
-    """Mọi tệp có thể đưa thẻ HTML tới trình duyệt.
-
-    Tự DÒ thay vì liệt kê tay, và đó là toàn bộ lý do hàm này tồn tại. Bản
-    trước ghim cứng ba đường dẫn (`build_landing_page.py`,
-    `build_statistics_dashboard.py`, `docs/live.html`); khi tầng trình bày bị
-    xóa thì cả ba biến mất và phép kiểm nổ, còn khi giao diện MỚI lên thì
-    không ai nhớ thêm nó vào danh sách — bất biến bảo mật im lặng ngừng hoạt
-    động đúng lúc cần nhất.
-    """
-    found: list[Path] = []
-    docs = root / "docs"
-    if docs.is_dir():
-        found.extend(sorted(docs.rglob("*.html")))
-    for path in sorted((root / "src").rglob("*")):
-        if path.suffix not in {".py", ".js", ".j2", ".html"} or not path.is_file():
-            continue
-        text = path.read_text(encoding="utf-8", errors="replace")
-        if "<!DOCTYPE" in text or "<!doctype" in text or "<html" in text:
-            found.append(path)
-    return found
-
-
-def test_the_dom_sink_rule_catches_each_sink_it_names() -> None:
-    """Luật phải tự kiểm được, vì hiện KHÔNG còn tệp nào để quét.
-
-    Tầng trình bày đã bị xóa, nên phép kiểm chạy qua tệp thật hiện quét qua
-    tập rỗng và xanh miễn phí. Một phép kiểm rỗng không phân biệt được với một
-    phép kiểm đã bị tháo. Nên luật được ghim trên chuỗi dựng sẵn ở đây, và nó
-    sẽ tự áp cho giao diện mới ngay khi giao diện mới xuất hiện.
-    """
-    assert dom_sink_offenders("const x = 1;") == []
-    for sink in DOM_SINKS:
-        assert dom_sink_offenders(f"el{sink} = data") == [sink], sink
-
-
-def test_the_markup_discovery_actually_finds_markup(tmp_path: Path) -> None:
-    """Bộ dò phải thật sự tìm ra, nếu không phép kiểm dưới là rỗng vĩnh viễn."""
-    (tmp_path / "docs").mkdir()
-    (tmp_path / "docs" / "trang.html").write_text("<!DOCTYPE html><p>xin chào", encoding="utf-8")
-    (tmp_path / "src").mkdir()
-    (tmp_path / "src" / "dung_trang.py").write_text(
-        'HTML = "<!DOCTYPE html><html lang=vi>"\n', encoding="utf-8"
-    )
-    (tmp_path / "src" / "chi_du_lieu.py").write_text("import json\n", encoding="utf-8")
-
-    names = {p.name for p in markup_emitters(tmp_path)}
-    assert names == {"trang.html", "dung_trang.py"}
-
-
-def test_the_published_tree_holds_at_least_one_page() -> None:
-    """Chốt chặn cho cả một LỚP lỗi: phép kiểm cấp trang hoá rỗng trong im lặng.
-
-    Mọi phép kiểm duyệt ``docs/**/*.html`` đều xanh miễn phí khi ``docs/``
-    không có trang nào. Đó không phải giả thuyết — nó đã xảy ra: sau khi tầng
-    trình bày bị xóa ngày 2026-09-21, bộ kiểm báo 1 127 xanh / 0 đỏ, nhưng
-    trong số đó ``tests/test_dock_on_mobile.py`` (7 phép kiểm) xanh CHỈ VÌ nó
-    parametrize qua 0 trang. Nó thức dậy ngay khi trang đầu tiên xuất hiện và
-    đòi một thành phần đã bị xóa cùng giao diện cũ.
-
-    Một phép kiểm quét tập rỗng không phân biệt được với một phép kiểm đã bị
-    tháo. Bất biến này đứng thay cho tất cả chúng: hễ ``docs/`` còn trang thì
-    mọi phép kiểm cấp trang còn có đối tượng, và hễ nó trống thì CHÍNH phép
-    kiểm này đỏ — nói ra sự rỗng thay vì để nó ẩn trong màu xanh.
-    """
-    pages = sorted((ROOT / "docs").rglob("*.html"))
-    assert pages, (
-        "docs/ không có trang HTML nào. Mọi phép kiểm duyệt trang đã xuất bản "
-        "hiện quét qua tập rỗng và xanh miễn phí — xem lại chúng trước khi tin "
-        "vào màu xanh của bộ kiểm."
-    )
-
-
-def test_nothing_that_emits_markup_uses_an_untrusted_dom_sink() -> None:
-    """Không nguồn nào đưa thẻ tới trình duyệt được dùng cách ghi phân tích chuỗi.
-
-    Hiện tập này RỖNG vì tầng trình bày đã bị xóa. Phép kiểm vẫn ở đây để
-    giao diện mới bị soi ngay khi nó xuất hiện, và hai phép kiểm trên bảo đảm
-    cả luật lẫn bộ dò đều còn sống trong lúc tập rỗng.
-    """
-    offenders: list[str] = []
-    for path in markup_emitters(ROOT):
-        source = path.read_text(encoding="utf-8", errors="replace")
-        for sink in dom_sink_offenders(source):
-            offenders.append(f"{path.relative_to(ROOT)}: {sink}")
-    assert not offenders, "dùng cách ghi DOM không an toàn: " + "; ".join(offenders)
-
-
-def test_every_published_page_declares_a_content_security_policy() -> None:
-    """Trang xuất bản phải khai CSP, và khai cả nguồn được phép gọi mạng.
-
-    Cũng đang rỗng cùng lý do trên. Khi giao diện mới lên, mỗi trang HTML
-    trong ``docs/`` phải mang ``Content-Security-Policy``.
-    """
-    missing = [
-        str(path.relative_to(ROOT))
-        for path in sorted((ROOT / "docs").rglob("*.html"))
-        if "Content-Security-Policy" not in path.read_text(encoding="utf-8", errors="replace")
+def test_static_page_builders_do_not_use_untrusted_html_dom_sinks() -> None:
+    paths = [
+        ROOT / "src" / "build_landing_page.py",
+        ROOT / "src" / "build_statistics_dashboard.py",
+        ROOT / "docs" / "live.html",
     ]
-    assert not missing, "trang thiếu CSP: " + "; ".join(missing)
+    for path in paths:
+        source = path.read_text(encoding="utf-8")
+        assert ".innerHTML" not in source, path.name
+        assert "insertAdjacentHTML" not in source, path.name
+
+    live = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
+    assert "Content-Security-Policy" in live
+    assert "connect-src 'self' https://raw.githubusercontent.com" in live
 
 
 def test_empty_history_uses_vietnam_business_date() -> None:

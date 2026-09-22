@@ -1,62 +1,313 @@
-<!DOCTYPE html>
-<html lang="vi" data-theme-state="system">
+<!doctype html>
+<html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;; img-src &#x27;self&#x27; data:; style-src &#x27;self&#x27;; script-src &#x27;self&#x27;; font-src &#x27;self&#x27;; connect-src &#x27;self&#x27;">
-<meta name="color-scheme" content="light dark">
-<meta name="description" content="Dự đoán kỳ tới, trọng số tổ hợp đang có hiệu lực, và xuất xứ của chúng.">
-<title>Bảng điều khiển · VLA</title>
-<link rel="stylesheet" href="assets/vla.css"><script src="assets/vla-shell.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
+<meta name="referrer" content="no-referrer" />
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/critical.css" />
+  <link rel="preload" href="assets/ui.css" as="style" />
+  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
+  <link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />
+  <script src="assets/css-async.js" defer></script>
+  <noscript>
+  <link rel="stylesheet" href="assets/ui.css" />
+  </noscript>
+  <style id="ai-command-center-source">
+.ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
+.ai-command-center .ui-shell{max-width:1280px}
+.ai-command-center .ui-header{position:relative;overflow:hidden;padding:clamp(1.35rem,3vw,2.2rem);border:1px solid rgba(255,255,255,.96);border-radius:24px;background:rgba(255,255,255,.9);box-shadow:0 12px 36px rgba(15,23,42,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.ai-command-center .ui-header::after{content:"AI";position:absolute;right:1rem;top:-1.5rem;font-size:7rem;font-weight:900;letter-spacing:-.08em;color:rgba(79,70,229,.07);pointer-events:none}
+.ai-status-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:1rem 0 1.25rem}
+.ai-status-item{position:relative;overflow:hidden;min-width:0;padding:1rem 1.05rem;border:1px solid rgba(255,255,255,.96);border-radius:18px;background:rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px)}
+.ai-status-item::after{content:"";position:absolute;left:1rem;right:1rem;bottom:.65rem;height:3px;border-radius:999px;background:linear-gradient(90deg,#4f46e5 0 32%,#818cf8 32% 63%,#c7d2fe 63% 100%);opacity:.78}
+.ai-status-item span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.ai-status-item strong{display:block;margin-top:.25rem;padding-bottom:.55rem;font-size:.92rem;color:#0f172a}
+.ai-signal-grid{align-items:start}.ai-signal-grid>.ui-card{border-color:rgba(255,255,255,.96);background:rgba(255,255,255,.92);box-shadow:0 10px 32px rgba(15,23,42,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.ai-signal-grid>.ui-card:nth-child(-n+2){position:relative;overflow:hidden;border-color:#c7d2fe;box-shadow:0 16px 40px rgba(79,70,229,.09)}
+.ai-signal-grid>.ui-card:nth-child(-n+2)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#4f46e5,#818cf8)}
+.ai-signal-grid>.ui-card .ui-card-head h2{letter-spacing:-.02em}.ai-command-center .ui-table{font-variant-numeric:tabular-nums}.ai-command-center .ui-table th{background:#f8fafc}
+@media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
+</style>
+  <title>Bảng điều khiển phân tích XSMB</title>
+<style id="ui-targeted-ui-refinement">
+.ai-command-center{min-height:100vh;background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%)}
+.ai-command-center .ui-shell{max-width:1280px}
+.ai-command-center .ui-header{position:relative;overflow:hidden;padding:clamp(1.35rem,3vw,2.2rem);border:1px solid rgba(255,255,255,.94);border-radius:24px;background:rgba(255,255,255,.84);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.ai-command-center .ui-header::after{content:"AI";position:absolute;right:1rem;top:-1.5rem;font-size:7rem;font-weight:900;letter-spacing:-.08em;color:rgba(79,70,229,.07);pointer-events:none}
+.ai-status-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:1rem 0 1.25rem}
+.ai-status-item{position:relative;overflow:hidden;min-width:0;padding:1rem 1.05rem;border:1px solid rgba(255,255,255,.94);border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 8px 30px rgba(15,23,42,.04);backdrop-filter:blur(14px)}
+.ai-status-item::after{content:"";position:absolute;left:1rem;right:1rem;bottom:.65rem;height:3px;border-radius:999px;background:linear-gradient(90deg,#4f46e5 0 32%,#818cf8 32% 63%,#c7d2fe 63% 100%);opacity:.75}
+.ai-status-item span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.ai-status-item strong{display:block;margin-top:.25rem;padding-bottom:.55rem;font-size:.92rem;color:#0f172a}
+.ai-signal-grid{align-items:start}.ai-signal-grid>.ui-card{border-color:rgba(255,255,255,.94);background:rgba(255,255,255,.9);box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.ai-signal-grid>.ui-card:nth-child(-n+2){position:relative;overflow:hidden;border-color:#c7d2fe;box-shadow:0 14px 36px rgba(79,70,229,.08)}.ai-signal-grid>.ui-card:nth-child(-n+2)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#4f46e5,#818cf8)}
+@media(max-width:760px){.ai-status-strip{grid-template-columns:1fr}.ai-command-center .ui-header::after{font-size:4.5rem}}
+</style>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
-<body>
-<a class="vla-skip-link" href="#vla-content">Bỏ qua điều hướng, tới nội dung</a>
-<div class="vla-app">
-<aside id="vla-sidebar" class="vla-sidebar" data-open="false">
-  <div class="vla-sidebar-brand">
-    <span class="vla-brand-mark" aria-hidden="true">VLA</span>
-    <span class="vla-brand-text">
-      <span class="vla-brand-name">Phân tích XSMB</span>
-      <span class="vla-brand-sub">Thống kê &amp; xác suất</span>
-    </span>
-    <button type="button" class="vla-btn vla-btn--icon vla-menu-button" data-vla-nav-close>
-      <svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6.75 6.75 10.5 10.5M17.25 6.75 6.75 17.25"/></svg><span class="vla-visually-hidden">Đóng điều hướng</span>
-    </button>
-  </div>
-  <nav class="vla-sidebar-scroll" aria-label="Điều hướng chính">
-    <details class="vla-nav-group" open><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.25 9.75V20.25h13.5V9.75"/><path d="M9.75 20.25v-6h4.5v6"/></svg><span class="vla-nav-group-label">Tổng quan</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="index.html" title="Điểm vào, số liệu nổi bật của kỳ mới nhất">Trang chủ</a></li><li><a class="vla-nav-link" href="dashboard.html" aria-current="page" title="Dự đoán kỳ tới, trọng số đang hiệu lực, hiệu chuẩn">Bảng điều khiển</a></li><li><a class="vla-nav-link" href="thong-ke-tong-hop.html" title="Tổng hợp mọi bảng thống kê trong một trang">Thống kê tổng hợp</a></li><li><a class="vla-nav-link" href="statistics.html" title="Ma trận thống kê và tần suất theo nhiều cửa sổ">Bảng thống kê</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 4.5h6a2.25 2.25 0 0 1 2.25 2.25V21a1.5 1.5 0 0 0-1.5-1.5H4.5z"/><path d="M19.5 4.5h-6a2.25 2.25 0 0 0-2.25 2.25V21a1.5 1.5 0 0 1 1.5-1.5h6.75z"/></svg><span class="vla-nav-group-label">Kết quả</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="live.html" title="Kết quả đang về của kỳ hôm nay">Trực tiếp</a></li><li><a class="vla-nav-link" href="so-ket-qua-truyen-thong.html" title="Bảng kết quả theo lối sổ giấy, kèm chục và đơn vị">Sổ kết quả truyền thống</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3.75 2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.77l-5.1 2.68.98-5.68L3.75 9.75l5.7-.83z"/></svg><span class="vla-nav-group-label">Đặc Biệt</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="bang-dac-biet.html" title="Giải Đặc Biệt theo ngày">Bảng Đặc Biệt</a></li><li><a class="vla-nav-link" href="bang-dac-biet-thang.html" title="Giải Đặc Biệt gom theo tháng">Bảng Đặc Biệt theo tháng</a></li><li><a class="vla-nav-link" href="bang-dac-biet-nam.html" title="Giải Đặc Biệt gom theo năm">Bảng Đặc Biệt theo năm</a></li><li><a class="vla-nav-link" href="cau-giai-dac-biet.html" title="Quan hệ giữa các kỳ liền nhau của giải Đặc Biệt">Cầu giải Đặc Biệt</a></li><li><a class="vla-nav-link" href="cau-dac-biet-theo-bo-so.html" title="Cầu Đặc Biệt nhóm theo bộ số">Cầu Đặc Biệt theo bộ số</a></li><li><a class="vla-nav-link" href="chu-ky-dac-biet.html" title="Khoảng cách giữa hai lần về của cùng một số">Chu kỳ Đặc Biệt</a></li><li><a class="vla-nav-link" href="giai-dac-biet-theo-tong.html" title="Giải Đặc Biệt nhóm theo tổng hai chữ số cuối">Đặc Biệt theo tổng</a></li><li><a class="vla-nav-link" href="giai-db-ngay-mai.html" title="Thống kê hướng tới kỳ chưa mở">Đặc Biệt kỳ tới</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 3.75h16.5v16.5H3.75z"/><path d="M9.25 3.75v16.5M14.75 3.75v16.5M3.75 9.25h16.5M3.75 14.75h16.5"/></svg><span class="vla-nav-group-label">Lô tô</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="tan-suat-loto.html" title="Số lần về của từng con trong nhiều cửa sổ">Tần suất lô tô</a></li><li><a class="vla-nav-link" href="tan-suat-cap-loto.html" title="Số lần hai con cùng về trong một kỳ">Tần suất cặp lô tô</a></li><li><a class="vla-nav-link" href="cap-lon-loto.html" title="Các cặp có tần suất đồng hiện cao nhất">Cặp lớn lô tô</a></li><li><a class="vla-nav-link" href="dau-duoi-loto.html" title="Phân bố theo chữ số đầu và chữ số cuối">Đầu đuôi lô tô</a></li><li><a class="vla-nav-link" href="lo-gan.html" title="Số kỳ liên tiếp một con chưa về">Lô gan</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.25a3 3 0 0 0-5.63 1.02A2.63 2.63 0 0 0 5.25 12a2.63 2.63 0 0 0 1.5 4.73A3 3 0 0 0 12 18.75z"/><path d="M12 5.25a3 3 0 0 1 5.63 1.02A2.63 2.63 0 0 1 18.75 12a2.63 2.63 0 0 1-1.5 4.73A3 3 0 0 1 12 18.75z"/><path d="M12 5.25v13.5"/></svg><span class="vla-nav-group-label">Dự đoán &amp; Mô hình</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="ml_top10_loto.html" title="Mười con lô tô có xác suất mô hình cao nhất">Top 10 lô tô (ML)</a></li><li><a class="vla-nav-link" href="ml_top10_de.html" title="Mười con Đặc Biệt có xác suất mô hình cao nhất">Top 10 Đặc Biệt (ML)</a></li><li><a class="vla-nav-link" href="model-quality.html" title="Hiệu chuẩn, độ nhọn, phân rã Murphy, kỹ năng so đường cơ sở">Chất lượng mô hình</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.25"/><circle cx="18" cy="18" r="2.25"/><path d="M8.25 6h4.5a3 3 0 0 1 3 3v6"/></svg><span class="vla-nav-group-label">Soi path</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="soi-path-loto-stable.html" title="Đường đi ổn định của lô tô qua các kỳ">Path lô tô — ổn định</a></li><li><a class="vla-nav-link" href="soi-path-loto-active.html" title="Đường đi đang hoạt động của lô tô">Path lô tô — hoạt động</a></li><li><a class="vla-nav-link" href="soi-path-de-stable.html" title="Đường đi ổn định của giải Đặc Biệt">Path Đặc Biệt — ổn định</a></li><li><a class="vla-nav-link" href="soi-path-de-active.html" title="Đường đi đang hoạt động của giải Đặc Biệt">Path Đặc Biệt — hoạt động</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.75 3.75h4.5v4.19l4.13 8.26A2.25 2.25 0 0 1 16.37 19.5H7.63a2.25 2.25 0 0 1-2.01-3.3l4.13-8.26z"/><path d="M6.9 13.5h10.2"/></svg><span class="vla-nav-group-label">Nghiên cứu</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="research-lab.html" title="Quét cầu, kiểm định đa giả thuyết, cổng nghiên cứu">Phòng nghiên cứu</a></li></ul></details>
-  </nav>
-  <div class="vla-sidebar-foot">
-    Mọi số liệu là THỐNG KÊ MÔ TẢ, không phải dự đoán có giá trị kỳ vọng dương.
-  </div>
-</aside>
-<div id="vla-backdrop" class="vla-backdrop" data-open="false"></div>
-<div id="vla-main" class="vla-main">
-  <header class="vla-topbar">
-    <button type="button" class="vla-btn vla-btn--icon vla-menu-button" data-vla-nav-toggle
-            aria-expanded="false" aria-controls="vla-sidebar">
-      <svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/></svg><span class="vla-visually-hidden">Mở điều hướng</span>
-    </button>
-    <div class="vla-topbar-title">
-      <span class="vla-topbar-context">Tổng quan</span>
-    </div>
-    <div class="vla-topbar-actions"><button type="button" class="vla-btn vla-btn--icon" data-vla-theme-toggle aria-describedby="vla-theme-live"><span class="vla-theme-label vla-theme-label--system"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 5.25h16.5v10.5H3.75z"/><path d="M8.25 20.25h7.5M12 15.75v4.5"/></svg></span><span class="vla-theme-label vla-theme-label--light"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.13"/><path d="M12 2.25v2.25M12 19.5v2.25M2.25 12H4.5M19.5 12h2.25M5.11 5.11l1.59 1.59M17.3 17.3l1.59 1.59M18.89 5.11 17.3 6.7M6.7 17.3 5.11 18.89"/></svg></span><span class="vla-theme-label vla-theme-label--dark"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.25 14.62A8.63 8.63 0 0 1 9.38 3.75a8.63 8.63 0 1 0 10.87 10.87z"/></svg></span><span class="vla-visually-hidden">Đổi chủ đề: theo hệ thống, sáng, tối</span></button><span id="vla-theme-live" class="vla-visually-hidden" role="status" aria-live="polite"></span></div>
-  </header>
-  <main id="vla-content" class="vla-content" tabindex="-1">
-    <div class="vla-container">
-      <nav class="vla-breadcrumb" aria-label="Đường dẫn"><ol class="vla-breadcrumb-list"><li><a href="index.html">Trang chủ</a></li><li class="vla-breadcrumb-sep" aria-hidden="true">/</li><li>Tổng quan</li><li class="vla-breadcrumb-sep" aria-hidden="true">/</li><li aria-current="page">Bảng điều khiển</li></ol></nav>
-      <div class="vla-page-head">
-        <div class="vla-page-head-text">
-          <h1 class="vla-page-title">Bảng điều khiển</h1>
-          <p class="vla-page-sub">Dự đoán kỳ tới, trọng số tổ hợp đang có hiệu lực, và xuất xứ của chúng.</p>
-        </div>
-        
-      </div>
-      <aside class="vla-disclaimer" role="note"><span class="vla-disclaimer-icon"><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.75 3.75h4.5v4.19l4.13 8.26A2.25 2.25 0 0 1 16.37 19.5H7.63a2.25 2.25 0 0 1-2.01-3.3l4.13-8.26z"/><path d="M6.9 13.5h10.2"/></svg></span><span>Mọi số liệu ở đây là THỐNG KÊ MÔ TẢ trên dữ liệu lịch sử. Không phải dự đoán có giá trị kỳ vọng dương, và không bảo đảm kết quả tương lai.</span></aside><div class="vla-kpi-grid"><article class="vla-card vla-card--kpi"><p class="vla-kpi-label">Kỳ dự đoán</p><p class="vla-kpi-value vla-num">2026-09-22</p><p class="vla-kpi-note"><span class="vla-badge vla-badge--info">chưa mở</span></p></article><article class="vla-card vla-card--kpi"><p class="vla-kpi-label">Kỳ neo</p><p class="vla-kpi-value vla-num">2026-09-21</p><p class="vla-kpi-note"><span class="vla-badge vla-badge--success">đã chốt</span></p></article><article class="vla-card vla-card--kpi"><p class="vla-kpi-label">Số lô tô liệt kê</p><p class="vla-kpi-value vla-num">10</p><p class="vla-kpi-note"><span class="vla-badge vla-badge--neutral">mô hình</span></p></article><article class="vla-card vla-card--kpi"><p class="vla-kpi-label">Cầu đang hoạt động</p><p class="vla-kpi-value vla-num">0</p><p class="vla-kpi-note"><span class="vla-badge vla-badge--neutral">sau ba cổng</span></p></article></div><div class="vla-grid"><div class="vla-col-7"><section class="vla-card"><header class="vla-card-head"><h2 class="vla-card-title">Lô tô — kỳ tới</h2></header><div class="vla-card-body vla-card-body--flush"><div class="vla-table-scroll"><table class="vla-table"><caption class="vla-visually-hidden">Mười số lô tô có xác suất mô hình cao nhất cho kỳ tới</caption><thead><tr><th scope="col" data-col="hang" class="vla-num">#</th><th scope="col" data-col="so">Số</th><th scope="col" data-col="xacsuat" class="vla-num">Xác suất mô hình</th><th scope="col" data-col="coso" class="vla-num">Đường cơ sở</th></tr></thead><tbody><tr><td data-col="hang" class="vla-num">1</td><td data-col="so">95</td><td data-col="xacsuat" class="vla-num">23,887%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">2</td><td data-col="so">56</td><td data-col="xacsuat" class="vla-num">23,882%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">3</td><td data-col="so">75</td><td data-col="xacsuat" class="vla-num">23,878%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">4</td><td data-col="so">81</td><td data-col="xacsuat" class="vla-num">23,872%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">5</td><td data-col="so">76</td><td data-col="xacsuat" class="vla-num">23,871%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">6</td><td data-col="so">91</td><td data-col="xacsuat" class="vla-num">23,871%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">7</td><td data-col="so">06</td><td data-col="xacsuat" class="vla-num">23,865%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">8</td><td data-col="so">73</td><td data-col="xacsuat" class="vla-num">23,864%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">9</td><td data-col="so">94</td><td data-col="xacsuat" class="vla-num">23,863%</td><td data-col="coso" class="vla-num">23,766%</td></tr><tr><td data-col="hang" class="vla-num">10</td><td data-col="so">97</td><td data-col="xacsuat" class="vla-num">23,862%</td><td data-col="coso" class="vla-num">23,766%</td></tr></tbody></table></div></div></section></div><div class="vla-col-5"><section class="vla-card"><header class="vla-card-head"><h2 class="vla-card-title">Đặc Biệt — kỳ tới</h2></header><div class="vla-card-body vla-card-body--flush"><div class="vla-table-scroll"><table class="vla-table"><caption class="vla-visually-hidden">Mười số Đặc Biệt có xác suất mô hình cao nhất</caption><thead><tr><th scope="col" data-col="hang" class="vla-num">#</th><th scope="col" data-col="so">Số</th><th scope="col" data-col="xacsuat" class="vla-num">Xác suất mô hình</th><th scope="col" data-col="coso" class="vla-num">Đường cơ sở</th></tr></thead><tbody><tr><td data-col="hang" class="vla-num">1</td><td data-col="so">85</td><td data-col="xacsuat" class="vla-num">1,006%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">2</td><td data-col="so">65</td><td data-col="xacsuat" class="vla-num">1,005%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">3</td><td data-col="so">24</td><td data-col="xacsuat" class="vla-num">1,005%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">4</td><td data-col="so">89</td><td data-col="xacsuat" class="vla-num">1,004%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">5</td><td data-col="so">97</td><td data-col="xacsuat" class="vla-num">1,004%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">6</td><td data-col="so">76</td><td data-col="xacsuat" class="vla-num">1,003%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">7</td><td data-col="so">62</td><td data-col="xacsuat" class="vla-num">1,003%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">8</td><td data-col="so">30</td><td data-col="xacsuat" class="vla-num">1,003%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">9</td><td data-col="so">08</td><td data-col="xacsuat" class="vla-num">1,003%</td><td data-col="coso" class="vla-num">1,000%</td></tr><tr><td data-col="hang" class="vla-num">10</td><td data-col="so">31</td><td data-col="xacsuat" class="vla-num">1,003%</td><td data-col="coso" class="vla-num">1,000%</td></tr></tbody></table></div></div></section></div><div class="vla-col-12"><section class="vla-card"><header class="vla-card-head"><h2 class="vla-card-title">Nhóm Đặc Biệt gợi ý</h2></header><div class="vla-card-body"><dl class="vla-meta"><div><dt>Chạm</dt><dd>0 · 2 · 3 · 4 · 5 · 7 · 8 · 9</dd></div><div><dt>Tổng</dt><dd>1 · 2 · 3 · 5 · 6 · 7 · 8</dd></div><div><dt>Dàn 36</dt><dd>36 số</dd></div><div><dt>Dàn 64</dt><dd>64 số</dd></div></dl><p class="vla-card-note">Chạm và tổng là nhóm thu hẹp, không phải dự đoán một con.</p></div></section></div><div class="vla-col-12"><div class="vla-grid"><div class="vla-col-6"><section class="vla-card"><header class="vla-card-head"><h2 class="vla-card-title">Trọng số — Lô tô</h2></header><div class="vla-card-body"><div class="vla-table-scroll"><table class="vla-table"><caption class="vla-visually-hidden">Trọng số tổ hợp đang có hiệu lực cho Lô tô</caption><thead><tr><th scope="col" data-col="thanhphan">Thành phần</th><th scope="col" data-col="trongso" class="vla-num">Trọng số</th></tr></thead><tbody><tr><td data-col="thanhphan">Học máy</td><td data-col="trongso" class="vla-num">0,2500</td></tr><tr><td data-col="thanhphan">Cầu</td><td data-col="trongso" class="vla-num">0,3000</td></tr><tr><td data-col="thanhphan">Thống kê</td><td data-col="trongso" class="vla-num">0,2000</td></tr><tr><td data-col="thanhphan">Cầu đang hoạt động</td><td data-col="trongso" class="vla-num">0,1250</td></tr><tr><td data-col="thanhphan">Cầu ổn định</td><td data-col="trongso" class="vla-num">0,1250</td></tr></tbody></table></div><p class="vla-origin"><span class="vla-badge vla-badge--info">Mặc định — cổng đã đo và TỪ CHỐI đề bạt</span></p><p class="vla-card-note">biên thắng +0.0000% chưa đạt sàn 0.20%</p><dl class="vla-meta"><div><dt>Số kỳ khớp</dt><dd>14</dd></div><div><dt>Số kỳ thẩm định</dt><dd>9</dd></div><div><dt>LogLoss mặc định</dt><dd>0,540739</dd></div><div><dt>LogLoss ứng viên</dt><dd>0,540739</dd></div></dl></div></section></div><div class="vla-col-6"><section class="vla-card"><header class="vla-card-head"><h2 class="vla-card-title">Trọng số — Đặc Biệt</h2></header><div class="vla-card-body"><div class="vla-table-scroll"><table class="vla-table"><caption class="vla-visually-hidden">Trọng số tổ hợp đang có hiệu lực cho Đặc Biệt</caption><thead><tr><th scope="col" data-col="thanhphan">Thành phần</th><th scope="col" data-col="trongso" class="vla-num">Trọng số</th></tr></thead><tbody><tr><td data-col="thanhphan">Học máy</td><td data-col="trongso" class="vla-num">0,2500</td></tr><tr><td data-col="thanhphan">Cầu</td><td data-col="trongso" class="vla-num">0,3000</td></tr><tr><td data-col="thanhphan">Thống kê</td><td data-col="trongso" class="vla-num">0,2000</td></tr><tr><td data-col="thanhphan">Cầu đang hoạt động</td><td data-col="trongso" class="vla-num">0,1250</td></tr><tr><td data-col="thanhphan">Cầu ổn định</td><td data-col="trongso" class="vla-num">0,1250</td></tr></tbody></table></div><p class="vla-origin"><span class="vla-badge vla-badge--info">Mặc định — cổng đã đo và TỪ CHỐI đề bạt</span></p><p class="vla-card-note">biên thắng -0.0712% chưa đạt sàn 0.20%</p><dl class="vla-meta"><div><dt>Số kỳ khớp</dt><dd>13</dd></div><div><dt>Số kỳ thẩm định</dt><dd>8</dd></div><div><dt>LogLoss mặc định</dt><dd>4,602276</dd></div><div><dt>LogLoss ứng viên</dt><dd>4,605554</dd></div></dl></div></section></div></div></div></div><p class="vla-source-note">Nguồn dữ liệu: <code>health.json</code> · <code>predict_next_de_all_2026-09-22.csv</code> · <code>predictions_today.json</code></p>
-    </div>
-  </main>
-</div>
-</div>
-
+<body data-ui-page="dashboard" class="ai-command-center">
+<div class="ui-app ui-dock-space" id="ui-app"><main class="ui-shell">
+<header class="ui-header"><h1>Bảng điều khiển phân tích XSMB</h1><p class="ui-sub">Xác suất mô hình tổ hợp, trọng số đã học và danh sách gợi ý.</p><div class="ui-meta"><span>Ngày dữ liệu mới nhất: 2026-09-21</span><span>Tạo lúc: 2026-09-22T05:02:24Z</span></div></header>
+<section class="ai-status-strip" aria-label="AI/ML"><div class="ai-status-item"><span>Space</span><strong>AI/ML Command Center</strong></div><div class="ai-status-item"><span>Signals</span><strong>Prob · Picks · Rank</strong></div><div class="ai-status-item"><span>Control</span><strong>Weights · Calibration</strong></div></section>
+<div class="ui-grid ai-signal-grid"><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xác suất LOTO cao nhất</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">86</td><td class="ui-ar">0.235694</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">6</td><td class="ui-ar">0.235500</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">96</td><td class="ui-ar">0.235497</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">26</td><td class="ui-ar">0.235416</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">78</td><td class="ui-ar">0.235406</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">90</td><td class="ui-ar">0.235391</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">0</td><td class="ui-ar">0.235376</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">98</td><td class="ui-ar">0.235358</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">66</td><td class="ui-ar">0.235350</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">72</td><td class="ui-ar">0.235349</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">50</td><td class="ui-ar">0.235343</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">16</td><td class="ui-ar">0.235337</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">7</td><td class="ui-ar">0.235325</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">8</td><td class="ui-ar">0.235310</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">59</td><td class="ui-ar">0.235302</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">70</td><td class="ui-ar">0.235287</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">63</td><td class="ui-ar">0.235287</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">53</td><td class="ui-ar">0.235282</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">75</td><td class="ui-ar">0.235280</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">54</td><td class="ui-ar">0.235279</td></tr></tbody></table></div></div></section><section class="ui-card ui-card-lift ui-c6"><div class="ui-card-head"><h2>Xác suất Đặc Biệt cao nhất</h2></div><div class="ui-card-body ui-card-flush"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th scope="col" class="ui-ar">#</th><th scope="col" class="ui-al">Số</th><th scope="col" class="ui-ar">Xác suất</th></tr></thead><tbody><tr><td class="ui-ar">1</td><td class="ui-al ui-key">85</td><td class="ui-ar">0.010064</td></tr><tr><td class="ui-ar">2</td><td class="ui-al ui-key">65</td><td class="ui-ar">0.010052</td></tr><tr><td class="ui-ar">3</td><td class="ui-al ui-key">24</td><td class="ui-ar">0.010047</td></tr><tr><td class="ui-ar">4</td><td class="ui-al ui-key">89</td><td class="ui-ar">0.010039</td></tr><tr><td class="ui-ar">5</td><td class="ui-al ui-key">97</td><td class="ui-ar">0.010035</td></tr><tr><td class="ui-ar">6</td><td class="ui-al ui-key">76</td><td class="ui-ar">0.010033</td></tr><tr><td class="ui-ar">7</td><td class="ui-al ui-key">62</td><td class="ui-ar">0.010030</td></tr><tr><td class="ui-ar">8</td><td class="ui-al ui-key">30</td><td class="ui-ar">0.010028</td></tr><tr><td class="ui-ar">9</td><td class="ui-al ui-key">8</td><td class="ui-ar">0.010028</td></tr><tr><td class="ui-ar">10</td><td class="ui-al ui-key">31</td><td class="ui-ar">0.010026</td></tr><tr><td class="ui-ar">11</td><td class="ui-al ui-key">71</td><td class="ui-ar">0.010024</td></tr><tr><td class="ui-ar">12</td><td class="ui-al ui-key">92</td><td class="ui-ar">0.010024</td></tr><tr><td class="ui-ar">13</td><td class="ui-al ui-key">48</td><td class="ui-ar">0.010023</td></tr><tr><td class="ui-ar">14</td><td class="ui-al ui-key">9</td><td class="ui-ar">0.010023</td></tr><tr><td class="ui-ar">15</td><td class="ui-al ui-key">20</td><td class="ui-ar">0.010023</td></tr><tr><td class="ui-ar">16</td><td class="ui-al ui-key">14</td><td class="ui-ar">0.010023</td></tr><tr><td class="ui-ar">17</td><td class="ui-al ui-key">22</td><td class="ui-ar">0.010020</td></tr><tr><td class="ui-ar">18</td><td class="ui-al ui-key">5</td><td class="ui-ar">0.010020</td></tr><tr><td class="ui-ar">19</td><td class="ui-al ui-key">53</td><td class="ui-ar">0.010018</td></tr><tr><td class="ui-ar">20</td><td class="ui-al ui-key">1</td><td class="ui-ar">0.010016</td></tr></tbody></table></div></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sách gợi ý (LOTO)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-21</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-22</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">-1.06737</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0.15</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validated stacked challenger blended into production</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · candidate</td><td class="ui-ar">meta_shallow</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">0.544899</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">0.903176</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">0.396686</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng Brier</td><td class="ui-ar">0.172145</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · trained_through_target_date</td><td class="ui-ar">2026-09-21</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">86, 06, 96, 26</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">86, 06, 96, 26, 78, 90 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">86, 06, 96, 26, 78, 90 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;mode&quot;: &quot;loto&quot;,
+  &quot;anchor_date&quot;: &quot;2026-09-21&quot;,
+  &quot;target_date&quot;: &quot;2026-09-22&quot;,
+  &quot;weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;effective_weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;component_availability&quot;: {
+    &quot;ml&quot;: true,
+    &quot;cau&quot;: true,
+    &quot;stat&quot;: true,
+    &quot;active&quot;: true,
+    &quot;stable&quot;: true
+  },
+  &quot;component_reasons&quot;: {
+    &quot;ml&quot;: &quot;ok&quot;,
+    &quot;cau&quot;: &quot;ok&quot;,
+    &quot;stat&quot;: &quot;ok&quot;,
+    &quot;active&quot;: &quot;ok&quot;,
+    &quot;stable&quot;: &quot;ok&quot;
+  },
+  &quot;calibration&quot;: {
+    &quot;mode&quot;: &quot;loto&quot;,
+    &quot;a&quot;: 0.1,
+    &quot;b&quot;: -1.0673690031034766,
+    &quot;temperature&quot;: 1.0,
+    &quot;active&quot;: true,
+    &quot;reason&quot;: &quot;calibration matches full five-component ensemble&quot;
+  },
+  &quot;meta&quot;: {
+    &quot;active&quot;: true,
+    &quot;trust&quot;: 0.15,
+    &quot;quality_pass&quot;: true,
+    &quot;reason&quot;: &quot;validated stacked challenger blended into production&quot;,
+    &quot;candidate&quot;: &quot;meta_shallow&quot;,
+    &quot;validation_logloss&quot;: 0.5448988033706086,
+    &quot;baseline_validation_logloss&quot;: 0.9031762149093682,
+    &quot;logloss_skill&quot;: 0.396686057077701,
+    &quot;brier_skill&quot;: 0.1721447533891941,
+    &quot;trained_through_target_date&quot;: &quot;2026-09-21&quot;
+  },
+  &quot;top4&quot;: [
+    &quot;86&quot;,
+    &quot;06&quot;,
+    &quot;96&quot;,
+    &quot;26&quot;
+  ],
+  &quot;top8&quot;: [
+    &quot;86&quot;,
+    &quot;06&quot;,
+    &quot;96&quot;,
+    &quot;26&quot;,
+    &quot;78&quot;,
+    &quot;90&quot;,
+    &quot;00&quot;,
+    &quot;98&quot;
+  ],
+  &quot;top10&quot;: [
+    &quot;86&quot;,
+    &quot;06&quot;,
+    &quot;96&quot;,
+    &quot;26&quot;,
+    &quot;78&quot;,
+    &quot;90&quot;,
+    &quot;00&quot;,
+    &quot;98&quot;,
+    &quot;66&quot;,
+    &quot;72&quot;
+  ]
+}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Danh sách gợi ý (Đặc Biệt)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Ngày neo</td><td class="ui-ar">2026-09-21</td></tr><tr><td class="ui-al ui-key">Ngày mục tiêu</td><td class="ui-ar">2026-09-22</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số áp dụng thực tế · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Học máy</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu vị trí</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Thống kê</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Thành phần có sẵn · Cầu ổn định</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Học máy</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu vị trí</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Thống kê</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Đang hoạt động</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Lý do theo thành phần · Cầu ổn định</td><td class="ui-ar">ok</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">5</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Đang hoạt động</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Hiệu chỉnh · Căn cứ</td><td class="ui-ar">calibration matches full five-component ensemble</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đang hoạt động</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Mức tin cậy</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Đạt kiểm chất lượng</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Căn cứ</td><td class="ui-ar">validation gate rejected stacked challenger</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · validation_logloss</td><td class="ui-ar">4.60513</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · baseline_validation_logloss</td><td class="ui-ar">4.60357</td></tr><tr><td class="ui-al ui-key">Siêu dữ liệu · Kỹ năng LogLoss</td><td class="ui-ar">-0.000337836</td></tr><tr><td class="ui-al ui-key">top4</td><td class="ui-ar">85, 65, 24, 89</td></tr><tr><td class="ui-al ui-key">top8</td><td class="ui-ar">85, 65, 24, 89, 97, 76 … (tổng 8)</td></tr><tr><td class="ui-al ui-key">top10</td><td class="ui-ar">85, 65, 24, 89, 97, 76 … (tổng 10)</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;mode&quot;: &quot;de&quot;,
+  &quot;anchor_date&quot;: &quot;2026-09-21&quot;,
+  &quot;target_date&quot;: &quot;2026-09-22&quot;,
+  &quot;weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;effective_weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;component_availability&quot;: {
+    &quot;ml&quot;: true,
+    &quot;cau&quot;: true,
+    &quot;stat&quot;: true,
+    &quot;active&quot;: true,
+    &quot;stable&quot;: true
+  },
+  &quot;component_reasons&quot;: {
+    &quot;ml&quot;: &quot;ok&quot;,
+    &quot;cau&quot;: &quot;ok&quot;,
+    &quot;stat&quot;: &quot;ok&quot;,
+    &quot;active&quot;: &quot;ok&quot;,
+    &quot;stable&quot;: &quot;ok&quot;
+  },
+  &quot;calibration&quot;: {
+    &quot;mode&quot;: &quot;de&quot;,
+    &quot;a&quot;: 1.0,
+    &quot;b&quot;: 0.0,
+    &quot;temperature&quot;: 5.0,
+    &quot;active&quot;: true,
+    &quot;reason&quot;: &quot;calibration matches full five-component ensemble&quot;
+  },
+  &quot;meta&quot;: {
+    &quot;active&quot;: false,
+    &quot;trust&quot;: 0.0,
+    &quot;quality_pass&quot;: false,
+    &quot;reason&quot;: &quot;validation gate rejected stacked challenger&quot;,
+    &quot;validation_logloss&quot;: 4.605128882056066,
+    &quot;baseline_validation_logloss&quot;: 4.603573629284884,
+    &quot;logloss_skill&quot;: -0.0003378359718826385
+  },
+  &quot;top4&quot;: [
+    &quot;85&quot;,
+    &quot;65&quot;,
+    &quot;24&quot;,
+    &quot;89&quot;
+  ],
+  &quot;top8&quot;: [
+    &quot;85&quot;,
+    &quot;65&quot;,
+    &quot;24&quot;,
+    &quot;89&quot;,
+    &quot;97&quot;,
+    &quot;76&quot;,
+    &quot;62&quot;,
+    &quot;30&quot;
+  ],
+  &quot;top10&quot;: [
+    &quot;85&quot;,
+    &quot;65&quot;,
+    &quot;24&quot;,
+    &quot;89&quot;,
+    &quot;97&quot;,
+    &quot;76&quot;,
+    &quot;62&quot;,
+    &quot;30&quot;,
+    &quot;08&quot;,
+    &quot;31&quot;
+  ]
+}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Trọng số (LOTO)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">xuat_xu</td><td class="ui-ar">bi_tu_choi</td></tr><tr><td class="ui-al ui-key">Xuất xứ trọng số</td><td class="ui-ar">mặc định, cổng từ chối đề bạt</td></tr><tr><td class="ui-al ui-key">Lý do</td><td class="ui-ar">biên thắng +0.0000% chưa đạt sàn 0.20%</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-21T12:55:40Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Chỉ số · LogLoss</td><td class="ui-ar">0.544893</td></tr><tr><td class="ui-al ui-key">Chỉ số · Brier</td><td class="ui-ar">0.179604</td></tr><tr><td class="ui-al ui-key">Số ngày đã dùng</td><td class="ui-ar">23</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Số kỳ đã khớp</td><td class="ui-ar">14</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Số kỳ thẩm định</td><td class="ui-ar">9</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · mac_dinh</td><td class="ui-ar">0.540739</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · dang_hieu_luc</td><td class="ui-ar">0.540739</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · ung_vien</td><td class="ui-ar">0.540739</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Lợi tương đối</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;mode&quot;: &quot;loto&quot;,
+  &quot;weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;xuat_xu&quot;: &quot;bi_tu_choi&quot;,
+  &quot;nguon&quot;: &quot;mặc định, cổng từ chối đề bạt&quot;,
+  &quot;ly_do&quot;: &quot;biên thắng +0.0000% chưa đạt sàn 0.20%&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-21T12:55:40Z&quot;,
+  &quot;window_days&quot;: 180,
+  &quot;half_life_days&quot;: 45,
+  &quot;metric&quot;: {
+    &quot;logloss&quot;: 0.5448934672027014,
+    &quot;brier&quot;: 0.1796042286520383
+  },
+  &quot;days_used&quot;: 23,
+  &quot;tham_dinh&quot;: {
+    &quot;so_ky_khop&quot;: 14,
+    &quot;so_ky_tham_dinh&quot;: 9,
+    &quot;logloss_ngoai_mau&quot;: {
+      &quot;mac_dinh&quot;: 0.5407385787786667,
+      &quot;dang_hieu_luc&quot;: 0.5407385787786667,
+      &quot;ung_vien&quot;: 0.5407385787786667
+    },
+    &quot;loi_tuong_doi&quot;: 0.0
+  }
+}</pre></details><h3 class="mt-4">Hiệu chỉnh (LOTO)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Phiên bản lược đồ</td><td class="ui-ar">7</td></tr><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-21T12:55:40Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Yêu cầu thành phần có sẵn</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">LOTO</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">0.1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">-1.06737</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Phương pháp được chọn</td><td class="ui-ar">Hiệu chỉnh tham số</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Đã so sánh phương pháp</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày huấn luyện</td><td class="ui-ar">23</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày kiểm định riêng</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;schema_version&quot;: 7,
+  &quot;mode&quot;: &quot;loto&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-21T12:55:40Z&quot;,
+  &quot;window_days&quot;: 180,
+  &quot;half_life_days&quot;: 45,
+  &quot;component_availability_required&quot;: true,
+  &quot;params&quot;: {
+    &quot;mode&quot;: &quot;loto&quot;,
+    &quot;a&quot;: 0.1,
+    &quot;b&quot;: -1.0673690031034766,
+    &quot;temperature&quot;: 1.0
+  },
+  &quot;selection&quot;: {
+    &quot;chosen&quot;: &quot;parametric&quot;,
+    &quot;selected&quot;: false,
+    &quot;brier_by_candidate&quot;: {},
+    &quot;fit_days&quot;: 23,
+    &quot;holdout_days&quot;: 0
+  }
+}</pre></details></div></section><section class="ui-card ui-c6"><div class="ui-card-head"><h2>Trọng số (Đặc Biệt)</h2></div><div class="ui-card-body"><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số ML</td><td class="ui-ar">0.25</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu</td><td class="ui-ar">0.3</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số thống kê</td><td class="ui-ar">0.2</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu đang chạy</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">Trọng số · Trọng số cầu ổn định</td><td class="ui-ar">0.125</td></tr><tr><td class="ui-al ui-key">xuat_xu</td><td class="ui-ar">bi_tu_choi</td></tr><tr><td class="ui-al ui-key">Xuất xứ trọng số</td><td class="ui-ar">mặc định, cổng từ chối đề bạt</td></tr><tr><td class="ui-al ui-key">Lý do</td><td class="ui-ar">biên thắng -0.0712% chưa đạt sàn 0.20%</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-21T12:55:47Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Chỉ số · LogLoss</td><td class="ui-ar">4.60733</td></tr><tr><td class="ui-al ui-key">Chỉ số · Brier</td><td class="ui-ar">0.990046</td></tr><tr><td class="ui-al ui-key">Số ngày đã dùng</td><td class="ui-ar">21</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Số kỳ đã khớp</td><td class="ui-ar">13</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Số kỳ thẩm định</td><td class="ui-ar">8</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · mac_dinh</td><td class="ui-ar">4.60228</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · dang_hieu_luc</td><td class="ui-ar">4.60228</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · LogLoss ngoài mẫu · ung_vien</td><td class="ui-ar">4.60555</td></tr><tr><td class="ui-al ui-key">Thẩm định ngoài mẫu · Lợi tương đối</td><td class="ui-ar">-0.000712261</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;mode&quot;: &quot;de&quot;,
+  &quot;weights&quot;: {
+    &quot;w_ml&quot;: 0.25,
+    &quot;w_cau&quot;: 0.3,
+    &quot;w_stat&quot;: 0.2,
+    &quot;w_active&quot;: 0.125,
+    &quot;w_stable&quot;: 0.125
+  },
+  &quot;xuat_xu&quot;: &quot;bi_tu_choi&quot;,
+  &quot;nguon&quot;: &quot;mặc định, cổng từ chối đề bạt&quot;,
+  &quot;ly_do&quot;: &quot;biên thắng -0.0712% chưa đạt sàn 0.20%&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-21T12:55:47Z&quot;,
+  &quot;window_days&quot;: 180,
+  &quot;half_life_days&quot;: 45,
+  &quot;metric&quot;: {
+    &quot;logloss&quot;: 4.607332238375245,
+    &quot;brier&quot;: 0.9900461102514759
+  },
+  &quot;days_used&quot;: 21,
+  &quot;tham_dinh&quot;: {
+    &quot;so_ky_khop&quot;: 13,
+    &quot;so_ky_tham_dinh&quot;: 8,
+    &quot;logloss_ngoai_mau&quot;: {
+      &quot;mac_dinh&quot;: 4.602276136687072,
+      &quot;dang_hieu_luc&quot;: 4.602276136687072,
+      &quot;ung_vien&quot;: 4.605554157303025
+    },
+    &quot;loi_tuong_doi&quot;: -0.000712260741988626
+  }
+}</pre></details><h3 class="mt-4">Hiệu chỉnh (Đặc Biệt)</h3><div class="ui-table-wrap"><table class="ui-table"><thead><tr><th class="ui-al" scope="col">Mục</th><th class="ui-ar" scope="col">Giá trị</th></tr></thead><tbody><tr><td class="ui-al ui-key">Phiên bản lược đồ</td><td class="ui-ar">7</td></tr><tr><td class="ui-al ui-key">Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Học lúc (UTC)</td><td class="ui-ar">2026-09-21T12:55:47Z</td></tr><tr><td class="ui-al ui-key">Cửa sổ (ngày)</td><td class="ui-ar">180</td></tr><tr><td class="ui-al ui-key">Chu kỳ bán rã (kỳ)</td><td class="ui-ar">45</td></tr><tr><td class="ui-al ui-key">Yêu cầu thành phần có sẵn</td><td class="ui-ar">Có</td></tr><tr><td class="ui-al ui-key">Tham số · Loại</td><td class="ui-ar">Đặc Biệt</td></tr><tr><td class="ui-al ui-key">Tham số · Số A</td><td class="ui-ar">1</td></tr><tr><td class="ui-al ui-key">Tham số · Số B</td><td class="ui-ar">0</td></tr><tr><td class="ui-al ui-key">Tham số · Nhiệt độ hiệu chỉnh</td><td class="ui-ar">5</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Phương pháp được chọn</td><td class="ui-ar">Hiệu chỉnh tham số</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Đã so sánh phương pháp</td><td class="ui-ar">Không</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày huấn luyện</td><td class="ui-ar">21</td></tr><tr><td class="ui-al ui-key">Lựa chọn hiệu chỉnh · Số ngày kiểm định riêng</td><td class="ui-ar">0</td></tr></tbody></table></div><details class="ui-raw"><summary>Xem dữ liệu gốc (JSON)</summary><pre class="ui-pre">{
+  &quot;schema_version&quot;: 7,
+  &quot;mode&quot;: &quot;de&quot;,
+  &quot;learned_at_utc&quot;: &quot;2026-09-21T12:55:47Z&quot;,
+  &quot;window_days&quot;: 180,
+  &quot;half_life_days&quot;: 45,
+  &quot;component_availability_required&quot;: true,
+  &quot;params&quot;: {
+    &quot;mode&quot;: &quot;de&quot;,
+    &quot;a&quot;: 1.0,
+    &quot;b&quot;: 0.0,
+    &quot;temperature&quot;: 5.0
+  },
+  &quot;selection&quot;: {
+    &quot;chosen&quot;: &quot;parametric&quot;,
+    &quot;selected&quot;: false,
+    &quot;brier_by_candidate&quot;: {},
+    &quot;fit_days&quot;: 21,
+    &quot;holdout_days&quot;: 0
+  }
+}</pre></details></div></section></div>
+</main><nav class="ui-dock" aria-label="Điều hướng chính"><div class="ui-dock-inner"><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tr-c-ti-p"><span class="ui-dock-ic" aria-hidden="true">◉</span><span class="ui-dock-name">Trực tiếp</span></button><div class="ui-dock-pop" id="dock-tr-c-ti-p" role="menu"><a href="live.html" role="menuitem"><span aria-hidden="true">◉</span><span>Kết quả trực tiếp</span></a><a href="index.html" role="menuitem"><span aria-hidden="true">▤</span><span>Kết quả hôm nay</span></a><a href="so-ket-qua-truyen-thong.html" role="menuitem"><span aria-hidden="true">▥</span><span>Sổ kết quả</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-th-ng-k"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Thống kê</span></button><div class="ui-dock-pop" id="dock-th-ng-k" role="menu"><a href="statistics.html" role="menuitem"><span aria-hidden="true">▦</span><span>Ma trận thống kê</span></a><a href="index.html#tan-suat-loto" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="index.html#gan-nhip" role="menuitem"><span aria-hidden="true">◷</span><span>Gan &amp; nhịp</span></a><a href="index.html#cap-lon" role="menuitem"><span aria-hidden="true">⇅</span><span>Cặp lộn &amp; bóng</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-c-u-k-o"><span class="ui-dock-ic" aria-hidden="true">⟋</span><span class="ui-dock-name">Cầu kèo</span></button><div class="ui-dock-pop" id="dock-c-u-k-o" role="menu"><a href="soi-path-loto-active.html" role="menuitem"><span aria-hidden="true">⟋</span><span>Cầu LOTO đang chạy</span></a><a href="soi-path-loto-stable.html" role="menuitem"><span aria-hidden="true">⟊</span><span>Cầu LOTO ổn định</span></a><a href="soi-path-de-active.html" role="menuitem"><span aria-hidden="true">⟍</span><span>Cầu Đặc Biệt đang chạy</span></a><a href="soi-path-de-stable.html" role="menuitem"><span aria-hidden="true">⟌</span><span>Cầu Đặc Biệt ổn định</span></a><a href="index.html#duong-cau" role="menuitem"><span aria-hidden="true">⌗</span><span>Căn cứ vị trí cầu</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-current="true" aria-haspopup="true" aria-expanded="false" aria-controls="dock-ph-ng-o-n"><span class="ui-dock-ic" aria-hidden="true">◈</span><span class="ui-dock-name">Phỏng đoán</span></button><div class="ui-dock-pop" id="dock-ph-ng-o-n" role="menu"><a href="dashboard.html" role="menuitem" aria-current="page"><span aria-hidden="true">◈</span><span>Bảng điều khiển AI/ML</span></a><a href="ml_top10_loto.html" role="menuitem"><span aria-hidden="true">①</span><span>10 số LOTO</span></a><a href="ml_top10_de.html" role="menuitem"><span aria-hidden="true">②</span><span>10 số Đặc Biệt</span></a><a href="model-quality.html" role="menuitem"><span aria-hidden="true">✓</span><span>Chất lượng mô hình</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-b-ng-c-bi-t"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Bảng Đặc Biệt</span></button><div class="ui-dock-pop" id="dock-b-ng-c-bi-t" role="menu"><a href="bang-dac-biet.html" role="menuitem"><span aria-hidden="true">▦</span><span>Theo ngày</span></a><a href="bang-dac-biet-thang.html" role="menuitem"><span aria-hidden="true">▩</span><span>Theo tháng</span></a><a href="bang-dac-biet-nam.html" role="menuitem"><span aria-hidden="true">▨</span><span>Theo năm</span></a><a href="chu-ky-dac-biet.html" role="menuitem"><span aria-hidden="true">◷</span><span>Chu kỳ Đặc Biệt</span></a><a href="cau-dac-biet-theo-bo-so.html" role="menuitem"><span aria-hidden="true">⌗</span><span>Cầu Đặc Biệt theo bộ số</span></a><a href="giai-db-ngay-mai.html" role="menuitem"><span aria-hidden="true">◐</span><span>Giải Đặc Biệt ngày mai</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-loto-chi-ti-t"><span class="ui-dock-ic" aria-hidden="true">◧</span><span class="ui-dock-name">LOTO chi tiết</span></button><div class="ui-dock-pop" id="dock-loto-chi-ti-t" role="menu"><a href="tan-suat-loto.html" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="tan-suat-cap-loto.html" role="menuitem"><span aria-hidden="true">⇅</span><span>Tần suất cặp LOTO</span></a><a href="cap-lon-loto.html" role="menuitem"><span aria-hidden="true">🔁</span><span>Cặp lộn LOTO</span></a><a href="cau-giai-dac-biet.html" role="menuitem"><span aria-hidden="true">🎯</span><span>Cầu giải Đặc Biệt</span></a><a href="giai-dac-biet-theo-tong.html" role="menuitem"><span aria-hidden="true">Σ</span><span>Đặc Biệt theo tổng</span></a><a href="dau-duoi-loto.html" role="menuitem"><span aria-hidden="true">⊞</span><span>Đầu đuôi LOTO</span></a><a href="lo-gan.html" role="menuitem"><span aria-hidden="true">⏳</span><span>Lô gan</span></a><a href="thong-ke-tong-hop.html" role="menuitem"><span aria-hidden="true">◫</span><span>Thống kê tổng hợp</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tool-n-ng-cao"><span class="ui-dock-ic" aria-hidden="true">⚗</span><span class="ui-dock-name">Tool nâng cao</span></button><div class="ui-dock-pop" id="dock-tool-n-ng-cao" role="menu"><a href="research-lab.html" role="menuitem"><span aria-hidden="true">⚗</span><span>Phòng nghiên cứu</span></a><a href="index.html#backtest" role="menuitem"><span aria-hidden="true">⟳</span><span>Kiểm định AI/ML</span></a></div></div></div></nav><script>(function(){var d=document.querySelector(".ui-dock");if(!d)return;document.documentElement.classList.add("ui-js");var gs=Array.prototype.slice.call(d.querySelectorAll(".ui-dock-group"));function set(g,o){g.classList.toggle("ui-open",o);var b=g.querySelector(".ui-dock-btn");if(b)b.setAttribute("aria-expanded",o?"true":"false")}function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}d.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ui-dock-btn");if(!b)return;var g=b.closest(".ui-dock-group");if(!g)return;var o=!g.classList.contains("ui-open");shut(g);set(g,o)});document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".ui-dock")))shut(null)});document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;var g=d.querySelector(".ui-dock-group.ui-open");if(!g)return;var b=g.querySelector(".ui-dock-btn");shut(null);if(b)b.focus()});d.addEventListener("focusout",function(e){if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})})();</script></div>
 </body>
 </html>

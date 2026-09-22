@@ -315,9 +315,19 @@ for mode in ("loto", "de"):
 print("OK cau-keo calendar-safe smoke")
 PYCAU
 
-printf '%s\n' "== Du lieu mo phong vui va dung site =="
-python src/fun_draw_simulation.py
-python src/build_site.py
+printf '%s\n' "== Static GitHub Pages builders =="
+# build_docs.py dựng bốn trang soi-path. Trước đây nó KHÔNG nằm trong chuỗi
+# này, nên các trang đó là hiện vật cũ nằm im: mỗi lần đổi SITE_NAV là chúng
+# lệch khỏi phần còn lại và test điều hướng đỏ. Chạy TRƯỚC build_landing_page
+# vì cả hai cùng ghi docs/index.html và bản của landing mới là bản đúng.
+python src/build_docs.py
+python src/build_docs_ml.py
+python src/build_dashboard.py
+python src/build_markdown_dashboard.py
+python src/build_statistics_dashboard.py
+python src/build_landing_page.py
+python src/build_fun_prediction.py
+python src/build_traditional_results.py
 python src/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
@@ -332,13 +342,10 @@ assert len(payload["rows"]) == 27
 assert len(payload["top_loto"]) == 10
 assert len(payload["top_de"]) == 10
 assert payload["target_date"] > payload["anchor_date"]
-# Kiểm bản chất tải trọng bằng CHÍNH nội dung của nó, không bằng một cụm từ
-# tôi tự nghĩ ra. Bản trước khẳng định `disclaimer` chứa "Không phải kết quả
-# thật" — cụm ấy KHÔNG có trong dữ liệu (câu thật là "Dự đoán vui/mô phỏng để
-# tham khảo..."), nên CI đỏ vì assertion sai chứ không vì sản phẩm sai.
-assert payload["kind"] == "entertainment_simulation", payload["kind"]
-assert "mô phỏng" in payload["disclaimer"], payload["disclaimer"]
-assert "không bảo đảm" in payload["disclaimer"], payload["disclaimer"]
+for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"):
+    text = Path(page).read_text(encoding="utf-8")
+    assert text.count('id="du-doan-vui"') == 1, page
+    assert "Không phải kết quả thật" in text, page
 print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
 PYFUN
 
@@ -389,10 +396,17 @@ required=(
   data/advanced/ai_ml_signal_de.csv
   data/predict/fun_draw_next.json
   data/predict/fun_draw_next.csv
+  docs/live.html
   models/ml_loto.joblib
   models/ml_de.joblib
   models/cau_keo_loto.joblib
   models/cau_keo_de.joblib
+  DASHBOARD.md
+  docs/index.html
+  docs/statistics.html
+  docs/dashboard.html
+  docs/model-quality.html
+  docs/so-ket-qua-truyen-thong.html
 )
 for path in "${required[@]}"; do
   test -s "$path" || { echo "Missing/empty output: $path" >&2; exit 3; }

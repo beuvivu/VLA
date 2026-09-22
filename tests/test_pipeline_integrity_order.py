@@ -18,3 +18,12 @@ def test_pipeline_treats_canonical_validation_as_hard_failure() -> None:
     start = text.index('"src/validate_data.py"')
     block = text[start : start + 260]
     assert "allow_fail=False" in block
+
+
+def test_pipeline_treats_simulation_refresh_as_hard_failure() -> None:
+    text = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(
+        encoding="utf-8"
+    )
+    marker = '_py("src/build_fun_prediction.py")'
+    start = text.index(marker)
+    assert "allow_fail=False" in text[start : start + 180]

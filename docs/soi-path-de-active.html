@@ -1,62 +1,160 @@
-<!DOCTYPE html>
-<html lang="vi" data-theme-state="system">
+<!doctype html>
+<html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;; img-src &#x27;self&#x27; data:; style-src &#x27;self&#x27;; script-src &#x27;self&#x27;; font-src &#x27;self&#x27;; connect-src &#x27;self&#x27;">
-<meta name="color-scheme" content="light dark">
-<meta name="description" content="Các đường đi hoạt động giữa hai vị trí qua các kỳ, kèm đường cơ sở.">
-<title>Path Đặc Biệt — hoạt động · VLA</title>
-<link rel="stylesheet" href="assets/vla.css"><script src="assets/vla-shell.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'self'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'" />
+  <meta name="referrer" content="no-referrer" />
+  <title>SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</title>
+  <link rel="preload" href="assets/ui.css" as="style" />
+  <link rel="preload" href="assets/ui-visual-system.css" as="style" />
+  <link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/ui.css" />
+  <style>
+    :root{
+      --bg:#F4F5FF;--card:rgba(255,255,255,.90);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;
+      --hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eef2ff;
+      --ui-bg:#F4F5FF;--ui-surface:rgba(255,255,255,.94);--ui-surface-2:#f8fafc;
+      --ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-ink-muted:#64748b;
+      --ui-border:#dbe3f0;--ui-border-strong:#cbd5e1;
+      --ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+      --ui-on-brand:#ffffff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--ui-font);background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);color:var(--text)}
+    a{color:#4338ca;text-decoration:none}a:hover{text-decoration:underline}
+    .path-shell{max-width:1280px;margin:0 auto;padding:clamp(16px,2.4vw,28px);padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 36px)}
+    .path-hero{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:18px 20px;border:1px solid rgba(255,255,255,.96);border-radius:22px;background:rgba(255,255,255,.88);box-shadow:0 12px 36px rgba(15,23,42,.06);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .path-hero h1{letter-spacing:-.03em}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.96);border-radius:20px;padding:16px;box-shadow:0 10px 32px rgba(15,23,42,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+    .kpi{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid #dbe3f0;border-radius:999px;padding:6px 10px;font-size:12px;color:#475569;font-weight:700}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;color:#475569}
+    .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+    .dot.hit{background:var(--hit)}.dot.hitde{background:var(--hitde)}.dot.none{background:#94a3b8}
+    table{width:100%;border-collapse:separate;border-spacing:0;background:transparent;font-variant-numeric:tabular-nums}
+    th,td{border-bottom:1px solid #e2e8f0;padding:9px 8px;text-align:center;font-size:12px}
+    th{position:sticky;top:0;background:rgba(248,250,252,.98);color:#334155;z-index:3}
+    td{color:#0f172a}td.left,th.left{text-align:left}tr:hover td{background:#f8faff}
+    .cell{display:inline-flex;gap:6px;align-items:center;justify-content:center;min-width:42px;padding:5px 7px;border-radius:9px;border:1px solid #dbe3f0;background:#fff;color:#0f172a}
+    .cell.hit{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+    .cell.hitde{background:#FEE2E2;border-color:#f87171;color:#DC2626;font-weight:800}
+    .cell.none{background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.34) 7px 8px);color:#475569}
+    .small{font-size:11px;color:var(--muted);line-height:1.5}
+    .btn{display:inline-block;background:#4f46e5;color:#fff;padding:8px 11px;border-radius:10px;border:1px solid #4f46e5;font-weight:700}
+    .btn:hover{text-decoration:none;background:#4338ca}.btn.secondary{background:#fff;color:#334155;border-color:#dbe3f0}.btn.secondary:hover{background:#eef2ff}
+    .path-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr);gap:14px;align-items:stretch;margin-top:14px}
+    .path-overview>.card{display:flex;flex-direction:column;min-height:0}
+    .quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+    .quick-pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;border:1px solid #dbe3f0;border-radius:12px;background:#fff;color:var(--text);text-decoration:none;transition:transform .16s ease,border-color .16s ease,background .16s ease}
+    .quick-pick:hover{background:#eef2ff;border-color:#a5b4fc;transform:translateY(-1px);text-decoration:none}
+    .quick-number{font-size:16px;font-weight:800;letter-spacing:.04em}.quick-meta{font-size:10px;color:var(--muted);text-align:right;line-height:1.35}
+    .empty-state{margin-top:10px;padding:10px;border:1px dashed #cbd5e1;border-radius:10px;color:var(--muted);font-size:12px;background:#f8fafc}
+    .pick-scroll{flex:1 1 auto;min-height:0;max-height:26rem;overflow:auto;border:1px solid #e2e8f0;border-radius:12px}
+    .path-matrix-card{margin-top:14px;overflow:hidden}
+    .path-table-scroll{margin-top:10px;max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid #dbe3f0;border-radius:14px;background:#fff}
+    .path-table-scroll table{margin:0;min-width:max-content}.path-table-scroll th{top:0;box-shadow:0 1px 0 #dbe3f0}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .path-footer{margin-top:14px;color:var(--muted);padding-bottom:8px}
+    @media(max-width:979px){.path-overview{grid-template-columns:1fr}.path-table-scroll{max-height:58vh}}
+    @media(max-width:640px){.path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 32px)}.path-hero{padding:14px;border-radius:16px}.card{border-radius:16px;padding:13px}.quick-grid{grid-template-columns:1fr}.kpi{width:100%}.chip{font-size:11px}}
+  </style>
+<style id="ui-targeted-ui-refinement">
+.path-page{--bg:#F4F5FF;--card:rgba(255,255,255,.88);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;--hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eef2ff;--ui-bg:#F4F5FF;--ui-surface:rgba(255,255,255,.92);--ui-surface-2:#f8fafc;--ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-border:#dbe3f0;--ui-brand:#4f46e5;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;min-height:100vh;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2rem);background:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 48%,#E8ECFF 100%);color:#0f172a}
+.path-page a{color:#4338ca}
+.path-page .path-shell{max-width:1280px;margin-inline:auto;padding:clamp(1rem,2.5vw,2rem);padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.25rem)}
+.path-page .path-hero{padding:1.15rem 1.2rem;border:1px solid rgba(255,255,255,.94);border-radius:20px;background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.path-page .path-hero h1{font-size:clamp(1.3rem,2.5vw,2rem)!important;letter-spacing:-.03em;color:#0f172a}
+.path-page .path-overview{gap:1rem;margin-top:1rem!important;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr)}
+.path-page .card{border-radius:20px;border-color:rgba(255,255,255,.94);background:rgba(255,255,255,.9);box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.path-page .card b,.path-page .quick-number{color:#0f172a}.path-page .small{color:#64748b}.path-page .chip{background:#eef2ff;border-color:#dbe3f0;color:#475569}
+.path-page .btn{background:#4f46e5;color:#fff;border-color:#4f46e5}.path-page .btn.secondary{background:#fff;color:#334155;border-color:#dbe3f0}
+.path-page .quick-pick{min-height:3.15rem;border-radius:14px;background:#fff;border-color:#dbe3f0;color:#0f172a}.path-page .quick-pick:hover{background:#eef2ff;border-color:#a5b4fc}
+.path-page th{background:rgba(248,250,252,.98);color:#334155}.path-page td{color:#0f172a;border-color:#e2e8f0}.path-page tr:hover td{background:#f8faff}
+.path-page .cell{background:#fff;border-color:#dbe3f0;color:#0f172a}.path-page .cell.none{background-color:#E2E8F0;background-image:repeating-linear-gradient(135deg,transparent 0 7px,rgba(156,163,175,.32) 7px 8px);color:#475569}.path-page .cell.hit{background:#fff7ed;border-color:#fdba74;color:#9a3412}.path-page .cell.hitde{background:#FEE2E2;border-color:#f87171;color:#DC2626;font-weight:800}
+.path-page .path-table-scroll{max-height:min(66vh,52rem);overflow:auto;overscroll-behavior:contain;border:1px solid #dbe3f0;border-radius:14px;background:#fff}
+.path-page .path-table-scroll table{margin:0}.path-page .path-table-scroll th{position:sticky;top:0;z-index:3;box-shadow:0 1px 0 #dbe3f0}
+@media(max-width:979px){.path-page .path-overview{grid-template-columns:1fr}.path-page .path-table-scroll{max-height:58vh}}
+@media(max-width:640px){.path-page .path-shell{padding:12px 12px calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.5rem)}.path-page .path-hero{padding:.9rem;border-radius:16px}.path-page .card{border-radius:16px;padding:12px}.path-page .quick-grid{grid-template-columns:1fr 1fr}}
+</style>
+<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
+<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
 </head>
-<body>
-<a class="vla-skip-link" href="#vla-content">Bỏ qua điều hướng, tới nội dung</a>
-<div class="vla-app">
-<aside id="vla-sidebar" class="vla-sidebar" data-open="false">
-  <div class="vla-sidebar-brand">
-    <span class="vla-brand-mark" aria-hidden="true">VLA</span>
-    <span class="vla-brand-text">
-      <span class="vla-brand-name">Phân tích XSMB</span>
-      <span class="vla-brand-sub">Thống kê &amp; xác suất</span>
-    </span>
-    <button type="button" class="vla-btn vla-btn--icon vla-menu-button" data-vla-nav-close>
-      <svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6.75 6.75 10.5 10.5M17.25 6.75 6.75 17.25"/></svg><span class="vla-visually-hidden">Đóng điều hướng</span>
-    </button>
-  </div>
-  <nav class="vla-sidebar-scroll" aria-label="Điều hướng chính">
-    <details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.25 9.75V20.25h13.5V9.75"/><path d="M9.75 20.25v-6h4.5v6"/></svg><span class="vla-nav-group-label">Tổng quan</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="index.html" title="Điểm vào, số liệu nổi bật của kỳ mới nhất">Trang chủ</a></li><li><a class="vla-nav-link" href="dashboard.html" title="Dự đoán kỳ tới, trọng số đang hiệu lực, hiệu chuẩn">Bảng điều khiển</a></li><li><a class="vla-nav-link" href="thong-ke-tong-hop.html" title="Tổng hợp mọi bảng thống kê trong một trang">Thống kê tổng hợp</a></li><li><a class="vla-nav-link" href="statistics.html" title="Ma trận thống kê và tần suất theo nhiều cửa sổ">Bảng thống kê</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 4.5h6a2.25 2.25 0 0 1 2.25 2.25V21a1.5 1.5 0 0 0-1.5-1.5H4.5z"/><path d="M19.5 4.5h-6a2.25 2.25 0 0 0-2.25 2.25V21a1.5 1.5 0 0 1 1.5-1.5h6.75z"/></svg><span class="vla-nav-group-label">Kết quả</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="live.html" title="Kết quả đang về của kỳ hôm nay">Trực tiếp</a></li><li><a class="vla-nav-link" href="so-ket-qua-truyen-thong.html" title="Bảng kết quả theo lối sổ giấy, kèm chục và đơn vị">Sổ kết quả truyền thống</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3.75 2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.77l-5.1 2.68.98-5.68L3.75 9.75l5.7-.83z"/></svg><span class="vla-nav-group-label">Đặc Biệt</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="bang-dac-biet.html" title="Giải Đặc Biệt theo ngày">Bảng Đặc Biệt</a></li><li><a class="vla-nav-link" href="bang-dac-biet-thang.html" title="Giải Đặc Biệt gom theo tháng">Bảng Đặc Biệt theo tháng</a></li><li><a class="vla-nav-link" href="bang-dac-biet-nam.html" title="Giải Đặc Biệt gom theo năm">Bảng Đặc Biệt theo năm</a></li><li><a class="vla-nav-link" href="cau-giai-dac-biet.html" title="Quan hệ giữa các kỳ liền nhau của giải Đặc Biệt">Cầu giải Đặc Biệt</a></li><li><a class="vla-nav-link" href="cau-dac-biet-theo-bo-so.html" title="Cầu Đặc Biệt nhóm theo bộ số">Cầu Đặc Biệt theo bộ số</a></li><li><a class="vla-nav-link" href="chu-ky-dac-biet.html" title="Khoảng cách giữa hai lần về của cùng một số">Chu kỳ Đặc Biệt</a></li><li><a class="vla-nav-link" href="giai-dac-biet-theo-tong.html" title="Giải Đặc Biệt nhóm theo tổng hai chữ số cuối">Đặc Biệt theo tổng</a></li><li><a class="vla-nav-link" href="giai-db-ngay-mai.html" title="Thống kê hướng tới kỳ chưa mở">Đặc Biệt kỳ tới</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 3.75h16.5v16.5H3.75z"/><path d="M9.25 3.75v16.5M14.75 3.75v16.5M3.75 9.25h16.5M3.75 14.75h16.5"/></svg><span class="vla-nav-group-label">Lô tô</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="tan-suat-loto.html" title="Số lần về của từng con trong nhiều cửa sổ">Tần suất lô tô</a></li><li><a class="vla-nav-link" href="tan-suat-cap-loto.html" title="Số lần hai con cùng về trong một kỳ">Tần suất cặp lô tô</a></li><li><a class="vla-nav-link" href="cap-lon-loto.html" title="Các cặp có tần suất đồng hiện cao nhất">Cặp lớn lô tô</a></li><li><a class="vla-nav-link" href="dau-duoi-loto.html" title="Phân bố theo chữ số đầu và chữ số cuối">Đầu đuôi lô tô</a></li><li><a class="vla-nav-link" href="lo-gan.html" title="Số kỳ liên tiếp một con chưa về">Lô gan</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5.25a3 3 0 0 0-5.63 1.02A2.63 2.63 0 0 0 5.25 12a2.63 2.63 0 0 0 1.5 4.73A3 3 0 0 0 12 18.75z"/><path d="M12 5.25a3 3 0 0 1 5.63 1.02A2.63 2.63 0 0 1 18.75 12a2.63 2.63 0 0 1-1.5 4.73A3 3 0 0 1 12 18.75z"/><path d="M12 5.25v13.5"/></svg><span class="vla-nav-group-label">Dự đoán &amp; Mô hình</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="ml_top10_loto.html" title="Mười con lô tô có xác suất mô hình cao nhất">Top 10 lô tô (ML)</a></li><li><a class="vla-nav-link" href="ml_top10_de.html" title="Mười con Đặc Biệt có xác suất mô hình cao nhất">Top 10 Đặc Biệt (ML)</a></li><li><a class="vla-nav-link" href="model-quality.html" title="Hiệu chuẩn, độ nhọn, phân rã Murphy, kỹ năng so đường cơ sở">Chất lượng mô hình</a></li></ul></details><details class="vla-nav-group" open><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.25"/><circle cx="18" cy="18" r="2.25"/><path d="M8.25 6h4.5a3 3 0 0 1 3 3v6"/></svg><span class="vla-nav-group-label">Soi path</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="soi-path-loto-stable.html" title="Đường đi ổn định của lô tô qua các kỳ">Path lô tô — ổn định</a></li><li><a class="vla-nav-link" href="soi-path-loto-active.html" title="Đường đi đang hoạt động của lô tô">Path lô tô — hoạt động</a></li><li><a class="vla-nav-link" href="soi-path-de-stable.html" title="Đường đi ổn định của giải Đặc Biệt">Path Đặc Biệt — ổn định</a></li><li><a class="vla-nav-link" href="soi-path-de-active.html" aria-current="page" title="Đường đi đang hoạt động của giải Đặc Biệt">Path Đặc Biệt — hoạt động</a></li></ul></details><details class="vla-nav-group"><summary><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.75 3.75h4.5v4.19l4.13 8.26A2.25 2.25 0 0 1 16.37 19.5H7.63a2.25 2.25 0 0 1-2.01-3.3l4.13-8.26z"/><path d="M6.9 13.5h10.2"/></svg><span class="vla-nav-group-label">Nghiên cứu</span><svg class="vla-icon vla-nav-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6.75 5.25 5.25L9 17.25"/></svg></summary><ul class="vla-nav-list"><li><a class="vla-nav-link" href="research-lab.html" title="Quét cầu, kiểm định đa giả thuyết, cổng nghiên cứu">Phòng nghiên cứu</a></li></ul></details>
-  </nav>
-  <div class="vla-sidebar-foot">
-    Mọi số liệu là THỐNG KÊ MÔ TẢ, không phải dự đoán có giá trị kỳ vọng dương.
-  </div>
-</aside>
-<div id="vla-backdrop" class="vla-backdrop" data-open="false"></div>
-<div id="vla-main" class="vla-main">
-  <header class="vla-topbar">
-    <button type="button" class="vla-btn vla-btn--icon vla-menu-button" data-vla-nav-toggle
-            aria-expanded="false" aria-controls="vla-sidebar">
-      <svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/></svg><span class="vla-visually-hidden">Mở điều hướng</span>
-    </button>
-    <div class="vla-topbar-title">
-      <span class="vla-topbar-context">Soi path</span>
+<body data-ui-page="soi-path-de-active" class="ui-app ui-dock-space path-page">
+<div class="wrap path-shell">
+  <div class="top path-hero">
+    <div>
+      <h1 style="margin:0;font-size:clamp(20px,3vw,30px)">SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</h1>
+      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-09-21</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
     </div>
-    <div class="vla-topbar-actions"><button type="button" class="vla-btn vla-btn--icon" data-vla-theme-toggle aria-describedby="vla-theme-live"><span class="vla-theme-label vla-theme-label--system"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.75 5.25h16.5v10.5H3.75z"/><path d="M8.25 20.25h7.5M12 15.75v4.5"/></svg></span><span class="vla-theme-label vla-theme-label--light"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.13"/><path d="M12 2.25v2.25M12 19.5v2.25M2.25 12H4.5M19.5 12h2.25M5.11 5.11l1.59 1.59M17.3 17.3l1.59 1.59M18.89 5.11 17.3 6.7M6.7 17.3 5.11 18.89"/></svg></span><span class="vla-theme-label vla-theme-label--dark"><svg class="vla-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.25 14.62A8.63 8.63 0 0 1 9.38 3.75a8.63 8.63 0 1 0 10.87 10.87z"/></svg></span><span class="vla-visually-hidden">Đổi chủ đề: theo hệ thống, sáng, tối</span></button><span id="vla-theme-live" class="vla-visually-hidden" role="status" aria-live="polite"></span></div>
-  </header>
-  <main id="vla-content" class="vla-content" tabindex="-1">
-    <div class="vla-container vla-container--wide">
-      <nav class="vla-breadcrumb" aria-label="Đường dẫn"><ol class="vla-breadcrumb-list"><li><a href="index.html">Trang chủ</a></li><li class="vla-breadcrumb-sep" aria-hidden="true">/</li><li>Soi path</li><li class="vla-breadcrumb-sep" aria-hidden="true">/</li><li aria-current="page">Path Đặc Biệt — hoạt động</li></ol></nav>
-      <div class="vla-page-head">
-        <div class="vla-page-head-text">
-          <h1 class="vla-page-title">Path Đặc Biệt — hoạt động</h1>
-          <p class="vla-page-sub">Các đường đi hoạt động giữa hai vị trí qua các kỳ, kèm đường cơ sở.</p>
-        </div>
-        
-      </div>
-      <aside class="vla-disclaimer" role="note"><span class="vla-disclaimer-icon"><svg class="vla-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.75 3.75h4.5v4.19l4.13 8.26A2.25 2.25 0 0 1 16.37 19.5H7.63a2.25 2.25 0 0 1-2.01-3.3l4.13-8.26z"/><path d="M6.9 13.5h10.2"/></svg></span><span>Mọi số liệu ở đây là THỐNG KÊ MÔ TẢ trên dữ liệu lịch sử. Không phải dự đoán có giá trị kỳ vọng dương, và không bảo đảm kết quả tương lai.</span></aside><div class="vla-state"><span class="vla-state-icon"><svg class="vla-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4.5 6h15v13.5h-15z"/><path d="M4.5 10.5h15M8.25 3.75V6M15.75 3.75V6"/></svg></span><p class="vla-state-title">Chưa có đường path nào</p><p class="vla-state-text">Nguồn: paths_de_active.csv</p></div>
+    <div class="kpi">
+      <span class="chip">Màu đỏ: về Đặc Biệt</span>
+      <span class="chip">Màu cam: loto đã về</span>
+      <span class="chip">Gợi ý ô: độ trễ + vị trí dữ liệu gốc</span>
     </div>
-  </main>
-</div>
-</div>
+  </div>
 
+  <div class="grid path-overview" style="margin-top:12px">
+    <div class="card">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện (Đang chạy).</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn secondary" href="soi-path-de-stable.html">Xem Ổn định (Đặc Biệt)</a>
+          <a class="btn secondary" href="index.html">Trang tổng hợp</a>
+        </div>
+      </div>
+      <div class="pick-scroll" style="margin-top:10px">
+        <table>
+          <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
+          <tbody>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <b>Chọn nhanh</b>
+      <div class="small" style="margin-top:6px">Trang tĩnh, dữ liệu dựng sẵn.</div>
+      <div class="legend">
+        <span><span class="dot hitde"></span>Về Đặc Biệt</span>
+        <span><span class="dot hit"></span>Về loto</span>
+        <span><span class="dot none"></span>Không về</span>
+      </div>
+
+      <div class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày neo này, nên chưa có danh sách chọn nhanh.</div>
+
+      <div style="margin-top:10px" class="small">
+        Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
+      </div>
+    </div>
+  </div>
+
+  <div class="card path-matrix-card" style="margin-top:12px; overflow:hidden">
+    <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
+    <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
+
+    <div class="ui-empty" role="status">
+      <span class="ui-empty-icon" aria-hidden="true">◌</span>
+      <h3>Hôm nay không có đường cầu đang chạy nào</h3>
+
+      <p>Đây là trạng thái bình thường, không phải lỗi dữ liệu. Bộ quét đã chạy đủ và kết luận không đường cầu nào đạt ngưỡng 3 nhịp liên tiếp.</p>
+      <div class="ui-empty-why">
+
+        <p style="margin:0 0 .5rem">Với Đặc Biệt, tỉ lệ trúng của một con là <b>1.0%</b>, nên xác suất một đường cầu trúng 3 kỳ liên tiếp chỉ khoảng <b>0.000100%</b>. Rỗng là kết quả thường gặp, và hạ ngưỡng để “có dữ liệu” sẽ tạo ra tín hiệu giả.</p>
+
+        <p style="margin:0">Trang <a href="soi-path-de-stable.html">Ổn định</a> hiện có <b>325</b> đường cầu đủ điều kiện.</p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="small path-footer" style="margin-top:14px;color:var(--muted)">
+    Được tạo bởi <span class="mono">src/build_docs.py</span> · Nguồn dữ liệu: thu thập cục bộ, có dự phòng nhiều nguồn.
+  </div>
+</div>
+<nav class="ui-dock" aria-label="Điều hướng chính"><div class="ui-dock-inner"><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tr-c-ti-p"><span class="ui-dock-ic" aria-hidden="true">◉</span><span class="ui-dock-name">Trực tiếp</span></button><div class="ui-dock-pop" id="dock-tr-c-ti-p" role="menu"><a href="live.html" role="menuitem"><span aria-hidden="true">◉</span><span>Kết quả trực tiếp</span></a><a href="index.html" role="menuitem"><span aria-hidden="true">▤</span><span>Kết quả hôm nay</span></a><a href="so-ket-qua-truyen-thong.html" role="menuitem"><span aria-hidden="true">▥</span><span>Sổ kết quả</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-th-ng-k"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Thống kê</span></button><div class="ui-dock-pop" id="dock-th-ng-k" role="menu"><a href="statistics.html" role="menuitem"><span aria-hidden="true">▦</span><span>Ma trận thống kê</span></a><a href="index.html#tan-suat-loto" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="index.html#gan-nhip" role="menuitem"><span aria-hidden="true">◷</span><span>Gan &amp; nhịp</span></a><a href="index.html#cap-lon" role="menuitem"><span aria-hidden="true">⇅</span><span>Cặp lộn &amp; bóng</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-current="true" aria-haspopup="true" aria-expanded="false" aria-controls="dock-c-u-k-o"><span class="ui-dock-ic" aria-hidden="true">⟋</span><span class="ui-dock-name">Cầu kèo</span></button><div class="ui-dock-pop" id="dock-c-u-k-o" role="menu"><a href="soi-path-loto-active.html" role="menuitem"><span aria-hidden="true">⟋</span><span>Cầu LOTO đang chạy</span></a><a href="soi-path-loto-stable.html" role="menuitem"><span aria-hidden="true">⟊</span><span>Cầu LOTO ổn định</span></a><a href="soi-path-de-active.html" role="menuitem" aria-current="page"><span aria-hidden="true">⟍</span><span>Cầu Đặc Biệt đang chạy</span></a><a href="soi-path-de-stable.html" role="menuitem"><span aria-hidden="true">⟌</span><span>Cầu Đặc Biệt ổn định</span></a><a href="index.html#duong-cau" role="menuitem"><span aria-hidden="true">⌗</span><span>Căn cứ vị trí cầu</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-ph-ng-o-n"><span class="ui-dock-ic" aria-hidden="true">◈</span><span class="ui-dock-name">Phỏng đoán</span></button><div class="ui-dock-pop" id="dock-ph-ng-o-n" role="menu"><a href="dashboard.html" role="menuitem"><span aria-hidden="true">◈</span><span>Bảng điều khiển AI/ML</span></a><a href="ml_top10_loto.html" role="menuitem"><span aria-hidden="true">①</span><span>10 số LOTO</span></a><a href="ml_top10_de.html" role="menuitem"><span aria-hidden="true">②</span><span>10 số Đặc Biệt</span></a><a href="model-quality.html" role="menuitem"><span aria-hidden="true">✓</span><span>Chất lượng mô hình</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-b-ng-c-bi-t"><span class="ui-dock-ic" aria-hidden="true">▦</span><span class="ui-dock-name">Bảng Đặc Biệt</span></button><div class="ui-dock-pop" id="dock-b-ng-c-bi-t" role="menu"><a href="bang-dac-biet.html" role="menuitem"><span aria-hidden="true">▦</span><span>Theo ngày</span></a><a href="bang-dac-biet-thang.html" role="menuitem"><span aria-hidden="true">▩</span><span>Theo tháng</span></a><a href="bang-dac-biet-nam.html" role="menuitem"><span aria-hidden="true">▨</span><span>Theo năm</span></a><a href="chu-ky-dac-biet.html" role="menuitem"><span aria-hidden="true">◷</span><span>Chu kỳ Đặc Biệt</span></a><a href="cau-dac-biet-theo-bo-so.html" role="menuitem"><span aria-hidden="true">⌗</span><span>Cầu Đặc Biệt theo bộ số</span></a><a href="giai-db-ngay-mai.html" role="menuitem"><span aria-hidden="true">◐</span><span>Giải Đặc Biệt ngày mai</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-loto-chi-ti-t"><span class="ui-dock-ic" aria-hidden="true">◧</span><span class="ui-dock-name">LOTO chi tiết</span></button><div class="ui-dock-pop" id="dock-loto-chi-ti-t" role="menu"><a href="tan-suat-loto.html" role="menuitem"><span aria-hidden="true">◧</span><span>Tần suất LOTO</span></a><a href="tan-suat-cap-loto.html" role="menuitem"><span aria-hidden="true">⇅</span><span>Tần suất cặp LOTO</span></a><a href="cap-lon-loto.html" role="menuitem"><span aria-hidden="true">🔁</span><span>Cặp lộn LOTO</span></a><a href="cau-giai-dac-biet.html" role="menuitem"><span aria-hidden="true">🎯</span><span>Cầu giải Đặc Biệt</span></a><a href="giai-dac-biet-theo-tong.html" role="menuitem"><span aria-hidden="true">Σ</span><span>Đặc Biệt theo tổng</span></a><a href="dau-duoi-loto.html" role="menuitem"><span aria-hidden="true">⊞</span><span>Đầu đuôi LOTO</span></a><a href="lo-gan.html" role="menuitem"><span aria-hidden="true">⏳</span><span>Lô gan</span></a><a href="thong-ke-tong-hop.html" role="menuitem"><span aria-hidden="true">◫</span><span>Thống kê tổng hợp</span></a></div></div><div class="ui-dock-group"><button class="ui-dock-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="dock-tool-n-ng-cao"><span class="ui-dock-ic" aria-hidden="true">⚗</span><span class="ui-dock-name">Tool nâng cao</span></button><div class="ui-dock-pop" id="dock-tool-n-ng-cao" role="menu"><a href="research-lab.html" role="menuitem"><span aria-hidden="true">⚗</span><span>Phòng nghiên cứu</span></a><a href="index.html#backtest" role="menuitem"><span aria-hidden="true">⟳</span><span>Kiểm định AI/ML</span></a></div></div></div></nav><script>(function(){var d=document.querySelector(".ui-dock");if(!d)return;document.documentElement.classList.add("ui-js");var gs=Array.prototype.slice.call(d.querySelectorAll(".ui-dock-group"));function set(g,o){g.classList.toggle("ui-open",o);var b=g.querySelector(".ui-dock-btn");if(b)b.setAttribute("aria-expanded",o?"true":"false")}function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}d.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".ui-dock-btn");if(!b)return;var g=b.closest(".ui-dock-group");if(!g)return;var o=!g.classList.contains("ui-open");shut(g);set(g,o)});document.addEventListener("click",function(e){if(!(e.target.closest&&e.target.closest(".ui-dock")))shut(null)});document.addEventListener("keydown",function(e){if(e.key!=="Escape")return;var g=d.querySelector(".ui-dock-group.ui-open");if(!g)return;var b=g.querySelector(".ui-dock-btn");shut(null);if(b)b.focus()});d.addEventListener("focusout",function(e){if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})})();</script>
 </body>
 </html>

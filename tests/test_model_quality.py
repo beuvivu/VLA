@@ -7,12 +7,14 @@ con số tính đúng, và hình vẽ mô tả đúng con số ấy.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
+import build_model_quality as page
 import model_quality as mq
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -156,3 +158,79 @@ def test_ensemble_renormalizes_weights_over_available_components_only() -> None:
     assert probabilities[0][0] == pytest.approx(0.5 / 0.6 * 0.25 + 0.1 / 0.6 * 0.10)
 
 
+def test_skill_chart_pins_off_scale_points_instead_of_dropping_them() -> None:
+    """Cắt thang mà im lặng là giấu dữ liệu.
+
+    Lịch sử có 25/229 kỳ hỏng nặng, một kỳ xuống −96%. Để chúng định thang thì
+    227 kỳ còn lại dồn thành một vạch; bỏ chúng đi thì trang nói dối. Nên
+    chúng phải hiện thành mốc ghim ở mép, và chú thích phải đếm đúng số ấy.
+    """
+    points = [{"date": f"2026-01-{d:02d}", "skill": 0.001, "cumulative": 0.001}
+              for d in range(1, 21)]
+    points[3]["skill"] = -0.96
+    points[7]["skill"] = 0.85
+    svg = page.skill_chart({"points": points, "stderr": 0.0005}, "thử")
+    assert "2 kỳ nằm ngoài thang" in svg, svg[-400:]
+    assert svg.count("var(--ui-bad)") == 2, "mỗi điểm ngoài thang một mốc"
+    assert "-0,960%" in svg or "−0,960%" in svg or "-96,000%" in svg, "vẫn phải tra được giá trị thật"
+
+
+def test_skill_chart_does_not_describe_marks_it_did_not_draw() -> None:
+    """Chú thích nói "đường đậm là trung bình tích luỹ" trong khi đường ấy nằm
+    ngoài thang là gửi người đọc đi tìm thứ không tồn tại."""
+    points = [{"date": f"2026-01-{d:02d}", "skill": 0.001, "cumulative": -0.5}
+              for d in range(1, 21)]
+    svg = page.skill_chart({"points": points, "stderr": 0.0002}, "thử")
+    assert "nằm trọn ngoài thang nên không vẽ được" in svg
+    assert "Đường liền là trung bình tích luỹ" not in svg
+
+
+def test_charts_stay_inside_their_viewbox() -> None:
+    """Toạ độ tràn khung thì nét bị xén mà không có cảnh báo nào."""
+    rows = [{"bin": i, "count": 100 + i, "predicted": 0.23 + i * 0.001,
+             "observed": 0.23 + i * 0.001, "ci_low": 0.21, "ci_high": 0.26} for i in range(8)]
+    svg = page.calibration_chart(rows, 0.2377, "thử")
+    coords = [float(v) for v in re.findall(r'c[xy]="([-\d.]+)"', svg)]
+    assert coords, svg[:200]
+    assert min(coords) >= 0.0 and max(coords) <= max(page.PLOT_W, page.PLOT_H), (
+        min(coords), max(coords)
+    )
+
+
+def test_the_published_page_explains_why_not_only_how_much() -> None:
+    """Trang cũ chỉ có LogLoss và Brier — trả lời "hơn kém bao nhiêu" mà không
+    trả lời "vì sao", trong khi "vì sao" mới quyết định phải sửa cái gì."""
+    html = (ROOT / "docs" / "model-quality.html").read_text(encoding="utf-8")
+    for needle in ("Độ tin cậy", "Độ phân giải", "Độ bất định", "Vì sao kỹ năng"):
+        assert needle in html, needle
+    assert "artifact đã phát hành" in html, "trang phải nói rõ nguồn của con số"
+    assert "<svg" in html, "trang phải có hình, không chỉ bảng"
+
+
+def test_the_page_detects_a_report_older_than_the_data(tmp_path: Path) -> None:
+    """Bước chẩn đoán chạy với ``allow_fail``, nên khi nó hỏng thì builder vẫn
+    dựng trang từ báo cáo của lần trước và xuất bản như thường.
+
+    Không có phép đối chiếu này thì một hỏng hóc lặng lẽ kéo dài nhiều ngày —
+    đúng cách mà bộ ``post-finalization`` từng đỏ 130 lần liên tiếp mà không
+    ai thấy.
+    """
+    data_dir = tmp_path / "data"
+    (data_dir / "prob_eval").mkdir(parents=True)
+    pd.DataFrame({"target_date": ["2026-09-10", "2026-09-15"]}).to_csv(
+        data_dir / "prob_eval" / "ensemble_history.csv", index=False
+    )
+    assert page._staleness(data_dir, {"covers_through": "2026-09-15"}) == ""
+    stale = page._staleness(data_dir, {"covers_through": "2026-09-01"})
+    assert "2026-09-01" in stale and "2026-09-15" in stale, stale
+    assert "chẩn đoán nhiều khả năng đã hỏng" in stale
+    assert "không ghi ngày chấm cuối cùng" in page._staleness(data_dir, {})
+
+
+def test_the_page_renders_a_dash_instead_of_crashing_on_a_truncated_report() -> None:
+    """Trang chẩn đoán sập vì thiếu một trường thì đúng lúc cần nhất lại không
+    đọc được gì."""
+    assert page._num(None) == "—"
+    assert page._num(float("nan")) == "—"
+    assert page._num("không phải số") == "—"
+    assert page._num(0.5, 3) == "0,500"
