@@ -158,8 +158,63 @@ def header_html(current: str) -> str:
 #: Dock cũ: thanh nổi ở chân trang. Khung mới thay hẳn vai trò của nó, nên gỡ
 #: đi — để lại thì hai bộ điều hướng cùng tồn tại và cùng đòi cùng một chỗ.
 _DOCK_CU = re.compile(r'<nav class="ui-dock".*?</nav>\s*(?:<script>.*?</script>)?', re.S)
+#: Thẻ mở vùng nội dung thật. Chuỗi cố định vì chính :func:`wrap_page` sinh ra.
+_MO_MAIN: Final[str] = '<main class="app-main" id="app-main">'
+#: Đuôi khung: đóng vùng nội dung rồi tới thẻ kịch bản, luôn ở CUỐI phần thân.
+#:
+#: KHÔNG khớp nguyên văn chuỗi mà :func:`wrap_page` sinh ra. Trang đã xuất bản
+#: đi qua một lượt chuẩn hoá HTML sắp lại thuộc tính theo thứ tự chữ cái, nên
+#: `<script src="…" defer>` quay lại thành `<script defer="" src="…">`. Bản
+#: đầu của tôi khớp nguyên văn và vì thế trượt trên chính những tệp cần bóc:
+#: index, landing, landing_desktop và live đều bị bọc thành HAI lớp. Đo được
+#: bằng cách đếm `class="app-rail"` mỗi trang — phải đúng bằng 1.
+#: Thẻ kịch bản là TUỲ CHỌN. Lớp khung phía trong của ``docs/live.html`` có
+#: hai ``</main>`` nhưng chỉ một thẻ script — lượt chuẩn hoá gộp hai thẻ
+#: ``src`` trùng nhau lại làm một. Bản đòi script bắt buộc vì thế bỏ cuộc ở
+#: đúng tệp duy nhất cần bóc, rồi bọc thêm lớp nữa.
+_DUOI_KHUNG: Final[re.Pattern[str]] = re.compile(
+    r"</main>\s*(?:<script\b[^>]*\bsrc=\"assets/app-shell\.js\"[^>]*>\s*</script>\s*)?\Z"
+)
 _MO_BODY = re.compile(r"(<body\b[^>]*>)", re.I)
 _DONG_BODY = re.compile(r"</body\s*>", re.I)
+
+
+def _go_khung(than: str) -> str:
+    """Bóc MỌI lớp khung đang có ra khỏi phần thân, trả lại nội dung gốc.
+
+    Không có hàm này thì khung chỉ CỘNG THÊM. Đã xảy ra thật:
+    ``docs/live.html`` là trang duy nhất viết tay và commit thẳng, nên mỗi
+    lượt dựng đọc lại chính bản đã có khung rồi bọc tiếp — tệp kết thúc với
+    hai ``.app-rail``, hai ``.app-header``, hai ``.app-main`` lồng nhau. Hệ
+    quả nhìn thấy được, đo bằng ``elementFromPoint``: chữ thương hiệu của
+    khung NGOÀI nằm đúng trên nút tab đầu của dải TRONG, nên mục điều hướng
+    đầu tiên bấm không ăn.
+
+    Chốt chặn cũ là ``if "app-rail" in html: return html``. Nó ngăn được lần
+    bọc thứ hai nhưng KHÔNG sửa được tệp đã hỏng, và nó im lặng giữ nguyên
+    một khung cũ đã lệch khỏi :data:`SITE_NAV`. Bóc rồi bọc lại thì cả hai
+    vấn đề biến mất cùng lúc.
+
+    Args:
+        than: Nội dung giữa hai thẻ ``<body>``.
+
+    Returns:
+        Phần nội dung thật, đã bỏ hết lớp khung.
+    """
+    # Trần 8 vòng: khung lồng sâu hơn thế nghĩa là có gì đó sai hẳn, và vòng
+    # lặp không trần sẽ treo trình dựng thay vì báo lỗi.
+    for _ in range(8):
+        if "app-rail" not in than:
+            return than
+        dau = than.find(_MO_MAIN)
+        if dau < 0:
+            return than
+        con = than[dau + len(_MO_MAIN) :]
+        duoi = _DUOI_KHUNG.search(con)
+        if duoi is None:
+            return than
+        than = con[: duoi.start()]
+    return than
 
 
 def wrap_page(html: str, current: str) -> str:
@@ -176,8 +231,6 @@ def wrap_page(html: str, current: str) -> str:
     Returns:
         Trang đã bọc, hoặc nguyên trạng nếu nó không phải tài liệu đủ thẻ.
     """
-    if "app-rail" in html:
-        return html
     mo = _MO_BODY.search(html)
     if not mo or not _DONG_BODY.search(html):
         return html
@@ -189,7 +242,9 @@ def wrap_page(html: str, current: str) -> str:
     cuoi_vt = _DONG_BODY.search(html)
     if cuoi_vt is None:
         return html
-    than = html[mo.end() : cuoi_vt.start()]
+    # Bóc trước, bọc sau. Gọi hàm này nhiều lần cho cùng một kết quả, và một
+    # trang đã bị bọc chồng sẽ được SỬA chứ không chỉ được để yên.
+    than = _go_khung(html[mo.end() : cuoi_vt.start()])
     duoi = html[cuoi_vt.start() :]
     khung = (
         rail_html(current)

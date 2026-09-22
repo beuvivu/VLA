@@ -46,6 +46,80 @@ def test_every_published_page_carries_the_shell(page: Path) -> None:
         assert dau in text, f"{page.name} thiếu {dau}"
 
 
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_no_published_page_carries_the_shell_twice(page: Path) -> None:
+    """Khung phải có ĐÚNG MỘT lớp, không phải "ít nhất một".
+
+    Phép kiểm trên chỉ đòi khung CÓ MẶT, nên nó xanh y nguyên khi trang mang
+    hai khung lồng nhau. Đã xảy ra thật với ``docs/live.html`` — trang duy
+    nhất viết tay và commit thẳng, nên mỗi lượt dựng đọc lại chính bản đã có
+    khung. Hệ quả nhìn thấy được, đo bằng ``elementFromPoint``: chữ thương
+    hiệu của khung NGOÀI nằm đúng trên nút tab đầu của dải TRONG, nên mục
+    điều hướng đầu tiên bấm không ăn.
+
+    Đếm từng dấu một chứ không đếm mỗi ``app-rail``: khung có thể nhân đôi
+    lệch nhau — bản hỏng của ``live.html`` có hai ``</main>`` nhưng chỉ một
+    thẻ kịch bản, vì lượt chuẩn hoá gộp hai thẻ ``src`` trùng nhau lại.
+    """
+    text = page.read_text(encoding="utf-8")
+    for dau in ('class="app-rail"', 'class="app-panel"', 'class="app-header"',
+                'class="app-main"', 'id="app-toggle"'):
+        assert text.count(dau) == 1, (
+            f"{page.name} có {text.count(dau)} lần {dau}, phải đúng 1"
+        )
+
+
+def test_wrapping_a_page_twice_gives_the_same_page() -> None:
+    """Bọc khung phải LUỸ ĐẲNG, và phải SỬA được trang đã bọc chồng.
+
+    Ghim chính LUẬT trên dữ liệu dựng sẵn, không dựa vào việc quét
+    ``docs/``: nếu một ngày nào đó không trang nào hỏng thì phép kiểm trên
+    vẫn xanh dù ``wrap_page`` đã hỏng hẳn. Ở đây trang hỏng được DỰNG RA.
+    """
+    from app_shell import wrap_page
+
+    goc = "<html><head></head><body><p>Nội dung thật</p></body></html>"
+    mot = wrap_page(goc, "index.html")
+    assert mot.count('class="app-rail"') == 1
+    assert "<p>Nội dung thật</p>" in mot
+
+    # Bọc lại bản đã bọc: phải cho ra ĐÚNG bản cũ, không dày thêm một lớp.
+    assert wrap_page(mot, "index.html") == mot
+
+    # Trang đã bọc chồng phải được SỬA, không phải được để yên.
+    #
+    # Dựng đúng hình dạng đã xảy ra: khung LỒNG NHAU, tức lớp ngoài chứa trọn
+    # lớp trong. Hai khung cạnh nhau là một hình dạng khác và chưa từng xảy
+    # ra — dựng nhầm nó thì phép kiểm đo một thứ không có thật.
+    from app_shell import header_html, panel_html, rail_html
+
+    than = mot.split("<body>", 1)[1].rsplit("</body>", 1)[0]
+    long_nhau = (
+        rail_html("index.html")
+        + panel_html("index.html")
+        + '<div class="app-scrim" id="app-scrim" hidden></div>'
+        + header_html("index.html")
+        + '<main class="app-main" id="app-main">'
+        + than
+        + "</main>"
+        + '<script src="assets/app-shell.js" defer></script>'
+    )
+    assert long_nhau.count('class="app-rail"') == 2, "mẫu dựng sẵn phải thật sự hỏng"
+
+    sua = wrap_page("<html><head></head><body>" + long_nhau + "</body></html>", "index.html")
+    assert sua.count('class="app-rail"') == 1, "trang bọc chồng phải được bóc về một lớp"
+    assert "<p>Nội dung thật</p>" in sua, "bóc khung không được đánh rơi nội dung"
+
+    # Và hình dạng mà `docs/live.html` thật sự mang: khung trong MẤT thẻ kịch
+    # bản, vì lượt chuẩn hoá gộp hai thẻ `src` trùng nhau lại làm một.
+    mat_script = long_nhau.replace(
+        '<script src="assets/app-shell.js" defer></script>', "", 1
+    )
+    sua2 = wrap_page("<html><head></head><body>" + mat_script + "</body></html>", "index.html")
+    assert sua2.count('class="app-rail"') == 1, "thiếu thẻ kịch bản vẫn phải bóc được"
+    assert "<p>Nội dung thật</p>" in sua2
+
+
 def test_the_rail_has_one_button_per_navigation_group() -> None:
     """Dải biểu tượng phải phủ đúng các nhóm của mô hình điều hướng.
 
