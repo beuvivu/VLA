@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at_utc": "2026-09-22T05:01:03Z",
+  "generated_at_utc": "2026-09-22T01:43:41Z",
   "anchor_date": "2026-09-21",
   "target_date": "2026-09-22",
   "history_days": 4212,
@@ -11,7 +11,7 @@
     "45": 0.00990000036322413,
     "90": 0.009900000411067955,
     "180": 0.009900000690790726,
-    "365": 0.009900001014442364,
+    "365": 0.009900001014442363,
     "730": 0.009900000988274418,
     "1460": 0.009900000695767807
   },
@@ -31,7 +31,7 @@
   "min_stability": 0.9995207665886716,
   "max_stability": 0.9995207665886716,
   "dynamics_weight_in_stat_signal": 0.2,
-  "global_dynamics_reliability": 0.6453247852839988,
+  "global_dynamics_reliability": 0.645324785283999,
   "regime_js_divergence_30_vs_180": 0.04529311393242366,
   "transition_active_mean_trials": 45.0,
   "calendar_contiguous": true,

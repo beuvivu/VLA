@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-09-22T05:00:57Z",
+  "generated_at_utc": "2026-09-22T01:43:36Z",
   "anchor_date": "2026-09-21",
   "target_date": "2026-09-22",
   "history_days": 4212,
@@ -50,7 +50,7 @@
   },
   "mean_stability": 0.9974803422853565,
   "min_stability": 0.9974507614447848,
-  "max_stability": 0.9974980780530407,
+  "max_stability": 0.9974980780530406,
   "dynamics_weight_in_stat_signal": 0.3,
   "global_dynamics_reliability": 0.7618778290518813,
   "regime_js_divergence_30_vs_180": 0.010073287672907588,
