@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-22T14:16:05Z",
+  "generated_at_utc": "2026-09-22T14:52:31Z",
   "start_date": "2015-01-01",
   "end_date": "2026-09-22",
   "draw_days": 4213,
-  "permutations": 127,
+  "permutations": 31,
   "primary_tests": [
     {
       "name": "de_suffix_uniformity",
@@ -30,14 +30,14 @@
     {
       "name": "weekday_vs_de_tail",
       "statistic": 43.93662771232888,
-      "p_value": 0.8046875,
+      "p_value": 0.8125,
       "q_value_fdr": 0.8249440749430261,
       "fdr_05": false
     },
     {
       "name": "loto_repeat_dependency",
       "statistic": 0.0011051087919928815,
-      "p_value": 0.4453125,
+      "p_value": 0.5,
       "q_value_fdr": 0.8249440749430261,
       "fdr_05": false
     }
@@ -47,15 +47,15 @@
   "weekday_test": {
     "statistic": 43.93662771232888,
     "p_value_asymptotic": 0.8341682712055863,
-    "p_value_permutation": 0.8046875,
+    "p_value_permutation": 0.8125,
     "min_expected_cell": 57.06147638262521,
     "method": "weekday labels permuted; DE tail distribution preserved"
   },
   "loto_repeat_test": {
     "effect": 0.0011051087919928815,
-    "p_value": 0.4453125,
-    "null_mean": -4.7385560585110444e-05,
-    "null_std": 0.0016279160993884511,
+    "p_value": 0.5,
+    "null_mean": -0.00012695614418291716,
+    "null_std": 0.0012639182932103652,
     "method": "two-sided day-level circular-shift permutation"
   },
   "coverage": [
