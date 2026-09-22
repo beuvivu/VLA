@@ -55,6 +55,58 @@ function updateChanceNote(nDraws) {
 const $ = (id) => document.getElementById(id);
 const pad2 = (n) => String(n).padStart(2, "0");
 
+// --- Bộ dựng DOM ------------------------------------------------------------
+//
+// Trang này từng ghép bảng bằng chuỗi rồi gán thẳng vào cây DOM. Mỗi chỗ như
+// thế là một cống HTML: trình duyệt PHÂN TÍCH lại chuỗi thành thẻ, nên bất kỳ
+// ký tự nào lọt vào từ dữ liệu cũng có thể thành mã đánh dấu. Ba hàm dưới đây
+// thay hẳn lối ấy — chuỗi chỉ đi vào `textContent` hoặc `setAttribute`.
+//
+// `tests/test_security_hardening.py` canh: không tệp nào trong `src/` hay
+// `docs/` được phép gọi lại một cống HTML, kể cả trong chú thích.
+//
+// Thứ tự khoá trong `attrs` LÀ thứ tự thuộc tính in ra. Giữ đúng thứ tự của
+// bản chuỗi cũ để phép so DOM giữa hai bản là so từng byte, không phải so
+// "tương đương về ý nghĩa".
+
+/** Dựng một phần tử: thẻ, thuộc tính, con.
+ *
+ * Giá trị thuộc tính rỗng, `null`, `undefined` hay `false` thì BỎ HẲN thuộc
+ * tính — bản chuỗi cũ nối `title="..."` chỉ khi có nội dung, nên giữ nguyên
+ * quy ước ấy. `true` cho thuộc tính cờ (`checked`), in ra `checked=""`.
+ */
+function mk(tag, attrs, kids) {
+  const node = document.createElement(tag);
+  if (attrs) {
+    for (const k in attrs) {
+      const v = attrs[k];
+      if (v === null || v === undefined || v === false || v === "") continue;
+      node.setAttribute(k, v === true ? "" : String(v));
+    }
+  }
+  if (kids !== undefined) put(node, kids);
+  return node;
+}
+
+/** Nối con vào `node`: phần tử giữ nguyên, mảng nối lần lượt, còn lại thành
+ * CHỮ. Số 0 là nội dung thật nên không bị bỏ; chuỗi rỗng thì bỏ, vì bản cũ
+ * nối chuỗi rỗng cũng không sinh ra nút nào. */
+function put(node, kids) {
+  if (kids === null || kids === undefined || kids === false || kids === "") return node;
+  if (Array.isArray(kids)) {
+    for (let i = 0; i < kids.length; i += 1) put(node, kids[i]);
+    return node;
+  }
+  node.appendChild(kids.nodeType ? kids : document.createTextNode(String(kids)));
+  return node;
+}
+
+/** Thay TOÀN BỘ con của `node`. Đây là chỗ thay cho phép gán chuỗi HTML. */
+function fill(node, kids) {
+  node.textContent = "";
+  return put(node, kids);
+}
+
 /** Các kỳ nằm trong dải đang chọn. */
 /** Thứ trong tuần của nhãn ngày `YYYY-MM-DD`, chuẩn JS (Chủ nhật = 0).
  *
@@ -143,7 +195,7 @@ function setCount(rows) {
  */
 function specialFull(value) {
   const s = String(value).padStart(5, "0");
-  return `<span class="sp-de">${s.slice(0, 3)}<b>${s.slice(3)}</b></span>`;
+  return mk("span", { class: "sp-de" }, [s.slice(0, 3), mk("b", null, s.slice(3))]);
 }
 
 // --- Ô bảng Đặc Biệt: sáu trường ------------------------------------------
@@ -203,30 +255,33 @@ function specialCell(value, iso) {
   const tip = (key) => (DE_FIELDS.find((f) => f.key === key) || {}).hint || "";
   const parts = [];
   if (iso && SHOWN.has("ngay")) {
-    parts.push(`<i class="sp-f sp-f-ngay" title="Ngày ${iso}">` +
-      `${iso.slice(8)}-${iso.slice(5, 7)}</i>`);
+    parts.push(mk("i", { class: "sp-f sp-f-ngay", title: `Ngày ${iso}` },
+      `${iso.slice(8)}-${iso.slice(5, 7)}`));
   }
   if (SHOWN.has("tong")) {
-    parts.push(`<i class="sp-f" title="Tổng — ${tip("tong")}">${(dau + duoi) % 10}</i>`);
+    parts.push(mk("i", { class: "sp-f", title: `Tổng — ${tip("tong")}` }, (dau + duoi) % 10));
   }
-  if (SHOWN.has("dau")) parts.push(`<i class="sp-f" title="Đầu — ${tip("dau")}">${dau}</i>`);
-  if (SHOWN.has("duoi")) parts.push(`<i class="sp-f" title="Đuôi — ${tip("duoi")}">${duoi}</i>`);
+  if (SHOWN.has("dau")) parts.push(mk("i", { class: "sp-f", title: `Đầu — ${tip("dau")}` }, dau));
+  if (SHOWN.has("duoi")) parts.push(mk("i", { class: "sp-f", title: `Đuôi — ${tip("duoi")}` }, duoi));
   if (SHOWN.has("chanle")) {
     // HAI ký tự: chẵn/lẻ của Đầu rồi của Đuôi. Hai trang tham chiếu khác nhau
     // ở chỗ này — hainhay chỉ ghi một ký tự theo Đuôi, thongkemienbac ghi cả
     // hai. Lấy bản hai ký tự vì nó chứa trọn thông tin của bản kia.
     // Kiểm trên 15 ô thật: 49 -> "CL" (Đầu 4 chẵn, Đuôi 9 lẻ).
-    parts.push(`<i class="sp-f" title="Chẵn/Lẻ — ${tip("chanle")}">` +
-      `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}</i>`);
+    parts.push(mk("i", { class: "sp-f", title: `Chẵn/Lẻ — ${tip("chanle")}` },
+      `${dau % 2 === 0 ? "C" : "L"}${duoi % 2 === 0 ? "C" : "L"}`));
   }
   if (SHOWN.has("bo")) {
-    parts.push(`<i class="sp-f" title="Bộ — ${tip("bo")}">${BO_LOOKUP[+two] || ""}</i>`);
+    parts.push(mk("i", { class: "sp-f", title: `Bộ — ${tip("bo")}` }, BO_LOOKUP[+two] || ""));
   }
 
-  // Gọi lại specialFull thay vì chép markup: hai bản dựng cùng một thứ là hai
-  // bản sẽ lệch nhau khi ai đó sửa một bên.
-  return specialFull(s) +
-    (parts.length ? `<span class="sp-fields">${parts.join("")}</span>` : "");
+  // Gọi lại specialFull thay vì chép cách dựng: hai bản dựng cùng một thứ là
+  // hai bản sẽ lệch nhau khi ai đó sửa một bên.
+  //
+  // Trả về MẢNG nút, không phải chuỗi. Người gọi đẩy thẳng mảng ấy vào `put`.
+  return parts.length
+    ? [specialFull(s), mk("span", { class: "sp-fields" }, parts)]
+    : [specialFull(s)];
 }
 
 /** Hàng chú giải sáu trường, dựng từ một ô THẬT của kỳ gần nhất.
@@ -241,7 +296,7 @@ function renderLegend() {
   const box = $("sp-legend");
   if (!box) return;
   const last = DRAWS.length ? DRAWS[DRAWS.length - 1] : null;
-  if (!last) { box.innerHTML = ""; return; }
+  if (!last) { box.textContent = ""; return; }
 
   const s = String(last.s).padStart(5, "0");
   const two = s.slice(3);
@@ -266,38 +321,51 @@ function renderLegend() {
     if (BO_LOOKUP[n] === bo) family.push(pad2(n));
   }
   const items = DE_FIELDS.map((f) =>
-    `<span class="sp-lg-item" title="${f.hint}">` +
-    `<b class="sp-lg-val">${val[f.key]}</b>` +
-    `<span class="sp-lg-lab">${f.label}</span>` +
-    `<span class="sp-lg-hint">${f.hint}</span></span>`
-  ).join("");
+    mk("span", { class: "sp-lg-item", title: f.hint }, [
+      mk("b", { class: "sp-lg-val" }, val[f.key]),
+      mk("span", { class: "sp-lg-lab" }, f.label),
+      mk("span", { class: "sp-lg-hint" }, f.hint),
+    ]));
 
-  box.innerHTML =
-    '<div class="sp-legend-head">Đọc một ô: chữ nhỏ dưới mỗi giải là gì</div>' +
-    `<div class="sp-legend-sample">${specialFull(s)}` +
-    `<span class="sp-lg-src">giải Đặc Biệt kỳ ` +
-    `${iso.slice(8)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}, hai số cuối ` +
-    `<b>${two}</b> — sáu trường dưới đây tách ra từ chính ô này</span></div>` +
-    `<div class="sp-legend-items">${items}</div>` +
-    '<p class="sp-legend-rule">' +
-    `Tổng = (Đầu + Đuôi) chia lấy dư 10 = (${dau} + ${duoi}) mod 10 = <b>${val.tong}</b>. ` +
-    (bo
-      ? `Bộ gom một con với bóng dương (0↔5, 1↔6, 2↔7, 3↔8, 4↔9) và số lộn của nó: ` +
-        `${two} nằm ở bộ <b>${bo}</b>, gồm ${family.join(" ")}. Cả thảy 15 bộ. `
-      : "") +
-    "Bật/tắt từng trường bằng các ô dưới đây; lựa chọn được nhớ lại cho lần sau." +
-    "</p>";
+  const rule = mk("p", { class: "sp-legend-rule" }, [
+    `Tổng = (Đầu + Đuôi) chia lấy dư 10 = (${dau} + ${duoi}) mod 10 = `,
+    mk("b", null, val.tong),
+    ". ",
+  ]);
+  if (bo) {
+    put(rule, [
+      "Bộ gom một con với bóng dương (0↔5, 1↔6, 2↔7, 3↔8, 4↔9) và số lộn của nó: ",
+      `${two} nằm ở bộ `,
+      mk("b", null, bo),
+      `, gồm ${family.join(" ")}. Cả thảy 15 bộ. `,
+    ]);
+  }
+  put(rule, "Bật/tắt từng trường bằng các ô dưới đây; lựa chọn được nhớ lại cho lần sau.");
+
+  fill(box, [
+    mk("div", { class: "sp-legend-head" }, "Đọc một ô: chữ nhỏ dưới mỗi giải là gì"),
+    mk("div", { class: "sp-legend-sample" }, [
+      specialFull(s),
+      mk("span", { class: "sp-lg-src" }, [
+        `giải Đặc Biệt kỳ ${iso.slice(8)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}, hai số cuối `,
+        mk("b", null, two),
+        " — sáu trường dưới đây tách ra từ chính ô này",
+      ]),
+    ]),
+    mk("div", { class: "sp-legend-items" }, items),
+    rule,
+  ]);
 }
 
 /** Gắn sáu ô đánh dấu bật/tắt trường. */
 function bindFieldToggles(render) {
   const box = $("sp-fields-toggle");
   if (!box) return;
-  box.innerHTML = DE_FIELDS.map((f) =>
-    `<label class="sp-fchk" title="${f.hint}">` +
-    `<input type="checkbox" data-field="${f.key}"` +
-    `${SHOWN.has(f.key) ? " checked" : ""}> ${f.label}</label>`
-  ).join("");
+  fill(box, DE_FIELDS.map((f) =>
+    mk("label", { class: "sp-fchk", title: f.hint }, [
+      mk("input", { type: "checkbox", "data-field": f.key, checked: SHOWN.has(f.key) }),
+      ` ${f.label}`,
+    ])));
   box.addEventListener("change", (ev) => {
     const key = ev.target.dataset.field;
     if (!key) return;
@@ -325,17 +393,20 @@ function table(el, headers, rows, opts) {
   //
   // Khoá của tiêu đề dùng CÙNG lược đồ danh tính với nhãn hàng, nên một con
   // số đánh dấu ở chiều này vẫn sáng khi đổi sang chiều kia.
-  const thead = "<thead><tr>" + headers.map((h, i) => {
+  const headRow = mk("tr");
+  headers.forEach((h, i) => {
     const headKey = opts.headKey && opts.headKey(i);
     const extra = opts.headExtra ? opts.headExtra(i) : "";
-    if (!headKey) return `<th>${h}${extra}</th>`;
+    if (!headKey) { put(headRow, mk("th", null, [h, extra])); return; }
     const hPair = opts.headPairOf ? opts.headPairOf(i) : pairInKey(headKey);
     const hKey = hPair && !pairInKey(headKey) ? `${headKey}|n${hPair}` : headKey;
     const on = (MARKS.has(hKey) || (hPair && PAIR_MARKS.has(hPair))) ? " marked" : "";
-    return `<th class="cell${on}" data-key="${hKey}">${h}${extra}</th>`;
-  }).join("") + "</tr></thead>";
-  const body = rows.map((r, y) =>
-    "<tr>" + r.map((c, i) => {
+    put(headRow, mk("th", { class: "cell" + on, "data-key": hKey }, [h, extra]));
+  });
+  const thead = mk("thead", null, headRow);
+  const body = rows.map((r, y) => {
+    const tr = mk("tr");
+    r.forEach((c, i) => {
       const cls = opts.numeric && opts.numeric.includes(i) ? " num" : "";
       // Khoá theo DANH TÍNH ô khi người gọi cung cấp được, chứ không theo vị trí.
       //
@@ -375,21 +446,27 @@ function table(el, headers, rows, opts) {
       const gan = !waiting && blank && opts.gan && opts.gan(y, i) ? " sp-gan" : "";
       const de = !blank && opts.de && opts.de(y, i) ? " sp-de-hit" : "";
       const tip = opts.title ? opts.title(y, i) : "";
-      const titleAttr = tip ? ` title="${tip}"` : "";
-      const style = opts.style && opts.style(y, i) ? ` style="${opts.style(y, i)}"` : "";
+      const style = opts.style ? opts.style(y, i) : "";
       const extra = opts.cellExtra ? opts.cellExtra(y, i) : "";
-      return `<td class="cell${cls}${on}${blank}${state}${waiting}${gan}${de}" data-key="${key}"${titleAttr}${style}>${c}${extra}</td>`;
-    }).join("") + "</tr>"
-  ).join("");
+      put(tr, mk("td", {
+        class: `cell${cls}${on}${blank}${state}${waiting}${gan}${de}`,
+        "data-key": key,
+        title: tip,
+        style: style,
+      }, [c, extra]));
+    });
+    return tr;
+  });
 
   // Dải rỗng phải nói ra là rỗng. Không có nhánh này thì bảng giữ nguyên số
   // liệu của dải TRƯỚC trong khi bộ đếm đã báo "0 kỳ" — số cũ được trình bày
   // như thể thuộc về dải mới. Tái hiện được: chọn Từ ngày 09-09-2026 đến
   // 01-01-2020 (dải ngược) thì bộ đếm ra "0 kỳ" mà ba bảng vẫn đủ 40 hàng.
-  const empty = `<tbody><tr><td class="sp-empty-row" colspan="${headers.length}">` +
-    "Không có kỳ nào trong dải đã chọn. Kiểm lại Từ ngày / Đến ngày — " +
-    "chọn ngược thứ tự cũng cho dải rỗng.</td></tr></tbody>";
-  el.innerHTML = thead + (rows.length ? "<tbody>" + body + "</tbody>" : empty);
+  const empty = mk("tr", null,
+    mk("td", { class: "sp-empty-row", colspan: headers.length },
+      "Không có kỳ nào trong dải đã chọn. Kiểm lại Từ ngày / Đến ngày — " +
+      "chọn ngược thứ tự cũng cho dải rỗng."));
+  fill(el, [thead, mk("tbody", null, rows.length ? body : empty)]);
 
   // Cột đầu chỉ được dính và tô nền khi nó là NHÃN HÀNG. Bảng lịch tuần có
   // cột đầu là Thứ 2 — dữ liệu thật — nên tô nó lên là bịa ra một cột tiêu đề
@@ -664,17 +741,23 @@ function isPicked(n) {
 function bindPicker(render) {
   const box = $("sp-picker");
   if (!box) return;
+  const nutNhanh = (pick, nhan) => mk("button", { type: "button", "data-pick": pick }, nhan);
   const draw = () => {
-    box.innerHTML =
-      '<div class="sp-pick-quick">' +
-      '<button type="button" data-pick="all">Tất cả</button>' +
-      '<button type="button" data-pick="none">Bỏ hết</button>' +
-      '<button type="button" data-pick="even">Số chẵn</button>' +
-      '<button type="button" data-pick="odd">Số lẻ</button>' +
-      "</div><div class='sp-pick-grid'>" +
-      Array.from({ length: 100 }, (_, n) =>
-        `<button type="button" class="sp-pick${isPicked(n) ? " on" : ""}" ` +
-        `aria-pressed="${isPicked(n)}" data-num="${n}">${pad2(n)}</button>`).join("") + "</div>";
+    fill(box, [
+      mk("div", { class: "sp-pick-quick" }, [
+        nutNhanh("all", "Tất cả"),
+        nutNhanh("none", "Bỏ hết"),
+        nutNhanh("even", "Số chẵn"),
+        nutNhanh("odd", "Số lẻ"),
+      ]),
+      mk("div", { class: "sp-pick-grid" },
+        Array.from({ length: 100 }, (_, n) => mk("button", {
+          type: "button",
+          class: "sp-pick" + (isPicked(n) ? " on" : ""),
+          "aria-pressed": String(isPicked(n)),
+          "data-num": n,
+        }, pad2(n)))),
+    ]);
   };
   draw();
 
@@ -723,7 +806,7 @@ function renderLotoMatrix(rows) {
         "dùng trọn dải."
       : `${shown.length} kỳ × ${nums.length} con.`;
   }
-  if (!nums.length) { grid.innerHTML = ""; return; }
+  if (!nums.length) { grid.textContent = ""; return; }
 
   const per = shown.map((r) => {
     const c = new Array(100).fill(0);
@@ -801,7 +884,7 @@ function renderLotoMatrix(rows) {
   if (vertical) {
     const head = ["Ngày"].concat(nums.map(pad2));
     const body = byDate.map((r) =>
-      [`<b>${r.d.slice(8)}-${r.d.slice(5, 7)}</b>`]
+      [mk("b", null, `${r.d.slice(8)}-${r.d.slice(5, 7)}`)]
         .concat(nums.map((n) => r.c[n] || "")));
     opts.key = (y, i) => (i === 0
       ? `m|d${byDate[y].d}`
@@ -814,7 +897,7 @@ function renderLotoMatrix(rows) {
   } else {
     const head = ["Số"].concat(byDate.map((r) => `${r.d.slice(8)}-${r.d.slice(5, 7)}`));
     const body = nums.map((n) =>
-      [`<b>${pad2(n)}</b>`].concat(byDate.map((r) => r.c[n] || "")));
+      [mk("b", null, pad2(n))].concat(byDate.map((r) => r.c[n] || "")));
     opts.key = (y, i) => (i === 0
       ? `m|n${pad2(nums[y])}`
       : `m|n${pad2(nums[y])}|d${byDate[i - 1].d}`);
@@ -862,27 +945,37 @@ function openGanPopup(pair) {
   if (!host) return;
   const mode = (host.dataset.mode === "de") ? "de" : "loto";
   const g = ganCycles(pair, mode);
-  const tab = (value, label) =>
-    `<button type="button" class="sp-btn${mode === value ? " on" : ""}" data-gmode="${value}">${label}</button>`;
-  host.querySelector(".sp-modal-body").innerHTML =
-    `<div class="sp-modal-tabs">${tab("loto", "Lô tô")}${tab("de", "Giải Đặc Biệt")}</div>` +
-    `<div class="sp-modal-kpi">` +
-    `<div><span>Gan hiện tại</span><strong>${g.current}</strong></div>` +
-    `<div><span>Gan cực đại</span><strong>${g.max}</strong></div>` +
-    `<div><span>Số lần về</span><strong>${g.hits.length}</strong></div>` +
-    `<div><span>Số chu kỳ</span><strong>${g.cycles.length}</strong></div>` +
-    "</div>" +
-    `<p class="sp-hint">Các kỳ về gần nhất</p>` +
-    `<div class="sp-modal-days">${g.dates.map((d) => `<span>${d}</span>`).join("") || "<span>—</span>"}</div>` +
-    `<p class="sp-hint">Độ dài 12 chu kỳ gan gần nhất (số kỳ trượt giữa hai lần về)</p>` +
-    `<div class="sp-modal-days">${g.cycles.slice(-12).reverse().map((c) => `<span>${c}</span>`).join("") || "<span>—</span>"}</div>` +
-    // Nút lọc CHỈ có nghĩa ở trang có lưới chọn 00-99. Trang tần suất cặp lọc
-    // theo HỌ CẶP, nên một nút "chỉ xem số 07" ở đó bấm vào không đổi gì — và
-    // một nút không làm gì thì tệ hơn hẳn việc không có nút.
-    ($("sp-picker")
-      ? `<div class="sp-modal-tabs"><button type="button" class="sp-btn" data-gfilter="${pair}">` +
-        `Chỉ xem số ${pair} trên ma trận</button></div>`
-      : "");
+  const tab = (value, label) => mk("button", {
+    type: "button",
+    class: "sp-btn" + (mode === value ? " on" : ""),
+    "data-gmode": value,
+  }, label);
+  const o = (nhan, so) => mk("div", null, [mk("span", null, nhan), mk("strong", null, so)]);
+  // Dãy số rỗng vẫn phải hiện một ô "—": để trống thì dải trông như chưa dựng.
+  const day = (xs) => mk("div", { class: "sp-modal-days" },
+    xs.length ? xs.map((x) => mk("span", null, x)) : mk("span", null, "—"));
+  const body = [
+    mk("div", { class: "sp-modal-tabs" }, [tab("loto", "Lô tô"), tab("de", "Giải Đặc Biệt")]),
+    mk("div", { class: "sp-modal-kpi" }, [
+      o("Gan hiện tại", g.current),
+      o("Gan cực đại", g.max),
+      o("Số lần về", g.hits.length),
+      o("Số chu kỳ", g.cycles.length),
+    ]),
+    mk("p", { class: "sp-hint" }, "Các kỳ về gần nhất"),
+    day(g.dates),
+    mk("p", { class: "sp-hint" }, "Độ dài 12 chu kỳ gan gần nhất (số kỳ trượt giữa hai lần về)"),
+    day(g.cycles.slice(-12).reverse()),
+  ];
+  // Nút lọc CHỈ có nghĩa ở trang có lưới chọn 00-99. Trang tần suất cặp lọc
+  // theo HỌ CẶP, nên một nút "chỉ xem số 07" ở đó bấm vào không đổi gì — và
+  // một nút không làm gì thì tệ hơn hẳn việc không có nút.
+  if ($("sp-picker")) {
+    body.push(mk("div", { class: "sp-modal-tabs" },
+      mk("button", { type: "button", class: "sp-btn", "data-gfilter": pair },
+        `Chỉ xem số ${pair} trên ma trận`)));
+  }
+  fill(host.querySelector(".sp-modal-body"), body);
   host.querySelector(".sp-modal-title").textContent = `Chu kỳ gan · số ${pair}`;
   host.dataset.pair = pair;
   host.hidden = false;
@@ -922,7 +1015,7 @@ function bindGanPopup(render) {
  */
 function miniBar(total) {
   const pct = Math.max(6, Math.min(100, Math.round((total / 12) * 100)));
-  return `<i class="sp-mini-bar" style="--h:${pct}%" aria-hidden="true"></i>`;
+  return mk("i", { class: "sp-mini-bar", style: `--h:${pct}%`, "aria-hidden": "true" });
 }
 
 /** Chú giải phân cấp số nháy.
@@ -940,10 +1033,17 @@ function renderNhayLegend(grid) {
   ];
   const box = document.createElement("div");
   box.className = "sp-nhay-legend";
-  box.innerHTML = "<b>Số nháy</b>" + tiers.map(([k, label]) =>
-    `<span class="sp-nl"><i class="sp-n${k}">${k === 5 ? "5+" : k}</i>` +
-    `<span>${label}</span></span>`).join("") +
-    '<span class="sp-nl"><i class="sp-empty-key"></i><span>không về</span></span>';
+  fill(box, [
+    mk("b", null, "Số nháy"),
+    tiers.map(([k, label]) => mk("span", { class: "sp-nl" }, [
+      mk("i", { class: "sp-n" + k }, k === 5 ? "5+" : k),
+      mk("span", null, label),
+    ])),
+    mk("span", { class: "sp-nl" }, [
+      mk("i", { class: "sp-empty-key" }),
+      mk("span", null, "không về"),
+    ]),
+  ]);
   host.insertBefore(box, grid);
 }
 
@@ -957,10 +1057,11 @@ function renderLotoFrequency() {
 
   const m = $("sp-matrix");
   if (m) {
-    m.innerHTML = counts.map((v, i) =>
-      `<span class="sp-cell" style="${heat(v, max)}" title="Số ${pad2(i)}: ${v} lần">` +
-      `<b>${pad2(i)}</b><i>${v}</i></span>`
-    ).join("");
+    fill(m, counts.map((v, i) =>
+      mk("span", { class: "sp-cell", style: heat(v, max), title: `Số ${pad2(i)}: ${v} lần` }, [
+        mk("b", null, pad2(i)),
+        mk("i", null, v),
+      ])));
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const rankBody = order.map((p, k) => [
@@ -1103,7 +1204,7 @@ function renderPairMatrix(rows) {
   };
   if (($("sp-orient") || {}).value === "Xem theo chiều dọc") {
     table(grid, ["Ngày"].concat(CAP50.map(label)),
-      byDate.map((r) => [`<b>${r.t}</b>`].concat(r.c.map((v) => v || ""))),
+      byDate.map((r) => [mk("b", null, r.t)].concat(r.c.map((v) => v || ""))),
       { pending: pendingAt, gan: pairGan, title: pairTip,
         headKey: (i) => (i === 0 ? null : `p|c${label(CAP50[i - 1])}`),
         headExtra: (i) => (i === 0 ? "" : miniBar(recentPair[i - 1] / 2)),
@@ -1112,7 +1213,7 @@ function renderPairMatrix(rows) {
           : `p|c${label(CAP50[i - 1])}|d${byDate[y].d}`) });
   } else {
     table(grid, ["Cặp"].concat(byDate.map((r) => r.t)),
-      CAP50.map((pair, j) => [`<b>${label(pair)}</b>`]
+      CAP50.map((pair, j) => [mk("b", null, label(pair))]
         .concat(byDate.map((r) => r.c[j] || ""))),
       { pending: pendingAt, gan: pairGan, title: pairTip,
         headKey: (i) => (i === 0 ? null : `p|d${byDate[i - 1].d}`),
@@ -1161,7 +1262,7 @@ function renderHeadTail() {
     table(el, [label, "Số lần", "Tỉ lệ", ""],
       counts.map((v, i) => [
         i, v, total ? ((v / total) * 100).toFixed(2) + "%" : "—",
-        `<span class="sp-bar" style="width:${(100 * v / max).toFixed(1)}%"></span>`,
+        mk("span", { class: "sp-bar", style: `width:${(100 * v / max).toFixed(1)}%` }),
       ]), { numeric: [0, 1, 2] });
   };
   build($("sp-head"), head, "Chữ số đầu");
@@ -1180,7 +1281,7 @@ function renderHeadTail() {
       const count = new Array(10).fill(0);
       r.n.forEach((x) => { count[pick(+x[0], +x[1])] += 1; });
       return [viDate(r.d)].concat(
-        count.map((v) => (v ? `${v} lần` : '<span class="sp-zero">0</span>')));
+        count.map((v) => (v ? `${v} lần` : mk("span", { class: "sp-zero" }, "0"))));
     }), { numeric: Array.from({ length: 10 }, (_, i) => i + 1) });
   };
   perDay((d) => d, "Đầu", $("sp-day-head"));
@@ -1413,7 +1514,7 @@ function fillPicker(id, values, prefer) {
   const sel = $(id);
   if (!sel) return null;
   if (!sel.options.length) {
-    sel.innerHTML = values.map((v) => `<option>${v}</option>`).join("");
+    fill(sel, values.map((v) => mk("option", null, v)));
     sel.value = prefer !== undefined ? prefer : values[values.length - 1];
   }
   return sel.value;
@@ -1458,7 +1559,7 @@ function monthGrid(year) {
   const body = [];
   const pairs = [];
   for (let day = 1; day <= 31; day++) {
-    const line = [`<b>${pad2(day)}</b>`];
+    const line = [mk("b", null, pad2(day))];
     const pline = [null];
     for (let m = 1; m <= 12; m++) {
       const de = byDate[`${year}-${pad2(m)}-${pad2(day)}`];
@@ -1500,7 +1601,7 @@ function renderSpecialYearByDay() {
 
   const head = ["Năm"].concat(Array.from({ length: 31 }, (_, i) => String(i + 1)));
   const order = Array.from(byYear.keys()).sort().reverse();
-  const body = order.map((year) => [`<b>${year}</b>`].concat(byYear.get(year)));
+  const body = order.map((year) => [mk("b", null, year)].concat(byYear.get(year)));
   const pairs = order.map((year) => [null].concat(pairByYear.get(year)));
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (pairs[y] || [])[i] || null });
@@ -1527,12 +1628,15 @@ function renderOverview() {
 
   const kpi = $("sp-kpi");
   if (kpi) {
-    kpi.innerHTML = [
+    fill(kpi, [
       ["Số kỳ trong dải", rows.length],
       ["Kỳ vọng mỗi con", expected.toFixed(1) + " lần"],
       ["Về nhiều nhất", pad2(hottest) + " (" + counts[hottest] + ")"],
       ["Gan Đặc Biệt lâu nhất", pad2(coldest) + " (" + s.current[coldest] + " kỳ)"],
-    ].map((p) => `<div class="sp-kpi-card"><span>${p[0]}</span><strong>${p[1]}</strong></div>`).join("");
+    ].map((p) => mk("div", { class: "sp-kpi-card" }, [
+      mk("span", null, p[0]),
+      mk("strong", null, p[1]),
+    ])));
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const body = order.slice(0, 40).map((p, k) => [
@@ -1633,11 +1737,11 @@ function renderSpecialBridge() {
   // 1. Ma trận Đầu 0-9 x Đuôi 0-9.
   const head = ["Đầu"].concat(Array.from({ length: 10 }, (_, d) => String(d)));
   const body = Array.from({ length: 10 }, (_, tens) =>
-    [`<b>Đầu ${tens}</b>`].concat(Array.from({ length: 10 }, (_, ones) => {
+    [mk("b", null, `Đầu ${tens}`)].concat(Array.from({ length: 10 }, (_, ones) => {
       const n = tens * 10 + ones;
       return count[n]
-        ? `<b>${pad2(n)}</b><i class="sp-times">${count[n]} lần</i>`
-        : `<span class="sp-none">${pad2(n)}</span>`;
+        ? [mk("b", null, pad2(n)), mk("i", { class: "sp-times" }, `${count[n]} lần`)]
+        : mk("span", { class: "sp-none" }, pad2(n));
     })));
   // Ô ma trận LÀ con số: hàng là Đầu, cột là Đuôi, nên cặp suy thẳng từ toạ độ
   // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
@@ -1660,13 +1764,13 @@ function renderSpecialBridge() {
   const recent = $("sp-recent");
   if (recent) {
     const last = DRAWS.slice(-3).reverse();
-    recent.innerHTML = last.map((r) => {
-      const cells = r.n.map((x) => `<span class="sp-lo">${x}</span>`).join("");
-      return `<div class="sp-draw"><h4>Kết quả ngày ${r.d.slice(8)}-` +
-        `${r.d.slice(5, 7)}-${r.d.slice(0, 4)}</h4>` +
-        `<p class="sp-db">Đặc Biệt <b>${String(r.s).padStart(5, "0")}</b></p>` +
-        `<div class="sp-lolist">${cells}</div></div>`;
-    }).join("");
+    fill(recent, last.map((r) => mk("div", { class: "sp-draw" }, [
+      mk("h4", null,
+        `Kết quả ngày ${r.d.slice(8)}-${r.d.slice(5, 7)}-${r.d.slice(0, 4)}`),
+      mk("p", { class: "sp-db" }, ["Đặc Biệt ", mk("b", null, String(r.s).padStart(5, "0"))]),
+      mk("div", { class: "sp-lolist" },
+        r.n.map((x) => mk("span", { class: "sp-lo" }, x))),
+    ])));
   }
 }
 
@@ -1714,7 +1818,7 @@ function renderSpecialByTong() {
     hits[t],
   ]).sort((a, b) => b[2] - a[2]);
   table($("sp-grid"), ["Tổng", "Ngày ra gần nhất", "Số kỳ chưa về", "Tổng số lần"],
-    gan.map((g) => [`<b>${g[0]}</b>`, g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
+    gan.map((g) => [mk("b", null, g[0]), g[1], g[2], g[3]]), { numeric: [0, 2, 3] });
 
   // 2. Chuyển tổng: đếm cặp (hôm qua, hôm nay) trên các kỳ LIỀN KỀ thật.
   //    Bỏ qua ranh giới ngày nghỉ quay — nối hai kỳ cách nhau nhiều ngày lại
@@ -1750,7 +1854,7 @@ function renderSpecialByTong() {
     table(tr,
       ["Tổng hôm trước", "Tổng hôm sau", "Số lần", "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"],
       flat.slice(0, 40).map((f) => [
-        `<b>${f[0]}</b>`, `<b>${f[1]}</b>`, f[2], f[3],
+        mk("b", null, f[0]), mk("b", null, f[1]), f[2], f[3],
         f[4].toFixed(2).replace(".", ",") + " %",
         (f[5] > 0 ? "+" : "") + f[5].toFixed(2).replace(".", ","),
       ]), { numeric: [0, 1, 2, 3, 4, 5] });
@@ -1765,7 +1869,7 @@ function renderSpecialByTong() {
       let even = 0;
       for (let b = 0; b < 10; b += 2) even += trans[a][b];
       const pct = 100 * even / fromTotal[a];
-      body.push([`<b>${a}</b>`, fromTotal[a],
+      body.push([mk("b", null, a), fromTotal[a],
         pct.toFixed(2).replace(".", ",") + " %",
         (100 - pct).toFixed(2).replace(".", ",") + " %"]);
     }

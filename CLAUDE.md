@@ -83,14 +83,23 @@ là xong.
 
 - **CSS viết tay**, không Tailwind, không framework JS. Kho không có
   `package.json` và GitHub Pages phục vụ tệp tĩnh từ `docs/`.
-- **Nợ đã đo — `.innerHTML`.** 14 trang thống kê xuất bản dùng `.innerHTML`.
-  Nguồn là hai tệp kịch bản `src/templates/stat_pages.js` và
-  `src/templates/frequency_bento.js`, không phải trình dựng Python.
-  `test_static_page_builders_do_not_use_untrusted_html_dom_sinks` XANH nhưng
-  chỉ soi ba đường dẫn: `build_landing_page.py`, `build_statistics_dashboard.py`
-  và `docs/live.html` — nó KHÔNG phủ hai tệp kia, nên luật không được thi hành
-  trên toàn kho. Mã MỚI phải dùng `createElement` + `textContent`; đừng thêm
-  chỗ vi phạm mới.
+- **Không cống HTML, trên TOÀN kho.** Mọi mã dựng DOM đi bằng `createElement`
+  + `textContent`. Ba hàm dùng chung ở đầu `src/templates/stat_pages.js` —
+  `mk`, `put`, `fill` — là lối duy nhất; `frequency_bento.js` dùng lại chúng
+  vì cả hai tệp nằm trong CÙNG một thẻ `<script>`.
+
+  Trong `mk(tag, attrs, kids)`, thứ tự khoá của `attrs` LÀ thứ tự thuộc tính
+  in ra, và giá trị rỗng thì bỏ hẳn thuộc tính. Hai quy ước ấy không phải
+  thẩm mỹ: chúng giữ cho `outerHTML` sau khi dựng trùng từng byte với bản
+  chuỗi cũ, tức phép so DOM trước/sau là phép so thật.
+
+  Nợ này TỪNG có: 15 chỗ trong `stat_pages.js` và `frequency_bento.js`, và
+  phép kiểm khi ấy chỉ soi ba đường dẫn nên không thi hành được luật. Nay
+  `test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink` quét
+  mọi `src/**/*.js`, `src/**/*.py` và `docs/*.html`, còn
+  `test_the_dom_sink_rule_itself_catches_a_sink` ghim chính luật trên mẫu dựng
+  sẵn để một lần `rglob` hỏng không thu tập quét về rỗng. Luật cấm cả việc
+  NHẮC TÊN cống trong chú thích — viết "gán chuỗi HTML" thay vì gọi tên.
 - **Không vẽ danh tính nguồn dữ liệu ra trình duyệt.** Hai phép kiểm canh:
   `test_no_page_spells_out_where_the_data_lives` (mọi trang) và
   `test_the_live_page_never_renders_a_source_field` (trang live).

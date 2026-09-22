@@ -399,7 +399,8 @@ def test_cells_can_be_marked_for_comparison() -> None:
     là mất dấu những ô đang muốn so."""
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert "function bindMarking(" in js
-    assert 'data-key=' in js, "ô phải có khoá ổn định để nhớ được"
+    # Ô dựng bằng `mk()`, nên khoá đi vào như một khoá của `attrs`.
+    assert '"data-key": key' in js, "ô phải có khoá ổn định để nhớ được"
     assert "localStorage" in js
 
     assert "try {" in js and "catch" in js, (

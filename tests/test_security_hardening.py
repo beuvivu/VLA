@@ -35,17 +35,88 @@ def test_release_checks_do_not_use_fixed_shared_temporary_files() -> None:
     assert '"$TMP_PRED/production-audit-release.json"' in release_check
 
 
-def test_static_page_builders_do_not_use_untrusted_html_dom_sinks() -> None:
-    paths = [
-        ROOT / "src" / "build_landing_page.py",
-        ROOT / "src" / "build_statistics_dashboard.py",
-        ROOT / "docs" / "live.html",
-    ]
-    for path in paths:
-        source = path.read_text(encoding="utf-8")
-        assert ".innerHTML" not in source, path.name
-        assert "insertAdjacentHTML" not in source, path.name
+#: Các cống HTML: chuỗi đi qua chúng được trình duyệt PHÂN TÍCH thành thẻ,
+#: nên một ký tự lọt vào từ dữ liệu có thể thành mã đánh dấu. Mã dựng DOM phải
+#: đi bằng ``createElement`` + ``textContent``.
+DOM_SINKS = (".innerHTML", ".outerHTML", "insertAdjacentHTML", "document.write")
 
+
+def dom_sinks_in(source: str) -> list[str]:
+    """Các cống HTML mà ``source`` có nhắc tới.
+
+    Args:
+        source: Nội dung một tệp kịch bản, trang, hay trình dựng.
+
+    Returns:
+        Tên các cống tìm thấy, theo thứ tự đã khai trong ``DOM_SINKS``.
+    """
+    return [sink for sink in DOM_SINKS if sink in source]
+
+
+def files_scanned_for_dom_sinks() -> list[Path]:
+    """Mọi tệp mà luật cấm cống HTML áp lên.
+
+    Returns:
+        Kịch bản trình duyệt, trình dựng Python, và trang đã xuất bản.
+    """
+    return sorted(
+        {
+            *(ROOT / "src").rglob("*.js"),
+            *(ROOT / "src").rglob("*.py"),
+            *(ROOT / "docs").glob("*.html"),
+        }
+    )
+
+
+def test_the_dom_sink_rule_itself_catches_a_sink() -> None:
+    """Ghim chính LUẬT trên mẫu dựng sẵn.
+
+    Phép kiểm dưới đây quét một tập tệp tìm bằng ``rglob``. Nếu cách tìm ấy
+    hỏng — đổi thư mục, đổi đuôi — tập thành rỗng và phép kiểm vẫn XANH trong
+    khi nó không còn canh gì. Mẫu dựng sẵn ở đây không thể rỗng.
+    """
+    assert dom_sinks_in('box.innerHTML = "<b>x</b>";') == [".innerHTML"]
+    assert dom_sinks_in("el.outerHTML = s;") == [".outerHTML"]
+    assert dom_sinks_in('el.insertAdjacentHTML("beforeend", s);') == [
+        "insertAdjacentHTML"
+    ]
+    assert dom_sinks_in('document.write("<p>");') == ["document.write"]
+    assert (
+        dom_sinks_in(
+            'node.textContent = ""; node.appendChild(document.createElement("b"));'
+        )
+        == []
+    )
+
+
+def test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink() -> None:
+    scanned = files_scanned_for_dom_sinks()
+    names = {path.name for path in scanned}
+    # Tập quét phải chứa đúng những tệp từng vi phạm, cộng các trình dựng mà
+    # bản cũ của phép kiểm này soi. Ghim tên để một lần đổi thư mục không lặng
+    # lẽ thu tập về rỗng — tập rỗng là phép kiểm không thể đỏ.
+    assert {
+        "stat_pages.js",
+        "frequency_bento.js",
+        "frequency_demo.js",
+        "traditional_results.js",
+        "build_landing_page.py",
+        "build_statistics_dashboard.py",
+        "build_stat_pages.py",
+        "live.html",
+    } <= names, sorted(names)
+    assert sum(1 for path in scanned if path.suffix == ".html") >= 29
+
+    ban = {
+        path.relative_to(ROOT).as_posix(): dom_sinks_in(
+            path.read_text(encoding="utf-8")
+        )
+        for path in scanned
+    }
+    assert {ten: xs for ten, xs in ban.items() if xs} == {}
+
+
+def test_the_live_page_declares_its_content_security_policy() -> None:
     live = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     assert "Content-Security-Policy" in live
     assert "connect-src 'self' https://raw.githubusercontent.com" in live

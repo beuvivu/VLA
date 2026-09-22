@@ -315,11 +315,15 @@ def test_the_number_is_clickable_in_both_orientations() -> None:
     # vẫn bấm được y nguyên (đo trong trình duyệt: 91 `th.cell[data-key]`, bấm
     # một cái thì số ô sáng 0 -> 1). Thứ đáng đòi là: tiêu đề CÓ mang khoá, và
     # khoá ấy suy ra từ `headKey`.
-    assert re.search(r'<th class="cell\$\{on\}" data-key="\$\{h?[Kk]ey\}"', builder), (
-        "tiêu đề cột phải là ô bấm được và phải mang data-key", builder[:400],
-    )
-    assert "if (!headKey) return" in builder, (
-        "không có headKey thì phải trả về <th> trần; thiếu nhánh này nghĩa là "
+    #
+    # Bảng nay dựng bằng `mk()` chứ không ghép chuỗi, nên khuôn cần khớp là
+    # lời gọi `mk("th", ...)` chứ không còn là một mẩu HTML.
+    assert re.search(
+        r'mk\(\s*"th",\s*\{\s*class:\s*"cell"\s*\+\s*on,\s*"data-key":\s*h?[Kk]ey',
+        builder,
+    ), ("tiêu đề cột phải là ô bấm được và phải mang data-key", builder[:400])
+    assert "if (!headKey) {" in builder and 'mk("th", null,' in builder, (
+        "không có headKey thì phải dựng <th> trần; thiếu nhánh này nghĩa là "
         "khoá tiêu đề không còn bắt nguồn từ opts.headKey", builder[:400],
     )
     assert 'closest("td.cell, th.cell")' in JS_CODE, "trình xử lý phải nhận cả th"
@@ -407,8 +411,9 @@ def test_the_hover_tooltip_states_the_gan_day_count() -> None:
 def test_the_header_chart_is_one_element_per_number_not_an_svg() -> None:
     """100 tiêu đề × một biểu đồ, nên mỗi nút thừa nhân lên trăm lần."""
     body = _block(JS_CODE, "function miniBar")
-    assert "<i class=\"sp-mini-bar\"" in body, body
-    assert "<svg" not in body and "canvas" not in body, body
+    # Một `<i>` một thuộc tính, dựng bằng `mk` — không phải SVG, không canvas.
+    assert re.search(r'mk\(\s*"i",\s*\{\s*class:\s*"sp-mini-bar"', body), body
+    assert '"svg"' not in body and "canvas" not in body, body
 
 
 def test_the_gan_popup_covers_both_loto_and_special_prize() -> None:
