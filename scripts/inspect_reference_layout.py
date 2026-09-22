@@ -136,7 +136,10 @@ def main() -> int:
                     pg.close()
                     continue
                 print(f"\n--- {ten} {w}x{h} / {che_do} ---")
-                print(json.dumps(do, ensure_ascii=False, indent=1))
+                # In GỌN, mỗi lần đo một dòng. Bản trước in JSON thụt lề:
+                # ba lần đo thành 1041 dòng log, mà log của Actions chỉ lấy về
+                # được phần cuối — hai phần ba số đo không đọc tới.
+                print(json.dumps(do, ensure_ascii=False, separators=(",", ":")))
                 pg.close()
         b.close()
     return 0
