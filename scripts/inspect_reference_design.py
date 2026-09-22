@@ -157,9 +157,30 @@ def doc_mot_trang(url: str, session: requests.Session) -> None:
     bien = {}
     for m in RE_VAR_DECL.finditer(css):
         bien.setdefault(m.group(1), m.group(2).strip())
-    print(f"\n  == Biến CSS ({len(bien)} biến) ==")
-    for ten, gia_tri in list(bien.items())[:60]:
+    # Tách biến CỦA CHỦ ĐỀ khỏi biến của framework. Một trang Bootstrap khai
+    # hơn năm trăm biến `--bs-*`; in gộp rồi cắt ở 60 dòng thì danh sách toàn
+    # `--bs-*` và những biến thật sự mang bản sắc thiết kế — phông, màu nhấn —
+    # bị đẩy ra ngoài khung in. Đã đo: lần chạy đầu không thấy `--primary-font`
+    # lẫn `--alt-font` vì đúng lý do đó.
+    rieng = {k: v for k, v in bien.items() if not k.startswith("--bs-")}
+    framework = {k: v for k, v in bien.items() if k.startswith("--bs-")}
+    print(f"\n  == Biến RIÊNG của chủ đề ({len(rieng)} biến) ==")
+    for ten, gia_tri in rieng.items():
+        print(f"    {ten}: {gia_tri[:110]}")
+    print(f"\n  == Biến framework ({len(framework)} biến, in 20 đầu) ==")
+    for ten, gia_tri in list(framework.items())[:20]:
         print(f"    {ten}: {gia_tri[:90]}")
+
+    print("\n  == Khai báo cho body / html ==")
+    for m in re.finditer(r"(?:^|\})\s*(?:html|body)[^{}]{0,80}\{([^{}]{1,600})\}", css):
+        khoi = " ".join(m.group(1).split())
+        if any(k in khoi for k in ("background", "font-family", "color")):
+            print(f"    {khoi[:300]}")
+
+    print("\n  == @font-face: họ phông thật ==")
+    ho = sorted({m.group(1).strip().strip('\'"') for m in re.finditer(r"@font-face[^{}]*\{[^{}]*font-family\s*:\s*([^;}]{1,60})", css)})
+    for h in ho[:40]:
+        print(f"    {h}")
 
     in_tap("Gradient", sorted({m.group(0) for m in RE_GRADIENT.finditer(css)}, key=len))
     in_bang_dem("box-shadow", Counter(m.group(1).strip() for m in RE_SHADOW.finditer(css)))
