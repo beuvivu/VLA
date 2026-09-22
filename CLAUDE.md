@@ -96,10 +96,15 @@ là xong.
   Nợ này TỪNG có: 15 chỗ trong `stat_pages.js` và `frequency_bento.js`, và
   phép kiểm khi ấy chỉ soi ba đường dẫn nên không thi hành được luật. Nay
   `test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink` quét
-  mọi `src/**/*.js`, `src/**/*.py` và `docs/*.html`, còn
+  mọi `src/**/*.js`, `src/**/*.py`, `docs/**/*.html` VÀ `docs/**/*.js`, còn
   `test_the_dom_sink_rule_itself_catches_a_sink` ghim chính luật trên mẫu dựng
   sẵn để một lần `rglob` hỏng không thu tập quét về rỗng. Luật cấm cả việc
   NHẮC TÊN cống trong chú thích — viết "gán chuỗi HTML" thay vì gọi tên.
+
+  `docs/**/*.js` phải khai riêng, không suy ra được từ `src`: năm tệp trong
+  `docs/assets/` (`live-board.js`, `matrix-virt.js`, `ui-dock.js`,
+  `apply-data-styles.js`, `css-async.js`) KHÔNG có bản nguồn nào dưới `src`
+  mà trang sinh ra vẫn nạp chúng.
 - **Không vẽ danh tính nguồn dữ liệu ra trình duyệt.** Hai phép kiểm canh:
   `test_no_page_spells_out_where_the_data_lives` (mọi trang) và
   `test_the_live_page_never_renders_a_source_field` (trang live).
