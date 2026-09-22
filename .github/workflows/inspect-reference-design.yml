@@ -1,0 +1,49 @@
+name: Đọc đặc tính thiết kế trang tham chiếu
+
+# CHẠY TAY, KHÔNG CÓ LỊCH.
+#
+# Vì sao cần: proxy của môi trường phát triển chặn toàn bộ HTTP ra ngoài (đã
+# đo: trang mẫu trả 403 ngay ở tầng CONNECT), nên không đọc được trang thiết
+# kế mà chủ dự án đưa. Runner của Actions thì gọi được — cùng đường mà
+# `inspect-reference-pages.yml` đã dùng.
+#
+# Job chỉ ĐỌC và in SỐ ĐO thị giác ra log: mã màu theo tần suất, chuỗi
+# gradient, giá trị bóng, bán kính, phông, tên @keyframes. Không commit,
+# không tải hiện vật, không lưu HTML/CSS của trang vào kho — trang mẫu là sản
+# phẩm thương mại có bản quyền; ta đọc để biết ngôn ngữ thị giác rồi tự viết
+# CSS của mình.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Danh sách URL https, cách nhau bằng dấu phẩy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-reference-design
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: In màu, gradient, bóng, phông và hiệu ứng
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir requests beautifulsoup4 lxml
+
+      - name: Đọc và in đặc tính thiết kế
+        env:
+          URLS: ${{ inputs.urls }}
+        run: python scripts/inspect_reference_design.py
