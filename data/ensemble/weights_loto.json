@@ -1,7 +1,7 @@
 {
   "schema_version": 7,
   "mode": "loto",
-  "learned_at_utc": "2026-09-22T11:16:21Z",
+  "learned_at_utc": "2026-09-22T12:07:13Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -27,25 +27,26 @@
     "2026-09-18",
     "2026-09-19",
     "2026-09-20",
-    "2026-09-21"
+    "2026-09-21",
+    "2026-09-22"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 0.5448934672027014,
-    "brier": 0.1796042286520383
+    "logloss": 0.5434667441747791,
+    "brier": 0.1789627949391738
   },
   "promotion": {
     "promoted": false,
     "reason": "biên thắng +0.0000% chưa đạt sàn 0.20%",
     "baseline": "mac_dinh",
     "train_days": 14,
-    "validation_days": 9,
+    "validation_days": 10,
     "train_last_day": "2026-09-12",
     "validation_first_day": "2026-09-13",
     "validation_logloss": {
-      "mac_dinh": 0.5407385787786667,
-      "dang_hieu_luc": 0.5407385787786667,
-      "ung_vien": 0.5407385787786667
+      "mac_dinh": 0.5382694589404604,
+      "dang_hieu_luc": 0.5382694589404604,
+      "ung_vien": 0.5382694589404604
     },
     "relative_gain": 0.0,
     "delta_ci95_low": 0.0,

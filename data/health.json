@@ -1,9 +1,9 @@
 {
   "ok": true,
-  "latest_date": "2026-09-21",
-  "last_date": "2026-09-21",
+  "latest_date": "2026-09-22",
+  "last_date": "2026-09-22",
   "first_date": "2015-01-01",
-  "row_count": 4212,
+  "row_count": 4213,
   "lookback_days": 90,
   "missing_count": 0,
   "missing_dates": [],
@@ -13,7 +13,7 @@
   "range_issues": [],
   "sparse_check": {
     "ok": true,
-    "rows": 4212,
+    "rows": 4213,
     "missing_number_columns": [],
     "extra_number_columns": [],
     "invalid_value_row_count": 0,

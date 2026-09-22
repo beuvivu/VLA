@@ -1,21 +1,21 @@
 {
   "schema_version": 7,
   "mode": "loto",
-  "learned_at_utc": "2026-09-22T11:16:21Z",
+  "learned_at_utc": "2026-09-22T12:07:13Z",
   "window_days": 180,
   "half_life_days": 45,
   "component_availability_required": true,
   "params": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.0673690031034766,
+    "b": -1.074099815930961,
     "temperature": 1.0
   },
   "selection": {
     "chosen": "parametric",
     "selected": false,
     "brier_by_candidate": {},
-    "fit_days": 23,
+    "fit_days": 24,
     "holdout_days": 0
   }
 }
