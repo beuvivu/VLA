@@ -332,7 +332,13 @@ assert len(payload["rows"]) == 27
 assert len(payload["top_loto"]) == 10
 assert len(payload["top_de"]) == 10
 assert payload["target_date"] > payload["anchor_date"]
-assert "Không phải kết quả thật" in payload["disclaimer"], payload["disclaimer"]
+# Kiểm bản chất tải trọng bằng CHÍNH nội dung của nó, không bằng một cụm từ
+# tôi tự nghĩ ra. Bản trước khẳng định `disclaimer` chứa "Không phải kết quả
+# thật" — cụm ấy KHÔNG có trong dữ liệu (câu thật là "Dự đoán vui/mô phỏng để
+# tham khảo..."), nên CI đỏ vì assertion sai chứ không vì sản phẩm sai.
+assert payload["kind"] == "entertainment_simulation", payload["kind"]
+assert "mô phỏng" in payload["disclaimer"], payload["disclaimer"]
+assert "không bảo đảm" in payload["disclaimer"], payload["disclaimer"]
 print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
 PYFUN
 

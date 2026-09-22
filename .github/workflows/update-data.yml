@@ -285,10 +285,14 @@ jobs:
           test -s models/ml_de.joblib
           test -s models/cau_keo_loto.joblib
           test -s models/cau_keo_de.joblib
-          # Tầng trình bày đã bị xóa theo yêu cầu, chờ giao diện mới; sáu
-          # phép kiểm trang ở đây không còn đối tượng nào để kiểm.
           test -f docs/.nojekyll
-          test -s DASHBOARD.md
+          test -s docs/index.html
+          test -s docs/dashboard.html
+          test -s docs/statistics.html
+          test -s docs/model-quality.html
+          test -s docs/research-lab.html
+          test -s docs/assets/vla.css
+          test -s docs/assets/vla-shell.js
 
       - name: Ghi nhận phân tích và bảng điều khiển đã hoàn tất
         id: commit
@@ -298,7 +302,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data models images docs README.md DASHBOARD.md
+          git add data models images docs README.md
           if git diff --cached --quiet; then
             echo "No generated analytics changes to commit."
             echo "generated_changed=false" >> "$GITHUB_OUTPUT"
