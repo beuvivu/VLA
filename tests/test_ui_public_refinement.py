@@ -53,7 +53,7 @@ def test_path_pages_are_light_dock_safe_and_bounded() -> None:
         assert "path-shell" in out
         assert "path-table-scroll" in out
         assert "safe-area-inset-bottom" in out
-        assert "#F4F5FF" in out
+        assert "#f0f4fd" in out
 
 
 def test_dashboard_research_and_live_receive_distinct_shells() -> None:

@@ -137,14 +137,18 @@ def extract(css_text: str) -> str:
         if prop in used_vars and "mesh" not in prop:
             root_decls.append(f"{prop}:{val.strip()}")
 
+    # Giá trị đỡ cho token mà quét không tìm thấy trong ui.css. Đây là BẢN SAO
+    # thứ tư của bảng màu, nên nó trôi được: trước khi sửa, danh sách này còn
+    # nguyên #F2F4FF/#4f46e5 của bảng cũ. Chỉ dùng khi ui.css thật sự không
+    # khai token đó, nên giữ giống ui.css chứ không nghĩ ra màu mới.
     for m in (
-        "--ui-bg:#F2F4FF", "--ui-bg-2:#E6EAFB", "--ui-surface:#fff", "--ui-border:#E7EAF6",
-        "--ui-ink:#161C2D", "--ui-ink-2:#28304A", "--ui-ink-soft:#5A6480",
-        "--ui-brand:#4f46e5", "--ui-brand-ink:#4338ca", "--ui-brand-soft:#eef2ff",
+        "--ui-bg:#f0f4fd", "--ui-bg-2:#eaedff", "--ui-surface:#fff", "--ui-border:#e4e7f2",
+        "--ui-ink:#202329", "--ui-ink-2:#262b35", "--ui-ink-soft:#5c6270",
+        "--ui-brand:#2946f3", "--ui-brand-ink:#2038cf", "--ui-brand-soft:#eaedff",
         "--ui-on-brand:#fff",
         '--ui-font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',
         "--ui-page-max:1280px", "--ui-page-gutter:clamp(16px,2.5vw,32px)",
-        "--ui-dock-h:64px", "--ui-r-xl:1.5rem",
+        "--ui-dock-h:64px", "--ui-r-xl:24px",
     ):
         if m.split(":")[0] not in {d.split(":")[0] for d in root_decls}:
             root_decls.append(m)
@@ -153,7 +157,12 @@ def extract(css_text: str) -> str:
     base = (
         "*,::before,::after{box-sizing:border-box}"
         "html{-webkit-text-size-adjust:100%}"
-        "body{margin:0;color:var(--ui-ink-2);background:linear-gradient(162deg,#F2F4FF,#E6EAFB);"
+        # Nền lấy TỪ TOKEN, không viết lại mã màu. Bản trước ghim
+        # `linear-gradient(162deg,#F2F4FF,#E6EAFB)` ngay ở đây, nên đổi bảng
+        # màu trong `ui_theme.py` xong thì khung vẽ đầu tiên vẫn là nền cũ:
+        # người đọc thấy nền cũ lóe lên rồi mới đổi.
+        "body{margin:0;color:var(--ui-ink-2);"
+        "background:linear-gradient(180deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);"
         "background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;"
         "min-height:100vh;-webkit-font-smoothing:antialiased}"
     )

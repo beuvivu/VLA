@@ -38,39 +38,74 @@ _ALIGN_CLASS = {
 TAILWIND_LITE_CSS = r"""
 /* ---- 1. Design token ------------------------------------------------- */
 :root{
---ui-bg:#F2F4FF;--ui-bg-2:#E6EAFB;--ui-surface:#fff;--ui-surface-2:#F7F8FE;
---ui-border:#E7EAF6;--ui-border-strong:#D8DDF0;
---ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;
-/* Lưới sáng periwinkle phủ trên nền dốc. Tách thành token riêng để chế độ
-   tối tắt hẳn nó đi thay vì phải viết lại quy tắc body. */
---ui-bg-mesh:radial-gradient(1200px 620px at 10% -8%,rgba(129,140,248,.20),transparent 60%),
-radial-gradient(900px 520px at 92% 2%,rgba(99,102,241,.15),transparent 62%);
+/* Bảng màu lấy theo trang tham chiếu mà chủ dự án chọn. Đã ĐỌC bằng runner
+   Actions (proxy môi trường phát triển chặn trang đó, trả 403 ở tầng CONNECT)
+   nên đây là số đo, không phải phỏng đoán: nền `--solitude-blue #f0f4fd`,
+   `--selago #eaedff`, bề mặt phụ `--very-light-gray #f7f7f7`, mực
+   `--charcoal-blue #202329` và `--slate-blue #262b35`.
+   MỘT chỗ KHÔNG lấy nguyên: chữ mờ. Màu `--medium-gray #717580` của họ chỉ
+   đạt 3,96:1 trên nền #eaedff — trượt AA. Đậm lại thành #5c6270, thấp nhất
+   5,25:1 trên nền tối nhất đang dùng. */
+--ui-bg:#f0f4fd;--ui-bg-2:#eaedff;--ui-surface:#fff;--ui-surface-2:#f7f7f7;
+--ui-border:#e4e7f2;--ui-border-strong:#cdd4e8;
+--ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;
+/* Nền: hai quầng sáng mờ cộng một dải chuyển lên trắng. Trang tham chiếu
+   dựng quầng bằng phần tử thật có `filter:blur(20px|30px)`; ở đây làm bằng
+   `radial-gradient` để không phải thêm thẻ vào 29 trang và không tốn một lớp
+   hợp ảnh nào. Dải `to top` lên trắng là mẫu đo được của họ
+   (`linear-gradient(to top,#fff 30%,rgba(255,255,255,0) 70%)`) — nó khiến
+   phần trên trang nhẹ dần lên thay vì dừng cứng ở cạnh. */
+--ui-bg-mesh:linear-gradient(to top,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 46%),
+radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.13),transparent 62%),
+radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%);
 /* THƯƠNG HIỆU — chỉ dành cho điều hướng và hành động chính. Không một dấu
    hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
    --ui-ok/warn/bad và ở các thang nhiệt của từng trang. */
---ui-brand:#4f46e5;--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-brand-border:#c7d2fe;
+--ui-brand:#2946f3;--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;--ui-brand-border:#c2cdfb;
 /* Màu ĐÁNH DẤU DỮ LIỆU của biểu đồ, tách khỏi --ui-brand.
 Dải sáng của nền tối yêu cầu OKLCH L trong khoảng 0,48-0,67 để nét mảnh còn
 đọc được; --ui-brand ở nền tối là #8b93f8 với L=0,70, nằm ngoài dải. Dùng
 chung một token thì hoặc hỏng nhãn hiệu, hoặc hỏng biểu đồ. Cả hai bước dưới
 đây đã qua bộ kiểm dải sáng, sàn sắc độ và tương phản với nền tương ứng. */
---ui-chart-1:#4f46e5;
---ui-brand-grad:linear-gradient(135deg,#4F46E5 0%,#4C3BC4 54%,#5B2E9E 100%);
+/* #2946f3 có OKLCH L=0,505 — nằm trong dải 0,48-0,67 đã nêu ở trên, nên nó
+dùng được cho cả nhãn hiệu và đánh dấu dữ liệu ở chế độ sáng. Ở chế độ tối thì
+không: --ui-brand khi ấy là #8b93f8 với L=0,700, ngoài dải — đã đo. */
+--ui-chart-1:#2946f3;
+/* Dải nhấn: base-color -> majorelle-blue, hai màu đo được của trang tham
+chiếu. Họ dùng kiểu dải ba chặng chạy ngang (`to right,#2a46f4,#bf25ff,#2a46f4`)
+cho chữ và nút; ở đây dựng theo đường chéo cho khối lớn để không có cạnh nào
+đổi màu giữa dòng chữ. */
+--ui-brand-grad:linear-gradient(135deg,#2946f3 0%,#4a44ea 52%,#724ade 100%);
 /* Chữ đặt TRÊN nền thương hiệu. Phải lật cùng lúc với --ui-brand: ở chế
 độ tối nền thương hiệu sáng lên, và chữ trắng chỉ còn 2,75:1. */
 --ui-on-brand:#ffffff;
---ui-ok:#047857;--ui-ok-soft:#ecfdf5;--ui-ok-border:#a7f3d0;
---ui-warn:#a94e08;--ui-warn-soft:#fffbeb;--ui-warn-border:#fde68a;
---ui-bad:#be123c;--ui-bad-soft:#fff1f2;--ui-bad-border:#fecdd3;
-/* 18-24px cho bề mặt nổi; .75rem giữ lại cho chi tiết nhỏ bên trong, vì bo
-   18px lên một ô 32px thì góc ăn hết cạnh. */
---ui-r-md:.75rem;--ui-r-lg:1.125rem;--ui-r-xl:1.5rem;
-/* Bóng hai lớp, ám lạnh theo màu mực: một lớp sát để tách khỏi nền, một lớp
-   toả rộng rất nhạt để bề mặt trông nổi lên chứ không bị viền đen. */
---ui-sh-sm:0 1px 2px rgba(22,28,45,.04),0 8px 26px rgba(22,28,45,.06);
---ui-sh-md:0 2px 4px rgba(22,28,45,.05),0 14px 38px rgba(22,28,45,.09);
---ui-sh-lg:0 4px 8px rgba(22,28,45,.06),0 22px 60px rgba(22,28,45,.13);
---ui-sh-brand:0 10px 30px rgba(79,70,229,.26);
+/* Sắc độ theo trang tham chiếu, ĐỘ ĐẬM thì không. `--green #2ebb79`,
+`--golden-yellow #fd961e` và `--red #dc3131` của họ lần lượt chỉ đạt 2,24 /
+1,99 / 4,21 trên nền #f0f4fd — chúng là màu TÔ, không phải màu CHỮ. Ba token
+dưới đây là màu chữ, nên đậm lại tới mức đo được ≥4,8:1 trên mọi bề mặt sáng
+đang dùng. Nền nhạt thì lấy nguyên của họ: `--white-ice`, `--light-red`. */
+--ui-ok:#12744a;--ui-ok-soft:#d8f5ef;--ui-ok-border:#a5ddcb;
+--ui-warn:#8f5608;--ui-warn-soft:#fff6e6;--ui-warn-border:#f7d9a6;
+--ui-bad:#c62828;--ui-bad-soft:#feedec;--ui-bad-border:#f6c9c6;
+/* Trang tham chiếu bo 16px cho thẻ nội dung và 50px cho nút viên thuốc — đếm
+   được 9 lần 16px và 8 lần 50px trong CSS của họ. Giữ .5rem cho chi tiết nhỏ:
+   bo 16px lên một ô 32px thì góc ăn hết cạnh. */
+--ui-r-md:.5rem;--ui-r-lg:16px;--ui-r-xl:24px;
+/* Bóng của trang tham chiếu luôn là đen 8%, toả rộng, không lệch: đếm được
+   `0 0 10px rgba(0,0,0,.08)`, `0 0 25px rgba(0,0,0,.08)` và
+   `0 20px 60px rgba(0,0,0,.08)`. Đó là thứ làm bề mặt trông "nổi" mà không
+   có cạnh tối. Lấy đúng ba mức ấy. */
+--ui-sh-sm:0 0 10px rgba(0,0,0,.08);
+--ui-sh-md:0 0 25px rgba(0,0,0,.08);
+--ui-sh-lg:0 20px 60px rgba(0,0,0,.08);
+--ui-sh-brand:0 20px 60px rgba(41,70,243,.24);
+/* Nhịp và đường cong chuyển động, đo từ trang tham chiếu: .3s xuất hiện 107
+   lần, và hai đường cong đặc trưng là cubic-bezier(.12,0,.39,0) cho lúc rời
+   đi và cubic-bezier(.37,0,.63,1) cho lúc vào. */
+--ui-dur:.3s;--ui-dur-slow:.5s;
+--ui-ease-in:cubic-bezier(.12,0,.39,0);
+--ui-ease-out:cubic-bezier(.37,0,.63,1);
+--ui-ease:cubic-bezier(.165,.84,.44,1);
 /* Inter tự host. Bản trước khai báo Aptos theo tên, nhưng CSP đặt font-src
 'self' và kho KHÔNG có tệp font nào — nên trang chưa bao giờ hiển thị bằng
 Aptos trừ máy đã cài sẵn Microsoft 365; mọi máy khác rơi về font hệ thống.
@@ -117,38 +152,48 @@ tay sáng, chọn tay tối, và mặc định "theo hệ điều hành" vốn k
 tính nào lên thẻ gốc. */
 @media (prefers-color-scheme:dark){
 :root:not([data-ui-theme="light"]){
---ui-bg:#0b1220;--ui-bg-2:#0b1220;--ui-bg-mesh:none;
---ui-surface:#131c2e;--ui-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
---ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
---ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
---ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-bg:#121418;--ui-bg-2:#1f232c;
+/* Quầng sáng vẫn còn ở chế độ tối, chỉ nhạt hơn nhiều. Bản trước tắt hẳn
+   (`none`) nên nền tối là một mảng phẳng tuyệt đối, không còn dấu vết của
+   ngôn ngữ thị giác. */
+--ui-bg-mesh:radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.16),transparent 62%),
+radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%);
+--ui-surface:#1f232c;--ui-surface-2:#181b22;--hairline:rgba(255,255,255,.08);
+--ui-border:rgba(58,66,84,.9);--ui-border-strong:#3a4254;
+--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#a3afc4;
+--ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1c2140;--ui-brand-border:#363d70;
 --ui-chart-1:#7b83ee;
---ui-on-brand:#0f172a;
+--ui-on-brand:#121418;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
 --ui-bad:#fb7185;--ui-bad-soft:#2a1119;--ui-bad-border:#4d2030;
---ui-sh-sm:0 1px 2px rgba(0,0,0,.4);
---ui-sh-md:0 4px 12px rgba(0,0,0,.45);
---ui-sh-lg:0 10px 25px rgba(0,0,0,.5);
---ui-sh-brand:0 10px 30px rgba(0,0,0,.5);
+--ui-sh-sm:0 0 10px rgba(0,0,0,.45);
+--ui-sh-md:0 0 25px rgba(0,0,0,.5);
+--ui-sh-lg:0 20px 60px rgba(0,0,0,.55);
+--ui-sh-brand:0 20px 60px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 }
 :root[data-ui-theme="dark"]{
---ui-bg:#0b1220;--ui-bg-2:#0b1220;--ui-bg-mesh:none;
---ui-surface:#131c2e;--ui-surface-2:#0f1727;--hairline:rgba(255,255,255,.08);
---ui-border:rgba(35,50,72,.9);--ui-border-strong:#233248;
---ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#97a8be;
---ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1b1f3d;--ui-brand-border:#343b6b;
+--ui-bg:#121418;--ui-bg-2:#1f232c;
+/* Quầng sáng vẫn còn ở chế độ tối, chỉ nhạt hơn nhiều. Bản trước tắt hẳn
+   (`none`) nên nền tối là một mảng phẳng tuyệt đối, không còn dấu vết của
+   ngôn ngữ thị giác. */
+--ui-bg-mesh:radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.16),transparent 62%),
+radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%);
+--ui-surface:#1f232c;--ui-surface-2:#181b22;--hairline:rgba(255,255,255,.08);
+--ui-border:rgba(58,66,84,.9);--ui-border-strong:#3a4254;
+--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#a3afc4;
+--ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;--ui-brand-soft:#1c2140;--ui-brand-border:#363d70;
 --ui-chart-1:#7b83ee;
---ui-on-brand:#0f172a;
+--ui-on-brand:#121418;
 --ui-ok:#4ade80;--ui-ok-soft:#0f2018;--ui-ok-border:#1f4034;
 --ui-warn:#fbbf24;--ui-warn-soft:#231a08;--ui-warn-border:#4a3714;
 --ui-bad:#fb7185;--ui-bad-soft:#2a1119;--ui-bad-border:#4d2030;
---ui-sh-sm:0 1px 2px rgba(0,0,0,.4);
---ui-sh-md:0 4px 12px rgba(0,0,0,.45);
---ui-sh-lg:0 10px 25px rgba(0,0,0,.5);
---ui-sh-brand:0 10px 30px rgba(0,0,0,.5);
+--ui-sh-sm:0 0 10px rgba(0,0,0,.45);
+--ui-sh-md:0 0 25px rgba(0,0,0,.5);
+--ui-sh-lg:0 20px 60px rgba(0,0,0,.55);
+--ui-sh-brand:0 20px 60px rgba(0,0,0,.5);
 color-scheme:dark;
 }
 
@@ -328,10 +373,10 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
 /* ---- 10. Tiện ích kiểu Tailwind (giữ tương thích ngược) -------------- */
 .bg-slate-50{background-color:#f8fafc}.bg-slate-50\/50{background-color:rgba(248,250,252,.5)}
-.bg-white{background-color:#fff}.bg-indigo-600{background-color:#4f46e5}
+.bg-white{background-color:#fff}.bg-indigo-600{background-color:#2946f3}
 .text-slate-900{color:#0f172a}.text-slate-800{color:#1e293b}
-.text-slate-600{color:#475569}.text-slate-500{color:#64748b}.text-slate-400{color:#94a3b8}
-.text-indigo-600{color:#4f46e5}.text-blue-600{color:#2563eb}.text-white{color:#fff}
+.text-slate-600{color:#475569}.text-slate-500{color:#5c6b80}.text-slate-400{color:#94a3b8}
+.text-indigo-600{color:#2946f3}.text-blue-600{color:#245fe2}.text-white{color:#fff}
 .border{border-width:1px;border-style:solid}
 .border-slate-200\/60{border-color:rgba(226,232,240,.6)}
 .rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}

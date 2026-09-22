@@ -690,22 +690,22 @@ _DASHBOARD_CSS = """\
       --page-gutter: clamp(16px, 5vw, 72px);
 
       /* Nền và bề mặt */
-      --bg: #F2F4FF;
-      --bg-2: #E6EAFB;
+      --bg: #f0f4fd;
+      --bg-2: #eaedff;
       --surface: #ffffff;
       --surface-strong: #ffffff;
-      --surface-2: #F7F8FE;
-      --text: #161C2D;
-      --muted: #5A6480;
+      --surface-2: #f7f7f7;
+      --text: #202329;
+      --muted: #5c6270;
       --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
-      --line: #E7EAF6;
+      --line: #e4e7f2;
       --line-soft: #F0F2FB;
 
       /* THƯƠNG HIỆU — chỉ dùng cho điều hướng và hành động chính.
          Không một dấu hiệu mã hoá dữ liệu nào được lấy màu từ đây. */
-      --brand: #4F46E5;
+      --brand: #2946f3;
       --brand-2: #6366F1;
-      --brand-3: #818CF8;
+      --brand-3: #7d8bfb;
       --brand-wash: #EEF0FF;
       --brand-ink: #3730A3;
 
@@ -752,7 +752,7 @@ _DASHBOARD_CSS = """\
       margin: 18px auto 0;
       padding: 34px clamp(20px, 4vw, 44px) 24px;
       border-radius: var(--radius-xl);
-      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+      background: linear-gradient(135deg, #2946f3 0%, #4a44ea 54%, #724ade 100%);
       box-shadow: var(--shadow-brand);
       color: white;
       overflow: hidden;
@@ -984,8 +984,8 @@ _DASHBOARD_CSS = """\
       letter-spacing: .08em;
     }
     .type-badge.matrix { background: #dbeafe; color: #1d4ed8; }
-    .type-badge.chart { background: #fef3c7; color: #b45309; }
-    .type-badge.table { background: #ede9fe; color: #6d28d9; }
+    .type-badge.chart { background: #fef3c7; color: #a94e08; }
+    .type-badge.table { background: #ede9fe; color: #724ade; }
 
     .matrix-scroll {
       overflow-x: auto;
@@ -1088,7 +1088,7 @@ _DASHBOARD_CSS = """\
       position: relative;
       height: 26px;
       border-radius: 999px;
-      background: #eef2ff;
+      background: #eaedff;
       overflow: hidden;
       border: 1px solid rgba(15,23,42,0.06);
     }
@@ -1298,7 +1298,7 @@ _DASHBOARD_CSS = """\
       color: white;
       background:
         radial-gradient(circle at 10% 0%, rgba(255,255,255,0.25), transparent 34%),
-        linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+        linear-gradient(135deg, #2946f3 0%, #4a44ea 54%, #724ade 100%);
     }
     .evidence-head-row {
       display: flex;
@@ -1326,7 +1326,7 @@ _DASHBOARD_CSS = """\
     }
     .evidence-head p {
       margin: 0;
-      color: #e0e7ff;
+      color: #e0e6fb;
       line-height: 1.55;
       font-size: 13px;
     }

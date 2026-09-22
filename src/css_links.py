@@ -10,14 +10,15 @@ except Exception:
     _GENERATED = None
 
 _FALLBACK_CRITICAL = (
-    ":root{--ui-bg:#F2F4FF;--ui-bg-2:#E6EAFB;--ui-surface:#fff;--ui-border:#E7EAF6;"
-    "--ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;--ui-brand:#4f46e5;"
-    "--ui-brand-ink:#4338ca;--ui-brand-soft:#eef2ff;--ui-on-brand:#fff;"
+    ":root{--ui-bg:#f0f4fd;--ui-bg-2:#eaedff;--ui-surface:#fff;--ui-border:#e4e7f2;"
+    "--ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;--ui-brand:#2946f3;"
+    "--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;--ui-on-brand:#fff;"
     "--ui-font:system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;"
     "--ui-page-max:1280px;--ui-page-gutter:clamp(16px,2.5vw,32px);--ui-dock-h:64px;"
     "--ui-r-xl:1.5rem}"
     "*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}"
-    "body{margin:0;color:var(--ui-ink-2);background:linear-gradient(162deg,#F2F4FF,#E6EAFB);"
+    "body{margin:0;color:var(--ui-ink-2);"
+    "background:linear-gradient(180deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);"
     "background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;"
     "min-height:100vh;-webkit-font-smoothing:antialiased}"
     ".ui-app,.app{min-height:100vh;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}"

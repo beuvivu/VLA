@@ -105,13 +105,117 @@ def test_inverse_surfaces_do_not_use_a_theme_flipping_token() -> None:
     assert "background:var(--ui-ink)" not in hero.group(0).replace(" ", "")
 
 
-def test_text_on_brand_background_flips_with_the_theme() -> None:
-    """Nền thương hiệu sáng lên ở chế độ tối; chữ trắng chỉ còn 2,75:1."""
+def _tokens(block_selector: str) -> dict[str, str]:
+    """Token màu ĐANG có hiệu lực trong một khối của biểu định kiểu dùng chung.
+
+    Đọc giá trị thật chứ không nhận mã màu viết tay trong phép kiểm. Bản trước
+    ghim ``"#4f46e5"`` và ``"#8b93f8"`` thành hằng: đổi ``--ui-brand`` sang một
+    màu KHÔNG đạt chuẩn thì phép kiểm vẫn xanh, vì nó không hề đọc token. Nó
+    kiểm hai con số do chính nó viết ra.
+    """
     from ui_theme import TAILWIND_LITE_CSS
 
-    assert "--ui-on-brand" in TAILWIND_LITE_CSS
-    assert contrast_ratio("#ffffff", "#4f46e5") >= WCAG_AA_NORMAL
-    assert contrast_ratio("#0f172a", "#8b93f8") >= WCAG_AA_NORMAL
+    # Đếm ngoặc phải bắt đầu TỪ dấu ``{`` mở, không phải từ bên trong khối.
+    # Bản trước nhảy qua luôn dấu mở nên độ sâu khởi đầu đã là 1 mà biến đếm
+    # vẫn là 0: nó không bao giờ đóng đúng chỗ, ăn sang các khối sau, và vì
+    # dict lấy giá trị CUỐI cho khoá trùng, ``_tokens(":root{")`` trả về đúng
+    # bảng màu chế độ TỐI. Đột biến phát hiện: đổi --ui-ink-soft sang một màu
+    # trượt AA mà phép kiểm vẫn xanh.
+    mo = TAILWIND_LITE_CSS.index(block_selector) + len(block_selector) - 1
+    if TAILWIND_LITE_CSS[mo] != "{":
+        raise AssertionError(f"{block_selector!r} phải kết thúc bằng dấu ngoặc mở")
+    depth = 0
+    for offset, char in enumerate(TAILWIND_LITE_CSS[mo:]):
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                block = TAILWIND_LITE_CSS[mo + 1 : mo + offset]
+                break
+    else:
+        raise AssertionError(f"khong dong ngoac cho {block_selector!r}")
+    # Bóc chú thích TRƯỚC khi dò token. Chú thích trong khối này nhắc tên token
+    # bằng đúng cú pháp khai báo (``... cùng lúc với --ui-brand: ở chế độ
+    # tối``), nên phép dò bắt luôn chuỗi đó và chạy tới dấu ``;`` kế tiếp — vốn
+    # nằm sau MỘT khai báo khác. Kết quả đo được: ``--ui-brand`` mang giá trị
+    # là một đoạn văn, và ``--ui-on-brand`` biến mất khỏi bảng.
+    sach = re.sub(r"/\*.*?\*/", " ", block, flags=re.S)
+    # Giữ giá trị CUỐI cho khoá trùng: trong một khối CSS, khai báo sau thắng.
+    return {
+        name: value.strip()
+        for name, value in re.findall(r"(--ui-[a-z0-9-]+)\s*:\s*([^;}]+)", sach)
+    }
+
+
+def test_text_on_brand_background_flips_with_the_theme() -> None:
+    """Chữ trên nền thương hiệu phải đạt AA ở CẢ hai chế độ.
+
+    Nền thương hiệu sáng lên ở chế độ tối, nên một màu chữ cố định không phục
+    vụ được cả hai: chữ trắng trên nền thương hiệu tối chỉ còn 2,75:1.
+    """
+    for ten, selector in (
+        ("sáng", ":root{"),
+        ("tối theo hệ", ':root:not([data-ui-theme="light"]){'),
+        ("tối chọn tay", ':root[data-ui-theme="dark"]{'),
+    ):
+        token = _tokens(selector)
+        thuong_hieu = token["--ui-brand"]
+        tren_thuong_hieu = token["--ui-on-brand"]
+        ratio = contrast_ratio(tren_thuong_hieu, thuong_hieu)
+        assert ratio >= WCAG_AA_NORMAL, (
+            f"chế độ {ten}: {tren_thuong_hieu} trên {thuong_hieu} = {ratio:.2f}:1"
+        )
+
+
+def test_both_dark_blocks_declare_the_same_tokens() -> None:
+    """Tối-theo-hệ và tối-chọn-tay phải cho CÙNG một bảng màu.
+
+    Biểu định kiểu khai chế độ tối hai lần: một lần trong
+    ``@media (prefers-color-scheme:dark)`` cho người không chọn gì, một lần
+    trong ``:root[data-ui-theme="dark"]`` cho người bấm chọn. Không có phép
+    kiểm này thì hai khối trôi khỏi nhau: sửa một khối, quên khối kia, và hai
+    người đọc cùng một trang thấy hai màu khác nhau. Đột biến đã chứng minh lỗ
+    này — đổi ``--ui-on-brand`` chỉ trong khối ``@media`` mà bộ kiểm vẫn xanh.
+    """
+    theo_he = _tokens(':root:not([data-ui-theme="light"]){')
+    chon_tay = _tokens(':root[data-ui-theme="dark"]{')
+    assert theo_he == chon_tay, (
+        "hai khối chế độ tối lệch nhau: "
+        + ", ".join(
+            f"{k}: media={theo_he.get(k)!r} vs attr={chon_tay.get(k)!r}"
+            for k in sorted(set(theo_he) | set(chon_tay))
+            if theo_he.get(k) != chon_tay.get(k)
+        )
+    )
+
+
+def test_every_text_token_reaches_aa_on_every_surface_it_sits_on() -> None:
+    """Mọi token màu CHỮ phải đạt AA trên mọi bề mặt của cùng chế độ.
+
+    Không có phép kiểm này thì một màu nhấn đẹp mà mờ lọt thẳng ra trang: đã
+    đo, ``#717580`` — màu chữ mờ của trang tham chiếu — chỉ đạt 3,96:1 trên
+    ``#eaedff``.
+    """
+    CHU = ("--ui-ink", "--ui-ink-2", "--ui-ink-soft", "--ui-brand", "--ui-brand-ink",
+           "--ui-ok", "--ui-warn", "--ui-bad")
+    BE_MAT = ("--ui-bg", "--ui-bg-2", "--ui-surface", "--ui-surface-2")
+    loi: list[str] = []
+    for che_do, selector in (
+        ("sáng", ":root{"),
+        ("tối theo hệ", ':root:not([data-ui-theme="light"]){'),
+        ("tối chọn tay", ':root[data-ui-theme="dark"]{'),
+    ):
+        token = _tokens(selector)
+        for ten_chu in CHU:
+            for ten_nen in BE_MAT:
+                chu, nen = token[ten_chu], token[ten_nen]
+                if not (chu.startswith("#") and nen.startswith("#")):
+                    continue
+                ratio = contrast_ratio(chu, nen)
+                if ratio < WCAG_AA_NORMAL:
+                    loi.append(f"{che_do}: {ten_chu} {chu} trên {ten_nen} {nen} = {ratio:.2f}:1")
+    assert not loi, "token chữ trượt AA:\n  " + "\n  ".join(loi)
 
 
 # --- Không còn liên kết chết ----------------------------------------------
@@ -364,3 +468,53 @@ def test_statistics_page_can_reach_the_rest_of_the_site() -> None:
     # Mọi đích phải tồn tại thật — liên kết gãy còn tệ hơn không có liên kết.
     missing = sorted(t for t in targets if not (DOCS / t).exists())
     assert not missing, f"liên kết trỏ tới trang không tồn tại: {missing}"
+
+
+# --- Nền không được nháy màu khi trang tải xong ---------------------------
+
+
+def _ui_bg(css: str) -> str:
+    match = re.search(r"--ui-bg:\s*(#[0-9a-fA-F]{3,8})", css)
+    assert match, "không tìm thấy --ui-bg"
+    return match.group(1).lower()
+
+
+def test_the_three_copies_of_the_page_background_agree() -> None:
+    """Màu nền khai ở BA chỗ; lệch nhau là một cú nháy màu khi trang tải.
+
+    ``critical.css`` vẽ khung đầu tiên, ``ui.css`` vẽ khi đã tải xong, và
+    ``_FALLBACK_CRITICAL`` đỡ khi module sinh ra không nạp được. Đo được trước
+    khi sửa: bản dự phòng vẫn mang ``#F2F4FF`` của bảng màu cũ trong khi hai
+    bản kia đã đổi — người đọc thấy nền cũ lóe lên rồi mới đổi sang nền mới.
+    """
+    import css_links
+    from ui_theme import TAILWIND_LITE_CSS
+
+    token = _ui_bg(TAILWIND_LITE_CSS)
+    assert _ui_bg(css_links.CRITICAL_CSS) == token, "critical.css lệch khỏi ui.css"
+    assert _ui_bg(css_links._FALLBACK_CRITICAL) == token, "bản dự phòng lệch khỏi ui.css"
+
+
+def test_the_first_frame_paints_the_background_from_tokens_not_a_copy() -> None:
+    """Quy tắc ``body`` của CSS tới hạn không được ghim mã màu.
+
+    Màu nền từng có BỐN bản sao: ``ui_theme``, module sinh ra, bản dự phòng
+    trong ``css_links``, và một chuỗi ghim cứng trong
+    ``scripts/extract_critical_css.py``. Bản thứ tư không ai canh, nên sau khi
+    đổi bảng màu thì khung vẽ ĐẦU TIÊN vẫn là nền cũ. Phép kiểm trên chỉ soi
+    ``--ui-bg`` nên nó không thấy — nó không đọc thuộc tính ``background``.
+    """
+    import css_links
+
+    for ten, css in (
+        ("critical sinh ra", css_links.CRITICAL_CSS),
+        ("bản dự phòng", css_links._FALLBACK_CRITICAL),
+    ):
+        match = re.search(r"body\{([^}]*)\}", css)
+        assert match, f"{ten}: không có quy tắc body"
+        khoi = match.group(1)
+        background = re.search(r"background\s*:\s*([^;]+)", khoi)
+        assert background, f"{ten}: body không khai background"
+        assert not re.search(r"#[0-9a-fA-F]{3,8}", background.group(1)), (
+            f"{ten}: nền ghim mã màu {background.group(1)!r} thay vì đọc token"
+        )

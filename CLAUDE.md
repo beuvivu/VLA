@@ -28,6 +28,41 @@ ra 29 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
 Stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên đã nghỉ;
 `tests/test_published_ui_contract.py` làm đỏ trang nào còn trỏ vào nó.
 
+### Ngôn ngữ thị giác — lấy từ trang tham chiếu, ĐÃ ĐO
+
+Bảng màu và hiệu ứng lấy theo trang mẫu chủ dự án chọn (một chủ đề thương mại
+dựng trên Bootstrap 5). Ta KHÔNG bê tệp của họ về — kho này viết CSS tay,
+không framework — mà đọc ngôn ngữ thị giác rồi tự viết. Proxy môi trường phát
+triển chặn trang đó, nên đọc qua runner Actions:
+`.github/workflows/inspect-reference-design.yml`.
+
+    nền           --solitude-blue #f0f4fd -> --selago #eaedff
+    nhấn          --base-color #2946f3, --majorelle-blue #724ade
+    bóng          luôn đen 8%: 0 0 10px / 0 0 25px / 0 20px 60px
+    bo góc        16px cho thẻ, 24px cho dải tiêu đề, 50px cho viên thuốc
+    nhịp          .3s; đường cong cubic-bezier(.12,0,.39,0) và (.37,0,.63,1)
+    quầng sáng    radial-gradient thay cho phần tử có filter:blur(20-30px)
+
+**KHÔNG lấy nguyên mọi mã màu của họ.** Màu chữ mờ `--medium-gray #717580` của
+trang mẫu chỉ đạt **3,96:1** trên nền `#eaedff` — trượt AA. Lấy sắc độ của họ,
+còn độ đậm thì phải đo lại. Cùng lý do với `--green #2ebb79` (2,24:1),
+`--golden-yellow #fd961e` (1,99:1) và `--red #dc3131` (4,21:1): chúng là màu
+TÔ, không phải màu CHỮ.
+
+Đổi bảng màu thì đổi ở **`src/ui_theme.py`** (token dùng chung) và
+**`src/templates/ui_visual_system.css`** (lớp skin). Bốn phép kiểm canh:
+
+- `test_every_text_token_reaches_aa_on_every_surface_it_sits_on` — mọi token
+  chữ trên mọi bề mặt, cả ba khối màu.
+- `test_both_dark_blocks_declare_the_same_tokens` — `@media
+  prefers-color-scheme` và `[data-ui-theme="dark"]` phải trùng nhau.
+- `test_the_three_copies_of_the_page_background_agree` và
+  `test_the_first_frame_paints_the_background_from_tokens_not_a_copy` — màu nền
+  từng có BỐN bản sao (`ui_theme`, module sinh ra, bản dự phòng trong
+  `css_links`, và một chuỗi ghim trong `scripts/extract_critical_css.py`).
+- `PAGE_GROUND` / `BRAND_RAMP` trong `tests/test_ui_design_system.py` là HỢP
+  ĐỒNG: mọi chủ sở hữu style phải khai cùng một nền và cùng một dốc nhấn.
+
 `docs/ui-ux/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
 giữ lại để tham chiếu. Nó **chưa có hiệu lực** — tầng trình bày nó mô tả đã
 bị gỡ. Đừng coi nó là luật của kho cho tới khi chủ dự án nói bắt đầu lại.

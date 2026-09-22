@@ -363,13 +363,13 @@ FUN_CSS = r"""
 }
 .fun-prediction-head h3 { margin: 3px 0 5px; font-size: 20px; }
 .fun-prediction-head p { margin: 0; color: #55606f; font-size: 13px; line-height: 1.5; }
-.fun-eyebrow { color: #c2410c; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.fun-eyebrow { color: #ba3e0c; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .fun-warning {
   white-space: nowrap;
   padding: 7px 10px;
   border-radius: 999px;
   background: #fff7ed;
-  color: #c2410c;
+  color: #ba3e0c;
   border: 1px solid #fed7aa;
   font-size: 11px;
   font-weight: 900;

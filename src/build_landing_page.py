@@ -836,17 +836,17 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 #: thuần và thuộc về một hằng số, không thuộc về thân hàm.
 _LANDING_CSS = """\
     :root {
-      --bg: #F2F4FF;
-      --bg-2: #E6EAFB;
+      --bg: #f0f4fd;
+      --bg-2: #eaedff;
       --panel: #ffffff;
-      --panel-soft: #F7F8FE;
-      --ink: #161C2D;
-      --muted: #5A6480;
-      --line: #E7EAF6;
+      --panel-soft: #f7f7f7;
+      --ink: #202329;
+      --muted: #5c6270;
+      --line: #e4e7f2;
       /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
          màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
          với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
-      --brand: #4F46E5;
+      --brand: #2946f3;
       --blue: #2563eb;
       --sky: #0891b2;
       --green: #059669;
@@ -930,7 +930,7 @@ _LANDING_CSS = """\
     .dock-btn {
       display: grid; place-items: center;
       padding: 0; background: none; border: 0; cursor: pointer;
-      border-radius: 12px; color: #e5e7eb;
+      border-radius: 12px; color: #f0f1ff;
     }
     .dock-ic {
       display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
@@ -1068,7 +1068,7 @@ _LANDING_CSS = """\
       /* Ba chặng đã dò trắng trên toàn dải: 6,29:1 / 7,69:1 / 9,02:1. Chọn
          chặng bằng cách nhìn ba ô màu thì không đủ — lần trước làm thế và hai
          trong ba chặng trượt chuẩn với chữ trắng. */
-      background: linear-gradient(135deg, #4F46E5 0%, #4C3BC4 54%, #5B2E9E 100%);
+      background: linear-gradient(135deg, #2946f3 0%, #4a44ea 54%, #724ade 100%);
       box-shadow: var(--shadow-brand);
     }
     .hero::after {
@@ -1089,7 +1089,7 @@ _LANDING_CSS = """\
       line-height: .98;
       letter-spacing: -.045em;
     }
-    .hero p { max-width: 820px; margin: 0; color: #E4E5FC; font-size: 16px; line-height: 1.65; }
+    .hero p { max-width: 820px; margin: 0; color: #F8F9FF; font-size: 16px; line-height: 1.65; }
     .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .primary-action, .ghost-action {
       display: inline-flex;
@@ -1102,7 +1102,7 @@ _LANDING_CSS = """\
       font-weight: 800;
     }
     .primary-action { background: #fff; color: #0f172a; }
-    .ghost-action { border: 1px solid rgba(255,255,255,.18); color: #e5e7eb; background: rgba(255,255,255,.07); }
+    .ghost-action { border: 1px solid rgba(255,255,255,.18); color: #f0f1ff; background: rgba(255,255,255,.07); }
     /* auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần một
        media query riêng cho từng mốc. */
     .metric-row {
@@ -1566,7 +1566,7 @@ _LANDING_CSS = """\
       width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
       background: #94a3b8;
     }
-    .live-status[data-state="live"] { border-color: #ef4444; color: #b91c1c; }
+    .live-status[data-state="live"] { border-color: #bf3636; color: #b91c1c; }
     .live-status[data-state="live"] .live-dot {
       background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
     }
@@ -2396,7 +2396,7 @@ def _render_html(
       <section id="tong-quan" class="hero section">
         <div class="hero-content">
           <div>
-            <p class="eyebrow" style="color:#D5D8FC">Bảng điều khiển tổng hợp</p>
+            <p class="eyebrow" style="color:#F8F9FF">Bảng điều khiển tổng hợp</p>
             <h1>Trung tâm thống kê xổ số</h1>
           </div>
           <p>

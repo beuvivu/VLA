@@ -216,7 +216,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 @media (prefers-color-scheme: dark) {
   .sp-fields { color: #94a3b8; }
   .sp-f + .sp-f { border-left-color: #334155; }
-  .sp-f-ngay { color: #64748b; }
+  .sp-f-ngay { color: #5c6b80; }
   .sp-fields-toggle { background: #0f172a; }
   .sp-fchk { color: #cbd5e1; }
   .sp-zero { color: #475569; }
@@ -277,7 +277,7 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 @media (max-width: 860px) { .sp-pick-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
 @media (prefers-color-scheme: dark) {
   .sp-pick-quick button { background: #1e293b; color: #e2e8f0; }
-  .sp-pick { background: #1e293b; color: #64748b; }
+  .sp-pick { background: #1e293b; color: #5c6b80; }
 }
 
 /* --- Cầu giải Đặc Biệt ---------------------------------------------------- */
@@ -478,7 +478,7 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
   .sp-table th.sp-pending {
     background-color: #263243 !important;
     color: #CBD5E1;
-    outline-color: #64748B;
+    outline-color: #5c6b80;
     /* Hex ở khối chế độ tối là lựa chọn có chủ đích, không phải sót token. */
   }
 }

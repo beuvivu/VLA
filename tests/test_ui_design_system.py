@@ -297,10 +297,13 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
 # thương hiệu, nên lần sau sửa lệch một chủ thể sẽ đỏ ngay tại chỗ sửa.
 
 #: Mặt đất của trang ở chế độ sáng. Mọi chủ thể tạo kiểu phải khai cùng giá trị.
-PAGE_GROUND = ("#F2F4FF", "#E6EAFB")
+#: Nền trang, lấy theo trang tham chiếu mà chủ dự án chọn: --solitude-blue và
+#: --selago. Đây là HỢP ĐỒNG, không phải ảnh chụp — đổi bảng màu thì phải đổi ở
+#: đây một cách có ý thức, và phép kiểm dưới bắt mọi chủ sở hữu style đi theo.
+PAGE_GROUND = ("#f0f4fd", "#eaedff")
 
 #: Dốc thương hiệu dành riêng cho điều hướng và hành động chính.
-BRAND_RAMP = ("#4F46E5", "#4C3BC4", "#5B2E9E")
+BRAND_RAMP = ("#2946F3", "#4A44EA", "#724ADE")
 
 
 def _light_root(css: str) -> str:

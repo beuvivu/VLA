@@ -119,3 +119,131 @@ Bản khôi phục **xanh hơn chính bản gốc mà nó khôi phục**: 22 ph�
   thứ tư (vector đã học từ trước khi có cổng đề bạt) mà hàm chung gộp vào
   `khong_co_ho_so`. Gộp hai bên là đổi hành vi, không phải dọn dẹp.
 - 14 trang thống kê do `build_stat_pages.py` sinh ra dùng `.innerHTML`.
+
+## 2026-09-22 (2) — Áp ngôn ngữ thị giác của trang tham chiếu lên cả 29 trang
+
+Chủ dự án đưa một trang mẫu và yêu cầu dùng nền, hiệu ứng và toàn bộ UI/UX của
+nó cho `index` / `landing_desktop` và các trang còn lại.
+
+### Đọc trang mẫu: proxy chặn, đi qua runner Actions
+
+Trang mẫu trả **403 ngay ở tầng CONNECT** với cả `curl` lẫn trình lấy trang —
+giống năm trang tham chiếu trước. Runner của Actions không bị chặn, nên thêm
+`scripts/inspect_reference_design.py` và
+`.github/workflows/inspect-reference-design.yml`: chúng in SỐ ĐO thị giác (mã
+màu theo tần suất, gradient, `box-shadow`, `border-radius`, `font-family`,
+`@keyframes`, `transition`, `filter`) chứ không lưu HTML/CSS/hình của họ vào
+kho. Trang mẫu là sản phẩm thương mại có bản quyền, và kho này viết CSS tay
+không framework, nên bê tệp của họ về vừa sai vừa không dùng được.
+
+Ba lần chạy mới ra đủ dữ liệu, và hai lần đầu hỏng vì lỗi của công cụ:
+
+1. Lần 1 không in `--primary-font`/`--alt-font` — trang mẫu khai **508 biến
+   CSS**, gần hết là `--bs-*` của Bootstrap, nên khung in 60 dòng chỉ toàn
+   framework.
+2. Lần 2 in ra nhưng không đọc được: log của Actions chỉ lấy về được phần
+   cuối (tải trọn tệp log cũng bị proxy chặn 403), mà ba mục cần thì nằm giữa.
+   Phải đưa chúng xuống cuối.
+
+### Số đo thu được
+
+| Hạng mục | Trang tham chiếu |
+| --- | --- |
+| Phông | `--primary-font: 'Inter'`, `--alt-font: 'Plus Jakarta Sans'` |
+| Nhấn | `--base-color #2946f3`, `--majorelle-blue #724ade` |
+| Nền | `--solitude-blue #f0f4fd`, `--selago #eaedff` |
+| Bóng | luôn đen 8%: `0 0 10px`, `0 0 25px`, `0 20px 60px` |
+| Bo góc | 16px (thẻ) ×9, 50px (viên thuốc) ×8 |
+| Nhịp | `.3s` ×107; `cubic-bezier(.12,0,.39,0)`, `(.37,0,.63,1)` |
+| Quầng | `filter: blur(20px)` / `blur(30px)` |
+| `clamp()` | **0** — họ dùng breakpoint, không dùng thang co giãn |
+
+Phông: giữ **Inter tự host**. Không thêm Plus Jakarta Sans vì CSP đặt
+`font-src 'self'` và proxy không tải được tệp phông về để tự host. Đây là
+thiếu sót đã biết, không phải bỏ qua.
+
+### Chỗ KHÔNG lấy nguyên
+
+Màu chữ mờ của họ, `--medium-gray #717580`, chỉ đạt **3,96:1** trên nền
+`#eaedff` — trượt AA. `--green #2ebb79` đạt 2,24, `--golden-yellow #fd961e`
+đạt 1,99, `--red #dc3131` đạt 4,21: đó là màu TÔ, không phải màu CHỮ. Lấy sắc
+độ, đo lại độ đậm: chữ mờ `#5c6270` (5,25 trên nền tối nhất), trạng thái
+`#12744a` / `#8f5608` / `#c62828`.
+
+### Bốn bản sao của màu nền
+
+Màu nền trang hoá ra có **bốn** bản: `ui_theme.py`, `critical_css_generated`,
+bản dự phòng trong `css_links.py`, và một chuỗi ghim cứng trong
+`scripts/extract_critical_css.py`. Bản thứ tư không ai canh, nên sau khi đổi
+bảng màu thì **khung vẽ đầu tiên vẫn là nền cũ**. Nay cả hai chỗ sinh CSS tới
+hạn đều đọc `var(--ui-bg)`, và hai phép kiểm canh việc đó.
+
+### Phép kiểm tương phản: tự nó từng không thể đỏ
+
+`test_text_on_brand_background_flips_with_the_theme` ghim hằng `"#4f46e5"` và
+`"#8b93f8"` — nó kiểm hai con số do chính nó viết ra, nên đổi `--ui-brand`
+sang màu KHÔNG đạt chuẩn thì vẫn xanh. Nay nó đọc token thật. Trong lúc viết
+lại, đột biến còn lộ hai lỗi trong chính phép kiểm mới:
+
+1. Phép đếm ngoặc bắt đầu từ *bên trong* khối nên không đóng đúng chỗ, ăn sang
+   các khối sau, và vì `dict` lấy giá trị cuối cho khoá trùng, `_tokens(":root{")`
+   trả về bảng màu chế độ **TỐI**.
+2. Chú thích trong khối nhắc tên token bằng đúng cú pháp khai báo
+   (`... cùng lúc với --ui-brand: ở chế độ tối`), nên phép dò bắt luôn đoạn văn
+   đó làm giá trị và `--ui-on-brand` biến mất khỏi bảng.
+
+Thêm `test_both_dark_blocks_declare_the_same_tokens`: khối `@media
+prefers-color-scheme` và khối `[data-ui-theme="dark"]` phải trùng nhau — đột
+biến chứng minh lỗ này bằng cách đổi `--ui-on-brand` chỉ ở một khối mà bộ kiểm
+vẫn xanh.
+
+### Đo trên trang đã render, không suy từ CSS
+
+Soi 14 trang × 3 khổ × 2 chế độ = 84 trường hợp bằng Chromium thật. Hai lần
+đầu thước đo sai:
+
+1. Đầu dò leo cây DOM tìm `backgroundColor` — sai ở mọi nền gradient, vì màu
+   nằm ở `background-image`. Nó báo chữ trắng trên dải xanh là **1,00:1**.
+2. Đầu dò lấy màu nền từ pixel 3px phía trên hộp chữ — đụng viền, cạnh bóng và
+   thẻ bên cạnh, nên **báo quá**.
+
+Cách dùng đúng một thước đo nhiễu là đo **so sánh** trên cùng thước, hai cây
+mã. Kết quả:
+
+| Phép đo | Trước | Sau |
+| --- | --- | --- |
+| Trường hợp có vấn đề | 71 | 65 |
+| Tổng lượt chữ trượt AA | 235 | **180** |
+| Tràn ngang | 4 | 4 |
+| Trường hợp xấu đi | — | **0** |
+
+### Hồi quy do chính thay đổi này, đã tìm và sửa
+
+- Khối "chỉ-sáng" trong skin ghim nền/mực/thương hiệu nhưng **bỏ sót màu trạng
+  thái**, nên ở chế độ tối `--ui-ok`/`--ui-bad` vẫn lật sang bản dành cho nền
+  tối trong khi bề mặt đã bị ghim trắng: `#4ade80` trên `#f7f7f7` = 1,63:1,
+  `#fb7185` trên `#ffffff` = 2,69:1.
+- Chữ nhạt trên dải hero được chọn cho màu chàm cũ nhạt hơn. Với `#2946f3` nó
+  tụt còn 3,49–4,40:1. Nâng lên `#F8F9FF` (4,55:1 trên điểm hero bất lợi nhất
+  đo từ pixel).
+- Nền mới (`#eaedff`) sâu hơn nền cũ (`#f4f5ff`), nên 30 tông xám vốn đã sát
+  ngưỡng bị đẩy xuống dưới. Đậm lại theo phép đo, giữ sắc độ, chỉ ở những khai
+  báo `color:` — cùng một mã màu còn làm nền và viền ở nơi khác.
+
+Bốn trang thiếu trong hợp đồng "chỉ-sáng" (`dashboard`, `model-quality`,
+`ml_top10_*`, `bang-dac-biet`) khiến chữ `#e8eef6` nằm trên nền `#ffffff` =
+**1,17:1**, vô hình hoàn toàn ở chế độ tối. Đã thêm vào danh sách. Lối sửa
+đúng về lâu dài là cho CSS riêng của chúng đọc token.
+
+## Còn lại, chưa sửa — đều có TRƯỚC thay đổi này
+
+Đã kiểm chứng bằng cách chạy cùng phép đo trên cây mã trước khi sửa:
+
+- **180 lượt chữ trượt AA** theo đầu dò pixel. Thước này báo quá (xem trên),
+  nên con số thật thấp hơn; nhưng nó giảm 23% và không có trường hợp nào xấu đi.
+- **4 trường hợp tràn ngang**, y hệt trước.
+- **Dock nổi che chữ ở khổ 390px**: `index` che 2 mục, `landing_desktop` 2,
+  `statistics` 1. Đo trước/sau giống hệt từng con số — `padding-bottom` của
+  `body` là `0px` nên không chỗ nào dành sẵn cho dock.
+- Phông tiêu đề `Plus Jakarta Sans` chưa có (CSP `font-src 'self'`, proxy
+  không tải được tệp về).

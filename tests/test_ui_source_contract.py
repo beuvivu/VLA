@@ -19,7 +19,7 @@ def test_path_template_owns_light_dock_safe_bento_structure() -> None:
     assert '<div class="top path-hero">' in source
     assert 'class="grid path-overview"' in source
     assert 'class="path-table-scroll"' in source
-    assert '--bg:#F4F5FF' in source
+    assert '--bg:#f0f4fd' in source
     assert 'color-scheme:dark' not in source
 
 

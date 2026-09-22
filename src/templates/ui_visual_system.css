@@ -2,17 +2,39 @@
 :root {
   --ui-page-max:1280px;
   --ui-page-gutter:clamp(16px,2.5vw,32px);
-  --ui-canvas:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 52%,#E8ECFF 100%);
-  --ui-glass:color-mix(in srgb,var(--ui-surface) 85%,transparent);
-  --ui-glass-border:color-mix(in srgb,var(--ui-surface) 80%,var(--ui-border));
-  --ui-elevation:0 1px 2px rgb(30 41 59 / .025),0 8px 30px rgb(30 41 59 / .045);
-  --ui-r-lg:20px;
+  /* Nền: quầng sáng + dải chuyển lên trắng, theo đúng mẫu đo được của trang
+     tham chiếu. Ba lớp xếp từ trên xuống: lớp trắng làm nhẹ phần đầu trang,
+     hai quầng lấy màu #2946f3 và #724ade, rồi nền phẳng #f0f4fd đỡ bên dưới. */
+  --ui-canvas:linear-gradient(to top,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 46%),
+    radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.13),transparent 62%),
+    radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%),
+    linear-gradient(180deg,#f0f4fd 0%,#eaedff 100%);
+  --ui-glass:color-mix(in srgb,var(--ui-surface) 88%,transparent);
+  --ui-glass-border:color-mix(in srgb,var(--ui-surface) 76%,var(--ui-border));
+  /* Bóng đen 8% toả rộng, không lệch — dấu hiệu nhận ra của trang tham chiếu.
+     Bản trước dùng bóng hai lớp ám lạnh; nó tách bề mặt khỏi nền rõ hơn nhưng
+     cho cảm giác "cứng" hơn hẳn. */
+  --ui-elevation:0 0 25px rgba(0,0,0,.08);
+  --ui-elevation-hover:0 20px 60px rgba(0,0,0,.08);
+  --ui-r-lg:16px;
   --ui-r-xl:24px;
 }
 @media (prefers-color-scheme:dark) {
-  :root:not([data-ui-theme="light"]) {--ui-canvas:linear-gradient(135deg,#0b1220,#141c32)}
+  :root:not([data-ui-theme="light"]) {
+    --ui-canvas:radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.16),transparent 62%),
+      radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%),
+      linear-gradient(180deg,#121418 0%,#1a1d25 100%);
+    --ui-elevation:0 0 25px rgba(0,0,0,.5);
+    --ui-elevation-hover:0 20px 60px rgba(0,0,0,.55);
+  }
 }
-:root[data-ui-theme="dark"] {--ui-canvas:linear-gradient(135deg,#0b1220,#141c32)}
+:root[data-ui-theme="dark"] {
+  --ui-canvas:radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.16),transparent 62%),
+    radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%),
+    linear-gradient(180deg,#121418 0%,#1a1d25 100%);
+  --ui-elevation:0 0 25px rgba(0,0,0,.5);
+  --ui-elevation-hover:0 20px 60px rgba(0,0,0,.55);
+}
 body[data-ui-page] {
   background:var(--ui-canvas);
   background-attachment:fixed;
@@ -20,17 +42,41 @@ body[data-ui-page] {
   font-family:var(--ui-font);
   -webkit-font-smoothing:antialiased;
 }
-/* These families already have an intentionally light-only visual contract. */
+/* Những họ trang này có hợp đồng thị giác CHỈ-SÁNG, có chủ ý: CSS riêng của
+   chúng ghim nền thẻ là #fff. Nếu để token lật sang chế độ tối thì chữ chuyển
+   sáng mà nền thẻ vẫn trắng — ĐO ĐƯỢC trên trang thật: chữ #e8eef6 trên nền
+   #ffffff là 1,17:1, tức vô hình hoàn toàn. Bốn trang dưới (`dashboard`,
+   `model-quality`, `ml_top10_*`, `bang-dac-biet`) thiếu trong danh sách này
+   nên chúng vỡ đúng theo cách ấy. Lối sửa đúng về lâu dài là cho CSS riêng
+   của chúng đọc token; ghim sáng ở đây là chặn chảy máu, và nó chặn thật. */
 body[data-ui-page]:is(.sp-page,.path-page,.bf-page,.live-console,
   [data-ui-page="index"],[data-ui-page="landing"],[data-ui-page="landing_desktop"],
-  [data-ui-page="statistics"]) {
-  --ui-canvas:linear-gradient(135deg,#F4F5FF 0%,#EAEBFF 52%,#E8ECFF 100%);
-  --ui-surface:#fff;--ui-surface-2:#F7F8FE;
-  --ui-ink:#161C2D;--ui-ink-2:#28304A;--ui-ink-soft:#5A6480;
-  --ui-border:#E0E4F2;--ui-border-strong:#CAD1E5;
-  --ui-brand:#4F46E5;--ui-brand-ink:#4338CA;--ui-brand-soft:#EEF2FF;
-  --ui-brand-border:#C7D2FE;--ui-on-brand:#fff;
-  --ui-glass:rgb(255 255 255 / .85);--ui-glass-border:rgb(255 255 255 / .8);
+  [data-ui-page="statistics"],[data-ui-page="dashboard"],
+  [data-ui-page="model-quality"],[data-ui-page="ml_top10_loto"],
+  [data-ui-page="ml_top10_de"],[data-ui-page="bang-dac-biet"],
+  [data-ui-page="research-lab"],[data-ui-page="so-ket-qua-truyen-thong"]) {
+  --ui-canvas:linear-gradient(to top,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 46%),
+    radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.13),transparent 62%),
+    radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%),
+    linear-gradient(180deg,#f0f4fd 0%,#eaedff 100%);
+  --ui-surface:#fff;--ui-surface-2:#f7f7f7;
+  --ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;
+  --ui-border:#e4e7f2;--ui-border-strong:#cdd4e8;
+  --ui-brand:#2946f3;--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;
+  --ui-brand-border:#c2cdfb;--ui-on-brand:#fff;
+  --ui-glass:rgb(255 255 255 / .88);--ui-glass-border:rgb(255 255 255 / .76);
+  --ui-elevation:0 0 25px rgba(0,0,0,.08);
+  --ui-elevation-hover:0 20px 60px rgba(0,0,0,.08);
+  /* Màu TRẠNG THÁI cũng phải ghim sáng. Ghim nền mà bỏ sót ba token này thì ở
+     chế độ tối chúng vẫn lật sang bản dành cho nền tối, trong khi bề mặt đã bị
+     ghim trắng — ĐO ĐƯỢC trên trang thật: #4ade80 trên #f7f7f7 là 1,63:1 và
+     #fb7185 trên #ffffff là 2,69:1. --ui-chart-1 cũng vậy: dải sáng của nó
+     được chọn cho nền tối. */
+  --ui-ok:#12744a;--ui-ok-soft:#d8f5ef;--ui-ok-border:#a5ddcb;
+  --ui-warn:#8f5608;--ui-warn-soft:#fff6e6;--ui-warn-border:#f7d9a6;
+  --ui-bad:#c62828;--ui-bad-soft:#feedec;--ui-bad-border:#f6c9c6;
+  --ui-chart-1:#2946f3;
+  --hairline:rgba(15,23,42,.06);
   color-scheme:light;
 }
 body[data-ui-page] :is(.ui-shell,.ui-shell-wide,.path-shell),
@@ -48,14 +94,24 @@ body[data-ui-page] :is(.ui-card,.card,.metric-card,.sp-controls,.sp-kpi-card,
   .sp-recent-card,.sp-duo>div,.bf-card,.tr-filter,.tr-summary>div,.tr-day,
   .ai-status-item,.rl-stage,.rl-console-card) {
   border:1px solid var(--ui-glass-border);
-  border-radius:20px;background:var(--ui-glass);
+  border-radius:var(--ui-r-lg);background:var(--ui-glass);
   box-shadow:var(--ui-elevation);
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:box-shadow var(--ui-dur,.3s) var(--ui-ease-out,ease),
+    transform var(--ui-dur,.3s) var(--ui-ease-out,ease);
+}
+/* Bề mặt nâng lên khi trỏ vào: bóng đổi từ mức toả gần sang mức toả xa, đúng
+   cặp giá trị của trang tham chiếu (0 0 25px -> 0 20px 60px, cùng đen 8%).
+   Nhấc 2px chứ không nhấc nhiều: bảng số nhảy theo con trỏ thì khó đọc. */
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  body[data-ui-page] :is(.ui-card,.card,.metric-card,.bf-card,.tr-day):hover {
+    box-shadow:var(--ui-elevation-hover);transform:translateY(-2px);
+  }
 }
 /* Nested controls share the parent card rather than drawing a second card. */
 body.bf-page[data-ui-page] .sp-controls {background:transparent;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
 body[data-ui-page] :is(.ui-header,.path-hero,.live-hero) {
-  padding:24px;margin-bottom:24px;border-radius:24px;
+  padding:24px;margin-bottom:24px;border-radius:var(--ui-r-xl);
   background:var(--ui-glass);border:1px solid var(--ui-glass-border);
   box-shadow:var(--ui-elevation);backdrop-filter:blur(12px);
 }
@@ -94,7 +150,12 @@ body[data-ui-page] input[type="checkbox"] {accent-color:var(--ui-brand)}
 body[data-ui-page] :is(.sp-chip,.sp-btn,.sp-controls select,.sp-controls input:not([type="checkbox"]),
   .ui-tab,.ui-btn) {min-height:36px}
 body[data-ui-page] :is(.sp-chip,.sp-btn,.ui-btn,.tr-btn,.bf-tabs a,.ui-tab) {
-  transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+  /* .3s là nhịp đếm được nhiều nhất ở trang tham chiếu (107 lần), và
+     cubic-bezier(.37,0,.63,1) là đường cong "vào" của họ. */
+  transition:background-color var(--ui-dur,.3s) var(--ui-ease-out,ease),
+    border-color var(--ui-dur,.3s) var(--ui-ease-out,ease),
+    box-shadow var(--ui-dur,.3s) var(--ui-ease-out,ease),
+    transform var(--ui-dur,.3s) var(--ui-ease-out,ease);
 }
 body[data-ui-page] :is(.sp-chip,.sp-btn,.ui-btn,.tr-btn):active {transform:translateY(1px)}
 body[data-ui-page] :is(.sp-controls,.sp-marktools,.sp-fields-toggle) {flex-wrap:wrap}
@@ -102,7 +163,7 @@ body[data-ui-page] .sp-controls>label {max-width:100%}
 body[data-ui-page] :is(.sp-controls input,.sp-controls select) {max-width:100%;min-width:0}
 body[data-ui-page] .sp-marktools {gap:8px;max-width:100%}
 body[data-ui-page] .sp-legend {
-  background:var(--ui-brand-soft);border-color:var(--ui-brand-border);border-radius:20px;
+  background:var(--ui-brand-soft);border-color:var(--ui-brand-border);border-radius:var(--ui-r-lg);
 }
 body[data-ui-page] :is(.sp-legend-head,.sp-lg-src,.sp-legend-rule b) {color:var(--ui-brand-ink)}
 body[data-ui-page] .sp-lg-item {background:var(--ui-surface);border-color:var(--ui-border)}
