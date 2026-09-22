@@ -2197,10 +2197,22 @@ _LANDING_SCRIPT = """\
       }
     }
 
-    document.querySelectorAll('[data-number]').forEach(el => {
-      el.addEventListener('click', () => {
-        showNumber(el.dataset.mode || 'loto', el.dataset.number);
-      });
+    // MỘT trình nghe uỷ quyền, không phải một trình nghe mỗi phần tử.
+    //
+    // Đã đo trên `docs/index.html`: `[data-number]` khớp 1309 phần tử — 1000
+    // ô ma trận, 100 ô ma trận nhỏ, 88 liên kết số, 44 hàng cột, 27 số giải,
+    // 27 số dự đoán vui, 20 hàng xác suất, và vài nút khác. Bản cũ giữ lại
+    // 1309 closure cùng 1309 bản ghi trình nghe, tất cả chỉ để gọi đúng một
+    // hàm với hai giá trị đọc thẳng từ `dataset`.
+    //
+    // Sự kiện click nổi bọt, nên một trình nghe ở `document` cộng `closest`
+    // cho hành vi y hệt. Nó còn phủ cả phần tử được thêm SAU khi trang dựng
+    // xong — bản cũ thì không, vì nó chụp danh sách một lần.
+    document.addEventListener('click', (ev) => {
+      const goc = ev.target;
+      if (!goc || typeof goc.closest !== 'function') return;
+      const el = goc.closest('[data-number]');
+      if (el) showNumber(el.dataset.mode || 'loto', el.dataset.number);
     });
 
     const navLinks = [...document.querySelectorAll('.side-nav a')];
