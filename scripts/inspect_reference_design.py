@@ -164,12 +164,21 @@ def doc_mot_trang(url: str, session: requests.Session) -> None:
     # lẫn `--alt-font` vì đúng lý do đó.
     rieng = {k: v for k, v in bien.items() if not k.startswith("--bs-")}
     framework = {k: v for k, v in bien.items() if k.startswith("--bs-")}
+    in_tap("Gradient", sorted({m.group(0) for m in RE_GRADIENT.finditer(css)}, key=len))
+    in_bang_dem("box-shadow", Counter(m.group(1).strip() for m in RE_SHADOW.finditer(css)))
+    in_bang_dem("border-radius", Counter(m.group(1).strip() for m in RE_RADIUS.finditer(css)))
+    in_bang_dem("font-family", Counter(m.group(1).strip()[:90] for m in RE_FONT.finditer(css)))
+    in_tap("@keyframes", sorted({m.group(1) for m in RE_KEYFRAMES.finditer(css)}), 60)
+    in_bang_dem("transition", Counter(m.group(1).strip() for m in RE_TRANSITION.finditer(css)))
+    in_bang_dem("filter / backdrop-filter", Counter(m.group(1).strip() for m in RE_FILTER.finditer(css)))
+    in_tap("clamp() — thang chữ co giãn", sorted({m.group(0) for m in RE_CLAMP.finditer(css)}, key=len))
+
     print(f"\n  == Biến RIÊNG của chủ đề ({len(rieng)} biến) ==")
     for ten, gia_tri in rieng.items():
         print(f"    {ten}: {gia_tri[:110]}")
-    print(f"\n  == Biến framework ({len(framework)} biến, in 20 đầu) ==")
-    for ten, gia_tri in list(framework.items())[:20]:
-        print(f"    {ten}: {gia_tri[:90]}")
+    # Không in giá trị biến framework: chúng là mặc định của Bootstrap, tra
+    # được ở tài liệu của họ, và in ra thì đẩy phần mang bản sắc ra khỏi khung.
+    print(f"\n  == Biến framework: {len(framework)} biến (không in) ==")
 
     print("\n  == Khai báo cho body / html ==")
     for m in re.finditer(r"(?:^|\})\s*(?:html|body)[^{}]{0,80}\{([^{}]{1,600})\}", css):
@@ -181,15 +190,6 @@ def doc_mot_trang(url: str, session: requests.Session) -> None:
     ho = sorted({m.group(1).strip().strip('\'"') for m in re.finditer(r"@font-face[^{}]*\{[^{}]*font-family\s*:\s*([^;}]{1,60})", css)})
     for h in ho[:40]:
         print(f"    {h}")
-
-    in_tap("Gradient", sorted({m.group(0) for m in RE_GRADIENT.finditer(css)}, key=len))
-    in_bang_dem("box-shadow", Counter(m.group(1).strip() for m in RE_SHADOW.finditer(css)))
-    in_bang_dem("border-radius", Counter(m.group(1).strip() for m in RE_RADIUS.finditer(css)))
-    in_bang_dem("font-family", Counter(m.group(1).strip()[:90] for m in RE_FONT.finditer(css)))
-    in_tap("@keyframes", sorted({m.group(1) for m in RE_KEYFRAMES.finditer(css)}), 60)
-    in_bang_dem("transition", Counter(m.group(1).strip() for m in RE_TRANSITION.finditer(css)))
-    in_bang_dem("filter / backdrop-filter", Counter(m.group(1).strip() for m in RE_FILTER.finditer(css)))
-    in_tap("clamp() — thang chữ co giãn", sorted({m.group(0) for m in RE_CLAMP.finditer(css)}, key=len))
 
 
 def main() -> int:
