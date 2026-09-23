@@ -49,3 +49,11 @@ jobs:
         env:
           URLS: ${{ inputs.urls }}
         run: python scripts/inspect_reference_shell.py
+
+      # TẠM: `inspect-reference-icons.yml` chưa dispatch được vì GitHub đòi
+      # tệp workflow phải có trên nhánh mặc định mới đăng ký. Chạy nhờ ở đây
+      # để lấy số đo; gỡ bước này khi workflow kia đã lên nhánh mặc định.
+      - name: Đo biểu tượng đã render
+        env:
+          URLS: ${{ inputs.urls }}
+        run: python scripts/inspect_reference_icons.py
