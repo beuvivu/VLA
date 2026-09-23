@@ -34,7 +34,7 @@
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 4.6552557869423605,
+    "temperature": 4.655255786942317,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
   },
@@ -44,8 +44,8 @@
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
     "validation_logloss": 4.6061463160923815,
-    "baseline_validation_logloss": 4.602979028975798,
-    "logloss_skill": -0.0006880950568415312
+    "baseline_validation_logloss": 4.602979028772286,
+    "logloss_skill": -0.0006880951010850289
   },
   "top4": [
     "89",
