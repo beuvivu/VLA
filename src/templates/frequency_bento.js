@@ -1,5 +1,10 @@
 /* Frequency-only presentation layer. Counts, filters and cell identities are
-   supplied by the existing statistics engine. No network or external assets. */
+   supplied by the existing statistics engine. No network or external assets.
+
+   `mk`, `put` and `fill` are the DOM builders declared at the top of
+   stat_pages.js. Both files are emitted into the SAME <script> element by
+   src/build_stat_pages.py, so they share one scope. Nothing here may assign a
+   string to the DOM: tests/test_security_hardening.py scans this file. */
 function installFrequencyBento(renderName) {
   const pairPage = renderName === "renderPairFrequency";
   const demo = !!window.__D_DEMO_DRAWS__;
@@ -27,12 +32,17 @@ function installFrequencyBento(renderName) {
     const total = rows.reduce((n, r) => n + r.n.length, 0);
     const hot = counts.indexOf(Math.max(...counts));
     const last = rows.at(-1);
-    $("bf-kpis").innerHTML = [
+    fill($("bf-kpis"), [
       ["Kỳ đang phân tích", rows.length, rows.length ? `${rows[0].d} → ${last.d}` : "Không có kỳ phù hợp", "◷"],
       ["Tổng số nháy", total.toLocaleString("vi-VN"), "27 kết quả trong mỗi kỳ XSMB", "▥"],
       ["Đặc Biệt gần nhất", last ? String(last.s).slice(-2) : "—", last ? `Giải ${last.s} · ${last.d}` : "Chưa có kết quả", "★"],
       ["Lô tô xuất hiện nhiều nhất", rows.length ? pad2(hot) : "—", rows.length ? `${counts[hot]} nháy trên trọn dải` : "Chọn lại khoảng thời gian", "↗"],
-    ].map(([label, value, hint, icon]) => `<div class="bf-kpi"><span class="bf-kpi-icon" aria-hidden="true">${icon}</span><span class="bf-kpi-label">${label}</span><strong>${value}</strong><small>${hint}</small></div>`).join("");
+    ].map(([label, value, hint, icon]) => mk("div", {class: "bf-kpi"}, [
+      mk("span", {class: "bf-kpi-icon", "aria-hidden": "true"}, icon),
+      mk("span", {class: "bf-kpi-label"}, label),
+      mk("strong", null, value),
+      mk("small", null, hint),
+    ])));
     grid.classList.add("sp-nhay");
     grid.querySelectorAll("th").forEach(th => {th.scope = "col";});
     const dataCells = grid.querySelectorAll("td[data-key]");
@@ -55,8 +65,10 @@ function installFrequencyBento(renderName) {
     if (first) first.tabIndex = 0;
     // A date range with no draws is not evidence of misses.
     if (!rows.length || !first) {
-      grid.innerHTML = '<tbody><tr><td class="sp-empty-row">' +
-        (!rows.length ? 'Không có kỳ trong dải đã chọn. Hãy kiểm tra khoảng ngày và bộ lọc thứ.' : 'Chưa chọn số nào. Mở phần lựa chọn để thêm số vào ma trận.') + '</td></tr></tbody>';
+      fill(grid, mk("tbody", null, mk("tr", null, mk("td", {class: "sp-empty-row"},
+        !rows.length
+          ? 'Không có kỳ trong dải đã chọn. Hãy kiểm tra khoảng ngày và bộ lọc thứ.'
+          : 'Chưa chọn số nào. Mở phần lựa chọn để thêm số vào ma trận.'))));
     }
     $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;
     $("sp-matrix-note").textContent = `${Math.min(rows.length, MATRIX_MAX_DAYS)} kỳ${rows.length > MATRIX_MAX_DAYS ? " gần nhất · xếp hạng dùng trọn dải" : " · mới nhất trước"}`;
@@ -145,9 +157,20 @@ function installFrequencyBento(renderName) {
   if (pairPage) {
     const host=$("bf-pair-picker");
     const drawPicker=()=>{
-      host.innerHTML='<div class="sp-pick-quick"><button type="button" data-bf-pick="all">Tất cả</button><button type="button" data-bf-pick="none">Bỏ hết</button></div><div class="bf-pair-grid">'+CAP50.map(p=>{
-        const label=p.map(pad2).join("-");return `<button type="button" data-bf-pair="${label}" aria-pressed="${pickedPairs.has(label)}">${label}</button>`;
-      }).join("")+'</div>';
+      fill(host, [
+        mk("div", {class: "sp-pick-quick"}, [
+          mk("button", {type: "button", "data-bf-pick": "all"}, "Tất cả"),
+          mk("button", {type: "button", "data-bf-pick": "none"}, "Bỏ hết"),
+        ]),
+        mk("div", {class: "bf-pair-grid"}, CAP50.map(p => {
+          const label = p.map(pad2).join("-");
+          return mk("button", {
+            type: "button",
+            "data-bf-pair": label,
+            "aria-pressed": String(pickedPairs.has(label)),
+          }, label);
+        })),
+      ]);
     };
     drawPicker();
     host.addEventListener("click",ev=>{
