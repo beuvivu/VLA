@@ -28,6 +28,7 @@ import re
 from html import escape
 from typing import Final
 
+from app_icons import icon_svg
 from ui_theme import SITE_NAV
 
 #: Bề rộng dải biểu tượng. Số đo của trang tham chiếu, dùng ở cả CSS lẫn JS.
@@ -77,7 +78,7 @@ def rail_html(current: str) -> str:
             f'<button class="app-rail-btn" role="tab" type="button"'
             f' id="app-tab-{i}" aria-controls="app-panel-{i}" aria-selected="{chon}"'
             f' data-app-group="{i}" title="{escape(ten, quote=True)}">'
-            f'<span class="app-rail-ic" aria-hidden="true">{escape(bieu_tuong)}</span>'
+            f'<span class="app-rail-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
             f'<span class="app-rail-lb">{escape(NHAN_NGAN.get(ten, ten))}</span>'
             f"</button>"
         )
@@ -112,7 +113,7 @@ def panel_html(current: str) -> str:
             phan.append(
                 f'<a class="app-nav-item{lop}" href="{escape(href, quote=True)}"{danh_dau}'
                 f' data-app-label="{escape(nhan, quote=True)}">'
-                f'<span class="app-nav-ic" aria-hidden="true">{escape(bieu_tuong)}</span>'
+                f'<span class="app-nav-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
                 f'<span class="app-nav-lb">{escape(nhan)}</span></a>'
             )
         phan.append("</nav>")
