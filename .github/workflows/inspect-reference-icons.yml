@@ -1,0 +1,55 @@
+name: Đo hệ biểu tượng và menu trang tham chiếu
+
+# CHẠY TAY, KHÔNG CÓ LỊCH.
+#
+# Vì sao cần, dù đã có `inspect-reference-design.yml`: workflow kia đọc CSS
+# dạng VĂN BẢN. Cách ấy hỏng với một dashboard — đã đo trên NexLink: trang nạp
+# mười biểu định kiểu, tám cái đầu là thư viện icon, nên bản đọc thu về 0 biến
+# chủ đề, 0 quy tắc `body` và một bộ xương rỗng.
+#
+# Workflow này chạy Chromium thật và hỏi `getComputedStyle`: số đo là thứ
+# người dùng nhìn thấy sau khi mọi biểu định kiểu đã hoà vào nhau.
+#
+# Khác `inspect-reference-shell.yml`: workflow kia đo HÌNH HỌC của hai dải.
+# Cái này hỏi biểu tượng được VẼ BẰNG GÌ — ký tự của phông biểu tượng, phần
+# tử <svg>, hay ảnh nền — vì ba lối ấy đòi ba cách dựng lại khác hẳn nhau.
+#
+# Chỉ ĐỌC và in số đo ra log. Không commit, không tải hiện vật, không lưu
+# HTML/CSS/hình của trang vào kho.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Danh sách URL https, cách nhau bằng dấu phẩy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-reference-icons
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: Đo biểu tượng từng mục menu — lối vẽ, cỡ, nét, màu
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir playwright
+
+      - run: python -m playwright install --with-deps chromium
+
+      - name: Đo biểu tượng đã render
+        env:
+          URLS: ${{ inputs.urls }}
+        run: python scripts/inspect_reference_icons.py
