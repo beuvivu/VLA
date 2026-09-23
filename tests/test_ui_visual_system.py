@@ -20,8 +20,14 @@ def test_output_publishes_skin_after_page_styles_without_changing_hooks(tmp_path
     assert skin.name == "link"
     assert (tmp_path / skin["href"]).is_file()
     assert result.body["class"] == ["existing"]
-    assert result.button.attrs == BeautifulSoup(source, "html.parser").button.attrs
-    assert result.script.string == BeautifulSoup(source, "html.parser").script.string
+    # Soi trong VÙNG NỘI DUNG, không soi cả tài liệu. Khung ứng dụng chèn nút
+    # và kịch bản của chính nó vào trước nội dung trang, nên ``result.button``
+    # trả về nút của khung: phép kiểm đỏ trong khi cái nó đặt tên — móc nối của
+    # trang không đổi — vẫn đúng nguyên.
+    noi_dung = result.select_one(".app-main") or result
+    goc = BeautifulSoup(source, "html.parser")
+    assert noi_dung.button.attrs == goc.button.attrs
+    assert noi_dung.script.string == goc.script.string
     once = page.read_text()
     write_page(page, once)
     assert page.read_text() == once

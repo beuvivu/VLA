@@ -211,7 +211,41 @@ def write_page(path: Path, html: str) -> None:
     refined = refine_page(path, html)
     refined = _inject_source_detail_style(path, refined)
     refined = _attach_visual_system(path, refined)
+    # Khung ứng dụng bọc SAU CÙNG, và chỉ bọc. Mọi trình dựng đều đi qua hàm
+    # này, nên đây là chỗ duy nhất cần sửa để cả hai mươi chín trang có cùng
+    # một khung — thay vì chép khung vào từng trình dựng rồi trôi khỏi nhau.
+    refined = _attach_shell(path, refined)
     path.write_text(strip_comments(refined), encoding="utf-8")
+
+
+#: Tệp tĩnh của khung, chép từ ``src/`` sang ``docs/assets/`` mỗi lần ghi
+#: trang. GitHub Pages chỉ phục vụ ``docs/``, nên trỏ thẳng vào ``src/`` là một
+#: tham chiếu chết.
+_SHELL_CSS_NGUON = Path(__file__).with_name("templates") / "app_shell.css"
+_SHELL_JS_NGUON = Path(__file__).with_name("assets") / "app-shell.js"
+_SHELL_LINK = '<link rel="stylesheet" href="assets/app-shell.css" data-app-shell>'
+_SHELL_LINK_CU = re.compile(r'<link\b[^>]*\bdata-(?:app|vla)-shell\b[^>]*>\s*')
+
+
+def _attach_shell(path: Path, html: str) -> str:
+    """Bọc trang vào khung dùng chung và xuất bản biểu định kiểu của khung."""
+    if "</head>" not in html or not re.search(r"<body\b", html, re.I):
+        return html
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    write_stylesheet_text(assets / "app-shell.css", _SHELL_CSS_NGUON.read_text(encoding="utf-8"))
+    (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    head, rest = html.split("</head>", 1)
+    # Bóc bản cũ trước khi chèn bản mới, đúng thứ tự đã học ở
+    # `_attach_visual_system`: ghi lại một trang đã ghi phải cho ra đúng tệp ấy.
+    head = _SHELL_LINK_CU.sub("", head)
+    html = head.rstrip() + "\n" + _SHELL_LINK + "\n</head>" + rest
+    # Nhập TRỄ, có chủ ý: `app_shell` đọc `ui_theme.SITE_NAV`, mà `ui_theme`
+    # lại nhập `page_output`. Nhập ở đầu tệp thì vòng khép lại ngay lúc nạp
+    # module và Python dừng với "partially initialized module".
+    from app_shell import wrap_page
+
+    return wrap_page(html, path.name)
 
 
 def _attach_visual_system(path: Path, html: str) -> str:

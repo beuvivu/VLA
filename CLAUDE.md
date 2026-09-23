@@ -10,6 +10,27 @@ mã nguồn cũng tiếng Việt.
 KHÔNG BAO GIỜ hỏi, nhận, hay xử lý GitHub PAT của chủ dự án. Token chỉ được
 đưa vào terminal của họ và cron-job.org, không đi qua phiên làm việc này.
 
+## Khung ứng dụng
+
+Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
+được bọc vào (`_attach_shell` -> `app_shell.wrap_page`). Đừng chép khung vào
+từng trình dựng: chép là để chúng trôi khỏi nhau.
+
+    src/app_shell.py              dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
+    src/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
+    src/assets/app-shell.js       thu/mở, đổi nhóm, tìm, đổi chế độ màu
+
+Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 32 mục. Thêm mục thì
+thêm ở đó, không thêm ở `app_shell.py`.
+
+**Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
+`test_no_page_spells_out_where_the_data_lives` cấm chuỗi `vla` trong mọi tệp
+xuất bản, vì nó xuất hiện trong đường dẫn GitHub Pages của kho.
+
+Số đo phải giữ (`test_every_page_pins_the_measured_shell_geometry` canh):
+dải biểu tượng 80px, dải chi tiết 240px, thanh trên 80px, bo 8px. Và dải chi
+tiết **phủ lên** nội dung — `margin-left` của `.app-main` không đổi khi mở.
+
 ## Giao diện — trạng thái hiện tại
 
 Giao diện đang chạy là **giao diện cũ**, đã được khôi phục từ git history sau
@@ -146,7 +167,7 @@ LUẬT trên dữ liệu dựng sẵn.
 
 Chạy bộ kiểm: `PYTHONPATH=src python3 -m pytest tests -q`
 
-Bộ kiểm hiện **xanh hết: 2 187 phép kiểm**. Bốn kịch bản chốt phát hành
+Bộ kiểm hiện **xanh hết: 1 873 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.

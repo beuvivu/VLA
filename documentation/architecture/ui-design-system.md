@@ -41,7 +41,7 @@ không được dùng lại.
 
 Canh: `test_every_published_page_loads_the_shared_design_system`,
 `test_no_published_page_references_the_retired_stylesheet_name`,
-`test_every_published_page_carries_the_dock`,
+`test_every_published_page_carries_the_shell`,
 `test_every_style_owner_declares_the_same_page_ground`,
 `test_brand_ramp_is_identical_wherever_it_is_declared`.
 

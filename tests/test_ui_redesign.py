@@ -74,8 +74,27 @@ def _css(path: Path) -> str:
 
 
 #: Các trang thực sự gắn dock, xét theo lớp trong HTML.
-DOCK_PAGES = [p for p in PAGES if "dock-inner" in p.read_text(encoding="utf-8")]
 
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_every_page_pins_the_measured_shell_geometry(page: Path) -> None:
+    """Hình học khung phải đúng SỐ ĐO của trang tham chiếu, trên mọi trang.
+
+    Thay cho bảy phép kiểm ghim CSS của dock cũ. Chúng lọc theo "trang nào CÓ
+    dock", nên khi dock được thay thì danh sách rỗng và một trăm bảy mươi lăm
+    phép kiểm lặng lẽ ngừng chạy — không một cái nào đỏ. Phép kiểm này quét
+    MỌI trang xuất bản, nên tập của nó không thể tự rỗng đi.
+    """
+    assert 'href="assets/app-shell.css"' in page.read_text(encoding="utf-8"), page.name
+    gon = (ROOT / "src/templates/app_shell.css").read_text(encoding="utf-8").replace(" ", "")
+    for khoa, gia_tri in (
+        ("--app-rail-w:", "80px"),
+        ("--app-panel-w:", "240px"),
+        ("--app-header-h:", "80px"),
+        ("--app-shell-radius:", "8px"),
+    ):
+        assert khoa + gia_tri in gon, f"{khoa} lệch khỏi số đo {gia_tri}"
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
@@ -289,35 +308,6 @@ def test_sidebar_is_gone_from_every_page() -> None:
     for page in PAGES:
         soup = _soup(page)
         assert not soup.select(".sidebar, .ui-side"), f"{page.name} vẫn còn sidebar"
-
-
-def test_dock_replaces_it_on_the_main_pages() -> None:
-    for page in DOCK_PAGES:
-        soup = _soup(page)
-        assert soup.select(".dock, .ui-dock"), f"{page.name} thiếu dock"
-
-
-def test_dock_shows_one_button_per_navigation_group() -> None:
-    """17 đích là quá nhiều cho một dock; gom theo 5 nhóm của SITE_NAV.
-
-    Trang landing có thêm một nhóm "Trên trang" chứa neo cuộn nội bộ, nên số
-    nút là 5 hoặc 6 — phép kiểm canh cận dưới và cận trên chứ không ghim cứng.
-    """
-    for page in DOCK_PAGES:
-        soup = _soup(page)
-        buttons = soup.select(".dock-btn, .ui-dock-btn")
-        assert len(SITE_NAV) <= len(buttons) <= len(SITE_NAV) + 1, (
-            f"{page.name}: {len(buttons)} nút / {len(SITE_NAV)} nhóm"
-        )
-
-
-def test_dock_popovers_reach_every_destination() -> None:
-    """Mọi đích của SITE_NAV phải tới được; neo trong trang là phần thêm."""
-    for page in DOCK_PAGES:
-        soup = _soup(page)
-        hrefs = {a.get("href") for a in soup.select(".dock-pop a, .ui-dock-pop a")}
-        expected = {href for _, items in SITE_NAV for href, _, _ in items}
-        assert expected <= hrefs, f"{page.name}: thiếu {sorted(expected - hrefs)}"
 
 
 def test_landing_dock_keeps_in_page_anchors() -> None:
@@ -782,80 +772,6 @@ def test_main_max_width_is_declared_once_and_the_same_everywhere() -> None:
         assert "1600px" in w, f"còn một khai báo max-width khác: {w}"
 
 
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_dock_bar_fits_the_agreed_height(page: Path) -> None:
-    """Trước: 108-114px. Nhãn cố định dưới icon là thứ đội chiều cao lên.
-
-    54px = icon 40 + đệm 6*2 + viền 1*2, nằm trong khoảng 48-56px của bản vẽ.
-    """
-    css = _css(page)
-    assert re.search(r"dock-ic\{[^}]*width:40px;height:40px", css), page.name
-    assert re.search(r"dock-inner\{[^}]*padding:6px10px", css), page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_dock_label_is_a_tooltip_not_a_fixed_row(page: Path) -> None:
-    """Nhãn phải ra khỏi luồng, nếu không nó cộng thẳng vào chiều cao thanh."""
-    css = _css(page)
-    assert re.search(r"dock-name\{[^}]*position:absolute", css), page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_dock_uses_glassmorphism_at_thirty_percent(page: Path) -> None:
-    """Trước: nền đục 84% + blur 20px — không nhìn thấy gì phía sau."""
-    css = _css(page)
-    rule = re.search(r"dock-inner\{([^}]*)\}", css)
-    assert rule, page.name
-    body = rule.group(1)
-    assert "blur(12px)" in body, page.name
-    assert re.search(r"rgba\(15,23,42,\.?3\d*\)|srgb[^;]*30%|30%,transparent", body), page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_dock_opaque_fallback_when_backdrop_filter_is_missing(page: Path) -> None:
-    """Nền 30% mà không có blur thì chữ nằm trên nội dung trang, đọc không nổi."""
-    css = _css(page)
-    assert "@supportsnot(backdrop-filter" in css, page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_submenu_has_a_hover_bridge_over_the_gap(page: Path) -> None:
-    """Trước: khe hở 10px giữa đáy popover và đỉnh nút làm menu tắt giữa đường.
-
-    Cầu ::after cao 18px phủ kín khe đó, nên :hover của nhóm không bao giờ đứt.
-    """
-    css = _css(page)
-    assert re.search(r"dock-pop::after\{[^}]*top:100%", css), page.name
-    assert re.search(r"dock-pop::after\{[^}]*height:18px", css), page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_submenu_closes_slower_than_it_opens(page: Path) -> None:
-    """Nửa sau của hover intent: mở ngay, đóng trễ, để con trỏ kịp băng qua."""
-    css = _css(page)
-    rule = re.search(r"dock-pop\{([^}]*)\}", css)
-    assert rule, page.name
-    assert re.search(r"visibility:?[^;]*\.4\ds|visibility0slinear\.4\ds", rule.group(1).replace(" ", "")), page.name
-
-
-@pytest.mark.parametrize("page", DOCK_PAGES, ids=lambda p: p.name)
-def test_icon_magnification_stays_in_the_agreed_range(page: Path) -> None:
-    """Bản vẽ yêu cầu 1.15-1.2x, ease-in-out."""
-    css = _css(page)
-    # Trước đây ở đây còn một biểu thức nữa:
-    #     dock-ic\{?[^}]*?\}?[^{]*?transform:scale\(([\d.]+)\)
-    # Nó có hai lượng từ không chặn lồng nhau, cách nhau bởi một dấu tuỳ
-    # chọn — công thức của quay lui bình phương. Và nó THỪA: mọi kết quả của
-    # nó đều đã nằm trong biểu thức dưới (đã đối chiếu trên cả bốn trang có
-    # dock). Bỏ đi không đổi kết quả, chỉ bỏ đi cái bẫy.
-    scales = [float(s) for s in re.findall(r"transform:scale\(([\d.]+)\)", css)]
-    hits = [s for s in scales if 1.10 <= s <= 1.25]
-    assert hits, f"{page.name}: không thấy hệ số phóng nào trong khoảng"
-    assert all(1.15 <= s <= 1.20 for s in hits), f"{page.name}: {hits}"
-    assert re.search(r"dock-ic\{[^}]*transition:transform[^;]*ease-in-out", css), page.name
-
-
-
 def test_evidence_columns_are_balanced_by_a_sticky_panel() -> None:
     """Khung căn cứ KHÔNG còn dính, và đó là chủ ý.
 
@@ -1220,8 +1136,21 @@ def test_desktop_page_differs_from_the_default_one_only_by_its_body_class() -> N
     body = desktop.read_text(encoding="utf-8")
     assert marker in body, "trang máy tính thiếu lớp desktop-view"
 
-    stripped = body.replace(marker, "", 1)
-    expected = default.read_text(encoding="utf-8")
+    # So VÙNG NỘI DUNG, không so cả tài liệu. Khung ứng dụng dùng chung phản
+    # ánh TRANG HIỆN TẠI: mục điều hướng đang mở và đường dẫn ở thanh trên khác
+    # nhau giữa `index.html` và `landing_desktop.html` — đúng như thiết kế, vì
+    # đó là hai trang khác nhau. So cả tài liệu thì phép kiểm đỏ vì một khác
+    # biệt CÓ CHỦ Ý, trong khi điều nó đặt tên — hai trang dùng chung một bố
+    # cục — vẫn đúng.
+    def than(html: str) -> str:
+        dau = html.find('<main class="app-main"')
+        if dau == -1:
+            return html
+        dau = html.index(">", dau) + 1
+        return html[dau : html.rindex("</main>")]
+
+    stripped = than(body.replace(marker, "", 1))
+    expected = than(default.read_text(encoding="utf-8"))
     if stripped == expected:
         return
 
