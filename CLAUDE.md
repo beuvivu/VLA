@@ -167,7 +167,7 @@ LUẬT trên dữ liệu dựng sẵn.
 
 Chạy bộ kiểm: `PYTHONPATH=src python3 -m pytest tests -q`
 
-Bộ kiểm hiện **xanh hết: 1 873 phép kiểm**. Bốn kịch bản chốt phát hành
+Bộ kiểm hiện **xanh hết: 1 907 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.
