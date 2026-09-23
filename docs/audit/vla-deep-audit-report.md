@@ -175,6 +175,31 @@ lại, cùng `test_every_published_asset_is_reachable_from_some_page` canh chi�
 ngược. Cả ba phép kiểm của tệp ấy đã thử bằng đột biến, **kể cả đột biến làm
 hỏng chính phép quét** — tập rỗng không lọt qua được.
 
+### A-06 · §VI Chuyển động — ĐÃ ĐẠT SẴN, không phải sửa
+
+Đếm chuỗi trong nguồn cho ra "8/29 trang khai `prefers-reduced-motion`", và
+con số ấy **đo sai thứ**: 21 trang còn lại thừa hưởng mệnh đề từ
+`assets/ui.css` dùng chung. Đo HÀNH VI trong trình duyệt, hai ngữ cảnh
+(`reduced_motion` là `no-preference` rồi `reduce`), trên cả 29 trang:
+
+| Phép đo | Thường | Đã xin giảm |
+| --- | --- | --- |
+| Trang còn vòng lặp vô hạn đang chạy | 1 (`live.html`, 8 hiệu ứng) | **0 / 29** |
+| Chuyển tiếp CSS đang bật, `index.html` | 1 203 | **0** |
+| Chuyển tiếp CSS đang bật, `so-ket-qua-truyen-thong.html` | 1 713 | **0** |
+| Chuyển tiếp CSS đang bật, `statistics.html` | 1 456 | **0** |
+
+Cả 29 trang tôn trọng đầy đủ `prefers-reduced-motion`. Yêu cầu §6.2 đã đạt,
+không có gì để sửa.
+
+Bề mặt chuyển động của kho cũng nhỏ: tổng cộng **sáu** `@keyframes` —
+`ui-shimmer`, `live-pulse`, `rl-scan`, `reveal`, `pulse`. Chỉ `live.html` có
+hiệu ứng lặp vô hạn. Nên §6.1 "gỡ chuyển động thừa" gần như không có đối
+tượng, và §6.2 "tránh animate thuộc tính nặng về bố cục" không có vi phạm
+nào đo được.
+
+**Trạng thái.** ĐÃ KIỂM, KHÔNG CẦN SỬA.
+
 ## 5. Kết quả phép kiểm
 
 | | |
@@ -192,9 +217,10 @@ Ghi thẳng để không ai đọc nhầm báo cáo này thành "đã soát hế
 
 - **CSS** (§IV): chưa kiểm kê selector trùng, `!important` thừa, media query
   xung đột. 13 tệp CSS chưa được đo độ phủ.
-- **Animation** (§VI): chưa đo CPU/GPU, chưa kiểm `prefers-reduced-motion`
-  trên từng hiệu ứng.
-- **Mã chết và tài nguyên thừa** (§X): chưa dựng bản đồ phụ thuộc đầy đủ.
+- **Animation** (§VI): `prefers-reduced-motion` ĐÃ đo và đạt trên cả 29 trang
+  (xem A-06). Chưa đo CPU/GPU khi hiệu ứng chạy.
+- **Mã chết và tài nguyên thừa** (§X): tài nguyên XUẤT BẢN đã kiểm hết (xem
+  A-03, A-04, A-05). Chưa quét mã chết trong 151 mô-đun `src/`.
 - **Mạng và nạp dữ liệu** (§IX): chưa đo trùng lặp yêu cầu trên `live.html`.
 - **Lighthouse / Core Web Vitals** (§13.1): chưa chạy. Môi trường phát triển
   mở trang qua `file://` nên LCP/INP/CLS đo được ở đây **không** đại diện cho
