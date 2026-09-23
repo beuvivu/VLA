@@ -616,8 +616,11 @@ dock nên nó nuốt mất cú chạm ở rìa nút. */
 .ui-dock-group::after{content:none}
 }
 
-/* Dock che mất phần cuối trang nếu không chừa chỗ. */
-.ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
+/* Dock đã bị khung ứng dụng thay thế: đo được 0/29 trang còn dấu vết nào
+   của nó (`ui-dock-inner`, `ui-dock-btn`, `class="ui-dock"`). Quy tắc chừa
+   chỗ cho dock vì thế chừa chỗ cho hư không — đo trên bốn trang `soi-path-*`
+   là 86px trống dưới cùng (54px chiều cao dock cộng 32px khoảng cách). */
+
 
 @media (prefers-reduced-motion:reduce){
 .ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
@@ -967,7 +970,7 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     """
     extra = " ui-shell-wide" if wide else ""
     return (
-        f'<div class="ui-app ui-dock-space" id="ui-app">'
+        f'<div class="ui-app" id="ui-app">'
         f'<main class="ui-shell{extra}">'
     )
 

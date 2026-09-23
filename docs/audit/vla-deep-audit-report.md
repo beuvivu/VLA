@@ -200,6 +200,53 @@ nào đo được.
 
 **Trạng thái.** ĐÃ KIỂM, KHÔNG CẦN SỬA.
 
+### A-07 · P3 · 54px trống chừa cho thanh điều hướng đã biến mất
+
+**Thành phần.** `src/ui_page_refinements.py` (`.path-page`), bốn trang
+`soi-path-de-active`, `soi-path-de-stable`, `soi-path-loto-active`,
+`soi-path-loto-stable`.
+
+**Tái hiện.** Dock đã bị khung ứng dụng thay thế. Đo: **0/29** trang còn bất
+kỳ dấu vết nào của nó (`ui-dock-inner`, `ui-dock-btn`, `class="ui-dock"`).
+Nhưng bốn trang `soi-path-*` vẫn có `padding-bottom: 86px` — chừa chỗ cho
+một thanh không còn tồn tại.
+
+**Một lần quy sai nguyên nhân, ghi lại vì nó là bài học.** Tôi quy 86px cho
+lớp `ui-dock-space` vì 23 trang mang lớp ấy và quy tắc của nó tính ra đúng
+86px (54px chiều cao dock + 32px khoảng cách). Gỡ quy tắc ấy khỏi ba chỗ —
+con số **không đổi**. Hỏi trình duyệt quy tắc nào THẮNG thì nguồn thật là
+`.path-page`, một quy tắc nội tuyến khác:
+
+    padding-bottom: calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2rem)
+
+Đếm chuỗi trong nguồn không thay được việc hỏi trình duyệt cái gì có hiệu
+lực. Ba quy tắc `ui-dock-space` đã gỡ vẫn đúng là mã chết, nhưng chúng không
+gây ra khoảng trống này.
+
+**Bản vá.** Bỏ số hạng `var(--ui-dock-h,64px)` khỏi `.path-page` và
+`.path-page .path-shell`, giữ nguyên `env(safe-area-inset-bottom)` và phần
+khoảng thở có chủ ý.
+
+**Kiểm chứng.** 86px → **32px** trên cả bốn trang. Dựng lại đủ 29 trang rồi
+soi lại: 0 trang thiếu khung, 0 trang bị dải chi tiết đẩy nội dung, 0 nút
+thu/mở bị che, và số trang tràn ngang không đổi (vẫn chỉ `landing_desktop`,
+cố ý).
+
+**Trạng thái.** ĐÃ SỬA, ĐÃ KIỂM CHỨNG.
+
+### A-08 · §4.1 CSS — đo được, chưa cần sửa thêm
+
+| Phép đo | Kết quả |
+| --- | --- |
+| Tổng CSS (13 tệp) | 147 KB, nay 135 KB sau A-03 |
+| `!important` toàn kho | **41** — `stat_pages.css` 12, `frequency_bento.css` 8, ba tệp còn lại 7 mỗi tệp |
+| `ui.css`: khối quy tắc / selector khác nhau | 243 / 229 |
+| Selector lặp trong `ui.css` | 14, **phần lớn là `.ui-dock-*`** |
+
+41 `!important` trên 147 KB là mức khiêm tốn, không phải dấu hiệu của cuộc
+chiến độ ưu tiên. Còn 14 selector lặp thì đa số thuộc dock đã chết — dọn
+chúng là việc của lần gỡ đường mã dock (xem A-04), không phải việc gộp CSS.
+
 ## 5. Kết quả phép kiểm
 
 | | |

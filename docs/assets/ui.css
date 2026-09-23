@@ -433,8 +433,6 @@ opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
 .ui-dock-group::after{content:none}
 }
 
-.ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
-
 @media (prefers-reduced-motion:reduce){
 .ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
 .ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{transform:none}
