@@ -122,6 +122,59 @@ Ghi lại để lần sau không ai mất công đi lại.
 | CodeQL báo 14 cảnh báo cao trên PR #86 | KHÔNG do PR sinh ra. Trên cùng 14 trang, `innerHTML` đi từ **174 xuống 0** và không hạng mục rủi ro nào tăng. Số cảnh báo bám theo **số trang được ghi lại** (PR #85 dựng lại 29 trang → 28 cảnh báo; PR #86 dựng lại 14 → 14), đúng như ghi chú của chính CodeQL. |
 | `github-advanced-security` đỏ | KHÔNG do PR sinh ra. Tác nhân chết ở bước gọi mô hình trước khi đọc tệp nào: `CAPIError: 400 The requested model is not supported`. Lặp lại y hệt trên ba head của PR #86 và trên PR #85 (diff hoàn toàn khác). Lỗi nằm trong dịch vụ của GitHub, không có bản vá nào trong kho sửa được. |
 
+### A-03 · P3 · 12 KB CSS không trang nào nạp
+
+**Thành phần.** `docs/assets/ui-part1.css`, `ui-part2.css`, `ui-part3.css`.
+
+**Tái hiện.** Quét mọi `href`/`src` nội bộ của 29 trang: **0 trang** trỏ tới
+ba tệp này. Kiểm đủ năm đường mà §X đòi:
+
+| Đường tham chiếu | Kết quả |
+| --- | --- |
+| Trang xuất bản | 0/29 |
+| `@import` trong CSS | không có |
+| Phép kiểm | không nhắc |
+| `scripts/extract_critical_css.py` | chỉ đọc `ui.css` |
+| Trình dựng | không sinh ra — là tệp tĩnh commit thẳng |
+
+Thứ duy nhất nhắc tên chúng là một chuỗi selector trong `css-async.js`, và
+selector ấy chỉ khớp **nếu** có trang nạp chúng.
+
+**Bản vá.** Gỡ ba tệp; gỡ luôn mệnh đề `ui-part` khỏi selector trong
+`css-async.js`.
+
+**Trạng thái.** ĐÃ GỠ.
+
+### A-04 · P3 · Bốn tệp JS xuất bản không trang nào nạp — KHÔNG gỡ
+
+Ghi lại thay vì gỡ, vì **đo cho thấy chúng không chết theo nghĩa thường**.
+
+| Tệp | Kích thước | Ai phát ra |
+| --- | --- | --- |
+| `matrix-virt.js` | 6,5 KB | `scripts/optimize_index_dom.py` |
+| `apply-data-styles.js` | 1,2 KB | `scripts/patch_csp_no_inline.py` |
+| `ui-dock.js` | 2,0 KB | `src/web_security.py::security_script_tags` |
+| `live-board.js` | 9,6 KB | không mã nào phát ra |
+
+Hai sự thật đo được làm chúng thành ứng viên gỡ ở lần sau, chứ không phải
+lần này: `security_script_tags` **không ai gọi**, và hai kịch bản kia
+**không workflow nào chạy** — chúng là công cụ chạy tay. Gỡ tệp mà để lại
+mã phát ra nó là để lại một cái bẫy; gỡ cả đường mã là một thay đổi rộng hơn
+phạm vi lần soát này.
+
+Ghi vào `NGOAI_LE` của `tests/test_published_assets.py` kèm lý do, nên chúng
+không thể lặng lẽ trôi đi.
+
+**Trạng thái.** ĐÃ GHI NHẬN, CHƯA GỠ.
+
+### A-05 · Không có tham chiếu gãy
+
+Quét 35 đường dẫn nội bộ trên 29 trang: **0** trang trỏ tới tệp không tồn
+tại. Nay có `test_no_published_page_points_at_a_file_that_is_not_there` khoá
+lại, cùng `test_every_published_asset_is_reachable_from_some_page` canh chiều
+ngược. Cả ba phép kiểm của tệp ấy đã thử bằng đột biến, **kể cả đột biến làm
+hỏng chính phép quét** — tập rỗng không lọt qua được.
+
 ## 5. Kết quả phép kiểm
 
 | | |
