@@ -9,7 +9,7 @@
       links[i].removeAttribute("data-async-css");
     }
     var more = document.querySelectorAll(
-      'link[rel="stylesheet"][media="print"][href*="ui.css"], link[rel="stylesheet"][media="print"][href*="ui-visual"], link[rel="stylesheet"][media="print"][href*="ui-part"]'
+      'link[rel="stylesheet"][media="print"][href*="ui.css"], link[rel="stylesheet"][media="print"][href*="ui-visual"]'
     );
     for (var j = 0; j < more.length; j++) {
       more[j].media = "all";

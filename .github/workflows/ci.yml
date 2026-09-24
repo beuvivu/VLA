@@ -70,6 +70,11 @@ jobs:
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
           python -m pip install --no-cache-dir -r requirements-dev.txt
 
+      - name: Kiểm thử tương tác điều hướng
+        run: |
+          npm ci --prefix tests/frontend
+          npm test --prefix tests/frontend
+
       - name: Kiểm tra phát hành lõi
         run: bash scripts/release_check.sh
 

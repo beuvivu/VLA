@@ -33,7 +33,12 @@
 
   function datTrangThai(mo) {
     body.classList.toggle("app-panel-open", mo);
-    if (hep()) { body.classList.toggle("app-nav-open", mo); }
+    body.classList.toggle("app-nav-open", mo && hep());
+    panel.inert = !mo;
+    panel.setAttribute("aria-hidden", mo ? "false" : "true");
+    rail.inert = hep() && !mo;
+    var main = lay("app-main");
+    if (main) { main.inert = mo && hep(); }
     if (toggle) { toggle.setAttribute("aria-expanded", mo ? "true" : "false"); }
     if (scrim) { scrim.hidden = !(mo && hep()); }
     try { localStorage.setItem(KHOA_PANEL, mo ? "1" : "0"); } catch (e) { /* chế độ riêng tư */ }
@@ -48,7 +53,20 @@
     scrim.addEventListener("click", function () { datTrangThai(false); });
   }
   doc.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape" && dangMo() && hep()) { datTrangThai(false); }
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
+      ev.preventDefault(); datTrangThai(true); if (search) { search.focus(); }
+    }
+    if (ev.key === "Escape" && dangMo()) {
+      datTrangThai(false); if (toggle) { toggle.focus(); }
+    }
+    if (ev.key === "Tab" && hep() && dangMo()) {
+      var focusables = [].slice.call(doc.querySelectorAll(
+        '.app-header a, .app-header button, .app-rail button, .app-panel input, .app-panel a, .app-panel summary'
+      )).filter(function (e) { return e.getClientRects().length && !e.closest('[hidden]'); });
+      var first = focusables[0], last = focusables[focusables.length - 1];
+      if (ev.shiftKey && doc.activeElement === first) { ev.preventDefault(); last.focus(); }
+      else if (!ev.shiftKey && doc.activeElement === last) { ev.preventDefault(); first.focus(); }
+    }
   });
 
   /* Khôi phục lựa chọn cũ. Ở màn hẹp luôn bắt đầu ở trạng thái đóng: mở sẵn
@@ -59,9 +77,13 @@
   datTrangThai(!hep() && luu === "1");
 
   /* Đổi bề ngang qua mốc thì trạng thái phủ không còn nghĩa cũ. */
+  var narrowBefore = hep();
   window.addEventListener("resize", function () {
-    if (!hep()) { body.classList.remove("app-nav-open"); if (scrim) { scrim.hidden = true; } }
-    else if (dangMo()) { body.classList.add("app-nav-open"); if (scrim) { scrim.hidden = false; } }
+    var narrowNow = hep();
+    if (narrowNow !== narrowBefore) {
+      narrowBefore = narrowNow;
+      datTrangThai(false);
+    }
   });
 
   /* --- Chọn nhóm cấp một ------------------------------------------------ */
@@ -70,6 +92,9 @@
   var nhomPanel = [].slice.call(doc.querySelectorAll(".app-panel-group"));
 
   function moNhom(chiSo) {
+    if (search) { search.value = ""; }
+    [].slice.call(doc.querySelectorAll(".app-nav-item")).forEach(function (a) { a.hidden = false; });
+    if (searchEmpty) { searchEmpty.hidden = true; }
     nutNhom.forEach(function (b) {
       b.setAttribute("aria-selected", b.getAttribute("data-app-group") === chiSo ? "true" : "false");
     });
@@ -96,8 +121,12 @@
      chữ rồi không trả về gì: mỗi kết quả là một trang tồn tại trong kho. */
   var mucNav = [].slice.call(doc.querySelectorAll(".app-nav-item"));
 
+  function chuanHoa(tu) {
+    return (tu || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").trim().toLowerCase();
+  }
+
   function loc(tu) {
-    var q = (tu || "").trim().toLowerCase();
+    var q = chuanHoa(tu);
     if (!q) {
       nhomPanel.forEach(function (g) {
         g.hidden = g.getAttribute("aria-labelledby") !==
@@ -110,7 +139,7 @@
     var khop = 0;
     nhomPanel.forEach(function (g) { g.hidden = false; });
     mucNav.forEach(function (a) {
-      var nhan = (a.getAttribute("data-app-label") || a.textContent || "").toLowerCase();
+      var nhan = chuanHoa(a.getAttribute("data-app-label") || a.textContent);
       var hien = nhan.indexOf(q) !== -1;
       a.hidden = !hien;
       if (hien) { khop += 1; }
@@ -125,7 +154,7 @@
   if (search) {
     search.addEventListener("input", function () { loc(search.value); });
     search.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape") { search.value = ""; loc(""); }
+      if (ev.key === "Escape" && search.value) { ev.stopPropagation(); search.value = ""; loc(""); }
     });
   }
   if (searchOpen && search) {
@@ -142,7 +171,6 @@
      data-ui-theme: đặt vào là đè mất prefers-color-scheme, và người dùng mất
      khả năng đi theo cài đặt máy. */
   var VONG = ["auto", "light", "dark"];
-  var NHAN = { auto: "◐", light: "☀", dark: "☾" };
   var TEN = { auto: "Theo hệ thống", light: "Sáng", dark: "Tối" };
 
   function datTheme(che) {
@@ -150,8 +178,9 @@
     else { doc.documentElement.setAttribute("data-ui-theme", che); }
     if (themeBtn) {
       var ic = themeBtn.querySelector(".app-theme-ic");
-      if (ic) { ic.textContent = NHAN[che]; }
+      if (ic) { ic.setAttribute("data-theme-state", che); }
       themeBtn.setAttribute("title", "Chế độ màu: " + TEN[che]);
+      themeBtn.setAttribute("aria-label", "Chế độ màu: " + TEN[che] + ". Bấm để chuyển.");
     }
     try { localStorage.setItem(KHOA_THEME, che); } catch (e) { /* chế độ riêng tư */ }
   }
@@ -164,6 +193,54 @@
     themeBtn.addEventListener("click", function () {
       var hien = doc.documentElement.getAttribute("data-ui-theme") || "auto";
       datTheme(VONG[(VONG.indexOf(hien) + 1) % VONG.length]);
+    });
+  }
+  /* Đường dẫn neo phải phản ánh đúng phần đang xem và đóng menu trên điện thoại. */
+  function dongBoDuongDan() {
+    var file = location.pathname.split("/").pop() || "index.html";
+    if (file === "landing.html" || file === "landing_desktop.html") { file = "index.html"; }
+    var target = file + location.hash;
+    var currentLink = mucNav.filter(function (a) { return a.getAttribute("href") === target; })[0] ||
+      mucNav.filter(function (a) { return a.getAttribute("href") === file; })[0];
+    mucNav.forEach(function (a) {
+      var active = a === currentLink;
+      a.classList.toggle("app-nav-item--active", active);
+      if (active) { a.setAttribute("aria-current", "page"); } else { a.removeAttribute("aria-current"); }
+    });
+    if (!currentLink) { return; }
+    var group = currentLink.closest(".app-panel-group").getAttribute("data-app-group");
+    nutNhom.forEach(function (b) {
+      var active = b.getAttribute("data-app-group") === group;
+      b.setAttribute("aria-selected", active ? "true" : "false");
+      if (active) {
+        if (panelTitle) { panelTitle.textContent = b.title; }
+        var crumb = doc.querySelector(".app-crumb:not(.app-crumb--now)");
+        if (crumb) { crumb.textContent = b.title; }
+      }
+    });
+    nhomPanel.forEach(function (g) { g.hidden = g.getAttribute("data-app-group") !== group; });
+    var pageCrumb = doc.querySelector(".app-crumb--now");
+    if (pageCrumb) { pageCrumb.textContent = currentLink.getAttribute("data-app-label"); }
+    if (search && search.value) { loc(search.value); }
+  }
+  dongBoDuongDan();
+  window.addEventListener("hashchange", dongBoDuongDan);
+  mucNav.forEach(function (a) { a.addEventListener("click", function () { datTrangThai(false); }); });
+
+  [].slice.call(doc.querySelectorAll(".app-section-link")).forEach(function (a) {
+    a.addEventListener("click", function () { datTrangThai(false); });
+  });
+
+  var full = lay("app-fullscreen");
+  if (full) {
+    full.hidden = !doc.fullscreenEnabled;
+    full.addEventListener("click", function () {
+      var action = doc.fullscreenElement ? doc.exitFullscreen() : doc.documentElement.requestFullscreen();
+      if (action && action.catch) { action.catch(function () { full.hidden = true; }); }
+    });
+    doc.addEventListener("fullscreenchange", function () {
+      full.setAttribute("aria-label", doc.fullscreenElement ? "Thoát toàn màn hình" : "Toàn màn hình");
+      full.setAttribute("aria-pressed", doc.fullscreenElement ? "true" : "false");
     });
   }
 })();

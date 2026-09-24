@@ -137,8 +137,9 @@ def test_the_banner_uses_the_same_content_column_as_the_page_body() -> None:
     # nằm nguyên trong trang dựng ra.
     assert "--page-max:" in DASHBOARD_CSS and "--page-gutter:" in DASHBOARD_CSS
     hero = re.search(r"\.hero \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
-    main = re.search(r"\n\s*main \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
+    main = re.search(r"\.statistics-content \{(.*?)\}", DASHBOARD_CSS, flags=re.S)
     assert hero is not None and main is not None
+    assert '<main class="statistics-content">' in BUILDER_CODE
     for block, name in ((hero.group(1), "hero"), (main.group(1), "main")):
         assert "var(--page-max)" in block, f"{name} phải dùng biến chung"
         assert "var(--page-gutter)" in block, f"{name} phải dùng biến chung"

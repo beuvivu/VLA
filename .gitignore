@@ -45,3 +45,6 @@ logs/
 # Vẫn được sinh ra mỗi lần chạy nên ai cần vẫn có; chỉ là không đưa vào lịch sử.
 data/advanced/*_day.json
 data/advanced/*_day.csv
+
+# Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
+tests/frontend/node_modules/

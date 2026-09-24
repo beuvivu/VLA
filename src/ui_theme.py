@@ -616,8 +616,11 @@ dock nên nó nuốt mất cú chạm ở rìa nút. */
 .ui-dock-group::after{content:none}
 }
 
-/* Dock che mất phần cuối trang nếu không chừa chỗ. */
-.ui-dock-space{padding-bottom:calc(var(--ui-dock-h) + var(--s4))}
+/* Dock đã bị khung ứng dụng thay thế: đo được 0/29 trang còn dấu vết nào
+   của nó (`ui-dock-inner`, `ui-dock-btn`, `class="ui-dock"`). Quy tắc chừa
+   chỗ cho dock vì thế chừa chỗ cho hư không — đo trên bốn trang `soi-path-*`
+   là 86px trống dưới cùng (54px chiều cao dock cộng 32px khoảng cách). */
+
 
 @media (prefers-reduced-motion:reduce){
 .ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
@@ -713,72 +716,87 @@ TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}"
 #: đúng chuỗi "Gan &amp; nhịp". Nơi nào quên escape thì lại hiện đúng — nên lỗi
 #: chỉ xuất hiện ở một số trang, càng khó truy. Escape thuộc về ranh giới dựng
 #: HTML, không thuộc về dữ liệu.
+LANDING_SECTIONS: list[tuple[str, str, str]] = [
+    ("tong-quan", "Tổng quan", "Cập nhật, tín hiệu nóng và đường dẫn nhanh"),
+    ("ket-qua", "Kết quả ngày", "Bảng kết quả đầy đủ theo giải"),
+    ("chuc-don-vi", "Chục × đơn vị", "Ma trận đầu/chục và đuôi/đơn vị"),
+    ("ai-ml", "AI/ML cầu-kèo", "Xếp hạng xác suất và lý do thống kê"),
+    ("tan-suat-loto", "Tần suất loto", "Ma trận ngày, tuần, tháng, năm"),
+    ("tan-suat-de", "Tần suất Đặc Biệt", "Ma trận Đặc Biệt theo kỳ"),
+    ("gan-nhip", "Gan / nhịp", "Số lâu chưa về và áp lực nhịp"),
+    ("cap-lon", "Cặp lộn", "45 cặp đảo chiều và 5 cặp kép-bóng"),
+    ("dau-duoi-tong", "Đầu · đuôi · tổng", "Phân bổ nhóm số dễ so sánh"),
+    ("db-tuan-thang", "Đặc Biệt tuần/tháng", "Bảng Đặc Biệt theo lịch"),
+    ("duong-cau", "Vị trí đường cầu", "Căn cứ khi bấm vào từng số"),
+    ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
+]
+
 SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
     (
         "Trực tiếp",
         (
-            ("live.html", "Kết quả trực tiếp", "◉"),
-            ("index.html", "Kết quả hôm nay", "▤"),
-            ("so-ket-qua-truyen-thong.html", "Sổ kết quả", "▥"),
+            ("live.html", "Kết quả trực tiếp", "truc-tiep"),
+            ("index.html", "Kết quả hôm nay", "hom-nay"),
+            ("so-ket-qua-truyen-thong.html", "Sổ kết quả", "so-ket-qua"),
         ),
     ),
     (
         "Thống kê",
         (
-            ("statistics.html", "Ma trận thống kê", "▦"),
-            ("index.html#tan-suat-loto", "Tần suất LOTO", "◧"),
-            ("index.html#gan-nhip", "Gan & nhịp", "◷"),
-            ("index.html#cap-lon", "Cặp lộn & bóng", "⇅"),
+            ("statistics.html", "Ma trận thống kê", "ma-tran"),
+            ("index.html#tan-suat-loto", "Tần suất LOTO", "tan-suat"),
+            ("index.html#gan-nhip", "Gan & nhịp", "gan-nhip"),
+            ("index.html#cap-lon", "Cặp lộn & bóng", "cap-lon"),
         ),
     ),
     (
         "Cầu kèo",
         (
-            ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "⟋"),
-            ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "⟊"),
-            ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "⟍"),
-            ("soi-path-de-stable.html", "Cầu Đặc Biệt ổn định", "⟌"),
-            ("index.html#duong-cau", "Căn cứ vị trí cầu", "⌗"),
+            ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "cau-chay"),
+            ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "cau-on-dinh"),
+            ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "cau-de-chay"),
+            ("soi-path-de-stable.html", "Cầu Đặc Biệt ổn định", "cau-de-on-dinh"),
+            ("index.html#duong-cau", "Căn cứ vị trí cầu", "vi-tri-cau"),
         ),
     ),
     (
         "Phỏng đoán",
         (
-            ("dashboard.html", "Bảng điều khiển AI/ML", "◈"),
-            ("ml_top10_loto.html", "10 số LOTO", "①"),
-            ("ml_top10_de.html", "10 số Đặc Biệt", "②"),
-            ("model-quality.html", "Chất lượng mô hình", "✓"),
+            ("dashboard.html", "Bảng điều khiển AI/ML", "ai-ml"),
+            ("ml_top10_loto.html", "10 số LOTO", "top-loto"),
+            ("ml_top10_de.html", "10 số Đặc Biệt", "top-de"),
+            ("model-quality.html", "Chất lượng mô hình", "chat-luong"),
         ),
     ),
     (
         "Bảng Đặc Biệt",
         (
-            ("bang-dac-biet.html", "Theo ngày", "▦"),
-            ("bang-dac-biet-thang.html", "Theo tháng", "▩"),
-            ("bang-dac-biet-nam.html", "Theo năm", "▨"),
-            ("chu-ky-dac-biet.html", "Chu kỳ Đặc Biệt", "◷"),
-            ("cau-dac-biet-theo-bo-so.html", "Cầu Đặc Biệt theo bộ số", "⌗"),
-            ("giai-db-ngay-mai.html", "Giải Đặc Biệt ngày mai", "◐"),
+            ("bang-dac-biet.html", "Theo ngày", "theo-ngay"),
+            ("bang-dac-biet-thang.html", "Theo tháng", "theo-thang"),
+            ("bang-dac-biet-nam.html", "Theo năm", "theo-nam"),
+            ("chu-ky-dac-biet.html", "Chu kỳ Đặc Biệt", "chu-ky"),
+            ("cau-dac-biet-theo-bo-so.html", "Cầu Đặc Biệt theo bộ số", "bo-so"),
+            ("giai-db-ngay-mai.html", "Giải Đặc Biệt ngày mai", "ngay-mai"),
         ),
     ),
     (
         "LOTO chi tiết",
         (
-            ("tan-suat-loto.html", "Tần suất LOTO", "◧"),
-            ("tan-suat-cap-loto.html", "Tần suất cặp LOTO", "⇅"),
-            ("cap-lon-loto.html", "Cặp lộn LOTO", "🔁"),
-            ("cau-giai-dac-biet.html", "Cầu giải Đặc Biệt", "🎯"),
-            ("giai-dac-biet-theo-tong.html", "Đặc Biệt theo tổng", "Σ"),
-            ("dau-duoi-loto.html", "Đầu đuôi LOTO", "⊞"),
-            ("lo-gan.html", "Lô gan", "⏳"),
-            ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "◫"),
+            ("tan-suat-loto.html", "Tần suất LOTO", "tan-suat"),
+            ("tan-suat-cap-loto.html", "Tần suất cặp LOTO", "cap-loto"),
+            ("cap-lon-loto.html", "Cặp lộn LOTO", "cap-lon-loto"),
+            ("cau-giai-dac-biet.html", "Cầu giải Đặc Biệt", "cau-giai-db"),
+            ("giai-dac-biet-theo-tong.html", "Đặc Biệt theo tổng", "theo-tong"),
+            ("dau-duoi-loto.html", "Đầu đuôi LOTO", "dau-duoi"),
+            ("lo-gan.html", "Lô gan", "lo-gan"),
+            ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "tong-hop"),
         ),
     ),
     (
         "Tool nâng cao",
         (
-            ("research-lab.html", "Phòng nghiên cứu", "⚗"),
-            ("index.html#backtest", "Kiểm định AI/ML", "⟳"),
+            ("research-lab.html", "Phòng nghiên cứu", "nghien-cuu"),
+            ("index.html#backtest", "Kiểm định AI/ML", "kiem-dinh"),
         ),
     ),
 )
@@ -967,7 +985,7 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
     """
     extra = " ui-shell-wide" if wide else ""
     return (
-        f'<div class="ui-app ui-dock-space" id="ui-app">'
+        f'<div class="ui-app" id="ui-app">'
         f'<main class="ui-shell{extra}">'
     )
 

@@ -28,7 +28,8 @@ import re
 from html import escape
 from typing import Final
 
-from ui_theme import SITE_NAV
+from app_icons import icon_svg
+from ui_theme import LANDING_SECTIONS, SITE_NAV
 
 #: Bề rộng dải biểu tượng. Số đo của trang tham chiếu, dùng ở cả CSS lẫn JS.
 RAIL_W: Final[int] = 80
@@ -54,8 +55,14 @@ NHAN_NGAN: Final[dict[str, str]] = {
 }
 
 
+def _trang_chuan(ten_tep: str) -> str:
+    """Ba địa chỉ của trang chủ dùng chung một mục điều hướng."""
+    return "index.html" if ten_tep in {"landing.html", "landing_desktop.html"} else ten_tep
+
+
 def _nhom_cua_trang(ten_tep: str) -> int:
     """Chỉ số nhóm chứa trang này; 0 nếu không nhóm nào chứa."""
+    ten_tep = _trang_chuan(ten_tep)
     for i, (_, muc) in enumerate(SITE_NAV):
         for href, _, _ in muc:
             if href.split("#", 1)[0] == ten_tep:
@@ -67,7 +74,7 @@ def rail_html(current: str) -> str:
     """Dải biểu tượng cấp một: một nút cho mỗi nhóm của ``SITE_NAV``."""
     hoat_dong = _nhom_cua_trang(current)
     phan = [
-        f'<aside class="app-rail" id="app-rail" aria-label="Nhóm chức năng">',
+        '<aside class="app-rail" id="app-rail" aria-label="Nhóm chức năng">',
         '<div class="app-rail-list" role="tablist" aria-orientation="vertical">',
     ]
     for i, (ten, muc) in enumerate(SITE_NAV):
@@ -77,7 +84,7 @@ def rail_html(current: str) -> str:
             f'<button class="app-rail-btn" role="tab" type="button"'
             f' id="app-tab-{i}" aria-controls="app-panel-{i}" aria-selected="{chon}"'
             f' data-app-group="{i}" title="{escape(ten, quote=True)}">'
-            f'<span class="app-rail-ic" aria-hidden="true">{escape(bieu_tuong)}</span>'
+            f'<span class="app-rail-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
             f'<span class="app-rail-lb">{escape(NHAN_NGAN.get(ten, ten))}</span>'
             f"</button>"
         )
@@ -99,23 +106,29 @@ def panel_html(current: str) -> str:
         '<p class="app-search-empty" id="app-search-empty" hidden>Không có chức năng nào khớp.</p>'
         "</div>",
     ]
-    for i, (ten, muc) in enumerate(SITE_NAV):
+    for i, (_ten, muc) in enumerate(SITE_NAV):
         an = "" if i == hoat_dong else " hidden"
         phan.append(
             f'<nav class="app-panel-group" id="app-panel-{i}" role="tabpanel"'
             f' aria-labelledby="app-tab-{i}" data-app-group="{i}"{an}>'
         )
         for href, nhan, bieu_tuong in muc:
-            la_trang_nay = href.split("#", 1)[0] == current
+            la_trang_nay = href == _trang_chuan(current)
             danh_dau = ' aria-current="page"' if la_trang_nay else ""
             lop = " app-nav-item--active" if la_trang_nay else ""
             phan.append(
                 f'<a class="app-nav-item{lop}" href="{escape(href, quote=True)}"{danh_dau}'
                 f' data-app-label="{escape(nhan, quote=True)}">'
-                f'<span class="app-nav-ic" aria-hidden="true">{escape(bieu_tuong)}</span>'
+                f'<span class="app-nav-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
                 f'<span class="app-nav-lb">{escape(nhan)}</span></a>'
             )
         phan.append("</nav>")
+    if _trang_chuan(current) == "index.html":
+        phan.append('<details class="app-page-sections"><summary>Trên trang này</summary>'
+                    '<nav aria-label="Các phần trong trang">')
+        for section_id, label, _ in LANDING_SECTIONS:
+            phan.append(f'<a class="app-section-link" href="#{escape(section_id)}">{escape(label)}</a>')
+        phan.append('</nav></details>')
     phan.append("</div>")
     return "".join(phan)
 
@@ -124,16 +137,12 @@ def header_html(current: str) -> str:
     """Thanh trên: nút thu/mở, đường dẫn, và các điều khiển có việc thật."""
     hoat_dong = _nhom_cua_trang(current)
     nhom = escape(SITE_NAV[hoat_dong][0])
-    trang = current
-    for _, muc in SITE_NAV:
-        for href, nhan, _ in muc:
-            if href.split("#", 1)[0] == current:
-                trang = nhan
-                break
+    trang = next((nhan for _, muc in SITE_NAV for href, nhan, _ in muc
+                  if href == _trang_chuan(current)), "Tổng quan")
     return (
         '<header class="app-header" id="app-header">'
         '<a class="app-rail-brand" href="index.html" title="Vietnam Lottery Analysis">'
-        '<span aria-hidden="true">V</span>'
+        f'<span aria-hidden="true">{icon_svg("ai-ml")}</span>'
         '<span class="app-sr">Vietnam Lottery Analysis</span></a>'
         '<button class="app-icon-btn app-toggle" id="app-toggle" type="button"'
         ' aria-expanded="false" aria-controls="app-panel"'
@@ -145,19 +154,29 @@ def header_html(current: str) -> str:
         f'<span class="app-crumb app-crumb--now">{escape(trang)}</span>'
         "</nav>"
         '<div class="app-header-actions">'
-        '<button class="app-icon-btn" id="app-search-open" type="button"'
-        ' title="Tìm chức năng"><span aria-hidden="true">⌕</span>'
-        '<span class="app-sr">Tìm chức năng</span></button>'
+        '<button class="app-icon-btn app-search-trigger" id="app-search-open" type="button"'
+        f' title="Tìm chức năng">{icon_svg("tim-kiem")}'
+        '<span>Tìm chức năng</span><kbd>Ctrl K</kbd></button>'
         '<button class="app-icon-btn" id="app-theme" type="button"'
-        ' title="Đổi chế độ màu"><span class="app-theme-ic" aria-hidden="true">◐</span>'
+        f' title="Đổi chế độ màu"><span class="app-theme-ic" aria-hidden="true">{icon_svg("che-do")}</span>'
         '<span class="app-sr">Đổi chế độ màu</span></button>'
+        '<a class="app-icon-btn app-calendar-link" href="so-ket-qua-truyen-thong.html"'
+        f' title="Sổ kết quả" aria-label="Sổ kết quả">{icon_svg("hom-nay")}</a>'
+        '<a class="app-icon-btn" href="model-quality.html"'
+        f' title="Chất lượng dữ liệu và mô hình" aria-label="Chất lượng dữ liệu và mô hình">{icon_svg("chat-luong")}</a>'
+        '<button class="app-icon-btn" id="app-fullscreen" type="button"'
+        f' title="Toàn màn hình" aria-label="Toàn màn hình">{icon_svg("toan-man-hinh")}</button>'
+        '<span class="app-header-brand">Vietnam Lottery Analysis<small>Thống kê · Phân tích</small></span>'
         "</div></header>"
     )
 
 
 #: Dock cũ: thanh nổi ở chân trang. Khung mới thay hẳn vai trò của nó, nên gỡ
 #: đi — để lại thì hai bộ điều hướng cùng tồn tại và cùng đòi cùng một chỗ.
-_DOCK_CU = re.compile(r'<nav class="ui-dock".*?</nav>\s*(?:<script>.*?</script>)?', re.S)
+_DOCK_CU = re.compile(
+    r"<nav\b(?=[^>]*\bclass=[\"'][^\"']*\b(?:ui-dock|dock)\b)[^>]*>.*?</nav>\s*",
+    re.S | re.I,
+)
 #: Thẻ mở vùng nội dung thật. Chuỗi cố định vì chính :func:`wrap_page` sinh ra.
 _MO_MAIN: Final[str] = '<main class="app-main" id="app-main">'
 #: Đuôi khung: đóng vùng nội dung rồi tới thẻ kịch bản, luôn ở CUỐI phần thân.
@@ -245,6 +264,8 @@ def wrap_page(html: str, current: str) -> str:
     # Bóc trước, bọc sau. Gọi hàm này nhiều lần cho cùng một kết quả, và một
     # trang đã bị bọc chồng sẽ được SỬA chứ không chỉ được để yên.
     than = _go_khung(html[mo.end() : cuoi_vt.start()])
+    # Mỗi tài liệu chỉ có một mốc main; giữ nguyên id/lớp và nội dung con.
+    than = re.sub(r"<(/?)main\b", r"<\1div", than, flags=re.I)
     duoi = html[cuoi_vt.start() :]
     khung = (
         rail_html(current)

@@ -824,13 +824,13 @@ _DASHBOARD_CSS = """\
     }
     .site-hop a:hover { background: rgba(255,255,255,0.24); }
 
-    main {
+    .statistics-content {
       max-width: var(--page-max);
       margin: 0 auto;
       /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
          `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
          để trang vẫn đúng nếu tệp ấy không tải được. */
-      padding: 0 var(--page-gutter) calc(var(--ui-dock-h, 54px) + 40px);
+      padding: 24px var(--page-gutter) 40px;
     }
 
     .metric-grid {
@@ -2077,7 +2077,7 @@ def main() -> None:
     </div>
   </header>
 
-  <main>
+  <main class="statistics-content">
     <div class="metric-grid">{"".join(metrics)}</div>
     <nav class="sticky-nav" aria-label="Điều hướng nhanh">
       <a href="#ma-tran-loto">Loto ngày/tuần/tháng/năm</a>
