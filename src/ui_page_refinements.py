@@ -87,9 +87,9 @@ _STAT_CSS = rf"""
 """
 
 _PATH_CSS = rf"""
-.path-page{{--bg:#f0f4fd;--card:rgba(255,255,255,.88);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;--hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eaedff;--ui-bg:#f0f4fd;--ui-surface:rgba(255,255,255,.92);--ui-surface-2:#f8fafc;--ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-border:#dbe3f0;--ui-brand:#2946f3;--ui-brand-soft:#eaedff;--ui-brand-border:#c2cdfb;min-height:100vh;padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2rem);background:{_BASE_BG};color:#0f172a}}
+.path-page{{--bg:#f0f4fd;--card:rgba(255,255,255,.88);--text:#0f172a;--muted:#64748b;--line:#dbe3f0;--hit:#f59e0b;--hitde:#dc2626;--ok:#059669;--chip:#eaedff;--ui-bg:#f0f4fd;--ui-surface:rgba(255,255,255,.92);--ui-surface-2:#f8fafc;--ui-ink:#0f172a;--ui-ink-2:#334155;--ui-ink-soft:#64748b;--ui-border:#dbe3f0;--ui-brand:#2946f3;--ui-brand-soft:#eaedff;--ui-brand-border:#c2cdfb;min-height:100vh;padding-bottom:calc(env(safe-area-inset-bottom) + 2rem);background:{_BASE_BG};color:#0f172a}}
 .path-page a{{color:#2038cf}}
-.path-page .path-shell{{max-width:1280px;margin-inline:auto;padding:clamp(1rem,2.5vw,2rem);padding-bottom:calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2.25rem)}}
+.path-page .path-shell{{max-width:1280px;margin-inline:auto;padding:clamp(1rem,2.5vw,2rem);padding-bottom:calc(env(safe-area-inset-bottom) + 2.25rem)}}
 .path-page .path-hero{{padding:1.15rem 1.2rem;border:1px solid rgba(255,255,255,.94);border-radius:20px;background:rgba(255,255,255,.86);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}}
 .path-page .path-hero h1{{font-size:clamp(1.3rem,2.5vw,2rem)!important;letter-spacing:-.03em;color:#0f172a}}
 .path-page .path-overview{{gap:1rem;margin-top:1rem!important;grid-template-columns:minmax(0,1.15fr) minmax(18rem,.85fr)}}
@@ -198,7 +198,12 @@ def _refine_stat(filename: str, page: str) -> str:
 
 
 def _refine_path(page: str) -> str:
-    page = _add_body_classes(page, "ui-dock-space", "path-page")
+    # KHONG gan `ui-dock-space`: dock da bi khung ung dung thay the, va tren
+    # trang nay lop ay la cho DUY NHAT quy tac `padding-bottom` cua no khong
+    # bi de. Do duoc: 86px trong duoi cung cho mot thanh dieu huong khong con
+    # ton tai. 19 trang khac cung mang lop ay nhung tinh ra 0px, nen chung
+    # khong lo ra van de.
+    page = _add_body_classes(page, "path-page")
     page = page.replace('<div class="wrap">', '<div class="wrap path-shell">', 1)
     page = page.replace('<div class="top">', '<div class="top path-hero">', 1)
     page = page.replace('<div class="grid" style="margin-top:12px">', '<div class="grid path-overview" style="margin-top:12px">', 1)

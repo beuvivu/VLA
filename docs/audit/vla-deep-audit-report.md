@@ -122,6 +122,131 @@ Ghi lại để lần sau không ai mất công đi lại.
 | CodeQL báo 14 cảnh báo cao trên PR #86 | KHÔNG do PR sinh ra. Trên cùng 14 trang, `innerHTML` đi từ **174 xuống 0** và không hạng mục rủi ro nào tăng. Số cảnh báo bám theo **số trang được ghi lại** (PR #85 dựng lại 29 trang → 28 cảnh báo; PR #86 dựng lại 14 → 14), đúng như ghi chú của chính CodeQL. |
 | `github-advanced-security` đỏ | KHÔNG do PR sinh ra. Tác nhân chết ở bước gọi mô hình trước khi đọc tệp nào: `CAPIError: 400 The requested model is not supported`. Lặp lại y hệt trên ba head của PR #86 và trên PR #85 (diff hoàn toàn khác). Lỗi nằm trong dịch vụ của GitHub, không có bản vá nào trong kho sửa được. |
 
+### A-03 · P3 · 12 KB CSS không trang nào nạp
+
+**Thành phần.** `docs/assets/ui-part1.css`, `ui-part2.css`, `ui-part3.css`.
+
+**Tái hiện.** Quét mọi `href`/`src` nội bộ của 29 trang: **0 trang** trỏ tới
+ba tệp này. Kiểm đủ năm đường mà §X đòi:
+
+| Đường tham chiếu | Kết quả |
+| --- | --- |
+| Trang xuất bản | 0/29 |
+| `@import` trong CSS | không có |
+| Phép kiểm | không nhắc |
+| `scripts/extract_critical_css.py` | chỉ đọc `ui.css` |
+| Trình dựng | không sinh ra — là tệp tĩnh commit thẳng |
+
+Thứ duy nhất nhắc tên chúng là một chuỗi selector trong `css-async.js`, và
+selector ấy chỉ khớp **nếu** có trang nạp chúng.
+
+**Bản vá.** Gỡ ba tệp; gỡ luôn mệnh đề `ui-part` khỏi selector trong
+`css-async.js`.
+
+**Trạng thái.** ĐÃ GỠ.
+
+### A-04 · P3 · Bốn tệp JS xuất bản không trang nào nạp — KHÔNG gỡ
+
+Ghi lại thay vì gỡ, vì **đo cho thấy chúng không chết theo nghĩa thường**.
+
+| Tệp | Kích thước | Ai phát ra |
+| --- | --- | --- |
+| `matrix-virt.js` | 6,5 KB | `scripts/optimize_index_dom.py` |
+| `apply-data-styles.js` | 1,2 KB | `scripts/patch_csp_no_inline.py` |
+| `ui-dock.js` | 2,0 KB | `src/web_security.py::security_script_tags` |
+| `live-board.js` | 9,6 KB | không mã nào phát ra |
+
+Hai sự thật đo được làm chúng thành ứng viên gỡ ở lần sau, chứ không phải
+lần này: `security_script_tags` **không ai gọi**, và hai kịch bản kia
+**không workflow nào chạy** — chúng là công cụ chạy tay. Gỡ tệp mà để lại
+mã phát ra nó là để lại một cái bẫy; gỡ cả đường mã là một thay đổi rộng hơn
+phạm vi lần soát này.
+
+Ghi vào `NGOAI_LE` của `tests/test_published_assets.py` kèm lý do, nên chúng
+không thể lặng lẽ trôi đi.
+
+**Trạng thái.** ĐÃ GHI NHẬN, CHƯA GỠ.
+
+### A-05 · Không có tham chiếu gãy
+
+Quét 35 đường dẫn nội bộ trên 29 trang: **0** trang trỏ tới tệp không tồn
+tại. Nay có `test_no_published_page_points_at_a_file_that_is_not_there` khoá
+lại, cùng `test_every_published_asset_is_reachable_from_some_page` canh chiều
+ngược. Cả ba phép kiểm của tệp ấy đã thử bằng đột biến, **kể cả đột biến làm
+hỏng chính phép quét** — tập rỗng không lọt qua được.
+
+### A-06 · §VI Chuyển động — ĐÃ ĐẠT SẴN, không phải sửa
+
+Đếm chuỗi trong nguồn cho ra "8/29 trang khai `prefers-reduced-motion`", và
+con số ấy **đo sai thứ**: 21 trang còn lại thừa hưởng mệnh đề từ
+`assets/ui.css` dùng chung. Đo HÀNH VI trong trình duyệt, hai ngữ cảnh
+(`reduced_motion` là `no-preference` rồi `reduce`), trên cả 29 trang:
+
+| Phép đo | Thường | Đã xin giảm |
+| --- | --- | --- |
+| Trang còn vòng lặp vô hạn đang chạy | 1 (`live.html`, 8 hiệu ứng) | **0 / 29** |
+| Chuyển tiếp CSS đang bật, `index.html` | 1 203 | **0** |
+| Chuyển tiếp CSS đang bật, `so-ket-qua-truyen-thong.html` | 1 713 | **0** |
+| Chuyển tiếp CSS đang bật, `statistics.html` | 1 456 | **0** |
+
+Cả 29 trang tôn trọng đầy đủ `prefers-reduced-motion`. Yêu cầu §6.2 đã đạt,
+không có gì để sửa.
+
+Bề mặt chuyển động của kho cũng nhỏ: tổng cộng **sáu** `@keyframes` —
+`ui-shimmer`, `live-pulse`, `rl-scan`, `reveal`, `pulse`. Chỉ `live.html` có
+hiệu ứng lặp vô hạn. Nên §6.1 "gỡ chuyển động thừa" gần như không có đối
+tượng, và §6.2 "tránh animate thuộc tính nặng về bố cục" không có vi phạm
+nào đo được.
+
+**Trạng thái.** ĐÃ KIỂM, KHÔNG CẦN SỬA.
+
+### A-07 · P3 · 54px trống chừa cho thanh điều hướng đã biến mất
+
+**Thành phần.** `src/ui_page_refinements.py` (`.path-page`), bốn trang
+`soi-path-de-active`, `soi-path-de-stable`, `soi-path-loto-active`,
+`soi-path-loto-stable`.
+
+**Tái hiện.** Dock đã bị khung ứng dụng thay thế. Đo: **0/29** trang còn bất
+kỳ dấu vết nào của nó (`ui-dock-inner`, `ui-dock-btn`, `class="ui-dock"`).
+Nhưng bốn trang `soi-path-*` vẫn có `padding-bottom: 86px` — chừa chỗ cho
+một thanh không còn tồn tại.
+
+**Một lần quy sai nguyên nhân, ghi lại vì nó là bài học.** Tôi quy 86px cho
+lớp `ui-dock-space` vì 23 trang mang lớp ấy và quy tắc của nó tính ra đúng
+86px (54px chiều cao dock + 32px khoảng cách). Gỡ quy tắc ấy khỏi ba chỗ —
+con số **không đổi**. Hỏi trình duyệt quy tắc nào THẮNG thì nguồn thật là
+`.path-page`, một quy tắc nội tuyến khác:
+
+    padding-bottom: calc(var(--ui-dock-h,64px) + env(safe-area-inset-bottom) + 2rem)
+
+Đếm chuỗi trong nguồn không thay được việc hỏi trình duyệt cái gì có hiệu
+lực. Ba quy tắc `ui-dock-space` đã gỡ vẫn đúng là mã chết, nhưng chúng không
+gây ra khoảng trống này.
+
+**Bản vá.** Bỏ số hạng `var(--ui-dock-h,64px)` khỏi `.path-page` và
+`.path-page .path-shell`, giữ nguyên `env(safe-area-inset-bottom)` và phần
+khoảng thở có chủ ý.
+
+**Kiểm chứng.** 86px → **32px** trên cả bốn trang. Dựng lại đủ 29 trang rồi
+soi lại: 0 trang thiếu khung, 0 trang bị dải chi tiết đẩy nội dung, 0 nút
+thu/mở bị che, và số trang tràn ngang không đổi (vẫn chỉ `landing_desktop`,
+cố ý).
+
+**Trạng thái.** ĐÃ SỬA, ĐÃ KIỂM CHỨNG.
+
+### A-08 · §4.1 CSS — đo được, chưa cần sửa thêm
+
+| Phép đo | Kết quả |
+| --- | --- |
+| Tổng CSS (13 tệp) | 147 KB, nay 135 KB sau A-03 |
+| `!important` toàn kho | **41** — `stat_pages.css` 12, `frequency_bento.css` 8, ba tệp còn lại 7 mỗi tệp |
+| `ui.css`: khối quy tắc / selector khác nhau | 243 / 229 |
+| Selector lặp trong `ui.css` | 14, **phần lớn là `.ui-dock-*`** |
+
+41 `!important` trên 147 KB là mức khiêm tốn, không phải dấu hiệu của cuộc
+chiến độ ưu tiên. Còn 14 selector lặp thì đa số thuộc dock đã chết — dọn
+chúng là việc của lần gỡ đường mã dock (xem A-04), không phải việc gộp CSS.
+
 ## 5. Kết quả phép kiểm
 
 | | |
@@ -139,9 +264,10 @@ Ghi thẳng để không ai đọc nhầm báo cáo này thành "đã soát hế
 
 - **CSS** (§IV): chưa kiểm kê selector trùng, `!important` thừa, media query
   xung đột. 13 tệp CSS chưa được đo độ phủ.
-- **Animation** (§VI): chưa đo CPU/GPU, chưa kiểm `prefers-reduced-motion`
-  trên từng hiệu ứng.
-- **Mã chết và tài nguyên thừa** (§X): chưa dựng bản đồ phụ thuộc đầy đủ.
+- **Animation** (§VI): `prefers-reduced-motion` ĐÃ đo và đạt trên cả 29 trang
+  (xem A-06). Chưa đo CPU/GPU khi hiệu ứng chạy.
+- **Mã chết và tài nguyên thừa** (§X): tài nguyên XUẤT BẢN đã kiểm hết (xem
+  A-03, A-04, A-05). Chưa quét mã chết trong 151 mô-đun `src/`.
 - **Mạng và nạp dữ liệu** (§IX): chưa đo trùng lặp yêu cầu trên `live.html`.
 - **Lighthouse / Core Web Vitals** (§13.1): chưa chạy. Môi trường phát triển
   mở trang qua `file://` nên LCP/INP/CLS đo được ở đây **không** đại diện cho

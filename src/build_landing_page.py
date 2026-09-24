@@ -21,25 +21,12 @@ import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
-from ui_theme import SITE_NAV, dock_script, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import LANDING_SECTIONS, SITE_NAV, dock_script, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
 
-NAV_ITEMS: list[tuple[str, str, str]] = [
-    ("tong-quan", "Tổng quan", "Cập nhật, tín hiệu nóng và đường dẫn nhanh"),
-    ("ket-qua", "Kết quả ngày", "Bảng kết quả đầy đủ theo giải"),
-    ("chuc-don-vi", "Chục × đơn vị", "Ma trận đầu/chục và đuôi/đơn vị"),
-    ("ai-ml", "AI/ML cầu-kèo", "Xếp hạng xác suất và lý do thống kê"),
-    ("tan-suat-loto", "Tần suất loto", "Ma trận ngày, tuần, tháng, năm"),
-    ("tan-suat-de", "Tần suất Đặc Biệt", "Ma trận Đặc Biệt theo kỳ"),
-    ("gan-nhip", "Gan / nhịp", "Số lâu chưa về và áp lực nhịp"),
-    ("cap-lon", "Cặp lộn", "45 cặp đảo chiều và 5 cặp kép-bóng"),
-    ("dau-duoi-tong", "Đầu · đuôi · tổng", "Phân bổ nhóm số dễ so sánh"),
-    ("db-tuan-thang", "Đặc Biệt tuần/tháng", "Bảng Đặc Biệt theo lịch"),
-    ("duong-cau", "Vị trí đường cầu", "Căn cứ khi bấm vào từng số"),
-    ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
-]
+NAV_ITEMS = LANDING_SECTIONS
 
 PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
     ("special", "Đặc Biệt", ["special"], "special"),

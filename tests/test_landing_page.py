@@ -34,9 +34,10 @@ def test_landing_page_contains_navigation_and_sections(tmp_path: Path) -> None:
         assert f'id="{section_id}"' in html or f"id='{section_id}'" in html
         assert f"#{section_id}" in html
 
-    # Sidebar đã thay bằng dock nổi; điều hướng vẫn phải phủ đủ nhóm.
-    assert 'class="dock"' in html
-    assert "Điều hướng chính" in html
+    # Khung hai cấp thay dock nổi, giữ các neo chuyển phần.
+    assert 'class="app-rail"' in html
+    assert 'class="dock"' not in html
+    assert "Các phần trong trang" in html
     assert "Kết quả hàng ngày" in html
     assert "Chục × đơn vị" in html
     assert "data-number" in html

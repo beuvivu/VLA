@@ -62,7 +62,7 @@ body[data-ui-page]:is(.sp-page,.path-page,.bf-page,.live-console,
   --ui-surface:#fff;--ui-surface-2:#f7f7f7;
   --ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;
   --ui-border:#e4e7f2;--ui-border-strong:#cdd4e8;
-  --ui-brand:#2946f3;--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;
+  --ui-brand:#5955d1;--ui-brand-ink:#4e49b8;--ui-brand-soft:#f0effa;
   --ui-brand-border:#c2cdfb;--ui-on-brand:#fff;
   --ui-glass:rgb(255 255 255 / .88);--ui-glass-border:rgb(255 255 255 / .76);
   --ui-elevation:0 0 25px rgba(0,0,0,.08);
@@ -204,3 +204,48 @@ body[data-ui-page] [hidden] {display:none!important}
   body[data-ui-page] :is(.ui-card,.card,.sp-controls,.metric-card,.sp-scroll) {box-shadow:none;backdrop-filter:none;background:#fff}
   body[data-ui-page] :is(.sp-scroll,.ui-table-wrap,.path-table-scroll) {max-height:none;overflow:visible}
 }
+
+/* Nexlink là lớp trình bày chung. Nền chuyển sắc đã được chọn trước đây
+   chỉ dành cho trang chủ; màu ô số và bố cục bảng giữ hợp đồng dữ liệu. */
+body[data-ui-page]{
+  --ui-page-max:1440px;--ui-page-gutter:24px;
+  --ui-r-lg:10px;--ui-r-xl:10px;
+  --ui-glass:var(--ui-surface);--ui-glass-border:var(--ui-border);
+  --ui-elevation:0 2px 6px rgba(41,41,75,.025);
+  --ui-elevation-hover:0 4px 14px rgba(41,41,75,.065);
+}
+body[data-ui-page]:not([data-ui-page="index"]){background:var(--ui-surface-2)}
+body[data-ui-page] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-controls,.sp-kpi-card,
+  .sp-recent-card,.sp-duo>div,.bf-card,.tr-filter,.tr-summary>div,.tr-day,
+  .ai-status-item,.rl-stage,.rl-console-card,.ui-header,.path-hero,.live-hero,.sp-scroll){
+  background:var(--ui-glass);border:1px solid var(--ui-glass-border);
+  border-radius:10px;box-shadow:var(--ui-elevation);backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+body[data-ui-page] :is(.ui-card,.card,.metric-card,.metric-tile,.bf-card,.tr-day):hover{
+  transform:none;box-shadow:var(--ui-elevation-hover);
+}
+body[data-ui-page] :is(.ui-header,.path-hero,.live-hero){padding:20px 24px;margin-bottom:24px}
+body[data-ui-page] :is(.ui-header,.path-hero,.live-hero) h1{font-size:24px;line-height:1.3;letter-spacing:-.02em}
+body[data-ui-page] :is(.ui-shell,.ui-shell-wide,.path-shell),body[data-ui-page] .app>.main{
+  padding-top:24px;padding-bottom:24px;
+}
+body[data-ui-page] .main>.hero{border-radius:10px;padding:24px;box-shadow:var(--ui-elevation)}
+body[data-ui-page] .hero h1{font-size:clamp(26px,3vw,38px);line-height:1.15}
+body[data-ui-page] .hero p{font-size:14px;line-height:1.6}
+body[data-ui-page] .metric-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+body[data-ui-page] .metric-tile{min-height:126px;padding:20px;gap:10px}
+body[data-ui-page] .metric-tile::before{display:none}
+body[data-ui-page] .metric-tile span{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none}
+body[data-ui-page] .metric-tile strong{font-size:30px}
+body[data-ui-page] .section-title h2{font-size:24px}
+body[data-ui-page] :is(.sp-btn,.sp-chip,.ui-btn,.tr-btn,.bf-tabs a,.ui-tab){border-radius:8px;font-weight:500}
+body[data-ui-page] .app-main :is(.ui-table-wrap,.table-wrap,.sp-scroll){scrollbar-width:thin}
+@media(min-width:1440px){body[data-ui-page] .metric-row{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media(max-width:760px){
+  body[data-ui-page]{--ui-page-gutter:16px}
+  body[data-ui-page] .metric-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  body[data-ui-page] .metric-tile{padding:16px}
+  body[data-ui-page] .metric-tile strong{font-size:26px}
+  body[data-ui-page] :is(.ui-header,.path-hero,.live-hero),body[data-ui-page] .main>.hero{padding:20px 16px}
+}
+@media(max-width:360px){body[data-ui-page] .metric-row{grid-template-columns:minmax(0,1fr)}}

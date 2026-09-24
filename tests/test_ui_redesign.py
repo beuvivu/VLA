@@ -310,9 +310,9 @@ def test_sidebar_is_gone_from_every_page() -> None:
         assert not soup.select(".sidebar, .ui-side"), f"{page.name} vẫn còn sidebar"
 
 
-def test_landing_dock_keeps_in_page_anchors() -> None:
+def test_landing_shell_keeps_in_page_anchors() -> None:
     """Bỏ sidebar cũng bỏ neo cuộn; trang này cao khoảng 12 000px."""
-    hrefs = {a.get("href") for a in _soup(DOCS / "index.html").select(".dock-pop a")}
+    hrefs = {a.get("href") for a in _soup(DOCS / "index.html").select(".app-page-sections a")}
     anchors = {h for h in hrefs if h and h.startswith("#")}
     assert len(anchors) >= 10, f"chỉ còn {len(anchors)} neo trong trang"
     for required in ("#tong-quan", "#ket-qua", "#duong-cau", "#backtest"):
