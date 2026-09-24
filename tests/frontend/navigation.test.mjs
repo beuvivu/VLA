@@ -1,8 +1,21 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { JSDOM } from 'jsdom';
 const root = new URL('../../', import.meta.url);
+test('Định danh cặp chỉ nhận số thuần, từ chối chuỗi chứa thẻ', () => {
+  const source = readFileSync(new URL('src/templates/stat_pages.js', root), 'utf8');
+  const start = source.indexOf('function asPair(value) {');
+  const end = source.indexOf('\nfunction markPair(', start);
+  const asPair = runInNewContext(`${source.slice(start, end)}; asPair`);
+  for (const [input, expected] of [[34, '34'], ['07', '07'], [' 34 - 66 ', '34-66'], ['00', '00']]) {
+    assert.equal(asPair(input), expected);
+  }
+  for (const input of [null, undefined, 7, '7', '123', '<b>07</b>', '<script>07</script>', '0<b></b>7', '<scr<script>ipt>07']) {
+    assert.equal(asPair(input), null, String(input));
+  }
+});
 function setup({ narrow = false, hash = '' } = {}) {
   const dom = new JSDOM(readFileSync(new URL('docs/index.html', root), 'utf8'), {
     url: `https://example.test/index.html${hash}`, runScripts: 'outside-only',

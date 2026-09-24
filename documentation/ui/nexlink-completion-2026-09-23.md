@@ -18,6 +18,7 @@ Card dùng bo 10 px, viền mảnh và bóng nhẹ; bỏ chuyển động nâng 
 - Sau điều hướng đến neo, kết quả tìm ở nhóm khác biến mất dù ô nhập không đổi.
 - Bỏ dock làm mất 12 liên kết nhảy nhanh: chuyển chúng vào “Trên trang này” trong panel.
 - Mốc `main` lồng nhau: giữ một mốc, bảo toàn id/lớp/nội dung; vùng thống kê dùng lớp `.statistics-content` thay selector thẻ.
+- CodeQL phát hiện thao tác xóa thẻ bằng regex trong hàm `asPair` dùng chung của 14 trang. Các nơi gọi đều truyền dữ liệu số thuần; bỏ thao tác xóa thẻ, giữ kiểm tra định dạng số nghiêm ngặt và thêm kiểm thử từ chối markup.
 
 ## Kiểm chứng
 
@@ -27,6 +28,7 @@ Card dùng bo 10 px, viền mảnh và bóng nhẹ; bỏ chuyển động nâng 
 - Bảy kiểm tra JavaScript đầu tiên đều thất bại với script gốc; bản sửa đạt, cộng thêm kiểm tra neo sau rà soát độc lập.
 - Kiểm thử JavaScript dùng DOM thực từ trang xuất bản: `npm ci --prefix tests/frontend && npm test --prefix tests/frontend`. Đã bổ sung vào CI.
 - Bộ kiểm tra Python: `PYTHONPATH=src python -m pytest tests -q`.
+- Bản trước sửa `asPair`: toàn bộ Python đạt 1.927, bỏ qua 8 theo môi trường. Sau sửa: 166 kiểm tra thống kê/bảo mật/tài nguyên đạt; JavaScript đạt 9/9. CI chạy lại trên commit cuối.
 
 ## Giới hạn xác minh trực quan
 
