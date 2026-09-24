@@ -469,27 +469,6 @@
     "conditional_rate":0.0697674419
   },
   {
-    "prev_special_2d":"06",
-    "next_special_2d":"24",
-    "count":2,
-    "base_count":29,
-    "conditional_rate":0.0689655172
-  },
-  {
-    "prev_special_2d":"06",
-    "next_special_2d":"45",
-    "count":2,
-    "base_count":29,
-    "conditional_rate":0.0689655172
-  },
-  {
-    "prev_special_2d":"06",
-    "next_special_2d":"83",
-    "count":2,
-    "base_count":29,
-    "conditional_rate":0.0689655172
-  },
-  {
     "prev_special_2d":"26",
     "next_special_2d":"15",
     "count":2,
@@ -557,6 +536,27 @@
     "next_special_2d":"05",
     "count":3,
     "base_count":45,
+    "conditional_rate":0.0666666667
+  },
+  {
+    "prev_special_2d":"06",
+    "next_special_2d":"24",
+    "count":2,
+    "base_count":30,
+    "conditional_rate":0.0666666667
+  },
+  {
+    "prev_special_2d":"06",
+    "next_special_2d":"45",
+    "count":2,
+    "base_count":30,
+    "conditional_rate":0.0666666667
+  },
+  {
+    "prev_special_2d":"06",
+    "next_special_2d":"83",
+    "count":2,
+    "base_count":30,
     "conditional_rate":0.0666666667
   },
   {

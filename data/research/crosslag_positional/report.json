@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-09-24T09:30:07Z",
-  "anchor_date": "2026-09-23",
+  "generated_at_utc": "2026-09-24T12:12:19Z",
+  "anchor_date": "2026-09-24",
   "research_only": true,
   "production_wired": false,
   "positions": 27,
@@ -24,9 +24,9 @@
     ]
   ],
   "warmup_rows": 180,
-  "train_end_date": "2022-04-08",
-  "validation_end_date": "2024-06-30",
-  "holdout_days": 807,
+  "train_end_date": "2022-04-09",
+  "validation_end_date": "2024-07-02",
+  "holdout_days": 806,
   "train_fdr_05_count": 0,
   "train_bonferroni_05_count": 0,
   "research_gate_pass_count": 0,
