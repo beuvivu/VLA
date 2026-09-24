@@ -971,7 +971,7 @@ function pairInKey(key) {
 
 function asPair(value) {
   if (value === null || value === undefined) return null;
-  // Pair identifiers come from numeric data, never from formatted cell markup.
+
   const raw = String(value).trim();
   const two = /^([0-9]{2})$/.exec(raw);
   if (two) return two[1];
