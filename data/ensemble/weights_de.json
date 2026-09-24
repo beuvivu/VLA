@@ -1,7 +1,7 @@
 {
   "schema_version": 7,
   "mode": "de",
-  "learned_at_utc": "2026-09-24T13:56:41Z",
+  "learned_at_utc": "2026-09-24T14:22:51Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -46,11 +46,11 @@
     "validation_logloss": {
       "mac_dinh": 4.599229312535216,
       "dang_hieu_luc": 4.599229312535216,
-      "ung_vien": 4.597772262030334
+      "ung_vien": 4.597772263735978
     },
-    "relative_gain": 0.00031680318720143686,
-    "delta_ci95_low": -0.0075763462879921235,
-    "delta_ci95_high": 0.005350674550223318
+    "relative_gain": 0.000316802816347211,
+    "delta_ci95_low": -0.007576353737137048,
+    "delta_ci95_high": 0.005350690267085809
   },
   "weights": {
     "w_ml": 0.25,

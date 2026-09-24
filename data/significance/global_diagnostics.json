@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-24T13:52:56Z",
+  "generated_at_utc": "2026-09-24T14:18:47Z",
   "window_days": 365,
   "start_date": "2025-09-25",
   "end_date": "2026-09-24",
@@ -9,6 +9,6 @@
   "de_entropy_normalized": 0.9640258004111982,
   "all_prizes_uniform_chi2": 91.3810403200985,
   "all_prizes_uniform_p_value": 0.6943762282230289,
-  "de_lag1_numeric_corr": 0.021617781773283322,
+  "de_lag1_numeric_corr": 0.021617781773283305,
   "interpretation": "Diagnostics test historical deviations only; statistical significance is not evidence of future predictability."
 }
