@@ -43,7 +43,7 @@ from ensemble_utils import (
     load_ensemble_weights,
 )
 from xsmb_domain import baseline_rate
-from skill_monitor import MIN_DAYS, daily_skill, published_evaluation
+from skill_monitor import MIN_DAYS, graded_series, published_evaluation, update_ledger
 from skill_monitor import evaluate as evaluate_skill
 
 SCHEMA_VERSION = 1
@@ -337,6 +337,7 @@ def coverage(history: pd.DataFrame) -> dict:
 
 def build(data_dir: Path) -> Path:
     """Tính toàn bộ chẩn đoán và ghi ``data/model_quality/report.json``."""
+    update_ledger(data_dir)
     history_path = data_dir / "prob_eval" / "ensemble_history.csv"
     raw_history = pd.read_csv(history_path)
     history, converted = normalize_brier_scale(raw_history)
@@ -351,7 +352,9 @@ def build(data_dir: Path) -> Path:
         days, probabilities, labels = published_evaluation(data_dir, mode)
         if len(days) >= MIN_DAYS:
             source = "published"
-            skill = summarize_skill(days, daily_skill(mode, probabilities, labels))
+            # Kỹ năng lấy từ sổ cái để không mất những kỳ mà artifact đã bị dọn;
+            # hiệu chỉnh và độ sắc cần cả vector nên chỉ chấm artifact còn trên đĩa.
+            skill = summarize_skill(*graded_series(data_dir, mode))
         else:
             source = "reconstructed"
             predictions = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")

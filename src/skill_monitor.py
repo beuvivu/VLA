@@ -120,6 +120,53 @@ def daily_skill(mode: str, probs: np.ndarray, labels: np.ndarray) -> np.ndarray:
     return 1.0 - model / reference
 
 
+#: Sổ cái kỹ năng đã chấm, nằm NGOÀI thư mục bị dọn. ``cleanup_artifacts`` xoá
+#: tệp trong ``data/predict`` quá 45 ngày, nên chỉ đọc artifact thì cửa sổ 60 kỳ
+#: không bao giờ đầy — review của PR #93 bắt được điều đó. Mỗi dòng ~40 byte.
+LEDGER = Path("model_quality") / "published_skill.csv"
+
+
+def _read_ledger(data_dir: Path) -> pd.DataFrame:
+    path = data_dir / LEDGER
+    if not path.exists():
+        return pd.DataFrame(columns=["target_date", "mode", "skill"])
+    frame = pd.read_csv(path, dtype={"target_date": str, "mode": str})
+    return frame[["target_date", "mode", "skill"]]
+
+
+def graded_series(data_dir: Path, mode: str) -> tuple[list[str], np.ndarray]:
+    """Kỹ năng từng kỳ: sổ cái nối với artifact còn trên đĩa.
+
+    Ngày đã có trong sổ thì GIỮ bản trong sổ — lần ghi đầu là lần chấm sớm
+    nhất, sát lúc công bố nhất; không để một tệp viết lại về sau đè lên.
+    """
+    kept = _read_ledger(data_dir)
+    kept = kept[kept["mode"] == mode]
+    series = dict(zip(kept["target_date"], kept["skill"].astype(float), strict=True))
+    days, probs, labels = published_evaluation(data_dir, mode)
+    for day, value in zip(days, daily_skill(mode, probs, labels), strict=True):
+        series.setdefault(day, float(value))
+    ordered = sorted(series)
+    return ordered, np.asarray([series[d] for d in ordered], dtype=float)
+
+
+def update_ledger(data_dir: Path) -> Path:
+    """Ghi mọi kỳ đã chấm được vào sổ cái. Gọi được nhiều lần cho cùng kết quả.
+
+    Phải chạy TRƯỚC mọi bước xoá artifact; ``cleanup_artifacts`` gọi nó ngay
+    trước khi dọn, nên không kỳ nào bị xoá khi chưa kịp ghi.
+    """
+    rows = []
+    for mode in MODES:
+        days, skills = graded_series(data_dir, mode)
+        rows += [{"target_date": d, "mode": mode, "skill": float(s)} for d, s in zip(days, skills, strict=True)]
+    path = data_dir / LEDGER
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame = pd.DataFrame(rows, columns=["target_date", "mode", "skill"])
+    frame.sort_values(["mode", "target_date"]).to_csv(path, index=False, float_format="%.12g")
+    return path
+
+
 @dataclass(frozen=True)
 class SkillStatus:
     """Trạng thái kỹ năng ngoài mẫu của một chế độ trên cửa sổ gần nhất."""
@@ -214,8 +261,8 @@ def status(
 def evaluate(data_dir: Path, *, window: int = DEFAULT_WINDOW, z: float = DEFAULT_Z) -> list[SkillStatus]:
     out = []
     for mode in MODES:
-        days, probs, labels = published_evaluation(data_dir, mode)
-        out.append(status(days, daily_skill(mode, probs, labels), mode, window=window, z=z))
+        days, skills = graded_series(data_dir, mode)
+        out.append(status(days, skills, mode, window=window, z=z))
     return out
 
 

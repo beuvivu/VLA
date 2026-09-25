@@ -188,6 +188,11 @@ VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ h
 tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
 ngưỡng.
 
+`cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
+vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
+giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
+hơn hạn giữ artifact.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được
@@ -203,7 +208,7 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Bộ kiểm hiện **xanh hết: 2 121 phép kiểm**. Bốn kịch bản chốt phát hành
+Bộ kiểm hiện **xanh hết: 2 124 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.

@@ -157,3 +157,54 @@ def test_a_store_without_outcomes_or_artifacts_is_empty_not_a_crash(tmp_path: Pa
         days, probs, labels = sm.published_evaluation(tmp_path, mode)
         assert days == [] and probs.shape == labels.shape == (0, 100)
     assert all(check.state == "chua_du" for check in sm.evaluate(tmp_path))
+
+
+# ---------------------------------------------------------------------------
+# Sổ cái: chuỗi đánh giá phải sống lâu hơn artifact bị dọn
+# ---------------------------------------------------------------------------
+
+
+def test_the_real_cleanup_step_keeps_a_full_monitoring_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review của PR #93: pipeline chạy ``cleanup_artifacts --retention-days
+    45``, nên chỉ đọc artifact thì cửa sổ 60 kỳ không bao giờ đầy. Chạy đúng
+    bước dọn ấy trên 70 kỳ rồi đòi bộ theo dõi vẫn thấy đủ 60."""
+    import cleanup_artifacts
+
+    days = _write_store(tmp_path, 70)
+    pd.DataFrame({"date": days}).to_csv(tmp_path / "xsmb.csv", index=False)
+
+    monkeypatch.setattr(
+        "sys.argv", ["cleanup_artifacts", "--data-dir", str(tmp_path), "--retention-days", "45"]
+    )
+    cleanup_artifacts.main()
+
+    left = sorted((tmp_path / "predict").glob("predict_next_de_all_*.csv"))
+    assert len(left) < 60, "mẫu dựng sẵn phải thật sự bị dọn bớt"
+    for check in sm.evaluate(tmp_path):
+        assert check.days == sm.DEFAULT_WINDOW, check.describe()
+    ledger = pd.read_csv(tmp_path / sm.LEDGER, dtype={"target_date": str})
+    assert set(ledger["target_date"]) == set(days)
+
+
+def test_the_first_recorded_skill_is_never_overwritten(tmp_path: Path) -> None:
+    """Lần chấm đầu sát lúc công bố nhất. Một tệp viết lại về sau — dù vì lý
+    do gì — không được đè lên bản đã ghi."""
+    days = _write_store(tmp_path, sm.MIN_DAYS)
+    sm.update_ledger(tmp_path)
+    ledger = pd.read_csv(tmp_path / sm.LEDGER, dtype={"target_date": str})
+    ledger.loc[(ledger["mode"] == "de") & (ledger["target_date"] == days[0]), "skill"] = 0.123
+    ledger.to_csv(tmp_path / sm.LEDGER, index=False)
+
+    sm.update_ledger(tmp_path)
+    graded_days, skills = sm.graded_series(tmp_path, "de")
+
+    assert graded_days[0] == days[0]
+    assert skills[0] == pytest.approx(0.123)
+
+
+def test_updating_the_ledger_twice_changes_nothing(tmp_path: Path) -> None:
+    _write_store(tmp_path, sm.MIN_DAYS)
+    first = sm.update_ledger(tmp_path).read_bytes()
+    assert sm.update_ledger(tmp_path).read_bytes() == first
