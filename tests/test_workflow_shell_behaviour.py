@@ -324,8 +324,17 @@ class PredictionRepo:
             self.bin / "python",
             'if [[ "$1" == "src/run_daily_prediction.py" ]]; then\n'
             '  n=$(( $(cat "$FAKE_DIR/stamp") + 1 )); echo "$n" > "$FAKE_DIR/stamp"\n'
+            # Mỗi lần chạy lệch 1e-11 — đúng cỡ nhiễu đo được giữa hai runner
+            # (commit b8afdc7f). `data/shift` là thay đổi CÓ NGHĨA của dữ liệu.
+            "  shift=$(cat data/shift 2>/dev/null || echo 0)\n"
+            '  p=$(awk -v n="$n" -v s="$shift"'
+            " 'BEGIN{printf \"%.17g\", 0.23923968902 + n * 1e-11 + s}')\n"
+            # `lift` = p trừ đường cơ sở: số nhỏ mang nguyên nhiễu TUYỆT ĐỐI,
+            # nên lệch tương đối lớn — đúng hình dạng làm bản so đầu trượt.
+            '  lift=$(awk -v p="$p" \'BEGIN{printf "%.17g", p - 0.23765728565289646}\')\n'
             '  printf \'{"date": "2026-09-25", "generated_at_local": "t%s",'
-            ' "generated_at_utc": "t%s", "top": "%s"}\\n\' "$n" "$n" "$(cat data/marker)"'
+            ' "generated_at_utc": "t%s", "top": "%s", "p": %s, "lift": %s}\\n\''
+            ' "$n" "$n" "$(cat data/marker)" "$p" "$lift"'
             " > data/predictions_today.json\n"
             "  exit 0\n"
             "fi\n"
@@ -435,18 +444,40 @@ def test_a_prediction_is_rebuilt_on_the_data_it_is_pushed_on_top_of(tmp_path: Pa
     assert json.loads(repo.remote_file("data/predictions_today.json"))["top"] == "m2"
 
 
-def test_a_timestamp_only_change_is_not_committed(tmp_path: Path) -> None:
-    """Tám commit cho cùng một kỳ trong một đêm, chỉ khác dấu thời gian."""
+def test_a_timestamp_or_float_noise_change_is_not_committed(tmp_path: Path) -> None:
+    """Tám commit cho cùng một kỳ trong một đêm. Sau bản sửa đầu (chỉ bỏ qua
+    dấu thời gian) vẫn còn: b8afdc7f chỉ khác xác suất ở chữ số thứ mười."""
     repo = PredictionRepo(tmp_path)
     first = repo.runner("first")
     repo.push_from(first, "data: dự đoán cho kỳ 2026-09-25")
     before = repo.remote_log()
     again = repo.runner("again")
+    assert repo.remote_file("data/predictions_today.json") != (
+        again / "data/predictions_today.json"
+    ).read_text(encoding="utf-8"), "mẫu dựng sẵn phải thật sự khác byte"
 
     result = repo.run_write_step(again)
 
     assert result.returncode == 0, (result.stdout + result.stderr)[-800:]
     assert repo.remote_log() == before
+
+
+def test_a_meaningful_probability_change_is_still_committed(tmp_path: Path) -> None:
+    """Sai số cho phép chỉ nuốt nhiễu, không nuốt thay đổi thật."""
+    repo = PredictionRepo(tmp_path)
+    first = repo.runner("first")
+    repo.push_from(first, "data: dự đoán cho kỳ 2026-09-25")
+    other = tmp_path / "other"
+    repo.git(tmp_path, "clone", str(repo.remote), str(other))
+    (other / "data/shift").write_text("0.001\n", encoding="utf-8")
+    repo.push_from(other, "data: dữ liệu làm xác suất đổi")
+    runner = repo.runner("runner")
+
+    result = repo.run_write_step(runner)
+
+    assert result.returncode == 0, (result.stdout + result.stderr)[-800:]
+    published = json.loads(repo.remote_file("data/predictions_today.json"))
+    assert published["p"] == pytest.approx(0.23923968902 + 0.001, abs=1e-6)
 
 
 # ---------------------------------------------------------------------------

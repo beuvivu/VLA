@@ -134,6 +134,17 @@ Hai lỗi đi kèm, cùng được sửa:
 **Bản vá.** Mỗi lần thử: bỏ rebase dở, `reset --hard` về đầu nhánh chính,
 sinh lại dự đoán trên nền ấy. Không commit khi chỉ khác dấu thời gian.
 
+**Bản vá chưa đủ, phát hiện SAU khi trộn PR #89.** Lượt pipeline đầu tiên sau
+khi trộn vẫn cho ra commit rác `b8afdc7f`: xác suất lệch 1,08e-10 vì hai runner
+khác CPU không cho kết quả trùng từng bit. Phép so "bỏ dấu thời gian rồi so
+tuyệt đối" không nuốt được nó. Lần sửa thứ hai (PR sau #89) so số thực theo
+**sai số tuyệt đối** 1e-8. Không dùng sai số tương đối: `lift` (xác suất trừ
+đường cơ sở, cỡ 8e-4) mang nguyên nhiễu tuyệt đối nên lệch tương đối tới
+1,3e-7 — bản đầu của lần sửa này dùng 1e-9 tương đối và trượt đúng ở đó; phép
+kiểm tổng hợp không thấy, chỉ thử trên cặp commit thật mới lộ. Đo trên 59 cặp
+commit liên tiếp của `data/predictions_today.json`: **54 là commit rác, 5 là
+thay đổi thật**, và phép so mới không nuốt nhầm thay đổi thật nào.
+
 **Phép kiểm cho F-02, F-03, F-04** (`tests/test_workflow_shell_behaviour.py`):
 chạy NGUYÊN khối `run:` lấy từ YAML bằng đúng lệnh shell GitHub dùng; chỉ
 thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy. Bước ghi dự đoán chạy git THẬT
@@ -206,3 +217,16 @@ trang đều làm đỏ.
 
 Bốn kịch bản chốt chạy trong một git worktree riêng, vì `release_check.sh`
 dựng lại `docs/` — chạy chung cây với bộ kiểm là để hai lượt giẫm lên nhau.
+
+## 7. Xác minh sau khi trộn PR #89 (`36e65445`)
+
+| | Đo được |
+| --- | --- |
+| `pages.yml` #104 | xanh; triển khai `docs/` của `36e65445` — 29 trang, mỗi trang đúng 1 khung, 0 kịch bản dock |
+| `update-data.yml` #589 (bị push kích hoạt) | 4/4 job xanh, **gồm cả `verify-published-pages` chạy lần đầu trên commit thật của pipeline** |
+| `docs/live.html` sau lượt pipeline thật (`3a9d574b`) | **1 lớp, không đổi byte nào** — trước bản vá, mỗi lượt như thế thêm một lớp |
+| `daily_prediction` sau đó (`b8afdc7f`) | còn một commit rác vì nhiễu dấu phẩy động → sửa ở PR sau, xem F-04 |
+
+Không đọc được trang thật trên `github.io` từ môi trường phát triển (proxy trả
+403), nên phép xác minh dựa vào nội dung của đúng commit đã triển khai và lượt
+`pages.yml` xanh — không dựa vào việc mở trang.
