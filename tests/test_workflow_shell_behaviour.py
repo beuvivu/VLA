@@ -248,7 +248,13 @@ def test_a_verified_result_is_republished_until_the_push_goes_through(
 def test_a_push_that_never_recovers_ends_at_the_time_limit_not_a_crash(
     live: LiveHarness,
 ) -> None:
-    """Hỏng dai dẳng thì hết giờ và báo, không chết giữa chừng, không lặp mãi."""
+    """Hỏng dai dẳng thì hết giờ và báo, không chết giữa chừng, không lặp mãi.
+
+    Và VẪN phát ``verified=true``: cờ ấy kích hoạt hoàn tất dữ liệu ngày, và
+    chuỗi update-data → post-finalization ghi ảnh chụp chuẩn lên nhánh live
+    từ ``data/xsmb.csv`` — đường sửa duy nhất cho nhánh live khi đẩy từ đây
+    hỏng dai dẳng. Giữ cờ lại thì nhánh live kẹt ở ảnh chụp dở tới cron kế.
+    """
     result = live.run(
         _vn("18:30"), statuses=["complete_verified"], push_failures=10**6, max_seconds=120
     )
@@ -257,6 +263,7 @@ def test_a_push_that_never_recovers_ends_at_the_time_limit_not_a_crash(
     assert live.lines("pushes") == []
     assert "Chưa đẩy được ảnh chụp live" in result.stdout
     assert 1 < len(live.polls()) < 20
+    assert "verified=true" in live.output()
 
 
 def test_the_live_harness_itself_catches_the_octal_bug(live: LiveHarness, tmp_path: Path) -> None:

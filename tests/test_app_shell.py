@@ -127,13 +127,15 @@ def _dock_script() -> str:
     gỡ trong ``app_shell`` thì các phép kiểm dưới phải đỏ, không phải xanh
     trên một bản chép đã cũ.
     """
-    import re
-
     from ui_theme import dock
 
-    found = re.search(r"<script>.*?</script>", dock("live.html"), re.S)
-    assert found, "dock() không còn kèm kịch bản — xem lại mẫu gỡ trong app_shell"
-    return found.group(0)
+    # Cắt theo vị trí chuỗi chứ không dùng biểu thức chính quy: đây là trích
+    # đúng một đoạn từ đầu ra của chính ta, không phải bộ lọc HTML.
+    html = dock("live.html")
+    dau = html.find("<script>")
+    assert dau >= 0, "dock() không còn kèm kịch bản — xem lại mẫu gỡ trong app_shell"
+    cuoi = html.index("</script>", dau) + len("</script>")
+    return html[dau:cuoi]
 
 
 @pytest.mark.parametrize("so_lop", [2, 8, 11, 12])

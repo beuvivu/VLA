@@ -156,6 +156,12 @@ jobs:
 
             # Chỉ dừng khi kết quả đã xác minh VÀ chính ảnh chụp ấy đã lên
             # nhánh live — nếu không, người xem kẹt ở ảnh chụp dở dang.
+            #
+            # Còn `verified` thì theo NGUỒN, không theo lần đẩy: nó kích hoạt
+            # hoàn tất dữ liệu ngày, và chuỗi ấy (update-data rồi
+            # post-finalization) tự ghi ảnh chụp chuẩn lên nhánh live từ
+            # data/xsmb.csv. Nếu đẩy hỏng tới hết giờ, đó chính là đường sửa
+            # nhánh live; giữ lại cờ thì nhánh live kẹt tới cron kế tiếp.
             status="$(python -c "import json, os; print(json.load(open(os.environ['LIVE_PATH']))['status'])")"
             if [[ "$status" == "complete_verified" ]]; then
               verified="true"
