@@ -463,7 +463,11 @@ def main() -> int:
                 if found["labels"] != [name]:
                     failures.append(
                         f"{label}: nhãn trên thẻ là {found['labels']}, phải là ['{name}']")
-            # Rỗng vì lọc thứ phải nói khác rỗng vì khoảng sai.
+            # Rỗng vì lọc thứ phải nói khác rỗng vì khoảng sai. Vòng trên để
+            # bộ lọc thứ ở giá trị cuối (thứ bảy), nên phải trả về "tất cả"
+            # trước khi đo khoảng — nếu không, khoảng thứ ba → thứ năm rỗng vì
+            # bộ lọc sót lại chứ không vì khoảng.
+            tz_page.select_option("#tr-weekday", "all")
             tz_page.select_option("#tr-period", "custom")
             tz_page.wait_for_timeout(200)
             tz_page.fill("#tr-from", dates[-3])
@@ -471,6 +475,14 @@ def main() -> int:
             tz_page.dispatch_event("#tr-to", "change")
             tz_page.wait_for_timeout(250)
             in_range = tz_page.evaluate("() => document.querySelectorAll('.tr-day').length")
+            # Khoảng ba kỳ cuối phải hiện đúng ba kỳ, ở CẢ HAI múi giờ. Thiếu
+            # dòng này, một khoảng lọc hỏng (rỗng sẵn) vẫn cho phép kiểm "lọc
+            # thứ rỗng" bên dưới xanh — rỗng vì khoảng sai trông y như rỗng vì
+            # thứ không có kỳ nào.
+            if in_range != len(dates[-3:]):
+                failures.append(
+                    f"{timezone}: khoảng {dates[-3]} → {dates[-1]} hiện {in_range} kỳ,"
+                    f" phải là {len(dates[-3:])}")
             missing = next(
                 (d for d in range(7)
                  if d not in {_weekday(x) for x in dates[-3:]}), None)
@@ -499,7 +511,7 @@ def main() -> int:
         # --- Bảng lô tô: cỡ chữ, cặp đầy đủ, không vỡ khi nhiều cột --------
         print("\nBảng lô tô theo đầu:")
         before_loto = len(failures)
-        loto_js = """() => {
+        loto_js = r"""() => {
           const digit = document.querySelector(".tr-digit");
           const mini = document.querySelector(".tr-mini");
           const cs = (n) => getComputedStyle(n);
