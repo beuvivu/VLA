@@ -42,7 +42,7 @@ khi đầu ra sai hình. Không có tiến trình chạy dài nào để gắn c
 
 | Commit | Lúc (giờ VN) | Số lớp khung |
 | --- | --- | --- |
-| `cf91acf0` (PR #87) | 24-09 07:13 | 1 |
+| `cf91acf0` (nhánh PR #88) | 24-09 07:13 | 1 |
 | `30e0c82e` | 24-09 16:33 | 2 |
 | … mỗi lượt `chore: finalize analytics` +1 … | | |
 | `85f02a68` | 24-09 22:54 | **11** |
@@ -56,6 +56,13 @@ côi nằm lại **sau** đuôi khung cũ. `_DUOI_KHUNG` neo ở cuối phần t
 nên bước bóc trượt, bỏ cuộc và bọc thêm lớp nữa. Hai chỗ khác chặn đường
 sửa: lớp trong đã bị đổi `<main>` → `<div>` nên bước bóc không nhận ra, và
 trần bóc là 8 vòng, ít hơn chính 11 lớp đo được.
+
+**Hồi quy do đâu.** PR #88 viết lại `_DOCK_CU`. Bản cũ là
+`<nav class="ui-dock".*?</nav>\s*(?:<script>.*?</script>)?` — gỡ CẢ kịch bản.
+Bản mới khớp thẻ nav chặt hơn nhưng làm rơi đúng phần
+`(?:<script>.*?</script>)?`. Không phép kiểm nào đỏ, vì phép kiểm bọc chồng
+khi ấy không dựng kịch bản dock. Lượt pipeline đầu tiên sau khi trộn #88
+(`30e0c82e`, 16:33) là lượt đầu tiên cho ra 2 lớp.
 
 **Là tái phát.** A-01 của báo cáo trước chính là lỗi này trên chính trang
 này. Phép kiểm khi ấy dựng một khung lồng có `<main>` ở lớp trong và không có
