@@ -30,6 +30,8 @@ forecasting guarantee.
 | [`operations/scheduling.md`](operations/scheduling.md) | Lịch chạy các workflow và ràng buộc thời gian. |
 | [`history/legacy-consolidation.md`](history/legacy-consolidation.md) | Consolidated migration, retirement acceptance and forensic re-audit record for the three predecessor repositories. |
 
+| [`plans/2026-09-24-ui-cleanup.md`](plans/2026-09-24-ui-cleanup.md) | Kế hoạch dọn mã điều hướng đã nghỉ và hoàn thiện Nexlink. |
+
 ## Related material outside this directory
 
 | Location | Content |

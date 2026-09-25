@@ -12,7 +12,6 @@ import pandas as pd
 from ui_locale import mode_label, strategy_label
 from ui_theme import (
     card,
-    dock,
     shell_close,
     shell_open,
     stylesheet_link,
@@ -411,7 +410,7 @@ font-variant-numeric:tabular-nums}}
 <div class="ui-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
 <section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report)}</section>
 <div class="ui-grid">{cards}</div>
-{shell_close()}{dock("research-lab.html")}
+{shell_close()}
 </body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
     write_stylesheet(docs_dir)

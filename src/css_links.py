@@ -14,14 +14,14 @@ _FALLBACK_CRITICAL = (
     "--ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;--ui-brand:#2946f3;"
     "--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;--ui-on-brand:#fff;"
     "--ui-font:system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;"
-    "--ui-page-max:1280px;--ui-page-gutter:clamp(16px,2.5vw,32px);--ui-dock-h:64px;"
+    "--ui-page-max:1280px;--ui-page-gutter:clamp(16px,2.5vw,32px);"
     "--ui-r-xl:1.5rem}"
     "*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}"
     "body{margin:0;color:var(--ui-ink-2);"
     "background:linear-gradient(180deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);"
     "background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;"
     "min-height:100vh;-webkit-font-smoothing:antialiased}"
-    ".ui-app,.app{min-height:100vh;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}"
+    ".ui-app,.app{min-height:100vh}"
     ".ui-shell,.main,.path-shell{width:100%;max-width:var(--ui-page-max);margin-inline:auto;"
     "padding:1.5rem var(--ui-page-gutter) 3rem;min-width:0}"
     ".ui-header,header.ui-header,.path-hero{margin-bottom:1.25rem;padding:1.25rem 1.5rem;"
@@ -30,7 +30,6 @@ _FALLBACK_CRITICAL = (
     "letter-spacing:-.02em;color:var(--ui-ink);line-height:1.25}"
     ".ui-card,.card{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.8);"
     "border-radius:var(--ui-r-xl);overflow:hidden}"
-    ".ui-dock,.dock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60}"
 )
 
 CRITICAL_CSS = _GENERATED or _FALLBACK_CRITICAL

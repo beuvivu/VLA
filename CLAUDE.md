@@ -35,21 +35,17 @@ tiết **phủ lên** nội dung — `margin-left` của `.app-main` không đ�
 `docs/live.html` là trang duy nhất viết tay, nên mỗi lượt pipeline đọc lại
 chính bản đã có khung. Ngày 24-09 nó dày lên 11 lớp vì `ui_theme.dock()` trả
 `<nav>` KÈM một `<script>`: gỡ nav mà sót script thì đuôi khung không còn ở
-cuối thân trang và bước bóc bỏ cuộc. `wrap_page` nay gỡ cả hai, và
+cuối thân trang và bước bóc bỏ cuộc. Dock đã được gỡ khỏi builder; mẫu kiểm thử lịch sử nằm ở
+`tests/fixtures/legacy_ui_dock_script.html`. `wrap_page` gỡ cả nav lẫn script, và
 `test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired` dựng lại
 đúng hình dạng ấy. Job `verify-published-pages` trong `update-data.yml` chạy
 các phép kiểm bất biến trang trên mỗi commit của pipeline.
 
 ## Giao diện — trạng thái hiện tại
 
-Giao diện đang chạy là **giao diện cũ**, đã được khôi phục từ git history sau
-khi bản "Master Design System" bị gỡ theo yêu cầu của chủ dự án. Mười hai
-trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
-`build_model_quality`, `build_markdown_dashboard_v3`,
-`build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
-`build_research_lab`, `build_stat_pages`, `build_traditional_results`) sinh
-ra 29 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
-`src/pipeline.py`.
+Giao diện dùng khung **Nexlink** chung cho 29 trang. Các builder trong
+`src/pipeline.py` giữ nội dung và hợp đồng dữ liệu riêng; `write_page` gắn
+khung và skin khi xuất. Dock chân trang đã nghỉ, không sinh lại.
 
 Đọc trước khi sửa frontend:
 
@@ -60,18 +56,11 @@ Stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên đã ngh�
 
 ### Ngôn ngữ thị giác — lấy từ trang tham chiếu, ĐÃ ĐO
 
-Bảng màu và hiệu ứng lấy theo trang mẫu chủ dự án chọn (một chủ đề thương mại
-dựng trên Bootstrap 5). Ta KHÔNG bê tệp của họ về — kho này viết CSS tay,
-không framework — mà đọc ngôn ngữ thị giác rồi tự viết. Proxy môi trường phát
-triển chặn trang đó, nên đọc qua runner Actions:
-`.github/workflows/inspect-reference-design.yml`.
-
-    nền           --solitude-blue #f0f4fd -> --selago #eaedff
-    nhấn          --base-color #2946f3, --majorelle-blue #724ade
-    bóng          luôn đen 8%: 0 0 10px / 0 0 25px / 0 20px 60px
-    bo góc        16px cho thẻ, 24px cho dải tiêu đề, 50px cho viên thuốc
-    nhịp          .3s; đường cong cubic-bezier(.12,0,.39,0) và (.37,0,.63,1)
-    quầng sáng    radial-gradient thay cho phần tử có filter:blur(20-30px)
+Tham chiếu hiện hành: https://nexlink.layoutdrop.com/demo/index.html.
+CSS viết tay, không framework. Skin `ui_visual_system.css` dùng nền trung tính
+cho trang con, thẻ bo 10px, viền mảnh và bóng nhẹ; gradient chỉ dành trang chủ.
+Header/rail/panel theo hình học 80/80/240px bên trên, icon SVG từ `app_icons.py`.
+Các màu của ô thống kê là hợp đồng dữ liệu, không đổi theo màu thương hiệu.
 
 **KHÔNG lấy nguyên mọi mã màu của họ.** Màu chữ mờ `--medium-gray #717580` của
 trang mẫu chỉ đạt **3,96:1** trên nền `#eaedff` — trượt AA. Lấy sắc độ của họ,
@@ -131,8 +120,8 @@ là xong.
   sẵn để một lần `rglob` hỏng không thu tập quét về rỗng. Luật cấm cả việc
   NHẮC TÊN cống trong chú thích — viết "gán chuỗi HTML" thay vì gọi tên.
 
-  `docs/**/*.js` phải khai riêng, không suy ra được từ `src`: năm tệp trong
-  `docs/assets/` (`live-board.js`, `matrix-virt.js`, `ui-dock.js`,
+  `docs/**/*.js` phải khai riêng, không suy ra được từ `src`: các tệp trong
+  `docs/assets/` (`matrix-virt.js`,
   `apply-data-styles.js`, `css-async.js`) KHÔNG có bản nguồn nào dưới `src`
   mà trang sinh ra vẫn nạp chúng.
 - **Không vẽ danh tính nguồn dữ liệu ra trình duyệt.** Hai phép kiểm canh:
@@ -182,7 +171,7 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Bộ kiểm hiện **xanh hết: 2 105 phép kiểm**. Bốn kịch bản chốt phát hành
+Số lượng kiểm thử và bằng chứng gần nhất nằm trong PR và báo cáo `documentation/ui/`. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.

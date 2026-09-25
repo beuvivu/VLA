@@ -26,12 +26,12 @@ SHELL = re.compile(
     r"^\s*(\*|html|body)\s*$|"
     r"\.ui-app\b|\.ui-shell\b|\.ui-header\b|\.ui-sub\b|\.ui-nav\b|"
     r"\.ui-card\b|\.ui-card-head\b|\.ui-card-body\b|\.ui-grid\b|"
-    r"\.ui-badge\b|\.ui-table-wrap\b|\.ui-dock\b|\.dock\b|\.ui-dock-space\b|"
+    r"\.ui-badge\b|\.ui-table-wrap\b|"
     r"\.path-shell\b|\.path-hero\b|\.main\b|\.app\b|\.ui-c12\b|\.ui-c6\b",
     re.I,
 )
 SKIP = re.compile(
-    r"data-ui-theme|nth-child|ui-table\.ui-[mr]|ui-chart|ui-matrix|ui-dock-pop|keyframes",
+    r"data-ui-theme|nth-child|ui-table\.ui-[mr]|ui-chart|ui-matrix|keyframes",
     re.I,
 )
 DROP_PROP = re.compile(
@@ -122,7 +122,7 @@ def extract(css_text: str) -> str:
         "--ui-bg", "--ui-bg-2", "--ui-surface", "--ui-surface-2", "--ui-border",
         "--ui-ink", "--ui-ink-2", "--ui-ink-soft", "--ui-brand", "--ui-brand-ink",
         "--ui-brand-soft", "--ui-on-brand", "--ui-font", "--ui-page-max",
-        "--ui-page-gutter", "--ui-dock-h", "--ui-r-xl", "--ui-r-lg", "--s4",
+        "--ui-page-gutter", "--ui-r-xl", "--ui-r-lg", "--s4",
     }
     used_vars.discard("--ui-bg-mesh")
 
@@ -148,7 +148,7 @@ def extract(css_text: str) -> str:
         "--ui-on-brand:#fff",
         '--ui-font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',
         "--ui-page-max:1280px", "--ui-page-gutter:clamp(16px,2.5vw,32px)",
-        "--ui-dock-h:64px", "--ui-r-xl:24px",
+        "--ui-r-xl:24px",
     ):
         if m.split(":")[0] not in {d.split(":")[0] for d in root_decls}:
             root_decls.append(m)
@@ -169,7 +169,6 @@ def extract(css_text: str) -> str:
     media = (
         "@media (max-width:640px){"
         ".ui-shell,.main{padding-left:14px;padding-right:14px}"
-        ".ui-dock,.dock{left:12px;right:12px;transform:none;max-width:none}"
         "}"
     )
 
@@ -178,7 +177,7 @@ def extract(css_text: str) -> str:
         score = 0
         for k, w in (
             (".ui-shell", 5), (".ui-header", 5), (".ui-card", 4), (".ui-nav", 4),
-            (".ui-app", 5), (".ui-dock", 3), (".ui-grid", 3), (".ui-sub", 2),
+            (".ui-app", 5), (".ui-grid", 3), (".ui-sub", 2),
             (".ui-badge", 1), (".path-", 2),
         ):
             if k in s:

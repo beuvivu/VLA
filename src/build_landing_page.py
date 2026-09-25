@@ -21,7 +21,7 @@ import pandas as pd
 
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
-from ui_theme import LANDING_SECTIONS, SITE_NAV, dock_script, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -867,13 +867,10 @@ _LANDING_CSS = """\
        lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
        --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
        Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
-    /* Không còn cột sidebar. Sidebar cũ rộng 292px trên màn 1680px — 17,4%
-       chiều ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm.
-       Điều hướng chuyển sang dock nổi ở chân trang; toàn bộ phần đó trả về
-       cho nội dung. */
+    /* Nội dung nằm trong khung Nexlink do write_page gắn. */
     .app {
       min-height: 100vh;
-      padding-bottom: calc(76px + 32px);   /* chừa chỗ cho dock */
+      padding-bottom: 0;
     }
     .app > * { min-width: 0; }
     /* Nhãn chỉ dành cho trình đọc màn hình: dock dùng biểu tượng, và một nút
@@ -881,158 +878,6 @@ _LANDING_CSS = """\
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-    }
-
-    /* Điều hướng dự phòng cuối trang. */
-    /* ── Dock điều hướng nổi ──────────────────────────────────────────────
-       17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-       tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
-       nhóm và mở popover khi hover HOẶC focus — chỉ hover thôi thì người dùng
-       bàn phím không bao giờ tới được các mục con. */
-    .dock {
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-      z-index: 60; max-width: calc(100vw - 32px);
-    }
-    /* Kính mờ 30%. Nền 84% trước đây gần như đục hẳn nên không còn là
-       glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
-       thanh vẫn tách khỏi nội dung phía sau. */
-    .dock-inner {
-      position: relative;
-      display: flex; align-items: center; gap: 4px;
-      padding: 6px 10px; border-radius: 999px;
-      background: rgba(15, 23, 42, .30);
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: 0 10px 36px rgba(15,23,42,.34), inset 0 1px 0 rgba(255,255,255,.10);
-      backdrop-filter: blur(12px) saturate(1.8);
-      -webkit-backdrop-filter: blur(12px) saturate(1.8);
-    }
-    /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
-       vẫn đọc được, đó là điều quan trọng. */
-    @supports not (backdrop-filter: blur(1px)) {
-      .dock-inner { background: #0f172a; }
-    }
-    .dock-group { position: relative; }
-    /* Nhãn chuyển thành tooltip thay vì chữ dưới icon: hai dòng làm thanh cao
-       114px, quá thô so với mức 48–56px cần đạt. */
-    .dock-btn {
-      display: grid; place-items: center;
-      padding: 0; background: none; border: 0; cursor: pointer;
-      border-radius: 12px; color: #f0f1ff;
-    }
-    .dock-ic {
-      display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
-      border-radius: 11px; background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      transition: transform .24s ease-in-out, background .2s ease-in-out;
-    }
-    .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {
-      transform: scale(1.18);
-      background: rgba(124,58,237,.42);
-    }
-    .dock-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
-
-    /* Tooltip thay cho nhãn cố định. */
-    .dock-name {
-      position: absolute; bottom: calc(100% + 8px); left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      padding: 4px 9px; border-radius: 7px; white-space: nowrap;
-      font-size: 11px; font-weight: 600; letter-spacing: .02em;
-      background: #0f172a; color: #f1f5f9;
-      border: 1px solid rgba(255,255,255,.12);
-      opacity: 0; pointer-events: none;
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out;
-    }
-    .dock-btn:hover .dock-name, .dock-btn:focus-visible .dock-name {
-      opacity: 1; transform: translateX(-50%) translateY(0);
-    }
-    /* Khi popover đang mở thì ẩn tooltip — hai lớp nổi chồng nhau gây rối. */
-    .dock-group:hover .dock-name, .dock-group:focus-within .dock-name { opacity: 0; }
-    .dock-pop {
-      position: absolute; bottom: calc(100% + 14px); left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      min-width: 232px; padding: 8px;
-      background: rgba(255,255,255,.97); border: 1px solid var(--line);
-      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.26);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      opacity: 0; visibility: hidden; pointer-events: none;
-      /* Độ trễ khi ĐÓNG (0.22s) nhưng không trễ khi MỞ. Rê chuột ra ngoài
-         trong chớp mắt sẽ không làm menu tắt ngay, nên người dùng có thời gian
-         quay lại — đây là nửa thứ hai của cơ chế chống tắt đột ngột. */
-      transition: opacity .18s ease-in-out .22s,
-                  transform .18s ease-in-out .22s,
-                  visibility 0s linear .40s;
-    }
-    /* CẦU NỐI HOVER. Giữa nút và popover có khe hở 14px; con trỏ đi qua khe đó
-       rời khỏi cả hai phần tử nên :hover tắt và menu biến mất giữa chừng —
-       đúng lỗi người dùng gặp. Phần tử giả này phủ kín khe, trong suốt, và
-       thuộc về .dock-pop nên hover trên nó vẫn tính là hover trong nhóm. */
-    .dock-pop::after {
-      content: ""; position: absolute; left: 0; right: 0;
-      top: 100%; height: 18px;
-    }
-    /* Mở rộng vùng bắt của cả nhóm xuống dưới nút, phòng khi con trỏ đi vòng. */
-    .dock-group::after {
-      content: ""; position: absolute; left: -6px; right: -6px;
-      top: -18px; bottom: -6px; z-index: -1;
-    }
-    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop,
-    .dock-group.ui-open .dock-pop {
-      opacity: 1; visibility: visible; pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-      /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out, visibility 0s;
-    }
-    .dock-pop a {
-      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-      border-radius: 12px; color: #1e293b; font-size: 13px;
-      white-space: nowrap; text-decoration: none;
-    }
-    .dock-pop a:hover { background: #f1f5f9; }
-    /* MÀN HẸP. `.dock-inner` từng mang `overflow-x: auto`, và một hộp cuộn
-       thì CẮT mọi hậu duệ nằm ngoài nó. Inner chỉ cao 54px còn menu con bung
-       lên phía trên, nên menu bị xén sạch: đo được 0/9 liên kết nhận được cú
-       chạm trên điện thoại trong khi máy bàn 9/9. `position: fixed` không
-       thoát ra được vì `backdrop-filter` của inner biến nó thành khối chứa
-       cho cả hậu duệ `fixed`. Bỏ hẳn cuộn ngang mới là gỡ đúng gốc: cho mỗi
-       nhóm `flex: 1 1 0` để N nhóm luôn vừa khít bề ngang, rồi căng menu
-       `left: 0; right: 0` theo cả dải dock. Cách này cũng xử lý luôn lỗi menu
-       rộng cố định 232px lòi ra ngoài viền ở các nhóm đầu và cuối. */
-    @media (max-width: 640px) {
-      .dock { left: 16px; right: 16px; transform: none; max-width: none; }
-      .dock-inner { justify-content: space-between; gap: 2px; padding: 6px;
-        border-radius: 16px; }
-      .dock-group { position: static; flex: 1 1 0; min-width: 0; }
-      .dock-btn { width: 100%; }
-      .dock-ic { width: 100%; max-width: 40px; margin: 0 auto; }
-      /* Màn cảm ứng không có hover để hiện tooltip, mà tên nhóm đã nằm sẵn
-         trong menu con. */
-      .dock-name { display: none; }
-      .dock-pop { left: 0; right: 0; min-width: 0;
-        transform: translateY(6px);
-        max-height: min(60vh, 420px); overflow-y: auto; }
-      /* Chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu
-         mở mãi và cú chạm thứ hai không đóng được gì. Ở màn hẹp chỉ `.ui-open`
-         (do kịch bản đặt) mới là công tắc. `.ui-js` đứng đầu để khi không có
-         JavaScript thì hành vi cũ vẫn còn. */
-      .ui-js .dock-group:hover .dock-pop,
-      .ui-js .dock-group:focus-within .dock-pop {
-        opacity: 0; visibility: hidden; pointer-events: none;
-        transform: translateY(6px);
-      }
-      .ui-js .dock-group.ui-open .dock-pop,
-      .dock-group.ui-open .dock-pop {
-        opacity: 1; visibility: visible; pointer-events: auto;
-        transform: translateY(0);
-      }
-      /* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn
-         cảm ứng không có hover, còn `z-index: -1` của vùng đệm lại đẩy nó
-         xuống dưới dải dock nên nó nuốt mất cú chạm ở rìa nút. */
-      .dock-pop::after { content: none; }
-      .dock-group::after { content: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .dock-ic, .dock-pop { transition: none; }
-      .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic { transform: none; }
     }
 
     /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
@@ -2082,7 +1927,7 @@ _LANDING_CSS = """\
       grid-template-columns: minmax(0, 1fr) !important;
     }
     @media print {
-      .dock, .hero-actions { display: none; }
+      .hero-actions { display: none; }
       .app { padding-bottom: 0; }
       body { background: #fff; }
       .card, .metric-tile, .hero { box-shadow: none; }
@@ -2342,7 +2187,6 @@ def _render_html(
         ),
     ]
 
-    dock_html = _render_dock()
 
     live_block = _render_live_block(latest)
 
@@ -2648,7 +2492,6 @@ def _render_html(
         Sinh lúc {html.escape(generated_at)}. AI/ML và cầu-kèo là tín hiệu thống kê từ lịch sử, không phải bảo đảm kết quả xổ số tương lai.
       </div>
     </main>
-    {dock_html}
   </div>
 
   <script type="application/json" id="landing-data">{data_json}</script>
@@ -2659,53 +2502,6 @@ def _render_html(
 </html>
 """
     return html_doc
-
-
-def _render_dock() -> str:
-    """Dựng dock điều hướng nổi từ :data:`SITE_NAV`.
-
-    Sidebar cũ rộng 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết
-    mà phần lớn thời gian không ai bấm. Dock trả toàn bộ phần đó cho nội dung.
-
-    17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-    tooltip chồng nhau. ``SITE_NAV`` vốn đã chia 5 nhóm, nên dock hiện 5 icon
-    nhóm, mỗi icon mở một popover chứa các mục con.
-
-    Returns:
-        Chuỗi HTML của dock.
-    """
-    # Nhóm đầu tiên là các neo TRONG trang. Bỏ sidebar cũng bỏ luôn khả năng
-    # nhảy tới từng mục, mà trang này cao khoảng 12 000px — cuộn tay từ đầu tới
-    # phần kiểm định là hơn mười màn hình. SITE_NAV chỉ phủ 4 trong 12 neo đó.
-    groups: list[tuple[str, tuple[tuple[str, str, str], ...]]] = [
-        (
-            "Trên trang",
-            tuple((f"#{sid}", label, f"{index:02d}") for index, (sid, label, _) in enumerate(NAV_ITEMS, 1)),
-        ),
-        *SITE_NAV,
-    ]
-    parts = ['<nav class="dock" aria-label="Điều hướng chính"><div class="dock-inner">']
-    for group, items in groups:
-        group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
-        icon = "☰" if group == "Trên trang" else (items[0][2] if items else "•")
-        parts.append('<div class="dock-group">')
-        parts.append(
-            f'<button class="dock-btn" type="button" aria-haspopup="true"'
-            f' aria-expanded="false" aria-controls="{group_id}">'
-            f'<span class="dock-ic" aria-hidden="true">{icon}</span>'
-            f'<span class="dock-name">{html.escape(group)}</span></button>'
-        )
-        parts.append(f'<div class="dock-pop" id="{group_id}" role="menu">')
-        for href, label, item_icon in items:
-            parts.append(
-                f'<a href="{href}" role="menuitem">'
-                f'<span aria-hidden="true">{item_icon}</span>'
-                f"<span>{html.escape(label)}</span></a>"
-            )
-        parts.append("</div></div>")
-    parts.append("</div></nav>")
-    parts.append(dock_script("dock"))
-    return "".join(parts)
 
 
 def _history_days(repo_root: Path) -> int:

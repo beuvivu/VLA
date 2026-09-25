@@ -32,6 +32,10 @@
   /* --- Thu / mở --------------------------------------------------------- */
 
   function datTrangThai(mo) {
+    /* Trả focus trước khi khóa panel; scrim và resize cũng đi qua đây. */
+    if (!mo && toggle && (panel.contains(doc.activeElement) || (hep() && rail.contains(doc.activeElement)))) {
+      toggle.focus();
+    }
     body.classList.toggle("app-panel-open", mo);
     body.classList.toggle("app-nav-open", mo && hep());
     panel.inert = !mo;
@@ -239,7 +243,9 @@
       if (action && action.catch) { action.catch(function () { full.hidden = true; }); }
     });
     doc.addEventListener("fullscreenchange", function () {
-      full.setAttribute("aria-label", doc.fullscreenElement ? "Thoát toàn màn hình" : "Toàn màn hình");
+      var label = doc.fullscreenElement ? "Thoát toàn màn hình" : "Toàn màn hình";
+      full.setAttribute("aria-label", label);
+      full.setAttribute("title", label);
       full.setAttribute("aria-pressed", doc.fullscreenElement ? "true" : "false");
     });
   }
