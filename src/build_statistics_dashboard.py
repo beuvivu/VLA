@@ -24,7 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
-from ui_theme import dock, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -652,12 +652,12 @@ def _board_month_table(df: pd.DataFrame) -> str:
     )
 
 
-def _section(title: str, intro: str, body: str, anchor: str) -> str:
+def _section(title: str, intro: str, body: str, anchor: str, *, eyebrow: str | None = None) -> str:
     return f"""
     <section class="section" id="{html.escape(anchor)}">
       <div class="section-head">
         <div>
-          <span class="eyebrow">{html.escape(anchor.replace("-", " / "))}</span>
+          <span class="eyebrow">{html.escape(eyebrow if eyebrow is not None else anchor.replace("-", " / "))}</span>
           <h2>{html.escape(title)}</h2>
           <p>{html.escape(intro)}</p>
         </div>
@@ -827,9 +827,6 @@ _DASHBOARD_CSS = """\
     .statistics-content {
       max-width: var(--page-max);
       margin: 0 auto;
-      /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
-         `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
-         để trang vẫn đúng nếu tệp ấy không tải được. */
       padding: 24px var(--page-gutter) 40px;
     }
 
@@ -1963,11 +1960,6 @@ def main() -> None:
     """
 
     qa_body = f"""
-    <div class="decision-grid">
-      <article><b>Ma trận</b><span>Dùng cho 00–99: tần suất, gan, điểm AI/ML. Nhìn được toàn bộ mặt phẳng số và cụm bất thường.</span></article>
-      <article><b>Biểu đồ thanh</b><span>Dùng cho xếp hạng: AI, lô gan, đầu–đuôi–tổng, cặp lộn. So sánh lớn/nhỏ rất nhanh.</span></article>
-      <article><b>Bảng</b><span>Dùng cho dữ liệu cần đối chiếu chi tiết: bảng Đặc Biệt tuần/tháng, điều kiện lịch sử, các trường giải thích.</span></article>
-    </div>
     <div class="layout-grid two">
       {_table(snap_loto, title="Ảnh chụp LOTO hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="loto")}
       {_table(snap_de, title="Ảnh chụp Đặc Biệt hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho Đặc Biệt ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="de")}
@@ -2030,10 +2022,11 @@ def main() -> None:
             "dieu-kien",
         ),
         _section(
-            "Quy tắc chọn loại hiển thị",
-            "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.",
+            "Chi tiết thống kê",
+            "Đối chiếu tần suất, số ngày xuất hiện và thứ hạng qua các kỳ thống kê.",
             qa_body,
             "ui-ux",
+            eyebrow="Thống kê",
         ),
     ]
 
@@ -2089,7 +2082,7 @@ def main() -> None:
       <a href="#cap-lon">Cặp lộn</a>
       <a href="#bang-db">Bảng Đặc Biệt</a>
       <a href="#dieu-kien">Điều kiện</a>
-      <a href="#ui-ux">Quy tắc UI</a>
+      <a href="#ui-ux">Chi tiết thống kê</a>
     </nav>
 
     {"".join(sections)}
@@ -2122,7 +2115,6 @@ def main() -> None:
   <script>
 {_DASHBOARD_SCRIPT_EVIDENCE}
   </script>
-{dock("statistics.html")}
 </body>
 </html>
 """

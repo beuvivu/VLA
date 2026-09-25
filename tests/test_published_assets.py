@@ -31,17 +31,9 @@ _THAM_CHIEU = re.compile(r'(?:href|src)="((?!https?:|data:|mailto:|#)[^"]+)"')
 #:
 #:     matrix-virt.js        scripts/optimize_index_dom.py
 #:     apply-data-styles.js  scripts/patch_csp_no_inline.py
-#:     ui-dock.js            src/web_security.py::security_script_tags
-#:     live-board.js         không mã nào phát ra
-#:
-#: `security_script_tags` hiện KHÔNG ai gọi, và `live-board.js` không mã nào
-#: phát ra. Cả hai là ứng viên gỡ, nhưng gỡ chúng là gỡ cả một đường mã nên
-#: tách sang lần sau; ghi ở đây để chúng không lặng lẽ trôi đi.
 NGOAI_LE = {
     "assets/matrix-virt.js",
     "assets/apply-data-styles.js",
-    "assets/ui-dock.js",
-    "assets/live-board.js",
 }
 
 

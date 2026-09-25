@@ -121,21 +121,12 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
 
 
 def _dock_script() -> str:
-    """Thẻ kịch bản mà ``ui_theme.dock`` đặt ngay sau ``<nav class="ui-dock">``.
+    """Mẫu lịch sử từ ui_theme.dock_script ở c8854608 trước khi gỡ dock.
 
-    Lấy từ chính hàm sinh ra nó chứ không chép tay: đổi dock mà quên đổi mẫu
-    gỡ trong ``app_shell`` thì các phép kiểm dưới phải đỏ, không phải xanh
-    trên một bản chép đã cũ.
+    Hàm sinh dock đã nghỉ; giữ nguyên mẫu cũ để kiểm tra khả năng sửa trang
+    đã xuất bản, độc lập với trình dựng hiện hành.
     """
-    from ui_theme import dock
-
-    # Cắt theo vị trí chuỗi chứ không dùng biểu thức chính quy: đây là trích
-    # đúng một đoạn từ đầu ra của chính ta, không phải bộ lọc HTML.
-    html = dock("live.html")
-    dau = html.find("<script>")
-    assert dau >= 0, "dock() không còn kèm kịch bản — xem lại mẫu gỡ trong app_shell"
-    cuoi = html.index("</script>", dau) + len("</script>")
-    return html[dau:cuoi]
+    return (Path(__file__).parent / "fixtures" / "legacy_ui_dock_script.html").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("so_lop", [2, 8, 11, 12])

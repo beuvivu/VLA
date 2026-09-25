@@ -87,3 +87,12 @@ test('Đi tới neo không làm mất kết quả đang tìm ở các nhóm khá
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
   assert.equal(visibleLinks(dom).length, 3); dom.window.close();
 });
+
+test('Đóng menu bằng lớp phủ trả focus khỏi vùng bị khóa', () => {
+  const dom = setup({ narrow: true }), d = dom.window.document;
+  d.getElementById('app-toggle').click();
+  d.getElementById('app-search').focus();
+  d.getElementById('app-scrim').click();
+  assert.equal(d.activeElement.id, 'app-toggle');
+  dom.window.close();
+});

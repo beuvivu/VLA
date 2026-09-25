@@ -1,3 +1,8 @@
+> Cập nhật 24/09/2026: khung hiện hành là Nexlink, qua `page_output.write_page`.
+> Rail 80px, panel 240px phủ nội dung, header 80px; icon SVG.
+> Skin trang con nền trung tính, thẻ bo 10px; gradient dành cho trang chủ.
+> Dock cũ đã gỡ. Các quy tắc màu dữ liệu dưới đây vẫn giữ nguyên.
+
 # Hệ thiết kế giao diện
 
 Tài liệu này ghi các quy tắc đã được **đo** chứ không phải được cảm nhận, cùng
@@ -26,14 +31,14 @@ overlay chỉ được bổ sung lên shared base, không được thay thế n�
 
 | Lớp | Phủ | Vai trò |
 |---|---|---|
-| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dock, dark mode |
+| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dark mode |
 | `src/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
 | `src/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
 | `src/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
-| CSS nội tuyến của `live.html` | `live.html` | bảng màu tối của trang trực tiếp; dock/base vẫn lấy từ `ui.css` |
+| CSS nội tuyến của `live.html` | `live.html` | bảng màu tối của trang trực tiếp; base lấy từ `ui.css`, khung từ `app_shell` |
 
 `live.html` là ngoại lệ duy nhất còn được lưu như trang viết tay; hàm
-`ui_theme.refresh_live_page()` chịu trách nhiệm đồng bộ dock và điều hướng của
+`ui_theme.refresh_live_page()` chịu trách nhiệm đồng bộ khung điều hướng của
 nó từ `SITE_NAV` để trang này không trôi khỏi hệ thống.
 
 Tên stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên cũ và

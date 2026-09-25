@@ -46,11 +46,3 @@ def json_for_html_script(payload: Any) -> str:
         .replace("\u2028", "\\u2028")
         .replace("\u2029", "\\u2029")
     )
-
-
-def security_script_tags() -> str:
-    """Optional external helpers (dock / async CSS). Safe with either CSP mode."""
-    return (
-        '<script src="assets/css-async.js" defer></script>\n'
-        '<script src="assets/ui-dock.js" defer></script>'
-    )
