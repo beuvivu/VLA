@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from skill_monitor import update_ledger
+
 DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
 
 
@@ -46,6 +48,10 @@ def main() -> None:
     data_dir = Path(args.data_dir)
     latest = _latest_date(data_dir / "xsmb.csv")
     cutoff = latest - timedelta(days=max(1, args.retention_days))
+
+    # Ghi kỹ năng của mọi artifact đã chấm được vào sổ cái TRƯỚC khi xoá: sau
+    # bước này tệp biến mất, và nếu chưa ghi thì kỳ ấy mất khỏi bộ theo dõi.
+    update_ledger(data_dir)
 
     removed = 0
     for rel in ["path_ui", "predict"]:

@@ -429,9 +429,9 @@ jobs:
           python-version: "3.11"
 
       - name: Cài bộ chạy kiểm thử
-        # Đúng hai thứ các phép kiểm dưới cần, cùng mốc phiên bản với
-        # requirements-dev.txt và requirements.txt.
-        run: python -m pip install --no-cache-dir "pytest>=9.1.1,<10" "beautifulsoup4==4.15.0"
+        # Cùng mốc phiên bản với requirements.txt. scipy vì xsmb_domain nhập nó
+        # (lười, trong hàm) — phép kiểm cây import tính cả nhánh ấy.
+        run: python -m pip install --no-cache-dir "pytest>=9.1.1,<10" "beautifulsoup4==4.15.0" "numpy==2.2.6" "pandas==3.0.5" "scipy>=1.10,<2.0"
 
       - name: Một khung, không mã chết, không tham chiếu gãy, không lộ nguồn
         run: >-
@@ -440,3 +440,10 @@ jobs:
           tests/test_app_icons.py
           tests/test_published_assets.py
           tests/test_shipped_pages_are_clean.py
+
+      # Chấm xác suất ĐÃ CÔNG BỐ với kết quả quay thật trên 60 kỳ gần nhất. Kỳ
+      # quay đã kiểm là ngẫu nhiên, nên kỹ năng ngoài mẫu phải nằm trong vùng 0;
+      # rời vùng theo hướng nào cũng làm lượt chạy đỏ — tệ hơn là hồi quy, tốt
+      # hơn thì phải kiểm lại trước khi tin. Xem src/skill_monitor.py.
+      - name: Kỹ năng ngoài mẫu LOTO và Đặc Biệt còn trong vùng 0
+        run: python src/skill_monitor.py
