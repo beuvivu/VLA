@@ -33,7 +33,7 @@
   "calibration": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.0666160494726942,
+    "b": -1.066622021047344,
     "temperature": 1.0,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
@@ -44,8 +44,8 @@
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
     "validation_logloss": 0.5449477484315233,
-    "baseline_validation_logloss": 1.0325627324711963,
-    "logloss_skill": 0.4722376362283395,
+    "baseline_validation_logloss": 1.032285080942964,
+    "logloss_skill": 0.47209568510500166,
     "constant_validation_logloss": 0.5448802596851022,
     "constant_logloss_skill": -0.00012385977510009916
   },

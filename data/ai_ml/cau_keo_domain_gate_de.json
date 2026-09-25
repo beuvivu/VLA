@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-09-25T15:37:11Z",
+  "generated_at": "2026-09-25T15:53:31Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -87,27 +87,27 @@
   "screen_summary": {
     "partner": {
       "mean_brier_skill": 4.425709537108356e-05,
-      "mean_logloss_skill": 0.00037386591406541063
+      "mean_logloss_skill": 0.000373865914064977
     },
     "cap_50": {
       "mean_brier_skill": -1.3492029382573393e-05,
-      "mean_logloss_skill": -0.00012119089622384595
+      "mean_logloss_skill": -0.0001211908962240938
     },
     "bo": {
-      "mean_brier_skill": -2.785424405578235e-05,
-      "mean_logloss_skill": -0.0002718516564890781
+      "mean_brier_skill": -2.785424405586996e-05,
+      "mean_logloss_skill": -0.00027185165648944986
     },
     "bong": {
-      "mean_brier_skill": 7.375751537642993e-07,
-      "mean_logloss_skill": 5.27526115581146e-06
+      "mean_brier_skill": 7.375751537642985e-07,
+      "mean_logloss_skill": 5.275261155501663e-06
     },
     "cham": {
-      "mean_brier_skill": -1.8047252895317313e-05,
-      "mean_logloss_skill": -0.0001598178623807349
+      "mean_brier_skill": -1.8047252895404927e-05,
+      "mean_logloss_skill": -0.00015981786238123056
     },
     "tong": {
       "mean_brier_skill": -0.00014988929838488375,
-      "mean_logloss_skill": -0.0013354120409345169
+      "mean_logloss_skill": -0.001335412040934765
     }
   },
   "screened_groups": [],
