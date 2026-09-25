@@ -200,6 +200,8 @@ def _meta_prediction(
             "validation_logloss": pack.get("validation_logloss"),
             "baseline_validation_logloss": pack.get("baseline_validation_logloss"),
             "logloss_skill": pack.get("logloss_skill"),
+            "constant_validation_logloss": pack.get("constant_validation_logloss"),
+            "constant_logloss_skill": pack.get("constant_logloss_skill"),
         }
     try:
         p_meta = predict_meta(
@@ -226,6 +228,8 @@ def _meta_prediction(
         "baseline_validation_logloss": pack.get("baseline_validation_logloss"),
         "logloss_skill": pack.get("logloss_skill"),
         "brier_skill": pack.get("brier_skill"),
+        "constant_validation_logloss": pack.get("constant_validation_logloss"),
+        "constant_logloss_skill": pack.get("constant_logloss_skill"),
         "trained_through_target_date": pack.get("trained_through_target_date"),
     }
 

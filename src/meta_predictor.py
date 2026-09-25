@@ -572,6 +572,66 @@ def _baseline_validation(
     return p_val, weight_dict, calib.as_dict()
 
 
+def _constant_validation(
+    history: pd.DataFrame,
+    pre_val_days: list[str],
+    val_days: list[str],
+    mode: str,
+) -> np.ndarray:
+    """Dự báo KHÔNG THÔNG TIN trên lát thẩm định: cùng một xác suất cho mọi con.
+
+    Đặc Biệt: 1/100. LOTO: tần suất về của một con trên các ngày TRƯỚC lát
+    thẩm định — không nhìn vào lát ấy, nên đây là đối thủ ngoài mẫu thật.
+
+    Vì sao phải có mốc này bên cạnh tổ hợp tuyến tính: ngày 25-09-2026, tổ
+    hợp tuyến tính hiệu chỉnh của LOTO chọn a=4,89 trên chính các ngày nó được
+    khớp — tức LÀM NHỌN xác suất gần năm lần — và trên lát thẩm định cho logloss
+    1,0157, tệ gần gấp đôi dự báo hằng số (≈0,545). Mô hình xếp chồng đạt
+    0,5456, KHÔNG hơn hằng số, nhưng vẫn "thắng 46%" và được trộn vào
+    production. Thắng một đối thủ hỏng không chứng minh được gì.
+    """
+    if mode == "de":
+        return np.full((len(val_days), 100), 0.01)
+    pre = history[_date_strings(history["target_date"]).isin(pre_val_days)]
+    rate = float(np.clip(_matrix_by_day(pre, "y", pre_val_days).mean(), 1e-6, 1.0 - 1e-6))
+    return np.full((len(val_days), 100), rate)
+
+
+def quality_gate(
+    mode: str,
+    meta: MetaMetrics,
+    linear: MetaMetrics,
+    constant: MetaMetrics,
+) -> dict[str, float | bool]:
+    """Mô hình xếp chồng chỉ được bật khi thắng CẢ HAI đối thủ ngoài mẫu.
+
+    - tổ hợp tuyến tính hiệu chỉnh — thứ production sẽ dùng nếu không có nó;
+    - dự báo hằng số — mốc không thông tin, không thể hỏng theo kiểu khớp quá.
+
+    Độ tin cậy tính từ kỹ năng NHỎ HƠN trong hai, để một đối thủ hỏng không
+    thổi phồng mức trộn.
+    """
+
+    def skill(model: float, baseline: float) -> float:
+        return 1.0 - model / baseline if baseline > 0 else 0.0
+
+    brier_floor = -0.02 if mode == "de" else 0.0
+    result: dict[str, float | bool] = {
+        "logloss_skill": skill(meta.logloss, linear.logloss),
+        "brier_skill": skill(meta.brier, linear.brier),
+        "constant_logloss_skill": skill(meta.logloss, constant.logloss),
+        "constant_brier_skill": skill(meta.brier, constant.brier),
+    }
+    beats_linear = result["logloss_skill"] > 0.003 and result["brier_skill"] > brier_floor
+    beats_constant = (
+        result["constant_logloss_skill"] > 0.003
+        and result["constant_brier_skill"] > brier_floor
+    )
+    result["quality_pass"] = bool(beats_linear and beats_constant)
+    result["gate_skill"] = min(result["logloss_skill"], result["constant_logloss_skill"])
+    return result
+
+
 def train_meta(
     mode: str,
     history_path: Path,
@@ -654,26 +714,19 @@ def train_meta(
         half_life_days,
     )
     baseline_metrics = _evaluate(mode, p_baseline, y_matrix)
+    constant_metrics = _evaluate(
+        mode, _constant_validation(history, pre_val_days, val_days, mode), y_matrix
+    )
 
-    logloss_skill = (
-        1.0 - meta_metrics.logloss / baseline_metrics.logloss
-        if baseline_metrics.logloss > 0
-        else 0.0
-    )
-    brier_skill = (
-        1.0 - meta_metrics.brier / baseline_metrics.brier
-        if baseline_metrics.brier > 0
-        else 0.0
-    )
-    if mode == "de":
-        quality_pass = bool(logloss_skill > 0.003 and brier_skill > -0.02)
-    else:
-        quality_pass = bool(logloss_skill > 0.003 and brier_skill > 0.0)
+    gate = quality_gate(mode, meta_metrics, baseline_metrics, constant_metrics)
+    logloss_skill = float(gate["logloss_skill"])
+    brier_skill = float(gate["brier_skill"])
+    quality_pass = bool(gate["quality_pass"])
 
     meta_trust = 0.0
     if quality_pass:
         meta_trust = float(
-            np.clip(0.05 + 6.0 * logloss_skill, 0.05, trust_cap)
+            np.clip(0.05 + 6.0 * float(gate["gate_skill"]), 0.05, trust_cap)
         )
 
     pack = {
@@ -694,6 +747,10 @@ def train_meta(
         "baseline_validation_brier": baseline_metrics.brier,
         "logloss_skill": logloss_skill,
         "brier_skill": brier_skill,
+        "constant_validation_logloss": constant_metrics.logloss,
+        "constant_validation_brier": constant_metrics.brier,
+        "constant_logloss_skill": float(gate["constant_logloss_skill"]),
+        "constant_brier_skill": float(gate["constant_brier_skill"]),
         "baseline_weights": baseline_weights,
         "baseline_calibration": baseline_calibration,
         "history_days": len(days),
@@ -746,7 +803,9 @@ def train_meta(
         f"history={len(days)} candidate={best_cfg['name']} "
         f"logloss={meta_metrics.logloss:.6f} "
         f"vs calibrated-linear={baseline_metrics.logloss:.6f} "
-        f"skill={logloss_skill:.4%} trust={meta_trust:.3f}/{trust_cap:.2f}"
+        f"vs constant={constant_metrics.logloss:.6f} "
+        f"skill={logloss_skill:.4%} constant_skill={float(gate['constant_logloss_skill']):.4%} "
+        f"trust={meta_trust:.3f}/{trust_cap:.2f}"
     )
     print("[INFO] tier maturity:", maturity)
     return pack

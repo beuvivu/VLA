@@ -114,3 +114,92 @@ def test_meta_pack_cannot_expand_the_production_feature_allowlist() -> None:
     pack["features"] = meta_feature_columns(components)
     with pytest.raises(ValueError, match="schema metadata"):
         predict_meta(pack, "loto", "2026-09-01", p, p, p, p, p)
+
+
+# ---------------------------------------------------------------------------
+# Cổng thẩm định: phải thắng CẢ dự báo hằng số, không chỉ tổ hợp tuyến tính
+# ---------------------------------------------------------------------------
+
+
+def _metrics(logloss: float, brier: float):
+    from meta_predictor import MetaMetrics
+
+    return MetaMetrics(logloss=logloss, brier=brier, auc_roc=float("nan"))
+
+
+def test_beating_a_broken_linear_baseline_alone_does_not_switch_meta_on() -> None:
+    """Đúng các con số của lượt 25-09-2026 (LOTO): tổ hợp tuyến tính hiệu chỉnh
+    làm nhọn xác suất và cho logloss 1,0157; mô hình xếp chồng 0,5456 "thắng
+    46%" — nhưng dự báo hằng số trên cùng lát đạt 0,54566. Không hơn hằng số
+    thì không có gì để trộn vào production."""
+    from meta_predictor import quality_gate
+
+    gate = quality_gate(
+        "loto",
+        meta=_metrics(0.545609, 0.179940),
+        linear=_metrics(1.015388, 0.223760),
+        constant=_metrics(0.545656, 0.179957),
+    )
+
+    assert gate["logloss_skill"] > 0.46, "mẫu dựng sẵn phải tái hiện đúng 'kỹ năng 46%'"
+    assert gate["quality_pass"] is False
+    assert gate["gate_skill"] == pytest.approx(gate["constant_logloss_skill"])
+
+
+def test_a_real_edge_over_both_opponents_still_switches_meta_on() -> None:
+    """Cổng chặt hơn không được thành cổng đóng cứng."""
+    from meta_predictor import quality_gate
+
+    gate = quality_gate(
+        "loto",
+        meta=_metrics(0.5400, 0.1780),
+        linear=_metrics(0.5460, 0.1800),
+        constant=_metrics(0.5470, 0.1805),
+    )
+
+    assert gate["quality_pass"] is True
+    # Độ tin cậy tính theo đối thủ MẠNH hơn (kỹ năng nhỏ hơn).
+    assert gate["gate_skill"] == pytest.approx(1 - 0.5400 / 0.5460)
+
+
+def test_losing_to_the_constant_forecast_fails_even_when_linear_is_worse() -> None:
+    from meta_predictor import quality_gate
+
+    gate = quality_gate(
+        "de",
+        meta=_metrics(4.6100, 0.9901),
+        linear=_metrics(4.7000, 0.9950),
+        constant=_metrics(4.6052, 0.9900),
+    )
+
+    assert gate["constant_logloss_skill"] < 0
+    assert gate["quality_pass"] is False
+
+
+def test_the_constant_opponent_never_looks_at_the_validation_days() -> None:
+    """Tần suất của mốc hằng số LOTO lấy từ ngày TRƯỚC lát thẩm định. Lát
+    thẩm định ở đây toàn 1: nếu mốc nhìn vào nó, tần suất sẽ khác 0,25."""
+    from meta_predictor import _constant_validation
+
+    rows = []
+    for day in range(8):
+        y = np.zeros(100, dtype=int)
+        if day < 4:
+            y[:25] = 1
+        else:
+            y[:] = 1
+        rows.append(
+            pd.DataFrame(
+                {"target_date": [f"2026-08-{10 + day:02d}"] * 100, "number": np.arange(100), "y": y}
+            )
+        )
+    history = pd.concat(rows, ignore_index=True)
+    pre = [f"2026-08-{10 + d:02d}" for d in range(4)]
+    val = [f"2026-08-{10 + d:02d}" for d in range(4, 8)]
+
+    loto = _constant_validation(history, pre, val, "loto")
+    de = _constant_validation(history, pre, val, "de")
+
+    assert loto.shape == (4, 100)
+    assert np.allclose(loto, 0.25)
+    assert np.allclose(de, 0.01)

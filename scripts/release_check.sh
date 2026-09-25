@@ -232,8 +232,13 @@ for mode in ("loto", "de"):
         "baseline_validation_brier",
         "logloss_skill",
         "brier_skill",
+        "constant_validation_logloss",
+        "constant_logloss_skill",
     ):
         assert math.isfinite(float(pack[key])), (mode, key, pack[key])
+    # Bật mà không thắng dự báo hằng số là đúng lỗi của lượt 25-09-2026.
+    if pack["quality_pass"]:
+        assert float(pack["constant_logloss_skill"]) > 0.003, (mode, pack["constant_logloss_skill"])
     assert len(pack["validation_days"]) >= 15, mode
     print(
         "OK stacked ML",
@@ -244,6 +249,8 @@ for mode in ("loto", "de"):
         pack["meta_trust"],
         "skill=",
         pack["logloss_skill"],
+        "constant_skill=",
+        pack["constant_logloss_skill"],
     )
 PYMETA
 
