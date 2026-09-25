@@ -39,43 +39,42 @@
     "reason": "calibration matches full five-component ensemble"
   },
   "meta": {
-    "active": true,
-    "trust": 0.15,
-    "quality_pass": true,
-    "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_shallow",
+    "active": false,
+    "trust": 0.0,
+    "quality_pass": false,
+    "reason": "validation gate rejected stacked challenger",
     "validation_logloss": 0.5449477484315233,
     "baseline_validation_logloss": 1.0325627324711963,
     "logloss_skill": 0.4722376362283395,
-    "brier_skill": 0.20172719819472684,
-    "trained_through_target_date": "2026-09-25"
+    "constant_validation_logloss": 0.5448802596851022,
+    "constant_logloss_skill": -0.00012385977510009916
   },
   "top4": [
-    "09",
-    "90",
-    "36",
-    "63"
+    "99",
+    "30",
+    "43",
+    "19"
   ],
   "top8": [
-    "09",
-    "90",
-    "36",
-    "63",
-    "54",
-    "18",
-    "72",
-    "45"
+    "99",
+    "30",
+    "43",
+    "19",
+    "88",
+    "75",
+    "22",
+    "40"
   ],
   "top10": [
-    "09",
-    "90",
-    "36",
-    "63",
-    "54",
-    "18",
-    "72",
-    "45",
-    "27",
-    "22"
+    "99",
+    "30",
+    "43",
+    "19",
+    "88",
+    "75",
+    "22",
+    "40",
+    "60",
+    "33"
   ]
 }
