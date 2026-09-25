@@ -70,24 +70,61 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data/predictions_today.json
-          if git diff --cached --quiet; then
-            echo "Dự đoán không đổi so với lần chạy trước."
-            exit 0
-          fi
+          # Dự đoán chỉ khác bản đã có ở dấu thời gian thì KHÔNG ghi. Trước
+          # đây mỗi lượt đều ghi một commit như thế (tám commit cho cùng một
+          # kỳ trong một đêm), và hai lượt nối nhau đủ để xung đột.
+          same_as_head() {
+            git cat-file -e HEAD:data/predictions_today.json 2>/dev/null || return 1
+            python - <<'PY'
+          import json
+          import subprocess
+          import sys
 
-          TARGET_DATE="$(python -c "import json;print(json.load(open('data/predictions_today.json'))['date'])")"
-          git commit -m "data: dự đoán cho kỳ ${TARGET_DATE}"
+          head = subprocess.run(
+              ["git", "show", "HEAD:data/predictions_today.json"],
+              capture_output=True, text=True, check=True,
+          ).stdout
+          old = json.loads(head)
+          with open("data/predictions_today.json", encoding="utf-8") as fh:
+              new = json.load(fh)
+          for payload in (old, new):
+              payload.pop("generated_at_local", None)
+              payload.pop("generated_at_utc", None)
+          sys.exit(0 if old == new else 1)
+          PY
+          }
 
-          # Pipeline dữ liệu có thể vừa push trong lúc job này chạy; rebase rồi
-          # thử lại thay vì hỏng ở lần đẩy đầu tiên.
+          # Mỗi lần thử bắt đầu lại từ ĐẦU nhánh chính và sinh lại dự đoán
+          # trên nền ấy, thay vì `pull --rebase` lên cây cũ. Lượt 36037174777
+          # cho thấy vì sao: lượt khác vừa đẩy dự đoán cùng kỳ, rebase xung
+          # đột ở data/predictions_today.json và để cây ở GIỮA CHỪNG; ba lần
+          # thử sau đều chết ngay vì "unmerged files" — vòng thử lại không tự
+          # hồi phục được. Dự đoán là hàm của dữ liệu trên nhánh, nên sinh lại
+          # mới đúng; trộn hai tệp thì không.
           for attempt in 1 2 3 4; do
-            if git pull --rebase origin "${GITHUB_REF_NAME}" \
-               && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            if (( attempt > 1 )); then
+              git rebase --abort 2>/dev/null || true
+              git fetch origin "${GITHUB_REF_NAME}"
+              git reset --hard "origin/${GITHUB_REF_NAME}"
+              if ! python src/run_daily_prediction.py; then
+                echo "::notice::Trên nền mới nhất không còn dự đoán nào cần ghi."
+                exit 0
+              fi
+            fi
+
+            if same_as_head; then
+              echo "Dự đoán không đổi so với bản đã có (chỉ khác dấu thời gian)."
+              exit 0
+            fi
+
+            TARGET_DATE="$(python -c "import json;print(json.load(open('data/predictions_today.json'))['date'])")"
+            git add data/predictions_today.json
+            git commit -m "data: dự đoán cho kỳ ${TARGET_DATE}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
               echo "Đã đẩy ở lần thử ${attempt}."
               exit 0
             fi
-            sleep $((2 ** attempt))
+            sleep $(( 2 ** attempt + RANDOM % 3 ))
           done
           echo "::error::Không đẩy được sau 4 lần thử."
           exit 1

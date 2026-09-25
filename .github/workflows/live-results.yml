@@ -86,7 +86,15 @@ jobs:
           max_wait_seconds=$((90 * 60))
           waited=0
           while true; do
-            now_min=$(( $(date +%H) * 60 + $(date +%M) ))
+            # Đọc đồng hồ MỘT lần và ép cơ số 10. `date +%H` trả "08", "09"
+            # có số 0 đứng đầu, và trong $(( )) bash đọc chúng là hệ bát
+            # phân: "08" không hợp lệ. Bash 5.2 khi ấy bỏ ngang CẢ vòng
+            # `while` và chạy tiếp sau `done` — `set -e` không bắt được — nên
+            # lượt nổ lúc 17:08, 16:09 hay trong giờ 08, 09 bỏ qua bước chờ,
+            # thăm dò ngay giờ trống rồi hết 60 phút đúng lúc kỳ quay bắt
+            # đầu. Hai lần gọi `date` riêng còn có thể vắt qua ranh giới phút.
+            hhmm="$(date +%H%M)"
+            now_min=$(( 10#${hhmm:0:2} * 60 + 10#${hhmm:2:2} ))
             (( now_min >= window_start_min )) && break
             gap=$(( (window_start_min - now_min) * 60 ))
             if (( gap > max_wait_seconds )); then
@@ -99,8 +107,23 @@ jobs:
             waited=$((waited + gap))
           done
 
+          # Lượt #164 chết vì GitHub trả HTTP 500 MỘT lần khi đẩy ảnh chụp:
+          # với `set -e`, một lỗi thoáng qua giết cả vòng thăm dò 60 phút.
+          # Mỗi ảnh chụp giờ được thử lại có giới hạn, giãn cách tăng dần kèm
+          # nhiễu; hết lượt thì KHÔNG thoát mà để vòng thăm dò kế tiếp đẩy lại.
+          push_snapshot() {
+            local attempt
+            for attempt in 1 2 3; do
+              if git push --force origin "$1:refs/heads/live"; then
+                return 0
+              fi
+              sleep $(( attempt * 2 + RANDOM % 3 ))
+            done
+            return 1
+          }
+
           started="$(date +%s)"
-          previous_payload_hash=""
+          published_hash=""
           verified="false"
           live_path="$(mktemp "${RUNNER_TEMP}/live-result.XXXXXX.json")"
           export LIVE_PATH="$live_path"
@@ -120,19 +143,34 @@ jobs:
           PY
           )"
 
-            if [[ "$payload_hash" != "$previous_payload_hash" ]]; then
+            if [[ "$payload_hash" != "$published_hash" ]]; then
               blob="$(git hash-object -w "$live_path")"
               tree="$(printf '100644 blob %s\tlive.json\n' "$blob" | git mktree)"
               commit="$(printf 'live: XSMB snapshot\n' | git commit-tree "$tree")"
-              git push --force origin "$commit:refs/heads/live"
-              previous_payload_hash="$payload_hash"
+              if push_snapshot "$commit"; then
+                published_hash="$payload_hash"
+              else
+                echo "::warning::Chưa đẩy được ảnh chụp live sau 3 lần thử; vòng thăm dò kế tiếp sẽ đẩy lại."
+              fi
             fi
 
+            # Chỉ dừng khi kết quả đã xác minh VÀ chính ảnh chụp ấy đã lên
+            # nhánh live — nếu không, người xem kẹt ở ảnh chụp dở dang.
+            #
+            # Còn `verified` thì theo NGUỒN, không theo lần đẩy: nó kích hoạt
+            # hoàn tất dữ liệu ngày, và chuỗi ấy (update-data rồi
+            # post-finalization) tự ghi ảnh chụp chuẩn lên nhánh live từ
+            # data/xsmb.csv. Nếu đẩy hỏng tới hết giờ, đó chính là đường sửa
+            # nhánh live; giữ lại cờ thì nhánh live kẹt tới cron kế tiếp.
             status="$(python -c "import json, os; print(json.load(open(os.environ['LIVE_PATH']))['status'])")"
             if [[ "$status" == "complete_verified" ]]; then
-              echo "Verified complete result reached."
               verified="true"
-              break
+              if [[ "$published_hash" == "$payload_hash" ]]; then
+                echo "Verified complete result reached."
+                break
+              fi
+            else
+              verified="false"
             fi
 
             now="$(date +%s)"
@@ -157,27 +195,48 @@ jobs:
           python - <<'PY'
           import json
           import os
+          import random
+          import time
+          import urllib.error
           import urllib.request
 
           repo = os.environ["REPOSITORY"]
           branch = os.environ.get("DEFAULT_BRANCH") or "main"
-          url = f"https://api.github.com/repos/{repo}/actions/workflows/update-data.yml/dispatches"
+          api = os.environ.get("GITHUB_API_URL") or "https://api.github.com"
+          url = f"{api}/repos/{repo}/actions/workflows/update-data.yml/dispatches"
           payload = json.dumps(
               {"ref": branch, "inputs": {"reason": "live_verified"}}
           ).encode("utf-8")
-          req = urllib.request.Request(
-              url,
-              data=payload,
-              method="POST",
-              headers={
-                  "Accept": "application/vnd.github+json",
-                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
-                  "X-GitHub-Api-Version": "2022-11-28",
-                  "Content-Type": "application/json",
-              },
-          )
-          with urllib.request.urlopen(req, timeout=20) as resp:
-              if resp.status != 204:
-                  raise RuntimeError(f"workflow dispatch failed: HTTP {resp.status}")
+
+          # Thử lại CHỈ với lỗi thoáng qua (5xx, mạng). Lỗi 4xx là quyền hoặc
+          # cấu hình sai: thử lại chỉ che nó đi, nên dừng ngay và làm đỏ.
+          for attempt in range(1, 5):
+              req = urllib.request.Request(
+                  url,
+                  data=payload,
+                  method="POST",
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "Content-Type": "application/json",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      if resp.status != 204:
+                          raise RuntimeError(f"workflow dispatch failed: HTTP {resp.status}")
+                  break
+              except urllib.error.HTTPError as exc:
+                  if exc.code < 500 or attempt == 4:
+                      raise
+                  reason = f"HTTP {exc.code}"
+              except (urllib.error.URLError, TimeoutError) as exc:
+                  if attempt == 4:
+                      raise
+                  reason = str(getattr(exc, "reason", exc))[:80]
+              delay = 2 ** attempt + random.uniform(0, 1)
+              print(f"Lần {attempt} lỗi thoáng qua ({reason}); thử lại sau {delay:.1f}s.")
+              time.sleep(delay)
           print("Daily finalization dispatched after verified live result.")
           PY

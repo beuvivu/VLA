@@ -120,6 +120,90 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     assert "<p>Nội dung thật</p>" in sua2
 
 
+def _dock_script() -> str:
+    """Thẻ kịch bản mà ``ui_theme.dock`` đặt ngay sau ``<nav class="ui-dock">``.
+
+    Lấy từ chính hàm sinh ra nó chứ không chép tay: đổi dock mà quên đổi mẫu
+    gỡ trong ``app_shell`` thì các phép kiểm dưới phải đỏ, không phải xanh
+    trên một bản chép đã cũ.
+    """
+    from ui_theme import dock
+
+    # Cắt theo vị trí chuỗi chứ không dùng biểu thức chính quy: đây là trích
+    # đúng một đoạn từ đầu ra của chính ta, không phải bộ lọc HTML.
+    html = dock("live.html")
+    dau = html.find("<script>")
+    assert dau >= 0, "dock() không còn kèm kịch bản — xem lại mẫu gỡ trong app_shell"
+    cuoi = html.index("</script>", dau) + len("</script>")
+    return html[dau:cuoi]
+
+
+@pytest.mark.parametrize("so_lop", [2, 8, 11, 12])
+def test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired(so_lop: int) -> None:
+    """Dựng lại ĐÚNG hình dạng mà pipeline đã tạo ra trên ``docs/live.html``.
+
+    Mỗi lượt: trang cũ + dock (nav + kịch bản) được bọc tiếp; nav bị gỡ, kịch
+    bản mồ côi nằm lại SAU đuôi khung cũ, và ``<main>`` phía trong bị đổi
+    thành ``<div>``. Đo được 11 lớp sau một ngày; trần bóc cũ là 8 vòng.
+    """
+    import re
+
+    from app_shell import header_html, panel_html, rail_html, wrap_page
+
+    goc = "<html><head></head><body><p>Nội dung thật</p></body></html>"
+    than = wrap_page(goc, "live.html").split("<body>", 1)[1].rsplit("</body>", 1)[0]
+    for _ in range(so_lop - 1):
+        than = (
+            rail_html("live.html")
+            + panel_html("live.html")
+            + '<div class="app-scrim" id="app-scrim" hidden></div>'
+            + header_html("live.html")
+            + '<main class="app-main" id="app-main">'
+            + re.sub(r"<(/?)main\b", r"<\1div", than)
+            + _dock_script()
+            + "</main>"
+            + '<script src="assets/app-shell.js" defer></script>'
+        )
+    hong = "<html><head></head><body>" + than + "</body></html>"
+    assert hong.count('class="app-rail"') == so_lop, "mẫu dựng sẵn phải thật sự hỏng"
+
+    sua = wrap_page(hong, "live.html")
+
+    assert sua.count('class="app-rail"') == 1
+    assert sua.count('id="app-main"') == 1
+    assert _dock_script() not in sua, "kịch bản dock mồ côi phải được gỡ"
+    assert sua == wrap_page(goc, "live.html"), "sửa xong phải đúng từng byte bản bọc một lớp"
+
+
+def test_refreshing_the_live_page_again_and_again_keeps_one_shell(tmp_path: Path) -> None:
+    """Chính đường pipeline chạy mỗi lượt: ``refresh_live_page`` trên một
+    ``live.html`` viết tay. Trước bản sửa, mỗi lần gọi thêm đúng một lớp."""
+    from ui_theme import refresh_live_page
+
+    trang = tmp_path / "live.html"
+    trang.write_text(
+        "<!doctype html><html><head><style>body{margin:0}</style></head>"
+        "<body><p>Nội dung thật</p></body></html>",
+        encoding="utf-8",
+    )
+    refresh_live_page(tmp_path)
+    lan_dau = trang.read_text(encoding="utf-8")
+    for _ in range(4):
+        refresh_live_page(tmp_path)
+
+    sau = trang.read_text(encoding="utf-8")
+    assert sau.count('class="app-rail"') == 1
+    assert _dock_script() not in sau
+    assert sau == lan_dau, "chạy lại phải cho ra đúng tệp ấy"
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_no_published_page_carries_the_retired_dock_script(page: Path) -> None:
+    """Dock đã nghỉ; kịch bản của nó còn lại trên trang là mã chết — và trên
+    ``live.html`` chính nó đã làm bước bóc khung trượt."""
+    assert _dock_script() not in page.read_text(encoding="utf-8")
+
+
 def test_the_rail_has_one_button_per_navigation_group() -> None:
     """Dải biểu tượng phải phủ đúng các nhóm của mô hình điều hướng.
 

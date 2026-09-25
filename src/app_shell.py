@@ -177,8 +177,24 @@ _DOCK_CU = re.compile(
     r"<nav\b(?=[^>]*\bclass=[\"'][^\"']*\b(?:ui-dock|dock)\b)[^>]*>.*?</nav>\s*",
     re.S | re.I,
 )
+#: Kịch bản đi kèm dock — ``ui_theme.dock`` trả về ``<nav>`` rồi NGAY SAU là
+#: thẻ này. Gỡ nav mà để lại nó thì ta có mã chết trên mọi trang, và trên
+#: ``docs/live.html`` còn tệ hơn: thẻ mồ côi đứng SAU đuôi khung nên
+#: :data:`_DUOI_KHUNG` (neo ở cuối phần thân) trượt, bước bóc bỏ cuộc, và mỗi
+#: lượt pipeline bọc thêm một lớp — đo được 11 lớp sau một ngày.
+#: Khớp theo chữ ký mở đầu của chính kịch bản ấy, không theo "có nhắc ui-dock":
+#: đo trên 29 trang, mọi thẻ nội tuyến nhắc ``ui-dock`` đều là bản này.
+_DOCK_KICH_BAN = re.compile(
+    r"<script>\s*\(function\(\)\{var d=document\.querySelector\(\"\.ui-dock\"\);"
+    r".*?</script>\s*",
+    re.S,
+)
 #: Thẻ mở vùng nội dung thật. Chuỗi cố định vì chính :func:`wrap_page` sinh ra.
 _MO_MAIN: Final[str] = '<main class="app-main" id="app-main">'
+#: Cùng thẻ ấy ở một lớp khung PHÍA TRONG. :func:`wrap_page` đổi mọi ``<main>``
+#: bên trong thành ``<div>`` (mỗi tài liệu một mốc main), nên lớp khung bị bọc
+#: chồng mang dạng này, và bước bóc chỉ tìm ``<main>`` thì dừng ở lớp ngoài.
+_MO_MAIN_TRONG: Final[str] = '<div class="app-main" id="app-main">'
 #: Đuôi khung: đóng vùng nội dung rồi tới thẻ kịch bản, luôn ở CUỐI phần thân.
 #:
 #: KHÔNG khớp nguyên văn chuỗi mà :func:`wrap_page` sinh ra. Trang đã xuất bản
@@ -192,7 +208,7 @@ _MO_MAIN: Final[str] = '<main class="app-main" id="app-main">'
 #: ``src`` trùng nhau lại làm một. Bản đòi script bắt buộc vì thế bỏ cuộc ở
 #: đúng tệp duy nhất cần bóc, rồi bọc thêm lớp nữa.
 _DUOI_KHUNG: Final[re.Pattern[str]] = re.compile(
-    r"</main>\s*(?:<script\b[^>]*\bsrc=\"assets/app-shell\.js\"[^>]*>\s*</script>\s*)?\Z"
+    r"</(?:main|div)>\s*(?:<script\b[^>]*\bsrc=\"assets/app-shell\.js\"[^>]*>\s*</script>\s*)?\Z"
 )
 _MO_BODY = re.compile(r"(<body\b[^>]*>)", re.I)
 _DONG_BODY = re.compile(r"</body\s*>", re.I)
@@ -220,15 +236,19 @@ def _go_khung(than: str) -> str:
     Returns:
         Phần nội dung thật, đã bỏ hết lớp khung.
     """
-    # Trần 8 vòng: khung lồng sâu hơn thế nghĩa là có gì đó sai hẳn, và vòng
-    # lặp không trần sẽ treo trình dựng thay vì báo lỗi.
-    for _ in range(8):
+    # Mỗi vòng cắt bỏ ít nhất một thẻ mở, nên chuỗi ngắn dần và vòng lặp
+    # không thể treo; trần chỉ là lưới an toàn. Trần cũ là 8 — thấp hơn chính
+    # số lớp đã đo được trên ``docs/live.html`` (11), tức tệp hỏng nhất lại là
+    # tệp không sửa được.
+    for _ in range(64):
         if "app-rail" not in than:
             return than
-        dau = than.find(_MO_MAIN)
-        if dau < 0:
+        vi_tri = [(than.find(the), the) for the in (_MO_MAIN, _MO_MAIN_TRONG)]
+        vi_tri = [(vt, the) for vt, the in vi_tri if vt >= 0]
+        if not vi_tri:
             return than
-        con = than[dau + len(_MO_MAIN) :]
+        dau, the = min(vi_tri)
+        con = than[dau + len(the) :]
         duoi = _DUOI_KHUNG.search(con)
         if duoi is None:
             return than
@@ -253,7 +273,7 @@ def wrap_page(html: str, current: str) -> str:
     mo = _MO_BODY.search(html)
     if not mo or not _DONG_BODY.search(html):
         return html
-    html = _DOCK_CU.sub("", html)
+    html = _DOCK_KICH_BAN.sub("", _DOCK_CU.sub("", html))
     mo = _MO_BODY.search(html)
     if mo is None:
         return html

@@ -121,9 +121,17 @@ def test_workflow_shares_the_data_pipeline_concurrency_group() -> None:
 
 
 def test_workflow_retries_the_push() -> None:
+    """Thử lại có giới hạn, và mỗi lần thử bắt đầu lại từ ĐẦU nhánh chính.
+
+    Bản cũ `pull --rebase` lên cây cũ: lượt 36037174777 rebase xung đột, cây
+    kẹt giữa chừng và mọi lần thử sau chết vì "unmerged files". Hành vi thật
+    được chạy trong ``tests/test_workflow_shell_behaviour.py``; ở đây chỉ
+    chặn việc ai đó đưa lại đúng câu lệnh ấy.
+    """
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert "git pull --rebase" in text
     assert "for attempt in 1 2 3 4" in text
+    assert 'git reset --hard "origin/${GITHUB_REF_NAME}"' in text
+    assert "git pull --rebase" not in text
 
 
 def test_workflow_pins_the_vietnamese_timezone() -> None:

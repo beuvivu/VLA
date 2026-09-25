@@ -398,3 +398,45 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
+
+  verify-published-pages:
+    # Bước "Xác minh các đầu ra" ở trên chỉ kiểm tệp CÓ TỒN TẠI. Ngày
+    # 24-09-2026, mười lượt liên tiếp commit một docs/live.html dày thêm một
+    # lớp khung mỗi lượt (1 → 11) mà không gì đỏ lên. Job này chạy các phép
+    # kiểm bất biến của trang ngay trên commit vừa đẩy.
+    #
+    # Nó CỐ Ý không chặn dữ liệu hay triển khai: dữ liệu kỳ mới quan trọng hơn
+    # hình dạng một trang, và deploy-pages không phụ thuộc job này. Việc của
+    # nó là làm lượt chạy ĐỎ để lỗi được thấy ngay trong ngày.
+    name: Kiểm bất biến các trang vừa xuất bản
+    needs: update
+    if: ${{ needs.update.result == 'success' && needs.update.outputs.generated_changed == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+    steps:
+      - name: Lấy commit dữ liệu mới tạo gần nhất
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài bộ chạy kiểm thử
+        # Đúng hai thứ các phép kiểm dưới cần, cùng mốc phiên bản với
+        # requirements-dev.txt và requirements.txt.
+        run: python -m pip install --no-cache-dir "pytest>=9.1.1,<10" "beautifulsoup4==4.15.0"
+
+      - name: Một khung, không mã chết, không tham chiếu gãy, không lộ nguồn
+        run: >-
+          python -m pytest -q
+          tests/test_app_shell.py
+          tests/test_app_icons.py
+          tests/test_published_assets.py
+          tests/test_shipped_pages_are_clean.py
