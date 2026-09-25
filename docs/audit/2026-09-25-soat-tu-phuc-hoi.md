@@ -230,3 +230,38 @@ dựng lại `docs/` — chạy chung cây với bộ kiểm là để hai lư�
 Không đọc được trang thật trên `github.io` từ môi trường phát triển (proxy trả
 403), nên phép xác minh dựa vào nội dung của đúng commit đã triển khai và lượt
 `pages.yml` xanh — không dựa vào việc mở trang.
+
+## 8. Xác suất LOTO / Đặc Biệt "sai lệch khá nhiều" — đo rồi mới sửa
+
+Yêu cầu của chủ dự án: xác suất lệch nhiều, cần đẩy mạnh ML tự học. Đo trước.
+
+**Xác suất ĐÃ CÔNG BỐ** (`data/predict/predict_next_*_all_<ngày>.csv`, 28 kỳ
+10-08 → 24-09, chấm với kết quả quay thật):
+
+| | Kỹ năng so với cơ sở | Lớn nhất từng công bố |
+| --- | --- | --- |
+| Đặc Biệt | −0,03% ± 0,32% | 1,28% (cơ sở 1%) |
+| LOTO | −0,013% ± 0,038% | 25,9% (cơ sở 23,8%) |
+
+Tức là con số người xem nhận đã ở đúng mức tối ưu của một cuộc quay công bằng;
+không mô hình nào nâng được xác suất trúng thật lên trên mức đó.
+
+**Những chỗ lệch thật:**
+
+- **F-07 · Cổng ML xếp chồng so với một đối thủ hỏng — ĐÃ SỬA.** LOTO: tổ hợp
+  tuyến tính hiệu chỉnh chọn a=4,89 (làm NHỌN) trên chính ngày được khớp, cho
+  logloss 1,0157 trên lát thẩm định, tệ gần gấp đôi hằng số (0,5457). Mô hình
+  xếp chồng 0,5456 — hơn hằng số +0,0086% — được báo "kỹ năng 46%", bật với
+  độ tin cậy 15%, và trang chủ in "ML xếp chồng đang bật". `quality_gate` nay
+  đòi thắng cả dự báo hằng số, và độ tin cậy tính theo kỹ năng nhỏ hơn. Chạy
+  lại trên lịch sử thật: LOTO và Đặc Biệt đều bị từ chối, trust 0.
+- **Trang Chất lượng chấm một mô hình KHÁC mô hình đã công bố — CHƯA SỬA, chờ
+  quyết.** Nó dựng lại tổ hợp CHƯA hiệu chỉnh, nên hiện Đặc Biệt tới 25,9% và
+  kỹ năng −2,0%. Thủ phạm là hai thành phần đường cầu: `active` (kỹ năng
+  −7,2%, p tới 95%) và `stable` (−29,5%). Phát lại hiệu chỉnh kiểu đi tới (mỗi
+  ngày chỉ học từ quá khứ) kéo Đặc Biệt về −0,52% ± 0,52%, nhưng làm LOTO tệ
+  đi chút ít và có ngày làm nhọn xác suất tới 33,6% — nên chưa đổi phương pháp
+  chấm khi chưa có quyết định.
+- **"Nhóm dựng lại −7,437%"** trên trang Chất lượng là các dòng lịch sử
+  12-2025 → 01-2026 ghi `p_active`/`p_stable` ở thang sai (lỗi đã sửa từ
+  trước, dữ liệu cũ còn nguyên). Không phải kỹ năng của mô hình hiện tại.

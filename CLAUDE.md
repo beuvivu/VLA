@@ -167,6 +167,13 @@ vector đã học khi nó thắng **mặc định** trên lát kiểm ngoài m�
 KHÔNG được là vector đương nhiệm: lần chạy trước đã khớp trên chính những
 ngày đó, nên phép so ấy rò rỉ và luôn báo thắng.
 
+Cổng của mô hình xếp chồng (`meta_predictor.quality_gate`) cùng tinh thần:
+phải thắng CẢ tổ hợp tuyến tính hiệu chỉnh LẪN dự báo hằng số (Đặc Biệt 1/100,
+LOTO tần suất của các ngày trước lát thẩm định). Ngày 25-09-2026 tổ hợp tuyến
+tính làm nhọn xác suất (a=4,89) và thua cả hằng số, nên một mô hình không hơn
+hằng số (+0,0086%) vẫn "thắng 46%" và được trộn vào production. Thắng một đối
+thủ hỏng không chứng minh được gì.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được
@@ -182,7 +189,7 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Bộ kiểm hiện **xanh hết: 2 105 phép kiểm**. Bốn kịch bản chốt phát hành
+Bộ kiểm hiện **xanh hết: 2 109 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.
