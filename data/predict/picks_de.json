@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "anchor_date": "2026-09-24",
-  "target_date": "2026-09-25",
+  "anchor_date": "2026-09-25",
+  "target_date": "2026-09-26",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -34,7 +34,7 @@
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 2.2834019604252394,
+    "temperature": 0.5800056770105544,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
   },
@@ -43,36 +43,36 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.6042576673201285,
-    "baseline_validation_logloss": 4.604357111925503,
-    "logloss_skill": 2.1597934946604447e-05
+    "validation_logloss": 4.604825034932707,
+    "baseline_validation_logloss": 4.60378824943534,
+    "logloss_skill": -0.000225202689870585
   },
   "top4": [
-    "20",
     "89",
-    "65",
+    "22",
+    "05",
     "85"
   ],
   "top8": [
-    "20",
     "89",
-    "65",
+    "22",
+    "05",
     "85",
+    "43",
+    "49",
     "77",
-    "02",
-    "92",
-    "36"
+    "24"
   ],
   "top10": [
-    "20",
     "89",
-    "65",
+    "22",
+    "05",
     "85",
+    "43",
+    "49",
     "77",
-    "02",
-    "92",
-    "36",
-    "59",
-    "48"
+    "24",
+    "20",
+    "82"
   ]
 }

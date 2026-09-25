@@ -1,7 +1,7 @@
 {
   "mode": "loto",
-  "anchor_date": "2026-09-24",
-  "target_date": "2026-09-25",
+  "anchor_date": "2026-09-25",
+  "target_date": "2026-09-26",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -33,7 +33,7 @@
   "calibration": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.0654329068127906,
+    "b": -1.0666160494726942,
     "temperature": 1.0,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
@@ -43,39 +43,39 @@
     "trust": 0.15,
     "quality_pass": true,
     "reason": "validated stacked challenger blended into production",
-    "candidate": "meta_interaction",
-    "validation_logloss": 0.5456094460317132,
-    "baseline_validation_logloss": 1.0156756785675363,
-    "logloss_skill": 0.46281135056692846,
-    "brier_skill": 0.19583355343007303,
-    "trained_through_target_date": "2026-09-24"
+    "candidate": "meta_shallow",
+    "validation_logloss": 0.5449477484315233,
+    "baseline_validation_logloss": 1.0325627324711963,
+    "logloss_skill": 0.4722376362283395,
+    "brier_skill": 0.20172719819472684,
+    "trained_through_target_date": "2026-09-25"
   },
   "top4": [
-    "26",
-    "32",
-    "84",
-    "34"
+    "09",
+    "90",
+    "36",
+    "63"
   ],
   "top8": [
-    "26",
-    "32",
-    "84",
-    "34",
-    "25",
-    "57",
-    "94",
-    "96"
+    "09",
+    "90",
+    "36",
+    "63",
+    "54",
+    "18",
+    "72",
+    "45"
   ],
   "top10": [
-    "26",
-    "32",
-    "84",
-    "34",
-    "25",
-    "57",
-    "94",
-    "96",
-    "31",
-    "53"
+    "09",
+    "90",
+    "36",
+    "63",
+    "54",
+    "18",
+    "72",
+    "45",
+    "27",
+    "22"
   ]
 }

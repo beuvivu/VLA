@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "mode": "de",
-  "history_days": 4215,
+  "history_days": 4216,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-09-24",
+  "calendar_end": "2026-09-25",
   "active_numbers_last_draw": 1,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 44699.43953606467,
+    "hazard": 45814.251530311805,
     "lag_median": 1000000.0,
     "regime_recent": 1000000.0,
-    "regime_long": 2328.4112247799976
+    "regime_long": 1804.4358040418683
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 1.8223673269283158,
+    "t_statistic": -0.8979439898938532,
     "holdout_days": 1054,
-    "brier_arithmetic": 0.00990179271471489,
-    "brier_logodds": 0.00990179271471489
+    "brier_arithmetic": 0.00990175857024355,
+    "brier_logodds": 0.00990175857024355
   },
-  "transition_active_mean_trials": 46.0,
-  "regime_js_divergence_30_vs_180": 0.047797638036969806,
+  "transition_active_mean_trials": 56.0,
+  "regime_js_divergence_30_vs_180": 0.04787206641512489,
   "entropy_recent": 4.42991348104248,
-  "entropy_long": 4.424276099930484,
-  "global_dynamics_reliability": 0.6379371149137066,
+  "entropy_long": 4.419323176853936,
+  "global_dynamics_reliability": 0.6377192653512677,
   "hazard_nonzero_bins": 200,
-  "generated_at_utc": "2026-09-25T02:34:37Z",
+  "generated_at_utc": "2026-09-25T12:09:52Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-09-24"
+  "anchor_date": "2026-09-25"
 }
