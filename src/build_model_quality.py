@@ -400,6 +400,52 @@ def coverage_cards(coverage: dict) -> str:
 
 
 
+#: Lời cho từng trạng thái của bộ theo dõi kỹ năng (``skill_monitor``).
+_MONITOR_WORDS = {
+    "chua_du": "Chưa đủ kỳ để kết luận.",
+    "vung_0": "Trong vùng 0 — đúng như một kỳ quay công bằng.",
+    "te_hon": "TỆ HƠN đường cơ sở một cách có ý nghĩa — pipeline đã báo động.",
+    "hon": "HƠN đường cơ sở một cách có ý nghĩa — phải kiểm lại trước khi tin.",
+}
+
+
+def source_cards(report: dict) -> str:
+    """Các con số bên dưới chấm từ đâu, và kỹ năng ngoài mẫu đang ở vùng nào.
+
+    Trang từng chấm một bản DỰNG LẠI bỏ qua hiệu chỉnh — một mô hình khác mô
+    hình được công bố — và in "nhóm dựng lại −7,4%" lẫn Đặc Biệt 25,9%. Nay
+    chấm thẳng vector đã công bố; thẻ này nói rõ điều ấy và cho thấy kết luận
+    của bộ theo dõi, để người đọc không phải tự suy từ biểu đồ.
+    """
+    monitor = {row["mode"]: row for row in report.get("monitor", [])}
+    cards = []
+    for mode, block in report.get("modes", {}).items():
+        if block.get("source") == "published":
+            origin = (
+                f"kỳ đã công bố, chấm với kết quả quay thật "
+                f"({html.escape(block['first_day'])} → {html.escape(block['last_day'])})."
+            )
+        else:
+            origin = "kỳ DỰNG LẠI — chưa đủ artifact đã công bố để chấm trực tiếp."
+        row = monitor.get(mode)
+        if row:
+            verdict = (
+                f"<br>{row['days']} kỳ gần nhất: kỹ năng <b>{_pct(row['mean'], 4)}</b>, "
+                f"khoảng [{_pct(row['low'], 4)}, {_pct(row['high'], 4)}] ở "
+                f"z={row['z']:g}. {html.escape(_MONITOR_WORDS.get(row['state'], ''))}"
+            )
+        else:
+            verdict = ""
+        cards.append(
+            '<article class="ui-kpi">'
+            f'<span class="ui-kpi-label">{html.escape(mode_label(mode))} · nguồn chấm</span>'
+            f'<b class="ui-kpi-value">{block.get("days", 0)}</b>'
+            f'<span class="ui-kpi-sub">{origin}{verdict}</span>'
+            "</article>"
+        )
+    return f'<div class="ui-kpi-grid">{"".join(cards)}</div>'
+
+
 def _staleness(data_dir: Path, report: dict) -> str:
     """Báo cáo có cũ hơn lịch sử đánh giá hiện có không.
 
@@ -469,7 +515,9 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
 
     blocks.append(
         card(
-            coverage_cards(report.get("coverage", {})),
+            source_cards(report)
+            if any("source" in block for block in modes.values())
+            else coverage_cards(report.get("coverage", {})),
             title="Nguồn của các con số bên dưới",
             span=12,
             flush=True,

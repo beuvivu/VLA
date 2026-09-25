@@ -203,7 +203,7 @@ def test_the_published_page_explains_why_not_only_how_much() -> None:
     html = (ROOT / "docs" / "model-quality.html").read_text(encoding="utf-8")
     for needle in ("Độ tin cậy", "Độ phân giải", "Độ bất định", "Vì sao kỹ năng"):
         assert needle in html, needle
-    assert "artifact đã phát hành" in html, "trang phải nói rõ nguồn của con số"
+    assert "kỳ đã công bố, chấm với kết quả quay thật" in html, "trang phải nói rõ nguồn của con số"
     assert "<svg" in html, "trang phải có hình, không chỉ bảng"
 
 

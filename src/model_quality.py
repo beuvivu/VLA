@@ -43,6 +43,8 @@ from ensemble_utils import (
     load_ensemble_weights,
 )
 from xsmb_domain import baseline_rate
+from skill_monitor import MIN_DAYS, daily_skill, published_evaluation
+from skill_monitor import evaluate as evaluate_skill
 
 SCHEMA_VERSION = 1
 
@@ -260,7 +262,14 @@ def skill_series(history: pd.DataFrame, mode: str) -> dict:
         return {"days": 0}
     values = pd.to_numeric(sub["logloss_skill"], errors="coerce")
     usable = sub[values.notna()]
-    series = values.dropna().to_numpy(dtype=float)
+    return summarize_skill(
+        usable["target_date"].astype(str).tolist(), values.dropna().to_numpy(dtype=float)
+    )
+
+
+def summarize_skill(dates: list[str], series: np.ndarray) -> dict:
+    """Trung bình, sai số chuẩn, dải 95% và đường tích luỹ của chuỗi kỹ năng."""
+    series = np.asarray(series, dtype=float)
     if len(series) == 0:
         return {"days": 0}
     mean = float(series.mean())
@@ -276,7 +285,7 @@ def skill_series(history: pd.DataFrame, mode: str) -> dict:
         "points": [
             {"date": str(d), "skill": float(v), "cumulative": float(c)}
             for d, v, c in zip(
-                usable["target_date"].astype(str),
+                dates,
                 series,
                 np.cumsum(series) / np.arange(1, len(series) + 1),
                 strict=True,
@@ -334,18 +343,31 @@ def build(data_dir: Path) -> Path:
 
     modes = {}
     for mode in MODES:
-        predictions = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")
-        weights = load_ensemble_weights(data_dir, mode)
-        days, probabilities, labels = ensemble_probabilities(predictions, weights, mode)
+        # Chấm CHÍNH vector đã công bố trước kỳ quay (xem skill_monitor). Bản
+        # dựng lại từ pred_<mode>.csv bỏ qua hiệu chỉnh và tầng xếp chồng, tức
+        # chấm một mô hình khác: nó từng in Đặc Biệt tới 25,9% và kỹ năng
+        # −2,0% trong khi thứ người xem nhận cao nhất 1,28% và kỹ năng −0,03%.
+        # Chỉ lùi về bản dựng lại khi chưa đủ artifact để kết luận.
+        days, probabilities, labels = published_evaluation(data_dir, mode)
+        if len(days) >= MIN_DAYS:
+            source = "published"
+            skill = summarize_skill(days, daily_skill(mode, probabilities, labels))
+        else:
+            source = "reconstructed"
+            predictions = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")
+            weights = load_ensemble_weights(data_dir, mode)
+            days, probabilities, labels = ensemble_probabilities(predictions, weights, mode)
+            skill = skill_series(history, mode)
         modes[mode] = {
             "mode": mode,
+            "source": source,
             "days": len(days),
             "first_day": days[0],
             "last_day": days[-1],
             "murphy": murphy(probabilities, labels),
             "calibration": calibration(probabilities, labels),
             "sharpness": sharpness(probabilities, mode),
-            "skill": skill_series(history, mode),
+            "skill": skill,
         }
 
     # Ngày chấm cuối cùng, để trang phát hiện được báo cáo cũ. Bước chẩn đoán
@@ -358,6 +380,7 @@ def build(data_dir: Path) -> Path:
         "covers_through": max(covered) if covered else None,
         "brier_rows_rescaled": converted,
         "coverage": coverage(history),
+        "monitor": [check.as_dict() for check in evaluate_skill(data_dir)],
         "modes": modes,
     }
     out_dir = data_dir / "model_quality"

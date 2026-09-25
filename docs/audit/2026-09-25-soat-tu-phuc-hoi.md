@@ -265,3 +265,26 @@ không mô hình nào nâng được xác suất trúng thật lên trên mức 
 - **"Nhóm dựng lại −7,437%"** trên trang Chất lượng là các dòng lịch sử
   12-2025 → 01-2026 ghi `p_active`/`p_stable` ở thang sai (lỗi đã sửa từ
   trước, dữ liệu cũ còn nguyên). Không phải kỹ năng của mô hình hiện tại.
+
+## 9. Trang Chất lượng chấm thứ đã công bố, và theo dõi kỹ năng liên tục
+
+Chủ dự án chọn làm cả hai việc đề xuất ở mục 8.
+
+- **Trang Chất lượng** nay chấm thẳng các vector đã công bố trước kỳ quay
+  (`skill_monitor.published_evaluation`), không chấm bản dựng lại. Trên 28 kỳ:
+  Đặc Biệt lớn nhất 1,28% (bản dựng lại in 25,9%), kỹ năng +0,002%; LOTO
+  −0,014%. Thẻ "Nguồn của các con số" nói rõ nguồn chấm, khoảng ngày và kết
+  luận của bộ theo dõi. Bản dựng lại chỉ còn làm phương án lùi khi chưa đủ
+  `MIN_DAYS` (20) kỳ.
+- **Bộ theo dõi** `src/skill_monitor.py`: 60 kỳ gần nhất, khoảng tin cậy hai
+  phía z=3 (chạy mỗi ngày trên cửa sổ chồng lấn nên 1,96 sẽ báo giả vài lần
+  mỗi năm), sàn hiệu ứng 0,0001%. Chạy trong job `verify-published-pages`; rời
+  vùng 0 theo hướng nào cũng làm lượt đỏ. Phép kiểm dựng sẵn bắt được một lỗi
+  của chính bản đầu: dự báo trùng đúng mốc cho kỹ năng ±1e-16 với sai số chuẩn
+  còn nhỏ hơn, nên nó báo động giả — nay có sàn hiệu ứng.
+- Phép kiểm cây import trong `test_workflows.py` không bóc nháy khỏi đặc tả gói
+  (`"numpy==2.2.6"` thành tên `"numpy`); đã sửa và ghim bằng phép kiểm riêng.
+- Phép kiểm sẵn có `test_quality_page_shows_skill_only_when_the_data_supports_it`
+  bắt thêm một lỗi của bản đầu: thiếu `xsmb-2-digits.csv` thì
+  `published_evaluation` ném ngoại lệ và làm sập cả bước chẩn đoán. Nay thiếu
+  dữ liệu nghĩa là "chưa có gì để chấm" — trang lùi về bản dựng lại.

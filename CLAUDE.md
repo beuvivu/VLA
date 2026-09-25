@@ -174,6 +174,20 @@ tính làm nhọn xác suất (a=4,89) và thua cả hằng số, nên một mô
 hằng số (+0,0086%) vẫn "thắng 46%" và được trộn vào production. Thắng một đối
 thủ hỏng không chứng minh được gì.
 
+## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
+
+Trang Chất lượng mô hình và bộ theo dõi `src/skill_monitor.py` chấm chính
+vector xác suất đã công bố trước kỳ quay
+(`data/predict/predict_next_<mode>_all_<ngày>.csv`) với kết quả quay thật.
+Bản dựng lại từ `data/history/pred_<mode>.csv` bỏ qua hiệu chỉnh và tầng xếp
+chồng — tức chấm một mô hình KHÁC — nên chỉ dùng khi chưa đủ `MIN_DAYS` kỳ.
+
+`skill_monitor` chạy trong job `verify-published-pages` trên mỗi commit của
+pipeline và làm lượt đỏ khi kỹ năng ngoài mẫu rời vùng 0 theo HƯỚNG NÀO CŨNG
+VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ hơn là hồi quy,
+tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
+ngưỡng.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được
@@ -189,7 +203,7 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Bộ kiểm hiện **xanh hết: 2 109 phép kiểm**. Bốn kịch bản chốt phát hành
+Bộ kiểm hiện **xanh hết: 2 121 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.

@@ -404,6 +404,9 @@ def _installed_by(run_text: str) -> set[str]:
         for req in re.findall(r"-r\s+(\S+)", args):
             installed |= _requirement_names(req)
         for token in args.split():
+            # Đặc tả có < hoặc > PHẢI bọc nháy trong shell ("scipy>=1.10,<2.0"),
+            # nên bóc nháy trước khi lấy tên gói.
+            token = token.strip("\"'")
             if token.startswith("-") or "/" in token:
                 continue
             if token in {"pip", "wheel", "setuptools"}:
@@ -452,6 +455,16 @@ def test_the_audit_actually_finds_the_jobs_that_run_python() -> None:
         ("watchdog.yml", "audit-and-recover"),
     ):
         assert expected in seen, (expected, sorted(seen))
+
+
+def test_the_install_parser_reads_quoted_requirement_specs() -> None:
+    """Không bóc nháy thì `"numpy==2.2.6"` thành tên gói `"numpy` và phép kiểm
+    dưới báo thiếu một gói đã được cài."""
+    assert _installed_by('python -m pip install "numpy==2.2.6" \'scipy>=1.10,<2.0\' pandas') == {
+        "numpy",
+        "scipy",
+        "pandas",
+    }
 
 
 def test_every_workflow_installs_what_its_python_scripts_import() -> None:
