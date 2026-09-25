@@ -31,6 +31,15 @@ Số đo phải giữ (`test_every_page_pins_the_measured_shell_geometry` canh):
 dải biểu tượng 80px, dải chi tiết 240px, thanh trên 80px, bo 8px. Và dải chi
 tiết **phủ lên** nội dung — `margin-left` của `.app-main` không đổi khi mở.
 
+**Bọc khung phải LUỸ ĐẲNG và phải SỬA được trang đã bọc chồng.**
+`docs/live.html` là trang duy nhất viết tay, nên mỗi lượt pipeline đọc lại
+chính bản đã có khung. Ngày 24-09 nó dày lên 11 lớp vì `ui_theme.dock()` trả
+`<nav>` KÈM một `<script>`: gỡ nav mà sót script thì đuôi khung không còn ở
+cuối thân trang và bước bóc bỏ cuộc. `wrap_page` nay gỡ cả hai, và
+`test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired` dựng lại
+đúng hình dạng ấy. Job `verify-published-pages` trong `update-data.yml` chạy
+các phép kiểm bất biến trang trên mỗi commit của pipeline.
+
 ## Giao diện — trạng thái hiện tại
 
 Giao diện đang chạy là **giao diện cũ**, đã được khôi phục từ git history sau
@@ -167,7 +176,13 @@ LUẬT trên dữ liệu dựng sẵn.
 
 Chạy bộ kiểm: `PYTHONPATH=src python3 -m pytest tests -q`
 
-Bộ kiểm hiện **xanh hết: 1 907 phép kiểm**. Bốn kịch bản chốt phát hành
+Khối `run:` của workflow là MÃ, không phải văn bản:
+`tests/test_workflow_shell_behaviour.py` chạy nguyên khối lấy từ YAML bằng
+đúng lệnh shell của GitHub, chỉ thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy.
+Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
+một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
+
+Bộ kiểm hiện **xanh hết: 2 104 phép kiểm**. Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.
