@@ -70,15 +70,39 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Dự đoán chỉ khác bản đã có ở dấu thời gian thì KHÔNG ghi. Trước
-          # đây mỗi lượt đều ghi một commit như thế (tám commit cho cùng một
-          # kỳ trong một đêm), và hai lượt nối nhau đủ để xung đột.
+          # Dự đoán chỉ khác bản đã có ở dấu thời gian — hoặc ở nhiễu dấu
+          # phẩy động — thì KHÔNG ghi. Trước đây mỗi lượt đều ghi một commit
+          # như thế (tám commit cho cùng một kỳ trong một đêm), và hai lượt nối
+          # nhau đủ để xung đột. Nhiễu là có thật: hai runner khác CPU cho xác
+          # suất lệch nhau cỡ 1e-10 (commit b8afdc7f), trong khi trang chỉ hiện
+          # tới 0,01%.
           same_as_head() {
             git cat-file -e HEAD:data/predictions_today.json 2>/dev/null || return 1
             python - <<'PY'
           import json
+          import math
           import subprocess
           import sys
+
+
+          def same(a, b):
+              # Nhiễu là TUYỆT ĐỐI, không tương đối: đo trên b8afdc7f, mọi
+              # trường lệch tối đa 1,08e-10, nhưng `lift` (xác suất trừ đường
+              # cơ sở, cỡ 8e-4) vì thế lệch TƯƠNG ĐỐI tới 1,3e-7. Ngưỡng 1e-8
+              # gấp ~100 lần nhiễu, và nhỏ hơn bước hiển thị 0,01% cả vạn lần.
+              # Mọi thứ khác so đúng tuyệt đối — thứ tự và danh tính các số
+              # được chọn phải trùng.
+              if isinstance(a, float) or isinstance(b, float):
+                  return (
+                      isinstance(a, (int, float)) and isinstance(b, (int, float))
+                      and math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-8)
+                  )
+              if isinstance(a, dict) and isinstance(b, dict):
+                  return a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+              if isinstance(a, list) and isinstance(b, list):
+                  return len(a) == len(b) and all(same(x, y) for x, y in zip(a, b))
+              return a == b
+
 
           head = subprocess.run(
               ["git", "show", "HEAD:data/predictions_today.json"],
@@ -90,7 +114,7 @@ jobs:
           for payload in (old, new):
               payload.pop("generated_at_local", None)
               payload.pop("generated_at_utc", None)
-          sys.exit(0 if old == new else 1)
+          sys.exit(0 if same(old, new) else 1)
           PY
           }
 
