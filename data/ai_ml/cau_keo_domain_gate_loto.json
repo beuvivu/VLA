@@ -1,31 +1,31 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-09-26T09:58:07Z",
+  "generated_at": "2026-09-26T11:49:07Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
       "fold": 1,
-      "calib_start": "2026-04-28",
-      "val_start": "2026-05-28",
-      "val_end_exclusive": "2026-06-27"
+      "calib_start": "2026-04-29",
+      "val_start": "2026-05-29",
+      "val_end_exclusive": "2026-06-28"
     },
     {
       "fold": 2,
-      "calib_start": "2026-05-28",
-      "val_start": "2026-06-27",
-      "val_end_exclusive": "2026-07-27"
+      "calib_start": "2026-05-29",
+      "val_start": "2026-06-28",
+      "val_end_exclusive": "2026-07-28"
     },
     {
       "fold": 3,
-      "calib_start": "2026-06-27",
-      "val_start": "2026-07-27",
-      "val_end_exclusive": "2026-08-26"
+      "calib_start": "2026-06-28",
+      "val_start": "2026-07-28",
+      "val_end_exclusive": "2026-08-27"
     },
     {
       "fold": 4,
-      "calib_start": "2026-07-27",
-      "val_start": "2026-08-26",
+      "calib_start": "2026-07-28",
+      "val_start": "2026-08-27",
       "val_end_exclusive": null
     }
   ],
@@ -86,32 +86,46 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": 1.0661729809013351e-05,
-      "mean_logloss_skill": 8.301595501416706e-06
+      "mean_brier_skill": 0.0001728272094407445,
+      "mean_logloss_skill": 0.00015729861474512625
     },
     "cap_50": {
-      "mean_brier_skill": -1.007516285011932e-05,
-      "mean_logloss_skill": -7.92216664996361e-06
+      "mean_brier_skill": 0.00010465580224409683,
+      "mean_logloss_skill": 9.461230136657335e-05
     },
     "bo": {
-      "mean_brier_skill": 1.6234586944248447e-05,
-      "mean_logloss_skill": 1.686202166433401e-05
+      "mean_brier_skill": 8.2743733580942e-05,
+      "mean_logloss_skill": 7.450975409632724e-05
     },
     "bong": {
-      "mean_brier_skill": 8.054906294648107e-05,
-      "mean_logloss_skill": 7.292950174901414e-05
+      "mean_brier_skill": 0.00013261970251580302,
+      "mean_logloss_skill": 0.00012016256493477637
     },
     "cham": {
-      "mean_brier_skill": -7.903622510176514e-05,
-      "mean_logloss_skill": -6.940202449292132e-05
+      "mean_brier_skill": -3.933645161032635e-05,
+      "mean_logloss_skill": -3.617217518621427e-05
     },
     "tong": {
-      "mean_brier_skill": 2.3519221795324155e-05,
-      "mean_logloss_skill": 2.1577689372144723e-05
+      "mean_brier_skill": 1.4585926607178871e-05,
+      "mean_logloss_skill": 1.3193030742360759e-05
     }
   },
-  "screened_groups": [],
-  "confirmation": {},
+  "screened_groups": [
+    "partner",
+    "bong"
+  ],
+  "confirmation": {
+    "partner": {
+      "brier_skill": -0.00011972939306709168,
+      "logloss_skill": -0.00010754694203131655,
+      "confirmed": false
+    },
+    "bong": {
+      "brier_skill": -0.00029343689029779057,
+      "logloss_skill": -0.000263638974067546,
+      "confirmed": false
+    }
+  },
   "confirmed_groups": [],
   "selected_features": [
     "number_value",
@@ -321,15 +335,15 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": -0.0004265546821565866,
-  "all_groups_confirmation_logloss_skill": -0.00038377551311582505,
+  "all_groups_confirmation_brier_skill": -0.0001853379367639116,
+  "all_groups_confirmation_logloss_skill": -0.00016654804947841104,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
   "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold.",
   "reason": "no individual domain feature group survived confirmation",
-  "anchor_date": "2026-09-25",
-  "predict_for_date": "2026-09-26",
+  "anchor_date": "2026-09-26",
+  "predict_for_date": "2026-09-27",
   "production_selected_groups": [],
   "production_feature_count": 39,
   "baseline_feature_count": 39
