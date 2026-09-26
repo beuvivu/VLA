@@ -29,6 +29,7 @@ from html import escape
 from typing import Final
 
 from app_icons import icon_svg
+from nexlink_icons import nexlink_icon, navigation_icon
 from ui_theme import LANDING_SECTIONS, SITE_NAV, SITE_SEARCH_EXTRAS
 
 #: Bề rộng dải biểu tượng. Số đo của trang tham chiếu, dùng ở cả CSS lẫn JS.
@@ -71,25 +72,41 @@ def _nhom_cua_trang(ten_tep: str) -> int:
 
 
 def rail_html(current: str) -> str:
-    """Dải biểu tượng cấp một: một nút cho mỗi nhóm của ``SITE_NAV``."""
-    hoat_dong = _nhom_cua_trang(current)
-    phan = [
+    """All eleven reference rail icons, in the original groups and order."""
+    active = _nhom_cua_trang(current)
+    parts = [
         '<aside class="app-rail" id="app-rail" aria-label="Nhóm chức năng">',
         '<div class="app-rail-list" role="tablist" aria-orientation="vertical">',
     ]
-    for i, (ten, muc) in enumerate(SITE_NAV):
-        bieu_tuong = muc[0][2] if muc else "◆"
-        chon = "true" if i == hoat_dong else "false"
-        phan.append(
-            f'<button class="app-rail-btn" role="tab" type="button"'
-            f' id="app-tab-{i}" aria-controls="app-panel-{i}" aria-selected="{chon}"'
-            f' data-app-group="{i}" title="{escape(ten, quote=True)}">'
-            f'<span class="app-rail-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
-            f'<span class="app-rail-lb">{escape(NHAN_NGAN.get(ten, ten))}</span>'
-            f"</button>"
+    # Seven existing groups plus two useful direct links occupy the nine slots.
+    for position, (group, icon) in enumerate([(0, 'home'), (1, 'crown'), (2, 'layers'),
+                                            (3, 'circles'), (4, 'components'),
+                                            (6, 'code'), (5, 'clipboard')]):
+        if position in (3, 5):
+            parts.append('<span class="app-rail-divider" role="presentation"></span>')
+        label = SITE_NAV[group][0]
+        selected = 'true' if group == active else 'false'
+        parts.append(
+            f'<button class="app-rail-btn" role="tab" type="button" id="app-tab-{group}"'
+            f' aria-controls="app-panel-{group}" aria-selected="{selected}"'
+            f' data-app-group="{group}" title="{escape(label, quote=True)}">'
+            f'<span class="app-rail-ic">{nexlink_icon(icon)}</span>'
+            f'<span class="app-rail-lb">{escape(label)}</span></button>'
         )
-    phan.append("</div></aside>")
-    return "".join(phan)
+    for icon, href, label in [('chart', 'statistics.html', 'Ma trận thống kê'),
+                              ('robot', 'dashboard.html', 'Bảng điều khiển AI/ML')]:
+        parts.append(f'<a class="app-rail-link" href="{href}" title="{label}" aria-label="{label}">'
+                     f'{nexlink_icon(icon)}' + ('<span class="app-status-dot" aria-hidden="true"></span>' if icon == 'robot' else '') + '</a>')
+    parts.extend([
+        '<span class="app-rail-divider" role="presentation"></span>',
+        '<button class="app-rail-link app-rail-add" id="app-rail-add" type="button"'
+        ' title="Mở chức năng" aria-label="Mở chức năng" aria-haspopup="dialog" aria-controls="app-global-search">'
+        + nexlink_icon('plus') + '</button>',
+        '<button class="app-rail-link app-rail-exit" id="app-rail-exit" type="button"'
+        ' title="Đóng menu" aria-label="Đóng menu">' + nexlink_icon('exit') + '</button>',
+        '</div></aside>',
+    ])
+    return ''.join(parts)
 
 
 def panel_html(current: str) -> str:
@@ -120,7 +137,7 @@ def panel_html(current: str) -> str:
             phan.append(
                 f'<a class="app-nav-item{lop}" href="{escape(href, quote=True)}"{danh_dau}'
                 f' data-app-label="{escape(nhan, quote=True)}">'
-                f'<span class="app-nav-ic">{icon_svg(bieu_tuong, "app-ic")}</span>'
+                f'<span class="app-nav-ic">{navigation_icon(bieu_tuong)}</span>'
                 f'<span class="app-nav-lb">{escape(nhan)}</span></a>'
             )
         phan.append("</nav>")
@@ -135,41 +152,65 @@ def panel_html(current: str) -> str:
 
 
 def header_html(current: str) -> str:
-    """Thanh trên: nút thu/mở, đường dẫn, và các điều khiển có việc thật."""
-    hoat_dong = _nhom_cua_trang(current)
-    nhom = escape(SITE_NAV[hoat_dong][0])
-    trang = next((nhan for _, muc in SITE_NAV for href, nhan, _ in muc
-                  if href == _trang_chuan(current)), "Tổng quan")
+    """Nexlink header layout, exact original vectors, real application actions."""
+    group = escape(SITE_NAV[_nhom_cua_trang(current)][0])
+    page = next((label for _, items in SITE_NAV for href, label, _ in items
+                 if href == _trang_chuan(current)), 'Tổng quan')
+    count = len({href for _, items in SITE_NAV for href, _, _ in items})
     return (
         '<header class="app-header" id="app-header">'
-        '<a class="app-rail-brand" href="index.html" title="Vietnam Lottery Analysis">'
-        f'<span aria-hidden="true">{icon_svg("ai-ml")}</span>'
-        '<span class="app-sr">Vietnam Lottery Analysis</span></a>'
+        '<a class="app-rail-brand" href="index.html" title="Vietnam Lottery Analysis" aria-label="Vietnam Lottery Analysis">'
+        + nexlink_icon('brand', 'app-brand-icon') + '</a>'
+        '<div class="app-header-inner">'
         '<button class="app-icon-btn app-toggle" id="app-toggle" type="button"'
-        ' aria-expanded="false" aria-controls="app-panel"'
-        f' title="Mở/đóng menu chi tiết">{icon_svg("menu")}'
-        '<span class="app-sr">Mở hoặc đóng menu chi tiết</span></button>'
-        '<nav class="app-crumbs" aria-label="Đường dẫn">'
-        f'<span class="app-crumb">{nhom}</span>'
-        '<span class="app-crumb-sep" aria-hidden="true">/</span>'
-        f'<span class="app-crumb app-crumb--now">{escape(trang)}</span>'
-        "</nav>"
-        '<div class="app-header-actions">'
-        '<button class="app-icon-btn app-search-trigger" id="app-search-open" type="button"'
-        ' aria-haspopup="dialog" aria-controls="app-global-search"'
-        f' title="Tìm chức năng">{icon_svg("tim-kiem")}'
-        '<span>Tìm chức năng</span><kbd>Ctrl K</kbd></button>'
-        '<button class="app-icon-btn" id="app-theme" type="button"'
-        f' title="Đổi chế độ màu"><span class="app-theme-ic" aria-hidden="true">{icon_svg("che-do")}</span>'
-        '<span class="app-sr">Đổi chế độ màu</span></button>'
-        '<a class="app-icon-btn app-calendar-link" href="so-ket-qua-truyen-thong.html"'
-        f' title="Sổ kết quả" aria-label="Sổ kết quả">{icon_svg("hom-nay")}</a>'
-        '<a class="app-icon-btn" href="model-quality.html"'
-        f' title="Chất lượng dữ liệu và mô hình" aria-label="Chất lượng dữ liệu và mô hình">{icon_svg("chat-luong")}</a>'
-        '<button class="app-icon-btn" id="app-fullscreen" type="button"'
-        f' title="Toàn màn hình" aria-label="Toàn màn hình">{icon_svg("toan-man-hinh")}</button>'
-        '<span class="app-header-brand">Vietnam Lottery Analysis<small>Thống kê · Phân tích</small></span>'
-        "</div></header>"
+        ' aria-expanded="false" aria-controls="app-panel" title="Mở/đóng menu chi tiết">'
+        + nexlink_icon('chevrons') + '<span class="app-sr">Mở hoặc đóng menu chi tiết</span></button>'
+        '<div class="app-header-start">'
+        '<button class="app-search-trigger" id="app-search-open" type="button"'
+        ' aria-haspopup="dialog" aria-controls="app-global-search" title="Tìm chức năng (Ctrl K)">'
+        + nexlink_icon('search') + '<span>Tìm kiếm chức năng…</span></button>'
+        f'<a class="app-header-badge" href="statistics.html">Chức năng phân tích<span>{count}</span></a>'
+        '</div>'
+        '<nav class="app-crumbs app-sr" aria-label="Đường dẫn">'
+        f'<span class="app-crumb">{group}</span><span aria-hidden="true"> / </span>'
+        f'<span class="app-crumb app-crumb--now">{escape(page)}</span></nav>'
+        '<div class="app-header-end">'
+        '<div class="app-theme-wrap"><button class="app-theme-switch" id="app-theme" type="button" title="Đổi chế độ màu">'
+        '<span class="app-theme-ic" aria-hidden="true">'
+        + nexlink_icon('sun', 'app-nexlink-ic app-theme-sun')
+        + nexlink_icon('moon', 'app-nexlink-ic app-theme-moon') + '</span>'
+        '<span class="app-sr">Đổi chế độ màu</span></button></div>'
+        '<span class="app-header-divider" aria-hidden="true"></span>'
+        '<div class="app-header-tools">'
+        '<a class="app-icon-btn" href="live.html" title="Kết quả trực tiếp" aria-label="Kết quả trực tiếp">'
+        + nexlink_icon('inbox') + '<span class="app-status-dot" aria-hidden="true"></span></a>'
+        '<div class="app-dropdown">'
+        '<button class="app-icon-btn" id="app-notifications-toggle" type="button"'
+        ' aria-expanded="false" aria-controls="app-notifications-menu" title="Cập nhật" aria-label="Cập nhật">'
+        + nexlink_icon('bell') + '</button>'
+        '<div class="app-dropdown-menu app-notifications-menu" id="app-notifications-menu" hidden>'
+        '<h2>Cập nhật</h2>'
+        '<a href="index.html#ket-qua">' + nexlink_icon('inbox') + '<span>Kết quả mới nhất<small>Xem bảng kết quả theo giải</small></span></a>'
+        '<a href="model-quality.html">' + nexlink_icon('clipboard') + '<span>Chất lượng mô hình<small>Kiểm tra dữ liệu và độ chính xác</small></span></a>'
+        '<a href="index.html#backtest">' + nexlink_icon('chart') + '<span>Kiểm định AI/ML<small>Đối chiếu với kết quả lịch sử</small></span></a>'
+        '</div></div>'
+        '<a class="app-icon-btn app-calendar-link" href="so-ket-qua-truyen-thong.html" title="Sổ kết quả" aria-label="Sổ kết quả">'
+        + nexlink_icon('calendar') + '</a></div>'
+        '<span class="app-header-divider" aria-hidden="true"></span>'
+        '<div class="app-dropdown app-profile">'
+        '<button class="app-profile-toggle" id="app-profile-toggle" type="button"'
+        ' aria-expanded="false" aria-controls="app-profile-menu" aria-label="Menu ứng dụng">'
+        '<span class="app-profile-copy"><strong>Vietnam Lottery</strong><small>'
+        + nexlink_icon('angle-down') + ' Analysis</small></span>'
+        '<span class="app-avatar"><img src="assets/app-avatar.webp" alt="" width="40" height="40"></span></button>'
+        '<div class="app-dropdown-menu app-profile-menu" id="app-profile-menu" hidden>'
+        '<a href="index.html">' + nexlink_icon('house-blank') + 'Trang tổng quan</a>'
+        '<a href="dashboard.html">' + nexlink_icon('circle-user') + 'Bảng điều khiển AI/ML</a>'
+        '<a href="model-quality.html">' + nexlink_icon('review') + 'Chất lượng mô hình</a>'
+        '<button id="app-fullscreen" type="button" title="Toàn màn hình" aria-label="Toàn màn hình">'
+        + nexlink_icon('arrows') + '<span>Toàn màn hình</span></button>'
+        '<a href="research-lab.html">' + nexlink_icon('sliders-h-square') + 'Công cụ nghiên cứu</a>'
+        '</div></div></div></div></header>'
     )
 
 

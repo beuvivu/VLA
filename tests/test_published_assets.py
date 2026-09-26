@@ -11,6 +11,7 @@ Hai lớp lỗi khác nhau, nên hai phép kiểm khác nhau:
 from __future__ import annotations
 
 import re
+import posixpath
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +51,23 @@ def _duong_dan_trang_tro_toi() -> dict[str, set[str]]:
             dich = khop.group(1).split("?")[0].split("#")[0]
             if dich and not dich.endswith("/"):
                 ra.setdefault(dich, set()).add(trang.name)
+    # Fonts/images referenced by a reachable stylesheet are reachable too.
+    # Follow the CSS dependency graph instead of exempting individual fonts.
+    scanned = set()
+    while True:
+        pending = [name for name in ra if name.endswith('.css') and name not in scanned]
+        if not pending:
+            break
+        for name in pending:
+            scanned.add(name)
+            stylesheet = DOCS / name
+            if not stylesheet.is_file():
+                continue
+            for reference in re.findall(r'url\(\s*[\"\']?([^\s)\"\']+)', stylesheet.read_text()):
+                if re.match(r'(?:[a-z]+:|//|#)', reference, re.I):
+                    continue
+                target = posixpath.normpath(posixpath.join(posixpath.dirname(name), reference.split('?')[0].split('#')[0]))
+                ra.setdefault(target, set()).update(ra[name])
     return ra
 
 

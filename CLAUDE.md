@@ -20,7 +20,8 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
     src/assets/app-shell.js       thu/mở, đổi nhóm, hai tìm kiếm độc lập
     src/assets/app-theme.js       khôi phục/đổi màu, OS và storage sync
-    src/app_icons.py              SVG Lucide chính thức, 20px/grid24/stroke2
+    src/app_icons.py              SVG Lucide cho nội dung / global search
+    src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
 Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 32 mục. Thêm mục thì
 thêm ở đó, không thêm ở `app_shell.py`.
@@ -229,8 +230,12 @@ bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ l�
   để quy tắc bóc/bọc shell vẫn lũy đẳng.
 - Sidebar Filter: `#app-sidebar-filter`, chỉ lọc nhóm đang hiển thị. Không
   dùng lại input, query hoặc handler global search.
-- Icon là SVG Lucide canonical tại `src/assets/icons`, có LICENSE và
-  provenance pin commit. Không vẽ lại icon tay hoặc đổi về Unicode/icon font.
+- Theo yêu cầu mới ngày 26/09/2026, rail/header dùng SVG gốc Nexlink tại
+  `src/assets/nexlink`, giữ đúng đường nét, opacity, thứ tự 11 icon và header.
+  Sidebar dùng outline Flaticon Rounded chuyển nguyên hình học sang SVG.
+  `nexlink_icons.py` là renderer của shell; không thay bằng Lucide tương tự.
+  Lucide tại `src/assets/icons` chỉ còn dùng trong nội dung/global search.
+  Mọi bộ icon có provenance; không vẽ lại hoặc dùng Unicode/icon font.
 - Mọi bề mặt/chữ/viền/control/modal phải đọc token; màu có nghĩa dữ liệu dùng
   cặp token riêng, kiểm AA cả hai theme. Không dùng OS media riêng để bỏ qua
   lựa chọn sáng tường minh. Bản in đặt lại token sáng để chữ đọc được.

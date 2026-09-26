@@ -97,6 +97,25 @@ def main():
                         page.screenshot(path=str(OUT / f"failure-{name}-{width}.png"))
                 # Hai truy vấn tồn tại cùng lúc, đóng modal phải trả về bộ lọc.
                 page.goto(base + "/tan-suat-cap-loto.html", wait_until="load")
+                # Reference header controls must work at both widths, with visible menus.
+                page.locator('#app-profile-toggle').click()
+                expect(page.locator('#app-profile-menu')).to_be_visible()
+                page.locator('#app-notifications-toggle').click()
+                expect(page.locator('#app-profile-menu')).not_to_be_visible()
+                notifications = page.locator('#app-notifications-menu')
+                expect(notifications).to_be_visible()
+                menu_box = notifications.bounding_box()
+                assert menu_box['x'] >= 0 and menu_box['x'] + menu_box['width'] <= width
+                notifications.locator('a').first.focus()
+                page.keyboard.press('Escape')
+                expect(page.locator('#app-notifications-toggle')).to_be_focused()
+                expect(notifications).not_to_be_visible()
+                page.locator('#app-profile-toggle').press('ArrowDown')
+                expect(page.locator('#app-profile-menu a').first).to_be_focused()
+                page.keyboard.press('Escape')
+                expect(page.locator('#app-profile-toggle')).to_be_focused()
+                assert page.locator('.app-rail-list svg').count() == 11
+                assert page.locator('.app-rail-divider').count() == 3
                 page.locator("#app-toggle").click()
                 sidebar = page.locator("#app-sidebar-filter")
                 sidebar.fill("cap")

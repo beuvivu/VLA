@@ -125,6 +125,6 @@ def test_every_published_page_draws_the_icon_set(page: Path) -> None:
     """Mọi trang có đủ icon của nhóm và mục; nguồn render kiểm riêng phía trên."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
-    expected = len(SITE_NAV) + sum(len(items) for _, items in SITE_NAV)
+    expected = 11 + sum(len(items) for _, items in SITE_NAV)
     count = len(soup.select(".app-rail .app-ic, .app-panel .app-nav-ic .app-ic"))
     assert count == expected, f"{page.name}: {count} biểu tượng, cần {expected}"

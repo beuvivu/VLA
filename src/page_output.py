@@ -260,6 +260,11 @@ def _attach_shell(path: Path, html: str) -> str:
     assets.mkdir(parents=True, exist_ok=True)
     write_stylesheet_text(assets / "app-shell.css", _SHELL_CSS_NGUON.read_text(encoding="utf-8"))
     (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    # Shell typography and profile image use the same local assets as the reference.
+    reference_assets = Path(__file__).with_name("assets") / "nexlink"
+    for source in reference_assets.glob("InstrumentSans-*"):
+        (assets / source.name).write_bytes(source.read_bytes())
+    (assets / "app-avatar.webp").write_bytes((reference_assets / "avatar.webp").read_bytes())
     head, rest = html.split("</head>", 1)
     # Bóc bản cũ trước khi chèn bản mới, đúng thứ tự đã học ở
     # `_attach_visual_system`: ghi lại một trang đã ghi phải cho ra đúng tệp ấy.

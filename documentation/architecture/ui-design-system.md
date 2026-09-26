@@ -206,7 +206,12 @@ phần trang chủ. Sidebar Filter chỉ lọc nhóm hiện tại. Hai input/ID/
 độc lập; mở tìm kiếm không thay trạng thái menu. Chọn một đích là điều hướng
 thật, giải phóng lớp phủ trên điện thoại.
 
-Icons dùng Lucide canonical tự host: viewBox24, kích thước20px, stroke2,
+Cập nhật 26/09/2026: rail/header dùng SVG Nexlink gốc (24px, opacity và nét
+nguyên bản), sidebar dùng Flaticon Rounded từ đúng font của Nexlink chuyển
+sang SVG. Nguồn và SHA-256: `src/assets/nexlink/provenance.json`. Header dùng
+Instrument Sans, theme pill 74×40, ba icon inbox/bell/calendar và menu profile.
+
+Icon nội dung/global search dùng Lucide canonical tự host: viewBox24, kích thước20px, stroke2,
 currentColor. Hover/active dùng Indigo `#4F46E5` ở light và màu chữ nhấn sáng
 đủ tương phản ở dark. Giữ giấy phép và provenance ở `src/assets/icons`.
 
