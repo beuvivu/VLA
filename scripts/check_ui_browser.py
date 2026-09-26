@@ -6,6 +6,7 @@ import json
 import threading
 
 from playwright.sync_api import expect, sync_playwright
+from check_landing_readability_browser import check_landing
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "ui-browser-artifacts"
@@ -90,6 +91,8 @@ def main():
                                 assert contrast(colors) >= 4.5, colors
                             if name in ("index.html", "statistics.html", "tan-suat-cap-loto.html"):
                                 page.screenshot(path=str(OUT / f"{name}-{width}-{'dark' if dark else 'light'}.png"))
+                            if name == "index.html":
+                                state["landing"] = check_landing(page, OUT, width, dark)
                             results.append({"page": name, "width": width, **state})
                         assert not errors, errors
                     except Exception as error:

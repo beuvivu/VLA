@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 
 from build_fun_prediction import (
     BLOCK_ID,
@@ -142,3 +143,44 @@ def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:
     assert "Không phải kết quả thật" in text
     assert "LOTO ngày mai" in text
     assert "Đặc Biệt ngày mai" in text
+
+
+def test_landing_simulation_does_not_repeat_its_neighbouring_prediction_panels(tmp_path: Path) -> None:
+    """Chèn lại bảng vẫn giữ đủ số và đích tra cứu trong đúng một thẻ mô phỏng."""
+    data = tmp_path / "data"
+    _write_prediction_fixture(data)
+    payload = build_fun_draw(load_prediction_inputs(data))
+    payload["groups"][0]["values"][0].update(value="00107", suffix="07")
+    payload["groups"][-1]["values"][-1].update(value="00", suffix="00")
+    page = tmp_path / "index.html"
+    page.write_text(
+        "<!doctype html><html><head></head><body><div class='next-day'>"
+        "<section id='mo-phong' class='section'></section>"
+        "<article><h3>Đặc Biệt ngày mai</h3></article>"
+        "<article><h3>LOTO ngày mai</h3></article>"
+        "</div></body></html>",
+        encoding="utf-8",
+    )
+
+    assert inject_into_html(page, payload)
+    assert inject_into_html(page, payload)
+    soup = BeautifulSoup(page.read_text(encoding="utf-8"), "html.parser")
+    simulation = soup.select_one("#mo-phong")
+    assert simulation is not None
+    assert len(soup.select(".next-day > *")) == 3
+    assert len(simulation.select(f"#{BLOCK_ID}")) == 1
+    assert simulation.select(".fun-prob-panels") == []
+    assert simulation.select(".fun-prob-row") == []
+    assert len(simulation.select("tr[data-prize]")) == 8
+    numbers = simulation.select("button.fun-prize-number")
+    assert len(numbers) == 27
+    assert [button.get_text(strip=True) for button in numbers] == [
+        item["value"] for group in payload["groups"] for item in group["values"]
+    ]
+    assert numbers[0].get_text(strip=True) == "00107"
+    assert (numbers[0]["data-mode"], numbers[0]["data-number"]) == ("de", "07")
+    assert numbers[-1].get_text(strip=True) == "00"
+    assert (numbers[-1]["data-mode"], numbers[-1]["data-number"]) == ("loto", "00")
+    assert "Không phải kết quả thật" in simulation.get_text(" ", strip=True)
+    assert payload["disclaimer"] in simulation.get_text(" ", strip=True)
+    assert payload["method"] in simulation.get_text(" ", strip=True)

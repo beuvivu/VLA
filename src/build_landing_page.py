@@ -21,7 +21,9 @@ import pandas as pd
 
 from app_icons import icon_svg
 from calendar_widget import render_calendar
-from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
+from draw_metadata import load_draw_metadata, station_for_date
+from shared_results import draw_from_row, render_result_board, shared_results_css
+from ui_locale import COLUMN_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 from ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
@@ -64,6 +66,18 @@ PATH_TABLE_LABELS = {
     "hit_ratio": "Trúng/Mẫu",
     "p_mean": "Tỷ lệ",
     "rule_score": "Điểm",
+}
+
+# Căn lề và độ chính xác chỉ thuộc tầng hiển thị; không sửa bảng đầu vào.
+NUMERIC_TABLE_COLUMNS = frozenset({
+    "count", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period",
+    "top_k", "validation_days", "hit_any_days", "avg_hits_per_day", "val_brier",
+    "val_logloss", "base_count", "current_gap", "hit_count", "mean_gap", "max_gap",
+    "z_score", "lag_days", "p_mean", "hit_ratio", "current_streak", "rule_score",
+})
+TABLE_DECIMALS = {
+    "avg_per_draw": 2, "avg_hits_per_day": 2, "mean_gap": 2, "z_score": 2,
+    "val_brier": 4, "val_logloss": 3, "rule_score": 1,
 }
 
 PALETTES = {
@@ -227,6 +241,8 @@ def _latest_draw(repo_root: Path) -> dict[str, Any]:
         return {"date": "", "groups": [], "numbers": [], "counts": {}}
     df = df.sort_values("date")
     row = df.iloc[-1].to_dict()
+    draw_date = row.get("date", "")
+    metadata = load_draw_metadata(repo_root).get(draw_date, {"station": station_for_date(draw_date)})
     groups = []
     numbers: list[str] = []
     for key, label, cols, kind in PRIZE_GROUPS:
@@ -245,6 +261,7 @@ def _latest_draw(repo_root: Path) -> dict[str, Any]:
         tails[number[1]].append(label)
     return {
         "date": row.get("date", ""),
+        "draw": draw_from_row(row, metadata=metadata),
         "special": _fmt_prize("special", row.get("special", "")),
         "special_2d": _last2_from_prize("special", row.get("special", "")),
         "groups": groups,
@@ -399,48 +416,6 @@ def _render_live_block(latest: Mapping[str, Any]) -> str:
         </div>
       </section>
     """
-
-
-def _render_result_table(latest: Mapping[str, Any]) -> str:
-    """Bảng giải kẻ ô theo Sổ kết quả, giữ đủ số và thao tác xem căn cứ."""
-    if not latest.get("groups"):
-        return "<div class='empty'>Chưa có dữ liệu kết quả ngày.</div>"
-    rows = []
-    for group in latest["groups"]:
-        key = html.escape(str(group["key"]))
-        numbers = []
-        for value in group["values"]:
-            text = html.escape(value)
-            if key == "special":
-                text = html.escape(value[:-2]) + f"<span class='app-special-tail'>{html.escape(value[-2:])}</span>"
-            numbers.append(
-                f"<button type='button' class='prize-number app-prize-number {key}' "
-                f"data-mode='loto' data-number='{html.escape(value[-2:])}' "
-                f"aria-label='{html.escape(str(group['label']))} {html.escape(value)}. Xem LOTO {html.escape(value[-2:])}'>{text}</button>"
-            )
-        rows.append(
-            f"<tr data-prize='{key}'><th scope='row' class='app-prize-label'>{html.escape(str(group['label']))}</th>"
-            f"<td><div class='app-prize-values' style='--count:{len(numbers)}'>{''.join(numbers)}</div></td></tr>"
-        )
-    return "<div class='result-scroll'><table class='result-table app-prize-table' aria-label='Kết quả các giải XSMB'><tbody>" + "".join(rows) + "</tbody></table></div>"
-
-
-def _render_compact_head_tail(latest: Mapping[str, Any]) -> str:
-    """Gộp đầu và đuôi trong một bảng để đối chiếu cùng bảng giải."""
-    rows = []
-    special = str(latest.get("special_2d", ""))
-    for digit in range(10):
-        cells = []
-        for kind in ("heads", "tails"):
-            values = latest.get(kind, {}).get(str(digit), [])
-            buttons = []
-            for value in values:
-                number = value.split("×")[0]
-                cls = " class='app-head-tail-special'" if number == special else ""
-                buttons.append(f"<button type='button'{cls} data-mode='loto' data-number='{html.escape(number)}' aria-label='Xem LOTO {html.escape(number)}'>{html.escape(value)}</button>")
-            cells.append("<td><div class='app-head-tail-numbers'>" + ("".join(buttons) or "<span class='muted'>—</span>") + "</div></td>")
-        rows.append(f"<tr><th scope='row'>{digit}</th>{''.join(cells)}</tr>")
-    return "<table class='app-head-tail-table' aria-label='LOTO theo đầu và đuôi'><thead><tr><th scope='col'>Số</th><th scope='col'>LOTO đầu</th><th scope='col' id='don-vi'>LOTO đuôi</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table>"
 
 
 def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
@@ -677,16 +652,22 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
             }
         )
 
+    pair_columns = (
+        ("col-pair", "Cặp số"),
+        ("col-count numeric", "Số lần cùng về"),
+        ("col-expected numeric", "Kỳ vọng"),
+        ("col-ratio numeric", "So kỳ vọng"),
+    )
     header = "".join(
-        f"<th>{html.escape(h)}</th>"
-        for h in ("Cặp số", "Số lần cùng về", "Kỳ vọng", "So kỳ vọng")
+        f"<th scope='col' class='{cls}'>{html.escape(label)}</th>"
+        for cls, label in pair_columns
     )
     body = "".join(
         "<tr>"
         f"<td class='col-pair'>{html.escape(r['pair'])}</td>"
-        f"<td class='col-count'>{r['count']}</td>"
-        f"<td class='col-count'>{r['expected']}</td>"
-        f"<td class='col-count'>{html.escape(r['ratio'])}</td>"
+        f"<td class='col-count numeric'>{r['count']}</td>"
+        f"<td class='col-expected numeric'>{r['expected']}</td>"
+        f"<td class='col-ratio numeric'>{html.escape(r['ratio'])}</td>"
         "</tr>"
         for r in rows
     )
@@ -701,7 +682,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
         </div>
       </div>
       <div class="table-wrap">
-        <table class="stat-table"><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>
+        <table class="stat-table pair-frequency-table"><colgroup><col><col><col><col></colgroup><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>
       </div>
       <p class="pair-note">
         ⚠️ Có <b>4 950</b> cặp số, nên cặp dẫn đầu luôn cao hơn kỳ vọng kể cả khi
@@ -725,6 +706,7 @@ def _render_table(
     searchable: bool = False,
     number_mode: str = "loto",
     labels: Mapping[str, str] | None = None,
+    framed: bool = True,
 ) -> str:
     rows = _df_to_rows(df, columns, limit=limit)
     if not rows:
@@ -735,8 +717,14 @@ def _render_table(
         # nth-child, nhưng chỉ số cột đổi theo mỗi lần gọi _render_table nên
         # quy tắc sẽ trượt sang cột khác lúc nào không hay.
         overrides = dict(labels or {})
+        column_classes = {
+            c: f"col-{html.escape(c)}" + (
+                " numeric" if c in NUMERIC_TABLE_COLUMNS or c.endswith("rate") else ""
+            )
+            for c in table_cols
+        }
         thead = "".join(
-            f'<th class="col-{html.escape(c)}">'
+            f'<th scope="col" class="{column_classes[c]}">'
             f"{html.escape(overrides.get(c) or _pretty_col(c))}</th>"
             for c in table_cols
         )
@@ -746,7 +734,7 @@ def _render_table(
             for c in table_cols:
                 value = row.get(c, "")
                 s = str(value)
-                cls = f' class="col-{html.escape(c)}"'
+                cls = f' class="{column_classes[c]}"'
                 if c.endswith("rate") or c in {"hit_any_rate", "prob", "p_mean"}:
                     # p_mean từng in nguyên 8 chữ số thập phân ("0.02544529"):
                     # vừa rộng vô ích vừa không ai đọc tới số thứ tám.
@@ -756,8 +744,8 @@ def _render_table(
                     s = f"<button class='num-link' data-mode='{number_mode}' data-number='{s}'>{s}</button>"
                     cells.append(f"<td{cls}>{s}</td>")
                     continue
-                elif c == "rule_score":
-                    s = _fmt_num(value, decimals=1)
+                elif c in TABLE_DECIMALS:
+                    s = _fmt_num(value, decimals=TABLE_DECIMALS[c])
                 elif c == "mode":
                     s = mode_label(value)
                 elif c in {"score_band", "period_kind", "stage", "status"}:
@@ -770,8 +758,9 @@ def _render_table(
             else ""
         )
         body = f"{search}<div class='table-wrap'><table class='stat-table {'dense' if dense else ''}'><thead><tr>{thead}</tr></thead><tbody>{''.join(trs)}</tbody></table></div>"
+    card_class = "card table-card" if framed else "table-card table-card-plain"
     return f"""
-    <article class="card table-card">
+    <article class="{card_class}">
       <div class="card-head">
         <div>
           <p class="eyebrow">Bảng dữ liệu</p>
@@ -805,35 +794,84 @@ def _render_special_board(repo_root: Path, kind: str) -> str:
 
 
 def _render_group_bars(repo_root: Path, period: str) -> str:
+    """Hiện đủ 0–9 từ tần suất đã chốt, kèm mẫu số và phạm vi quan sát."""
     df = _read_csv(repo_root / "data" / "advanced" / "head_tail_total_loto_current.csv", dtype=str)
-    if df.empty:
+    if df.empty or not {"period_kind", "period_key", "group_type", "group_value", "freq"} <= set(df.columns):
         return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng.</div>"
-    if "period_kind" in df.columns:
-        df = df[df["period_kind"] == period]
-    cards = []
-    # Ba nhóm này đều là TẦN SUẤT LOTO, chỉ khác cách gom (đầu / đuôi / tổng),
-    # nên chúng dùng chung sắc với bốn ma trận tần suất LOTO. Ba sắc khác nhau
-    # ngụ ý ba loại dữ liệu khác nhau — ở đây thì không phải. Riêng "blue" còn
-    # lệch đúng 22° khỏi sắc thương hiệu 243°, tức là một dấu hiệu MÃ HOÁ DỮ
-    # LIỆU mang màu của điều hướng.
-    for group, palette in [("head", "green"), ("tail", "green"), ("total", "green")]:
-        part = df[df.get("group_type", "") == group].copy()
-        if not part.empty:
-            group_label = GROUP_LABELS.get(group, group)
-            part["label"] = part["group_value"].map(lambda x, label=group_label: f"{label} {x}")
-        cards.append(
-            _render_bar_card(
-                title=GROUP_LABELS.get(group, group),
-                subtitle=f"Phân bổ {GROUP_LABELS.get(group, group).lower()} trong kỳ {period}.",
-                df=_sort_top(part, "freq", 10),
-                label_col="label",
-                value_col="freq",
-                palette=palette,
-                limit=10,
-                value_decimals=0,
+    df = df[df["period_kind"] == period]
+    if df.empty:
+        return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng cho kỳ này.</div>"
+    period_key = str(df["period_key"].max())
+    df = df[df["period_key"] == period_key]
+    period_label = {
+        "day": "Ngày", "week": "Tuần", "month": "Tháng", "year": "Năm",
+    }.get(period, "Kỳ")
+    period_text = f"{period_label} {period_key}"
+    if period == "month" and re.fullmatch(r"\d{4}-\d{2}", period_key):
+        period_text = f"Tháng {period_key[5:]}/{period_key[:4]}"
+    elif period == "day" and re.fullmatch(r"\d{4}-\d{2}-\d{2}", period_key):
+        period_text = f"Ngày {period_key[8:]}/{period_key[5:7]}/{period_key[:4]}"
+
+    # Phạm vi chỉ đếm ngày thực sự có dữ liệu trong kỳ, không suy ra số kỳ
+    # từ độ dài tháng hoặc lấy ngày hôm nay thay ngày đã cập nhật.
+    history = _read_csv(repo_root / "data" / "xsmb.csv", dtype=str)
+    coverage = "Chưa có thông tin phạm vi ngày quan sát."
+    if not history.empty and "date" in history.columns:
+        dates = pd.to_datetime(history["date"], errors="coerce").dropna().drop_duplicates()
+        if period == "week":
+            iso = dates.dt.isocalendar()
+            keys = iso["year"].astype(str) + "-W" + iso["week"].astype(str).str.zfill(2)
+        else:
+            keys = dates.dt.strftime({"day": "%Y-%m-%d", "month": "%Y-%m", "year": "%Y"}.get(period, "%Y-%m-%d"))
+        observed = dates[keys == period_key]
+        if not observed.empty:
+            coverage = (
+                f"{observed.min():%d/%m/%Y}–{observed.max():%d/%m/%Y} · "
+                f"{len(observed)} kỳ quay có dữ liệu."
             )
+
+    cards = []
+    _, high = PALETTES["green"]
+    # Cùng phép đo tần suất LOTO nên cả ba biểu đồ giữ cùng sắc xanh lục.
+    for group, title, label, description in (
+        ("head", "Đầu · hàng chục", "Đầu", "Chữ số hàng chục của hai số cuối. Ví dụ: 68 có đầu 6."),
+        ("tail", "Đuôi · hàng đơn vị", "Đuôi", "Chữ số hàng đơn vị của hai số cuối. Ví dụ: 68 có đuôi 8."),
+        ("total", "Tổng · modulo 10", "Tổng", "Cộng hai chữ số rồi lấy số cuối. Ví dụ: 68 → 6 + 8 = 14 → tổng 4."),
+    ):
+        part = df[df["group_type"] == group]
+        frequencies = {digit: 0 for digit in range(10)}
+        for row in part.to_dict("records"):
+            digit = _to_int(row["group_value"], default=-1)
+            if digit in frequencies:
+                frequencies[digit] += _to_int(row["freq"])
+        total = sum(frequencies.values())
+        maximum = max(frequencies.values()) or 1
+        rows = []
+        for digit, frequency in frequencies.items():
+            share = frequency / total * 100 if total else 0.0
+            width = frequency / maximum * 100
+            rows.append(
+                f"<li class='group-bar-row' data-group-value='{digit}' data-frequency='{frequency}'>"
+                f"<span class='group-bar-label'>{label} <b>{digit}</b></span>"
+                f"<span class='bar-track' aria-hidden='true'><span class='bar-fill' style='width:{width:.1f}%;background:{high}'></span></span>"
+                f"<span class='group-bar-value'><b>{_fmt_num(frequency)} lượt</b><small>{share:.1f}%</small></span>"
+                "</li>"
+            )
+        cards.append(
+            f"<article class='card group-chart' data-group='{group}'>"
+            f"<div class='card-head'><div><p class='eyebrow'>Tần suất LOTO</p><h3>{title}</h3>"
+            f"<p>{description}</p></div></div>"
+            f"<p class='group-total'>{_fmt_num(total)} lượt LOTO · tỷ trọng trên tổng lượt của nhóm</p>"
+            f"<ol class='group-bar-list' aria-label='Tần suất {label.lower()} từ 0 đến 9'>{''.join(rows)}</ol>"
+            "</article>"
         )
-    return "<div class='three-col'>" + "".join(cards) + "</div>"
+    return (
+        f"<div class='group-context'><strong>{html.escape(period_text)}</strong>"
+        f"<span>{html.escape(coverage)}</span>"
+        "<p>Mỗi lần xuất hiện trong các giải tính là một lượt LOTO; số về nhiều nháy được tính đủ. "
+        "Độ dài thanh so với nhóm cao nhất trong mỗi biểu đồ; tỷ trọng ghi bên phải.</p></div>"
+        "<div class='three-col group-charts'>" + "".join(cards) + "</div>"
+    )
 
 
 #: Biểu định kiểu của trang tổng hợp.
@@ -1059,7 +1097,7 @@ _LANDING_CSS = """\
       letter-spacing: .14em;
       font-weight: 900;
     }
-    .card h3 {
+    .card h3, .table-card h3 {
       margin: 0;
       font-size: 18px;
       letter-spacing: -.02em;
@@ -1145,14 +1183,8 @@ _LANDING_CSS = """\
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    article.card, section.section.card {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 280px;
-    }
-    #tong-quan, #live, #ket-qua {
-      content-visibility: visible;
-      contain-intrinsic-size: auto;
-    }
+    /* Tính chiều cao thật ngay từ đầu: chiều cao tạm của từng thẻ gây lệch
+       các bảng song song và làm vị trí mục thay đổi khi cuộn tới. */
     .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {
       transform: translateY(-1px);
       box-shadow: 0 12px 22px rgba(15,23,42,.12);
@@ -1208,7 +1240,9 @@ _LANDING_CSS = """\
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
+      align-items: stretch;
     }
+    .two-col > .card { display: flex; flex-direction: column; }
     .matrix-three, .three-col {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1265,6 +1299,27 @@ _LANDING_CSS = """\
       font-size: 12px;
       font-weight: 850;
     }
+    .group-context {
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      margin-bottom: 16px; color: var(--ui-ink-soft); font-size: 13px;
+    }
+    .group-context strong { color: var(--ui-ink); }
+    .group-context p { flex-basis: 100%; margin: 0; line-height: 1.6; }
+    .group-charts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+    .group-chart { display: flex; flex-direction: column; }
+    .group-chart .card-head { min-height: 96px; margin-bottom: 8px; }
+    .group-chart .group-total { margin: 0 0 16px; font-size: 12px; }
+    .group-bar-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .group-bar-row {
+      display: grid; grid-template-columns: 52px minmax(0, 1fr) 86px;
+      align-items: center; gap: 8px; min-height: 40px;
+      font-variant-numeric: tabular-nums;
+    }
+    .group-bar-label { white-space: nowrap; font-size: 13px; color: var(--ui-ink-2); }
+    .group-bar-label b { color: var(--ui-ink); }
+    .group-bar-value { display: grid; gap: 2px; text-align: right; white-space: nowrap; }
+    .group-bar-value b { color: var(--ui-ink); font-size: 13px; }
+    .group-bar-value small { color: var(--ui-ink-soft); font-size: 12px; }
     .signal-pills { display: grid; gap: 8px; }
     .signal-pill {
       display: grid;
@@ -1296,10 +1351,20 @@ _LANDING_CSS = """\
     }
     .table-wrap {
       overflow: auto;
+      min-width: 0;
       border: 1px solid var(--line);
       border-radius: 18px;
       max-height: 520px;
+      overscroll-behavior-x: contain;
     }
+    .table-card { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+    .table-card > .card-head, .table-card > .table-filter { flex-shrink: 0; }
+    .table-card > .table-wrap { display: flex; flex: 1 1 auto; align-items: stretch; }
+    /* Bảng và biểu đồ bên cạnh dùng trọn chiều cao thẻ. Trần 520px từng
+       để lại dải trắng dưới bảng cặp lộn dù biểu đồ còn cao hơn. */
+    .two-col > .table-card > .table-wrap { max-height: none; }
+    .two-col > .table-card .stat-table { height: 100%; }
+    #cap-lon .stat-table { min-width: 560px; }
     .stat-table {
       width: 100%;
       border-collapse: separate;
@@ -1317,7 +1382,7 @@ _LANDING_CSS = """\
       border-bottom: 1px solid var(--line);
       color: var(--ui-ink-2);
       font-size: 12px;
-      white-space: nowrap;
+      white-space: normal;
     }
     .stat-table td {
       padding: 10px 11px;
@@ -1326,6 +1391,13 @@ _LANDING_CSS = """\
       font-size: 13px;
       vertical-align: top;
     }
+    .stat-table th.numeric, .stat-table td.numeric {
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .stat-table td.numeric { white-space: nowrap; }
+    .stat-table tbody tr:last-child td { border-bottom: 0; }
+    .pair-frequency-table { min-width: 560px; table-layout: fixed; }
+    .pair-frequency-table col { width: 25%; }
     .stat-table.dense th, .stat-table.dense td {
       padding: 7px 8px;
       font-size: 12px;
@@ -1393,11 +1465,8 @@ _LANDING_CSS = """\
        Tầng 1: khung căn cứ trải hết chiều ngang.
        Tầng 2: bảng cầu Đặc Biệt và bảng cầu LOTO cạnh nhau, Đặc Biệt bên trái.
 
-       Đánh đổi phải nói rõ: min-content của mỗi bảng cầu đo được 796px, nên
-       hai bảng cạnh nhau cần 1616px vùng nội dung. Dưới mức đó mỗi bảng tự
-       cuộn ngang trong thẻ của nó để xem đủ 9 cột. Bố cục cũ cho mỗi bảng
-       trọn ~1090px nên không phải cuộn — đây là cái giá của việc xếp ngang,
-       và nó là lựa chọn có chủ ý chứ không phải sơ suất. */
+       Mỗi bảng giữ sàn 860px cho chín cột dễ đọc. Khi khung không đủ rộng,
+       bảng cuộn ngang bên trong; cả hai bảng vẫn nằm cạnh nhau trên desktop. */
     .inspector {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -1417,7 +1486,7 @@ _LANDING_CSS = """\
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 0;
     }
-    .basis-merged > section { min-width: 0; }
+    .basis-merged > section { min-width: 0; display: flex; flex-direction: column; }
 
     /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
        phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
@@ -1430,27 +1499,17 @@ _LANDING_CSS = """\
     /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
        chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
        nhiên là đọc được trọn vẹn, không cắt hàng nào. */
-    .basis-merged > section { padding: 20px 24px; }
+    .basis-merged > section { padding: 24px; }
     /* Cạnh nhau thì vách ngăn phải DỌC. Giữ border-top cho nhánh xếp dọc
        bên dưới, nếu không hai bảng chồng lên nhau mà không có gì ngăn. */
     .basis-merged > section + section { border-left: 1px solid var(--line); }
-    .basis-merged > section > * { margin: 0; border: 0; box-shadow: none; padding: 0; }
+    .basis-merged .table-card-plain { flex: 1 1 auto; margin: 0; padding: 0; }
     /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
        hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
-    .basis-merged .table-wrap { max-height: none; }
-    /* Ngưỡng xếp dọc PHẢI khớp với ngưỡng thu hẹp cột ngay bên dưới (1280px).
-       Khi hai ngưỡng lệch nhau — cạnh nhau từ 1024px nhưng cột chỉ thu từ
-       1280px — thì cả dải 1024-1279px rơi vào trạng thái xấu nhất: hai bảng
-       đã bị chia đôi bề ngang mà cột vẫn giữ sàn rộng. Đo phần bị che:
-
-         1440   628px/bảng   che 10%
-         1280   553px/bảng   che 21%
-         1265   546px/bảng   che 32%   <- lệch ngưỡng bắt đầu cắn ở đây
-         1100   483px/bảng   che 40%
-         1024   445px/bảng   che 44%
-
-       445px chính là con số mà chú thích gốc ghi là đã làm cột "Tỷ lệ" bị
-       cắt. Dưới 1280 thì xếp dọc, mỗi bảng được trọn chiều ngang. */
+    .basis-merged .table-wrap { max-height: none; border-radius: 8px; }
+    .basis-merged .stat-table { min-width: 860px; table-layout: fixed; height: 100%; }
+    /* Dưới 1280px mỗi bảng dùng trọn chiều ngang. Không thu nhỏ chữ hay
+       cột để giấu phần tràn; .table-wrap vẫn là vùng cuộn duy nhất. */
     @media (max-width: 1279px) {
       .basis-merged { grid-template-columns: minmax(0, 1fr); }
       .basis-merged > section + section {
@@ -1458,35 +1517,18 @@ _LANDING_CSS = """\
       }
     }
 
-    /* Bề rộng cột cho hai bảng đường cầu.
-
-       Bảng có 10 cột trong ~925px. Để trình duyệt tự chia thì "Đường cầu" và
-       "Căn cứ" — hai cột chữ dài nhất — bị bóp xuống ~90px và xuống 3-4 dòng,
-       kéo hàng cao 83px ở bảng trên và 104px ở bảng dưới. Hai bảng cạnh nhau
-       cao lệch nhau trông như lỗi dựng.
-
-       Chữa bằng cách nói rõ cột nào ưu tiên bề rộng, thay vì để thuật toán
-       chia đều cho cả cột chỉ chứa một con số. */
-    .basis-merged .col-path_line { min-width: 190px; width: 26%; }
+    /* Cùng một sơ đồ cột cho cả hai bảng. Cột chữ giữ chỗ đọc, cột số có
+       bề rộng ổn định; khung hẹp cuộn bên trong thay vì ép nội dung chồng lên. */
+    .basis-merged .col-path_line { min-width: 190px; width: 24%; }
     .basis-merged .col-reason { min-width: 170px; width: 22%; }
-    /* Khi hai bảng đứng CẠNH nhau, mỗi bảng chỉ còn ~751px. Hai sàn 190/170
-       ở trên vốn chỉnh cho bảng ~925px, và chúng chính là thứ đặt min-content
-       của bảng lên 796px — dư 45px, đủ để cắt mất cột "Căn cứ".
-
-       Dò từng cặp giá trị, đo cả mức cuộn lẫn chiều cao hàng:
-
-         190/170  cuộn 95px   hàng 83,4px
-         160/140  cuộn 35px   hàng 83,4px
-         140/120  cuộn  0px   hàng 104,2px
-
-       Chọn 140/120. Hàng cao thêm 25% và bảng cao 874 -> 1082px, nhưng bảng
-       hiện đủ MỌI cột ngay khi nhìn. Một bảng cao hơn vẫn đọc được; một bảng
-       giấu mất cột thì phải biết là có cái gì đó ở bên phải mới đi tìm. */
-    @media (min-width: 1280px) {
-      .basis-merged .col-path_line { min-width: 140px; }
-      .basis-merged .col-reason { min-width: 120px; }
-    }
-    .basis-merged .col-rule_kind { width: 1%; }
+    .basis-merged .col-rule_kind { width: 9%; }
+    .basis-merged .col-number_str { width: 7%; }
+    .basis-merged .col-lag_days { width: 6%; }
+    .basis-merged .col-p_mean { width: 7%; }
+    .basis-merged .col-hit_ratio { width: 10%; }
+    .basis-merged .col-current_streak { width: 7%; }
+    .basis-merged .col-rule_score { width: 8%; }
+    .basis-merged td.col-path_line, .basis-merged td.col-reason { overflow-wrap: anywhere; }
     /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
        lớn ngay mà không phải đọc từng chữ số.
 
@@ -1499,16 +1541,15 @@ _LANDING_CSS = """\
     .basis-merged th.col-p_mean,
     .basis-merged th.col-hit_ratio,
     .basis-merged th.col-current_streak,
-    .basis-merged th.col-rule_score { text-align: right; width: 1%; }
+    .basis-merged th.col-rule_score { text-align: right; }
     .basis-merged td.col-lag_days,
     .basis-merged td.col-p_mean,
     .basis-merged td.col-hit_ratio,
     .basis-merged td.col-current_streak,
     .basis-merged td.col-rule_score {
-      white-space: nowrap; text-align: right; width: 1%;
+      white-space: nowrap; text-align: right;
       font-variant-numeric: tabular-nums;
     }
-    .basis-merged .col-number_str { width: 1%; }
 
     /* Ghi chú cảnh báo đi kèm bảng cặp. Nó không phải phần trang trí: thiếu
        nó thì bảng chỉ cho thấy "gấp đôi kỳ vọng" và người đọc kết luận có quy
@@ -1531,22 +1572,22 @@ _LANDING_CSS = """\
 
     .matrix-full { width: 100%; margin-bottom: 24px; }
 
-    /* Ba thẻ dự đoán ngày mai XẾP DỌC — giữ nguyên, và lý do vẫn đứng vững.
-
-       Bản ba cột cho mỗi thẻ 485px ở màn 1920px, trong khi thẻ mô phỏng cần
-       1112px: lưới bên trong nó tự chia ba cột (khung giải 520 + hai bảng xác
-       suất 280 mỗi bảng + khe). Ép xuống 485px thì lưới ấy TRÀN RA NGOÀI thẻ,
-       vì overflow-x của nó là visible chứ không phải auto — nội dung đi ra
-       khỏi khung chứ không sinh thanh cuộn.
-
-       Việc xếp ngang "mô phỏng | Đặc Biệt | LOTO" thuộc về BÊN TRONG khối mô phỏng
-       (.fun-pred-grid trong build_fun_prediction.py), không phải ở tầng này. */
+    /* Ba thẻ luôn cùng một hàng. Mô phỏng chỉ còn bảng giải; khi khung hẹp,
+       người đọc cuộn trong khu này, không kéo cả trang rộng ra. */
     .next-day {
       display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 24px;
+      grid-template-columns: repeat(3, minmax(360px, 1fr));
+      grid-auto-flow: column;
+      gap: 16px;
+      align-items: stretch;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding-bottom: 8px;
     }
     .next-day > * { min-width: 0; margin: 0; }
+    .next-day > .card { display: flex; flex-direction: column; }
+    .next-day .bar-list { grid-template-columns: minmax(0, 1fr); }
+    .next-day .bar-row { grid-template-columns: 40px minmax(0, 1fr) 58px; }
     /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
        dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
        lại khoảng trống; ẩn hẳn đi. */
@@ -2185,6 +2226,7 @@ def _render_html(
   <title>Trung tâm phân tích xổ số</title>
   <style>
 {_LANDING_CSS}
+{shared_results_css()}
   </style>
 </head>
 <body{body_class}>
@@ -2227,25 +2269,16 @@ def _render_html(
         {stat_tiles}
       </div>
 
-      <section id="ket-qua" class="section card app-result-card">
-        <div class="app-result-heading">
-          <div><p class="eyebrow">Kết quả hàng ngày</p>
-            <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3></div>
-          <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="app-result-layout">
-          <div>{_render_result_table(latest)}
-            <p class="app-result-note">Bấm vào số để xem căn cứ và đường cầu.</p></div>
-          <section id="chuc-don-vi" aria-label="LOTO đầu và đuôi">
-            {_render_compact_head_tail(latest)}
-            <p class="app-result-note">×2, ×3: số lần xuất hiện · Màu đỏ: hai số cuối Đặc Biệt.</p>
-          </section>
-        </div>
+      <section id="ket-qua" class="section" aria-label="Kết quả hàng ngày">
+        {render_result_board(latest.get("draw"), include_loto=False)}
+        <p class="app-result-note">Bấm vào từng ô giải để đánh dấu; bấm lại để bỏ chọn.
+          <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả</a></p>
       </section>
 
       <!-- Tầng 2: ma trận trải hết chiều ngang. Ma trận 10×10 trong cột 637px
            phải nén mỗi ô xuống dưới 60px; ở 1680px mỗi ô rộng gấp đôi. -->
       <section id="ma-tran-ngay" class="section card matrix-full">
+        <span id="chuc-don-vi"></span>
         <div class="card-head">
           <div>
             <p class="eyebrow">Chục × đơn vị</p>
@@ -2254,6 +2287,17 @@ def _render_html(
           </div>
         </div>
         {_render_daily_matrix(latest)}
+      </section>
+
+      <section id="db-tuan-thang" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Âm lịch · Dương lịch · Kết quả</div>
+            <h2>Lịch vạn niên</h2>
+            <p>Tra ngày âm dương, can chi, tiết khí và giải Đặc Biệt theo từng ngày.</p>
+          </div>
+        </div>
+        {render_calendar(repo_root)}
       </section>
 
       <!-- Ba bảng dự đoán trên MỘT hàng. Khối mô phỏng trước đây là một
@@ -2279,7 +2323,7 @@ def _render_html(
           <div>
             <div class="section-kicker">Cặp LOTO</div>
             <h2>Tần suất cặp LOTO đồng xuất hiện</h2>
-            <p>Bảng này do <code>src/pair_stats.py</code> tính hàng ngày. Nó luôn đi kèm mốc ngẫu nhiên, vì với 4 950 cặp thì cặp dẫn đầu cao hơn kỳ vọng là chuyện đương nhiên.</p>
+            <p>Tần suất hai số cùng xuất hiện trong một kỳ, đi kèm mốc so sánh ngẫu nhiên trên toàn bộ 4 950 cặp.</p>
           </div>
         </div>
         {_render_pair_frequency(repo_root)}
@@ -2352,21 +2396,10 @@ def _render_html(
           <div>
             <div class="section-kicker">Nhóm số</div>
             <h2>Đầu · đuôi · tổng</h2>
-            <p>Các nhóm 0–9 nên hiển thị bằng biểu đồ thanh để so sánh trực tiếp giữa các nhóm.</p>
+            <p>So sánh đủ 10 nhóm từ 0 đến 9 theo số lượt xuất hiện và tỷ trọng trong kỳ.</p>
           </div>
         </div>
         {_render_group_bars(repo_root, "month")}
-      </section>
-
-      <section id="db-tuan-thang" class="section">
-        <div class="section-title">
-          <div>
-            <div class="section-kicker">Âm lịch · Dương lịch · Kết quả</div>
-            <h2>Lịch vạn niên</h2>
-            <p>Tra ngày âm dương, can chi, tiết khí và giải Đặc Biệt theo từng ngày.</p>
-          </div>
-        </div>
-        {render_calendar(repo_root)}
       </section>
 
       <section id="duong-cau" class="section">
@@ -2374,7 +2407,7 @@ def _render_html(
           <div>
             <div class="section-kicker">Bấm để xem căn cứ</div>
             <h2>Vị trí đường cầu và căn cứ tạo số liệu</h2>
-            <p>Bấm vào bất kỳ số nào trên ma trận, bảng kết quả hoặc bảng xếp hạng AI/ML để cập nhật khung căn cứ phía trên với lý do, điểm, xác suất và các đường cầu vị trí.</p>
+            <p>Bấm vào một số trên ma trận hoặc bảng xếp hạng AI/ML để cập nhật khung căn cứ với lý do, điểm, xác suất và các đường cầu vị trí.</p>
           </div>
         </div>
         <div class="inspector">
@@ -2403,10 +2436,10 @@ def _render_html(
           <div class="basis-cell">
             <div class="basis-merged">
             <section>
-              {_render_table(title="Vị trí cầu Đặc Biệt nổi bật", subtitle="Các đường cầu Đặc Biệt có điểm quy tắc cao nhất hiện tại.", df=_hit_ratio_column(evidence_de), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de", labels=PATH_TABLE_LABELS)}
+              {_render_table(title="Vị trí cầu Đặc Biệt nổi bật", subtitle="Các đường cầu Đặc Biệt có điểm quy tắc cao nhất hiện tại. Cuộn ngang trong bảng để xem đủ cột.", df=_hit_ratio_column(evidence_de), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de", labels=PATH_TABLE_LABELS, framed=False)}
             </section>
             <section>
-              {_render_table(title="Vị trí cầu LOTO nổi bật", subtitle="Các đường cầu LOTO có điểm quy tắc cao nhất hiện tại.", df=_hit_ratio_column(evidence_loto), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, labels=PATH_TABLE_LABELS)}
+              {_render_table(title="Vị trí cầu LOTO nổi bật", subtitle="Các đường cầu LOTO có điểm quy tắc cao nhất hiện tại. Cuộn ngang trong bảng để xem đủ cột.", df=_hit_ratio_column(evidence_loto), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, labels=PATH_TABLE_LABELS, framed=False)}
             </section>
             </div>
           </div>
