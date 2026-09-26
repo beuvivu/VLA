@@ -40,6 +40,7 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
         next: [...next.children].map(box),
         columns: headers.map((e,i)=>({heading:textBox(e),value:textBox(cells[i])})),
         reverseCards, reverseInner,
+        reverseTable:box(reverse.querySelector('.stat-table')),
         paths: [...document.querySelectorAll('.basis-merged > section')].map(section=>({
           outer:box(section), inner:box(section.querySelector('.table-wrap'))
         })),
@@ -69,6 +70,7 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
         assert abs(left["bottom"] - right["bottom"]) <= 2, measured["reverseCards"]
         bars, table = measured["reverseInner"]
         assert abs(bars["bottom"] - table["bottom"]) <= 4, measured["reverseInner"]
+        assert measured["reverseTable"]["width"] <= table["width"], measured["reverseTable"]
     for path in measured["paths"]:
         assert path["inner"]["x"] - path["outer"]["x"] >= 12, path
         assert path["outer"]["right"] - path["inner"]["right"] >= 12, path

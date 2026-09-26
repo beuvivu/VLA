@@ -1364,6 +1364,7 @@ _LANDING_CSS = """\
        để lại dải trắng dưới bảng cặp lộn dù biểu đồ còn cao hơn. */
     .two-col > .table-card > .table-wrap { max-height: none; }
     .two-col > .table-card .stat-table { height: 100%; }
+    #cap-lon .stat-table { min-width: 560px; }
     .stat-table {
       width: 100%;
       border-collapse: separate;
