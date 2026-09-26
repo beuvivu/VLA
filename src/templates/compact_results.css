@@ -1,0 +1,34 @@
+/* Cùng cấu trúc ô giải của Sổ kết quả; dùng cho kết quả ngày, mô phỏng và trực tiếp. */
+.app-prize-table{--app-prize-label:100px;width:100%;min-width:0;border:1px solid var(--ui-border);border-radius:12px;border-spacing:0;border-collapse:separate;overflow:hidden;background:var(--ui-surface);table-layout:fixed;color:var(--ui-ink)}
+.app-prize-table th,.app-prize-table .app-prize-label{width:var(--app-prize-label);padding:10px 13px;font-size:12px;font-weight:800;text-align:left;vertical-align:middle;color:var(--ui-ink-2);background:var(--ui-surface-2);border:0;border-right:1px solid var(--ui-border);border-bottom:1px solid var(--ui-border);box-sizing:border-box}
+.app-prize-table td{padding:0;border:0;border-bottom:1px solid var(--ui-border);background:var(--ui-surface)}
+.app-prize-table tr:last-child th,.app-prize-table tr:last-child td{border-bottom:0}
+.app-prize-table .app-prize-values{display:grid;grid-template-columns:repeat(var(--count),minmax(0,1fr));gap:0;min-width:0}
+.app-prize-table .app-prize-number{display:flex;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;min-height:50px;height:auto;margin:0;padding:8px 3px;border:0;border-right:1px solid var(--ui-border);border-radius:0;background:transparent;color:var(--ui-ink);box-shadow:none;font-family:var(--ui-font-numeric,inherit);font-size:clamp(15px,1.5vw,22px);font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.3;box-sizing:border-box}
+.app-prize-table .app-prize-number:last-child{border-right:0}.app-prize-table button.app-prize-number{cursor:pointer}
+.app-prize-table button.app-prize-number:hover{background:var(--ui-surface-2)}
+.app-prize-table button.app-prize-number:focus-visible{outline:2px solid var(--ui-brand-ink);outline-offset:-3px}
+.app-prize-table [data-prize="special"] .app-prize-label{color:var(--ui-special-ink)}
+.app-prize-table [data-prize="special"] .app-prize-number{color:var(--ui-special-ink);font-size:34px;min-height:68px;letter-spacing:.03em;background:var(--ui-surface)}
+.app-prize-table .app-special-tail{display:inline-block;background:var(--ui-special-bg);color:var(--ui-special-ink);padding:1px 4px;border-radius:5px;font-weight:850;margin-left:1px}
+.app-result-card.card{padding:0;overflow:hidden;border-radius:20px}
+.app-result-card .app-result-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border)}
+.app-result-heading .eyebrow{margin:0 0 4px;font-size:10px;letter-spacing:.09em;color:var(--ui-ink-soft)}
+.app-result-heading h3{font-size:20px;letter-spacing:-.03em;margin:0}.app-result-heading>a{font-size:12px;font-weight:700;color:var(--ui-brand-ink);text-decoration:none}
+.app-result-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,.48fr);align-items:start;gap:16px;padding:16px}
+.app-result-layout>*{min-width:0}.app-result-layout .result-scroll{overflow:visible}
+.app-result-note{margin:10px 0 0;font-size:11px;color:var(--ui-ink-soft);line-height:1.5}
+.app-head-tail-table{width:100%;border:1px solid var(--ui-border);border-spacing:0;border-collapse:separate;table-layout:fixed;border-radius:12px;overflow:hidden;font-variant-numeric:tabular-nums}
+.app-head-tail-table th{font-size:11px;background:var(--ui-surface-2);color:var(--ui-ink-2);padding:10px 7px;font-weight:800;border-bottom:1px solid var(--ui-border);text-align:left}
+.app-head-tail-table th:first-child{width:37px;text-align:center}.app-head-tail-table tbody th{padding:7px;font-size:12px}
+.app-head-tail-table td{padding:6px 7px;border-bottom:1px solid var(--ui-border);border-left:1px solid var(--ui-border);font-size:12px;line-height:1.5;vertical-align:middle}
+.app-head-tail-table tr:last-child>*{border-bottom:0}.app-head-tail-numbers{display:flex;flex-wrap:wrap;gap:3px 6px;min-height:19px;align-items:center}
+.app-head-tail-numbers button{background:transparent;color:var(--ui-ink);font:inherit;font-weight:700;border:0;padding:0;cursor:pointer;border-radius:3px;line-height:1.5}
+.app-head-tail-numbers button:hover{color:var(--ui-brand-ink)}.app-head-tail-numbers button:focus-visible{outline:2px solid var(--ui-brand-ink);outline-offset:2px}
+.app-head-tail-numbers .app-head-tail-special{color:var(--ui-special-ink)}
+.live-console #results.app-prize-table{display:block;column-gap:0}.live-console .app-prize-table .prize{display:grid;grid-template-columns:var(--app-prize-label) minmax(0,1fr);gap:0;padding:0;border:0;border-bottom:1px solid var(--ui-border)}
+.live-console .app-prize-table .prize:last-child{border-bottom:0}.live-console .app-prize-table .app-prize-label{width:auto;border-bottom:0;gap:6px}
+.live-console .app-prize-table .slot.is-empty{color:var(--ui-empty-ink);background:var(--ui-empty-bg)}
+.live-console .app-prize-table .slot.is-fresh{box-shadow:inset 0 0 0 2px var(--ui-brand-ink)}
+@media(max-width:1000px){.app-result-layout{grid-template-columns:minmax(0,1fr)}.app-result-layout .app-head-tail-table{max-width:none}}
+@media(max-width:600px){.app-result-card .app-result-heading{padding:15px}.app-result-heading h3{font-size:18px}.app-result-layout{padding:10px;gap:13px}.app-prize-table{--app-prize-label:58px}.app-prize-table th,.app-prize-table .app-prize-label{padding:8px 6px;font-size:10px}.app-prize-table .app-prize-number{font-size:14px;min-height:44px;padding:7px 1px;letter-spacing:-.055em}.app-prize-table [data-prize="special"] .app-prize-number{font-size:29px;min-height:60px}.app-prize-table [data-prize="prize3"] .app-prize-values,.app-prize-table [data-prize="prize5"] .app-prize-values{grid-template-columns:repeat(3,minmax(0,1fr))}.app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(3),.app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(3){border-right:0}.app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(n+4),.app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(n+4){border-top:1px solid var(--ui-border)}.app-head-tail-table td{font-size:13px}.live-console .app-prize-table .dot{width:4px;height:4px}}

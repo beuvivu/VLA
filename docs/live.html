@@ -279,11 +279,11 @@
   <path d="M16 2v3" />
   <rect x="3" y="3" width="18" height="18" rx="2" />
   <path d="M3 9h18" />
-  <path d="m9 15 2 2 4-4" /></svg><span class="app-global-result-copy"><span>Đầu · đuôi · tổng</span><small>Trên trang chủ</small></span></a><a class="app-global-result" id="app-global-result-38" href="index.html#db-tuan-thang" role="option" tabindex="-1" aria-selected="false" data-app-search="Đặc Biệt tuần/tháng Trên trang chủ"><svg class="app-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 2v3" />
+  <path d="m9 15 2 2 4-4" /></svg><span class="app-global-result-copy"><span>Đầu · đuôi · tổng</span><small>Trên trang chủ</small></span></a><a class="app-global-result" id="app-global-result-38" href="index.html#db-tuan-thang" role="option" tabindex="-1" aria-selected="false" data-app-search="Lịch vạn niên Trên trang chủ"><svg class="app-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 2v3" />
   <path d="M16 2v3" />
   <rect x="3" y="3" width="18" height="18" rx="2" />
   <path d="M3 9h18" />
-  <path d="m9 15 2 2 4-4" /></svg><span class="app-global-result-copy"><span>Đặc Biệt tuần/tháng</span><small>Trên trang chủ</small></span></a><a class="app-global-result" id="app-global-result-39" href="landing_desktop.html" role="option" tabindex="-1" aria-selected="false" data-app-search="Giao diện máy tính Giao diện"><svg class="app-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="7" height="9" x="3" y="3" rx="1" />
+  <path d="m9 15 2 2 4-4" /></svg><span class="app-global-result-copy"><span>Lịch vạn niên</span><small>Trên trang chủ</small></span></a><a class="app-global-result" id="app-global-result-39" href="landing_desktop.html" role="option" tabindex="-1" aria-selected="false" data-app-search="Giao diện máy tính Giao diện"><svg class="app-ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect width="7" height="9" x="3" y="3" rx="1" />
   <rect width="7" height="5" x="14" y="3" rx="1" />
   <rect width="7" height="9" x="14" y="12" rx="1" />
   <rect width="7" height="5" x="3" y="16" rx="1" /></svg><span class="app-global-result-copy"><span>Giao diện máy tính</span><small>Giao diện</small></span></a></div><p class="app-global-search-empty" id="app-global-search-empty" role="status" aria-live="polite" hidden>Không có chức năng nào khớp.</p><p class="app-global-search-hint" id="app-global-search-hint">↑ ↓ để chọn · Enter để mở · Esc để đóng</p></div></dialog><main class="app-main" id="app-main">
@@ -308,7 +308,7 @@
     </div>
 
     <div class="card live-results-card">
-      <div id="results" aria-live="polite" aria-atomic="false"></div>
+      <div id="results" class="app-prize-table" role="table" aria-label="Kết quả các giải đang quay" aria-live="polite" aria-atomic="false"></div>
     </div>
 
     <div class="card live-sources-card">
@@ -367,11 +367,15 @@
       PRIZES.forEach(function (prize) {
         var row = el('div', 'prize is-waiting');
         row.setAttribute('data-prize', prize.key);
-        var label = el('div', 'prize-label');
+        row.setAttribute('role', 'row');
+        var label = el('div', 'prize-label app-prize-label');
+        label.setAttribute('role', 'rowheader');
         label.append(el('span', 'dot'), el('span', '', prize.label));
-        var slots = el('div', 'slots');
+        var slots = el('div', 'slots app-prize-values');
+        slots.setAttribute('role', 'cell');
+        slots.style.setProperty('--count', prize.count);
         for (var i = 0; i < prize.count; i++) {
-          var slot = el('div', 'slot is-empty', '·'.repeat(prize.digits));
+          var slot = el('div', 'slot app-prize-number is-empty', '·'.repeat(prize.digits));
           if (prize.key === 'special') slot.classList.add('is-special');
           slot.style.setProperty('--w', (prize.digits * 13 + 26) + 'px');
           slot.setAttribute('aria-label', prize.label + ' vị trí ' + (i + 1));

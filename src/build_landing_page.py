@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from app_icons import icon_svg
+from calendar_widget import render_calendar
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 from ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
@@ -401,23 +402,45 @@ def _render_live_block(latest: Mapping[str, Any]) -> str:
 
 
 def _render_result_table(latest: Mapping[str, Any]) -> str:
+    """Bảng giải kẻ ô theo Sổ kết quả, giữ đủ số và thao tác xem căn cứ."""
     if not latest.get("groups"):
         return "<div class='empty'>Chưa có dữ liệu kết quả ngày.</div>"
     rows = []
     for group in latest["groups"]:
-        prizes = " ".join(
-            f"<span class='prize-number {html.escape(str(group['key']))}' data-mode='loto' data-number='{html.escape(v[-2:])}'>{html.escape(v)}</span>"
-            for v in group["values"]
-        )
+        key = html.escape(str(group["key"]))
+        numbers = []
+        for value in group["values"]:
+            text = html.escape(value)
+            if key == "special":
+                text = html.escape(value[:-2]) + f"<span class='app-special-tail'>{html.escape(value[-2:])}</span>"
+            numbers.append(
+                f"<button type='button' class='prize-number app-prize-number {key}' "
+                f"data-mode='loto' data-number='{html.escape(value[-2:])}' "
+                f"aria-label='{html.escape(str(group['label']))} {html.escape(value)}. Xem LOTO {html.escape(value[-2:])}'>{text}</button>"
+            )
         rows.append(
-            f"<tr><th>{html.escape(str(group['label']))}</th>"
-            f"<td><div class='prize-list {html.escape(str(group['kind']))}'>{prizes}</div></td></tr>"
+            f"<tr data-prize='{key}'><th scope='row' class='app-prize-label'>{html.escape(str(group['label']))}</th>"
+            f"<td><div class='app-prize-values' style='--count:{len(numbers)}'>{''.join(numbers)}</div></td></tr>"
         )
-    return (
-        "<div class='result-scroll'><table class='result-table'><tbody>"
-        + "".join(rows)
-        + "</tbody></table></div>"
-    )
+    return "<div class='result-scroll'><table class='result-table app-prize-table' aria-label='Kết quả các giải XSMB'><tbody>" + "".join(rows) + "</tbody></table></div>"
+
+
+def _render_compact_head_tail(latest: Mapping[str, Any]) -> str:
+    """Gộp đầu và đuôi trong một bảng để đối chiếu cùng bảng giải."""
+    rows = []
+    special = str(latest.get("special_2d", ""))
+    for digit in range(10):
+        cells = []
+        for kind in ("heads", "tails"):
+            values = latest.get(kind, {}).get(str(digit), [])
+            buttons = []
+            for value in values:
+                number = value.split("×")[0]
+                cls = " class='app-head-tail-special'" if number == special else ""
+                buttons.append(f"<button type='button'{cls} data-mode='loto' data-number='{html.escape(number)}' aria-label='Xem LOTO {html.escape(number)}'>{html.escape(value)}</button>")
+            cells.append("<td><div class='app-head-tail-numbers'>" + ("".join(buttons) or "<span class='muted'>—</span>") + "</div></td>")
+        rows.append(f"<tr><th scope='row'>{digit}</th>{''.join(cells)}</tr>")
+    return "<table class='app-head-tail-table' aria-label='LOTO theo đầu và đuôi'><thead><tr><th scope='col'>Số</th><th scope='col'>LOTO đầu</th><th scope='col' id='don-vi'>LOTO đuôi</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table>"
 
 
 def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
@@ -1057,60 +1080,6 @@ _LANDING_CSS = """\
        520px và trước đây đẩy cả trang tràn ngang 187px. Cho phần dư cuộn
        trong khung riêng thay vì đẩy body. */
     .result-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
-    .result-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-    }
-    .result-table th {
-      width: 118px;
-      text-align: left;
-      vertical-align: middle;
-      padding: 14px;
-      color: var(--ui-ink-2);
-      background: var(--ui-surface-2);
-      border-bottom: 1px solid var(--line);
-      font-size: 13px;
-    }
-    .result-table td {
-      padding: 12px;
-      border-bottom: 1px solid var(--line);
-      background: var(--ui-surface);
-    }
-    .result-table tr:last-child th, .result-table tr:last-child td { border-bottom: 0; }
-    .prize-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .prize-number {
-      border: 0;
-      cursor: pointer;
-      display: inline-grid;
-      place-items: center;
-      min-width: 68px;
-      min-height: 38px;
-      padding: 6px 10px;
-      border-radius: 13px;
-      background: var(--ui-surface-2);
-      color: var(--ui-ink);
-      font-weight: 900;
-      letter-spacing: .03em;
-      box-shadow: inset 0 -1px 0 rgba(15,23,42,.08);
-    }
-    .prize-number.special {
-      min-width: 116px;
-      min-height: 52px;
-      background: var(--ui-special-bg);
-      color: var(--ui-special-ink);
-      font-size: 28px;
-      letter-spacing: .06em;
-    }
-    .prize-list.mini .prize-number { min-width: 48px; color: var(--ui-special-ink); background: var(--ui-special-bg); }
     /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
        (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
        .matrix-wrap cuộn ngang phần dư. */
@@ -1560,23 +1529,6 @@ _LANDING_CSS = """\
     }
     .stat-table td.col-pair { font-weight: 800; letter-spacing: .02em; }
 
-    /* Kết quả | Chục | Đơn vị: bảng kết quả chiếm phần lớn chiều ngang.
-       Sàn bằng 0 để nội dung bảng không đẩy rộng toàn trang. */
-    .matrix-top {
-      display: grid;
-      grid-template-columns: minmax(0, 2.1fr) repeat(2, minmax(0, 1fr));
-      gap: 24px;
-      align-items: stretch;
-      margin-bottom: 24px;
-    }
-    .matrix-top > * { min-width: 0; margin: 0; }
-    /* Tablet: kết quả trọn hàng, chục và đơn vị ở hàng kế tiếp. */
-    @media (max-width: 959px) {
-      .matrix-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .matrix-top > #ket-qua { grid-column: 1 / -1; }
-    }
-    @media (max-width: 640px) { .matrix-top { grid-template-columns: minmax(0, 1fr); } }
-
     .matrix-full { width: 100%; margin-bottom: 24px; }
 
     /* Ba thẻ dự đoán ngày mai XẾP DỌC — giữ nguyên, và lý do vẫn đứng vững.
@@ -1765,8 +1717,6 @@ _LANDING_CSS = """\
       .side-nav { grid-template-columns: 1fr; }
       .metric-row { grid-template-columns: 1fr; }
       .hero { padding: 22px; border-radius: 24px; }
-      .result-table th { width: 92px; }
-      .prize-number.special { font-size: 22px; min-width: 96px; }
       /* Cột cố định 38px làm ma trận rộng 402px, vượt bề ngang khả dụng của
          màn hình nhỏ (~354px ở 390px) và đẩy cả trang tràn ngang. Cho cột co
          lại theo khung để ma trận luôn vừa màn hình. */
@@ -1849,9 +1799,6 @@ _LANDING_CSS = """\
       .table-wrap {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-      }
-      .result-table {
-        min-width: 520px;
       }
       /* minmax chứ không phải 36px cứng. min-width:430px là để ma trận vẫn
          cuộn được trên máy hẹp; nhưng cột cứng thì có SÀN mà không có TRẦN,
@@ -2280,42 +2227,21 @@ def _render_html(
         {stat_tiles}
       </div>
 
-      <!-- Tầng 1: kết quả ngày (58%) cạnh phân bổ chục×đơn vị (42%), cân
-           bằng chiều cao. Trước đây bảng kết quả chiếm trọn chiều ngang rồi
-           đẩy hai bảng nhỏ xuống dưới, nên mắt phải cuộn giữa hai thứ vốn
-           được đọc cùng nhau. -->
-      <div class="matrix-top">
-        <section id="ket-qua" class="section card">
-          <div class="card-head">
-            <div>
-              <p class="eyebrow">Kết quả hàng ngày</p>
-              <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3>
-              <p>Bảng kết quả giữ đủ số 0 đầu theo chuẩn từng giải; bấm vào số để xem căn cứ AI/ML và đường cầu.</p>
-            </div>
-          </div>
-          {_render_result_table(latest)}
-        </section>
-        <section id="chuc-don-vi" class="section card">
-          <div class="card-head">
-            <div>
-              <p class="eyebrow">Phân bổ chữ số</p>
-              <h3>Theo hàng chục</h3>
-              <p>Các số đã về hôm nay gom theo hàng chục/đầu.</p>
-            </div>
-          </div>
-          {_render_head_tail_lists(latest, "heads")}
-        </section>
-        <section id="don-vi" class="section card">
-          <div class="card-head">
-            <div>
-              <p class="eyebrow">Phân bổ chữ số</p>
-              <h3>Theo hàng đơn vị</h3>
-              <p>Các số đã về hôm nay gom theo hàng đơn vị/đuôi.</p>
-            </div>
-          </div>
-          {_render_head_tail_lists(latest, "tails")}
-        </section>
-      </div>
+      <section id="ket-qua" class="section card app-result-card">
+        <div class="app-result-heading">
+          <div><p class="eyebrow">Kết quả hàng ngày</p>
+            <h3>XSMB ngày {html.escape(str(latest.get("date") or "—"))}</h3></div>
+          <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="app-result-layout">
+          <div>{_render_result_table(latest)}
+            <p class="app-result-note">Bấm vào số để xem căn cứ và đường cầu.</p></div>
+          <section id="chuc-don-vi" aria-label="LOTO đầu và đuôi">
+            {_render_compact_head_tail(latest)}
+            <p class="app-result-note">×2, ×3: số lần xuất hiện · Màu đỏ: hai số cuối Đặc Biệt.</p>
+          </section>
+        </div>
+      </section>
 
       <!-- Tầng 2: ma trận trải hết chiều ngang. Ma trận 10×10 trong cột 637px
            phải nén mỗi ô xuống dưới 60px; ở 1680px mỗi ô rộng gấp đôi. -->
@@ -2435,15 +2361,12 @@ def _render_html(
       <section id="db-tuan-thang" class="section">
         <div class="section-title">
           <div>
-            <div class="section-kicker">Bảng theo lịch</div>
-            <h2>Bảng Đặc Biệt tuần và tháng</h2>
-            <p>Nhóm lịch được giữ dạng bảng vì mục tiêu là đối chiếu theo ngày/thứ, không phải chỉ nhìn nhóm đứng đầu.</p>
+            <div class="section-kicker">Âm lịch · Dương lịch · Kết quả</div>
+            <h2>Lịch vạn niên</h2>
+            <p>Tra ngày âm dương, can chi, tiết khí và giải Đặc Biệt theo từng ngày.</p>
           </div>
         </div>
-        <div class="two-col">
-          {_render_special_board(repo_root, "week")}
-          {_render_special_board(repo_root, "month")}
-        </div>
+        {render_calendar(repo_root)}
       </section>
 
       <section id="duong-cau" class="section">
