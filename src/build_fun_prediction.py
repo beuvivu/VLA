@@ -292,14 +292,14 @@ def _render_board(payload: dict[str, Any]) -> str:
         for item in group["values"]:
             cls = " fun-special" if item["mode"] == "de" else ""
             values.append(
-                f"<button class='fun-prize-number{cls}' data-mode='{item['mode']}' "
+                f"<button class='fun-prize-number app-prize-number{cls}' data-mode='{item['mode']}' "
                 f"data-number='{html.escape(item['suffix'])}' "
                 f"title='2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
                 f"{html.escape(item['value'])}</button>"
             )
         rows.append(
-            f"<tr><th>{html.escape(group['label'])}</th>"
-            f"<td><div class='fun-prize-list'>{''.join(values)}</div></td></tr>"
+            f"<tr data-prize='{html.escape(group['key'])}'><th scope='row' class='app-prize-label'>{html.escape(group['label'])}</th>"
+            f"<td><div class='app-prize-values' style='--count:{len(values)}'>{''.join(values)}</div></td></tr>"
         )
 
     state = payload["model_state"]
@@ -326,7 +326,7 @@ def _render_board(payload: dict[str, Any]) -> str:
   </div>
   <div class="fun-pred-grid">
     <div class="fun-board-wrap">
-      <table class="fun-result-table"><tbody>{"".join(rows)}</tbody></table>
+      <table class="fun-result-table app-prize-table"><tbody>{"".join(rows)}</tbody></table>
       <p class="fun-method">{html.escape(str(payload["method"]))}</p>
     </div>
     <div class="fun-prob-panels">
@@ -377,48 +377,14 @@ FUN_CSS = r"""
 .fun-pred-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .fun-pred-grid > *, .fun-prob-panels > * { min-width: 0; }
 .fun-board-wrap { min-width: 0; overflow-x: auto; }
-.fun-result-table { width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 0; border: 1px solid var(--ui-border); border-radius: 16px; overflow: hidden; background: var(--ui-surface); }
-.fun-result-table th { width: 112px; padding: 11px 12px; text-align: left; background: var(--ui-warn-soft); color: var(--ui-warn); border-bottom: 1px solid var(--ui-border); font-size: 12px; }
-.fun-result-table td { padding: 10px 12px; border-bottom: 1px solid var(--ui-border); }
-.fun-result-table tr:last-child th, .fun-result-table tr:last-child td { border-bottom: 0; }
-.fun-prize-list { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
-.fun-prize-number { border: 0; border-radius: 11px; min-width: 62px; padding: 7px 9px; cursor: pointer; background: var(--ui-surface-2); color: var(--ui-ink); font-weight: 900; letter-spacing: .03em; }
-.fun-prize-number:hover { background: var(--ui-border); }
-.fun-prize-number.fun-special { background: var(--ui-special-bg); color: var(--ui-special-ink); font-size: 19px; min-width: 92px; }
 .fun-method { margin: 9px 2px 0; color: var(--ui-ink-soft); font-size: 11px; line-height: 1.45; }
 .fun-prob-panels { display: grid; gap: 12px; }
 @media (min-width: 641px) {
   .fun-prob-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (min-width: 1024px) {
-  .fun-pred-grid { grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr)); }
-  .fun-prob-panels { display: contents; }
-}
-@media (min-width: 1024px) and (max-width: 1249px) {
-  .fun-result-table { min-width: 0; }
-  .fun-result-table th { width: 76px; padding: 8px; }
-  .fun-result-table td { padding: 8px; }
-  .fun-prize-number { min-width: 0; padding: 7px; }
-}
-/* Khi thẻ xếp dọc nó có trọn chiều ngang trang. Giữ hai cột thì khung giải
-   cao 525px nằm cạnh cột phải cao 944px, để lại mảng trắng lớn dưới khung
-   giải. Trải ba cột lấp kín chiều ngang và giảm hẳn chiều cao thẻ.
-
-   Ngưỡng 1400px chứ không phải 1100px: khung giải cần tối thiểu 520px, mà ở
-   1280px cột đầu chỉ còn 474px — đo được tràn 46px. Phải đủ chỗ cho cả ba cột
-   thì mới chia ba.
-
-   Quy tắc này BẮT BUỘC nằm sau .fun-prob-panels{display:grid} bên trên: cùng
-   độ đặc hiệu nên khai sau mới thắng. */
-/* Sàn thật của bố cục ba cột: 520 + 280 + 280 + 32 (hai khe) = 1112px BỀ
-   RỘNG THẺ. Khối này chiếm trọn chiều ngang trang, và ở khung 1250px thẻ đo
-   được 1114px — vừa đủ. Ngưỡng cũ 1400px thận trọng quá tay: từ 1250 tới
-   1400 bố cục rơi về hai cột dù thừa chỗ cho ba. */
-@media (min-width: 1250px) {
-  .fun-pred-grid {
-    grid-template-columns: minmax(520px, 1.15fr) minmax(280px, .8fr) minmax(280px, .8fr);
-  }
-  .fun-prob-panels { display: contents; }
+  .fun-pred-grid { grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); }
+  .fun-prob-panels { grid-template-columns: minmax(0, 1fr); }
 }
 .fun-prob-card { padding: 13px; border-radius: 16px; background: var(--ui-surface-2); border: 1px solid var(--ui-border); }
 .fun-prob-card.de { background: var(--ui-warn-soft); border-color: var(--ui-warn-border); }

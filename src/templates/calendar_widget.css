@@ -1,0 +1,69 @@
+.app-calendar{border:1px solid var(--ui-border);border-radius:20px;overflow:hidden;background:var(--ui-surface);color:var(--ui-ink);box-shadow:0 8px 30px rgba(15,23,42,.04)}
+.app-calendar *{box-sizing:border-box}
+.app-calendar-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;padding:24px;border-bottom:1px solid var(--ui-border)}
+.app-calendar-eyebrow{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--ui-ink-soft);margin:0 0 5px}
+.app-calendar-heading h3{font-size:28px;font-weight:800;letter-spacing:-.04em;margin:3px 0 4px}
+.app-calendar-heading p{font-size:12px;color:var(--ui-ink-soft);margin:0}
+.app-calendar-controls{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+.app-calendar-controls button,.app-calendar-controls select,.app-calendar-controls input{font:inherit;font-size:13px;font-weight:650;color:var(--ui-ink);background:var(--ui-surface);border:1px solid var(--ui-border);height:40px;border-radius:9px;padding:0 11px;min-width:0}
+.app-calendar-controls select{max-width:112px;cursor:pointer}.app-calendar-controls input{width:84px;padding-right:3px}
+.app-calendar-controls button{cursor:pointer;min-width:40px}.app-calendar-controls button:not(.app-calendar-today){font-size:24px;line-height:1}
+.app-calendar-controls button:hover:not(:disabled){background:var(--ui-surface-2)}
+.app-calendar-controls button:disabled{opacity:.35;cursor:default}
+.app-calendar-controls .app-calendar-today{background:var(--ui-brand-ink);color:var(--ui-on-brand);border-color:var(--ui-brand-ink);font-size:12px}
+.app-calendar-controls .app-calendar-today:hover{color:var(--ui-brand-ink)}
+.app-calendar-layout{display:grid;grid-template-columns:minmax(0,1fr) 304px}
+.app-calendar-month-view{padding:20px 24px;min-width:0}
+.app-calendar-grid{border:1px solid var(--ui-border);border-radius:12px;overflow:hidden}
+.app-calendar-weekdays,.app-calendar-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.app-calendar-weekdays{background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border)}
+.app-calendar-weekdays>span{padding:11px 3px;text-align:center;font-size:11px;font-weight:750;color:var(--ui-ink-soft)}
+.app-calendar-weekdays>span:last-child{color:var(--ui-special-ink)}
+.app-calendar-week+.app-calendar-week{border-top:1px solid var(--ui-border)}
+.app-calendar-cell{min-width:0;display:flex}.app-calendar-cell+.app-calendar-cell{border-left:1px solid var(--ui-border)}
+.app-calendar-day{width:100%;min-width:0;min-height:101px;display:flex;flex-direction:column;align-items:stretch;gap:9px;padding:10px 9px;border:0;border-radius:0;background:var(--ui-surface);color:var(--ui-ink);text-align:left;font-family:inherit;cursor:pointer;position:relative;font-variant-numeric:tabular-nums;box-shadow:inset 0 0 0 2px transparent}
+.app-calendar-day:hover{background:var(--ui-surface-2)}
+.app-calendar-day.is-outside{background:var(--ui-surface-2);color:var(--ui-ink-soft)}
+.app-calendar-day.is-selected{background:color-mix(in srgb,var(--ui-brand-ink) 7%,var(--ui-surface));box-shadow:inset 0 0 0 2px var(--ui-brand-ink);z-index:1}
+.app-calendar-date-line{display:flex;align-items:baseline;justify-content:space-between;gap:2px}
+.app-calendar-solar{font-size:22px;font-weight:750;line-height:1.15;letter-spacing:-.04em}
+.app-calendar-lunar{font-size:10px;color:var(--ui-ink-soft);font-weight:550}
+.app-calendar-day.is-weekend .app-calendar-solar{color:var(--ui-special-ink)}
+.app-calendar-day.is-today .app-calendar-solar{background:var(--ui-brand-ink);color:var(--ui-on-brand);border-radius:6px;padding:2px 5px;margin:-2px -5px}
+.app-calendar-result{display:flex;align-items:baseline;gap:4px;font-size:13px;font-weight:650;white-space:nowrap;letter-spacing:-.025em}
+.app-calendar-result small{font-size:8px;letter-spacing:0;color:var(--ui-ink-soft);font-weight:600}
+.app-calendar-result b{color:var(--ui-special-ink);font-weight:850}
+.app-calendar-pending{font-size:10px;color:var(--ui-ink-soft);min-height:16px}
+.app-calendar-marker{display:flex;align-items:center;gap:4px;font-size:8px;color:var(--ui-brand-ink);min-width:0;margin-top:auto;line-height:1.3}
+.app-calendar-marker>span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.app-calendar-dot{width:5px;height:5px;border-radius:50%;background:var(--ui-brand-ink);display:inline-block;flex:none}
+.app-calendar-legend{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:10px;color:var(--ui-ink-soft);margin:16px 0 0}
+.app-calendar-legend>span{display:inline-flex;align-items:center;gap:5px}.app-calendar-legend b{color:var(--ui-special-ink);font-size:9px}
+.app-calendar-hint{font-size:10px;line-height:1.5;color:var(--ui-ink-soft);margin:10px 0 0}
+.app-calendar-detail{padding:24px 22px;background:var(--ui-surface-2);border-left:1px solid var(--ui-border);min-width:0}
+.app-calendar-day-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.app-calendar-day-heading h4{font-size:15px;margin:0;font-weight:750;letter-spacing:-.02em}
+.app-calendar-day-badge{font-size:9px;font-weight:650;border:1px solid var(--ui-border);background:var(--ui-surface);padding:4px 7px;border-radius:6px;white-space:nowrap}
+.app-calendar-lunar-detail{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:1px 9px;margin:23px 0}
+.app-calendar-lunar-number{grid-row:span 2;font-size:54px;line-height:1;font-weight:800;letter-spacing:-.07em;color:var(--ui-brand-ink)}
+.app-calendar-lunar-detail>span:not(.app-calendar-lunar-number){font-size:12px;font-weight:700}
+.app-calendar-lunar-detail small{font-size:11px;color:var(--ui-ink-soft)}
+.app-calendar-special{border:1px solid var(--ui-special-border);background:var(--ui-special-bg);border-radius:12px;padding:15px;text-align:center;display:grid;gap:4px}
+.app-calendar-special .app-calendar-eyebrow,.app-calendar-special small{color:var(--ui-special-ink)}
+.app-calendar-special-number{font-size:37px;font-weight:650;line-height:1.2;letter-spacing:.05em;font-variant-numeric:tabular-nums;color:var(--ui-special-ink)}
+.app-calendar-special-number b{font-weight:900}.app-calendar-special small{font-size:10px;line-height:1.5}
+.app-calendar-no-result{font-size:16px;font-weight:750;margin:5px 0;color:var(--ui-special-ink)}
+.app-calendar-facts{display:grid;gap:10px;margin:19px 0 16px}
+.app-calendar-fact{display:flex;justify-content:space-between;gap:10px;font-size:12px;line-height:1.45}
+.app-calendar-fact dt{color:var(--ui-ink-soft)}.app-calendar-fact dd{margin:0;font-weight:650;text-align:right}
+.app-calendar-events{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:20px}
+.app-calendar-event{font-size:10px;font-weight:650;color:var(--ui-brand-ink);background:var(--ui-surface);padding:5px 8px;border-radius:6px;border:1px solid var(--ui-border)}
+.app-calendar-quiet-day{font-size:10px;color:var(--ui-ink-soft)}
+.app-calendar-hours{border-top:1px solid var(--ui-border);padding-top:15px}.app-calendar-hours h5{font-size:12px;font-weight:750;margin:0 0 12px}
+.app-calendar-hour-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 7px}
+.app-calendar-hour-grid>div{display:grid;gap:3px}.app-calendar-hour-grid b{font-size:11px}.app-calendar-hour-grid span{font-size:9px;color:var(--ui-ink-soft);white-space:nowrap;letter-spacing:-.02em}
+.app-calendar button:focus-visible,.app-calendar input:focus-visible,.app-calendar select:focus-visible{outline:2px solid var(--ui-brand-ink);outline-offset:-3px}
+@media(max-width:1100px){.app-calendar-layout{grid-template-columns:minmax(0,1fr) 270px}.app-calendar-month-view{padding:16px}.app-calendar-detail{padding:20px 17px}.app-calendar-day{padding:9px 6px}.app-calendar-result small{display:none}}
+@media(max-width:900px){.app-calendar-layout{grid-template-columns:minmax(0,1fr)}.app-calendar-detail{border-left:0;border-top:1px solid var(--ui-border);display:grid;grid-template-columns:1fr 1fr;gap:0 24px}.app-calendar-day-heading{grid-column:1/-1}.app-calendar-lunar-detail{margin:18px 0}.app-calendar-special{margin:16px 0}.app-calendar-hours{grid-column:2;grid-row:3/span 2;border:0;padding-top:18px}.app-calendar-facts{margin-top:10px}.app-calendar-result small{display:inline}.app-calendar-events{align-content:start}}
+@media(max-width:560px){.app-calendar{border-radius:14px}.app-calendar-toolbar{padding:17px 13px;gap:14px}.app-calendar-heading h3{font-size:25px}.app-calendar-heading p{font-size:11px}.app-calendar-controls{gap:5px;width:100%}.app-calendar-controls button,.app-calendar-controls select,.app-calendar-controls input{height:38px;padding:0 7px}.app-calendar-controls button{min-width:31px}.app-calendar-controls input{width:68px}.app-calendar-controls .app-calendar-today{margin-left:auto;font-size:11px}.app-calendar-month-view{padding:10px 8px 14px}.app-calendar-weekdays>span{font-size:9px;padding:10px 1px}.app-calendar-day{padding:8px 4px;min-height:81px;gap:9px}.app-calendar-solar{font-size:18px}.app-calendar-lunar{font-size:8px}.app-calendar-result{font-size:11px;gap:0;justify-content:center;letter-spacing:-.04em}.app-calendar-result small{display:none}.app-calendar-marker{justify-content:center;min-height:5px}.app-calendar-marker>span{display:none}.app-calendar-pending{font-size:8px;text-align:center}.app-calendar-legend{font-size:9px;gap:8px 12px;padding:0 3px}.app-calendar-hint{font-size:9px;padding:0 3px}.app-calendar-detail{padding:19px 16px;gap:0 15px}.app-calendar-lunar-detail{grid-template-columns:48px 1fr;gap:1px 5px}.app-calendar-lunar-number{font-size:45px}.app-calendar-lunar-detail>span:not(.app-calendar-lunar-number){font-size:10px}.app-calendar-lunar-detail small{font-size:9px}.app-calendar-special{padding:12px 5px}.app-calendar-special-number{font-size:28px}.app-calendar-special .app-calendar-eyebrow{font-size:8px}.app-calendar-fact{font-size:11px;gap:5px}.app-calendar-hour-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 5px}.app-calendar-no-result{font-size:13px}}
+@media print{.app-calendar-controls,.app-calendar-hint{display:none}.app-calendar-day{min-height:70px}.app-calendar{break-inside:avoid}}

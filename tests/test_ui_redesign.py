@@ -561,14 +561,15 @@ def test_landing_section_order_matches_the_agreed_flow() -> None:
 
 
 
-def test_top_row_pairs_results_with_digit_spread_and_stretches() -> None:
-    """Kết quả rộng hơn hai bảng chữ số, các rãnh co được để tránh tràn trang."""
-    css = (DOCS / "index.html").read_text(encoding="utf-8")
-    top = re.search(r"\.matrix-top\s*\{([^}]*)\}", css)
-    assert top, "thiếu lưới .matrix-top"
-    body = top.group(1).replace(" ", "")
-    assert "minmax(0,2.1fr)repeat(2,minmax(0,1fr))" in body
-    assert "stretch" in body
+def test_results_and_digit_spread_share_one_compact_card() -> None:
+    """Bảng kết quả và đầu–đuôi cùng một thẻ, theo mẫu Sổ kết quả."""
+    soup = _soup(DOCS / "index.html")
+    card = soup.select_one("#ket-qua.app-result-card")
+    assert card is not None
+    assert not soup.select(".matrix-top")
+    assert len(card.select(".app-prize-table .app-prize-number")) == 27
+    assert card.select_one("#chuc-don-vi .app-head-tail-table") is not None
+    assert len(card.select(".app-head-tail-table tbody tr")) == 10
 
 
 
@@ -580,8 +581,8 @@ def test_top_row_columns_cannot_be_pushed_open_by_wide_tables() -> None:
     phép co hết cỡ, kèm cuộn bên trong) hoặc một số đo cụ thể — miễn là được
     nói ra, không phải ``auto``.
     """
-    css = (DOCS / "index.html").read_text(encoding="utf-8")
-    for name in ("matrix-top", "next-day", "inspector"):
+    css = (DOCS / "index.html").read_text(encoding="utf-8") + (DOCS / "assets/ui.css").read_text(encoding="utf-8")
+    for name in ("app-result-layout", "next-day", "inspector"):
         rule = re.search(rf"\.{name}\s*\{{([^}}]*)\}}", css)
         assert rule, name
         cols = re.search(r"grid-template-columns:([^;]*)", rule.group(1))
@@ -942,30 +943,16 @@ def test_bar_chart_uses_columns_instead_of_one_long_bar() -> None:
 
 
 
-def test_simulation_board_keeps_its_minimum_width_in_three_columns() -> None:
-    """Bảng mô phỏng: bảng giải | Đặc Biệt | LOTO, và sàn 520px phải còn.
-
-    Sàn thật của bố cục ba cột là 520 + 280 + 280 + 32 = 1112px BỀ RỘNG THẺ.
-    Khối chiếm trọn chiều ngang trang, nên khung 1250px cho thẻ 1114px — vừa
-    đủ. Ngưỡng cũ 1400px bỏ phí cả dải 1250-1400.
-
-    Bỏ sàn 520px là lỗi nặng chứ không phải chuyện thẩm mỹ: overflow-x của
-    .fun-pred-grid là visible, nên thiếu chỗ thì nội dung TRÀN RA NGOÀI thẻ
-    chứ không sinh thanh cuộn.
-
-    Kiểm ở NGUỒN chứ không ở docs/index.html: nhiều builder cùng ghi tệp đó và
-    khối <style> này chỉ có mặt khi build_fun_prediction chạy sau cùng.
-    """
+def test_simulation_uses_the_same_compact_prize_grid() -> None:
+    """Bảng mô phỏng giữ 27 ô và thứ tự xác suất, cùng kiểu bảng kết quả thật."""
+    soup = _soup(DOCS / "index.html")
+    board = soup.select_one(".fun-result-table.app-prize-table")
+    assert board is not None
+    assert len(board.select(".app-prize-number")) == 27
+    assert len(board.select("tr[data-prize]")) == 8
     src = (ROOT / "src" / "build_fun_prediction.py").read_text(encoding="utf-8")
-    flat = src.replace(" ", "").replace("\n", "")
-    assert "@media(min-width:1250px)" in flat
-    block = re.search(r"@media\(min-width:1250px\)\{(.*?\.fun-prob-panels\{[^}]*\})", flat)
-    assert block, "không tìm thấy khối ba cột cho bảng mô phỏng"
-    assert "minmax(520px" in block.group(1)
-    assert "display:contents" in block.group(1)
-
-    # Thứ tự đọc theo DOM: Đặc Biệt trước LOTO. Xáo bằng CSS order sẽ làm thứ
-    # tự nhìn và thứ tự trình đọc màn hình lệch nhau.
+    assert "minmax(0, 1.5fr) minmax(300px, 1fr)" in src
+    assert "min-width: 520px" not in src
     assert src.index("Đặc Biệt ngày mai") < src.index("LOTO ngày mai")
 
 

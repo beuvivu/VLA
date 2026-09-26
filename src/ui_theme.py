@@ -653,7 +653,7 @@ def _column_align_rules(columns: int = 10) -> str:
     return "\n".join(parts)
 
 
-TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}"
+TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}\n" + (Path(__file__).resolve().parent / "templates/compact_results.css").read_text(encoding="utf-8")
 
 
 #: Điều hướng dùng chung cho MỌI trang, chia năm nhóm.
@@ -679,7 +679,7 @@ LANDING_SECTIONS: list[tuple[str, str, str]] = [
     ("gan-nhip", "Gan / nhịp", "Số lâu chưa về và áp lực nhịp"),
     ("cap-lon", "Cặp lộn", "45 cặp đảo chiều và 5 cặp kép-bóng"),
     ("dau-duoi-tong", "Đầu · đuôi · tổng", "Phân bổ nhóm số dễ so sánh"),
-    ("db-tuan-thang", "Đặc Biệt tuần/tháng", "Bảng Đặc Biệt theo lịch"),
+    ("db-tuan-thang", "Lịch vạn niên", "Lịch âm dương và Đặc Biệt theo ngày"),
     ("duong-cau", "Vị trí đường cầu", "Căn cứ khi bấm vào từng số"),
     ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
 ]
