@@ -5,10 +5,10 @@
   "modes": {
     "loto": {
       "mode": "loto",
-      "days": 239,
+      "days": 240,
       "first_day": "2025-12-28",
-      "last_day": "2026-09-25",
-      "base_rate": 0.23736401673640167,
+      "last_day": "2026-09-26",
+      "base_rate": 0.237375,
       "configured_weights": {
         "w_ml": 0.25,
         "w_cau": 0.3,
@@ -17,442 +17,442 @@
         "w_stable": 0.125
       },
       "decision_share": {
-        "ml": 0.7832219484980524,
-        "cau": 0.042987583068256355,
-        "stat": 0.06332245905922977,
-        "active": 0.025964823194790886,
-        "stable": 0.08450318617967058
+        "ml": 0.781824551450593,
+        "cau": 0.04385719035537604,
+        "stat": 0.06293660261057395,
+        "active": 0.02607731022517276,
+        "stable": 0.0853043453582843
       },
       "skill_contribution": [
         {
           "component": "ml",
           "label": "Học máy (GBM)",
-          "days_active": 239,
-          "days_total": 239,
-          "days_comparable": 27,
-          "logloss_delta": 4.881788030523341e-06,
-          "logloss_ci_low": -7.892491347416746e-05,
-          "logloss_ci_high": 8.208329044196447e-05,
-          "logloss_relative": 8.954597426378185e-06,
-          "brier_delta": 1.811087132633124e-06,
+          "days_active": 240,
+          "days_total": 240,
+          "days_comparable": 28,
+          "logloss_delta": 6.189029511478277e-06,
+          "logloss_ci_low": -7.752939473043593e-05,
+          "logloss_ci_high": 8.32469969294615e-05,
+          "logloss_relative": 1.1347863497163502e-05,
+          "brier_delta": 2.279900991288394e-06,
           "distinguishable_from_zero": false,
           "materially_useful": false
         },
         {
           "component": "cau",
           "label": "Cầu kèo AI/ML",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": 5.4656758158244435e-06,
-          "logloss_ci_low": -6.762179367381836e-06,
-          "logloss_ci_high": 1.7779866885720004e-05,
-          "logloss_relative": 9.973321419837109e-06,
-          "brier_delta": 2.094940424635791e-06,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": 5.088845790661433e-06,
+          "logloss_ci_low": -7.173461456742753e-06,
+          "logloss_ci_high": 1.7238009825571604e-05,
+          "logloss_relative": 9.285478575584735e-06,
+          "brier_delta": 1.959297650185737e-06,
           "distinguishable_from_zero": false,
           "materially_useful": false
         },
         {
           "component": "stat",
           "label": "Tín hiệu thống kê",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": -4.156435400037664e-06,
-          "logloss_ci_low": -2.0704977645036734e-05,
-          "logloss_ci_high": 1.2877283192274143e-05,
-          "logloss_relative": 7.584325818473743e-06,
-          "brier_delta": -1.5527336362448192e-06,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": -3.90357865148692e-06,
+          "logloss_ci_low": -2.028134495361149e-05,
+          "logloss_ci_high": 1.2331856086956502e-05,
+          "logloss_relative": 7.122753847838749e-06,
+          "brier_delta": -1.4610859901343967e-06,
           "distinguishable_from_zero": false,
           "materially_useful": false
         },
         {
           "component": "active",
           "label": "Cầu đang chạy",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": 4.629067163111494e-06,
-          "logloss_ci_low": 5.592238616969847e-07,
-          "logloss_ci_high": 9.413522132278024e-06,
-          "logloss_relative": 8.446745882377328e-06,
-          "brier_delta": 1.689868055376742e-06,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": 4.642002269791834e-06,
+          "logloss_ci_low": 5.426885128591875e-07,
+          "logloss_ci_high": 9.240878595003184e-06,
+          "logloss_relative": 8.470135350351292e-06,
+          "brier_delta": 1.6939447615390893e-06,
           "distinguishable_from_zero": true,
           "materially_useful": false
         },
         {
           "component": "stable",
           "label": "Cầu ổn định",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": -9.834843648550194e-07,
-          "logloss_ci_low": -7.967331831637838e-06,
-          "logloss_ci_high": 6.205704618592037e-06,
-          "logloss_relative": 1.7945824107762103e-06,
-          "brier_delta": -4.1576984536656456e-07,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": -1.0656362427372926e-06,
+          "logloss_ci_low": -7.999176277065587e-06,
+          "logloss_ci_high": 6.0004798441223e-06,
+          "logloss_relative": 1.9444374831444103e-06,
+          "brier_delta": -4.463923948531956e-07,
           "distinguishable_from_zero": false,
           "materially_useful": false
         }
       ],
       "latest_day_drivers": [
         {
-          "number": "25",
-          "deviation_from_base": 0.004646708923291574,
+          "number": "99",
+          "deviation_from_base": 0.0031679026550481674,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 5.442438130420779e-05,
-              "share_of_magnitude": 0.011712457613044411
+              "signed_contribution": 0.000170665746928797,
+              "share_of_magnitude": 0.053873418950179844
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.003599243237581298,
-              "share_of_magnitude": 0.7745790186125354
+              "signed_contribution": 0.0015728200942844717,
+              "share_of_magnitude": 0.49648624517490336
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 8.555308201924072e-06,
-              "share_of_magnitude": 0.0018411543187137655
+              "signed_contribution": 0.00010092921269053701,
+              "share_of_magnitude": 0.03185994763118831
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00017107600821786653,
-              "share_of_magnitude": 0.036816596658411305
+              "signed_contribution": 0.0003819644735593361,
+              "share_of_magnitude": 0.12057329885142207
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0008134099879862772,
-              "share_of_magnitude": 0.17505077279729514
+              "signed_contribution": 0.0009415231275850255,
+              "share_of_magnitude": 0.29720708939230644
             }
           ]
         },
         {
-          "number": "26",
-          "deviation_from_base": 0.0037533134151397788,
+          "number": "30",
+          "deviation_from_base": 0.0014529919193523963,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00025743042827630624,
-              "share_of_magnitude": 0.0685875118336525
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.06344817078936962
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.0023597229093953787,
-              "share_of_magnitude": 0.628703933936596
+              "signed_contribution": -0.00011698001335491148,
+              "share_of_magnitude": 0.06882393155742181
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 7.272051112378609e-05,
-              "share_of_magnitude": 0.019375016973123698
+              "signed_contribution": -6.373859053182551e-06,
+              "share_of_magnitude": 0.003749991358797116
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00025744241920449065,
-              "share_of_magnitude": 0.06859070659168577
+              "signed_contribution": 0.0005026134645600873,
+              "share_of_magnitude": 0.2957072211966006
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.000805997147139817,
-              "share_of_magnitude": 0.21474283066494207
+              "signed_contribution": 0.0009658894926176005,
+              "share_of_magnitude": 0.5682706850978109
             }
           ]
         },
         {
-          "number": "32",
-          "deviation_from_base": 0.0022089953179239806,
+          "number": "43",
+          "deviation_from_base": 0.0012945770572926813,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0002686021974141056,
-              "share_of_magnitude": 0.12159473369393044
+              "signed_contribution": 0.00027518678262854895,
+              "share_of_magnitude": 0.11835040204563795
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.0002945047175097054,
-              "share_of_magnitude": 0.1333206617144312
+              "signed_contribution": -0.0005153048291794832,
+              "share_of_magnitude": 0.22161868795773929
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 2.3158843661524875e-05,
-              "share_of_magnitude": 0.010483880827456717
+              "signed_contribution": 2.851936806447797e-05,
+              "share_of_magnitude": 0.012265409858272498
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.0004679219366291419,
-              "share_of_magnitude": 0.21182568058536952
+              "signed_contribution": 0.0005079856718683239,
+              "share_of_magnitude": 0.21847091609843375
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0011548076227095028,
-              "share_of_magnitude": 0.5227750431788121
+              "signed_contribution": 0.0009981900639108136,
+              "share_of_magnitude": 0.4292945840399165
             }
           ]
         },
         {
-          "number": "91",
-          "deviation_from_base": 0.002160839062301375,
+          "number": "19",
+          "deviation_from_base": 0.0012835820564910997,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0002686021974141056,
-              "share_of_magnitude": 0.12254814228567946
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.05389019296199305
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.0007768349145979541,
-              "share_of_magnitude": 0.3544262726185513
+              "signed_contribution": -0.00035878837827894026,
+              "share_of_magnitude": 0.17929030716572045
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": -1.5485279825355746e-05,
-              "share_of_magnitude": 0.007065066085239705
+              "signed_contribution": 3.214851109303862e-05,
+              "share_of_magnitude": 0.016064947411173685
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.0001738341774277924,
-              "share_of_magnitude": 0.07931080130626074
+              "signed_contribution": 0.00036388485902936335,
+              "share_of_magnitude": 0.18183707192881193
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0009570530526868785,
-              "share_of_magnitude": 0.43664971770426875
+              "signed_contribution": 0.0011384942300648355,
+              "share_of_magnitude": 0.5689174805323008
             }
           ]
         },
         {
-          "number": "34",
-          "deviation_from_base": 0.002124475745080276,
+          "number": "88",
+          "deviation_from_base": 0.0011499326864695583,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0002686021974141056,
-              "share_of_magnitude": 0.12643222594379686
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.051120954650696625
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.0005077980123692177,
-              "share_of_magnitude": 0.23902273939589266
+              "signed_contribution": -0.00047981476677851905,
+              "share_of_magnitude": 0.2274475539159351
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 4.385529143204337e-05,
-              "share_of_magnitude": 0.020642876970283434
+              "signed_contribution": 2.012466390047818e-05,
+              "share_of_magnitude": 0.00953973469444502
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.0002763499811874043,
-              "share_of_magnitude": 0.13007914156109232
+              "signed_contribution": 0.0005126844611209984,
+              "share_of_magnitude": 0.24302884089123225
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.001027870262677505,
-              "share_of_magnitude": 0.4838230161289347
+              "signed_contribution": 0.0009890954936437983,
+              "share_of_magnitude": 0.468862915847691
             }
           ]
         },
         {
-          "number": "96",
-          "deviation_from_base": 0.0019429612616128958,
+          "number": "75",
+          "deviation_from_base": 0.0011328276641963426,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0002686021974141056,
-              "share_of_magnitude": 0.1382437224667737
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.0525766306928569
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.00034977984505305535,
-              "share_of_magnitude": 0.1800240961894913
+              "signed_contribution": -0.00045916381677020833,
+              "share_of_magnitude": 0.2238561932764666
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 5.779448653052688e-05,
-              "share_of_magnitude": 0.029745568103890233
+              "signed_contribution": 8.027719212938545e-06,
+              "share_of_magnitude": 0.003913754956436656
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00018924583281325347,
-              "share_of_magnitude": 0.09740072360277335
+              "signed_contribution": 0.0003639880348694363,
+              "share_of_magnitude": 0.17745513236908977
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0010775388998019546,
-              "share_of_magnitude": 0.5545858896370714
+              "signed_contribution": 0.0011121328923013735,
+              "share_of_magnitude": 0.5421982887051501
             }
           ]
         },
         {
-          "number": "74",
-          "deviation_from_base": 0.0017972074840138783,
+          "number": "22",
+          "deviation_from_base": 0.001125769921994229,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00025743042827630624,
-              "share_of_magnitude": 0.14323912545776954
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.09579473787305126
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.00026624301578694607,
-              "share_of_magnitude": 0.14814261467035494
+              "signed_contribution": 0.00021711630794817027,
+              "share_of_magnitude": 0.1928602849537521
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 3.6960755849108073e-05,
-              "share_of_magnitude": 0.020565658766655046
+              "signed_contribution": 4.725194948161926e-05,
+              "share_of_magnitude": 0.04197300759103199
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00023890971440398978,
-              "share_of_magnitude": 0.13293385239550054
+              "signed_contribution": 7.447498809438555e-05,
+              "share_of_magnitude": 0.06615471477729472
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.000997663569697528,
-              "share_of_magnitude": 0.5551187487097199
+              "signed_contribution": 0.0006790838418872513,
+              "share_of_magnitude": 0.6032172548048699
             }
           ]
         },
         {
-          "number": "56",
-          "deviation_from_base": 0.0016928419165065365,
+          "number": "40",
+          "deviation_from_base": 0.001082095542715919,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00025743042827630624,
-              "share_of_magnitude": 0.15206997520923698
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.08626259114412639
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.00035927155009215784,
-              "share_of_magnitude": 0.2122298287802177
+              "signed_contribution": -8.403682877085039e-05,
+              "share_of_magnitude": 0.06722036405434809
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 2.079716517782715e-05,
-              "share_of_magnitude": 0.012285355752972842
+              "signed_contribution": 2.0114604482379673e-05,
+              "share_of_magnitude": 0.016089505707095247
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00013144810112531574,
-              "share_of_magnitude": 0.0776493657462009
+              "signed_contribution": 0.00023568164625093618,
+              "share_of_magnitude": 0.18851979892191376
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0009238946718349295,
-              "share_of_magnitude": 0.5457654745113715
+              "signed_contribution": 0.000802493286170651,
+              "share_of_magnitude": 0.6419077401725166
             }
           ]
         },
         {
-          "number": "31",
-          "deviation_from_base": 0.0015508518409268748,
+          "number": "60",
+          "deviation_from_base": 0.0010673970872469892,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0002686021974141056,
-              "share_of_magnitude": 0.1731965558061137
+              "signed_contribution": 0.00010784283458280253,
+              "share_of_magnitude": 0.06700359663943593
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.00023507596755219793,
-              "share_of_magnitude": 0.15157861076639245
+              "signed_contribution": -0.00026316223595123923,
+              "share_of_magnitude": 0.16350475556973876
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 2.1099482215802823e-05,
-              "share_of_magnitude": 0.013605092155800393
+              "signed_contribution": -7.893293278499192e-06,
+              "share_of_magnitude": 0.004904164852818788
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.00020544566216064084,
-              "share_of_magnitude": 0.13247278478765268
+              "signed_contribution": 0.0003045331344149367,
+              "share_of_magnitude": 0.18920881837554607
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0008206285315841277,
-              "share_of_magnitude": 0.5291469564840409
+              "signed_contribution": 0.0009260766474789885,
+              "share_of_magnitude": 0.5753786645624605
             }
           ]
         },
         {
-          "number": "53",
-          "deviation_from_base": 0.0015006009055589693,
+          "number": "33",
+          "deviation_from_base": 0.0010610626685532316,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0003007322973290344,
-              "share_of_magnitude": 0.18977466842065507
+              "signed_contribution": 0.0002285136585057218,
+              "share_of_magnitude": 0.09337908435927794
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": -4.204001033867588e-05,
-              "share_of_magnitude": 0.026529006339795193
+              "signed_contribution": -0.000673172539836514,
+              "share_of_magnitude": 0.2750830554146909
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 2.5491059943644202e-05,
-              "share_of_magnitude": 0.01608592589309853
+              "signed_contribution": -1.987665290569818e-05,
+              "share_of_magnitude": 0.008122331332832794
             },
             {
               "component": "active",
               "label": "Cầu đang chạy",
-              "signed_contribution": 0.0002917317350617024,
-              "share_of_magnitude": 0.18409493686188086
+              "signed_contribution": 0.0004642029732501232,
+              "share_of_magnitude": 0.18969040573942553
             },
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 0.0009246858235632642,
-              "share_of_magnitude": 0.5835154624845703
+              "signed_contribution": 0.0010613952295395988,
+              "share_of_magnitude": 0.4337251231537728
             }
           ]
         }
@@ -460,9 +460,9 @@
     },
     "de": {
       "mode": "de",
-      "days": 239,
+      "days": 240,
       "first_day": "2025-12-28",
-      "last_day": "2026-09-25",
+      "last_day": "2026-09-26",
       "base_rate": 0.01,
       "configured_weights": {
         "w_ml": 0.25,
@@ -472,142 +472,106 @@
         "w_stable": 0.125
       },
       "decision_share": {
-        "ml": 0.07234248074468612,
-        "cau": 0.002365733853359578,
-        "stat": 0.008002854998849198,
-        "active": 0.15664155094764876,
-        "stable": 0.7606473794554562
+        "ml": 0.07238792046320436,
+        "cau": 0.002414243488946886,
+        "stat": 0.008022524162449368,
+        "active": 0.15661671846628367,
+        "stable": 0.7605585934191158
       },
       "skill_contribution": [
         {
           "component": "ml",
           "label": "Học máy (GBM)",
-          "days_active": 239,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": 0.28238197699483947,
-          "logloss_ci_low": 0.2067742689302974,
-          "logloss_ci_high": 0.36718522782444085,
-          "logloss_relative": 0.06011460435889119,
-          "brier_delta": 0.00021949965660452935,
+          "days_active": 240,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": 0.281188314003639,
+          "logloss_ci_low": 0.2054044997084332,
+          "logloss_ci_high": 0.3602435505245454,
+          "logloss_relative": 0.05986495292836386,
+          "brier_delta": 0.0002185816692286311,
           "distinguishable_from_zero": true,
           "materially_useful": true
         },
         {
           "component": "cau",
           "label": "Cầu kèo AI/ML",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": 0.0009344580724654539,
-          "logloss_ci_low": 4.459523814600803e-05,
-          "logloss_ci_high": 0.002033401421144513,
-          "logloss_relative": 0.0001989311708702267,
-          "brier_delta": 1.851564661825192e-07,
-          "distinguishable_from_zero": true,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": 0.000934709515514535,
+          "logloss_ci_low": -6.300953915114435e-05,
+          "logloss_ci_high": 0.0020216896665824625,
+          "logloss_relative": 0.00019899952580265217,
+          "brier_delta": 1.852288005437094e-07,
+          "distinguishable_from_zero": false,
           "materially_useful": false
         },
         {
           "component": "stat",
           "label": "Tín hiệu thống kê",
-          "days_active": 27,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": -0.001512589409818788,
-          "logloss_ci_low": -0.0030708628021769496,
-          "logloss_ci_high": -5.153196464187342e-05,
-          "logloss_relative": 0.0003220060816075627,
-          "brier_delta": -3.10983315806579e-07,
+          "days_active": 28,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": -0.001498949614470324,
+          "logloss_ci_low": -0.003088079533838256,
+          "logloss_ci_high": -2.5220491787477897e-05,
+          "logloss_relative": 0.0003191261643650447,
+          "brier_delta": -3.0821836727015687e-07,
           "distinguishable_from_zero": true,
           "materially_useful": false
         },
         {
           "component": "active",
           "label": "Cầu đang chạy",
-          "days_active": 237,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": 0.0009053477276232967,
-          "logloss_ci_low": -0.015948758149062832,
-          "logloss_ci_high": 0.016281430107155954,
-          "logloss_relative": 0.00019273404426334997,
-          "brier_delta": -5.587311416555888e-05,
+          "days_active": 238,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": 0.00090649566705114,
+          "logloss_ci_low": -0.015309211017533818,
+          "logloss_ci_high": 0.016691995213528706,
+          "logloss_relative": 0.00019299280139031664,
+          "brier_delta": -5.5639321682162224e-05,
           "distinguishable_from_zero": false,
           "materially_useful": false
         },
         {
           "component": "stable",
           "label": "Cầu ổn định",
-          "days_active": 239,
-          "days_total": 239,
-          "days_comparable": 239,
-          "logloss_delta": -0.050011248928762346,
-          "logloss_ci_low": -0.08442138176911829,
-          "logloss_ci_high": -0.014070996776093697,
-          "logloss_relative": 0.01064659464049829,
-          "brier_delta": 2.9436868800748314e-05,
+          "days_active": 240,
+          "days_total": 240,
+          "days_comparable": 240,
+          "logloss_delta": -0.049803140258073746,
+          "logloss_ci_low": -0.08155924821325118,
+          "logloss_ci_high": -0.015880481889219252,
+          "logloss_relative": 0.010603081631606153,
+          "brier_delta": 2.9314172179032443e-05,
           "distinguishable_from_zero": true,
           "materially_useful": true
         }
       ],
       "latest_day_drivers": [
         {
-          "number": "20",
-          "deviation_from_base": 0.0005959641753207949,
-          "drivers": [
-            {
-              "component": "ml",
-              "label": "Học máy (GBM)",
-              "signed_contribution": 0.0004956106573221,
-              "share_of_magnitude": 0.8313606373454636
-            },
-            {
-              "component": "cau",
-              "label": "Cầu kèo AI/ML",
-              "signed_contribution": 4.167583082909792e-06,
-              "share_of_magnitude": 0.006990899967161699
-            },
-            {
-              "component": "stat",
-              "label": "Tín hiệu thống kê",
-              "signed_contribution": -8.991326123988786e-08,
-              "share_of_magnitude": 0.00015082473523490373
-            },
-            {
-              "component": "active",
-              "label": "Cầu đang chạy",
-              "signed_contribution": 0.0,
-              "share_of_magnitude": 0.0
-            },
-            {
-              "component": "stable",
-              "label": "Cầu ổn định",
-              "signed_contribution": 9.627584817702498e-05,
-              "share_of_magnitude": 0.1614976379521399
-            }
-          ]
-        },
-        {
           "number": "89",
-          "deviation_from_base": 0.0005520937312803596,
+          "deviation_from_base": 0.000376033388568537,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.0004971365751266998,
-              "share_of_magnitude": 0.9004568372362989
+              "signed_contribution": 0.0004653026827790498,
+              "share_of_magnitude": 0.839030282966871
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 1.1937806314079972e-05,
-              "share_of_magnitude": 0.02162278909850149
+              "signed_contribution": -3.082163165994012e-05,
+              "share_of_magnitude": 0.0555773334008909
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 1.915846911799274e-07,
-              "share_of_magnitude": 0.00034701479173767047
+              "signed_contribution": -1.3470329794660132e-05,
+              "share_of_magnitude": 0.024289596938854435
             },
             {
               "component": "active",
@@ -618,32 +582,32 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 4.282776514839999e-05,
-              "share_of_magnitude": 0.07757335887346192
+              "signed_contribution": -4.497733275591253e-05,
+              "share_of_magnitude": 0.0811027866933836
             }
           ]
         },
         {
-          "number": "65",
-          "deviation_from_base": 0.0004566189481776071,
+          "number": "22",
+          "deviation_from_base": 0.0003731728426263473,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00044944956719074987,
-              "share_of_magnitude": 0.920039012042139
+              "signed_contribution": 0.00039933265465612496,
+              "share_of_magnitude": 0.8252093569997333
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 2.2684340393879823e-05,
-              "share_of_magnitude": 0.046435639609716625
+              "signed_contribution": -1.860745382112009e-05,
+              "share_of_magnitude": 0.03845176402203156
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 4.3127811424001353e-07,
-              "share_of_magnitude": 0.0008828414111529824
+              "signed_contribution": 2.9212156530379967e-05,
+              "share_of_magnitude": 0.060366074814915405
             },
             {
               "component": "active",
@@ -654,32 +618,68 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": -1.5946237521262613e-05,
-              "share_of_magnitude": 0.032642506936991195
+              "signed_contribution": -3.676451473903753e-05,
+              "share_of_magnitude": 0.07597280416331975
+            }
+          ]
+        },
+        {
+          "number": "05",
+          "deviation_from_base": 0.0002309222979385022,
+          "drivers": [
+            {
+              "component": "ml",
+              "label": "Học máy (GBM)",
+              "signed_contribution": 8.375095795502482e-05,
+              "share_of_magnitude": 0.2831104443515824
+            },
+            {
+              "component": "cau",
+              "label": "Cầu kèo AI/ML",
+              "signed_contribution": 0.00014270351566565993,
+              "share_of_magnitude": 0.48239275964262623
+            },
+            {
+              "component": "stat",
+              "label": "Tín hiệu thống kê",
+              "signed_contribution": 3.691884112338e-05,
+              "share_of_magnitude": 0.12479988015180056
+            },
+            {
+              "component": "active",
+              "label": "Cầu đang chạy",
+              "signed_contribution": 0.0,
+              "share_of_magnitude": 0.0
+            },
+            {
+              "component": "stable",
+              "label": "Cầu ổn định",
+              "signed_contribution": -3.245101680556255e-05,
+              "share_of_magnitude": 0.10969691585399081
             }
           ]
         },
         {
           "number": "85",
-          "deviation_from_base": 0.00038005165244551977,
+          "deviation_from_base": 0.00022839920824236216,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00044944956719074987,
-              "share_of_magnitude": 0.8662460218824132
+              "signed_contribution": 0.00020227117343527478,
+              "share_of_magnitude": 0.776852117531332
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": -3.2574453647070054e-05,
-              "share_of_magnitude": 0.06278232964632442
+              "signed_contribution": -1.5986803864709992e-05,
+              "share_of_magnitude": 0.06139966572563611
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": -4.83457981259941e-07,
-              "share_of_magnitude": 0.0009317920932294211
+              "signed_contribution": 1.7698309345060004e-05,
+              "share_of_magnitude": 0.06797295362422956
             },
             {
               "component": "active",
@@ -690,32 +690,104 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": -3.6340003116900124e-05,
-              "share_of_magnitude": 0.07003985637803303
+              "signed_contribution": 2.4416529326737367e-05,
+              "share_of_magnitude": 0.09377526311880233
+            }
+          ]
+        },
+        {
+          "number": "43",
+          "deviation_from_base": 0.0001982118942290319,
+          "drivers": [
+            {
+              "component": "ml",
+              "label": "Học máy (GBM)",
+              "signed_contribution": -2.5889396171900267e-05,
+              "share_of_magnitude": 0.10356144273541822
+            },
+            {
+              "component": "cau",
+              "label": "Cầu kèo AI/ML",
+              "signed_contribution": 0.00018925999516139976,
+              "share_of_magnitude": 0.7570681842431785
+            },
+            {
+              "component": "stat",
+              "label": "Tín hiệu thống kê",
+              "signed_contribution": 2.106352204741986e-05,
+              "share_of_magnitude": 0.08425722708387061
+            },
+            {
+              "component": "active",
+              "label": "Cầu đang chạy",
+              "signed_contribution": 0.0,
+              "share_of_magnitude": 0.0
+            },
+            {
+              "component": "stable",
+              "label": "Cầu ổn định",
+              "signed_contribution": 1.3777773192112522e-05,
+              "share_of_magnitude": 0.055113145937532755
+            }
+          ]
+        },
+        {
+          "number": "49",
+          "deviation_from_base": 0.00017915647229353485,
+          "drivers": [
+            {
+              "component": "ml",
+              "label": "Học máy (GBM)",
+              "signed_contribution": 6.186087834662499e-05,
+              "share_of_magnitude": 0.3452896652556902
+            },
+            {
+              "component": "cau",
+              "label": "Cầu kèo AI/ML",
+              "signed_contribution": 8.258666642741978e-05,
+              "share_of_magnitude": 0.4609750648143347
+            },
+            {
+              "component": "stat",
+              "label": "Tín hiệu thống kê",
+              "signed_contribution": 2.6208562063340102e-05,
+              "share_of_magnitude": 0.14628867005373536
+            },
+            {
+              "component": "active",
+              "label": "Cầu đang chạy",
+              "signed_contribution": 0.0,
+              "share_of_magnitude": 0.0
+            },
+            {
+              "component": "stable",
+              "label": "Cầu ổn định",
+              "signed_contribution": 8.500365456149978e-06,
+              "share_of_magnitude": 0.04744659987623973
             }
           ]
         },
         {
           "number": "77",
-          "deviation_from_base": 0.00022955976256326533,
+          "deviation_from_base": 0.00016405982730061493,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 5.922430854107515e-05,
-              "share_of_magnitude": 0.2579908076214065
+              "signed_contribution": -4.951106705299978e-06,
+              "share_of_magnitude": 0.025344042521933643
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.00010993317097638018,
-              "share_of_magnitude": 0.4788869344908964
+              "signed_contribution": 0.0001346127265343399,
+              "share_of_magnitude": 0.689064257416975
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 1.455187999599428e-07,
-              "share_of_magnitude": 0.0006339037744902645
+              "signed_contribution": -1.0696899435900034e-05,
+              "share_of_magnitude": 0.05475597483408971
             },
             {
               "component": "active",
@@ -726,32 +798,32 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 6.025676424585005e-05,
-              "share_of_magnitude": 0.26248835411320676
+              "signed_contribution": 4.509510690747505e-05,
+              "share_of_magnitude": 0.23083572522700163
             }
           ]
         },
         {
-          "number": "02",
-          "deviation_from_base": 0.0001843738951986801,
+          "number": "24",
+          "deviation_from_base": 0.00015574897694536717,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 8.012353799470009e-05,
-              "share_of_magnitude": 0.40468300059820905
+              "signed_contribution": 6.186087834662499e-05,
+              "share_of_magnitude": 0.26980729338852144
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 0.0001110588429144901,
-              "share_of_magnitude": 0.5609291216842406
+              "signed_contribution": 8.552391695351991e-05,
+              "share_of_magnitude": 0.3730140465177022
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": -3.8099032855995474e-07,
-              "share_of_magnitude": 0.0019242823422342952
+              "signed_contribution": 4.512869638425982e-05,
+              "share_of_magnitude": 0.19682959167445768
             },
             {
               "component": "active",
@@ -762,32 +834,32 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": -6.427495381950126e-06,
-              "share_of_magnitude": 0.03246359537531609
+              "signed_contribution": -3.676451473903753e-05,
+              "share_of_magnitude": 0.1603490684193187
             }
           ]
         },
         {
-          "number": "92",
-          "deviation_from_base": 0.00017102776406689024,
+          "number": "20",
+          "deviation_from_base": 0.00015033100970873232,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 9.252282222252514e-05,
-              "share_of_magnitude": 0.5406949180552387
+              "signed_contribution": 0.00016704072280880004,
+              "share_of_magnitude": 0.5442975296797694
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 2.173811325876015e-05,
-              "share_of_magnitude": 0.12703554739015868
+              "signed_contribution": -5.147221172994015e-05,
+              "share_of_magnitude": 0.167720764258358
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": -4.529295872003625e-08,
-              "share_of_magnitude": 0.00026468791175337906
+              "signed_contribution": -2.680843529064003e-05,
+              "share_of_magnitude": 0.08735453761163081
             },
             {
               "component": "active",
@@ -798,32 +870,32 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 5.6812121544325004e-05,
-              "share_of_magnitude": 0.33200484664284935
+              "signed_contribution": 6.157093392051248e-05,
+              "share_of_magnitude": 0.20062716845024173
             }
           ]
         },
         {
-          "number": "36",
-          "deviation_from_base": 0.00015155164728767722,
+          "number": "82",
+          "deviation_from_base": 0.00015004824487486218,
           "drivers": [
             {
               "component": "ml",
               "label": "Học máy (GBM)",
-              "signed_contribution": 0.00011430742905064973,
-              "share_of_magnitude": 0.7542473545910718
+              "signed_contribution": 8.375095795502482e-05,
+              "share_of_magnitude": 0.5581601972410392
             },
             {
               "component": "cau",
               "label": "Cầu kèo AI/ML",
-              "signed_contribution": 2.744124631208992e-05,
-              "share_of_magnitude": 0.18106861128339044
+              "signed_contribution": 1.5092937295530134e-05,
+              "share_of_magnitude": 0.1005872298480892
             },
             {
               "component": "stat",
               "label": "Tín hiệu thống kê",
-              "signed_contribution": 8.355341773000347e-07,
-              "share_of_magnitude": 0.005513197594705212
+              "signed_contribution": 3.395767644811983e-05,
+              "share_of_magnitude": 0.22631172044991252
             },
             {
               "component": "active",
@@ -834,80 +906,8 @@
             {
               "component": "stable",
               "label": "Cầu ổn định",
-              "signed_contribution": 8.967437747637533e-06,
-              "share_of_magnitude": 0.0591708365308325
-            }
-          ]
-        },
-        {
-          "number": "59",
-          "deviation_from_base": 0.0001379973158655824,
-          "drivers": [
-            {
-              "component": "ml",
-              "label": "Học máy (GBM)",
-              "signed_contribution": 2.6283762777700153e-05,
-              "share_of_magnitude": 0.1904018201735328
-            },
-            {
-              "component": "cau",
-              "label": "Cầu kèo AI/ML",
-              "signed_contribution": 6.361627917263971e-05,
-              "share_of_magnitude": 0.4608417542641538
-            },
-            {
-              "component": "stat",
-              "label": "Tín hiệu thống kê",
-              "signed_contribution": -2.3168522820041227e-08,
-              "share_of_magnitude": 0.00016783475611835036
-            },
-            {
-              "component": "active",
-              "label": "Cầu đang chạy",
-              "signed_contribution": 0.0,
-              "share_of_magnitude": 0.0
-            },
-            {
-              "component": "stable",
-              "label": "Cầu ổn định",
-              "signed_contribution": 4.812044243806255e-05,
-              "share_of_magnitude": 0.34858859080619514
-            }
-          ]
-        },
-        {
-          "number": "48",
-          "deviation_from_base": 0.0001363566248785095,
-          "drivers": [
-            {
-              "component": "ml",
-              "label": "Học máy (GBM)",
-              "signed_contribution": 6.708380278614996e-05,
-              "share_of_magnitude": 0.4919731831579142
-            },
-            {
-              "component": "cau",
-              "label": "Cầu kèo AI/ML",
-              "signed_contribution": 1.0170747974849735e-05,
-              "share_of_magnitude": 0.07458932034957326
-            },
-            {
-              "component": "stat",
-              "label": "Tín hiệu thống kê",
-              "signed_contribution": 1.734144100599272e-07,
-              "share_of_magnitude": 0.0012717710651347913
-            },
-            {
-              "component": "active",
-              "label": "Cầu đang chạy",
-              "signed_contribution": 0.0,
-              "share_of_magnitude": 0.0
-            },
-            {
-              "component": "stable",
-              "label": "Cầu ổn định",
-              "signed_contribution": 5.8928659707449885e-05,
-              "share_of_magnitude": 0.43216572542737774
+              "signed_contribution": 1.7246673176187378e-05,
+              "share_of_magnitude": 0.11494085246095898
             }
           ]
         }

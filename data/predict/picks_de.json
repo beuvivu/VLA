@@ -1,7 +1,7 @@
 {
   "mode": "de",
-  "anchor_date": "2026-09-25",
-  "target_date": "2026-09-26",
+  "anchor_date": "2026-09-26",
+  "target_date": "2026-09-27",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -34,7 +34,7 @@
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 0.5800056770105544,
+    "temperature": 0.6827731580817167,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
   },
@@ -43,38 +43,38 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 4.604825034932707,
-    "baseline_validation_logloss": 4.603788249435484,
-    "logloss_skill": -0.00022520268983927672,
+    "validation_logloss": 4.602934045502689,
+    "baseline_validation_logloss": 4.603385869307159,
+    "logloss_skill": 9.815032180604533e-05,
     "constant_validation_logloss": 4.605170185988091,
-    "constant_logloss_skill": 7.494859938805831e-05
+    "constant_logloss_skill": 0.0004855717367852064
   },
   "top4": [
-    "89",
-    "22",
-    "05",
-    "85"
+    "86",
+    "38",
+    "56",
+    "89"
   ],
   "top8": [
+    "86",
+    "38",
+    "56",
     "89",
-    "22",
-    "05",
-    "85",
-    "43",
-    "49",
-    "77",
-    "24"
+    "95",
+    "08",
+    "93",
+    "97"
   ],
   "top10": [
+    "86",
+    "38",
+    "56",
     "89",
-    "22",
-    "05",
-    "85",
-    "43",
-    "49",
-    "77",
-    "24",
-    "20",
-    "82"
+    "95",
+    "08",
+    "93",
+    "97",
+    "48",
+    "57"
   ]
 }

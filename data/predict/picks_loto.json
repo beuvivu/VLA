@@ -1,7 +1,7 @@
 {
   "mode": "loto",
-  "anchor_date": "2026-09-25",
-  "target_date": "2026-09-26",
+  "anchor_date": "2026-09-26",
+  "target_date": "2026-09-27",
   "weights": {
     "w_ml": 0.25,
     "w_cau": 0.3,
@@ -33,7 +33,7 @@
   "calibration": {
     "mode": "loto",
     "a": 0.1,
-    "b": -1.066622021047344,
+    "b": -1.0652765476170483,
     "temperature": 1.0,
     "active": true,
     "reason": "calibration matches full five-component ensemble"
@@ -43,38 +43,38 @@
     "trust": 0.0,
     "quality_pass": false,
     "reason": "validation gate rejected stacked challenger",
-    "validation_logloss": 0.5449477484315233,
-    "baseline_validation_logloss": 1.032285080942964,
-    "logloss_skill": 0.47209568510500166,
-    "constant_validation_logloss": 0.5448802596851022,
-    "constant_logloss_skill": -0.00012385977510009916
+    "validation_logloss": 0.5449586560654464,
+    "baseline_validation_logloss": 1.0527453744881536,
+    "logloss_skill": 0.482345238201207,
+    "constant_validation_logloss": 0.5444930195923526,
+    "constant_logloss_skill": -0.0008551743665003997
   },
   "top4": [
-    "99",
-    "30",
-    "43",
-    "19"
+    "52",
+    "25",
+    "19",
+    "91"
   ],
   "top8": [
-    "99",
-    "30",
-    "43",
+    "52",
+    "25",
     "19",
-    "88",
-    "75",
-    "22",
-    "40"
+    "91",
+    "59",
+    "43",
+    "97",
+    "72"
   ],
   "top10": [
-    "99",
-    "30",
-    "43",
+    "52",
+    "25",
     "19",
-    "88",
-    "75",
-    "22",
-    "40",
-    "60",
-    "33"
+    "91",
+    "59",
+    "43",
+    "97",
+    "72",
+    "39",
+    "99"
   ]
 }

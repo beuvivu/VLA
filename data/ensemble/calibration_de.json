@@ -1,7 +1,7 @@
 {
   "schema_version": 7,
   "mode": "de",
-  "learned_at_utc": "2026-09-26T09:59:15Z",
+  "learned_at_utc": "2026-09-26T11:50:19Z",
   "window_days": 180,
   "half_life_days": 45,
   "component_availability_required": true,
@@ -9,13 +9,13 @@
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 0.5800056770105544
+    "temperature": 0.6827731580817167
   },
   "selection": {
     "chosen": "parametric",
     "selected": false,
     "brier_by_candidate": {},
-    "fit_days": 25,
+    "fit_days": 26,
     "holdout_days": 0
   }
 }
