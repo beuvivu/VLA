@@ -49,6 +49,13 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
         }))
       };
     }""")
+    # Lưu đủ bảy vùng ngay cả khi một phép đo sau đó không đạt.
+    for target in ("ket-qua", "db-tuan-thang", "ai-ml", "tan-suat-cap", "cap-lon", "dau-duoi-tong", "duong-cau"):
+        page.locator(f"#{target}").screenshot(
+            path=str(output / f"landing-{target}-{width}-{'dark' if dark else 'light'}.png"),
+            animations="disabled",
+            style=".app-header { visibility: hidden !important; }",
+        )
     order = measured["sections"]
     assert order.index("ma-tran-ngay") < order.index("db-tuan-thang") < order.index("ai-ml"), order
     next_cards = measured["next"]
@@ -68,6 +75,4 @@ def check_landing(page, output: Path, width: int, dark: bool) -> dict:
     assert len(measured["groups"]) == 3, measured["groups"]
     for group in measured["groups"]:
         assert group["digits"] == [str(i) for i in range(10)] and not group["clipped"], group
-    for target in ("ket-qua", "db-tuan-thang", "ai-ml", "tan-suat-cap", "cap-lon", "dau-duoi-tong", "duong-cau"):
-        page.locator(f"#{target}").screenshot(path=str(output / f"landing-{target}-{width}-{'dark' if dark else 'light'}.png"))
     return measured

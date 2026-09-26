@@ -1183,14 +1183,8 @@ _LANDING_CSS = """\
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    article.card, section.section.card {
-      content-visibility: auto;
-      contain-intrinsic-size: auto 280px;
-    }
-    #tong-quan, #live, #ket-qua {
-      content-visibility: visible;
-      contain-intrinsic-size: auto;
-    }
+    /* Tính chiều cao thật ngay từ đầu: chiều cao tạm của từng thẻ gây lệch
+       các bảng song song và làm vị trí mục thay đổi khi cuộn tới. */
     .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {
       transform: translateY(-1px);
       box-shadow: 0 12px 22px rgba(15,23,42,.12);
