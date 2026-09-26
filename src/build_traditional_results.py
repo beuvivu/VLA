@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Sequence
 
@@ -35,70 +35,15 @@ from css_links import stylesheet_link
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
-#: Thứ tự giải, nhãn và độ rộng. Bên JS giữ một bản y hệt; chúng phải khớp
-#: nhau và ``tests/test_traditional_results_page.py`` kiểm điều đó.
-PRIZE_SPEC: tuple[tuple[str, str, int, int], ...] = (
-    # mã, nhãn, số lượng, độ rộng
-    ("special", "Đặc Biệt", 1, 5),
-    ("prize1", "Giải Nhất", 1, 5),
-    ("prize2", "Giải Nhì", 2, 5),
-    ("prize3", "Giải Ba", 6, 5),
-    ("prize4", "Giải Tư", 4, 4),
-    ("prize5", "Giải Năm", 6, 4),
-    ("prize6", "Giải Sáu", 3, 3),
-    ("prize7", "Giải Bảy", 4, 2),
+from shared_results import (
+    DATE_WIDTH, PRIZE_SPEC, PRIZE_ORDER, PRIZE_WIDTHS, PRIZE_LABELS,
+    PRIZE_COUNTS, PRIZE_FIELDS, PRIZE_DIGITS, ROW_WIDTH, encode_row,
+    decode_row, render_draw, shared_results_css, shared_results_script,
 )
-PRIZE_ORDER = tuple(code for code, _, _, _ in PRIZE_SPEC)
-PRIZE_WIDTHS = {code: width for code, _, _, width in PRIZE_SPEC}
-PRIZE_LABELS = {code: label for code, label, _, _ in PRIZE_SPEC}
-PRIZE_COUNTS = {code: count for code, _, count, _ in PRIZE_SPEC}
-PRIZE_FIELDS = {
-    "special": ("special",),
-    "prize1": ("prize1",),
-    "prize2": ("prize2_1", "prize2_2"),
-    "prize3": tuple(f"prize3_{i}" for i in range(1, 7)),
-    "prize4": tuple(f"prize4_{i}" for i in range(1, 5)),
-    "prize5": tuple(f"prize5_{i}" for i in range(1, 7)),
-    "prize6": tuple(f"prize6_{i}" for i in range(1, 4)),
-    "prize7": tuple(f"prize7_{i}" for i in range(1, 5)),
-}
-
-#: Độ dài một dòng nén: 10 ký tự ngày + 107 chữ số giải.
-DATE_WIDTH = 10
-PRIZE_DIGITS = sum(PRIZE_COUNTS[code] * PRIZE_WIDTHS[code] for code in PRIZE_ORDER)
-ROW_WIDTH = DATE_WIDTH + PRIZE_DIGITS
-
 
 def _asset(name: str) -> str:
     path = Path(__file__).resolve().parent / "templates" / name
     return path.read_text(encoding="utf-8")
-
-
-def encode_row(row: dict[str, str]) -> str | None:
-    """Một kỳ thành một chuỗi ``YYYY-MM-DD`` + 107 chữ số, hoặc ``None``.
-
-    Trả ``None`` cho mọi kỳ thiếu dữ liệu. KHÔNG bịa số 0 thay cho ô trống:
-    một kỳ thiếu phải biến mất khỏi sổ, chứ không được hiện ra như thể giải
-    ấy về 0000.
-    """
-    draw_date = str(row.get("date", ""))[:DATE_WIDTH]
-    try:
-        date.fromisoformat(draw_date)
-    except ValueError:
-        return None
-    digits: list[str] = []
-    for code in PRIZE_ORDER:
-        width = PRIZE_WIDTHS[code]
-        for field in PRIZE_FIELDS[code]:
-            raw = row.get(field)
-            if raw is None or not str(raw).strip():
-                return None
-            value = str(raw).strip().zfill(width)
-            if len(value) != width or not (value.isascii() and value.isdigit()):
-                return None
-            digits.append(value)
-    encoded = draw_date + "".join(digits)
-    return encoded if len(encoded) == ROW_WIDTH else None
 
 
 def load_rows(repo_root: Path, *, limit: int | None = None) -> list[str]:
@@ -115,7 +60,7 @@ def load_rows(repo_root: Path, *, limit: int | None = None) -> list[str]:
     return encoded if limit is None else encoded[:limit]
 
 
-def embedded_payload(rows: list[str], *, generated: str) -> dict[str, object]:
+def embedded_payload(rows: list[str], *, generated: str, draw_metadata: dict[str, dict] | None = None) -> dict[str, object]:
     latest = rows[0][:DATE_WIDTH] if rows else None
     earliest = rows[-1][:DATE_WIDTH] if rows else None
     return {
@@ -127,6 +72,7 @@ def embedded_payload(rows: list[str], *, generated: str) -> dict[str, object]:
         "earliest_draw_date": earliest,
         "timezone": "Asia/Ho_Chi_Minh",
         "rows": rows,
+        "draw_metadata": draw_metadata or {},
     }
 
 
@@ -200,13 +146,19 @@ def _layout_radios() -> str:
 def render_page(payload: dict[str, object]) -> str:
     latest = payload.get("latest_draw_date") or ""
     earliest = payload.get("earliest_draw_date") or ""
+    metadata = payload.get("draw_metadata") or {}
+    fallback = "".join(
+        render_draw(draw)
+        for row in payload.get("rows", [])[:30]
+        if (draw := decode_row(row, metadata=metadata.get(row[:DATE_WIDTH]))) is not None
+    )
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
 {stylesheet_link()}
 <title>Sổ kết quả truyền thống · Xổ số Miền Bắc</title>
-<style>{_asset("traditional_results.css")}</style>
+<style>{shared_results_css()}</style>
 </head><body>
 {app_shell_open("so-ket-qua-truyen-thong.html", wide=True)}
 <header class="tr-hero">
@@ -273,7 +225,8 @@ def render_page(payload: dict[str, object]) -> str:
   <div><span>Dữ liệu máy chủ</span><strong id="tr-total-count">0</strong></div>
 </section>
 
-<section id="tr-results" class="tr-results" data-layout="1" aria-live="polite">
+<section id="tr-results" class="tr-results" data-layout="1" data-headtail="on" data-loto="on" data-tail="on" aria-live="polite">
+  {fallback}
   <div id="tr-more" class="tr-more" hidden>
     <button class="tr-btn" id="tr-more-btn" type="button">Xem thêm</button>
   </div>
@@ -286,6 +239,7 @@ def render_page(payload: dict[str, object]) -> str:
 
 <script id="tr-embedded-data" type="application/json">{json_for_html_script(payload)}</script>
 <script>
+{shared_results_script()}
 {_asset("traditional_results.js")}
 </script>
 </body></html>
@@ -293,13 +247,24 @@ def render_page(payload: dict[str, object]) -> str:
 
 
 def build(repo_root: Path, docs_dir: Path, *, generated: str | None = None) -> Path:
+    from draw_metadata import load_draw_metadata, station_for_date
+
     rows = load_rows(repo_root)
     if not rows:
         raise SystemExit("không có kỳ hợp lệ để dựng Sổ kết quả")
     stamp = generated or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     docs_dir.mkdir(parents=True, exist_ok=True)
     target = docs_dir / "so-ket-qua-truyen-thong.html"
-    write_page(target, render_page(embedded_payload(rows, generated=stamp)))
+    available = load_draw_metadata(repo_root)
+    metadata = {}
+    for row in rows:
+        draw_date = row[:DATE_WIDTH]
+        details = available.get(draw_date, {})
+        metadata[draw_date] = {
+            "station": details.get("station") or station_for_date(draw_date),
+            "special_codes": details.get("special_codes", []),
+        }
+    write_page(target, render_page(embedded_payload(rows, generated=stamp, draw_metadata=metadata)))
     return target
 
 

@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from calendar_widget import load_special_results, render_calendar
-from build_landing_page import _LANDING_CSS, _latest_draw, _render_result_table
+from bs4 import BeautifulSoup
+from build_landing_page import _LANDING_CSS, _latest_draw
+from shared_results import render_result_board
 
 
 def test_special_results_preserve_zeroes_and_reject_invalid_rows(tmp_path: Path) -> None:
@@ -26,14 +28,15 @@ def test_calendar_handles_missing_data_and_uses_safe_embedded_json(tmp_path: Pat
     assert "Chưa có kết quả" in page
 
 
-def test_compact_draw_preserves_all_prizes_and_click_targets() -> None:
+def test_daily_ledger_board_preserves_all_prizes_and_mark_targets() -> None:
     root = Path(__file__).resolve().parents[1]
     latest = _latest_draw(root)
-    result = _render_result_table(latest)
-    assert "app-prize-table" in result
-    assert result.count("data-number=") == 27
-    for group in latest["groups"]:
-        for value in group["values"]:
-            assert f"aria-label='{group['label']} {value}. Xem LOTO {value[-2:]}'" in result
-    assert "app-special-tail" in result
+    result = render_result_board(latest["draw"])
+    soup = BeautifulSoup(result, "html.parser")
+    prizes = soup.select(".tr-number")
+    assert len(prizes) == 27
+    assert [p.get_text() for p in prizes] == [v for g in latest["groups"] for v in g["values"]]
+    assert all(p.get("role") == "button" and p.get("aria-pressed") == "false" for p in prizes)
+    assert soup.select_one(".tr-special-tail") is not None
+    assert soup.select_one(".tr-loto") is None
     assert "min-width: 520px" not in _LANDING_CSS

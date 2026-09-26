@@ -546,13 +546,13 @@ def test_a_page_with_paths_renders_no_empty_state() -> None:
 
 
 def test_landing_section_order_matches_the_agreed_flow() -> None:
-    """Live → (kết quả | chục×đơn vị) → ma trận full → ngày mai → thống kê."""
+    """Kết quả → ma trận ngày → lịch vạn niên → dự đoán vui → thống kê."""
     ids = [s.get("id") for s in _soup(DOCS / "index.html").find_all("section")]
     expected = [
         "live",
         "ket-qua",
-        "chuc-don-vi",
         "ma-tran-ngay",
+        "db-tuan-thang",
         "ai-ml",
         "tan-suat-loto",
     ]
@@ -561,15 +561,16 @@ def test_landing_section_order_matches_the_agreed_flow() -> None:
 
 
 
-def test_results_and_digit_spread_share_one_compact_card() -> None:
-    """Bảng kết quả và đầu–đuôi cùng một thẻ, theo mẫu Sổ kết quả."""
+def test_daily_results_use_the_ledger_card_without_the_extra_loto_strip() -> None:
+    """Dùng chính khối Sổ KQ, giữ đủ số giải và bảng LOTO theo đầu."""
     soup = _soup(DOCS / "index.html")
-    card = soup.select_one("#ket-qua.app-result-card")
+    card = soup.select_one("#ket-qua .tr-day")
     assert card is not None
     assert not soup.select(".matrix-top")
-    assert len(card.select(".app-prize-table .app-prize-number")) == 27
-    assert card.select_one("#chuc-don-vi .app-head-tail-table") is not None
-    assert len(card.select(".app-head-tail-table tbody tr")) == 10
+    assert len(card.select(".tr-prizes .tr-number")) == 27
+    assert card.select_one(".tr-head-tail table") is not None
+    assert len(card.select(".tr-head-tail tbody tr")) == 10
+    assert not card.select(".tr-loto,.app-prize-table,.app-head-tail-table")
 
 
 
@@ -658,8 +659,9 @@ def test_analysis_row_keeps_the_left_panel_independent() -> None:
 def test_wide_tables_scroll_inside_their_own_container() -> None:
     """Bảng kết quả rộng 520px từng đẩy cả trang tràn 187px ở màn 360px."""
     css = (DOCS / "index.html").read_text(encoding="utf-8")
-    assert re.search(r"\.result-scroll\s*\{[^}]*overflow-x:\s*auto", css)
-    assert _soup(DOCS / "index.html").find(class_="result-scroll") is not None
+    assert re.search(r"\.table-wrap\s*\{[^}]*overflow:\s*auto", css)
+    assert _soup(DOCS / "index.html").find(class_="table-wrap") is not None
+    assert "grid-template-columns:repeat(var(--count),minmax(0,1fr))" in _css(DOCS / "index.html")
 
 
 def test_shared_grids_never_let_a_child_force_the_page_wider() -> None:
@@ -901,21 +903,14 @@ def test_no_page_shows_a_raw_html_entity(page: Path) -> None:
 # --- Khu dự đoán ngày mai: xếp dọc ----------------------------------------
 
 
-def test_next_day_cards_stack_vertically() -> None:
-    """Bản ba cột cho mỗi thẻ 485px ở 1920px và 435px ở 1440px.
-
-    Bảng mô phỏng bên trong cần tối thiểu 520px cho khung giải, nên nó bị ép
-    còn 131px và 81px — đo được tràn 389px và 439px, đúng thanh cuộn ngang
-    nhìn thấy dưới bảng.
-    """
+def test_next_day_cards_keep_three_horizontal_tracks_with_internal_scroll() -> None:
+    """Yêu cầu mới giữ ba thẻ ngang, kể cả khi màn hẹp cần cuộn nội bộ."""
     css = _css(DOCS / "index.html")
     rule = re.search(r"\.next-day\{([^}]*)\}", css)
     assert rule, "không tìm thấy quy tắc .next-day"
     body = rule.group(1)
-    assert "grid-template-columns:minmax(0,1fr)" in body, (
-        "khu này phải xếp dọc một cột"
-    )
-    assert "repeat(3," not in body and "repeat(2," not in body
+    assert "grid-template-columns:repeat(3,minmax(360px,1fr))" in body
+    assert "overflow-x:auto" in body and "align-items:stretch" in body
 
 
 def test_next_day_order_is_simulation_then_special_then_loto_stacked() -> None:

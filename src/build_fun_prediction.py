@@ -285,14 +285,15 @@ def _prob_badges(rows: list[dict[str, Any]], mode: str, label: str) -> str:
     return "".join(items)
 
 
-def _render_board(payload: dict[str, Any]) -> str:
+def _render_board(payload: dict[str, Any], *, simulation_only: bool = False) -> str:
+    """Dựng riêng bảng trong thẻ trang chủ; trang cũ vẫn nhận cả bảng xác suất."""
     rows: list[str] = []
     for group in payload["groups"]:
         values = []
         for item in group["values"]:
             cls = " fun-special" if item["mode"] == "de" else ""
             values.append(
-                f"<button class='fun-prize-number app-prize-number{cls}' data-mode='{item['mode']}' "
+                f"<button type='button' class='fun-prize-number app-prize-number{cls}' data-mode='{item['mode']}' "
                 f"data-number='{html.escape(item['suffix'])}' "
                 f"title='2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
                 f"{html.escape(item['value'])}</button>"
@@ -301,6 +302,31 @@ def _render_board(payload: dict[str, Any]) -> str:
             f"<tr data-prize='{html.escape(group['key'])}'><th scope='row' class='app-prize-label'>{html.escape(group['label'])}</th>"
             f"<td><div class='app-prize-values' style='--count:{len(values)}'>{''.join(values)}</div></td></tr>"
         )
+
+    table = (
+        '<table class="fun-result-table app-prize-table" aria-label="Bảng mô phỏng các giải XSMB">'
+        f'<tbody>{"".join(rows)}</tbody></table>'
+    )
+    if simulation_only:
+        return f"""
+<div id="{BLOCK_ID}" class="fun-prediction-block fun-simulation-card">
+  <div class="fun-prediction-head">
+    <div>
+      <div class="fun-eyebrow">Dự đoán vui · {html.escape(str(payload["target_date"]))}</div>
+      <h3>Bảng mô phỏng XSMB</h3>
+      <p>Dữ liệu đến ngày {html.escape(str(payload["anchor_date"]))}.</p>
+    </div>
+    <span class="fun-warning">Không phải kết quả thật</span>
+  </div>
+  <div class="fun-board-wrap">{table}</div>
+  <p class="fun-simulation-note">Chỉ <b>2 số cuối</b> dùng xác suất mô hình. Tiền tố là mô phỏng, không bảo đảm kết quả thực tế.</p>
+  <details class="fun-simulation-details">
+    <summary>Cách tạo bảng mô phỏng</summary>
+    <p class="fun-method">{html.escape(str(payload["method"]))}</p>
+    <p class="fun-disclaimer">{html.escape(str(payload["disclaimer"]))}</p>
+  </details>
+</div>
+"""
 
     state = payload["model_state"]
     loto_state = (
@@ -326,7 +352,7 @@ def _render_board(payload: dict[str, Any]) -> str:
   </div>
   <div class="fun-pred-grid">
     <div class="fun-board-wrap">
-      <table class="fun-result-table app-prize-table"><tbody>{"".join(rows)}</tbody></table>
+      {table}
       <p class="fun-method">{html.escape(str(payload["method"]))}</p>
     </div>
     <div class="fun-prob-panels">
@@ -410,6 +436,36 @@ FUN_CSS = r"""
   .fun-warning { display: inline-flex; margin-top: 9px; }
   .fun-prob-row { grid-template-columns: 26px 28px minmax(58px, 1fr) 62px; }
 }
+#du-doan-vui.fun-simulation-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border-color: var(--ui-border);
+  border-radius: 16px;
+  box-shadow: none;
+}
+.fun-simulation-card .fun-prediction-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.fun-simulation-card .fun-prediction-head h3 { margin: 4px 0; font-size: 18px; }
+.fun-simulation-card .fun-prediction-head p { font-size: 12px; }
+.fun-simulation-card .fun-eyebrow { letter-spacing: .06em; }
+.fun-simulation-card .fun-warning { margin: 0; padding: 4px 8px; }
+.fun-simulation-card .app-prize-table { --app-prize-label: 70px; }
+.fun-simulation-card .app-prize-table .app-prize-label { padding: 8px; font-size: 11px; }
+.fun-simulation-card .app-prize-table .app-prize-number { min-height: 36px; padding: 6px 2px; font-size: 16px; letter-spacing: -.02em; }
+.fun-simulation-card .app-prize-table [data-prize="special"] .app-prize-number { min-height: 48px; font-size: 26px; letter-spacing: .03em; }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-values,
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(3),
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(3) { border-right: 0; }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(n+4),
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(n+4) { border-top: 1px solid var(--ui-border); }
+.fun-simulation-note { margin: 16px 0 8px; color: var(--ui-ink-soft); font-size: 12px; line-height: 1.5; }
+.fun-simulation-details { margin-top: auto; color: var(--ui-ink-soft); font-size: 12px; }
+.fun-simulation-details summary { cursor: pointer; color: var(--ui-brand-ink); font-weight: 700; }
+.fun-simulation-details summary:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 4px; }
 """
 
 
@@ -436,7 +492,10 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
         raise RuntimeError(f"Thiếu thẻ <head> trong {path}")
     soup.head.append(style)
 
-    fragment = BeautifulSoup(_render_board(payload), "html.parser")
+    fragment = BeautifulSoup(
+        _render_board(payload, simulation_only=target.get("id") == "mo-phong"),
+        "html.parser",
+    )
     block = fragment.find(id=BLOCK_ID)
     if block is None:
         raise RuntimeError("Không dựng được khối HTML mô phỏng vui")

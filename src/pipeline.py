@@ -361,6 +361,9 @@ def main() -> None:
     # nó mô tả một bộ trọng số đã bị thay từ lâu mà không dấu hiệu gì.
     _run(_py("src/feature_attribution.py"), allow_fail=soft_fail)
 
+    # Mã hiệu là dữ liệu phụ theo kỳ; lỗi nguồn không được chặn kết quả đã xác thực.
+    _run(_py("src/draw_metadata.py"), allow_fail=True)
+
     if not args.skip_docs:
         _run(
             _py("src/build_docs.py", "--display-days", str(args.display_days)),

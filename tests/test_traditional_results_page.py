@@ -41,7 +41,10 @@ CSS = (ROOT / "src" / "templates" / "traditional_results.css").read_text(encodin
 #: lần trong tệp này — lần này là chú thích nhắc tới ``minmax(64px,1fr)``
 #: để giải thích vì sao nó bị bỏ.
 CSS_CODE = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
-JS = (ROOT / "src" / "templates" / "traditional_results.js").read_text(encoding="utf-8")
+JS = "\n".join(
+    (ROOT / "src" / "templates" / name).read_text(encoding="utf-8")
+    for name in ("shared_results.js", "traditional_results.js")
+)
 
 
 def _javascript_without_comments() -> str:

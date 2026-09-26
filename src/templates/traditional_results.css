@@ -131,6 +131,11 @@ background:var(--ui-surface);box-shadow:var(--ui-sh-sm);overflow:hidden}
 border-bottom:1px solid var(--ui-border);background:var(--ui-surface-2)}
 .tr-day-title{display:grid;gap:2px}.tr-day-title h2{margin:0;font-size:17px}
 .tr-day-title time{color:var(--ui-ink-soft);font-size:12px}
+.tr-special-codes{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;
+font-size:12px;color:var(--ui-ink-soft)}
+.tr-code-label{font-weight:700}
+.tr-special-code{font-weight:800;font-variant-numeric:tabular-nums;color:var(--ui-ink)}
+.tr-code-missing{font-style:italic}
 .tr-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:4px 10px;border-radius:999px;
 font-size:11px;font-weight:800;white-space:nowrap;background:var(--ui-ok-soft);color:var(--ui-ok);border:1px solid var(--ui-ok-border)}
 
@@ -182,6 +187,7 @@ box-shadow:inset 0 0 0 1px var(--ui-special-border)}
    chỗ, nên bảng đứng yên. */
 .tr-number,.tr-mini{cursor:pointer;
 transition:background-color .12s ease,color .12s ease}
+.tr-number:focus-visible,.tr-mini:focus-visible{outline:2px solid var(--ui-brand);outline-offset:-2px}
 .tr-number[data-marked],.tr-mini[data-marked]{background:var(--tr-mark-bg);
 color:var(--tr-mark-ink);outline:1px solid var(--tr-mark-line);outline-offset:-1px}
 .tr-results{--tr-mark-bg:var(--ui-mark-bg);--tr-mark-ink:var(--ui-mark-ink);--tr-mark-line:var(--ui-mark-border)}

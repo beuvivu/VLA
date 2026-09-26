@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "draws": {
+    "2026-09-26": {
+      "station": "Nam Định",
+      "special_codes": [
+        "3GX",
+        "4GX",
+        "5GX",
+        "11GX",
+        "12GX",
+        "15GX"
+      ],
+      "special": "18132",
+      "source_url": "https://xoso.com.vn/xsmb-26-09-2026.html",
+      "checked_at": "2026-09-27T01:25:17+07:00"
+    }
+  }
+}
