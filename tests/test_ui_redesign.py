@@ -239,21 +239,33 @@ def test_no_page_loads_a_font_from_an_external_host() -> None:
 
 
 def test_only_the_licensed_font_is_distributed() -> None:
-    """Chỉ được phân phối phông có giấy phép cho phép, và phải kèm giấy phép.
+    """Inter for content and Nexlink's Instrument Sans both ship with SIL OFL."""
+    import hashlib
+    import json
 
-    Đảo ngược hẳn phép kiểm cũ ("không được có tệp phông nào"), vốn đúng khi
-    phông duy nhất được nhắc tới là Aptos — thứ không được phép redistribute.
-    Inter theo SIL OFL thì được, với điều kiện giữ nguyên văn bản giấy phép đi
-    kèm; đó chính là điều kiện phép kiểm này canh.
-    """
+    licensed = {
+        "InterVariable.woff2": "Inter-LICENSE.txt",
+        **{f"InstrumentSans-{weight}.woff2": "InstrumentSans-OFL.txt"
+           for weight in (400, 600, 700)},
+    }
     fonts = [f for suffix in ("*.woff", "*.woff2", "*.ttf", "*.otf") for f in DOCS.rglob(suffix)]
-    assert [f.name for f in fonts] == ["InterVariable.woff2"], (
+    assert sorted(f.relative_to(DOCS).as_posix() for f in fonts) == sorted(
+        f"assets/{name}" for name in licensed
+    ), (
         f"chỉ phân phối phông đã cấp phép, thấy: {[f.name for f in fonts]}"
     )
-    assert (DOCS / "assets" / "Inter-LICENSE.txt").exists(), "thiếu giấy phép đi kèm phông"
-    assert "SIL Open Font License" in (DOCS / "assets" / "Inter-LICENSE.txt").read_text(
-        encoding="utf-8"
-    )
+    for license_name in set(licensed.values()):
+        license_text = (DOCS / "assets" / license_name).read_text(encoding="utf-8")
+        assert "SIL Open Font License, Version 1.1" in license_text
+        assert "Copyright" in license_text
+    source = ROOT / "src" / "assets" / "nexlink"
+    manifest = json.loads((source / "provenance.json").read_text())["font"]
+    assert manifest["family"] == "Instrument Sans"
+    assert set(manifest["sha256"]) == {f"InstrumentSans-{w}.woff2" for w in (400, 600, 700)}
+    for name, digest in manifest["sha256"].items():
+        assert hashlib.sha256((DOCS / "assets" / name).read_bytes()).hexdigest() == digest
+        assert (DOCS / "assets" / name).read_bytes() == (source / name).read_bytes()
+    assert (DOCS / "assets" / "InstrumentSans-OFL.txt").read_bytes() == (source / "InstrumentSans-OFL.txt").read_bytes()
 
 
 # --- Biểu định kiểu dùng chung --------------------------------------------
