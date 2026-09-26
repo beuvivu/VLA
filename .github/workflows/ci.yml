@@ -83,7 +83,7 @@ jobs:
         # Worker. Runner ubuntu-latest tình cờ có sẵn Node, nhưng trông vào
         # thứ tình cờ thì một ngày nào đó nó biến mất và các phép kiểm ấy tự
         # BỎ QUA — chốt chặn giả còn tệ hơn không có chốt. Ghim tường minh.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 
