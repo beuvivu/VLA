@@ -121,21 +121,12 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
 
 
 def _dock_script() -> str:
-    """Thẻ kịch bản mà ``ui_theme.dock`` đặt ngay sau ``<nav class="ui-dock">``.
+    """Mẫu lịch sử từ ui_theme.dock_script ở c8854608 trước khi gỡ dock.
 
-    Lấy từ chính hàm sinh ra nó chứ không chép tay: đổi dock mà quên đổi mẫu
-    gỡ trong ``app_shell`` thì các phép kiểm dưới phải đỏ, không phải xanh
-    trên một bản chép đã cũ.
+    Giữ nguyên kịch bản đã phát hành để kiểm khả năng sửa trang cũ, độc lập
+    với trình dựng điều hướng hiện hành.
     """
-    from ui_theme import dock
-
-    # Cắt theo vị trí chuỗi chứ không dùng biểu thức chính quy: đây là trích
-    # đúng một đoạn từ đầu ra của chính ta, không phải bộ lọc HTML.
-    html = dock("live.html")
-    dau = html.find("<script>")
-    assert dau >= 0, "dock() không còn kèm kịch bản — xem lại mẫu gỡ trong app_shell"
-    cuoi = html.index("</script>", dau) + len("</script>")
-    return html[dau:cuoi]
+    return (Path(__file__).parent / "fixtures" / "legacy_ui_dock_script.html").read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("so_lop", [2, 8, 11, 12])
@@ -352,25 +343,20 @@ def test_no_floating_element_covers_the_navigation_controls(trinh_duyet) -> None
     assert not che, f"phần tử nổi che điều hướng: {che}"
 
 
-def test_the_theme_button_cycles_three_states_and_remembers(trinh_duyet) -> None:
-    """Ba trạng thái, và "theo hệ" KHÔNG được đặt thuộc tính chủ đề.
-
-    Đặt ``data-ui-theme`` cho trạng thái "theo hệ" là đè mất
-    ``prefers-color-scheme``: người dùng mất luôn khả năng đi theo cài đặt máy.
-    """
+def test_the_theme_button_changes_resolved_theme_and_remembers(trinh_duyet) -> None:
+    """Mỗi lần bấm phải đổi màu thật, kể cả lần đầu đang theo hệ thống."""
     pg = _mo(trinh_duyet, 1440, 900)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
     thay = []
     for _ in range(4):
-        thay.append(pg.evaluate("() => document.documentElement.getAttribute('data-ui-theme')"))
+        thay.append(pg.evaluate("() => document.documentElement.classList.contains('dark')"))
         pg.click("#app-theme")
         pg.wait_for_timeout(250)
     luu = pg.evaluate("() => localStorage.getItem('app-theme')")
     pg.close()
-    assert thay[0] is None, "trạng thái đầu phải là theo hệ, không đặt thuộc tính"
-    assert thay[1:4] == ["light", "dark", None], f"vòng chuyển sai: {thay}"
-    assert luu in {"auto", "light", "dark"}, f"không ghi nhớ lựa chọn: {luu!r}"
+    assert all(left != right for left, right in zip(thay, thay[1:], strict=False)), thay
+    assert luu in {"light", "dark"}, f"không ghi nhớ lựa chọn: {luu!r}"
 
 
 def test_the_search_only_offers_pages_that_exist(trinh_duyet) -> None:
@@ -380,16 +366,16 @@ def test_the_search_only_offers_pages_that_exist(trinh_duyet) -> None:
     pg.wait_for_timeout(500)
     pg.click("#app-toggle")
     pg.wait_for_timeout(400)
-    pg.fill("#app-search", "tần suất")
+    pg.fill("#app-sidebar-filter", "tần suất")
     pg.wait_for_timeout(400)
     href = pg.evaluate(
         """() => [...document.querySelectorAll('.app-nav-item')]
                .filter(a => a.offsetParent !== null)
                .map(a => a.getAttribute('href'))"""
     )
-    trong = pg.evaluate("""() => { document.getElementById('app-search').value='zzzz';
-        document.getElementById('app-search').dispatchEvent(new Event('input'));
-        return document.getElementById('app-search-empty').hidden; }""")
+    trong = pg.evaluate("""() => { document.getElementById('app-sidebar-filter').value='zzzz';
+        document.getElementById('app-sidebar-filter').dispatchEvent(new Event('input'));
+        return document.getElementById('app-sidebar-filter-empty').hidden; }""")
     pg.close()
     assert href, "tìm 'tần suất' không ra kết quả nào"
     thieu = [h for h in href if not (DOCS / h.split("#", 1)[0]).is_file()]

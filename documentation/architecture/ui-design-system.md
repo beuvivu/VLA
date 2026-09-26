@@ -26,15 +26,19 @@ overlay chỉ được bổ sung lên shared base, không được thay thế n�
 
 | Lớp | Phủ | Vai trò |
 |---|---|---|
-| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dock, dark mode |
+| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dark mode |
 | `src/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
 | `src/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
 | `src/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
-| CSS nội tuyến của `live.html` | `live.html` | bảng màu tối của trang trực tiếp; dock/base vẫn lấy từ `ui.css` |
+| CSS nội tuyến của `live.html` | `live.html` | màu theo token dùng chung; base từ `ui.css`, khung từ `app_shell` |
 
 `live.html` là ngoại lệ duy nhất còn được lưu như trang viết tay; hàm
-`ui_theme.refresh_live_page()` chịu trách nhiệm đồng bộ dock và điều hướng của
+`ui_theme.refresh_live_page()` chịu trách nhiệm đồng bộ khung điều hướng của
 nó từ `SITE_NAV` để trang này không trôi khỏi hệ thống.
+
+Dock chân trang đã nghỉ. Bộ bọc giữ khả năng sửa HTML lịch sử có khung lồng,
+thẻ `main` bị chuẩn hóa thành `div` hoặc thứ tự thuộc tính bị đảo. Mỗi lượt
+ghi chỉ giữ một khung, một `app-main` và nội dung nghiệp vụ bên trong.
 
 Tên stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên cũ và
 không được dùng lại.
@@ -87,15 +91,18 @@ trúc, không phải lỗi cấu hình.
 
 Thang **phân cấp số nháy** là ngoại lệ có chủ ý, theo quy ước các trang XSMB:
 
-```
-1 nháy   #FFFFFF / #161C2D   16,96:1
-2 nháy   #DBEAFE / #1D4ED8    5,49:1
-3 nháy   #D1FAE5 / #047857    4,84:1
-4 nháy   #FFEDD5 / #9A3412    6,38:1
-5+ nháy  #5B21B6 / #FFFFFF    8,98:1
-```
+| Cấp | Nền sáng / chữ | Nền tối / chữ | Tương phản sáng / tối |
+|---|---|---|---|
+| 1 nháy | `#FFF3CC` / `#714D0C` | `#3B311B` / `#F8D982` | 6,84 / 9,29 |
+| 2 nháy | `#E0F2FE` / `#075985` | `#183647` / `#9DD9F3` | 6,59 / 8,24 |
+| 3 nháy | `#DCFCE7` / `#166534` | `#173E30` / `#A0E3BC` | 6,49 / 8,04 |
+| 4 nháy | `#F3E8FF` / `#6B21A8` | `#362647` / `#D9B6F4` | 7,39 / 7,83 |
+| 5+ nháy | `#FFE4E6` / `#9F1239` | `#48212E` / `#F6B4C5` | 6,68 / 8,00 |
 
-Xanh dương -> xanh lá -> cam **không có trật tự tri giác**, nên bảng màu này
+Bảng này cập nhật ngày 26-09-2026 từ token thực tế. Các tỷ số tính bằng
+`ui_theme.contrast_ratio`, không phải nhận xét cảm quan.
+
+Các sắc theo từng cấp **không có trật tự tri giác**, nên bảng màu này
 BẮT BUỘC đi kèm chú giải; thiếu chú giải thì nó chỉ là màu, không phải thông tin.
 
 Canh: `test_every_nhay_tier_has_a_distinct_pair_that_passes_aa`,
@@ -117,7 +124,7 @@ Canh: `test_zebra_and_hover_never_repaint_a_data_coloured_cell`,
 
 Phân biệt bằng **hai** dấu hiệu, không riêng màu: độ sáng và độ nổi.
 
-- **Không về** — nền phẳng, sẫm: `#0B1220` ở chế độ tối, `#CBD5E1` ở chế độ
+- **Không về** — nền phẳng, sẫm: `#0B1220` ở chế độ tối, `#E2E8F0` ở chế độ
   sáng. Không vân, không bóng.
 - **Có về** — nền sáng hơn + vòng viền trong + bóng mỏng.
 - **Giải ĐẶC BIỆT** — luôn đỏ, ở cả hai chế độ: `#BE123C`/`#FFE4E6` (5,24:1)
@@ -126,20 +133,10 @@ Phân biệt bằng **hai** dấu hiệu, không riêng màu: độ sáng và đ
 
 Trước khi sửa, ô trống và ô có về cùng đứng trên nền trắng — **1,00:1**.
 
-Bản sau đó chữa bằng vân chéo. Nó tách được hai loại nhưng đổi một vấn đề mỏi
-mắt lấy một vấn đề khác: phần lớn ô trong ma trận là ô không về, nên màn hình
-đầy vạch chéo li ti. Nay việc phân biệt do độ sáng gánh, đo trên trang đã dựng:
-
-| trang | chế độ | không về | có về |
-|---|---|---|---|
-| tần suất LOTO | tối | 17,5 | 232,3 |
-| tần suất LOTO | sáng | 211,7 | 232,3 |
-| tần suất cặp | tối | 17,5 | 27,4 |
-| tần suất cặp | sáng | 211,7 | 255 |
-
-Trang tần suất cặp không dùng thang số nháy (cố ý: giá trị ô là tổng lần về
-của **hai** con, không phải số nháy của một con), nên ở chế độ tối chênh lệch
-chỉ 9,9 — vòng viền trong là thứ gánh phần còn lại.
+Màu ô lấy từ `--ui-empty-*`, `--ui-n1..n5-*`, `--ui-special-*`.
+Các ô nháy tối dùng nền có kênh RGB lớn nhất dưới 100; chữ tương phản ít nhất
+7,83:1. Phân cấp giữ sắc pastel nhưng giảm diện tích nền sáng rực khi đọc
+ma trận dài. Không dùng vân chéo và không cho hover/zebra thay nền ô dữ liệu.
 
 Canh: `test_empty_cell_sinks_by_tone_and_elevation_not_by_hatching`,
 `test_hit_cell_rises_with_fill_ring_and_shadow`,
@@ -196,3 +193,24 @@ Canh: `test_desktop_view_never_overrides_a_layout_the_base_sheet_defines`,
 Padding, gap và margin của các khối lấy từ `4 / 8 / 16 / 24 / 32 / 40 / 48`.
 Padding **trong ô bảng** cố ý nằm ngoài thang: ép 8pt vào đó là hy sinh mật độ
 dữ liệu, thứ mà các trang này tồn tại để cung cấp.
+
+## 11. Theme và trạng thái điều hướng dùng chung
+
+`app-theme.js` chạy trước CSS, đặt `.dark` theo màu thực tế. `data-ui-theme`
+chỉ thể hiện lựa chọn light/dark; mặc định theo hệ điều hành. Không được
+ghim lại token sáng trên body của một họ trang. CSS riêng chỉ alias token
+chung; bản critical có đủ light/dark và media fallback.
+
+Header Search mở dialog riêng bằng Ctrl/Cmd+K, phủ mọi đích SITE_NAV và các
+phần trang chủ. Sidebar Filter chỉ lọc nhóm hiện tại. Hai input/ID/query
+độc lập; mở tìm kiếm không thay trạng thái menu. Chọn một đích là điều hướng
+thật, giải phóng lớp phủ trên điện thoại.
+
+Icons dùng Lucide canonical tự host: viewBox24, kích thước20px, stroke2,
+currentColor. Hover/active dùng Indigo `#4F46E5` ở light và màu chữ nhấn sáng
+đủ tương phản ở dark. Giữ giấy phép và provenance ở `src/assets/icons`.
+
+Canh: `test_theme_script_is_local_synchronous_and_precedes_styles`,
+`test_data_state_pairs_are_readable_in_each_theme`,
+`test_renderer_keeps_uniform_geometry_and_accessibility`; các bộ kiểm
+JavaScript tại `tests/frontend/theme.test.mjs` và `tests/frontend/search.test.mjs`.

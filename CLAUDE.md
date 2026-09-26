@@ -18,7 +18,9 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
 
     src/app_shell.py              dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
     src/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
-    src/assets/app-shell.js       thu/mở, đổi nhóm, tìm, đổi chế độ màu
+    src/assets/app-shell.js       thu/mở, đổi nhóm, hai tìm kiếm độc lập
+    src/assets/app-theme.js       khôi phục/đổi màu, OS và storage sync
+    src/app_icons.py              SVG Lucide chính thức, 20px/grid24/stroke2
 
 Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 32 mục. Thêm mục thì
 thêm ở đó, không thêm ở `app_shell.py`.
@@ -35,15 +37,18 @@ tiết **phủ lên** nội dung — `margin-left` của `.app-main` không đ�
 `docs/live.html` là trang duy nhất viết tay, nên mỗi lượt pipeline đọc lại
 chính bản đã có khung. Ngày 24-09 nó dày lên 11 lớp vì `ui_theme.dock()` trả
 `<nav>` KÈM một `<script>`: gỡ nav mà sót script thì đuôi khung không còn ở
-cuối thân trang và bước bóc bỏ cuộc. `wrap_page` nay gỡ cả hai, và
+cuối thân trang và bước bóc bỏ cuộc. Dock đã nghỉ; mẫu lịch sử được lưu trong
+`tests/fixtures/legacy_ui_dock_script.html`. `wrap_page` gỡ cả nav lẫn script,
+kể cả khung có thứ tự thuộc tính đã chuẩn hóa, và
 `test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired` dựng lại
 đúng hình dạng ấy. Job `verify-published-pages` trong `update-data.yml` chạy
 các phép kiểm bất biến trang trên mỗi commit của pipeline.
 
 ## Giao diện — trạng thái hiện tại
 
-Giao diện đang chạy là **giao diện cũ**, đã được khôi phục từ git history sau
-khi bản "Master Design System" bị gỡ theo yêu cầu của chủ dự án. Mười hai
+Giao diện đang phát triển theo yêu cầu ngày 26-09-2026 kết hợp Crafto Application
+với khung Nexlink. Dark/Light phải đồng bộ trên mọi trang; KHÔNG khôi phục
+khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười hai
 trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
 `build_model_quality`, `build_markdown_dashboard_v3`,
 `build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
@@ -85,7 +90,7 @@ TÔ, không phải màu CHỮ.
 - `test_every_text_token_reaches_aa_on_every_surface_it_sits_on` — mọi token
   chữ trên mọi bề mặt, cả ba khối màu.
 - `test_both_dark_blocks_declare_the_same_tokens` — `@media
-  prefers-color-scheme` và `[data-ui-theme="dark"]` phải trùng nhau.
+  prefers-color-scheme`, `.dark` và `[data-ui-theme="dark"]` phải trùng nhau.
 - `test_the_three_copies_of_the_page_background_agree` và
   `test_the_first_frame_paints_the_background_from_tokens_not_a_copy` — màu nền
   từng có BỐN bản sao (`ui_theme`, module sinh ra, bản dự phòng trong
@@ -131,8 +136,8 @@ là xong.
   sẵn để một lần `rglob` hỏng không thu tập quét về rỗng. Luật cấm cả việc
   NHẮC TÊN cống trong chú thích — viết "gán chuỗi HTML" thay vì gọi tên.
 
-  `docs/**/*.js` phải khai riêng, không suy ra được từ `src`: năm tệp trong
-  `docs/assets/` (`live-board.js`, `matrix-virt.js`, `ui-dock.js`,
+  `docs/**/*.js` phải khai riêng, không suy ra được từ `src`: các tệp trong
+  `docs/assets/` (`matrix-virt.js`,
   `apply-data-styles.js`, `css-async.js`) KHÔNG có bản nguồn nào dưới `src`
   mà trang sinh ra vẫn nạp chúng.
 - **Không vẽ danh tính nguồn dữ liệu ra trình duyệt.** Hai phép kiểm canh:
@@ -208,7 +213,30 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Bộ kiểm hiện **xanh hết: 2 124 phép kiểm**. Bốn kịch bản chốt phát hành
+Số kiểm thử và bằng chứng phát hành gần nhất nằm trong PR và `docs/audit/`.
+Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.
+
+## Hợp đồng giao diện bổ sung — 26-09-2026
+
+- `app-theme.js` chạy đồng bộ trong head sau CSP, trước CSS. `.dark` biểu thị
+  màu đã phân giải; không có `data-ui-theme` là theo OS. Nút theme đảo màu
+  thực tế ngay lần bấm đầu, lưu `app-theme`, đồng bộ các tab và chịu lỗi storage.
+- Global Search: `#app-global-search` / `#app-global-search-input`, Ctrl/Cmd+K;
+  đích lấy SITE_NAV + LANDING_SECTIONS, dedup href. Dialog đặt trước app-main
+  để quy tắc bóc/bọc shell vẫn lũy đẳng.
+- Sidebar Filter: `#app-sidebar-filter`, chỉ lọc nhóm đang hiển thị. Không
+  dùng lại input, query hoặc handler global search.
+- Icon là SVG Lucide canonical tại `src/assets/icons`, có LICENSE và
+  provenance pin commit. Không vẽ lại icon tay hoặc đổi về Unicode/icon font.
+- Mọi bề mặt/chữ/viền/control/modal phải đọc token; màu có nghĩa dữ liệu dùng
+  cặp token riêng, kiểm AA cả hai theme. Không dùng OS media riêng để bỏ qua
+  lựa chọn sáng tường minh. Bản in đặt lại token sáng để chữ đọc được.
+- Sửa ui_theme thì dựng ui.css, chạy `scripts/extract_critical_css.py`, rồi
+  dựng HTML bằng process mới để không giữ module critical đã import.
+- `tests/frontend` chạy bằng `npm ci --prefix tests/frontend` và
+  `npm test --prefix tests/frontend`; fixture shell lấy từ generator nguồn.
+
+Đặc tả: `docs/superpowers/specs/2026-09-26-theme-search-icons-design.md`.

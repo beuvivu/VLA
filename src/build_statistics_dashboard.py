@@ -24,7 +24,7 @@ from ui_locale import (
     mode_label,
     value_label,
 )
-from ui_theme import dock, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -652,12 +652,12 @@ def _board_month_table(df: pd.DataFrame) -> str:
     )
 
 
-def _section(title: str, intro: str, body: str, anchor: str) -> str:
+def _section(title: str, intro: str, body: str, anchor: str, *, eyebrow: str | None = None) -> str:
     return f"""
     <section class="section" id="{html.escape(anchor)}">
       <div class="section-head">
         <div>
-          <span class="eyebrow">{html.escape(anchor.replace("-", " / "))}</span>
+          <span class="eyebrow">{html.escape(eyebrow if eyebrow is not None else anchor.replace("-", " / "))}</span>
           <h2>{html.escape(title)}</h2>
           <p>{html.escape(intro)}</p>
         </div>
@@ -690,24 +690,24 @@ _DASHBOARD_CSS = """\
       --page-gutter: clamp(16px, 5vw, 72px);
 
       /* Nền và bề mặt */
-      --bg: #f0f4fd;
-      --bg-2: #eaedff;
-      --surface: #ffffff;
-      --surface-strong: #ffffff;
-      --surface-2: #f7f7f7;
-      --text: #202329;
-      --muted: #5c6270;
-      --faint: #646D8A;  /* 5,13:1 trên trắng — nhãn 12px là chữ thường */
-      --line: #e4e7f2;
-      --line-soft: #F0F2FB;
+      --bg: var(--ui-bg);
+      --bg-2: var(--ui-bg-2);
+      --surface: var(--ui-surface);
+      --surface-strong: var(--ui-surface);
+      --surface-2: var(--ui-surface-2);
+      --text: var(--ui-ink);
+      --muted: var(--ui-ink-soft);
+      --faint: var(--ui-ink-soft);
+      --line: var(--ui-border);
+      --line-soft: var(--ui-border);
 
       /* THƯƠNG HIỆU — chỉ dùng cho điều hướng và hành động chính.
          Không một dấu hiệu mã hoá dữ liệu nào được lấy màu từ đây. */
-      --brand: #2946f3;
+      --brand: var(--ui-brand);
       --brand-2: #6366F1;
       --brand-3: #7d8bfb;
-      --brand-wash: #EEF0FF;
-      --brand-ink: #3730A3;
+      --brand-wash: var(--ui-brand-soft);
+      --brand-ink: var(--ui-brand-ink);
 
       /* PHÂN TÍCH — trạng thái, độc lập với thương hiệu. Thang nhiệt nằm
          trong palettes của _color_from_value, không phải ở đây. */
@@ -827,9 +827,6 @@ _DASHBOARD_CSS = """\
     .statistics-content {
       max-width: var(--page-max);
       margin: 0 auto;
-      /* Chừa chỗ cho dock ở đáy màn, nếu không nó che mất phần cuối trang.
-         `--ui-dock-h` do biểu định kiểu dùng chung khai báo; giá trị dự phòng
-         để trang vẫn đúng nếu tệp ấy không tải được. */
       padding: 24px var(--page-gutter) 40px;
     }
 
@@ -917,7 +914,7 @@ _DASHBOARD_CSS = """\
       padding: 24px 24px 8px;
     }
     .eyebrow {
-      color: var(--blue);
+      color: var(--ui-brand-ink);
       text-transform: uppercase;
       font-size: 12px;
       letter-spacing: .12em;
@@ -1006,14 +1003,14 @@ _DASHBOARD_CSS = """\
       place-items: center;
       min-height: 32px;
       border-radius: 12px;
-      background: #f1f5f9;
-      color: #475569;
+      background: var(--ui-surface-2);
+      color: var(--ui-ink-soft);
       font-size: 11px;
       font-weight: 850;
       text-transform: uppercase;
     }
     .row-axis { writing-mode: horizontal-tb; }
-    .corner { background: #e2e8f0; color: #334155; }
+    .corner { background: var(--ui-border); color: var(--ui-ink-2); }
     .matrix-cell {
       min-height: 52px;
       display: flex;
@@ -1101,7 +1098,7 @@ _DASHBOARD_CSS = """\
     }
     .bar-row > b {
       text-align: right;
-      color: #334155;
+      color: var(--ui-ink-2);
       font-variant-numeric: tabular-nums;
       font-size: 13px;
     }
@@ -1143,24 +1140,25 @@ _DASHBOARD_CSS = """\
       width: min(320px, 100%);
       padding: 10px 12px;
       border-radius: 14px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--ui-border-strong);
       outline: none;
       font: inherit;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
+      color: var(--ui-ink);
     }
     .table-tools input:focus {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
-      background: white;
+      border-color: var(--ui-brand);
+      box-shadow: 0 0 0 3px var(--ui-brand-soft);
+      background: var(--ui-surface);
     }
     .table-tools small { color: var(--muted); }
 
     .table-wrap {
       overflow: auto;
       max-height: 560px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ui-border);
       border-radius: 16px;
-      background: white;
+      background: var(--ui-surface);
       scrollbar-width: thin;
     }
     table {
@@ -1171,7 +1169,7 @@ _DASHBOARD_CSS = """\
     }
     th, td {
       padding: 9px 10px;
-      border-bottom: 1px solid #eef2f7;
+      border-bottom: 1px solid var(--ui-border);
       white-space: nowrap;
       text-align: left;
       vertical-align: middle;
@@ -1180,13 +1178,13 @@ _DASHBOARD_CSS = """\
       position: sticky;
       top: 0;
       z-index: 2;
-      background: #f8fafc;
-      color: #334155;
+      background: var(--ui-surface-2);
+      color: var(--ui-ink-2);
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: .04em;
     }
-    tr:hover td { background: #f8fafc; }
+    tr:hover td { background: var(--ui-surface-2); }
     .compact table { font-size: 12px; }
     .compact th, .compact td { padding: 8px 9px; text-align: center; }
     .compact th:first-child, .compact td:first-child {
@@ -1196,9 +1194,9 @@ _DASHBOARD_CSS = """\
       background: inherit;
       z-index: 1;
       font-weight: 850;
-      color: #334155;
+      color: var(--ui-ink-2);
     }
-    .compact th:first-child { z-index: 3; background: #f8fafc; }
+    .compact th:first-child { z-index: 3; background: var(--ui-surface-2); }
 
     .mini-bar {
       position: relative;
@@ -1230,17 +1228,13 @@ _DASHBOARD_CSS = """\
       gap: 6px;
       padding: 18px;
       border-radius: 18px;
-      /* Vân cũ vẽ #f1f5f9 trên #f8fafc — đo được 1,05:1, tức là không nhìn
-         thấy gì và khối rỗng trông như một mảng trắng bị lỗi. Dùng cùng nền
-         chìm và cùng vân với ô trống của các trang thống kê (1,79:1). */
-      background-color: #E2E8F0;
-      background-image: repeating-linear-gradient(
-        135deg, transparent, transparent 6px,
-        rgba(100, 116, 139, .38) 6px, rgba(100, 116, 139, .38) 9px);
-      border: 1px dashed #94A3B8;
-      color: #334155;
+      /* Trạng thái rỗng lấy cùng cặp nền/chữ ở cả hai chủ đề. */
+      background-color: var(--ui-empty-bg);
+      background-image: none;
+      border: 1px dashed var(--ui-border-strong);
+      color: var(--ui-empty-ink);
     }
-    .empty-state strong { color: #0f172a; }
+    .empty-state strong { color: var(--ui-ink); }
     .empty-state span { font-size: 13px; line-height: 1.5; }
 
     .decision-grid {
@@ -1253,7 +1247,7 @@ _DASHBOARD_CSS = """\
       padding: 16px;
       border-radius: 22px;
       border: 1px solid rgba(15,23,42,0.08);
-      background: white;
+      background: var(--ui-surface);
     }
     .decision-grid b {
       display: block;
@@ -1286,7 +1280,7 @@ _DASHBOARD_CSS = """\
       height: 100vh;
       display: flex;
       flex-direction: column;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
       box-shadow: -36px 0 90px rgba(2,6,23,0.35);
       transform: translateX(104%);
       transition: transform .22s ease;
@@ -1348,8 +1342,8 @@ _DASHBOARD_CSS = """\
       gap: 14px;
     }
     .evidence-card {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--ui-surface);
+      border: 1px solid var(--ui-border);
       border-radius: 20px;
       padding: 15px;
       box-shadow: 0 14px 36px rgba(15,23,42,0.06);
@@ -1367,12 +1361,12 @@ _DASHBOARD_CSS = """\
     .evidence-metric {
       padding: 11px;
       border-radius: 15px;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
+      background: var(--ui-surface-2);
+      border: 1px solid var(--ui-border);
     }
     .evidence-metric span {
       display: block;
-      color: #55606f;
+      color: var(--ui-ink-soft);
       font-size: 11px;
       font-weight: 850;
       text-transform: uppercase;
@@ -1382,18 +1376,18 @@ _DASHBOARD_CSS = """\
       display: block;
       margin-top: 3px;
       font-size: 16px;
-      color: #0f172a;
+      color: var(--ui-ink);
     }
     .evidence-list {
       margin: 0;
       padding-left: 18px;
-      color: #334155;
+      color: var(--ui-ink-2);
       line-height: 1.55;
       font-size: 13px;
     }
     .evidence-table-wrap {
       overflow: auto;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--ui-border);
       border-radius: 14px;
       max-height: 360px;
     }
@@ -1408,22 +1402,22 @@ _DASHBOARD_CSS = """\
     .evidence-empty {
       padding: 14px;
       border-radius: 14px;
-      background: #fff7ed;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
+      background: var(--ui-warn-soft);
+      color: var(--ui-warn);
+      border: 1px solid var(--ui-warn-border);
       font-size: 13px;
       line-height: 1.55;
     }
 
     .footer-note {
-      color: #cbd5e1;
+      color: var(--ui-ink-soft);
       padding: 10px 0 0;
       font-size: 13px;
       line-height: 1.6;
     }
     .footer-note code {
-      color: #e0f2fe;
-      background: rgba(255,255,255,0.10);
+      color: var(--ui-ink-2);
+      background: var(--ui-surface-2);
       padding: 2px 6px;
       border-radius: 8px;
     }
@@ -1605,7 +1599,7 @@ _DASHBOARD_SCRIPT_EVIDENCE = """\
 
     function evidenceParagraph(label, value) {
       const paragraph = document.createElement('p');
-      paragraph.style.cssText = 'margin:6px 0 0;color:#475569;line-height:1.6;font-size:13px;';
+      paragraph.style.cssText = 'margin:6px 0 0;color:var(--ui-ink-soft);line-height:1.6;font-size:13px;';
       paragraph.append(
         createEvidenceElement('b', '', label + ': '),
         document.createTextNode(valueOrDash(value))
@@ -1645,7 +1639,7 @@ _DASHBOARD_SCRIPT_EVIDENCE = """\
         evidenceParagraph('Bằng chứng', evidence)
       );
       const explanation = createEvidenceElement('p', '', valueOrDash(summary.explain_text));
-      explanation.style.cssText = 'margin:0;color:#334155;line-height:1.65;font-size:13px;';
+      explanation.style.cssText = 'margin:0;color:var(--ui-ink-2);line-height:1.65;font-size:13px;';
 
       document.getElementById('evidenceContent').replaceChildren(
         evidenceSection('AI/ML nhận định', aiContent),
@@ -1963,11 +1957,6 @@ def main() -> None:
     """
 
     qa_body = f"""
-    <div class="decision-grid">
-      <article><b>Ma trận</b><span>Dùng cho 00–99: tần suất, gan, điểm AI/ML. Nhìn được toàn bộ mặt phẳng số và cụm bất thường.</span></article>
-      <article><b>Biểu đồ thanh</b><span>Dùng cho xếp hạng: AI, lô gan, đầu–đuôi–tổng, cặp lộn. So sánh lớn/nhỏ rất nhanh.</span></article>
-      <article><b>Bảng</b><span>Dùng cho dữ liệu cần đối chiếu chi tiết: bảng Đặc Biệt tuần/tháng, điều kiện lịch sử, các trường giải thích.</span></article>
-    </div>
     <div class="layout-grid two">
       {_table(snap_loto, title="Ảnh chụp LOTO hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="loto")}
       {_table(snap_de, title="Ảnh chụp Đặc Biệt hiện tại", subtitle="Bảng kỹ thuật đầy đủ cho Đặc Biệt ngày/tuần/tháng/năm.", columns=["period_kind", "period_key", "number_str", "freq", "days_hit", "hit_rate", "z_score", "rank_in_period"], max_rows=60, highlight_col="freq", zfill_cols={"number_str"}, evidence_mode="de")}
@@ -2030,10 +2019,11 @@ def main() -> None:
             "dieu-kien",
         ),
         _section(
-            "Quy tắc chọn loại hiển thị",
-            "Mục này ghi rõ logic UI/UX để đội phát triển mở rộng thêm thống kê mà không làm rối giao diện.",
+            "Chi tiết thống kê",
+            "Đối chiếu tần suất, số ngày xuất hiện và thứ hạng qua các kỳ thống kê.",
             qa_body,
             "ui-ux",
+            eyebrow="Thống kê",
         ),
     ]
 
@@ -2089,7 +2079,7 @@ def main() -> None:
       <a href="#cap-lon">Cặp lộn</a>
       <a href="#bang-db">Bảng Đặc Biệt</a>
       <a href="#dieu-kien">Điều kiện</a>
-      <a href="#ui-ux">Quy tắc UI</a>
+      <a href="#ui-ux">Chi tiết thống kê</a>
     </nav>
 
     {"".join(sections)}
@@ -2122,7 +2112,6 @@ def main() -> None:
   <script>
 {_DASHBOARD_SCRIPT_EVIDENCE}
   </script>
-{dock("statistics.html")}
 </body>
 </html>
 """

@@ -212,7 +212,7 @@ def test_path_ui_template_does_not_apply_light_classes_to_dark_page() -> None:
     template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(
         encoding="utf-8"
     )
-    assert '<body class="ui-app ui-dock-space path-page">' in template
+    assert '<body class="ui-app path-page">' in template
     assert "bg-slate-50" not in template
     assert "text-slate-800" not in template
 
@@ -277,7 +277,7 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
         assert '<body class="bg-slate-50' not in text, page.name
         assert "text-slate-800" not in text, page.name
         body = BeautifulSoup(text, "html.parser").body
-        assert {"ui-app", "ui-dock-space", "path-page"} <= set(body.get("class", [])), page.name
+        assert {"ui-app", "path-page"} <= set(body.get("class", [])), page.name
 
 
 # --- Hệ thiết kế phải nằm ở LỚP DÙNG CHUNG, không ở một trang lẻ -----------
@@ -314,10 +314,10 @@ def _light_root(css: str) -> str:
 
 
 def test_every_style_owner_declares_the_same_page_ground() -> None:
-    """Trang chủ, biểu định kiểu chung và trang thống kê đứng trên cùng nền.
+    """Trang chủ và thống kê lấy nền chung khi người xem đổi chủ đề.
 
     Đây là phép kiểm bắt được lỗi "đổi giao diện mà người dùng không thấy gì
-    khác": nó so ba chủ thể với nhau chứ không so từng chủ thể với chính nó.
+    khác": hai chủ thể riêng phải tham chiếu token chung, không ghim màu sáng.
     """
     shared = _light_root(TAILWIND_LITE_CSS)
     assert f"--ui-bg:{PAGE_GROUND[0]}" in shared.replace(" ", "")
@@ -325,13 +325,13 @@ def test_every_style_owner_declares_the_same_page_ground() -> None:
 
     landing = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
     landing_root = _light_root(landing)
-    assert f"--bg:{PAGE_GROUND[0]}" in landing_root.replace(" ", "")
-    assert f"--bg-2:{PAGE_GROUND[1]}" in landing_root.replace(" ", "")
+    assert "--bg:var(--ui-bg)" in landing_root.replace(" ", "")
+    assert "--bg-2:var(--ui-bg-2)" in landing_root.replace(" ", "")
 
     stats = (ROOT / "src" / "build_statistics_dashboard.py").read_text(encoding="utf-8")
     stats_root = _light_root(stats)
-    assert f"--bg:{PAGE_GROUND[0]}" in stats_root.replace(" ", "")
-    assert f"--bg-2:{PAGE_GROUND[1]}" in stats_root.replace(" ", "")
+    assert "--bg:var(--ui-bg)" in stats_root.replace(" ", "")
+    assert "--bg-2:var(--ui-bg-2)" in stats_root.replace(" ", "")
 
 
 def test_brand_ramp_is_identical_wherever_it_is_declared() -> None:
@@ -424,6 +424,8 @@ def test_scroll_box_hugs_its_table_instead_of_stretching() -> None:
 # số đo được lúc trượt. Ghi số vào đây để lần sau ai đọc cũng biết ngưỡng này
 # từ đâu ra, thay vì tưởng là con số tuỳ ý.
 
+from theme_palette_helpers import theme_tokens, resolve_theme_colors
+
 STAT_CSS = "src/templates/stat_pages.css"
 
 
@@ -451,7 +453,8 @@ def test_empty_cell_sinks_by_tone_and_elevation_not_by_hatching() -> None:
     assert "background-image: none" in rule, rule
     assert "gradient" not in rule, rule
     assert "box-shadow: none" in rule, rule
-    found = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule)
+    assert "var(--ui-empty-bg)" in rule
+    found = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", resolve_theme_colors(rule, True))
     assert found, rule
     red, green, blue = (int(found.group(1)[i:i + 2], 16) for i in (1, 3, 5))
     assert 0.2126 * red + 0.7152 * green + 0.0722 * blue < 40, found.group(1)
@@ -467,17 +470,20 @@ def test_hit_cell_rises_with_fill_ring_and_shadow() -> None:
 
 
 def test_every_nhay_tier_has_a_distinct_pair_that_passes_aa() -> None:
-    """Năm cấp số nháy, mỗi cấp một cặp nền/chữ riêng, tất cả đạt AA."""
-    css = _stat_css()
-    seen = set()
-    for cls in ("sp-n1", "sp-n2", "sp-n3", "sp-n4", "sp-n5"):
-        start = css.index(f"td.{cls} {{")
-        rule = css[start : css.index("}", start)]
-        bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
-        fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
-        assert contrast_ratio(fg, bg) >= WCAG_AA_NORMAL, f"{cls} trượt AA"
-        seen.add(bg)
-    assert len(seen) == 5, "hai cấp dùng chung một nền thì không còn phân cấp"
+    """Năm cấp số nháy có nền/chữ riêng, đạt AA ở cả hai chủ đề."""
+    source = _stat_css()
+    for dark in (False, True):
+        css = resolve_theme_colors(source, dark)
+        seen = set()
+        for tier in range(1, 6):
+            assert f"var(--ui-n{tier}-bg)" in source
+            start = css.index(f"td.sp-n{tier} {{")
+            rule = css[start : css.index("}", start)]
+            bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+            fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+            assert contrast_ratio(fg, bg) >= WCAG_AA_NORMAL, (dark, tier)
+            seen.add(bg)
+        assert len(seen) == 5, "hai cấp dùng chung nền thì không còn phân cấp"
 
 
 def test_nhay_legend_exists_because_the_ramp_has_no_perceptual_order() -> None:
@@ -533,20 +539,17 @@ def test_crosshair_covers_the_row_as_well_as_the_column() -> None:
 
 
 def test_special_prize_is_red_in_both_themes() -> None:
-    """Giải ĐẶC BIỆT luôn đỏ, đậm, có nền và viền đỏ nhạt — ở cả hai chế độ.
-
-    Chế độ tối từng ghi đè về #e2e8f0, tức là mất hẳn màu đỏ. Giữ nguyên
-    #BE123C ở nền tối thì chìm (2,49:1), nên dùng #FDA4AF trên #4C0519 (8,27:1).
-    """
+    """Giải Đặc Biệt dùng cùng cặp token đỏ trong sáng, tối và chọn theo OS."""
     css = _stat_css()
     start = css.index(".sp-de b {")
     rule = css[start : css.index("}", start)]
-    assert "#BE123C" in rule and "#FFE4E6" in rule and "font-weight: 800" in rule
-    assert contrast_ratio("#BE123C", "#FFE4E6") >= WCAG_AA_NORMAL
-
-    dark = css[css.index("@media (prefers-color-scheme: dark)") :]
-    assert "#FDA4AF" in dark, "chế độ tối đánh mất màu đỏ của giải Đặc Biệt"
-    assert contrast_ratio("#FDA4AF", "#4C0519") >= WCAG_AA_NORMAL
+    assert "var(--ui-special-ink)" in rule and "var(--ui-special-bg)" in rule
+    assert "font-weight: 800" in rule
+    for dark in (False, True):
+        values = theme_tokens(dark)
+        fg, bg = values["--ui-special-ink"], values["--ui-special-bg"]
+        assert int(fg[1:3], 16) > int(fg[3:5], 16), (dark, fg)
+        assert contrast_ratio(fg, bg) >= WCAG_AA_NORMAL
 
 
 def test_matrix_columns_always_have_a_ceiling_of_one_fr() -> None:

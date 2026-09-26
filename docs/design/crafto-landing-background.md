@@ -1,5 +1,10 @@
 # Nền Crafto cho index / landing — trạng thái thật
 
+> Ghi chú lịch sử. Yêu cầu mới ngày 26/09/2026 mở rộng Crafto sang hệ thống
+> trình bày chung, đồng thời chọn Application làm tham chiếu nền/chuyển động.
+> Xem [thiết kế hiện hành](crafto-integration-2026-09-26.md). Các mục “CHƯA làm”
+> dưới đây mô tả thời điểm cũ, không phải trạng thái của bản tích hợp mới.
+
 ## Đã làm
 
 Ngôn ngữ thị giác của trang tham chiếu Crafto đã được đọc bằng

@@ -173,9 +173,8 @@ letter-spacing:.01em;white-space:nowrap}
 .tr-prize-row[data-prize="special"] .tr-prize-label{color:var(--ui-bad);background:var(--ui-bad-soft)}
 .tr-prize-row[data-prize="special"] .tr-number{min-height:var(--tr-sp-h);
 font-size:var(--tr-sp-fs);letter-spacing:.03em}
-.tr-special-tail{display:inline-block;margin-left:2px;padding:2px 5px;border-radius:8px;background:#fee2e2;color:#ca2323;
-box-shadow:inset 0 0 0 1px #fecaca}
-:root[data-ui-theme="dark"] .tr-special-tail{background:#451a1a;color:#fca5a5;box-shadow:inset 0 0 0 1px #7f1d1d}
+.tr-special-tail{display:inline-block;margin-left:2px;padding:2px 5px;border-radius:8px;background:var(--ui-special-bg);color:var(--ui-special-ink);
+box-shadow:inset 0 0 0 1px var(--ui-special-border)}
 
 /* ---- Đánh dấu số bằng cú nhấp (soi cầu) ---------------------------------
    Bấm một ô để tô, bấm lại để bỏ. Dùng `outline` chứ không `border`: viền
@@ -185,8 +184,7 @@ box-shadow:inset 0 0 0 1px #fecaca}
 transition:background-color .12s ease,color .12s ease}
 .tr-number[data-marked],.tr-mini[data-marked]{background:var(--tr-mark-bg);
 color:var(--tr-mark-ink);outline:1px solid var(--tr-mark-line);outline-offset:-1px}
-.tr-results{--tr-mark-bg:#fde68a;--tr-mark-ink:#78350f;--tr-mark-line:#f59e0b}
-:root[data-ui-theme="dark"] .tr-results{--tr-mark-bg:#78350f;--tr-mark-ink:#fde68a;--tr-mark-line:#b45309}
+.tr-results{--tr-mark-bg:var(--ui-mark-bg);--tr-mark-ink:var(--ui-mark-ink);--tr-mark-line:var(--ui-mark-border)}
 .tr-number[data-marked] .tr-special-tail{background:transparent;color:inherit;box-shadow:none}
 @media (prefers-reduced-motion:reduce){.tr-number,.tr-mini{transition:none}}
 .tr-mark-clear{margin-left:auto}

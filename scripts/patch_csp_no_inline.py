@@ -35,17 +35,9 @@ def rewrite_html(path: Path) -> bool:
         flags=re.I,
     )
 
-    html = re.sub(
-        r"<script>\(function\(\)\{var d=document\.querySelector\([\"']\.(?:ui-)?dock[\"']\)[\s\S]*?</script>",
-        '<script src="assets/ui-dock.js" defer></script>',
-        html,
-        flags=re.I,
-    )
-
     for needle, tag in [
         ("css-async.js", '<script src="assets/css-async.js" defer></script>'),
         ("apply-data-styles.js", '<script src="assets/apply-data-styles.js" defer></script>'),
-        ("ui-dock.js", '<script src="assets/ui-dock.js" defer></script>'),
     ]:
         if needle not in html and "</body>" in html:
             html = html.replace("</body>", tag + "\n</body>", 1)

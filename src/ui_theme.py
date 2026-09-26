@@ -61,7 +61,7 @@ radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%);
 /* THƯƠNG HIỆU — chỉ dành cho điều hướng và hành động chính. Không một dấu
    hiệu mã hoá dữ liệu nào được lấy màu từ đây; màu phân tích nằm ở khối
    --ui-ok/warn/bad và ở các thang nhiệt của từng trang. */
---ui-brand:#2946f3;--ui-brand-ink:#2038cf;--ui-brand-soft:#eaedff;--ui-brand-border:#c2cdfb;
+--ui-brand:#2946f3;--ui-brand-ink:#4F46E5;--ui-brand-soft:#eaedff;--ui-brand-border:#c2cdfb;
 /* Màu ĐÁNH DẤU DỮ LIỆU của biểu đồ, tách khỏi --ui-brand.
 Dải sáng của nền tối yêu cầu OKLCH L trong khoảng 0,48-0,67 để nét mảnh còn
 đọc được; --ui-brand ở nền tối là #8b93f8 với L=0,70, nằm ngoài dải. Dùng
@@ -129,7 +129,22 @@ ngoài thang là một quyết định chưa được cân nhắc. */
 --fs-title:20px;--fs-metric:clamp(32px,2.2vw,44px);
 --fs-body:15px;--fs-label:12px;
 
---ui-dock-h:54px;
+/* Màu trạng thái dữ liệu: nền/chữ đi thành cặp, giữ nguyên nghĩa khi đổi chủ đề. */
+--ui-empty-bg:#E2E8F0;--ui-empty-ink:#475569;
+--ui-special-bg:#FFE4E6;--ui-special-ink:#BE123C;--ui-special-border:#FDA4AF;
+--ui-special-strong-bg:#C0392B;--ui-special-strong-ink:#FFFFFF;
+--ui-mark-bg:#fde68a;--ui-mark-ink:#78350f;--ui-mark-border:#d97706;
+--ui-pending-bg:#E0E0E0;--ui-pending-ink:#515b6b;
+--ui-gan-bg:#F1F3F8;
+--ui-n1-bg:#FFF3CC;--ui-n1-ink:#714D0C;
+--ui-n2-bg:#E0F2FE;--ui-n2-ink:#075985;
+--ui-n3-bg:#DCFCE7;--ui-n3-ink:#166534;
+--ui-n4-bg:#F3E8FF;--ui-n4-ink:#6B21A8;
+--ui-n5-bg:#FFE4E6;--ui-n5-ink:#9F1239;
+--ui-orange-bg:#FFEDD5;--ui-orange-ink:#9A3412;
+--ui-inverse-bg:#2c2e3c;--ui-inverse-ink:#ffffff;
+--ui-coral-soft:#fff0eb;--ui-coral-ink:#984437;
+--ui-shadow-alpha:.08;--ui-decor-opacity:1;
 color-scheme:light;
 }
 
@@ -171,9 +186,25 @@ radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%);
 --ui-sh-md:0 0 25px rgba(0,0,0,.5);
 --ui-sh-lg:0 20px 60px rgba(0,0,0,.55);
 --ui-sh-brand:0 20px 60px rgba(0,0,0,.5);
+--ui-empty-bg:#0B1220;--ui-empty-ink:#a3afc4;
+--ui-special-bg:#4C0519;--ui-special-ink:#FDA4AF;--ui-special-border:#9F1239;
+--ui-special-strong-bg:#762f2a;--ui-special-strong-ink:#FFE8E3;
+--ui-mark-bg:#78350f;--ui-mark-ink:#fef3c7;--ui-mark-border:#f59e0b;
+--ui-pending-bg:#263243;--ui-pending-ink:#CBD5E1;
+--ui-gan-bg:#172033;
+--ui-n1-bg:#3b311b;--ui-n1-ink:#f8d982;
+--ui-n2-bg:#183647;--ui-n2-ink:#9dd9f3;
+--ui-n3-bg:#173e30;--ui-n3-ink:#a0e3bc;
+--ui-n4-bg:#362647;--ui-n4-ink:#d9b6f4;
+--ui-n5-bg:#48212e;--ui-n5-ink:#f6b4c5;
+--ui-orange-bg:#482d1b;--ui-orange-ink:#fbd1a2;
+--ui-inverse-bg:#e8eef6;--ui-inverse-ink:#202329;
+--ui-coral-soft:#422820;--ui-coral-ink:#ffbca7;
+--ui-shadow-alpha:.32;--ui-decor-opacity:.32;
 color-scheme:dark;
 }
 }
+:root.dark,
 :root[data-ui-theme="dark"]{
 --ui-bg:#121418;--ui-bg-2:#1f232c;
 /* Quầng sáng vẫn còn ở chế độ tối, chỉ nhạt hơn nhiều. Bản trước tắt hẳn
@@ -194,6 +225,21 @@ radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.13),transparent 64%);
 --ui-sh-md:0 0 25px rgba(0,0,0,.5);
 --ui-sh-lg:0 20px 60px rgba(0,0,0,.55);
 --ui-sh-brand:0 20px 60px rgba(0,0,0,.5);
+--ui-empty-bg:#0B1220;--ui-empty-ink:#a3afc4;
+--ui-special-bg:#4C0519;--ui-special-ink:#FDA4AF;--ui-special-border:#9F1239;
+--ui-special-strong-bg:#762f2a;--ui-special-strong-ink:#FFE8E3;
+--ui-mark-bg:#78350f;--ui-mark-ink:#fef3c7;--ui-mark-border:#f59e0b;
+--ui-pending-bg:#263243;--ui-pending-ink:#CBD5E1;
+--ui-gan-bg:#172033;
+--ui-n1-bg:#3b311b;--ui-n1-ink:#f8d982;
+--ui-n2-bg:#183647;--ui-n2-ink:#9dd9f3;
+--ui-n3-bg:#173e30;--ui-n3-ink:#a0e3bc;
+--ui-n4-bg:#362647;--ui-n4-ink:#d9b6f4;
+--ui-n5-bg:#48212e;--ui-n5-ink:#f6b4c5;
+--ui-orange-bg:#482d1b;--ui-orange-ink:#fbd1a2;
+--ui-inverse-bg:#e8eef6;--ui-inverse-ink:#202329;
+--ui-coral-soft:#422820;--ui-coral-ink:#ffbca7;
+--ui-shadow-alpha:.32;--ui-decor-opacity:.32;
 color-scheme:dark;
 }
 
@@ -372,13 +418,14 @@ letter-spacing:.02em;text-transform:uppercase}
 letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
 /* ---- 10. Tiện ích kiểu Tailwind (giữ tương thích ngược) -------------- */
-.bg-slate-50{background-color:#f8fafc}.bg-slate-50\/50{background-color:rgba(248,250,252,.5)}
-.bg-white{background-color:#fff}.bg-indigo-600{background-color:#2946f3}
-.text-slate-900{color:#0f172a}.text-slate-800{color:#1e293b}
-.text-slate-600{color:#475569}.text-slate-500{color:#5c6b80}.text-slate-400{color:#94a3b8}
-.text-indigo-600{color:#2946f3}.text-blue-600{color:#245fe2}.text-white{color:#fff}
+.bg-slate-50{background-color:var(--ui-surface-2)}.bg-slate-50\/50{background-color:color-mix(in srgb,var(--ui-surface-2) 50%,transparent)}
+.bg-white{background-color:var(--ui-surface)}.bg-indigo-600{background-color:var(--ui-brand)}
+.text-slate-900{color:var(--ui-ink)}.text-slate-800{color:var(--ui-ink-2)}
+.text-slate-600{color:var(--ui-ink-soft)}.text-slate-500{color:var(--ui-ink-soft)}.text-slate-400{color:var(--ui-ink-soft)}
+.text-indigo-600{color:var(--ui-brand-ink)}.text-blue-600{color:var(--ui-brand-ink)}.text-white{color:#fff}
+.bg-indigo-600.text-white{color:var(--ui-on-brand)}
 .border{border-width:1px;border-style:solid}
-.border-slate-200\/60{border-color:rgba(226,232,240,.6)}
+.border-slate-200\/60{border-color:var(--ui-border)}
 .rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
 .rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}
 .shadow-sm{box-shadow:var(--ui-sh-sm)}.shadow-md{box-shadow:var(--ui-sh-md)}
@@ -414,14 +461,11 @@ letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .lg\:col-span-8{grid-column:span 8/span 8}
 }
 
-/* ---- 12. Khung ứng dụng full-width -----------------------------------
-Không còn cột sidebar. Sidebar cũ chiếm 292px trên màn 1680px — 17,4% chiều
-ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm. Điều hướng
-chuyển sang dock nổi ở mục 15, và toàn bộ phần đó trả về cho nội dung. */
+/* ---- 12. Vùng nội dung trong khung ứng dụng --------------------------
+Khung điều hướng dùng chung được page_output gắn khi xuất trang. */
 .ui-app{min-height:100vh}
 
-/* .ui-sr-only vẫn cần: dock dùng biểu tượng, và một vài nút chỉ có icon sẽ
-được trình đọc màn hình đọc thành nút trống nếu thiếu nhãn ẩn này. */
+/* Nhãn ẩn giúp trình đọc màn hình đọc tên các nút chỉ có biểu tượng. */
 .ui-raw{margin-top:var(--s2)}
 .ui-raw summary{cursor:pointer;font-size:.8125rem;color:var(--ui-ink-soft);
 padding:.375rem 0;user-select:none}
@@ -467,164 +511,73 @@ border-radius:var(--ui-r-md);height:1rem;margin:.5rem 0}
 
 /* ---- 11. In ấn ------------------------------------------------------- */
 @media print{
+/* In từ màn tối vẫn dùng cặp nền/chữ sáng, gồm cả trạng thái số liệu. */
+:root,:root.dark,:root[data-ui-theme="dark"]{
+--ui-bg:#f0f4fd;
+--ui-bg-2:#eaedff;
+--ui-surface:#fff;
+--ui-surface-2:#f7f7f7;
+--ui-border:#e4e7f2;
+--ui-border-strong:#cdd4e8;
+--ui-ink:#202329;
+--ui-ink-2:#262b35;
+--ui-ink-soft:#5c6270;
+--ui-bg-mesh:linear-gradient(to top,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 46%),
+radial-gradient(1100px 560px at 8% -10%,rgba(41,70,243,.13),transparent 62%),
+radial-gradient(900px 520px at 94% 0%,rgba(114,74,222,.11),transparent 64%);
+--ui-brand:#2946f3;
+--ui-brand-ink:#4F46E5;
+--ui-brand-soft:#eaedff;
+--ui-brand-border:#c2cdfb;
+--ui-chart-1:#2946f3;
+--ui-brand-grad:linear-gradient(135deg,#2946f3 0%,#4a44ea 52%,#724ade 100%);
+--ui-on-brand:#ffffff;
+--ui-ok-soft:#d8f5ef;
+--ui-ok-border:#a5ddcb;
+--ui-warn-soft:#fff6e6;
+--ui-warn-border:#f7d9a6;
+--ui-bad-soft:#feedec;
+--ui-bad-border:#f6c9c6;
+--ui-sh-brand:0 20px 60px rgba(41,70,243,.24);
+--ui-empty-bg:#E2E8F0;
+--ui-empty-ink:#475569;
+--ui-special-bg:#FFE4E6;
+--ui-special-ink:#BE123C;
+--ui-special-border:#FDA4AF;
+--ui-special-strong-bg:#C0392B;
+--ui-special-strong-ink:#FFFFFF;
+--ui-mark-bg:#fde68a;
+--ui-mark-ink:#78350f;
+--ui-mark-border:#d97706;
+--ui-pending-bg:#E0E0E0;
+--ui-pending-ink:#515b6b;
+--ui-gan-bg:#F1F3F8;
+--ui-n1-bg:#FFF3CC;
+--ui-n1-ink:#714D0C;
+--ui-n2-bg:#E0F2FE;
+--ui-n2-ink:#075985;
+--ui-n3-bg:#DCFCE7;
+--ui-n3-ink:#166534;
+--ui-n4-bg:#F3E8FF;
+--ui-n4-ink:#6B21A8;
+--ui-n5-bg:#FFE4E6;
+--ui-n5-ink:#9F1239;
+--ui-orange-bg:#FFEDD5;
+--ui-orange-ink:#9A3412;
+--ui-inverse-bg:#2c2e3c;
+--ui-inverse-ink:#ffffff;
+--ui-coral-soft:#fff0eb;
+--ui-coral-ink:#984437;
+--ui-ok:#12744a;
+--ui-warn:#8f5608;
+--ui-bad:#c62828;
+color-scheme:light;
+}
+
 body{background:#fff}
 .ui-card{box-shadow:none;break-inside:avoid}
 .ui-table-wrap{max-height:none;overflow:visible}
 .ui-nav{display:none}
-}
-
-/* ---- 15. Dock điều hướng nổi ------------------------------------------
-Thay sidebar dọc. Sidebar chiếm 292px trên màn 1680px — 17,4% chiều ngang chỉ
-để hiển thị 17 liên kết mà phần lớn thời gian không ai bấm. Dock trả lại toàn
-bộ phần đó cho nội dung.
-
-17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và tooltip
-chồng lên nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon nhóm và mở
-popover khi hover hoặc focus. */
-.ui-dock{position:fixed;left:50%;bottom:var(--s3);transform:translateX(-50%);
-z-index:60;max-width:calc(100vw - var(--s4))}
-/* Nhãn nằm dưới icon đẩy dock lên 108px. Đưa nhãn thành tooltip nổi phía
-trên (xem .ui-dock-name) thì thanh chỉ còn icon: 40 + 6*2 viền = 54px, đúng
-khoảng 48-56px của bản thiết kế. Nền hạ từ 84% xuống 30% để thấy rõ nội dung
-trôi phía sau — đó mới là hiệu ứng kính. */
-.ui-dock-inner{position:relative;display:flex;align-items:center;gap:4px;
-padding:6px 10px;border-radius:var(--r-pill);
-background:color-mix(in srgb,var(--ui-surface) 30%,transparent);
-border:1px solid var(--hairline);
-box-shadow:0 8px 32px rgba(15,23,42,.22),inset 0 1px 0 rgba(255,255,255,.06);
-backdrop-filter:blur(12px) saturate(1.8);-webkit-backdrop-filter:blur(12px) saturate(1.8)}
-/* Trình duyệt không có backdrop-filter sẽ thấy nền đặc thay vì trong suốt —
-vẫn đọc được, chỉ mất hiệu ứng kính. */
-@supports not (backdrop-filter:blur(1px)){
-.ui-dock-inner{background:var(--ui-surface)}
-}
-.ui-dock-group{position:relative}
-.ui-dock-btn{position:relative;display:grid;place-items:center;padding:0;
-background:none;border:0;color:var(--ui-ink-2);cursor:pointer;border-radius:var(--r-inner)}
-.ui-dock-ic{display:grid;place-items:center;width:40px;height:40px;font-size:18px;
-border-radius:var(--r-inner);background:var(--ui-surface-2);
-border:1px solid var(--hairline);
-transition:transform .24s ease-in-out,background .2s ease-in-out}
-/* Nhãn thành tooltip: ra khỏi luồng nên không cộng vào chiều cao thanh. */
-.ui-dock-name{position:absolute;bottom:calc(100% + 8px);left:50%;
-transform:translateX(-50%) translateY(4px);
-padding:3px 8px;border-radius:var(--r-inner);
-background:var(--ui-ink);color:var(--ui-surface);
-font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
-opacity:0;visibility:hidden;pointer-events:none;
-transition:opacity .16s ease-in-out,transform .16s ease-in-out,visibility .16s}
-.ui-dock-btn:hover .ui-dock-name,.ui-dock-btn:focus-visible .ui-dock-name{
-opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
-/* Nhóm nào có popover thì popover đã nói rõ tên nhóm — hiện thêm tooltip là
-thừa và hai lớp nổi chồng lên nhau. */
-.ui-dock-group:hover .ui-dock-name{opacity:0;visibility:hidden}
-.ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{
-transform:scale(1.18);background:var(--ui-brand-soft)}
-.ui-dock-btn[aria-current="true"] .ui-dock-ic{
-background:var(--ui-brand);color:var(--ui-on-brand);border-color:transparent}
-.ui-dock-btn:focus-visible{outline:2px solid var(--ui-brand);outline-offset:2px}
-
-/* Popover: mặc định ẩn khỏi CÂY TRỢ NĂNG lẫn thị giác. Dùng visibility chứ
-không dùng display:none để còn chuyển động được, và hidden-until-found sẽ làm
-trình đọc màn hình bỏ qua khi đóng. */
-.ui-dock-pop{position:absolute;bottom:calc(100% + var(--s2));left:50%;
-transform:translateX(-50%) translateY(6px);min-width:220px;padding:var(--s1);
-background:var(--ui-surface);border:1px solid var(--ui-border);
-border-radius:var(--r-card);box-shadow:var(--ui-sh-lg);
-opacity:0;visibility:hidden;pointer-events:none;
-/* Độ trễ BẤT ĐỐI XỨNG. Mở gần như tức thì, nhưng đóng chậm .40s: con trỏ đi
-từ nút lên popover phải băng qua khe hở var(--s2), và nếu đóng ngay khi rời
-nút thì menu biến mất giữa đường. Đây là nửa sau của "hover intent"; nửa đầu
-là cầu nối ::after ngay bên dưới. */
-transition:opacity .18s ease-in-out .22s,transform .18s ease-in-out .22s,
-visibility 0s linear .40s}
-/* Cầu nối phủ kín khe hở giữa đáy popover và đỉnh nút, nên :hover của nhóm
-không bao giờ đứt khi con trỏ băng qua. */
-.ui-dock-pop::after{content:"";position:absolute;left:0;right:0;top:100%;
-height:18px}
-/* Vùng đệm quanh cả nhóm: tha thứ cho đường chuột đi chéo ra ngoài mép nút. */
-.ui-dock-group::after{content:"";position:absolute;left:-6px;right:-6px;
-top:-18px;bottom:-6px;z-index:-1}
-.ui-dock-group:hover .ui-dock-pop,
-.ui-dock-group:focus-within .ui-dock-pop,
-.ui-dock-group.ui-open .ui-dock-pop{
-opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0);
-transition-delay:0s,0s,0s}
-.ui-dock-pop a{display:flex;align-items:center;gap:var(--s1);
-padding:var(--s1) var(--s2);border-radius:var(--r-inner);
-color:var(--ui-ink-2);font-size:13px;white-space:nowrap}
-.ui-dock-pop a:hover{background:var(--ui-surface-2);text-decoration:none}
-.ui-dock-pop a[aria-current="page"]{background:var(--ui-brand-soft);
-color:var(--ui-brand-ink);font-weight:600}
-
-/* MÀN HẸP: dock không được cuộn ngang, và menu con neo vào CẢ DẢI DOCK.
-   ========================================================================
-   Hai lỗi chồng lên nhau khiến dock chết hẳn trên điện thoại.
-
-   Lỗi 1 — menu lòi ra ngoài viền. Menu rộng cố định 220px canh giữa theo nút
-   của nó. Máy bàn thì dock nằm giữa màn rộng nên không sao; điện thoại thì
-   dock chiếm gần trọn bề ngang, nên các nhóm ở HAI ĐẦU đẩy menu ra ngoài:
-
-       390px   3/7 nhóm hỏng   #0 lòi trái 63px · #1 lòi trái 19px · #6 lòi phải 31px
-       360px   4/7 nhóm hỏng   thêm #5 lòi phải 17px, #6 thành 61px
-
-   Lỗi 2 — KHÔNG ô nào chạm tới được, kể cả ô nằm gọn trong màn. Đo được 0/9
-   liên kết nhận cú chạm trên điện thoại trong khi máy bàn 9/9. Nguyên nhân
-   là `.ui-dock-inner` cũ mang `overflow-x:auto`: hộp cuộn CẮT mọi hậu duệ
-   nằm ngoài nó, mà inner chỉ cao 54px còn menu bung lên phía trên. Menu bị
-   xén sạch — `elementFromPoint` giữa menu trả về nội dung trang chứ không
-   phải liên kết, dù computed style vẫn báo `visibility:visible`.
-
-   `position:fixed` KHÔNG thoát ra được: `.ui-dock-inner` có `backdrop-filter`,
-   mà backdrop-filter biến phần tử thành khối chứa cho cả hậu duệ `fixed`. Đo
-   để chắc: tắt riêng `backdrop-filter` → chạm được; tắt riêng `overflow-x` →
-   cũng chạm được; để cả hai → không. Phải gỡ đúng một trong hai, và gỡ hộp
-   cuộn mới là gỡ đúng gốc.
-
-   Nên bỏ hẳn cuộn ngang: cho mỗi nhóm `flex:1 1 0` để N nhóm luôn vừa khít
-   bề ngang. Không còn ngữ cảnh cắt thì menu chỉ cần `absolute` lấy
-   `.ui-dock-inner` làm gốc toạ độ rồi căng `left:0;right:0` — hết cả hai lỗi
-   bằng cùng một thay đổi. Cuộn ngang với thanh cuộn ẩn vốn cũng là cách điều
-   hướng tồi trên màn cảm ứng: không có gì báo rằng còn nhóm phía sau. */
-@media (max-width:640px){
-.ui-dock{left:var(--s2);right:var(--s2);transform:none;max-width:none}
-.ui-dock-inner{justify-content:space-between;gap:2px;padding:6px;
-border-radius:var(--r-card)}
-.ui-dock-group{position:static;flex:1 1 0;min-width:0}
-.ui-dock-btn{width:100%}
-.ui-dock-ic{width:100%;max-width:40px;margin-left:auto;margin-right:auto}
-/* Màn cảm ứng không có trạng thái hover để hiện tooltip, mà tên nhóm đã nằm
-sẵn trong menu con. */
-.ui-dock-name{display:none}
-.ui-dock-pop{position:absolute;left:0;right:0;min-width:0;
-transform:translateY(6px);max-height:min(60vh,420px);overflow-y:auto}
-/* Trên màn cảm ứng, MỘT CÚ CHẠM phải mở và cú chạm thứ hai phải đóng. Nhưng
-chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu mở mãi
-và cú chạm thứ hai không đóng được gì. Ở màn hẹp, chỉ `.ui-open` (do kịch bản
-đặt) mới là công tắc. Có `.ui-js` đứng đầu để khi không có JavaScript thì
-`:focus-within` của quy tắc gốc vẫn còn tác dụng. */
-.ui-js .ui-dock-group:hover .ui-dock-pop,
-.ui-js .ui-dock-group:focus-within .ui-dock-pop{
-opacity:0;visibility:hidden;pointer-events:none;transform:translateY(6px)}
-.ui-js .ui-dock-group.ui-open .ui-dock-pop,
-.ui-dock-group.ui-open .ui-dock-pop{
-opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
-/* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn cảm
-ứng không có hover, còn `z-index:-1` của vùng đệm lại đẩy nó xuống dưới dải
-dock nên nó nuốt mất cú chạm ở rìa nút. */
-.ui-dock-pop::after{content:none}
-.ui-dock-group::after{content:none}
-}
-
-/* Dock đã bị khung ứng dụng thay thế: đo được 0/29 trang còn dấu vết nào
-   của nó (`ui-dock-inner`, `ui-dock-btn`, `class="ui-dock"`). Quy tắc chừa
-   chỗ cho dock vì thế chừa chỗ cho hư không — đo trên bốn trang `soi-path-*`
-   là 86px trống dưới cùng (54px chiều cao dock cộng 32px khoảng cách). */
-
-
-@media (prefers-reduced-motion:reduce){
-.ui-dock-ic,.ui-dock-pop,.ui-dock-name{transition:none}
-.ui-dock-btn:hover .ui-dock-ic,.ui-dock-btn:focus-visible .ui-dock-ic{transform:none}
 }
 
 /* ---- 16. Lưới KPI -----------------------------------------------------
@@ -802,6 +755,12 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
 )
 
 
+#: Đích tìm kiếm bổ sung; không đổi nhóm sidebar hay mục đang hoạt động.
+SITE_SEARCH_EXTRAS: tuple[tuple[str, str, str], ...] = (
+    ("landing_desktop.html", "Giao diện máy tính", "dashboard"),
+)
+
+
 #: Mọi trang HTML mà điều hướng phải phủ. Test đối chiếu với docs/*.html.
 def nav_targets() -> set[str]:
     """Tập tệp .html mà :data:`SITE_NAV` trỏ tới, đã bỏ phần neo."""
@@ -877,104 +836,8 @@ def stylesheet_link() -> str:
     return f'<link rel="stylesheet" href="{STYLESHEET_NAME}" />'
 
 
-def dock_script(prefix: str = "ui-dock") -> str:
-    """Kịch bản điều khiển dock, nhúng thẳng vào trang.
-
-    Dock vốn chỉ mở bằng ``:hover``/``:focus-within``. Màn cảm ứng KHÔNG CÓ
-    hover, còn ``:focus-within`` thì mở được nhưng không đóng được: chạm lần
-    hai vào nút chẳng thay đổi gì vì nút vẫn đang giữ focus. Vậy nên cần một
-    công tắc tường minh — lớp ``ui-open`` — dùng chung cho chạm và bàn phím.
-
-    Kịch bản cũng gắn ``ui-js`` lên ``<html>``. Biểu định kiểu dựa vào lớp đó
-    để chỉ tắt ``:focus-within`` KHI có JavaScript; không có JavaScript thì
-    hành vi cũ vẫn còn, tốt hơn là chẳng còn gì.
-
-    Kèm theo là ``aria-expanded``: nút mang ``aria-haspopup`` mà không báo
-    trạng thái đóng/mở thì trình đọc màn hình không biết menu đang ra sao.
-
-    Args:
-        prefix: Tiền tố lớp của dock — ``ui-dock`` cho khung dùng chung,
-            ``dock`` cho dock riêng của trang chủ.
-
-    Returns:
-        Thẻ ``<script>`` đã đóng gói.
-    """
-    root, group, btn = f".{prefix}", f".{prefix}-group", f".{prefix}-btn"
-    return (
-        "<script>(function(){"
-        f'var d=document.querySelector("{root}");if(!d)return;'
-        'document.documentElement.classList.add("ui-js");'
-        f'var gs=Array.prototype.slice.call(d.querySelectorAll("{group}"));'
-        'function set(g,o){g.classList.toggle("ui-open",o);'
-        f'var b=g.querySelector("{btn}");'
-        'if(b)b.setAttribute("aria-expanded",o?"true":"false")}'
-        "function shut(k){for(var i=0;i<gs.length;i++)if(gs[i]!==k)set(gs[i],false)}"
-        'd.addEventListener("click",function(e){'
-        f'var b=e.target.closest&&e.target.closest("{btn}");if(!b)return;'
-        f'var g=b.closest("{group}");if(!g)return;'
-        'var o=!g.classList.contains("ui-open");shut(g);set(g,o)});'
-        'document.addEventListener("click",function(e){'
-        f'if(!(e.target.closest&&e.target.closest("{root}")))shut(null)}});'
-        'document.addEventListener("keydown",function(e){'
-        'if(e.key!=="Escape")return;'
-        f'var g=d.querySelector("{group}.ui-open");if(!g)return;'
-        f'var b=g.querySelector("{btn}");shut(null);if(b)b.focus()}});'
-        'd.addEventListener("focusout",function(e){'
-        "if(!e.relatedTarget||!d.contains(e.relatedTarget))shut(null)})"
-        "})();</script>"
-    )
-
-
-def dock(current: str = "") -> str:
-    """Dựng dock điều hướng nổi ở giữa chân trang.
-
-    Thay cho sidebar dọc. Sidebar chiếm 292px trên màn 1680px — 17,4% chiều
-    ngang — chỉ để hiện 17 liên kết mà phần lớn thời gian không ai bấm.
-
-    17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-    tooltip chồng nhau. :data:`SITE_NAV` vốn đã chia 5 nhóm, nên dock hiện 5
-    icon nhóm, mỗi icon mở một popover chứa các mục con.
-
-    Popover mở bằng ``:hover`` **và** ``:focus-within`` — chỉ hover thôi thì
-    người dùng bàn phím không bao giờ tới được các mục con.
-
-    Args:
-        current: Tên tệp trang hiện tại, để đánh dấu mục đang xem.
-
-    Returns:
-        Chuỗi HTML của dock.
-    """
-    parts = ['<nav class="ui-dock" aria-label="Điều hướng chính">', '<div class="ui-dock-inner">']
-    for group, items in SITE_NAV:
-        hrefs = {href.split("#", 1)[0] for href, _, _ in items}
-        active = " aria-current=\"true\"" if current and current in hrefs else ""
-        icon = items[0][2] if items else "•"
-        group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
-        parts.append('<div class="ui-dock-group">')
-        parts.append(
-            f'<button class="ui-dock-btn" type="button"{active}'
-            f' aria-haspopup="true" aria-expanded="false"'
-            f' aria-controls="{group_id}">'
-            f'<span class="ui-dock-ic" aria-hidden="true">{icon}</span>'
-            f'<span class="ui-dock-name">{html.escape(group)}</span>'
-            "</button>"
-        )
-        parts.append(f'<div class="ui-dock-pop" id="{group_id}" role="menu">')
-        for href, label, item_icon in items:
-            mark = ' aria-current="page"' if href == current else ""
-            parts.append(
-                f'<a href="{href}" role="menuitem"{mark}>'
-                f'<span aria-hidden="true">{item_icon}</span>'
-                f"<span>{html.escape(label)}</span></a>"
-            )
-        parts.append("</div></div>")
-    parts.append("</div></nav>")
-    parts.append(dock_script())
-    return "".join(parts)
-
-
 def app_shell_open(current: str = "", *, wide: bool = False) -> str:
-    """Mở khung ứng dụng: nội dung chiếm trọn chiều ngang, dock ở chân trang.
+    """Mở vùng nội dung; khung điều hướng được gắn khi xuất trang.
 
     Args:
         current: Tên tệp trang hiện tại.
@@ -992,15 +855,15 @@ def app_shell_open(current: str = "", *, wide: bool = False) -> str:
 
 #: Vá riêng cho trang trực tiếp, chèn vào cuối thẻ ``<style>`` của chính nó.
 #:
-#: Trang này có bảng màu tối riêng và trước đây không dùng biểu định kiểu dùng
-#: chung. Gắn dock thì phải nạp biểu định kiểu ấy, và nó mang theo quy tắc
+#: Trang này trước đây không dùng biểu định kiểu dùng chung. Khi nạp nó,
+#: trang nhận thêm quy tắc
 #: ``body{font-size:14px;line-height:1.6}`` cùng ``a{text-decoration:none}`` —
 #: hai thứ trang không tự khai báo nên chúng lọt xuống toàn bộ nội dung: đo
 #: được trang cao thêm 235px và liên kết ở đầu trang mất gạch chân.
 #:
 #: Ghim lại theo ``.wrap`` chứ không theo ``body``: ``.wrap`` bọc đúng phần
-#: nội dung của trang, còn dải dock và khối điều hướng cuối trang nằm NGOÀI
-#: nó nên vẫn giữ nguyên định kiểu dùng chung.
+#: nội dung của trang, còn khung điều hướng nằm NGOÀI nó nên vẫn giữ nguyên
+#: định kiểu dùng chung.
 _LIVE_PATCH = (
     ".wrap{font-size:16px;line-height:normal}"
     ".wrap a{text-decoration:underline}"
@@ -1009,12 +872,9 @@ _LIVE_PATCH = (
 #: Khối điều hướng phẳng viết tay của trang trực tiếp.
 _LIVE_NAV = re.compile(r'<nav class="ui-live-nav".*?</nav>', re.S)
 
-#: Dock đã gắn ở lượt dựng trước, để lượt sau thay chứ không chồng thêm.
-_LIVE_DOCK = re.compile(r'<nav class="ui-dock".*?</nav>\s*(?:<script>.*?</script>)?', re.S)
-
 
 def refresh_live_page(docs_dir: Path) -> Path | None:
-    """Gắn dock và làm mới điều hướng cho ``live.html``.
+    """Làm mới khung điều hướng cho ``live.html``.
 
     ``live.html`` là trang DUY NHẤT không do builder nào sinh ra: nó được viết
     tay và commit thẳng. Cái giá của việc đó đã hiện rõ — khối điều hướng
@@ -1023,8 +883,7 @@ def refresh_live_page(docs_dir: Path) -> Path | None:
     chuẩn hoá thành "LOTO" và "Đặc Biệt". Chép tay lần nữa là lặp lại đúng
     lỗi ấy, nên ở đây sinh lại từ nguồn.
 
-    Hàm chạy được nhiều lần cho cùng một kết quả: dock cũ bị thay chứ không
-    bị chồng thêm.
+    Hàm chạy nhiều lần cho cùng một kết quả; write_page làm mới khung chung.
 
     Args:
         docs_dir: Thư mục gốc của trang tĩnh.
@@ -1038,7 +897,6 @@ def refresh_live_page(docs_dir: Path) -> Path | None:
     text = path.read_text(encoding="utf-8")
     if STYLESHEET_NAME not in text:
         text = text.replace("<style>", f"{stylesheet_link()}\n  <style>", 1)
-    text = _LIVE_DOCK.sub("", text)
     # Trang trực tiếp có khối điều hướng phẳng viết tay của riêng nó. Trước
     # đây nó được THAY bằng bản dựng từ SITE_NAV; nay menu chân trang đã gỡ
     # khỏi toàn bộ trang nên khối này bị xoá hẳn, không thay nữa.
@@ -1047,24 +905,13 @@ def refresh_live_page(docs_dir: Path) -> Path | None:
         # Phải chèn vào đúng thẻ `<style>` của trang, và chèn CUỐI: trang có
         # biểu định kiểu riêng nên chèn sớm sẽ bị chính nó đè mất.
         text = text.replace("</style>", f"{_LIVE_PATCH}\n  </style>", 1)
-    text = text.replace("</body>", f'{dock("live.html")}\n</body>', 1)
     write_page(path, text)
     return path
 
 
 def app_shell_close(current: str = "") -> str:
-    """Đóng khung mở bởi :func:`app_shell_open` và gắn dock.
-
-    Dock đặt ở CUỐI phần thân chứ không phải đầu: thứ tự trong DOM là thứ tự
-    trình đọc màn hình đi qua, và nội dung nên đến trước điều hướng phụ.
-
-    Args:
-        current: Tên tệp trang hiện tại, chuyển tiếp cho :func:`dock`.
-
-    Returns:
-        Phần HTML đóng khung kèm dock.
-    """
-    return f"</main>{dock(current)}</div>"
+    """Đóng vùng nội dung; điều hướng do page_output gắn một lần khi xuất."""
+    return "</main></div>"
 
 
 def tailwind_style_tag() -> str:

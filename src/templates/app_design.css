@@ -1,0 +1,342 @@
+/* Lớp Crafto cuối cùng: chỉ đổi trình bày, giữ hình học khung và màu dữ liệu. */
+body[data-app-design="crafto"][data-ui-page] {
+  --app-design-cream:color-mix(in srgb,var(--ui-surface,#fff) 94%,#dabd88);
+  --app-design-ink:var(--ui-ink,#2c2e3c);
+  --app-design-muted:var(--ui-ink-soft,#5c6270);
+  --app-design-line:color-mix(in srgb,var(--ui-ink,#2c2e3c) 9%,var(--ui-surface,#fff));
+  --app-design-coral:#fd6f63;
+  --app-design-shadow:var(--ui-sh-lg);
+  --app-design-ease:cubic-bezier(.12,0,.39,0);
+  --app-surface:var(--ui-surface,#fff);--app-ground:var(--app-design-cream);
+  --app-fill:var(--ui-brand-soft,#f2f0fb);--app-line:var(--app-design-line);
+  --app-ink:var(--app-design-ink);--app-head-ink:var(--app-design-ink);
+  --app-ink-soft:var(--app-design-muted);--app-accent:var(--ui-brand-ink,#514bc4);
+  --ui-r-lg:16px;--ui-r-xl:24px;--ui-page-gutter:clamp(16px,2.5vw,32px);
+  --ui-elevation:var(--ui-sh-md);
+  --ui-elevation-hover:var(--ui-sh-lg);
+  background:var(--app-design-cream);background-attachment:scroll;
+  color:var(--app-design-ink);isolation:isolate;
+}
+body[data-app-design="crafto"] .app-header {
+  background:var(--app-surface);border-color:var(--app-design-line);
+  box-shadow:0 4px 24px rgba(0,0,0,.025);
+}
+body[data-app-design="crafto"] .app-header .app-rail-brand {
+  border-radius:var(--app-shell-radius);background:var(--ui-inverse-bg);color:var(--ui-inverse-ink);
+}
+body[data-app-design="crafto"] .app-header .app-search-trigger {
+  background:var(--app-design-cream);border:1px solid var(--app-design-line);
+}
+body[data-app-design="crafto"] .app-rail {box-shadow:none;border-right:1px solid var(--app-design-line)}
+body[data-app-design="crafto"] .app-panel {box-shadow:18px 0 40px rgba(0,0,0,.04)}
+body[data-app-design="crafto"] :is(.app-rail-btn,.app-nav-item)[aria-selected="true"],
+body[data-app-design="crafto"] :is(.app-nav-item--active,.app-nav-item[aria-current="page"]) {
+  background:var(--ui-brand-soft);color:var(--app-accent);
+}
+body[data-app-design="crafto"] .app-nav-ic {color:var(--app-accent)}
+body[data-app-design="crafto"] .app-panel-title {font-weight:750;letter-spacing:-.02em}
+body[data-app-design="crafto"] .app-main {min-width:0}
+body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-controls,
+  .sp-kpi-card,.sp-recent-card,.sp-duo>div,.bf-card,.bf-kpi,.tr-filter,.tr-summary>div,.tr-day,
+  .ai-status-item,.rl-stage,.rl-console-card) {
+  background:var(--ui-surface);border:1px solid var(--app-design-line);
+  border-radius:16px;box-shadow:var(--ui-elevation);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+  transition:box-shadow .3s var(--app-design-ease),border-color .3s var(--app-design-ease);
+}
+/* Giữ bảng đứng yên để người đọc không phải nhìn theo con trỏ. */
+body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-kpi-card,
+  .sp-recent-card,.bf-card,.tr-day,.ai-status-item,.rl-stage,.rl-console-card):hover {
+  transform:none;box-shadow:var(--ui-elevation-hover);
+}
+body[data-app-design="crafto"].bf-page .sp-controls {
+  background:transparent;border:0;border-radius:0;box-shadow:none;
+}
+body[data-app-design="crafto"] :is(.ui-header,.path-hero,.live-hero) {
+  padding:28px 32px;border-radius:24px;border:1px solid var(--app-design-line);
+  background:var(--ui-surface);box-shadow:var(--ui-elevation);backdrop-filter:none;
+}
+body[data-app-design="crafto"] :is(.ui-header,.path-hero,.live-hero,.bf-hero) h1 {
+  color:var(--app-design-ink);font-size:clamp(26px,2.8vw,38px);
+  line-height:1.18;letter-spacing:-.045em;font-weight:750;
+}
+body[data-app-design="crafto"] :is(.ui-header,.path-hero,.live-hero) p {line-height:1.65}
+body[data-app-design="crafto"] :is(.ui-header,.path-hero,.live-hero) svg {
+  flex-shrink:0;
+}
+body[data-app-design="crafto"] :is(.sp-btn,.sp-chip,.ui-btn,.tr-btn,.bf-tabs a,.ui-tab) {
+  border-radius:50px;font-weight:600;
+}
+body[data-app-design="crafto"] :is(.sp-controls select,.sp-controls input:not([type="checkbox"]),
+  .tr-filter select,.tr-filter input) {border-radius:10px}
+body[data-app-design="crafto"] :is(.sp-legend,.sp-scroll,.ui-table-wrap,.path-table-scroll) {
+  border-radius:16px;
+}
+body[data-app-design="crafto"] :is(.eyebrow,.section-kicker,.bf-eyebrow) {letter-spacing:.13em}
+body[data-app-design="crafto"] .section-title {margin-block:40px 20px}
+body[data-app-design="crafto"] .section-title h2 {font-size:clamp(24px,2.6vw,32px);letter-spacing:-.045em}
+body[data-app-design="crafto"] .metric-row {gap:16px;margin-block:24px}
+body[data-app-design="crafto"] .metric-tile {padding:24px;min-height:144px;gap:12px}
+body[data-app-design="crafto"] .metric-tile span {font-weight:600}
+body[data-app-design="crafto"] .metric-tile strong {font-size:32px;letter-spacing:-.045em}
+body[data-app-design="crafto"] .metric-tile[data-long="true"] strong {font-size:24px}
+
+/* Lớp trang trí độc lập với nội dung và không chặn thao tác. */
+[data-app-effects] {display:contents;pointer-events:none}
+.app-ambience {position:fixed;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
+.app-orb {position:absolute;display:block;width:560px;height:560px;border-radius:50%;opacity:.18}
+.app-orb--one {
+  top:8%;right:-380px;background:radial-gradient(circle,#fd6f63 0,transparent 68%);
+  animation:app-orb-drift 24s ease-in-out infinite alternate;
+}
+.app-orb--two {
+  bottom:-380px;left:10%;background:radial-gradient(circle,#a28af8 0,transparent 68%);
+  animation:app-orb-drift 30s ease-in-out -9s infinite alternate-reverse;
+}
+.app-orb--three {
+  top:45%;left:-440px;background:radial-gradient(circle,#fbcdb2 0,transparent 68%);
+}
+.app-particle {
+  position:absolute;left:-20px;top:calc(12% + var(--app-i,0)*6.5%);
+  width:5px;height:5px;border-radius:50%;background:var(--app-design-coral);opacity:.26;
+  animation:app-particle-drift calc(32s + var(--app-i,0)*2s) linear calc(var(--app-i,0)*-6s) infinite;
+}
+.app-particle:nth-child(3n) {background:#8269eb;width:7px;height:7px}
+.app-particle:nth-child(3n + 1) {background:#e966ac;width:4px;height:4px}
+.app-cursor {
+  position:fixed;left:0;top:0;width:25px;height:25px;border-radius:50%;z-index:90;
+  background:rgba(44,46,60,.15);opacity:0;pointer-events:none;
+  transform:translate3d(calc(var(--app-pointer-x,0px) - 50%),calc(var(--app-pointer-y,0px) - 50%),0);
+  transition:opacity .2s,background-color .2s,width .2s,height .2s;
+}
+.app-cursor--visible {opacity:1}
+.app-cursor--active {width:42px;height:42px;background:rgba(253,111,99,.18)}
+body[data-app-design="crafto"] #app-motion-toggle {
+  position:fixed;right:20px;bottom:20px;z-index:30;display:inline-flex;
+  align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 14px;
+  border:1px solid var(--app-design-line);border-radius:50px;
+  background:var(--ui-surface);color:var(--app-design-ink);
+  font-family:inherit;font-size:12px;font-weight:650;box-shadow:0 4px 20px rgba(0,0,0,.08);
+  cursor:pointer;pointer-events:auto;
+}
+body[data-app-design="crafto"] #app-motion-toggle[hidden] {display:none!important}
+body[data-app-design="crafto"] #app-motion-toggle svg {width:15px;height:15px;flex-shrink:0}
+body[data-app-design="crafto"] #app-motion-toggle:hover {border-color:var(--app-accent);color:var(--app-accent)}
+
+/* Hero Application: khoảng trắng, quầng sáng ở mép và kết quả thật ở giữa. */
+body[data-app-design="crafto"] .main>.hero {
+  position:relative;isolation:isolate;overflow:hidden;margin-top:0;margin-bottom:24px;
+  padding:64px 56px 0;border:1px solid var(--app-design-line);border-radius:24px;
+  background:var(--ui-surface);color:var(--ui-ink);box-shadow:var(--app-design-shadow);
+}
+body[data-app-design="crafto"] .hero::before,
+body[data-app-design="crafto"] .hero::after {
+  content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;opacity:var(--ui-decor-opacity,1);
+}
+body[data-app-design="crafto"] .hero::before {
+  width:760px;height:760px;top:-490px;left:-330px;
+  background:radial-gradient(circle,#ff877b 0,#ffb2a9 32%,rgba(255,213,205,.46) 49%,transparent 68%);
+}
+body[data-app-design="crafto"] .hero::after {
+  width:900px;height:900px;right:-630px;top:30px;
+  background:radial-gradient(circle at 40% 45%,#e455c8 0,#aa77ed 26%,#cfbcf2 39%,rgba(236,226,249,.6) 52%,transparent 69%);
+}
+.app-hero-particles {position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.app-hero-particles .app-particle {opacity:.5}
+body[data-app-design="crafto"] .hero-content {
+  position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  align-items:center;gap:40px;min-width:0;
+}
+.app-hero-copy {min-width:0;display:grid;gap:24px;align-content:center;padding-bottom:32px}
+body[data-app-design="crafto"] .hero .app-hero-copy>p {
+  max-width:500px;margin:0;color:var(--ui-ink-soft);font-size:14px;line-height:1.8;
+}
+body[data-app-design="crafto"] .hero .app-hero-kicker {
+  display:flex;align-items:center;gap:10px;max-width:none;margin:0;
+  color:var(--ui-ink-soft);font-size:11px;font-weight:750;line-height:1.5;letter-spacing:.16em;text-transform:uppercase;
+}
+.app-hero-kicker>span:empty {display:none}
+.app-hero-kicker::before {content:"";width:24px;height:2px;flex:0 0 auto;background:#fd6f63}
+body[data-app-design="crafto"] .hero h1 {
+  max-width:680px;margin:0;color:var(--ui-ink);font-size:clamp(42px,4.75vw,72px);
+  line-height:1.04;letter-spacing:-.06em;font-weight:750;text-wrap:balance;
+}
+body[data-app-design="crafto"] .hero .app-hero-lead {
+  max-width:500px;margin:0 0 -12px;color:var(--ui-ink-2);font-size:20px;font-weight:500;line-height:1.6;
+}
+body[data-app-design="crafto"] .hero-actions {gap:10px;grid-column:auto}
+body[data-app-design="crafto"] .hero-actions :is(.primary-action,.ghost-action) {
+  min-height:44px;padding:12px 20px;border-radius:50px;font-size:12px;font-weight:650;
+  text-decoration:none;line-height:1.4;transition:background-color .3s,color .3s,box-shadow .3s;
+}
+body[data-app-design="crafto"] .hero .primary-action {background:var(--ui-inverse-bg);color:var(--ui-inverse-ink);border:1px solid var(--ui-inverse-bg)}
+body[data-app-design="crafto"] .hero .ghost-action {background:var(--ui-surface);color:var(--ui-ink-2);border:1px solid var(--ui-border)}
+body[data-app-design="crafto"] .hero .primary-action:hover {background:var(--ui-brand);color:var(--ui-on-brand);border-color:var(--ui-brand);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+body[data-app-design="crafto"] .hero .ghost-action:hover {background:var(--ui-surface-2);border-color:var(--ui-border-strong)}
+body[data-app-design="crafto"] .hero .signal-pills {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+  grid-column:auto;grid-row:auto;align-self:auto;align-content:start;
+  padding:16px 0 0;border:0;border-top:1px solid var(--ui-border);border-radius:0;
+  background:transparent;backdrop-filter:none;
+}
+body[data-app-design="crafto"] .hero .signal-pill {
+  grid-template-columns:32px minmax(0,1fr);gap:8px;padding:0;
+  background:transparent;border:0;border-radius:8px;min-width:0;text-align:left;
+}
+body[data-app-design="crafto"] .hero .signal-pill b {width:32px;height:32px;border-radius:50%;font-size:14px}
+body[data-app-design="crafto"] .hero .signal-pill span {font-size:12px;font-weight:500;line-height:1.5;color:var(--ui-ink-soft)}
+.app-hero-visual {
+  position:relative;min-width:0;min-height:440px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-content:center;align-items:start;gap:20px;padding:16px 0 24px;
+  transform:translate3d(var(--app-parallax-x,0px),var(--app-parallax-y,0px),0);
+}
+.app-hero-orbit {
+  position:absolute;inset:18px -16px;border:1px solid color-mix(in srgb,var(--ui-ink) 14%,transparent);border-radius:50%;
+  transform:rotate(-24deg);pointer-events:none;
+}
+.app-hero-orbit::before,.app-hero-orbit::after {content:"";position:absolute;border-radius:50%;pointer-events:none}
+.app-hero-orbit::before {inset:36px -24px;border:1px solid color-mix(in srgb,var(--ui-ink) 10%,transparent);transform:rotate(55deg)}
+.app-hero-orbit::after {top:8%;left:21%;width:12px;height:12px;background:#fd6f63;box-shadow:0 0 0 7px rgba(253,111,99,.12)}
+.app-hero-result {
+  position:relative;z-index:1;grid-column:1 / -1;justify-self:center;width:min(100%,330px);margin-bottom:8px;padding:32px;border:1px solid var(--ui-border);
+  border-radius:24px;background:var(--ui-surface);box-shadow:0 20px 60px rgba(0,0,0,.08);
+  text-align:center;transform:rotate(-5deg);
+}
+.app-hero-result-label {display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ui-ink-soft);font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
+.app-hero-result-label>svg {width:16px;height:16px;flex-shrink:0;color:var(--ui-brand-ink)}
+body[data-app-design="crafto"] .hero .app-hero-date {display:block;margin:8px 0 24px;color:var(--ui-ink-soft);font-size:12px}
+.app-hero-number {display:block;color:var(--ui-ink);font-size:clamp(44px,5.3vw,72px);line-height:1.2;font-weight:750;letter-spacing:-.065em;font-variant-numeric:tabular-nums}
+body[data-app-design="crafto"] .hero .app-hero-meta {margin:20px 0 0;padding-top:20px;border-top:1px solid var(--ui-border);color:var(--ui-ink-soft);font-size:11px;line-height:1.7}
+.app-hero-meta {display:flex;justify-content:space-between;gap:12px;text-align:left}
+.app-hero-meta>b {color:var(--ui-ink);font-size:16px}
+.app-hero-result>a {display:inline-flex;align-items:center;gap:8px;margin-top:18px;color:var(--ui-brand-ink);font-size:11px;font-weight:650;text-decoration:none}
+.app-hero-result>a:hover {text-decoration:underline}
+.app-hero-chip {display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:50px;background:var(--ui-coral-soft);color:var(--ui-coral-ink);font-size:11px;font-weight:650}
+.app-hero-mini {
+  position:relative;z-index:2;min-width:0;width:100%;max-width:190px;align-self:stretch;
+  padding:18px 20px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);
+  color:var(--ui-ink-soft);box-shadow:0 20px 60px rgba(0,0,0,.08);transform:rotate(6deg);
+}
+.app-hero-mini--one {justify-self:end;transform:rotate(-4deg)}
+.app-hero-mini--two {justify-self:start;transform:rotate(4deg)}
+.app-hero-mini>small {display:block;margin-top:8px;color:var(--ui-ink-soft);font-size:9px}
+.app-hero-mini-value>small {font-size:11px;font-weight:500;letter-spacing:0;color:var(--ui-ink-soft)}
+.app-hero-mini>span {display:block;font-size:12px;line-height:1.6;font-weight:600}
+.app-hero-mini-value {display:block;margin-top:5px;color:var(--ui-ink);font-size:24px;line-height:1.2;font-weight:750;letter-spacing:-.035em}
+.app-feature-links {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;position:relative;z-index:1;margin:24px 0 40px}
+.app-feature-link {
+  display:flex;align-items:center;gap:12px;padding:18px 20px;min-width:0;
+  border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);
+  color:var(--ui-ink);text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.04);
+  transition:transform .3s var(--app-design-ease),box-shadow .3s var(--app-design-ease);
+}
+.app-feature-link>svg {width:42px;height:42px;flex-shrink:0;padding:11px;border-radius:50%;background:var(--ui-brand-soft);color:var(--ui-brand-ink)}
+.app-feature-link:nth-child(2)>svg {background:var(--ui-coral-soft);color:var(--ui-coral-ink)}
+.app-feature-link:nth-child(3)>svg {background:var(--ui-ok-soft);color:var(--ui-ok)}
+.app-feature-link>span:not(.app-feature-arrow) {min-width:0}
+.app-feature-link strong {display:block;font-size:14px;font-weight:700;line-height:1.5}
+.app-feature-link small {display:block;margin-top:3px;font-size:12px;line-height:1.5;color:var(--ui-ink-soft)}
+.app-feature-arrow {margin-left:auto;color:var(--ui-ink-soft);font-size:19px;line-height:1}
+.app-hero-copy .app-feature-links {margin:0;gap:8px}
+.app-hero-copy .app-feature-link {flex-wrap:wrap;gap:8px;padding:12px;align-items:flex-start}
+.app-hero-copy .app-feature-arrow {display:none}
+.app-hero-copy .app-feature-link>svg {width:32px;height:32px;padding:8px}
+.app-marquee {position:relative;z-index:0;overflow:hidden;margin-inline:-56px;padding-top:8px;border-top:1px solid rgba(44,46,60,.06);pointer-events:none;user-select:none}
+.app-marquee-track {display:flex;width:max-content;animation:app-marquee 38s linear infinite}
+.app-marquee-track>span {display:block;flex:0 0 auto;padding-right:.3em;color:color-mix(in srgb,var(--ui-ink) 7%,var(--ui-surface));font-size:clamp(100px,13vw,200px);line-height:.95;letter-spacing:-.07em;font-weight:800;white-space:nowrap}
+
+@keyframes app-orb-drift {to {transform:translate3d(32px,-40px,0) scale(1.08)}}
+@keyframes app-particle-drift {from {transform:translate3d(-12px,0,0)} to {transform:translate3d(calc(100vw + 32px),-48px,0)}}
+@keyframes app-marquee {to {transform:translateX(-50%)}}
+@keyframes app-content-reveal {from {opacity:.4} to {opacity:1}}
+@media (prefers-reduced-motion:no-preference) {
+  body[data-app-motion="on"] .hero::before {animation:app-orb-drift 24s ease-in-out infinite alternate}
+  body[data-app-motion="on"] .hero::after {animation:app-orb-drift 30s ease-in-out -8s infinite alternate-reverse}
+  body[data-app-motion="on"] [data-app-reveal].app-is-revealed {animation:app-content-reveal .65s var(--app-design-ease) both}
+}
+@media (hover:hover) and (pointer:fine) {
+  body[data-app-motion="on"] .app-feature-link:hover {transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.08)}
+}
+@media (max-width:1100px) {
+  body[data-app-design="crafto"] .main>.hero {padding:48px 32px 0}
+  body[data-app-design="crafto"] .hero-content {gap:24px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  body[data-app-design="crafto"] .hero h1 {font-size:clamp(42px,5.3vw,62px)}
+  .app-hero-visual {min-height:440px}
+  .app-hero-result {padding:28px 24px}
+  .app-hero-mini {padding:16px 20px}
+  .app-feature-link {padding:16px;gap:10px}
+  .app-feature-link>svg {width:36px;height:36px;padding:9px}
+  .app-feature-arrow {display:none}
+  .app-marquee {margin-inline:-32px}
+}
+@media (max-width:760px) {
+  body[data-app-design="crafto"] :is(.ui-header,.path-hero,.live-hero) {padding:24px 20px;border-radius:20px}
+  body[data-app-design="crafto"] .main>.hero {padding:40px 24px 0;border-radius:20px}
+  body[data-app-design="crafto"] .hero-content {grid-template-columns:minmax(0,1fr);gap:8px}
+  body[data-app-design="crafto"] .hero h1 {max-width:520px;font-size:clamp(40px,7vw,54px)}
+  body[data-app-design="crafto"] .hero .app-hero-lead {font-size:18px;max-width:540px}
+  .app-hero-copy {gap:20px;padding-bottom:16px}
+  .app-hero-visual {min-height:440px;max-width:400px;width:100%;margin:0 auto}
+  .app-hero-result {width:280px;padding:24px}
+  .app-hero-number {font-size:60px}
+  .app-hero-orbit {inset:16px 0}
+  .app-feature-links {grid-template-columns:minmax(0,1fr);gap:10px;margin:24px 0 32px}
+  .app-feature-link {padding:16px 20px}
+  .app-feature-link>svg {width:40px;height:40px;padding:10px}
+  .app-feature-arrow {display:block}
+  .app-feature-link strong {font-size:14px}
+  .app-feature-link small {font-size:12px}
+  .app-marquee {margin-inline:-24px}
+  body[data-app-design="crafto"] .metric-tile {padding:20px 16px;min-height:128px}
+  body[data-app-design="crafto"] .metric-tile strong {font-size:28px}
+  body[data-app-design="crafto"] .metric-tile[data-long="true"] strong {font-size:20px}
+  body[data-app-design="crafto"] .section-title {margin-block:32px 16px}
+  body[data-app-design="crafto"] #app-motion-toggle {right:12px;bottom:12px;min-height:40px;padding:10px 12px}
+}
+@media (max-width:480px) {
+  body[data-app-design="crafto"] .main>.hero {padding:32px 20px 0}
+  body[data-app-design="crafto"] .hero h1 {font-size:42px;line-height:1.06}
+  body[data-app-design="crafto"] .hero .app-hero-copy>p {
+  max-width:500px;margin:0;color:var(--ui-ink-soft);font-size:14px;line-height:1.8;
+}
+body[data-app-design="crafto"] .hero .app-hero-kicker {font-size:9px;letter-spacing:.1em;gap:8px}
+  body[data-app-design="crafto"] .hero-actions {display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+  body[data-app-design="crafto"] .hero-actions a {width:100%;min-height:44px;padding-inline:14px}
+  body[data-app-design="crafto"] .hero .signal-pills {grid-template-columns:minmax(0,1fr);gap:10px}
+  body[data-app-design="crafto"] .hero .signal-pill {grid-template-columns:28px minmax(0,1fr)}
+  body[data-app-design="crafto"] .hero .signal-pill b {width:28px;height:28px;font-size:12px}
+  body[data-app-design="crafto"] .hero .signal-pill span {font-size:12px}
+  .app-hero-visual {min-height:440px}
+  .app-hero-result {width:calc(100% - 20px);padding:24px 16px}
+  .app-hero-number {font-size:clamp(42px,14vw,58px)}
+  .app-hero-mini {padding:14px 12px}
+  .app-hero-mini-value {font-size:22px}
+  .app-marquee {margin-inline:-20px}
+  .app-marquee-track>span {font-size:100px}
+}
+@media (hover:none),(pointer:coarse) {
+  .app-cursor {display:none!important}
+  [data-app-parallax] {transform:none!important}
+}
+body:is([data-app-motion="off"],[data-app-hidden="true"]) :is(.app-orb,.app-particle,.app-marquee-track),
+body:is([data-app-motion="off"],[data-app-hidden="true"]) .hero::before,
+body:is([data-app-motion="off"],[data-app-hidden="true"]) .hero::after {
+  animation-play-state:paused!important;
+}
+body[data-app-motion="off"] [data-app-parallax] {transform:none!important}
+body[data-app-motion="off"] .app-cursor,body[data-app-hidden="true"] .app-cursor {display:none}
+body[data-app-motion="off"] [data-app-reveal].app-is-revealed {animation:none}
+@media (prefers-reduced-motion:reduce) {
+  body[data-app-design="crafto"] *,body[data-app-design="crafto"] *::before,body[data-app-design="crafto"] *::after {
+    animation:none!important;transition:none!important;scroll-behavior:auto!important;
+  }
+  .app-cursor {display:none!important}
+  [data-app-parallax] {transform:none!important}
+}
+@media print {
+  [data-app-effects],.app-ambience,.app-cursor,#app-motion-toggle,.app-marquee,.app-hero-orbit {display:none!important}
+  body[data-app-design="crafto"] {background:#fff}
+  body[data-app-design="crafto"] .hero::before,body[data-app-design="crafto"] .hero::after {display:none}
+  body[data-app-design="crafto"] :is(.card,.ui-card,.metric-tile,.main>.hero,.app-hero-result,.app-hero-mini) {box-shadow:none}
+  [data-app-parallax],.app-hero-result,.app-hero-mini {transform:none!important}
+}
