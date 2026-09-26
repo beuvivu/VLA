@@ -27,6 +27,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  browser:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    name: Giao diện Chromium sáng/tối và mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: python -m pip install playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/check_ui_browser.py
+      - name: Lưu ảnh và kết quả kiểm tra giao diện
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-browser-review
+          path: ui-browser-artifacts/
+          retention-days: 7
   test:
     # Nhánh trong kho đã được `push` phủ, nên để `pull_request` chạy nữa là
     # chạy hai lần cùng một commit, tốn gấp đôi runner mà không thêm tín hiệu

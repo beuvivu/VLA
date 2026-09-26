@@ -56,9 +56,9 @@ def dom_sinks_in(source: str) -> list[str]:
 def files_scanned_for_dom_sinks() -> list[Path]:
     """Mọi tệp mà luật cấm cống HTML áp lên.
 
-    ``docs/**/*.js`` phải có mặt riêng, không thể dựa vào ``src``: năm tệp
-    trong ``docs/assets/`` (``live-board.js``, ``matrix-virt.js``,
-    ``ui-dock.js``, ``apply-data-styles.js``, ``css-async.js``) KHÔNG có bản
+    ``docs/**/*.js`` phải có mặt riêng, không thể dựa vào ``src``: ba tệp
+    trong ``docs/assets/`` (``matrix-virt.js``, ``apply-data-styles.js``,
+    ``css-async.js``) KHÔNG có bản
     nguồn nào dưới ``src``, mà trang sinh ra vẫn nạp chúng. Quét mỗi ``src``
     và ``docs/*.html`` thì một cống thêm vào bất kỳ tệp nào trong số đó vẫn
     để phép kiểm XANH — đúng thứ mà tên phép kiểm hứa là không xảy ra.
@@ -112,10 +112,8 @@ def test_nothing_published_to_the_browser_uses_an_untrusted_html_dom_sink() -> N
         "build_statistics_dashboard.py",
         "build_stat_pages.py",
         "live.html",
-        # Năm tệp kịch bản xuất bản không có bản nguồn dưới `src`.
-        "live-board.js",
+        # Ba tệp kịch bản bảo trì không có bản nguồn dưới `src`.
         "matrix-virt.js",
-        "ui-dock.js",
         "apply-data-styles.js",
         "css-async.js",
     } <= names, sorted(names)

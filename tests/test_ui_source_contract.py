@@ -11,15 +11,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_path_template_owns_light_dock_safe_bento_structure() -> None:
+def test_path_template_owns_themed_bento_structure() -> None:
     source = (ROOT / "src" / "templates" / "path_ui_page.html.j2").read_text(encoding="utf-8")
 
-    assert '<body class="ui-app ui-dock-space path-page">' in source
+    assert '<body class="ui-app path-page">' in source
     assert '<div class="wrap path-shell">' in source
     assert '<div class="top path-hero">' in source
     assert 'class="grid path-overview"' in source
     assert 'class="path-table-scroll"' in source
-    assert '--bg:#f0f4fd' in source
+    assert '--bg:var(--ui-bg)' in source
     assert 'color-scheme:dark' not in source
 
 

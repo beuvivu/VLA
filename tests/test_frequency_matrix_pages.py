@@ -10,6 +10,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from theme_palette_helpers import theme_tokens, resolve_theme_colors
+
 ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
 CSS = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
@@ -114,28 +116,16 @@ def test_empty_cells_carry_no_stripe_pattern() -> None:
 
 
 def test_the_empty_cell_has_a_dark_tone_and_a_light_mode_counterpart() -> None:
-    """Một giá trị cho chế độ tối là chưa đủ.
-
-    Thang màu ô có về là màu SÁNG CỐ ĐỊNH, không đổi theo chế độ. Nếu chỉ đặt
-    tông tối mà không cho chế độ sáng một giá trị riêng thì ô rỗng sáng 231,3
-    còn ô có về 232,3 — chênh một đơn vị, mắt thường không tách được. Chính
-    vạch chéo cũ đang gánh việc phân biệt ấy.
-    """
+    """Ô không về đổi nền theo chủ đề và luôn tách khỏi cấp có về đầu tiên."""
     rule = _block(CSS_CODE, ".sp-table td.is-empty {")
-    found = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule)
-    assert found, rule
-    red, green, blue = (int(found.group(1)[i:i + 2], 16) for i in (1, 3, 5))
-    assert 0.2126 * red + 0.7152 * green + 0.0722 * blue < 40, found.group(1)
-    light = re.search(
-        r"@media \(prefers-color-scheme: light\) \{\s*\.sp-table td\.is-empty \{"
-        r"\s*background-color:\s*(#[0-9A-Fa-f]{6})", CSS_CODE)
-    assert light, "chế độ sáng phải có giá trị riêng"
-    # Empty calendar cells must not look like the ordinary white data cells.
-    assert light.group(1).upper() != "#FFFFFF", light.group(1)
-    tier_one = re.search(r"\.sp-table td\.sp-n1 \{[^}]*background-color:\s*(#[0-9A-Fa-f]{6})",
-                         CSS_CODE)
-    assert tier_one and tier_one.group(1).upper() != light.group(1).upper(), (
-        "cấp 1 nháy không được trùng màu ô không về")
+    assert "var(--ui-empty-bg)" in rule
+    dark = theme_tokens(True)["--ui-empty-bg"]
+    red, green, blue = (int(dark[i:i + 2], 16) for i in (1, 3, 5))
+    assert 0.2126 * red + 0.7152 * green + 0.0722 * blue < 40
+    for is_dark in (False, True):
+        values = theme_tokens(is_dark)
+        assert values["--ui-empty-bg"] != values["--ui-n1-bg"]
+    assert theme_tokens(False)["--ui-empty-bg"] != dark
 
 
 def test_a_hit_cell_keeps_a_ring_that_an_empty_cell_does_not_have() -> None:
@@ -190,7 +180,10 @@ def test_the_pending_draw_is_shown_as_waiting_not_as_a_miss() -> None:
     assert "pending: true" in JS_CODE
     rule = _block(_without_media(CSS_CODE), ".sp-table td.sp-pending,")
     assert "dashed" in rule, rule
-    assert "#E0E0E0" in rule, rule
+    assert "var(--ui-pending-bg)" in rule, rule
+    for dark in (False, True):
+        values = theme_tokens(dark)
+        assert values["--ui-pending-bg"] != values["--ui-empty-bg"]
 
 
 def test_today_is_read_in_vietnam_time_not_the_viewer_clock() -> None:
@@ -369,24 +362,23 @@ def test_a_marked_header_actually_changes_colour() -> None:
 
 
 def test_nhay_cells_and_legend_share_readable_pastel_colors() -> None:
-    """Every tier must be readable and its legend must match the actual cell."""
-    def luminance(hex_color: str) -> float:
-        rgb = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-        linear = [x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in rgb]
-        return sum(x * w for x, w in zip(linear, (.2126, .7152, .0722), strict=True))
+    """Ô và chú giải cùng token; sáng pastel, tối dịu, cả hai đạt AA."""
+    from ui_theme import contrast_ratio
+    for dark in (False, True):
+        css = resolve_theme_colors(_without_media(CSS_CODE), dark)
+        colors = set()
+        for tier in range(1, 6):
+            rule = _block(css, f".sp-table td.sp-n{tier} {{")
+            legend = _block(css, f".sp-nl i.sp-n{tier} {{")
+            bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+            fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
+            rgb = [int(bg[i:i + 2], 16) for i in (1, 3, 5)]
+            assert max(rgb) < 100 if dark else min(rgb) >= 200
+            assert contrast_ratio(fg, bg) >= 4.5
+            assert bg in legend and fg in legend
+            colors.add(bg)
+        assert len(colors) == 5
 
-    css = _without_media(CSS_CODE)
-    colors = set()
-    for tier in range(1, 6):
-        rule = _block(css, f".sp-table td.sp-n{tier} {{")
-        legend = _block(css, f".sp-nl i.sp-n{tier} {{")
-        bg = re.search(r"background-color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
-        fg = re.search(r"(?<!-)color:\s*(#[0-9A-Fa-f]{6})", rule).group(1)
-        assert min(int(bg[i:i + 2], 16) for i in (1, 3, 5)) >= 200
-        assert (max(luminance(bg), luminance(fg)) + .05) / (min(luminance(bg), luminance(fg)) + .05) >= 4.5
-        assert bg in legend and fg in legend
-        colors.add(bg)
-    assert len(colors) == 5
 
 def test_the_gan_run_reads_differently_from_an_ordinary_miss() -> None:
     """Ô trống giữa hai lần về, và cả dải trống tới hôm nay, là HAI thứ khác nhau.

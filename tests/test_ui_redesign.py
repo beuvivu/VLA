@@ -73,10 +73,6 @@ def _css(path: Path) -> str:
     return "".join(parts).replace(" ", "").replace("\n", "")
 
 
-#: Các trang thực sự gắn dock, xét theo lớp trong HTML.
-
-
-
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
 def test_every_page_pins_the_measured_shell_geometry(page: Path) -> None:
     """Hình học khung phải đúng SỐ ĐO của trang tham chiếu, trên mọi trang.
@@ -319,28 +315,6 @@ def test_landing_shell_keeps_in_page_anchors() -> None:
         assert required in anchors, required
 
 
-def test_dock_popovers_open_on_focus_not_only_hover() -> None:
-    """Chỉ mở bằng :hover thì người dùng bàn phím không tới được mục con."""
-    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
-    assert "focus-within" in css
-
-
-def test_dock_magnification_uses_the_agreed_easing() -> None:
-    """Đường cong đã đổi từ cubic-bezier(.25,1,.5,1) sang ease-in-out.
-
-    Bản vẽ đầu dùng đường cong vọt-rồi-hãm cho cảm giác "nảy" kiểu macOS. Bản
-    sửa lỗi yêu cầu ease-in-out: vào và ra đối xứng, không vọt quá, hợp với
-    thanh dock đã thu gọn còn 54px nơi một cú nảy 4px trông như giật.
-    """
-    css = _css(DOCS / "index.html") + TAILWIND_LITE_CSS.replace(" ", "")
-    assert "transition:transform.24sease-in-out" in css
-
-
-def test_dock_motion_respects_reduced_motion_preference() -> None:
-    css = (DOCS / "index.html").read_text(encoding="utf-8") + TAILWIND_LITE_CSS
-    assert "prefers-reduced-motion" in css
-
-
 def test_no_page_is_a_navigation_dead_end() -> None:
     """Bốn trang soi cầu, research-lab và live từng không có <nav> nào."""
     for page in PAGES:
@@ -371,7 +345,7 @@ def test_navigation_groups_are_the_agreed_set() -> None:
 
 
 def test_every_navigation_group_has_entries() -> None:
-    """Một nhóm rỗng vẫn hiện nút trên dock nhưng popover trống trơn."""
+    """Một nhóm rỗng vẫn hiện nút trên dải biểu tượng nhưng menu trống trơn."""
     for group, items in SITE_NAV:
         assert items, f"nhóm {group!r} không có mục nào"
 

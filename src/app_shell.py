@@ -29,7 +29,7 @@ from html import escape
 from typing import Final
 
 from app_icons import icon_svg
-from ui_theme import LANDING_SECTIONS, SITE_NAV
+from ui_theme import LANDING_SECTIONS, SITE_NAV, SITE_SEARCH_EXTRAS
 
 #: Bề rộng dải biểu tượng. Số đo của trang tham chiếu, dùng ở cả CSS lẫn JS.
 RAIL_W: Final[int] = 80
@@ -100,10 +100,11 @@ def panel_html(current: str) -> str:
         '<div class="app-panel-head"><span class="app-panel-title" id="app-panel-title">'
         f"{escape(SITE_NAV[hoat_dong][0])}</span></div>",
         '<div class="app-panel-search">'
-        '<input type="search" id="app-search" class="app-search-input"'
-        ' placeholder="Tìm chức năng…" autocomplete="off"'
-        ' aria-label="Tìm trang và chức năng">'
-        '<p class="app-search-empty" id="app-search-empty" hidden>Không có chức năng nào khớp.</p>'
+        '<input type="search" id="app-sidebar-filter" class="app-search-input"'
+        ' placeholder="Lọc trong nhóm…" autocomplete="off"'
+        ' aria-label="Lọc chức năng trong nhóm đang chọn">'
+        '<p class="app-search-empty" id="app-sidebar-filter-empty" role="status" hidden>'
+        'Không có chức năng nào khớp trong nhóm.</p>'
         "</div>",
     ]
     for i, (_ten, muc) in enumerate(SITE_NAV):
@@ -146,7 +147,7 @@ def header_html(current: str) -> str:
         '<span class="app-sr">Vietnam Lottery Analysis</span></a>'
         '<button class="app-icon-btn app-toggle" id="app-toggle" type="button"'
         ' aria-expanded="false" aria-controls="app-panel"'
-        ' title="Mở/đóng menu chi tiết"><span class="app-burger" aria-hidden="true"></span>'
+        f' title="Mở/đóng menu chi tiết">{icon_svg("menu")}'
         '<span class="app-sr">Mở hoặc đóng menu chi tiết</span></button>'
         '<nav class="app-crumbs" aria-label="Đường dẫn">'
         f'<span class="app-crumb">{nhom}</span>'
@@ -155,6 +156,7 @@ def header_html(current: str) -> str:
         "</nav>"
         '<div class="app-header-actions">'
         '<button class="app-icon-btn app-search-trigger" id="app-search-open" type="button"'
+        ' aria-haspopup="dialog" aria-controls="app-global-search"'
         f' title="Tìm chức năng">{icon_svg("tim-kiem")}'
         '<span>Tìm chức năng</span><kbd>Ctrl K</kbd></button>'
         '<button class="app-icon-btn" id="app-theme" type="button"'
@@ -171,6 +173,47 @@ def header_html(current: str) -> str:
     )
 
 
+def global_search_html() -> str:
+    """Tìm kiếm toàn ứng dụng lấy đích thật, độc lập danh sách của sidebar."""
+    muc = [(href, nhan, nhom, icon) for nhom, nhom_muc in SITE_NAV
+           for href, nhan, icon in nhom_muc]
+    muc.extend((f"index.html#{key}", label, "Trên trang chủ", "hom-nay")
+               for key, label, _ in LANDING_SECTIONS)
+    muc.extend((href, label, "Giao diện", icon) for href, label, icon in SITE_SEARCH_EXTRAS)
+    da_co: set[str] = set()
+    lien_ket: list[str] = []
+    for href, nhan, nhom, icon in muc:
+        if href in da_co:
+            continue
+        da_co.add(href)
+        lien_ket.append(
+            f'<a class="app-global-result" id="app-global-result-{len(lien_ket)}"'
+            f' href="{escape(href, quote=True)}" role="option" tabindex="-1" aria-selected="false"'
+            f' data-app-search="{escape(nhan + " " + nhom, quote=True)}">'
+            f'{icon_svg(icon)}<span class="app-global-result-copy">'
+            f'<span>{escape(nhan)}</span><small>{escape(nhom)}</small></span></a>'
+        )
+    return (
+        '<dialog class="app-global-search" id="app-global-search" aria-modal="true"'
+        ' aria-labelledby="app-global-search-title" aria-describedby="app-global-search-hint">'
+        '<div class="app-global-search-surface">'
+        '<div class="app-global-search-heading"><h2 id="app-global-search-title">Tìm chức năng</h2>'
+        '<button class="app-icon-btn" id="app-global-search-close" type="button" aria-label="Đóng tìm kiếm">'
+        f'{icon_svg("close")}</button></div>'
+        '<label class="app-sr" for="app-global-search-input">Tìm trên toàn ứng dụng</label>'
+        '<input class="app-search-input app-global-search-input" id="app-global-search-input"'
+        ' type="search" placeholder="Tìm trang, thống kê hoặc chức năng…" autocomplete="off"'
+        ' role="combobox" aria-autocomplete="list" aria-expanded="false"'
+        ' aria-controls="app-global-search-results">'
+        f'<p class="app-global-search-status" id="app-global-search-status" role="status" aria-live="polite">{len(lien_ket)} chức năng</p>'
+        '<div class="app-global-search-results" id="app-global-search-results" role="listbox" aria-label="Kết quả tìm kiếm">'
+        + "".join(lien_ket)
+        + '</div><p class="app-global-search-empty" id="app-global-search-empty" role="status" aria-live="polite" hidden>Không có chức năng nào khớp.</p>'
+        '<p class="app-global-search-hint" id="app-global-search-hint">↑ ↓ để chọn · Enter để mở · Esc để đóng</p>'
+        '</div></dialog>'
+    )
+
+
 #: Dock cũ: thanh nổi ở chân trang. Khung mới thay hẳn vai trò của nó, nên gỡ
 #: đi — để lại thì hai bộ điều hướng cùng tồn tại và cùng đòi cùng một chỗ.
 _DOCK_CU = re.compile(
@@ -182,19 +225,19 @@ _DOCK_CU = re.compile(
 #: ``docs/live.html`` còn tệ hơn: thẻ mồ côi đứng SAU đuôi khung nên
 #: :data:`_DUOI_KHUNG` (neo ở cuối phần thân) trượt, bước bóc bỏ cuộc, và mỗi
 #: lượt pipeline bọc thêm một lớp — đo được 11 lớp sau một ngày.
-#: Khớp theo chữ ký mở đầu của chính kịch bản ấy, không theo "có nhắc ui-dock":
-#: đo trên 29 trang, mọi thẻ nội tuyến nhắc ``ui-dock`` đều là bản này.
+#: Chỉ khớp chữ ký handler cũ của cả hai dock, không nuốt kịch bản nghiệp vụ
+#: đứng ngay sau nav hoặc chỉ nhắc tên lớp dock.
 _DOCK_KICH_BAN = re.compile(
-    r"<script>\s*\(function\(\)\{var d=document\.querySelector\(\"\.ui-dock\"\);"
+    r"<script>\s*\(function\(\)\{var d=document\.querySelector\([\"']\.(?:ui-)?dock[\"']\);if\(!d\)return;"
     r".*?</script>\s*",
-    re.S,
+    re.S | re.I,
 )
-#: Thẻ mở vùng nội dung thật. Chuỗi cố định vì chính :func:`wrap_page` sinh ra.
-_MO_MAIN: Final[str] = '<main class="app-main" id="app-main">'
-#: Cùng thẻ ấy ở một lớp khung PHÍA TRONG. :func:`wrap_page` đổi mọi ``<main>``
-#: bên trong thành ``<div>`` (mỗi tài liệu một mốc main), nên lớp khung bị bọc
-#: chồng mang dạng này, và bước bóc chỉ tìm ``<main>`` thì dừng ở lớp ngoài.
-_MO_MAIN_TRONG: Final[str] = '<div class="app-main" id="app-main">'
+#: Nhận cả main và div: khung cũ đổi main lồng nhau thành div. Lượt chuẩn hoá
+#: HTML còn đổi thứ tự thuộc tính và dấu nháy, nên không khớp chuỗi cố định.
+_MO_MAIN = re.compile(
+    r"<(?:main|div)\b(?=[^>]*\bid=[\"']app-main[\"'])(?=[^>]*\bclass=[\"'][^\"']*\bapp-main\b)[^>]*>",
+    re.I,
+)
 #: Đuôi khung: đóng vùng nội dung rồi tới thẻ kịch bản, luôn ở CUỐI phần thân.
 #:
 #: KHÔNG khớp nguyên văn chuỗi mà :func:`wrap_page` sinh ra. Trang đã xuất bản
@@ -236,24 +279,19 @@ def _go_khung(than: str) -> str:
     Returns:
         Phần nội dung thật, đã bỏ hết lớp khung.
     """
-    # Mỗi vòng cắt bỏ ít nhất một thẻ mở, nên chuỗi ngắn dần và vòng lặp
-    # không thể treo; trần chỉ là lưới an toàn. Trần cũ là 8 — thấp hơn chính
-    # số lớp đã đo được trên ``docs/live.html`` (11), tức tệp hỏng nhất lại là
-    # tệp không sửa được.
-    for _ in range(64):
+    # Mỗi vòng cắt cả đầu và đuôi, nên chuỗi ngắn dần và không thể treo.
+    # Không đặt trần khiến trang tích luỹ nhiều lớp vẫn còn khung lồng nhau.
+    while True:
         if "app-rail" not in than:
             return than
-        vi_tri = [(than.find(the), the) for the in (_MO_MAIN, _MO_MAIN_TRONG)]
-        vi_tri = [(vt, the) for vt, the in vi_tri if vt >= 0]
-        if not vi_tri:
+        dau = _MO_MAIN.search(than)
+        if dau is None:
             return than
-        dau, the = min(vi_tri)
-        con = than[dau + len(the) :]
+        con = than[dau.end() :]
         duoi = _DUOI_KHUNG.search(con)
         if duoi is None:
             return than
         than = con[: duoi.start()]
-    return than
 
 
 def wrap_page(html: str, current: str) -> str:
@@ -292,6 +330,7 @@ def wrap_page(html: str, current: str) -> str:
         + panel_html(current)
         + '<div class="app-scrim" id="app-scrim" hidden></div>'
         + header_html(current)
+        + global_search_html()
         + '<main class="app-main" id="app-main">'
         + than
         + "</main>"

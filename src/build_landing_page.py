@@ -19,9 +19,10 @@ from typing import Any, Iterable, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from app_icons import icon_svg
 from ui_locale import COLUMN_LABELS, GROUP_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
-from ui_theme import LANDING_SECTIONS, SITE_NAV, dock_script, readable_ink, stylesheet_link, write_stylesheet
+from ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
@@ -823,17 +824,19 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 #: thuần và thuộc về một hằng số, không thuộc về thân hàm.
 _LANDING_CSS = """\
     :root {
-      --bg: #f0f4fd;
-      --bg-2: #eaedff;
-      --panel: #ffffff;
-      --panel-soft: #f7f7f7;
-      --ink: #202329;
-      --muted: #5c6270;
-      --line: #e4e7f2;
+      --bg: var(--ui-bg);
+      --bg-2: var(--ui-bg-2);
+      --panel: var(--ui-surface);
+      --panel-soft: var(--ui-surface-2);
+      --panel-2: var(--ui-surface-2);
+      --ink-soft: var(--ui-ink-soft);
+      --ink: var(--ui-ink);
+      --muted: var(--ui-ink-soft);
+      --line: var(--ui-border);
       /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
          màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
          với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
-      --brand: #2946f3;
+      --brand: var(--ui-brand);
       --blue: #2563eb;
       --sky: #0891b2;
       --green: #059669;
@@ -860,179 +863,18 @@ _LANDING_CSS = """\
     }
     a { color: inherit; text-decoration: none; }
     button { font: inherit; }
-    /* Trang này CỐ Ý giữ một bảng màu sáng duy nhất, không theo chế độ tối của
-       hệ điều hành. Lý do: các ma trận nhiệt ở đây tô màu bằng hàm trộn hex
-       trong Python (_style_for_value), không đi qua biến CSS — nên đảo token
-       chỉ lật được phần khung mà không lật được phần dữ liệu, tạo ra bảng màu
-       lai. Bản thử trước đó đúng là như vậy: ghi đè 6 token, bỏ sót --muted và
-       --panel-soft, làm chữ #e8eef6 nằm trên nền #f8fafc — đo được 1,12:1.
-       Một chế độ tối nửa vời tệ hơn hẳn một chế độ sáng nhất quán. */
-    /* Không còn cột sidebar. Sidebar cũ rộng 292px trên màn 1680px — 17,4%
-       chiều ngang dành cho 17 liên kết mà phần lớn thời gian không ai bấm.
-       Điều hướng chuyển sang dock nổi ở chân trang; toàn bộ phần đó trả về
-       cho nội dung. */
+    /* Khung, chữ và điều khiển theo chủ đề chung. Màu ma trận do dữ liệu
+       cung cấp luôn giữ nguyên cặp nền/chữ đã kiểm tương phản. */
+    /* Nội dung nằm trong khung Nexlink do write_page gắn. */
     .app {
       min-height: 100vh;
-      padding-bottom: calc(76px + 32px);   /* chừa chỗ cho dock */
+      padding-bottom: 0;
     }
     .app > * { min-width: 0; }
-    /* Nhãn chỉ dành cho trình đọc màn hình: dock dùng biểu tượng, và một nút
-       chỉ có icon sẽ được đọc thành "nút" trống nếu thiếu nhãn này. */
+    /* Nhãn ẩn giúp trình đọc màn hình đọc tên các nút chỉ có biểu tượng. */
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-    }
-
-    /* Điều hướng dự phòng cuối trang. */
-    /* ── Dock điều hướng nổi ──────────────────────────────────────────────
-       17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-       tooltip chồng nhau. SITE_NAV vốn đã chia 5 nhóm, nên dock hiện 5 icon
-       nhóm và mở popover khi hover HOẶC focus — chỉ hover thôi thì người dùng
-       bàn phím không bao giờ tới được các mục con. */
-    .dock {
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-      z-index: 60; max-width: calc(100vw - 32px);
-    }
-    /* Kính mờ 30%. Nền 84% trước đây gần như đục hẳn nên không còn là
-       glassmorphism; ở mức 30% phải tăng độ tương phản viền và bóng đổ để
-       thanh vẫn tách khỏi nội dung phía sau. */
-    .dock-inner {
-      position: relative;
-      display: flex; align-items: center; gap: 4px;
-      padding: 6px 10px; border-radius: 999px;
-      background: rgba(15, 23, 42, .30);
-      border: 1px solid rgba(255,255,255,.18);
-      box-shadow: 0 10px 36px rgba(15,23,42,.34), inset 0 1px 0 rgba(255,255,255,.10);
-      backdrop-filter: blur(12px) saturate(1.8);
-      -webkit-backdrop-filter: blur(12px) saturate(1.8);
-    }
-    /* Không có backdrop-filter thì thấy nền đặc — mất hiệu ứng kính nhưng
-       vẫn đọc được, đó là điều quan trọng. */
-    @supports not (backdrop-filter: blur(1px)) {
-      .dock-inner { background: #0f172a; }
-    }
-    .dock-group { position: relative; }
-    /* Nhãn chuyển thành tooltip thay vì chữ dưới icon: hai dòng làm thanh cao
-       114px, quá thô so với mức 48–56px cần đạt. */
-    .dock-btn {
-      display: grid; place-items: center;
-      padding: 0; background: none; border: 0; cursor: pointer;
-      border-radius: 12px; color: #f0f1ff;
-    }
-    .dock-ic {
-      display: grid; place-items: center; width: 40px; height: 40px; font-size: 18px;
-      border-radius: 11px; background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      transition: transform .24s ease-in-out, background .2s ease-in-out;
-    }
-    .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic {
-      transform: scale(1.18);
-      background: rgba(124,58,237,.42);
-    }
-    .dock-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
-
-    /* Tooltip thay cho nhãn cố định. */
-    .dock-name {
-      position: absolute; bottom: calc(100% + 8px); left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      padding: 4px 9px; border-radius: 7px; white-space: nowrap;
-      font-size: 11px; font-weight: 600; letter-spacing: .02em;
-      background: #0f172a; color: #f1f5f9;
-      border: 1px solid rgba(255,255,255,.12);
-      opacity: 0; pointer-events: none;
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out;
-    }
-    .dock-btn:hover .dock-name, .dock-btn:focus-visible .dock-name {
-      opacity: 1; transform: translateX(-50%) translateY(0);
-    }
-    /* Khi popover đang mở thì ẩn tooltip — hai lớp nổi chồng nhau gây rối. */
-    .dock-group:hover .dock-name, .dock-group:focus-within .dock-name { opacity: 0; }
-    .dock-pop {
-      position: absolute; bottom: calc(100% + 14px); left: 50%;
-      transform: translateX(-50%) translateY(6px);
-      min-width: 232px; padding: 8px;
-      background: rgba(255,255,255,.97); border: 1px solid var(--line);
-      border-radius: 16px; box-shadow: 0 18px 44px rgba(15,23,42,.26);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      opacity: 0; visibility: hidden; pointer-events: none;
-      /* Độ trễ khi ĐÓNG (0.22s) nhưng không trễ khi MỞ. Rê chuột ra ngoài
-         trong chớp mắt sẽ không làm menu tắt ngay, nên người dùng có thời gian
-         quay lại — đây là nửa thứ hai của cơ chế chống tắt đột ngột. */
-      transition: opacity .18s ease-in-out .22s,
-                  transform .18s ease-in-out .22s,
-                  visibility 0s linear .40s;
-    }
-    /* CẦU NỐI HOVER. Giữa nút và popover có khe hở 14px; con trỏ đi qua khe đó
-       rời khỏi cả hai phần tử nên :hover tắt và menu biến mất giữa chừng —
-       đúng lỗi người dùng gặp. Phần tử giả này phủ kín khe, trong suốt, và
-       thuộc về .dock-pop nên hover trên nó vẫn tính là hover trong nhóm. */
-    .dock-pop::after {
-      content: ""; position: absolute; left: 0; right: 0;
-      top: 100%; height: 18px;
-    }
-    /* Mở rộng vùng bắt của cả nhóm xuống dưới nút, phòng khi con trỏ đi vòng. */
-    .dock-group::after {
-      content: ""; position: absolute; left: -6px; right: -6px;
-      top: -18px; bottom: -6px; z-index: -1;
-    }
-    .dock-group:hover .dock-pop, .dock-group:focus-within .dock-pop,
-    .dock-group.ui-open .dock-pop {
-      opacity: 1; visibility: visible; pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-      /* Mở ngay, không trễ. Trễ khi mở làm menu có cảm giác chậm chạp. */
-      transition: opacity .18s ease-in-out, transform .18s ease-in-out, visibility 0s;
-    }
-    .dock-pop a {
-      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-      border-radius: 12px; color: #1e293b; font-size: 13px;
-      white-space: nowrap; text-decoration: none;
-    }
-    .dock-pop a:hover { background: #f1f5f9; }
-    /* MÀN HẸP. `.dock-inner` từng mang `overflow-x: auto`, và một hộp cuộn
-       thì CẮT mọi hậu duệ nằm ngoài nó. Inner chỉ cao 54px còn menu con bung
-       lên phía trên, nên menu bị xén sạch: đo được 0/9 liên kết nhận được cú
-       chạm trên điện thoại trong khi máy bàn 9/9. `position: fixed` không
-       thoát ra được vì `backdrop-filter` của inner biến nó thành khối chứa
-       cho cả hậu duệ `fixed`. Bỏ hẳn cuộn ngang mới là gỡ đúng gốc: cho mỗi
-       nhóm `flex: 1 1 0` để N nhóm luôn vừa khít bề ngang, rồi căng menu
-       `left: 0; right: 0` theo cả dải dock. Cách này cũng xử lý luôn lỗi menu
-       rộng cố định 232px lòi ra ngoài viền ở các nhóm đầu và cuối. */
-    @media (max-width: 640px) {
-      .dock { left: 16px; right: 16px; transform: none; max-width: none; }
-      .dock-inner { justify-content: space-between; gap: 2px; padding: 6px;
-        border-radius: 16px; }
-      .dock-group { position: static; flex: 1 1 0; min-width: 0; }
-      .dock-btn { width: 100%; }
-      .dock-ic { width: 100%; max-width: 40px; margin: 0 auto; }
-      /* Màn cảm ứng không có hover để hiện tooltip, mà tên nhóm đã nằm sẵn
-         trong menu con. */
-      .dock-name { display: none; }
-      .dock-pop { left: 0; right: 0; min-width: 0;
-        transform: translateY(6px);
-        max-height: min(60vh, 420px); overflow-y: auto; }
-      /* Chạm vào nút cũng làm nút nhận focus, nên `:focus-within` sẽ giữ menu
-         mở mãi và cú chạm thứ hai không đóng được gì. Ở màn hẹp chỉ `.ui-open`
-         (do kịch bản đặt) mới là công tắc. `.ui-js` đứng đầu để khi không có
-         JavaScript thì hành vi cũ vẫn còn. */
-      .ui-js .dock-group:hover .dock-pop,
-      .ui-js .dock-group:focus-within .dock-pop {
-        opacity: 0; visibility: hidden; pointer-events: none;
-        transform: translateY(6px);
-      }
-      .ui-js .dock-group.ui-open .dock-pop,
-      .dock-group.ui-open .dock-pop {
-        opacity: 1; visibility: visible; pointer-events: auto;
-        transform: translateY(0);
-      }
-      /* Cầu nối và vùng đệm là để chuột đi chéo không làm đứt `:hover`. Màn
-         cảm ứng không có hover, còn `z-index: -1` của vùng đệm lại đẩy nó
-         xuống dưới dải dock nên nó nuốt mất cú chạm ở rìa nút. */
-      .dock-pop::after { content: none; }
-      .dock-group::after { content: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .dock-ic, .dock-pop { transition: none; }
-      .dock-btn:hover .dock-ic, .dock-btn:focus-visible .dock-ic { transform: none; }
     }
 
     /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
@@ -1102,7 +944,7 @@ _LANDING_CSS = """\
       padding: 18px;
       border-radius: 22px;
       background: var(--panel);
-      border: 1px solid rgba(226,232,240,.8);
+      border: 1px solid var(--ui-border);
       box-shadow: 0 14px 34px rgba(15,23,42,.06);
       min-height: 124px;
       display: grid;
@@ -1131,10 +973,10 @@ _LANDING_CSS = """\
        nghĩa. Hạ cỡ chữ theo độ dài thay vì cho xuống dòng. */
     .metric-tile[data-long="true"] strong { font-size: clamp(20px, 2.1vw, 27px); }
     .metric-tile em { font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.4; }
-    .metric-tile.blue { color: var(--blue); }
-    .metric-tile.orange { color: var(--orange); }
-    .metric-tile.green { color: var(--green); }
-    .metric-tile.purple { color: var(--purple); }
+    .metric-tile.blue { color: var(--ui-brand-ink); }
+    .metric-tile.orange { color: var(--ui-warn); }
+    .metric-tile.green { color: var(--ui-ok); }
+    .metric-tile.purple { color: var(--ui-brand-ink); }
     .layout-top {
       display: grid;
       grid-template-columns: minmax(0, 1.4fr) minmax(330px, .72fr);
@@ -1166,15 +1008,15 @@ _LANDING_CSS = """\
     }
     .section-title .section-kicker {
       font-size: 11px;
-      color: var(--blue);
+      color: var(--ui-brand-ink);
       text-transform: uppercase;
       letter-spacing: .15em;
       font-weight: 900;
     }
     .card {
-      background: rgba(255,255,255,.88);
+      background: var(--ui-surface);
       backdrop-filter: blur(18px);
-      border: 1px solid rgba(226,232,240,.85);
+      border: 1px solid var(--ui-border);
       border-radius: var(--radius);
       box-shadow: 0 16px 42px rgba(15,23,42,.07);
       padding: 18px;
@@ -1188,7 +1030,7 @@ _LANDING_CSS = """\
     }
     .eyebrow {
       margin: 0 0 5px;
-      color: var(--blue);
+      color: var(--ui-brand-ink);
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: .14em;
@@ -1228,15 +1070,15 @@ _LANDING_CSS = """\
       text-align: left;
       vertical-align: middle;
       padding: 14px;
-      color: #334155;
-      background: #f8fafc;
+      color: var(--ui-ink-2);
+      background: var(--ui-surface-2);
       border-bottom: 1px solid var(--line);
       font-size: 13px;
     }
     .result-table td {
       padding: 12px;
       border-bottom: 1px solid var(--line);
-      background: #fff;
+      background: var(--ui-surface);
     }
     .result-table tr:last-child th, .result-table tr:last-child td { border-bottom: 0; }
     .prize-list {
@@ -1254,8 +1096,8 @@ _LANDING_CSS = """\
       min-height: 38px;
       padding: 6px 10px;
       border-radius: 13px;
-      background: #f1f5f9;
-      color: #0f172a;
+      background: var(--ui-surface-2);
+      color: var(--ui-ink);
       font-weight: 900;
       letter-spacing: .03em;
       box-shadow: inset 0 -1px 0 rgba(15,23,42,.08);
@@ -1263,12 +1105,12 @@ _LANDING_CSS = """\
     .prize-number.special {
       min-width: 116px;
       min-height: 52px;
-      background: linear-gradient(135deg, #fee2e2, #ffedd5);
-      color: #b91c1c;
+      background: var(--ui-special-bg);
+      color: var(--ui-special-ink);
       font-size: 28px;
       letter-spacing: .06em;
     }
-    .prize-list.mini .prize-number { min-width: 48px; color: #b91c1c; background: #fff1f2; }
+    .prize-list.mini .prize-number { min-width: 48px; color: var(--ui-special-ink); background: var(--ui-special-bg); }
     /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
        (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
        .matrix-wrap cuộn ngang phần dư. */
@@ -1367,7 +1209,7 @@ _LANDING_CSS = """\
     }
     .head-tail-card {
       border-radius: 18px;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
       border: 1px solid var(--line);
       padding: 12px;
     }
@@ -1378,7 +1220,7 @@ _LANDING_CSS = """\
       gap: 8px;
       align-items: start;
       padding: 5px 0;
-      border-top: 1px solid rgba(226,232,240,.75);
+      border-top: 1px solid var(--ui-border);
     }
     .head-tail-row:first-of-type { border-top: 0; }
     .mini-badge {
@@ -1432,7 +1274,7 @@ _LANDING_CSS = """\
     }
     .bar-label {
       font-weight: 900;
-      color: #0f172a;
+      color: var(--ui-ink);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1440,7 +1282,7 @@ _LANDING_CSS = """\
     .bar-track {
       height: 13px;
       border-radius: 999px;
-      background: #e2e8f0;
+      background: var(--ui-border);
       overflow: hidden;
     }
     .bar-fill {
@@ -1463,7 +1305,7 @@ _LANDING_CSS = """\
       padding: 9px;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--ui-surface);
       text-align: left;
       cursor: pointer;
     }
@@ -1473,12 +1315,12 @@ _LANDING_CSS = """\
       width: 42px;
       height: 42px;
       border-radius: 14px;
-      background: #f5f3ff;
-      color: var(--purple);
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
       font-size: 18px;
     }
     .signal-pill span {
-      color: #334155;
+      color: var(--ui-ink-2);
       font-size: 13px;
       line-height: 1.35;
       font-weight: 700;
@@ -1494,7 +1336,7 @@ _LANDING_CSS = """\
       border-collapse: separate;
       border-spacing: 0;
       min-width: 640px;
-      background: #fff;
+      background: var(--ui-surface);
     }
     .stat-table th {
       position: sticky;
@@ -1502,16 +1344,16 @@ _LANDING_CSS = """\
       z-index: 1;
       padding: 10px 11px;
       text-align: left;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
       border-bottom: 1px solid var(--line);
-      color: #334155;
+      color: var(--ui-ink-2);
       font-size: 12px;
       white-space: nowrap;
     }
     .stat-table td {
       padding: 10px 11px;
-      border-bottom: 1px solid #f1f5f9;
-      color: #0f172a;
+      border-bottom: 1px solid var(--ui-border);
+      color: var(--ui-ink);
       font-size: 13px;
       vertical-align: top;
     }
@@ -1529,13 +1371,14 @@ _LANDING_CSS = """\
       border: 1px solid var(--line);
       border-radius: 14px;
       outline: none;
-      background: #fff;
+      background: var(--ui-surface);
+      color: var(--ui-ink);
     }
     .num-link {
       border: 0;
       border-radius: 10px;
-      background: #eff6ff;
-      color: #1d4ed8;
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
       font-weight: 900;
       padding: 5px 8px;
       cursor: pointer;
@@ -1553,7 +1396,7 @@ _LANDING_CSS = """\
       width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
       background: #94a3b8;
     }
-    .live-status[data-state="live"] { border-color: #bf3636; color: #b91c1c; }
+    .live-status[data-state="live"] { border-color: var(--ui-bad-border); color: var(--ui-bad); }
     .live-status[data-state="live"] .live-dot {
       background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
     }
@@ -1612,7 +1455,7 @@ _LANDING_CSS = """\
     .basis-merged {
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #fff;
+      background: var(--ui-surface);
       overflow: hidden;
     }
     /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
@@ -1705,9 +1548,9 @@ _LANDING_CSS = """\
       margin: 14px 0 0;
       padding: 12px 14px;
       border-radius: 12px;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      color: #78350f;
+      background: var(--ui-warn-soft);
+      border: 1px solid var(--ui-warn-border);
+      color: var(--ui-warn);
       font-size: 13px;
       line-height: 1.6;
     }
@@ -1759,9 +1602,9 @@ _LANDING_CSS = """\
     .inspect-panel {
       background:
         radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
-        #fff;
+        var(--ui-surface);
       border-radius: var(--radius);
-      border: 1px solid rgba(226,232,240,.9);
+      border: 1px solid var(--ui-border);
       padding: 18px;
       box-shadow: 0 16px 42px rgba(15,23,42,.07);
     }
@@ -1799,7 +1642,7 @@ _LANDING_CSS = """\
     }
     .inspect-number span { color: var(--muted); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
     .inspect-panel h3 { margin: 0 0 8px; font-size: 22px; }
-    .inspect-panel p { color: #475569; line-height: 1.55; margin: 8px 0; }
+    .inspect-panel p { color: var(--ui-ink-soft); line-height: 1.55; margin: 8px 0; }
     .inspect-meta {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1809,7 +1652,7 @@ _LANDING_CSS = """\
     .inspect-meta div {
       padding: 10px;
       border-radius: 14px;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
       border: 1px solid var(--line);
     }
     .inspect-meta span {
@@ -1826,9 +1669,9 @@ _LANDING_CSS = """\
       list-style: none;
       padding: 10px;
       border-radius: 14px;
-      background: #f8fafc;
+      background: var(--ui-surface-2);
       border: 1px solid var(--line);
-      color: #334155;
+      color: var(--ui-ink-2);
       font-size: 13px;
       line-height: 1.45;
     }
@@ -1836,8 +1679,8 @@ _LANDING_CSS = """\
     .empty {
       padding: 22px;
       border-radius: 18px;
-      background: #f8fafc;
-      border: 1px dashed #cbd5e1;
+      background: var(--ui-surface-2);
+      border: 1px dashed var(--ui-border-strong);
       text-align: center;
     }
     .footer {
@@ -2082,7 +1925,7 @@ _LANDING_CSS = """\
       grid-template-columns: minmax(0, 1fr) !important;
     }
     @media print {
-      .dock, .hero-actions { display: none; }
+      .hero-actions { display: none; }
       .app { padding-bottom: 0; }
       body { background: #fff; }
       .card, .metric-tile, .hero { box-shadow: none; }
@@ -2342,7 +2185,6 @@ def _render_html(
         ),
     ]
 
-    dock_html = _render_dock()
 
     live_block = _render_live_block(latest)
 
@@ -2355,10 +2197,18 @@ def _render_html(
 
     hero_actions = """
       <div class="hero-actions">
-        <a class="primary-action" href="#ket-qua">Xem kết quả ngày</a>
+        <a class="primary-action" href="#ket-qua">Xem kết quả ngày <span aria-hidden="true">→</span></a>
         <a class="ghost-action" href="landing_desktop.html">Mở giao diện máy tính</a>
-        <a class="ghost-action" href="statistics.html">Mở bảng điều khiển thống kê đầy đủ</a>
-        <a class="ghost-action" href="soi-path-loto-active.html">Soi cầu vị trí</a>
+      </div>
+    """
+    hero_features = f"""
+      <div class="app-feature-links" aria-label="Khám phá phân tích">
+        <a class="app-feature-link" href="statistics.html">{icon_svg("tan-suat")}
+          <span><strong>Thống kê</strong><small>Toàn cảnh dữ liệu</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
+        <a class="app-feature-link" href="soi-path-loto-active.html">{icon_svg("ma-tran")}
+          <span><strong>Soi cầu vị trí</strong><small>Khám phá quy luật</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
+        <a class="app-feature-link" href="model-quality.html">{icon_svg("chat-luong")}
+          <span><strong>Kiểm định</strong><small>Đánh giá mô hình</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
       </div>
     """
 
@@ -2376,6 +2226,7 @@ def _render_html(
 
     data_json = json_for_html_script({"explain": explain_map, "generated_at": generated_at})
     body_class = ' class="desktop-view"' if desktop_view else ""
+    hero_particles = "".join(f'<span class="app-particle" style="--app-i:{i}"></span>' for i in range(12))
 
     html_doc = f"""<!doctype html>
 <html lang="vi">
@@ -2393,21 +2244,34 @@ def _render_html(
   <div class="app">
     <main class="main">
       <section id="tong-quan" class="hero section">
+        <div class="app-hero-particles" aria-hidden="true">{hero_particles}</div>
         <div class="hero-content">
-          <div>
-            <p class="eyebrow" style="color:#F8F9FF">Bảng điều khiển tổng hợp</p>
+          <div class="app-hero-copy" data-app-reveal>
+            <p class="app-hero-kicker"><span aria-hidden="true"></span> Dữ liệu mỗi ngày · Góc nhìn dài hạn</p>
             <h1>Trung tâm thống kê xổ số</h1>
+            <p class="app-hero-lead">Đọc dữ liệu. Hiểu quy luật.</p>
+            <p>Kết quả Miền Bắc, ma trận tần suất và kiểm định mô hình — trong một không gian phân tích liền mạch.</p>
+            {hero_actions}
+            <div class="signal-pills" aria-label="Tín hiệu thống kê tham khảo">
+              {ai_pills}
+            </div>
           </div>
-          <p>
-            Trang này gom các bảng quan trọng vào một trang tổng hợp hiện đại: bấm trình đơn để cuộn tới đúng thống kê,
-            bảng kết quả đặt trung tâm, chục–đơn vị đặt cạnh bên, còn AI/ML và các bảng phân tích nằm ở phải và bên dưới
-            để so sánh nhanh mà không bị rối giao diện.
-          </p>
-          {hero_actions}
-          <div class="signal-pills">
-            {ai_pills}
+          <div class="app-hero-visual" data-app-parallax data-app-reveal>
+            <span class="app-hero-orbit" aria-hidden="true"></span>
+            <div class="app-hero-result">
+              <div class="app-hero-result-label">{icon_svg("hom-nay")} Kết quả gần nhất</div>
+              <p class="app-hero-date">Miền Bắc · {html.escape(str(latest.get("date") or "Chưa có dữ liệu"))}</p>
+              <span class="app-hero-chip">Đặc Biệt</span>
+              <strong class="app-hero-number">{html.escape(str(latest.get("special") or "—"))}</strong>
+              <div class="app-hero-meta"><span>Hai số cuối</span><b>{html.escape(str(latest.get("special_2d") or "—"))}</b></div>
+              <a href="#ket-qua">Xem đầy đủ các giải <span aria-hidden="true">↗</span></a>
+            </div>
+            <div class="app-hero-mini app-hero-mini--one"><span>Số khác nhau</span><strong class="app-hero-mini-value">{len(latest.get("counts", {})) if latest.get("counts") else "—"}<small> / 100</small></strong></div>
+            <div class="app-hero-mini app-hero-mini--two"><span>Lượt xuất hiện</span><strong class="app-hero-mini-value">{sum(_to_int(v) for v in latest.get("counts", {}).values()) if latest.get("counts") else "—"}</strong><small>Từ toàn bộ giải trong ngày</small></div>
           </div>
         </div>
+        {hero_features}
+        <div class="app-marquee" aria-hidden="true"><div class="app-marquee-track"><span>Vietnam Lottery Analysis · </span><span>Vietnam Lottery Analysis · </span></div></div>
       </section>
 
       {live_block}
@@ -2648,7 +2512,6 @@ def _render_html(
         Sinh lúc {html.escape(generated_at)}. AI/ML và cầu-kèo là tín hiệu thống kê từ lịch sử, không phải bảo đảm kết quả xổ số tương lai.
       </div>
     </main>
-    {dock_html}
   </div>
 
   <script type="application/json" id="landing-data">{data_json}</script>
@@ -2659,53 +2522,6 @@ def _render_html(
 </html>
 """
     return html_doc
-
-
-def _render_dock() -> str:
-    """Dựng dock điều hướng nổi từ :data:`SITE_NAV`.
-
-    Sidebar cũ rộng 292px trên màn 1680px — 17,4% chiều ngang cho 17 liên kết
-    mà phần lớn thời gian không ai bấm. Dock trả toàn bộ phần đó cho nội dung.
-
-    17 đích là quá nhiều cho một dock kiểu macOS: icon sẽ nhỏ hơn 32px và
-    tooltip chồng nhau. ``SITE_NAV`` vốn đã chia 5 nhóm, nên dock hiện 5 icon
-    nhóm, mỗi icon mở một popover chứa các mục con.
-
-    Returns:
-        Chuỗi HTML của dock.
-    """
-    # Nhóm đầu tiên là các neo TRONG trang. Bỏ sidebar cũng bỏ luôn khả năng
-    # nhảy tới từng mục, mà trang này cao khoảng 12 000px — cuộn tay từ đầu tới
-    # phần kiểm định là hơn mười màn hình. SITE_NAV chỉ phủ 4 trong 12 neo đó.
-    groups: list[tuple[str, tuple[tuple[str, str, str], ...]]] = [
-        (
-            "Trên trang",
-            tuple((f"#{sid}", label, f"{index:02d}") for index, (sid, label, _) in enumerate(NAV_ITEMS, 1)),
-        ),
-        *SITE_NAV,
-    ]
-    parts = ['<nav class="dock" aria-label="Điều hướng chính"><div class="dock-inner">']
-    for group, items in groups:
-        group_id = "dock-" + re.sub(r"[^a-z0-9]+", "-", group.lower()).strip("-")
-        icon = "☰" if group == "Trên trang" else (items[0][2] if items else "•")
-        parts.append('<div class="dock-group">')
-        parts.append(
-            f'<button class="dock-btn" type="button" aria-haspopup="true"'
-            f' aria-expanded="false" aria-controls="{group_id}">'
-            f'<span class="dock-ic" aria-hidden="true">{icon}</span>'
-            f'<span class="dock-name">{html.escape(group)}</span></button>'
-        )
-        parts.append(f'<div class="dock-pop" id="{group_id}" role="menu">')
-        for href, label, item_icon in items:
-            parts.append(
-                f'<a href="{href}" role="menuitem">'
-                f'<span aria-hidden="true">{item_icon}</span>'
-                f"<span>{html.escape(label)}</span></a>"
-            )
-        parts.append("</div></div>")
-    parts.append("</div></nav>")
-    parts.append(dock_script("dock"))
-    return "".join(parts)
 
 
 def _history_days(repo_root: Path) -> int:

@@ -11,7 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
 from ui_locale import mode_label, path_kind_label
-from ui_theme import dock, refresh_live_page
+from ui_theme import refresh_live_page
 from xsmb_domain import baseline_rate
 from web_security import security_meta_tags
 from page_output import write_page
@@ -218,9 +218,6 @@ def _render_page(
         days=days,
         rows=rows,
         picks=picks,
-        # Bốn trang soi cầu trước đây KHÔNG có phần tử <nav> nào: người đọc tới
-        # đó rồi không đi tiếp được đâu ngoài nút back của trình duyệt.
-        dock_html=dock(out_path.name),
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
     write_page(out_path, html)

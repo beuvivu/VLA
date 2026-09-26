@@ -215,7 +215,32 @@ def write_page(path: Path, html: str) -> None:
     # này, nên đây là chỗ duy nhất cần sửa để cả hai mươi chín trang có cùng
     # một khung — thay vì chép khung vào từng trình dựng rồi trôi khỏi nhau.
     refined = _attach_shell(path, refined)
+    from crafto_design import attach_crafto_design
+
+    refined = attach_crafto_design(path, refined)
+    refined = _attach_theme_bootstrap(path, refined)
     path.write_text(strip_comments(refined), encoding="utf-8")
+
+
+def _attach_theme_bootstrap(path: Path, html: str) -> str:
+    """Nạp màu đã chọn sau metadata/CSP nhưng trước mọi stylesheet."""
+    head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
+    if not head_match:
+        return html
+    source = Path(__file__).with_name("assets") / "app-theme.js"
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "app-theme.js").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    head = re.sub(
+        r'<script\b[^>]*\bsrc=[\"\']assets/app-theme\.js[\"\'][^>]*>\s*</script>\s*',
+        "", head_match.group(1), flags=re.I,
+    )
+    metadata = list(re.finditer(r"<(?:meta|base)\b[^>]*>", head, re.I))
+    position = metadata[-1].end() if metadata else 0
+    script = '\n<script src="assets/app-theme.js" data-app-theme></script>\n'
+    # Chuẩn hoá hai mép để lần ghi thứ hai không thêm một dòng trắng nữa.
+    head = head[:position].rstrip() + script + head[position:].lstrip()
+    return html[:head_match.start(1)] + head + html[head_match.end(1):]
 
 
 #: Tệp tĩnh của khung, chép từ ``src/`` sang ``docs/assets/`` mỗi lần ghi

@@ -78,7 +78,7 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
     1,00:1 — chữ vô hình hoàn toàn.
     """
     template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
-    for token in ("--ui-ink:", "--ui-ink-soft:", "--ui-surface:", "--ui-bg:"):
+    for token in ("--text:var(--ui-ink)", "--muted:var(--ui-ink-soft)", "--card:var(--ui-surface)", "--bg:var(--ui-bg)"):
         assert token in template, token
 
 
@@ -86,12 +86,16 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
     "page",
     ["soi-path-de-active.html", "soi-path-loto-active.html"],
 )
-def test_path_page_text_contrasts_with_the_light_surface(page: Path) -> None:
+def test_path_page_text_contrasts_with_each_theme(page: Path) -> None:
+    from theme_palette_helpers import theme_tokens
     text = (DOCS / page).read_text(encoding="utf-8")
-    match = re.search(r"--ui-ink:\s*(#[0-9a-fA-F]{6})", text)
-    assert match, "trang soi cầu phải khai báo --ui-ink"
-    # Các trang soi cầu hiện dùng surface sáng, nên chữ phải tương phản đủ với màu trắng.
-    assert contrast_ratio(match.group(1), "#ffffff") >= WCAG_AA_NORMAL
+    assert 'assets/ui.css' in text
+    template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
+    assert '--text:var(--ui-ink)' in template and '--card:var(--ui-surface)' in template
+    for dark in (False, True):
+        tokens = theme_tokens(dark)
+        for ink in ('--ui-ink', '--ui-ink-soft'):
+            assert contrast_ratio(tokens[ink], tokens['--ui-surface']) >= WCAG_AA_NORMAL
 
 
 def test_inverse_surfaces_do_not_use_a_theme_flipping_token() -> None:

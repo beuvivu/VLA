@@ -83,11 +83,8 @@ color:var(--ui-ink);font-variant-numeric:tabular-nums}
 /* Ghi chú mốc ngẫu nhiên. Không phải trang trí: thiếu nó thì bảng xếp hạng
    trông như quy luật trong khi đó là mức ngẫu nhiên thường tạo ra. */
 .sp-note{margin:1.5rem 0 0;padding:1rem;border-radius:var(--ui-r-lg);
-background:#fffbeb;border:1px solid #fde68a;color:#78350f;font-size:.8125rem;
+background:var(--ui-warn-soft);border:1px solid var(--ui-warn-border);color:var(--ui-warn);font-size:.8125rem;
 line-height:1.65}
-:root:not([data-theme=light]) .sp-note{background:#3f2d0c;border-color:#78350f;color:#fde68a}
-@media (prefers-color-scheme: light){:root:not([data-theme=dark]) .sp-note{
-background:#fffbeb;border-color:#fde68a;color:#78350f}}
 
 /* --- Giải ĐẶC BIỆT -------------------------------------------------------
    Ba chữ số đầu để mờ nhưng vẫn hiện đủ, để đối chiếu được với kết quả gốc.
@@ -96,9 +93,9 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
    gì khác. Đỏ #BE123C trên #FFE4E6 đo được 5,24:1. */
 .sp-de { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--ui-ink-soft); }
 .sp-de b {
-  color: #BE123C; font-weight: 800;
+  color: var(--ui-special-ink); font-weight: 800;
   padding: 0 4px; border-radius: 6px;
-  background: #FFE4E6; border: 1px solid #FDA4AF;
+  background: var(--ui-special-bg); border: 1px solid var(--ui-special-border);
 }
 
 /* --- Đánh dấu ô để so sánh -----------------------------------------------
@@ -110,30 +107,18 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table th.cell:hover { outline: 2px solid rgba(124, 58, 237, .35); outline-offset: -2px; }
 .sp-table td.marked,
 .sp-table th.marked {
-  background: #fde68a !important;
-  color: #78350f !important;
-  box-shadow: inset 0 0 0 2px #d97706;
+  background: var(--ui-mark-bg) !important;
+  color: var(--ui-mark-ink) !important;
+  box-shadow: inset 0 0 0 2px var(--ui-mark-border);
   font-weight: 800;
 }
 .sp-table td.marked .sp-de,
-.sp-table td.marked .sp-de b { color: #78350f; }
+.sp-table td.marked .sp-de b { color: var(--ui-mark-ink); }
 
 .sp-marktools { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
 .sp-hint { color: var(--ui-ink-soft); font-size: 12px; }
 .sp-mark-count { color: var(--ui-warn); font-size: 12px; font-weight: 800; }
 .sp-subhead { margin: 24px 0 8px; font-size: 17px; }
-
-@media (prefers-color-scheme: dark) {
-  .sp-de { color: #94a3b8; }
-  /* Vẫn đỏ ở chế độ tối, chỉ đổi sắc độ cho hợp nền: #FDA4AF trên #4C0519
-     đo được 8,27:1. Giữ nguyên #BE123C ở đây thì chữ chìm hẳn (2,49:1). */
-  .sp-de b { color: #FDA4AF; background: #4C0519; border-color: #9F1239; }
-  .sp-table td.marked,
-  .sp-table th.marked { background: #78350f !important; color: #fef3c7 !important;
-    box-shadow: inset 0 0 0 2px #f59e0b; }
-  .sp-table td.marked .sp-de,
-  .sp-table td.marked .sp-de b { color: #fef3c7; }
-}
 
 /* Lịch tuần của bảng Đặc Biệt theo tháng: số ngày nhỏ ở góc, giải bên dưới. */
 .sp-daynum {
@@ -141,10 +126,6 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   color: var(--ui-ink-soft); margin-bottom: 2px;
 }
 .sp-none { color: var(--ui-ink-soft); }
-@media (prefers-color-scheme: dark) {
-  .sp-daynum { color: #94a3b8; }
-  .sp-none { color: var(--ui-ink-soft); }
-}
 
 /* --- Ô bảng Đặc Biệt sáu trường ------------------------------------------
    Giải nổi bật, các trường phụ (Tổng/Đầu/Đuôi/Chẵn lẻ/Bộ) nhỏ và mờ hơn để
@@ -175,31 +156,31 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-legend {
   margin: 0 0 16px; padding: 16px;
   border: 1px solid var(--ui-border); border-radius: var(--ui-r-lg);
-  background: #fffbeb; border-color: #fde68a;
+  background: var(--ui-warn-soft); border-color: var(--ui-warn-border);
 }
-.sp-legend-head { font-size: 12px; font-weight: 800; color: #92400e; margin-bottom: 8px; }
+.sp-legend-head { font-size: 12px; font-weight: 800; color: var(--ui-warn); margin-bottom: 8px; }
 .sp-legend-sample {
   display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
   margin-bottom: 10px; font-size: 18px;
 }
-.sp-lg-src { font-size: 11px; font-weight: 700; color: #92400e; }
+.sp-lg-src { font-size: 11px; font-weight: 700; color: var(--ui-warn); }
 .sp-legend-items {
   display: grid; gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 .sp-lg-item {
   display: block; padding: 7px 9px; border-radius: var(--ui-r-md);
-  background: #fff; border: 1px solid #fde68a;
+  background: var(--ui-surface); border: 1px solid var(--ui-warn-border);
 }
 .sp-lg-val {
   display: inline-block; min-width: 22px; padding: 1px 5px; border-radius: 5px;
-  background: #fef3c7; color: #78350f; font-size: 13px; font-weight: 800;
+  background: var(--ui-mark-bg); color: var(--ui-mark-ink); font-size: 13px; font-weight: 800;
   font-variant-numeric: tabular-nums; text-align: center;
 }
 .sp-lg-lab { font-size: 12px; font-weight: 800; color: var(--ui-ink); margin-left: 6px; }
 .sp-lg-hint { display: block; margin-top: 3px; font-size: 11px; line-height: 1.4; color: var(--ui-ink-soft); }
 .sp-legend-rule { margin: 10px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--ui-ink-soft); }
-.sp-legend-rule b { color: #78350f; }
+.sp-legend-rule b { color: var(--ui-mark-ink); }
 
 .sp-fields-toggle {
   display: flex; flex-wrap: wrap; gap: 6px 14px;
@@ -213,29 +194,12 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 }
 .sp-fchk input { cursor: pointer; }
 
-@media (prefers-color-scheme: dark) {
-  .sp-fields { color: #94a3b8; }
-  .sp-f + .sp-f { border-left-color: #334155; }
-  .sp-f-ngay { color: #5c6b80; }
-  .sp-fields-toggle { background: #0f172a; }
-  .sp-fchk { color: #cbd5e1; }
-  .sp-zero { color: #475569; }
-  .sp-empty-row { color: #94a3b8; }
-  .sp-legend { background: #1c1917; border-color: #78350f; }
-  .sp-legend-head, .sp-lg-src { color: #fcd34d; }
-  .sp-lg-item { background: #0f172a; border-color: #78350f; }
-  .sp-lg-val { background: #78350f; color: #fef3c7; }
-  .sp-lg-lab { color: #e2e8f0; }
-  .sp-lg-hint, .sp-legend-rule { color: #94a3b8; }
-  .sp-legend-rule b { color: #fcd34d; }
-}
-
 /* --- Bộ chọn con số 00-99 ------------------------------------------------- */
 .sp-picker { margin-bottom: 16px; }
 .sp-pick-quick { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .sp-pick-quick button {
   padding: 5px 11px; border-radius: 999px; border: 1px solid var(--ui-border);
-  background: var(--ui-surface); font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--ui-surface); color:var(--ui-ink); font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .sp-pick-grid {
   display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px;
@@ -275,10 +239,6 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 .sp-table.sp-dense th { white-space: nowrap; }
 
 @media (max-width: 860px) { .sp-pick-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
-@media (prefers-color-scheme: dark) {
-  .sp-pick-quick button { background: #1e293b; color: #e2e8f0; }
-  .sp-pick { background: #1e293b; color: #5c6b80; }
-}
 
 /* --- Cầu giải Đặc Biệt ---------------------------------------------------- */
 .sp-times { display: block; font-style: normal; font-size: 10px; color: var(--ui-ink-soft); }
@@ -295,17 +255,10 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
   border: 1px solid var(--ui-border); text-align: center;
   font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
-@media (prefers-color-scheme: dark) {
-  .sp-times { color: #94a3b8; }
-  .sp-draw { background: #0f172a; }
-  .sp-db b { color: #e2e8f0; }
-  .sp-lo { background: #1e293b; }
-}
 
 /* Ghi chú kích thước ma trận. Lớp RIÊNG, không dùng .sp-note: lớp đó dành cho
    ghi chú mốc ngẫu nhiên, và một ghi chú rỗng đứng trước sẽ che mất nó. */
 .sp-matrix-note { margin: 0 0 8px; color: var(--ui-ink-soft); font-size: 12px; }
-@media (prefers-color-scheme: dark) { .sp-matrix-note { color: #94a3b8; } }
 
 /* =========================================================================
    Bảng dạng lưới cho các trang thống kê mới
@@ -335,16 +288,11 @@ background:#fffbeb;border-color:#fde68a;color:#78350f}}
 /* Empty, data and pending are different states. A data cell retains an
    inset ring as a second cue; empty cells are quiet, flat and darker. */
 .sp-table td.is-empty {
-  background-color: #0B1220;
+  background-color: var(--ui-empty-bg);
   background-image: none;
   box-shadow: none;
 }
-@media (prefers-color-scheme: light) {
-  .sp-table td.is-empty { background-color: #E2E8F0; }
-  .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
-}
-:root[data-ui-theme="light"] .sp-table td.is-empty,
-body.sp-page .sp-table td.is-empty { background-color: #E2E8F0; }
+
 .sp-table td.sp-hit {
   background-color: var(--ui-surface);
   box-shadow: inset 0 0 0 1px var(--ui-border-strong), 0 1px 1.5px rgba(22,28,45,.07);
@@ -352,13 +300,13 @@ body.sp-page .sp-table td.is-empty { background-color: #E2E8F0; }
 }
 /* Muted tiers, each with AA text contrast. The numeric count remains the
    primary encoding; matching legend swatches appear beside every matrix. */
-.sp-table td.sp-n1 { background-color: #FFF3CC; color: #714D0C; }
-.sp-table td.sp-n2 { background-color: #E0F2FE; color: #075985; }
-.sp-table td.sp-n3 { background-color: #DCFCE7; color: #166534; }
-.sp-table td.sp-n4 { background-color: #F3E8FF; color: #6B21A8; font-weight: 800; }
+.sp-table td.sp-n1 { background-color: var(--ui-n1-bg); color: var(--ui-n1-ink); }
+.sp-table td.sp-n2 { background-color: var(--ui-n2-bg); color: var(--ui-n2-ink); }
+.sp-table td.sp-n3 { background-color: var(--ui-n3-bg); color: var(--ui-n3-ink); }
+.sp-table td.sp-n4 { background-color: var(--ui-n4-bg); color: var(--ui-n4-ink); font-weight: 800; }
 .sp-table td.sp-n5 {
-  background-color: #FFE4E6; color: #9F1239;
-  box-shadow: inset 0 0 0 1px #FDA4AF;
+  background-color: var(--ui-n5-bg); color: var(--ui-n5-ink);
+  box-shadow: inset 0 0 0 1px var(--ui-special-border);
   font-weight: 800;
 }
 
@@ -379,25 +327,20 @@ body.sp-page .sp-table td.is-empty { background-color: #E2E8F0; }
 .sp-nl span { color: var(--ui-ink-2); font-weight: 600; }
 /* Quy tắc cấp nháy ở trên neo vào "td", nên ô mẫu trong chú giải — vốn là
    thẻ <i> — không với tới được. Khai lại cho đúng nơi nó sống. */
-.sp-nl i.sp-n1 { background: #FFF3CC; color: #714D0C; }
-.sp-nl i.sp-n2 { background: #E0F2FE; color: #075985; }
-.sp-nl i.sp-n3 { background: #DCFCE7; color: #166534; }
-.sp-nl i.sp-n4 { background: #F3E8FF; color: #6B21A8; }
-.sp-nl i.sp-n5 { background: #FFE4E6; color: #9F1239; }
-.sp-nl i.sp-de-key { background: #C0392B; color: #FFFFFF; }
-.sp-nl i.sp-gan-key { background: #F1F3F8; box-shadow: inset 0 0 0 1px var(--ui-border-strong); }
+.sp-nl i.sp-n1 { background: var(--ui-n1-bg); color: var(--ui-n1-ink); }
+.sp-nl i.sp-n2 { background: var(--ui-n2-bg); color: var(--ui-n2-ink); }
+.sp-nl i.sp-n3 { background: var(--ui-n3-bg); color: var(--ui-n3-ink); }
+.sp-nl i.sp-n4 { background: var(--ui-n4-bg); color: var(--ui-n4-ink); }
+.sp-nl i.sp-n5 { background: var(--ui-n5-bg); color: var(--ui-n5-ink); }
+.sp-nl i.sp-de-key { background: var(--ui-special-strong-bg); color: var(--ui-special-strong-ink); }
+.sp-nl i.sp-gan-key { background: var(--ui-gan-bg); box-shadow: inset 0 0 0 1px var(--ui-border-strong); }
 /* Chú giải phải hiện ĐÚNG thứ nó chú giải. Để lại sọc ở đây trong khi ô thật
    đã phẳng thì chú giải nói sai về chính bảng nó đang giải thích. */
 .sp-nl i.sp-empty-key {
-  background-color: #0B1220;
+  background-color: var(--ui-empty-bg);
   background-image: none;
   box-shadow: inset 0 0 0 1px var(--ui-border-strong);
 }
-@media (prefers-color-scheme: light) {
-  .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
-}
-:root[data-ui-theme="light"] .sp-nl i.sp-empty-key,
-body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 
 /* 3. CỘT ĐẦU DÍNH. Ma trận rộng tới 120 cột; cuộn ngang mà mất nhãn hàng thì
       mọi con số thành vô nghĩa. */
@@ -412,7 +355,7 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 /* Tiêu đề cột đang trỏ tới. Không có nó thì đọc lệch cột là chuyện thường. */
 .sp-table th.col-hint {
   background: var(--ui-brand);
-  color: #fff;
+  color: var(--ui-on-brand);
 }
 
 /* Dóng chữ thập. Nửa theo CỘT đã có từ trước, nửa theo HÀNG thì không — mà
@@ -451,12 +394,7 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
 }
 
 /* Ô đánh dấu phải thắng mọi nền ở trên. */
-.sp-table.sp-grid-lines td.marked { background: #fde68a; }
-
-@media (prefers-color-scheme: dark) {
-  .sp-table.sp-grid-lines td.marked { background: #78350f; }
-  .sp-table td.is-empty { opacity: .35; }
-}
+.sp-table.sp-grid-lines td.marked { background: var(--ui-mark-bg); }
 
 /* Ô của kỳ CHƯA QUAY: xám tro, viền nét đứt.
    ------------------------------------------------------------------------
@@ -466,28 +404,20 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
    trắng đen hoặc khi người xem không phân biệt màu. */
 .sp-table td.sp-pending,
 .sp-table th.sp-pending {
-  background-color: #E0E0E0 !important;
+  background-color: var(--ui-pending-bg) !important;
   background-image: none !important;
-  color: var(--ui-ink-soft);
+  color: var(--ui-pending-ink);
   box-shadow: none !important;
   outline: 1px dashed var(--ui-border-strong);
   outline-offset: -2px;
 }
-@media (prefers-color-scheme: dark) {
-  .sp-table td.sp-pending,
-  .sp-table th.sp-pending {
-    background-color: #263243 !important;
-    color: #CBD5E1;
-    outline-color: #5c6b80;
-    /* Hex ở khối chế độ tối là lựa chọn có chủ đích, không phải sót token. */
-  }
-}
+
 .sp-pending-note { color: var(--ui-ink-soft); font-size: 12px; }
 
 /* Ô về GIẢI ĐẶC BIỆT: đỏ riêng, không lẫn vào thang nháy.
    #C0392B chứ không phải #D9534F của trang mẫu — đo ra #D9534F chỉ đạt 3,96
    với chữ trắng, tức trượt AA và chữ chìm. #C0392B đạt 5,44, cùng sắc đỏ. */
-.sp-table td.sp-de-hit { background-color: #C0392B !important; color: #FFFFFF !important;
+.sp-table td.sp-de-hit { background-color: var(--ui-special-strong-bg) !important; color: var(--ui-special-strong-ink) !important;
   font-weight: 800; }
 
 /* KHOẢNG GAN: những kỳ từ lần về GẦN NHẤT tới hôm nay.
@@ -499,11 +429,8 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
    Nét đứt bên TRÁI+PHẢI chứ không bao quanh: các ô gan của cùng một con số
    nằm liền nhau, viền bao quanh từng ô sẽ thành một hàng rào răng cưa. */
 .sp-table td.sp-gan {
-  background-color: #F1F3F8;
+  background-color: var(--ui-gan-bg);
   box-shadow: inset 1px 0 0 var(--ui-border-strong), inset -1px 0 0 var(--ui-border-strong);
-}
-@media (prefers-color-scheme: dark) {
-  .sp-table td.sp-gan { background-color: #172033; }
 }
 
 /* Cột mini trong tiêu đề số: một vạch dựng đứng dưới con số. */
@@ -514,7 +441,6 @@ body.sp-page .sp-nl i.sp-empty-key { background-color: #E2E8F0; }
     var(--ui-brand) 0, var(--ui-brand) var(--h), transparent var(--h));
   border-radius: 999px; opacity: .85;
 }
-@media (prefers-color-scheme: dark) { .sp-mini-bar { opacity: .95; } }
 
 /* Popup chu kỳ gan. `hidden` phải THẬT SỰ ẩn — thuộc tính ấy chỉ là
    `display:none` trong biểu định kiểu mặc định của trình duyệt, nên bất kỳ
