@@ -168,3 +168,57 @@ test('Đi tới neo thuộc nhóm mới xóa bộ lọc để mục đích luôn
     'statistics.html', 'index.html#tan-suat-loto', 'index.html#gan-nhip', 'index.html#cap-lon',
   ]); dom.window.close();
 });
+
+test('Header dropdowns exclude each other, dismiss outside and return focus with Escape', () => {
+  const dom = setup(), d = dom.window.document;
+  const profile = d.getElementById('app-profile-toggle');
+  const notifications = d.getElementById('app-notifications-toggle');
+  profile.click();
+  assert.equal(d.getElementById('app-profile-menu').hidden, false);
+  notifications.click();
+  assert.equal(d.getElementById('app-profile-menu').hidden, true);
+  assert.equal(profile.getAttribute('aria-expanded'), 'false');
+  assert.equal(d.getElementById('app-notifications-menu').hidden, false);
+  d.getElementById('app-notifications-menu').querySelector('a').focus();
+  d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.equal(d.activeElement, notifications);
+  assert.equal(d.getElementById('app-notifications-menu').hidden, true);
+  profile.click(); d.body.click();
+  assert.equal(d.getElementById('app-profile-menu').hidden, true);
+  dom.window.close();
+});
+
+test('Rail plus opens global search and exit closes the mobile menu', () => {
+  const dom = setup({ narrow: true }), d = dom.window.document;
+  d.getElementById('app-toggle').click();
+  d.getElementById('app-rail-add').click();
+  assert.equal(d.getElementById('app-global-search').open, true);
+  d.getElementById('app-global-search-close').click();
+  d.getElementById('app-rail-exit').click();
+  assert.equal(d.getElementById('app-panel').inert, true);
+  assert.equal(d.activeElement.id, 'app-toggle');
+  dom.window.close();
+});
+
+test('Header same-page destination releases the mobile overlay and hidden dropdown focus', () => {
+  const dom = setup({ narrow: true }), d = dom.window.document;
+  d.getElementById('app-toggle').click();
+  d.getElementById('app-notifications-toggle').click();
+  const link = d.querySelector('#app-notifications-menu a[href="index.html#backtest"]');
+  link.focus(); link.click();
+  dom.window.history.replaceState(null, '', '#backtest');
+  dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
+  assert.equal(d.getElementById('app-main').inert, false);
+  assert.equal(d.getElementById('app-panel').inert, true);
+  assert.equal(d.getElementById('app-notifications-menu').hidden, true);
+  assert.equal(d.activeElement.id, 'app-notifications-toggle');
+  dom.window.close();
+});
+
+test('Reloading shell runtime does not double-bind header menus', () => {
+  const dom = setup(), d = dom.window.document;
+  dom.window.eval(readFileSync(new URL('src/assets/app-shell.js', root), 'utf8'));
+  d.getElementById('app-profile-toggle').click();
+  assert.equal(d.getElementById('app-profile-menu').hidden, false);
+  dom.window.close();
+});

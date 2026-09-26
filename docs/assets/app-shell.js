@@ -25,9 +25,41 @@
   var globalDialog = lay("app-global-search");
   var globalInput = lay("app-global-search-input");
   var globalClose = lay("app-global-search-close");
-
   if (!rail || !panel || body.dataset.appShellReady) { return; }
   body.dataset.appShellReady = "true";
+  var dropdowns = [].slice.call(doc.querySelectorAll(".app-dropdown"));
+
+  function closeDropdowns(restoreFocus) {
+    dropdowns.forEach(function (container) {
+      var button = container.querySelector("button[aria-controls]");
+      var menu = lay(button.getAttribute("aria-controls"));
+      if (!menu.hidden && restoreFocus) { button.focus(); }
+      menu.hidden = true;
+      button.setAttribute("aria-expanded", "false");
+    });
+  }
+  dropdowns.forEach(function (container) {
+    var button = container.querySelector("button[aria-controls]");
+    var menu = lay(button.getAttribute("aria-controls"));
+    button.addEventListener("click", function () {
+      var open = menu.hidden;
+      closeDropdowns(false);
+      menu.hidden = !open;
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    button.addEventListener("keydown", function (event) {
+      if (event.key !== "ArrowDown") { return; }
+      event.preventDefault(); closeDropdowns(false);
+      menu.hidden = false; button.setAttribute("aria-expanded", "true");
+      menu.querySelector("a, button:not([hidden])").focus();
+    });
+  });
+  doc.addEventListener("click", function (event) {
+    if (!event.target.closest(".app-dropdown")) { closeDropdowns(false); }
+  });
+  doc.addEventListener("focusin", function (event) {
+    if (!event.target.closest(".app-dropdown")) { closeDropdowns(false); }
+  });
 
   var hep = function () {
     try {
@@ -73,12 +105,15 @@
       ev.preventDefault(); openGlobalSearch(); return;
     }
     if (globalDialog && globalDialog.open) { globalKeydown(ev); return; }
+    if (ev.key === "Escape" && dropdowns.some(function (c) { return !c.querySelector(".app-dropdown-menu").hidden; })) {
+      ev.preventDefault(); closeDropdowns(true); return;
+    }
     if (ev.key === "Escape" && dangMo()) {
       datTrangThai(false); if (toggle) { toggle.focus(); }
     }
     if (ev.key === "Tab" && hep() && dangMo()) {
       var focusables = [].slice.call(doc.querySelectorAll(
-        '.app-header a, .app-header button, .app-rail button, .app-panel input, .app-panel a, .app-panel summary'
+        '.app-header a, .app-header button, .app-rail button, .app-rail a, .app-panel input, .app-panel a, .app-panel summary'
       )).filter(function (e) { return e.getClientRects().length && !e.closest('[hidden]'); });
       var first = focusables[0], last = focusables[focusables.length - 1];
       if (ev.shiftKey && doc.activeElement === first) { ev.preventDefault(); last.focus(); }
@@ -199,6 +234,7 @@
 
   function openGlobalSearch() {
     if (!globalDialog || !globalInput) { return; }
+    closeDropdowns(false);
     if (!globalDialog.open) {
       previousFocus = doc.activeElement;
       globalDialog.showModal();
@@ -264,6 +300,13 @@
       } else if (event.target === globalDialog) { closeGlobalSearch(); }
     });
     if (searchOpen) { searchOpen.addEventListener("click", openGlobalSearch); }
+    if (lay("app-rail-add")) { lay("app-rail-add").addEventListener("click", openGlobalSearch); }
+  }
+  if (lay("app-rail-exit")) {
+    lay("app-rail-exit").addEventListener("click", function () {
+      if (toggle) { toggle.focus(); }
+      datTrangThai(false);
+    });
   }
   /* Đường dẫn neo phải phản ánh đúng phần đang xem và đóng menu trên điện thoại. */
   function dongBoDuongDan() {
@@ -298,6 +341,12 @@
   dongBoDuongDan();
   window.addEventListener("hashchange", dongBoDuongDan);
   mucNav.forEach(function (a) { a.addEventListener("click", function () { datTrangThai(false); }); });
+  [].slice.call(doc.querySelectorAll('.app-header a[href]')).forEach(function (a) {
+    a.addEventListener('click', function () {
+      closeDropdowns(true);
+      datTrangThai(false);
+    });
+  });
 
   [].slice.call(doc.querySelectorAll(".app-section-link")).forEach(function (a) {
     a.addEventListener("click", function () { datTrangThai(false); });
@@ -315,6 +364,8 @@
       full.setAttribute("aria-label", label);
       full.setAttribute("title", label);
       full.setAttribute("aria-pressed", doc.fullscreenElement ? "true" : "false");
+      var caption = full.querySelector("span");
+      if (caption) { caption.textContent = label; }
     });
   }
 })();

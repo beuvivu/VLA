@@ -17,24 +17,7 @@ body[data-app-design="crafto"][data-ui-page] {
   background:var(--app-design-cream);background-attachment:scroll;
   color:var(--app-design-ink);isolation:isolate;
 }
-body[data-app-design="crafto"] .app-header {
-  background:var(--app-surface);border-color:var(--app-design-line);
-  box-shadow:0 4px 24px rgba(0,0,0,.025);
-}
-body[data-app-design="crafto"] .app-header .app-rail-brand {
-  border-radius:var(--app-shell-radius);background:var(--ui-inverse-bg);color:var(--ui-inverse-ink);
-}
-body[data-app-design="crafto"] .app-header .app-search-trigger {
-  background:var(--app-design-cream);border:1px solid var(--app-design-line);
-}
-body[data-app-design="crafto"] .app-rail {box-shadow:none;border-right:1px solid var(--app-design-line)}
-body[data-app-design="crafto"] .app-panel {box-shadow:18px 0 40px rgba(0,0,0,.04)}
-body[data-app-design="crafto"] :is(.app-rail-btn,.app-nav-item)[aria-selected="true"],
-body[data-app-design="crafto"] :is(.app-nav-item--active,.app-nav-item[aria-current="page"]) {
-  background:var(--ui-brand-soft);color:var(--app-accent);
-}
-body[data-app-design="crafto"] .app-nav-ic {color:var(--app-accent)}
-body[data-app-design="crafto"] .app-panel-title {font-weight:750;letter-spacing:-.02em}
+/* Shell geometry and colors belong to app_shell.css (Nexlink reference). */
 body[data-app-design="crafto"] .app-main {min-width:0}
 body[data-app-design="crafto"] :is(.ui-card,.card,.metric-card,.metric-tile,.sp-controls,
   .sp-kpi-card,.sp-recent-card,.sp-duo>div,.bf-card,.bf-kpi,.tr-filter,.tr-summary>div,.tr-day,

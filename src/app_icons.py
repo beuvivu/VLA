@@ -1,12 +1,8 @@
-"""SVG Lucide chính thức, lưu cục bộ và dùng chung cho toàn giao diện.
+"""Canonical Lucide SVG for page content and global search results.
 
-Nexlink tham chiếu phối hợp Flaticon, Lucide iconfont và SVG nội tuyến.
-Theo lựa chọn của chủ dự án, VLA dùng một bộ Lucide tương đương: hộp 20px,
-lưới 24×24, nét 2, màu currentColor. Không tải font/CDN và không vẽ lại nét.
-
-Các SVG trong assets/icons giữ nguyên từng byte từ commit upstream ghi ở
-provenance.json. LICENSE giữ cả thông báo ISC và MIT cho phần gốc Feather.
-API icon_svg(khoa, lop) và các khóa SITE_NAV được giữ để mọi trang cùng đổi.
+The rail, expanded navigation and header use exact Nexlink assets through
+nexlink_icons.py per the user's updated request on 2026-09-26.
+Assets here retain their pinned upstream provenance and ISC/MIT notices.
 """
 
 from __future__ import annotations
