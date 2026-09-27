@@ -156,7 +156,6 @@ def header_html(current: str) -> str:
     group = escape(SITE_NAV[_nhom_cua_trang(current)][0])
     page = next((label for _, items in SITE_NAV for href, label, _ in items
                  if href == _trang_chuan(current)), 'Tổng quan')
-    count = len({href for _, items in SITE_NAV for href, _, _ in items})
     return (
         '<header class="app-header" id="app-header">'
         '<a class="app-rail-brand" href="index.html" title="Vietnam Lottery Analysis" aria-label="Vietnam Lottery Analysis">'
@@ -169,7 +168,6 @@ def header_html(current: str) -> str:
         '<button class="app-search-trigger" id="app-search-open" type="button"'
         ' aria-haspopup="dialog" aria-controls="app-global-search" title="Tìm chức năng (Ctrl K)">'
         + nexlink_icon('search') + '<span>Tìm kiếm chức năng…</span></button>'
-        f'<a class="app-header-badge" href="statistics.html">Chức năng phân tích<span>{count}</span></a>'
         '</div>'
         '<nav class="app-crumbs app-sr" aria-label="Đường dẫn">'
         f'<span class="app-crumb">{group}</span><span aria-hidden="true"> / </span>'
