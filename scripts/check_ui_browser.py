@@ -41,6 +41,25 @@ def main():
             for width in (390, 1440):
                 context = browser.new_context(viewport={"width": width, "height": 950}, color_scheme="light", reduced_motion="reduce")
                 page = context.new_page()
+                # A fixed draw fixture makes the LIVE forecast/date contract deterministic.
+                live_fixture = {
+                    "draw_date": "2026-09-26", "status": "complete_verified",
+                    "verified_complete": True, "progress_percent": 100,
+                    "verification_percent": 100, "checked_at_local": "2026-09-26T18:35:00+07:00",
+                    "prizes": {key: ["0" * digits] * count for key, count, digits in [
+                        ("special", 1, 5), ("prize1", 1, 5), ("prize2", 2, 5),
+                        ("prize3", 6, 5), ("prize4", 4, 4), ("prize5", 6, 4),
+                        ("prize6", 3, 3), ("prize7", 4, 2),
+                    ]}, "conflicts": [],
+                }
+                page.route("**/live.json*", lambda route: route.fulfill(
+                    content_type="application/json", body=json.dumps(live_fixture)))
+                def forecast_route(route):
+                    if not route.request.url.endswith("_2026-09-26.csv"):
+                        route.fulfill(status=404, body="")
+                        return
+                    route.fulfill(content_type="text/csv", body="number,prob\n5,0.01\n42,0.01\n")
+                page.route("**/predict_next_*_top10_*.csv", forecast_route)
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 for name in pages:
@@ -89,7 +108,21 @@ def main():
                                 assert cell.count(), "Thiếu ô 2 nháy để đo màu dữ liệu"
                                 colors = cell.evaluate("e => ({fg:getComputedStyle(e).color,bg:getComputedStyle(e).backgroundColor})")
                                 assert contrast(colors) >= 4.5, colors
-                            if name in ("index.html", "statistics.html", "tan-suat-cap-loto.html"):
+                            assert page.locator("#app-sidebar-filter").count() == 0
+                            assert page.locator(".app-calendar-link").get_attribute("href") == "index.html#db-tuan-thang"
+                            if name == "live.html":
+                                expect(page.locator(".live-prediction-list li")).to_have_count(4)
+                                expect(page.locator("#live-prediction-date")).to_have_attribute("datetime", "2026-09-26")
+                                assert page.locator(".live-actions a").evaluate_all(
+                                    "nodes => nodes.map(n => n.getAttribute('href'))"
+                                ) == ["index.html", "so-ket-qua-truyen-thong.html", "statistics.html"]
+                                assert page.locator('[data-prediction-mode="de"] .live-prediction-number').all_text_contents() == ["05", "42"]
+                                assert page.locator("#sources").count() == 0
+                            if name == "index.html":
+                                assert page.locator(".app-hero-shortcut").evaluate_all(
+                                    "nodes => nodes.map(n => n.getAttribute('href'))"
+                                ) == ["statistics.html", "so-ket-qua-truyen-thong.html"]
+                            if name in ("index.html", "statistics.html", "tan-suat-cap-loto.html", "live.html"):
                                 page.screenshot(path=str(OUT / f"{name}-{width}-{'dark' if dark else 'light'}.png"))
                             if name == "index.html":
                                 state["landing"] = check_landing(page, OUT, width, dark)
