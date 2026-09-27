@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
-import { setup, type } from './shell-fixture.mjs';
+import { setup } from './shell-fixture.mjs';
 const root = new URL('../../', import.meta.url);
 test('Định danh cặp chỉ nhận số thuần, từ chối chuỗi chứa thẻ', () => {
   const source = readFileSync(new URL('src/templates/stat_pages.js', root), 'utf8');
@@ -16,25 +16,19 @@ test('Định danh cặp chỉ nhận số thuần, từ chối chuỗi chứa t
     assert.equal(asPair(input), null, String(input));
   }
 });
-function input(dom, value) {
-  type(dom, 'app-sidebar-filter', value);
-}
 function visibleLinks(dom) {
   return [...dom.window.document.querySelectorAll('.app-nav-item')]
     .filter(a => !a.hidden && !a.closest('[hidden]'));
 }
-test('Lọc sidebar không dấu chỉ trả về mục của nhóm đã chọn', () => {
-  const dom = setup();
-  dom.window.document.getElementById('app-tab-1').click();
-  input(dom, 'tan suat');
-  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['index.html#tan-suat-loto']);
-  dom.window.close();
-});
-test('Đổi nhóm sau khi tìm kiếm phải khôi phục các mục của nhóm', () => {
-  const dom = setup(); input(dom, 'zzzz');
-  dom.window.document.querySelector('[data-app-group="2"]').click();
+test('Menu thống kê chỉ có ma trận, chuyển nhóm vẫn hiện đủ mục', () => {
+  const dom = setup(), d = dom.window.document;
+  assert.equal(d.getElementById('app-sidebar-filter'), null);
+  d.getElementById('app-tab-1').click();
+  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html']);
+  d.getElementById('app-tab-2').click();
   assert.equal(visibleLinks(dom).length, 5);
-  assert.equal(dom.window.document.getElementById('app-sidebar-filter').value, ''); dom.window.close();
+  assert.equal(d.querySelectorAll('.app-panel-group:not([hidden])').length, 1);
+  dom.window.close();
 });
 test('Menu đóng không nhận focus; nội dung bị khóa khi mở menu điện thoại', () => {
   const dom = setup({ narrow: true }), d = dom.window.document;
@@ -52,12 +46,12 @@ test('Escape đóng menu cả trên máy tính', () => {
   d.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   assert.equal(d.getElementById('app-toggle').getAttribute('aria-expanded'), 'false'); dom.window.close();
 });
-for (const target of ['app-sidebar-filter', 'app-tab-1']) {
+for (const target of ['#app-panel-0 .app-nav-item', '#app-tab-1']) {
   test(`Đóng bằng nền phủ trả focus khỏi ${target} trước khi khóa menu`, () => {
     const dom = setup({ narrow: true }), d = dom.window.document;
     d.getElementById('app-toggle').click();
-    d.getElementById(target).focus();
-    assert.equal(d.activeElement.id, target);
+    d.querySelector(target).focus();
+    assert.equal(d.activeElement, d.querySelector(target));
     const focusStates = [];
     d.getElementById('app-toggle').addEventListener('focus', () => {
       focusStates.push([
@@ -74,10 +68,10 @@ for (const target of ['app-sidebar-filter', 'app-tab-1']) {
     dom.window.close();
   });
 }
-test('Bấm nền phủ trả focus ngay cả khi thao tác chuột đã làm bộ lọc mất focus', () => {
+test('Bấm nền phủ trả focus ngay cả khi thao tác chuột đã làm liên kết mất focus', () => {
   const dom = setup({ narrow: true }), d = dom.window.document;
   d.getElementById('app-toggle').click();
-  const sidebar = d.getElementById('app-sidebar-filter');
+  const sidebar = d.querySelector('.app-panel-group:not([hidden]) .app-nav-item');
   sidebar.focus();
   // Chromium bỏ focus khỏi ô nhập khi nhấn chuột xuống nền phủ trước sự kiện click.
   sidebar.blur();
@@ -159,14 +153,14 @@ test('Nút toàn màn hình đồng bộ tooltip với nhãn và trạng thái k
 });
 
 
-test('Đi tới neo thuộc nhóm mới xóa bộ lọc để mục đích luôn hiện', () => {
-  const dom = setup(); input(dom, 'zzzz');
-  dom.window.history.replaceState(null, '', '#tan-suat-loto');
+test('Đi tới neo còn trong menu sẽ chọn đúng nhóm và liên kết', () => {
+  const dom = setup(), d = dom.window.document;
+  dom.window.history.replaceState(null, '', '#duong-cau');
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
-  assert.equal(dom.window.document.getElementById('app-sidebar-filter').value, '');
-  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), [
-    'statistics.html', 'index.html#tan-suat-loto', 'index.html#gan-nhip', 'index.html#cap-lon',
-  ]); dom.window.close();
+  assert.equal(d.getElementById('app-tab-2').getAttribute('aria-selected'), 'true');
+  assert.equal(d.querySelector('.app-nav-item[aria-current="page"]').getAttribute('href'), 'index.html#duong-cau');
+  assert.equal(visibleLinks(dom).length, 5);
+  dom.window.close();
 });
 
 test('Header dropdowns exclude each other, dismiss outside and return focus with Escape', () => {

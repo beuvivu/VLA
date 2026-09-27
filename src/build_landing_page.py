@@ -2255,8 +2255,8 @@ def _render_html(
               <div class="app-hero-meta"><span>Hai số cuối</span><b>{html.escape(str(latest.get("special_2d") or "—"))}</b></div>
               <a href="#ket-qua">Xem đầy đủ các giải <span aria-hidden="true">↗</span></a>
             </div>
-            <div class="app-hero-mini app-hero-mini--one"><span>Số khác nhau</span><strong class="app-hero-mini-value">{len(latest.get("counts", {})) if latest.get("counts") else "—"}<small> / 100</small></strong></div>
-            <div class="app-hero-mini app-hero-mini--two"><span>Lượt xuất hiện</span><strong class="app-hero-mini-value">{sum(_to_int(v) for v in latest.get("counts", {}).values()) if latest.get("counts") else "—"}</strong><small>Từ toàn bộ giải trong ngày</small></div>
+            <a class="app-hero-mini app-hero-mini--one app-hero-shortcut" href="statistics.html">{icon_svg("ma-tran")}<span>Thống kê tổng hợp</span><span class="app-hero-shortcut-arrow" aria-hidden="true">↗</span></a>
+            <a class="app-hero-mini app-hero-mini--two app-hero-shortcut" href="so-ket-qua-truyen-thong.html">{icon_svg("so-ket-qua")}<span>Sổ kết quả</span><span class="app-hero-shortcut-arrow" aria-hidden="true">↗</span></a>
           </div>
         </div>
         {hero_features}

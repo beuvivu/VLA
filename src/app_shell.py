@@ -17,8 +17,8 @@ nội dung KHÔNG đổi. Dải chi tiết phủ lên nội dung chứ không đ
 hay đóng cũng không có một dòng chữ nào phải xếp lại. Bản dựng này giữ đúng
 hành vi ấy.
 
-Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — bảy nhóm, ba mươi hai
-mục, tất cả trỏ tới trang có thật. Không nhóm rỗng, không liên kết chết, không
+Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — bảy nhóm chức năng,
+tất cả trỏ tới trang có thật. Không nhóm rỗng, không liên kết chết, không
 mục bịa.
 """
 
@@ -116,13 +116,6 @@ def panel_html(current: str) -> str:
         '<div class="app-panel" id="app-panel" aria-label="Chức năng trong nhóm">',
         '<div class="app-panel-head"><span class="app-panel-title" id="app-panel-title">'
         f"{escape(SITE_NAV[hoat_dong][0])}</span></div>",
-        '<div class="app-panel-search">'
-        '<input type="search" id="app-sidebar-filter" class="app-search-input"'
-        ' placeholder="Lọc trong nhóm…" autocomplete="off"'
-        ' aria-label="Lọc chức năng trong nhóm đang chọn">'
-        '<p class="app-search-empty" id="app-sidebar-filter-empty" role="status" hidden>'
-        'Không có chức năng nào khớp trong nhóm.</p>'
-        "</div>",
     ]
     for i, (_ten, muc) in enumerate(SITE_NAV):
         an = "" if i == hoat_dong else " hidden"
@@ -192,7 +185,7 @@ def header_html(current: str) -> str:
         '<a href="model-quality.html">' + nexlink_icon('clipboard') + '<span>Chất lượng mô hình<small>Kiểm tra dữ liệu và độ chính xác</small></span></a>'
         '<a href="index.html#backtest">' + nexlink_icon('chart') + '<span>Kiểm định AI/ML<small>Đối chiếu với kết quả lịch sử</small></span></a>'
         '</div></div>'
-        '<a class="app-icon-btn app-calendar-link" href="so-ket-qua-truyen-thong.html" title="Sổ kết quả" aria-label="Sổ kết quả">'
+        '<a class="app-icon-btn app-calendar-link" href="index.html#db-tuan-thang" title="Lịch vạn niên" aria-label="Lịch vạn niên">'
         + nexlink_icon('calendar') + '</a></div>'
         '<span class="app-header-divider" aria-hidden="true"></span>'
         '<div class="app-dropdown app-profile">'

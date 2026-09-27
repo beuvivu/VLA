@@ -140,11 +140,11 @@ _LIVE_CSS = rf"""
 .live-console .wrap{{max-width:1280px;padding:24px 18px 36px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}}
 .live-console .wrap>.top{{grid-column:1/-1;padding:1rem 1.15rem;border:1px solid var(--ui-border);border-radius:20px;background:var(--ui-surface);box-shadow:0 8px 30px rgba(15,23,42,.05);backdrop-filter:blur(16px)}}
 .live-console .card{{margin:0;border-color:var(--ui-border);border-radius:20px;background:var(--ui-surface);box-shadow:0 8px 30px rgba(15,23,42,.045);backdrop-filter:blur(14px)}}
-.live-console .live-status-card{{grid-column:span 4;align-self:start}}.live-console .live-results-card{{grid-column:span 8;grid-row:2/span 2}}.live-console .live-sources-card{{grid-column:span 4;align-self:start}}
+.live-console .live-status-card{{grid-column:span 4;align-self:start}}.live-console .live-results-card{{grid-column:span 8;grid-row:2/span 2}}.live-console .live-predictions-card{{grid-column:span 4;align-self:start}}
 .live-console #results{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}}.live-console .prize[data-prize=special],.live-console .prize[data-prize=prize3],.live-console .prize[data-prize=prize5],.live-console .prize[data-prize=prize7]{{grid-column:1/-1}}
 .live-console .slot{{background:var(--ui-surface);border-color:var(--ui-border);color:var(--ui-ink)}}.live-console .slot.is-empty{{color:var(--ui-empty-ink);background-color:var(--ui-empty-bg);background-image:none;border-color:var(--ui-border)}}.live-console .slot.is-special{{color:var(--ui-special-ink);border-color:var(--ui-special-border);background:var(--ui-special-bg)}}
 .live-console .ui-live-nav{{margin-top:1rem;padding-bottom:calc(env(safe-area-inset-bottom) + 2.5rem)}}
-@media(max-width:900px){{.live-console .live-status-card,.live-console .live-results-card,.live-console .live-sources-card{{grid-column:1/-1;grid-row:auto}}.live-console #results{{grid-template-columns:1fr}}.live-console .prize{{grid-column:1/-1!important}}}}
+@media(max-width:900px){{.live-console .live-status-card,.live-console .live-results-card,.live-console .live-predictions-card{{grid-column:1/-1;grid-row:auto}}.live-console #results{{grid-template-columns:1fr}}.live-console .prize{{grid-column:1/-1!important}}}}
 @media(max-width:620px){{.live-console .wrap{{padding:12px 12px 28px;gap:10px}}.live-console .card{{border-radius:16px;padding:13px}}}}
 """
 
@@ -254,7 +254,7 @@ def _refine_live(page: str) -> str:
     page = page.replace('<div class="top" style="margin-bottom:4px">', '<div class="top live-hero" style="margin-bottom:4px">', 1)
     page = page.replace('<div class="card">', '<div class="card live-status-card">', 1)
     page = page.replace('<div class="card">', '<div class="card live-results-card">', 1)
-    page = page.replace('<div class="card">', '<div class="card live-sources-card">', 1)
+    page = page.replace('<div class="card">', '<div class="card live-predictions-card">', 1)
     return _append_style(page, _LIVE_CSS)
 
 

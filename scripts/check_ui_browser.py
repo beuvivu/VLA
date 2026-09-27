@@ -98,7 +98,7 @@ def main():
                     except Exception as error:
                         failures.append({"page": name, "width": width, "error": str(error)})
                         page.screenshot(path=str(OUT / f"failure-{name}-{width}.png"))
-                # Hai truy vấn tồn tại cùng lúc, đóng modal phải trả về bộ lọc.
+                # Đóng modal phải trả focus về mục menu đã mở nó.
                 page.goto(base + "/tan-suat-cap-loto.html", wait_until="load")
                 # Reference header controls must work at both widths, with visible menus.
                 page.locator('#app-profile-toggle').click()
@@ -120,23 +120,21 @@ def main():
                 assert page.locator('.app-rail-list svg').count() == 11
                 assert page.locator('.app-rail-divider').count() == 3
                 page.locator("#app-toggle").click()
-                sidebar = page.locator("#app-sidebar-filter")
-                sidebar.fill("cap")
+                sidebar = page.locator(".app-panel-group:not([hidden]) .app-nav-item").first
+                sidebar.focus()
                 sidebar.press("Control+k")
                 page.locator("#app-global-search-input").fill("nghien cuu")
-                assert sidebar.input_value() == "cap"
                 assert page.locator(".app-global-result:visible").count() >= 1
                 page.locator("#app-global-search-input").press("Escape")
                 expect(sidebar).to_be_focused()
-                assert sidebar.input_value() == "cap"
                 sidebar.press("Escape")
                 sidebar.press("Escape")
                 assert not page.locator("#app-main").evaluate("e => e.inert")
                 expect(page.locator("#app-toggle")).to_be_focused()
                 if width == 390:
-                    # Mô phỏng người dùng đóng nền phủ khi đang nhập bộ lọc.
+                    # Mô phỏng người dùng đóng nền phủ khi đang chọn mục menu.
                     page.locator("#app-toggle").click()
-                    sidebar.fill("cap")
+                    sidebar.focus()
                     page.locator("#app-scrim").click(position={"x": 370, "y": 500})
                     expect(page.locator("#app-toggle")).to_be_focused()
                     assert page.locator("#app-panel").evaluate("e => e.inert")

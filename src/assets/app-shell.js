@@ -1,4 +1,4 @@
-/* Hành vi khung ứng dụng: thu/mở điều hướng, đổi nhóm, lọc sidebar và tìm
+/* Hành vi khung ứng dụng: thu/mở điều hướng, đổi nhóm và tìm
    chức năng toàn ứng dụng. Chế độ màu do app-theme.js quản lý.
 
    KHÔNG dùng bất kỳ cách ghi DOM nào nhận chuỗi rồi tự phân tích thành thẻ.
@@ -18,8 +18,6 @@
   var panel = lay("app-panel");
   var toggle = lay("app-toggle");
   var scrim = lay("app-scrim");
-  var search = lay("app-sidebar-filter");
-  var searchEmpty = lay("app-sidebar-filter-empty");
   var searchOpen = lay("app-search-open");
   var panelTitle = lay("app-panel-title");
   var globalDialog = lay("app-global-search");
@@ -144,9 +142,7 @@
   var nhomPanel = [].slice.call(doc.querySelectorAll(".app-panel-group"));
 
   function moNhom(chiSo) {
-    if (search) { search.value = ""; }
     [].slice.call(doc.querySelectorAll(".app-nav-item")).forEach(function (a) { a.hidden = false; });
-    if (searchEmpty) { searchEmpty.hidden = true; }
     nutNhom.forEach(function (b) {
       b.setAttribute("aria-selected", b.getAttribute("data-app-group") === chiSo ? "true" : "false");
     });
@@ -167,36 +163,11 @@
     });
   });
 
-  /* --- Lọc chức năng trong nhóm đang chọn ------------------------------ */
-
-  /* Lọc trên chính các mục điều hướng có thật. Không có ô tìm kiếm nào nhận
-     chữ rồi không trả về gì: mỗi kết quả là một trang tồn tại trong kho. */
+  /* Chuẩn hóa nhãn cho tìm kiếm toàn ứng dụng. */
   var mucNav = [].slice.call(doc.querySelectorAll(".app-nav-item"));
 
   function chuanHoa(tu) {
     return (tu || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").trim().toLowerCase();
-  }
-
-  function loc(tu) {
-    var q = chuanHoa(tu);
-    var selected = nutNhom.filter(function (b) { return b.getAttribute("aria-selected") === "true"; })[0];
-    var khop = 0;
-    nhomPanel.forEach(function (g) {
-      g.hidden = !selected || g.getAttribute("aria-labelledby") !== selected.id;
-      [].slice.call(g.querySelectorAll(".app-nav-item")).forEach(function (a) {
-        var nhan = chuanHoa(a.getAttribute("data-app-label") || a.textContent);
-        a.hidden = nhan.indexOf(q) === -1;
-        if (!g.hidden && !a.hidden) { khop += 1; }
-      });
-    });
-    if (searchEmpty) { searchEmpty.hidden = khop !== 0; }
-  }
-
-  if (search) {
-    search.addEventListener("input", function () { loc(search.value); });
-    search.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && !ev.isComposing && search.value) { ev.stopPropagation(); search.value = ""; loc(""); }
-    });
   }
 
   /* --- Tìm kiếm toàn ứng dụng: trạng thái riêng, không mở/lọc sidebar. --- */
@@ -322,8 +293,6 @@
     });
     if (!currentLink) { return; }
     var group = currentLink.closest(".app-panel-group").getAttribute("data-app-group");
-    var previousGroup = nutNhom.filter(function (b) { return b.getAttribute("aria-selected") === "true"; })[0];
-    if (search && previousGroup && previousGroup.getAttribute("data-app-group") !== group) { search.value = ""; }
     nutNhom.forEach(function (b) {
       var active = b.getAttribute("data-app-group") === group;
       b.setAttribute("aria-selected", active ? "true" : "false");
@@ -336,7 +305,6 @@
     nhomPanel.forEach(function (g) { g.hidden = g.getAttribute("data-app-group") !== group; });
     var pageCrumb = doc.querySelector(".app-crumb--now");
     if (pageCrumb) { pageCrumb.textContent = currentLink.getAttribute("data-app-label"); }
-    if (search) { loc(search.value); }
   }
   dongBoDuongDan();
   window.addEventListener("hashchange", dongBoDuongDan);

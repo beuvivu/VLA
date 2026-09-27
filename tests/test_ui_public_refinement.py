@@ -68,7 +68,7 @@ def test_dashboard_research_and_live_receive_distinct_shells() -> None:
     live = refine_page("live.html", _doc('<div class="wrap"><div class="top" style="margin-bottom:4px"></div><div class="card"></div><div class="card"></div><div class="card"></div></div>'))
     assert "--ui-dock-h" not in live
     assert "live-console" in live
-    assert "live-status-card" in live and "live-results-card" in live and "live-sources-card" in live
+    assert "live-status-card" in live and "live-results-card" in live and "live-predictions-card" in live
 
 
 def test_refinement_is_idempotent() -> None:
