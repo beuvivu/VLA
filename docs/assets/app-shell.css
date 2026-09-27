@@ -112,7 +112,6 @@ html.dark :is(.app-header,.app-rail,.app-panel){
 .app-search-trigger{display:flex;align-items:center;gap:12px;width:250px;height:42px;padding:8px 16px;border:1px solid var(--app-line);border-radius:6px;background:var(--app-fill);color:var(--app-ink-soft);font:inherit;cursor:pointer;text-align:left;white-space:nowrap}
 .app-search-trigger .app-nexlink-ic{width:16px;height:16px}
 
-
 .app-header-end{display:flex;align-items:center;height:80px;margin-left:auto;flex-shrink:0}
 .app-theme-wrap{padding:0 24px}
 .app-theme-switch{position:relative;display:flex;align-items:center;justify-content:center;width:74px;height:40px;padding:0;border:0;border-radius:50px;background:var(--app-fill);color:var(--app-head-ink);cursor:pointer}
