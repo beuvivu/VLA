@@ -50,6 +50,26 @@ def _effective_n(weights: np.ndarray) -> float:
     return 0.0 if q <= 0 else s * s / q
 
 
+def _weighted_counts(
+    observations: np.ndarray, weights: np.ndarray
+) -> tuple[np.ndarray, float]:
+    """Đổi tần suất có trọng số thành số đếm giả trên cùng cỡ mẫu hiệu dụng.
+
+    ``n_eff=(Σw)²/Σw²`` và ``counts_eff=weighted_rate*n_eff``. Đây là xấp xỉ
+    khớp mô men khi các kỳ độc lập, không phải likelihood Beta-Binomial chính
+    xác của tổng có trọng số. Trọng số đều khôi phục đúng số đếm ban đầu.
+    """
+    scale = float(np.max(weights, initial=0.0))
+    if scale <= 0.0:
+        return np.zeros(observations.shape[1], dtype=float), 0.0
+    # Chỉ tỉ lệ giữa các trọng số có ý nghĩa; đổi đơn vị không được làm
+    # bình phương tràn số hoặc hụt về không trước khi tính ESS.
+    relative = weights / scale
+    ess = _effective_n(relative)
+    rates = (observations * relative[:, None]).sum(axis=0) / relative.sum()
+    return rates * ess, ess
+
+
 def _logit(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     p = np.clip(p, eps, 1 - eps)
     return np.log(p / (1 - p))
@@ -65,10 +85,10 @@ def _js_divergence(p: np.ndarray, q: np.ndarray) -> float:
     )
 
 
-def _eb_posterior(
+def _eb_parameters(
     counts: np.ndarray, trials: float, prior_strength: float | None
-) -> np.ndarray:
-    """Hậu nghiệm Beta-Binomial, HỌC độ co ngót riêng cho từng phép đo.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Tham số Beta dùng chung cho ước lượng điểm và khoảng khả tín.
 
     Mỗi hậu nghiệm trả lời một câu hỏi gộp KHÁC NHAU, nên phải có κ riêng:
 
@@ -80,8 +100,6 @@ def _eb_posterior(
     ràng: tần suất chung đồng nhất kéo κ lên rất lớn, rồi κ ấy nghiền nát một
     nhịp theo thứ có thật. Phép kiểm nhịp thứ Hai bắt được đúng điều này.
     """
-    if trials <= 0.0:
-        return np.full(counts.shape, 1.0 / max(counts.size, 1), dtype=float)
     if prior_strength is None:
         fit = fit_pooling(counts, float(trials))
         kappa, mean = fit.prior_strength, fit.pooled_rate
@@ -90,7 +108,17 @@ def _eb_posterior(
         mean = float(counts.sum() / (trials * counts.size))
     a0 = max(1e-6, mean * kappa)
     b0 = max(1e-6, (1.0 - mean) * kappa)
-    return (a0 + counts) / (a0 + b0 + trials)
+    return a0 + counts, b0 + (trials - counts)
+
+
+def _eb_posterior(
+    counts: np.ndarray, trials: float, prior_strength: float | None
+) -> np.ndarray:
+    """Trung bình hậu nghiệm từ số đếm và số kỳ cùng đơn vị đo."""
+    if trials <= 0.0:
+        return np.full(counts.shape, 1.0 / max(counts.size, 1), dtype=float)
+    alpha, beta = _eb_parameters(counts, trials, prior_strength)
+    return alpha / (alpha + beta)
 
 
 #: Trọng số của ba thành phần tầng 2, giữ nguyên từ bản cũ.
@@ -131,7 +159,8 @@ def select_signal_pool(
     for t in range(start, days):
         past = hit[:t]
         w = _exp_weights(t, half_life)
-        ewm = _eb_posterior((past * w[:, None]).sum(axis=0), float(w.sum()), None)
+        counts, ess = _weighted_counts(past, w)
+        ewm = _eb_posterior(counts, ess, None)
 
         target_weekday = int(pd.Timestamp(dates.iloc[t]).weekday())
         mask = np.array(
@@ -170,9 +199,9 @@ def _loto_signal(
     baseline = float(hit.mean())
 
     w = _exp_weights(n, half_life)
-    weighted_hits = (hit * w[:, None]).sum(axis=0)
-    weighted_trials = float(w.sum())
-    ewm = _eb_posterior(weighted_hits, weighted_trials, prior_strength)
+    counts, ess = _weighted_counts(hit, w)
+    alpha, beta = _eb_parameters(counts, ess, prior_strength)
+    ewm = alpha / (alpha + beta)
 
     weekday_mask = dates.dt.weekday.to_numpy() == int(target_weekday)
     weekday_hit = hit[weekday_mask]
@@ -200,20 +229,8 @@ def _loto_signal(
     prob = baseline + stability * (raw - baseline)
     prob = np.clip(prob, 1e-5, 1 - 1e-5)
 
-    ess = _effective_n(w)
-    weighted_rate = weighted_hits / max(weighted_trials, 1e-12)
-    # Khoảng khả tín phải dùng ĐÚNG tiên nghiệm của phép đo `ewm`, không phải
-    # một tiên nghiệm khác — nếu không, khoảng và ước lượng điểm nói hai
-    # chuyện khác nhau về cùng một con số.
-    ewm_kappa = (
-        fit_pooling(weighted_hits, weighted_trials).prior_strength
-        if prior_strength is None
-        else float(prior_strength)
-    )
-    a0 = max(1e-6, baseline * ewm_kappa)
-    b0 = max(1e-6, (1 - baseline) * ewm_kappa)
-    alpha = a0 + weighted_rate * ess
-    beta = b0 + (1 - weighted_rate) * ess
+    # Khoảng này mô tả EWM trước khi trộn: dùng nguyên alpha/beta đã sinh
+    # ewm_prob, gồm tâm có trọng số, κ và số đếm giả trên cùng ESS.
     ci_low = beta_dist.ppf(0.025, alpha, beta)
     ci_high = beta_dist.ppf(0.975, alpha, beta)
 
@@ -239,19 +256,18 @@ def _loto_signal(
 def _de_posterior(
     onehot: np.ndarray, weights: np.ndarray, prior_strength: float | None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Hậu nghiệm Dirichlet-Multinomial cho đề, độ tập trung HỌC được nếu None.
+    """Hậu nghiệm Dirichlet cho Đặc Biệt, xấp xỉ ESS khi có trọng số.
 
-    Đề là bài toán một-trong-một-trăm nên tiên nghiệm là Dirichlet đối xứng với
+    Đặc Biệt là bài toán một-trong-một-trăm nên tiên nghiệm là Dirichlet đối xứng với
     tổng độ tập trung ``κ``. Câu hỏi gộp vẫn y hệt chế độ LOTO — "các con có
     khác nhau thật hay chỉ dao động?" — nên dùng cùng bộ ước lượng, chỉ khác ở
     chỗ chia đều κ cho 100 loại.
     """
-    counts = (onehot * weights[:, None]).sum(axis=0)
-    total_weight = float(weights.sum())
+    counts, ess = _weighted_counts(onehot, weights)
     if prior_strength is None:
         kappa = (
-            fit_pooling(counts, total_weight).prior_strength
-            if total_weight > 0.0 and counts.size >= 3
+            fit_pooling(counts, ess).prior_strength
+            if ess > 0.0 and counts.size >= 3
             else 100.0
         )
     else:
@@ -398,7 +414,7 @@ def _blend_dynamics(
 #: lần. Brier: gộp hoàn toàn 0,18138190; học κ 0,18138272; đặt tay 80
 #: 0,18149968; không gộp 0,18150858.
 #:
-#: Vẫn nhận một số cụ thể để ép, phục vụ tái lập kết quả cũ.
+#: Vẫn nhận một số cụ thể để ép κ; số đếm có trọng số luôn dùng đơn vị ESS.
 LEARN_PRIOR_STRENGTH: float | None = None
 
 #: Lưới chu kỳ bán rã để chọn, tính bằng KỲ QUAY.
@@ -452,7 +468,8 @@ def select_half_life(
         for t in range(split, days):
             past = hit[:t]
             w = _exp_weights(t, half_life)
-            p = _eb_posterior((past * w[:, None]).sum(axis=0), float(w.sum()), None)
+            counts, ess = _weighted_counts(past, w)
+            p = _eb_posterior(counts, ess, None)
             errors.append(float(np.mean((p - hit[t]) ** 2)))
         per_day[half_life] = np.asarray(errors, dtype=float)
     scores = {str(hl): float(errors.mean()) for hl, errors in per_day.items()}

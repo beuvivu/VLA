@@ -214,7 +214,7 @@ class CalibrationAudit:
         if not self.selected:
             return (
                 f"Không chọn được ({self.fit_days + self.holdout_days} kỳ, dưới ngưỡng "
-                f"{MIN_SELECTION_DAYS}); giữ hành vi tham số mặc định."
+                f"{MIN_SELECTION_DAYS}); giữ phép đồng nhất chưa hiệu chuẩn."
             )
         ranked = sorted(self.brier_by_candidate.items(), key=lambda kv: kv[1])
         detail = ", ".join(f"{name} {score:.6f}" for name, score in ranked)
@@ -222,7 +222,7 @@ class CalibrationAudit:
 
 
 #: Dưới ngưỡng này, cắt thêm một lát giữ riêng sẽ làm hỏng chính phép khớp.
-#: Khi ấy giữ nguyên hành vi cũ và nói rõ là không chọn, thay vì chọn bừa.
+#: Khi ấy trả phép đồng nhất; không phát hành phép khớp chưa qua thẩm định.
 MIN_SELECTION_DAYS = 60
 DEFAULT_SELECTION_HOLDOUT = 0.30
 
@@ -285,22 +285,35 @@ def select_calibration(
     chất lượng xác suất. Lát giữ riêng cắt theo THỜI GIAN, không trộn ngẫu
     nhiên — trộn ở đây là rò rỉ nhìn-trước.
 
-    Cửa sổ quá ngắn thì không chọn: trả về phép khớp tham số trên toàn bộ dữ
-    liệu, đúng hành vi cũ, và nói rõ ``selected=False``.
+    Cửa sổ quá ngắn thì trả phép đồng nhất và ``selected=False``: không
+    phát hành phép hiệu chuẩn đã khớp nhưng chưa có dữ liệu để thẩm định.
     """
     probs = np.asarray(probs_by_day, dtype=float)
     labels = np.asarray(y_by_day, dtype=float)
-    if probs.ndim != 2 or probs.shape != labels.shape:
+    if probs.ndim != 2 or probs.shape != labels.shape or probs.shape[1] != 100:
         raise ValueError("probs_by_day and y_by_day must share shape (days, 100)")
+    if mode not in {"de", "loto"}:
+        raise ValueError("mode phải là de hoặc loto")
+    if not np.isfinite(probs).all() or np.any((probs < 0) | (probs > 1)):
+        raise ValueError("xác suất phải hữu hạn trong [0, 1]")
+    if not np.isfinite(labels).all() or not np.isin(labels, [0, 1]).all():
+        raise ValueError("nhãn phải nhị phân và hữu hạn")
+    if mode == "de" and not np.all(labels.sum(axis=1) == 1):
+        raise ValueError("mỗi kỳ Đặc Biệt phải có đúng một nhãn dương")
+    if sample_weight_by_day is not None:
+        sample_weight_by_day = np.asarray(sample_weight_by_day, dtype=float)
+        if (sample_weight_by_day.shape != (len(probs),)
+                or not np.isfinite(sample_weight_by_day).all()
+                or np.any(sample_weight_by_day <= 0)):
+            raise ValueError("trọng số kỳ phải hữu hạn, dương và đúng chiều")
     if not 0.05 <= holdout_fraction <= 0.6:
         raise ValueError("holdout_fraction phải nằm trong [0.05, 0.6]")
 
     days = probs.shape[0]
     split = int(round(days * (1.0 - holdout_fraction)))
     if days < MIN_SELECTION_DAYS or split <= 0 or days - split <= 0:
-        params = learn_calibration(mode, probs, labels, sample_weight_by_day)
-        return params, CalibrationAudit(
-            chosen="parametric",
+        return CalibParams(mode=mode), CalibrationAudit(
+            chosen="identity",
             brier_by_candidate={},
             fit_days=days,
             holdout_days=0,

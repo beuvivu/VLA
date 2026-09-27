@@ -16,6 +16,7 @@ sớm và ồn ào tốt hơn nhiều so với một mô hình có vẻ tốt v�
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Integral
 from typing import Any, Final
 
 import numpy as np
@@ -59,14 +60,24 @@ class ObservationMatrix:
     counts: np.ndarray
 
     def __post_init__(self) -> None:
+        counts = np.asarray(self.counts)
+        if counts.dtype.kind not in "buif" or not np.all(np.isfinite(counts)):
+            raise SchemaError("counts phải là số hữu hạn")
+        if np.any(counts != np.floor(counts)):
+            raise SchemaError("counts phải là số nguyên lần xuất hiện")
+        object.__setattr__(self, "counts", counts)
         if self.counts.ndim != 2 or self.counts.shape[1] != NUMBER_SPACE:
             raise SchemaError(f"counts phải có dạng (n, {NUMBER_SPACE}), nhận {self.counts.shape}")
         if len(self.dates) != self.counts.shape[0]:
             raise SchemaError("dates và counts phải cùng số hàng")
+        if self.dates.hasnans:
+            raise SchemaError("dates không được chứa ngày không hợp lệ")
         if self.counts.shape[0] == 0:
             raise SchemaError("cần ít nhất một kỳ quay")
         if np.any(self.counts < 0):
             raise SchemaError("counts không được âm")
+        if np.any(self.counts > LOTO_DRAWS_PER_DAY):
+            raise SchemaError(f"mỗi count không được vượt {LOTO_DRAWS_PER_DAY}")
 
         totals = self.counts.sum(axis=1)
         if not np.all(totals == LOTO_DRAWS_PER_DAY):
@@ -87,6 +98,11 @@ class ObservationMatrix:
                     "dates thiếu kỳ ngoài lịch nghỉ quay; "
                     f"{len(gaps)} ngày, bắt đầu từ {gaps[0]}"
                 )
+
+        # Không giữ alias tới bộ đệm của người gọi: frozen chỉ bảo vệ thuộc tính.
+        protected = np.array(self.counts, dtype=np.int16, copy=True)
+        protected.setflags(write=False)
+        object.__setattr__(self, "counts", protected)
 
     @property
     def n_days(self) -> int:
@@ -175,9 +191,13 @@ class DailyRequest:
     top_k: int = 10
 
     def __post_init__(self) -> None:
+        if isinstance(self.top_k, bool) or not isinstance(self.top_k, Integral):
+            raise SchemaError("top_k phải là số nguyên")
         if self.top_k < 1 or self.top_k > NUMBER_SPACE:
             raise SchemaError(f"top_k phải nằm trong [1, {NUMBER_SPACE}]")
-        if (self.target_date - self.anchor_date).days != 1:
+        if pd.isna(self.anchor_date) or pd.isna(self.target_date):
+            raise SchemaError("anchor_date và target_date phải là ngày hợp lệ")
+        if self.target_date.normalize() != self.anchor_date.normalize() + pd.Timedelta(days=1):
             raise SchemaError(
                 "target_date phải là ngày ngay sau anchor_date "
                 f"(nhận {self.anchor_date.date()} → {self.target_date.date()})"
@@ -207,4 +227,4 @@ class DailyRequest:
             if payload.get("target_date")
             else anchor + pd.Timedelta(days=1)
         )
-        return cls(anchor_date=anchor, target_date=target, top_k=int(payload.get("top_k", 10)))
+        return cls(anchor_date=anchor, target_date=target, top_k=payload.get("top_k", 10))

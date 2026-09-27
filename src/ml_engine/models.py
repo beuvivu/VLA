@@ -25,7 +25,7 @@ Về xác suất và thứ hạng
 ``RankingBooster`` tối ưu một mục tiêu xếp hạng nên đầu ra **không phải xác
 suất** — nó chỉ đúng về thứ tự. Trả thẳng điểm số ra ngoài sẽ phá hỏng mọi phép
 đo log-loss phía sau. Vì vậy lớp này hiệu chỉnh điểm về thang xác suất bằng hồi
-quy đẳng hướng khớp trên chính tập huấn luyện, và ghi rõ trong ``is_calibrated``
+quy đẳng hướng khớp trên các ngày cuối được giữ riêng, và ghi rõ trong ``is_calibrated``
 để tầng trên biết nó đã được hiệu chỉnh chứ không phải xác suất tự nhiên.
 """
 
@@ -205,6 +205,10 @@ class RankingBooster:
             raise ValueError(
                 f"số hàng ({x.shape[0]}) phải chia hết cho kích thước nhóm ({self.group_size})"
             )
+        self._model = None
+        self._calibrator = None
+        self._fallback = None
+        self.is_calibrated = False
         if CAPABILITIES.lightgbm is None:
             # Không có LightGBM thì không có LambdaMART; lui về phân loại rồi
             # xếp hạng theo xác suất. Thứ tự vẫn có, chỉ là không tối ưu trực
@@ -215,7 +219,13 @@ class RankingBooster:
             self.is_calibrated = False
             return
 
-        groups = [self.group_size] * (x.shape[0] // self.group_size)
+        n_days = x.shape[0] // self.group_size
+        if n_days < 2:
+            raise ValueError("cần ít nhất hai ngày để tách huấn luyện và hiệu chuẩn")
+        calibration_days = max(1, int(np.ceil(n_days * 0.2)))
+        training_days = n_days - calibration_days
+        boundary = training_days * self.group_size
+        groups = [self.group_size] * training_days
         self._model = CAPABILITIES.lightgbm.LGBMRanker(
             objective="lambdarank",
             max_depth=int(self.params["max_depth"]),
@@ -227,12 +237,13 @@ class RankingBooster:
             verbose=-1,
             n_jobs=1,
         )
-        self._model.fit(x, y, group=groups)
+        self._model.fit(x[:boundary], y[:boundary], group=groups)
 
-        # Hiệu chỉnh điểm xếp hạng về thang xác suất bằng hồi quy đẳng hướng.
-        raw = np.asarray(self._model.predict(x), dtype=float)
+        # Giữ nguyên nhóm ngày; mô hình chưa thấy nhãn của lát hiệu chuẩn.
+        # Không fit lại ranker trên cả hai lát sau đó vì sẽ đổi thang điểm.
+        raw = np.asarray(self._model.predict(x[boundary:]), dtype=float)
         self._calibrator = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
-        self._calibrator.fit(raw, y.astype(float))
+        self._calibrator.fit(raw, y[boundary:].astype(float))
         self.is_calibrated = True
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
@@ -257,7 +268,7 @@ class RankingBooster:
 class TemporalSequenceModel:
     """Mô hình chuỗi trên véc-tơ kết quả theo ngày.
 
-    Dùng GRU khi có PyTorch. Không có thì lui về hồi quy logistic đa nhãn trên
+    Dùng GRU khi có PyTorch. Không có thì lui về hồi quy ridge đa nhãn trên
     cửa sổ trễ — vẫn là mô hình chuỗi, chỉ là tuyến tính và không có trạng thái.
 
     Cảnh báo về dung lượng, và đây là điểm quan trọng nhất của lớp này: một GRU
@@ -318,12 +329,12 @@ class TemporalSequenceModel:
     def parameter_count(self) -> int:
         """Số tham số của mô hình **đang thực sự chạy**, để so với lượng dữ liệu.
 
-        Phụ thuộc backend: đường lui tuyến tính có ít tham số hơn GRU rất nhiều,
-        và báo cáo số của GRU khi đang chạy tuyến tính sẽ là nói sai.
+        Đường lui ridge có một vector trọng số riêng cho mỗi trong 100 đầu ra;
+        đếm chỉ một vector sẽ đánh giá thấp dung lượng đúng 100 lần.
         """
         if self.backend == "torch":
             return self.gru_parameter_count(self.hidden_size)
-        return int(self.lookback * NUMBER_SPACE + 1)
+        return int((self.lookback * NUMBER_SPACE + 1) * NUMBER_SPACE)
 
     def _windows(self, hits: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Cắt lịch sử thành các cặp (cửa sổ quá khứ, kết quả ngày kế tiếp)."""

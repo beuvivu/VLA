@@ -9,7 +9,7 @@ Luồng
                  → sinh đặc trưng (không rò rỉ)
                  → chọn đặc trưng bằng SHAP
                  → mỗi "cánh tay" khai báo xác suất riêng
-                 → MAB trộn theo trọng số hậu nghiệm
+                 → MAB trộn theo phần thưởng 1 − Brier
                  → chế độ an toàn có quyền phủ quyết
                  → Top-K
                  → kết quả thật → phần thưởng → cập nhật MAB
@@ -29,6 +29,11 @@ với mọi mô hình. Nhờ vậy hệ thống có thể *kết luận bằng d
 hình nào đáng tin — trọng số dồn về nền — thay vì phải có người quyết định điều
 đó. Không có cánh tay nền thì trọng số luôn bị chuẩn hóa giữa các mô hình, và
 hệ thống không có cách nào diễn đạt câu "không cái nào đáng dùng".
+
+Bandit ở module nghiên cứu này là heuristic Beta với phần thưởng liên tục:
+khoảng Beta không phải khoảng tin cậy xác suất trúng. Bộ đệm dự báo chỉ sống
+trong tiến trình, nên tệp bandit riêng không đủ để khôi phục vòng học. Luồng
+production dùng sổ dự báo và trạng thái trực tuyến riêng để tiếp tục qua lần chạy.
 """
 
 from __future__ import annotations
@@ -38,8 +43,10 @@ import json
 import logging
 import sys
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Final
 
@@ -51,18 +58,18 @@ from ml_engine.capabilities import CAPABILITIES
 from ml_engine.drift import ConceptDriftDetector
 from ml_engine.fallback import SafeModeController
 from ml_engine.features import build_features, build_training_table
-from ml_engine.metrics import PerformanceTracker
+from ml_engine.metrics import PerformanceTracker, score_day, validate_probabilities
 from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
 from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE, DailyRequest, ObservationMatrix
 from ml_engine.selection import select_features
 
 LOGGER: Final[logging.Logger] = logging.getLogger("ml_engine")
 
-#: Mức K dùng để tính phần thưởng cho MAB.
-REWARD_K: Final[int] = 10
+#: Kỳ vọng của 1 − Brier khi khai báo xác suất nền đúng.
+BASELINE_REWARD: Final[float] = 1.0 - BASELINE_RATE * (1.0 - BASELINE_RATE)
 
 
-@dataclass
+@dataclass(frozen=True)
 class PipelineConfig:
     """Tham số vận hành của pipeline.
 
@@ -87,6 +94,19 @@ class PipelineConfig:
     use_ranking: bool = True
     feature_epsilon: float = 1e-4
     seed: int = 0
+
+    def __post_init__(self) -> None:
+        for name, minimum in (("window", 30), ("warmup", 60), ("refit_every", 1),
+                              ("top_k", 1), ("seed", 0)):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, Integral) or value < minimum:
+                raise ValueError(f"{name} phải là số nguyên ít nhất {minimum}")
+        if self.top_k > NUMBER_SPACE:
+            raise ValueError(f"top_k không được vượt {NUMBER_SPACE}")
+        if not np.isfinite(self.discount) or not 0.0 < self.discount <= 1.0:
+            raise ValueError("discount phải hữu hạn trong (0, 1]")
+        if not np.isfinite(self.feature_epsilon) or self.feature_epsilon < 0.0:
+            raise ValueError("feature_epsilon phải hữu hạn và không âm")
 
 
 @dataclass
@@ -148,7 +168,7 @@ class ContinuousLearningPipeline:
 
         self.bandit = DiscountedThompsonSamplingMAB.with_baseline_prior(
             list(self.arm_builders),
-            baseline=BASELINE_RATE,
+            baseline=BASELINE_REWARD,
             discount=self.config.discount,
             seed=self.config.seed,
         )
@@ -158,6 +178,12 @@ class ContinuousLearningPipeline:
         self.selected_features: list[str] | None = None
         self._fitted: dict[str, Any] = {}
         self._fitted_at = -1
+        self._force_refit = False
+        self._last_observed_day = -1
+        self._forecast_day = -1
+        self._forecast: tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]] | None = None
+        self._forecast_mode = self.safe_mode.mode.value
+        self._forecast_reason = self.safe_mode.reason
 
     # -- Cánh tay --------------------------------------------------------
 
@@ -264,6 +290,7 @@ class ContinuousLearningPipeline:
         Returns:
             Ánh xạ tên cánh tay sang mảng ``(100,)`` xác suất.
         """
+        self._check_prediction_day(day)
         past = self.observations.counts[:day]
         matrix = build_features(self.observations.counts, day)
         if self.selected_features:
@@ -291,6 +318,21 @@ class ContinuousLearningPipeline:
             output.setdefault(name, np.full(NUMBER_SPACE, BASELINE_RATE))
         return output
 
+    def _check_prediction_day(self, day: int) -> None:
+        """Chặn dùng mô hình/hậu nghiệm đã thấy ngày tương lai để dự báo quá khứ."""
+        if isinstance(day, bool) or not isinstance(day, Integral):
+            raise ValueError("day phải là số nguyên")
+        if not self.config.warmup <= day <= self.observations.n_days:
+            raise ValueError("day phải nằm sau warmup và không vượt kỳ kế tiếp")
+        if day < max(self._forecast_day, self._fitted_at, self._last_observed_day):
+            raise ValueError("không được dự báo lùi thời gian bằng trạng thái đã học")
+
+    def _copy_forecast(self) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
+        """Trả bản sao để người gọi không sửa được dự báo đang chờ chấm."""
+        assert self._forecast is not None
+        probabilities, weights, per_arm = self._forecast
+        return probabilities.copy(), dict(weights), {name: p.copy() for name, p in per_arm.items()}
+
     def predict_day(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
         """Dự đoán một kỳ: trộn các cánh tay rồi cho chế độ an toàn phủ quyết.
 
@@ -300,10 +342,30 @@ class ContinuousLearningPipeline:
         Returns:
             Bộ ba ``(xác suất cuối, trọng số cánh tay, xác suất từng cánh tay)``.
         """
-        if day - self._fitted_at >= self.config.refit_every or not self._fitted:
-            self._refit(day)
+        self._check_prediction_day(day)
+        if day == self._forecast_day and self._forecast is not None:
+            return self._copy_forecast()
+        checkpoint = self._fitted, self._fitted_at, self.selected_features, self._force_refit
+        random_state = deepcopy(self.bandit._rng.bit_generator.state)
+        try:
+            return self._predict_uncached(day)
+        except Exception:
+            # Dự báo mới hỏng không được làm mất mô hình hoặc dự báo đang chờ chấm.
+            self._fitted, self._fitted_at, self.selected_features, self._force_refit = checkpoint
+            self.bandit._rng.bit_generator.state = random_state
+            raise
 
-        per_arm = self.arm_probabilities(day)
+    def _predict_uncached(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
+        """Tạo dự báo mới; bên gọi khôi phục trạng thái nếu bất kỳ bước nào lỗi."""
+        if (self._force_refit or day - self._fitted_at >= self.config.refit_every
+                or not self._fitted):
+            self._refit(day)
+            self._force_refit = False
+
+        per_arm = {
+            name: validate_probabilities(probability).copy()
+            for name, probability in self.arm_probabilities(day).items()
+        }
         weights = self.bandit.select_weights()
         blended = np.zeros(NUMBER_SPACE)
         for name, probability in per_arm.items():
@@ -314,8 +376,14 @@ class ContinuousLearningPipeline:
         if total > 0:
             blended /= total
 
-        final = self.safe_mode.apply(self.observations.counts[:day], blended)
-        return final, weights, per_arm
+        final = validate_probabilities(
+            self.safe_mode.apply(self.observations.counts[:day], blended)
+        ).copy()
+        self._forecast_day = day
+        self._forecast_mode = self.safe_mode.mode.value
+        self._forecast_reason = self.safe_mode.reason
+        self._forecast = final, dict(weights), per_arm
+        return self._copy_forecast()
 
     # -- Vòng lặp chính --------------------------------------------------
 
@@ -328,27 +396,34 @@ class ContinuousLearningPipeline:
         Returns:
             Kết quả của kỳ đó.
         """
+        if day <= self._last_observed_day:
+            raise ValueError("ngày đã được chấm; không được học lại hay chạy lùi thời gian")
+        if day >= self.observations.n_days:
+            raise ValueError("chưa có kết quả thật của ngày cần chấm")
         probabilities, weights, per_arm = self.predict_day(day)
+        prediction_mode = self._forecast_mode
         outcome = (self.observations.counts[day] > 0).astype(float)
 
         top_k = np.argsort(-probabilities)[: self.config.top_k]
         hits_in_top_k = int(outcome[top_k].sum())
 
-        # Phần thưởng cho mỗi cánh tay: tỉ lệ trúng trong Top-K *của riêng nó*.
-        # Chấm từng cánh tay theo lựa chọn của chính nó, không theo lựa chọn
-        # chung — nếu không thì mọi cánh tay nhận cùng một phần thưởng và bandit
-        # không học được gì.
+        # 1 − Brier chấm toàn bộ xác suất, phân biệt được cả sai hiệu chuẩn
+        # khi thứ hạng không đổi. Beta với thưởng liên tục vẫn chỉ là bộ trộn
+        # heuristic: khoảng Beta KHÔNG phải khoảng tin cậy xác suất trúng.
         rewards = {
-            name: float(outcome[np.argsort(-probability)[:REWARD_K]].sum() / REWARD_K)
+            name: 1.0 - score_day(probability, outcome).brier
             for name, probability in per_arm.items()
         }
         self.bandit.update_batch(rewards)
 
-        self.tracker.add(probabilities, outcome)  # ghi nhận, giá trị trả về không dùng
-        verdict = self.drift.update(1.0 - hits_in_top_k / self.config.top_k)
+        score = self.tracker.add(probabilities, outcome)
+        verdict = self.drift.update(score.brier)
+        if verdict.drifted:
+            self._force_refit = True
         self.safe_mode.observe(
             hits_in_top_k / self.config.top_k, drifted=verdict.drifted, day_index=day
         )
+        self._last_observed_day = day
 
         return DayResult(
             day_index=day,
@@ -356,7 +431,7 @@ class ContinuousLearningPipeline:
             probabilities=probabilities,
             top_k=[int(n) for n in top_k],
             arm_weights=weights,
-            mode=self.safe_mode.mode.value,
+            mode=prediction_mode,
             drifted=verdict.drifted,
             hits_in_top_k=hits_in_top_k,
             arm_rewards=rewards,
@@ -380,6 +455,9 @@ class ContinuousLearningPipeline:
                 f"khoảng [{start}, {stop}) phải nằm sau warmup={self.config.warmup} "
                 f"và trong {self.observations.n_days} ngày"
             )
+        if start <= self._last_observed_day:
+            raise ValueError("khoảng chạy chứa ngày đã chấm; cần pipeline mới để replay")
+        self._check_prediction_day(start)
         results = []
         for day in range(start, stop):
             results.append(self.step(day))
@@ -419,8 +497,9 @@ class ContinuousLearningPipeline:
         return {
             "anchor_date": str(request.anchor_date.date()),
             "target_date": str(request.target_date.date()),
-            "mode": self.safe_mode.mode.value,
-            "mode_reason": self.safe_mode.reason,
+            "mode": self._forecast_mode,
+            "mode_reason": self._forecast_reason,
+            "probabilities": [float(p) for p in probabilities],
             "top_k": [
                 {"number": f"{int(n):02d}", "probability": float(probabilities[n])} for n in order
             ],
@@ -461,9 +540,12 @@ def summarise(pipeline: ContinuousLearningPipeline, results: list[DayResult]) ->
             "profit_ratio": {str(k): v for k, v in report.profit_ratio.items()},
         },
         "bandit": {
-            "arms": pipeline.bandit.report(BASELINE_RATE),
+            "reward": "one_minus_brier",
+            "interpretation": "heuristic_beta_pseudocounts_not_hit_probability",
+            "baseline_reward": BASELINE_REWARD,
+            "arms": pipeline.bandit.report(BASELINE_REWARD),
             "max_effective_n": pipeline.bandit.max_effective_n,
-            "power_floor": pipeline.bandit.power_floor(BASELINE_RATE),
+            "heuristic_reward_standard_error": pipeline.bandit.power_floor(BASELINE_REWARD),
         },
         "drift": {
             "backend": pipeline.drift.backend,
@@ -496,7 +578,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--discount", type=float, default=0.98)
     parser.add_argument("--no-temporal", action="store_true", help="tắt cánh tay GRU")
     parser.add_argument("--no-ranking", action="store_true", help="tắt cánh tay LambdaMART")
-    parser.add_argument("--bandit-state", default=None, help="tệp JSON để nạp/ghi trạng thái MAB")
+    parser.add_argument("--bandit-state", default=None, help="tệp mới để xuất chẩn đoán MAB; không resume")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -505,6 +587,13 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
     CAPABILITIES.log_summary()
+
+    if args.bandit_state and Path(args.bandit_state).exists():
+        LOGGER.error(
+            "Trạng thái bandit không đủ để tiếp tục: thiếu cursor, mô hình và dự báo đã phát. "
+            "Chạy replay mới không kèm --bandit-state hoặc chọn tệp xuất mới."
+        )
+        return 1
 
     try:
         observations = ObservationMatrix.from_frame(pd.read_csv(args.raw))
@@ -515,23 +604,20 @@ def main(argv: list[str] | None = None) -> int:
         LOGGER.error("Dữ liệu đầu vào không hợp lệ: %s", error)
         return 1
 
-    config = PipelineConfig(
-        window=args.window,
-        warmup=args.warmup,
-        refit_every=args.refit_every,
-        top_k=args.top_k,
-        discount=args.discount,
-        use_temporal=not args.no_temporal,
-        use_ranking=not args.no_ranking,
-    )
+    try:
+        config = PipelineConfig(
+            window=args.window,
+            warmup=args.warmup,
+            refit_every=args.refit_every,
+            top_k=args.top_k,
+            discount=args.discount,
+            use_temporal=not args.no_temporal,
+            use_ranking=not args.no_ranking,
+        )
+    except ValueError as error:
+        LOGGER.error("Cấu hình không hợp lệ: %s", error)
+        return 1
     pipeline = ContinuousLearningPipeline(observations, config)
-
-    if args.bandit_state and Path(args.bandit_state).exists():
-        try:
-            pipeline.bandit = DiscountedThompsonSamplingMAB.load_json(args.bandit_state)
-            LOGGER.info("Đã nạp trạng thái MAB từ %s", args.bandit_state)
-        except Exception as error:
-            LOGGER.warning("Không nạp được trạng thái MAB (%s); bắt đầu từ tiên nghiệm", error)
 
     start = args.start if args.start is not None else config.warmup
     stop = args.stop if args.stop is not None else observations.n_days
@@ -566,11 +652,14 @@ def main(argv: list[str] | None = None) -> int:
                 f"lời/lỗ {metrics['profit_ratio'][k]:+.1%})"
             )
     print(f"  vượt nền         : {'CÓ' if metrics['beats_baseline'] else 'KHÔNG'}")
-    print(f"\n  trọng số cánh tay (trần n hiệu dụng {summary['bandit']['max_effective_n']:.0f}):")
+    print(
+        f"\n  chẩn đoán MAB 1−Brier (Beta heuristic, "
+        f"trần số đếm {summary['bandit']['max_effective_n']:.0f}):"
+    )
     for row in summary["bandit"]["arms"]:
         verdict = "VƯỢT NỀN" if row["beats_baseline"] else ""
         print(
-            f"    {row['arm']:<22} trung bình={row['posterior_mean']:.4f} "
+            f"    {row['arm']:<22} thưởng={row['posterior_mean']:.4f} "
             f"[{row['credible_low']:.4f}, {row['credible_high']:.4f}] {verdict}"
         )
     print(

@@ -23,7 +23,7 @@ from ml_engine.capabilities import CAPABILITIES
 from ml_engine.drift import ConceptDriftDetector, _PureAdwin
 from ml_engine.fallback import Mode, SafeModeController
 from ml_engine.features import FeatureMatrix, build_features, build_training_table
-from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
+from ml_engine.main_pipeline import BASELINE_REWARD, ContinuousLearningPipeline, PipelineConfig
 from ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
 from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
 from ml_engine.schema import (
@@ -705,7 +705,7 @@ class TestModels:
         if model.backend == "torch":
             assert model.parameter_count == TemporalSequenceModel.gru_parameter_count(64)
         else:
-            assert model.parameter_count == 14 * NUMBER_SPACE + 1
+            assert model.parameter_count == (14 * NUMBER_SPACE + 1) * NUMBER_SPACE
 
     def test_temporal_model_needs_more_days_than_the_lookback(self) -> None:
         with pytest.raises(ValueError, match="cần hơn"):
@@ -912,7 +912,10 @@ class TestArchitectureIsTwoSided:
         assert report.beats_baseline
         assert report.logloss_skill > 0.1
         assert report.hit_rate_at[10] > 2 * report.random_hit_rate_at[10]
-        assert weights["baseline"] < 0.05
+        # Thưởng 1−Brier đo cả độ đúng xác suất, có biên tách nhỏ hơn hit-rate.
+        # Nền phải mất phần lớn trọng số ban đầu và nhường mô hình có tín hiệu.
+        assert weights["baseline"] < 0.5 / len(weights)
+        assert weights["tabular_boosting"] > weights["baseline"]
         assert sum(1 for r in results if r.mode == "safe") == 0
 
     def test_fair_data_keeps_the_system_quiet(self) -> None:
@@ -923,5 +926,5 @@ class TestArchitectureIsTwoSided:
         # Không có tín hiệu thì chế độ an toàn phải bật phần lớn thời gian.
         assert sum(1 for r in results if r.mode == "safe") > len(results) // 3
         assert not any(
-            pipeline.bandit.beats_baseline(arm, BASELINE_RATE) for arm in pipeline.bandit.arms
+            pipeline.bandit.beats_baseline(arm, BASELINE_REWARD) for arm in pipeline.bandit.arms
         )

@@ -304,7 +304,7 @@ def test_the_written_file_records_the_refusal(tmp_path: Path) -> None:
     Một cổng im lặng không phân biệt được với một cổng không tồn tại: cả hai
     đều để lại tệp mang trọng số mặc định.
     """
-    days = [f"2026-04-{d:02d}" for d in range(1, 26)]
+    days = [f"2026-{month:02d}-{d:02d}" for month in (3, 4) for d in range(1, 26)]
     rng = np.random.default_rng(3)
     rows = []
     for day in days:

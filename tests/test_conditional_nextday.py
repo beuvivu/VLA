@@ -83,50 +83,71 @@ def test_an_explicit_number_is_used_verbatim_for_every_special() -> None:
     np.testing.assert_allclose(merged["p_eb"].to_numpy(), expected.to_numpy())
 
 
-def test_learned_beats_the_hand_picked_60_on_pairs_it_never_saw() -> None:
-    """Chốt lại con số đã biện minh cho thay đổi này.
+def _conditional_oracle_risks(seed: int, *, planted: bool) -> dict[str, float]:
+    """Rủi ro Brier dư kỳ vọng trên đủ 100 trạng thái nguồn và 100 số.
 
-    Bảng này không vào bộ hợp thành nên không có Brier của bộ hợp thành để
-    gác — phải chấm điểm chính ``p_eb`` trên phần đuôi. Số đầy đủ (1 792 cặp
-    khớp, 598 cặp chấm điểm) ghi trong tài liệu của ``LEARN_CONDITIONAL_PRIOR``:
-    κ = 60 cho Brier 0,18208903, phép học cho 0,18166797, t = -6,15.
-
-    Ở đây dùng lịch sử tổng hợp ngắn hơn cho nhanh, và chỉ đòi đúng dấu.
+    Dùng đúng 700 kỳ khớp của fixture cũ. Các kết quả đặc biệt giữ IID đều;
+    khi nguồn là 42, chỉ 26 giải thường ngày sau được lấy từ nhóm 00–19.
+    Vì thế việc tiêm không thay chuỗi trạng thái nguồn hay làm sai oracle.
     """
-    frame = _noise_two(900, seed=11)
-    cut = 700
-    fit = frame.iloc[:cut]
-    learned = compute_loto_nextday_given_special(fit)
-    hand = compute_loto_nextday_given_special(fit, prior_strength=60.0)
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, 100, size=(900, 27))
+    truth = np.full((100, 100), 1.0 - 0.99 ** 27)
+    if planted:
+        for day in range(len(draws) - 1):
+            if draws[day, 0] == 42:
+                draws[day + 1, 1:] = rng.integers(0, 20, size=26)
+        truth[42, :20] = 1.0 - 0.99 * 0.95 ** 26
+        truth[42, 20:] = 0.01
+    frame = pd.DataFrame(draws, columns=["special", *[f"p{i}" for i in range(1, 27)]])
+    frame["date"] = pd.date_range("2020-01-01", periods=len(frame)).strftime("%Y-%m-%d")
+    fitted = compute_loto_nextday_given_special(frame.iloc[:700])
+    baseline = fitted.groupby("number")["baseline"].first().reindex(range(100)).to_numpy()
+    source = fitted["special"].to_numpy(dtype=int)
+    number = fitted["number"].to_numpy(dtype=int)
+    hits = fitted["hits"].to_numpy(dtype=float)
+    trials = fitted["trials"].to_numpy(dtype=float)
+    values = {
+        "learned": fitted["p_eb"].to_numpy(),
+        "empirical": fitted["p_raw"].to_numpy(),
+        "hand60": (hits + 60.0 * fitted["baseline"].to_numpy()) / (trials + 60.0),
+    }
+    predictions = {"pooled": np.tile(baseline, (100, 1))}
+    for name, probabilities in values.items():
+        # Nguồn vắng trong tập khớp vẫn được chấm, với fallback về baseline.
+        grid = np.tile(baseline, (100, 1))
+        grid[source, number] = probabilities
+        predictions[name] = grid
+    risks = {name: float(np.mean((prob - truth) ** 2)) for name, prob in predictions.items()}
+    risks.update({f"{name}_signal_row": float(np.mean((prob[42] - truth[42]) ** 2))
+                  for name, prob in predictions.items()})
+    return risks
 
-    dates = pd.to_datetime(frame["date"])
-    specials = (frame["special"].astype(int) % 100).to_numpy()
-    later = frame.iloc[cut:]
-    later_idx = later.index.to_numpy()
 
-    def table(df: pd.DataFrame) -> np.ndarray:
-        grid = np.full((100, 100), np.nan)
-        grid[df["special"].to_numpy(), df["number"].to_numpy()] = df["p_eb"].to_numpy()
-        return grid
+def test_learned_shrinks_null_risk_against_empirical_rates_across_seeds() -> None:
+    """Co nhiễu được đo bằng oracle-risk, không bằng dấu của 199 kỳ may rủi.
 
-    grids = {"học": table(learned), "đặt tay": table(hand)}
-    marginal = float(learned["baseline"].mean())
-    errors = {k: [] for k in grids}
-    for i in later_idx[:-1]:
-        if (dates[i + 1] - dates[i]).days != 1:
-            continue
-        s = int(specials[i])
-        nxt = {int(v) % 100 for k, v in frame.loc[i + 1].items() if k != "date"}
-        y = np.zeros(100)
-        for x in nxt:
-            y[x] = 1.0
-        for name, grid in grids.items():
-            row = grid[s]
-            row = np.where(np.isnan(row), marginal, row)
-            errors[name].append(float(np.mean((row - y) ** 2)))
+    Seed 11 vẫn thuộc dải 0–19. Với 700 kỳ, mô men đã hiệu chỉnh KHÔNG luôn
+    hơn κ=60: trên 1.000 seed, excess-risk là 0,00057943 so với 0,00053046.
+    Đó là đánh đổi giữ tín hiệu, không phải lý do đổi seed hay bỏ hiệu chỉnh.
+    """
+    risks = [_conditional_oracle_risks(seed, planted=False) for seed in range(20)]
+    difference = [row["learned"] - row["empirical"] for row in risks]
+    assert np.mean(difference) < 0.0
 
-    assert len(errors["học"]) > 50
-    assert np.mean(errors["học"]) < np.mean(errors["đặt tay"])
+
+def test_learned_preserves_planted_conditional_signal_across_seeds() -> None:
+    """Co hoàn toàn hoặc ép κ=60 không được thay thế phép học có tín hiệu.
+
+    Chấm cả bảng để trả giá cho nhiễu ở 99 nguồn còn lại; đồng thời chấm riêng
+    hàng có quy luật thật. So expected Brier chỉ cần marginal oracle, không
+    giả định 100 số trong cùng kỳ độc lập.
+    """
+    risks = [_conditional_oracle_risks(seed, planted=True) for seed in range(20)]
+    for baseline in ("pooled", "hand60"):
+        assert np.mean([row["learned"] - row[baseline] for row in risks]) < 0.0
+        assert np.mean([row["learned_signal_row"] - row[f"{baseline}_signal_row"]
+                        for row in risks]) < 0.0
 
 
 def test_manifest_records_whether_the_strength_was_learned(tmp_path) -> None:

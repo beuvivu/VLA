@@ -49,3 +49,10 @@ forecasting guarantee.
 - Research-plane material is descriptive or challenger evidence only. Promotion
   into production prediction weights requires a separate code change plus the
   chronological out-of-sample gates described in the relevant document.
+
+## Nâng cấp xác suất và tự học ngày 27-09-2026
+
+- [Kiến trúc](architecture/2026-09-27-adaptive-inference.md)
+- [Kế hoạch và kiểm định](architecture/2026-09-27-adaptive-inference-plan.md)
+- [Hướng dẫn vận hành tự học](operations/adaptive-inference.md)
+- [Kết quả kiểm chứng và giới hạn](qa/2026-09-27-adaptive-inference.md)

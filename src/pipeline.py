@@ -351,6 +351,10 @@ def main() -> None:
                 allow_fail=soft_fail,
             )
 
+            # Chốt dự báo đầy đủ trước kỳ quay; chỉ học từ dự báo đã lưu. Lỗi sổ
+            # phải dừng lượt xuất bản để không đánh mất hoặc chấm lại bằng chứng.
+            _run(_py("src/online_learning.py", "--mode", mode), allow_fail=False)
+
     for mode in ["loto", "de"]:
         _run(_py("src/prob_eval_history.py", "--mode", mode), allow_fail=soft_fail)
 
