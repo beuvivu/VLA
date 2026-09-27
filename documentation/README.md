@@ -56,3 +56,4 @@ forecasting guarantee.
 - [Kế hoạch và kiểm định](architecture/2026-09-27-adaptive-inference-plan.md)
 - [Hướng dẫn vận hành tự học](operations/adaptive-inference.md)
 - [Kết quả kiểm chứng và giới hạn](qa/2026-09-27-adaptive-inference.md)
+- [Sửa tích hợp CI và vòng đời stacking](qa/2026-09-27-stacking-integration.md)
