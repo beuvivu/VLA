@@ -54,6 +54,18 @@ COMPONENT_TIERS = [
 ]
 
 
+class InsufficientMetaHistory(RuntimeError):
+    """Không tầng nào đủ kỳ hợp lệ; khác với lỗi đọc dữ liệu hoặc khớp model."""
+
+    def __init__(self, maturity: dict[str, int], minimum_days: int) -> None:
+        self.maturity = dict(maturity)
+        self.minimum_days = minimum_days
+        super().__init__(
+            "Stacked ML history is not mature for any supported tier: "
+            + ", ".join(f"{name}={count}" for name, count in maturity.items())
+        )
+
+
 @dataclass(frozen=True)
 class MetaMetrics:
     logloss: float
@@ -254,10 +266,7 @@ def _select_component_tier(
         maturity[name] = len(days)
         if len(days) >= min_days:
             return name, list(cols), float(trust_cap), days, maturity
-    raise RuntimeError(
-        "Stacked ML history is not mature for any supported tier: "
-        + ", ".join(f"{name}={count}" for name, count in maturity.items())
-    )
+    raise InsufficientMetaHistory(maturity, min_days)
 
 
 def _four_way_split(
@@ -739,12 +748,55 @@ def train_meta(
     min_days: int = 100,
     half_life_days: int = 90,
 ) -> dict:
+    if mode not in {"loto", "de"}:
+        raise ValueError("Mode phải là loto hoặc de")
     if not history_path.exists():
         raise RuntimeError(f"History not found: {history_path}")
     history = pd.read_csv(history_path)
-    tier, component_cols, trust_cap, days, maturity = _select_component_tier(
-        history, window_days, min_days, mode=mode
-    )
+    required = {"target_date", "number", "y", "p_ml", "p_active", "p_stable"}
+    if missing := required.difference(history.columns):
+        raise ValueError(f"Lịch sử stacking thiếu cột: {sorted(missing)}")
+    _date_strings(history["target_date"])
+    # Bốn lát train/calibrate/select/validate cần ít nhất 100 kỳ ngay cả
+    # khi tham số CLI thấp hơn; không nới sàn để làm kiểm phát hành xanh.
+    minimum_days = max(100, min_days)
+    try:
+        tier, component_cols, trust_cap, days, maturity = _select_component_tier(
+            history, window_days, minimum_days, mode=mode
+        )
+    except InsufficientMetaHistory as exc:
+        pack = {
+            "schema_version": META_SCHEMA_VERSION,
+            "mode": mode,
+            "status": "insufficient_history",
+            "model": None,
+            "features": [],
+            "component_tier": None,
+            "component_cols": [],
+            "quality_pass": False,
+            "meta_trust": 0.0,
+            "history_days": max(exc.maturity.values(), default=0),
+            "minimum_history_days": exc.minimum_days,
+            "tier_maturity_days": exc.maturity,
+            "trained_through_target_date": None,
+            "evaluated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            "reason": str(exc),
+        }
+        # Ghi đè pack cũ bằng trạng thái vô hiệu hóa: không giữ một model
+        # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
+        models_dir.mkdir(parents=True, exist_ok=True)
+        report_dir.mkdir(parents=True, exist_ok=True)
+        joblib.dump(pack, models_dir / f"meta_{mode}.joblib")
+        report = {key: value for key, value in pack.items() if key != "model"}
+        (report_dir / f"meta_report_{mode}.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
+        )
+        pd.DataFrame([{
+            key: pack[key]
+            for key in ("mode", "status", "history_days", "minimum_history_days", "quality_pass", "meta_trust")
+        }]).to_csv(report_dir / f"meta_report_{mode}.csv", index=False)
+        print(f"[INFO] stacked ML {mode}: insufficient_history; {pack['history_days']}/{minimum_days} kỳ; giữ linear")
+        return pack
     history = history[_date_strings(history["target_date"]).isin(days)].copy()
     history = _normalize_components_by_day(history, mode, component_cols)
     train_days, cal_days, select_days, val_days = _four_way_split(days)
@@ -826,6 +878,8 @@ def train_meta(
     pack = {
         "schema_version": META_SCHEMA_VERSION,
         "mode": mode,
+        "status": "trained",
+        "minimum_history_days": minimum_days,
         "model": best_model,
         "features": feature_cols,
         "component_tier": tier,

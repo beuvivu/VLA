@@ -183,6 +183,14 @@ def _meta_prediction(
     if str(pack.get("mode")) != mode:
         fallback["reason"] = "stacked model mode mismatch"
         return linear_prob.copy(), 0.0, fallback
+    if pack.get("status") == "insufficient_history":
+        # Trạng thái này không có estimator và không được trộn vào forecast.
+        fallback.update(
+            reason="insufficient_history",
+            history_days=pack.get("history_days"),
+            minimum_history_days=pack.get("minimum_history_days"),
+        )
+        return linear_prob.copy(), 0.0, fallback
     if available is not None:
         required = list(pack.get("component_cols") or [])
         if not required or any(not available.get(str(column).removeprefix("p_"), False) for column in required):
