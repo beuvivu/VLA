@@ -44,7 +44,7 @@ jobs:
       - run: python scripts/check_ui_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ui-browser-review
           path: ui-browser-artifacts/
