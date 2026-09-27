@@ -1,6 +1,8 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "mode": "de",
+  "status": "trained",
+  "minimum_history_days": 100,
   "features": [
     "p_ml",
     "p_active",
@@ -34,10 +36,10 @@
     "p_stable"
   ],
   "tier_maturity_days": {
-    "five_component": 26,
-    "four_with_cau": 26,
-    "four_with_stat": 26,
-    "core_three": 238
+    "five_component": 27,
+    "four_with_cau": 27,
+    "four_with_stat": 27,
+    "core_three": 239
   },
   "tier_trust_cap": 0.15,
   "selected_candidate": {
@@ -50,30 +52,54 @@
   },
   "quality_pass": false,
   "meta_trust": 0.0,
-  "validation_logloss": 4.602934045502689,
-  "validation_brier": 0.9899546989559727,
-  "baseline_validation_logloss": 4.603385869307159,
-  "baseline_validation_brier": 0.989965225405175,
-  "logloss_skill": 9.815032180604533e-05,
-  "brier_skill": 1.0633150470451547e-05,
+  "holdout_gate": {
+    "logloss_skill": 0.0009081442600706868,
+    "brier_skill": 0.0020111249425638356,
+    "constant_logloss_skill": -1.6304929597588114e-05,
+    "constant_brier_skill": -1.705864417278491e-06,
+    "quality_pass": false,
+    "gate_skill": -1.6304929597588114e-05,
+    "blend_logloss_skill": 0.0003257702012984254,
+    "blend_brier_skill": 0.000566574924704577,
+    "blend_constant_logloss_skill": -0.0005992178529632408,
+    "blend_constant_brier_skill": -0.0014491693764555613,
+    "blend_quality_pass": false,
+    "blend_gate_skill": -0.0005992178529632408,
+    "blend_logloss": 4.60792968617947,
+    "blend_brier": 0.9914346776826906,
+    "holdout_days": 30,
+    "linear_delta_ci95_low": -0.007130116044152053,
+    "linear_delta_ci95_high": 0.002540587013490523,
+    "constant_delta_ci95_low": -0.02048151000830894,
+    "constant_delta_ci95_high": 0.02962266143275028,
+    "bootstrap_block_days": 4,
+    "uncertainty_pass": false
+  },
+  "validation_logloss": 4.605245272963759,
+  "validation_brier": 0.9900016888057728,
+  "baseline_validation_logloss": 4.609431301542445,
+  "baseline_validation_brier": 0.9919967181485828,
+  "logloss_skill": 0.0009081442600706868,
+  "brier_skill": 0.0020111249425638356,
   "constant_validation_logloss": 4.605170185988091,
   "constant_validation_brier": 0.9899999999999997,
-  "constant_logloss_skill": 0.0004855717367852064,
-  "constant_brier_skill": 4.5758630330294814e-05,
+  "constant_logloss_skill": -1.6304929597588114e-05,
+  "constant_brier_skill": -1.705864417278491e-06,
   "baseline_weights": {
-    "p_ml": 0.8000000000000002,
-    "p_active": 0.14711167173171164,
-    "p_stable": 0.05288832826828822
+    "p_ml": 0.25,
+    "p_cau": 0.3,
+    "p_stat": 0.2,
+    "p_active": 0.125,
+    "p_stable": 0.125
   },
   "baseline_calibration": {
     "mode": "de",
     "a": 1.0,
     "b": 0.0,
-    "temperature": 5.0
+    "temperature": 1.0
   },
-  "history_days": 238,
+  "history_days": 239,
   "selection_days": [
-    "2026-07-09",
     "2026-07-10",
     "2026-07-11",
     "2026-07-12",
@@ -102,10 +128,10 @@
     "2026-08-04",
     "2026-08-05",
     "2026-08-06",
-    "2026-08-07"
+    "2026-08-07",
+    "2026-08-08"
   ],
   "validation_days": [
-    "2026-08-08",
     "2026-08-09",
     "2026-08-10",
     "2026-08-11",
@@ -134,8 +160,9 @@
     "2026-09-23",
     "2026-09-24",
     "2026-09-25",
-    "2026-09-26"
+    "2026-09-26",
+    "2026-09-27"
   ],
-  "trained_through_target_date": "2026-09-26",
-  "trained_at_utc": "2026-09-27T05:02:27Z"
+  "trained_through_target_date": "2026-09-27",
+  "trained_at_utc": "2026-09-27T11:47:47Z"
 }

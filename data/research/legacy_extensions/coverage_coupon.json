@@ -1,6 +1,6 @@
 {
-  "draw_days": 4217,
-  "average_distinct_loto_per_day": 23.82902537348826,
+  "draw_days": 4218,
+  "average_distinct_loto_per_day": 23.82859174964438,
   "all_time_distinct_numbers": 100,
   "unseen_numbers": [],
   "first_full_coverage_day_from_start": 23,
@@ -12,6 +12,6 @@
     "99": 20,
     "100": 23
   },
-  "coupon_collector_expected_days_approx": 21.7691552060329,
+  "coupon_collector_expected_days_approx": 21.76955135301706,
   "coupon_note": "Heuristic context only: 100*H_100/average distinct numbers per draw assumes simplified independent coupon sampling and is not a prediction model."
 }
