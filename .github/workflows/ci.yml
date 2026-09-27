@@ -27,10 +27,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  route:
+    name: Chọn sự kiện cần kiểm thử
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      run_checks: ${{ steps.route.outputs.run_checks }}
+    steps:
+      - name: Đối chiếu nhánh PR với allowlist push (phân biệt hoa thường)
+        id: route
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPO_NAME: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          event = os.environ["EVENT_NAME"]
+          if event == "pull_request":
+              repo = os.environ.get("REPO_NAME", "")
+              head_repo = os.environ.get("HEAD_REPO", "")
+              head_ref = os.environ.get("HEAD_REF", "")
+              if not repo or not head_repo or not head_ref:
+                  raise SystemExit("PR thiếu tên kho hoặc tên nhánh; không thể chọn cổng CI")
+              # Khớp đúng allowlist on.push.branches, phân biệt hoa/thường.
+              push_covered = head_ref in ("main", "master") or head_ref.startswith(
+                  ("claude/", "codex/")
+              )
+              run_checks = head_repo != repo or not push_covered
+          elif event in ("push", "workflow_dispatch"):
+              run_checks = True
+          else:
+              raise SystemExit(f"Sự kiện CI chưa hỗ trợ: {event}")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"run_checks={str(run_checks).lower()}\n")
+          PY
   browser:
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name != github.repository
+    needs: route
+    if: needs.route.outputs.run_checks == 'true'
     name: Giao diện Chromium sáng/tối và mobile
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -44,19 +82,14 @@ jobs:
       - run: python scripts/check_ui_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ui-browser-review
           path: ui-browser-artifacts/
           retention-days: 7
   test:
-    # Nhánh trong kho đã được `push` phủ, nên để `pull_request` chạy nữa là
-    # chạy hai lần cùng một commit, tốn gấp đôi runner mà không thêm tín hiệu
-    # nào. Chỉ fork mới cần `pull_request`: nhánh của fork không sinh sự kiện
-    # `push` trên kho này.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name != github.repository
+    needs: route
+    if: needs.route.outputs.run_checks == 'true'
     name: Kiểm thử thống kê, AI/ML và quy trình nghiên cứu
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -83,7 +116,7 @@ jobs:
         # Worker. Runner ubuntu-latest tình cờ có sẵn Node, nhưng trông vào
         # thứ tình cờ thì một ngày nào đó nó biến mất và các phép kiểm ấy tự
         # BỎ QUA — chốt chặn giả còn tệ hơn không có chốt. Ghim tường minh.
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 
