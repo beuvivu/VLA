@@ -7,6 +7,7 @@
   var currentDate = '', revision = 0, pending = null;
   var ready = new Set();
   var modes = ['de', 'loto'];
+  var predictionRoot = root.dataset.predictionRoot || 'https://raw.githubusercontent.com/beuvivu/VLA/main/data/predict/';
 
   function validDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -54,7 +55,7 @@
     var timer = window.setTimeout(function () { controller.abort(); }, 10000);
     column(mode, 'loading', 'Đang tải dự đoán…');
     try {
-      var url = root.dataset.predictionRoot + 'predict_next_' + mode + '_top10_' + date + '.csv';
+      var url = predictionRoot + 'predict_next_' + mode + '_top10_' + date + '.csv';
       var response = await fetch(url, { cache: 'no-store', signal: controller.signal });
       if (!response.ok && response.status !== 404) throw new Error('Forecast unavailable');
       var values = response.ok ? parseNumbers(await response.text()) : [];
@@ -93,5 +94,5 @@
       .finally(function () { if (version === revision) pending = null; });
     return pending;
   }
-  window.VLALivePredictions = { load: load };
+  window.LivePredictions = { load: load };
 })();

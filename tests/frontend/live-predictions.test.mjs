@@ -9,7 +9,7 @@ function setup(t, fetcher) {
   t.after(() => dom.window.close());
   dom.window.fetch = fetcher;
   dom.window.eval(script);
-  return {load: dom.window.VLALivePredictions.load, d: dom.window.document};
+  return {load: dom.window.LivePredictions.load, d: dom.window.document};
 }
 const csv = text => ({ok: true, text: async () => text});
 const numbers = (d, mode) => [...d.querySelectorAll('[data-prediction-mode="' + mode + '"] .live-prediction-number')].map(n => n.textContent);

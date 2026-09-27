@@ -317,7 +317,7 @@
       <div id="results" class="app-prize-table" role="table" aria-label="Kết quả các giải đang quay" aria-live="polite" aria-atomic="false"></div>
     </div>
 
-<section class="card live-predictions-card" id="live-predictions" data-prediction-root="https://raw.githubusercontent.com/beuvivu/VLA/main/data/predict/" aria-labelledby="live-predictions-title"><div class="live-prediction-heading"><h2 id="live-predictions-title">Dự đoán trong ngày</h2><time id="live-prediction-date">Đang chờ ngày quay</time></div><div class="live-prediction-columns"><section class="live-prediction-column" data-prediction-mode="de" aria-labelledby="live-prediction-de-title"><h3 id="live-prediction-de-title">Đặc Biệt</h3><ol class="live-prediction-list" aria-label="10 bộ số Đặc Biệt theo thứ hạng"></ol><p class="live-prediction-message" role="status">Đang chờ ngày quay.</p></section><section class="live-prediction-column" data-prediction-mode="loto" aria-labelledby="live-prediction-loto-title"><h3 id="live-prediction-loto-title">LOTO</h3><ol class="live-prediction-list" aria-label="10 bộ số LOTO theo thứ hạng"></ol><p class="live-prediction-message" role="status">Đang chờ ngày quay.</p></section></div><p class="live-prediction-note">Hai số cuối · Xếp hạng tham khảo từ mô hình thống kê.</p></section>
+<section class="card live-predictions-card" id="live-predictions" aria-labelledby="live-predictions-title"><div class="live-prediction-heading"><h2 id="live-predictions-title">Dự đoán trong ngày</h2><time id="live-prediction-date">Đang chờ ngày quay</time></div><div class="live-prediction-columns"><section class="live-prediction-column" data-prediction-mode="de" aria-labelledby="live-prediction-de-title"><h3 id="live-prediction-de-title">Đặc Biệt</h3><ol class="live-prediction-list" aria-label="10 bộ số Đặc Biệt theo thứ hạng"></ol><p class="live-prediction-message" role="status">Đang chờ ngày quay.</p></section><section class="live-prediction-column" data-prediction-mode="loto" aria-labelledby="live-prediction-loto-title"><h3 id="live-prediction-loto-title">LOTO</h3><ol class="live-prediction-list" aria-label="10 bộ số LOTO theo thứ hạng"></ol><p class="live-prediction-message" role="status">Đang chờ ngày quay.</p></section></div><p class="live-prediction-note">Hai số cuối · Xếp hạng tham khảo từ mô hình thống kê.</p></section>
   </div>
 
   <script src="assets/live-predictions.js"></script>
@@ -551,7 +551,7 @@
         document.getElementById('conflicts').textContent = conflicts.length
           ? 'Đang có bất đồng nguồn: ' + conflicts.join(', ')
           : '';
-        if (window.VLALivePredictions) window.VLALivePredictions.load(data.draw_date);
+        if (window.LivePredictions) window.LivePredictions.load(data.draw_date);
       } catch (error) {
         document.getElementById('status').textContent = 'Chưa lấy được dữ liệu trực tiếp';
         document.getElementById('checked').textContent =

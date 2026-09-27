@@ -168,11 +168,9 @@ def test_the_live_page_never_renders_a_source_field() -> None:
     miền lọt vào tải trọng, trang vẫn không được vẽ nó ra.
     """
     page = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
-    # Phải so KHỚP TRỌN thuộc tính: "source.source_code" chứa "source.source"
-    # như một chuỗi con, nên phép so chuỗi con báo động giả — bản đầu của
-    # phép kiểm này đã đỏ đúng vì thế.
-    assert re.search(r"\bsource\.source\b(?!_)", page) is None
-    assert "source.source_code" in page
+    # Khung nguồn đã được thay bằng dự đoán; không dựng cả tên lẫn mã nguồn.
+    assert re.search(r"\bsource\.(?:source|source_code)\b", page) is None
+    assert 'id="sources"' not in page
     assert not [d for d in known_source_domains() if d in page]
 
 
