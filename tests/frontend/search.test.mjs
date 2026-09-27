@@ -41,32 +41,21 @@ test('Global search phủ mọi trang xuất bản kể cả giao diện máy t�
   assert.match(d.querySelector('#app-global-search a[href="landing_desktop.html"]').textContent, /Giao diện máy tính/);
 });
 
-test('Hai truy vấn độc lập và mở global không đổi trạng thái sidebar', t => {
+test('Mở global không đổi nhóm hoặc trạng thái sidebar', t => {
   const dom = start(t), d = dom.window.document;
   d.getElementById('app-tab-2').click();
-  type(dom, 'app-sidebar-filter', 'dac biet');
   const before = [...d.querySelectorAll('.app-nav-item')].map(node => node.hidden);
   const panelSaved = dom.window.localStorage.getItem('app-panel-open');
   open(dom);
   type(dom, 'app-global-search-input', 'tan suat');
   assert.deepEqual(results(dom).map(node => node.getAttribute('href')), [
-    'index.html#tan-suat-loto', 'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'index.html#tan-suat-de',
+    'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'index.html#tan-suat-loto', 'index.html#tan-suat-de',
   ]);
-  assert.equal(d.getElementById('app-sidebar-filter').value, 'dac biet');
   assert.deepEqual([...d.querySelectorAll('.app-nav-item')].map(node => node.hidden), before);
   assert.equal(dom.window.localStorage.getItem('app-panel-open'), panelSaved);
   assert.equal(d.body.classList.contains('app-panel-open'), true);
   key(dom, 'Escape');
   assert.equal(d.body.classList.contains('app-panel-open'), true);
-});
-
-test('Lọc sidebar không được làm lộ nhóm khác dù không có kết quả', t => {
-  const dom = start(t), d = dom.window.document;
-  d.getElementById('app-tab-0').click();
-  type(dom, 'app-sidebar-filter', 'tan suat');
-  assert.equal(d.getElementById('app-sidebar-filter-empty').hidden, false);
-  assert.deepEqual([...d.querySelectorAll('.app-panel-group')].filter(node => !node.hidden).map(node => node.id), ['app-panel-0']);
-  assert.equal([...d.querySelectorAll('#app-panel-0 .app-nav-item')].filter(node => !node.hidden).length, 0);
 });
 
 test('Global search hỗ trợ nhãn nhóm, không dấu và trạng thái rỗng an toàn', t => {
@@ -84,13 +73,12 @@ test('Global search hỗ trợ nhãn nhóm, không dấu và trạng thái rỗn
   assert.equal(results(dom).length, fixture.targets.length);
 });
 
-test('Escape khi đang gõ IME không đóng modal hoặc xóa truy vấn sidebar', t => {
+test('Escape khi đang gõ IME không đóng menu hoặc modal', t => {
   const dom = start(t), d = dom.window.document;
   d.getElementById('app-tab-0').click();
-  type(dom, 'app-sidebar-filter', 'ket qua');
-  const sidebar = d.getElementById('app-sidebar-filter'); sidebar.focus();
+  const sidebar = d.querySelector('.app-panel-group:not([hidden]) .app-nav-item'); sidebar.focus();
   key(dom, 'Escape', { isComposing: true });
-  assert.equal(sidebar.value, 'ket qua');
+  assert.equal(d.body.classList.contains('app-panel-open'), true);
   open(dom);
   const event = key(dom, 'Escape', { isComposing: true });
   assert.equal(event.defaultPrevented, false);
@@ -112,14 +100,14 @@ test('Mũi tên Home End và Enter chọn rồi mở đúng kết quả thật',
   let followed = null;
   links[0].addEventListener('click', event => { event.preventDefault(); followed = event.currentTarget.getAttribute('href'); });
   key(dom, 'Enter');
-  assert.equal(followed, 'index.html#tan-suat-loto');
+  assert.equal(followed, 'tan-suat-loto.html');
   assert.equal(d.getElementById('app-global-search').open, false);
 });
 
 test('Escape đóng modal và trả focus về phần tử đã mở, không đóng menu di động', t => {
   const dom = start(t, { narrow: true }), d = dom.window.document;
   d.getElementById('app-toggle').click();
-  const filter = d.getElementById('app-sidebar-filter'); filter.focus();
+  const filter = d.querySelector('.app-panel-group:not([hidden]) .app-nav-item'); filter.focus();
   const event = key(dom, 'k', { metaKey: true });
   assert.equal(event.defaultPrevented, true);
   assert.equal(d.activeElement.id, 'app-global-search-input');
@@ -151,7 +139,7 @@ test('Tab giữ focus trong dialog và close backdrop cancel đều trả về �
 test('Chọn kết quả trên điện thoại đóng menu để đích điều hướng nhận tương tác', t => {
   const dom = start(t, { narrow: true }), d = dom.window.document;
   d.getElementById('app-tab-1').click();
-  d.getElementById('app-sidebar-filter').focus();
+  d.querySelector('.app-panel-group:not([hidden]) .app-nav-item').focus();
   key(dom, 'k', { ctrlKey: true });
   type(dom, 'app-global-search-input', 'tan suat');
   const result = results(dom)[0];

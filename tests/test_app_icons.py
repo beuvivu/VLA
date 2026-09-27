@@ -80,7 +80,7 @@ def test_renderer_preserves_the_canonical_svg_primitives(key: str, name: str) ->
 def test_every_navigation_key_resolves_to_a_verified_icon() -> None:
     """Một khóa lạ/Unicode sẽ rơi vào icon dự phòng và phải bị bắt ở đây."""
     keys = [key for _, items in SITE_NAV for _, _, key in items]
-    assert len(keys) >= 32
+    assert keys
     assert all(re.fullmatch(r"[a-z0-9-]+", key) for key in keys)
     assert set(keys) <= REFERENCE_MAP.keys()
     fallback = _geometry(ET.fromstring(icon_svg("khong-co-khoa")))

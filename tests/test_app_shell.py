@@ -366,16 +366,17 @@ def test_the_search_only_offers_pages_that_exist(trinh_duyet) -> None:
     pg.wait_for_timeout(500)
     pg.click("#app-toggle")
     pg.wait_for_timeout(400)
-    pg.fill("#app-sidebar-filter", "tần suất")
+    pg.click("#app-search-open")
+    pg.fill("#app-global-search-input", "tần suất")
     pg.wait_for_timeout(400)
     href = pg.evaluate(
-        """() => [...document.querySelectorAll('.app-nav-item')]
+        """() => [...document.querySelectorAll('.app-global-result')]
                .filter(a => a.offsetParent !== null)
                .map(a => a.getAttribute('href'))"""
     )
-    trong = pg.evaluate("""() => { document.getElementById('app-sidebar-filter').value='zzzz';
-        document.getElementById('app-sidebar-filter').dispatchEvent(new Event('input'));
-        return document.getElementById('app-sidebar-filter-empty').hidden; }""")
+    trong = pg.evaluate("""() => { document.getElementById('app-global-search-input').value='zzzz';
+        document.getElementById('app-global-search-input').dispatchEvent(new Event('input'));
+        return document.getElementById('app-global-search-empty').hidden; }""")
     pg.close()
     assert href, "tìm 'tần suất' không ra kết quả nào"
     thieu = [h for h in href if not (DOCS / h.split("#", 1)[0]).is_file()]

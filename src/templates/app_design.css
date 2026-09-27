@@ -188,7 +188,7 @@ body[data-app-design="crafto"] .hero .signal-pill span {font-size:12px;font-weig
 .app-hero-result-label {display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ui-ink-soft);font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
 .app-hero-result-label>svg {width:16px;height:16px;flex-shrink:0;color:var(--ui-brand-ink)}
 body[data-app-design="crafto"] .hero .app-hero-date {display:block;margin:8px 0 24px;color:var(--ui-ink-soft);font-size:12px}
-.app-hero-number {display:block;color:var(--ui-ink);font-size:clamp(44px,5.3vw,72px);line-height:1.2;font-weight:750;letter-spacing:-.065em;font-variant-numeric:tabular-nums}
+.app-hero-number {display:block;color:var(--ui-special-ink);font-size:clamp(44px,5.3vw,72px);line-height:1.2;font-weight:750;letter-spacing:-.065em;font-variant-numeric:tabular-nums}
 body[data-app-design="crafto"] .hero .app-hero-meta {margin:20px 0 0;padding-top:20px;border-top:1px solid var(--ui-border);color:var(--ui-ink-soft);font-size:11px;line-height:1.7}
 .app-hero-meta {display:flex;justify-content:space-between;gap:12px;text-align:left}
 .app-hero-meta>b {color:var(--ui-ink);font-size:16px}
@@ -202,6 +202,12 @@ body[data-app-design="crafto"] .hero .app-hero-meta {margin:20px 0 0;padding-top
 }
 .app-hero-mini--one {justify-self:end;transform:rotate(-4deg)}
 .app-hero-mini--two {justify-self:start;transform:rotate(4deg)}
+.app-hero-shortcut {display:flex;align-items:center;gap:12px;min-height:82px;text-decoration:none;color:var(--ui-brand-ink);transition:background .2s,border-color .2s,box-shadow .2s}
+.app-hero-shortcut>.app-ic {width:24px;height:24px;flex-shrink:0}
+.app-hero-shortcut>span {font-size:13px;line-height:1.45;color:var(--ui-ink)}
+.app-hero-shortcut>.app-hero-shortcut-arrow {margin-left:auto;color:var(--ui-brand-ink);font-size:18px}
+.app-hero-shortcut:hover {background:var(--ui-brand-soft);border-color:var(--ui-brand-border);box-shadow:0 12px 32px rgba(41,70,243,.1)}
+.app-hero-shortcut:focus-visible {outline:3px solid var(--ui-brand-ink);outline-offset:4px}
 .app-hero-mini>small {display:block;margin-top:8px;color:var(--ui-ink-soft);font-size:9px}
 .app-hero-mini-value>small {font-size:11px;font-weight:500;letter-spacing:0;color:var(--ui-ink-soft)}
 .app-hero-mini>span {display:block;font-size:12px;line-height:1.6;font-weight:600}

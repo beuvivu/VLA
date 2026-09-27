@@ -260,6 +260,15 @@ def _attach_shell(path: Path, html: str) -> str:
     assets.mkdir(parents=True, exist_ok=True)
     write_stylesheet_text(assets / "app-shell.css", _SHELL_CSS_NGUON.read_text(encoding="utf-8"))
     (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    if path.name == "live.html":
+        source_dir = Path(__file__).parent
+        (assets / "live-predictions.js").write_text(
+            (source_dir / "assets/live-predictions.js").read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        write_stylesheet_text(
+            assets / "live-predictions.css",
+            (source_dir / "templates/live_predictions.css").read_text(encoding="utf-8"),
+        )
     # Shell typography and profile image use the same local assets as the reference.
     reference_assets = Path(__file__).with_name("assets") / "nexlink"
     for source in reference_assets.glob("InstrumentSans-*"):

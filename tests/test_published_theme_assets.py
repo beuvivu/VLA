@@ -15,6 +15,8 @@ ROOT = Path(__file__).resolve().parents[1]
     ("assets/app-theme.js", "app-theme.js"),
     ("assets/app-motion.js", "app-motion.js"),
     ("assets/app-shell.js", "app-shell.js"),
+    ("assets/live-predictions.js", "live-predictions.js"),
+    ("templates/live_predictions.css", "live-predictions.css"),
 ])
 def test_published_theme_asset_matches_its_reviewed_source(source, published):
     expected = (ROOT / "src" / source).read_text(encoding="utf-8")
