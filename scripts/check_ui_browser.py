@@ -22,7 +22,7 @@ def contrast(colors):
     def luminance(color):
         rgb = [float(n.strip()) / 255 for n in color.split("(")[1].split(")")[0].split(",")[:3]]
         linear = [v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in rgb]
-        return sum(v * w for v, w in zip(linear, (.2126, .7152, .0722)))
+        return sum(v * w for v, w in zip(linear, (.2126, .7152, .0722), strict=True))
     light, dark = sorted((luminance(colors["fg"]), luminance(colors["bg"])), reverse=True)
     return (light + .05) / (dark + .05)
 
@@ -52,7 +52,7 @@ def main():
                         ("prize6", 3, 3), ("prize7", 4, 2),
                     ]}, "conflicts": [],
                 }
-                page.route("**/live.json*", lambda route: route.fulfill(
+                page.route("**/live.json*", lambda route, _request, live_fixture=live_fixture: route.fulfill(
                     content_type="application/json", body=json.dumps(live_fixture)))
                 def forecast_route(route):
                     if not route.request.url.endswith("_2026-09-26.csv"):
@@ -61,7 +61,7 @@ def main():
                     route.fulfill(content_type="text/csv", body="number,prob\n5,0.01\n42,0.01\n")
                 page.route("**/predict_next_*_top10_*.csv", forecast_route)
                 errors = []
-                page.on("pageerror", lambda error: errors.append(str(error)))
+                page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
                 for name in pages:
                     errors.clear()
                     try:

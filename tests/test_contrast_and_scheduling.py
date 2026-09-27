@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 from bs4 import BeautifulSoup
 
 from ui_theme import (
@@ -300,18 +301,17 @@ def test_ci_does_not_run_the_same_commit_twice() -> None:
     hai lần chạy song song trên đúng một commit, dù khối ``concurrency`` vẫn ở
     nguyên đó.
 
-    Nên phải chặn ở điều kiện job: nhánh trong kho đã có ``push`` phủ, chỉ fork
-    mới cần ``pull_request`` vì nhánh fork không sinh ``push`` trên kho này.
+    Nên phải chặn ở điều kiện job: nhánh trong kho có ``push`` phủ không chạy
+    lặp, nhưng fork và nhánh trong kho nằm ngoài allowlist cần ``pull_request``.
+    Job chọn cổng phân biệt hoa thường để tên nhánh khớp đúng lọc push.
     """
-    text = (WORKFLOWS / "ci.yml").read_text(encoding="utf-8")
-    block = text[text.index("jobs:") :]
-    block = block[: block.index("steps:")]
-    assert "github.event_name != 'pull_request'" in block, (
-        "job phải bỏ qua pull_request của nhánh trong kho"
-    )
-    assert "head.repo.full_name != github.repository" in block, (
-        "vẫn phải chạy cho PR đến từ fork"
-    )
+    workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
+    route = workflow["jobs"]["route"]
+    assert route["outputs"]["run_checks"] == "${{ steps.route.outputs.run_checks }}"
+    for name in ("browser", "test"):
+        job = workflow["jobs"][name]
+        assert job["needs"] == "route"
+        assert job["if"] == "needs.route.outputs.run_checks == 'true'"
 
 
 def test_live_workflow_waits_for_the_draw_window_when_it_starts_early() -> None:
