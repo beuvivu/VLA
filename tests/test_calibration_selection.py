@@ -63,7 +63,7 @@ def test_an_already_calibrated_forecast_is_left_alone() -> None:
 
 
 def test_a_short_window_refuses_to_choose_and_says_so() -> None:
-    """Cửa sổ ngắn thì giữ hành vi cũ và nói rõ là KHÔNG chọn.
+    """Cửa sổ ngắn thì giữ phép đồng nhất và nói rõ là KHÔNG chọn.
 
     Cắt thêm lát giữ riêng khi dữ liệu đã ít sẽ làm hỏng chính phép khớp. Im
     lặng chọn bừa trong tình huống ấy còn tệ hơn không chọn.
@@ -74,7 +74,7 @@ def test_a_short_window_refuses_to_choose_and_says_so() -> None:
     params, audit = select_calibration("loto", probs, _labels(days, rng))
 
     assert audit.selected is False
-    assert audit.chosen == "parametric"
+    assert audit.chosen == "identity"
     assert audit.brier_by_candidate == {}
     assert "Không chọn được" in audit.describe()
     assert params.uses_isotonic is False

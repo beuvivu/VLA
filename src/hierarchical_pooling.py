@@ -80,6 +80,29 @@ class PoolingFit:
         )
 
 
+def _validate_counts(
+    counts: np.ndarray, n: np.ndarray, *, allow_zero: bool
+) -> np.ndarray:
+    """Kiểm miền nhị thức, giữ dung sai cộng số thực cho số đếm có trọng số."""
+    if n.shape != counts.shape:
+        raise ValueError("successes và trials phải cùng hình dạng")
+    if not np.all(np.isfinite(counts)) or not np.all(np.isfinite(n)):
+        raise ValueError("successes và trials phải hữu hạn")
+    if np.any(n < 0) or (not allow_zero and np.any(n == 0)):
+        raise ValueError("mọi đơn vị phải có ít nhất một phép thử" if not allow_zero
+                         else "số phép thử không được âm")
+    tolerance = 1e-9 * np.maximum(np.abs(n), 1.0)
+    if np.any(counts < -tolerance) or np.any(counts > n + tolerance):
+        raise ValueError("số lần thành công phải nằm trong [0, số phép thử]")
+    return np.clip(counts, 0.0, n)
+
+
+def _validate_prior_mean(m: np.ndarray) -> None:
+    """Tiên nghiệm phải là xác suất hợp lệ trước khi tính mô men."""
+    if not np.all(np.isfinite(m)) or np.any(m < 0.0) or np.any(m > 1.0):
+        raise ValueError("prior_mean phải hữu hạn và nằm trong [0, 1]")
+
+
 def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit:
     """Ước lượng độ co ngót bằng Bayes thực nghiệm (phương pháp mô men).
 
@@ -89,10 +112,16 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
       nhau — nhưng chỉ khác đúng bằng dao động nhị thức ``m(1-m)/n``.
     * Phần phương sai VƯỢT quá mức ấy mới là bằng chứng các đơn vị thật sự khác
       nhau. Không có phần vượt thì không có gì để phân biệt.
+    * Phần vượt bằng ``Var(p) · (1 - mean(1/n))``. Chia cho hệ số này mới
+      thu được phương sai tiềm ẩn; bỏ nó sẽ co quá mạnh khi ít phép thử.
 
     Khi phần vượt ``≤ 0``, hàm trả về co ngót hoàn toàn thay vì một κ âm vô
     nghĩa. Đây là trường hợp thường gặp nhất với dữ liệu ở đây, và nó là câu
     trả lời ĐÚNG chứ không phải trường hợp suy biến cần né.
+
+    Nếu caller dùng dữ liệu có trọng số, ``trials`` phải là cỡ mẫu hiệu dụng
+    và ``successes`` là tần suất có trọng số nhân cỡ mẫu ấy. Khi đó đây là
+    xấp xỉ khớp mô men, không phải likelihood Beta-Binomial chính xác.
     """
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n_units = counts.size
@@ -101,27 +130,10 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
     n = np.asarray(trials, dtype=float)
     if n.ndim == 0:
         n = np.full(n_units, float(n))
-    if n.shape != counts.shape:
-        raise ValueError("successes và trials phải cùng hình dạng")
-    if np.any(n <= 0):
-        raise ValueError("mọi đơn vị phải có ít nhất một phép thử")
-    # Dung sai cho sai số cộng dấu chấm động.
-    #
     # Với số lần thành công CÓ TRỌNG SỐ, ``counts`` và ``trials`` được cộng
     # theo hai thứ tự khác nhau, nên một đơn vị trúng MỌI kỳ có thể cho
-    # ``counts`` nhỉnh hơn ``trials`` ở chữ số cuối. Đó là đầu vào hoàn toàn
-    # hợp lệ, và từ chối nó là từ chối nhầm — phép kiểm chọn chu kỳ bán rã đã
-    # nổ đúng vì chuyện này.
-    tolerance = 1e-9 * np.maximum(np.abs(n), 1.0)
-    if np.any(counts < -tolerance) or np.any(counts > n + tolerance):
-        raise ValueError("số lần thành công phải nằm trong [0, số phép thử]")
-    # Kẹp này là phòng thủ và KHÔNG quan sát được từ bên ngoài — đã kiểm ngược:
-    # gỡ nó đi không phép kiểm nào đỏ. Lý do là chốt ``pooled <= 0 or pooled >= 1``
-    # phía dưới đã bắt cùng một biên, nên một giá trị lệch 1e-15 vẫn rơi vào
-    # nhánh co ngót hoàn toàn y hệt. Giữ lại để ``rates`` không mang giá trị vô
-    # nghĩa nếu ai đó thêm phép tính khác vào giữa; ghi rõ ở đây rằng phép kiểm
-    # không tách được dòng này.
-    counts = np.clip(counts, 0.0, n)
+    # ``counts`` nhỉnh hơn ``trials`` ở chữ số cuối; validation giữ dung sai.
+    counts = _validate_counts(counts, n, allow_zero=False)
 
     rates = counts / n
     # Trung bình CÓ TRỌNG SỐ theo số phép thử: đơn vị được thử nhiều hơn mang
@@ -131,7 +143,13 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
 
     observed_variance = float(np.var(rates, ddof=1))
     within = float(pooled * (1.0 - pooled) / harmonic_n)
-    between = observed_variance - within
+    finite_trial_factor = 1.0 - 1.0 / harmonic_n
+    # Mỗi đơn vị chỉ có một phép thử thì κ không nhận diện được. Số phép thử
+    # hiệu dụng nhỏ hơn một cũng không cung cấp mô men Beta-Binomial hợp lệ.
+    between = (
+        (observed_variance - within) / finite_trial_factor
+        if finite_trial_factor > 0.0 else 0.0
+    )
 
     if not np.isfinite(between) or between <= 0.0 or pooled <= 0.0 or pooled >= 1.0:
         kappa = MAX_PRIOR_STRENGTH
@@ -156,11 +174,30 @@ def fit_pooling(successes: np.ndarray, trials: np.ndarray | float) -> PoolingFit
 def pooled_posterior(
     successes: np.ndarray, trials: np.ndarray | float, fit: PoolingFit
 ) -> np.ndarray:
-    """Hậu nghiệm Beta-Binomial của từng đơn vị dưới độ co ngót đã học."""
+    """Hậu nghiệm Beta-Binomial; ô không có phép thử giữ nguyên tiên nghiệm."""
     counts = np.asarray(successes, dtype=float).reshape(-1)
     n = np.asarray(trials, dtype=float)
     if n.ndim == 0:
         n = np.full(counts.size, float(n))
+    counts = _validate_counts(counts, n, allow_zero=True)
+    metadata = (
+        fit.pooled_rate, fit.prior_strength, fit.shrinkage,
+        fit.effective_parameters, fit.between_variance, fit.within_variance,
+        fit.n_units, fit.n_trials,
+    )
+    if (
+        not np.all(np.isfinite(metadata))
+        or not 0.0 <= fit.pooled_rate <= 1.0
+        or fit.prior_strength <= 0.0
+        or not 0.0 <= fit.shrinkage <= 1.0
+        or fit.n_units < MIN_NUMBERS
+        or int(fit.n_units) != fit.n_units
+        or not 1.0 <= fit.effective_parameters <= fit.n_units
+        or fit.between_variance < 0.0
+        or fit.within_variance < 0.0
+        or fit.n_trials <= 0.0
+    ):
+        raise ValueError("metadata PoolingFit phải hữu hạn và đúng miền")
     a0 = fit.prior_strength * fit.pooled_rate
     b0 = fit.prior_strength * (1.0 - fit.pooled_rate)
     return (a0 + counts) / (a0 + b0 + n)
@@ -203,8 +240,9 @@ def fit_shrinkage_to_prior(
     m = m.reshape(-1)
     if n.shape != counts.shape or m.shape != counts.shape:
         raise ValueError("successes, trials và prior_mean phải cùng hình dạng")
-
-    usable = np.isfinite(counts) & np.isfinite(n) & np.isfinite(m) & (n > 0)
+    counts = _validate_counts(counts, n, allow_zero=True)
+    _validate_prior_mean(m)
+    usable = n > 0
     if int(usable.sum()) < MIN_NUMBERS:
         return MAX_PRIOR_STRENGTH
 
@@ -218,10 +256,12 @@ def fit_shrinkage_to_prior(
     within = float(np.mean(m * (1.0 - m) / n))
     between = deviation - within
 
-    centre = float(np.mean(m))
-    if not np.isfinite(between) or between <= 0.0:
+    # Mỗi tâm có phương sai Beta riêng mᵢ(1−mᵢ)/(κ+1), nên phải lấy trung
+    # bình TÍCH với hệ số hữu hạn, không lấy phương sai tại trung bình tâm.
+    latent_scale = float(np.mean(m * (1.0 - m) * (1.0 - 1.0 / n)))
+    if not np.isfinite(between) or between <= 0.0 or latent_scale <= 0.0:
         return MAX_PRIOR_STRENGTH
-    kappa = centre * (1.0 - centre) / between - 1.0
+    kappa = latent_scale / between - 1.0
     if not np.isfinite(kappa):
         return MAX_PRIOR_STRENGTH
     return float(np.clip(kappa, 1e-6, MAX_PRIOR_STRENGTH))
@@ -275,10 +315,12 @@ def fit_shrinkage_to_prior_rows(
     m = np.asarray(prior_mean, dtype=float).reshape(-1)
     if m.size != n_units:
         raise ValueError("prior_mean phải cùng số đơn vị với successes")
+    counts = _validate_counts(counts, n, allow_zero=True)
+    _validate_prior_mean(m)
     m = np.clip(m, 1e-9, 1.0 - 1e-9)
 
     out = np.full(n_rows, MAX_PRIOR_STRENGTH, dtype=float)
-    usable = np.isfinite(counts) & np.isfinite(n) & (n > 0)
+    usable = n > 0
     enough = usable.sum(axis=1) >= MIN_NUMBERS
     if not np.any(enough):
         return out
@@ -291,12 +333,13 @@ def fit_shrinkage_to_prior_rows(
     k_safe = np.maximum(k, 1)
 
     between = dev.sum(axis=1) / k_safe - within_cell.sum(axis=1) / k_safe
-    centre = np.where(
-        k > 0, (np.where(usable, m[None, :], 0.0)).sum(axis=1) / k_safe, 0.5
+    latent_cell = np.where(
+        usable, m[None, :] * (1.0 - m[None, :]) * (1.0 - 1.0 / safe_n), 0.0
     )
-    good = enough & np.isfinite(between) & (between > 0.0)
+    latent_scale = latent_cell.sum(axis=1) / k_safe
+    good = enough & np.isfinite(between) & (between > 0.0) & (latent_scale > 0.0)
     kappa = np.divide(
-        centre * (1.0 - centre),
+        latent_scale,
         np.where(good, between, 1.0),
         out=np.full(n_rows, np.inf),
         where=good,

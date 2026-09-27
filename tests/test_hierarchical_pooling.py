@@ -121,9 +121,9 @@ def test_unequal_trial_counts_are_handled_by_weighting() -> None:
 
     # Và số phép thử hiệu dụng phải là trung bình ĐIỀU HOÀ, không phải cộng.
     # Điều hoà ở đây là 3,99 còn cộng là 750,2 — chênh gần hai trăm lần, nên
-    # độ co ngót ra 0,176 thay vì 0,0011. Không khẳng định chỗ này thì một
+    # Sau hiệu chỉnh mẫu hữu hạn, độ co ngót ra 0,0883756. Không khẳng định thì một
     # đột biến đổi điều hoà thành cộng đi lọt.
-    assert fit.shrinkage > 0.1, (
+    assert fit.shrinkage == pytest.approx(0.0883755874474333), (
         f"co ngót {fit.shrinkage:.6f} quá thấp — nhiều khả năng đang dùng "
         "trung bình cộng của số phép thử"
     )

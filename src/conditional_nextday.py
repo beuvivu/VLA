@@ -17,7 +17,8 @@ from research_diagnostics import bh_fdr
 
 #: ``None`` nghĩa là HỌC độ co ngót theo từng con đề, thay cho hằng số 60.
 #:
-#: Đo trên chính bảng này (khớp 1 792 cặp đầu, chấm điểm 598 cặp đuôi mà phép
+#: Số đo của PHIÊN BẢN TRƯỚC hiệu chỉnh mô men mẫu nhỏ (khớp 1 792 cặp đầu,
+#: chấm điểm 598 cặp đuôi mà phép
 #: khớp chưa từng thấy):
 #:
 #:     κ = 60 (đặt tay)    Brier 0,18208903   log-loss 0,550738
@@ -33,6 +34,10 @@ from research_diagnostics import bh_fdr
 #: nhiễu, và hằng số 60 đã khiến nó trông như có nội dung. Giữ nguyên phép
 #: học chứ không chốt cứng co ngót hoàn toàn, để nếu về sau có tín hiệu thật
 #: thì nó tự nổi lên.
+#: Hiệu chỉnh mô men đúng không bảo đảm rủi ro dự báo thấp hơn mọi κ cố định.
+#: Khi mỗi hàng chỉ có vài kỳ và không có tín hiệu, κ học có thể thua κ=60;
+#: tests/test_conditional_nextday.py kiểm riêng co nhiễu và giữ tín hiệu tiêm
+#: trên nhiều seed, thay vì đòi thắng một baseline ở một mẫu ngẫu nhiên.
 LEARN_CONDITIONAL_PRIOR: float | None = None
 
 

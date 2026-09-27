@@ -217,7 +217,9 @@ test -s "$TMP_PRED/meta_report_de.json"
 python - <<PYMETA
 import joblib
 import math
-from meta_predictor import META_SCHEMA_VERSION
+import json
+from pathlib import Path
+from meta_predictor import COMPONENT_TIERS, META_SCHEMA_VERSION
 
 for mode in ("loto", "de"):
     path = "$TMP_MODELS/meta_" + mode + ".joblib"
@@ -225,6 +227,28 @@ for mode in ("loto", "de"):
     assert int(pack["schema_version"]) == META_SCHEMA_VERSION, path
     assert pack["mode"] == mode, path
     assert 0.0 <= float(pack["meta_trust"]) <= 0.40, pack["meta_trust"]
+    report = json.loads(Path("$TMP_PRED/meta_report_" + mode + ".json").read_text())
+    assert report["status"] == pack["status"], mode
+    if pack["status"] == "insufficient_history":
+        # Thiếu lịch sử là trạng thái được kiểm, không phải model đã học.
+        # Không nới sàn, bịa metric hoặc giữ lại challenger cũ đang bật.
+        assert pack["model"] is None, mode
+        assert pack["quality_pass"] is False and pack["meta_trust"] == 0.0, mode
+        assert report["quality_pass"] is False and report["meta_trust"] == 0.0, mode
+        minimum = pack["minimum_history_days"]
+        maturity = pack["tier_maturity_days"]
+        assert type(minimum) is int and minimum >= 100, (mode, minimum)
+        assert set(maturity) == {name for name, _, _ in COMPONENT_TIERS}, (mode, maturity)
+        assert all(type(n) is int and 0 <= n < minimum for n in maturity.values()), maturity
+        assert pack["history_days"] == max(maturity.values()), mode
+        assert report["tier_maturity_days"] == maturity, mode
+        assert pack.get("trained_through_target_date") is None, mode
+        assert pack.get("validation_logloss") is None, mode
+        assert pack.get("validation_brier") is None, mode
+        print("OK stacked ML disabled", mode, maturity, "minimum=", minimum)
+        continue
+    assert pack["status"] == "trained", (mode, pack["status"])
+    assert callable(getattr(pack["model"], "predict_proba", None)), mode
     for key in (
         "validation_logloss",
         "validation_brier",

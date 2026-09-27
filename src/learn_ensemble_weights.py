@@ -4,14 +4,14 @@ import argparse
 import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Final
 
 import numpy as np
 import pandas as pd
 
-from calibration import select_calibration
+from calibration import CalibrationAudit, CalibParams, select_calibration
 from ensemble_components import COMPONENT_KEYS, availability_from_history_day
 from ensemble_utils import (
     DEFAULT_ENSEMBLE_WEIGHTS,
@@ -19,6 +19,7 @@ from ensemble_utils import (
     EnsembleWeights,
     clip01,
     load_ensemble_weights,
+    floor_distribution,
     weight_grid,
 )
 
@@ -461,6 +462,71 @@ def learn_with_holdout(
     return (candidate if promoted else DEFAULT_ENSEMBLE_WEIGHTS), audit
 
 
+
+def learn_chronological_stack(
+    mode: str,
+    arrays: dict[str, np.ndarray],
+    y: np.ndarray,
+    day_list: Sequence[str],
+    half_life_draws: int,
+    incumbent: EnsembleWeights,
+) -> tuple[EnsembleWeights, PromotionAudit, CalibParams, CalibrationAudit, dict]:
+    """Tách chọn trọng số và hiệu chuẩn thành các lát thời gian không chồng.
+
+    60% kỳ đầu phục vụ cổng trọng số (có lát khớp/thẩm định riêng); 40%
+    kỳ cuối chỉ phục vụ hiệu chuẩn (lại tách khớp/chọn). Nhãn của hiệu
+    chuẩn tuyệt đối không được tham gia lựa chọn vector trọng số.
+    """
+    days = [str(day) for day in day_list]
+    if not days or any(b <= a for a, b in zip(days, days[1:], strict=False)):
+        raise ValueError("day_list phải tăng nghiêm ngặt và không rỗng")
+    if mode not in {"de", "loto"}:
+        raise ValueError("mode phải là de hoặc loto")
+    if any(date.fromisoformat(day).isoformat() != day for day in days):
+        raise ValueError("ngày phải có định dạng ISO YYYY-MM-DD")
+    y = np.asarray(y, dtype=float)
+    if y.shape != (len(days), 100):
+        raise ValueError("nhãn phải khớp số ngày và đủ 100 số")
+    if not np.isfinite(y).all() or not np.isin(y, [0, 1]).all():
+        raise ValueError("nhãn mọi lát phải hữu hạn và nhị phân")
+    if mode == "de" and not np.all(y.sum(axis=1) == 1):
+        raise ValueError("mỗi kỳ Đặc Biệt phải có đúng một nhãn dương")
+    arrays = {name: np.asarray(arrays[name], dtype=float) for name in COMPONENT_COLS}
+    for values in arrays.values():
+        if values.shape != (len(days), 100):
+            raise ValueError("thành phần phải khớp số ngày và đủ 100 số")
+        if not np.isfinite(values).all() or np.any((values < 0) | (values > 1)):
+            raise ValueError("xác suất mọi lát phải hữu hạn trong [0, 1]")
+    split = max(1, int(np.floor(len(days) * 0.6)))
+    weight_arrays = {name: values[:split] for name, values in arrays.items()}
+    weights, promotion = learn_with_holdout(
+        mode, weight_arrays, y[:split], days[:split], half_life_draws, incumbent
+    )
+    # Không giữ vector đương nhiệm đã có thể nhìn thấy nhãn ở lát cuối khi
+    # dữ liệu chưa đủ để kiểm định một vector mới.
+    if promotion.validation_days < MIN_VALIDATION_DAYS:
+        weights = DEFAULT_ENSEMBLE_WEIGHTS
+    tail = {name: values[split:] for name, values in arrays.items()}
+    raw = _blend(tail, _weight_vector(weights))
+    # Cùng phép biến đổi trước hiệu chuẩn với predict_nextday_2d.
+    probs = (np.vstack([floor_distribution(row) for row in raw])
+             if mode == "de" and len(raw) else clip01(raw, eps=1e-6))
+    params, calibration_audit = select_calibration(
+        mode, probs, y[split:], _day_weights(days[split:], half_life_draws)
+        if days[split:] else None,
+    )
+    boundaries = {
+        "weight_days": split,
+        "calibration_days": len(days) - split,
+        "weight_first_day": days[0],
+        "weight_last_day": days[split - 1],
+        "calibration_first_day": days[split] if split < len(days) else None,
+        "calibration_last_day": days[-1] if split < len(days) else None,
+        "disjoint": True,
+    }
+    return weights, promotion, params, calibration_audit, boundaries
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Learn five-component ensemble weights from labeled walk-forward history.")
     ap.add_argument("--mode", choices=["loto", "de"], required=True)
@@ -486,7 +552,7 @@ def main() -> None:
     arrays, y, day_list = _stack_days(df, days)
     out_dir = Path(args.out_dir)
     incumbent = load_ensemble_weights(out_dir.parent, args.mode)
-    final_w, audit = learn_with_holdout(
+    final_w, audit, calib, calib_audit, boundaries = learn_chronological_stack(
         args.mode, arrays, y, day_list, args.half_life_days, incumbent
     )
 
@@ -499,7 +565,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     weights_path = out_dir / f"weights_{args.mode}.json"
     payload = {
-        "schema_version": 7,
+        "schema_version": 8,
         "mode": args.mode,
         "learned_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "window_days": args.window_days,
@@ -508,6 +574,7 @@ def main() -> None:
         "component_availability_required": True,
         "metric": {"logloss": in_sample_ll, "brier": in_sample_br},
         "promotion": asdict(audit),
+        "chronological_split": boundaries,
         "weights": final_w.as_dict(),
     }
     weights_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -524,18 +591,17 @@ def main() -> None:
     # Hiệu chuẩn khớp trên CHÍNH trọng số sắp được xuất bản, nên phải dùng
     # `final_w` chứ không phải ứng viên: khi cổng từ chối đề bạt, khớp theo ứng
     # viên bị loại sẽ cho một phép hiệu chuẩn lệch khỏi vector đang chạy.
-    calib, calib_audit = select_calibration(
-        args.mode, _blend(arrays, _weight_vector(final_w)), y, w_day
-    )
+    # calib đã khớp trên lát sau cổng trọng số, không dùng lại nhãn chọn trọng số.
     calib_path = out_dir / f"calibration_{args.mode}.json"
     calib_payload = {
-        "schema_version": 7,
+        "schema_version": 8,
         "mode": args.mode,
         "learned_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "window_days": args.window_days,
         "half_life_days": args.half_life_days,
         "component_availability_required": True,
         "params": calib.as_dict(),
+        "chronological_split": boundaries,
         "selection": {
             "chosen": calib_audit.chosen,
             "selected": calib_audit.selected,

@@ -105,6 +105,18 @@ class DailyScore:
     actual_hits: int
 
 
+def validate_probabilities(probabilities: np.ndarray) -> np.ndarray:
+    """Kiểm vector xác suất trước khi trộn, chấm hay cập nhật trạng thái."""
+    values = np.asarray(probabilities, dtype=float)
+    if values.shape != (NUMBER_SPACE,):
+        raise ValueError(f"probabilities phải có dạng ({NUMBER_SPACE},)")
+    if not np.all(np.isfinite(values)):
+        raise ValueError("probabilities phải hữu hạn")
+    if np.any(values < 0.0) or np.any(values > 1.0):
+        raise ValueError("probabilities phải nằm trong [0, 1]")
+    return values
+
+
 def score_day(
     probabilities: np.ndarray,
     outcome: np.ndarray,
@@ -124,10 +136,12 @@ def score_day(
     Raises:
         ValueError: Khi hình dạng sai hoặc xác suất ngoài ``[0, 1]``.
     """
-    if probabilities.shape != (NUMBER_SPACE,) or outcome.shape != (NUMBER_SPACE,):
+    probabilities = validate_probabilities(probabilities)
+    outcome = np.asarray(outcome, dtype=float)
+    if outcome.shape != (NUMBER_SPACE,):
         raise ValueError(f"cần hai mảng dạng ({NUMBER_SPACE},)")
-    if np.any(probabilities < 0.0) or np.any(probabilities > 1.0):
-        raise ValueError("probabilities phải nằm trong [0, 1]")
+    if not np.all(np.isfinite(outcome)) or not np.all((outcome == 0) | (outcome == 1)):
+        raise ValueError("outcome phải hữu hạn và nhị phân 0/1")
 
     p = np.clip(probabilities, _EPSILON, 1.0 - _EPSILON)
     y = outcome.astype(float)
@@ -136,7 +150,7 @@ def score_day(
     order = np.argsort(-p)
     return DailyScore(
         logloss=float(-np.mean(y * np.log(p) + (1 - y) * np.log1p(-p))),
-        brier=float(np.mean((p - y) ** 2)),
+        brier=float(np.mean((probabilities - y) ** 2)),
         baseline_logloss=float(-np.mean(y * np.log(b) + (1 - y) * np.log1p(-b))),
         baseline_brier=float(np.mean((b - y) ** 2)),
         hit_rate_at={k: int(y[order[:k]].sum()) for k in k_values},

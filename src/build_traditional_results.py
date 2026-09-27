@@ -36,8 +36,8 @@ from web_security import json_for_html_script, security_meta_tags
 from page_output import write_page
 
 from shared_results import (
-    DATE_WIDTH, PRIZE_SPEC, PRIZE_ORDER, PRIZE_WIDTHS, PRIZE_LABELS,
-    PRIZE_COUNTS, PRIZE_FIELDS, PRIZE_DIGITS, ROW_WIDTH, encode_row,
+    DATE_WIDTH, PRIZE_SPEC as PRIZE_SPEC, PRIZE_ORDER as PRIZE_ORDER, PRIZE_WIDTHS as PRIZE_WIDTHS, PRIZE_LABELS as PRIZE_LABELS,
+    PRIZE_COUNTS as PRIZE_COUNTS, PRIZE_FIELDS as PRIZE_FIELDS, PRIZE_DIGITS as PRIZE_DIGITS, ROW_WIDTH, encode_row,
     decode_row, render_draw, shared_results_css, shared_results_script,
 )
 

@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from opinion_pool import PoolParams, apply_pool, fit_pool  # noqa: E402
-from statistical_signal import _eb_posterior, _exp_weights  # noqa: E402
+from statistical_signal import _eb_posterior, _exp_weights, _weighted_counts  # noqa: E402
 
 #: Trọng số ĐANG DÙNG ở tầng 2, đặt tay: 0,55·ewm + 0,25·weekday + 0,20·p90.
 PRODUCTION_WEIGHTS = np.array([0.55, 0.25, 0.20])
@@ -38,7 +38,8 @@ def _components(hit: np.ndarray, dates: pd.Series, t: int, half_life: int) -> np
     past = hit[:t]
     n = past.shape[0]
     w = _exp_weights(n, half_life)
-    ewm = _eb_posterior((past * w[:, None]).sum(axis=0), float(w.sum()), None)
+    counts, ess = _weighted_counts(past, w)
+    ewm = _eb_posterior(counts, ess, None)
 
     target_weekday = int(pd.Timestamp(dates.iloc[t]).weekday())
     mask = np.array([pd.Timestamp(d).weekday() == target_weekday for d in dates.iloc[:t]])

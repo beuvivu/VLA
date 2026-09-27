@@ -144,6 +144,8 @@ def _meta_prediction(
     p_a: np.ndarray,
     p_s: np.ndarray,
     linear_prob: np.ndarray,
+    *,
+    available: dict[str, bool] | None = None,
 ) -> tuple[np.ndarray, float, dict]:
     model_path = models_dir / f"meta_{mode}.joblib"
     fallback = {
@@ -181,6 +183,19 @@ def _meta_prediction(
     if str(pack.get("mode")) != mode:
         fallback["reason"] = "stacked model mode mismatch"
         return linear_prob.copy(), 0.0, fallback
+    if pack.get("status") == "insufficient_history":
+        # Trạng thái này không có estimator và không được trộn vào forecast.
+        fallback.update(
+            reason="insufficient_history",
+            history_days=pack.get("history_days"),
+            minimum_history_days=pack.get("minimum_history_days"),
+        )
+        return linear_prob.copy(), 0.0, fallback
+    if available is not None:
+        required = list(pack.get("component_cols") or [])
+        if not required or any(not available.get(str(column).removeprefix("p_"), False) for column in required):
+            fallback["reason"] = "stacked model required components are unavailable"
+            return linear_prob.copy(), 0.0, fallback
 
     if not np.isfinite(trust_value) or not 0.0 <= trust_value <= 0.40:
         fallback["reason"] = "stacked model trust is outside [0, 0.40]"
@@ -287,17 +302,6 @@ def main() -> None:
             "active": True,
             "reason": "calibration matches full five-component ensemble",
         }
-        p_meta, meta_trust, meta_info = _meta_prediction(
-            models_dir,
-            args.mode,
-            target,
-            vectors["ml"],
-            vectors["cau"],
-            vectors["stat"],
-            vectors["active"],
-            vectors["stable"],
-            p_linear,
-        )
     else:
         p_linear = p_linear_raw
         calibration_info = {
@@ -305,14 +309,21 @@ def main() -> None:
             "active": False,
             "reason": "bypassed because one or more ensemble components are unavailable",
         }
-        p_meta = p_linear.copy()
-        meta_trust = 0.0
-        meta_info = {
-            "active": False,
-            "trust": 0.0,
-            "quality_pass": False,
-            "reason": "stacked model requires all five ensemble components",
-        }
+
+    # Hiệu chuẩn phụ thuộc tổ hợp đủ năm thành phần; mô hình xếp chồng chỉ
+    # cần đúng các thành phần thuộc tầng mà nó đã được huấn luyện.
+    p_meta, meta_trust, meta_info = _meta_prediction(
+        models_dir,
+        args.mode,
+        target,
+        vectors["ml"],
+        vectors["cau"],
+        vectors["stat"],
+        vectors["active"],
+        vectors["stable"],
+        p_linear,
+        available=available,
+    )
 
     p = blend_predictions(args.mode, p_linear, p_meta, meta_trust)
 

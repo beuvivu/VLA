@@ -22,18 +22,26 @@ import pandas as pd
 from scipy.optimize import minimize
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from calibration import apply_calibration, select_calibration
+from calibration import CalibParams, apply_calibration
+from ensemble_components import (
+    COMPONENT_KEYS,
+    availability_from_history_day,
+    probability_component,
+    renormalize_available_weights,
+)
 from ensemble_utils import (
+    DEFAULT_ENSEMBLE_WEIGHTS,
     bernoulli_brier,
     bernoulli_logloss,
     categorical_brier,
     categorical_logloss,
     clip01,
+    floor_distribution,
     normalize_distribution,
 )
 from ml_models import PlattCalibratedClassifier
 
-META_SCHEMA_VERSION = 2
+META_SCHEMA_VERSION = 3
 COMPONENT_COLS = ["p_ml", "p_cau", "p_stat", "p_active", "p_stable"]
 
 # Richer tiers are preferred, but only when every selected component has genuine
@@ -44,6 +52,18 @@ COMPONENT_TIERS = [
     ("four_with_stat", ["p_ml", "p_stat", "p_active", "p_stable"], 0.25),
     ("core_three", ["p_ml", "p_active", "p_stable"], 0.15),
 ]
+
+
+class InsufficientMetaHistory(RuntimeError):
+    """Không tầng nào đủ kỳ hợp lệ; khác với lỗi đọc dữ liệu hoặc khớp model."""
+
+    def __init__(self, maturity: dict[str, int], minimum_days: int) -> None:
+        self.maturity = dict(maturity)
+        self.minimum_days = minimum_days
+        super().__init__(
+            "Stacked ML history is not mature for any supported tier: "
+            + ", ".join(f"{name}={count}" for name, count in maturity.items())
+        )
 
 
 @dataclass(frozen=True)
@@ -217,36 +237,36 @@ def current_component_frame(
 
 
 def _complete_days_for_components(
-    df: pd.DataFrame, component_cols: list[str], window_days: int
+    df: pd.DataFrame, component_cols: list[str], window_days: int, *, mode: str | None = None
 ) -> list[str]:
-    required = ["y", *component_cols]
+    required = ["target_date", "number", "y", *component_cols]
     if any(c not in df.columns for c in required):
         return []
-    # ``groupby(...).apply(lambda g: ...)`` builds a sub-frame per day.  Size and
-    # null counts are aggregations, so they can be computed in two vectorised
-    # passes instead.
-    sizes = df.groupby("target_date", sort=True).size()
-    complete = (
-        df[required].notna().all(axis=1).groupby(df["target_date"], sort=True).all()
-    )
-    ok = (sizes == 100) & complete.reindex(sizes.index).fillna(False)
-    days = sorted(str(day) for day, valid in ok.items() if bool(valid))
+    days: list[str] = []
+    for day, sub in df.groupby("target_date", sort=True):
+        labels = pd.to_numeric(sub["y"], errors="coerce").to_numpy(dtype=float)
+        if not np.isfinite(labels).all() or not np.isin(labels, [0.0, 1.0]).all():
+            continue
+        if mode == "de" and labels.sum() != 1.0:
+            continue
+        # Cùng hợp đồng với production: cờ thiếu, vector rỗng và số trùng
+        # không được biến thành lịch sử đủ trưởng thành cho tầng xếp chồng.
+        available = availability_from_history_day(sub, mode=mode)
+        if all(available.get(column.removeprefix("p_"), False) for column in component_cols):
+            days.append(str(day))
     return days if window_days <= 0 else days[-window_days:]
 
 
 def _select_component_tier(
-    df: pd.DataFrame, window_days: int, min_days: int
+    df: pd.DataFrame, window_days: int, min_days: int, *, mode: str | None = None
 ) -> tuple[str, list[str], float, list[str], dict[str, int]]:
     maturity: dict[str, int] = {}
     for name, cols, trust_cap in COMPONENT_TIERS:
-        days = _complete_days_for_components(df, cols, window_days)
+        days = _complete_days_for_components(df, cols, window_days, mode=mode)
         maturity[name] = len(days)
         if len(days) >= min_days:
             return name, list(cols), float(trust_cap), days, maturity
-    raise RuntimeError(
-        "Stacked ML history is not mature for any supported tier: "
-        + ", ".join(f"{name}={count}" for name, count in maturity.items())
-    )
+    raise InsufficientMetaHistory(maturity, min_days)
 
 
 def _four_way_split(
@@ -543,33 +563,49 @@ def _baseline_validation(
     component_cols: list[str],
     half_life_days: int,
 ) -> tuple[np.ndarray, dict[str, float], dict]:
-    pre = history[_date_strings(history["target_date"]).isin(pre_val_days)].copy()
-    arrays_pre = {
-        col: _matrix_by_day(pre, col, pre_val_days) for col in component_cols
-    }
-    y_pre = _matrix_by_day(pre, "y", pre_val_days)
-    day_w = _day_weights(pre_val_days, half_life_days)
-    weights = _optimize_linear_weights(
-        mode, arrays_pre, component_cols, y_pre, day_w
-    )
-    p_pre = _blend_arrays(arrays_pre, component_cols, weights)
-    if mode == "de":
-        p_pre = np.vstack([normalize_distribution(row) for row in p_pre])
-    # Bộ chọn có đo; xem ghi chú trong learn_ensemble_weights.py.
-    calib, _calib_audit = select_calibration(mode, p_pre, y_pre, day_w)
+    """Dựng lại policy tuyến tính từ dữ liệu trước lát kiểm.
 
-    val = history[_date_strings(history["target_date"]).isin(val_days)].copy()
-    arrays_val = {
-        col: _matrix_by_day(val, col, val_days) for col in component_cols
-    }
-    p_val_raw = _blend_arrays(arrays_val, component_cols, weights)
-    p_val = np.vstack(
-        [apply_calibration(mode, row, calib) for row in p_val_raw]
-    )
-    weight_dict = {
-        col: float(weights[i]) for i, col in enumerate(component_cols)
-    }
-    return p_val, weight_dict, calib.as_dict()
+    Dùng chung bộ học production, mặc định và phép đặt sàn. Trọng số và
+    hiệu chuẩn được đóng băng trước lát kiểm; availability vẫn xét riêng
+    từng ngày, gồm cả thành phần ngoài tầng của mô hình xếp chồng.
+    """
+    from learn_ensemble_weights import learn_chronological_stack
+
+    work = history.copy()
+    work["target_date"] = _date_strings(work["target_date"])
+    pre = work[work["target_date"].isin(pre_val_days)].copy()
+    complete = _complete_days_for_components(pre, COMPONENT_COLS, 180, mode=mode)
+    weights = DEFAULT_ENSEMBLE_WEIGHTS
+    calib = CalibParams(mode=mode)
+    if len(complete) >= 20:
+        pre = _normalize_components_by_day(
+            pre[pre["target_date"].isin(complete)], mode, COMPONENT_COLS
+        )
+        arrays = {column: _matrix_by_day(pre, column, complete) for column in COMPONENT_COLS}
+        weights, _, calib, _, _ = learn_chronological_stack(
+            mode, arrays, _matrix_by_day(pre, "y", complete), complete,
+            half_life_days, DEFAULT_ENSEMBLE_WEIGHTS,
+        )
+
+    by_day = {day: sub for day, sub in work.groupby("target_date", sort=False)}
+    predictions: list[np.ndarray] = []
+    for day in val_days:
+        sub = by_day[day]
+        available = availability_from_history_day(sub, mode=mode)
+        effective = renormalize_available_weights(weights, available).as_dict()
+        raw = np.zeros(100)
+        for key in COMPONENT_KEYS:
+            if available[key]:
+                component = probability_component(
+                    sub[["number", f"p_{key}"]].rename(columns={f"p_{key}": "prob"}),
+                    mode=mode,
+                )
+                raw += effective[f"w_{key}"] * component.prob
+        raw = floor_distribution(raw) if mode == "de" else clip01(raw, eps=1e-6)
+        predictions.append(apply_calibration(mode, raw, calib) if all(available.values()) else raw)
+    configured = weights.as_dict()
+    weight_dict = {f"p_{key}": configured[f"w_{key}"] for key in COMPONENT_KEYS}
+    return np.vstack(predictions), weight_dict, calib.as_dict()
 
 
 def _constant_validation(
@@ -608,8 +644,8 @@ def quality_gate(
     - tổ hợp tuyến tính hiệu chỉnh — thứ production sẽ dùng nếu không có nó;
     - dự báo hằng số — mốc không thông tin, không thể hỏng theo kiểu khớp quá.
 
-    Độ tin cậy tính từ kỹ năng NHỎ HƠN trong hai, để một đối thủ hỏng không
-    thổi phồng mức trộn.
+    Kỹ năng NHỎ HƠN được ghi lại để một đối thủ hỏng không thổi phồng báo
+    cáo. Cổng ngoài mẫu bổ sung xét độ bất định và mức trộn cố định theo tầng.
     """
 
     def skill(model: float, baseline: float) -> float:
@@ -632,6 +668,76 @@ def quality_gate(
     return result
 
 
+def holdout_quality_gate(
+    mode: str,
+    meta_prob: np.ndarray,
+    linear_prob: np.ndarray,
+    constant_prob: np.ndarray,
+    labels: np.ndarray,
+    trust: float,
+) -> dict[str, float | bool | int]:
+    """Chấm chính xác suất sẽ công bố, với mức trộn chốt trước lát kiểm.
+
+    Lấy mẫu theo khối ngày giữ nguyên phụ thuộc trong một kỳ và một phần
+    phụ thuộc giữa các kỳ liên tiếp. Khoảng tin cậy là bằng chứng của lát
+    kiểm hiện tại, không phải bảo đảm cho chuỗi tái kiểm định vô hạn.
+    """
+    y = np.asarray(labels, dtype=float)
+    if y.ndim != 2 or y.shape[1] != 100 or y.shape[0] == 0:
+        raise ValueError("Nhãn thẩm định phải có dạng (số ngày, 100)")
+    if not np.isfinite(y).all() or not np.isin(y, [0.0, 1.0]).all():
+        raise ValueError("Nhãn thẩm định phải hữu hạn và nhị phân")
+    if mode == "de" and not np.all(y.sum(axis=1) == 1.0):
+        raise ValueError("Mỗi ngày Đặc Biệt phải có đúng một số trúng")
+    matrices = [np.asarray(value, dtype=float) for value in (meta_prob, linear_prob, constant_prob)]
+    if any(value.shape != y.shape for value in matrices):
+        raise ValueError("Xác suất và nhãn thẩm định phải cùng hình dạng")
+    p_meta, p_linear, p_constant = [
+        np.vstack([_safe_prob(row, mode) for row in value]) for value in matrices
+    ]
+    blended = np.vstack([
+        blend_predictions(mode, linear, challenger, trust)
+        for linear, challenger in zip(p_linear, p_meta, strict=True)
+    ])
+    linear_metrics = _evaluate(mode, p_linear, y)
+    constant_metrics = _evaluate(mode, p_constant, y)
+    point_gate = quality_gate(mode, _evaluate(mode, p_meta, y), linear_metrics, constant_metrics)
+    blend_metrics = _evaluate(mode, blended, y)
+    blend_gate = quality_gate(mode, blend_metrics, linear_metrics, constant_metrics)
+    result: dict[str, float | bool | int] = dict(point_gate)
+    result.update({f"blend_{key}": value for key, value in blend_gate.items()})
+    result["blend_logloss"] = blend_metrics.logloss
+    result["blend_brier"] = blend_metrics.brier
+    result["holdout_days"] = len(y)
+
+    def daily_loss(prob: np.ndarray) -> np.ndarray:
+        if mode == "de":
+            hit = prob[np.arange(len(y)), np.argmax(y, axis=1)]
+            return -np.log(np.clip(hit, 1e-12, 1.0))
+        p = np.clip(prob, 1e-6, 1.0 - 1e-6)
+        return -(y * np.log(p) + (1.0 - y) * np.log1p(-p)).mean(axis=1)
+
+    n_days = len(y)
+    block_size = max(1, int(np.ceil(n_days ** (1.0 / 3.0))))
+    rng = np.random.default_rng(20260927)
+    starts = rng.integers(0, n_days, size=(2000, int(np.ceil(n_days / block_size))))
+    indices = ((starts[..., None] + np.arange(block_size)) % n_days).reshape(2000, -1)[:, :n_days]
+    loss = daily_loss(blended)
+    uncertainty_pass = n_days >= 20
+    for name, baseline in (("linear", p_linear), ("constant", p_constant)):
+        difference = loss - daily_loss(baseline)
+        low, high = np.quantile(difference[indices].mean(axis=1), [0.025, 0.975])
+        result[f"{name}_delta_ci95_low"] = float(low)
+        result[f"{name}_delta_ci95_high"] = float(high)
+        uncertainty_pass = uncertainty_pass and float(high) < 0.0
+    result["bootstrap_block_days"] = block_size
+    result["uncertainty_pass"] = bool(uncertainty_pass)
+    result["quality_pass"] = bool(
+        point_gate["quality_pass"] and blend_gate["quality_pass"] and uncertainty_pass
+    )
+    return result
+
+
 def train_meta(
     mode: str,
     history_path: Path,
@@ -642,12 +748,55 @@ def train_meta(
     min_days: int = 100,
     half_life_days: int = 90,
 ) -> dict:
+    if mode not in {"loto", "de"}:
+        raise ValueError("Mode phải là loto hoặc de")
     if not history_path.exists():
         raise RuntimeError(f"History not found: {history_path}")
     history = pd.read_csv(history_path)
-    tier, component_cols, trust_cap, days, maturity = _select_component_tier(
-        history, window_days, min_days
-    )
+    required = {"target_date", "number", "y", "p_ml", "p_active", "p_stable"}
+    if missing := required.difference(history.columns):
+        raise ValueError(f"Lịch sử stacking thiếu cột: {sorted(missing)}")
+    _date_strings(history["target_date"])
+    # Bốn lát train/calibrate/select/validate cần ít nhất 100 kỳ ngay cả
+    # khi tham số CLI thấp hơn; không nới sàn để làm kiểm phát hành xanh.
+    minimum_days = max(100, min_days)
+    try:
+        tier, component_cols, trust_cap, days, maturity = _select_component_tier(
+            history, window_days, minimum_days, mode=mode
+        )
+    except InsufficientMetaHistory as exc:
+        pack = {
+            "schema_version": META_SCHEMA_VERSION,
+            "mode": mode,
+            "status": "insufficient_history",
+            "model": None,
+            "features": [],
+            "component_tier": None,
+            "component_cols": [],
+            "quality_pass": False,
+            "meta_trust": 0.0,
+            "history_days": max(exc.maturity.values(), default=0),
+            "minimum_history_days": exc.minimum_days,
+            "tier_maturity_days": exc.maturity,
+            "trained_through_target_date": None,
+            "evaluated_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+            "reason": str(exc),
+        }
+        # Ghi đè pack cũ bằng trạng thái vô hiệu hóa: không giữ một model
+        # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
+        models_dir.mkdir(parents=True, exist_ok=True)
+        report_dir.mkdir(parents=True, exist_ok=True)
+        joblib.dump(pack, models_dir / f"meta_{mode}.joblib")
+        report = {key: value for key, value in pack.items() if key != "model"}
+        (report_dir / f"meta_report_{mode}.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
+        )
+        pd.DataFrame([{
+            key: pack[key]
+            for key in ("mode", "status", "history_days", "minimum_history_days", "quality_pass", "meta_trust")
+        }]).to_csv(report_dir / f"meta_report_{mode}.csv", index=False)
+        print(f"[INFO] stacked ML {mode}: insufficient_history; {pack['history_days']}/{minimum_days} kỳ; giữ linear")
+        return pack
     history = history[_date_strings(history["target_date"]).isin(days)].copy()
     history = _normalize_components_by_day(history, mode, component_cols)
     train_days, cal_days, select_days, val_days = _four_way_split(days)
@@ -714,24 +863,23 @@ def train_meta(
         half_life_days,
     )
     baseline_metrics = _evaluate(mode, p_baseline, y_matrix)
-    constant_metrics = _evaluate(
-        mode, _constant_validation(history, pre_val_days, val_days, mode), y_matrix
-    )
+    p_constant = _constant_validation(history, pre_val_days, val_days, mode)
+    constant_metrics = _evaluate(mode, p_constant, y_matrix)
 
-    gate = quality_gate(mode, meta_metrics, baseline_metrics, constant_metrics)
+    # Mức trộn cố định theo tầng được khai trước khi nhìn nhãn thẩm định.
+    # Không tăng trust theo chính biên thắng trên lát quyết định đề bạt.
+    gate = holdout_quality_gate(mode, p_meta, p_baseline, p_constant, y_matrix, trust_cap)
     logloss_skill = float(gate["logloss_skill"])
     brier_skill = float(gate["brier_skill"])
     quality_pass = bool(gate["quality_pass"])
 
-    meta_trust = 0.0
-    if quality_pass:
-        meta_trust = float(
-            np.clip(0.05 + 6.0 * float(gate["gate_skill"]), 0.05, trust_cap)
-        )
+    meta_trust = trust_cap if quality_pass else 0.0
 
     pack = {
         "schema_version": META_SCHEMA_VERSION,
         "mode": mode,
+        "status": "trained",
+        "minimum_history_days": minimum_days,
         "model": best_model,
         "features": feature_cols,
         "component_tier": tier,
@@ -741,6 +889,7 @@ def train_meta(
         "selected_candidate": dict(best_cfg),
         "quality_pass": quality_pass,
         "meta_trust": meta_trust,
+        "holdout_gate": gate,
         "validation_logloss": meta_metrics.logloss,
         "validation_brier": meta_metrics.brier,
         "baseline_validation_logloss": baseline_metrics.logloss,
@@ -837,12 +986,29 @@ def predict_meta(
     expected_features = meta_feature_columns(component_cols)
     if list(pack.get("features") or []) != expected_features:
         raise ValueError("Stacked-ML feature allowlist mismatch")
+    # Mốc này bao gồm mọi nhãn dùng cho fit, chọn và duyệt mô hình. Ngày
+    # đích phải đứng sau cả lát thẩm định, kể cả khi chạy lại một ngày cũ.
+    try:
+        if not isinstance(pack.get("trained_through_target_date"), str) or not isinstance(target_date, str):
+            raise ValueError("mốc ngày phải là chuỗi ngày có nguồn gốc")
+        last_day = pd.Timestamp(pack.get("trained_through_target_date"))
+        target_day = pd.Timestamp(target_date)
+        if pd.isna(last_day) or pd.isna(target_day) or last_day.date() >= target_day.date():
+            raise ValueError("ngày huấn luyện phải đứng trước ngày dự đoán")
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Mốc ngày huấn luyện hoặc ngày đích không hợp lệ") from exc
     model = pack.get("model")
     if not callable(getattr(model, "predict_proba", None)):
         raise ValueError("Stacked-ML model is missing predict_proba")
     frame = current_component_frame(
         target_date, p_ml, p_cau, p_stat, p_active, p_stable
     )
+    for column in component_cols:
+        component = probability_component(
+            frame[["number", column]].rename(columns={column: "prob"}), mode=mode
+        )
+        if not component.available:
+            raise ValueError(f"Thành phần {column} không hợp lệ: {component.reason}")
     features = build_meta_features(frame, mode, component_cols)
     X = features[expected_features].astype(np.float32).to_numpy()
     prediction = np.asarray(model.predict_proba(X), dtype=np.float64)

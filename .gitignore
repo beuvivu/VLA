@@ -48,3 +48,7 @@ data/advanced/*_day.csv
 
 # Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
 tests/frontend/node_modules/
+
+# Khoá tiến trình và tệp tạm của sổ học trực tuyến.
+data/online/*.lock
+data/online/.*
