@@ -902,8 +902,10 @@ background:var(--ui-warn-soft);color:var(--ui-ink);font-size:13.5px}
     host.append(head);
     renderPrediction(host, params, path, a, b);
 
-    const maxDays = Math.max(1, Math.min(prepared.length - 1, Math.max(path.streak + 1, 7, params.days)));
-    let chosen = params.days || Math.max(1, path.streak);
+    const MIN_DAYS = 7;
+    const maxDays = Math.max(1, Math.min(prepared.length - 1, Math.max(path.streak + 1, MIN_DAYS, params.days)));
+
+    let chosen = params.days || Math.max(MIN_DAYS, path.streak);
     chosen = Math.min(chosen, maxDays);
     const picker = el("div", "app-bridge-days-picker");
     picker.setAttribute("role", "group");

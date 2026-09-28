@@ -384,8 +384,10 @@
 
     // Tối thiểu 7 kỳ để thấy cả những kỳ cầu trượt trước khi chạy — cầu nào cũng
     // "đẹp" nếu chỉ nhìn đúng đoạn nó đang trúng.
-    const maxDays = Math.max(1, Math.min(prepared.length - 1, Math.max(path.streak + 1, 7, params.days)));
-    let chosen = params.days || Math.max(1, path.streak);
+    const MIN_DAYS = 7;
+    const maxDays = Math.max(1, Math.min(prepared.length - 1, Math.max(path.streak + 1, MIN_DAYS, params.days)));
+    // Mặc định cũng tối thiểu 7 kỳ (hoặc cả đoạn cầu nếu dài hơn); `days` tường minh thì theo đúng nó.
+    let chosen = params.days || Math.max(MIN_DAYS, path.streak);
     chosen = Math.min(chosen, maxDays);
     const picker = el("div", "app-bridge-days-picker");
     picker.setAttribute("role", "group");

@@ -83,12 +83,15 @@ test('đường cầu 6x22 tô chữ số nguồn, tô số về theo cầu kỳ
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '68,86');
   assert.match(d.querySelector('.app-bridge-run').textContent, /Đã chạy 3 kỳ/);
   const days = d.querySelectorAll('.app-bridge-days .app-bridge-day');
-  assert.deepEqual(texts(d.querySelectorAll('.app-bridge-days h2')).map((s) => s.slice(-10)),
+  // Mặc định ít nhất 7 kỳ kết quả (8 bảng) để thấy cả những kỳ cầu trượt trước khi chạy.
+  assert.equal(days.length, 8);
+  assert.deepEqual(texts(d.querySelectorAll('.app-bridge-days h2')).map((s) => s.slice(-10)).slice(0, 4),
     ['28/09/2026', '27/09/2026', '26/09/2026', '25/09/2026']);
+  assert.equal(d.querySelector('.app-bridge-day-button[aria-pressed="true"]').value, '7');
   assert.deepEqual(texts(days[0].querySelectorAll('.app-bridge-src')), ['6', '8']);
   assert.deepEqual(texts(days[0].querySelectorAll('.app-bridge-hit')), ['46', '46']);
   assert.deepEqual(texts(days[1].querySelectorAll('.app-bridge-hit')), ['45', '54']);
-  assert.deepEqual(texts(d.querySelectorAll('.app-bridge-days .tr-badge')), ['Trúng', 'Trúng', 'Trúng', 'Trượt']);
+  assert.deepEqual(texts(d.querySelectorAll('.app-bridge-days .tr-badge')).slice(0, 4), ['Trúng', 'Trúng', 'Trúng', 'Trượt']);
   d.querySelector('.app-bridge-day-button[value="1"]').click();
   assert.equal(d.querySelectorAll('.app-bridge-days .app-bridge-day').length, 2);
   assert.equal(d.querySelector('.app-bridge-day-button[value="1"]').getAttribute('aria-pressed'), 'true');
