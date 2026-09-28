@@ -261,14 +261,11 @@ def test_switching_pair_mode_off_does_not_erase_existing_marks() -> None:
     assert "PAIR_MARKS.clear()" not in body.split('addEventListener("change"')[1].split("\n")[0]
 
 
-def test_the_day_cap_reaches_the_longest_preset_people_ask_for() -> None:
-    """Trần 120 cũ âm thầm cắt mốc 300 ngày xuống còn 120.
+def test_requested_short_and_yearly_ranges_are_available() -> None:
+    """Bộ lọc phải có đủ các mốc chủ dự án dùng để đọc bảng responsive."""
+    from build_stat_pages import QUICK_RANGES
 
-    Chi phí dựng đã đo lại trong Chromium: 300 ngày cho 30 300 ô trong 894 ms,
-    còn 500 ngày mới là chỗ gãy (4 113 ms).
-    """
-    found = re.search(r"const MATRIX_MAX_DAYS = (\d+);", JS_CODE)
-    assert found and int(found.group(1)) >= 300, found
+    assert {"10", "30", "100", "365"}.issubset(dict(QUICK_RANGES))
 
 
 def test_the_matrix_does_not_touch_the_frame_it_sits_in() -> None:

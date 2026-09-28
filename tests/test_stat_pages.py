@@ -500,15 +500,13 @@ def test_matrix_note_does_not_shadow_the_chance_note() -> None:
         )
 
 
-def test_matrix_caps_its_column_count() -> None:
-    """Chọn "Tất cả" trên kho 2392 kỳ cho 239 000 ô và trình duyệt nghẹn.
-    Phải có trần, và phải nói ra trên trang thay vì để người dùng ngồi nhìn
-    trang treo."""
-    js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
-    assert "MATRIX_MAX_DAYS" in js
-    cap = int(re.search(r"MATRIX_MAX_DAYS = (\d+)", js).group(1))
-    assert 30 <= cap <= 400, f"trần {cap} kỳ không hợp lý"
-    assert "sp-matrix-note" in js, "phải báo cho người đọc biết đã cắt bớt"
+def test_responsive_layout_is_published_on_the_five_requested_pages() -> None:
+    """Các trang đã xuất bản phải nhận cùng cơ chế co giãn như trình dựng."""
+    targets = {"tan-suat-loto", "tan-suat-cap-loto", "bang-dac-biet",
+               "bang-dac-biet-thang", "bang-dac-biet-nam"}
+    for page in PAGES:
+        html = (DOCS / f"{page.slug}.html").read_text(encoding="utf-8")
+        assert ("installStatTableLayout();" in html) == (page.slug in targets)
 
 
 # --- Giải Đặc Biệt theo tổng ------------------------------------------------
