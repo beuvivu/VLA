@@ -126,11 +126,13 @@ vùng 0 theo hướng nào cũng vậy. Số đo 31-08 → 27-09-2026 (28 kỳ �
 
 | | LOTO mô hình | LOTO nền | Đặc Biệt mô hình | Đặc Biệt nền |
 |---|---:|---:|---:|---:|
-| Log-loss | 0,545292 | 0,545267 | 0,0559966 | 0,0560015 |
-| Brier | 0,179791 | 0,179782 | 0,00989997 | 0,00990000 |
-| MAE | 0,36075 | 0,36096 | 0,019800 | 0,019800 |
+| Log-loss | 0,545292 | 0,545267 | 4,604675 | 4,605170 |
+| Brier | 0,179791 | 0,179782 | 0,989997 | 0,990000 |
+| MAE | 0,36075 | 0,36096 | 1,979977 | 1,980000 |
 | Trạng thái bộ theo dõi (30 kỳ, z = 3) | vùng 0 | | vùng 0 | |
 
+LOTO chấm như 100 biến nhị phân; Đặc Biệt chấm như MỘT kết quả trong 100 lớp
+(−log q con về, Brier và MAE cộng qua 100 lớp), cùng thang với trang Chất lượng mô hình.
 MAE được liệt kê vì được yêu cầu, nhưng **không dùng để quyết định**: MAE không phải
 quy tắc chấm đúng đắn (nó thưởng dự báo co về 0/1), nên chỗ "mô hình hơn nền" ở cột
 MAE LOTO là ảo; log-loss và Brier — hai quy tắc đúng đắn — cho thấy mô hình LOTO kém
@@ -212,7 +214,7 @@ Lý do, đã đo chứ không suy ra:
 2. Mọi tín hiệu tốt nhất chọn trên 2015–2023 đều thoái lui về nền ngoài mẫu
    (6/6 phép kiểm, không phép nào có ý nghĩa).
 3. Vector đã công bố không khác dự báo hằng số (28 kỳ): LOTO kém nền 0,005 % log-loss,
-   Đặc Biệt hơn nền 0,009 % — cả hai nằm trong vùng 0 của bộ theo dõi.
+   Đặc Biệt hơn nền 0,011 % — cả hai nằm trong vùng 0 của bộ theo dõi.
 
 Một hệ thống trả "High 90 %" cho kỳ quay này sẽ là hệ thống **đang báo động giả**:
 ví dụ Bayes ngây thơ ở đây sẽ đạt "99 %" trên 60 % số lịch sử hoàn toàn ngẫu nhiên.

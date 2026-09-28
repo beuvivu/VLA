@@ -579,39 +579,45 @@ def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str], 
     return str(pred["date"]), lo, de, "home"
 
 
-def _feedback(data_dir: Path) -> dict:
+def forecast_scores(mode: str, probs: np.ndarray, labels: np.ndarray) -> dict:
+    """Log-loss, Brier và MAE của một dãy dự báo, theo đúng quy ước của kho.
+
+    Đặc Biệt là MỘT kết quả trong 100 lớp: log-loss −log(q con về), Brier và
+    MAE cộng qua 100 lớp — cùng thang với trang Chất lượng mô hình và
+    ``skill_monitor`` (review PR #104). LOTO là 100 biến nhị phân: trung bình
+    theo từng ô. Dùng chung cho trang lẫn script nghiên cứu để hai nơi không
+    thể lệch nhau.
+    """
+    eps = 1e-12
+    if mode == "de":
+        return {
+            "logloss": float(-np.log((probs * labels).sum(axis=1) + eps).mean()),
+            "brier": float(((probs - labels) ** 2).sum(axis=1).mean()),
+            "mae": float(np.abs(probs - labels).sum(axis=1).mean()),
+        }
+    return {
+        "logloss": float(-(labels * np.log(probs + eps)
+                           + (1 - labels) * np.log(1 - probs + eps)).mean()),
+        "brier": float(((probs - labels) ** 2).mean()),
+        "mae": float(np.abs(probs - labels).mean()),
+    }
+
+
+def published_feedback(data_dir: Path) -> dict:
     """Vòng phản hồi: vector ĐÃ công bố so với kết quả quay thật."""
     import skill_monitor as sm
 
     out = {"monitor": [check.as_dict() for check in sm.evaluate(data_dir)], "modes": {}}
-    eps = 1e-12
     for mode in sm.MODES:
         days, probs, labels = sm.published_evaluation(data_dir, mode)
         if not len(days):
             continue
-        base = np.full_like(probs, sm.baseline_rate(mode))
-        # Đặc Biệt là MỘT kết quả trong 100 lớp: log-loss −log(q con về) và Brier
-        # cộng qua 100 lớp, đúng thang của trang Chất lượng mô hình và
-        # skill_monitor (review PR #104). LOTO là 100 biến nhị phân.
-        if mode == "de":
-
-            def logloss(q, y=labels):
-                return float(-np.log((q * y).sum(axis=1) + eps).mean())
-
-            def brier(q, y=labels):
-                return float(((q - y) ** 2).sum(axis=1).mean())
-        else:
-
-            def logloss(q, y=labels):
-                return float(-(y * np.log(q + eps) + (1 - y) * np.log(1 - q + eps)).mean())
-
-            def brier(q, y=labels):
-                return float(((q - y) ** 2).mean())
-
+        model = forecast_scores(mode, probs, labels)
+        base = forecast_scores(mode, np.full_like(probs, sm.baseline_rate(mode)), labels)
         out["modes"][mode] = {
             "days": len(days), "first": days[0], "last": days[-1],
-            "logloss_model": logloss(probs), "logloss_base": logloss(base),
-            "brier_model": brier(probs), "brier_base": brier(base),
+            **{f"{k}_model": v for k, v in model.items()},
+            **{f"{k}_base": v for k, v in base.items()},
         }
     return out
 
@@ -732,7 +738,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         "matrix": matrix,
         "risk": risk,
         "intervention": intervention,
-        "feedback": _feedback(data_dir),
+        "feedback": published_feedback(data_dir),
     }
 
 

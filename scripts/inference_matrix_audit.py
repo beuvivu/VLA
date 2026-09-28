@@ -26,6 +26,7 @@ from confidence_matrix import (  # noqa: E402
     NAMES,
     SPLIT,
     digits,
+    forecast_scores,
     hits_matrix,
     out_of_sample,
     simulate_null,
@@ -36,11 +37,6 @@ from confidence_matrix import (  # noqa: E402
 
 def load(data_dir: Path) -> pd.DataFrame:
     return pd.read_csv(data_dir / "xsmb-2-digits.csv")
-
-
-def _logloss(q: np.ndarray, y: np.ndarray) -> float:
-    eps = 1e-12
-    return float(-(y * np.log(q + eps) + (1 - y) * np.log(1 - q + eps)).mean())
 
 
 def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
@@ -284,17 +280,15 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         days, P, Y = sm.published_evaluation(data_dir, mode)
         if not len(days):
             continue
-        base = np.full_like(P, sm.baseline_rate(mode))
+        # Cùng quy ước chấm với trang production (Đặc Biệt theo 100 lớp).
+        model = forecast_scores(mode, P, Y)
+        base = forecast_scores(mode, np.full_like(P, sm.baseline_rate(mode)), Y)
         fb[mode] = {
             "days": len(days),
             "first": days[0],
             "last": days[-1],
-            "mae_model": float(np.abs(P - Y).mean()),
-            "mae_base": float(np.abs(base - Y).mean()),
-            "brier_model": float(((P - Y) ** 2).mean()),
-            "brier_base": float(((base - Y) ** 2).mean()),
-            "logloss_model": _logloss(P, Y),
-            "logloss_base": _logloss(base, Y),
+            **{f"{k}_model": v for k, v in model.items()},
+            **{f"{k}_base": v for k, v in base.items()},
             "prob_std_mean": float(P.std(axis=1).mean()),
         }
         d2, sk = sm.graded_series(data_dir, mode)

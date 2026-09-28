@@ -332,7 +332,7 @@ def test_special_feedback_is_scored_as_one_outcome_in_a_hundred(tmp_path: Path) 
         for mode, prob in (("de", 0.01), ("loto", cm.BASE)):
             pd.DataFrame({"number": range(100), "prob": prob}).to_csv(
                 tmp_path / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False)
-    de = cm._feedback(tmp_path)["modes"]["de"]
+    de = cm.published_feedback(tmp_path)["modes"]["de"]
     assert de["logloss_base"] == pytest.approx(np.log(100), rel=1e-6)
     assert de["brier_base"] == pytest.approx(0.99)
     assert de["logloss_model"] == pytest.approx(de["logloss_base"])
