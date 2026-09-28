@@ -26,6 +26,7 @@ import pandas as pd
 
 from bridges import DigitTensor
 from features import FeatureContext, SpecialSetExtractor, default_registry
+from pick_diversity import MAX_PER_TAIL, diversified_order
 from modeling import (
     DEFAULT_GAN_THRESHOLD_DAYS,
     DeModel,
@@ -119,7 +120,9 @@ def build_bundle(tensor: DigitTensor, *, warmup_days: int, research_dir: Path) -
 
         if mode == "loto":
             explainer = Explainer.from_training(model, data.features)
-            order = np.lexsort((np.arange(100), -probabilities))[:10]
+            # Tối đa MAX_PER_TAIL con cùng đuôi: mười con cùng đuôi gần như
+            # là MỘT lần đặt (28-09-2026: cả 10 con đuôi 4).
+            order = diversified_order(probabilities, 10)
             reasons = {int(n): explainer.group_shares(matrix, int(n)) for n in order}
             picks = build_picks(
                 probabilities,
@@ -128,6 +131,7 @@ def build_bundle(tensor: DigitTensor, *, warmup_days: int, research_dir: Path) -
                 gan_threshold=gan.threshold_days,
                 reasons=reasons,
                 top_k=10,
+                max_per_tail=MAX_PER_TAIL,
             )
         else:
             special = _special_axes(ctx, probabilities)

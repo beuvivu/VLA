@@ -75,9 +75,19 @@ def build_picks(
     gan_threshold: int,
     reasons: dict[int, dict[str, float]],
     top_k: int = 10,
+    max_per_tail: int | None = None,
 ) -> list[NumberPick]:
-    """Lấy ``top_k`` con có xác suất cao nhất, kèm bối cảnh đầy đủ."""
-    order = np.lexsort((np.arange(len(probabilities)), -probabilities))[:top_k]
+    """Lấy ``top_k`` con có xác suất cao nhất, kèm bối cảnh đầy đủ.
+
+    ``max_per_tail`` giới hạn số con cùng đuôi (xem ``pick_diversity``);
+    None giữ thứ tự xác suất thuần.
+    """
+    if max_per_tail is None:
+        order = np.lexsort((np.arange(len(probabilities)), -probabilities))[:top_k]
+    else:
+        from pick_diversity import diversified_order
+
+        order = diversified_order(probabilities, top_k, max_per_tail=max_per_tail)
     return [
         NumberPick(
             number=normalize_two_digit(int(n)),

@@ -2963,5 +2963,29 @@
     "mae_base": 1.9799999999999993
    }
   }
+ },
+ "hot_tail": {
+  "registered_on": "2026-09-28",
+  "first_target": "2026-09-29",
+  "window": 7,
+  "min_draws": 180,
+  "alpha": 0.01,
+  "z_critical": 2.326,
+  "draws": 0,
+  "first": null,
+  "last": null,
+  "mean_diff": 0.0,
+  "stderr": 0.0,
+  "z": 0.0,
+  "state": "dang_thu",
+  "retrospective": {
+   "draws": 4212,
+   "last_draw": "2026-09-28",
+   "effect_pp": 0.456,
+   "z": 2.43,
+   "p_two_sided_mc": 0.011,
+   "control_head_effect_pp": 0.135,
+   "control_head_p": 0.475
+  }
  }
 }

@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from calibration import CalibParams, apply_calibration
+from pick_diversity import diversified_order
 from ensemble_components import COMPONENT_KEYS, probability_component, renormalize_available_weights
 from ensemble_utils import (
     EnsembleWeights,
@@ -259,6 +260,27 @@ def _blend_linear(vectors: dict[str, np.ndarray], weights: EnsembleWeights) -> n
     )
 
 
+
+def top_frames(df_all: pd.DataFrame, mode: str) -> dict[int, pd.DataFrame]:
+    """Các danh sách top-4/8/10 từ bảng đã xếp theo xác suất giảm dần.
+
+    LOTO: tối đa ``pick_diversity.MAX_PER_TAIL`` con cùng đuôi — ngày
+    28-09-2026 cả 10 con đuôi 4, gần như MỘT lần đặt. Đặc Biệt giữ thứ tự
+    thuần. Tệp ``*_all`` không đi qua hàm này nên giữ nguyên.
+    """
+    out = {}
+    # diversified_order lấy đuôi từ CHỈ SỐ, nên vector phải xếp theo con số
+    # 00..99 — không theo vị trí dòng của bảng đã sắp xếp.
+    by_number = df_all.set_index(df_all["number"].astype(int))["prob"]
+    probs = by_number.reindex(range(100)).to_numpy(dtype=float)
+    for n in (4, 8, 10):
+        if mode == "loto":
+            chosen = set(diversified_order(probs, n))
+            out[n] = df_all[df_all["number"].astype(int).isin(chosen)]
+        else:
+            out[n] = df_all.head(n)
+    return out
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         description=(
@@ -364,8 +386,8 @@ def main() -> None:
         out_dir / f"predict_next_{args.mode}_all_{target.isoformat()}.csv",
         index=False,
     )
-    for n in (4, 8, 10):
-        df_all.head(n).to_csv(
+    for n, top in top_frames(df_all, args.mode).items():
+        top.to_csv(
             out_dir / f"predict_next_{args.mode}_top{n}_{target.isoformat()}.csv",
             index=False,
         )
