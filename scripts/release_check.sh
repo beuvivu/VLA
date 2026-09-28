@@ -437,6 +437,7 @@ required=(
   docs/statistics.html
   docs/dashboard.html
   docs/model-quality.html
+  docs/do-tin-cay.html
   docs/so-ket-qua-truyen-thong.html
 )
 for path in "${required[@]}"; do

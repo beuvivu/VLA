@@ -38,6 +38,7 @@ BIEU_TUONG: Final[dict[str, str]] = {
     "top-loto": "list-ordered",
     "top-de": "award",
     "chat-luong": "shield-check",
+    "tin-cay": "sigma",
     "theo-ngay": "calendar-days",
     "theo-thang": "calendar-range",
     "theo-nam": "calendar",

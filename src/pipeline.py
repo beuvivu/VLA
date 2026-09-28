@@ -380,6 +380,11 @@ def main() -> None:
         # của ngày hôm trước mà không có dấu hiệu gì.
         _run(_py("src/model_quality.py"), allow_fail=soft_fail)
         _run(_py("src/build_model_quality.py"), allow_fail=soft_fail)
+        # Confidence Score đọc dự báo vừa công bố cho kỳ tới và trạng thái của
+        # kỳ vừa quay, nên đứng sau dự báo và sau chẩn đoán. Phân phối null
+        # 10 000 lịch sử được lưu sẵn; chỉ tính lại khi số kỳ trôi quá 2%.
+        _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
+        _run(_py("src/build_confidence_page.py"), allow_fail=soft_fail)
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)

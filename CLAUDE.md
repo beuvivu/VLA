@@ -23,7 +23,7 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 32 mục. Thêm mục thì
+Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 30 mục. Thêm mục thì
 thêm ở đó, không thêm ở `app_shell.py`.
 
 **Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
@@ -51,10 +51,10 @@ Giao diện đang phát triển theo yêu cầu ngày 26-09-2026 kết hợp Cra
 với khung Nexlink. Dark/Light phải đồng bộ trên mọi trang; KHÔNG khôi phục
 khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười hai
 trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
-`build_model_quality`, `build_markdown_dashboard_v3`,
+`build_model_quality`, `build_confidence_page`, `build_markdown_dashboard_v3`,
 `build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
 `build_research_lab`, `build_stat_pages`, `build_traditional_results`) sinh
-ra 29 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
+ra 30 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
 `src/pipeline.py`.
 
 Đọc trước khi sửa frontend:
@@ -198,6 +198,21 @@ ngưỡng.
 vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
 hơn hạn giữ artifact.
+
+## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
+
+`src/confidence_matrix.py` dựng Confidence Score ba tầng (High: cả Bayes,
+Markov, cầu > 85%; Medium: hai trong ba ≥ 60%; còn lại Low/Noise) và
+`build_confidence_page.py` in ra `docs/do-tin-cay.html`. Tin cậy của một thành
+phần là tỉ lệ lịch sử CÔNG BẰNG mà tín hiệu mạnh nhất của cả họ còn yếu hơn
+nó. Đừng thay bằng hậu nghiệm từng con: con cao nhất trong 100 con của một lịch
+sử ngẫu nhiên đạt hậu nghiệm > 99% ở 60% lịch sử.
+
+Phân phối null 10 000 lịch sử nằm ở `data/confidence/null_quantiles.json`,
+tính lại khi số kỳ trôi quá 2% hoặc `STAT_VERSION` đổi (~8 phút, 4 lõi). Đổi
+định nghĩa thống kê nào trong `stats()` thì PHẢI tăng `STAT_VERSION`. Phân vị
+lưu ĐỦ độ chính xác: làm tròn 7 chữ số từng thổi tin cậy cầu Đặc Biệt từ
+50,7% lên 66,5% vì cả khối giá trị hoà bị đếm là "nhỏ hơn".
 
 ## Kỷ luật kiểm thử
 
