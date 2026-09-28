@@ -450,7 +450,9 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
         "mean_occurrences": float(occ.mean()),
         "p_zero_numbers_hit": float((days_any == 0).mean()),
         "p_ge_half": float((days_any >= len(picks) / 2).mean()),
-        "dist_numbers_hit": np.bincount(days_any, minlength=6)[:6].tolist(),
+        # 0, 1, 2, 3, 4 và "≥ 5": ô cuối gộp MỌI kỳ có từ 5 con về trở lên.
+        "dist_numbers_hit": np.bincount(days_any, minlength=6)[:5].tolist()
+        + [int((days_any >= 5).sum())],
         "breakeven_loto_multiple_per_occurrence": 100 / 27,
         "breakeven_de_multiple": 100.0,
     }
@@ -506,10 +508,16 @@ def main() -> int:
         null = np.load(args.null)
     else:
         T = len(load(args.data_dir))
-        chunks = 40
+        if args.sims < 1:
+            ap.error("--sims phải ≥ 1")
+        # Chia phần dư cho các khối đầu: chạy ĐÚNG số mô phỏng được yêu cầu.
+        # Với 10 000 (chia hết cho 40) các khối và hạt giống y như trước.
+        chunks = min(40, args.sims)
+        sizes = [args.sims // chunks + (1 if i < args.sims % chunks else 0) for i in range(chunks)]
         seeds = np.random.SeedSequence(20260928).spawn(chunks)
+        jobs = [(s, n, T) for s, n in zip(seeds, sizes, strict=True)]
         with Pool(args.workers) as pool:
-            null = np.concatenate(pool.map(worker, [(s, args.sims // chunks, T) for s in seeds]))
+            null = np.concatenate(pool.map(worker, jobs))
         np.save(args.out_dir / "null.npy", null)
     out = report(null, args.data_dir, args.out_dir)
     print(

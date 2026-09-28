@@ -45,6 +45,7 @@ REQUIRED_PATHS = [
     "docs/statistics.html",
     "docs/dashboard.html",
     "docs/model-quality.html",
+    "docs/do-tin-cay.html",
     "DASHBOARD.md",
     "README.md",
 ]

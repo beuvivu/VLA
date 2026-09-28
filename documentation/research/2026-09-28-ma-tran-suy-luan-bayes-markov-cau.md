@@ -6,6 +6,9 @@ Tái lập:
     python3 scripts/inference_matrix_audit.py --sims 10000 --out-dir <thư mục>
 
 (khoảng 8 phút trên 4 lõi; hạt giống cố định `20260928`, nên cùng dữ liệu cho cùng số.)
+Bản production của phân tích này chạy mỗi lượt pipeline ở `src/confidence_matrix.py`
+và in ra trang `docs/do-tin-cay.html` (Độ tin cậy dự báo), kèm thêm bốn phép kiểm
+giả thuyết kỳ quay bị sắp đặt.
 Script chỉ ĐỌC dữ liệu và mã hiện có — không đổi phép tính, mô hình hay hợp đồng dữ
 liệu nào của production.
 

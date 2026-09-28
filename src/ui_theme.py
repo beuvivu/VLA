@@ -716,6 +716,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
             ("ml_top10_loto.html", "10 số LOTO", "top-loto"),
             ("ml_top10_de.html", "10 số Đặc Biệt", "top-de"),
             ("model-quality.html", "Chất lượng mô hình", "chat-luong"),
+            ("do-tin-cay.html", "Độ tin cậy dự báo", "tin-cay"),
         ),
     ),
     (

@@ -292,28 +292,45 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
 
     Dock từng CHẾT HẲN trên điện thoại: menu mở ra nhưng không ô nào nhận được
     cú chạm — đo được 0/9 liên kết chạm được ở 390px trong khi máy bàn 9/9.
+
+    Bản trước chỉ đếm nhóm của trang đang mở và đòi ≥ 3 mục. Từ khi nhóm
+    "Thống kê" rút còn một mục, phép kiểm ấy đỏ mà không có lỗi nào, và tệ
+    hơn: nó chưa bao giờ nhìn tới sáu nhóm kia. Nay đi qua MỌI nhóm bằng chính
+    dải biểu tượng — đúng đường người dùng điện thoại đi — và đòi mọi mục của
+    ``SITE_NAV`` đều chạm được.
     """
+    from ui_theme import SITE_NAV
+
     pg = _mo(trinh_duyet, 390, 844, cam_ung=True)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
     pg.wait_for_timeout(500)
     pg.tap("#app-toggle")
     pg.wait_for_timeout(600)
-    do = pg.evaluate(
-        """() => {
-          const items = [...document.querySelectorAll('.app-panel-group:not([hidden]) .app-nav-item')];
-          let cham = 0;
-          for (const a of items) {
-            const r = a.getBoundingClientRect();
-            if (r.width < 4 || r.height < 4) continue;
-            const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-            if (a === el || a.contains(el)) cham += 1;
-          }
-          return {tong: items.length, cham: cham};
-        }"""
-    )
+    so_nhom = pg.locator(".app-rail-btn").count()
+    ket_qua = []
+    for i in range(so_nhom):
+        pg.locator(".app-rail-btn").nth(i).tap()
+        pg.wait_for_timeout(400)
+        ket_qua.append(pg.evaluate(
+            """() => {
+              const items = [...document.querySelectorAll('.app-panel-group:not([hidden]) .app-nav-item')];
+              const hong = [];
+              for (const a of items) {
+                const r = a.getBoundingClientRect();
+                const el = r.width >= 4 && r.height >= 4
+                  ? document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
+                if (!(el && (a === el || a.contains(el)))) hong.push(a.getAttribute('href'));
+              }
+              return {tong: items.length, hong: hong};
+            }"""
+        ))
     pg.close()
-    assert do["tong"] >= 3, f"chỉ thấy {do['tong']} liên kết — menu chưa mở?"
-    assert do["cham"] == do["tong"], f"chỉ {do['cham']}/{do['tong']} liên kết chạm được"
+    assert so_nhom == len(SITE_NAV), f"chỉ {so_nhom} nút nhóm trên dải biểu tượng"
+    tong = sum(do["tong"] for do in ket_qua)
+    hong = [href for do in ket_qua for href in do["hong"]]
+    can = sum(len(items) for _, items in SITE_NAV)
+    assert tong == can, f"chỉ thấy {tong}/{can} liên kết khi đi qua mọi nhóm — menu chưa mở?"
+    assert not hong, f"{len(hong)}/{tong} liên kết không chạm được: {hong}"
 
 
 def test_no_floating_element_covers_the_navigation_controls(trinh_duyet) -> None:
