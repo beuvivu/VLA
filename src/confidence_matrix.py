@@ -259,9 +259,13 @@ def null_quantiles(null: np.ndarray, rows: int) -> dict:
     }
 
 
-def needs_refresh(cached: dict | None, rows: int) -> bool:
-    """Tính lại khi chưa có, khác phiên bản thống kê, hay số kỳ trôi quá ngưỡng."""
+def needs_refresh(cached: dict | None, rows: int, sims: int = DEFAULT_SIMS) -> bool:
+    """Tính lại khi chưa có, khác phiên bản thống kê, khác số mô phỏng được yêu
+    cầu (review PR #104: ``--sims`` từng bị lặng lẽ bỏ qua), hay số kỳ trôi quá
+    ngưỡng."""
     if not cached or cached.get("version") != STAT_VERSION:
+        return True
+    if cached.get("sims") != sims:
         return True
     if set(cached.get("quantiles", {})) != set(NAMES):
         return True
@@ -279,7 +283,7 @@ def load_null(data_dir: Path, rows: int, *, sims: int = DEFAULT_SIMS, workers: i
             cached = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             cached = None
-    if force or needs_refresh(cached, rows):
+    if force or needs_refresh(cached, rows, sims):
         cached = null_quantiles(simulate_null(rows, sims, workers=workers), rows)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(cached, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -461,18 +465,49 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
     return rows
 
 
-def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str]]:
-    path = data_dir / "predictions_today.json"
-    nxt = (date.fromisoformat(last) + timedelta(days=1)).isoformat()
+#: Nguồn của các con "đang công bố", theo thứ tự ưu tiên.
+PICK_SOURCES = {
+    "top10": "trang 10 số LOTO / 10 số Đặc Biệt",
+    "home": "dự đoán trang chủ",
+}
+
+
+def _top10(data_dir: Path, mode: str, day: str) -> list[str]:
+    path = data_dir / "predict" / f"predict_next_{mode}_top10_{day}.csv"
     try:
-        pred = json.loads(path.read_text(encoding="utf-8"))
+        frame = pd.read_csv(path, usecols=["number"])
     except (OSError, ValueError):
-        return nxt, [], []
+        return []
+    return [str(int(n)).zfill(2) for n in frame["number"]]
+
+
+def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str], str | None]:
+    """Kỳ đích và các con đã công bố cho nó.
+
+    Ưu tiên tệp top-10 mà CHÍNH pipeline vừa ghi cho kỳ tới
+    (``predict_nextday_2d``, chạy trước bước dựng trang). ``predictions_today.json``
+    do workflow dự đoán ghi SAU pipeline, nên lúc pipeline dựng trang nó vẫn trỏ
+    vào kỳ vừa quay — review PR #104: đọc nó trước thì sau lượt cập nhật đầu tiên
+    trang không còn gắn với dự báo nào. Nó chỉ là dự phòng khi trỏ đúng kỳ tới.
+    """
+    nxt = (date.fromisoformat(last) + timedelta(days=1)).isoformat()
+    pattern = "predict_next_loto_top10_*.csv"
+    ahead = sorted(
+        day for day in (p.stem.rsplit("_", 1)[-1] for p in (data_dir / "predict").glob(pattern))
+        if day > last
+    ) if (data_dir / "predict").is_dir() else []
+    if ahead:
+        day = ahead[0]
+        return day, _top10(data_dir, "loto", day), _top10(data_dir, "de", day), "top10"
+    try:
+        pred = json.loads((data_dir / "predictions_today.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return nxt, [], [], None
     if str(pred.get("date", "")) <= last:
-        return nxt, [], []
+        return nxt, [], [], None
     lo = [str(r["number"]).zfill(2) for r in pred.get("top_lo_to", []) if "number" in r]
     de = [str(n).zfill(2) for n in (pred.get("top_dac_biet") or {}).get("top_numbers", [])]
-    return str(pred["date"]), lo, de
+    return str(pred["date"]), lo, de, "home"
 
 
 def _feedback(data_dir: Path) -> dict:
@@ -520,7 +555,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         })
 
     last = str(dates.iloc[-1])
-    target, lo_picks, de_picks = _target_date(data_dir, last)
+    target, lo_picks, de_picks, pick_source = _target_date(data_dir, last)
     hits = hits_matrix(draws)
     hit_yesterday = hits[-1].astype(bool)
     dig_last = digits(draws)[-1]
@@ -574,6 +609,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
     occurrences = (sim[:, :, None] == picks[None, None, :]).sum(axis=(1, 2))
     risk = {
         "picks": [f"{p:02d}" for p in picks],
+        "picks_source": PICK_SOURCES.get(pick_source) if lo_picks else None,
         "scenarios": int(len(sim)),
         "numbers_hit": np.bincount(got, minlength=len(picks) + 1).tolist(),
         "mean_occurrences": float(occurrences.mean()),

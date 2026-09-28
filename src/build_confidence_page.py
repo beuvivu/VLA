@@ -221,10 +221,14 @@ def risk_card(report: dict) -> str:
         "(đoán bừa 10 con: 10%)."
         if risk.get("de_hit_share") is not None else ""
     )
+    origin = (
+        f"đang công bố ở {html.escape(risk['picks_source'])}"
+        if risk.get("picks_source") else "có Score cao nhất (chưa có dự báo công bố cho kỳ này)"
+    )
     return (
         f'<p class="ui-muted">{_count(risk["scenarios"])} kỳ kế tiếp giả lập với '
-        f"{len(risk['picks'])} con LOTO {', '.join(html.escape(p) for p in risk['picks'])}: "
-        "số con trong nhóm có về.</p>"
+        f"{len(risk['picks'])} con LOTO {origin} — "
+        f"{', '.join(html.escape(p) for p in risk['picks'])}: số con trong nhóm có về.</p>"
         + _table(head, [cells], numeric="")
         + f'<p class="ui-muted">Trung bình {_num(risk["mean_occurrences"], 2)} lượt về mỗi kỳ.'
         f"{de_line} Hoà vốn cần trả ít nhất <b>{_num(risk['breakeven_loto'], 2)} lần</b> tiền "

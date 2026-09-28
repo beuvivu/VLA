@@ -19,11 +19,14 @@ import confidence_matrix as cm
 
 #: Mười con như dự báo thật: đủ để có kỳ về từ 6 con trở lên.
 PICKS = (7, 11, 22, 33, 44, 55, 66, 77, 88, 99)
+TOP10_LOTO = [3, 13, 23, 34, 45, 56, 67, 78, 89, 90]
+TOP10_DE = [4, 40]
 WIDTHS = [cm.PRIZE_WIDTH[c.split("_")[0]] for c in cm.PRIZE_COLUMNS]
 
 
 def _store(root: Path, days: int, *, seed: int, rig: bool = False,
-           rig_digit_column: str | None = None, picks: bool = False) -> np.ndarray:
+           rig_digit_column: str | None = None, picks: bool = False,
+           top10: bool = False) -> np.ndarray:
     """Kho giả ``days`` kỳ bắt đầu 01-06-2022 (đủ để tách mẫu ở 2024).
 
     ``rig``: con 07 về theo KHỐI 5 kỳ về / 5 kỳ trượt qua giải 7.4, và kỳ cuối
@@ -55,6 +58,18 @@ def _store(root: Path, days: int, *, seed: int, rig: bool = False,
     frame.insert(0, "date", dates)
     frame.to_csv(root / "xsmb.csv", index=False)
 
+    if top10:
+        # Đúng lúc pipeline dựng trang: tệp top-10 cho kỳ tới đã có, còn dự
+        # đoán trang chủ vẫn trỏ vào kỳ VỪA quay (workflow dự đoán chạy sau).
+        nxt = (start + timedelta(days=days)).isoformat()
+        (root / "predict").mkdir(exist_ok=True)
+        for mode, nums in (("loto", TOP10_LOTO), ("de", TOP10_DE)):
+            pd.DataFrame({"number": nums, "prob": 0.1}).to_csv(
+                root / "predict" / f"predict_next_{mode}_top10_{nxt}.csv", index=False)
+        (root / "predictions_today.json").write_text(json.dumps({
+            "date": dates[-1], "top_lo_to": [{"number": "01"}],
+            "top_dac_biet": {"top_numbers": ["02"]},
+        }), encoding="utf-8")
     if picks:
         nxt = (start + timedelta(days=days)).isoformat()
         (root / "predictions_today.json").write_text(json.dumps({
@@ -174,7 +189,7 @@ def test_exactly_the_requested_number_of_histories_is_simulated(sims: int) -> No
 
 
 def test_the_null_is_reused_until_the_draw_count_drifts() -> None:
-    cached = {"version": cm.STAT_VERSION, "draws": 1000,
+    cached = {"version": cm.STAT_VERSION, "draws": 1000, "sims": cm.DEFAULT_SIMS,
               "quantiles": {name: [0.0] for name in cm.NAMES}}
     assert not cm.needs_refresh(cached, 1000)
     assert not cm.needs_refresh(cached, 1020)
@@ -182,6 +197,9 @@ def test_the_null_is_reused_until_the_draw_count_drifts() -> None:
     assert cm.needs_refresh({**cached, "version": cm.STAT_VERSION + 1}, 1000)
     assert cm.needs_refresh({**cached, "quantiles": {"freq_chi2": [0.0]}}, 1000)
     assert cm.needs_refresh(None, 1000)
+    # Review PR #104: đổi số mô phỏng mà vẫn dùng lại bản cũ là lặng lẽ bỏ qua --sims.
+    assert cm.needs_refresh(cached, 1000, sims=100)
+    assert not cm.needs_refresh(cached, 1000, sims=cm.DEFAULT_SIMS)
 
 
 def test_load_null_computes_once_then_reads_the_cache(tmp_path: Path, monkeypatch) -> None:
@@ -192,9 +210,9 @@ def test_load_null_computes_once_then_reads_the_cache(tmp_path: Path, monkeypatc
         return np.zeros((5, len(cm.NAMES)))
 
     monkeypatch.setattr(cm, "simulate_null", fake)
-    first = cm.load_null(tmp_path, 500)
-    second = cm.load_null(tmp_path, 505)
-    cm.load_null(tmp_path, 600)
+    first = cm.load_null(tmp_path, 500, sims=5)
+    second = cm.load_null(tmp_path, 505, sims=5)
+    cm.load_null(tmp_path, 600, sims=5)
     assert calls == [500, 600]
     assert first == second
     assert (tmp_path / cm.OUT / cm.NULL_FILE).exists()
@@ -220,6 +238,20 @@ def test_the_published_picks_and_target_date_come_from_the_forecast(tmp_path: Pa
     assert report["generated_for"] == (date(2022, 6, 1) + timedelta(days=700)).isoformat()
     published = {(r["mode"], r["number"]) for r in report["matrix"] if r["published"]}
     assert published == {("loto", f"{n:02d}") for n in PICKS} | {("de", "05"), ("de", "50")}
+
+
+def test_picks_come_from_the_top10_the_pipeline_just_wrote_not_a_stale_forecast(
+    tmp_path: Path, small_null: dict
+) -> None:
+    """Review PR #104: lúc pipeline dựng trang, ``predictions_today.json`` còn
+    trỏ vào kỳ vừa quay. Đọc nó thì trang mất mọi con "đang công bố"."""
+    _store(tmp_path, 700, seed=3, top10=True)
+    report = cm.build_report(tmp_path, small_null)
+    published = {(r["mode"], r["number"]) for r in report["matrix"] if r["published"]}
+    assert published == ({("loto", f"{n:02d}") for n in TOP10_LOTO}
+                         | {("de", f"{n:02d}") for n in TOP10_DE})
+    assert report["generated_for"] == (date(2022, 6, 1) + timedelta(days=700)).isoformat()
+    assert report["risk"]["picks_source"] == cm.PICK_SOURCES["top10"]
 
 
 def test_a_rigged_digit_position_is_flagged_and_a_fair_table_is_not(tmp_path: Path) -> None:
