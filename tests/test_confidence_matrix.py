@@ -215,6 +215,24 @@ def test_exactly_the_requested_number_of_histories_is_simulated(sims: int) -> No
     assert len(cm.simulate_null(60, sims, workers=1)) == sims
 
 
+def test_p_values_never_claim_more_resolution_than_the_simulations_have(
+    tmp_path: Path, small_null: dict
+) -> None:
+    """Review PR #104: 80 lịch sử không đo được p dưới 1/81, dù lưới phân vị
+    có 1 001 điểm. Con bị sắp đặt vượt MỌI lịch sử, nên p của nó chạm sàn."""
+    _store(tmp_path, 700, seed=11, rig=True)
+    report = cm.build_report(tmp_path, small_null)
+    floor = 1 / (small_null["sims"] + 1)
+    assert report["p_floor"] == pytest.approx(floor)
+    assert min(f["p"] for f in report["families"]) == pytest.approx(floor)
+
+
+@pytest.mark.parametrize("sims", [0, -3])
+def test_a_nonpositive_simulation_count_is_rejected(sims: int) -> None:
+    with pytest.raises(ValueError, match="ít nhất 1"):
+        cm.simulate_null(60, sims, workers=1)
+
+
 def test_the_null_is_reused_until_the_draw_count_drifts() -> None:
     cached = {"version": cm.STAT_VERSION, "draws": 1000, "sims": cm.DEFAULT_SIMS,
               "quantiles": {name: [0.0] for name in cm.NAMES}}
@@ -281,15 +299,54 @@ def test_picks_come_from_the_top10_the_pipeline_just_wrote_not_a_stale_forecast(
     assert report["risk"]["picks_source"] == cm.PICK_SOURCES["top10"]
 
 
+def test_repeat_counts_match_a_plain_loop() -> None:
+    rng = np.random.default_rng(12)
+    seq = rng.integers(0, 12, size=300)
+    loop = sum(int(seq[t] in set(seq[t - 7 : t])) for t in range(7, len(seq)))
+    assert int(cm.repeat_counts(seq)[0]) == loop
+    draws = rng.integers(0, 30, size=(200, 27))
+    loop = sum(int(draws[t, 0] in set(draws[t - 1])) for t in range(1, 200))
+    assert int(cm.hot_counts(draws)[0]) == loop
+
+
+def test_the_avoidance_checks_use_their_own_fair_distribution(tmp_path: Path) -> None:
+    """Review PR #104: cửa sổ 7 kỳ chồng nhau nên số lần lặp không theo nhị
+    thức. p phải lấy từ chính phân phối của số đếm trên lịch sử công bằng."""
+    draws = _store(tmp_path, 700, seed=5)
+    raw = pd.read_csv(tmp_path / "xsmb.csv")
+    tests = {t["key"]: t for t in cm.intervention_tests(raw, draws, sims=400)["tests"]}
+    null = cm.intervention_null(700, 400)
+    assert tests["special_repeat"]["p"] == pytest.approx(
+        cm.mc_two_sided_p(int(cm.repeat_counts(draws[:, 0])[0]), null["repeat"]))
+    assert tests["special_avoids_hot"]["p"] == pytest.approx(
+        cm.mc_two_sided_p(int(cm.hot_counts(draws)[0]), null["hot"]))
+
+
+def test_special_feedback_is_scored_as_one_outcome_in_a_hundred(tmp_path: Path) -> None:
+    """Review PR #104: Đặc Biệt từng chấm như 100 biến nhị phân (log-loss ~0,056)
+    thay vì một kết quả trong 100 lớp như trang Chất lượng mô hình (log 100)."""
+    _store(tmp_path, 60, seed=2)
+    frame = pd.read_csv(tmp_path / "xsmb-2-digits.csv", dtype={"date": str})
+    (tmp_path / "predict").mkdir(exist_ok=True)
+    for day in frame["date"].iloc[-25:]:
+        for mode, prob in (("de", 0.01), ("loto", cm.BASE)):
+            pd.DataFrame({"number": range(100), "prob": prob}).to_csv(
+                tmp_path / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False)
+    de = cm._feedback(tmp_path)["modes"]["de"]
+    assert de["logloss_base"] == pytest.approx(np.log(100), rel=1e-6)
+    assert de["brier_base"] == pytest.approx(0.99)
+    assert de["logloss_model"] == pytest.approx(de["logloss_base"])
+
+
 def test_a_rigged_digit_position_is_flagged_and_a_fair_table_is_not(tmp_path: Path) -> None:
     fair = _store(tmp_path / "fair", 700, seed=5)
     raw = pd.read_csv(tmp_path / "fair" / "xsmb.csv")
-    tests = {t["key"]: t for t in cm.intervention_tests(raw, fair)["tests"]}
+    tests = {t["key"]: t for t in cm.intervention_tests(raw, fair, sims=400)["tests"]}
     assert tests["digits"]["p_holm"] > 0.05
 
     rigged = _store(tmp_path / "rig", 700, seed=5, rig_digit_column="prize3_2")
     raw = pd.read_csv(tmp_path / "rig" / "xsmb.csv")
-    tests = {t["key"]: t for t in cm.intervention_tests(raw, rigged)["tests"]}
+    tests = {t["key"]: t for t in cm.intervention_tests(raw, rigged, sims=400)["tests"]}
     assert tests["digits"]["p_holm"] < 0.001
     assert "prize3_2[1]" in tests["digits"]["detail"]
 

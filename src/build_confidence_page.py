@@ -145,7 +145,7 @@ def matrix_card(report: dict, mode: str) -> str:
 
 def families_card(report: dict) -> str:
     fams = report["families"]
-    floor = 1.0 / 1001
+    floor = report.get("p_floor", 1.0 / 1001)
     strict = 0.05 / len(fams)
     rows = []
     for f in fams:

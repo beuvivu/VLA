@@ -9,6 +9,7 @@
   "seed": 20260928,
   "version": 2
  },
+ "p_floor": 0.000999000999000999,
  "thresholds": {
   "high": 0.85,
   "medium": 0.6
@@ -2888,16 +2889,16 @@
    {
     "key": "special_repeat",
     "label": "Đặc Biệt né con đã ra trong 7 kỳ trước",
-    "detail": "298/4212 kỳ lặp lại (7.08%), kỳ vọng 6.79%",
-    "p": 0.4624212748271317,
+    "detail": "298/4212 kỳ lặp lại (7.08%), lịch sử công bằng trung bình 6.79%",
+    "p": 0.4540545945405459,
     "p_holm": 1.0
    },
    {
     "key": "special_avoids_hot",
     "label": "Đặc Biệt né con vừa về LOTO hôm trước",
-    "detail": "1036/4218 kỳ (24.56%), kỳ vọng 23.83%",
-    "p": 0.2636403025189268,
-    "p_holm": 1.0
+    "detail": "1036/4218 kỳ (24.56%), lịch sử công bằng trung bình 23.76%",
+    "p": 0.22727727227277272,
+    "p_holm": 0.9091090890910909
    },
    {
     "key": "weekday",
@@ -2952,10 +2953,10 @@
     "days": 29,
     "first": "2026-08-31",
     "last": "2026-09-28",
-    "logloss_model": 0.055997974705777005,
-    "logloss_base": 0.056001534352847354,
-    "brier_model": 0.009900000035281957,
-    "brier_base": 0.009899999999999997
+    "logloss_model": 4.604814182803201,
+    "logloss_base": 4.60517018588809,
+    "brier_model": 0.9900000035281957,
+    "brier_base": 0.9899999999999997
    }
   }
  }

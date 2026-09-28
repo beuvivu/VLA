@@ -231,7 +231,9 @@ def _worker(args: tuple[np.random.SeedSequence, int, int]) -> np.ndarray:
 
 def simulate_null(rows: int, sims: int = DEFAULT_SIMS, *, workers: int = 4, seed: int = SEED) -> np.ndarray:
     """``sims`` lịch sử công bằng ``rows`` kỳ; trả mảng (sims, len(NAMES))."""
-    chunks = max(1, min(40, sims))
+    if sims < 1:
+        raise ValueError(f"cần ít nhất 1 lịch sử mô phỏng, nhận {sims}")
+    chunks = min(40, sims)
     sizes = [sims // chunks + (1 if i < sims % chunks else 0) for i in range(chunks)]
     seeds = np.random.SeedSequence(seed).spawn(chunks)
     jobs = [(s, n, rows) for s, n in zip(seeds, sizes, strict=True) if n]
@@ -302,6 +304,11 @@ def confidence(null: dict, name: str, value: float) -> float:
     return float(np.searchsorted(grid, value, side="left") / len(grid))
 
 
+def cm_grid_len(null: dict) -> int:
+    """Số điểm lưới phân vị đã lưu (mọi họ cùng một lưới)."""
+    return len(next(iter(null["quantiles"].values())))
+
+
 def tier(components: dict[str, float]) -> tuple[str, float]:
     """Luật ba tầng. Score = thành phần yếu nhất (High) hoặc mạnh thứ hai."""
     ranked = sorted(components.values(), reverse=True)
@@ -330,7 +337,54 @@ def _raw_digit_counts(raw: pd.DataFrame) -> list[tuple[str, np.ndarray]]:
     return out
 
 
-def intervention_tests(raw: pd.DataFrame, draws: np.ndarray) -> dict:
+#: Số lịch sử công bằng để hiệu chỉnh các phép kiểm "né" (rẻ: vài giây).
+INTERVENTION_SIMS = 10_000
+REPEAT_WINDOW = 7
+
+
+def repeat_counts(special: np.ndarray, window: int = REPEAT_WINDOW) -> np.ndarray:
+    """Số kỳ mà Đặc Biệt trùng một trong ``window`` Đặc Biệt ngay trước nó.
+
+    Nhận (T,) hoặc (S, T). Các cửa sổ chồng lên nhau, nên các chỉ báo KHÔNG
+    độc lập — review PR #104: tổng của chúng không theo phân phối nhị thức.
+    """
+    seq = np.atleast_2d(special)
+    rows = seq.shape[1]
+    hit = np.zeros((seq.shape[0], max(rows - window, 0)), dtype=bool)
+    for k in range(1, window + 1):
+        hit |= seq[:, window:] == seq[:, window - k : rows - k]
+    return hit.sum(axis=1)
+
+
+def hot_counts(draws: np.ndarray) -> np.ndarray:
+    """Số kỳ mà Đặc Biệt là một con vừa về LOTO kỳ trước. Nhận (T, 27) hoặc (S, T, 27)."""
+    arr = draws if draws.ndim == 3 else draws[None]
+    return (arr[:, :-1, :] == arr[:, 1:, 0:1]).any(axis=-1).sum(axis=-1)
+
+
+def intervention_null(rows: int, sims: int = INTERVENTION_SIMS, *, seed: int = SEED + 1) -> dict:
+    """Phân phối của hai số đếm "né" trên ``sims`` lịch sử công bằng ``rows`` kỳ."""
+    if sims < 1:
+        raise ValueError(f"cần ít nhất 1 lịch sử mô phỏng, nhận {sims}")
+    rng = np.random.default_rng(seed)
+    repeat, hot = [], []
+    for start in range(0, sims, 500):
+        size = min(500, sims - start)
+        batch = rng.integers(0, 100, size=(size, rows, 27), dtype=np.int8)
+        repeat.append(repeat_counts(batch[:, :, 0]))
+        hot.append(hot_counts(batch))
+    return {"repeat": np.concatenate(repeat), "hot": np.concatenate(hot)}
+
+
+def mc_two_sided_p(observed: float, simulated: np.ndarray) -> float:
+    """p hai phía: tỉ lệ lịch sử công bằng lệch khỏi trung bình ít nhất bằng thật."""
+    centre = float(np.mean(simulated))
+    far = np.abs(simulated - centre) >= abs(observed - centre) - 1e-9
+    return float((far.sum() + 1) / (len(simulated) + 1))
+
+
+def intervention_tests(raw: pd.DataFrame, draws: np.ndarray, *,
+                       sims: int = INTERVENTION_SIMS) -> dict:
     """Những dấu vết mà một kỳ quay bị sắp đặt THƯỜNG để lại trên kết quả công bố.
 
     Không phép kiểm nào chứng minh được "không có can thiệp". Chúng trả lời câu
@@ -338,7 +392,7 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray) -> dict:
     có để lại dấu vết nào trên kết quả công bố mà người ngoài khai thác được
     không.
     """
-    from scipy.stats import binomtest, chi2
+    from scipy.stats import chi2
 
     rows = len(draws)
     tests = []
@@ -363,32 +417,26 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray) -> dict:
     })
 
     special = draws[:, 0]
-    repeats = sum(int(special[t] in set(special[max(0, t - 7):t])) for t in range(7, rows))
-    trials = rows - 7
-    expected_rate = 1 - 0.99**7
+    # Hai số đếm dưới đây dùng cửa sổ/kỳ chồng nhau nên không phải tổng của
+    # phép thử độc lập: p lấy từ chính phân phối của chúng trên lịch sử công bằng.
+    null = intervention_null(rows, sims)
+    repeats = int(repeat_counts(special)[0])
+    trials = rows - REPEAT_WINDOW
     tests.append({
         "key": "special_repeat",
-        "label": "Đặc Biệt né con đã ra trong 7 kỳ trước",
+        "label": f"Đặc Biệt né con đã ra trong {REPEAT_WINDOW} kỳ trước",
         "detail": f"{repeats}/{trials} kỳ lặp lại ({repeats / trials:.2%}), "
-                  f"kỳ vọng {expected_rate:.2%}",
-        "p": float(binomtest(repeats, trials, expected_rate).pvalue),
+                  f"lịch sử công bằng trung bình {float(null['repeat'].mean()) / trials:.2%}",
+        "p": mc_two_sided_p(repeats, null["repeat"]),
     })
 
-    hits = hits_matrix(draws)
-    in_prev = hits[:-1][np.arange(rows - 1), special[1:]]
-    expected_prev = hits[:-1].sum(axis=1) / 100
-    observed = int(in_prev.sum())
-    mean_expected = float(expected_prev.sum())
-    var = float((expected_prev * (1 - expected_prev)).sum())
-    from scipy.stats import norm
-
-    z = (observed - mean_expected) / np.sqrt(var)
+    observed = int(hot_counts(draws)[0])
     tests.append({
         "key": "special_avoids_hot",
         "label": "Đặc Biệt né con vừa về LOTO hôm trước",
         "detail": f"{observed}/{rows - 1} kỳ ({observed / (rows - 1):.2%}), "
-                  f"kỳ vọng {mean_expected / (rows - 1):.2%}",
-        "p": float(2 * norm.sf(abs(z))),
+                  f"lịch sử công bằng trung bình {float(null['hot'].mean()) / (rows - 1):.2%}",
+        "p": mc_two_sided_p(observed, null["hot"]),
     })
 
     weekdays = pd.to_datetime(raw["date"]).dt.weekday.to_numpy()
@@ -542,15 +590,28 @@ def _feedback(data_dir: Path) -> dict:
         if not len(days):
             continue
         base = np.full_like(probs, sm.baseline_rate(mode))
+        # Đặc Biệt là MỘT kết quả trong 100 lớp: log-loss −log(q con về) và Brier
+        # cộng qua 100 lớp, đúng thang của trang Chất lượng mô hình và
+        # skill_monitor (review PR #104). LOTO là 100 biến nhị phân.
+        if mode == "de":
 
-        def logloss(q, y=labels):
-            return float(-(y * np.log(q + eps) + (1 - y) * np.log(1 - q + eps)).mean())
+            def logloss(q, y=labels):
+                return float(-np.log((q * y).sum(axis=1) + eps).mean())
+
+            def brier(q, y=labels):
+                return float(((q - y) ** 2).sum(axis=1).mean())
+        else:
+
+            def logloss(q, y=labels):
+                return float(-(y * np.log(q + eps) + (1 - y) * np.log(1 - q + eps)).mean())
+
+            def brier(q, y=labels):
+                return float(((q - y) ** 2).mean())
 
         out["modes"][mode] = {
             "days": len(days), "first": days[0], "last": days[-1],
             "logloss_model": logloss(probs), "logloss_base": logloss(base),
-            "brier_model": float(((probs - labels) ** 2).mean()),
-            "brier_base": float(((base - labels) ** 2).mean()),
+            "brier_model": brier(probs), "brier_base": brier(base),
         }
     return out
 
@@ -565,6 +626,9 @@ def build_report(data_dir: Path, null: dict) -> dict:
     observed = summarize(values)
     col = {n: i for i, n in enumerate(NAMES)}
 
+    # p nhỏ nhất đo được: 1/(N+1) với N lịch sử — review PR #104: lưới 1 001
+    # phân vị không được cho 100 mô phỏng "đo" tới p ≈ 0,001.
+    p_floor = max(1.0 / (int(null.get("sims") or 0) + 1), 1.0 / cm_grid_len(null))
     families = []
     for key, label, size in FAMILIES:
         obs = float(observed[col[key]])
@@ -572,7 +636,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         families.append({
             "key": key, "label": label, "size": size, "observed": obs,
             "null_median": grid[len(grid) // 2], "null_p95": grid[int(0.95 * (len(grid) - 1))],
-            "p": max(1.0 - confidence(null, key, obs), 1.0 / len(grid)),
+            "p": max(1.0 - confidence(null, key, obs), p_floor),
         })
 
     last = str(dates.iloc[-1])
@@ -655,6 +719,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         "draws": rows,
         "first_draw": str(dates.iloc[0]),
         "null": {k: null[k] for k in ("sims", "draws", "seed", "version")},
+        "p_floor": p_floor,
         "thresholds": {"high": HIGH, "medium": MEDIUM},
         "families": families,
         "naive_false_alarm": naive,
@@ -689,6 +754,8 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--force", action="store_true", help="tính lại phân phối null")
     args = parser.parse_args()
+    if args.sims < 1:
+        parser.error("--sims phải ≥ 1")
     print("Wrote:", run(args.data_dir, sims=args.sims, workers=args.workers, force=args.force))
     return 0
 
