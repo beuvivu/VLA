@@ -36,7 +36,7 @@ REFERENCE_MAP = {
     "tim-kiem": "search", "che-do": "sun-moon", "toan-man-hinh": "maximize",
     "truc-tiep": "radio", "hom-nay": "calendar-check", "so-ket-qua": "book-open-text",
     "ma-tran": "grid-2x2", "tan-suat": "chart-column", "gan-nhip": "clock-3",
-    "cap-lon": "arrow-up-down", "cau-chay": "trending-up", "cau-on-dinh": "activity",
+    "cap-lon": "arrow-up-down", "soi-vi-tri": "route", "cau-chay": "trending-up", "cau-on-dinh": "activity",
     "cau-de-chay": "route", "cau-de-on-dinh": "chart-no-axes-combined",
     "vi-tri-cau": "locate-fixed", "ai-ml": "cpu", "top-loto": "list-ordered",
     "top-de": "award", "chat-luong": "shield-check", "tin-cay": "sigma",

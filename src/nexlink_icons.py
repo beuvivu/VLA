@@ -30,7 +30,7 @@ def nexlink_icon(name: str, css_class: str = 'app-ic app-nexlink-ic') -> str:
 _NAVIGATION = {
     'truc-tiep': 'inbox-in', 'hom-nay': 'house-blank', 'so-ket-qua': 'calendar-lines',
     'ma-tran': 'table', 'tan-suat': 'growth-chart-invest', 'gan-nhip': 'calendar',
-    'cap-lon': 'arrows', 'cau-chay': 'growth-chart-invest', 'cau-on-dinh': 'review',
+    'cap-lon': 'arrows', 'soi-vi-tri': 'chart', 'cau-chay': 'growth-chart-invest', 'cau-on-dinh': 'review',
     'cau-de-chay': 'flux-capacitor', 'cau-de-on-dinh': 'chart-pie-alt',
     'vi-tri-cau': 'map-marker', 'ai-ml': 'circle-user', 'top-loto': 'list',
     'top-de': 'star', 'chat-luong': 'review', 'tin-cay': 'percent-100',

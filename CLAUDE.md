@@ -23,7 +23,7 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 30 mục. Thêm mục thì
+Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 31 mục. Thêm mục thì
 thêm ở đó, không thêm ở `app_shell.py`.
 
 **Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
@@ -49,12 +49,13 @@ các phép kiểm bất biến trang trên mỗi commit của pipeline.
 
 Giao diện đang phát triển theo yêu cầu ngày 26-09-2026 kết hợp Crafto Application
 với khung Nexlink. Dark/Light phải đồng bộ trên mọi trang; KHÔNG khôi phục
-khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười hai
+khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười ba
 trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
-`build_model_quality`, `build_confidence_page`, `build_markdown_dashboard_v3`,
+`build_model_quality`, `build_confidence_page`, `build_position_bridges`,
+`build_markdown_dashboard_v3`,
 `build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
 `build_research_lab`, `build_stat_pages`, `build_traditional_results`) sinh
-ra 30 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
+ra 31 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
 `src/pipeline.py`.
 
 Đọc trước khi sửa frontend:
@@ -224,6 +225,23 @@ trưng `tail_freq_7d` của mô hình cầu kèo — mười con cùng đuôi g�
 29-09, 180 kỳ, một phía α = 0,01). KHÔNG sửa tham số của nó: muốn đổi thì đăng ký giả
 thuyết mới với ngày bắt đầu mới. Sổ cái `data/hypotheses/hot_tail.csv` giữ lần ghi đầu.
 Chi tiết: `documentation/research/2026-09-28-duoi-4-va-gia-thuyet-duoi-nong.md`.
+
+## Soi cầu vị trí — đúng luật của trang tham chiếu, kèm kiểm chứng
+
+`src/position_bridges.py` dò cầu trên 107 vị trí chữ số (ĐB 0–4 … G7 99–106),
+`build_position_bridges.py` in `docs/soi-cau-vi-tri.html` và ô "cầu đẹp nhất"
+cạnh bảng LOTO ở trang chủ (cột `.tr-day-extra` của `render_result_board`). Luật
+đã đối chiếu từng con số với trang tham chiếu ngày 29-09-2026 và bị ghim trong
+`tests/test_position_bridges.py`: lộn thì CỘNG GỘP nháy của cả hai chiều; cầu
+chạy theo KỲ QUAY; số kép chỉ là một số — số bóng (44 → 99) chỉ HIỆN kèm, tính nó
+vào phép trúng thì ra 64 cầu thay vì 43. Bản JS (`templates/position_bridges.js`)
+tính lại cho mọi tham số và phải ra đúng từng cầu như bản Python —
+`tests/frontend/position-bridges.test.mjs` so tám bộ tham số.
+
+Cầu dài KHÔNG trúng nhiều hơn: trên 4 217 kỳ, cầu LOTO đã chạy ≥ 10 kỳ trúng tiếp
+39,2% so với kỳ vọng 40,5%; nhiều cầu cùng báo một cặp cũng không hơn. Trang in
+kết luận ấy TỪ SỐ ĐO (`verdict`), đừng viết cứng. Đừng thêm "điểm tin cậy" theo độ
+dài cầu. Thứ tự ô "đẹp nhất" là quy tắc tự đặt (độ dài, rồi số cầu cùng báo).
 
 ## Kỷ luật kiểm thử
 
