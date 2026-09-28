@@ -549,12 +549,35 @@
     for (const radio of form.querySelectorAll('input[name="lon"]')) radio.checked = radio.value === (params.lon ? "1" : "0");
   }
 
+  /** Truy vấn chuẩn hoá từ các ô của biểu mẫu — cùng luật kiểm như khi đọc URL. */
+  function formQuery(form) {
+    const q = new URLSearchParams();
+    q.set("limit", form.elements.limit.value);
+    q.set("exactlimit", form.elements.exactlimit.value);
+    q.set("nhay", form.elements.nhay.value);
+    if (form.elements.db.checked) q.set("db", "1");
+    const lon = form.querySelector('input[name="lon"]:checked');
+    q.set("lon", lon ? lon.value : "1");
+    return query(readParams(`?${q.toString()}`), null);
+  }
+
+  // CSP của trang cấm gửi biểu mẫu (form-action 'none'), nên bấm "Soi cầu" không
+  // được để trình duyệt tự gửi: tự dựng truy vấn rồi chuyển trang bằng location.
+  function bindForm(form) {
+    if (!form) return;
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      window.location.assign(formQuery(form));
+    });
+  }
+
   function mount() {
     const params = readParams(window.location.search);
     const prepared = prepare(REPORT.draws);
     const bridges = findBridges(prepared, params);
     const summary = summarize(bridges, params.limit);
     syncForm(document.getElementById("app-bridge-form"), params);
+    bindForm(document.getElementById("app-bridge-form"));
     const title = document.getElementById("app-bridge-list-title");
     if (title) title.textContent = `${modeTitle(params)} · kỳ ${formatDate(REPORT.target_date)}`;
     const list = document.getElementById("app-bridge-list");
@@ -569,7 +592,7 @@
   }
 
   window.PositionBridges = Object.freeze({
-    LAYOUT, POSITIONS, prepare, findBridges, summarize, pathOf, readParams, query, shadowOf,
+    LAYOUT, POSITIONS, prepare, findBridges, summarize, pathOf, readParams, query, shadowOf, formQuery,
   });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();

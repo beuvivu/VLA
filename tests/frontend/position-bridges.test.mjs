@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { JSDOM } from 'jsdom';
+import { JSDOM, VirtualConsole } from 'jsdom';
 
 // Bản trình duyệt và bản Python của soi cầu vị trí PHẢI đếm ra cùng một con số:
 // trang chủ in ô "đẹp nhất" từ Python, trang đường cầu tính lại bằng JS.
@@ -39,8 +39,10 @@ const fixture = JSON.parse(execFileSync(process.env.APP_TEST_PYTHON || 'python3'
 }));
 
 async function open(t, search = '') {
+  // Bộ điều hướng của jsdom chưa có: lời gọi location.assign chỉ ghi "not implemented".
+  const virtualConsole = new VirtualConsole();
   const dom = new JSDOM(fixture.page, {
-    url: `https://example.test/soi-cau-vi-tri.html${search}`, runScripts: 'outside-only',
+    url: `https://example.test/soi-cau-vi-tri.html${search}`, runScripts: 'outside-only', virtualConsole,
   });
   t.after(() => dom.window.close());
   const source = readFileSync(new URL('../../src/templates/position_bridges.js', import.meta.url), 'utf8');
@@ -161,6 +163,23 @@ test('khi lộn, 22x6 và 6x22 là cùng một cầu', async t => {
   const dom = await open(t, '?vt=22x6&limit=3&exactlimit=0&lon=1&nhay=2&db=0');
   assert.equal(dom.window.document.querySelector('.app-bridge-path-head h2').textContent,
     'Cầu LOTO 2 nháy tại vị trí 6x22');
+});
+
+test('bấm Soi cầu không gửi biểu mẫu (CSP cấm) mà tự dựng truy vấn đã chuẩn hoá', async t => {
+  const dom = await open(t);
+  const d = dom.window.document;
+  const form = d.getElementById('app-bridge-form');
+  form.elements.limit.value = '3';
+  form.elements.nhay.value = '2';
+  d.querySelector('input[name="lon"][value="0"]').checked = true;
+  const event = new dom.window.Event('submit', { cancelable: true });
+  form.dispatchEvent(event);
+  assert.equal(event.defaultPrevented, true, 'để trình duyệt tự gửi thì CSP form-action chặn đứng');
+  const api = dom.window.PositionBridges;
+  assert.equal(api.formQuery(form), '?limit=3&exactlimit=0&lon=0&nhay=2&db=0');
+  form.elements.db.checked = true;
+  form.elements.limit.value = '999';
+  assert.equal(api.formQuery(form), '?limit=5&exactlimit=0&lon=0&nhay=1&db=1', 'ĐB bỏ số nháy; độ dài hỏng về mặc định');
 });
 
 test('tham số hỏng rơi về mặc định thay vì vẽ bậy', async t => {
