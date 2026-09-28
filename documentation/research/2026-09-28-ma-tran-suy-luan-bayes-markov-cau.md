@@ -87,7 +87,7 @@ xác suất cao hơn."
 vị z = +2,48; con 49 lệch +2,55 — ngang con đầu bảng điển hình của ngẫu nhiên
 (p hiệu chỉnh = 0,46).
 Kiểm ngoài mẫu: 10 con có hậu nghiệm cao nhất giai đoạn 2015–2023 về **23,56 %** trong
-2024 → 27-09-2026 (9 890 lượt, z = −0,48). *Kết luận:* bác bỏ.
+2024 → 27-09-2026 (9 890 lượt, z = −0,51). *Kết luận:* bác bỏ.
 
 **B2. Giả thuyết Bayes:** "P(p₄₉ > nền | dữ liệu) = 99,37 %, vậy tin cậy 99 %."
 *Phản biện:* với prior Beta tâm ở nền (100 kỳ giả), **60,0 %** lịch sử công bằng có ít
@@ -101,16 +101,16 @@ từng con là đúng về toán, nhưng **chọn con cao nhất trong 100 con**
 khi hôm nay trượt (z = 3,02, p một phía danh nghĩa ≈ 0,001)."
 *Phản biện:* đó là con tốt nhất trong 100 phép kiểm; p hiệu chỉnh = 0,12. Kiểm ngoài
 mẫu: 10 con Markov mạnh nhất 2015–2023, sau khi về, về lại **22,34 %** trong 2024–nay
-(2 372 lượt, z = −1,63 — thấp hơn nền). *Kết luận:* bác bỏ.
+(2 372 lượt, z = −1,58 — thấp hơn nền). *Kết luận:* bác bỏ.
 
 **B4. Giả thuyết cầu:** "Cầu giải 6.2 hàng chục + giải 3.6 hàng đơn vị trúng 25,94 %
 suốt 11 năm."
 *Phản biện:* lịch sử công bằng có cầu tốt nhất trung vị 26,08 % — cầu tốt nhất thật
 còn **thấp hơn** cầu tốt nhất của ngẫu nhiên. 20 cầu LOTO tốt nhất 2015–2023 (trung
-bình 26,01 % trong mẫu) chỉ còn **23,57 %** ngoài mẫu (19 780 lượt, z = −0,65).
-20 cầu Đặc Biệt tốt nhất (1,51 % trong mẫu) còn 1,12 % ngoài mẫu (z = +1,66, không có
-ý nghĩa, và là 1 trong 6 phép kiểm ngoài mẫu). Bạc nhớ top-50: 23,61 % (z = −0,41).
-Chuyển đầu Đặc Biệt top-20: 0,96 % (z = −0,16). *Kết luận:* bác bỏ.
+bình 26,01 % trong mẫu) chỉ còn **23,57 %** ngoài mẫu (19 780 lượt, z = −0,60).
+20 cầu Đặc Biệt tốt nhất (1,51 % trong mẫu) còn 1,12 % ngoài mẫu (z = +1,52, không có
+ý nghĩa, và là 1 trong 6 phép kiểm ngoài mẫu). Bạc nhớ top-50: 23,61 % (z = −0,43).
+Chuyển đầu Đặc Biệt top-20: 0,96 % (z = −0,17). *Kết luận:* bác bỏ.
 
 **B5. Tín hiệu duy nhất dưới 0,05 — đứt gãy "số con khác nhau mỗi kỳ".**
 Trung bình 23,83 con khác nhau/kỳ so với kỳ vọng 23,77 — tức ít "nháy kép" hơn ngẫu
@@ -153,7 +153,8 @@ Với mỗi con (100 LOTO + 100 Đặc Biệt), trạng thái sau kỳ 27-09-202
   con đó; Đặc Biệt — z của ô chuyển (đầu Đặc Biệt hôm qua = 7 → con này).
 - **Cầu**: cầu vị trí tốt nhất (tỉ lệ trúng 11 năm) mà chữ số kỳ 27-09 ghép ra con này.
 
-Mỗi thành phần đổi ra Confidence hiệu chỉnh đa kiểm như mô tả ở đầu. Luật tầng, đúng
+Mỗi thành phần đổi ra Confidence hiệu chỉnh đa kiểm như mô tả ở đầu. Thành phần Markov so với null của CHÍNH điểm z/−z theo trạng thái kỳ cuối;
+z ngoài mẫu dùng phương sai theo từng kỳ quay, vì các lượt trúng cùng kỳ không độc lập. Luật tầng, đúng
 như yêu cầu:
 
     High      : cả ba thành phần > 85 %          Score = thành phần yếu nhất
@@ -164,7 +165,7 @@ Thành phần mạnh nhất đạt được trên CẢ 100 con:
 
 | | Bayes | Markov | Cầu |
 |---|---:|---:|---:|
-| LOTO | 54,5 % (con 49) | 46,8 % (con 01) | 23,1 % |
+| LOTO | 54,5 % (con 49) | 48,4 % (con 01) | 23,1 % |
 | Đặc Biệt | 16,6 % (con 65) | 0,08 % | 50,7 % |
 
 Không thành phần nào của con nào chạm 60 %. Phân tầng:

@@ -417,8 +417,24 @@ def intervention_tests(raw: pd.DataFrame, draws: np.ndarray) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _binom_z(hits: float, n: float, p: float) -> float:
-    return float((hits - n * p) / np.sqrt(n * p * (1 - p))) if n else 0.0
+def cluster_z(hits: np.ndarray, trials: np.ndarray, p: float) -> float:
+    """z của tổng lượt trúng, với phương sai ước lượng THEO TỪNG KỲ QUAY.
+
+    Các lượt trúng trong cùng một kỳ không độc lập: mười con LOTO cùng chia 27
+    giải, còn các cầu Đặc Biệt loại trừ nhau hoặc trùng nhau khi ghép ra cùng
+    một con. ``sqrt(n·p·(1−p))`` vì thế đo sai phương sai (review PR #104).
+    Dưới giả thuyết công bằng các KỲ độc lập với nhau, nên lấy mỗi kỳ làm một
+    cụm: z = Σ(h_t − n_t·p) / sqrt(Σ(h_t − n_t·p)²).
+    """
+    dev = np.asarray(hits, dtype=float) - np.asarray(trials, dtype=float) * p
+    scale = float(np.sqrt((dev**2).sum()))
+    return float(dev.sum() / scale) if scale > 0 else 0.0
+
+
+def cau_hit_matrix(dig: np.ndarray, target: np.ndarray) -> np.ndarray:
+    """(T-1, 2916): cầu nào trúng ở kỳ nào — giữ từng kỳ để tính phương sai cụm."""
+    idx = (10 * dig[:-1, :, None] + dig[:-1, None, :]).reshape(dig.shape[0] - 1, -1)
+    return np.take_along_axis(target[1:], idx, axis=1)
 
 
 def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
@@ -428,24 +444,26 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
         return []
     train = stats(draws[:cut])
     hits = hits_matrix(draws)
-    test = hits[cut:]
+    test = hits[cut:].astype(int)
     rows = []
 
-    def add(key, label, hit, n, base, in_sample=None):
-        rows.append({"key": key, "label": label, "hits": int(hit), "n": int(n),
+    def add(key, label, per_hit, per_n, base, in_sample=None):
+        hit, n = int(np.sum(per_hit)), int(np.sum(per_n))
+        rows.append({"key": key, "label": label, "hits": hit, "n": n,
                      "rate": float(hit / n) if n else 0.0, "base": base,
-                     "z": _binom_z(hit, n, base), "in_sample": in_sample})
+                     "z": cluster_z(per_hit, per_n, base), "in_sample": in_sample})
 
     top = np.argsort(-train["bayes_post"])[:10]
-    add("bayes", "10 con hậu nghiệm Bayes cao nhất", test[:, top].sum(), len(test) * 10, BASE,
-        float(hits[:cut, top].mean()))
+    add("bayes", "10 con hậu nghiệm Bayes cao nhất", test[:, top].sum(axis=1),
+        np.full(len(test), 10), BASE, float(hits[:cut, top].mean()))
     top = np.argsort(-train["markov_z"])[:10]
     prev, nxt = test[:-1, top], test[1:, top]
-    add("markov", "10 con Markov mạnh nhất, sau khi vừa về", (prev * nxt).sum(), prev.sum(), BASE,
-        float(train["markov_p11"][top].mean()))
+    add("markov", "10 con Markov mạnh nhất, sau khi vừa về", (prev * nxt).sum(axis=1),
+        prev.sum(axis=1), BASE, float(train["markov_p11"][top].mean()))
     flat = np.argsort(-train["pair_z"], axis=None)[:50]
     a, b = np.unravel_index(flat, (100, 100))
-    add("pairs", "50 cặp bạc nhớ mạnh nhất", (test[:-1, a] * test[1:, b]).sum(), test[:-1, a].sum(), BASE)
+    add("pairs", "50 cặp bạc nhớ mạnh nhất", (test[:-1, a] * test[1:, b]).sum(axis=1),
+        test[:-1, a].sum(axis=1), BASE)
 
     dig = digits(draws)[cut - 1 :]
     special = np.zeros_like(hits)
@@ -455,19 +473,16 @@ def out_of_sample(draws: np.ndarray, dates: pd.Series) -> list[dict]:
         ("cau_de", "20 cầu vị trí Đặc Biệt tốt nhất", special[cut - 1 :], 0.01),
     ):
         sel = np.argsort(-train[key])[:20]
-        add(key, label, cau_hits(dig, target)[sel].sum(), (len(dig) - 1) * 20, base,
-            float(train[key][sel].mean()))
+        per_day = cau_hit_matrix(dig, target)[:, sel].sum(axis=1)
+        add(key, label, per_day, np.full(len(dig) - 1, 20), base, float(train[key][sel].mean()))
 
     flat = np.argsort(-train["de_markov_z"], axis=None)[:20]
     r, c = np.unravel_index(flat, (10, 100))
     tens = draws[cut - 1 : -1, 0] // 10
     nxt_de = draws[cut:, 0]
-    n = h = 0
-    for rr, cc in zip(r, c, strict=True):
-        mask = tens == rr
-        n += int(mask.sum())
-        h += int((nxt_de[mask] == cc).sum())
-    add("de_markov", "20 ô chuyển đầu Đặc Biệt mạnh nhất", h, n, 0.01)
+    per_n = (tens[:, None] == r[None, :]).sum(axis=1)
+    per_hit = ((tens[:, None] == r[None, :]) & (nxt_de[:, None] == c[None, :])).sum(axis=1)
+    add("de_markov", "20 ô chuyển đầu Đặc Biệt mạnh nhất", per_hit, per_n, 0.01)
     return rows
 
 

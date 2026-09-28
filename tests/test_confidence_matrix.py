@@ -184,6 +184,19 @@ def test_the_markov_component_is_scored_against_the_null_of_the_same_statistic(
     assert all(r["c_markov"] == 1.0 for r in rows)
 
 
+def test_out_of_sample_z_treats_each_draw_as_one_cluster() -> None:
+    """Review PR #104: mười con cùng một kỳ không phải mười phép thử độc lập.
+    Khi chúng về hoặc trượt CÙNG NHAU, thông tin chỉ bằng một phép thử mỗi kỳ,
+    nên z phải bằng z của chuỗi một-phép-thử — không lớn gấp √10 lần."""
+    rng = np.random.default_rng(8)
+    together = (rng.random(900) < 0.30).astype(int)
+    z_cluster = cm.cluster_z(10 * together, np.full(900, 10), cm.BASE)
+    z_single = cm.cluster_z(together, np.ones(900), cm.BASE)
+    assert z_cluster == pytest.approx(z_single)
+    naive = (10 * together.sum() - 9000 * cm.BASE) / np.sqrt(9000 * cm.BASE * (1 - cm.BASE))
+    assert naive > 2 * z_cluster > 0
+
+
 def test_naive_bayes_false_alarms_are_reported_from_the_null(small_null: dict) -> None:
     """Chính lời phản biện của trang: hậu nghiệm cao nhất trong 100 con của
     một lịch sử CÔNG BẰNG thường vẫn vượt 95%."""
