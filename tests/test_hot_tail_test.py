@@ -79,6 +79,7 @@ def test_the_first_recorded_score_is_never_overwritten(tmp_path: Path) -> None:
     again = pd.read_csv(path, dtype={"date": str, "hot_tails": str})
     assert again.loc[0, "diff"] == pytest.approx(0.5)
     assert ht.update_ledger(tmp_path).read_bytes() == path.read_bytes()
+    assert b"\r" not in path.read_bytes(), "đuôi dòng LF như mọi tệp dữ liệu của kho"
 
 
 def _ledger(root: Path, diffs: list[float]) -> None:

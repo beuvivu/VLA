@@ -108,7 +108,7 @@ def update_ledger(data_dir: Path) -> Path:
         known.setdefault(row["date"], {k: row[k] for k in FIELDS})
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDS)
+        writer = csv.DictWriter(fh, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader()
         for day in sorted(known):
             writer.writerow({k: known[day][k] for k in FIELDS})
