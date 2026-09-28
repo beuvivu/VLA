@@ -200,21 +200,21 @@
   {
    "key": "cau_de",
    "label": "20 cầu vị trí Đặc Biệt tốt nhất",
-   "hits": 230,
+   "hits": 221,
    "n": 19800,
-   "rate": 0.011616161616161616,
+   "rate": 0.011161616161616162,
    "base": 0.01,
-   "z": 2.058740050619915,
+   "z": 1.5029149019126533,
    "in_sample": 0.01514869888475836
   },
   {
    "key": "de_markov",
    "label": "20 ô chuyển đầu Đặc Biệt mạnh nhất",
-   "hits": 20,
+   "hits": 19,
    "n": 1976,
-   "rate": 0.010121457489878543,
+   "rate": 0.009615384615384616,
    "base": 0.01,
-   "z": 0.054456080399124605,
+   "z": -0.17677478249121334,
    "in_sample": null
   }
  ],
@@ -2962,6 +2962,30 @@
     "brier_base": 0.9899999999999997,
     "mae_base": 1.9799999999999993
    }
+  }
+ },
+ "hot_tail": {
+  "registered_on": "2026-09-28",
+  "first_target": "2026-09-29",
+  "window": 7,
+  "min_draws": 180,
+  "alpha": 0.01,
+  "z_critical": 2.326,
+  "draws": 0,
+  "first": null,
+  "last": null,
+  "mean_diff": 0.0,
+  "stderr": 0.0,
+  "z": 0.0,
+  "state": "dang_thu",
+  "retrospective": {
+   "draws": 4212,
+   "last_draw": "2026-09-28",
+   "effect_pp": 0.456,
+   "z": 2.43,
+   "p_two_sided_mc": 0.011,
+   "control_head_effect_pp": 0.135,
+   "control_head_p": 0.475
   }
  }
 }

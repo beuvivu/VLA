@@ -214,6 +214,17 @@ tính lại khi số kỳ trôi quá 2% hoặc `STAT_VERSION` đổi (~8 phút, 
 lưu ĐỦ độ chính xác: làm tròn 7 chữ số từng thổi tin cậy cầu Đặc Biệt từ
 50,7% lên 66,5% vì cả khối giá trị hoà bị đếm là "nhỏ hơn".
 
+## Top LOTO và giả thuyết "đuôi nóng"
+
+Top LOTO (tệp top-4/8/10 và trang chủ) chọn qua `pick_diversity.diversified_order`:
+tối đa 3 con cùng đuôi, xác suất không đổi. Ngày 28-09-2026 cả 10 con đuôi 4 vì đặc
+trưng `tail_freq_7d` của mô hình cầu kèo — mười con cùng đuôi gần như là MỘT lần đặt.
+
+`src/hot_tail_test.py` là phép kiểm TIẾN CỨU đã đăng ký ngày 28-09-2026 (từ kỳ
+29-09, 180 kỳ, một phía α = 0,01). KHÔNG sửa tham số của nó: muốn đổi thì đăng ký giả
+thuyết mới với ngày bắt đầu mới. Sổ cái `data/hypotheses/hot_tail.csv` giữ lần ghi đầu.
+Chi tiết: `documentation/research/2026-09-28-duoi-4-va-gia-thuyet-duoi-nong.md`.
+
 ## Kỷ luật kiểm thử
 
 Phép kiểm phải ĐỎ khi hành vi nó đặt tên bị đảo. Mỗi phép kiểm mới phải được

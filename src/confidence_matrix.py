@@ -622,6 +622,14 @@ def published_feedback(data_dir: Path) -> dict:
     return out
 
 
+def _hot_tail_status(data_dir: Path) -> dict:
+    """Ghi các kỳ mới vào sổ cái giả thuyết "đuôi nóng" rồi trả trạng thái."""
+    import hot_tail_test
+
+    hot_tail_test.update_ledger(data_dir)
+    return hot_tail_test.evaluate(data_dir)
+
+
 def build_report(data_dir: Path, null: dict) -> dict:
     """Phần dữ liệu thật: họ giả thuyết, ma trận quyết định, rủi ro, phản hồi."""
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype={"date": str})
@@ -739,6 +747,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         "risk": risk,
         "intervention": intervention,
         "feedback": published_feedback(data_dir),
+        "hot_tail": _hot_tail_status(data_dir),
     }
 
 

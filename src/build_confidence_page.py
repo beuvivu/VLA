@@ -270,6 +270,43 @@ def feedback_card(report: dict) -> str:
     )
 
 
+_HOT_TAIL_WORDS = {
+    "dang_thu": "Đang thu thập — chưa đủ kỳ để kết luận.",
+    "xac_nhan": "XÁC NHẬN: đuôi nóng về nhiều hơn một cách có ý nghĩa trên các kỳ chưa từng thấy.",
+    "bac_bo": "BÁC BỎ: trên các kỳ chưa từng thấy, đuôi nóng không hơn các đuôi khác.",
+}
+
+
+def hot_tail_card(report: dict) -> str:
+    """Giả thuyết đã đăng ký trước, chấm trên các kỳ quay SAU ngày đăng ký."""
+    h = report.get("hot_tail")
+    if not h:
+        return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
+    retro = h["retrospective"]
+    span = (f"{html.escape(h['first'])} → {html.escape(h['last'])}" if h.get("first")
+            else "chưa có kỳ nào")
+    rows = [
+        ["Hồi cứu (dẫn tới giả thuyết)", _count(retro["draws"]),
+         f"{_num(retro['effect_pp'], 3)} điểm %", f"z {_num(retro['z'], 2)}, p {_num(retro['p_two_sided_mc'], 3)}"],
+        ["Tiến cứu (kỳ chưa từng thấy)", f"{h['draws']}/{h['min_draws']}",
+         f"{_num(h['mean_diff'] * 100, 3)} điểm %", f"z {_num(h['z'], 2)} (ngưỡng {_num(h['z_critical'], 3)})"],
+    ]
+    return (
+        '<p class="ui-muted">Điều tra vì sao cả 10 con LOTO ngày 28-09-2026 đều đuôi 4 tìm ra '
+        f"một tín hiệu: đuôi về nhiều nhất trong {h['window']} kỳ trước có xu hướng về nhiều hơn "
+        "các đuôi khác ở kỳ sau. Tín hiệu ấy được tìm SAU khi nhìn dữ liệu, nên chưa phải bằng "
+        f"chứng. Giả thuyết được chốt ngày {html.escape(h['registered_on'])} và chỉ chấm trên các kỳ "
+        f"từ {html.escape(h['first_target'])} trở đi; kết luận sau {h['min_draws']} kỳ, một phía "
+        f"α = {_num(h['alpha'], 2)}.</p>"
+        + _table(["", "Số kỳ", "Đuôi nóng − trung bình các đuôi", "Kiểm định"], rows,
+                 numeric="ui-r2 ui-r3")
+        + f'<p class="ui-muted">Kỳ đã chấm: {span}. '
+        f"<b>{html.escape(_HOT_TAIL_WORDS.get(h['state'], h['state']))}</b> Danh sách top LOTO "
+        "đã giới hạn tối đa 3 con cùng đuôi, nên dù tín hiệu có thật, mười con không còn dồn "
+        "vào một đuôi.</p>"
+    )
+
+
 def render(report: dict) -> str:
     blocks = [
         card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True),
@@ -279,6 +316,8 @@ def render(report: dict) -> str:
         card(families_card(report), title="Các trục cầu kèo so với ngẫu nhiên", span=12, lift=True),
         card(oos_card(report), title="Kiểm ngoài mẫu", span=12, lift=True),
         card(intervention_card(report), title="Giả thuyết kỳ quay bị sắp đặt", span=12, lift=True),
+        card(hot_tail_card(report), title="Giả thuyết đang kiểm tiến cứu: đuôi nóng", span=12,
+             lift=True),
         card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True),
         card(feedback_card(report), title="Vòng phản hồi", span=12, lift=True),
     ]
