@@ -379,3 +379,24 @@ def test_the_page_states_every_tier_and_links_back_to_quality(tmp_path: Path, sm
     assert content.select('a[href="model-quality.html"]')
     assert "(đang công bố)" in text
     assert "vla" not in text.lower()
+
+
+def test_the_page_never_prints_an_exact_zero_p_and_labels_each_sample() -> None:
+    """Review PR #104: p rất nhỏ từng in thành "0,000"; và dòng phản hồi in số
+    kỳ của bộ theo dõi (sổ cái) cạnh log-loss tính trên ít kỳ hơn."""
+    import build_confidence_page as page
+
+    report = {
+        "intervention": {"tests": [
+            {"label": "x", "detail": "y", "p": 1e-5, "p_holm": 4e-5},
+        ]},
+        "feedback": {
+            "monitor": [{"mode": "loto", "days": 31, "state": "vung_0"}],
+            "modes": {"loto": {"days": 29, "logloss_model": 0.5, "logloss_base": 0.5,
+                               "brier_model": 0.2, "brier_base": 0.2}},
+        },
+    }
+    card = page.intervention_card(report)
+    assert "0,000<" not in card and "< 0,001" in card
+    feedback = page.feedback_card(report)
+    assert "<td>29</td>" in feedback and "31 kỳ" in feedback

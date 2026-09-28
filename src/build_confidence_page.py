@@ -192,7 +192,9 @@ def intervention_card(report: dict) -> str:
     if not block:
         return '<p class="ui-table-empty">Chưa có bảng kết quả đầy đủ để kiểm.</p>'
     rows = [
-        [html.escape(t["label"]), html.escape(t["detail"]), _num(t["p"], 3), _num(t["p_holm"], 3)]
+        # Không in "0,000": p không thể bằng 0, và p Monte Carlo không nhỏ hơn
+        # 1/(N+1) — review PR #104.
+        [html.escape(t["label"]), html.escape(t["detail"]), _p(t["p"], 0.001), _p(t["p_holm"], 0.001)]
         for t in block["tests"]
     ]
     return (
@@ -246,8 +248,12 @@ def feedback_card(report: dict) -> str:
     for check in fb.get("monitor", []):
         mode = check["mode"]
         scores = fb.get("modes", {}).get(mode, {})
+        # Số kỳ của phép chấm và của bộ theo dõi là HAI mẫu khác nhau: sổ cái
+        # sống lâu hơn artifact, nên bộ theo dõi thường thấy nhiều kỳ hơn
+        # (review PR #104). Ghi riêng từng số.
         rows.append([
             html.escape(mode_label(mode)),
+            f"{scores.get('days', 0)}",
             f"{_num(scores.get('logloss_model'), 6)} / {_num(scores.get('logloss_base'), 6)}",
             f"{_num(scores.get('brier_model'), 6)} / {_num(scores.get('brier_base'), 6)}",
             f"{check['days']} kỳ: {html.escape(words.get(check['state'], check['state']))}",
@@ -255,7 +261,8 @@ def feedback_card(report: dict) -> str:
     if not rows:
         return '<p class="ui-table-empty">Chưa có kỳ đã công bố để chấm.</p>'
     return (
-        _table(["", "Log-loss mô hình / nền", "Brier mô hình / nền", "Bộ theo dõi (z = 3)"], rows)
+        _table(["", "Kỳ chấm", "Log-loss mô hình / nền", "Brier mô hình / nền",
+                "Bộ theo dõi (z = 3)"], rows)
         + '<p class="ui-muted">Vòng phản hồi chấm đúng vector xác suất đã công bố trước kỳ quay '
         'với kết quả thật; chi tiết ở trang <a href="model-quality.html">Chất lượng mô hình</a>. '
         "Trọng số chỉ được đổi khi bản mới thắng cả mặc định lẫn dự báo hằng số trên dữ liệu "
