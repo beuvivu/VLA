@@ -1,0 +1,53 @@
+name: Đọc cách soi cầu của trang tham chiếu
+
+# CHẠY TAY, KHÔNG CÓ LỊCH.
+#
+# Vì sao cần: chủ dự án muốn hệ thống soi cầu theo đúng nguyên lý của một trang
+# tham chiếu (tham số vt=6x22, lon, nhay, db). Proxy của môi trường phát triển
+# chặn trang ấy; runner của Actions gọi được — cùng đường với
+# inspect-reference-pages.yml.
+#
+# Job chỉ ĐỌC và in ra log cách trang đánh số vị trí và tô đường cầu. Không
+# commit, không tải hiện vật, không lưu nội dung trang vào kho. Mỗi URL gọi
+# đúng một lần, có nhịp chờ.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Danh sách URL https, cách nhau bằng dấu phẩy"
+        required: true
+        type: string
+      max_rows:
+        description: "Số hàng tối đa in cho mỗi bảng"
+        required: false
+        default: "30"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-reference-bridge
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: In vị trí, tham số và ô được tô
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir requests beautifulsoup4 lxml
+
+      - name: Đọc và in
+        env:
+          URLS: ${{ inputs.urls }}
+          MAX_ROWS: ${{ inputs.max_rows }}
+        run: python scripts/inspect_reference_bridge.py
