@@ -383,6 +383,8 @@ function lastTwo(value) {
 /** Dựng bảng từ tiêu đề và các hàng. */
 function table(el, headers, rows, opts) {
   opts = opts || {};
+  if (!opts.windowed && typeof renderFrequencyWindow === 'function' &&
+      renderFrequencyWindow(el, headers, rows, opts)) return;
   // Tiêu đề cột cũng phải ĐÁNH DẤU ĐƯỢC.
   //
   // Bố cục hai chiều là bất đối xứng: cùng một con số, ở chiều ngang nó là
@@ -703,20 +705,7 @@ function countLoto(rows) {
 // ô là số lần con đó về trong kỳ đó. Đổi được chiều ngang/dọc, và có bộ chọn
 // để chỉ hiện những con đang quan tâm.
 //
-// Trần cột là ràng buộc thật, không phải lười: chọn "Tất cả" trên kho 2392 kỳ
-// cho 239 000 ô và trình duyệt nghẹn.
-//
-// Nhưng trần 120 cũ thận trọng quá mức — đã đo lại chi phí dựng thật trong
-// Chromium, cùng máy, cùng trang:
-//
-//        30 ngày    3 030 ô    106 ms
-//       120 ngày   12 120 ô    352 ms
-//       300 ngày   30 300 ô    894 ms      <- vẫn dưới một giây
-//       500 ngày   50 500 ô  4 113 ms      <- chỗ gãy thật
-//
-// Nên trần đặt ở 300: đủ cho mốc dài nhất người dùng hỏi tới, và còn cách xa
-// điểm mà trình duyệt bắt đầu nghẹn.
-const MATRIX_MAX_DAYS = 300;
+// Hiển thị trọn dải đã chọn, kể cả 365 ngày và toàn bộ lịch sử.
 let MATRIX_GAN = new Array(100).fill(0);
 let MATRIX_RECENT = new Array(100).fill(0);
 
@@ -795,17 +784,14 @@ function bindPicker(render) {
 function renderLotoMatrix(rows) {
   const grid = $("sp-matrix-grid");
   if (!grid) return;
+  if (grid._spWindow) grid._spWindow.destroy();
 
-  const shown = rows.slice(-MATRIX_MAX_DAYS);
+  const shown = rows;
   const nums = Array.from({ length: 100 }, (_, n) => n).filter(isPicked);
 
   const note = $("sp-matrix-note");
   if (note) {
-    note.textContent = rows.length > shown.length
-      ? `Ma trận hiện ${shown.length} kỳ gần nhất trong ${rows.length} kỳ đã chọn ` +
-        `(trần ${MATRIX_MAX_DAYS} để trang không treo). Bảng xếp hạng bên dưới ` +
-        "dùng trọn dải."
-      : `${shown.length} kỳ × ${nums.length} con.`;
+    note.textContent = `${shown.length} kỳ × ${nums.length} con.`;
   }
   if (!nums.length) { grid.textContent = ""; return; }
 
@@ -1147,14 +1133,12 @@ const CAP50 = window.__D_CAP50__ || [];
 function renderPairMatrix(rows) {
   const grid = $("sp-matrix-grid");
   if (!grid || !CAP50.length) return;
+  if (grid._spWindow) grid._spWindow.destroy();
 
-  const shown = rows.slice(-MATRIX_MAX_DAYS);
+  const shown = rows;
   const note = $("sp-matrix-note");
   if (note) {
-    note.textContent = rows.length > shown.length
-      ? `Ma trận hiện ${shown.length} kỳ gần nhất trong ${rows.length} kỳ đã chọn ` +
-        `(trần ${MATRIX_MAX_DAYS} để trang không treo).`
-      : `${shown.length} kỳ × ${CAP50.length} họ cặp.`;
+    note.textContent = `${shown.length} kỳ × ${CAP50.length} họ cặp.`;
   }
 
   // Mỗi ô: số lần HAI con của họ đó về trong kỳ, cộng lại.

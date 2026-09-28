@@ -24,10 +24,13 @@ function installFrequencyBento(renderName) {
   }
   const dateOf = cell => /\|d(\d{4}-\d{2}-\d{2})/.exec(cell.dataset.key || "")?.[1];
   const numberOf = cell => /\|n(\d{2})/.exec(cell.dataset.key || "")?.[1];
+  let currentRows = [], currentSpecials = new Map(), scoredRows = null, pairScores = null;
   function decorate() {
     clearCrosshair.run();
     const rows = selected();
     const specials = new Map(rows.map(r => [r.d, String(r.s).slice(-2)]));
+    currentRows = rows;
+    currentSpecials = specials;
     const counts = countLoto(rows);
     const total = rows.reduce((n, r) => n + r.n.length, 0);
     const hot = counts.indexOf(Math.max(...counts));
@@ -43,6 +46,21 @@ function installFrequencyBento(renderName) {
       mk("strong", null, value),
       mk("small", null, hint),
     ])));
+    decorateCells(rows, specials);
+    $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;
+    $("sp-matrix-note").textContent = `${rows.length} kỳ · mới nhất trước`;
+    if (!pairPage) {
+      // Bảng xếp hạng đếm tổng số nháy trên trọn dải đã chọn.
+      const expected = rows.length * 27 / 100;
+      $("sp-grid").querySelectorAll("tbody tr").forEach(tr => {
+        if (tr.cells.length !== 5) return;
+        tr.cells[3].textContent = expected.toFixed(1);
+        tr.cells[4].textContent = expected ? (Number(tr.cells[2].textContent) / expected).toFixed(2) + "×" : "—";
+      });
+    }
+    paintMarks();
+  }
+  function decorateCells(rows, specials) {
     grid.classList.add("sp-nhay");
     grid.querySelectorAll("th").forEach(th => {th.scope = "col";});
     const dataCells = grid.querySelectorAll("td[data-key]");
@@ -65,34 +83,32 @@ function installFrequencyBento(renderName) {
     if (first) first.tabIndex = 0;
     // A date range with no draws is not evidence of misses.
     if (!rows.length || !first) {
+      if (grid._spWindow) grid._spWindow.destroy();
       fill(grid, mk("tbody", null, mk("tr", null, mk("td", {class: "sp-empty-row"},
         !rows.length
           ? 'Không có kỳ trong dải đã chọn. Hãy kiểm tra khoảng ngày và bộ lọc thứ.'
           : 'Chưa chọn số nào. Mở phần lựa chọn để thêm số vào ma trận.'))));
     }
-    $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;
-    $("sp-matrix-note").textContent = `${Math.min(rows.length, MATRIX_MAX_DAYS)} kỳ${rows.length > MATRIX_MAX_DAYS ? " gần nhất · xếp hạng dùng trọn dải" : " · mới nhất trước"}`;
-    if (!pairPage) {
-      // The ranking counts occurrences, not the number of draws with a hit.
-      const expected = rows.length * 27 / 100;
-      $("sp-grid").querySelectorAll("tbody tr").forEach(tr => {
-        if (tr.cells.length !== 5) return;
-        tr.cells[3].textContent = expected.toFixed(1);
-        tr.cells[4].textContent = expected ? (Number(tr.cells[2].textContent) / expected).toFixed(2) + "×" : "—";
-      });
-    }
-    paintMarks();
   }
+  grid.addEventListener('sp:matrix-window', () => {
+    clearCrosshair.run();
+    decorateCells(currentRows, currentSpecials);
+    paintMarks();
+  });
   function filterPairs(rows) {
     const vertical = $("sp-orient").value === "Xem theo chiều dọc";
     const pairs = CAP50.map(p => p.map(pad2).join("-"));
-    const byDate = rows.slice(-MATRIX_MAX_DAYS).slice().reverse();
-    const score = new Map(pairs.map(pair => {
-      const ns = pair.split("-");
-      const daily = byDate.map(r => r.n.filter(n => ns.includes(n)).length);
-      const hit = daily.findIndex(n => n > 0);
-      return [pair, {total:daily.reduce((a,b)=>a+b,0), gan:hit < 0 ? daily.length : hit}];
-    }));
+    if (scoredRows !== rows) {
+      const byDate = rows.slice().reverse();
+      pairScores = new Map(pairs.map(pair => {
+        const ns = pair.split("-");
+        const daily = byDate.map(r => r.n.filter(n => ns.includes(n)).length);
+        const hit = daily.findIndex(n => n > 0);
+        return [pair, {total:daily.reduce((a,b)=>a+b,0), gan:hit < 0 ? daily.length : hit}];
+      }));
+      scoredRows = rows;
+    }
+    const score = pairScores;
     const sort = $("sp-sort")?.value || "num";
     const compare = (a,b) => {
       if (sort === "num") return a.localeCompare(b);
@@ -104,6 +120,7 @@ function installFrequencyBento(renderName) {
       const head = Array.from(grid.tHead.rows[0].cells);
       const order = head.slice(1).map((c, i) => ({pair:pairOf(c),index:i+1})).sort((a,b)=>compare(a.pair,b.pair));
       for (const tr of grid.rows) {
+        if (tr.classList.contains('sp-virtual-gap')) continue;
         const cells = Array.from(tr.cells);
         for (const item of order) {const c=cells[item.index];c.hidden=!pickedPairs.has(item.pair);tr.append(c);}
       }
@@ -143,14 +160,18 @@ function installFrequencyBento(renderName) {
       if(ev.key==="Enter" || ev.key===" "){ev.preventDefault();cell.click();return;}
       if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.key))return;
       ev.preventDefault();
-      const rows=Array.from(grid.tBodies[0].rows).filter(r=>!r.hidden);
+      const rows=Array.from(grid.tBodies[0].rows).filter(r=>!r.hidden && !r.classList.contains('sp-virtual-gap'));
       let rowIndex=rows.indexOf(cell.parentElement);
-      const cells=Array.from(cell.parentElement.cells).filter(c=>!c.hidden && c.cellIndex>0);
+      const cells=Array.from(cell.parentElement.cells).filter(c=>!c.hidden && c.cellIndex>0 && c.hasAttribute('data-key'));
       let colIndex=cells.indexOf(cell);
       if(ev.key==="ArrowUp")rowIndex--;if(ev.key==="ArrowDown")rowIndex++;
       if(ev.key==="ArrowLeft")colIndex--;if(ev.key==="ArrowRight")colIndex++;
+      if (grid._spWindow && (rowIndex < 0 || rowIndex >= rows.length || colIndex < 0 || colIndex >= cells.length)) {
+        grid._spWindow.move(cell, ev.key);
+        return;
+      }
       const row=rows[Math.max(0,Math.min(rows.length-1,rowIndex))];
-      const target=Array.from(row.cells).filter(c=>!c.hidden && c.cellIndex>0)[Math.max(0,Math.min(cells.length-1,colIndex))];
+      const target=Array.from(row.cells).filter(c=>!c.hidden && c.cellIndex>0 && c.hasAttribute('data-key'))[Math.max(0,Math.min(cells.length-1,colIndex))];
       if(target){cell.tabIndex=-1;target.tabIndex=0;target.focus({preventScroll:true});target.scrollIntoView({block:"nearest",inline:"nearest"});}
     });
   };

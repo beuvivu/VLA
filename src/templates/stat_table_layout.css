@@ -1,0 +1,58 @@
+/* Khung tăng chiều cao theo toàn bộ hàng; chỉ cuộn ngang khi cần. */
+.sp-table-frame {position:relative;min-width:0;max-width:100%}
+body[data-ui-page] .sp-scroll.sp-table-layout {
+  width:100%;height:auto;max-height:none;min-width:0;
+  overscroll-behavior-y:auto;isolation:isolate;overflow-anchor:none;
+}
+.sp-table-pan {
+  position:sticky;top:var(--app-header-h,80px);z-index:8;
+  width:100%;height:16px;overflow-x:auto;overflow-y:hidden;
+  background:var(--ui-surface-2);scrollbar-width:thin;
+  scrollbar-color:var(--ui-border-strong) var(--ui-surface-2);
+}
+.sp-table-pan[hidden] {display:none}
+.sp-table-pan-track {height:1px}
+.sp-table-pan::-webkit-scrollbar {height:12px}
+.sp-table-pan::-webkit-scrollbar-thumb {background:var(--ui-border-strong);border-radius:6px}
+.sp-table-layout .sp-table {min-width:100%;border-collapse:separate;border-spacing:0}
+body[data-ui-page] .sp-table-layout .sp-table thead th {
+  position:sticky;top:0;z-index:4;
+  transform:translateY(var(--sp-head-offset,0px));
+  box-shadow:0 1px 0 var(--ui-border);
+}
+body[data-ui-page] .sp-table-layout .has-rowhead thead th:first-child {z-index:6}
+body[data-ui-page] .sp-table-layout .has-rowhead :is(th,td):first-child {
+  border-right:1px solid var(--ui-border-strong);
+}
+/* Đủ chỗ thì các cột giãn đều; nhiều cột vẫn giữ kích thước đọc được. */
+.bf-page .sp-table-layout #sp-matrix-grid {
+  width:max(100%,calc(86px + var(--sp-data-columns,90) * 54px));
+  table-layout:fixed;
+}
+.bf-page .sp-table-layout #sp-matrix-grid :is(th,td) {
+  width:auto;min-width:54px;max-width:none;border-color:var(--ui-border-strong);
+}
+.bf-page .sp-table-layout #sp-matrix-grid :is(th,td):first-child {
+  width:86px;min-width:86px;max-width:none;
+}
+.sp-table-layout .sp-calendar-table {
+  table-layout:fixed;width:max(100%,calc(var(--sp-columns,7) * 112px));
+}
+.sp-table-layout .sp-calendar-table.has-rowhead {
+  width:max(100%,calc(64px + var(--sp-data-columns,12) * 112px));
+}
+.sp-table-layout .sp-calendar-table.has-rowhead :is(th,td):first-child {width:64px}
+.sp-table-layout .sp-calendar-table :is(th,td) {text-align:center;vertical-align:middle}
+.sp-table-layout .sp-calendar-table .sp-fields {
+  display:flex;flex-wrap:wrap;justify-content:center;gap:2px 0;white-space:normal;
+}
+.sp-table-layout .sp-calendar-table .sp-f {white-space:nowrap}
+.sp-table-layout .sp-empty-row {white-space:normal;overflow-wrap:anywhere}
+.bf-page .sp-table-layout #sp-matrix-grid .sp-virtual-gap {
+  padding:0;border:0;min-width:0;max-width:none;position:static;
+  font-size:0;line-height:0;border-radius:0;background:var(--ui-empty-bg);
+}
+@media print {
+  .sp-table-pan {display:none}
+  body[data-ui-page] .sp-table-layout .sp-table thead th {transform:none}
+}

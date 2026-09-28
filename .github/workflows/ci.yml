@@ -80,6 +80,7 @@ jobs:
       - run: python -m pip install playwright==1.55.0
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/check_ui_browser.py
+      - run: python scripts/check_stat_tables_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
         if: always()
         uses: actions/upload-artifact@v7

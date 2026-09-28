@@ -218,11 +218,11 @@ WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
 )
 
 
-#: Mốc ngày nhanh. Trần 300 là ràng buộc đo được: 300 kỳ dựng trong 894 ms,
-#: còn 500 kỳ mất 4 113 ms nên không đưa vào danh sách.
+#: Mốc ngày nhanh, gồm dải ngắn và trọn năm cho bảng co giãn.
 QUICK_RANGES: tuple[tuple[str, str], ...] = (
-    ("30", "30 ngày"), ("60", "60 ngày"), ("90", "90 ngày"),
+    ("10", "10 ngày"), ("30", "30 ngày"), ("60", "60 ngày"), ("90", "90 ngày"),
     ("100", "100 ngày"), ("200", "200 ngày"), ("300", "300 ngày"),
+    ("365", "365 ngày"),
 )
 
 #: Thứ tự sắp xếp con số trên ma trận.
@@ -710,12 +710,15 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
     bento = page.slug in {"tan-suat-loto", "tan-suat-cap-loto"}
+    calendar = page.slug in {"bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"}
+    responsive = bento or calendar
+    body = page.body.replace('class="sp-table ', 'class="sp-table sp-calendar-table ') if calendar else page.body
     content = frequency_bento_layout(page, note_html) if bento else f"""
 <div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
 <h1>{page.title}</h1>
 <p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
 {page.controls}
-{page.body}
+{body}
 {note_html}"""
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
@@ -726,6 +729,7 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 <style>
 {_asset("stat_pages.css")}
 {_asset("frequency_bento.css") if bento else ""}
+{_asset("stat_table_layout.css") if responsive else ""}
 </style></head><body class="{'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
 {content}
@@ -740,8 +744,11 @@ window.__D_CAP50__={json_for_html_script(cap_loto_50())};</script>
 <script>
 {_asset("frequency_demo.js") if bento else ""}
 {_asset("stat_pages.js")}
+{_asset("frequency_window.js") if bento else ""}
 {_asset("frequency_bento.js") if bento else ""}
 {f'installFrequencyBento({json.dumps(page.render)});' if bento else ""}
+{_asset("stat_table_layout.js") if responsive else ""}
+{'installStatTableLayout();' if responsive else ''}
 boot({json.dumps(page.render)});
 </script>
 </body></html>
