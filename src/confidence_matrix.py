@@ -51,7 +51,7 @@ SPLIT = "2024-01-01"
 DEFAULT_SIMS = 10_000
 SEED = 20260928
 #: Tăng khi đổi định nghĩa bất kỳ thống kê nào trong :func:`stats`.
-STAT_VERSION = 1
+STAT_VERSION = 2
 #: Số kỳ trôi quá tỉ lệ này thì tính lại phân phối null.
 REFRESH_DRIFT = 0.02
 #: Số điểm phân vị lưu cho mỗi họ: độ phân giải tin cậy 0,1 %.
@@ -65,7 +65,7 @@ NAMES = [
     "freq_absz_max", "freq_chi2", "bayes_post_max", "bayes60_post_max",
     "markov_z_max", "markov_absz_max", "pair_z_max", "cau_loto_max", "cau_de_max",
     "cusum_max", "distinct_cusum", "year_persist", "de_chi2", "de_bayes_post_max",
-    "de_markov_z_max", "de_to_loto", "freq_z_max",
+    "de_markov_z_max", "de_to_loto", "freq_z_max", "markov_state_max",
 ]
 
 #: Tên hiển thị và cỡ họ của từng thống kê, theo đúng thứ tự trình bày.
@@ -156,6 +156,11 @@ def stats(draws: np.ndarray) -> dict[str, np.ndarray | float]:
         se = np.sqrt(pp * (1 - pp) * (1 / n1 + 1 / n0))
         out["markov_z"] = _safe((p11 - p01) / se)
         out["markov_p11"], out["markov_p01"] = _safe(p11), _safe(p01)
+        # Điểm Markov THEO TRẠNG THÁI KỲ CUỐI: về thì z, trượt thì −z. Thành
+        # phần Markov của ma trận chấm đúng điểm này, nên null phải là max của
+        # CHÍNH nó — review PR #104: so −z với max z chưa đổi dấu là so hai
+        # thống kê khác nhau.
+        out["markov_state"] = np.where(hits[-1] == 1, out["markov_z"], -out["markov_z"])
 
         pairs = prev.T @ nxt
         expected = np.outer(n1, pp)
@@ -209,6 +214,7 @@ def summarize(values: dict) -> np.ndarray:
         values["de_markov_z"].max(),
         values["de_to_loto"],
         values["freq_z"].max(),
+        values["markov_state"].max(),
     ])
 
 
@@ -556,8 +562,6 @@ def build_report(data_dir: Path, null: dict) -> dict:
 
     last = str(dates.iloc[-1])
     target, lo_picks, de_picks, pick_source = _target_date(data_dir, last)
-    hits = hits_matrix(draws)
-    hit_yesterday = hits[-1].astype(bool)
     dig_last = digits(draws)[-1]
     best = {"loto": np.zeros(100), "de": np.zeros(100)}
     grids = {"loto": values["cau_loto"].reshape(54, 54), "de": values["cau_de"].reshape(54, 54)}
@@ -573,10 +577,10 @@ def build_report(data_dir: Path, null: dict) -> dict:
         for i in range(100):
             if mode == "loto":
                 bayes = float(values["bayes_post"][i])
-                markov = float(values["markov_z"][i] if hit_yesterday[i] else -values["markov_z"][i])
+                markov = float(values["markov_state"][i])
                 comps = {
                     "bayes": confidence(null, "bayes_post_max", bayes),
-                    "markov": confidence(null, "markov_z_max", markov),
+                    "markov": confidence(null, "markov_state_max", markov),
                     "cau": confidence(null, "cau_loto_max", best["loto"][i]) if best["loto"][i] else 0.0,
                 }
             else:

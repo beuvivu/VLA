@@ -170,6 +170,20 @@ def test_a_high_naive_posterior_in_a_fair_history_is_not_high_confidence(
     assert top["c_bayes"] < top["naive_bayes"] - 0.2, top
 
 
+def test_the_markov_component_is_scored_against_the_null_of_the_same_statistic(
+    tmp_path: Path, small_null: dict
+) -> None:
+    """Review PR #104: điểm Markov gắn trạng thái kỳ cuối (z hoặc −z) phải so
+    với max của CHÍNH điểm ấy, không với max z chưa đổi dấu. Dựng null mà hai
+    họ đối nghịch nhau: chấm nhầm họ thì mọi thành phần Markov về 0."""
+    _store(tmp_path, 700, seed=11)
+    null = json.loads(json.dumps(small_null))
+    null["quantiles"]["markov_state_max"] = [-100.0] * cm.QUANTILES
+    null["quantiles"]["markov_z_max"] = [100.0] * cm.QUANTILES
+    rows = [r for r in cm.build_report(tmp_path, null)["matrix"] if r["mode"] == "loto"]
+    assert all(r["c_markov"] == 1.0 for r in rows)
+
+
 def test_naive_bayes_false_alarms_are_reported_from_the_null(small_null: dict) -> None:
     """Chính lời phản biện của trang: hậu nghiệm cao nhất trong 100 con của
     một lịch sử CÔNG BẰNG thường vẫn vượt 95%."""
