@@ -58,6 +58,23 @@ def bridge_script() -> str:
     return (Path(__file__).parent / "templates" / "position_bridges.js").read_text(encoding="utf-8")
 
 
+def analysis_css() -> str:
+    """Bố cục chung của các trang soi cầu, chỉ áp dụng trong họ trang này."""
+    return (Path(__file__).parent / "templates" / "bridge_workspace.css").read_text(encoding="utf-8")
+
+
+def analysis_header(title: str, subtitle: str, meta=(), *, section="Soi cầu / Miền Bắc") -> str:
+    header = page_header(title, subtitle, meta)
+    return header.replace(
+        '<header class="ui-header">',
+        '<header class="ui-header app-analysis-header">'
+        '<div class="app-analysis-topline"><a href="index.html">← Trang chính</a>'
+        '<span class="ui-badge ui-badge-ok">Dữ liệu XSMB · Miền Bắc</span></div>'
+        f'<p class="app-analysis-eyebrow">{html.escape(section)}</p>',
+        1,
+    )
+
+
 def link(cfg: dict, bridge: dict | None = None, *, base: str = PAGE) -> str:
     """Đường dẫn tới đường cầu, cùng bộ tham số với trang đối chiếu."""
     params = {}
@@ -236,7 +253,8 @@ def page_payload(report: dict) -> dict:
 def render(report: dict) -> str:
     target = _date(report["target_date"])
     blocks = [
-        card(form_card(), title="Tuỳ chọn soi cầu", span=12, flush=True),
+        card(form_card(), title="Bộ lọc & lựa chọn", span=12, flush=True,
+             aside='<span class="app-analysis-caption">Chọn điều kiện rồi bấm Soi cầu</span>'),
         '<section class="ui-card ui-c12 app-bridge-path" hidden>'
         '<div id="app-bridge-path" class="ui-card-body" aria-live="polite"></div></section>',
         card(f'<div id="app-bridge-list">{best_panel(report, report["source_date"])}</div>',
@@ -258,15 +276,16 @@ def render(report: dict) -> str:
   <style>
 {shared_results_css()}
 {bridge_css()}
+{analysis_css()}
   </style>
 </head>
-<body>
+<body class="app-analysis-page app-position-page">
 {app_shell_open(PAGE)}
-{page_header(
+{analysis_header(
     "Soi cầu vị trí",
-    f"Ghép hai chữ số ở hai vị trí của bảng kết quả kỳ trước thành cầu và dò xem kỳ sau có về. "
-    f"Dữ liệu đến kỳ {_date(report['source_date'])}, cầu cho kỳ {target}; cập nhật ngay sau mỗi kỳ quay. "
-    "Công cụ mô tả, không phải lời khuyên đặt cược.",
+    "Chọn vị trí, theo dõi đường cầu và đối chiếu với từng kỳ kết quả.",
+    (f"Dữ liệu đến {_date(report['source_date'])}", f"Kỳ tiếp theo {target}",
+     "Thống kê mô tả · Không phải khuyến nghị đặt cược"),
 )}
 <div class="ui-grid">{"".join(blocks)}</div>
 <script id="app-bridge-data" type="application/json">{json_for_html_script(page_payload(report))}</script>

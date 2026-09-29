@@ -206,10 +206,22 @@
   function renderGrid(host, result, onPick, onHover) {
     host.replaceChildren();
     const table = el("table", "app-cau-grid");
+    table.append(el("caption", "ui-sr-only", "Số cầu theo các số 00 đến 99"));
+    const thead = el("thead");
+    const header = el("tr");
+    for (const label of ["Đầu / Đuôi", ...Array.from({ length: 10 }, (_, i) => String(i))]) {
+      const th = el("th", "", label);
+      th.scope = "col";
+      header.append(th);
+    }
+    thead.append(header);
+    table.append(thead);
     const body = el("tbody");
     for (let head = 0; head < 10; head += 1) {
       const row = el("tr");
-      row.append(el("th", "", `Đầu ${head}`));
+      const rowhead = el("th", "", `Đầu ${head}`);
+      rowhead.scope = "row";
+      row.append(rowhead);
       for (let tail = 0; tail < 10; tail += 1) {
         const number = `${head}${tail}`;
         const n = result.counts[number] || 0;
@@ -218,11 +230,14 @@
           const button = el("button", "app-cau-cell");
           button.type = "button";
           button.dataset.number = number;
+          button.setAttribute("aria-pressed", "false");
+          button.setAttribute("aria-label", `Số ${number}, ${n} cầu. Xem vị trí cầu`);
           button.append(el("b", "", number), el("span", "", `${n} cầu`));
           button.addEventListener("click", () => onPick(number));
           button.addEventListener("mouseenter", () => onHover(number));
           button.addEventListener("focus", () => onHover(number));
           button.addEventListener("mouseleave", () => onHover(null));
+          button.addEventListener("blur", () => onHover(null));
           cell.append(button);
         } else {
           cell.className = "app-cau-empty";
@@ -234,13 +249,19 @@
     }
     table.append(body);
     const wrap = el("div", "app-cau-grid-wrap");
+    wrap.tabIndex = 0;
+    wrap.setAttribute("role", "region");
+    wrap.setAttribute("aria-label", "Bảng cầu theo đầu và đuôi, cuộn ngang để xem đủ 00 đến 99");
     wrap.append(table);
     host.append(wrap);
   }
 
   function renderGroups(host, result, kind) {
     host.replaceChildren();
-    if (!result.groups.length) return;
+    if (!result.groups.length) {
+      host.append(el("p", "app-cau-empty-state", "Không có cầu phù hợp. Giảm số ngày cầu chạy hoặc chọn kỳ khác để xem kết quả."));
+      return;
+    }
     host.append(el("h3", "app-cau-subhead", kind === "bo-so" ? "Xếp hạng bộ số (tổng số cầu thuộc bộ)" : "Tổng số cầu theo cặp số"));
     const list = el("ol", "app-cau-groups");
     for (const group of result.groups) {
@@ -302,12 +323,34 @@
   }
 
   function mount() {
+    const tabs = document.querySelector(".app-cau-tabs");
+    const activeTab = tabs?.querySelector('[aria-current="page"]');
+    if (tabs && activeTab) {
+      const revealTab = () => {
+        if (tabs.scrollWidth <= tabs.clientWidth) return;
+        const frame = tabs.getBoundingClientRect();
+        const item = activeTab.getBoundingClientRect();
+        if (item.left < frame.left + 16) tabs.scrollLeft += item.left - frame.left - 16;
+        else if (item.right > frame.right - 16) tabs.scrollLeft += item.right - frame.right + 16;
+      };
+      revealTab();
+      window.addEventListener("load", revealTab, { once: true });
+      window.addEventListener("resize", revealTab);
+    }
     const rule = REPORT.rule;
     const params = readParams(window.location.search);
     const series = seriesFor(params);
     const result = { ...scan(series, rule.kind, params.count, params.both) };
     Object.assign(result, tally(result.bridges, rule.kind));
     const last = series[series.length - 1];
+    for (const [key, value] of Object.entries({
+      total: result.total.toLocaleString("vi-VN"),
+      longest: String(result.longest),
+      date: formatDate(last.date),
+    })) {
+      const metric = document.querySelector(`[data-cau-metric="${key}"]`);
+      if (metric) metric.textContent = value;
+    }
 
     const form = document.getElementById("app-cau-form");
     if (form) {
@@ -399,6 +442,9 @@
 
     function pick(number) {
       if (!detail) return;
+      for (const cell of document.querySelectorAll("button.app-cau-cell")) {
+        cell.setAttribute("aria-pressed", String(cell.dataset.number === number));
+      }
       detail.replaceChildren();
       const list = result.bridges.filter((x) => x.number === number);
       detail.append(el("h3", "app-cau-subhead", `Số ${number}: ${list.length} cầu`));

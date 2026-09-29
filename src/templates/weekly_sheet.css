@@ -1,0 +1,33 @@
+/* Màu tùy chọn dành cho phôi in; bộ điều khiển dùng bảng màu chung. */
+body.app-phoi-page #app-phoi-form {grid-template-columns:repeat(3,minmax(0,1fr))}
+body.app-phoi-page #app-phoi-form input[type=color] {width:100%;height:44px;border-radius:10px;cursor:pointer}
+.app-phoi-actions {grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--ui-border);padding-top:16px}
+.app-phoi-actions p {margin:0;color:var(--ui-ink-soft);font-size:12px}
+body.app-phoi-page .app-phoi-wrap {max-width:100%;border:1px solid var(--ui-border-strong);border-radius:12px;scrollbar-width:thin;overscroll-behavior-x:contain}
+body.app-phoi-page .app-phoi {min-width:720px;border:0;border-collapse:separate;border-spacing:0}
+body.app-phoi-page .app-phoi :is(th,td) {border-width:0 1px 1px 0;padding:10px 8px;line-height:1.4}
+body.app-phoi-page .app-phoi tr > :last-child {border-right:0}
+body.app-phoi-page .app-phoi tbody tr:last-child > * {border-bottom:0}
+body.app-phoi-page .app-phoi tr > th:first-child {position:sticky;left:0;z-index:1;min-width:52px}
+body.app-phoi-page .app-phoi thead th {font-size:12px;padding-block:12px;white-space:nowrap}
+body.app-phoi-page .app-phoi-cell {letter-spacing:0}
+body.app-phoi-page .app-phoi-tail {margin-left:2px}
+@media (max-width:760px) {
+  body.app-phoi-page #app-phoi-form {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app-phoi-actions {flex-direction:column;align-items:stretch}
+}
+@media print {
+  @page {size:A4 landscape;margin:12mm}
+  body.app-phoi-page .app-analysis-header,
+  body.app-phoi-page .ui-grid > :not(#app-phoi-preview),
+  body.app-phoi-page #app-phoi-status {display:none!important}
+  body.app-phoi-page #app-phoi-preview {display:block;overflow:visible;border:0;border-radius:0;box-shadow:none;break-inside:auto}
+  body.app-phoi-page #app-phoi-preview .ui-card-head {padding:0 0 12px;border:0}
+  body.app-phoi-page #app-phoi-preview .ui-card-body {display:block;padding:0}
+  body.app-phoi-page .app-phoi-wrap {overflow:visible;border:0;border-radius:0}
+  body.app-phoi-page .app-phoi {width:100%;min-width:0;border-collapse:collapse;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  body.app-phoi-page .app-phoi :is(th,td) {padding:4px;border:1px solid #6b7280}
+  body.app-phoi-page .app-phoi th {position:static!important;background:#f3f4f6;color:#111827}
+  body.app-phoi-page .app-phoi thead {display:table-header-group}
+  body.app-phoi-page .app-phoi tr {break-inside:avoid}
+}

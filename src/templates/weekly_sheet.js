@@ -56,8 +56,11 @@
     table.style.backgroundColor = options.bg;
     const thead = el("thead");
     const headRow = el("tr");
-    headRow.append(el("th", "", "No"));
-    for (const day of DAYS) headRow.append(el("th", "", day));
+    for (const label of ["Tuần", ...DAYS]) {
+      const th = el("th", "", label);
+      th.scope = "col";
+      headRow.append(th);
+    }
     thead.append(headRow);
     table.append(thead);
     const body = el("tbody");
@@ -65,6 +68,7 @@
     list.forEach(([monday, cells], i) => {
       const row = el("tr");
       const no = el("th", "", String(list.length - i));
+      no.scope = "row";
       no.title = `Tuần bắt đầu ${monday.split("-").reverse().join("/")}`;
       row.append(no);
       for (const cell of cells) {
@@ -92,7 +96,13 @@
     const form = document.getElementById("app-phoi-form");
     const host = document.getElementById("app-phoi");
     if (!form || !host) return;
-    const draw = () => render(host, readForm(form));
+    const draw = () => {
+      const options = readForm(form);
+      const table = render(host, options);
+      const status = document.getElementById("app-phoi-status");
+      if (status) status.textContent = `${table.tBodies[0].rows.length} tuần · Mỗi hàng một tuần, từ cũ đến mới. `
+        + "Cuộn ngang nếu cần để xem đủ bảy ngày.";
+    };
     form.addEventListener("input", draw);
     form.addEventListener("submit", (event) => { event.preventDefault(); draw(); });
     const print = document.getElementById("app-phoi-print");
