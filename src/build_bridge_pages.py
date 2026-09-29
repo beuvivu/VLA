@@ -13,15 +13,18 @@ từ số đo, không viết cứng.
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import html
 import json
 from pathlib import Path
 
 from bridge_rules import OUT, RULES
-from build_position_bridges import MIN_ROWS, Z_ALERT, _count, _date, _rows_table, _streak_label
+from build_position_bridges import (
+    MIN_ROWS, Z_ALERT, _count, _date, _rows_table, _streak_label, analysis_css, analysis_header,
+)
 from page_output import write_page
 from shared_results import shared_results_css
-from ui_theme import app_shell_close, app_shell_open, card, page_header, stylesheet_link, write_stylesheet
+from ui_theme import app_shell_close, app_shell_open, card, stylesheet_link, write_stylesheet
 from web_security import json_for_html_script, security_meta_tags
 
 TOOL_PAGE = "tao-phoi-tuan.html"
@@ -69,7 +72,7 @@ def form_card(key: str, cfg: dict, report: dict) -> str:
         extra += f'<label>Thứ trong tuần<select name="thu">{options}</select></label>'
     return (
         '<form id="app-cau-form" class="app-cau-form" method="get">'
-        '<label>Biên ngày cầu chạy<select name="ngay">'
+        '<label>Tính đến kỳ<select name="ngay">'
         f'<option value="{report["source_date"]}">{_date(report["source_date"])}</option></select></label>'
         f'<label>Số ngày cầu chạy<input type="number" name="count" min="1" max="{report["window"] - 1}" '
         f'value="{cfg["count"]}" inputmode="numeric" required></label>'
@@ -87,8 +90,25 @@ def static_grid(counts: dict[str, int]) -> str:
              if f"{head}{tail}" in counts else f'<td class="app-cau-empty"><span>{head}{tail}</span></td>')
             for tail in range(10)
         )
-        rows.append(f"<tr><th>Đầu {head}</th>{cells}</tr>")
-    return f'<div class="app-cau-grid-wrap"><table class="app-cau-grid"><tbody>{"".join(rows)}</tbody></table></div>'
+        rows.append(f'<tr><th scope="row">Đầu {head}</th>{cells}</tr>')
+    heads = ''.join(f'<th scope="col">{tail}</th>' for tail in range(10))
+    return ('<div class="app-cau-grid-wrap" tabindex="0" role="region" aria-label="Bảng cầu theo đầu và đuôi">'
+            '<table class="app-cau-grid"><caption class="ui-sr-only">Số cầu theo các số 00 đến 99</caption>'
+            f'<thead><tr><th scope="col">Đầu / Đuôi</th>{heads}</tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table></div>')
+
+
+def summary_metrics(data: dict, source_date: str) -> str:
+    metrics = (
+        ("total", "Cầu đang chạy", _count(data["total"]), "Theo điều kiện đang chọn"),
+        ("longest", "Cầu dài nhất", str(data["longest"]), "Số bước kỳ-sang-kỳ liên tiếp"),
+        ("date", "Kỳ đang phân tích", _date(source_date), "Mốc cuối của chuỗi kết quả"),
+    )
+    return '<dl class="app-cau-metrics">' + ''.join(
+        f'<div><dt>{label}</dt><dd data-cau-metric="{key}">{value}</dd>'
+        f'<dd class="app-cau-metric-hint">{hint}</dd></div>'
+        for key, label, value, hint in metrics
+    ) + '</dl>'
 
 
 def backtest_card(cfg: dict, data: dict) -> str:
@@ -141,18 +161,30 @@ def render(key: str, report: dict) -> str:
     data = report["rules"][key]
     weekday_note = (f" Mặc định là các kỳ {WEEKDAYS[data['default_weekday']]} — cùng thứ với kỳ "
                     f"{_date(report['target_date'])}." if cfg["weekday"] else "")
-    blocks = [
-        card(_nav_links(key) + form_card(key, cfg, report), title="Tuỳ chọn", span=12, flush=True),
-        card(f'<p id="app-cau-summary" class="app-cau-summary">{html.escape(cfg["title"])}: '
+    selected_date = next(
+        row[:10] for row in reversed(report["draws"])
+        if not cfg["weekday"] or date.fromisoformat(row[:10]).weekday() == data["default_weekday"]
+    )
+    overview = card(f'<p id="app-cau-summary" class="app-cau-summary" role="status">{html.escape(cfg["title"])}: '
              f'{data["total"]} cầu chạy từ {cfg["count"]} ngày, cầu dài nhất {data["longest"]} ngày.</p>'
              f'<p class="app-cau-help">Rê chuột hoặc chạm vào một ô để thấy các vị trí tạo cầu trên bảng kết quả; '
              f'bấm vào ô để chọn từng cầu và xem cách tính.</p>'
              f'<div id="app-cau-grid">{static_grid(data["counts"])}</div>'
              '<div id="app-cau-detail" class="app-cau-detail" aria-live="polite"></div>',
-             title=f"Bảng cầu cho kỳ {_date(report['target_date'])}", span=12, lift=True),
-        card('<div id="app-cau-days" class="tr-results app-cau-days" data-layout="2"></div>',
-             title="Vị trí cầu trên bảng kết quả", span=12, lift=True),
-        card('<div id="app-cau-groups"></div>', title="Xếp hạng", span=12, lift=True),
+             title="Bảng phân bố cầu", lift=True,
+             aside='<span class="app-analysis-caption">Đầu 0–9 · Đuôi 0–9</span>')
+    overview = overview.replace('<section class="', '<section class="app-cau-distribution ', 1)
+    ranking = card('<div id="app-cau-groups"></div>', title="Xếp hạng cặp / bộ số", lift=True)
+    ranking = ranking.replace('<section class="', '<section class="app-cau-ranking ', 1)
+    evidence = card('<div id="app-cau-days" class="tr-results app-cau-days" data-layout="2"></div>',
+                    title="Vị trí cầu trên bảng kết quả", lift=True,
+                    aside='<span class="app-analysis-caption">Chọn một số ở bảng trên để đối chiếu</span>')
+    evidence = evidence.replace('<section class="', '<section class="app-cau-evidence ', 1)
+    blocks = [
+        card(_nav_links(key) + form_card(key, cfg, report), title="Bộ lọc & lựa chọn", span=12, flush=True,
+             aside='<span class="app-analysis-caption">Chọn điều kiện rồi bấm Xem kết quả</span>'),
+        '<div class="ui-c12">' + summary_metrics(data, selected_date) + '</div>',
+        f'<div class="app-cau-overview ui-c12">{overview}{evidence}{ranking}</div>',
         card(backtest_card(cfg, data)
              + ('<h3 class="app-cau-subhead">Khi chọn "cả hai chữ số"</h3>'
                 + backtest_card(cfg, {**data, "backtest": data["backtest_both"]})
@@ -175,11 +207,14 @@ def render(key: str, report: dict) -> str:
   <style>
 {shared_results_css()}
 {page_css()}
+{analysis_css()}
   </style>
 </head>
-<body>
+<body class="app-analysis-page app-cau-page">
 {app_shell_open(cfg["slug"] + ".html")}
-{page_header(cfg["title"], RULE_TEXT[key] + " Công cụ mô tả, không phải lời khuyên đặt cược.")}
+{analysis_header(cfg["title"], "Khám phá các cầu đang chạy, chọn số và đối chiếu vị trí trên bảng kết quả.",
+                 (f"Dữ liệu đến {_date(report['source_date'])}",
+                  "Thống kê mô tả · Không phải khuyến nghị đặt cược"))}
 <div class="ui-grid">{"".join(blocks)}</div>
 <script id="app-cau-data" type="application/json">{json_for_html_script(page_payload(key, cfg, report))}</script>
 <script>{page_script()}</script>
@@ -197,18 +232,23 @@ def render_tool(specials: list[list[str]]) -> str:
     """Tạo phôi tuần: bảng giải Đặc Biệt theo tuần, tách 3 chữ số đầu và 2 chữ số cuối."""
     form = (
         '<form id="app-phoi-form" class="app-cau-form">'
-        '<label>Số tuần (5–80)<input type="number" name="count" min="5" max="80" value="50"></label>'
-        '<label>Cỡ chữ 3 chữ số đầu (15–35)<input type="number" name="headsize" min="15" max="35" value="20"></label>'
-        '<label>Cỡ chữ 2 chữ số cuối (15–35)<input type="number" name="tailsize" min="15" max="35" value="20"></label>'
+        '<label>Số tuần (5–80)<input type="number" name="count" min="5" max="80" value="50" inputmode="numeric"></label>'
+        '<label>Cỡ chữ 3 số đầu (15–35)<input type="number" name="headsize" min="15" max="35" value="20" inputmode="numeric"></label>'
+        '<label>Cỡ chữ 2 số cuối (15–35)<input type="number" name="tailsize" min="15" max="35" value="20" inputmode="numeric"></label>'
         '<label>Màu nền<input type="color" name="bgcolour" value="#ffffff"></label>'
         '<label>Màu 3 chữ số đầu<input type="color" name="headcolour" value="#000000"></label>'
         '<label>Màu 2 chữ số cuối<input type="color" name="tailcolour" value="#d11a1a"></label>'
-        '<button type="button" id="app-phoi-print">In phôi</button></form>'
+        '<div class="app-phoi-actions"><p>Màu đã chọn áp dụng cho bản phôi và bản in.</p>'
+        '<button type="button" id="app-phoi-print">In phôi</button></div></form>'
     )
     blocks = [
-        card(form, title="Tuỳ chọn phôi", span=12, flush=True),
-        card('<div id="app-phoi" class="app-phoi-wrap"><p class="app-cau-help">Bật JavaScript để tạo phôi.</p></div>',
-             title="Phôi giải Đặc Biệt theo tuần", span=12, lift=True),
+        card(form, title="Tuỳ chỉnh phôi tuần", span=12, flush=True,
+             aside='<span class="app-analysis-caption">Xem trước ngay khi thay đổi</span>'),
+        card('<p class="app-cau-help" id="app-phoi-status" role="status"></p>'
+             '<div id="app-phoi" class="app-phoi-wrap" tabindex="0" role="region" '
+             'aria-label="Phôi giải Đặc Biệt theo tuần"><p class="app-cau-help">Bật JavaScript để tạo phôi.</p></div>',
+             title="Phôi giải Đặc Biệt theo tuần", span=12, lift=True)
+             .replace('<section class="', '<section id="app-phoi-preview" class="', 1),
     ]
     return f"""<!doctype html>
 <html lang="vi">
@@ -220,12 +260,14 @@ def render_tool(specials: list[list[str]]) -> str:
   <title>Tạo phôi tuần — Phân tích XSMB</title>
   <style>
 {page_css()}
+{analysis_css()}
+{(Path(__file__).parent / "templates" / "weekly_sheet.css").read_text(encoding="utf-8")}
   </style>
 </head>
-<body>
+<body class="app-analysis-page app-phoi-page">
 {app_shell_open(TOOL_PAGE)}
-{page_header("Tạo phôi tuần", "Bảng giải Đặc Biệt theo tuần — mỗi hàng một tuần, cột Thứ Hai đến Chủ Nhật, "
-             "tách 3 chữ số đầu và 2 chữ số cuối — chỉnh số tuần, cỡ chữ và màu rồi in.")}
+{analysis_header("Tạo phôi tuần", "Tùy chỉnh bảng Đặc Biệt theo tuần, xem trước và in để theo dõi kết quả.",
+                 ("Thứ Hai → Chủ Nhật", "3 chữ số đầu / 2 chữ số cuối"), section="Công cụ / Miền Bắc")}
 <div class="ui-grid">{"".join(blocks)}</div>
 <script id="app-phoi-data" type="application/json">{json_for_html_script({"specials": specials})}</script>
 <script>{(Path(__file__).parent / "templates" / "weekly_sheet.js").read_text(encoding="utf-8")}</script>

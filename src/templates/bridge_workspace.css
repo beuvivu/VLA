@@ -1,0 +1,130 @@
+/* Giao diện dùng chung cho cầu vị trí, bảy trang soi cầu và phôi tuần.
+   Giữ khung và bảng màu hiện tại, chỉ áp dụng trong các trang này. */
+body.app-analysis-page .ui-grid > .ui-c12 {grid-column:1/-1}
+body.app-analysis-page .ui-header.app-analysis-header {
+  padding:0;margin-bottom:24px;border:0;border-radius:0;background:transparent;
+  box-shadow:none;backdrop-filter:none;
+}
+.app-analysis-topline {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+.app-analysis-topline a {color:var(--ui-ink-soft);font-size:12px;font-weight:600}
+.app-analysis-topline a:hover {color:var(--ui-brand-ink)}
+.app-analysis-eyebrow {margin:0 0 10px;color:var(--ui-ink-soft);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+body.app-analysis-page .app-analysis-header h1 {margin-bottom:12px}
+body.app-analysis-page .app-analysis-header .ui-sub {max-width:76ch}
+body.app-analysis-page .ui-meta {gap:8px 16px;margin-top:14px;font-size:12px}
+body.app-analysis-page .ui-meta span {display:inline-flex;align-items:center;gap:8px}
+body.app-analysis-page .ui-meta span::before {content:"";width:5px;height:5px;flex:none;border-radius:50%;background:var(--ui-brand)}
+body.app-analysis-page .ui-card-head {padding:18px 22px;gap:8px 16px;align-items:center}
+body.app-analysis-page .ui-card-head h2 {font-size:16px;font-weight:750;letter-spacing:-.02em;line-height:1.5}
+body.app-analysis-page .ui-card-body:not(.ui-card-flush) {padding:22px;gap:14px}
+.app-analysis-caption {font-size:11px;font-weight:500;line-height:1.5;color:var(--ui-ink-soft)}
+
+/* Trường nhập rộng hết ô, cùng nhịp khoảng cách cho mọi bộ lọc soi cầu. */
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) {
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));
+  align-items:end;gap:16px;padding:22px;margin:0;
+}
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) > :is(label,fieldset) {
+  min-width:0;max-width:100%;font-size:12px;font-weight:600;letter-spacing:0;
+}
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) :is(input[type=number],select) {
+  width:100%;min-width:0;max-width:100%;height:44px;border-radius:10px;
+  background:var(--ui-surface-2);font-size:13px;
+}
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) button {
+  min-height:44px;padding:10px 20px;line-height:1.5;font-size:13px;font-weight:700;
+  border-radius:50px;transition:background-color .2s,box-shadow .2s;
+}
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) button:hover {box-shadow:var(--ui-sh-md)}
+body.app-analysis-page :is(.app-cau-form,.app-bridge-form) input:is([type=checkbox],[type=radio]) {
+  width:16px;height:16px;flex:none;accent-color:var(--ui-brand);
+}
+body.app-analysis-page :is(.app-cau-inline,.app-bridge-inline,.app-bridge-radios) {
+  min-height:44px;flex-wrap:wrap;
+}
+body.app-analysis-page .app-cau-tabs {gap:8px;padding:18px 22px;border-bottom:1px solid var(--ui-border);background:var(--ui-surface-2)}
+body.app-analysis-page .app-cau-tabs a {min-height:40px;padding:8px 12px;font-size:12px;background:var(--ui-surface);line-height:1.4}
+body.app-analysis-page .app-cau-tabs a[aria-current=page] {background:var(--ui-brand);color:var(--ui-on-brand)}
+
+/* Chỉ số phản ánh bộ lọc đang chọn, kể cả khi xem lại kỳ trong quá khứ. */
+.app-cau-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0}
+.app-cau-metrics > div {padding:20px 22px;border:1px solid var(--ui-border);border-radius:var(--ui-r-lg);
+  background:var(--ui-surface);box-shadow:var(--ui-elevation);min-width:0}
+.app-cau-metrics dt {color:var(--ui-ink-soft);font-size:12px;font-weight:600}
+.app-cau-metrics dd {margin:8px 0;color:var(--ui-ink);font-size:30px;line-height:1.2;font-weight:750;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.app-cau-metrics [data-cau-metric=date] {font-size:clamp(18px,2vw,26px);min-height:36px;display:flex;align-items:center}
+.app-cau-metrics .app-cau-metric-hint {margin:0;color:var(--ui-ink-soft);font-size:11px;font-weight:400;line-height:1.5;letter-spacing:0}
+.app-cau-overview {display:grid;grid-template-columns:minmax(0,1fr);gap:24px;min-width:0;align-items:start}
+.app-cau-overview > .ui-card {min-width:0}
+body.app-analysis-page .app-cau-summary {font-size:13px;line-height:1.65}
+body.app-analysis-page .app-cau-help {font-size:12px;line-height:1.65}
+body.app-analysis-page .app-cau-grid-wrap {
+  max-width:100%;min-width:0;overflow:auto;overscroll-behavior-x:contain;
+  scrollbar-width:thin;scrollbar-color:var(--ui-border-strong) var(--ui-surface-2);
+}
+body.app-analysis-page .app-cau-grid {min-width:620px;border-collapse:separate;border-spacing:0;table-layout:fixed}
+body.app-analysis-page .app-cau-grid th {border-bottom:1px solid var(--ui-border);font-size:11px}
+body.app-analysis-page .app-cau-grid thead th {position:static;width:auto;height:36px;border-right:0;background:var(--ui-surface-2)}
+body.app-analysis-page .app-cau-grid thead th:first-child {position:sticky;left:0;z-index:2;width:68px;border-right:1px solid var(--ui-border)}
+body.app-analysis-page .app-cau-grid tbody th {width:68px}
+body.app-analysis-page .app-cau-grid td {border-right:1px solid var(--ui-border);padding:3px}
+body.app-analysis-page .app-cau-grid td:last-child {border-right:0}
+body.app-analysis-page .app-cau-cell {min-height:48px;background:var(--ui-surface);border-color:var(--ui-border);border-radius:8px}
+body.app-analysis-page button.app-cau-cell:not([aria-pressed=true]):hover {background:var(--ui-brand-soft);border-color:var(--ui-brand)}
+body.app-analysis-page .app-cau-cell[aria-pressed=true] {background:var(--ui-brand);border-color:var(--ui-brand);color:var(--ui-on-brand)}
+body.app-analysis-page .app-cau-cell[aria-pressed=true] span {color:var(--ui-on-brand)}
+body.app-analysis-page .app-cau-empty {background:var(--ui-surface-2)}
+body.app-analysis-page .app-cau-empty span {opacity:1}
+body.app-analysis-page .app-cau-detail:not(:empty) {padding:16px;margin-top:4px;border:1px solid var(--ui-brand-border);border-radius:12px;background:var(--ui-brand-soft)}
+body.app-analysis-page .app-cau-bridges {max-height:240px;overflow:auto;padding:4px;gap:8px}
+body.app-analysis-page .app-cau-bridge {min-height:44px}
+body.app-analysis-page .app-cau-groups {gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr))}
+body.app-analysis-page .app-cau-groups li {min-height:44px;align-items:center;padding:10px 12px;border-radius:10px}
+body.app-analysis-page .app-cau-groups small {grid-row:2;line-height:1.6}
+body.app-analysis-page .app-cau-groups b {color:var(--ui-ink)}
+.app-cau-empty-state {padding:20px;border:1px dashed var(--ui-border-strong);border-radius:12px;color:var(--ui-ink-soft);font-size:13px;text-align:center}
+body.app-analysis-page :is(.app-bridge-verdict,.app-bridge-summary,.app-cau-rule) {font-size:13px;line-height:1.7}
+body.app-analysis-page .app-bridge-verdict {margin:0 0 12px;padding:14px 16px;border:1px solid var(--ui-warn-border);
+  border-left:3px solid var(--ui-warn);border-radius:10px;background:var(--ui-warn-soft);color:var(--ui-ink)}
+body.app-analysis-page .ui-table-wrap {flex:none;min-width:0;max-width:100%}
+body.app-analysis-page .ui-table {min-width:560px;font-size:13px;font-variant-numeric:tabular-nums}
+body.app-analysis-page .app-bridge-links a {min-width:44px;min-height:44px}
+body.app-analysis-page .app-bridge-cell {min-width:30px;min-height:40px}
+
+@media (min-width:1280px) {
+  .app-cau-overview {grid-template-columns:minmax(0,2.4fr) minmax(270px,1fr);grid-template-areas:"distribution ranking" "evidence evidence"}
+  .app-cau-distribution {grid-area:distribution}
+  .app-cau-ranking {grid-area:ranking}
+  .app-cau-evidence {grid-area:evidence}
+  .app-cau-overview #app-cau-groups {max-height:685px;overflow:auto;padding:3px;scrollbar-width:thin}
+  .app-cau-overview .app-cau-groups {grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px) {
+  body.app-analysis-page .ui-header.app-analysis-header {padding:0}
+  .app-analysis-topline {margin-bottom:18px}
+  .app-analysis-topline .ui-badge {font-size:10px}
+  body.app-analysis-page .ui-card-head {padding:16px}
+  body.app-analysis-page .ui-card-body:not(.ui-card-flush) {padding:16px}
+  body.app-analysis-page :is(.app-cau-form,.app-bridge-form) {padding:16px;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
+  body.app-analysis-page :is(.app-cau-form,.app-bridge-form) > button {grid-column:1/-1}
+  body.app-cau-page .app-cau-form > label:first-of-type {grid-column:1/-1}
+  body.app-analysis-page .app-cau-tabs {padding:14px 16px;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+  body.app-analysis-page .app-cau-tabs a {flex-shrink:0;min-height:44px}
+  .app-cau-metrics {gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .app-cau-metrics > div {padding:16px}
+  .app-cau-metrics > div:last-child {grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:4px 12px}
+  .app-cau-metrics > div:last-child .app-cau-metric-hint {grid-column:1/-1}
+  .app-cau-metrics dd {font-size:26px}
+  .app-cau-metrics [data-cau-metric=date] {min-height:0;font-size:20px;justify-content:flex-end;margin:0}
+  body.app-analysis-page .app-bridge-cell {min-width:26px}
+}
+@media (max-width:380px) {
+  body.app-analysis-page :is(.app-cau-form,.app-bridge-form) {grid-template-columns:minmax(0,1fr)}
+}
+@media print {
+  body.app-analysis-page :is(.app-analysis-topline,.app-cau-metrics) {display:none!important}
+  body.app-analysis-page .ui-grid,.app-cau-overview {display:block}
+  body.app-analysis-page .ui-card {margin-bottom:16px;break-inside:auto}
+  body.app-analysis-page .app-cau-grid {min-width:0}
+  .app-cau-overview #app-cau-groups {max-height:none;overflow:visible}
+}

@@ -152,7 +152,7 @@ test('phôi tuần: đúng số tuần, cột Thứ Hai → Chủ Nhật, cỡ c
   const rows = d.querySelectorAll('.app-phoi tbody tr');
   assert.equal(rows.length, 50);
   assert.deepEqual([...d.querySelectorAll('.app-phoi thead th')].map((n) => n.textContent),
-    ['No', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy', 'Chủ nhật']);
+    ['Tuần', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy', 'Chủ nhật']);
   const last = rows[rows.length - 1];
   assert.equal(last.querySelector('th').textContent, '1', 'tuần mới nhất ở cuối, đánh số 1');
   assert.equal(last.cells[1].textContent, '77115', '28-09-2026 là Thứ Hai');
@@ -242,4 +242,26 @@ test('đổi thứ trong tuần thì nạp lại biên ngày của thứ mới, 
   assert.equal(form.elements.ngay.value, '2026-09-27', 'Chủ Nhật mới nhất');
   assert.ok([...form.elements.ngay.options].every((o) => new Date(`${o.value}T00:00:00Z`).getUTCDay() === 0));
   assert.match(dom.window.BridgePages.formQuery(form), /thu=6&ngay=2026-09-27$/);
+});
+
+test('chọn số mới cập nhật trạng thái nút và chỉ giữ một số đang chọn', async t => {
+  const dom = await open(t, fixture.pages.loto);
+  const d = dom.window.document;
+  const cells = [...d.querySelectorAll('button.app-cau-cell')];
+  cells[0].click();
+  assert.equal(cells[0].getAttribute('aria-pressed'), 'true');
+  cells[1].click();
+  assert.equal(cells[0].getAttribute('aria-pressed'), 'false');
+  assert.equal(cells[1].getAttribute('aria-pressed'), 'true');
+  assert.equal(d.querySelectorAll('.app-cau-cell[aria-pressed="true"]').length, 1);
+  assert.match(d.querySelector('#app-cau-detail').textContent, new RegExp(`Số ${cells[1].dataset.number}:`));
+});
+
+test('dải không có cầu hiển thị trạng thái rỗng và chỉ số theo bộ lọc', async t => {
+  const dom = await open(t, fixture.pages.loto, '?count=59&ngay=2026-09-20');
+  const d = dom.window.document;
+  assert.equal(d.querySelectorAll('button.app-cau-cell').length, 0);
+  assert.match(d.querySelector('#app-cau-groups').textContent, /Không có cầu/);
+  assert.equal(d.querySelector('[data-cau-metric="total"]').textContent, '0');
+  assert.equal(d.querySelector('[data-cau-metric="date"]').textContent, '20/09/2026');
 });
