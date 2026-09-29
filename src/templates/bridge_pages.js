@@ -380,8 +380,19 @@
           const cells = fulfilled(rule.kind, prev, draw, single.a, single.b, params.both);
           for (const j of cells) card.querySelector(`.tr-number[data-value="${j}"]`).classList.add("is-hit");
           const ok = step(rule.kind, prev, draw, single.a, single.b, params.both);
-          facts.append(el("span", ok ? "app-cau-fact-hit" : "app-cau-fact-miss",
-            ok ? "Trúng theo cầu kỳ trước" : "Trượt theo cầu kỳ trước"));
+          if (rule.kind === "bo-so") {
+            // Bộ số có HAI điều khác nhau: cầu còn chạy (số giữ bộ) và điều cầu báo
+            // (ĐB rơi vào bộ). Không gộp làm một nhãn "trúng".
+            const inSet = cells.length > 0;
+            const set = pad(BO_ID[numberAt(prev, single.a, single.b)]);
+            facts.append(el("span", ok ? "app-cau-fact-hit" : "app-cau-fact-miss",
+              ok ? "Cầu giữ bộ" : "Cầu gãy bộ"));
+            facts.append(el("span", inSet ? "app-cau-fact-hit" : "app-cau-fact-miss",
+              `ĐB ${pad(draw.two[0])} ${inSet ? "trong" : "ngoài"} bộ ${set}`));
+          } else {
+            facts.append(el("span", ok ? "app-cau-fact-hit" : "app-cau-fact-miss",
+              ok ? "Trúng theo cầu kỳ trước" : "Trượt theo cầu kỳ trước"));
+          }
         }
       }
     }

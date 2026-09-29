@@ -189,6 +189,12 @@ test('trang bộ số chỉ tô giải Đặc Biệt khi nó rơi vào bộ mà 
         const draw = series[index];
         const expected = api.BO_ID[10 * prev.digits[a] + prev.digits[b]] === api.BO_ID[draw.two[0]];
         assert.equal(card.querySelector('.tr-number[data-value="0"]').classList.contains('is-hit'), expected);
+        // Nhãn nói đúng điều cầu báo (ĐB trong/ngoài bộ), tách khỏi việc cầu còn giữ bộ.
+        const facts = card.querySelector('.app-cau-facts').textContent;
+        assert.match(facts, expected ? /trong bộ/ : /ngoài bộ/);
+        assert.doesNotMatch(facts, /Trúng theo cầu/);
+        const kept = api.BO_ID[10 * prev.digits[a] + prev.digits[b]] === api.BO_ID[10 * draw.digits[a] + draw.digits[b]];
+        assert.match(facts, kept ? /Cầu giữ bộ/ : /Cầu gãy bộ/);
         checked += 1;
       }
     }
