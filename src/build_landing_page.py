@@ -22,6 +22,8 @@ import pandas as pd
 from app_icons import icon_svg
 from calendar_widget import render_calendar
 from draw_metadata import load_draw_metadata, station_for_date
+from build_position_bridges import best_panel, bridge_css
+from build_position_bridges import load as load_position_bridges
 from shared_results import draw_from_row, render_result_board, shared_results_css
 from ui_locale import COLUMN_LABELS, mode_label, value_label
 from xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
@@ -2081,6 +2083,8 @@ def _render_html(
     landing_desktop.html ghi "09:24 UTC" cho cùng một lần chạy.
     """
     latest = _latest_draw(repo_root)
+    bridge_panel = (best_panel(load_position_bridges(repo_root / "data"), latest["date"])
+                    if latest.get("draw") else "")
     explain_map = _load_explain_map(repo_root)
     if generated_at is None:
         generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
@@ -2227,6 +2231,7 @@ def _render_html(
   <style>
 {_LANDING_CSS}
 {shared_results_css()}
+{bridge_css()}
   </style>
 </head>
 <body{body_class}>
@@ -2270,7 +2275,7 @@ def _render_html(
       </div>
 
       <section id="ket-qua" class="section" aria-label="Kết quả hàng ngày">
-        {render_result_board(latest.get("draw"), include_loto=False)}
+        {render_result_board(latest.get("draw"), include_loto=False, extra=bridge_panel)}
         <p class="app-result-note">Bấm vào từng ô giải để đánh dấu; bấm lại để bỏ chọn.
           <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả</a></p>
       </section>

@@ -702,6 +702,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
     (
         "Cầu kèo",
         (
+            ("soi-cau-vi-tri.html", "Soi cầu vị trí", "soi-vi-tri"),
             ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "cau-chay"),
             ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "cau-on-dinh"),
             ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "cau-de-chay"),

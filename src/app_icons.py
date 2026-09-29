@@ -29,6 +29,7 @@ BIEU_TUONG: Final[dict[str, str]] = {
     "tan-suat": "chart-column",
     "gan-nhip": "clock-3",
     "cap-lon": "arrow-up-down",
+    "soi-vi-tri": "route",
     "cau-chay": "trending-up",
     "cau-on-dinh": "activity",
     "cau-de-chay": "route",

@@ -385,6 +385,10 @@ def main() -> None:
         # 10 000 lịch sử được lưu sẵn; chỉ tính lại khi số kỳ trôi quá 2%.
         _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
         _run(_py("src/build_confidence_page.py"), allow_fail=soft_fail)
+        # Soi cầu vị trí đọc kỳ vừa quay; phải có TRƯỚC trang chủ vì ô "cầu đẹp
+        # nhất" nằm cạnh bảng LOTO của khung kết quả hằng ngày.
+        _run(_py("src/position_bridges.py"), allow_fail=soft_fail)
+        _run(_py("src/build_position_bridges.py"), allow_fail=soft_fail)
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)

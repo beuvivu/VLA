@@ -225,7 +225,7 @@
     return section;
   }
 
-  function renderDraw(draw, { includeLoto = true } = {}) {
+  function renderDraw(draw, { includeLoto = true, extra = null } = {}) {
     const article = el("article", "tr-day");
     const header = el("header", "tr-day-head");
     const title = el("div", "tr-day-title");
@@ -251,6 +251,8 @@
     side.append(renderHeadTail(draw));
     if (includeLoto) side.append(renderLoto(draw));
     grid.append(side);
+    // Khối phụ dựng sẵn phía máy chủ (ô cầu vị trí) được CHUYỂN sang, không dựng lại.
+    if (extra) grid.append(extra);
     article.append(grid);
     return article;
   }
@@ -362,7 +364,8 @@
 
   function mount(resultsNode, draw, options = {}) {
     if (!resultsNode || !draw) return null;
-    resultsNode.replaceChildren(renderDraw(draw, options));
+    const extra = resultsNode.querySelector(".tr-day-extra");
+    resultsNode.replaceChildren(renderDraw(draw, { ...options, extra }));
     const marks = createMarks(resultsNode, options);
     marks.paintMarks();
     return marks;

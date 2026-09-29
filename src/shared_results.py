@@ -125,8 +125,13 @@ def _number_attrs(draw_date: str, code: str, index: int, pair: str) -> str:
     )
 
 
-def render_draw(draw: Mapping[str, Any], *, include_loto: bool = True) -> str:
-    """Bản HTML dự phòng chung, đủ dữ liệu trước lúc bộ dựng DOM khởi chạy."""
+def render_draw(draw: Mapping[str, Any], *, include_loto: bool = True, extra: str = "") -> str:
+    """Bản HTML dự phòng chung, đủ dữ liệu trước lúc bộ dựng DOM khởi chạy.
+
+    ``extra`` là một khối đã dựng sẵn (vd. ô cầu vị trí ở trang chủ), đặt thành
+    cột thứ ba của lưới, cạnh bảng LOTO. Bộ dựng DOM chuyển nguyên khối ấy sang
+    bảng mới thay vì dựng lại.
+    """
     draw_date = str(draw["date"])
     parsed = date.fromisoformat(draw_date)
     weekday = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")[parsed.weekday()]
@@ -183,13 +188,15 @@ def render_draw(draw: Mapping[str, Any], *, include_loto: bool = True) -> str:
         side += '<section class="tr-loto"><h3>Dãy LOTO (27 số)</h3><div class="tr-loto-list">'
         side += "".join(f'<span class="tr-loto-item">{escape(pair)}</span>' for pair in sorted(all_pairs))
         side += '</div></section>'
+    extra_block = f'<div class="tr-day-extra">{extra}</div>' if extra else ""
     return (
         f'<article class="tr-day">{header}<div class="tr-day-grid"><section class="tr-prizes">'
-        + "".join(rows) + f'</section><div class="tr-day-side">{side}</div></div></article>'
+        + "".join(rows) + f'</section><div class="tr-day-side">{side}</div>{extra_block}</div></article>'
     )
 
 
-def render_result_board(draw: Mapping[str, Any] | None, *, board_id: str = "app-daily-results", include_loto: bool = False) -> str:
+def render_result_board(draw: Mapping[str, Any] | None, *, board_id: str = "app-daily-results",
+                        include_loto: bool = False, extra: str = "") -> str:
     """Nhúng một bảng hoàn chỉnh với dữ liệu thật và đánh dấu chuột/bàn phím."""
     if not draw:
         return '<p class="tr-empty">Chưa có kết quả đầy đủ cho kỳ này.</p>'
@@ -198,8 +205,8 @@ def render_result_board(draw: Mapping[str, Any] | None, *, board_id: str = "app-
     return (
         f'<section id="{escape(board_id)}" class="tr-results" data-layout="1"'
         f' data-headtail="on" data-loto="{"on" if include_loto else "off"}" data-tail="on"'
-        ' aria-label="Kết quả xổ số Miền Bắc">'
-        f'{render_draw(draw, include_loto=include_loto)}</section>'
+        f' data-extra="{"on" if extra else "off"}" aria-label="Kết quả xổ số Miền Bắc">'
+        f'{render_draw(draw, include_loto=include_loto, extra=extra)}</section>'
         f'<script id="{escape(payload_id)}" type="application/json">{json_for_html_script(dict(draw))}</script>'
         f'<script>{shared_results_script()}</script><script>'
         'window.TraditionalResults.mount('
