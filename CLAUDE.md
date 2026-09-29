@@ -23,7 +23,7 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 31 mục. Thêm mục thì
+Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 39 mục. Thêm mục thì
 thêm ở đó, không thêm ở `app_shell.py`.
 
 **Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
@@ -49,13 +49,14 @@ các phép kiểm bất biến trang trên mỗi commit của pipeline.
 
 Giao diện đang phát triển theo yêu cầu ngày 26-09-2026 kết hợp Crafto Application
 với khung Nexlink. Dark/Light phải đồng bộ trên mọi trang; KHÔNG khôi phục
-khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười ba
+khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười bốn
 trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
 `build_model_quality`, `build_confidence_page`, `build_position_bridges`,
+`build_bridge_pages`,
 `build_markdown_dashboard_v3`,
 `build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
 `build_research_lab`, `build_stat_pages`, `build_traditional_results`) sinh
-ra 31 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
+ra 39 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
 `src/pipeline.py`.
 
 Đọc trước khi sửa frontend:
@@ -242,6 +243,18 @@ Cầu dài KHÔNG trúng nhiều hơn: trên 4 217 kỳ, cầu LOTO đã chạy 
 39,2% so với kỳ vọng 40,5%; nhiều cầu cùng báo một cặp cũng không hơn. Trang in
 kết luận ấy TỪ SỐ ĐO (`verdict`), đừng viết cứng. Đừng thêm "điểm tin cậy" theo độ
 dài cầu. Thứ tự ô "đẹp nhất" là quy tắc tự đặt (độ dài, rồi số cầu cùng báo).
+
+### Bảy kiểu cầu của trang tham chiếu thứ hai + phôi tuần
+
+`src/bridge_rules.py` + `build_bridge_pages.py` in bảy trang `docs/soi-cau-*.html`
+(LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, Đặc Biệt theo thứ, LOTO theo thứ) và
+`docs/tao-phoi-tuan.html`. Mọi kiểu dùng cặp vị trí a < b, số `10·d[a]+d[b]`; chỉ
+luật "bước trúng" khác nhau — ghi trong docstring và bị ghim từng ô bởi
+`tests/test_bridge_rules.py` với `tests/fixtures/bridge_reference_2026-09-28.json`.
+Hai điểm dễ sai: hai nháy BẤT ĐỐI XỨNG (số lộn về hai nháy KHÔNG tính); bộ số là
+"số giữ nguyên trong một bộ qua các kỳ", không phải "ĐB rơi vào bộ". Hai trang
+tần suất cũ `cau-giai-dac-biet.html`, `cau-dac-biet-theo-bo-so.html` là thống kê
+khác, giữ nguyên.
 
 ## Kỷ luật kiểm thử
 

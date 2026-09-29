@@ -291,6 +291,8 @@ jobs:
           test -s docs/model-quality.html
           test -s docs/do-tin-cay.html
           test -s docs/soi-cau-vi-tri.html
+          test -s docs/soi-cau-loto.html
+          test -s docs/tao-phoi-tuan.html
           test -s docs/live.html
           test -s docs/so-ket-qua-truyen-thong.html
           test -s DASHBOARD.md

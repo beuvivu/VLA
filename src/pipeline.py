@@ -389,6 +389,9 @@ def main() -> None:
         # nhất" nằm cạnh bảng LOTO của khung kết quả hằng ngày.
         _run(_py("src/position_bridges.py"), allow_fail=soft_fail)
         _run(_py("src/build_position_bridges.py"), allow_fail=soft_fail)
+        # Bảy kiểu cầu vị trí và công cụ phôi tuần: cùng dữ liệu vừa chốt.
+        _run(_py("src/bridge_rules.py"), allow_fail=soft_fail)
+        _run(_py("src/build_bridge_pages.py"), allow_fail=soft_fail)
         _run(_py("src/build_markdown_dashboard_v3.py"), allow_fail=soft_fail)
         _run(_py("src/build_statistics_dashboard.py"), allow_fail=soft_fail)
         _run(_py("src/build_landing_page.py"), allow_fail=soft_fail)

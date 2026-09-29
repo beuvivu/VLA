@@ -1,0 +1,87 @@
+/* Trang cầu vị trí (bảy kiểu) và công cụ tạo phôi tuần. Mọi màu đọc token để
+   sáng/tối đi theo khung chung; ô tô vị trí dùng --ui-brand-ink, ô "đã về"
+   dùng cặp --ui-mark-*, cùng cặp đã kiểm AA của Sổ kết quả. Riêng bảng phôi
+   dùng màu người xem tự chọn — đó là mục đích của công cụ. */
+
+.app-cau-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px 0}
+.app-cau-tabs a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--ui-border);
+border-radius:50px;background:var(--ui-surface-2);color:var(--ui-ink-2);font-size:13px;font-weight:700;text-decoration:none}
+.app-cau-tabs a:hover,.app-cau-tabs a:focus-visible{border-color:var(--ui-brand);color:var(--ui-brand-ink)}
+.app-cau-tabs a[aria-current="page"]{border-color:var(--ui-brand);background:var(--ui-brand);color:var(--ui-on-brand)}
+
+.app-cau-form{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;padding:14px 16px 16px}
+.app-cau-form label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ui-ink-soft)}
+.app-cau-form input[type=number],.app-cau-form select{height:44px;min-width:110px;padding:0 12px;
+border:1px solid var(--ui-border-strong);border-radius:12px;background:var(--ui-surface-2);color:var(--ui-ink);
+font:inherit;font-weight:600}
+.app-cau-form input[type=number]{width:96px;min-width:0}
+.app-cau-form input[type=color]{width:64px;height:44px;padding:2px;border:1px solid var(--ui-border-strong);
+border-radius:12px;background:var(--ui-surface-2)}
+.app-cau-form .app-cau-inline{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--ui-ink);font-weight:600}
+.app-cau-form button{min-height:44px;padding:0 22px;border:0;border-radius:50px;background:var(--ui-brand);
+color:var(--ui-on-brand);font:inherit;font-weight:800;cursor:pointer}
+.app-cau-form input:focus-visible,.app-cau-form select:focus-visible,.app-cau-form button:focus-visible{
+outline:2px solid var(--ui-brand);outline-offset:2px}
+
+.app-cau-summary{margin:0 0 6px;font-size:14px;color:var(--ui-ink-2)}
+.app-cau-help,.app-cau-rule{margin:0 0 12px;font-size:13px;color:var(--ui-ink-soft)}
+.app-cau-rule{color:var(--ui-ink-2)}
+.app-cau-grid-wrap{overflow-x:auto;border:1px solid var(--ui-border);border-radius:12px}
+.app-cau-grid{width:100%;min-width:640px;border-collapse:collapse;table-layout:fixed}
+.app-cau-grid th{position:sticky;left:0;z-index:1;width:72px;padding:6px;background:var(--ui-surface-2);border-right:1px solid var(--ui-border);
+color:var(--ui-ink-soft);font-size:12px;font-weight:800;text-align:center}
+.app-cau-grid td{padding:3px;border-bottom:1px solid var(--ui-border);text-align:center}
+.app-cau-grid tr:last-child td,.app-cau-grid tr:last-child th{border-bottom:0}
+.app-cau-cell{display:grid;justify-items:center;gap:1px;width:100%;min-height:44px;padding:4px 2px;
+border:1px solid var(--ui-brand-border);border-radius:10px;background:var(--ui-brand-soft);color:var(--ui-ink);
+font:inherit;font-variant-numeric:tabular-nums;cursor:pointer}
+button.app-cau-cell:hover,button.app-cau-cell:focus-visible{border-color:var(--ui-brand);outline:none}
+.app-cau-cell b{font-size:15px;font-weight:800}
+.app-cau-cell span{font-size:10.5px;font-weight:600;color:var(--ui-ink-soft)}
+.app-cau-empty span{display:inline-grid;place-items:center;min-height:44px;color:var(--ui-ink-soft);
+font-size:13px;font-variant-numeric:tabular-nums;opacity:.7}
+
+.app-cau-detail{margin-top:12px}
+.app-cau-detail:empty{display:none}
+.app-cau-subhead{margin:12px 0 8px;font-size:14px}
+.app-cau-bridges{display:flex;flex-wrap:wrap;gap:6px}
+.app-cau-bridge{min-height:40px;padding:0 12px;border:1px solid var(--ui-border-strong);border-radius:10px;
+background:var(--ui-surface);color:var(--ui-ink-2);font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+font-variant-numeric:tabular-nums}
+.app-cau-bridge[aria-pressed="true"]{border-color:var(--ui-brand);background:var(--ui-brand);color:var(--ui-on-brand)}
+.app-cau-honest{margin:10px 0 0;font-size:12.5px;color:var(--ui-ink-soft)}
+
+.app-cau-days .tr-number{cursor:default}
+.app-cau-days .tr-day-title h2{font-size:15px}
+.app-cau-digit{display:inline-block;min-width:.62em;border-radius:4px;transition:background-color .3s cubic-bezier(.37,0,.63,1)}
+.app-cau-digit.is-cau{color:var(--ui-brand-ink);font-weight:900;background:var(--ui-brand-soft)}
+.app-cau-digit.is-src{color:var(--ui-brand-ink);font-size:1.22em;font-weight:900;text-decoration:underline;
+text-underline-offset:3px;background:none}
+.tr-number.is-hit{background:var(--ui-mark-bg);color:var(--ui-mark-ink);box-shadow:inset 0 0 0 1px var(--ui-mark-border)}
+.tr-number.is-hit .app-cau-digit.is-src,.tr-number.is-hit .app-cau-digit.is-cau{color:var(--ui-mark-ink);background:none}
+.app-cau-facts{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 0;font-size:12px;color:var(--ui-ink-soft)}
+.app-cau-facts:empty{display:none}
+.app-cau-fact-src{font-weight:700;color:var(--ui-brand-ink)}
+.app-cau-fact-hit{font-weight:700;color:var(--ui-ink)}
+
+.app-cau-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:0;padding:0;list-style:none}
+.app-cau-groups li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:8px 10px;border:1px solid var(--ui-border);
+border-radius:10px;background:var(--ui-surface-2);font-size:13px;font-variant-numeric:tabular-nums}
+.app-cau-groups small{grid-column:1/-1;color:var(--ui-ink-soft);font-size:11px}
+.app-cau-groups span{color:var(--ui-ink-soft)}
+
+.app-phoi-wrap{overflow-x:auto}
+.app-phoi{width:100%;min-width:560px;border-collapse:collapse;border:1px solid var(--ui-border-strong)}
+.app-phoi th,.app-phoi td{border:1px solid var(--ui-border-strong);padding:4px 6px;text-align:center;
+font-variant-numeric:tabular-nums}
+.app-phoi thead th{background:var(--ui-surface-2);color:var(--ui-ink);font-size:13px}
+.app-phoi tbody th{width:48px;background:var(--ui-surface-2);color:var(--ui-ink-soft);font-size:12px}
+.app-phoi-cell{white-space:nowrap;font-weight:800;letter-spacing:.02em}
+
+@media (max-width:640px){
+.app-cau-form label{flex:1 1 40%}
+.app-cau-form button{flex:1 1 100%}}
+@media (prefers-reduced-motion:reduce){.app-cau-digit{transition:none}}
+@media print{
+.app-cau-form,.app-cau-tabs,.ui-header p{display:none!important}
+.app-phoi{min-width:0}}

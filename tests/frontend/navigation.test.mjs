@@ -26,7 +26,7 @@ test('Menu thống kê chỉ có ma trận, chuyển nhóm vẫn hiện đủ m�
   d.getElementById('app-tab-1').click();
   assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html']);
   d.getElementById('app-tab-2').click();
-  assert.equal(visibleLinks(dom).length, 6);
+  assert.equal(visibleLinks(dom).length, 13);
   assert.equal(d.querySelectorAll('.app-panel-group:not([hidden])').length, 1);
   dom.window.close();
 });
@@ -159,7 +159,7 @@ test('Đi tới neo còn trong menu sẽ chọn đúng nhóm và liên kết', (
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
   assert.equal(d.getElementById('app-tab-2').getAttribute('aria-selected'), 'true');
   assert.equal(d.querySelector('.app-nav-item[aria-current="page"]').getAttribute('href'), 'index.html#duong-cau');
-  assert.equal(visibleLinks(dom).length, 6);
+  assert.equal(visibleLinks(dom).length, 13);
   dom.window.close();
 });
 
