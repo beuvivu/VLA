@@ -226,3 +226,14 @@ test('phôi 80 tuần có đủ 80 hàng', async t => {
   form.dispatchEvent(new dom.window.Event('input'));
   assert.equal(dom.window.document.querySelectorAll('.app-phoi tbody tr').length, 80);
 });
+
+test('đổi thứ trong tuần thì nạp lại biên ngày của thứ mới, chọn kỳ mới nhất', async t => {
+  const dom = await open(t, fixture.pages['dac-biet-theo-thu']);
+  const form = dom.window.document.getElementById('app-cau-form');
+  assert.equal(form.elements.ngay.value, '2026-09-22');
+  form.elements.thu.value = '6';
+  form.elements.thu.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(form.elements.ngay.value, '2026-09-27', 'Chủ Nhật mới nhất');
+  assert.ok([...form.elements.ngay.options].every((o) => new Date(`${o.value}T00:00:00Z`).getUTCDay() === 0));
+  assert.match(dom.window.BridgePages.formQuery(form), /thu=6&ngay=2026-09-27$/);
+});

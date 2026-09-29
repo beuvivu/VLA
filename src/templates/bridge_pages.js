@@ -289,6 +289,18 @@
     return article;
   }
 
+  /** Nạp ô "Biên ngày" bằng các kỳ của chuỗi (theo thứ nếu có), mới nhất trước. */
+  function fillDates(select, weekday, selected) {
+    select.replaceChildren();
+    const pool = weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === weekday);
+    for (const draw of boundaries(pool).reverse()) {
+      const option = el("option", "", `${WEEKDAYS[weekdayOf(draw.date)]}, ${formatDate(draw.date)}`);
+      option.value = draw.date;
+      select.append(option);
+    }
+    select.value = selected && [...select.options].some((o) => o.value === selected) ? selected : select.options[0].value;
+  }
+
   function mount() {
     const rule = REPORT.rule;
     const params = readParams(window.location.search);
@@ -303,14 +315,11 @@
       if (form.elements.both) form.elements.both.checked = params.both;
       if (form.elements.thu) form.elements.thu.value = String(params.weekday);
       const dates = form.elements.ngay;
-      dates.replaceChildren();
-      const pool = params.weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === params.weekday);
-      for (const draw of boundaries(pool).reverse()) {
-        const option = el("option", "", `${WEEKDAYS[weekdayOf(draw.date)]}, ${formatDate(draw.date)}`);
-        option.value = draw.date;
-        dates.append(option);
+      fillDates(dates, params.weekday, last.date);
+      // Đổi thứ thì các biên ngày của thứ cũ không còn hợp lệ: nạp lại, chọn kỳ mới nhất.
+      if (form.elements.thu) {
+        form.elements.thu.addEventListener("change", () => fillDates(dates, Number(form.elements.thu.value), null));
       }
-      dates.value = last.date;
       form.addEventListener("submit", (event) => {
         // CSP cấm gửi biểu mẫu (form-action 'none'): tự dựng truy vấn rồi chuyển trang.
         event.preventDefault();
