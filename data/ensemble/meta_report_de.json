@@ -54,7 +54,7 @@
   "meta_trust": 0.0,
   "holdout_gate": {
     "logloss_skill": -0.0039958844503567015,
-    "brier_skill": 0.0015323283042436575,
+    "brier_skill": 0.0015323283042437685,
     "constant_logloss_skill": -0.0006439776520648088,
     "constant_brier_skill": -6.138867775851153e-05,
     "quality_pass": false,
@@ -68,19 +68,19 @@
     "blend_logloss": 4.591960541124637,
     "blend_brier": 0.9910985193941139,
     "holdout_days": 30,
-    "linear_delta_ci95_low": -0.00172336767405455,
+    "linear_delta_ci95_low": -0.0017233676740544908,
     "linear_delta_ci95_high": 0.006750512747749999,
-    "constant_delta_ci95_low": -0.039475341260108106,
-    "constant_delta_ci95_high": 0.0038993759539279835,
+    "constant_delta_ci95_low": -0.03947534126010808,
+    "constant_delta_ci95_high": 0.003899375953928099,
     "bootstrap_block_days": 4,
     "uncertainty_pass": false
   },
   "validation_logloss": 4.608135812671823,
-  "validation_brier": 0.9900607747909806,
+  "validation_brier": 0.9900607747909805,
   "baseline_validation_logloss": 4.589795520122649,
   "baseline_validation_brier": 0.9915802011992058,
   "logloss_skill": -0.0039958844503567015,
-  "brier_skill": 0.0015323283042436575,
+  "brier_skill": 0.0015323283042437685,
   "constant_validation_logloss": 4.605170185988091,
   "constant_validation_brier": 0.9899999999999997,
   "constant_logloss_skill": -0.0006439776520648088,
@@ -164,5 +164,5 @@
     "2026-09-29"
   ],
   "trained_through_target_date": "2026-09-29",
-  "trained_at_utc": "2026-09-29T16:15:18Z"
+  "trained_at_utc": "2026-09-29T16:35:15Z"
 }
