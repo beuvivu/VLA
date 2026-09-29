@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-09-29T01:52:32Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-09-29T03:11:38Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -1068,11 +1068,11 @@
 ### Đặc Biệt hôm trước → LOTO hôm sau
 | # | Điều kiện → kết quả | Tỷ lệ | Mẫu | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `42` → **`96`** | 50.00% | n=38 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | `37` → **`52`** | 50.00% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | `37` → **`52`** | 50.00% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | `42` → **`96`** | 50.00% | n=38 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 3 | `53` → **`07`** | 48.65% | n=37 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | `27` → **`93`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | `27` → **`55`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | `27` → **`55`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | `27` → **`93`** | 48.57% | n=35 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 6 | `82` → **`70`** | 47.83% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 7 | `47` → **`22`** | 47.73% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
 | 8 | `22` → **`67`** | 47.73% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▰▰ |
@@ -1113,8 +1113,8 @@
 | 5 | `60` → **`83`** | 9.52% | n=42 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 6 | `37` → **`53`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 7 | `37` → **`88`** | 9.38% | n=32 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 8 | `04` → **`81`** | 9.09% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
-| 9 | `74` → **`42`** | 9.09% | n=33 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 8 | `74` → **`42`** | 9.09% | n=33 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
+| 9 | `04` → **`81`** | 9.09% | n=44 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 10 | `97` → **`98`** | 8.89% | n=45 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 11 | `08` → **`81`** | 8.70% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
 | 12 | `01` → **`57`** | 8.70% | n=46 | Có mẫu lịch sử tương đối tốt hơn | ▰▰▰▰▰▰▰▰▱▱ |
