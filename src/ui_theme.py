@@ -703,6 +703,13 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         "Cầu kèo",
         (
             ("soi-cau-vi-tri.html", "Soi cầu vị trí", "soi-vi-tri"),
+            ("soi-cau-loto.html", "Cầu LOTO vị trí", "cau-loto-vt"),
+            ("soi-cau-hai-nhay.html", "Cầu hai nháy", "cau-hai-nhay"),
+            ("soi-cau-bach-thu.html", "Cầu bạch thủ", "cau-bach-thu"),
+            ("soi-cau-dac-biet.html", "Cầu Đặc Biệt vị trí", "cau-db-vt"),
+            ("soi-cau-dac-biet-bo-so.html", "Cầu bộ số Đặc Biệt", "cau-bo-so"),
+            ("soi-cau-dac-biet-theo-thu.html", "Cầu Đặc Biệt theo thứ", "cau-db-thu"),
+            ("soi-cau-loto-theo-thu.html", "Cầu LOTO theo thứ", "cau-loto-thu"),
             ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "cau-chay"),
             ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "cau-on-dinh"),
             ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "cau-de-chay"),
@@ -748,6 +755,7 @@ SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
         "Tool nâng cao",
         (
             ("research-lab.html", "Phòng nghiên cứu", "nghien-cuu"),
+            ("tao-phoi-tuan.html", "Tạo phôi tuần", "phoi-tuan"),
             ("index.html#backtest", "Kiểm định AI/ML", "kiem-dinh"),
         ),
     ),

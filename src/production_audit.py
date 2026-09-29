@@ -47,6 +47,8 @@ REQUIRED_PATHS = [
     "docs/model-quality.html",
     "docs/do-tin-cay.html",
     "docs/soi-cau-vi-tri.html",
+    "docs/soi-cau-loto.html",
+    "docs/tao-phoi-tuan.html",
     "DASHBOARD.md",
     "README.md",
 ]
