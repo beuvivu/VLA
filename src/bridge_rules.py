@@ -61,8 +61,10 @@ RULES = {
     "loto-theo-thu": {"slug": "soi-cau-loto-theo-thu", "title": "Cầu LOTO theo thứ", "kind": "loto",
                       "count": 3, "weekday": True, "nav": "Cầu LOTO theo thứ"},
 }
-#: Số kỳ nhúng vào trang: đủ 60 kỳ CÙNG THỨ cho các trang theo thứ.
-EMBED = 7 * WINDOW
+#: Số kỳ nhúng vào trang. Mỗi biên ngày người xem chọn được (60 kỳ gần nhất của chuỗi)
+#: phải còn đủ 60 kỳ trước nó để đếm độ dài cầu — với trang theo thứ là 2 × 60 kỳ cùng
+#: thứ, tức 14 × 60 kỳ quay. Cũng đủ cho phôi 80 tuần (≤ 560 kỳ).
+EMBED = 14 * WINDOW
 OUT = Path("bridge_pages")
 
 
@@ -227,6 +229,9 @@ def build(data_dir: Path) -> dict:
         report["rules"][key] = {**cfg, "default_weekday": weekday, "longest": found["longest"],
                                 **tally(found["bridges"], cfg["kind"]),
                                 "backtest": backtest(cfg["kind"], series)}
+        if cfg["kind"] == "dac-biet":
+            # "Cả hai chữ số" là luật khác hẳn: kiểm lịch sử riêng, không mượn luật một chữ số.
+            report["rules"][key]["backtest_both"] = backtest(cfg["kind"], series, both=True)
     return report
 
 

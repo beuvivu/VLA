@@ -24,6 +24,7 @@ color:var(--ui-on-brand);font:inherit;font-weight:800;cursor:pointer}
 outline:2px solid var(--ui-brand);outline-offset:2px}
 
 .app-cau-summary{margin:0 0 6px;font-size:14px;color:var(--ui-ink-2)}
+.app-cau-notice{display:block;margin-top:6px;color:var(--ui-bad);font-weight:700}
 .app-cau-help,.app-cau-rule{margin:0 0 12px;font-size:13px;color:var(--ui-ink-soft)}
 .app-cau-rule{color:var(--ui-ink-2)}
 .app-cau-grid-wrap{overflow-x:auto;border:1px solid var(--ui-border);border-radius:12px}

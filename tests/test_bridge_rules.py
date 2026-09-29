@@ -204,3 +204,34 @@ def test_the_backtest_verdict_is_read_from_the_numbers(history) -> None:
     data["backtest"] = {**data["backtest"], "rows": [dict(r) for r in data["backtest"]["rows"]]}
     data["backtest"]["rows"][4]["z"] = 3.5
     assert "1 trên 11 hàng đủ mẫu" in pages.backtest_card(br.RULES["loto"], data)
+
+
+def test_the_report_carries_a_separate_backtest_for_the_two_digit_rule(monkeypatch) -> None:
+    """Luật "cả hai chữ số" khác hẳn luật một chữ số — không được mượn số của nhau."""
+    calls = []
+
+    def fake(kind, series, *, both=False):
+        calls.append((kind, both))
+        return {"base_rate": 0.1, "rate_kep": 0.1, "rate_pair": 0.1, "draws": 1, "rows": [], "both": both}
+
+    monkeypatch.setattr(br, "backtest", fake)
+    report = br.build(ROOT / "data")
+    for key, cfg in br.RULES.items():
+        data = report["rules"][key]
+        assert data["backtest"]["both"] is False
+        assert ("backtest_both" in data) == (cfg["kind"] == "dac-biet"), key
+        if cfg["kind"] == "dac-biet":
+            assert data["backtest_both"]["both"] is True
+    assert len(report["draws"]) == br.EMBED >= pages.TOOL_DRAWS, "phôi 80 tuần cần ≤ 560 kỳ"
+
+
+def test_the_special_page_prints_both_backtests(history) -> None:
+    report = _report(history)
+    data = report["rules"]["dac-biet"]
+    data["backtest_both"] = {**data["backtest"]}
+    soup = BeautifulSoup(pages.render("dac-biet", report), "html.parser")
+    assert "Khi chọn" in soup.get_text() and len(soup.select("#kiem-chung table, .ui-table")) >= 2
+    payload = json.loads(soup.select_one("#app-cau-data").string)
+    assert "backtest_both" in payload
+    assert "backtest_both" not in json.loads(
+        BeautifulSoup(pages.render("loto", report), "html.parser").select_one("#app-cau-data").string)

@@ -109,16 +109,23 @@ def backtest_card(cfg: dict, data: dict) -> str:
     )
 
 
+def _compact(bt: dict) -> dict:
+    return {"rows": [{"k": r["k"], "plus": r["plus"], "n": r["n"], "rate": r["rate"],
+                      "expected": r["expected"]} for r in bt["rows"]]}
+
+
 def page_payload(key: str, cfg: dict, report: dict) -> dict:
     data = report["rules"][key]
-    return {
+    payload = {
         "window": report["window"],
         "draws": report["draws"],
         "rule": {"key": key, "title": cfg["title"], "kind": cfg["kind"], "count": cfg["count"],
                  "weekday": cfg["weekday"], "default_weekday": data["default_weekday"]},
-        "backtest": {"rows": [{"k": r["k"], "plus": r["plus"], "n": r["n"], "rate": r["rate"],
-                               "expected": r["expected"]} for r in data["backtest"]["rows"]]},
+        "backtest": _compact(data["backtest"]),
     }
+    if "backtest_both" in data:
+        payload["backtest_both"] = _compact(data["backtest_both"])
+    return payload
 
 
 def _nav_links(current: str) -> str:
@@ -146,7 +153,11 @@ def render(key: str, report: dict) -> str:
         card('<div id="app-cau-days" class="tr-results app-cau-days" data-layout="2"></div>',
              title="Vị trí cầu trên bảng kết quả", span=12, lift=True),
         card('<div id="app-cau-groups"></div>', title="Xếp hạng", span=12, lift=True),
-        card(backtest_card(cfg, data), title="Cầu dài có đáng tin hơn?", span=12, lift=True),
+        card(backtest_card(cfg, data)
+             + ('<h3 class="app-cau-subhead">Khi chọn "cả hai chữ số"</h3>'
+                + backtest_card(cfg, {**data, "backtest": data["backtest_both"]})
+                if "backtest_both" in data else ""),
+             title="Cầu dài có đáng tin hơn?", span=12, lift=True),
         card(f'<p class="app-cau-rule">{html.escape(RULE_TEXT[key])}{html.escape(weekday_note)}</p>'
              '<p class="app-cau-rule">Vị trí đánh số từ 0 như trang Soi cầu vị trí: ĐB 0–4, G1 5–9, G2 10–19, '
              "G3 20–49, G4 50–65, G5 66–89, G6 90–98, G7 99–106. Cầu \"chạy N ngày\" khi N bước kỳ-sang-kỳ "

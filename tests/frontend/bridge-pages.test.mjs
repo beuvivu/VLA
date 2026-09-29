@@ -25,6 +25,8 @@ for key, cfg in br.RULES.items():
     _, dg, vl = br.weekday_subset(dates, digits, values, weekday)
     found = br.find(cfg["kind"], dg, vl, count=cfg["count"])
     report["rules"][key] = {**cfg, "default_weekday": weekday, "longest": found["longest"], **br.tally(found["bridges"], cfg["kind"]), "backtest": stub}
+    if cfg["kind"] == "dac-biet":
+        report["rules"][key]["backtest_both"] = {**stub, "rows": [{**r, "rate": 0.0123, "expected": 0.0199} for r in stub["rows"]]}
 def expect(kind, count, both=False, weekday=None, end=None):
     ds, dg, vl = br.weekday_subset(dates, digits, values, weekday)
     if end:
@@ -192,4 +194,35 @@ test('trang bộ số chỉ tô giải Đặc Biệt khi nó rơi vào bộ mà 
     }
   }
   assert.ok(checked >= 60, 'phải thật sự soi đủ các cặp kỳ');
+});
+
+test('biên ngày sớm nhất chọn được vẫn được tôn trọng; biên quá sớm bị từ chối có báo, không âm thầm đổi', async t => {
+  const first = await open(t, fixture.pages['loto-theo-thu'], '?thu=4');
+  const options = [...first.window.document.getElementById('app-cau-form').elements.ngay.options].map((o) => o.value);
+  assert.equal(options.length, 60, 'đủ 60 biên ngày cùng thứ');
+  const earliest = options[options.length - 1];
+  const dom = await open(t, fixture.pages['loto-theo-thu'], `?thu=4&count=59&ngay=${earliest}`);
+  const { series, params } = dom.window.BridgePages.state;
+  assert.equal(series[series.length - 1].date, earliest);
+  assert.equal(params.rejected, undefined);
+  const tooEarly = await open(t, fixture.pages['loto-theo-thu'], '?thu=4&ngay=2000-01-06');
+  const d = tooEarly.window.document;
+  assert.match(d.querySelector('.app-cau-notice').textContent, /06\/01\/2000 không còn đủ 60 kỳ/);
+});
+
+test('"cả hai chữ số" dùng kiểm lịch sử của chính luật ấy', async t => {
+  const one = await open(t, fixture.pages['dac-biet']);
+  one.window.document.querySelector('button.app-cau-cell').click();
+  assert.match(one.window.document.querySelector('.app-cau-honest').textContent, /40,0%/);
+  const both = await open(t, fixture.pages['dac-biet'], '?count=1&both=1');
+  both.window.document.querySelector('button.app-cau-cell').click();
+  assert.match(both.window.document.querySelector('.app-cau-honest').textContent, /1,2% số lần.*2,0%/);
+});
+
+test('phôi 80 tuần có đủ 80 hàng', async t => {
+  const dom = await open(t, fixture.tool, '', 'WeeklySheet');
+  const form = dom.window.document.getElementById('app-phoi-form');
+  form.elements.count.value = '80';
+  form.dispatchEvent(new dom.window.Event('input'));
+  assert.equal(dom.window.document.querySelectorAll('.app-phoi tbody tr').length, 80);
 });

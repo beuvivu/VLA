@@ -173,13 +173,21 @@
     return params;
   }
 
+  /** Chuỗi kỳ tính đến biên ngày. Biên ngày không còn đủ `window` kỳ trước nó thì
+   *  KHÔNG được âm thầm đổi sang kỳ mới nhất: bỏ biên ấy và báo rõ (`params.rejected`). */
   function seriesFor(params) {
-    let series = params.weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === params.weekday);
-    if (params.end) {
-      const cut = series.filter((d) => d.date <= params.end);
-      if (cut.length > params.count) series = cut;
-    }
+    const series = params.weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === params.weekday);
+    if (!params.end) return series;
+    const cut = series.filter((d) => d.date <= params.end);
+    if (cut.length >= REPORT.window) return cut;
+    params.rejected = params.end;
+    params.end = null;
     return series;
+  }
+
+  /** Các biên ngày chọn được: kỳ của chuỗi còn đủ `window` kỳ lịch sử trước nó. */
+  function boundaries(series) {
+    return series.slice(REPORT.window - 1).slice(-REPORT.window);
   }
 
   function query(params) {
@@ -297,7 +305,7 @@
       const dates = form.elements.ngay;
       dates.replaceChildren();
       const pool = params.weekday === null ? ALL : ALL.filter((d) => weekdayOf(d.date) === params.weekday);
-      for (const draw of pool.slice(-REPORT.window).reverse()) {
+      for (const draw of boundaries(pool).reverse()) {
         const option = el("option", "", `${WEEKDAYS[weekdayOf(draw.date)]}, ${formatDate(draw.date)}`);
         option.value = draw.date;
         dates.append(option);
@@ -319,6 +327,10 @@
       summary.append(document.createTextNode(` chạy từ ${params.count} ngày. Cầu dài nhất: `));
       summary.append(el("b", "", `${result.longest} ngày`));
       summary.append(document.createTextNode("."));
+      if (params.rejected) {
+        summary.append(el("span", "app-cau-notice", ` Biên ngày ${formatDate(params.rejected)} không còn đủ `
+          + `${REPORT.window} kỳ lịch sử trước nó nên không tính được — đang hiện kỳ mới nhất.`));
+      }
     }
 
     // Các bảng kết quả: count + 1 kỳ cuối của chuỗi, mới nhất trước.
@@ -383,7 +395,9 @@
         buttons.append(button);
       }
       detail.append(buttons);
-      const history = REPORT.backtest && REPORT.backtest.rows[Math.min(params.count, REPORT.backtest.rows.length - 1)];
+      // "Cả hai chữ số" là luật khác: dùng kiểm lịch sử của chính nó.
+      const tested = params.both && REPORT.backtest_both ? REPORT.backtest_both : REPORT.backtest;
+      const history = tested && tested.rows[Math.min(params.count, tested.rows.length - 1)];
       if (history && history.n >= 200) {
         detail.append(el("p", "app-cau-honest",
           `Trên toàn lịch sử, cầu kiểu này đã chạy ${history.plus ? "từ " : ""}${history.k} ngày thì kỳ sau đúng `
@@ -412,7 +426,7 @@
   }
 
   window.BridgePages = {
-    POSITIONS, decode, scan, tally, step, fulfilled, readParams, query, formQuery, boKey, BO_ID,
+    POSITIONS, decode, scan, tally, step, fulfilled, readParams, query, formQuery, boKey, BO_ID, boundaries,
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();
