@@ -1,31 +1,31 @@
 {
   "schema_version": 3,
   "mode": "de",
-  "generated_at": "2026-09-29T16:58:21Z",
+  "generated_at": "2026-09-30T13:03:05Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
       "fold": 1,
-      "calib_start": "2026-05-02",
-      "val_start": "2026-06-01",
-      "val_end_exclusive": "2026-07-01"
+      "calib_start": "2026-05-03",
+      "val_start": "2026-06-02",
+      "val_end_exclusive": "2026-07-02"
     },
     {
       "fold": 2,
-      "calib_start": "2026-06-01",
-      "val_start": "2026-07-01",
-      "val_end_exclusive": "2026-07-31"
+      "calib_start": "2026-06-02",
+      "val_start": "2026-07-02",
+      "val_end_exclusive": "2026-08-01"
     },
     {
       "fold": 3,
-      "calib_start": "2026-07-01",
-      "val_start": "2026-07-31",
-      "val_end_exclusive": "2026-08-30"
+      "calib_start": "2026-07-02",
+      "val_start": "2026-08-01",
+      "val_end_exclusive": "2026-08-31"
     },
     {
       "fold": 4,
-      "calib_start": "2026-07-31",
-      "val_start": "2026-08-30",
+      "calib_start": "2026-08-01",
+      "val_start": "2026-08-31",
       "val_end_exclusive": null
     }
   ],
@@ -86,28 +86,28 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": -0.0001521947828223051,
-      "mean_logloss_skill": -0.0016606657946554334
+      "mean_brier_skill": 3.73820294485885e-05,
+      "mean_logloss_skill": 0.0003283244179338112
     },
     "cap_50": {
-      "mean_brier_skill": 8.707948150390903e-06,
-      "mean_logloss_skill": 7.784789026398542e-05
+      "mean_brier_skill": 1.7869520998607667e-06,
+      "mean_logloss_skill": 1.1697143681981101e-05
     },
     "bo": {
-      "mean_brier_skill": -1.1631896957191061e-06,
-      "mean_logloss_skill": -9.60749647660041e-06
+      "mean_brier_skill": -4.6459431886723965e-05,
+      "mean_logloss_skill": -0.0004309832521913658
     },
     "bong": {
-      "mean_brier_skill": 1.4671249800248096e-05,
-      "mean_logloss_skill": 0.00011934861004715885
+      "mean_brier_skill": 9.408967618156788e-06,
+      "mean_logloss_skill": 8.514447700498846e-05
     },
     "cham": {
-      "mean_brier_skill": -0.0003302578035455964,
-      "mean_logloss_skill": -0.003200875840148345
+      "mean_brier_skill": -3.6296381175173347e-06,
+      "mean_logloss_skill": -3.612612387418599e-05
     },
     "tong": {
-      "mean_brier_skill": 5.4882763241491514e-05,
-      "mean_logloss_skill": 0.0004918115888680358
+      "mean_brier_skill": 8.05985846646536e-06,
+      "mean_logloss_skill": 7.006868426038068e-05
     }
   },
   "screened_groups": [],
@@ -321,15 +321,15 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": -1.0627149763824824e-05,
-  "all_groups_confirmation_logloss_skill": -0.000146966051832159,
+  "all_groups_confirmation_brier_skill": -6.173167293152136e-05,
+  "all_groups_confirmation_logloss_skill": -0.0005658641502102146,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
   "policy": "A domain feature group can affect production only after positive OOS Brier and LogLoss skill in screening and confirmation, then positive clustered-bootstrap lower confidence bounds for both losses on the untouched combined final fold.",
   "reason": "no individual domain feature group survived confirmation",
-  "anchor_date": "2026-09-29",
-  "predict_for_date": "2026-09-30",
+  "anchor_date": "2026-09-30",
+  "predict_for_date": "2026-10-01",
   "production_selected_groups": [],
   "production_feature_count": 39,
   "baseline_feature_count": 39
