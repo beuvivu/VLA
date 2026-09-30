@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-09-30T13:02:51Z",
+  "generated_at": "2026-09-30T14:19:01Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -86,28 +86,28 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": 0.000180604717416857,
-      "mean_logloss_skill": 0.00016527229421963897
+      "mean_brier_skill": 0.0001806047174169331,
+      "mean_logloss_skill": 0.00016527229421973972
     },
     "cap_50": {
-      "mean_brier_skill": 0.0006976664518982593,
-      "mean_logloss_skill": 0.0006324313320233196
+      "mean_brier_skill": 0.0006976664518983354,
+      "mean_logloss_skill": 0.0006324313320234203
     },
     "bo": {
-      "mean_brier_skill": 0.0004002595576518318,
-      "mean_logloss_skill": 0.0003666316577349756
+      "mean_brier_skill": 0.00040025955765206247,
+      "mean_logloss_skill": 0.0003666316577351782
     },
     "bong": {
-      "mean_brier_skill": 0.00014416612956550556,
-      "mean_logloss_skill": 0.0001308949428010215
+      "mean_brier_skill": 0.0001441661295658136,
+      "mean_logloss_skill": 0.00013089494280142796
     },
     "cham": {
       "mean_brier_skill": 0.00012862477357692678,
-      "mean_logloss_skill": 0.0001199829619286794
+      "mean_logloss_skill": 0.00011998296192878015
     },
     "tong": {
-      "mean_brier_skill": 0.00017513091416570495,
-      "mean_logloss_skill": 0.00016117265227394474
+      "mean_brier_skill": 0.00017513091416578106,
+      "mean_logloss_skill": 0.0001611726522740455
     }
   },
   "screened_groups": [
@@ -130,7 +130,7 @@
       "confirmed": true
     },
     "bo": {
-      "brier_skill": -5.480270684069948e-05,
+      "brier_skill": -5.480270684085252e-05,
       "logloss_skill": -5.11951530151975e-05,
       "confirmed": false
     },
@@ -145,7 +145,7 @@
       "confirmed": false
     },
     "tong": {
-      "brier_skill": 3.8279461048633384e-05,
+      "brier_skill": 3.827946104848034e-05,
       "logloss_skill": 3.4882385824967335e-05,
       "confirmed": false
     }
