@@ -201,6 +201,15 @@ vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lầ
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
 hơn hạn giữ artifact.
 
+## Bảng mô phỏng và sổ nhật ký của nó
+
+Bảng mô phỏng trang chủ (`build_fun_prediction.py`) rút 2 số cuối theo xác suất mô
+hình; tiền tố là số ngẫu nhiên. `src/fun_draw_ledger.py` ghi mỗi kỳ bảng đang hiện
+vào `data/fun_draw/ledger.csv` và chấm với kết quả thật (Đặc Biệt trúng đúng / trúng
+lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 giờ Việt Nam của kỳ đích;
+sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
+(`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
+
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 
 `src/confidence_matrix.py` dựng Confidence Score ba tầng (High: cả Bayes,
