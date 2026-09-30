@@ -16,6 +16,7 @@ import json
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,8 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from page_output import write_page
+
+import fun_draw_ledger
 
 
 SCHEMA_VERSION = 1
@@ -285,7 +288,70 @@ def _prob_badges(rows: list[dict[str, Any]], mode: str, label: str) -> str:
     return "".join(items)
 
 
-def _render_board(payload: dict[str, Any], *, simulation_only: bool = False) -> str:
+def _pct(value: float) -> str:
+    return f"{value:.1f}".replace(".", ",")
+
+
+def _short_date(iso: str) -> str:
+    """2026-09-30 -> 30/09; bảng nhật ký phải vừa màn hình điện thoại."""
+    parts = iso.split("-")
+    return f"{parts[2]}/{parts[1]}" if len(parts) == 3 else iso
+
+
+def _ledger_block(ledger: pd.DataFrame | None) -> str:
+    """Nhật ký: bảng đã hiện trước giờ quay so với kết quả thật, kỳ mới trước."""
+    if ledger is None or ledger.empty:
+        return ""
+    total = fun_draw_ledger.summarize(ledger)
+    rows: list[str] = []
+    for row in fun_draw_ledger.recent(ledger, 10):
+        if not row["actual_special"]:
+            verdict, actual, loto = "Chưa quay", "—", "—"
+        else:
+            actual = html.escape(row["actual_special"])
+            if row["exact"] == "1":
+                verdict = "Trúng đúng"
+            elif row["reversed"] == "1":
+                verdict = "Trúng lộn"
+            else:
+                verdict = "Trượt"
+            loto = f"{html.escape(row['loto_hits'])}/{len(row['loto'].split())}"
+        cls = " is-hit" if verdict.startswith("Trúng") else ""
+        rows.append(
+            f"<tr class='fun-ledger-row{cls}'>"
+            f"<td title='{html.escape(row['target_date'])}'>{html.escape(_short_date(row['target_date']))}</td>"
+            f"<td>{html.escape(row['special'])}</td><td>{actual}</td>"
+            f"<td>{verdict}</td><td>{loto}</td></tr>"
+        )
+    if total["days"]:
+        tally = (
+            f"{total['days']} kỳ ({html.escape(total['first_day'])} → {html.escape(total['last_day'])}): "
+            f"Đặc Biệt trúng đúng <b>{total['exact']}</b> lần, trúng lộn <b>{total['reversed']}</b> lần "
+            f"— nếu chỉ do ngẫu nhiên, kỳ vọng {_pct(total['expected_exact'])} và {_pct(total['expected_reversed'])}. "
+            f"LOTO: <b>{total['loto_hits']}</b>/{total['loto_positions']} vị trí có số về "
+            f"({_pct(100 * total['loto_hits'] / total['loto_positions'])}%; ngẫu nhiên "
+            f"≈ {_pct(100 * total['expected_loto_hits'] / total['loto_positions'])}%)."
+        )
+    else:
+        tally = "Chưa có kỳ nào đã quay để chấm."
+    return f"""
+  <details class="fun-simulation-details fun-ledger">
+    <summary>Nhật ký mô phỏng so với kết quả thật</summary>
+    <p class="fun-ledger-tally">{tally}</p>
+    <div class="fun-ledger-wrap"><table class="fun-ledger-table">
+      <thead><tr><th scope="col">Kỳ</th><th scope="col">Mô phỏng</th><th scope="col">Đặc Biệt thật</th><th scope="col">Kết quả</th><th scope="col">LOTO về</th></tr></thead>
+      <tbody>{"".join(rows)}</tbody>
+    </table></div>
+    <p class="fun-method">Mỗi kỳ ghi bảng đang hiện lúc 18:10, trước giờ quay; sau giờ đó bảng không được ghi lại. "Trúng lộn" là Đặc Biệt về số đảo của 2 số cuối mô phỏng.</p>
+  </details>"""
+
+
+def _render_board(
+    payload: dict[str, Any],
+    *,
+    simulation_only: bool = False,
+    ledger: pd.DataFrame | None = None,
+) -> str:
     """Dựng riêng bảng trong thẻ trang chủ; trang cũ vẫn nhận cả bảng xác suất."""
     rows: list[str] = []
     for group in payload["groups"]:
@@ -324,7 +390,7 @@ def _render_board(payload: dict[str, Any], *, simulation_only: bool = False) -> 
     <summary>Cách tạo bảng mô phỏng</summary>
     <p class="fun-method">{html.escape(str(payload["method"]))}</p>
     <p class="fun-disclaimer">{html.escape(str(payload["disclaimer"]))}</p>
-  </details>
+  </details>{_ledger_block(ledger)}
 </div>
 """
 
@@ -366,7 +432,7 @@ def _render_board(payload: dict[str, Any], *, simulation_only: bool = False) -> 
       </article>
     </div>
   </div>
-  <div class="fun-disclaimer">⚠ {html.escape(str(payload["disclaimer"]))}</div>
+  <div class="fun-disclaimer">⚠ {html.escape(str(payload["disclaimer"]))}</div>{_ledger_block(ledger)}
 </div>
 """
 
@@ -466,10 +532,20 @@ FUN_CSS = r"""
 .fun-simulation-details { margin-top: auto; color: var(--ui-ink-soft); font-size: 12px; }
 .fun-simulation-details summary { cursor: pointer; color: var(--ui-brand-ink); font-weight: 700; }
 .fun-simulation-details summary:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 4px; }
+.fun-simulation-details.fun-ledger { margin-top: 10px; }
+.fun-ledger-tally { margin: 8px 0; color: var(--ui-ink); line-height: 1.5; }
+.fun-ledger-wrap { max-width: 100%; overflow-x: auto; }
+.fun-ledger-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fun-ledger-table th, .fun-ledger-table td { padding: 5px 4px; border-bottom: 1px solid var(--ui-border); text-align: left; white-space: nowrap; }
+.fun-ledger-table th { color: var(--ui-ink-soft); font-weight: 700; }
+.fun-ledger-table td { color: var(--ui-ink); }
+.fun-ledger-row.is-hit td { background: var(--ui-warn-soft); font-weight: 800; }
 """
 
 
-def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
+def inject_into_html(
+    path: Path, payload: dict[str, Any], ledger: pd.DataFrame | None = None
+) -> bool:
     if not path.exists() or path.stat().st_size == 0:
         return False
     soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
@@ -493,7 +569,7 @@ def inject_into_html(path: Path, payload: dict[str, Any]) -> bool:
     soup.head.append(style)
 
     fragment = BeautifulSoup(
-        _render_board(payload, simulation_only=target.get("id") == "mo-phong"),
+        _render_board(payload, simulation_only=target.get("id") == "mo-phong", ledger=ledger),
         "html.parser",
     )
     block = fragment.find(id=BLOCK_ID)
@@ -516,11 +592,15 @@ def main() -> None:
     inputs = load_prediction_inputs(data_dir)
     payload = build_fun_draw(inputs)
     json_path, csv_path = write_artifacts(payload, data_dir)
+    # Sổ nhật ký: ghi bảng này nếu còn trước giờ khoá của kỳ, rồi chấm mọi kỳ đã quay.
+    ledger = fun_draw_ledger.update(
+        data_dir, payload, _prob_lookup(inputs.de), datetime.now(timezone.utc)
+    )
 
     injected: list[str] = []
     for name in ("index.html", "landing.html", "landing_desktop.html"):
         path = docs_dir / name
-        if inject_into_html(path, payload):
+        if inject_into_html(path, payload, ledger):
             injected.append(str(path))
 
     if not injected:

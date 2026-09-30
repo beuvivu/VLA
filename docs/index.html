@@ -1320,6 +1320,7 @@ background:var(--ui-warn-soft);color:var(--ui-ink);font-size:13.5px}
 @media print{.app-bridge-form,.app-bridge-days-picker{display:none!important}}
 
   </style>
+
 <style id="fun-prediction-style">
 #du-doan-vui.fun-prediction-block {
   margin-top: 20px;
@@ -1415,6 +1416,14 @@ background:var(--ui-warn-soft);color:var(--ui-ink);font-size:13.5px}
 .fun-simulation-details { margin-top: auto; color: var(--ui-ink-soft); font-size: 12px; }
 .fun-simulation-details summary { cursor: pointer; color: var(--ui-brand-ink); font-weight: 700; }
 .fun-simulation-details summary:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 4px; }
+.fun-simulation-details.fun-ledger { margin-top: 10px; }
+.fun-ledger-tally { margin: 8px 0; color: var(--ui-ink); line-height: 1.5; }
+.fun-ledger-wrap { max-width: 100%; overflow-x: auto; }
+.fun-ledger-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fun-ledger-table th, .fun-ledger-table td { padding: 5px 4px; border-bottom: 1px solid var(--ui-border); text-align: left; white-space: nowrap; }
+.fun-ledger-table th { color: var(--ui-ink-soft); font-weight: 700; }
+.fun-ledger-table td { color: var(--ui-ink); }
+.fun-ledger-row.is-hit td { background: var(--ui-warn-soft); font-weight: 800; }
 </style>
 <link rel="stylesheet" href="assets/ui-visual-system.css" media="print" onload="this.media='all'" data-ui-visual-system>
 <noscript><link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system></noscript>
@@ -2483,6 +2492,15 @@ background:var(--ui-warn-soft);color:var(--ui-ink);font-size:13.5px}
 <summary>Cách tạo bảng mô phỏng</summary>
 <p class="fun-method">Đặc Biệt: lấy mẫu tất định có trọng số từ phân phối Đặc Biệt. Các giải khác: lấy mẫu tất định có trọng số từ phân phối LOTO. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp dữ liệu/mô hình để cùng đầu vào luôn cho cùng một bảng mô phỏng.</p>
 <p class="fun-disclaimer">Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế.</p>
+</details>
+<details class="fun-simulation-details fun-ledger">
+<summary>Nhật ký mô phỏng so với kết quả thật</summary>
+<p class="fun-ledger-tally">30 kỳ (2026-09-01 → 2026-09-30): Đặc Biệt trúng đúng <b>1</b> lần, trúng lộn <b>1</b> lần — nếu chỉ do ngẫu nhiên, kỳ vọng 0,3 và 0,3. LOTO: <b>178</b>/780 vị trí có số về (22,8%; ngẫu nhiên ≈ 23,8%).</p>
+<div class="fun-ledger-wrap"><table class="fun-ledger-table">
+<thead><tr><th scope="col">Kỳ</th><th scope="col">Mô phỏng</th><th scope="col">Đặc Biệt thật</th><th scope="col">Kết quả</th><th scope="col">LOTO về</th></tr></thead>
+<tbody><tr class="fun-ledger-row"><td title="2026-10-01">01/10</td><td>54130</td><td>—</td><td>Chưa quay</td><td>—</td></tr><tr class="fun-ledger-row is-hit"><td title="2026-09-30">30/09</td><td>27124</td><td>95242</td><td>Trúng lộn</td><td>4/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-29">29/09</td><td>26460</td><td>05651</td><td>Trượt</td><td>6/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-28">28/09</td><td>35061</td><td>77115</td><td>Trượt</td><td>5/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-27">27/09</td><td>09017</td><td>55473</td><td>Trượt</td><td>7/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-26">26/09</td><td>39657</td><td>18132</td><td>Trượt</td><td>5/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-25">25/09</td><td>77772</td><td>34465</td><td>Trượt</td><td>4/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-24">24/09</td><td>04329</td><td>78196</td><td>Trượt</td><td>5/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-23">23/09</td><td>26151</td><td>76406</td><td>Trượt</td><td>9/26</td></tr><tr class="fun-ledger-row"><td title="2026-09-22">22/09</td><td>26953</td><td>31922</td><td>Trượt</td><td>7/26</td></tr></tbody>
+</table></div>
+<p class="fun-method">Mỗi kỳ ghi bảng đang hiện lúc 18:10, trước giờ quay; sau giờ đó bảng không được ghi lại. "Trúng lộn" là Đặc Biệt về số đảo của 2 số cuối mô phỏng.</p>
 </details>
 </div></section>
 <article class="card">
