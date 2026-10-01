@@ -1,14 +1,26 @@
 [
   {
-    "value":95,
-    "last_seen":"2026-09-10",
-    "days_since_last":20,
-    "value_str":"95"
-  },
-  {
     "value":58,
     "last_seen":"2026-09-15",
-    "days_since_last":15,
+    "days_since_last":16,
     "value_str":"58"
+  },
+  {
+    "value":31,
+    "last_seen":"2026-09-21",
+    "days_since_last":10,
+    "value_str":"31"
+  },
+  {
+    "value":59,
+    "last_seen":"2026-09-21",
+    "days_since_last":10,
+    "value_str":"59"
+  },
+  {
+    "value":13,
+    "last_seen":"2026-09-21",
+    "days_since_last":10,
+    "value_str":"13"
   }
 ]

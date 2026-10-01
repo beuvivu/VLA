@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "generated_at_utc": "2026-09-30T18:16:08Z",
-  "anchor_date": "2026-09-30",
+  "generated_at_utc": "2026-10-01T13:53:12Z",
+  "anchor_date": "2026-10-01",
   "modes": {
     "loto": {
       "mode": "loto",
@@ -9,7 +9,7 @@
       "hypotheses": 1458,
       "train_days": 2532,
       "validation_days": 844,
-      "holdout_days": 844,
+      "holdout_days": 845,
       "fdr_significant_train": 0,
       "production_eligible_count": 0,
       "minimum_lift_gate": 1.03,
@@ -31,7 +31,7 @@
       "hypotheses": 1458,
       "train_days": 2532,
       "validation_days": 844,
-      "holdout_days": 844,
+      "holdout_days": 845,
       "fdr_significant_train": 0,
       "production_eligible_count": 0,
       "minimum_lift_gate": 1.03,
