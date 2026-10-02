@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "de",
-  "learned_at_utc": "2026-10-01T16:49:23Z",
+  "learned_at_utc": "2026-10-02T13:12:09Z",
   "window_days": 180,
   "half_life_days": 45,
   "component_availability_required": true,
@@ -12,12 +12,12 @@
     "temperature": 1.0
   },
   "chronological_split": {
-    "weight_days": 18,
+    "weight_days": 19,
     "calibration_days": 13,
     "weight_first_day": "2026-08-12",
-    "weight_last_day": "2026-09-18",
-    "calibration_first_day": "2026-09-19",
-    "calibration_last_day": "2026-10-01",
+    "weight_last_day": "2026-09-19",
+    "calibration_first_day": "2026-09-20",
+    "calibration_last_day": "2026-10-02",
     "disjoint": true
   },
   "selection": {

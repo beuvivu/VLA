@@ -283,7 +283,7 @@
   <div class="top path-hero">
     <div>
       <h1 style="margin:0;font-size:clamp(20px,3vw,30px)">SOI CẦU ĐẶC BIỆT — ĐANG CHẠY</h1>
-      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-10-01</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
+      <div class="small">Ngày neo (biên ngày cầu chạy): <b>2026-10-02</b> · Số ngày cầu chạy: <b>10</b> · Loại: <b>Đặc Biệt</b> · Trạng thái: <b>Đang chạy</b></div>
     </div>
     <div class="kpi">
       <span class="chip">Màu đỏ: về Đặc Biệt</span>
@@ -306,6 +306,13 @@
           <thead><tr><th>Hạng</th><th>Số</th><th>%</th><th>Số đường hỗ trợ</th></tr></thead>
           <tbody>
 
+            <tr>
+              <td>1</td>
+              <td class="mono">01</td>
+              <td>1.03</td>
+              <td>1</td>
+            </tr>
+
           </tbody>
         </table>
       </div>
@@ -320,7 +327,15 @@
         <span><span class="dot none"></span>Không về</span>
       </div>
 
-      <div class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày neo này, nên chưa có danh sách chọn nhanh.</div>
+      <div class="quick-grid" aria-label="Danh sách chọn nhanh">
+
+        <div class="quick-pick" title="Số 01 · điểm 1.03% · hỗ trợ 1 đường cầu">
+          <span class="quick-number mono">01</span>
+          <span class="quick-meta"><b>1.03%</b><br>1 đường cầu</span>
+        </div>
+
+      </div>
+      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo điểm tổng hợp; đây là điểm xếp hạng, không phải xác suất đã hiệu chuẩn.</i></div>
 
       <div style="margin-top:10px" class="small">
         Mẹo: có thể tăng/giảm <span class="mono">--so-ngay</span>, <span class="mono">--lag-max</span>, <span class="mono">--window-days</span> trong quy trình/CLI để điều chỉnh “biên độ” hiển thị.
@@ -332,19 +347,70 @@
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
     <div class="small" style="margin-top:6px">Mỗi hàng là một đường cầu; mỗi cột là một ngày trong “Số ngày cầu chạy”. Ô hiển thị số do đường cầu tạo ra tại ngày đó và được tô màu nếu đã về.</div>
 
-    <div class="ui-empty" role="status">
-      <span class="ui-empty-icon" aria-hidden="true">◌</span>
-      <h3>Hôm nay không có đường cầu đang chạy nào</h3>
+    <div class="path-table-scroll" style="margin-top:10px; overflow:auto">
+      <table id="path-table">
+        <thead>
+          <tr>
+            <th class="left">Đường cầu</th>
+            <th>Tỷ lệ lịch sử</th>
+            <th>Chuỗi liên tiếp</th>
 
-      <p>Đây là trạng thái bình thường, không phải lỗi dữ liệu. Bộ quét đã chạy đủ và kết luận không đường cầu nào đạt ngưỡng 3 nhịp liên tiếp.</p>
-      <div class="ui-empty-why">
+              <th class="mono">09-23</th>
 
-        <p style="margin:0 0 .5rem">Với Đặc Biệt, tỉ lệ trúng của một con là <b>1.0%</b>, nên xác suất một đường cầu trúng 3 kỳ liên tiếp chỉ khoảng <b>0.000100%</b>. Rỗng là kết quả thường gặp, và hạ ngưỡng để “có dữ liệu” sẽ tạo ra tín hiệu giả.</p>
+              <th class="mono">09-24</th>
 
-        <p style="margin:0">Trang <a href="soi-path-de-stable.html">Ổn định</a> hiện có <b>324</b> đường cầu đủ điều kiện.</p>
+              <th class="mono">09-25</th>
 
-      </div>
+              <th class="mono">09-26</th>
 
+              <th class="mono">09-27</th>
+
+              <th class="mono">09-28</th>
+
+              <th class="mono">09-29</th>
+
+              <th class="mono">09-30</th>
+
+              <th class="mono">10-01</th>
+
+              <th class="mono">10-02</th>
+
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr>
+            <td class="left">
+              <div class="mono">L6-[24,97]</div>
+              <div class="small">trễ=6 · A=24 (prize3_1.d4) · B=97 (prize6_3.d1)</div>
+            </td>
+            <td>1.41</td>
+            <td class="mono">hiện tại=3 / dài nhất=3</td>
+
+                <td title="2026-09-23 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=93"><span class="cell none mono">93</span></td>
+
+                <td title="2026-09-24 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=44"><span class="cell none mono">44</span></td>
+
+                <td title="2026-09-25 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=45"><span class="cell none mono">45</span></td>
+
+                <td title="2026-09-26 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=86"><span class="cell none mono">86</span></td>
+
+                <td title="2026-09-27 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=83"><span class="cell none mono">83</span></td>
+
+                <td title="2026-09-28 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=03"><span class="cell none mono">03</span></td>
+
+                <td title="2026-09-29 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=50"><span class="cell none mono">50</span></td>
+
+                <td title="2026-09-30 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=42"><span class="cell hitde mono">42</span></td>
+
+                <td title="2026-10-01 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=08"><span class="cell hitde mono">08</span></td>
+
+                <td title="2026-10-02 · trễ=6 · vị trí A=24 (prize3_1.d4) · vị trí B=97 (prize6_3.d1) · số=83"><span class="cell hitde mono">83</span></td>
+
+          </tr>
+
+        </tbody>
+      </table>
     </div>
 
   </div>
