@@ -33,7 +33,7 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
   </section>
   <section id="ai-ml"><h2>Bảng xác suất</h2>
     <table><thead><tr><th>#</th><th>Số</th><th>Xác suất (%)</th></tr></thead>
-      <tbody><tr data-evidence-row="ml-loto-63"><td>1</td><td id="num">63</td><td id="prob">23,943%</td></tr>
+      <tbody><tr data-evidence-row="ml-loto-63" data-evidence-cols="1,2"><td id="rank">1</td><td id="num">63</td><td id="prob">23,943%</td></tr>
         <tr><td>2</td><td>95</td><td id="prob2">23,936%</td></tr>
         <tr><td>3</td><td id="sci">-7.15393e-05</td><td id="sci2">3.39239E+05</td></tr></tbody></table>
     <script type="application/json" data-app-evidence-values>${JSON.stringify(ROW)}</script>
@@ -133,6 +133,10 @@ test('Hàng khai data-evidence-row dùng bằng chứng riêng, kèm độ tin c
   assert.equal(d.querySelector('.app-evidence-source-title').textContent, 'Mô hình ML thành phần');
   assert.equal(d.querySelector('.app-evidence-meter').getAttribute('aria-valuenow'), '35');
   assert.equal(dom.window.appEvidence.evidenceFor($(dom, 'num')).reasoningTrace.confidenceScore, 0.35);
+  // Cột hạng không nằm trong data-evidence-cols: không mượn bằng chứng xác suất.
+  const rank = dom.window.appEvidence.evidenceFor($(dom, 'rank'));
+  assert.notEqual(rank.scope, 'Số 63 · ML LOTO');
+  assert.equal(rank.sources[0].title, 'Dự báo đã công bố trước kỳ quay');
 });
 
 test('Ô đã có chức năng nhấp giữ nguyên chức năng; Alt + nhấp mở bằng chứng mà không đánh dấu', t => {

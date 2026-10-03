@@ -291,7 +291,11 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "landing.html": home,
         "landing_desktop.html": home,
         "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày dùng vector đã công bố trước giờ quay; " + _GHI_CHU_DU_BAO]), [
-            _sec("#live-predictions", "Dự đoán trong ngày", _du_bao_ev(f, "Số hiển thị là dự báo đã lưu cho đúng ngày quay đang xem, không phải kết quả.")),
+            # Trang tải dự báo theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
+            _sec("#live-predictions", "Dự đoán trong ngày", _du_bao_ev(
+                {k: v for k, v in f.items() if k != "target"},
+                "Số hiển thị là dự báo đã lưu cho đúng ngày quay ghi ở đầu khối, không phải kết quả.",
+            )),
         ]),
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
         "statistics.html": _thong_ke_tong(f),
@@ -434,8 +438,12 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
     return out
 
 
-def tag_rows(table_html: str, ids: list[str]) -> str:
-    """Gắn ``data-evidence-row`` cho các ``<tr>`` trong ``<tbody>``, theo thứ tự."""
+def tag_rows(table_html: str, ids: list[str], cols: tuple[int, ...] = ()) -> str:
+    """Gắn ``data-evidence-row`` cho các ``<tr>`` trong ``<tbody>``, theo thứ tự.
+
+    ``cols``: chỉ số cột (0 là cột đầu) dùng bằng chứng của hàng; cột khác —
+    ví dụ cột hạng "#" — rơi về bằng chứng của trang. Rỗng là mọi cột.
+    """
     start = table_html.find("<tbody")
     if start < 0 or not ids:
         return table_html
@@ -444,7 +452,10 @@ def tag_rows(table_html: str, ids: list[str]) -> str:
 
     def put(match: re.Match[str]) -> str:
         ident = next(queue, None)
-        return match.group(0) if ident is None else f'<tr data-evidence-row="{ident}"'
+        if ident is None:
+            return match.group(0)
+        limit = f' data-evidence-cols="{",".join(map(str, cols))}"' if cols else ""
+        return f'<tr data-evidence-row="{ident}"{limit}'
 
     return head + re.sub(r"<tr(?=[\s>])", put, body)
 

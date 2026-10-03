@@ -119,8 +119,9 @@ def build() -> None:
     # co về nền); app-evidence.js mở nó khi người xem nhấp vào số trong hàng.
     loto_rows = ml_row_evidence(loto_top, "loto")
     de_rows = ml_row_evidence(de_top, "de")
-    loto_table = tag_rows(loto_table, [ident for ident, _ in loto_rows]) + values_block(loto_rows)
-    de_table = tag_rows(de_table, [ident for ident, _ in de_rows]) + values_block(de_rows)
+    # Cột 0 là hạng "#": bằng chứng xác suất của hàng không giải thích hạng.
+    loto_table = tag_rows(loto_table, [ident for ident, _ in loto_rows], cols=(1, 2, 3)) + values_block(loto_rows)
+    de_table = tag_rows(de_table, [ident for ident, _ in de_rows], cols=(1, 2, 3)) + values_block(de_rows)
 
     loto_page = _base_page(
         body=f"""

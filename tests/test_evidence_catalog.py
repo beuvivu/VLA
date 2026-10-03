@@ -131,6 +131,9 @@ def test_row_tags_go_to_body_rows_in_order() -> None:
     tagged = tag_rows(table, ["a", "b"])
     assert '<thead><tr><th>' in tagged
     assert re.findall(r'data-evidence-row="(\w)"', tagged) == ["a", "b"]
+    assert 'data-evidence-cols' not in tagged
+    assert tagged.count('data-evidence-cols="1,2"') == 0
+    assert tag_rows(table, ["a", "b"], cols=(1, 2)).count('data-evidence-cols="1,2"') == 2
     block = values_block([("a", {"title": "</script>"})])
     assert block.startswith('<script type="application/json" data-app-evidence-values>')
     assert "</script>" not in block[len('<script type="application/json" data-app-evidence-values>'):-len("</script>")]
@@ -139,7 +142,7 @@ def test_row_tags_go_to_body_rows_in_order() -> None:
 def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
     for mode in ("loto", "de"):
         html = (ROOT / f"docs/ml_top10_{mode}.html").read_text(encoding="utf-8")
-        rows = re.findall(r'data-evidence-row="(ml-' + mode + r'-\d\d)"', html)
+        rows = re.findall(r'data-evidence-row="(ml-' + mode + r'-\d\d)" data-evidence-cols="1,2,3"', html)
         assert len(rows) == 10, (mode, rows)
         values = json.loads(re.search(r"data-app-evidence-values>(.*?)</script>", html, re.S).group(1))
         assert set(rows) == set(values)
@@ -179,3 +182,6 @@ def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
     assert "Dự báo đã công bố trước kỳ quay" in titles
     assert "Bảng kết quả đang quay" not in titles
     assert "Bảng kết quả đang quay" in [src["title"] for src in registry("live.html")["page"]["sources"]]
+    # Trang tải dự báo theo ngày quay lúc chạy: không được ghi ngày lúc dựng.
+    snippets = " ".join(src["snippet"] for src in sections["#live-predictions"]["sources"])
+    assert not re.search(r"cho kỳ \d\d-\d\d-\d{4}", snippets), snippets

@@ -288,13 +288,21 @@
     return bits.filter(Boolean).join(" › ").slice(0, 160);
   }
 
+  /* data-evidence-cols="1,2" trên hàng: chỉ các cột ấy dùng bằng chứng của hàng. */
+  function rowCovers(row, el) {
+    var cols = row.getAttribute("data-evidence-cols");
+    if (!cols) { return true; }
+    var cell = el.closest("td, th");
+    return Boolean(cell) && cols.split(",").indexOf(String(cell.cellIndex)) >= 0;
+  }
+
   /** Bằng chứng đầy đủ của một con số (CitationEvidence + ngữ cảnh). */
   function evidenceFor(el) {
     var value = valueText(el);
     var explicitId = el.getAttribute("data-evidence") || "";
     if (!explicitId) {
       var row = el.closest("[data-evidence-row]");
-      if (row && root.contains(row)) { explicitId = row.getAttribute("data-evidence-row") || ""; }
+      if (row && root.contains(row) && rowCovers(row, el)) { explicitId = row.getAttribute("data-evidence-row") || ""; }
     }
     var own = explicitId ? registry.values[explicitId] || null : null;
     var section = sectionEntry(el);
