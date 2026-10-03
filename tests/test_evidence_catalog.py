@@ -143,3 +143,8 @@ def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
         assert len(rows) == 10, (mode, rows)
         values = json.loads(re.search(r"data-app-evidence-values>(.*?)</script>", html, re.S).group(1))
         assert set(rows) == set(values)
+        # Nguồn ML của mỗi chế độ trỏ về đúng trang top của chế độ ấy.
+        page = f"ml_top10_{mode}.html"
+        assert {v["sources"][0]["url"] for v in values.values()} == {page}
+        ml = [src for src in _published_registry(ROOT / "docs" / page)["page"]["sources"] if src["title"] == "Mô hình ML thành phần"]
+        assert [src["url"] for src in ml] == [page]

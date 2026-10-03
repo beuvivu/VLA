@@ -235,6 +235,11 @@ body.app-global-search-open{overflow:hidden}
 }
 
 .app-evidence-hot{cursor:pointer;outline:1px dashed var(--ui-brand-ink);outline-offset:1px;border-radius:2px}
+.app-evidence-active{outline:2px solid var(--ui-brand-ink);outline-offset:1px;border-radius:2px}
+[data-evidence-region]:focus{outline:none}
+[data-evidence-region]:focus-visible{outline:2px solid var(--ui-brand-border);outline-offset:2px}
+.app-evidence-sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .app-evidence-tip{position:fixed;z-index:2147483000;top:0;left:0;max-width:min(320px,calc(100vw - 16px));
   padding:10px 12px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface);
   color:var(--ui-ink);box-shadow:var(--ui-sh-lg);font:13px/1.45 var(--ui-font);pointer-events:none}

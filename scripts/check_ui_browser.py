@@ -77,6 +77,23 @@ def check_evidence(page, name, width, dark):
     assert box["x"] >= -1 and box["x"] + box["width"] <= width + 1, box
     page.keyboard.press("Escape")
     expect(drawer).not_to_be_visible()
+    if width > 640 and not dark:
+        # Bàn phím: vùng chứa số nhận tiêu điểm, mũi tên chọn số, Enter mở.
+        # Trang tự dựng lại (live) có thể đã thay phần tử: lấy vùng còn gắn trên trang.
+        page.wait_for_function("document.querySelector('#app-main [data-evidence-region]')")
+        region = target.evaluate_handle(
+            "e => (e.isConnected && e.closest('[data-evidence-region]')) || "
+            "document.querySelector('#app-main [data-evidence-region]')").as_element()
+        assert region is not None, f"{name}: con số không thuộc vùng bàn phím nào"
+        page.keyboard.press("Shift")
+        region.focus()
+        expect(page.locator(".app-evidence-active")).to_have_count(1)
+        page.keyboard.press("ArrowRight")
+        page.keyboard.press("Enter")
+        expect(drawer).to_be_visible()
+        page.keyboard.press("Escape")
+        expect(drawer).not_to_be_visible()
+        assert region.evaluate("e => document.activeElement === e"), f"{name}: tiêu điểm không về vùng"
     return ("alt:" if alt else "") + target.evaluate("e => e.textContent.trim().slice(0, 24)")
 
 

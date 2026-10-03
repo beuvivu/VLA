@@ -329,6 +329,12 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
   `[data-app-evidence-values]` (`evidence_catalog.values_block`) hoặc
   `window.appEvidence.register`. Ví dụ: `ml_top10_*` in phép co
   `p = trust·thô + (1 − trust)·nền` bằng số thật, `confidenceScore` = model_trust.
+- Bàn phím: mỗi bảng hoặc khối có số (`section`, `article`, `.ui-card`…) là
+  MỘT điểm dừng Tab (`data-evidence-region`, gắn khi quét và khi DOM đổi);
+  mũi tên chọn số (lên/xuống theo cột trong bảng), Enter/Space mở bằng chứng,
+  `aria-live` đọc giá trị. ĐỪNG gắn tabindex cho từng con số: trang thống kê có
+  hàng nghìn con số. tabindex do module tự gắn không làm số thành "đã có chức
+  năng nhấp".
 - Câu nhắc dự báo (`_GHI_CHU_DU_BAO`) phải đúng với số đo của kho; đừng viết
   cứng kết luận mà trang khác in TỪ SỐ ĐO (ví dụ "cầu dài có đáng tin hơn?").
 

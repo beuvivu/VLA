@@ -149,14 +149,17 @@ def _cham(f: dict[str, str]) -> Source:
     }
 
 
-_ML: Source = {
-    "title": "Mô hình ML thành phần",
-    "snippet": (
-        "Cây tăng cường có hiệu chỉnh Platt, học lại theo cửa sổ 2 000 ngày gần nhất; "
-        "không có kỹ năng thẩm định thì xác suất co hẳn về tỉ lệ nền."
-    ),
-    "url": "ml_top10_loto.html",
-}
+def _ml(mode: str = "loto") -> Source:
+    """Nguồn thành phần ML, trỏ về đúng trang top của chế độ đang xem."""
+    return {
+        "title": "Mô hình ML thành phần",
+        "snippet": (
+            "Cây tăng cường có hiệu chỉnh Platt, học lại theo cửa sổ 2 000 ngày gần nhất; "
+            "không có kỹ năng thẩm định thì xác suất co hẳn về tỉ lệ nền."
+        ),
+        "url": "ml_top10_de.html" if mode == "de" else "ml_top10_loto.html",
+    }
+
 
 _CAU: Source = {
     "title": "Bộ dò cầu vị trí",
@@ -237,9 +240,9 @@ def _cau(f: dict[str, str], *extra: str) -> Evidence:
     )
 
 
-def _du_bao_ev(f: dict[str, str], *extra: str) -> Evidence:
+def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "loto") -> Evidence:
     return _ev(
-        [_du_bao(f), _ML, _cham(f)],
+        [_du_bao(f), _ml(mode), _cham(f)],
         [
             "Mỗi thành phần cho một vector xác suất 100 số, chỉ dùng các kỳ trước kỳ đích.",
             "Trộn theo trọng số mặc định (hoặc vector đã học khi nó thắng mặc định ngoài mẫu), "
@@ -318,7 +321,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "dashboard.html": (_du_bao_ev(f, "Trọng số là phần đóng góp của từng thành phần vào tổ hợp."), []),
         "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất."), []),
-        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất."), []),
+        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], ["Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.", "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt.", "Kỹ năng = 1 − điểm mô hình / điểm dự báo hằng số; 0 là ngang hằng số."]), []),
         "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], ["Đo tín hiệu mạnh nhất của từng họ (Bayes, Markov, cầu) trên lịch sử thật.", "Tin cậy = tỉ lệ lịch sử ngẫu nhiên có tín hiệu mạnh nhất còn yếu hơn — không phải hậu nghiệm từng con.", "Ba tầng: High khi cả ba > 85%, Medium khi hai trong ba ≥ 60%, còn lại Low/Noise."]), []),
         "research-lab.html": (_ev([_ket_qua(f), _NULL], ["Mỗi giả thuyết kiểm trên tập giữ lại theo thời gian, có kiểm soát nhiều phép thử.", "Kết quả tách khỏi bộ dự báo vận hành cho tới khi vượt mọi cổng."]), []),
@@ -407,7 +410,7 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
             f"ml-{mode}-{n:02d}",
             {
                 "title": f"Số {n:02d} · ML {label}",
-                "sources": [_ML, _du_bao(f), _cham(f)],
+                "sources": [_ml(mode), _du_bao(f), _cham(f)],
                 "reasoningTrace": {"steps": steps, "confidenceScore": max(0.0, min(1.0, trust))},
             },
         ))

@@ -136,7 +136,8 @@
      tabindex để cuộn bằng bàn phím, không phải để nhấp. */
   function isInteractive(el) {
     if (el.hasAttribute("data-evidence")) { return false; }
-    if (el.matches("[tabindex]:not([tabindex='-1'])")) { return true; }
+    /* tabindex do chính module gắn cho vùng bàn phím không phải "chức năng nhấp". */
+    if (el.matches("[tabindex]:not([tabindex='-1'])") && !el.hasAttribute("data-evidence-region")) { return true; }
     var hit = el.closest(INTERACTIVE);
     return Boolean(hit && root.contains(hit) && !hit.hasAttribute("data-evidence"));
   }
@@ -345,7 +346,7 @@
   var hideTimer = 0;
   var lastTouch = 0;
 
-  function fillTip(ev, interactive) {
+  function fillTip(ev, interactive, viaKeyboard) {
     var src = ev.sources[0];
     var lines = [];
     var head = mk("p", "app-evidence-tip-source");
@@ -356,9 +357,11 @@
     var where = ev.context.column || ev.context.label || ev.scope || ev.context.section;
     lines.push(mk("p", "app-evidence-tip-meta",
       "Suy luận qua " + ev.reasoningTrace.steps.length + " bước" + (where ? " · " + where : "")));
-    lines.push(mk("p", "app-evidence-tip-hint", interactive
-      ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
-      : "Click để xem chi tiết bằng chứng suy luận"));
+    lines.push(mk("p", "app-evidence-tip-hint", viaKeyboard
+      ? "Enter để xem chi tiết bằng chứng suy luận · mũi tên để chọn số khác"
+      : interactive
+        ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
+        : "Click để xem chi tiết bằng chứng suy luận"));
     tip.replaceChildren.apply(tip, lines);
   }
 
@@ -375,11 +378,11 @@
     tip.style.left = left + "px";
   }
 
-  function showTip(el) {
+  function showTip(el, viaKeyboard) {
     clearTimeout(hideTimer);
     if (tipFor && tipFor !== el) { unmark(tipFor); }
     var interactive = isInteractive(el);
-    fillTip(evidenceFor(el), interactive);
+    fillTip(evidenceFor(el), interactive, viaKeyboard);
     tip.hidden = false;
     placeTip(el);
     tipFor = el;
@@ -423,13 +426,28 @@
   });
 
   doc.addEventListener("focusin", function (event) {
+    if (event.target.hasAttribute && event.target.hasAttribute("data-evidence-region")) {
+      if (keyboard && !drawerOpen()) {
+        var region = event.target;
+        var keep = activeRegion === region && active && region.contains(active) ? active : null;
+        var start = keep || firstItem(region);
+        if (start) { setActive(region, start); }
+      }
+      return;
+    }
     var el = valueTarget(event.target);
     if (el && el === event.target && !drawerOpen()) { showTip(el); }
   });
   doc.addEventListener("focusout", function (event) {
     if (event.target === tipFor) { hideTip(); }
+    if (event.target === activeRegion && !(event.relatedTarget && activeRegion.contains(event.relatedTarget))) {
+      deactivate();
+    }
   });
-  win.addEventListener("scroll", function () { if (tipFor) { hideTip(); } }, { passive: true, capture: true });
+  win.addEventListener("scroll", function () {
+    if (!tipFor) { return; }
+    if (tipFor === active) { placeTip(active); } else { hideTip(); }
+  }, { passive: true, capture: true });
 
   /* ---------- ngăn kéo chi tiết ---------- */
 
@@ -602,7 +620,170 @@
     openFor(el);
   });
 
+  /* ---------- bàn phím: mỗi bảng hay khối có số là MỘT điểm dừng Tab ----------
+     Gắn tabindex cho từng con số sẽ thêm hàng nghìn điểm dừng trên trang thống
+     kê. Thay vào đó, bảng (hoặc khối) nhận tiêu điểm một lần; mũi tên chọn con
+     số bên trong (lên/xuống theo cột trong bảng), Enter hoặc Space mở bằng
+     chứng. Tooltip đi theo số đang chọn; vùng aria-live đọc giá trị. */
+
+  var REGION_OF = "section, article, aside, figure, .ui-card";
+  var SHOW_TEXT = 4;
+  var keyboard = false;
+  var active = null;
+  var activeRegion = null;
+  var hint = mk("p", "app-evidence-sr",
+    "Dùng phím mũi tên để chọn con số, Enter để xem nguồn và bằng chứng suy luận.");
+  hint.id = "app-evidence-kbd";
+  var live = mk("p", "app-evidence-sr");
+  live.id = "app-evidence-live";
+  live.setAttribute("aria-live", "polite");
+  doc.body.appendChild(hint);
+  doc.body.appendChild(live);
+
+  doc.addEventListener("keydown", function () { keyboard = true; }, true);
+  doc.addEventListener("pointerdown", function () { keyboard = false; }, true);
+
+  function selfFocusable(el) {
+    return !el.hasAttribute("data-evidence-region") &&
+      el.matches("a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex='-1'])");
+  }
+
+  function regionFor(el) {
+    var table = el.closest("table");
+    if (table && root.contains(table)) { return table; }
+    var box = el.closest(REGION_OF);
+    return box && root.contains(box) ? box : el;
+  }
+
+  function markRegion(region) {
+    if (region.hasAttribute("data-evidence-region") || region.closest(EXCLUDE)) { return; }
+    var tab = region.getAttribute("tabindex");
+    if (tab !== null && tab !== "0") { return; }
+    region.setAttribute("data-evidence-region", "");
+    region.setAttribute("tabindex", "0");
+    var described = region.getAttribute("aria-describedby");
+    region.setAttribute("aria-describedby", described ? described + " " + hint.id : hint.id);
+  }
+
+  function eachItem(scope, region, visit) {
+    var walker = doc.createTreeWalker(scope, SHOW_TEXT, null);
+    var last = null;
+    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!/\d/.test(node.nodeValue)) { continue; }
+      var el = valueTarget(node);
+      if (!el || el === last || selfFocusable(el) || (region && regionFor(el) !== region)) { continue; }
+      last = el;
+      if (visit(el) === false) { return; }
+    }
+  }
+
+  function firstItem(region) {
+    var found = null;
+    eachItem(region, region, function (el) { found = el; return false; });
+    return found;
+  }
+
+  function itemsIn(region) {
+    var out = [];
+    eachItem(region, region, function (el) { if (out[out.length - 1] !== el) { out.push(el); } });
+    return out;
+  }
+
+  function itemInCell(cell, region) {
+    var found = null;
+    if (cell) { eachItem(cell, region, function (el) { found = el; return false; }); }
+    return found;
+  }
+
+  /* Bước trong bảng: trái/phải theo hàng, lên/xuống theo cột; bỏ qua ô không có số. */
+  function cellStep(cell, region, dRow, dCol) {
+    var rows = region.rows;
+    var r = cell.parentElement.rowIndex;
+    var c = cell.cellIndex;
+    for (var guard = 0; guard < 2000; guard += 1) {
+      if (dCol) {
+        c += dCol;
+        if (c < 0 || c >= rows[r].cells.length) { return null; }
+      } else {
+        r += dRow;
+        if (r < 0 || r >= rows.length) { return null; }
+        c = Math.min(cell.cellIndex, rows[r].cells.length - 1);
+      }
+      var next = itemInCell(rows[r].cells[c], region);
+      if (next) { return next; }
+    }
+    return null;
+  }
+
+  function deactivate() {
+    if (active) { active.classList.remove("app-evidence-active"); }
+    if (tipFor === active) { hideTip(); }
+  }
+
+  function setActive(region, el) {
+    deactivate();
+    active = el;
+    activeRegion = region;
+    el.classList.add("app-evidence-active");
+    if (el.scrollIntoView) { el.scrollIntoView({ block: "nearest", inline: "nearest" }); }
+    showTip(el, true);
+    var ev = evidenceFor(el);
+    var where = ev.context.column || ev.context.label || ev.context.section;
+    live.textContent = ev.value + (where ? ", " + where : "");
+  }
+
+  function regionKey(event, region) {
+    var key = event.key;
+    if (key === "Escape") { deactivate(); return; }
+    var moves = ["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"];
+    var open = key === "Enter" || key === " ";
+    if (!open && moves.indexOf(key) < 0) { return; }
+    event.preventDefault();
+    var cur = activeRegion === region && active && region.contains(active) ? active : null;
+    if (open) {
+      var target = cur || firstItem(region);
+      if (target) { event.stopPropagation(); openFor(target); }
+      return;
+    }
+    var next = null;
+    var cell = cur && region.tagName === "TABLE" ? cur.closest("td, th") : null;
+    if (!cur) {
+      next = firstItem(region);
+    } else if (key === "Home") {
+      next = firstItem(region);
+    } else if (key === "End") {
+      var all = itemsIn(region);
+      next = all[all.length - 1];
+    } else if (cell) {
+      next = key === "ArrowRight" ? cellStep(cell, region, 0, 1)
+        : key === "ArrowLeft" ? cellStep(cell, region, 0, -1)
+          : key === "ArrowDown" ? cellStep(cell, region, 1, 0)
+            : cellStep(cell, region, -1, 0);
+    } else {
+      var items = itemsIn(region);
+      var i = items.indexOf(cur);
+      next = key === "ArrowRight" || key === "ArrowDown" ? items[i + 1] : items[i - 1];
+    }
+    if (next) { setActive(region, next); }
+  }
+
+  var scanTimer = 0;
+  function scan() {
+    scanTimer = 0;
+    var seen = [];
+    eachItem(root, null, function (el) {
+      var region = regionFor(el);
+      if (seen.indexOf(region) < 0) { seen.push(region); markRegion(region); }
+    });
+  }
+  function scheduleScan() { if (!scanTimer) { scanTimer = setTimeout(scan, 250); } }
+  scan();
+  if (win.MutationObserver) { new win.MutationObserver(scheduleScan).observe(root, { childList: true, subtree: true }); }
+
   doc.addEventListener("keydown", function (event) {
+    var region = event.target && event.target.hasAttribute && event.target.hasAttribute("data-evidence-region")
+      ? event.target : null;
+    if (region && !drawerOpen()) { regionKey(event, region); return; }
     if (event.key === "Escape" && tipFor && !drawerOpen()) { hideTip(); return; }
     if (event.key !== "Enter" && event.key !== " ") { return; }
     var el = valueTarget(event.target);

@@ -44,8 +44,12 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
     <div id="kv"><p id="blank"></p>42</div>
     <div id="pair"><span id="pair-a">46</span><span>64</span></div>
     <p class="note">Gan dài nhất: <b id="unit">565 kỳ</b></p>
+  </section>
+  <div id="loose"><span id="alone">99</span></div>
+  <section id="ma-tran-2">
     <div class="scroller" tabindex="0"><span id="phoi">323</span></div>
   </section>
+  <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
 
@@ -175,4 +179,76 @@ test('Danh mục hỏng không làm sập trang: con số vẫn mở được, n
   click(dom, $(dom, 'kpi-value'));
   assert.equal(drawer(dom).open, true);
   assert.match(drawer(dom).textContent, /Dữ liệu hiển thị trên chính trang này/);
+});
+
+function key(dom, target, name) {
+  target.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+}
+const activeText = dom => dom.window.document.querySelector('.app-evidence-active')?.textContent;
+
+test('Bàn phím: mỗi bảng/khối có số là một điểm dừng Tab, không gắn cho từng con số', t => {
+  const dom = start(t), d = dom.window.document;
+  const regions = [...d.querySelectorAll('[data-evidence-region]')];
+  assert.ok(regions.includes(d.querySelector('#ai-ml table')));
+  assert.ok(regions.includes($(dom, 'kpi')));
+  assert.ok(!regions.includes($(dom, 'text-only')), 'khối không có số thì không thành điểm dừng');
+  assert.ok(regions.every(r => r.getAttribute('tabindex') === '0'));
+  assert.equal(d.querySelectorAll('td[tabindex], strong[tabindex]').length, 0);
+  assert.match(d.querySelector('#ai-ml table').getAttribute('aria-describedby'), /app-evidence-kbd/);
+});
+
+test('Bàn phím: mũi tên chọn số theo hàng/cột, Enter mở đúng số, đóng thì tiêu điểm về bảng', t => {
+  const dom = start(t), d = dom.window.document, table = d.querySelector('#ai-ml table');
+  key(dom, d.body, 'Tab');
+  table.focus();
+  assert.equal(activeText(dom), '1');
+  assert.match($(dom, 'app-evidence-tip').textContent, /Enter để xem chi tiết/);
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '63');
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '23,943%');
+  key(dom, table, 'ArrowDown');
+  assert.equal(activeText(dom), '23,936%');
+  assert.match($(dom, 'app-evidence-live').textContent, /^23,936%, Xác suất \(%\)$/);
+  key(dom, table, 'Home');
+  assert.equal(activeText(dom), '1');
+  key(dom, table, 'End');
+  assert.equal(activeText(dom), '23,936%');
+  key(dom, table, 'Enter');
+  assert.equal(drawer(dom).open, true);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '23,936%');
+  drawer(dom).querySelector('.app-evidence-close').click();
+  assert.equal(d.activeElement, table);
+  assert.equal(activeText(dom), '23,936%', 'quay lại đúng số đang chọn');
+});
+
+test('Bàn phím trong khối không phải bảng: đi theo thứ tự, bỏ qua nút đã tự nhận tiêu điểm', t => {
+  const dom = start(t), kpi = $(dom, 'kpi');
+  key(dom, dom.window.document.body, 'Tab');
+  kpi.focus();
+  assert.equal(activeText(dom), '4 224');
+  key(dom, kpi, 'ArrowRight');
+  assert.equal(activeText(dom), '4 224', 'nút "12" có tiêu điểm riêng, không phải mục của khối');
+  key(dom, kpi, ' ');
+  assert.equal(drawer(dom).open, true);
+});
+
+test('Bảng dựng sau khi tải cũng thành điểm dừng bàn phím', async t => {
+  const dom = start(t), d = dom.window.document;
+  const late = d.createElement('table');
+  const row = late.insertRow();
+  row.insertCell().textContent = '88';
+  $(dom, 'text-only').appendChild(late);
+  await wait(400);
+  assert.equal(late.getAttribute('data-evidence-region'), '');
+  assert.equal(late.getAttribute('tabindex'), '0');
+});
+
+test('Con số đứng riêng thành vùng bàn phím của chính nó mà nhấp thường vẫn mở bằng chứng', t => {
+  const dom = start(t), alone = $(dom, 'alone');
+  assert.equal(alone.getAttribute('data-evidence-region'), '');
+  assert.equal(alone.getAttribute('tabindex'), '0');
+  click(dom, alone);
+  assert.equal(drawer(dom).open, true);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '99');
 });
