@@ -38,7 +38,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from vla.backtest import evaluator, walk_forward  # noqa: E402
 from vla.backtest.production_ml import ProductionMLModel  # noqa: E402
-from vla.backtest.synthetic import synthetic_history  # noqa: E402
+from vla.backtest.synthetic import power_history  # noqa: E402
 from vla.features.engineer import History, build_features, load_history  # noqa: E402
 from vla.models.bayesian_lgb import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
 
@@ -144,9 +144,10 @@ def against_recorded_production(frame: pd.DataFrame) -> dict:
 
 
 def power_check(refit_every: int) -> dict:
-    hist = synthetic_history(2600, seed=11)
     out = {}
     for mode in ("loto", "de"):
+        # Mỗi chế độ một lịch sử, chỉ cài tín hiệu của chính nó.
+        hist = power_history(mode, 2600, seed=11)
         feats = build_features(hist, mode)
         hit = hist.hits(mode)
         T = len(hist)

@@ -27,3 +27,16 @@ def synthetic_history(n: int, seed: int, *, loto_signal: float = 0.5, de_signal:
     raw = pd.DataFrame(values, columns=list(PRIZE_FIELDS))
     raw.insert(0, "date", pd.date_range("2010-01-01", periods=n, freq="D").strftime("%Y-%m-%d"))
     return history_from_frame(raw)
+
+
+POWER_SIGNALS = {"loto": {"loto_signal": 0.5, "de_signal": 0.0}, "de": {"loto_signal": 0.0, "de_signal": 0.15}}
+
+
+def power_history(mode: str, n: int, seed: int) -> History:
+    """Lịch sử cho kiểm độ nhạy của MỘT chế độ: chỉ cài tín hiệu của chế độ ấy.
+
+    Đặc Biệt cũng là một trong 27 giải LOTO, nên cài cả hai thì tín hiệu
+    "Đặc Biệt + 1" thành thêm một tín hiệu trễ của LOTO và phép đo LOTO không
+    còn nói được mô hình bắt đúng tín hiệu 37 → 73.
+    """
+    return synthetic_history(n, seed, **POWER_SIGNALS[mode])

@@ -275,3 +275,69 @@ def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
     assert ref[0] == pytest.approx(np.full(100, 0.10))
     assert ref[1] == pytest.approx(np.full(100, (0.1 * 3 + 0.3 * 2) / 5))
     assert np.allclose(evaluator.cumulative_reference("de", hit, np.array([4])), 0.01)
+
+
+def _planted_rates(history: History) -> tuple[float, float]:
+    """(tỉ lệ giải bảy thứ nhất = 73 sau kỳ có 37, tỉ lệ Đặc Biệt = kỳ trước + 1)."""
+    from xsmb_domain import PRIZE_FIELDS
+
+    seven = PRIZE_FIELDS.index("prize7_1")
+    after_37 = np.array([37 in set((history.values[t - 1] % 100).tolist()) for t in range(1, len(history))])
+    seventy_three = history.values[1:, seven][after_37] == 73
+    plus_one = history.special[1:] == (history.special[:-1] + 1) % 100
+    return float(seventy_three.mean()), float(plus_one.mean())
+
+
+def test_each_power_check_history_plants_only_its_own_signal() -> None:
+    from vla.backtest.synthetic import power_history
+
+    loto_73, loto_plus = _planted_rates(power_history("loto", 3000, seed=21))
+    de_73, de_plus = _planted_rates(power_history("de", 3000, seed=21))
+    # Tín hiệu của chính chế độ có mặt ...
+    assert loto_73 > 0.4 and de_plus > 0.12
+    # ... còn tín hiệu kia chỉ ở mức ngẫu nhiên (1/100): Đặc Biệt là một giải
+    # LOTO, nên cài "Đặc Biệt + 1" vào lịch sử LOTO là thêm một tín hiệu LOTO.
+    assert loto_plus < 0.03 and de_73 < 0.03
+
+
+def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pytest.MonkeyPatch) -> None:
+    import importlib.util
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "benchmark_probability_models.py"
+    spec = importlib.util.spec_from_file_location("benchmark_power_check", path)
+    bench = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bench)
+
+    made, used = [], []
+
+    class Fake:
+        def __init__(self, mode: str) -> None:
+            self.planted = mode
+            self.counts = self.special = np.zeros((700, 100))
+
+        def __len__(self) -> int:
+            return 700
+
+        def hits(self, mode: str) -> np.ndarray:
+            return np.zeros((700, 100))
+
+    def fake_history(mode: str, n: int, seed: int) -> Fake:
+        made.append(mode)
+        return Fake(mode)
+
+    def fake_features(hist: Fake, mode: str) -> SimpleNamespace:
+        used.append((hist.planted, mode))
+        return SimpleNamespace(X=None)
+
+    monkeypatch.setattr(bench, "power_history", fake_history)
+    monkeypatch.setattr(bench, "build_features", fake_features)
+    monkeypatch.setattr(bench.walk_forward, "run", lambda *a, **k: SimpleNamespace(probs=None))
+    monkeypatch.setattr(bench.evaluator, "cumulative_reference", lambda *a, **k: None)
+    monkeypatch.setattr(
+        bench.evaluator, "evaluate", lambda *a, **k: {"logloss_skill": 0.0, "vs_reference": {"z": 0.0}, "top_k": {}}
+    )
+    bench.power_check(50)
+    assert sorted(made) == ["de", "loto"]
+    assert used == [("loto", "loto"), ("de", "de")]
