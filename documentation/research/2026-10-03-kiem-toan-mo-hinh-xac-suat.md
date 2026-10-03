@@ -1,8 +1,11 @@
 # Kiểm toán mô hình xác suất LOTO / Đặc Biệt và mô hình thách đấu ba tầng
 
 Ngày: 03-10-2026. Dữ liệu: 4 223 kỳ, 01-01-2015 → 02-10-2026.
-Tái lập: `PYTHONPATH=src python3 scripts/benchmark_probability_models.py --last 1000 --power-check`
-(≈ 7 phút, 4 lõi). Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.csv`.
+Tái lập (≈ 55 phút, 4 lõi; phần lớn là đo học lại mỗi kỳ trên 200 kỳ ở mục 3.1):
+
+    PYTHONPATH=src python3 scripts/benchmark_probability_models.py --last 1000 --power-check --refit-check 200
+
+Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.csv`.
 
 ## Tóm tắt
 
@@ -117,10 +120,12 @@ Mô hình mới so với ML production: LOTO +0,000008 nats mỗi kỳ (z = +1,0
 **Không thắng.**
 
 **Top-5 Đặc Biệt 7,0% có phải tín hiệu?** Không đủ căn cứ.
-- Trên 1 000 kỳ này: 71/1 000 kỳ trúng so với kỳ vọng 50 (p = 0,002 một phía), đều ở cả hai nửa (7,2% và 7,0%).
-- Đó là MỘT trong 30 chỉ số đọc sau khi chạy (5 mô hình × 3 mức K × 2 kiểu). Sau hiệu chỉnh Bonferroni, p ≈ 0,07.
-- Chạy lại y hệt trên 1 000 kỳ TRƯỚC đó: 50/1 000 (5,0%, p = 0,52), tức không lặp lại.
+- Trên 997 kỳ đã chấm: 70 kỳ trúng so với kỳ vọng 49,9 (p = 0,0032 một phía), đều ở cả hai nửa (7,0% và 7,0%).
+- Đó là MỘT trong 30 chỉ số đọc sau khi chạy (5 mô hình × 3 mức K × 2 kiểu). Sau hiệu chỉnh Bonferroni, p ≈ 0,10.
+- Chạy lại y hệt trên 998 kỳ đã chấm TRƯỚC đó (cùng luật loại kỳ sau Tết): 50 kỳ trúng (5,0%, p = 0,51), tức không lặp lại.
 - Logloss, chỉ số chấm chính đã chọn từ trước, kém hằng số.
+
+Tái lập phép kiểm lặp lại: `scripts/replicate_top5_special.py` → `data/research/model_overhaul/top5_replication.json`.
 
 Kết luận: chưa đủ căn cứ. Muốn kiểm thì phải đăng ký tiến cứu như `hot_tail_test`, với ngày bắt đầu mới.
 
