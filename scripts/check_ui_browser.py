@@ -27,6 +27,75 @@ def contrast(colors):
     return (light + .05) / (dark + .05)
 
 
+def check_evidence(page, name, width, dark):
+    """Mọi trang: một con số mở được nguồn & bằng chứng.
+
+    Ưu tiên con số chưa có chức năng nhấp (nhấp thường mở ngăn kéo). Trang mà
+    mọi con số đều đã có chức năng (ô đánh dấu của trang thống kê) thì dùng
+    Alt + nhấp — đúng lối mà tooltip của những ô ấy chỉ dẫn. Rê chuột chỉ đo
+    ở bản rộng, nền sáng; chữ của giá trị phải đạt AA trên nền ngăn kéo ở cả
+    hai chế độ màu; Escape đóng ngăn kéo.
+    """
+    found = page.evaluate_handle("""() => {
+      const root = document.getElementById('app-main');
+      const inView = e => { const r = e.getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.bottom > 90 && r.top < innerHeight - 20 &&
+          r.left > 0 && r.right < innerWidth; };
+      const busy = e => !!e.closest('a[href],button,label,summary,[onclick],[data-key],.tr-number,.tr-mini,[role=button]');
+      let fallback = null;
+      for (const e of root.querySelectorAll('td, th, span, strong, b, em, p, li, div, dd, small, text')) {
+        const hit = window.appEvidence && window.appEvidence.find(e);
+        if (hit !== e) continue;
+        if (!busy(hit)) { hit.scrollIntoView({block: 'center'}); if (inView(hit)) return {el: hit, alt: false}; }
+        else if (!fallback) fallback = hit;
+      }
+      if (fallback) { fallback.scrollIntoView({block: 'center'}); return {el: fallback, alt: true}; }
+      return null;
+    }""")
+    alt = found.evaluate("r => r && r.alt")
+    target = found.evaluate_handle("r => r && r.el").as_element()
+    assert target is not None, f"{name}: không tìm thấy con số nào nhận được bằng chứng"
+    if width > 640 and not dark:
+        # Trang trước có thể để con trỏ nằm sẵn đúng chỗ (hai trang ML cùng bố
+        # cục): không di chuột thì trình duyệt không phát mouseover.
+        page.mouse.move(1, 1)
+        target.hover()
+        tip = page.locator("#app-evidence-tip")
+        expect(tip).to_be_visible()
+        text = tip.text_content()
+        assert "Nguồn" in text and "bằng chứng suy luận" in text, text
+        assert ("Alt + nhấp" in text) == bool(alt), text
+    target.click(modifiers=["Alt"] if alt else [])
+    drawer = page.locator("#app-evidence-drawer")
+    expect(drawer).to_be_visible()
+    assert drawer.locator(".app-evidence-sources li").count() >= 1
+    assert drawer.locator(".app-evidence-steps li").count() >= 1
+    colors = drawer.locator(".app-evidence-value").evaluate(
+        "e => ({fg:getComputedStyle(e).color,bg:getComputedStyle(e.closest('dialog')).backgroundColor})")
+    assert contrast(colors) >= 4.5, colors
+    box = drawer.bounding_box()
+    assert box["x"] >= -1 and box["x"] + box["width"] <= width + 1, box
+    page.keyboard.press("Escape")
+    expect(drawer).not_to_be_visible()
+    return ("alt:" if alt else "") + target.evaluate("e => e.textContent.trim().slice(0, 24)")
+
+
+def check_evidence_keeps_existing_clicks(page):
+    """Ô đã có chức năng nhấp (đánh dấu) giữ nguyên; Alt + nhấp mới mở bằng chứng."""
+    cell = page.locator("#sp-matrix-grid td.cell[data-key]").filter(has_text="1").first
+    cell.scroll_into_view_if_needed()
+    before = cell.evaluate("e => e.classList.contains('marked')")
+    cell.click()
+    assert cell.evaluate("e => e.classList.contains('marked')") != before
+    assert not page.locator("#app-evidence-drawer").is_visible()
+    marked = cell.evaluate("e => e.classList.contains('marked')")
+    cell.click(modifiers=["Alt"])
+    expect(page.locator("#app-evidence-drawer")).to_be_visible()
+    assert cell.evaluate("e => e.classList.contains('marked')") == marked
+    page.keyboard.press("Escape")
+    cell.click()
+
+
 def main():
     OUT.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(ROOT / "docs")))
@@ -122,6 +191,9 @@ def main():
                                 assert page.locator(".app-hero-shortcut").evaluate_all(
                                     "nodes => nodes.map(n => n.getAttribute('href'))"
                                 ) == ["statistics.html", "so-ket-qua-truyen-thong.html"]
+                            state["evidence"] = check_evidence(page, name, width, dark)
+                            if name == "tan-suat-loto.html" and not dark:
+                                check_evidence_keeps_existing_clicks(page)
                             if name in ("index.html", "statistics.html", "tan-suat-cap-loto.html", "live.html"):
                                 page.screenshot(path=str(OUT / f"{name}-{width}-{'dark' if dark else 'light'}.png"))
                             if name == "index.html":

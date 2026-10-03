@@ -219,6 +219,7 @@ def write_page(path: Path, html: str) -> None:
 
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
+    refined = _attach_evidence(path, refined)
     path.write_text(strip_comments(refined), encoding="utf-8")
 
 
@@ -241,6 +242,37 @@ def _attach_theme_bootstrap(path: Path, html: str) -> str:
     # Chuẩn hoá hai mép để lần ghi thứ hai không thêm một dòng trắng nữa.
     head = head[:position].rstrip() + script + head[position:].lstrip()
     return html[:head_match.start(1)] + head + html[head_match.end(1):]
+
+
+_EVIDENCE_JS_NGUON = Path(__file__).with_name("assets") / "app-evidence.js"
+_EVIDENCE_CU = re.compile(r"<script\b[^>]*\bdata-app-evidence\b[^>]*>.*?</script>\s*", re.I | re.S)
+
+
+def _attach_evidence(path: Path, html: str) -> str:
+    """Nạp hiệu ứng nguồn & bằng chứng cho mọi con số của trang.
+
+    Hai thẻ vào ``<head>``: khối JSON ``#app-evidence-data`` (danh mục của
+    trang, :mod:`evidence_catalog`) và ``assets/app-evidence.js`` chạy trễ.
+    Đặt ở đầu trang chứ không ở đuôi khung: đuôi khung là mốc mà
+    ``app_shell._DUOI_KHUNG`` neo vào để bóc lớp cũ, thêm thẻ vào đó là làm
+    trượt phép bóc. Bóc bản cũ rồi chèn lại, nên ghi hai lần ra cùng một tệp.
+    """
+    head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
+    if not head_match:
+        return html
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "app-evidence.js").write_text(_EVIDENCE_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    from evidence_catalog import registry_json
+
+    head = _EVIDENCE_CU.sub("", head_match.group(1)).rstrip()
+    tags = (
+        '\n<script type="application/json" id="app-evidence-data" data-app-evidence>'
+        + registry_json(path.name)
+        + "</script>"
+        + '\n<script src="assets/app-evidence.js" defer data-app-evidence></script>\n'
+    )
+    return html[:head_match.start(1)] + head + tags + html[head_match.end(1):]
 
 
 #: Tệp tĩnh của khung, chép từ ``src/`` sang ``docs/assets/`` mỗi lần ghi

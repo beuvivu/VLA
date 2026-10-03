@@ -307,6 +307,31 @@ Bốn kịch bản chốt phát hành
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
 bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ lỗi.
 
+## Nguồn & bằng chứng suy luận của con số — 03-10-2026
+
+Mọi con số trong `#app-main` có tooltip (rê chuột/tiêu điểm: nguồn tóm tắt, số
+bước, gợi ý thao tác) và ngăn kéo `<dialog>` (nhấp: ngữ cảnh, nguồn, các bước,
+độ tin cậy nếu có). `src/assets/app-evidence.js` dùng ủy quyền sự kiện ở cấp
+tài liệu nên phủ cả bảng do JS dựng sau khi tải; nhận diện "con số" bằng chữ
+của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho từng ô.
+
+- Danh mục: `src/evidence_catalog.py` → khối `#app-evidence-data` trong
+  `<head>`, chèn bởi `page_output._attach_evidence` (bóc rồi chèn, lũy đẳng).
+  KHÔNG đặt thẻ ở đuôi khung: `_DUOI_KHUNG` neo vào đó. Trang mới phải có mục
+  trong `_catalog` (`test_the_catalog_covers_every_page_a_reader_can_reach`).
+- "Nguồn" là bộ dữ liệu và phép tính mô tả bằng lời; luật riêng tư của kho áp
+  lên MỌI chuỗi danh mục. Liên kết nguồn chỉ trỏ tới trang nội bộ đã xuất bản.
+- Số đã có chức năng nhấp (`[data-key]`, `.tr-number`, nút, liên kết,
+  `[onclick]`, `[tabindex]`) GIỮ chức năng ấy; bằng chứng mở bằng Alt + nhấp
+  (pha bắt, chặn trình xử lý của trang) hoặc nhấn giữ trên màn hình cảm ứng.
+- Bằng chứng riêng cho giá trị: `data-evidence="<id>"` trên phần tử hoặc
+  `data-evidence-row="<id>"` trên hàng bảng, mục nằm trong khối JSON
+  `[data-app-evidence-values]` (`evidence_catalog.values_block`) hoặc
+  `window.appEvidence.register`. Ví dụ: `ml_top10_*` in phép co
+  `p = trust·thô + (1 − trust)·nền` bằng số thật, `confidenceScore` = model_trust.
+- Câu nhắc dự báo (`_GHI_CHU_DU_BAO`) phải đúng với số đo của kho; đừng viết
+  cứng kết luận mà trang khác in TỪ SỐ ĐO (ví dụ "cầu dài có đáng tin hơn?").
+
 ## Hợp đồng giao diện bổ sung — 26-09-2026
 
 - `app-theme.js` chạy đồng bộ trong head sau CSP, trước CSS. `.dark` biểu thị
