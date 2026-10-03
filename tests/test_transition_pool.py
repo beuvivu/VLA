@@ -34,9 +34,17 @@ def _inject(hit: np.ndarray, amount: float, seed: int = 0) -> np.ndarray:
     return h
 
 
+#: Bảng đo trong ``test_the_gate_holds_the_incumbent_when_the_challenger_merely_leads``
+#: lấy trên đúng ngần này kỳ đầu. Không ghim thì mỗi kỳ quay mới dời t một chút
+#: (năng lực thống kê tăng theo độ dài) và phép kiểm đỏ dần mà mã không đổi gì —
+#: ngày 03-10-2026, ở 4 223 kỳ, hạt 3 đã trôi từ -1,81 sang -1,99.
+MEASURED_DRAWS = 4207
+
+
 @pytest.fixture(scope="module")
 def real() -> tuple[pd.DatetimeIndex, np.ndarray]:
-    return nd.build_hit_matrix_from_lottery("loto")
+    dates, hit = nd.build_hit_matrix_from_lottery("loto")
+    return dates[:MEASURED_DRAWS], hit[:MEASURED_DRAWS]
 
 
 def test_arithmetic_pooling_can_never_sharpen_beyond_its_inputs() -> None:
