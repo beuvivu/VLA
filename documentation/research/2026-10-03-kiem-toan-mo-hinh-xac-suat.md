@@ -219,7 +219,7 @@ nguyên từng byte; nhãn đã ghi không bị đè. Dòng mới mang nhãn nga
 (s = kỹ năng thẩm định, kém hơn trong logloss/Brier) giữ 35% mô hình thô cả khi s ≤ 0. Đo bằng
 `scripts/benchmark_model_trust.py` → `data/research/model_overhaul/trust_floor.json`: walk-forward 997
 kỳ, học lại mỗi 50 kỳ, mọi luật chấm trên CÙNG bộ xác suất thô. Kỹ năng thẩm định của 20 lần học nằm
-trong [−0,04%, +0,02%] cho LOTO — tức thực chất bằng 0.
+trong [−0,035%, +0,025%] cho LOTO — tức thực chất bằng 0.
 
 | Luật trust | LOTO so với hằng số | Đặc Biệt so với hằng số |
 |---|---:|---:|
