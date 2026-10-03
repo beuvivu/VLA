@@ -11,7 +11,7 @@ import pandas as pd
 
 from lottery import Lottery
 from ml_features import FeatureParams, build_features_for_prediction
-from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, train_one
+from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, TRUST_POLICY_VERSION, train_one
 from ml_validation import predict_with_feature_allowlist
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,15 @@ def _model_pack_issue(
         return "model-pack probabilities outside [0, 1]"
     if schema_version != FEATURE_SCHEMA_VERSION:
         return "feature schema changed"
+    trust_policy = pack.get("trust_policy_version")
+    if (
+        isinstance(trust_policy, bool)
+        or not isinstance(trust_policy, Integral)
+        or trust_policy != TRUST_POLICY_VERSION
+    ):
+        # model_trust đã lưu tính theo luật cũ (vd. sàn 0,35); dùng lại là
+        # phát xác suất theo công thức đã bỏ.
+        return "trust policy changed"
     if str(pack.get("trained_through_date", "")) != latest_data_date:
         return (
             f"new draw available ({pack.get('trained_through_date')}"
@@ -130,6 +139,15 @@ def _load_or_train_model(
     return pack
 
 
+def rank_predictions(df: pd.DataFrame) -> pd.DataFrame:
+    """Xếp theo ``prob`` giảm dần; hoà thì theo xác suất thô của mô hình.
+
+    Khi kỹ năng thẩm định bằng 0, ``model_trust`` = 0 và mọi ``prob`` bằng tỉ
+    lệ nền; không có tiêu chí phụ thì thứ hạng top-k là tuỳ ý.
+    """
+    return df.sort_values(["prob", "raw_model_prob"], ascending=False, kind="mergesort")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cutoff", default="18:35")
@@ -184,7 +202,8 @@ def main() -> None:
                 "model_trust": trust,
                 "quality_pass": bool(pack.get("quality_pass", True)),
             }
-        ).sort_values("prob", ascending=False)
+        )
+        df = rank_predictions(df)
 
         top = df.head(args.top).reset_index(drop=True)
         top["prob_percent"] = (top["prob"] * 100.0).round(3)

@@ -80,7 +80,8 @@ class ProductionMLModel:
         base_brier, base_ll = ml_train._metrics(self.y[va], np.full(int(va.sum()), self.baseline))
         ll_skill = 1.0 - ll / base_ll if base_ll > 0 else 0.0
         br_skill = 1.0 - brier / base_brier if base_brier > 0 else 0.0
-        self.trust = float(np.clip(0.35 + 20.0 * max(0.0, min(ll_skill, br_skill)), 0.35, 1.0))
+        self.val_skill = (float(ll_skill), float(br_skill))
+        self.trust = ml_train.model_trust(ll_skill, br_skill)
         return self
 
     def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:

@@ -8,7 +8,7 @@ import pytest
 
 import ml_predict
 from calibration import CalibParams
-from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION
+from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, TRUST_POLICY_VERSION
 from ensemble_utils import load_ensemble_weights
 from predict_nextday_2d import _load_calibration
 from lottery import Lottery, RepoPaths, vietnam_today
@@ -193,6 +193,7 @@ def test_base_ml_pack_cannot_expand_the_production_feature_allowlist(
         "features": [*FEATURE_COLUMNS, "rejected_experiment"],
         "model": _ProbabilityModel(),
         "feature_schema_version": FEATURE_SCHEMA_VERSION,
+        "trust_policy_version": TRUST_POLICY_VERSION,
         "trained_through_date": "2026-09-03",
         "window_days": 2000,
         "baseline_prob": 0.2,
@@ -228,6 +229,7 @@ def test_base_ml_pack_with_invalid_numeric_metadata_is_retrained(
         "features": list(FEATURE_COLUMNS),
         "model": _ProbabilityModel(),
         "feature_schema_version": FEATURE_SCHEMA_VERSION,
+        "trust_policy_version": TRUST_POLICY_VERSION,
         "trained_through_date": "2026-09-03",
         "window_days": 2000,
         "baseline_prob": 0.2,
@@ -250,6 +252,42 @@ def test_base_ml_pack_with_invalid_numeric_metadata_is_retrained(
     )
 
     assert pack["model_trust"] == 0.5
+    assert retrained == ["loto"]
+
+
+def test_base_ml_pack_trained_under_an_old_trust_policy_is_retrained(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Gói lưu ``model_trust`` theo luật cũ (sàn 0,35) không được dùng lại."""
+    model_path = tmp_path / "ml_loto.joblib"
+    model_path.touch()
+    current = {
+        "features": list(FEATURE_COLUMNS),
+        "model": _ProbabilityModel(),
+        "feature_schema_version": FEATURE_SCHEMA_VERSION,
+        "trust_policy_version": TRUST_POLICY_VERSION,
+        "trained_through_date": "2026-09-03",
+        "window_days": 2000,
+        "baseline_prob": 0.2,
+        "model_trust": 0.0,
+    }
+    old = {k: v for k, v in current.items() if k != "trust_policy_version"} | {"model_trust": 0.35}
+    for stale in (old, {**old, "trust_policy_version": TRUST_POLICY_VERSION - 1}):
+        assert ml_predict._model_pack_issue(
+            stale, window_days=2000, latest_data_date="2026-09-03"
+        ) == "trust policy changed"
+    loaded = iter((old, current))
+    retrained: list[str] = []
+    monkeypatch.setattr(ml_predict.joblib, "load", lambda _: next(loaded))
+    monkeypatch.setattr(
+        ml_predict,
+        "train_one",
+        lambda mode, models_dir, window_days: retrained.append(mode),
+    )
+    pack = ml_predict._load_or_train_model(
+        "loto", tmp_path, window_days=2000, latest_data_date="2026-09-03"
+    )
+    assert pack["model_trust"] == 0.0
     assert retrained == ["loto"]
 
 
