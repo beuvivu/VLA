@@ -799,13 +799,42 @@
     if (next) { setActive(region, next); }
   }
 
-  /* ---------- ô nhiều số: "23,56% (2.344/9.950)", "0,19060 – 0,28008" ----------
-     Chỉ phần tử mà TOÀN BỘ chữ là số và dấu phân cách (không câu văn, không
-     ngày, không giờ). Mỗi con số được bọc riêng một span — dựng bằng
-     createElement + textContent — để chuột lẫn bàn phím đều chọn được. */
-  var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~]+$/;
-  var DATE_LIKE = /\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}/;
-  var TOKEN = /[+\-\u2212]?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?/g;
+  /* ---------- ô nhiều số: "23,56% (2.344/9.950)", "hiện tại=3 / dài nhất=4" ----------
+     Mỗi con số trong một ô ngắn được bọc riêng một span — dựng bằng
+     createElement + textContent, chữ hiển thị giữ nguyên — để chuột lẫn bàn
+     phím chọn được. Ô bảng (td, th, dd, li) ngắn được tách cả khi có chữ;
+     phần tử khác chỉ khi toàn bộ chữ là số và dấu phân cách. Ngày, giờ không
+     bao giờ thành số: chúng được loại theo từng đoạn, không loại cả ô. Ngày
+     rút gọn là dd/mm đủ hai chữ số và hợp lệ (03/10) — "5/26" là số trúng
+     trên tổng, không phải ngày. */
+  var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~=\u2192\u2190]+$/;
+  var DATE_PART = /(?<![\d.,])(?:(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])(?!\/)|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![\d.,])/g;
+  /* Dấu âm chỉ khi không đứng ngay sau chữ số hay chữ cái: "12-68" là hai số
+     12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. */
+  var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
+  var CELLISH = "td, th, dd, li";
+
+  function tokenRanges(value) {
+    var dates = [];
+    DATE_PART.lastIndex = 0;
+    for (var d = DATE_PART.exec(value); d; d = DATE_PART.exec(value)) { dates.push([d.index, d.index + d[0].length]); }
+    var out = [];
+    TOKEN.lastIndex = 0;
+    for (var m = TOKEN.exec(value); m; m = TOKEN.exec(value)) {
+      var a = m.index;
+      var b = a + m[0].length;
+      var inDate = dates.some(function (r) { return a < r[1] && b > r[0]; });
+      if (!inDate) { out.push([a, b]); }
+    }
+    return out;
+  }
+
+  function splittable(parent, whole) {
+    if (whole.length > 120) { return false; }
+    if (COMPOUND.test(whole)) { return true; }
+    var cell = parent.closest(CELLISH);
+    return Boolean(cell && root.contains(cell) && norm(cell.textContent).length <= 80);
+  }
 
   function splitCompound() {
     var walker = doc.createTreeWalker(root, SHOW_TEXT, null);
@@ -814,20 +843,20 @@
       var parent = node.parentElement;
       if (!parent || !/\d/.test(node.nodeValue) || valueTarget(node)) { continue; }
       if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || isInteractive(parent)) { continue; }
-      var whole = norm(parent.textContent);
-      if (whole.length > 120 || !COMPOUND.test(whole) || DATE_LIKE.test(whole)) { continue; }
-      todo.push(node);
+      if (!splittable(parent, norm(parent.textContent))) { continue; }
+      var ranges = tokenRanges(node.nodeValue);
+      if (ranges.length) { todo.push([node, ranges]); }
     }
-    todo.forEach(function (text) {
+    todo.forEach(function (job) {
+      var text = job[0];
       var value = text.nodeValue;
       var parts = doc.createDocumentFragment();
       var at = 0;
-      TOKEN.lastIndex = 0;
-      for (var m = TOKEN.exec(value); m; m = TOKEN.exec(value)) {
-        if (m.index > at) { parts.appendChild(doc.createTextNode(value.slice(at, m.index))); }
-        parts.appendChild(mk("span", "app-evidence-token", m[0]));
-        at = m.index + m[0].length;
-      }
+      job[1].forEach(function (r) {
+        if (r[0] > at) { parts.appendChild(doc.createTextNode(value.slice(at, r[0]))); }
+        parts.appendChild(mk("span", "app-evidence-token", value.slice(r[0], r[1])));
+        at = r[1];
+      });
       if (at < value.length) { parts.appendChild(doc.createTextNode(value.slice(at))); }
       text.parentNode.replaceChild(parts, text);
     });

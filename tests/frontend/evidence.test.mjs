@@ -36,7 +36,10 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
       <tbody><tr data-evidence-row="ml-loto-63" data-evidence-cols="1,2"><td id="rank">1</td><td id="num">63</td><td id="prob">23,943%</td></tr>
         <tr><td>2</td><td>95</td><td id="prob2">23,936%</td></tr>
         <tr><td>3</td><td id="sci">-7.15393e-05</td><td id="sci2">3.39239E+05</td></tr>
-        <tr><td>4</td><td id="compound">23,56% (2.344/9.950)</td><td id="range">0,19060 – 0,28008</td></tr></tbody></table>
+        <tr><td>4</td><td id="compound">23,56% (2.344/9.950)</td><td id="range">0,19060 – 0,28008</td></tr>
+        <tr><td id="pairs">12-68</td><td id="labeled">hiện tại=3 / dài nhất=4</td><td id="arrow">0,295 → 0,0%</td></tr>
+        <tr><td id="ddmm">04/10</td><td id="dated">Ngày 03/10 lúc 18:10 về 5 nháy</td><td id="neg">−0,10 (z)</td></tr>
+        <tr><td id="word">G7 có 4</td><td id="ratio">5/26</td><td>2</td></tr></tbody></table>
     <script type="application/json" data-app-evidence-values>${JSON.stringify(ROW)}</script>
   </section>
   <section id="ma-tran"><h2>Ma trận</h2>
@@ -223,10 +226,13 @@ test('Bàn phím: mũi tên chọn số theo hàng/cột, Enter mở đúng số
   key(dom, table, 'Home');
   assert.equal(activeText(dom), '1');
   key(dom, table, 'End');
-  assert.equal(activeText(dom), '0,28008');
+  assert.equal(activeText(dom), '2', 'End tới số cuối cùng của bảng');
   key(dom, table, 'ArrowUp');
-  assert.equal(activeText(dom), '3.39239E+05');
-  key(dom, table, 'ArrowUp');
+  assert.equal(activeText(dom), '−0,10', 'lên theo đúng cột');
+  key(dom, table, 'Home');
+  key(dom, table, 'ArrowDown');
+  key(dom, table, 'ArrowRight');
+  key(dom, table, 'ArrowRight');
   assert.equal(activeText(dom), '23,936%');
   key(dom, table, 'Enter');
   assert.equal(drawer(dom).open, true);
@@ -315,4 +321,18 @@ test('Ô nhiều số được tách thành từng con số; câu văn và ngày
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '2.344');
   assert.match([...drawer(dom).querySelectorAll('.app-evidence-steps li')].at(-1).textContent, /hàng «#4», cột «Số»: 2\.344/);
   assert.ok(d.querySelectorAll('.app-evidence-token').length >= 5);
+});
+
+test('Tách theo ranh giới thật: cặp số, ô có nhãn, mũi tên; không tách ngày, giờ, số dính chữ', t => {
+  const dom = start(t);
+  const tokens = id => [...$(dom, id).querySelectorAll('.app-evidence-token')].map(n => n.textContent);
+  assert.deepEqual(tokens('pairs'), ['12', '68'], 'gạch nối giữa hai số không phải dấu âm');
+  assert.deepEqual(tokens('labeled'), ['3', '4']);
+  assert.deepEqual(tokens('arrow'), ['0,295', '0,0%']);
+  assert.deepEqual(tokens('ddmm'), [], 'ngày dd/mm không phải hai con số');
+  assert.deepEqual(tokens('dated'), ['5'], 'ngày và giờ bị loại theo đoạn, số còn lại vẫn tách');
+  assert.deepEqual(tokens('neg'), ['−0,10'], 'số âm thật giữ dấu');
+  assert.deepEqual(tokens('word'), ['4'], 'G7 là tên giải, không phải số 7');
+  assert.deepEqual(tokens('ratio'), ['5', '26'], 'số trúng trên tổng không phải ngày (tháng 26 không có)');
+  assert.equal($(dom, 'dated').textContent, 'Ngày 03/10 lúc 18:10 về 5 nháy');
 });
