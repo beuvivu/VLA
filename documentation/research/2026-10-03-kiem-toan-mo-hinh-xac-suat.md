@@ -10,7 +10,8 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
 ## Tóm tắt
 
 1. **Không có sụt giảm độ chính xác.** Từ 02-2026 đến nay, kỹ năng ngoài mẫu của tổ hợp production
-   luôn nằm trong vùng 0. Giai đoạn TỆ nhất là 12-2025 → 01-2026, và lỗi gây ra nó đã được sửa.
+   luôn nằm trong vùng 0. Chỉ 32 kỳ (01-09 → 02-10-2026) được chấm đúng vector đã công bố; các tháng
+   trước đó trong sổ không gắn nhãn nguồn nên là bằng chứng yếu hơn (mục 1.1, 3.2). Giai đoạn TỆ nhất là 12-2025 → 01-2026, và lỗi gây ra nó đã được sửa.
    Thứ trông như "sụt giảm" gần đây là Brier Đặc Biệt nhảy từ 0,0099 lên 0,99 ngày 04-09-2026.
    Đó là đổi ĐƠN VỊ đo (trung bình → tổng), không phải mô hình kém đi.
 2. **Không thấy trôi.** Tần suất biên của 100 con đồng nhất qua bốn giai đoạn lịch sử
@@ -34,6 +35,11 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
 
 Kỹ năng = 1 − logloss mô hình / logloss dự báo hằng số; 0 là ngang hằng số.
 
+Hai nguồn chấm khác nhau, đọc riêng: từ 01-09-2026 mỗi dòng gắn nhãn
+`exact_emitted_prediction_artifact` (chấm đúng vector đã công bố trước kỳ quay); 214 dòng từ 28-12-2025
+đến 31-08-2026 KHÔNG gắn nhãn nguồn, nên không chứng minh được chúng chấm đúng thứ đã công bố.
+`model_quality.coverage` cấm gộp hai nhóm; bảng dưới chỉ mô tả hình dạng theo thời gian.
+
 | Tháng | LOTO | Đặc Biệt |
 |---|---:|---:|
 | 12-2025 | **−73,3%** | **−7,1%** |
@@ -41,6 +47,8 @@ Kỹ năng = 1 − logloss mô hình / logloss dự báo hằng số; 0 là ngan
 | 02-2026 | +0,34% | −0,16% |
 | 03 → 09-2026 | −0,02% … −0,01% | −0,19% … +0,06% |
 | 10-2026 (2 kỳ) | +0,04% | +0,08% |
+
+Tháng 12-2025 → 08-2026: dòng không gắn nhãn nguồn. Tháng 09 → 10-2026: chấm đúng vector đã công bố.
 
 Khi so với trước đây, mô hình hiện tại TỐT hơn hẳn, không tệ hơn. Hai tháng đầu tệ vì
 `p_active`/`p_stable` ghi ở thang "gần 1,0 cho mọi con" (tổng ≈ 100). Lỗi được chặn ở
@@ -157,11 +165,20 @@ Học lại mỗi kỳ tốt hơn một chút nhưng không có ý nghĩa thốn
 bảng 1 000 kỳ ở trên là xấp xỉ đủ dùng cho đối chứng production. Chạy đúng nhịp production cho cả
 1 000 kỳ: `--production-refit-every 1`.
 
-### 3.2 Tổ hợp production đã ghi sổ (241 kỳ trùng)
+### 3.2 Tổ hợp production đã ghi sổ, tách theo nguồn chấm
 
-Trên cả 241 kỳ, tổ hợp production kém hằng số (LOTO z = −4,65) vì gồm hai tháng lỗi thang ở mục 1.1.
-Từ 02-2026 (219 kỳ), nó ngang hằng số: LOTO z = −1,21, Đặc Biệt z = −1,72. Trên 32 kỳ chấm đúng tệp đã
-công bố cũng vậy: z = −0,20 và −0,19.
+`benchmark.json` → `recorded_production.<mode>.exact_emitted` / `.reconstructed`; hai nhóm không gộp.
+z dưới đây là production so với hằng số (âm = production kém hơn).
+
+| Nguồn | Kỳ | LOTO z | Đặc Biệt z |
+|---|---:|---:|---:|
+| Chấm đúng vector đã công bố (01-09 → 02-10-2026) | 32 | −0,20 | −0,19 |
+| Dòng không gắn nhãn nguồn (12-2025 → 08-2026) | 209 | −4,68 | −2,84 |
+
+Nhóm đã công bố ngang hằng số. Nhóm không gắn nhãn kém rõ vì gồm hai tháng lỗi thang ở mục 1.1, và
+không chứng minh được là cùng mô hình với thứ đã công bố, nên không dùng để kết luận về production
+hiện tại. Mô hình mới so với production trên 32 kỳ đã công bố: LOTO z = +0,11, Đặc Biệt z = +0,57
+(dương = mô hình mới tốt hơn) — không có ý nghĩa thống kê.
 
 ## 4. Kiểm độ nhạy (lịch sử tổng hợp 2 600 kỳ, chấm 600 kỳ cuối, seed 31)
 

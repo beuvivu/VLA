@@ -348,3 +348,35 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
     from vla.backtest.synthetic import TUNING_SEED
 
     assert TUNING_SEED not in seeds
+
+
+def _benchmark_module():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "benchmark_probability_models.py"
+    spec = importlib.util.spec_from_file_location("benchmark_recorded", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_the_recorded_production_comparison_never_mixes_reconstructed_rows() -> None:
+    import pandas as pd
+
+    bench = _benchmark_module()
+    dates = ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"]
+    exact = "exact_emitted_prediction_artifact"
+    book = pd.DataFrame({
+        "mode": "loto",
+        "target_date": dates,
+        "logloss": [0.50, 0.52, 0.90, 0.95, 0.99],
+        "evaluation_source": [exact, exact, "reconstructed_history", "", None],
+    })
+    frame = pd.DataFrame({"mode": "loto", "target_date": dates, "model": "hang_so",
+                          "logloss": [0.55, 0.55, 0.55, 0.55, 0.55]})
+    out = bench.against_recorded_production(frame, book)["loto"]
+    assert out["exact_emitted"]["days"] == 2
+    assert out["exact_emitted"]["production_recorded_logloss"] == pytest.approx(0.51)
+    assert out["reconstructed"]["days"] == 3
+    assert out["reconstructed"]["production_recorded_logloss"] == pytest.approx((0.90 + 0.95 + 0.99) / 3)

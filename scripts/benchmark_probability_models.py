@@ -121,25 +121,44 @@ def pairwise(frame: pd.DataFrame, mode: str) -> dict:
     return out
 
 
-def against_recorded_production(frame: pd.DataFrame) -> dict:
-    """So với tổ hợp production đã ghi sổ, trên đúng các kỳ trong sổ."""
-    path = ROOT / "data" / "prob_eval" / "ensemble_history.csv"
-    if not path.exists():
-        return {}
-    book = pd.read_csv(path, dtype={"target_date": str})
+EXACT_SOURCE = "exact_emitted_prediction_artifact"
+
+
+def _against_book(wide: pd.DataFrame, rec: pd.Series, dates: pd.Index) -> dict:
+    common = wide.index.intersection(dates)
+    block = {"days": int(len(common)),
+             "production_recorded_logloss": float(rec[common].mean()) if len(common) else None}
+    for name in wide.columns:
+        block[f"{name}_logloss"] = float(wide.loc[common, name].mean()) if len(common) else None
+        if len(common) > 1:
+            block[f"{name}_vs_production"] = evaluator.paired(wide.loc[common, name].to_numpy(), rec[common].to_numpy())
+    return block
+
+
+def against_recorded_production(frame: pd.DataFrame, book: pd.DataFrame | None = None) -> dict:
+    """So với tổ hợp production đã ghi sổ, TÁCH hai nguồn chấm.
+
+    ``exact_emitted``: kỳ chấm đúng vector đã công bố trước kỳ quay.
+    ``reconstructed``: kỳ dựng lại về sau từ ``pred_<mode>.csv`` — bỏ qua hiệu
+    chỉnh và tầng xếp chồng, tức là một mô hình KHÁC (``model_quality.coverage``),
+    nên không bao giờ gộp chung với nhóm trên.
+    """
+    if book is None:
+        path = ROOT / "data" / "prob_eval" / "ensemble_history.csv"
+        if not path.exists():
+            return {}
+        book = pd.read_csv(path, dtype={"target_date": str})
+    source = book["evaluation_source"].fillna("") if "evaluation_source" in book else pd.Series("", index=book.index)
     out = {}
     for mode, group in frame.groupby("mode"):
-        rec = book[book["mode"] == mode].set_index("target_date")["logloss"]
+        mine = book[book["mode"] == mode]
+        rec = mine.set_index("target_date")["logloss"]
         wide = group.pivot(index="target_date", columns="model", values="logloss")
-        common = wide.index.intersection(rec.index)
-        exact = book[(book["mode"] == mode) & (book.get("evaluation_source") == "exact_emitted_prediction_artifact")]
-        block = {"days": int(len(common)), "exact_artifact_days": int(exact["target_date"].isin(common).sum()),
-                 "production_recorded_logloss": float(rec[common].mean()) if len(common) else None}
-        for name in wide.columns:
-            block[f"{name}_logloss"] = float(wide.loc[common, name].mean()) if len(common) else None
-            if len(common) > 1:
-                block[f"{name}_vs_production"] = evaluator.paired(wide.loc[common, name].to_numpy(), rec[common].to_numpy())
-        out[mode] = block
+        exact = source[mine.index] == EXACT_SOURCE
+        out[mode] = {
+            "exact_emitted": _against_book(wide, rec, pd.Index(mine.loc[exact, "target_date"])),
+            "reconstructed": _against_book(wide, rec, pd.Index(mine.loc[~exact, "target_date"])),
+        }
     return out
 
 

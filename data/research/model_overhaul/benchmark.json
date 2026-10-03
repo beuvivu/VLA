@@ -2868,73 +2868,143 @@
   },
   "recorded_production": {
     "de": {
-      "days": 241,
-      "exact_artifact_days": 32,
-      "production_recorded_logloss": 4.630322915346497,
-      "bayes_lgb_logloss": 4.608564234849033,
-      "bayes_lgb_vs_production": {
-        "mean_gain": 0.021758680497465193,
-        "se": 0.009080059667536867,
-        "z": 2.3963147043248045
+      "exact_emitted": {
+        "days": 32,
+        "production_recorded_logloss": 4.606294624495364,
+        "bayes_lgb_logloss": 4.6026507353124995,
+        "bayes_lgb_vs_production": {
+          "mean_gain": 0.0036438891828642073,
+          "se": 0.006407858317465062,
+          "z": 0.5686594494345381
+        },
+        "bayes_lgb_focal_iso_logloss": 4.6010889084375,
+        "bayes_lgb_focal_iso_vs_production": {
+          "mean_gain": 0.005205716057864268,
+          "se": 0.025238700125620583,
+          "z": 0.20625927769472507
+        },
+        "hang_so_logloss": 4.60517019,
+        "hang_so_vs_production": {
+          "mean_gain": 0.0011244344953643126,
+          "se": 0.005815662878373041,
+          "z": 0.19334588659631496
+        },
+        "ml_production_logloss": 4.606376951875,
+        "ml_production_vs_production": {
+          "mean_gain": -8.232737963576042e-05,
+          "se": 0.006213479241458941,
+          "z": -0.013249803602213329
+        },
+        "tien_nghiem_logloss": 4.60510630875,
+        "tien_nghiem_vs_production": {
+          "mean_gain": 0.0011883157453642101,
+          "se": 0.005392685916482793,
+          "z": 0.22035693599957534
+        }
       },
-      "bayes_lgb_focal_iso_logloss": 4.614630705680797,
-      "bayes_lgb_focal_iso_vs_production": {
-        "mean_gain": 0.01569220966570019,
-        "se": 0.009877919907080658,
-        "z": 1.5886147906961419
-      },
-      "hang_so_logloss": 4.605170185988091,
-      "hang_so_vs_production": {
-        "mean_gain": 0.025152729358406505,
-        "se": 0.008862156770862046,
-        "z": 2.8382176042186886
-      },
-      "ml_production_logloss": 4.604509785328491,
-      "ml_production_vs_production": {
-        "mean_gain": 0.025813130018006517,
-        "se": 0.008908534002903342,
-        "z": 2.8975732718305696
-      },
-      "tien_nghiem_logloss": 4.606639361972507,
-      "tien_nghiem_vs_production": {
-        "mean_gain": 0.023683553373990796,
-        "se": 0.00888217899007941,
-        "z": 2.6664125323800816
+      "reconstructed": {
+        "days": 209,
+        "production_recorded_logloss": 4.6340018881083935,
+        "bayes_lgb_logloss": 4.609469650813397,
+        "bayes_lgb_vs_production": {
+          "mean_gain": 0.024532237294996272,
+          "se": 0.010415460824939,
+          "z": 2.3553674395525315
+        },
+        "bayes_lgb_focal_iso_logloss": 4.616704090765551,
+        "bayes_lgb_focal_iso_vs_production": {
+          "mean_gain": 0.017297797342843164,
+          "se": 0.010732817234997248,
+          "z": 1.6116735209502149
+        },
+        "hang_so_logloss": 4.605170190000002,
+        "hang_so_vs_production": {
+          "mean_gain": 0.028831698108393464,
+          "se": 0.010160394803115078,
+          "z": 2.837655294610594
+        },
+        "ml_production_logloss": 4.604223903971292,
+        "ml_production_vs_production": {
+          "mean_gain": 0.02977798413710157,
+          "se": 0.01020499137427989,
+          "z": 2.9179822936599824
+        },
+        "tien_nghiem_logloss": 4.606874087751196,
+        "tien_nghiem_vs_production": {
+          "mean_gain": 0.027127800357197234,
+          "se": 0.010191911062083338,
+          "z": 2.661699085868202
+        }
       }
     },
     "loto": {
-      "days": 241,
-      "exact_artifact_days": 32,
-      "production_recorded_logloss": 0.5841722738928983,
-      "bayes_lgb_logloss": 0.5477208745158924,
-      "bayes_lgb_vs_production": {
-        "mean_gain": 0.03645139937700601,
-        "se": 0.007836564586541995,
-        "z": 4.6514514076238545
+      "exact_emitted": {
+        "days": 32,
+        "production_recorded_logloss": 0.5442061574920884,
+        "bayes_lgb_logloss": 0.5441966490625001,
+        "bayes_lgb_vs_production": {
+          "mean_gain": 9.50842958837711e-06,
+          "se": 8.339914859472254e-05,
+          "z": 0.1140111110076584
+        },
+        "bayes_lgb_focal_iso_logloss": 0.543894483125,
+        "bayes_lgb_focal_iso_vs_production": {
+          "mean_gain": 0.00031167436708839577,
+          "se": 0.00023813390954262033,
+          "z": 1.3088197631619256
+        },
+        "hang_so_logloss": 0.5441883446875,
+        "hang_so_vs_production": {
+          "mean_gain": 1.781280458840878e-05,
+          "se": 8.725692257407733e-05,
+          "z": 0.2041420217781172
+        },
+        "ml_production_logloss": 0.54416174625,
+        "ml_production_vs_production": {
+          "mean_gain": 4.4411242088395614e-05,
+          "se": 9.195520339737675e-05,
+          "z": 0.48296605790186914
+        },
+        "tien_nghiem_logloss": 0.5441950093750001,
+        "tien_nghiem_vs_production": {
+          "mean_gain": 1.1148117088397025e-05,
+          "se": 8.348756223949022e-05,
+          "z": 0.13353027432299233
+        }
       },
-      "bayes_lgb_focal_iso_logloss": 0.547752743861528,
-      "bayes_lgb_focal_iso_vs_production": {
-        "mean_gain": 0.03641953003137023,
-        "se": 0.007841514475651836,
-        "z": 4.644451036142837
-      },
-      "hang_so_logloss": 0.5477129040896397,
-      "hang_so_vs_production": {
-        "mean_gain": 0.036459369803258666,
-        "se": 0.007835643564539353,
-        "z": 4.653015352594343
-      },
-      "ml_production_logloss": 0.5477128934751877,
-      "ml_production_vs_production": {
-        "mean_gain": 0.03645938041771061,
-        "se": 0.007835344388246294,
-        "z": 4.653194372975219
-      },
-      "tien_nghiem_logloss": 0.5477161979010766,
-      "tien_nghiem_vs_production": {
-        "mean_gain": 0.036456075991821615,
-        "se": 0.00783639904240676,
-        "z": 4.652146450753612
+      "reconstructed": {
+        "days": 209,
+        "production_recorded_logloss": 0.5902914878872806,
+        "bayes_lgb_logloss": 0.5482604686124402,
+        "bayes_lgb_vs_production": {
+          "mean_gain": 0.04203101927484042,
+          "se": 0.008976728141530319,
+          "z": 4.682220360488174
+        },
+        "bayes_lgb_focal_iso_logloss": 0.548343482631579,
+        "bayes_lgb_focal_iso_vs_production": {
+          "mean_gain": 0.04194800525570168,
+          "se": 0.008983559296868428,
+          "z": 4.669419310264285
+        },
+        "hang_so_logloss": 0.5482525497129187,
+        "hang_so_vs_production": {
+          "mean_gain": 0.04203893817436197,
+          "se": 0.008975658682443573,
+          "z": 4.683660515811537
+        },
+        "ml_production_logloss": 0.5482566099521531,
+        "ml_production_vs_production": {
+          "mean_gain": 0.042034877935127515,
+          "se": 0.008975401679790808,
+          "z": 4.683342254171652
+        },
+        "tien_nghiem_logloss": 0.5482553268899522,
+        "tien_nghiem_vs_production": {
+          "mean_gain": 0.04203616099732847,
+          "se": 0.008976525372566806,
+          "z": 4.682898922760843
+        }
       }
     }
   },
