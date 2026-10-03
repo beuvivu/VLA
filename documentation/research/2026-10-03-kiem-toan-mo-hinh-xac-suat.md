@@ -24,8 +24,8 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
 4. **Mô hình mới ba tầng (Bayes + LightGBM + hiệu chỉnh) không hơn dự báo hằng số trên 1 000 kỳ** (LOTO còn
    kém nhẹ) và không thắng mô hình ML đang chạy. Theo luật của kho, nó KHÔNG được đưa vào production.
 5. **Công cụ đo không mù.** Trên lịch sử tổng hợp có cài tín hiệu, chính mô hình ấy bắt được tín hiệu
-   Đặc Biệt (z = 6,6, kỹ năng +6,3%) và tín hiệu LOTO một cặp số (z = 3,3), mỗi tín hiệu đo trên
-   lịch sử chỉ cài riêng nó. Hoà trên dữ liệu thật vì
+   Đặc Biệt (z = 5,1, kỹ năng +4,4%) và tín hiệu LOTO một cặp số (z = 6,1), mỗi tín hiệu đo trên
+   lịch sử chỉ cài riêng nó và chưa dùng để chọn siêu tham số. Hoà trên dữ liệu thật vì
    dữ liệu không có tín hiệu để học, không phải vì phương pháp yếu.
 
 ## 1. Chẩn đoán nguyên nhân
@@ -91,8 +91,9 @@ không viết lại lịch sử.
 - `src/vla/backtest/production_ml.py`: tái dựng đúng `ml_train.train_one` + `ml_predict` của thành phần ML production để làm đối chứng "cũ".
 
 Siêu tham số chốt TRƯỚC khi chạm dữ liệu thật. `min_data_in_leaf` = 500 chọn bằng kiểm độ nhạy trên dữ
-liệu tổng hợp: giá trị 2 000 chỉ thấy tín hiệu LOTO cài sẵn ở z = 1,6, còn 500 thấy ở z = 3,3 (đo lại
-trên lịch sử chỉ cài tín hiệu LOTO, xem mục 4).
+liệu tổng hợp seed 11 (`TUNING_SEED`, chỉ cài tín hiệu LOTO): giá trị 2 000 thấy tín hiệu ở z = 1,6, còn
+500 thấy ở z = 3,3. Vì chọn trên chính mẫu ấy nên z = 3,3 là số đã được chọn lọc; độ nhạy công bố ở
+mục 4 đo trên seed khác.
 
 ## 3. So sánh 1 000 kỳ (26-12-2023 → 02-10-2026, walk-forward)
 
@@ -162,16 +163,17 @@ Trên cả 241 kỳ, tổ hợp production kém hằng số (LOTO z = −4,65) v
 Từ 02-2026 (219 kỳ), nó ngang hằng số: LOTO z = −1,21, Đặc Biệt z = −1,72. Trên 32 kỳ chấm đúng tệp đã
 công bố cũng vậy: z = −0,20 và −0,19.
 
-## 4. Kiểm độ nhạy (lịch sử tổng hợp 2 600 kỳ, chấm 600 kỳ cuối)
+## 4. Kiểm độ nhạy (lịch sử tổng hợp 2 600 kỳ, chấm 600 kỳ cuối, seed 31)
 
 Mỗi chế độ một lịch sử riêng, CHỈ cài tín hiệu của chế độ ấy (`power_history`). Đặc Biệt cũng là một
 trong 27 giải LOTO, nên cài cả hai vào cùng lịch sử thì "Đặc Biệt + 1" thành thêm một tín hiệu trễ của
-LOTO và phép đo LOTO không còn nói được mô hình bắt đúng tín hiệu 37 → 73.
+LOTO và phép đo LOTO không còn nói được mô hình bắt đúng tín hiệu 37 → 73. Seed 31 (`POWER_SEED`) chưa
+dùng để chọn siêu tham số nào; mục 2 chọn `min_data_in_leaf` trên seed 11.
 
 | Tín hiệu cài | Kỹ năng mô hình mới | z | Top-5 / ngẫu nhiên |
 |---|---:|---:|---:|
-| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +6,30% | +6,6 | 18,7% / 5% |
-| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,089% | +3,3 | 24,7% / 23,8% |
+| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +4,41% | +5,1 | 16,2% / 5% |
+| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,175% | +6,1 | 26,3% / 23,7% |
 
 Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ liệu thật thì không.
 
