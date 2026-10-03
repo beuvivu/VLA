@@ -213,12 +213,12 @@ sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ g
 ## Phòng thử thách mô hình `src/vla/`
 
 `src/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,
-walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 03-10-2026 nó hoà
-dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
+walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 03-10-2026 nó không
+hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
-bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt 7,0% trên 1 000 kỳ KHÔNG
-lặp lại ở 1 000 kỳ trước đó — đừng trích nó như tín hiệu.
+bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
+trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,5% — đừng trích nó như tín hiệu.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 

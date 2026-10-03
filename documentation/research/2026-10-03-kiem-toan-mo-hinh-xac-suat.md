@@ -17,10 +17,10 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
    (χ²: LOTO p = 0,68, Đặc Biệt p = 0,74). Tần suất 1 000 kỳ gần nhất cũng không khác phần trước đó
    (p = 0,76 và 0,93), và vẫn đều trên toàn lịch sử (p = 0,68 và 0,83).
 3. **Không tìm thấy rò rỉ dữ liệu** trong đường ML production.
-4. **Mô hình mới ba tầng (Bayes + LightGBM + hiệu chỉnh) hoà dự báo hằng số trên 1 000 kỳ** và không
-   thắng mô hình ML đang chạy. Theo luật của kho, nó KHÔNG được đưa vào production.
+4. **Mô hình mới ba tầng (Bayes + LightGBM + hiệu chỉnh) không hơn dự báo hằng số trên 1 000 kỳ** (LOTO còn
+   kém nhẹ) và không thắng mô hình ML đang chạy. Theo luật của kho, nó KHÔNG được đưa vào production.
 5. **Công cụ đo không mù.** Trên lịch sử tổng hợp có cài tín hiệu, chính mô hình ấy bắt được tín hiệu
-   Đặc Biệt (z = 6,6, kỹ năng +6,2%) và tín hiệu LOTO một cặp số (z = 3,2). Hoà trên dữ liệu thật vì
+   Đặc Biệt (z = 6,5, kỹ năng +6,2%) và tín hiệu LOTO một cặp số (z = 3,3). Hoà trên dữ liệu thật vì
    dữ liệu không có tín hiệu để học, không phải vì phương pháp yếu.
 
 ## 1. Chẩn đoán nguyên nhân
@@ -68,6 +68,8 @@ không viết lại lịch sử.
 `PYTHONPATH=src`).
 
 - `src/vla/features/engineer.py`: 19 đặc trưng cho LOTO, 30 cho Đặc Biệt. Quy ước duy nhất: hàng t chỉ đọc kỳ ≤ t.
+  PMI làm trơn bằng `log[(c+k)/(e+k)]` với `e` là số kỳ vọng nếu độc lập: cặp chưa có dữ liệu ra 0. Bản đầu dùng
+  `log[(c+1)·N/((c_i+1)(c_j+1))]`, cho hai con chưa từng về PMI = log N, tức vắng bằng chứng bị đọc thành gắn kết.
   - Gan và điểm z của gan so với chính các chu kỳ đã hoàn tất của con số (co về chu kỳ hình học khi còn ít dữ liệu).
   - Tần suất suy giảm `2^{-(T-t)/h}` với h = 7/30/90/180, chia cho tỉ lệ nền.
   - Cầu vị trí: số cầu đang chạy và độ dài cầu, khớp từng cầu với `bridge_rules`.
@@ -100,7 +102,7 @@ Mốc kỹ năng 0: tỉ lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt)
 | Hằng số | 0,548757 | 0 | — | 22,8% | 23,1% | 23,6% | −9,1% |
 | ML production (cũ) | 0,548763 | −0,001% | −1,30 | 23,1% | 23,1% | 23,7% | −10,0% |
 | Tiên nghiệm Bayes | 0,548758 | −0,000% | −0,22 | 24,3% | 24,4% | 24,1% | −3,3% |
-| **Bayes + LGB + Platt (mới)** | 0,548755 | +0,000% | +0,29 | 24,5% | 24,3% | 24,4% | −2,3% |
+| **Bayes + LGB + Platt (mới)** | 0,548772 | −0,003% | −2,18 | 23,0% | 23,7% | 23,7% | −5,7% |
 | Bayes + LGB focal + isotonic | 0,548866 | −0,020% | −2,06 | 23,1% | 23,8% | 23,9% | −6,0% |
 
 Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn của Top-10 trên 997 kỳ khoảng 0,6
@@ -113,26 +115,24 @@ Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn
 | Hằng số | 4,605170 | 0 | — | 4,5% | 9,8% | 18,8% | −31,2% |
 | ML production (cũ) | 4,604909 | +0,006% | +0,37 | 6,2% | 11,4% | 20,9% | −20,0% |
 | Tiên nghiệm Bayes | 4,606216 | −0,023% | −2,15 | 4,6% | 10,1% | 18,8% | −29,1% |
-| **Bayes + LGB + Platt (mới)** | 4,606609 | −0,031% | −0,73 | **7,0%** | 11,9% | 19,8% | −16,4% |
-| Bayes + LGB focal + isotonic | 4,647522 | −0,920% | −2,28 | 4,4% | 9,1% | 18,5% | −36,1% |
+| **Bayes + LGB + Platt (mới)** | 4,607017 | −0,040% | −0,98 | 5,5% | 9,7% | 19,8% | −31,9% |
+| Bayes + LGB focal + isotonic | 4,649460 | −0,962% | −2,39 | 4,5% | 9,2% | 18,1% | −35,4% |
 
-Mô hình mới so với ML production: LOTO +0,000008 nats mỗi kỳ (z = +1,04), Đặc Biệt −0,0017 (z = −0,80).
-**Không thắng.**
+Mô hình mới so với ML production: LOTO −0,000009 nats mỗi kỳ (z = −1,11), Đặc Biệt −0,0021 (z = −1,05).
+**Không thắng.** Ở LOTO nó còn kém hằng số một chút (z = −2,18): LightGBM bám vào nhiễu dù có dừng sớm.
 
-**Top-5 Đặc Biệt 7,0% có phải tín hiệu?** Không đủ căn cứ.
-- Trên 997 kỳ đã chấm: 70 kỳ trúng so với kỳ vọng 49,9 (p = 0,0032 một phía), đều ở cả hai nửa (7,0% và 7,0%).
-- Đó là MỘT trong 30 chỉ số đọc sau khi chạy (5 mô hình × 3 mức K × 2 kiểu). Sau hiệu chỉnh Bonferroni, p ≈ 0,10.
-- Chạy lại y hệt trên 998 kỳ đã chấm TRƯỚC đó (cùng luật loại kỳ sau Tết): 50 kỳ trúng (5,0%, p = 0,51), tức không lặp lại.
-- Logloss, chỉ số chấm chính đã chọn từ trước, kém hằng số.
+**Top-5 Đặc Biệt — một "tín hiệu" sinh ra từ lỗi đặc trưng.** Trước khi sửa PMI, mô hình mới đạt
+Top-5 Đặc Biệt 70/997 (7,0%, p = 0,003 một phía). Con số ấy không lặp lại ở 1 000 kỳ trước đó (5,0%).
+Sau khi sửa (mục 2), nó biến mất ở cả hai khối: 55/997 (5,5%, p = 0,25) và 44/998 (4,4%, p = 0,82).
 
-Tái lập phép kiểm lặp lại: `scripts/replicate_top5_special.py` → `data/research/model_overhaul/top5_replication.json`.
-
-Kết luận: chưa đủ căn cứ. Muốn kiểm thì phải đăng ký tiến cứu như `hot_tail_test`, với ngày bắt đầu mới.
+Bản PMI cũ cho cặp số chưa có dữ liệu một giá trị dương lớn, nên mô hình có thứ để "bám". Đây chính là
+cách một con số đẹp xuất hiện khi đọc nhiều chỉ số sau khi chạy (30 chỉ số ở đây). Kiểm lặp lại:
+`scripts/replicate_top5_special.py` → `data/research/model_overhaul/top5_replication.json`.
 
 **ROI.** Không chiến lược nào hoàn vốn. Theo luật trả thưởng, đánh ngẫu nhiên hoàn khoảng 0,94 (lô)
 và 0,70 (Đặc Biệt). Chiến lược "chỉ đánh khi kỳ vọng dương theo xác suất mô hình":
-- Mô hình mới: 0 cược LOTO; 21 cược Đặc Biệt, trượt cả 21.
-- Bản focal (hiệu chỉnh kém): 3 632 cược LOTO (ROI −1,9%) và 1 032 cược Đặc Biệt (ROI −80%).
+- Mô hình mới: 0 cược LOTO; 8 cược Đặc Biệt, trượt cả 8.
+- Bản focal (hiệu chỉnh kém): 3 632 cược LOTO (ROI −1,9%) và 839 cược Đặc Biệt (ROI −67%).
 - ML production: 31 cược Đặc Biệt, lời +126%. Đó chỉ là 1 lần trúng nên không có ý nghĩa thống kê.
 
 ### 3.1 ML production học lại mỗi kỳ hay mỗi 50 kỳ
@@ -159,10 +159,10 @@ công bố cũng vậy: z = −0,20 và −0,19.
 
 | Tín hiệu cài | Kỹ năng mô hình mới | z | Top-5 / ngẫu nhiên |
 |---|---:|---:|---:|
-| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +6,25% | +6,6 | 19,2% / 5% |
-| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,083% | +3,2 | 25,7% / 23,8% |
+| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +6,23% | +6,5 | 19,2% / 5% |
+| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,098% | +3,3 | 26,0% / 23,8% |
 
-Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ liệu thật thì hoà.
+Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ liệu thật thì không.
 
 ## 5. Quyết định
 
