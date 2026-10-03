@@ -13,9 +13,13 @@ Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.
    luôn nằm trong vùng 0. Giai đoạn TỆ nhất là 12-2025 → 01-2026, và lỗi gây ra nó đã được sửa.
    Thứ trông như "sụt giảm" gần đây là Brier Đặc Biệt nhảy từ 0,0099 lên 0,99 ngày 04-09-2026.
    Đó là đổi ĐƠN VỊ đo (trung bình → tổng), không phải mô hình kém đi.
-2. **Không có trôi khái niệm.** Tần suất 100 con đồng nhất qua bốn giai đoạn lịch sử
+2. **Không thấy trôi.** Tần suất biên của 100 con đồng nhất qua bốn giai đoạn lịch sử
    (χ²: LOTO p = 0,68, Đặc Biệt p = 0,74). Tần suất 1 000 kỳ gần nhất cũng không khác phần trước đó
    (p = 0,76 và 0,93), và vẫn đều trên toàn lịch sử (p = 0,68 và 0,83).
+   χ² chỉ nói về tần suất BIÊN; quan hệ có điều kiện giữa đặc trưng và kết cục vẫn có thể đổi khi biên
+   đều. Phần ấy được kiểm qua sai số dự báo: logloss của production theo tháng phẳng quanh mức hằng số
+   từ 02-2026 (mục 1.1). Trong mọi lần học lại walk-forward, tiên nghiệm cũng chọn mức co về hằng số
+   gần như tối đa (mục 1.3).
 3. **Không tìm thấy rò rỉ dữ liệu** trong đường ML production.
 4. **Mô hình mới ba tầng (Bayes + LightGBM + hiệu chỉnh) không hơn dự báo hằng số trên 1 000 kỳ** (LOTO còn
    kém nhẹ) và không thắng mô hình ML đang chạy. Theo luật của kho, nó KHÔNG được đưa vào production.

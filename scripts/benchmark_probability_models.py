@@ -173,14 +173,18 @@ def production_refit_check(history: History, last: int, refit_every: int) -> dic
         hit = history.hits(mode)
         pack = ProductionMLModel(mode, history)
         targets = np.arange(T - last, T)
+        # Cùng luật với run_mode: kỳ ngay sau quãng nghỉ không có hàng production
+        # (predict trả tỉ lệ nền thay vào), nên bị loại khỏi MỌI phép chấm.
+        dates = pd.to_datetime(list(history.dates))
+        keep = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
         hits = (history.counts[targets] > 0).astype(float) if mode == "loto" else np.eye(100)[history.special[targets]]
         losses = {}
         for every in (1, refit_every):
             res = walk_forward.run(lambda p=pack: p, feats.X, hit, T - last, T - 1, refit_every=every)
-            losses[every] = evaluator.daily_logloss(mode, res.probs, hits)
-        const = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit, targets), hits)
+            losses[every] = evaluator.daily_logloss(mode, res.probs, hits)[keep]
+        const = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit, targets), hits)[keep]
         out[mode] = {
-            "days": last,
+            "days": int(keep.sum()),
             "logloss_refit_1": float(losses[1].mean()),
             f"logloss_refit_{refit_every}": float(losses[refit_every].mean()),
             "refit_1_vs_block": evaluator.paired(losses[1], losses[refit_every]),
