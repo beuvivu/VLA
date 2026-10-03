@@ -143,7 +143,7 @@ tốn khoảng 4 giờ, nên phép đo này chạy trên 200 kỳ cuối, cùng 
 
 | | Học lại mỗi kỳ | Mỗi 50 kỳ | Hiệu (z) | Mỗi kỳ so với hằng số (z) |
 |---|---:|---:|---:|---:|
-| LOTO | 0,547181 | 0,547191 | +0,73 | +1,56 |
+| LOTO | 0,547181 | 0,547191 | +0,73 | +1,54 |
 | Đặc Biệt | 4,603863 | 4,604559 | +0,32 | +0,69 |
 
 Học lại mỗi kỳ tốt hơn một chút nhưng không có ý nghĩa thống kê, và vẫn không hơn hằng số. Vì vậy
