@@ -211,3 +211,12 @@ def test_dashboard_diagnostics_have_their_own_derivations() -> None:
     steps = " ".join(sections["Trọng số"]["reasoningTrace"]["steps"])
     assert "MẶC ĐỊNH" in steps and "ngoài mẫu" in steps
     assert "vector xác suất 100 số" not in steps.lower()
+
+
+def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
+    """Số ở khối rủi ro đến từ mô phỏng và phép hoà vốn, không từ luật ba tầng."""
+    sections = {s.get("heading"): s for s in registry("do-tin-cay.html")["sections"]}
+    risk = " ".join(sections["Rủi ro / lợi nhuận"]["reasoningTrace"]["steps"])
+    assert "10 000 kỳ" in risk and "100/27" in risk
+    assert "High" not in risk and "Medium" not in risk
+    assert {"Vòng phản hồi", "Giả thuyết đang kiểm tiến cứu"} <= set(sections)

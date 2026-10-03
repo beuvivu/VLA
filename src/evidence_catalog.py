@@ -185,6 +185,11 @@ def _trong_so(f: dict[str, str]) -> Source:
     }
 
 
+_MO_PHONG_RUI_RO: Source = {
+    "title": "Mô phỏng kỳ kế tiếp",
+    "snippet": "10 000 kỳ giả lập, mỗi kỳ 27 giải rút đều trong 00–99; so nhóm số đang công bố với kết cục giả lập.",
+}
+
 _CAU: Source = {
     "title": "Bộ dò cầu vị trí",
     "snippet": (
@@ -369,7 +374,21 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
         "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], ["Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.", "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt.", "Kỹ năng = 1 − điểm mô hình / điểm dự báo hằng số; 0 là ngang hằng số."]), []),
-        "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], ["Đo tín hiệu mạnh nhất của từng họ (Bayes, Markov, cầu) trên lịch sử thật.", "Tin cậy = tỉ lệ lịch sử ngẫu nhiên có tín hiệu mạnh nhất còn yếu hơn — không phải hậu nghiệm từng con.", "Ba tầng: High khi cả ba > 85%, Medium khi hai trong ba ≥ 60%, còn lại Low/Noise."]), []),
+        "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], ["Đo tín hiệu mạnh nhất của từng họ (Bayes, Markov, cầu) trên lịch sử thật.", "Tin cậy = tỉ lệ lịch sử ngẫu nhiên có tín hiệu mạnh nhất còn yếu hơn — không phải hậu nghiệm từng con.", "Ba tầng: High khi cả ba > 85%, Medium khi hai trong ba ≥ 60%, còn lại Low/Noise."]), [
+            _sec_heading("Rủi ro / lợi nhuận", "Rủi ro / lợi nhuận", _ev([_MO_PHONG_RUI_RO], [
+                "Giả lập 10 000 kỳ kế tiếp, mỗi kỳ 27 giải rút đều trong 00–99 (hạt giống theo ngày đích); không dùng mô hình nào.",
+                "Đếm số con trong nhóm 10 con LOTO đang công bố có về ở mỗi kỳ giả lập → tỉ lệ ở bảng; trung bình lượt về mỗi kỳ.",
+                "Hoà vốn: mỗi con kỳ vọng 27/100 lượt về mỗi kỳ, nên mức trả phải ≥ 100/27 ≈ 3,70 lần tiền đặt cho mỗi lượt về; Đặc Biệt một giải, xác suất 1/100, hoà vốn 100 lần.",
+            ])),
+            _sec_heading("Vòng phản hồi", "Vòng phản hồi", _ev([_cham(f), _du_bao(f)], [
+                "Chấm vector xác suất đã công bố trước kỳ quay với kết quả thật; cặp số là điểm mô hình / điểm dự báo hằng số.",
+                "Bộ theo dõi báo động khi kỹ năng ngoài mẫu rời vùng 0 theo HƯỚNG NÀO CŨNG VẬY (z = 3, cửa sổ 60 kỳ).",
+            ])),
+            _sec_heading("Giả thuyết đang kiểm tiến cứu", "Giả thuyết đuôi nóng", _ev([_ket_qua(f)], [
+                "Giả thuyết đăng ký ngày 28-09-2026, TRƯỚC khi có dữ liệu kiểm: chạy từ kỳ 29-09-2026, 180 kỳ, kiểm một phía α = 0,01.",
+                "Tham số không được sửa sau khi đăng ký; số trên thẻ là tiến độ và kết quả tích luỹ tới kỳ gần nhất.",
+            ])),
+        ]),
         "research-lab.html": (_ev([_ket_qua(f), _NULL], ["Mỗi giả thuyết kiểm trên tập giữ lại theo thời gian, có kiểm soát nhiều phép thử.", "Kết quả tách khỏi bộ dự báo vận hành cho tới khi vượt mọi cổng."]), []),
         "tao-phoi-tuan.html": (_ev([_ket_qua(f), _DAC_BIET], ["Lấy giải Đặc Biệt đã lưu, xếp Thứ Hai → Chủ Nhật theo tuần.", "Tách 3 chữ số đầu và 2 chữ số cuối theo tuỳ chọn của phôi."]), []),
     }

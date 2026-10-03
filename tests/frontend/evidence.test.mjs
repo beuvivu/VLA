@@ -35,7 +35,8 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
     <table><thead><tr><th>#</th><th>Số</th><th>Xác suất (%)</th></tr></thead>
       <tbody><tr data-evidence-row="ml-loto-63" data-evidence-cols="1,2"><td id="rank">1</td><td id="num">63</td><td id="prob">23,943%</td></tr>
         <tr><td>2</td><td>95</td><td id="prob2">23,936%</td></tr>
-        <tr><td>3</td><td id="sci">-7.15393e-05</td><td id="sci2">3.39239E+05</td></tr></tbody></table>
+        <tr><td>3</td><td id="sci">-7.15393e-05</td><td id="sci2">3.39239E+05</td></tr>
+        <tr><td>4</td><td id="compound">23,56% (2.344/9.950)</td><td id="range">0,19060 – 0,28008</td></tr></tbody></table>
     <script type="application/json" data-app-evidence-values>${JSON.stringify(ROW)}</script>
   </section>
   <section id="ma-tran"><h2>Ma trận</h2>
@@ -222,6 +223,8 @@ test('Bàn phím: mũi tên chọn số theo hàng/cột, Enter mở đúng số
   key(dom, table, 'Home');
   assert.equal(activeText(dom), '1');
   key(dom, table, 'End');
+  assert.equal(activeText(dom), '0,28008');
+  key(dom, table, 'ArrowUp');
   assert.equal(activeText(dom), '3.39239E+05');
   key(dom, table, 'ArrowUp');
   assert.equal(activeText(dom), '23,936%');
@@ -296,4 +299,20 @@ test('Khối lồng nhau: khối gần con số nhất thắng; khớp được 
   assert.equal(ev(a).sources[0].title, 'Nguồn ngoài');
   assert.equal(ev(b).sources[0].title, 'Nguồn trong');
   assert.equal(ev(c).sources[0].title, 'Nguồn hiệu chỉnh');
+});
+
+test('Ô nhiều số được tách thành từng con số; câu văn và ngày tháng thì không', t => {
+  const dom = start(t), d = dom.window.document;
+  const tokens = id => [...$(dom, id).querySelectorAll('.app-evidence-token')].map(n => n.textContent);
+  assert.deepEqual(tokens('compound'), ['23,56%', '2.344', '9.950']);
+  assert.deepEqual(tokens('range'), ['0,19060', '0,28008']);
+  assert.equal($(dom, 'compound').textContent, '23,56% (2.344/9.950)', 'chữ hiển thị giữ nguyên');
+  assert.equal(tokens('prose').length, 0);
+  assert.equal(tokens('date').length, 0);
+  const second = $(dom, 'compound').querySelectorAll('.app-evidence-token')[1];
+  assert.equal(dom.window.appEvidence.find(second), second);
+  click(dom, second);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '2.344');
+  assert.match([...drawer(dom).querySelectorAll('.app-evidence-steps li')].at(-1).textContent, /hàng «#4», cột «Số»: 2\.344/);
+  assert.ok(d.querySelectorAll('.app-evidence-token').length >= 5);
 });

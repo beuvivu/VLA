@@ -799,9 +799,44 @@
     if (next) { setActive(region, next); }
   }
 
+  /* ---------- ô nhiều số: "23,56% (2.344/9.950)", "0,19060 – 0,28008" ----------
+     Chỉ phần tử mà TOÀN BỘ chữ là số và dấu phân cách (không câu văn, không
+     ngày, không giờ). Mỗi con số được bọc riêng một span — dựng bằng
+     createElement + textContent — để chuột lẫn bàn phím đều chọn được. */
+  var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~]+$/;
+  var DATE_LIKE = /\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}/;
+  var TOKEN = /[+\-\u2212]?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?/g;
+
+  function splitCompound() {
+    var walker = doc.createTreeWalker(root, SHOW_TEXT, null);
+    var todo = [];
+    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+      var parent = node.parentElement;
+      if (!parent || !/\d/.test(node.nodeValue) || valueTarget(node)) { continue; }
+      if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || isInteractive(parent)) { continue; }
+      var whole = norm(parent.textContent);
+      if (whole.length > 120 || !COMPOUND.test(whole) || DATE_LIKE.test(whole)) { continue; }
+      todo.push(node);
+    }
+    todo.forEach(function (text) {
+      var value = text.nodeValue;
+      var parts = doc.createDocumentFragment();
+      var at = 0;
+      TOKEN.lastIndex = 0;
+      for (var m = TOKEN.exec(value); m; m = TOKEN.exec(value)) {
+        if (m.index > at) { parts.appendChild(doc.createTextNode(value.slice(at, m.index))); }
+        parts.appendChild(mk("span", "app-evidence-token", m[0]));
+        at = m.index + m[0].length;
+      }
+      if (at < value.length) { parts.appendChild(doc.createTextNode(value.slice(at))); }
+      text.parentNode.replaceChild(parts, text);
+    });
+  }
+
   var scanTimer = 0;
   function scan() {
     scanTimer = 0;
+    splitCompound();
     var seen = [];
     eachItem(root, null, function (el) {
       var region = regionFor(el);
