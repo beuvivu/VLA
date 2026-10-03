@@ -352,9 +352,16 @@ def markov_features(special: np.ndarray) -> dict[str, np.ndarray]:
 
 
 def weekday_features(dates: tuple[str, ...]) -> tuple[np.ndarray, np.ndarray]:
-    """sin/cos thứ của kỳ t+1 (lịch quay biết trước, không phải kết cục)."""
+    """sin/cos thứ của kỳ đích t+1 (lịch quay biết trước, không phải kết cục).
+
+    Hàng lịch sử lấy đúng ngày của kỳ quay KẾ TIẾP trong chuỗi — qua quãng nghỉ
+    (Tết, 2020) đó không phải ngày lịch kế tiếp. Chỉ hàng cuối, khi kỳ đích chưa
+    có trong dữ liệu, mới giả định quay vào ngày hôm sau.
+    """
     day = pd.to_datetime(pd.Series(dates))
-    target = ((day + pd.Timedelta(days=1)).dt.weekday).to_numpy(dtype=np.float64)
+    nxt = day.shift(-1)
+    nxt.iloc[-1] = day.iloc[-1] + pd.Timedelta(days=1)
+    target = nxt.dt.weekday.to_numpy(dtype=np.float64)
     angle = 2.0 * np.pi * target / 7.0
     return np.sin(angle), np.cos(angle)
 

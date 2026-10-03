@@ -250,3 +250,14 @@ def test_pmi_treats_missing_evidence_as_no_association() -> None:
     assert pmi[1, 2] == pytest.approx(0.0, abs=1e-12)  # 250 = 500·500/1000: độc lập
     assert pmi[1, 1] > 0.6  # 500 so với kỳ vọng 250: gắn kết
     assert pmi[2, 2] < -0.8  # 100 so với kỳ vọng 250: tránh nhau
+
+
+def test_target_weekday_follows_the_next_recorded_draw_across_a_break() -> None:
+    """Qua quãng nghỉ, thứ của kỳ đích là thứ của kỳ quay kế tiếp thật."""
+    from vla.features.engineer import weekday_features
+
+    dates = ("2026-02-15", "2026-02-21", "2026-02-22")  # CN → (nghỉ Tết) → T7 → CN
+    sin, cos = weekday_features(dates)
+    angle = np.arctan2(sin, cos) % (2 * np.pi)
+    weekday = np.rint(angle * 7 / (2 * np.pi)).astype(int) % 7
+    assert weekday.tolist() == [5, 6, 0]  # thứ Bảy, Chủ Nhật, rồi giả định thứ Hai
