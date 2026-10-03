@@ -323,8 +323,11 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
         def hits(self, mode: str) -> np.ndarray:
             return np.zeros((700, 100))
 
+    seeds = []
+
     def fake_history(mode: str, n: int, seed: int) -> Fake:
         made.append(mode)
+        seeds.append(seed)
         return Fake(mode)
 
     def fake_features(hist: Fake, mode: str) -> SimpleNamespace:
@@ -341,3 +344,7 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
     bench.power_check(50)
     assert sorted(made) == ["de", "loto"]
     assert used == [("loto", "loto"), ("de", "de")]
+    # Độ nhạy công bố đo trên lịch sử CHƯA dùng để chọn siêu tham số.
+    from vla.backtest.synthetic import TUNING_SEED
+
+    assert TUNING_SEED not in seeds

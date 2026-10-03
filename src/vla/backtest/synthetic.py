@@ -29,6 +29,10 @@ def synthetic_history(n: int, seed: int, *, loto_signal: float = 0.5, de_signal:
     return history_from_frame(raw)
 
 
+# min_data_in_leaf được CHỌN trên lịch sử seed TUNING_SEED; độ nhạy công bố phải
+# đo trên seed khác (POWER_SEED), chưa từng dùng để chọn gì.
+TUNING_SEED = 11
+POWER_SEED = 31
 POWER_SIGNALS = {"loto": {"loto_signal": 0.5, "de_signal": 0.0}, "de": {"loto_signal": 0.0, "de_signal": 0.15}}
 
 
