@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-03T07:49:03Z",
+  "generated_at_utc": "2026-10-03T08:43:43Z",
   "history_draws": 4223,
   "last": 1000,
   "refit_every": 50,
@@ -37,7 +37,7 @@
           "target_weekday_cos",
           "is_double"
         ],
-        "seconds": 198.8
+        "seconds": 191.8
       },
       "models": {
         "hang_so": {
@@ -403,7 +403,7 @@
             "return": 0.0,
             "roi": null
           },
-          "seconds": 6.0,
+          "seconds": 6.6,
           "refit_every": 50,
           "refits": [
             {
@@ -590,95 +590,95 @@
         },
         "bayes_lgb": {
           "days": 997,
-          "logloss": 0.5487722811122189,
+          "logloss": 0.5487792110234592,
           "logloss_reference": 0.5487570405322624,
-          "logloss_skill": -2.7772910105472448e-05,
-          "brier": 0.18135854994126274,
+          "logloss_skill": -4.04012879275939e-05,
+          "brier": 0.1813610604641753,
           "brier_reference": 0.18135301364912704,
-          "brier_skill": -3.052770959977025e-05,
+          "brier_skill": -4.437100264476079e-05,
           "vs_reference": {
-            "mean_gain": -1.5240579956262557e-05,
-            "se": 7.005248361951068e-06,
-            "z": -2.175594521250896
+            "mean_gain": -2.2170491196701727e-05,
+            "se": 7.5913960194678255e-06,
+            "z": -2.9204761732685802
           },
           "calibration": [
             {
               "bin": 0,
               "count": 9970,
-              "predicted": 0.23627015404708618,
-              "observed": 0.243530591775326
+              "predicted": 0.2360270175407596,
+              "observed": 0.24493480441323973
             },
             {
               "bin": 1,
               "count": 9970,
-              "predicted": 0.237146921723097,
-              "observed": 0.23139418254764293
+              "predicted": 0.23712828075994874,
+              "observed": 0.23269809428284854
             },
             {
               "bin": 2,
               "count": 9970,
-              "predicted": 0.23744570642159463,
-              "observed": 0.24443329989969909
+              "predicted": 0.2374985652588066,
+              "observed": 0.24653961885656972
             },
             {
               "bin": 3,
               "count": 9970,
-              "predicted": 0.23769955530446157,
-              "observed": 0.24463390170511534
+              "predicted": 0.23774108991049586,
+              "observed": 0.23671013039117353
             },
             {
               "bin": 4,
               "count": 9970,
-              "predicted": 0.23793275990276277,
-              "observed": 0.2342026078234704
+              "predicted": 0.23796657933010884,
+              "observed": 0.23681043129388166
             },
             {
               "bin": 5,
               "count": 9970,
-              "predicted": 0.23816146651542758,
-              "observed": 0.23139418254764293
+              "predicted": 0.23818674941990226,
+              "observed": 0.23550651955867602
             },
             {
               "bin": 6,
               "count": 9970,
-              "predicted": 0.23839630089705735,
-              "observed": 0.24623871614844534
+              "predicted": 0.23841636164597665,
+              "observed": 0.2456369107321966
             },
             {
               "bin": 7,
               "count": 9970,
-              "predicted": 0.23862611364979255,
-              "observed": 0.2358074222668004
+              "predicted": 0.23863900450085954,
+              "observed": 0.2350050150451354
             },
             {
               "bin": 8,
               "count": 9970,
-              "predicted": 0.23890667656380868,
-              "observed": 0.2308926780341023
+              "predicted": 0.238920438931783,
+              "observed": 0.2307923771313942
             },
             {
               "bin": 9,
               "count": 9970,
-              "predicted": 0.23979902339543038,
-              "observed": 0.2374122367101304
+              "predicted": 0.2398409446268596,
+              "observed": 0.2353059177532598
             }
           ],
           "top_k": {
             "5": {
-              "hits_per_day": 1.1504513540621866,
-              "hit_rate": 0.23009027081243733,
+              "hits_per_day": 1.156469408224674,
+              "hit_rate": 0.2312938816449348,
               "random_hit_rate": 0.2379939819458375,
               "any_hit": 0.7432296890672017
             },
             "10": {
-              "hits_per_day": 2.3701103309929787,
-              "hit_rate": 0.23701103309929789,
+              "hits_per_day": 2.3279839518555665,
+              "hit_rate": 0.23279839518555667,
               "random_hit_rate": 0.2379939819458375,
-              "any_hit": 0.9498495486459378
+              "any_hit": 0.9518555667001003
             },
             "20": {
-              "hits_per_day": 4.731193580742227,
-              "hit_rate": 0.23655967903711134,
+              "hits_per_day": 4.679037111334002,
+              "hit_rate": 0.2339518555667001,
               "random_hit_rate": 0.2379939819458375,
               "any_hit": 0.9989969909729187
             }
@@ -686,18 +686,18 @@
           "roi_top_k": {
             "5": {
               "stake": 114655.0,
-              "return": 105520.0,
-              "roi": -0.07967380402075797
+              "return": 106080.0,
+              "roi": -0.07478958614975362
             },
             "10": {
               "stake": 229310.0,
-              "return": 216240.0,
-              "roi": -0.05699707819109501
+              "return": 213040.0,
+              "roi": -0.0709519863939645
             },
             "20": {
               "stake": 458620.0,
-              "return": 432640.0,
-              "roi": -0.05664820548602334
+              "return": 426880.0,
+              "roi": -0.06920762286860582
             }
           },
           "roi_positive_ev": {
@@ -707,7 +707,7 @@
             "return": 0.0,
             "roi": null
           },
-          "seconds": 21.8,
+          "seconds": 21.3,
           "refit_every": 50,
           "refits": [
             {
@@ -733,7 +733,7 @@
               "last_target": 3372,
               "train_rows": 3322,
               "last_label": 3322,
-              "rounds": 1,
+              "rounds": 26,
               "prior_half_life": 30.0,
               "prior_alpha": 10000.0
             },
@@ -742,7 +742,7 @@
               "last_target": 3422,
               "train_rows": 3372,
               "last_label": 3372,
-              "rounds": 23,
+              "rounds": 24,
               "prior_half_life": 30.0,
               "prior_alpha": 10000.0
             },
@@ -751,7 +751,7 @@
               "last_target": 3472,
               "train_rows": 3422,
               "last_label": 3422,
-              "rounds": 48,
+              "rounds": 47,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -769,7 +769,7 @@
               "last_target": 3572,
               "train_rows": 3522,
               "last_label": 3522,
-              "rounds": 11,
+              "rounds": 3,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -778,7 +778,7 @@
               "last_target": 3622,
               "train_rows": 3572,
               "last_label": 3572,
-              "rounds": 9,
+              "rounds": 26,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -1011,7 +1011,7 @@
             "return": 81920.0,
             "roi": -0.01934495307412376
           },
-          "seconds": 25.8,
+          "seconds": 24.0,
           "refit_every": 50,
           "refits": [
             {
@@ -1315,7 +1315,7 @@
             "return": 80.0,
             "roi": -0.13043478260869568
           },
-          "seconds": 140.7,
+          "seconds": 135.6,
           "refit_every": 50,
           "refits": [
             {
@@ -1443,19 +1443,19 @@
       },
       "pairwise": {
         "bayes_lgb_vs_ml_production": {
-          "mean_gain": -9.193747333634079e-06,
-          "se": 8.29506502458021e-06,
-          "z": -1.1083393929271035
+          "mean_gain": -1.6123658574073247e-05,
+          "se": 8.789243537059012e-06,
+          "z": -1.8344762556742646
         },
         "bayes_lgb_vs_tien_nghiem": {
-          "mean_gain": -1.4491876328473082e-05,
-          "se": 6.3329106317202026e-06,
-          "z": -2.288343728693463
+          "mean_gain": -2.142178756891225e-05,
+          "se": 6.947969690885573e-06,
+          "z": -3.0831722822587437
         },
         "bayes_lgb_vs_hang_so": {
-          "mean_gain": -1.523656193999737e-05,
-          "se": 7.005438861814893e-06,
-          "z": -2.1749618033280567
+          "mean_gain": -2.216647318043654e-05,
+          "se": 7.59155133803211e-06,
+          "z": -2.919887147359074
         },
         "bayes_lgb_focal_iso_vs_ml_production": {
           "mean_gain": -0.00010340837957310734,
@@ -1512,7 +1512,7 @@
           "target_weekday_cos",
           "is_double"
         ],
-        "seconds": 185.3
+        "seconds": 173.5
       },
       "models": {
         "hang_so": {
@@ -1812,7 +1812,7 @@
             "return": 0.0,
             "roi": null
           },
-          "seconds": 5.3,
+          "seconds": 4.8,
           "refit_every": 50,
           "refits": [
             {
@@ -1999,86 +1999,86 @@
         },
         "bayes_lgb": {
           "days": 997,
-          "logloss": 4.60701745738435,
+          "logloss": 4.606651091648008,
           "logloss_reference": 4.60517018598809,
-          "logloss_skill": -0.00040112988698659535,
-          "brier": 0.9900382052853872,
+          "logloss_skill": -0.00032157457816084367,
+          "brier": 0.9900298366725554,
           "brier_reference": 0.9900000000000001,
-          "brier_skill": -3.859119736082661e-05,
+          "brier_skill": -3.0138053086048444e-05,
           "vs_reference": {
-            "mean_gain": -0.00184727139625962,
-            "se": 0.0018812752492550744,
-            "z": -0.9819251047878726
+            "mean_gain": -0.0014809056599165294,
+            "se": 0.001830696055117716,
+            "z": -0.8089303823956213
           },
           "calibration": [
             {
               "bin": 0,
               "count": 9970,
-              "predicted": 0.009024531472654007,
-              "observed": 0.009729187562688065
+              "predicted": 0.009075878452258984,
+              "observed": 0.009027081243731194
             },
             {
               "bin": 1,
               "count": 9970,
-              "predicted": 0.009479496046459132,
-              "observed": 0.009227683049147442
+              "predicted": 0.009495013998881795,
+              "observed": 0.009027081243731194
             },
             {
               "bin": 2,
               "count": 9970,
-              "predicted": 0.009658649696527718,
-              "observed": 0.011434302908726178
+              "predicted": 0.009661961033923045,
+              "observed": 0.012236710130391173
             },
             {
               "bin": 3,
               "count": 9970,
-              "predicted": 0.009773246301493064,
-              "observed": 0.010030090270812437
+              "predicted": 0.009775557439769364,
+              "observed": 0.010732196589769307
             },
             {
               "bin": 4,
               "count": 9970,
-              "predicted": 0.00987743191832372,
-              "observed": 0.01123370110330993
+              "predicted": 0.00988072214671055,
+              "observed": 0.010431293881644935
             },
             {
               "bin": 5,
               "count": 9970,
-              "predicted": 0.009990402082516819,
-              "observed": 0.009428284854563691
+              "predicted": 0.009992381980520668,
+              "observed": 0.009929789368104312
             },
             {
               "bin": 6,
               "count": 9970,
-              "predicted": 0.01012217517043454,
+              "predicted": 0.010121568077700621,
               "observed": 0.008826479438314945
             },
             {
               "bin": 7,
               "count": 9970,
-              "predicted": 0.010291284535805694,
-              "observed": 0.010431293881644935
+              "predicted": 0.010284860209650937,
+              "observed": 0.00982948846539619
             },
             {
               "bin": 8,
               "count": 9970,
-              "predicted": 0.010545253600193068,
-              "observed": 0.00962888665997994
+              "predicted": 0.01052605683655137,
+              "observed": 0.010130391173520562
             },
             {
               "bin": 9,
               "count": 9970,
-              "predicted": 0.011237529175592242,
-              "observed": 0.010030090270812437
+              "predicted": 0.011185999824032664,
+              "observed": 0.00982948846539619
             }
           ],
           "top_k": {
             "5": {
-              "hit_rate": 0.055165496489468405,
+              "hit_rate": 0.05416248746238716,
               "random_hit_rate": 0.05
             },
             "10": {
-              "hit_rate": 0.09729187562688064,
+              "hit_rate": 0.10030090270812438,
               "random_hit_rate": 0.1
             },
             "20": {
@@ -2089,13 +2089,13 @@
           "roi_top_k": {
             "5": {
               "stake": 4985.0,
-              "return": 3850.0,
-              "roi": -0.2276830491474423
+              "return": 3780.0,
+              "roi": -0.2417251755265798
             },
             "10": {
               "stake": 9970.0,
-              "return": 6790.0,
-              "roi": -0.31895687061183553
+              "return": 7000.0,
+              "roi": -0.2978936810431294
             },
             "20": {
               "stake": 19940.0,
@@ -2110,7 +2110,7 @@
             "return": 0.0,
             "roi": -1.0
           },
-          "seconds": 32.1,
+          "seconds": 28.7,
           "refit_every": 50,
           "refits": [
             {
@@ -2127,7 +2127,7 @@
               "last_target": 3322,
               "train_rows": 3272,
               "last_label": 3272,
-              "rounds": 52,
+              "rounds": 47,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -2154,7 +2154,7 @@
               "last_target": 3472,
               "train_rows": 3422,
               "last_label": 3422,
-              "rounds": 81,
+              "rounds": 77,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -2172,7 +2172,7 @@
               "last_target": 3572,
               "train_rows": 3522,
               "last_label": 3522,
-              "rounds": 55,
+              "rounds": 18,
               "prior_half_life": 30.0,
               "prior_alpha": 1000.0
             },
@@ -2244,7 +2244,7 @@
               "last_target": 3972,
               "train_rows": 3922,
               "last_label": 3922,
-              "rounds": 9,
+              "rounds": 18,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -2253,7 +2253,7 @@
               "last_target": 4022,
               "train_rows": 3972,
               "last_label": 3972,
-              "rounds": 10,
+              "rounds": 9,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             },
@@ -2289,7 +2289,7 @@
               "last_target": 4222,
               "train_rows": 4172,
               "last_label": 4172,
-              "rounds": 32,
+              "rounds": 18,
               "prior_half_life": 30.0,
               "prior_alpha": 3000.0
             }
@@ -2408,7 +2408,7 @@
             "return": 280.0,
             "roi": -0.66626936829559
           },
-          "seconds": 29.5,
+          "seconds": 26.1,
           "refit_every": 50,
           "refits": [
             {
@@ -2706,7 +2706,7 @@
             "return": 70.0,
             "roi": 1.2580645161290325
           },
-          "seconds": 114.6,
+          "seconds": 110.6,
           "refit_every": 50,
           "refits": [
             {
@@ -2834,19 +2834,19 @@
       },
       "pairwise": {
         "bayes_lgb_vs_ml_production": {
-          "mean_gain": -0.002108757215097765,
-          "se": 0.002000130831575307,
-          "z": -1.054309639053413
+          "mean_gain": -0.0017423914787546744,
+          "se": 0.0019532590751776616,
+          "z": -0.892043201486824
         },
         "bayes_lgb_vs_tien_nghiem": {
-          "mean_gain": -0.0008009594237462609,
-          "se": 0.0017312531616983666,
-          "z": -0.4626471976868573
+          "mean_gain": -0.0004345936874031703,
+          "se": 0.0016733521165090734,
+          "z": -0.2597144277737637
         },
         "bayes_lgb_vs_hang_so": {
-          "mean_gain": -0.00184727139625962,
-          "se": 0.0018812752492550744,
-          "z": -0.9819251047878726
+          "mean_gain": -0.0014809056599165294,
+          "se": 0.001830696055117716,
+          "z": -0.8089303823956213
         },
         "bayes_lgb_focal_iso_vs_ml_production": {
           "mean_gain": -0.04455152017454177,
@@ -2871,11 +2871,11 @@
       "days": 241,
       "exact_artifact_days": 32,
       "production_recorded_logloss": 4.630322915346497,
-      "bayes_lgb_logloss": 4.609266786113268,
+      "bayes_lgb_logloss": 4.608564234849033,
       "bayes_lgb_vs_production": {
-        "mean_gain": 0.021056129233230334,
-        "se": 0.00918244778639104,
-        "z": 2.293084559047189
+        "mean_gain": 0.021758680497465193,
+        "se": 0.009080059667536867,
+        "z": 2.3963147043248045
       },
       "bayes_lgb_focal_iso_logloss": 4.614630705680797,
       "bayes_lgb_focal_iso_vs_production": {
@@ -2906,11 +2906,11 @@
       "days": 241,
       "exact_artifact_days": 32,
       "production_recorded_logloss": 0.5841722738928983,
-      "bayes_lgb_logloss": 0.5477182445115583,
+      "bayes_lgb_logloss": 0.5477208745158924,
       "bayes_lgb_vs_production": {
-        "mean_gain": 0.036454029381340104,
-        "se": 0.007836514509836896,
-        "z": 4.651816740156694
+        "mean_gain": 0.03645139937700601,
+        "se": 0.007836564586541995,
+        "z": 4.6514514076238545
       },
       "bayes_lgb_focal_iso_logloss": 0.547752743861528,
       "bayes_lgb_focal_iso_vs_production": {

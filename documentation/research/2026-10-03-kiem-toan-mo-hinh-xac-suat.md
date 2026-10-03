@@ -68,6 +68,7 @@ không viết lại lịch sử.
 `PYTHONPATH=src`).
 
 - `src/vla/features/engineer.py`: 19 đặc trưng cho LOTO, 30 cho Đặc Biệt. Quy ước duy nhất: hàng t chỉ đọc kỳ ≤ t.
+  Thứ của kỳ đích lấy theo ngày của kỳ quay kế tiếp thật (qua Tết/quãng nghỉ không phải "ngày hôm sau").
   PMI làm trơn bằng `log[(c+k)/(e+k)]` với `e` là số kỳ vọng nếu độc lập: cặp chưa có dữ liệu ra 0. Bản đầu dùng
   `log[(c+1)·N/((c_i+1)(c_j+1))]`, cho hai con chưa từng về PMI = log N, tức vắng bằng chứng bị đọc thành gắn kết.
   - Gan và điểm z của gan so với chính các chu kỳ đã hoàn tất của con số (co về chu kỳ hình học khi còn ít dữ liệu).
@@ -102,7 +103,7 @@ Mốc kỹ năng 0: tỉ lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt)
 | Hằng số | 0,548757 | 0 | — | 22,8% | 23,1% | 23,6% | −9,1% |
 | ML production (cũ) | 0,548763 | −0,001% | −1,30 | 23,1% | 23,1% | 23,7% | −10,0% |
 | Tiên nghiệm Bayes | 0,548758 | −0,000% | −0,22 | 24,3% | 24,4% | 24,1% | −3,3% |
-| **Bayes + LGB + Platt (mới)** | 0,548772 | −0,003% | −2,18 | 23,0% | 23,7% | 23,7% | −5,7% |
+| **Bayes + LGB + Platt (mới)** | 0,548779 | −0,004% | −2,92 | 23,1% | 23,3% | 23,4% | −7,1% |
 | Bayes + LGB focal + isotonic | 0,548866 | −0,020% | −2,06 | 23,1% | 23,8% | 23,9% | −6,0% |
 
 Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn của Top-10 trên 997 kỳ khoảng 0,6
@@ -115,15 +116,15 @@ Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn
 | Hằng số | 4,605170 | 0 | — | 4,5% | 9,8% | 18,8% | −31,2% |
 | ML production (cũ) | 4,604909 | +0,006% | +0,37 | 6,2% | 11,4% | 20,9% | −20,0% |
 | Tiên nghiệm Bayes | 4,606216 | −0,023% | −2,15 | 4,6% | 10,1% | 18,8% | −29,1% |
-| **Bayes + LGB + Platt (mới)** | 4,607017 | −0,040% | −0,98 | 5,5% | 9,7% | 19,8% | −31,9% |
+| **Bayes + LGB + Platt (mới)** | 4,606651 | −0,032% | −0,81 | 5,4% | 10,0% | 19,8% | −29,8% |
 | Bayes + LGB focal + isotonic | 4,649460 | −0,962% | −2,39 | 4,5% | 9,2% | 18,1% | −35,4% |
 
-Mô hình mới so với ML production: LOTO −0,000009 nats mỗi kỳ (z = −1,11), Đặc Biệt −0,0021 (z = −1,05).
-**Không thắng.** Ở LOTO nó còn kém hằng số một chút (z = −2,18): LightGBM bám vào nhiễu dù có dừng sớm.
+Mô hình mới so với ML production: LOTO −0,000016 nats mỗi kỳ (z = −1,83), Đặc Biệt −0,0017 (z = −0,89).
+**Không thắng.** Ở LOTO nó còn kém hằng số một chút (z = −2,92): LightGBM bám vào nhiễu dù có dừng sớm.
 
 **Top-5 Đặc Biệt — một "tín hiệu" sinh ra từ lỗi đặc trưng.** Trước khi sửa PMI, mô hình mới đạt
 Top-5 Đặc Biệt 70/997 (7,0%, p = 0,003 một phía). Con số ấy không lặp lại ở 1 000 kỳ trước đó (5,0%).
-Sau khi sửa (mục 2), nó biến mất ở cả hai khối: 55/997 (5,5%, p = 0,25) và 44/998 (4,4%, p = 0,82).
+Sau khi sửa (mục 2), nó biến mất ở cả hai khối: 54/997 (5,4%, p = 0,29) và 36/998 (3,6%, p = 0,99).
 
 Bản PMI cũ cho cặp số chưa có dữ liệu một giá trị dương lớn, nên mô hình có thứ để "bám". Đây chính là
 cách một con số đẹp xuất hiện khi đọc nhiều chỉ số sau khi chạy (30 chỉ số ở đây). Kiểm lặp lại:

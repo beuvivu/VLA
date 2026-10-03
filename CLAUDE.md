@@ -218,7 +218,7 @@ hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, n�
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
-trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,5% — đừng trích nó như tín hiệu.
+trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 
