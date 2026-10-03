@@ -57,8 +57,12 @@ class Evidence(TypedDict):
 
 
 class Section(Evidence):
-    match: str
+    """Ghi đè cho một khối: khớp bằng bộ chọn CSS ``match`` HOẶC bằng tiêu đề
+    khối ``heading`` (tiền tố của h2/h3), cho trang mà thẻ không mang id."""
+
     title: str
+    match: NotRequired[str]
+    heading: NotRequired[str]
 
 
 def _ngay(value: str) -> str:
@@ -89,6 +93,14 @@ def facts(data_dir: str) -> dict[str, str]:
     predicted = sorted((base / "predict").glob("predict_next_loto_all_*.csv"))
     if predicted:
         out["target"] = _ngay(predicted[-1].stem.rsplit("_", 1)[-1])
+    weights = base / "ensemble" / "weights_loto.json"
+    if weights.exists():
+        try:
+            spec = json.loads(weights.read_text(encoding="utf-8"))
+        except ValueError:
+            spec = {}
+        if spec.get("window_days") and spec.get("half_life_days"):
+            out.update(weight_window=str(spec["window_days"]), weight_half_life=str(spec["half_life_days"]))
     quality = base / "model_quality" / "report.json"
     if quality.exists():
         try:
@@ -161,6 +173,18 @@ def _ml(mode: str = "loto") -> Source:
     }
 
 
+def _trong_so(f: dict[str, str]) -> Source:
+    window = (
+        f"Học trên cửa sổ {f['weight_window']} ngày gần nhất, nửa chu kỳ phân rã {f['weight_half_life']} ngày; "
+        if "weight_window" in f else ""
+    )
+    return {
+        "title": "Trọng số tổ hợp và hiệu chỉnh đã lưu",
+        "snippet": window + "khối học trọng số và khối hiệu chỉnh tách theo thời gian, không chồng nhau.",
+        "url": "dashboard.html",
+    }
+
+
 _CAU: Source = {
     "title": "Bộ dò cầu vị trí",
     "snippet": (
@@ -213,6 +237,10 @@ def _sec(match: str, title: str, ev: Evidence) -> Section:
     return {"match": match, "title": title, **ev}  # type: ignore[typeddict-item]
 
 
+def _sec_heading(heading: str, title: str, ev: Evidence) -> Section:
+    return {"heading": heading, "title": title, **ev}  # type: ignore[typeddict-item]
+
+
 # --- Theo nhóm trang ------------------------------------------------------
 
 
@@ -240,9 +268,11 @@ def _cau(f: dict[str, str], *extra: str) -> Evidence:
     )
 
 
-def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "loto") -> Evidence:
+def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "both") -> Evidence:
+    """``mode="both"`` cho khối gộp LOTO lẫn Đặc Biệt: trích nguồn ML của cả hai."""
+    models = [_ml("loto"), _ml("de")] if mode == "both" else [_ml(mode)]
     return _ev(
-        [_du_bao(f), _ml(mode), _cham(f)],
+        [_du_bao(f), *models, _cham(f)],
         [
             "Mỗi thành phần cho một vector xác suất 100 số, chỉ dùng các kỳ trước kỳ đích.",
             "Trộn theo trọng số mặc định (hoặc vector đã học khi nó thắng mặc định ngoài mẫu), "
@@ -325,8 +355,18 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "soi-path-loto-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "soi-path-de-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
-        "dashboard.html": (_du_bao_ev(f, "Trọng số là phần đóng góp của từng thành phần vào tổ hợp."), []),
-        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất."), []),
+        "dashboard.html": (_du_bao_ev(f, "Số trong bảng xác suất và danh sách gợi ý là xác suất (hoặc thứ hạng) của số ấy cho kỳ kế tiếp."), [
+            _sec_heading("Trọng số", "Trọng số tổ hợp và cổng thẩm định", _ev([_trong_so(f), _cham(f)], [
+                "Mỗi thành phần đóng góp theo một trọng số; mặc định là vector cố định.",
+                "Vector học từ các ngày gần đây chỉ được dùng khi thắng vector MẶC ĐỊNH trên lát kiểm ngoài mẫu (ngày chưa dùng để học) với biên ≥ 0,20%.",
+                "Các số trong khối là trọng số, hoặc chỉ số của cổng: logloss/Brier từng vector, số ngày học/kiểm, biên thắng và khoảng tin cậy.",
+            ])),
+            _sec_heading("Hiệu chỉnh", "Hiệu chỉnh xác suất", _ev([_trong_so(f), _cham(f)], [
+                "Sau khi trộn, xác suất được hiệu chỉnh bằng tham số học trên một khối ngày RIÊNG, nằm sau khối dùng để học trọng số (hai khối không chồng nhau).",
+                "Các số trong khối là tham số hiệu chỉnh hoặc logloss/Brier trên khối hiệu chỉnh.",
+            ])),
+        ]),
+        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
         "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], ["Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.", "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt.", "Kỹ năng = 1 − điểm mô hình / điểm dự báo hằng số; 0 là ngang hằng số."]), []),
         "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], ["Đo tín hiệu mạnh nhất của từng họ (Bayes, Markov, cầu) trên lịch sử thật.", "Tin cậy = tỉ lệ lịch sử ngẫu nhiên có tín hiệu mạnh nhất còn yếu hơn — không phải hậu nghiệm từng con.", "Ba tầng: High khi cả ba > 85%, Medium khi hai trong ba ≥ 60%, còn lại Low/Noise."]), []),

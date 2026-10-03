@@ -267,15 +267,35 @@
     return ctx;
   }
 
-  function sectionEntry(el) {
-    for (var i = 0; i < registry.sections.length; i += 1) {
-      var entry = registry.sections[i];
-      try {
-        if (entry && entry.match && el.closest(entry.match)) { return entry; }
-      } catch (error) { /* bộ chọn hỏng thì bỏ qua mục ấy */ }
+  /* Chỗ một mục danh mục bám vào quanh con số: tổ tiên khớp bộ chọn, hoặc
+     tổ tiên mang tiêu đề bắt đầu bằng "heading". */
+  function entryAnchor(entry, el) {
+    try {
+      if (entry.match) { return el.closest(entry.match); }
+    } catch (error) { return null; }
+    if (!entry.heading) { return null; }
+    for (var anc = el.parentElement; anc && anc !== root && anc !== doc.body; anc = anc.parentElement) {
+      if (anc.namespaceURI !== SVG_NS && headingOf(anc).indexOf(entry.heading) === 0) { return anc; }
     }
     return null;
   }
+
+  /* Khối khớp GẦN con số nhất thắng: khối lồng trong khối khác (mô phỏng
+     nằm trong AI/ML) phải dùng được bằng chứng riêng của nó. */
+  function sectionEntry(el) {
+    var best = null;
+    var bestAnchor = null;
+    for (var i = 0; i < registry.sections.length; i += 1) {
+      var entry = registry.sections[i];
+      var anchor = entry ? entryAnchor(entry, el) : null;
+      if (anchor && root.contains(anchor) && (!bestAnchor || (bestAnchor !== anchor && bestAnchor.contains(anchor)))) {
+        best = entry;
+        bestAnchor = anchor;
+      }
+    }
+    return best;
+  }
+
 
   function whereStep(ctx, value) {
     var parts = [];

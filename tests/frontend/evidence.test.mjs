@@ -274,3 +274,26 @@ test('Giải tách để tô (779<span>61</span>) vẫn là một giá trị 779
   // Số liền nhau KHÔNG phải phần tử kết quả vẫn bị từ chối.
   assert.equal(dom.window.appEvidence.find($(dom, 'pair')), null);
 });
+
+test('Khối lồng nhau: khối gần con số nhất thắng; khớp được theo tiêu đề khối', t => {
+  const registry = JSON.stringify({ ...REGISTRY, sections: [
+    { match: '#outer', title: 'Ngoài', sources: [{ title: 'Nguồn ngoài', snippet: 'x' }], reasoningTrace: { steps: ['a'] } },
+    { match: '#inner', title: 'Trong', sources: [{ title: 'Nguồn trong', snippet: 'y' }], reasoningTrace: { steps: ['b'] } },
+    { heading: 'Hiệu chỉnh', title: 'Hiệu chỉnh xác suất', sources: [{ title: 'Nguồn hiệu chỉnh', snippet: 'z' }], reasoningTrace: { steps: ['c'] } },
+  ] });
+  const dom = start(t, { registry }), d = dom.window.document;
+  const outer = d.createElement('section'); outer.id = 'outer';
+  const a = d.createElement('strong'); a.textContent = '11'; outer.appendChild(a);
+  const inner = d.createElement('div'); inner.id = 'inner';
+  const b = d.createElement('strong'); b.textContent = '22'; inner.appendChild(b);
+  outer.appendChild(inner);
+  const card = d.createElement('section');
+  const h = d.createElement('h2'); h.textContent = 'Hiệu chỉnh (LOTO)';
+  const c = d.createElement('strong'); c.textContent = '0,98';
+  card.append(h, c);
+  $(dom, 'app-main').append(outer, card);
+  const ev = el => dom.window.appEvidence.evidenceFor(el);
+  assert.equal(ev(a).sources[0].title, 'Nguồn ngoài');
+  assert.equal(ev(b).sources[0].title, 'Nguồn trong');
+  assert.equal(ev(c).sources[0].title, 'Nguồn hiệu chỉnh');
+});

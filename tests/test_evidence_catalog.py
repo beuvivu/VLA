@@ -45,7 +45,8 @@ def test_every_published_page_carries_sources_and_steps(page: Path) -> None:
     assert data["page"]["sources"], page.name
     assert data["page"]["reasoningTrace"]["steps"], page.name
     for entry in data["sections"]:
-        assert entry["match"] and entry["sources"] and entry["reasoningTrace"]["steps"], entry
+        assert (entry.get("match") or entry.get("heading")) and entry["sources"], entry
+        assert entry["reasoningTrace"]["steps"], entry
     html = page.read_text(encoding="utf-8")
     assert html.count('<script src="assets/app-evidence.js" defer data-app-evidence></script>') == 1
 
@@ -171,6 +172,10 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
     """Khối khai trong danh mục phải có thật, nếu không con số rơi về bằng chứng của cả trang."""
     html = page.read_text(encoding="utf-8")
     for entry in _published_registry(page)["sections"]:
+        if "heading" in entry:
+            heads = [re.sub(r"<[^>]+>", "", h) for h in re.findall(r"<h[23][^>]*>(.*?)</h[23]>", html, re.S)]
+            assert any(h.strip().startswith(entry["heading"]) for h in heads), (page.name, entry["heading"])
+            continue
         ids = re.findall(r"#([\w-]+)", entry["match"])
         assert ids, entry["match"]
         assert any(f'id="{ident}"' in html for ident in ids), (page.name, entry["match"])
@@ -185,3 +190,24 @@ def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
     # Trang tải dự báo theo ngày quay lúc chạy: không được ghi ngày lúc dựng.
     snippets = " ".join(src["snippet"] for src in sections["#live-predictions"]["sources"])
     assert not re.search(r"cho kỳ \d\d-\d\d-\d{4}", snippets), snippets
+
+
+def test_mixed_forecast_blocks_cite_both_model_pages() -> None:
+    """Khối gộp LOTO lẫn Đặc Biệt trích mô hình ML của cả hai, trang riêng chỉ một."""
+    def ml_links(entry: dict) -> set[str]:
+        return {s["url"] for s in entry["sources"] if s["title"] == "Mô hình ML thành phần"}
+
+    both = {"ml_top10_loto.html", "ml_top10_de.html"}
+    home = {s.get("match"): s for s in registry("index.html")["sections"]}
+    assert ml_links(home["#ai-ml"]) == both
+    assert ml_links(registry("dashboard.html")["page"]) == both
+    assert ml_links(registry("ml_top10_loto.html")["page"]) == {"ml_top10_loto.html"}
+    assert ml_links(registry("ml_top10_de.html")["page"]) == {"ml_top10_de.html"}
+
+
+def test_dashboard_diagnostics_have_their_own_derivations() -> None:
+    sections = {s.get("heading"): s for s in registry("dashboard.html")["sections"]}
+    assert {"Trọng số", "Hiệu chỉnh"} <= set(sections)
+    steps = " ".join(sections["Trọng số"]["reasoningTrace"]["steps"])
+    assert "MẶC ĐỊNH" in steps and "ngoài mẫu" in steps
+    assert "vector xác suất 100 số" not in steps.lower()
