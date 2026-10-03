@@ -152,6 +152,14 @@ def _metrics(y: np.ndarray, p: np.ndarray) -> tuple[float, float]:
     )
 
 
+def model_trust(logloss_skill: float, brier_skill: float) -> float:
+    """Mức tin mô hình thô khi trộn với tỉ lệ nền: ``p = trust·thô + (1 − trust)·nền``.
+
+    Kỹ năng lấy trên khối thẩm định chưa chạm (kém hơn trong hai thước đo).
+    """
+    return float(np.clip(0.35 + 20.0 * max(0.0, min(logloss_skill, brier_skill)), 0.35, 1.0))
+
+
 def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
     params = FeatureParams()
     X, y = build_ml_table(mode=mode, params=params)
@@ -228,7 +236,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
 
     # Weak/noisy models stay in the ensemble but are shrunk toward the natural
     # prevalence rather than being allowed to emit overconfident probabilities.
-    model_trust = float(np.clip(0.35 + 20.0 * max(0.0, min(logloss_skill, brier_skill)), 0.35, 1.0))
+    trust = model_trust(logloss_skill, brier_skill)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / f"ml_{mode}.joblib"
@@ -257,7 +265,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
             "logloss_skill": logloss_skill,
             "brier_skill": brier_skill,
             "quality_pass": quality_pass,
-            "model_trust": model_trust,
+            "model_trust": trust,
             "trained_through_date": source_through_date,
         },
         model_path,
@@ -275,7 +283,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
                 "brier_skill": brier_skill,
                 "logloss_skill": logloss_skill,
                 "quality_pass": quality_pass,
-                "model_trust": model_trust,
+                "model_trust": trust,
                 "calib_start": calib_start,
                 "selection_start": select_start,
                 "val_start": val_start,
@@ -290,7 +298,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
     print(
         f"[OK] candidate={best_cfg['name']} val_brier={brier:.6f} "
         f"val_logloss={ll:.6f} baseline_logloss={baseline_ll:.6f} "
-        f"trust={model_trust:.3f}"
+        f"trust={trust:.3f}"
     )
 
 
