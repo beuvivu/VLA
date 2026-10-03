@@ -236,3 +236,17 @@ def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> Non
     first_valid = learn[-max(int(len(learn) * 0.2), 10)]
     assert len(seen) == 1
     assert seen[0].max() < first_valid
+
+
+def test_pmi_treats_missing_evidence_as_no_association() -> None:
+    """Cặp chưa từng gặp (và con chưa từng về) phải ra PMI ≈ 0, không phải log N."""
+    from vla.features.engineer import _pmi
+
+    left = np.array([0.0, 500.0, 500.0])
+    right = np.array([0.0, 500.0, 500.0])
+    joint = np.array([[0.0, 0.0, 0.0], [0.0, 500.0, 250.0], [0.0, 250.0, 100.0]])
+    pmi = _pmi(joint, left, right, total=1000.0)
+    assert abs(pmi[0, 0]) < 1e-12 and abs(pmi[0, 1]) < 1e-12
+    assert pmi[1, 2] == pytest.approx(0.0, abs=1e-12)  # 250 = 500·500/1000: độc lập
+    assert pmi[1, 1] > 0.6  # 500 so với kỳ vọng 250: gắn kết
+    assert pmi[2, 2] < -0.8  # 100 so với kỳ vọng 250: tránh nhau

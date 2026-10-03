@@ -213,11 +213,21 @@ def bridge_features(history: History, mode: Mode, min_streak: int) -> tuple[np.n
     return count, longest
 
 
-def _pmi(joint: np.ndarray, left: np.ndarray, right: np.ndarray, total: float, alpha: float = 1.0) -> np.ndarray:
-    """PMI làm trơn: log[(c_ij + α)·N / ((c_i + α)(c_j + α))]."""
-    return np.log((joint + alpha) * max(total, 1.0)) - np.log(
-        np.outer(left + alpha, right + alpha)
-    )
+#: Số đếm ảo cộng vào CẢ số quan sát lẫn số kỳ vọng của một cặp trước khi lấy log.
+PMI_PSEUDOCOUNT = 5.0
+
+
+def _pmi(joint: np.ndarray, left: np.ndarray, right: np.ndarray, total: float,
+         pseudo: float = PMI_PSEUDOCOUNT) -> np.ndarray:
+    """PMI co về 0: ``log[(c_ij + k) / (e_ij + k)]`` với ``e_ij = c_i·c_j / N``.
+
+    ``e_ij`` là số lần cặp cùng xuất hiện nếu hai con độc lập. Cặp chưa có bằng
+    chứng (``c_ij`` và ``e_ij`` đều ≈ 0) cho PMI ≈ 0, không phải "liên kết mạnh";
+    cặp có nhiều dữ liệu tiến về ``log(c_ij / e_ij)``. Dạng cũ
+    ``log[(c_ij+1)·N / ((c_i+1)(c_j+1))]`` cho hai con chưa từng về PMI = log N.
+    """
+    expected = np.outer(left, right) / max(float(total), 1.0)
+    return np.log((joint + pseudo) / (expected + pseudo))
 
 
 def cooccurrence_features(
