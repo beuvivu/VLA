@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from backfill_baseline_skill import brier_is_comparable
 from ensemble_components import probability_component
 from ensemble_utils import (
     bernoulli_brier,
@@ -16,6 +17,46 @@ from ensemble_utils import (
     skill_score,
 )
 from xsmb_domain import baseline_rate
+
+
+# Đơn vị của cột ``brier`` trong sổ, ghi ngay trên từng dòng. Ngày 05-09-2026
+# ``categorical_brier`` đổi từ TRUNG BÌNH sang TỔNG trên 100 lớp (định nghĩa
+# chuẩn), nên Brier Đặc Biệt trong sổ nhảy từ ~0,0099 lên ~0,99: đổi đơn vị,
+# không phải mô hình kém đi 100 lần. Giá trị cũ giữ nguyên — sổ là bằng chứng
+# ghi theo thời gian — còn nhãn cho người đọc tệp thô biết phải nhân 100.
+BRIER_UNIT = {"loto": "mean_100_bernoulli", "de": "sum_100_classes"}
+LEGACY_DE_BRIER_UNIT = "mean_100_classes"
+BRIER_UNIT_COLUMN = "brier_unit"
+
+
+def label_brier_units(frame: pd.DataFrame) -> pd.DataFrame:
+    """Điền ``brier_unit`` cho dòng chưa có nhãn; nhãn đã ghi không bị đè.
+
+    Dòng Đặc Biệt cũ được nhận ra bằng bất biến toán học
+    (:func:`backfill_baseline_skill.brier_is_comparable`), không bằng mốc ngày:
+    Brier theo quy ước tổng không bao giờ nhỏ hơn ``(1 − e^−logloss)²``.
+    Cột đứng ngay sau ``brier``.
+    """
+    out = frame.copy()
+    if BRIER_UNIT_COLUMN not in out.columns:
+        out[BRIER_UNIT_COLUMN] = pd.Series(pd.NA, index=out.index, dtype="object")
+    out[BRIER_UNIT_COLUMN] = out[BRIER_UNIT_COLUMN].astype("object")
+    missing = out[BRIER_UNIT_COLUMN].isna() | (out[BRIER_UNIT_COLUMN].astype(str).str.strip() == "")
+    for position in out.index[missing]:
+        mode = str(out.at[position, "mode"])
+        if mode not in BRIER_UNIT:
+            continue
+        logloss = pd.to_numeric(out.at[position, "logloss"], errors="coerce")
+        brier = pd.to_numeric(out.at[position, "brier"], errors="coerce")
+        if pd.isna(logloss) or pd.isna(brier):
+            continue
+        if brier_is_comparable(mode, float(logloss), float(brier)):
+            out.at[position, BRIER_UNIT_COLUMN] = BRIER_UNIT[mode]
+        else:
+            out.at[position, BRIER_UNIT_COLUMN] = LEGACY_DE_BRIER_UNIT
+    columns = [c for c in out.columns if c != BRIER_UNIT_COLUMN]
+    at = columns.index("brier") + 1 if "brier" in columns else len(columns)
+    return out[columns[:at] + [BRIER_UNIT_COLUMN] + columns[at:]]
 
 
 def _latest_fully_labeled_day(df: pd.DataFrame) -> str | None:
@@ -130,6 +171,7 @@ def evaluate_latest_emitted(
         "target_date": tdate,
         "logloss": float(ll),
         "brier": float(br),
+        BRIER_UNIT_COLUMN: BRIER_UNIT[mode],
         "baseline_logloss": float(base_ll),
         "baseline_brier": float(base_br),
         "logloss_skill": skill_score(float(ll), float(base_ll)),
@@ -180,6 +222,7 @@ def main() -> None:
         result = pd.concat([old, new_row], ignore_index=True)
     else:
         result = new_row
+    result = label_brier_units(result)
     result.sort_values(["mode", "target_date"], inplace=True)
     result.to_csv(out, index=False)
     print(
