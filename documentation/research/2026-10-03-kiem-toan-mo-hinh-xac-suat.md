@@ -70,7 +70,7 @@ không viết lại lịch sử.
 
 | Giả thuyết | Kết luận | Bằng chứng |
 |---|---|---|
-| Quá khớp trên nhiễu | Có, nhưng nhỏ và đã bị chặn | ML production (`src/ml_train.py`) dùng cây nông (độ sâu 2–3), dừng sớm, chọn cấu hình trên khối riêng, rồi co về tỉ lệ nền. Mức co có SÀN: `model_trust` không xuống dưới 0,35 (`ml_train.py:231`, áp ở `ml_predict.py:170`), nên ngay cả khi không có kỹ năng, 35% xác suất vẫn đến từ mô hình thô. Đo walk-forward: ML production LOTO kém hằng số z = −1,30 (không có ý nghĩa thống kê). Đặc Biệt: z = +0,37. Tầng xếp chồng từng làm nhọn xác suất (a = 4,89 ngày 25-09) và đã bị chặn bởi cổng phải thắng cả dự báo hằng số (`meta_predictor.quality_gate`). |
+| Quá khớp trên nhiễu | Có, nhưng nhỏ và đã bị chặn | ML production (`src/ml_train.py`) dùng cây nông (độ sâu 2–3), dừng sớm, chọn cấu hình trên khối riêng, rồi co về tỉ lệ nền. Mức co từng có SÀN: `model_trust` không xuống dưới 0,35, nên ngay cả khi không có kỹ năng, 35% xác suất vẫn đến từ mô hình thô (đã bỏ ngày 03-10-2026, mục 5.2). Đo walk-forward: ML production LOTO kém hằng số z = −1,30 (không có ý nghĩa thống kê). Đặc Biệt: z = +0,37. Tầng xếp chồng từng làm nhọn xác suất (a = 4,89 ngày 25-09) và đã bị chặn bởi cổng phải thắng cả dự báo hằng số (`meta_predictor.quality_gate`). |
 | Xác suất chưa hiệu chỉnh | Không | Tổ hợp production: độ lệch hiệu chỉnh 0,00030 ≈ độ phân giải 0,00028. Mười nhóm dự báo 23,2–24,5% đều nằm trong khoảng tin cậy của tần suất thật (`data/model_quality/report.json`). Mô hình mới: dự báo 23,64–23,96%, thực tế 23,0–24,4% (bảng hiệu chỉnh trong `benchmark.json`). |
 | Cửa sổ tĩnh, không suy giảm | Không phải nguyên nhân | ML production đã đánh trọng số giảm dần (bán rã 365 ngày khi học, 120 ngày khi hiệu chỉnh; `ml_train.py:191-192`) và có EWM 14/45 ngày. Tiên nghiệm Bayes mới tự CHỌN chu kỳ bán rã bằng Bayes thực nghiệm. Ở mọi lần học lại, nó chọn tiên nghiệm cực mạnh (α = 3 000, tức gần hằng số), đúng như dự đoán khi không có trôi (mục 2). |
 | Rò rỉ dữ liệu | Không tìm thấy | Hàng neo t chỉ đọc kỳ ≤ t (`ml_features.py:235`). Bỏ các bước qua kỳ nghỉ (`ml_features.py:357`). Bốn khối thời gian liên tiếp (`ml_train.py:43`). Rò rỉ thật duy nhất từng có (so trọng số học với chính vector đương nhiệm) đã sửa trong `learn_ensemble_weights.py`. |
@@ -200,10 +200,47 @@ Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ l
   cổng của kho: phải thắng CẢ hai trên lát ngoài mẫu.
 - Gói `src/vla/` giữ lại làm khung thách đấu. Mọi ý tưởng đặc trưng mới nên đi qua
   `benchmark_probability_models.py` trước khi chạm production.
-- Việc nên làm tiếp, chủ dự án quyết:
-  1. Đăng ký tiến cứu giả thuyết "Top-5 Đặc Biệt của bayes_lgb trúng > 5%", từ kỳ 04-10-2026, 365 kỳ, một phía α = 0,01.
-  2. Ghi chú đơn vị Brier ngay trong sổ `ensemble_history.csv`, để đọc tệp thô không còn thấy "tăng gấp 100".
-  3. Xem lại sàn 0,35 của `model_trust`: khi không có kỹ năng, sàn ấy vẫn trộn 35% mô hình thô vào dự báo.
+- Việc làm tiếp (chủ dự án duyệt ngày 03-10-2026):
+  1. ~~Đăng ký tiến cứu giả thuyết "Top-5 Đặc Biệt trúng > 5%"~~ — không còn cần: sau khi sửa PMI, Top-5
+     Đặc Biệt còn 5,4% (p = 0,29), không có gì để kiểm.
+  2. **Đã làm:** sổ `ensemble_history.csv` có cột `brier_unit` ngay sau `brier` (mục 5.1).
+  3. **Đã làm:** bỏ sàn 0,35 của `model_trust` (mục 5.2).
+
+### 5.1 Đơn vị Brier ghi trên từng dòng sổ
+
+`prob_eval_history.label_brier_units` gắn nhãn: LOTO `mean_100_bernoulli`; Đặc Biệt `mean_100_classes`
+(217 dòng, 28-12-2025 → 03-09-2026) hoặc `sum_100_classes` (từ 04-09-2026). Dòng cũ nhận ra bằng bất
+biến — Brier theo quy ước tổng không nhỏ hơn `(1 − e^−logloss)²` — không bằng ngày. Giá trị cũ giữ
+nguyên từng byte; nhãn đã ghi không bị đè. Dòng mới mang nhãn ngay khi ghi.
+
+### 5.2 Sàn `model_trust` của thành phần ML
+
+`ml_train.model_trust` trộn `p = trust·thô + (1 − trust)·nền`. Công thức cũ `clip(0,35 + 20·s, 0,35, 1)`
+(s = kỹ năng thẩm định, kém hơn trong logloss/Brier) giữ 35% mô hình thô cả khi s ≤ 0. Đo bằng
+`scripts/benchmark_model_trust.py` → `data/research/model_overhaul/trust_floor.json`: walk-forward 997
+kỳ, học lại mỗi 50 kỳ, mọi luật chấm trên CÙNG bộ xác suất thô. Kỹ năng thẩm định của 20 lần học nằm
+trong [−0,04%, +0,02%] cho LOTO — tức thực chất bằng 0.
+
+| Luật trust | LOTO so với hằng số | Đặc Biệt so với hằng số |
+|---|---:|---:|
+| Sàn 0,35 (cũ) | z = −2,40 | z = +0,10 |
+| **Không sàn: `clip(20·s, 0, 1)` (mới)** | z = +0,06 | z = +0,02 |
+| Sàn 0 chỉ khi s ≤ 0 | z = −1,65 | z = −0,74 |
+| Mô hình thô (trust = 1) | z = −3,53 | z = −0,37 |
+
+Không sàn so với sàn cũ: LOTO z = +2,44 (hai nửa giai đoạn +1,52 / +1,92), Đặc Biệt z = −0,10.
+Sàn cũ ở đây ra LOTO z = −2,40, khác −1,30 ở mục 3: lượt này có thêm kỳ 03-10 nên mọi ranh giới khối
+học lại lệch một kỳ. Cả hai đều cùng kết luận: sàn 0,35 không hơn hằng số.
+
+Luật quyết định chốt trước khi đo: đổi khi luật mới không kém ở cả hai chế độ và thắng z ≥ 2 ở ít
+nhất một. LOTO đạt. Đặc Biệt: ước lượng điểm kém 0,001% (z = −0,10) — đọc chặt từng chữ thì "không
+kém" không đạt; tôi đọc nó là "không kém có ý nghĩa thống kê" và ghi rõ lựa chọn ấy ở đây. Lý do giữ
+MỘT luật cho cả hai: với Đặc Biệt, luật mới cho đúng dự báo hằng số (trust trung bình 0,000), và luật
+cũ cũng không hơn hằng số (z = +0,10). Kho đã dùng cùng tinh thần cho cầu kèo (`_trust_from_skill`) và
+tầng xếp chồng (`meta_trust`): không có kỹ năng thì trust = 0.
+
+Hệ quả: khi trust = 0 mọi xác suất ML bằng tỉ lệ nền, nên `ml_predict.rank_predictions` xếp hoà theo
+xác suất thô để top-k trên trang ML vẫn có thứ tự xác định.
 
 ## 6. Kiểm thử
 

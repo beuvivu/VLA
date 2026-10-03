@@ -182,6 +182,13 @@ tính làm nhọn xác suất (a=4,89) và thua cả hằng số, nên một mô
 hằng số (+0,0086%) vẫn "thắng 46%" và được trộn vào production. Thắng một đối
 thủ hỏng không chứng minh được gì.
 
+## Độ tin thành phần ML — không có kỹ năng thì không tin
+
+`ml_train.model_trust` = `clip(20·s, 0, 1)`, s là kỹ năng thẩm định (kém hơn trong logloss/Brier).
+Sàn 0,35 cũ trộn 35% mô hình thô cả khi s ≤ 0; walk-forward 997 kỳ đo nó làm LOTO kém hằng số
+(z = −2,40), bỏ sàn hơn sàn z = +2,44 (`scripts/benchmark_model_trust.py`). Đừng khôi phục sàn. Khi
+trust = 0 mọi xác suất ML bằng nền; `ml_predict.rank_predictions` xếp hoà theo xác suất thô.
+
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
 
 Trang Chất lượng mô hình và bộ theo dõi `src/skill_monitor.py` chấm chính
@@ -200,6 +207,10 @@ ngưỡng.
 vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
 hơn hạn giữ artifact.
+
+Sổ `data/prob_eval/ensemble_history.csv` ghi đơn vị Brier trên từng dòng (`brier_unit`): Đặc Biệt
+trước 04-09-2026 là TRUNG BÌNH 100 lớp, sau đó là TỔNG — nhảy 100 lần là đổi đơn vị. Đừng sửa giá
+trị cũ; nhãn được gắn bằng bất biến trong `prob_eval_history.label_brier_units`.
 
 ## Bảng mô phỏng và sổ nhật ký của nó
 

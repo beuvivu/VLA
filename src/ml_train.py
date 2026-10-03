@@ -156,8 +156,15 @@ def model_trust(logloss_skill: float, brier_skill: float) -> float:
     """Mức tin mô hình thô khi trộn với tỉ lệ nền: ``p = trust·thô + (1 − trust)·nền``.
 
     Kỹ năng lấy trên khối thẩm định chưa chạm (kém hơn trong hai thước đo).
+    Không có kỹ năng thì trust = 0, tức thành phần ML phát đúng tỉ lệ nền —
+    cùng tinh thần với ``_trust_from_skill`` của cầu kèo và ``meta_trust``.
+
+    Trước 03-10-2026 công thức có SÀN 0,35: kỹ năng bằng 0 vẫn trộn 35% mô
+    hình thô. Walk-forward 997 kỳ (học lại mỗi 50 kỳ) đo sàn ấy làm hỏng LOTO:
+    so với hằng số z = −2,40, bỏ sàn z = +0,06; bỏ sàn hơn sàn z = +2,44, đều ở
+    hai nửa giai đoạn (+1,52 / +1,92). Đặc Biệt ngang (z = −0,10).
     """
-    return float(np.clip(0.35 + 20.0 * max(0.0, min(logloss_skill, brier_skill)), 0.35, 1.0))
+    return float(np.clip(20.0 * max(0.0, min(logloss_skill, brier_skill)), 0.0, 1.0))
 
 
 def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:

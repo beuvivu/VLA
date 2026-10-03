@@ -130,6 +130,15 @@ def _load_or_train_model(
     return pack
 
 
+def rank_predictions(df: pd.DataFrame) -> pd.DataFrame:
+    """Xếp theo ``prob`` giảm dần; hoà thì theo xác suất thô của mô hình.
+
+    Khi kỹ năng thẩm định bằng 0, ``model_trust`` = 0 và mọi ``prob`` bằng tỉ
+    lệ nền; không có tiêu chí phụ thì thứ hạng top-k là tuỳ ý.
+    """
+    return df.sort_values(["prob", "raw_model_prob"], ascending=False, kind="mergesort")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cutoff", default="18:35")
@@ -184,7 +193,8 @@ def main() -> None:
                 "model_trust": trust,
                 "quality_pass": bool(pack.get("quality_pass", True)),
             }
-        ).sort_values("prob", ascending=False)
+        )
+        df = rank_predictions(df)
 
         top = df.head(args.top).reset_index(drop=True)
         top["prob_percent"] = (top["prob"] * 100.0).round(3)
