@@ -365,6 +365,14 @@ def _vi(x: float, digits: int = 3) -> str:
     return f"{x:.{digits}f}".replace(".", ",")
 
 
+def _legacy_trust(row: dict) -> bool:
+    """Dòng có model_trust tính theo luật cũ (trước ``TRUST_POLICY_VERSION`` hiện hành)."""
+    from ml_train import TRUST_POLICY_VERSION
+
+    version = pd.to_numeric(pd.Series([row.get("trust_policy_version")]), errors="coerce").iloc[0]
+    return pd.isna(version) or int(version) != TRUST_POLICY_VERSION
+
+
 def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -> list[tuple[str, dict]]:
     """Bằng chứng tính toán cho từng hàng của bảng top ML, theo thứ tự hàng.
 
@@ -405,6 +413,13 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
                 else "Lần học này không có kỹ năng dương trên khối thẩm định chưa chạm (quality_pass = False)."
             )
         steps.append(f"Độ tin cậy hiển thị bên dưới chính là model_trust = {_vi(trust)}.")
+        if _legacy_trust(row):
+            steps.append(
+                "Tệp dự báo này được tạo theo luật trust CŨ (sàn 0,35 — vẫn trộn 35% mô hình thô "
+                "khi không có kỹ năng), đã bỏ ngày 03-10-2026. Theo luật hiện hành, độ tin bằng "
+                "20 × kỹ năng thẩm định và bằng 0 khi không có kỹ năng; lượt học lại kế tiếp "
+                "sẽ thay tệp này."
+            )
         steps.append(_GHI_CHU_DU_BAO)
         out.append((
             f"ml-{mode}-{n:02d}",

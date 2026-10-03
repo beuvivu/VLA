@@ -123,7 +123,7 @@ def test_ml_evidence_without_skill_says_the_probability_is_the_baseline() -> Non
     assert any("model_trust = 0" in step and "23,830%" in step for step in steps)
     de = ml_row_evidence(_ml_frame(0.35).assign(prob=[0.0108, 0.0101]), "de")[0][1]["reasoningTrace"]["steps"]
     assert any("chuẩn hoá" in step for step in de)
-    assert not any("× " in step for step in de), "Đặc Biệt chuẩn hoá sau khi trộn: không được bịa nền"
+    assert not any(re.search(r"× \d+,\d+%", step) for step in de), "Đặc Biệt chuẩn hoá sau khi trộn: không được bịa nền"
 
 
 def test_row_tags_go_to_body_rows_in_order() -> None:
@@ -148,3 +148,16 @@ def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
         assert {v["sources"][0]["url"] for v in values.values()} == {page}
         ml = [src for src in _published_registry(ROOT / "docs" / page)["page"]["sources"] if src["title"] == "Mô hình ML thành phần"]
         assert [src["url"] for src in ml] == [page]
+
+
+def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
+    """Tệp tạo trước luật mới không được trình bày như luật hiện hành."""
+    from ml_train import TRUST_POLICY_VERSION
+
+    legacy = " ".join(ml_row_evidence(_ml_frame(0.35), "loto")[0][1]["reasoningTrace"]["steps"])
+    assert "luật trust CŨ" in legacy
+    current = _ml_frame(0.0).assign(prob=[0.2383, 0.2383], trust_policy_version=TRUST_POLICY_VERSION)
+    steps = " ".join(ml_row_evidence(current, "loto")[0][1]["reasoningTrace"]["steps"])
+    assert "luật trust CŨ" not in steps
+    stale = current.assign(trust_policy_version=TRUST_POLICY_VERSION - 1)
+    assert "luật trust CŨ" in " ".join(ml_row_evidence(stale, "loto")[0][1]["reasoningTrace"]["steps"])
