@@ -295,15 +295,19 @@ class PriorOnlyModel(BayesianLGBModel):
 
 
 class ConstantModel:
-    """Dự báo hằng số: tỉ lệ nền tích luỹ (LOTO) hoặc 1/100 (Đặc Biệt)."""
+    """Dự báo hằng số — CHÍNH mốc kỹ năng 0 của ``evaluator.cumulative_reference``.
+
+    LOTO: hàng t dự báo tỉ lệ về tích luỹ qua kỳ 0..t (mọi kỳ trước kỳ đích t+1);
+    Đặc Biệt: 1/100. Không học gì, nên ``fit`` không làm gì.
+    """
 
     def __init__(self, mode: Mode):
         self.mode = mode
 
     def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "ConstantModel":
-        self.rate = float(hit[np.asarray(rows) + 1].mean()) if len(rows) else 0.01
         return self
 
     def predict(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> np.ndarray:
-        value = 0.01 if self.mode == "de" else self.rate
-        return np.full((len(rows), 100), value)
+        from vla.backtest.evaluator import cumulative_reference
+
+        return cumulative_reference(self.mode, hit, np.asarray(rows, dtype=np.int64) + 1)

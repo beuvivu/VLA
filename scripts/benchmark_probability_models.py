@@ -80,9 +80,7 @@ def run_mode(
     # hình đều được chấm trên CÙNG tập kỳ còn lại.
     dates = pd.to_datetime(list(history.dates))
     consecutive = np.asarray((dates[targets] - dates[targets - 1]).days == 1)
-    reference = np.full((len(targets), 100), 0.01)
-    if mode == "loto":
-        reference = np.repeat(np.cumsum(hit.mean(axis=1))[targets - 1, None] / targets[:, None], 100, axis=1)
+    reference = evaluator.cumulative_reference(mode, hit, targets)
 
     results, daily = {}, []
     for name, factory in factories(mode, history, include_production).items():
@@ -153,7 +151,7 @@ def power_check(refit_every: int) -> dict:
         hit = hist.hits(mode)
         T = len(hist)
         targets = np.arange(T - 600, T)
-        ref = np.full((len(targets), 100), 0.01) if mode == "de" else np.full((len(targets), 100), hit[: T - 600].mean())
+        ref = evaluator.cumulative_reference(mode, hit, targets)
         res = walk_forward.run(lambda m=mode: BayesianLGBModel(m), feats.X, hit, T - 600, T - 1, refit_every=refit_every * 3)
         summary = evaluator.evaluate(mode, res.probs, hist.counts[targets], hist.special[targets], ref)
         out[mode] = {"logloss_skill": summary["logloss_skill"], "vs_reference": summary["vs_reference"],
@@ -180,7 +178,7 @@ def production_refit_check(history: History, last: int, refit_every: int) -> dic
         for every in (1, refit_every):
             res = walk_forward.run(lambda p=pack: p, feats.X, hit, T - last, T - 1, refit_every=every)
             losses[every] = evaluator.daily_logloss(mode, res.probs, hits)
-        const = evaluator.daily_logloss(mode, np.full((last, 100), 0.01 if mode == "de" else hit[: T - last].mean()), hits)
+        const = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit, targets), hits)
         out[mode] = {
             "days": last,
             "logloss_refit_1": float(losses[1].mean()),

@@ -211,10 +211,13 @@ def test_a_calibrated_base_rate_never_places_a_positive_ev_bet() -> None:
 
 
 def test_constant_model_is_the_skill_zero_reference() -> None:
+    """Mô hình hằng số trùng từng giá trị với mốc kỹ năng 0 của bộ chấm."""
     hit = np.zeros((10, 100), dtype=bool)
-    hit[:, :20] = True
-    model = ConstantModel("loto").fit(None, hit, np.arange(8))
-    assert np.allclose(model.predict(None, hit, np.arange(3)), 0.2)
+    hit[:5, :20] = True
+    hit[5:, :40] = True
+    rows = np.arange(2, 9)
+    model = ConstantModel("loto").fit(None, hit, np.arange(2))
+    assert np.allclose(model.predict(None, hit, rows), evaluator.cumulative_reference("loto", hit, rows + 1))
 
 
 def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> None:
@@ -261,3 +264,14 @@ def test_target_weekday_follows_the_next_recorded_draw_across_a_break() -> None:
     angle = np.arctan2(sin, cos) % (2 * np.pi)
     weekday = np.rint(angle * 7 / (2 * np.pi)).astype(int) % 7
     assert weekday.tolist() == [5, 6, 0]  # thứ Bảy, Chủ Nhật, rồi giả định thứ Hai
+
+
+def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
+    """Mốc LOTO của kỳ đích k là tỉ lệ về qua kỳ 0..k-1, không đông cứng ở đầu khối."""
+    hit = np.zeros((6, 100), dtype=bool)
+    hit[:3, :10] = True  # kỳ 0..2: 10% con về
+    hit[3:, :30] = True  # kỳ 3..5: 30% con về
+    ref = evaluator.cumulative_reference("loto", hit, np.array([3, 5]))
+    assert ref[0] == pytest.approx(np.full(100, 0.10))
+    assert ref[1] == pytest.approx(np.full(100, (0.1 * 3 + 0.3 * 2) / 5))
+    assert np.allclose(evaluator.cumulative_reference("de", hit, np.array([4])), 0.01)

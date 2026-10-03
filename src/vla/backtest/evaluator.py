@@ -31,6 +31,19 @@ class Payout:
     de_win: float = 70.0
 
 
+def cumulative_reference(mode: Mode, hit: np.ndarray, targets: np.ndarray) -> np.ndarray:
+    """Dự báo hằng số làm mốc kỹ năng 0, cho từng kỳ đích.
+
+    Đặc Biệt: 1/100. LOTO: tỉ lệ về tích luỹ qua MỌI kỳ trước kỳ đích ấy
+    (kỳ 0..target-1) — cập nhật từng kỳ, không đông cứng ở đầu khối.
+    """
+    targets = np.asarray(targets, dtype=np.int64)
+    if mode == "de":
+        return np.full((len(targets), 100), 0.01)
+    rate = np.cumsum(hit.mean(axis=1))[targets - 1] / targets
+    return np.repeat(rate[:, None], 100, axis=1)
+
+
 def daily_logloss(mode: Mode, p: np.ndarray, hits: np.ndarray) -> np.ndarray:
     if mode == "de":
         q = np.clip(p / p.sum(axis=1, keepdims=True), EPS, 1.0)
