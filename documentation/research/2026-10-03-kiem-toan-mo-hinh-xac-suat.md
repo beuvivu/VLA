@@ -17,7 +17,7 @@ Tái lập: `PYTHONPATH=src python3 scripts/benchmark_probability_models.py --la
 4. **Mô hình mới ba tầng (Bayes + LightGBM + hiệu chỉnh) hoà dự báo hằng số trên 1 000 kỳ** và không
    thắng mô hình ML đang chạy. Theo luật của kho, nó KHÔNG được đưa vào production.
 5. **Công cụ đo không mù.** Trên lịch sử tổng hợp có cài tín hiệu, chính mô hình ấy bắt được tín hiệu
-   Đặc Biệt (z = 6,6, kỹ năng +6,2%) và tín hiệu LOTO một cặp số (z = 2,9). Hoà trên dữ liệu thật vì
+   Đặc Biệt (z = 6,6, kỹ năng +6,2%) và tín hiệu LOTO một cặp số (z = 3,2). Hoà trên dữ liệu thật vì
    dữ liệu không có tín hiệu để học, không phải vì phương pháp yếu.
 
 ## 1. Chẩn đoán nguyên nhân
@@ -85,6 +85,9 @@ liệu tổng hợp: giá trị 2 000 chỉ thấy tín hiệu LOTO cài sẵn �
 ## 3. So sánh 1 000 kỳ (26-12-2023 → 02-10-2026, walk-forward)
 
 997 kỳ được chấm; 3 kỳ ngay sau Tết bị loại khỏi MỌI mô hình vì bảng production không có hàng cho chúng.
+Mỗi mô hình học lại mỗi 50 kỳ, chỉ trên dữ liệu trước khối kỳ được chấm. Riêng việc ML production thật
+học lại mỗi kỳ được đo ở mục 3.1.
+
 Mốc kỹ năng 0: tỉ lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt). z là hiệu logloss từng kỳ so với mốc.
 
 **LOTO**
@@ -94,8 +97,8 @@ Mốc kỹ năng 0: tỉ lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt)
 | Hằng số | 0,548757 | 0 | — | 22,8% | 23,1% | 23,6% | −9,1% |
 | ML production (cũ) | 0,548763 | −0,001% | −1,30 | 23,1% | 23,1% | 23,7% | −10,0% |
 | Tiên nghiệm Bayes | 0,548758 | −0,000% | −0,22 | 24,3% | 24,4% | 24,1% | −3,3% |
-| **Bayes + LGB + Platt (mới)** | 0,548757 | +0,000% | +0,01 | 24,2% | 24,3% | 24,3% | −2,1% |
-| Bayes + LGB focal + isotonic | 0,548847 | −0,016% | −1,73 | 22,9% | 23,8% | 23,9% | −6,1% |
+| **Bayes + LGB + Platt (mới)** | 0,548755 | +0,000% | +0,29 | 24,5% | 24,3% | 24,4% | −2,3% |
+| Bayes + LGB focal + isotonic | 0,548866 | −0,020% | −2,06 | 23,1% | 23,8% | 23,9% | −6,0% |
 
 Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn của Top-10 trên 997 kỳ khoảng 0,6
 điểm phần trăm, nên mọi chênh lệch trong bảng nằm trong nhiễu. Hằng số "chọn" 00–09 vì mọi xác suất bằng nhau.
@@ -107,27 +110,41 @@ Tỉ lệ một con LOTO về ở kỳ ngẫu nhiên là 23,6%. Sai số chuẩn
 | Hằng số | 4,605170 | 0 | — | 4,5% | 9,8% | 18,8% | −31,2% |
 | ML production (cũ) | 4,604909 | +0,006% | +0,37 | 6,2% | 11,4% | 20,9% | −20,0% |
 | Tiên nghiệm Bayes | 4,606216 | −0,023% | −2,15 | 4,6% | 10,1% | 18,8% | −29,1% |
-| **Bayes + LGB + Platt (mới)** | 4,606990 | −0,040% | −0,99 | **7,2%** | 11,6% | 19,8% | −18,6% |
+| **Bayes + LGB + Platt (mới)** | 4,606609 | −0,031% | −0,73 | **7,0%** | 11,9% | 19,8% | −16,4% |
 | Bayes + LGB focal + isotonic | 4,647522 | −0,920% | −2,28 | 4,4% | 9,1% | 18,5% | −36,1% |
 
-Mô hình mới so với ML production: Đặc Biệt chênh −0,0021 nats mỗi kỳ (z = −1,05); LOTO chênh
-+0,000006 (z = +0,87). **Không thắng.**
+Mô hình mới so với ML production: LOTO +0,000008 nats mỗi kỳ (z = +1,04), Đặc Biệt −0,0017 (z = −0,80).
+**Không thắng.**
 
-**Top-5 Đặc Biệt 7,2% có phải tín hiệu?** Không đủ căn cứ.
-- Trên 1 000 kỳ này: 72/1 000 kỳ trúng so với kỳ vọng 50 (p = 0,0015 một phía), đều ở cả hai nửa (7,4% và 7,0%).
-- Đó là MỘT trong 30 chỉ số đọc sau khi chạy (5 mô hình × 3 mức K × 2 kiểu). Sau hiệu chỉnh Bonferroni, p ≈ 0,05.
-- Chạy lại y hệt trên 1 000 kỳ TRƯỚC đó: 55/1 000 (p = 0,25), tức không lặp lại.
+**Top-5 Đặc Biệt 7,0% có phải tín hiệu?** Không đủ căn cứ.
+- Trên 1 000 kỳ này: 71/1 000 kỳ trúng so với kỳ vọng 50 (p = 0,002 một phía), đều ở cả hai nửa (7,2% và 7,0%).
+- Đó là MỘT trong 30 chỉ số đọc sau khi chạy (5 mô hình × 3 mức K × 2 kiểu). Sau hiệu chỉnh Bonferroni, p ≈ 0,07.
+- Chạy lại y hệt trên 1 000 kỳ TRƯỚC đó: 50/1 000 (5,0%, p = 0,52), tức không lặp lại.
 - Logloss, chỉ số chấm chính đã chọn từ trước, kém hằng số.
 
 Kết luận: chưa đủ căn cứ. Muốn kiểm thì phải đăng ký tiến cứu như `hot_tail_test`, với ngày bắt đầu mới.
 
 **ROI.** Không chiến lược nào hoàn vốn. Theo luật trả thưởng, đánh ngẫu nhiên hoàn khoảng 0,94 (lô)
-và 0,70 (Đặc Biệt). Chiến lược "chỉ đánh khi kỳ vọng dương theo xác suất mô hình" gần như không đặt
-cược nào với mô hình đã hiệu chỉnh: 0 lần với LOTO, 4 lần với Đặc Biệt. Các mô hình đặt nhiều cược đều
-lỗ: bản focal đặt 3 604 cược LOTO (ROI −2,2%) và 1 032 cược Đặc Biệt (ROI −80%). Riêng ML production
-đặt 31 cược Đặc Biệt và lời +126%, nhưng đó chỉ là 1 lần trúng nên không có ý nghĩa thống kê.
+và 0,70 (Đặc Biệt). Chiến lược "chỉ đánh khi kỳ vọng dương theo xác suất mô hình":
+- Mô hình mới: 0 cược LOTO; 21 cược Đặc Biệt, trượt cả 21.
+- Bản focal (hiệu chỉnh kém): 3 632 cược LOTO (ROI −1,9%) và 1 032 cược Đặc Biệt (ROI −80%).
+- ML production: 31 cược Đặc Biệt, lời +126%. Đó chỉ là 1 lần trúng nên không có ý nghĩa thống kê.
 
-### Tổ hợp production đã ghi sổ (241 kỳ trùng)
+### 3.1 ML production học lại mỗi kỳ hay mỗi 50 kỳ
+
+Production thật học lại mỗi kỳ (`ml_predict` coi mô hình cũ là hết hạn). Học lại mỗi kỳ cho cả 1 000 kỳ
+tốn khoảng 4 giờ, nên phép đo này chạy trên 200 kỳ cuối, cùng mã, chỉ khác nhịp học lại:
+
+| | Học lại mỗi kỳ | Mỗi 50 kỳ | Hiệu (z) | Mỗi kỳ so với hằng số (z) |
+|---|---:|---:|---:|---:|
+| LOTO | 0,547181 | 0,547191 | +0,73 | +1,56 |
+| Đặc Biệt | 4,603863 | 4,604559 | +0,32 | +0,69 |
+
+Học lại mỗi kỳ tốt hơn một chút nhưng không có ý nghĩa thống kê, và vẫn không hơn hằng số. Vì vậy
+bảng 1 000 kỳ ở trên là xấp xỉ đủ dùng cho đối chứng production. Chạy đúng nhịp production cho cả
+1 000 kỳ: `--production-refit-every 1`.
+
+### 3.2 Tổ hợp production đã ghi sổ (241 kỳ trùng)
 
 Trên cả 241 kỳ, tổ hợp production kém hằng số (LOTO z = −4,65) vì gồm hai tháng lỗi thang ở mục 1.1.
 Từ 02-2026 (219 kỳ), nó ngang hằng số: LOTO z = −1,21, Đặc Biệt z = −1,72. Trên 32 kỳ chấm đúng tệp đã
@@ -137,8 +154,8 @@ công bố cũng vậy: z = −0,20 và −0,19.
 
 | Tín hiệu cài | Kỹ năng mô hình mới | z | Top-5 / ngẫu nhiên |
 |---|---:|---:|---:|
-| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +6,25% | +6,6 | 18,7% / 5% |
-| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,075% | +2,9 | 25,5% / 23,8% |
+| Đặc Biệt kỳ sau = kỳ trước + 1, xác suất 15% | +6,25% | +6,6 | 19,2% / 5% |
+| LOTO: 37 về thì kỳ sau 73 ở giải bảy, xác suất 50% | +0,083% | +3,2 | 25,7% / 23,8% |
 
 Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ liệu thật thì hoà.
 

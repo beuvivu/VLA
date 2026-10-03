@@ -217,7 +217,7 @@ walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 0
 dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
-bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt 7,2% trên 1 000 kỳ KHÔNG
+bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt 7,0% trên 1 000 kỳ KHÔNG
 lặp lại ở 1 000 kỳ trước đó — đừng trích nó như tín hiệu.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
