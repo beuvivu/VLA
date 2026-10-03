@@ -1,14 +1,14 @@
 {
-  "generated_at_utc": "2026-10-02T16:26:22Z",
+  "generated_at_utc": "2026-10-03T13:26:29Z",
   "window_days": 365,
-  "start_date": "2025-10-03",
-  "end_date": "2026-10-02",
+  "start_date": "2025-10-04",
+  "end_date": "2026-10-03",
   "draw_days": 361,
-  "de_uniform_chi2": 103.54293628808864,
-  "de_uniform_p_value": 0.35745692315805017,
-  "de_entropy_normalized": 0.965337176725767,
-  "all_prizes_uniform_chi2": 93.43295372935265,
-  "all_prizes_uniform_p_value": 0.6389582218905882,
-  "de_lag1_numeric_corr": 0.009741549633824923,
+  "de_uniform_chi2": 104.65096952908587,
+  "de_uniform_p_value": 0.3294688405534099,
+  "de_entropy_normalized": 0.9648180407010788,
+  "all_prizes_uniform_chi2": 94.23319995896175,
+  "all_prizes_uniform_p_value": 0.6166764587922798,
+  "de_lag1_numeric_corr": 0.004313858604341049,
   "interpretation": "Diagnostics test historical deviations only; statistical significance is not evidence of future predictability."
 }

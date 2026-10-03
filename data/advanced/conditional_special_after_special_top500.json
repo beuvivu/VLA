@@ -1988,48 +1988,6 @@
     "conditional_rate":0.0487804878
   },
   {
-    "prev_special_2d":"83",
-    "next_special_2d":"21",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
-    "prev_special_2d":"83",
-    "next_special_2d":"57",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
-    "prev_special_2d":"83",
-    "next_special_2d":"58",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
-    "prev_special_2d":"83",
-    "next_special_2d":"63",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
-    "prev_special_2d":"83",
-    "next_special_2d":"78",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
-    "prev_special_2d":"83",
-    "next_special_2d":"91",
-    "count":2,
-    "base_count":41,
-    "conditional_rate":0.0487804878
-  },
-  {
     "prev_special_2d":"87",
     "next_special_2d":"27",
     "count":2,
@@ -2403,6 +2361,55 @@
   {
     "prev_special_2d":"60",
     "next_special_2d":"81",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"21",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"57",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"58",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"61",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"63",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"78",
+    "count":2,
+    "base_count":42,
+    "conditional_rate":0.0476190476
+  },
+  {
+    "prev_special_2d":"83",
+    "next_special_2d":"91",
     "count":2,
     "base_count":42,
     "conditional_rate":0.0476190476
@@ -3488,13 +3495,6 @@
   {
     "prev_special_2d":"54",
     "next_special_2d":"09",
-    "count":2,
-    "base_count":47,
-    "conditional_rate":0.0425531915
-  },
-  {
-    "prev_special_2d":"54",
-    "next_special_2d":"16",
     "count":2,
     "base_count":47,
     "conditional_rate":0.0425531915
