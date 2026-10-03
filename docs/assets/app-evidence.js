@@ -36,6 +36,7 @@
      "565 kỳ", "3 nháy"). Ngày (03-10-2026) và giờ không khớp. */
   var NUM = /^[+\-\u2212\u00b1]?\s?(?:\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s?(?:%|\u2030|\u00d7|x|k\u1ef3|l\u1ea7n|ng\u00e0y|nh\u00e1y|c\u1ea7u|con|s\u1ed1|tu\u1ea7n|th\u00e1ng|n\u0103m)?$/;
   var MAX_LEN = 24;
+  var KNOWN_VALUE = ".tr-number, .tr-mini, [data-evidence-value]";
   var EXCLUDE = [
     ".app-rail", ".app-panel", ".app-header", ".app-global-search", ".app-evidence-tip",
     ".app-evidence-drawer", "input", "textarea", "select", "option", "[contenteditable]",
@@ -107,6 +108,9 @@
     if (!el || !root.contains(el) || el.closest(EXCLUDE)) { return null; }
     var explicit = el.closest("[data-evidence]");
     if (explicit && root.contains(explicit)) { return explicit; }
+    /* Phần tử kết quả đã biết là MỘT giá trị dù bị tách để tô (779<span>61</span>). */
+    var known = el.closest(KNOWN_VALUE);
+    if (known && root.contains(known) && isNumber(norm(known.textContent))) { return known; }
     if (el.namespaceURI === SVG_NS) {
       var label = svgLabel(el);
       if (label && /\d/.test(label)) { return el; }

@@ -47,6 +47,7 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
     <p class="note">Gan dài nhất: <b id="unit">565 kỳ</b></p>
   </section>
   <div id="loose"><span id="alone">99</span></div>
+  <div class="tr-board"><span class="tr-number" tabindex="0" id="special">779<span id="tail" class="tr-special-tail">61</span></span></div>
   <section id="ma-tran-2">
     <div class="scroller" tabindex="0"><span id="phoi">323</span></div>
   </section>
@@ -261,4 +262,15 @@ test('Con số đứng riêng thành vùng bàn phím của chính nó mà nhấ
   click(dom, alone);
   assert.equal(drawer(dom).open, true);
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '99');
+});
+
+test('Giải tách để tô (779<span>61</span>) vẫn là một giá trị 77961, không phải 61', t => {
+  const dom = start(t), special = $(dom, 'special');
+  assert.equal(dom.window.appEvidence.find($(dom, 'tail')), special);
+  assert.equal(dom.window.appEvidence.find(special), special);
+  click(dom, $(dom, 'tail'), { altKey: true });
+  assert.equal(drawer(dom).open, true);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '77961');
+  // Số liền nhau KHÔNG phải phần tử kết quả vẫn bị từ chối.
+  assert.equal(dom.window.appEvidence.find($(dom, 'pair')), null);
 });
