@@ -161,3 +161,21 @@ def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
     assert "luật trust CŨ" not in steps
     stale = current.assign(trust_policy_version=TRUST_POLICY_VERSION - 1)
     assert "luật trust CŨ" in " ".join(ml_row_evidence(stale, "loto")[0][1]["reasoningTrace"]["steps"])
+
+
+@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path) -> None:
+    """Khối khai trong danh mục phải có thật, nếu không con số rơi về bằng chứng của cả trang."""
+    html = page.read_text(encoding="utf-8")
+    for entry in _published_registry(page)["sections"]:
+        ids = re.findall(r"#([\w-]+)", entry["match"])
+        assert ids, entry["match"]
+        assert any(f'id="{ident}"' in html for ident in ids), (page.name, entry["match"])
+
+
+def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
+    sections = {s["match"]: s for s in registry("live.html")["sections"]}
+    titles = [src["title"] for src in sections["#live-predictions"]["sources"]]
+    assert "Dự báo đã công bố trước kỳ quay" in titles
+    assert "Bảng kết quả đang quay" not in titles
+    assert "Bảng kết quả đang quay" in [src["title"] for src in registry("live.html")["page"]["sources"]]

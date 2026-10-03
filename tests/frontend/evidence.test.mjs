@@ -34,7 +34,8 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
   <section id="ai-ml"><h2>Bảng xác suất</h2>
     <table><thead><tr><th>#</th><th>Số</th><th>Xác suất (%)</th></tr></thead>
       <tbody><tr data-evidence-row="ml-loto-63"><td>1</td><td id="num">63</td><td id="prob">23,943%</td></tr>
-        <tr><td>2</td><td>95</td><td id="prob2">23,936%</td></tr></tbody></table>
+        <tr><td>2</td><td>95</td><td id="prob2">23,936%</td></tr>
+        <tr><td>3</td><td id="sci">-7.15393e-05</td><td id="sci2">3.39239E+05</td></tr></tbody></table>
     <script type="application/json" data-app-evidence-values>${JSON.stringify(ROW)}</script>
   </section>
   <section id="ma-tran"><h2>Ma trận</h2>
@@ -94,6 +95,9 @@ test('Không nhận hàng, khối hay hai số dính nhau làm "con số"; nhậ
   assert.equal(find($(dom, 'pair')), null);
   assert.equal(find($(dom, 'pair-a')), $(dom, 'pair-a'));
   assert.equal(find($(dom, 'unit')), $(dom, 'unit'));
+  // Số dạng khoa học (chỉ số cổng mô hình trên trang bảng điều khiển).
+  assert.equal(find($(dom, 'sci')), $(dom, 'sci'));
+  assert.equal(find($(dom, 'sci2')), $(dom, 'sci2'));
 });
 
 test('Khung cuộn có tabindex không biến con số bên trong thành "đã có chức năng"', t => {
@@ -213,6 +217,8 @@ test('Bàn phím: mũi tên chọn số theo hàng/cột, Enter mở đúng số
   key(dom, table, 'Home');
   assert.equal(activeText(dom), '1');
   key(dom, table, 'End');
+  assert.equal(activeText(dom), '3.39239E+05');
+  key(dom, table, 'ArrowUp');
   assert.equal(activeText(dom), '23,936%');
   key(dom, table, 'Enter');
   assert.equal(drawer(dom).open, true);

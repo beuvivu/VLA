@@ -32,9 +32,9 @@
 
   var SVG_NS = "http://www.w3.org/2000/svg";
   /* Một con số đứng một mình: dấu, phần nghìn bằng khoảng trắng/chấm/phẩy,
-     phần thập phân, đơn vị (%, ‰, hệ số 0,45×, hoặc một đơn vị đếm như
+     phần thập phân, số mũ (−7.15e-05), đơn vị (%, ‰, hệ số 0,45×, hoặc một đơn vị đếm như
      "565 kỳ", "3 nháy"). Ngày (03-10-2026) và giờ không khớp. */
-  var NUM = /^[+\-\u2212\u00b1]?\s?(?:\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+)(?:[.,]\d+)?\s?(?:%|\u2030|\u00d7|x|k\u1ef3|l\u1ea7n|ng\u00e0y|nh\u00e1y|c\u1ea7u|con|s\u1ed1|tu\u1ea7n|th\u00e1ng|n\u0103m)?$/;
+  var NUM = /^[+\-\u2212\u00b1]?\s?(?:\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s?(?:%|\u2030|\u00d7|x|k\u1ef3|l\u1ea7n|ng\u00e0y|nh\u00e1y|c\u1ea7u|con|s\u1ed1|tu\u1ea7n|th\u00e1ng|n\u0103m)?$/;
   var MAX_LEN = 24;
   var EXCLUDE = [
     ".app-rail", ".app-panel", ".app-header", ".app-global-search", ".app-evidence-tip",
