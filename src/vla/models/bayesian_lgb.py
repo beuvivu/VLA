@@ -223,12 +223,18 @@ class BayesianLGBModel:
             raise ValueError("hàng huấn luyện phải đã có nhãn (kỳ t+1 đã quay)")
         n_cal = min(cfg.calib_rows, max(len(rows) // 5, 1))
         learn, cal = rows[:-n_cal], rows[-n_cal:]
-        self.prior = DirichletPrior.fit(self.mode, hit, learn)
-        prior = self.prior.matrix(hit)
-
-        if cfg.use_lgb and len(learn) >= 50:
+        use_lgb = cfg.use_lgb and len(learn) >= 50
+        if use_lgb:
+            # Tách khối dừng sớm TRƯỚC khi chọn tiên nghiệm: nhãn của ``va`` không
+            # được chạm vào (h, α), nếu không khối ấy hết là khối chưa chạm.
             n_valid = max(int(len(learn) * cfg.valid_share), 10)
             tr, va = learn[:-n_valid], learn[-n_valid:]
+            self.prior = DirichletPrior.fit(self.mode, hit, tr)
+        else:
+            self.prior = DirichletPrior.fit(self.mode, hit, learn)
+        prior = self.prior.matrix(hit)
+
+        if use_lgb:
             Xtr, btr = self._design(X, prior, tr)
             Xva, bva = self._design(X, prior, va)
             ytr = hit[tr + 1].reshape(-1).astype(np.float32)

@@ -60,7 +60,14 @@ def factories(mode: str, history: History, include_production: bool) -> dict:
     return out
 
 
-def run_mode(mode: str, history: History, last: int, refit_every: int, include_production: bool) -> tuple[dict, pd.DataFrame]:
+def run_mode(
+    mode: str,
+    history: History,
+    last: int,
+    refit_every: int,
+    include_production: bool,
+    production_refit_every: int | None = None,
+) -> tuple[dict, pd.DataFrame]:
     started = time.perf_counter()
     feats = build_features(history, mode)
     hit = history.hits(mode)
@@ -80,10 +87,14 @@ def run_mode(mode: str, history: History, last: int, refit_every: int, include_p
     results, daily = {}, []
     for name, factory in factories(mode, history, include_production).items():
         t0 = time.perf_counter()
-        res = walk_forward.run(factory, feats.X, hit, first, final, refit_every=refit_every)
+        # Production học lại MỖI kỳ (``ml_predict`` coi mô hình cũ là hết hạn);
+        # ``--production-refit-every 1`` tái dựng đúng điều đó, giá ~7 giây/kỳ.
+        every = (production_refit_every or refit_every) if name == "ml_production" else refit_every
+        res = walk_forward.run(factory, feats.X, hit, first, final, refit_every=every)
         m = consecutive
         summary = evaluator.evaluate(mode, res.probs[m], counts[m], special[m], reference[m])
         summary["seconds"] = round(time.perf_counter() - t0, 1)
+        summary["refit_every"] = every
         summary["refits"] = res.refits
         results[name] = summary
         hits = (counts > 0).astype(float) if mode == "loto" else np.eye(100)[special]
@@ -151,6 +162,38 @@ def power_check(refit_every: int) -> dict:
     return out
 
 
+def production_refit_check(history: History, last: int, refit_every: int) -> dict:
+    """ML production học lại mỗi kỳ so với mỗi ``refit_every`` kỳ, trên ``last`` kỳ cuối.
+
+    Đo xem đối chứng "học lại theo khối" lệch bao nhiêu so với production thật
+    (học lại mỗi kỳ). Cùng tập kỳ, cùng mã; chỉ khác nhịp học lại.
+    """
+    out = {}
+    T = len(history)
+    for mode in ("loto", "de"):
+        feats = build_features(history, mode)
+        hit = history.hits(mode)
+        pack = ProductionMLModel(mode, history)
+        targets = np.arange(T - last, T)
+        hits = (history.counts[targets] > 0).astype(float) if mode == "loto" else np.eye(100)[history.special[targets]]
+        losses = {}
+        for every in (1, refit_every):
+            res = walk_forward.run(lambda p=pack: p, feats.X, hit, T - last, T - 1, refit_every=every)
+            losses[every] = evaluator.daily_logloss(mode, res.probs, hits)
+        const = evaluator.daily_logloss(mode, np.full((last, 100), 0.01 if mode == "de" else hit[: T - last].mean()), hits)
+        out[mode] = {
+            "days": last,
+            "logloss_refit_1": float(losses[1].mean()),
+            f"logloss_refit_{refit_every}": float(losses[refit_every].mean()),
+            "refit_1_vs_block": evaluator.paired(losses[1], losses[refit_every]),
+            "refit_1_vs_constant": evaluator.paired(losses[1], const),
+            "max_abs_daily_gap": float(np.abs(losses[1] - losses[refit_every]).max()),
+        }
+        print(f"[học lại mỗi kỳ {mode}] {out[mode]['logloss_refit_1']:.6f} vs khối "
+              f"{out[mode][f'logloss_refit_{refit_every}']:.6f}", flush=True)
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--data-dir", default=str(ROOT / "data"))
@@ -159,6 +202,10 @@ def main() -> None:
     ap.add_argument("--modes", default="loto,de")
     ap.add_argument("--skip-production", action="store_true")
     ap.add_argument("--power-check", action="store_true")
+    ap.add_argument("--production-refit-every", type=int, default=None,
+                    help="nhịp học lại riêng cho ml_production (1 = đúng production, chậm)")
+    ap.add_argument("--refit-check", type=int, default=0,
+                    help="so ml_production học lại mỗi kỳ với mỗi --refit-every kỳ trên N kỳ cuối")
     ap.add_argument("--out", default=str(OUT))
     args = ap.parse_args()
 
@@ -168,12 +215,16 @@ def main() -> None:
               "payout": evaluator.Payout().__dict__, "modes": {}}
     frames = []
     for mode in args.modes.split(","):
-        report["modes"][mode], frame = run_mode(mode, history, args.last, args.refit_every, not args.skip_production)
+        report["modes"][mode], frame = run_mode(
+            mode, history, args.last, args.refit_every, not args.skip_production, args.production_refit_every
+        )
         frames.append(frame)
     daily = pd.concat(frames, ignore_index=True)
     report["recorded_production"] = against_recorded_production(daily)
     if args.power_check:
         report["power_check"] = power_check(args.refit_every)
+    if args.refit_check:
+        report["production_refit_check"] = production_refit_check(history, args.refit_check, args.refit_every)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

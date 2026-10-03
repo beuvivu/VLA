@@ -215,3 +215,24 @@ def test_constant_model_is_the_skill_zero_reference() -> None:
     hit[:, :20] = True
     model = ConstantModel("loto").fit(None, hit, np.arange(8))
     assert np.allclose(model.predict(None, hit, np.arange(3)), 0.2)
+
+
+def test_the_prior_is_tuned_without_the_early_stopping_block(monkeypatch) -> None:
+    """Nhãn của khối dừng sớm không được chạm vào việc chọn (h, α) của tiên nghiệm."""
+    seen: list[np.ndarray] = []
+    real_fit = DirichletPrior.fit.__func__
+
+    def spy(cls, mode, hit, rows, *args, **kwargs):
+        seen.append(np.asarray(rows))
+        return real_fit(cls, mode, hit, rows, *args, **kwargs)
+
+    monkeypatch.setattr(DirichletPrior, "fit", classmethod(spy))
+    history = synthetic_history(400, seed=13, loto_signal=0.0, de_signal=0.0)
+    feats = build_features(history, "de", PARAMS)
+    cfg = replace(ModelConfig(), calib_rows=50, valid_share=0.2, threads=2)
+    rows = np.arange(len(history) - 1)
+    BayesianLGBModel("de", cfg).fit(feats.X, history.hits("de"), rows)
+    learn = rows[:-50]
+    first_valid = learn[-max(int(len(learn) * 0.2), 10)]
+    assert len(seen) == 1
+    assert seen[0].max() < first_valid
