@@ -11,7 +11,7 @@ import pandas as pd
 
 from lottery import Lottery
 from ml_features import FeatureParams, build_features_for_prediction
-from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, train_one
+from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, TRUST_POLICY_VERSION, train_one
 from ml_validation import predict_with_feature_allowlist
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,15 @@ def _model_pack_issue(
         return "model-pack probabilities outside [0, 1]"
     if schema_version != FEATURE_SCHEMA_VERSION:
         return "feature schema changed"
+    trust_policy = pack.get("trust_policy_version")
+    if (
+        isinstance(trust_policy, bool)
+        or not isinstance(trust_policy, Integral)
+        or trust_policy != TRUST_POLICY_VERSION
+    ):
+        # model_trust đã lưu tính theo luật cũ (vd. sàn 0,35); dùng lại là
+        # phát xác suất theo công thức đã bỏ.
+        return "trust policy changed"
     if str(pack.get("trained_through_date", "")) != latest_data_date:
         return (
             f"new draw available ({pack.get('trained_through_date')}"

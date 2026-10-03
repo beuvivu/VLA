@@ -13,6 +13,10 @@ from ml_features import FeatureParams, build_ml_table
 from ml_models import PlattCalibratedClassifier
 
 FEATURE_SCHEMA_VERSION = 2
+# Đổi công thức ``model_trust`` thì tăng số này: gói mô hình đã lưu mang trust
+# tính theo luật cũ, và ``ml_predict`` coi gói lệch phiên bản là cũ, học lại.
+# 2 = bỏ sàn 0,35 (03-10-2026).
+TRUST_POLICY_VERSION = 2
 FEATURE_COLUMNS = [
     "target_weekday",
     "target_weekday_sin",
@@ -273,6 +277,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
             "brier_skill": brier_skill,
             "quality_pass": quality_pass,
             "model_trust": trust,
+            "trust_policy_version": TRUST_POLICY_VERSION,
             "trained_through_date": source_through_date,
         },
         model_path,
