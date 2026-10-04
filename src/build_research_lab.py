@@ -408,7 +408,7 @@ font-variant-numeric:tabular-nums}}
 <h1>Phòng nghiên cứu khoa học</h1>
 <p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
 <div class="ui-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
-<section class="rl-metrics">{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report)}</section>
+<section class="rl-metrics" data-evidence-split>{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report)}</section>
 <div class="ui-grid">{cards}</div>
 {shell_close()}
 </body></html>"""

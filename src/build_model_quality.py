@@ -344,7 +344,7 @@ def murphy_table(mu: dict) -> str:
         '<div class="ui-table-wrap"><table class="ui-table ui-r2">'
         "<thead><tr><th>Thành phần</th><th>Giá trị</th><th>Chiều tốt</th><th>Nghĩa là gì</th></tr></thead>"
         f"<tbody>{body}</tbody></table></div>"
-        f'<p class="ui-muted">Tin cậy − phân giải + bất định = '
+        f'<p class="ui-muted" data-evidence-split>Tin cậy − phân giải + bất định = '
         f"{_num(mu['brier_from_decomposition'])}, khớp đúng Brier của dự báo <b>đã gộp "
         f"nhóm</b> ({_num(mu.get('brier_binned', float('nan')))}). Brier đo trực tiếp trên "
         f"dự báo thô là {_num(mu['brier_direct'])}; chênh lệch "
@@ -396,7 +396,7 @@ def coverage_cards(coverage: dict) -> str:
             "</article>"
         )
     joined = "".join(cards)
-    return f'<div class="ui-kpi-grid">{joined}</div>'
+    return f'<div class="ui-kpi-grid" data-evidence-split>{joined}</div>'
 
 
 
@@ -443,7 +443,7 @@ def source_cards(report: dict) -> str:
             f'<span class="ui-kpi-sub">{origin}{verdict}</span>'
             "</article>"
         )
-    return f'<div class="ui-kpi-grid">{"".join(cards)}</div>'
+    return f'<div class="ui-kpi-grid" data-evidence-split>{"".join(cards)}</div>'
 
 
 def _staleness(data_dir: Path, report: dict) -> str:
@@ -555,7 +555,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
         blocks.append(
             card(
                 sharpness_chart(sharp, f"Độ sắc {name}")
-                + f'<p class="ui-muted">Độ lệch chuẩn của xác suất dự báo là '
+                + f'<p class="ui-muted" data-evidence-split>Độ lệch chuẩn của xác suất dự báo là '
                 f"{_num(sharp['std'], 5)}, bằng "
                 f"{_num(sharp['spread_vs_base'] * 100, 2)}% tỉ lệ nền "
                 f"{_num(sharp['base_rate'], 5)}. Một mô hình hiệu chỉnh hoàn hảo mà luôn trả "
@@ -575,7 +575,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
         blocks.append(
             card(
                 skill_chart(skill, f"Kỹ năng theo thời gian {name}")
-                + f'<p class="ui-muted">Trung bình {_pct(skill.get("mean", 0.0), 4)} '
+                + f'<p class="ui-muted" data-evidence-split>Trung bình {_pct(skill.get("mean", 0.0), 4)} '
                 f"± {_num(1.96 * skill.get('stderr', 0.0) * 100, 4)} điểm phần trăm — "
                 f"{verdict}. Tệ hơn đường cơ sở ở "
                 f"{skill.get('share_worse_than_baseline', 0):.0%} số kỳ.</p>",

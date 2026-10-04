@@ -69,6 +69,8 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
   <section id="controls"><h2>Cầu đẹp</h2>
     <a href="#x" id="cau-link"><b><span>67</span>,<span>76</span></b><span>9</span></a>
     <button type="button" id="bar" class="bar-row"><span class="bar-label">54</span><span class="bar-value" data-evidence-primary>59</span></button></section>
+  <section id="summary"><h2>Phân rã</h2>
+    <p id="summary-prose" data-evidence-split>Tin cậy − phân giải + bất định = 0,1794618, khớp Brier của dự báo đã gộp nhóm (0,1794620) tính đến kỳ 03/10/2026.</p></section>
   <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
@@ -434,4 +436,13 @@ test('Liên kết/nút chứa nhiều số: Tab vào thì Alt + Enter mở số 
   bar.focus();
   bar.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', altKey: true, bubbles: true, cancelable: true }));
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '59', 'số chính là điểm, không phải nhãn 54');
+});
+
+test('Khối khai data-evidence-split: số trong câu văn thành giá trị; ngày vẫn không; câu thường thì không tách', t => {
+  const dom = start(t);
+  const tokens = [...$(dom, 'summary-prose').querySelectorAll('.app-evidence-token')].map(e => e.textContent);
+  assert.deepEqual(tokens, ['0,1794618', '0,1794620']);
+  assert.equal($(dom, 'summary-prose').textContent.includes('03/10/2026'), true);
+  assert.equal($(dom, 'prose').querySelectorAll('.app-evidence-token').length, 0, 'câu văn không khai thì giữ nguyên');
+  assert.equal(dom.window.appEvidence.find($(dom, 'summary-prose').querySelector('.app-evidence-token').firstChild).textContent, '0,1794618');
 });

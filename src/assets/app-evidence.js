@@ -865,7 +865,7 @@
      rút gọn là dd/mm đủ hai chữ số và hợp lệ (03/10) — "5/26" là số trúng
      trên tổng, không phải ngày. */
   var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~=\u2192\u2190]+$/;
-  var DATE_PART = /(?<![\d.,])(?:(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])(?!\/)|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![\d.,])/g;
+  var DATE_PART = /(?<!\d[.,]?)(?:(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])(?!\/)|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![.,]?\d)/g;
   /* Dấu âm chỉ khi không đứng ngay sau chữ số hay chữ cái: "12-68" là hai số
      12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. */
   var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
@@ -900,7 +900,12 @@
     return out.sort(function (x, y) { return x[0] - y[0]; });
   }
 
+  /* Câu văn thường không bị tách. Khối tóm tắt in kết quả tính được giữa
+     câu ("= 0,1794618", "336 cầu chạy từ 3 ngày") khai [data-evidence-split]
+     ở trình dựng thì mọi con số trong đó thành một giá trị. */
   function splittable(parent, whole) {
+    var marked = parent.closest("[data-evidence-split]");
+    if (marked && root.contains(marked)) { return whole.length <= 600; }
     if (whole.length > 120) { return false; }
     if (COMPOUND.test(whole)) { return true; }
     var cell = parent.closest(CELLISH);
