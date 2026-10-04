@@ -660,6 +660,7 @@
 
   var REGION_OF = "section, article, aside, figure, .ui-card";
   var SHOW_TEXT = 4;
+  var SHOW_ELEMENT = 1;
   var keyboard = false;
   var active = null;
   var activeRegion = null;
@@ -697,12 +698,26 @@
     region.setAttribute("aria-describedby", described ? described + " " + hint.id : hint.id);
   }
 
+  /* Điểm dữ liệu SVG (vòng tròn, cột) không có chữ: con số nằm trong <title>
+     hoặc aria-label của nó. Nó là một mục như mọi con số; chữ của chính thẻ
+     <title> thì không — nếu không, một điểm bị đếm hai lần. */
+  function svgPoint(el) {
+    return el.namespaceURI === SVG_NS && /\d/.test(svgLabel(el)) && valueTarget(el) === el;
+  }
+
   function eachItem(scope, region, visit) {
-    var walker = doc.createTreeWalker(scope, SHOW_TEXT, null);
+    var walker = doc.createTreeWalker(scope, SHOW_TEXT | SHOW_ELEMENT, null);
     var last = null;
     for (var node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (!/\d/.test(node.nodeValue)) { continue; }
-      var el = valueTarget(node);
+      var el;
+      if (node.nodeType === 1) {
+        if (!svgPoint(node)) { continue; }
+        el = node;
+      } else {
+        var holder = node.parentElement;
+        if (!/\d/.test(node.nodeValue) || (holder && holder.namespaceURI === SVG_NS && holder.localName === "title")) { continue; }
+        el = valueTarget(node);
+      }
       if (!el || el === last || selfFocusable(el) || (region && regionFor(el) !== region)) { continue; }
       last = el;
       if (visit(el) === false) { return; }
@@ -721,9 +736,11 @@
     return out;
   }
 
-  function itemInCell(cell, region) {
+  /* Ô có nhiều số (đã tách thành từng span): đi sang trái thì vào số CUỐI
+     của ô bên trái, như đọc ngược một dòng chữ. */
+  function itemInCell(cell, region, fromEnd) {
     var found = null;
-    if (cell) { eachItem(cell, region, function (el) { found = el; return false; }); }
+    if (cell) { eachItem(cell, region, function (el) { found = el; return fromEnd ? undefined : false; }); }
     return found;
   }
 
@@ -741,10 +758,17 @@
         if (r < 0 || r >= rows.length) { return null; }
         c = Math.min(cell.cellIndex, rows[r].cells.length - 1);
       }
-      var next = itemInCell(rows[r].cells[c], region);
+      var next = itemInCell(rows[r].cells[c], region, dCol < 0);
       if (next) { return next; }
     }
     return null;
+  }
+
+  function stepInCell(cell, region, cur, dir) {
+    var items = [];
+    eachItem(cell, region, function (el) { items.push(el); });
+    var i = items.indexOf(cur);
+    return i < 0 ? null : items[i + dir] || null;
   }
 
   function deactivate() {
@@ -787,10 +811,10 @@
       var all = itemsIn(region);
       next = all[all.length - 1];
     } else if (cell) {
-      next = key === "ArrowRight" ? cellStep(cell, region, 0, 1)
-        : key === "ArrowLeft" ? cellStep(cell, region, 0, -1)
-          : key === "ArrowDown" ? cellStep(cell, region, 1, 0)
-            : cellStep(cell, region, -1, 0);
+      /* Trái/phải đi qua các số còn lại trong cùng ô trước khi sang ô kế. */
+      var dir = key === "ArrowRight" ? 1 : key === "ArrowLeft" ? -1 : 0;
+      next = (dir && stepInCell(cell, region, cur, dir)) ||
+        (dir ? cellStep(cell, region, 0, dir) : cellStep(cell, region, key === "ArrowDown" ? 1 : -1, 0));
     } else {
       var items = itemsIn(region);
       var i = items.indexOf(cur);

@@ -55,6 +55,13 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
   <section id="ma-tran-2">
     <div class="scroller" tabindex="0"><span id="phoi">323</span></div>
   </section>
+  <section id="chart"><h2>Hiệu chỉnh</h2>
+    <svg viewBox="0 0 10 10" role="img" aria-label="Biểu đồ hiệu chỉnh">
+      <circle id="pt1" cx="1" cy="1" r="1"><title>Nhóm 1: dự báo 12%, thực tế 10%</title></circle>
+      <circle id="pt2" cx="2" cy="2" r="1" aria-label="Nhóm 2: dự báo 25%"></circle>
+      <circle id="pt3" cx="3" cy="3" r="1"><title>7%</title></circle>
+      <circle id="deco" cx="4" cy="4" r="1"></circle>
+      <text id="axis" x="0" y="9">0,5</text></svg></section>
   <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
@@ -335,4 +342,46 @@ test('Tách theo ranh giới thật: cặp số, ô có nhãn, mũi tên; không
   assert.deepEqual(tokens('word'), ['4'], 'G7 là tên giải, không phải số 7');
   assert.deepEqual(tokens('ratio'), ['5', '26'], 'số trúng trên tổng không phải ngày (tháng 26 không có)');
   assert.equal($(dom, 'dated').textContent, 'Ngày 03/10 lúc 18:10 về 5 nháy');
+});
+
+test('Bàn phím đi qua từng số trong ô nhiều số trước khi sang ô kế, và lùi vào số cuối của ô bên trái', t => {
+  const dom = start(t), d = dom.window.document, table = d.querySelector('#ai-ml table');
+  key(dom, d.body, 'Tab');
+  table.focus();
+  for (const k of ['ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowRight']) key(dom, table, k);
+  assert.equal(activeText(dom), '23,56%');
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '2.344');
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '9.950');
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '0,19060', 'hết số trong ô mới sang ô kế');
+  key(dom, table, 'ArrowLeft');
+  assert.equal(activeText(dom), '9.950', 'lùi vào số CUỐI của ô bên trái');
+  key(dom, table, 'ArrowLeft');
+  assert.equal(activeText(dom), '2.344');
+  key(dom, table, 'Enter');
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '2.344');
+});
+
+test('Bàn phím đi qua điểm dữ liệu SVG có <title> hoặc aria-label, không đếm chữ của <title> hai lần', t => {
+  const dom = start(t), d = dom.window.document, chart = $(dom, 'chart');
+  assert.equal(chart.getAttribute('data-evidence-region'), '', 'biểu đồ chỉ có điểm SVG vẫn là điểm dừng Tab');
+  key(dom, d.body, 'Tab');
+  chart.focus();
+  const activeId = () => d.querySelector('.app-evidence-active')?.id;
+  assert.equal(activeId(), 'pt1');
+  key(dom, chart, 'ArrowRight');
+  assert.equal(activeId(), 'pt2');
+  key(dom, chart, 'ArrowRight');
+  assert.equal(activeId(), 'pt3', '<title> thuần số thuộc về điểm, không là mục riêng');
+  key(dom, chart, 'ArrowRight');
+  assert.equal(activeId(), 'axis', 'điểm không nhãn bị bỏ qua; nhãn trục là chữ số thường');
+  key(dom, chart, 'ArrowRight');
+  assert.equal(activeId(), 'axis', 'không còn mục nào sau trục');
+  key(dom, chart, 'ArrowLeft');
+  key(dom, chart, 'ArrowLeft');
+  key(dom, chart, 'Enter');
+  assert.equal(drawer(dom).open, true);
+  assert.match(drawer(dom).textContent, /Nhóm 2: dự báo 25%/);
 });

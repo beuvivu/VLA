@@ -177,8 +177,11 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
             assert any(h.strip().startswith(entry["heading"]) for h in heads), (page.name, entry["heading"])
             continue
         ids = re.findall(r"#([\w-]+)", entry["match"])
-        assert ids, entry["match"]
-        assert any(f'id="{ident}"' in html for ident in ids), (page.name, entry["match"])
+        classes = re.findall(r"(?<![\w-])\.([\w-]+)", entry["match"])
+        assert ids or classes, entry["match"]
+        assert any(f'id="{ident}"' in html for ident in ids) or any(
+            re.search(rf'class="(?:[^"]* )?{re.escape(c)}(?: [^"]*)?"', html) for c in classes
+        ), (page.name, entry["match"])
 
 
 def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
@@ -198,9 +201,8 @@ def test_mixed_forecast_blocks_cite_both_model_pages() -> None:
         return {s["url"] for s in entry["sources"] if s["title"] == "Mô hình ML thành phần"}
 
     both = {"ml_top10_loto.html", "ml_top10_de.html"}
-    home = {s.get("match"): s for s in registry("index.html")["sections"]}
-    assert ml_links(home["#ai-ml"]) == both
     assert ml_links(registry("dashboard.html")["page"]) == both
+    assert ml_links(registry("live.html")["sections"][0]) == both
     assert ml_links(registry("ml_top10_loto.html")["page"]) == {"ml_top10_loto.html"}
     assert ml_links(registry("ml_top10_de.html")["page"]) == {"ml_top10_de.html"}
 
@@ -220,3 +222,46 @@ def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
     assert "10 000 kỳ" in risk and "100/27" in risk
     assert "High" not in risk and "Medium" not in risk
     assert {"Vòng phản hồi", "Giả thuyết đang kiểm tiến cứu"} <= set(sections)
+
+
+@pytest.mark.parametrize("page", ["index.html", "landing.html", "statistics.html"])
+def test_cau_keo_scores_get_the_score_formula_not_the_probability_derivation(page: str) -> None:
+    """Thanh «ngày mai» và bảng cầu-kèo in ``cau_score``: thứ hạng 0–100, không phải xác suất."""
+    sections = {s.get("match"): s for s in registry(page)["sections"]}
+    steps = " ".join(sections["#ai-ml"]["reasoningTrace"]["steps"])
+    assert "0,38" in steps and "0,42" in steps, steps
+    assert "không phải xác suất" in steps
+    assert "vector xác suất 100 số" not in steps
+    assert "Mô hình cầu-kèo AI/ML" in [src["title"] for src in sections["#ai-ml"]["sources"]]
+
+
+def _card_headings(page: str) -> list[str]:
+    html = (ROOT / "docs" / page).read_text(encoding="utf-8")
+    body = html[re.search(r'class="(?:[^"]* )?ui-grid(?: [^"]*)?"', html).start():]
+    heads = [re.sub(r"<[^>]+>", "", h).strip() for h in re.findall(r"<h[23][^>]*>(.*?)</h[23]>", body, re.S)]
+    assert len(heads) >= 8, heads  # trang rỗng thì phép kiểm không thể đỏ
+    return heads
+
+
+@pytest.mark.parametrize("page", ["do-tin-cay.html", "research-lab.html"])
+def test_every_block_of_the_research_pages_carries_its_own_derivation(page: str) -> None:
+    """Mỗi khối có phép tính riêng; bằng chứng cả trang chỉ nói điều đúng với MỌI khối."""
+    reg = registry(page)
+    prefixes = [s["heading"] for s in reg["sections"] if "heading" in s]
+    for head in _card_headings(page):
+        assert any(head.startswith(prefix) for prefix in prefixes), (page, head)
+    generic = " ".join(reg["page"]["reasoningTrace"]["steps"])
+    for claim in ("High", "Medium", "FDR", "tập giữ lại", "hậu nghiệm"):
+        assert claim not in generic, (page, claim)
+
+
+def test_research_blocks_describe_what_their_numbers_are() -> None:
+    lab = {s.get("heading") or s.get("match"): s for s in registry("research-lab.html")["sections"]}
+    gaps = " ".join(lab["Gan tổng / chạm"]["reasoningTrace"]["steps"])
+    assert "mô tả" in gaps and "0–18" in gaps and "FDR" not in gaps
+    assert ".rl-metrics" in lab
+    conf = {s.get("heading"): s for s in registry("do-tin-cay.html")["sections"]}
+    assert "0,05 / k" in " ".join(conf["Các trục cầu kèo so với ngẫu nhiên"]["reasoningTrace"]["steps"])
+    oos = " ".join(conf["Kiểm ngoài mẫu"]["reasoningTrace"]["steps"])
+    assert "2015–2023" in oos and "từng kỳ" in oos
+    assert "Holm" in " ".join(conf["Giả thuyết kỳ quay bị sắp đặt"]["reasoningTrace"]["steps"])

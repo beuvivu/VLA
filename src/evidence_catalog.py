@@ -222,6 +222,15 @@ _MO_PHONG: Source = {
     ),
 }
 
+_CAU_KEO: Source = {
+    "title": "Mô hình cầu-kèo AI/ML",
+    "snippet": (
+        "Cây tăng cường hiệu chỉnh Platt học trên cặp (kỳ t, số) → số ấy có về ở kỳ t + 1, "
+        "kèm các tín hiệu cầu, xác suất có điều kiện, tần suất và gan tính từ các kỳ trước."
+    ),
+    "url": "statistics.html",
+}
+
 #: Câu nhắc chung cho mọi xác suất dự báo — đúng với số đo của kho, nên ghi ra.
 _GHI_CHU_DU_BAO = (
     "Kỳ quay đã kiểm là ngẫu nhiên: kỹ năng ngoài mẫu đo được nằm quanh 0, nên xác suất "
@@ -286,13 +295,31 @@ def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "both") -> Evidence:
     )
 
 
+def _cau_keo_ev(f: dict[str, str], *extra: str) -> Evidence:
+    """Điểm cầu-kèo (``cau_keo_ml._add_ai_judgement``): thứ hạng 0–100, KHÔNG phải xác suất."""
+    return _ev(
+        [_CAU_KEO, _ket_qua(f), _CAU],
+        [
+            "Mỗi tín hiệu của 100 số được chuẩn hoá min–max về 0–1 trong chính kỳ ấy.",
+            "LOTO: điểm = 100 × (0,38·xác suất mô hình + 0,18·hỗ trợ đường cầu + 0,14·tỉ lệ về sau "
+            "Đặc Biệt hôm nay + 0,13·tỉ lệ về sau LOTO hôm nay + 0,10·tần suất 30 ngày "
+            "+ 0,04·cùng thứ + 0,03·xu hướng 7/30 ngày).",
+            "Đặc Biệt: điểm = 100 × (0,42·xác suất mô hình + 0,18·tỉ lệ về sau Đặc Biệt hôm nay "
+            "+ 0,16·hỗ trợ đường cầu + 0,10·gan + 0,08·cùng thứ + 0,06·tỉ lệ về sau LOTO hôm nay).",
+            "Trọng số các tín hiệu đặt cố định, không học; điểm chỉ so được giữa các số trong cùng "
+            "một kỳ, không phải xác suất đã hiệu chuẩn.",
+            *extra,
+        ],
+    )
+
+
 def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     page = _ev([_ket_qua(f), _LOTO, _DAC_BIET], ["Đọc sổ kết quả đã lưu.", "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy."])
     sections = [
         _sec("#live", "Kết quả trực tiếp", _ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Khi phiên kết thúc, kết quả được lưu vào sổ."])),
         _sec("#ket-qua", "Bảng kết quả", _ev([_ket_qua(f), _LOTO], ["Lấy kỳ quay đã lưu theo ngày đang chọn.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."])),
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
-        _sec("#ai-ml", "Dự báo AI/ML", _du_bao_ev(f, "Số hiển thị là xác suất (hoặc thứ hạng) của số ấy cho kỳ kế tiếp.")),
+        _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
         _sec("#mo-phong, #du-doan-vui", "Bảng mô phỏng", _ev([_MO_PHONG, _du_bao(f)], ["Rút hai chữ số cuối theo xác suất mô hình bằng hạt giống cố định của kỳ.", "Phần đầu là số ngẫu nhiên, không mang thông tin.", "Sổ nhật ký chấm bảng đã hiện với kết quả thật."])),
         _sec("#tan-suat-cap, #tan-suat-loto, #tan-suat-de", "Tần suất", _thong_ke(f, "Đếm số lần mỗi số (hoặc cặp) về trong khung thời gian của bảng.")),
         _sec("#gan-nhip", "Gan và nhịp", _thong_ke(f, "Gan = số kỳ kể từ lần về gần nhất; nhịp = khoảng cách giữa hai lần về liên tiếp.")),
@@ -307,7 +334,13 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
 def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     page = _thong_ke(f, "Dựng các bảng tần suất, gan, đầu đuôi và cặp từ cùng một sổ kết quả.")
     sections = [
-        _sec("#ai-ml, #can-cu-cau", "Cầu-kèo AI/ML", _du_bao_ev(f, "Điểm xếp hạng gộp tín hiệu cầu và mô hình cho từng số.")),
+        _sec("#ai-ml", "Cầu-kèo AI/ML", _cau_keo_ev(f, "Cột xác suất là xác suất của riêng mô hình cầu-kèo (Đặc Biệt chuẩn hoá tổng 100 số bằng 1), không phải xác suất tổ hợp đã công bố.")),
+        _sec_heading("Kiểm định cầu-kèo", "Kiểm định cầu-kèo", _ev([_CAU_KEO, _ket_qua(f)], [
+            "Học trên các kỳ trước lát kiểm định, rồi dự báo từng ngày của lát kiểm định gần nhất (ngày đầu ghi ở cột ngày bắt đầu).",
+            "Mỗi dòng là một nhóm K số điểm cao nhất: số ngày kiểm, số ngày có ít nhất một số trong nhóm về và tỉ lệ ấy, số lượt về trung bình mỗi ngày.",
+            "Brier và logloss chấm xác suất của mô hình cầu-kèo trên cùng lát kiểm định; nhỏ hơn là tốt hơn.",
+        ])),
+        _sec("#can-cu-cau", "Căn cứ cầu", _cau_keo_ev(f, "Các cột đường cầu đếm số đường cầu vị trí ghép ra số ấy (đang chạy, ổn định) và đường mạnh nhất; cột xác suất là của riêng mô hình cầu-kèo.")),
         _sec("#gan-nhip", "Gan và nhịp", _thong_ke(f, "Gan = số kỳ kể từ lần về gần nhất; nhịp = khoảng cách giữa hai lần về.")),
         _sec("#dieu-kien", "Điều kiện lịch sử", _thong_ke(f, "Lọc các kỳ thoả điều kiện rồi đếm kết cục ở kỳ kế tiếp; mẫu nhỏ thì dao động lớn.")),
     ]
@@ -372,7 +405,41 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
         "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], ["Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.", "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt.", "Kỹ năng = 1 − điểm mô hình / điểm dự báo hằng số; 0 là ngang hằng số."]), []),
-        "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], ["Đo tín hiệu mạnh nhất của từng họ (Bayes, Markov, cầu) trên lịch sử thật.", "Tin cậy = tỉ lệ lịch sử ngẫu nhiên có tín hiệu mạnh nhất còn yếu hơn — không phải hậu nghiệm từng con.", "Ba tầng: High khi cả ba > 85%, Medium khi hai trong ba ≥ 60%, còn lại Low/Noise."]), [
+        "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], [
+            "Đọc sổ kết quả đã lưu và phân phối null của 10 000 lịch sử ngẫu nhiên cùng độ dài.",
+            "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
+        ]), [
+            _sec_heading("Kết luận cho kỳ kế tiếp", "Kết luận cho kỳ kế tiếp", _ev([_NULL, _ket_qua(f)], [
+                "Xếp từng con 00–99 vào ba tầng theo luật ở khối «Luật ba tầng», rồi đếm số con ở tầng Cao · Trung bình · Thấp/nhiễu.",
+                "«Thành phần mạnh nhất» là tin cậy lớn nhất của ba họ Bayes, Markov, cầu trên cả 100 con.",
+                "Thẻ Đối chứng: số lịch sử công bằng đã giả lập, số kỳ mỗi lịch sử, và số kỳ thật trong sổ.",
+            ])),
+            _sec_heading("Luật ba tầng", "Luật ba tầng", _ev([_NULL], [
+                "Tin cậy của một thành phần = tỉ lệ lịch sử công bằng mà tín hiệu mạnh nhất của cả họ còn yếu hơn nó, tức 1 − p đã hiệu chỉnh cho việc soi nhiều con cùng lúc.",
+                "High khi cả ba thành phần vượt ngưỡng cao; Medium khi ít nhất hai thành phần đạt ngưỡng giữa; còn lại Low/Noise.",
+                "Các tỉ lệ ở đoạn cuối đếm số lịch sử ngẫu nhiên có ít nhất một con đạt hậu nghiệm Bayes vượt mức ghi bên cạnh.",
+            ])),
+            _sec_heading("Ma trận suy luận", "Ma trận suy luận", _ev([_NULL, _ket_qua(f), _CAU], [
+                "Bayes: hậu nghiệm xác suất về của con ấy cao hơn tỉ lệ nền → tin cậy so với phân phối null.",
+                "Markov: điểm z của xác suất về theo đúng trạng thái kỳ trước của con ấy → tin cậy.",
+                "Cầu: tỉ lệ trúng của cầu vị trí tốt nhất ghép ra con ấy từ kỳ vừa quay → tin cậy.",
+                "Score là thành phần yếu nhất (tầng Cao) hoặc mạnh thứ hai (tầng khác).",
+            ])),
+            _sec_heading("Các trục cầu kèo so với ngẫu nhiên", "Các trục cầu kèo so với ngẫu nhiên", _ev([_NULL, _ket_qua(f)], [
+                "Mỗi trục là một họ tín hiệu; «Thật» là tín hiệu mạnh nhất của họ trên lịch sử thật, so với trung vị của nó trên các lịch sử ngẫu nhiên.",
+                "p = tỉ lệ lịch sử công bằng có tín hiệu mạnh nhất của họ ≥ tín hiệu thật (có sàn vì số lịch sử hữu hạn).",
+                "Soi k họ cùng lúc nên ngưỡng Bonferroni là 0,05 / k; chỉ dòng có p dưới ngưỡng ấy mới là khác ngẫu nhiên.",
+            ])),
+            _sec_heading("Kiểm ngoài mẫu", "Kiểm ngoài mẫu", _ev([_ket_qua(f)], [
+                "Chọn nhóm tín hiệu mạnh nhất (10 con Bayes, 10 con Markov, 50 cặp, 20 cầu…) chỉ trên các kỳ 2015–2023; cột «Trong mẫu» là tỉ lệ trúng của nhóm ấy trên chính các kỳ đã dùng để chọn.",
+                "Chấm đúng tín hiệu ấy trên các kỳ từ 2024 tới nay (số trúng / số lần), so với tỉ lệ nền.",
+                "z = Σ(trúng − kỳ vọng theo nền) / căn của tổng bình phương độ lệch từng kỳ — phương sai ước lượng theo từng kỳ quay vì các lượt trúng trong một kỳ không độc lập; |z| < 2 nghĩa là không phân biệt được với nền.",
+            ])),
+            _sec_heading("Giả thuyết kỳ quay bị sắp đặt", "Giả thuyết kỳ quay bị sắp đặt", _ev([_NULL, _ket_qua(f)], [
+                "Mỗi dòng là một dấu vết có thể khai thác; số đo tính trên kết quả công bố thật.",
+                "Dòng χ² lấy p từ phân phối χ² với số bậc tự do ghi kèm; hai dòng đếm «né» lấy p Monte Carlo hai phía trên các lịch sử công bằng, không nhỏ hơn 1/(N + 1).",
+                "p (Holm) hiệu chỉnh Holm cho cả bốn dấu vết kiểm cùng lúc.",
+            ])),
             _sec_heading("Rủi ro / lợi nhuận", "Rủi ro / lợi nhuận", _ev([_MO_PHONG_RUI_RO], [
                 "Giả lập 10 000 kỳ kế tiếp, mỗi kỳ 27 giải rút đều trong 00–99 (hạt giống theo ngày đích); không dùng mô hình nào.",
                 "Đếm số con trong nhóm 10 con LOTO đang công bố có về ở mỗi kỳ giả lập → tỉ lệ ở bảng; trung bình lượt về mỗi kỳ.",
@@ -387,7 +454,50 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Tham số không được sửa sau khi đăng ký; số trên thẻ là tiến độ và kết quả tích luỹ tới kỳ gần nhất.",
             ])),
         ]),
-        "research-lab.html": (_ev([_ket_qua(f), _NULL], ["Mỗi giả thuyết kiểm trên tập giữ lại theo thời gian, có kiểm soát nhiều phép thử.", "Kết quả tách khỏi bộ dự báo vận hành cho tới khi vượt mọi cổng."]), []),
+        "research-lab.html": (_ev([_ket_qua(f)], [
+            "Đọc các báo cáo nghiên cứu dựng từ sổ kết quả đã lưu.",
+            "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy; không khối nào nối vào bộ dự báo vận hành.",
+        ]), [
+            _sec(".rl-metrics", "Tóm tắt các họ giả thuyết", _ev([_ket_qua(f)], [
+                "Mỗi thẻ đếm số giả thuyết của một họ và số giả thuyết qua cổng của họ ấy (cổng ghi ngay trên thẻ: đủ điều kiện vận hành, cổng nghiên cứu, hay FDR < 0,05).",
+                "Thẻ cầu bóng so độ nâng tốt nhất trên tập huấn luyện với trung bình độ nâng tốt nhất khi dịch vòng chuỗi kết quả theo thời gian; p = tỉ lệ lượt dịch vòng có độ nâng tốt nhất ≥ thật.",
+                "Thẻ Đặc Biệt → LOTO: hai số cuối Đặc Biệt kỳ gần nhất, số ô có điều kiện và số ô có q < 0,05.",
+            ])),
+            _sec_heading("Chẩn đoán tính ngẫu nhiên", "Chẩn đoán tính ngẫu nhiên", _ev([_ket_qua(f)], [
+                "Mỗi dòng là một phép kiểm định trên toàn bộ lịch sử: thống kê và p thô.",
+                "q là p đã hiệu chỉnh Benjamini–Hochberg FDR trên nhóm phép kiểm chính; «Có» khi q < 0,05.",
+            ])),
+            _sec_heading("Gan tổng / chạm", "Gan tổng / chạm", _ev([_ket_qua(f), _LOTO], [
+                "Thống kê mô tả, không phải phép kiểm và không dùng làm xác suất.",
+                "Chạm d: số ngày kể từ kỳ gần nhất có một LOTO chứa chữ số d (hàng chục hoặc đơn vị). Tổng s: như vậy với LOTO có tổng hai chữ số bằng s (0–18, không lấy mod 10).",
+                "«Lần cuối» là ngày của kỳ ấy; bảng xếp từ gan dài nhất xuống.",
+            ])),
+            _sec_heading("Kiểm tra tương thích cũ", "Kiểm tra tương thích cũ", _ev([_ket_qua(f)], [
+                "Các kiểm định từ phiên bản cũ, giữ riêng vì chúng hỏi câu hỏi thống kê khác bộ kiểm hiện đại.",
+                "Mỗi dòng ghi thống kê, p và phương pháp; dòng ACF đếm số độ trễ đã kiểm và số độ trễ có FDR < 0,05.",
+            ])),
+            _sec_heading("Đặc Biệt", "Đặc Biệt → LOTO ngày kế", _ev([_ket_qua(f), _LOTO, _DAC_BIET], [
+                "Chỉ dùng cặp ngày lịch liên tiếp có hai số cuối Đặc Biệt hôm trước đúng bằng số ghi ở tiêu đề.",
+                "Cỡ mẫu = số cặp ngày như vậy; số lần trúng = số lần con ấy về LOTO ngày kế; p thô = trúng / cỡ mẫu.",
+                "p EB co p thô về xác suất nền biên (Bayes thực nghiệm) để mẫu nhỏ không bị phóng đại; q là BH-FDR trên mọi ô.",
+            ])),
+            _sec_heading("Cầu bóng", "Cầu bóng trên 107 ô chữ số", _ev([_ket_qua(f), _CAU], [
+                "Chọn các đường cầu có độ nâng cao nhất trên tập huấn luyện; q là BH-FDR chỉ trên tập huấn luyện.",
+                "Chấm lại đúng những đường ấy trên tập kiểm định rồi tập giữ lại theo thời gian, chưa từng dùng để chọn; độ nâng = tỉ lệ trúng / tỉ lệ nền.",
+            ])),
+            _sec_heading("Phòng chiến lược", "Phòng chiến lược", _ev([_ket_qua(f)], [
+                "Mỗi chiến lược chọn số bằng một luật cố định; độ chính xác và độ nâng (so với tỉ lệ nền chỉ tính trên tập huấn luyện) chấm trên tập giữ lại theo thời gian.",
+                "q là BH-FDR trên tập giữ lại; «ĐẠT» khi q ≤ 0,05, độ nâng ≥ 1,03, hiệu ứng đủ lớn và ít nhất 100 lượt chọn trên tập giữ lại — vẫn chưa phải đủ điều kiện vận hành.",
+            ])),
+            _sec_heading("Họ vị trí chéo độ trễ", "Họ vị trí chéo độ trễ", _ev([_ket_qua(f), _CAU], [
+                "Mỗi quy tắc ghép chữ số ở vị trí A (trễ A ngày) với vị trí B (trễ B ngày; −1 là không dùng) bằng phép biến đổi ghi ở cột đầu.",
+                "Độ nâng chấm trên tập giữ lại chưa chạm; «CẦN XEM XÉT» khi q (BH-FDR, tập huấn luyện) ≤ 0,05 và độ nâng ở cả tập kiểm định lẫn tập giữ lại ≥ 1,03 — chỉ là đáng xem tiếp, không nối vào vận hành.",
+            ])),
+            _sec_heading("Tường lửa nghiên cứu", "Tường lửa nghiên cứu", _ev([_ket_qua(f)], [
+                "Mô tả quy trình chung: quét 27 × 27 vị trí giải cho hai họ đuôi–đuôi và đầu–đuôi, rồi chia huấn luyện / kiểm định / giữ lại theo thời gian.",
+                "FDR chỉ áp trên tập huấn luyện; phép kiểm thực tế dịch vòng với thống kê cực đại kiểm soát việc dò dữ liệu trên cả họ.",
+            ])),
+        ]),
         "tao-phoi-tuan.html": (_ev([_ket_qua(f), _DAC_BIET], ["Lấy giải Đặc Biệt đã lưu, xếp Thứ Hai → Chủ Nhật theo tuần.", "Tách 3 chữ số đầu và 2 chữ số cuối theo tuỳ chọn của phôi."]), []),
     }
 
