@@ -36,15 +36,16 @@ function installFrequencyBento(renderName) {
     const hot = counts.indexOf(Math.max(...counts));
     const last = rows.at(-1);
     fill($("bf-kpis"), [
-      ["Kỳ đang phân tích", rows.length, rows.length ? `${rows[0].d} → ${last.d}` : "Không có kỳ phù hợp", "◷"],
-      ["Tổng số nháy", total.toLocaleString("vi-VN"), "27 kết quả trong mỗi kỳ XSMB", "▥"],
-      ["Đặc Biệt gần nhất", last ? String(last.s).slice(-2) : "—", last ? `Giải ${last.s} · ${last.d}` : "Chưa có kết quả", "★"],
-      ["Lô tô xuất hiện nhiều nhất", rows.length ? pad2(hot) : "—", rows.length ? `${counts[hot]} nháy trên trọn dải` : "Chọn lại khoảng thời gian", "↗"],
-    ].map(([label, value, hint, icon]) => mk("div", {class: "bf-kpi"}, [
+      ["Kỳ đang phân tích", rows.length, rows.length ? `${rows[0].d} → ${last.d}` : "Không có kỳ phù hợp", "◷", ""],
+      ["Tổng số nháy", total.toLocaleString("vi-VN"), "27 kết quả trong mỗi kỳ XSMB", "▥", ""],
+      ["Đặc Biệt gần nhất", last ? String(last.s).slice(-2) : "—", last ? `Giải ${last.s} · ${last.d}` : "Chưa có kết quả", "★", "1"],
+      ["Lô tô xuất hiện nhiều nhất", rows.length ? pad2(hot) : "—", rows.length ? `${counts[hot]} nháy trên trọn dải` : "Chọn lại khoảng thời gian", "↗", "1"],
+    ].map(([label, value, hint, icon, computed]) => mk("div", {class: "bf-kpi"}, [
       mk("span", {class: "bf-kpi-icon", "aria-hidden": "true"}, icon),
       mk("span", {class: "bf-kpi-label"}, label),
       mk("strong", null, value),
-      mk("small", null, hint),
+      // Dòng phụ in kết quả tính được thì khai để số trong câu có bằng chứng.
+      mk("small", {"data-evidence-split": computed}, hint),
     ])));
     decorateCells(rows, specials);
     $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;

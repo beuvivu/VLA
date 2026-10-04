@@ -45,7 +45,7 @@ def render_calendar(repo_root: Path) -> str:
   <div class="app-calendar-toolbar">
     <div class="app-calendar-heading"><span class="app-calendar-eyebrow">LỊCH VIỆT NAM · UTC+7</span>
       <h3 id="app-calendar-title">Lịch vạn niên</h3>
-      <p id="app-calendar-summary" role="status" aria-live="polite"></p></div>
+      <p id="app-calendar-summary" role="status" aria-live="polite" data-evidence-split></p></div>
     <div class="app-calendar-controls">
       <button type="button" id="app-calendar-prev" aria-label="Tháng trước">‹</button>
       <label><span class="app-sr">Chọn tháng</span><select id="app-calendar-month">{months}</select></label>

@@ -70,7 +70,11 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
     <a href="#x" id="cau-link"><b><span>67</span>,<span>76</span></b><span>9</span></a>
     <button type="button" id="bar" class="bar-row"><span class="bar-label">54</span><span class="bar-value" data-evidence-primary>59</span></button></section>
   <section id="summary"><h2>Phân rã</h2>
-    <p id="summary-prose" data-evidence-split>Tin cậy − phân giải + bất định = 0,1794618, khớp Brier của dự báo đã gộp nhóm (0,1794620) tính đến kỳ 03/10/2026.</p></section>
+    <p id="summary-prose" data-evidence-split>Tin cậy − phân giải + bất định = 0,1794618, khớp Brier của dự báo đã gộp nhóm (0,1794620) tính đến kỳ 03/10/2026.</p>
+    <p id="summary-thousands" data-evidence-split>Chỉ do ngẫu nhiên của 5 671 cặp vị trí, 2 số cuối khác nhau.</p></section>
+  <section id="grid"><h2>Bảng Đặc Biệt</h2>
+    <table><tbody><tr><td id="spde-cell" data-key="g|n97"><span class="sp-de" id="spde">434<b>97</b></span></td>
+      <td id="pair-key" data-key="g|p46">46 ↔ 64</td><td><button type="button" id="chip">30 kỳ gần</button></td></tr></tbody></table></section>
   <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
@@ -445,4 +449,17 @@ test('Khối khai data-evidence-split: số trong câu văn thành giá trị; n
   assert.equal($(dom, 'summary-prose').textContent.includes('03/10/2026'), true);
   assert.equal($(dom, 'prose').querySelectorAll('.app-evidence-token').length, 0, 'câu văn không khai thì giữ nguyên');
   assert.equal(dom.window.appEvidence.find($(dom, 'summary-prose').querySelector('.app-evidence-token').firstChild).textContent, '0,1794618');
+});
+
+test('Giải tách để tô (.sp-de) là một giá trị; ô dữ liệu có chức năng nhấp vẫn tách số; nút thì không', t => {
+  const dom = start(t);
+  assert.equal(dom.window.appEvidence.find($(dom, 'spde').firstChild), $(dom, 'spde'), '434<b>97</b> là 43497');
+  assert.deepEqual([...$(dom, 'pair-key').querySelectorAll('.app-evidence-token')].map(e => e.textContent), ['46', '64']);
+  assert.equal($(dom, 'pair-key').dataset.key, 'g|p46', 'ô giữ nguyên chức năng nhấp');
+  assert.equal($(dom, 'chip').querySelectorAll('.app-evidence-token').length, 0, 'chữ của nút là tên thao tác');
+});
+
+test('Phần nghìn bằng khoảng trắng là một số khi tách câu', t => {
+  const dom = start(t);
+  assert.deepEqual([...$(dom, 'summary-thousands').querySelectorAll('.app-evidence-token')].map(e => e.textContent), ['5 671', '2']);
 });

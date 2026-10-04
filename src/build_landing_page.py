@@ -2180,10 +2180,17 @@ def _render_html(
 
     live_block = _render_live_block(latest)
 
+    def _tile_desc(desc: str) -> str:
+        """Dòng phụ "2 số cuối: 61": chỉ 61 là kết quả, nên chỉ nó thành một giá trị."""
+        label, sep, value = desc.rpartition(": ")
+        if sep and value.isdigit():
+            return f"{html.escape(label)}: <b>{html.escape(value)}</b>"
+        return html.escape(desc)
+
     stat_tiles = "\n".join(
         f"<div class='metric-tile {palette}' data-long='{str(len(value) >= 9).lower()}'>"
         f"<span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>"
-        f"<em>{html.escape(desc)}</em></div>"
+        f"<em>{_tile_desc(desc)}</em></div>"
         for label, value, desc, palette in stat_cards_top
     )
 

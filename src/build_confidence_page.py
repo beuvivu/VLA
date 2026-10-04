@@ -82,7 +82,7 @@ def summary_cards(report: dict) -> str:
         f"({html.escape(report['first_draw'])} → {html.escape(report['last_draw'])}).</span>"
         "</article>"
     )
-    return f'<div class="ui-kpi-grid">{"".join(cards)}</div>'
+    return f'<div class="ui-kpi-grid" data-evidence-split>{"".join(cards)}</div>'
 
 
 def rules_card(report: dict) -> str:
@@ -163,7 +163,7 @@ def families_card(report: dict) -> str:
     return (
         _table(["Trục khảo sát", "Cỡ họ", "Thật", "Trung vị ngẫu nhiên", "p", "Kết luận"], rows,
                numeric="ui-r2 ui-r3 ui-r4 ui-r5")
-        + f'<p class="ui-muted">p là tỉ lệ lịch sử công bằng có tín hiệu mạnh nhất của họ ≥ tín '
+        + f'<p class="ui-muted" data-evidence-split>p là tỉ lệ lịch sử công bằng có tín hiệu mạnh nhất của họ ≥ tín '
         f"hiệu thật. Soi {len(fams)} họ cùng lúc nên ngưỡng Bonferroni là "
         f"{_num(strict, 4)}.</p>"
     )
@@ -194,7 +194,7 @@ def intervention_card(report: dict) -> str:
     rows = [
         # Không in "0,000": p không thể bằng 0, và p Monte Carlo không nhỏ hơn
         # 1/(N+1) — review PR #104.
-        [html.escape(t["label"]), html.escape(t["detail"]), _p(t["p"], 0.001), _p(t["p_holm"], 0.001)]
+        [html.escape(t["label"]), f'<span data-evidence-split>{html.escape(t["detail"])}</span>', _p(t["p"], 0.001), _p(t["p_holm"], 0.001)]
         for t in block["tests"]
     ]
     return (
@@ -300,7 +300,7 @@ def hot_tail_card(report: dict) -> str:
         f"α = {_num(h['alpha'], 2)}.</p>"
         + _table(["", "Số kỳ", "Đuôi nóng − trung bình các đuôi", "Kiểm định"], rows,
                  numeric="ui-r2 ui-r3")
-        + f'<p class="ui-muted">Kỳ đã chấm: {span}. '
+        + f'<p class="ui-muted" data-evidence-split>Kỳ đã chấm: {span}. '
         f"<b>{html.escape(_HOT_TAIL_WORDS.get(h['state'], h['state']))}</b> Danh sách top LOTO "
         "đã giới hạn tối đa 3 con cùng đuôi, nên dù tín hiệu có thật, mười con không còn dồn "
         "vào một đuôi.</p>"

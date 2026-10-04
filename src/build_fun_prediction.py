@@ -338,7 +338,7 @@ def _ledger_block(ledger: pd.DataFrame | None) -> str:
     return f"""
   <details class="fun-simulation-details fun-ledger">
     <summary>Nhật ký mô phỏng so với kết quả thật</summary>
-    <p class="fun-ledger-tally">{tally}</p>
+    <p class="fun-ledger-tally" data-evidence-split>{tally}</p>
     <div class="fun-ledger-wrap"><table class="fun-ledger-table">
       <thead><tr><th scope="col">Kỳ</th><th scope="col">Mô phỏng</th><th scope="col">Đặc Biệt thật</th><th scope="col">Kết quả</th><th scope="col">LOTO về</th></tr></thead>
       <tbody>{"".join(rows)}</tbody>

@@ -121,7 +121,7 @@ def best_panel(report: dict | None, draw_date: str) -> str:
         groups.append(
             f'<section class="app-bridge-group" data-mode="{key}"><h4>'
             f'<a href="{html.escape(link(cfg))}">{html.escape(cfg["title"])}</a>'
-            f'<small>≥ {cfg["limit"]} ngày · {summary["count"]} cầu</small></h4>{body}</section>'
+            f'<small data-evidence-split>≥ {cfg["limit"]} ngày · {summary["count"]} cầu</small></h4>{body}</section>'
         )
     return (
         '<aside class="app-bridge-best" aria-label="Soi cầu vị trí">'
@@ -185,7 +185,7 @@ def backtest_card(report: dict) -> str:
         per_day = f'{v["per_day"]:.1f}'.replace(".", ",")
         parts.append(
             f'<h3 class="app-bridge-subhead">{html.escape(cfg["title"])}</h3>'
-            f'<p class="app-bridge-summary">Trung bình mỗi ngày có {per_day} cầu đạt '
+            f'<p class="app-bridge-summary" data-evidence-split>Trung bình mỗi ngày có {per_day} cầu đạt '
             f'≥ {cfg["limit"]} ngày chỉ do ngẫu nhiên của 5 671 cặp vị trí; hôm nay có '
             f'{mode["summary"]["count"]}. {line}</p>'
             + _rows_table("Cầu đã chạy", streaks["rows"], _streak_label)
@@ -194,7 +194,7 @@ def backtest_card(report: dict) -> str:
         )
     draws = report["modes"]["lo"]["streaks"]["draws"]
     return (
-        f'<p class="app-bridge-verdict">Đo trên {_count(draws)} kỳ đã quay: mỗi dòng là tỉ lệ kỳ '
+        f'<p class="app-bridge-verdict" data-evidence-split>Đo trên {_count(draws)} kỳ đã quay: mỗi dòng là tỉ lệ kỳ '
         "kế tiếp trúng, so với kỳ vọng nếu cầu KHÔNG mang thông tin (tính riêng số kép và số thường "
         "vì số kép chỉ là một số). z đếm mỗi kỳ là một cụm, vì mọi cầu cùng kỳ dùng chung 27 giải.</p>"
         + "".join(parts)

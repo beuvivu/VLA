@@ -435,7 +435,16 @@
 
   function renderList(host, bridges, summary, params) {
     host.replaceChildren();
-    const intro = el("p", "app-bridge-summary");
+    // Đoạn tóm tắt in kết quả tính được: khai để mỗi con số có bằng chứng.
+    const summaryLine = (...parts) => {
+      const p = el("p", "app-bridge-summary");
+      p.setAttribute("data-evidence-split", "");
+      p.append(...parts);
+      return p;
+    };
+    // Cặp "67,76" in liền đọc như số thập phân: mỗi số một nút chữ riêng.
+    const pairNodes = (pair) => pair.split(",").flatMap((n, i) => (i ? [",", n] : [n]));
+    const intro = summaryLine();
     intro.append(document.createTextNode(`Kết quả soi cầu cho kỳ ${formatDate(REPORT.target_date)}: tìm được `));
     intro.append(el("b", "", String(summary.count)));
     intro.append(document.createTextNode(` cầu có độ dài ${params.exact ? "đúng" : "từ"} ${params.limit} ngày${params.exact ? "" : " trở lên"}.`));
@@ -455,15 +464,15 @@
     }
     host.append(list);
     if (!params.exact) {
-      host.append(el("p", "app-bridge-summary",
+      host.append(summaryLine(
         `Trong đó có ${summary.longer} cầu dài hơn ${params.limit} ngày (in đậm). Cầu xuất hiện tại `
         + `${summary.pairs} cặp số khác nhau, ${summary.pairsLonger} cặp có cầu chạy hơn ${params.limit} ngày.`));
     }
     const top = summary.repeats[0];
     if (top) {
       const nums = top.pair.split(",");
-      host.append(el("p", "app-bridge-summary",
-        `Cặp số có nhiều cầu nhất là ${top.pair}: ${top.bridges} cầu (${top.bridges} vị trí cầu khác nhau `
+      host.append(summaryLine("Cặp số có nhiều cầu nhất là ", ...pairNodes(top.pair),
+        `: ${top.bridges} cầu (${top.bridges} vị trí cầu khác nhau `
         + `cùng báo ${params.db ? "Đặc Biệt" : "LOTO"} về ${nums.join(" hoặc ")}).`));
     }
     host.append(el("h3", "app-bridge-subhead", "Thống kê cầu lặp"));

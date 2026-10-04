@@ -36,7 +36,7 @@
      "565 kỳ", "3 nháy"). Ngày (03-10-2026) và giờ không khớp. */
   var NUM = /^[+\-\u2212\u00b1]?\s?(?:\d{1,3}(?:[ \u00a0\u202f.,]\d{3})+|\d+)(?:[.,]\d+)?(?:[eE][+\-]?\d+)?\s?(?:%|\u2030|\u00d7|x|k\u1ef3|l\u1ea7n|ng\u00e0y|nh\u00e1y|c\u1ea7u|con|s\u1ed1|tu\u1ea7n|th\u00e1ng|n\u0103m)?$/;
   var MAX_LEN = 24;
-  var KNOWN_VALUE = ".tr-number, .tr-mini, [data-evidence-value]";
+  var KNOWN_VALUE = ".tr-number, .tr-mini, .sp-de, [data-evidence-value]";
   var EXCLUDE = [
     ".app-rail", ".app-panel", ".app-header", ".app-global-search", ".app-evidence-tip",
     ".app-evidence-drawer", "input", "textarea", "select", "option", "[contenteditable]",
@@ -867,9 +867,15 @@
   var COMPOUND = /^[\d\s.,%\u2030\u00d7()\/+\-\u2212\u2013\u2014\u00b1\u2248~=\u2192\u2190]+$/;
   var DATE_PART = /(?<!\d[.,]?)(?:(?:0[1-9]|[12]\d|3[01])\/(?:0[1-9]|1[0-2])(?!\/)|\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}-\d{1,2}-\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![.,]?\d)/g;
   /* Dấu âm chỉ khi không đứng ngay sau chữ số hay chữ cái: "12-68" là hai số
-     12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. */
-  var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
+     12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. Phần nghìn
+     bằng khoảng trắng ("5 671") là MỘT số, như NUM vẫn đọc. */
+  var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)*)(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
   var CELLISH = "td, th, dd, li";
+  /* Điều khiển (nút, liên kết, nhãn bộ lọc) không bị tách: chữ của chúng là
+     tên thao tác. Ô dữ liệu có chức năng nhấp ([data-key]) thì vẫn tách — số
+     trong ô là dữ liệu, và chức năng nhấp đi theo ủy quyền nên không mất. */
+  var CONTROL = "a[href], button, label, summary, [role='button'], [role='link'], [role='tab'], " +
+    "[role='checkbox'], [role='switch'], [role='option'], [onclick]";
   /* Tiêu đề cột "09-24" là tháng-ngày; trong ô dữ liệu "12-21" vẫn là cặp số,
      nên dạng rút gọn này chỉ là ngày khi nó là TOÀN BỘ chữ của một ô tiêu đề. */
   var MONTH_DAY = /^(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
@@ -918,7 +924,7 @@
     for (var node = walker.nextNode(); node; node = walker.nextNode()) {
       var parent = node.parentElement;
       if (!parent || !/\d/.test(node.nodeValue) || valueTarget(node)) { continue; }
-      if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || isInteractive(parent)) { continue; }
+      if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || parent.closest(CONTROL)) { continue; }
       /* Chữ trong SVG không bao giờ được tách: span HTML trong <text> không
          được vẽ, nhãn trục "08-11" chỉ còn lại dấu gạch. */
       if (parent.namespaceURI === SVG_NS) { continue; }
