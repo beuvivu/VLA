@@ -66,6 +66,9 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
   <section id="paths"><h2>Đường cầu</h2>
     <table><thead><tr><th>Đường</th><th id="mmdd">09-24</th><th id="hpair">12-68</th></tr></thead>
       <tbody><tr><td id="pathid">L11-[10,95]</td><td id="datepair">12-21</td><td>3</td></tr></tbody></table></section>
+  <section id="controls"><h2>Cầu đẹp</h2>
+    <a href="#x" id="cau-link"><b><span>67</span>,<span>76</span></b><span>9</span></a>
+    <button type="button" id="bar" class="bar-row"><span class="bar-label">54</span><span class="bar-value" data-evidence-primary>59</span></button></section>
   <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
@@ -412,4 +415,23 @@ test('Số đã có chức năng nhận tiêu điểm Tab: tooltip nói Alt + En
   special.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', altKey: true, bubbles: true, cancelable: true }));
   assert.equal(drawer(dom).open, true);
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '77961');
+});
+
+test('Liên kết/nút chứa nhiều số: Tab vào thì Alt + Enter mở số chính, Enter thường giữ chức năng', t => {
+  const dom = start(t), d = dom.window.document, link = $(dom, 'cau-link'), bar = $(dom, 'bar');
+  let followed = 0;
+  link.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.altKey) followed += 1; });
+  key(dom, d.body, 'Tab');
+  link.focus();
+  assert.match($(dom, 'app-evidence-tip').querySelector('.app-evidence-tip-hint').textContent, /Alt \+ Enter/);
+  key(dom, link, 'Enter');
+  assert.ok(!drawer(dom) || !drawer(dom).open, 'Enter thường là của liên kết');
+  assert.equal(followed, 1);
+  link.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', altKey: true, bubbles: true, cancelable: true }));
+  assert.equal(drawer(dom).open, true);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '67');
+  drawer(dom).querySelector('.app-evidence-close').click();
+  bar.focus();
+  bar.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', altKey: true, bubbles: true, cancelable: true }));
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '59', 'số chính là điểm, không phải nhãn 54');
 });

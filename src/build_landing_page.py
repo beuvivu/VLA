@@ -571,7 +571,7 @@ def _render_bar_card(
                 f"<button class='bar-row'{number_attr}>"
                 f"<span class='bar-label'>{html.escape(label)}</span>"
                 f"<span class='bar-track'><span class='bar-fill' style='width:{width:.1f}%;background:{high}'></span></span>"
-                f"<span class='bar-value'>{html.escape(value_text)}</span>"
+                f"<span class='bar-value' data-evidence-primary>{html.escape(value_text)}</span>"
                 f"</button>"
             )
         body = "<div class='bar-list'>" + "".join(items) + "</div>"

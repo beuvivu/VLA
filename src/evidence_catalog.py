@@ -320,6 +320,10 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         _sec("#ket-qua", "Bảng kết quả", _ev([_ket_qua(f), _LOTO], ["Lấy kỳ quay đã lưu theo ngày đang chọn.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."])),
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
         _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
+        _sec("#ai-ml .bar-label", "Số được chấm điểm", _ev([_CAU_KEO], [
+            "Nhãn là số 00–99 mà thanh bên cạnh chấm điểm — một định danh, không phải giá trị đo.",
+            "Giá trị của số ấy là điểm cầu-kèo in ở cuối cùng thanh.",
+        ])),
         _sec("#mo-phong, #du-doan-vui", "Bảng mô phỏng", _ev([_MO_PHONG, _du_bao(f)], ["Rút hai chữ số cuối theo xác suất mô hình bằng hạt giống cố định của kỳ.", "Phần đầu là số ngẫu nhiên, không mang thông tin.", "Sổ nhật ký chấm bảng đã hiện với kết quả thật."])),
         _sec(".fun-ledger", "Sổ nhật ký mô phỏng", _ev([_MO_PHONG, _ket_qua(f)], [
             "Mỗi kỳ ghi bảng mô phỏng đang hiện lúc 18:10, trước giờ quay; sau giờ ấy dòng của kỳ đóng băng.",

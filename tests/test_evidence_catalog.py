@@ -319,3 +319,12 @@ def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws()
     assert "xác suất mô hình" in steps(".fun-ledger td[data-col='sim']")
     html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     assert re.search(r"<td[^>]*data-col=.actual.", html), "sổ nhật ký phải gắn tên cột cho từng ô"
+
+
+def test_bar_labels_are_identifiers_not_scores() -> None:
+    """Nhãn «54» trên biểu đồ ngày mai là tên số; điểm của nó là «59» ở cuối thanh."""
+    sections = {s.get("match"): s for s in registry("index.html")["sections"]}
+    label = " ".join(sections["#ai-ml .bar-label"]["reasoningTrace"]["steps"])
+    assert "định danh" in label and "0,38" not in label
+    html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    assert re.search(r'class="bar-value"[^>]*data-evidence-primary', html), "điểm phải là số chính của nút thanh"

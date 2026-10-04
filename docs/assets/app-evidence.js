@@ -475,10 +475,21 @@
       return;
     }
     var el = valueTarget(event.target);
-    if (el && el === event.target && !drawerOpen()) { showTip(el, keyboard ? "self" : false); }
+    if (el && el === event.target && !drawerOpen()) { showTip(el, keyboard ? "self" : false); return; }
+    /* Liên kết hay nút chứa NHIỀU số (cầu "67,76" kèm số ngày, thanh "54 … 59"):
+       tiêu điểm nằm trên chính điều khiển, nên Alt + Enter mở số chính của nó.
+       Các số còn lại vẫn chọn được bằng mũi tên trong vùng bao quanh. */
+    var inner = keyboard && !drawerOpen() ? controlNumber(event.target) : null;
+    if (inner) {
+      showTip(inner, "self");
+      event.target.setAttribute("aria-describedby", tip.id);
+    }
   });
   doc.addEventListener("focusout", function (event) {
-    if (event.target === tipFor) { hideTip(); }
+    if (event.target === tipFor || (tipFor && event.target.contains && event.target.contains(tipFor))) { hideTip(); }
+    if (event.target.getAttribute && event.target.getAttribute("aria-describedby") === tip.id) {
+      event.target.removeAttribute("aria-describedby");
+    }
     if (event.target === activeRegion && !(event.relatedTarget && activeRegion.contains(event.relatedTarget))) {
       deactivate();
     }
@@ -731,6 +742,21 @@
     }
   }
 
+  /* Số chính của một điều khiển nhận tiêu điểm (liên kết, nút) chứa nhiều số:
+     phần tử khai [data-evidence-primary] nếu có, không thì số đầu tiên. */
+  function controlNumber(control) {
+    if (!control || control.nodeType !== 1 || !root.contains(control) || control.closest(EXCLUDE)) { return null; }
+    if (!selfFocusable(control) || control.hasAttribute("data-evidence-region")) { return null; }
+    var found = null;
+    var primary = control.querySelector("[data-evidence-primary]");
+    if (primary) {
+      eachItem(primary, null, function (el) { if (control.contains(el) && el !== control) { found = el; return false; } });
+      if (found) { return found; }
+    }
+    eachItem(control, null, function (el) { if (control.contains(el) && el !== control) { found = el; return false; } });
+    return found;
+  }
+
   function firstItem(region) {
     var found = null;
     eachItem(region, region, function (el) { found = el; return false; });
@@ -933,8 +959,9 @@
     if (event.key === "Escape" && tipFor && !drawerOpen()) { hideTip(); return; }
     if (event.key !== "Enter" && event.key !== " ") { return; }
     var el = valueTarget(event.target);
-    if (!el || el !== event.target) { return; }
-    var own = el.hasAttribute("data-evidence") && !isInteractive(el);
+    if (!el || el !== event.target) { el = event.key === "Enter" && event.altKey ? controlNumber(event.target) : null; }
+    if (!el) { return; }
+    var own = el === event.target && el.hasAttribute("data-evidence") && !isInteractive(el);
     if (own || (event.key === "Enter" && event.altKey)) {
       event.preventDefault();
       event.stopPropagation();
