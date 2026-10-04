@@ -17,6 +17,7 @@ from cau_keo_domain_challenger import (
     FINAL_GATE_CONFIG,
     POSITIVE_SKILL_EPS,
 )
+from cau_keo_ml import trust_from_pack, trusted_probability
 
 
 def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
@@ -112,6 +113,8 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             raise RuntimeError(f"{mode}: prediction universe is not exactly 00..99")
         required_cols = {
             "ml_prob_raw",
+            "model_trust",
+            "base_rate",
             "ml_prob_baseline",
             "ml_prob_domain",
             "domain_prob_edge",
@@ -137,6 +140,17 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             raise RuntimeError(f"{mode}: inactive challenger changed baseline probabilities")
 
         pack = joblib.load(model_path)
+        # Xác suất đưa vào tổ hợp phải là bản đã co về nền theo kỹ năng của mô
+        # hình nền, đúng trust và nền lưu trong gói — không phải bản thô.
+        model_trust, base_rate = trust_from_pack(pack)
+        # Bộ đọc CSV mặc định của pandas có thể lệch ở chữ số cuối, nên so tương đối 1e-12.
+        if not np.allclose(pred["model_trust"].astype(float), model_trust, atol=1e-15, rtol=1e-12):
+            raise RuntimeError(f"{mode}: persisted model_trust differs from the model pack")
+        if not np.allclose(pred["base_rate"].astype(float), base_rate, atol=1e-15, rtol=1e-12):
+            raise RuntimeError(f"{mode}: persisted base_rate differs from the model pack")
+        trusted = trusted_probability(production, mode=mode, trust=model_trust, base_rate=base_rate)
+        if not np.allclose(pred["prob"].astype(float).to_numpy(), trusted, atol=1e-12, rtol=1e-9):
+            raise RuntimeError(f"{mode}: persisted prob is not the skill-shrunk probability")
         if int(pack.get("domain_schema_version", 0)) != DOMAIN_SCHEMA_VERSION:
             raise RuntimeError(f"{mode}: model-pack domain schema mismatch")
         if bool(pack.get("domain_active")) != active:
@@ -163,6 +177,8 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
         result["modes"][mode] = {
             "active": active,
             "trust": trust,
+            "model_trust": model_trust,
+            "base_rate": base_rate,
             "groups": list(gate.get("production_selected_groups", [])),
             "final_brier_skill": brier_skill,
             "final_logloss_skill": logloss_skill,

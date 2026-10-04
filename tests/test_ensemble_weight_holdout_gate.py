@@ -34,7 +34,7 @@ from ensemble_utils import (
     bernoulli_logloss,
     categorical_brier,
     categorical_logloss,
-    clip01,
+    finalize_blend,
     floor_distribution,
 )
 from learn_ensemble_weights import (
@@ -122,9 +122,10 @@ def test_daily_scores_match_a_straight_reference(mode: str) -> None:
         ref_ll = [categorical_logloss(floor_distribution(p_blend[i]), int(y_idx[i])) for i in range(len(y))]
         ref_br = [categorical_brier(floor_distribution(p_blend[i]), int(y_idx[i])) for i in range(len(y))]
     else:
-        p_clip = clip01(p_blend, eps=1e-6)
-        ref_ll = [bernoulli_logloss(p_clip[i], y[i]) for i in range(len(y))]
-        ref_br = [bernoulli_brier(p_clip[i], y[i]) for i in range(len(y))]
+        # LOTO: chính phép chốt của đường dự đoán thật — neo tổng về 100·nền.
+        p_final = [finalize_blend(p_blend[i], mode) for i in range(len(y))]
+        ref_ll = [bernoulli_logloss(p_final[i], y[i]) for i in range(len(y))]
+        ref_br = [bernoulli_brier(p_final[i], y[i]) for i in range(len(y))]
 
     np.testing.assert_allclose(logloss, ref_ll, rtol=0, atol=1e-12)
     np.testing.assert_allclose(brier, ref_br, rtol=0, atol=1e-12)

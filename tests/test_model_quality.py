@@ -16,6 +16,8 @@ import pytest
 
 import build_model_quality as page
 import model_quality as mq
+from ensemble_utils import anchor_loto_level
+from xsmb_domain import LOTO_BASELINE_RATE
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -145,17 +147,24 @@ def test_ensemble_renormalizes_weights_over_available_components_only() -> None:
     for number in range(100):
         rows.append(
             {"target_date": "2026-01-01", "number": number, "p_ml": 0.25,
-             "p_cau": np.nan, "p_stat": np.nan, "p_active": 0.10, "p_stable": 0.10, "y": 0.0}
+             "p_cau": np.nan, "p_stat": np.nan,
+             "p_active": 0.30 if number == 1 else 0.10, "p_stable": 0.10, "y": 0.0}
         )
     weights = mq.EnsembleWeights(w_ml=0.5, w_cau=0.3, w_stat=0.1, w_active=0.05, w_stable=0.05)
     _, probabilities, _ = mq.ensemble_probabilities(pd.DataFrame(rows), weights, "loto")
-    # ml 0,5 và active/stable 0,05 còn lại -> 0,5/0,6·0,25 + 0,1/0,6·0,10
+    # ml 0,5 và active/stable 0,05 còn lại -> 0,5/0,6·0,25 + 0,1/0,6·0,10;
+    # con 01 có active 0,30 nên cộng thêm 0,05/0,6·0,20.
     #
     # p_ml dùng 0,25 chứ không phải 0,30 như bản trước: 0,30 cho cả 100 con là
     # tổng 30, vượt trần 27 giải của một kỳ — dữ liệu BẤT KHẢ THI về vật lý.
     # Cổng canh tổng biên thêm sau đã loại nó và làm phép kiểm này đỏ, đúng
     # việc của nó.
-    assert probabilities[0][0] == pytest.approx(0.5 / 0.6 * 0.25 + 0.1 / 0.6 * 0.10)
+    expected = np.full(100, 0.5 / 0.6 * 0.25 + 0.1 / 0.6 * 0.10)
+    expected[1] += 0.05 / 0.6 * 0.20
+    # Phép chốt của sản xuất neo tổng về 100·nền, nên mức không thể tụt dù thiếu
+    # thành phần; thứ còn phân biệt được trọng số là TỈ LỆ giữa các con.
+    np.testing.assert_allclose(probabilities[0], anchor_loto_level(expected), rtol=1e-12)
+    assert probabilities[0].sum() == pytest.approx(100 * LOTO_BASELINE_RATE)
 
 
 def test_skill_chart_pins_off_scale_points_instead_of_dropping_them() -> None:

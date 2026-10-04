@@ -141,7 +141,8 @@ def _du_bao(f: dict[str, str]) -> Source:
         "title": "Dự báo đã công bố trước kỳ quay",
         "snippet": (
             f"Vector xác suất 100 số{target}: tổ hợp các thành phần ML, cầu, thống kê và hai "
-            "nhánh đường đi, rồi hiệu chỉnh."
+            "nhánh đường đi, chốt mức (LOTO: tổng bằng số con khác nhau kỳ vọng mỗi kỳ; "
+            "Đặc Biệt: tổng bằng 1), rồi hiệu chỉnh."
         ),
         "url": "dashboard.html",
     }
@@ -394,12 +395,14 @@ def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
     """Các cột của bảng cầu-kèo không phải điểm tổng hợp: mỗi cột một phép tính."""
     raw = _ev([_CAU_KEO, _ket_qua(f)], [
         "Cột «Bằng chứng» in các tín hiệu THÔ của số ấy, trước khi chuẩn hoá min–max để tính điểm.",
-        "ML = xác suất của mô hình cầu-kèo; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
+        "ML = xác suất THÔ của mô hình cầu-kèo, trước khi co về nền; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
         "Đặc Biệt→x = (số lần về + 1) / (số lần thử + 10) của số ấy ở kỳ ngay sau những kỳ có hai số cuối Đặc Biệt như kỳ này; loto→x = tỉ lệ cao nhất của số ấy về ở kỳ ngay sau một con LOTO của kỳ này.",
         "gap = số kỳ kể từ lần về gần nhất; f30 = số lần về trong 30 kỳ gần nhất.",
     ])
     prob = _ev([_CAU_KEO, _ket_qua(f)], [
         "Xác suất về ở kỳ kế tiếp của riêng mô hình cầu-kèo (cây tăng cường hiệu chỉnh Platt), chỉ dùng các kỳ trước.",
+        "Co về nền theo kỹ năng: p = trust·thô + (1 − trust)·nền, trust = clip(20·s, 0, 1), s là kỹ năng (kém hơn trong logloss/Brier) của mô hình so với tỉ lệ nền trên khối thẩm định chưa dùng để học. Không có kỹ năng thì trust = 0 và mọi số nhận đúng tỉ lệ nền.",
+        "Điểm cầu-kèo và cột «Bằng chứng» vẫn đọc xác suất THÔ, nên thứ hạng không đổi khi trust = 0.",
         "Đặc Biệt chuẩn hoá để 100 số cộng lại 100%; LOTO giữ nguyên.",
         "Đây không phải xác suất tổ hợp đã công bố ở trang Bảng điều khiển.",
     ])
@@ -494,6 +497,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Cách học trọng số và luật của cổng nằm ở khối «Trọng số».",
             ])),
             _sec_heading("Hiệu chỉnh", "Hiệu chỉnh xác suất", _ev([_trong_so(f), _cham(f)], [
+                "Trước hiệu chỉnh, vector trộn được chốt mức. LOTO: nhân mọi số với cùng một hệ số để tổng xác suất bằng số con khác nhau kỳ vọng mỗi kỳ, 100·(1 − 0,99²⁷) ≈ 23,77 — thứ hạng giữ nguyên. Đặc Biệt: chuẩn hoá về tổng 1 và dành 5% cho phân phối đều.",
                 "Sau khi trộn, xác suất được hiệu chỉnh bằng tham số học trên một khối ngày RIÊNG, nằm sau khối dùng để học trọng số (hai khối không chồng nhau).",
                 "Các số trong khối là tham số hiệu chỉnh hoặc logloss/Brier trên khối hiệu chỉnh.",
             ])),

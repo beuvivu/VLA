@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 from ensemble_components import COMPONENT_KEYS, availability_from_history_day
-from ensemble_utils import clip01, floor_distribution, load_ensemble_weights
+from ensemble_utils import finalize_blend, load_ensemble_weights
 
 SCHEMA_VERSION: Final[int] = 1
 MODES: Final[tuple[str, ...]] = ("loto", "de")
@@ -99,7 +99,7 @@ def _effective_weights(raw: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 def _blend(vectors: np.ndarray, effective: np.ndarray, mode: str) -> np.ndarray:
     mixed = np.tensordot(effective, vectors, axes=(0, 0))
-    return floor_distribution(mixed) if mode == "de" else clip01(mixed, eps=1e-6)
+    return finalize_blend(mixed, mode)
 
 
 def decision_share(

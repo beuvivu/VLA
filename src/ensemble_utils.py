@@ -9,6 +9,8 @@ from typing import Final, Iterable
 import numpy as np
 import pandas as pd
 
+from xsmb_domain import LOTO_BASELINE_RATE
+
 #: Trọng số khi CHƯA học được: cầu 0,30 / thống kê 0,20 / ML 0,25 / hai nhánh
 #: cầu 0,125 mỗi bên. Đây là giá trị đặt tay, không phải kết quả tối ưu.
 #: Phiên bản lược đồ tối thiểu của ``weights_<mode>.json`` được phép dùng.
@@ -83,6 +85,49 @@ def floor_distribution(
 
 def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     return np.clip(p, eps, 1.0 - eps)
+
+
+def anchor_loto_level(p: np.ndarray) -> np.ndarray:
+    """Neo TỔNG xác suất LOTO về số con khác nhau kỳ vọng mỗi kỳ: ``Σp = 100·nền``.
+
+    Mỗi kỳ có đúng 27 giải, nên số con 00–99 khác nhau về là ``Σ_n y_n`` với kỳ
+    vọng ``100·(1 − 0,99²⁷) ≈ 23,77`` — 4 225 kỳ lịch sử đo 23,83 ± 0,02; chênh
+    0,3% ấy đổi logloss chưa tới 10⁻⁶ nats mỗi số, nên neo theo mức lý thuyết.
+    Vector nào có tổng khác con số ấy là SAI MỨC ở mọi con cùng lúc, bất kể
+    thứ hạng đúng hay sai. Đặc Biệt có ràng buộc tương tự là tổng bằng 1
+    (``floor_distribution``); LOTO trước đây không có.
+
+    Đo walk-forward 1 000 kỳ (kỳ đích 25-12-2023 → 04-10-2026): hai nhánh cầu vị
+    trí có tổng trung vị 24,49 (active) và 26,47 (stable) — lời nguyền người thắng
+    của việc chọn top quy tắc — nên tổ hợp trọng số mặc định ra tổng 24,22 và kém
+    dự báo hằng số z = −3,33. Chỉ neo mức đã đưa nó về z = +1,76; neo xong, từng
+    nhánh cầu vị trí cũng về ngang hằng số (z = −0,06 và −0,03;
+    ``scripts/benchmark_component_trust.py``).
+
+    Nhân cùng một hệ số nên giữ nguyên thứ hạng của mọi con. Nhận vector 100 số
+    hoặc ma trận ``(kỳ, 100)``; hàng có tổng 0 nhận đúng tỉ lệ nền.
+    """
+    values = np.asarray(p, dtype=np.float64)
+    total = values.sum(axis=-1, keepdims=True)
+    target = values.shape[-1] * LOTO_BASELINE_RATE
+    safe = np.where(total > 0.0, total, 1.0)
+    scaled = np.where(total > 0.0, values * (target / safe), LOTO_BASELINE_RATE)
+    return clip01(scaled, eps=1e-6)
+
+
+def finalize_blend(p: np.ndarray, mode: str) -> np.ndarray:
+    """Phép chốt của tổ hợp tuyến tính TRƯỚC hiệu chuẩn — một nguồn cho mọi nơi.
+
+    Đường dự đoán thật (``predict_nextday_2d``), bộ học trọng số và hiệu chuẩn,
+    tầng xếp chồng, trang Chất lượng và bảng đóng góp thành phần đều phải chấm
+    ĐÚNG vector mà hệ thống xuất bản. Trước đây năm nơi ấy tự chép phép chốt;
+    chép là để chúng trôi khỏi nhau.
+    """
+    if mode == "de":
+        return floor_distribution(p)
+    if mode == "loto":
+        return anchor_loto_level(p)
+    raise ValueError("mode must be 'loto' or 'de'")
 
 
 def sigmoid(x: np.ndarray) -> np.ndarray:

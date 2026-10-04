@@ -36,7 +36,7 @@ from ensemble_utils import (
     categorical_brier,
     categorical_logloss,
     clip01,
-    floor_distribution,
+    finalize_blend,
     normalize_distribution,
 )
 from ml_models import PlattCalibratedClassifier
@@ -601,7 +601,7 @@ def _baseline_validation(
                     mode=mode,
                 )
                 raw += effective[f"w_{key}"] * component.prob
-        raw = floor_distribution(raw) if mode == "de" else clip01(raw, eps=1e-6)
+        raw = finalize_blend(raw, mode)
         predictions.append(apply_calibration(mode, raw, calib) if all(available.values()) else raw)
     configured = weights.as_dict()
     weight_dict = {f"p_{key}": configured[f"w_{key}"] for key in COMPONENT_KEYS}

@@ -39,6 +39,7 @@ from cau_keo_ml import (
     _downsample,
     build_cau_keo_feature_frame,
     run as run_baseline,
+    trust_from_pack,
 )
 from cau_keo_feature_groups import (
     ALL_DOMAIN_FEATURES,
@@ -519,6 +520,8 @@ def _write_prediction_outputs(
         "prob",
         "prob_percent",
         "ml_prob_raw",
+        "model_trust",
+        "base_rate",
         "ml_prob_baseline",
         "ml_prob_domain",
         "domain_prob_edge",
@@ -572,7 +575,12 @@ def _ensure_baseline(
     model_path = models_dir / f"cau_keo_{mode}.joblib"
     output_path = out_dir / f"cau_keo_{mode}_all.csv"
     if model_path.exists() and output_path.exists():
-        return
+        try:
+            trust_from_pack(joblib.load(model_path))
+            return
+        except (AttributeError, EOFError, ImportError, OSError, ValueError):
+            # Gói thiếu luật tin hiện hành: học lại nền thay vì đọc trust mặc định.
+            pass
     run_baseline(
         mode=mode,
         models_dir=models_dir,
@@ -647,7 +655,12 @@ def run_mode(
     X_pred["domain_active"] = active
     X_pred["domain_groups"] = "|".join(selected_groups) if selected_groups else ""
     X_pred["ml_prob_raw"] = p_prod
-    judged = _add_ai_judgement(X_pred, mode=mode)
+    # Co về nền theo kỹ năng của mô hình NỀN: thách đấu miền chỉ được bật khi
+    # hơn mô hình nền, nên chưa chứng minh được gì so với dự báo hằng số.
+    baseline_trust, base_rate = trust_from_pack(pack)
+    judged = _add_ai_judgement(
+        X_pred, mode=mode, trust=baseline_trust, base_rate=base_rate
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     created = _write_prediction_outputs(judged, mode=mode, out_dir=out_dir, top=config.top)
