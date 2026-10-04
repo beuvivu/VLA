@@ -375,5 +375,8 @@ def test_calendar_values_cite_the_calendar_engine_and_only_results_cite_the_ledg
     cal = sections["#app-calendar"]
     assert [src["title"] for src in cal["sources"]] == ["Bộ tính lịch âm dương Việt Nam"]
     assert "không đọc từ sổ kết quả" in " ".join(cal["reasoningTrace"]["steps"])
+    # Meeus chỉ cho điểm sóc; tiết khí/tháng nhuận theo kinh độ Mặt Trời, can chi là phép đếm chu kỳ.
+    snippet = cal["sources"][0]["snippet"]
+    assert "kinh độ Mặt Trời" in snippet and "Julius" in snippet and "địa chi" in snippet
     special = sections["#app-calendar .app-calendar-result, #app-calendar .app-calendar-special"]
     assert any(src["title"].startswith("Sổ kết quả") for src in special["sources"])

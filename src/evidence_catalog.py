@@ -186,9 +186,10 @@ def _trong_so(f: dict[str, str]) -> Source:
 _LICH: Source = {
     "title": "Bộ tính lịch âm dương Việt Nam",
     "snippet": (
-        "Chạy trong trình duyệt theo giờ Việt Nam (UTC+7), từ năm 1900 đến 2099: điểm sóc tính theo "
-        "công thức thiên văn (Meeus, chương 49), rồi suy ra ngày âm, tháng nhuận, can chi, tiết khí và "
-        "giờ hoàng đạo."
+        "Chạy trong trình duyệt theo giờ Việt Nam (UTC+7), từ năm 1900 đến 2099. Mỗi đại lượng có công "
+        "thức riêng: ngày âm theo điểm sóc (Meeus, chương 49); tháng nhuận là tháng không chứa trung khí, "
+        "tính theo kinh độ Mặt Trời; tiết khí cũng theo kinh độ Mặt Trời; can chi ngày theo số ngày "
+        "Julius, can chi tháng và năm theo tháng và năm âm; giờ hoàng đạo theo địa chi của ngày."
     ),
 }
 
@@ -339,6 +340,7 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         # Lịch: ngày tháng do bộ tính lịch sinh ra; chỉ giải Đặc Biệt lấy từ sổ kết quả.
         _sec("#app-calendar", "Lịch vạn niên", _ev([_LICH], [
             "Ngày dương, ngày âm (kể cả tháng nhuận), can chi, tiết khí và giờ hoàng đạo do bộ tính lịch sinh ra trong trình duyệt — không đọc từ sổ kết quả.",
+            "Ngày âm dựa trên điểm sóc; tháng nhuận và tiết khí dựa trên kinh độ Mặt Trời; can chi và giờ hoàng đạo là phép đếm chu kỳ 10 can, 12 chi từ số ngày và tháng, năm âm.",
             "Năm hiển thị giới hạn 1900–2099, tức phạm vi của bộ tính lịch.",
         ])),
         _sec("#app-calendar .app-calendar-result, #app-calendar .app-calendar-special", "Đặc Biệt theo ngày", _ev([_ket_qua(f), _DAC_BIET], [
