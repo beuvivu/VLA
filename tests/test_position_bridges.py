@@ -226,6 +226,8 @@ def test_the_home_panel_links_each_bridge_with_the_reference_parameters() -> Non
     assert chip.select_one("b").get_text() == "44,99"
     assert chip.select_one(".app-bridge-shadow").get_text() == ",99", "số bóng phải phân biệt được với số cầu"
     assert chip.select_one(".app-bridge-streak").get_text() == "6"
+    # Mỗi số một phần tử: "44,99" viết liền bị đọc thành số thập phân 44,99.
+    assert [s.get_text() for s in chip.select(".app-bridge-num")] == ["44", "99"]
 
 
 def test_the_home_panel_refuses_a_report_from_another_draw() -> None:

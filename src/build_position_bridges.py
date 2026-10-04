@@ -89,12 +89,15 @@ def _chip(cfg: dict, bridge: dict) -> str:
     """Một cầu trong ô trang chủ: cặp số, số bóng (nếu là số kép) và số ngày chạy."""
     numbers = pair_key(bridge["numbers"])
     shadow = bridge.get("shadow")
-    extra = f'<i class="app-bridge-shadow">,{html.escape(shadow)}</i>' if shadow else ""
+    # Mỗi số một phần tử: "67,76" viết liền đọc như số thập phân 67,76.
+    num = lambda n: f'<span class="app-bridge-num">{html.escape(n)}</span>'  # noqa: E731
+    shown = ",".join(num(n) for n in numbers.split(","))
+    extra = f'<i class="app-bridge-shadow">,{num(shadow)}</i>' if shadow else ""
     title = f'Vị trí {bridge["vt"]} · chạy {bridge["streak"]} ngày · {bridge.get("same_pair", 1)} cầu cùng báo cặp này'
     if shadow:
         title += f" · {shadow} là số bóng của {numbers}, chỉ tham khảo"
     return (f'<li><a href="{html.escape(link(cfg, bridge))}" title="{html.escape(title)}">'
-            f'<b>{html.escape(numbers)}{extra}</b>'
+            f'<b>{shown}{extra}</b>'
             f'<span class="app-bridge-streak">{bridge["streak"]}</span></a></li>')
 
 

@@ -568,7 +568,8 @@ def _table(
                 width = max(4.0, min(100.0, float(x) / max_highlight * 100.0))
                 val_text = _display_cell(raw, c)
                 val = f"<div class='mini-bar'><i style='width:{width:.1f}%'></i><b>{val_text}</b></div>"
-            cells.append(f"<td class='{cell_class}'>{val}</td>")
+            # data-col: danh mục bằng chứng cấp cách tính riêng cho từng cột.
+            cells.append(f"<td class='{cell_class}' data-col='{html.escape(c)}'>{val}</td>")
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
     compact_class = " compact" if compact else ""

@@ -319,9 +319,10 @@ def _ledger_block(ledger: pd.DataFrame | None) -> str:
         cls = " is-hit" if verdict.startswith("Trúng") else ""
         rows.append(
             f"<tr class='fun-ledger-row{cls}'>"
-            f"<td title='{html.escape(row['target_date'])}'>{html.escape(_short_date(row['target_date']))}</td>"
-            f"<td>{html.escape(row['special'])}</td><td>{actual}</td>"
-            f"<td>{verdict}</td><td>{loto}</td></tr>"
+            # data-col: số mô phỏng, kết quả thật và phép chấm có bằng chứng riêng.
+            f"<td title='{html.escape(row['target_date'])}' data-col='ky'>{html.escape(_short_date(row['target_date']))}</td>"
+            f"<td data-col='sim'>{html.escape(row['special'])}</td><td data-col='actual'>{actual}</td>"
+            f"<td data-col='verdict'>{verdict}</td><td data-col='loto'>{loto}</td></tr>"
         )
     if total["days"]:
         tally = (

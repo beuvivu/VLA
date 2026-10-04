@@ -165,7 +165,7 @@ def render(key: str, report: dict) -> str:
         row[:10] for row in reversed(report["draws"])
         if not cfg["weekday"] or date.fromisoformat(row[:10]).weekday() == data["default_weekday"]
     )
-    overview = card(f'<p id="app-cau-summary" class="app-cau-summary" role="status">{html.escape(cfg["title"])}: '
+    overview = card(f'<p id="app-cau-summary" class="app-cau-summary" role="status" data-evidence-split>{html.escape(cfg["title"])}: '
              f'{data["total"]} cầu chạy từ {cfg["count"]} ngày, cầu dài nhất {data["longest"]} ngày.</p>'
              f'<p class="app-cau-help">Rê chuột hoặc chạm vào một ô để thấy các vị trí tạo cầu trên bảng kết quả; '
              f'bấm vào ô để chọn từng cầu và xem cách tính.</p>'

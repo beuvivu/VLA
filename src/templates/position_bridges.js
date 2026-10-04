@@ -251,7 +251,13 @@
 
   function numberChips(bridge, big = false) {
     const box = el("span", big ? "app-bridge-numbers app-bridge-numbers--big" : "app-bridge-numbers");
-    box.append(el("b", "", bridge.numbers.join(",")));
+    // Mỗi số một phần tử: "67,76" viết liền đọc như số thập phân 67,76.
+    const pair = el("b", "");
+    bridge.numbers.forEach((n, i) => {
+      if (i) pair.append(",");
+      pair.append(el("span", "app-bridge-num", n));
+    });
+    box.append(pair);
     if (bridge.shadow) {
       const note = el("small", "app-bridge-shadow", `bóng ${bridge.shadow}`);
       note.title = "Số bóng của số kép — chỉ để tham khảo, không tính vào cầu";

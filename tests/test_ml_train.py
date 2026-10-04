@@ -51,3 +51,26 @@ def test_ml_rankings_stay_meaningful_when_every_probability_is_the_baseline() ->
     # prob vẫn là tiêu chí chính.
     df.loc[5, "prob"] = 0.30
     assert rank_predictions(df)["number"].iloc[0] == "05"
+
+
+def test_ml_predictions_record_which_trust_policy_produced_them(tmp_path, monkeypatch) -> None:
+    """Tệp dự báo ghi phiên bản luật trust, để trang bằng chứng nhận ra tệp cũ."""
+    import sys
+
+    import ml_predict
+    from ml_train import TRUST_POLICY_VERSION
+
+    pack = {"features": ["f"], "model": object(), "model_trust": 0.0, "baseline_prob": 0.27,
+            "quality_pass": False, "trust_policy_version": TRUST_POLICY_VERSION}
+    monkeypatch.setattr(ml_predict, "_latest_data_date", lambda: "2026-10-03")
+    monkeypatch.setattr(ml_predict, "_load_or_train_model", lambda *a, **k: pack)
+    monkeypatch.setattr(ml_predict, "build_features_for_prediction",
+                        lambda **k: ("2026-10-03", pd.DataFrame({"f": range(100)})))
+    monkeypatch.setattr(ml_predict, "predict_with_feature_allowlist",
+                        lambda model, X, cols: np.linspace(0.2, 0.3, 100))
+    monkeypatch.setattr(sys, "argv", ["ml_predict.py", "--out-dir", str(tmp_path), "--models-dir", str(tmp_path)])
+    ml_predict.main()
+    for mode in ("loto", "de"):
+        frame = pd.read_csv(tmp_path / f"predict_next_{mode}_ml_all.csv")
+        assert set(frame["trust_policy_version"]) == {TRUST_POLICY_VERSION}
+        assert (frame["model_trust"] == 0.0).all()

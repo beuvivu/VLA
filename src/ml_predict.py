@@ -201,6 +201,9 @@ def main() -> None:
                 "raw_model_prob": raw_proba,
                 "model_trust": trust,
                 "quality_pass": bool(pack.get("quality_pass", True)),
+                # Luật nào đã tính model_trust: trang bằng chứng dựa vào nó để
+                # không trình bày tệp tạo theo luật cũ như luật hiện hành.
+                "trust_policy_version": int(pack.get("trust_policy_version", 1)),
             }
         )
         df = rank_predictions(df)
