@@ -182,6 +182,8 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
         assert any(f'id="{ident}"' in html for ident in ids) or any(
             re.search(rf'class="(?:[^"]* )?{re.escape(c)}(?: [^"]*)?"', html) for c in classes
         ), (page.name, entry["match"])
+        for col in re.findall(r"data-col='([\w-]+)'", entry["match"]):
+            assert f"data-col='{col}'" in html or f'data-col="{col}"' in html, (page.name, col)
 
 
 def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
@@ -285,3 +287,17 @@ def test_de_rows_at_trust_bounds_still_say_the_probabilities_are_normalised(trus
     assert "chuẩn hoá" in de and "dùng nguyên" not in de
     loto = " ".join(ml_row_evidence(_ml_frame(trust), "loto")[0][1]["reasoningTrace"]["steps"])
     assert "chuẩn hoá" not in loto
+
+
+def test_raw_cau_keo_inputs_get_their_own_derivation_not_the_score_formula() -> None:
+    """``cầu=1635`` trong cột «Bằng chứng» là số đếm thô, không phải điểm 0–100."""
+    by_match = {s.get("match"): s for s in registry("statistics.html")["sections"]}
+    raw = next(s for m, s in by_match.items() if m and "data-col='evidence'" in m)
+    steps = " ".join(raw["reasoningTrace"]["steps"])
+    assert "THÔ" in steps and "30 kỳ" in steps and "0,38" not in steps
+    prob = next(s for m, s in by_match.items() if m and "data-col='prob_percent'" in m)
+    assert "Platt" in " ".join(prob["reasoningTrace"]["steps"])
+    paths = by_match["#can-cu-cau"]
+    assert "0,38" not in " ".join(paths["reasoningTrace"]["steps"])
+    html = (ROOT / "docs" / "statistics.html").read_text(encoding="utf-8")
+    assert re.search(r"<td[^>]*data-col=.evidence.", html), "bảng phải gắn tên cột cho từng ô"

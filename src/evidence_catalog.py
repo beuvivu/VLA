@@ -331,16 +331,48 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     return page, sections
 
 
+def _cot(section: str, *cols: str) -> str:
+    """Bộ chọn các ô của những cột dữ liệu ``cols`` trong khối ``section``."""
+    return ", ".join(f"{section} td[data-col='{c}']" for c in cols)
+
+
+def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
+    """Các cột của bảng cầu-kèo không phải điểm tổng hợp: mỗi cột một phép tính."""
+    raw = _ev([_CAU_KEO, _ket_qua(f)], [
+        "Cột «Bằng chứng» in các tín hiệu THÔ của số ấy, trước khi chuẩn hoá min–max để tính điểm.",
+        "ML = xác suất của mô hình cầu-kèo; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
+        "Đặc Biệt→x = (số lần về + 1) / (số lần thử + 10) của số ấy ở kỳ ngay sau những kỳ có hai số cuối Đặc Biệt như kỳ này; loto→x = tỉ lệ cao nhất của số ấy về ở kỳ ngay sau một con LOTO của kỳ này.",
+        "gap = số kỳ kể từ lần về gần nhất; f30 = số lần về trong 30 kỳ gần nhất.",
+    ])
+    prob = _ev([_CAU_KEO, _ket_qua(f)], [
+        "Xác suất về ở kỳ kế tiếp của riêng mô hình cầu-kèo (cây tăng cường hiệu chỉnh Platt), chỉ dùng các kỳ trước.",
+        "Đặc Biệt chuẩn hoá để 100 số cộng lại 100%; LOTO giữ nguyên.",
+        "Đây không phải xác suất tổ hợp đã công bố ở trang Bảng điều khiển.",
+    ])
+    paths = _ev([_ket_qua(f), _CAU], [
+        "Mỗi đường cầu ghép chữ số ở hai vị trí của bảng kết quả một ngày gốc (trễ tối đa 30 ngày) thành một số; chỉ giữ đường có ít nhất 60 lần thử.",
+        "Đang chạy: chuỗi trúng hiện tại ≥ 3; ổn định: chuỗi trúng dài nhất ≥ 3. p = (trúng + α) / (thử + α + β), trung bình hậu nghiệm Beta.",
+        "Điểm đường cầu = 100·p·min(1, thử/365) + 3,8·chuỗi hiện tại + 1,35·chuỗi dài nhất + 0,2·min(trúng, 120) + điểm cộng khi chạm Đặc Biệt — chỉ để xếp thứ tự, không phải tín hiệu đặt cược.",
+        "Các cột tổng hợp đếm số đường cầu của số ấy và lấy điểm, p, chuỗi lớn nhất trong số đó; cột giải thích ghép điểm và xác suất cầu-kèo với các đường mạnh nhất thành câu.",
+    ])
+    return [
+        _sec(_cot("#ai-ml", "evidence"), "Tín hiệu thô của cầu-kèo", raw),
+        _sec(_cot("#ai-ml", "prob_percent") + ", " + _cot("#can-cu-cau", "ai_prob_percent"), "Xác suất mô hình cầu-kèo", prob),
+        _sec(_cot("#can-cu-cau", "ai_cau_score"), "Điểm cầu-kèo", _cau_keo_ev(f)),
+        _sec("#can-cu-cau", "Căn cứ đường cầu", paths),
+    ]
+
+
 def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     page = _thong_ke(f, "Dựng các bảng tần suất, gan, đầu đuôi và cặp từ cùng một sổ kết quả.")
     sections = [
-        _sec("#ai-ml", "Cầu-kèo AI/ML", _cau_keo_ev(f, "Cột xác suất là xác suất của riêng mô hình cầu-kèo (Đặc Biệt chuẩn hoá tổng 100 số bằng 1), không phải xác suất tổ hợp đã công bố.")),
+        _sec("#ai-ml", "Cầu-kèo AI/ML", _cau_keo_ev(f, "Ma trận, biểu đồ và cột điểm in điểm này; cột xác suất và cột «Bằng chứng» có cách tính riêng.")),
         _sec_heading("Kiểm định cầu-kèo", "Kiểm định cầu-kèo", _ev([_CAU_KEO, _ket_qua(f)], [
             "Học trên các kỳ trước lát kiểm định, rồi dự báo từng ngày của lát kiểm định gần nhất (ngày đầu ghi ở cột ngày bắt đầu).",
             "Mỗi dòng là một nhóm K số điểm cao nhất: số ngày kiểm, số ngày có ít nhất một số trong nhóm về và tỉ lệ ấy, số lượt về trung bình mỗi ngày.",
             "Brier và logloss chấm xác suất của mô hình cầu-kèo trên cùng lát kiểm định; nhỏ hơn là tốt hơn.",
         ])),
-        _sec("#can-cu-cau", "Căn cứ cầu", _cau_keo_ev(f, "Các cột đường cầu đếm số đường cầu vị trí ghép ra số ấy (đang chạy, ổn định) và đường mạnh nhất; cột xác suất là của riêng mô hình cầu-kèo.")),
+        *_cau_keo_cot(f),
         _sec("#gan-nhip", "Gan và nhịp", _thong_ke(f, "Gan = số kỳ kể từ lần về gần nhất; nhịp = khoảng cách giữa hai lần về.")),
         _sec("#dieu-kien", "Điều kiện lịch sử", _thong_ke(f, "Lọc các kỳ thoả điều kiện rồi đếm kết cục ở kỳ kế tiếp; mẫu nhỏ thì dao động lớn.")),
     ]
