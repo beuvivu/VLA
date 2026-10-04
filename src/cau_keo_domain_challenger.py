@@ -522,6 +522,7 @@ def _write_prediction_outputs(
         "ml_prob_raw",
         "model_trust",
         "base_rate",
+        "trust_policy_version",
         "ml_prob_baseline",
         "ml_prob_domain",
         "domain_prob_edge",

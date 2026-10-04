@@ -10,7 +10,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from ensemble_components import (
+    COMPONENT_POLICY,
     availability_from_history_day,
+    policy_column,
     probability_component,
     renormalize_available_weights,
 )
@@ -80,6 +82,7 @@ def _history_day(day: str, *, zero_component: str | None = None, explicit_flags:
         if key == zero_component:
             p[:] = 0.0
         data[f"p_{key}"] = p
+        data[policy_column("cau")] = COMPONENT_POLICY["cau"]
         if explicit_flags:
             data[f"has_{key}"] = [key != zero_component] * 100
     return pd.DataFrame(data)
@@ -108,3 +111,64 @@ def test_explicit_string_false_availability_is_not_truthy() -> None:
     available = availability_from_history_day(sub)
     assert available["ml"] is True
     assert available["stat"] is False
+
+
+def test_learners_ignore_cau_recorded_under_an_older_definition() -> None:
+    """Trước 04-10-2026 cột ``p_cau`` là xác suất THÔ; sau đó là bản đã co về nền.
+
+    Bộ học trọng số và tầng xếp chồng không được học trên hỗn hợp hai định
+    nghĩa, còn trang Chất lượng — dựng lại thứ ĐÃ công bố — vẫn đọc dòng cũ.
+    """
+    current = _history_day("2026-10-06")
+    legacy = _history_day("2026-10-01").drop(columns=[policy_column("cau")])
+    older = _history_day("2026-10-02")
+    older[policy_column("cau")] = COMPONENT_POLICY["cau"] - 1
+    df = pd.concat([legacy, older, current], ignore_index=True)
+
+    assert _select_recent_complete_days(df, 180) == ["2026-10-06"]
+    assert availability_from_history_day(legacy)["cau"] is True
+    assert availability_from_history_day(legacy, current_policy=True)["cau"] is False
+    assert availability_from_history_day(older, current_policy=True)["cau"] is False
+    # Thành phần không đổi định nghĩa không bị ảnh hưởng.
+    assert availability_from_history_day(legacy, current_policy=True)["ml"] is True
+
+
+def test_stacked_model_tiers_without_cau_still_use_legacy_days() -> None:
+    import meta_predictor as meta
+
+    legacy = _history_day("2026-10-01").drop(columns=[policy_column("cau")])
+    current = _history_day("2026-10-06")
+    df = pd.concat([legacy, current], ignore_index=True)
+    with_cau = meta._complete_days_for_components(df, ["p_ml", "p_cau"], 0, mode="loto")
+    without_cau = meta._complete_days_for_components(df, ["p_ml", "p_active"], 0, mode="loto")
+    assert with_cau == ["2026-10-06"]
+    assert without_cau == ["2026-10-01", "2026-10-06"]
+
+
+def test_history_records_the_definition_each_component_declares(tmp_path, monkeypatch) -> None:
+    import record_pred_history as recorder
+
+    data = tmp_path / "data"
+    data.mkdir()
+    pd.DataFrame({"date": ["2026-01-01"]}).to_csv(data / "xsmb.csv", index=False)
+    dirs = {name: tmp_path / name for name in ("path_ui", "ml", "ai_ml", "stat", "history")}
+    for path in dirs.values():
+        path.mkdir()
+    full = pd.DataFrame({"number": range(100), "prob": 0.2, "target_date": "2026-01-02"})
+    full.to_csv(dirs["ml"] / "predict_next_loto_ml_all.csv", index=False)
+    full.assign(trust_policy_version=COMPONENT_POLICY["cau"]).to_csv(
+        dirs["ai_ml"] / "cau_keo_loto_all.csv", index=False
+    )
+    # Đặc Biệt: tệp cầu-kèo không khai phiên bản — phải ghi là KHÔNG rõ, không đoán.
+    full.assign(prob=0.01).to_csv(dirs["ai_ml"] / "cau_keo_de_all.csv", index=False)
+    argv = ["record_pred_history.py", "--data-dir", str(data), "--path-ui-dir", str(dirs["path_ui"]),
+            "--ml-dir", str(dirs["ml"]), "--out-dir", str(dirs["history"]),
+            "--ai-ml-dir", str(dirs["ai_ml"]), "--stat-dir", str(dirs["stat"])]
+    monkeypatch.setattr(sys, "argv", argv)
+    recorder.main()
+
+    loto = pd.read_csv(dirs["history"] / "pred_loto.csv")
+    de = pd.read_csv(dirs["history"] / "pred_de.csv")
+    assert (loto[policy_column("cau")] == COMPONENT_POLICY["cau"]).all()
+    assert de[policy_column("cau")].isna().all()
+    assert recorder._policy_version(full.assign(trust_policy_version=[1] * 99 + [2])) != 1

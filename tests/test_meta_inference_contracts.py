@@ -12,6 +12,7 @@ from sklearn.dummy import DummyClassifier
 
 import meta_predictor as meta
 import predict_nextday_2d as predictor
+from ensemble_components import COMPONENT_POLICY, policy_column
 from ensemble_utils import anchor_loto_level
 from xsmb_domain import LOTO_BASELINE_RATE
 
@@ -23,6 +24,7 @@ def _history() -> pd.DataFrame:
     for key in ("ml", "cau", "stat", "active", "stable"):
         frame[f"p_{key}"] = 0.01
         frame[f"has_{key}"] = True
+    frame[policy_column("cau")] = COMPONENT_POLICY["cau"]
     return frame
 
 

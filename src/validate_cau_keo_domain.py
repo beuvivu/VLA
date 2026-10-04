@@ -17,7 +17,7 @@ from cau_keo_domain_challenger import (
     FINAL_GATE_CONFIG,
     POSITIVE_SKILL_EPS,
 )
-from cau_keo_ml import trust_from_pack, trusted_probability
+from cau_keo_ml import TRUST_POLICY_VERSION, trust_from_pack, trusted_probability
 
 
 def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
@@ -115,6 +115,7 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             "ml_prob_raw",
             "model_trust",
             "base_rate",
+            "trust_policy_version",
             "ml_prob_baseline",
             "ml_prob_domain",
             "domain_prob_edge",
@@ -148,6 +149,9 @@ def validate(*, data_dir: Path, models_dir: Path) -> dict[str, object]:
             raise RuntimeError(f"{mode}: persisted model_trust differs from the model pack")
         if not np.allclose(pred["base_rate"].astype(float), base_rate, atol=1e-15, rtol=1e-12):
             raise RuntimeError(f"{mode}: persisted base_rate differs from the model pack")
+        # Sổ lịch sử dựa vào cột này để không trộn định nghĩa cũ với định nghĩa mới.
+        if not (pd.to_numeric(pred["trust_policy_version"], errors="coerce") == TRUST_POLICY_VERSION).all():
+            raise RuntimeError(f"{mode}: persisted trust_policy_version is not the current policy")
         trusted = trusted_probability(production, mode=mode, trust=model_trust, base_rate=base_rate)
         if not np.allclose(pred["prob"].astype(float).to_numpy(), trusted, atol=1e-12, rtol=1e-9):
             raise RuntimeError(f"{mode}: persisted prob is not the skill-shrunk probability")

@@ -36,6 +36,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
 
 from calendar_alignment import require_daily_contiguous
+from ensemble_components import COMPONENT_POLICY
 from lottery import Lottery
 from ml_features import _pairs_indices, _path_support_matrix
 from ml_train import model_trust
@@ -45,10 +46,11 @@ from ml_models import PlattCalibratedClassifier
 Mode = Literal["loto", "de"]
 NUMBER_COLS = list(range(100))
 
-#: Luật tính ``model_trust`` của gói cầu-kèo. Đổi luật thì tăng số này: gói đã
-#: lưu mang trust tính theo luật cũ, và dùng lại nó là phát xác suất theo công
-#: thức đã bỏ — ``_load_or_train`` coi gói khác số là phải học lại.
-TRUST_POLICY_VERSION = 1
+#: Luật tính ``model_trust`` của gói cầu-kèo. Đổi luật thì tăng số này (ở
+#: ``ensemble_components.COMPONENT_POLICY``): gói đã lưu mang trust tính theo luật
+#: cũ, và dùng lại nó là phát xác suất theo công thức đã bỏ — ``_load_or_train``
+#: coi gói khác số là phải học lại, còn sổ lịch sử ghi số này cho từng dòng.
+TRUST_POLICY_VERSION = COMPONENT_POLICY["cau"]
 
 logger = logging.getLogger(__name__)
 
@@ -911,6 +913,7 @@ def _add_ai_judgement(
     # thứ tự, nhưng khi trust = 0 mọi ``prob`` bằng nhau và không còn gì để xếp.
     out["model_trust"] = float(trust)
     out["base_rate"] = float(base_rate)
+    out["trust_policy_version"] = TRUST_POLICY_VERSION
     out["prob"] = trusted_probability(
         out["ml_prob_raw"], mode=mode, trust=trust, base_rate=base_rate
     )
@@ -963,6 +966,7 @@ def _write_outputs(
         "ml_prob_raw",
         "model_trust",
         "base_rate",
+        "trust_policy_version",
         "cau_score",
         "score_band",
         "primary_reason",

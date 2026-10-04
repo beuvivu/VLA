@@ -87,6 +87,11 @@ def clip01(p: np.ndarray, eps: float = 1e-6) -> np.ndarray:
     return np.clip(p, eps, 1.0 - eps)
 
 
+#: Biên của mọi xác suất LOTO đã chốt — cùng ``eps`` với ``clip01``.
+_PROB_LO: Final[float] = 1e-6
+_PROB_HI: Final[float] = 1.0 - 1e-6
+
+
 def anchor_loto_level(p: np.ndarray) -> np.ndarray:
     """Neo TỔNG xác suất LOTO về số con khác nhau kỳ vọng mỗi kỳ: ``Σp = 100·nền``.
 
@@ -105,14 +110,47 @@ def anchor_loto_level(p: np.ndarray) -> np.ndarray:
     ``scripts/benchmark_component_trust.py``).
 
     Nhân cùng một hệ số nên giữ nguyên thứ hạng của mọi con. Nhận vector 100 số
-    hoặc ma trận ``(kỳ, 100)``; hàng có tổng 0 nhận đúng tỉ lệ nền.
+    hoặc ma trận ``(kỳ, 100)``; hàng có tổng 0 nhận đúng tỉ lệ nền. Hàng mà phép
+    nhân đẩy một số ra ngoài ``[1e-6, 1 − 1e-6]`` đi qua ``_bounded_level``, để
+    phép chặn biên không âm thầm phá tổng đã hứa.
     """
     values = np.asarray(p, dtype=np.float64)
     total = values.sum(axis=-1, keepdims=True)
     target = values.shape[-1] * LOTO_BASELINE_RATE
     safe = np.where(total > 0.0, total, 1.0)
     scaled = np.where(total > 0.0, values * (target / safe), LOTO_BASELINE_RATE)
-    return clip01(scaled, eps=1e-6)
+    inside = np.all((scaled >= _PROB_LO) & (scaled <= _PROB_HI), axis=-1)
+    if np.all(inside):
+        return scaled
+    rows = scaled.reshape(-1, values.shape[-1])
+    raw = values.reshape(-1, values.shape[-1])
+    for index in np.flatnonzero(~np.asarray(inside).reshape(-1)):
+        rows[index] = _bounded_level(raw[index], target)
+    return rows.reshape(values.shape)
+
+
+def _bounded_level(row: np.ndarray, target: float) -> np.ndarray:
+    """``clip(c·row, lo, hi)`` với hệ số ``c`` chọn để tổng đúng bằng ``target``.
+
+    Tổng ấy tăng đơn điệu theo ``c`` nên tìm ``c`` bằng chia đôi; thứ hạng vẫn
+    giữ (không nghiêm ở chỗ chạm biên). Khi chính phép nhân không đủ — các số
+    dương đều chạm trần mà tổng vẫn thiếu, như vector ``[1, 0, …, 0]`` — phần còn
+    thiếu chia đều cho các số bằng 0: không có bằng chứng nào phân biệt chúng.
+    """
+    positive = row > 0.0
+    ceiling = positive.sum() * _PROB_HI + (~positive).sum() * _PROB_LO
+    if ceiling < target:
+        out = np.where(positive, _PROB_HI, 0.0)
+        out[~positive] = (target - out.sum()) / max(int((~positive).sum()), 1)
+        return out
+    low, high = 0.0, _PROB_HI / float(row[positive].min())
+    for _ in range(200):
+        middle = 0.5 * (low + high)
+        if np.clip(middle * row, _PROB_LO, _PROB_HI).sum() < target:
+            low = middle
+        else:
+            high = middle
+    return np.clip(high * row, _PROB_LO, _PROB_HI)
 
 
 def finalize_blend(p: np.ndarray, mode: str) -> np.ndarray:

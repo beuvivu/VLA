@@ -27,6 +27,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from ensemble_components import COMPONENT_POLICY, policy_column
 from ensemble_utils import (
     DEFAULT_ENSEMBLE_WEIGHTS,
     EnsembleWeights,
@@ -316,6 +317,7 @@ def test_the_written_file_records_the_refusal(tmp_path: Path) -> None:
                     "number": number,
                     "y": float(rng.random() < LOTO_RATE),
                     **{c: float(rng.random() * 0.4 + 0.05) for c in COMPONENT_COLS},
+                    policy_column("cau"): COMPONENT_POLICY["cau"],
                 }
             )
     hist_dir = tmp_path / "history"

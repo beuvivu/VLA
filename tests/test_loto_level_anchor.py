@@ -43,6 +43,25 @@ def test_anchor_works_row_by_row_and_gives_an_empty_row_the_base_rate() -> None:
     np.testing.assert_allclose(out[1], LOTO_BASELINE_RATE)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        np.r_[1.0, np.zeros(99)],  # hợp lệ với probability_component, dồn hết vào một con
+        np.r_[0.9, np.full(99, 0.05)],  # nhân lên thì con đầu vượt 1
+        np.r_[np.zeros(50), np.full(50, 0.3)],  # nửa số bằng 0
+    ],
+    ids=["one-hot", "one-dominant", "half-zero"],
+)
+def test_bounding_never_breaks_the_promised_sum(raw: np.ndarray) -> None:
+    """Chặn biên sau khi nhân không được âm thầm phá tổng: ``[1, 0, …]`` từng ra 1,0001."""
+    out = anchor_loto_level(raw)
+    assert out.sum() == pytest.approx(EXPECTED_SUM, abs=1e-9)
+    assert out.min() >= 1e-6 and out.max() <= 1 - 1e-6
+    order = np.argsort(raw, kind="stable")
+    assert np.all(np.diff(out[order]) >= -1e-15)  # thứ hạng giữ (không nghiêm ở chỗ chạm biên)
+    np.testing.assert_allclose(anchor_loto_level(np.vstack([raw, raw]))[1], out)
+
+
 def test_finalize_blend_is_the_floor_for_de_and_the_anchor_for_loto() -> None:
     raw = np.linspace(0.0, 0.02, 100)
     np.testing.assert_array_equal(finalize_blend(raw, "de"), floor_distribution(raw))

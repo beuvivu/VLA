@@ -105,6 +105,8 @@ def test_zero_trust_emits_the_base_rate_but_keeps_the_raw_ranking() -> None:
     out = _add_ai_judgement(_judgement_frame(raw), mode="loto", trust=0.0, base_rate=0.237)
     np.testing.assert_allclose(out["prob"].astype(float), 0.237)
     assert (out["model_trust"] == 0.0).all() and (out["base_rate"] == 0.237).all()
+    # Sổ lịch sử đọc phiên bản này để không trộn xác suất thô cũ với bản đã co.
+    assert (out["trust_policy_version"] == TRUST_POLICY_VERSION).all()
     # Xác suất thô vẫn được giữ và vẫn quyết định điểm, nên thứ tự không đổi.
     by_number = out.set_index("number")
     np.testing.assert_allclose(by_number.loc[[0, 1, 2], "ml_prob_raw"], raw)

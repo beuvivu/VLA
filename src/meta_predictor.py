@@ -251,7 +251,7 @@ def _complete_days_for_components(
             continue
         # Cùng hợp đồng với production: cờ thiếu, vector rỗng và số trùng
         # không được biến thành lịch sử đủ trưởng thành cho tầng xếp chồng.
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         if all(available.get(column.removeprefix("p_"), False) for column in component_cols):
             days.append(str(day))
     return days if window_days <= 0 else days[-window_days:]
@@ -591,7 +591,7 @@ def _baseline_validation(
     predictions: list[np.ndarray] = []
     for day in val_days:
         sub = by_day[day]
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         effective = renormalize_available_weights(weights, available).as_dict()
         raw = np.zeros(100)
         for key in COMPONENT_KEYS:

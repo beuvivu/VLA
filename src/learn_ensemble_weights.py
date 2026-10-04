@@ -67,7 +67,7 @@ def _select_recent_complete_days(
         numbers = pd.to_numeric(sub.get("number"), errors="coerce")
         if numbers.isna().any() or set(numbers.astype(int).tolist()) != set(range(100)):
             continue
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         if all(available.get(key, False) for key in COMPONENT_KEYS):
             complete.append(str(day))
 
