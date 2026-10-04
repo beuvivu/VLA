@@ -159,12 +159,23 @@
     return h1 ? short(h1.textContent, 90) : short(doc.title, 90);
   }
 
+  var HEADINGS = ":scope > h2, :scope > h3, :scope > h4, :scope > header h2, :scope > header h3, " +
+    ":scope > .ui-card-head h2, :scope > .ui-card-head h3, :scope > div > h2, :scope > div > h3";
+
   function headingOf(container) {
-    var h = container.querySelector(
-      ":scope > h2, :scope > h3, :scope > h4, :scope > header h2, :scope > header h3, " +
-      ":scope > .ui-card-head h2, :scope > .ui-card-head h3, :scope > div > h2, :scope > div > h3"
-    );
+    var h = container.querySelector(HEADINGS);
     return h ? short(h.textContent, 80) : "";
+  }
+
+  /* Tiêu đề GẦN NHẤT của khối đứng TRƯỚC con số: thẻ «Trọng số» có bảng trọng
+     số rồi mới tới h3 «Hiệu chỉnh» — ô trọng số không thuộc tiêu đề đứng sau nó. */
+  function headingBefore(container, el) {
+    var found = "";
+    var all = container.querySelectorAll(HEADINGS);
+    for (var i = 0; i < all.length; i += 1) {
+      if (all[i].compareDocumentPosition(el) & 4) { found = short(all[i].textContent, 80); }
+    }
+    return found;
   }
 
   function sectionTitle(el) {
@@ -275,7 +286,7 @@
     } catch (error) { return null; }
     if (!entry.heading) { return null; }
     for (var anc = el.parentElement; anc && anc !== root && anc !== doc.body; anc = anc.parentElement) {
-      if (anc.namespaceURI !== SVG_NS && headingOf(anc).indexOf(entry.heading) === 0) { return anc; }
+      if (anc.namespaceURI !== SVG_NS && headingBefore(anc, el).indexOf(entry.heading) === 0) { return anc; }
     }
     return null;
   }

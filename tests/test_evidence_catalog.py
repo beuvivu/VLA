@@ -358,3 +358,10 @@ def test_home_matrix_cells_open_their_value_and_pair_labels_are_split() -> None:
     value = re.search(r'data-value="([^"]*)"', cell).group(1)
     assert f'data-evidence-value="{value}"' in cell
     assert re.search(r'class="bar-label"><span>\d\d</span>-<span>\d\d</span>', html), "cặp phải tách thành hai phần tử số"
+
+
+def test_dashboard_suggestion_metadata_is_not_a_forecast_probability() -> None:
+    """«Trọng số áp dụng thực tế 0.125» trong thẻ gợi ý là siêu dữ liệu đã ghi, không phải xác suất."""
+    sections = {s.get("heading"): s for s in registry("dashboard.html")["sections"]}
+    steps = " ".join(sections["Danh sách gợi ý"]["reasoningTrace"]["steps"])
+    assert "siêu dữ liệu" in steps and "không phải xác suất" in steps

@@ -497,3 +497,21 @@ test('Tiêu đề hạng có định ngữ ("Hạng trong kỳ") vẫn là cột
   assert.equal(dom.window.appEvidence.evidenceFor(row.cells[0]).scope, 'Thứ hạng trong bảng');
   assert.notEqual(dom.window.appEvidence.evidenceFor(row.cells[1]).scope, 'Thứ hạng trong bảng');
 });
+
+test('Khớp theo tiêu đề chỉ tính tiêu đề đứng TRƯỚC con số', t => {
+  const reg = JSON.parse(JSON.stringify(REGISTRY));
+  reg.sections.push(
+    { heading: 'Trọng số', title: 'Trọng số', sources: [{ title: 'Trọng số', snippet: 's' }], reasoningTrace: { steps: ['Học trọng số.'] } },
+    { heading: 'Hiệu chỉnh', title: 'Hiệu chỉnh', sources: [{ title: 'Hiệu chỉnh', snippet: 's' }], reasoningTrace: { steps: ['Hiệu chỉnh.'] } },
+  );
+  const dom = start(t, { registry: JSON.stringify(reg) }), d = dom.window.document;
+  const card = d.createElement('section');
+  const head = d.createElement('h2'); head.textContent = 'Trọng số (LOTO)';
+  const body = d.createElement('div');
+  const w = d.createElement('p'); w.id = 'w-cell'; w.textContent = '0.25';
+  const sub = d.createElement('h3'); sub.textContent = 'Hiệu chỉnh (LOTO)';
+  const c = d.createElement('p'); c.id = 'c-cell'; c.textContent = '4.89';
+  body.append(w, sub, c); card.append(head, body); $(dom, 'app-main').append(card);
+  assert.equal(dom.window.appEvidence.evidenceFor(w).scope, 'Trọng số', 'tiêu đề đứng sau không giành con số trước nó');
+  assert.equal(dom.window.appEvidence.evidenceFor(c).scope, 'Hiệu chỉnh');
+});

@@ -465,6 +465,11 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Vector học từ các ngày gần đây chỉ được dùng khi thắng vector MẶC ĐỊNH trên lát kiểm ngoài mẫu (ngày chưa dùng để học) với biên ≥ 0,20%.",
                 "Các số trong khối là trọng số, hoặc chỉ số của cổng: logloss/Brier từng vector, số ngày học/kiểm, biên thắng và khoảng tin cậy.",
             ])),
+            _sec_heading("Danh sách gợi ý", "Tệp danh sách gợi ý", _ev([_du_bao(f), _trong_so(f)], [
+                "Khối in tệp danh sách gợi ý đã ghi cho kỳ tới: các số được chọn từ vector xác suất đã công bố, kèm siêu dữ liệu của lần chạy.",
+                "Siêu dữ liệu là bản sao giá trị đã ghi trong tệp — trọng số áp dụng thực tế, số ngày lịch sử, cỡ mẫu và chênh logloss/Brier của cổng — không phải xác suất của một số.",
+                "Cách học trọng số và luật của cổng nằm ở khối «Trọng số».",
+            ])),
             _sec_heading("Hiệu chỉnh", "Hiệu chỉnh xác suất", _ev([_trong_so(f), _cham(f)], [
                 "Sau khi trộn, xác suất được hiệu chỉnh bằng tham số học trên một khối ngày RIÊNG, nằm sau khối dùng để học trọng số (hai khối không chồng nhau).",
                 "Các số trong khối là tham số hiệu chỉnh hoặc logloss/Brier trên khối hiệu chỉnh.",
