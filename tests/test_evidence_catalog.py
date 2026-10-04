@@ -249,6 +249,10 @@ def test_every_block_of_the_research_pages_carries_its_own_derivation(page: str)
     reg = registry(page)
     prefixes = [s["heading"] for s in reg["sections"] if "heading" in s]
     for head in _card_headings(page):
+        # Thẻ «⚠ Báo cáo chẩn đoán đang cũ» chỉ hiện khi bước chẩn đoán hỏng và
+        # chỉ chứa NGÀY — mà ngày không bao giờ được nhận là con số.
+        if head.startswith("⚠"):
+            continue
         assert any(head.startswith(prefix) for prefix in prefixes), (page, head)
     generic = " ".join(reg["page"]["reasoningTrace"]["steps"])
     for claim in ("High", "Medium", "FDR", "tập giữ lại", "hậu nghiệm"):

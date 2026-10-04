@@ -408,9 +408,6 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
             "Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
         ]), [
-            _sec_heading("⚠ Báo cáo chẩn đoán", "Báo cáo đang cũ", _ev([_cham(f), _ket_qua(f)], [
-                "So ngày chấm cuối cùng ghi trong báo cáo chẩn đoán với ngày mới nhất của lịch sử đánh giá; hai ngày trong khối là hai mốc ấy.",
-            ])),
             _sec_heading("Đã sửa một lỗi đơn vị", "Sửa đơn vị Brier", _ev([_cham(f)], [
                 "Đếm số dòng Brier Đặc Biệt trong lịch sử đã lưu từng ghi theo trung bình 100 lớp và đã được đổi sang tổng 100 lớp như các dòng mới.",
                 "Dòng cũ được nhận ra bằng bất biến toán học của đơn vị, không bằng mốc ngày cứng.",
