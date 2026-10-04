@@ -33,6 +33,8 @@
   }
   function specialNumber(value, className) {
     const item = node('span', className);
+    // Giải tách để tô hai số cuối vẫn là MỘT giá trị khi mở bằng chứng.
+    item.setAttribute('data-evidence-value', value);
     item.append(document.createTextNode(value.slice(0, 3)), node('b', '', value.slice(3)));
     return item;
   }

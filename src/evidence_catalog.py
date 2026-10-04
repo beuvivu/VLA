@@ -183,6 +183,15 @@ def _trong_so(f: dict[str, str]) -> Source:
     }
 
 
+_LICH: Source = {
+    "title": "Bộ tính lịch âm dương Việt Nam",
+    "snippet": (
+        "Chạy trong trình duyệt theo giờ Việt Nam (UTC+7), từ năm 1900 đến 2099: điểm sóc tính theo "
+        "công thức thiên văn (Meeus, chương 49), rồi suy ra ngày âm, tháng nhuận, can chi, tiết khí và "
+        "giờ hoàng đạo."
+    ),
+}
+
 _MO_PHONG_RUI_RO: Source = {
     "title": "Mô phỏng kỳ kế tiếp",
     "snippet": "10 000 kỳ giả lập, mỗi kỳ 27 giải rút đều trong 00–99; so nhóm số đang công bố với kết cục giả lập.",
@@ -327,6 +336,18 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     sections = [
         _sec("#live", "Kết quả trực tiếp", _ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Khi phiên kết thúc, kết quả được lưu vào sổ."])),
         _sec("#ket-qua", "Bảng kết quả", _ev([_ket_qua(f), _LOTO], ["Lấy kỳ quay đã lưu theo ngày đang chọn.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."])),
+        # Lịch: ngày tháng do bộ tính lịch sinh ra; chỉ giải Đặc Biệt lấy từ sổ kết quả.
+        _sec("#app-calendar", "Lịch vạn niên", _ev([_LICH], [
+            "Ngày dương, ngày âm (kể cả tháng nhuận), can chi, tiết khí và giờ hoàng đạo do bộ tính lịch sinh ra trong trình duyệt — không đọc từ sổ kết quả.",
+            "Năm hiển thị giới hạn 1900–2099, tức phạm vi của bộ tính lịch.",
+        ])),
+        _sec("#app-calendar .app-calendar-result, #app-calendar .app-calendar-special", "Đặc Biệt theo ngày", _ev([_ket_qua(f), _DAC_BIET], [
+            "Giải Đặc Biệt đã quay của đúng ngày ấy, lấy nguyên từ sổ kết quả đã lưu; chỉ nhận ngày hợp lệ và giải đủ 5 chữ số.",
+            "«Hai số cuối» là 2 chữ số cuối của giải; ngày chưa có trong sổ thì không có số.",
+        ])),
+        _sec("#app-calendar-summary", "Số ngày có kết quả", _ev([_ket_qua(f), _LICH], [
+            "Đếm số ngày thuộc tháng đang xem có giải Đặc Biệt trong sổ kết quả.",
+        ])),
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
         _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
         # Nhãn mọi biểu đồ thanh trên trang (cầu-kèo, gan, cặp lộn…): định danh.
