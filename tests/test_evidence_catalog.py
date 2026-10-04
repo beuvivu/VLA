@@ -365,3 +365,18 @@ def test_dashboard_suggestion_metadata_is_not_a_forecast_probability() -> None:
     sections = {s.get("heading"): s for s in registry("dashboard.html")["sections"]}
     steps = " ".join(sections["Danh sách gợi ý"]["reasoningTrace"]["steps"])
     assert "siêu dữ liệu" in steps and "không phải xác suất" in steps
+
+
+
+@pytest.mark.parametrize("page", ["index.html", "landing.html"])
+def test_calendar_values_cite_the_calendar_engine_and_only_results_cite_the_ledger(page: str) -> None:
+    """Ngày âm/dương do bộ tính lịch sinh ra; chỉ giải Đặc Biệt trong lịch đến từ sổ kết quả."""
+    sections = {s.get("match"): s for s in registry(page)["sections"]}
+    cal = sections["#app-calendar"]
+    assert [src["title"] for src in cal["sources"]] == ["Bộ tính lịch âm dương Việt Nam"]
+    assert "không đọc từ sổ kết quả" in " ".join(cal["reasoningTrace"]["steps"])
+    # Meeus chỉ cho điểm sóc; tiết khí/tháng nhuận theo kinh độ Mặt Trời, can chi là phép đếm chu kỳ.
+    snippet = cal["sources"][0]["snippet"]
+    assert "kinh độ Mặt Trời" in snippet and "Julius" in snippet and "địa chi" in snippet
+    special = sections["#app-calendar .app-calendar-result, #app-calendar .app-calendar-special"]
+    assert any(src["title"].startswith("Sổ kết quả") for src in special["sources"])

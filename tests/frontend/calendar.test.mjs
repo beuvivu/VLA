@@ -85,6 +85,8 @@ test('lịch thật có giải đủ 5 số, số 0 đầu, chi tiết âm lịc
   assert.match(d.getElementById('app-calendar-detail').textContent, /Tết Trung thu/);
   d.querySelector('[data-calendar-date="2026-09-01"]').click();
   assert.equal(d.querySelector('.app-calendar-special-number').textContent, '00001');
+  // Giải tách để tô (000<b>01</b>) vẫn là MỘT giá trị khi mở bằng chứng.
+  assert.equal(d.querySelector('.app-calendar-special-number').getAttribute('data-evidence-value'), '00001');
   d.querySelector('[data-calendar-date="2026-09-02"]').click();
   assert.equal(d.querySelector('.app-calendar-special-number').textContent, '00000');
   d.querySelector('[data-calendar-date="2026-09-26"]').click();
