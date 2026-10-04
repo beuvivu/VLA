@@ -73,7 +73,9 @@ def _day_matrices(
     labels: list[np.ndarray] = []
 
     for day, sub in _usable_days(history, mode):
-        available = availability_from_history_day(sub, mode=mode)
+        # Bảng này công bố đóng góp của ĐỊNH NGHĨA hiện hành, nên dòng ghi theo
+        # định nghĩa cũ (p_cau thô trước 04-10-2026) không được tính là cầu-kèo.
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         per_component = np.zeros((len(COMPONENT_KEYS), 100), dtype=np.float64)
         mask = np.zeros(len(COMPONENT_KEYS), dtype=np.float64)
         for index, key in enumerate(COMPONENT_KEYS):

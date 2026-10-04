@@ -113,7 +113,8 @@ bằng bản đã co, với đúng trust trong gói.
 Đổi định nghĩa `prob` cũng đổi nghĩa cột `p_cau` trong sổ `data/history/pred_<mode>.csv`. Sổ không bị
 viết lại; thay vào đó tệp cầu-kèo khai `trust_policy_version`, sổ ghi số ấy vào cột `policy_cau` của
 từng dòng mới, và bộ học trọng số/hiệu chỉnh cùng tầng xếp chồng chỉ coi `p_cau` là có mặt khi dòng ghi
-đúng phiên bản hiện hành (`ensemble_components.COMPONENT_POLICY`). Trang Chất lượng — dựng lại thứ ĐÃ
+đúng phiên bản hiện hành (`ensemble_components.COMPONENT_POLICY`); bảng đóng góp thành phần cũng vậy,
+vì nó công bố đóng góp của định nghĩa hiện hành. Trang Chất lượng — dựng lại thứ ĐÃ
 công bố — vẫn đọc dòng cũ theo định nghĩa cũ. Hệ quả: bộ học trọng số đòi đủ năm thành phần nên bắt
 đầu tích luỹ lại từ kỳ đầu tiên theo luật mới; hôm nay nó vốn chưa đề bạt gì (trọng số mặc định, hiệu
 chỉnh đồng nhất, xếp chồng thiếu lịch sử), nên production không đổi vì việc này.

@@ -195,7 +195,8 @@ Cầu-kèo (`cau_keo_ml`, trọng số tổ hợp 0,30) dùng CÙNG luật từ 
 xác suất thô cho điểm và lý do. Walk-forward 1 000 kỳ đo xác suất thô kém hằng số (Đặc Biệt
 z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co. Dòng `p_cau` cũ trong sổ
 `data/history/pred_<mode>.csv` là xác suất THÔ: sổ ghi `policy_cau` cho dòng mới, và nơi HỌC từ sổ
-(trọng số, hiệu chỉnh, xếp chồng) gọi `availability_from_history_day(..., current_policy=True)`.
+(trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
+`availability_from_history_day(..., current_policy=True)`.
 Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
 
 ## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
