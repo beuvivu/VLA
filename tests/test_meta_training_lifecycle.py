@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 import meta_predictor as meta
+from ensemble_components import COMPONENT_POLICY, policy_column
 from predict_nextday_2d import _meta_prediction
 
 
@@ -27,6 +28,7 @@ def _history(mode: str, days: int, valid_days: int | None = None) -> pd.DataFram
             p = rng.uniform(0.15, 0.30, size=100)
             frame[f"p_{name}"] = p / p.sum() if mode == "de" else p
             frame[f"has_{name}"] = True
+        frame[policy_column("cau")] = COMPONENT_POLICY["cau"]
         if valid_days is not None and i < days - valid_days:
             frame["has_ml"] = False
         rows.append(frame)

@@ -36,13 +36,21 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
 
 from calendar_alignment import require_daily_contiguous
+from ensemble_components import COMPONENT_POLICY
 from lottery import Lottery
 from ml_features import _pairs_indices, _path_support_matrix
+from ml_train import model_trust
 from xsmb_domain import raw_digit_matrix
 from ml_models import PlattCalibratedClassifier
 
 Mode = Literal["loto", "de"]
 NUMBER_COLS = list(range(100))
+
+#: Luật tính ``model_trust`` của gói cầu-kèo. Đổi luật thì tăng số này (ở
+#: ``ensemble_components.COMPONENT_POLICY``): gói đã lưu mang trust tính theo luật
+#: cũ, và dùng lại nó là phát xác suất theo công thức đã bỏ — ``_load_or_train``
+#: coi gói khác số là phải học lại, còn sổ lịch sử ghi số này cho từng dòng.
+TRUST_POLICY_VERSION = COMPONENT_POLICY["cau"]
 
 logger = logging.getLogger(__name__)
 
@@ -571,6 +579,17 @@ def _train_model(
         y_val, np.vstack([1 - p_val, p_val]).T, labels=[0, 1]
     )
 
+    # Mốc so sánh: tỉ lệ nền học CHỈ trên các kỳ trước khối thẩm định.
+    base_rate = float(np.clip(y_np[~val_mask.to_numpy()].mean(), 1e-6, 1 - 1e-6))
+    base_vec = np.full(len(y_val), base_rate, dtype=float)
+    base_brier = brier_score_loss(y_val, base_vec)
+    base_ll = log_loss(
+        y_val, np.vstack([1 - base_vec, base_vec]).T, labels=[0, 1]
+    )
+    logloss_skill = float(1.0 - ll / base_ll) if base_ll > 0 else 0.0
+    brier_skill = float(1.0 - brier / base_brier) if base_brier > 0 else 0.0
+    trust = model_trust(logloss_skill, brier_skill)
+
     val_df = X.loc[val_mask].copy().reset_index(drop=True)
     val_df["target"] = y_val
     val_df["prob"] = p_val
@@ -579,6 +598,10 @@ def _train_model(
     report.insert(0, "mode", mode)
     report["val_brier"] = round(float(brier), 10)
     report["val_logloss"] = round(float(ll), 10)
+    report["base_rate"] = base_rate
+    report["logloss_skill"] = logloss_skill
+    report["brier_skill"] = brier_skill
+    report["model_trust"] = trust
     report["calib_start"] = str(pd.to_datetime(calib_start).date())
     report["val_start"] = str(pd.to_datetime(val_start).date())
     report["neg_ratio"] = int(neg_ratio)
@@ -600,11 +623,63 @@ def _train_model(
         ),
         "calibration_prevalence": "natural",
         "calendar_contract": "daily-contiguous raw and two-digit histories",
+        "val_brier": float(brier),
+        "val_logloss": float(ll),
+        "base_rate": base_rate,
+        "logloss_skill": logloss_skill,
+        "brier_skill": brier_skill,
+        "model_trust": trust,
+        "trust_policy_version": TRUST_POLICY_VERSION,
     }
 
     models_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(pack, models_dir / f"cau_keo_{mode}.joblib")
     return pack, report, val_df
+
+
+def trust_from_pack(pack: object) -> tuple[float, float]:
+    """``(model_trust, base_rate)`` của gói cầu-kèo; gói thiếu hay hỏng thì ném ValueError.
+
+    Không có giá trị mặc định: một gói lưu trước khi có luật tin mà được đọc
+    thành trust = 1 sẽ phát lại đúng xác suất thô mà luật này sinh ra để chặn.
+    """
+    if not isinstance(pack, dict):
+        raise ValueError("cầu-kèo model pack has invalid type")
+    policy = pack.get("trust_policy_version")
+    if isinstance(policy, bool) or not isinstance(policy, Integral) or policy != TRUST_POLICY_VERSION:
+        raise ValueError("cầu-kèo trust policy changed")
+    values = []
+    for key in ("model_trust", "base_rate"):
+        value = pack.get(key)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"cầu-kèo model pack lacks numeric {key}")
+        value = float(value)
+        if not np.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError(f"cầu-kèo {key} outside [0, 1]")
+        values.append(value)
+    return values[0], values[1]
+
+
+def trusted_probability(
+    raw: np.ndarray | pd.Series, *, mode: Mode, trust: float, base_rate: float
+) -> np.ndarray:
+    """Xác suất cầu-kèo đưa vào tổ hợp: ``p = trust·thô + (1 − trust)·nền``.
+
+    Cùng luật với thành phần ML (``ml_train.model_trust``): trust = clip(20·s, 0, 1),
+    s là kỹ năng trên khối thẩm định chưa chạm, kém hơn trong logloss/Brier.
+    Walk-forward 1 000 kỳ (học lại mỗi 50 kỳ, kỳ đích 25-12-2023 → 04-10-2026):
+    xác suất THÔ của Đặc Biệt kém dự báo hằng số z = −2,18, bản co hơn bản thô
+    z = +2,18; LOTO thô ngang hằng số và bản co ngang bản thô (z = −0,02). Kỹ năng
+    thẩm định dương ở 10/21 (LOTO) và 9/21 (Đặc Biệt) lần học nhưng trust trung
+    bình chỉ 0,0007 và 0,0001 (``scripts/benchmark_component_trust.py``).
+    Đặc Biệt chuẩn hoá lại về tổng 1.
+    """
+    p = float(trust) * np.asarray(raw, dtype=float) + (1.0 - float(trust)) * float(base_rate)
+    if mode == "de":
+        total = float(p.sum())
+        if total > 0:
+            p = p / total
+    return p
 
 
 def _topk_backtest(
@@ -665,7 +740,12 @@ def _load_or_train(
             pack = joblib.load(model_path)
             same_schema = pack.get("features") == FEATURE_COLS
             up_to_date = str(pack.get("trained_through_date", "")) == latest_anchor
-            if same_schema and up_to_date:
+            try:
+                trust_from_pack(pack)
+                trust_ok = True
+            except ValueError:
+                trust_ok = False
+            if same_schema and up_to_date and trust_ok:
                 # Produce a fresh validation report while avoiding duplicate training
                 # inside the same daily pipeline run. A new draw automatically makes
                 # ``latest_anchor`` advance and forces retraining.
@@ -738,7 +818,9 @@ def _reason_candidates(
     return reasons
 
 
-def _add_ai_judgement(pred: pd.DataFrame, *, mode: Mode) -> pd.DataFrame:
+def _add_ai_judgement(
+    pred: pd.DataFrame, *, mode: Mode, trust: float, base_rate: float
+) -> pd.DataFrame:
     out = pred.copy()
     prob_norm = _minmax(out["ml_prob_raw"])
     path_norm = _minmax(out["path_support"])
@@ -826,14 +908,15 @@ def _add_ai_judgement(pred: pd.DataFrame, *, mode: Mode) -> pd.DataFrame:
         "AI/ML ranking signal from historical statistics; not a guaranteed prediction"
     )
 
-    # A probability alias for compatibility with older dashboard/statistics loaders.
-    if mode == "de":
-        s = float(out["ml_prob_raw"].sum())
-        out["prob"] = (
-            out["ml_prob_raw"] / s if s > 0 else out["ml_prob_raw"]
-        )
-    else:
-        out["prob"] = out["ml_prob_raw"]
+    # ``prob`` là xác suất đưa vào tổ hợp, đã co về nền theo kỹ năng thẩm định;
+    # điểm và lý do ở trên vẫn đọc ``ml_prob_raw`` — co tuyến tính giữ nguyên
+    # thứ tự, nhưng khi trust = 0 mọi ``prob`` bằng nhau và không còn gì để xếp.
+    out["model_trust"] = float(trust)
+    out["base_rate"] = float(base_rate)
+    out["trust_policy_version"] = TRUST_POLICY_VERSION
+    out["prob"] = trusted_probability(
+        out["ml_prob_raw"], mode=mode, trust=trust, base_rate=base_rate
+    )
     out["prob_percent"] = (out["prob"] * 100.0).round(4)
     return out.sort_values(
         ["cau_score", "ml_prob_raw"], ascending=False
@@ -856,7 +939,8 @@ def _predict_next(
         X_pred[FEATURE_COLS].astype(np.float32).to_numpy()
     )[:, 1]
     X_pred["ml_prob_raw"] = proba
-    return _add_ai_judgement(X_pred, mode=mode)
+    trust, base_rate = trust_from_pack(pack)
+    return _add_ai_judgement(X_pred, mode=mode, trust=trust, base_rate=base_rate)
 
 
 def _write_outputs(
@@ -880,6 +964,9 @@ def _write_outputs(
         "prob",
         "prob_percent",
         "ml_prob_raw",
+        "model_trust",
+        "base_rate",
+        "trust_policy_version",
         "cau_score",
         "score_band",
         "primary_reason",

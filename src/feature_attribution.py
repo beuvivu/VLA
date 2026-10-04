@@ -30,7 +30,7 @@ import numpy as np
 import pandas as pd
 
 from ensemble_components import COMPONENT_KEYS, availability_from_history_day
-from ensemble_utils import clip01, floor_distribution, load_ensemble_weights
+from ensemble_utils import finalize_blend, load_ensemble_weights
 
 SCHEMA_VERSION: Final[int] = 1
 MODES: Final[tuple[str, ...]] = ("loto", "de")
@@ -73,7 +73,9 @@ def _day_matrices(
     labels: list[np.ndarray] = []
 
     for day, sub in _usable_days(history, mode):
-        available = availability_from_history_day(sub, mode=mode)
+        # Bảng này công bố đóng góp của ĐỊNH NGHĨA hiện hành, nên dòng ghi theo
+        # định nghĩa cũ (p_cau thô trước 04-10-2026) không được tính là cầu-kèo.
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         per_component = np.zeros((len(COMPONENT_KEYS), 100), dtype=np.float64)
         mask = np.zeros(len(COMPONENT_KEYS), dtype=np.float64)
         for index, key in enumerate(COMPONENT_KEYS):
@@ -99,7 +101,7 @@ def _effective_weights(raw: np.ndarray, mask: np.ndarray) -> np.ndarray:
 
 def _blend(vectors: np.ndarray, effective: np.ndarray, mode: str) -> np.ndarray:
     mixed = np.tensordot(effective, vectors, axes=(0, 0))
-    return floor_distribution(mixed) if mode == "de" else clip01(mixed, eps=1e-6)
+    return finalize_blend(mixed, mode)
 
 
 def decision_share(

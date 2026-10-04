@@ -7,7 +7,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ensemble_components import COMPONENT_KEYS, probability_component
+from ensemble_components import (
+    BLEND_POLICY,
+    BLEND_POLICY_COLUMN,
+    COMPONENT_KEYS,
+    COMPONENT_POLICY,
+    policy_column,
+    probability_component,
+)
 
 
 def _latest_anchor_date(xsmb_csv: Path) -> date:
@@ -45,6 +52,20 @@ def _load_stat_full(stat_dir: Path, mode: str) -> pd.DataFrame:
     if f.exists():
         return pd.read_csv(f)
     return pd.DataFrame(columns=["number", "prob"])
+
+
+def _policy_version(frame: pd.DataFrame) -> float:
+    """Phiên bản định nghĩa mà tệp thành phần tự khai (cột ``trust_policy_version``).
+
+    Tệp không khai, hoặc khai không nhất quán giữa các dòng, nhận NaN: bộ học
+    coi dòng ấy là định nghĩa cũ thay vì đoán.
+    """
+    if "trust_policy_version" not in frame.columns or frame.empty:
+        return float("nan")
+    values = pd.to_numeric(frame["trust_policy_version"], errors="coerce").to_numpy(dtype=float)
+    if not np.isfinite(values).all() or len(set(values.tolist())) != 1:
+        return float("nan")
+    return float(values[0])
 
 
 def _sanitize_history(df: pd.DataFrame) -> pd.DataFrame:
@@ -151,6 +172,14 @@ def main() -> None:
                     f"has_{key}": [bool(component.available)] * 100
                     for key, component in components.items()
                 },
+                **{
+                    policy_column(key): [
+                        _policy_version(frames[key]) if components[key].available else np.nan
+                    ] * 100
+                    for key in COMPONENT_POLICY
+                },
+                # Phép chốt mà predict_nextday_2d của CÙNG lượt chạy dùng để công bố.
+                BLEND_POLICY_COLUMN: [BLEND_POLICY] * 100,
             }
         )
         out_path = out_dir / f"pred_{mode}.csv"

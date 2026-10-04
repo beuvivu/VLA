@@ -189,6 +189,30 @@ Sàn 0,35 cũ trộn 35% mô hình thô cả khi s ≤ 0; walk-forward 997 kỳ 
 (z = −2,40), bỏ sàn hơn sàn z = +2,44 (`scripts/benchmark_model_trust.py`). Đừng khôi phục sàn. Khi
 trust = 0 mọi xác suất ML bằng nền; `ml_predict.rank_predictions` xếp hoà theo xác suất thô.
 
+Cầu-kèo (`cau_keo_ml`, trọng số tổ hợp 0,30) dùng CÙNG luật từ 04-10-2026: cột `prob` =
+`trust·thô + (1 − trust)·nền`, trust và nền học trên khối thẩm định, lưu trong gói và đọc CHỈ qua
+`cau_keo_ml.trust_from_pack` — không có mặc định; gói thiếu luật tin thì học lại. `ml_prob_raw` giữ
+xác suất thô cho điểm và lý do. Walk-forward 1 000 kỳ đo xác suất thô kém hằng số (Đặc Biệt
+z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co. Dòng `p_cau` cũ trong sổ
+`data/history/pred_<mode>.csv` là xác suất THÔ: sổ ghi `policy_cau` cho dòng mới, và nơi HỌC từ sổ
+(trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
+`availability_from_history_day(..., current_policy=True)`.
+Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
+
+## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
+
+`ensemble_utils.finalize_blend(p, mode)` là phép chốt của tổ hợp tuyến tính TRƯỚC hiệu chỉnh:
+Đặc Biệt = `floor_distribution`; LOTO = `anchor_loto_level`, tức `Σp = 100·(1 − 0,99²⁷) ≈ 23,77`
+(số con khác nhau kỳ vọng mỗi kỳ), nhân cùng một hệ số nên giữ thứ hạng. Hai nhánh cầu vị trí
+thổi tổng lên 24,5 và 26,5 (lời nguyền người thắng khi chọn top quy tắc), nên trước đó tổ hợp LOTO
+kém hằng số chỉ vì SAI MỨC. Mọi nơi chấm vector tổ hợp — `predict_nextday_2d`,
+`learn_ensemble_weights`, `meta_predictor._baseline_validation`, `model_quality`,
+`feature_attribution` — phải gọi hàm ấy; đừng chép lại `clip01`
+(`tests/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
+`policy_blend`, và trang Chất lượng chốt dòng cũ (không có cột) bằng `anchor_loto=False`.
+Số đo: `scripts/benchmark_component_trust.py`,
+`documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.
+
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
 
 Trang Chất lượng mô hình và bộ theo dõi `src/skill_monitor.py` chấm chính
