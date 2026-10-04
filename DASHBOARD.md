@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-10-03T15:15:49Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-10-03T17:18:02Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -92,8 +92,8 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | **17** | 24.145% | Thấp · disp 0.004 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
 | 2 | **47** | 24.133% | Thấp · disp 0.004 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **95** | 23.962% | Cao · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **63** | 23.958% | Cao · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **95** | 23.962% | Trung bình · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **63** | 23.958% | Cao · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
 | 5 | **15** | 23.946% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 6 | **25** | 23.946% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 7 | **33** | 23.919% | Cao · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
@@ -137,21 +137,21 @@
 
 | # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **70** | 1.026% | Thấp · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **54** | 1.025% | Thấp · disp 0.001 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **89** | 1.018% | Thấp · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | **70** | 1.026% | Trung bình · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **54** | 1.025% | Trung bình · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **89** | 1.018% | Cao · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
 | 4 | **20** | 1.017% | Thấp · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **85** | 1.017% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **03** | 1.014% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | **16** | 1.011% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | **95** | 1.011% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | **88** | 1.009% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | **38** | 1.009% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | **77** | 1.009% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **85** | 1.017% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **03** | 1.014% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | **16** | 1.011% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | **95** | 1.011% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | **88** | 1.009% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | **38** | 1.009% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | **77** | 1.009% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 12 | **40** | 1.008% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 13 | **14** | 1.008% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 | 14 | **82** | 1.007% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | **05** | 1.007% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | **05** | 1.007% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 
 ### Đặc Biệt · Ma trận nhiệt xác suất 00–99
 
