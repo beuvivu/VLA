@@ -401,3 +401,15 @@ test('Không tách chữ trong SVG, tiêu đề tháng-ngày; tách đúng danh 
   assert.deepEqual(tokens('pathid'), ['10', '95'], '[10,95] là hai vị trí, không phải 10,95');
   assert.equal($(dom, 'pathid').textContent, 'L11-[10,95]', 'chữ hiển thị giữ nguyên');
 });
+
+test('Số đã có chức năng nhận tiêu điểm Tab: tooltip nói Alt + Enter, và Alt + Enter mở bằng chứng', t => {
+  const dom = start(t), d = dom.window.document, special = $(dom, 'special');
+  key(dom, d.body, 'Tab');
+  special.focus();
+  const hint = $(dom, 'app-evidence-tip').querySelector('.app-evidence-tip-hint').textContent;
+  assert.match(hint, /Alt \+ Enter/, 'bàn phím không có "nhấp": phải nói phím thật');
+  assert.doesNotMatch(hint, /nhấp/);
+  special.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', altKey: true, bubbles: true, cancelable: true }));
+  assert.equal(drawer(dom).open, true);
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '77961');
+});

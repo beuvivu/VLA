@@ -389,11 +389,18 @@
     var where = ev.context.column || ev.context.label || ev.scope || ev.context.section;
     lines.push(mk("p", "app-evidence-tip-meta",
       "Suy luận qua " + ev.reasoningTrace.steps.length + " bước" + (where ? " · " + where : "")));
-    lines.push(mk("p", "app-evidence-tip-hint", viaKeyboard
+    /* viaKeyboard: "region" khi chọn bằng mũi tên trong một vùng, "self" khi
+       chính con số nhận tiêu điểm Tab. Số đã có chức năng riêng giữ Enter cho
+       chức năng ấy, nên bằng chứng mở bằng Alt + Enter — phải nói ra. */
+    lines.push(mk("p", "app-evidence-tip-hint", viaKeyboard === "region"
       ? "Enter để xem chi tiết bằng chứng suy luận · mũi tên để chọn số khác"
-      : interactive
-        ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
-        : "Click để xem chi tiết bằng chứng suy luận"));
+      : viaKeyboard && interactive
+        ? "Alt + Enter để xem chi tiết bằng chứng suy luận (Enter giữ chức năng sẵn có)"
+        : viaKeyboard
+          ? "Enter để xem chi tiết bằng chứng suy luận"
+          : interactive
+            ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
+            : "Click để xem chi tiết bằng chứng suy luận"));
     tip.replaceChildren.apply(tip, lines);
   }
 
@@ -468,7 +475,7 @@
       return;
     }
     var el = valueTarget(event.target);
-    if (el && el === event.target && !drawerOpen()) { showTip(el); }
+    if (el && el === event.target && !drawerOpen()) { showTip(el, keyboard ? "self" : false); }
   });
   doc.addEventListener("focusout", function (event) {
     if (event.target === tipFor) { hideTip(); }
@@ -782,7 +789,7 @@
     activeRegion = region;
     el.classList.add("app-evidence-active");
     if (el.scrollIntoView) { el.scrollIntoView({ block: "nearest", inline: "nearest" }); }
-    showTip(el, true);
+    showTip(el, "region");
     var ev = evidenceFor(el);
     var where = ev.context.column || ev.context.label || ev.context.section;
     live.textContent = ev.value + (where ? ", " + where : "");
