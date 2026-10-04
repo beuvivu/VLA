@@ -386,6 +386,11 @@ def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
 def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     page = _thong_ke(f, "Dựng các bảng tần suất, gan, đầu đuôi và cặp từ cùng một sổ kết quả.")
     sections = [
+        # Nhãn số của ô ma trận và của thanh/hàng: định danh, không phải giá trị đo.
+        _sec(".matrix-cell > b, .num-pill", "Số được mô tả", _ev([_ket_qua(f)], [
+            "Nhãn là số 00–99 (hoặc cặp số) mà ô, thanh hay hàng này mô tả — một định danh, không phải giá trị đo.",
+            "Giá trị của số ấy in ngay cạnh nhãn (trong ô, ở cuối thanh, hoặc ở các cột của hàng); mỗi giá trị có cách tính của khối chứa nó.",
+        ])),
         _sec("#ai-ml", "Cầu-kèo AI/ML", _cau_keo_ev(f, "Ma trận, biểu đồ và cột điểm in điểm này; cột xác suất và cột «Bằng chứng» có cách tính riêng.")),
         _sec_heading("Kiểm định cầu-kèo", "Kiểm định cầu-kèo", _ev([_CAU_KEO, _ket_qua(f)], [
             "Học trên các kỳ trước lát kiểm định, rồi dự báo từng ngày của lát kiểm định gần nhất (ngày đầu ghi ở cột ngày bắt đầu).",

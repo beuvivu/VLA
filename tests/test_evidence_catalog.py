@@ -185,7 +185,7 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
         classes = re.findall(r"(?<![\w-])\.([\w-]+)", entry["match"])
         assert ids or classes, entry["match"]
         assert any(f'id="{ident}"' in html for ident in ids) or any(
-            re.search(rf'class="(?:[^"]* )?{re.escape(c)}(?: [^"]*)?"', html) for c in classes
+            re.search(rf"""class=(["'])(?:(?!\1).)*?(?<![\w-]){re.escape(c)}(?![\w-])""", html) for c in classes
         ), (page.name, entry["match"])
         for col in re.findall(r"data-col='([\w-]+)'", entry["match"]):
             assert f"data-col='{col}'" in html or f'data-col="{col}"' in html, (page.name, col)
@@ -328,3 +328,13 @@ def test_bar_labels_are_identifiers_not_scores() -> None:
     assert "định danh" in label and "0,38" not in label
     html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     assert re.search(r'class="bar-value"[^>]*data-evidence-primary', html), "điểm phải là số chính của nút thanh"
+
+
+
+def test_statistics_number_labels_are_identifiers_and_scores_are_primary() -> None:
+    """Ô «<b>00</b><span>32.3</span>»: 00 là tên số, 32.3 là điểm và là số chính của ô."""
+    sections = {s.get("match"): s for s in registry("statistics.html")["sections"]}
+    label = " ".join(sections[".matrix-cell > b, .num-pill"]["reasoningTrace"]["steps"])
+    assert "định danh" in label and "0,38" not in label
+    html = (ROOT / "docs" / "statistics.html").read_text(encoding="utf-8")
+    assert re.search(r"<b>\d\d</b><span data-evidence-primary", html), "giá trị phải là số chính của ô ma trận"

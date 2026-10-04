@@ -421,7 +421,8 @@ def _matrix(
                 f"<div class='{cell_class}' "
                 f"style='background:{bg};color:{fg}' "
                 f"title='{n:02d}: {html.escape(val_text + suffix)}'{attrs}>"
-                f"<b>{n:02d}</b><span>{html.escape(val_text)}{html.escape(suffix)}</span>"
+                # Ô gồm nhãn số và giá trị: giá trị là số chính của ô (Alt + Enter).
+                f"<b>{n:02d}</b><span data-evidence-primary>{html.escape(val_text)}{html.escape(suffix)}</span>"
                 "</div>"
             )
     parts.append(
