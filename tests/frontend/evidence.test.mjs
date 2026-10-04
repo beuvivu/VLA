@@ -484,3 +484,16 @@ test('Cột «Số» không có bằng chứng hàng là định danh, không nh
     assert.deepEqual([...p.querySelectorAll('.app-evidence-token')].map(e => e.textContent), ['0,0123%', '± 0,0300']);
   });
 });
+
+test('Tiêu đề hạng có định ngữ ("Hạng trong kỳ") vẫn là cột thứ hạng', t => {
+  const dom = start(t), d = dom.window.document;
+  const table = d.createElement('table');
+  const head = table.createTHead().insertRow();
+  for (const name of ['Hạng trong kỳ', 'Tần suất']) { const th = d.createElement('th'); th.textContent = name; head.append(th); }
+  const row = table.createTBody().insertRow();
+  row.insertCell().textContent = '1';
+  row.insertCell().textContent = '12';
+  $(dom, 'ai-ml').append(table);
+  assert.equal(dom.window.appEvidence.evidenceFor(row.cells[0]).scope, 'Thứ hạng trong bảng');
+  assert.notEqual(dom.window.appEvidence.evidenceFor(row.cells[1]).scope, 'Thứ hạng trong bảng');
+});

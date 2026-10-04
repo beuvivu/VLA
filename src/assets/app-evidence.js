@@ -324,7 +324,7 @@
      tính của bảng: số 17 ở cột «Số» là TÊN của hàng, không phải xác suất. Mục
      danh mục khai riêng cho ô (bộ chọn trỏ vào chính ô) vẫn thắng. */
   var IDENT_COLUMN = /^(?:số|con|cặp|cặp số|bộ số|số loto|số đặc biệt|2 số cuối)$/i;
-  var RANK_COLUMN = /^(?:#|hạng|thứ hạng|stt|top)$/i;
+  var RANK_COLUMN = /^(?:#|stt|top|(?:thứ )?hạng(?: .*)?)$/i;
 
   function cellScoped(section, el) {
     var cell = el.closest("td, th");

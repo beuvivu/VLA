@@ -259,7 +259,8 @@
     });
     box.append(pair);
     if (bridge.shadow) {
-      const note = el("small", "app-bridge-shadow", `bóng ${bridge.shadow}`);
+      const note = el("small", "app-bridge-shadow", "bóng ");
+      note.append(el("span", "app-bridge-num", bridge.shadow));
       note.title = "Số bóng của số kép — chỉ để tham khảo, không tính vào cầu";
       box.append(note);
     }

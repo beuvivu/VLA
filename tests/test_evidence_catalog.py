@@ -143,7 +143,7 @@ def test_row_tags_go_to_body_rows_in_order() -> None:
 def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
     for mode in ("loto", "de"):
         html = (ROOT / f"docs/ml_top10_{mode}.html").read_text(encoding="utf-8")
-        rows = re.findall(r'data-evidence-row="(ml-' + mode + r'-\d\d)" data-evidence-cols="1,2,3"', html)
+        rows = re.findall(r'data-evidence-row="(ml-' + mode + r'-\d\d)" data-evidence-cols="2,3"', html)
         assert len(rows) == 10, (mode, rows)
         values = json.loads(re.search(r"data-app-evidence-values>(.*?)</script>", html, re.S).group(1))
         assert set(rows) == set(values)
