@@ -837,20 +837,34 @@
      12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. */
   var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?\d+(?:[.,]\d+)*(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
   var CELLISH = "td, th, dd, li";
+  /* Tiêu đề cột "09-24" là tháng-ngày; trong ô dữ liệu "12-21" vẫn là cặp số,
+     nên dạng rút gọn này chỉ là ngày khi nó là TOÀN BỘ chữ của một ô tiêu đề. */
+  var MONTH_DAY = /^(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+  /* "[10,95]" là danh sách vị trí, không phải số thập phân 10,95. */
+  var BRACKET_LIST = /\[(\d+(?:,\s?\d+)+)\]/g;
 
   function tokenRanges(value) {
-    var dates = [];
+    var taken = [];
     DATE_PART.lastIndex = 0;
-    for (var d = DATE_PART.exec(value); d; d = DATE_PART.exec(value)) { dates.push([d.index, d.index + d[0].length]); }
+    for (var d = DATE_PART.exec(value); d; d = DATE_PART.exec(value)) { taken.push([d.index, d.index + d[0].length]); }
     var out = [];
+    BRACKET_LIST.lastIndex = 0;
+    for (var g = BRACKET_LIST.exec(value); g; g = BRACKET_LIST.exec(value)) {
+      taken.push([g.index, g.index + g[0].length]);
+      var digits = /\d+/g;
+      for (var n = digits.exec(g[1]); n; n = digits.exec(g[1])) {
+        var at = g.index + 1 + n.index;
+        out.push([at, at + n[0].length]);
+      }
+    }
     TOKEN.lastIndex = 0;
     for (var m = TOKEN.exec(value); m; m = TOKEN.exec(value)) {
       var a = m.index;
       var b = a + m[0].length;
-      var inDate = dates.some(function (r) { return a < r[1] && b > r[0]; });
-      if (!inDate) { out.push([a, b]); }
+      var covered = taken.some(function (r) { return a < r[1] && b > r[0]; });
+      if (!covered) { out.push([a, b]); }
     }
-    return out;
+    return out.sort(function (x, y) { return x[0] - y[0]; });
   }
 
   function splittable(parent, whole) {
@@ -867,7 +881,12 @@
       var parent = node.parentElement;
       if (!parent || !/\d/.test(node.nodeValue) || valueTarget(node)) { continue; }
       if (parent.closest(EXCLUDE) || parent.closest(".app-evidence-token") || isInteractive(parent)) { continue; }
-      if (!splittable(parent, norm(parent.textContent))) { continue; }
+      /* Chữ trong SVG không bao giờ được tách: span HTML trong <text> không
+         được vẽ, nhãn trục "08-11" chỉ còn lại dấu gạch. */
+      if (parent.namespaceURI === SVG_NS) { continue; }
+      var whole = norm(parent.textContent);
+      if (parent.closest("th") && MONTH_DAY.test(whole)) { continue; }
+      if (!splittable(parent, whole)) { continue; }
       var ranges = tokenRanges(node.nodeValue);
       if (ranges.length) { todo.push([node, ranges]); }
     }

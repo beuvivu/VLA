@@ -61,7 +61,11 @@ function page({ registry = JSON.stringify(REGISTRY) } = {}) {
       <circle id="pt2" cx="2" cy="2" r="1" aria-label="Nhóm 2: dự báo 25%"></circle>
       <circle id="pt3" cx="3" cy="3" r="1"><title>7%</title></circle>
       <circle id="deco" cx="4" cy="4" r="1"></circle>
-      <text id="axis" x="0" y="9">0,5</text></svg></section>
+      <text id="axis" x="0" y="9">0,5</text>
+      <text id="axisdate" x="5" y="9">09-16</text></svg></section>
+  <section id="paths"><h2>Đường cầu</h2>
+    <table><thead><tr><th>Đường</th><th id="mmdd">09-24</th><th id="hpair">12-68</th></tr></thead>
+      <tbody><tr><td id="pathid">L11-[10,95]</td><td id="datepair">12-21</td><td>3</td></tr></tbody></table></section>
   <section id="text-only"><h2>Ghi chú</h2><p>Không có con số nào ở đây.</p></section>
 </main></body></html>`;
 }
@@ -384,4 +388,16 @@ test('Bàn phím đi qua điểm dữ liệu SVG có <title> hoặc aria-label, 
   key(dom, chart, 'Enter');
   assert.equal(drawer(dom).open, true);
   assert.match(drawer(dom).textContent, /Nhóm 2: dự báo 25%/);
+});
+
+test('Không tách chữ trong SVG, tiêu đề tháng-ngày; tách đúng danh sách vị trí trong ngoặc', t => {
+  const dom = start(t);
+  const tokens = id => [...$(dom, id).querySelectorAll('.app-evidence-token')].map(e => e.textContent);
+  assert.equal($(dom, 'axisdate').children.length, 0, 'span HTML trong <text> SVG không được vẽ');
+  assert.equal($(dom, 'axisdate').textContent, '09-16');
+  assert.deepEqual(tokens('mmdd'), [], 'tiêu đề cột 09-24 là ngày');
+  assert.deepEqual(tokens('hpair'), ['12', '68'], '12-68 không phải tháng-ngày hợp lệ nên vẫn là cặp số');
+  assert.deepEqual(tokens('datepair'), ['12', '21'], 'trong ô dữ liệu, 12-21 vẫn là cặp số');
+  assert.deepEqual(tokens('pathid'), ['10', '95'], '[10,95] là hai vị trí, không phải 10,95');
+  assert.equal($(dom, 'pathid').textContent, 'L11-[10,95]', 'chữ hiển thị giữ nguyên');
 });
