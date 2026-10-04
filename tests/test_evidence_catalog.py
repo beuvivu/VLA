@@ -243,7 +243,7 @@ def _card_headings(page: str) -> list[str]:
     return heads
 
 
-@pytest.mark.parametrize("page", ["do-tin-cay.html", "research-lab.html"])
+@pytest.mark.parametrize("page", ["do-tin-cay.html", "research-lab.html", "model-quality.html"])
 def test_every_block_of_the_research_pages_carries_its_own_derivation(page: str) -> None:
     """Mỗi khối có phép tính riêng; bằng chứng cả trang chỉ nói điều đúng với MỌI khối."""
     reg = registry(page)
@@ -265,3 +265,19 @@ def test_research_blocks_describe_what_their_numbers_are() -> None:
     oos = " ".join(conf["Kiểm ngoài mẫu"]["reasoningTrace"]["steps"])
     assert "2015–2023" in oos and "từng kỳ" in oos
     assert "Holm" in " ".join(conf["Giả thuyết kỳ quay bị sắp đặt"]["reasoningTrace"]["steps"])
+
+
+def test_sharpness_counts_get_the_histogram_not_the_brier_decomposition() -> None:
+    sections = {s.get("heading"): s for s in registry("model-quality.html")["sections"]}
+    sharp = " ".join(sections["Độ sắc"]["reasoningTrace"]["steps"])
+    assert "24 khoảng" in sharp and "Brier" not in sharp
+    assert "phân rã" not in " ".join(registry("model-quality.html")["page"]["reasoningTrace"]["steps"]).lower()
+
+
+@pytest.mark.parametrize("trust", [0.0, 1.0])
+def test_de_rows_at_trust_bounds_still_say_the_probabilities_are_normalised(trust: float) -> None:
+    """ml_predict chuẩn hoá Đặc Biệt sau khi trộn ở MỌI mức trust; LOTO thì không."""
+    de = " ".join(ml_row_evidence(_ml_frame(trust), "de")[0][1]["reasoningTrace"]["steps"])
+    assert "chuẩn hoá" in de and "dùng nguyên" not in de
+    loto = " ".join(ml_row_evidence(_ml_frame(trust), "loto")[0][1]["reasoningTrace"]["steps"])
+    assert "chuẩn hoá" not in loto

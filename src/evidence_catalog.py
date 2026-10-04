@@ -404,7 +404,41 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         ]),
         "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
         "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
-        "model-quality.html": (_ev([_cham(f), _du_bao(f)], ["Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.", "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt.", "Kỹ năng = 1 − điểm mô hình / điểm dự báo hằng số; 0 là ngang hằng số."]), []),
+        "model-quality.html": (_ev([_cham(f), _du_bao(f)], [
+            "Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.",
+            "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
+        ]), [
+            _sec_heading("⚠ Báo cáo chẩn đoán", "Báo cáo đang cũ", _ev([_cham(f), _ket_qua(f)], [
+                "So ngày chấm cuối cùng ghi trong báo cáo chẩn đoán với ngày mới nhất của lịch sử đánh giá; hai ngày trong khối là hai mốc ấy.",
+            ])),
+            _sec_heading("Đã sửa một lỗi đơn vị", "Sửa đơn vị Brier", _ev([_cham(f)], [
+                "Đếm số dòng Brier Đặc Biệt trong lịch sử đã lưu từng ghi theo trung bình 100 lớp và đã được đổi sang tổng 100 lớp như các dòng mới.",
+                "Dòng cũ được nhận ra bằng bất biến toán học của đơn vị, không bằng mốc ngày cứng.",
+            ])),
+            _sec_heading("Nguồn của các con số", "Nguồn chấm", _ev([_cham(f), _du_bao(f)], [
+                "Số lớn là số kỳ đã chấm: vector đã công bố trước kỳ quay so với kết quả thật (hoặc bản dựng lại khi chưa đủ kỳ đã công bố).",
+                "Kỹ năng một kỳ = 1 − logloss mô hình / logloss dự báo hằng số; dòng bộ theo dõi là trung bình các kỳ gần nhất kèm khoảng ± z × sai số chuẩn.",
+                "Bộ theo dõi báo động khi khoảng ấy rời 0 theo hướng nào cũng vậy.",
+            ])),
+            _sec_heading("Vì sao kỹ năng gần bằng 0", "Phân rã Brier", _ev([_cham(f)], [
+                "Chia mọi ô (kỳ × số) thành 10 nhóm theo phân vị của xác suất dự báo — đúng các nhóm của biểu đồ hiệu chỉnh.",
+                "Độ tin cậy = trung bình có trọng số (dự báo − thực tế)² theo nhóm; độ phân giải = trung bình có trọng số (thực tế nhóm − tỉ lệ chung)²; độ bất định = tỉ lệ chung × (1 − tỉ lệ chung).",
+                "Tin cậy − phân giải + bất định bằng đúng Brier của dự báo đã gộp nhóm; Brier đo trực tiếp lệch một phần dư do chia nhóm.",
+            ])),
+            _sec_heading("Độ hiệu chỉnh", "Độ hiệu chỉnh", _ev([_cham(f)], [
+                "Chia mọi ô (kỳ × số) thành 10 nhóm theo phân vị của xác suất dự báo.",
+                "Mỗi nhóm: số ô, xác suất dự báo trung bình, tỉ lệ về thực tế, và khoảng Wilson 95% của tỉ lệ ấy.",
+            ])),
+            _sec_heading("Độ sắc", "Độ sắc", _ev([_cham(f)], [
+                "Chia khoảng [nhỏ nhất, lớn nhất] của mọi xác suất dự báo thành 24 khoảng đều; mỗi cột là số ô (kỳ × số) rơi vào khoảng ấy.",
+                "Độ lệch chuẩn của xác suất dự báo, và tỉ số của nó với tỉ lệ nền, đo mô hình dám rời nền bao xa.",
+            ])),
+            _sec_heading("Kỹ năng theo thời gian", "Kỹ năng theo thời gian", _ev([_cham(f)], [
+                "Kỹ năng từng kỳ = 1 − logloss mô hình / logloss dự báo hằng số; 0 là ngang hằng số.",
+                "Đường tích luỹ là trung bình các kỳ tới ngày ấy; dải là ±1,96 × sai số chuẩn của trung bình.",
+                "Tỉ lệ «tệ hơn đường cơ sở» đếm số kỳ có kỹ năng âm.",
+            ])),
+        ]),
         "do-tin-cay.html": (_ev([_NULL, _ket_qua(f), _cham(f)], [
             "Đọc sổ kết quả đã lưu và phân phối null của 10 000 lịch sử ngẫu nhiên cùng độ dài.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
@@ -563,10 +597,13 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
     for row in df.to_dict("records"):
         n, p, raw, trust = int(row["number"]), float(row["prob"]), float(row["raw_model_prob"]), float(row["model_trust"])
         steps = [f"Thành phần ML cho số {n:02d} xác suất thô {_pct(raw)}."]
+        # Đặc Biệt là đúng một trong 100 lớp: ml_predict chuẩn hoá SAU khi trộn,
+        # ở MỌI mức trust — kể cả 1, khi xác suất thô cộng lại khác 100%.
+        norm = ", rồi chuẩn hoá để 100 số cộng lại 100%" if mode == "de" else ""
         if trust <= 0.0:
-            steps.append(f"Độ tin model_trust = 0 (không có kỹ năng thẩm định): p = tỉ lệ nền = {_pct(p)}.")
+            steps.append(f"Độ tin model_trust = 0 (không có kỹ năng thẩm định): mọi số nhận tỉ lệ nền{norm}: p = {_pct(p)}.")
         elif trust >= 1.0:
-            steps.append(f"Độ tin model_trust = 1: dùng nguyên xác suất thô, p = {_pct(p)}.")
+            steps.append(f"Độ tin model_trust = 1: dùng xác suất thô{norm}: p = {_pct(p)}.")
         elif mode == "loto":
             base = (p - trust * raw) / (1.0 - trust)
             steps.append(
