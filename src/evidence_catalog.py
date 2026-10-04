@@ -601,12 +601,24 @@ def _vi(x: float, digits: int = 3) -> str:
     return f"{x:.{digits}f}".replace(".", ",")
 
 
-def _legacy_trust(row: dict) -> bool:
-    """Dòng có model_trust tính theo luật cũ (trước ``TRUST_POLICY_VERSION`` hiện hành)."""
+#: Sàn của luật trust cũ: dưới mức này thì độ tin KHÔNG thể do luật ấy tính ra.
+_SAN_TRUST_CU = 0.35
+
+
+def _trust_policy(row: dict) -> str:
+    """Luật đã tính ``model_trust`` của dòng: ``"current"``, ``"legacy"`` hay ``"unknown"``.
+
+    Thiếu cột phiên bản KHÔNG có nghĩa là luật cũ: ``ml_predict`` trước khi có
+    cột ấy vẫn có thể chạy luật mới. Chỉ khẳng định được khi tệp ghi phiên bản,
+    hoặc khi độ tin dưới sàn 0,35 — điều luật cũ không thể sinh ra.
+    """
     from ml_train import TRUST_POLICY_VERSION
 
     version = pd.to_numeric(pd.Series([row.get("trust_policy_version")]), errors="coerce").iloc[0]
-    return pd.isna(version) or int(version) != TRUST_POLICY_VERSION
+    if not pd.isna(version):
+        return "current" if int(version) == TRUST_POLICY_VERSION else "legacy"
+    trust = pd.to_numeric(pd.Series([row.get("model_trust")]), errors="coerce").iloc[0]
+    return "current" if not pd.isna(trust) and float(trust) < _SAN_TRUST_CU else "unknown"
 
 
 def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -> list[tuple[str, dict]]:
@@ -652,12 +664,18 @@ def ml_row_evidence(df: pd.DataFrame, mode: str, data_dir: Path | None = None) -
                 else "Lần học này không có kỹ năng dương trên khối thẩm định chưa chạm (quality_pass = False)."
             )
         steps.append(f"Độ tin cậy hiển thị bên dưới chính là model_trust = {_vi(trust)}.")
-        if _legacy_trust(row):
+        policy = _trust_policy(row)
+        if policy == "legacy":
             steps.append(
                 "Tệp dự báo này được tạo theo luật trust CŨ (sàn 0,35 — vẫn trộn 35% mô hình thô "
                 "khi không có kỹ năng), đã bỏ ngày 03-10-2026. Theo luật hiện hành, độ tin bằng "
                 "20 × kỹ năng thẩm định và bằng 0 khi không có kỹ năng; lượt học lại kế tiếp "
                 "sẽ thay tệp này."
+            )
+        elif policy == "unknown":
+            steps.append(
+                "Tệp dự báo này không ghi phiên bản luật trust, nên không xác định được độ tin "
+                "trên do luật hiện hành (20 × kỹ năng thẩm định) hay luật cũ có sàn 0,35 tính ra."
             )
         steps.append(_GHI_CHU_DU_BAO)
         out.append((

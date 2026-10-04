@@ -158,8 +158,13 @@ def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
     """Tệp tạo trước luật mới không được trình bày như luật hiện hành."""
     from ml_train import TRUST_POLICY_VERSION
 
-    legacy = " ".join(ml_row_evidence(_ml_frame(0.35), "loto")[0][1]["reasoningTrace"]["steps"])
-    assert "luật trust CŨ" in legacy
+    # Không ghi phiên bản: không được khẳng định luật cũ (review PR #113) —
+    # trust 0 hay 0,001 thì luật cũ có sàn 0,35 không thể sinh ra.
+    for trust in (0.0, 0.001075):
+        steps = " ".join(ml_row_evidence(_ml_frame(trust), "loto")[0][1]["reasoningTrace"]["steps"])
+        assert "luật trust CŨ" not in steps and "không ghi phiên bản" not in steps, trust
+    unknown = " ".join(ml_row_evidence(_ml_frame(0.35), "loto")[0][1]["reasoningTrace"]["steps"])
+    assert "luật trust CŨ" not in unknown and "không ghi phiên bản" in unknown
     current = _ml_frame(0.0).assign(prob=[0.2383, 0.2383], trust_policy_version=TRUST_POLICY_VERSION)
     steps = " ".join(ml_row_evidence(current, "loto")[0][1]["reasoningTrace"]["steps"])
     assert "luật trust CŨ" not in steps
