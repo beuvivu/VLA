@@ -324,7 +324,7 @@ def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws()
 def test_bar_labels_are_identifiers_not_scores() -> None:
     """Nhãn «54» trên biểu đồ ngày mai là tên số; điểm của nó là «59» ở cuối thanh."""
     sections = {s.get("match"): s for s in registry("index.html")["sections"]}
-    label = " ".join(sections["#ai-ml .bar-label"]["reasoningTrace"]["steps"])
+    label = " ".join(sections[".bar-label"]["reasoningTrace"]["steps"])
     assert "định danh" in label and "0,38" not in label
     html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
     assert re.search(r'class="bar-value"[^>]*data-evidence-primary', html), "điểm phải là số chính của nút thanh"
@@ -348,3 +348,13 @@ def test_shadow_numbers_get_the_digit_mapping_not_the_bridge_derivation(page: st
     steps = " ".join(sections["#app-main .app-bridge-shadow"]["reasoningTrace"]["steps"])
     assert "0↔5" in steps and "KHÔNG tham gia" in steps
     assert "10·d[a]" not in steps
+
+
+
+def test_home_matrix_cells_open_their_value_and_pair_labels_are_split() -> None:
+    """Ô ma trận in nhãn «00», giá trị gan nằm trong data-value; nhãn cặp «09-90» là hai số."""
+    html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    cell = re.search(r'<button class="matrix-cell"[^>]*>', html).group(0)
+    value = re.search(r'data-value="([^"]*)"', cell).group(1)
+    assert f'data-evidence-value="{value}"' in cell
+    assert re.search(r'class="bar-label"><span>\d\d</span>-<span>\d\d</span>', html), "cặp phải tách thành hai phần tử số"
