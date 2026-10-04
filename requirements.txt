@@ -1,6 +1,6 @@
 # Runtime dependencies for GitHub Actions statistics / AI / ML pipeline.
 # Target runtime: Python 3.11.
-tzdata==2025.2
+tzdata==2026.4
 pydantic==2.11.4
 requests>=2.34.2,<3.0
 beautifulsoup4==4.15.0
