@@ -321,6 +321,22 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
         _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
         _sec("#mo-phong, #du-doan-vui", "Bảng mô phỏng", _ev([_MO_PHONG, _du_bao(f)], ["Rút hai chữ số cuối theo xác suất mô hình bằng hạt giống cố định của kỳ.", "Phần đầu là số ngẫu nhiên, không mang thông tin.", "Sổ nhật ký chấm bảng đã hiện với kết quả thật."])),
+        _sec(".fun-ledger", "Sổ nhật ký mô phỏng", _ev([_MO_PHONG, _ket_qua(f)], [
+            "Mỗi kỳ ghi bảng mô phỏng đang hiện lúc 18:10, trước giờ quay; sau giờ ấy dòng của kỳ đóng băng.",
+            "Phần chấm tính lại từ sổ kết quả: Đặc Biệt trúng đúng / trúng lộn (2 số cuối đảo), và số vị trí LOTO có về.",
+            "Kỳ vọng nếu chỉ do ngẫu nhiên: Đặc Biệt đúng 1/100 mỗi kỳ, lộn 1/100 (trừ số kép), mỗi vị trí LOTO khoảng 23,8%.",
+        ])),
+        _sec(".fun-ledger td[data-col='sim']", "Số mô phỏng đã ghi", _ev([_MO_PHONG], [
+            "Giải Đặc Biệt mô phỏng đã hiện trước giờ quay: 2 số cuối rút theo xác suất mô hình, 3 số đầu là số ngẫu nhiên tất định.",
+        ])),
+        _sec(".fun-ledger td[data-col='actual']", "Đặc Biệt thật", _ev([_ket_qua(f), _DAC_BIET], [
+            "Giải Đặc Biệt đã quay của kỳ ấy, lấy nguyên từ sổ kết quả — không phải số mô phỏng.",
+            "So 2 số cuối của nó với 2 số cuối mô phỏng để chấm trúng đúng / trúng lộn.",
+        ])),
+        _sec(".fun-ledger td[data-col='loto']", "LOTO về", _ev([_MO_PHONG, _ket_qua(f), _LOTO], [
+            "Tử số: số vị trí trong 26 giải mô phỏng (trừ Đặc Biệt) mà 2 số cuối có về trong LOTO thật của kỳ ấy.",
+            "Mẫu số: 26 vị trí. Nếu chỉ do ngẫu nhiên, mỗi vị trí về với xác suất khoảng 23,8%, tức khoảng 6,2 trên 26.",
+        ])),
         _sec("#tan-suat-cap, #tan-suat-loto, #tan-suat-de", "Tần suất", _thong_ke(f, "Đếm số lần mỗi số (hoặc cặp) về trong khung thời gian của bảng.")),
         _sec("#gan-nhip", "Gan và nhịp", _thong_ke(f, "Gan = số kỳ kể từ lần về gần nhất; nhịp = khoảng cách giữa hai lần về liên tiếp.")),
         _sec("#cap-lon", "Cặp lộn", _thong_ke(f, "Cặp lộn là hai số đảo chữ số (12 ↔ 21); số kép (11, 22…) xét riêng.")),

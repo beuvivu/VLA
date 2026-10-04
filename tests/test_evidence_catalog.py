@@ -306,3 +306,16 @@ def test_raw_cau_keo_inputs_get_their_own_derivation_not_the_score_formula() -> 
     assert "0,38" not in " ".join(paths["reasoningTrace"]["steps"])
     html = (ROOT / "docs" / "statistics.html").read_text(encoding="utf-8")
     assert re.search(r"<td[^>]*data-col=.evidence.", html), "bảng phải gắn tên cột cho từng ô"
+
+
+def test_ledger_actual_results_and_scores_are_not_explained_as_simulated_draws() -> None:
+    """«Đặc Biệt thật» 77961 và «5/26» là kết quả và phép chấm, không phải số rút mô phỏng."""
+    sections = {s.get("match"): s for s in registry("index.html")["sections"]}
+    steps = lambda m: " ".join(sections[m]["reasoningTrace"]["steps"])  # noqa: E731
+    actual = steps(".fun-ledger td[data-col='actual']")
+    assert "sổ kết quả" in actual and "Rút" not in actual
+    loto = steps(".fun-ledger td[data-col='loto']")
+    assert "26" in loto and "23,8%" in loto
+    assert "xác suất mô hình" in steps(".fun-ledger td[data-col='sim']")
+    html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    assert re.search(r"<td[^>]*data-col=.actual.", html), "sổ nhật ký phải gắn tên cột cho từng ô"
