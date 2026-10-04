@@ -319,9 +319,10 @@ def _ledger_block(ledger: pd.DataFrame | None) -> str:
         cls = " is-hit" if verdict.startswith("Trúng") else ""
         rows.append(
             f"<tr class='fun-ledger-row{cls}'>"
-            f"<td title='{html.escape(row['target_date'])}'>{html.escape(_short_date(row['target_date']))}</td>"
-            f"<td>{html.escape(row['special'])}</td><td>{actual}</td>"
-            f"<td>{verdict}</td><td>{loto}</td></tr>"
+            # data-col: số mô phỏng, kết quả thật và phép chấm có bằng chứng riêng.
+            f"<td title='{html.escape(row['target_date'])}' data-col='ky'>{html.escape(_short_date(row['target_date']))}</td>"
+            f"<td data-col='sim'>{html.escape(row['special'])}</td><td data-col='actual'>{actual}</td>"
+            f"<td data-col='verdict'>{verdict}</td><td data-col='loto'>{loto}</td></tr>"
         )
     if total["days"]:
         tally = (
@@ -337,7 +338,7 @@ def _ledger_block(ledger: pd.DataFrame | None) -> str:
     return f"""
   <details class="fun-simulation-details fun-ledger">
     <summary>Nhật ký mô phỏng so với kết quả thật</summary>
-    <p class="fun-ledger-tally">{tally}</p>
+    <p class="fun-ledger-tally" data-evidence-split>{tally}</p>
     <div class="fun-ledger-wrap"><table class="fun-ledger-table">
       <thead><tr><th scope="col">Kỳ</th><th scope="col">Mô phỏng</th><th scope="col">Đặc Biệt thật</th><th scope="col">Kết quả</th><th scope="col">LOTO về</th></tr></thead>
       <tbody>{"".join(rows)}</tbody>

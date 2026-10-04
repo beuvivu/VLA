@@ -434,7 +434,8 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
             label = f"{value} lần" if value else "0"
             row_cells.append(
                 f"<button class='tiny-matrix-cell{active}' data-mode='loto' data-number='{n}' "
-                f"data-value='{html.escape(str(label))}' "
+                # Ô chỉ in nhãn số; giá trị nằm trong data-value — bằng chứng mở giá trị.
+                f"data-value='{html.escape(str(label))}' data-evidence-value='{html.escape(str(label))}' "
                 f"style='background:{bg};color:{fg}' title='{n}: {label}'>{n}</button>"
             )
         cells.append("".join(row_cells))
@@ -511,7 +512,7 @@ def _render_matrix_card(
                 val_label = f"{val_label}{value_suffix}"
             row.append(
                 f"<button class='matrix-cell' data-mode='{mode}' data-number='{n}' "
-                f"data-value='{html.escape(val_label)}' "
+                f"data-value='{html.escape(val_label)}' data-evidence-value='{html.escape(val_label)}' "
                 f"style='background:{bg};color:{fg}' title='{html.escape(title)} · {n}: {html.escape(val_label)}'>"
                 f"{n}</button>"
             )
@@ -533,6 +534,14 @@ def _render_matrix_card(
       <div class="legend"><span style="background:{legend_low}"></span> Thấp <i></i> Cao <span style="background:{legend_high}"></span></div>
     </article>
     """
+
+
+def _label_parts(label: str) -> str:
+    """Nhãn cặp "09-90" thành hai phần tử số; nhãn khác giữ nguyên chữ."""
+    parts = label.split("-")
+    if len(parts) == 2 and all(p.isdigit() for p in parts):
+        return "-".join(f"<span>{html.escape(p)}</span>" for p in parts)
+    return html.escape(label)
 
 
 def _render_bar_card(
@@ -569,9 +578,9 @@ def _render_bar_card(
             value_text = _pct(value) if percent else _fmt_num(value, decimals=value_decimals)
             items.append(
                 f"<button class='bar-row'{number_attr}>"
-                f"<span class='bar-label'>{html.escape(label)}</span>"
+                f"<span class='bar-label'>{_label_parts(label)}</span>"
                 f"<span class='bar-track'><span class='bar-fill' style='width:{width:.1f}%;background:{high}'></span></span>"
-                f"<span class='bar-value'>{html.escape(value_text)}</span>"
+                f"<span class='bar-value' data-evidence-primary>{html.escape(value_text)}</span>"
                 f"</button>"
             )
         body = "<div class='bar-list'>" + "".join(items) + "</div>"
@@ -2180,10 +2189,17 @@ def _render_html(
 
     live_block = _render_live_block(latest)
 
+    def _tile_desc(desc: str) -> str:
+        """Dòng phụ "2 số cuối: 61": chỉ 61 là kết quả, nên chỉ nó thành một giá trị."""
+        label, sep, value = desc.rpartition(": ")
+        if sep and value.isdigit():
+            return f"{html.escape(label)}: <b>{html.escape(value)}</b>"
+        return html.escape(desc)
+
     stat_tiles = "\n".join(
         f"<div class='metric-tile {palette}' data-long='{str(len(value) >= 9).lower()}'>"
         f"<span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>"
-        f"<em>{html.escape(desc)}</em></div>"
+        f"<em>{_tile_desc(desc)}</em></div>"
         for label, value, desc, palette in stat_cards_top
     )
 

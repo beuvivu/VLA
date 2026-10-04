@@ -113,6 +113,8 @@ test('đường cầu Đặc Biệt chỉ tô hai số cuối của giải Đặ
   const d = dom.window.document;
   assert.equal(d.querySelector('.app-bridge-path-head h2').textContent, 'Cầu Đặc Biệt tại vị trí 18x36');
   assert.equal(d.querySelector('.app-bridge-predict b').textContent, '44');
+  // Mỗi số một phần tử: "67,76" viết liền bị đọc thành số thập phân.
+  assert.deepEqual([...d.querySelectorAll('.app-bridge-predict .app-bridge-num')].map((n) => n.textContent), ['44', '99'], 'số bóng cũng là một phần tử số');
   assert.equal(d.querySelector('.app-bridge-predict .app-bridge-shadow').textContent, 'bóng 99');
   assert.match(d.querySelector('.app-bridge-run').textContent, /Đã chạy 2 kỳ/);
   const hits = [...d.querySelectorAll('.app-bridge-days .app-bridge-hit')];

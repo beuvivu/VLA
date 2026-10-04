@@ -161,7 +161,7 @@ def _range_controls(*, mode: str = "day", pairs: bool = True) -> str:
         # không gỡ ra được.
         return (
             '<div class="sp-controls"><div class="sp-chips">'
-            f'{presets}</div><span class="sp-count" id="sp-count"></span>'
+            f'{presets}</div><span class="sp-count" id="sp-count" data-evidence-split></span>'
             f"{_mark_tools(pairs=pairs)}</div>"
         )
     return f"""
@@ -169,7 +169,7 @@ def _range_controls(*, mode: str = "day", pairs: bool = True) -> str:
       <label>Từ ngày <input type="date" id="sp-from"></label>
       <label>Đến ngày <input type="date" id="sp-to"></label>
       <div class="sp-chips">{presets}</div>
-      <span class="sp-count" id="sp-count"></span>
+      <span class="sp-count" id="sp-count" data-evidence-split></span>
       {_mark_tools(pairs=pairs)}
     </div>
     """
@@ -324,7 +324,7 @@ PAGES: tuple[StatPage, ...] = (
         subtitle="Trọn một năm: hàng là ngày trong tháng, cột là tháng.",
         controls='<div class="sp-controls">'
                  '<label>Năm <select id="sp-year"></select></label>'
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+                 '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialDayByMonth",
@@ -335,7 +335,7 @@ PAGES: tuple[StatPage, ...] = (
         subtitle="Một tháng soi qua mọi năm: hàng là năm, cột là ngày trong tháng.",
         controls='<div class="sp-controls">'
                  '<label>Tháng <select id="sp-month"></select></label>'
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+                 '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=FIELD_TOGGLE
              + '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialYearByDay",
@@ -351,10 +351,10 @@ PAGES: tuple[StatPage, ...] = (
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
                  + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+                 '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=_gan_modal() +
              '<div class="sp-picker" id="sp-picker"></div>'
-             '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
+             '<p class="sp-matrix-note" id="sp-matrix-note" data-evidence-split></p>'
              '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Xếp hạng trên trọn dải đã chọn</h3>'
              '<div id="sp-matrix" class="sp-matrix"></div>'
@@ -372,9 +372,9 @@ PAGES: tuple[StatPage, ...] = (
                  '<option>Xem theo chiều ngang</option>'
                  '<option>Xem theo chiều dọc</option></select></label>'
                  + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
-                 '<span class="sp-count" id="sp-count"></span>' + _mark_tools() + '</div>',
+                 '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=_gan_modal() +
-             '<p class="sp-matrix-note" id="sp-matrix-note"></p>'
+             '<p class="sp-matrix-note" id="sp-matrix-note" data-evidence-split></p>'
              '<div class="sp-scroll"><table class="sp-table sp-dense sp-grid-lines sp-crosshair" id="sp-matrix-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp đồng xuất hiện nhiều nhất trên trọn dải</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
@@ -668,7 +668,7 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
   <details class="bf-selection"><summary>Chọn {label} để so sánh <span id="bf-selection-count"></span></summary>{picker}</details>
 </section>
 <section class="bf-card bf-matrix-card" aria-labelledby="bf-matrix-title">
-  <div class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note"></span></div>
+  <div class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note" data-evidence-split></span></div>
   <div class="bf-legend" aria-label="Chú thích số nháy">
     <span><i class="bf-swatch is-empty"></i>Không về</span>
     <span><i class="bf-swatch sp-n1">1</i>1 nháy</span>

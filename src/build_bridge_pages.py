@@ -122,7 +122,7 @@ def backtest_card(cfg: dict, data: dict) -> str:
                f"Không hàng nào trong {len(rows)} hàng đủ mẫu vượt kỳ vọng rõ rệt (z ≥ {Z_ALERT:g}): "
                "cầu chạy dài hơn không làm điều nó báo xảy ra thường hơn.")
     return (
-        f'<p class="app-bridge-verdict">Đo trên {_count(bt["draws"])} bước kỳ-sang-kỳ trong lịch sử: '
+        f'<p class="app-bridge-verdict" data-evidence-split>Đo trên {_count(bt["draws"])} bước kỳ-sang-kỳ trong lịch sử: '
         f"trung bình mỗi kỳ có {per_day} cầu kiểu này chạy từ {cfg['count']} ngày chỉ do ngẫu nhiên của "
         f"5 671 cặp vị trí. {verdict}</p>"
         + _rows_table("Cầu đã chạy", bt["rows"], _streak_label)
@@ -165,7 +165,7 @@ def render(key: str, report: dict) -> str:
         row[:10] for row in reversed(report["draws"])
         if not cfg["weekday"] or date.fromisoformat(row[:10]).weekday() == data["default_weekday"]
     )
-    overview = card(f'<p id="app-cau-summary" class="app-cau-summary" role="status">{html.escape(cfg["title"])}: '
+    overview = card(f'<p id="app-cau-summary" class="app-cau-summary" role="status" data-evidence-split>{html.escape(cfg["title"])}: '
              f'{data["total"]} cầu chạy từ {cfg["count"]} ngày, cầu dài nhất {data["longest"]} ngày.</p>'
              f'<p class="app-cau-help">Rê chuột hoặc chạm vào một ô để thấy các vị trí tạo cầu trên bảng kết quả; '
              f'bấm vào ô để chọn từng cầu và xem cách tính.</p>'

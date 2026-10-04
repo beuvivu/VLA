@@ -170,14 +170,14 @@ def render_page(payload: dict[str, object]) -> str:
   </div>
   <div class="tr-trust" aria-label="Phạm vi dữ liệu">
     <span class="tr-status-dot" aria-hidden="true"></span>
-    <strong>SỔ KẾT QUẢ XSMB</strong><small>{payload.get("total_draws", 0)} kỳ đã lưu</small>
+    <strong>SỔ KẾT QUẢ XSMB</strong><small data-evidence-split>{payload.get("total_draws", 0)} kỳ đã lưu</small>
   </div>
 </header>
 
 <section class="tr-filter" aria-labelledby="tr-filter-title">
   <div class="tr-filter-head">
     <div><p class="tr-section-kicker">BỘ LỌC TRA CỨU</p><h2 id="tr-filter-title">Chọn dữ liệu cần xem</h2></div>
-    <p id="tr-source-status" class="tr-source-status" role="status" aria-live="polite"></p>
+    <p id="tr-source-status" class="tr-source-status" role="status" aria-live="polite" data-evidence-split></p>
   </div>
   <form id="tr-form" class="tr-form">
     <label>Khoảng thời gian
