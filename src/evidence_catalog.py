@@ -295,6 +295,15 @@ def _du_bao_ev(f: dict[str, str], *extra: str, mode: str = "both") -> Evidence:
     )
 
 
+def _so_bong(f: dict[str, str]) -> Section:
+    """Số bóng chỉ HIỆN kèm số kép — nó không tham gia phép dò cầu (``position_bridges``)."""
+    # Neo vào #app-main: số bóng chỉ có khi danh sách có cầu số kép.
+    return _sec("#app-main .app-bridge-shadow", "Số bóng", _ev([_CAU], [
+        "Số bóng đổi từng chữ số của số kép sang bóng của nó: 0↔5, 1↔6, 2↔7, 3↔8, 4↔9 (44 → 99).",
+        "Chỉ hiện kèm để tham khảo cho người quen đọc cặp kép–bóng; số bóng KHÔNG tham gia phép dò cầu và không tính vào phép trúng.",
+    ]))
+
+
 def _cau_keo_ev(f: dict[str, str], *extra: str) -> Evidence:
     """Điểm cầu-kèo (``cau_keo_ml._add_ai_judgement``): thứ hạng 0–100, KHÔNG phải xác suất."""
     return _ev(
@@ -345,6 +354,7 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         _sec("#gan-nhip", "Gan và nhịp", _thong_ke(f, "Gan = số kỳ kể từ lần về gần nhất; nhịp = khoảng cách giữa hai lần về liên tiếp.")),
         _sec("#cap-lon", "Cặp lộn", _thong_ke(f, "Cặp lộn là hai số đảo chữ số (12 ↔ 21); số kép (11, 22…) xét riêng.")),
         _sec("#dau-duoi-tong", "Đầu · đuôi · tổng", _thong_ke(f, "Đầu = chữ số hàng chục, đuôi = hàng đơn vị, tổng = (đầu + đuôi) mod 10.")),
+        _so_bong(f),
         _sec("#duong-cau", "Vị trí đường cầu", _cau(f, "Ô cầu đẹp nhất xếp theo độ dài cầu, rồi theo số cầu cùng báo một số.")),
         _sec("#backtest", "Kiểm định AI/ML", _ev([_cham(f), _du_bao(f)], ["Chấm dự báo của từng kỳ với kết quả thật của chính kỳ ấy.", "So với dự báo hằng số trên cùng các kỳ; hiệu từng kỳ cho điểm z."])),
     ]
@@ -436,7 +446,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "dau-duoi-loto.html": tk("Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn."),
         "lo-gan.html": tk("Số kỳ chưa về của từng con LOTO, gan cực đại trong lịch sử, và cặp lô gan."),
         "thong-ke-tong-hop.html": tk("Bảng tổng hợp đa chiều: tần suất, chu kỳ gan, đầu đuôi và tổng trên cùng một dải."),
-        "soi-cau-vi-tri.html": cau("Lộn thì cộng gộp nháy của cả hai chiều; số kép chỉ là một số (số bóng chỉ hiện kèm)."),
+        "soi-cau-vi-tri.html": (_cau(f, "Lộn thì cộng gộp nháy của cả hai chiều; số kép chỉ là một số (số bóng chỉ hiện kèm)."), [_so_bong(f)]),
         "soi-cau-loto.html": cau("Bước trúng: n hoặc số lộn của n về ở kỳ kế tiếp (≥ 1 nháy, cộng cả hai chiều)."),
         "soi-cau-hai-nhay.html": cau("Bước trúng: n về ≥ 2 nháy, hoặc n và số lộn (khác n) cùng về ở kỳ kế tiếp."),
         "soi-cau-bach-thu.html": cau("Bước trúng: đúng n về ở kỳ kế tiếp (không tính số lộn)."),

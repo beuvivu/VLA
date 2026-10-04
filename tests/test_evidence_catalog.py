@@ -338,3 +338,13 @@ def test_statistics_number_labels_are_identifiers_and_scores_are_primary() -> No
     assert "định danh" in label and "0,38" not in label
     html = (ROOT / "docs" / "statistics.html").read_text(encoding="utf-8")
     assert re.search(r"<b>\d\d</b><span data-evidence-primary", html), "giá trị phải là số chính của ô ma trận"
+
+
+
+@pytest.mark.parametrize("page", ["soi-cau-vi-tri.html", "index.html"])
+def test_shadow_numbers_get_the_digit_mapping_not_the_bridge_derivation(page: str) -> None:
+    """Số bóng (44 → 99) chỉ hiện kèm; nó không phải số do cầu ghép ra."""
+    sections = {s.get("match"): s for s in registry(page)["sections"]}
+    steps = " ".join(sections["#app-main .app-bridge-shadow"]["reasoningTrace"]["steps"])
+    assert "0↔5" in steps and "KHÔNG tham gia" in steps
+    assert "10·d[a]" not in steps
