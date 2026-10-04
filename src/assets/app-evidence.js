@@ -320,6 +320,36 @@
     return Boolean(cell) && cols.split(",").indexOf(String(cell.cellIndex)) >= 0;
   }
 
+  /* Cột định danh ("Số") và cột thứ hạng ("#") của một bảng không mang phép
+     tính của bảng: số 17 ở cột «Số» là TÊN của hàng, không phải xác suất. Mục
+     danh mục khai riêng cho ô (bộ chọn trỏ vào chính ô) vẫn thắng. */
+  var IDENT_COLUMN = /^(?:số|con|cặp|cặp số|bộ số|số loto|số đặc biệt|2 số cuối)$/i;
+  var RANK_COLUMN = /^(?:#|hạng|thứ hạng|stt|top)$/i;
+
+  function cellScoped(section, el) {
+    var cell = el.closest("td, th");
+    var anchor = section && cell ? entryAnchor(section, el) : null;
+    return Boolean(anchor && cell.contains(anchor));
+  }
+
+  function columnRole(column, section) {
+    var name = norm(column);
+    var sources = ((section || registry.page || {}).sources) || [];
+    if (IDENT_COLUMN.test(name)) {
+      return { title: "Định danh của hàng", sources: sources, reasoningTrace: { steps: [
+        "Cột «" + name + "» là định danh của hàng: số 00–99 (hoặc cặp số) mà các cột còn lại mô tả — không phải giá trị đo.",
+        "Giá trị của số ấy nằm ở các cột khác của cùng hàng; mỗi cột có cách tính của bảng.",
+      ] } };
+    }
+    if (RANK_COLUMN.test(name)) {
+      return { title: "Thứ hạng trong bảng", sources: sources, reasoningTrace: { steps: [
+        "Cột «" + name + "» là thứ tự của hàng sau khi bảng được sắp xếp theo cột giá trị chính — vị trí trong danh sách, không phải một phép tính riêng.",
+        "Giá trị dùng để xếp nằm ở các cột khác của cùng hàng.",
+      ] } };
+    }
+    return null;
+  }
+
   /** Bằng chứng đầy đủ của một con số (CitationEvidence + ngữ cảnh). */
   function evidenceFor(el) {
     var value = valueText(el);
@@ -330,9 +360,10 @@
     }
     var own = explicitId ? registry.values[explicitId] || null : null;
     var section = sectionEntry(el);
+    var ctx = context(el, value);
+    if (!own && !cellScoped(section, el)) { own = columnRole(ctx.column, section); }
     var base = own || section || registry.page || {};
     var trace = base.reasoningTrace || {};
-    var ctx = context(el, value);
     var steps = (trace.steps || []).slice();
     var where = whereStep(ctx, value);
     if (where) { steps.push(where); }
@@ -869,7 +900,7 @@
   /* Dấu âm chỉ khi không đứng ngay sau chữ số hay chữ cái: "12-68" là hai số
      12 và 68, "−0,10" là một số âm. Số dính chữ ("G7") không tách. Phần nghìn
      bằng khoảng trắng ("5 671") là MỘT số, như NUM vẫn đọc. */
-  var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d))?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)*)(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
+  var TOKEN = /(?<![\p{L}\d.,])(?:[+\-\u2212](?=\d)|\u00b1\s?(?=\d))?(?:\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)*)(?:[eE][+\-]?\d+)?(?:\s?(?:%|\u2030|\u00d7))?(?![\p{L}\d])/gu;
   var CELLISH = "td, th, dd, li";
   /* Điều khiển (nút, liên kết, nhãn bộ lọc) không bị tách: chữ của chúng là
      tên thao tác. Ô dữ liệu có chức năng nhấp ([data-key]) thì vẫn tách — số

@@ -158,10 +158,13 @@ test('Hàng khai data-evidence-row dùng bằng chứng riêng, kèm độ tin c
   assert.equal(d.querySelector('.app-evidence-source-title').textContent, 'Mô hình ML thành phần');
   assert.equal(d.querySelector('.app-evidence-meter').getAttribute('aria-valuenow'), '35');
   assert.equal(dom.window.appEvidence.evidenceFor($(dom, 'num')).reasoningTrace.confidenceScore, 0.35);
-  // Cột hạng không nằm trong data-evidence-cols: không mượn bằng chứng xác suất.
+  // Cột hạng không nằm trong data-evidence-cols: không mượn bằng chứng xác suất,
+  // và cũng không mượn phép tính của khối — hạng là vị trí sau khi sắp xếp.
   const rank = dom.window.appEvidence.evidenceFor($(dom, 'rank'));
-  assert.notEqual(rank.scope, 'Số 63 · ML LOTO');
-  assert.equal(rank.sources[0].title, 'Dự báo đã công bố trước kỳ quay');
+  assert.equal(rank.scope, 'Thứ hạng trong bảng');
+  assert.match(rank.reasoningTrace.steps[0], /sắp xếp/);
+  assert.doesNotMatch(rank.reasoningTrace.steps.join(' '), /Trộn các thành phần/);
+  assert.equal(rank.sources[0].title, 'Dự báo đã công bố trước kỳ quay', 'nguồn vẫn là dữ liệu của khối');
 });
 
 test('Ô đã có chức năng nhấp giữ nguyên chức năng; Alt + nhấp mở bằng chứng mà không đánh dấu', t => {
@@ -462,4 +465,22 @@ test('Giải tách để tô (.sp-de) là một giá trị; ô dữ liệu có c
 test('Phần nghìn bằng khoảng trắng là một số khi tách câu', t => {
   const dom = start(t);
   assert.deepEqual([...$(dom, 'summary-thousands').querySelectorAll('.app-evidence-token')].map(e => e.textContent), ['5 671', '2']);
+});
+
+test('Cột «Số» không có bằng chứng hàng là định danh, không nhận phép tính của khối; ± giữ dấu', t => {
+  const dom = start(t), d = dom.window.document;
+  const row2 = $(dom, 'prob2').parentElement;
+  const ident = dom.window.appEvidence.evidenceFor(row2.cells[1]);
+  assert.equal(ident.value, '95');
+  assert.equal(ident.scope, 'Định danh của hàng');
+  assert.doesNotMatch(ident.reasoningTrace.steps.join(' '), /Trộn các thành phần/);
+  // Ô giá trị cùng hàng vẫn nhận phép tính của khối.
+  assert.match(dom.window.appEvidence.evidenceFor($(dom, 'prob2')).reasoningTrace.steps.join(' '), /Trộn các thành phần/);
+  const p = d.createElement('p');
+  p.setAttribute('data-evidence-split', '');
+  p.textContent = 'Trung bình 0,0123% ± 0,0300 điểm phần trăm.';
+  $(dom, 'summary').append(p);
+  return new Promise(resolve => setTimeout(resolve, 400)).then(() => {
+    assert.deepEqual([...p.querySelectorAll('.app-evidence-token')].map(e => e.textContent), ['0,0123%', '± 0,0300']);
+  });
 });
