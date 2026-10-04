@@ -35,7 +35,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ensemble_components import COMPONENT_KEYS, availability_from_history_day
+from ensemble_components import (
+    COMPONENT_KEYS,
+    availability_from_history_day,
+    published_with_level_anchor,
+)
 from ensemble_utils import (
     EnsembleWeights,
     finalize_blend,
@@ -129,9 +133,10 @@ def ensemble_probabilities(history: pd.DataFrame, weights: EnsembleWeights, mode
             continue
         effective /= effective.sum()
         blend = sum(w * v for w, v in zip(effective, vectors, strict=True))
-        # Phải dùng ĐÚNG phép chốt của sản xuất, kể cả sàn xác suất — nếu không,
-        # trang Chất lượng lại chấm điểm một mô hình khác mô hình được xuất bản.
-        blend = finalize_blend(blend, mode)
+        # Phải dùng ĐÚNG phép chốt đã dùng khi CÔNG BỐ ngày ấy, kể cả sàn xác
+        # suất — nếu không, trang Chất lượng lại chấm một mô hình khác mô hình
+        # được xuất bản. Ngày trước khi có neo mức LOTO được chốt bằng clip01.
+        blend = finalize_blend(blend, mode, anchor_loto=published_with_level_anchor(sub))
         days.append(str(day))
         probs.append(blend)
         labels.append(pd.to_numeric(sub["y"], errors="coerce").to_numpy(dtype=float))

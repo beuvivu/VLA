@@ -94,7 +94,9 @@ bằng 1; LOTO thì chưa.
 
 Phép nhân giữ nguyên thứ hạng, nên danh sách gợi ý không đổi vì riêng phép này. Khi phép nhân đẩy
 một số ra ngoài [10⁻⁶, 1 − 10⁻⁶], hệ số được chọn lại bằng chia đôi sao cho tổng SAU khi chặn biên vẫn
-đúng; vector dồn hết vào vài con (ví dụ `[1, 0, …, 0]`) chia phần còn thiếu đều cho các con bằng 0. Nó đi vào
+đúng; vector dồn hết vào vài con (ví dụ `[1, 0, …, 0]`) chia phần còn thiếu đều cho các con bằng 0.
+Sổ lịch sử ghi `policy_blend` cho mỗi dòng mới; khi trang Chất lượng phải dựng lại từ sổ, ngày cũ
+vẫn được chốt bằng `clip01` như lúc công bố, để nó không chấm một vector chưa từng được công bố. Nó đi vào
 `ensemble_utils.finalize_blend`, nay là phép chốt DUY NHẤT trước hiệu chỉnh cho cả năm nơi chấm vector
 tổ hợp: đường dự đoán thật, bộ học trọng số và hiệu chỉnh, tầng xếp chồng, trang Chất lượng, bảng
 đóng góp thành phần. Trước đây năm nơi ấy tự chép `floor_distribution`/`clip01`.
@@ -176,10 +178,11 @@ Bộ theo dõi `skill_monitor` vẫn canh kỹ năng ngoài mẫu của vector �
 `tests/test_loto_level_anchor.py` (12 phép), 5 phép mới trong `tests/test_cau_keo_ml.py` và 3 trong
 `tests/test_ensemble_component_availability.py`; bốn phép cũ được viết lại: ba phép chấm vector LOTO
 đồng đều — dạng mà phép neo làm mất khả năng phân biệt trọng số — và bản tham chiếu điểm theo ngày
-của bộ học trọng số. Fixture lịch sử của các phép cũ ghi thêm `policy_cau` hiện hành. 25 đột biến
+của bộ học trọng số. Fixture lịch sử của các phép cũ ghi thêm `policy_cau` hiện hành. 30 đột biến
 đều làm đỏ: bỏ neo, hàng rỗng nhận 0, `finalize_blend` quay về `clip01`, từng nơi trong năm nơi chấm
 quay về bản chép riêng, chặn biên bằng `clip01`, phần thiếu không chia cho các con bằng 0; bỏ trust,
 Đặc Biệt không chuẩn hoá lại, trust mặc định cho gói cũ, nền nhìn khối thẩm định, trust = 1, dùng
 lại gói cũ không học lại, `prob` = xác suất thô, đầu ra không khai phiên bản; bỏ lọc phiên bản,
 thiếu cột coi như hiện hành, bộ học trọng số hoặc tầng xếp chồng không đòi phiên bản, sổ không ghi
-phiên bản, phiên bản không nhất quán vẫn nhận.
+phiên bản, phiên bản không nhất quán vẫn nhận; trang Chất lượng luôn neo hoặc không bao giờ neo,
+thiếu `policy_blend` coi là đã neo, sổ không ghi phép chốt, `anchor_loto` bị bỏ qua.

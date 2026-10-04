@@ -33,6 +33,22 @@ def policy_column(key: str) -> str:
     return f"policy_{key}"
 
 
+#: Phiên bản PHÉP CHỐT tổ hợp (``ensemble_utils.finalize_blend``) đã dùng khi
+#: công bố ngày ấy, ghi vào cột ``policy_blend`` của sổ lịch sử. 1 = neo mức
+#: LOTO (04-10-2026); dòng cũ không có cột đã được công bố bằng ``clip01``.
+BLEND_POLICY: Final[int] = 1
+BLEND_POLICY_COLUMN: Final[str] = "policy_blend"
+
+
+def published_with_level_anchor(sub: pd.DataFrame) -> bool:
+    """Ngày này đã được CÔNG BỐ với phép neo mức LOTO hay chưa."""
+    if BLEND_POLICY_COLUMN not in sub.columns:
+        return False
+    versions = pd.to_numeric(sub[BLEND_POLICY_COLUMN], errors="coerce").to_numpy(dtype=float)
+    # Phiên bản 1 trở đi đều neo mức; NaN (dòng ghi trước khi có cột) thì không.
+    return bool(versions.size and np.all(versions >= float(BLEND_POLICY)))
+
+
 @dataclass(frozen=True)
 class ComponentVector:
     prob: np.ndarray

@@ -153,18 +153,21 @@ def _bounded_level(row: np.ndarray, target: float) -> np.ndarray:
     return np.clip(high * row, _PROB_LO, _PROB_HI)
 
 
-def finalize_blend(p: np.ndarray, mode: str) -> np.ndarray:
+def finalize_blend(p: np.ndarray, mode: str, *, anchor_loto: bool = True) -> np.ndarray:
     """Phép chốt của tổ hợp tuyến tính TRƯỚC hiệu chuẩn — một nguồn cho mọi nơi.
 
     Đường dự đoán thật (``predict_nextday_2d``), bộ học trọng số và hiệu chuẩn,
     tầng xếp chồng, trang Chất lượng và bảng đóng góp thành phần đều phải chấm
     ĐÚNG vector mà hệ thống xuất bản. Trước đây năm nơi ấy tự chép phép chốt;
     chép là để chúng trôi khỏi nhau.
+
+    ``anchor_loto=False`` là phép chốt LOTO trước 04-10-2026 (chỉ ``clip01``), chỉ
+    dành cho nơi dựng lại một ngày ĐÃ công bố theo luật cũ (trang Chất lượng).
     """
     if mode == "de":
         return floor_distribution(p)
     if mode == "loto":
-        return anchor_loto_level(p)
+        return anchor_loto_level(p) if anchor_loto else clip01(p, eps=1e-6)
     raise ValueError("mode must be 'loto' or 'de'")
 
 

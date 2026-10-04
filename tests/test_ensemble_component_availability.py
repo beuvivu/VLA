@@ -10,6 +10,8 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from ensemble_components import (
+    BLEND_POLICY,
+    BLEND_POLICY_COLUMN,
     COMPONENT_POLICY,
     availability_from_history_day,
     policy_column,
@@ -170,5 +172,7 @@ def test_history_records_the_definition_each_component_declares(tmp_path, monkey
     loto = pd.read_csv(dirs["history"] / "pred_loto.csv")
     de = pd.read_csv(dirs["history"] / "pred_de.csv")
     assert (loto[policy_column("cau")] == COMPONENT_POLICY["cau"]).all()
+    # Trang Chất lượng dựa vào cột này để dựng lại đúng phép chốt đã công bố.
+    assert (loto[BLEND_POLICY_COLUMN] == BLEND_POLICY).all()
     assert de[policy_column("cau")].isna().all()
     assert recorder._policy_version(full.assign(trust_policy_version=[1] * 99 + [2])) != 1

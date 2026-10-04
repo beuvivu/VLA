@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 
 from ensemble_components import (
+    BLEND_POLICY,
+    BLEND_POLICY_COLUMN,
     COMPONENT_KEYS,
     COMPONENT_POLICY,
     policy_column,
@@ -176,6 +178,8 @@ def main() -> None:
                     ] * 100
                     for key in COMPONENT_POLICY
                 },
+                # Phép chốt mà predict_nextday_2d của CÙNG lượt chạy dùng để công bố.
+                BLEND_POLICY_COLUMN: [BLEND_POLICY] * 100,
             }
         )
         out_path = out_dir / f"pred_{mode}.csv"

@@ -207,7 +207,9 @@ thổi tổng lên 24,5 và 26,5 (lời nguyền người thắng khi chọn top
 kém hằng số chỉ vì SAI MỨC. Mọi nơi chấm vector tổ hợp — `predict_nextday_2d`,
 `learn_ensemble_weights`, `meta_predictor._baseline_validation`, `model_quality`,
 `feature_attribution` — phải gọi hàm ấy; đừng chép lại `clip01`
-(`tests/test_loto_level_anchor.py`). Số đo: `scripts/benchmark_component_trust.py`,
+(`tests/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
+`policy_blend`, và trang Chất lượng chốt dòng cũ (không có cột) bằng `anchor_loto=False`.
+Số đo: `scripts/benchmark_component_trust.py`,
 `documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.
 
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ

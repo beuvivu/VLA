@@ -16,6 +16,7 @@ import pytest
 
 import build_model_quality as page
 import model_quality as mq
+from ensemble_components import BLEND_POLICY, BLEND_POLICY_COLUMN
 from ensemble_utils import anchor_loto_level
 from xsmb_domain import LOTO_BASELINE_RATE
 
@@ -148,7 +149,8 @@ def test_ensemble_renormalizes_weights_over_available_components_only() -> None:
         rows.append(
             {"target_date": "2026-01-01", "number": number, "p_ml": 0.25,
              "p_cau": np.nan, "p_stat": np.nan,
-             "p_active": 0.30 if number == 1 else 0.10, "p_stable": 0.10, "y": 0.0}
+             "p_active": 0.30 if number == 1 else 0.10, "p_stable": 0.10, "y": 0.0,
+             BLEND_POLICY_COLUMN: BLEND_POLICY}
         )
     weights = mq.EnsembleWeights(w_ml=0.5, w_cau=0.3, w_stat=0.1, w_active=0.05, w_stable=0.05)
     _, probabilities, _ = mq.ensemble_probabilities(pd.DataFrame(rows), weights, "loto")
@@ -165,6 +167,12 @@ def test_ensemble_renormalizes_weights_over_available_components_only() -> None:
     # thành phần; thứ còn phân biệt được trọng số là TỈ LỆ giữa các con.
     np.testing.assert_allclose(probabilities[0], anchor_loto_level(expected), rtol=1e-12)
     assert probabilities[0].sum() == pytest.approx(100 * LOTO_BASELINE_RATE)
+
+    # Ngày ghi trước khi có neo mức đã được CÔNG BỐ bằng clip01: dựng lại phải
+    # chấm đúng vector ấy, không phải vector theo luật hôm nay.
+    legacy = pd.DataFrame(rows).drop(columns=[BLEND_POLICY_COLUMN])
+    _, probabilities, _ = mq.ensemble_probabilities(legacy, weights, "loto")
+    np.testing.assert_allclose(probabilities[0], expected, rtol=1e-12)
 
 
 def test_skill_chart_pins_off_scale_points_instead_of_dropping_them() -> None:
