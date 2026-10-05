@@ -1,6 +1,12 @@
 name: Đồng bộ XSMT và XSMN
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/regional_lottery.py'
+      - 'src/build_regional_results.py'
+      - '.github/workflows/regional-results.yml'
   workflow_dispatch:
     inputs:
       backfill_days:
@@ -42,8 +48,9 @@ jobs:
 
       - name: Đồng bộ Miền Trung và Miền Nam
         env:
-          MANUAL_DAYS: ${{ github.event.inputs.backfill_days || '7' }}
+          MANUAL_DAYS: ${{ github.event.inputs.backfill_days || '365' }}
         run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then MANUAL_DAYS=7; fi
           python src/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.35
           python src/build_regional_results.py
 
