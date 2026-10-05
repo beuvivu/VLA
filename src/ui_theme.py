@@ -701,6 +701,16 @@ SITE_NAV_SECTIONS: tuple[
                 ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "so-ket-qua"),
                 ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "so-ket-qua"),
             )),
+            ("Vietlott", (
+                ("vietlott.html", "Tổng quan Vietlott", "so-ket-qua"),
+                ("vietlott-lotto-535.html", "Lotto 5/35", "so-ket-qua"),
+                ("vietlott-mega-645.html", "Mega 6/45", "so-ket-qua"),
+                ("vietlott-power-655.html", "Power 6/55", "so-ket-qua"),
+                ("vietlott-max-3d.html", "Max 3D / Max 3D+", "so-ket-qua"),
+                ("vietlott-max-3d-pro.html", "Max 3D Pro", "so-ket-qua"),
+                ("vietlott-keno.html", "Keno", "so-ket-qua"),
+                ("vietlott-bingo18.html", "Bingo18", "so-ket-qua"),
+            )),
         ),
     ),
     (
