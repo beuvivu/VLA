@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import html
-import json
 from collections import defaultdict
 from pathlib import Path
 from typing import Sequence
@@ -12,7 +11,7 @@ from typing import Sequence
 from css_links import stylesheet_link
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open
-from web_security import security_meta_tags
+from web_security import json_for_html_script, security_meta_tags
 
 PRIZE_ORDER = ("ĐB", "G.1", "G.2", "G.3", "G.4", "G.5", "G.6", "G.7", "G.8")
 REGION_META = {
