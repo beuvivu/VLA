@@ -698,8 +698,8 @@ SITE_NAV_SECTIONS: tuple[
                 ("so-ket-qua-truyen-thong.html", "Sổ kết quả Miền Bắc", "so-ket-qua"),
             )),
             ("Miền Trung & Miền Nam", (
-                ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "mien-trung"),
-                ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "mien-nam"),
+                ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "so-ket-qua"),
+                ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "so-ket-qua"),
             )),
         ),
     ),
