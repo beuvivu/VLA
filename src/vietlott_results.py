@@ -134,21 +134,22 @@ def upsert(db,d):
  meta_json=excluded.meta_json,source_url=excluded.source_url,fetched_at=excluded.fetched_at""",
  (d.product,d.draw_id,d.draw_date,json.dumps(d.result),d.bonus,d.jackpot_1,d.jackpot_2,d.meta_json,d.source_url,d.fetched_at))
 
-def crawl_product(db,http,product,limit=500,delay=.12):
+def crawl_product(db,http,product,limit=500,delay=.12,mode="update"):
  known={r[0] for r in db.execute("SELECT draw_id FROM draws WHERE product=?",(product,))}
- url=latest_url(http,product); seen=set(); added=0; scanned=0
+ if mode=="backfill" and known:
+  row=db.execute("SELECT source_url FROM draws WHERE product=? ORDER BY draw_date,CAST(draw_id AS INTEGER) LIMIT 1",(product,)).fetchone()
+  url=row[0] if row and row[0] else latest_url(http,product)
+ else:url=latest_url(http,product)
+ seen=set(); added=0; scanned=0
  while url and url not in seen and scanned<limit:
   seen.add(url); got=_get(http,url)
   if not got:break
   draw=parse_detail(product,got[0],url)
   if not draw:break
-  scanned+=1
-  if draw.draw_id not in known:upsert(db,draw);known.add(draw.draw_id);added+=1
+  scanned+=1; was_known=draw.draw_id in known
+  if not was_known:upsert(db,draw);known.add(draw.draw_id);added+=1
   nxt=previous_url(got[1],product,draw)
-  # Incremental run may stop once it reaches an already persisted chain.
-  if draw.draw_id in known and added and nxt:
-   m=re.search(r"id=(\d+)",nxt)
-   if m and m[1] in known:break
+  if mode=="update" and was_known:break
   url=nxt
   if delay:time.sleep(delay)
  db.commit(); return scanned,added
@@ -167,10 +168,10 @@ def export(root,db):
  (out/"latest.json").write_text(json.dumps({"source":"vietlott.vn","timezone":"Asia/Ho_Chi_Minh","counts":counts,"latest":latest},ensure_ascii=False,indent=2),encoding="utf-8")
 
 def main():
- ap=argparse.ArgumentParser();ap.add_argument("--products",default="all");ap.add_argument("--limit",type=int,default=500);ap.add_argument("--delay",type=float,default=.12)
+ ap=argparse.ArgumentParser();ap.add_argument("--products",default="all");ap.add_argument("--limit",type=int,default=500);ap.add_argument("--delay",type=float,default=.12);ap.add_argument("--mode",choices=("update","backfill"),default="update")
  a=ap.parse_args();root=Path(__file__).resolve().parents[1];db=init_db(root/"data"/"vietlott"/"vietlott.sqlite3");http=requests.Session()
  products=PRODUCTS if a.products=="all" else [x.strip() for x in a.products.split(",") if x.strip()]
  for p in products:
-  scanned,added=crawl_product(db,http,p,max(1,a.limit),max(0,a.delay));print(p,scanned,added)
+  scanned,added=crawl_product(db,http,p,max(1,a.limit),max(0,a.delay),a.mode);print(p,scanned,added)
  export(root,db);db.close();return 0
 if __name__=="__main__":raise SystemExit(main())
