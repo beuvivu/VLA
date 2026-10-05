@@ -343,16 +343,15 @@ def test_navigation_covers_every_generated_page() -> None:
 
 
 def test_navigation_groups_are_the_agreed_set() -> None:
-    """Bảy nhóm. Hai nhóm "Bảng Đặc Biệt" và "LOTO chi tiết" được thêm khi
-    dựng mười trang thống kê riêng; trước đó chỉ có năm."""
+    """Thứ tự tra cứu, thống kê, soi cầu, dự báo rồi nghiên cứu."""
     assert [group for group, _ in SITE_NAV] == [
-        "Trực tiếp",
+        "Kết quả",
         "Thống kê",
-        "Cầu kèo",
-        "Phỏng đoán",
-        "Bảng Đặc Biệt",
-        "LOTO chi tiết",
-        "Tool nâng cao",
+        "Thống kê LOTO",
+        "Thống kê Đặc Biệt",
+        "Soi cầu",
+        "Dự báo",
+        "Nghiên cứu & công cụ",
     ]
 
 
