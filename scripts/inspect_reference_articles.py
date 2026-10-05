@@ -59,7 +59,8 @@ def category_prefix(start: str) -> str:
     prefix = path.split("/type/")[0].rstrip("/")
     if not prefix:
         prefix = path.rstrip("/").rsplit("/", 1)[0]
-    if not prefix:
+    # Rỗng thì khớp mọi liên kết; chứa /type/ thì không bài nào lọt qua article_links.
+    if not prefix or "/type" in prefix + "/":
         raise SystemExit("Không suy ra được tiền tố bài viết; đặt ARTICLE_PREFIX.")
     return prefix + "/"
 
@@ -81,11 +82,12 @@ def article_links(soup: BeautifulSoup, base: str, prefix: str) -> list[str]:
 
 
 def page_links(soup: BeautifulSoup, base: str) -> list[str]:
-    """Liên kết phân trang của trang chuyên mục (``?page=``, ``/page/``)."""
+    """Liên kết phân trang CÙNG host của trang chuyên mục (``?page=``, ``/page/``)."""
+    host = urlparse(base).netloc
     out: list[str] = []
     for a in soup.find_all("a", href=True):
         href = urljoin(base, a["href"])
-        if PAGINATION.search(href) and href not in out:
+        if urlparse(href).netloc == host and PAGINATION.search(href) and href not in out:
             out.append(href)
     return out
 
