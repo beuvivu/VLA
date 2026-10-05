@@ -101,6 +101,9 @@ từng ô — `tests/fixtures/bridge_reference_2026-09-28.json`.
 
 Khung: Chủ Nhật mở tuần (đầu – đuôi cả tuần; chạm thứ Hai – Năm; lô G5 thứ Hai – Ba; song thủ
 thứ Hai), thứ Năm mở cuối tuần. Loạt bài HẰNG NGÀY không tái lập được (BTL/STL không khớp chính
-phương pháp bài nêu). Kiểm 4 224 kỳ: cả năm quy tắc ngang chọn bừa; "nổ cả tuần" là do khung dài
-(1 − 0,8⁷ ≈ 79%). Đọc bài: dispatch `inspect-reference-articles.yml` (`start_url`), log dài thì
+phương pháp bài nêu). Kiểm 4 225 kỳ: cả năm quy tắc ngang chọn bừa (p Holm ≥ 0,966); "nổ cả
+tuần" là do khung dài (1 − 0,8⁷ ≈ 79%). Mốc LOTO có điều kiện: 1 − C(100 − m, k)/C(100, k), m = số
+con khác nhau đã về. Bằng chứng tiến cứu cộng dồn trong `digit_sum_hypothesis` (sổ
+`data/hypotheses/digit_sum_rules.csv`, từ kỳ 06-10-2026, kết luận sau 180 kỳ) — đọc trạng thái ở
+đó trước khi nói một quy tắc "đang chạy". Đọc bài: dispatch `inspect-reference-articles.yml` (`start_url`), log dài thì
 lưu tệp rồi tách theo dòng `BÀI`.

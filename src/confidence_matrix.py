@@ -630,6 +630,14 @@ def _hot_tail_status(data_dir: Path) -> dict:
     return hot_tail_test.evaluate(data_dir)
 
 
+def _digit_sum_status(data_dir: Path) -> dict:
+    """Ghi các kỳ mới vào sổ cái năm quy tắc "tổng – bóng – chạm" rồi trả trạng thái."""
+    import digit_sum_hypothesis
+
+    digit_sum_hypothesis.update_ledger(data_dir)
+    return digit_sum_hypothesis.evaluate(data_dir)
+
+
 def build_report(data_dir: Path, null: dict) -> dict:
     """Phần dữ liệu thật: họ giả thuyết, ma trận quyết định, rủi ro, phản hồi."""
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype={"date": str})
@@ -748,6 +756,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
         "intervention": intervention,
         "feedback": published_feedback(data_dir),
         "hot_tail": _hot_tail_status(data_dir),
+        "digit_sum": _digit_sum_status(data_dir),
     }
 
 

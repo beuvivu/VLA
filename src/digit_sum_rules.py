@@ -18,6 +18,12 @@ Hai loạt bài, hai mức tái lập được:
 Mọi quy tắc đọc ĐÚNG MỘT kỳ gốc và chỉ dùng tổng hai chữ số (mod 10) và bóng
 (x ↔ x + 5 mod 10). Kiểm lịch sử (``backtest``) chấm mỗi quy tắc trên từng kỳ
 kế tiếp với xác suất trúng chính xác của một bộ số cùng cỡ chọn ngẫu nhiên.
+
+Cách chấm (06-10-2026, đối chiếu với bộ ``xsmb_methods`` chủ dự án gửi — cùng
+năm quy tắc, ra cùng bộ số ở cả 500 kỳ của bộ ấy): mốc LOTO là xác suất CÓ ĐIỀU
+KIỆN theo đúng số con khác nhau đã về ở kỳ được chấm, p một phía là đuôi phân
+phối Poisson-nhị thức (mỗi kỳ một xác suất riêng), kèm khoảng Wilson 95% và p
+đã hiệu chỉnh Holm cho năm quy tắc kiểm cùng lúc.
 """
 
 from __future__ import annotations
@@ -25,14 +31,14 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
-from math import sqrt
+from math import comb, sqrt
 from pathlib import Path
 from typing import Callable
 
 import numpy as np
 import pandas as pd
 
-from xsmb_domain import FIELD_WIDTHS, LOTO_DRAWS_PER_DAY
+from xsmb_domain import FIELD_WIDTHS
 
 #: Thứ tự giải đúng như bảng kết quả, kèm số chữ số của mỗi giải.
 _WIDTH = dict(FIELD_WIDTHS)
@@ -153,8 +159,13 @@ def tong_hop_ky(row: pd.Series) -> dict:
     }
 
 
-def _hit_and_chance(rule: Rule, picks: list[int], nxt: pd.Series) -> tuple[bool, float]:
-    """Trúng hay không ở kỳ kế, và xác suất trúng của một bộ ngẫu nhiên cùng cỡ."""
+def hit_and_chance(rule: Rule, picks: list[int], nxt: pd.Series) -> tuple[bool, float]:
+    """Trúng hay không ở kỳ kế, và xác suất trúng của một bộ ngẫu nhiên cùng cỡ.
+
+    LOTO: kỳ về m con khác nhau thì một bộ k con chọn ngẫu nhiên trượt hết với
+    xác suất C(100 − m, k) / C(100, k) — chính xác cho đúng kỳ ấy, thay cho xấp
+    xỉ 1 − (1 − k/100)²⁷ coi 27 giải như 27 lần rút độc lập.
+    """
     k = len(picks)
     special = int(nxt["special"]) % 100
     if rule.target == "dau_db":
@@ -164,39 +175,88 @@ def _hit_and_chance(rule: Rule, picks: list[int], nxt: pd.Series) -> tuple[bool,
     if rule.target == "db":
         return special in picks, k / 100
     lotos = {int(nxt[field]) % 100 for field, _ in FIELD_WIDTHS}
-    return bool(lotos & set(picks)), 1.0 - (1.0 - k / 100) ** LOTO_DRAWS_PER_DAY
+    return bool(lotos & set(picks)), 1.0 - comb(100 - len(lotos), k) / comb(100, k)
+
+
+def poisson_binomial_sf(hits: int, chances: list[float]) -> float:
+    """P(X ≥ hits) khi phép thử thứ i trúng với xác suất ``chances[i]``, độc lập."""
+    dist = np.zeros(len(chances) + 1)
+    dist[0] = 1.0
+    for i, p in enumerate(chances):
+        step = dist[: i + 2] * (1.0 - p)
+        step[1:] += dist[: i + 1] * p
+        dist[: i + 2] = step
+    return float(min(1.0, dist[hits:].sum()))
+
+
+def wilson(hits: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
+    """Khoảng tin cậy Wilson 95% cho tỉ lệ hits/n."""
+    if n == 0:
+        return 0.0, 1.0
+    rate = hits / n
+    den = 1 + z * z / n
+    centre = (rate + z * z / (2 * n)) / den
+    half = z * sqrt(rate * (1 - rate) / n + z * z / (4 * n * n)) / den
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
+def holm(p_values: list[float]) -> list[float]:
+    """p đã hiệu chỉnh Holm–Bonferroni, giữ thứ tự đầu vào."""
+    order = sorted(range(len(p_values)), key=lambda i: p_values[i])
+    adjusted = [1.0] * len(p_values)
+    running = 0.0
+    for rank, i in enumerate(order):
+        running = max(running, min(1.0, (len(p_values) - rank) * p_values[i]))
+        adjusted[i] = running
+    return adjusted
+
+
+def verdict(n: int, hits: int, chances: list[float]) -> dict:
+    """Tỉ lệ trúng, mốc chọn bừa, z, p một phía và khoảng Wilson của một chuỗi chấm."""
+    expected = float(sum(chances))
+    variance = float(sum(p * (1.0 - p) for p in chances))
+    low, high = wilson(hits, n)
+    return {
+        "hits": hits,
+        "hit_rate": hits / n if n else 0.0,
+        "ci_low": low,
+        "ci_high": high,
+        "expected_rate": expected / n if n else 0.0,
+        "z": (hits - expected) / sqrt(variance) if variance > 0 else 0.0,
+        "p_value": poisson_binomial_sf(hits, chances) if n else 1.0,
+    }
+
+
+def with_holm(rows: list[dict]) -> list[dict]:
+    for row, adjusted in zip(rows, holm([row["p_value"] for row in rows]), strict=True):
+        row["p_holm"] = adjusted
+    return rows
 
 
 def backtest(raw: pd.DataFrame) -> list[dict]:
     """Chấm mỗi quy tắc: kỳ gốc t → kỳ t+1, trên toàn bộ lịch sử.
 
     ``expected`` cộng xác suất trúng chính xác của một bộ ngẫu nhiên cùng cỡ ở
-    từng kỳ (bộ đổi cỡ khi có số kép), nên z so đúng với "chọn bừa".
+    từng kỳ (bộ đổi cỡ khi có số kép), nên z và p so đúng với "chọn bừa".
     """
     raw = raw.sort_values("date").reset_index(drop=True)
     rows = [raw.iloc[i] for i in range(len(raw))]
     out = []
     for rule in RULES:
         hits = 0
-        expected = 0.0
-        variance = 0.0
+        chances = []
         for t in range(len(rows) - 1):
-            hit, p = _hit_and_chance(rule, rule.make(rows[t]), rows[t + 1])
+            hit, p = hit_and_chance(rule, rule.make(rows[t]), rows[t + 1])
             hits += int(hit)
-            expected += p
-            variance += p * (1.0 - p)
-        n = len(rows) - 1
+            chances.append(p)
         out.append({
             "rule": rule.key,
             "label": rule.label,
             "formula": rule.formula,
-            "draws": n,
-            "hits": hits,
-            "hit_rate": hits / n,
-            "expected_rate": expected / n,
-            "z": (hits - expected) / sqrt(variance) if variance > 0 else 0.0,
+            "draws": len(chances),
+            **verdict(len(chances), hits, chances),
         })
-    return out
+    return with_holm(out)
 
 
 #: Khung áp dụng theo đúng loạt bài tuần: kỳ gốc (thứ, 0 = thứ Hai) → các thứ
@@ -224,8 +284,8 @@ def frame_backtest(raw: pd.DataFrame) -> list[dict]:
     out = []
     for key, frames in FRAMES.items():
         rule = by_key[key]
-        n = hits = 0
-        expected = variance = 0.0
+        hits = 0
+        chances = []
         for t in range(len(rows) - 1):
             days = frames.get(int(dates[t].weekday()))
             if days is None:
@@ -237,25 +297,20 @@ def frame_backtest(raw: pd.DataFrame) -> list[dict]:
                 if gap > 7 or int(dates[u].weekday()) not in days:
                     continue
                 span += 1
-                hit, p = _hit_and_chance(rule, picks, rows[u])
+                hit, p = hit_and_chance(rule, picks, rows[u])
                 hit_any |= hit
                 miss_all *= 1.0 - p
             if span == 0:
                 continue
-            n += 1
             hits += int(hit_any)
-            expected += 1.0 - miss_all
-            variance += (1.0 - miss_all) * miss_all
+            chances.append(1.0 - miss_all)
         out.append({
             "rule": key,
             "label": rule.label,
-            "frames": n,
-            "hits": hits,
-            "hit_rate": hits / n if n else 0.0,
-            "expected_rate": expected / n if n else 0.0,
-            "z": (hits - expected) / sqrt(variance) if variance > 0 else 0.0,
+            "frames": len(chances),
+            **verdict(len(chances), hits, chances),
         })
-    return out
+    return with_holm(out)
 
 
 def next_picks(raw: pd.DataFrame) -> dict:

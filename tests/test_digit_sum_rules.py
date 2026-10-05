@@ -6,6 +6,10 @@ liệu tải về sau. Số mong đợi là số in trong bài (dạng ``xyx`` =
 
 from __future__ import annotations
 
+import itertools
+import math
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -13,6 +17,7 @@ import pytest
 import digit_sum_rules as r
 from xsmb_domain import FIELD_WIDTHS
 
+ROOT = Path(__file__).resolve().parents[1]
 COLUMNS = [field for field, _ in FIELD_WIDTHS]
 ROWS = {
     "2026-09-27": [55473, 64870, 68612, 77718, 52620, 19062, 416, 15268, 86933, 43655, 2733, 3480,
@@ -133,3 +138,58 @@ def test_frame_scoring_counts_a_week_as_won_by_a_single_hit() -> None:
     assert rows["dau_db"]["frames"] == 99  # mỗi Chủ Nhật có đủ khung 7 kỳ phía sau
     # Dàn chạm mở hai khung mỗi tuần: Chủ Nhật → thứ Hai–Năm, thứ Năm → thứ Sáu–Chủ Nhật.
     assert rows["dan_cham"]["frames"] == 199
+
+
+def test_loto_chance_is_conditional_on_the_numbers_that_came_out() -> None:
+    """Kỳ 04-10 về 25 con khác nhau (51, 89 về hai nháy): bộ 2 con chọn bừa trúng với
+    1 − C(75,2)/C(100,2), không phải 1 − 0,98²⁷."""
+    row = _row("2026-10-04")
+    lotos = {value % 100 for value in ROWS["2026-10-04"]}
+    rule = next(rule for rule in r.RULES if rule.key == "lo_g5")
+    hit, chance = r.hit_and_chance(rule, [1, 10], row)
+    assert chance == pytest.approx(1 - math.comb(100 - len(lotos), 2) / math.comb(100, 2))
+    assert hit is False and len(lotos) == 25
+
+
+def test_poisson_binomial_tail_is_exact() -> None:
+    chances = [0.1, 0.5, 0.9, 0.3]
+    for k in range(6):
+        brute = sum(
+            np.prod([p if bit else 1 - p for p, bit in zip(chances, bits, strict=True)])
+            for bits in itertools.product((0, 1), repeat=4)
+            if sum(bits) >= k
+        )
+        assert r.poisson_binomial_sf(k, chances) == pytest.approx(brute)
+    # Cùng một xác suất thì là đuôi nhị thức.
+    assert r.poisson_binomial_sf(30, [0.2] * 100) == pytest.approx(
+        sum(math.comb(100, i) * 0.2**i * 0.8 ** (100 - i) for i in range(30, 101))
+    )
+
+
+def test_holm_and_wilson_match_their_textbook_values() -> None:
+    assert r.holm([0.01, 0.04, 0.03, 0.005]) == pytest.approx([0.03, 0.06, 0.06, 0.02])
+    assert r.wilson(0, 10) == pytest.approx((0.0, 0.2775), abs=1e-4)
+    assert r.wilson(5, 10) == pytest.approx((0.2366, 0.7634), abs=1e-4)
+
+
+def test_the_500_draw_report_matches_the_independent_implementation() -> None:
+    """Bộ ``xsmb_methods`` chủ dự án gửi (05-10-2026) cài đặt độc lập cùng năm quy
+    tắc và cùng cách chấm; báo cáo 500 kỳ 20-05-2025 → 05-10-2026 của nó in đúng
+    các số dưới đây. Hai cài đặt phải ra cùng một kết quả trên dữ liệu kho."""
+    raw = pd.read_csv(ROOT / "data" / "xsmb.csv", dtype={"date": str})
+    raw = raw[(raw["date"] >= "2025-05-20") & (raw["date"] <= "2026-10-05")]
+    assert len(raw) == 500
+    rows = {row["rule"]: row for row in r.backtest(raw)}
+    expected = {  # quy tắc: (trúng, mốc chọn bừa, p, p Holm)
+        "dau_db": (99, 0.200, 0.553, 1.000),
+        "duoi_db": (100, 0.200, 0.509, 1.000),
+        "dan_cham": (97, 0.177, 0.165, 0.827),
+        "lo_g5": (206, 0.404, 0.362, 1.000),
+        "lo_vip": (203, 0.406, 0.507, 1.000),
+    }
+    for key, (hits, base, p_value, p_holm) in expected.items():
+        row = rows[key]
+        assert row["draws"] == 499 and row["hits"] == hits, key
+        assert row["expected_rate"] == pytest.approx(base, abs=5e-4), key
+        assert row["p_value"] == pytest.approx(p_value, abs=5e-4), key
+        assert row["p_holm"] == pytest.approx(p_holm, abs=5e-4), key

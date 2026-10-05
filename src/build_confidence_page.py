@@ -307,6 +307,67 @@ def hot_tail_card(report: dict) -> str:
     )
 
 
+_DIGIT_SUM_WORDS = {
+    "dang_thu": "Đang thu thập — chưa đủ kỳ để kết luận.",
+    "xac_nhan": "XÁC NHẬN có quy tắc trúng nhiều hơn chọn bừa trên các kỳ chưa từng thấy — "
+                "vẫn phải qua kiểm mô hình trước khi được dùng trong xác suất.",
+    "bac_bo": "BÁC BỎ: trên các kỳ chưa từng thấy, không quy tắc nào hơn chọn bừa.",
+}
+
+
+def digit_sum_card(report: dict) -> str:
+    """Năm quy tắc "tổng – bóng – chạm", chấm tiến cứu và cộng dồn từng kỳ."""
+    h = report.get("digit_sum")
+    if not h:
+        return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
+    retro = h["retrospective"]
+    rows = []
+    for r in h["rules"]:
+        size = r["draws"]
+        rows.append([
+            html.escape(r["label"]),
+            f"{size}/{h['min_draws']}",
+            f"{r['hits']} ({_pct(r['hit_rate'])})" if size else "—",
+            _pct(r["expected_rate"]) if size else "—",
+            _num(r["p_holm"], 3) if size else "—",
+            _pct(retro["hit_rate"][r["rule"]]) + " / " + _pct(retro["expected_rate"][r["rule"]]),
+        ])
+    span = (f"{html.escape(h['first'])} → {html.escape(h['last'])}" if h.get("first")
+            else "chưa có kỳ nào")
+    upcoming = h.get("next") or {}
+    picks = upcoming.get("picks") or {}
+    labels = {r["rule"]: r["label"] for r in h["rules"]}
+
+    def _fmt(key: str, values: list[int]) -> str:
+        width = 1 if key in ("dau_db", "duoi_db") else 2
+        return " ".join(f"{v:0{width}d}" for v in values)
+
+    listing = "".join(
+        f"<li><b>{html.escape(labels.get(key, key))}</b>: {html.escape(_fmt(key, values))}</li>"
+        for key, values in picks.items()
+    )
+    return (
+        '<p class="ui-muted">Năm quy tắc học từ loạt bài dự đoán tuần (tổng hai chữ số và '
+        "bóng của các giải). Kiểm hồi cứu trên "
+        f"{_count(retro['draws'])} kỳ, không quy tắc nào hơn chọn bừa (p Holm nhỏ nhất "
+        f"{_num(retro['min_p_holm'], 3)}). Quy tắc được chốt ngày "
+        f"{html.escape(h['registered_on'])}; từ kỳ {html.escape(h['first_target'])} mỗi kỳ mới "
+        "được ghi vào sổ cái và chấm với kết quả thật, so với một bộ chọn ngẫu nhiên cùng cỡ ở "
+        f"đúng kỳ ấy. Kết luận sau {h['min_draws']} kỳ, một phía, hiệu chỉnh Holm cho năm "
+        f"quy tắc, α = {_num(h['alpha'], 2)}.</p>"
+        + _table(["Quy tắc", "Số kỳ", "Trúng", "Chọn bừa", "p Holm", "Hồi cứu: trúng / chọn bừa"],
+                 rows, numeric="ui-r2 ui-r3 ui-r4 ui-r5")
+        + f'<p class="ui-muted" data-evidence-split>Kỳ đã chấm: {span}. '
+        f"<b>{html.escape(_DIGIT_SUM_WORDS.get(h['state'], h['state']))}</b></p>"
+        + (
+            f'<p class="ui-muted">Bộ số các quy tắc đọc từ kỳ '
+            f"{html.escape(str(upcoming.get('base_date', '')))} — mô tả quy tắc, không phải dự báo "
+            f"có kỹ năng:</p><ul>{listing}</ul>"
+            if listing else ""
+        )
+    )
+
+
 def render(report: dict) -> str:
     blocks = [
         card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True),
@@ -318,6 +379,8 @@ def render(report: dict) -> str:
         card(intervention_card(report), title="Giả thuyết kỳ quay bị sắp đặt", span=12, lift=True),
         card(hot_tail_card(report), title="Giả thuyết đang kiểm tiến cứu: đuôi nóng", span=12,
              lift=True),
+        card(digit_sum_card(report), title="Giả thuyết đang kiểm tiến cứu: tổng – bóng – chạm",
+             span=12, lift=True),
         card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True),
         card(feedback_card(report), title="Vòng phản hồi", span=12, lift=True),
     ]
