@@ -359,6 +359,7 @@ python src/build_statistics_dashboard.py
 python src/build_landing_page.py
 python src/build_fun_prediction.py
 python src/build_traditional_results.py
+python src/build_regional_results.py
 python src/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
@@ -442,6 +443,8 @@ required=(
   docs/soi-cau-loto.html
   docs/tao-phoi-tuan.html
   docs/so-ket-qua-truyen-thong.html
+  docs/ket-qua-mien-trung.html
+  docs/ket-qua-mien-nam.html
 )
 for path in "${required[@]}"; do
   test -s "$path" || { echo "Missing/empty output: $path" >&2; exit 3; }

@@ -1,0 +1,92 @@
+name: Đồng bộ XSMT và XSMN
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/regional_lottery.py'
+      - 'src/build_regional_results.py'
+      - '.github/workflows/regional-results.yml'
+  workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "Số ngày lùi để bổ sung lịch sử (không tải lại ngày đã có)"
+        required: false
+        default: "365"
+        type: string
+  schedule:
+    # Chạy sau toàn bộ cửa sổ ưu tiên XSMB. GitHub cron là best-effort.
+    # 13:25 UTC = 20:25 Asia/Ho_Chi_Minh.
+    - cron: "25 13 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regional-lottery-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Asia/Ho_Chi_Minh
+      PYTHONPATH: ${{ github.workspace }}/src
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài thư viện tối thiểu
+        run: |
+          python -m pip install --no-cache-dir 'requests>=2.34.2' 'beautifulsoup4==4.15.0' 'lxml==6.1.3'
+
+      - name: Đồng bộ Miền Trung và Miền Nam
+        env:
+          MANUAL_DAYS: ${{ github.event.inputs.backfill_days || '365' }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then MANUAL_DAYS=7; fi
+          python src/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.35
+          python src/build_regional_results.py
+          python - <<'PY'
+          from pathlib import Path
+          from app_shell import wrap_page
+          for path in Path("docs").glob("*.html"):
+              path.write_text(wrap_page(path.read_text(encoding="utf-8"), path.name), encoding="utf-8")
+          PY
+
+      - name: Kiểm tra dữ liệu trước khi ghi
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          for region in ("xsmt", "xsmn"):
+              path = Path("data/regions") / f"{region}.csv"
+              if not path.exists():
+                  raise SystemExit(f"thiếu {path}")
+              with path.open(encoding="utf-8") as fh:
+                  rows = list(csv.DictReader(fh))
+              keys = {(r["date"], r["province"], r["prize"], r["position"]) for r in rows}
+              assert len(keys) == len(rows), f"{region}: trùng khóa"
+              assert all(r["source"] == "xskt.com.vn" for r in rows), region
+              print(region, len(rows), "dòng")
+          PY
+
+      - name: Ghi dữ liệu và trang nếu thay đổi
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/regions/xsmt.csv data/regions/xsmt.json data/regions/xsmn.csv data/regions/xsmn.json                   docs/*.html
+          if git diff --cached --quiet; then
+            echo "Không có dữ liệu vùng mới."
+            exit 0
+          fi
+          git commit -m "data: sync XSMT/XSMN from xskt.com.vn"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
