@@ -213,6 +213,19 @@ Các quy trình phục hồi kiểm tra trạng thái trước khi gọi để t
 - `docs/soi-path-loto-active.html`, `docs/soi-path-loto-stable.html`.
 - `docs/soi-path-de-active.html`, `docs/soi-path-de-stable.html`.
 
+## Dữ liệu Miền Trung và Miền Nam
+
+VLA vẫn ưu tiên XSMB cho trực tiếp, thống kê và AI/ML. XSMT/XSMN là lớp dữ liệu
+mở rộng phục vụ tra cứu và nghiên cứu liên vùng, được đồng bộ riêng từ
+`xskt.com.vn` để không ảnh hưởng hợp đồng dữ liệu Miền Bắc.
+
+- `data/regions/xsmt.csv|json` — dữ liệu chuẩn hóa Miền Trung theo ngày/tỉnh/giải.
+- `data/regions/xsmn.csv|json` — dữ liệu chuẩn hóa Miền Nam theo ngày/tỉnh/giải.
+- `docs/ket-qua-mien-trung.html` — trang kết quả Miền Trung.
+- `docs/ket-qua-mien-nam.html` — trang kết quả Miền Nam.
+- Workflow `regional-results.yml` chạy sau cửa sổ ưu tiên XSMB; có thể chạy tay
+  với `backfill_days` để bổ sung lịch sử mà không tải lại ngày đã có.
+
 ## Dữ liệu đầu ra
 
 | Bộ dữ liệu | CSV | JSON | XLSX an toàn cho Excel |
