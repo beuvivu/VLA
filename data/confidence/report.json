@@ -200,21 +200,21 @@
   {
    "key": "cau_de",
    "label": "20 cầu vị trí Đặc Biệt tốt nhất",
-   "hits": 221,
+   "hits": 231,
    "n": 19940,
-   "rate": 0.011083249749247744,
+   "rate": 0.011584754262788365,
    "base": 0.01,
-   "z": 1.410590155029345,
+   "z": 2.029313389806555,
    "in_sample": 0.01514869888475836
   },
   {
    "key": "de_markov",
    "label": "20 ô chuyển đầu Đặc Biệt mạnh nhất",
-   "hits": 19,
+   "hits": 20,
    "n": 1987,
-   "rate": 0.009562154001006542,
+   "rate": 0.010065425264217413,
    "base": 0.01,
-   "z": -0.2023458279345958,
+   "z": 0.029494993627896836,
    "in_sample": null
   }
  ],
@@ -2986,6 +2986,187 @@
    "p_two_sided_mc": 0.011,
    "control_head_effect_pp": 0.135,
    "control_head_p": 0.475
+  }
+ },
+ "digit_sum": {
+  "registered_on": "2026-10-05",
+  "first_target": "2026-10-06",
+  "min_draws": 180,
+  "alpha": 0.01,
+  "draws": 0,
+  "recorded": 0,
+  "first": null,
+  "last": null,
+  "rules": [
+   {
+    "rule": "dau_db",
+    "label": "Đầu Đặc Biệt",
+    "formula": "tổng 2 số cuối Đặc Biệt và bóng",
+    "draws": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 1.0,
+    "expected_rate": 0.0,
+    "z": 0.0,
+    "p_value": 1.0,
+    "p_holm": 1.0,
+    "state": "dang_thu"
+   },
+   {
+    "rule": "duoi_db",
+    "label": "Đuôi Đặc Biệt",
+    "formula": "tổng 2 số đầu Đặc Biệt và bóng",
+    "draws": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 1.0,
+    "expected_rate": 0.0,
+    "z": 0.0,
+    "p_value": 1.0,
+    "p_holm": 1.0,
+    "state": "dang_thu"
+   },
+   {
+    "rule": "dan_cham",
+    "label": "Dàn đề chạm",
+    "formula": "chạm = tổng 2 số cuối giải nhất và bóng; ghép thẳng/lộn với 3 số đầu Đặc Biệt và bóng",
+    "draws": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 1.0,
+    "expected_rate": 0.0,
+    "z": 0.0,
+    "p_value": 1.0,
+    "p_holm": 1.0,
+    "state": "dang_thu"
+   },
+   {
+    "rule": "lo_g5",
+    "label": "Lô cặp G5",
+    "formula": "tổng 2 số đầu G5.2 ghép tổng 2 số cuối G5.4, lấy lộn",
+    "draws": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 1.0,
+    "expected_rate": 0.0,
+    "z": 0.0,
+    "p_value": 1.0,
+    "p_holm": 1.0,
+    "state": "dang_thu"
+   },
+   {
+    "rule": "lo_vip",
+    "label": "Song thủ lô G2–G1",
+    "formula": "tổng 2 số cuối G2.1 ghép tổng 2 số đầu giải nhất, lấy lộn",
+    "draws": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 1.0,
+    "expected_rate": 0.0,
+    "z": 0.0,
+    "p_value": 1.0,
+    "p_holm": 1.0,
+    "state": "dang_thu"
+   }
+  ],
+  "state": "dang_thu",
+  "next": {
+   "base_date": "2026-10-05",
+   "tong_hop": {
+    "de": "54",
+    "de_dau": 5,
+    "de_duoi": 4,
+    "de_tong": 9,
+    "lo_kep": [
+     44,
+     66
+    ],
+    "lo_nhay": {
+     "47": 2,
+     "53": 2,
+     "72": 2
+    },
+    "lo_ca_cap": [
+     15,
+     25,
+     35,
+     45,
+     47
+    ],
+    "cam_dau": [],
+    "cam_duoi": [],
+    "dau_nhieu_nhat": [
+     4,
+     5
+    ],
+    "duoi_nhieu_nhat": [
+     5
+    ]
+   },
+   "picks": {
+    "dau_db": [
+     4,
+     9
+    ],
+    "duoi_db": [
+     0,
+     5
+    ],
+    "dan_cham": [
+     1,
+     4,
+     6,
+     9,
+     10,
+     15,
+     40,
+     45,
+     51,
+     54,
+     56,
+     59,
+     60,
+     65,
+     90,
+     95
+    ],
+    "lo_g5": [
+     78,
+     87
+    ],
+    "lo_vip": [
+     18,
+     81
+    ]
+   },
+   "cham": [
+    0,
+    5
+   ]
+  },
+  "retrospective": {
+   "draws": 4225,
+   "last_draw": "2026-10-05",
+   "hit_rate": {
+    "dau_db": 0.2054,
+    "duoi_db": 0.1976,
+    "dan_cham": 0.1806,
+    "lo_g5": 0.4005,
+    "lo_vip": 0.3983
+   },
+   "expected_rate": {
+    "dau_db": 0.2,
+    "duoi_db": 0.2,
+    "dan_cham": 0.176,
+    "lo_g5": 0.4033,
+    "lo_vip": 0.4025
+   },
+   "min_p_holm": 0.966
   }
  }
 }
