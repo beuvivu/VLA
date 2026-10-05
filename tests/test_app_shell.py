@@ -333,6 +333,26 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
     assert not hong, f"{len(hong)}/{tong} liên kết không chạm được: {hong}"
 
 
+def test_page_widgets_never_cover_links_in_the_open_menu(trinh_duyet) -> None:
+    """Thanh neo của ma trận không được nằm trên các mục cuối nhóm Soi cầu."""
+    pg = _mo(trinh_duyet, 1440, 844)
+    pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")
+    pg.locator("#app-tab-4").click()
+    links = pg.locator("#app-panel-4 .app-nav-item")
+    assert links.count() == 13
+    covered = []
+    for link in links.all():
+        link.scroll_into_view_if_needed()
+        if not link.evaluate("""a => {
+            const r = a.getBoundingClientRect();
+            const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+            return e && (e === a || a.contains(e));
+        }"""):
+            covered.append(link.get_attribute("href"))
+    pg.close()
+    assert not covered, f"nội dung trang che mục menu: {covered}"
+
+
 def test_no_floating_element_covers_the_navigation_controls(trinh_duyet) -> None:
     """Không phần tử nổi nào được đè lên thanh trên hay dải biểu tượng."""
     pg = _mo(trinh_duyet, 1440, 900)

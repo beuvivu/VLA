@@ -23,8 +23,9 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 39 mục. Thêm mục thì
-thêm ở đó, không thêm ở `app_shell.py`.
+Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 7 nhóm, 39 mục,
+chia cụm có tiêu đề. `SITE_NAV` là bản phẳng được suy ra cho các trình dựng
+và tìm kiếm. Thêm mục ở `SITE_NAV_SECTIONS`, không thêm ở `app_shell.py`.
 
 **Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
 `test_no_page_spells_out_where_the_data_lives` cấm chuỗi `vla` trong mọi tệp
@@ -373,7 +374,12 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
 - Sidebar Filter: `#app-sidebar-filter`, chỉ lọc nhóm đang hiển thị. Không
   dùng lại input, query hoặc handler global search.
 - Theo yêu cầu mới ngày 26/09/2026, rail/header dùng SVG gốc Nexlink tại
-  `src/assets/nexlink`, giữ đúng đường nét, opacity, thứ tự 11 icon và header.
+  `src/assets/nexlink`, giữ đúng đường nét, opacity và header. Từ 05-10-2026,
+  rail theo thứ tự nhóm trong `SITE_NAV`: Kết quả → Thống kê → Thống kê LOTO →
+  Thống kê Đặc Biệt → Soi cầu → Dự báo → Nghiên cứu & công cụ. Bảy nút nhóm
+  có nhãn ngắn; tìm kiếm và đóng menu là hai nút riêng ngoài tablist. Không
+  thêm lại hai lối tắt lặp với menu con. Mũi tên, Home/End chọn nhóm; chỉ nhóm
+  đang chọn có `tabindex=0`.
   Sidebar dùng outline Flaticon Rounded chuyển nguyên hình học sang SVG.
   `nexlink_icons.py` là renderer của shell; không thay bằng Lucide tương tự.
   Lucide tại `src/assets/icons` chỉ còn dùng trong nội dung/global search.

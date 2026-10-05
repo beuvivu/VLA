@@ -20,14 +20,41 @@ function visibleLinks(dom) {
   return [...dom.window.document.querySelectorAll('.app-nav-item')]
     .filter(a => !a.hidden && !a.closest('[hidden]'));
 }
-test('Menu thống kê chỉ có ma trận, chuyển nhóm vẫn hiện đủ mục', () => {
+test('Menu tổng quan, LOTO và Đặc Biệt đưa người đọc tới đúng loại thống kê', () => {
   const dom = setup(), d = dom.window.document;
   assert.equal(d.getElementById('app-sidebar-filter'), null);
   d.getElementById('app-tab-1').click();
-  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html']);
+  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html', 'thong-ke-tong-hop.html']);
   d.getElementById('app-tab-2').click();
-  assert.equal(visibleLinks(dom).length, 13);
+  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), [
+    'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'dau-duoi-loto.html', 'cap-lon-loto.html', 'lo-gan.html',
+  ]);
+  d.getElementById('app-tab-3').click();
+  assert.ok(visibleLinks(dom).some(a => a.getAttribute('href') === 'cau-giai-dac-biet.html'));
+  assert.ok(visibleLinks(dom).some(a => a.getAttribute('href') === 'giai-dac-biet-theo-tong.html'));
+  assert.ok(visibleLinks(dom).every(a => !a.getAttribute('href').includes('loto')));
   assert.equal(d.querySelectorAll('.app-panel-group:not([hidden])').length, 1);
+  dom.window.close();
+});
+test('Bàn phím chọn nhóm theo thứ tự hiển thị và chỉ để một tab trong luồng Tab', () => {
+  const dom = setup(), d = dom.window.document;
+  const tabs = [...d.querySelectorAll('.app-rail-btn')];
+  const press = key => d.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown', {
+    key, bubbles: true, cancelable: true,
+  }));
+  const selected = index => {
+    assert.equal(d.activeElement, tabs[index]);
+    assert.deepEqual(tabs.filter(b => b.tabIndex === 0), [tabs[index]]);
+    assert.equal(tabs[index].getAttribute('aria-selected'), 'true');
+    assert.equal(d.querySelector('.app-panel-group:not([hidden])').id, `app-panel-${index}`);
+    assert.equal(d.getElementById('app-panel-title').textContent, tabs[index].title);
+  };
+  tabs[0].focus(); press('ArrowDown'); selected(1);
+  press('End'); selected(6);
+  press('ArrowDown'); selected(0);
+  press('ArrowUp'); selected(6);
+  press('Home'); selected(0);
+  assert.equal(d.body.classList.contains('app-panel-open'), true);
   dom.window.close();
 });
 test('Menu đóng không nhận focus; nội dung bị khóa khi mở menu điện thoại', () => {
@@ -157,7 +184,7 @@ test('Đi tới neo còn trong menu sẽ chọn đúng nhóm và liên kết', (
   const dom = setup(), d = dom.window.document;
   dom.window.history.replaceState(null, '', '#duong-cau');
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
-  assert.equal(d.getElementById('app-tab-2').getAttribute('aria-selected'), 'true');
+  assert.equal(d.getElementById('app-tab-4').getAttribute('aria-selected'), 'true');
   assert.equal(d.querySelector('.app-nav-item[aria-current="page"]').getAttribute('href'), 'index.html#duong-cau');
   assert.equal(visibleLinks(dom).length, 13);
   dom.window.close();

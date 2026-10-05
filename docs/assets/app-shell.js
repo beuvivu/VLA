@@ -112,7 +112,7 @@
     if (ev.key === "Tab" && hep() && dangMo()) {
       var focusables = [].slice.call(doc.querySelectorAll(
         '.app-header a, .app-header button, .app-rail button, .app-rail a, .app-panel input, .app-panel a, .app-panel summary'
-      )).filter(function (e) { return e.getClientRects().length && !e.closest('[hidden]'); });
+      )).filter(function (e) { return e.tabIndex >= 0 && e.getClientRects().length && !e.closest('[hidden]'); });
       var first = focusables[0], last = focusables[focusables.length - 1];
       if (ev.shiftKey && doc.activeElement === first) { ev.preventDefault(); last.focus(); }
       else if (!ev.shiftKey && doc.activeElement === last) { ev.preventDefault(); first.focus(); }
@@ -144,13 +144,16 @@
   function moNhom(chiSo) {
     [].slice.call(doc.querySelectorAll(".app-nav-item")).forEach(function (a) { a.hidden = false; });
     nutNhom.forEach(function (b) {
-      b.setAttribute("aria-selected", b.getAttribute("data-app-group") === chiSo ? "true" : "false");
+      var selected = b.getAttribute("data-app-group") === chiSo;
+      b.setAttribute("aria-selected", selected ? "true" : "false");
+      b.tabIndex = selected ? 0 : -1;
     });
     nhomPanel.forEach(function (g) {
       g.hidden = g.getAttribute("data-app-group") !== chiSo;
     });
     var nut = nutNhom.filter(function (b) { return b.getAttribute("data-app-group") === chiSo; })[0];
     if (nut && panelTitle) { panelTitle.textContent = nut.getAttribute("title") || ""; }
+    panel.scrollTop = 0;
     datTrangThai(true);
   }
 
@@ -158,8 +161,15 @@
     b.addEventListener("click", function () { moNhom(b.getAttribute("data-app-group")); });
     b.addEventListener("keydown", function (ev) {
       var i = nutNhom.indexOf(b);
-      var ke = ev.key === "ArrowDown" ? i + 1 : (ev.key === "ArrowUp" ? i - 1 : -1);
-      if (ke >= 0 && ke < nutNhom.length) { ev.preventDefault(); nutNhom[ke].focus(); }
+      var ke = -1;
+      if (ev.key === "ArrowDown") { ke = (i + 1) % nutNhom.length; }
+      else if (ev.key === "ArrowUp") { ke = (i + nutNhom.length - 1) % nutNhom.length; }
+      else if (ev.key === "Home") { ke = 0; }
+      else if (ev.key === "End") { ke = nutNhom.length - 1; }
+      if (ke >= 0) {
+        ev.preventDefault(); nutNhom[ke].focus();
+        moNhom(nutNhom[ke].getAttribute("data-app-group"));
+      }
     });
   });
 
@@ -296,6 +306,7 @@
     nutNhom.forEach(function (b) {
       var active = b.getAttribute("data-app-group") === group;
       b.setAttribute("aria-selected", active ? "true" : "false");
+      b.tabIndex = active ? 0 : -1;
       if (active) {
         if (panelTitle) { panelTitle.textContent = b.title; }
         var crumb = doc.querySelector(".app-crumb:not(.app-crumb--now)");

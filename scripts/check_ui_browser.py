@@ -239,7 +239,7 @@ def main():
                 expect(page.locator('#app-profile-menu a').first).to_be_focused()
                 page.keyboard.press('Escape')
                 expect(page.locator('#app-profile-toggle')).to_be_focused()
-                assert page.locator('.app-rail-list svg').count() == 11
+                assert page.locator('.app-rail svg').count() == 9
                 assert page.locator('.app-rail-divider').count() == 3
                 page.locator("#app-toggle").click()
                 sidebar = page.locator(".app-panel-group:not([hidden]) .app-nav-item").first

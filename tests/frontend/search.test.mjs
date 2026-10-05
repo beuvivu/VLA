@@ -49,7 +49,7 @@ test('Mở global không đổi nhóm hoặc trạng thái sidebar', t => {
   open(dom);
   type(dom, 'app-global-search-input', 'tan suat');
   assert.deepEqual(results(dom).map(node => node.getAttribute('href')), [
-    'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'index.html#tan-suat-loto', 'index.html#tan-suat-de',
+    'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'cau-giai-dac-biet.html', 'index.html#tan-suat-loto', 'index.html#tan-suat-de',
   ]);
   assert.deepEqual([...d.querySelectorAll('.app-nav-item')].map(node => node.hidden), before);
   assert.equal(dom.window.localStorage.getItem('app-panel-open'), panelSaved);
@@ -61,8 +61,8 @@ test('Mở global không đổi nhóm hoặc trạng thái sidebar', t => {
 test('Global search hỗ trợ nhãn nhóm, không dấu và trạng thái rỗng an toàn', t => {
   const dom = start(t), d = dom.window.document;
   open(dom);
-  type(dom, 'app-global-search-input', 'LOTO chi tiet');
-  assert.equal(results(dom).length, 8);
+  type(dom, 'app-global-search-input', 'thong ke loto');
+  assert.equal(results(dom).length, 5);
   type(dom, 'app-global-search-input', '<img src=x onerror=alert(1)>');
   assert.equal(results(dom).length, 0);
   assert.equal(d.getElementById('app-global-search-empty').hidden, false);
@@ -94,8 +94,8 @@ test('Mũi tên Home End và Enter chọn rồi mở đúng kết quả thật',
   const selected = () => input.getAttribute('aria-activedescendant');
   assert.equal(selected(), links[0].id);
   key(dom, 'ArrowDown'); assert.equal(selected(), links[1].id);
-  key(dom, 'End'); assert.equal(selected(), links[3].id);
-  key(dom, 'ArrowUp'); assert.equal(selected(), links[2].id);
+  key(dom, 'End'); assert.equal(selected(), links[4].id);
+  key(dom, 'ArrowUp'); assert.equal(selected(), links[3].id);
   key(dom, 'Home'); assert.equal(selected(), links[0].id);
   let followed = null;
   links[0].addEventListener('click', event => { event.preventDefault(); followed = event.currentTarget.getAttribute('href'); });
