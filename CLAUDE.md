@@ -261,8 +261,12 @@ trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,
 `src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
 2 số cuối/đầu ĐB và bóng; chạm từ tổng 2 số cuối giải nhất; lô cặp G5; song thủ G2–G1), khớp
 TỪNG con số in trong bài (`tests/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
-Kiểm 4 224 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
-bừa cũng nổ 78,5%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Chi tiết:
+Kiểm 4 225 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
+bừa cũng nổ 78,4%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Mốc chấm LOTO là xác suất CÓ
+ĐIỀU KIỆN theo số con đã về ở kỳ ấy, p Poisson-nhị thức, Holm cho năm quy tắc — khớp từng số với bộ
+`xsmb_methods` chủ dự án gửi. `src/digit_sum_hypothesis.py` là phép kiểm TIẾN CỨU đã đăng ký
+05-10-2026 (từ kỳ 06-10, 180 kỳ, α = 0,01 sau Holm), sổ cái `data/hypotheses/digit_sum_rules.csv`
+giữ lần ghi đầu; KHÔNG sửa tham số. Chi tiết:
 `documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`; kỹ năng `soi-cau`.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô

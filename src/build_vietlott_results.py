@@ -66,7 +66,7 @@ def page(product,data,count):
  cards="".join(card(product,r) for r in data) or '<div class="vl-empty">Chưa có dữ liệu đã đồng bộ.</div>'
  return f'''<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">{security_meta_tags()}{stylesheet_link()}<title>{name} · Vietlott</title><style>{STYLE}</style></head><body>
  {app_shell_open(file,wide=True)}
- <section class="vl-hero"><span class="vl-kicker">VIETLOTT · KẾT QUẢ CHÍNH THỨC</span><h1>{name}</h1><p>Theo dõi kết quả, lịch sử kỳ quay và dữ liệu nền phục vụ phân tích. Dữ liệu chỉ đồng bộ từ website chính thức của Vietlott.</p><span class="vl-source">{count:,} kỳ đã lưu · Nguồn: vietlott.vn</span></section>
+ <section class="vl-hero"><span class="vl-kicker">VIETLOTT · KẾT QUẢ CHÍNH THỨC</span><h1>{name}</h1><p>Theo dõi kết quả, lịch sử kỳ quay và dữ liệu nền phục vụ phân tích. Dữ liệu chỉ lấy từ kết quả công bố chính thức.</p><span class="vl-source">{count:,} kỳ đã lưu</span></section>
  {nav_products(product)}
  <section class="vl-toolbar"><label>Tìm ngày / kỳ quay<input id="vl-search" type="search" placeholder="VD: 2026-10-05 hoặc 00832"></label></section>
  <section class="vl-grid" id="vl-grid">{cards}</section>
@@ -80,19 +80,26 @@ def overview(latest,counts):
   body=result_markup(key,json.loads(r[2]),r[3],json.loads(r[6] or "{}")) if r else "Chưa đồng bộ"
   tiles.append(f'<a class="vl-draw" href="{file}" style="text-decoration:none;color:inherit"><div class="vl-draw-head"><strong>{name}</strong><small>{counts.get(key,0):,} kỳ</small></div><div class="vl-result">{body}</div></a>')
  return f'''<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">{security_meta_tags()}{stylesheet_link()}<title>Vietlott · Kết quả</title><style>{STYLE}</style></head><body>
- {app_shell_open("vietlott.html",wide=True)}<section class="vl-hero"><span class="vl-kicker">VLA · VIETLOTT DATA HUB</span><h1>Kết quả Vietlott</h1><p>Một cơ sở dữ liệu riêng cho Lotto 5/35, Mega 6/45, Power 6/55, Max 3D/3D+, Max 3D Pro, Keno và Bingo18. XSMB vẫn là miền ưu tiên của hệ thống VLA.</p><span class="vl-source">Nguồn chính thức: vietlott.vn</span></section>{nav_products()}<section class="vl-grid">{"".join(tiles)}</section>{app_shell_close("vietlott.html")}</body></html>'''
+ {app_shell_open("vietlott.html",wide=True)}<section class="vl-hero"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span><h1>Kết quả Vietlott</h1><p>Một cơ sở dữ liệu riêng cho Lotto 5/35, Mega 6/45, Power 6/55, Max 3D/3D+, Max 3D Pro, Keno và Bingo18. XSMB vẫn là miền ưu tiên của hệ thống.</p><span class="vl-source">Kết quả công bố chính thức</span></section>{nav_products()}<section class="vl-grid">{"".join(tiles)}</section>{app_shell_close("vietlott.html")}</body></html>'''
 
 def build(root):
+ """Luôn dựng đủ 8 trang qua write_page; chưa có cơ sở dữ liệu thì in trạng thái trống.
+
+ Trước đây thiếu tệp dữ liệu thì bỏ qua, nên trang trong docs/ là bản giữ chỗ
+ viết tay: không khung ứng dụng, không bằng chứng, không điều hướng.
+ """
  dbp=root/"data"/"vietlott"/"vietlott.sqlite3";docs=root/"docs";docs.mkdir(exist_ok=True)
- if not dbp.exists(): return []
- db=sqlite3.connect(dbp); latest={};counts={}
+ db=sqlite3.connect(dbp) if dbp.exists() else None
+ latest={};counts={};history={}
  for p in PRODUCTS:
-  counts[p]=db.execute("SELECT COUNT(*) FROM draws WHERE product=?",(p,)).fetchone()[0]
-  rr=rows(db,p,1);latest[p]=rr[0] if rr else None
+  counts[p]=db.execute("SELECT COUNT(*) FROM draws WHERE product=?",(p,)).fetchone()[0] if db else 0
+  rr=rows(db,p,1) if db else [];latest[p]=rr[0] if rr else None
+  history[p]=rows(db,p,160) if db else []
+ if db: db.close()
  out=[docs/"vietlott.html"];write_page(out[0],overview(latest,counts))
  for p,(_,file,__) in PRODUCTS.items():
-  target=docs/file;write_page(target,page(p,rows(db,p,160),counts[p]));out.append(target)
- db.close();return out
+  target=docs/file;write_page(target,page(p,history[p],counts[p]));out.append(target)
+ return out
 if __name__=="__main__":
  root=Path(__file__).resolve().parents[1]
  for p in build(root):print("đã ghi",p)

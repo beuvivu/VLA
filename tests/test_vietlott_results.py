@@ -28,3 +28,16 @@ def test_parse_max3d_groups():
  html="<h5>Kỳ quay thưởng #01120 ngày 17/08/2026</h5><div>"+" ".join(triples)+"</div><p>Các con số dự thưởng phải trùng</p>"
  d=parse_detail("max3d",html)
  assert d and len(d.result)==20 and d.result[0]=="321" and d.result[-1]=="978"
+
+
+def test_pages_are_built_through_the_shell_even_before_the_first_sync(tmp_path):
+ """Thiếu cơ sở dữ liệu thì trước đây bỏ qua, để lại bản giữ chỗ viết tay không có
+ khung, bằng chứng hay điều hướng. Nay luôn dựng đủ 8 trang, trạng thái trống."""
+ import build_vietlott_results as b
+ out=b.build(tmp_path)
+ assert sorted(p.name for p in out)==sorted(["vietlott.html",*(f for _,f,_ in b.PRODUCTS.values())])
+ for path in out:
+  page=path.read_text(encoding="utf-8")
+  assert 'id="app-rail"' in page and 'id="app-evidence-data"' in page, path.name
+  assert "vietlott.vn" not in page and "VLA" not in page, path.name
+ assert "Chưa có dữ liệu đã đồng bộ" in (tmp_path/"docs"/"vietlott-keno.html").read_text(encoding="utf-8")

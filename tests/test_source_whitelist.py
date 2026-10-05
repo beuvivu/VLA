@@ -1,4 +1,4 @@
-"""Chỉ tám tên miền trong danh sách được xuất hiện trong mã và dữ liệu.
+"""Chỉ các tên miền trong danh mục nguồn được xuất hiện trong mã và dữ liệu.
 
 Đây là bước "rà soát chéo" biến thành phép kiểm. Một lượt quét thủ công chỉ
 đúng vào ngày quét; phép kiểm thì đỏ ngay khi ai đó thêm một nguồn ngoài danh
@@ -17,13 +17,15 @@ from pathlib import Path
 
 import pytest
 
-from sources import FALLBACK_SOURCE_NAMES, PRIMARY_SOURCE_NAMES
+from sources import FALLBACK_SOURCE_NAMES, PRIMARY_SOURCE_NAMES, REGIONAL_SOURCE_NAMES
 
 ROOT = Path(__file__).resolve().parents[1]
 
 ALLOWED = {
     *PRIMARY_SOURCE_NAMES,
     *FALLBACK_SOURCE_NAMES,
+    # Lớp dữ liệu Miền Trung/Miền Nam, tách khỏi chuỗi nguồn XSMB.
+    *REGIONAL_SOURCE_NAMES,
     # Cùng tên miền, khác tiền tố "www."
     "www.hainhay.net",
     "www.xosominhngoc.com",
