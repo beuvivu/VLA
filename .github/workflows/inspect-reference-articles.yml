@@ -1,0 +1,66 @@
+name: Đọc bài phân tích của trang tham chiếu
+
+# CHẠY TAY, KHÔNG CÓ LỊCH. Proxy của môi trường phát triển chặn trang tham chiếu;
+# runner của Actions thì gọi được. Job chỉ ĐỌC và in chữ của các bài ra log để
+# học CÁCH phân tích. Không commit, không tải hiện vật, không lưu nội dung vào
+# kho. Mỗi URL gọi đúng một lần, có nhịp chờ giữa các lần.
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_url:
+        description: "Trang chuyên mục liệt kê bài (để trống nếu chỉ đọc article_urls)"
+        required: false
+        default: ""
+        type: string
+      article_urls:
+        description: "Bài cụ thể, cách nhau bằng dấu phẩy"
+        required: false
+        default: ""
+        type: string
+      max_articles:
+        description: "Số bài tối đa đọc toàn văn"
+        required: false
+        default: "20"
+        type: string
+      max_list_pages:
+        description: "Số trang phân trang tối đa của chuyên mục"
+        required: false
+        default: "3"
+        type: string
+      text_chars:
+        description: "Số ký tự tối đa in cho mỗi bài"
+        required: false
+        default: "15000"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: inspect-reference-articles
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: In toàn văn bài phân tích
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir requests beautifulsoup4 lxml
+
+      - name: Đọc và in
+        env:
+          START_URL: ${{ inputs.start_url }}
+          ARTICLE_URLS: ${{ inputs.article_urls }}
+          MAX_ARTICLES: ${{ inputs.max_articles }}
+          MAX_LIST_PAGES: ${{ inputs.max_list_pages }}
+          TEXT_CHARS: ${{ inputs.text_chars }}
+        run: python scripts/inspect_reference_articles.py
