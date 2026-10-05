@@ -84,3 +84,23 @@ từng ô — `tests/fixtures/bridge_reference_2026-09-28.json`.
 - Thêm trang: SITE_NAV + `app_icons.BIEU_TUONG` + `nexlink_icons._NAVIGATION` +
   `tests/test_app_icons.py` REFERENCE_MAP + số mục nhóm trong `tests/frontend/navigation.test.mjs`
   + pipeline (trước `build_landing_page`) + danh sách `test -s` / production_audit / release_check.
+
+## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán (05-10-2026)
+
+`src/digit_sum_rules.py` — luật đã giải mã từ loạt bài tuần, khớp từng con số (ghim trong
+`tests/test_digit_sum_rules.py`). tổng(xy) = (x + y) mod 10, bóng(x) = x + 5 mod 10, giải đệm 0
+đủ độ dài.
+
+| Quy tắc | Công thức |
+|---|---|
+| Đầu ĐB | {tổng 2 số CUỐI ĐB, bóng} |
+| Đuôi ĐB | {tổng 2 số ĐẦU ĐB, bóng} |
+| Chạm | {tổng 2 số cuối giải nhất, bóng}; dàn = {cd, dc}, d ∈ 3 số đầu ĐB và bóng |
+| Lô cặp G5 | lộn {tổng 2 số đầu G5.2, tổng 2 số cuối G5.4} |
+| Song thủ lô | lộn {tổng 2 số cuối G2.1, tổng 2 số đầu G1} |
+
+Khung: Chủ Nhật mở tuần (đầu – đuôi cả tuần; chạm thứ Hai – Năm; lô G5 thứ Hai – Ba; song thủ
+thứ Hai), thứ Năm mở cuối tuần. Loạt bài HẰNG NGÀY không tái lập được (BTL/STL không khớp chính
+phương pháp bài nêu). Kiểm 4 224 kỳ: cả năm quy tắc ngang chọn bừa; "nổ cả tuần" là do khung dài
+(1 − 0,8⁷ ≈ 79%). Đọc bài: dispatch `inspect-reference-articles.yml` (`start_url`), log dài thì
+lưu tệp rồi tách theo dòng `BÀI`.

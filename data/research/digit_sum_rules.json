@@ -1,0 +1,174 @@
+{
+  "backtest": [
+    {
+      "rule": "dau_db",
+      "label": "Đầu Đặc Biệt",
+      "formula": "tổng 2 số cuối Đặc Biệt và bóng",
+      "draws": 4224,
+      "hits": 868,
+      "hit_rate": 0.20549242424242425,
+      "expected_rate": 0.20000000000001306,
+      "z": 0.8924133095980414
+    },
+    {
+      "rule": "duoi_db",
+      "label": "Đuôi Đặc Biệt",
+      "formula": "tổng 2 số đầu Đặc Biệt và bóng",
+      "draws": 4224,
+      "hits": 835,
+      "hit_rate": 0.19767992424242425,
+      "expected_rate": 0.20000000000001306,
+      "z": -0.37696769112632494
+    },
+    {
+      "rule": "dan_cham",
+      "label": "Dàn đề chạm",
+      "formula": "chạm = tổng 2 số cuối giải nhất và bóng; ghép thẳng/lộn với 3 số đầu Đặc Biệt và bóng",
+      "draws": 4224,
+      "hits": 763,
+      "hit_rate": 0.1806344696969697,
+      "expected_rate": 0.1759753787878835,
+      "z": 0.8009885435267271
+    },
+    {
+      "rule": "lo_g5",
+      "label": "Lô cặp G5",
+      "formula": "tổng 2 số đầu G5.2 ghép tổng 2 số cuối G5.4, lấy lộn",
+      "draws": 4224,
+      "hits": 1692,
+      "hit_rate": 0.4005681818181818,
+      "expected_rate": 0.40225880427216326,
+      "z": -0.22548502466168768
+    },
+    {
+      "rule": "lo_vip",
+      "label": "Song thủ lô G2–G1",
+      "formula": "tổng 2 số cuối G2.1 ghép tổng 2 số đầu giải nhất, lấy lộn",
+      "draws": 4224,
+      "hits": 1683,
+      "hit_rate": 0.3984375,
+      "expected_rate": 0.4015232033740222,
+      "z": -0.411770631105717
+    }
+  ],
+  "frames": [
+    {
+      "rule": "dau_db",
+      "label": "Đầu Đặc Biệt",
+      "frames": 603,
+      "hits": 479,
+      "hit_rate": 0.7943615257048093,
+      "expected_rate": 0.7849209419568781,
+      "z": 0.5667772134604852
+    },
+    {
+      "rule": "duoi_db",
+      "label": "Đuôi Đặc Biệt",
+      "frames": 603,
+      "hits": 463,
+      "hit_rate": 0.7678275290215588,
+      "expected_rate": 0.7849209419568781,
+      "z": -1.0262243533544926
+    },
+    {
+      "rule": "dan_cham",
+      "label": "Dàn đề chạm",
+      "frames": 1203,
+      "hits": 576,
+      "hit_rate": 0.47880299251870323,
+      "expected_rate": 0.4788690566916024,
+      "z": -0.004709770956900056
+    },
+    {
+      "rule": "lo_g5",
+      "label": "Lô cặp G5",
+      "frames": 1203,
+      "hits": 851,
+      "hit_rate": 0.7073981712385703,
+      "expected_rate": 0.7092054529771089,
+      "z": -0.14183339654143426
+    },
+    {
+      "rule": "lo_vip",
+      "label": "Song thủ lô G2–G1",
+      "frames": 1203,
+      "hits": 476,
+      "hit_rate": 0.39567747298420614,
+      "expected_rate": 0.399769609389034,
+      "z": -0.2917908867429408
+    }
+  ],
+  "next": {
+    "base_date": "2026-10-04",
+    "tong_hop": {
+      "de": "51",
+      "de_dau": 5,
+      "de_duoi": 1,
+      "de_tong": 6,
+      "lo_kep": [],
+      "lo_nhay": {
+        "51": 2,
+        "89": 2
+      },
+      "lo_ca_cap": [
+        8,
+        9,
+        35
+      ],
+      "cam_dau": [
+        7
+      ],
+      "cam_duoi": [],
+      "dau_nhieu_nhat": [
+        8
+      ],
+      "duoi_nhieu_nhat": [
+        9
+      ]
+    },
+    "picks": {
+      "dau_db": [
+        1,
+        6
+      ],
+      "duoi_db": [
+        0,
+        5
+      ],
+      "dan_cham": [
+        23,
+        28,
+        32,
+        33,
+        34,
+        37,
+        38,
+        39,
+        43,
+        48,
+        73,
+        78,
+        82,
+        83,
+        84,
+        87,
+        88,
+        89,
+        93,
+        98
+      ],
+      "lo_g5": [
+        67,
+        76
+      ],
+      "lo_vip": [
+        5,
+        50
+      ]
+    },
+    "cham": [
+      3,
+      8
+    ]
+  }
+}

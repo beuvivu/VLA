@@ -255,6 +255,15 @@ phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trư
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
+## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
+
+`src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
+2 số cuối/đầu ĐB và bóng; chạm từ tổng 2 số cuối giải nhất; lô cặp G5; song thủ G2–G1), khớp
+TỪNG con số in trong bài (`tests/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
+Kiểm 4 224 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
+bừa cũng nổ 78,5%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Chi tiết:
+`documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`; kỹ năng `soi-cau`.
+
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 
 `src/confidence_matrix.py` dựng Confidence Score ba tầng (High: cả Bayes,
