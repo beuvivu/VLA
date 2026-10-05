@@ -18,6 +18,11 @@ on:
         required: false
         default: ""
         type: string
+      article_prefix:
+        description: "Tiền tố đường dẫn của bài (để trống thì suy từ start_url)"
+        required: false
+        default: ""
+        type: string
       max_articles:
         description: "Số bài tối đa đọc toàn văn"
         required: false
@@ -60,6 +65,7 @@ jobs:
         env:
           START_URL: ${{ inputs.start_url }}
           ARTICLE_URLS: ${{ inputs.article_urls }}
+          ARTICLE_PREFIX: ${{ inputs.article_prefix }}
           MAX_ARTICLES: ${{ inputs.max_articles }}
           MAX_LIST_PAGES: ${{ inputs.max_list_pages }}
           TEXT_CHARS: ${{ inputs.text_chars }}

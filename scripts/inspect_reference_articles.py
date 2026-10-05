@@ -47,12 +47,33 @@ def get(session: requests.Session, url: str) -> BeautifulSoup | None:
     return soup
 
 
+PAGINATION = re.compile(r"([?&]page=\d+|/page/\d+)")
+
+
+def category_prefix(start: str) -> str:
+    """Tiền tố đường dẫn của bài: phần trước ``/type/``, hoặc thư mục cha của trang.
+
+    Không bao giờ rỗng hay chỉ là ``/``: tiền tố ấy khớp mọi liên kết điều hướng.
+    """
+    path = urlparse(start).path
+    prefix = path.split("/type/")[0].rstrip("/")
+    if not prefix:
+        prefix = path.rstrip("/").rsplit("/", 1)[0]
+    if not prefix:
+        raise SystemExit("Không suy ra được tiền tố bài viết; đặt ARTICLE_PREFIX.")
+    return prefix + "/"
+
+
 def article_links(soup: BeautifulSoup, base: str, prefix: str) -> list[str]:
-    """Liên kết tới bài viết nằm dưới ``prefix`` nhưng không phải trang chuyên mục."""
+    """Liên kết CÙNG host tới bài dưới ``prefix``, trừ trang chuyên mục và trang phân trang."""
+    host = urlparse(base).netloc
     out: list[str] = []
     for a in soup.find_all("a", href=True):
         href = urljoin(base, a["href"]).split("#")[0]
-        path = urlparse(href).path
+        parsed = urlparse(href)
+        path = parsed.path
+        if parsed.netloc != host or PAGINATION.search(href):
+            continue
         if path.startswith(prefix) and "/type/" not in path and path.rstrip("/") != prefix.rstrip("/"):
             if href not in out:
                 out.append(href)
@@ -64,7 +85,7 @@ def page_links(soup: BeautifulSoup, base: str) -> list[str]:
     out: list[str] = []
     for a in soup.find_all("a", href=True):
         href = urljoin(base, a["href"])
-        if re.search(r"([?&]page=\d+|/page/\d+)", href) and href not in out:
+        if PAGINATION.search(href) and href not in out:
             out.append(href)
     return out
 
@@ -97,7 +118,7 @@ def main() -> int:
     session.headers["User-Agent"] = UA
     articles: list[str] = list(extra)
     if start:
-        prefix = os.environ.get("ARTICLE_PREFIX", "").strip() or urlparse(start).path.split("/type/")[0]
+        prefix = os.environ.get("ARTICLE_PREFIX", "").strip() or category_prefix(start)
         queue, seen = [start], set()
         while queue and len(seen) < MAX_LIST_PAGES:
             url = queue.pop(0)
