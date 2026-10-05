@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -123,29 +125,82 @@ def test_daily_update_prefers_dispatch_over_schedule() -> None:
     assert len(crons) <= 8, "quá nhiều mốc chỉ tăng số lần chạy thừa"
 
 
-def test_cron_slots_sit_early_enough_for_the_measured_scheduler_delay() -> None:
+# Độ trễ của bộ lập lịch GitHub đo trên kho này, phút, theo từng ngày
+# 10-09 -> 05-10-2026: (ngày, mốc 00:15 UTC, mốc 06:37 UTC, mốc 08:51 UTC).
+# Đo bằng created_at của lần chạy trừ giờ mốc; None là chưa nổ khi đo.
+MEASURED_DELAYS = [
+    ("09-10", 263, 307, 257), ("09-11", 261, 307, 250), ("09-12", 256, 274, 211),
+    ("09-13", 268, 337, 277), ("09-14", 277, 398, 384), ("09-15", 276, 325, 302),
+    ("09-16", 271, 321, 294), ("09-17", 274, 322, 297), ("09-18", 265, 304, 259),
+    ("09-19", 259, 288, 230), ("09-20", 276, 308, 262), ("09-21", 277, 398, 389),
+    ("09-22", 276, 322, 290), ("09-23", 267, 325, 301), ("09-24", 271, 330, 297),
+    ("09-25", 279, 330, 320), ("09-26", 279, 305, 272), ("09-27", 300, 345, 328),
+    ("09-28", 304, 466, 491), ("09-29", 325, 398, 376), ("09-30", 314, 379, 390),
+    ("10-01", 332, 432, 410), ("10-02", 317, 387, 372), ("10-03", 299, 320, 305),
+    ("10-04", 333, 371, 333), ("10-05", 319, 514, None),
+]
+UTC_MIDNIGHT_VN = 17 * 60   # 00:00 giờ VN tính theo phút UTC
+
+
+def _utc_minutes(name: str) -> list[int]:
+    crons = re.findall(r'cron: "([^"]+)"', _text(name))
+    return [int(c.split()[1]) * 60 + int(c.split()[0]) for c in crons]
+
+
+# GitHub còn BỎ mốc: ngày 05-10-2026 không mốc nào của daily_update nổ trong
+# 7,7 giờ đầu. Một mốc rơi đúng khung là chưa đủ; phải có dự phòng.
+REDUNDANT_SLOTS = 3
+
+
+def _slots_landing_in(slots: list[int], low: int, high: int, delay: int) -> int:
+    return sum(low <= slot + delay <= high for slot in slots)
+
+
+@pytest.mark.parametrize(
+    "name, window, cap",
+    [
+        # (workflow, khung quay theo phút UTC, trần chờ theo phút)
+        ("daily_update.yml", 11 * 60 + 15, "daily"),
+        ("live-results.yml", 11 * 60 + 8, "live"),
+    ],
+)
+def test_some_slot_lands_in_the_waiting_window_on_every_measured_day(name, window, cap) -> None:
     """Mốc cron phải đặt theo ĐỘ TRỄ ĐO ĐƯỢC, không theo giờ mong muốn.
 
-    Đo trên 62 lần chạy theo lịch của kho này: trễ tối thiểu 49 phút, trung vị
-    144, tối đa 305. Lịch cũ đặt mốc sớm nhất ở 11:08 UTC (18:08 giờ VN) —
-    cộng 49 phút thì không đời nào chạy trước 18:57, tức lịch tự đặt trần cho
-    chính nó. Kỳ về sớm nhất quan sát được là 19:38, khớp đúng.
-
-    Mốc chính phải sớm hơn khung quay 11:15 UTC ít nhất bằng độ trễ TRUNG VỊ,
-    để ở ngày trung bình nó rơi đúng khung.
+    Lịch 07:50-10:50 UTC với trần chờ 75 phút nổ lúc 19:00-23:30 giờ VN, sau
+    hạn thăm dò; kỳ về kho lúc 18:58-20:51. Lượt đến sớm nay CHỜ trong runner,
+    nên chỉ cần một mốc rơi vào [khung - trần chờ, 18:35]. Mỗi ngày đo, MỌI độ
+    trễ nằm giữa số đo ở mốc 00:15 và 06:37 (mốc mới nằm giữa hai mốc ấy) đều
+    phải có ít nhất ``REDUNDANT_SLOTS`` mốc rơi vào khoảng đó. Thêm trường hợp
+    GitHub bỗng đúng giờ: ít nhất một mốc vẫn chờ được tới khung.
     """
-    text = _text("daily_update.yml")
-    crons = re.findall(r'cron: "([^"]+)"', text)
-    minutes = sorted(int(c.split()[1]) * 60 + int(c.split()[0]) for c in crons)
+    slots = _utc_minutes(name)
+    wait = _wait_cap_minutes(cap)
+    low, high = window - wait, 11 * 60 + 35
+    missed = []
+    for day, early, mid, _ in MEASURED_DELAYS:
+        for delay in range(min(early, mid), max(early, mid) + 1):
+            if _slots_landing_in(slots, low, high, delay) < REDUNDANT_SLOTS:
+                missed.append((day, delay))
+                break
+    assert not missed, f"ngày có ít hơn {REDUNDANT_SLOTS} mốc rơi vào khung chờ: {missed}"
+    assert _slots_landing_in(slots, low, window, 0), "GitHub đúng giờ thì không mốc nào chờ được"
 
-    window = 11 * 60 + 15          # 18:15 giờ VN
-    median_delay = 144             # phút, đo được
 
-    assert minutes[0] <= window - median_delay, (
-        f"mốc sớm nhất {minutes[0] // 60:02d}:{minutes[0] % 60:02d} UTC quá muộn; "
-        f"phải <= {(window - median_delay) // 60:02d}:{(window - median_delay) % 60:02d} "
-        "để ở độ trễ trung vị còn rơi đúng khung"
-    )
+def _wait_cap_minutes(which: str) -> int:
+    if which == "daily":
+        return int(re.search(r'MAX_WAIT_MINUTES:\s*"(\d+)"', _text("daily_update.yml")).group(1))
+    found = re.search(r"max_wait_seconds=\$\(\(\s*(\d+)\s*\*\s*60\s*\)\)", _text("live-results.yml"))
+    return int(found.group(1))
+
+
+def test_the_last_backstop_fires_before_midnight_even_at_the_worst_measured_delay() -> None:
+    """Mốc cuối nổ sau nửa đêm VN thì "hôm nay" đã sang ngày mới: bước chặn
+    thấy còn 16 giờ mới tới khung quay và thoát — lưới an toàn cuối thành vô
+    dụng. Mốc cũ 14:34 UTC nổ lúc 01:07-02:28 giờ VN hôm sau, đúng như thế."""
+    last = _utc_minutes("daily_update.yml")[-1]
+    worst = max(late for *_, late in MEASURED_DELAYS if late is not None)
+    assert last + worst < UTC_MIDNIGHT_VN
 
 
 def test_early_arrivals_exit_instead_of_idling_the_runner() -> None:
