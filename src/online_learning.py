@@ -255,6 +255,31 @@ def _scores(mode: str, record: dict, labels) -> dict:
     return result
 
 
+# Sai số làm tròn cho phép khi chấm lại một kỳ đã chốt. Cùng một vector, cùng
+# nhãn, nhưng runner khác CPU chọn nhánh SIMD khác cho `np.log`/`np.mean` và lệch
+# 1 ULP: ngày 04-10-2026 logloss ...7734 so với ...7733 làm sổ bị từ chối và
+# pipeline hoàn tất đỏ hai ngày liền. Ngưỡng tương đối 1e-12 rộng hơn 1 ULP
+# (~2e-16) bốn bậc mà vẫn hẹp hơn mọi sửa điểm có nghĩa hàng triệu lần.
+SCORE_RTOL = 1e-12
+SCORE_ATOL = 1e-15
+
+
+def _scores_agree(computed: dict, stored: dict) -> bool:
+    """Điểm chấm lại khớp điểm đã chốt, sai khác tối đa sai số làm tròn."""
+    if set(computed) != set(stored):
+        return False
+    for name, losses in computed.items():
+        if set(losses) != set(stored[name]):
+            return False
+        for key, value in losses.items():
+            other = stored[name][key]
+            if isinstance(other, bool) or not isinstance(other, (int, float)):
+                return False
+            if not np.isclose(value, other, rtol=SCORE_RTOL, atol=SCORE_ATOL):
+                return False
+    return True
+
+
 def _is_scored(record: dict) -> bool:
     settlement = record["settlement"]
     return settlement is not None and settlement.get("status", "scored") == "scored"
@@ -336,10 +361,10 @@ def _validate_state(state: dict, mode: str) -> None:
                 if not _is_scored(record):
                     raise ValueError("Trạng thái chốt kỳ không hợp lệ")
                 labels = _labels(mode, settlement["labels"])
-                scores = _scores(mode, record, labels)
-                if scores != settlement["scores"]:
+                if not _scores_agree(_scores(mode, record, labels), settlement["scores"]):
                     raise ValueError("Điểm kỳ quay lệch khỏi vector đóng băng")
-                losses = np.asarray([scores[name]["brier"] for name in EXPERTS])
+                # Bộ nhớ học dựng từ điểm ĐÃ CHỐT, đúng như `advance` đã cộng.
+                losses = np.asarray([settlement["scores"][name]["brier"] for name in EXPERTS])
                 slow += losses
                 fast = RECIPE["discount"] * fast + losses
                 count += 1
