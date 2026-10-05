@@ -62,7 +62,7 @@ def render(region: str, rows: list[dict[str, str]]) -> str:
     latest = dates[0] if dates else "—"
     boards = "".join(board(d, data[d]) for d in dates[:120])
     if not boards:
-        boards = '<div class="rg-empty"><strong>Chưa có dữ liệu đã lưu.</strong><span>Workflow vùng sẽ đồng bộ từ xskt.com.vn sau khi chạy.</span></div>'
+        boards = '<div class="rg-empty"><strong>Chưa có dữ liệu đã lưu.</strong><span>Dữ liệu vùng sẽ có sau lượt đồng bộ kế tiếp.</span></div>'
     filter_data = json_for_html_script({"dates": dates, "provinces": provinces})
 
     return f"""<!doctype html>
@@ -79,9 +79,9 @@ def render(region: str, rows: list[dict[str, str]]) -> str:
 @media(max-width:720px){{.rg-hero{{display:block;padding:18px}}.rg-priority{{margin-top:14px;max-width:none}}.rg-filter{{grid-template-columns:1fr}}}}
 </style></head><body>
 {app_shell_open(filename, wide=True)}
-<section class="rg-hero"><div><p class="rg-kicker">KẾT QUẢ XỔ SỐ {name.upper()}</p><h1>{code} · Kết quả theo tỉnh</h1><p>Dữ liệu đã lưu từ xskt.com.vn để tra cứu và xây dựng cơ sở phân tích vùng.</p></div><div class="rg-priority"><strong>Ưu tiên hệ thống: XSMB</strong><br>Miền Trung/Miền Nam là lớp dữ liệu mở rộng; pipeline Miền Bắc vẫn giữ lịch, AI/ML và tài nguyên ưu tiên cao nhất.</div></section>
+<section class="rg-hero"><div><p class="rg-kicker">KẾT QUẢ XỔ SỐ {name.upper()}</p><h1>{code} · Kết quả theo tỉnh</h1><p>Kết quả đã công bố, lưu theo tỉnh/thành để tra cứu và xây dựng cơ sở phân tích vùng.</p></div><div class="rg-priority"><strong>Ưu tiên hệ thống: XSMB</strong><br>Miền Trung/Miền Nam là lớp dữ liệu mở rộng; pipeline Miền Bắc vẫn giữ lịch, AI/ML và tài nguyên ưu tiên cao nhất.</div></section>
 <section class="rg-filter" aria-label="Bộ lọc kết quả"><label>Ngày quay<select id="rg-date"><option value="">Tất cả ngày đang hiển thị</option>{"".join(f'<option value="{d}">{d}</option>' for d in dates[:120])}</select></label><label>Tỉnh / thành<select id="rg-province"><option value="">Tất cả đài</option>{"".join(f'<option value="{html.escape(p)}">{html.escape(p)}</option>' for p in provinces)}</select></label><button class="rg-btn" id="rg-reset" type="button">Đặt lại</button></section>
-<div class="rg-meta"><span><strong>{len(dates)}</strong> ngày đã lưu</span><span><strong>{len(provinces)}</strong> tỉnh/thành</span><span>Mới nhất: <strong>{latest}</strong></span><span>Nguồn: <strong>xskt.com.vn</strong></span></div>
+<div class="rg-meta"><span><strong>{len(dates)}</strong> ngày đã lưu</span><span><strong>{len(provinces)}</strong> tỉnh/thành</span><span>Mới nhất: <strong>{latest}</strong></span></div>
 <section class="rg-results" id="rg-results">{boards}</section>
 {app_shell_close(filename)}
 <script id="rg-data" type="application/json">{filter_data}</script>

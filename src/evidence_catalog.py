@@ -441,6 +441,30 @@ def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     return page, sections
 
 
+def _vung(region: str) -> tuple[Evidence, list[Section]]:
+    """Trang kết quả theo tỉnh của một miền — dữ liệu vùng, tách khỏi sổ XSMB."""
+    return _ev([{
+        "title": f"Sổ kết quả {region} đã lưu",
+        "snippet": "Kết quả theo tỉnh/thành mỗi ngày quay, từ giải tám tới Đặc Biệt; lưu riêng, "
+                   "không dùng trong dự báo XSMB.",
+    }], [
+        "Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.",
+        "Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại.",
+    ]), []
+
+
+def _vietlott(step: str) -> tuple[Evidence, list[Section]]:
+    """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
+    return _ev([{
+        "title": "Sổ kết quả Vietlott đã lưu",
+        "snippet": "Kết quả các kỳ quay đã công bố chính thức, lưu theo từng sản phẩm; "
+                   "không dùng trong dự báo XSMB.",
+    }], [
+        "Đọc sổ kết quả Vietlott đã lưu theo sản phẩm.",
+        step,
+    ]), []
+
+
 def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
     """Trang → (bằng chứng mặc định, ghi đè theo khối). Phủ MỌI trang xuất bản."""
     tk = lambda *extra: (_thong_ke(f, *extra), [])  # noqa: E731
@@ -458,6 +482,16 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
             )),
         ]),
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
+        "ket-qua-mien-trung.html": _vung("Miền Trung"),
+        "ket-qua-mien-nam.html": _vung("Miền Nam"),
+        "vietlott.html": _vietlott("Bảng tổng quan lấy kỳ mới nhất đã lưu của từng sản phẩm."),
+        "vietlott-lotto-535.html": _vietlott("Mỗi kỳ 5 số và số đặc biệt, kỳ mới nhất trước."),
+        "vietlott-mega-645.html": _vietlott("Mỗi kỳ 6 số, kèm giá trị jackpot đã công bố."),
+        "vietlott-power-655.html": _vietlott("Mỗi kỳ 6 số và số đặc biệt, kèm hai giá trị jackpot."),
+        "vietlott-max-3d.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
+        "vietlott-max-3d-pro.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
+        "vietlott-keno.html": _vietlott("Mỗi kỳ 20 số."),
+        "vietlott-bingo18.html": _vietlott("Mỗi kỳ 3 số, kèm tổng và nhóm tổng."),
         "statistics.html": _thong_ke_tong(f),
         "bang-dac-biet.html": tk("Giải Đặc Biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ."),
         "bang-dac-biet-thang.html": tk("Trọn một năm: hàng là ngày trong tháng, cột là tháng."),

@@ -478,6 +478,10 @@ FALLBACK_SOURCE_NAMES: tuple[str, ...] = (
     "hainhay.net",
 )
 
+#: Nguồn của lớp dữ liệu Miền Trung/Miền Nam (``regional_lottery``). KHÔNG thuộc
+#: chuỗi nguồn XSMB: không đồng thuận, không dự phòng cho kỳ Miền Bắc.
+REGIONAL_SOURCE_NAMES: tuple[str, ...] = ("xskt.com.vn",)
+
 #: Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
 #:
 #: Không phải để làm đẹp: yêu cầu là KHÔNG để lộ tên miền nguồn trên giao diện

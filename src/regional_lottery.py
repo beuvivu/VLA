@@ -20,8 +20,10 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
+from sources import REGIONAL_SOURCE_NAMES
+
 VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
-SOURCE = "xskt.com.vn"
+SOURCE = REGIONAL_SOURCE_NAMES[0]
 REGIONS = {"mt": "Miền Trung", "mn": "Miền Nam"}
 PRIZE_SPECS = (
     ("G.8", 1, 2), ("G.7", 1, 3), ("G.6", 3, 4), ("G.5", 1, 4),
