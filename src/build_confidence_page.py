@@ -358,7 +358,10 @@ def digit_sum_card(report: dict) -> str:
         + _table(["Quy tắc", "Số kỳ", "Trúng", "Chọn bừa", "p Holm", "Hồi cứu: trúng / chọn bừa"],
                  rows, numeric="ui-r2 ui-r3 ui-r4 ui-r5")
         + f'<p class="ui-muted" data-evidence-split>Kỳ đã chấm: {span}. '
-        f"<b>{html.escape(_DIGIT_SUM_WORDS.get(h['state'], h['state']))}</b></p>"
+        f"<b>{html.escape(_DIGIT_SUM_WORDS.get(h['state'], h['state']))}</b>"
+        + (f" Sổ đã ghi {h['recorded']} kỳ; kết luận chốt trên {h['min_draws']} kỳ đầu và "
+           "không tính lại." if h.get("recorded", 0) > h["min_draws"] else "")
+        + "</p>"
         + (
             f'<p class="ui-muted">Bộ số các quy tắc đọc từ kỳ '
             f"{html.escape(str(upcoming.get('base_date', '')))} — mô tả quy tắc, không phải dự báo "

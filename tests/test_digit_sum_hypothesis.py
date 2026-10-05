@@ -93,7 +93,7 @@ def test_the_verdict_follows_the_registered_rule(tmp_path: Path, days, planted, 
     dh.update_ledger(tmp_path)
     result = dh.evaluate(tmp_path)
     assert result["state"] == state, [(r["rule"], r["p_holm"]) for r in result["rules"]]
-    assert result["draws"] == days - 1
+    assert result["draws"] == min(days - 1, dh.MIN_DRAWS)
     by_rule = {r["rule"]: r for r in result["rules"]}
     if planted:
         assert by_rule["dau_db"]["state"] == "xac_nhan"
@@ -112,3 +112,28 @@ def test_the_page_shows_the_prospective_state(tmp_path: Path) -> None:
     assert "2026-10-06 → 2026-10-17" in card
     assert "không phải dự báo" in card
     assert "Chưa có dữ liệu" in page.digit_sum_card({})
+
+
+def test_the_verdict_is_frozen_at_the_registered_sample_size(tmp_path: Path) -> None:
+    """Tính lại kết luận mỗi ngày trên sổ dài dần là nhìn nhiều lần: kỳ 181 trở đi
+    được ghi nhưng không được lật một kết luận đã chốt ở kỳ 180."""
+    days = pd.date_range(dh.FIRST_TARGET, periods=260, freq="D").strftime("%Y-%m-%d")
+    rows = []
+    for i, day in enumerate(days):
+        for rule in dsr.RULES:
+            if rule.key == "dau_db":
+                hit = int(i % 5 == 0) if i < dh.MIN_DRAWS else 1  # đúng mốc, rồi trúng liên tục
+            else:
+                hit = int(i % 5 == 0)
+            rows.append({"date": day, "rule": rule.key, "base_date": "", "picks": "",
+                         "hit": hit, "chance": 0.2})
+    path = tmp_path / dh.LEDGER
+    path.parent.mkdir(parents=True)
+    pd.DataFrame(rows, columns=dh.FIELDS).to_csv(path, index=False)
+
+    result = dh.evaluate(tmp_path)
+    by_rule = {r["rule"]: r for r in result["rules"]}
+    assert result["recorded"] == 260 and result["draws"] == dh.MIN_DRAWS
+    assert by_rule["dau_db"]["hits"] == dh.MIN_DRAWS // 5
+    assert result["state"] == "bac_bo"
+    assert result["last"] == days[dh.MIN_DRAWS - 1]

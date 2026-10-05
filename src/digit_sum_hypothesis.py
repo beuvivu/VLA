@@ -23,6 +23,11 @@ Thống kê, mỗi quy tắc r và mỗi kỳ t từ ``FIRST_TARGET``:
 Dưới giả thuyết công bằng, số kỳ trúng theo phân phối Poisson-nhị thức(p_t).
 Sau ``MIN_DRAWS`` kỳ: p một phía P(X ≥ trúng), hiệu chỉnh Holm cho năm quy tắc;
 xác nhận quy tắc nào có p Holm ≤ ``ALPHA``.
+
+Kết luận chỉ dùng ĐÚNG ``MIN_DRAWS`` kỳ đầu từ ``FIRST_TARGET`` rồi đóng băng. Sổ
+vẫn ghi tiếp, nhưng tính lại kết luận mỗi ngày trên sổ dài dần là nhìn nhiều lần:
+một quy tắc bác bỏ ở kỳ 180 có thể "xác nhận" ở kỳ 230 do may, và α = 0,01 không
+còn giữ.
 """
 
 from __future__ import annotations
@@ -106,9 +111,11 @@ def evaluate(data_dir: Path) -> dict:
         pd.read_csv(path, dtype={"date": str, "picks": str}) if path.exists()
         else pd.DataFrame(columns=FIELDS)
     )
+    dates = sorted(ledger["date"].unique()) if len(ledger) else []
+    frozen = set(dates[:MIN_DRAWS])
     rules = []
     for rule in dsr.RULES:
-        part = ledger[ledger["rule"] == rule.key]
+        part = ledger[(ledger["rule"] == rule.key) & ledger["date"].isin(frozen)]
         n = len(part)
         chances = part["chance"].astype(float).tolist()
         hits = int(part["hit"].astype(int).sum()) if n else 0
@@ -126,13 +133,14 @@ def evaluate(data_dir: Path) -> dict:
     states = {r["state"] for r in rules}
     state = ("dang_thu" if "dang_thu" in states
              else "xac_nhan" if "xac_nhan" in states else "bac_bo")
-    dates = sorted(ledger["date"].unique()) if len(ledger) else []
     raw_path = data_dir / "xsmb.csv"
     upcoming = dsr.next_picks(pd.read_csv(raw_path, dtype={"date": str})) if raw_path.exists() else None
     return {
         "registered_on": REGISTERED_ON, "first_target": FIRST_TARGET,
         "min_draws": MIN_DRAWS, "alpha": ALPHA,
-        "draws": draws, "first": dates[0] if dates else None, "last": dates[-1] if dates else None,
+        "draws": draws, "recorded": len(dates),
+        "first": dates[0] if dates else None,
+        "last": dates[min(len(dates), MIN_DRAWS) - 1] if dates else None,
         "rules": rules, "state": state, "next": upcoming,
         "retrospective": RETROSPECTIVE,
     }

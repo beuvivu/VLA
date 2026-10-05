@@ -118,7 +118,8 @@ mẫu và báo cáo kiểm thử ngược. Đối chiếu:
 `src/digit_sum_hypothesis.py` đăng ký ngày 05-10-2026: từ kỳ 06-10-2026, mỗi lượt pipeline ghi bộ
 số của năm quy tắc cho từng kỳ mới vào `data/hypotheses/digit_sum_rules.csv` (dòng đã ghi không bị
 đè) và chấm với kết quả thật. Sau 180 kỳ: p một phía Poisson-nhị thức, Holm cho năm quy tắc,
-α = 0,01. Trang Độ tin cậy in trạng thái và bộ số kỳ kế tiếp (mô tả quy tắc, không phải dự báo).
+α = 0,01. Kết luận chốt trên ĐÚNG 180 kỳ đầu rồi đóng băng — sổ ghi tiếp nhưng không tính lại,
+vì tính lại mỗi ngày trên sổ dài dần là nhìn nhiều lần và phá α. Trang Độ tin cậy in trạng thái và bộ số kỳ kế tiếp (mô tả quy tắc, không phải dự báo).
 Quy tắc được XÁC NHẬN vẫn phải qua `scripts/benchmark_probability_models.py` trước khi vào tổ hợp
 xác suất. Không sửa tham số đã đăng ký; muốn đổi thì đăng ký giả thuyết mới.
 
