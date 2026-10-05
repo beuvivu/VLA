@@ -693,7 +693,7 @@ SITE_NAV_SECTIONS: tuple[
         "Kết quả",
         (
             ("Miền Bắc · ưu tiên", (
-                ("index.html", "Kết quả Miền Bắc hôm nay", "hom-nay"),
+                ("index.html", "Kết quả hôm nay", "hom-nay"),
                 ("live.html", "Miền Bắc trực tiếp", "truc-tiep"),
                 ("so-ket-qua-truyen-thong.html", "Sổ kết quả Miền Bắc", "so-ket-qua"),
             )),
