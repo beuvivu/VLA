@@ -63,7 +63,7 @@ def render(region: str, rows: list[dict[str, str]]) -> str:
     boards = "".join(board(d, data[d]) for d in dates[:120])
     if not boards:
         boards = '<div class="rg-empty"><strong>Chưa có dữ liệu đã lưu.</strong><span>Workflow vùng sẽ đồng bộ từ xskt.com.vn sau khi chạy.</span></div>'
-    filter_data = json.dumps({"dates": dates, "provinces": provinces}, ensure_ascii=False).replace("</", "<\/")
+    filter_data = json_for_html_script({"dates": dates, "provinces": provinces})
 
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
