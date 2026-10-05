@@ -21,6 +21,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: regional-lottery-sync
@@ -30,6 +32,9 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       TZ: Asia/Ho_Chi_Minh
       PYTHONPATH: ${{ github.workspace }}/src
@@ -92,3 +97,15 @@ jobs:
           git commit -m "data: sync XSMT/XSMN from xskt.com.vn"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Đóng gói GitHub Pages đã cập nhật
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: regional-pages-${{ github.run_attempt }}
+          path: docs
+
+      - name: Triển khai trang Miền Trung/Miền Nam
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: regional-pages-${{ github.run_attempt }}
