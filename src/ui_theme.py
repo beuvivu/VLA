@@ -692,12 +692,14 @@ SITE_NAV_SECTIONS: tuple[
     (
         "Kết quả",
         (
-            ("Kết quả ngày", (
-                ("index.html", "Kết quả hôm nay", "hom-nay"),
-                ("live.html", "Kết quả trực tiếp", "truc-tiep"),
+            ("Miền Bắc · ưu tiên", (
+                ("index.html", "Kết quả Miền Bắc hôm nay", "hom-nay"),
+                ("live.html", "Miền Bắc trực tiếp", "truc-tiep"),
+                ("so-ket-qua-truyen-thong.html", "Sổ kết quả Miền Bắc", "so-ket-qua"),
             )),
-            ("Tra cứu lịch sử", (
-                ("so-ket-qua-truyen-thong.html", "Sổ kết quả", "so-ket-qua"),
+            ("Miền Trung & Miền Nam", (
+                ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "mien-trung"),
+                ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "mien-nam"),
             )),
         ),
     ),
