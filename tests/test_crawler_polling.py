@@ -569,3 +569,29 @@ def test_a_source_that_never_requests_reports_zero_attempts() -> None:
     full = _full_prize_map()
     _, _, stats = poll_once([FakeSource("a.vn", [full])], TARGET, min_agreement=1)
     assert stats[0]["attempts"] == 0
+
+
+def test_a_start_after_the_deadline_still_polls_once() -> None:
+    """Bộ lập lịch của GitHub trễ 4-8 giờ: lượt nổ lúc 21:00 phải lấy được kỳ
+    đã xong, thay vì thoát mà không gọi nguồn lần nào."""
+    full = _full_prize_map()
+    sources = [FakeSource("a.vn", [full]), FakeSource("b.vn", [full])]
+    clock = FakeClock(datetime(2026, 9, 7, 21, 0, tzinfo=TZ))
+
+    outcome = poll_until_complete(_cfg(), sources=sources, sleeper=clock.sleep, clock=clock)
+
+    assert outcome.verified is True
+    assert outcome.rounds == 1
+    assert clock.slept == []
+
+
+def test_a_late_start_that_finds_no_result_does_not_keep_polling() -> None:
+    empty = {k: [] for k in PRIZE_ORDER}
+    sources = [FakeSource("a.vn", [empty]), FakeSource("b.vn", [empty])]
+    clock = FakeClock(datetime(2026, 9, 7, 21, 0, tzinfo=TZ))
+
+    outcome = poll_until_complete(_cfg(), sources=sources, sleeper=clock.sleep, clock=clock)
+
+    assert outcome.verified is False
+    assert outcome.rounds == 1
+    assert clock.slept == []

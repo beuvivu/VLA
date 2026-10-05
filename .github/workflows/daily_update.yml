@@ -24,7 +24,8 @@ name: Thu thập XSMB đúng giờ
 #      lịch của GitHub.
 #   2. Một lần chạy tự thăm dò trong vòng lặp tới khi đủ 27 ô, nên chỉ cần
 #      được đánh thức MỘT lần thay vì mười lần.
-#   3. Lịch cron bên dưới chỉ là lưới an toàn cuối, không phải đường chính.
+#   3. Lịch cron bên dưới là đường dự phòng: lượt đến sớm CHỜ trong runner
+#      tới khung quay, nên độ trễ của bộ lập lịch không còn đẩy kỳ về muộn.
 
 on:
   repository_dispatch:
@@ -45,32 +46,33 @@ on:
         type: string
 
   schedule:
-    # LƯỚI AN TOÀN, không phải đường chính. Ba mốc là đủ: mốc đầu bắt trường
-    # hợp bộ lập lịch chạy đúng giờ, hai mốc sau bắt trường hợp nó trễ vài
-    # giờ như số liệu bên trên. Thêm mốc nữa không tăng độ tin cậy vì mọi mốc
-    # đều rơi cùng một cách khi GitHub quá tải — nó chỉ tăng số lần chạy thừa.
-    #
     # Giờ UTC; Việt Nam là UTC+7.
-    # Đặt theo ĐỘ TRỄ ĐO ĐƯỢC, không theo giờ mong muốn. Trên 62 lần chạy
-    # theo lịch của kho này: trễ tối thiểu 49 phút, trung vị 144, phân vị 90
-    # là 223, tối đa 305. KHÔNG lần nào dưới 30 phút.
     #
-    # Lịch cũ đặt khe sớm nhất ở 18:08 giờ VN — tức tự đặt trần cho chính nó:
-    # cộng 49 phút tối thiểu thì không đời nào chạy trước 18:57. Đo trên kho,
-    # kỳ về sớm nhất là 19:38, khớp đúng.
+    # Đo lại 10-09 -> 05-10-2026 (26 ngày): bộ lập lịch của GitHub trên kho này
+    # trễ 4,3-5,6 giờ ở mốc 00:15 UTC và 4,6-8,6 giờ ở mốc 06:37 UTC. Lịch cũ
+    # (07:50-10:50 UTC, trần chờ 75 phút) vì thế nổ lúc 19:00-23:30 giờ VN —
+    # SAU hạn thăm dò 19:30, nên bộ thăm dò thoát mà không gọi nguồn lần nào.
+    # Kỳ về kho lúc 18:58-20:51 chỉ nhờ live-results kích hoạt hoàn tất.
     #
-    # Khe dưới đây lùi lại để ở độ trễ TRUNG VỊ, mốc 08:51 rơi đúng 18:15 giờ
-    # VN. Khe sớm hơn phục vụ ngày trễ ít, khe muộn hơn phục vụ ngày trễ nhiều.
-    # Nổ sớm là vô hại vì bộ thăm dò chờ tới khung quay; nổ quá sớm thì bước
-    # chặn phía dưới cho thoát ngay để khỏi giữ runner.
-    - cron: "50 7 * * *"    # 14:50 VN + trễ 2h24m -> 17:14
-    - cron: "20 8 * * *"    # 15:20 VN                -> 17:44
-    - cron: "51 8 * * *"    # 15:51 VN                -> 18:15  <- mốc chính
-    - cron: "20 9 * * *"    # 16:20 VN                -> 18:44
-    - cron: "50 9 * * *"    # 16:50 VN                -> 19:14
-    - cron: "20 10 * * *"   # 17:20 VN                -> 19:44
-    - cron: "50 10 * * *"   # 17:50 VN                -> 20:14
-    - cron: "34 14 * * *"   # 21:34 VN — lưới an toàn cuối
+    # Cách sửa: đặt mốc vào SÁNG SỚM để độ trễ đẩy chúng rơi vào buổi chiều,
+    # và cho lượt đến sớm CHỜ trong runner tới khung quay (MAX_WAIT_MINUTES
+    # bên dưới, 260 phút: mọi lượt nổ từ 13:55 giờ VN đều chờ được). Bảy mốc
+    # cách nhau <= 44 phút: với mọi độ trễ đo được (4,3-8,6 giờ) có ít nhất
+    # BA mốc rơi vào khung chờ 13:55-18:35, vì GitHub còn bỏ mốc (05-10 không
+    # mốc nào nổ trong 7,7 giờ). Mô phỏng trên 26 ngày đo: 26/26 ngày thu được
+    # lúc 18:35 (tests/test_workflows.py ghim phép tính này).
+    #
+    # Nổ quá sớm (GitHub bỗng đúng giờ) thì bước chặn cho thoát sau ~20 giây;
+    # khi ấy mốc 08:17 UTC (15:17 VN) tự chờ tới 18:15. Mốc cuối cũng là lưới
+    # an toàn: độ trễ lớn nhất đo được (8,2 giờ) vẫn giữ nó trước nửa đêm VN.
+    - cron: "13 1 * * *"    # 08:13 VN
+    - cron: "55 1 * * *"    # 08:55 VN
+    - cron: "37 2 * * *"    # 09:37 VN
+    - cron: "19 3 * * *"    # 10:19 VN
+    - cron: "1 4 * * *"     # 11:01 VN
+    - cron: "43 4 * * *"    # 11:43 VN
+    - cron: "27 5 * * *"    # 12:27 VN
+    - cron: "17 8 * * *"    # 15:17 VN — lưới an toàn cuối
 
 permissions:
   contents: read
@@ -86,9 +88,10 @@ jobs:
     name: Thăm dò tới khi đủ 27 ô
     runs-on: ubuntu-latest
 
-    # Chặn runner treo. Xấu nhất: đến sớm đúng mức trần MAX_WAIT_MINUTES (75)
+    # Chặn runner treo. Xấu nhất: đến sớm đúng mức trần MAX_WAIT_MINUTES (260)
     # rồi thăm dò tới hạn 19:30 (75 phút nữa), cộng nới cho khâu cài đặt.
-    timeout-minutes: 170
+    # GitHub giết mọi job quá 360 phút, nên trần chờ không thể lớn hơn nữa.
+    timeout-minutes: 350
 
     env:
       # Đặt TZ ở cấp job để MỌI bước — kể cả `date` trong shell — cùng một múi
@@ -144,12 +147,12 @@ jobs:
         # 1. Kỳ hôm nay đã nằm trong kho — một mốc trước đó đã làm xong. Tiếp
         #    tục chỉ tốn yêu cầu vào nguồn tin và giữ runner vô ích.
         # 2. Đến quá sớm. Bộ thăm dò chờ tới khung quay KHÔNG giới hạn, nên
-        #    một job nổ lúc 15:39 sẽ nằm im 2h36m rồi chết vì timeout — đúng
-        #    những gì lịch cũ vẫn làm hằng ngày. Trần 75 phút giữ phần chờ
-        #    trong mức job chịu được, và mốc muộn hơn sẽ lo phần còn lại.
+        #    trần chờ phải nằm trong timeout của job. 260 phút: lượt nổ từ
+        #    13:55 giờ VN chờ được — đó chính là đường đúng giờ khi bộ lập
+        #    lịch trễ 4-8 giờ. Nổ trước đó thì mốc sau lo.
         env:
           WINDOW_START: ${{ github.event.inputs.window_start || '18:15' }}
-          MAX_WAIT_MINUTES: "75"
+          MAX_WAIT_MINUTES: "260"
         run: |
           set -euo pipefail
 
@@ -270,7 +273,7 @@ jobs:
           FIRED_CRON: ${{ github.event.schedule }}
           # Mốc lưới an toàn CUỐI CÙNG trong ngày. Phải khớp chính xác với
           # mốc cuối ở khối `schedule` phía trên.
-          LAST_CRON: "34 14 * * *"
+          LAST_CRON: "17 8 * * *"
         run: |
           set -euo pipefail
           verified="${{ steps.poll.outputs.verified }}"

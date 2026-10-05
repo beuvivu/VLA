@@ -195,6 +195,9 @@ def live(tmp_path: Path) -> LiveHarness:
         "18:09:59",
         "18:10:00",
         "19:08:00",
+        # Bộ lập lịch trễ 4-8 giờ: lượt nổ buổi chiều CHỜ tới khung quay.
+        "14:08:00",
+        "16:09:00",
     ],
 )
 def test_live_poll_starts_polling_at_every_minute_of_the_draw_window(
@@ -210,7 +213,7 @@ def test_live_poll_starts_polling_at_every_minute_of_the_draw_window(
     assert "verified=true" in live.output()
 
 
-@pytest.mark.parametrize("start", ["08:08:00", "09:09:00", "09:59:00", "13:37:00", "16:09:00"])
+@pytest.mark.parametrize("start", ["08:08:00", "09:09:00", "09:59:00", "13:37:00", "14:07:00"])
 def test_live_poll_leaves_too_early_starts_to_a_later_slot(live: LiveHarness, start: str) -> None:
     """Giờ 08, 09 và phút 08, 09 là số bát phân: trước đây lượt nổ lúc ấy bỏ
     qua trần chờ và thăm dò 60 phút giữa giờ trống, thay vì thoát sạch để mốc

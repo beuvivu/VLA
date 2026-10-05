@@ -321,10 +321,22 @@ def test_live_workflow_waits_for_the_draw_window_when_it_starts_early() -> None:
 
 
 def test_live_workflow_gives_up_early_instead_of_holding_a_runner() -> None:
-    """Mốc rơi quá sớm phải thoát để mốc sau xử lý, không giữ runner hàng giờ."""
+    """Mốc rơi quá sớm phải thoát để mốc sau xử lý; phần chờ được phép phải
+    nằm gọn trong timeout của job cùng cả ngân sách thăm dò.
+
+    Trần chờ cũ 90 phút cộng 60 phút thăm dò vượt timeout 70 phút: lượt nào
+    thực sự chờ đều bị giết trước khi kích hoạt hoàn tất dữ liệu ngày.
+    """
     text = (WORKFLOWS / "live-results.yml").read_text(encoding="utf-8")
     assert "quá sớm" in text
-    assert re.search(r"max_wait_seconds=\$\(\(\s*90\s*\*\s*60\s*\)\)", text)
+    wait = re.search(r"max_wait_seconds=\$\(\(\s*(\d+)\s*\*\s*60\s*\)\)", text)
+    timeout = re.search(r"^\s*timeout-minutes:\s*(\d+)", text, re.MULTILINE)
+    budget = re.search(r'^\s*MAX_SECONDS:\s*"(\d+)"', text, re.MULTILINE)
+    assert wait and timeout and budget
+    wait_s, timeout_s, budget_s = int(wait.group(1)) * 60, int(timeout.group(1)) * 60, int(budget.group(1))
+    assert timeout_s >= wait_s + budget_s + 300, "timeout không chứa nổi chờ + thăm dò + cài đặt"
+    # GitHub giết mọi job quá 360 phút.
+    assert int(timeout.group(1)) <= 360
 
 
 def test_live_window_starts_before_the_first_prize() -> None:

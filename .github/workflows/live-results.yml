@@ -10,7 +10,8 @@ name: Kết quả XSMB gần thời gian thực
 # hiện dần.
 #
 # Hai biện pháp ở đây chỉ giảm xác suất trượt chứ KHÔNG loại bỏ được độ trễ:
-#   1. Nhiều mốc trải từ đầu giờ chiều: chỉ cần một mốc rơi đúng khung quay.
+#   1. Nhiều mốc trải từ sáng sớm, và lượt đến sớm CHỜ trong runner tới khung
+#      quay: chỉ cần một mốc rơi vào khoảng 14:08-18:35 giờ VN.
 #   2. Phút lẻ: hàng đợi của GitHub dồn nặng nhất ở phút :00 và :30.
 # Cách chắc chắn là gọi từ bộ lập lịch bên ngoài — xem repository_dispatch bên
 # dưới và hướng dẫn trong tài liệu.
@@ -21,15 +22,21 @@ on:
     # lịch của GitHub. Đây là đường duy nhất chạy đúng giờ một cách chắc chắn.
     types: [live-window]
   schedule:
-    - cron: "37 6 * * *"
-    - cron: "43 7 * * *"
-    - cron: "17 8 * * *"
-    - cron: "53 8 * * *"
-    - cron: "23 9 * * *"
-    - cron: "47 9 * * *"
-    - cron: "13 10 * * *"
-    - cron: "41 10 * * *"
-    - cron: "7 11 * * *"
+    # Đo lại 10-09 -> 05-10-2026: mốc 06:37 UTC nổ trễ 4,6-8,6 GIỜ, tức
+    # 18:15-23:11 giờ VN — gần như luôn sau khi kỳ quay đã xong, nên số không
+    # bao giờ hiện dần. Mốc nay dời vào sáng sớm (trễ 4,3-5,6 giờ ở 00:15 UTC)
+    # để rơi vào buổi chiều, và lượt đến sớm chờ tối đa 240 phút tới 18:08.
+    # Tám mốc cách nhau <= 45 phút phủ mọi độ trễ 1-9,9 giờ; mốc 11:07 giữ lại
+    # để lượt nổ muộn vẫn kích hoạt hoàn tất dữ liệu ngày.
+    - cron: "19 1 * * *"    # 08:19 VN
+    - cron: "2 2 * * *"     # 09:02 VN
+    - cron: "47 2 * * *"    # 09:47 VN
+    - cron: "29 3 * * *"    # 10:29 VN
+    - cron: "11 4 * * *"    # 11:11 VN
+    - cron: "53 4 * * *"    # 11:53 VN
+    - cron: "37 5 * * *"    # 12:37 VN
+    - cron: "17 6 * * *"    # 13:17 VN
+    - cron: "7 11 * * *"    # 18:07 VN
 
 permissions:
   contents: write
@@ -42,12 +49,13 @@ concurrency:
 jobs:
   live:
     runs-on: ubuntu-latest
-    # Phải lớn hơn MAX_SECONDS (60 phút) cộng thời gian checkout/cài đặt.
+    # Phải lớn hơn trần chờ (240 phút) cộng MAX_SECONDS (60 phút) cộng thời
+    # gian checkout/cài đặt — lượt nổ lúc 14:08 chờ 4 giờ rồi mới thăm dò.
     # Trước đây job bị giết ở phút 50 trong khi vòng thăm dò được cấp 60 phút,
     # nên với kỳ quay muộn (sau 18:50 giờ VN) job chết giữa chừng và bước
     # "kích hoạt hoàn tất dữ liệu ngày" — vốn có điều kiện verified == 'true' —
     # không bao giờ chạy, khiến dữ liệu ngày phải chờ cron kế tiếp.
-    timeout-minutes: 70
+    timeout-minutes: 315
     env:
       PYTHONPATH: ${{ github.workspace }}/src
       TZ: Asia/Ho_Chi_Minh
@@ -79,11 +87,11 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Nếu job khởi động TRƯỚC khung quay, chờ tới lúc bắt đầu rồi mới thăm
-          # dò, để số hiện dần đúng lúc thay vì đăng một ảnh chụp rỗng. Chỉ chờ
-          # tối đa 90 phút: mốc nào rơi quá sớm thì thoát để mốc sau xử lý, thay
-          # vì giữ runner hàng giờ.
+          # dò, để số hiện dần đúng lúc thay vì đăng một ảnh chụp rỗng. Chờ tối
+          # đa 240 phút: bộ lập lịch trễ 4-8 giờ, nên chờ trong runner là đường
+          # đúng giờ; mốc nào rơi sớm hơn nữa thì thoát để mốc sau xử lý.
           window_start_min=$((18 * 60 + 8))
-          max_wait_seconds=$((90 * 60))
+          max_wait_seconds=$((240 * 60))
           waited=0
           while true; do
             # Đọc đồng hồ MỘT lần và ép cơ số 10. `date +%H` trả "08", "09"
