@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-10-05T17:29:58Z",
+  "generated_at": "2026-10-06T01:33:18Z",
   "baseline": "HistGradientBoosting cầu-kèo với 39 đặc trưng production",
   "common_parameters": {
     "screening_folds": [
@@ -22,7 +22,7 @@
   },
   "experiments": [
     {
-      "experiment_id": "EXP-LOTO-PARTNER-20261005",
+      "experiment_id": "EXP-LOTO-PARTNER-20261006",
       "algorithm_group": "partner",
       "mode": "loto",
       "parameters": {
@@ -57,7 +57,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-LOTO-CAP-50-20261005",
+      "experiment_id": "EXP-LOTO-CAP-50-20261006",
       "algorithm_group": "cap_50",
       "mode": "loto",
       "parameters": {
@@ -92,7 +92,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-LOTO-BO-20261005",
+      "experiment_id": "EXP-LOTO-BO-20261006",
       "algorithm_group": "bo",
       "mode": "loto",
       "parameters": {
@@ -128,7 +128,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-LOTO-BONG-20261005",
+      "experiment_id": "EXP-LOTO-BONG-20261006",
       "algorithm_group": "bong",
       "mode": "loto",
       "parameters": {
@@ -163,7 +163,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-LOTO-CHAM-20261005",
+      "experiment_id": "EXP-LOTO-CHAM-20261006",
       "algorithm_group": "cham",
       "mode": "loto",
       "parameters": {
@@ -199,7 +199,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-LOTO-TONG-20261005",
+      "experiment_id": "EXP-LOTO-TONG-20261006",
       "algorithm_group": "tong",
       "mode": "loto",
       "parameters": {
@@ -234,7 +234,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-PARTNER-20261005",
+      "experiment_id": "EXP-DE-PARTNER-20261006",
       "algorithm_group": "partner",
       "mode": "de",
       "parameters": {
@@ -270,7 +270,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-CAP-50-20261005",
+      "experiment_id": "EXP-DE-CAP-50-20261006",
       "algorithm_group": "cap_50",
       "mode": "de",
       "parameters": {
@@ -306,7 +306,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-BO-20261005",
+      "experiment_id": "EXP-DE-BO-20261006",
       "algorithm_group": "bo",
       "mode": "de",
       "parameters": {
@@ -342,7 +342,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-BONG-20261005",
+      "experiment_id": "EXP-DE-BONG-20261006",
       "algorithm_group": "bong",
       "mode": "de",
       "parameters": {
@@ -377,7 +377,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-CHAM-20261005",
+      "experiment_id": "EXP-DE-CHAM-20261006",
       "algorithm_group": "cham",
       "mode": "de",
       "parameters": {
@@ -413,7 +413,7 @@
       "ci_status": "not_computed_candidate_failed_before_final_gate"
     },
     {
-      "experiment_id": "EXP-DE-TONG-20261005",
+      "experiment_id": "EXP-DE-TONG-20261006",
       "algorithm_group": "tong",
       "mode": "de",
       "parameters": {
