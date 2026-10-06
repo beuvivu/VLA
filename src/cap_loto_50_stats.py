@@ -17,6 +17,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from safe_io import read_csv_or_empty
+
 from lottery import Lottery
 from number_reference import all_cap_loto_50, cap_loto_50_id, cap_loto_50_kind
 
@@ -106,12 +108,7 @@ def _current_cau_scores(
     """Load only a cầu-kèo artifact anchored to the same canonical history end."""
 
     path = data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"
-    if not path.exists():
-        return {}
-    try:
-        df = pd.read_csv(path, dtype={"number_str": str, "anchor_date": str})
-    except Exception:
-        return {}
+    df = read_csv_or_empty(path, dtype={"number_str": str, "anchor_date": str})
     required = {"number_str", "cau_score", "anchor_date"}
     if not required.issubset(df.columns):
         return {}

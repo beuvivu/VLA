@@ -83,7 +83,7 @@ def page(product,data,count):
 
 def overview(latest,counts):
  tiles=[]
- for key,(name,file,desc) in PRODUCTS.items():
+ for key,(name,file,_desc) in PRODUCTS.items():
   r=latest.get(key)
   body=result_markup(key,json.loads(r[2]),r[3],json.loads(r[6] or "{}")) if r else "Chưa đồng bộ"
   tiles.append(f'<a class="vl-draw" href="{file}" style="text-decoration:none;color:inherit"><div class="vl-draw-head"><strong>{name}</strong><small>{counts.get(key,0):,} kỳ</small></div><div class="vl-result">{body}</div></a>')

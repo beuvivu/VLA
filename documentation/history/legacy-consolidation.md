@@ -219,7 +219,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | Pipeline chronology gate | `src/pipeline.py` | Canonical validation is a hard precondition immediately after sync and before statistics/path/ML/research | `test_pipeline_integrity_order.py` | HARDENED |
 | Head-table day windows | `src/descriptive_extensions.py` | `N days` now means inclusive calendar window, not last `N` rows | `test_descriptive_calendar_windows.py` | HARDENED |
 | Number recency / pair recency / gap evidence | `src/descriptive_extensions.py`, `src/research_legacy_extensions.py` | Calendar-day recency separated from draw-index interval metrics; descriptive only | calendar-gap + legacy-extension regression tests | MIGRATED / RESEARCH-ONLY |
-| VIP statistics CLI | `src/vip_stats.py` -> `src/descriptive_extensions.py` | Removed duplicate statistical implementation; legacy filenames/CLI preserved through canonical functions | compile/unit suite + canonical descriptive tests | SUPERSEDED |
+| VIP statistics CLI | ~~`src/vip_stats.py`~~ -> `src/descriptive_extensions.py` | Removed duplicate statistical implementation; the compatibility wrapper itself was deleted on 2026-10-06 (no workflow, script, test or import called it, and `data/vip/` was never produced) | canonical descriptive tests | REMOVED |
 | Exact next-day conditional matrices | `src/conditional_matrices.py` | `ĐB→Loto`, `ĐB→ĐB`, `Loto→Loto` count only exact `+1 calendar day`; canonical outputs overwrite legacy row-adjacent outputs | `test_conditional_matrices.py`; release diagnostics gate | MIGRATED / HARDENED |
 | Bayesian conditional next-day research | `src/conditional_nextday.py` | Calendar-safe chronology, shrinkage, no-lookahead research evidence | `test_conditional_nextday.py` | HARDENED / RESEARCH-ONLY |
 | Markov-1 Loto | `src/markov_stats.py` | Exact next-calendar-day transitions rather than arbitrary adjacent rows | calendar-alignment regression coverage | HARDENED |
@@ -227,7 +227,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | Production statistical signal | `src/statistical_signal.py` | Two-digit and sparse calendars must both be contiguous and identical; dynamics receives actual dates | release smoke + number-dynamics tests | HARDENED |
 | Cycle / hazard descriptive statistics | `src/cycle_stats.py`, `src/hazard_stats.py` | Calendar-day gap definitions and explicit boundary-censoring semantics | calendar-gap statistics tests | HARDENED |
 | Positional path engine | `src/run_path_ui.py`, path model/probability core | Runtime verifies raw/two-digit daily continuity and date-axis equality before lag-day interpretation | strict pipeline + release checks | HARDENED |
-| Legacy path CLI | `src/run_path.py` -> `src/run_path_ui.py` | Duplicate engine removed; old command delegates to date-scoped canonical runner | compile/unit suite | SUPERSEDED |
+| Legacy path CLI | ~~`src/run_path.py`~~ -> `src/run_path_ui.py` | Duplicate engine removed; the delegating wrapper was deleted on 2026-10-06 (no caller anywhere). Run `src/run_path_ui.py` directly | strict pipeline + release checks | REMOVED |
 | Path walk-forward evaluation | `src/path_backtest.py`, `src/path_timeline_evidence.py` | Exact next-calendar-day scoring and no-lookahead timeline evidence | `test_path_timeline_evidence.py` + calendar regression coverage | HARDENED |
 | Base ML | `src/ml_features.py`, `src/ml_train.py`, `src/ml_predict.py` | Existing leakage-safe chronology retained; schema/date-aware retraining and natural-prevalence calibration retained | fresh train/predict smoke in `release_check.sh` | HARDENED / RETAINED |
 | Cầu-kèo ML | `src/cau_keo_ml.py` | Raw and two-digit histories must be daily-contiguous and date-aligned before rolling/gap/t-1/t+1/path features; model feature schema/hyperparameters unchanged | `test_cau_keo_calendar.py`, `test_cau_keo_ml.py`, production-path release smoke | HARDENED |
@@ -280,14 +280,14 @@ passed, the core release gate passed, and the research-plane release gate passed
 | `src/record_pred_history.py` | Explicit availability history + legacy sanitation; HARDENED. |
 | `src/research_firewall.py` | Calendar fail-fast before research inference; HARDENED / RESEARCH-ONLY. |
 | `src/research_legacy_extensions.py` | Legacy descriptive evidence retained under research plane; MIGRATED. |
-| `src/run_path.py` | Compatibility wrapper only; SUPERSEDED. |
+| ~~`src/run_path.py`~~ | Wrapper deleted 2026-10-06; use `src/run_path_ui.py`. REMOVED. |
 | `src/run_path_ui.py` | Canonical path runner with date-axis guard; HARDENED. |
 | `src/sources.py` | Source boundary/provider-independence contract; HARDENED. |
 | `src/statistical_signal.py` | Calendar-validated production statistical signal; HARDENED. |
 | `src/statistics_ai_overlay.py` | Date-safe canonical replacement for legacy overlay; MIGRATED. |
 | `src/strategy_lab.py` | Calendar-safe holdout geometry; HARDENED / RESEARCH-ONLY. |
 | `src/validate_data.py` | Strict data-domain/continuity gate; HARDENED. |
-| `src/vip_stats.py` | Compatibility wrapper over canonical descriptive engine; SUPERSEDED. |
+| ~~`src/vip_stats.py`~~ | Wrapper deleted 2026-10-06; use `src/descriptive_extensions.py`. REMOVED. |
 | `src/build_markdown_dashboard.py` | Compatibility wrapper over v3; SUPERSEDED. |
 | `src/build_research_lab.py` | Research evidence presentation; MIGRATED. |
 

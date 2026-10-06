@@ -61,7 +61,7 @@ def _fmt(value, digits: int = 4) -> str:
         if pd.isna(x):
             return "—"
         return f"{x:.{digits}f}"
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return html.escape(str(value)) if value not in (None, "") else "—"
 
 
@@ -236,7 +236,7 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
         return '<tr><td colspan="6">Chưa có dữ liệu</td></tr>'
     try:
         state = int(current_special)
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return '<tr><td colspan="6">Chưa có trạng thái Đặc Biệt hiện tại</td></tr>'
     view = df[df["special"].astype(int) == state].copy()
     if view.empty:

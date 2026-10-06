@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -10,6 +9,8 @@ from pathlib import Path
 from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, load_ensemble_weights
 
 import pandas as pd
+
+from safe_io import read_csv_or_empty, read_json_or_empty
 
 from page_output import write_page
 from ui_locale import column_label, localize_mapping_for_display
@@ -48,10 +49,7 @@ _COMMAND_CENTER_CSS = r"""
 
 
 def _read_json(p: Path) -> dict:
-    try:
-        return json.loads(p.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    return read_json_or_empty(p)
 
 
 def _latest_date(data_dir: Path) -> str:
@@ -162,10 +160,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         files = sorted((data_dir / "predict").glob(f"predict_next_{mode}_all_*.csv"))
         if not files:
             return pd.DataFrame()
-        try:
-            return pd.read_csv(files[-1]).sort_values("prob", ascending=False).head(20)
-        except Exception:
+        frame = read_csv_or_empty(files[-1])
+        if "prob" not in frame.columns:
             return pd.DataFrame()
+        return frame.sort_values("prob", ascending=False).head(20)
 
     pred_loto = load_pred("loto")
     pred_de = load_pred("de")

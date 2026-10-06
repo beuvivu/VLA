@@ -30,6 +30,7 @@ from typing import Literal
 import joblib
 import numpy as np
 import pandas as pd
+from safe_io import read_json_or_empty
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from cau_keo_ml import (
@@ -701,12 +702,7 @@ def run_mode(
     joblib.dump(pack, model_path)
 
     manifest_path = out_dir / f"cau_keo_manifest_{mode}.json"
-    manifest = {}
-    if manifest_path.exists():
-        try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001
-            manifest = {}
+    manifest = read_json_or_empty(manifest_path)
     manifest["domain_challenger"] = {
         "schema_version": DOMAIN_SCHEMA_VERSION,
         "active": active,

@@ -126,7 +126,7 @@ def parse_xskt_html(html_text: str, *, region: str, selected_date: date) -> list
             if len(cells) < len(provinces):
                 valid = False
                 break
-            for province, cell in zip(provinces, cells):
+            for province, cell in zip(provinces, cells[: len(provinces)], strict=True):
                 values = _cell_values(cell, width=width, count=count)
                 if len(values) != count:
                     valid = False
