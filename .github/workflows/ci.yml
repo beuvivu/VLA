@@ -23,7 +23,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Một sự kiện PR sau merge có thể dùng ref main. Không để lượt PR đã được
+  # route bỏ qua hủy lượt push main trước khi bất kỳ job kiểm thử nào bắt đầu.
+  # Lượt chạy tay cũng có nhóm riêng; push mới cùng nhánh vẫn thay lượt cũ.
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
