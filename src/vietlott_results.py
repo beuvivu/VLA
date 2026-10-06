@@ -200,12 +200,21 @@ def parse_page(product: str, html: str, url: str = "") -> list[Draw]:
     return draws
 
 
-def _get(http, url: str) -> str | None:
-    try:
-        r = http.get(url, timeout=30, headers={"User-Agent": UA, "Accept-Language": "vi-VN,vi;q=0.9"})
-    except requests.RequestException:
-        return None
-    return r.text if r.status_code == 200 else None
+def _get(http, url: str, attempts: int = 3, pause: float = 2.0) -> str | None:
+    """Trang ở ``url``; lỗi mạng hay 5xx thì thử lại. Lượt nạp 06-10-2026 mất trọn
+    hai ngày Lotto 5/35 vì một lần gọi lỗi thoáng qua không được thử lại."""
+    for attempt in range(attempts):
+        try:
+            r = http.get(url, timeout=30, headers={"User-Agent": UA, "Accept-Language": "vi-VN,vi;q=0.9"})
+        except requests.RequestException:
+            r = None
+        if r is not None and r.status_code == 200:
+            return r.text
+        if r is not None and r.status_code < 500:
+            return None
+        if attempt + 1 < attempts and pause:
+            time.sleep(pause * (attempt + 1))
+    return None
 
 
 def day_urls(product: str, day: date) -> list[str]:
@@ -255,6 +264,25 @@ def backfill_days(start: date, weekdays: tuple[int, ...] | None, limit_days: int
             yield day
 
 
+def gap_days(known: list[tuple[str, str]], weekdays: tuple[int, ...] | None) -> list[date]:
+    """Các ngày quay nằm giữa hai kỳ đã lưu mà số kỳ bị đứt quãng.
+
+    ``known`` là (số kỳ, ngày). Tính cả hai ngày đầu mút vì Lotto 5/35 quay hai
+    kỳ một ngày: kỳ thiếu có thể cùng ngày với kỳ đã có.
+    """
+    rows = sorted((int(did), day) for did, day in known)
+    days: set[date] = set()
+    for (a_id, a_day), (b_id, b_day) in zip(rows, rows[1:]):
+        if b_id - a_id <= 1:
+            continue
+        cursor, end = date.fromisoformat(a_day), date.fromisoformat(b_day)
+        while cursor <= end:
+            if weekdays is None or cursor.weekday() in weekdays:
+                days.add(cursor)
+            cursor += timedelta(days=1)
+    return sorted(days, reverse=True)
+
+
 def crawl_product(db, http, product: str, limit: int = 500, delay: float = 0.15,
                   mode: str = "update") -> tuple[int, int]:
     """Trả (số kỳ đọc được, số kỳ mới ghi)."""
@@ -275,6 +303,13 @@ def crawl_product(db, http, product: str, limit: int = 500, delay: float = 0.15,
             draws.extend(found)
             if delay:
                 time.sleep(delay)
+    # Vá lỗ hổng: số kỳ đứt quãng giữa hai kỳ đã lưu thì đọc lại các ngày ở giữa.
+    stored = list(db.execute("SELECT draw_id, draw_date FROM draws WHERE product=?", (product,)))
+    stored += [(d.draw_id, d.draw_date) for d in draws]
+    for day in gap_days(stored, PRODUCTS[product][5])[:limit]:
+        draws.extend(fetch_day(http, product, day))
+        if delay:
+            time.sleep(delay)
     added = 0
     for draw in draws:
         if draw.draw_id not in known:
