@@ -29149,7 +29149,7 @@
     "number":8,
     "number_str":"08",
     "freq":1,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -29157,14 +29157,14 @@
     "number":51,
     "number_str":"51",
     "freq":1,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "number":54,
     "number_str":"54",
-    "freq":1,
+    "freq":2,
     "rank_in_period":1
   },
   {
@@ -29173,7 +29173,7 @@
     "number":61,
     "number_str":"61",
     "freq":1,
-    "rank_in_period":1
+    "rank_in_period":2
   },
   {
     "period_kind":"month",
@@ -29181,6 +29181,6 @@
     "number":83,
     "number_str":"83",
     "freq":1,
-    "rank_in_period":1
+    "rank_in_period":2
   }
 ]
