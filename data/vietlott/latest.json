@@ -2,30 +2,13 @@
   "source": "xskt.com.vn",
   "timezone": "Asia/Ho_Chi_Minh",
   "counts": {
-    "power655": 1200,
-    "mega645": 1199,
-    "max3d": 1140,
-    "max3dpro": 786,
+    "mega645": 1570,
+    "power655": 1406,
+    "max3d": 1141,
+    "max3dpro": 787,
     "lotto535": 924
   },
   "latest": {
-    "power655": {
-      "draw_id": "01406",
-      "draw_date": "2026-10-03",
-      "result": [
-        "07",
-        "11",
-        "13",
-        "16",
-        "18",
-        "54"
-      ],
-      "bonus": "41",
-      "jackpot_1": 112784140200,
-      "jackpot_2": 3695872550,
-      "meta": {},
-      "source_url": "https://xskt.com.vn/xspower"
-    },
     "mega645": {
       "draw_id": "01571",
       "draw_date": "2026-10-04",
@@ -42,6 +25,23 @@
       "jackpot_2": null,
       "meta": {},
       "source_url": "https://xskt.com.vn/xsmega645"
+    },
+    "power655": {
+      "draw_id": "01406",
+      "draw_date": "2026-10-03",
+      "result": [
+        "07",
+        "11",
+        "13",
+        "16",
+        "18",
+        "54"
+      ],
+      "bonus": "41",
+      "jackpot_1": 112784140200,
+      "jackpot_2": 3695872550,
+      "meta": {},
+      "source_url": "https://xskt.com.vn/xspower"
     },
     "max3d": {
       "draw_id": "01141",
