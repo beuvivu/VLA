@@ -97,9 +97,9 @@ def ensure_up_to_date(
         had_before = lottery.has_date(d)
 
         ok = False
+        age_days = max(0, (target - d).days)
+        min_agreement = consensus_min_recent if age_days <= consensus_recent_days else 1
         for attempt in range(1, max_retries + 1):
-            age_days = max(0, (target - d).days)
-            min_agreement = consensus_min_recent if age_days <= consensus_recent_days else 1
             lottery.fetch(d, min_agreement=min_agreement)
             if lottery.has_date(d):
                 ok = True
