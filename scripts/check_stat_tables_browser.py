@@ -79,7 +79,7 @@ def check_full_history(page):
     """Cuộn tới ngày cũ nhất, quay lại và đổi chiều mà không dựng hàng trăm nghìn ô."""
     results = []
     for orientation in ("Xem theo chiều ngang", "Xem theo chiều dọc"):
-        page.locator("#sp-orient").select_option(label=orientation)
+        page.locator("#sp-orient").select_option(value=orientation)
         page.locator("#sp-sort").select_option('hit-desc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.wait_for_function("document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
@@ -167,7 +167,7 @@ def check_full_history(page):
 def check_small_selection(page, pair_page):
     """Khung cũng phải co lại sau dải rỗng hoặc chỉ còn một cặp."""
     if pair_page:
-        page.locator('#sp-orient').select_option(label='Xem theo chiều dọc')
+        page.locator('#sp-orient').select_option(value='Xem theo chiều dọc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.locator('details').filter(has=page.locator('#bf-pair-picker')).locator('summary').click()
         page.locator('[data-bf-pick="none"]').click()
@@ -212,7 +212,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                 orientations = ("Xem theo chiều ngang", "Xem theo chiều dọc") if frequency else (None,)
                 for orientation in orientations:
                     if orientation:
-                        page.locator("#sp-orient").select_option(label=orientation)
+                        page.locator("#sp-orient").select_option(value=orientation)
                         counts = page.evaluate("""() => {
                           const expected = selected().map(r => r.d);
                           const dates = new Set(Array.from(document.querySelectorAll('#sp-matrix-grid [data-key]'),
