@@ -66,6 +66,9 @@ def test_a_programming_error_is_not_swallowed(tmp_path: Path) -> None:
     path.write_text("a\n1\n", encoding="utf-8")
     with pytest.raises(TypeError):
         safe_io.read_csv_or_empty(path, no_such_option=True)
+    # ValueError trần của pandas cũng là lỗi tham số, không phải tệp hỏng.
+    with pytest.raises(ValueError, match="engine"):
+        safe_io.read_csv_or_empty(path, engine="no-such-engine")
 
 
 def test_the_page_builders_read_through_safe_io(tmp_path: Path, caplog) -> None:

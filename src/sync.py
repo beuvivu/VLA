@@ -104,13 +104,16 @@ def ensure_up_to_date(
             if lottery.has_date(d):
                 ok = True
                 break
-            if lottery.is_no_draw(d):
+            # Trong cửa sổ gần, trùng khít còn có thể là trang nguồn CHƯA cập
+            # nhật kỳ mới (bộ phân tích đóng dấu ngày được hỏi lên kỳ cũ), nên
+            # vẫn thử lại. Ngoài cửa sổ thì trùng khít là ngày không quay.
+            if lottery.is_no_draw(d) and age_days > consensus_recent_days:
                 break
             sleep_s = retry_backoff_s * attempt
             logger.warning("No data for %s (attempt %d/%d). Sleep %.1fs then retry.", d, attempt, max_retries, sleep_s)
             time.sleep(sleep_s)
 
-        if lottery.is_no_draw(d):
+        if not ok and lottery.is_no_draw(d) and age_days > consensus_recent_days:
             logger.warning(
                 "%s là ngày không quay; ghi vào data/non_draw_days.json để lượt sau bỏ qua", d
             )

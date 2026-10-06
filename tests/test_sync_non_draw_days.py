@@ -122,3 +122,28 @@ def test_by_default_ensure_up_to_date_skips_the_shipped_ledger(setup, monkeypatc
     monkeypatch.setattr(sync, "known_non_draw_days", lambda: frozenset({gap_known.isoformat()}))
     sync.ensure_up_to_date(lottery=lot, fill_missing_days_back=9, polite_sleep_s=0.0)
     assert gap_known not in source.calls
+
+
+def test_a_twin_inside_the_recent_window_is_still_retried(tmp_path: Path, monkeypatch) -> None:
+    """Kỳ mới vừa quay: trang nguồn có thể còn hiện kỳ trước và bộ phân tích
+    đóng dấu ngày được hỏi lên đó. Trong cửa sổ đồng thuận, trùng khít CHƯA chắc
+    là ngày không quay, nên phải thử lại để kịp lấy kết quả vừa đăng."""
+    monkeypatch.setattr(sync.time, "sleep", lambda s: None)
+    target = _target()
+    paths = RepoPaths(root=tmp_path, data_dir=tmp_path / "data", images_dir=tmp_path / "images")
+    first, second = CountingSource(answers={}, name="a"), CountingSource(answers={}, name="b")
+    lot = Lottery(paths=paths, http=object(), sources=[first, second])  # type: ignore[arg-type]
+    for k in range(1, 10):
+        day = target - timedelta(days=k)
+        lot._data[day] = _result(day, special=10000 + k)  # type: ignore[attr-defined]
+    lot.generate_dataframes()
+    monkeypatch.setattr(lot, "dump", lambda: None)
+    stale = _result(target, special=lot._data[target - timedelta(days=1)].special)  # type: ignore[attr-defined]
+    first.answers[target] = second.answers[target] = stale
+
+    sync.ensure_up_to_date(
+        lottery=lot, fill_missing_days_back=9, polite_sleep_s=0.0,
+        max_retries=3, retry_backoff_s=0.8, non_draw_days=set(),
+    )
+    assert lot.is_no_draw(target), "điều kiện tiền đề: trùng khít đã được nhận ra"
+    assert first.calls.count(target) == 3

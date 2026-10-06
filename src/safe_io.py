@@ -10,10 +10,11 @@ Luật ở đây tách ba trường hợp:
 
 * tệp không có hoặc rỗng  -> trả rỗng, im lặng (trạng thái bình thường khi
   pipeline chưa sinh tệp);
-* tệp có nhưng không đọc được (``OSError``, ``ValueError`` — gồm lỗi phân tích
-  CSV, lỗi giải mã JSON và lỗi giải mã chữ) -> trả rỗng VÀ ghi cảnh báo nêu
-  đường dẫn cùng lỗi;
-* mọi lỗi khác (``TypeError``, ``NameError``…) -> để nổ: đó là lỗi của mã.
+* tệp có nhưng không đọc được (``OSError``, lỗi phân tích CSV, lỗi giải mã JSON,
+  lỗi giải mã chữ) -> trả rỗng VÀ ghi cảnh báo nêu đường dẫn cùng lỗi;
+* mọi lỗi khác (``TypeError``, ``NameError``, và cả ``ValueError`` chung — mà
+  ``pd.read_csv`` ném cho tham số sai như ``engine`` lạ) -> để nổ: đó là lỗi của
+  mã.
 """
 
 from __future__ import annotations
@@ -27,10 +28,15 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-#: Lỗi của DỮ LIỆU, không phải của mã. ``pd.errors.ParserError``,
-#: ``pd.errors.EmptyDataError``, ``json.JSONDecodeError`` và
-#: ``UnicodeDecodeError`` đều là lớp con của ``ValueError``.
-DATA_ERRORS: tuple[type[BaseException], ...] = (OSError, ValueError)
+#: Lỗi của DỮ LIỆU, không phải của mã. Cố ý KHÔNG bắt ``ValueError`` chung:
+#: cả ba lớp dưới đây là lớp con của nó, nhưng ``ValueError`` trần từ
+#: ``pd.read_csv`` thường là tham số sai.
+CSV_DATA_ERRORS: tuple[type[BaseException], ...] = (
+    OSError, UnicodeDecodeError, pd.errors.ParserError, pd.errors.EmptyDataError,
+)
+JSON_DATA_ERRORS: tuple[type[BaseException], ...] = (
+    OSError, UnicodeDecodeError, json.JSONDecodeError,
+)
 
 
 def _present(path: Path) -> bool:
@@ -48,7 +54,7 @@ def read_csv_or_empty(path: Path, **kwargs: Any) -> pd.DataFrame:
         return pd.DataFrame()
     try:
         return pd.read_csv(path, **kwargs)
-    except DATA_ERRORS as error:
+    except CSV_DATA_ERRORS as error:
         logger.warning("bỏ qua %s vì không đọc được: %s", path, error)
         return pd.DataFrame()
 
@@ -60,6 +66,6 @@ def read_json_or_empty(path: Path) -> Any:
         return {}
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except DATA_ERRORS as error:
+    except JSON_DATA_ERRORS as error:
         logger.warning("bỏ qua %s vì không đọc được: %s", path, error)
         return {}
