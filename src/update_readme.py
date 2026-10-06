@@ -126,14 +126,14 @@ def _load_fun_prediction(path: Path = FUN_PREDICTION) -> dict[str, Any]:
 def _fmt_iso_date(value: Any) -> str:
     try:
         return date.fromisoformat(str(value)[:10]).strftime("%d-%m-%Y")
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return str(value or "—")
 
 
 def _fmt_prob(value: Any, decimals: int) -> str:
     try:
         return f"{float(value):.{decimals}f}%"
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return "—"
 
 

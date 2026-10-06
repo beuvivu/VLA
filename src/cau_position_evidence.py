@@ -25,6 +25,8 @@ from typing import Literal
 import numpy as np
 import pandas as pd
 
+from safe_io import read_csv_or_empty
+
 from lottery import Lottery
 from path_models import PathParams, index_to_label
 from path_prob import fit_paths, paths_to_dataframe
@@ -115,7 +117,7 @@ def _pretty_position_label(code: str) -> str:
         field, digit = code.split(".d", 1)
         digit_no = int(digit) + 1
         return f"{FIELD_DISPLAY_NAMES.get(field, field)} · số {digit_no}"
-    except Exception:
+    except (AttributeError, ValueError):
         return code
 
 
@@ -130,12 +132,7 @@ def _to_date(value: object) -> date:
 
 
 def _read_csv(path: Path, *, dtype: dict[str, object] | str | None = None) -> pd.DataFrame:
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return pd.DataFrame()
-        return pd.read_csv(path, dtype=dtype, keep_default_na=False)
-    except Exception:
-        return pd.DataFrame()
+    return read_csv_or_empty(path, dtype=dtype, keep_default_na=False)
 
 
 def _safe_float(value: object, default: float = 0.0) -> float:
@@ -146,7 +143,7 @@ def _safe_float(value: object, default: float = 0.0) -> float:
         if not np.isfinite(out):
             return default
         return out
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return default
 
 

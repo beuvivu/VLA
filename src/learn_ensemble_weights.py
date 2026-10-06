@@ -213,7 +213,7 @@ def _optimize_weights_continuous(
     """Optimize five non-negative weights on the simplex using recent LogLoss."""
     try:
         from scipy.optimize import minimize
-    except Exception:  # pragma: no cover
+    except ImportError:  # pragma: no cover
         minimize = None
 
     def eval_scores(w: np.ndarray) -> tuple[float, float]:

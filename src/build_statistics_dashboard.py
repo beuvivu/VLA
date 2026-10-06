@@ -9,13 +9,14 @@ CDNs, or JavaScript frameworks.
 """
 
 import html
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
+
+from safe_io import read_csv_or_empty, read_json_or_empty
 
 from ui_locale import (
     COLUMN_LABELS,
@@ -40,22 +41,12 @@ PERIOD_TITLES = {
 def _read_csv(
     path: Path, *, dtype: dict[str, object] | str | None = None, nrows: int | None = None
 ) -> pd.DataFrame:
-    """Read a CSV defensively and return an empty DataFrame on bad/missing files."""
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return pd.DataFrame()
-        return pd.read_csv(path, dtype=dtype, nrows=nrows, keep_default_na=False)
-    except Exception:
-        return pd.DataFrame()
+    """Đọc CSV; thiếu/rỗng/hỏng thì DataFrame rỗng (luật ở ``safe_io``)."""
+    return read_csv_or_empty(path, dtype=dtype, nrows=nrows, keep_default_na=False)
 
 
 def _read_json(path: Path) -> dict:
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return {}
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    return read_json_or_empty(path)
 
 
 def _safe_columns(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
@@ -80,7 +71,7 @@ def _number_to_int(value: object) -> int | None:
         return None
     try:
         n = int(float(s))
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return None
     return n if 0 <= n <= 99 else None
 
@@ -97,7 +88,7 @@ def _fmt_value(value: object, *, decimals: int = 0, percent: bool = False) -> st
         return ""
     try:
         x = float(value)
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return html.escape(str(value))
     if percent:
         return f"{x * 100:.1f}%"
@@ -228,7 +219,7 @@ def _number_map(df: pd.DataFrame, value_col: str) -> dict[int, float]:
             continue
         try:
             values[number] = float(row.get(value_col, 0) or 0)
-        except Exception:
+        except (TypeError, ValueError):
             values[number] = 0.0
     return values
 

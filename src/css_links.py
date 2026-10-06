@@ -6,7 +6,9 @@ from pathlib import Path
 
 try:
     from critical_css_generated import CRITICAL_CSS as _GENERATED
-except Exception:
+except ImportError:
+    # Chỉ khi module sinh ra CHƯA có; module có mà hỏng thì phải nổ, không lặng
+    # lẽ lùi về bản dự phòng.
     _GENERATED = None
 
 _FALLBACK_CRITICAL = (

@@ -29,6 +29,7 @@ import sqlite3
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
@@ -272,7 +273,7 @@ def gap_days(known: list[tuple[str, str]], weekdays: tuple[int, ...] | None) -> 
     """
     rows = sorted((int(did), day) for did, day in known)
     days: set[date] = set()
-    for (a_id, a_day), (b_id, b_day) in zip(rows, rows[1:]):
+    for (a_id, a_day), (b_id, b_day) in pairwise(rows):
         if b_id - a_id <= 1:
             continue
         cursor, end = date.fromisoformat(a_day), date.fromisoformat(b_day)

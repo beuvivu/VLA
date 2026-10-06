@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 import numpy as np
 import pandas as pd
+from safe_io import read_json_or_empty
 import requests
 
 from dtos import Result, ResultList
@@ -70,6 +71,10 @@ class Lottery:
 
         self._data: dict[date, Result] = {}
         self._fetch_audit: dict[str, dict[str, Any]] = {}
+        # Ngày mà lần lấy trong PHIÊN NÀY đã xác định là không quay (nguồn trả
+        # kết quả trùng khít một kỳ đã lưu). Thử lại trong vài giây không đổi
+        # được kết luận ấy.
+        self._no_draw: set[date] = set()
 
         self._raw_data: pd.DataFrame = pd.DataFrame()
         self._2_digits_data: pd.DataFrame = pd.DataFrame()
@@ -120,12 +125,7 @@ class Lottery:
         )
         if self._fetch_audit:
             audit_path = self._paths.data_dir / "source_audit.json"
-            existing: dict[str, Any] = {}
-            if audit_path.exists():
-                try:
-                    existing = json.loads(audit_path.read_text(encoding="utf-8"))
-                except Exception:
-                    existing = {}
+            existing: dict[str, Any] = read_json_or_empty(audit_path)
             existing.update(self._fetch_audit)
             # Keep the audit compact: latest 120 requested dates.
             trimmed = dict(sorted(existing.items())[-120:])
@@ -209,6 +209,7 @@ class Lottery:
                         "kết quả gần nhất",
                         selected_date, twin,
                     )
+                    self._no_draw.add(selected_date)
                     return False
                 self._data[selected_date] = result
                 self._fetch_audit[selected_date.isoformat()] = {
@@ -294,6 +295,7 @@ class Lottery:
                 self._fetch_audit[selected_date.isoformat()]["rejected_reason"] = (
                     f"trùng khít kỳ {twin.isoformat()}"
                 )
+                self._no_draw.add(selected_date)
                 return False
             self._data[selected_date] = best[0][1]
             logger.info(
@@ -370,3 +372,7 @@ class Lottery:
 
     def has_date(self, d: date) -> bool:
         return d in self._data
+
+    def is_no_draw(self, d: date) -> bool:
+        """``d`` vừa được xác định là ngày không quay trong phiên này."""
+        return d in self._no_draw
