@@ -32,6 +32,7 @@ UA = (
 MAX_ROWS = 3
 MAX_COLS = 16
 MAX_TABLES = 6
+BODY_CHARS = int(os.environ.get("BODY_CHARS", "600"))
 
 
 def summarise_table(table, index: int) -> None:
@@ -123,6 +124,13 @@ def main() -> int:
 
         print(f"  HTTP {response.status_code}, {len(response.content) / 1024:.0f} KB")
         if response.status_code != 200:
+            # Trang lỗi cũng là bằng chứng: tường lửa, chặn theo vùng hay thách
+            # thức trình duyệt mỗi loại để lại header và thân trang khác nhau.
+            for key in ("server", "content-type", "cf-ray", "x-cache", "via", "x-powered-by"):
+                if key in response.headers:
+                    print(f"    {key}: {response.headers[key]}")
+            text = BeautifulSoup(response.text, "lxml").get_text(" ", strip=True)
+            print(f"    thân trang: {text[:BODY_CHARS]!r}")
             failures += 1
             continue
 
