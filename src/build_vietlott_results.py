@@ -5,6 +5,7 @@ from pathlib import Path
 from css_links import stylesheet_link
 from page_output import write_page
 from ui_theme import app_shell_open,app_shell_close
+from vietlott_results import PRODUCTS as SOURCES, TRIPLE_GROUPS
 from web_security import security_meta_tags
 
 PRODUCTS={
@@ -33,10 +34,15 @@ def result_markup(product,result,bonus,meta):
  if product=="bingo18":
   total=meta.get("sum",sum(map(int,result)));band=meta.get("band","")
   return balls(result)+f'<span class="vl-bingo-meta">Tổng <b>{total}</b> · {html.escape(str(band))}</span>'
- groups=meta.get("groups") or {"special":result[:2],"first":result[2:6],"second":result[6:12],"third":result[12:20]}
+ # Max 3D xếp Nhất/Nhì/Ba/Tư, Max 3D Pro xếp ĐB/Nhất/Nhì/Ba — lấy đúng nhóm bộ thu thập đã ghi.
+ order=[(key,label,n) for key,label,n in TRIPLE_GROUPS.get(product,())]
+ groups=meta.get("groups") or {}
+ if not groups and order:
+  i=0
+  for key,_,n in order: groups[key]=result[i:i+n]; i+=n
  return '<div class="vl-3d">'+''.join(
   f'<div><small>{label}</small><span>{" · ".join(html.escape(x) for x in groups.get(key,[]))}</span></div>'
-  for key,label in (("special","Đặc Biệt"),("first","Nhất"),("second","Nhì"),("third","Ba")) )+'</div>'
+  for key,label,_ in order)+'</div>'
 
 def card(product,row,compact=False):
  did,day,rj,bonus,j1,j2,mj,url=row; result=json.loads(rj);meta=json.loads(mj or "{}")
@@ -63,10 +69,12 @@ def nav_products(active=""):
 
 def page(product,data,count):
  name,file,desc=PRODUCTS[product]
- cards="".join(card(product,r) for r in data) or '<div class="vl-empty">Chưa có dữ liệu đã đồng bộ.</div>'
+ empty=("Nguồn đang dùng chưa đăng kết quả sản phẩm này, nên chưa có dữ liệu." if SOURCES[product][1]=="unavailable"
+  else "Chưa có dữ liệu đã đồng bộ.")
+ cards="".join(card(product,r) for r in data) or f'<div class="vl-empty">{empty}</div>'
  return f'''<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">{security_meta_tags()}{stylesheet_link()}<title>{name} · Vietlott</title><style>{STYLE}</style></head><body>
  {app_shell_open(file,wide=True)}
- <section class="vl-hero"><span class="vl-kicker">VIETLOTT · KẾT QUẢ CHÍNH THỨC</span><h1>{name}</h1><p>Theo dõi kết quả, lịch sử kỳ quay và dữ liệu nền phục vụ phân tích. Dữ liệu chỉ lấy từ kết quả công bố chính thức.</p><span class="vl-source">{count:,} kỳ đã lưu</span></section>
+ <section class="vl-hero"><span class="vl-kicker">VIETLOTT · KẾT QUẢ</span><h1>{name}</h1><p>Theo dõi kết quả, lịch sử kỳ quay và dữ liệu nền phục vụ phân tích. Kết quả các kỳ đã công bố, lưu theo từng sản phẩm.</p><span class="vl-source">{count:,} kỳ đã lưu</span></section>
  {nav_products(product)}
  <section class="vl-toolbar"><label>Tìm ngày / kỳ quay<input id="vl-search" type="search" placeholder="VD: 2026-10-05 hoặc 00832"></label></section>
  <section class="vl-grid" id="vl-grid">{cards}</section>
@@ -80,7 +88,7 @@ def overview(latest,counts):
   body=result_markup(key,json.loads(r[2]),r[3],json.loads(r[6] or "{}")) if r else "Chưa đồng bộ"
   tiles.append(f'<a class="vl-draw" href="{file}" style="text-decoration:none;color:inherit"><div class="vl-draw-head"><strong>{name}</strong><small>{counts.get(key,0):,} kỳ</small></div><div class="vl-result">{body}</div></a>')
  return f'''<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">{security_meta_tags()}{stylesheet_link()}<title>Vietlott · Kết quả</title><style>{STYLE}</style></head><body>
- {app_shell_open("vietlott.html",wide=True)}<section class="vl-hero"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span><h1>Kết quả Vietlott</h1><p>Một cơ sở dữ liệu riêng cho Lotto 5/35, Mega 6/45, Power 6/55, Max 3D/3D+, Max 3D Pro, Keno và Bingo18. XSMB vẫn là miền ưu tiên của hệ thống.</p><span class="vl-source">Kết quả công bố chính thức</span></section>{nav_products()}<section class="vl-grid">{"".join(tiles)}</section>{app_shell_close("vietlott.html")}</body></html>'''
+ {app_shell_open("vietlott.html",wide=True)}<section class="vl-hero"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span><h1>Kết quả Vietlott</h1><p>Một cơ sở dữ liệu riêng cho Lotto 5/35, Mega 6/45, Power 6/55, Max 3D/3D+, Max 3D Pro, Keno và Bingo18. XSMB vẫn là miền ưu tiên của hệ thống.</p><span class="vl-source">Kết quả các kỳ đã công bố</span></section>{nav_products()}<section class="vl-grid">{"".join(tiles)}</section>{app_shell_close("vietlott.html")}</body></html>'''
 
 def build(root):
  """Luôn dựng đủ 8 trang qua write_page; chưa có cơ sở dữ liệu thì in trạng thái trống.

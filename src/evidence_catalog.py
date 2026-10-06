@@ -457,7 +457,8 @@ def _vietlott(step: str) -> tuple[Evidence, list[Section]]:
     """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
     return _ev([{
         "title": "Sổ kết quả Vietlott đã lưu",
-        "snippet": "Kết quả các kỳ quay đã công bố chính thức, lưu theo từng sản phẩm; "
+        "snippet": "Kết quả các kỳ quay đã công bố, lưu theo từng sản phẩm (Keno, Bingo18 chưa "
+                   "có nguồn đọc được); "
                    "không dùng trong dự báo XSMB.",
     }], [
         "Đọc sổ kết quả Vietlott đã lưu theo sản phẩm.",
