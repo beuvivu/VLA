@@ -129,13 +129,14 @@ def load_draws(repo_root: Path) -> list[dict[str, object]]:
     return draws
 
 
-def _range_controls(*, mode: str = "day", pairs: bool = True) -> str:
+def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = False) -> str:
     """Thanh chọn dải thời gian.
 
     Args:
         mode: ``day`` cho hai ô chọn ngày, ``preset`` cho các nút nhanh.
         pairs: Có ô tick "Tự động đánh dấu cặp trùng" hay không. Đặt ``False``
             cho trang mà không ô nào mang số hai chữ số.
+        weekday: Thêm bộ lọc thứ trong dải ngày cho trang tổng hợp.
 
     Returns:
         Chuỗi HTML.
@@ -168,6 +169,7 @@ def _range_controls(*, mode: str = "day", pairs: bool = True) -> str:
     <div class="sp-controls">
       <label>Từ ngày <input type="date" id="sp-from"></label>
       <label>Đến ngày <input type="date" id="sp-to"></label>
+      {_weekday_filter() if weekday else ""}
       <div class="sp-chips">{presets}</div>
       <span class="sp-count" id="sp-count" data-evidence-split></span>
       {_mark_tools(pairs=pairs)}
@@ -347,9 +349,9 @@ PAGES: tuple[StatPage, ...] = (
         controls='<div class="sp-controls">'
                  '<label>Từ ngày <input type="date" id="sp-from"></label>'
                  '<label>Đến ngày <input type="date" id="sp-to"></label>'
-                 '<label>Chiều <select id="sp-orient">'
-                 '<option>Xem theo chiều ngang</option>'
-                 '<option>Xem theo chiều dọc</option></select></label>'
+                 '<label>Hiển thị <select id="sp-orient">'
+                 '<option value="Xem theo chiều ngang">Số theo hàng</option>'
+                 '<option value="Xem theo chiều dọc">Ngày theo hàng</option></select></label>'
                  + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
                  '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=_gan_modal() +
@@ -368,9 +370,9 @@ PAGES: tuple[StatPage, ...] = (
         controls='<div class="sp-controls">'
                  '<label>Từ ngày <input type="date" id="sp-from"></label>'
                  '<label>Đến ngày <input type="date" id="sp-to"></label>'
-                 '<label>Chiều <select id="sp-orient">'
-                 '<option>Xem theo chiều ngang</option>'
-                 '<option>Xem theo chiều dọc</option></select></label>'
+                 '<label>Hiển thị <select id="sp-orient">'
+                 '<option value="Xem theo chiều ngang">Cặp theo hàng</option>'
+                 '<option value="Xem theo chiều dọc">Ngày theo hàng</option></select></label>'
                  + _weekday_filter() + _quick_ranges() + _sort_menu() + _gan_picker() +
                  '<span class="sp-count" id="sp-count" data-evidence-split></span>' + _mark_tools() + '</div>',
         body=_gan_modal() +
@@ -491,8 +493,8 @@ PAGES: tuple[StatPage, ...] = (
     StatPage(
         slug="thong-ke-tong-hop",
         title="Thống kê tổng hợp",
-        subtitle="Bảng tổng hợp đa chiều: tần suất, chu kỳ gan, đầu đuôi và tổng trên cùng một dải.",
-        controls=_range_controls(),
+        subtitle="Tần suất LOTO, phân bố đầu – đuôi – tổng và chu kỳ Đặc Biệt từ lịch sử XSMB.",
+        controls=_range_controls(weekday=True),
         body='<div id="sp-kpi" class="sp-kpi"></div>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderOverview",
@@ -631,44 +633,120 @@ def chance_note_context(n_draws: int) -> dict[str, str]:
 
 
 
+def _statistics_tabs(active: str) -> str:
+    """Ba trang thống kê cùng một lối đi, giữ rõ trang đang xem."""
+    links = (
+        ("thong-ke-tong-hop", "Tổng hợp", "Đa chiều"),
+        ("tan-suat-loto", "Tần suất LOTO", "00–99"),
+        ("tan-suat-cap-loto", "Tần suất cặp", "50 họ cặp"),
+    )
+    current = ' aria-current="page"'
+    return '<nav class="bf-tabs" aria-label="Loại thống kê">' + "".join(
+        f'<a href="{slug}.html"'
+        f'{current if slug == active else ""}>'
+        f'{label}<span>{hint}</span></a>'
+        for slug, label, hint in links
+    ) + '</nav>'
+
+
+def overview_layout(page: StatPage) -> str:
+    """Tổng hợp theo luồng đọc: dải dữ liệu, phân bố, rồi chi tiết từng số."""
+    distribution = "".join(
+        f'<section class="bf-card bf-distribution" aria-labelledby="bf-{key}-title">'
+        '<header class="bf-card-heading"><div>'
+        f'<h2 id="bf-{key}-title">{title}</h2></div></header>'
+        f'<p class="bf-section-copy">{hint}</p>'
+        f'<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair"'
+        f' id="sp-overview-{key}" aria-label="{title}"></table></div></section>'
+        for key, title, hint in (
+            ("head", "Theo chữ số đầu", "Hàng chục của từng số LOTO."),
+            ("tail", "Theo chữ số đuôi", "Hàng đơn vị của từng số LOTO."),
+            ("sum", "Theo tổng hai chữ số", "Cộng đầu và đuôi, lấy chữ số cuối."),
+        )
+    )
+    return f"""
+<div class="bf-topline"><a href="statistics.html">← Thống kê</a><span class="bf-live">Lịch sử XSMB · Miền Bắc</span></div>
+<header class="bf-hero">
+  <div><p class="bf-eyebrow">THỐNG KÊ / MIỀN BẮC</p><h1>{page.title}</h1>
+  <p>{page.subtitle}</p></div>
+  <a class="bf-demo-link" href="tan-suat-loto.html">Xem từng kỳ quay ↗</a>
+</header>
+{_statistics_tabs(page.slug)}
+<section class="bf-card bf-filters" aria-labelledby="bf-filter-title">
+  <header class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Chọn dải dữ liệu</h2></div><span>Áp dụng cho tần suất và phân bố LOTO</span></header>
+  {page.controls}
+</section>
+<section id="sp-kpi" class="sp-kpi bf-kpis" aria-label="Tóm tắt dữ liệu"></section>
+<section class="bf-card bf-totals" aria-labelledby="bf-overview-matrix-title">
+  <header class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-overview-matrix-title">Tần suất LOTO 00–99</h2></div><span id="sp-overview-total" data-evidence-split></span></header>
+  <p class="bf-section-copy">Mỗi ô là tổng số nháy của một số trong dải đã chọn. Xếp từ 00 đến 99 để đối chiếu nhanh.</p>
+  <div id="sp-overview-matrix" class="sp-matrix"></div>
+</section>
+<div class="bf-distributions">{distribution}</div>
+<section class="bf-card bf-ranking" aria-labelledby="bf-overview-ranking-title">
+  <header class="bf-card-heading"><div><span class="bf-step">03</span><h2 id="bf-overview-ranking-title">40 số LOTO về nhiều nhất</h2></div><span>Đối chiếu với chu kỳ Đặc Biệt</span></header>
+  <p class="bf-section-copy">Tần suất LOTO theo bộ lọc phía trên. Gan và chu kỳ Đặc Biệt tính trên toàn bộ lịch sử, đến kỳ mới nhất đã có kết quả.</p>
+  <div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid" aria-label="Tần suất LOTO và chu kỳ Đặc Biệt"></table></div>
+</section>
+<section class="bf-card bf-guide" aria-labelledby="bf-guide-title">
+  <header class="bf-card-heading"><div><h2 id="bf-guide-title">Hiểu đúng các chỉ số</h2></div><span>Thống kê mô tả từ lịch sử</span></header>
+  <div class="bf-guide-grid">
+    <div><h3>Số nháy LOTO</h3><p>Một số xuất hiện nhiều lần trong cùng kỳ được cộng đủ từng lần. Mỗi kỳ XSMB có 27 kết quả LOTO.</p></div>
+    <div><h3>So với kỳ vọng</h3><p id="sp-overview-expected" data-evidence-split></p><p>Số dẫn đầu trong 100 số có thể cao hơn mức này ngay cả khi kết quả ngẫu nhiên.</p></div>
+    <div><h3>Gan và chu kỳ Đặc Biệt</h3><p>Gan là số kỳ chưa xuất hiện ở giải Đặc Biệt. Chu kỳ dài nhất là khoảng cách giữa hai lần xuất hiện đã ghi nhận. Gan dài không có nghĩa là sắp về.</p></div>
+  </div>
+</section>
+<script type="application/json" id="sp-stat-evidence" data-app-evidence-values>{{}}</script>
+"""
+
+
 def frequency_bento_layout(page: StatPage, note_html: str) -> str:
-    """Bento layout for the two frequency pages; controls keep existing IDs."""
+    """Hai trang tần suất theo luồng dọc, giữ các định danh điều khiển sẵn có."""
     pairs = page.slug == "tan-suat-cap-loto"
     label = "cặp số" if pairs else "số lô tô"
     picker = (
         '<div id="bf-pair-picker"></div>' if pairs
         else '<div class="sp-picker" id="sp-picker"></div>'
     )
-    matrix = "Tổng quan 00–99" if not pairs else "Đọc ma trận cặp số"
-    overview = (
-        '<div id="sp-matrix" class="sp-matrix"></div>' if not pairs
-        else '<p>Mỗi ô cộng số lần xuất hiện của hai thành viên trong cùng kỳ. '
-             'Ví dụ 12 về 2 lần và 21 về 1 lần: ô 12–21 hiển thị <b>3</b>.</p>'
-             '<p>Ngôi sao đỏ cho biết một thành viên là hai số cuối Giải Đặc Biệt. '
-             '50 họ gồm 45 cặp đảo và 5 cặp kép bóng.</p>'
-             '<p>Bảng đồng xuất hiện tính số kỳ <b>cả hai số cùng về</b>, '
-             'trên toàn bộ 4.950 cặp khác nhau.</p>'
+    matrix = "Tổng số nháy theo 50 họ cặp" if pairs else "Tổng số nháy 00–99"
+    total_id = "bf-pair-totals" if pairs else "sp-matrix"
+    guide = (
+        '<div><h3>Đọc ma trận cặp số</h3><p>Mỗi ô cộng số nháy của hai thành viên '
+        'trong cùng kỳ. Ví dụ 12 về 2 nháy và 21 về 1 nháy: ô 12–21 hiển thị '
+        '<b>3</b>.</p></div>'
+        '<div><h3>50 họ cặp</h3><p>Gồm 45 cặp đảo hai chữ số và 5 cặp kép bóng. '
+        'Tổng nháy theo họ cặp cộng đủ các lần xuất hiện, kể cả khi chỉ một '
+        'thành viên về.</p></div>'
+        '<div><h3>Đồng xuất hiện</h3><p>Bảng xếp hạng xét toàn bộ 4.950 cặp số khác '
+        'nhau. Mỗi kỳ chỉ tính một lần nếu <b>cả hai số cùng về</b>; phép đếm '
+        'này khác tổng nháy của họ cặp.</p></div>'
+        if pairs else
+        '<div><h3>Đọc ma trận theo kỳ</h3><p>Số trong ô là số nháy của một con LOTO '
+        'ở kỳ đó. Đổi chiều để xem theo ngày hoặc theo số; thứ tự ngày luôn '
+        'mới nhất trước.</p></div>'
+        '<div><h3>Đọc tổng 00–99</h3><p>Tổng nháy và xếp hạng dùng toàn bộ 100 số '
+        'trên dải đã chọn. Lựa chọn số phía trên chỉ thu gọn ma trận theo kỳ '
+        'để dễ so sánh.</p></div>'
+        '<div><h3>Chu kỳ gan</h3><p>Chọn một số trong bộ chọn để xem chu kỳ gan. '
+        'Gan đếm theo kỳ quay; số gan cao không bảo đảm kết quả kỳ tiếp theo.</p></div>'
     )
     return f"""
-<div class="bf-topline"><a href="index.html">← Trang chính</a><span class="bf-live" id="bf-source">Dữ liệu XSMB · Miền Bắc</span></div>
+<div class="bf-topline"><a href="statistics.html">← Thống kê</a><span class="bf-live" id="bf-source">Lịch sử XSMB · Miền Bắc</span></div>
 <header class="bf-hero">
   <div><p class="bf-eyebrow">THỐNG KÊ / MIỀN BẮC</p><h1>{page.title}</h1>
-  <p>Nhìn rõ từng nhịp số. So sánh tần suất theo ngày trong một không gian gọn gàng.</p></div>
+  <p>{page.subtitle}</p></div>
   <a class="bf-demo-link" id="bf-demo-link" href="?demo=1">Xem dữ liệu minh họa ↗</a>
 </header>
-<nav class="bf-tabs" aria-label="Loại thống kê">
-  <a href="tan-suat-loto.html" {'aria-current="page"' if not pairs else ''}>Tần suất lô tô <span>00–99</span></a>
-  <a href="tan-suat-cap-loto.html" {'aria-current="page"' if pairs else ''}>Tần suất cặp <span>50 họ cặp</span></a>
-</nav>
+{_statistics_tabs(page.slug)}
 <div id="bf-demo-banner" class="bf-demo-banner" hidden>DỮ LIỆU MINH HỌA · Các kỳ và kết quả được giả lập để kiểm tra giao diện.</div>
-<section class="bf-kpis" aria-label="Tổng quan dải đã chọn" id="bf-kpis"></section>
 <section class="bf-card bf-filters" aria-labelledby="bf-filter-title">
-  <div class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Bộ lọc &amp; lựa chọn</h2></div><span>Cập nhật ngay khi thay đổi</span></div>
+  <header class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Bộ lọc &amp; lựa chọn</h2></div><span>Cập nhật ngay khi thay đổi</span></header>
   {page.controls}
   <details class="bf-selection"><summary>Chọn {label} để so sánh <span id="bf-selection-count"></span></summary>{picker}</details>
 </section>
+<section class="bf-kpis" aria-label="Tổng quan dải đã chọn" id="bf-kpis"></section>
 <section class="bf-card bf-matrix-card" aria-labelledby="bf-matrix-title">
-  <div class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note" data-evidence-split></span></div>
+  <header class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note" data-evidence-split></span></header>
   <div class="bf-legend" aria-label="Chú thích số nháy">
     <span><i class="bf-swatch is-empty"></i>Không về</span>
     <span><i class="bf-swatch sp-n1">1</i>1 nháy</span>
@@ -684,15 +762,21 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
   </div>
   <div class="bf-matrix-footer"><span id="bf-cell-status" role="status" aria-live="polite">Rê chuột hoặc chạm vào ô để dóng hàng và cột.</span><span>↔ Cuộn để xem thêm · Phím mũi tên để di chuyển</span></div>
 </section>
-<div class="bf-bottom">
-  <section class="bf-card bf-ranking"><div class="bf-card-heading"><div><span class="bf-step">03</span><h2>{'Xếp hạng đồng xuất hiện' if pairs else 'Xếp hạng tần suất'}</h2></div><span>Trọn dải đã chọn</span></div>
-    <div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>
-  </section>
-  <aside class="bf-card bf-summary"><div class="bf-card-heading"><h2>{matrix}</h2></div>{overview}
-    <details class="bf-method"><summary>Cách đọc &amp; mốc so sánh</summary>{note_html}</details>
-    <p class="bf-tip">★ Màu Đặc Biệt luôn ưu tiên, kể cả khi số về nhiều nháy. Số trong ô vẫn là tổng số nháy.</p>
-  </aside>
-</div>
+<section class="bf-card bf-totals" aria-labelledby="bf-totals-title">
+  <header class="bf-card-heading"><div><span class="bf-step">03</span><h2 id="bf-totals-title">{matrix}</h2></div><span>Trọn dải đã chọn</span></header>
+  <p class="bf-section-copy">Tổng nháy cộng gộp qua các kỳ, không phụ thuộc lựa chọn {label} trên ma trận.</p>
+  <div id="{total_id}" class="sp-matrix {'bf-pair-totals' if pairs else ''}"></div>
+</section>
+<section class="bf-card bf-ranking" aria-labelledby="bf-ranking-title">
+  <header class="bf-card-heading"><div><span class="bf-step">04</span><h2 id="bf-ranking-title">{'Xếp hạng đồng xuất hiện' if pairs else 'Xếp hạng tần suất'}</h2></div><span>{'50 cặp dẫn đầu trong 4.950 cặp' if pairs else 'Đủ 100 số trên trọn dải'}</span></header>
+  <div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid" aria-label="{'Xếp hạng cặp đồng xuất hiện' if pairs else 'Xếp hạng tần suất LOTO'}"></table></div>
+</section>
+<section class="bf-card bf-guide" aria-labelledby="bf-guide-title">
+  <header class="bf-card-heading"><div><h2 id="bf-guide-title">Cách đọc và đối chiếu</h2></div><span>Thống kê mô tả từ lịch sử</span></header>
+  <div class="bf-guide-grid">{guide}</div>
+  <details class="bf-method" open><summary>Mốc ngẫu nhiên để so sánh</summary>{note_html}</details>
+  <p class="bf-tip">★ Ô có hai số cuối giải Đặc Biệt được ưu tiên màu đỏ. Giá trị trong ô vẫn là số nháy.</p>
+</section>
 {_gan_modal()}
 """
 
@@ -710,16 +794,24 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
     note = CHANCE_NOTES.get(page.slug, "").format(**chance_note_context(len(draws)))
     note_html = f'<p class="sp-note">{note}</p>' if note else ""
     bento = page.slug in {"tan-suat-loto", "tan-suat-cap-loto"}
+    overview = page.slug == "thong-ke-tong-hop"
+    statistical = bento or overview
     calendar = page.slug in {"bang-dac-biet", "bang-dac-biet-thang", "bang-dac-biet-nam"}
-    responsive = bento or calendar
+    responsive = statistical or calendar
     body = page.body.replace('class="sp-table ', 'class="sp-table sp-calendar-table ') if calendar else page.body
-    content = frequency_bento_layout(page, note_html) if bento else f"""
+    content = frequency_bento_layout(page, note_html) if bento else overview_layout(page) if overview else f"""
 <div style="margin-bottom:1rem"><a href="index.html">← Trang chính</a></div>
 <h1>{page.title}</h1>
 <p class="ui-muted" style="max-width:60rem;line-height:1.65">{page.subtitle}</p>
 {page.controls}
 {body}
 {note_html}"""
+    footer = (
+        f'Dữ liệu đến {str(draws[-1]["d"])} · Dựng lúc {generated}.'
+        if statistical and draws else
+        f'Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên '
+        f'{len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.'
+    )
     return f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -728,14 +820,13 @@ def render_page(page: StatPage, draws: list[dict[str, object]], *, generated: st
 <title>{page.title}</title>
 <style>
 {_asset("stat_pages.css")}
-{_asset("frequency_bento.css") if bento else ""}
+{_asset("frequency_bento.css") if statistical else ""}
 {_asset("stat_table_layout.css") if responsive else ""}
-</style></head><body class="{'bf-page' if bento else ''}">
+</style></head><body class="{'bf-page sp-overview-page' if overview else 'bf-page' if bento else ''}">
 {app_shell_open(f"{page.slug}.html", wide=True)}
 {content}
 <p class="ui-muted" style="margin-top:1.5rem;font-size:.75rem">
-Dựng lúc {generated}. Toàn bộ tính toán chạy trong trình duyệt trên
-{len(draws)} kỳ đã nhúng — không gọi mạng, không máy chủ.</p>
+{footer}</p>
 {app_shell_close(f"{page.slug}.html")}
 <script>window.__D_DRAWS__={json_for_html_script(draws)};
 window.__D_PAIR_CHANCE__={json_for_html_script(pair_chance_grid())};

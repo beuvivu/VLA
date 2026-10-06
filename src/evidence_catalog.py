@@ -278,6 +278,47 @@ def _thong_ke(f: dict[str, str], *extra: str) -> Evidence:
     )
 
 
+def _overview(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
+    """Trang gộp nháy theo bộ lọc với chu kỳ Đặc Biệt trên toàn lịch sử."""
+    filtered = _ev([_ket_qua({}), _LOTO], [
+        "Giữ các kỳ phù hợp với bộ lọc ngày và thứ đang chọn.",
+        "Cộng đủ mọi nháy của từng số LOTO; một số về nhiều lần trong một kỳ được cộng từng lần.",
+        "Phân bố đầu, đuôi và tổng gom chính các nháy ấy; tổng là (đầu + đuôi) chia lấy dư 10.",
+        "Tỉ lệ lấy số nháy trong nhóm chia cho tổng nháy của dải, rồi nhân 100%.",
+    ])
+    expected = _ev([_ket_qua({}), _LOTO], [
+        "Dùng số kỳ thực tế phù hợp với bộ lọc ngày và thứ.",
+        "Kỳ vọng số nháy của mỗi số là 27/100 × số kỳ: mỗi kỳ có 27 kết quả trong 100 số 00–99.",
+        "Cột «So kỳ vọng» lấy tổng nháy của số ấy trong dải chia cho mốc này.",
+    ])
+    global_steps = [
+        "Đọc hai số cuối giải Đặc Biệt trên toàn bộ lịch sử, đến kỳ mới nhất đã có kết quả.",
+        "Bộ lọc ngày và thứ của trang không áp dụng cho gan và chu kỳ Đặc Biệt.",
+    ]
+    gan = _ev([_ket_qua(f), _DAC_BIET], [
+        *global_steps,
+        "Gan là số kỳ kể sau lần xuất hiện gần nhất; số về ở kỳ mới nhất có gan 0. "
+        "Nếu chưa từng xuất hiện, gan bằng số kỳ trong toàn lịch sử.",
+    ])
+    cycle = _ev([_ket_qua(f), _DAC_BIET], [
+        *global_steps,
+        "Chu kỳ dài nhất là khoảng cách lớn nhất theo kỳ giữa hai lần xuất hiện liên tiếp đã ghi nhận; "
+        "chưa đủ hai lần thì hiển thị dấu gạch.",
+    ])
+    page = _ev([_ket_qua(f), _LOTO, _DAC_BIET], [
+        "Tần suất, phân bố và kỳ vọng LOTO dùng các kỳ phù hợp với bộ lọc ngày và thứ.",
+        "Gan và chu kỳ Đặc Biệt dùng toàn bộ lịch sử, đến kỳ mới nhất đã có kết quả; bộ lọc không áp dụng.",
+    ])
+    return page, [
+        _sec("#sp-overview-matrix, #sp-overview-head, #sp-overview-tail, #sp-overview-sum, #sp-grid, "
+             "#sp-kpi .sp-kpi-card:nth-child(-n+3)", "Tần suất và phân bố LOTO theo dải", filtered),
+        _sec("#sp-overview-expected, #sp-grid tbody td:nth-child(4)", "Kỳ vọng số nháy LOTO", expected),
+        _sec("#sp-grid tbody td:nth-child(5), #sp-kpi .sp-kpi-card:nth-child(4)",
+             "Gan Đặc Biệt trên toàn lịch sử", gan),
+        _sec("#sp-grid tbody td:nth-child(6)", "Chu kỳ Đặc Biệt trên toàn lịch sử", cycle),
+    ]
+
+
 def _cau(f: dict[str, str], *extra: str) -> Evidence:
     return _ev(
         [_ket_qua(f), _CAU],
@@ -507,7 +548,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "giai-dac-biet-theo-tong.html": tk("Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau."),
         "dau-duoi-loto.html": tk("Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn."),
         "lo-gan.html": tk("Số kỳ chưa về của từng con LOTO, gan cực đại trong lịch sử, và cặp lô gan."),
-        "thong-ke-tong-hop.html": tk("Bảng tổng hợp đa chiều: tần suất, chu kỳ gan, đầu đuôi và tổng trên cùng một dải."),
+        "thong-ke-tong-hop.html": _overview(f),
         "soi-cau-vi-tri.html": (_cau(f, "Lộn thì cộng gộp nháy của cả hai chiều; số kép chỉ là một số (số bóng chỉ hiện kèm)."), [_so_bong(f)]),
         "soi-cau-loto.html": cau("Bước trúng: n hoặc số lộn của n về ở kỳ kế tiếp (≥ 1 nháy, cộng cả hai chiều)."),
         "soi-cau-hai-nhay.html": cau("Bước trúng: n về ≥ 2 nháy, hoặc n và số lộn (khác n) cùng về ở kỳ kế tiếp."),

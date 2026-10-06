@@ -5,19 +5,29 @@ from __future__ import annotations
 import csv
 import html
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 from typing import Sequence
 
 from css_links import stylesheet_link
 from page_output import write_page
+from shared_results import shared_results_css, shared_results_script
 from ui_theme import app_shell_close, app_shell_open
 from web_security import json_for_html_script, security_meta_tags
 
 PRIZE_ORDER = ("ĐB", "G.1", "G.2", "G.3", "G.4", "G.5", "G.6", "G.7", "G.8")
+PRIZE_LABELS = dict(zip(PRIZE_ORDER, (
+    "Đặc Biệt", "Giải Nhất", "Giải Nhì", "Giải Ba", "Giải Tư",
+    "Giải Năm", "Giải Sáu", "Giải Bảy", "Giải Tám",
+), strict=True))
 REGION_META = {
     "mt": ("Miền Trung", "XSMT", "ket-qua-mien-trung.html"),
     "mn": ("Miền Nam", "XSMN", "ket-qua-mien-nam.html"),
 }
+
+
+def _asset(name: str) -> str:
+    return (Path(__file__).parent / "templates" / name).read_text(encoding="utf-8")
 
 
 def load_rows(root: Path, region: str) -> list[dict[str, str]]:
@@ -36,21 +46,59 @@ def grouped(rows: list[dict[str, str]]) -> dict[str, dict[str, dict[str, list[st
 
 
 def board(draw_date: str, provinces: dict[str, dict[str, list[str]]]) -> str:
-    heads = "".join(f"<th>{html.escape(p)}</th>" for p in provinces)
+    """Bảng thật theo giải và tỉnh; số gốc không qua ép kiểu hay cắt độ dài."""
+    day_key = html.escape(draw_date)
+    display_date = date.fromisoformat(draw_date).strftime("%d/%m/%Y")
+    station_ids = {province: f"rg-{draw_date}-station-{index}" for index, province in enumerate(provinces)}
+    heads = "".join(
+        f'<th scope="col" id="{html.escape(station_ids[p])}" data-province="{html.escape(p)}">{html.escape(p)}</th>'
+        for p in provinces
+    )
     body = []
     for prize in PRIZE_ORDER:
+        code = "special" if prize == "ĐB" else f"prize{prize[-1]}"
+        prize_id = f"rg-{draw_date}-{code}"
         cells = []
         for province in provinces:
             values = provinces[province].get(prize, [])
-            nums = "".join(f'<span class="rg-num">{html.escape(v)}</span>' for v in values) or "—"
-            cells.append(f"<td>{nums}</td>")
-        cls = ' class="rg-special"' if prize == "ĐB" else ""
-        body.append(f'<tr{cls}><th scope="row">{prize}</th>{"".join(cells)}</tr>')
+            nums = []
+            for index, value in enumerate(values):
+                pair = value[-2:]
+                content = html.escape(value)
+                if prize == "ĐB":
+                    content = f'{html.escape(value[:-2])}<span class="tr-special-tail">{html.escape(pair)}</span>'
+                cell_key = html.escape(f"{draw_date}|{province}|{code}|{index}")
+                number_label = html.escape(f"Đánh dấu kết quả {value}, {PRIZE_LABELS[prize]}, {province}, ngày {display_date}")
+                nums.append(
+                    f'<div class="rg-num tr-number" data-cell="{cell_key}" tabindex="0" role="button"'
+                    f' aria-pressed="false" aria-label="{number_label}">{content}</div>'
+                )
+            contents = (
+                f'<div class="tr-number-grid" style="--count: {min(2, len(values))};">{"".join(nums)}</div>'
+                if nums else '<span class="rg-missing" aria-label="Chưa có kết quả giải này">—</span>'
+            )
+            cells.append(
+                f'<td class="rg-cell" data-province="{html.escape(province)}"'
+                f' headers="{html.escape(prize_id)} {html.escape(station_ids[province])}">{contents}</td>'
+            )
+        body.append(
+            f'<tr class="tr-prize-row" data-prize="{code}"><th class="tr-prize-label"'
+            f' scope="row" id="{html.escape(prize_id)}">{PRIZE_LABELS[prize]}</th>{"".join(cells)}</tr>'
+        )
     return (
-        f'<article class="rg-draw" data-date="{draw_date}">'
-        f'<div class="rg-draw-head"><h2>{draw_date}</h2><span>{len(provinces)} đài</span></div>'
-        f'<div class="rg-table-wrap"><table class="rg-table"><thead><tr><th>Giải</th>{heads}</tr></thead>'
-        f'<tbody>{"".join(body)}</tbody></table></div></article>'
+        f'<article class="rg-draw tr-day" data-date="{day_key}">'
+        f'<header class="rg-draw-head tr-day-head"><div class="tr-day-title"><h2>'
+        f'<time datetime="{day_key}">{display_date}</time></h2>'
+        '<span>Kết quả theo tỉnh / thành</span></div>'
+        f'<span class="rg-station-count">{len(provinces)} đài</span></header>'
+        '<div class="rg-board-body">'
+        f'<div class="rg-table-wrap" tabindex="0" role="region" aria-label="Bảng kết quả ngày {display_date}">'
+        f'<table class="rg-table" style="--rg-visible-provinces: {len(provinces)};">'
+        f'<caption class="rg-caption">Kết quả ngày {display_date}, mỗi cột là một tỉnh / thành.</caption>'
+        f'<thead><tr><th class="rg-corner" scope="col">Giải</th>{heads}</tr></thead>'
+        f'<tbody>{"".join(body)}</tbody></table></div>'
+        '<p class="rg-scroll-hint">Cuộn ngang để xem các đài; tên giải và tên tỉnh luôn được giữ trong bảng.</p>'
+        '</div></article>'
     )
 
 
@@ -70,24 +118,19 @@ def render(region: str, rows: list[dict[str, str]]) -> str:
 {security_meta_tags()}
 {stylesheet_link()}
 <title>Kết quả xổ số {name} · {code}</title>
-<style>
-.rg-hero{{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;margin-bottom:24px;padding:24px;border:1px solid var(--ui-border);border-radius:24px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}}
-.rg-kicker{{margin:0 0 6px;color:var(--ui-brand-ink);font-size:12px;font-weight:800;letter-spacing:.08em}}.rg-hero h1{{margin:0 0 8px;font-size:clamp(28px,4vw,44px)}}.rg-hero p{{margin:0;color:var(--ui-ink-soft)}}.rg-priority{{max-width:310px;padding:12px 14px;border-radius:14px;background:var(--ui-brand-soft);color:var(--ui-ink-2);font-size:13px}}
-.rg-filter{{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-bottom:18px;padding:16px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface)}}.rg-filter label{{display:grid;gap:5px;font-size:12px;font-weight:700}}.rg-filter select{{min-height:42px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface);color:var(--ui-ink);padding:0 10px}}.rg-btn{{align-self:end;min-height:42px;padding:0 16px;border:0;border-radius:10px;background:var(--ui-brand);color:var(--ui-on-brand);font-weight:700;cursor:pointer}}
-.rg-meta{{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}}.rg-meta span{{padding:7px 10px;border:1px solid var(--ui-border);border-radius:999px;background:var(--ui-surface);font-size:12px}}
-.rg-results{{display:grid;gap:18px}}.rg-draw{{overflow:hidden;border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}}.rg-draw-head{{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--ui-border)}}.rg-draw-head h2{{margin:0;font-size:18px}}.rg-draw-head span{{color:var(--ui-ink-soft);font-size:12px}}.rg-table-wrap{{overflow:auto}}.rg-table{{width:100%;border-collapse:collapse;min-width:620px}}.rg-table th,.rg-table td{{padding:9px 12px;border-bottom:1px solid var(--ui-border);text-align:center;vertical-align:middle}}.rg-table thead th{{position:sticky;top:0;background:var(--ui-surface-2);z-index:1}}.rg-table tbody th{{width:72px;color:var(--ui-ink-soft)}}.rg-num{{display:inline-block;margin:2px 7px;font:700 16px var(--ui-mono);letter-spacing:.03em}}.rg-special td{{background:var(--ui-special-bg);color:var(--ui-special-ink)}}.rg-special .rg-num{{font-size:21px}}.rg-empty{{display:grid;gap:6px;padding:32px;border:1px dashed var(--ui-border);border-radius:18px;text-align:center;background:var(--ui-surface)}}.rg-empty span{{color:var(--ui-ink-soft)}}[hidden]{{display:none!important}}
-@media(max-width:720px){{.rg-hero{{display:block;padding:18px}}.rg-priority{{margin-top:14px;max-width:none}}.rg-filter{{grid-template-columns:1fr}}}}
-</style></head><body>
+<style>{shared_results_css()}
+{_asset("regional_results.css")}</style></head><body>
 {app_shell_open(filename, wide=True)}
-<section class="rg-hero"><div><p class="rg-kicker">KẾT QUẢ XỔ SỐ {name.upper()}</p><h1>{code} · Kết quả theo tỉnh</h1><p>Kết quả đã công bố, lưu theo tỉnh/thành để tra cứu và xây dựng cơ sở phân tích vùng.</p></div><div class="rg-priority"><strong>Ưu tiên hệ thống: XSMB</strong><br>Miền Trung/Miền Nam là lớp dữ liệu mở rộng; pipeline Miền Bắc vẫn giữ lịch, AI/ML và tài nguyên ưu tiên cao nhất.</div></section>
+<section class="rg-hero"><div><p class="rg-kicker">KẾT QUẢ XỔ SỐ {name.upper()}</p><h1>{code} · Kết quả theo tỉnh</h1><p>Tra cứu theo ngày quay và tỉnh / thành; xem đầy đủ các giải đã công bố trong cùng một bảng.</p></div><div class="rg-guide"><strong>Cách đọc bảng</strong><br>Mỗi cột là một tỉnh, mỗi hàng là một giải. Bấm số để đánh dấu hoặc so các cặp trùng.</div></section>
 <section class="rg-filter" aria-label="Bộ lọc kết quả"><label>Ngày quay<select id="rg-date"><option value="">Tất cả ngày đang hiển thị</option>{"".join(f'<option value="{d}">{d}</option>' for d in dates[:120])}</select></label><label>Tỉnh / thành<select id="rg-province"><option value="">Tất cả đài</option>{"".join(f'<option value="{html.escape(p)}">{html.escape(p)}</option>' for p in provinces)}</select></label><button class="rg-btn" id="rg-reset" type="button">Đặt lại</button></section>
 <div class="rg-meta"><span><strong>{len(dates)}</strong> ngày đã lưu</span><span><strong>{len(provinces)}</strong> tỉnh/thành</span><span>Mới nhất: <strong>{latest}</strong></span></div>
-<section class="rg-results" id="rg-results">{boards}</section>
+<div class="rg-tools"><p>Bấm số hoặc dùng Enter / Space để đánh dấu.</p><label class="tr-chip"><input type="checkbox" id="rg-pair-mode"><span>Đánh dấu cặp trùng</span></label><button class="tr-btn" id="rg-mark-clear" type="button" hidden>Bỏ đánh dấu</button></div>
+<section class="rg-results tr-results" id="rg-results" aria-label="Kết quả xổ số {name}">{boards}</section>
+<div class="rg-empty" id="rg-filter-empty" role="status" hidden><strong>Không có kết quả phù hợp.</strong><span>Chọn ngày hoặc tỉnh / thành khác để xem kết quả đã lưu.</span></div>
 {app_shell_close(filename)}
 <script id="rg-data" type="application/json">{filter_data}</script>
-<script>
-(()=>{{const d=document.getElementById('rg-date'),p=document.getElementById('rg-province'),reset=document.getElementById('rg-reset');const apply=()=>{{const dv=d.value,pv=p.value.toLowerCase();document.querySelectorAll('.rg-draw').forEach(card=>{{const dateOk=!dv||card.dataset.date===dv;const provinceOk=!pv||card.textContent.toLowerCase().includes(pv);card.hidden=!(dateOk&&provinceOk);}})}};d.addEventListener('change',apply);p.addEventListener('change',apply);reset.addEventListener('click',()=>{{d.value='';p.value='';apply();}});}})();
-</script></body></html>"""
+<script>{shared_results_script()}</script>
+<script>{_asset("regional_results.js")}</script></body></html>"""
 
 
 def build(root: Path) -> list[Path]:

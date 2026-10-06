@@ -1044,17 +1044,17 @@ function renderLotoFrequency() {
 
   const m = $("sp-matrix");
   if (m) {
-    fill(m, counts.map((v, i) =>
+    fill(m, rows.length ? counts.map((v, i) =>
       mk("span", { class: "sp-cell", style: heat(v, max), title: `Số ${pad2(i)}: ${v} lần` }, [
         mk("b", null, pad2(i)),
         mk("i", null, v),
-      ])));
+      ])) : mk("p", { class: "sp-empty-row" }, "Không có kỳ phù hợp với dải đang chọn."));
   }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
-  const rankBody = order.map((p, k) => [
+  const rankBody = rows.length ? order.map((p, k) => [
     k + 1, pad2(p[0]), p[1], expected.toFixed(1),
     expected ? (p[1] / expected).toFixed(2) + "×" : "—",
-  ]);
+  ]) : [];
   table($("sp-grid"),
     ["Hạng", "Số", "Số lần về", "Kỳ vọng", "So kỳ vọng"],
     rankBody, { numeric: [0, 2, 3, 4], pairOf: pairCols(rankBody, 1) });
@@ -1605,33 +1605,169 @@ function renderSpecialDayByMonth() {
 function renderOverview() {
   const rows = selected();
   setCount(rows);
+  if ($("sp-count")) $("sp-count").textContent = rows.length
+    ? `${rows.length} kỳ · ${viDate(rows[0].d)} → ${viDate(rows.at(-1).d)}`
+    : "Không có kỳ phù hợp với bộ lọc";
   const counts = countLoto(rows);
-  const expected = LOTO_BASELINE * rows.length;
+  // Bảng đếm đủ số nháy, nên mốc so sánh là 27/100 nháy mỗi kỳ.
+  // Tỉ lệ có mặt ít nhất một lần (LOTO_BASELINE) là một phép đếm khác.
+  const expected = 27 / 100 * rows.length;
+  const total = rows.reduce((sum, row) => sum + row.n.length, 0);
   const s = specialGaps();
   const hottest = counts.indexOf(Math.max(...counts));
   const coldest = s.current.indexOf(Math.max(...s.current));
+  const values = {};
+  const scope = (list) => list.length
+    ? `${list.length} kỳ · ${viDate(list[0].d)} → ${viDate(list.at(-1).d)}`
+    : "0 kỳ · Không có kỳ phù hợp";
+  const weekday = $("sp-weekday");
+  const weekdayLabel = weekday && weekday.value !== "all"
+    ? ` · ${weekday.options[weekday.selectedIndex].textContent}` : "";
+  const filteredSources = [{
+    title: "Các kỳ XSMB trong dải đang chọn",
+    snippet: scope(rows) + weekdayLabel + ". Cộng đủ mọi nháy từ 27 kết quả LOTO mỗi kỳ.",
+    url: "so-ket-qua-truyen-thong.html",
+  }];
+  const globalSources = [{
+    title: "Giải Đặc Biệt trên toàn bộ lịch sử",
+    snippet: scope(DRAWS) + ". Dùng hai số cuối giải Đặc Biệt; bộ lọc ngày và thứ không áp dụng.",
+    url: "so-ket-qua-truyen-thong.html",
+  }];
+  const define = (id, title, sources, steps) => {
+    values[id] = { title, sources, reasoningTrace: { steps } };
+    return id;
+  };
+  const countSteps = (number) => [
+    `Giữ đúng ${scope(rows)}${weekdayLabel} theo bộ lọc ngày và thứ.`,
+    `Đếm đủ các lần xuất hiện của số ${pad2(number)} trong 27 kết quả LOTO của từng kỳ: ${counts[number]} nháy.`,
+  ];
+  const expectedStep = `Mốc cho mỗi số là 27/100 × ${rows.length} kỳ = ` +
+    `${expected.toLocaleString("vi-VN", {maximumFractionDigits: 2})} nháy; đây là kỳ vọng số nháy.`;
+  const ganSteps = (number) => [
+    `Dùng toàn bộ lịch sử: ${scope(DRAWS)}, đến kỳ mới nhất đã có kết quả.`,
+    "Bộ lọc ngày và thứ không áp dụng cho gan Đặc Biệt.",
+    s.last[number] < 0
+      ? `Số ${pad2(number)} chưa từng là hai số cuối giải Đặc Biệt; gan bằng ${s.current[number]} kỳ của toàn lịch sử.`
+      : `Số ${pad2(number)} về Đặc Biệt gần nhất ngày ${viDate(DRAWS[s.last[number]].d)}. ` +
+        `Đếm các kỳ sau lần ấy đến kỳ mới nhất: ${s.current[number]} kỳ gan.`,
+  ];
+  const cycleSteps = (number) => [
+    `Dùng toàn bộ lịch sử: ${scope(DRAWS)}, đến kỳ mới nhất đã có kết quả.`,
+    "Bộ lọc ngày và thứ không áp dụng cho chu kỳ Đặc Biệt.",
+    s.maxGap[number]
+      ? `Lấy khoảng cách lớn nhất theo kỳ giữa hai lần số ${pad2(number)} về Đặc Biệt liên tiếp: ${s.maxGap[number]} kỳ.`
+      : `Số ${pad2(number)} chưa đủ hai lần về Đặc Biệt để có chu kỳ đã ghi nhận; hiển thị dấu gạch.`,
+  ];
+  const rangeId = define("overview-range", "Số kỳ trong dải đang chọn", filteredSources, [
+    `Áp dụng bộ lọc ngày và thứ; dải có dữ liệu là ${scope(rows)}${weekdayLabel}.`,
+  ]);
+  const totalId = define("overview-total", "Tổng số nháy LOTO trong dải", filteredSources, [
+    `Cộng toàn bộ kết quả LOTO của ${rows.length} kỳ trong dải: ${total} nháy.`,
+    "Một số xuất hiện nhiều lần trong cùng kỳ được cộng đủ từng nháy.",
+  ]);
+  const expectedId = define("overview-expected", "Kỳ vọng số nháy LOTO", filteredSources, [
+    expectedStep, "Cột «So kỳ vọng» lấy tổng nháy của từng số chia cho mốc này.",
+  ]);
+  const hotId = define("overview-hottest", "Số LOTO về nhiều nhất trong dải", filteredSources, [
+    "Sắp xếp 100 số theo tổng nháy giảm dần trong dải đang chọn.",
+    rows.length ? `Số ${pad2(hottest)} dẫn đầu với ${counts[hottest]} nháy.` : "Dải không có kỳ nào nên không có số dẫn đầu.",
+  ]);
+  const coldId = define("overview-coldest", "Số Đặc Biệt gan lâu nhất trên toàn lịch sử", globalSources, [
+    "So sánh số kỳ chưa xuất hiện ở hai số cuối giải Đặc Biệt của 100 số trên toàn bộ lịch sử.",
+    ...ganSteps(coldest),
+  ]);
 
   const kpi = $("sp-kpi");
   if (kpi) {
     fill(kpi, [
-      ["Số kỳ trong dải", rows.length],
-      ["Kỳ vọng mỗi con", expected.toFixed(1) + " lần"],
-      ["Về nhiều nhất", pad2(hottest) + " (" + counts[hottest] + ")"],
-      ["Gan Đặc Biệt lâu nhất", pad2(coldest) + " (" + s.current[coldest] + " kỳ)"],
-    ].map((p) => mk("div", { class: "sp-kpi-card" }, [
+      ["Kỳ đang phân tích", rows.length, rows.length ? `${viDate(rows[0].d)} → ${viDate(rows.at(-1).d)}` : "Không có kỳ phù hợp", rangeId],
+      ["Tổng số nháy LOTO", total.toLocaleString("vi-VN"), "Cộng đủ mọi lần xuất hiện trong dải", totalId],
+      ["LOTO về nhiều nhất", rows.length ? pad2(hottest) : "—", rows.length ? `${counts[hottest]} nháy trong dải đã chọn` : "Chọn lại dải dữ liệu", hotId],
+      ["Gan Đặc Biệt lâu nhất", pad2(coldest), `${s.current[coldest]} kỳ · toàn bộ lịch sử`, coldId],
+    ].map((p) => mk("div", { class: "sp-kpi-card bf-kpi" }, [
       mk("span", null, p[0]),
-      mk("strong", null, p[1]),
+      mk("strong", { "data-evidence": p[3], "aria-label": p[0] }, p[1]),
+      mk("small", { "data-evidence-split": "1", "data-evidence-row": p[3] }, p[2]),
     ])));
   }
+  const matrix = $("sp-overview-matrix");
+  if (matrix) {
+    fill(matrix, rows.length ? counts.map((value, number) => mk("span", {
+      class: "sp-cell", title: `Số ${pad2(number)}: ${value} nháy`,
+    }, [mk("b", {
+      "data-evidence": define(`overview-number-${pad2(number)}`, `Định danh số LOTO ${pad2(number)}`, filteredSources,
+        [`${pad2(number)} là định danh của số LOTO; số nháy của số ấy nằm ngay dưới trong cùng ô.`]),
+      "aria-label": `Số LOTO ${pad2(number)}`,
+    }, pad2(number)), mk("i", {
+      "data-evidence": define(`overview-count-${pad2(number)}`, `Số ${pad2(number)} · Tổng nháy LOTO`, filteredSources, countSteps(number)),
+      "aria-label": `Số ${pad2(number)} · Tổng nháy LOTO`,
+    }, value)])) :
+      mk("p", { class: "sp-empty-row" }, "Không có kỳ phù hợp với dải ngày và thứ đang chọn."));
+  }
+  const totalLabel = $("sp-overview-total");
+  if (totalLabel) {
+    totalLabel.textContent = `${total.toLocaleString("vi-VN")} nháy · ${rows.length} kỳ`;
+    totalLabel.setAttribute("data-evidence-row", totalId);
+  }
+  const expectedLabel = $("sp-overview-expected");
+  if (expectedLabel) {
+    expectedLabel.textContent = rows.length
+      ? `Mốc trung bình là 27/100 × ${rows.length} kỳ = ${expected.toLocaleString("vi-VN", {maximumFractionDigits: 2})} nháy cho mỗi số. Cột “So kỳ vọng” lấy tổng nháy chia cho mốc này.`
+      : "Chọn dải có kết quả để tính mốc so sánh theo số kỳ thực tế.";
+    expectedLabel.setAttribute("data-evidence-row", expectedId);
+  }
+  const head = new Array(10).fill(0), tail = new Array(10).fill(0), sums = new Array(10).fill(0);
+  counts.forEach((value, number) => {
+    const tens = Math.floor(number / 10), units = number % 10;
+    head[tens] += value; tail[units] += value; sums[(tens + units) % 10] += value;
+  });
+  for (const [id, values, label] of [
+    ["sp-overview-head", head, "Đầu"], ["sp-overview-tail", tail, "Đuôi"], ["sp-overview-sum", sums, "Tổng"],
+  ]) {
+    const el = $(id);
+    if (!el) continue;
+    const max = Math.max(...values, 1);
+    table(el, [label, "Nháy", "Tỉ lệ", "Phân bố"], rows.length ? values.map((value, digit) => [
+      digit, value, total ? (100 * value / total).toFixed(1) + "%" : "—",
+      mk("span", { class: "bf-distribution-track", "aria-hidden": "true" },
+        mk("i", { style: `width:${(100 * value / max).toFixed(1)}%` })),
+    ]) : [], { numeric: [0, 1, 2] });
+    if (rows.length) Array.from(el.tBodies[0].rows).forEach((row, digit) => {
+      row.setAttribute("data-evidence-row", define(`overview-${id}-${digit}`, `${label} ${digit} · Phân bố nháy LOTO`, filteredSources, [
+        `Trong ${scope(rows)}${weekdayLabel}, gom các số LOTO có ${label.toLowerCase()} ${digit}: ${values[digit]} nháy.`,
+        label === "Tổng" ? "Tổng là (đầu + đuôi) chia lấy dư 10." :
+          `${label} là chữ số ${label === "Đầu" ? "hàng chục" : "hàng đơn vị"} của số LOTO.`,
+        `Tỉ lệ = ${values[digit]} / ${total} × 100% = ${(100 * values[digit] / total).toFixed(1)}%.`,
+      ]));
+      row.setAttribute("data-evidence-cols", "1,2");
+    });
+  }
   const order = counts.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
-  const body = order.slice(0, 40).map((p, k) => [
+  const body = rows.length ? order.slice(0, 40).map((p, k) => [
     k + 1, pad2(p[0]), p[1],
     expected ? (p[1] / expected).toFixed(2) + "×" : "—",
     s.current[p[0]], s.maxGap[p[0]] || "—",
-  ]);
-  table($("sp-grid"),
-    ["Hạng", "Số", "Lần về", "So kỳ vọng", "Gan Đặc Biệt (kỳ)", "Chu kỳ Đặc Biệt dài nhất"],
+  ]) : [];
+  const rank = $("sp-grid");
+  table(rank,
+    ["Hạng", "Số", "Nháy LOTO", "So kỳ vọng", "Gan Đặc Biệt (kỳ)", "Chu kỳ Đặc Biệt dài nhất (kỳ)"],
     body, { numeric: [0, 2, 3, 4, 5], pairOf: pairCols(body, 1) });
+  if (body.length) Array.from(rank.tBodies[0].rows).forEach((row, index) => {
+    const number = order[index][0];
+    row.setAttribute("data-evidence-row", define(`overview-rank-${pad2(number)}`, `Số ${pad2(number)} · Nháy và kỳ vọng LOTO`, filteredSources, [
+      ...countSteps(number), expectedStep,
+      `So kỳ vọng = ${counts[number]} / ${expected.toLocaleString("vi-VN", {maximumFractionDigits: 2})} = ${body[index][3]}.`,
+    ]));
+    row.setAttribute("data-evidence-cols", "2,3");
+    // Căn cứ trên từng ô giữ phạm vi toàn lịch sử, bấm thường vẫn đánh dấu.
+    row.cells[4].setAttribute("data-evidence-row", define(`overview-gan-${pad2(number)}`,
+      `Số ${pad2(number)} · Gan Đặc Biệt trên toàn lịch sử`, globalSources, ganSteps(number)));
+    row.cells[5].setAttribute("data-evidence-row", define(`overview-cycle-${pad2(number)}`,
+      `Số ${pad2(number)} · Chu kỳ Đặc Biệt trên toàn lịch sử`, globalSources, cycleSteps(number)));
+  });
+  const block = $("sp-stat-evidence");
+  if (block) fill(block, JSON.stringify(values));
+  if (window.appEvidence) Object.entries(values).forEach(([id, entry]) => window.appEvidence.register(id, entry));
 }
 
 // --- Khởi động -------------------------------------------------------------

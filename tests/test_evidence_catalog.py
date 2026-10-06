@@ -222,6 +222,25 @@ def test_dashboard_diagnostics_have_their_own_derivations() -> None:
     assert "vector xác suất 100 số" not in steps.lower()
 
 
+def test_overview_evidence_separates_filtered_loto_from_global_special_cycles() -> None:
+    """Nguồn của nháy và kỳ vọng theo dải không gán bộ lọc cho chu kỳ toàn lịch sử."""
+    data = registry("thong-ke-tong-hop.html")
+    page_steps = " ".join(data["page"]["reasoningTrace"]["steps"])
+    assert "toàn bộ lịch sử" in page_steps and "cùng một dải" not in page_steps
+    sections = {entry["title"]: entry for entry in data["sections"]}
+    filtered = sections["Tần suất và phân bố LOTO theo dải"]
+    filtered_steps = " ".join(filtered["reasoningTrace"]["steps"])
+    assert "nháy" in filtered_steps and "bộ lọc" in filtered_steps
+    expectation = " ".join(sections["Kỳ vọng số nháy LOTO"]["reasoningTrace"]["steps"])
+    assert "27/100" in expectation and "số kỳ" in expectation
+    for title in ("Gan Đặc Biệt trên toàn lịch sử", "Chu kỳ Đặc Biệt trên toàn lịch sử"):
+        entry = sections[title]
+        steps = " ".join(entry["reasoningTrace"]["steps"])
+        assert "toàn bộ lịch sử" in steps and "không áp dụng" in steps
+        assert "tính lại theo bộ lọc" not in steps
+        assert "Quy ước Đặc Biệt" in [source["title"] for source in entry["sources"]]
+
+
 def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
     """Số ở khối rủi ro đến từ mô phỏng và phép hoà vốn, không từ luật ba tầng."""
     sections = {s.get("heading"): s for s in registry("do-tin-cay.html")["sections"]}
