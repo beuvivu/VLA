@@ -140,3 +140,26 @@ def test_pages_are_built_through_the_shell_even_before_the_first_sync(tmp_path):
   assert "vietlott.vn" not in page and "VLA" not in page, path.name
  assert "Chưa có dữ liệu đã đồng bộ" in (tmp_path/"docs"/"vietlott-mega-645.html").read_text(encoding="utf-8")
  assert "chưa đăng kết quả sản phẩm này" in (tmp_path/"docs"/"vietlott-keno.html").read_text(encoding="utf-8")
+
+
+def test_gap_days_cover_only_the_draw_days_between_a_broken_id_run():
+    known = [("00922", "2026-10-02"), ("00925", "2026-10-04"), ("00926", "2026-10-04")]
+    assert v.gap_days(known, None) == [date(2026, 10, 4), date(2026, 10, 3), date(2026, 10, 2)]
+    # Mega: kỳ 1570 (02-10) và 1571 (04-10) liền nhau — không có gì phải vá.
+    assert v.gap_days([("01570", "2026-10-02"), ("01571", "2026-10-04")], (2, 4, 6)) == []
+
+
+def test_a_transient_server_error_is_retried_but_a_missing_page_is_not():
+    class Flaky:
+        def __init__(self, codes):
+            self.codes, self.calls = list(codes), 0
+
+        def get(self, url, **_):
+            self.calls += 1
+            code = self.codes.pop(0)
+            return type("R", (), {"status_code": code, "text": "ok"})()
+
+    flaky = Flaky([503, 200])
+    assert v._get(flaky, "u", pause=0) == "ok" and flaky.calls == 2
+    missing = Flaky([404, 200])
+    assert v._get(missing, "u", pause=0) is None and missing.calls == 1
