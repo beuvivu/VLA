@@ -181,9 +181,10 @@ def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
                 "dự báo không làm tăng xác suất trúng.")
     labels = [names[c] for c in found]
     listed = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " và " + labels[-1]
-    rtps = [analysis[c].get("max_rtp") for c in found]
+    # "Mọi cửa" là mọi cửa của MỌI sản phẩm đã phân tích, không chỉ sản phẩm có tín hiệu.
+    rtps = [a["max_rtp"] for a in analysis.values() if (a or {}).get("max_rtp") is not None]
     money = ""
-    if None not in rtps and max(rtps) < 1:
+    if rtps and max(rtps) < 1:
         best = f"{max(rtps):.2f}".replace(".", ",")
         money = f" Dù vậy mọi cửa vẫn có kỳ vọng âm: RTP cao nhất theo mô hình là {best} (dưới 1)."
     return (f"Phép kiểm e-value của engine thấy độ lệch nhỏ có ý nghĩa thống kê ở {listed}; các sản phẩm còn lại "

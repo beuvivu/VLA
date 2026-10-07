@@ -196,6 +196,12 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     dashboard["analysis"]["max3d"] = {**dashboard["analysis"]["max3dpro"], "max_rtp": 0.5918}
     two = b.randomness_summary(dashboard["analysis"], {c: v[0] for c, v in b.PRODUCTS.items()})
     assert "ở Max 3D / Max 3D+ và Max 3D Pro;" in two and "0,63" in two
+    # RTP cao nhất lấy trên MỌI sản phẩm, kể cả sản phẩm không có tín hiệu.
+    names = {c: v[0] for c, v in b.PRODUCTS.items()}
+    dashboard["analysis"]["keno"] = {"evidence": {"found": False}, "max_rtp": 0.71}
+    assert "RTP cao nhất theo mô hình là 0,71" in b.randomness_summary(dashboard["analysis"], names)
+    dashboard["analysis"]["keno"]["max_rtp"] = 1.02
+    assert "kỳ vọng âm" not in b.randomness_summary(dashboard["analysis"], names)
 
 
 def test_max_rtp_reads_every_bet_of_every_component() -> None:
