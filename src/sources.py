@@ -478,10 +478,9 @@ FALLBACK_SOURCE_NAMES: tuple[str, ...] = (
     "hainhay.net",
 )
 
-#: Nguồn của các lớp dữ liệu ngoài XSMB: Miền Trung/Miền Nam (``regional_lottery``)
-#: và Vietlott (``vietlott_results`` — trang nhà phát hành chặn truy cập tự động
-#: bằng thách thức chống bot, đo ngày 06-10-2026). KHÔNG thuộc chuỗi nguồn XSMB:
-#: không đồng thuận, không dự phòng cho kỳ Miền Bắc.
+#: Nguồn của lớp dữ liệu Miền Trung/Miền Nam (``regional_lottery``). KHÔNG thuộc
+#: chuỗi nguồn XSMB: không đồng thuận, không dự phòng cho kỳ Miền Bắc. Vietlott
+#: không còn dùng nguồn này từ 07-10-2026: dữ liệu đến từ engine ``vietlott/``.
 REGIONAL_SOURCE_NAMES: tuple[str, ...] = ("xskt.com.vn",)
 
 #: Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
