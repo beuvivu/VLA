@@ -1144,5 +1144,26 @@
     ],
     "candidates": 5,
     "distinct_results": 2
+  },
+  "2026-10-07": {
+    "checked_at_utc": "2026-10-07T11:35:23Z",
+    "accepted": true,
+    "required_agreement": 2,
+    "agreement": 3,
+    "runner_up_agreement": 1,
+    "ambiguous_tie": false,
+    "source_agreement": 3,
+    "independent_groups": [
+      "G2",
+      "G4",
+      "G6"
+    ],
+    "sources": [
+      "P2",
+      "F2",
+      "F5"
+    ],
+    "candidates": 5,
+    "distinct_results": 2
   }
 }
