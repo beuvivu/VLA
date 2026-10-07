@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-10-06T13:26:49Z",
+  "generated_at_utc": "2026-10-07T10:25:38Z",
   "anchor_date": "2026-10-06",
   "target_date": "2026-10-07",
   "history_days": 4227,
@@ -20,7 +20,7 @@
     "sharpness": 1.0,
     "selected": true,
     "brier_by_candidate": {
-      "linear": 0.18044208231195913,
+      "linear": 0.18044208231195916,
       "log(s=0)": 0.1804263643235072,
       "log(s=0.1)": 0.18042768981401922,
       "log(s=0.2)": 0.18042906945611573,
