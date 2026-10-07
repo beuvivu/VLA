@@ -55,7 +55,7 @@ Muốn gõ `vietlott` ở bất cứ đâu: `source .venv/bin/activate`. Lệnh 
 
 ```bash
 docker compose up -d                                  # API + bộ lập lịch
-docker compose --profile jobs run --rm backtest       # chạy một lần toàn bộ báo cáo
+make docker-job                                      # chạy một lần toàn bộ báo cáo, bằng UID của bạn
 ```
 
 API ở http://localhost:8000/docs. Bộ lập lịch đồng bộ 6 giờ/lần rồi gọi `/forecast/<sản phẩm>?record=true`: mô hình tự học kỳ mới và ghi dự báo vào sổ (chỉ khi kỳ đó chưa quay). Dữ liệu nằm trong volume `vqe-data`.
