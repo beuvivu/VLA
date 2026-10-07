@@ -65,6 +65,42 @@ def _fmt(value, digits: int = 4) -> str:
         return html.escape(str(value)) if value not in (None, "") else "—"
 
 
+def _count(value) -> str:
+    """Giữ số thiếu là chưa biết, phân biệt với số đếm bằng không."""
+    return f"{int(value):,}".replace(",", ".") if value is not None else "—"
+
+
+def _overview(report: dict) -> str:
+    """Bảng điều hành chỉ tổng hợp hai chế độ của cùng tường lửa vị trí."""
+    modes = report.get("modes", {})
+
+    def combined(key: str):
+        values = [modes.get(mode, {}).get(key) for mode in ("loto", "de")]
+        return sum(values) if all(value is not None for value in values) else None
+
+    items = (
+        ("hypotheses", "Giả thuyết vị trí", combined("hypotheses"), "Hai chế độ LOTO & Đặc Biệt"),
+        ("fdr", "Qua FDR · huấn luyện", combined("fdr_significant_train"), "Hiệu chỉnh nhiều phép thử"),
+        ("holdout", "Kỳ giữ lại · LOTO", modes.get("loto", {}).get("holdout_days"), "Dữ liệu ngoài tập chọn giả thuyết"),
+        ("eligible", "Đủ điều kiện · tường lửa", combined("production_eligible_count"), "Cần xem xét; chưa tự động đưa vào vận hành"),
+    )
+    cards = "".join(
+        f'<article class="rl-stat"><span>{label}</span><strong id="rl-{key}" data-lab-metric>{_count(value)}</strong>'
+        f'<small>{hint}</small></article>' for key, label, value, hint in items
+    )
+    stamp = html.escape(str(report.get("anchor_date") or "Chưa có báo cáo"))
+    return (
+        '<section class="rl-overview" aria-label="Tóm tắt tường lửa vị trí">'
+        f'<div class="rl-section-line"><span>TƯỜNG LỬA VỊ TRÍ</span><span>Báo cáo đến {stamp}</span></div>'
+        f'<div class="rl-stat-grid">{cards}</div></section>'
+    )
+
+
+def _network() -> str:
+    """Sơ đồ trang trí biểu diễn các nhánh nghiên cứu, không giả lập tiến độ."""
+    return (Path(__file__).parent / "templates" / "research_network.html").read_text(encoding="utf-8")
+
+
 def _primary_tests(diag: dict) -> str:
     rows = []
     for item in diag.get("primary_tests", []):
@@ -278,14 +314,26 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     conditional = _read_csv(data_dir / "conditional" / "loto_nextday_given_special_long.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
 
+    table_index = 0
+    anchors = ("rl-diagnostics", "rl-descriptive", "rl-legacy", "rl-conditional",
+               "rl-bong", "rl-loto", "rl-special", "rl-crosslag")
+
     def _table(title, desc, headers, align_cls, rows_html, span=6):
-        head = "".join(f"<th>{h}</th>" for h in headers)
+        nonlocal table_index
+        anchor = anchors[table_index]
+        table_index += 1
+        head = "".join(f'<th scope="col">{h}</th>' for h in headers)
         body = (
-            f'<div class="ui-table-wrap"><table class="ui-table {align_cls}">'
+            f'<div class="ui-table-wrap" tabindex="0" role="region" aria-label="{html.escape(title)}"><table class="ui-table {align_cls}">'
             f"<thead><tr>{head}</tr></thead><tbody>{rows_html}</tbody></table></div>"
         )
         intro = f'<p class="ui-muted">{desc}</p>' if desc else ""
-        return card(intro + body, title=title, span=span, lift=True)
+        return (
+            f'<article class="ui-card rl-panel" id="{anchor}">'
+            f'<header class="rl-panel-head"><div><p class="rl-eyebrow">HỒ SƠ / {table_index:02d}</p>'
+            f'<h2>{title}</h2></div><a class="rl-back" href="#rl-top" aria-label="Về đầu trang">↑</a></header>'
+            f'{intro}{body}</article>'
+        )
 
     cards = "".join(
         [
@@ -298,7 +346,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
             ),
             _table(
                 "Gan tổng / chạm",
-                "Khôi phục thống kê mô tả hữu ích từ các repo cũ, không dùng trực tiếp làm xác suất.",
+                "Thời gian chưa xuất hiện của nhóm tổng và chạm. Đây là thống kê mô tả, không dùng trực tiếp làm xác suất.",
                 ["Nhóm", "Gan ngày", "Lần cuối"],
                 "ui-r2 ui-m3",
                 _gap_table(touch, sums),
@@ -319,13 +367,9 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
             ),
             _table(
                 "Cầu bóng trên toàn bộ 107 ô chữ số",
-                "Họ cầu rộng nhất dự án từng quét: nối một chữ số BẤT KỲ bên trong số đầy đủ "
-                "của kỳ trước với một chữ số bất kỳ khác, mỗi chữ số được phép đi qua bóng dương "
-                "hoặc bóng âm. 206.082 giả thuyết, gấp 15,7 lần họ vị trí chéo. "
-                "Ngũ hành không có cột riêng vì Kim 2–7, Mộc 5–0, Thủy 1–6, Hỏa 3–8, Thổ 4–9 "
-                "chính là ánh xạ bóng dương, chỉ khác tên gọi. "
-                "Hai cột cuối mới là thứ đáng đọc: chúng chấm lại đúng những đường cầu ấy trên "
-                "những kỳ chưa từng dùng để chọn ra chúng.",
+                "Ghép các chữ số từ kết quả đầy đủ của những kỳ trước, với phép biến đổi gốc, bóng dương hoặc bóng âm. "
+                "Các đường cầu được chọn trên tập huấn luyện rồi chấm lại trên tập kiểm định và tập giữ lại. "
+                "Đối chiếu độ nâng ở cả ba tập để nhận biết tín hiệu chỉ đẹp trong mẫu.",
                 ["Đường cầu", "Độ nâng (huấn luyện)", "Kiểm định", "Giữ lại", "q"],
                 "ui-r2 ui-r3 ui-r4 ui-r5",
                 _bong_bridge_table(bong_rules),
@@ -365,7 +409,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 span=12,
             ),
             card(
-                '<p class="ui-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
+                '<p id="rl-firewall" class="ui-muted">Hệ thống quét 27×27 vị trí cho hai họ đuôi–đuôi và đầu–đuôi, '
                 "sau đó chia huấn luyện/kiểm định/tập giữ lại theo thời gian. FDR chỉ áp dụng trên tập "
                 "huấn luyện; tập kiểm định và tập giữ lại chưa chạm phải duy trì cỡ ảnh hưởng/độ nâng, "
                 "đồng thời phép kiểm tra thực tế dịch vòng với thống kê cực đại kiểm soát rủi ro dò dữ "
@@ -376,40 +420,63 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
         ]
     )
 
+    css = (Path(__file__).parent / "templates" / "research_lab.css").read_text(encoding="utf-8")
+    sample = _count(diagnostics.get("draw_days"))
+    start_date = html.escape(str(diagnostics.get("start_date") or "—"))
+    end_date = html.escape(str(diagnostics.get("end_date") or "Chưa có báo cáo"))
+    navigation = (
+        ("rl-protocol", "Quy trình"), ("rl-diagnostics", "Kiểm định nền"),
+        ("rl-conditional", "Có điều kiện"), ("rl-bong", "Cầu & vị trí"),
+        ("rl-loto", "Chiến lược"), ("rl-glossary", "Thuật ngữ"),
+    )
+    nav = "".join(f'<a href="#{anchor}">{label}</a>' for anchor, label in navigation)
+    stages = (
+        ("Dữ liệu", "Kết quả đã công bố", "rl-diagnostics"),
+        ("Giả thuyết", "Đăng ký họ quy tắc", "rl-bong"),
+        ("Kiểm định", "FDR & cỡ ảnh hưởng", "rl-diagnostics"),
+        ("Ngoài mẫu", "Kiểm định / giữ lại", "rl-loto"),
+        ("Cổng vận hành", "Xem xét độc lập", "rl-firewall"),
+    )
+    pipeline = "".join(
+        f'<li><a href="#{anchor}"><span class="rl-step">{i:02d}</span><strong>{label}</strong><small>{hint}</small></a></li>'
+        for i, (label, hint, anchor) in enumerate(stages, 1)
+    )
     page = f"""<!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {security_meta_tags()}
 {stylesheet_link()}
-<title>Phòng nghiên cứu</title>
+<title>Phòng nghiên cứu AI · Kiểm chứng tín hiệu</title>
 <style>
-/* Dải tiêu đề cố ý tối ở CẢ hai chế độ màu, nên KHÔNG dùng var(--ui-ink):
-   token đó lật thành màu sáng ở chế độ tối, để lại chữ trắng trên nền sáng —
-   đo được 1,17:1, gần như không đọc nổi. Giá trị cố định là đúng ở đây vì
-   thành phần này không đổi theo chế độ. */
-.rl-hero{{padding:1.75rem;border-radius:var(--ui-r-xl);background:#0f172a;
-color:#fff;margin-bottom:1.25rem}}
-.rl-hero h1{{color:#fff;margin:.5rem 0 .625rem;font-size:clamp(1.75rem,4vw,2.5rem)}}
-.rl-hero p{{margin:0;max-width:60rem;color:#cbd5e1;line-height:1.65}}
-.rl-hero a{{color:#bfdbfe}}
-.rl-metrics{{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));
-gap:1rem;margin-bottom:1.5rem}}
-@media(min-width:640px){{.rl-metrics{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
-@media(min-width:1024px){{.rl-metrics{{grid-template-columns:repeat(4,minmax(0,1fr))}}}}
-.metric-card{{background:var(--ui-surface);border:1px solid var(--ui-border);
-border-radius:var(--ui-r-lg);padding:1.125rem;box-shadow:var(--ui-sh-sm)}}
-.metric-card span,.metric-card em{{display:block;color:var(--ui-ink-soft);
-font-style:normal;font-size:.75rem;line-height:1.5}}
-.metric-card strong{{display:block;font-size:2rem;font-weight:600;
-color:var(--ui-ink);margin:.25rem 0;letter-spacing:-.02em;
-font-variant-numeric:tabular-nums}}
-</style></head><body>
+.rl-hero{{background:#091321;color:#edf5ff}}
+{css}
+</style></head><body data-research-layout="command">
 {shell_open(wide=True)}
-<section class="rl-hero"><div><a href="index.html">← Trang chính</a></div>
-<h1>Phòng nghiên cứu khoa học</h1>
-<p>Không gian kiểm chứng riêng cho thống kê, cầu và chiến lược. Mọi kết quả tại đây được tách khỏi bộ dự báo vận hành cho đến khi vượt qua tập giữ lại theo thời gian, kiểm soát nhiều phép thử, cổng cỡ ảnh hưởng và kiểm tra thực tế chống dò dữ liệu.</p></section>
-<div class="ui-note" style="margin-bottom:1.25rem">Phòng nghiên cứu dùng để <b>bác bỏ nhiễu trước khi tin tín hiệu</b>. Giá trị p nhỏ hoặc độ nâng lịch sử cao không đồng nghĩa với lợi thế dự đoán tương lai. Các bảng kiểm tra tương thích cũ và vị trí chéo độ trễ bên dưới <b>không được nối vào trọng số vận hành</b>.</div>
-<section class="rl-metrics" data-evidence-split>{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report)}</section>
-<div class="ui-grid">{cards}</div>
+<div class="rl-lab" id="rl-top">
+<div class="rl-topbar"><a href="statistics.html">Thống kê / Phòng nghiên cứu</a><span class="rl-label">AI RESEARCH LAB</span></div>
+<section class="rl-hero">
+<div class="rl-hero-copy">
+<p class="rl-eyebrow"><span class="rl-dot"></span> TRUNG TÂM NGHIÊN CỨU ĐỊNH LƯỢNG</p>
+<h1>Khám phá tín hiệu.<br><em>Kiểm chứng bằng dữ liệu.</em></h1>
+<p class="rl-lead">Phòng nghiên cứu khoa học về thống kê, mô hình và chiến lược. Mỗi giả thuyết đi qua dữ liệu, kiểm định và bằng chứng ngoài mẫu.</p>
+<div class="rl-hero-actions"><a class="rl-primary" href="#rl-diagnostics">Khám phá nghiên cứu <span aria-hidden="true">↗</span></a><a class="rl-secondary" href="#rl-protocol">Xem quy trình ↓</a></div>
+<div class="rl-hero-stats"><div><strong>{sample}</strong><span>kỳ trong báo cáo chẩn đoán</span></div><div><span>Phạm vi dữ liệu</span><b>{start_date} → {end_date}</b></div></div>
+</div>
+<div class="rl-network">{_network()}<div class="rl-network-caption"><span class="rl-dot"></span> Sơ đồ các lớp nghiên cứu</div></div>
+</section>
+<nav class="rl-nav" aria-label="Các khu nghiên cứu">{nav}</nav>
+{_overview(firewall)}
+<section class="rl-protocol" id="rl-protocol" aria-labelledby="rl-protocol-title">
+<header class="rl-section-heading"><div><p class="rl-eyebrow">PHƯƠNG PHÁP NGHIÊN CỨU</p><h2 id="rl-protocol-title">Từ giả thuyết đến bằng chứng</h2></div><span class="rl-label">QUY TRÌNH KIỂM CHỨNG</span></header>
+<ol class="rl-pipeline">{pipeline}</ol>
+<div class="rl-principle"><span aria-hidden="true">◈</span><p><strong>Bác bỏ nhiễu trước khi tin tín hiệu.</strong> Giá trị p nhỏ hay độ nâng lịch sử cao cần được kiểm chứng trên dữ liệu ngoài mẫu. Các kết quả nghiên cứu tại đây <b>không được nối vào trọng số vận hành</b>.</p></div>
+</section>
+<section class="rl-family-section" aria-label="Các họ giả thuyết"><header class="rl-section-heading"><div><p class="rl-eyebrow">BẢN ĐỒ NGHIÊN CỨU</p><h2>Các họ giả thuyết đang được đánh giá</h2></div><span class="rl-label">KẾT QUẢ TỪ BÁO CÁO</span></header>
+<section class="rl-metrics" data-evidence-split>{_firewall_cards(firewall, cross_report, conditional_manifest, bong_report) or '<p class="rl-empty">Chưa có báo cáo cho các họ giả thuyết.</p>'}</section></section>
+<section class="rl-glossary" id="rl-glossary" aria-label="Thuật ngữ nghiên cứu"><details><summary>Đọc hiểu các chỉ số nghiên cứu <span>p · q · lift · holdout</span></summary><dl><div><dt>p-value & q (FDR)</dt><dd>p-value đo mức tương thích với giả thuyết không; q hiệu chỉnh nhiều phép thử. Riêng p thô và p EB trong bảng có điều kiện là các ước lượng xác suất trúng.</dd></div><div><dt>Độ nâng (lift)</dt><dd>Tỉ lệ trúng chia cho tỉ lệ nền. Cần xem độ nâng ngoài mẫu cùng cỡ mẫu và độ bất định.</dd></div><div><dt>Tập giữ lại (holdout)</dt><dd>Các kỳ được giữ riêng theo thời gian, không dùng để chọn giả thuyết, để đánh giá kết quả ngoài mẫu.</dd></div><div><dt>Cổng nghiên cứu</dt><dd>Kết quả đạt cổng vẫn cần thẩm định độc lập trước khi xem xét đưa vào vận hành.</dd></div></dl></details></section>
+<div class="rl-section-heading rl-dossiers"><div><p class="rl-eyebrow">HỒ SƠ THỰC NGHIỆM</p><h2>Bằng chứng & kết quả kiểm định</h2></div><span class="rl-label">ĐỐI CHIẾU TỪNG HỌ</span></div>
+<div class="ui-grid rl-evidence-grid">{cards}</div>
+<footer class="rl-footer"><span>RESEARCH LAB / EVIDENCE FIRST</span><a href="do-tin-cay.html">Xem đánh giá độ tin cậy ↗</a><a href="#rl-top">Về đầu trang ↑</a></footer>
+</div>
 {shell_close()}
 </body></html>"""
     docs_dir.mkdir(parents=True, exist_ok=True)
