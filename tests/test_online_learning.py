@@ -364,10 +364,12 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
     frame.tail(4).to_csv(stale_top, index=False)
     online.run_online("de", data, out, now=before(target))
     assert pd.read_csv(stale_top)["number"].tolist() == [0, 1, 2, 3]
+    assert pd.read_csv(stale_top, dtype=str)["number"].tolist() == ["00", "01", "02", "03"]
     frame["prob"] = np.linspace(1, 2, 100) / 150
     frame.to_csv(path, index=False)
     online.run_online("de", data, out, now=before(target))
     restored = pd.read_csv(path)
+    assert pd.read_csv(path, dtype=str)["number"].str.fullmatch(r"[0-9]{2}").all()
     np.testing.assert_array_equal(restored.sort_values("number")["prob"], uniform())
     assert restored["custom"].tolist() == frame["custom"].tolist()
     assert len(pd.read_csv(out / f"predict_next_de_top4_{target}.csv")) == 4

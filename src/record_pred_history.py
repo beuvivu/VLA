@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 from datetime import date, timedelta
 from pathlib import Path
@@ -114,7 +116,7 @@ def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_
         df_all = df_new
     df_all = _sanitize_history(df_all)
     df_all.sort_values([key_col, "number"], inplace=True)
-    df_all.to_csv(out, index=False)
+    write_code_csv(df_all, out, index=False)
 
 
 def main() -> None:

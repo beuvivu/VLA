@@ -6,6 +6,7 @@ import html
 import pandas as pd
 
 from ui_locale import column_label
+from lottery_codes import lottery_code
 from ui_theme import (
     ALIGN_LEFT,
     ALIGN_RIGHT,
@@ -55,6 +56,8 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
 
     cols = [c for c in ["predict_for_date", "number", "prob_percent", "prob"] if c in df.columns]
     view = df[cols].copy()
+    if "number" in view:
+        view["number"] = view["number"].map(lottery_code)
 
     if "prob_percent" in view.columns:
         view["prob_percent"] = view["prob_percent"].astype(float).map(lambda x: f"{x:.3f}%")
@@ -151,7 +154,7 @@ def _forecast_body(frame: pd.DataFrame, table: str, date: str,
     if "number" in frame:
         for index, number in enumerate(frame["number"]):
             evidence = f' data-evidence="{html.escape(rows[index][0])}"' if index < len(rows) else ""
-            numbers.append(f'<li{evidence}><b>{html.escape(str(number).zfill(2))}</b></li>')
+            numbers.append(f'<li{evidence}><b>{html.escape(lottery_code(number))}</b></li>')
     strip = ('<ol class="app-lab-number-strip" aria-label="Các số theo thứ tự công bố">'
              + ''.join(numbers) + '</ol>') if numbers else ''
     hero = lab_hero(current, f"Dự báo ML · Top 10 {name}", subtitle,

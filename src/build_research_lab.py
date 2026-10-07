@@ -6,6 +6,7 @@ import argparse
 import html
 import json
 from pathlib import Path
+from lottery_codes import lottery_code
 
 import pandas as pd
 
@@ -284,7 +285,7 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
     for _, r in view.iterrows():
         rows.append(
             "<tr>"
-            f"<td>{html.escape(str(r.get('number_str', int(r.get('number', 0)))))}</td>"
+            f"<td>{html.escape(lottery_code(r.get('number')))}</td>"
             f"<td>{int(r.get('trials', 0))}</td>"
             f"<td>{int(r.get('hits', 0))}</td>"
             f"<td>{_fmt(r.get('p_raw'), 4)}</td>"

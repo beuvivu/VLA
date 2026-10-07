@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Canonical calendar-safe next-day conditional matrices.
 
 This module supersedes the row-adjacent conditional-table implementation that
@@ -330,7 +332,7 @@ def write_canonical_tables(*, top: int = 500) -> list[Path]:
     for name, table in tables.items():
         csv_path = out / f"{name}.csv"
         json_path = out / f"{name}.json"
-        table.to_csv(csv_path, index=False)
+        write_code_csv(table, csv_path, index=False)
         table.to_json(json_path, orient="records", indent=2, force_ascii=False)
         created.extend([csv_path, json_path])
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import json
 from datetime import date
@@ -255,8 +257,8 @@ def main() -> None:
         (stats_df["trials"] >= params.min_trials)
         & (stats_df["current_streak"] >= params.min_current_streak)
     ].copy()
-    stable_df.to_csv(out_dir / f"paths_{args.mode}_stable.csv", index=False)
-    active_df.to_csv(out_dir / f"paths_{args.mode}_active.csv", index=False)
+    write_code_csv(stable_df, out_dir / f"paths_{args.mode}_stable.csv", index=False)
+    write_code_csv(active_df, out_dir / f"paths_{args.mode}_active.csv", index=False)
 
     stable_lines = _build_path_lines(
         stats_df=stable_df,
@@ -281,12 +283,12 @@ def main() -> None:
         top_paths=args.top_paths,
     )
 
-    stable_lines.to_csv(
+    write_code_csv(stable_lines,
         out_dir
         / f"ui_{args.mode}_stable_{anchor_date.isoformat()}_{display_days}d.csv",
         index=False,
     )
-    active_lines.to_csv(
+    write_code_csv(active_lines,
         out_dir
         / f"ui_{args.mode}_active_{anchor_date.isoformat()}_{display_days}d.csv",
         index=False,
@@ -319,11 +321,11 @@ def main() -> None:
         bias_special_both=args.bias_special_both,
     )
 
-    pred_active.to_csv(
+    write_code_csv(pred_active,
         out_dir / f"predict_next_{args.mode}_active_{anchor_date.isoformat()}.csv",
         index=False,
     )
-    pred_stable.to_csv(
+    write_code_csv(pred_stable,
         out_dir / f"predict_next_{args.mode}_stable_{anchor_date.isoformat()}.csv",
         index=False,
     )
@@ -353,12 +355,12 @@ def main() -> None:
             bias_special_touch=args.bias_special_touch,
             bias_special_both=args.bias_special_both,
         )
-        pred_active_full.to_csv(
+        write_code_csv(pred_active_full,
             out_dir
             / f"predict_next_{args.mode}_active_{anchor_date.isoformat()}_all.csv",
             index=False,
         )
-        pred_stable_full.to_csv(
+        write_code_csv(pred_stable_full,
             out_dir
             / f"predict_next_{args.mode}_stable_{anchor_date.isoformat()}_all.csv",
             index=False,

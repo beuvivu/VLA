@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Historical statistics for the common 50-cặp-loto partition.
 
 The partition contains 45 reverse pairs and five kép-bóng pairs. This module
@@ -260,7 +262,7 @@ def main() -> None:
     modes = ["loto", "de"] if args.mode == "both" else [args.mode]
     for mode in modes:
         df, summary = build_stats(mode, data_dir=data_dir)
-        df.to_csv(out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
+        write_code_csv(df, out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
         (out_dir / f"cap_loto_50_summary_{mode}.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",

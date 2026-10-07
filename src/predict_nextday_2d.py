@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import json
 from dataclasses import dataclass
@@ -376,12 +378,12 @@ def main() -> None:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    df_all.to_csv(
+    write_code_csv(df_all,
         out_dir / f"predict_next_{args.mode}_all_{target.isoformat()}.csv",
         index=False,
     )
     for n, top in top_frames(df_all, args.mode).items():
-        top.to_csv(
+        write_code_csv(top,
             out_dir / f"predict_next_{args.mode}_top{n}_{target.isoformat()}.csv",
             index=False,
         )

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 from datetime import date
 from pathlib import Path
 
@@ -94,8 +96,8 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    de_df.to_csv(out / "cycle_de.csv", index=False)
-    loto_df.to_csv(out / "cycle_loto.csv", index=False)
+    write_code_csv(de_df, out / "cycle_de.csv", index=False)
+    write_code_csv(loto_df, out / "cycle_loto.csv", index=False)
 
     # Aggregates by head/tail/total (DE)
     def head(x: int) -> int:
@@ -122,7 +124,7 @@ def build_cycle_tables(out_dir: str = "data/cycle") -> None:
                     "gap_unit": "calendar_days_absent",
                 }
             )
-    pd.DataFrame(agg_rows).to_csv(out / "cycle_de_groups.csv", index=False)
+    write_code_csv(pd.DataFrame(agg_rows), out / "cycle_de_groups.csv", index=False)
 
     print(f"Saved cycle tables to: {out.resolve()}")
 

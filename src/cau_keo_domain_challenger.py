@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Validation-gated domain challenger for the production cầu-kèo model.
 
 The baseline model in :mod:`cau_keo_ml` remains the champion.  This module adds
@@ -562,8 +564,8 @@ def _write_prediction_outputs(
     cols = [c for c in base_cols if c in pred.columns]
     all_path = out_dir / f"cau_keo_{mode}_all.csv"
     top_path = out_dir / f"cau_keo_{mode}_top{top}.csv"
-    pred[cols].to_csv(all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    pred.head(top)[cols].to_csv(top_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(pred[cols], all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(pred.head(top)[cols], top_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
     return [all_path, top_path]
 
 
@@ -668,7 +670,7 @@ def run_mode(
     created = _write_prediction_outputs(judged, mode=mode, out_dir=out_dir, top=config.top)
     ablation_path = out_dir / f"cau_keo_domain_ablation_{mode}.csv"
     gate_path = out_dir / f"cau_keo_domain_gate_{mode}.json"
-    ablation.to_csv(ablation_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(ablation, ablation_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
     gate.update(
         {
             "anchor_date": latest_anchor,

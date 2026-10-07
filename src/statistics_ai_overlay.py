@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Date-safe AI/statistics overlay for the legacy 00..99 statistics dashboard.
 
 The historical ``statistical_matrices`` builder accepted any probability file
@@ -360,7 +362,7 @@ def write_overlays() -> list[Path]:
         )
         csv_path = out_dir / f"ai_ml_signal_{mode}.csv"
         json_path = out_dir / f"ai_ml_signal_{mode}.json"
-        table.to_csv(csv_path, index=False)
+        write_code_csv(table, csv_path, index=False)
         table.to_json(
             json_path,
             orient="records",

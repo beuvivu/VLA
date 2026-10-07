@@ -8,6 +8,8 @@ bảo đảm kiểm định tuần tự hay lời hứa dự đoán được m�
 
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import base64
 import copy
@@ -670,13 +672,13 @@ def run_online(
             published_frame = published_frame.sort_values(
                 "prob", ascending=False, kind="stable"
             ).reset_index(drop=True)
-            _atomic_write(prediction_path, published_frame.to_csv(index=False).encode("utf-8"))
+            _atomic_write(prediction_path, write_code_csv(published_frame, index=False).encode("utf-8"))
         ranked = published_frame.sort_values("prob", ascending=False, kind="stable").copy()
         ranked["number_str"] = ranked["number"].map(lambda number: f"{number:02d}")
         for n in (4, 8, 10):
             top_path = out_dir / f"predict_next_{mode}_top{n}_{target}.csv"
             # Khôi phục cả tệp top nếu lần trước ngắt sau khi đã ghi tệp đủ số.
-            _atomic_write(top_path, ranked.head(n).to_csv(index=False).encode("utf-8"))
+            _atomic_write(top_path, write_code_csv(ranked.head(n), index=False).encode("utf-8"))
         picks_path = out_dir / f"picks_{mode}.json"
         picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}
         picks.update(
