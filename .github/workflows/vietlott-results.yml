@@ -58,15 +58,22 @@ jobs:
           python -m pip install --no-cache-dir -r requirements.txt
           python -m pip install --no-cache-dir -e vietlott
 
-      # Trạng thái bộ dự báo do workflow engine lưu (đã học tới kỳ mới nhất).
-      # Chỉ KHÔI PHỤC, không lưu: trang chỉ đọc. Mất cache thì phần phân tích
-      # tự học lại từ dữ liệu đi kèm và ghi rõ dữ liệu tới kỳ nào.
-      - name: Khôi phục trạng thái bộ dự báo của engine
+      # Trạng thái engine do `vlm-results.yml` / `vlm-update.yml` lưu: kho DuckDB
+      # (bảng giải, số người trúng mới), kho Keno/Bingo18, trạng thái bộ dự báo.
+      # Chỉ KHÔI PHỤC, không lưu: trang chỉ đọc. Danh sách đường dẫn PHẢI trùng
+      # từng dòng với bước lưu — `actions/cache` tính phiên bản theo nó, lệch một
+      # dòng là không bao giờ khôi phục được (`tests/test_vietlott_engine_layout.py`).
+      # Mất cache thì trang dựng từ dữ liệu đã commit, phân tích học lại từ seed.
+      - name: Khôi phục trạng thái của engine
         uses: actions/cache/restore@v6
         with:
           path: |
+            vietlott/data/vietlott.duckdb*
+            vietlott/data/parquet
+            vietlott/data/products
             vietlott/data/forecast/*.json
             vietlott/data/forecast/ml/*.json.gz
+            vietlott/data/results/status.json
           key: vqe-state-${{ github.run_id }}
           restore-keys: vqe-state-
 

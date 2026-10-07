@@ -50,13 +50,22 @@ def _dashboard() -> dict:
     compared = {"status": "matched", "product": "mega645", "target_id": 1571, "target_date": "2026-10-04",
                 "registered": True, "result": latest,
                 "tickets": [{"numbers": [14, 20, 21, 24, 27, 30], "matched_numbers": [20], "hits": 1}]}
+    mismatched = {"status": "date_mismatch", "product": "mega645", "target_id": 1569,
+                  "target_date": "2026-10-01", "registered": True, "tickets": []}
+    lotto_draw = _matrix(930, None, numbers=(15, 22, 27, 28, 29), bonus=3)
+    lotto_compared = {"status": "matched", "product": "lotto535", "target_id": 930, "target_date": "2026-10-06",
+                      "registered": True, "result": lotto_draw,
+                      "tickets": [{"numbers": [1, 2, 3, 4, 5], "special": 7, "matched_numbers": [], "hits": 0}]}
     reference = {**forecast, "registered": False, "status": "reference",
                  "note": "Dự báo tham khảo; chưa xác minh thời điểm từng kỳ."}
     products = [
         {"product": "mega645", "name": "Mega 6/45", "schedule": "18:00 Thứ 4, 6, CN",
          "official_url": "https://vietlott.vn/vi/645", "latest": latest, "draws": [latest, older],
          "prize_catalogue": [{"label": "Jackpot", "condition": "6 số chính", "value_vnd": None, "code": "jackpot1"}],
-         "next_forecast": forecast, "comparisons": [compared]},
+         "next_forecast": forecast, "comparisons": [compared, mismatched]},
+        {"product": "lotto535", "name": "Lotto 5/35", "schedule": "13:00 và 21:00",
+         "latest": lotto_draw, "draws": [lotto_draw], "prize_catalogue": [], "next_forecast": None,
+         "comparisons": [lotto_compared]},
         {"product": "keno", "name": "Keno", "schedule": "~8 phút/kỳ",
          "latest": {**_matrix(298378, None, numbers=range(1, 21)), "prizes": [],
                     "facts": {"large": 11, "small": 9, "even": 12, "odd": 8}},
@@ -128,6 +137,38 @@ def test_forecasts_say_whether_they_were_registered_before_the_draw(built) -> No
     keno = built["vietlott-keno.html"]
     assert "Tham khảo" in keno and "Đã đăng ký trước kỳ" not in keno
     assert "Chưa có kết quả đã xác thực" in built["vietlott-power-655.html"]
+
+
+def test_a_date_mismatch_is_shown_as_such_not_as_pending(built) -> None:
+    mega = built["vietlott-mega-645.html"]
+    row = mega.split('<th scope="row">#1569</th>', 1)[1].split("</tr>", 1)[0]
+    assert "Lệch ngày" in row and "Chờ kết quả" not in row
+
+
+def test_comparisons_show_the_special_number_on_both_sides(built) -> None:
+    lotto = built["vietlott-lotto-535.html"]
+    row = lotto.split('<th scope="row">#930</th>', 1)[1].split("</tr>", 1)[0]
+    assert "01 02 03 04 05 + 07" in row, row
+    assert "15 22 27 28 29 + 03" in row, row
+
+
+def test_a_cache_path_from_the_repo_root_is_resolved_before_entering_the_engine(tmp_path, monkeypatch) -> None:
+    """Workflow truyền ``vietlott/data/forecast`` tính từ gốc kho; engine chạy sau chdir."""
+    (tmp_path / "states").mkdir()
+    monkeypatch.chdir(tmp_path)
+    seen = []
+
+    class Stop(Exception):
+        pass
+
+    def capture(work, cache_states):
+        seen.append(cache_states)
+        raise Stop
+
+    monkeypatch.setattr(b, "_states_dir", capture)
+    with pytest.raises(Stop):
+        b.load(Path("states"), products=())
+    assert seen == [(tmp_path / "states").resolve()]
 
 
 def test_the_overview_names_each_latest_draw(built) -> None:

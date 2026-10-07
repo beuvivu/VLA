@@ -160,6 +160,9 @@ def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> d
 
 def load(cache_states: Path | None = None, products: tuple[str, ...] = tuple(PRODUCTS)) -> dict[str, Any]:
     """Bảng điều khiển của engine + phân tích, đọc từ dữ liệu ``vietlott/`` đã commit."""
+    # Phân giải TRƯỚC khi chuyển vào thư mục engine: workflow truyền đường dẫn tính từ
+    # gốc kho (``vietlott/data/forecast``), sau chdir nó thành ``vietlott/vietlott/...``.
+    cache_states = Path(cache_states).resolve() if cache_states else None
     with tempfile.TemporaryDirectory() as tmp, _engine_importable():
         from vlm.web.dashboard import build_dashboard
 
@@ -267,18 +270,24 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
         return '<p class="vl-muted">Chưa có dự báo đăng ký trước kỳ nào để đối chiếu.</p>'
     rows = []
     for c in comparisons[:COMPARISONS_SHOWN]:
-        status = {"matched": "Đã chấm", "pending": "Chờ kết quả", "mismatch": "Lệch ngày"}.get(c.get("status"), "Chờ kết quả")
+        # Engine ghi ``date_mismatch`` khi mã kỳ khớp mà ngày quay khác ngày đã đăng ký:
+        # lỗi ghép dữ liệu, không phải "chờ kết quả".
+        status = {"matched": "Đã chấm", "pending": "Chờ kết quả", "date_mismatch": "Lệch ngày"}.get(
+            c.get("status"), "Chờ kết quả")
         tickets = c.get("tickets") or []
         if c.get("status") == "matched" and tickets:
             best = max((int(t.get("hits") or 0) for t in tickets), default=0)
             detail = " · ".join(
                 esc(t.get("symbol") or _symbol(product, t.get("numbers") or []))
+                + (f" + {esc(_two(t['special']))}" if t.get("special") is not None else "")
                 + (f' <b>({int(t.get("hits") or 0)})</b>' if product not in MAX else
                    (f' <b>({", ".join(esc(x) for x in t.get("tiers") or [])})</b>' if t.get("tiers") else ""))
                 for t in tickets[:5])
             result = c.get("result") or {}
             drawn = (" · ".join(esc(x) for x in result.get("numbers") or []) if product in MAX
                      else " ".join(esc(_two(x)) for x in result.get("numbers") or []))
+            if product in MATRIX and result.get("bonus") is not None:
+                drawn += f" + {esc(_two(result['bonus']))}"
             rows.append(f'<tr><th scope="row">#{esc(c.get("target_id"))}</th><td>{day_label(c.get("target_date"))}</td>'
                         f'<td>{status}</td><td>{detail}</td><td>{drawn}</td><td class="vl-num">{best}</td></tr>')
         else:

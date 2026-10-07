@@ -77,6 +77,26 @@ def test_engine_workflows_run_inside_the_engine_and_never_deploy_pages(workflow:
     assert cache_paths_outside_engine(document) == []
 
 
+def _cache_paths(document: dict, action: str) -> list[list[str]]:
+    return [
+        [line.strip() for line in str(step["with"]["path"]).splitlines() if line.strip()]
+        for job in (document.get("jobs") or {}).values()
+        for step in job.get("steps") or []
+        if str(step.get("uses", "")).startswith(action)
+    ]
+
+
+def test_the_page_build_restores_exactly_what_the_engine_saves() -> None:
+    """``actions/cache`` tính phiên bản theo danh sách đường dẫn: khôi phục bằng một
+    danh sách khác bước lưu thì không bao giờ trúng cache nào, và trang mất bảng giải
+    mới lẫn trạng thái bộ dự báo mà không báo lỗi."""
+    saved = {tuple(p) for name in ("vlm-results.yml", "vlm-update.yml")
+             for p in _cache_paths(_load(ROOT / ".github" / "workflows" / name), "actions/cache/save")}
+    assert len(saved) == 1, saved
+    restored = _cache_paths(_load(ROOT / ".github" / "workflows" / "vietlott-results.yml"), "actions/cache/restore")
+    assert [tuple(p) for p in restored] == list(saved)
+
+
 def test_the_rules_themselves_catch_violations() -> None:
     """Ghim chính LUẬT trên mẫu dựng sẵn: quét qua tệp thật có thể không bao giờ đỏ."""
     deploy = {
