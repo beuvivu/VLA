@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at_utc": "2026-10-07T16:31:05Z",
+  "generated_at_utc": "2026-10-07T17:14:36Z",
   "anchor_date": "2026-10-07",
   "target_date": "2026-10-08",
   "history_days": 4228,
@@ -31,7 +31,7 @@
       "log(s=1)": 0.18038507504915155,
       "log(s=1.2)": 0.1803890597394933,
       "log(s=1.5)": 0.18039544973972474,
-      "log(s=2)": 0.18040719652250092,
+      "log(s=2)": 0.1804071965225009,
       "log(s=3)": 0.18043477302928265
     },
     "holdout_days": 90,
@@ -50,7 +50,7 @@
   },
   "mean_stability": 0.9949168459984792,
   "min_stability": 0.9947547076640296,
-  "max_stability": 0.9950411974444995,
+  "max_stability": 0.9950411974444996,
   "dynamics_weight_in_stat_signal": 0.3,
   "global_dynamics_reliability": 0.7663164884695136,
   "regime_js_divergence_30_vs_180": 0.008868625218821964,

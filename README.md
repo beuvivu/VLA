@@ -221,16 +221,6 @@ Các quy trình phục hồi kiểm tra trạng thái trước khi gọi để t
 | Hai chữ số | `data/xsmb-2-digits.csv` | `data/xsmb-2-digits.json` | `data/excel/xsmb-2-digits.xlsx` |
 | Thưa 00–99 | `data/xsmb-sparse.csv` | `data/xsmb-sparse.json` | `data/excel/xsmb-sparse.xlsx` |
 
-Mã kết quả trong CSV giữ đủ độ dài của giải; mã LOTO/Đặc Biệt hai chữ số
-giữ dạng `00`–`99`. Khi đọc CSV bằng pandas, khai `dtype` chuỗi cho cột mã.
-Khi mở bằng Excel, dùng bản `.xlsx`: CSV không lưu kiểu ô nên Excel có thể
-tự suy mã `03` thành số `3` dù nội dung tệp vẫn là `03`. Các ô mã trong XLSX
-được lưu dưới dạng văn bản và kiểm tra sau khi mở lại. JSON chuẩn và chỉ số
-cột của ma trận thưa giữ hợp đồng số nguyên cho các chương trình phân tích.
-
-Chạy `python src/lottery_codes.py` để chuẩn hóa CSV đã có. Pipeline chạy bước
-này trước khi dựng trang, giữ nguyên số đếm, hạng, xác suất và ô thiếu dữ liệu.
-
 Dữ liệu dẫn xuất:
 
 - `data/source_audit.json` — nguồn gốc/đồng thuận gần đây.
