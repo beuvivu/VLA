@@ -95,5 +95,25 @@
       .finally(function () { if (version === revision) pending = null; });
     return pending;
   }
-  window.LivePredictions = { load: load };
+  // Kỳ đã quay xong thì số của nó không còn là dự đoán: chuyển sang kỳ kế tiếp.
+  // live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau, nên nếu chỉ khoá
+  // theo ngày ấy thì khối đứng yên ở số cũ cả đêm lẫn sáng hôm sau.
+  // Mọi trạng thái "complete*" đều nghĩa là đã đủ 27 giải: complete_verified,
+  // complete_provisional, complete_conflict (src/live_sync.py, worker/src/snapshot.js).
+  // Chưa xác minh hay còn bất đồng nguồn thì kỳ quay vẫn đã kết thúc.
+  function finished(status) {
+    return typeof status === 'string' && status.indexOf('complete') === 0;
+  }
+
+  function nextDay(value) {
+    var day = new Date(value + 'T00:00:00Z');
+    day.setUTCDate(day.getUTCDate() + 1);
+    return day.toISOString().slice(0, 10);
+  }
+
+  function loadForDraw(drawDate, status) {
+    if (validDate(drawDate) && finished(status)) return load(nextDay(drawDate));
+    return load(drawDate);
+  }
+  window.LivePredictions = { load: load, loadForDraw: loadForDraw };
 })();

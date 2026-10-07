@@ -84,6 +84,8 @@ def test_the_live_page_reads_the_daily_snapshot() -> None:
     assert "predict_next_" not in script
     live = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     assert "đứng đầu bảng Cầu Kèo" in live
+    # Trang gọi theo TRẠNG THÁI kỳ quay, để kỳ đã quay xong chuyển sang kỳ kế tiếp.
+    assert "LivePredictions.loadForDraw(data.draw_date, status)" in live
     assert "không phải xác suất" in live
 
 

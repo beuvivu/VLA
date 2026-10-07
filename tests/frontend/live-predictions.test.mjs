@@ -59,3 +59,24 @@ test('Invalid dates clear stale values and malformed CSV produces an empty state
   assert.deepEqual(numbers(empty.d, 'de'), []);
   assert.match(empty.d.querySelector('[data-prediction-mode="de"] p').textContent, /Chưa có/);
 });
+test('A finished draw moves the block to the next draw date', async t => {
+  const urls = [];
+  const {d} = setup(t, async url => { urls.push(url); return csv('number\n31'); });
+  const api = d.defaultView.LivePredictions;
+  // Đang quay: vẫn là số của chính kỳ ấy.
+  await api.loadForDraw('2026-10-07', 'partial');
+  assert.equal(d.querySelector('time').dateTime, '2026-10-07');
+  // Quay xong (kể cả qua cuối tháng/năm): số của kỳ kế tiếp.
+  // Mọi trạng thái hoàn tất mà hai nguồn trực tiếp thật sự ghi ra.
+  for (const [status, draw, next] of [['complete_verified', '2026-10-07', '2026-10-08'], ['complete_provisional', '2026-10-31', '2026-11-01'], ['complete_conflict', '2026-12-31', '2027-01-01'], ['complete', '2026-10-09', '2026-10-10']]) {
+    await api.loadForDraw(draw, status);
+    assert.equal(d.querySelector('time').dateTime, next);
+    assert.ok(urls.at(-1).endsWith('_top10_' + next + '.csv'), urls.at(-1));
+  }
+  for (const status of ['waiting', 'partial', undefined]) {
+    await api.loadForDraw('2026-10-11', status);
+    assert.equal(d.querySelector('time').dateTime, '2026-10-11');
+  }
+  await api.loadForDraw('2026-02-30', 'complete_verified');
+  assert.equal(d.querySelector('time').dateTime, '');
+});
