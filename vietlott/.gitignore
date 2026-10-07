@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# cấu hình máy cục bộ
+.env
+
+# lệnh tắt do bộ cài tạo
+/vietlott
+/vietlott.cmd
+
+# dữ liệu tạo ra khi chạy (dựng lại được từ data/seed + nguồn dữ liệu)
+data/*.duckdb*
+data/parquet/
+data/products/
+data/updates/
+data/results/status.json
+data/results/writer.lock
+data/forecast/*
+!data/forecast/ledger.jsonl
+!data/forecast/ml-ledger.jsonl
+data/forecast.lock
+data/local/
+reports/*.json
+site/
+.vendor/

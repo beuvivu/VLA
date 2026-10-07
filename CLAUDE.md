@@ -246,6 +246,26 @@ lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 g
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
 
+## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
+
+Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,
+"Vietlott Quant Engine") nhưng hai bên chạy riêng rẽ, để sau còn tách thành hai
+trang. Toàn bộ VLM (bản `6bec0c9`, trừ `.github`) nằm ở `vietlott/` như một dự án
+TỰ ĐỦ: `pyproject.toml`, `src/vietlott_engine`, `src/vlm`, `data/`, `scripts/`,
+`tests/`, `reports/`. Đừng trộn nó vào `src/` hay `data/` của VLA, và đừng sửa
+logic của nó ở đây khi không cần — engine tự tìm thư mục dự án qua `paths.py`.
+
+- Chạy: `cd vietlott && python -m pip install -e ".[dev,crawler]" && python -m pytest`
+  (369 phép kiểm). Lệnh: `vietlott`, `vlm-update`, `vlm-forecast`, `vlm-audit`.
+- Workflow ở `.github/workflows/vlm-*.yml` (GitHub chỉ đọc workflow ở gốc kho),
+  `working-directory: vietlott`, đường dẫn cache có tiền tố `vietlott/`. Chúng KHÔNG
+  triển khai Pages; trang riêng của engine chỉ được dựng và lưu thành artifact.
+  `tests/test_vietlott_engine_layout.py` canh cả ba điều.
+- Phép kiểm của engine tìm workflow ở cả hai bố cục (`tests/conftest.py`,
+  `find_workflows`): kho riêng thì `.github/workflows/*.yml`, nằm trong VLA thì
+  `../.github/workflows/vlm-*.yml`.
+- Tag phát hành của engine là `vlm-v<phiên bản>`.
+
 ## Phòng thử thách mô hình `src/vla/`
 
 `src/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,
