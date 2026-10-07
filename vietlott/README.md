@@ -719,6 +719,7 @@ Lỗi nghiệp vụ trả JSON `{"error", "detail"}`: 422 (dữ liệu không h�
 docker compose build
 docker compose up -d api                           # API :8000 + tự cập nhật theo lịch từng sản phẩm
 make docker-job                                   # job nghiên cứu → ./reports (chạy bằng UID của bạn)
+docker compose --profile jobs run --rm backtest    # cùng job, không cần make (Docker Desktop; Linux xem dưới)
 ```
 
 - `api`: khi volume trống, nạp snapshot có sẵn trong image (kết quả + dữ liệu giải thưởng), mô hình hiệu chỉnh trong `/app/calibration`, rồi sync tăng dần **ở nền** (API phục vụ ngay, không chặn khởi động nếu mạng lỗi).
