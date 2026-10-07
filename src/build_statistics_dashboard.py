@@ -549,7 +549,11 @@ def _table(
                 continue
             raw = row.get(c, "")
             if c in full_results:
-                val = html.escape(_full_special_value(raw))
+                full = _full_special_value(raw)
+                val = (
+                    f'{html.escape(full[:-2])}<span class="special-result-tail">{html.escape(full[-2:])}</span>'
+                    if full else ""
+                )
             else:
                 val = _fmt2(raw) if c in zfill else _display_cell(raw, c)
             cell_class = "special-result" if c in full_results else ""
@@ -1241,12 +1245,13 @@ _DASHBOARD_CSS = """\
     .result-calendar tr:hover td:first-child { background: var(--ui-surface-2); }
     .result-calendar .table-wrap { max-height: none; }
     .result-calendar .special-result {
-      color: var(--ui-special-ink);
+      color: var(--ui-ink);
       font-weight: 750;
       font-size: 14px;
       font-variant-numeric: tabular-nums;
       letter-spacing: .04em;
     }
+    .result-calendar .special-result-tail { color: var(--ui-special-ink); }
     .result-calendar th:last-child, .result-calendar td:last-child { border-right: 0; }
     .result-calendar tbody tr:last-child td { border-bottom: 0; }
     .result-calendar .table-wrap:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
