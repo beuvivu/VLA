@@ -42,3 +42,9 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
+
+[tool.pytest.ini_options]
+# Bộ kiểm của VLA. Engine Vietlott `vietlott/` là dự án con có bộ kiểm và môi
+# trường riêng (`cd vietlott && python -m pytest`, workflow `vlm-ci.yml`); máy
+# chạy bộ kiểm VLA không cài phụ thuộc của engine, nên không gom chung.
+testpaths = ["tests"]
