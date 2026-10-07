@@ -191,10 +191,15 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
             assert f"data-col='{col}'" in html or f'data-col="{col}"' in html, (page.name, col)
 
 
-def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
+def test_live_forecasts_cite_the_cau_keo_table_not_the_live_draw() -> None:
+    """Khối dự đoán trên trang trực tiếp là 10 số đứng đầu bảng Cầu Kèo (yêu cầu
+    07-10-2026), nên bằng chứng phải trích mô hình cầu-kèo và cách tính điểm."""
     sections = {s["match"]: s for s in registry("live.html")["sections"]}
     titles = [src["title"] for src in sections["#live-predictions"]["sources"]]
-    assert "Dự báo đã công bố trước kỳ quay" in titles
+    assert "Mô hình cầu-kèo AI/ML" in titles
+    assert "Dự báo đã công bố trước kỳ quay" not in titles
+    steps = " ".join(sections["#live-predictions"]["reasoningTrace"]["steps"])
+    assert "không phải xác suất" in steps
     assert "Bảng kết quả đang quay" not in titles
     assert "Bảng kết quả đang quay" in [src["title"] for src in registry("live.html")["page"]["sources"]]
     # Trang tải dự báo theo ngày quay lúc chạy: không được ghi ngày lúc dựng.
@@ -209,7 +214,6 @@ def test_mixed_forecast_blocks_cite_both_model_pages() -> None:
 
     both = {"ml_top10_loto.html", "ml_top10_de.html"}
     assert ml_links(registry("dashboard.html")["page"]) == both
-    assert ml_links(registry("live.html")["sections"][0]) == both
     assert ml_links(registry("ml_top10_loto.html")["page"]) == {"ml_top10_loto.html"}
     assert ml_links(registry("ml_top10_de.html")["page"]) == {"ml_top10_de.html"}
 

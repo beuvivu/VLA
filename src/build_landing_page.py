@@ -22,6 +22,7 @@ from safe_io import read_csv_or_empty, read_json_or_empty
 
 from app_icons import icon_svg
 from calendar_widget import render_calendar
+from cau_keo_daily_top import top_by_cau_score
 from draw_metadata import load_draw_metadata, station_for_date
 from build_position_bridges import best_panel, bridge_css
 from build_position_bridges import load as load_position_bridges
@@ -2098,13 +2099,13 @@ def _render_html(
         repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
     )
 
-    ai_loto = _sort_top(
-        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str),
-        "cau_score",
-        10,
+    # Cùng phép xếp với bản chụp theo ngày mà trang trực tiếp đọc
+    # (``cau_keo_daily_top``): hai nơi phải ra đúng một bộ 10 số.
+    ai_loto = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str)
     )
-    ai_de = _sort_top(
-        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str), "cau_score", 10
+    ai_de = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str)
     )
     loto_rhythm = _sort_top(
         _read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
