@@ -129,6 +129,10 @@ jobs:
         run: |
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
           python -m pip install --no-cache-dir -r requirements-dev.txt
+          # Trang Vietlott dựng từ engine `vietlott/`, và phép kiểm của trang đọc
+          # dữ liệu engine thật — thiếu duckdb, pydantic-settings… của engine là
+          # `test_vietlott_results.py` đỏ. Engine là dự án tự đủ, cài như gói.
+          python -m pip install --no-cache-dir -e vietlott
 
       - name: Kiểm thử tương tác điều hướng
         run: |
