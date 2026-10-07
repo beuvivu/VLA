@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Clickable evidence tables for "đường cầu" positions.
 
 The AI/ML layer scores numbers, while this module answers the practical UI
@@ -409,8 +411,8 @@ def run(
         positions_path = out / f"cau_position_evidence_{m}.csv"
         summary_path = out / f"cau_number_explain_{m}.csv"
 
-        positions.to_csv(positions_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-        summary.to_csv(summary_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+        write_code_csv(positions, positions_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+        write_code_csv(summary, summary_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
         created.extend([positions_path, summary_path])
         manifest_outputs[m] = {
             "positions": positions_path.name,

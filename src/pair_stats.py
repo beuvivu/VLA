@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import json
 from pathlib import Path
@@ -87,7 +89,7 @@ def compute_pair_frequency(df_2d: pd.DataFrame) -> pd.DataFrame:
 def _write_cap_loto_50_stats(*, data_dir: Path, out_dir: Path) -> None:
     for mode in ("loto", "de"):
         df, summary = build_cap_loto_50_stats(mode, data_dir=data_dir)
-        df.to_csv(out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
+        write_code_csv(df, out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
         (out_dir / f"cap_loto_50_summary_{mode}.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
@@ -117,10 +119,10 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rev = compute_reversal_pair_cooccurrence(df_2d)
-    rev.to_csv(out_dir / "reversal_pair_cooccurrence.csv", index=False)
+    write_code_csv(rev, out_dir / "reversal_pair_cooccurrence.csv", index=False)
 
     pairs = compute_pair_frequency(df_2d).head(args.top)
-    pairs.to_csv(out_dir / f"top_unordered_pairs_top{args.top}.csv", index=False)
+    write_code_csv(pairs, out_dir / f"top_unordered_pairs_top{args.top}.csv", index=False)
 
     # The 50-pair system is a different object from arbitrary co-occurrence:
     # 45 AB-BA pairs plus 5 kép-bóng pairs partition the whole 00..99 universe.

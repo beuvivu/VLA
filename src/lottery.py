@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import json
 import logging
 from collections import defaultdict
@@ -104,7 +106,8 @@ class Lottery:
     def dump(self) -> None:
         def _dump(df: pd.DataFrame, file_name: str) -> None:
             self._paths.data_dir.mkdir(parents=True, exist_ok=True)
-            df.to_csv(self._paths.data_dir / f"{file_name}.csv", index=False)
+            csv_path = self._paths.data_dir / f"{file_name}.csv"
+            write_code_csv(df, csv_path, index=False)
             df.to_json(
                 self._paths.data_dir / f"{file_name}.json",
                 orient="records",

@@ -13,6 +13,7 @@ from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, load_ensemble_weights
 import pandas as pd
 
 from safe_io import read_csv_or_empty, read_json_or_empty
+from lottery_codes import lottery_code
 
 from page_output import write_page
 from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
@@ -159,6 +160,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         if not cols:
             cols = df.columns.tolist()[:2]
         df2 = df[cols].copy()
+        if "number" in df2:
+            df2["number"] = df2["number"].map(lottery_code)
         if "prob" in df2.columns:
             df2["prob"] = df2["prob"].astype(float).map(lambda x: f"{x:.6f}")
         df2 = df2.rename(columns=column_label)

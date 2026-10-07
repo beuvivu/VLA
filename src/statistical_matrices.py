@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Period matrices, boards, and AI/ML-assisted statistical signals for XSMB.
 
 The tables in this module are descriptive analytics derived from historical
@@ -671,7 +673,7 @@ def _to_10x10_from_number_metric(df: pd.DataFrame, *, metric: str) -> pd.DataFra
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> Path:
     _ensure_dir(out_dir)
     path = out_dir / f"{name}.csv"
-    df.to_csv(path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(df, path, index=False, quoting=csv.QUOTE_NONNUMERIC)
     df.to_json(out_dir / f"{name}.json", orient="records", indent=2, force_ascii=False)
     return path
 

@@ -371,6 +371,10 @@ def main() -> None:
     # Mã hiệu là dữ liệu phụ theo kỳ; lỗi nguồn không được chặn kết quả đã xác thực.
     _run(_py("src/draw_metadata.py"), allow_fail=True)
 
+    # Chốt độ rộng mã ở biên xuất bản sau khi mọi trình phân tích đã ghi CSV.
+    # Cổng cứng: không xuất bản tệp có mã sai miền hoặc mất số 0 đầu.
+    _run(_py("src/lottery_codes.py"), allow_fail=False)
+
     if not args.skip_docs:
         _run(
             _py("src/build_docs.py", "--display-days", str(args.display_days)),

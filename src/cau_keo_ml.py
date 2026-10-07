@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Explainable AI/ML layer for Vietnamese lottery statistical "cầu kèo".
 
 This module builds a leakage-aware training table where each row is:
@@ -999,11 +1001,11 @@ def _write_outputs(
     backtest_path = out_dir / f"cau_keo_backtest_{mode}.csv"
     manifest_path = out_dir / f"cau_keo_manifest_{mode}.json"
 
-    pred[cols].to_csv(all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    pred.head(top)[cols].to_csv(
+    write_code_csv(pred[cols], all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(pred.head(top)[cols],
         top_path, index=False, quoting=csv.QUOTE_NONNUMERIC
     )
-    report.to_csv(report_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(report, report_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     # Store a compact validation sample, enough for debugging UI/reporting.
     backtest_cols = ["predict_for_date", "number_str", "target", "prob"]
@@ -1015,7 +1017,7 @@ def _write_outputs(
         .groupby("predict_for_date")
         .head(top)
     )
-    bt[[c for c in backtest_cols if c in bt.columns]].to_csv(
+    write_code_csv(bt[[c for c in backtest_cols if c in bt.columns]],
         backtest_path, index=False, quoting=csv.QUOTE_NONNUMERIC
     )
 

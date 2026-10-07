@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import logging
 from numbers import Integral, Real
@@ -211,8 +213,8 @@ def main() -> None:
         top = df.head(args.top).reset_index(drop=True)
         top["prob_percent"] = (top["prob"] * 100.0).round(3)
 
-        df.to_csv(out_dir / f"predict_next_{mode}_ml_all.csv", index=False)
-        top.to_csv(out_dir / f"predict_next_{mode}_ml_top{args.top}.csv", index=False)
+        write_code_csv(df, out_dir / f"predict_next_{mode}_ml_all.csv", index=False)
+        write_code_csv(top, out_dir / f"predict_next_{mode}_ml_top{args.top}.csv", index=False)
 
         print(
             f"[OK] {mode} -> predictions for {next_date}; "
