@@ -88,3 +88,35 @@ def test_site_build(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert [p["product"] for p in summary["products"]] == ["lotto535", "max3dpro"]
     assert summary["products"][1]["evidence_found"] is True
     assert (out / "data" / "ledger.jsonl").exists() and (out / "data" / "forecast" / "max3dpro.json").exists() and (out / ".nojekyll").exists()
+
+
+def test_serve_refuses_more_than_one_worker(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """Mỗi worker giành khoá ghi riêng; worker thứ hai trở đi sập lúc khởi động."""
+    import uvicorn
+
+    from vietlott_engine import cli
+
+    monkeypatch.setattr(uvicorn, "run", lambda *a, **k: pytest.fail("không được khởi động server"))
+    assert cli.main(["serve", "--workers", "2"]) == 2
+    assert "--workers phải là 1" in capsys.readouterr().err
+    started = []
+    monkeypatch.setattr(uvicorn, "run", lambda *a, **k: started.append(k["workers"]))
+    assert cli.main(["serve"]) == 0 and started == [1]
+
+
+def test_audit_resolves_defaults_inside_the_project(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """`vlm-audit` gọi từ thư mục khác vẫn đọc đúng seed của dự án."""
+    from vlm.tools import gap_analyzer
+
+    seen: dict[str, Path] = {}
+
+    async def fake_run(args):  # type: ignore[no-untyped-def]
+        seen["cwd"] = Path.cwd()
+        seen["seed"] = args.seed_dir.resolve()
+        return 0
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("VQE_HOME", str(ROOT))
+    monkeypatch.setattr(gap_analyzer, "_run", fake_run)
+    assert gap_analyzer.main(["--game", "mega645"]) == 0
+    assert seen["cwd"] == ROOT.resolve() and seen["seed"] == SEED.resolve()

@@ -888,6 +888,12 @@ def cmd_doctor(a: argparse.Namespace) -> int:
 
 
 def cmd_serve(a: argparse.Namespace) -> int:
+    # Mỗi worker Uvicorn chạy lifespan riêng: trình cập nhật kết quả giành khoá ghi
+    # `writer.lock` (chỉ worker đầu được), còn kho DuckDB chỉ cho một tiến trình ghi.
+    # Nhiều worker thì từ worker thứ hai trở đi dừng ngay lúc khởi động.
+    if a.workers != 1:
+        print("✗ --workers phải là 1: trình cập nhật kết quả và kho DuckDB chỉ chạy trong một tiến trình.", file=sys.stderr)
+        return 2
     import uvicorn
 
     uvicorn.run("vietlott_engine.api.main:app", host=a.host, port=a.port, workers=a.workers, log_level="info")
@@ -1077,7 +1083,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("serve", help="run the FastAPI server")
     s.add_argument("--host", default="0.0.0.0")
     s.add_argument("--port", type=int, default=8000)
-    s.add_argument("--workers", type=int, default=1)
+    s.add_argument("--workers", type=int, default=1, help="phải là 1 (một tiến trình giữ kho và trình cập nhật)")
     s.set_defaults(func=cmd_serve)
     return p
 

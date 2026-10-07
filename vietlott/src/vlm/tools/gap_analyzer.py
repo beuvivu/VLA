@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Iterable
 from vlm.database.schema import DrawRecord, VN, game_code, SQLRepository, DuckRepository, _merge, _merge_metadata
 from vietlott_engine.core.exceptions import SourceError
+from vietlott_engine.paths import enter_project
 
 SEED_FILES={"mega645":"power645.jsonl","power655":"power655.jsonl","lotto535":"power535.jsonl",
             "max3d":"max3d.jsonl","max3dplus":"max3d.jsonl","max3dpro":"max3d_pro.jsonl",
@@ -358,6 +359,10 @@ async def _run(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Như `vietlott`, `vlm-update`, `vlm-forecast`: các đường dẫn mặc định tính từ thư
+    # mục dự án. Thiếu bước này, chạy ngoài thư mục ấy thì seed "rỗng" và lệnh vẫn
+    # thoát 0 với một báo cáo không kỳ nào.
+    enter_project()
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed-dir",type=Path,default=Path("data/seed"))
     parser.add_argument("--game",default="all",choices=["all",*SEED_FILES])
