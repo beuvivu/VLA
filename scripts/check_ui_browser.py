@@ -141,12 +141,13 @@ def main():
                 page.route("**/live.json*", lambda route, _request, live_fixture=live_fixture: route.fulfill(
                     content_type="application/json", body=json.dumps(live_fixture)))
                 def forecast_route(route):
-                    if not route.request.url.endswith("_2026-09-26.csv"):
+                    # Kỳ 26-09 đã quay xong, nên khối dự đoán phải nhắm kỳ kế tiếp.
+                    if not route.request.url.endswith("_2026-09-27.csv"):
                         route.fulfill(status=404, body="")
                         return
                     route.fulfill(content_type="text/csv", body=(
                         "predict_for_date,rank,number,cau_score,prob\n"
-                        "2026-09-26,1,05,70.1,0.01\n2026-09-26,2,42,65.3,0.01\n"))
+                        "2026-09-27,1,05,70.1,0.01\n2026-09-27,2,42,65.3,0.01\n"))
                 # Trang trực tiếp đọc bản chụp 10 số đầu bảng Cầu Kèo theo ngày quay.
                 page.route("**/ai_ml/daily/cau_keo_*_top10_*.csv", forecast_route)
                 errors = []
@@ -201,7 +202,7 @@ def main():
                             assert page.locator(".app-calendar-link").get_attribute("href") == "index.html#db-tuan-thang"
                             if name == "live.html":
                                 expect(page.locator(".live-prediction-list li")).to_have_count(4)
-                                expect(page.locator("#live-prediction-date")).to_have_attribute("datetime", "2026-09-26")
+                                expect(page.locator("#live-prediction-date")).to_have_attribute("datetime", "2026-09-27")
                                 assert page.locator(".live-actions a").evaluate_all(
                                     "nodes => nodes.map(n => n.getAttribute('href'))"
                                 ) == ["index.html", "so-ket-qua-truyen-thong.html", "statistics.html"]

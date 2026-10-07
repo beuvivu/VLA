@@ -640,7 +640,7 @@
         document.getElementById('conflicts').textContent = conflicts.length
           ? 'Đang có bất đồng nguồn: ' + conflicts.join(', ')
           : '';
-        if (window.LivePredictions) window.LivePredictions.load(data.draw_date);
+        if (window.LivePredictions) window.LivePredictions.loadForDraw(data.draw_date, status);
       } catch (error) {
         document.getElementById('status').textContent = 'Chưa lấy được dữ liệu trực tiếp';
         document.getElementById('checked').textContent =
