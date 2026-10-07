@@ -273,6 +273,10 @@ báo ghi trước kỳ + đối chiếu, kết luận e-value. Trình dựng KH�
 `source_url`, `official_url` hay cảnh báo của engine (chúng nhắc tên nguồn) —
 `tests/test_vietlott_results.py` canh. Workflow `vietlott-results.yml` không gọi
 mạng: khôi phục (chỉ đọc) cache trạng thái `vqe-state-` rồi dựng và triển khai.
+Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value của engine
+(`randomness_summary`), không viết cứng: Max 3D và Max 3D Pro lệch thật ở hàng đơn vị (số 6
+≈ 11%, lặp lại trên hai sản phẩm), dù mọi cửa Max 3D mà mô hình tính được vẫn có RTP < 1 (Mega/Power/Lotto không có RTP trong phân tích nên không được gộp vào câu ấy)
+(`documentation/research/2026-10-07-max3d-hang-don-vi.md`).
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

@@ -40,12 +40,19 @@ services:
         done
     restart: unless-stopped
 
-  # One-off research job: `docker compose --profile jobs run --rm backtest`
+  # One-off research job: `make docker-job` (or
+  # `VQE_UID=$(id -u) VQE_GID=$(id -g) docker compose --profile jobs run --rm backtest`).
+  # ./reports is a bind mount and keeps the HOST owner and mode, so on native Linux
+  # Docker the image's `vqe` user (UID 10001) cannot write it. The job therefore runs
+  # as the host user; everything else it writes lives under /tmp, which any UID can
+  # write. The default 10001 keeps Docker Desktop (which remaps ownership) working.
   backtest:
     image: vietlott-quant-engine:latest
     profiles: ["jobs"]
+    user: "${VQE_UID:-10001}:${VQE_GID:-10001}"
     environment:
-      VQE_DATA_DIR: /app/jobdata         # separate DuckDB file: never contends with the API's lock
+      VQE_DATA_DIR: /tmp/vqe-jobdata     # separate DuckDB file: never contends with the API's lock
+      HOME: /tmp                         # an arbitrary host UID has no home directory in the image
     volumes:
       - ./reports:/app/reports
     command:

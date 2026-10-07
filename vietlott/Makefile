@@ -96,4 +96,4 @@ docker-up:
 	docker compose up -d api scheduler
 
 docker-job:
-	docker compose --profile jobs run --rm backtest
+	VQE_UID=$$(id -u) VQE_GID=$$(id -g) docker compose --profile jobs run --rm backtest

@@ -154,8 +154,45 @@ def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> d
         out[code] = {
             "draws": rep["draws"], "last_id": rep["last_id"], "last_date": rep["last_date"],
             "verdict": rep["verdict"], "evidence": rep["evidence"], "board": boards.get(code),
+            "max_rtp": _max_rtp(rep["components"]),
         }
     return out
+
+
+def _max_rtp(components: list[dict]) -> float | None:
+    """RTP cao nhất theo mô hình trong mọi cửa của một sản phẩm (None khi không có cửa)."""
+    rtps = [b["rtp_model"] for c in components for kind in ("digit", "set") if c.get(kind)
+            for b in (c[kind].get("bets") or []) + (c[kind].get("keno") or [])]
+    return max(rtps) if rtps else None
+
+
+def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
+    """Kết luận về độ ngẫu nhiên in TỪ SỐ ĐO của engine, không viết cứng.
+
+    Max 3D / Max 3D Pro từng mâu thuẫn với câu viết cứng "kỳ quay đã kiểm là ngẫu
+    nhiên": cả hai lệch thật ở chữ số hàng đơn vị (số 6 ≈ 11% thay vì 10%, ổn định
+    qua thời gian, lặp lại trên hai sản phẩm độc lập), e-value vượt ngưỡng 20.
+    """
+    if not analysis:
+        return "Chưa có phân tích độ ngẫu nhiên của kỳ quay."
+    found = [code for code in names if ((analysis.get(code) or {}).get("evidence") or {}).get("found")]
+    if not found:
+        return ("Phép kiểm e-value của engine chưa thấy sản phẩm nào lệch khỏi máy quay công bằng; "
+                "dự báo không làm tăng xác suất trúng.")
+    # Chỉ nói về những sản phẩm mà mô hình TÍNH được RTP. Mega/Power/Lotto không có RTP
+    # trong phân tích, mà jackpot dồn hay chia giải có thể đẩy RTP của chúng vượt 1.
+    priced = [c for c in names if (analysis.get(c) or {}).get("max_rtp") is not None]
+    money = ""
+    if priced and max(analysis[c]["max_rtp"] for c in priced) < 1:
+        best = f"{max(analysis[c]['max_rtp'] for c in priced):.2f}".replace(".", ",")
+        money = (f" Dù vậy mọi cửa của {_join([names[c] for c in priced])} mà mô hình tính được vẫn có kỳ vọng âm: "
+                 f"RTP cao nhất là {best} (dưới 1).")
+    return (f"Phép kiểm e-value của engine thấy độ lệch nhỏ có ý nghĩa thống kê ở {_join([names[c] for c in found])}; "
+            f"các sản phẩm còn lại chưa lệch khỏi máy quay công bằng.{money}")
+
+
+def _join(labels: list[str]) -> str:
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " và " + labels[-1]
 
 
 def load(cache_states: Path | None = None, products: tuple[str, ...] = tuple(PRODUCTS)) -> dict[str, Any]:
@@ -428,8 +465,9 @@ def overview(dashboard: dict) -> str:
              f'<span class="vl-chip">{esc(stats.get("compared_draws", 0))} kỳ đã đối chiếu</span>')
     hero = ('<section class="vl-hero"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span><h1>Kết quả Vietlott</h1>'
             '<p>Bảy sản phẩm đang phát hành: Mega 6/45, Power 6/55, Lotto 5/35, Max 3D / Max 3D+, Max 3D Pro, Keno '
-            'và Bingo18. Kết quả đã xác thực, bảng giải, dự báo ghi trước kỳ và đối chiếu. Kỳ quay đã kiểm là '
-            f'ngẫu nhiên; dự báo không làm tăng xác suất trúng.</p><div class="vl-chipline">{chips}</div></section>')
+            'và Bingo18. Kết quả đã xác thực, bảng giải, dự báo ghi trước kỳ và đối chiếu. '
+            f'{esc(randomness_summary(analysis, {c: v[0] for c, v in PRODUCTS.items()}))}</p>'
+            f'<div class="vl-chipline">{chips}</div></section>')
     return (_head("Vietlott · Kết quả") + app_shell_open("vietlott.html", wide=True) + hero + nav_products()
             + f'<div class="vl-tiles">{"".join(tiles)}</div>' + app_shell_close("vietlott.html") + "</body></html>")
 

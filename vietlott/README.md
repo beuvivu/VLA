@@ -718,12 +718,13 @@ Lỗi nghiệp vụ trả JSON `{"error", "detail"}`: 422 (dữ liệu không h�
 ```bash
 docker compose build
 docker compose up -d api                           # API :8000 + tự cập nhật theo lịch từng sản phẩm
-docker compose --profile jobs run --rm backtest    # job nghiên cứu → ./reports
+make docker-job                                   # job nghiên cứu → ./reports (chạy bằng UID của bạn)
+docker compose --profile jobs run --rm backtest    # cùng job, không cần make (Docker Desktop; Linux xem dưới)
 ```
 
 - `api`: khi volume trống, nạp snapshot có sẵn trong image (kết quả + dữ liệu giải thưởng), mô hình hiệu chỉnh trong `/app/calibration`, rồi sync tăng dần **ở nền** (API phục vụ ngay, không chặn khởi động nếu mạng lỗi).
 - Bộ cập nhật chạy trong tiến trình API: kiểm tra mỗi 2 phút trong cửa sổ quay của từng game, retry độc lập và phục hồi sau restart. Xem [`docs/VLM_AUTO_UPDATES.md`](docs/VLM_AUTO_UPDATES.md), `GET /updates/status`. DuckDB do API sở hữu; dùng 1 worker. Workflow `results.yml` cào bù mỗi 10 phút ban ngày và mỗi giờ ban đêm, giữ journal kết quả trong repo khi cache mất; workflow dự báo/trang vẫn chạy hai lần/ngày.
-- `backtest` (profile `jobs`): dùng file DuckDB riêng, không tranh khóa với API; đồng bộ bảng giải chính thức và sản phẩm, chạy lại hiệu chỉnh thị trường (`reports/calibration`), báo cáo v3, bao và sản phẩm trước backtest.
+- `backtest` (profile `jobs`): chạy bằng UID/GID của người dùng host (`VQE_UID`/`VQE_GID`, `make docker-job` tự đặt) vì `./reports` là bind mount giữ quyền của host — chạy bằng UID 10001 của image thì Docker Linux gốc báo `PermissionError`; không có `make` thì gõ `VQE_UID=$(id -u) VQE_GID=$(id -g) docker compose --profile jobs run --rm backtest`. Dùng file DuckDB riêng dưới `/tmp`, không tranh khóa với API; đồng bộ bảng giải chính thức và sản phẩm, chạy lại hiệu chỉnh thị trường (`reports/calibration`), báo cáo v3, bao và sản phẩm trước backtest.
 - Mở rộng đọc: các replica có thể đọc `data/parquet/*.parquet` (read-only) thay vì file DuckDB.
 
 ---
