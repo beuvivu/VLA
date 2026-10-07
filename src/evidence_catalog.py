@@ -273,6 +273,16 @@ def _sec_heading(heading: str, title: str, ev: Evidence) -> Section:
 # --- Theo nhóm trang ------------------------------------------------------
 
 
+def ml_summary_evidence(mode: str) -> Section:
+    """Cùng diễn giải cho cả khối tóm tắt và mức tin hiển thị thành khoảng."""
+    return _sec(".app-lab-summary", "Tóm tắt bản dự báo ML", _ev([_ml(mode)], [
+        "Ngày đích và số ứng viên được đọc từ đúng danh sách dự báo đang hiển thị.",
+        "Mức tin thành phần ML là trọng số đã lưu, dùng để co xác suất thô về nền; không phải xác suất trúng.",
+        "Nếu các dòng có mức tin khác nhau, hiển thị khoảng nhỏ nhất–lớn nhất. Thiếu hoặc sai mức tin ở bất kỳ dòng nào thì hiển thị dấu gạch ngang.",
+        "Khi mức tin bằng 0, xác suất công bố bằng nền. Thứ hạng phá hòa không chứng minh lợi thế dự báo.",
+    ]))
+
+
 def _thong_ke(f: dict[str, str], *extra: str) -> Evidence:
     return _ev(
         [_ket_qua(f), _LOTO, _DAC_BIET],
@@ -571,6 +581,10 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "soi-path-de-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "dashboard.html": (_du_bao_ev(f, "Số trong bảng xác suất và danh sách gợi ý là xác suất (hoặc thứ hạng) của số ấy cho kỳ kế tiếp."), [
+            _sec(".ai-status-strip", "Phạm vi và xuất xứ mô hình", _ev([_ket_qua(f), _trong_so(f)], [
+                "Ngày dữ liệu là ngày kỳ quay mới nhất đã lưu. Đây không phải ngày đích của mọi tệp dự báo.",
+                "Hai trạng thái trọng số đọc đúng xuất xứ của từng kênh: mặc định, đã học, hoặc cổng từ chối đề bạt.",
+            ])),
             _sec_heading("Trọng số", "Trọng số tổ hợp và cổng thẩm định", _ev([_trong_so(f), _cham(f)], [
                 "Mỗi thành phần đóng góp theo một trọng số; mặc định là vector cố định.",
                 "Vector học từ các ngày gần đây chỉ được dùng khi thắng vector MẶC ĐỊNH trên lát kiểm ngoài mẫu (ngày chưa dùng để học) với biên ≥ 0,20%.",
@@ -587,8 +601,8 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Các số trong khối là tham số hiệu chỉnh hoặc logloss/Brier trên khối hiệu chỉnh.",
             ])),
         ]),
-        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
-        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
+        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), [ml_summary_evidence("loto")]),
+        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), [ml_summary_evidence("de")]),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], [
             "Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",

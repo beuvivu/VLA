@@ -266,6 +266,8 @@ def refine_page(path: Path | str, page: str) -> str:
     if filename in _PATH_PAGES:
         return _refine_path(page)
     if filename == "dashboard.html":
+        if 'data-lab-layout="dashboard"' in page:
+            return page
         return _refine_dashboard(page)
     if filename == "research-lab.html":
         if 'data-research-layout="command"' in page:
