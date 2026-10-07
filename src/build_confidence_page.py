@@ -16,7 +16,8 @@ from pathlib import Path
 
 from page_output import write_page
 from ui_locale import mode_label
-from ui_theme import app_shell_close, app_shell_open, card, page_header, stylesheet_link, write_stylesheet
+from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
+from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
 from web_security import security_meta_tags
 
 PAGE = "do-tin-cay.html"
@@ -373,18 +374,18 @@ def digit_sum_card(report: dict) -> str:
 
 def render(report: dict) -> str:
     blocks = [
-        card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True),
-        card(rules_card(report), title="Luật ba tầng và vì sao phải hiệu chỉnh", span=12, lift=True),
-        card(matrix_card(report, "loto"), title="Ma trận suy luận · LOTO", span=12, lift=True),
-        card(matrix_card(report, "de"), title="Ma trận suy luận · Đặc Biệt", span=12, lift=True),
+        card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True, ident="app-lab-conclusion"),
+        card(rules_card(report), title="Luật ba tầng và vì sao phải hiệu chỉnh", span=12, lift=True, ident="app-lab-rules"),
+        card(matrix_card(report, "loto"), title="Ma trận suy luận · LOTO", span=12, lift=True, ident="app-lab-loto-matrix"),
+        card(matrix_card(report, "de"), title="Ma trận suy luận · Đặc Biệt", span=12, lift=True, ident="app-lab-de-matrix"),
         card(families_card(report), title="Các trục cầu kèo so với ngẫu nhiên", span=12, lift=True),
-        card(oos_card(report), title="Kiểm ngoài mẫu", span=12, lift=True),
+        card(oos_card(report), title="Kiểm ngoài mẫu", span=12, lift=True, ident="app-lab-oos"),
         card(intervention_card(report), title="Giả thuyết kỳ quay bị sắp đặt", span=12, lift=True),
         card(hot_tail_card(report), title="Giả thuyết đang kiểm tiến cứu: đuôi nóng", span=12,
              lift=True),
         card(digit_sum_card(report), title="Giả thuyết đang kiểm tiến cứu: tổng – bóng – chạm",
              span=12, lift=True),
-        card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True),
+        card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True, ident="app-lab-risk"),
         card(feedback_card(report), title="Vòng phản hồi", span=12, lift=True),
     ]
     return f"""<!doctype html>
@@ -394,16 +395,30 @@ def render(report: dict) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
   {stylesheet_link()}
+  {lab_styles()}
   <title>Độ tin cậy dự báo — Phân tích XSMB</title>
 </head>
 <body>
 {app_shell_open(PAGE)}
-{page_header(
+<div class="app-lab app-lab-confidence" data-lab-layout="confidence">
+{lab_hero(PAGE,
     "Độ tin cậy dự báo",
-    "Confidence Score ba tầng cho từng con, tính bằng Bayes, Markov và cầu vị trí rồi đối chứng "
-    "với hàng nghìn lịch sử quay công bằng. Thước đo xác suất, không phải lời khuyên đặt cược.",
+    "Tách tín hiệu khỏi nhiễu. Đối chiếu Bayes, Markov và cầu vị trí với lịch sử ngẫu nhiên, "
+    "rồi kiểm tra trên những kỳ mô hình chưa từng thấy.",
+    eyebrow="PHÒNG THẨM ĐỊNH TÍN HIỆU", core="ĐỐI CHỨNG",
+    meta=f"Kỳ dự báo: {report['generated_for']} · Dữ liệu đến: {report['last_draw']}",
+    action=("#app-lab-conclusion", "Đọc kết luận"),
 )}
+{lab_guide([
+    ("Confidence Score", "Mức nổi bật của tín hiệu sau hiệu chỉnh đa kiểm. Đây không phải xác suất trúng và không đồng nghĩa mức tin thành phần ML."),
+    ("Đối chứng ngẫu nhiên", "So tín hiệu mạnh nhất của cả họ với các lịch sử quay công bằng để tránh chọn một con nổi bật chỉ do thử quá nhiều lần."),
+    ("Kiểm ngoài mẫu", "Đánh giá trên dữ liệu chưa dùng để chọn tín hiệu. Chỉ đọc kết luận cùng cỡ mẫu, mức nền và độ bất định."),
+])}
+{lab_jump([("app-lab-conclusion", "Kết luận"), ("app-lab-rules", "Luật ba tầng"),
+           ("app-lab-loto-matrix", "Ma trận LOTO"), ("app-lab-de-matrix", "Ma trận Đặc Biệt"),
+           ("app-lab-oos", "Ngoài mẫu"), ("app-lab-risk", "Rủi ro")])}
 <div class="ui-grid">{"".join(blocks)}</div>
+{lab_footer()}</div>
 {app_shell_close(PAGE)}
 </body>
 </html>

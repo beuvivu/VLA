@@ -49,14 +49,21 @@ def test_detail_statistics_stylesheet_covers_every_reported_layout_problem() -> 
     assert ".sp-page-cap-lon-loto .sp-scroll" in source
 
 
-def test_dashboard_builder_owns_command_center_structure() -> None:
-    source = (ROOT / "src" / "build_dashboard.py").read_text(encoding="utf-8")
+def test_dashboard_builder_navigation_reaches_its_analysis_panels(tmp_path, monkeypatch) -> None:
+    """Mục lục không được dẫn tới id đã mất khi thay bố cục thẻ."""
+    from bs4 import BeautifulSoup
+    from build_dashboard import main
 
-    assert '<body class="ai-command-center">' in source
-    assert 'class="ai-status-strip"' in source
-    assert 'class="ui-grid ai-signal-grid"' in source
-    assert "AI/ML Command Center" in source
-    assert ".ai-command-center .ui-header" in source
+    monkeypatch.chdir(tmp_path)
+    main(["--docs-dir", "docs"])
+    page = BeautifulSoup((tmp_path / "docs/dashboard.html").read_text(), "html.parser")
+    links = page.select(".app-lab-jump a")
+    assert len(links) >= 4
+    for link in links:
+        targets = page.select(link["href"])
+        assert len(targets) == 1
+        assert targets[0].select_one("h2") is not None
+    assert page.select_one('nav a[aria-current="page"]')['href'] == 'dashboard.html'
 
 
 def test_research_builder_owns_core_lab_structure() -> None:
