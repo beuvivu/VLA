@@ -268,6 +268,8 @@ def refine_page(path: Path | str, page: str) -> str:
     if filename == "dashboard.html":
         return _refine_dashboard(page)
     if filename == "research-lab.html":
+        if 'data-research-layout="command"' in page:
+            return page
         return _refine_research(page)
     if filename == "live.html":
         return _refine_live(page)

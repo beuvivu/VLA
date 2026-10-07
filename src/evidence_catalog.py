@@ -674,6 +674,16 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
             "Đọc các báo cáo nghiên cứu dựng từ sổ kết quả đã lưu.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy; không khối nào nối vào bộ dự báo vận hành.",
         ]), [
+            _sec(".rl-hero-stats", "Phạm vi báo cáo chẩn đoán", _ev([_ket_qua(f)], [
+                "Số kỳ và ngày đầu/cuối lấy từ báo cáo chẩn đoán khoa học; đây là phạm vi mẫu đã được kiểm định.",
+                "Nếu báo cáo thiếu, hiển thị dấu gạch hoặc chưa có báo cáo; không suy ra mẫu bằng không.",
+            ])),
+            _sec(".rl-overview", "Tường lửa vị trí · tóm tắt kiểm định", _ev([_ket_qua(f)], [
+                "Giả thuyết vị trí và số qua FDR trên tập huấn luyện cộng hai chế độ LOTO và Đặc Biệt của cùng báo cáo tường lửa.",
+                "Kỳ giữ lại chỉ lấy số kỳ của chế độ LOTO, không cộng hai chế độ vì chúng có thể dùng cùng ngày.",
+                "Đủ điều kiện là tổng số giả thuyết đạt tiêu chí tường lửa ở hai chế độ; vẫn cần xem xét độc lập, chưa tự động đưa vào vận hành.",
+                "Ngày báo cáo ghi riêng trên khối này; số liệu không phải tiến độ xử lý trực tiếp.",
+            ])),
             _sec(".rl-metrics", "Tóm tắt các họ giả thuyết", _ev([_ket_qua(f)], [
                 "Mỗi thẻ đếm số giả thuyết của một họ và số giả thuyết qua cổng của họ ấy (cổng ghi ngay trên thẻ: đủ điều kiện vận hành, cổng nghiên cứu, hay FDR < 0,05).",
                 "Thẻ cầu bóng so độ nâng tốt nhất trên tập huấn luyện với trung bình độ nâng tốt nhất khi dịch vòng chuỗi kết quả theo thời gian; p = tỉ lệ lượt dịch vòng có độ nâng tốt nhất ≥ thật.",
