@@ -503,12 +503,15 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
 def _vietlott(step: str) -> tuple[Evidence, list[Section]]:
     """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
     return _ev([{
-        "title": "Sổ kết quả Vietlott đã lưu",
-        "snippet": "Kết quả các kỳ quay đã công bố, lưu theo từng sản phẩm (Keno, Bingo18 chưa "
-                   "có nguồn đọc được); "
-                   "không dùng trong dự báo XSMB.",
+        "title": "Sổ kết quả Vietlott đã xác thực",
+        "snippet": "Kết quả bảy sản phẩm đang phát hành, đối chiếu giữa các nguồn theo đúng mã kỳ và "
+                   "ngày; bảng giải đúng mã kỳ, giá trị chưa công bố để trống. Không dùng trong dự báo XSMB.",
+    }, {
+        "title": "Bộ dự báo tự học Vietlott",
+        "snippet": "Dự báo ghi TRƯỚC kỳ quay vào sổ rồi chấm với kết quả thật; e-value hợp lệ ở mọi "
+                   "thời điểm đo xem mô hình có vượt máy quay công bằng không.",
     }], [
-        "Đọc sổ kết quả Vietlott đã lưu theo sản phẩm.",
+        "Đọc sổ kết quả và sổ dự báo của engine Vietlott.",
         step,
     ]), []
 

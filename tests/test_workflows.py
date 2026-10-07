@@ -388,6 +388,12 @@ _IMPORT_TO_DISTRIBUTION = {
 }
 
 
+#: Dự án con cài bằng ``pip install -e <thư mục>`` → các gói import nó cung cấp.
+#: Engine Vietlott tự khai phụ thuộc trong ``vietlott/pyproject.toml`` và CI riêng
+#: (``vlm-ci.yml``) kiểm điều đó; ở đây chỉ cần biết lệnh cài nó đã có mặt.
+_LOCAL_PROJECTS = {"vietlott": {"vietlott_engine", "vlm"}}
+
+
 def _resolve_local(module: str, *search: Path) -> Path | None:
     """Đường dẫn của một module CÙNG KHO, hoặc None nếu là thư viện ngoài."""
     for directory in search:
@@ -466,6 +472,9 @@ def _installed_by(run_text: str) -> set[str]:
                 continue
             if token in {"pip", "wheel", "setuptools"}:
                 continue
+            if token.rstrip("/") in _LOCAL_PROJECTS:
+                installed |= _LOCAL_PROJECTS[token.rstrip("/")]
+                continue
             installed.add(re.split(r"[<>=!~\[]", token)[0].strip().lower())
     return installed
 
@@ -520,6 +529,15 @@ def test_the_install_parser_reads_quoted_requirement_specs() -> None:
         "scipy",
         "pandas",
     }
+
+
+def test_local_projects_really_provide_the_packages_they_are_credited_with() -> None:
+    """Bảng ``_LOCAL_PROJECTS`` không được ghi công cho gói không có thật."""
+    for directory, packages in _LOCAL_PROJECTS.items():
+        assert (ROOT / directory / "pyproject.toml").is_file(), directory
+        for package in packages:
+            assert (ROOT / directory / "src" / package / "__init__.py").is_file(), (directory, package)
+    assert _installed_by("python -m pip install --no-cache-dir -e vietlott") == {"vietlott_engine", "vlm"}
 
 
 def test_every_workflow_installs_what_its_python_scripts_import() -> None:

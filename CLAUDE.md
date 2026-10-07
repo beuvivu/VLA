@@ -266,6 +266,16 @@ logic của nó ở đây khi không cần — engine tự tìm thư mục dự 
   `../.github/workflows/vlm-*.yml`.
 - Tag phát hành của engine là `vlm-v<phiên bản>`.
 
+Trang Vietlott của site (`vietlott.html` + 7 trang sản phẩm) dựng bằng
+`src/build_vietlott_results.py` từ `vlm.web.dashboard.build_dashboard` của engine:
+kết quả đã xác thực, bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước), dự
+báo ghi trước kỳ + đối chiếu, kết luận e-value. Trình dựng KHÔNG in `source`,
+`source_url`, `official_url` hay cảnh báo của engine (chúng nhắc tên nguồn) —
+`tests/test_vietlott_results.py` canh. Workflow `vietlott-results.yml` không gọi
+mạng: khôi phục (chỉ đọc) cache trạng thái `vqe-state-` rồi dựng và triển khai.
+Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
+giữ nguyên làm lưu trữ, không còn được ghi.
+
 ## Phòng thử thách mô hình `src/vla/`
 
 `src/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,

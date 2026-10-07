@@ -1,165 +1,153 @@
-"""Bộ thu thập Vietlott: đọc đúng bảng của nguồn đăng lại, mỗi kỳ mang ngày và số kỳ
-riêng, và trang theo ngày KHÔNG nhận kết quả cùng ngày của năm khác.
+"""Trang Vietlott dựng từ engine ``vietlott/``: đủ 8 trang qua khung chung, không
+lộ nguồn, không bịa giá trị khuyết, và đọc đúng dữ liệu đã commit của engine."""
 
-HTML mẫu chép nguyên từ trang thật, đọc qua runner Actions ngày 06-10-2026
-(``inspect-reference-pages.yml`` với ``html_selector=table``).
-"""
+from __future__ import annotations
 
-from datetime import date
+import copy
+import os
+from pathlib import Path
 
-import vietlott_results as v
+import pytest
 
-MEGA = (
-    '<table class="result"><tr><td class="kmt" colspan="2"><span>Kỳ mở thưởng:</span> '
-    '<a href="/xsmega645/ngay-4-10-2026"><b>#01571</b></a></td></tr><tr><td class="ketquatxt">Kết quả</td>'
-    '<td class="megaresult"><em>15 20 29 37 40 45</em></td></tr></table>'
-    '<table class="trunggiai"><tr><td colspan="4">Thống kê trúng giải</td></tr><tr><th>Giải</th>'
-    "<th>Trùng khớp</th><th>Số người trúng</th><th>Trị giá giải (VNĐ)</th></tr>"
-    "<tr><td>J.pot</td><td></td><td><em>1</em></td><td><em>199,576,277,000</em></td></tr>"
-    "<tr><td>G.1</td><td></td><td><b>153</b></td><td>10,000,000</td></tr></table>"
-)
-#: Ngày 05-10 không quay Mega: trang theo ngày hiện kỳ cùng ngày của năm 2025 và 2022.
-MEGA_OTHER_YEARS = (
-    '<table class="result"><tr><td class="kmt" colspan="2"><a href="/xsmega645/ngay-5-10-2025">'
-    '<b>#01415</b></a></td></tr><tr><td class="megaresult"><em>05 14 22 28 32 39</em></td></tr></table>'
-    '<table class="result"><tr><td class="kmt" colspan="2"><a href="/xsmega645/ngay-5-10-2022">'
-    '<b>#00949</b></a></td></tr><tr><td class="megaresult"><em>09 18 23 24 29 34</em></td></tr></table>'
-)
-LOTTO = (
-    '<table class="result"><tr><td class="kmt" colspan="2"><span>Kỳ mở thưởng:</span> '
-    '<a href="/xslotto-21h/ngay-5-10-2026"><b>#00928 (21h)</b></a></td></tr><tr><td class="ketquatxt">'
-    'Kết quả</td><td class="megaresult"><em>01 13 16 20 26 <span>11</span></em></td></tr></table>'
-    '<table class="trunggiai"><tr><td colspan="4">Thống kê trúng giải</td></tr>'
-    "<tr><td>J.pot</td><td></td><td><b>0</b></td><td>10,323,886,500</td></tr></table>"
-)
-POWER = (
-    '<table class="result"><tr><td class="kmt" colspan="2"><a href="/xspower/ngay-3-10-2026"><b>#01406</b>'
-    '</a></td></tr><tr><td class="ketquatxt">Kết quả</td><td class="megaresult"><em>07 11 13 16 18 54</em>'
-    "</td></tr><tr><td>Số JP2</td><td><em>41</em></td></tr></table>"
-    '<table class="trunggiai"><tr><td>J.pot</td><td></td><td>0</td><td>112,784,140,200</td></tr>'
-    "<tr><td>Jpot2</td><td></td><td>0</td><td>3,695,872,550</td></tr></table>"
-)
-MAX3D = (
-    '<table class="max3d"><tr><th><b>Max 3D</b></th><th class="kmt">Kỳ MT: <a href="/xsmax3d/ngay-5-10-2026">'
-    '<b>#01141</b></a></th><th><b>MAX 3D+</b></th></tr><tr><th class="th2">Trúng giải</th><th class="th2">'
-    'Kết quả</th><th class="th2">Trúng giải</th></tr><tr><td class="name"><span>Giải nhất</span><br/>'
-    '<span>1tr:</span> <em>80</em></td><td><b class="red">546 085</b></td><td class="name"><span>Đặc biệt'
-    '</span><br/><span>1tỷ:</span> <em>0</em></td></tr><tr><td class="name"><span>Giải nhì</span><br/>'
-    "<span>350K:</span> <em>201</em></td><td><b>472 486</b><br/><b>159 586</b></td><td></td></tr><tr>"
-    '<td class="name"><span>Giải ba</span><br/><span>210K:</span> <em>326</em></td><td><b>525 877</b><br/>'
-    "<b>261 110</b><br/><b>123 238</b></td><td></td></tr><tr><td class=\"name\"><span>Giải tư (KK)</span>"
-    "<br/><span>100K:</span> <em>277</em></td><td><b>399 183</b><br/><b>166 713</b><br/><b>699 490</b><br/>"
-    '<b>993 152</b></td><td></td></tr><tr><td colspan="2"><p><em>Max 3D+:</em> Trùng khớp <strong>2 bộ số'
-    "</strong></p></td><td></td></tr></table>"
-)
-MAX3DPRO = (
-    '<table><tr><th>Giải</th><th class="kmt">Kỳ MT: <a href="/xsmax3dpro/ngay-3-10-2026"><b>#00787</b></a>'
-    "</th><th>Trúng giải</th></tr><tr><td>Giải ĐB 2 tỷ</td><td><b>509 954</b></td><td>0</td></tr>"
-    "<tr><td>G. phụ ĐB 400tr</td><td><b>954 509</b></td><td>0</td></tr>"
-    "<tr><td>Giải nhất 30tr</td><td><b>467 123</b><br/><b>573 811</b></td><td>2</td></tr>"
-    "<tr><td>Giải nhì 10tr</td><td>101 202<br/>303 404<br/>505 606</td><td>1</td></tr>"
-    "<tr><td>Giải ba 4tr</td><td>111 222<br/>333 444<br/>555 666<br/>777 888</td><td>3</td></tr></table>"
-)
+import build_vietlott_results as b
+
+SOURCE_MARKERS = ("nhanaz", "minhngoc", "vietlott.vn", "mirror", "SECRET-SOURCE")
 
 
-def test_mega_reads_numbers_draw_id_date_and_jackpot():
-    (d,) = v.parse_page("mega645", MEGA, "u")
-    assert (d.draw_id, d.draw_date, d.result) == ("01571", "2026-10-04", ("15", "20", "29", "37", "40", "45"))
-    assert d.jackpot_1 == 199_576_277_000 and d.bonus == ""
+def _matrix(draw_id: int, jackpot: int | None, *, numbers=(1, 2, 3, 4, 5, 6), bonus=None) -> dict:
+    return {
+        "draw_id": draw_id, "draw_date": f"2026-10-0{draw_id % 9 + 1}T00:00:00+07:00",
+        "numbers": list(numbers), "bonus": bonus, "time_precision": "day",
+        "source": "nhanaz:SECRET-SOURCE", "source_url": "https://SECRET-SOURCE.example/x",
+        "official_url": "https://vietlott.vn/vi/645", "official_direct": False, "facts": {},
+        "prize_source": "nhanaz:SECRET-SOURCE",
+        "prizes": [
+            {"label": "Jackpot", "condition": "6 số chính", "value_vnd": jackpot, "code": "jackpot1",
+             "winners": None, "pool": True, "source": "nhanaz:SECRET-SOURCE"},
+            {"label": "Giải Nhất", "condition": "5 số chính", "value_vnd": 10_000_000, "code": "first",
+             "winners": 12, "pool": False, "source": "catalogue"},
+        ],
+    }
 
 
-def test_lotto_keeps_the_special_number_and_the_session():
-    (d,) = v.parse_page("lotto535", LOTTO)
-    assert d.result == ("01", "13", "16", "20", "26") and d.bonus == "11"
-    assert '"21h"' in d.meta_json and d.jackpot_1 == 10_323_886_500
+def _max_draw() -> dict:
+    groups = [("Đặc biệt", ["038", "091"]), ("Nhất", ["232", "504", "975", "346"]),
+              ("Nhì", ["989", "690", "066", "206", "904", "115"]),
+              ("Ba", ["610", "570", "216", "577", "913", "985", "577", "286"])]
+    return {"draw_id": 788, "draw_date": "2026-10-06T00:00:00+07:00",
+            "numbers": [x for _, g in groups for x in g], "bonus": None, "source": "nhanaz",
+            "official_url": "https://vietlott.vn/max", "facts": {},
+            "prizes": [{"label": label, "numbers": g} for label, g in groups]}
 
 
-def test_power_reads_the_jackpot_2_number_and_both_jackpots():
-    (d,) = v.parse_page("power655", POWER)
-    assert d.result == ("07", "11", "13", "16", "18", "54") and d.bonus == "41"
-    assert (d.jackpot_1, d.jackpot_2) == (112_784_140_200, 3_695_872_550)
+def _dashboard() -> dict:
+    latest = _matrix(1571, None)                       # jackpot kỳ mới CHƯA công bố
+    older = _matrix(1570, 123_456_789_000)             # kỳ trước có jackpot
+    forecast = {"target_id": 1572, "target_date": "2026-10-07", "made_at": "2026-10-04T21:23:33+07:00",
+                "product": "mega645", "engine": "ml", "registered": True,
+                "components": [{"name": "main", "kind": "set",
+                                "top": [{"numbers": [4, 12, 31, 34, 38, 41], "p_model": 1.26e-07, "p_fair": 1.2e-07}]}]}
+    compared = {"status": "matched", "product": "mega645", "target_id": 1571, "target_date": "2026-10-04",
+                "registered": True, "result": latest,
+                "tickets": [{"numbers": [14, 20, 21, 24, 27, 30], "matched_numbers": [20], "hits": 1}]}
+    reference = {**forecast, "registered": False, "status": "reference",
+                 "note": "Dự báo tham khảo; chưa xác minh thời điểm từng kỳ."}
+    products = [
+        {"product": "mega645", "name": "Mega 6/45", "schedule": "18:00 Thứ 4, 6, CN",
+         "official_url": "https://vietlott.vn/vi/645", "latest": latest, "draws": [latest, older],
+         "prize_catalogue": [{"label": "Jackpot", "condition": "6 số chính", "value_vnd": None, "code": "jackpot1"}],
+         "next_forecast": forecast, "comparisons": [compared]},
+        {"product": "keno", "name": "Keno", "schedule": "~8 phút/kỳ",
+         "latest": {**_matrix(298378, None, numbers=range(1, 21)), "prizes": [],
+                    "facts": {"large": 11, "small": 9, "even": 12, "odd": 8}},
+         "draws": [], "prize_catalogue": [], "next_forecast": reference, "comparisons": []},
+        {"product": "bingo18", "name": "Bingo18", "schedule": "~6 phút/kỳ",
+         "latest": {**_matrix(190110, None, numbers=(5, 1, 6)), "prizes": [],
+                    "facts": {"sum": 12, "size": "Lớn"}},
+         "draws": [], "prize_catalogue": [], "next_forecast": None, "comparisons": []},
+        {"product": "max3dpro", "name": "Max 3D Pro", "schedule": "18:00 Thứ 3, 5, 7",
+         "latest": _max_draw(), "draws": [_max_draw()], "prize_catalogue": [], "next_forecast": None,
+         "comparisons": []},
+    ]
+    return {"schema_version": 1, "generated_at": "2026-10-07T23:16:50+07:00", "products": products,
+            "warnings": ["result_conflict: mega645 #1570; nguồn nhanaz:SECRET-SOURCE / vietlott.vn"],
+            "stats": {"products": 7, "results": 4, "registered_next": 1, "compared_draws": 1},
+            "analysis": {"mega645": {"draws": 1571, "last_id": 1571, "last_date": "2026-10-04",
+                                     "verdict": "Mô hình tự học CHƯA tìm thấy tín hiệu vượt ngẫu nhiên.",
+                                     "evidence": {"found": False, "text": "Chưa có bằng chứng."},
+                                     "board": {"recorded": 2, "scored": 1, "hits": 1.0, "expected": 0.8}}}}
 
 
-def test_max3d_keeps_twenty_triples_in_prize_order():
-    (d,) = v.parse_page("max3d", MAX3D)
-    assert (d.draw_id, d.draw_date, len(d.result)) == ("01141", "2026-10-05", 20)
-    assert d.result[:2] == ("546", "085") and d.result[-1] == "152"
-    assert '"fourth"' in d.meta_json
+@pytest.fixture
+def built(tmp_path: Path) -> dict[str, str]:
+    paths = b.build(tmp_path, dashboard=_dashboard())
+    return {p.name: p.read_text(encoding="utf-8") for p in paths}
 
 
-def test_max3d_pro_skips_the_derived_reverse_row():
-    (d,) = v.parse_page("max3dpro", MAX3DPRO)
-    assert d.result[:2] == ("509", "954") and d.result[2] == "467" and len(d.result) == 20
-    assert "954" not in d.result[2:6]
+def test_all_eight_pages_are_built_through_the_shell(built) -> None:
+    assert set(built) == {"vietlott.html", *(file for _, file, _ in b.PRODUCTS.values())}
+    for name, page in built.items():
+        assert "app-main" in page, name
+        assert 'href="vietlott.html"' in page, name
 
 
-class _Http:
-    def __init__(self, pages):
-        self.pages, self.asked = pages, []
-
-    def get(self, url, **_):
-        self.asked.append(url)
-        body = self.pages.get(url)
-        return type("R", (), {"status_code": 200 if body else 404, "text": body or ""})()
+def test_no_page_spells_out_a_data_source(built) -> None:
+    """Dữ liệu engine mang tên nguồn, đường dẫn và cảnh báo nhắc nguồn; không chữ nào ra trang."""
+    for name, page in built.items():
+        for marker in SOURCE_MARKERS:
+            assert marker not in page, (name, marker)
 
 
-def test_a_no_draw_day_does_not_borrow_results_from_other_years():
-    """Ngày không quay, trang theo ngày hiện kỳ CÙNG NGÀY của năm khác."""
-    url = v.day_urls("mega645", date(2026, 10, 5))[0]
-    assert v.fetch_day(_Http({url: MEGA_OTHER_YEARS}), "mega645", date(2026, 10, 5)) == []
-    url = v.day_urls("mega645", date(2026, 10, 4))[0]
-    assert [d.draw_id for d in v.fetch_day(_Http({url: MEGA}), "mega645", date(2026, 10, 4))] == ["01571"]
+def test_an_unpublished_jackpot_is_a_dash_not_the_previous_draw(built) -> None:
+    mega = built["vietlott-mega-645.html"]
+    table = mega.split("Bảng giải kỳ #1571", 1)[1].split("</table>", 1)[0]
+    jackpot_row = table.split('<th scope="row">Jackpot</th>', 1)[1].split("</tr>", 1)[0]
+    cells = [c.split(">", 1)[1].split("</td>", 1)[0] for c in jackpot_row.split("<td")[1:]]
+    assert cells == ["6 số chính", "—", "—"], cells
+    assert "123.456.789.000" not in table, "jackpot kỳ trước bị mượn cho kỳ mới"
+    assert "10.000.000 ₫" in table and ">12<" in table
+    # Kỳ trước vẫn hiện jackpot của chính nó trong lịch sử.
+    assert "123.456.789.000 ₫" in mega
 
 
-def test_lotto_reads_both_daily_sessions():
-    urls = v.day_urls("lotto535", date(2026, 10, 5))
-    assert [u.rsplit("/", 2)[1] for u in urls] == ["xslotto-13h", "xslotto-21h"]
+def test_each_product_keeps_its_own_shape(built) -> None:
+    pro = built["vietlott-max-3d-pro.html"]
+    for label in ("Đặc biệt", "Nhất", "Nhì", "Ba"):
+        assert f"<small>{label}</small>" in pro
+    assert "038 · 091" in pro
+    keno = built["vietlott-keno.html"]
+    assert "Lớn 11 · Nhỏ 9 · Chẵn 12 · Lẻ 8" in keno
+    bingo = built["vietlott-bingo18.html"]
+    assert "Tổng <b>12</b> · Lớn" in bingo
 
 
-def test_backfill_walks_only_the_product_draw_days():
-    days = list(v.backfill_days(date(2026, 10, 4), v.PRODUCTS["mega645"][5], 7))
-    # Mega quay thứ Tư, thứ Sáu, Chủ Nhật: 02-10, 30-09, 27-09.
-    assert [d.isoformat() for d in days] == ["2026-10-02", "2026-09-30", "2026-09-27"]
+def test_forecasts_say_whether_they_were_registered_before_the_draw(built) -> None:
+    mega = built["vietlott-mega-645.html"]
+    assert "Đã đăng ký trước kỳ" in mega and "04 12 31 34 38 41" in mega
+    assert "Đã chấm" in mega and "Chưa hơn ngẫu nhiên" in mega
+    keno = built["vietlott-keno.html"]
+    assert "Tham khảo" in keno and "Đã đăng ký trước kỳ" not in keno
+    assert "Chưa có kết quả đã xác thực" in built["vietlott-power-655.html"]
 
 
-def test_products_without_a_source_are_left_empty_not_faked(tmp_path):
-    db = v.init_db(tmp_path / "x.sqlite3")
-    assert v.crawl_product(db, _Http({}), "keno") == (0, 0)
-    assert "keno" not in v.available_products() and "bingo18" not in v.available_products()
+def test_the_overview_names_each_latest_draw(built) -> None:
+    overview = built["vietlott.html"]
+    assert "Kỳ #1571" in overview and "Kỳ #788" in overview
+    assert "Dự báo kỳ #1572: đã đăng ký trước kỳ" in overview
 
 
-def test_pages_are_built_through_the_shell_even_before_the_first_sync(tmp_path):
- """Thiếu cơ sở dữ liệu thì trước đây bỏ qua, để lại bản giữ chỗ viết tay không có
- khung, bằng chứng hay điều hướng. Nay luôn dựng đủ 8 trang, trạng thái trống."""
- import build_vietlott_results as b
- out=b.build(tmp_path)
- assert sorted(p.name for p in out)==sorted(["vietlott.html",*(f for _,f,_ in b.PRODUCTS.values())])
- for path in out:
-  page=path.read_text(encoding="utf-8")
-  assert 'id="app-rail"' in page and 'id="app-evidence-data"' in page, path.name
-  assert "vietlott.vn" not in page and "VLA" not in page, path.name
- assert "Chưa có dữ liệu đã đồng bộ" in (tmp_path/"docs"/"vietlott-mega-645.html").read_text(encoding="utf-8")
- assert "chưa đăng kết quả sản phẩm này" in (tmp_path/"docs"/"vietlott-keno.html").read_text(encoding="utf-8")
-
-
-def test_gap_days_cover_only_the_draw_days_between_a_broken_id_run():
-    known = [("00922", "2026-10-02"), ("00925", "2026-10-04"), ("00926", "2026-10-04")]
-    assert v.gap_days(known, None) == [date(2026, 10, 4), date(2026, 10, 3), date(2026, 10, 2)]
-    # Mega: kỳ 1570 (02-10) và 1571 (04-10) liền nhau — không có gì phải vá.
-    assert v.gap_days([("01570", "2026-10-02"), ("01571", "2026-10-04")], (2, 4, 6)) == []
-
-
-def test_a_transient_server_error_is_retried_but_a_missing_page_is_not():
-    class Flaky:
-        def __init__(self, codes):
-            self.codes, self.calls = list(codes), 0
-
-        def get(self, url, **_):
-            self.calls += 1
-            code = self.codes.pop(0)
-            return type("R", (), {"status_code": code, "text": "ok"})()
-
-    flaky = Flaky([503, 200])
-    assert v._get(flaky, "u", pause=0) == "ok" and flaky.calls == 2
-    missing = Flaky([404, 200])
-    assert v._get(missing, "u", pause=0) is None and missing.calls == 1
+def test_the_real_engine_data_loads(tmp_path: Path) -> None:
+    """Đọc ĐÚNG dữ liệu đã commit của engine: 7 sản phẩm đều có kỳ mới nhất."""
+    cwd = os.getcwd()
+    dashboard = b.load(products=("mega645",))
+    assert os.getcwd() == cwd, "engine phải trả lại thư mục làm việc"
+    by_code = {p["product"]: p for p in dashboard["products"]}
+    assert set(by_code) == set(b.PRODUCTS)
+    assert all(p["latest"] for p in by_code.values())
+    assert by_code["keno"]["latest"]["numbers"] and len(by_code["keno"]["latest"]["numbers"]) == 20
+    assert dashboard["analysis"]["mega645"]["draws"] > 1500
+    built = b.build(tmp_path, dashboard=copy.deepcopy(dashboard))
+    for path in built:
+        page = path.read_text(encoding="utf-8")
+        for marker in SOURCE_MARKERS[:-1]:
+            assert marker not in page, (path.name, marker)
