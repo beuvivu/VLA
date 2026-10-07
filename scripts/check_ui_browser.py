@@ -144,8 +144,11 @@ def main():
                     if not route.request.url.endswith("_2026-09-26.csv"):
                         route.fulfill(status=404, body="")
                         return
-                    route.fulfill(content_type="text/csv", body="number,prob\n5,0.01\n42,0.01\n")
-                page.route("**/predict_next_*_top10_*.csv", forecast_route)
+                    route.fulfill(content_type="text/csv", body=(
+                        "predict_for_date,rank,number,cau_score,prob\n"
+                        "2026-09-26,1,05,70.1,0.01\n2026-09-26,2,42,65.3,0.01\n"))
+                # Trang trực tiếp đọc bản chụp 10 số đầu bảng Cầu Kèo theo ngày quay.
+                page.route("**/ai_ml/daily/cau_keo_*_top10_*.csv", forecast_route)
                 errors = []
                 page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
                 for name in pages:
