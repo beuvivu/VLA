@@ -85,3 +85,21 @@ def test_the_live_page_reads_the_daily_snapshot() -> None:
     live = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     assert "đứng đầu bảng Cầu Kèo" in live
     assert "không phải xác suất" in live
+
+
+def test_old_snapshots_are_pruned_with_the_other_dated_artifacts(tmp_path: Path, monkeypatch) -> None:
+    """Mỗi lượt pipeline thêm hai tệp; không dọn thì thư mục phình mãi."""
+    import sys
+
+    import cleanup_artifacts
+
+    monkeypatch.setattr(cleanup_artifacts, "update_ledger", lambda data_dir: None)
+    pd.DataFrame({"date": ["2026-10-06"]}).to_csv(tmp_path / "xsmb.csv", index=False)
+    old = daily.daily_path(tmp_path, "de", "2026-08-01")
+    new = daily.daily_path(tmp_path, "loto", "2026-10-07")
+    for path in (old, new):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("number\n01\n", encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["cleanup", "--data-dir", str(tmp_path)])
+    cleanup_artifacts.main()
+    assert not old.exists() and new.exists()
