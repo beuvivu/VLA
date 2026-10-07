@@ -281,6 +281,9 @@ def main() -> None:
             _py("src/validate_cau_keo_domain.py"),
             allow_fail=soft_fail,
         )
+        # Chụp top 10 cầu-kèo theo ngày quay cho trang trực tiếp; phải chạy SAU
+        # domain challenger vì nó ghi đè bảng top20.
+        _run(_py("src/cau_keo_daily_top.py"), allow_fail=soft_fail)
         # Keep the machine-readable experiment report synchronized with the
         # gate artifacts produced by this same daily run.
         _run(

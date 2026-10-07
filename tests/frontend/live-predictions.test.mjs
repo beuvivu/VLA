@@ -17,7 +17,7 @@ test('Exact draw date, zero padding, validation and ten unique numbers', async t
   const urls = [];
   const {load, d} = setup(t, async url => { urls.push(url); return csv('number,prob\n5,0.01\n00,0.01\n5,0.01\n<img>,0.01\n100,0.01\n-2,0.01\n' + Array.from({length: 12}, (_, i) => (i + 10) + ',0.01').join('\n')); });
   await load('2026-09-26');
-  assert.deepEqual(urls, ['https://example.test/predict/predict_next_de_top10_2026-09-26.csv', 'https://example.test/predict/predict_next_loto_top10_2026-09-26.csv']);
+  assert.deepEqual(urls, ['https://example.test/predict/cau_keo_de_top10_2026-09-26.csv', 'https://example.test/predict/cau_keo_loto_top10_2026-09-26.csv']);
   assert.deepEqual(numbers(d, 'de'), ['05','00','10','11','12','13','14','15','16','17']);
   assert.equal(d.querySelector('img'), null);
   assert.equal(d.querySelector('time').dateTime, '2026-09-26');

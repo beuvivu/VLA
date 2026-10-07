@@ -1,4 +1,5 @@
-/* Archived two-digit forecasts, keyed strictly to the LIVE draw date. */
+/* 10 số đứng đầu bảng Cầu Kèo, chụp theo ngày quay (src/cau_keo_daily_top.py)
+   và khoá đúng vào ngày của phiên đang quay. */
 (function () {
   'use strict';
   var root = document.getElementById('live-predictions');
@@ -7,7 +8,7 @@
   var currentDate = '', revision = 0, pending = null;
   var ready = new Set();
   var modes = ['de', 'loto'];
-  var predictionRoot = root.dataset.predictionRoot || 'https://raw.githubusercontent.com/beuvivu/VLA/main/data/predict/';
+  var predictionRoot = root.dataset.predictionRoot || 'https://raw.githubusercontent.com/beuvivu/VLA/main/data/ai_ml/daily/';
 
   function validDate(value) {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -55,7 +56,7 @@
     var timer = window.setTimeout(function () { controller.abort(); }, 10000);
     column(mode, 'loading', 'Đang tải dự đoán…');
     try {
-      var url = predictionRoot + 'predict_next_' + mode + '_top10_' + date + '.csv';
+      var url = predictionRoot + 'cau_keo_' + mode + '_top10_' + date + '.csv';
       var response = await fetch(url, { cache: 'no-store', signal: controller.signal });
       if (!response.ok && response.status !== 404) throw new Error('Forecast unavailable');
       var values = response.ok ? parseNumbers(await response.text()) : [];

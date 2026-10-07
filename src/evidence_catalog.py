@@ -247,6 +247,12 @@ _GHI_CHU_DU_BAO = (
     "Kỳ quay đã kiểm là ngẫu nhiên: kỹ năng ngoài mẫu đo được nằm quanh 0, nên xác suất "
     "này không cao hơn đáng kể mức nền."
 )
+#: Điểm cầu-kèo là thứ hạng, không phải xác suất; xác suất thô của mô hình cầu-kèo
+#: đo walk-forward 1 000 kỳ còn kém dự báo hằng số (CLAUDE.md, "Độ tin thành phần ML").
+_GHI_CHU_CAU_KEO = (
+    "Kỳ quay đã kiểm là ngẫu nhiên: chưa có phép đo nào cho thấy số xếp đầu bảng Cầu Kèo "
+    "về nhiều hơn số chọn bừa."
+)
 
 
 def _ev(sources: list[Source], steps: list[str], confidence: float | None = None) -> Evidence:
@@ -516,11 +522,14 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "index.html": home,
         "landing.html": home,
         "landing_desktop.html": home,
-        "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày dùng vector đã công bố trước giờ quay; " + _GHI_CHU_DU_BAO]), [
-            # Trang tải dự báo theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
-            _sec("#live-predictions", "Dự đoán trong ngày", _du_bao_ev(
+        "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày là 10 số đứng đầu bảng Cầu Kèo, chụp cho đúng ngày quay trước giờ quay; " + _GHI_CHU_CAU_KEO]), [
+            # Trang tải bản chụp theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
+            _sec("#live-predictions", "Dự đoán trong ngày · Cầu Kèo", _cau_keo_ev(
                 {k: v for k, v in f.items() if k != "target"},
-                "Số hiển thị là dự báo đã lưu cho đúng ngày quay ghi ở đầu khối, không phải kết quả.",
+                "Số hiển thị là 10 số có điểm cầu-kèo cao nhất trong bảng đã chụp cho đúng ngày quay "
+                "ghi ở đầu khối — cùng bộ số khối «ngày mai» của trang chủ hiện trước kỳ quay ấy, "
+                "không phải kết quả.",
+                _GHI_CHU_CAU_KEO,
             )),
         ]),
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
