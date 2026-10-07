@@ -177,6 +177,34 @@ def test_the_overview_names_each_latest_draw(built) -> None:
     assert "Dự báo kỳ #1572: đã đăng ký trước kỳ" in overview
 
 
+def test_the_overview_says_no_product_deviates_when_none_does(built) -> None:
+    overview = built["vietlott.html"]
+    assert "chưa thấy sản phẩm nào lệch khỏi máy quay công bằng" in overview
+    assert "Kỳ quay đã kiểm là ngẫu nhiên" not in overview
+
+
+def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> None:
+    """Max 3D / Pro lệch thật ở hàng đơn vị; trang tổng quan không được viết cứng "ngẫu nhiên"."""
+    dashboard = _dashboard()
+    dashboard["analysis"]["max3dpro"] = {"draws": 786, "last_id": 786, "last_date": "2026-10-01", "verdict": "ĐÃ",
+                                         "evidence": {"found": True, "text": "Có bằng chứng."}, "max_rtp": 0.6293}
+    overview = {p.name: p.read_text(encoding="utf-8") for p in b.build(tmp_path, dashboard=dashboard)}["vietlott.html"]
+    hero = overview.split('class="vl-hero"', 1)[1].split("</section>", 1)[0]
+    assert "độ lệch nhỏ có ý nghĩa thống kê ở Max 3D Pro;" in hero
+    assert "kỳ vọng âm: RTP cao nhất theo mô hình là 0,63 (dưới 1)" in hero
+    assert "chưa thấy sản phẩm nào" not in hero and "không làm tăng xác suất trúng" not in hero
+    dashboard["analysis"]["max3d"] = {**dashboard["analysis"]["max3dpro"], "max_rtp": 0.5918}
+    two = b.randomness_summary(dashboard["analysis"], {c: v[0] for c, v in b.PRODUCTS.items()})
+    assert "ở Max 3D / Max 3D+ và Max 3D Pro;" in two and "0,63" in two
+
+
+def test_max_rtp_reads_every_bet_of_every_component() -> None:
+    components = [{"digit": {"bets": [{"rtp_model": 0.59}, {"rtp_model": 0.63}]}, "set": None},
+                  {"digit": None, "set": {"keno": [{"rtp_model": 0.71}], "bets": []}}]
+    assert b._max_rtp(components) == 0.71
+    assert b._max_rtp([{"digit": None, "set": {"ticket": [1]}}]) is None
+
+
 def test_the_real_engine_data_loads(tmp_path: Path) -> None:
     """Đọc ĐÚNG dữ liệu đã commit của engine: 7 sản phẩm đều có kỳ mới nhất."""
     cwd = os.getcwd()
