@@ -13,19 +13,15 @@ from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, load_ensemble_weights
 import pandas as pd
 
 from safe_io import read_csv_or_empty, read_json_or_empty
-from lottery_codes import lottery_code
 
 from page_output import write_page
-from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
-from ui_locale import column_label, localize_mapping_for_display
+from lab_ui import lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
+from dashboard_tables import (
+    calibration_card, dashboard_group, dashboard_styles, forecast_card, picks_card, weights_card,
+)
 from ui_theme import (
-    ALIGN_LEFT,
-    ALIGN_RIGHT,
     app_shell_close,
     app_shell_open,
-    dataframe_table,
-    definition_table,
-    raw_details,
     write_stylesheet,
 )
 from css_links import stylesheet_link
@@ -153,32 +149,15 @@ def main(argv: Sequence[str] | None = None) -> None:
     pred_loto = load_pred("loto")
     pred_de = load_pred("de")
 
-    def df_to_html(df: pd.DataFrame) -> str:
-        if df.empty:
-            return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
-        cols = [c for c in df.columns if c in ("number", "prob")]
-        if not cols:
-            cols = df.columns.tolist()[:2]
-        df2 = df[cols].copy()
-        if "number" in df2:
-            df2["number"] = df2["number"].map(lottery_code)
-        if "prob" in df2.columns:
-            df2["prob"] = df2["prob"].astype(float).map(lambda x: f"{x:.6f}")
-        df2 = df2.rename(columns=column_label)
-        df2.insert(0, "#", range(1, len(df2) + 1))
-        align = [ALIGN_RIGHT, ALIGN_LEFT] + [ALIGN_RIGHT] * (len(df2.columns) - 2)
-        return dataframe_table(df2, align=align, key_column=1)
-
-    def rendered(payload: dict) -> str:
-        return definition_table(localize_mapping_for_display(payload)) + raw_details(payload)
-
     cards = "".join([
-        card(df_to_html(pred_loto), title="Xác suất LOTO cao nhất", span=6, flush=True, lift=True, ident="app-lab-loto"),
-        card(df_to_html(pred_de), title="Xác suất Đặc Biệt cao nhất", span=6, flush=True, lift=True, ident="app-lab-de"),
-        card(rendered(picks_loto), title="Danh sách gợi ý (LOTO)", span=6, ident="app-lab-picks"),
-        card(rendered(picks_de), title="Danh sách gợi ý (Đặc Biệt)", span=6),
-        card(rendered(w_loto) + '<h3 class="mt-4">Hiệu chỉnh (LOTO)</h3>' + rendered(c_loto), title="Trọng số (LOTO)", span=6, ident="app-lab-weights"),
-        card(rendered(w_de) + '<h3 class="mt-4">Hiệu chỉnh (Đặc Biệt)</h3>' + rendered(c_de), title="Trọng số (Đặc Biệt)", span=6),
+        dashboard_group(1, "Bảng xếp hạng xác suất", "Hai kênh có ý nghĩa xác suất khác nhau; giữ nguyên thứ tự và độ chính xác công bố.",
+                        forecast_card(pred_loto, "loto") + forecast_card(pred_de, "de")),
+        dashboard_group(2, "Danh sách số theo kỳ", "Đọc trọn bộ Top 4, Top 8 và Top 10; dữ liệu kiểm chứng nằm trong hồ sơ mở rộng.",
+                        picks_card(picks_loto, "loto") + picks_card(picks_de, "de")),
+        dashboard_group(3, "Cấu trúc tổ hợp", "Đối chiếu trọng số có hiệu lực và xuất xứ của từng kênh.",
+                        weights_card(w_loto, "loto") + weights_card(w_de, "de")),
+        dashboard_group(4, "Hiệu chỉnh xác suất", "Tham số và cách lựa chọn được lưu cùng báo cáo; ô thiếu dữ liệu hiển thị dấu gạch ngang.",
+                        calibration_card(c_loto, "loto") + calibration_card(c_de, "de")),
     ])
 
     status_strip = f"""<section class="ai-status-strip" aria-label="Phạm vi bảng điều khiển">
@@ -195,6 +174,7 @@ def main(argv: Sequence[str] | None = None) -> None:
   {security_meta_tags()}
   {stylesheet_link()}
   {lab_styles()}
+  {dashboard_styles()}
   <title>Bảng điều khiển phân tích XSMB</title>
 </head>
 <body class="ai-command-center">
@@ -212,8 +192,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     ("Kiểm chứng từng giá trị", "Chọn một con số để xem nguồn và bước tính. Các khối dữ liệu gốc vẫn có thể mở để đối chiếu chi tiết."),
 ])}
 {lab_jump([("app-lab-loto", "Xác suất LOTO"), ("app-lab-de", "Xác suất Đặc Biệt"),
-           ("app-lab-picks", "Danh sách gợi ý"), ("app-lab-weights", "Trọng số & hiệu chỉnh")])}
-<div class="ui-grid ai-signal-grid">{cards}</div>
+           ("app-lab-picks", "Danh sách gợi ý"), ("app-lab-weights", "Trọng số"),
+           ("app-dash-calibration-loto", "Hiệu chỉnh")])}
+{cards}
 {lab_footer()}</div>
 {app_shell_close("dashboard.html")}
 </body>
