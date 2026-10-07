@@ -191,7 +191,7 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     overview = {p.name: p.read_text(encoding="utf-8") for p in b.build(tmp_path, dashboard=dashboard)}["vietlott.html"]
     hero = overview.split('class="vl-hero"', 1)[1].split("</section>", 1)[0]
     assert "độ lệch nhỏ có ý nghĩa thống kê ở Max 3D Pro;" in hero
-    assert "kỳ vọng âm: RTP cao nhất theo mô hình là 0,63 (dưới 1)" in hero
+    assert "mọi cửa của Max 3D Pro mà mô hình tính được vẫn có kỳ vọng âm: RTP cao nhất là 0,63 (dưới 1)" in hero
     assert "chưa thấy sản phẩm nào" not in hero and "không làm tăng xác suất trúng" not in hero
     dashboard["analysis"]["max3d"] = {**dashboard["analysis"]["max3dpro"], "max_rtp": 0.5918}
     two = b.randomness_summary(dashboard["analysis"], {c: v[0] for c, v in b.PRODUCTS.items()})
@@ -199,7 +199,11 @@ def test_the_overview_names_a_product_whose_draws_deviate(tmp_path: Path) -> Non
     # RTP cao nhất lấy trên MỌI sản phẩm, kể cả sản phẩm không có tín hiệu.
     names = {c: v[0] for c, v in b.PRODUCTS.items()}
     dashboard["analysis"]["keno"] = {"evidence": {"found": False}, "max_rtp": 0.71}
-    assert "RTP cao nhất theo mô hình là 0,71" in b.randomness_summary(dashboard["analysis"], names)
+    wide = b.randomness_summary(dashboard["analysis"], names)
+    assert "mọi cửa của Max 3D / Max 3D+, Max 3D Pro và Keno mà mô hình tính được" in wide
+    assert "RTP cao nhất là 0,71" in wide
+    # Mega không có RTP trong phân tích (jackpot dồn có thể vượt 1): không được gộp vào "mọi cửa".
+    assert "Mega" not in wide.split("Dù vậy", 1)[1]
     dashboard["analysis"]["keno"]["max_rtp"] = 1.02
     assert "kỳ vọng âm" not in b.randomness_summary(dashboard["analysis"], names)
 

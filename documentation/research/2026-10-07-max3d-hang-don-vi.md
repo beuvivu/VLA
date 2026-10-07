@@ -3,7 +3,7 @@
 Engine Vietlott (`vietlott/`, chép từ VLM) báo e-value vượt ngưỡng 20 cho Max 3D
 (10^2,57) và Max 3D Pro (10^2,84). Kỳ quay được coi là ngẫu nhiên, nên một kết quả "tốt
 hơn ngẫu nhiên" phải được kiểm lại trước khi tin. Kết luận: **độ lệch là thật**. Nó
-không do lỗi dữ liệu, cũng không do cách tính. Dù vậy mọi cửa cược vẫn có kỳ vọng âm.
+không do lỗi dữ liệu, cũng không do cách tính. Dù vậy mọi cửa Max 3D / Pro mà mô hình tính vẫn có kỳ vọng âm.
 
 ## Dữ liệu
 
@@ -43,4 +43,4 @@ nhiều phép thử.
 RTP cao nhất theo mô hình là 0,59 (Max 3D) và 0,63 (Max 3D Pro), đều dưới 1. Câu viết
 cứng "Kỳ quay đã kiểm là ngẫu nhiên; dự báo không làm tăng xác suất trúng" ở trang tổng
 quan vì thế sai với Max 3D. Câu ấy nay được in TỪ SỐ ĐO
-(`build_vietlott_results.randomness_summary`).
+(`build_vietlott_results.randomness_summary`). Câu về kỳ vọng âm chỉ nói về các sản phẩm mà mô hình tính được RTP. Mega, Power và Lotto không có RTP trong phân tích, mà jackpot dồn hay chia giải có thể đẩy RTP của chúng vượt 1 (`vietlott/reports/vietlott_v3.md`).

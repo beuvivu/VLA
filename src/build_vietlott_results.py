@@ -179,16 +179,20 @@ def randomness_summary(analysis: dict, names: dict[str, str]) -> str:
     if not found:
         return ("Phép kiểm e-value của engine chưa thấy sản phẩm nào lệch khỏi máy quay công bằng; "
                 "dự báo không làm tăng xác suất trúng.")
-    labels = [names[c] for c in found]
-    listed = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " và " + labels[-1]
-    # "Mọi cửa" là mọi cửa của MỌI sản phẩm đã phân tích, không chỉ sản phẩm có tín hiệu.
-    rtps = [a["max_rtp"] for a in analysis.values() if (a or {}).get("max_rtp") is not None]
+    # Chỉ nói về những sản phẩm mà mô hình TÍNH được RTP. Mega/Power/Lotto không có RTP
+    # trong phân tích, mà jackpot dồn hay chia giải có thể đẩy RTP của chúng vượt 1.
+    priced = [c for c in names if (analysis.get(c) or {}).get("max_rtp") is not None]
     money = ""
-    if rtps and max(rtps) < 1:
-        best = f"{max(rtps):.2f}".replace(".", ",")
-        money = f" Dù vậy mọi cửa vẫn có kỳ vọng âm: RTP cao nhất theo mô hình là {best} (dưới 1)."
-    return (f"Phép kiểm e-value của engine thấy độ lệch nhỏ có ý nghĩa thống kê ở {listed}; các sản phẩm còn lại "
-            f"chưa lệch khỏi máy quay công bằng.{money}")
+    if priced and max(analysis[c]["max_rtp"] for c in priced) < 1:
+        best = f"{max(analysis[c]['max_rtp'] for c in priced):.2f}".replace(".", ",")
+        money = (f" Dù vậy mọi cửa của {_join([names[c] for c in priced])} mà mô hình tính được vẫn có kỳ vọng âm: "
+                 f"RTP cao nhất là {best} (dưới 1).")
+    return (f"Phép kiểm e-value của engine thấy độ lệch nhỏ có ý nghĩa thống kê ở {_join([names[c] for c in found])}; "
+            f"các sản phẩm còn lại chưa lệch khỏi máy quay công bằng.{money}")
+
+
+def _join(labels: list[str]) -> str:
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " và " + labels[-1]
 
 
 def load(cache_states: Path | None = None, products: tuple[str, ...] = tuple(PRODUCTS)) -> dict[str, Any]:
