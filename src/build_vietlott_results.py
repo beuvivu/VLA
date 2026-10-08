@@ -217,17 +217,35 @@ def balls(values: list, bonus: object = None, *, product: str = "") -> str:
     fmt = (lambda x: str(int(x))) if product == "bingo18" else _two
     out = "".join(f'<span class="vl-ball">{esc(fmt(x))}</span>' for x in values)
     if bonus is not None:
-        out += f'<span class="vl-plus">+</span><span class="vl-ball vl-ball--bonus">{esc(_two(bonus))}</span>'
-    return '<span class="vl-number-sequence">' + out + "</span>"
+        out += (f'<span class="vl-plus" aria-hidden="true">+</span><span class="vl-ball vl-ball--bonus" '
+                f'aria-label="Số đặc biệt {esc(_two(bonus))}">{esc(_two(bonus))}</span>')
+    matrix = " vl-number-sequence--matrix" if product in MATRIX else ""
+    return f'<span class="vl-number-sequence{matrix}">' + out + "</span>"
+
+
+def _max_result_markup(product: str, draw: dict, *, matched_symbol: str | None = None) -> str:
+    """Giữ từng giải trên một hàng; tô Đặc biệt theo nhóm, không theo tập bộ ba."""
+    groups = [p for p in draw.get("prizes") or [] if isinstance(p, dict) and "numbers" in p]
+    if not groups:
+        numbers = draw.get("numbers") or []
+        return _comparison_balls(product, numbers, matched=[x == matched_symbol for x in numbers],
+                                 sequence_class="vl-number-sequence")
+    rows = []
+    for group in groups:
+        label = str(group.get("label") or "")
+        special = product == "max3dpro" and label.strip().casefold() == "đặc biệt"
+        numbers = group["numbers"]
+        sequence = _comparison_balls(product, numbers, matched=[x == matched_symbol for x in numbers],
+                                     special=special, sequence_class="vl-number-sequence", label=label + ": ")
+        modifier = " vl-prize-row--special" if special else ""
+        rows.append(f'<div class="vl-prize-row{modifier}"><span class="vl-prize-label">{esc(label)}</span>{sequence}</div>')
+    return '<div class="vl-3d">' + "".join(rows) + "</div>"
 
 
 def result_markup(product: str, draw: dict) -> str:
     """Bộ số của một kỳ, đúng hình dạng từng sản phẩm."""
     if product in MAX:
-        groups = [p for p in draw.get("prizes") or [] if isinstance(p, dict) and "numbers" in p]
-        return '<div class="vl-3d">' + "".join(
-            f'<div><small>{esc(g["label"])}</small><span>{" · ".join(esc(x) for x in g["numbers"])}</span></div>'
-            for g in groups) + "</div>"
+        return _max_result_markup(product, draw)
     out = balls(draw.get("numbers") or [], draw.get("bonus"), product=product)
     facts = draw.get("facts") or {}
     if product == "bingo18" and facts:
@@ -249,7 +267,7 @@ def prize_table(product: str, draw: dict) -> str:
         f'<td class="vl-num">{"—" if p.get("winners") is None else vn_int(int(p["winners"]))}</td></tr>'
         for p in rows)
     return (f'<div class="vl-table-wrap"><table class="vl-table"><caption>Bảng giải kỳ #{esc(draw["draw_id"])}'
-            f' — "—" là chưa có số liệu công bố</caption><thead><tr><th scope="col">Giải</th>'
+            f' — "—" là chưa có dữ liệu cho kỳ này</caption><thead><tr><th scope="col">Giải</th>'
             '<th scope="col">Điều kiện</th><th scope="col">Giá trị</th><th scope="col">Số người trúng</th>'
             f'</tr></thead><tbody>{body}</tbody></table></div>')
 
@@ -290,6 +308,7 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     if forecast.get("target_date"):
         target += f" · {day_label(forecast['target_date'])}"
     parts = [f'<p class="vl-forecast-head"><strong>{target}</strong> · {state}</p>']
+    components = []
     for comp in forecast.get("components") or []:
         rows = []
         for t in (comp.get("top") or [])[:5]:
@@ -303,11 +322,13 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
                     f'<span class="vl-ball vl-ball--bonus">{esc(_two(number))}</span>' for number in numbers) + '</span>'
             else:
                 sequence = balls(numbers, product=product)
-            rows.append(f'<li><span class="vl-ticket" aria-label="{esc(_symbol(product, numbers))}">{sequence}</span>'
-                        + (f'<small>×{lift:.4f} so với ngẫu nhiên</small>' if lift else "") + "</li>")
-        label = {"special": "Số đặc biệt", "dice": "Bộ ba số"}.get(comp.get("name"), comp.get("name"))
-        name = "" if comp.get("name") in ("main", "digits") else f'<h4>{esc(label)}</h4>'
-        parts.append(f'{name}<ol class="vl-tickets">{"".join(rows)}</ol>')
+            rows.append(f'<li><div class="vl-ticket-row"><span class="vl-ticket" aria-label="{esc(_symbol(product, numbers))}">{sequence}</span>'
+                        + (f'<small>×{lift:.4f} so với ngẫu nhiên</small>' if lift else "") + "</div></li>")
+        key = comp.get("name") or ""
+        label = {"main": "Bộ số chính", "special": "Số đặc biệt", "digits": "Bộ ba số", "dice": "Bộ ba số"}.get(key, key)
+        components.append(f'<div class="vl-forecast-component" data-vl-component="{esc(key)}">'
+                          f'<h4 class="vl-forecast-label">{esc(label)}</h4><ol class="vl-tickets">{"".join(rows)}</ol></div>')
+    parts.append('<div class="vl-forecast-layout"><div class="vl-forecast-components">' + "".join(components) + '</div></div>')
     return "".join(parts)
 
 
@@ -328,7 +349,7 @@ def _hit_percent(hits: int, denominator: int) -> str:
 
 def _comparison_balls(product: str, values: list, *, matched: list[bool] | None = None,
                       bonus: object = None, bonus_hit: bool = False, bonus_main: object = None,
-                      label: str = "") -> str:
+                      label: str = "", special: bool = False, sequence_class: str = "vl-comparison-balls") -> str:
     """Đánh dấu theo từng vị trí; bộ ba Max giữ nguyên chuỗi và số 0 đầu."""
     fmt = str if product in MAX else (lambda x: str(int(x))) if product == "bingo18" else _two
     marks = matched or []
@@ -336,7 +357,10 @@ def _comparison_balls(product: str, values: list, *, matched: list[bool] | None 
     for index, number in enumerate(values):
         is_match = index < len(marks) and marks[index]
         is_bonus = bonus_main is not None and number == bonus_main
-        modifier = " vl-ball--match" if is_match else " vl-ball--bonus-hit" if is_bonus else ""
+        modifier = " vl-ball--symbol" if product in MAX else ""
+        if special or is_bonus:
+            modifier += " vl-ball--bonus"
+        modifier += " vl-ball--match" if is_match else " vl-ball--bonus-hit" if is_bonus else ""
         description = " · trùng số chính" if is_match and product in MATRIX else " · trùng" if is_match else " · trùng số phụ" if is_bonus else ""
         spans.append(f'<span class="vl-ball{modifier}" aria-label="{esc(fmt(number) + description)}">{esc(fmt(number))}</span>')
     text = " · ".join(fmt(x) for x in values) if product in MAX else " ".join(fmt(x) for x in values)
@@ -345,7 +369,8 @@ def _comparison_balls(product: str, values: list, *, matched: list[bool] | None 
         modifier = " vl-ball--bonus-hit" if bonus_hit else ""
         spans.append(f'<span class="vl-plus" aria-hidden="true">+</span><span class="vl-ball vl-ball--bonus{modifier}" '
                      f'aria-label="Số đặc biệt {esc(_two(bonus))}{" · trùng" if bonus_hit else ""}">{esc(_two(bonus))}</span>')
-    return f'<div class="vl-comparison-balls" aria-label="{esc(label + text)}">{"".join(spans)}</div>'
+    tag = "span" if sequence_class == "vl-number-sequence" else "div"
+    return f'<{tag} class="{sequence_class}" aria-label="{esc(label + text)}">{"".join(spans)}</{tag}>'
 
 
 def _stored_tickets(product: str, comparison: dict) -> list[dict]:
@@ -403,9 +428,20 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
         status = {"matched": "Đã chấm", "pending": "Chờ kết quả", "date_mismatch": "Lệch ngày"}.get(c.get("status"), "Chờ kết quả")
         state_class = " vl-badge--ok" if scored else " vl-badge--warn" if c.get("status") == "date_mismatch" else ""
         tickets = _stored_tickets(product, c)
-        predictions, actuals, scores = [], [], []
         result = c.get("result") or {}
-        for index, ticket in enumerate(tickets, 1):
+        total = max(1, len(tickets))
+        rowspan = f' rowspan="{total}"' if total > 1 else ""
+        metadata = (f'<th scope="row"{rowspan} class="vl-comparison-meta">#{esc(c.get("target_id"))}</th>'
+                    f'<td class="vl-comparison-meta vl-comparison-date"{rowspan}>{day_label(c.get("target_date"))}</td>'
+                    f'<td class="vl-comparison-meta"{rowspan}><span class="vl-badge{state_class}">{status}</span></td>')
+        for index, ticket in enumerate(tickets or [None], 1):
+            if ticket is None:
+                rows.append(f'<tr data-vl-comparison-status="{esc(c.get("status") or "pending")}" '
+                            f'data-vl-comparison-target="{esc(c.get("target_id"))}" data-vl-comparison-ticket="{index}">{metadata}'
+                            '<td class="vl-comparison-prediction">—</td><td class="vl-comparison-result">'
+                            '<span class="vl-muted">Chưa có vé để đối chiếu</span></td><td class="vl-comparison-score-cell">'
+                            '<span class="vl-muted">Chưa chấm · —</span></td></tr>')
+                continue
             numbers = ticket.get("numbers") or []
             drawn = result.get("numbers") or []
             matches = ticket.get("matched_numbers") or []
@@ -425,13 +461,16 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
                 drawn_marks = [scored and value in matches for value in drawn]
             special = ticket.get("special") if product == "lotto535" else None
             bonus_main = result.get("bonus") if scored and product == "power655" and bonus_hit else None
-            predictions.append('<div class="vl-comparison-ticket"' + (f' data-vl-ticket="{index}"' if scored else "") + '>'
-                               f'<small>Vé {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
-                               bonus=special, bonus_hit=bonus_hit, bonus_main=bonus_main, label="Bộ số đã đăng ký: ") + '</div>')
+            prediction = ('<div class="vl-comparison-ticket"' + (f' data-vl-ticket="{index}"' if scored else "") + '>'
+                          f'<small>Vé {index}</small>' + _comparison_balls(product, pred_values, matched=pred_marks,
+                          bonus=special, bonus_hit=bonus_hit, bonus_main=bonus_main, label="Bộ số đã đăng ký: ") + '</div>')
+            actual = '<span class="vl-muted">Chưa đối chiếu kết quả</span>'
+            score = '<span class="vl-muted">Chưa chấm · —</span>'
             if scored:
-                actuals.append(f'<div class="vl-comparison-actual"><small>Đối chiếu vé {index}</small>'
-                               + _comparison_balls(product, drawn, matched=drawn_marks, bonus=result.get("bonus") if product in MATRIX else None,
-                                                   bonus_hit=bonus_hit, label="Kết quả: ") + '</div>')
+                sequence = (_max_result_markup(product, result, matched_symbol=symbol) if product in MAX else
+                            _comparison_balls(product, drawn, matched=drawn_marks, bonus=result.get("bonus") if product in MATRIX else None,
+                                              bonus_hit=bonus_hit, label="Kết quả: "))
+                actual = f'<div class="vl-comparison-actual"><small>Đối chiếu vé {index}</small>{sequence}</div>'
                 pair = _ticket_score(product, ticket)
                 score = f"{pair[0]} / {pair[1]} · {_hit_percent(*pair)}" if pair else f"Xuất hiện {int(ticket['hits'])} lần" if product in MAX and ticket.get("hits") is not None else "Chưa đủ dữ liệu chấm"
                 secondary = ""
@@ -439,12 +478,12 @@ def comparisons_markup(product: str, comparisons: list[dict]) -> str:
                     secondary = f'<small class="vl-comparison-secondary">Bộ có lặp: {int(ticket["multiset_hits"])} / {len(numbers)}</small>'
                 elif product in ("power655", "lotto535"):
                     secondary = f'<small class="vl-comparison-secondary">Số {"phụ" if product == "power655" else "đặc biệt"}: {"trùng" if bonus_hit else "không trùng"}</small>'
-                scores.append(f'<div class="vl-comparison-score"><small>Vé {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
-                              f'<strong>{esc(score)}</strong>{secondary}<span class="vl-comparison-tier">{esc(_ticket_prize(product, ticket))}</span></div>')
-        actual = "".join(actuals) if scored else '<span class="vl-muted">Chưa đối chiếu kết quả</span>'
-        score = "".join(scores) if scored and scores else '<span class="vl-muted">Chưa chấm · —</span>'
-        rows.append(f'<tr><th scope="row">#{esc(c.get("target_id"))}</th><td>{day_label(c.get("target_date"))}</td>'
-                    f'<td><span class="vl-badge{state_class}">{status}</span></td><td>{"".join(predictions) or "—"}</td><td>{actual}</td><td>{score}</td></tr>')
+                score = (f'<div class="vl-comparison-score"><small>Vé {index}{" · theo vị trí" if product == "bingo18" else ""}</small>'
+                         f'<strong>{esc(score)}</strong>{secondary}<span class="vl-comparison-tier">{esc(_ticket_prize(product, ticket))}</span></div>')
+            rows.append(f'<tr data-vl-comparison-status="{esc(c.get("status") or "pending")}" '
+                        f'data-vl-comparison-target="{esc(c.get("target_id"))}" data-vl-comparison-ticket="{index}">'
+                        f'{metadata if index == 1 else ""}<td class="vl-comparison-prediction">{prediction}</td>'
+                        f'<td class="vl-comparison-result">{actual}</td><td class="vl-comparison-score-cell">{score}</td></tr>')
     unit = "Tỷ lệ đếm vị trí trùng của từng vé Bingo18; bộ có lặp được đếm riêng." if product == "bingo18" else "Max 3D đối chiếu cả bộ ba; số lần xuất hiện và hạng giải do engine chấm." if product in MAX else "Tỷ lệ = tổng số chính trùng / tổng số chính đã chọn trên từng vé; số phụ được xét riêng."
     note = (unit + " Đây là mức khớp của các vé đã chấm, không phải xác suất trúng giải.") if product not in MAX else unit
     legend = ('<div class="vl-comparison-legend"><span><span class="vl-ball vl-ball--match" aria-hidden="true">✓</span> Trùng</span>'
@@ -533,7 +572,7 @@ def jackpot_card(product: str, data: dict | None) -> str:
     return (f'<article class="vl-jackpot-card" data-vl-jackpot="{product}" aria-label="Jackpot của kỳ mới nhất">'
             f'<span class="vl-kicker">JACKPOT · KỲ MỚI NHẤT</span><h2>{esc(name)}</h2>'
             f'<p class="vl-jackpot-stamp">{stamp}</p>{values}'
-            '<p class="vl-jackpot-note">Giá trị chưa công bố được hiển thị bằng dấu —.</p>'
+            '<p class="vl-jackpot-note">Dấu — cho biết chưa có dữ liệu giá trị của kỳ này.</p>'
             f'<a class="vl-button vl-button--secondary" href="{file}#vl-latest">Xem bảng giải <span aria-hidden="true">↗</span></a></article>')
 
 

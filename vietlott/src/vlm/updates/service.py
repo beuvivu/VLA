@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import tempfile
 from collections import defaultdict
@@ -9,9 +10,11 @@ from datetime import datetime
 
 from vietlott_engine.core.games import GAMES, get_game
 from vietlott_engine.core.models import Draw
+from vietlott_engine.core.prizes import PrizeRecord
 from vietlott_engine.core.products import ProductCode, history_to_rows
 from vietlott_engine.crawler.pipeline import SyncPipeline, build_http_client, build_source
-from vietlott_engine.crawler.product_store import ProductSyncPipeline, sync_canonical_prizes
+from vietlott_engine.crawler.product_store import ProductSyncPipeline, _prefer_prize_record, sync_canonical_prizes
+from vietlott_engine.crawler.storage import DuckDBRepository
 from vietlott_engine.forecast.schedule import VN
 from vlm.database.schema import DrawRecord
 from pydantic import ValidationError
@@ -66,9 +69,18 @@ def _identity(record: DrawRecord) -> tuple:
     return (record.draw_date.date(), record.winning_numbers, record.bonus_number)
 
 
+def _journal_identity(record: DrawRecord) -> tuple:
+    """Thay đổi riêng bảng giải cũng là một bản cập nhật phải lưu bền."""
+    sub = record.sub_prizes_json or {}
+    finance = {key: getattr(record, key) for key in
+               ('jackpot1_value', 'jackpot2_value', 'jackpot1_winners', 'jackpot2_winners')}
+    finance.update({key: sub.get(key) for key in ('winners', 'field_sources', 'finance_source')})
+    return (*_identity(record), json.dumps(finance, sort_keys=True))
+
+
 def _journal_index(state) -> dict:  # type: ignore[no-untyped-def]
     if state._journal_seen is None:
-        state._journal_seen = {(r.game_type,r.draw_id):_identity(r) for r in _read_journal(journal_path(state))}
+        state._journal_seen = {(r.game_type,r.draw_id):_journal_identity(r) for r in _read_journal(journal_path(state))}
     return state._journal_seen
 
 
@@ -100,9 +112,9 @@ def _append(state, records: list[DrawRecord], *, baseline: dict | None = None) -
         newest = max(r.draw_date.date() for r in records)
         # Track old-result corrections as well as new IDs. Known journal IDs are
         # rechecked after failed appends; unchanged bundled history stays in seed.
-        records = [r for r in records if baseline.get((r.game_type,r.draw_id)) != _identity(r)
+        records = [r for r in records if baseline.get((r.game_type,r.draw_id)) != _journal_identity(r)
                    or r.draw_date.date() == newest or (r.game_type,r.draw_id) in state._journal_seen]
-    records = [r for r in records if state._journal_seen.get((r.game_type,r.draw_id)) != _identity(r)]
+    records = [r for r in records if state._journal_seen.get((r.game_type,r.draw_id)) != _journal_identity(r)]
     if not records:
         return
     payload = ''.join(r.model_dump_json() + '\n' for r in records)
@@ -117,13 +129,30 @@ def _append(state, records: list[DrawRecord], *, baseline: dict | None = None) -
     except OSError:
         state._journal_seen = None  # re-read/repair a possible torn tail on retry
         raise
-    state._journal_seen.update(((r.game_type,r.draw_id),_identity(r)) for r in records)
+    state._journal_seen.update(((r.game_type,r.draw_id),_journal_identity(r)) for r in records)
 
 
-def _matrix_record(draw: Draw) -> DrawRecord:
-    return DrawRecord.from_legacy(draw.game.value, {'id':draw.draw_id, 'date':draw.draw_date.isoformat(),
+def _matrix_record(draw: Draw, finance: PrizeRecord | None = None) -> DrawRecord:
+    """Gộp bảng giải đúng mã kỳ/ngày, giữ nguồn riêng của các giá trị tài chính."""
+    row = {'id':draw.draw_id, 'date':draw.draw_date.isoformat(),
         'result':list(draw.numbers), 'bonus_number':draw.bonus, 'source':draw.source,
-        'jackpot1_value':draw.jackpot1_value, 'jackpot2_value':draw.jackpot2_value})
+        'jackpot1_value':draw.jackpot1_value, 'jackpot2_value':draw.jackpot2_value,
+        'winners':draw.tier_winners or {}}
+    if finance is not None and (finance.game, finance.draw_id, finance.draw_date) == (draw.game, draw.draw_id, draw.draw_date):
+        row['winners'] = {**row['winners'], **finance.winners}
+        fields = {}
+        for tier, value in (finance.jackpot_pots or {}).items():
+            row[tier + '_value'] = value
+            fields[tier + '_value'] = finance.source
+        row['sub_prizes_json'] = {'winners':row['winners'], 'field_sources':fields,
+                                 'finance_source':finance.source}
+    return DrawRecord.from_legacy(draw.game.value, row)
+
+
+def _matrix_records(repository, spec) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
+    """Chụp số quay cùng bảng giải để mất cache không làm mất jackpot."""
+    finance = {p.draw_id:p for p in repository.load_prizes(spec.code)}
+    return [_matrix_record(d, finance.get(d.draw_id)) for d in repository.load(spec.code)]
 
 
 def replay_results(state) -> int:  # type: ignore[no-untyped-def]
@@ -134,6 +163,7 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
     records = {(r.game_type,r.draw_id):r for r in _read_journal(path)}
     products = defaultdict(list)
     matrix = []
+    prizes = []
     existing = {spec.code.value:{d.draw_id:d for d in state.repository.load(spec.code)} for spec in GAMES.values()}
     for r in records.values():
         if r.game_type in GAMES:
@@ -141,10 +171,33 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
             if current is not None:
                 if _identity(_matrix_record(current)) != _identity(r):
                     state.replay_conflicts.append({'game_type':r.game_type, 'draw_id':r.draw_id})
-                continue
-            matrix.append(Draw(game=r.game_type, draw_id=r.draw_id, draw_date=r.draw_date.date(),
+                    continue
+            winners = dict((r.sub_prizes_json or {}).get('winners', {}))
+            for tier in ('jackpot1', 'jackpot2'):
+                count = getattr(r, tier + '_winners')
+                if count is not None:
+                    winners[tier] = count
+            recovered = Draw(game=r.game_type, draw_id=r.draw_id, draw_date=r.draw_date.date(),
                                numbers=tuple(r.winning_numbers), bonus=r.bonus_number, source=r.source,
-                               jackpot1_value=r.jackpot1_value, jackpot2_value=r.jackpot2_value))
+                               jackpot1_value=r.jackpot1_value, jackpot2_value=r.jackpot2_value,
+                               tier_winners=winners or None)
+            if current is not None:
+                recovered = current.model_copy(update={
+                    'jackpot1_value':current.jackpot1_value if current.jackpot1_value is not None else recovered.jackpot1_value,
+                    'jackpot2_value':current.jackpot2_value if current.jackpot2_value is not None else recovered.jackpot2_value,
+                    'tier_winners':{**winners, **(current.tier_winners or {})} or None,
+                })
+            if recovered != current:
+                matrix.append(recovered)
+            pots = {tier:getattr(r, tier + '_value') for tier in ('jackpot1', 'jackpot2')
+                    if getattr(r, tier + '_value') is not None}
+            if winners or pots:
+                cached = next((p for p in state.repository.load_prizes(r.game_type.value)
+                               if p.draw_id == r.draw_id and p.draw_date == r.draw_date.date()), None)
+                prize = PrizeRecord(game=r.game_type, draw_id=r.draw_id, draw_date=r.draw_date.date(),
+                    winners=winners, jackpot_pots=pots or None,
+                    source=(r.sub_prizes_json or {}).get('finance_source', r.source))
+                prizes.append(_prefer_prize_record(prize, cached) if cached else prize)
         else:
             products[ProductCode(r.game_type)].append({'id':r.draw_id, 'date':r.draw_date.date().isoformat(),
                                                       'result':list(r.winning_numbers)})
@@ -152,6 +205,8 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
         state.repository.upsert(matrix)
         for product in {d.game for d in matrix}:
             state.invalidate(get_game(product))
+    if prizes:
+        state.repository.upsert_prizes(prizes)
     for product, rows in products.items():
         store = state.product_store()
         current = {row['id']:row for row in history_to_rows(store.load(product, include_unconfirmed=True))}
@@ -169,11 +224,19 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
 async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: bool = False,
                       learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
     async with state.sync_lock(spec.code.value):
-        before = {(d.game.value,d.draw_id):_identity(_matrix_record(d)) for d in state.repository.load(spec.code)}
+        before = {(r.game_type,r.draw_id):_journal_identity(r) for r in _matrix_records(state.repository, spec)}
         async with build_http_client(state.settings) as client:
             report = await SyncPipeline(build_source(state.settings, client, source), state.repository).run(spec, full_refresh)
-        draws = state.repository.load(spec.code)
-        _append(state, [_matrix_record(d) for d in draws], baseline=before)
+        changed = [d.draw_id for d in state.repository.load(spec.code)
+                   if (d.game.value, d.draw_id) in before
+                   and before[(d.game.value, d.draw_id)][:3] != _identity(_matrix_record(d))]
+        if changed:
+            # Cùng mã kỳ không đủ: bảng giải cũ thuộc bộ số/ngày/bonus cũ.
+            state.repository.invalidate_finance(spec.code, changed)
+            if isinstance(state.repository, DuckDBRepository) and state.repository.parquet_dir is not None:
+                # Pipeline đã xuất trước bước loại finance của bộ số cũ.
+                state.repository.export_parquet(spec.code)
+        _append(state, _matrix_records(state.repository, spec), baseline=before)
         state.invalidate(spec)
     return {**report.to_dict(), 'learning':await _learn(state, spec.code.value) if learn else None}
 
@@ -246,13 +309,19 @@ async def update_product(state, product: str, *, learn: bool = True) -> dict:  #
         # separate audit. Give this optional step a small budget.
         try:
             async with state.sync_lock(product):
-                async with build_http_client(state.settings) as client:
-                    s = state.settings
-                    finance = await asyncio.wait_for(sync_canonical_prizes(client, state.repository, spec,
-                        source='auto', last=3, canonical_base_url=s.canonical_base_url,
-                        vietlott_base_url=s.vietlott_base_url, bootstrap_cookie=s.vietlott_cookie_bootstrap,
-                        nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir), min(45, s.auto_update_timeout_s / 4))
-                    prize_error = 'SourceError' if finance.error else None
+                before = {(r.game_type, r.draw_id):_journal_identity(r) for r in _matrix_records(state.repository, spec)}
+                try:
+                    async with build_http_client(state.settings) as client:
+                        s = state.settings
+                        finance = await asyncio.wait_for(sync_canonical_prizes(client, state.repository, spec,
+                            source='auto', last=3, canonical_base_url=s.canonical_base_url,
+                            vietlott_base_url=s.vietlott_base_url, bootstrap_cookie=s.vietlott_cookie_bootstrap,
+                            nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir), min(45, s.auto_update_timeout_s / 4))
+                        prize_error = 'SourceError' if finance.error else None
+                finally:
+                    # Cả phần finance đã lấy trước một timeout cũng phải được lưu.
+                    _append(state, _matrix_records(state.repository, spec), baseline=before)
+                    state.invalidate(spec)
         except Exception as exc:
             prize_error = type(exc).__name__
         return {'last_draw_id':last.draw_id if last else None, 'last_draw_date':last_date,

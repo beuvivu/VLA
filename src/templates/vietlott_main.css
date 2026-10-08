@@ -114,25 +114,30 @@
   color:var(--vl-ball-ink);font:750 clamp(13px,.75rem + .2vw,15px) var(--ui-font);font-variant-numeric:tabular-nums;
   box-shadow:inset 0 1px 1px color-mix(in srgb,var(--ui-surface) 75%,transparent),0 2px 4px color-mix(in srgb,var(--ui-ink) 12%,transparent);
 }
-.vl-ball--bonus {--vl-ball-bg:var(--ui-special-bg);--vl-ball-ink:var(--ui-special-ink);--vl-ball-line:var(--ui-special-border)}
-.vl-ball--hit,.vl-ball--match,.vl-ball--bonus-hit {
+.vl-ball--hit,.vl-ball--match {
   --vl-ball-bg:var(--ui-n3-bg);--vl-ball-ink:var(--ui-n3-ink);
   --vl-ball-line:color-mix(in srgb,var(--ui-n3-ink) 65%,var(--ui-n3-bg));
   box-shadow:inset 0 1px 1px color-mix(in srgb,var(--ui-surface) 75%,transparent),0 0 0 2px color-mix(in srgb,var(--ui-n3-ink) 24%,transparent),0 2px 4px color-mix(in srgb,var(--ui-ink) 12%,transparent);
 }
+.vl-ball--bonus,.vl-ball--bonus-hit {--vl-ball-bg:var(--ui-special-bg);--vl-ball-ink:var(--ui-special-ink);--vl-ball-line:var(--ui-special-border)}
 .vl-ball--bonus.vl-ball--hit,.vl-ball--bonus.vl-ball--match,.vl-ball--bonus-hit {
   --vl-ball-line:var(--ui-special-ink);
-  box-shadow:inset 0 1px 1px color-mix(in srgb,var(--ui-surface) 75%,transparent),0 0 0 2px var(--ui-special-border),0 2px 4px color-mix(in srgb,var(--ui-ink) 12%,transparent);
+  box-shadow:inset 0 1px 1px color-mix(in srgb,var(--ui-surface) 75%,transparent),0 0 0 2px var(--ui-n3-ink),0 2px 4px color-mix(in srgb,var(--ui-ink) 12%,transparent);
 }
+.vl-number-sequence--matrix {width:max-content;gap:clamp(3px,1.1vw,6px);padding-inline:2px}
+.vl-number-sequence--matrix>.vl-ball {flex:0 1 38px;min-width:24px;width:38px;height:auto;aspect-ratio:1;padding:0 2px}
+.vl-number-sequence--matrix>.vl-plus {flex:0 0 auto}
+.vl-ball--symbol {min-width:44px}
 .vl-plus {font-weight:750;color:var(--ui-ink-soft)}
 .vl-meta {flex-basis:100%;color:var(--ui-ink-soft);font-size:13px}
 .vl-jackpots {display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;color:var(--ui-ink-soft);font-size:12px}
 .vl-jackpots>span {min-width:0;max-width:100%}
 .vl-jackpots b {display:inline-block;max-width:100%;overflow-x:auto;white-space:nowrap;vertical-align:middle;color:var(--ui-ink);font-variant-numeric:tabular-nums;scrollbar-width:thin}
-.vl-3d {width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:8px}
-.vl-3d div {min-width:0;padding:8px;border-radius:10px;background:var(--ui-surface-2)}
-.vl-3d small {display:block;color:var(--ui-ink-soft);font-size:11px}
-.vl-3d span {display:block;overflow-x:auto;white-space:nowrap;font:650 clamp(13px,.75rem + .25vw,15px)/1.6 var(--ui-font);font-variant-numeric:tabular-nums;scrollbar-width:thin}
+.vl-3d {width:100%;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.vl-prize-row {display:grid;grid-template-columns:80px minmax(0,1fr);align-items:center;gap:8px;min-width:0;padding:4px 8px;border-radius:10px;background:var(--ui-surface-2)}
+.vl-prize-label {color:var(--ui-ink-soft);font-size:11px;font-weight:650;line-height:1.5}
+.vl-prize-row--special>.vl-prize-label {color:var(--ui-special-ink)}
+.vl-prize-row>.vl-number-sequence {width:max-content}
 .vl-table-wrap {min-width:0;max-width:100%;overflow-x:auto;margin:8px 0;scrollbar-width:thin;overscroll-behavior-inline:contain}
 .vl-table {width:100%;border-collapse:collapse;font-size:14px}
 .vl-table caption {text-align:left;color:var(--ui-ink-soft);font-size:12px;padding:0 0 8px}
@@ -146,6 +151,14 @@
 .vl-tickets li {margin:4px 0}
 .vl-ticket {display:inline-block;max-width:100%;overflow-x:auto;vertical-align:middle;white-space:nowrap;font:650 clamp(13px,.8rem + .15vw,15px) var(--ui-font);font-variant-numeric:tabular-nums;margin-right:8px;scrollbar-width:thin}
 .vl-tickets small {color:var(--ui-ink-soft)}
+.vl-forecast-layout {container:vl-forecast / inline-size;min-width:0}
+.vl-forecast-components {display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.vl-forecast-components:has([data-vl-component="special"]) {grid-template-columns:minmax(0,1fr) 104px}
+.vl-forecast-component {min-width:0}
+.vl-section .vl-forecast-label {margin:0 0 8px;font-size:13px;color:var(--ui-ink-soft)}
+.vl-ticket-row {display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.vl-ticket-row>.vl-ticket {min-width:0;margin:0;max-width:100%}
+.vl-ticket-row>small {min-width:0;max-width:100%;font-size:11px;white-space:normal;overflow-wrap:anywhere}
 .vl-forecast-head {margin:0 0 8px}
 .vl-game-hub {margin:40px 0 24px;scroll-margin-top:104px}
 .vl-section-heading {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
@@ -200,11 +213,13 @@
 .vl-comparison-legend .vl-ball {min-width:24px;height:24px;font-size:12px}
 .vl-comparison-table {min-width:960px}
 .vl-comparison-table th {white-space:nowrap}
-.vl-comparison-table tbody>tr>th,.vl-comparison-table tbody>tr>td:nth-child(2) {white-space:nowrap;font-variant-numeric:tabular-nums}
+.vl-comparison-table tbody>tr>th,.vl-comparison-date {white-space:nowrap;font-variant-numeric:tabular-nums}
+.vl-comparison-meta {vertical-align:top!important}
 .vl-comparison-table .vl-badge {white-space:nowrap}
 .vl-comparison-ticket,.vl-comparison-actual,.vl-comparison-score {min-width:0;margin:0 0 16px}
 .vl-comparison-ticket:last-child,.vl-comparison-actual:last-child,.vl-comparison-score:last-child {margin-bottom:0}
 .vl-comparison-ticket,.vl-comparison-actual {width:320px;max-width:100%}
+.vl-comparison-actual .vl-prize-row {padding:0;background:transparent}
 .vl-comparison-ticket>small,.vl-comparison-actual>small,.vl-comparison-score>small {display:block;color:var(--ui-ink-soft);font-size:11px;line-height:1.6;margin-bottom:4px}
 .vl-comparison-score>strong {display:block;white-space:nowrap;font-size:clamp(13px,.75rem + .2vw,15px);font-variant-numeric:tabular-nums;color:var(--ui-ink)}
 .vl-comparison-tier {display:inline-block;margin-top:8px;padding:4px 8px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface-2);color:var(--ui-ink);font-size:12px}
@@ -231,6 +246,9 @@
   .vl-picks-layout {grid-template-columns:minmax(0,1fr)}
   .vl-pick-ticket {max-width:480px;width:100%}
 }
+@container vl-forecast (max-width:360px) {
+  .vl-forecast-components:has([data-vl-component="special"]) {grid-template-columns:minmax(0,1fr)}
+}
 @media (max-width:1199px) {
   .vl-hero {padding:32px;gap:24px}
 }
@@ -247,6 +265,9 @@
   .vl-pick {min-height:44px}
   .vl-pick-dialog {padding:24px}
   .vl-ball {min-width:34px;height:34px;font-size:14px}
+  .vl-ball--symbol {min-width:42px}
+  .vl-number-sequence--matrix>.vl-ball {flex-basis:34px;width:34px}
+  .vl-prize-row {grid-template-columns:72px minmax(0,1fr);gap:4px;padding:4px}
 }
 @media (max-width:359px) {
   .vl-picks {padding:12px}
@@ -272,5 +293,5 @@
   .vl-comparison-tier {font-size:10px;padding:4px}
   .vl-number-sequence,.vl-comparison-balls {overflow:visible;flex-wrap:wrap;white-space:normal}
   .vl-ball {min-width:24px;height:24px;font-size:11px;background:var(--vl-ball-bg);box-shadow:none}
-  .vl-jackpot-value,.vl-3d span,.vl-ticket {overflow:visible;white-space:normal}
+  .vl-jackpot-value,.vl-ticket {overflow:visible;white-space:normal}
 }

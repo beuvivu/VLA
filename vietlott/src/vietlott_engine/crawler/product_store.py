@@ -274,6 +274,23 @@ class ProductSyncPipeline:
 
 
 # ----------------------------------------------------------------- official prize data
+def _prefer_prize_record(current, incoming):  # type: ignore[no-untyped-def]
+    """Chọn nguyên bảng giải, không ghép giá trị rồi đổi nhãn nguồn của chúng.
+
+    Nguồn ưu tiên chỉ thay thế bảng cũ nếu không làm mất trường đã biết. Nguồn
+    phụ được bổ sung trường thiếu khi mọi trường chung khớp bảng đang có.
+    """
+    rank = lambda origin: 3 if origin.startswith('vietlott') else 2 if origin.startswith('canonical') else 1
+    pairs = ((current.winners, incoming.winners),
+             (current.jackpot_pots or {}, incoming.jackpot_pots or {}))
+    covers = all(set(old).issubset(new) for old, new in pairs)
+    if rank(incoming.source) >= rank(current.source):
+        return incoming if covers else current
+    adds = any(set(new) - set(old) for old, new in pairs)
+    agrees = all(all(new.get(key) == value for key, value in old.items()) for old, new in pairs)
+    return incoming if covers and adds and agrees else current
+
+
 @dataclass
 class CanonicalPrizeReport:
     game: str
@@ -335,13 +352,20 @@ async def sync_canonical_prizes(
 
     ``canonical``: the ``pqminh-4`` record file. ``vietlott``: detail pages of the ``last`` most
     recent stored draws (from Vietnam). ``nhanaz`` / ``v130``: community archive / 1.3.0
-    snapshot. ``auto``: the first of vietlott → canonical → nhanaz → v130 that answers."""
+    snapshot. ``auto`` tiếp tục đến khi các kỳ gần nhất có bảng giải đúng kỳ,
+    thay vì dừng ở một kho lịch sử còn thiếu dữ liệu tài chính mới."""
     from vietlott_engine.crawler.official_data import import_canonical
 
     t0 = time.perf_counter()
     order = [s for s in (fallback_order or ["vietlott", "canonical", "nhanaz", "v130"]) if not (s == "v130" and v130_dir is None)]
     attempts: list[dict] = []
-    rows: list[dict] = []
+    known = {d.draw_id: d for d in repository.load(spec.code)}
+    targets = sorted(known)[-max(1, last):]
+    prizes = {p.draw_id: p for p in repository.load_prizes(spec.code)}
+    tiers = {t.name for t in spec.tiers}
+    jackpots = {t.name for t in spec.tiers if t.is_jackpot}
+    records = draws_inserted = prizes_inserted = rejected = 0
+    imported_prizes = {}
     used = None
     for s in order if source == "auto" else [source]:
         try:
@@ -352,25 +376,67 @@ async def sync_canonical_prizes(
         except (SourceError, OSError, ValueError, TimeoutError) as exc:
             attempts.append({"source": s, "ok": False, "rows": 0, "error": (str(exc).splitlines() or [type(exc).__name__])[0][:300]})
             continue
-        attempts.append({"source": s, "ok": True, "rows": len(rows), "error": None})
-        if source == 'auto' and not rows:
-            continue
-        used = s
-        break
-    imp = import_canonical(rows, spec.code)
-    draws_inserted = repository.upsert(imp.draws) if imp.draws else 0
-    prizes_inserted = repository.upsert_prizes(imp.prizes) if imp.prizes else 0
+        records += len(rows)
+        additions = []
+        accepted = []
+        for row in rows:
+            if not isinstance(row, dict) or any(row.get(key) not in (None, spec.code.value)
+                                                for key in ('game', 'game_type', 'product')):
+                rejected += 1
+                continue
+            # Nhập từng row để bảng giải không mất liên kết với chính bộ số của nó.
+            try:
+                imp = import_canonical([row], spec.code)
+            except (ValueError, TypeError, KeyError):
+                rejected += 1
+                continue
+            rejected += len(imp.rejected)
+            if not imp.draws:
+                continue
+            draw = imp.draws[0]
+            current = known.get(draw.draw_id)
+            if current is not None and (current.draw_date, current.numbers, current.bonus) != (draw.draw_date, draw.numbers, draw.bonus):
+                rejected += 1
+                continue
+            if current is None:
+                additions.append(draw)
+                known[draw.draw_id] = draw
+            for prize in imp.prizes:
+                if prize.draw_date != draw.draw_date:
+                    continue
+                current = prizes.get(prize.draw_id)
+                if current is not None and current.draw_date == prize.draw_date:
+                    prize = _prefer_prize_record(current, prize)
+                prizes[prize.draw_id] = prize
+                imported_prizes[prize.draw_id] = prize
+                accepted.append(prize)
+        # Đồng bộ bảng giải không được sửa số quay để tự làm cho bảng giải khớp.
+        draws_inserted += repository.upsert(additions) if additions else 0
+        prizes_inserted += repository.upsert_prizes(accepted) if accepted else 0
+        missing = [did for did in targets if did not in prizes or prizes[did].draw_date != known[did].draw_date
+                   or set(prizes[did].winners) != tiers or not jackpots.issubset(prizes[did].jackpot_pots or {})]
+        attempts.append({'source': s, 'ok': bool(accepted), 'rows': len(rows),
+                         'missing_draw_ids': missing, 'error': None if accepted else 'no matching prize tables'})
+        if accepted:
+            used = s
+        if source != 'auto' or (accepted and not missing):
+            break
+    missing = [did for did in targets if did not in prizes or prizes[did].draw_date != known[did].draw_date
+               or set(prizes[did].winners) != tiers or not jackpots.issubset(prizes[did].jackpot_pots or {})]
+    error = ('missing current prize tables: ' + ', '.join(str(did) for did in missing)) if missing else None
+    if not targets and not used:
+        error = '; '.join(f"{a['source']}: {a['error']}" for a in attempts) or 'no matching prize tables'
     return CanonicalPrizeReport(
         game=spec.code.value,
         source=source,
-        records=len(rows),
+        records=records,
         draws_inserted=draws_inserted,
-        prize_records=len(imp.prizes),
+        prize_records=len(imported_prizes),
         prize_records_inserted=prizes_inserted,
-        with_jackpot_pots=sum(p.jackpot_pots is not None for p in imp.prizes),
-        rejected=len(imp.rejected),
+        with_jackpot_pots=sum(p.jackpot_pots is not None for p in imported_prizes.values()),
+        rejected=rejected,
         elapsed_s=round(time.perf_counter() - t0, 3),
-        error=None if used else "; ".join(f"{a['source']}: {a['error']}" for a in attempts),
+        error=error,
         source_used=used,
         attempts=attempts,
     )

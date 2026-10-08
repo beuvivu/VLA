@@ -34,6 +34,7 @@ class DrawRepository(Protocol):
 
     def upsert_prizes(self, records: Iterable[PrizeRecord]) -> int: ...
     def load_prizes(self, game: GameCode | str) -> list[PrizeRecord]: ...
+    def invalidate_finance(self, game: GameCode | str, draw_ids: Iterable[int]) -> None: ...
     def load_prize_history(self, game: GameCode | str) -> tuple[DrawHistory, PrizeHistory]: ...
 
 
@@ -66,6 +67,21 @@ class InMemoryRepository(_HistoryMixin):
     def load_prizes(self, game: GameCode | str) -> list[PrizeRecord]:
         code = get_game(game).code.value
         return sorted((r for (g, _), r in self._prizes.items() if g == code), key=lambda r: r.draw_id)
+
+    def invalidate_finance(self, game: GameCode | str, draw_ids: Iterable[int]) -> None:
+        """Loại bảng giải và số tiền cũ của đúng game/kỳ, giữ kết quả quay."""
+        ids = set(draw_ids)
+        if not ids:
+            return
+        code = get_game(game).code.value
+        for draw_id in ids:
+            key = (code, draw_id)
+            self._prizes.pop(key, None)
+            draw = self._data.get(key)
+            if draw is not None:
+                self._data[key] = draw.model_copy(
+                    update={"jackpot1_value": None, "jackpot2_value": None, "tier_winners": None}
+                )
 
     def upsert(self, draws: Iterable[Draw]) -> int:
         n = 0
@@ -292,6 +308,28 @@ class DuckDBRepository(_HistoryMixin):
             )
             for r in rows
         ]
+
+    def invalidate_finance(self, game: GameCode | str, draw_ids: Iterable[int]) -> None:
+        """Xóa tài chính cũ trong một giao dịch, không đổi dữ liệu kết quả quay."""
+        ids = list(dict.fromkeys(draw_ids))
+        if not ids:
+            return
+        params = [get_game(game).code.value, *ids]
+        placeholders = ", ".join("?" for _ in ids)
+        condition = f"game = ? AND draw_id IN ({placeholders})"
+        with self._lock:
+            try:
+                self._con.execute("BEGIN TRANSACTION")
+                self._con.execute(f"DELETE FROM prizes WHERE {condition}", params)
+                self._con.execute(
+                    "UPDATE draws SET jackpot1_value = NULL, jackpot2_value = NULL, tier_winners = NULL "
+                    f"WHERE {condition}",
+                    params,
+                )
+                self._con.execute("COMMIT")
+            except Exception as exc:
+                self._con.execute("ROLLBACK")
+                raise StorageError(f"finance invalidation failed: {exc}") from exc
 
     def max_draw_id(self, game: GameCode | str) -> int | None:
         with self._lock:

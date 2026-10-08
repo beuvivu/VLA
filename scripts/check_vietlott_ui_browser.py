@@ -57,6 +57,68 @@ def check_single_line_sequences(page, label):
             assert max(row['balls']) - min(row['balls']) <= 1, (label, row)
 
 
+def check_max_prize_alignment(page, label):
+    """A Max prize label sits beside its own number row, even when that row scrolls."""
+    rows = page.locator('.vl-3d > div').evaluate_all('''elements => elements.map(el => {
+        const label = el.querySelector('.vl-prize-label, small');
+        const sequence = el.querySelector('.vl-number-sequence') || el.querySelector(':scope > span');
+        if (!label || !sequence) return {error: 'missing prize label or number sequence'};
+        const a = label.getBoundingClientRect(), b = sequence.getBoundingClientRect();
+        return {label: label.textContent, numbers: sequence.textContent,
+            visible: a.width > 0 && a.height > 0 && getComputedStyle(label).visibility === 'visible',
+            labelY: a.top + a.height / 2, sequenceY: b.top + b.height / 2,
+            labelRight: a.right, sequenceLeft: b.left,
+            balls: sequence.querySelectorAll('.vl-ball').length};
+    })''')
+    for row in rows:
+        assert 'error' not in row, (label, row)
+        assert row['visible'], (label, 'Max prize label hidden', row)
+        assert abs(row['labelY'] - row['sequenceY']) <= 1, (label, 'Max prize label moved above its numbers', row)
+        assert row['labelRight'] <= row['sequenceLeft'] + 1, (label, 'Max prize label overlaps its numbers', row)
+        assert row['balls'] > 0, (label, 'Max result missing number balls', row)
+
+
+def check_latest_bonus_visible(page, name, width, label):
+    """Compact Power/Lotto results expose the bonus without horizontal scrolling on phones."""
+    if name not in ('vietlott-power-655.html', 'vietlott-lotto-535.html') or width not in (320, 390):
+        return
+    sequences = page.locator('section[aria-labelledby="vl-latest"] .vl-number-sequence')
+    expect(sequences).to_have_count(1)
+    expect(sequences.locator('.vl-ball--bonus')).to_be_visible()
+    rows = sequences.evaluate_all('''elements => elements.map(el => {
+        const clip = el.getBoundingClientRect(), balls = [...el.querySelectorAll('.vl-ball')];
+        const bonus = el.querySelector('.vl-ball--bonus'), b = bonus?.getBoundingClientRect();
+        return {text: el.textContent, bonus: b ? {left: b.left, right: b.right} : null,
+            left: clip.left, right: clip.right, viewport: innerWidth,
+            scrollWidth: el.scrollWidth, clientWidth: el.clientWidth,
+            fontSizes: balls.map(ball => parseFloat(getComputedStyle(ball).fontSize))};
+    })''')
+    for row in rows:
+        assert row['bonus'], (label, 'latest result has no bonus ball', row)
+        assert row['bonus']['left'] >= row['left'] - 1, (label, row)
+        assert row['bonus']['right'] <= min(row['right'], row['viewport']) + 1, (label, 'latest bonus clipped', row)
+        assert row['scrollWidth'] <= row['clientWidth'] + 1, (label, 'latest result requires horizontal scroll', row)
+        assert min(row['fontSizes']) >= 12, (label, 'compact numbers too small to read', row)
+
+
+def check_bonus_palette(scope, label):
+    """A matched bonus keeps the rose fill and ink; only its match outline may change."""
+    styles = scope.locator('.vl-ball--bonus, .vl-ball--bonus-hit').evaluate_all('''elements =>
+        elements.map(el => {
+            const actual = getComputedStyle(el);
+            const reference = document.createElement('span'); reference.className = 'vl-ball vl-ball--bonus';
+            el.parentElement.append(reference);
+            const expected = getComputedStyle(reference);
+            const values = {text: el.textContent, classes: el.className,
+                ink: actual.color, fill: actual.backgroundImage,
+                roseInk: expected.color, roseFill: expected.backgroundImage};
+            reference.remove(); return values;
+        })''')
+    for style in styles:
+        assert style['ink'] == style['roseInk'], (label, 'bonus ink lost rose meaning', style)
+        assert style['fill'] == style['roseFill'], (label, 'bonus fill became a main-number hit', style)
+
+
 def check_jackpots(page, label):
     """Large amounts remain one line and scroll within their own card if necessary."""
     values = page.locator('.vl-jackpot-value')
@@ -145,31 +207,70 @@ def check_registered_comparisons(page, label):
             assert box['x'] + box['width'] <= page.viewport_size['width'] + 1, (label, box)
     for table in page.locator('.vl-comparison-table').all():
         expect(table.locator('thead th')).to_have_count(6)
-        for row in table.locator('tbody tr').all():
-            cells = row.locator('td')
-            status = cells.nth(1).inner_text()
-            if status in ('Chờ kết quả', 'Lệch ngày'):
-                expect(cells.nth(3)).to_contain_text('Chưa đối chiếu')
-                expect(cells.nth(4)).to_contain_text('—')
-                expect(row.locator('.vl-ball--match, .vl-ball--bonus-hit')).to_have_count(0)
-            elif status == 'Đã chấm':
-                tickets = cells.nth(2).locator('.vl-comparison-ticket')
-                count = tickets.count()
-                assert count > 0, (label, 'scored row without tickets')
-                actuals = cells.nth(3).locator('.vl-comparison-actual')
-                scores = cells.nth(4).locator('.vl-comparison-score')
-                expect(actuals).to_have_count(count)
-                expect(scores).to_have_count(count)
-                expect(cells.nth(4).locator('.vl-comparison-tier')).to_have_count(count)
-                for index in range(count):
-                    expect(tickets.nth(index)).to_have_attribute('data-vl-ticket', str(index + 1))
-                    expect(actuals.nth(index).locator('small').first).to_have_text(f'Đối chiếu vé {index + 1}')
-                    expect(scores.nth(index).locator('small').first).to_contain_text(f'Vé {index + 1}')
-                    pair = re.search(r'(\d+)\s*/\s*(\d+)', scores.nth(index).locator('strong').inner_text())
-                    if pair:
-                        hits, total = map(int, pair.groups())
-                        expect(tickets.nth(index).locator('.vl-ball--match')).to_have_count(hits)
-                        expect(tickets.nth(index).locator('.vl-ball:not(.vl-ball--bonus)')).to_have_count(total)
+        rows = table.locator('tbody tr')
+        cursor = 0
+        while cursor < rows.count():
+            first = rows.nth(cursor)
+            metadata = first.locator(':scope > .vl-comparison-meta')
+            expect(metadata).to_have_count(3)
+            span = metadata.first.evaluate('el => el.rowSpan')
+            assert span >= 1 and cursor + span <= rows.count(), (label, 'draw rowspans escape their ticket group')
+            target = first.get_attribute('data-vl-comparison-target')
+            status = first.get_attribute('data-vl-comparison-status')
+            assert target and status in ('matched', 'pending', 'date_mismatch'), (label, target, status)
+            expect(first.locator('th')).to_have_text(f'#{target}')
+            for cell in metadata.all():
+                assert cell.evaluate('el => el.rowSpan') == span, (label, 'metadata spans different ticket groups')
+            for index in range(span):
+                row = rows.nth(cursor + index)
+                expect(row).to_have_attribute('data-vl-comparison-target', target)
+                expect(row).to_have_attribute('data-vl-comparison-status', status)
+                expect(row).to_have_attribute('data-vl-comparison-ticket', str(index + 1))
+                if index:
+                    expect(row.locator(':scope > .vl-comparison-meta, :scope > th')).to_have_count(0)
+                check_registered_ticket_row(row, status, index + 1, label)
+            cursor += span
+
+
+def check_registered_ticket_row(row, status, ticket_number, label):
+    """One visual row ties the ticket, its actual result and its score together."""
+    prediction_cell = row.locator('.vl-comparison-prediction')
+    actual_cell = row.locator('.vl-comparison-result')
+    score_cell = row.locator('.vl-comparison-score-cell')
+    for cell in (prediction_cell, actual_cell, score_cell):
+        expect(cell).to_have_count(1)
+    if not prediction_cell.locator('.vl-comparison-ticket').count():
+        expect(prediction_cell).to_have_text('—')
+        expect(actual_cell).to_contain_text(re.compile(r'Chưa.*đối chiếu'))
+        expect(score_cell).to_contain_text('—')
+        expect(row.locator('.vl-ball--match, .vl-ball--bonus-hit')).to_have_count(0)
+        return
+    if status in ('pending', 'date_mismatch'):
+        expect(actual_cell).to_contain_text('Chưa đối chiếu')
+        expect(score_cell).to_contain_text('—')
+        expect(row.locator('.vl-ball--match, .vl-ball--bonus-hit')).to_have_count(0)
+        return
+    ticket = prediction_cell.locator('.vl-comparison-ticket')
+    actual = actual_cell.locator('.vl-comparison-actual')
+    score = score_cell.locator('.vl-comparison-score')
+    for part in (ticket, actual, score):
+        expect(part).to_have_count(1)
+    expect(ticket).to_have_attribute('data-vl-ticket', str(ticket_number))
+    expect(actual.locator('small').first).to_have_text(f'Đối chiếu vé {ticket_number}')
+    expect(score.locator('small').first).to_contain_text(f'Vé {ticket_number}')
+    expect(score_cell.locator('.vl-comparison-tier')).to_have_count(1)
+    tops = [part.bounding_box()['y'] for part in (ticket, actual, score)]
+    assert max(tops) - min(tops) <= 1, (label, ticket_number, 'ticket/result/score drifted vertically', tops)
+    centers = [part.locator('.vl-ball').first.evaluate('''el => {
+        const r = el.getBoundingClientRect(); return r.top + r.height / 2;}''') for part in (ticket, actual)]
+    assert abs(centers[0] - centers[1]) <= 1, (label, ticket_number, 'prediction and actual balls misaligned', centers)
+    pair = re.search(r'(\d+)\s*/\s*(\d+)', score.locator('strong').inner_text())
+    if pair:
+        hits, total = map(int, pair.groups())
+        expect(ticket.locator('.vl-ball--match')).to_have_count(hits)
+        # Power's selected bonus match remains one of its six chosen main numbers.
+        separate_bonus = ticket.locator('.vl-plus').count()
+        expect(ticket.locator('.vl-ball')).to_have_count(total + separate_bonus)
 
 
 def check_manual_comparison(page, name, width, theme):
@@ -206,6 +307,7 @@ def check_manual_comparison(page, name, width, theme):
     if 'bonus' in case:
         assert bonus.all_text_contents() == [case['bonus']] * 2, label
     check_single_line_sequences(page, label)
+    check_bonus_palette(output, label)
     check_ball_contrast(page, output, label)
     assert_no_page_overflow(page, (label, 'comparison result'))
     check_reduced_motion(page, submit, label)
@@ -287,6 +389,9 @@ def main():
                         label = (name, width, theme)
                         assert_no_page_overflow(page, label)
                         check_single_line_sequences(page, label)
+                        check_max_prize_alignment(page, label)
+                        check_latest_bonus_visible(page, name, width, label)
+                        check_bonus_palette(page, label)
                         check_jackpots(page, label)
                         check_registered_comparisons(page, label)
                         assert 'Inter var' in page.locator('.vl-hero h1').evaluate('el => getComputedStyle(el).fontFamily')

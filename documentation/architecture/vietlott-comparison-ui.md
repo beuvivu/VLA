@@ -17,7 +17,10 @@ và bóng nhẹ, giữ màu chữ tương phản trong cả hai theme.
 | Số khớp | `--ui-n3-bg`, `--ui-n3-ink` | `#DCFCE7` / `#166534` | `#173E30` / `#A0E3BC` |
 
 Các lớp `.vl-ball--match` và `.vl-ball--bonus-hit` thể hiện số khớp;
-số phụ khớp còn có viền riêng. Nhãn chữ và nhãn truy cập giải thích màu.
+số Đặc Biệt/phụ giữ nền và chữ hồng khi khớp, thêm viền xanh để nhận biết.
+Nhãn chữ và nhãn truy cập giải thích màu. Max 3D Pro tô hồng theo đúng nhóm
+giải Đặc Biệt; giải Nhất của Max 3D vẫn dùng màu số thường. Mỗi nhóm giải
+có nhãn và các bộ ba cùng một hàng, giữ nguyên số 0 đầu và số lặp.
 
 Nút dùng `.vl-button`; biến `--vl-button-start`, `--vl-button-end` và
 `--vl-button-ink` điều khiển gradient/chữ. Sửa `transition` trong lớp này
@@ -70,7 +73,10 @@ tô số trùng và thông báo lỗi/chờ kết quả. Đối chiếu thủ c�
 ## Cách đọc bảng tự động
 
 Bảng dùng chính bộ số đã đăng ký trước kỳ quay, ghép đúng sản phẩm, mã kỳ
-và ngày. Kỳ chờ hoặc lệch ngày vẫn hiện bộ số đã lưu, chưa tính điểm.
+và ngày. Mỗi vé có một hàng riêng để bộ số, kết quả và mức giải luôn ngang
+hàng. Kỳ chờ hoặc lệch ngày vẫn hiện bộ số đã lưu, chưa tính điểm. Các danh
+sách số chính và số Đặc Biệt được xếp cạnh nhau khi đủ chỗ; thứ hạng của hai
+danh sách độc lập, không ghép chúng thành các vé đã đăng ký.
 
 - Mega/Power/Lotto/Keno: tỷ lệ số chính khớp trên từng bộ số; số phụ xét riêng.
 - Bingo18: tỷ lệ vị trí khớp; số trùng có lặp được ghi riêng.

@@ -14,7 +14,17 @@ khai báo bảng màu riêng hoặc lưu một lựa chọn theme khác `app-the
 - Hero 24px, card 16px, nút pill 50px, control tối thiểu 44px. Grid luôn có
   `minmax(0,1fr)` và chuyển thành một cột trên điện thoại.
 - Thẻ Jackpot chỉ đọc `latest.prizes` của đúng sản phẩm; Power giữ cả hai
-  pool. Tiền chưa công bố hiện `—`, không lấy kỳ cũ làm giá trị hiện tại.
+  pool. Bảng giải thiếu trong bản cập nhật hiện `—`, không lấy kỳ cũ làm giá
+  trị hiện tại và không suy rằng nguồn chưa công bố. Nhãn ghi rõ sản phẩm,
+  mã kỳ và ngày của các giá trị đang hiển thị.
+
+## Bảng giải và phục hồi dữ liệu
+
+Nguồn bảng giải phải khớp sản phẩm, mã kỳ, ngày, số chính và số phụ của kết
+quả đã lưu. Chuỗi dự phòng tiếp tục khi nguồn đầu chỉ có lịch sử cũ hoặc
+chưa có bảng giải kỳ cần bổ sung. Bảng giải đã xác thực được lưu cùng kết
+quả trong journal, kể cả khi chỉ thông tin giải thay đổi. Khôi phục cache
+rỗng phải phục hồi cả giá trị Jackpot và số người trúng từ journal.
 
 ## Nguồn dựng
 
