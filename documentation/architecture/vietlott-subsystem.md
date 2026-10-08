@@ -40,7 +40,7 @@ Hai phần này không được gộp thành một phần trăm.
 
 | # | Yêu cầu | Đã có (module) | Còn thiếu |
 |---|---|---|---|
-| 1 | Crawler realtime, retry, xử lý đổi cấu trúc, polling theo lịch | `vlm.updates.schedule` (cửa sổ từng sản phẩm, 2 phút trong giờ quay), `vlm.updates.runner`, `crawler.http.RetryPolicy` (backoff mũ + jitter, `Retry-After`, nhận diện Cloudflare), `crawler.sources.fallback` (chuỗi nguồn dự phòng, ghi từng lần thử), `crawler.schemas` + `saved_pages` (mẫu trang đã lưu) | Trang VLA dựng theo cron 5 lần/ngày chứ không theo sự kiện; chưa có cảnh báo "trễ quá X giờ" (hiện lượt nào thiếu một sản phẩm là đỏ); chưa có canary đổi cấu trúc chạy định kỳ |
+| 1 | Crawler realtime, retry, xử lý đổi cấu trúc, polling theo lịch, dữ liệu đúng | `vlm.updates.schedule` (cửa sổ từng sản phẩm, 2 phút trong giờ quay), `vlm.updates.runner`, `crawler.http.RetryPolicy` (backoff mũ + jitter, `Retry-After`, nhận diện Cloudflare), `crawler.sources.fallback` (chuỗi nguồn dự phòng, ghi từng lần thử), `crawler.schemas` + `saved_pages` (mẫu trang đã lưu) | Chưa đối chiếu nguồn thứ hai khi nguồn đầu đã trả (nguồn đầu sai thì sai luôn); trang VLA dựng theo cron 5 lần/ngày chứ không theo sự kiện; chưa có cảnh báo "trễ quá X giờ" (hiện lượt nào thiếu một sản phẩm là đỏ); chưa có canary đổi cấu trúc chạy định kỳ |
 | 2 | Kho lịch sử tối ưu chuỗi thời gian, metadata đủ | Journal `data/results/results.jsonl` (append-only, commit vào git), DuckDB `draws`/`prizes`/`sync_log`, Parquet, seed 8 sản phẩm, `vlm.database.schema` (Pydantic + SQLAlchemy, không ghi đè kết quả mâu thuẫn) | Chưa có lược đồ chuẩn hóa cho dự báo, phiên bản mô hình, backtest; bảng giải lưu dạng chuỗi JSON (`tier_winners VARCHAR`) |
 | 3 | Thống kê: tần suất, co-occurrence, nóng/lạnh, gap; tinh chỉnh được | `analytics.stats` (GOF, BH-FDR, Wilson), `analytics.cooccurrence` (null Monte Carlo + FDR), `analytics.gaps` (hazard), `analytics.randomness` (χ², entropy, runs, Ljung-Box), `inference.*` (tuần tự, changepoint, đa kiểm, công suất) | Chưa có registry cho thuật toán tự viết, chưa đánh phiên bản thống kê, chưa có quy trình đăng ký giả thuyết tiến cứu cho Vietlott |
 | 4 | AI dự báo, phân phối xác suất | `vietlott_engine.forecast` (hỗn hợp chuyên gia, e-process theo sản phẩm), `vlm.forecast` (logistic AdaGrad, GRU NumPy BPTT, RF/XGB/LGB, trộn fixed-share), liệt kê top-N chính xác, RTP từng cửa | Chưa có LSTM/Transformer; chưa có hợp đồng đầu ra chung cho mọi mô hình |
@@ -61,7 +61,8 @@ flowchart LR
   subgraph Ingestion["M1 · Thu thập"]
     SCH[Lịch quay từng sản phẩm] --> RUN[UpdateRunner]
     RUN --> FB[FallbackDrawSource + RetryPolicy]
-    FB --> VAL[Kiểm hợp lệ + đối chiếu nguồn]
+    FB --> VAL[Kiểm hợp lệ]
+    VAL --> REC[Đối chiếu nguồn độc lập thứ hai — giai đoạn 1]
   end
   subgraph Store["M2 · Lưu trữ"]
     J[(Journal JSONL trong git)]
@@ -85,7 +86,7 @@ flowchart LR
     API[FastAPI tùy chọn]
   end
   S1 & S2 & S3 --> FB
-  VAL --> J --> D --> P
+  REC --> J --> D --> P
   D --> REG --> PG
   D --> EXP --> MIX --> SCORE
   J --> SCORE --> GATE --> MR --> MIX
@@ -106,11 +107,18 @@ flowchart LR
    - Lược đồ Pydantic chặn kết quả sai luật: số ngoài miền, trùng số, sai số lượng.
    - Kết quả mâu thuẫn với bản đã lưu KHÔNG được ghi đè, mà bị đánh dấu xung đột.
    - Bản ghi chỉ có ngày thì mang `time_precision=day`, không giả giờ quay.
+   - **Đối chiếu nguồn thứ hai: CHƯA CÓ.** `FallbackDrawSource.fetch` trả ngay kết quả của
+     nguồn đầu tiên lấy được, và `SyncPipeline.run` upsert luôn. Một kết quả sai nhưng
+     hợp lệ về hình thức từ nguồn đầu (ví dụ trang lỗi hiển thị kỳ cũ với mã kỳ mới) đi
+     thẳng vào kho. Giai đoạn 1 thêm bước này: sau khi nguồn đầu trả, lấy kỳ ấy từ một
+     nguồn thuộc NHÓM ĐỘC LẬP khác (như `SOURCE_INDEPENDENCE_GROUP` của XSMB) và ghi cả hai
+     vào `draw_observation`. Trùng thì `validated`; lệch thì `conflict` và không công bố;
+     nguồn thứ hai chưa trả được thì `single_source`, công bố kèm nhãn và thử lại.
 4. **Lưu.** Ghi journal trước (nguồn sự thật, ai cũng kiểm toán được qua git), rồi
    upsert DuckDB, rồi xuất Parquet.
-5. **Chấm.** Mọi dự báo đã ghi TRƯỚC giờ quay của kỳ này được chấm: log-loss, log-loss
-   của luật công bằng, số trùng, cập nhật e-value. Dự báo ghi sau giờ quay không được
-   tính vào bằng chứng.
+5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
+   trùng. Chỉ dự báo phát TRƯỚC giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1)
+   mới được cập nhật e-value. Giờ đích do chính dự báo khai không được dùng để xét.
 6. **Học.** Các chuyên gia cập nhật online; trọng số trộn cập nhật theo log-likelihood
    thật. Cây quyết định được fit lại định kỳ trên một vùng đệm giới hạn.
 7. **Dự báo kỳ tới.** Engine phát luật xác suất cho kỳ tới và ghi sổ kèm `history_sha256`
@@ -190,12 +198,17 @@ CREATE TABLE draw (
     draw_id         INTEGER  NOT NULL,
     draw_ts         TIMESTAMPTZ NOT NULL,         -- giờ quay; 00:00 nếu chỉ biết ngày
     time_precision  VARCHAR  NOT NULL CHECK (time_precision IN ('minute', 'day')),
+    earliest_draw_ts TIMESTAMPTZ NOT NULL,        -- giờ SỚM NHẤT kỳ này có thể đã quay: draw_ts nếu
+                                                  -- biết đến phút, nếu chỉ biết ngày thì giờ bắt đầu
+                                                  -- quay sớm nhất của ngày ấy theo game.schedule
+                                                  -- (Lotto: 13:00 cho cả kỳ 21:00). Mốc để xét
+                                                  -- dự báo có ghi trước kỳ và để đo độ trễ.
     numbers         SMALLINT[] NOT NULL,          -- theo thứ tự quay nếu biết, nếu không thì đã sắp
     numbers_ordered BOOLEAN  NOT NULL,            -- TRUE khi giữ được thứ tự quay
     bonus           SMALLINT,
-    status          VARCHAR  NOT NULL CHECK (status IN ('validated', 'conflict')),
+    status          VARCHAR  NOT NULL CHECK (status IN ('validated', 'single_source', 'conflict')),
     journal_sha256  VARCHAR  NOT NULL,            -- hash dòng journal sinh ra bản ghi
-    first_seen_at   TIMESTAMPTZ NOT NULL,         -- dùng để đo độ trễ thu thập
+    first_seen_at   TIMESTAMPTZ NOT NULL,         -- lúc crawler thấy kỳ này lần đầu
     PRIMARY KEY (game, draw_id)
 );
 CREATE INDEX draw_by_time ON draw (game, draw_ts);
@@ -265,6 +278,16 @@ CREATE TABLE source_attempt (
     latency_ms      INTEGER,
     PRIMARY KEY (run_id, game, source_code)
 );
+
+-- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối.
+CREATE TABLE publication (
+    game            VARCHAR NOT NULL,
+    draw_id         INTEGER NOT NULL,
+    deployed_at     TIMESTAMPTZ NOT NULL,         -- lúc deploy Pages hoàn tất
+    deploy_run      VARCHAR NOT NULL,             -- mã lượt workflow / bản dựng
+    PRIMARY KEY (game, draw_id),
+    FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
+);
 ```
 
 `error_class = 'parse_schema'` trên một nguồn vốn ổn định là tín hiệu **nguồn đổi cấu
@@ -329,11 +352,11 @@ CREATE TABLE forecast_issue (
     game            VARCHAR NOT NULL,
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
     target_draw_id  INTEGER NOT NULL,
-    target_draw_ts  TIMESTAMPTZ NOT NULL,
+    target_draw_ts  TIMESTAMPTZ NOT NULL,         -- giờ đích DỰ BÁO tự khai: chỉ để hiển thị,
+                                                  -- KHÔNG dùng để xét quyền vào bằng chứng
     based_on_draw_id INTEGER NOT NULL,
     history_sha256  VARCHAR NOT NULL,             -- lịch sử dùng để dự báo
     issued_at       TIMESTAMPTZ NOT NULL,
-    pre_draw        BOOLEAN GENERATED ALWAYS AS (issued_at < target_draw_ts),
     law             JSON    NOT NULL,             -- phân phối đầy đủ (theo số / theo vị trí chữ số)
     top_n           JSON    NOT NULL,             -- bộ số đề xuất + p_model, p_fair, lift
     UNIQUE (game, model_id, target_draw_id),
@@ -357,6 +380,16 @@ CREATE TABLE forecast_score (
     FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
 );
 
+-- Quyền vào bằng chứng TÍNH LẠI từ giờ quay có thẩm quyền của kỳ đã xác thực, không lưu
+-- thành cờ. Lỗi lịch hay lỗi nạp làm target_draw_ts sai cũng không lọt được dự báo phát
+-- sau khi quay vào cổng e-value. evidence_state chỉ đọc các dòng live_eligible.
+CREATE VIEW live_score AS
+SELECT s.*, i.issued_at, d.earliest_draw_ts,
+       i.issued_at < d.earliest_draw_ts AND d.status <> 'conflict' AS live_eligible
+FROM forecast_score s
+JOIN forecast_issue i ON i.forecast_id = s.forecast_id
+JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id;
+
 -- Trạng thái bằng chứng sau mỗi kỳ, để vẽ đường e-value và quyết định cổng.
 CREATE TABLE evidence_state (
     game            VARCHAR NOT NULL,
@@ -377,6 +410,10 @@ CREATE TABLE backtest_run (
     last_draw_id    INTEGER NOT NULL,
     config          JSON    NOT NULL,
     seed            BIGINT  NOT NULL,
+    history_sha256  VARCHAR NOT NULL,             -- hash ĐÚNG lịch sử đã dùng: đính chính hay
+                                                  -- backfill sau này làm lệch hash, nên biết lượt
+                                                  -- chạy cũ dựa trên dữ liệu khác
+    code_sha        VARCHAR NOT NULL,             -- commit của mã backtest
     created_at      TIMESTAMPTZ NOT NULL
 );
 
@@ -469,7 +506,8 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 
 ```
 kỳ t có kết quả
-  → chấm mọi forecast_issue có pre_draw = TRUE và target_draw_id = t
+  → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
+    (issued_at < draw.earliest_draw_ts) mới vào e-value
   → cập nhật chuyên gia online (logistic, GRU, LSTM)      [mỗi kỳ]
   → cập nhật trọng số fixed-share theo log-likelihood     [mỗi kỳ]
   → fit lại cây trên vùng đệm                             [mỗi N kỳ]
@@ -556,7 +594,8 @@ Mỗi giai đoạn có **tiêu chí xong đo được**. Không giai đoạn nà
 ### Giai đoạn 1 — MVP vận hành tin cậy (1–2 tuần)
 
 1. **Dựng trang theo sự kiện.** `vietlott-results.yml` chạy bằng `workflow_run` khi
-   `vlm-results.yml` commit dữ liệu mới, thay cho 5 mốc cron.
+   `vlm-results.yml` commit dữ liệu mới, thay cho 5 mốc cron. Ghi `publication` (mục 4.3)
+   mỗi lần triển khai để đo độ trễ đầu-cuối.
 2. **Cảnh báo theo độ trễ, không theo lượt chạy.** Workflow chỉ đỏ khi một kỳ đến hạn
    chưa lấy được quá 3 giờ, hoặc khi một nguồn ổn định trả `parse_schema`. Hiện lượt nào
    thiếu một sản phẩm là đỏ, nên báo động mất ý nghĩa.
@@ -566,11 +605,17 @@ Mỗi giai đoạn có **tiêu chí xong đo được**. Không giai đoạn nà
    phẩm.
 5. **Đăng ký giả thuyết tiến cứu Max 3D.** "Số 6 ở hàng đơn vị > 10%" chạy từ kỳ kế tiếp,
    180 kỳ, α = 0,01, theo mẫu `hot_tail_test`. Sổ cái giữ lần ghi đầu.
+6. **Đối chiếu nguồn thứ hai** (mục 2.2, bước 3): `draw_observation`, trạng thái
+   `validated` / `single_source` / `conflict`; kết quả `conflict` không được công bố.
 
 Xong khi:
-- Trung vị độ trễ từ lúc kết quả có trên nguồn đến khi trang cập nhật ≤ 30 phút, đo từ
-  `first_seen_at` qua 2 tuần.
-- 0 kết quả sai khi đối chiếu hai nguồn.
+- Độ trễ đầu-cuối `publication.deployed_at − draw.earliest_draw_ts`, đo qua 2 tuần ở chế độ
+  A: trung vị ≤ 60 phút, p90 ≤ 120 phút. Mốc tính từ giờ quay, chứ không từ lúc crawler
+  thấy kết quả, nên phần trễ do cron hay polling không bị giấu đi. Trong đó có khoảng 30
+  phút quay và nguồn công bố, nằm ngoài tầm kiểm soát. Báo cáo tách hai đoạn
+  `first_seen_at − earliest_draw_ts` (nguồn + polling) và `deployed_at − first_seen_at`
+  (pipeline của ta).
+- Mọi kỳ công bố đều `validated` hoặc mang nhãn `single_source`; 0 kỳ `conflict` lên trang.
 - Mọi phép kiểm mới đã qua thử đột biến.
 
 ### Giai đoạn 2 — Production (2–4 tuần)
