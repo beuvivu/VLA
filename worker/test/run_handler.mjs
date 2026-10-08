@@ -21,6 +21,11 @@ class FakeKV {
   async put(key, value, options = {}) {
     this.puts += 1;
     const ttl = options.expirationTtl;
+    // Như Cloudflare KV: TTL dưới 60 giây bị từ chối. Bản giả không chặn điều này đã để lọt
+    // một khoá 10 giây không bao giờ ghi được.
+    if (ttl !== undefined && ttl < 60) {
+      throw new Error(`Invalid expiration_ttl of ${ttl}. Expiration TTL must be at least 60.`);
+    }
     this.store.set(key, { value, expiresAt: ttl ? Date.now() + ttl * 1000 : null });
   }
 }
@@ -65,6 +70,28 @@ const SCENARIOS = {
     }
     return { requests: 12, outbound_fetches: counter.calls,
              all_ok: statuses.every((s) => s === 200) };
+  },
+
+  // Hai isolate (hai bản module, mỗi bản một mốc trong bộ nhớ riêng) dùng chung một KV mà ghi ảnh
+  // chụp hỏng: chỉ khoá trong KV chặn được isolate thứ hai thu thập lại.
+  async lock_shared_across_isolates() {
+    const counter = { calls: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    const put = kv.put.bind(kv);
+    kv.put = async (key, value, options) => {
+      if (key === "live.json") throw new Error("KV PUT failed: 429 Too Many Requests");
+      return put(key, value, options);
+    };
+    const other = (await import("../src/index.js?isolate=b")).default;
+    const first = await worker.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx());
+    const afterFirst = counter.calls;
+    const second = await other.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx());
+    return {
+      statuses: [first.status, second.status],
+      outbound_after_first: afterFirst,
+      outbound_after_second: counter.calls,
+    };
   },
 
   // KV lành lặn nhưng chưa có ảnh chụp: đúng lần gọi đầu sau khi triển khai.

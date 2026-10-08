@@ -173,7 +173,10 @@ lệnh ghi. So khớp token bằng `hmac.compare_digest` (thời gian hằng).
 Không đặt token thì client không phải trình duyệt (scheduler, curl) vẫn ghi được như cũ,
 nhưng lệnh ghi mà trình duyệt đánh dấu là đến từ trang khác bị trả 403: `Sec-Fetch-Site`
 khác `same-origin`/`none`, hoặc `Origin` không phải chính API và không có trong
-`VQE_CORS_ORIGINS`. Swagger UI ở `/docs` (cùng trang) vẫn dùng được. `vietlott serve` mặc
+`VQE_CORS_ORIGINS`. Swagger UI ở `/docs` (cùng trang) vẫn dùng được. Ba route GET làm mới dự
+báo (`/forecast/{p}`, `/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi: chúng học
+thêm từ kỳ mới, ghi sự kiện vào sổ và lưu checkpoint dù không có `record`. `/scoreboard` chỉ
+đọc. `vietlott serve` mặc
 định nghe `127.0.0.1` (trước: `0.0.0.0`), và cảnh báo khi được mở ra mạng mà không có token.
 CORS được thêm SAU middleware xác thực nên nằm ngoài cùng: phản hồi 401/403 vẫn mang
 `Access-Control-Allow-Origin` cho trang được phép, thay vì thành lỗi mạng mờ.
@@ -220,6 +223,14 @@ thập theo yêu cầu trả JSON 503 có CORS. `/health` bắt lỗi `JSON.pars
 cầu khi KV ghi hỏng đều nhận 200 kèm CORS, yêu cầu đầu có ảnh chụp thật, chỉ có 6 lượt gọi
 nguồn (một vòng). Nhánh 503 là lớp phòng thủ cuối: sau bản vá, không đường nào trong phép
 kiểm còn chạm tới được nó.
+
+**Khoá thu thập chưa từng ghi được.** KV của Cloudflare từ chối `expirationTtl` dưới 60 giây,
+nên khoá 10 giây (`expirationTtl: 10`) bị từ chối ở mọi lần ghi: lớp khoá giữa các isolate chưa
+từng có hiệu lực, chỉ còn mốc trong bộ nhớ của từng isolate. Bộ thử không thấy vì `FakeKV`
+không áp giới hạn ấy. Nay giá trị khoá là mốc thời gian, hết hạn về logic sau 10 giây, ghi với
+TTL 60 giây. `FakeKV` của cả hai bộ thử Worker từ chối TTL dưới 60 như Cloudflare. Kịch bản hai
+isolate (hai bản module dùng chung một KV ghi ảnh chụp hỏng): trước 6 → 12 lượt gọi nguồn, nay
+6.
 
 ### A5 — Vòng thăm dò trang live (MEDIUM)
 

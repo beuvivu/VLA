@@ -39,6 +39,10 @@ const FALLBACK_WINDOW_DAYS = 500;
 // và cron chạy tuần tự theo lịch nên một mốc thời gian là đủ giãn cách.
 const FALLBACK_REFRESH_KEY = "traditional:fallback-refreshed-at:v1";
 const FALLBACK_REFRESH_SECONDS = 600;
+// Một ngày trang nguồn không có (thường là nghỉ quay dịp Tết) chỉ được tin là "không có kỳ" trong
+// ABSENT_RECHECK_DAYS ngày; sau đó cron kiểm lại. Nếu chỉ là trang tạm thiếu hay cắt hỏng một
+// bảng, khoảng trống thật không bị giữ mãi.
+const ABSENT_RECHECK_DAYS = 7;
 
 const PRIZE_LABELS = {
   special: "Đặc Biệt",
@@ -241,15 +245,21 @@ export function parseXsktLedger(html) {
   return rows;
 }
 
-/** Ngày đã giải quyết trong lớp bù: có đủ giải, hoặc nguồn xác nhận không có kỳ (nghỉ Tết). */
-function overlayResolved(entry) {
-  return Boolean(entry?.absent) || completePrizeMap(entry?.prizes);
+/**
+ * Ngày đã giải quyết trong lớp bù: có đủ giải, hoặc nguồn xác nhận không có kỳ (nghỉ Tết) trong
+ * ABSENT_RECHECK_DAYS ngày gần nhất.
+ */
+function overlayResolved(entry, nowUtcMs) {
+  if (completePrizeMap(entry?.prizes)) return true;
+  if (!entry?.absent) return false;
+  const checked = Date.parse(entry.checked_at_utc);
+  return Number.isFinite(checked) && nowUtcMs - checked < ABSENT_RECHECK_DAYS * 86_400_000;
 }
 
 /** Lượt yêu cầu: CHỈ đọc lớp bù đã lưu, không gọi mạng. */
-async function readOverlay(env, missingDates) {
+async function readOverlay(env, missingDates, nowUtcMs) {
   const overlay = (await readJson(cacheStore(env), OVERLAY_KEY)) || {};
-  const unresolved = missingDates.filter((day) => !overlayResolved(overlay[day]));
+  const unresolved = missingDates.filter((day) => !overlayResolved(overlay[day], nowUtcMs));
   return {
     overlay,
     unresolved,
@@ -264,7 +274,8 @@ async function readOverlay(env, missingDates) {
  * thiếu. Không thiếu gì thì không gọi mạng; lần tải trước chưa quá FALLBACK_REFRESH_SECONDS thì
  * cũng không. Ngày nằm GIỮA ngày cũ nhất và mới nhất của trang mà trang không có được ghi
  * `absent` (XSMB nghỉ quay dịp Tết): không ghi thì lượt cron nào cũng thấy "thiếu" và tải lại vô
- * ích. Ngày ngoài phạm vi trang (mới hơn ngày mới nhất) để lượt sau thử lại.
+ * ích. Dấu ấy hết hạn sau ABSENT_RECHECK_DAYS ngày để một lần trang tạm thiếu không thành khoảng
+ * trống vĩnh viễn. Ngày ngoài phạm vi trang (mới hơn ngày mới nhất) để lượt sau thử lại.
  */
 export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs = Date.now() } = {}) {
   const kv = cacheStore(env);
@@ -273,7 +284,7 @@ export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs 
   const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
   const latest = latestEligibleDate(nowUtcMs);
   const missing = dateRange(isoDate(addDays(latest, -(FALLBACK_WINDOW_DAYS - 1))), isoDate(latest))
-    .filter((day) => !completePrizeMap(primary.rows[day]) && !overlayResolved(overlay[day]));
+    .filter((day) => !completePrizeMap(primary.rows[day]) && !overlayResolved(overlay[day], nowUtcMs));
   if (missing.length === 0) return { fetched: false, missing: 0 };
   const last = Number(await kv.get(FALLBACK_REFRESH_KEY)) || 0;
   if (nowUtcMs - last < FALLBACK_REFRESH_SECONDS * 1000) return { fetched: false, missing: missing.length };
@@ -364,7 +375,7 @@ export async function buildTraditionalResults(
   const requestedDates = dateRange(query.from, query.to);
   const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
   const fallback = missing.length
-    ? await readOverlay(env, missing)
+    ? await readOverlay(env, missing, nowUtcMs)
     : { overlay: {}, unresolved: [], warning: null };
 
   const data = [];

@@ -13,7 +13,13 @@ const hostOf = (url) => new URL(String(url)).hostname;
 class FakeKV {
   constructor() { this.store = new Map(); }
   async get(key) { return this.store.get(key) ?? null; }
-  async put(key, value) { this.store.set(key, value); }
+  async put(key, value, options = {}) {
+    // Như Cloudflare KV: TTL dưới 60 giây bị từ chối.
+    if (options.expirationTtl !== undefined && options.expirationTtl < 60) {
+      throw new Error(`Invalid expiration_ttl of ${options.expirationTtl}. Expiration TTL must be at least 60.`);
+    }
+    this.store.set(key, value);
+  }
 }
 
 const primaryRow = {
@@ -178,11 +184,12 @@ const scenarios = {
 
   // Lịch sử chuẩn đủ mọi ngày trong cửa sổ trừ 11-09 (nghỉ quay) và 13-09. Trang có 10-09 và
   // 13-09: 13-09 được bù, 11-09 nằm giữa hai ngày của trang mà trang không có → ghi "absent".
-  // Hết ngày thiếu thì cron không gọi nguồn nữa, kể cả khi đã quá 10 phút.
+  // Hết ngày thiếu thì cron không gọi nguồn nữa, kể cả khi đã quá 10 phút; nhưng sau 7 ngày dấu
+  // "absent" hết hạn và cron kiểm lại đúng một lần.
   async days_the_source_never_had_are_remembered() {
     const counter = { primary: 0, xskt: 0 };
     const primary = [];
-    for (let d = Date.UTC(2025, 4, 2); d <= Date.UTC(2026, 8, 13); d += 86_400_000) {
+    for (let d = Date.UTC(2025, 4, 2); d <= Date.UTC(2026, 8, 21); d += 86_400_000) {
       const day = new Date(d).toISOString().slice(0, 10);
       if (day !== "2026-09-11" && day !== "2026-09-13") {
         primary.push({ ...primaryRow, date: `${day}T00:00:00.000` });
@@ -192,10 +199,15 @@ const scenarios = {
     const env = { LIVE: new FakeKV() };
     const first = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW });
     const second = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + 30 * MINUTE });
+    const xsktBeforeRecheck = counter.xskt;
     const payload = await buildTraditionalResults(
       { ...query, from: "2026-09-10", to: "2026-09-13" }, env, { fetchImpl, nowUtcMs: NOW });
+    const DAY = 1440 * MINUTE;
+    const recheck = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + 8 * DAY });
+    const afterRecheck = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + 8 * DAY + 30 * MINUTE });
     return {
-      first, second, xskt: counter.xskt,
+      first, second, xskt: xsktBeforeRecheck, recheck, after_recheck: afterRecheck,
+      xskt_total: counter.xskt,
       dates: payload.data.map((row) => row.draw_date),
       unresolved: payload.meta.unresolved_dates,
     };

@@ -11,6 +11,7 @@ from vietlott_engine import __version__
 import asyncio
 import contextlib
 import hmac
+import re
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -137,6 +138,10 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         lifespan=lifespan,
     )
     _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
+    # GET mà vẫn GHI trạng thái: làm mới dự báo học thêm từ kỳ mới, ghi sự kiện chấm/phát vào sổ
+    # và lưu checkpoint (forecast.refresh, vlm.forecast.service.refresh_snapshot). Không phải
+    # /scoreboard (chỉ đọc sổ).
+    _REFRESHING_GET = re.compile(r"^/(?:ml/)?forecast/[^/]+(?:/evidence)?/?$")
     _BOOL = TypeAdapter(bool)
 
     def _asks_to_record(request: Request) -> bool:
@@ -174,7 +179,8 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         từ trang khác: CORS đóng chỉ ngăn đọc phản hồi, còn một "simple request" như
         ``GET /forecast/mega645?record=true`` từ trang lạ vẫn được gửi đi."""
         token = settings.api_token
-        writes = request.method in _MUTATING or _asks_to_record(request)
+        writes = (request.method in _MUTATING or _asks_to_record(request)
+                  or (request.method in {"GET", "HEAD"} and _REFRESHING_GET.match(request.url.path) is not None))
         if writes and token:
             supplied = request.headers.get("authorization", "")
             if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):

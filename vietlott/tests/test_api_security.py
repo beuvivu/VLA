@@ -84,8 +84,21 @@ def test_an_unreadable_record_value_is_treated_as_a_write(guarded: TestClient) -
 
 
 def test_record_false_and_no_record_stay_reads(guarded: TestClient) -> None:
+    # /games/{game}/draws chỉ đọc: record=false (hay không có) không biến nó thành lệnh ghi.
     for query in ("", "?record=false", "?record=off", "?record=0"):
-        assert guarded.get(f"/forecast/mega645{query}").status_code != 401, query
+        assert guarded.get(f"/games/mega645/draws{query}").status_code != 401, query
+
+
+@pytest.mark.parametrize("path", ["/forecast/mega645", "/forecast/mega645/evidence", "/ml/forecast/mega645"])
+def test_a_get_that_refreshes_forecast_state_is_a_write(guarded: TestClient, default: TestClient, path: str) -> None:
+    # Các GET này học thêm từ kỳ mới, ghi sự kiện vào sổ và lưu checkpoint, dù không có record.
+    assert guarded.get(path).status_code == 401
+    assert guarded.get(path, headers={"Authorization": f"Bearer {TOKEN}"}).status_code != 401
+    assert default.get(path, headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+
+
+def test_the_scoreboard_only_reads_the_ledger(guarded: TestClient) -> None:
+    assert guarded.get("/forecast/mega645/scoreboard").status_code == 200
 
 
 def test_a_bodyless_cross_site_post_to_sync_is_refused(guarded: TestClient) -> None:

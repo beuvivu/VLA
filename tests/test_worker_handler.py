@@ -97,6 +97,16 @@ def test_many_viewers_cannot_amplify_into_a_flood_of_source_requests(scenario: s
     )
 
 
+def test_the_kv_lock_stops_a_second_isolate_from_collecting_again() -> None:
+    """Ghi ảnh chụp vào KV hỏng, hai isolate (mỗi bản một mốc trong bộ nhớ): chỉ khoá KV chặn
+    được isolate thứ hai. KV từ chối TTL dưới 60 giây, nên khoá 10 giây cũ không bao giờ ghi
+    được: đo được 6 → 12 lượt gọi nguồn."""
+    out = _scenario("lock_shared_across_isolates")
+    assert out["statuses"] == [200, 200]
+    assert out["outbound_after_first"] == SOURCES_PER_COLLECTION
+    assert out["outbound_after_second"] == SOURCES_PER_COLLECTION
+
+
 def test_the_scheduled_run_writes_once_and_reads_come_from_storage() -> None:
     """Cron gọi nguồn; lượt đọc của người xem thì KHÔNG."""
     out = _scenario("normal")

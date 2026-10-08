@@ -121,6 +121,10 @@ def test_days_the_source_never_had_are_not_fetched_again() -> None:
     assert result["xskt"] == 1
     assert result["dates"] == ["2026-09-13", "2026-09-12", "2026-09-10"]
     assert result["unresolved"] == []
+    # Dấu "absent" không vĩnh viễn: một lần trang tạm thiếu không được thành khoảng trống mãi.
+    assert result["recheck"] == {"fetched": True, "missing": 1, "filled": 0, "absent": 1}
+    assert result["after_recheck"] == {"fetched": False, "missing": 0}
+    assert result["xskt_total"] == 2
 
 
 def test_the_cron_refresh_needs_the_wrangler_switch() -> None:

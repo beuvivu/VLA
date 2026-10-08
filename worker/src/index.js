@@ -32,6 +32,10 @@ const LOCK_KEY = "collect-lock";
 // Khoá ngắn hạn này giữ cho tối đa một vòng thu thập theo yêu cầu mỗi 10
 // giây, bất kể có bao nhiêu người xem. Cron vẫn chạy bình thường.
 const ONDEMAND_LOCK_SECONDS = 10;
+// KV từ chối expirationTtl dưới 60 giây. Bản trước ghi khoá bằng TTL 10 nên lần ghi nào cũng bị
+// từ chối và lớp khoá giữa các isolate chưa từng có hiệu lực. Nay giá trị khoá là MỐC THỜI GIAN,
+// hết hạn về logic sau ONDEMAND_LOCK_SECONDS; TTL 60 giây chỉ để KV tự dọn.
+const KV_MIN_TTL_SECONDS = 60;
 
 // Lớp chặn THỨ HAI, trong bộ nhớ.
 //
@@ -132,9 +136,10 @@ async function refreshOnDemand(env) {
   // lúc vòng thu thập đang chạy cũng phải bị chặn, chứ không chỉ các lượt đến
   // sau khi nó xong.
   lastOnDemandAttemptMs = now;
-  if (await kv.get(LOCK_KEY)) return null;
+  const heldSince = Number(await kv.get(LOCK_KEY)) || 0;
+  if (now - heldSince < ONDEMAND_LOCK_SECONDS * 1000) return null;
   try {
-    await kv.put(LOCK_KEY, "1", { expirationTtl: ONDEMAND_LOCK_SECONDS });
+    await kv.put(LOCK_KEY, String(now), { expirationTtl: KV_MIN_TTL_SECONDS });
   } catch (error) {
     // Khoá KV không ghi được thì vẫn còn mốc trong bộ nhớ ở trên chặn khuếch đại.
     console.error("không ghi được khoá thu thập:", error?.message || error);

@@ -283,7 +283,8 @@ Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value
 (`documentation/research/2026-10-07-max3d-hang-don-vi.md`).
 API của engine mặc định an toàn (08-10-2026): CORS đóng, `VQE_API_TOKEN` (khi đặt) bắt mọi
 POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y`… cũng vậy, đọc bằng
-chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`. Không có token thì lệnh ghi do trình
+chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`; ba GET làm mới dự báo (`/forecast/{p}`,
+`/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi. Không có token thì lệnh ghi do trình
 duyệt gửi từ trang khác (`Sec-Fetch-Site`/`Origin`) bị 403; `vietlott serve` và compose chỉ nghe
 `127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
