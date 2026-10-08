@@ -113,6 +113,14 @@ thật giờ là ~244 phút. Ngày 12/09, mốc "chính" `08:51 UTC` nổ lúc `
 Dải trễ đã tự trôi một lần và sẽ trôi nữa. Chỉnh lại mốc là cải thiện, không
 phải đảm bảo — đó là lý do [`live-worker.md`](live-worker.md) tồn tại.
 
+### 2.7 Đo lại tháng 10/2026 — dải trễ trôi lên 4–8 giờ
+
+Trên 26 ngày tới 05-10-2026, độ trễ là 4h16–5h33 ở mốc 00:15 UTC và 4h34–8h34
+ở mốc 06:37 UTC. Lịch "mốc chính 08:51" nổ lúc 19:00–23:30 giờ VN — sau hạn
+thăm dò — nên lượt thu không bao giờ đúng giờ. Cách sửa không còn là đuổi theo
+độ trễ trung vị mà là **chờ trong runner**: xem
+[`scheduling.md`](scheduling.md#đo-lại-05-10-2026--chờ-trong-runner-thay-vì-đuổi-theo-độ-trễ).
+
 ## 3. Kiến trúc sau khi sửa
 
 ```

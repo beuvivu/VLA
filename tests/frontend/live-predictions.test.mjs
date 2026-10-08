@@ -17,7 +17,7 @@ test('Exact draw date, zero padding, validation and ten unique numbers', async t
   const urls = [];
   const {load, d} = setup(t, async url => { urls.push(url); return csv('number,prob\n5,0.01\n00,0.01\n5,0.01\n<img>,0.01\n100,0.01\n-2,0.01\n' + Array.from({length: 12}, (_, i) => (i + 10) + ',0.01').join('\n')); });
   await load('2026-09-26');
-  assert.deepEqual(urls, ['https://example.test/predict/predict_next_de_top10_2026-09-26.csv', 'https://example.test/predict/predict_next_loto_top10_2026-09-26.csv']);
+  assert.deepEqual(urls, ['https://example.test/predict/cau_keo_de_top10_2026-09-26.csv', 'https://example.test/predict/cau_keo_loto_top10_2026-09-26.csv']);
   assert.deepEqual(numbers(d, 'de'), ['05','00','10','11','12','13','14','15','16','17']);
   assert.equal(d.querySelector('img'), null);
   assert.equal(d.querySelector('time').dateTime, '2026-09-26');
@@ -58,4 +58,25 @@ test('Invalid dates clear stale values and malformed CSV produces an empty state
   await empty.load('2026-09-26');
   assert.deepEqual(numbers(empty.d, 'de'), []);
   assert.match(empty.d.querySelector('[data-prediction-mode="de"] p').textContent, /Chưa có/);
+});
+test('A finished draw moves the block to the next draw date', async t => {
+  const urls = [];
+  const {d} = setup(t, async url => { urls.push(url); return csv('number\n31'); });
+  const api = d.defaultView.LivePredictions;
+  // Đang quay: vẫn là số của chính kỳ ấy.
+  await api.loadForDraw('2026-10-07', 'partial');
+  assert.equal(d.querySelector('time').dateTime, '2026-10-07');
+  // Quay xong (kể cả qua cuối tháng/năm): số của kỳ kế tiếp.
+  // Mọi trạng thái hoàn tất mà hai nguồn trực tiếp thật sự ghi ra.
+  for (const [status, draw, next] of [['complete_verified', '2026-10-07', '2026-10-08'], ['complete_provisional', '2026-10-31', '2026-11-01'], ['complete_conflict', '2026-12-31', '2027-01-01'], ['complete', '2026-10-09', '2026-10-10']]) {
+    await api.loadForDraw(draw, status);
+    assert.equal(d.querySelector('time').dateTime, next);
+    assert.ok(urls.at(-1).endsWith('_top10_' + next + '.csv'), urls.at(-1));
+  }
+  for (const status of ['waiting', 'partial', undefined]) {
+    await api.loadForDraw('2026-10-11', status);
+    assert.equal(d.querySelector('time').dateTime, '2026-10-11');
+  }
+  await api.loadForDraw('2026-02-30', 'complete_verified');
+  assert.equal(d.querySelector('time').dateTime, '');
 });

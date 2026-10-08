@@ -9,13 +9,14 @@ CDNs, or JavaScript frameworks.
 """
 
 import html
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable, Sequence
 
 import numpy as np
 import pandas as pd
+
+from safe_io import read_csv_or_empty, read_json_or_empty
 
 from ui_locale import (
     COLUMN_LABELS,
@@ -40,22 +41,12 @@ PERIOD_TITLES = {
 def _read_csv(
     path: Path, *, dtype: dict[str, object] | str | None = None, nrows: int | None = None
 ) -> pd.DataFrame:
-    """Read a CSV defensively and return an empty DataFrame on bad/missing files."""
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return pd.DataFrame()
-        return pd.read_csv(path, dtype=dtype, nrows=nrows, keep_default_na=False)
-    except Exception:
-        return pd.DataFrame()
+    """Đọc CSV; thiếu/rỗng/hỏng thì DataFrame rỗng (luật ở ``safe_io``)."""
+    return read_csv_or_empty(path, dtype=dtype, nrows=nrows, keep_default_na=False)
 
 
 def _read_json(path: Path) -> dict:
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return {}
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    return read_json_or_empty(path)
 
 
 def _safe_columns(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
@@ -80,7 +71,7 @@ def _number_to_int(value: object) -> int | None:
         return None
     try:
         n = int(float(s))
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return None
     return n if 0 <= n <= 99 else None
 
@@ -97,7 +88,7 @@ def _fmt_value(value: object, *, decimals: int = 0, percent: bool = False) -> st
         return ""
     try:
         x = float(value)
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return html.escape(str(value))
     if percent:
         return f"{x * 100:.1f}%"
@@ -228,7 +219,7 @@ def _number_map(df: pd.DataFrame, value_col: str) -> dict[int, float]:
             continue
         try:
             values[number] = float(row.get(value_col, 0) or 0)
-        except Exception:
+        except (TypeError, ValueError):
             values[number] = 0.0
     return values
 
@@ -524,6 +515,7 @@ def _table(
     zfill_cols: Iterable[str] = (),
     compact: bool = False,
     evidence_mode: str | None = None,
+    result_cols: Iterable[str] = (),
 ) -> str:
     view = _safe_columns(df, columns) if columns else df.copy()
     if view.empty:
@@ -540,6 +532,7 @@ def _table(
         view = view.sort_values("_highlight", ascending=False)
     view = view.head(max_rows).copy()
     zfill = set(zfill_cols)
+    full_results = set(result_cols)
 
     max_highlight = (
         float(view["_highlight"].max()) if "_highlight" in view.columns and not view.empty else 0.0
@@ -555,8 +548,15 @@ def _table(
             if c == "_highlight":
                 continue
             raw = row.get(c, "")
-            val = _fmt2(raw) if c in zfill else _display_cell(raw, c)
-            cell_class = ""
+            if c in full_results:
+                full = _full_special_value(raw)
+                val = (
+                    f'{html.escape(full[:-2])}<span class="special-result-tail">{html.escape(full[-2:])}</span>'
+                    if full else ""
+                )
+            else:
+                val = _fmt2(raw) if c in zfill else _display_cell(raw, c)
+            cell_class = "special-result" if c in full_results else ""
             if c in {"number", "number_str", "prev_special_2d", "prev_loto", "next_loto"}:
                 val = _clickable_number(raw, mode=evidence_mode, source_title=title)
             elif c == "pair":
@@ -574,15 +574,22 @@ def _table(
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
     compact_class = " compact" if compact else ""
+    calendar_class = " result-calendar" if full_results else ""
+    period_label = "tuần" if "week_key" in view.columns else "tháng"
+    table_hint = (
+        f"{len(view)} {period_label} gần nhất · Kết quả Đặc Biệt đủ 5 chữ số."
+        if full_results else f"Hiển thị tối đa {max_rows} dòng đầu sau khi sắp xếp."
+    )
+    scroll_attrs = ' tabindex="0" aria-label="Bảng kết quả, cuộn ngang để xem các ngày"' if full_results else ""
     return f"""
-    <article class="viz-card table-card{compact_class}">
+    <article class="viz-card table-card{compact_class}{calendar_class}">
       <div class="card-head"><span class="type-badge table">Bảng</span><h3>{html.escape(title)}</h3></div>
       <p>{html.escape(subtitle)}</p>
       <div class="table-tools">
         <input type="search" placeholder="Lọc nhanh trong bảng..." aria-label="Lọc bảng" oninput="filterTable(this)" />
-        <small>Hiển thị tối đa {max_rows} dòng đầu sau khi sắp xếp.</small>
+        <small>{table_hint}</small>
       </div>
-      <div class="table-wrap"><table><thead><tr>{header}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
+      <div class="table-wrap"{scroll_attrs}><table><thead><tr>{header}</tr></thead><tbody>{"".join(rows)}</tbody></table></div>
     </article>
     """
 
@@ -629,14 +636,49 @@ def _latest_by_period(
     return view[view["period_key"].astype(str) == latest].copy()
 
 
+def _full_special_value(value: object) -> str:
+    """Định dạng kết quả gốc; để trống giá trị thiếu hoặc sai độ rộng."""
+    raw = str(value).strip()
+    if not raw or len(raw) > 5 or not (raw.isascii() and raw.isdigit()):
+        return ""
+    return raw.zfill(5)
+
+
+def _full_special_boards(raw: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Dựng lịch năm chữ số từ kết quả gốc, giữ riêng hợp đồng thống kê đuôi số."""
+    day_cols = [f"{day:02d}" for day in range(1, 32)]
+    empty_week = pd.DataFrame(columns=["week_key", *WEEKDAY_COLS])
+    empty_month = pd.DataFrame(columns=["month_key", *day_cols])
+    if raw.empty or not {"date", "special"}.issubset(raw.columns):
+        return empty_week, empty_month
+    view = raw[["date", "special"]].copy()
+    view["date"] = pd.to_datetime(view["date"], format="%Y-%m-%d", errors="coerce")
+    view["special"] = view["special"].map(_full_special_value)
+    view = view.loc[view["date"].notna() & view["special"].ne("")]
+    view = view.drop_duplicates("date", keep="last").sort_values("date")
+    if view.empty:
+        return empty_week, empty_month
+    iso = view["date"].dt.isocalendar()
+    view["week_key"] = iso["year"].astype(str) + "-W" + iso["week"].astype(str).str.zfill(2)
+    view["weekday"] = view["date"].dt.weekday.map(dict(enumerate(WEEKDAY_COLS)))
+    view["month_key"] = view["date"].dt.strftime("%Y-%m")
+    view["day"] = view["date"].dt.strftime("%d")
+    week = view.pivot(index="week_key", columns="weekday", values="special")
+    month = view.pivot(index="month_key", columns="day", values="special")
+    return (
+        week.reindex(columns=WEEKDAY_COLS).fillna("").sort_index().reset_index(),
+        month.reindex(columns=day_cols).fillna("").sort_index().reset_index(),
+    )
+
+
 def _board_week_table(df: pd.DataFrame) -> str:
     return _table(
         df.tail(14),
         title="Bảng Đặc Biệt theo tuần",
-        subtitle="Dùng bảng vì cần đối chiếu nhanh thứ trong tuần; ô trống là ngày chưa có dữ liệu trong mẫu.",
+        subtitle="Kết quả Đặc Biệt đầy đủ theo thứ trong tuần. Ô trống là ngày chưa có kết quả trong dữ liệu.",
         columns=["week_key", *WEEKDAY_COLS],
         max_rows=14,
-        zfill_cols=WEEKDAY_COLS,
+        result_cols=WEEKDAY_COLS,
         compact=True,
     )
 
@@ -646,10 +688,10 @@ def _board_month_table(df: pd.DataFrame) -> str:
     return _table(
         df.tail(8),
         title="Bảng Đặc Biệt theo tháng",
-        subtitle="Dùng bảng rộng dạng lịch để soi chuỗi ngày trong tháng; cuộn ngang an toàn trên màn hình nhỏ.",
+        subtitle="Mỗi cột là một ngày trong tháng, giữ đủ 5 chữ số và số 0 ở đầu. Cuộn ngang để xem các ngày còn lại.",
         columns=["month_key", *day_cols],
         max_rows=8,
-        zfill_cols=day_cols,
+        result_cols=day_cols,
         compact=True,
     )
 
@@ -873,19 +915,12 @@ _DASHBOARD_CSS = """\
     /* Nav xuống dòng thay vì cuộn ngang: cuộn ngang làm các mục cuối bị ẩn
        khỏi tầm nhìn, giấu mất đường vào những phần cuối của trang. */
     .sticky-nav {
-      position: sticky;
-      top: 0;
-      z-index: 50;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       padding: 12px 0 14px;
       margin-bottom: 8px;
-      background: linear-gradient(to bottom,
-        color-mix(in srgb, var(--bg) 94%, transparent) 0%,
-        color-mix(in srgb, var(--bg) 94%, transparent) 72%,
-        transparent 100%);
-      backdrop-filter: blur(16px);
+      background: transparent;
     }
     .sticky-nav a {
       white-space: nowrap;
@@ -900,6 +935,7 @@ _DASHBOARD_CSS = """\
     }
 
     .sticky-nav a:hover { background: var(--brand-wash); color: var(--brand-ink); border-color: transparent; }
+    .sticky-nav a:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
 
     .section {
       margin: 18px 0 24px;
@@ -1199,6 +1235,26 @@ _DASHBOARD_CSS = """\
       color: var(--ui-ink-2);
     }
     .compact th:first-child { z-index: 3; background: var(--ui-surface-2); }
+    .result-calendar th, .result-calendar td {
+      min-width: 78px;
+      padding: 11px 12px;
+      border-right: 1px solid var(--ui-border);
+    }
+    .result-calendar th:first-child, .result-calendar td:first-child { min-width: 114px; }
+    .result-calendar td:first-child { background: var(--ui-surface); }
+    .result-calendar tr:hover td:first-child { background: var(--ui-surface-2); }
+    .result-calendar .table-wrap { max-height: none; }
+    .result-calendar .special-result {
+      color: var(--ui-ink);
+      font-weight: 750;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .04em;
+    }
+    .result-calendar .special-result-tail { color: var(--ui-special-ink); }
+    .result-calendar th:last-child, .result-calendar td:last-child { border-right: 0; }
+    .result-calendar tbody tr:last-child td { border-bottom: 0; }
+    .result-calendar .table-wrap:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
 
     .mini-bar {
       position: relative;
@@ -1695,8 +1751,7 @@ def main() -> None:
     pair_current = _read_csv(adv / "reverse_pair_frequency_current.csv", dtype=str)
     hht_current = _read_csv(adv / "head_tail_total_loto_current.csv", dtype=str)
     sg_current = _read_csv(adv / "special_group_frequency_current.csv", dtype=str)
-    special_week = _read_csv(adv / "special_week_board.csv", dtype=str)
-    special_month = _read_csv(adv / "special_month_board.csv", dtype=str)
+    special_week, special_month = _full_special_boards(_read_csv(data_dir / "xsmb.csv", dtype=str))
     first_overdue = _read_csv(adv / "first_prize_overdue.csv", dtype=str)
     cond_de_loto = _read_csv(adv / "conditional_loto_after_special_top500.csv", dtype=str, nrows=80)
     cond_loto_loto = _read_csv(adv / "conditional_loto_after_loto_top500.csv", dtype=str, nrows=80)

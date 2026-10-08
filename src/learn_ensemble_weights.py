@@ -17,9 +17,10 @@ from ensemble_utils import (
     DEFAULT_ENSEMBLE_WEIGHTS,
     PROBABILITY_FLOOR_SHARE,
     EnsembleWeights,
+    anchor_loto_level,
     clip01,
+    finalize_blend,
     load_ensemble_weights,
-    floor_distribution,
     weight_grid,
 )
 
@@ -66,7 +67,7 @@ def _select_recent_complete_days(
         numbers = pd.to_numeric(sub.get("number"), errors="coerce")
         if numbers.isna().any() or set(numbers.astype(int).tolist()) != set(range(100)):
             continue
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         if all(available.get(key, False) for key in COMPONENT_KEYS):
             complete.append(str(day))
 
@@ -173,8 +174,9 @@ def _daily_scores(mode: str, p_blend: np.ndarray, y: np.ndarray) -> tuple[np.nda
     từng ngày để lấy khoảng tin cậy bootstrap. Trung bình hoá là việc của người
     gọi.
 
-    Đề dùng ``floor_distribution`` — ĐÚNG phép biến đổi mà đường dự đoán thật
-    áp lên vector đề ở ``predict_nextday_2d``. Bản trước chỉ chặn ở 1e-12, tức
+    Đề dùng sàn ``floor_distribution`` và LOTO dùng phép neo mức
+    ``anchor_loto_level`` — ĐÚNG phép chốt ``finalize_blend`` mà đường dự đoán
+    thật áp ở ``predict_nextday_2d``. Bản trước chỉ chặn ở 1e-12, tức
     bộ tối ưu học một hàm mục tiêu KHÁC hàm mà hệ thống thật phải trả giá: một
     ngày mà con về bị thành phần nào đó gán 0 sẽ vào logloss là 27,6 trong khi
     thực tế chỉ là 7,6. Chênh lệch ấy đủ để kéo trọng số về phía thành phần
@@ -195,7 +197,8 @@ def _daily_scores(mode: str, p_blend: np.ndarray, y: np.ndarray) -> tuple[np.nda
         brier = np.sum(q * q, axis=1) - 2.0 * hit + 1.0
         return logloss, brier
 
-    p = clip01(probs, eps=1e-6)
+    # LOTO: cùng phép neo mức mà ``finalize_blend`` áp ở đường dự đoán thật.
+    p = anchor_loto_level(probs)
     logloss = -np.mean(labels * np.log(p) + (1.0 - labels) * np.log(1.0 - p), axis=1)
     brier = np.mean((p - labels) ** 2, axis=1)
     return logloss, brier
@@ -210,7 +213,7 @@ def _optimize_weights_continuous(
     """Optimize five non-negative weights on the simplex using recent LogLoss."""
     try:
         from scipy.optimize import minimize
-    except Exception:  # pragma: no cover
+    except ImportError:  # pragma: no cover
         minimize = None
 
     def eval_scores(w: np.ndarray) -> tuple[float, float]:
@@ -509,8 +512,8 @@ def learn_chronological_stack(
     tail = {name: values[split:] for name, values in arrays.items()}
     raw = _blend(tail, _weight_vector(weights))
     # Cùng phép biến đổi trước hiệu chuẩn với predict_nextday_2d.
-    probs = (np.vstack([floor_distribution(row) for row in raw])
-             if mode == "de" and len(raw) else clip01(raw, eps=1e-6))
+    probs = (np.vstack([finalize_blend(row, mode) for row in raw])
+             if len(raw) else clip01(raw, eps=1e-6))
     params, calibration_audit = select_calibration(
         mode, probs, y[split:], _day_weights(days[split:], half_life_draws)
         if days[split:] else None,

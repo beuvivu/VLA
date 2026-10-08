@@ -500,10 +500,10 @@ def test_matrix_note_does_not_shadow_the_chance_note() -> None:
         )
 
 
-def test_responsive_layout_is_published_on_the_five_requested_pages() -> None:
+def test_responsive_layout_is_published_on_the_detailed_table_pages() -> None:
     """Các trang đã xuất bản phải nhận cùng cơ chế co giãn như trình dựng."""
     targets = {"tan-suat-loto", "tan-suat-cap-loto", "bang-dac-biet",
-               "bang-dac-biet-thang", "bang-dac-biet-nam"}
+               "bang-dac-biet-thang", "bang-dac-biet-nam", "thong-ke-tong-hop"}
     for page in PAGES:
         html = (DOCS / f"{page.slug}.html").read_text(encoding="utf-8")
         assert ("installStatTableLayout();" in html) == (page.slug in targets)

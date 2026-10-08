@@ -175,6 +175,21 @@ def test_the_verification_step_reads_the_anonymised_snapshot_fields() -> None:
     assert "row.source_code" in setup
 
 
+def test_the_verification_step_reads_a_503_as_waiting_for_the_first_cron() -> None:
+    """Lượt yêu cầu không còn thu thập, nên Worker vừa triển khai trả 503 cho tới lượt cron đầu.
+
+    Đọc thân 503 như một ảnh chụp thì `source_status` rỗng và bộ cài đặt in "0/0 nguồn trả lời
+    được" — trông như đã kiểm mà thật ra chưa có gì để kiểm.
+    """
+    setup = (ROOT / "worker" / "setup.mjs").read_text(encoding="utf-8")
+    block = setup.split("/live.json`, { cache: \"no-store\" })")[1].split("} catch (error)")[0]
+    waiting, snapshot = block.split("} else {")
+    assert "response.status === 503" in waiting
+    assert "nguồn trả lời được`" not in waiting
+    assert "nguồn trả lời được`" in snapshot
+    assert "ép thu thập" not in setup, "Worker không còn thu thập theo yêu cầu"
+
+
 def test_a_trailing_slash_in_the_worker_url_does_not_double_up(tmp_path: Path) -> None:
     html = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
     result = _run([

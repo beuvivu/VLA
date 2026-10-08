@@ -191,10 +191,15 @@ def test_every_catalog_section_points_at_a_block_the_page_really_has(page: Path)
             assert f"data-col='{col}'" in html or f'data-col="{col}"' in html, (page.name, col)
 
 
-def test_live_forecasts_cite_the_published_forecast_not_the_live_draw() -> None:
+def test_live_forecasts_cite_the_cau_keo_table_not_the_live_draw() -> None:
+    """Khối dự đoán trên trang trực tiếp là 10 số đứng đầu bảng Cầu Kèo (yêu cầu
+    07-10-2026), nên bằng chứng phải trích mô hình cầu-kèo và cách tính điểm."""
     sections = {s["match"]: s for s in registry("live.html")["sections"]}
     titles = [src["title"] for src in sections["#live-predictions"]["sources"]]
-    assert "Dự báo đã công bố trước kỳ quay" in titles
+    assert "Mô hình cầu-kèo AI/ML" in titles
+    assert "Dự báo đã công bố trước kỳ quay" not in titles
+    steps = " ".join(sections["#live-predictions"]["reasoningTrace"]["steps"])
+    assert "không phải xác suất" in steps
     assert "Bảng kết quả đang quay" not in titles
     assert "Bảng kết quả đang quay" in [src["title"] for src in registry("live.html")["page"]["sources"]]
     # Trang tải dự báo theo ngày quay lúc chạy: không được ghi ngày lúc dựng.
@@ -209,7 +214,6 @@ def test_mixed_forecast_blocks_cite_both_model_pages() -> None:
 
     both = {"ml_top10_loto.html", "ml_top10_de.html"}
     assert ml_links(registry("dashboard.html")["page"]) == both
-    assert ml_links(registry("live.html")["sections"][0]) == both
     assert ml_links(registry("ml_top10_loto.html")["page"]) == {"ml_top10_loto.html"}
     assert ml_links(registry("ml_top10_de.html")["page"]) == {"ml_top10_de.html"}
 
@@ -220,6 +224,25 @@ def test_dashboard_diagnostics_have_their_own_derivations() -> None:
     steps = " ".join(sections["Trọng số"]["reasoningTrace"]["steps"])
     assert "MẶC ĐỊNH" in steps and "ngoài mẫu" in steps
     assert "vector xác suất 100 số" not in steps.lower()
+
+
+def test_overview_evidence_separates_filtered_loto_from_global_special_cycles() -> None:
+    """Nguồn của nháy và kỳ vọng theo dải không gán bộ lọc cho chu kỳ toàn lịch sử."""
+    data = registry("thong-ke-tong-hop.html")
+    page_steps = " ".join(data["page"]["reasoningTrace"]["steps"])
+    assert "toàn bộ lịch sử" in page_steps and "cùng một dải" not in page_steps
+    sections = {entry["title"]: entry for entry in data["sections"]}
+    filtered = sections["Tần suất và phân bố LOTO theo dải"]
+    filtered_steps = " ".join(filtered["reasoningTrace"]["steps"])
+    assert "nháy" in filtered_steps and "bộ lọc" in filtered_steps
+    expectation = " ".join(sections["Kỳ vọng số nháy LOTO"]["reasoningTrace"]["steps"])
+    assert "27/100" in expectation and "số kỳ" in expectation
+    for title in ("Gan Đặc Biệt trên toàn lịch sử", "Chu kỳ Đặc Biệt trên toàn lịch sử"):
+        entry = sections[title]
+        steps = " ".join(entry["reasoningTrace"]["steps"])
+        assert "toàn bộ lịch sử" in steps and "không áp dụng" in steps
+        assert "tính lại theo bộ lọc" not in steps
+        assert "Quy ước Đặc Biệt" in [source["title"] for source in entry["sources"]]
 
 
 def test_confidence_page_risk_numbers_get_the_simulation_derivation() -> None:
@@ -365,3 +388,18 @@ def test_dashboard_suggestion_metadata_is_not_a_forecast_probability() -> None:
     sections = {s.get("heading"): s for s in registry("dashboard.html")["sections"]}
     steps = " ".join(sections["Danh sách gợi ý"]["reasoningTrace"]["steps"])
     assert "siêu dữ liệu" in steps and "không phải xác suất" in steps
+
+
+
+@pytest.mark.parametrize("page", ["index.html", "landing.html"])
+def test_calendar_values_cite_the_calendar_engine_and_only_results_cite_the_ledger(page: str) -> None:
+    """Ngày âm/dương do bộ tính lịch sinh ra; chỉ giải Đặc Biệt trong lịch đến từ sổ kết quả."""
+    sections = {s.get("match"): s for s in registry(page)["sections"]}
+    cal = sections["#app-calendar"]
+    assert [src["title"] for src in cal["sources"]] == ["Bộ tính lịch âm dương Việt Nam"]
+    assert "không đọc từ sổ kết quả" in " ".join(cal["reasoningTrace"]["steps"])
+    # Meeus chỉ cho điểm sóc; tiết khí/tháng nhuận theo kinh độ Mặt Trời, can chi là phép đếm chu kỳ.
+    snippet = cal["sources"][0]["snippet"]
+    assert "kinh độ Mặt Trời" in snippet and "Julius" in snippet and "địa chi" in snippet
+    special = sections["#app-calendar .app-calendar-result, #app-calendar .app-calendar-special"]
+    assert any(src["title"].startswith("Sổ kết quả") for src in special["sources"])

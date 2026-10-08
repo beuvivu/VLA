@@ -112,6 +112,76 @@
       "special": "77961",
       "source_url": "https://xoso.com.vn/xsmb-03-10-2026.html",
       "checked_at": "2026-10-04T00:17:28+07:00"
+    },
+    "2026-10-04": {
+      "station": "Thái Bình",
+      "special_codes": [
+        "2HF",
+        "4HF",
+        "6HF",
+        "12HF",
+        "13HF",
+        "14HF"
+      ],
+      "special": "82951",
+      "source_url": "https://xoso.com.vn/xsmb-04-10-2026.html",
+      "checked_at": "2026-10-05T17:47:11+07:00"
+    },
+    "2026-10-05": {
+      "station": "Hà Nội",
+      "special_codes": [
+        "6HG",
+        "7HG",
+        "9HG",
+        "10HG",
+        "11HG",
+        "14HG"
+      ],
+      "special": "19654",
+      "source_url": "https://xoso.com.vn/xsmb-05-10-2026.html",
+      "checked_at": "2026-10-06T10:48:13+07:00"
+    },
+    "2026-10-06": {
+      "station": "Quảng Ninh",
+      "special_codes": [
+        "5HK",
+        "8HK",
+        "10HK",
+        "13HK",
+        "14HK",
+        "15HK"
+      ],
+      "special": "12554",
+      "source_url": "https://xoso.com.vn/xsmb-06-10-2026.html",
+      "checked_at": "2026-10-07T17:40:06+07:00"
+    },
+    "2026-10-07": {
+      "station": "Bắc Ninh",
+      "special_codes": [
+        "1HL",
+        "4HL",
+        "7HL",
+        "9HL",
+        "11HL",
+        "13HL"
+      ],
+      "special": "56488",
+      "source_url": "https://xoso.com.vn/xsmb-07-10-2026.html",
+      "checked_at": "2026-10-08T17:49:25+07:00"
+    },
+    "2026-10-08": {
+      "station": "Hà Nội",
+      "special_codes": [
+        "2HM",
+        "5HM",
+        "8HM",
+        "9HM",
+        "10HM",
+        "12HM"
+      ],
+      "special": "43339",
+      "source_url": "https://xoso.com.vn/xsmb-08-10-2026.html",
+      "checked_at": "2026-10-08T20:53:35+07:00"
     }
   }
 }

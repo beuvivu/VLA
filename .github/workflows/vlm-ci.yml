@@ -1,0 +1,108 @@
+name: VLM · Kiểm thử engine Vietlott
+
+# Chép từ VLM (.github/workflows/ci.yml). Engine sống trong thư mục con `vietlott/`
+# như một dự án tự đủ, nên mọi lệnh chạy trong thư mục ấy và chỉ thay đổi ở đó
+# mới kích hoạt workflow này.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "vietlott/**"
+      - "!vietlott/data/forecast/ledger.jsonl"
+      - "!vietlott/data/forecast/ml-ledger.jsonl"
+      - "!vietlott/data/results/results.jsonl"
+      - "!vietlott/**/*.md"
+      - ".github/workflows/vlm-*.yml"
+  pull_request:
+    paths:
+      - "vietlott/**"
+      - ".github/workflows/vlm-*.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vlm-ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: vietlott
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.11", "3.12"]
+        include:
+          - os: windows-latest
+            python: "3.12"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: vietlott/pyproject.toml
+      - name: Cài gói và công cụ phát triển
+        run: python -m pip install -e ".[dev,crawler]"
+      - name: Ruff (lỗi đúng/sai)
+        run: ruff check --select F,B023 src scripts tests
+      - name: Pytest
+        run: python -m pytest -q
+
+  ml:
+    name: Optional ML backends (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: vietlott/pyproject.toml
+      - run: python -m pip install -e ".[dev,ml]"
+      - run: python -m pytest tests/test_vlm_forecast_models.py tests/test_vlm_forecast_pipeline.py -q
+
+  website:
+    name: Website (desktop, mobile, light/dark)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VQE_AUTO_UPDATE_DIR: data/results
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - run: python -m pip install -e .
+      - name: Dựng hai trang từ seed và sổ dự báo thật
+        run: python scripts/build_site.py --out site
+      - name: Cài trình duyệt kiểm thử
+        run: |
+          npm install --prefix /tmp/vlm-ui playwright@1.62.1 @axe-core/playwright
+          /tmp/vlm-ui/node_modules/.bin/playwright install --with-deps chromium
+      - name: Kiểm tra hành vi và chụp desktop / mobile
+        run: |
+          python -m http.server 8765 --directory site > /tmp/vlm-site-http.log 2>&1 &
+          NODE_PATH=/tmp/vlm-ui/node_modules node scripts/check_site.cjs
+      - name: Ảnh kiểm tra giao diện
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: vlm-ui-screenshots
+          path: vietlott/ui-artifacts
+          retention-days: 14

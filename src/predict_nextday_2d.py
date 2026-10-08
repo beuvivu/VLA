@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import json
 from dataclasses import dataclass
@@ -17,9 +19,8 @@ from pick_diversity import diversified_order
 from ensemble_components import COMPONENT_KEYS, probability_component, renormalize_available_weights
 from ensemble_utils import (
     EnsembleWeights,
-    clip01,
+    finalize_blend,
     load_ensemble_weights,
-    floor_distribution,
 )
 from meta_predictor import META_SCHEMA_VERSION, blend_predictions, predict_meta
 
@@ -305,16 +306,11 @@ def main() -> None:
     vectors, available, reasons = _load_probs(data_dir, args.mode, anchor)
     effective_weights = renormalize_available_weights(configured_weights, available)
 
-    p_linear_raw = _blend_linear(vectors, effective_weights)
-    if args.mode == "de":
-        # Sàn xác suất: không con nào bị tuyên bố bất khả thi. `p_stable` là
-        # ĐIỂM XẾP HẠNG chứ không phải phân phối — nó gán đúng 0 cho trung vị
-        # 58/100 con mỗi kỳ, và trong 128/231 kỳ lịch sử gán 0 cho chính con
-        # đã về. Hôm nay các thành phần khác che hết chỗ 0 ấy, nhưng đó là may
-        # chứ không phải thiết kế; nó đã hỏng suốt 212 kỳ khi cầu/thống kê vắng.
-        p_linear_raw = floor_distribution(p_linear_raw)
-    else:
-        p_linear_raw = clip01(p_linear_raw, eps=1e-6)
+    # Đặc Biệt: sàn xác suất — không con nào bị tuyên bố bất khả thi. `p_stable`
+    # là ĐIỂM XẾP HẠNG chứ không phải phân phối: nó gán đúng 0 cho trung vị
+    # 58/100 con mỗi kỳ, và trong 128/231 kỳ lịch sử gán 0 cho chính con đã về.
+    # LOTO: neo tổng về 100·nền — hai nhánh cầu vị trí thổi mức lên 3–11%.
+    p_linear_raw = finalize_blend(_blend_linear(vectors, effective_weights), args.mode)
 
     all_components_available = all(available.get(key, False) for key in COMPONENT_KEYS)
     if all_components_available:
@@ -382,12 +378,12 @@ def main() -> None:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    df_all.to_csv(
+    write_code_csv(df_all,
         out_dir / f"predict_next_{args.mode}_all_{target.isoformat()}.csv",
         index=False,
     )
     for n, top in top_frames(df_all, args.mode).items():
-        top.to_csv(
+        write_code_csv(top,
             out_dir / f"predict_next_{args.mode}_top{n}_{target.isoformat()}.csv",
             index=False,
         )

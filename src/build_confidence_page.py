@@ -16,7 +16,8 @@ from pathlib import Path
 
 from page_output import write_page
 from ui_locale import mode_label
-from ui_theme import app_shell_close, app_shell_open, card, page_header, stylesheet_link, write_stylesheet
+from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
+from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
 from web_security import security_meta_tags
 
 PAGE = "do-tin-cay.html"
@@ -307,18 +308,84 @@ def hot_tail_card(report: dict) -> str:
     )
 
 
+_DIGIT_SUM_WORDS = {
+    "dang_thu": "Đang thu thập — chưa đủ kỳ để kết luận.",
+    "xac_nhan": "XÁC NHẬN có quy tắc trúng nhiều hơn chọn bừa trên các kỳ chưa từng thấy — "
+                "vẫn phải qua kiểm mô hình trước khi được dùng trong xác suất.",
+    "bac_bo": "BÁC BỎ: trên các kỳ chưa từng thấy, không quy tắc nào hơn chọn bừa.",
+}
+
+
+def digit_sum_card(report: dict) -> str:
+    """Năm quy tắc "tổng – bóng – chạm", chấm tiến cứu và cộng dồn từng kỳ."""
+    h = report.get("digit_sum")
+    if not h:
+        return '<p class="ui-table-empty">Chưa có dữ liệu.</p>'
+    retro = h["retrospective"]
+    rows = []
+    for r in h["rules"]:
+        size = r["draws"]
+        rows.append([
+            html.escape(r["label"]),
+            f"{size}/{h['min_draws']}",
+            f"{r['hits']} ({_pct(r['hit_rate'])})" if size else "—",
+            _pct(r["expected_rate"]) if size else "—",
+            _num(r["p_holm"], 3) if size else "—",
+            _pct(retro["hit_rate"][r["rule"]]) + " / " + _pct(retro["expected_rate"][r["rule"]]),
+        ])
+    span = (f"{html.escape(h['first'])} → {html.escape(h['last'])}" if h.get("first")
+            else "chưa có kỳ nào")
+    upcoming = h.get("next") or {}
+    picks = upcoming.get("picks") or {}
+    labels = {r["rule"]: r["label"] for r in h["rules"]}
+
+    def _fmt(key: str, values: list[int]) -> str:
+        width = 1 if key in ("dau_db", "duoi_db") else 2
+        return " ".join(f"{v:0{width}d}" for v in values)
+
+    listing = "".join(
+        f"<li><b>{html.escape(labels.get(key, key))}</b>: {html.escape(_fmt(key, values))}</li>"
+        for key, values in picks.items()
+    )
+    return (
+        '<p class="ui-muted">Năm quy tắc học từ loạt bài dự đoán tuần (tổng hai chữ số và '
+        "bóng của các giải). Kiểm hồi cứu trên "
+        f"{_count(retro['draws'])} kỳ, không quy tắc nào hơn chọn bừa (p Holm nhỏ nhất "
+        f"{_num(retro['min_p_holm'], 3)}). Quy tắc được chốt ngày "
+        f"{html.escape(h['registered_on'])}; từ kỳ {html.escape(h['first_target'])} mỗi kỳ mới "
+        "được ghi vào sổ cái và chấm với kết quả thật, so với một bộ chọn ngẫu nhiên cùng cỡ ở "
+        f"đúng kỳ ấy. Kết luận sau {h['min_draws']} kỳ, một phía, hiệu chỉnh Holm cho năm "
+        f"quy tắc, α = {_num(h['alpha'], 2)}.</p>"
+        + _table(["Quy tắc", "Số kỳ", "Trúng", "Chọn bừa", "p Holm", "Hồi cứu: trúng / chọn bừa"],
+                 rows, numeric="ui-r2 ui-r3 ui-r4 ui-r5")
+        + f'<p class="ui-muted" data-evidence-split>Kỳ đã chấm: {span}. '
+        f"<b>{html.escape(_DIGIT_SUM_WORDS.get(h['state'], h['state']))}</b>"
+        + (f" Sổ đã ghi {h['recorded']} kỳ; kết luận chốt trên {h['min_draws']} kỳ đầu và "
+           "không tính lại." if h.get("recorded", 0) > h["min_draws"] else "")
+        + "</p>"
+        + (
+            f'<p class="ui-muted">Bộ số các quy tắc đọc từ kỳ '
+            f"{html.escape(str(upcoming.get('base_date', '')))} — mô tả quy tắc, không phải dự báo "
+            f"có kỹ năng:</p><ul>{listing}</ul>"
+            if listing else ""
+        )
+    )
+
+
 def render(report: dict) -> str:
     blocks = [
-        card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True),
-        card(rules_card(report), title="Luật ba tầng và vì sao phải hiệu chỉnh", span=12, lift=True),
-        card(matrix_card(report, "loto"), title="Ma trận suy luận · LOTO", span=12, lift=True),
-        card(matrix_card(report, "de"), title="Ma trận suy luận · Đặc Biệt", span=12, lift=True),
+        card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True, ident="app-lab-conclusion"),
+        card(rules_card(report), title="Luật ba tầng và vì sao phải hiệu chỉnh", span=12, lift=True, ident="app-lab-rules"),
+        card(matrix_card(report, "loto"), title="Ma trận suy luận · LOTO", span=12, lift=True, ident="app-lab-loto-matrix"),
+        card(matrix_card(report, "de"), title="Ma trận suy luận · Đặc Biệt", span=12, lift=True, ident="app-lab-de-matrix"),
         card(families_card(report), title="Các trục cầu kèo so với ngẫu nhiên", span=12, lift=True),
-        card(oos_card(report), title="Kiểm ngoài mẫu", span=12, lift=True),
+        card(oos_card(report), title="Kiểm ngoài mẫu", span=12, lift=True, ident="app-lab-oos"),
         card(intervention_card(report), title="Giả thuyết kỳ quay bị sắp đặt", span=12, lift=True),
         card(hot_tail_card(report), title="Giả thuyết đang kiểm tiến cứu: đuôi nóng", span=12,
              lift=True),
-        card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True),
+        card(digit_sum_card(report), title="Giả thuyết đang kiểm tiến cứu: tổng – bóng – chạm",
+             span=12, lift=True),
+        card(risk_card(report), title="Rủi ro / lợi nhuận", span=12, lift=True, ident="app-lab-risk"),
         card(feedback_card(report), title="Vòng phản hồi", span=12, lift=True),
     ]
     return f"""<!doctype html>
@@ -328,16 +395,30 @@ def render(report: dict) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
   {stylesheet_link()}
+  {lab_styles()}
   <title>Độ tin cậy dự báo — Phân tích XSMB</title>
 </head>
 <body>
 {app_shell_open(PAGE)}
-{page_header(
+<div class="app-lab app-lab-confidence" data-lab-layout="confidence">
+{lab_hero(PAGE,
     "Độ tin cậy dự báo",
-    "Confidence Score ba tầng cho từng con, tính bằng Bayes, Markov và cầu vị trí rồi đối chứng "
-    "với hàng nghìn lịch sử quay công bằng. Thước đo xác suất, không phải lời khuyên đặt cược.",
+    "Tách tín hiệu khỏi nhiễu. Đối chiếu Bayes, Markov và cầu vị trí với lịch sử ngẫu nhiên, "
+    "rồi kiểm tra trên những kỳ mô hình chưa từng thấy.",
+    eyebrow="PHÒNG THẨM ĐỊNH TÍN HIỆU", core="ĐỐI CHỨNG",
+    meta=f"Kỳ dự báo: {report['generated_for']} · Dữ liệu đến: {report['last_draw']}",
+    action=("#app-lab-conclusion", "Đọc kết luận"),
 )}
+{lab_guide([
+    ("Confidence Score", "Mức nổi bật của tín hiệu sau hiệu chỉnh đa kiểm. Đây không phải xác suất trúng và không đồng nghĩa mức tin thành phần ML."),
+    ("Đối chứng ngẫu nhiên", "So tín hiệu mạnh nhất của cả họ với các lịch sử quay công bằng để tránh chọn một con nổi bật chỉ do thử quá nhiều lần."),
+    ("Kiểm ngoài mẫu", "Đánh giá trên dữ liệu chưa dùng để chọn tín hiệu. Chỉ đọc kết luận cùng cỡ mẫu, mức nền và độ bất định."),
+])}
+{lab_jump([("app-lab-conclusion", "Kết luận"), ("app-lab-rules", "Luật ba tầng"),
+           ("app-lab-loto-matrix", "Ma trận LOTO"), ("app-lab-de-matrix", "Ma trận Đặc Biệt"),
+           ("app-lab-oos", "Ngoài mẫu"), ("app-lab-risk", "Rủi ro")])}
 <div class="ui-grid">{"".join(blocks)}</div>
+{lab_footer()}</div>
 {app_shell_close(PAGE)}
 </body>
 </html>

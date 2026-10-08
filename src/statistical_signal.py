@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Conservative empirical-Bayes statistical signal for the 00..99 universe.
 
 This component combines:
@@ -669,7 +671,7 @@ def main() -> None:
             half_life=args.half_life,
             prior_strength=args.prior_strength,
         )
-        df.to_csv(out / f"predict_next_{mode}_stat_all.csv", index=False)
+        write_code_csv(df, out / f"predict_next_{mode}_stat_all.csv", index=False)
         (out / f"diagnostics_{mode}.json").write_text(
             json.dumps(diag, ensure_ascii=False, indent=2), encoding="utf-8"
         )

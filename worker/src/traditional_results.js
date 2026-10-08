@@ -2,12 +2,11 @@
 //
 // Luồng dữ liệu có thứ tự cứng:
 // 1. lịch sử chuẩn trong data/xsmb.json của VLA;
-// 2. lớp bù đã lưu trong KV;
-// 3. chỉ khi vẫn thiếu ngày mới gọi sổ cuộn xskt.vn đúng MỘT lần.
+// 2. lớp bù đã lưu trong KV, do CRON nạp từ sổ cuộn xskt.vn (refreshFallbackOverlay).
 //
-// Kết quả lấy từ xskt.vn được lưu vào KV ngay để các lượt xem sau không cào
-// lại. Quy trình Python hằng ngày dùng cùng nguồn XsktVnSource và sẽ đưa kỳ
-// hợp lệ vào data/xsmb.json sau bước đồng thuận/canonical validation.
+// Yêu cầu của khách KHÔNG BAO GIỜ gọi nguồn dự phòng; nó chỉ đọc lớp bù. Quy
+// trình Python hằng ngày dùng cùng nguồn XsktVnSource và sẽ đưa kỳ hợp lệ vào
+// data/xsmb.json sau bước đồng thuận/canonical validation.
 
 import {
   EXPECTED_COUNTS,
@@ -24,9 +23,26 @@ const DEFAULT_XSKT_URL = "https://xskt.vn/xsmb-500-ngay/";
 const PRIMARY_FRESH_KEY = "traditional:primary:fresh:v1";
 const PRIMARY_LAST_GOOD_KEY = "traditional:primary:last-good:v1";
 const OVERLAY_KEY = "traditional:xskt-overlay:v1";
-const RESPONSE_PREFIX = "traditional:response:v1:";
+const RESPONSE_PREFIX = "traditional:response:v2:";
 const ALLOWED_DAYS = new Set([30, 60, 90, 100]);
 const MAX_RANGE_DAYS = 500;
+
+// Sổ cuộn của nguồn dự phòng chỉ có khoảng 500 ngày gần nhất: ngày cũ hơn thì gọi
+// cũng không có, nên không được kéo theo một lượt tải trang.
+const FALLBACK_WINDOW_DAYS = 500;
+
+// CHẶN KHUẾCH ĐẠI ra nguồn ngoài. Khoá đệm phản hồi gồm cả from/to, nên mỗi khoảng
+// ngày mới là một lần trượt đệm. Trước 08-10-2026, khách chỉ cần đổi khoảng ngày là mỗi
+// yêu cầu kéo một lượt tải trọn trang 500 ngày (đo: 20 khoảng ngày → 20 lượt tải). Một
+// khoá KV sau đó chỉ chặn được trong từng isolate: KV nhất quán sau và không có đọc-ghi
+// nguyên tử. Nay chỉ cron gọi nguồn, nên lưu lượng khách không còn đường nào chạm tới nó,
+// và cron chạy tuần tự theo lịch nên một mốc thời gian là đủ giãn cách.
+const FALLBACK_REFRESH_KEY = "traditional:fallback-refreshed-at:v1";
+const FALLBACK_REFRESH_SECONDS = 600;
+// Một ngày trang nguồn không có (thường là nghỉ quay dịp Tết) chỉ được tin là "không có kỳ" trong
+// ABSENT_RECHECK_DAYS ngày; sau đó cron kiểm lại. Nếu chỉ là trang tạm thiếu hay cắt hỏng một
+// bảng, khoảng trống thật không bị giữ mãi.
+const ABSENT_RECHECK_DAYS = 7;
 
 const PRIZE_LABELS = {
   special: "Đặc Biệt",
@@ -114,6 +130,11 @@ export function parseTraditionalQuery(url, { nowUtcMs = Date.now() } = {}) {
     from = parseDate(fromRaw);
     to = parseDate(toRaw);
     if (!from || !to) throw new Error("Ngày phải đúng định dạng YYYY-MM-DD.");
+    // Ngày chưa quay thì không có kết quả ở đâu cả; nhận nó chỉ để kéo một lượt gọi
+    // nguồn dự phòng vô ích.
+    if (to > latestEligibleDate(nowUtcMs)) {
+      throw new Error("Đến ngày không được sau kỳ gần nhất đã quay.");
+    }
   } else {
     const days = Number(url.searchParams.get("days") || 30);
     if (!Number.isInteger(days) || !ALLOWED_DAYS.has(days)) {
@@ -162,7 +183,7 @@ function completePrizeMap(prizes) {
 }
 
 function normalizePrimary(payload) {
-  if (!Array.isArray(payload)) throw new Error("Dữ liệu VLA không phải một danh sách.");
+  if (!Array.isArray(payload)) throw new Error("Lịch sử chuẩn không phải một danh sách.");
   const byDate = {};
   for (const row of payload) {
     const drawDate = String(row?.date || "").slice(0, 10);
@@ -170,7 +191,7 @@ function normalizePrimary(payload) {
     const prizes = prizeMapFromInternal(row);
     if (prizes && completePrizeMap(prizes)) byDate[drawDate] = prizes;
   }
-  if (Object.keys(byDate).length === 0) throw new Error("Dữ liệu VLA không có kỳ hợp lệ.");
+  if (Object.keys(byDate).length === 0) throw new Error("Lịch sử chuẩn không có kỳ hợp lệ.");
   return byDate;
 }
 
@@ -204,13 +225,14 @@ async function loadPrimary(env, fetchImpl) {
     return { rows, cache: "miss" };
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
-    if (stale) return { rows: stale, cache: "stale", warning: String(error?.message || error) };
-    throw new Error(`Không đọc được CSDL VLA: ${String(error?.message || error)}`);
+    if (stale) return { rows: stale, cache: "stale", warning: "Lịch sử chuẩn tạm không khả dụng; đang dùng bản lưu gần nhất." };
+    throw new Error("Không đọc được lịch sử chuẩn.");
   }
 }
 
-export function parseXsktLedger(html) {
+function parseLedgerPage(html) {
   const rows = {};
+  const presentDates = new Set();
   const tablePattern = /<table\b[^>]*class=["'][^"']*\bkqmb\b[^"']*["'][^>]*>[\s\S]*?<\/table\s*>/gi;
   for (const match of String(html || "").matchAll(tablePattern)) {
     const table = match[0];
@@ -218,49 +240,87 @@ export function parseXsktLedger(html) {
     if (!dateMatch) continue;
     const drawDate = `${dateMatch[3]}-${pad2(dateMatch[2])}-${pad2(dateMatch[1])}`;
     if (!parseDate(drawDate)) continue;
+    presentDates.add(drawDate);
     const prizes = extractPartialPrizeMap(table);
     if (completePrizeMap(prizes)) rows[drawDate] = prizes;
   }
-  return rows;
+  return { rows, presentDates };
 }
 
-async function loadXsktOverlay(env, fetchImpl, missingDates) {
-  const kv = cacheStore(env);
-  const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
-  let unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
-  let fetched = false;
-  let warning = null;
+export function parseXsktLedger(html) {
+  return parseLedgerPage(html).rows;
+}
 
-  if (unresolved.length > 0) {
-    const xsktUrl = env?.XSKT_HISTORY_URL || DEFAULT_XSKT_URL;
-    try {
-      const responseFromSource = await fetchImpl(xsktUrl, {
-        headers: {
-          "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "vi-VN,vi;q=0.9",
-          "User-Agent": "VLA-traditional-results/1.0 (+https://github.com/beuvivu/VLA)",
-        },
-        signal: AbortSignal.timeout(12_000),
-      });
-      if (!responseFromSource.ok) {
-        warning = `xskt.vn trả HTTP ${responseFromSource.status}`;
-      } else {
-        fetched = true;
-        const parsed = parseXsktLedger(await responseFromSource.text());
-        const fetchedAt = new Date().toISOString();
-        for (const day of unresolved) {
-          if (completePrizeMap(parsed[day])) {
-            overlay[day] = { prizes: parsed[day], fetched_at_utc: fetchedAt };
-          }
-        }
-        if (kv) await kv.put(OVERLAY_KEY, JSON.stringify(overlay), { expirationTtl: 2_592_000 });
-      }
-    } catch (error) {
-      warning = `Không đọc được xskt.vn: ${String(error?.message || error)}`;
+/**
+ * Ngày đã giải quyết trong lớp bù: có đủ giải, hoặc nguồn xác nhận không có kỳ (nghỉ Tết) trong
+ * ABSENT_RECHECK_DAYS ngày gần nhất.
+ */
+function overlayResolved(entry, nowUtcMs) {
+  if (completePrizeMap(entry?.prizes)) return true;
+  if (!entry?.absent) return false;
+  const checked = Date.parse(entry.checked_at_utc);
+  return Number.isFinite(checked) && nowUtcMs - checked < ABSENT_RECHECK_DAYS * 86_400_000;
+}
+
+/** Lượt yêu cầu: CHỈ đọc lớp bù đã lưu, không gọi mạng. */
+async function readOverlay(env, missingDates, nowUtcMs) {
+  const overlay = (await readJson(cacheStore(env), OVERLAY_KEY)) || {};
+  const unresolved = missingDates.filter((day) => !overlayResolved(overlay[day], nowUtcMs));
+  return {
+    overlay,
+    unresolved,
+    warning: unresolved.length
+      ? "Một số ngày chưa có trong lịch sử chuẩn; lượt cập nhật theo lịch sẽ bù."
+      : null,
+  };
+}
+
+/**
+ * Lượt CRON: nạp lớp bù cho các ngày trong cửa sổ FALLBACK_WINDOW_DAYS mà lịch sử chuẩn còn
+ * thiếu. Không thiếu gì thì không gọi mạng; lần tải trước chưa quá FALLBACK_REFRESH_SECONDS thì
+ * cũng không. Ngày nằm GIỮA ngày cũ nhất và mới nhất của trang mà trang không có được ghi
+ * `absent` (XSMB nghỉ quay dịp Tết): không ghi thì lượt cron nào cũng thấy "thiếu" và tải lại vô
+ * ích. Dấu ấy hết hạn sau ABSENT_RECHECK_DAYS ngày để một lần trang tạm thiếu không thành khoảng
+ * trống vĩnh viễn. Ngày ngoài phạm vi trang (mới hơn ngày mới nhất) để lượt sau thử lại.
+ */
+export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs = Date.now() } = {}) {
+  const kv = cacheStore(env);
+  if (!kv) return { fetched: false, missing: 0 };
+  const primary = await loadPrimary(env, fetchImpl);
+  const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
+  const latest = latestEligibleDate(nowUtcMs);
+  const missing = dateRange(isoDate(addDays(latest, -(FALLBACK_WINDOW_DAYS - 1))), isoDate(latest))
+    .filter((day) => !completePrizeMap(primary.rows[day]) && !overlayResolved(overlay[day], nowUtcMs));
+  if (missing.length === 0) return { fetched: false, missing: 0 };
+  const last = Number(await kv.get(FALLBACK_REFRESH_KEY)) || 0;
+  if (nowUtcMs - last < FALLBACK_REFRESH_SECONDS * 1000) return { fetched: false, missing: missing.length };
+  await kv.put(FALLBACK_REFRESH_KEY, String(nowUtcMs), { expirationTtl: 86_400 });
+
+  const responseFromSource = await fetchImpl(env?.XSKT_HISTORY_URL || DEFAULT_XSKT_URL, {
+    headers: {
+      "Accept": "text/html,application/xhtml+xml",
+      "Accept-Language": "vi-VN,vi;q=0.9",
+      "User-Agent": "VLA-traditional-results/1.0 (+https://github.com/beuvivu/VLA)",
+    },
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!responseFromSource.ok) throw new Error(`nguồn dự phòng trả HTTP ${responseFromSource.status}`);
+  const { rows: parsed, presentDates } = parseLedgerPage(await responseFromSource.text());
+  const pageDays = Object.keys(parsed).sort();
+  const stamp = new Date(nowUtcMs).toISOString();
+  let filled = 0;
+  let absent = 0;
+  for (const day of missing) {
+    if (completePrizeMap(parsed[day])) {
+      overlay[day] = { prizes: parsed[day], fetched_at_utc: stamp };
+      filled += 1;
+    } else if (!presentDates.has(day) && pageDays.length && day > pageDays[0] && day < pageDays.at(-1)) {
+      overlay[day] = { absent: true, checked_at_utc: stamp };
+      absent += 1;
     }
-    unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
   }
-  return { overlay, unresolved, fetched, warning };
+  await kv.put(OVERLAY_KEY, JSON.stringify(overlay), { expirationTtl: 2_592_000 });
+  return { fetched: true, missing: missing.length, filled, absent };
 }
 
 function dateRange(from, to) {
@@ -307,7 +367,7 @@ function apiDraw(drawDate, prizes, source) {
 }
 
 function sourceCounts(data) {
-  const counts = { vla_db: 0, xskt_fallback: 0 };
+  const counts = { canonical: 0, fallback: 0 };
   for (const draw of data) counts[draw.source.kind] += 1;
   return counts;
 }
@@ -321,21 +381,16 @@ export async function buildTraditionalResults(
   const requestedDates = dateRange(query.from, query.to);
   const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
   const fallback = missing.length
-    ? await loadXsktOverlay(env, fetchImpl, missing)
-    : { overlay: {}, unresolved: [], fetched: false, warning: null };
+    ? await readOverlay(env, missing, nowUtcMs)
+    : { overlay: {}, unresolved: [], warning: null };
 
   const data = [];
   for (const day of requestedDates) {
     if (completePrizeMap(primary.rows[day])) {
-      data.push(apiDraw(day, primary.rows[day], {
-        kind: "vla_db",
-        provider: "VLA canonical database",
-        canonical: true,
-      }));
+      data.push(apiDraw(day, primary.rows[day], { kind: "canonical", canonical: true }));
     } else if (completePrizeMap(fallback.overlay[day]?.prizes)) {
       data.push(apiDraw(day, fallback.overlay[day].prizes, {
-        kind: "xskt_fallback",
-        provider: "xskt.vn",
+        kind: "fallback",
         canonical: false,
         fetched_at_utc: fallback.overlay[day].fetched_at_utc,
       }));
@@ -344,7 +399,10 @@ export async function buildTraditionalResults(
   data.sort((a, b) => b.draw_date.localeCompare(a.draw_date));
   const counts = sourceCounts(data);
   return {
-    schema_version: 1,
+    // Lược đồ 2 (08-10-2026): `source.kind` đổi từ tên nguồn sang `canonical`/`fallback`, bỏ
+    // `source.provider`; khoá của `source_counts` và `sources_used` đổi theo. Bên gọi phân nhánh
+    // theo các giá trị cũ phải thấy số phiên bản đổi chứ không lặng lẽ mất kết quả.
+    schema_version: 2,
     query,
     meta: {
       generated_at_utc: new Date(nowUtcMs).toISOString(),
@@ -354,7 +412,8 @@ export async function buildTraditionalResults(
       source_counts: counts,
       sources_used: Object.entries(counts).filter(([, n]) => n > 0).map(([name]) => name),
       fallback_requested: missing.length > 0,
-      fallback_network_fetch: fallback.fetched,
+      // Giữ trường cho bên gọi cũ: từ 08-10-2026 yêu cầu không bao giờ gọi nguồn dự phòng.
+      fallback_network_fetch: false,
       unresolved_dates: fallback.unresolved,
       primary_cache: primary.cache,
       warning: [primary.warning, fallback.warning].filter(Boolean).join("; ") || null,

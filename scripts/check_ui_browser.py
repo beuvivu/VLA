@@ -46,6 +46,9 @@ def check_evidence(page, name, width, dark):
       for (const e of root.querySelectorAll('td, th, span, strong, b, em, p, li, div, dd, small, text')) {
         const hit = window.appEvidence && window.appEvidence.find(e);
         if (hit !== e) continue;
+        // Closed <details> can retain a descendant's layout rectangle even
+        // though Chromium does not paint it or allow pointer interaction.
+        if (!hit.checkVisibility({checkVisibilityCSS: true})) continue;
         if (!busy(hit)) { hit.scrollIntoView({block: 'center'}); if (inView(hit)) return {el: hit, alt: false}; }
         else if (!fallback) fallback = hit;
       }
@@ -65,7 +68,11 @@ def check_evidence(page, name, width, dark):
         text = tip.text_content()
         assert "Nguồn" in text and "bằng chứng suy luận" in text, text
         assert ("Alt + nhấp" in text) == bool(alt), text
-    target.click(modifiers=["Alt"] if alt else [])
+    try:
+        target.click(modifiers=["Alt"] if alt else [])
+    except Exception as error:
+        detail = target.evaluate("e => ({html:e.outerHTML.slice(0,500),details:e.closest('details')?.open})")
+        raise AssertionError(f"{name} width={width} dark={dark}: {detail}") from error
     drawer = page.locator("#app-evidence-drawer")
     expect(drawer).to_be_visible()
     assert drawer.locator(".app-evidence-sources li").count() >= 1
@@ -141,11 +148,15 @@ def main():
                 page.route("**/live.json*", lambda route, _request, live_fixture=live_fixture: route.fulfill(
                     content_type="application/json", body=json.dumps(live_fixture)))
                 def forecast_route(route):
-                    if not route.request.url.endswith("_2026-09-26.csv"):
+                    # Kỳ 26-09 đã quay xong, nên khối dự đoán phải nhắm kỳ kế tiếp.
+                    if not route.request.url.endswith("_2026-09-27.csv"):
                         route.fulfill(status=404, body="")
                         return
-                    route.fulfill(content_type="text/csv", body="number,prob\n5,0.01\n42,0.01\n")
-                page.route("**/predict_next_*_top10_*.csv", forecast_route)
+                    route.fulfill(content_type="text/csv", body=(
+                        "predict_for_date,rank,number,cau_score,prob\n"
+                        "2026-09-27,1,05,70.1,0.01\n2026-09-27,2,42,65.3,0.01\n"))
+                # Trang trực tiếp đọc bản chụp 10 số đầu bảng Cầu Kèo theo ngày quay.
+                page.route("**/ai_ml/daily/cau_keo_*_top10_*.csv", forecast_route)
                 errors = []
                 page.on("pageerror", lambda error, errors=errors: errors.append(str(error)))
                 for name in pages:
@@ -198,7 +209,7 @@ def main():
                             assert page.locator(".app-calendar-link").get_attribute("href") == "index.html#db-tuan-thang"
                             if name == "live.html":
                                 expect(page.locator(".live-prediction-list li")).to_have_count(4)
-                                expect(page.locator("#live-prediction-date")).to_have_attribute("datetime", "2026-09-26")
+                                expect(page.locator("#live-prediction-date")).to_have_attribute("datetime", "2026-09-27")
                                 assert page.locator(".live-actions a").evaluate_all(
                                     "nodes => nodes.map(n => n.getAttribute('href'))"
                                 ) == ["index.html", "so-ket-qua-truyen-thong.html", "statistics.html"]
@@ -239,7 +250,7 @@ def main():
                 expect(page.locator('#app-profile-menu a').first).to_be_focused()
                 page.keyboard.press('Escape')
                 expect(page.locator('#app-profile-toggle')).to_be_focused()
-                assert page.locator('.app-rail-list svg').count() == 11
+                assert page.locator('.app-rail svg').count() == 10
                 assert page.locator('.app-rail-divider').count() == 3
                 page.locator("#app-toggle").click()
                 sidebar = page.locator(".app-panel-group:not([hidden]) .app-nav-item").first

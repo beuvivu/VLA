@@ -36,7 +36,7 @@ from ensemble_utils import (
     categorical_brier,
     categorical_logloss,
     clip01,
-    floor_distribution,
+    finalize_blend,
     normalize_distribution,
 )
 from ml_models import PlattCalibratedClassifier
@@ -251,7 +251,7 @@ def _complete_days_for_components(
             continue
         # Cùng hợp đồng với production: cờ thiếu, vector rỗng và số trùng
         # không được biến thành lịch sử đủ trưởng thành cho tầng xếp chồng.
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         if all(available.get(column.removeprefix("p_"), False) for column in component_cols):
             days.append(str(day))
     return days if window_days <= 0 else days[-window_days:]
@@ -591,7 +591,7 @@ def _baseline_validation(
     predictions: list[np.ndarray] = []
     for day in val_days:
         sub = by_day[day]
-        available = availability_from_history_day(sub, mode=mode)
+        available = availability_from_history_day(sub, mode=mode, current_policy=True)
         effective = renormalize_available_weights(weights, available).as_dict()
         raw = np.zeros(100)
         for key in COMPONENT_KEYS:
@@ -601,7 +601,7 @@ def _baseline_validation(
                     mode=mode,
                 )
                 raw += effective[f"w_{key}"] * component.prob
-        raw = floor_distribution(raw) if mode == "de" else clip01(raw, eps=1e-6)
+        raw = finalize_blend(raw, mode)
         predictions.append(apply_calibration(mode, raw, calib) if all(available.values()) else raw)
     configured = weights.as_dict()
     weight_dict = {f"p_{key}": configured[f"w_{key}"] for key in COMPONENT_KEYS}

@@ -152,3 +152,71 @@ Production impact: none
 
 Reason: `unstable_across_folds`, `negative_brier_skill`,
 `negative_logloss_skill`.
+
+## TUNE-0005 — Neo mức tổng xác suất LOTO của tổ hợp
+
+Hypothesis: tổ hợp LOTO kém dự báo hằng số vì SAI MỨC — hai nhánh cầu vị trí
+mang lời nguyền người thắng của việc chọn top quy tắc — chứ không vì thứ hạng.
+
+Change: `ensemble_utils.anchor_loto_level` nhân vector tổ hợp với cùng một hệ số
+để `Σp = 100·(1 − 0,99²⁷) ≈ 23,7657`; `finalize_blend` thành phép chốt duy nhất
+trước hiệu chỉnh cho dự đoán, học trọng số, xếp chồng, trang Chất lượng và bảng
+đóng góp.
+
+Baseline: tổ hợp tuyến tính trọng số mặc định, LOTO chốt bằng `clip01`.
+
+Evaluation period: kỳ đích 2023-12-25 → 2026-10-04, 1 000 kỳ liên tiếp theo lịch.
+
+Walk-forward configuration: cầu vị trí dựng lại mỗi kỳ (tham số pipeline);
+cầu-kèo học lại mỗi 50 kỳ bằng `cau_keo_ml._train_model`; ML và thống kê lấy tỉ
+lệ nền; `scripts/benchmark_component_trust.py --last 1000`.
+
+Metrics before: logloss `0.548770`, so với hằng số z = `-3.33`; tổng trung vị
+`24.22` (active `24.49`, stable `26.47`).
+
+Metrics after: chỉ neo mức: so với hiện hành z = `+4.24` (hai nửa `+3.11` /
+`+2.87`), so với hằng số z = `+1.76`. Neo xong, từng nhánh cầu vị trí ngang hằng
+số (z = `-0.06` và `-0.03`).
+
+Confidence interval: z của hiệu logloss ghép cặp theo kỳ.
+
+Result: accepted
+
+Production impact: tổng xác suất LOTO đã công bố bằng 23,77; thứ hạng không đổi.
+
+Reason: luật quyết định chốt trước (không kém ở cả hai chế độ, z ≥ 2 ở ít nhất
+một, không kém hằng số) đạt; Đặc Biệt không bị ảnh hưởng.
+
+## TUNE-0006 — Độ tin theo kỹ năng cho cầu-kèo
+
+Hypothesis: cầu-kèo phát xác suất thô không co về nền nên trả giá khi không có
+kỹ năng, như thành phần ML trước khi có `model_trust`.
+
+Change: `prob = trust·thô + (1 − trust)·nền`, `trust = ml_train.model_trust`
+trên khối thẩm định 60 kỳ; trust và nền lưu trong gói, đọc qua
+`cau_keo_ml.trust_from_pack` không có mặc định.
+
+Baseline: xác suất thô của `cau_keo_ml` (cây tăng cường + Platt).
+
+Evaluation period: như TUNE-0005.
+
+Walk-forward configuration: như TUNE-0005; 21 lần học mỗi chế độ.
+
+Metrics before: thô so với hằng số: LOTO z = `+0.03`, Đặc Biệt z = `-2.18`.
+
+Metrics after: bản co so với bản thô: LOTO z = `-0.02`, Đặc Biệt z = `+2.18`.
+Trong tổ hợp đã neo: LOTO z = `-1.65` (hai nửa `-0.90` / `-1.50`), Đặc Biệt
+z = `+1.77`. Trust trung bình `0.0007` (LOTO) và `0.0001` (Đặc Biệt); kỹ năng
+thẩm định dương ở 10/21 và 9/21 lần học.
+
+Confidence interval: z của hiệu logloss ghép cặp theo kỳ.
+
+Result: accepted, cùng TUNE-0005 (tổ hợp mới so với hiện hành: LOTO z = `+3.23`,
+Đặc Biệt z = `+1.77`).
+
+Production impact: cột `prob` của cầu-kèo gần bằng nền; `ml_prob_raw` và điểm
+cầu-kèo không đổi.
+
+Reason: ứng viên "cả hai sửa chữa" chốt trước khi đo tổ hợp và qua luật quyết
+định. Ước lượng âm ở LOTO được ghi lại, không dùng để chọn biến thể sau khi
+xem kết quả; xem `documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.

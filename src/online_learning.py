@@ -8,13 +8,13 @@ bảo đảm kiểm định tuần tự hay lời hứa dự đoán được m�
 
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import base64
 import copy
 import hashlib
 import json
-import os
-import tempfile
 import zlib
 from contextlib import contextmanager
 from datetime import date, datetime, time, timedelta
@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from atomic_io import atomic_write_bytes
 from calendar_alignment import known_non_draw_days
 from hierarchical_pooling import fit_shrinkage_to_prior
 from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TZ, now_vietnam
@@ -255,6 +256,31 @@ def _scores(mode: str, record: dict, labels) -> dict:
     return result
 
 
+# Sai số làm tròn cho phép khi chấm lại một kỳ đã chốt. Cùng một vector, cùng
+# nhãn, nhưng runner khác CPU chọn nhánh SIMD khác cho `np.log`/`np.mean` và lệch
+# 1 ULP: ngày 04-10-2026 logloss ...7734 so với ...7733 làm sổ bị từ chối và
+# pipeline hoàn tất đỏ hai ngày liền. Ngưỡng tương đối 1e-12 rộng hơn 1 ULP
+# (~2e-16) bốn bậc mà vẫn hẹp hơn mọi sửa điểm có nghĩa hàng triệu lần.
+SCORE_RTOL = 1e-12
+SCORE_ATOL = 1e-15
+
+
+def _scores_agree(computed: dict, stored: dict) -> bool:
+    """Điểm chấm lại khớp điểm đã chốt, sai khác tối đa sai số làm tròn."""
+    if set(computed) != set(stored):
+        return False
+    for name, losses in computed.items():
+        if set(losses) != set(stored[name]):
+            return False
+        for key, value in losses.items():
+            other = stored[name][key]
+            if isinstance(other, bool) or not isinstance(other, (int, float)):
+                return False
+            if not np.isclose(value, other, rtol=SCORE_RTOL, atol=SCORE_ATOL):
+                return False
+    return True
+
+
 def _is_scored(record: dict) -> bool:
     settlement = record["settlement"]
     return settlement is not None and settlement.get("status", "scored") == "scored"
@@ -336,10 +362,10 @@ def _validate_state(state: dict, mode: str) -> None:
                 if not _is_scored(record):
                     raise ValueError("Trạng thái chốt kỳ không hợp lệ")
                 labels = _labels(mode, settlement["labels"])
-                scores = _scores(mode, record, labels)
-                if scores != settlement["scores"]:
+                if not _scores_agree(_scores(mode, record, labels), settlement["scores"]):
                     raise ValueError("Điểm kỳ quay lệch khỏi vector đóng băng")
-                losses = np.asarray([scores[name]["brier"] for name in EXPERTS])
+                # Bộ nhớ học dựng từ điểm ĐÃ CHỐT, đúng như `advance` đã cộng.
+                losses = np.asarray([settlement["scores"][name]["brier"] for name in EXPERTS])
                 slow += losses
                 fast = RECIPE["discount"] * fast + losses
                 count += 1
@@ -537,24 +563,10 @@ def advance(
     return result, copy.deepcopy(record)
 
 
-def _atomic_write(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
-
-
 def save_state(path: Path, state: dict) -> None:
     """Ghi JSON nguyên tử có checksum; lỗi không đè lên sổ đang dùng."""
     _validate_state(state, state["mode"])
-    _atomic_write(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
+    atomic_write_bytes(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
 
 
 def load_state(path: Path, mode: str) -> dict:
@@ -645,13 +657,13 @@ def run_online(
             published_frame = published_frame.sort_values(
                 "prob", ascending=False, kind="stable"
             ).reset_index(drop=True)
-            _atomic_write(prediction_path, published_frame.to_csv(index=False).encode("utf-8"))
+            atomic_write_bytes(prediction_path, write_code_csv(published_frame, index=False).encode("utf-8"))
         ranked = published_frame.sort_values("prob", ascending=False, kind="stable").copy()
         ranked["number_str"] = ranked["number"].map(lambda number: f"{number:02d}")
         for n in (4, 8, 10):
             top_path = out_dir / f"predict_next_{mode}_top{n}_{target}.csv"
             # Khôi phục cả tệp top nếu lần trước ngắt sau khi đã ghi tệp đủ số.
-            _atomic_write(top_path, ranked.head(n).to_csv(index=False).encode("utf-8"))
+            atomic_write_bytes(top_path, write_code_csv(ranked.head(n), index=False).encode("utf-8"))
         picks_path = out_dir / f"picks_{mode}.json"
         picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}
         picks.update(
@@ -659,8 +671,8 @@ def run_online(
         )
         for n in (4, 8, 10):
             picks[f"top{n}"] = ranked.head(n)["number_str"].tolist()
-        _atomic_write(picks_path, _json_bytes(picks))
-        _atomic_write(data_dir / "research" / f"online_{mode}_report.json", _json_bytes(report))
+        atomic_write_bytes(picks_path, _json_bytes(picks))
+        atomic_write_bytes(data_dir / "research" / f"online_{mode}_report.json", _json_bytes(report))
         return report
 
 

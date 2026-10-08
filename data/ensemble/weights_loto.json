@@ -1,7 +1,7 @@
 {
   "schema_version": 8,
   "mode": "loto",
-  "learned_at_utc": "2026-10-03T17:17:13Z",
+  "learned_at_utc": "2026-10-04T15:44:11Z",
   "window_days": 180,
   "half_life_days": 45,
   "days_used": [
@@ -39,12 +39,13 @@
     "2026-09-30",
     "2026-10-01",
     "2026-10-02",
-    "2026-10-03"
+    "2026-10-03",
+    "2026-10-04"
   ],
   "component_availability_required": true,
   "metric": {
-    "logloss": 0.543881216397864,
-    "brier": 0.17915128175102474
+    "logloss": 0.5445683794739092,
+    "brier": 0.17946002925896218
   },
   "promotion": {
     "promoted": false,
@@ -65,11 +66,11 @@
   },
   "chronological_split": {
     "weight_days": 21,
-    "calibration_days": 14,
+    "calibration_days": 15,
     "weight_first_day": "2026-08-12",
     "weight_last_day": "2026-09-19",
     "calibration_first_day": "2026-09-20",
-    "calibration_last_day": "2026-10-03",
+    "calibration_last_day": "2026-10-04",
     "disjoint": true
   },
   "weights": {

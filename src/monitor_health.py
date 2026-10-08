@@ -79,7 +79,7 @@ def main() -> None:
             y, m, d = map(int, str(latest).split("-"))
             latest_d = date(y, m, d)
             staleness = (expected - latest_d).days
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             staleness = None
 
     md = [

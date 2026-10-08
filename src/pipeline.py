@@ -281,6 +281,9 @@ def main() -> None:
             _py("src/validate_cau_keo_domain.py"),
             allow_fail=soft_fail,
         )
+        # Chụp top 10 cầu-kèo theo ngày quay cho trang trực tiếp; phải chạy SAU
+        # domain challenger vì nó ghi đè bảng top20.
+        _run(_py("src/cau_keo_daily_top.py"), allow_fail=soft_fail)
         # Keep the machine-readable experiment report synchronized with the
         # gate artifacts produced by this same daily run.
         _run(
@@ -367,6 +370,10 @@ def main() -> None:
 
     # Mã hiệu là dữ liệu phụ theo kỳ; lỗi nguồn không được chặn kết quả đã xác thực.
     _run(_py("src/draw_metadata.py"), allow_fail=True)
+
+    # Chốt độ rộng mã ở biên xuất bản sau khi mọi trình phân tích đã ghi CSV.
+    # Cổng cứng: không xuất bản tệp có mã sai miền hoặc mất số 0 đầu.
+    _run(_py("src/lottery_codes.py"), allow_fail=False)
 
     if not args.skip_docs:
         _run(

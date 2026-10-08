@@ -1,10 +1,5 @@
-/* Frequency-only presentation layer. Counts, filters and cell identities are
-   supplied by the existing statistics engine. No network or external assets.
-
-   `mk`, `put` and `fill` are the DOM builders declared at the top of
-   stat_pages.js. Both files are emitted into the SAME <script> element by
-   src/build_stat_pages.py, so they share one scope. Nothing here may assign a
-   string to the DOM: tests/test_security_hardening.py scans this file. */
+/* Lớp trình bày cho hai trang tần suất. Bộ máy thống kê cung cấp phép đếm,
+   bộ lọc và danh tính ô. Các hàm mk, put, fill nằm cùng phạm vi script. */
 function installFrequencyBento(renderName) {
   const pairPage = renderName === "renderPairFrequency";
   const demo = !!window.__D_DEMO_DRAWS__;
@@ -18,8 +13,16 @@ function installFrequencyBento(renderName) {
     $("bf-source").textContent = "Dữ liệu giả lập · Không phải kết quả thật";
     $("bf-demo-link").textContent = "Quay về dữ liệu XSMB ↗";
     $("bf-demo-link").href = location.pathname;
-    document.querySelectorAll(".bf-tabs a").forEach(a => {a.href += "?demo=1";});
-    // A historical demonstration must not add today's real pending draw.
+    document.querySelectorAll(".bf-tabs a").forEach(a => {
+      const target = new URL(a.href, location.href);
+      if (target.pathname.endsWith("/thong-ke-tong-hop.html")) {
+        fill(a, "Tổng hợp · Dữ liệu thật");
+      } else {
+        target.searchParams.set("demo", "1");
+        a.href = target.href;
+      }
+    });
+    // Minh họa lịch sử không thêm kỳ chờ của hôm nay.
     pendingDay = () => "";
   }
   const dateOf = cell => /\|d(\d{4}-\d{2}-\d{2})/.exec(cell.dataset.key || "")?.[1];
@@ -35,10 +38,13 @@ function installFrequencyBento(renderName) {
     const total = rows.reduce((n, r) => n + r.n.length, 0);
     const hot = counts.indexOf(Math.max(...counts));
     const last = rows.at(-1);
+    $("sp-count").textContent = rows.length
+      ? `${rows.length} kỳ · ${viDate(rows[0].d)} → ${viDate(last.d)}`
+      : "Không có kỳ phù hợp với bộ lọc";
     fill($("bf-kpis"), [
-      ["Kỳ đang phân tích", rows.length, rows.length ? `${rows[0].d} → ${last.d}` : "Không có kỳ phù hợp", "◷", ""],
+      ["Kỳ đang phân tích", rows.length, rows.length ? `${viDate(rows[0].d)} → ${viDate(last.d)}` : "Không có kỳ phù hợp", "◷", ""],
       ["Tổng số nháy", total.toLocaleString("vi-VN"), "27 kết quả trong mỗi kỳ XSMB", "▥", ""],
-      ["Đặc Biệt gần nhất", last ? String(last.s).slice(-2) : "—", last ? `Giải ${last.s} · ${last.d}` : "Chưa có kết quả", "★", "1"],
+      ["Đặc Biệt gần nhất", last ? String(last.s).slice(-2) : "—", last ? `Giải ${last.s} · ${viDate(last.d)}` : "Chưa có kết quả", "★", "1"],
       ["Lô tô xuất hiện nhiều nhất", rows.length ? pad2(hot) : "—", rows.length ? `${counts[hot]} nháy trên trọn dải` : "Chọn lại khoảng thời gian", "↗", "1"],
     ].map(([label, value, hint, icon, computed]) => mk("div", {class: "bf-kpi"}, [
       mk("span", {class: "bf-kpi-icon", "aria-hidden": "true"}, icon),
@@ -48,6 +54,13 @@ function installFrequencyBento(renderName) {
       mk("small", {"data-evidence-split": computed}, hint),
     ])));
     decorateCells(rows, specials);
+    if (pairPage) {
+      const totals = $("bf-pair-totals");
+      fill(totals, rows.length ? CAP50.map(([a, b]) => mk("span", {
+        class: "sp-cell", title: `Họ ${pad2(a)}–${pad2(b)}: ${counts[a] + counts[b]} nháy`,
+      }, [mk("b", null, `${pad2(a)}–${pad2(b)}`), mk("i", null, counts[a] + counts[b])])) :
+        mk("p", {class: "sp-empty-row"}, "Không có kỳ phù hợp với dải ngày và thứ đang chọn."));
+    }
     $("bf-selection-count").textContent = pairPage ? `${pickedPairs.size}/50 họ cặp` : `${Array.from({length:100},(_,i)=>i).filter(isPicked).length}/100 số`;
     $("sp-matrix-note").textContent = `${rows.length} kỳ · mới nhất trước`;
     if (!pairPage) {
@@ -82,7 +95,7 @@ function installFrequencyBento(renderName) {
     if (pairPage && rows.length) filterPairs(rows);
     const first = Array.from(dataCells).find(c => c.cellIndex > 0 && !c.hidden && !c.parentElement.hidden);
     if (first) first.tabIndex = 0;
-    // A date range with no draws is not evidence of misses.
+    // Dải không có kỳ không đồng nghĩa với những lần không về.
     if (!rows.length || !first) {
       if (grid._spWindow) grid._spWindow.destroy();
       fill(grid, mk("tbody", null, mk("tr", null, mk("td", {class: "sp-empty-row"},
@@ -133,7 +146,7 @@ function installFrequencyBento(renderName) {
   }
   const render = () => {original();decorate();};
   window[renderName] = render;
-  // Existing boot binds this handler. It remains unchanged on all other pages.
+  // Hàm khởi động gắn bộ xử lý này riêng cho hai trang tần suất.
   bindColumnHint = () => {
     let tracked = [], active = null, touch = false;
     function clear() {

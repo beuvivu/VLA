@@ -509,7 +509,10 @@ def poll_until_complete(
 
     while rounds < config.max_rounds:
         now = clock()
-        if now >= deadline_at:
+        # Lượt khởi động SAU hạn chót vẫn thử một vòng. Bộ lập lịch của GitHub
+        # trễ 4-8 giờ trên kho này, nên lượt nổ muộn là chuyện thường ngày; bỏ
+        # về không gọi nguồn lần nào thì kỳ hôm nay chờ lưới an toàn kế tiếp.
+        if now >= deadline_at and rounds > 0:
             logger.warning(
                 "Hết hạn %s mà mới có %d/%d ô.",
                 config.deadline.strftime("%H:%M"),

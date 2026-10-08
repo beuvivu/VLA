@@ -17,7 +17,7 @@ nội dung KHÔNG đổi. Dải chi tiết phủ lên nội dung chứ không đ
 hay đóng cũng không có một dòng chữ nào phải xếp lại. Bản dựng này giữ đúng
 hành vi ấy.
 
-Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — bảy nhóm chức năng,
+Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — tám nhóm chức năng,
 tất cả trỏ tới trang có thật. Không nhóm rỗng, không liên kết chết, không
 mục bịa.
 """
@@ -30,7 +30,7 @@ from typing import Final
 
 from app_icons import icon_svg
 from nexlink_icons import nexlink_icon, navigation_icon
-from ui_theme import LANDING_SECTIONS, SITE_NAV, SITE_SEARCH_EXTRAS
+from ui_theme import LANDING_SECTIONS, SITE_NAV, SITE_NAV_SECTIONS, SITE_SEARCH_EXTRAS
 
 #: Bề rộng dải biểu tượng. Số đo của trang tham chiếu, dùng ở cả CSS lẫn JS.
 RAIL_W: Final[int] = 80
@@ -43,16 +43,27 @@ HEADER_H: Final[int] = 80
 BP_DESKTOP: Final[int] = 1200
 
 #: Nhãn ngắn cho biểu tượng cấp một. ``SITE_NAV`` mang nhãn đầy đủ; dải rộng
-#: 80px không chứa nổi "Bảng Đặc Biệt" nên rút gọn RIÊNG cho dải, còn nhãn đầy
+#: 80px không chứa nổi "Thống kê Đặc Biệt" nên rút gọn RIÊNG cho dải, còn nhãn đầy
 #: đủ vẫn hiện ở dải chi tiết và ở thuộc tính title.
 NHAN_NGAN: Final[dict[str, str]] = {
-    "Trực tiếp": "Trực tiếp",
+    "Kết quả": "Kết quả",
+    "Vietlott": "Vietlott",
     "Thống kê": "Thống kê",
-    "Cầu kèo": "Cầu kèo",
-    "Phỏng đoán": "Dự đoán",
-    "Bảng Đặc Biệt": "Đặc Biệt",
-    "LOTO chi tiết": "LOTO",
-    "Tool nâng cao": "Công cụ",
+    "Thống kê LOTO": "LOTO",
+    "Thống kê Đặc Biệt": "Đặc Biệt",
+    "Soi cầu": "Soi cầu",
+    "Dự báo": "Dự báo",
+    "Nghiên cứu & công cụ": "Công cụ",
+}
+BIEU_TUONG_NHOM: Final[dict[str, str]] = {
+    "Kết quả": "home",
+    "Vietlott": "tags",
+    "Thống kê": "chart",
+    "Thống kê LOTO": "clipboard",
+    "Thống kê Đặc Biệt": "crown",
+    "Soi cầu": "layers",
+    "Dự báo": "robot",
+    "Nghiên cứu & công cụ": "code",
 }
 
 
@@ -72,39 +83,34 @@ def _nhom_cua_trang(ten_tep: str) -> int:
 
 
 def rail_html(current: str) -> str:
-    """All eleven reference rail icons, in the original groups and order."""
+    """Nhóm chính theo thứ tự SITE_NAV, có nhãn; tìm kiếm và đóng ở cuối."""
     active = _nhom_cua_trang(current)
     parts = [
         '<aside class="app-rail" id="app-rail" aria-label="Nhóm chức năng">',
         '<div class="app-rail-list" role="tablist" aria-orientation="vertical">',
     ]
-    # Seven existing groups plus two useful direct links occupy the nine slots.
-    for position, (group, icon) in enumerate([(0, 'home'), (1, 'crown'), (2, 'layers'),
-                                            (3, 'circles'), (4, 'components'),
-                                            (6, 'code'), (5, 'clipboard')]):
-        if position in (3, 5):
+    for group, (label, _) in enumerate(SITE_NAV):
+        if label in ("Thống kê", "Soi cầu", "Nghiên cứu & công cụ"):
             parts.append('<span class="app-rail-divider" role="presentation"></span>')
-        label = SITE_NAV[group][0]
         selected = 'true' if group == active else 'false'
+        tab_index = '0' if group == active else '-1'
         parts.append(
             f'<button class="app-rail-btn" role="tab" type="button" id="app-tab-{group}"'
             f' aria-controls="app-panel-{group}" aria-selected="{selected}"'
-            f' data-app-group="{group}" title="{escape(label, quote=True)}">'
-            f'<span class="app-rail-ic">{nexlink_icon(icon)}</span>'
-            f'<span class="app-rail-lb">{escape(label)}</span></button>'
+            f' tabindex="{tab_index}"'
+            f' data-app-group="{group}" data-app-module="{"vietlott" if label == "Vietlott" else "standard"}" title="{escape(label, quote=True)}"'
+            f' aria-label="{escape(label, quote=True)}">'
+            f'<span class="app-rail-ic">{nexlink_icon(BIEU_TUONG_NHOM[label])}</span>'
+            f'<span class="app-rail-lb" aria-hidden="true">{escape(NHAN_NGAN[label])}</span></button>'
         )
-    for icon, href, label in [('chart', 'statistics.html', 'Ma trận thống kê'),
-                              ('robot', 'dashboard.html', 'Bảng điều khiển AI/ML')]:
-        parts.append(f'<a class="app-rail-link" href="{href}" title="{label}" aria-label="{label}">'
-                     f'{nexlink_icon(icon)}' + ('<span class="app-status-dot" aria-hidden="true"></span>' if icon == 'robot' else '') + '</a>')
     parts.extend([
-        '<span class="app-rail-divider" role="presentation"></span>',
+        '</div><div class="app-rail-actions" role="group" aria-label="Thao tác menu">',
         '<button class="app-rail-link app-rail-add" id="app-rail-add" type="button"'
         ' title="Mở chức năng" aria-label="Mở chức năng" aria-haspopup="dialog" aria-controls="app-global-search">'
         + nexlink_icon('plus') + '</button>',
         '<button class="app-rail-link app-rail-exit" id="app-rail-exit" type="button"'
         ' title="Đóng menu" aria-label="Đóng menu">' + nexlink_icon('exit') + '</button>',
-        '</div></aside>',
+        '</div></aside><span class="app-rail-tooltip" id="app-rail-tooltip" role="tooltip" hidden></span>',
     ])
     return ''.join(parts)
 
@@ -117,22 +123,30 @@ def panel_html(current: str) -> str:
         '<div class="app-panel-head"><span class="app-panel-title" id="app-panel-title">'
         f"{escape(SITE_NAV[hoat_dong][0])}</span></div>",
     ]
-    for i, (_ten, muc) in enumerate(SITE_NAV):
+    for i, (_ten, cum) in enumerate(SITE_NAV_SECTIONS):
         an = "" if i == hoat_dong else " hidden"
         phan.append(
             f'<nav class="app-panel-group" id="app-panel-{i}" role="tabpanel"'
+            f' data-app-module="{"vietlott" if _ten == "Vietlott" else "standard"}"'
             f' aria-labelledby="app-tab-{i}" data-app-group="{i}"{an}>'
         )
-        for href, nhan, bieu_tuong in muc:
-            la_trang_nay = href == _trang_chuan(current)
-            danh_dau = ' aria-current="page"' if la_trang_nay else ""
-            lop = " app-nav-item--active" if la_trang_nay else ""
+        for j, (tieu_de, muc) in enumerate(cum):
+            heading_id = f"app-nav-heading-{i}-{j}"
             phan.append(
-                f'<a class="app-nav-item{lop}" href="{escape(href, quote=True)}"{danh_dau}'
-                f' data-app-label="{escape(nhan, quote=True)}">'
-                f'<span class="app-nav-ic">{navigation_icon(bieu_tuong)}</span>'
-                f'<span class="app-nav-lb">{escape(nhan)}</span></a>'
+                f'<section class="app-nav-section" aria-labelledby="{heading_id}">'
+                f'<h3 class="app-nav-heading" id="{heading_id}">{escape(tieu_de)}</h3>'
             )
+            for href, nhan, bieu_tuong in muc:
+                la_trang_nay = href == _trang_chuan(current)
+                danh_dau = ' aria-current="page"' if la_trang_nay else ""
+                lop = " app-nav-item--active" if la_trang_nay else ""
+                phan.append(
+                    f'<a class="app-nav-item{lop}" href="{escape(href, quote=True)}"{danh_dau}'
+                    f' data-app-label="{escape(nhan, quote=True)}">'
+                    f'<span class="app-nav-ic">{navigation_icon(bieu_tuong)}</span>'
+                    f'<span class="app-nav-lb">{escape(nhan)}</span></a>'
+                )
+            phan.append("</section>")
         phan.append("</nav>")
     if _trang_chuan(current) == "index.html":
         phan.append('<details class="app-page-sections"><summary>Trên trang này</summary>'

@@ -1,0 +1,148 @@
+name: Trang Vietlott (dựng từ engine)
+
+# Từ 07-10-2026 trang Vietlott dựng từ engine `vietlott/` (chép từ VLM): kết
+# quả đã xác thực của 7 sản phẩm, bảng giải, dự báo đăng ký trước kỳ và đối
+# chiếu. Việc ĐỒNG BỘ dữ liệu do `vlm-results.yml` / `vlm-update.yml` làm và
+# commit vào `vietlott/data`; workflow này KHÔNG gọi mạng, chỉ dựng trang từ
+# dữ liệu đã commit rồi triển khai.
+#
+# Lượt đẩy bằng GITHUB_TOKEN không kích hoạt `pages.yml`, nên workflow tự
+# triển khai như `update-data.yml`. Giờ Việt Nam = UTC + 7; mỗi mốc chạy sau
+# một khung quay: Lotto 13:00 → 13:25; Mega/Power/Max 18:00 → 18:40 và 19:30;
+# Lotto 21:00 → 21:25; Keno/Bingo18 hết ngày → 22:20.
+on:
+  workflow_run:
+    # Commit do GITHUB_TOKEN ghi không phát sinh push; dựng ngay sau engine.
+    workflows:
+      - "VLM · Tự cập nhật kết quả từng sản phẩm Vietlott"
+      - "VLM · Cập nhật dữ liệu, dự báo và trang Vietlott"
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "25 6 * * *"
+    - cron: "40 11 * * *"
+    - cron: "30 12 * * *"
+    - cron: "25 14 * * *"
+    - cron: "20 15 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/build_vietlott_results.py"
+      - "src/templates/vietlott_main.css"
+      - "src/assets/vietlott-picks.js"
+      - "src/assets/vietlott-comparison.js"
+      - "src/vietlott_navigation_content.py"
+      - "src/evidence_catalog.py"
+      - "vietlott/src/vlm/web/**"
+      - "vietlott/data/results/results.jsonl"
+      - "vietlott/data/forecast/*ledger.jsonl"
+      - ".github/workflows/vietlott-results.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vietlott-results-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Lượt nguồn lỗi vẫn có thể đã lưu kết quả hợp lệ của các sản phẩm khác.
+    # Đọc main và cache của chính kho; lỗi nguồn vẫn được báo ở workflow engine.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      ((github.event.workflow_run.conclusion == 'success' ||
+        github.event.workflow_run.conclusion == 'failure') &&
+       github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+    env:
+      TZ: Asia/Ho_Chi_Minh
+      PYTHONPATH: ${{ github.workspace }}/src
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event_name == 'workflow_run' && github.event.repository.default_branch || github.ref }}
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài thư viện của trang và của engine
+        run: |
+          python -m pip install --no-cache-dir -r requirements.txt
+          python -m pip install --no-cache-dir -e vietlott
+
+      # Trạng thái engine do `vlm-results.yml` / `vlm-update.yml` lưu: kho DuckDB
+      # (bảng giải, số người trúng mới), kho Keno/Bingo18, trạng thái bộ dự báo.
+      # Chỉ KHÔI PHỤC, không lưu: trang chỉ đọc. Danh sách đường dẫn PHẢI trùng
+      # từng dòng với bước lưu — `actions/cache` tính phiên bản theo nó, lệch một
+      # dòng là không bao giờ khôi phục được (`tests/test_vietlott_engine_layout.py`).
+      # Mất cache thì trang dựng từ dữ liệu đã commit, phân tích học lại từ seed.
+      - name: Khôi phục trạng thái của engine
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            vietlott/data/vietlott.duckdb*
+            vietlott/data/parquet
+            vietlott/data/products
+            vietlott/data/forecast/*.json
+            vietlott/data/forecast/ml/*.json.gz
+            vietlott/data/results/status.json
+          key: vqe-state-${{ github.run_id }}
+          restore-keys: vqe-state-
+
+      - name: Dựng trang Vietlott
+        run: python src/build_vietlott_results.py --cache-states vietlott/data/forecast
+
+      - name: Ghi trang
+        # Chỉ nhánh mặc định ghi; lượt chạy trên nhánh khác là chạy thử.
+        if: github.ref_name == github.event.repository.default_branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/vietlott*.html docs/assets/vietlott-picks.js docs/assets/vietlott-comparison.js
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: dựng lại trang Vietlott từ engine"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Đóng gói GitHub Pages
+        if: github.ref_name == github.event.repository.default_branch
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: vietlott-pages-${{ github.run_attempt }}
+          path: docs
+
+      - name: Đánh dấu đã đóng gói
+        id: publish
+        if: github.ref_name == github.event.repository.default_branch
+        run: echo "published=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Triển khai GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: vietlott-pages-${{ github.run_attempt }}

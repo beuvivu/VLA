@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Extended descriptive statistics preserved from the legacy repositories.
 
 The outputs are intentionally descriptive. They provide user-facing recency,
@@ -291,20 +293,20 @@ def main() -> None:
         }
     )
     for window in windows:
-        build_head_table(two, lookback_days=window).to_csv(
+        write_code_csv(build_head_table(two, lookback_days=window),
             out / f"head_table_{window}d.csv", index=False
         )
 
     for mode in ("loto", "de"):
         raw_sum, mod_sum, touch = _group_gap_rows(two, mode=mode)
-        raw_sum.to_csv(out / f"gap_digit_sum_{mode}.csv", index=False)
-        mod_sum.to_csv(out / f"gap_sum_mod10_{mode}.csv", index=False)
-        touch.to_csv(out / f"gap_touch_{mode}.csv", index=False)
+        write_code_csv(raw_sum, out / f"gap_digit_sum_{mode}.csv", index=False)
+        write_code_csv(mod_sum, out / f"gap_sum_mod10_{mode}.csv", index=False)
+        write_code_csv(touch, out / f"gap_touch_{mode}.csv", index=False)
         recency = build_number_recency(two, mode=mode)
-        recency.to_csv(out / f"number_recency_{mode}.csv", index=False)
+        write_code_csv(recency, out / f"number_recency_{mode}.csv", index=False)
 
     pairs = build_pair_recency(two, top=max(10, args.pair_top))
-    pairs.to_csv(out / "pair_recency_loto.csv", index=False)
+    write_code_csv(pairs, out / "pair_recency_loto.csv", index=False)
 
     manifest = {
         "latest_date": pd.to_datetime(two["date"]).max().date().isoformat(),

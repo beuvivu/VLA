@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 from dataclasses import dataclass
 from numbers import Integral, Real
@@ -166,7 +168,7 @@ def main() -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     df = compute_markov_for_loto(df_2d, alpha=args.alpha, beta=args.beta)
-    df.to_csv(out_path, index=False)
+    write_code_csv(df, out_path, index=False)
     print(f"Saved {out_path}")
 
 

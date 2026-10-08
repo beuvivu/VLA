@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ensemble_components import COMPONENT_KEYS
+from ensemble_components import COMPONENT_KEYS, COMPONENT_POLICY, policy_column
 from ensemble_utils import EnsembleWeights, floor_distribution
 from feature_attribution import (
     MATERIAL_EFFECT_FLOOR,
@@ -47,6 +47,7 @@ def _history(days: int, *, only_ml_after: int | None = None, seed: int = 0) -> p
                 "p_stat": 0.0 if sparse else 0.01 + rng.normal(0, 0.0005),
                 "p_active": 0.0 if sparse else 0.01 + rng.normal(0, 0.0005),
                 "p_stable": 0.0 if sparse else 0.01 + rng.normal(0, 0.0005),
+                policy_column("cau"): COMPONENT_POLICY["cau"],
             })
     return pd.DataFrame(rows)
 
@@ -103,6 +104,7 @@ def test_a_statistically_tiny_effect_is_not_called_useful() -> None:
                 # nhích ĐÚNG con sẽ về, mọi kỳ: nhất quán nhưng bé xíu
                 "p_cau": shared + (1e-7 if number == winner else 0.0),
                 "p_stat": shared, "p_active": shared, "p_stable": shared,
+                policy_column("cau"): COMPONENT_POLICY["cau"],
             })
     history = pd.DataFrame(rows_data)
 
@@ -206,3 +208,19 @@ def test_the_log_is_actually_produced_by_the_pipeline() -> None:
     assert pipeline.index("src/learn_ensemble_weights.py") < pipeline.index(
         "src/feature_attribution.py"
     ), "log tầm quan trọng phải chạy SAU bộ học trọng số"
+
+
+def test_cau_recorded_under_the_old_definition_is_not_attributed() -> None:
+    """Trước 04-10-2026 cột ``p_cau`` là xác suất THÔ, một thành phần khác.
+
+    Bảng công bố đóng góp của định nghĩa HIỆN HÀNH, nên dòng cũ không được tính
+    là cầu-kèo — kể cả khi nó hợp lệ về mặt xác suất.
+    """
+    current = _history(6, seed=4)
+    legacy = current.drop(columns=[policy_column("cau")])
+    _, _, masks, _ = _day_matrices(current, "de")
+    cau = COMPONENT_KEYS.index("cau")
+    assert masks[:, cau].all()
+    _, _, legacy_masks, _ = _day_matrices(legacy, "de")
+    assert not legacy_masks[:, cau].any()
+    assert legacy_masks[:, COMPONENT_KEYS.index("ml")].all()

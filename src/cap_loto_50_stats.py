@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Historical statistics for the common 50-cặp-loto partition.
 
 The partition contains 45 reverse pairs and five kép-bóng pairs. This module
@@ -16,6 +18,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from safe_io import read_csv_or_empty
 
 from lottery import Lottery
 from number_reference import all_cap_loto_50, cap_loto_50_id, cap_loto_50_kind
@@ -106,12 +110,7 @@ def _current_cau_scores(
     """Load only a cầu-kèo artifact anchored to the same canonical history end."""
 
     path = data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"
-    if not path.exists():
-        return {}
-    try:
-        df = pd.read_csv(path, dtype={"number_str": str, "anchor_date": str})
-    except Exception:
-        return {}
+    df = read_csv_or_empty(path, dtype={"number_str": str, "anchor_date": str})
     required = {"number_str", "cau_score", "anchor_date"}
     if not required.issubset(df.columns):
         return {}
@@ -263,7 +262,7 @@ def main() -> None:
     modes = ["loto", "de"] if args.mode == "both" else [args.mode]
     for mode in modes:
         df, summary = build_stats(mode, data_dir=data_dir)
-        df.to_csv(out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
+        write_code_csv(df, out_dir / f"cap_loto_50_stats_{mode}.csv", index=False)
         (out_dir / f"cap_loto_50_summary_{mode}.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",

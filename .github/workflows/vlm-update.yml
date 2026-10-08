@@ -1,0 +1,117 @@
+name: VLM · Cập nhật dữ liệu, dự báo và trang Vietlott
+
+# Chép từ VLM (.github/workflows/update.yml), chạy engine trong `vietlott/`.
+# Hai lần mỗi ngày (giờ Việt Nam). Cron của GitHub có thể trễ vài giờ; bước ghi sổ tự kiểm tra
+# lịch quay và chỉ ghi dự báo cho kỳ CHƯA quay (vietlott/README.md mục 1.9).
+#   22:40 — sau kỳ Lotto 21:00 và khi Keno/Bingo18 đã quay xong ngày: dự báo cho các kỳ ngày mai.
+#   10:10 — trước kỳ Lotto 13:00 và các kỳ 18:00.
+#
+# Khác bản gốc: KHÔNG triển khai GitHub Pages (xem vlm-results.yml).
+on:
+  schedule:
+    - cron: "40 15 * * *"
+    - cron: "10 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vlm-vietlott-update
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: vietlott
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      VQE_LOG_LEVEL: WARNING
+      VQE_SEED_FILE_DIR: data/seed
+      VQE_AUTO_UPDATE_DIR: data/results
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: vietlott/pyproject.toml
+      - name: Cài gói
+        run: python -m pip install -e .
+
+      # Kho kết quả, kỳ đã đồng bộ và trạng thái bộ dự báo được giữ giữa các lần chạy bằng cache.
+      # Mất cache cũng không sao: bước sau dựng lại từ dữ liệu đi kèm + nguồn, và bộ dự báo học lại
+      # cho đúng kết quả cũ (học tăng dần = học một lần). Sổ dự báo và journal kết quả nằm trong repo.
+      - name: Đồng bộ main mới nhất trước khi cập nhật
+        run: python scripts/persist_site.py sync
+
+      - name: Khôi phục trạng thái
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            vietlott/data/vietlott.duckdb*
+            vietlott/data/parquet
+            vietlott/data/products
+            vietlott/data/forecast/*.json
+            vietlott/data/forecast/ml/*.json.gz
+            vietlott/data/results/status.json
+          key: vqe-state-${{ github.run_id }}
+          restore-keys: vqe-state-
+
+      - name: Nạp dữ liệu đi kèm (không làm gì nếu đã có)
+        run: vietlott init --skip-forecast --offline
+
+      - name: Phục hồi kết quả đã lưu và đồng bộ đến hạn
+        run: vlm-update --once > results-status.json || echo "::warning::nguồn kết quả chưa sẵn sàng — giữ dữ liệu đã phục hồi"
+
+      - name: Đồng bộ (vietlott.vn → kho cộng đồng → bản sao GitHub)
+        run: |
+          vietlott sync --game all --source auto > sync.json || echo "::warning::đồng bộ Mega/Power/Lotto lỗi — dùng dữ liệu đã có"
+          vietlott prizes --game all > prizes.json || echo "::warning::đồng bộ bảng giải lỗi — dùng dữ liệu đã có"
+          vietlott products sync > products.json || echo "::warning::đồng bộ Keno/Bingo18/Max 3D lỗi — dùng dữ liệu đã có"
+
+      - name: Học kỳ mới, chấm sổ, ghi dự báo cho kỳ chưa quay
+        continue-on-error: true
+        run: vietlott forecast next --product all
+
+      - name: Học ensemble ML và ghi dự báo đúng cửa sổ
+        continue-on-error: true
+        run: vlm-forecast next --product all > ml-forecasts.json
+
+      - name: Ghi sổ dự báo vào repo
+        id: persist
+        if: always()
+        run: python scripts/persist_site.py persist
+
+      - name: Dựng trang
+        id: build
+        if: always() && steps.persist.outcome == 'success'
+        run: python scripts/build_site.py --out site
+
+      - name: Lưu trạng thái
+        if: always() && steps.persist.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            vietlott/data/vietlott.duckdb*
+            vietlott/data/parquet
+            vietlott/data/products
+            vietlott/data/forecast/*.json
+            vietlott/data/forecast/ml/*.json.gz
+            vietlott/data/results/status.json
+          key: vqe-state-${{ github.run_id }}
+
+      - name: Lưu trang đã dựng
+        if: always() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v6
+        with:
+          name: vlm-site-${{ github.run_id }}-${{ github.run_attempt }}
+          path: vietlott/site
+          retention-days: 7

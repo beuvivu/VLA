@@ -26,6 +26,7 @@ from typing import Any
 
 import pandas as pd
 
+from atomic_io import atomic_to_csv
 from xsmb_domain import DE_BASELINE_RATE, LOTO_BASELINE_RATE, PRIZE_FIELDS
 
 LEDGER = Path("fun_draw") / "ledger.csv"
@@ -107,7 +108,7 @@ def write_ledger(frame: pd.DataFrame, data_dir: Path) -> Path:
     path = data_dir / LEDGER
     path.parent.mkdir(parents=True, exist_ok=True)
     frame = frame[COLUMNS].sort_values("target_date").reset_index(drop=True)
-    frame.to_csv(path, index=False)
+    atomic_to_csv(frame, path, index=False)
     return path
 
 
