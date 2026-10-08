@@ -215,8 +215,11 @@ CREATE TABLE draw (
                                                   -- 2) nếu chỉ biết ngày: slot theo lịch của ĐÚNG kỳ
                                                   --    này, suy từ thứ tự mã kỳ, CHỈ khi ngày ấy có
                                                   --    đủ số kỳ đúng lịch (thiếu một kỳ là thứ tự
-                                                  --    lệch), rồi trừ thêm một bước nhịp quay làm biên
-                                                  --    an toàn (Keno 8 phút, Bingo18 6 phút);
+                                                  --    lệch), trừ một biên nhỏ 2 phút. Biên phải NHỎ
+                                                  --    HƠN khoảng từ lúc có kết quả kỳ trước tới giờ
+                                                  --    quay kỳ này: trừ trọn một nhịp (Keno 8 phút)
+                                                  --    sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI
+                                                  --    dự báo phát sau khi có kết quả kỳ trước;
                                                   -- 3) không suy được: giờ quay sớm nhất của ngày
                                                   --    (thận trọng; khi ấy dự báo phát sau kỳ đầu
                                                   --    ngày không được tính, chấp nhận mất dữ liệu
@@ -244,13 +247,16 @@ CREATE INDEX draw_by_time ON draw (game, draw_ts);
 
 -- Mỗi nguồn nhìn thấy gì: phát hiện mâu thuẫn mà không ghi đè.
 -- Nhóm độc lập của từng nguồn, CÓ HIỆU LỰC THEO THỜI GIAN và chỉ chèn: hai nguồn khác tên
--- nhưng chép cùng một nơi phải chung một nhóm. Đổi nhóm của một nguồn là một dòng mới,
--- không sửa dòng cũ, nên luôn biết nhóm nào đã được dùng để xác nhận một kỳ.
+-- nhưng chép cùng một nơi phải chung một nhóm. Đổi nhóm của một nguồn là một dòng mới, không
+-- sửa dòng cũ. valid_from do bên ghi tự khai, nên mỗi dòng có BIÊN NHẬN bên ngoài (bảng
+-- receipt, subject_kind = 'source_registry'). Một phiên bản chỉ có hiệu lực từ
+-- max(valid_from, receipt_at): ghi lùi valid_from KHÔNG áp ngược được lên quan sát đã có.
 CREATE TABLE source_registry (
     source_code     VARCHAR NOT NULL,
     independence_group VARCHAR NOT NULL,          -- mã ẩn danh của nhà cung cấp gốc
     valid_from      TIMESTAMPTZ NOT NULL,
     note            VARCHAR NOT NULL,             -- vì sao xếp vào nhóm này (đã kiểm thế nào)
+    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
     PRIMARY KEY (source_code, valid_from)
 );
 
@@ -262,54 +268,17 @@ CREATE TABLE draw_observation (
     -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
     -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
     observed_at     TIMESTAMPTZ NOT NULL,
-    registry_valid_from TIMESTAMPTZ NOT NULL,     -- phiên bản source_registry CHỐT lúc nạp (bản mới nhất
-                                                  -- có valid_from ≤ observed_at TẠI LÚC NẠP). Dòng sổ
-                                                  -- thêm sau, kể cả ghi lùi valid_from, không xếp lại
-                                                  -- được quan sát đã lưu.
+    -- Không lưu con trỏ tới phiên bản sổ: con trỏ lưu sẵn có thể trỏ vào một bản đã cũ. Phiên
+    -- bản áp dụng được SUY RA ở view observation_group từ thời điểm hiệu lực có biên nhận.
     numbers         SMALLINT[] NOT NULL,
     bonus           SMALLINT,
     raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
     -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
     -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
-    PRIMARY KEY (game, draw_id, source_code, observed_at),
-    FOREIGN KEY (source_code, registry_valid_from) REFERENCES source_registry(source_code, valid_from)
+    PRIMARY KEY (game, draw_id, source_code, observed_at)
 );
 
--- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
--- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
--- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
--- view này, không chỉ tin cột draw.status.
--- Nhóm của mỗi quan sát = nhóm ở ĐÚNG phiên bản sổ đã chốt lúc nạp (khóa ngoại), không tra lại.
-CREATE VIEW observation_group AS
-SELECT o.*, r.independence_group
-FROM draw_observation o
-JOIN source_registry r ON r.source_code = o.source_code AND r.valid_from = o.registry_valid_from;
-
-CREATE VIEW draw_corroboration AS
-WITH agreeing AS (                                -- quan sát TRÙNG số liệu hiện tại của kỳ
-    SELECT o.game, o.draw_id, o.source_code, o.independence_group, o.observed_at
-    FROM observation_group o
-    JOIN draw d ON d.game = o.game AND d.draw_id = o.draw_id
-    JOIN game g ON g.code = d.game
-    WHERE CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
-               ELSE o.numbers = d.numbers END
-      AND o.bonus IS NOT DISTINCT FROM d.bonus
-), per_source AS (                                -- MỖI NGUỒN góp đúng một nhóm: của lần trùng sớm nhất
-    SELECT game, draw_id, source_code, independence_group FROM (
-        SELECT *, row_number() OVER (PARTITION BY game, draw_id, source_code
-                                     ORDER BY observed_at) AS k
-        FROM agreeing
-    ) WHERE k = 1
-)
-SELECT d.game, d.draw_id, d.status,
-       count(DISTINCT p.source_code) AS agreeing_sources,
-       count(DISTINCT p.independence_group) AS agreeing_groups,
-       d.status = 'validated'
-       AND count(DISTINCT p.source_code) >= 2
-       AND count(DISTINCT p.independence_group) >= 2 AS corroborated
-FROM draw d
-LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
-GROUP BY d.game, d.draw_id, d.status;
+-- (view draw_corroboration nằm ở mục 4.5, sau observation_group)
 ```
 
 ### 4.2 Giải thưởng và jackpot
@@ -541,8 +510,8 @@ CREATE TABLE candidate_score (
 -- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
 -- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
-    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation')),
-    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry')),
+    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, source_code@valid_from
     receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('sigstore_attestation', 'rfc3161')),
     receipt_ref     VARCHAR NOT NULL,             -- UUID mục Rekor, hoặc sha256 của token TSA
     receipt_at      TIMESTAMPTZ NOT NULL,         -- integratedTime / genTime ĐỌC TỪ proof
@@ -553,6 +522,57 @@ CREATE TABLE receipt (
     verifier        VARCHAR,                      -- công cụ và phiên bản đã kiểm
     PRIMARY KEY (subject_kind, subject_id)
 );
+
+-- Nhóm của mỗi quan sát = nhóm của phiên bản sổ có thời điểm hiệu lực
+-- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ observed_at. Chỉ dòng sổ có biên nhận đã
+-- kiểm, phủ đúng hash, mới được tính. Nguồn chưa có phiên bản hiệu lực thì ra NULL và không
+-- được đếm.
+CREATE VIEW registry_effective AS
+SELECT s.source_code, s.independence_group,
+       greatest(s.valid_from, r.receipt_at) AS effective_from
+FROM source_registry s
+JOIN receipt r ON r.subject_kind = 'source_registry'
+              AND r.subject_id = s.source_code || '@' || strftime(s.valid_from, '%Y-%m-%dT%H:%M:%S%z')
+              AND r.verified AND r.content_sha256 = s.content_sha256;
+
+CREATE VIEW observation_group AS
+SELECT o.*,
+       (SELECT e.independence_group FROM registry_effective e
+         WHERE e.source_code = o.source_code AND e.effective_from <= o.observed_at
+         ORDER BY e.effective_from DESC LIMIT 1) AS independence_group
+FROM draw_observation o;
+
+-- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
+-- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
+-- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
+-- view này, không chỉ tin cột draw.status.
+-- (view registry_effective và observation_group nằm ở mục 4.5, sau bảng receipt)
+
+CREATE VIEW draw_corroboration AS
+WITH agreeing AS (                                -- quan sát TRÙNG số liệu hiện tại của kỳ
+    SELECT o.game, o.draw_id, o.source_code, o.independence_group, o.observed_at
+    FROM observation_group o
+    JOIN draw d ON d.game = o.game AND d.draw_id = o.draw_id
+    JOIN game g ON g.code = d.game
+    WHERE CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
+               ELSE o.numbers = d.numbers END
+      AND o.bonus IS NOT DISTINCT FROM d.bonus
+), per_source AS (                                -- MỖI NGUỒN góp đúng một nhóm: của lần trùng sớm nhất
+    SELECT game, draw_id, source_code, independence_group FROM (
+        SELECT *, row_number() OVER (PARTITION BY game, draw_id, source_code
+                                     ORDER BY observed_at) AS k
+        FROM agreeing
+    ) WHERE k = 1
+)
+SELECT d.game, d.draw_id, d.status,
+       count(DISTINCT p.source_code) AS agreeing_sources,
+       count(DISTINCT p.independence_group) AS agreeing_groups,
+       d.status = 'validated'
+       AND count(DISTINCT p.source_code) >= 2
+       AND count(DISTINCT p.independence_group) >= 2 AS corroborated
+FROM draw d
+LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
+GROUP BY d.game, d.draw_id, d.status;
 
 -- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
 CREATE VIEW hypothesis_eligibility AS
