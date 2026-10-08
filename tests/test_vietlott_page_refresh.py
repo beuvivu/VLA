@@ -28,15 +28,18 @@ def test_page_refresh_follows_both_engine_workflows_without_a_cycle() -> None:
 
 @pytest.mark.parametrize("event,conclusion,branch,repo,allowed", [
     ("workflow_run", "success", "main", "beuvivu/VLA", True),
-    ("workflow_run", "failure", "main", "beuvivu/VLA", False),
+    ("workflow_run", "failure", "main", "beuvivu/VLA", True),
     ("workflow_run", "cancelled", "main", "beuvivu/VLA", False),
+    ("workflow_run", "skipped", "main", "beuvivu/VLA", False),
     ("workflow_run", "success", "feature", "beuvivu/VLA", False),
+    ("workflow_run", "failure", "feature", "beuvivu/VLA", False),
     ("workflow_run", "success", "main", "someone/VLA", False),
+    ("workflow_run", "failure", "main", "someone/VLA", False),
     ("push", None, None, None, True),
     ("schedule", None, None, None, True),
     ("workflow_dispatch", None, None, None, True),
 ])
-def test_actual_build_guard_accepts_only_trusted_success_or_direct_events(
+def test_actual_build_guard_accepts_trusted_completed_updates_or_direct_events(
     event: str, conclusion: str | None, branch: str | None, repo: str | None, allowed: bool,
 ) -> None:
     # Đọc CHÍNH biểu thức trong workflow; chỉ đổi toán tử Boolean sang cú pháp Python.

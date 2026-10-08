@@ -87,7 +87,12 @@ PYTHONPATH=src python src/build_vietlott_results.py \
   --cache-states vietlott/data/forecast
 ```
 
-Workflow `vietlott-results.yml` dựng lại sau khi một trong hai workflow cập
-nhật engine hoàn tất thành công trên `main` của chính kho. Nó khôi phục cache
-engine, đọc đầu nhánh hiện tại, ghi HTML/asset và triển khai Pages. Các mốc
-cron vẫn là đường phục hồi khi chưa có sự kiện cập nhật.
+Workflow `vietlott-results.yml` dựng lại khi một trong hai workflow cập nhật
+engine hoàn tất trên `main` của chính kho, kể cả lượt cập nhật một phần có
+lỗi nguồn. Kết quả hợp lệ đã lưu của sản phẩm khác vẫn được đưa lên trang;
+workflow engine giữ trạng thái lỗi để theo dõi các kỳ còn thiếu. Lượt bị hủy,
+bỏ qua hoặc đến từ nhánh/kho khác không kích hoạt dựng trang.
+
+Trang khôi phục cache engine, đọc kết quả và sổ dự báo đã commit từ đầu nhánh
+hiện tại, bổ sung bảng giải đúng kỳ từ cache, ghi HTML/asset và triển khai
+Pages. Các mốc cron vẫn là đường phục hồi khi chưa có sự kiện cập nhật.
