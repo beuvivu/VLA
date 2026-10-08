@@ -23,13 +23,13 @@ function visibleLinks(dom) {
 test('Menu tổng quan, LOTO và Đặc Biệt đưa người đọc tới đúng loại thống kê', () => {
   const dom = setup(), d = dom.window.document;
   assert.equal(d.getElementById('app-sidebar-filter'), null);
-  d.getElementById('app-tab-1').click();
-  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html', 'thong-ke-tong-hop.html']);
   d.getElementById('app-tab-2').click();
+  assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), ['statistics.html', 'thong-ke-tong-hop.html']);
+  d.getElementById('app-tab-3').click();
   assert.deepEqual(visibleLinks(dom).map(a => a.getAttribute('href')), [
     'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'dau-duoi-loto.html', 'cap-lon-loto.html', 'lo-gan.html',
   ]);
-  d.getElementById('app-tab-3').click();
+  d.getElementById('app-tab-4').click();
   assert.ok(visibleLinks(dom).some(a => a.getAttribute('href') === 'cau-giai-dac-biet.html'));
   assert.ok(visibleLinks(dom).some(a => a.getAttribute('href') === 'giai-dac-biet-theo-tong.html'));
   assert.ok(visibleLinks(dom).every(a => !a.getAttribute('href').includes('loto')));
@@ -50,9 +50,9 @@ test('Bàn phím chọn nhóm theo thứ tự hiển thị và chỉ để một
     assert.equal(d.getElementById('app-panel-title').textContent, tabs[index].title);
   };
   tabs[0].focus(); press('ArrowDown'); selected(1);
-  press('End'); selected(6);
+  press('End'); selected(7);
   press('ArrowDown'); selected(0);
-  press('ArrowUp'); selected(6);
+  press('ArrowUp'); selected(7);
   press('Home'); selected(0);
   assert.equal(d.body.classList.contains('app-panel-open'), true);
   dom.window.close();
@@ -184,7 +184,7 @@ test('Đi tới neo còn trong menu sẽ chọn đúng nhóm và liên kết', (
   const dom = setup(), d = dom.window.document;
   dom.window.history.replaceState(null, '', '#duong-cau');
   dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
-  assert.equal(d.getElementById('app-tab-4').getAttribute('aria-selected'), 'true');
+  assert.equal(d.getElementById('app-tab-5').getAttribute('aria-selected'), 'true');
   assert.equal(d.querySelector('.app-nav-item[aria-current="page"]').getAttribute('href'), 'index.html#duong-cau');
   assert.equal(visibleLinks(dom).length, 13);
   dom.window.close();
@@ -241,5 +241,56 @@ test('Reloading shell runtime does not double-bind header menus', () => {
   dom.window.eval(readFileSync(new URL('src/assets/app-shell.js', root), 'utf8'));
   d.getElementById('app-profile-toggle').click();
   assert.equal(d.getElementById('app-profile-menu').hidden, false);
+  dom.window.close();
+});
+
+test('Vietlott hover xem nhanh, click giữ mở và click lại thu menu', async () => {
+  const dom = setup(), d = dom.window.document;
+  dom.window.matchMedia = query => ({ matches: query.includes('hover: hover') });
+  const ticket = d.querySelector('[data-app-module="vietlott"][role=tab]');
+  ticket.dispatchEvent(new dom.window.Event('pointerenter'));
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(d.getElementById('app-panel').inert, false);
+  assert.equal(ticket.getAttribute('aria-selected'), 'true');
+  assert.equal(dom.window.localStorage.getItem('app-panel-open'), '0');
+  ticket.click();
+  d.getElementById('app-rail').dispatchEvent(new dom.window.Event('pointerleave'));
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(d.getElementById('app-panel').inert, false);
+  assert.equal(dom.window.localStorage.getItem('app-panel-open'), '1');
+  ticket.click();
+  assert.equal(d.getElementById('app-panel').inert, true);
+  dom.window.close();
+});
+
+test('Rời icon trước độ trễ không mở menu; rời preview khôi phục nhóm cũ', async () => {
+  const dom = setup(), d = dom.window.document;
+  dom.window.matchMedia = query => ({ matches: query.includes('hover: hover') });
+  const ticket = d.querySelector('[data-app-module="vietlott"][role=tab]');
+  ticket.dispatchEvent(new dom.window.Event('pointerenter'));
+  ticket.dispatchEvent(new dom.window.Event('pointerleave'));
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(d.getElementById('app-panel').inert, true);
+  ticket.dispatchEvent(new dom.window.Event('pointerenter'));
+  await new Promise(resolve => setTimeout(resolve, 190));
+  d.getElementById('app-panel').dispatchEvent(new dom.window.Event('pointerleave'));
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(d.getElementById('app-panel').inert, true);
+  assert.equal(d.querySelector('[role=tab][aria-selected=true]').title, 'Kết quả');
+  dom.window.close();
+});
+
+test('Hover không ẩn nhóm đang giữ focus bàn phím', async () => {
+  const dom = setup(), d = dom.window.document;
+  dom.window.matchMedia = query => ({ matches: query.includes('hover: hover') });
+  const ticket = d.querySelector('[data-app-module="vietlott"][role=tab]');
+  ticket.dispatchEvent(new dom.window.Event('pointerenter'));
+  await new Promise(resolve => setTimeout(resolve, 190));
+  const link = d.querySelector('.app-panel-group:not([hidden]) a');
+  link.focus();
+  d.querySelector('[role=tab][title="Thống kê"]').dispatchEvent(new dom.window.Event('pointerenter'));
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(d.querySelector('[role=tab][aria-selected=true]').title, 'Vietlott');
+  assert.equal(link.closest('[hidden]'), null);
   dom.window.close();
 });

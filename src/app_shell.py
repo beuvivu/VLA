@@ -17,7 +17,7 @@ nội dung KHÔNG đổi. Dải chi tiết phủ lên nội dung chứ không đ
 hay đóng cũng không có một dòng chữ nào phải xếp lại. Bản dựng này giữ đúng
 hành vi ấy.
 
-Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — bảy nhóm chức năng,
+Điều hướng lấy nguyên từ :data:`ui_theme.SITE_NAV` — tám nhóm chức năng,
 tất cả trỏ tới trang có thật. Không nhóm rỗng, không liên kết chết, không
 mục bịa.
 """
@@ -47,6 +47,7 @@ BP_DESKTOP: Final[int] = 1200
 #: đủ vẫn hiện ở dải chi tiết và ở thuộc tính title.
 NHAN_NGAN: Final[dict[str, str]] = {
     "Kết quả": "Kết quả",
+    "Vietlott": "Vietlott",
     "Thống kê": "Thống kê",
     "Thống kê LOTO": "LOTO",
     "Thống kê Đặc Biệt": "Đặc Biệt",
@@ -56,6 +57,7 @@ NHAN_NGAN: Final[dict[str, str]] = {
 }
 BIEU_TUONG_NHOM: Final[dict[str, str]] = {
     "Kết quả": "home",
+    "Vietlott": "tags",
     "Thống kê": "chart",
     "Thống kê LOTO": "clipboard",
     "Thống kê Đặc Biệt": "crown",
@@ -88,7 +90,7 @@ def rail_html(current: str) -> str:
         '<div class="app-rail-list" role="tablist" aria-orientation="vertical">',
     ]
     for group, (label, _) in enumerate(SITE_NAV):
-        if group in (1, 4, 6):
+        if label in ("Thống kê", "Soi cầu", "Nghiên cứu & công cụ"):
             parts.append('<span class="app-rail-divider" role="presentation"></span>')
         selected = 'true' if group == active else 'false'
         tab_index = '0' if group == active else '-1'
@@ -96,7 +98,7 @@ def rail_html(current: str) -> str:
             f'<button class="app-rail-btn" role="tab" type="button" id="app-tab-{group}"'
             f' aria-controls="app-panel-{group}" aria-selected="{selected}"'
             f' tabindex="{tab_index}"'
-            f' data-app-group="{group}" title="{escape(label, quote=True)}"'
+            f' data-app-group="{group}" data-app-module="{"vietlott" if label == "Vietlott" else "standard"}" title="{escape(label, quote=True)}"'
             f' aria-label="{escape(label, quote=True)}">'
             f'<span class="app-rail-ic">{nexlink_icon(BIEU_TUONG_NHOM[label])}</span>'
             f'<span class="app-rail-lb" aria-hidden="true">{escape(NHAN_NGAN[label])}</span></button>'
@@ -108,7 +110,7 @@ def rail_html(current: str) -> str:
         + nexlink_icon('plus') + '</button>',
         '<button class="app-rail-link app-rail-exit" id="app-rail-exit" type="button"'
         ' title="Đóng menu" aria-label="Đóng menu">' + nexlink_icon('exit') + '</button>',
-        '</div></aside>',
+        '</div></aside><span class="app-rail-tooltip" id="app-rail-tooltip" role="tooltip" hidden></span>',
     ])
     return ''.join(parts)
 
@@ -125,6 +127,7 @@ def panel_html(current: str) -> str:
         an = "" if i == hoat_dong else " hidden"
         phan.append(
             f'<nav class="app-panel-group" id="app-panel-{i}" role="tabpanel"'
+            f' data-app-module="{"vietlott" if _ten == "Vietlott" else "standard"}"'
             f' aria-labelledby="app-tab-{i}" data-app-group="{i}"{an}>'
         )
         for j, (tieu_de, muc) in enumerate(cum):

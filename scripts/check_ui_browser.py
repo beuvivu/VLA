@@ -46,6 +46,9 @@ def check_evidence(page, name, width, dark):
       for (const e of root.querySelectorAll('td, th, span, strong, b, em, p, li, div, dd, small, text')) {
         const hit = window.appEvidence && window.appEvidence.find(e);
         if (hit !== e) continue;
+        // Closed <details> can retain a descendant's layout rectangle even
+        // though Chromium does not paint it or allow pointer interaction.
+        if (!hit.checkVisibility({checkVisibilityCSS: true})) continue;
         if (!busy(hit)) { hit.scrollIntoView({block: 'center'}); if (inView(hit)) return {el: hit, alt: false}; }
         else if (!fallback) fallback = hit;
       }
@@ -65,7 +68,11 @@ def check_evidence(page, name, width, dark):
         text = tip.text_content()
         assert "Nguồn" in text and "bằng chứng suy luận" in text, text
         assert ("Alt + nhấp" in text) == bool(alt), text
-    target.click(modifiers=["Alt"] if alt else [])
+    try:
+        target.click(modifiers=["Alt"] if alt else [])
+    except Exception as error:
+        detail = target.evaluate("e => ({html:e.outerHTML.slice(0,500),details:e.closest('details')?.open})")
+        raise AssertionError(f"{name} width={width} dark={dark}: {detail}") from error
     drawer = page.locator("#app-evidence-drawer")
     expect(drawer).to_be_visible()
     assert drawer.locator(".app-evidence-sources li").count() >= 1
@@ -243,7 +250,7 @@ def main():
                 expect(page.locator('#app-profile-menu a').first).to_be_focused()
                 page.keyboard.press('Escape')
                 expect(page.locator('#app-profile-toggle')).to_be_focused()
-                assert page.locator('.app-rail svg').count() == 9
+                assert page.locator('.app-rail svg').count() == 10
                 assert page.locator('.app-rail-divider').count() == 3
                 page.locator("#app-toggle").click()
                 sidebar = page.locator(".app-panel-group:not([hidden]) .app-nav-item").first

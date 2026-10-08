@@ -49,6 +49,7 @@ test('Mở global không đổi nhóm hoặc trạng thái sidebar', t => {
   open(dom);
   type(dom, 'app-global-search-input', 'tan suat');
   assert.deepEqual(results(dom).map(node => node.getAttribute('href')), [
+    'vietlott.html#vl-frequency',
     'tan-suat-loto.html', 'tan-suat-cap-loto.html', 'cau-giai-dac-biet.html', 'index.html#tan-suat-loto', 'index.html#tan-suat-de',
   ]);
   assert.deepEqual([...d.querySelectorAll('.app-nav-item')].map(node => node.hidden), before);
@@ -94,13 +95,13 @@ test('Mũi tên Home End và Enter chọn rồi mở đúng kết quả thật',
   const selected = () => input.getAttribute('aria-activedescendant');
   assert.equal(selected(), links[0].id);
   key(dom, 'ArrowDown'); assert.equal(selected(), links[1].id);
-  key(dom, 'End'); assert.equal(selected(), links[4].id);
-  key(dom, 'ArrowUp'); assert.equal(selected(), links[3].id);
+  key(dom, 'End'); assert.equal(selected(), links.at(-1).id);
+  key(dom, 'ArrowUp'); assert.equal(selected(), links.at(-2).id);
   key(dom, 'Home'); assert.equal(selected(), links[0].id);
   let followed = null;
   links[0].addEventListener('click', event => { event.preventDefault(); followed = event.currentTarget.getAttribute('href'); });
   key(dom, 'Enter');
-  assert.equal(followed, 'tan-suat-loto.html');
+  assert.equal(followed, 'vietlott.html#vl-frequency');
   assert.equal(d.getElementById('app-global-search').open, false);
 });
 

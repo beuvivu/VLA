@@ -701,8 +701,33 @@ SITE_NAV_SECTIONS: tuple[
                 ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "so-ket-qua"),
                 ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "so-ket-qua"),
             )),
-            ("Vietlott", (
-                ("vietlott.html", "Tổng quan Vietlott", "so-ket-qua"),
+        ),
+    ),
+    (
+        "Vietlott",
+        (
+            ("Dashboard & Thống kê", (
+                ("vietlott.html", "Tổng quan Vietlott", "ma-tran"),
+                ("vietlott.html#vl-frequency", "Tần suất", "tan-suat"),
+                ("vietlott.html#vl-pairs", "Cặp số", "cap-loto"),
+                ("vietlott.html#vl-hot-cold", "Hot / Cold", "gan-nhip"),
+            )),
+            ("AI & ML Prediction", (
+                ("vietlott.html#vl-predictions", "Phỏng đoán bộ số", "ai-ml"),
+                ("vietlott.html#vl-confidence", "Độ tin cậy mô hình", "tin-cay"),
+            )),
+            ("So sánh & Đối soát", (
+                ("vietlott.html#vl-comparisons", "Thực tế vs Dự đoán", "kiem-dinh"),
+                ("vietlott.html#vl-backtesting", "Kiểm định dự báo", "chat-luong"),
+            )),
+            ("Realtime Crawler Status", (
+                ("vietlott.html#vl-crawler", "Trạng thái dữ liệu", "truc-tiep"),
+            )),
+            ("Cấu hình thuật toán", (
+                ("vietlott.html#vl-tuning", "Tham số mô hình", "nghien-cuu"),
+                ("vietlott.html#vl-models", "Quản lý mô hình · chỉ đọc", "chat-luong"),
+            )),
+            ("Kết quả theo sản phẩm", (
                 ("vietlott-lotto-535.html", "Lotto 5/35", "so-ket-qua"),
                 ("vietlott-mega-645.html", "Mega 6/45", "so-ket-qua"),
                 ("vietlott-power-655.html", "Power 6/55", "so-ket-qua"),

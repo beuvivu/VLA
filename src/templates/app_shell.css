@@ -91,6 +91,30 @@ body.app-panel-open .app-panel{transform:none}
   background:var(--app-fill);color:var(--app-ink);font-weight:600;
 }
 
+/* Vietlott dùng cùng token/hình học với mọi nhóm; chỉ thêm viền nhấn nhẹ. */
+.app-rail-btn[data-app-module="vietlott"] .app-rail-ic{color:var(--app-accent)}
+.app-rail-btn[data-app-module="vietlott"]:hover,
+.app-rail-btn[data-app-module="vietlott"][aria-selected="true"]{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--app-accent) 12%,var(--app-surface)),var(--app-fill));
+  box-shadow:inset 3px 0 0 var(--app-accent),inset 0 0 0 1px color-mix(in srgb,var(--app-accent) 30%,var(--app-line)),0 0 12px color-mix(in srgb,var(--app-accent) 12%,transparent);
+}
+.app-panel-group[data-app-module="vietlott"] .app-nav-item[aria-current="page"]{
+  box-shadow:inset 2px 0 0 var(--app-accent);color:var(--app-accent);
+  background:color-mix(in srgb,var(--app-accent) 8%,var(--app-surface));
+}
+.app-rail-tooltip{position:fixed;left:calc(var(--app-rail-w) + 8px);z-index:65;
+  max-width:220px;padding:8px 12px;border-radius:var(--app-shell-radius);border:1px solid var(--app-line);
+  background:var(--app-surface);color:var(--app-ink);font-size:12px;box-shadow:0 4px 18px #0002;pointer-events:none}
+.app-rail-tooltip[hidden]{display:none}
+.app-vietlott-card{min-width:0;padding:16px;border:1px solid var(--app-line);border-radius:var(--app-shell-radius);background:var(--app-surface)}
+.app-vietlott-card + .app-vietlott-card{margin-top:12px}
+.vl-cols .app-vietlott-card + .app-vietlott-card{margin-top:0}
+.app-vietlott-card h3{margin:0 0 12px;font-size:15px}
+.app-vietlott-detail{padding:12px;border:1px solid var(--app-line);border-radius:var(--app-shell-radius);margin-block:8px}
+.app-vietlott-detail summary{cursor:pointer;padding:6px;font-weight:600}
+.app-vietlott-detail summary:focus-visible{outline:2px solid var(--app-accent);outline-offset:2px}
+.vl-section h2[id]{scroll-margin-top:calc(var(--app-header-h) + 20px)}
+
 /* Header matches the reference's search, badge, theme switch and menus. */
 @font-face{font-family:Instrument Sans;src:url(InstrumentSans-400.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
 @font-face{font-family:Instrument Sans;src:url(InstrumentSans-600.woff2) format("woff2");font-weight:600;font-style:normal;font-display:swap}

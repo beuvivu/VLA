@@ -23,7 +23,7 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 7 nhóm, 39 mục,
+Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 8 nhóm chức năng,
 chia cụm có tiêu đề. `SITE_NAV` là bản phẳng được suy ra cho các trình dựng
 và tìm kiếm. Thêm mục ở `SITE_NAV_SECTIONS`, không thêm ở `app_shell.py`.
 
@@ -422,8 +422,8 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
   dùng lại input, query hoặc handler global search.
 - Theo yêu cầu mới ngày 26/09/2026, rail/header dùng SVG gốc Nexlink tại
   `src/assets/nexlink`, giữ đúng đường nét, opacity và header. Từ 05-10-2026,
-  rail theo thứ tự nhóm trong `SITE_NAV`: Kết quả → Thống kê → Thống kê LOTO →
-  Thống kê Đặc Biệt → Soi cầu → Dự báo → Nghiên cứu & công cụ. Bảy nút nhóm
+  rail theo thứ tự nhóm trong `SITE_NAV`: Kết quả → Vietlott → Thống kê → Thống kê LOTO →
+  Thống kê Đặc Biệt → Soi cầu → Dự báo → Nghiên cứu & công cụ. Tám nút nhóm
   có nhãn ngắn; tìm kiếm và đóng menu là hai nút riêng ngoài tablist. Không
   thêm lại hai lối tắt lặp với menu con. Mũi tên, Home/End chọn nhóm; chỉ nhóm
   đang chọn có `tabindex=0`.

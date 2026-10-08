@@ -11,6 +11,7 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`architecture/2026-10-08-vietlott-navigation.md`](architecture/2026-10-08-vietlott-navigation.md) | Phân hệ Vietlott trong shell Nexlink dùng chung, đích submenu, giới hạn dữ liệu và kiểm chứng. |
 | [`ui/nexlink-completion-2026-09-23.md`](ui/nexlink-completion-2026-09-23.md) | Hoàn thiện khung Nexlink, sửa điều hướng và ghi rõ kiểm chứng cùng giới hạn trực quan. |
 | [`qa/2026-09-18-visual-system.md`](qa/2026-09-18-visual-system.md) | Rà soát và đồng bộ giao diện 29 trang, bảo toàn chức năng, kiểm thử và giới hạn kiểm chứng. |
 | [`domain/number-ontology.md`](domain/number-ontology.md) | Canonical two-digit number relations (lộn, bóng, bộ, chạm, tổng, cặp 50), their provenance, generated data contracts and Excel integrity rules. |
