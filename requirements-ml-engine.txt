@@ -10,7 +10,8 @@
 # nếu môi trường đã có sẵn.
 lightgbm>=4.7.0,<5.0
 optuna>=5.0.0,<6.0
-shap>=0.45,<1.0
+shap>=0.51.0,<0.52; python_version < "3.12"
+shap>=0.52.0,<1.0; python_version >= "3.12"
 river>=0.26.1,<1.0
 # Phòng thử thách src/vla: cộng đồng Louvain trên đồ thị đồng xuất hiện. Từng chỉ
 # có mặt nhờ ăn theo gói khác trên máy dev, nên CI hỏng ở bước thu thập phép kiểm.
