@@ -442,6 +442,7 @@ def page(product: str, data: dict | None, analysis: dict | None) -> str:
 
 
 def overview(dashboard: dict) -> str:
+    from vietlott_navigation_content import overview_sections
     by_code = _by_code(dashboard)
     analysis = dashboard.get("analysis") or {}
     tiles = []
@@ -469,7 +470,8 @@ def overview(dashboard: dict) -> str:
             f'{esc(randomness_summary(analysis, {c: v[0] for c, v in PRODUCTS.items()}))}</p>'
             f'<div class="vl-chipline">{chips}</div></section>')
     return (_head("Vietlott · Kết quả") + app_shell_open("vietlott.html", wide=True) + hero + nav_products()
-            + f'<div class="vl-tiles">{"".join(tiles)}</div>' + app_shell_close("vietlott.html") + "</body></html>")
+            + f'<div class="vl-tiles">{"".join(tiles)}</div>' + overview_sections(dashboard)
+            + app_shell_close("vietlott.html") + "</body></html>")
 
 
 def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Path | None = None) -> list[Path]:

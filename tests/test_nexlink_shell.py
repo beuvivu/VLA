@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 ASSETS = ROOT / 'src/assets/nexlink'
-RAIL = ['home', 'chart', 'clipboard', 'crown', 'layers', 'robot', 'code', 'plus', 'exit']
+RAIL = ['home', 'tags', 'chart', 'clipboard', 'crown', 'layers', 'robot', 'code', 'plus', 'exit']
 
 
 def test_reference_vectors_are_preserved_in_the_rendered_shell():
@@ -40,7 +40,7 @@ def test_rail_follows_the_reader_workflow_and_keeps_utilities_separate():
     soup = BeautifulSoup(rail_html('index.html'), 'html.parser')
     assert [n['data-nexlink-icon'] for n in soup.select('.app-rail svg')] == RAIL
     assert len(soup.select('.app-rail-divider')) == 3
-    assert len(soup.select('[role=tab]')) == 7
+    assert len(soup.select('[role=tab]')) == 8
     assert not soup.select('.app-rail-list a, .app-rail-list button:not([role=tab])')
     assert soup.select_one('[role=tablist] [aria-selected=true][tabindex="0"]')
     for link in soup.select('a[href]'):
