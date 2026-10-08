@@ -17,8 +17,8 @@
     "prev_special_2d":"88",
     "next_special_2d":"93",
     "count":5,
-    "base_count":47,
-    "conditional_rate":0.1063829787
+    "base_count":48,
+    "conditional_rate":0.1041666667
   },
   {
     "prev_special_2d":"45",
@@ -672,13 +672,6 @@
     "conditional_rate":0.0638297872
   },
   {
-    "prev_special_2d":"88",
-    "next_special_2d":"64",
-    "count":3,
-    "base_count":47,
-    "conditional_rate":0.0638297872
-  },
-  {
     "prev_special_2d":"18",
     "next_special_2d":"45",
     "count":3,
@@ -709,6 +702,13 @@
   {
     "prev_special_2d":"81",
     "next_special_2d":"52",
+    "count":3,
+    "base_count":48,
+    "conditional_rate":0.0625
+  },
+  {
+    "prev_special_2d":"88",
+    "next_special_2d":"64",
     "count":3,
     "base_count":48,
     "conditional_rate":0.0625

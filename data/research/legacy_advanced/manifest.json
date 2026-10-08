@@ -1,31 +1,31 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-08T10:45:34Z",
-  "anchor_date": "2026-10-07",
+  "generated_at_utc": "2026-10-08T11:37:11Z",
+  "anchor_date": "2026-10-08",
   "research_only": true,
   "aggregate_transition": {
     "name": "aggregate_loto_transition_independence",
     "table": {
-      "prev_hit_next_hit": 24086,
-      "prev_hit_next_miss": 76635,
-      "prev_miss_next_hit": 76634,
-      "prev_miss_next_miss": 245345
+      "prev_hit_next_hit": 24092,
+      "prev_hit_next_miss": 76652,
+      "prev_miss_next_hit": 76651,
+      "prev_miss_next_miss": 245405
     },
-    "statistic": 0.5302407609136871,
-    "p_value": 0.4665056561952351,
-    "expected_min": 23999.572084220486,
-    "p_next_given_hit": 0.23913583066093466,
-    "p_next_given_absent": 0.23800931116625618,
-    "effect": 0.0011265194946784851,
-    "lift": 1.0047330900171867,
+    "statistic": 0.539003291023376,
+    "p_value": 0.46284608870983324,
+    "expected_min": 24004.85523178808,
+    "p_next_given_hit": 0.23914079250377193,
+    "p_next_given_absent": 0.2380051916436893,
+    "effect": 0.0011356008600826306,
+    "lift": 1.0047713281052402,
     "method": "2x2 chi-square with Yates continuity correction; all 00..99 transitions pooled"
   },
   "weekday_special_tail": {
     "name": "weekday_vs_full_special_tail",
-    "statistic": 43.970994152533144,
-    "p_value": 0.8332216708003395,
+    "statistic": 43.82997357015189,
+    "p_value": 0.8370869852999634,
     "dof": 54,
-    "min_expected_cell": 57.42857142857143,
+    "min_expected_cell": 57.414991723811774,
     "table": [
       [
         50,
@@ -73,7 +73,7 @@
         58,
         55,
         67,
-        61
+        62
       ],
       [
         62,
