@@ -224,7 +224,12 @@ CREATE TABLE draw (
     numbers_ordered BOOLEAN  NOT NULL,            -- TRUE khi giữ được thứ tự quay
     bonus           SMALLINT,
     status          VARCHAR  NOT NULL CHECK (status IN ('validated', 'single_source', 'conflict')),
-    journal_sha256  VARCHAR  NOT NULL,            -- hash dòng journal sinh ra bản ghi
+    -- Nguồn gốc của bản ghi. Journal chỉ có các kỳ gần đây (1 986 dòng ngày 08-10-2026);
+    -- phần lớn lịch sử đến từ tệp seed đã commit (Keno 297 398 dòng, Bingo18 105 593 dòng…).
+    -- Mọi tệp ấy đều nằm trong git, nên hash của đúng dòng sinh ra bản ghi luôn tính lại được.
+    provenance_kind VARCHAR  NOT NULL CHECK (provenance_kind IN ('journal', 'seed', 'product_store')),
+    provenance_ref  VARCHAR  NOT NULL,            -- đường dẫn tệp trong kho, ví dụ data/seed/keno.jsonl.gz
+    provenance_sha256 VARCHAR NOT NULL,           -- sha256 của đúng dòng sinh ra bản ghi
     first_seen_at   TIMESTAMPTZ NOT NULL,         -- lúc crawler thấy kỳ này lần đầu
     PRIMARY KEY (game, draw_id)
 );
@@ -393,7 +398,12 @@ CREATE TABLE model_deployment (
 -- ở mỗi kỳ của mỗi sản phẩm có ĐÚNG MỘT mô hình production; nếu chưa có gì qua cổng
 -- thì đó là mô hình luật công bằng ('fair').
 
--- Ghi TRƯỚC giờ quay; append-only. Một mô hình chỉ có một dự báo cho mỗi kỳ.
+-- Ghi TRƯỚC giờ quay; append-only. Một mô hình CÓ THỂ phát nhiều lần cho cùng một kỳ: sổ
+-- hiện có 10 cặp (sản phẩm, kỳ) như vậy, ví dụ Mega kỳ 1571 có 4 lần phát với digest khác
+-- nhau. Mọi lần phát đều được giữ để không mất dấu vết kiểm toán. Nhưng chấm mọi lần sẽ
+-- dùng một kết quả nhiều lần và thổi phồng bằng chứng, nên chỉ lần phát ĐẦU TIÊN của mỗi
+-- (game, model_id, target_draw_id) được vào e-value (view evidence_issue). Đây cũng là
+-- luật "lần ghi đầu giữ nguyên" của các sổ trong kho, và luật chọn được chốt trước kỳ quay.
 CREATE TABLE forecast_issue (
     forecast_id     VARCHAR PRIMARY KEY,          -- digest nội dung
     game            VARCHAR NOT NULL,
@@ -406,7 +416,6 @@ CREATE TABLE forecast_issue (
     issued_at       TIMESTAMPTZ NOT NULL,
     law             JSON    NOT NULL,             -- phân phối đầy đủ (theo số / theo vị trí chữ số)
     top_n           JSON    NOT NULL,             -- bộ số đề xuất + p_model, p_fair, lift
-    UNIQUE (game, model_id, target_draw_id),
     UNIQUE (forecast_id, game, target_draw_id)    -- đích của khóa ngoại ghép trong forecast_score
 );
 
@@ -445,9 +454,19 @@ CREATE TABLE candidate_score (
     PRIMARY KEY (forecast_id, rank)
 );
 
+-- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần sớm nhất.
+CREATE VIEW evidence_issue AS
+SELECT forecast_id FROM (
+    SELECT forecast_id,
+           row_number() OVER (PARTITION BY game, model_id, target_draw_id
+                              ORDER BY issued_at, forecast_id) AS revision
+    FROM forecast_issue
+) WHERE revision = 1;
+
 CREATE VIEW live_score AS
 SELECT s.*, i.issued_at, d.earliest_draw_ts,
-       i.issued_at < d.earliest_draw_ts AND d.status = 'validated' AS live_eligible
+       i.issued_at < d.earliest_draw_ts AND d.status = 'validated'
+       AND s.forecast_id IN (SELECT forecast_id FROM evidence_issue) AS live_eligible
 FROM forecast_score s
 JOIN forecast_issue i ON i.forecast_id = s.forecast_id
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id;
@@ -565,7 +584,8 @@ CREATE TABLE backtest_metric (
 | `draws` (DuckDB) | `draw` + `prize_tier` + `jackpot_snapshot` | Tách `tier_winners VARCHAR` thành dòng |
 | `prizes` | `prize_tier` | — |
 | `sync_log` | `ingestion_run` + `source_attempt` | Thêm `error_class`, độ trễ |
-| `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật | `draw.journal_sha256` trỏ về dòng journal |
+| `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật cho kỳ gần đây | `provenance_kind = 'journal'` |
+| `data/seed/*.jsonl(.gz)`, `data/products` | Nạp vào `draw` | `provenance_kind = 'seed'` / `'product_store'`, kèm đường dẫn và hash của đúng dòng |
 | `data/forecast/ledger.jsonl`, `ml-ledger.jsonl` | `forecast_issue` + `forecast_score` + `candidate_score` | Nạp lại toàn bộ, mỗi vé trong top-N một dòng điểm; sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | `evidence_state` + checkpoint | Checkpoint vẫn là JSON gzip |
 
