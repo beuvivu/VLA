@@ -408,10 +408,26 @@ CREATE TABLE evidence_state (
     model_id        VARCHAR NOT NULL,
     as_of_draw_id   INTEGER NOT NULL,
     live_draws      INTEGER NOT NULL,
-    log10_wealth    DOUBLE  NOT NULL,
+    log10_wealth    DOUBLE  NOT NULL,             -- e-process so với luật công bằng
     max_log10_wealth DOUBLE NOT NULL,
+    log10_threshold DOUBLE  NOT NULL,             -- log10(1 / alpha) từ gate_allocation
+    cs_lower_vs_incumbent DOUBLE,                 -- cận dưới chuỗi tin cậy của hiệu log-score
+                                                  -- (mô hình − đang chạy); NULL nếu chưa có cặp
+    log10_cusum_vs_fair DOUBLE,                   -- e-detector rollback (chỉ khi đang production)
     gate_passed     BOOLEAN NOT NULL,
     PRIMARY KEY (game, model_id, as_of_draw_id)
+);
+
+-- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Thứ tự seq_no chốt lúc
+-- đăng ký, trước khi mô hình có dự báo live nào; alpha = (0,05/7)·6/(π²·seq_no²).
+CREATE TABLE gate_allocation (
+    game            VARCHAR NOT NULL REFERENCES game(code),
+    model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
+    seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
+    alpha           DOUBLE  NOT NULL CHECK (alpha > 0 AND alpha < 1),
+    registered_at   TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (game, model_id),
+    UNIQUE (game, seq_no)
 );
 
 CREATE TABLE backtest_run (
@@ -516,7 +532,7 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 - **Đề bạt.** Theo đúng thang `model_version.stage`: shadow (ghi sổ, không vào hỗn hợp) →
   challenger (vào hỗn hợp với trọng số ban đầu nhỏ) → production. Đề bạt chỉ khi thắng
   CẢ luật công bằng LẪN hỗn hợp đang chạy trên dự báo live (luật của kho, mục Phòng thử
-  thách mô hình).
+  thách mô hình). Cả hai phép so đều có kiểm định cụ thể ở mục M5, "Cổng đề bạt".
 
 ### M5 · Vòng tự học
 
@@ -533,21 +549,67 @@ kỳ t có kết quả
 
 Các luật an toàn:
 
-- **Cổng live.** Đây là cổng đang có trong `vlm.forecast.pipeline` (`confidence()`). Để
-  qua cổng cần:
+- **Cổng hiện có.** `vlm.forecast.pipeline` (`confidence()`) đòi:
   - e-value hiện tại ≥ 140 (α = 5% cho cả họ 7 sản phẩm, tức 7/0,05);
   - ≥ 100 kỳ live, và tổng log-score của 100 kỳ gần nhất dương;
   - không thiếu kỳ, không lệch ngày.
 
-  Chưa qua cổng thì luật công bố là luật công bằng. Keno, Bingo18 và Max 4D hiện bị loại
-  khỏi cổng. Keno và Bingo18 quay mỗi 6–8 phút, nên muốn ghi sổ trước từng kỳ thì phải có
-  máy chủ thường trực (chế độ B); cron GitHub không làm được.
+  Keno, Bingo18 và Max 4D hiện bị loại khỏi cổng. Keno và Bingo18 quay mỗi 6–8 phút, nên
+  muốn ghi sổ trước từng kỳ thì phải có máy chủ thường trực (chế độ B); cron GitHub
+  không làm được.
+
+  Ngưỡng 140 chỉ hiệu chỉnh cho 7 SẢN PHẨM. Nó đúng khi mỗi sản phẩm chỉ thử một mô hình.
+  Tính hợp lệ mọi thời điểm của e-value bảo vệ việc nhìn một e-process nhiều lần, không
+  bảo vệ việc thử nhiều mô hình rồi đề bạt cái nào vượt ngưỡng trước. Engine đã có hai
+  họ dự báo (`vietlott_engine.forecast` và `vlm.forecast`), và giai đoạn 3 còn thêm mô hình
+  thách đấu. Vì vậy cổng đề bạt dưới đây thay cho cổng hiện có.
+
+- **Cổng đề bạt.** Một mô hình lên production cho sản phẩm p khi đạt cả ba điều kiện:
+  1. **Thắng luật công bằng, có hiệu chỉnh theo cả sản phẩm lẫn mô hình.** Mô hình thứ k
+     được đăng ký thử cho p nhận α(p, k) = (0,05 / 7) · 6 / (π² k²). Thứ tự k được chốt lúc
+     đăng ký, trong bảng `gate_allocation`. Vì Σₖ 6/(π² k²) = 1, tổng α của mọi mô hình của
+     mọi sản phẩm ≤ 0,05 (bất đẳng thức Ville cho từng e-process, cộng cận hợp). Ngưỡng
+     e-value là 1/α(p, k): **230** với k = 1, **921** với k = 2, **2 073** với k = 3,
+     **23 029** với k = 10. Thử càng nhiều cấu hình thì mỗi cấu hình sau càng phải có bằng
+     chứng mạnh hơn. Đó là cái giá đúng của việc thử nhiều.
+  2. **Thắng mô hình đang chạy trên cùng các kỳ.** Ở giai đoạn shadow, hai mô hình cùng ghi
+     sổ trước những kỳ giống nhau. Dựng một chuỗi tin cậy hợp lệ mọi thời điểm cho hiệu
+     log-score trung bình (thách đấu − đang chạy), theo Choe & Ramdas (2023), "Comparing
+     sequential forecasters", ở cùng mức α(p, k). Chỉ đề bạt khi cận dưới của chuỗi > 0.
+     Thắng luật công bằng mà thua mô hình đang chạy thì không được đề bạt.
+  3. **Đủ dữ liệu sạch:** ≥ 100 kỳ live `validated`, không thiếu kỳ, không lệch ngày.
+
+  Chưa qua cổng thì luật công bố là luật công bằng.
+
+  Nhãn "có tín hiệu thống kê" trên trang hiện dùng ngưỡng 20 của từng sản phẩm riêng lẻ.
+  Max 3D (10^2,57 ≈ 371) và Max 3D Pro (10^2,84 ≈ 692) vẫn vượt ngưỡng 230 của cả họ. Giai
+  đoạn 2 đổi nhãn sang ngưỡng của cả họ.
 - **Theo dõi trôi theo cả hai chiều**, như `skill_monitor` của XSMB. Kỹ năng tệ đi là hồi
   quy; kỹ năng tốt lên bất thường cũng phải kiểm lại trước khi tin, vì có thể là rò rỉ
   dữ liệu.
-- **Rollback.** Khi e-value của mô hình production rơi dưới ngưỡng duy trì (đề xuất 1, tức
-  không còn bằng chứng), hạ về challenger và công bố luật công bằng. Checkpoint cũ được
-  giữ để dựng lại.
+- **Rollback tự động theo sụt giảm GẦN ĐÂY.** Không dùng e-value cả đời: một mô hình đã tích
+  bằng chứng lớn sẽ phải thua rất lâu thì giá trị ấy mới rơi về 1. Thay vào đó dùng một
+  e-detector kiểu CUSUM có khởi động lại (Shin, Ramdas & Rinaldo, 2023):
+
+      Mₜ = max(Mₜ₋₁, 1) · p_công_bằng(xₜ) / p_production(xₜ)
+
+  Nếu dữ liệu thật sự theo luật của mô hình production (đúng điều mô hình tuyên bố khi
+  được đề bạt), mỗi thừa số có kỳ vọng 1. Khi ấy thời gian trung bình giữa hai lần báo động
+  nhầm ≥ c. Đề xuất c = 1 000 kỳ, khoảng 6 năm với sản phẩm quay 3 kỳ/tuần. Khi Mₜ ≥ c, hệ
+  thống tự hạ mô hình về challenger, công bố luật công bằng, và giữ checkpoint để dựng lại.
+  Một detector thứ hai cùng dạng, so production với mô hình production trước đó, bắt
+  trường hợp bản mới tệ hơn bản cũ. `skill_monitor` vẫn chạy, nhưng chỉ để cảnh báo hai
+  chiều; quyết định rollback thuộc về e-detector.
+
+  Mô phỏng trên dữ liệu kiểu Max 3D (60 chữ số mỗi kỳ, số 6 lệch ×1,07):
+  - Khi dữ liệu theo đúng luật production, c = 100 cho trung bình 7 933 kỳ mới báo động
+    nhầm, tức giới hạn ≥ c giữ được và còn rất thận trọng.
+  - Khi độ lệch biến mất, c = 1 000 phát hiện sau trung bình 452 kỳ, khoảng 3 năm với sản
+    phẩm quay 3 kỳ/tuần.
+
+  Độ lệch nhỏ thì mỗi kỳ mang rất ít thông tin, nên phát hiện nó biến mất cũng chậm.
+  Không có cách nào nhanh hơn nhiều mà không tăng báo động nhầm. Dù vậy, cách này vẫn
+  nhanh hơn hẳn việc chờ e-value cả đời rơi về 1.
 - **Sửa dữ liệu quá khứ** (backfill hay đính chính một kỳ) thì phát lại có giới hạn từ kỳ
   bị sửa, và đặt lại bằng chứng live của các dự báo liên quan. Engine đã làm việc này qua
   `history_sha256`.
@@ -648,7 +710,9 @@ Xong khi:
    `vietlott/reports/`, để mọi con số trên trang tái lập được từ kho.
 5. `skill_monitor` cho Vietlott chạy sau mỗi lượt đồng bộ: z = 3 cả hai chiều, cửa sổ
    60 kỳ.
-6. *(Tùy chủ dự án)* Chế độ B: máy chủ Docker thường trực cho độ trễ khoảng 2–5 phút.
+6. Nhãn "có tín hiệu thống kê" trên trang dùng ngưỡng của cả họ (e-value ≥ 1/α(p, k)),
+   không dùng ngưỡng 20 của từng sản phẩm riêng lẻ.
+7. *(Tùy chủ dự án)* Chế độ B: máy chủ Docker thường trực cho độ trễ khoảng 2–5 phút.
 
 Xong khi:
 - Mọi trang đọc từ lược đồ mới; số liệu trùng từng con số với trang cũ (phép so trước/sau).
@@ -659,7 +723,8 @@ Xong khi:
 1. Extra `[deep]`: LSTM nhỏ cho mọi sản phẩm, Transformer chỉ cho Keno/Bingo18. Cả hai cài
    hợp đồng `Law`, vào ở giai đoạn shadow. Transformer cho Keno/Bingo18 chỉ có thể lên
    production khi có chế độ B: phải ghi sổ trước từng kỳ 6–8 phút thì cổng mới tính.
-2. Tự động đề bạt và rollback theo cổng mục 5.
+2. Tự động đề bạt theo "Cổng đề bạt" và rollback theo e-detector (mục M5). Đăng ký
+   `gate_allocation` cho mọi mô hình trước khi nó có dự báo live đầu tiên.
 3. Phát hiện điểm gãy (`inference.changepoint`) trên chuỗi log-loss gain: máy quay đổi
    hay dữ liệu đổi nguồn thì có báo.
 4. Chạy lại backtest định kỳ cho mọi mô hình ở stage ≥ challenger; lưu `backtest_metric`.
@@ -669,8 +734,14 @@ nguồn thứ hai của giai đoạn 1 đã chạy. Thiếu bước ấy, mọi 
 hình nào tích được bằng chứng; đó là kết quả an toàn, không phải lỗi.
 
 Xong khi:
-- Một mô hình chỉ lên production nếu e-value live ≥ 140 sau ≥ 100 kỳ và log-score gần đây
-  dương.
+- Một mô hình chỉ lên production khi đạt đủ ba điều kiện của cổng đề bạt:
+  - e-value so với luật công bằng ≥ 1/α(p, k);
+  - cận dưới chuỗi tin cậy so với mô hình đang chạy > 0;
+  - ≥ 100 kỳ live `validated`.
+- Phép thử trên dữ liệu mô phỏng công bằng: chạy nhiều mô hình thách đấu ngẫu nhiên qua
+  cổng; tỉ lệ đề bạt nhầm của cả họ ≤ 5%.
+- Phép thử đổi chế độ: mô phỏng một độ lệch có thật rồi tắt nó. E-detector phải hạ mô hình
+  trong thời gian đo được, kể cả khi mô hình đã tích e-value cả đời rất lớn.
 - Với sản phẩm không có độ lệch, hệ thống công bố luật công bằng và trang nói rõ điều
   đó. Đây là kết quả ĐÚNG, không phải thất bại.
 
