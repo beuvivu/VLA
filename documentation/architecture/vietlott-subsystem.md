@@ -117,8 +117,9 @@ flowchart LR
 4. **Lưu.** Ghi journal trước (nguồn sự thật, ai cũng kiểm toán được qua git), rồi
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
-   trùng. Chỉ dự báo phát TRƯỚC giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1)
-   mới được cập nhật e-value. Giờ đích do chính dự báo khai không được dùng để xét.
+   trùng. Chỉ dự báo phát TRƯỚC giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1),
+   cho một kỳ đã được hai nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ đích do
+   chính dự báo khai không được dùng để xét.
 6. **Học.** Các chuyên gia cập nhật online; trọng số trộn cập nhật theo log-likelihood
    thật. Cây quyết định được fit lại định kỳ trên một vùng đệm giới hạn.
 7. **Dự báo kỳ tới.** Engine phát luật xác suất cho kỳ tới và ghi sổ kèm `history_sha256`
@@ -198,11 +199,18 @@ CREATE TABLE draw (
     draw_id         INTEGER  NOT NULL,
     draw_ts         TIMESTAMPTZ NOT NULL,         -- giờ quay; 00:00 nếu chỉ biết ngày
     time_precision  VARCHAR  NOT NULL CHECK (time_precision IN ('minute', 'day')),
-    earliest_draw_ts TIMESTAMPTZ NOT NULL,        -- giờ SỚM NHẤT kỳ này có thể đã quay: draw_ts nếu
-                                                  -- biết đến phút, nếu chỉ biết ngày thì giờ bắt đầu
-                                                  -- quay sớm nhất của ngày ấy theo game.schedule
-                                                  -- (Lotto: 13:00 cho cả kỳ 21:00). Mốc để xét
-                                                  -- dự báo có ghi trước kỳ và để đo độ trễ.
+    -- Hai mốc thời gian, hai mục đích, KHÔNG dùng lẫn:
+    earliest_draw_ts TIMESTAMPTZ NOT NULL,        -- CHỈ để xét dự báo có ghi trước kỳ: giờ SỚM NHẤT
+                                                  -- kỳ này có thể đã quay. draw_ts nếu biết đến phút;
+                                                  -- nếu chỉ biết ngày thì giờ bắt đầu quay sớm nhất
+                                                  -- của ngày theo game.schedule (thận trọng: Lotto
+                                                  -- 13:00 cho cả kỳ 21:00).
+    scheduled_slot_ts TIMESTAMPTZ,                -- CHỈ để đo độ trễ: giờ quay theo lịch của ĐÚNG
+                                                  -- kỳ này. draw_ts nếu biết đến phút; nếu chỉ biết
+                                                  -- ngày thì suy từ thứ tự mã kỳ trong ngày khi lịch
+                                                  -- có số kỳ cố định (Lotto: kỳ nhỏ 13:00, kỳ lớn
+                                                  -- 21:00); NULL khi không suy được (Keno, Bingo18
+                                                  -- chỉ có ngày) và kỳ ấy không vào phép đo độ trễ.
     numbers         SMALLINT[] NOT NULL,          -- theo thứ tự quay nếu biết, nếu không thì đã sắp
     numbers_ordered BOOLEAN  NOT NULL,            -- TRUE khi giữ được thứ tự quay
     bonus           SMALLINT,
@@ -279,7 +287,8 @@ CREATE TABLE source_attempt (
     PRIMARY KEY (run_id, game, source_code)
 );
 
--- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối.
+-- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
+-- draw.scheduled_slot_ts, KHÔNG phải earliest_draw_ts).
 CREATE TABLE publication (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
@@ -382,10 +391,13 @@ CREATE TABLE forecast_score (
 
 -- Quyền vào bằng chứng TÍNH LẠI từ giờ quay có thẩm quyền của kỳ đã xác thực, không lưu
 -- thành cờ. Lỗi lịch hay lỗi nạp làm target_draw_ts sai cũng không lọt được dự báo phát
--- sau khi quay vào cổng e-value. evidence_state chỉ đọc các dòng live_eligible.
+-- sau khi quay vào cổng e-value. Chỉ kỳ 'validated' (hai nguồn độc lập trùng nhau) được
+-- tính: kỳ 'single_source' chính là trạng thái mà một kết quả sai của nguồn đầu chưa bị
+-- phát hiện. Khi đối chiếu xong và kỳ chuyển sang 'validated', view tự tính dòng ấy, và
+-- evidence_state được dựng lại từ kỳ đó trở đi. evidence_state chỉ đọc live_eligible.
 CREATE VIEW live_score AS
 SELECT s.*, i.issued_at, d.earliest_draw_ts,
-       i.issued_at < d.earliest_draw_ts AND d.status <> 'conflict' AS live_eligible
+       i.issued_at < d.earliest_draw_ts AND d.status = 'validated' AS live_eligible
 FROM forecast_score s
 JOIN forecast_issue i ON i.forecast_id = s.forecast_id
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id;
@@ -417,13 +429,17 @@ CREATE TABLE backtest_run (
     created_at      TIMESTAMPTZ NOT NULL
 );
 
+-- Một lượt chạy chấm nhiều chiến lược (báo cáo đã commit có 9), nên chỉ số được khóa theo
+-- chiến lược. Chỉ số của CẢ lượt (SPA, White Reality Check) dùng strategy = '*'.
 CREATE TABLE backtest_metric (
     run_id          VARCHAR NOT NULL REFERENCES backtest_run(run_id),
-    metric          VARCHAR NOT NULL,             -- mean_hits, log_loss_gain, roi, spa_p, wrc_p, tost_bound
+    strategy        VARCHAR NOT NULL,             -- random, hot_50, markov, ... hoặc '*' cho cấp lượt
+    metric          VARCHAR NOT NULL,             -- mean_hits, z_cluster, q_bh, max_e, roi, tost_bound;
+                                                  -- cấp lượt: spa_p, wrc_p, spa_best
     value           DOUBLE  NOT NULL,
     ci_low          DOUBLE,
     ci_high         DOUBLE,
-    PRIMARY KEY (run_id, metric)
+    PRIMARY KEY (run_id, strategy, metric)
 );
 ```
 
@@ -507,7 +523,7 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 ```
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
-    (issued_at < draw.earliest_draw_ts) mới vào e-value
+    (issued_at < draw.earliest_draw_ts VÀ kỳ đã 'validated') mới vào e-value
   → cập nhật chuyên gia online (logistic, GRU, LSTM)      [mỗi kỳ]
   → cập nhật trọng số fixed-share theo log-likelihood     [mỗi kỳ]
   → fit lại cây trên vùng đệm                             [mỗi N kỳ]
@@ -609,12 +625,14 @@ Mỗi giai đoạn có **tiêu chí xong đo được**. Không giai đoạn nà
    `validated` / `single_source` / `conflict`; kết quả `conflict` không được công bố.
 
 Xong khi:
-- Độ trễ đầu-cuối `publication.deployed_at − draw.earliest_draw_ts`, đo qua 2 tuần ở chế độ
-  A: trung vị ≤ 60 phút, p90 ≤ 120 phút. Mốc tính từ giờ quay, chứ không từ lúc crawler
-  thấy kết quả, nên phần trễ do cron hay polling không bị giấu đi. Trong đó có khoảng 30
-  phút quay và nguồn công bố, nằm ngoài tầm kiểm soát. Báo cáo tách hai đoạn
-  `first_seen_at − earliest_draw_ts` (nguồn + polling) và `deployed_at − first_seen_at`
-  (pipeline của ta).
+- Độ trễ đầu-cuối `publication.deployed_at − draw.scheduled_slot_ts`, đo qua 2 tuần ở chế
+  độ A cho Mega, Power, Max 3D, Max 3D Pro, Lotto: trung vị ≤ 60 phút, p90 ≤ 120 phút. Mốc
+  tính từ giờ quay theo lịch của đúng kỳ ấy, chứ không từ lúc crawler thấy kết quả, nên
+  phần trễ do cron hay polling không bị giấu đi. Trong đó có khoảng 30 phút quay và nguồn
+  công bố, nằm ngoài tầm kiểm soát. Báo cáo tách hai đoạn `first_seen_at − scheduled_slot_ts`
+  (nguồn + polling) và `deployed_at − first_seen_at` (pipeline của ta). Keno và Bingo18
+  chỉ có ngày nên không vào phép đo này; độ trễ của chúng chỉ đo được ở chế độ B, nơi
+  crawler ghi giờ đến phút.
 - Mọi kỳ công bố đều `validated` hoặc mang nhãn `single_source`; 0 kỳ `conflict` lên trang.
 - Mọi phép kiểm mới đã qua thử đột biến.
 
@@ -645,6 +663,10 @@ Xong khi:
 3. Phát hiện điểm gãy (`inference.changepoint`) trên chuỗi log-loss gain: máy quay đổi
    hay dữ liệu đổi nguồn thì có báo.
 4. Chạy lại backtest định kỳ cho mọi mô hình ở stage ≥ challenger; lưu `backtest_metric`.
+
+Phụ thuộc: cổng production chỉ đọc kỳ `validated`, nên giai đoạn này cần bước đối chiếu
+nguồn thứ hai của giai đoạn 1 đã chạy. Thiếu bước ấy, mọi kỳ là `single_source` và không mô
+hình nào tích được bằng chứng; đó là kết quả an toàn, không phải lỗi.
 
 Xong khi:
 - Một mô hình chỉ lên production nếu e-value live ≥ 140 sau ≥ 100 kỳ và log-score gần đây
