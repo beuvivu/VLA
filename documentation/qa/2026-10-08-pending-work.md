@@ -80,6 +80,29 @@ tham khảo, chưa đủ bằng chứng thời gian để dùng cho chấm dự 
 Giữ trạng thái chưa xác minh; dữ liệu đầy đủ của các sản phẩm khác tiếp tục
 được lưu khi một nguồn chưa sẵn sàng.
 
+Lượt thử lại sau khi đưa collector về `httpx`,
+[run 37808002327](https://github.com/beuvivu/VLA/actions/runs/37808002327),
+đã lưu dữ liệu, dựng trang, lưu cache và xuất artifact trạng thái lúc
+23:23 ngày 08-10 theo giờ Việt Nam. Bước báo lỗi cuối vẫn đỏ do Lotto 5/35
+còn thiếu kỳ 21:00. Không có `worker_error`; cả bảy sản phẩm có lần lấy dữ
+liệu thành công và `error=null`. Nguồn chính trả human challenge, hệ thống
+chuyển sang chuỗi dự phòng sẵn có; không giải hay vượt challenge.
+
+| Sản phẩm | Kỳ cuối trong trạng thái | Độ mới được xác minh |
+|---|---:|---|
+| Mega 6/45 | 1572, 07-10 | `caught_up`, có |
+| Power 6/55 | 1408, 08-10 | `caught_up`, có |
+| Lotto 5/35 | 933, 08-10; một kỳ trong ngày | `behind_schedule`, thiếu kỳ buổi tối |
+| Max 3D | 1142, 07-10 | `caught_up`, có |
+| Max 3D Pro | 789, 08-10 | `caught_up`, có |
+| Keno | 298570, 08-10 | `date_only`, chưa xác minh giờ từng kỳ |
+| Bingo18 | 190304, 08-10 | `date_only`, chưa xác minh giờ từng kỳ |
+
+Lotto tự lên lịch thử lại sau năm phút; không phát hành dự báo cho kỳ đã
+đến giờ khi dữ liệu vẫn thiếu. Ngoài giờ bán, Keno/Bingo18 trở lại trạng
+thái `date_only` đúng hợp đồng; điều đó không chứng minh nguồn đã bắt kịp.
+Các commit dữ liệu và trang do lượt này tạo được giữ nguyên trên main.
+
 ## Những đề xuất chưa phải việc triển khai đã bắt đầu
 
 Các mục A10 (gom Wilson/BH), A11 (CSP hash), A13 (retry dashboard push) trong
@@ -99,6 +122,30 @@ commit và head SHA đã kiểm. Xung đột requirements được hòa giải b
 hợp nhất main vào nhánh SHAP/NetworkX, giữ Optuna 5 và marker Python.
 Không force-push main; giữ các commit dữ liệu tự động. CI/Pages của source
 commit cuối được đối chiếu riêng sau khi đẩy phần CI/vận hành bổ sung.
+
+Source commit đã xuất bản:
+[`974732c6`](https://github.com/beuvivu/VLA/commit/974732c6be3685219963f7c7e0e902f84fb8375a).
+Các kết quả triển khai được gắn với SHA này; commit dựng trang/dữ liệu
+tự động sau đó không thay mã nguồn.
+
+CI VLA đầu tiên trên SHA này,
+[run 37808002411](https://github.com/beuvivu/VLA/actions/runs/37808002411),
+phát hiện báo cáo này chưa có liên kết trong `documentation/README.md`:
+1 failed, 3.270 passed, 9 skipped trên Python 3.11. Đây là tài liệu được
+thêm sau lượt full suite cục bộ, nên bằng chứng cục bộ không bao gồm nó.
+Đã tái hiện đúng lỗi bằng hai ca kiểm mục lục, bổ sung liên kết và chạy
+lại để xác nhận cả hai ca xanh; không bỏ hay nới ca kiểm trong CI.
+
+| Cổng GitHub Actions trên source commit | Bằng chứng |
+|---|---|
+| Engine, Ubuntu Python 3.11/3.12, Windows Python 3.12, optional ML và giao diện | [Run 37808002396](https://github.com/beuvivu/VLA/actions/runs/37808002396): tất cả job thành công |
+| CodeQL Python, JavaScript/TypeScript và Actions | [Run 37808002382](https://github.com/beuvivu/VLA/actions/runs/37808002382): tất cả job thành công |
+| GitHub Pages | [Run 37808002359](https://github.com/beuvivu/VLA/actions/runs/37808002359): deploy thành công |
+
+Kiểm trực tiếp trang công khai sau deploy thấy banner Power #1408 có đủ
+Jackpot 1 `129.672.825.150₫` và Jackpot 2 `3.800.633.150₫`, các giá trị trên
+một dòng trong khung desktop. Số đặc biệt Lotto/Power và nhãn tham khảo
+của Keno/Bingo18 vẫn hiện đúng trên trang.
 
 ## Quyết định phạm vi và ghi chú nhỏ
 
