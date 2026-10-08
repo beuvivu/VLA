@@ -513,7 +513,7 @@ CREATE TABLE forecast_score (
 -- sau khi quay vào cổng e-value. Chỉ kỳ 'validated' (hai nguồn độc lập trùng nhau) được
 -- tính: kỳ 'single_source' chính là trạng thái mà một kết quả sai của nguồn đầu chưa bị
 -- phát hiện. Khi đối chiếu xong và kỳ chuyển sang 'validated', view tự tính dòng ấy, và
--- evidence_state được dựng lại từ kỳ đó trở đi. evidence_state chỉ đọc live_eligible.
+-- evidence_state (cũng là view) tự tính lại từ kỳ đó trở đi. evidence_state chỉ đọc live_eligible.
 -- Điểm của TỪNG vé/ứng viên trong top_n (bộ dự báo hiện phát 5 vé mỗi kỳ). forecast_score
 -- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây.
 CREATE TABLE candidate_score (
@@ -633,23 +633,29 @@ JOIN receipt r ON r.subject_kind = 'game_schedule'
 -- chỉ chèn, vẫn có thể được ghi sai ngay từ đầu (nạp lại lịch sử, suy slot sai) và muộn hơn
 -- giờ quay thật. Ở đây mốc chỉ dựa trên hai thứ đã được bảo đảm: ngày quay (đối chiếu bởi
 -- ≥ 2 nhóm nguồn, live_score đòi corroborated) và lịch quay có biên nhận TRƯỚC ngày ấy.
---   schedule_slot: ngày có ĐÚNG số kỳ như lịch, nên kỳ thứ k của ngày ứng với slot thứ k; mốc
---      = slot − 2 phút. Biên phải NHỎ HƠN khoảng từ lúc có kết quả kỳ trước tới giờ quay kỳ
---      này: trừ trọn một nhịp (Keno 8 phút) sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI dự
---      báo phát sau khi có kết quả kỳ trước. Khi biết giờ quay đến phút (chế độ B), lấy giá
---      trị NHỎ hơn của hai mốc: draw_ts chỉ có thể làm mốc sớm hơn.
---   day_start: không có lịch hiệu lực, hoặc số kỳ trong ngày lệch lịch (thiếu kỳ, thừa kỳ, lịch
---      đổi mà chưa đăng ký): 00:00 giờ VN của ngày quay. Thận trọng; chấp nhận mất dữ liệu hơn
---      là nhận nhầm. Thêm hay xóa một dòng draw chỉ có thể đẩy kỳ về nhánh này.
+--   schedule_slot: kỳ ứng với slot thứ k = draw_id − (mã nhỏ nhất trong các kỳ ĐÃ XÁC NHẬN của
+--      ngày) + 1; mốc = slot − 2 phút. Không đòi các kỳ SAU trong ngày đã có: Keno/Bingo18 chấm
+--      từng kỳ khi các kỳ sau chưa quay. Mã kỳ tăng theo giờ quay, và mọi kỳ được dùng làm neo
+--      đều thật sự thuộc ngày ấy (ngày đã đối chiếu), nên neo chỉ có thể MUỘN hơn kỳ đầu thật
+--      của ngày: thiếu kỳ đầu ngày làm k nhỏ đi, tức mốc SỚM hơn, không bao giờ muộn hơn. Biên
+--      2 phút phải NHỎ HƠN khoảng từ lúc có kết quả kỳ trước tới giờ quay kỳ này: trừ trọn một
+--      nhịp (Keno 8 phút) sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI dự báo phát sau khi có
+--      kết quả kỳ trước. Khi biết giờ quay đến phút (chế độ B), lấy giá trị NHỎ hơn của hai
+--      mốc: draw_ts chỉ có thể làm mốc sớm hơn.
+--   day_start: kỳ chưa được xác nhận, không có lịch hiệu lực, k vượt số slot, hoặc ngày đã có
+--      NHIỀU kỳ xác nhận hơn số slot (lịch đổi mà chưa đăng ký, quay bổ sung): 00:00 giờ VN của
+--      ngày quay. Thận trọng; chấp nhận mất dữ liệu hơn là nhận nhầm.
 CREATE VIEW draw_cutoff_effective AS
 WITH d AS (
-    SELECT game, draw_id, draw_ts, time_precision,
-           CAST(timezone('Asia/Ho_Chi_Minh', draw_ts) AS DATE) AS draw_date
-    FROM draw
+    SELECT d.game, d.draw_id, d.draw_ts, d.time_precision, c.corroborated,
+           CAST(timezone('Asia/Ho_Chi_Minh', d.draw_ts) AS DATE) AS draw_date
+    FROM draw d
+    JOIN draw_corroboration c ON c.game = d.game AND c.draw_id = d.draw_id
 ), day AS (
     SELECT d.*,
-           row_number() OVER (PARTITION BY game, draw_date ORDER BY draw_id) AS k,
-           count(*) OVER (PARTITION BY game, draw_date) AS n_day,
+           d.draw_id - min(d.draw_id) FILTER (WHERE d.corroborated)
+                           OVER (PARTITION BY d.game, d.draw_date) + 1 AS k,
+           count(*) FILTER (WHERE d.corroborated) OVER (PARTITION BY d.game, d.draw_date) AS n_day,
            timezone('Asia/Ho_Chi_Minh', draw_date + TIME '00:00') AS day_start,
            (SELECT e.slots_by_isodow[isodow(d.draw_date)] FROM schedule_effective e
              WHERE e.game = d.game
@@ -658,7 +664,7 @@ WITH d AS (
     FROM d
 ), slot AS (
     SELECT *,
-           CASE WHEN len(slots) = n_day
+           CASE WHEN corroborated AND k BETWEEN 1 AND len(slots) AND n_day <= len(slots)
                 THEN timezone('Asia/Ho_Chi_Minh', draw_date + slots[k]) - INTERVAL 2 MINUTE END AS slot_cutoff
     FROM day
 )
@@ -702,20 +708,6 @@ JOIN draw_cutoff_effective k ON k.game = s.game AND k.draw_id = s.draw_id
 JOIN draw_corroboration c ON c.game = s.game AND c.draw_id = s.draw_id
 LEFT JOIN evidence_issue e ON e.forecast_id = s.forecast_id;
 
--- Trạng thái bằng chứng sau mỗi kỳ, để vẽ đường e-value và quyết định cổng.
-CREATE TABLE evidence_state (
-    game            VARCHAR NOT NULL,
-    model_id        VARCHAR NOT NULL,
-    as_of_draw_id   INTEGER NOT NULL,
-    live_draws      INTEGER NOT NULL,
-    log10_wealth    DOUBLE  NOT NULL,             -- e-process so với luật công bằng
-    max_log10_wealth DOUBLE NOT NULL,
-    log10_threshold DOUBLE  NOT NULL,             -- log10(1 / alpha) từ gate_allocation
-    log10_cusum_vs_fair DOUBLE,                   -- e-detector rollback (chỉ khi đang production)
-    gate_passed     BOOLEAN NOT NULL,
-    PRIMARY KEY (game, model_id, as_of_draw_id)
-);
-
 -- Phép so thách đấu với mô hình đang chạy, theo TỪNG KỲ HIỆU LỰC của mô hình đang chạy.
 -- Khi production đổi (một dòng mới trong model_deployment), chuỗi tin cậy bắt đầu lại từ 0
 -- với đối thủ mới: lợi thế tích được trước một đối thủ yếu cũ không được mang sang.
@@ -739,6 +731,10 @@ CREATE TABLE comparison_epoch (
         REFERENCES model_deployment(game, model_id, effective_from_draw_id)
 );
 
+-- cs_lower là con số LƯU duy nhất mà cổng đọc: chuỗi tin cậy của Choe & Ramdas cần mã của
+-- engine, SQL không biểu diễn được. Vì vậy dòng ghi rõ mức alpha đã dùng, gate_status chỉ nhận
+-- dòng có mức đúng bằng gate_allocation.alpha × alpha_factor, và phép kiểm tính lại n_draws,
+-- trung bình và cs_lower từ live_score của cả hai mô hình.
 CREATE TABLE incumbent_comparison (
     game            VARCHAR NOT NULL,
     challenger_id   VARCHAR NOT NULL,
@@ -746,6 +742,7 @@ CREATE TABLE incumbent_comparison (
     as_of_draw_id   INTEGER NOT NULL,
     n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong lần so này
     mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
+    alpha_level     DOUBLE  NOT NULL,             -- mức của chuỗi tin cậy đã tính
     cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
     PRIMARY KEY (game, challenger_id, epoch_no, as_of_draw_id),
     FOREIGN KEY (game, challenger_id, epoch_no) REFERENCES comparison_epoch(game, challenger_id, epoch_no)
@@ -776,6 +773,109 @@ CREATE TABLE gate_allocation (
     PRIMARY KEY (game, model_id),
     UNIQUE (game, seq_no)
 );
+
+-- Trạng thái bằng chứng sau mỗi kỳ: SUY RA từ live_score, không lưu. Với luật qₜ đã phát
+-- trước kỳ, Πₜ qₜ(xₜ) / p_công_bằng(xₜ) là e-process so với luật công bằng, nên
+-- log10_wealth = Σ (log_loss_fair − log_loss) / ln 10 trên các dòng live_eligible. Kỳ được xác
+-- nhận muộn tự vào lại khi view được đọc. log_loss lưu ở forecast_score là đầu vào duy nhất;
+-- phép kiểm tính lại nó từ law và kết quả kỳ. missing_draws đếm theo dãy mã kỳ, nên kỳ chưa có
+-- trong kho cũng bị tính là thiếu.
+CREATE VIEW evidence_state AS
+WITH s AS (
+    SELECT i.game, i.model_id, l.draw_id,
+           sum((l.log_loss_fair - l.log_loss) / ln(10)) OVER w AS log10_wealth,
+           count(*) OVER w AS live_draws,
+           min(l.draw_id) OVER w AS first_live_draw_id
+    FROM live_score l
+    JOIN forecast_issue i ON i.forecast_id = l.forecast_id
+    WHERE l.live_eligible
+    WINDOW w AS (PARTITION BY i.game, i.model_id ORDER BY l.draw_id)
+)
+SELECT game, model_id, draw_id AS as_of_draw_id, live_draws, log10_wealth,
+       greatest(0, max(log10_wealth) OVER (PARTITION BY game, model_id ORDER BY draw_id)) AS max_log10_wealth,
+       (draw_id - first_live_draw_id + 1) - live_draws AS missing_draws
+FROM s;
+
+-- Kết quả cổng đề bạt (mục M5) cho mỗi (game, model_id, kỳ): SUY RA, không lưu cờ hay ngưỡng.
+--   1) ngưỡng = log10(1 / alpha) của dòng gate_allocation có biên nhận đã kiểm, phủ đúng hash,
+--      và SỚM HƠN biên nhận của mọi dự báo bằng chứng của mô hình ấy. Không có thì không qua;
+--      e-process đã vượt ngưỡng ở một thời điểm nào đó (max_log10_wealth) là đủ, theo Ville.
+--   2) lần so với ĐÚNG mô hình production hiện hành (dòng production mới nhất có hiệu lực tới
+--      kỳ này) có cs_lower > 0, ở mức đúng bằng alpha × alpha_factor của lần so ấy.
+--   3) ≥ 100 kỳ live và không thiếu kỳ.
+CREATE VIEW gate_status AS
+WITH alloc AS (
+    SELECT ga.game, ga.model_id, ga.alpha
+    FROM gate_allocation ga
+    JOIN receipt r ON r.subject_kind = 'gate_allocation' AND r.subject_id = ga.game || '/' || ga.model_id
+                  AND r.verified AND r.content_sha256 = ga.content_sha256
+    WHERE r.receipt_at < (SELECT min(e.receipt_at) FROM evidence_issue e
+                           JOIN forecast_issue i ON i.forecast_id = e.forecast_id
+                           WHERE i.game = ga.game AND i.model_id = ga.model_id)
+), st AS (
+    SELECT es.*, a.alpha, -log10(a.alpha) AS log10_threshold,
+           (SELECT md.model_id || '@' || md.effective_from_draw_id FROM model_deployment md
+             WHERE md.game = es.game AND md.stage = 'production'
+               AND md.effective_from_draw_id <= es.as_of_draw_id
+             ORDER BY md.effective_from_draw_id DESC, md.decided_at DESC LIMIT 1) AS incumbent_key
+    FROM evidence_state es
+    LEFT JOIN alloc a ON a.game = es.game AND a.model_id = es.model_id
+), cmp AS (
+    SELECT st.game, st.model_id, st.as_of_draw_id, max(ic.cs_lower) AS cs_lower
+    FROM st
+    JOIN comparison_epoch ce ON ce.game = st.game AND ce.challenger_id = st.model_id
+                            AND ce.incumbent_id || '@' || ce.incumbent_from_draw_id = st.incumbent_key
+    JOIN incumbent_comparison ic ON ic.game = ce.game AND ic.challenger_id = ce.challenger_id
+                                AND ic.epoch_no = ce.epoch_no AND ic.as_of_draw_id = st.as_of_draw_id
+    WHERE abs(ic.alpha_level - st.alpha * ce.alpha_factor) <= 1e-12 * st.alpha * ce.alpha_factor
+    GROUP BY st.game, st.model_id, st.as_of_draw_id
+)
+SELECT st.game, st.model_id, st.as_of_draw_id, st.live_draws, st.missing_draws,
+       st.log10_wealth, st.max_log10_wealth, st.log10_threshold, cmp.cs_lower,
+       coalesce(st.max_log10_wealth >= st.log10_threshold
+                AND cmp.cs_lower > 0
+                AND st.live_draws >= 100 AND st.missing_draws = 0, FALSE) AS gate_passed
+FROM st
+LEFT JOIN cmp ON cmp.game = st.game AND cmp.model_id = st.model_id AND cmp.as_of_draw_id = st.as_of_draw_id;
+
+-- Đề bạt không có căn cứ: dòng production lý do 'gate_passed' mà gate_status ở kỳ ngay trước
+-- kỳ hiệu lực không qua. Phép kiểm đòi view này RỖNG.
+CREATE VIEW unsupported_promotion AS
+SELECT md.*
+FROM model_deployment md
+LEFT JOIN gate_status g ON g.game = md.game AND g.model_id = md.model_id
+                       AND g.as_of_draw_id = md.effective_from_draw_id - 1
+WHERE md.stage = 'production' AND md.reason = 'gate_passed' AND NOT coalesce(g.gate_passed, FALSE);
+
+-- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
+-- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Với yₜ = log10(p_công_bằng /
+-- p_production) và Yₜ = Σ yₜ, đệ quy Lₜ = max(Lₜ₋₁, 0) + yₜ có dạng đóng
+-- Lₜ = Yₜ − min(0, Y₁, …, Yₜ₋₁). Báo động khi Lₜ ≥ log10(c) = 3 (c = 1 000 kỳ).
+CREATE VIEW rollback_detector AS
+WITH period AS (
+    SELECT p.game, p.model_id, p.effective_from_draw_id AS from_id,
+           (SELECT min(n.effective_from_draw_id) FROM model_deployment n
+             WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id
+               AND (n.model_id = p.model_id OR n.stage = 'production')) AS to_id
+    FROM model_deployment p
+    WHERE p.stage = 'production' AND p.model_id <> 'fair'
+), y AS (
+    SELECT pr.game, pr.model_id, pr.from_id, l.draw_id,
+           sum((l.log_loss - l.log_loss_fair) / ln(10)) OVER w AS cum
+    FROM period pr
+    JOIN forecast_issue i ON i.game = pr.game AND i.model_id = pr.model_id
+    JOIN live_score l ON l.forecast_id = i.forecast_id AND l.live_eligible
+    WHERE l.draw_id >= pr.from_id AND (pr.to_id IS NULL OR l.draw_id < pr.to_id)
+    WINDOW w AS (PARTITION BY pr.game, pr.model_id, pr.from_id ORDER BY l.draw_id)
+), c AS (
+    SELECT *, cum - least(0, coalesce(min(cum) OVER (PARTITION BY game, model_id, from_id ORDER BY draw_id
+                                                      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0))
+              AS log10_cusum_vs_fair
+    FROM y
+)
+SELECT game, model_id, from_id, draw_id AS as_of_draw_id, log10_cusum_vs_fair,
+       log10_cusum_vs_fair >= 3 AS alarm
+FROM c;
 
 CREATE TABLE backtest_run (
     run_id          VARCHAR PRIMARY KEY,
@@ -821,7 +921,7 @@ CREATE TABLE backtest_metric (
 | `data/seed/*.jsonl(.gz)`, `data/products` | Nạp vào `draw` | `provenance_kind = 'seed'` / `'product_store'`, kèm đường dẫn và hash của đúng dòng |
 | `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss. Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
 | `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng, không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
-| `data/forecast/<sản phẩm>.json` | `evidence_state` + checkpoint | Checkpoint vẫn là JSON gzip |
+| `data/forecast/<sản phẩm>.json` | Checkpoint | Checkpoint vẫn là JSON gzip. Wealth trong tệp KHÔNG được nạp: `evidence_state` là view, tính lại từ `live_score` |
 | Cửa sổ quay trong `vlm.updates.schedule` (mã nguồn) | `game_schedule` | Lịch chép thành một phiên bản và xin biên nhận TRƯỚC kỳ đầu áp dụng. Kỳ đã quay trước giờ biên nhận ấy có mốc đầu ngày, tức dự báo trong ngày quay của chúng không vào bằng chứng; lịch không được áp ngược |
 
 Luật riêng tư của kho vẫn áp dụng: `source_code` là mã ẩn danh, và trang xuất bản không
@@ -910,7 +1010,8 @@ kỳ t có kết quả
       cập nhật trọng số fixed-share theo log-likelihood   [mỗi kỳ]
       fit lại cây trên vùng đệm                           [mỗi N kỳ]
     nếu chưa: giữ trạng thái học tới kỳ validated cuối, chờ đối chiếu
-  → cập nhật evidence_state; kiểm cổng
+  → đọc gate_status và rollback_detector (view, tính lại từ live_score và gate_allocation);
+    đề bạt hay rollback = chèn một dòng model_deployment; unsupported_promotion phải rỗng
   → phát forecast_issue cho kỳ t+1 (ghi sổ trước giờ quay)
 ```
 
@@ -951,7 +1052,9 @@ Các luật an toàn:
      đo thách đấu với ĐÚNG mô hình nó sắp thay.
   3. **Đủ dữ liệu sạch:** ≥ 100 kỳ live `validated`, không thiếu kỳ, không lệch ngày.
 
-  Chưa qua cổng thì luật công bố là luật công bằng.
+  Chưa qua cổng thì luật công bố là luật công bằng. Kết quả cổng là view `gate_status`, không
+  phải một cờ được ghi: ngưỡng lấy từ `gate_allocation` có biên nhận, wealth tính lại từ
+  `live_score`. Một bộ nạp cũ ghi ngưỡng 140 hay ghi thẳng "đã qua" không có chỗ để ghi.
 
   Nhãn "có tín hiệu thống kê" trên trang hiện dùng ngưỡng 20 của từng sản phẩm riêng lẻ.
   Max 3D (10^2,57 ≈ 371) và Max 3D Pro (10^2,84 ≈ 692) vẫn vượt ngưỡng 230 của cả họ. Giai
@@ -967,7 +1070,8 @@ Các luật an toàn:
 
   Nếu dữ liệu thật sự theo luật của mô hình production (đúng điều mô hình tuyên bố khi
   được đề bạt), mỗi thừa số có kỳ vọng 1. Khi ấy thời gian trung bình giữa hai lần báo động
-  nhầm ≥ c. Đề xuất c = 1 000 kỳ, khoảng 6 năm với sản phẩm quay 3 kỳ/tuần. Khi Mₜ ≥ c, hệ
+  nhầm ≥ c. Đề xuất c = 1 000 kỳ, khoảng 6 năm với sản phẩm quay 3 kỳ/tuần (view
+  `rollback_detector`, mục 4.5). Khi Mₜ ≥ c, hệ
   thống tự hạ mô hình về challenger, công bố luật công bằng, và giữ checkpoint để dựng lại.
   Một detector thứ hai cùng dạng, so production với mô hình production trước đó của cùng
   sản phẩm (đọc từ `model_deployment`), bắt
