@@ -15,6 +15,8 @@ giữ: dải chi tiết PHỦ LÊN nội dung chứ không đẩy nó.
 
 from __future__ import annotations
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -28,9 +30,6 @@ sys.path.insert(0, str(ROOT / "src"))
 #: phép kiểm tự định nghĩa phạm vi của mình, và một trang đánh rơi khung sẽ
 #: lặng lẽ rơi khỏi danh sách thay vì làm phép kiểm đỏ.
 PAGES = sorted(DOCS.glob("*.html"))
-
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
-
 
 def test_the_published_tree_holds_at_least_one_page() -> None:
     """Chốt chặn cho mọi phép kiểm chạy theo tham số ở tệp này."""
@@ -220,13 +219,24 @@ def test_every_navigation_target_is_a_real_page() -> None:
     assert not thieu, f"điều hướng trỏ tới trang không có: {thieu}"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def trinh_duyet():
-    playwright = pytest.importorskip("playwright.sync_api")
-    if not Path(CHROME).exists():
-        pytest.skip("không có Chromium ở đường dẫn đã ghim")
+    if os.environ.get("UI_BROWSER_REQUIRED") == "1":
+        import playwright.sync_api as playwright
+    else:
+        playwright = pytest.importorskip("playwright.sync_api")
     with playwright.sync_playwright() as pw:
-        b = pw.chromium.launch(executable_path=CHROME, args=["--no-sandbox"])
+        options = {"args": ["--no-sandbox"]}
+        if os.environ.get("UI_CHROMIUM_EXECUTABLE"):
+            options["executable_path"] = os.environ["UI_CHROMIUM_EXECUTABLE"]
+        if os.environ.get("UI_CHROMIUM_ARGS_FILE"):
+            options["args"] = json.loads(Path(os.environ["UI_CHROMIUM_ARGS_FILE"]).read_text())
+        try:
+            b = pw.chromium.launch(**options)
+        except playwright.Error:
+            if os.environ.get("UI_BROWSER_REQUIRED") == "1" or options.get("executable_path"):
+                raise
+            pytest.skip("chưa cài Chromium; browser CI phải cài và chạy phép kiểm này")
         yield b
         b.close()
 
@@ -311,19 +321,29 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
     for i in range(so_nhom):
         pg.locator(".app-rail-btn").nth(i).tap()
         pg.wait_for_timeout(400)
-        ket_qua.append(pg.evaluate(
-            """() => {
-              const items = [...document.querySelectorAll('.app-panel-group:not([hidden]) .app-nav-item')];
-              const hong = [];
-              for (const a of items) {
+        links = pg.locator(".app-panel-group:not([hidden]) .app-nav-item")
+        hong = []
+        panel = pg.locator(".app-panel").bounding_box()
+        pg.mouse.move(panel["x"] + panel["width"] / 2, panel["y"] + panel["height"] / 2)
+        # Cuộn bằng đầu vào người dùng; không dùng cuộn DOM vì nó vẫn cuộn
+        # được phần tử overflow:hidden và che mất lỗi menu không vuốt được.
+        pg.mouse.wheel(0, -10_000)
+        pg.wait_for_timeout(100)
+        for link in links.all():
+            for _ in range(20):
+                reached = link.evaluate("""a => {
                 const r = a.getBoundingClientRect();
                 const el = r.width >= 4 && r.height >= 4
                   ? document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) : null;
-                if (!(el && (a === el || a.contains(el)))) hong.push(a.getAttribute('href'));
-              }
-              return {tong: items.length, hong: hong};
-            }"""
-        ))
+                return !!(el && (a === el || a.contains(el)));
+                }""")
+                if reached:
+                    break
+                pg.mouse.wheel(0, 160)
+                pg.wait_for_timeout(50)
+            if not reached:
+                hong.append(link.get_attribute("href"))
+        ket_qua.append({"tong": links.count(), "hong": hong})
     pg.close()
     assert so_nhom == len(SITE_NAV), f"chỉ {so_nhom} nút nhóm trên dải biểu tượng"
     tong = sum(do["tong"] for do in ket_qua)

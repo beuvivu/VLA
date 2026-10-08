@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 25
     env:
       VQE_SOURCE: auto
-      VQE_HTTP_BACKEND: curl_cffi
+      VQE_HTTP_BACKEND: httpx
       VQE_SEED_FILE_DIR: data/seed
       VQE_AUTO_UPDATE_DIR: data/results
       VQE_LOG_LEVEL: WARNING
