@@ -194,6 +194,22 @@ Lược đồ dưới đây dùng kiểu của DuckDB và chạy được trên 
 **không thay thế ngay** các bảng `draws`/`prizes`/`sync_log` đang chạy. Bước 2 của lộ
 trình dựng nó thành bảng mới cùng view tương thích, rồi chuyển dần từng nơi đọc.
 
+**Gốc tin cậy.** Cổng đề bạt và rollback chỉ đọc ba loại giá trị:
+
+1. **Sự kiện do bên ngoài chứng nhận:** biên nhận (attestation Sigstore, tem RFC 3161) phủ
+   dấu băm nội dung, do bộ kiểm xác minh chữ ký, dấu băm và mốc giờ.
+2. **Giá trị SQL suy ra được:** nhóm nguồn, xác nhận kỳ, mốc xét quyền, wealth, các lần so,
+   số kỳ và trung bình của phép so. Chúng là view, không lưu.
+3. **Giá trị chỉ mã mới tính được:** log-loss của một luật hỗn hợp, cận dưới chuỗi tin cậy
+   Choe–Ramdas. Chúng do workflow chấm điểm công khai sinh ra, chạy trên `main` ở đúng
+   `code_sha`. Workflow ký attestation phủ bản kê các dòng nó ghi, và bản kê được tính lại
+   từ dòng thật (`scoring_run`, mục 4.5). Ai cũng chạy lại được trên cùng đầu vào. Dòng sửa
+   tay, dòng do bộ nạp khác ghi, hay dòng sửa sau khi ký đều không vào cổng. Có nhiều lượt
+   hợp lệ thì lấy giá trị KÉM thuận lợi nhất cho mô hình, nên chạy lại không giúp được gì.
+
+Gốc tin cậy cuối cùng là mã chấm điểm đã qua review trên `main`; lược đồ không thay được
+review ấy.
+
 ### 4.1 Danh mục và kết quả
 
 ```sql
@@ -503,14 +519,29 @@ CREATE TABLE forecast_issue (
 -- Mã kỳ chỉ duy nhất TRONG một sản phẩm (mọi sản phẩm bắt đầu từ kỳ 1), nên điểm luôn đi
 -- kèm game. Hai khóa ngoại ghép buộc: kỳ được chấm đúng là kỳ đích của dự báo, và kỳ ấy có
 -- thật trong draw của CÙNG sản phẩm. Điểm của Mega không thể gắn vào kết quả Power.
+-- Một lượt của workflow chấm điểm (gốc tin cậy, loại 3). Biên nhận của lượt
+-- (subject_kind = 'scoring_run') phải là attestation Sigstore của ĐÚNG workflow chấm trên
+-- refs/heads/main ở commit code_sha, phủ bản kê các dòng lượt ấy ghi (view attested_run).
+CREATE TABLE scoring_run (
+    run_id          VARCHAR PRIMARY KEY,
+    kind            VARCHAR NOT NULL CHECK (kind IN ('score', 'comparison')),
+    code_sha        VARCHAR NOT NULL,             -- commit của mã chấm
+    started_at      TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE forecast_score (
-    forecast_id     VARCHAR PRIMARY KEY,
+    forecast_id     VARCHAR NOT NULL,
+    run_id          VARCHAR NOT NULL REFERENCES scoring_run(run_id),
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
+    forecast_sha256 VARCHAR NOT NULL,             -- content_sha256 của lần phát đã chấm
+    outcome_sha256  VARCHAR NOT NULL,             -- hash kết quả kỳ đã dùng (cùng biểu thức như live_score)
     log_loss        DOUBLE  NOT NULL,             -- −log p_model(kết quả thật)
     log_loss_fair   DOUBLE  NOT NULL,             -- −log p_công_bằng(kết quả thật)
     brier           DOUBLE,
     scored_at       TIMESTAMPTZ NOT NULL,
+    -- Một lần phát có thể được chấm lại (đính chính kỳ, sửa mã chấm): mỗi lượt một dòng.
+    PRIMARY KEY (forecast_id, run_id),
     FOREIGN KEY (forecast_id, game, draw_id) REFERENCES forecast_issue(forecast_id, game, target_draw_id),
     FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
 );
@@ -556,7 +587,7 @@ CREATE TABLE candidate_score (
 -- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
 -- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
-    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run', 'game_schedule', 'model_deployment')),
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run', 'game_schedule', 'model_deployment', 'scoring_run')),
     subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, run_id, source_code@<giờ>, game/model_id@kỳ,
                                                   -- game@<giờ>; <giờ> = valid_from theo UTC, dạng
                                                   -- 2026-01-01T00:00:00Z, KHÔNG phụ thuộc múi giờ phiên
@@ -568,6 +599,10 @@ CREATE TABLE receipt (
     verified        BOOLEAN NOT NULL,             -- bộ kiểm đã xác nhận chữ ký + dấu băm + mốc giờ
     verified_at     TIMESTAMPTZ,
     verifier        VARCHAR,                      -- công cụ và phiên bản đã kiểm
+    -- Danh tính người ký, ĐỌC TỪ chứng chỉ của bundle Sigstore (NULL với rfc3161):
+    signer_workflow VARCHAR,                      -- ví dụ .github/workflows/vlm-score.yml
+    signer_ref      VARCHAR,                      -- ví dụ refs/heads/main
+    signer_sha      VARCHAR,                      -- commit mà workflow chạy
     PRIMARY KEY (subject_kind, subject_id)
 );
 
@@ -584,6 +619,29 @@ FROM source_registry s
 JOIN receipt r ON r.subject_kind = 'source_registry'
               AND r.subject_id = s.source_code || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
               AND r.verified AND r.content_sha256 = s.content_sha256;
+
+CREATE VIEW attested_run AS
+SELECT sr.run_id, sr.kind, r.content_sha256 AS attested_sha256, r.receipt_at
+FROM scoring_run sr
+JOIN receipt r ON r.subject_kind = 'scoring_run' AND r.subject_id = sr.run_id AND r.verified
+              AND r.receipt_kind = 'sigstore_attestation'
+              AND r.signer_workflow = '.github/workflows/vlm-score.yml'
+              AND r.signer_ref = 'refs/heads/main'
+              AND r.signer_sha = sr.code_sha;
+
+-- Lượt chấm điểm có bản kê TÍNH LẠI từ dòng forecast_score khớp đúng attestation.
+CREATE VIEW verified_score_run AS
+SELECT a.run_id, a.receipt_at
+FROM attested_run a
+JOIN (SELECT run_id, sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256)) AS sha
+      FROM (SELECT run_id,
+                   sha256(to_json(struct_pack(forecast_id := forecast_id, game := game, draw_id := draw_id,
+                                              forecast_sha256 := forecast_sha256,
+                                              outcome_sha256 := outcome_sha256, log_loss := log_loss,
+                                              log_loss_fair := log_loss_fair, brier := brier))::VARCHAR) AS row_sha256
+            FROM forecast_score)
+      GROUP BY run_id) m ON m.run_id = a.run_id
+WHERE a.kind = 'score' AND a.attested_sha256 = m.sha;
 
 CREATE VIEW observation_group AS
 SELECT o.*, rr.receipt_at AS run_receipt_at,
@@ -707,22 +765,40 @@ SELECT forecast_id, receipt_at FROM (
     WHERE NOT i.legacy
 ) WHERE revision = 1;
 
+-- Mỗi lần phát đúng MỘT điểm: trong các dòng thuộc lượt chấm đã xác minh, chấm ĐÚNG lần phát
+-- (forecast_sha256) và ĐÚNG kết quả hiện tại của kỳ (outcome_sha256; đính chính kỳ làm điểm cũ
+-- tự rơi ra), lấy dòng KÉM thuận lợi nhất cho mô hình. Chạy lại lượt chấm không thể nâng điểm.
 CREATE VIEW live_score AS
+WITH ok AS (
+    SELECT s.*
+    FROM forecast_score s
+    JOIN verified_score_run v ON v.run_id = s.run_id
+    JOIN forecast_issue fi ON fi.forecast_id = s.forecast_id AND fi.content_sha256 = s.forecast_sha256
+    JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
+    WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR)
+), pick AS (
+    SELECT * EXCLUDE (k) FROM (
+        SELECT *, row_number() OVER (PARTITION BY forecast_id
+                                     ORDER BY log_loss - log_loss_fair DESC, run_id) AS k
+        FROM ok
+    ) WHERE k = 1
+)
 SELECT s.*, e.receipt_at, k.cutoff_ts,
        e.receipt_at IS NOT NULL AND e.receipt_at < k.cutoff_ts
        AND c.corroborated AS live_eligible
-FROM forecast_score s
-JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
+FROM pick s
 JOIN draw_cutoff_effective k ON k.game = s.game AND k.draw_id = s.draw_id
 JOIN draw_corroboration c ON c.game = s.game AND c.draw_id = s.draw_id
 LEFT JOIN evidence_issue e ON e.forecast_id = s.forecast_id;
 
--- cs_lower là con số LƯU duy nhất mà cổng đọc: chuỗi tin cậy của Choe & Ramdas cần mã của
--- engine, SQL không biểu diễn được. Vì vậy dòng ghi rõ mức alpha đã dùng, gate_status chỉ nhận
--- dòng có mức đúng bằng gate_allocation.alpha × alpha_factor của lần so (view comparison_epoch),
--- và phép kiểm tính lại n_draws, trung bình và cs_lower từ live_score của cả hai mô hình. Dòng
--- được khóa theo ĐỐI THỦ (kỳ hiệu lực của nó), không theo số thứ tự j: j do view cấp.
+-- cs_lower cần mã của engine (chuỗi tin cậy Choe & Ramdas), SQL không biểu diễn được, nên nó
+-- là giá trị loại 3 của gốc tin cậy: do workflow chấm ghi trong một lượt 'comparison' có
+-- attestation (view verified_comparison_run). gate_status còn TÍNH LẠI n_draws và trung bình từ
+-- live_score của cả hai mô hình và đòi trùng, đòi cs_lower ≤ trung bình, đòi mức alpha đúng
+-- bằng gate_allocation.alpha × alpha_factor của lần so, và lấy cs_lower NHỎ nhất qua mọi lượt
+-- hợp lệ. Dòng được khóa theo ĐỐI THỦ (kỳ hiệu lực của nó), không theo số thứ tự j.
 CREATE TABLE incumbent_comparison (
+    run_id          VARCHAR NOT NULL REFERENCES scoring_run(run_id),
     game            VARCHAR NOT NULL,
     challenger_id   VARCHAR NOT NULL,
     incumbent_id    VARCHAR NOT NULL,
@@ -732,8 +808,23 @@ CREATE TABLE incumbent_comparison (
     mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
     alpha_level     DOUBLE  NOT NULL,             -- mức của chuỗi tin cậy đã tính
     cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
-    PRIMARY KEY (game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id)
+    PRIMARY KEY (run_id, game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id)
 );
+
+CREATE VIEW verified_comparison_run AS
+SELECT a.run_id
+FROM attested_run a
+JOIN (SELECT run_id, sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256)) AS sha
+      FROM (SELECT run_id,
+                   sha256(to_json(struct_pack(game := game, challenger_id := challenger_id,
+                                              incumbent_id := incumbent_id,
+                                              incumbent_from_draw_id := incumbent_from_draw_id,
+                                              as_of_draw_id := as_of_draw_id, n_draws := n_draws,
+                                              mean_log_score_diff := mean_log_score_diff,
+                                              alpha_level := alpha_level, cs_lower := cs_lower))::VARCHAR) AS row_sha256
+            FROM incumbent_comparison)
+      GROUP BY run_id) m ON m.run_id = a.run_id
+WHERE a.kind = 'comparison' AND a.attested_sha256 = m.sha;
 
 -- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
 -- chỉ đúng khi seq_no được chốt VĨNH VIỄN trước dự báo live đầu tiên và alpha đúng bằng công
@@ -807,9 +898,8 @@ SELECT *, 6 / (pi() ^ 2 * epoch_no * epoch_no) AS alpha_factor FROM numbered;
 -- Trạng thái bằng chứng sau mỗi kỳ: SUY RA từ live_score, không lưu. Với luật qₜ đã phát
 -- trước kỳ, Πₜ qₜ(xₜ) / p_công_bằng(xₜ) là e-process so với luật công bằng, nên
 -- log10_wealth = Σ (log_loss_fair − log_loss) / ln 10 trên các dòng live_eligible. Kỳ được xác
--- nhận muộn tự vào lại khi view được đọc. log_loss lưu ở forecast_score là đầu vào duy nhất;
--- phép kiểm tính lại nó từ law và kết quả kỳ. missing_draws đếm theo dãy mã kỳ, nên kỳ chưa có
--- trong kho cũng bị tính là thiếu.
+-- nhận muộn tự vào lại khi view được đọc. log_loss đến từ lượt chấm đã xác minh (live_score).
+-- missing_draws đếm theo dãy mã kỳ, nên kỳ chưa có trong kho cũng bị tính là thiếu.
 CREATE VIEW evidence_state AS
 WITH s AS (
     SELECT i.game, i.model_id, l.draw_id,
@@ -831,7 +921,9 @@ FROM s;
 --      và SỚM HƠN biên nhận của mọi dự báo bằng chứng của mô hình ấy. Không có thì không qua;
 --      e-process đã vượt ngưỡng ở một thời điểm nào đó (max_log10_wealth) là đủ, theo Ville.
 --   2) lần so với ĐÚNG mô hình production hiện hành (dòng production mới nhất có hiệu lực tới
---      kỳ này) có cs_lower > 0, ở mức đúng bằng alpha × alpha_factor của lần so ấy.
+--      kỳ này) có cs_lower > 0: lấy từ lượt so đã xác minh, n_draws và trung bình trùng với
+--      giá trị tính lại, cs_lower ≤ trung bình, mức đúng bằng alpha × alpha_factor; nhiều lượt
+--      thì lấy cs_lower nhỏ nhất, và một dòng không nhất quán làm cả kỳ không qua.
 --   3) ≥ 100 kỳ live và không thiếu kỳ.
 CREATE VIEW gate_status AS
 WITH alloc AS (
@@ -850,16 +942,41 @@ WITH alloc AS (
              ORDER BY md.effective_from_draw_id DESC, md.decided_at DESC LIMIT 1) AS incumbent_key
     FROM evidence_state es
     LEFT JOIN alloc a ON a.game = es.game AND a.model_id = es.model_id
-), cmp AS (
-    SELECT st.game, st.model_id, st.as_of_draw_id, max(ic.cs_lower) AS cs_lower
+), pairs AS (                                   -- hiệu log-score (thách đấu − đối thủ) từng kỳ
+    SELECT ce.game, ce.challenger_id, ce.incumbent_id, ce.incumbent_from_draw_id, lc.draw_id,
+           CASE WHEN ce.incumbent_id = 'fair' THEN lc.log_loss_fair ELSE li.log_loss END
+             - lc.log_loss AS diff
+    FROM comparison_epoch ce
+    JOIN forecast_issue fc ON fc.game = ce.game AND fc.model_id = ce.challenger_id
+    JOIN live_score lc ON lc.forecast_id = fc.forecast_id AND lc.live_eligible
+                      AND lc.draw_id >= ce.incumbent_from_draw_id
+    LEFT JOIN forecast_issue fi ON fi.game = ce.game AND fi.model_id = ce.incumbent_id
+                               AND fi.target_draw_id = lc.draw_id
+    LEFT JOIN live_score li ON li.forecast_id = fi.forecast_id AND li.live_eligible
+    WHERE ce.incumbent_id = 'fair' OR li.forecast_id IS NOT NULL
+), paired AS (
+    SELECT game, challenger_id, incumbent_id, incumbent_from_draw_id, draw_id AS as_of_draw_id,
+           count(*) OVER w AS n_draws, avg(diff) OVER w AS mean_diff
+    FROM pairs
+    WINDOW w AS (PARTITION BY game, challenger_id, incumbent_id, incumbent_from_draw_id ORDER BY draw_id)
+), cmp AS (                                       -- mọi dòng so đã xác minh phải nhất quán; lấy min
+    SELECT st.game, st.model_id, st.as_of_draw_id,
+           CASE WHEN bool_and(ic.n_draws = p.n_draws
+                              AND abs(ic.mean_log_score_diff - p.mean_diff) <= 1e-9 * greatest(1, abs(p.mean_diff))
+                              AND ic.cs_lower <= ic.mean_log_score_diff
+                              AND abs(ic.alpha_level - st.alpha * ce.alpha_factor) <= 1e-12 * st.alpha * ce.alpha_factor)
+                THEN min(ic.cs_lower) END AS cs_lower
     FROM st
     JOIN comparison_epoch ce ON ce.game = st.game AND ce.challenger_id = st.model_id
                             AND ce.incumbent_id || '@' || ce.incumbent_from_draw_id = st.incumbent_key
+    JOIN paired p ON p.game = ce.game AND p.challenger_id = ce.challenger_id
+                 AND p.incumbent_id = ce.incumbent_id AND p.incumbent_from_draw_id = ce.incumbent_from_draw_id
+                 AND p.as_of_draw_id = st.as_of_draw_id
     JOIN incumbent_comparison ic ON ic.game = ce.game AND ic.challenger_id = ce.challenger_id
                                 AND ic.incumbent_id = ce.incumbent_id
                                 AND ic.incumbent_from_draw_id = ce.incumbent_from_draw_id
                                 AND ic.as_of_draw_id = st.as_of_draw_id
-    WHERE abs(ic.alpha_level - st.alpha * ce.alpha_factor) <= 1e-12 * st.alpha * ce.alpha_factor
+    JOIN verified_comparison_run v ON v.run_id = ic.run_id
     GROUP BY st.game, st.model_id, st.as_of_draw_id
 )
 SELECT st.game, st.model_id, st.as_of_draw_id, st.live_draws, st.missing_draws,
@@ -972,7 +1089,7 @@ CREATE TABLE backtest_metric (
 | `sync_log` | `ingestion_run` + `source_attempt` | Thêm `error_class`, độ trễ |
 | `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật cho kỳ gần đây | `provenance_kind = 'journal'` |
 | `data/seed/*.jsonl(.gz)`, `data/products` | Nạp vào `draw` | `provenance_kind = 'seed'` / `'product_store'`, kèm đường dẫn và hash của đúng dòng |
-| `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss. Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
+| `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss (trong một `scoring_run` riêng). Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
 | `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng, không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | Checkpoint | Checkpoint vẫn là JSON gzip. Wealth trong tệp KHÔNG được nạp: `evidence_state` là view, tính lại từ `live_score` |
 | Cửa sổ quay trong `vlm.updates.schedule` (mã nguồn) | `game_schedule` | Lịch chép thành một phiên bản và xin biên nhận TRƯỚC kỳ đầu áp dụng. Kỳ đã quay trước giờ biên nhận ấy có mốc đầu ngày, tức dự báo trong ngày quay của chúng không vào bằng chứng; lịch không được áp ngược |
