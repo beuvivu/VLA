@@ -110,3 +110,49 @@ def test_docker_publishes_the_api_on_loopback_only() -> None:
     compose = yaml.safe_load((Path(__file__).resolve().parents[1] / "docker-compose.yml").read_text(encoding="utf-8"))
     ports = [str(p) for p in compose["services"]["api"]["ports"]]
     assert ports and all(p.startswith("127.0.0.1:") for p in ports), ports
+
+
+def test_a_rejected_write_still_carries_cors_headers_for_an_allowed_origin() -> None:
+    # Xác thực nằm NGOÀI CORS thì 401 trả sớm không có Access-Control-Allow-Origin, và client
+    # hợp lệ chỉ thấy lỗi mạng mờ thay vì phản hồi xác thực.
+    settings = Settings(storage_backend="memory", api_token=TOKEN, cors_origins=["https://ok.example"])
+    with TestClient(create_app(settings, repository=_repo())) as c:
+        response = c.post(EV[0], json=EV[1], headers={"Origin": "https://ok.example"})
+        assert response.status_code == 401
+        assert response.headers.get("access-control-allow-origin") == "https://ok.example"
+
+
+@pytest.mark.parametrize("headers", [{"Sec-Fetch-Site": "cross-site"}, {"Sec-Fetch-Site": "same-site"},
+                                     {"Origin": EVIL}])
+def test_without_a_token_a_browser_write_from_another_site_is_refused(default: TestClient, headers: dict) -> None:
+    # Không đặt token thì client không phải trình duyệt (scheduler, curl) vẫn ghi được, nhưng
+    # một trang lạ không còn kích hoạt được lệnh ghi bằng "simple request".
+    assert default.get("/forecast/mega645?record=true", headers=headers).status_code == 403
+    assert default.post(EV[0], json=EV[1], headers=headers).status_code == 403
+
+
+def test_without_a_token_same_origin_and_non_browser_writes_still_work(default: TestClient) -> None:
+    assert default.post(EV[0], json=EV[1]).status_code == 200
+    assert default.post(EV[0], json=EV[1], headers={"Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert default.post(EV[0], json=EV[1], headers={"Sec-Fetch-Site": "none"}).status_code == 200
+
+
+def test_without_a_token_the_api_s_own_docs_page_can_still_write(default: TestClient) -> None:
+    # Swagger UI ở /docs do chính API phục vụ: trình duyệt gửi Origin là host của API.
+    own = {"Origin": "http://testserver"}
+    assert default.post(EV[0], json=EV[1], headers={**own, "Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert default.post(EV[0], json=EV[1], headers=own).status_code == 200
+
+
+def test_an_origin_listed_in_cors_may_write_without_a_token() -> None:
+    settings = Settings(storage_backend="memory", cors_origins=["https://ok.example"])
+    with TestClient(create_app(settings, repository=_repo())) as c:
+        headers = {"Origin": "https://ok.example", "Sec-Fetch-Site": "cross-site"}
+        assert c.post(EV[0], json=EV[1], headers=headers).status_code == 200
+
+
+def test_serve_listens_on_loopback_unless_told_otherwise() -> None:
+    from vietlott_engine.cli import build_parser
+
+    assert build_parser().parse_args(["serve"]).host == "127.0.0.1"
+

@@ -142,15 +142,23 @@ ports:
 đọc được (FastAPI sẽ trả 422) vẫn tính là lệnh ghi. Bản đầu chỉ so với `{"1", "true", "yes"}`,
 nên `?record=on` ghi được vào sổ mà không cần token.
 
-Dịch vụ `scheduler` trong compose gửi `Authorization: Bearer $VQE_API_TOKEN`. Không đặt
-token thì hành vi giữ nguyên, tương thích ngược. Header tuỳ biến buộc trình duyệt gửi
-preflight, nên `<form>`/`<img>` ở trang lạ không còn kích hoạt được lệnh ghi. So khớp token
-bằng `hmac.compare_digest` (thời gian hằng).
+Dịch vụ `scheduler` trong compose gửi `Authorization: Bearer $VQE_API_TOKEN`. Header tuỳ
+biến buộc trình duyệt gửi preflight, nên `<form>`/`<img>` ở trang lạ không còn kích hoạt được
+lệnh ghi. So khớp token bằng `hmac.compare_digest` (thời gian hằng).
 
-**Kiểm chứng.** `vietlott/tests/test_api_security.py` có 16 phép kiểm. Đột biến cả 7 luật
-(CORS `*`, bỏ kiểm token, `record=true` không tính là ghi, so `record` phân biệt hoa thường,
-chỉ đọc một lần lặp của `record`, cho giá trị không đọc được đi qua, compose mở mọi giao diện)
-đều đỏ. Toàn bộ bộ kiểm engine vẫn xanh. Engine là mã chép từ
+Không đặt token thì client không phải trình duyệt (scheduler, curl) vẫn ghi được như cũ,
+nhưng lệnh ghi mà trình duyệt đánh dấu là đến từ trang khác bị trả 403: `Sec-Fetch-Site`
+khác `same-origin`/`none`, hoặc `Origin` không phải chính API và không có trong
+`VQE_CORS_ORIGINS`. Swagger UI ở `/docs` (cùng trang) vẫn dùng được. `vietlott serve` mặc
+định nghe `127.0.0.1` (trước: `0.0.0.0`), và cảnh báo khi được mở ra mạng mà không có token.
+CORS được thêm SAU middleware xác thực nên nằm ngoài cùng: phản hồi 401/403 vẫn mang
+`Access-Control-Allow-Origin` cho trang được phép, thay vì thành lỗi mạng mờ.
+
+**Kiểm chứng.** `vietlott/tests/test_api_security.py` có 24 phép kiểm. Đột biến cả 12 luật
+đều đỏ: CORS `*`, bỏ kiểm token, `record=true` không tính là ghi, so `record` phân biệt hoa
+thường, chỉ đọc một lần lặp của `record`, cho giá trị không đọc được đi qua, compose mở mọi
+giao diện, CORS nằm trong xác thực, bỏ chặn trang khác khi không có token, không tin origin
+của chính API, cho qua `Sec-Fetch-Site` lạ khi không có `Origin`, `serve` mặc định `0.0.0.0`. Toàn bộ bộ kiểm engine vẫn xanh. Engine là mã chép từ
 VLM, nên bản vá này nên được đưa ngược về kho VLM.
 
 ### A3 — API lộ danh tính nguồn (MEDIUM)

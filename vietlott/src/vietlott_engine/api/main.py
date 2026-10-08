@@ -1,6 +1,6 @@
 """FastAPI application factory.
 
-Run:  uvicorn vietlott_engine.api.main:app --host 0.0.0.0 --port 8000
+Run:  uvicorn vietlott_engine.api.main:app --host 127.0.0.1 --port 8000
 Docs: http://localhost:8000/docs
 """
 
@@ -136,8 +136,6 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         ),
         lifespan=lifespan,
     )
-    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
-
     _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
     _BOOL = TypeAdapter(bool)
 
@@ -153,16 +151,41 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
                 return True
         return False
 
+    def _sent_by_another_site(request: Request) -> bool:
+        """Trình duyệt đánh dấu yêu cầu đến từ một trang khác (Fetch Metadata, hoặc Origin lạ).
+
+        Client không phải trình duyệt (scheduler, curl) không gửi hai đầu mục này nên không bị
+        ảnh hưởng. Cùng trang (Swagger UI ở /docs do chính API phục vụ) và Origin có trong
+        VQE_CORS_ORIGINS là được tin."""
+        site = request.headers.get("sec-fetch-site")
+        if site in {"same-origin", "none"}:
+            return False
+        origin = request.headers.get("origin")
+        if origin is not None:
+            own = f"{request.url.scheme}://{request.url.netloc}"
+            return origin != own and origin not in settings.cors_origins
+        return site is not None
+
     @app.middleware("http")
     async def _require_token_for_writes(request: Request, call_next):  # type: ignore[no-untyped-def]
-        """Lệnh ghi cần token khi VQE_API_TOKEN được đặt; lệnh đọc giữ nguyên."""
+        """Lệnh ghi cần token khi VQE_API_TOKEN được đặt; lệnh đọc giữ nguyên.
+
+        Không đặt token thì lệnh ghi vẫn mở cho client cục bộ, nhưng KHÔNG cho trình duyệt gửi
+        từ trang khác: CORS đóng chỉ ngăn đọc phản hồi, còn một "simple request" như
+        ``GET /forecast/mega645?record=true`` từ trang lạ vẫn được gửi đi."""
         token = settings.api_token
         writes = request.method in _MUTATING or _asks_to_record(request)
-        if token and writes:
+        if writes and token:
             supplied = request.headers.get("authorization", "")
             if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
                 return JSONResponse(status_code=401, content={"error": "Unauthorized", "detail": "missing or invalid API token"})
+        elif writes and _sent_by_another_site(request):
+            return JSONResponse(status_code=403, content={"error": "Forbidden", "detail": "cross-site write without an API token"})
         return await call_next(request)
+
+    # CORS thêm SAU cùng nên nằm NGOÀI cùng: phản hồi 401/403 trả sớm ở trên vẫn mang đầu mục
+    # CORS cho trang được phép, thay vì thành lỗi mạng mờ.
+    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
 
     @app.exception_handler(VQEError)
     async def _vqe_error(_: Request, exc: VQEError) -> JSONResponse:
