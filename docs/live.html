@@ -611,12 +611,25 @@
       return urls;
     }
 
+    var FETCH_TIMEOUT_MS = Number(window.LIVE_FETCH_TIMEOUT_MS) > 0
+      ? Number(window.LIVE_FETCH_TIMEOUT_MS) : 10000;
+
+    function timeoutSignal(ms) {
+      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+        return AbortSignal.timeout(ms);
+      }
+      var controller = new AbortController();
+      window.setTimeout(function () { controller.abort(); }, ms);
+      return controller.signal;
+    }
+
     async function fetchSnapshot() {
       var lastError = null;
       var urls = candidateUrls();
       for (var i = 0; i < urls.length; i += 1) {
         try {
-          var response = await fetch(urls[i] + '?t=' + Date.now(), {cache: 'no-store'});
+          var response = await fetch(urls[i] + '?t=' + Date.now(),
+            {cache: 'no-store', signal: timeoutSignal(FETCH_TIMEOUT_MS)});
           if (!response.ok) throw new Error(String(response.status));
           return await response.json();
         } catch (error) {
@@ -638,7 +651,11 @@
       pollTimer = window.setTimeout(load, delay);
     }
 
+    var loading = false;
+
     async function load() {
+      if (loading) return;
+      loading = true;
       var status = 'waiting';
       try {
         var data = await fetchSnapshot();
@@ -671,6 +688,7 @@
         document.getElementById('checked').textContent =
           'Sẽ thử lại tự động. Kết quả đã xác minh vẫn xem được ở Trang chủ.';
       }
+      loading = false;
       schedule(status);
     }
 

@@ -152,26 +152,35 @@ if (DRY) {
   if (!health) fail(`Worker chưa trả lời tại ${workerUrl}/health`);
   ok(`/health trả lời: ok=${health.ok}, đã có ảnh chụp=${health.has_snapshot}`);
 
-  note("đang ép thu thập một lượt để kiểm đường ra nguồn…");
+  // Lượt yêu cầu không còn thu thập (chỉ cron gọi nguồn), nên Worker vừa triển khai trả 503
+  // cho tới lượt cron đầu trong khung quay số. Đó là trạng thái chờ, không phải lỗi cài đặt.
+  note("đang đọc ảnh chụp của Worker để kiểm đường ra nguồn…");
   try {
-    const snap = await (await fetch(`${workerUrl}/live.json`, { cache: "no-store" })).json();
-    const rows = snap.source_status || [];
-    // Bản chụp công khai đã ẩn danh nguồn: không còn `error`, chỉ còn cờ
-    // `failed`. Đọc `r.error` thì mọi hàng đều tính là sống, và cảnh báo
-    // "không nguồn nào trả lời" sẽ KHÔNG BAO GIỜ hiện ra.
-    const alive = rows.filter((r) => !r.failed).length;
-    ok(`${alive}/${rows.length} nguồn trả lời được`);
-    if (rows.length > 0 && alive === 0) {
-      say("");
-      say("    ⚠ KHÔNG nguồn nào trả lời. Nhiều khả năng các trang chặn IP trung");
-      say("      tâm dữ liệu — đây là rủi ro đã ghi ở mục 6 của");
-      say("      documentation/operations/live-worker.md.");
-      say("      Lỗi của từng nguồn:");
-      for (const row of rows) {
-        say(`        ${row.source_code} (${row.tier}): ${row.received_values}/27 giá trị`);
+    const response = await fetch(`${workerUrl}/live.json`, { cache: "no-store" });
+    if (response.status === 503) {
+      note("Worker chưa có ảnh chụp: lượt cron đầu trong khung quay số (từ 18:08 giờ VN) sẽ thu.");
+      note("Trước đó trang live đọc live.json dự phòng; sau lượt cron ấy chạy lại lệnh này để");
+      note("xem có bao nhiêu nguồn trả lời được.");
+    } else {
+      const snap = await response.json();
+      const rows = snap.source_status || [];
+      // Bản chụp công khai đã ẩn danh nguồn: không còn `error`, chỉ còn cờ
+      // `failed`. Đọc `r.error` thì mọi hàng đều tính là sống, và cảnh báo
+      // "không nguồn nào trả lời" sẽ KHÔNG BAO GIỜ hiện ra.
+      const alive = rows.filter((r) => !r.failed).length;
+      ok(`${alive}/${rows.length} nguồn trả lời được`);
+      if (rows.length > 0 && alive === 0) {
+        say("");
+        say("    ⚠ KHÔNG nguồn nào trả lời. Nhiều khả năng các trang chặn IP trung");
+        say("      tâm dữ liệu — đây là rủi ro đã ghi ở mục 6 của");
+        say("      documentation/operations/live-worker.md.");
+        say("      Lỗi của từng nguồn:");
+        for (const row of rows) {
+          say(`        ${row.source_code} (${row.tier}): ${row.received_values}/27 giá trị`);
+        }
+        say("      Muốn quay lại như cũ: xoá nội dung window.LIVE_WORKER_URL");
+        say("      trong docs/live.html rồi đẩy lên.");
       }
-      say("      Muốn quay lại như cũ: xoá nội dung window.LIVE_WORKER_URL");
-      say("      trong docs/live.html rồi đẩy lên.");
     }
   } catch (error) {
     note(`chưa gọi được /live.json (${error.message}) — thử lại sau vài phút`);

@@ -28,11 +28,14 @@ Dưới giả thuyết công bằng E[d_t] = 0 và các kỳ độc lập. Kết
 from __future__ import annotations
 
 import csv
+import io
 import math
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+from atomic_io import atomic_write_text
 
 #: Tham số ĐÃ ĐĂNG KÝ. Không sửa — xem docstring.
 REGISTERED_ON = "2026-09-28"
@@ -106,12 +109,12 @@ def update_ledger(data_dir: Path) -> Path:
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype={"date": str})
     for row in scored_draws(frame):
         known.setdefault(row["date"], {k: row[k] for k in FIELDS})
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDS, lineterminator="\n")
-        writer.writeheader()
-        for day in sorted(known):
-            writer.writerow({k: known[day][k] for k in FIELDS})
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=FIELDS, lineterminator="\n")
+    writer.writeheader()
+    for day in sorted(known):
+        writer.writerow({k: known[day][k] for k in FIELDS})
+    atomic_write_text(path, buffer.getvalue())
     return path
 
 
