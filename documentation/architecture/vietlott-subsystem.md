@@ -313,18 +313,19 @@ CREATE TABLE jackpot_snapshot (
 ### 4.3 Vận hành thu thập
 
 ```sql
--- Mỗi lượt thu thập có biên nhận bên ngoài (receipt, subject_kind = 'ingestion_run') phủ
--- observations_sha256, tức hash của mọi quan sát lượt ấy ghi. Giờ biên nhận là mốc DUY NHẤT
--- dùng để chọn phiên bản sổ nguồn cho các quan sát ấy. observed_at tự khai chỉ để hiển thị.
--- Một lượt phát lại chèn sau, kể cả ghi lùi observed_at, nhận biên nhận MỚI, nên dùng
--- phiên bản sổ hiện hành chứ không chọn được nhóm cũ.
+-- Mỗi lượt thu thập có biên nhận bên ngoài (receipt, subject_kind = 'ingestion_run'), xin
+-- SAU khi lượt ghi xong, phủ bản kê quan sát của lượt (view run_manifest bên dưới). Giờ biên
+-- nhận là mốc DUY NHẤT dùng để chọn phiên bản sổ nguồn cho các quan sát ấy. observed_at tự
+-- khai chỉ để hiển thị. Một lượt phát lại chèn sau, kể cả ghi lùi observed_at, nhận biên
+-- nhận MỚI, nên dùng phiên bản sổ hiện hành chứ không chọn được nhóm cũ.
 CREATE TABLE ingestion_run (
     run_id          VARCHAR PRIMARY KEY,
     trigger         VARCHAR NOT NULL CHECK (trigger IN ('schedule', 'api', 'manual', 'replay')),
     started_at      TIMESTAMPTZ NOT NULL,
     finished_at     TIMESTAMPTZ,
-    status          VARCHAR NOT NULL CHECK (status IN ('ok', 'partial', 'failed')),
-    observations_sha256 VARCHAR                   -- NULL khi lượt không ghi quan sát nào
+    status          VARCHAR NOT NULL CHECK (status IN ('ok', 'partial', 'failed'))
+    -- Không lưu hash bản kê: hash lưu sẵn không chứng minh được dòng nào nằm trong nó. Bản kê
+    -- được TÍNH LẠI từ chính các dòng quan sát (run_manifest).
 );
 
 CREATE TABLE source_attempt (
@@ -350,9 +351,9 @@ CREATE TABLE draw_observation (
     source_code     VARCHAR NOT NULL,             -- mã ẩn danh, KHÔNG phải tên miền
     run_id          VARCHAR NOT NULL REFERENCES ingestion_run(run_id),   -- lượt đã ghi quan sát này
     -- KHÔNG lưu nhóm độc lập ở đây: một giá trị do bên ghi tự điền có thể gõ sai hay khác
-    -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
-    -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
-    observed_at     TIMESTAMPTZ NOT NULL,
+    -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA ở view observation_group từ
+    -- source_registry, đúng phiên bản có hiệu lực lúc lượt thu thập nhận biên nhận.
+    observed_at     TIMESTAMPTZ NOT NULL,         -- tự khai, chỉ để hiển thị; không dùng để xét
     -- Không lưu con trỏ tới phiên bản sổ: con trỏ lưu sẵn có thể trỏ vào một bản đã cũ. Phiên
     -- bản áp dụng được SUY RA ở view observation_group từ thời điểm hiệu lực có biên nhận.
     numbers         SMALLINT[] NOT NULL,
@@ -360,8 +361,26 @@ CREATE TABLE draw_observation (
     raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
     -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
     -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
-    PRIMARY KEY (game, draw_id, source_code, observed_at)
+    PRIMARY KEY (game, draw_id, source_code, run_id)
 );
+
+-- Bản kê của mỗi lượt, TÍNH LẠI từ đúng các dòng đang có: hash của từng dòng ở dạng JSON
+-- chuẩn (to_json theo thứ tự cột cố định; giờ là epoch micro giây, không phụ thuộc múi giờ
+-- phiên), sắp xếp rồi nối và băm. Bộ ghi tính bản kê bằng CHÍNH view này trên bản nháp
+-- trước khi xin biên nhận. Chèn thêm, sửa hay xóa một dòng dưới một run_id đã có biên nhận
+-- đều làm bản kê lệch biên nhận, và CẢ lượt ấy bị loại (observation_group ra nhóm NULL),
+-- chứ không chỉ dòng chèn thêm.
+CREATE VIEW run_manifest AS
+SELECT run_id, count(*) AS n_observations,
+       sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256)) AS observations_sha256
+FROM (
+    SELECT run_id,
+           sha256(to_json(struct_pack(game := game, draw_id := draw_id, source_code := source_code,
+                                      observed_us := epoch_us(observed_at), numbers := numbers,
+                                      bonus := bonus, raw_sha256 := raw_sha256))::VARCHAR) AS row_sha256
+    FROM draw_observation
+)
+GROUP BY run_id;
 
 -- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
 -- draw.scheduled_slot_ts, KHÔNG phải draw_cutoff).
@@ -569,9 +588,9 @@ SELECT o.*, rr.receipt_at AS run_receipt_at,
          WHERE e.source_code = o.source_code AND e.effective_from <= rr.receipt_at
          ORDER BY e.effective_from DESC LIMIT 1) AS independence_group
 FROM draw_observation o
-JOIN ingestion_run ir ON ir.run_id = o.run_id
+JOIN run_manifest m ON m.run_id = o.run_id
 LEFT JOIN receipt rr ON rr.subject_kind = 'ingestion_run' AND rr.subject_id = o.run_id
-                    AND rr.verified AND rr.content_sha256 = ir.observations_sha256;
+                    AND rr.verified AND rr.content_sha256 = m.observations_sha256;
 
 -- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
 -- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
@@ -579,18 +598,22 @@ LEFT JOIN receipt rr ON rr.subject_kind = 'ingestion_run' AND rr.subject_id = o.
 -- view này, không chỉ tin cột draw.status.
 
 CREATE VIEW draw_corroboration AS
-WITH agreeing AS (                                -- quan sát TRÙNG số liệu hiện tại của kỳ
-    SELECT o.game, o.draw_id, o.source_code, o.independence_group, o.observed_at
+WITH agreeing AS (                                -- quan sát CÓ NHÓM và TRÙNG số liệu hiện tại của kỳ
+    SELECT o.game, o.draw_id, o.source_code, o.independence_group, o.run_receipt_at, o.run_id
     FROM observation_group o
     JOIN draw d ON d.game = o.game AND d.draw_id = o.draw_id
     JOIN game g ON g.code = d.game
     WHERE CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
                ELSE o.numbers = d.numbers END
       AND o.bonus IS NOT DISTINCT FROM d.bonus
-), per_source AS (                                -- MỖI NGUỒN góp đúng một nhóm: của lần trùng sớm nhất
+      AND o.independence_group IS NOT NULL         -- lượt không có biên nhận hợp lệ không được đếm
+),
+-- MỖI NGUỒN góp đúng một nhóm: của lần trùng có BIÊN NHẬN sớm nhất. Không xếp theo observed_at:
+-- một lượt phát lại muộn có thể ghi lùi trường ấy để chen lên trước và mang nhóm mới vào.
+per_source AS (
     SELECT game, draw_id, source_code, independence_group FROM (
         SELECT *, row_number() OVER (PARTITION BY game, draw_id, source_code
-                                     ORDER BY observed_at) AS k
+                                     ORDER BY run_receipt_at, run_id) AS k
         FROM agreeing
     ) WHERE k = 1
 )
