@@ -213,6 +213,26 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
     app.include_router(catalog.router)
     app.include_router(forecast.router)
     app.include_router(ml_router)
+    if settings.api_token:
+        base_openapi = app.openapi
+
+        def _openapi_with_bearer() -> dict:
+            """Cho Swagger gửi token theo đúng các thao tác middleware bảo vệ."""
+            schema = base_openapi()
+            schema.setdefault("components", {}).setdefault("securitySchemes", {})["VqeBearer"] = {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Nhập VQE_API_TOKEN trong Authorize; Swagger tự thêm tiền tố Bearer.",
+            }
+            for path, operations in schema["paths"].items():
+                for method, operation in operations.items():
+                    if method.upper() in _MUTATING or (
+                        method.upper() in {"GET", "HEAD"} and _REFRESHING_GET.match(path) is not None
+                    ):
+                        operation["security"] = [{"VqeBearer": []}]
+            return schema
+
+        app.openapi = _openapi_with_bearer
     return app
 
 

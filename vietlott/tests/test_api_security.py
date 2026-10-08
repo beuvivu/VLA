@@ -63,6 +63,36 @@ def test_with_a_token_writes_need_it_and_reads_do_not(guarded: TestClient) -> No
     assert guarded.post(EV[0], json=EV[1], headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 200
 
 
+def test_openapi_exposes_bearer_for_guarded_try_it_out(guarded: TestClient) -> None:
+    """Swagger phải biết gửi token cho POST và GET làm mới trạng thái."""
+    schema = guarded.get("/openapi.json").json()
+    schemes = schema.get("components", {}).get("securitySchemes", {})
+    bearer = next((name for name, value in schemes.items()
+                   if value.get("type") == "http" and value.get("scheme") == "bearer"), None)
+    assert bearer is not None, "Swagger thiếu HTTP Bearer nên không có nút Authorize"
+    for path, method in (
+        ("/games/{game}/ev", "post"),
+        ("/games/{game}/prizes/sync", "post"),
+        ("/forecast/{product}/fit", "post"),
+        ("/forecast/{product}", "get"),
+        ("/forecast/{product}/evidence", "get"),
+        ("/ml/forecast/{product}", "get"),
+    ):
+        assert schema["paths"][path][method].get("security") == [{bearer: []}], (path, method)
+    for path in ("/health", "/games/{game}/draws", "/forecast/{product}/scoreboard"):
+        assert not schema["paths"][path]["get"].get("security"), path
+    assert TOKEN not in guarded.get("/openapi.json").text
+    # Đây là đầu mục mà client theo HTTP Bearer trong schema phải gửi.
+    assert guarded.post(EV[0], json=EV[1]).status_code == 401
+    assert guarded.post(EV[0], json=EV[1], headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 200
+
+
+def test_openapi_keeps_local_no_token_operations_anonymous(default: TestClient) -> None:
+    schema = default.get("/openapi.json").json()
+    assert not schema.get("components", {}).get("securitySchemes")
+    assert not schema["paths"]["/games/{game}/ev"]["post"].get("security")
+
+
 def test_record_true_is_a_write_even_though_it_is_a_get(guarded: TestClient) -> None:
     assert guarded.get("/forecast/mega645?record=true").status_code == 401
     assert guarded.get("/forecast/mega645?record=TRUE").status_code == 401

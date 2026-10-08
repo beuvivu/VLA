@@ -360,3 +360,11 @@ Các ca kiểm dưới đây đã được chạy đỏ trên bản chưa sửa 
 Phạm vi này giữ nguyên payload kết quả quay, sổ dự báo và chính sách mô hình.
 Các nâng cấp dependency và thay đổi CI/vận hành được ghi riêng trong
 `2026-10-08-pending-work.md` khi chốt main.
+
+Review tổng thể còn phát hiện Swagger `/docs` thiếu khai báo HTTP Bearer:
+khi bật token, người dùng không có nút Authorize để gửi nó. OpenAPI nay khai
+báo scheme và gắn đúng các POST/PUT/PATCH/DELETE cùng GET làm mới dự báo;
+không gắn xác thực cho lệnh đọc công khai hoặc khi chưa cấu hình token.
+Kiểm `test_openapi_exposes_bearer_for_guarded_try_it_out` đã chạy đỏ rồi xanh,
+kèm kiểm không đưa giá trị token vào schema. Hướng dẫn API ghi cách dùng
+Authorize. Middleware tiếp tục là nơi thực thi xác thực.
