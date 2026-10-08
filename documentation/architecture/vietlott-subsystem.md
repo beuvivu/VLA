@@ -117,8 +117,9 @@ flowchart LR
 4. **Lưu.** Ghi journal trước (nguồn sự thật, ai cũng kiểm toán được qua git), rồi
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
-   trùng. Chỉ dự báo phát TRƯỚC giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1),
-   cho một kỳ đã được hai nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ đích do
+   trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài (giờ máy chủ của lượt Actions, hoặc tem RFC 3161;
+   mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1), cho một kỳ
+   được hai nhóm nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ phát và giờ đích do
    chính dự báo khai không được dùng để xét.
 6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
    theo log-likelihood thật; cây quyết định được fit lại định kỳ trên một vùng đệm giới
@@ -236,10 +237,22 @@ CREATE TABLE draw (
 CREATE INDEX draw_by_time ON draw (game, draw_ts);
 
 -- Mỗi nguồn nhìn thấy gì: phát hiện mâu thuẫn mà không ghi đè.
+-- Nhóm độc lập của từng nguồn, CÓ HIỆU LỰC THEO THỜI GIAN và chỉ chèn: hai nguồn khác tên
+-- nhưng chép cùng một nơi phải chung một nhóm. Đổi nhóm của một nguồn là một dòng mới,
+-- không sửa dòng cũ, nên luôn biết nhóm nào đã được dùng để xác nhận một kỳ.
+CREATE TABLE source_registry (
+    source_code     VARCHAR NOT NULL,
+    independence_group VARCHAR NOT NULL,          -- mã ẩn danh của nhà cung cấp gốc
+    valid_from      TIMESTAMPTZ NOT NULL,
+    note            VARCHAR NOT NULL,             -- vì sao xếp vào nhóm này (đã kiểm thế nào)
+    PRIMARY KEY (source_code, valid_from)
+);
+
 CREATE TABLE draw_observation (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
     source_code     VARCHAR NOT NULL,             -- mã ẩn danh, KHÔNG phải tên miền
+    independence_group VARCHAR NOT NULL,          -- CHỤP từ source_registry lúc quan sát
     observed_at     TIMESTAMPTZ NOT NULL,
     numbers         SMALLINT[] NOT NULL,
     bonus           SMALLINT,
@@ -247,6 +260,17 @@ CREATE TABLE draw_observation (
     agrees          BOOLEAN NOT NULL,             -- trùng bản đã xác thực?
     PRIMARY KEY (game, draw_id, source_code, observed_at)
 );
+
+-- Số nhóm ĐỘC LẬP khác nhau cùng xác nhận một kỳ. 'validated' chỉ có nghĩa khi ≥ 2 nhóm;
+-- học và bằng chứng đọc view này, không chỉ tin cột draw.status.
+CREATE VIEW draw_corroboration AS
+SELECT d.game, d.draw_id, d.status,
+       count(DISTINCT o.independence_group) FILTER (WHERE o.agrees) AS agreeing_groups,
+       d.status = 'validated' AND count(DISTINCT o.independence_group) FILTER (WHERE o.agrees) >= 2
+           AS corroborated
+FROM draw d
+LEFT JOIN draw_observation o ON o.game = d.game AND o.draw_id = d.draw_id
+GROUP BY d.game, d.draw_id, d.status;
 ```
 
 ### 4.2 Giải thưởng và jackpot
@@ -354,19 +378,14 @@ CREATE TABLE hypothesis (
     params_sha256   VARCHAR NOT NULL              -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
                                                   -- không khoảng trắng); kiểm toán tính lại được
 );
-
-CREATE VIEW hypothesis_eligibility AS
-SELECT h.hypothesis_id, h.registered_at, d.earliest_draw_ts AS first_draw_ts,
-       h.registered_at < d.earliest_draw_ts AS prospective
-FROM hypothesis h
-JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id;
 -- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
 -- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
 -- Giả thuyết chỉ là TIẾN CỨU khi được đăng ký TRƯỚC giờ quay của kỳ đầu tiên nó tính. Lúc
--- đăng ký, kỳ ấy thường chưa có trong draw, nên không thể là khóa ngoại hay CHECK; view dưới
--- đây xét lại khi kỳ đã có. Kết quả của giả thuyết nào không 'prospective' thì không được
--- tính và không được in như phép kiểm tiến cứu. registered_at còn phải khớp thời điểm commit
--- của dòng sổ trong git (phép kiểm so hai mốc), vì đó là mốc bên ngoài, không tự khai được.
+-- đăng ký, kỳ ấy thường chưa có trong draw, nên không thể là khóa ngoại hay CHECK; view
+-- hypothesis_eligibility (mục 4.5, sau bảng receipt) xét lại khi kỳ đã có. Kết quả của giả thuyết nào không 'prospective' thì không được
+-- tính và không được in như phép kiểm tiến cứu. Mốc dùng để xét là BIÊN NHẬN bên ngoài
+-- (bảng receipt, mục 4.5), không phải registered_at tự khai, cũng không phải ngày commit
+-- của git, vốn cũng tự khai được.
 ```
 
 ### 4.5 Mô hình, dự báo, chấm điểm
@@ -454,22 +473,54 @@ CREATE TABLE candidate_score (
     PRIMARY KEY (forecast_id, rank)
 );
 
--- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần sớm nhất.
+-- BIÊN NHẬN bên ngoài cho thứ cần chứng minh "đã có trước": dự báo, giả thuyết.
+-- issued_at và registered_at là giờ TỰ KHAI. Bảng chỉ chèn cũng không ngăn được việc chèn
+-- muộn một dòng ghi lùi giờ, và ngày commit của git cũng tự khai được. Vì vậy chỉ mốc do bên
+-- ngoài cấp mới được dùng để xét:
+--   * actions_run: giờ máy chủ GitHub ghi khi lượt Actions đã commit dòng sổ chạy xong
+--     (updated_at của run, tra từ API theo run id). Ai cũng kiểm lại được, không sửa được.
+--   * rfc3161: tem thời gian của một cơ quan cấp tem (TSA) trên content_sha256, cho dự
+--     báo phát ngoài Actions (máy chủ thường trực, chế độ B).
+-- content_sha256 gắn biên nhận với ĐÚNG nội dung đã phát, nên không đổi nội dung được sau đó.
+-- Không có biên nhận thì không vào bằng chứng.
+CREATE TABLE receipt (
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation')),
+    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id
+    receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('actions_run', 'rfc3161')),
+    receipt_ref     VARCHAR NOT NULL,             -- run id, hoặc sha256 của token TSA
+    receipt_at      TIMESTAMPTZ NOT NULL,         -- giờ do bên ngoài cấp
+    content_sha256  VARCHAR NOT NULL,             -- hash của đúng nội dung được biên nhận
+    PRIMARY KEY (subject_kind, subject_id)
+);
+
+-- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
+CREATE VIEW hypothesis_eligibility AS
+SELECT h.hypothesis_id, r.receipt_at, d.earliest_draw_ts AS first_draw_ts,
+       r.receipt_at IS NOT NULL AND r.receipt_at < d.earliest_draw_ts AS prospective
+FROM hypothesis h
+JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id
+LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id;
+
+-- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần có biên nhận
+-- SỚM NHẤT. Chèn muộn một dòng ghi lùi issued_at không đổi được lựa chọn, vì biên nhận
+-- của nó đến sau.
 CREATE VIEW evidence_issue AS
-SELECT forecast_id FROM (
-    SELECT forecast_id,
-           row_number() OVER (PARTITION BY game, model_id, target_draw_id
-                              ORDER BY issued_at, forecast_id) AS revision
-    FROM forecast_issue
+SELECT forecast_id, receipt_at FROM (
+    SELECT i.forecast_id, r.receipt_at,
+           row_number() OVER (PARTITION BY i.game, i.model_id, i.target_draw_id
+                              ORDER BY r.receipt_at, i.forecast_id) AS revision
+    FROM forecast_issue i
+    JOIN receipt r ON r.subject_kind = 'forecast' AND r.subject_id = i.forecast_id
 ) WHERE revision = 1;
 
 CREATE VIEW live_score AS
-SELECT s.*, i.issued_at, d.earliest_draw_ts,
-       i.issued_at < d.earliest_draw_ts AND d.status = 'validated'
-       AND s.forecast_id IN (SELECT forecast_id FROM evidence_issue) AS live_eligible
+SELECT s.*, e.receipt_at, d.earliest_draw_ts,
+       e.receipt_at IS NOT NULL AND e.receipt_at < d.earliest_draw_ts
+       AND c.corroborated AS live_eligible
 FROM forecast_score s
-JOIN forecast_issue i ON i.forecast_id = s.forecast_id
-JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id;
+JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
+JOIN draw_corroboration c ON c.game = s.game AND c.draw_id = s.draw_id
+LEFT JOIN evidence_issue e ON e.forecast_id = s.forecast_id;
 
 -- Trạng thái bằng chứng sau mỗi kỳ, để vẽ đường e-value và quyết định cổng.
 CREATE TABLE evidence_state (
@@ -527,8 +578,8 @@ CREATE TABLE incumbent_comparison (
 --   * bảng chỉ được chèn: quyền UPDATE/DELETE bị thu hồi, và sổ gate_allocation được commit
 --     vào git như data/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
 --   * bất biến kiểm bằng phép kiểm: seq_no của mỗi sản phẩm liên tục 1..n (xoá một dòng để
---     dùng lại số nhỏ sẽ làm hở dãy), và registered_at < issued_at của mọi dự báo của
---     (game, model_id) ấy.
+--     dùng lại số nhỏ sẽ làm hở dãy), và BIÊN NHẬN của dòng phân bổ (bảng receipt,
+--     subject_kind = 'gate_allocation') sớm hơn biên nhận của mọi dự báo của (game, model_id) ấy.
 CREATE TABLE gate_allocation (
     game            VARCHAR NOT NULL REFERENCES game(code)
                     -- ĐÚNG 7 sản phẩm được cấp alpha, khớp mẫu số 7 của công thức. Max 4D đã
@@ -659,7 +710,8 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 ```
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
-    (issued_at < draw.earliest_draw_ts VÀ kỳ đã 'validated') mới vào e-value
+    (biên nhận bên ngoài < draw.earliest_draw_ts VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
+    mới vào e-value
   → CHỈ KHI kỳ t (và mọi kỳ trước nó) đã 'validated':
       cập nhật chuyên gia online (logistic, GRU, LSTM)    [mỗi kỳ]
       cập nhật trọng số fixed-share theo log-likelihood   [mỗi kỳ]
