@@ -8,6 +8,7 @@ import gzip
 import heapq
 import json
 from collections import Counter
+from copy import deepcopy
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Iterator
@@ -197,7 +198,8 @@ def compare_prediction(prediction: dict, draw: DrawRecord) -> dict:
         raise ValueError('Prediction product/draw does not match this result')
     out = {'status': 'matched', 'product': code, 'target_id': draw.draw_id,
            'target_date': prediction['target_date'], 'made_at': prediction['made_at'],
-           'engine': prediction['engine'], 'registered': prediction['registered'], 'tickets': []}
+           'engine': prediction['engine'], 'registered': prediction['registered'],
+           'components': deepcopy(prediction['components']), 'tickets': []}
     if draw.draw_date.date().isoformat() != prediction['target_date']:
         return {**out, 'status': 'date_mismatch'}
     components = {c['name']: c for c in prediction['components']}

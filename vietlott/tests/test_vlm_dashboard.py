@@ -1,5 +1,6 @@
 """Dashboard tests exercise draw pairing, frozen forecasts and nullable prize data."""
 import json
+from copy import deepcopy
 from datetime import datetime
 
 import numpy as np
@@ -49,6 +50,26 @@ def test_lotto_compares_special_number_from_the_frozen_forecast():
     draw = DrawRecord.from_legacy('lotto535', {'id': 2, 'date': '2026-10-04', 'result': [1, 2, 3, 4, 7, 9]})
     ticket = compare_prediction(pred, draw)['tickets'][0]
     assert (ticket['hits'], ticket['bonus_hit'], ticket['tier']) == (4, True, 'second')
+
+
+def test_date_mismatch_keeps_frozen_main_and_special_numbers_without_scoring():
+    """Lệch ngày vẫn giữ bộ số đã đăng ký; không chấm với kết quả của ngày khác."""
+    from vlm.web.dashboard import compare_prediction
+    pred = prediction('lotto535', [1, 2, 3, 4, 5], target_date='2026-10-05')
+    pred['components'].append({'name': 'special', 'kind': 'digit', 'top': [{'numbers': [9]}]})
+    original = deepcopy(pred)
+    draw = DrawRecord.from_legacy('lotto535', {'id': 2, 'date': '2026-10-04', 'result': [1, 2, 3, 4, 5, 9]})
+    result = compare_prediction(pred, draw)
+    assert result['status'] == 'date_mismatch'
+    assert result['tickets'] == []
+    assert result['components'] == original['components']
+    assert result['made_at'] == original['made_at']
+    assert result['engine'] == original['engine'] and result['registered'] is True
+    assert pred == original
+    # Bản dùng để trình bày cũng không được giữ tham chiếu tới bộ số trong sổ.
+    result['components'][0]['top'][0]['numbers'][0] = 35
+    result['components'][1]['top'][0]['numbers'][0] = 12
+    assert pred == original
 
 
 def test_max_digits_match_full_padded_number_and_every_tier():
@@ -106,6 +127,8 @@ def test_snapshot_uses_first_pre_draw_issue_never_current_or_late_picks(tmp_path
     assert len(mega['comparisons']) == 1
     assert mega['comparisons'][0]['tickets'][0]['numbers'] == [1, 2, 3, 4, 5, 6]
     assert mega['comparisons'][0]['tickets'][0]['hits'] == 5
+    assert mega['comparisons'][0]['components'][0]['top'][0]['numbers'] == [1, 2, 3, 4, 5, 6]
+    assert mega['comparisons'][0]['made_at'] == '2026-10-03T08:00:00+07:00'
     assert mega['next_forecast'] is None
     assert len(snap['products']) == 7
 

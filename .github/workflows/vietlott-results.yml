@@ -11,6 +11,13 @@ name: Trang Vietlott (dựng từ engine)
 # một khung quay: Lotto 13:00 → 13:25; Mega/Power/Max 18:00 → 18:40 và 19:30;
 # Lotto 21:00 → 21:25; Keno/Bingo18 hết ngày → 22:20.
 on:
+  workflow_run:
+    # Commit do GITHUB_TOKEN ghi không phát sinh push; dựng ngay sau engine.
+    workflows:
+      - "VLM · Tự cập nhật kết quả từng sản phẩm Vietlott"
+      - "VLM · Cập nhật dữ liệu, dự báo và trang Vietlott"
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: "25 6 * * *"
     - cron: "40 11 * * *"
@@ -24,9 +31,12 @@ on:
       - "src/build_vietlott_results.py"
       - "src/templates/vietlott_main.css"
       - "src/assets/vietlott-picks.js"
+      - "src/assets/vietlott-comparison.js"
       - "src/vietlott_navigation_content.py"
       - "src/evidence_catalog.py"
       - "vietlott/src/vlm/web/**"
+      - "vietlott/data/results/results.jsonl"
+      - "vietlott/data/forecast/*ledger.jsonl"
       - ".github/workflows/vietlott-results.yml"
 
 permissions:
@@ -38,6 +48,12 @@ concurrency:
 
 jobs:
   build:
+    # Chỉ đọc đầu main của chính kho sau một lượt engine thành công.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -52,6 +68,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          ref: ${{ github.event_name == 'workflow_run' && github.event.repository.default_branch || github.ref }}
 
       - uses: actions/setup-python@v7
         with:
@@ -91,7 +108,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/vietlott*.html docs/assets/vietlott-picks.js
+          git add docs/vietlott*.html docs/assets/vietlott-picks.js docs/assets/vietlott-comparison.js
           if ! git diff --cached --quiet; then
             git commit -m "docs: dựng lại trang Vietlott từ engine"
             git pull --rebase origin "${GITHUB_REF_NAME}"

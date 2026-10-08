@@ -140,6 +140,20 @@ def test_forecasts_say_whether_they_were_registered_before_the_draw(built) -> No
     assert "Chưa có kết quả đã xác thực" in built["vietlott-power-655.html"]
 
 
+def test_forecast_candidates_render_balls_without_losing_symbols_or_odds() -> None:
+    forecast = _dashboard()["products"][0]["next_forecast"]
+    soup = BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser")
+    assert [ball.get_text() for ball in soup.select('.vl-ball')] == ["04", "12", "31", "34", "38", "41"]
+    assert soup.select_one('.vl-number-sequence') is not None
+    assert "×1.0500 so với ngẫu nhiên" in soup.get_text()
+    max_forecast = {"components": [{"name": "digits", "top": [{"numbers": [0, 3, 8]}]}]}
+    max_soup = BeautifulSoup(b.forecast_markup("max3d", max_forecast), "html.parser")
+    assert [ball.get_text() for ball in max_soup.select('.vl-ball')] == ["038"]
+    lotto_forecast = {"components": [{"name": "special", "top": [{"numbers": [7]}]}]}
+    lotto_soup = BeautifulSoup(b.forecast_markup("lotto535", lotto_forecast), "html.parser")
+    assert lotto_soup.select_one('.vl-ball--bonus').get_text() == "07"
+
+
 def test_a_date_mismatch_is_shown_as_such_not_as_pending(built) -> None:
     mega = built["vietlott-mega-645.html"]
     row = mega.split('<th scope="row">#1569</th>', 1)[1].split("</tr>", 1)[0]
@@ -151,6 +165,125 @@ def test_comparisons_show_the_special_number_on_both_sides(built) -> None:
     row = lotto.split('<th scope="row">#930</th>', 1)[1].split("</tr>", 1)[0]
     assert "01 02 03 04 05 + 07" in row, row
     assert "15 22 27 28 29 + 03" in row, row
+
+
+def test_comparison_dashboard_scores_each_ticket_and_uses_engine_prize_tiers() -> None:
+    """Phần trăm cộng theo số chính của từng vé; số phụ có dấu hiệu riêng."""
+    comparison = {
+        "status": "matched", "target_id": 101, "target_date": "2026-10-07",
+        "result": _matrix(101, None, numbers=(1, 2, 3, 4, 5, 6), bonus=7),
+        "tickets": [
+            {"numbers": [1, 2, 3, 4, 5, 7], "matched_numbers": [1, 2, 3, 4, 5],
+             "hits": 5, "bonus_hit": True, "tier": "jackpot2"},
+            {"numbers": [1, 8, 9, 10, 11, 12], "matched_numbers": [1],
+             "hits": 1, "bonus_hit": False, "tier": None},
+        ],
+    }
+    soup = BeautifulSoup(b.comparisons_markup("power655", [comparison]), "html.parser")
+    assert soup.select_one('.vl-comparison-summary') is not None
+    stats = soup.select('.vl-comparison-stat')
+    assert "2" in stats[0].get_text() and "vé đã chấm" in stats[0].get_text()
+    assert "50,0%" in stats[-1].get_text() and "6 / 12" in stats[-1].get_text()
+    tickets = soup.select('.vl-comparison-ticket[data-vl-ticket]')
+    assert len(tickets) == 2
+    assert [ball.get_text() for ball in tickets[0].select('.vl-ball--match')] == ["01", "02", "03", "04", "05"]
+    assert [ball.get_text() for ball in tickets[0].select('.vl-ball--bonus-hit')] == ["07"]
+    assert "5 / 6" in soup.get_text() and "83,3%" in soup.get_text()
+    assert "Jackpot 2" in soup.get_text() and "Không trúng giải" in soup.get_text()
+    assert "không phải xác suất trúng" in soup.get_text()
+
+
+def test_lotto_special_only_prize_uses_engine_consolation_tier() -> None:
+    comparison = {"status": "matched", "target_id": 1, "result": {"numbers": [6, 7, 8, 9, 10], "bonus": 3},
+                  "tickets": [{"numbers": [1, 2, 3, 4, 5], "special": 3, "matched_numbers": [],
+                               "hits": 0, "bonus_hit": True, "tier": "consolation"}]}
+    soup = BeautifulSoup(b.comparisons_markup("lotto535", [comparison]), "html.parser")
+    assert "0 / 5" in soup.get_text() and "0,0%" in soup.get_text()
+    assert "Khuyến khích" in soup.get_text()
+    assert [ball.get_text() for ball in soup.select('.vl-comparison-table .vl-ball--bonus-hit')] == ["03", "03"]
+
+
+def test_comparison_summary_weights_by_total_selected_numbers() -> None:
+    comparison = {"status": "matched", "target_id": 1, "result": {"numbers": [1, 3, 4, 5]},
+                  "tickets": [{"numbers": [1, 2], "matched_numbers": [1], "hits": 1},
+                              {"numbers": [1, 2, 3, 4, 5], "matched_numbers": [1, 3, 4, 5], "hits": 4}]}
+    soup = BeautifulSoup(b.comparisons_markup("keno", [comparison]), "html.parser")
+    summary = soup.select_one('.vl-comparison-stat:last-child')
+    assert summary.select_one('strong').get_text() == "71,4%"
+    assert "5 / 7" in summary.get_text()
+    assert "Chưa phân hạng cược" in soup.get_text()
+
+
+def test_unscored_comparisons_have_no_fake_zero_percentage() -> None:
+    comparisons = [{"status": "pending", "target_id": 2, "tickets": []},
+                   {"status": "date_mismatch", "target_id": 1,
+                    "tickets": [{"numbers": [1, 2, 3, 4, 5, 6], "hits": 6, "tier": "jackpot1"}]}]
+    soup = BeautifulSoup(b.comparisons_markup("mega645", comparisons), "html.parser")
+    assert "Chờ kết quả" in soup.get_text() and "Lệch ngày" in soup.get_text()
+    assert "0,0%" not in soup.get_text()
+    assert soup.select_one('.vl-comparison-stat:last-child strong').get_text() == "—"
+    assert not soup.select('[data-vl-ticket]')
+
+
+def test_pending_comparison_preserves_frozen_registered_numbers_without_scoring() -> None:
+    comparison = {"status": "pending", "target_id": 931, "target_date": "2026-10-08", "registered": True,
+                  "components": [{"name": "main", "top": [{"numbers": [1, 2, 3, 4, 5]}]},
+                                 {"name": "special", "top": [{"numbers": [7]}]}], "tickets": []}
+    soup = BeautifulSoup(b.comparisons_markup("lotto535", [comparison]), "html.parser")
+    assert "01 02 03 04 05 + 07" in str(soup)
+    assert "Chờ kết quả" in soup.get_text() and "Chưa chấm" in soup.get_text()
+    assert not soup.select('.vl-comparison-table .vl-ball--match')
+    assert "0,0%" not in soup.get_text() and "Không trúng giải" not in soup.get_text()
+
+
+def test_bingo_comparison_counts_positions_and_preserves_repeated_dice() -> None:
+    comparison = {"status": "matched", "target_id": 1, "result": {"numbers": [2, 1, 2]},
+                  "tickets": [{"numbers": [2, 2, 2], "position_matches": [True, False, True],
+                               "position_hits": 2, "multiset_hits": 2, "sum_match": False, "exact": False}]}
+    soup = BeautifulSoup(b.comparisons_markup("bingo18", [comparison]), "html.parser")
+    ticket = soup.select_one('[data-vl-ticket]')
+    assert [ball.get_text() for ball in ticket.select('.vl-ball')] == ["2", "2", "2"]
+    assert [ball.get_text() for ball in ticket.select('.vl-ball--match')] == ["2", "2"]
+    assert "2 / 3" in soup.get_text() and "66,7%" in soup.get_text()
+    assert "vị trí" in soup.get_text() and "Bộ có lặp: 2 / 3" in soup.get_text()
+    assert "Giải Ba" not in soup.get_text()
+
+
+def test_max_comparison_highlights_whole_symbols_and_keeps_engine_tiers() -> None:
+    comparison = {"status": "matched", "target_id": 1, "result": {"numbers": ["222", "121", "222"]},
+                  "tickets": [{"numbers": [2, 2, 2], "symbol": "222", "hits": 2, "tiers": ["Đặc biệt", "Nhất"]}]}
+    soup = BeautifulSoup(b.comparisons_markup("max3d", [comparison]), "html.parser")
+    assert [ball.get_text() for ball in soup.select_one('[data-vl-ticket]').select('.vl-ball')] == ["222"]
+    assert len(soup.select('.vl-comparison-actual .vl-ball--match')) == 2
+    assert "Xuất hiện 2 lần" in soup.get_text()
+    assert "Đặc biệt · Nhất" in soup.get_text() and "Không áp dụng" in soup.get_text()
+    assert "%" not in soup.get_text()
+
+
+def test_manual_comparison_widget_is_limited_to_matrix_products_and_loads_asset(tmp_path: Path) -> None:
+    pages = b.build(tmp_path, dashboard=_dashboard())
+    matrix_pages = {b.PRODUCTS[code][1]: code for code in b.MATRIX}
+    for path in pages:
+        soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
+        widget = soup.select_one('[data-vl-comparison-widget]')
+        assert len(soup.select('script[src="assets/vietlott-comparison.js"]')) == 1
+        if path.name in matrix_pages:
+            assert widget is not None, path.name
+            assert widget['data-vl-comparison-widget'] == matrix_pages[path.name]
+            assert widget.has_attr('novalidate')
+            assert not widget.select_one('[data-vl-actual]').has_attr('required')
+            for selector in ('[data-vl-prediction]', '[data-vl-actual]', '[data-vl-comparison-output]',
+                             '[data-vl-comparison-status]', '[data-vl-comparison-submit]'):
+                assert widget.select_one(selector) is not None, selector
+            assert widget.select_one('[data-vl-comparison-submit]')['type'] == 'submit'
+            assert widget.select_one('[data-vl-comparison-status]')['aria-live'] == 'polite'
+            if matrix_pages[path.name] == 'lotto535':
+                assert widget.select_one('[data-vl-predicted-bonus]') is not None
+            if matrix_pages[path.name] in ('power655', 'lotto535'):
+                assert widget.select_one('[data-vl-actual-bonus]') is not None
+        else:
+            assert widget is None, path.name
+    assert (tmp_path / 'docs/assets/vietlott-comparison.js').read_bytes() == (b.ROOT / 'src/assets/vietlott-comparison.js').read_bytes()
 
 
 def test_a_cache_path_from_the_repo_root_is_resolved_before_entering_the_engine(tmp_path, monkeypatch) -> None:
