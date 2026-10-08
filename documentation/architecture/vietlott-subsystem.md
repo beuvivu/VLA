@@ -120,8 +120,17 @@ flowchart LR
    trùng. Chỉ dự báo phát TRƯỚC giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1),
    cho một kỳ đã được hai nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ đích do
    chính dự báo khai không được dùng để xét.
-6. **Học.** Các chuyên gia cập nhật online; trọng số trộn cập nhật theo log-likelihood
-   thật. Cây quyết định được fit lại định kỳ trên một vùng đệm giới hạn.
+6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
+   theo log-likelihood thật; cây quyết định được fit lại định kỳ trên một vùng đệm giới
+   hạn. Kỳ `single_source` hay `conflict` KHÔNG được đưa vào học. Một kết quả sai của nguồn
+   đầu sẽ làm hỏng checkpoint và mọi dự báo phát trước khi đối chiếu xong, kể cả của mô
+   hình production.
+   - Việc học đi đúng thứ tự mã kỳ, nên một kỳ chưa `validated` chặn việc học các kỳ sau
+     nó.
+   - Dự báo kỳ tới vẫn được phát, từ trạng thái đã học tới kỳ `validated` cuối cùng.
+     `history_sha256` ghi đúng lịch sử ấy, nên dự báo vẫn hợp lệ, chỉ cũ hơn một kỳ.
+   - Khi đối chiếu xong, nếu kỳ thành `validated` thì học tiếp theo thứ tự. Nếu kỳ được
+     đính chính thì phát lại tất định từ kỳ ấy, như khi sửa dữ liệu quá khứ.
 7. **Dự báo kỳ tới.** Engine phát luật xác suất cho kỳ tới và ghi sổ kèm `history_sha256`
    cùng thời điểm phát. Nếu chưa qua cổng, luật công bố là luật công bằng; luật của mô
    hình được ghi rõ là thử nghiệm.
@@ -451,19 +460,34 @@ CREATE TABLE evidence_state (
 -- với đối thủ mới: lợi thế tích được trước một đối thủ yếu cũ không được mang sang.
 -- Lần so thứ j của một thách đấu (j = 1 với đối thủ đầu tiên) dùng mức
 -- α(p, k) · 6 / (π² j²), để việc so lại nhiều lần vẫn nằm trong α(p, k).
-CREATE TABLE incumbent_comparison (
+-- Số thứ tự j của mỗi lần so được cấp MỘT LẦN, chỉ chèn, không dùng lại: một thách đấu gặp
+-- một kỳ hiệu lực production mới thì nhận j kế tiếp. Hệ số 6/(π² j²) là cột sinh, nên mỗi
+-- lần so không thể tự nhận hệ số lớn nhất. Bất biến (phép kiểm): j liên tục 1..n cho mỗi
+-- (game, challenger_id). Mức thật của lần so = gate_allocation.alpha × alpha_factor.
+CREATE TABLE comparison_epoch (
     game            VARCHAR NOT NULL,
     challenger_id   VARCHAR NOT NULL REFERENCES model_version(model_id),
+    epoch_no        INTEGER NOT NULL CHECK (epoch_no >= 1),   -- j
     incumbent_id    VARCHAR NOT NULL REFERENCES model_version(model_id),
     incumbent_from_draw_id INTEGER NOT NULL,      -- khóa của kỳ hiệu lực trong model_deployment
-    epoch_no        INTEGER NOT NULL CHECK (epoch_no >= 1),   -- j
-    as_of_draw_id   INTEGER NOT NULL,
-    n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong kỳ hiệu lực này
-    mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
-    cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
-    PRIMARY KEY (game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id),
+    alpha_factor    DOUBLE  GENERATED ALWAYS AS (6 / (pi() ^ 2 * epoch_no * epoch_no)) VIRTUAL,
+    opened_at       TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (game, challenger_id, epoch_no),
+    UNIQUE (game, challenger_id, incumbent_id, incumbent_from_draw_id),   -- một kỳ hiệu lực, một j
     FOREIGN KEY (game, incumbent_id, incumbent_from_draw_id)
         REFERENCES model_deployment(game, model_id, effective_from_draw_id)
+);
+
+CREATE TABLE incumbent_comparison (
+    game            VARCHAR NOT NULL,
+    challenger_id   VARCHAR NOT NULL,
+    epoch_no        INTEGER NOT NULL,
+    as_of_draw_id   INTEGER NOT NULL,
+    n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong lần so này
+    mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
+    cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
+    PRIMARY KEY (game, challenger_id, epoch_no, as_of_draw_id),
+    FOREIGN KEY (game, challenger_id, epoch_no) REFERENCES comparison_epoch(game, challenger_id, epoch_no)
 );
 
 -- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
@@ -476,7 +500,12 @@ CREATE TABLE incumbent_comparison (
 --     dùng lại số nhỏ sẽ làm hở dãy), và registered_at < issued_at của mọi dự báo của
 --     (game, model_id) ấy.
 CREATE TABLE gate_allocation (
-    game            VARCHAR NOT NULL REFERENCES game(code),
+    game            VARCHAR NOT NULL REFERENCES game(code)
+                    -- ĐÚNG 7 sản phẩm được cấp alpha, khớp mẫu số 7 của công thức. Max 4D đã
+                    -- ngừng phát hành, không có kỳ tới nên không có dự báo live, và bị loại
+                    -- bằng ràng buộc chứ không chỉ bằng lời. Thêm một sản phẩm mới thì phải mở
+                    -- ngân sách alpha mới cho cả họ, không được nới danh sách này.
+                    CHECK (game IN ('mega645', 'power655', 'lotto535', 'max3d', 'max3dpro', 'keno', 'bingo18')),
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
     seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
     alpha           DOUBLE  GENERATED ALWAYS AS ((0.05 / 7) * 6 / (pi() ^ 2 * seq_no * seq_no)) VIRTUAL,
@@ -596,9 +625,11 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
     (issued_at < draw.earliest_draw_ts VÀ kỳ đã 'validated') mới vào e-value
-  → cập nhật chuyên gia online (logistic, GRU, LSTM)      [mỗi kỳ]
-  → cập nhật trọng số fixed-share theo log-likelihood     [mỗi kỳ]
-  → fit lại cây trên vùng đệm                             [mỗi N kỳ]
+  → CHỈ KHI kỳ t (và mọi kỳ trước nó) đã 'validated':
+      cập nhật chuyên gia online (logistic, GRU, LSTM)    [mỗi kỳ]
+      cập nhật trọng số fixed-share theo log-likelihood   [mỗi kỳ]
+      fit lại cây trên vùng đệm                           [mỗi N kỳ]
+    nếu chưa: giữ trạng thái học tới kỳ validated cuối, chờ đối chiếu
   → cập nhật evidence_state; kiểm cổng
   → phát forecast_issue cho kỳ t+1 (ghi sổ trước giờ quay)
 ```
@@ -622,7 +653,8 @@ Các luật an toàn:
 
 - **Cổng đề bạt.** Một mô hình lên production cho sản phẩm p khi đạt cả ba điều kiện:
   1. **Thắng luật công bằng, có hiệu chỉnh theo cả sản phẩm lẫn mô hình.** Mô hình thứ k
-     được đăng ký thử cho p nhận α(p, k) = (0,05 / 7) · 6 / (π² k²). Thứ tự k được chốt lúc
+     được đăng ký thử cho p nhận α(p, k) = (0,05 / 7) · 6 / (π² k²), với p là một trong ĐÚNG
+     7 sản phẩm đang phát hành (Max 4D đã ngừng nên bị loại bằng ràng buộc). Thứ tự k được chốt lúc
      đăng ký, trong bảng `gate_allocation`. Vì Σₖ 6/(π² k²) = 1, tổng α của mọi mô hình của
      mọi sản phẩm ≤ 0,05 (bất đẳng thức Ville cho từng e-process, cộng cận hợp). Ngưỡng
      e-value là 1/α(p, k): **230** với k = 1, **921** với k = 2, **2 073** với k = 3,
@@ -633,7 +665,8 @@ Các luật an toàn:
      log-score trung bình (thách đấu − đang chạy), theo Choe & Ramdas (2023), "Comparing
      sequential forecasters". Chỉ đề bạt khi cận dưới của chuỗi > 0. Thắng luật công bằng
      mà thua mô hình đang chạy thì không được đề bạt. Chuỗi được khóa theo kỳ hiệu lực của
-     mô hình đang chạy (bảng `incumbent_comparison`): khi production đổi, phép so bắt đầu
+     mô hình đang chạy (bảng `comparison_epoch` cấp j một lần, `incumbent_comparison` lưu
+     từng kỳ): khi production đổi, phép so bắt đầu
      lại từ đầu với đối thủ mới, ở mức α(p, k)·6/(π² j²) cho lần so thứ j. Vì vậy cổng luôn
      đo thách đấu với ĐÚNG mô hình nó sắp thay.
   3. **Đủ dữ liệu sạch:** ≥ 100 kỳ live `validated`, không thiếu kỳ, không lệch ngày.
