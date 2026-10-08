@@ -117,8 +117,8 @@ flowchart LR
 4. **Lưu.** Ghi journal trước (nguồn sự thật, ai cũng kiểm toán được qua git), rồi
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
-   trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài (giờ máy chủ của lượt Actions, hoặc tem RFC 3161;
-   mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1), cho một kỳ
+   trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài đã kiểm (attestation Sigstore của lượt Actions,
+   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1), cho một kỳ
    được hai nhóm nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ phát và giờ đích do
    chính dự báo khai không được dùng để xét.
 6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
@@ -257,18 +257,27 @@ CREATE TABLE draw_observation (
     numbers         SMALLINT[] NOT NULL,
     bonus           SMALLINT,
     raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
-    agrees          BOOLEAN NOT NULL,             -- trùng bản đã xác thực?
+    -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
+    -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
     PRIMARY KEY (game, draw_id, source_code, observed_at)
 );
 
--- Số nhóm ĐỘC LẬP khác nhau cùng xác nhận một kỳ. 'validated' chỉ có nghĩa khi ≥ 2 nhóm;
--- học và bằng chứng đọc view này, không chỉ tin cột draw.status.
+-- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
+-- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
+-- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
+-- view này, không chỉ tin cột draw.status.
 CREATE VIEW draw_corroboration AS
 SELECT d.game, d.draw_id, d.status,
-       count(DISTINCT o.independence_group) FILTER (WHERE o.agrees) AS agreeing_groups,
-       d.status = 'validated' AND count(DISTINCT o.independence_group) FILTER (WHERE o.agrees) >= 2
-           AS corroborated
+       count(DISTINCT o.independence_group) FILTER (WHERE
+           CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
+                ELSE o.numbers = d.numbers END
+           AND o.bonus IS NOT DISTINCT FROM d.bonus) AS agreeing_groups,
+       d.status = 'validated' AND count(DISTINCT o.independence_group) FILTER (WHERE
+           CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
+                ELSE o.numbers = d.numbers END
+           AND o.bonus IS NOT DISTINCT FROM d.bonus) >= 2 AS corroborated
 FROM draw d
+JOIN game g ON g.code = d.game
 LEFT JOIN draw_observation o ON o.game = d.game AND o.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
 ```
@@ -477,19 +486,33 @@ CREATE TABLE candidate_score (
 -- issued_at và registered_at là giờ TỰ KHAI. Bảng chỉ chèn cũng không ngăn được việc chèn
 -- muộn một dòng ghi lùi giờ, và ngày commit của git cũng tự khai được. Vì vậy chỉ mốc do bên
 -- ngoài cấp mới được dùng để xét:
---   * actions_run: giờ máy chủ GitHub ghi khi lượt Actions đã commit dòng sổ chạy xong
---     (updated_at của run, tra từ API theo run id). Ai cũng kiểm lại được, không sửa được.
---   * rfc3161: tem thời gian của một cơ quan cấp tem (TSA) trên content_sha256, cho dự
---     báo phát ngoài Actions (máy chủ thường trực, chế độ B).
--- content_sha256 gắn biên nhận với ĐÚNG nội dung đã phát, nên không đổi nội dung được sau đó.
--- Không có biên nhận thì không vào bằng chứng.
+-- Một biên nhận chỉ có giá trị khi CHÍNH bằng chứng ràng buộc ba thứ: dấu băm nội dung, thời
+-- điểm, và bên cấp. Chỉ ghi "run id + giờ của run" thì không đủ: giờ của run là thật, nhưng
+-- không có gì chứng minh run ấy chứa đúng dự báo này, nên có thể mượn một run id cũ. Hai
+-- loại được chấp nhận:
+--   * sigstore_attestation: trong lượt Actions phát dự báo, bước attestation của GitHub ký
+--     một bản chứng nhận có subject = content_sha256, danh tính = (kho, workflow, run id).
+--     Mốc thời gian là integratedTime của sổ minh bạch Rekor, do bên ngoài cấp. Kiểm bằng
+--     `gh attestation verify`, đối chiếu dấu băm và danh tính workflow. Cách này cần kho
+--     công khai, hoặc gói GitHub có hỗ trợ attestation cho kho riêng.
+--   * rfc3161: tem của một cơ quan cấp tem (TSA). Token chứa messageImprint = content_sha256
+--     và genTime, có chữ ký TSA. Dùng cho dự báo phát ngoài Actions (chế độ B), hoặc khi
+--     không dùng được attestation.
+-- proof lưu NGUYÊN bằng chứng (bundle Sigstore / token TSA) để ai cũng kiểm lại được.
+-- verified chỉ TRUE sau khi bộ kiểm đã xác nhận chữ ký, dấu băm = content_sha256, và
+-- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
+-- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
     subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation')),
     subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id
-    receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('actions_run', 'rfc3161')),
-    receipt_ref     VARCHAR NOT NULL,             -- run id, hoặc sha256 của token TSA
-    receipt_at      TIMESTAMPTZ NOT NULL,         -- giờ do bên ngoài cấp
+    receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('sigstore_attestation', 'rfc3161')),
+    receipt_ref     VARCHAR NOT NULL,             -- UUID mục Rekor, hoặc sha256 của token TSA
+    receipt_at      TIMESTAMPTZ NOT NULL,         -- integratedTime / genTime ĐỌC TỪ proof
     content_sha256  VARCHAR NOT NULL,             -- hash của đúng nội dung được biên nhận
+    proof           BLOB    NOT NULL,             -- bundle Sigstore hoặc token RFC 3161, nguyên vẹn
+    verified        BOOLEAN NOT NULL,             -- bộ kiểm đã xác nhận chữ ký + dấu băm + mốc giờ
+    verified_at     TIMESTAMPTZ,
+    verifier        VARCHAR,                      -- công cụ và phiên bản đã kiểm
     PRIMARY KEY (subject_kind, subject_id)
 );
 
@@ -499,7 +522,8 @@ SELECT h.hypothesis_id, r.receipt_at, d.earliest_draw_ts AS first_draw_ts,
        r.receipt_at IS NOT NULL AND r.receipt_at < d.earliest_draw_ts AS prospective
 FROM hypothesis h
 JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id
-LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id;
+LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id
+                   AND r.verified;
 
 -- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần có biên nhận
 -- SỚM NHẤT. Chèn muộn một dòng ghi lùi issued_at không đổi được lựa chọn, vì biên nhận
@@ -511,6 +535,7 @@ SELECT forecast_id, receipt_at FROM (
                               ORDER BY r.receipt_at, i.forecast_id) AS revision
     FROM forecast_issue i
     JOIN receipt r ON r.subject_kind = 'forecast' AND r.subject_id = i.forecast_id
+                  AND r.verified
 ) WHERE revision = 1;
 
 CREATE VIEW live_score AS
@@ -669,14 +694,23 @@ Ba luật bắt buộc:
 
 ### M4 · Hợp đồng đầu ra của mọi mô hình
 
-Mọi chuyên gia, kể cả LSTM/Transformer, trả cùng một kiểu:
+Mọi chuyên gia, kể cả LSTM/Transformer, trả cùng một kiểu. Một sản phẩm có thể có nhiều thành phần (Lotto 5/35 có 5 số chính và số đặc biệt 1–12 từ lồng riêng), nên hợp đồng là luật của CẢ sản phẩm ghép từ các thành phần có tên, không phải một luật đơn:
 
 ```python
-class Law:                       # luật xác suất cho kỳ tới
+class ComponentLaw:              # luật của MỘT thành phần, theo ProductConfig của engine
     kind: Literal["set", "digit"]
     node_scores: np.ndarray      # set: điểm từng số; digit: (vị trí × chữ số)
-    def prob(self, outcome) -> float: ...   # xác suất ĐÚNG của một kết quả, chuẩn hóa đầy đủ
-    def top(self, n: int) -> list[Candidate]: ...  # p_model, p_fair, lift
+    def prob(self, outcome) -> float: ...   # xác suất ĐÚNG, chuẩn hóa đầy đủ trong thành phần
+
+class ProductLaw:                # luật của CẢ kết quả một kỳ = ghép các thành phần có tên
+    product: str
+    components: dict[str, ComponentLaw]     # Lotto 5/35: {"main": set 5/35, "special": digit 1..12}
+    def prob(self, outcome: dict[str, Any]) -> float:
+        # Các thành phần quay từ các lồng cầu độc lập (khai trong ProductConfig), nên xác suất
+        # của cả kết quả là TÍCH xác suất từng thành phần; log-loss là TỔNG. Bóng Power quay
+        # từ cùng lồng thì nằm TRONG thành phần "main" (bonus_same_drum), không tách ra.
+        ...
+    def top(self, n: int) -> list[Candidate]: ...  # vé đầy đủ (Lotto: 5 số + số đặc biệt), p_model, p_fair, lift
 ```
 
 Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
