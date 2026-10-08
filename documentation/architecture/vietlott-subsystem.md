@@ -118,7 +118,7 @@ flowchart LR
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
    trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài đã kiểm (attestation Sigstore của lượt Actions,
-   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.earliest_draw_ts`, mục 4.1), cho một kỳ
+   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.eligibility_cutoff_ts`, mục 4.1), cho một kỳ
    được hai nhóm nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ phát và giờ đích do
    chính dự báo khai không được dùng để xét.
 6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
@@ -210,11 +210,17 @@ CREATE TABLE draw (
     draw_ts         TIMESTAMPTZ NOT NULL,         -- giờ quay; 00:00 nếu chỉ biết ngày
     time_precision  VARCHAR  NOT NULL CHECK (time_precision IN ('minute', 'day')),
     -- Hai mốc thời gian, hai mục đích, KHÔNG dùng lẫn:
-    earliest_draw_ts TIMESTAMPTZ NOT NULL,        -- CHỈ để xét dự báo có ghi trước kỳ: giờ SỚM NHẤT
-                                                  -- kỳ này có thể đã quay. draw_ts nếu biết đến phút;
-                                                  -- nếu chỉ biết ngày thì giờ bắt đầu quay sớm nhất
-                                                  -- của ngày theo game.schedule (thận trọng: Lotto
-                                                  -- 13:00 cho cả kỳ 21:00).
+    eligibility_cutoff_ts TIMESTAMPTZ NOT NULL,   -- CHỈ để xét dự báo có ghi trước kỳ, THEO TỪNG KỲ:
+                                                  -- 1) draw_ts nếu biết đến phút (chế độ B ghi được);
+                                                  -- 2) nếu chỉ biết ngày: slot theo lịch của ĐÚNG kỳ
+                                                  --    này, suy từ thứ tự mã kỳ, CHỈ khi ngày ấy có
+                                                  --    đủ số kỳ đúng lịch (thiếu một kỳ là thứ tự
+                                                  --    lệch), rồi trừ thêm một bước nhịp quay làm biên
+                                                  --    an toàn (Keno 8 phút, Bingo18 6 phút);
+                                                  -- 3) không suy được: giờ quay sớm nhất của ngày
+                                                  --    (thận trọng; khi ấy dự báo phát sau kỳ đầu
+                                                  --    ngày không được tính, chấp nhận mất dữ liệu
+                                                  --    hơn là nhận nhầm).
     scheduled_slot_ts TIMESTAMPTZ,                -- CHỈ để đo độ trễ: giờ quay theo lịch của ĐÚNG
                                                   -- kỳ này. draw_ts nếu biết đến phút; nếu chỉ biết
                                                   -- ngày thì suy từ thứ tự mã kỳ trong ngày khi lịch
@@ -256,40 +262,53 @@ CREATE TABLE draw_observation (
     -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
     -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
     observed_at     TIMESTAMPTZ NOT NULL,
+    registry_valid_from TIMESTAMPTZ NOT NULL,     -- phiên bản source_registry CHỐT lúc nạp (bản mới nhất
+                                                  -- có valid_from ≤ observed_at TẠI LÚC NẠP). Dòng sổ
+                                                  -- thêm sau, kể cả ghi lùi valid_from, không xếp lại
+                                                  -- được quan sát đã lưu.
     numbers         SMALLINT[] NOT NULL,
     bonus           SMALLINT,
     raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
     -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
     -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
-    PRIMARY KEY (game, draw_id, source_code, observed_at)
+    PRIMARY KEY (game, draw_id, source_code, observed_at),
+    FOREIGN KEY (source_code, registry_valid_from) REFERENCES source_registry(source_code, valid_from)
 );
 
 -- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
 -- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
 -- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
 -- view này, không chỉ tin cột draw.status.
--- Nhóm của mỗi quan sát = nhóm của nguồn ấy ở phiên bản source_registry mới nhất có
--- valid_from ≤ observed_at. Nguồn chưa đăng ký ra NULL và không được đếm.
+-- Nhóm của mỗi quan sát = nhóm ở ĐÚNG phiên bản sổ đã chốt lúc nạp (khóa ngoại), không tra lại.
 CREATE VIEW observation_group AS
-SELECT o.*,
-       (SELECT r.independence_group FROM source_registry r
-         WHERE r.source_code = o.source_code AND r.valid_from <= o.observed_at
-         ORDER BY r.valid_from DESC LIMIT 1) AS independence_group
-FROM draw_observation o;
+SELECT o.*, r.independence_group
+FROM draw_observation o
+JOIN source_registry r ON r.source_code = o.source_code AND r.valid_from = o.registry_valid_from;
 
 CREATE VIEW draw_corroboration AS
+WITH agreeing AS (                                -- quan sát TRÙNG số liệu hiện tại của kỳ
+    SELECT o.game, o.draw_id, o.source_code, o.independence_group, o.observed_at
+    FROM observation_group o
+    JOIN draw d ON d.game = o.game AND d.draw_id = o.draw_id
+    JOIN game g ON g.code = d.game
+    WHERE CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
+               ELSE o.numbers = d.numbers END
+      AND o.bonus IS NOT DISTINCT FROM d.bonus
+), per_source AS (                                -- MỖI NGUỒN góp đúng một nhóm: của lần trùng sớm nhất
+    SELECT game, draw_id, source_code, independence_group FROM (
+        SELECT *, row_number() OVER (PARTITION BY game, draw_id, source_code
+                                     ORDER BY observed_at) AS k
+        FROM agreeing
+    ) WHERE k = 1
+)
 SELECT d.game, d.draw_id, d.status,
-       count(DISTINCT o.independence_group) FILTER (WHERE
-           CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
-                ELSE o.numbers = d.numbers END
-           AND o.bonus IS NOT DISTINCT FROM d.bonus) AS agreeing_groups,
-       d.status = 'validated' AND count(DISTINCT o.independence_group) FILTER (WHERE
-           CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
-                ELSE o.numbers = d.numbers END
-           AND o.bonus IS NOT DISTINCT FROM d.bonus) >= 2 AS corroborated
+       count(DISTINCT p.source_code) AS agreeing_sources,
+       count(DISTINCT p.independence_group) AS agreeing_groups,
+       d.status = 'validated'
+       AND count(DISTINCT p.source_code) >= 2
+       AND count(DISTINCT p.independence_group) >= 2 AS corroborated
 FROM draw d
-JOIN game g ON g.code = d.game
-LEFT JOIN observation_group o ON o.game = d.game AND o.draw_id = d.draw_id
+LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
 ```
 
@@ -348,7 +367,7 @@ CREATE TABLE source_attempt (
 );
 
 -- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
--- draw.scheduled_slot_ts, KHÔNG phải earliest_draw_ts).
+-- draw.scheduled_slot_ts, KHÔNG phải eligibility_cutoff_ts).
 CREATE TABLE publication (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
@@ -537,8 +556,8 @@ CREATE TABLE receipt (
 
 -- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
 CREATE VIEW hypothesis_eligibility AS
-SELECT h.hypothesis_id, r.receipt_at, d.earliest_draw_ts AS first_draw_ts,
-       r.receipt_at IS NOT NULL AND r.receipt_at < d.earliest_draw_ts AS prospective
+SELECT h.hypothesis_id, r.receipt_at, d.eligibility_cutoff_ts AS first_draw_ts,
+       r.receipt_at IS NOT NULL AND r.receipt_at < d.eligibility_cutoff_ts AS prospective
 FROM hypothesis h
 JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id
 LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id
@@ -559,8 +578,8 @@ SELECT forecast_id, receipt_at FROM (
 ) WHERE revision = 1;
 
 CREATE VIEW live_score AS
-SELECT s.*, e.receipt_at, d.earliest_draw_ts,
-       e.receipt_at IS NOT NULL AND e.receipt_at < d.earliest_draw_ts
+SELECT s.*, e.receipt_at, d.eligibility_cutoff_ts,
+       e.receipt_at IS NOT NULL AND e.receipt_at < d.eligibility_cutoff_ts
        AND c.corroborated AS live_eligible
 FROM forecast_score s
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
@@ -767,7 +786,7 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 ```
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
-    (biên nhận bên ngoài < draw.earliest_draw_ts VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
+    (biên nhận bên ngoài < draw.eligibility_cutoff_ts VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
     mới vào e-value
   → CHỈ KHI kỳ t (và mọi kỳ trước nó) đã 'validated':
       cập nhật chuyên gia online (logistic, GRU, LSTM)    [mỗi kỳ]
