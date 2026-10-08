@@ -277,6 +277,8 @@ CREATE TABLE source_attempt (
     run_id          VARCHAR NOT NULL REFERENCES ingestion_run(run_id),
     game            VARCHAR NOT NULL,
     source_code     VARCHAR NOT NULL,
+    attempt_no      SMALLINT NOT NULL,            -- 1, 2, 3 ... mỗi lần RetryPolicy thử lại là một dòng
+    attempted_at    TIMESTAMPTZ NOT NULL,
     ok              BOOLEAN NOT NULL,
     rows_fetched    INTEGER,
     rows_inserted   INTEGER,
@@ -284,7 +286,7 @@ CREATE TABLE source_attempt (
     error_class     VARCHAR,                      -- timeout, http_5xx, cloudflare, parse_schema, no_newer
     http_status     SMALLINT,
     latency_ms      INTEGER,
-    PRIMARY KEY (run_id, game, source_code)
+    PRIMARY KEY (run_id, game, source_code, attempt_no)
 );
 
 -- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
@@ -350,10 +352,26 @@ CREATE TABLE model_version (
     family          VARCHAR NOT NULL,             -- fair, logistic, gru, tree, lstm, transformer, mixture
     code_sha        VARCHAR NOT NULL,             -- commit của mã
     config          JSON    NOT NULL,
-    stage           VARCHAR NOT NULL CHECK (stage IN ('shadow', 'challenger', 'production', 'retired')),
-    created_at      TIMESTAMPTZ NOT NULL,
-    retired_reason  VARCHAR
+    created_at      TIMESTAMPTZ NOT NULL
 );
+
+-- Giai đoạn của một mô hình là THEO SẢN PHẨM và THEO THỜI GIAN, không phải một thuộc tính
+-- của model_id. Cùng một LSTM có thể là production cho Max 3D mà vẫn là shadow cho Mega.
+-- Mỗi lần đổi giai đoạn là một dòng mới (append-only), không ghi đè, nên luôn trả lời
+-- được: "kỳ t của sản phẩm p, mô hình nào đang chạy?". Đề bạt, rollback và mô hình
+-- "đang chạy" để so trong cổng đều đọc từ đây.
+CREATE TABLE model_deployment (
+    game            VARCHAR NOT NULL REFERENCES game(code),
+    model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
+    stage           VARCHAR NOT NULL CHECK (stage IN ('shadow', 'challenger', 'production', 'retired')),
+    effective_from_draw_id INTEGER NOT NULL,      -- có hiệu lực từ kỳ này (kỳ đầu tiên dự báo theo stage mới)
+    decided_at      TIMESTAMPTZ NOT NULL,
+    reason          VARCHAR NOT NULL,             -- gate_passed, e_detector_alarm, manual, superseded, ...
+    PRIMARY KEY (game, model_id, effective_from_draw_id)
+);
+-- Bất biến (kiểm bằng phép kiểm, vì DuckDB không có chỉ mục duy nhất có điều kiện):
+-- ở mỗi kỳ của mỗi sản phẩm có ĐÚNG MỘT mô hình production; nếu chưa có gì qua cổng
+-- thì đó là mô hình luật công bằng ('fair').
 
 -- Ghi TRƯỚC giờ quay; append-only. Một mô hình chỉ có một dự báo cho mỗi kỳ.
 CREATE TABLE forecast_issue (
@@ -529,7 +547,8 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
   hơn.
 - **Huấn luyện.** Offline định kỳ trên dữ liệu đến kỳ t; suy luận online. Checkpoint
   dạng `state_dict` cộng JSON cấu hình, có hash lịch sử.
-- **Đề bạt.** Theo đúng thang `model_version.stage`: shadow (ghi sổ, không vào hỗn hợp) →
+- **Đề bạt.** Theo đúng thang giai đoạn trong `model_deployment`, xét riêng từng sản phẩm:
+  shadow (ghi sổ, không vào hỗn hợp) →
   challenger (vào hỗn hợp với trọng số ban đầu nhỏ) → production. Đề bạt chỉ khi thắng
   CẢ luật công bằng LẪN hỗn hợp đang chạy trên dự báo live (luật của kho, mục Phòng thử
   thách mô hình). Cả hai phép so đều có kiểm định cụ thể ở mục M5, "Cổng đề bạt".
@@ -597,7 +616,8 @@ Các luật an toàn:
   được đề bạt), mỗi thừa số có kỳ vọng 1. Khi ấy thời gian trung bình giữa hai lần báo động
   nhầm ≥ c. Đề xuất c = 1 000 kỳ, khoảng 6 năm với sản phẩm quay 3 kỳ/tuần. Khi Mₜ ≥ c, hệ
   thống tự hạ mô hình về challenger, công bố luật công bằng, và giữ checkpoint để dựng lại.
-  Một detector thứ hai cùng dạng, so production với mô hình production trước đó, bắt
+  Một detector thứ hai cùng dạng, so production với mô hình production trước đó của cùng
+  sản phẩm (đọc từ `model_deployment`), bắt
   trường hợp bản mới tệ hơn bản cũ. `skill_monitor` vẫn chạy, nhưng chỉ để cảnh báo hai
   chiều; quyết định rollback thuộc về e-detector.
 
@@ -626,7 +646,7 @@ số "Hit Rate 15%" không nói được gì.
 | Recall | hits / số được quay | 6/45 = **13,3%** (với k = 6) |
 | Hit Rate (≥ m số) | Tỉ lệ kỳ có ít nhất m số trùng | Theo phân phối siêu bội; ≥ 3 số = **2,38%** |
 | Log-loss gain | log-loss công bằng − log-loss mô hình | **0** |
-| E-value | Tích các tỉ số hợp lý trên dự báo live | 1; bằng chứng khi ≥ 140 |
+| E-value | Tích các tỉ số hợp lý trên dự báo live | 1; bằng chứng khi ≥ 1/α(p, k) của RIÊNG mô hình ấy (230 cho mô hình đầu tiên của một sản phẩm, rồi tăng dần; mục M5). Ngưỡng 140 chỉ để ghi nhãn cổng cũ của `vlm.forecast` |
 | Hiệu chuẩn | Biểu đồ độ tin cậy theo nhóm xác suất | Đường chéo |
 
 Với vé đủ k số trên tổng k số được quay, precision và recall bằng nhau. Hai chỉ số chỉ
@@ -702,8 +722,8 @@ Xong khi:
 
 1. Dựng lược đồ mục 4 trong DuckDB, kèm view tương thích với `draws`/`prizes`; nạp lại sổ
    dự báo cũ vào `forecast_issue`/`forecast_score`.
-2. `model_version` và giai đoạn shadow/challenger/production; bảng đối chiếu tách theo
-   phiên bản.
+2. `model_version` và lịch sử giai đoạn `model_deployment` theo từng sản phẩm; bảng đối
+   chiếu tách theo phiên bản và in mô hình đang chạy ở từng kỳ.
 3. Registry thống kê (`Statistic`), `stat_definition` có phiên bản, BH/Holm bắt buộc.
 4. Trang `vietlott-kiem-dinh.html`: backtest (SPA/WRC/TOST), đường e-value, hiệu chuẩn,
    giả thuyết tiến cứu. Chạy lại backtest cho Mega, Power, Lotto và commit báo cáo vào
