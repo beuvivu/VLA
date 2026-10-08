@@ -69,9 +69,9 @@
     "blend_brier": 0.9899531227039716,
     "holdout_days": 30,
     "linear_delta_ci95_low": -0.007086938783442954,
-    "linear_delta_ci95_high": 0.001158264225823324,
-    "constant_delta_ci95_low": -0.008286108769599483,
-    "constant_delta_ci95_high": 0.00501575686270839,
+    "linear_delta_ci95_high": 0.0011582642258234114,
+    "constant_delta_ci95_low": -0.008286108769599397,
+    "constant_delta_ci95_high": 0.005015756862708419,
     "bootstrap_block_days": 4,
     "uncertainty_pass": false
   },
@@ -164,5 +164,5 @@
     "2026-10-08"
   ],
   "trained_through_target_date": "2026-10-08",
-  "trained_at_utc": "2026-10-08T13:02:50Z"
+  "trained_at_utc": "2026-10-08T13:44:57Z"
 }
