@@ -5,6 +5,10 @@ import {
   parseXsktLedger,
 } from "../src/traditional_results.js";
 
+// So đúng TÊN HOST, không so chuỗi con: "raw.githubusercontent.com" có thể nằm ở bất kỳ đâu
+// trong một URL của host khác.
+const hostOf = (url) => new URL(String(url)).hostname;
+
 class FakeKV {
   constructor() { this.store = new Map(); }
   async get(key) { return this.store.get(key) ?? null; }
@@ -40,11 +44,11 @@ const xsktHtml = `
 
 function makeFetch(counter) {
   return async (url) => {
-    if (String(url).includes("raw.githubusercontent.com")) {
+    if (hostOf(url) === "raw.githubusercontent.com") {
       counter.primary += 1;
       return new Response(JSON.stringify([primaryRow]), { status: 200 });
     }
-    if (String(url).includes("xskt.vn")) {
+    if (hostOf(url) === "xskt.vn") {
       counter.xskt += 1;
       return new Response(xsktHtml, { status: 200 });
     }
@@ -106,7 +110,7 @@ const scenarios = {
   async fallback_outage_keeps_primary() {
     const counter = { primary: 0, xskt: 0 };
     const fetchImpl = async (url) => {
-      if (String(url).includes("raw.githubusercontent.com")) {
+      if (hostOf(url) === "raw.githubusercontent.com") {
         counter.primary += 1;
         return new Response(JSON.stringify([primaryRow]), { status: 200 });
       }
@@ -173,7 +177,7 @@ const scenarios = {
     const failing = await buildTraditionalResults(
       query, { LIVE: new FakeKV() },
       {
-        fetchImpl: async (url) => (String(url).includes("raw.githubusercontent.com")
+        fetchImpl: async (url) => (hostOf(url) === "raw.githubusercontent.com"
           ? new Response(JSON.stringify([primaryRow]), { status: 200 })
           : new Response("busy", { status: 503 })),
         nowUtcMs: Date.UTC(2026, 8, 13, 12),
