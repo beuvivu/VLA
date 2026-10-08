@@ -475,7 +475,9 @@ CREATE TABLE model_version (
 -- được một lần đổi production để cắt đúng chỗ có lợi cho một thách đấu. Ngoại lệ duy nhất là
 -- dòng khởi tạo ('fair', production, lý do 'initial', kỳ hiệu lực nhỏ nhất của sản phẩm).
 -- Khi một mô hình được đề bạt, production cũ nhận dòng 'shadow' cùng kỳ hiệu lực và VẪN phát
--- dự báo ghi trước kỳ: detector so với mô hình tiền nhiệm cần điểm của nó.
+-- dự báo ghi trước kỳ: detector so với mô hình tiền nhiệm cần điểm của nó. Dòng 'shadow' ấy không
+-- tự làm production cũ ngừng được công bố: mô hình được công bố là dòng production_effective muộn
+-- nhất, nên lần đề bạt đi kèm mà bị bác thì production cũ vẫn chạy (và vẫn bị giám sát).
 CREATE TABLE model_deployment (
     game            VARCHAR NOT NULL REFERENCES game(code),
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
@@ -1147,8 +1149,8 @@ SELECT g.*,
        ) AS promote_ok
 FROM gate_status g;
 
--- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
--- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Hai tham chiếu:
+-- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở dòng
+-- production ĐÃ DUYỆT kế tiếp (mô hình khác, về 'fair', hay chính nó triển khai lại). Hai tham chiếu:
 --   'fair'        yₜ = log10(p_công_bằng / p_production);
 --   'predecessor' yₜ = log10(p_tiền_nhiệm / p_production) ở biên kém thuận lợi cho production
 --                 (loss lớn nhất của production, nhỏ nhất của tiền nhiệm), trên các kỳ mà production LẪN mô
@@ -1158,16 +1160,13 @@ FROM gate_status g;
 -- Với Yₜ = Σ yₜ, đệ quy Lₜ = max(Lₜ₋₁, 0) + yₜ có dạng đóng Lₜ = Yₜ − min(0, Y₁, …, Yₜ₋₁).
 -- Báo động khi Lₜ ≥ log10(c) = 3 (c = 1 000 kỳ).
 CREATE VIEW rollback_detector AS
--- Chu kỳ dựng từ lịch sử ĐÃ DUYỆT (production_effective): một dòng bị bác không cắt ngang việc
--- giám sát mô hình đang thật sự được công bố. Chu kỳ kết thúc khi một dòng đã duyệt khác lên
--- production, hoặc khi chính mô hình này đổi giai đoạn.
+-- Chu kỳ dựng CHỈ từ lịch sử ĐÃ DUYỆT (production_effective), đúng như luật công bố: mô hình được
+-- công bố ở kỳ t là dòng production_effective muộn nhất ≤ t. Một dòng bị bác, kể cả dòng 'shadow'
+-- đi kèm của mô hình đang chạy, không làm nó ngừng được công bố, nên cũng không cắt việc giám sát.
 WITH period AS (
     SELECT p.game, p.model_id, p.effective_from_draw_id AS from_id,
-           least((SELECT min(n.effective_from_draw_id) FROM production_effective n
-                   WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id),
-                 (SELECT min(m.effective_from_draw_id) FROM deployment_effective m
-                   WHERE m.game = p.game AND m.model_id = p.model_id
-                     AND m.effective_from_draw_id > p.effective_from_draw_id)) AS to_id,
+           (SELECT min(n.effective_from_draw_id) FROM production_effective n
+             WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id) AS to_id,
            (SELECT q.model_id FROM production_effective q
              WHERE q.game = p.game AND q.effective_from_draw_id < p.effective_from_draw_id
              ORDER BY q.effective_from_draw_id DESC, q.decided_at DESC LIMIT 1) AS predecessor_id
