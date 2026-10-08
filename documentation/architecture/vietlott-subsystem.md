@@ -252,7 +252,9 @@ CREATE TABLE draw_observation (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
     source_code     VARCHAR NOT NULL,             -- mã ẩn danh, KHÔNG phải tên miền
-    independence_group VARCHAR NOT NULL,          -- CHỤP từ source_registry lúc quan sát
+    -- KHÔNG lưu nhóm độc lập ở đây: một giá trị do bên ghi tự điền có thể gõ sai hay khác
+    -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
+    -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
     observed_at     TIMESTAMPTZ NOT NULL,
     numbers         SMALLINT[] NOT NULL,
     bonus           SMALLINT,
@@ -266,6 +268,15 @@ CREATE TABLE draw_observation (
 -- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
 -- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
 -- view này, không chỉ tin cột draw.status.
+-- Nhóm của mỗi quan sát = nhóm của nguồn ấy ở phiên bản source_registry mới nhất có
+-- valid_from ≤ observed_at. Nguồn chưa đăng ký ra NULL và không được đếm.
+CREATE VIEW observation_group AS
+SELECT o.*,
+       (SELECT r.independence_group FROM source_registry r
+         WHERE r.source_code = o.source_code AND r.valid_from <= o.observed_at
+         ORDER BY r.valid_from DESC LIMIT 1) AS independence_group
+FROM draw_observation o;
+
 CREATE VIEW draw_corroboration AS
 SELECT d.game, d.draw_id, d.status,
        count(DISTINCT o.independence_group) FILTER (WHERE
@@ -278,7 +289,7 @@ SELECT d.game, d.draw_id, d.status,
            AND o.bonus IS NOT DISTINCT FROM d.bonus) >= 2 AS corroborated
 FROM draw d
 JOIN game g ON g.code = d.game
-LEFT JOIN draw_observation o ON o.game = d.game AND o.draw_id = d.draw_id
+LEFT JOIN observation_group o ON o.game = d.game AND o.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
 ```
 
