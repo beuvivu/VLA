@@ -302,8 +302,12 @@ CREATE TABLE hypothesis (
     n_draws         INTEGER NOT NULL,
     alpha           DOUBLE  NOT NULL,
     test            VARCHAR NOT NULL,
-    params_sha256   VARCHAR NOT NULL              -- chống sửa tham số sau khi đăng ký
+    params          JSON    NOT NULL,             -- tham số đầy đủ: đủ để chạy lại đúng phép kiểm
+    params_sha256   VARCHAR NOT NULL              -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
+                                                  -- không khoảng trắng); kiểm toán tính lại được
 );
+-- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
+-- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
 ```
 
 ### 4.5 Mô hình, dự báo, chấm điểm
@@ -332,18 +336,25 @@ CREATE TABLE forecast_issue (
     pre_draw        BOOLEAN GENERATED ALWAYS AS (issued_at < target_draw_ts),
     law             JSON    NOT NULL,             -- phân phối đầy đủ (theo số / theo vị trí chữ số)
     top_n           JSON    NOT NULL,             -- bộ số đề xuất + p_model, p_fair, lift
-    UNIQUE (game, model_id, target_draw_id)
+    UNIQUE (game, model_id, target_draw_id),
+    UNIQUE (forecast_id, game, target_draw_id)    -- đích của khóa ngoại ghép trong forecast_score
 );
 
+-- Mã kỳ chỉ duy nhất TRONG một sản phẩm (mọi sản phẩm bắt đầu từ kỳ 1), nên điểm luôn đi
+-- kèm game. Hai khóa ngoại ghép buộc: kỳ được chấm đúng là kỳ đích của dự báo, và kỳ ấy có
+-- thật trong draw của CÙNG sản phẩm. Điểm của Mega không thể gắn vào kết quả Power.
 CREATE TABLE forecast_score (
-    forecast_id     VARCHAR PRIMARY KEY REFERENCES forecast_issue(forecast_id),
+    forecast_id     VARCHAR PRIMARY KEY,
+    game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
     log_loss        DOUBLE  NOT NULL,             -- −log p_model(kết quả thật)
     log_loss_fair   DOUBLE  NOT NULL,             -- −log p_công_bằng(kết quả thật)
     brier           DOUBLE,
     hits            DOUBLE  NOT NULL,             -- số trùng của bộ đề xuất
     expected_hits   DOUBLE  NOT NULL,             -- kỳ vọng ngẫu nhiên (Mega: 6·6/45 = 0,8)
-    scored_at       TIMESTAMPTZ NOT NULL
+    scored_at       TIMESTAMPTZ NOT NULL,
+    FOREIGN KEY (forecast_id, game, draw_id) REFERENCES forecast_issue(forecast_id, game, target_draw_id),
+    FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
 );
 
 -- Trạng thái bằng chứng sau mỗi kỳ, để vẽ đường e-value và quyết định cổng.
@@ -512,14 +523,16 @@ Backtest đi theo `WalkForwardBacktester`:
 - TOST tương đương, để nói được "chênh lệch nhỏ hơn X".
 
 Backtest là **khám phá**: nó không đủ để đề bạt mô hình; chỉ dự báo live ghi trước kỳ mới
-là bằng chứng. Job Docker `backtest` ngày 07-10-2026 chấm 8 chiến lược trên 3 100 vé mỗi
-sản phẩm. SPA của chiến lược tốt nhất có p = 0,84 (Mega), 0,68 (Power) và 0,06 (Lotto,
-chiến lược "lâu chưa về").
+là bằng chứng. Hai báo cáo đã commit trong `vietlott/reports/` cho đúng kết quả đó. Mỗi báo
+cáo chấm 9 chiến lược với 5 vé mỗi kỳ:
 
-Lotto đáng ghi chú: White Reality Check cho p = 0,048, sát ngưỡng. Báo cáo vẫn kết luận
-chưa có chiến lược nào hơn ngẫu nhiên, vì mọi q của BH ≥ 0,05 và không e-process nào có ý
-nghĩa sau Holm. Một kết quả sát ngưỡng như vậy là ứng viên cho giả thuyết tiến cứu, chưa
-phải bằng chứng.
+- `backtest_mega645.md` (1 071 kỳ): chiến lược tốt nhất có SPA p = 0,418, White Reality
+  Check p = 0,685.
+- `backtest_power655.md` (1 102 kỳ): SPA p = 0,392, White Reality Check p = 0,662.
+
+Cả hai có mọi q của BH ≥ 0,05 và không e-process nào có ý nghĩa sau Holm. Chưa có báo cáo
+backtest Lotto được commit. Bước 2.4 của lộ trình chạy lại backtest cho cả ba sản phẩm và
+commit báo cáo, để mọi con số trên trang tái lập được từ kho.
 
 Giao diện: thêm vào 8 trang Vietlott hiện có (dựng qua `write_page`):
 - bảng đối chiếu có cột "kỳ vọng ngẫu nhiên";
@@ -568,7 +581,8 @@ Xong khi:
    phiên bản.
 3. Registry thống kê (`Statistic`), `stat_definition` có phiên bản, BH/Holm bắt buộc.
 4. Trang `vietlott-kiem-dinh.html`: backtest (SPA/WRC/TOST), đường e-value, hiệu chuẩn,
-   giả thuyết tiến cứu.
+   giả thuyết tiến cứu. Chạy lại backtest cho Mega, Power, Lotto và commit báo cáo vào
+   `vietlott/reports/`, để mọi con số trên trang tái lập được từ kho.
 5. `skill_monitor` cho Vietlott chạy sau mỗi lượt đồng bộ: z = 3 cả hai chiều, cửa sổ
    60 kỳ.
 6. *(Tùy chủ dự án)* Chế độ B: máy chủ Docker thường trực cho độ trễ khoảng 2–5 phút.
