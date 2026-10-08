@@ -118,7 +118,7 @@ flowchart LR
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
    trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài đã kiểm (attestation Sigstore của lượt Actions,
-   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw.eligibility_cutoff_ts`, mục 4.1), cho một kỳ
+   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw_cutoff_effective`: mốc nhỏ nhất từng ghi, mục 4.1), cho một kỳ
    được hai nhóm nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ phát và giờ đích do
    chính dự báo khai không được dùng để xét.
 6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
@@ -163,6 +163,12 @@ quyết định của chủ dự án. Chế độ A vẫn đúng dữ liệu, ch
 
 ## 3. Đề xuất công nghệ
 
+**Xung đột cần chủ dự án quyết.** `.github/workflows/vlm-results.yml` và
+`vietlott/docker-compose.yml` hiện đặt `VQE_HTTP_BACKEND: curl_cffi`. Cấu hình này chép
+nguyên từ VLM, và trái `SECURITY.md` của VLA. Mặc định của engine là `httpx`. Đưa về
+`httpx` là đúng chính sách nhưng có thể làm một số nguồn trả "không khả dụng" thường hơn.
+Thiết kế dưới đây theo đúng chính sách.
+
 Ràng buộc của kho quyết định một nửa lựa chọn (CLAUDE.md):
 - trang tĩnh trên GitHub Pages;
 - CSS viết tay, không framework JS;
@@ -171,7 +177,7 @@ Ràng buộc của kho quyết định một nửa lựa chọn (CLAUDE.md):
 
 | Tầng | Chọn | Lý do | Không chọn, và vì sao |
 |---|---|---|---|
-| Crawler | Python 3.11+, `httpx` bất đồng bộ, `curl_cffi` (vân tay TLS trình duyệt), BeautifulSoup/lxml | Đang chạy và có kiểm thử; `RetryPolicy` và chuỗi dự phòng đã viết | Scrapy (nặng cho vài trang/kỳ), Playwright (chỉ để dành khi nguồn bắt buộc JS) |
+| Crawler | Python 3.11+, `httpx` bất đồng bộ (HTTP thông thường), BeautifulSoup/lxml | Đang chạy và có kiểm thử; `RetryPolicy` và chuỗi dự phòng đã viết | `curl_cffi` và mọi thư viện giả vân tay trình duyệt: trái `SECURITY.md` (Thu thập dữ liệu công khai). Nguồn chặn truy cập thì ghi là không khả dụng và dùng nguồn dự phòng, không tìm cách vượt. Scrapy (nặng cho vài trang/kỳ). Playwright (cũng là giả lập trình duyệt, cùng lý do) |
 | Lịch | `vlm.updates` (chế độ B), cron GitHub Actions (chế độ A) | Lịch theo từng sản phẩm, chạy lại an toàn | Celery/Airflow: quá tải cho 8 sản phẩm |
 | Lưu trữ | Journal JSONL trong git + DuckDB + Parquet | Dữ liệu nhỏ: Keno 297 398 kỳ × 20 số khoảng 6 triệu giá trị, nằm gọn trong RAM. DuckDB cột hóa, truy vấn cửa sổ thời gian nhanh, nhúng được, không cần dịch vụ riêng. Journal trong git cho phép kiểm toán và khôi phục khi mất cache | TimescaleDB/PostgreSQL: chỉ cần khi có nhiều tiến trình cùng ghi ở chế độ B. Engine đã có extra `postgres` để chuyển khi cần |
 | Thống kê | NumPy, SciPy, `vietlott_engine.analytics` / `inference` | Đã có null Monte Carlo, FDR, kiểm định tuần tự | — |
@@ -210,20 +216,7 @@ CREATE TABLE draw (
     draw_ts         TIMESTAMPTZ NOT NULL,         -- giờ quay; 00:00 nếu chỉ biết ngày
     time_precision  VARCHAR  NOT NULL CHECK (time_precision IN ('minute', 'day')),
     -- Hai mốc thời gian, hai mục đích, KHÔNG dùng lẫn:
-    eligibility_cutoff_ts TIMESTAMPTZ NOT NULL,   -- CHỈ để xét dự báo có ghi trước kỳ, THEO TỪNG KỲ:
-                                                  -- 1) draw_ts nếu biết đến phút (chế độ B ghi được);
-                                                  -- 2) nếu chỉ biết ngày: slot theo lịch của ĐÚNG kỳ
-                                                  --    này, suy từ thứ tự mã kỳ, CHỈ khi ngày ấy có
-                                                  --    đủ số kỳ đúng lịch (thiếu một kỳ là thứ tự
-                                                  --    lệch), trừ một biên nhỏ 2 phút. Biên phải NHỎ
-                                                  --    HƠN khoảng từ lúc có kết quả kỳ trước tới giờ
-                                                  --    quay kỳ này: trừ trọn một nhịp (Keno 8 phút)
-                                                  --    sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI
-                                                  --    dự báo phát sau khi có kết quả kỳ trước;
-                                                  -- 3) không suy được: giờ quay sớm nhất của ngày
-                                                  --    (thận trọng; khi ấy dự báo phát sau kỳ đầu
-                                                  --    ngày không được tính, chấp nhận mất dữ liệu
-                                                  --    hơn là nhận nhầm).
+    -- (mốc xét dự báo ghi trước kỳ nằm ở bảng draw_cutoff ngay dưới, chỉ chèn)
     scheduled_slot_ts TIMESTAMPTZ,                -- CHỈ để đo độ trễ: giờ quay theo lịch của ĐÚNG
                                                   -- kỳ này. draw_ts nếu biết đến phút; nếu chỉ biết
                                                   -- ngày thì suy từ thứ tự mã kỳ trong ngày khi lịch
@@ -245,7 +238,32 @@ CREATE TABLE draw (
 );
 CREATE INDEX draw_by_time ON draw (game, draw_ts);
 
--- Mỗi nguồn nhìn thấy gì: phát hiện mâu thuẫn mà không ghi đè.
+-- Mốc xét "dự báo có ghi trước kỳ", CHỈ CHÈN: mỗi lần tính lại (đính chính, phát lại, đổi
+-- cách suy) là một dòng mới, không sửa dòng cũ. Bằng chứng dùng mốc NHỎ NHẤT từng ghi cho kỳ
+-- ấy (view draw_cutoff_effective). Ghi thêm chỉ có thể làm mốc SỚM HƠN, tức loại bớt dự báo,
+-- không bao giờ nhận thêm được một dự báo mà biên nhận thật ra muộn hơn giờ quay.
+-- Cách tính một mốc:
+--   1) draw_ts nếu biết đến phút (chế độ B ghi được);
+--   2) nếu chỉ biết ngày: slot theo lịch của ĐÚNG kỳ này, suy từ thứ tự mã kỳ, CHỈ khi ngày
+--      ấy có đủ số kỳ đúng lịch (thiếu một kỳ là thứ tự lệch), trừ một biên nhỏ 2 phút.
+--      Biên phải NHỎ HƠN khoảng từ lúc có kết quả kỳ trước tới giờ quay kỳ này: trừ trọn
+--      một nhịp (Keno 8 phút) sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI dự báo phát sau
+--      khi có kết quả kỳ trước;
+--   3) không suy được: giờ quay sớm nhất của ngày (thận trọng; chấp nhận mất dữ liệu hơn
+--      là nhận nhầm).
+CREATE TABLE draw_cutoff (
+    game            VARCHAR NOT NULL,
+    draw_id         INTEGER NOT NULL,
+    cutoff_ts       TIMESTAMPTZ NOT NULL,
+    method          VARCHAR NOT NULL CHECK (method IN ('minute', 'schedule_slot', 'day_start')),
+    recorded_at     TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (game, draw_id, recorded_at),
+    FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
+);
+
+CREATE VIEW draw_cutoff_effective AS
+SELECT game, draw_id, min(cutoff_ts) AS cutoff_ts FROM draw_cutoff GROUP BY game, draw_id;
+
 -- Nhóm độc lập của từng nguồn, CÓ HIỆU LỰC THEO THỜI GIAN và chỉ chèn: hai nguồn khác tên
 -- nhưng chép cùng một nơi phải chung một nhóm. Đổi nhóm của một nguồn là một dòng mới, không
 -- sửa dòng cũ. valid_from do bên ghi tự khai, nên mỗi dòng có BIÊN NHẬN bên ngoài (bảng
@@ -260,25 +278,9 @@ CREATE TABLE source_registry (
     PRIMARY KEY (source_code, valid_from)
 );
 
-CREATE TABLE draw_observation (
-    game            VARCHAR NOT NULL,
-    draw_id         INTEGER NOT NULL,
-    source_code     VARCHAR NOT NULL,             -- mã ẩn danh, KHÔNG phải tên miền
-    -- KHÔNG lưu nhóm độc lập ở đây: một giá trị do bên ghi tự điền có thể gõ sai hay khác
-    -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
-    -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
-    observed_at     TIMESTAMPTZ NOT NULL,
-    -- Không lưu con trỏ tới phiên bản sổ: con trỏ lưu sẵn có thể trỏ vào một bản đã cũ. Phiên
-    -- bản áp dụng được SUY RA ở view observation_group từ thời điểm hiệu lực có biên nhận.
-    numbers         SMALLINT[] NOT NULL,
-    bonus           SMALLINT,
-    raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
-    -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
-    -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
-    PRIMARY KEY (game, draw_id, source_code, observed_at)
-);
 
--- (view draw_corroboration nằm ở mục 4.5, sau observation_group)
+-- (draw_observation nằm ở mục 4.3, sau ingestion_run mà nó tham chiếu; view
+-- draw_corroboration ở mục 4.5, sau observation_group)
 ```
 
 ### 4.2 Giải thưởng và jackpot
@@ -311,12 +313,18 @@ CREATE TABLE jackpot_snapshot (
 ### 4.3 Vận hành thu thập
 
 ```sql
+-- Mỗi lượt thu thập có biên nhận bên ngoài (receipt, subject_kind = 'ingestion_run') phủ
+-- observations_sha256, tức hash của mọi quan sát lượt ấy ghi. Giờ biên nhận là mốc DUY NHẤT
+-- dùng để chọn phiên bản sổ nguồn cho các quan sát ấy. observed_at tự khai chỉ để hiển thị.
+-- Một lượt phát lại chèn sau, kể cả ghi lùi observed_at, nhận biên nhận MỚI, nên dùng
+-- phiên bản sổ hiện hành chứ không chọn được nhóm cũ.
 CREATE TABLE ingestion_run (
     run_id          VARCHAR PRIMARY KEY,
     trigger         VARCHAR NOT NULL CHECK (trigger IN ('schedule', 'api', 'manual', 'replay')),
     started_at      TIMESTAMPTZ NOT NULL,
     finished_at     TIMESTAMPTZ,
-    status          VARCHAR NOT NULL CHECK (status IN ('ok', 'partial', 'failed'))
+    status          VARCHAR NOT NULL CHECK (status IN ('ok', 'partial', 'failed')),
+    observations_sha256 VARCHAR                   -- NULL khi lượt không ghi quan sát nào
 );
 
 CREATE TABLE source_attempt (
@@ -335,8 +343,28 @@ CREATE TABLE source_attempt (
     PRIMARY KEY (run_id, game, source_code, attempt_no)
 );
 
+-- Mỗi nguồn nhìn thấy gì: phát hiện mâu thuẫn mà không ghi đè.
+CREATE TABLE draw_observation (
+    game            VARCHAR NOT NULL,
+    draw_id         INTEGER NOT NULL,
+    source_code     VARCHAR NOT NULL,             -- mã ẩn danh, KHÔNG phải tên miền
+    run_id          VARCHAR NOT NULL REFERENCES ingestion_run(run_id),   -- lượt đã ghi quan sát này
+    -- KHÔNG lưu nhóm độc lập ở đây: một giá trị do bên ghi tự điền có thể gõ sai hay khác
+    -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA trong view dưới đây từ
+    -- source_registry, đúng phiên bản có hiệu lực lúc quan sát.
+    observed_at     TIMESTAMPTZ NOT NULL,
+    -- Không lưu con trỏ tới phiên bản sổ: con trỏ lưu sẵn có thể trỏ vào một bản đã cũ. Phiên
+    -- bản áp dụng được SUY RA ở view observation_group từ thời điểm hiệu lực có biên nhận.
+    numbers         SMALLINT[] NOT NULL,
+    bonus           SMALLINT,
+    raw_sha256      VARCHAR NOT NULL,             -- hash nội dung trang/JSON gốc
+    -- Không lưu cờ "trùng/không trùng": việc trùng được TÍNH LẠI từ số liệu ở view dưới đây,
+    -- nên đính chính một kỳ hay một lỗi ghi cờ không làm lệch kết quả xác nhận.
+    PRIMARY KEY (game, draw_id, source_code, observed_at)
+);
+
 -- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
--- draw.scheduled_slot_ts, KHÔNG phải eligibility_cutoff_ts).
+-- draw.scheduled_slot_ts, KHÔNG phải draw_cutoff).
 CREATE TABLE publication (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
@@ -510,8 +538,8 @@ CREATE TABLE candidate_score (
 -- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
 -- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
-    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry')),
-    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, source_code@valid_from
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run')),
+    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, source_code@valid_from, run_id
     receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('sigstore_attestation', 'rfc3161')),
     receipt_ref     VARCHAR NOT NULL,             -- UUID mục Rekor, hoặc sha256 của token TSA
     receipt_at      TIMESTAMPTZ NOT NULL,         -- integratedTime / genTime ĐỌC TỪ proof
@@ -524,7 +552,7 @@ CREATE TABLE receipt (
 );
 
 -- Nhóm của mỗi quan sát = nhóm của phiên bản sổ có thời điểm hiệu lực
--- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ observed_at. Chỉ dòng sổ có biên nhận đã
+-- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ giờ BIÊN NHẬN của lượt thu thập đã ghi nó. Chỉ dòng sổ có biên nhận đã
 -- kiểm, phủ đúng hash, mới được tính. Nguồn chưa có phiên bản hiệu lực thì ra NULL và không
 -- được đếm.
 CREATE VIEW registry_effective AS
@@ -536,17 +564,19 @@ JOIN receipt r ON r.subject_kind = 'source_registry'
               AND r.verified AND r.content_sha256 = s.content_sha256;
 
 CREATE VIEW observation_group AS
-SELECT o.*,
+SELECT o.*, rr.receipt_at AS run_receipt_at,
        (SELECT e.independence_group FROM registry_effective e
-         WHERE e.source_code = o.source_code AND e.effective_from <= o.observed_at
+         WHERE e.source_code = o.source_code AND e.effective_from <= rr.receipt_at
          ORDER BY e.effective_from DESC LIMIT 1) AS independence_group
-FROM draw_observation o;
+FROM draw_observation o
+JOIN ingestion_run ir ON ir.run_id = o.run_id
+LEFT JOIN receipt rr ON rr.subject_kind = 'ingestion_run' AND rr.subject_id = o.run_id
+                    AND rr.verified AND rr.content_sha256 = ir.observations_sha256;
 
 -- Số nhóm ĐỘC LẬP khác nhau có quan sát TRÙNG ĐÚNG số liệu hiện tại của kỳ. Việc trùng được
 -- so trực tiếp từ numbers/bonus, theo dạng chuẩn của loại sản phẩm (tập số: so sau khi sắp;
 -- chữ số: so đúng thứ tự vị trí). 'validated' chỉ có nghĩa khi ≥ 2 nhóm; học và bằng chứng đọc
 -- view này, không chỉ tin cột draw.status.
--- (view registry_effective và observation_group nằm ở mục 4.5, sau bảng receipt)
 
 CREATE VIEW draw_corroboration AS
 WITH agreeing AS (                                -- quan sát TRÙNG số liệu hiện tại của kỳ
@@ -576,10 +606,10 @@ GROUP BY d.game, d.draw_id, d.status;
 
 -- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
 CREATE VIEW hypothesis_eligibility AS
-SELECT h.hypothesis_id, r.receipt_at, d.eligibility_cutoff_ts AS first_draw_ts,
-       r.receipt_at IS NOT NULL AND r.receipt_at < d.eligibility_cutoff_ts AS prospective
+SELECT h.hypothesis_id, r.receipt_at, d.cutoff_ts AS first_draw_ts,
+       r.receipt_at IS NOT NULL AND r.receipt_at < d.cutoff_ts AS prospective
 FROM hypothesis h
-JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id
+JOIN draw_cutoff_effective d ON d.game = h.game AND d.draw_id = h.first_draw_id
 LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id
                    AND r.verified AND r.content_sha256 = h.registration_sha256;
 
@@ -598,11 +628,12 @@ SELECT forecast_id, receipt_at FROM (
 ) WHERE revision = 1;
 
 CREATE VIEW live_score AS
-SELECT s.*, e.receipt_at, d.eligibility_cutoff_ts,
-       e.receipt_at IS NOT NULL AND e.receipt_at < d.eligibility_cutoff_ts
+SELECT s.*, e.receipt_at, k.cutoff_ts,
+       e.receipt_at IS NOT NULL AND e.receipt_at < k.cutoff_ts
        AND c.corroborated AS live_eligible
 FROM forecast_score s
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
+JOIN draw_cutoff_effective k ON k.game = s.game AND k.draw_id = s.draw_id
 JOIN draw_corroboration c ON c.game = s.game AND c.draw_id = s.draw_id
 LEFT JOIN evidence_issue e ON e.forecast_id = s.forecast_id;
 
@@ -806,7 +837,7 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 ```
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
-    (biên nhận bên ngoài < draw.eligibility_cutoff_ts VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
+    (biên nhận bên ngoài < mốc nhỏ nhất trong draw_cutoff VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
     mới vào e-value
   → CHỈ KHI kỳ t (và mọi kỳ trước nó) đã 'validated':
       cập nhật chuyên gia online (logistic, GRU, LSTM)    [mỗi kỳ]
@@ -961,6 +992,9 @@ Mỗi giai đoạn có **tiêu chí xong đo được**. Không giai đoạn nà
    180 kỳ, α = 0,01, theo mẫu `hot_tail_test`. Sổ cái giữ lần ghi đầu.
 6. **Đối chiếu nguồn thứ hai** (mục 2.2, bước 3): `draw_observation`, trạng thái
    `validated` / `single_source` / `conflict`; kết quả `conflict` không được công bố.
+7. **Đưa HTTP về đúng `SECURITY.md`** khi chủ dự án đồng ý: bỏ `VQE_HTTP_BACKEND: curl_cffi`
+   trong `vlm-results.yml` và `vietlott/docker-compose.yml`, và thêm phép kiểm cấm cấu hình ấy
+   quay lại.
 
 Xong khi:
 - Độ trễ đầu-cuối `publication.deployed_at − draw.scheduled_slot_ts`, đo qua 2 tuần ở chế
