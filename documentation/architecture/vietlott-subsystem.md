@@ -384,8 +384,10 @@ CREATE TABLE hypothesis (
     alpha           DOUBLE  NOT NULL,
     test            VARCHAR NOT NULL,
     params          JSON    NOT NULL,             -- tham số đầy đủ: đủ để chạy lại đúng phép kiểm
-    params_sha256   VARCHAR NOT NULL              -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
+    params_sha256   VARCHAR NOT NULL,             -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
                                                   -- không khoảng trắng); kiểm toán tính lại được
+    registration_sha256 VARCHAR NOT NULL          -- sha256 của TOÀN BỘ bản đăng ký ở dạng JSON chuẩn (mọi
+                                                  -- cột trừ cột này): biên nhận phải phủ đúng hash này
 );
 -- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
 -- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
@@ -433,18 +435,24 @@ CREATE TABLE model_deployment (
 -- (game, model_id, target_draw_id) được vào e-value (view evidence_issue). Đây cũng là
 -- luật "lần ghi đầu giữ nguyên" của các sổ trong kho, và luật chọn được chốt trước kỳ quay.
 CREATE TABLE forecast_issue (
-    forecast_id     VARCHAR PRIMARY KEY,          -- digest nội dung
+    forecast_id     VARCHAR PRIMARY KEY,          -- mã của lần phát
+    content_sha256  VARCHAR NOT NULL,             -- sha256 của TOÀN BỘ lần phát ở dạng JSON chuẩn (mọi cột
+                                                  -- trừ cột này): biên nhận phải phủ đúng hash này
+    legacy          BOOLEAN NOT NULL DEFAULT FALSE,   -- dòng nạp từ sổ cũ không đủ trường (xem 4.6)
     game            VARCHAR NOT NULL,
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
     target_draw_id  INTEGER NOT NULL,
     target_draw_ts  TIMESTAMPTZ NOT NULL,         -- giờ đích DỰ BÁO tự khai: chỉ để hiển thị,
                                                   -- KHÔNG dùng để xét quyền vào bằng chứng
     based_on_draw_id INTEGER NOT NULL,
-    history_sha256  VARCHAR NOT NULL,             -- lịch sử dùng để dự báo
+    history_sha256  VARCHAR,                      -- lịch sử dùng để dự báo; NULL chỉ ở dòng legacy
     issued_at       TIMESTAMPTZ NOT NULL,
-    law             JSON    NOT NULL,             -- phân phối đầy đủ (theo số / theo vị trí chữ số)
+    law             JSON,                         -- phân phối đầy đủ ĐÚNG như đã phát; NULL chỉ ở dòng legacy
     top_n           JSON    NOT NULL,             -- bộ số đề xuất + p_model, p_fair, lift
-    UNIQUE (forecast_id, game, target_draw_id)    -- đích của khóa ngoại ghép trong forecast_score
+    UNIQUE (forecast_id, game, target_draw_id),   -- đích của khóa ngoại ghép trong forecast_score
+    -- Dòng không legacy phải có đủ luật và hash lịch sử; dòng legacy không bao giờ có điểm
+    -- log-loss (không có luật để chấm) và không vào bằng chứng.
+    CHECK (legacy OR (law IS NOT NULL AND history_sha256 IS NOT NULL))
 );
 
 -- Mã kỳ chỉ duy nhất TRONG một sản phẩm (mọi sản phẩm bắt đầu từ kỳ 1), nên điểm luôn đi
@@ -471,10 +479,10 @@ CREATE TABLE forecast_score (
 -- Điểm của TỪNG vé/ứng viên trong top_n (bộ dự báo hiện phát 5 vé mỗi kỳ). forecast_score
 -- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây.
 CREATE TABLE candidate_score (
-    forecast_id     VARCHAR NOT NULL REFERENCES forecast_score(forecast_id),
+    forecast_id     VARCHAR NOT NULL REFERENCES forecast_issue(forecast_id),  -- cả dòng legacy
     rank            SMALLINT NOT NULL CHECK (rank >= 1),   -- thứ hạng trong top_n lúc phát
     candidate       JSON    NOT NULL,             -- bộ số / số chữ số đúng như đã công bố
-    p_model         DOUBLE  NOT NULL,
+    p_model         DOUBLE,                       -- NULL ở dòng legacy (sổ cũ không lưu)
     p_fair          DOUBLE  NOT NULL,
     hits            DOUBLE  NOT NULL,             -- số trùng của vé này
     expected_hits   DOUBLE  NOT NULL,             -- kỳ vọng ngẫu nhiên (Mega: 6·6/45 = 0,8)
@@ -523,7 +531,7 @@ SELECT h.hypothesis_id, r.receipt_at, d.earliest_draw_ts AS first_draw_ts,
 FROM hypothesis h
 JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id
 LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id
-                   AND r.verified;
+                   AND r.verified AND r.content_sha256 = h.registration_sha256;
 
 -- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần có biên nhận
 -- SỚM NHẤT. Chèn muộn một dòng ghi lùi issued_at không đổi được lựa chọn, vì biên nhận
@@ -535,7 +543,8 @@ SELECT forecast_id, receipt_at FROM (
                               ORDER BY r.receipt_at, i.forecast_id) AS revision
     FROM forecast_issue i
     JOIN receipt r ON r.subject_kind = 'forecast' AND r.subject_id = i.forecast_id
-                  AND r.verified
+                  AND r.verified AND r.content_sha256 = i.content_sha256
+    WHERE NOT i.legacy
 ) WHERE revision = 1;
 
 CREATE VIEW live_score AS
@@ -616,6 +625,8 @@ CREATE TABLE gate_allocation (
     seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
     alpha           DOUBLE  GENERATED ALWAYS AS ((0.05 / 7) * 6 / (pi() ^ 2 * seq_no * seq_no)) VIRTUAL,
     registered_at   TIMESTAMPTZ NOT NULL,
+    content_sha256  VARCHAR NOT NULL,             -- sha256 của dòng phân bổ ở dạng JSON chuẩn: biên nhận
+                                                  -- 'gate_allocation' phải phủ đúng hash này
     PRIMARY KEY (game, model_id),
     UNIQUE (game, seq_no)
 );
@@ -662,7 +673,8 @@ CREATE TABLE backtest_metric (
 | `sync_log` | `ingestion_run` + `source_attempt` | Thêm `error_class`, độ trễ |
 | `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật cho kỳ gần đây | `provenance_kind = 'journal'` |
 | `data/seed/*.jsonl(.gz)`, `data/products` | Nạp vào `draw` | `provenance_kind = 'seed'` / `'product_store'`, kèm đường dẫn và hash của đúng dòng |
-| `data/forecast/ledger.jsonl`, `ml-ledger.jsonl` | `forecast_issue` + `forecast_score` + `candidate_score` | Nạp lại toàn bộ, mỗi vé trong top-N một dòng điểm; sổ cũ giữ nguyên |
+| `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss. Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
+| `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng, không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | `evidence_state` + checkpoint | Checkpoint vẫn là JSON gzip |
 
 Luật riêng tư của kho vẫn áp dụng: `source_code` là mã ẩn danh, và trang xuất bản không
