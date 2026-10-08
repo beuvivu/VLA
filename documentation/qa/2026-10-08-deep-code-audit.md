@@ -12,7 +12,7 @@ kiểm ấy đã được thử đột biến: trả mã về bản cũ thì ph�
 | A1 | **HIGH** | `worker/src/traditional_results.js` | Khách đổi `from`/`to` tuỳ ý, kể cả ngày tương lai. Mỗi khoảng là một khoá đệm mới, và mỗi lần trượt đệm kéo một lượt tải trọn trang 500 ngày của nguồn dự phòng. | Ai cũng biến Worker thành công cụ dội vào nguồn ngoài (đo: 20 yêu cầu → 20 lượt tải). Hết hạn mức subrequest; nguồn có thể chặn IP của Worker, và dự án mất nguồn dự phòng. | Đã sửa |
 | A2 | **HIGH** | `vietlott/…/api/main.py`, `core/config.py`, `docker-compose.yml` | API engine không có xác thực. CORS là `*`, và Docker publish `8000` trên mọi giao diện. Lệnh ghi (`/sync`, `/fit`, `?record=true`) và lệnh tính nặng (`/backtest`) mở cho mọi người. | Ai vào được mạng là gọi được. Bất kỳ trang web nào người dùng đang mở cũng kích hoạt được lệnh ghi vào API chạy trên máy họ (CSRF qua `<form>`/`<img>`). | Đã sửa |
 | A3 | MEDIUM | `worker/src/traditional_results.js` | API trả tên nguồn trong `source.provider`, `source.kind` và `meta.warning`. | Trái luật "không đưa danh tính nguồn ra trình duyệt"; `live.json` đã ẩn danh, API này thì chưa. | Đã sửa |
-| A4 | MEDIUM | `worker/src/index.js` | KV ghi hỏng (hết hạn mức) thì `fetch()` ném lỗi ra ngoài. Nền tảng trả 500 không có CORS, và ảnh chụp vừa thu bị vứt. `/health` sập khi KV chứa JSON hỏng. | Đúng kịch bản mà chú thích của tệp đã tính tới lại làm trang live báo "lỗi mạng". | Đã sửa |
+| A4 | MEDIUM | `worker/src/index.js` | KV ghi hỏng (hết hạn mức) thì `fetch()` ném lỗi ra ngoài. Nền tảng trả 500 không có CORS, và ảnh chụp vừa thu bị vứt. `/health` sập khi KV chứa JSON hỏng. | Đúng kịch bản mà chú thích của tệp đã tính tới lại làm trang live báo "lỗi mạng". | Đã sửa; bản cuối: lượt yêu cầu không thu thập nữa |
 | A5 | MEDIUM | `docs/live.html` | (a) Đổi tab gọi `load()` trong khi lượt trước còn chờ, hai phản hồi về lệch thứ tự. (b) `fetch` không có hạn. | (a) Bản cũ ("đang cập nhật") có thể đè bản mới ("đã xác minh"). (b) Một kết nối treo làm đứng vòng thăm dò vài phút, đúng lúc quay số. | Đã sửa |
 | A6 | MEDIUM | `fun_draw_ledger`, `hot_tail_test`, `digit_sum_hypothesis`, `skill_monitor` | Sổ cái "đọc lại rồi ghi lại toàn bộ" bằng `open("w")`/`to_csv(path)`: tệp bị cắt về rỗng trước khi ghi. | Chết giữa chừng để lại sổ cụt; lần sau gộp sổ cụt và mất dòng cũ. Đây là các sổ CLAUDE.md dặn không được mất, như chuỗi kỹ năng dài hơn hạn giữ artifact và tiền tố ngẫu nhiên đã đóng băng. | Đã sửa |
 | A7 | MEDIUM | `.github/workflows/vlm-results.yml`, `vietlott/docker-compose.yml` | `VQE_HTTP_BACKEND: curl_cffi` (thư viện giả vân tay trình duyệt). | Trái `SECURITY.md` ("không dùng thư viện né anti-bot"). | **Chờ chủ dự án quyết** |
@@ -207,30 +207,30 @@ await kv.put(KV_KEY, JSON.stringify(snapshot), { expirationTtl: 60 * 60 * 36 });
 return snapshot;
 ```
 
-Sau:
+Bản sửa đầu bọc `kv.put` trong `try/catch` để `fetch()` vẫn trả ảnh chụp vừa thu. Bản cuối
+(xem dưới) bỏ hẳn việc thu thập khỏi `fetch()`:
 
 ```js
-try {
-  await kv.put(KV_KEY, JSON.stringify(snapshot), { expirationTtl: 60 * 60 * 36 });
-} catch (error) {
-  console.error("không ghi được ảnh chụp vào KV:", error?.message || error);
-}
-return snapshot;
+// fetch(): KV chưa có ảnh chụp thì không gọi nguồn
+return jsonResponse({ schema_version: 2, status: "waiting" }, { status: 503 });
 ```
 
-Ghi khoá thu thập thất bại thì vẫn dựa vào mốc trong bộ nhớ. Lỗi còn lại của nhánh thu
-thập theo yêu cầu trả JSON 503 có CORS. `/health` bắt lỗi `JSON.parse`. Phép kiểm: 12 yêu
-cầu khi KV ghi hỏng đều nhận 200 kèm CORS, yêu cầu đầu có ảnh chụp thật, chỉ có 6 lượt gọi
-nguồn (một vòng). Nhánh 503 là lớp phòng thủ cuối: sau bản vá, không đường nào trong phép
-kiểm còn chạm tới được nó.
+`/health` bắt lỗi `JSON.parse`.
 
 **Khoá thu thập chưa từng ghi được.** KV của Cloudflare từ chối `expirationTtl` dưới 60 giây,
 nên khoá 10 giây (`expirationTtl: 10`) bị từ chối ở mọi lần ghi: lớp khoá giữa các isolate chưa
-từng có hiệu lực, chỉ còn mốc trong bộ nhớ của từng isolate. Bộ thử không thấy vì `FakeKV`
-không áp giới hạn ấy. Nay giá trị khoá là mốc thời gian, hết hạn về logic sau 10 giây, ghi với
-TTL 60 giây. `FakeKV` của cả hai bộ thử Worker từ chối TTL dưới 60 như Cloudflare. Kịch bản hai
-isolate (hai bản module dùng chung một KV ghi ảnh chụp hỏng): trước 6 → 12 lượt gọi nguồn, nay
-6.
+từng có hiệu lực. Bộ thử không thấy vì `FakeKV` không áp giới hạn ấy; nay `FakeKV` của cả hai bộ
+thử Worker từ chối TTL dưới 60 như Cloudflare.
+
+**Bản cuối: lượt yêu cầu không thu thập nữa.** Kể cả khi ghi được, khoá KV không chặn được lúc
+khởi động lạnh: KV nhất quán sau, không đọc-ghi nguyên tử, kết quả "không có" còn được đệm tới
+60 giây, nên mỗi isolate ở mỗi nơi tự chạy một vòng sáu nguồn (đo: 12 yêu cầu luân phiên hai
+isolate trên KV rỗng → 12 lượt gọi nguồn). Cùng cách đã chữa A1, chỉ cron gọi nguồn: KV rỗng thì
+Worker trả 503 có CORS, và trang live đọc `live.json` dự phòng. Không còn khoá nào cần giữ, và
+`refresh()` để lỗi ghi KV lên tới `scheduled()`, nơi nó được ghi log. Phép kiểm: 12 yêu cầu
+luân phiên hai isolate, KV rỗng lẫn KV ghi mất → 0 lượt gọi nguồn, 503 kèm CORS; cron với KV
+ghi hỏng không đổ. Bộ cài đặt (`worker/setup.mjs`) đọc 503 là "chờ lượt cron đầu", không in
+"0/0 nguồn trả lời được".
 
 ### A5 — Vòng thăm dò trang live (MEDIUM)
 
@@ -297,10 +297,10 @@ Cấu hình chép nguyên từ VLM. Bỏ nó là đúng `SECURITY.md`, nhưng c�
 **Kiến trúc và cache.** Site là trang tĩnh trên GitHub Pages, cộng một Worker. Thêm Redis
 không giải quyết vấn đề nào đang có: Worker đã có KV và Cache API ở biên. Hai chỗ đáng làm:
 
-- **Khoá thật thay vì khoá KV.** KV là nhất quán cuối cùng (ghi có thể mất tới ~60 giây để
-  lan khắp nơi), nên khoá thu thập live theo yêu cầu chỉ là nỗ lực tốt nhất. A1 đã tránh
-  nhu cầu này bằng cách chỉ cho cron gọi nguồn. Nếu đường live cũng cần kết quả nhất quán
-  mạnh: một Durable Object làm khoá, hoặc Rate Limiting binding theo IP cho `/api/*`.
+- **Không cần khoá thật nữa.** KV là nhất quán cuối cùng (ghi có thể mất tới ~60 giây để
+  lan khắp nơi), nên mọi khoá dựng trên KV chỉ là nỗ lực tốt nhất. A1 và A4 tránh nhu cầu này
+  bằng cách chỉ cho cron gọi nguồn. Nếu sau này lại có đường yêu cầu nào cần gọi ra ngoài: một
+  Durable Object làm khoá, hoặc Rate Limiting binding theo IP cho `/api/*`.
 - **Chế độ B (API engine thường trực).** Chuyển `/sync`, `/fit`, `/backtest` sang hàng đợi
   nền (arq/RQ, hoặc một worker DuckDB duy nhất đọc lệnh từ bảng). DuckDB chỉ có một tiến
   trình ghi, nên xếp hàng đúng với ràng buộc ấy hơn là chạy trong luồng xử lý yêu cầu. Thêm

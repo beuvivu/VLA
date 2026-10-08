@@ -1,10 +1,8 @@
 // Chạy handler của Worker với env giả, MỘT KỊCH BẢN mỗi lần gọi.
 //
-// Mỗi kịch bản phải là một tiến trình riêng: `index.js` giữ trạng thái ở cấp
-// module (mốc chặn khuếch đại trong bộ nhớ), nên chạy nhiều kịch bản trong
-// cùng một tiến trình thì ca sau thừa hưởng khoá của ca trước và số đo thành
-// vô nghĩa. Bản đầu tôi viết đúng lỗi ấy: ca "KV lành lặn" báo 0 lượt gọi ra
-// nguồn, mà thật ra chỉ vì ca trước đã đặt mốc.
+// Mỗi kịch bản là một tiến trình riêng: trạng thái cấp module (bộ đệm trong bộ nhớ) của ca
+// trước không được lọt sang ca sau. Từng có một bản giữ mốc chặn ở cấp module, và ca sau báo 0
+// lượt gọi nguồn chỉ vì ca trước đã đặt mốc.
 import worker from "../src/index.js";
 
 class FakeKV {
@@ -21,7 +19,7 @@ class FakeKV {
   async put(key, value, options = {}) {
     this.puts += 1;
     const ttl = options.expirationTtl;
-    // Như Cloudflare KV: TTL dưới 60 giây bị từ chối. Bản giả không chặn điều này đã để lọt
+    // Như Cloudflare KV: TTL dưới 60 giây bị từ chối. Bản giả không chặn điều này từng để lọt
     // một khoá 10 giây không bao giờ ghi được.
     if (ttl !== undefined && ttl < 60) {
       throw new Error(`Invalid expiration_ttl of ${ttl}. Expiration TTL must be at least 60.`);
@@ -54,60 +52,29 @@ const SCENARIOS = {
     }
   },
 
-  // Tình huống XẤU NHẤT: KV còn sống nhưng ghi không lưu được gì, nên khoá
-  // trong KV vô tác dụng. Trang live vẫn thăm dò 5 giây một lần.
-  async amplification_kv_broken() {
+  // KV chưa có ảnh chụp (khởi động lạnh) hoặc ghi không lưu được gì, nhiều isolate cùng lúc:
+  // trước 08-10-2026 mỗi isolate tự thu thập vì khoá trong KV không nguyên tử. Lượt yêu cầu
+  // nay không bao giờ gọi nguồn, nên số lượt gọi ra phải bằng 0 dù có bao nhiêu isolate.
+  async requests_never_collect() {
     const counter = { calls: 0 };
     globalThis.fetch = makeFetch(counter);
-    const kv = new FakeKV();
-    kv.put = async () => { kv.puts += 1; };
-    const ctx = newCtx();
-    const statuses = [];
-    for (let i = 0; i < 12; i += 1) {
-      statuses.push((await worker.fetch(
-        new Request("https://w/live.json"), { LIVE: kv }, ctx,
-      )).status);
-    }
-    return { requests: 12, outbound_fetches: counter.calls,
-             all_ok: statuses.every((s) => s === 200) };
-  },
-
-  // Hai isolate (hai bản module, mỗi bản một mốc trong bộ nhớ riêng) dùng chung một KV mà ghi ảnh
-  // chụp hỏng: chỉ khoá trong KV chặn được isolate thứ hai thu thập lại.
-  async lock_shared_across_isolates() {
-    const counter = { calls: 0 };
-    globalThis.fetch = makeFetch(counter);
-    const kv = new FakeKV();
-    const put = kv.put.bind(kv);
-    kv.put = async (key, value, options) => {
-      if (key === "live.json") throw new Error("KV PUT failed: 429 Too Many Requests");
-      return put(key, value, options);
-    };
     const other = (await import("../src/index.js?isolate=b")).default;
-    const first = await worker.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx());
-    const afterFirst = counter.calls;
-    const second = await other.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx());
-    return {
-      statuses: [first.status, second.status],
-      outbound_after_first: afterFirst,
-      outbound_after_second: counter.calls,
-    };
-  },
-
-  // KV lành lặn nhưng chưa có ảnh chụp: đúng lần gọi đầu sau khi triển khai.
-  async amplification_kv_healthy() {
-    const counter = { calls: 0 };
-    globalThis.fetch = makeFetch(counter);
-    const kv = new FakeKV();
-    const ctx = newCtx();
-    const statuses = [];
-    for (let i = 0; i < 12; i += 1) {
-      statuses.push((await worker.fetch(
-        new Request("https://w/live.json"), { LIVE: kv }, ctx,
-      )).status);
+    const out = {};
+    for (const [name, kv] of [["kv_empty", new FakeKV()], ["kv_put_drops", new FakeKV()]]) {
+      if (name === "kv_put_drops") kv.put = async () => { kv.puts += 1; };
+      const responses = [];
+      for (let i = 0; i < 12; i += 1) {
+        const handler = i % 2 === 0 ? worker : other;
+        responses.push(await handler.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx()));
+      }
+      out[name] = {
+        statuses: [...new Set(responses.map((r) => r.status))],
+        cors: [...new Set(responses.map((r) => r.headers.get("access-control-allow-origin")))],
+        body_status: (await responses[0].json()).status,
+      };
     }
-    return { requests: 12, outbound_fetches: counter.calls,
-             all_ok: statuses.every((s) => s === 200) };
+    out.outbound_fetches = counter.calls;
+    return out;
   },
 
   // Đường bình thường: cron ghi một lần, mọi lượt đọc lấy từ KV.
@@ -211,25 +178,28 @@ const SCENARIOS = {
     };
   },
 
-  // KV đọc được nhưng GHI ném lỗi (hết hạn mức). Trước đây fetch() ném lỗi ra
-  // ngoài: nền tảng trả 500 không có CORS, ảnh chụp vừa thu bị vứt.
+  // KV đọc được nhưng GHI ném lỗi (hết hạn mức): lượt cron không được làm đổ Worker, lỗi chỉ
+  // vào log; người xem nhận 503 có CORS để trang chuyển sang nguồn dự phòng.
   async kv_put_throws() {
     const counter = { calls: 0 };
     globalThis.fetch = makeFetch(counter);
     const kv = new FakeKV();
     kv.put = async () => { throw new Error("KV put failed: quota exceeded"); };
     const ctx = newCtx();
+    await worker.scheduled({}, { LIVE: kv }, ctx);
+    const settled = await Promise.allSettled(ctx.pending);
+    const afterCron = counter.calls;
     const out = [];
     for (let i = 0; i < 12; i += 1) {
-      const res = await worker.fetch(new Request("https://w/live.json"), { LIVE: kv }, ctx);
-      out.push({ status: res.status, cors: res.headers.get("access-control-allow-origin"),
-                 body_status: (await res.json()).status });
+      const res = await worker.fetch(new Request("https://w/live.json"), { LIVE: kv }, newCtx());
+      out.push({ status: res.status, cors: res.headers.get("access-control-allow-origin") });
     }
     return {
+      cron_rejected: settled.some((r) => r.status === "rejected"),
+      outbound_on_cron: afterCron,
       statuses: [...new Set(out.map((r) => r.status))],
       cors: [...new Set(out.map((r) => r.cors))],
-      first_has_snapshot: out[0].body_status !== "waiting",
-      outbound_fetches: counter.calls,
+      outbound_after_reads: counter.calls,
     };
   },
 

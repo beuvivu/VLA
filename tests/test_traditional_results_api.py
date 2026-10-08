@@ -147,3 +147,10 @@ def test_the_api_never_names_its_sources() -> None:
     result = _scenario("anonymised")
     assert result["mentions_source"] is False
     assert result["sources"] == ["fallback", "canonical"]
+    assert result["sources_used"] == ["canonical", "fallback"]
+
+
+def test_renaming_the_source_fields_bumped_the_schema_version() -> None:
+    """Lược đồ 1 ghi tên nguồn vào `source.kind`, `source_counts`, `sources_used`. Đổi các giá
+    trị ấy mà giữ số phiên bản thì bên gọi phân nhánh theo giá trị cũ lặng lẽ mất kết quả."""
+    assert _scenario("anonymised")["schema_version"] == 2

@@ -152,11 +152,11 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
 - Mốc xác định kỳ mới nhất: `18:35`, múi giờ `Asia/Ho_Chi_Minh`.
 - Query sai trả `400`; không đọc được cả dữ liệu chuẩn lẫn bản last-good trả `502`.
 
-## API response v1
+## API response — lược đồ 2
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "query": {
     "region": "north",
     "province": "hanoi",
@@ -170,8 +170,8 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
     "total_results": 30,
     "requested_calendar_days": 30,
     "latest_draw_date": "2026-09-13",
-    "source_counts": {"vla_db": 29, "xskt_fallback": 1},
-    "sources_used": ["vla_db", "xskt_fallback"],
+    "source_counts": {"canonical": 29, "fallback": 1},
+    "sources_used": ["canonical", "fallback"],
     "fallback_requested": true,
     "fallback_network_fetch": false,
     "unresolved_dates": [],
@@ -187,8 +187,7 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
       "draw_date": "2026-09-13",
       "status": "official",
       "source": {
-        "kind": "vla_db",
-        "provider": "VLA canonical database",
+        "kind": "canonical",
         "canonical": true
       },
       "prizes": [
@@ -209,6 +208,11 @@ Mọi kết quả giải là **chuỗi**, không phải số, để giữ `01`, 
 không phải suy đoán cách đệm số. `source.canonical=false` chỉ có nghĩa là kỳ
 đang nằm ở lớp bù, chưa được pipeline hằng ngày đưa vào kho chuẩn.
 
+Lược đồ 1 (trước 08-10-2026) ghi tên nguồn vào `source.kind`, kèm `source.provider`, và
+dùng các tên ấy làm khoá của `source_counts`, `sources_used`. API không được nói dữ liệu
+lấy từ đâu, nên lược đồ 2 chỉ còn hai loại `canonical`/`fallback` và bỏ `provider`. Đường
+dẫn `/api/v1/` giữ nguyên; bên gọi đọc `schema_version` để biết mình đang nhận lược đồ nào.
+
 ## Thứ tự dữ liệu và cache
 
 1. Worker đọc `data/xsmb.json` từ nhánh `main` và chuẩn hóa vào cache 5 phút.
@@ -224,7 +228,8 @@ không phải suy đoán cách đệm số. `source.canonical=false` chỉ có n
    - mỗi lượt đọc sổ cuộn `xskt.vn/xsmb-500-ngay/`, cắt từng bảng `kqmb`, kiểm đủ 27 số và
      đúng độ rộng;
    - ngày nằm giữa ngày cũ nhất và mới nhất của trang mà trang không có (XSMB nghỉ quay dịp
-     Tết) được ghi `absent`, nếu không lượt cron nào cũng tải lại vô ích.
+     Tết) được ghi `absent`, nếu không lượt cron nào cũng tải lại vô ích. Dấu ấy hết hạn sau
+     7 ngày, để một ngày nguồn chỉ tạm thiếu vẫn được thử lại.
 
    Trước 08-10-2026 chính yêu cầu gọi nguồn: đổi khoảng ngày là trượt đệm phản hồi, nên 20
    khoảng ngày kéo 20 lượt tải. Một khoá KV chỉ chặn được trong từng isolate (KV nhất quán

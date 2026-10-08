@@ -19,34 +19,14 @@ import { anonymiseSnapshot, collectSnapshot, drawDate } from "./snapshot.js";
 import { handleTraditionalResults, refreshFallbackOverlay } from "./traditional_results.js";
 
 const KV_KEY = "live.json";
-const LOCK_KEY = "collect-lock";
-
-// Chặn KHUẾCH ĐẠI YÊU CẦU.
+// Lượt yêu cầu của người xem CHỈ ĐỌC KV, không bao giờ gọi nguồn.
 //
-// Nhánh "KV rỗng thì thu thập ngay" là đúng cho lần gọi đầu sau khi triển
-// khai. Nhưng nếu KV ghi hỏng — hết hạn mức, cấu hình sai, sự cố nền tảng —
-// thì nó biến thành: mỗi người xem, 5 giây một lần, kéo theo sáu lượt gọi ra
-// trang nguồn. Mười người xem là 720 lượt/phút dội vào đúng lúc các trang ấy
-// đang tải nặng nhất trong ngày.
-//
-// Khoá ngắn hạn này giữ cho tối đa một vòng thu thập theo yêu cầu mỗi 10
-// giây, bất kể có bao nhiêu người xem. Cron vẫn chạy bình thường.
-const ONDEMAND_LOCK_SECONDS = 10;
-// KV từ chối expirationTtl dưới 60 giây. Bản trước ghi khoá bằng TTL 10 nên lần ghi nào cũng bị
-// từ chối và lớp khoá giữa các isolate chưa từng có hiệu lực. Nay giá trị khoá là MỐC THỜI GIAN,
-// hết hạn về logic sau ONDEMAND_LOCK_SECONDS; TTL 60 giây chỉ để KV tự dọn.
-const KV_MIN_TTL_SECONDS = 60;
-
-// Lớp chặn THỨ HAI, trong bộ nhớ.
-//
-// Khoá ở trên nằm trong KV, nên nếu chính KV là thứ đang hỏng thì khoá cũng
-// hỏng theo và chốt chặn bốc hơi đúng lúc cần nhất. Đo được: với KV ghi hỏng,
-// 12 lượt truy cập sinh 72 lượt gọi ra nguồn.
-//
-// Biến này sống trong một isolate của Worker, không dùng chung giữa các
-// isolate — nên nó KHÔNG thay được khoá KV, chỉ chặn đỡ khi khoá kia mất tác
-// dụng. Hai lớp cùng hỏng thì mới khuếch đại được.
-let lastOnDemandAttemptMs = 0;
+// Trước 08-10-2026, KV rỗng thì lượt yêu cầu thu thập ngay, chặn bằng một khoá trong KV cộng
+// một mốc trong bộ nhớ của isolate. KV nhất quán sau và không có đọc-ghi nguyên tử: lúc khởi
+// động lạnh, các isolate ở nhiều nơi cùng đọc thấy khoá rỗng (kết quả "không có" còn được
+// đệm tới 60 giây) và mỗi isolate tự chạy một vòng sáu nguồn. Cron là đường duy nhất gọi nguồn,
+// nên lưu lượng khách không còn đường nào chạm tới trang nguồn. KV rỗng thì trả 503: trang
+// live coi đó là lỗi và đọc live.json dự phòng trên nhánh `live`.
 
 // Ảnh chụp đã xác minh thì không đổi nữa, nên cho phép đệm lâu hơn. Khi đang
 // về số thì phải thật ngắn, nếu không trang live sẽ hiện số cũ.
@@ -105,49 +85,21 @@ function alreadySettled(stored, nowUtcMs) {
   }
 }
 
-async function refresh(env, { force = false } = {}) {
+async function refresh(env) {
   const kv = requireKv(env);
-  if (!force && alreadySettled(await kv.get(KV_KEY), Date.now())) return null;
+  if (alreadySettled(await kv.get(KV_KEY), Date.now())) return;
   // Ẩn danh TRƯỚC khi ghi vào KV, không phải lúc trả lời. Mọi đường đọc đều
   // đi qua KV, nên ẩn ở đây là ẩn ở mọi nơi — kể cả những đường sẽ thêm về
   // sau. Chi tiết từng nguồn vẫn xem được bằng `wrangler tail`, không công khai.
   const snapshot = anonymiseSnapshot(await collectSnapshot({
     minAgreement: Number(env.MIN_AGREEMENT ?? 2),
   }));
-  try {
-    await kv.put(KV_KEY, JSON.stringify(snapshot), {
-      // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
-      expirationTtl: 60 * 60 * 36,
-    });
-  } catch (error) {
-    // KV ghi hỏng (hết hạn mức, sự cố nền tảng): ảnh chụp vừa thu được vẫn là dữ
-    // liệu đúng, trả nó cho người đang chờ thay vì vứt đi rồi ném lỗi 500.
-    console.error("không ghi được ảnh chụp vào KV:", error?.message || error);
-  }
-  return snapshot;
-}
-
-/** Thu thập theo yêu cầu, hai lớp khoá — trả `null` khi vòng khác vừa chạy. */
-async function refreshOnDemand(env) {
-  const kv = requireKv(env);
-  const now = Date.now();
-  if (now - lastOnDemandAttemptMs < ONDEMAND_LOCK_SECONDS * 1000) return null;
-  // Đặt mốc TRƯỚC khi gọi nguồn, không phải sau: các lượt truy cập đến trong
-  // lúc vòng thu thập đang chạy cũng phải bị chặn, chứ không chỉ các lượt đến
-  // sau khi nó xong.
-  lastOnDemandAttemptMs = now;
-  const heldSince = Number(await kv.get(LOCK_KEY)) || 0;
-  if (now - heldSince < ONDEMAND_LOCK_SECONDS * 1000) return null;
-  try {
-    await kv.put(LOCK_KEY, String(now), { expirationTtl: KV_MIN_TTL_SECONDS });
-  } catch (error) {
-    // Khoá KV không ghi được thì vẫn còn mốc trong bộ nhớ ở trên chặn khuếch đại.
-    console.error("không ghi được khoá thu thập:", error?.message || error);
-  }
-  // Ép chạy: tới nhánh này thì KV chắc chắn chưa có ảnh chụp, nên chốt
-  // "đã xong" bên trong `refresh` không có gì để so và sẽ luôn cho qua —
-  // nhưng nói rõ ý định vẫn hơn để nó phụ thuộc vào điều đó.
-  return await refresh(env, { force: true });
+  // Ghi hỏng (hết hạn mức, sự cố nền tảng) thì lỗi lên tới `scheduled()`, được ghi log, và
+  // lượt cron sau — chỉ cách một phút — thử lại.
+  await kv.put(KV_KEY, JSON.stringify(snapshot), {
+    // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
+    expirationTtl: 60 * 60 * 36,
+  });
 }
 
 export default {
@@ -216,26 +168,9 @@ export default {
       });
     }
 
-    // Chưa có ảnh chụp nào: thu thập ngay thay vì trả rỗng. Xảy ra ở lần gọi
-    // đầu sau khi triển khai, hoặc khi KV vừa hết hạn.
-    let snapshot;
-    try {
-      snapshot = await refreshOnDemand(env);
-    } catch (error) {
-      // Lỗi lọt ra khỏi handler thành trang lỗi 500 của nền tảng, KHÔNG có đầu mục
-      // CORS: trình duyệt chỉ thấy "lỗi mạng". Trả JSON có CORS để trang đọc được
-      // và chuyển sang nguồn kế tiếp.
-      console.error("thu thập theo yêu cầu hỏng:", error?.message || error);
-      return jsonResponse({ schema_version: 2, status: "waiting" }, { status: 503 });
-    }
-    if (snapshot === null) {
-      // Một vòng khác vừa chạy trong 10 giây qua. Trả trạng thái chờ thay vì
-      // gọi nguồn lần nữa; trang sẽ tự thăm dò lại sau vài giây.
-      return jsonResponse({ schema_version: 2, status: "waiting" },
-        { cacheControl: "public, max-age=3" });
-    }
-    return jsonResponse(snapshot, {
-      cacheControl: `public, max-age=${cacheSeconds(snapshot.status)}`,
-    });
+    // Chưa có ảnh chụp: lần đầu sau khi triển khai (cho tới lượt cron đầu trong khung quay số)
+    // hoặc khi cron hỏng quá 36 giờ. Trả JSON có CORS để trang đọc được mã lỗi và chuyển
+    // sang nguồn kế tiếp.
+    return jsonResponse({ schema_version: 2, status: "waiting" }, { status: 503 });
   },
 };

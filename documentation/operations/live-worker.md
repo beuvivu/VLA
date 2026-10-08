@@ -143,7 +143,7 @@ Bốn phép kiểm đối chiếu chạy trong CI, mỗi phép khoá một tần
 | `test_worker_snapshot_parity.py` | **Toàn bộ payload live.json**, 120 ca |
 | `test_worker_sources_parity.py` | Danh mục nguồn, thứ tự ưu tiên, địa chỉ |
 
-| `test_worker_handler.py` | Hành vi vận hành: chặn khuếch đại, dừng khi đã xong, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
+| `test_worker_handler.py` | Hành vi vận hành: lượt yêu cầu không gọi nguồn, dừng khi đã xong, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
 | `test_worker_setup.py` | Bộ cài đặt một lệnh: bóc id/địa chỉ từ mọi dạng đầu ra wrangler, vá đúng dòng gán, chạy lại an toàn, thử khô không đụng tệp |
 
 Bốn phép đầu đều đã kiểm ngược: đột biến trên bản JS làm chúng đỏ (10 + 10 + 10 đột
@@ -157,23 +157,27 @@ nguồn hiện tại — đo trên 9 630 ô sinh ngẫu nhiên, 0 ô mà chúng 
 đối chiếu không phân biệt được chúng; chốt chặn ở đó là chú thích trong mã,
 không phải phép kiểm. Ghi rõ để không ai tưởng là đã được khoá.
 
-### Chặn khuếch đại yêu cầu
+### Lượt yêu cầu không bao giờ gọi nguồn
 
-Nhánh "KV rỗng thì thu thập ngay" là đúng cho lần gọi đầu sau khi triển khai.
-Nhưng nếu KV ghi hỏng, nó biến thành: mỗi người xem, 5 giây một lần, dội sáu
-lượt vào trang nguồn — đúng lúc các trang ấy tải nặng nhất trong ngày. Mười
-người xem là hơn 700 lượt mỗi phút.
+Chỉ cron gọi trang nguồn. Lượt yêu cầu của người xem chỉ đọc KV; KV chưa có ảnh
+chụp thì Worker trả **503** (JSON có CORS), và trang live coi đó là lỗi rồi đọc
+`live.json` dự phòng trên nhánh `live`. Có hai lúc KV rỗng: lần đầu sau khi
+triển khai, cho tới lượt cron đầu trong khung quay số; và khi cron hỏng quá 36
+giờ (hạn giữ ảnh chụp).
 
-Có **hai** lớp khoá, và cần cả hai:
+Trước 08-10-2026, KV rỗng thì lượt yêu cầu thu thập ngay, chặn bằng một khoá
+trong KV cộng một mốc trong bộ nhớ của isolate. Cả hai đều chỉ là nỗ lực tốt
+nhất:
 
-| Lớp | Phạm vi | Mất tác dụng khi |
-|---|---|---|
-| Khoá trong KV | Toàn cầu | Chính KV đang hỏng |
-| Mốc trong bộ nhớ | Một isolate | Isolate bị tái tạo |
+- khoá KV 10 giây chưa từng ghi được, vì KV từ chối `expirationTtl` dưới 60 giây;
+- kể cả khi ghi được, KV nhất quán sau, không có đọc-ghi nguyên tử, và kết quả
+  "không có" còn được đệm tới 60 giây. Lúc khởi động lạnh, mỗi isolate ở mỗi nơi
+  vẫn tự chạy một vòng sáu nguồn.
 
-Bản đầu chỉ có lớp KV. Đo được: với KV ghi hỏng, 12 lượt truy cập sinh **72**
-lượt gọi ra nguồn — tức chốt chặn bốc hơi đúng lúc cần nhất. Sau khi thêm lớp
-thứ hai: 12 lượt truy cập, **6** lượt gọi, đúng một vòng thu thập.
+Đo được: 12 yêu cầu luân phiên hai isolate trên KV rỗng sinh 12 lượt gọi nguồn.
+Khoá mạnh (Durable Object) chữa được triệu chứng; bỏ hẳn việc gọi nguồn khỏi lượt
+yêu cầu thì không còn gì để khoá. Nay số đo ấy là 0
+(`test_viewer_requests_never_call_the_sources`).
 
 ### Dừng khi kỳ đã xong
 

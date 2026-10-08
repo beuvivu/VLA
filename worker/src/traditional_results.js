@@ -393,7 +393,10 @@ export async function buildTraditionalResults(
   data.sort((a, b) => b.draw_date.localeCompare(a.draw_date));
   const counts = sourceCounts(data);
   return {
-    schema_version: 1,
+    // Lược đồ 2 (08-10-2026): `source.kind` đổi từ tên nguồn sang `canonical`/`fallback`, bỏ
+    // `source.provider`; khoá của `source_counts` và `sources_used` đổi theo. Bên gọi phân nhánh
+    // theo các giá trị cũ phải thấy số phiên bản đổi chứ không lặng lẽ mất kết quả.
+    schema_version: 2,
     query,
     meta: {
       generated_at_utc: new Date(nowUtcMs).toISOString(),

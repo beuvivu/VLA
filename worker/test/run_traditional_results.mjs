@@ -265,7 +265,12 @@ const scenarios = {
     try { await refreshFallbackOverlay(failingEnv, { fetchImpl: busy, nowUtcMs: NOW }); } catch { /* lỗi cron chỉ vào log */ }
     const failing = await buildTraditionalResults(query, failingEnv, { fetchImpl: busy, nowUtcMs: NOW });
     const text = JSON.stringify([ok, failing]).toLowerCase();
-    return { mentions_source: text.includes("xskt"), sources: ok.data.map((row) => row.source.kind) };
+    return {
+      mentions_source: text.includes("xskt"),
+      sources: ok.data.map((row) => row.source.kind),
+      schema_version: ok.schema_version,
+      sources_used: ok.meta.sources_used,
+    };
   },
 
   async validation() {
