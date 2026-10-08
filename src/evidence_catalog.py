@@ -510,7 +510,7 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
     ]), []
 
 
-def _vietlott(step: str) -> tuple[Evidence, list[Section]]:
+def _vietlott(step: str, *, overview: bool = False) -> tuple[Evidence, list[Section]]:
     """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
     evidence = _ev([{
         "title": "Sổ kết quả Vietlott đã xác thực",
@@ -524,13 +524,15 @@ def _vietlott(step: str) -> tuple[Evidence, list[Section]]:
         "Đọc sổ kết quả và sổ dự báo của engine Vietlott.",
         step,
     ])
+    if not overview:
+        return evidence, []
     sections = []
-    for anchor, title, rule in [
-        ('vl-frequency', 'Tần suất số chính Vietlott', 'Đếm mỗi số chính tối đa một lần trong một kỳ; chia số kỳ có số đó cho tổng kỳ khảo sát. Không tính số đặc biệt.'),
-        ('vl-pairs', 'Cặp số Vietlott cùng kỳ', 'Lấy mọi cặp không thứ tự của các số chính trong từng kỳ; cộng số kỳ cùng xuất hiện rồi xếp 10 cặp đầu mỗi sản phẩm.'),
-        ('vl-hot-cold', 'Số xuất hiện nhiều và ít', 'Xếp các số theo số kỳ xuất hiện trong cửa sổ công bố; gồm cả số có tần suất 0. Hòa thì theo giá trị số, không suy ra xác suất kỳ sau.'),
+    for heading, title, rule in [
+        ('Tần suất số chính', 'Tần suất số chính Vietlott', 'Đếm mỗi số chính tối đa một lần trong một kỳ; chia số kỳ có số đó cho tổng kỳ khảo sát. Không tính số đặc biệt.'),
+        ('Cặp số cùng xuất hiện', 'Cặp số Vietlott cùng kỳ', 'Lấy mọi cặp không thứ tự của các số chính trong từng kỳ; cộng số kỳ cùng xuất hiện rồi xếp 10 cặp đầu mỗi sản phẩm.'),
+        ('Hot / Cold', 'Số xuất hiện nhiều và ít', 'Xếp các số theo số kỳ xuất hiện trong cửa sổ công bố; gồm cả số có tần suất 0. Hòa thì theo giá trị số, không suy ra xác suất kỳ sau.'),
     ]:
-        sections.append({'match': f'section[aria-labelledby="{anchor}"]', 'title': title,
+        sections.append({'heading': heading, 'title': title,
                          **_ev([{'title': 'Các kỳ gần nhất được công bố của từng sản phẩm',
                                   'snippet': 'Số kỳ khảo sát được ghi cạnh từng sản phẩm; không trộn sản phẩm hoặc mở rộng thành toàn lịch sử.'}], [rule])})
     return evidence, sections
@@ -558,7 +560,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
         "ket-qua-mien-trung.html": _vung("Miền Trung"),
         "ket-qua-mien-nam.html": _vung("Miền Nam"),
-        "vietlott.html": _vietlott("Bảng tổng quan lấy kỳ mới nhất đã lưu của từng sản phẩm."),
+        "vietlott.html": _vietlott("Bảng tổng quan lấy kỳ mới nhất đã lưu của từng sản phẩm.", overview=True),
         "vietlott-lotto-535.html": _vietlott("Mỗi kỳ 5 số và số đặc biệt, kỳ mới nhất trước."),
         "vietlott-mega-645.html": _vietlott("Mỗi kỳ 6 số, kèm giá trị jackpot đã công bố."),
         "vietlott-power-655.html": _vietlott("Mỗi kỳ 6 số và số đặc biệt, kèm hai giá trị jackpot."),

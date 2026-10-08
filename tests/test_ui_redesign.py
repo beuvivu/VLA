@@ -346,6 +346,7 @@ def test_navigation_groups_are_the_agreed_set() -> None:
     """Thứ tự tra cứu, thống kê, soi cầu, dự báo rồi nghiên cứu."""
     assert [group for group, _ in SITE_NAV] == [
         "Kết quả",
+        "Vietlott",
         "Thống kê",
         "Thống kê LOTO",
         "Thống kê Đặc Biệt",
