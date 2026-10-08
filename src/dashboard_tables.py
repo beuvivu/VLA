@@ -69,7 +69,7 @@ def forecast_card(frame, mode: str) -> str:
     note = ("Xác suất xuất hiện ít nhất một lần trong kỳ." if mode == "loto"
             else "Xác suất của hai chữ số cuối giải Đặc Biệt.")
     return lab_card(_caption(note) + table,
-                    title=f"Xác suất {_channel(mode)} cao nhất", span=6, flush=True,
+                    title=f"Xác suất {_channel(mode)} cao nhất", span=6,
                     aside=f'<span class="app-dash-tag">{len(frame)} ứng viên</span>',
                     ident=f"app-lab-{mode}")
 
@@ -93,7 +93,7 @@ def picks_card(payload: dict, mode: str) -> str:
     body = _facts([("Kỳ dự báo", payload.get("target_date")), ("Ngày dữ liệu neo", payload.get("anchor_date"))])
     body += table + _facts([("Mô hình xếp chồng", stacked), ("Học trực tuyến", status),
                            ("Kỳ đã chốt", online.get("n_settled"))]) + _audit(payload)
-    return lab_card(body, title=f"Danh sách gợi ý ({_channel(mode)})", span=6, flush=True,
+    return lab_card(body, title=f"Danh sách gợi ý ({_channel(mode)})", span=6,
                     ident="app-lab-picks" if mode == "loto" else "app-dash-picks-de")
 
 
@@ -106,7 +106,7 @@ def weights_card(payload: dict, mode: str) -> str:
                                     align=["left", "right"]), "weights")
     metadata = {key: value for key, value in payload.items() if key not in {"weights", "mode"}}
     body = _caption(payload.get("nguon", "Chưa có thông tin xuất xứ")) + table + _audit(payload, metadata=metadata)
-    return lab_card(body, title=f"Trọng số ({_channel(mode)})", span=6, flush=True,
+    return lab_card(body, title=f"Trọng số ({_channel(mode)})", span=6,
                     ident="app-lab-weights" if mode == "loto" else "app-dash-weights-de")
 
 
@@ -121,7 +121,7 @@ def calibration_card(payload: dict, mode: str) -> str:
                    ("Số ngày kiểm định riêng", selection.get("holdout_days"))])
     body += _mark_table(render_table(["Tham số", "Giá trị"], rows, align=["left", "right"]), "calibration")
     body += _audit(payload, metadata={key: value for key, value in payload.items() if key != "params"})
-    return lab_card(body, title=f"Hiệu chỉnh ({_channel(mode)})", span=6, flush=True,
+    return lab_card(body, title=f"Hiệu chỉnh ({_channel(mode)})", span=6,
                     ident=f"app-dash-calibration-{mode}")
 
 
