@@ -15,6 +15,14 @@ class FakeKV {
   async put(key, value) { this.store.set(key, value); }
 }
 
+// KV chạm giới hạn ghi cùng một khoá (1 lần/giây) khi nhiều isolate cùng giành khoá dự phòng.
+class LockRateLimitedKV extends FakeKV {
+  async put(key, value, options) {
+    if (key.includes("fallback-lock")) throw new Error("KV PUT failed: 429 Too Many Requests");
+    return super.put(key, value, options);
+  }
+}
+
 const primaryRow = {
   date: "2026-09-12T00:00:00.000",
   special: 58851,
@@ -147,6 +155,24 @@ const scenarios = {
       statuses.push(res.status);
     }
     return { counter, statuses: [...new Set(statuses)] };
+  },
+
+  // Ghi khoá thất bại thì coi như đang khoá: không gọi nguồn dự phòng, nhưng vẫn trả lịch sử chuẩn
+  // thay vì làm hỏng cả yêu cầu.
+  async lock_kv_rate_limited() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const ctx = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
+    const res = await worker.fetch(new Request("https://worker/api/v1/traditional-results"
+      + "?province=hanoi&from=2026-09-12&to=2026-09-13"), { LIVE: new LockRateLimitedKV() }, ctx);
+    await Promise.all(ctx.pending);
+    const body = await res.json();
+    return {
+      status: res.status,
+      counter,
+      dates: (body.data || []).map((row) => row.draw_date),
+      unresolved: body.meta?.unresolved_dates ?? null,
+    };
   },
 
   async future_range() {

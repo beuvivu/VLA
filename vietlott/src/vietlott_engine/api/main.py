@@ -17,6 +17,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import TypeAdapter, ValidationError
 
 from vietlott_engine.api.deps import AppState
 from vietlott_engine.api.routers import analytics, catalog, data, forecast, inference, max3d, products, strategy
@@ -138,12 +139,25 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
 
     _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
+    _BOOL = TypeAdapter(bool)
+
+    def _asks_to_record(request: Request) -> bool:
+        """Đọc ``record`` ĐÚNG như FastAPI đọc tham số bool (pydantic): "on", "y", "t"… cũng là
+        True, không chỉ "1"/"true"/"yes". Xét MỌI lần lặp của tham số. Giá trị không đọc được
+        (FastAPI sẽ trả 422) vẫn tính là lệnh ghi: đóng an toàn."""
+        for value in request.query_params.getlist("record"):
+            try:
+                if _BOOL.validate_python(value):
+                    return True
+            except ValidationError:
+                return True
+        return False
 
     @app.middleware("http")
     async def _require_token_for_writes(request: Request, call_next):  # type: ignore[no-untyped-def]
         """Lệnh ghi cần token khi VQE_API_TOKEN được đặt; lệnh đọc giữ nguyên."""
         token = settings.api_token
-        writes = request.method in _MUTATING or request.query_params.get("record", "").lower() in {"1", "true", "yes"}
+        writes = request.method in _MUTATING or _asks_to_record(request)
         if token and writes:
             supplied = request.headers.get("authorization", "")
             if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):

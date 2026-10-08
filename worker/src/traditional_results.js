@@ -242,14 +242,26 @@ export function parseXsktLedger(html) {
   return rows;
 }
 
-/** Tối đa một lượt gọi nguồn dự phòng mỗi FALLBACK_LOCK_SECONDS, bất kể bao nhiêu khách. */
+/**
+ * Chặn gọi nguồn dự phòng dồn dập: tối đa một lượt mỗi FALLBACK_LOCK_SECONDS trong MỘT isolate
+ * (mốc trong bộ nhớ), và khoá KV chặn thêm giữa các isolate khi nó đã lan tới. KV nhất quán SAU
+ * và không có thao tác đọc-ghi nguyên tử, nên giữa các isolate đây là chặn "nỗ lực tốt nhất",
+ * không phải đúng một lượt trên toàn mạng; muốn vậy phải có bộ điều phối nguyên tử (Durable Object).
+ */
 async function acquireFallbackLock(kv, nowUtcMs) {
   // Đặt mốc TRƯỚC khi gọi nguồn: các yêu cầu đến trong lúc lượt này đang chạy cũng bị chặn.
   if (nowUtcMs - lastFallbackAttemptMs < FALLBACK_LOCK_SECONDS * 1000) return false;
   lastFallbackAttemptMs = nowUtcMs;
   if (!kv) return true;
-  if (await kv.get(FALLBACK_LOCK_KEY)) return false;
-  await kv.put(FALLBACK_LOCK_KEY, "1", { expirationTtl: FALLBACK_LOCK_SECONDS });
+  try {
+    if (await kv.get(FALLBACK_LOCK_KEY)) return false;
+    await kv.put(FALLBACK_LOCK_KEY, "1", { expirationTtl: FALLBACK_LOCK_SECONDS });
+  } catch (error) {
+    // KV hỏng, hay từ chối ghi vì nhiều isolate cùng giành khoá (giới hạn một lần ghi mỗi giây
+    // trên một khoá): coi như đang khoá. Không gọi nguồn, nhưng yêu cầu vẫn trả lịch sử chuẩn.
+    console.error("khoá nguồn dự phòng không dùng được:", error?.message || error);
+    return false;
+  }
   return true;
 }
 

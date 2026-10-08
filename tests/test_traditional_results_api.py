@@ -99,6 +99,16 @@ def test_changing_the_date_range_cannot_amplify_calls_to_the_fallback_source() -
     assert result["counter"] == {"primary": 1, "xskt": 1}
 
 
+def test_a_rate_limited_lock_write_keeps_the_canonical_rows() -> None:
+    """Nhiều isolate cùng giành khoá dự phòng thì KV có thể từ chối ghi (giới hạn một lần ghi
+    mỗi giây trên một khoá). Trước đây lỗi ấy làm hỏng cả yêu cầu (502) dù lịch sử chuẩn đủ."""
+    result = _scenario("lock_kv_rate_limited")
+    assert result["status"] == 200
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+    assert result["dates"] == ["2026-09-12"]
+    assert result["unresolved"] == ["2026-09-13"]
+
+
 def test_a_range_ending_after_the_latest_draw_is_rejected() -> None:
     assert _scenario("future_range") == {"status": 400}
 

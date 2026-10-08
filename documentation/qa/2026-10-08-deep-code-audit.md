@@ -80,17 +80,22 @@ if (to > latestEligibleDate(nowUtcMs)) {                 // 1. ngày chưa quay 
   throw new Error("Đến ngày không được sau kỳ gần nhất đã quay.");
 }
 const fetchable = unresolved.filter((day) => day >= windowStart);   // 2. chỉ trong cửa sổ 500 ngày của nguồn
-if (fetchable.length > 0 && !(await acquireFallbackLock(kv, nowUtcMs))) {   // 3. ≤ 1 lượt / 10 phút
+if (fetchable.length > 0 && !(await acquireFallbackLock(kv, nowUtcMs))) {   // 3. ≤ 1 lượt / 10 phút / isolate
   warning = "Nguồn dự phòng vừa được gọi; ngày còn thiếu sẽ được bù ở lượt sau.";
 }
 ```
 
-`acquireFallbackLock` dùng hai lớp như đường `live.json`: khoá KV dùng chung giữa các
-isolate, và mốc trong bộ nhớ khi chính KV hỏng.
+`acquireFallbackLock` dùng hai lớp như đường `live.json`. Mốc trong bộ nhớ giữ chặt "một lượt
+mỗi 10 phút" trong MỘT isolate. Khoá KV chặn thêm giữa các isolate khi nó đã lan tới. KV nhất
+quán sau và không có đọc-ghi nguyên tử, nên trên toàn mạng giới hạn là một lượt mỗi 10 phút cho
+MỖI isolate đang chạy, không phải một lượt duy nhất (xem đề xuất "Khoá thật" ở mục 4). KV lỗi
+hay từ chối ghi khoá (giới hạn một lần ghi mỗi giây trên một khoá, khi nhiều isolate cùng
+giành) thì coi như đang khoá: không gọi nguồn, nhưng yêu cầu vẫn trả lịch sử chuẩn thay vì 502.
 
-**Kiểm chứng.** Có bốn phép kiểm mới trong `tests/test_traditional_results_api.py`: 20 khoảng
-ngày → 1 lượt tải; khoảng tương lai → 400; ngày ngoài cửa sổ → 0 lượt tải; không lộ tên nguồn.
-Bỏ khoá, bỏ chặn ngày tương lai, bỏ lọc cửa sổ hay trả lại tên nguồn: lần nào cũng đỏ.
+**Kiểm chứng.** Có năm phép kiểm mới trong `tests/test_traditional_results_api.py`: 20 khoảng
+ngày → 1 lượt tải; khoảng tương lai → 400; ngày ngoài cửa sổ → 0 lượt tải; không lộ tên nguồn;
+ghi khoá bị KV từ chối → 200 với lịch sử chuẩn và 0 lượt tải (trước: 502). Bỏ khoá, bỏ chặn
+ngày tương lai, bỏ lọc cửa sổ, trả lại tên nguồn, hay cho gọi nguồn khi KV lỗi: lần nào cũng đỏ.
 
 ### A2 — Mặc định không an toàn của API engine (HIGH)
 
@@ -119,7 +124,7 @@ api_token: str | None = None        # VQE_API_TOKEN
 @app.middleware("http")
 async def _require_token_for_writes(request, call_next):
     token = settings.api_token
-    writes = request.method in _MUTATING or request.query_params.get("record", "").lower() in {"1", "true", "yes"}
+    writes = request.method in _MUTATING or _asks_to_record(request)
     if token and writes:
         supplied = request.headers.get("authorization", "")
         if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
@@ -132,14 +137,20 @@ ports:
   - "127.0.0.1:8000:8000"
 ```
 
+`_asks_to_record` đọc MỌI lần lặp của `record` bằng đúng bộ đọc bool của FastAPI (pydantic
+`TypeAdapter(bool)`): `on`, `y`, `t`… cũng là True, không chỉ `1`/`true`/`yes`. Giá trị không
+đọc được (FastAPI sẽ trả 422) vẫn tính là lệnh ghi. Bản đầu chỉ so với `{"1", "true", "yes"}`,
+nên `?record=on` ghi được vào sổ mà không cần token.
+
 Dịch vụ `scheduler` trong compose gửi `Authorization: Bearer $VQE_API_TOKEN`. Không đặt
 token thì hành vi giữ nguyên, tương thích ngược. Header tuỳ biến buộc trình duyệt gửi
 preflight, nên `<form>`/`<img>` ở trang lạ không còn kích hoạt được lệnh ghi. So khớp token
 bằng `hmac.compare_digest` (thời gian hằng).
 
-**Kiểm chứng.** `vietlott/tests/test_api_security.py` có 7 phép kiểm. Đột biến cả 5 luật
+**Kiểm chứng.** `vietlott/tests/test_api_security.py` có 16 phép kiểm. Đột biến cả 7 luật
 (CORS `*`, bỏ kiểm token, `record=true` không tính là ghi, so `record` phân biệt hoa thường,
-compose mở mọi giao diện) đều đỏ. Toàn bộ bộ kiểm engine vẫn xanh. Engine là mã chép từ
+chỉ đọc một lần lặp của `record`, cho giá trị không đọc được đi qua, compose mở mọi giao diện)
+đều đỏ. Toàn bộ bộ kiểm engine vẫn xanh. Engine là mã chép từ
 VLM, nên bản vá này nên được đưa ngược về kho VLM.
 
 ### A3 — API lộ danh tính nguồn (MEDIUM)

@@ -282,7 +282,8 @@ Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value
 ≈ 11%, lặp lại trên hai sản phẩm), dù mọi cửa Max 3D mà mô hình tính được vẫn có RTP < 1 (Mega/Power/Lotto không có RTP trong phân tích nên không được gộp vào câu ấy)
 (`documentation/research/2026-10-07-max3d-hang-don-vi.md`).
 API của engine mặc định an toàn (08-10-2026): CORS đóng, `VQE_API_TOKEN` (khi đặt) bắt mọi
-POST/PUT/PATCH/DELETE và `?record=true` gửi `Authorization: Bearer`, compose chỉ bind
+POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y`… cũng vậy, đọc bằng
+chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`, compose chỉ bind
 `127.0.0.1`. `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.

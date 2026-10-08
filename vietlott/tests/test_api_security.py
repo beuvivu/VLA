@@ -66,6 +66,28 @@ def test_record_true_is_a_write_even_though_it_is_a_get(guarded: TestClient) -> 
     assert guarded.get("/forecast/mega645?record=TRUE").status_code == 401
 
 
+@pytest.mark.parametrize("value", ["on", "ON", "y", "t", "1", "yes"])
+def test_every_value_fastapi_reads_as_true_needs_the_token(guarded: TestClient, value: str) -> None:
+    # FastAPI đọc tham số bool bằng pydantic: "on", "y", "t"… cũng là True. Middleware phải
+    # đọc giống hệt, nếu không ?record=on ghi vào sổ mà không cần token.
+    assert guarded.get(f"/forecast/mega645?record={value}").status_code == 401
+
+
+def test_a_repeated_record_parameter_cannot_hide_a_write(guarded: TestClient) -> None:
+    assert guarded.get("/forecast/mega645?record=0&record=on").status_code == 401
+    assert guarded.get("/forecast/mega645?record=on&record=0").status_code == 401
+
+
+def test_an_unreadable_record_value_is_treated_as_a_write(guarded: TestClient) -> None:
+    # FastAPI trả 422 cho giá trị này; middleware vẫn đóng an toàn thay vì cho qua không token.
+    assert guarded.get("/forecast/mega645?record=maybe").status_code == 401
+
+
+def test_record_false_and_no_record_stay_reads(guarded: TestClient) -> None:
+    for query in ("", "?record=false", "?record=off", "?record=0"):
+        assert guarded.get(f"/forecast/mega645{query}").status_code != 401, query
+
+
 def test_a_bodyless_cross_site_post_to_sync_is_refused(guarded: TestClient) -> None:
     response = guarded.post("/games/mega645/prizes/sync", headers={"Origin": EVIL})
     assert response.status_code == 401
