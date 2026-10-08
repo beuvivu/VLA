@@ -58,4 +58,4 @@
 - [x] Xác minh khóa cuộn làm phép kiểm đỏ; thêm ca này vào browser CI để không còn bị bỏ qua trên runner.
 - [x] Đồng bộ cấu hình collector với SECURITY.md; xem báo cáo lỗi nguồn và thử lại có kiểm soát, giữ dữ liệu hợp lệ khi nguồn chưa sẵn sàng.
 - [x] Chạy full Python VLA, full engine, Node, các cổng phát hành và kiểm giao diện liên quan; ghi kết quả và phạm vi tồn đọng thực tế vào tài liệu.
-- [ ] Review tổng thể, commit/push main, xác nhận CI và Pages; kiểm lại PR còn mở và workspace sạch.
+- [x] Review tổng thể, commit/push main, xác nhận CI và Pages; kiểm lại PR còn mở và workspace sạch.

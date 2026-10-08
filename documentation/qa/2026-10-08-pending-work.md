@@ -138,14 +138,37 @@ lại để xác nhận cả hai ca xanh; không bỏ hay nới ca kiểm trong 
 
 | Cổng GitHub Actions trên source commit | Bằng chứng |
 |---|---|
+| Chromium VLA sáng/tối và điện thoại | [Run 37808002411](https://github.com/beuvivu/VLA/actions/runs/37808002411): browser job thành công; menu dài bắt buộc chạy, 64 trạng thái Vietlott đạt |
 | Engine, Ubuntu Python 3.11/3.12, Windows Python 3.12, optional ML và giao diện | [Run 37808002396](https://github.com/beuvivu/VLA/actions/runs/37808002396): tất cả job thành công |
 | CodeQL Python, JavaScript/TypeScript và Actions | [Run 37808002382](https://github.com/beuvivu/VLA/actions/runs/37808002382): tất cả job thành công |
 | GitHub Pages | [Run 37808002359](https://github.com/beuvivu/VLA/actions/runs/37808002359): deploy thành công |
+| Hoàn tất XSMB, thống kê và AI/ML | [Run 37808002278](https://github.com/beuvivu/VLA/actions/runs/37808002278): cập nhật, kiểm toán/đối soát, deploy dashboard và kiểm bất biến đều thành công |
+| Dựng lại Vietlott sau lượt lấy dữ liệu | [Run 37808541775](https://github.com/beuvivu/VLA/actions/runs/37808541775): thành công, giữ dữ liệu đã lưu |
 
 Kiểm trực tiếp trang công khai sau deploy thấy banner Power #1408 có đủ
 Jackpot 1 `129.672.825.150₫` và Jackpot 2 `3.800.633.150₫`, các giá trị trên
 một dòng trong khung desktop. Số đặc biệt Lotto/Power và nhãn tham khảo
 của Keno/Bingo18 vẫn hiện đúng trên trang.
+
+Lượt kiểm xác nhận sau bản sửa mục lục trên commit
+[`e3a9eb39`](https://github.com/beuvivu/VLA/commit/e3a9eb39349fb9177b5fc22f2e7997d6c5a1cc28)
+đã hoàn tất:
+
+- [CI VLA 37809785379](https://github.com/beuvivu/VLA/actions/runs/37809785379)
+  thành công: 3.271 passed, 9 skipped, 18 warnings trên Python 3.11;
+  browser sáng/tối/mobile và bốn cổng release/domain/number/research đều
+  qua. Đối soát Excel kiểm đủ 114.183 ô giải; challenger chưa vượt cổng
+  vẫn không được promote.
+- [CodeQL 37809785266](https://github.com/beuvivu/VLA/actions/runs/37809785266)
+  thành công cho Python, JavaScript/TypeScript và Actions.
+- Mã nguồn, tests, scripts, requirements và workflows giữa `974732c6` và
+  `e3a9eb39` không đổi. Các commit xen giữa giữ cập nhật dữ liệu/trang tự
+  động và bổ sung mục lục/bằng chứng triển khai.
+
+Bản commit chốt kế hoạch sau lượt kiểm này chỉ sửa Markdown; kiểm mục lục
+và đường dẫn tài liệu được chạy lại trên bản chốt. Sáu PR đã hợp nhất,
+không còn PR mở tại thời điểm rà soát cuối. CI mã nguồn đã xanh; cron vẫn
+báo nguồn Lotto chậm và giữ giới hạn Keno/Bingo18 ghi ở trên.
 
 ## Quyết định phạm vi và ghi chú nhỏ
 
