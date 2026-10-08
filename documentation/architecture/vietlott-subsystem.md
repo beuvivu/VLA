@@ -833,23 +833,36 @@ SELECT forecast_id, receipt_at FROM (
     WHERE NOT i.legacy
 ) WHERE revision = 1;
 
--- Mỗi lần phát đúng MỘT điểm: trong các dòng thuộc lượt chấm đã xác minh, chấm ĐÚNG lần phát
--- (forecast_sha256 = hash tính lại của lần phát, row_digest) và ĐÚNG kết quả hiện tại của kỳ (outcome_sha256; đính chính kỳ làm điểm cũ
--- tự rơi ra), lấy dòng KÉM thuận lợi nhất cho mô hình. Chạy lại lượt chấm không thể nâng điểm.
+-- Điểm hợp lệ: thuộc lượt chấm đã xác minh, chấm ĐÚNG lần phát (forecast_sha256 = hash tính
+-- lại của lần phát, row_digest) và ĐÚNG kết quả hiện tại của kỳ (outcome_sha256; đính chính kỳ
+-- làm điểm cũ tự rơi ra). Một lần phát có thể có nhiều dòng hợp lệ (chấm lại).
+CREATE VIEW valid_score AS
+SELECT s.*
+FROM forecast_score s
+JOIN verified_score_run v ON v.run_id = s.run_id
+JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = s.forecast_id
+                  AND fd.content_sha256 = s.forecast_sha256
+JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
+WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR);
+
+-- Biên của các dòng hợp lệ cho mỗi lần phát. "Kém thuận lợi nhất" phụ thuộc VAI trong phép so:
+-- với chính mô hình là loss LỚN nhất; với đối thủ hay tiền nhiệm là loss NHỎ nhất (đối thủ tốt
+-- nhất có thể). Lấy loss lớn nhất cho cả hai phía của một hiệu sẽ thổi phồng loss đối thủ và làm
+-- thách đấu trông tốt hơn.
+CREATE VIEW score_bounds AS
+SELECT forecast_id, max(log_loss) AS log_loss_hi, min(log_loss) AS log_loss_lo,
+       min(log_loss_fair) AS log_loss_fair_lo
+FROM valid_score
+GROUP BY forecast_id;
+
+-- Mỗi lần phát đúng MỘT điểm cho e-value của chính nó: dòng hợp lệ KÉM thuận lợi nhất cho mô
+-- hình. Chạy lại lượt chấm không thể nâng điểm.
 CREATE VIEW live_score AS
-WITH ok AS (
-    SELECT s.*
-    FROM forecast_score s
-    JOIN verified_score_run v ON v.run_id = s.run_id
-    JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = s.forecast_id
-                      AND fd.content_sha256 = s.forecast_sha256
-    JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
-    WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR)
-), pick AS (
+WITH pick AS (
     SELECT * EXCLUDE (k) FROM (
         SELECT *, row_number() OVER (PARTITION BY forecast_id
                                      ORDER BY log_loss - log_loss_fair DESC, run_id) AS k
-        FROM ok
+        FROM valid_score
     ) WHERE k = 1
 )
 SELECT s.*, e.receipt_at, k.cutoff_ts,
@@ -987,16 +1000,20 @@ WITH alloc AS (
     FROM evidence_state es
     LEFT JOIN alloc a ON a.game = es.game AND a.model_id = es.model_id
 ), pairs AS (                                   -- hiệu log-score (thách đấu − đối thủ) từng kỳ
+    -- Hiệu KÉM thuận lợi nhất cho thách đấu qua mọi lượt chấm hợp lệ: loss nhỏ nhất của đối
+    -- thủ trừ loss lớn nhất của thách đấu.
     SELECT ce.game, ce.challenger_id, ce.incumbent_id, ce.incumbent_from_draw_id, lc.draw_id,
-           CASE WHEN ce.incumbent_id = 'fair' THEN lc.log_loss_fair ELSE li.log_loss END
-             - lc.log_loss AS diff
+           CASE WHEN ce.incumbent_id = 'fair' THEN bc.log_loss_fair_lo ELSE bi.log_loss_lo END
+             - bc.log_loss_hi AS diff
     FROM comparison_epoch ce
     JOIN forecast_issue fc ON fc.game = ce.game AND fc.model_id = ce.challenger_id
     JOIN live_score lc ON lc.forecast_id = fc.forecast_id AND lc.live_eligible
                       AND lc.draw_id >= ce.incumbent_from_draw_id
+    JOIN score_bounds bc ON bc.forecast_id = lc.forecast_id
     LEFT JOIN forecast_issue fi ON fi.game = ce.game AND fi.model_id = ce.incumbent_id
                                AND fi.target_draw_id = lc.draw_id
     LEFT JOIN live_score li ON li.forecast_id = fi.forecast_id AND li.live_eligible
+    LEFT JOIN score_bounds bi ON bi.forecast_id = li.forecast_id
     WHERE ce.incumbent_id = 'fair' OR li.forecast_id IS NOT NULL
 ), paired AS (
     SELECT game, challenger_id, incumbent_id, incumbent_from_draw_id, draw_id AS as_of_draw_id,
@@ -1046,16 +1063,46 @@ LEFT JOIN gate_status g ON g.game = md.game AND g.model_id = md.model_id
                        AND g.as_of_draw_id = md.effective_from_draw_id - 1
 WHERE md.stage = 'production' AND md.model_id <> 'fair' AND NOT coalesce(g.gate_passed, FALSE);
 
--- Production được CÔNG BỐ: dòng có hiệu lực (biên nhận trước kỳ hiệu lực) và không nằm trong
--- unsupported_promotion. Trang và luật phát ra đọc view này; một dòng không qua cổng không
--- bao giờ thành luật công bố, kể cả khi phép kiểm chưa kịp chạy.
+-- CHUỖI đề bạt phải sạch kể từ lần về 'fair' gần nhất. gate_status xét cổng với đối thủ thô
+-- (deployment_effective); lấy đối thủ từ lịch sử ĐÃ DUYỆT thì view đệ quy (duyệt cần cổng,
+-- cổng cần đối thủ, đối thủ cần duyệt). Luật chuỗi phá vòng ấy: nếu mọi dòng production khác
+-- 'fair' kể từ lần về 'fair' gần nhất đều qua cổng, đối thủ thô CHÍNH LÀ đối thủ đã duyệt, nên
+-- phép xét cục bộ là đúng (quy nạp theo chuỗi). Có một dòng bị bác trong chuỗi thì mọi đề bạt
+-- sau nó bị chặn và không được công bố, cho tới khi về 'fair' (luôn hợp lệ) để bắt đầu lại.
+CREATE VIEW chain_reset AS                        -- mốc 'fair' gần nhất tới mỗi kỳ hiệu lực
+SELECT d.game, d.effective_from_draw_id AS at_draw_id,
+       coalesce((SELECT max(f.effective_from_draw_id) FROM deployment_effective f
+                  WHERE f.game = d.game AND f.stage = 'production' AND f.model_id = 'fair'
+                    AND f.effective_from_draw_id <= d.effective_from_draw_id), 0) AS last_fair
+FROM deployment_effective d;
+
+-- Production được CÔNG BỐ: 'fair', hoặc dòng có hiệu lực mà chuỗi từ lần về 'fair' gần nhất
+-- tới nó (kể cả chính nó) không có dòng nào trong unsupported_promotion. Trang và luật phát ra
+-- đọc view này; mô hình đã duyệt trước đó tiếp tục được công bố khi một dòng mới bị bác.
 CREATE VIEW production_effective AS
 SELECT d.*
 FROM deployment_effective d
 WHERE d.stage = 'production'
-  AND NOT EXISTS (SELECT 1 FROM unsupported_promotion u
-                  WHERE u.game = d.game AND u.model_id = d.model_id
-                    AND u.effective_from_draw_id = d.effective_from_draw_id);
+  AND (d.model_id = 'fair' OR NOT EXISTS (
+        SELECT 1 FROM unsupported_promotion u
+        WHERE u.game = d.game
+          AND u.effective_from_draw_id <= d.effective_from_draw_id
+          AND u.effective_from_draw_id > (SELECT max(r.last_fair) FROM chain_reset r
+                                           WHERE r.game = d.game AND r.at_draw_id = d.effective_from_draw_id)));
+
+-- Quyết định đề bạt: cổng qua VÀ chuỗi từ lần về 'fair' gần nhất tới kỳ này sạch. Bộ đề bạt
+-- đọc promote_ok, không đọc gate_passed.
+CREATE VIEW gate_decision AS
+SELECT g.*,
+       g.gate_passed AND NOT EXISTS (
+         SELECT 1 FROM unsupported_promotion u
+         WHERE u.game = g.game AND u.effective_from_draw_id <= g.as_of_draw_id
+           AND u.effective_from_draw_id > coalesce((SELECT max(f.effective_from_draw_id) FROM deployment_effective f
+                                                     WHERE f.game = g.game AND f.stage = 'production'
+                                                       AND f.model_id = 'fair'
+                                                       AND f.effective_from_draw_id <= g.as_of_draw_id), 0)
+       ) AS promote_ok
+FROM gate_status g;
 
 -- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
 -- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Hai tham chiếu:
@@ -1090,11 +1137,12 @@ WITH period AS (
     FROM own
     UNION ALL
     SELECT o.game, o.model_id, o.from_id, 'predecessor', o.draw_id,
-           (o.log_loss - lp.log_loss) / ln(10)
+           (o.log_loss - bp.log_loss_lo) / ln(10)          -- tiền nhiệm ở mức tốt nhất của nó
     FROM own o
     JOIN forecast_issue ip ON ip.game = o.game AND ip.model_id = o.predecessor_id
                           AND ip.target_draw_id = o.draw_id
     JOIN live_score lp ON lp.forecast_id = ip.forecast_id AND lp.live_eligible
+    JOIN score_bounds bp ON bp.forecast_id = lp.forecast_id
     WHERE o.predecessor_id <> 'fair'
 ), c AS (
     SELECT *, cum - least(0, coalesce(min(cum) OVER (PARTITION BY game, model_id, from_id, reference
@@ -1242,8 +1290,9 @@ kỳ t có kết quả
       fit lại cây trên vùng đệm                           [mỗi N kỳ]
     nếu chưa: giữ trạng thái học tới kỳ validated cuối, chờ đối chiếu
   → đọc gate_status và rollback_detector (view, tính lại từ live_score và gate_allocation);
-    đề bạt hay rollback = chèn một dòng model_deployment; unsupported_promotion phải rỗng,
-    và luật công bố đọc production_effective (không bao giờ là dòng chưa qua cổng)
+    đề bạt (chỉ khi gate_decision.promote_ok) hay rollback = chèn một dòng model_deployment;
+    unsupported_promotion phải rỗng, và luật công bố đọc production_effective (không bao giờ
+    là dòng chưa qua cổng, hay dòng đứng sau một dòng bị bác chưa được rollback)
   → phát forecast_issue cho kỳ t+1 (ghi sổ trước giờ quay)
 ```
 
