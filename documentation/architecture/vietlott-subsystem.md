@@ -235,7 +235,7 @@ CREATE TABLE game_schedule (
     valid_from      TIMESTAMPTZ NOT NULL,
     slots_by_isodow TIME[][] NOT NULL,            -- 7 danh sách giờ quay tăng dần; phần tử 1 = thứ Hai
                                                   -- (Mega: [[], [], [18:00], [], [18:00], [], [18:00]])
-    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
     PRIMARY KEY (game, valid_from),
     CHECK (len(slots_by_isodow) = 7)
 );
@@ -279,7 +279,7 @@ CREATE TABLE source_registry (
     independence_group VARCHAR NOT NULL,          -- mã ẩn danh của nhà cung cấp gốc
     valid_from      TIMESTAMPTZ NOT NULL,
     note            VARCHAR NOT NULL,             -- vì sao xếp vào nhóm này (đã kiểm thế nào)
-    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
     PRIMARY KEY (source_code, valid_from)
 );
 
@@ -437,11 +437,8 @@ CREATE TABLE hypothesis (
     n_draws         INTEGER NOT NULL,
     alpha           DOUBLE  NOT NULL,
     test            VARCHAR NOT NULL,
-    params          JSON    NOT NULL,             -- tham số đầy đủ: đủ để chạy lại đúng phép kiểm
-    params_sha256   VARCHAR NOT NULL,             -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
-                                                  -- không khoảng trắng); kiểm toán tính lại được
-    registration_sha256 VARCHAR NOT NULL          -- sha256 của TOÀN BỘ bản đăng ký ở dạng JSON chuẩn (mọi
-                                                  -- cột trừ cột này): biên nhận phải phủ đúng hash này
+    params          JSON    NOT NULL              -- tham số đầy đủ: đủ để chạy lại đúng phép kiểm
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
 );
 -- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
 -- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
@@ -482,12 +479,37 @@ CREATE TABLE model_deployment (
     effective_from_draw_id INTEGER NOT NULL,      -- có hiệu lực từ kỳ này (kỳ đầu tiên dự báo theo stage mới)
     decided_at      TIMESTAMPTZ NOT NULL,
     reason          VARCHAR NOT NULL,             -- gate_passed, e_detector_alarm, manual, superseded, initial, ...
-    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
     PRIMARY KEY (game, model_id, effective_from_draw_id)
 );
 -- Bất biến (kiểm bằng phép kiểm, vì DuckDB không có chỉ mục duy nhất có điều kiện):
 -- ở mỗi kỳ của mỗi sản phẩm có ĐÚNG MỘT mô hình production; nếu chưa có gì qua cổng
 -- thì đó là mô hình luật công bằng ('fair').
+
+-- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
+-- chỉ đúng khi seq_no được chốt VĨNH VIỄN trước dự báo live đầu tiên và alpha đúng bằng công
+-- thức. Vì vậy:
+--   * alpha là cột SINH từ seq_no, không lưu được một giá trị khác;
+--   * bảng chỉ được chèn: quyền UPDATE/DELETE bị thu hồi, và sổ gate_allocation được commit
+--     vào git như data/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
+--   * bất biến kiểm bằng phép kiểm: seq_no của mỗi sản phẩm liên tục 1..n (xoá một dòng để
+--     dùng lại số nhỏ sẽ làm hở dãy), và BIÊN NHẬN của dòng phân bổ (bảng receipt,
+--     subject_kind = 'gate_allocation') sớm hơn biên nhận của mọi dự báo của (game, model_id) ấy.
+CREATE TABLE gate_allocation (
+    game            VARCHAR NOT NULL REFERENCES game(code)
+                    -- ĐÚNG 7 sản phẩm được cấp alpha, khớp mẫu số 7 của công thức. Max 4D đã
+                    -- ngừng phát hành, không có kỳ tới nên không có dự báo live, và bị loại
+                    -- bằng ràng buộc chứ không chỉ bằng lời. Thêm một sản phẩm mới thì phải mở
+                    -- ngân sách alpha mới cho cả họ, không được nới danh sách này.
+                    CHECK (game IN ('mega645', 'power655', 'lotto535', 'max3d', 'max3dpro', 'keno', 'bingo18')),
+    model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
+    seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
+    alpha           DOUBLE  GENERATED ALWAYS AS ((0.05 / 7) * 6 / (pi() ^ 2 * seq_no * seq_no)) VIRTUAL,
+    registered_at   TIMESTAMPTZ NOT NULL,
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
+    PRIMARY KEY (game, model_id),
+    UNIQUE (game, seq_no)
+);
 
 -- Ghi TRƯỚC giờ quay; append-only. Một mô hình CÓ THỂ phát nhiều lần cho cùng một kỳ: sổ
 -- hiện có 10 cặp (sản phẩm, kỳ) như vậy, ví dụ Mega kỳ 1571 có 4 lần phát với digest khác
@@ -497,8 +519,7 @@ CREATE TABLE model_deployment (
 -- luật "lần ghi đầu giữ nguyên" của các sổ trong kho, và luật chọn được chốt trước kỳ quay.
 CREATE TABLE forecast_issue (
     forecast_id     VARCHAR PRIMARY KEY,          -- mã của lần phát
-    content_sha256  VARCHAR NOT NULL,             -- sha256 của TOÀN BỘ lần phát ở dạng JSON chuẩn (mọi cột
-                                                  -- trừ cột này): biên nhận phải phủ đúng hash này
+    -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
     legacy          BOOLEAN NOT NULL DEFAULT FALSE,   -- dòng nạp từ sổ cũ không đủ trường (xem 4.6)
     game            VARCHAR NOT NULL,
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
@@ -534,7 +555,7 @@ CREATE TABLE forecast_score (
     run_id          VARCHAR NOT NULL REFERENCES scoring_run(run_id),
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
-    forecast_sha256 VARCHAR NOT NULL,             -- content_sha256 của lần phát đã chấm
+    forecast_sha256 VARCHAR NOT NULL,             -- hash chuẩn (row_digest) của lần phát đã chấm
     outcome_sha256  VARCHAR NOT NULL,             -- hash kết quả kỳ đã dùng (cùng biểu thức như live_score)
     log_loss        DOUBLE  NOT NULL,             -- −log p_model(kết quả thật)
     log_loss_fair   DOUBLE  NOT NULL,             -- −log p_công_bằng(kết quả thật)
@@ -606,6 +627,57 @@ CREATE TABLE receipt (
     PRIMARY KEY (subject_kind, subject_id)
 );
 
+-- Hash chuẩn của mọi dòng cần biên nhận, TÍNH LẠI từ chính các cột của dòng: không có bản
+-- sao nào để bên ghi điền. Dạng chuẩn: to_json(struct_pack(...)) theo đúng thứ tự cột của
+-- bảng, mốc giờ đổi ra epoch micro giây (không phụ thuộc múi giờ phiên). Bên ghi tính hash
+-- bằng CHÍNH view này rồi mới xin biên nhận. Hash phủ cả khóa của dòng, nên bằng chứng của
+-- một dòng không dùng lại được cho dòng khác: chép digest của một dự báo phát trước giờ quay
+-- sang một dự báo mới (mã khác, luật chọn sau khi biết kết quả) không khớp hash tính lại.
+CREATE VIEW row_digest AS
+SELECT 'source_registry' AS kind,
+       source_code || '@' || strftime(timezone('UTC', valid_from), '%Y-%m-%dT%H:%M:%SZ') AS subject_id,
+       sha256(to_json(struct_pack(source_code := source_code, independence_group := independence_group,
+                                  valid_from_us := epoch_us(valid_from), note := note))::VARCHAR) AS content_sha256
+FROM source_registry
+UNION ALL
+SELECT 'game_schedule', game || '@' || strftime(timezone('UTC', valid_from), '%Y-%m-%dT%H:%M:%SZ'),
+       sha256(to_json(struct_pack(game := game, valid_from_us := epoch_us(valid_from),
+                                  slots_by_isodow := slots_by_isodow))::VARCHAR)
+FROM game_schedule
+UNION ALL
+SELECT 'hypothesis', hypothesis_id,
+       sha256(to_json(struct_pack(hypothesis_id := hypothesis_id, game := game, statement := statement,
+                                  registered_at_us := epoch_us(registered_at), first_draw_id := first_draw_id,
+                                  n_draws := n_draws, alpha := alpha, test := test, params := params))::VARCHAR)
+FROM hypothesis
+UNION ALL
+SELECT 'model_deployment', game || '/' || model_id || '@' || effective_from_draw_id,
+       sha256(to_json(struct_pack(game := game, model_id := model_id, stage := stage,
+                                  effective_from_draw_id := effective_from_draw_id,
+                                  decided_at_us := epoch_us(decided_at), reason := reason))::VARCHAR)
+FROM model_deployment
+UNION ALL
+SELECT 'gate_allocation', game || '/' || model_id,
+       sha256(to_json(struct_pack(game := game, model_id := model_id, seq_no := seq_no,
+                                  registered_at_us := epoch_us(registered_at)))::VARCHAR)
+FROM gate_allocation
+UNION ALL
+SELECT 'forecast', forecast_id,
+       sha256(to_json(struct_pack(forecast_id := forecast_id, legacy := legacy, game := game,
+                                  model_id := model_id, target_draw_id := target_draw_id,
+                                  target_draw_ts_us := epoch_us(target_draw_ts),
+                                  based_on_draw_id := based_on_draw_id, history_sha256 := history_sha256,
+                                  issued_at_us := epoch_us(issued_at), law := law, top_n := top_n))::VARCHAR)
+FROM forecast_issue;
+
+-- Dòng có biên nhận đã kiểm phủ ĐÚNG hash tính lại của nó. Mọi phép xét "đã có trước" đọc view
+-- này, không đọc thẳng bảng receipt.
+CREATE VIEW attested_subject AS
+SELECT d.kind, d.subject_id, d.content_sha256, r.receipt_at
+FROM row_digest d
+JOIN receipt r ON r.subject_kind = d.kind AND r.subject_id = d.subject_id
+              AND r.verified AND r.content_sha256 = d.content_sha256;
+
 -- Nhóm của mỗi quan sát = nhóm của phiên bản sổ có thời điểm hiệu lực
 -- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ giờ BIÊN NHẬN của lượt thu thập đã ghi nó.
 -- Hai phiên bản trùng thời điểm hiệu lực (cùng một biên nhận cấp muộn) xếp theo valid_from,
@@ -614,11 +686,10 @@ CREATE TABLE receipt (
 -- được đếm.
 CREATE VIEW registry_effective AS
 SELECT s.source_code, s.independence_group, s.valid_from,
-       greatest(s.valid_from, r.receipt_at) AS effective_from
+       greatest(s.valid_from, a.receipt_at) AS effective_from
 FROM source_registry s
-JOIN receipt r ON r.subject_kind = 'source_registry'
-              AND r.subject_id = s.source_code || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
-              AND r.verified AND r.content_sha256 = s.content_sha256;
+JOIN attested_subject a ON a.kind = 'source_registry'
+                       AND a.subject_id = s.source_code || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ');
 
 CREATE VIEW attested_run AS
 SELECT sr.run_id, sr.kind, r.content_sha256 AS attested_sha256, r.receipt_at
@@ -690,11 +761,10 @@ LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
 
 CREATE VIEW schedule_effective AS
-SELECT s.game, s.slots_by_isodow, s.valid_from, greatest(s.valid_from, r.receipt_at) AS effective_from
+SELECT s.game, s.slots_by_isodow, s.valid_from, greatest(s.valid_from, a.receipt_at) AS effective_from
 FROM game_schedule s
-JOIN receipt r ON r.subject_kind = 'game_schedule'
-              AND r.subject_id = s.game || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
-              AND r.verified AND r.content_sha256 = s.content_sha256;
+JOIN attested_subject a ON a.kind = 'game_schedule'
+                       AND a.subject_id = s.game || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ');
 
 -- Mốc xét "dự báo có ghi trước kỳ": SUY RA, không lưu. Một giá trị lưu sẵn, kể cả trong bảng
 -- chỉ chèn, vẫn có thể được ghi sai ngay từ đầu (nạp lại lịch sử, suy slot sai) và muộn hơn
@@ -744,36 +814,35 @@ FROM slot;
 
 -- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
 CREATE VIEW hypothesis_eligibility AS
-SELECT h.hypothesis_id, r.receipt_at, d.cutoff_ts AS first_draw_ts,
-       r.receipt_at IS NOT NULL AND r.receipt_at < d.cutoff_ts AS prospective
+SELECT h.hypothesis_id, a.receipt_at, d.cutoff_ts AS first_draw_ts,
+       a.receipt_at IS NOT NULL AND a.receipt_at < d.cutoff_ts AS prospective
 FROM hypothesis h
 JOIN draw_cutoff_effective d ON d.game = h.game AND d.draw_id = h.first_draw_id
-LEFT JOIN receipt r ON r.subject_kind = 'hypothesis' AND r.subject_id = h.hypothesis_id
-                   AND r.verified AND r.content_sha256 = h.registration_sha256;
+LEFT JOIN attested_subject a ON a.kind = 'hypothesis' AND a.subject_id = h.hypothesis_id;
 
 -- Đúng MỘT lần phát được tính cho mỗi (game, model_id, target_draw_id): lần có biên nhận
 -- SỚM NHẤT. Chèn muộn một dòng ghi lùi issued_at không đổi được lựa chọn, vì biên nhận
 -- của nó đến sau.
 CREATE VIEW evidence_issue AS
 SELECT forecast_id, receipt_at FROM (
-    SELECT i.forecast_id, r.receipt_at,
+    SELECT i.forecast_id, a.receipt_at,
            row_number() OVER (PARTITION BY i.game, i.model_id, i.target_draw_id
-                              ORDER BY r.receipt_at, i.forecast_id) AS revision
+                              ORDER BY a.receipt_at, i.forecast_id) AS revision
     FROM forecast_issue i
-    JOIN receipt r ON r.subject_kind = 'forecast' AND r.subject_id = i.forecast_id
-                  AND r.verified AND r.content_sha256 = i.content_sha256
+    JOIN attested_subject a ON a.kind = 'forecast' AND a.subject_id = i.forecast_id
     WHERE NOT i.legacy
 ) WHERE revision = 1;
 
 -- Mỗi lần phát đúng MỘT điểm: trong các dòng thuộc lượt chấm đã xác minh, chấm ĐÚNG lần phát
--- (forecast_sha256) và ĐÚNG kết quả hiện tại của kỳ (outcome_sha256; đính chính kỳ làm điểm cũ
+-- (forecast_sha256 = hash tính lại của lần phát, row_digest) và ĐÚNG kết quả hiện tại của kỳ (outcome_sha256; đính chính kỳ làm điểm cũ
 -- tự rơi ra), lấy dòng KÉM thuận lợi nhất cho mô hình. Chạy lại lượt chấm không thể nâng điểm.
 CREATE VIEW live_score AS
 WITH ok AS (
     SELECT s.*
     FROM forecast_score s
     JOIN verified_score_run v ON v.run_id = s.run_id
-    JOIN forecast_issue fi ON fi.forecast_id = s.forecast_id AND fi.content_sha256 = s.forecast_sha256
+    JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = s.forecast_id
+                      AND fd.content_sha256 = s.forecast_sha256
     JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
     WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR)
 ), pick AS (
@@ -807,6 +876,7 @@ CREATE TABLE incumbent_comparison (
     n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong lần so này
     mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
     alpha_level     DOUBLE  NOT NULL,             -- mức của chuỗi tin cậy đã tính
+    pairs_sha256    VARCHAR NOT NULL,             -- hash của TRỌN dãy (draw_id, diff) đã dùng, tới as_of
     cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
     PRIMARY KEY (run_id, game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id)
 );
@@ -821,45 +891,19 @@ JOIN (SELECT run_id, sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256))
                                               incumbent_from_draw_id := incumbent_from_draw_id,
                                               as_of_draw_id := as_of_draw_id, n_draws := n_draws,
                                               mean_log_score_diff := mean_log_score_diff,
-                                              alpha_level := alpha_level, cs_lower := cs_lower))::VARCHAR) AS row_sha256
+                                              alpha_level := alpha_level, pairs_sha256 := pairs_sha256,
+                                              cs_lower := cs_lower))::VARCHAR) AS row_sha256
             FROM incumbent_comparison)
       GROUP BY run_id) m ON m.run_id = a.run_id
 WHERE a.kind = 'comparison' AND a.attested_sha256 = m.sha;
 
--- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
--- chỉ đúng khi seq_no được chốt VĨNH VIỄN trước dự báo live đầu tiên và alpha đúng bằng công
--- thức. Vì vậy:
---   * alpha là cột SINH từ seq_no, không lưu được một giá trị khác;
---   * bảng chỉ được chèn: quyền UPDATE/DELETE bị thu hồi, và sổ gate_allocation được commit
---     vào git như data/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
---   * bất biến kiểm bằng phép kiểm: seq_no của mỗi sản phẩm liên tục 1..n (xoá một dòng để
---     dùng lại số nhỏ sẽ làm hở dãy), và BIÊN NHẬN của dòng phân bổ (bảng receipt,
---     subject_kind = 'gate_allocation') sớm hơn biên nhận của mọi dự báo của (game, model_id) ấy.
-CREATE TABLE gate_allocation (
-    game            VARCHAR NOT NULL REFERENCES game(code)
-                    -- ĐÚNG 7 sản phẩm được cấp alpha, khớp mẫu số 7 của công thức. Max 4D đã
-                    -- ngừng phát hành, không có kỳ tới nên không có dự báo live, và bị loại
-                    -- bằng ràng buộc chứ không chỉ bằng lời. Thêm một sản phẩm mới thì phải mở
-                    -- ngân sách alpha mới cho cả họ, không được nới danh sách này.
-                    CHECK (game IN ('mega645', 'power655', 'lotto535', 'max3d', 'max3dpro', 'keno', 'bingo18')),
-    model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
-    seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
-    alpha           DOUBLE  GENERATED ALWAYS AS ((0.05 / 7) * 6 / (pi() ^ 2 * seq_no * seq_no)) VIRTUAL,
-    registered_at   TIMESTAMPTZ NOT NULL,
-    content_sha256  VARCHAR NOT NULL,             -- sha256 của dòng phân bổ ở dạng JSON chuẩn: biên nhận
-                                                  -- 'gate_allocation' phải phủ đúng hash này
-    PRIMARY KEY (game, model_id),
-    UNIQUE (game, seq_no)
-);
-
 CREATE VIEW deployment_effective AS
 SELECT md.*
 FROM model_deployment md
-LEFT JOIN receipt r ON r.subject_kind = 'model_deployment'
-                   AND r.subject_id = md.game || '/' || md.model_id || '@' || md.effective_from_draw_id
-                   AND r.verified AND r.content_sha256 = md.content_sha256
+LEFT JOIN attested_subject a ON a.kind = 'model_deployment'
+                            AND a.subject_id = md.game || '/' || md.model_id || '@' || md.effective_from_draw_id
 LEFT JOIN draw_cutoff_effective k ON k.game = md.game AND k.draw_id = md.effective_from_draw_id
-WHERE r.receipt_at < k.cutoff_ts
+WHERE a.receipt_at < k.cutoff_ts
    OR (md.model_id = 'fair' AND md.stage = 'production' AND md.reason = 'initial'
        AND md.effective_from_draw_id = (SELECT min(m0.effective_from_draw_id) FROM model_deployment m0
                                          WHERE m0.game = md.game));
@@ -922,16 +966,16 @@ FROM s;
 --      e-process đã vượt ngưỡng ở một thời điểm nào đó (max_log10_wealth) là đủ, theo Ville.
 --   2) lần so với ĐÚNG mô hình production hiện hành (dòng production mới nhất có hiệu lực tới
 --      kỳ này) có cs_lower > 0: lấy từ lượt so đã xác minh, n_draws và trung bình trùng với
---      giá trị tính lại, cs_lower ≤ trung bình, mức đúng bằng alpha × alpha_factor; nhiều lượt
+--      giá trị tính lại, hash của trọn dãy (draw_id, diff) trùng, cs_lower ≤ trung bình, mức
+--      đúng bằng alpha × alpha_factor; nhiều lượt
 --      thì lấy cs_lower nhỏ nhất, và một dòng không nhất quán làm cả kỳ không qua.
 --   3) ≥ 100 kỳ live và không thiếu kỳ.
 CREATE VIEW gate_status AS
 WITH alloc AS (
     SELECT ga.game, ga.model_id, ga.alpha
     FROM gate_allocation ga
-    JOIN receipt r ON r.subject_kind = 'gate_allocation' AND r.subject_id = ga.game || '/' || ga.model_id
-                  AND r.verified AND r.content_sha256 = ga.content_sha256
-    WHERE r.receipt_at < (SELECT min(e.receipt_at) FROM evidence_issue e
+    JOIN attested_subject a ON a.kind = 'gate_allocation' AND a.subject_id = ga.game || '/' || ga.model_id
+    WHERE a.receipt_at < (SELECT min(e.receipt_at) FROM evidence_issue e
                            JOIN forecast_issue i ON i.forecast_id = e.forecast_id
                            WHERE i.game = ga.game AND i.model_id = ga.model_id)
 ), st AS (
@@ -956,12 +1000,16 @@ WITH alloc AS (
     WHERE ce.incumbent_id = 'fair' OR li.forecast_id IS NOT NULL
 ), paired AS (
     SELECT game, challenger_id, incumbent_id, incumbent_from_draw_id, draw_id AS as_of_draw_id,
-           count(*) OVER w AS n_draws, avg(diff) OVER w AS mean_diff
+           count(*) OVER w AS n_draws, avg(diff) OVER w AS mean_diff,
+           -- Chuỗi tin cậy phụ thuộc cả thứ tự và độ phân tán của dãy, không chỉ n và trung bình:
+           -- đính chính hay chấm lại đổi dãy mà giữ nguyên n và trung bình vẫn phải làm dòng cũ rơi ra.
+           sha256(to_json(list(struct_pack(draw_id := draw_id, diff := diff)) OVER w)::VARCHAR) AS pairs_sha256
     FROM pairs
     WINDOW w AS (PARTITION BY game, challenger_id, incumbent_id, incumbent_from_draw_id ORDER BY draw_id)
 ), cmp AS (                                       -- mọi dòng so đã xác minh phải nhất quán; lấy min
     SELECT st.game, st.model_id, st.as_of_draw_id,
-           CASE WHEN bool_and(ic.n_draws = p.n_draws
+           CASE WHEN bool_and(ic.pairs_sha256 = p.pairs_sha256
+                              AND ic.n_draws = p.n_draws
                               AND abs(ic.mean_log_score_diff - p.mean_diff) <= 1e-9 * greatest(1, abs(p.mean_diff))
                               AND ic.cs_lower <= ic.mean_log_score_diff
                               AND abs(ic.alpha_level - st.alpha * ce.alpha_factor) <= 1e-12 * st.alpha * ce.alpha_factor)
@@ -987,14 +1035,27 @@ SELECT st.game, st.model_id, st.as_of_draw_id, st.live_draws, st.missing_draws,
 FROM st
 LEFT JOIN cmp ON cmp.game = st.game AND cmp.model_id = st.model_id AND cmp.as_of_draw_id = st.as_of_draw_id;
 
--- Đề bạt không có căn cứ: dòng production lý do 'gate_passed' mà gate_status ở kỳ ngay trước
--- kỳ hiệu lực không qua. Phép kiểm đòi view này RỖNG.
+-- Đề bạt không có căn cứ: MỌI dòng production của một mô hình khác 'fair' mà gate_status ở
+-- kỳ ngay trước kỳ hiệu lực không qua, bất kể lý do ghi là gì ('manual' cũng vậy). Lý do là
+-- chuỗi do bên ghi điền, nên không được quyết định dòng nào bị soát. Về 'fair' (rollback) luôn
+-- được: đó là luật an toàn. Phép kiểm đòi view này RỖNG.
 CREATE VIEW unsupported_promotion AS
 SELECT md.*
 FROM model_deployment md
 LEFT JOIN gate_status g ON g.game = md.game AND g.model_id = md.model_id
                        AND g.as_of_draw_id = md.effective_from_draw_id - 1
-WHERE md.stage = 'production' AND md.reason = 'gate_passed' AND NOT coalesce(g.gate_passed, FALSE);
+WHERE md.stage = 'production' AND md.model_id <> 'fair' AND NOT coalesce(g.gate_passed, FALSE);
+
+-- Production được CÔNG BỐ: dòng có hiệu lực (biên nhận trước kỳ hiệu lực) và không nằm trong
+-- unsupported_promotion. Trang và luật phát ra đọc view này; một dòng không qua cổng không
+-- bao giờ thành luật công bố, kể cả khi phép kiểm chưa kịp chạy.
+CREATE VIEW production_effective AS
+SELECT d.*
+FROM deployment_effective d
+WHERE d.stage = 'production'
+  AND NOT EXISTS (SELECT 1 FROM unsupported_promotion u
+                  WHERE u.game = d.game AND u.model_id = d.model_id
+                    AND u.effective_from_draw_id = d.effective_from_draw_id);
 
 -- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
 -- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Hai tham chiếu:
@@ -1181,7 +1242,8 @@ kỳ t có kết quả
       fit lại cây trên vùng đệm                           [mỗi N kỳ]
     nếu chưa: giữ trạng thái học tới kỳ validated cuối, chờ đối chiếu
   → đọc gate_status và rollback_detector (view, tính lại từ live_score và gate_allocation);
-    đề bạt hay rollback = chèn một dòng model_deployment; unsupported_promotion phải rỗng
+    đề bạt hay rollback = chèn một dòng model_deployment; unsupported_promotion phải rỗng,
+    và luật công bố đọc production_effective (không bao giờ là dòng chưa qua cổng)
   → phát forecast_issue cho kỳ t+1 (ghi sổ trước giờ quay)
 ```
 
