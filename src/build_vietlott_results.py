@@ -368,19 +368,8 @@ def draw_card(product: str, draw: dict) -> str:
             f'<div class="vl-jackpots">{jackpots}</div></article>')
 
 
-STYLE = """
-.vl-hero{padding:24px 28px;border:1px solid var(--ui-border);border-radius:24px;background:linear-gradient(135deg,var(--ui-surface),var(--ui-brand-soft));box-shadow:var(--ui-sh-sm);margin-bottom:16px}.vl-kicker{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--ui-brand-ink)}.vl-hero h1{font-size:clamp(28px,5vw,46px);margin:6px 0 8px}.vl-hero p{max-width:760px;color:var(--ui-ink-soft);margin:0}.vl-chipline{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.vl-chip{display:inline-flex;padding:6px 10px;border:1px solid var(--ui-border);border-radius:999px;font-size:12px;background:var(--ui-surface)}
-.vl-products{display:flex;gap:8px;overflow-x:auto;margin:0 0 16px;padding:2px 0 6px;scrollbar-width:thin}.vl-product{flex:0 0 auto;padding:9px 14px;border:1px solid var(--ui-border);border-radius:999px;background:var(--ui-surface);text-decoration:none;color:inherit;font-size:14px;font-weight:700;white-space:nowrap}.vl-product[aria-current="page"]{background:var(--ui-brand);color:var(--ui-on-brand);border-color:var(--ui-brand)}
-.vl-section{margin:0 0 16px;padding:18px;border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}.vl-section h2{margin:0 0 12px;font-size:20px}.vl-section h4{margin:12px 0 6px}.vl-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.vl-toolbar{display:flex;gap:10px;align-items:end;margin:0 0 12px}.vl-toolbar label{display:grid;gap:4px;font-size:12px;font-weight:700}.vl-toolbar input{min-height:40px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface);color:var(--ui-ink);padding:0 10px}
-.vl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.vl-draw{min-width:0;padding:16px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface)}.vl-draw-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.vl-draw-head div{display:flex;gap:8px;align-items:baseline}.vl-draw-head small{font-size:10px;color:var(--ui-ink-soft)}.vl-draw-head time{font-size:12px;color:var(--ui-ink-soft)}
-.vl-result{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}.vl-ball{display:inline-grid;place-items:center;min-width:38px;height:38px;padding:0 6px;border-radius:999px;background:var(--ui-brand);color:var(--ui-on-brand);font:800 16px var(--ui-mono)}.vl-ball--bonus{background:var(--ui-special-ink)}.vl-plus{font-weight:900;color:var(--ui-ink-soft)}.vl-meta{flex-basis:100%;color:var(--ui-ink-soft);font-size:13px}.vl-jackpots{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--ui-ink-soft);font-size:12px}.vl-jackpots b{color:var(--ui-ink)}
-.vl-3d{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.vl-3d div{min-width:0;padding:9px;border-radius:10px;background:var(--ui-surface-2)}.vl-3d small{display:block;color:var(--ui-ink-soft);font-size:10px}.vl-3d span{display:block;overflow-wrap:anywhere;font:700 14px/1.6 var(--ui-mono)}
-.vl-table-wrap{overflow-x:auto;margin:8px 0}.vl-table{width:100%;border-collapse:collapse;font-size:14px}.vl-table caption{text-align:left;color:var(--ui-ink-soft);font-size:12px;padding:0 0 6px}.vl-table th,.vl-table td{padding:8px 10px;border-bottom:1px solid var(--ui-border);text-align:left;vertical-align:top}.vl-num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
-.vl-badge{display:inline-flex;padding:3px 9px;border-radius:999px;border:1px solid var(--ui-border);font-size:12px;font-weight:700}.vl-badge--ok{border-color:var(--ui-brand);color:var(--ui-brand-ink)}.vl-badge--warn{border-color:var(--ui-special-ink);color:var(--ui-special-ink)}.vl-muted{color:var(--ui-ink-soft)}.vl-tickets{margin:6px 0;padding-left:22px}.vl-tickets li{margin:4px 0}.vl-ticket{font:700 15px var(--ui-mono);margin-right:8px}.vl-tickets small{color:var(--ui-ink-soft)}.vl-forecast-head{margin:0 0 6px}
-.vl-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.vl-tile{display:block;min-width:0;padding:16px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);color:inherit;text-decoration:none}.vl-tile:hover{box-shadow:var(--ui-sh-sm)}.vl-tile h2{font-size:18px;margin:0}.vl-tile p{margin:4px 0 10px;color:var(--ui-ink-soft);font-size:13px}.vl-empty{padding:24px;border:1px dashed var(--ui-border);border-radius:16px;text-align:center}
-@media(max-width:860px){.vl-grid,.vl-cols,.vl-tiles{grid-template-columns:1fr}.vl-hero{padding:18px}.vl-toolbar{display:grid}.vl-ball{min-width:34px;height:34px;font-size:15px}}
-"""
+STYLE = (Path(__file__).with_name("templates") / "vietlott_main.css").read_text(encoding="utf-8")
+
 
 SEARCH_SCRIPT = (
     "<script>(()=>{const q=document.getElementById('vl-search');if(!q)return;q.addEventListener('input',()=>{"
@@ -407,6 +396,59 @@ def _by_code(dashboard: dict) -> dict[str, dict]:
     return {p["product"]: p for p in dashboard.get("products") or []}
 
 
+def jackpot_card(product: str, data: dict | None) -> str:
+    """Jackpot đúng kỳ mới nhất; pool chưa công bố vẫn hiện dấu gạch."""
+    latest = (data or {}).get("latest") or {}
+    pools = {p.get("code"): p for p in latest.get("prizes") or [] if p.get("pool")}
+    labels = [("jackpot1", "Jackpot 1"), ("jackpot2", "Jackpot 2")] if product == "power655" else [("jackpot1", "Jackpot")]
+    values = "".join(
+        f'<div class="vl-jackpot-pool"><span>{label}</span><strong class="vl-jackpot-value">'
+        f'{money((pools.get(code) or {}).get("value_vnd"))}</strong></div>'
+        for code, label in labels)
+    stamp = (f'Kỳ #{esc(latest["draw_id"])} · {day_label(latest.get("draw_date"))}'
+             if latest else "Chưa có kết quả đã xác thực")
+    name, file, _ = PRODUCTS[product]
+    return (f'<article class="vl-jackpot-card" data-vl-jackpot="{product}" aria-label="Jackpot của kỳ mới nhất">'
+            f'<span class="vl-kicker">JACKPOT · KỲ MỚI NHẤT</span><h2>{esc(name)}</h2>'
+            f'<p class="vl-jackpot-stamp">{stamp}</p>{values}'
+            '<p class="vl-jackpot-note">Giá trị chưa công bố được hiển thị bằng dấu —.</p>'
+            f'<a class="vl-button vl-button--secondary" href="{file}#vl-latest">Xem bảng giải <span aria-hidden="true">↗</span></a></article>')
+
+
+def pick_board(product: str) -> str:
+    """Bộ chọn cục bộ; không ghi sổ dự báo và không tạo giao dịch."""
+    if product not in ("mega645", "power655"):
+        return ""
+    maximum = 45 if product == "mega645" else 55
+    buttons = "".join(
+        f'<button class="vl-pick" type="button" data-vl-number="{number}" aria-pressed="false" '
+        f'aria-label="Số {number:02d}" tabindex="{0 if number == 1 else -1}">{number:02d}</button>'
+        for number in range(1, maximum + 1))
+    slots = "".join('<span class="vl-pick-slot" data-vl-slot>—</span>' for _ in range(6))
+    name = PRODUCTS[product][0]
+    return (f'<section class="vl-section vl-picks" id="vl-picks" data-vl-picks="{product}" '
+            f'data-vl-name="{esc(name)}" aria-labelledby="vl-picks-title">'
+            '<div class="vl-section-heading"><div><span class="vl-kicker">BỘ SỐ CỦA BẠN</span>'
+            '<h2 id="vl-picks-title">Chọn sáu con số</h2></div><span class="vl-chip" data-vl-count>0 / 6</span></div>'
+            '<p class="vl-muted">Tạo bộ số nháp để lưu riêng. Chọn nhanh tạo số ngẫu nhiên.</p>'
+            '<div class="vl-picks-layout"><div><div class="vl-pick-grid" role="group" '
+            f'aria-label="Chọn 6 số từ 1 đến {maximum}" aria-describedby="vl-pick-help">{buttons}</div>'
+            '<p class="vl-pick-help" id="vl-pick-help">Dùng phím mũi tên để di chuyển; Enter hoặc Space để chọn.</p>'
+            '<div class="vl-pick-actions"><button type="button" class="vl-button vl-button--secondary" data-vl-random>'
+            'Chọn nhanh</button><button type="button" class="vl-button vl-button--ghost" data-vl-clear>Xóa bộ số</button></div>'
+            '<p class="vl-pick-status" data-vl-status role="status" aria-live="polite">Chọn 6 số khác nhau để xem trước.</p></div>'
+            '<aside class="vl-pick-ticket" aria-label="Bộ số nháp"><span class="vl-kicker">XEM TRƯỚC</span>'
+            f'<h3>{esc(name)}</h3><div class="vl-pick-slots" aria-hidden="true">{slots}</div>'
+            '<p class="vl-muted">Bộ số chỉ được lưu trên thiết bị của bạn.</p>'
+            '<button type="button" class="vl-button" data-vl-review disabled>Xem bộ số</button></aside></div>'
+            '<noscript><p class="vl-muted">Bật JavaScript để chọn và tải bộ số nháp.</p></noscript>'
+            '<dialog class="vl-pick-dialog" aria-labelledby="vl-draft-title"><span class="vl-kicker">BỘ SỐ NHÁP</span>'
+            f'<h2 id="vl-draft-title">{esc(name)}</h2><p class="vl-pick-preview" data-vl-preview></p>'
+            '<p class="vl-muted">Đây là bộ số nháp, chưa phải vé đã mua. Bộ số không được gửi đến hệ thống đặt vé.</p>'
+            '<div class="vl-pick-actions"><button type="button" class="vl-button" data-vl-download>Tải bộ số</button>'
+            '<button type="button" class="vl-button vl-button--secondary" data-vl-close>Chỉnh sửa</button></div></dialog></section>')
+
+
 def page(product: str, data: dict | None, analysis: dict | None) -> str:
     name, file, desc = PRODUCTS[product]
     latest = (data or {}).get("latest")
@@ -416,11 +458,19 @@ def page(product: str, data: dict | None, analysis: dict | None) -> str:
         chips.append(f'<span class="vl-chip">Lịch quay: {esc(data["schedule"])}</span>')
     if latest:
         chips.append(f'<span class="vl-chip">Kỳ mới nhất #{esc(latest["draw_id"])} · {day_label(latest.get("draw_date"))}</span>')
-    hero = (f'<section class="vl-hero"><span class="vl-kicker">VIETLOTT · KẾT QUẢ</span><h1>{esc(name)}</h1>'
+    feature = jackpot_card(product, data) if product in ("mega645", "power655") else (
+        '<article class="vl-hero-summary"><span class="vl-kicker">KỲ QUAY MỚI NHẤT</span>'
+        + (f'<strong>#{esc(latest["draw_id"])}</strong><p>{day_label(latest.get("draw_date"))}</p>'
+           f'<div class="vl-result">{result_markup(product, latest)}</div>' if latest else '<p>Chưa có kết quả đã xác thực.</p>')
+        + '</article>')
+    hero = (f'<section class="vl-hero"><div class="vl-hero-copy"><span class="vl-kicker">VIETLOTT · KẾT QUẢ</span><h1>{esc(name)}</h1>'
             '<p>Kết quả đã xác thực theo đúng mã kỳ, bảng giải của từng kỳ, dự báo ghi trước kỳ quay và đối chiếu '
-            f'với kết quả thật.</p><div class="vl-chipline">{"".join(chips)}</div></section>')
+            f'với kết quả thật.</p><div class="vl-chipline">{"".join(chips)}</div>'
+            '<div class="vl-hero-actions"><a class="vl-button" href="#vl-latest">Xem kết quả <span aria-hidden="true">↗</span></a>'
+            '<a class="vl-button vl-button--secondary" href="vietlott.html#vl-frequency">Khám phá thống kê</a></div></div>'
+            f'{feature}</section>')
     if not latest:
-        body = '<div class="vl-empty">Chưa có kết quả đã xác thực cho sản phẩm này.</div>'
+        body = '<div class="vl-empty" id="vl-latest">Chưa có kết quả đã xác thực cho sản phẩm này.</div>'
     else:
         body = (f'<section class="vl-section" aria-labelledby="vl-latest"><h2 id="vl-latest">Kỳ mới nhất</h2>'
                 f'{draw_card(product, latest)}{prize_table(product, latest)}</section>'
@@ -437,8 +487,9 @@ def page(product: str, data: dict | None, analysis: dict | None) -> str:
                 f'<div class="vl-grid" id="vl-grid">{"".join(draw_card(product, d) for d in draws)}</div></section>'
                 f'<section class="vl-section" aria-labelledby="vl-catalogue"><h2 id="vl-catalogue">Cơ cấu giải</h2>'
                 f'{catalogue_table(data.get("prize_catalogue") or [])}</section>')
-    return (_head(f"{name} · Vietlott") + app_shell_open(file, wide=True) + hero + nav_products(product) + body
-            + app_shell_close(file) + SEARCH_SCRIPT + "</body></html>")
+    script = '<script src="assets/vietlott-picks.js" defer></script>' if product in ("mega645", "power655") else ""
+    return (_head(f"{name} · Vietlott") + app_shell_open(file, wide=True) + hero + nav_products(product)
+            + pick_board(product) + body + app_shell_close(file) + SEARCH_SCRIPT + script + "</body></html>")
 
 
 def overview(dashboard: dict) -> str:
@@ -458,19 +509,29 @@ def overview(dashboard: dict) -> str:
                       + ("đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo") + "</p>")
         ev = (analysis.get(code) or {}).get("evidence") or {}
         signal = " · có tín hiệu thống kê" if ev.get("found") else ""
-        tiles.append(f'<a class="vl-tile" href="{file}"><h2>{esc(name)}</h2><p>{head} · {esc(data.get("schedule") or desc)}'
-                     f'{signal}</p>{result}{follow}</a>')
+        tiles.append(f'<a class="vl-tile" href="{file}"><div class="vl-tile-heading"><h2>{esc(name)}</h2>'
+                     f'<span class="vl-tile-arrow" aria-hidden="true">↗</span></div>'
+                     f'<p>{head} · {esc(data.get("schedule") or desc)}{signal}</p>{result}{follow}</a>')
     stats = dashboard.get("stats") or {}
     chips = (f'<span class="vl-chip">{esc(stats.get("results", 0))}/{esc(stats.get("products", len(PRODUCTS)))} sản phẩm có kết quả</span>'
              f'<span class="vl-chip">{esc(stats.get("registered_next", 0))} dự báo đã đăng ký cho kỳ tới</span>'
              f'<span class="vl-chip">{esc(stats.get("compared_draws", 0))} kỳ đã đối chiếu</span>')
-    hero = ('<section class="vl-hero"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span><h1>Kết quả Vietlott</h1>'
-            '<p>Bảy sản phẩm đang phát hành: Mega 6/45, Power 6/55, Lotto 5/35, Max 3D / Max 3D+, Max 3D Pro, Keno '
-            'và Bingo18. Kết quả đã xác thực, bảng giải, dự báo ghi trước kỳ và đối chiếu. '
-            f'{esc(randomness_summary(analysis, {c: v[0] for c, v in PRODUCTS.items()}))}</p>'
-            f'<div class="vl-chipline">{chips}</div></section>')
+    featured = next((c for c in ("power655", "mega645") if (by_code.get(c) or {}).get("latest")), "power655")
+    hero = ('<section class="vl-hero"><div class="vl-hero-copy"><span class="vl-kicker">VIETLOTT · TỔNG QUAN</span>'
+            '<h1>Kết quả <span>Vietlott</span></h1>'
+            '<p>Khám phá bảy sản phẩm Vietlott. Theo dõi kết quả đã xác thực, bảng giải và dự báo ghi trước kỳ quay.</p>'
+            f'<div class="vl-chipline">{chips}</div><details class="vl-hero-evidence">'
+            '<summary>Kết luận kiểm định các kỳ quay</summary>'
+            f'<p>{esc(randomness_summary(analysis, {c: v[0] for c, v in PRODUCTS.items()}))}</p></details>'
+            '<div class="vl-hero-actions">'
+            '<a class="vl-button" href="#vl-games">Khám phá sản phẩm <span aria-hidden="true">↗</span></a>'
+            '<a class="vl-button vl-button--secondary" href="vietlott-mega-645.html#vl-picks">Chọn bộ số</a></div></div>'
+            f'{jackpot_card(featured, by_code.get(featured))}</section>')
     return (_head("Vietlott · Kết quả") + app_shell_open("vietlott.html", wide=True) + hero + nav_products()
-            + f'<div class="vl-tiles">{"".join(tiles)}</div>' + overview_sections(dashboard)
+            + '<section class="vl-game-hub" id="vl-games" aria-labelledby="vl-games-title">'
+            + '<div class="vl-section-heading"><div><span class="vl-kicker">KHÁM PHÁ</span>'
+            + '<h2 id="vl-games-title">Một điểm đến. Bảy sản phẩm.</h2></div><span class="vl-muted">Kết quả theo đúng kỳ quay</span></div>'
+            + f'<div class="vl-tiles">{"".join(tiles)}</div></section>' + overview_sections(dashboard)
             + app_shell_close("vietlott.html") + "</body></html>")
 
 
@@ -480,6 +541,9 @@ def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Pat
         dashboard = load(cache_states)
     docs = root / "docs"
     docs.mkdir(exist_ok=True)
+    assets = docs / "assets"
+    assets.mkdir(exist_ok=True)
+    shutil.copyfile(ROOT / "src/assets/vietlott-picks.js", assets / "vietlott-picks.js")
     by_code = _by_code(dashboard)
     analysis = dashboard.get("analysis") or {}
     out = [docs / "vietlott.html"]

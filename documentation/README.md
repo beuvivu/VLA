@@ -11,6 +11,7 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`architecture/2026-10-08-vietlott-main-ui.md`](architecture/2026-10-08-vietlott-main-ui.md) | Đồng bộ font, màu ngày/đêm và bố cục với trang chính; Jackpot đúng kỳ và bộ số nháp Mega/Power trên thiết bị. |
 | [`architecture/2026-10-08-vietlott-navigation.md`](architecture/2026-10-08-vietlott-navigation.md) | Phân hệ Vietlott trong shell Nexlink dùng chung, đích submenu, giới hạn dữ liệu và kiểm chứng. |
 | [`ui/nexlink-completion-2026-09-23.md`](ui/nexlink-completion-2026-09-23.md) | Hoàn thiện khung Nexlink, sửa điều hướng và ghi rõ kiểm chứng cùng giới hạn trực quan. |
 | [`qa/2026-09-18-visual-system.md`](qa/2026-09-18-visual-system.md) | Rà soát và đồng bộ giao diện 29 trang, bảo toàn chức năng, kiểm thử và giới hạn kiểm chứng. |

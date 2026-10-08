@@ -22,6 +22,10 @@ on:
     branches: [main]
     paths:
       - "src/build_vietlott_results.py"
+      - "src/templates/vietlott_main.css"
+      - "src/assets/vietlott-picks.js"
+      - "src/vietlott_navigation_content.py"
+      - "src/evidence_catalog.py"
       - "vietlott/src/vlm/web/**"
       - ".github/workflows/vietlott-results.yml"
 
@@ -87,7 +91,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/vietlott*.html
+          git add docs/vietlott*.html docs/assets/vietlott-picks.js
           if ! git diff --cached --quiet; then
             git commit -m "docs: dựng lại trang Vietlott từ engine"
             git pull --rebase origin "${GITHUB_REF_NAME}"

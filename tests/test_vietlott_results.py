@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 
 import pytest
+from bs4 import BeautifulSoup
 
 import build_vietlott_results as b
 
@@ -230,3 +231,62 @@ def test_the_real_engine_data_loads(tmp_path: Path) -> None:
         page = path.read_text(encoding="utf-8")
         for marker in SOURCE_MARKERS[:-1]:
             assert marker not in page, (path.name, marker)
+
+
+def test_hero_jackpot_keeps_both_power_pools_and_missing_latest_values() -> None:
+    """Thẻ nổi bật không lấy jackpot cũ và không giấu pool chưa công bố."""
+    latest = _matrix(100, 101_000_000_000)
+    latest["prizes"][0]["label"] = "Jackpot 1"
+    latest["prizes"].append({"code": "jackpot2", "label": "Jackpot 2", "pool": True,
+                              "value_vnd": None, "winners": None})
+    data = {"latest": latest, "draws": [latest, _matrix(99, 999_000_000_000)]}
+    soup = BeautifulSoup(b.page("power655", data, None), "html.parser")
+    card = soup.select_one('[data-vl-jackpot="power655"]')
+    assert card is not None
+    assert [v.get_text(strip=True) for v in card.select('.vl-jackpot-value')] == ["101.000.000.000 ₫", "—"]
+    assert "#100" in card.get_text() and "Jackpot 2" in card.get_text()
+    assert "999.000.000.000" not in card.get_text()
+
+
+def test_overview_hero_uses_an_available_product_without_borrowing_history() -> None:
+    soup = BeautifulSoup(b.overview(_dashboard()), "html.parser")
+    card = soup.select_one('[data-vl-jackpot="mega645"]')
+    assert card is not None
+    assert card.select_one('.vl-jackpot-value').get_text(strip=True) == "—"
+    assert "#1571" in card.get_text()
+    assert "123.456.789.000" not in card.get_text()
+    empty = BeautifulSoup(b.overview({}), "html.parser")
+    assert "Chưa có kết quả" in empty.select_one('[data-vl-jackpot]').get_text()
+
+
+def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(tmp_path: Path) -> None:
+    """Bộ số nháp không biến thành kết quả, dự báo hoặc giao dịch."""
+    pages = b.build(tmp_path, dashboard=_dashboard())
+    for path in pages:
+        soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
+        board = soup.select_one('[data-vl-picks]')
+        maximum = {"vietlott-mega-645.html": 45, "vietlott-power-655.html": 55}.get(path.name)
+        if maximum:
+            assert board is not None, path.name
+            assert [int(button['data-vl-number']) for button in board.select('[data-vl-number]')] == list(range(1, maximum + 1))
+            assert all(button.get('type') == 'button' for button in board.select('button'))
+            assert "bộ số nháp" in board.get_text().lower()
+            assert soup.select_one('script[src="assets/vietlott-picks.js"]') is not None
+            assert board.select_one('[data-vl-review]').has_attr('disabled')
+            assert board.select_one('noscript') is not None
+        else:
+            assert board is None, path.name
+    assert (tmp_path / 'docs/assets/vietlott-picks.js').read_bytes() == (b.ROOT / 'src/assets/vietlott-picks.js').read_bytes()
+
+
+def test_draft_numbers_have_evidence_for_user_input_instead_of_draw_results() -> None:
+    """Giải thích số nháp phải nói về lựa chọn cục bộ, không viện sổ kết quả."""
+    from evidence_catalog import registry
+
+    for file in ('vietlott-mega-645.html', 'vietlott-power-655.html'):
+        entries = {entry.get('match'): entry for entry in registry(file)['sections']}
+        assert '#vl-picks' in entries
+        entry = entries['#vl-picks']
+        assert entry['sources'][0]['title'] == 'Bộ số nháp trên thiết bị'
+        assert 'ngẫu nhiên' in ' '.join(entry['reasoningTrace']['steps'])
+    assert not any(entry.get('match') == '#vl-picks' for entry in registry('vietlott-keno.html')['sections'])

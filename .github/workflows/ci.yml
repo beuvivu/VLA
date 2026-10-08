@@ -85,6 +85,7 @@ jobs:
       - run: python scripts/check_ui_browser.py
       - run: python scripts/check_dashboard_browser.py
       - run: python scripts/check_vietlott_navigation_browser.py
+      - run: python scripts/check_vietlott_ui_browser.py
       - run: python scripts/check_stat_tables_browser.py
       - run: python scripts/check_bridge_workspace_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện

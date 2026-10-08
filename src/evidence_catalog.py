@@ -510,7 +510,7 @@ def _vung(region: str) -> tuple[Evidence, list[Section]]:
     ]), []
 
 
-def _vietlott(step: str, *, overview: bool = False) -> tuple[Evidence, list[Section]]:
+def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tuple[Evidence, list[Section]]:
     """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
     evidence = _ev([{
         "title": "Sổ kết quả Vietlott đã xác thực",
@@ -524,9 +524,18 @@ def _vietlott(step: str, *, overview: bool = False) -> tuple[Evidence, list[Sect
         "Đọc sổ kết quả và sổ dự báo của engine Vietlott.",
         step,
     ])
-    if not overview:
-        return evidence, []
     sections = []
+    if picks:
+        sections.append({'match': '#vl-picks', 'title': 'Bộ số nháp của bạn', **_ev([{
+            'title': 'Bộ số nháp trên thiết bị',
+            'snippet': 'Số do bạn chọn trong trình duyệt; không đọc sổ kết quả và không gửi đặt vé.',
+        }], [
+            'Chọn tối đa sáu số khác nhau trong miền của sản phẩm.',
+            'Chọn nhanh xáo trộn ngẫu nhiên toàn miền rồi lấy sáu số; không dùng mô hình dự báo.',
+            'Xem trước và tải bộ số nháp trên thiết bị; chưa phải vé đã mua.',
+        ])})
+    if not overview:
+        return evidence, sections
     for heading, title, rule in [
         ('Tần suất số chính', 'Tần suất số chính Vietlott', 'Đếm mỗi số chính tối đa một lần trong một kỳ; chia số kỳ có số đó cho tổng kỳ khảo sát. Không tính số đặc biệt.'),
         ('Cặp số cùng xuất hiện', 'Cặp số Vietlott cùng kỳ', 'Lấy mọi cặp không thứ tự của các số chính trong từng kỳ; cộng số kỳ cùng xuất hiện rồi xếp 10 cặp đầu mỗi sản phẩm.'),
@@ -562,8 +571,8 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "ket-qua-mien-nam.html": _vung("Miền Nam"),
         "vietlott.html": _vietlott("Bảng tổng quan lấy kỳ mới nhất đã lưu của từng sản phẩm.", overview=True),
         "vietlott-lotto-535.html": _vietlott("Mỗi kỳ 5 số và số đặc biệt, kỳ mới nhất trước."),
-        "vietlott-mega-645.html": _vietlott("Mỗi kỳ 6 số, kèm giá trị jackpot đã công bố."),
-        "vietlott-power-655.html": _vietlott("Mỗi kỳ 6 số và số đặc biệt, kèm hai giá trị jackpot."),
+        "vietlott-mega-645.html": _vietlott("Mỗi kỳ 6 số, kèm giá trị jackpot đã công bố.", picks=True),
+        "vietlott-power-655.html": _vietlott("Mỗi kỳ 6 số và số đặc biệt, kèm hai giá trị jackpot.", picks=True),
         "vietlott-max-3d.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
         "vietlott-max-3d-pro.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
         "vietlott-keno.html": _vietlott("Mỗi kỳ 20 số."),
