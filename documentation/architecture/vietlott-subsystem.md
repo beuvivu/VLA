@@ -349,8 +349,19 @@ CREATE TABLE hypothesis (
     params_sha256   VARCHAR NOT NULL              -- sha256 của params ở dạng JSON chuẩn (khóa sắp xếp,
                                                   -- không khoảng trắng); kiểm toán tính lại được
 );
+
+CREATE VIEW hypothesis_eligibility AS
+SELECT h.hypothesis_id, h.registered_at, d.earliest_draw_ts AS first_draw_ts,
+       h.registered_at < d.earliest_draw_ts AS prospective
+FROM hypothesis h
+JOIN draw d ON d.game = h.game AND d.draw_id = h.first_draw_id;
 -- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
 -- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
+-- Giả thuyết chỉ là TIẾN CỨU khi được đăng ký TRƯỚC giờ quay của kỳ đầu tiên nó tính. Lúc
+-- đăng ký, kỳ ấy thường chưa có trong draw, nên không thể là khóa ngoại hay CHECK; view dưới
+-- đây xét lại khi kỳ đã có. Kết quả của giả thuyết nào không 'prospective' thì không được
+-- tính và không được in như phép kiểm tiến cứu. registered_at còn phải khớp thời điểm commit
+-- của dòng sổ trong git (phép kiểm so hai mốc), vì đó là mốc bên ngoài, không tự khai được.
 ```
 
 ### 4.5 Mô hình, dự báo, chấm điểm
@@ -535,7 +546,11 @@ CREATE TABLE backtest_metric (
     run_id          VARCHAR NOT NULL REFERENCES backtest_run(run_id),
     strategy        VARCHAR NOT NULL,             -- random, hot_50, markov, ... hoặc '*' cho cấp lượt
     metric          VARCHAR NOT NULL,             -- mean_hits, z_cluster, q_bh, max_e, roi, tost_bound;
-                                                  -- cấp lượt: spa_p, wrc_p, spa_best
+                                                  -- cấp lượt (strategy = '*'): spa_p, wrc_p.
+                                                  -- Chiến lược tốt nhất của SPA là MỘT dòng
+                                                  -- (strategy = tên nó, metric = 'spa_best',
+                                                  -- value = 1): tên nằm ở chiều strategy, không
+                                                  -- nhét chữ vào cột số.
     value           DOUBLE  NOT NULL,
     ci_low          DOUBLE,
     ci_high         DOUBLE,
