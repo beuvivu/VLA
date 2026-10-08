@@ -580,10 +580,12 @@ CREATE TABLE forecast_score (
 -- Điểm của TỪNG vé/ứng viên trong top_n (bộ dự báo hiện phát 5 vé mỗi kỳ). forecast_score
 -- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây, qua
 -- view valid_candidate_score. Dòng thuộc một lượt chấm (cùng bản kê có attestation với
--- forecast_score) và mang hash kết quả đã dùng: đính chính kỳ thì số trùng cũ tự rơi ra.
+-- forecast_score), mang hash của LẦN PHÁT đã chấm và hash kết quả đã dùng: sửa top_n hay phiên
+-- bản mô hình sau khi chấm, hoặc đính chính kỳ, thì số trùng cũ tự rơi ra.
 CREATE TABLE candidate_score (
     forecast_id     VARCHAR NOT NULL REFERENCES forecast_issue(forecast_id),  -- cả dòng legacy
     run_id          VARCHAR NOT NULL REFERENCES scoring_run(run_id),
+    forecast_sha256 VARCHAR NOT NULL,             -- hash lần phát đã chấm (row_digest, cả dòng legacy)
     outcome_sha256  VARCHAR NOT NULL,             -- hash kết quả kỳ đã dùng (cùng biểu thức như valid_score)
     rank            SMALLINT NOT NULL CHECK (rank >= 1),   -- thứ hạng trong top_n lúc phát
     candidate       JSON    NOT NULL,             -- bộ số / số chữ số đúng như đã công bố
@@ -728,7 +730,8 @@ JOIN (SELECT run_id, sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256))
             FROM forecast_score
             UNION ALL
             SELECT run_id,
-                   sha256(to_json(struct_pack(forecast_id := forecast_id, rank := rank, candidate := candidate,
+                   sha256(to_json(struct_pack(forecast_id := forecast_id, forecast_sha256 := forecast_sha256,
+                                              rank := rank, candidate := candidate,
                                               p_model := p_model, p_fair := p_fair, hits := hits,
                                               expected_hits := expected_hits, prize_tier := prize_tier,
                                               outcome_sha256 := outcome_sha256))::VARCHAR)
@@ -867,14 +870,17 @@ JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = s.forecast_id
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
 WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR);
 
--- Số trùng của từng vé chỉ đọc qua đây: lượt chấm đã xác minh và đúng kết quả hiện tại của kỳ
--- đích. Nhiều lượt hợp lệ thì lấy số trùng NHỎ nhất (không thể chấm lại cho đẹp hơn).
+-- Số trùng của từng vé chỉ đọc qua đây: lượt chấm đã xác minh, ĐÚNG lần phát (hash tính lại, kể
+-- cả dòng legacy không có biên nhận) và đúng kết quả hiện tại của kỳ đích. Nhiều lượt hợp lệ thì
+-- lấy số trùng NHỎ nhất (không thể chấm lại cho đẹp hơn).
 CREATE VIEW valid_candidate_score AS
 SELECT c.forecast_id, c.rank, any_value(c.candidate) AS candidate, min(c.hits) AS hits,
        any_value(c.expected_hits) AS expected_hits, any_value(c.p_fair) AS p_fair,
        min(c.p_model) AS p_model, count(*) AS runs
 FROM candidate_score c
 JOIN verified_score_run v ON v.run_id = c.run_id
+JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = c.forecast_id
+                  AND fd.content_sha256 = c.forecast_sha256
 JOIN forecast_issue fi ON fi.forecast_id = c.forecast_id
 JOIN draw d ON d.game = fi.game AND d.draw_id = fi.target_draw_id
 WHERE c.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR)
@@ -1090,10 +1096,12 @@ LEFT JOIN cmp ON cmp.game = st.game AND cmp.model_id = st.model_id AND cmp.as_of
 -- Đề bạt không có căn cứ: MỌI dòng production của một mô hình khác 'fair' mà gate_status ở
 -- kỳ ngay trước kỳ hiệu lực không qua, bất kể lý do ghi là gì ('manual' cũng vậy). Lý do là
 -- chuỗi do bên ghi điền, nên không được quyết định dòng nào bị soát. Về 'fair' (rollback) luôn
--- được: đó là luật an toàn. Phép kiểm đòi view này RỖNG.
+-- được: đó là luật an toàn. Phép kiểm đòi view này RỖNG. Chỉ xét dòng ĐÃ có hiệu lực
+-- (deployment_effective): dòng không biên nhận, biên nhận muộn hay sai hash chưa bao giờ chạy
+-- production, nên không được chặn chuỗi đề bạt hợp lệ sau nó.
 CREATE VIEW unsupported_promotion AS
 SELECT md.*
-FROM model_deployment md
+FROM deployment_effective md
 LEFT JOIN gate_status g ON g.game = md.game AND g.model_id = md.model_id
                        AND g.as_of_draw_id = md.effective_from_draw_id - 1
 WHERE md.stage = 'production' AND md.model_id <> 'fair' AND NOT coalesce(g.gate_passed, FALSE);
@@ -1434,9 +1442,9 @@ Với vé đủ k số trên tổng k số được quay, precision và recall b
 khác nhau khi số lượng chọn khác số lượng quay, như Keno bậc 1–10 hay top-N chữ số Max 3D.
 
 Bốn chỉ số đầu đọc số trùng qua view `valid_candidate_score`, không đọc thẳng bảng
-`candidate_score`: chỉ dòng của lượt chấm đã xác minh và chấm trên kết quả HIỆN TẠI của kỳ mới
-được tính. Kỳ bị đính chính thì số trùng cũ rơi ra cùng lúc với điểm log-loss của nó, cho tới
-khi lượt chấm lại ghi dòng mới.
+`candidate_score`: chỉ dòng của lượt chấm đã xác minh, chấm đúng lần phát hiện có và trên kết
+quả HIỆN TẠI của kỳ mới được tính. Kỳ bị đính chính, hay lần phát bị sửa sau khi chấm, thì số
+trùng cũ rơi ra cùng lúc với điểm log-loss của nó, cho tới khi lượt chấm lại ghi dòng mới.
 
 Backtest đi theo `WalkForwardBacktester`:
 - walk-forward, không nhìn trước;
