@@ -400,8 +400,6 @@ CREATE TABLE forecast_score (
     log_loss        DOUBLE  NOT NULL,             -- −log p_model(kết quả thật)
     log_loss_fair   DOUBLE  NOT NULL,             -- −log p_công_bằng(kết quả thật)
     brier           DOUBLE,
-    hits            DOUBLE  NOT NULL,             -- số trùng của bộ đề xuất
-    expected_hits   DOUBLE  NOT NULL,             -- kỳ vọng ngẫu nhiên (Mega: 6·6/45 = 0,8)
     scored_at       TIMESTAMPTZ NOT NULL,
     FOREIGN KEY (forecast_id, game, draw_id) REFERENCES forecast_issue(forecast_id, game, target_draw_id),
     FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
@@ -413,6 +411,20 @@ CREATE TABLE forecast_score (
 -- tính: kỳ 'single_source' chính là trạng thái mà một kết quả sai của nguồn đầu chưa bị
 -- phát hiện. Khi đối chiếu xong và kỳ chuyển sang 'validated', view tự tính dòng ấy, và
 -- evidence_state được dựng lại từ kỳ đó trở đi. evidence_state chỉ đọc live_eligible.
+-- Điểm của TỪNG vé/ứng viên trong top_n (bộ dự báo hiện phát 5 vé mỗi kỳ). forecast_score
+-- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây.
+CREATE TABLE candidate_score (
+    forecast_id     VARCHAR NOT NULL REFERENCES forecast_score(forecast_id),
+    rank            SMALLINT NOT NULL CHECK (rank >= 1),   -- thứ hạng trong top_n lúc phát
+    candidate       JSON    NOT NULL,             -- bộ số / số chữ số đúng như đã công bố
+    p_model         DOUBLE  NOT NULL,
+    p_fair          DOUBLE  NOT NULL,
+    hits            DOUBLE  NOT NULL,             -- số trùng của vé này
+    expected_hits   DOUBLE  NOT NULL,             -- kỳ vọng ngẫu nhiên (Mega: 6·6/45 = 0,8)
+    prize_tier      VARCHAR,                      -- hạng giải trúng, NULL nếu không trúng
+    PRIMARY KEY (forecast_id, rank)
+);
+
 CREATE VIEW live_score AS
 SELECT s.*, i.issued_at, d.earliest_draw_ts,
        i.issued_at < d.earliest_draw_ts AND d.status = 'validated' AS live_eligible
@@ -429,20 +441,45 @@ CREATE TABLE evidence_state (
     log10_wealth    DOUBLE  NOT NULL,             -- e-process so với luật công bằng
     max_log10_wealth DOUBLE NOT NULL,
     log10_threshold DOUBLE  NOT NULL,             -- log10(1 / alpha) từ gate_allocation
-    cs_lower_vs_incumbent DOUBLE,                 -- cận dưới chuỗi tin cậy của hiệu log-score
-                                                  -- (mô hình − đang chạy); NULL nếu chưa có cặp
     log10_cusum_vs_fair DOUBLE,                   -- e-detector rollback (chỉ khi đang production)
     gate_passed     BOOLEAN NOT NULL,
     PRIMARY KEY (game, model_id, as_of_draw_id)
 );
 
--- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Thứ tự seq_no chốt lúc
--- đăng ký, trước khi mô hình có dự báo live nào; alpha = (0,05/7)·6/(π²·seq_no²).
+-- Phép so thách đấu với mô hình đang chạy, theo TỪNG KỲ HIỆU LỰC của mô hình đang chạy.
+-- Khi production đổi (một dòng mới trong model_deployment), chuỗi tin cậy bắt đầu lại từ 0
+-- với đối thủ mới: lợi thế tích được trước một đối thủ yếu cũ không được mang sang.
+-- Lần so thứ j của một thách đấu (j = 1 với đối thủ đầu tiên) dùng mức
+-- α(p, k) · 6 / (π² j²), để việc so lại nhiều lần vẫn nằm trong α(p, k).
+CREATE TABLE incumbent_comparison (
+    game            VARCHAR NOT NULL,
+    challenger_id   VARCHAR NOT NULL REFERENCES model_version(model_id),
+    incumbent_id    VARCHAR NOT NULL REFERENCES model_version(model_id),
+    incumbent_from_draw_id INTEGER NOT NULL,      -- khóa của kỳ hiệu lực trong model_deployment
+    epoch_no        INTEGER NOT NULL CHECK (epoch_no >= 1),   -- j
+    as_of_draw_id   INTEGER NOT NULL,
+    n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong kỳ hiệu lực này
+    mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
+    cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
+    PRIMARY KEY (game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id),
+    FOREIGN KEY (game, incumbent_id, incumbent_from_draw_id)
+        REFERENCES model_deployment(game, model_id, effective_from_draw_id)
+);
+
+-- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
+-- chỉ đúng khi seq_no được chốt VĨNH VIỄN trước dự báo live đầu tiên và alpha đúng bằng công
+-- thức. Vì vậy:
+--   * alpha là cột SINH từ seq_no, không lưu được một giá trị khác;
+--   * bảng chỉ được chèn: quyền UPDATE/DELETE bị thu hồi, và sổ gate_allocation được commit
+--     vào git như data/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
+--   * bất biến kiểm bằng phép kiểm: seq_no của mỗi sản phẩm liên tục 1..n (xoá một dòng để
+--     dùng lại số nhỏ sẽ làm hở dãy), và registered_at < issued_at của mọi dự báo của
+--     (game, model_id) ấy.
 CREATE TABLE gate_allocation (
     game            VARCHAR NOT NULL REFERENCES game(code),
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
     seq_no          INTEGER NOT NULL CHECK (seq_no >= 1),
-    alpha           DOUBLE  NOT NULL CHECK (alpha > 0 AND alpha < 1),
+    alpha           DOUBLE  GENERATED ALWAYS AS ((0.05 / 7) * 6 / (pi() ^ 2 * seq_no * seq_no)) VIRTUAL,
     registered_at   TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (game, model_id),
     UNIQUE (game, seq_no)
@@ -485,7 +522,7 @@ CREATE TABLE backtest_metric (
 | `prizes` | `prize_tier` | — |
 | `sync_log` | `ingestion_run` + `source_attempt` | Thêm `error_class`, độ trễ |
 | `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật | `draw.journal_sha256` trỏ về dòng journal |
-| `data/forecast/ledger.jsonl`, `ml-ledger.jsonl` | `forecast_issue` + `forecast_score` | Nạp lại toàn bộ; sổ cũ giữ nguyên |
+| `data/forecast/ledger.jsonl`, `ml-ledger.jsonl` | `forecast_issue` + `forecast_score` + `candidate_score` | Nạp lại toàn bộ, mỗi vé trong top-N một dòng điểm; sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | `evidence_state` + checkpoint | Checkpoint vẫn là JSON gzip |
 
 Luật riêng tư của kho vẫn áp dụng: `source_code` là mã ẩn danh, và trang xuất bản không
@@ -594,8 +631,11 @@ Các luật an toàn:
   2. **Thắng mô hình đang chạy trên cùng các kỳ.** Ở giai đoạn shadow, hai mô hình cùng ghi
      sổ trước những kỳ giống nhau. Dựng một chuỗi tin cậy hợp lệ mọi thời điểm cho hiệu
      log-score trung bình (thách đấu − đang chạy), theo Choe & Ramdas (2023), "Comparing
-     sequential forecasters", ở cùng mức α(p, k). Chỉ đề bạt khi cận dưới của chuỗi > 0.
-     Thắng luật công bằng mà thua mô hình đang chạy thì không được đề bạt.
+     sequential forecasters". Chỉ đề bạt khi cận dưới của chuỗi > 0. Thắng luật công bằng
+     mà thua mô hình đang chạy thì không được đề bạt. Chuỗi được khóa theo kỳ hiệu lực của
+     mô hình đang chạy (bảng `incumbent_comparison`): khi production đổi, phép so bắt đầu
+     lại từ đầu với đối thủ mới, ở mức α(p, k)·6/(π² j²) cho lần so thứ j. Vì vậy cổng luôn
+     đo thách đấu với ĐÚNG mô hình nó sắp thay.
   3. **Đủ dữ liệu sạch:** ≥ 100 kỳ live `validated`, không thiếu kỳ, không lệch ngày.
 
   Chưa qua cổng thì luật công bố là luật công bằng.
