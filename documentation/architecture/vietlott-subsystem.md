@@ -452,14 +452,21 @@ CREATE TABLE model_version (
 -- của model_id. Cùng một LSTM có thể là production cho Max 3D mà vẫn là shadow cho Mega.
 -- Mỗi lần đổi giai đoạn là một dòng mới (append-only), không ghi đè, nên luôn trả lời
 -- được: "kỳ t của sản phẩm p, mô hình nào đang chạy?". Đề bạt, rollback và mô hình
--- "đang chạy" để so trong cổng đều đọc từ đây.
+-- "đang chạy" để so trong cổng đều đọc từ đây, qua view deployment_effective (mục 4.5): mỗi
+-- dòng phải có biên nhận (subject_kind = 'model_deployment', subject_id =
+-- game/model_id@effective_from_draw_id) SỚM HƠN mốc xét quyền của kỳ hiệu lực. Không ghi lùi
+-- được một lần đổi production để cắt đúng chỗ có lợi cho một thách đấu. Ngoại lệ duy nhất là
+-- dòng khởi tạo ('fair', production, lý do 'initial', kỳ hiệu lực nhỏ nhất của sản phẩm).
+-- Khi một mô hình được đề bạt, production cũ nhận dòng 'shadow' cùng kỳ hiệu lực và VẪN phát
+-- dự báo ghi trước kỳ: detector so với mô hình tiền nhiệm cần điểm của nó.
 CREATE TABLE model_deployment (
     game            VARCHAR NOT NULL REFERENCES game(code),
     model_id        VARCHAR NOT NULL REFERENCES model_version(model_id),
     stage           VARCHAR NOT NULL CHECK (stage IN ('shadow', 'challenger', 'production', 'retired')),
     effective_from_draw_id INTEGER NOT NULL,      -- có hiệu lực từ kỳ này (kỳ đầu tiên dự báo theo stage mới)
     decided_at      TIMESTAMPTZ NOT NULL,
-    reason          VARCHAR NOT NULL,             -- gate_passed, e_detector_alarm, manual, superseded, ...
+    reason          VARCHAR NOT NULL,             -- gate_passed, e_detector_alarm, manual, superseded, initial, ...
+    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
     PRIMARY KEY (game, model_id, effective_from_draw_id)
 );
 -- Bất biến (kiểm bằng phép kiểm, vì DuckDB không có chỉ mục duy nhất có điều kiện):
@@ -549,8 +556,8 @@ CREATE TABLE candidate_score (
 -- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
 -- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
-    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run', 'game_schedule')),
-    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, run_id, source_code@<giờ>,
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run', 'game_schedule', 'model_deployment')),
+    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, run_id, source_code@<giờ>, game/model_id@kỳ,
                                                   -- game@<giờ>; <giờ> = valid_from theo UTC, dạng
                                                   -- 2026-01-01T00:00:00Z, KHÔNG phụ thuộc múi giờ phiên
     receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('sigstore_attestation', 'rfc3161')),
@@ -565,11 +572,13 @@ CREATE TABLE receipt (
 );
 
 -- Nhóm của mỗi quan sát = nhóm của phiên bản sổ có thời điểm hiệu lực
--- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ giờ BIÊN NHẬN của lượt thu thập đã ghi nó. Chỉ dòng sổ có biên nhận đã
+-- max(valid_from, receipt_at) MUỘN NHẤT mà vẫn ≤ giờ BIÊN NHẬN của lượt thu thập đã ghi nó.
+-- Hai phiên bản trùng thời điểm hiệu lực (cùng một biên nhận cấp muộn) xếp theo valid_from,
+-- vốn nằm trong nội dung có biên nhận và không trùng được (khóa chính): kết quả xác định. Chỉ dòng sổ có biên nhận đã
 -- kiểm, phủ đúng hash, mới được tính. Nguồn chưa có phiên bản hiệu lực thì ra NULL và không
 -- được đếm.
 CREATE VIEW registry_effective AS
-SELECT s.source_code, s.independence_group,
+SELECT s.source_code, s.independence_group, s.valid_from,
        greatest(s.valid_from, r.receipt_at) AS effective_from
 FROM source_registry s
 JOIN receipt r ON r.subject_kind = 'source_registry'
@@ -580,7 +589,7 @@ CREATE VIEW observation_group AS
 SELECT o.*, rr.receipt_at AS run_receipt_at,
        (SELECT e.independence_group FROM registry_effective e
          WHERE e.source_code = o.source_code AND e.effective_from <= rr.receipt_at
-         ORDER BY e.effective_from DESC LIMIT 1) AS independence_group
+         ORDER BY e.effective_from DESC, e.valid_from DESC LIMIT 1) AS independence_group
 FROM draw_observation o
 JOIN run_manifest m ON m.run_id = o.run_id
 LEFT JOIN receipt rr ON rr.subject_kind = 'ingestion_run' AND rr.subject_id = o.run_id
@@ -623,7 +632,7 @@ LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
 
 CREATE VIEW schedule_effective AS
-SELECT s.game, s.slots_by_isodow, greatest(s.valid_from, r.receipt_at) AS effective_from
+SELECT s.game, s.slots_by_isodow, s.valid_from, greatest(s.valid_from, r.receipt_at) AS effective_from
 FROM game_schedule s
 JOIN receipt r ON r.subject_kind = 'game_schedule'
               AND r.subject_id = s.game || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
@@ -660,7 +669,7 @@ WITH d AS (
            (SELECT e.slots_by_isodow[isodow(d.draw_date)] FROM schedule_effective e
              WHERE e.game = d.game
                AND e.effective_from <= timezone('Asia/Ho_Chi_Minh', d.draw_date + TIME '00:00')
-             ORDER BY e.effective_from DESC LIMIT 1) AS slots
+             ORDER BY e.effective_from DESC, e.valid_from DESC LIMIT 1) AS slots
     FROM d
 ), slot AS (
     SELECT *,
@@ -708,44 +717,22 @@ JOIN draw_cutoff_effective k ON k.game = s.game AND k.draw_id = s.draw_id
 JOIN draw_corroboration c ON c.game = s.game AND c.draw_id = s.draw_id
 LEFT JOIN evidence_issue e ON e.forecast_id = s.forecast_id;
 
--- Phép so thách đấu với mô hình đang chạy, theo TỪNG KỲ HIỆU LỰC của mô hình đang chạy.
--- Khi production đổi (một dòng mới trong model_deployment), chuỗi tin cậy bắt đầu lại từ 0
--- với đối thủ mới: lợi thế tích được trước một đối thủ yếu cũ không được mang sang.
--- Lần so thứ j của một thách đấu (j = 1 với đối thủ đầu tiên) dùng mức
--- α(p, k) · 6 / (π² j²), để việc so lại nhiều lần vẫn nằm trong α(p, k).
--- Số thứ tự j của mỗi lần so được cấp MỘT LẦN, chỉ chèn, không dùng lại: một thách đấu gặp
--- một kỳ hiệu lực production mới thì nhận j kế tiếp. Hệ số 6/(π² j²) là cột sinh, nên mỗi
--- lần so không thể tự nhận hệ số lớn nhất. Bất biến (phép kiểm): j liên tục 1..n cho mỗi
--- (game, challenger_id). Mức thật của lần so = gate_allocation.alpha × alpha_factor.
-CREATE TABLE comparison_epoch (
-    game            VARCHAR NOT NULL,
-    challenger_id   VARCHAR NOT NULL REFERENCES model_version(model_id),
-    epoch_no        INTEGER NOT NULL CHECK (epoch_no >= 1),   -- j
-    incumbent_id    VARCHAR NOT NULL REFERENCES model_version(model_id),
-    incumbent_from_draw_id INTEGER NOT NULL,      -- khóa của kỳ hiệu lực trong model_deployment
-    alpha_factor    DOUBLE  GENERATED ALWAYS AS (6 / (pi() ^ 2 * epoch_no * epoch_no)) VIRTUAL,
-    opened_at       TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (game, challenger_id, epoch_no),
-    UNIQUE (game, challenger_id, incumbent_id, incumbent_from_draw_id),   -- một kỳ hiệu lực, một j
-    FOREIGN KEY (game, incumbent_id, incumbent_from_draw_id)
-        REFERENCES model_deployment(game, model_id, effective_from_draw_id)
-);
-
 -- cs_lower là con số LƯU duy nhất mà cổng đọc: chuỗi tin cậy của Choe & Ramdas cần mã của
 -- engine, SQL không biểu diễn được. Vì vậy dòng ghi rõ mức alpha đã dùng, gate_status chỉ nhận
--- dòng có mức đúng bằng gate_allocation.alpha × alpha_factor, và phép kiểm tính lại n_draws,
--- trung bình và cs_lower từ live_score của cả hai mô hình.
+-- dòng có mức đúng bằng gate_allocation.alpha × alpha_factor của lần so (view comparison_epoch),
+-- và phép kiểm tính lại n_draws, trung bình và cs_lower từ live_score của cả hai mô hình. Dòng
+-- được khóa theo ĐỐI THỦ (kỳ hiệu lực của nó), không theo số thứ tự j: j do view cấp.
 CREATE TABLE incumbent_comparison (
     game            VARCHAR NOT NULL,
     challenger_id   VARCHAR NOT NULL,
-    epoch_no        INTEGER NOT NULL,
+    incumbent_id    VARCHAR NOT NULL,
+    incumbent_from_draw_id INTEGER NOT NULL,
     as_of_draw_id   INTEGER NOT NULL,
     n_draws         INTEGER NOT NULL,             -- số kỳ cả hai cùng ghi sổ trước, trong lần so này
     mean_log_score_diff DOUBLE NOT NULL,          -- trung bình (thách đấu − đang chạy)
     alpha_level     DOUBLE  NOT NULL,             -- mức của chuỗi tin cậy đã tính
     cs_lower        DOUBLE  NOT NULL,             -- cận dưới chuỗi tin cậy hợp lệ mọi thời điểm
-    PRIMARY KEY (game, challenger_id, epoch_no, as_of_draw_id),
-    FOREIGN KEY (game, challenger_id, epoch_no) REFERENCES comparison_epoch(game, challenger_id, epoch_no)
+    PRIMARY KEY (game, challenger_id, incumbent_id, incumbent_from_draw_id, as_of_draw_id)
 );
 
 -- Phân bổ alpha cho MỌI mô hình từng được thử trên một sản phẩm. Bảo đảm "tổng alpha ≤ 0,05"
@@ -773,6 +760,49 @@ CREATE TABLE gate_allocation (
     PRIMARY KEY (game, model_id),
     UNIQUE (game, seq_no)
 );
+
+CREATE VIEW deployment_effective AS
+SELECT md.*
+FROM model_deployment md
+LEFT JOIN receipt r ON r.subject_kind = 'model_deployment'
+                   AND r.subject_id = md.game || '/' || md.model_id || '@' || md.effective_from_draw_id
+                   AND r.verified AND r.content_sha256 = md.content_sha256
+LEFT JOIN draw_cutoff_effective k ON k.game = md.game AND k.draw_id = md.effective_from_draw_id
+WHERE r.receipt_at < k.cutoff_ts
+   OR (md.model_id = 'fair' AND md.stage = 'production' AND md.reason = 'initial'
+       AND md.effective_from_draw_id = (SELECT min(m0.effective_from_draw_id) FROM model_deployment m0
+                                         WHERE m0.game = md.game));
+
+-- Phép so thách đấu với mô hình đang chạy, theo TỪNG KỲ HIỆU LỰC của mô hình đang chạy: khi
+-- production đổi, chuỗi tin cậy bắt đầu lại từ 0 với đối thủ mới, lợi thế tích được trước
+-- một đối thủ yếu cũ không được mang sang. Lần so thứ j dùng mức α(p, k) · 6 / (π² j²), để
+-- việc so lại nhiều lần vẫn nằm trong α(p, k).
+-- Các lần so được SUY RA, không chèn: MỌI kỳ hiệu lực production (có biên nhận trước kỳ hiệu
+-- lực) kể từ kỳ đang chạy lúc thách đấu có dự báo bằng chứng đầu tiên đều là một lần so, dù
+-- có được so hay không. Không bỏ được một lần so bất lợi, và một lần so có lợi về sau không
+-- tự nhận j = 1.
+CREATE VIEW comparison_epoch AS
+WITH start AS (
+    SELECT i.game, i.model_id AS challenger_id, min(i.target_draw_id) AS first_draw_id
+    FROM evidence_issue e
+    JOIN forecast_issue i ON i.forecast_id = e.forecast_id
+    GROUP BY i.game, i.model_id
+), inc AS (
+    SELECT s.game, s.challenger_id, d.model_id AS incumbent_id,
+           d.effective_from_draw_id AS incumbent_from_draw_id
+    FROM start s
+    JOIN deployment_effective d ON d.game = s.game AND d.stage = 'production'
+                               AND d.model_id <> s.challenger_id
+    WHERE d.effective_from_draw_id >= coalesce(
+        (SELECT max(p.effective_from_draw_id) FROM deployment_effective p
+          WHERE p.game = s.game AND p.stage = 'production'
+            AND p.effective_from_draw_id <= s.first_draw_id), 0)
+), numbered AS (
+    SELECT *, row_number() OVER (PARTITION BY game, challenger_id
+                                 ORDER BY incumbent_from_draw_id, incumbent_id) AS epoch_no
+    FROM inc
+)
+SELECT *, 6 / (pi() ^ 2 * epoch_no * epoch_no) AS alpha_factor FROM numbered;
 
 -- Trạng thái bằng chứng sau mỗi kỳ: SUY RA từ live_score, không lưu. Với luật qₜ đã phát
 -- trước kỳ, Πₜ qₜ(xₜ) / p_công_bằng(xₜ) là e-process so với luật công bằng, nên
@@ -814,7 +844,7 @@ WITH alloc AS (
                            WHERE i.game = ga.game AND i.model_id = ga.model_id)
 ), st AS (
     SELECT es.*, a.alpha, -log10(a.alpha) AS log10_threshold,
-           (SELECT md.model_id || '@' || md.effective_from_draw_id FROM model_deployment md
+           (SELECT md.model_id || '@' || md.effective_from_draw_id FROM deployment_effective md
              WHERE md.game = es.game AND md.stage = 'production'
                AND md.effective_from_draw_id <= es.as_of_draw_id
              ORDER BY md.effective_from_draw_id DESC, md.decided_at DESC LIMIT 1) AS incumbent_key
@@ -826,7 +856,9 @@ WITH alloc AS (
     JOIN comparison_epoch ce ON ce.game = st.game AND ce.challenger_id = st.model_id
                             AND ce.incumbent_id || '@' || ce.incumbent_from_draw_id = st.incumbent_key
     JOIN incumbent_comparison ic ON ic.game = ce.game AND ic.challenger_id = ce.challenger_id
-                                AND ic.epoch_no = ce.epoch_no AND ic.as_of_draw_id = st.as_of_draw_id
+                                AND ic.incumbent_id = ce.incumbent_id
+                                AND ic.incumbent_from_draw_id = ce.incumbent_from_draw_id
+                                AND ic.as_of_draw_id = st.as_of_draw_id
     WHERE abs(ic.alpha_level - st.alpha * ce.alpha_factor) <= 1e-12 * st.alpha * ce.alpha_factor
     GROUP BY st.game, st.model_id, st.as_of_draw_id
 )
@@ -848,33 +880,54 @@ LEFT JOIN gate_status g ON g.game = md.game AND g.model_id = md.model_id
 WHERE md.stage = 'production' AND md.reason = 'gate_passed' AND NOT coalesce(g.gate_passed, FALSE);
 
 -- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
--- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Với yₜ = log10(p_công_bằng /
--- p_production) và Yₜ = Σ yₜ, đệ quy Lₜ = max(Lₜ₋₁, 0) + yₜ có dạng đóng
--- Lₜ = Yₜ − min(0, Y₁, …, Yₜ₋₁). Báo động khi Lₜ ≥ log10(c) = 3 (c = 1 000 kỳ).
+-- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Hai tham chiếu:
+--   'fair'        yₜ = log10(p_công_bằng / p_production);
+--   'predecessor' yₜ = log10(p_tiền_nhiệm / p_production), trên các kỳ mà production LẪN mô
+--                 hình production trước đó (đang ở shadow) đều có dự báo live_eligible. Bắt
+--                 bản mới vẫn hơn luật công bằng nhưng kém bản nó thay. Tiền nhiệm là 'fair'
+--                 thì tham chiếu này trùng tham chiếu đầu và được bỏ.
+-- Với Yₜ = Σ yₜ, đệ quy Lₜ = max(Lₜ₋₁, 0) + yₜ có dạng đóng Lₜ = Yₜ − min(0, Y₁, …, Yₜ₋₁).
+-- Báo động khi Lₜ ≥ log10(c) = 3 (c = 1 000 kỳ).
 CREATE VIEW rollback_detector AS
 WITH period AS (
     SELECT p.game, p.model_id, p.effective_from_draw_id AS from_id,
-           (SELECT min(n.effective_from_draw_id) FROM model_deployment n
+           (SELECT min(n.effective_from_draw_id) FROM deployment_effective n
              WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id
-               AND (n.model_id = p.model_id OR n.stage = 'production')) AS to_id
-    FROM model_deployment p
+               AND (n.model_id = p.model_id OR n.stage = 'production')) AS to_id,
+           (SELECT q.model_id FROM deployment_effective q
+             WHERE q.game = p.game AND q.stage = 'production'
+               AND q.effective_from_draw_id < p.effective_from_draw_id
+             ORDER BY q.effective_from_draw_id DESC, q.decided_at DESC LIMIT 1) AS predecessor_id
+    FROM deployment_effective p
     WHERE p.stage = 'production' AND p.model_id <> 'fair'
-), y AS (
-    SELECT pr.game, pr.model_id, pr.from_id, l.draw_id,
-           sum((l.log_loss - l.log_loss_fair) / ln(10)) OVER w AS cum
+), own AS (
+    SELECT pr.*, l.draw_id, l.log_loss, l.log_loss_fair
     FROM period pr
     JOIN forecast_issue i ON i.game = pr.game AND i.model_id = pr.model_id
     JOIN live_score l ON l.forecast_id = i.forecast_id AND l.live_eligible
     WHERE l.draw_id >= pr.from_id AND (pr.to_id IS NULL OR l.draw_id < pr.to_id)
-    WINDOW w AS (PARTITION BY pr.game, pr.model_id, pr.from_id ORDER BY l.draw_id)
+), y AS (
+    SELECT game, model_id, from_id, 'fair' AS reference, draw_id,
+           (log_loss - log_loss_fair) / ln(10) AS y
+    FROM own
+    UNION ALL
+    SELECT o.game, o.model_id, o.from_id, 'predecessor', o.draw_id,
+           (o.log_loss - lp.log_loss) / ln(10)
+    FROM own o
+    JOIN forecast_issue ip ON ip.game = o.game AND ip.model_id = o.predecessor_id
+                          AND ip.target_draw_id = o.draw_id
+    JOIN live_score lp ON lp.forecast_id = ip.forecast_id AND lp.live_eligible
+    WHERE o.predecessor_id <> 'fair'
 ), c AS (
-    SELECT *, cum - least(0, coalesce(min(cum) OVER (PARTITION BY game, model_id, from_id ORDER BY draw_id
+    SELECT *, cum - least(0, coalesce(min(cum) OVER (PARTITION BY game, model_id, from_id, reference
+                                                      ORDER BY draw_id
                                                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING), 0))
-              AS log10_cusum_vs_fair
-    FROM y
+              AS log10_cusum
+    FROM (SELECT *, sum(y) OVER (PARTITION BY game, model_id, from_id, reference ORDER BY draw_id) AS cum
+          FROM y)
 )
-SELECT game, model_id, from_id, draw_id AS as_of_draw_id, log10_cusum_vs_fair,
-       log10_cusum_vs_fair >= 3 AS alarm
+SELECT game, model_id, from_id, reference, draw_id AS as_of_draw_id, log10_cusum,
+       log10_cusum >= 3 AS alarm
 FROM c;
 
 CREATE TABLE backtest_run (
@@ -1046,10 +1099,11 @@ Các luật an toàn:
      log-score trung bình (thách đấu − đang chạy), theo Choe & Ramdas (2023), "Comparing
      sequential forecasters". Chỉ đề bạt khi cận dưới của chuỗi > 0. Thắng luật công bằng
      mà thua mô hình đang chạy thì không được đề bạt. Chuỗi được khóa theo kỳ hiệu lực của
-     mô hình đang chạy (bảng `comparison_epoch` cấp j một lần, `incumbent_comparison` lưu
-     từng kỳ): khi production đổi, phép so bắt đầu
-     lại từ đầu với đối thủ mới, ở mức α(p, k)·6/(π² j²) cho lần so thứ j. Vì vậy cổng luôn
-     đo thách đấu với ĐÚNG mô hình nó sắp thay.
+     mô hình đang chạy: khi production đổi, phép so bắt đầu lại từ đầu với đối thủ mới, ở
+     mức α(p, k)·6/(π² j²) cho lần so thứ j. View `comparison_epoch` SUY RA j từ mọi lần đổi
+     production có biên nhận trước kỳ hiệu lực, nên không bỏ được lần so bất lợi;
+     `incumbent_comparison` lưu chuỗi tin cậy từng kỳ. Vì vậy cổng luôn đo thách đấu với
+     ĐÚNG mô hình nó sắp thay.
   3. **Đủ dữ liệu sạch:** ≥ 100 kỳ live `validated`, không thiếu kỳ, không lệch ngày.
 
   Chưa qua cổng thì luật công bố là luật công bằng. Kết quả cổng là view `gate_status`, không
@@ -1074,8 +1128,9 @@ Các luật an toàn:
   `rollback_detector`, mục 4.5). Khi Mₜ ≥ c, hệ
   thống tự hạ mô hình về challenger, công bố luật công bằng, và giữ checkpoint để dựng lại.
   Một detector thứ hai cùng dạng, so production với mô hình production trước đó của cùng
-  sản phẩm (đọc từ `model_deployment`), bắt
-  trường hợp bản mới tệ hơn bản cũ. `skill_monitor` vẫn chạy, nhưng chỉ để cảnh báo hai
+  sản phẩm (tham chiếu `'predecessor'` của `rollback_detector`), bắt trường hợp bản mới vẫn
+  hơn luật công bằng nhưng tệ hơn bản cũ. Muốn vậy, bản cũ chuyển về shadow khi bị thay và
+  vẫn phát dự báo ghi trước kỳ. `skill_monitor` vẫn chạy, nhưng chỉ để cảnh báo hai
   chiều; quyết định rollback thuộc về e-detector.
 
   Mô phỏng trên dữ liệu kiểu Max 3D (60 chữ số mỗi kỳ, số 6 lệch ×1,07):
