@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-08T06:20:27Z",
+  "generated_at": "2026-10-08T10:48:02Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -91,11 +91,11 @@
     },
     "cap_50": {
       "mean_brier_skill": 0.00011521722352611373,
-      "mean_logloss_skill": 0.0001047100194311978
+      "mean_logloss_skill": 0.0001047100194312994
     },
     "bo": {
-      "mean_brier_skill": 8.717823935065508e-05,
-      "mean_logloss_skill": 7.917009327215836e-05
+      "mean_brier_skill": 8.717823935073206e-05,
+      "mean_logloss_skill": 7.917009327205699e-05
     },
     "bong": {
       "mean_brier_skill": -4.2954670645113034e-05,
@@ -106,8 +106,8 @@
       "mean_logloss_skill": -5.458462804522671e-05
     },
     "tong": {
-      "mean_brier_skill": 6.234251441506521e-05,
-      "mean_logloss_skill": 5.8861842069349e-05
+      "mean_brier_skill": 6.234251441521871e-05,
+      "mean_logloss_skill": 5.8861842069551747e-05
     }
   },
   "screened_groups": [
@@ -321,7 +321,7 @@
       "brier_improvement_ci": {
         "confidence_level": 0.95,
         "lower": -9.399759560355099e-06,
-        "upper": 4.9045527438756896e-06
+        "upper": 4.904552743930506e-06
       },
       "baseline_logloss": 0.5437332038390402,
       "challenger_logloss": 0.5437393920778779,
@@ -329,8 +329,8 @@
       "logloss_skill": -1.1381020680726749e-05,
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -2.5818333485502765e-05,
-        "upper": 1.355122265173092e-05
+        "lower": -2.5818333485391743e-05,
+        "upper": 1.3551222651839167e-05
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -354,7 +354,7 @@
     "brier_improvement_ci": {
       "confidence_level": 0.95,
       "lower": -9.399759560355099e-06,
-      "upper": 4.9045527438756896e-06
+      "upper": 4.904552743930506e-06
     },
     "baseline_logloss": 0.5437332038390402,
     "challenger_logloss": 0.5437393920778779,
@@ -362,8 +362,8 @@
     "logloss_skill": -1.1381020680726749e-05,
     "logloss_improvement_ci": {
       "confidence_level": 0.95,
-      "lower": -2.5818333485502765e-05,
-      "upper": 1.355122265173092e-05
+      "lower": -2.5818333485391743e-05,
+      "upper": 1.3551222651839167e-05
     },
     "bootstrap_replicates": 1000,
     "bootstrap_seed": 20260902,
