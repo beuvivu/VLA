@@ -118,7 +118,7 @@ flowchart LR
    upsert DuckDB, rồi xuất Parquet.
 5. **Chấm.** Mọi dự báo cho kỳ này được chấm: log-loss, log-loss của luật công bằng, số
    trùng. Chỉ dự báo có BIÊN NHẬN bên ngoài đã kiểm (attestation Sigstore của lượt Actions,
-   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw_cutoff_effective`: mốc nhỏ nhất từng ghi, mục 4.1), cho một kỳ
+   hoặc tem RFC 3161; cả hai ràng buộc dấu băm nội dung với thời điểm; mục 4.5) sớm hơn giờ quay có thẩm quyền (`draw_cutoff_effective`: suy từ ngày quay đã đối chiếu và lịch quay có biên nhận, mục 4.5), cho một kỳ
    được hai nhóm nguồn độc lập xác nhận, mới được cập nhật e-value. Giờ phát và giờ đích do
    chính dự báo khai không được dùng để xét.
 6. **Học — chỉ từ kỳ `validated`.** Các chuyên gia cập nhật online; trọng số trộn cập nhật
@@ -205,8 +205,23 @@ CREATE TABLE game (
     pick_k          SMALLINT NOT NULL,            -- 6, 6, 5, 20, 3, ...
     digit_width     SMALLINT,                     -- 3 cho Max 3D, 4 cho Max 4D
     bonus_rule      VARCHAR,                      -- 'same_drum' (Power), 'separate_1_12' (Lotto), NULL
-    schedule        JSON NOT NULL,                -- cửa sổ quay theo giờ VN
+    -- Lịch quay KHÔNG nằm ở đây: nó quyết định mốc xét quyền, nên có phiên bản và biên nhận
+    -- (game_schedule ngay dưới).
     active          BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Lịch quay theo giờ VN, CÓ PHIÊN BẢN và chỉ chèn. Mỗi phiên bản có biên nhận bên ngoài
+-- (receipt, subject_kind = 'game_schedule', subject_id = game@valid_from) và chỉ có hiệu lực
+-- từ max(valid_from, receipt_at), như sổ nguồn. Một kỳ chỉ dùng phiên bản đã có hiệu lực
+-- TRƯỚC đầu ngày quay của nó: sửa lịch sau khi quay không áp ngược được.
+CREATE TABLE game_schedule (
+    game            VARCHAR NOT NULL REFERENCES game(code),
+    valid_from      TIMESTAMPTZ NOT NULL,
+    slots_by_isodow TIME[][] NOT NULL,            -- 7 danh sách giờ quay tăng dần; phần tử 1 = thứ Hai
+                                                  -- (Mega: [[], [], [18:00], [], [18:00], [], [18:00]])
+    content_sha256  VARCHAR NOT NULL,             -- hash của dòng ở dạng JSON chuẩn: biên nhận phải phủ nó
+    PRIMARY KEY (game, valid_from),
+    CHECK (len(slots_by_isodow) = 7)
 );
 
 -- Một dòng cho mỗi kỳ ĐÃ XÁC THỰC. Khóa tự nhiên (game, draw_id).
@@ -216,7 +231,7 @@ CREATE TABLE draw (
     draw_ts         TIMESTAMPTZ NOT NULL,         -- giờ quay; 00:00 nếu chỉ biết ngày
     time_precision  VARCHAR  NOT NULL CHECK (time_precision IN ('minute', 'day')),
     -- Hai mốc thời gian, hai mục đích, KHÔNG dùng lẫn:
-    -- (mốc xét dự báo ghi trước kỳ nằm ở bảng draw_cutoff ngay dưới, chỉ chèn)
+    -- (mốc xét dự báo ghi trước kỳ là view draw_cutoff_effective ở mục 4.5, SUY RA, không lưu)
     scheduled_slot_ts TIMESTAMPTZ,                -- CHỈ để đo độ trễ: giờ quay theo lịch của ĐÚNG
                                                   -- kỳ này. draw_ts nếu biết đến phút; nếu chỉ biết
                                                   -- ngày thì suy từ thứ tự mã kỳ trong ngày khi lịch
@@ -237,32 +252,6 @@ CREATE TABLE draw (
     PRIMARY KEY (game, draw_id)
 );
 CREATE INDEX draw_by_time ON draw (game, draw_ts);
-
--- Mốc xét "dự báo có ghi trước kỳ", CHỈ CHÈN: mỗi lần tính lại (đính chính, phát lại, đổi
--- cách suy) là một dòng mới, không sửa dòng cũ. Bằng chứng dùng mốc NHỎ NHẤT từng ghi cho kỳ
--- ấy (view draw_cutoff_effective). Ghi thêm chỉ có thể làm mốc SỚM HƠN, tức loại bớt dự báo,
--- không bao giờ nhận thêm được một dự báo mà biên nhận thật ra muộn hơn giờ quay.
--- Cách tính một mốc:
---   1) draw_ts nếu biết đến phút (chế độ B ghi được);
---   2) nếu chỉ biết ngày: slot theo lịch của ĐÚNG kỳ này, suy từ thứ tự mã kỳ, CHỈ khi ngày
---      ấy có đủ số kỳ đúng lịch (thiếu một kỳ là thứ tự lệch), trừ một biên nhỏ 2 phút.
---      Biên phải NHỎ HƠN khoảng từ lúc có kết quả kỳ trước tới giờ quay kỳ này: trừ trọn
---      một nhịp (Keno 8 phút) sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI dự báo phát sau
---      khi có kết quả kỳ trước;
---   3) không suy được: giờ quay sớm nhất của ngày (thận trọng; chấp nhận mất dữ liệu hơn
---      là nhận nhầm).
-CREATE TABLE draw_cutoff (
-    game            VARCHAR NOT NULL,
-    draw_id         INTEGER NOT NULL,
-    cutoff_ts       TIMESTAMPTZ NOT NULL,
-    method          VARCHAR NOT NULL CHECK (method IN ('minute', 'schedule_slot', 'day_start')),
-    recorded_at     TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (game, draw_id, recorded_at),
-    FOREIGN KEY (game, draw_id) REFERENCES draw(game, draw_id)
-);
-
-CREATE VIEW draw_cutoff_effective AS
-SELECT game, draw_id, min(cutoff_ts) AS cutoff_ts FROM draw_cutoff GROUP BY game, draw_id;
 
 -- Nhóm độc lập của từng nguồn, CÓ HIỆU LỰC THEO THỜI GIAN và chỉ chèn: hai nguồn khác tên
 -- nhưng chép cùng một nơi phải chung một nhóm. Đổi nhóm của một nguồn là một dòng mới, không
@@ -354,6 +343,8 @@ CREATE TABLE draw_observation (
     -- nhau giữa hai lần ghi cùng một nguồn. Nhóm được SUY RA ở view observation_group từ
     -- source_registry, đúng phiên bản có hiệu lực lúc lượt thu thập nhận biên nhận.
     observed_at     TIMESTAMPTZ NOT NULL,         -- tự khai, chỉ để hiển thị; không dùng để xét
+    draw_date       DATE NOT NULL,                -- ngày quay (giờ VN) theo nguồn: được đối chiếu như
+                                                  -- số liệu, vì mốc xét quyền suy từ ngày này
     -- Không lưu con trỏ tới phiên bản sổ: con trỏ lưu sẵn có thể trỏ vào một bản đã cũ. Phiên
     -- bản áp dụng được SUY RA ở view observation_group từ thời điểm hiệu lực có biên nhận.
     numbers         SMALLINT[] NOT NULL,
@@ -376,14 +367,15 @@ SELECT run_id, count(*) AS n_observations,
 FROM (
     SELECT run_id,
            sha256(to_json(struct_pack(game := game, draw_id := draw_id, source_code := source_code,
-                                      observed_us := epoch_us(observed_at), numbers := numbers,
+                                      observed_us := epoch_us(observed_at), draw_date := draw_date,
+                                      numbers := numbers,
                                       bonus := bonus, raw_sha256 := raw_sha256))::VARCHAR) AS row_sha256
     FROM draw_observation
 )
 GROUP BY run_id;
 
 -- Lần triển khai trang ĐẦU TIÊN có kỳ này: mốc cuối của độ trễ đầu-cuối (mốc đầu là
--- draw.scheduled_slot_ts, KHÔNG phải draw_cutoff).
+-- draw.scheduled_slot_ts, KHÔNG phải draw_cutoff_effective).
 CREATE TABLE publication (
     game            VARCHAR NOT NULL,
     draw_id         INTEGER NOT NULL,
@@ -557,8 +549,10 @@ CREATE TABLE candidate_score (
 -- receipt_at = mốc thời gian ĐỌC TỪ bằng chứng (không do người ghi tự điền). Không có biên
 -- nhận đã kiểm thì không vào bằng chứng.
 CREATE TABLE receipt (
-    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run')),
-    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, source_code@valid_from, run_id
+    subject_kind    VARCHAR NOT NULL CHECK (subject_kind IN ('forecast', 'hypothesis', 'gate_allocation', 'source_registry', 'ingestion_run', 'game_schedule')),
+    subject_id      VARCHAR NOT NULL,             -- forecast_id, hypothesis_id, game/model_id, run_id, source_code@<giờ>,
+                                                  -- game@<giờ>; <giờ> = valid_from theo UTC, dạng
+                                                  -- 2026-01-01T00:00:00Z, KHÔNG phụ thuộc múi giờ phiên
     receipt_kind    VARCHAR NOT NULL CHECK (receipt_kind IN ('sigstore_attestation', 'rfc3161')),
     receipt_ref     VARCHAR NOT NULL,             -- UUID mục Rekor, hoặc sha256 của token TSA
     receipt_at      TIMESTAMPTZ NOT NULL,         -- integratedTime / genTime ĐỌC TỪ proof
@@ -579,7 +573,7 @@ SELECT s.source_code, s.independence_group,
        greatest(s.valid_from, r.receipt_at) AS effective_from
 FROM source_registry s
 JOIN receipt r ON r.subject_kind = 'source_registry'
-              AND r.subject_id = s.source_code || '@' || strftime(s.valid_from, '%Y-%m-%dT%H:%M:%S%z')
+              AND r.subject_id = s.source_code || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
               AND r.verified AND r.content_sha256 = s.content_sha256;
 
 CREATE VIEW observation_group AS
@@ -606,6 +600,7 @@ WITH agreeing AS (                                -- quan sát CÓ NHÓM và TR�
     WHERE CASE WHEN g.kind = 'set' THEN list_sort(o.numbers) = list_sort(d.numbers)
                ELSE o.numbers = d.numbers END
       AND o.bonus IS NOT DISTINCT FROM d.bonus
+      AND o.draw_date = CAST(timezone('Asia/Ho_Chi_Minh', d.draw_ts) AS DATE)
       AND o.independence_group IS NOT NULL         -- lượt không có biên nhận hợp lệ không được đếm
 ),
 -- MỖI NGUỒN góp đúng một nhóm: của lần trùng có BIÊN NHẬN sớm nhất. Không xếp theo observed_at:
@@ -626,6 +621,53 @@ SELECT d.game, d.draw_id, d.status,
 FROM draw d
 LEFT JOIN per_source p ON p.game = d.game AND p.draw_id = d.draw_id
 GROUP BY d.game, d.draw_id, d.status;
+
+CREATE VIEW schedule_effective AS
+SELECT s.game, s.slots_by_isodow, greatest(s.valid_from, r.receipt_at) AS effective_from
+FROM game_schedule s
+JOIN receipt r ON r.subject_kind = 'game_schedule'
+              AND r.subject_id = s.game || '@' || strftime(timezone('UTC', s.valid_from), '%Y-%m-%dT%H:%M:%SZ')
+              AND r.verified AND r.content_sha256 = s.content_sha256;
+
+-- Mốc xét "dự báo có ghi trước kỳ": SUY RA, không lưu. Một giá trị lưu sẵn, kể cả trong bảng
+-- chỉ chèn, vẫn có thể được ghi sai ngay từ đầu (nạp lại lịch sử, suy slot sai) và muộn hơn
+-- giờ quay thật. Ở đây mốc chỉ dựa trên hai thứ đã được bảo đảm: ngày quay (đối chiếu bởi
+-- ≥ 2 nhóm nguồn, live_score đòi corroborated) và lịch quay có biên nhận TRƯỚC ngày ấy.
+--   schedule_slot: ngày có ĐÚNG số kỳ như lịch, nên kỳ thứ k của ngày ứng với slot thứ k; mốc
+--      = slot − 2 phút. Biên phải NHỎ HƠN khoảng từ lúc có kết quả kỳ trước tới giờ quay kỳ
+--      này: trừ trọn một nhịp (Keno 8 phút) sẽ lùi mốc về đúng giờ kỳ trước và loại MỌI dự
+--      báo phát sau khi có kết quả kỳ trước. Khi biết giờ quay đến phút (chế độ B), lấy giá
+--      trị NHỎ hơn của hai mốc: draw_ts chỉ có thể làm mốc sớm hơn.
+--   day_start: không có lịch hiệu lực, hoặc số kỳ trong ngày lệch lịch (thiếu kỳ, thừa kỳ, lịch
+--      đổi mà chưa đăng ký): 00:00 giờ VN của ngày quay. Thận trọng; chấp nhận mất dữ liệu hơn
+--      là nhận nhầm. Thêm hay xóa một dòng draw chỉ có thể đẩy kỳ về nhánh này.
+CREATE VIEW draw_cutoff_effective AS
+WITH d AS (
+    SELECT game, draw_id, draw_ts, time_precision,
+           CAST(timezone('Asia/Ho_Chi_Minh', draw_ts) AS DATE) AS draw_date
+    FROM draw
+), day AS (
+    SELECT d.*,
+           row_number() OVER (PARTITION BY game, draw_date ORDER BY draw_id) AS k,
+           count(*) OVER (PARTITION BY game, draw_date) AS n_day,
+           timezone('Asia/Ho_Chi_Minh', draw_date + TIME '00:00') AS day_start,
+           (SELECT e.slots_by_isodow[isodow(d.draw_date)] FROM schedule_effective e
+             WHERE e.game = d.game
+               AND e.effective_from <= timezone('Asia/Ho_Chi_Minh', d.draw_date + TIME '00:00')
+             ORDER BY e.effective_from DESC LIMIT 1) AS slots
+    FROM d
+), slot AS (
+    SELECT *,
+           CASE WHEN len(slots) = n_day
+                THEN timezone('Asia/Ho_Chi_Minh', draw_date + slots[k]) - INTERVAL 2 MINUTE END AS slot_cutoff
+    FROM day
+)
+SELECT game, draw_id,
+       CASE WHEN slot_cutoff IS NULL THEN day_start
+            WHEN time_precision = 'minute' THEN least(slot_cutoff, draw_ts)
+            ELSE slot_cutoff END AS cutoff_ts,
+       CASE WHEN slot_cutoff IS NULL THEN 'day_start' ELSE 'schedule_slot' END AS method
+FROM slot;
 
 -- Giả thuyết tiến cứu khi BIÊN NHẬN của bản đăng ký sớm hơn giờ quay của kỳ đầu (mục 4.4).
 CREATE VIEW hypothesis_eligibility AS
@@ -780,6 +822,7 @@ CREATE TABLE backtest_metric (
 | `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss. Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
 | `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng, không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | `evidence_state` + checkpoint | Checkpoint vẫn là JSON gzip |
+| Cửa sổ quay trong `vlm.updates.schedule` (mã nguồn) | `game_schedule` | Lịch chép thành một phiên bản và xin biên nhận TRƯỚC kỳ đầu áp dụng. Kỳ đã quay trước giờ biên nhận ấy có mốc đầu ngày, tức dự báo trong ngày quay của chúng không vào bằng chứng; lịch không được áp ngược |
 
 Luật riêng tư của kho vẫn áp dụng: `source_code` là mã ẩn danh, và trang xuất bản không
 bao giờ in tên nguồn (`tests/test_vietlott_results.py` canh).
@@ -860,7 +903,7 @@ Hai điểm kỹ thuật engine đã làm đúng và phải giữ:
 ```
 kỳ t có kết quả
   → chấm mọi forecast_issue có target_draw_id = t; chỉ dòng live_eligible
-    (biên nhận bên ngoài < mốc nhỏ nhất trong draw_cutoff VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
+    (biên nhận bên ngoài < draw_cutoff_effective VÀ kỳ được ≥ 2 nhóm độc lập xác nhận)
     mới vào e-value
   → CHỈ KHI kỳ t (và mọi kỳ trước nó) đã 'validated':
       cập nhật chuyên gia online (logistic, GRU, LSTM)    [mỗi kỳ]
@@ -1089,6 +1132,7 @@ Xong khi:
 | Đa kiểm: 45 số, 990 cặp, 7 sản phẩm | BH/Holm bắt buộc; cổng e-value cho cả họ |
 | Lộ nguồn dữ liệu trên trang | `source_code` ẩn danh; phép kiểm riêng tư của kho |
 | Một tiến trình ghi DuckDB | Một worker API; khóa ghi giữa tiến trình (đã có) |
+| Lịch quay đăng ký sai (biên nhận chỉ chứng minh lúc đăng ký, không chứng minh lịch đúng) | Đăng ký lịch trước kỳ đầu áp dụng, từ thông báo của nhà vận hành; ở chế độ B, `draw_ts` đến phút luôn kéo mốc về sớm hơn; số kỳ trong ngày lệch lịch thì mốc rơi về đầu ngày |
 
 ## 8. Ngoài phạm vi
 
