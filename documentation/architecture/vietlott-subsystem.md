@@ -454,9 +454,10 @@ CREATE TABLE hypothesis (
 
 ```sql
 -- Nội dung một phiên bản (họ, mã nguồn, cấu hình, giờ tạo) nằm trong hash của MỌI lần phát dùng
--- nó (view row_digest). Sửa dòng này sau khi đã phát thì biên nhận của các lần phát ấy không còn
--- phủ hash tính lại, nên chúng rơi khỏi bằng chứng thay vì được gán cho mã khác. Phiên bản mới
--- là model_id mới.
+-- nó và của dòng phân bổ alpha của nó (view row_digest). Sửa dòng này sau khi đã phát thì biên
+-- nhận của các lần phát và của phân bổ không còn phủ hash tính lại: lần phát rơi khỏi bằng chứng
+-- thay vì được gán cho mã khác, và mô hình mất mức alpha. Phiên bản mới là model_id mới, với
+-- seq_no mới.
 CREATE TABLE model_version (
     model_id        VARCHAR PRIMARY KEY,          -- ví dụ vlm-ml/gru@3, deep/lstm@1
     family          VARCHAR NOT NULL,             -- fair, logistic, gru, tree, lstm, transformer, mixture
@@ -669,10 +670,16 @@ SELECT 'model_deployment', game || '/' || model_id || '@' || effective_from_draw
                                   decided_at_us := epoch_us(decided_at), reason := reason))::VARCHAR)
 FROM model_deployment
 UNION ALL
-SELECT 'gate_allocation', game || '/' || model_id,
-       sha256(to_json(struct_pack(game := game, model_id := model_id, seq_no := seq_no,
-                                  registered_at_us := epoch_us(registered_at)))::VARCHAR)
-FROM gate_allocation
+-- Phân bổ phủ cả NỘI DUNG phiên bản mô hình, như lần phát: viết lại mã hay cấu hình dưới cùng
+-- model_id làm biên nhận phân bổ hết phủ, nên không dùng lại được mức alpha cho một mô hình khác.
+SELECT 'gate_allocation', ga.game || '/' || ga.model_id,
+       sha256(to_json(struct_pack(game := ga.game, model_id := ga.model_id, seq_no := ga.seq_no,
+                                  registered_at_us := epoch_us(ga.registered_at),
+                                  model_family := mv.family, model_code_sha := mv.code_sha,
+                                  model_config := mv.config,
+                                  model_created_us := epoch_us(mv.created_at)))::VARCHAR)
+FROM gate_allocation ga
+JOIN model_version mv ON mv.model_id = ga.model_id
 UNION ALL
 -- Lần phát phủ cả NỘI DUNG phiên bản mô hình (mã nguồn, cấu hình): sửa một dòng model_version
 -- sau khi đã phát làm hash của mọi lần phát dùng nó đổi theo, nên chúng rơi khỏi bằng chứng
@@ -1017,8 +1024,11 @@ SELECT game, model_id, draw_id AS as_of_draw_id, live_draws, log10_wealth,
 FROM s;
 
 -- Kết quả cổng đề bạt (mục M5) cho mỗi (game, model_id, kỳ): SUY RA, không lưu cờ hay ngưỡng.
---   1) ngưỡng = log10(1 / alpha) của dòng gate_allocation có biên nhận đã kiểm, phủ đúng hash,
---      và SỚM HƠN biên nhận của mọi dự báo bằng chứng của mô hình ấy. Không có thì không qua;
+--   1) ngưỡng = log10(1 / alpha) của dòng gate_allocation có biên nhận đã kiểm, phủ đúng hash
+--      (gồm cả nội dung phiên bản), và SỚM HƠN biên nhận của MỌI lần phát từng được biên nhận
+--      của mô hình ấy, kể cả lần đã rơi khỏi bằng chứng. Viết lại phiên bản sau một lần thử
+--      thất bại rồi xin biên nhận phân bổ mới không lấy lại được alpha: biên nhận của các lần
+--      phát cũ vẫn còn và sớm hơn. Phiên bản mới cần model_id và seq_no mới. Không có thì không qua;
 --      e-process đã vượt ngưỡng ở một thời điểm nào đó (max_log10_wealth) là đủ, theo Ville.
 --   2) lần so với ĐÚNG mô hình production hiện hành (dòng production mới nhất có hiệu lực tới
 --      kỳ này) có cs_lower > 0: lấy từ lượt so đã xác minh, n_draws và trung bình trùng với
@@ -1031,9 +1041,10 @@ WITH alloc AS (
     SELECT ga.game, ga.model_id, ga.alpha
     FROM gate_allocation ga
     JOIN attested_subject a ON a.kind = 'gate_allocation' AND a.subject_id = ga.game || '/' || ga.model_id
-    WHERE a.receipt_at < (SELECT min(e.receipt_at) FROM evidence_issue e
-                           JOIN forecast_issue i ON i.forecast_id = e.forecast_id
-                           WHERE i.game = ga.game AND i.model_id = ga.model_id)
+    WHERE a.receipt_at < (SELECT min(r.receipt_at) FROM receipt r
+                           JOIN forecast_issue i ON i.forecast_id = r.subject_id
+                           WHERE r.subject_kind = 'forecast' AND r.verified
+                             AND i.game = ga.game AND i.model_id = ga.model_id)
 ), st AS (
     SELECT es.*, a.alpha, -log10(a.alpha) AS log10_threshold,
            (SELECT md.model_id || '@' || md.effective_from_draw_id FROM deployment_effective md
