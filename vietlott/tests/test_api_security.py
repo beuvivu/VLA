@@ -8,10 +8,12 @@ Trước đây CORS là "*" và không có xác thực nào, nên bất kỳ tra
 
 from __future__ import annotations
 
+from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
 import yaml
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from vietlott_engine.api.main import create_app
@@ -168,4 +170,25 @@ def test_serve_listens_on_loopback_unless_told_otherwise() -> None:
     from vietlott_engine.cli import build_parser
 
     assert build_parser().parse_args(["serve"]).host == "127.0.0.1"
+
+
+@pytest.mark.parametrize("deployment", ["mounted", "root_path"])
+@pytest.mark.parametrize("path", ["/forecast/mega645", "/forecast/mega645/evidence", "/ml/forecast/mega645"])
+def test_a_prefixed_forecast_get_cannot_write_without_the_token(tmp_path: Path, deployment: str, path: str) -> None:
+    """Tiền tố ASGI không được làm GET ghi trạng thái lọt qua xác thực."""
+    app = create_app(Settings(storage_backend="memory", api_token=TOKEN, data_dir=tmp_path,
+                              seed_file_dir=None, auto_update_enabled=False), repository=_repo())
+    with ExitStack() as stack:
+        if deployment == "mounted":
+            # ASGI mount không tự chạy lifespan của app con: khởi động app thật trước.
+            stack.enter_context(TestClient(app))
+            parent = FastAPI()
+            parent.mount("/vqe", app)
+            client = TestClient(parent)
+        else:
+            client = TestClient(app, root_path="/vqe")
+        stack.enter_context(client)
+        assert client.get("/vqe" + path).status_code == 401
+        assert not list(tmp_path.rglob("*.json")), "yêu cầu bị chặn không được tạo checkpoint hay sổ"
+        assert client.get("/vqe" + path, headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 200
 

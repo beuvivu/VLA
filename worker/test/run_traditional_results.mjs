@@ -287,6 +287,57 @@ const scenarios = {
     };
   },
 
+  async legacy_response_cache() {
+    const kv = new FakeKV();
+    await kv.put("traditional:response:v1:north:hanoi:2026-09-12:2026-09-12", JSON.stringify({
+      schema_version: 1, data: [{ source: { kind: "vla_db", provider: "VLA canonical database" } }],
+      meta: { source_counts: { vla_db: 1 } },
+    }));
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const reply = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?from=2026-09-12&to=2026-09-12"), { LIVE: kv });
+    const payload = await reply.json();
+    return { status: reply.status, payload, counter };
+  },
+
+  async invalid_primary_is_anonymous() {
+    const replies = [];
+    for (const primary of [{}, []]) {
+      globalThis.fetch = async () => new Response(JSON.stringify(primary));
+      const reply = await worker.fetch(new Request(
+        "https://worker/api/v1/traditional-results?from=2026-09-12&to=2026-09-12"), { LIVE: new FakeKV() });
+      replies.push({ status: reply.status, payload: await reply.json() });
+    }
+    return { replies };
+  },
+
+  async incomplete_table_is_retried() {
+    const kv = new FakeKV();
+    const prizes = parseXsktLedger(xsktHtml)["2026-09-13"];
+    const rows = {};
+    for (let i = 0; i < 500; i++) {
+      const day = new Date(Date.UTC(2026, 8, 13) - i * 86_400_000).toISOString().slice(0, 10);
+      if (day !== "2026-09-11") rows[day] = prizes;
+    }
+    await kv.put("traditional:primary:fresh:v1", JSON.stringify(rows));
+    const broken = pageWith("11-09-2026").replace("21 88 40 27", "21 88 40");
+    let page = pageWith("10-09-2026") + broken + pageWith("13-09-2026");
+    let calls = 0;
+    const fetchImpl = async () => { calls += 1; return new Response(page); };
+    const env = { LIVE: kv };
+    const first = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW });
+    const before = await buildTraditionalResults({ ...query, from: "2026-09-11", to: "2026-09-11" },
+      env, { fetchImpl, nowUtcMs: NOW });
+    page = pageWith("10-09-2026", "11-09-2026", "13-09-2026");
+    const second = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + 11 * MINUTE });
+    const after = await buildTraditionalResults({ ...query, from: "2026-09-11", to: "2026-09-11" },
+      env, { fetchImpl, nowUtcMs: NOW + 11 * MINUTE });
+    return { first, second, calls, before: before.meta,
+      after: { total: after.meta.total_results, unresolved: after.meta.unresolved_dates,
+        special: after.data[0]?.prizes[0].values[0] } };
+  },
+
   async cors_preflight() {
     const response = await worker.fetch(
       new Request("https://worker/api/v1/traditional-results", { method: "OPTIONS" }),

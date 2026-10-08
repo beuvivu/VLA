@@ -334,3 +334,29 @@ gỡ nó (A12).
 thời gian); và đối chiếu số học cho các thủ tục thống kê dùng chung. Phần logic nghiệp vụ còn
 lại dựa vào bộ kiểm hiện có (3 232 phép kiểm VLA, toàn bộ bộ kiểm engine) và các bản kiểm
 toán số liệu trước trong `documentation/research/`.
+
+## 6. Kiểm bổ sung trước khi hợp nhất PR #149
+
+Rà soát độc lập phát hiện thêm ba đường biên còn bỏ sót trong bản vá ban đầu.
+Các ca kiểm dưới đây đã được chạy đỏ trên bản chưa sửa rồi chạy xanh sau bản sửa:
+
+- Cache phản hồi còn dùng namespace v1, nên bản lưu cũ vẫn có thể trả
+  `source.provider`. Đổi sang v2 để không đọc lại payload cũ. Lỗi JSON lịch sử
+  và cảnh báo dùng bản lưu cũng chỉ trả thông báo chung, không đưa tên nguồn
+  hoặc URL từ lỗi upstream ra API. Kiểm `legacy_response_cache` và
+  `invalid_primary_is_anonymous` chạy qua handler Worker thực tế.
+- Bảng đã có ngày nhưng thiếu một giải bị nhầm với ngày không có bảng, rồi
+  bị đệm là ngày nghỉ trong bảy ngày. Parser nay giữ riêng tập ngày có bảng;
+  cron chỉ đánh dấu vắng khi không có bảng. Kiểm
+  `incomplete_table_is_retried` đòi ngày còn unresolved khi thiếu G7, rồi
+  nhận đủ kết quả ngay ở lần cron tiếp theo sau khi nguồn sửa.
+- Middleware xác thực dùng đường dẫn có tiền tố mount/reverse proxy, trong
+  khi router dùng đường dẫn tương đối. Chuẩn hóa theo `scope.root_path` trước
+  khi xét GET ghi trạng thái. Sáu ca của
+  `test_a_prefixed_forecast_get_cannot_write_without_the_token` chạy cả
+  mount và root_path cho forecast/evidence/ML; không token phải 401 và không
+  có checkpoint, token hợp lệ phải 200.
+
+Phạm vi này giữ nguyên payload kết quả quay, sổ dự báo và chính sách mô hình.
+Các nâng cấp dependency và thay đổi CI/vận hành được ghi riêng trong
+`2026-10-08-pending-work.md` khi chốt main.

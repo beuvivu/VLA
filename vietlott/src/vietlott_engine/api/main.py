@@ -179,8 +179,14 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         từ trang khác: CORS đóng chỉ ngăn đọc phản hồi, còn một "simple request" như
         ``GET /forecast/mega645?record=true`` từ trang lạ vẫn được gửi đi."""
         token = settings.api_token
+        # Cùng đường dẫn tương đối mà router ASGI dùng: mount/reverse proxy có
+        # root_path không được che một GET làm mới trạng thái khỏi xác thực.
+        path = request.scope["path"]
+        root_path = request.scope.get("root_path", "")
+        if root_path and path.startswith(root_path + "/"):
+            path = path[len(root_path):]
         writes = (request.method in _MUTATING or _asks_to_record(request)
-                  or (request.method in {"GET", "HEAD"} and _REFRESHING_GET.match(request.url.path) is not None))
+                  or (request.method in {"GET", "HEAD"} and _REFRESHING_GET.match(path) is not None))
         if writes and token:
             supplied = request.headers.get("authorization", "")
             if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):

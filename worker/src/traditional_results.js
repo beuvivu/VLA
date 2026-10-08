@@ -23,7 +23,7 @@ const DEFAULT_XSKT_URL = "https://xskt.vn/xsmb-500-ngay/";
 const PRIMARY_FRESH_KEY = "traditional:primary:fresh:v1";
 const PRIMARY_LAST_GOOD_KEY = "traditional:primary:last-good:v1";
 const OVERLAY_KEY = "traditional:xskt-overlay:v1";
-const RESPONSE_PREFIX = "traditional:response:v1:";
+const RESPONSE_PREFIX = "traditional:response:v2:";
 const ALLOWED_DAYS = new Set([30, 60, 90, 100]);
 const MAX_RANGE_DAYS = 500;
 
@@ -183,7 +183,7 @@ function completePrizeMap(prizes) {
 }
 
 function normalizePrimary(payload) {
-  if (!Array.isArray(payload)) throw new Error("Dữ liệu VLA không phải một danh sách.");
+  if (!Array.isArray(payload)) throw new Error("Lịch sử chuẩn không phải một danh sách.");
   const byDate = {};
   for (const row of payload) {
     const drawDate = String(row?.date || "").slice(0, 10);
@@ -191,7 +191,7 @@ function normalizePrimary(payload) {
     const prizes = prizeMapFromInternal(row);
     if (prizes && completePrizeMap(prizes)) byDate[drawDate] = prizes;
   }
-  if (Object.keys(byDate).length === 0) throw new Error("Dữ liệu VLA không có kỳ hợp lệ.");
+  if (Object.keys(byDate).length === 0) throw new Error("Lịch sử chuẩn không có kỳ hợp lệ.");
   return byDate;
 }
 
@@ -225,13 +225,14 @@ async function loadPrimary(env, fetchImpl) {
     return { rows, cache: "miss" };
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
-    if (stale) return { rows: stale, cache: "stale", warning: String(error?.message || error) };
-    throw new Error(`Không đọc được lịch sử chuẩn: ${String(error?.message || error)}`);
+    if (stale) return { rows: stale, cache: "stale", warning: "Lịch sử chuẩn tạm không khả dụng; đang dùng bản lưu gần nhất." };
+    throw new Error("Không đọc được lịch sử chuẩn.");
   }
 }
 
-export function parseXsktLedger(html) {
+function parseLedgerPage(html) {
   const rows = {};
+  const presentDates = new Set();
   const tablePattern = /<table\b[^>]*class=["'][^"']*\bkqmb\b[^"']*["'][^>]*>[\s\S]*?<\/table\s*>/gi;
   for (const match of String(html || "").matchAll(tablePattern)) {
     const table = match[0];
@@ -239,10 +240,15 @@ export function parseXsktLedger(html) {
     if (!dateMatch) continue;
     const drawDate = `${dateMatch[3]}-${pad2(dateMatch[2])}-${pad2(dateMatch[1])}`;
     if (!parseDate(drawDate)) continue;
+    presentDates.add(drawDate);
     const prizes = extractPartialPrizeMap(table);
     if (completePrizeMap(prizes)) rows[drawDate] = prizes;
   }
-  return rows;
+  return { rows, presentDates };
+}
+
+export function parseXsktLedger(html) {
+  return parseLedgerPage(html).rows;
 }
 
 /**
@@ -299,7 +305,7 @@ export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs 
     signal: AbortSignal.timeout(12_000),
   });
   if (!responseFromSource.ok) throw new Error(`nguồn dự phòng trả HTTP ${responseFromSource.status}`);
-  const parsed = parseXsktLedger(await responseFromSource.text());
+  const { rows: parsed, presentDates } = parseLedgerPage(await responseFromSource.text());
   const pageDays = Object.keys(parsed).sort();
   const stamp = new Date(nowUtcMs).toISOString();
   let filled = 0;
@@ -308,7 +314,7 @@ export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs 
     if (completePrizeMap(parsed[day])) {
       overlay[day] = { prizes: parsed[day], fetched_at_utc: stamp };
       filled += 1;
-    } else if (pageDays.length && day > pageDays[0] && day < pageDays.at(-1)) {
+    } else if (!presentDates.has(day) && pageDays.length && day > pageDays[0] && day < pageDays.at(-1)) {
       overlay[day] = { absent: true, checked_at_utc: stamp };
       absent += 1;
     }

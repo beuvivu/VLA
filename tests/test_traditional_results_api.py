@@ -154,3 +154,28 @@ def test_renaming_the_source_fields_bumped_the_schema_version() -> None:
     """Lược đồ 1 ghi tên nguồn vào `source.kind`, `source_counts`, `sources_used`. Đổi các giá
     trị ấy mà giữ số phiên bản thì bên gọi phân nhánh theo giá trị cũ lặng lẽ mất kết quả."""
     assert _scenario("anonymised")["schema_version"] == 2
+
+
+def test_a_legacy_cache_cannot_restore_source_names_after_the_schema_upgrade() -> None:
+    result = _scenario("legacy_response_cache")
+    assert result["status"] == 200
+    assert result["payload"]["schema_version"] == 2
+    assert result["payload"]["data"][0]["source"]["kind"] == "canonical"
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+    assert "vla" not in json.dumps(result["payload"]).lower()
+
+
+def test_invalid_primary_data_never_names_the_source_in_the_error() -> None:
+    for reply in _scenario("invalid_primary_is_anonymous")["replies"]:
+        assert reply["status"] == 502
+        assert reply["payload"]["error"] == "results_unavailable"
+        assert "vla" not in json.dumps(reply["payload"]).lower()
+
+
+def test_a_table_with_incomplete_prizes_is_retried_instead_of_becoming_a_holiday() -> None:
+    result = _scenario("incomplete_table_is_retried")
+    assert result["first"] == {"fetched": True, "missing": 1, "filled": 0, "absent": 0}
+    assert result["before"]["unresolved_dates"] == ["2026-09-11"]
+    assert result["second"] == {"fetched": True, "missing": 1, "filled": 1, "absent": 0}
+    assert result["calls"] == 2
+    assert result["after"] == {"total": 1, "unresolved": [], "special": "83799"}
