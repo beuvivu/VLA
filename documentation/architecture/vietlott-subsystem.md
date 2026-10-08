@@ -1064,7 +1064,11 @@ WITH alloc AS (
     JOIN live_score lc ON lc.forecast_id = fc.forecast_id AND lc.live_eligible
                       AND lc.draw_id >= ce.incumbent_from_draw_id
     JOIN score_bounds bc ON bc.forecast_id = lc.forecast_id
-    LEFT JOIN forecast_issue fi ON fi.game = ce.game AND fi.model_id = ce.incumbent_id
+    -- Đối thủ 'fair' không cần lần phát: loss công bằng nằm sẵn trên dòng điểm của thách đấu. Không
+    -- ghép forecast_issue cho nó, nếu không mỗi dòng 'fair' chèn thêm (kể cả không biên nhận) nhân
+    -- bản hiệu của kỳ ấy và thổi phồng n. Đối thủ khác chỉ giữ ĐÚNG lần phát bằng chứng của kỳ.
+    LEFT JOIN forecast_issue fi ON ce.incumbent_id <> 'fair'
+                               AND fi.game = ce.game AND fi.model_id = ce.incumbent_id
                                AND fi.target_draw_id = lc.draw_id
     LEFT JOIN live_score li ON li.forecast_id = fi.forecast_id AND li.live_eligible
     LEFT JOIN score_bounds bi ON bi.forecast_id = li.forecast_id
