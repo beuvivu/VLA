@@ -33,11 +33,13 @@ còn giữ.
 from __future__ import annotations
 
 import csv
+import io
 from pathlib import Path
 
 import pandas as pd
 
 import digit_sum_rules as dsr
+from atomic_io import atomic_write_text
 
 #: Tham số ĐÃ ĐĂNG KÝ. Không sửa — xem docstring.
 REGISTERED_ON = "2026-10-05"
@@ -95,12 +97,12 @@ def update_ledger(data_dir: Path) -> Path:
     for row in scored_draws(raw):
         known.setdefault((row["date"], row["rule"]), row)
     order = {rule.key: i for i, rule in enumerate(dsr.RULES)}
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDS, lineterminator="\n")
-        writer.writeheader()
-        for key in sorted(known, key=lambda k: (k[0], order.get(k[1], 99))):
-            writer.writerow({field: known[key][field] for field in FIELDS})
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=FIELDS, lineterminator="\n")
+    writer.writeheader()
+    for key in sorted(known, key=lambda k: (k[0], order.get(k[1], 99))):
+        writer.writerow({field: known[key][field] for field in FIELDS})
+    atomic_write_text(path, buffer.getvalue())
     return path
 
 

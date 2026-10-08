@@ -184,6 +184,36 @@ const SCENARIOS = {
     };
   },
 
+  // KV đọc được nhưng GHI ném lỗi (hết hạn mức). Trước đây fetch() ném lỗi ra
+  // ngoài: nền tảng trả 500 không có CORS, ảnh chụp vừa thu bị vứt.
+  async kv_put_throws() {
+    const counter = { calls: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const kv = new FakeKV();
+    kv.put = async () => { throw new Error("KV put failed: quota exceeded"); };
+    const ctx = newCtx();
+    const out = [];
+    for (let i = 0; i < 12; i += 1) {
+      const res = await worker.fetch(new Request("https://w/live.json"), { LIVE: kv }, ctx);
+      out.push({ status: res.status, cors: res.headers.get("access-control-allow-origin"),
+                 body_status: (await res.json()).status });
+    }
+    return {
+      statuses: [...new Set(out.map((r) => r.status))],
+      cors: [...new Set(out.map((r) => r.cors))],
+      first_has_snapshot: out[0].body_status !== "waiting",
+      outbound_fetches: counter.calls,
+    };
+  },
+
+  async health_corrupt_kv() {
+    const kv = new FakeKV();
+    kv.get = async () => "{not json";
+    const res = await worker.fetch(new Request("https://w/health"), { LIVE: kv }, newCtx());
+    const body = await res.json();
+    return { status: res.status, has_snapshot: body.has_snapshot };
+  },
+
   async routing() {
     globalThis.fetch = makeFetch({ calls: 0 });
     const env = { LIVE: new FakeKV() };

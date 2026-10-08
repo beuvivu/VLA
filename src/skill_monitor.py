@@ -31,6 +31,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from atomic_io import atomic_to_csv
 from xsmb_domain import baseline_rate
 
 MODES: tuple[str, ...] = ("loto", "de")
@@ -161,9 +162,8 @@ def update_ledger(data_dir: Path) -> Path:
         days, skills = graded_series(data_dir, mode)
         rows += [{"target_date": d, "mode": mode, "skill": float(s)} for d, s in zip(days, skills, strict=True)]
     path = data_dir / LEDGER
-    path.parent.mkdir(parents=True, exist_ok=True)
     frame = pd.DataFrame(rows, columns=["target_date", "mode", "skill"])
-    frame.sort_values(["mode", "target_date"]).to_csv(path, index=False, float_format="%.12g")
+    atomic_to_csv(frame.sort_values(["mode", "target_date"]), path, index=False, float_format="%.12g")
     return path
 
 

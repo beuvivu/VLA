@@ -28,6 +28,19 @@ const RESPONSE_PREFIX = "traditional:response:v1:";
 const ALLOWED_DAYS = new Set([30, 60, 90, 100]);
 const MAX_RANGE_DAYS = 500;
 
+// Sổ cuộn của nguồn dự phòng chỉ có khoảng 500 ngày gần nhất: ngày cũ hơn thì gọi
+// cũng không có, nên không được kéo theo một lượt tải trang.
+const FALLBACK_WINDOW_DAYS = 500;
+
+// CHẶN KHUẾCH ĐẠI ra nguồn ngoài. Khoá đệm phản hồi gồm cả from/to, nên mỗi khoảng
+// ngày mới là một lần trượt đệm. Không có khoá này, khách chỉ cần đổi khoảng ngày là
+// mỗi yêu cầu kéo một lượt tải trọn trang 500 ngày của nguồn dự phòng (đo ngày
+// 08-10-2026: 20 khoảng ngày khác nhau → 20 lượt tải). Hai lớp như đường live.json:
+// khoá KV dùng chung giữa các isolate, và mốc trong bộ nhớ khi chính KV hỏng.
+const FALLBACK_LOCK_KEY = "traditional:fallback-lock:v1";
+const FALLBACK_LOCK_SECONDS = 600;
+let lastFallbackAttemptMs = 0;
+
 const PRIZE_LABELS = {
   special: "Đặc Biệt",
   prize1: "Giải Nhất",
@@ -114,6 +127,11 @@ export function parseTraditionalQuery(url, { nowUtcMs = Date.now() } = {}) {
     from = parseDate(fromRaw);
     to = parseDate(toRaw);
     if (!from || !to) throw new Error("Ngày phải đúng định dạng YYYY-MM-DD.");
+    // Ngày chưa quay thì không có kết quả ở đâu cả; nhận nó chỉ để kéo một lượt gọi
+    // nguồn dự phòng vô ích.
+    if (to > latestEligibleDate(nowUtcMs)) {
+      throw new Error("Đến ngày không được sau kỳ gần nhất đã quay.");
+    }
   } else {
     const days = Number(url.searchParams.get("days") || 30);
     if (!Number.isInteger(days) || !ALLOWED_DAYS.has(days)) {
@@ -205,7 +223,7 @@ async function loadPrimary(env, fetchImpl) {
   } catch (error) {
     const stale = await readJson(kv, PRIMARY_LAST_GOOD_KEY);
     if (stale) return { rows: stale, cache: "stale", warning: String(error?.message || error) };
-    throw new Error(`Không đọc được CSDL VLA: ${String(error?.message || error)}`);
+    throw new Error(`Không đọc được lịch sử chuẩn: ${String(error?.message || error)}`);
   }
 }
 
@@ -224,14 +242,29 @@ export function parseXsktLedger(html) {
   return rows;
 }
 
-async function loadXsktOverlay(env, fetchImpl, missingDates) {
+/** Tối đa một lượt gọi nguồn dự phòng mỗi FALLBACK_LOCK_SECONDS, bất kể bao nhiêu khách. */
+async function acquireFallbackLock(kv, nowUtcMs) {
+  // Đặt mốc TRƯỚC khi gọi nguồn: các yêu cầu đến trong lúc lượt này đang chạy cũng bị chặn.
+  if (nowUtcMs - lastFallbackAttemptMs < FALLBACK_LOCK_SECONDS * 1000) return false;
+  lastFallbackAttemptMs = nowUtcMs;
+  if (!kv) return true;
+  if (await kv.get(FALLBACK_LOCK_KEY)) return false;
+  await kv.put(FALLBACK_LOCK_KEY, "1", { expirationTtl: FALLBACK_LOCK_SECONDS });
+  return true;
+}
+
+async function loadXsktOverlay(env, fetchImpl, missingDates, nowUtcMs) {
   const kv = cacheStore(env);
   const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
   let unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
   let fetched = false;
   let warning = null;
+  const windowStart = isoDate(addDays(latestEligibleDate(nowUtcMs), -(FALLBACK_WINDOW_DAYS - 1)));
+  const fetchable = unresolved.filter((day) => day >= windowStart);
 
-  if (unresolved.length > 0) {
+  if (fetchable.length > 0 && !(await acquireFallbackLock(kv, nowUtcMs))) {
+    warning = "Nguồn dự phòng vừa được gọi; ngày còn thiếu sẽ được bù ở lượt sau.";
+  } else if (fetchable.length > 0) {
     const xsktUrl = env?.XSKT_HISTORY_URL || DEFAULT_XSKT_URL;
     try {
       const responseFromSource = await fetchImpl(xsktUrl, {
@@ -243,7 +276,7 @@ async function loadXsktOverlay(env, fetchImpl, missingDates) {
         signal: AbortSignal.timeout(12_000),
       });
       if (!responseFromSource.ok) {
-        warning = `xskt.vn trả HTTP ${responseFromSource.status}`;
+        warning = `Nguồn dự phòng trả HTTP ${responseFromSource.status}`;
       } else {
         fetched = true;
         const parsed = parseXsktLedger(await responseFromSource.text());
@@ -256,7 +289,7 @@ async function loadXsktOverlay(env, fetchImpl, missingDates) {
         if (kv) await kv.put(OVERLAY_KEY, JSON.stringify(overlay), { expirationTtl: 2_592_000 });
       }
     } catch (error) {
-      warning = `Không đọc được xskt.vn: ${String(error?.message || error)}`;
+      warning = `Không đọc được nguồn dự phòng: ${String(error?.message || error)}`;
     }
     unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
   }
@@ -307,7 +340,7 @@ function apiDraw(drawDate, prizes, source) {
 }
 
 function sourceCounts(data) {
-  const counts = { vla_db: 0, xskt_fallback: 0 };
+  const counts = { canonical: 0, fallback: 0 };
   for (const draw of data) counts[draw.source.kind] += 1;
   return counts;
 }
@@ -321,21 +354,16 @@ export async function buildTraditionalResults(
   const requestedDates = dateRange(query.from, query.to);
   const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
   const fallback = missing.length
-    ? await loadXsktOverlay(env, fetchImpl, missing)
+    ? await loadXsktOverlay(env, fetchImpl, missing, nowUtcMs)
     : { overlay: {}, unresolved: [], fetched: false, warning: null };
 
   const data = [];
   for (const day of requestedDates) {
     if (completePrizeMap(primary.rows[day])) {
-      data.push(apiDraw(day, primary.rows[day], {
-        kind: "vla_db",
-        provider: "VLA canonical database",
-        canonical: true,
-      }));
+      data.push(apiDraw(day, primary.rows[day], { kind: "canonical", canonical: true }));
     } else if (completePrizeMap(fallback.overlay[day]?.prizes)) {
       data.push(apiDraw(day, fallback.overlay[day].prizes, {
-        kind: "xskt_fallback",
-        provider: "xskt.vn",
+        kind: "fallback",
         canonical: false,
         fetched_at_utc: fallback.overlay[day].fetched_at_utc,
       }));

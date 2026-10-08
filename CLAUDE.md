@@ -228,6 +228,10 @@ VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ h
 tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
 ngưỡng.
 
+Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/atomic_io.py` (tệp tạm + `os.replace`).
+Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
+(`tests/test_atomic_ledgers.py`).
+
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
@@ -277,6 +281,9 @@ Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value
 (`randomness_summary`), không viết cứng: Max 3D và Max 3D Pro lệch thật ở hàng đơn vị (số 6
 ≈ 11%, lặp lại trên hai sản phẩm), dù mọi cửa Max 3D mà mô hình tính được vẫn có RTP < 1 (Mega/Power/Lotto không có RTP trong phân tích nên không được gộp vào câu ấy)
 (`documentation/research/2026-10-07-max3d-hang-don-vi.md`).
+API của engine mặc định an toàn (08-10-2026): CORS đóng, `VQE_API_TOKEN` (khi đặt) bắt mọi
+POST/PUT/PATCH/DELETE và `?record=true` gửi `Authorization: Bearer`, compose chỉ bind
+`127.0.0.1`. `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

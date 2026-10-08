@@ -1,4 +1,4 @@
-"""Hợp đồng API Sổ kết quả: CSDL VLA trước, xskt.vn chỉ bù ngày thiếu."""
+"""Hợp đồng API Sổ kết quả: lịch sử chuẩn trước, nguồn dự phòng chỉ bù ngày thiếu."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def test_internal_vla_database_is_used_without_calling_xskt() -> None:
     result = _scenario("primary_first")
     assert result["counter"] == {"primary": 1, "xskt": 0}
     assert result["count"] == 1
-    assert result["source"] == "vla_db"
+    assert result["source"] == "canonical"
     assert result["special"] == "58851"
     assert result["leading_zero"] == "01"
     assert result["head_tail_total"] == 27
@@ -50,7 +50,7 @@ def test_xskt_fills_only_the_missing_date_and_response_is_cached() -> None:
     assert result["statuses"] == [200, 200]
     assert result["counter"] == {"primary": 1, "xskt": 1}
     assert result["dates"] == ["2026-09-13", "2026-09-12"]
-    assert result["sources"] == ["xskt_fallback", "vla_db"]
+    assert result["sources"] == ["fallback", "canonical"]
     assert result["fallback_requested"] is True
     assert result["fallback_network_fetch"] is True
     assert result["second_cache"] == "hit"
@@ -62,7 +62,7 @@ def test_xskt_outage_does_not_hide_available_vla_results() -> None:
     assert result["counter"] == {"primary": 1, "xskt": 1}
     assert result["dates"] == ["2026-09-12"]
     assert result["unresolved"] == ["2026-09-13"]
-    assert result["warning"] == "Không đọc được xskt.vn: upstream timeout"
+    assert result["warning"] == "Không đọc được nguồn dự phòng: upstream timeout"
 
 
 def test_api_rejects_unsupported_or_unsafe_ranges() -> None:
@@ -90,3 +90,26 @@ def test_xskt_parser_and_vietnam_cutoff_policy() -> None:
     assert result["from"] == "2026-08-14"
     assert result["to"] == "2026-09-12"
     assert result["timezone"] == "Asia/Ho_Chi_Minh"
+
+
+def test_changing_the_date_range_cannot_amplify_calls_to_the_fallback_source() -> None:
+    """Mỗi khoảng ngày là một khoá đệm mới; trước đây 20 khoảng kéo 20 lượt tải trang nguồn."""
+    result = _scenario("amplification")
+    assert result["statuses"] == [200]
+    assert result["counter"] == {"primary": 1, "xskt": 1}
+
+
+def test_a_range_ending_after_the_latest_draw_is_rejected() -> None:
+    assert _scenario("future_range") == {"status": 400}
+
+
+def test_dates_older_than_the_fallback_window_never_trigger_a_fetch() -> None:
+    result = _scenario("out_of_window")
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+    assert result["unresolved"] == ["2020-01-01", "2020-01-02", "2020-01-03"]
+
+
+def test_the_api_never_names_its_sources() -> None:
+    result = _scenario("anonymised")
+    assert result["mentions_source"] is False
+    assert result["sources"] == ["fallback", "canonical"]

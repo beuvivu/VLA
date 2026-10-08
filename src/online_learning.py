@@ -15,8 +15,6 @@ import base64
 import copy
 import hashlib
 import json
-import os
-import tempfile
 import zlib
 from contextlib import contextmanager
 from datetime import date, datetime, time, timedelta
@@ -25,6 +23,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from atomic_io import atomic_write_bytes
 from calendar_alignment import known_non_draw_days
 from hierarchical_pooling import fit_shrinkage_to_prior
 from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TZ, now_vietnam
@@ -564,24 +563,10 @@ def advance(
     return result, copy.deepcopy(record)
 
 
-def _atomic_write(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    try:
-        with os.fdopen(fd, "wb") as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
-
-
 def save_state(path: Path, state: dict) -> None:
     """Ghi JSON nguyên tử có checksum; lỗi không đè lên sổ đang dùng."""
     _validate_state(state, state["mode"])
-    _atomic_write(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
+    atomic_write_bytes(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
 
 
 def load_state(path: Path, mode: str) -> dict:
@@ -672,13 +657,13 @@ def run_online(
             published_frame = published_frame.sort_values(
                 "prob", ascending=False, kind="stable"
             ).reset_index(drop=True)
-            _atomic_write(prediction_path, write_code_csv(published_frame, index=False).encode("utf-8"))
+            atomic_write_bytes(prediction_path, write_code_csv(published_frame, index=False).encode("utf-8"))
         ranked = published_frame.sort_values("prob", ascending=False, kind="stable").copy()
         ranked["number_str"] = ranked["number"].map(lambda number: f"{number:02d}")
         for n in (4, 8, 10):
             top_path = out_dir / f"predict_next_{mode}_top{n}_{target}.csv"
             # Khôi phục cả tệp top nếu lần trước ngắt sau khi đã ghi tệp đủ số.
-            _atomic_write(top_path, write_code_csv(ranked.head(n), index=False).encode("utf-8"))
+            atomic_write_bytes(top_path, write_code_csv(ranked.head(n), index=False).encode("utf-8"))
         picks_path = out_dir / f"picks_{mode}.json"
         picks = json.loads(picks_path.read_text(encoding="utf-8")) if picks_path.exists() else {}
         picks.update(
@@ -686,8 +671,8 @@ def run_online(
         )
         for n in (4, 8, 10):
             picks[f"top{n}"] = ranked.head(n)["number_str"].tolist()
-        _atomic_write(picks_path, _json_bytes(picks))
-        _atomic_write(data_dir / "research" / f"online_{mode}_report.json", _json_bytes(report))
+        atomic_write_bytes(picks_path, _json_bytes(picks))
+        atomic_write_bytes(data_dir / "research" / f"online_{mode}_report.json", _json_bytes(report))
         return report
 
 

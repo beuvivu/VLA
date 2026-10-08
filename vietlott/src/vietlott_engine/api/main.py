@@ -10,6 +10,7 @@ from vietlott_engine import __version__
 
 import asyncio
 import contextlib
+import hmac
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -135,6 +136,19 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         lifespan=lifespan,
     )
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
+
+    _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
+
+    @app.middleware("http")
+    async def _require_token_for_writes(request: Request, call_next):  # type: ignore[no-untyped-def]
+        """Lệnh ghi cần token khi VQE_API_TOKEN được đặt; lệnh đọc giữ nguyên."""
+        token = settings.api_token
+        writes = request.method in _MUTATING or request.query_params.get("record", "").lower() in {"1", "true", "yes"}
+        if token and writes:
+            supplied = request.headers.get("authorization", "")
+            if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
+                return JSONResponse(status_code=401, content={"error": "Unauthorized", "detail": "missing or invalid API token"})
+        return await call_next(request)
 
     @app.exception_handler(VQEError)
     async def _vqe_error(_: Request, exc: VQEError) -> JSONResponse:

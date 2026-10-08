@@ -73,7 +73,7 @@ def write_code_csv(frame: pd.DataFrame, path_or_buf=None, **kwargs):
     output = frame.copy()
     for name, width in widths.items():
         if name in output:
-            output[name] = output[name].map(lambda value: lottery_code(value, width))
+            output[name] = output[name].map(lambda value, width=width: lottery_code(value, width))
     return output.to_csv(path_or_buf, **kwargs)
 
 

@@ -110,10 +110,16 @@ async function refresh(env, { force = false } = {}) {
   const snapshot = anonymiseSnapshot(await collectSnapshot({
     minAgreement: Number(env.MIN_AGREEMENT ?? 2),
   }));
-  await kv.put(KV_KEY, JSON.stringify(snapshot), {
-    // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
-    expirationTtl: 60 * 60 * 36,
-  });
+  try {
+    await kv.put(KV_KEY, JSON.stringify(snapshot), {
+      // Giữ qua đêm để trang mở lúc sáng vẫn thấy kỳ hôm trước thay vì trắng.
+      expirationTtl: 60 * 60 * 36,
+    });
+  } catch (error) {
+    // KV ghi hỏng (hết hạn mức, sự cố nền tảng): ảnh chụp vừa thu được vẫn là dữ
+    // liệu đúng, trả nó cho người đang chờ thay vì vứt đi rồi ném lỗi 500.
+    console.error("không ghi được ảnh chụp vào KV:", error?.message || error);
+  }
   return snapshot;
 }
 
@@ -127,7 +133,12 @@ async function refreshOnDemand(env) {
   // sau khi nó xong.
   lastOnDemandAttemptMs = now;
   if (await kv.get(LOCK_KEY)) return null;
-  await kv.put(LOCK_KEY, "1", { expirationTtl: ONDEMAND_LOCK_SECONDS });
+  try {
+    await kv.put(LOCK_KEY, "1", { expirationTtl: ONDEMAND_LOCK_SECONDS });
+  } catch (error) {
+    // Khoá KV không ghi được thì vẫn còn mốc trong bộ nhớ ở trên chặn khuếch đại.
+    console.error("không ghi được khoá thu thập:", error?.message || error);
+  }
   // Ép chạy: tới nhánh này thì KV chắc chắn chưa có ảnh chụp, nên chốt
   // "đã xong" bên trong `refresh` không có gì để so và sẽ luôn cho qua —
   // nhưng nói rõ ý định vẫn hơn để nó phụ thuộc vào điều đó.
@@ -168,7 +179,8 @@ export default {
 
     if (url.pathname === "/health") {
       const stored = await requireKv(env).get(KV_KEY);
-      const parsed = stored ? JSON.parse(stored) : null;
+      let parsed = null;
+      try { parsed = stored ? JSON.parse(stored) : null; } catch { parsed = null; }
       return jsonResponse({
         ok: true,
         has_snapshot: Boolean(parsed),
@@ -194,7 +206,16 @@ export default {
 
     // Chưa có ảnh chụp nào: thu thập ngay thay vì trả rỗng. Xảy ra ở lần gọi
     // đầu sau khi triển khai, hoặc khi KV vừa hết hạn.
-    const snapshot = await refreshOnDemand(env);
+    let snapshot;
+    try {
+      snapshot = await refreshOnDemand(env);
+    } catch (error) {
+      // Lỗi lọt ra khỏi handler thành trang lỗi 500 của nền tảng, KHÔNG có đầu mục
+      // CORS: trình duyệt chỉ thấy "lỗi mạng". Trả JSON có CORS để trang đọc được
+      // và chuyển sang nguồn kế tiếp.
+      console.error("thu thập theo yêu cầu hỏng:", error?.message || error);
+      return jsonResponse({ schema_version: 2, status: "waiting" }, { status: 503 });
+    }
     if (snapshot === null) {
       // Một vòng khác vừa chạy trong 10 giây qua. Trả trạng thái chờ thay vì
       // gọi nguồn lần nữa; trang sẽ tự thăm dò lại sau vài giây.

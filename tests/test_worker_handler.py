@@ -173,3 +173,20 @@ def test_routing_and_methods() -> None:
     assert out["unknown_path"] == 404
     assert out["post"] == 405, "chỉ đọc, không nhận ghi"
     assert out["options"] == 204, "preflight CORS phải qua"
+
+
+def test_a_kv_that_cannot_write_still_serves_the_fresh_snapshot_with_cors() -> None:
+    """KV hết hạn mức ghi: trước đây fetch() ném lỗi ra ngoài, nền tảng trả 500 không CORS.
+
+    Ảnh chụp vừa thu vẫn đúng nên phải đến tay người xem, và mốc trong bộ nhớ vẫn
+    giữ số lượt gọi ra nguồn ở đúng một vòng.
+    """
+    out = _scenario("kv_put_throws")
+    assert out["statuses"] == [200]
+    assert out["cors"] == ["*"]
+    assert out["first_has_snapshot"] is True
+    assert out["outbound_fetches"] <= 6
+
+
+def test_health_survives_a_corrupt_stored_snapshot() -> None:
+    assert _scenario("health_corrupt_kv") == {"status": 200, "has_snapshot": False}

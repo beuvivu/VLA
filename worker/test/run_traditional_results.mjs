@@ -126,6 +126,63 @@ const scenarios = {
     };
   },
 
+  // Khách đổi khoảng ngày liên tục: mỗi khoảng là một khoá đệm mới, nhưng nguồn
+  // dự phòng chỉ được gọi MỘT lần trong khung khoá.
+  async amplification() {
+    const counter = { primary: 0, xskt: 0 };
+    globalThis.fetch = makeFetch(counter);
+    const env = { LIVE: new FakeKV() };
+    const statuses = [];
+    for (let i = 0; i < 20; i += 1) {
+      const from = new Date(Date.UTC(2026, 5, 1 + i)).toISOString().slice(0, 10);
+      const to = new Date(Date.UTC(2026, 5, 3 + i)).toISOString().slice(0, 10);
+      const ctx = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
+      const res = await worker.fetch(new Request(
+        `https://worker/api/v1/traditional-results?from=${from}&to=${to}`), env, ctx);
+      await Promise.all(ctx.pending);
+      statuses.push(res.status);
+    }
+    return { counter, statuses: [...new Set(statuses)] };
+  },
+
+  async future_range() {
+    const env = { LIVE: new FakeKV() };
+    const res = await worker.fetch(new Request(
+      "https://worker/api/v1/traditional-results?from=2099-01-01&to=2099-01-05"), env, { waitUntil() {} });
+    return { status: res.status };
+  },
+
+  // Ngày cũ hơn cửa sổ 500 ngày của nguồn dự phòng: gọi cũng không có, nên không gọi.
+  async out_of_window() {
+    const counter = { primary: 0, xskt: 0 };
+    const payload = await buildTraditionalResults(
+      { ...query, from: "2020-01-01", to: "2020-01-03" },
+      { LIVE: new FakeKV() },
+      { fetchImpl: makeFetch(counter), nowUtcMs: Date.UTC(2026, 8, 13, 12) },
+    );
+    return { counter, unresolved: payload.meta.unresolved_dates };
+  },
+
+  // Không gửi danh tính nguồn ra trình duyệt, như anonymiseSnapshot của live.json.
+  async anonymised() {
+    const counter = { primary: 0, xskt: 0 };
+    const ok = await buildTraditionalResults(
+      query, { LIVE: new FakeKV() },
+      { fetchImpl: makeFetch(counter), nowUtcMs: Date.UTC(2026, 8, 13, 12) },
+    );
+    const failing = await buildTraditionalResults(
+      query, { LIVE: new FakeKV() },
+      {
+        fetchImpl: async (url) => (String(url).includes("raw.githubusercontent.com")
+          ? new Response(JSON.stringify([primaryRow]), { status: 200 })
+          : new Response("busy", { status: 503 })),
+        nowUtcMs: Date.UTC(2026, 8, 13, 12),
+      },
+    );
+    const text = JSON.stringify([ok, failing]).toLowerCase();
+    return { mentions_source: text.includes("xskt"), sources: ok.data.map((row) => row.source.kind) };
+  },
+
   async validation() {
     const env = { LIVE: new FakeKV() };
     const ctx = { waitUntil() {} };
