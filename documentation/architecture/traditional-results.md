@@ -173,7 +173,7 @@ GET /api/v1/traditional-results?region=north&province=hanoi&from=2026-08-01&to=2
     "source_counts": {"vla_db": 29, "xskt_fallback": 1},
     "sources_used": ["vla_db", "xskt_fallback"],
     "fallback_requested": true,
-    "fallback_network_fetch": true,
+    "fallback_network_fetch": false,
     "unresolved_dates": [],
     "primary_cache": "hit",
     "response_cache": "miss",
@@ -214,12 +214,24 @@ không phải suy đoán cách đệm số. `source.canonical=false` chỉ có n
 1. Worker đọc `data/xsmb.json` từ nhánh `main` và chuẩn hóa vào cache 5 phút.
 2. Nếu nguồn GitHub tạm lỗi, Worker dùng bản `last-good` tối đa 36 giờ.
 3. Với từng ngày trong query, bản ghi VLA luôn thắng.
-4. Chỉ khi còn ngày thiếu, Worker gọi **một lần** sổ cuộn
-   `xskt.vn/xsmb-500-ngay/`, cắt từng bảng `kqmb`, kiểm đủ 27 số và đúng độ
-   rộng. Tên URL không được coi là cam kết số kỳ; ngày nguồn không trả về nằm
-   trong `unresolved_dates`.
-5. Bản bù được lưu KV 30 ngày. Response đã gộp được cache 5 phút.
-6. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
+4. Ngày còn thiếu lấy từ **lớp bù trong KV**. Yêu cầu của khách KHÔNG BAO GIỜ
+   gọi nguồn dự phòng; ngày chưa có trong lớp bù nằm trong `unresolved_dates`.
+   `fallback_network_fetch` vì thế luôn là `false` (giữ trường cho bên gọi cũ).
+5. Lớp bù do **cron** nạp (`refreshFallbackOverlay`, bật bằng
+   `TRADITIONAL_FALLBACK_REFRESH = "on"` trong `worker/wrangler.toml`):
+   - chỉ khi trong cửa sổ 500 ngày còn ngày lịch sử chuẩn thiếu;
+   - mỗi lượt tải cách lượt trước tối thiểu 10 phút;
+   - mỗi lượt đọc sổ cuộn `xskt.vn/xsmb-500-ngay/`, cắt từng bảng `kqmb`, kiểm đủ 27 số và
+     đúng độ rộng;
+   - ngày nằm giữa ngày cũ nhất và mới nhất của trang mà trang không có (XSMB nghỉ quay dịp
+     Tết) được ghi `absent`, nếu không lượt cron nào cũng tải lại vô ích.
+
+   Trước 08-10-2026 chính yêu cầu gọi nguồn: đổi khoảng ngày là trượt đệm phản hồi, nên 20
+   khoảng ngày kéo 20 lượt tải. Một khoá KV chỉ chặn được trong từng isolate (KV nhất quán
+   sau, không có đọc-ghi nguyên tử). Dời việc gọi nguồn sang cron thì lưu lượng khách không
+   còn đường nào chạm tới nguồn ngoài.
+6. Lớp bù lưu KV 30 ngày. Response đã gộp được cache 5 phút.
+7. `XsktVnSource` của Python nằm cuối danh mục nguồn. Quy trình canonical hằng
    ngày có thể dùng nó để bù dữ liệu rồi vẫn đi qua validation/consensus trước
    khi ghi `data/xsmb.json` và `data/xsmb.csv`.
 

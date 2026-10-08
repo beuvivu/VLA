@@ -20,7 +20,7 @@ kiểm ấy đã được thử đột biến: trả mã về bản cũ thì ph�
 | A9 | LOW | `.github/workflows/daily_prediction.yml` | Còn `checkout@v4`, `setup-python@v5`; mọi workflow khác dùng v7. | Lệch phiên bản; runtime cũ hết hỗ trợ trước. | Đã sửa |
 | A10 | LOW | 6 bản Wilson, 2 bản BH-FDR | Chép lặp. Cùng kết quả khi n > 0, nhưng khác nhau ở biên: Wilson n = 0 ra `(0,1)`, `(0,0)` hoặc `NaN`; một bản BH biến MỌI q-value thành NaN khi có một p-value NaN. | Chưa chạm đường chạy thật (bên gọi đã chặn), nhưng là bẫy cho lần dùng sau. | Đề xuất |
 | A11 | LOW | CSP của 49 trang | `script-src 'unsafe-inline'`; `connect-src` mở `*.workers.dev`, `*.deno.dev`. | Một lỗ chèn HTML sẽ thành chạy script; kênh gửi dữ liệu đi rộng. Hiện giảm thiểu nhờ luật cấm DOM sink. | Đề xuất |
-| A12 | LOW | `worker` route `/api/v1/traditional-results` | Không trang nào của site gọi endpoint này. | Bề mặt tấn công không mang lại giá trị (đã giảm rủi ro ở A1, A3). | Đề xuất |
+| A12 | LOW | `worker` route `/api/v1/traditional-results` | Không trang nào của site gọi endpoint này (tài liệu kiến trúc giữ nó cho bên gọi khác). | Bề mặt tấn công. | Giữ route; rủi ro khuếch đại của nó đã khép ở A1 |
 | A13 | LOW | `.github/workflows/dashboard-refresh.yml` | Một lần `git push`, không thử lại. | Đụng push của workflow khác thì lượt chạy đỏ (không mất dữ liệu). | Đề xuất |
 | A14 | LOW | `src/lottery_codes.py:76` | ruff B023 (closure bắt biến vòng lặp). Báo nhầm, vì `map` chạy ngay trong vòng lặp, nhưng làm bẩn lint. | — | Đã sửa (ràng tham số mặc định) |
 
@@ -73,7 +73,7 @@ if (unresolved.length > 0) {
   const responseFromSource = await fetchImpl(xsktUrl, { … });
 ```
 
-Sau, ba lớp:
+Bản vá đầu, ba lớp (lớp 3 sau đó được thay bằng bản cuối bên dưới):
 
 ```js
 if (to > latestEligibleDate(nowUtcMs)) {                 // 1. ngày chưa quay → 400
@@ -92,10 +92,34 @@ MỖI isolate đang chạy, không phải một lượt duy nhất (xem đề xu
 hay từ chối ghi khoá (giới hạn một lần ghi mỗi giây trên một khoá, khi nhiều isolate cùng
 giành) thì coi như đang khoá: không gọi nguồn, nhưng yêu cầu vẫn trả lịch sử chuẩn thay vì 502.
 
-**Kiểm chứng.** Có năm phép kiểm mới trong `tests/test_traditional_results_api.py`: 20 khoảng
-ngày → 1 lượt tải; khoảng tương lai → 400; ngày ngoài cửa sổ → 0 lượt tải; không lộ tên nguồn;
-ghi khoá bị KV từ chối → 200 với lịch sử chuẩn và 0 lượt tải (trước: 502). Bỏ khoá, bỏ chặn
-ngày tương lai, bỏ lọc cửa sổ, trả lại tên nguồn, hay cho gọi nguồn khi KV lỗi: lần nào cũng đỏ.
+**Bản cuối: chỉ cron gọi nguồn.** Khoá trên vẫn để lại khuếch đại theo số isolate. Bản cuối
+dời việc gọi nguồn khỏi lượt yêu cầu: yêu cầu chỉ đọc lớp bù trong KV, còn
+`refreshFallbackOverlay` chạy trong `scheduled()`. Hàm này:
+- chỉ chạy khi `TRADITIONAL_FALLBACK_REFRESH = "on"`;
+- chỉ tải khi trong cửa sổ 500 ngày còn ngày thiếu;
+- giãn cách các lần tải tối thiểu 10 phút;
+- ghi `absent` cho ngày trang nguồn xác nhận không có (nghỉ Tết).
+
+Cron chạy tuần tự theo lịch, nên giới hạn lượt tải không còn phụ thuộc lưu lượng khách. Khoá
+KV và mốc trong bộ nhớ không còn cần thiết, nên đã được gỡ.
+
+**Kiểm chứng.** `tests/test_traditional_results_api.py`:
+- 20 khoảng ngày → 0 lượt tải từ yêu cầu;
+- cron bù ngày thiếu, hai yêu cầu sau đó không gọi thêm nguồn;
+- cron ở phút 0/5/9/11/15/22 chỉ tải ở phút 0, 11 và 22;
+- ngày nghỉ được nhớ: lượt cron sau không tải lại;
+- công tắc tắt thì cron không nạp;
+- khoảng tương lai → 400;
+- ngày ngoài cửa sổ → 0 lượt tải;
+- không lộ tên nguồn.
+
+Sáu đột biến đều đỏ:
+- yêu cầu lại gọi nguồn;
+- bỏ giãn cách;
+- không nhớ ngày nghỉ;
+- ghi `absent` ngoài phạm vi trang;
+- bỏ qua công tắc;
+- cron không nạp.
 
 ### A2 — Mặc định không an toàn của API engine (HIGH)
 
@@ -263,9 +287,9 @@ Cấu hình chép nguyên từ VLM. Bỏ nó là đúng `SECURITY.md`, nhưng c�
 không giải quyết vấn đề nào đang có: Worker đã có KV và Cache API ở biên. Hai chỗ đáng làm:
 
 - **Khoá thật thay vì khoá KV.** KV là nhất quán cuối cùng (ghi có thể mất tới ~60 giây để
-  lan khắp nơi), nên khoá trong KV (A1, khoá thu thập live) chỉ là nỗ lực tốt nhất. Một
-  Durable Object làm khoá hay bộ đếm cho kết quả nhất quán mạnh. Hoặc dùng Rate Limiting
-  binding của Cloudflare theo IP cho `/api/*`.
+  lan khắp nơi), nên khoá thu thập live theo yêu cầu chỉ là nỗ lực tốt nhất. A1 đã tránh
+  nhu cầu này bằng cách chỉ cho cron gọi nguồn. Nếu đường live cũng cần kết quả nhất quán
+  mạnh: một Durable Object làm khoá, hoặc Rate Limiting binding theo IP cho `/api/*`.
 - **Chế độ B (API engine thường trực).** Chuyển `/sync`, `/fit`, `/backtest` sang hàng đợi
   nền (arq/RQ, hoặc một worker DuckDB duy nhất đọc lệnh từ bảng). DuckDB chỉ có một tiến
   trình ghi, nên xếp hàng đúng với ràng buộc ấy hơn là chạy trong luồng xử lý yêu cầu. Thêm
@@ -287,8 +311,9 @@ bỏ `'unsafe-inline'`. Thu `connect-src` về đúng tên Worker đã triển k
 (A11).
 
 **Chất lượng mã.** Gom Wilson/BH về một mô-đun thống kê dùng chung, với hợp đồng biên ghi
-rõ (n = 0 → `(0, 1)`; NaN bị loại khỏi BH chứ không lan) (A10). Gỡ route
-`/api/v1/traditional-results` nếu không có kế hoạch dùng (A12).
+rõ (n = 0 → `(0, 1)`; NaN bị loại khỏi BH chứ không lan) (A10). Route
+`/api/v1/traditional-results` được giữ cho bên gọi ngoài kho; nếu chắc không còn ai dùng thì
+gỡ nó (A12).
 
 ## 5. Giới hạn của lượt rà soát
 

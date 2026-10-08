@@ -3,6 +3,7 @@ import {
   buildTraditionalResults,
   parseTraditionalQuery,
   parseXsktLedger,
+  refreshFallbackOverlay,
 } from "../src/traditional_results.js";
 
 // So đúng TÊN HOST, không so chuỗi con: "raw.githubusercontent.com" có thể nằm ở bất kỳ đâu
@@ -13,14 +14,6 @@ class FakeKV {
   constructor() { this.store = new Map(); }
   async get(key) { return this.store.get(key) ?? null; }
   async put(key, value) { this.store.set(key, value); }
-}
-
-// KV chạm giới hạn ghi cùng một khoá (1 lần/giây) khi nhiều isolate cùng giành khoá dự phòng.
-class LockRateLimitedKV extends FakeKV {
-  async put(key, value, options) {
-    if (key.includes("fallback-lock")) throw new Error("KV PUT failed: 429 Too Many Requests");
-    return super.put(key, value, options);
-  }
 }
 
 const primaryRow = {
@@ -50,15 +43,22 @@ const xsktHtml = `
 <tr><td>G7</td><td>21 88 40 27</td></tr>
 </tbody></table>`;
 
-function makeFetch(counter) {
+const NOW = Date.UTC(2026, 8, 13, 12);   // 19:00 giờ VN ngày 13-09-2026: kỳ mới nhất là 13-09
+const MINUTE = 60_000;
+const ctxOf = () => ({ pending: [], waitUntil(promise) { this.pending.push(promise); } });
+
+// Trang dự phòng chỉ có những ngày được nêu (cùng bộ giải, khác ngày).
+const pageWith = (...days) => days.map((day) => xsktHtml.replace("13-09-2026", day)).join("\n");
+
+function makeFetch(counter, { page = xsktHtml, primary = [primaryRow] } = {}) {
   return async (url) => {
     if (hostOf(url) === "raw.githubusercontent.com") {
       counter.primary += 1;
-      return new Response(JSON.stringify([primaryRow]), { status: 200 });
+      return new Response(JSON.stringify(primary), { status: 200 });
     }
     if (hostOf(url) === "xskt.vn") {
       counter.xskt += 1;
-      return new Response(xsktHtml, { status: 200 });
+      return new Response(page, { status: 200 });
     }
     return new Response("not found", { status: 404 });
   };
@@ -89,21 +89,24 @@ const scenarios = {
     };
   },
 
-  async fallback_and_response_cache() {
+  // Cron nạp lớp bù; yêu cầu chỉ ĐỌC nó, và lượt thứ hai lấy từ đệm phản hồi.
+  async cron_fills_then_requests_read() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
-    const kv = new FakeKV();
-    const env = { LIVE: kv };
-    const ctx1 = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
+    const env = { LIVE: new FakeKV() };
+    const refreshed = await refreshFallbackOverlay(env, { fetchImpl: makeFetch(counter) });
+    const xsktOnCron = counter.xskt;
     const url = "https://worker/api/v1/traditional-results"
       + "?province=hanoi&from=2026-09-12&to=2026-09-13";
+    const ctx1 = ctxOf();
     const firstResponse = await worker.fetch(new Request(url), env, ctx1);
     const first = await firstResponse.json();
     await Promise.all(ctx1.pending);
-    const ctx2 = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
-    const secondResponse = await worker.fetch(new Request(url), env, ctx2);
+    const secondResponse = await worker.fetch(new Request(url), env, ctxOf());
     const second = await secondResponse.json();
     return {
+      refreshed: refreshed.fetched,
+      xskt_on_cron: xsktOnCron,
       statuses: [firstResponse.status, secondResponse.status],
       counter,
       dates: first.data.map((row) => row.draw_date),
@@ -115,6 +118,7 @@ const scenarios = {
     };
   },
 
+  // Nguồn dự phòng hỏng ở lượt cron: yêu cầu vẫn trả lịch sử chuẩn và báo ngày còn thiếu.
   async fallback_outage_keeps_primary() {
     const counter = { primary: 0, xskt: 0 };
     const fetchImpl = async (url) => {
@@ -125,12 +129,14 @@ const scenarios = {
       counter.xskt += 1;
       throw new Error("upstream timeout");
     };
-    const payload = await buildTraditionalResults(
-      query,
-      { LIVE: new FakeKV() },
-      { fetchImpl, nowUtcMs: Date.UTC(2026, 8, 13, 12) },
-    );
+    const env = { LIVE: new FakeKV() };
+    let refreshError = null;
+    try { await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW }); } catch (error) {
+      refreshError = String(error.message);
+    }
+    const payload = await buildTraditionalResults(query, env, { fetchImpl, nowUtcMs: NOW });
     return {
+      refresh_error: refreshError,
       counter,
       dates: payload.data.map((row) => row.draw_date),
       unresolved: payload.meta.unresolved_dates,
@@ -138,8 +144,8 @@ const scenarios = {
     };
   },
 
-  // Khách đổi khoảng ngày liên tục: mỗi khoảng là một khoá đệm mới, nhưng nguồn
-  // dự phòng chỉ được gọi MỘT lần trong khung khoá.
+  // Khách đổi khoảng ngày liên tục: mỗi khoảng là một khoá đệm mới, nhưng yêu cầu không
+  // bao giờ gọi nguồn dự phòng.
   async amplification() {
     const counter = { primary: 0, xskt: 0 };
     globalThis.fetch = makeFetch(counter);
@@ -148,7 +154,7 @@ const scenarios = {
     for (let i = 0; i < 20; i += 1) {
       const from = new Date(Date.UTC(2026, 5, 1 + i)).toISOString().slice(0, 10);
       const to = new Date(Date.UTC(2026, 5, 3 + i)).toISOString().slice(0, 10);
-      const ctx = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
+      const ctx = ctxOf();
       const res = await worker.fetch(new Request(
         `https://worker/api/v1/traditional-results?from=${from}&to=${to}`), env, ctx);
       await Promise.all(ctx.pending);
@@ -157,21 +163,62 @@ const scenarios = {
     return { counter, statuses: [...new Set(statuses)] };
   },
 
-  // Ghi khoá thất bại thì coi như đang khoá: không gọi nguồn dự phòng, nhưng vẫn trả lịch sử chuẩn
-  // thay vì làm hỏng cả yêu cầu.
-  async lock_kv_rate_limited() {
+  // Ngày 13-09 vẫn thiếu (trang chưa có): cron tải lại, nhưng cách nhau tối thiểu 10 phút.
+  async cron_refresh_is_spaced() {
     const counter = { primary: 0, xskt: 0 };
-    globalThis.fetch = makeFetch(counter);
-    const ctx = { pending: [], waitUntil(promise) { this.pending.push(promise); } };
-    const res = await worker.fetch(new Request("https://worker/api/v1/traditional-results"
-      + "?province=hanoi&from=2026-09-12&to=2026-09-13"), { LIVE: new LockRateLimitedKV() }, ctx);
-    await Promise.all(ctx.pending);
-    const body = await res.json();
+    const fetchImpl = makeFetch(counter, { page: pageWith("10-09-2026") });
+    const env = { LIVE: new FakeKV() };
+    const after = [];
+    for (const minutes of [0, 5, 9, 11, 15, 22]) {
+      await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + minutes * MINUTE });
+      after.push(counter.xskt);
+    }
+    return { xskt_after_each: after };
+  },
+
+  // Lịch sử chuẩn đủ mọi ngày trong cửa sổ trừ 11-09 (nghỉ quay) và 13-09. Trang có 10-09 và
+  // 13-09: 13-09 được bù, 11-09 nằm giữa hai ngày của trang mà trang không có → ghi "absent".
+  // Hết ngày thiếu thì cron không gọi nguồn nữa, kể cả khi đã quá 10 phút.
+  async days_the_source_never_had_are_remembered() {
+    const counter = { primary: 0, xskt: 0 };
+    const primary = [];
+    for (let d = Date.UTC(2025, 4, 2); d <= Date.UTC(2026, 8, 13); d += 86_400_000) {
+      const day = new Date(d).toISOString().slice(0, 10);
+      if (day !== "2026-09-11" && day !== "2026-09-13") {
+        primary.push({ ...primaryRow, date: `${day}T00:00:00.000` });
+      }
+    }
+    const fetchImpl = makeFetch(counter, { page: pageWith("10-09-2026", "13-09-2026"), primary });
+    const env = { LIVE: new FakeKV() };
+    const first = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW });
+    const second = await refreshFallbackOverlay(env, { fetchImpl, nowUtcMs: NOW + 30 * MINUTE });
+    const payload = await buildTraditionalResults(
+      { ...query, from: "2026-09-10", to: "2026-09-13" }, env, { fetchImpl, nowUtcMs: NOW });
     return {
-      status: res.status,
-      counter,
-      dates: (body.data || []).map((row) => row.draw_date),
-      unresolved: body.meta?.unresolved_dates ?? null,
+      first, second, xskt: counter.xskt,
+      dates: payload.data.map((row) => row.draw_date),
+      unresolved: payload.meta.unresolved_dates,
+    };
+  },
+
+  // Cron chỉ nạp lớp bù khi wrangler.toml bật TRADITIONAL_FALLBACK_REFRESH. Đếm đúng trang sổ
+  // cuộn 500 ngày: bộ thu thập trang live cũng gọi cùng host, nên đếm theo host là gộp hai việc.
+  async scheduled_refresh_needs_the_switch() {
+    const run = async (vars) => {
+      let ledgerFetches = 0;
+      const base = makeFetch({ primary: 0, xskt: 0 });
+      globalThis.fetch = async (url, init) => {
+        if (new URL(String(url)).pathname.startsWith("/xsmb-500-ngay")) ledgerFetches += 1;
+        return base(url, init);
+      };
+      const ctx = ctxOf();
+      await worker.scheduled({}, { LIVE: new FakeKV(), ...vars }, ctx);
+      await Promise.allSettled(ctx.pending);
+      return ledgerFetches;
+    };
+    return {
+      on: await run({ TRADITIONAL_FALLBACK_REFRESH: "on" }),
+      off: await run({}),
     };
   },
 
@@ -196,19 +243,15 @@ const scenarios = {
   // Không gửi danh tính nguồn ra trình duyệt, như anonymiseSnapshot của live.json.
   async anonymised() {
     const counter = { primary: 0, xskt: 0 };
-    const ok = await buildTraditionalResults(
-      query, { LIVE: new FakeKV() },
-      { fetchImpl: makeFetch(counter), nowUtcMs: Date.UTC(2026, 8, 13, 12) },
-    );
-    const failing = await buildTraditionalResults(
-      query, { LIVE: new FakeKV() },
-      {
-        fetchImpl: async (url) => (hostOf(url) === "raw.githubusercontent.com"
-          ? new Response(JSON.stringify([primaryRow]), { status: 200 })
-          : new Response("busy", { status: 503 })),
-        nowUtcMs: Date.UTC(2026, 8, 13, 12),
-      },
-    );
+    const okEnv = { LIVE: new FakeKV() };
+    await refreshFallbackOverlay(okEnv, { fetchImpl: makeFetch(counter), nowUtcMs: NOW });
+    const ok = await buildTraditionalResults(query, okEnv, { fetchImpl: makeFetch(counter), nowUtcMs: NOW });
+    const busy = async (url) => (hostOf(url) === "raw.githubusercontent.com"
+      ? new Response(JSON.stringify([primaryRow]), { status: 200 })
+      : new Response("busy", { status: 503 }));
+    const failingEnv = { LIVE: new FakeKV() };
+    try { await refreshFallbackOverlay(failingEnv, { fetchImpl: busy, nowUtcMs: NOW }); } catch { /* lỗi cron chỉ vào log */ }
+    const failing = await buildTraditionalResults(query, failingEnv, { fetchImpl: busy, nowUtcMs: NOW });
     const text = JSON.stringify([ok, failing]).toLowerCase();
     return { mentions_source: text.includes("xskt"), sources: ok.data.map((row) => row.source.kind) };
   },

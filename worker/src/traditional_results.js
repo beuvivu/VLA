@@ -2,12 +2,11 @@
 //
 // Luồng dữ liệu có thứ tự cứng:
 // 1. lịch sử chuẩn trong data/xsmb.json của VLA;
-// 2. lớp bù đã lưu trong KV;
-// 3. chỉ khi vẫn thiếu ngày mới gọi sổ cuộn xskt.vn đúng MỘT lần.
+// 2. lớp bù đã lưu trong KV, do CRON nạp từ sổ cuộn xskt.vn (refreshFallbackOverlay).
 //
-// Kết quả lấy từ xskt.vn được lưu vào KV ngay để các lượt xem sau không cào
-// lại. Quy trình Python hằng ngày dùng cùng nguồn XsktVnSource và sẽ đưa kỳ
-// hợp lệ vào data/xsmb.json sau bước đồng thuận/canonical validation.
+// Yêu cầu của khách KHÔNG BAO GIỜ gọi nguồn dự phòng; nó chỉ đọc lớp bù. Quy
+// trình Python hằng ngày dùng cùng nguồn XsktVnSource và sẽ đưa kỳ hợp lệ vào
+// data/xsmb.json sau bước đồng thuận/canonical validation.
 
 import {
   EXPECTED_COUNTS,
@@ -33,13 +32,13 @@ const MAX_RANGE_DAYS = 500;
 const FALLBACK_WINDOW_DAYS = 500;
 
 // CHẶN KHUẾCH ĐẠI ra nguồn ngoài. Khoá đệm phản hồi gồm cả from/to, nên mỗi khoảng
-// ngày mới là một lần trượt đệm. Không có khoá này, khách chỉ cần đổi khoảng ngày là
-// mỗi yêu cầu kéo một lượt tải trọn trang 500 ngày của nguồn dự phòng (đo ngày
-// 08-10-2026: 20 khoảng ngày khác nhau → 20 lượt tải). Hai lớp như đường live.json:
-// khoá KV dùng chung giữa các isolate, và mốc trong bộ nhớ khi chính KV hỏng.
-const FALLBACK_LOCK_KEY = "traditional:fallback-lock:v1";
-const FALLBACK_LOCK_SECONDS = 600;
-let lastFallbackAttemptMs = 0;
+// ngày mới là một lần trượt đệm. Trước 08-10-2026, khách chỉ cần đổi khoảng ngày là mỗi
+// yêu cầu kéo một lượt tải trọn trang 500 ngày (đo: 20 khoảng ngày → 20 lượt tải). Một
+// khoá KV sau đó chỉ chặn được trong từng isolate: KV nhất quán sau và không có đọc-ghi
+// nguyên tử. Nay chỉ cron gọi nguồn, nên lưu lượng khách không còn đường nào chạm tới nó,
+// và cron chạy tuần tự theo lịch nên một mốc thời gian là đủ giãn cách.
+const FALLBACK_REFRESH_KEY = "traditional:fallback-refreshed-at:v1";
+const FALLBACK_REFRESH_SECONDS = 600;
 
 const PRIZE_LABELS = {
   special: "Đặc Biệt",
@@ -242,70 +241,69 @@ export function parseXsktLedger(html) {
   return rows;
 }
 
-/**
- * Chặn gọi nguồn dự phòng dồn dập: tối đa một lượt mỗi FALLBACK_LOCK_SECONDS trong MỘT isolate
- * (mốc trong bộ nhớ), và khoá KV chặn thêm giữa các isolate khi nó đã lan tới. KV nhất quán SAU
- * và không có thao tác đọc-ghi nguyên tử, nên giữa các isolate đây là chặn "nỗ lực tốt nhất",
- * không phải đúng một lượt trên toàn mạng; muốn vậy phải có bộ điều phối nguyên tử (Durable Object).
- */
-async function acquireFallbackLock(kv, nowUtcMs) {
-  // Đặt mốc TRƯỚC khi gọi nguồn: các yêu cầu đến trong lúc lượt này đang chạy cũng bị chặn.
-  if (nowUtcMs - lastFallbackAttemptMs < FALLBACK_LOCK_SECONDS * 1000) return false;
-  lastFallbackAttemptMs = nowUtcMs;
-  if (!kv) return true;
-  try {
-    if (await kv.get(FALLBACK_LOCK_KEY)) return false;
-    await kv.put(FALLBACK_LOCK_KEY, "1", { expirationTtl: FALLBACK_LOCK_SECONDS });
-  } catch (error) {
-    // KV hỏng, hay từ chối ghi vì nhiều isolate cùng giành khoá (giới hạn một lần ghi mỗi giây
-    // trên một khoá): coi như đang khoá. Không gọi nguồn, nhưng yêu cầu vẫn trả lịch sử chuẩn.
-    console.error("khoá nguồn dự phòng không dùng được:", error?.message || error);
-    return false;
-  }
-  return true;
+/** Ngày đã giải quyết trong lớp bù: có đủ giải, hoặc nguồn xác nhận không có kỳ (nghỉ Tết). */
+function overlayResolved(entry) {
+  return Boolean(entry?.absent) || completePrizeMap(entry?.prizes);
 }
 
-async function loadXsktOverlay(env, fetchImpl, missingDates, nowUtcMs) {
-  const kv = cacheStore(env);
-  const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
-  let unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
-  let fetched = false;
-  let warning = null;
-  const windowStart = isoDate(addDays(latestEligibleDate(nowUtcMs), -(FALLBACK_WINDOW_DAYS - 1)));
-  const fetchable = unresolved.filter((day) => day >= windowStart);
+/** Lượt yêu cầu: CHỈ đọc lớp bù đã lưu, không gọi mạng. */
+async function readOverlay(env, missingDates) {
+  const overlay = (await readJson(cacheStore(env), OVERLAY_KEY)) || {};
+  const unresolved = missingDates.filter((day) => !overlayResolved(overlay[day]));
+  return {
+    overlay,
+    unresolved,
+    warning: unresolved.length
+      ? "Một số ngày chưa có trong lịch sử chuẩn; lượt cập nhật theo lịch sẽ bù."
+      : null,
+  };
+}
 
-  if (fetchable.length > 0 && !(await acquireFallbackLock(kv, nowUtcMs))) {
-    warning = "Nguồn dự phòng vừa được gọi; ngày còn thiếu sẽ được bù ở lượt sau.";
-  } else if (fetchable.length > 0) {
-    const xsktUrl = env?.XSKT_HISTORY_URL || DEFAULT_XSKT_URL;
-    try {
-      const responseFromSource = await fetchImpl(xsktUrl, {
-        headers: {
-          "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "vi-VN,vi;q=0.9",
-          "User-Agent": "VLA-traditional-results/1.0 (+https://github.com/beuvivu/VLA)",
-        },
-        signal: AbortSignal.timeout(12_000),
-      });
-      if (!responseFromSource.ok) {
-        warning = `Nguồn dự phòng trả HTTP ${responseFromSource.status}`;
-      } else {
-        fetched = true;
-        const parsed = parseXsktLedger(await responseFromSource.text());
-        const fetchedAt = new Date().toISOString();
-        for (const day of unresolved) {
-          if (completePrizeMap(parsed[day])) {
-            overlay[day] = { prizes: parsed[day], fetched_at_utc: fetchedAt };
-          }
-        }
-        if (kv) await kv.put(OVERLAY_KEY, JSON.stringify(overlay), { expirationTtl: 2_592_000 });
-      }
-    } catch (error) {
-      warning = `Không đọc được nguồn dự phòng: ${String(error?.message || error)}`;
+/**
+ * Lượt CRON: nạp lớp bù cho các ngày trong cửa sổ FALLBACK_WINDOW_DAYS mà lịch sử chuẩn còn
+ * thiếu. Không thiếu gì thì không gọi mạng; lần tải trước chưa quá FALLBACK_REFRESH_SECONDS thì
+ * cũng không. Ngày nằm GIỮA ngày cũ nhất và mới nhất của trang mà trang không có được ghi
+ * `absent` (XSMB nghỉ quay dịp Tết): không ghi thì lượt cron nào cũng thấy "thiếu" và tải lại vô
+ * ích. Ngày ngoài phạm vi trang (mới hơn ngày mới nhất) để lượt sau thử lại.
+ */
+export async function refreshFallbackOverlay(env, { fetchImpl = fetch, nowUtcMs = Date.now() } = {}) {
+  const kv = cacheStore(env);
+  if (!kv) return { fetched: false, missing: 0 };
+  const primary = await loadPrimary(env, fetchImpl);
+  const overlay = (await readJson(kv, OVERLAY_KEY)) || {};
+  const latest = latestEligibleDate(nowUtcMs);
+  const missing = dateRange(isoDate(addDays(latest, -(FALLBACK_WINDOW_DAYS - 1))), isoDate(latest))
+    .filter((day) => !completePrizeMap(primary.rows[day]) && !overlayResolved(overlay[day]));
+  if (missing.length === 0) return { fetched: false, missing: 0 };
+  const last = Number(await kv.get(FALLBACK_REFRESH_KEY)) || 0;
+  if (nowUtcMs - last < FALLBACK_REFRESH_SECONDS * 1000) return { fetched: false, missing: missing.length };
+  await kv.put(FALLBACK_REFRESH_KEY, String(nowUtcMs), { expirationTtl: 86_400 });
+
+  const responseFromSource = await fetchImpl(env?.XSKT_HISTORY_URL || DEFAULT_XSKT_URL, {
+    headers: {
+      "Accept": "text/html,application/xhtml+xml",
+      "Accept-Language": "vi-VN,vi;q=0.9",
+      "User-Agent": "VLA-traditional-results/1.0 (+https://github.com/beuvivu/VLA)",
+    },
+    signal: AbortSignal.timeout(12_000),
+  });
+  if (!responseFromSource.ok) throw new Error(`nguồn dự phòng trả HTTP ${responseFromSource.status}`);
+  const parsed = parseXsktLedger(await responseFromSource.text());
+  const pageDays = Object.keys(parsed).sort();
+  const stamp = new Date(nowUtcMs).toISOString();
+  let filled = 0;
+  let absent = 0;
+  for (const day of missing) {
+    if (completePrizeMap(parsed[day])) {
+      overlay[day] = { prizes: parsed[day], fetched_at_utc: stamp };
+      filled += 1;
+    } else if (pageDays.length && day > pageDays[0] && day < pageDays.at(-1)) {
+      overlay[day] = { absent: true, checked_at_utc: stamp };
+      absent += 1;
     }
-    unresolved = missingDates.filter((day) => !completePrizeMap(overlay[day]?.prizes));
   }
-  return { overlay, unresolved, fetched, warning };
+  await kv.put(OVERLAY_KEY, JSON.stringify(overlay), { expirationTtl: 2_592_000 });
+  return { fetched: true, missing: missing.length, filled, absent };
 }
 
 function dateRange(from, to) {
@@ -366,8 +364,8 @@ export async function buildTraditionalResults(
   const requestedDates = dateRange(query.from, query.to);
   const missing = requestedDates.filter((day) => !completePrizeMap(primary.rows[day]));
   const fallback = missing.length
-    ? await loadXsktOverlay(env, fetchImpl, missing, nowUtcMs)
-    : { overlay: {}, unresolved: [], fetched: false, warning: null };
+    ? await readOverlay(env, missing)
+    : { overlay: {}, unresolved: [], warning: null };
 
   const data = [];
   for (const day of requestedDates) {
@@ -394,7 +392,8 @@ export async function buildTraditionalResults(
       source_counts: counts,
       sources_used: Object.entries(counts).filter(([, n]) => n > 0).map(([name]) => name),
       fallback_requested: missing.length > 0,
-      fallback_network_fetch: fallback.fetched,
+      // Giữ trường cho bên gọi cũ: từ 08-10-2026 yêu cầu không bao giờ gọi nguồn dự phòng.
+      fallback_network_fetch: false,
       unresolved_dates: fallback.unresolved,
       primary_cache: primary.cache,
       warning: [primary.warning, fallback.warning].filter(Boolean).join("; ") || null,

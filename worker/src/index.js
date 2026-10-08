@@ -16,7 +16,7 @@
 // live nữa.
 
 import { anonymiseSnapshot, collectSnapshot, drawDate } from "./snapshot.js";
-import { handleTraditionalResults } from "./traditional_results.js";
+import { handleTraditionalResults, refreshFallbackOverlay } from "./traditional_results.js";
 
 const KV_KEY = "live.json";
 const LOCK_KEY = "collect-lock";
@@ -154,6 +154,13 @@ export default {
     ctx.waitUntil(refresh(env).catch((error) => {
       console.error("lượt thu thập theo lịch hỏng:", error?.message || error);
     }));
+    // Lớp bù của API Sổ kết quả chỉ được nạp ở ĐÂY, không bao giờ trong lượt yêu cầu: lưu
+    // lượng khách vì thế không chạm được tới nguồn dự phòng. Bật bằng biến trong wrangler.toml.
+    if (env?.TRADITIONAL_FALLBACK_REFRESH === "on") {
+      ctx.waitUntil(refreshFallbackOverlay(env).catch((error) => {
+        console.error("lượt bù lịch sử theo lịch hỏng:", error?.message || error);
+      }));
+    }
   },
 
   async fetch(request, env, ctx) {
