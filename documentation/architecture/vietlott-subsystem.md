@@ -453,6 +453,10 @@ CREATE TABLE hypothesis (
 ### 4.5 Mô hình, dự báo, chấm điểm
 
 ```sql
+-- Nội dung một phiên bản (họ, mã nguồn, cấu hình, giờ tạo) nằm trong hash của MỌI lần phát dùng
+-- nó (view row_digest). Sửa dòng này sau khi đã phát thì biên nhận của các lần phát ấy không còn
+-- phủ hash tính lại, nên chúng rơi khỏi bằng chứng thay vì được gán cho mã khác. Phiên bản mới
+-- là model_id mới.
 CREATE TABLE model_version (
     model_id        VARCHAR PRIMARY KEY,          -- ví dụ vlm-ml/gru@3, deep/lstm@1
     family          VARCHAR NOT NULL,             -- fair, logistic, gru, tree, lstm, transformer, mixture
@@ -574,9 +578,13 @@ CREATE TABLE forecast_score (
 -- phát hiện. Khi đối chiếu xong và kỳ chuyển sang 'validated', view tự tính dòng ấy, và
 -- evidence_state (cũng là view) tự tính lại từ kỳ đó trở đi. evidence_state chỉ đọc live_eligible.
 -- Điểm của TỪNG vé/ứng viên trong top_n (bộ dự báo hiện phát 5 vé mỗi kỳ). forecast_score
--- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây.
+-- giữ điểm của cả LUẬT xác suất (log-loss); số trùng, precision, hit rate tính trên đây, qua
+-- view valid_candidate_score. Dòng thuộc một lượt chấm (cùng bản kê có attestation với
+-- forecast_score) và mang hash kết quả đã dùng: đính chính kỳ thì số trùng cũ tự rơi ra.
 CREATE TABLE candidate_score (
     forecast_id     VARCHAR NOT NULL REFERENCES forecast_issue(forecast_id),  -- cả dòng legacy
+    run_id          VARCHAR NOT NULL REFERENCES scoring_run(run_id),
+    outcome_sha256  VARCHAR NOT NULL,             -- hash kết quả kỳ đã dùng (cùng biểu thức như valid_score)
     rank            SMALLINT NOT NULL CHECK (rank >= 1),   -- thứ hạng trong top_n lúc phát
     candidate       JSON    NOT NULL,             -- bộ số / số chữ số đúng như đã công bố
     p_model         DOUBLE,                       -- NULL ở dòng legacy (sổ cũ không lưu)
@@ -584,7 +592,7 @@ CREATE TABLE candidate_score (
     hits            DOUBLE  NOT NULL,             -- số trùng của vé này
     expected_hits   DOUBLE  NOT NULL,             -- kỳ vọng ngẫu nhiên (Mega: 6·6/45 = 0,8)
     prize_tier      VARCHAR,                      -- hạng giải trúng, NULL nếu không trúng
-    PRIMARY KEY (forecast_id, rank)
+    PRIMARY KEY (forecast_id, rank, run_id)
 );
 
 -- BIÊN NHẬN bên ngoài cho thứ cần chứng minh "đã có trước": dự báo, giả thuyết.
@@ -662,13 +670,20 @@ SELECT 'gate_allocation', game || '/' || model_id,
                                   registered_at_us := epoch_us(registered_at)))::VARCHAR)
 FROM gate_allocation
 UNION ALL
-SELECT 'forecast', forecast_id,
-       sha256(to_json(struct_pack(forecast_id := forecast_id, legacy := legacy, game := game,
-                                  model_id := model_id, target_draw_id := target_draw_id,
-                                  target_draw_ts_us := epoch_us(target_draw_ts),
-                                  based_on_draw_id := based_on_draw_id, history_sha256 := history_sha256,
-                                  issued_at_us := epoch_us(issued_at), law := law, top_n := top_n))::VARCHAR)
-FROM forecast_issue;
+-- Lần phát phủ cả NỘI DUNG phiên bản mô hình (mã nguồn, cấu hình): sửa một dòng model_version
+-- sau khi đã phát làm hash của mọi lần phát dùng nó đổi theo, nên chúng rơi khỏi bằng chứng
+-- thay vì âm thầm được gán cho mã khác.
+SELECT 'forecast', fi.forecast_id,
+       sha256(to_json(struct_pack(forecast_id := fi.forecast_id, legacy := fi.legacy, game := fi.game,
+                                  model_id := fi.model_id, target_draw_id := fi.target_draw_id,
+                                  target_draw_ts_us := epoch_us(fi.target_draw_ts),
+                                  based_on_draw_id := fi.based_on_draw_id, history_sha256 := fi.history_sha256,
+                                  issued_at_us := epoch_us(fi.issued_at), law := fi.law, top_n := fi.top_n,
+                                  model_family := mv.family, model_code_sha := mv.code_sha,
+                                  model_config := mv.config,
+                                  model_created_us := epoch_us(mv.created_at)))::VARCHAR)
+FROM forecast_issue fi
+JOIN model_version mv ON mv.model_id = fi.model_id;
 
 -- Dòng có biên nhận đã kiểm phủ ĐÚNG hash tính lại của nó. Mọi phép xét "đã có trước" đọc view
 -- này, không đọc thẳng bảng receipt.
@@ -710,7 +725,14 @@ JOIN (SELECT run_id, sha256(string_agg(row_sha256, chr(10) ORDER BY row_sha256))
                                               forecast_sha256 := forecast_sha256,
                                               outcome_sha256 := outcome_sha256, log_loss := log_loss,
                                               log_loss_fair := log_loss_fair, brier := brier))::VARCHAR) AS row_sha256
-            FROM forecast_score)
+            FROM forecast_score
+            UNION ALL
+            SELECT run_id,
+                   sha256(to_json(struct_pack(forecast_id := forecast_id, rank := rank, candidate := candidate,
+                                              p_model := p_model, p_fair := p_fair, hits := hits,
+                                              expected_hits := expected_hits, prize_tier := prize_tier,
+                                              outcome_sha256 := outcome_sha256))::VARCHAR)
+            FROM candidate_score)
       GROUP BY run_id) m ON m.run_id = a.run_id
 WHERE a.kind = 'score' AND a.attested_sha256 = m.sha;
 
@@ -844,6 +866,19 @@ JOIN row_digest fd ON fd.kind = 'forecast' AND fd.subject_id = s.forecast_id
                   AND fd.content_sha256 = s.forecast_sha256
 JOIN draw d ON d.game = s.game AND d.draw_id = s.draw_id
 WHERE s.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR);
+
+-- Số trùng của từng vé chỉ đọc qua đây: lượt chấm đã xác minh và đúng kết quả hiện tại của kỳ
+-- đích. Nhiều lượt hợp lệ thì lấy số trùng NHỎ nhất (không thể chấm lại cho đẹp hơn).
+CREATE VIEW valid_candidate_score AS
+SELECT c.forecast_id, c.rank, any_value(c.candidate) AS candidate, min(c.hits) AS hits,
+       any_value(c.expected_hits) AS expected_hits, any_value(c.p_fair) AS p_fair,
+       min(c.p_model) AS p_model, count(*) AS runs
+FROM candidate_score c
+JOIN verified_score_run v ON v.run_id = c.run_id
+JOIN forecast_issue fi ON fi.forecast_id = c.forecast_id
+JOIN draw d ON d.game = fi.game AND d.draw_id = fi.target_draw_id
+WHERE c.outcome_sha256 = sha256(to_json(struct_pack(numbers := d.numbers, bonus := d.bonus))::VARCHAR)
+GROUP BY c.forecast_id, c.rank;
 
 -- Biên của các dòng hợp lệ cho mỗi lần phát. "Kém thuận lợi nhất" phụ thuộc VAI trong phép so:
 -- với chính mô hình là loss LỚN nhất; với đối thủ hay tiền nhiệm là loss NHỎ nhất (đối thủ tốt
@@ -1107,29 +1142,35 @@ FROM gate_status g;
 -- e-detector rollback (mục M5), khởi động lại ở MỖI kỳ hiệu lực production, kết thúc ở lần
 -- đổi kế tiếp của mô hình ấy hoặc khi mô hình khác lên production. Hai tham chiếu:
 --   'fair'        yₜ = log10(p_công_bằng / p_production);
---   'predecessor' yₜ = log10(p_tiền_nhiệm / p_production), trên các kỳ mà production LẪN mô
+--   'predecessor' yₜ = log10(p_tiền_nhiệm / p_production) ở biên kém thuận lợi cho production
+--                 (loss lớn nhất của production, nhỏ nhất của tiền nhiệm), trên các kỳ mà production LẪN mô
 --                 hình production trước đó (đang ở shadow) đều có dự báo live_eligible. Bắt
 --                 bản mới vẫn hơn luật công bằng nhưng kém bản nó thay. Tiền nhiệm là 'fair'
 --                 thì tham chiếu này trùng tham chiếu đầu và được bỏ.
 -- Với Yₜ = Σ yₜ, đệ quy Lₜ = max(Lₜ₋₁, 0) + yₜ có dạng đóng Lₜ = Yₜ − min(0, Y₁, …, Yₜ₋₁).
 -- Báo động khi Lₜ ≥ log10(c) = 3 (c = 1 000 kỳ).
 CREATE VIEW rollback_detector AS
+-- Chu kỳ dựng từ lịch sử ĐÃ DUYỆT (production_effective): một dòng bị bác không cắt ngang việc
+-- giám sát mô hình đang thật sự được công bố. Chu kỳ kết thúc khi một dòng đã duyệt khác lên
+-- production, hoặc khi chính mô hình này đổi giai đoạn.
 WITH period AS (
     SELECT p.game, p.model_id, p.effective_from_draw_id AS from_id,
-           (SELECT min(n.effective_from_draw_id) FROM deployment_effective n
-             WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id
-               AND (n.model_id = p.model_id OR n.stage = 'production')) AS to_id,
-           (SELECT q.model_id FROM deployment_effective q
-             WHERE q.game = p.game AND q.stage = 'production'
-               AND q.effective_from_draw_id < p.effective_from_draw_id
+           least((SELECT min(n.effective_from_draw_id) FROM production_effective n
+                   WHERE n.game = p.game AND n.effective_from_draw_id > p.effective_from_draw_id),
+                 (SELECT min(m.effective_from_draw_id) FROM deployment_effective m
+                   WHERE m.game = p.game AND m.model_id = p.model_id
+                     AND m.effective_from_draw_id > p.effective_from_draw_id)) AS to_id,
+           (SELECT q.model_id FROM production_effective q
+             WHERE q.game = p.game AND q.effective_from_draw_id < p.effective_from_draw_id
              ORDER BY q.effective_from_draw_id DESC, q.decided_at DESC LIMIT 1) AS predecessor_id
-    FROM deployment_effective p
-    WHERE p.stage = 'production' AND p.model_id <> 'fair'
+    FROM production_effective p
+    WHERE p.model_id <> 'fair'
 ), own AS (
-    SELECT pr.*, l.draw_id, l.log_loss, l.log_loss_fair
+    SELECT pr.*, l.draw_id, l.log_loss, l.log_loss_fair, bo.log_loss_hi
     FROM period pr
     JOIN forecast_issue i ON i.game = pr.game AND i.model_id = pr.model_id
     JOIN live_score l ON l.forecast_id = i.forecast_id AND l.live_eligible
+    JOIN score_bounds bo ON bo.forecast_id = l.forecast_id
     WHERE l.draw_id >= pr.from_id AND (pr.to_id IS NULL OR l.draw_id < pr.to_id)
 ), y AS (
     SELECT game, model_id, from_id, 'fair' AS reference, draw_id,
@@ -1137,7 +1178,7 @@ WITH period AS (
     FROM own
     UNION ALL
     SELECT o.game, o.model_id, o.from_id, 'predecessor', o.draw_id,
-           (o.log_loss - bp.log_loss_lo) / ln(10)          -- tiền nhiệm ở mức tốt nhất của nó
+           (o.log_loss_hi - bp.log_loss_lo) / ln(10)       -- production ở mức kém nhất, tiền nhiệm ở mức tốt nhất
     FROM own o
     JOIN forecast_issue ip ON ip.game = o.game AND ip.model_id = o.predecessor_id
                           AND ip.target_draw_id = o.draw_id
@@ -1199,7 +1240,7 @@ CREATE TABLE backtest_metric (
 | `data/results/results.jsonl` | Giữ nguyên làm nguồn sự thật cho kỳ gần đây | `provenance_kind = 'journal'` |
 | `data/seed/*.jsonl(.gz)`, `data/products` | Nạp vào `draw` | `provenance_kind = 'seed'` / `'product_store'`, kèm đường dẫn và hash của đúng dòng |
 | `data/forecast/ml-ledger.jsonl` (22 dòng) | `forecast_issue` + `forecast_score` + `candidate_score` | Có đủ `laws` và `history_sha256` trong `pending`, nên nạp đầy đủ và chấm được log-loss (trong một `scoring_run` riêng). Không có biên nhận đã kiểm, nên vẫn không vào bằng chứng live |
-| `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng, không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
+| `data/forecast/ledger.jsonl` (33 dòng) | `forecast_issue` (`legacy = TRUE`) + `candidate_score` | Sổ cơ bản chỉ lưu `picks`, `top` và `digest` ngắn, KHÔNG có luật đầy đủ hay `history_sha256`. Phát lại trên lịch sử hôm nay không khôi phục được phân phối đã công bố, nên không bịa: chỉ nạp vé và số trùng (trong một `scoring_run` riêng, kèm hash kết quả của kỳ), không có log-loss, không vào bằng chứng. Sổ cũ giữ nguyên |
 | `data/forecast/<sản phẩm>.json` | Checkpoint | Checkpoint vẫn là JSON gzip. Wealth trong tệp KHÔNG được nạp: `evidence_state` là view, tính lại từ `live_score` |
 | Cửa sổ quay trong `vlm.updates.schedule` (mã nguồn) | `game_schedule` | Lịch chép thành một phiên bản và xin biên nhận TRƯỚC kỳ đầu áp dụng. Kỳ đã quay trước giờ biên nhận ấy có mốc đầu ngày, tức dự báo trong ngày quay của chúng không vào bằng chứng; lịch không được áp ngược |
 
@@ -1391,6 +1432,11 @@ số "Hit Rate 15%" không nói được gì.
 
 Với vé đủ k số trên tổng k số được quay, precision và recall bằng nhau. Hai chỉ số chỉ
 khác nhau khi số lượng chọn khác số lượng quay, như Keno bậc 1–10 hay top-N chữ số Max 3D.
+
+Bốn chỉ số đầu đọc số trùng qua view `valid_candidate_score`, không đọc thẳng bảng
+`candidate_score`: chỉ dòng của lượt chấm đã xác minh và chấm trên kết quả HIỆN TẠI của kỳ mới
+được tính. Kỳ bị đính chính thì số trùng cũ rơi ra cùng lúc với điểm log-loss của nó, cho tới
+khi lượt chấm lại ghi dòng mới.
 
 Backtest đi theo `WalkForwardBacktester`:
 - walk-forward, không nhìn trước;
