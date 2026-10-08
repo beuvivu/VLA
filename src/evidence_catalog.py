@@ -141,7 +141,8 @@ def _du_bao(f: dict[str, str]) -> Source:
         "title": "Dự báo đã công bố trước kỳ quay",
         "snippet": (
             f"Vector xác suất 100 số{target}: tổ hợp các thành phần ML, cầu, thống kê và hai "
-            "nhánh đường đi, rồi hiệu chỉnh."
+            "nhánh đường đi, chốt mức (LOTO: tổng bằng số con khác nhau kỳ vọng mỗi kỳ; "
+            "Đặc Biệt: tổng bằng 1), rồi hiệu chỉnh."
         ),
         "url": "dashboard.html",
     }
@@ -182,6 +183,16 @@ def _trong_so(f: dict[str, str]) -> Source:
         "url": "dashboard.html",
     }
 
+
+_LICH: Source = {
+    "title": "Bộ tính lịch âm dương Việt Nam",
+    "snippet": (
+        "Chạy trong trình duyệt theo giờ Việt Nam (UTC+7), từ năm 1900 đến 2099. Mỗi đại lượng có công "
+        "thức riêng: ngày âm theo điểm sóc (Meeus, chương 49); tháng nhuận là tháng không chứa trung khí, "
+        "tính theo kinh độ Mặt Trời; tiết khí cũng theo kinh độ Mặt Trời; can chi ngày theo số ngày "
+        "Julius, can chi tháng và năm theo tháng và năm âm; giờ hoàng đạo theo địa chi của ngày."
+    ),
+}
 
 _MO_PHONG_RUI_RO: Source = {
     "title": "Mô phỏng kỳ kế tiếp",
@@ -236,6 +247,12 @@ _GHI_CHU_DU_BAO = (
     "Kỳ quay đã kiểm là ngẫu nhiên: kỹ năng ngoài mẫu đo được nằm quanh 0, nên xác suất "
     "này không cao hơn đáng kể mức nền."
 )
+#: Điểm cầu-kèo là thứ hạng, không phải xác suất; xác suất thô của mô hình cầu-kèo
+#: đo walk-forward 1 000 kỳ còn kém dự báo hằng số (CLAUDE.md, "Độ tin thành phần ML").
+_GHI_CHU_CAU_KEO = (
+    "Kỳ quay đã kiểm là ngẫu nhiên: chưa có phép đo nào cho thấy số xếp đầu bảng Cầu Kèo "
+    "về nhiều hơn số chọn bừa."
+)
 
 
 def _ev(sources: list[Source], steps: list[str], confidence: float | None = None) -> Evidence:
@@ -256,6 +273,16 @@ def _sec_heading(heading: str, title: str, ev: Evidence) -> Section:
 # --- Theo nhóm trang ------------------------------------------------------
 
 
+def ml_summary_evidence(mode: str) -> Section:
+    """Cùng diễn giải cho cả khối tóm tắt và mức tin hiển thị thành khoảng."""
+    return _sec(".app-lab-summary", "Tóm tắt bản dự báo ML", _ev([_ml(mode)], [
+        "Ngày đích và số ứng viên được đọc từ đúng danh sách dự báo đang hiển thị.",
+        "Mức tin thành phần ML là trọng số đã lưu, dùng để co xác suất thô về nền; không phải xác suất trúng.",
+        "Nếu các dòng có mức tin khác nhau, hiển thị khoảng nhỏ nhất–lớn nhất. Thiếu hoặc sai mức tin ở bất kỳ dòng nào thì hiển thị dấu gạch ngang.",
+        "Khi mức tin bằng 0, xác suất công bố bằng nền. Thứ hạng phá hòa không chứng minh lợi thế dự báo.",
+    ]))
+
+
 def _thong_ke(f: dict[str, str], *extra: str) -> Evidence:
     return _ev(
         [_ket_qua(f), _LOTO, _DAC_BIET],
@@ -265,6 +292,47 @@ def _thong_ke(f: dict[str, str], *extra: str) -> Evidence:
             "Trình duyệt tính lại theo bộ lọc đang chọn trên trang; đổi bộ lọc thì con số đổi theo.",
         ],
     )
+
+
+def _overview(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
+    """Trang gộp nháy theo bộ lọc với chu kỳ Đặc Biệt trên toàn lịch sử."""
+    filtered = _ev([_ket_qua({}), _LOTO], [
+        "Giữ các kỳ phù hợp với bộ lọc ngày và thứ đang chọn.",
+        "Cộng đủ mọi nháy của từng số LOTO; một số về nhiều lần trong một kỳ được cộng từng lần.",
+        "Phân bố đầu, đuôi và tổng gom chính các nháy ấy; tổng là (đầu + đuôi) chia lấy dư 10.",
+        "Tỉ lệ lấy số nháy trong nhóm chia cho tổng nháy của dải, rồi nhân 100%.",
+    ])
+    expected = _ev([_ket_qua({}), _LOTO], [
+        "Dùng số kỳ thực tế phù hợp với bộ lọc ngày và thứ.",
+        "Kỳ vọng số nháy của mỗi số là 27/100 × số kỳ: mỗi kỳ có 27 kết quả trong 100 số 00–99.",
+        "Cột «So kỳ vọng» lấy tổng nháy của số ấy trong dải chia cho mốc này.",
+    ])
+    global_steps = [
+        "Đọc hai số cuối giải Đặc Biệt trên toàn bộ lịch sử, đến kỳ mới nhất đã có kết quả.",
+        "Bộ lọc ngày và thứ của trang không áp dụng cho gan và chu kỳ Đặc Biệt.",
+    ]
+    gan = _ev([_ket_qua(f), _DAC_BIET], [
+        *global_steps,
+        "Gan là số kỳ kể sau lần xuất hiện gần nhất; số về ở kỳ mới nhất có gan 0. "
+        "Nếu chưa từng xuất hiện, gan bằng số kỳ trong toàn lịch sử.",
+    ])
+    cycle = _ev([_ket_qua(f), _DAC_BIET], [
+        *global_steps,
+        "Chu kỳ dài nhất là khoảng cách lớn nhất theo kỳ giữa hai lần xuất hiện liên tiếp đã ghi nhận; "
+        "chưa đủ hai lần thì hiển thị dấu gạch.",
+    ])
+    page = _ev([_ket_qua(f), _LOTO, _DAC_BIET], [
+        "Tần suất, phân bố và kỳ vọng LOTO dùng các kỳ phù hợp với bộ lọc ngày và thứ.",
+        "Gan và chu kỳ Đặc Biệt dùng toàn bộ lịch sử, đến kỳ mới nhất đã có kết quả; bộ lọc không áp dụng.",
+    ])
+    return page, [
+        _sec("#sp-overview-matrix, #sp-overview-head, #sp-overview-tail, #sp-overview-sum, #sp-grid, "
+             "#sp-kpi .sp-kpi-card:nth-child(-n+3)", "Tần suất và phân bố LOTO theo dải", filtered),
+        _sec("#sp-overview-expected, #sp-grid tbody td:nth-child(4)", "Kỳ vọng số nháy LOTO", expected),
+        _sec("#sp-grid tbody td:nth-child(5), #sp-kpi .sp-kpi-card:nth-child(4)",
+             "Gan Đặc Biệt trên toàn lịch sử", gan),
+        _sec("#sp-grid tbody td:nth-child(6)", "Chu kỳ Đặc Biệt trên toàn lịch sử", cycle),
+    ]
 
 
 def _cau(f: dict[str, str], *extra: str) -> Evidence:
@@ -327,6 +395,19 @@ def _trang_chu(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     sections = [
         _sec("#live", "Kết quả trực tiếp", _ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Khi phiên kết thúc, kết quả được lưu vào sổ."])),
         _sec("#ket-qua", "Bảng kết quả", _ev([_ket_qua(f), _LOTO], ["Lấy kỳ quay đã lưu theo ngày đang chọn.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."])),
+        # Lịch: ngày tháng do bộ tính lịch sinh ra; chỉ giải Đặc Biệt lấy từ sổ kết quả.
+        _sec("#app-calendar", "Lịch vạn niên", _ev([_LICH], [
+            "Ngày dương, ngày âm (kể cả tháng nhuận), can chi, tiết khí và giờ hoàng đạo do bộ tính lịch sinh ra trong trình duyệt — không đọc từ sổ kết quả.",
+            "Ngày âm dựa trên điểm sóc; tháng nhuận và tiết khí dựa trên kinh độ Mặt Trời; can chi và giờ hoàng đạo là phép đếm chu kỳ 10 can, 12 chi từ số ngày và tháng, năm âm.",
+            "Năm hiển thị giới hạn 1900–2099, tức phạm vi của bộ tính lịch.",
+        ])),
+        _sec("#app-calendar .app-calendar-result, #app-calendar .app-calendar-special", "Đặc Biệt theo ngày", _ev([_ket_qua(f), _DAC_BIET], [
+            "Giải Đặc Biệt đã quay của đúng ngày ấy, lấy nguyên từ sổ kết quả đã lưu; chỉ nhận ngày hợp lệ và giải đủ 5 chữ số.",
+            "«Hai số cuối» là 2 chữ số cuối của giải; ngày chưa có trong sổ thì không có số.",
+        ])),
+        _sec("#app-calendar-summary", "Số ngày có kết quả", _ev([_ket_qua(f), _LICH], [
+            "Đếm số ngày thuộc tháng đang xem có giải Đặc Biệt trong sổ kết quả.",
+        ])),
         _sec("#ma-tran-ngay, #db-tuan-thang", "Bảng theo ngày", _thong_ke(f, "Xếp kết quả đã lưu theo ngày, tuần và tháng.")),
         _sec("#ai-ml", "Điểm cầu-kèo ngày mai", _cau_keo_ev(f, "Số trên mỗi thanh là điểm của số ấy; thanh dài hơn chỉ nghĩa là xếp trên trong kỳ này.")),
         # Nhãn mọi biểu đồ thanh trên trang (cầu-kèo, gan, cặp lộn…): định danh.
@@ -371,12 +452,14 @@ def _cau_keo_cot(f: dict[str, str]) -> list[Section]:
     """Các cột của bảng cầu-kèo không phải điểm tổng hợp: mỗi cột một phép tính."""
     raw = _ev([_CAU_KEO, _ket_qua(f)], [
         "Cột «Bằng chứng» in các tín hiệu THÔ của số ấy, trước khi chuẩn hoá min–max để tính điểm.",
-        "ML = xác suất của mô hình cầu-kèo; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
+        "ML = xác suất THÔ của mô hình cầu-kèo, trước khi co về nền; cầu = số lần số ấy được ghép từ một cặp vị trí chữ số trên bảng kết quả, cộng qua 30 kỳ gần nhất (đếm thô, không phải điểm).",
         "Đặc Biệt→x = (số lần về + 1) / (số lần thử + 10) của số ấy ở kỳ ngay sau những kỳ có hai số cuối Đặc Biệt như kỳ này; loto→x = tỉ lệ cao nhất của số ấy về ở kỳ ngay sau một con LOTO của kỳ này.",
         "gap = số kỳ kể từ lần về gần nhất; f30 = số lần về trong 30 kỳ gần nhất.",
     ])
     prob = _ev([_CAU_KEO, _ket_qua(f)], [
         "Xác suất về ở kỳ kế tiếp của riêng mô hình cầu-kèo (cây tăng cường hiệu chỉnh Platt), chỉ dùng các kỳ trước.",
+        "Co về nền theo kỹ năng: p = trust·thô + (1 − trust)·nền, trust = clip(20·s, 0, 1), s là kỹ năng (kém hơn trong logloss/Brier) của mô hình so với tỉ lệ nền trên khối thẩm định chưa dùng để học. Không có kỹ năng thì trust = 0 và mọi số nhận đúng tỉ lệ nền.",
+        "Điểm cầu-kèo và cột «Bằng chứng» vẫn đọc xác suất THÔ, nên thứ hạng không đổi khi trust = 0.",
         "Đặc Biệt chuẩn hoá để 100 số cộng lại 100%; LOTO giữ nguyên.",
         "Đây không phải xác suất tổ hợp đã công bố ở trang Bảng điều khiển.",
     ])
@@ -415,6 +498,55 @@ def _thong_ke_tong(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     return page, sections
 
 
+def _vung(region: str) -> tuple[Evidence, list[Section]]:
+    """Trang kết quả theo tỉnh của một miền — dữ liệu vùng, tách khỏi sổ XSMB."""
+    return _ev([{
+        "title": f"Sổ kết quả {region} đã lưu",
+        "snippet": "Kết quả theo tỉnh/thành mỗi ngày quay, từ giải tám tới Đặc Biệt; lưu riêng, "
+                   "không dùng trong dự báo XSMB.",
+    }], [
+        "Đọc sổ kết quả vùng đã lưu, nhóm theo ngày quay rồi theo tỉnh/thành.",
+        "Hiển thị nguyên số đã công bố; bộ lọc ngày và tỉnh chỉ ẩn/hiện, không tính lại.",
+    ]), []
+
+
+def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tuple[Evidence, list[Section]]:
+    """Trang kết quả Vietlott — cơ sở dữ liệu riêng, tách khỏi sổ XSMB."""
+    evidence = _ev([{
+        "title": "Sổ kết quả Vietlott đã xác thực",
+        "snippet": "Kết quả bảy sản phẩm đang phát hành, đối chiếu giữa các nguồn theo đúng mã kỳ và "
+                   "ngày; bảng giải đúng mã kỳ, giá trị chưa công bố để trống. Không dùng trong dự báo XSMB.",
+    }, {
+        "title": "Bộ dự báo tự học Vietlott",
+        "snippet": "Dự báo ghi TRƯỚC kỳ quay vào sổ rồi chấm với kết quả thật; e-value hợp lệ ở mọi "
+                   "thời điểm đo xem mô hình có vượt máy quay công bằng không.",
+    }], [
+        "Đọc sổ kết quả và sổ dự báo của engine Vietlott.",
+        step,
+    ])
+    sections = []
+    if picks:
+        sections.append({'match': '#vl-picks', 'title': 'Bộ số nháp của bạn', **_ev([{
+            'title': 'Bộ số nháp trên thiết bị',
+            'snippet': 'Số do bạn chọn trong trình duyệt; không đọc sổ kết quả và không gửi đặt vé.',
+        }], [
+            'Chọn tối đa sáu số khác nhau trong miền của sản phẩm.',
+            'Chọn nhanh xáo trộn ngẫu nhiên toàn miền rồi lấy sáu số; không dùng mô hình dự báo.',
+            'Xem trước và tải bộ số nháp trên thiết bị; chưa phải vé đã mua.',
+        ])})
+    if not overview:
+        return evidence, sections
+    for heading, title, rule in [
+        ('Tần suất số chính', 'Tần suất số chính Vietlott', 'Đếm mỗi số chính tối đa một lần trong một kỳ; chia số kỳ có số đó cho tổng kỳ khảo sát. Không tính số đặc biệt.'),
+        ('Cặp số cùng xuất hiện', 'Cặp số Vietlott cùng kỳ', 'Lấy mọi cặp không thứ tự của các số chính trong từng kỳ; cộng số kỳ cùng xuất hiện rồi xếp 10 cặp đầu mỗi sản phẩm.'),
+        ('Hot / Cold', 'Số xuất hiện nhiều và ít', 'Xếp các số theo số kỳ xuất hiện trong cửa sổ công bố; gồm cả số có tần suất 0. Hòa thì theo giá trị số, không suy ra xác suất kỳ sau.'),
+    ]:
+        sections.append({'heading': heading, 'title': title,
+                         **_ev([{'title': 'Các kỳ gần nhất được công bố của từng sản phẩm',
+                                  'snippet': 'Số kỳ khảo sát được ghi cạnh từng sản phẩm; không trộn sản phẩm hoặc mở rộng thành toàn lịch sử.'}], [rule])})
+    return evidence, sections
+
+
 def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
     """Trang → (bằng chứng mặc định, ghi đè theo khối). Phủ MỌI trang xuất bản."""
     tk = lambda *extra: (_thong_ke(f, *extra), [])  # noqa: E731
@@ -424,14 +556,27 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "index.html": home,
         "landing.html": home,
         "landing_desktop.html": home,
-        "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày dùng vector đã công bố trước giờ quay; " + _GHI_CHU_DU_BAO]), [
-            # Trang tải dự báo theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
-            _sec("#live-predictions", "Dự đoán trong ngày", _du_bao_ev(
+        "live.html": (_ev([_LIVE, _ket_qua(f)], ["Hiển thị giải đang quay theo đúng thứ tự giải.", "Dự đoán trong ngày là 10 số đứng đầu bảng Cầu Kèo, chụp cho đúng ngày quay trước giờ quay; " + _GHI_CHU_CAU_KEO]), [
+            # Trang tải bản chụp theo ngày quay LÚC CHẠY, nên không ghi ngày lúc dựng trang.
+            _sec("#live-predictions", "Dự đoán trong ngày · Cầu Kèo", _cau_keo_ev(
                 {k: v for k, v in f.items() if k != "target"},
-                "Số hiển thị là dự báo đã lưu cho đúng ngày quay ghi ở đầu khối, không phải kết quả.",
+                "Số hiển thị là 10 số có điểm cầu-kèo cao nhất trong bảng đã chụp cho đúng ngày quay "
+                "ghi ở đầu khối — cùng bộ số khối «ngày mai» của trang chủ hiện trước kỳ quay ấy, "
+                "không phải kết quả.",
+                _GHI_CHU_CAU_KEO,
             )),
         ]),
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
+        "ket-qua-mien-trung.html": _vung("Miền Trung"),
+        "ket-qua-mien-nam.html": _vung("Miền Nam"),
+        "vietlott.html": _vietlott("Bảng tổng quan lấy kỳ mới nhất đã lưu của từng sản phẩm.", overview=True),
+        "vietlott-lotto-535.html": _vietlott("Mỗi kỳ 5 số và số đặc biệt, kỳ mới nhất trước."),
+        "vietlott-mega-645.html": _vietlott("Mỗi kỳ 6 số, kèm giá trị jackpot đã công bố.", picks=True),
+        "vietlott-power-655.html": _vietlott("Mỗi kỳ 6 số và số đặc biệt, kèm hai giá trị jackpot.", picks=True),
+        "vietlott-max-3d.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
+        "vietlott-max-3d-pro.html": _vietlott("Mỗi kỳ 20 bộ ba số theo bốn hạng giải."),
+        "vietlott-keno.html": _vietlott("Mỗi kỳ 20 số."),
+        "vietlott-bingo18.html": _vietlott("Mỗi kỳ 3 số, kèm tổng và nhóm tổng."),
         "statistics.html": _thong_ke_tong(f),
         "bang-dac-biet.html": tk("Giải Đặc Biệt đủ 5 chữ số theo tuần: hàng là tuần, cột là thứ."),
         "bang-dac-biet-thang.html": tk("Trọn một năm: hàng là ngày trong tháng, cột là tháng."),
@@ -446,7 +591,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "giai-dac-biet-theo-tong.html": tk("Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau."),
         "dau-duoi-loto.html": tk("Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn."),
         "lo-gan.html": tk("Số kỳ chưa về của từng con LOTO, gan cực đại trong lịch sử, và cặp lô gan."),
-        "thong-ke-tong-hop.html": tk("Bảng tổng hợp đa chiều: tần suất, chu kỳ gan, đầu đuôi và tổng trên cùng một dải."),
+        "thong-ke-tong-hop.html": _overview(f),
         "soi-cau-vi-tri.html": (_cau(f, "Lộn thì cộng gộp nháy của cả hai chiều; số kép chỉ là một số (số bóng chỉ hiện kèm)."), [_so_bong(f)]),
         "soi-cau-loto.html": cau("Bước trúng: n hoặc số lộn của n về ở kỳ kế tiếp (≥ 1 nháy, cộng cả hai chiều)."),
         "soi-cau-hai-nhay.html": cau("Bước trúng: n về ≥ 2 nháy, hoặc n và số lộn (khác n) cùng về ở kỳ kế tiếp."),
@@ -460,6 +605,10 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "soi-path-de-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
         "dashboard.html": (_du_bao_ev(f, "Số trong bảng xác suất và danh sách gợi ý là xác suất (hoặc thứ hạng) của số ấy cho kỳ kế tiếp."), [
+            _sec(".ai-status-strip", "Phạm vi và xuất xứ mô hình", _ev([_ket_qua(f), _trong_so(f)], [
+                "Ngày dữ liệu là ngày kỳ quay mới nhất đã lưu. Đây không phải ngày đích của mọi tệp dự báo.",
+                "Hai trạng thái trọng số đọc đúng xuất xứ của từng kênh: mặc định, đã học, hoặc cổng từ chối đề bạt.",
+            ])),
             _sec_heading("Trọng số", "Trọng số tổ hợp và cổng thẩm định", _ev([_trong_so(f), _cham(f)], [
                 "Mỗi thành phần đóng góp theo một trọng số; mặc định là vector cố định.",
                 "Vector học từ các ngày gần đây chỉ được dùng khi thắng vector MẶC ĐỊNH trên lát kiểm ngoài mẫu (ngày chưa dùng để học) với biên ≥ 0,20%.",
@@ -471,12 +620,13 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "Cách học trọng số và luật của cổng nằm ở khối «Trọng số».",
             ])),
             _sec_heading("Hiệu chỉnh", "Hiệu chỉnh xác suất", _ev([_trong_so(f), _cham(f)], [
+                "Trước hiệu chỉnh, vector trộn được chốt mức. LOTO: nhân mọi số với cùng một hệ số để tổng xác suất bằng số con khác nhau kỳ vọng mỗi kỳ, 100·(1 − 0,99²⁷) ≈ 23,77 — thứ hạng giữ nguyên. Đặc Biệt: chuẩn hoá về tổng 1 và dành 5% cho phân phối đều.",
                 "Sau khi trộn, xác suất được hiệu chỉnh bằng tham số học trên một khối ngày RIÊNG, nằm sau khối dùng để học trọng số (hai khối không chồng nhau).",
                 "Các số trong khối là tham số hiệu chỉnh hoặc logloss/Brier trên khối hiệu chỉnh.",
             ])),
         ]),
-        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), []),
-        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), []),
+        "ml_top10_loto.html": (_du_bao_ev(f, "10 số LOTO có xác suất thành phần ML cao nhất.", mode="loto"), [ml_summary_evidence("loto")]),
+        "ml_top10_de.html": (_du_bao_ev(f, "10 số Đặc Biệt có xác suất thành phần ML cao nhất.", mode="de"), [ml_summary_evidence("de")]),
         "model-quality.html": (_ev([_cham(f), _du_bao(f)], [
             "Chấm vector xác suất đã công bố của từng kỳ với kết quả thật.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
@@ -562,6 +712,16 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
             "Đọc các báo cáo nghiên cứu dựng từ sổ kết quả đã lưu.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy; không khối nào nối vào bộ dự báo vận hành.",
         ]), [
+            _sec(".rl-hero-stats", "Phạm vi báo cáo chẩn đoán", _ev([_ket_qua(f)], [
+                "Số kỳ và ngày đầu/cuối lấy từ báo cáo chẩn đoán khoa học; đây là phạm vi mẫu đã được kiểm định.",
+                "Nếu báo cáo thiếu, hiển thị dấu gạch hoặc chưa có báo cáo; không suy ra mẫu bằng không.",
+            ])),
+            _sec(".rl-overview", "Tường lửa vị trí · tóm tắt kiểm định", _ev([_ket_qua(f)], [
+                "Giả thuyết vị trí và số qua FDR trên tập huấn luyện cộng hai chế độ LOTO và Đặc Biệt của cùng báo cáo tường lửa.",
+                "Kỳ giữ lại chỉ lấy số kỳ của chế độ LOTO, không cộng hai chế độ vì chúng có thể dùng cùng ngày.",
+                "Đủ điều kiện là tổng số giả thuyết đạt tiêu chí tường lửa ở hai chế độ; vẫn cần xem xét độc lập, chưa tự động đưa vào vận hành.",
+                "Ngày báo cáo ghi riêng trên khối này; số liệu không phải tiến độ xử lý trực tiếp.",
+            ])),
             _sec(".rl-metrics", "Tóm tắt các họ giả thuyết", _ev([_ket_qua(f)], [
                 "Mỗi thẻ đếm số giả thuyết của một họ và số giả thuyết qua cổng của họ ấy (cổng ghi ngay trên thẻ: đủ điều kiện vận hành, cổng nghiên cứu, hay FDR < 0,05).",
                 "Thẻ cầu bóng so độ nâng tốt nhất trên tập huấn luyện với trung bình độ nâng tốt nhất khi dịch vòng chuỗi kết quả theo thời gian; p = tỉ lệ lượt dịch vòng có độ nâng tốt nhất ≥ thật.",

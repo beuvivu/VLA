@@ -32,6 +32,8 @@ UA = (
 MAX_ROWS = 3
 MAX_COLS = 16
 MAX_TABLES = 6
+BODY_CHARS = int(os.environ.get("BODY_CHARS", "600"))
+HTML_CHARS = int(os.environ.get("HTML_CHARS", "6000"))
 
 
 def summarise_table(table, index: int) -> None:
@@ -123,6 +125,13 @@ def main() -> int:
 
         print(f"  HTTP {response.status_code}, {len(response.content) / 1024:.0f} KB")
         if response.status_code != 200:
+            # Trang lỗi cũng là bằng chứng: tường lửa, chặn theo vùng hay thách
+            # thức trình duyệt mỗi loại để lại header và thân trang khác nhau.
+            for key in ("server", "content-type", "cf-ray", "x-cache", "via", "x-powered-by"):
+                if key in response.headers:
+                    print(f"    {key}: {response.headers[key]}")
+            text = BeautifulSoup(response.text, "lxml").get_text(" ", strip=True)
+            print(f"    thân trang: {text[:BODY_CHARS]!r}")
             failures += 1
             continue
 
@@ -150,6 +159,15 @@ def main() -> int:
         print(f"  tổng {len(tables)} bảng")
         for index, table in enumerate(tables[:MAX_TABLES], start=1):
             summarise_table(table, index)
+
+        # Tuỳ chọn: in nguyên HTML của các phần tử khớp bộ chọn CSS, để viết
+        # bộ phân tích theo đúng cấu trúc thật chứ không đoán từ bản tóm tắt.
+        selector = os.environ.get("HTML_SELECTOR", "").strip()
+        if selector:
+            limit = int(os.environ.get("HTML_COUNT", "2"))
+            for index, node in enumerate(soup.select(selector)[:limit], start=1):
+                print(f"  --- HTML #{index} ({selector}) ---")
+                print(str(node)[:HTML_CHARS])
 
         if i + 1 < len(urls):
             time.sleep(random.uniform(*DELAY_RANGE))

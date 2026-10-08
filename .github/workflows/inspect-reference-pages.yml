@@ -27,6 +27,16 @@ on:
         required: false
         default: "0"
         type: string
+      html_selector:
+        description: "Bộ chọn CSS: in nguyên HTML của các phần tử khớp (để trống thì bỏ qua)"
+        required: false
+        default: ""
+        type: string
+      html_count:
+        description: "Số phần tử tối đa in HTML cho mỗi trang"
+        required: false
+        default: "2"
+        type: string
 
 permissions:
   contents: read
@@ -54,4 +64,6 @@ jobs:
         env:
           URLS: ${{ inputs.urls }}
           DUMP_LINKS: ${{ inputs.dump_links }}
+          HTML_SELECTOR: ${{ inputs.html_selector }}
+          HTML_COUNT: ${{ inputs.html_count }}
         run: python scripts/inspect_reference_pages.py

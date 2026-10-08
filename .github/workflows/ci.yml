@@ -23,7 +23,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # Một sự kiện PR sau merge có thể dùng ref main. Không để lượt PR đã được
+  # route bỏ qua hủy lượt push main trước khi bất kỳ job kiểm thử nào bắt đầu.
+  # Lượt chạy tay cũng có nhóm riêng; push mới cùng nhánh vẫn thay lượt cũ.
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -80,6 +83,9 @@ jobs:
       - run: python -m pip install playwright==1.55.0
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/check_ui_browser.py
+      - run: python scripts/check_dashboard_browser.py
+      - run: python scripts/check_vietlott_navigation_browser.py
+      - run: python scripts/check_vietlott_ui_browser.py
       - run: python scripts/check_stat_tables_browser.py
       - run: python scripts/check_bridge_workspace_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
@@ -126,6 +132,10 @@ jobs:
         run: |
           python -m pip install --upgrade --no-cache-dir pip wheel setuptools
           python -m pip install --no-cache-dir -r requirements-dev.txt
+          # Trang Vietlott dựng từ engine `vietlott/`, và phép kiểm của trang đọc
+          # dữ liệu engine thật — thiếu duckdb, pydantic-settings… của engine là
+          # `test_vietlott_results.py` đỏ. Engine là dự án tự đủ, cài như gói.
+          python -m pip install --no-cache-dir -e vietlott
 
       - name: Kiểm thử tương tác điều hướng
         run: |

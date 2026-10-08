@@ -202,9 +202,27 @@ ghim lại token sáng trên body của một họ trang. CSS riêng chỉ alias
 chung; bản critical có đủ light/dark và media fallback.
 
 Header Search mở dialog riêng bằng Ctrl/Cmd+K, phủ mọi đích SITE_NAV và các
-phần trang chủ. Sidebar Filter chỉ lọc nhóm hiện tại. Hai input/ID/query
-độc lập; mở tìm kiếm không thay trạng thái menu. Chọn một đích là điều hướng
-thật, giải phóng lớp phủ trên điện thoại.
+phần trang chủ. Mở tìm kiếm không thay trạng thái menu. Chọn một đích là
+điều hướng thật, giải phóng lớp phủ trên điện thoại.
+
+Cập nhật 05/10/2026: nhóm chính đi theo luồng sử dụng dưới đây. Mỗi mục khai
+một lần ở `SITE_NAV_SECTIONS`; `SITE_NAV` được suy ra để giữ hợp đồng của các
+trình dựng và tìm kiếm. Menu con có cụm mang tiêu đề, không thêm tầng bấm.
+
+| Thứ tự | Menu chính | Các cụm menu con |
+|---|---|---|
+| 1 | Kết quả | Kết quả ngày; tra cứu lịch sử |
+| 2 | Thống kê | Tổng quan dữ liệu |
+| 3 | Thống kê LOTO | Tần suất & phân bố; cặp số & chu kỳ |
+| 4 | Thống kê Đặc Biệt | Bảng kết quả; tần suất & chu kỳ |
+| 5 | Soi cầu | Vị trí & căn cứ; cầu LOTO; cầu Đặc Biệt |
+| 6 | Dự báo | Mô hình AI/ML; tham khảo theo lịch sử; đánh giá dự báo |
+| 7 | Nghiên cứu & công cụ | Kiểm định & nghiên cứu; tiện ích |
+
+Rail hiện nhãn ngắn dưới biểu tượng và đánh dấu nhóm chọn bằng màu lẫn vạch.
+Bảy nút nhóm nằm trong tablist theo đúng thứ tự trên; tìm kiếm và đóng nằm
+riêng ở cuối. Chỉ nhóm đang chọn có `tabindex=0`; mũi tên và Home/End đổi
+nhóm. Khung giữ số đo 80/240/80px và hành vi phủ lên nội dung.
 
 Cập nhật 26/09/2026: rail/header dùng SVG Nexlink gốc (24px, opacity và nét
 nguyên bản), sidebar dùng Flaticon Rounded từ đúng font của Nexlink chuyển

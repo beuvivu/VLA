@@ -205,6 +205,8 @@ Cùng mã, cùng siêu tham số. Có tín hiệu thì thắng rõ; trên dữ l
      Đặc Biệt còn 5,4% (p = 0,29), không có gì để kiểm.
   2. **Đã làm:** sổ `ensemble_history.csv` có cột `brier_unit` ngay sau `brier` (mục 5.1).
   3. **Đã làm:** bỏ sàn 0,35 của `model_trust` (mục 5.2).
+  4. **Đã làm 04-10-2026:** chấm từng THÀNH PHẦN của tổ hợp, neo mức LOTO và áp luật tin cho
+     cầu-kèo — `2026-10-04-ra-soat-thanh-phan-to-hop.md`.
 
 ### 5.1 Đơn vị Brier ghi trên từng dòng sổ
 

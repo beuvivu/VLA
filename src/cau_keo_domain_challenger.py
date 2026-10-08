@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Validation-gated domain challenger for the production cầu-kèo model.
 
 The baseline model in :mod:`cau_keo_ml` remains the champion.  This module adds
@@ -30,6 +32,7 @@ from typing import Literal
 import joblib
 import numpy as np
 import pandas as pd
+from safe_io import read_json_or_empty
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from cau_keo_ml import (
@@ -39,6 +42,7 @@ from cau_keo_ml import (
     _downsample,
     build_cau_keo_feature_frame,
     run as run_baseline,
+    trust_from_pack,
 )
 from cau_keo_feature_groups import (
     ALL_DOMAIN_FEATURES,
@@ -519,6 +523,9 @@ def _write_prediction_outputs(
         "prob",
         "prob_percent",
         "ml_prob_raw",
+        "model_trust",
+        "base_rate",
+        "trust_policy_version",
         "ml_prob_baseline",
         "ml_prob_domain",
         "domain_prob_edge",
@@ -557,8 +564,8 @@ def _write_prediction_outputs(
     cols = [c for c in base_cols if c in pred.columns]
     all_path = out_dir / f"cau_keo_{mode}_all.csv"
     top_path = out_dir / f"cau_keo_{mode}_top{top}.csv"
-    pred[cols].to_csv(all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
-    pred.head(top)[cols].to_csv(top_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(pred[cols], all_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(pred.head(top)[cols], top_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
     return [all_path, top_path]
 
 
@@ -572,7 +579,12 @@ def _ensure_baseline(
     model_path = models_dir / f"cau_keo_{mode}.joblib"
     output_path = out_dir / f"cau_keo_{mode}_all.csv"
     if model_path.exists() and output_path.exists():
-        return
+        try:
+            trust_from_pack(joblib.load(model_path))
+            return
+        except (AttributeError, EOFError, ImportError, OSError, ValueError):
+            # Gói thiếu luật tin hiện hành: học lại nền thay vì đọc trust mặc định.
+            pass
     run_baseline(
         mode=mode,
         models_dir=models_dir,
@@ -647,13 +659,18 @@ def run_mode(
     X_pred["domain_active"] = active
     X_pred["domain_groups"] = "|".join(selected_groups) if selected_groups else ""
     X_pred["ml_prob_raw"] = p_prod
-    judged = _add_ai_judgement(X_pred, mode=mode)
+    # Co về nền theo kỹ năng của mô hình NỀN: thách đấu miền chỉ được bật khi
+    # hơn mô hình nền, nên chưa chứng minh được gì so với dự báo hằng số.
+    baseline_trust, base_rate = trust_from_pack(pack)
+    judged = _add_ai_judgement(
+        X_pred, mode=mode, trust=baseline_trust, base_rate=base_rate
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     created = _write_prediction_outputs(judged, mode=mode, out_dir=out_dir, top=config.top)
     ablation_path = out_dir / f"cau_keo_domain_ablation_{mode}.csv"
     gate_path = out_dir / f"cau_keo_domain_gate_{mode}.json"
-    ablation.to_csv(ablation_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+    write_code_csv(ablation, ablation_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
     gate.update(
         {
             "anchor_date": latest_anchor,
@@ -687,12 +704,7 @@ def run_mode(
     joblib.dump(pack, model_path)
 
     manifest_path = out_dir / f"cau_keo_manifest_{mode}.json"
-    manifest = {}
-    if manifest_path.exists():
-        try:
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001
-            manifest = {}
+    manifest = read_json_or_empty(manifest_path)
     manifest["domain_challenger"] = {
         "schema_version": DOMAIN_SCHEMA_VERSION,
         "active": active,

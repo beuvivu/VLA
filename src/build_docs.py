@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from safe_io import read_csv_or_empty, read_json_or_empty
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from path_models import index_to_label
@@ -87,22 +87,15 @@ def _empty_reason(path_ui_dir: Path, *, mode: str, kind: str, rows: int) -> dict
         return {}
 
     sibling = "stable" if kind == "active" else "active"
-    sibling_rows = 0
-    sibling_path = path_ui_dir / f"paths_{mode}_{sibling}.csv"
-    if sibling_path.exists():
-        try:
-            sibling_rows = len(pd.read_csv(sibling_path))
-        except Exception:
-            sibling_rows = 0
+    sibling_rows = len(read_csv_or_empty(path_ui_dir / f"paths_{mode}_{sibling}.csv"))
 
-    manifest = path_ui_dir / f"path_manifest_{mode}.json"
     threshold = 3
-    if manifest.exists():
+    payload = read_json_or_empty(path_ui_dir / f"path_manifest_{mode}.json")
+    key = "min_current_streak" if kind == "active" else "min_max_streak"
+    if isinstance(payload, dict) and key in payload:
         try:
-            payload = json.loads(manifest.read_text(encoding="utf-8"))
-            key = "min_current_streak" if kind == "active" else "min_max_streak"
-            threshold = int(payload.get(key, threshold))
-        except Exception:
+            threshold = int(payload[key])
+        except (TypeError, ValueError):
             pass
 
     rate = baseline_rate(mode)

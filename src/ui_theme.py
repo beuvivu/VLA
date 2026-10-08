@@ -656,7 +656,7 @@ def _column_align_rules(columns: int = 10) -> str:
 TAILWIND_LITE_CSS = f"{TAILWIND_LITE_CSS}\n{_column_align_rules()}\n" + (Path(__file__).resolve().parent / "templates/compact_results.css").read_text(encoding="utf-8")
 
 
-#: Điều hướng dùng chung cho MỌI trang, chia năm nhóm.
+#: Điều hướng dùng chung cho MỌI trang, theo luồng tra cứu tới nghiên cứu.
 #:
 #: Trước đây có ba bảng điều hướng ở ba tệp builder khác nhau, liệt kê những
 #: trang khác nhau và không bảng nào phủ hết 14 trang; hai trang soi cầu ổn định
@@ -684,81 +684,157 @@ LANDING_SECTIONS: list[tuple[str, str, str]] = [
     ("backtest", "Kiểm định AI/ML", "Kiểm định lại tín hiệu trên lịch sử"),
 ]
 
-SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = (
+#: Mỗi mục chỉ khai một lần trong nhóm và cụm phù hợp. SITE_NAV ở dưới là
+#: bản phẳng cho các trình dựng và tìm kiếm đang dùng hợp đồng cũ.
+SITE_NAV_SECTIONS: tuple[
+    tuple[str, tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...]], ...
+] = (
     (
-        "Trực tiếp",
+        "Kết quả",
         (
-            ("live.html", "Kết quả trực tiếp", "truc-tiep"),
-            ("index.html", "Kết quả hôm nay", "hom-nay"),
-            ("so-ket-qua-truyen-thong.html", "Sổ kết quả", "so-ket-qua"),
+            ("Miền Bắc · ưu tiên", (
+                ("index.html", "Kết quả hôm nay", "hom-nay"),
+                ("live.html", "Miền Bắc trực tiếp", "truc-tiep"),
+                ("so-ket-qua-truyen-thong.html", "Sổ kết quả Miền Bắc", "so-ket-qua"),
+            )),
+            ("Miền Trung & Miền Nam", (
+                ("ket-qua-mien-trung.html", "Kết quả Miền Trung", "so-ket-qua"),
+                ("ket-qua-mien-nam.html", "Kết quả Miền Nam", "so-ket-qua"),
+            )),
+        ),
+    ),
+    (
+        "Vietlott",
+        (
+            ("Dashboard & Thống kê", (
+                ("vietlott.html", "Tổng quan Vietlott", "ma-tran"),
+                ("vietlott.html#vl-frequency", "Tần suất", "tan-suat"),
+                ("vietlott.html#vl-pairs", "Cặp số", "cap-loto"),
+                ("vietlott.html#vl-hot-cold", "Hot / Cold", "gan-nhip"),
+            )),
+            ("AI & ML Prediction", (
+                ("vietlott.html#vl-predictions", "Phỏng đoán bộ số", "ai-ml"),
+                ("vietlott.html#vl-confidence", "Độ tin cậy mô hình", "tin-cay"),
+            )),
+            ("So sánh & Đối soát", (
+                ("vietlott.html#vl-comparisons", "Thực tế vs Dự đoán", "kiem-dinh"),
+                ("vietlott.html#vl-backtesting", "Kiểm định dự báo", "chat-luong"),
+            )),
+            ("Realtime Crawler Status", (
+                ("vietlott.html#vl-crawler", "Trạng thái dữ liệu", "truc-tiep"),
+            )),
+            ("Cấu hình thuật toán", (
+                ("vietlott.html#vl-tuning", "Tham số mô hình", "nghien-cuu"),
+                ("vietlott.html#vl-models", "Quản lý mô hình · chỉ đọc", "chat-luong"),
+            )),
+            ("Kết quả theo sản phẩm", (
+                ("vietlott-lotto-535.html", "Lotto 5/35", "so-ket-qua"),
+                ("vietlott-mega-645.html", "Mega 6/45", "so-ket-qua"),
+                ("vietlott-power-655.html", "Power 6/55", "so-ket-qua"),
+                ("vietlott-max-3d.html", "Max 3D / Max 3D+", "so-ket-qua"),
+                ("vietlott-max-3d-pro.html", "Max 3D Pro", "so-ket-qua"),
+                ("vietlott-keno.html", "Keno", "so-ket-qua"),
+                ("vietlott-bingo18.html", "Bingo18", "so-ket-qua"),
+            )),
         ),
     ),
     (
         "Thống kê",
         (
-            ("statistics.html", "Ma trận thống kê", "ma-tran"),
+            ("Tổng quan dữ liệu", (
+                ("statistics.html", "Ma trận thống kê", "ma-tran"),
+                ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "tong-hop"),
+            )),
         ),
     ),
     (
-        "Cầu kèo",
+        "Thống kê LOTO",
         (
-            ("soi-cau-vi-tri.html", "Soi cầu vị trí", "soi-vi-tri"),
-            ("soi-cau-loto.html", "Cầu LOTO vị trí", "cau-loto-vt"),
-            ("soi-cau-hai-nhay.html", "Cầu hai nháy", "cau-hai-nhay"),
-            ("soi-cau-bach-thu.html", "Cầu bạch thủ", "cau-bach-thu"),
-            ("soi-cau-dac-biet.html", "Cầu Đặc Biệt vị trí", "cau-db-vt"),
-            ("soi-cau-dac-biet-bo-so.html", "Cầu bộ số Đặc Biệt", "cau-bo-so"),
-            ("soi-cau-dac-biet-theo-thu.html", "Cầu Đặc Biệt theo thứ", "cau-db-thu"),
-            ("soi-cau-loto-theo-thu.html", "Cầu LOTO theo thứ", "cau-loto-thu"),
-            ("soi-path-loto-active.html", "Cầu LOTO đang chạy", "cau-chay"),
-            ("soi-path-loto-stable.html", "Cầu LOTO ổn định", "cau-on-dinh"),
-            ("soi-path-de-active.html", "Cầu Đặc Biệt đang chạy", "cau-de-chay"),
-            ("soi-path-de-stable.html", "Cầu Đặc Biệt ổn định", "cau-de-on-dinh"),
-            ("index.html#duong-cau", "Căn cứ vị trí cầu", "vi-tri-cau"),
+            ("Tần suất & phân bố", (
+                ("tan-suat-loto.html", "Tần suất LOTO", "tan-suat"),
+                ("tan-suat-cap-loto.html", "Tần suất cặp LOTO", "cap-loto"),
+                ("dau-duoi-loto.html", "Đầu đuôi LOTO", "dau-duoi"),
+            )),
+            ("Cặp số & chu kỳ", (
+                ("cap-lon-loto.html", "Cặp lộn LOTO", "cap-lon-loto"),
+                ("lo-gan.html", "Lô gan", "lo-gan"),
+            )),
         ),
     ),
     (
-        "Phỏng đoán",
+        "Thống kê Đặc Biệt",
         (
-            ("dashboard.html", "Bảng điều khiển AI/ML", "ai-ml"),
-            ("ml_top10_loto.html", "10 số LOTO", "top-loto"),
-            ("ml_top10_de.html", "10 số Đặc Biệt", "top-de"),
-            ("model-quality.html", "Chất lượng mô hình", "chat-luong"),
-            ("do-tin-cay.html", "Độ tin cậy dự báo", "tin-cay"),
+            ("Bảng kết quả", (
+                ("bang-dac-biet.html", "Đặc Biệt theo tuần", "theo-ngay"),
+                ("bang-dac-biet-thang.html", "Đặc Biệt theo tháng", "theo-thang"),
+                ("bang-dac-biet-nam.html", "Đặc Biệt theo năm", "theo-nam"),
+            )),
+            ("Tần suất & chu kỳ", (
+                ("cau-giai-dac-biet.html", "Tần suất Đặc Biệt", "cau-giai-db"),
+                ("giai-dac-biet-theo-tong.html", "Đặc Biệt theo tổng", "theo-tong"),
+                ("cau-dac-biet-theo-bo-so.html", "Đặc Biệt theo bộ số", "bo-so"),
+                ("chu-ky-dac-biet.html", "Chu kỳ Đặc Biệt", "chu-ky"),
+            )),
         ),
     ),
     (
-        "Bảng Đặc Biệt",
+        "Soi cầu",
         (
-            ("bang-dac-biet.html", "Theo ngày", "theo-ngay"),
-            ("bang-dac-biet-thang.html", "Theo tháng", "theo-thang"),
-            ("bang-dac-biet-nam.html", "Theo năm", "theo-nam"),
-            ("chu-ky-dac-biet.html", "Chu kỳ Đặc Biệt", "chu-ky"),
-            ("cau-dac-biet-theo-bo-so.html", "Cầu Đặc Biệt theo bộ số", "bo-so"),
-            ("giai-db-ngay-mai.html", "Giải Đặc Biệt ngày mai", "ngay-mai"),
+            ("Vị trí & căn cứ", (
+                ("soi-cau-vi-tri.html", "Soi cầu vị trí", "soi-vi-tri"),
+                ("index.html#duong-cau", "Căn cứ vị trí cầu", "vi-tri-cau"),
+            )),
+            ("Cầu LOTO", (
+                ("soi-cau-loto.html", "Cầu LOTO vị trí", "cau-loto-vt"),
+                ("soi-cau-hai-nhay.html", "Cầu hai nháy", "cau-hai-nhay"),
+                ("soi-cau-bach-thu.html", "Cầu bạch thủ", "cau-bach-thu"),
+                ("soi-cau-loto-theo-thu.html", "Cầu LOTO theo thứ", "cau-loto-thu"),
+                ("soi-path-loto-active.html", "LOTO đang chạy", "cau-chay"),
+                ("soi-path-loto-stable.html", "LOTO ổn định", "cau-on-dinh"),
+            )),
+            ("Cầu Đặc Biệt", (
+                ("soi-cau-dac-biet.html", "Cầu Đặc Biệt vị trí", "cau-db-vt"),
+                ("soi-cau-dac-biet-bo-so.html", "Cầu bộ số Đặc Biệt", "cau-bo-so"),
+                ("soi-cau-dac-biet-theo-thu.html", "Cầu Đặc Biệt theo thứ", "cau-db-thu"),
+                ("soi-path-de-active.html", "Đặc Biệt đang chạy", "cau-de-chay"),
+                ("soi-path-de-stable.html", "Đặc Biệt ổn định", "cau-de-on-dinh"),
+            )),
         ),
     ),
     (
-        "LOTO chi tiết",
+        "Dự báo",
         (
-            ("tan-suat-loto.html", "Tần suất LOTO", "tan-suat"),
-            ("tan-suat-cap-loto.html", "Tần suất cặp LOTO", "cap-loto"),
-            ("cap-lon-loto.html", "Cặp lộn LOTO", "cap-lon-loto"),
-            ("cau-giai-dac-biet.html", "Cầu giải Đặc Biệt", "cau-giai-db"),
-            ("giai-dac-biet-theo-tong.html", "Đặc Biệt theo tổng", "theo-tong"),
-            ("dau-duoi-loto.html", "Đầu đuôi LOTO", "dau-duoi"),
-            ("lo-gan.html", "Lô gan", "lo-gan"),
-            ("thong-ke-tong-hop.html", "Thống kê tổng hợp", "tong-hop"),
+            ("Mô hình AI/ML", (
+                ("dashboard.html", "Bảng điều khiển AI/ML", "ai-ml"),
+                ("ml_top10_loto.html", "10 số LOTO", "top-loto"),
+                ("ml_top10_de.html", "10 số Đặc Biệt", "top-de"),
+            )),
+            ("Tham khảo theo lịch sử", (
+                ("giai-db-ngay-mai.html", "Đặc Biệt ngày mai", "ngay-mai"),
+            )),
+            ("Đánh giá dự báo", (
+                ("do-tin-cay.html", "Độ tin cậy dự báo", "tin-cay"),
+                ("model-quality.html", "Chất lượng mô hình", "chat-luong"),
+            )),
         ),
     ),
     (
-        "Tool nâng cao",
+        "Nghiên cứu & công cụ",
         (
-            ("research-lab.html", "Phòng nghiên cứu", "nghien-cuu"),
-            ("tao-phoi-tuan.html", "Tạo phôi tuần", "phoi-tuan"),
-            ("index.html#backtest", "Kiểm định AI/ML", "kiem-dinh"),
+            ("Kiểm định & nghiên cứu", (
+                ("research-lab.html", "Phòng nghiên cứu", "nghien-cuu"),
+                ("index.html#backtest", "Kiểm định AI/ML", "kiem-dinh"),
+            )),
+            ("Tiện ích", (
+                ("tao-phoi-tuan.html", "Tạo phôi tuần", "phoi-tuan"),
+            )),
         ),
     ),
+)
+
+SITE_NAV: tuple[tuple[str, tuple[tuple[str, str, str], ...]], ...] = tuple(
+    (group, tuple(item for _, items in sections for item in items))
+    for group, sections in SITE_NAV_SECTIONS
 )
 
 

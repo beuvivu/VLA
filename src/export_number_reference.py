@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Export the canonical 00..99 ontology used by VLA."""
 
 import argparse
@@ -127,10 +129,10 @@ def export_reference(out_dir: Path) -> None:
     if int((pairs["pair_kind"] == "reverse").sum()) != 45:
         raise RuntimeError("expected exactly 45 reverse pairs")
 
-    numbers.to_csv(out_dir / "number_ontology_00_99.csv", index=False)
-    seeds.to_csv(out_dir / "bo_seed_catalog_00_99.csv", index=False)
-    unique.to_csv(out_dir / "bo_unique_families.csv", index=False)
-    pairs.to_csv(out_dir / "cap_loto_50.csv", index=False)
+    write_code_csv(numbers, out_dir / "number_ontology_00_99.csv", index=False)
+    write_code_csv(seeds, out_dir / "bo_seed_catalog_00_99.csv", index=False)
+    write_code_csv(unique, out_dir / "bo_unique_families.csv", index=False)
+    write_code_csv(pairs, out_dir / "cap_loto_50.csv", index=False)
 
     manifest = reference_catalog()
     manifest.update(

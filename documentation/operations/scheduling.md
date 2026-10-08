@@ -21,14 +21,45 @@ không bao giờ thấy các số hiện dần.
 
 ## Đã làm được gì trong kho
 
-Hai biện pháp giảm xác suất trượt, **không** loại bỏ độ trễ:
+### Đo lại 05-10-2026 — chờ trong runner thay vì đuổi theo độ trễ
 
-1. **Rải nhiều mốc ở phút lẻ.** Hàng đợi của GitHub dồn nặng nhất ở phút `:00`
-   và `:30`. Mọi mốc trong `live-results.yml` và `update-data.yml` nay nằm ở
-   phút lẻ, trải từ 13:37 tới 18:07 giờ Việt Nam cho workflow live.
-2. **Chờ tới khung quay khi khởi động sớm.** Mốc nào rơi trước 18:08 giờ Việt
-   Nam sẽ chờ tối đa 90 phút rồi mới thăm dò; rơi sớm hơn nữa thì thoát ngay để
-   mốc sau xử lý, thay vì giữ runner hàng giờ.
+Đo trên 26 ngày (10-09 → 05-10-2026), lấy `created_at` của lần chạy trừ giờ
+mốc:
+
+| Mốc (UTC) | Trễ ngắn nhất | Trễ dài nhất |
+|---|---|---|
+| 00:15 (watchdog) | 4 giờ 16 | 5 giờ 33 |
+| 06:37 (live-results) | 4 giờ 34 | 8 giờ 34 |
+| 08:51 (daily_update) | 3 giờ 31 | 8 giờ 11 |
+
+Ngày 05-10 không mốc nào của `daily_update.yml` nổ trong 7,7 giờ đầu: GitHub
+còn bỏ mốc. Hệ quả của lịch cũ:
+
+- `daily_update.yml` nổ lúc 19:00–23:30 giờ VN, **sau** hạn thăm dò 19:30, nên
+  bộ thăm dò thoát mà không gọi nguồn lần nào.
+- `live-results.yml` nổ khi kỳ quay đã xong; kỳ về kho lúc 18:58–20:51 giờ VN
+  (trung vị ~20:00) chỉ nhờ lượt live ấy kích hoạt hoàn tất.
+
+Ba thay đổi:
+
+1. **Lượt đến sớm CHỜ trong runner.** `daily_update.yml` chờ tối đa 260 phút
+   (timeout 350, dưới trần 360 của GitHub), `live-results.yml` chờ tối đa 240
+   phút (timeout 315). Lượt nào nổ từ ~14:00 giờ VN đều thăm dò đúng 18:08–18:15.
+2. **Mốc dời vào sáng sớm** (08:13–13:17 giờ VN), cách nhau ≤ 45 phút, để độ
+   trễ 4–8 giờ đẩy chúng rơi vào buổi chiều. Với mọi độ trễ trong dải đo được,
+   ít nhất BA mốc của mỗi workflow rơi vào khung chờ — dự phòng cho mốc bị bỏ.
+   Mốc cuối của `daily_update.yml` (15:17 VN) vừa là lưới an toàn vừa lo
+   trường hợp GitHub bỗng đúng giờ, và nổ trước nửa đêm VN kể cả ở độ trễ dài
+   nhất đo được.
+3. **Lượt nổ muộn vẫn thử một vòng.** Trước đây bộ thăm dò khởi động sau hạn
+   19:30 thoát ngay; nay nó gọi nguồn một lần, lấy được kỳ đã xong thì kích
+   hoạt hoàn tất luôn.
+
+Mô phỏng trên chính 26 ngày đo: **26/26 ngày** thu được kỳ lúc 18:35 giờ VN.
+`tests/test_workflows.py` ghim phép tính ấy cùng bảng độ trễ — dải trễ trôi
+thì đo lại, cập nhật `MEASURED_DELAYS`, và phép kiểm nói lịch còn đủ hay không.
+
+Phút lẻ vẫn giữ: hàng đợi của GitHub dồn nặng nhất ở phút `:00` và `:30`.
 
 ## Cách chạy đúng giờ chắc chắn
 

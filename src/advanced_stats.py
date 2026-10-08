@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Advanced statistics for Vietnam lottery (XSMB).
 
 This script adds higher-level statistics commonly displayed on Vietnamese
@@ -68,7 +70,7 @@ def _flatten_2d_values(two_digit_df: pd.DataFrame) -> np.ndarray:
 
 def _dump_table(df: pd.DataFrame, *, out_dir: Path, name: str) -> None:
     _ensure_dir(out_dir)
-    df.to_csv(out_dir / f"{name}.csv", index=False)
+    write_code_csv(df, out_dir / f"{name}.csv", index=False)
     df.to_json(out_dir / f"{name}.json", orient="records", indent=2)
 
 

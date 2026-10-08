@@ -21,6 +21,11 @@ crons = [
 [vars]
 MIN_AGREEMENT = "2"
 
+# Cron nạp lớp bù cho API Sổ kết quả (/api/v1/traditional-results) từ sổ cuộn 500 ngày của
+# nguồn dự phòng: chỉ khi lịch sử chuẩn còn thiếu ngày, cách nhau tối thiểu 10 phút. Yêu cầu
+# của khách không bao giờ gọi nguồn ấy. Bỏ dòng này thì API chỉ trả lịch sử chuẩn.
+TRADITIONAL_FALLBACK_REFRESH = "on"
+
 # Nơi cất ảnh chụp giữa các lần cron gọi. Worker không có bộ nhớ riêng giữa
 # các lượt chạy, nên không có chỗ này thì cron thu thập xong sẽ mất trắng.
 # Tạo bằng: npx wrangler kv namespace create LIVE

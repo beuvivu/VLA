@@ -12,6 +12,9 @@ from sklearn.dummy import DummyClassifier
 
 import meta_predictor as meta
 import predict_nextday_2d as predictor
+from ensemble_components import COMPONENT_POLICY, policy_column
+from ensemble_utils import anchor_loto_level
+from xsmb_domain import LOTO_BASELINE_RATE
 
 
 def _history() -> pd.DataFrame:
@@ -21,6 +24,7 @@ def _history() -> pd.DataFrame:
     for key in ("ml", "cau", "stat", "active", "stable"):
         frame[f"p_{key}"] = 0.01
         frame[f"has_{key}"] = True
+    frame[policy_column("cau")] = COMPONENT_POLICY["cau"]
     return frame
 
 
@@ -105,7 +109,9 @@ def test_production_uses_three_component_model_when_unused_components_are_missin
     assert picks["meta"]["active"] is True
     assert picks["calibration"]["active"] is False
     published = pd.read_csv(output / "predict_next_loto_all_2026-01-02.csv")
-    np.testing.assert_allclose(published["prob"], 0.115)
+    # Tổ hợp tuyến tính được neo tổng về 100·nền trước khi trộn 15% mô hình
+    # xếp chồng (phát đúng tỉ lệ tiên nghiệm 0,2 của bộ phân loại giả).
+    np.testing.assert_allclose(published["prob"], 0.85 * LOTO_BASELINE_RATE + 0.15 * 0.2)
 
 
 def test_required_component_missing_keeps_linear_forecast(tmp_path) -> None:
@@ -144,7 +150,9 @@ def test_meta_baseline_replays_default_weights_and_categorical_floor() -> None:
 def test_meta_baseline_respects_each_validation_days_available_components() -> None:
     frame = _history()
     frame["p_ml"] = 0.1
+    frame.loc[0, "p_ml"] = 0.3
     frame["p_active"] = 0.2
+    frame.loc[1, "p_active"] = 0.4
     frame["p_stable"] = 0.24
     frame["has_cau"] = False
     frame["has_stat"] = False
@@ -157,5 +165,9 @@ def test_meta_baseline_respects_each_validation_days_available_components() -> N
         history, ["2026-01-01"], ["2026-01-02"], "loto",
         ["p_ml", "p_active", "p_stable"], 45,
     )
-    # Trọng số mặc định có hiệu lực là 0,50/0,25/0,25, không phải 1/3.
-    np.testing.assert_allclose(prediction, 0.16)
+    # Trọng số mặc định có hiệu lực là 0,50/0,25/0,25, không phải 1/3: con 00
+    # nhận 0,26, con 01 nhận 0,21, còn lại 0,16 — rồi neo tổng về 100·nền. Với
+    # 1/3, con 00 và 01 bằng nhau nên tỉ lệ giữa chúng phân biệt hai cách.
+    expected = np.full(100, 0.16)
+    expected[:2] = [0.26, 0.21]
+    np.testing.assert_allclose(prediction, anchor_loto_level(expected)[None, :], rtol=1e-12)

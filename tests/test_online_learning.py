@@ -364,10 +364,44 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
     frame.tail(4).to_csv(stale_top, index=False)
     online.run_online("de", data, out, now=before(target))
     assert pd.read_csv(stale_top)["number"].tolist() == [0, 1, 2, 3]
+    assert pd.read_csv(stale_top, dtype=str)["number"].tolist() == ["00", "01", "02", "03"]
     frame["prob"] = np.linspace(1, 2, 100) / 150
     frame.to_csv(path, index=False)
     online.run_online("de", data, out, now=before(target))
     restored = pd.read_csv(path)
+    assert pd.read_csv(path, dtype=str)["number"].str.fullmatch(r"[0-9]{2}").all()
     np.testing.assert_array_equal(restored.sort_values("number")["prob"], uniform())
     assert restored["custom"].tolist() == frame["custom"].tolist()
     assert len(pd.read_csv(out / f"predict_next_de_top4_{target}.csv")) == 4
+
+
+def _settled_state(online):
+    frame = history(24)
+    state = online.new_state("loto")
+    for end in (21, 22):
+        state, _ = issue(online, state, frame.iloc[:end])
+    scored = [r for r in state["records"] if r["settlement"] is not None]
+    assert scored, "phải có ít nhất một kỳ đã chốt để kiểm phép so điểm"
+    return state, scored[0]["settlement"]["scores"]
+
+
+def test_rounding_noise_in_a_settled_score_does_not_reject_the_journal(online, tmp_path):
+    """Runner khác CPU chấm lại cùng vector lệch 1 ULP; sổ vẫn phải đọc được.
+
+    Ngày 04-10-2026 logloss chốt ...7733 nhưng chấm lại ra ...7734, phép so
+    bằng tuyệt đối từ chối sổ và pipeline hoàn tất đỏ hai ngày liền.
+    """
+    state, scores = _settled_state(online)
+    value = scores["bayes_30"]["logloss"]
+    scores["bayes_30"]["logloss"] = float(np.nextafter(value, np.inf))
+    assert scores["bayes_30"]["logloss"] != value
+    path = tmp_path / "ulp.json"
+    online.save_state(path, state)
+    assert online.load_state(path, "loto")["learning"] == state["learning"]
+
+
+def test_a_real_change_to_a_settled_score_is_still_rejected(online, tmp_path):
+    state, scores = _settled_state(online)
+    scores["mixture"]["logloss"] *= 1 + 1e-9
+    with pytest.raises(ValueError, match="lệch khỏi vector đóng băng"):
+        online.save_state(tmp_path / "tampered.json", state)

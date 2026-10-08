@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Normalize pair artifacts to the canonical VLA number ontology.
 
 Historically, the word ``pair`` was used for several different concepts:
@@ -120,8 +122,8 @@ def normalize_artifacts(
             b_col="b",
             pair_kind="same_draw_cooccurrence",
         )
-        normalized.to_csv(recency, index=False)
-        normalized.to_csv(
+        write_code_csv(normalized, recency, index=False)
+        write_code_csv(normalized,
             descriptive_dir / "cooccurrence_pair_recency_loto.csv", index=False
         )
         counts["descriptive_pair_rows"] = len(normalized)
@@ -141,7 +143,7 @@ def normalize_artifacts(
             normalized["cap_loto_50_related"].all()
         ):
             raise RuntimeError("reverse artifact contains a pair outside cap_loto_50")
-        normalized.to_csv(reversal, index=False)
+        write_code_csv(normalized, reversal, index=False)
         counts["reversal_pair_rows"] = len(normalized)
 
     for path in sorted(pairs_dir.glob("top_unordered_pairs_top*.csv")):
@@ -152,7 +154,7 @@ def normalize_artifacts(
             b_col="y",
             pair_kind="same_draw_cooccurrence",
         )
-        normalized.to_csv(path, index=False)
+        write_code_csv(normalized, path, index=False)
         counts[path.name] = len(normalized)
 
     return counts

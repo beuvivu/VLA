@@ -1,4 +1,9 @@
-"""Hợp đồng API Sổ kết quả: CSDL VLA trước, xskt.vn chỉ bù ngày thiếu."""
+"""Hợp đồng API Sổ kết quả: lịch sử chuẩn trước, nguồn dự phòng chỉ bù ngày thiếu.
+
+Từ 08-10-2026 nguồn dự phòng CHỈ được gọi từ cron (``refreshFallbackOverlay``); yêu cầu của khách
+chỉ đọc lớp bù đã lưu. Một khoá KV không chặn được khuếch đại giữa các isolate (KV nhất quán sau,
+không có đọc-ghi nguyên tử), nên lưu lượng khách phải không còn đường nào chạm tới nguồn ngoài.
+"""
 
 from __future__ import annotations
 
@@ -39,30 +44,33 @@ def test_internal_vla_database_is_used_without_calling_xskt() -> None:
     result = _scenario("primary_first")
     assert result["counter"] == {"primary": 1, "xskt": 0}
     assert result["count"] == 1
-    assert result["source"] == "vla_db"
+    assert result["source"] == "canonical"
     assert result["special"] == "58851"
     assert result["leading_zero"] == "01"
     assert result["head_tail_total"] == 27
 
 
-def test_xskt_fills_only_the_missing_date_and_response_is_cached() -> None:
-    result = _scenario("fallback_and_response_cache")
+def test_the_cron_fills_the_missing_date_and_requests_only_read_it() -> None:
+    result = _scenario("cron_fills_then_requests_read")
+    assert result["refreshed"] is True
+    assert result["xskt_on_cron"] == 1
     assert result["statuses"] == [200, 200]
-    assert result["counter"] == {"primary": 1, "xskt": 1}
+    assert result["counter"] == {"primary": 1, "xskt": 1}, "hai yêu cầu không được gọi thêm nguồn nào"
     assert result["dates"] == ["2026-09-13", "2026-09-12"]
-    assert result["sources"] == ["xskt_fallback", "vla_db"]
+    assert result["sources"] == ["fallback", "canonical"]
     assert result["fallback_requested"] is True
-    assert result["fallback_network_fetch"] is True
+    assert result["fallback_network_fetch"] is False
     assert result["second_cache"] == "hit"
     assert result["xskt_special"] == "83799"
 
 
 def test_xskt_outage_does_not_hide_available_vla_results() -> None:
     result = _scenario("fallback_outage_keeps_primary")
+    assert result["refresh_error"] == "upstream timeout"
     assert result["counter"] == {"primary": 1, "xskt": 1}
     assert result["dates"] == ["2026-09-12"]
     assert result["unresolved"] == ["2026-09-13"]
-    assert result["warning"] == "Không đọc được xskt.vn: upstream timeout"
+    assert result["warning"] == "Một số ngày chưa có trong lịch sử chuẩn; lượt cập nhật theo lịch sẽ bù."
 
 
 def test_api_rejects_unsupported_or_unsafe_ranges() -> None:
@@ -90,3 +98,84 @@ def test_xskt_parser_and_vietnam_cutoff_policy() -> None:
     assert result["from"] == "2026-08-14"
     assert result["to"] == "2026-09-12"
     assert result["timezone"] == "Asia/Ho_Chi_Minh"
+
+
+def test_changing_the_date_range_cannot_amplify_calls_to_the_fallback_source() -> None:
+    """Mỗi khoảng ngày là một khoá đệm mới; trước đây 20 khoảng kéo 20 lượt tải trang nguồn."""
+    result = _scenario("amplification")
+    assert result["statuses"] == [200]
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+
+
+def test_the_cron_refresh_is_spaced_ten_minutes_apart() -> None:
+    """Ngày 13-09 vẫn thiếu ở các lượt cron phút 0, 5, 9, 11, 15, 22: chỉ phút 0, 11, 22 tải."""
+    assert _scenario("cron_refresh_is_spaced")["xskt_after_each"] == [1, 1, 1, 2, 2, 3]
+
+
+def test_days_the_source_never_had_are_not_fetched_again() -> None:
+    """XSMB nghỉ quay dịp Tết: ngày ấy thiếu mãi trong lịch sử chuẩn. Không ghi nhớ thì lượt cron
+    nào cũng thấy "thiếu" và tải lại trọn trang 500 ngày."""
+    result = _scenario("days_the_source_never_had_are_remembered")
+    assert result["first"] == {"fetched": True, "missing": 2, "filled": 1, "absent": 1}
+    assert result["second"] == {"fetched": False, "missing": 0}
+    assert result["xskt"] == 1
+    assert result["dates"] == ["2026-09-13", "2026-09-12", "2026-09-10"]
+    assert result["unresolved"] == []
+    # Dấu "absent" không vĩnh viễn: một lần trang tạm thiếu không được thành khoảng trống mãi.
+    assert result["recheck"] == {"fetched": True, "missing": 1, "filled": 0, "absent": 1}
+    assert result["after_recheck"] == {"fetched": False, "missing": 0}
+    assert result["xskt_total"] == 2
+
+
+def test_the_cron_refresh_needs_the_wrangler_switch() -> None:
+    assert _scenario("scheduled_refresh_needs_the_switch") == {"on": 1, "off": 0}
+    toml = (ROOT / "worker" / "wrangler.toml").read_text(encoding="utf-8")
+    assert 'TRADITIONAL_FALLBACK_REFRESH = "on"' in toml, "bản triển khai phải bật lớp bù theo lịch"
+
+
+def test_a_range_ending_after_the_latest_draw_is_rejected() -> None:
+    assert _scenario("future_range") == {"status": 400}
+
+
+def test_dates_older_than_the_fallback_window_never_trigger_a_fetch() -> None:
+    result = _scenario("out_of_window")
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+    assert result["unresolved"] == ["2020-01-01", "2020-01-02", "2020-01-03"]
+
+
+def test_the_api_never_names_its_sources() -> None:
+    result = _scenario("anonymised")
+    assert result["mentions_source"] is False
+    assert result["sources"] == ["fallback", "canonical"]
+    assert result["sources_used"] == ["canonical", "fallback"]
+
+
+def test_renaming_the_source_fields_bumped_the_schema_version() -> None:
+    """Lược đồ 1 ghi tên nguồn vào `source.kind`, `source_counts`, `sources_used`. Đổi các giá
+    trị ấy mà giữ số phiên bản thì bên gọi phân nhánh theo giá trị cũ lặng lẽ mất kết quả."""
+    assert _scenario("anonymised")["schema_version"] == 2
+
+
+def test_a_legacy_cache_cannot_restore_source_names_after_the_schema_upgrade() -> None:
+    result = _scenario("legacy_response_cache")
+    assert result["status"] == 200
+    assert result["payload"]["schema_version"] == 2
+    assert result["payload"]["data"][0]["source"]["kind"] == "canonical"
+    assert result["counter"] == {"primary": 1, "xskt": 0}
+    assert "vla" not in json.dumps(result["payload"]).lower()
+
+
+def test_invalid_primary_data_never_names_the_source_in_the_error() -> None:
+    for reply in _scenario("invalid_primary_is_anonymous")["replies"]:
+        assert reply["status"] == 502
+        assert reply["payload"]["error"] == "results_unavailable"
+        assert "vla" not in json.dumps(reply["payload"]).lower()
+
+
+def test_a_table_with_incomplete_prizes_is_retried_instead_of_becoming_a_holiday() -> None:
+    result = _scenario("incomplete_table_is_retried")
+    assert result["first"] == {"fetched": True, "missing": 1, "filled": 0, "absent": 0}
+    assert result["before"]["unresolved_dates"] == ["2026-09-11"]
+    assert result["second"] == {"fetched": True, "missing": 1, "filled": 1, "absent": 0}
+    assert result["calls"] == 2
+    assert result["after"] == {"total": 1, "unresolved": [], "special": "83799"}

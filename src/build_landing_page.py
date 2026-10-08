@@ -9,7 +9,6 @@ file so docs/index.html still works when opened directly from disk.
 
 import argparse
 import html
-import json
 import re
 from collections import Counter
 from datetime import UTC, datetime
@@ -19,8 +18,11 @@ from typing import Any, Iterable, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from safe_io import read_csv_or_empty, read_json_or_empty
+
 from app_icons import icon_svg
 from calendar_widget import render_calendar
+from cau_keo_daily_top import top_by_cau_score
 from draw_metadata import load_draw_metadata, station_for_date
 from build_position_bridges import best_panel, bridge_css
 from build_position_bridges import load as load_position_bridges
@@ -99,12 +101,7 @@ def _read_csv(
     dtype: str | Mapping[str, object] | None = None,
     nrows: int | None = None,
 ) -> pd.DataFrame:
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return pd.DataFrame()
-        return pd.read_csv(path, dtype=dtype, nrows=nrows, keep_default_na=False)
-    except Exception:
-        return pd.DataFrame()
+    return read_csv_or_empty(path, dtype=dtype, nrows=nrows, keep_default_na=False)
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -124,7 +121,7 @@ def _to_int(value: Any, default: int = 0) -> int:
         if value is None or value == "":
             return default
         return int(float(value))
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return default
 
 
@@ -2102,13 +2099,13 @@ def _render_html(
         repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
     )
 
-    ai_loto = _sort_top(
-        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str),
-        "cau_score",
-        10,
+    # Cùng phép xếp với bản chụp theo ngày mà trang trực tiếp đọc
+    # (``cau_keo_daily_top``): hai nơi phải ra đúng một bộ 10 số.
+    ai_loto = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str)
     )
-    ai_de = _sort_top(
-        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str), "cau_score", 10
+    ai_de = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str)
     )
     loto_rhythm = _sort_top(
         _read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
@@ -2510,10 +2507,7 @@ def _history_days(repo_root: Path) -> int:
     Returns:
         Số dòng dữ liệu, hoặc 0 nếu chưa đọc được tệp.
     """
-    try:
-        return int(len(pd.read_csv(repo_root / "data" / "xsmb.csv")))
-    except Exception:  # pragma: no cover - phụ thuộc trạng thái tệp
-        return 0
+    return int(len(read_csv_or_empty(repo_root / "data" / "xsmb.csv")))
 
 
 def _model_grade(repo_root: Path) -> str:
@@ -2529,19 +2523,16 @@ def _model_grade(repo_root: Path) -> str:
     Returns:
         Một trong ``"A"``, ``"B"``, ``"C"`` hoặc ``"—"`` khi chưa có số liệu.
     """
-    try:
-        scores = json.loads(
-            (repo_root / "data" / "research" / "model_scores.json").read_text(encoding="utf-8")
-        )
-        modes = scores.get("modes", {})
-        beats = sum(1 for entry in modes.values() if entry.get("beats_baseline"))
-        if not modes:
-            return "—"
-        if beats == len(modes):
-            return "A"
-        return "B" if beats else "C"
-    except Exception:  # pragma: no cover - phụ thuộc trạng thái tệp
+    scores = read_json_or_empty(repo_root / "data" / "research" / "model_scores.json")
+    modes = scores.get("modes") if isinstance(scores, dict) else None
+    if not isinstance(modes, dict) or not modes:
         return "—"
+    beats = sum(
+        1 for entry in modes.values() if isinstance(entry, dict) and entry.get("beats_baseline")
+    )
+    if beats == len(modes):
+        return "A"
+    return "B" if beats else "C"
 
 
 def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list[Path]:

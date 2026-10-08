@@ -19,6 +19,35 @@ from ensemble_utils import EnsembleWeights, normalize_distribution
 Mode = Literal["loto", "de"]
 COMPONENT_KEYS = ("ml", "cau", "stat", "active", "stable")
 
+#: Phiên bản ĐỊNH NGHĨA xác suất của thành phần, cho thành phần từng đổi định
+#: nghĩa. Sổ ``data/history/pred_<mode>.csv`` ghi số này vào cột
+#: ``policy_<key>`` của mỗi dòng; dòng cũ không có cột ấy.
+#:
+#: Cầu-kèo: 1 = co về nền theo kỹ năng thẩm định (04-10-2026). Trước đó cột
+#: ``p_cau`` là xác suất THÔ — một thành phần khác — nên bộ học trọng số và tầng
+#: xếp chồng không được học trên hỗn hợp hai định nghĩa.
+COMPONENT_POLICY: Final[dict[str, int]] = {"cau": 1}
+
+
+def policy_column(key: str) -> str:
+    return f"policy_{key}"
+
+
+#: Phiên bản PHÉP CHỐT tổ hợp (``ensemble_utils.finalize_blend``) đã dùng khi
+#: công bố ngày ấy, ghi vào cột ``policy_blend`` của sổ lịch sử. 1 = neo mức
+#: LOTO (04-10-2026); dòng cũ không có cột đã được công bố bằng ``clip01``.
+BLEND_POLICY: Final[int] = 1
+BLEND_POLICY_COLUMN: Final[str] = "policy_blend"
+
+
+def published_with_level_anchor(sub: pd.DataFrame) -> bool:
+    """Ngày này đã được CÔNG BỐ với phép neo mức LOTO hay chưa."""
+    if BLEND_POLICY_COLUMN not in sub.columns:
+        return False
+    versions = pd.to_numeric(sub[BLEND_POLICY_COLUMN], errors="coerce").to_numpy(dtype=float)
+    # Phiên bản 1 trở đi đều neo mức; NaN (dòng ghi trước khi có cột) thì không.
+    return bool(versions.size and np.all(versions >= float(BLEND_POLICY)))
+
 
 @dataclass(frozen=True)
 class ComponentVector:
@@ -170,8 +199,15 @@ def probability_component(
 
 
 def availability_from_history_day(
-    sub: pd.DataFrame, *, mode: Mode | None = None
+    sub: pd.DataFrame, *, mode: Mode | None = None, current_policy: bool = False
 ) -> dict[str, bool]:
+    """Thành phần nào của một ngày trong sổ lịch sử là vector xác suất hợp lệ.
+
+    ``current_policy=True`` dành cho nơi HỌC từ lịch sử (trọng số, hiệu chỉnh,
+    tầng xếp chồng): thành phần có trong ``COMPONENT_POLICY`` chỉ được tính khi
+    mọi dòng của ngày ghi đúng phiên bản hiện hành. Nơi dựng lại thứ ĐÃ công bố
+    (trang Chất lượng) giữ mặc định, vì ngày cũ đã công bố theo định nghĩa cũ.
+    """
     if len(sub) != 100 or "number" not in sub.columns:
         return {key: False for key in COMPONENT_KEYS}
 
@@ -205,6 +241,14 @@ def availability_from_history_day(
         if has_col in sub.columns:
             flags = _strict_bool_flags(sub[has_col])
             valid = valid and flags is not None and bool(flags.all())
+        if valid and current_policy and key in COMPONENT_POLICY:
+            column = policy_column(key)
+            versions = (
+                pd.to_numeric(sub[column], errors="coerce").to_numpy(dtype=float)
+                if column in sub.columns
+                else np.full(len(sub), np.nan)
+            )
+            valid = bool(np.all(versions == float(COMPONENT_POLICY[key])))
         out[key] = bool(valid)
     return out
 

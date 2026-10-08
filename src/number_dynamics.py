@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Leakage-safe higher-order numerical dynamics for the 00..99 universe.
 
 The module estimates descriptive/forecast-support signals using only observations
@@ -681,17 +683,17 @@ def export_dynamics(mode: Mode, out_dir: Path) -> DynamicsArtifacts:
     dates, hit = build_hit_matrix_from_lottery(mode)
     artifacts = build_dynamics_signal(hit, dates=dates, mode=mode)
     out_dir.mkdir(parents=True, exist_ok=True)
-    artifacts.current.to_csv(out_dir / f"current_dynamics_{mode}.csv", index=False)
-    artifacts.transition_prob.to_csv(
+    write_code_csv(artifacts.current, out_dir / f"current_dynamics_{mode}.csv", index=False)
+    write_code_csv(artifacts.transition_prob,
         out_dir / f"transition_prob_lag1_{mode}.csv", index=False
     )
-    artifacts.transition_lift.to_csv(
+    write_code_csv(artifacts.transition_lift,
         out_dir / f"transition_lift_lag1_{mode}.csv", index=False
     )
-    artifacts.cooccurrence_phi.to_csv(
+    write_code_csv(artifacts.cooccurrence_phi,
         out_dir / f"cooccurrence_phi_{mode}.csv", index=False
     )
-    artifacts.lag_dependency.to_csv(
+    write_code_csv(artifacts.lag_dependency,
         out_dir / f"lag_dependency_{mode}.csv", index=False
     )
     diag = dict(artifacts.diagnostics)

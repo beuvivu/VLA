@@ -23,8 +23,9 @@ từng trình dựng: chép là để chúng trôi khỏi nhau.
     src/app_icons.py              SVG Lucide cho nội dung / global search
     src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
-Điều hướng lấy nguyên từ `ui_theme.SITE_NAV` — 7 nhóm, 39 mục. Thêm mục thì
-thêm ở đó, không thêm ở `app_shell.py`.
+Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 8 nhóm chức năng,
+chia cụm có tiêu đề. `SITE_NAV` là bản phẳng được suy ra cho các trình dựng
+và tìm kiếm. Thêm mục ở `SITE_NAV_SECTIONS`, không thêm ở `app_shell.py`.
 
 **Tiền tố lớp phải là `app-`, không phải `vla-`.** Phép kiểm riêng tư
 `test_no_page_spells_out_where_the_data_lives` cấm chuỗi `vla` trong mọi tệp
@@ -189,6 +190,30 @@ Sàn 0,35 cũ trộn 35% mô hình thô cả khi s ≤ 0; walk-forward 997 kỳ 
 (z = −2,40), bỏ sàn hơn sàn z = +2,44 (`scripts/benchmark_model_trust.py`). Đừng khôi phục sàn. Khi
 trust = 0 mọi xác suất ML bằng nền; `ml_predict.rank_predictions` xếp hoà theo xác suất thô.
 
+Cầu-kèo (`cau_keo_ml`, trọng số tổ hợp 0,30) dùng CÙNG luật từ 04-10-2026: cột `prob` =
+`trust·thô + (1 − trust)·nền`, trust và nền học trên khối thẩm định, lưu trong gói và đọc CHỈ qua
+`cau_keo_ml.trust_from_pack` — không có mặc định; gói thiếu luật tin thì học lại. `ml_prob_raw` giữ
+xác suất thô cho điểm và lý do. Walk-forward 1 000 kỳ đo xác suất thô kém hằng số (Đặc Biệt
+z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co. Dòng `p_cau` cũ trong sổ
+`data/history/pred_<mode>.csv` là xác suất THÔ: sổ ghi `policy_cau` cho dòng mới, và nơi HỌC từ sổ
+(trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
+`availability_from_history_day(..., current_policy=True)`.
+Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
+
+## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
+
+`ensemble_utils.finalize_blend(p, mode)` là phép chốt của tổ hợp tuyến tính TRƯỚC hiệu chỉnh:
+Đặc Biệt = `floor_distribution`; LOTO = `anchor_loto_level`, tức `Σp = 100·(1 − 0,99²⁷) ≈ 23,77`
+(số con khác nhau kỳ vọng mỗi kỳ), nhân cùng một hệ số nên giữ thứ hạng. Hai nhánh cầu vị trí
+thổi tổng lên 24,5 và 26,5 (lời nguyền người thắng khi chọn top quy tắc), nên trước đó tổ hợp LOTO
+kém hằng số chỉ vì SAI MỨC. Mọi nơi chấm vector tổ hợp — `predict_nextday_2d`,
+`learn_ensemble_weights`, `meta_predictor._baseline_validation`, `model_quality`,
+`feature_attribution` — phải gọi hàm ấy; đừng chép lại `clip01`
+(`tests/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
+`policy_blend`, và trang Chất lượng chốt dòng cũ (không có cột) bằng `anchor_loto=False`.
+Số đo: `scripts/benchmark_component_trust.py`,
+`documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.
+
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
 
 Trang Chất lượng mô hình và bộ theo dõi `src/skill_monitor.py` chấm chính
@@ -202,6 +227,10 @@ pipeline và làm lượt đỏ khi kỹ năng ngoài mẫu rời vùng 0 theo H
 VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ hơn là hồi quy,
 tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
 ngưỡng.
+
+Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/atomic_io.py` (tệp tạm + `os.replace`).
+Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
+(`tests/test_atomic_ledgers.py`).
 
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
@@ -221,6 +250,46 @@ lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 g
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
 
+## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
+
+Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,
+"Vietlott Quant Engine") nhưng hai bên chạy riêng rẽ, để sau còn tách thành hai
+trang. Toàn bộ VLM (bản `6bec0c9`, trừ `.github`) nằm ở `vietlott/` như một dự án
+TỰ ĐỦ: `pyproject.toml`, `src/vietlott_engine`, `src/vlm`, `data/`, `scripts/`,
+`tests/`, `reports/`. Đừng trộn nó vào `src/` hay `data/` của VLA, và đừng sửa
+logic của nó ở đây khi không cần — engine tự tìm thư mục dự án qua `paths.py`.
+
+- Chạy: `cd vietlott && python -m pip install -e ".[dev,crawler]" && python -m pytest`
+  (369 phép kiểm). Lệnh: `vietlott`, `vlm-update`, `vlm-forecast`, `vlm-audit`.
+- Workflow ở `.github/workflows/vlm-*.yml` (GitHub chỉ đọc workflow ở gốc kho),
+  `working-directory: vietlott`, đường dẫn cache có tiền tố `vietlott/`. Chúng KHÔNG
+  triển khai Pages; trang riêng của engine chỉ được dựng và lưu thành artifact.
+  `tests/test_vietlott_engine_layout.py` canh cả ba điều.
+- Phép kiểm của engine tìm workflow ở cả hai bố cục (`tests/conftest.py`,
+  `find_workflows`): kho riêng thì `.github/workflows/*.yml`, nằm trong VLA thì
+  `../.github/workflows/vlm-*.yml`.
+- Tag phát hành của engine là `vlm-v<phiên bản>`.
+
+Trang Vietlott của site (`vietlott.html` + 7 trang sản phẩm) dựng bằng
+`src/build_vietlott_results.py` từ `vlm.web.dashboard.build_dashboard` của engine:
+kết quả đã xác thực, bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước), dự
+báo ghi trước kỳ + đối chiếu, kết luận e-value. Trình dựng KHÔNG in `source`,
+`source_url`, `official_url` hay cảnh báo của engine (chúng nhắc tên nguồn) —
+`tests/test_vietlott_results.py` canh. Workflow `vietlott-results.yml` không gọi
+mạng: khôi phục (chỉ đọc) cache trạng thái `vqe-state-` rồi dựng và triển khai.
+Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value của engine
+(`randomness_summary`), không viết cứng: Max 3D và Max 3D Pro lệch thật ở hàng đơn vị (số 6
+≈ 11%, lặp lại trên hai sản phẩm), dù mọi cửa Max 3D mà mô hình tính được vẫn có RTP < 1 (Mega/Power/Lotto không có RTP trong phân tích nên không được gộp vào câu ấy)
+(`documentation/research/2026-10-07-max3d-hang-don-vi.md`).
+API của engine mặc định an toàn (08-10-2026): CORS đóng, `VQE_API_TOKEN` (khi đặt) bắt mọi
+POST/PUT/PATCH/DELETE và mọi `?record=` mà FastAPI đọc là True (`on`, `y`… cũng vậy, đọc bằng
+chính `TypeAdapter(bool)`) gửi `Authorization: Bearer`; ba GET làm mới dự báo (`/forecast/{p}`,
+`/forecast/{p}/evidence`, `/ml/forecast/{p}`) cũng là lệnh ghi. Không có token thì lệnh ghi do trình
+duyệt gửi từ trang khác (`Sec-Fetch-Site`/`Origin`) bị 403; `vietlott serve` và compose chỉ nghe
+`127.0.0.1`. CORS phải nằm NGOÀI middleware xác thực (thêm sau cùng). `vietlott/tests/test_api_security.py` canh; nên đưa ngược bản vá về kho VLM.
+Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
+giữ nguyên làm lưu trữ, không còn được ghi.
+
 ## Phòng thử thách mô hình `src/vla/`
 
 `src/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,
@@ -230,6 +299,19 @@ hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, n�
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
+
+## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
+
+`src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
+2 số cuối/đầu ĐB và bóng; chạm từ tổng 2 số cuối giải nhất; lô cặp G5; song thủ G2–G1), khớp
+TỪNG con số in trong bài (`tests/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
+Kiểm 4 225 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
+bừa cũng nổ 78,4%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Mốc chấm LOTO là xác suất CÓ
+ĐIỀU KIỆN theo số con đã về ở kỳ ấy, p Poisson-nhị thức, Holm cho năm quy tắc — khớp từng số với bộ
+`xsmb_methods` chủ dự án gửi. `src/digit_sum_hypothesis.py` là phép kiểm TIẾN CỨU đã đăng ký
+05-10-2026 (từ kỳ 06-10, 180 kỳ, α = 0,01 sau Holm), sổ cái `data/hypotheses/digit_sum_rules.csv`
+giữ lần ghi đầu; KHÔNG sửa tham số. Chi tiết:
+`documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`; kỹ năng `soi-cau`.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 
@@ -349,7 +431,12 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
 - Sidebar Filter: `#app-sidebar-filter`, chỉ lọc nhóm đang hiển thị. Không
   dùng lại input, query hoặc handler global search.
 - Theo yêu cầu mới ngày 26/09/2026, rail/header dùng SVG gốc Nexlink tại
-  `src/assets/nexlink`, giữ đúng đường nét, opacity, thứ tự 11 icon và header.
+  `src/assets/nexlink`, giữ đúng đường nét, opacity và header. Từ 05-10-2026,
+  rail theo thứ tự nhóm trong `SITE_NAV`: Kết quả → Vietlott → Thống kê → Thống kê LOTO →
+  Thống kê Đặc Biệt → Soi cầu → Dự báo → Nghiên cứu & công cụ. Tám nút nhóm
+  có nhãn ngắn; tìm kiếm và đóng menu là hai nút riêng ngoài tablist. Không
+  thêm lại hai lối tắt lặp với menu con. Mũi tên, Home/End chọn nhóm; chỉ nhóm
+  đang chọn có `tabindex=0`.
   Sidebar dùng outline Flaticon Rounded chuyển nguyên hình học sang SVG.
   `nexlink_icons.py` là renderer của shell; không thay bằng Lucide tương tự.
   Lucide tại `src/assets/icons` chỉ còn dùng trong nội dung/global search.

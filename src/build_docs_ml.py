@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import html
 
 import pandas as pd
 
 from ui_locale import column_label
+from lottery_codes import lottery_code
 from ui_theme import (
     ALIGN_LEFT,
     ALIGN_RIGHT,
@@ -19,7 +21,8 @@ from ui_theme import (
 )
 from web_security import security_meta_tags
 from page_output import write_page
-from evidence_catalog import ml_row_evidence, tag_rows, values_block
+from lab_ui import lab_card, lab_footer, lab_guide, lab_hero, lab_styles
+from evidence_catalog import ml_row_evidence, ml_summary_evidence, tag_rows, values_block
 
 
 DOCS_DIR = Path("docs")
@@ -53,6 +56,8 @@ def _prediction_table(df: pd.DataFrame) -> tuple[str, str]:
 
     cols = [c for c in ["predict_for_date", "number", "prob_percent", "prob"] if c in df.columns]
     view = df[cols].copy()
+    if "number" in view:
+        view["number"] = view["number"].map(lottery_code)
 
     if "prob_percent" in view.columns:
         view["prob_percent"] = view["prob_percent"].astype(float).map(lambda x: f"{x:.3f}%")
@@ -97,6 +102,7 @@ def _base_page(body: str, page_title: str, current: str = "") -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   {security_meta_tags()}
   {stylesheet_link()}
+  {lab_styles() if current.startswith("ml_top10_") else ""}
   <title>{page_title}</title>
 </head>
 <body>
@@ -105,6 +111,69 @@ def _base_page(body: str, page_title: str, current: str = "") -> str:
 {app_shell_close(current)}
 </body>
 </html>"""
+
+
+def _prediction_overview(frame: pd.DataFrame, date: str, mode: str) -> str:
+    """Đọc mức tin đã lưu, không suy từ xác suất và không mặc định thiếu thành 0."""
+    trust = pd.to_numeric(frame.get("model_trust", pd.Series(dtype=float)), errors="coerce")
+    complete = len(frame) > 0 and len(trust) == len(frame) and trust.between(0, 1).all()
+    if not complete:
+        value = "—"
+        note = "Chưa có đủ mức tin thành phần ML trong báo cáo này. Không suy mức tin từ xác suất dự báo."
+    else:
+        low, high = float(trust.min()), float(trust.max())
+        value = f"{low:.1%}" if low == high else f"{low:.1%}–{high:.1%}"
+        value = value.replace(".", ",")
+        if high == 0:
+            note = ("Mức tin thành phần ML bằng 0: xác suất được co hoàn toàn về xác suất nền. "
+                    "Thứ hạng có thể dùng xác suất thô để phá hòa; thứ hạng ấy không chứng minh lợi thế dự báo.")
+        else:
+            note = ("Mức tin thành phần ML điều khiển phép co xác suất thô về mức nền. "
+                    "Đây là trọng số của thành phần ML, không phải xác suất trúng hay Confidence Score.")
+    evidence_id = f"ml-{mode}-summary"
+    return f"""<section class="app-lab-summary" aria-label="Tóm tắt bản dự báo ML">
+<article class="app-lab-stat"><span>Kỳ dự báo</span><strong class="app-lab-forecast-date">{html.escape(date or "—")}</strong><small>Ngày đích ghi trong bản dự báo</small></article>
+<article class="app-lab-stat"><span>Danh sách công bố</span><strong>{len(frame)}</strong><small>Số ứng viên hiện có trong bảng</small></article>
+<article class="app-lab-stat"><span>Mức tin thành phần ML</span><strong data-ml-trust data-evidence="{evidence_id}">{value}</strong><small>Trọng số co về xác suất nền</small></article>
+</section><p class="app-lab-trust-note">{note}</p>"""
+
+
+def _forecast_body(frame: pd.DataFrame, table: str, date: str,
+                   rows: list, mode: str) -> str:
+    """Dải số giữ nguyên thứ tự công bố; bảng giữ toàn bộ độ chính xác cũ."""
+    name = "LOTO" if mode == "loto" else "Đặc Biệt"
+    current = f"ml_top10_{mode}.html"
+    subtitle = (
+        "Quan sát thứ hạng của thành phần học máy trên dải 00–99. Xác suất biểu diễn khả năng "
+        "một số xuất hiện ít nhất một lần trong kỳ dự báo."
+        if mode == "loto" else
+        "Theo dõi hai chữ số cuối giải Đặc Biệt qua thành phần học máy. "
+        "Phân phối xác suất trên toàn bộ dải 00–99 được chuẩn hóa về tổng xấp xỉ một."
+    )
+    numbers = []
+    if "number" in frame:
+        for index, number in enumerate(frame["number"]):
+            evidence = f' data-evidence="{html.escape(rows[index][0])}"' if index < len(rows) else ""
+            numbers.append(f'<li{evidence}><b>{html.escape(lottery_code(number))}</b></li>')
+    strip = ('<ol class="app-lab-number-strip" aria-label="Các số theo thứ tự công bố">'
+             + ''.join(numbers) + '</ol>') if numbers else ''
+    hero = lab_hero(current, f"Dự báo ML · Top 10 {name}", subtitle,
+                    eyebrow="PHÒNG PHÂN TÍCH DỰ BÁO", core="ML / LOTO" if mode == "loto" else "ML / ĐB",
+                    meta="Bản dự báo theo kỳ · Đọc cùng mức tin và kết quả kiểm ngoài mẫu",
+                    action=("#app-lab-ranking", "Xem bảng xếp hạng"))
+    guide = lab_guide([
+        ("Xác suất công bố", "Giá trị sau phép co về nền: mức tin × xác suất thô + (1 − mức tin) × xác suất nền. "
+         + ("Đặc Biệt được chuẩn hóa sau co để xác suất của toàn bộ 100 số cộng lại 100%. " if mode == "de" else "")
+         + "Nhấp vào giá trị trong bảng để xem bước tính."),
+        ("Thứ hạng", "Danh sách giữ nguyên thứ tự từ bản dự báo. Nếu xác suất sau co bằng nhau, thứ hạng không biểu thị khác biệt về xác suất công bố."),
+        ("Chu kỳ cập nhật", "Sau 18:35 giờ Việt Nam, quy trình cập nhật dự báo cho kỳ tiếp theo. Ngày đích ở trên cho biết bản dự báo đang được hiển thị."),
+    ])
+    ranking = lab_card(table, title=f"10 số {name} đứng đầu" + (" (00–99)" if mode == "loto" else " (2 số cuối Đặc Biệt)"),
+                       aside=_date_badge(date), span=12, flush=True, ident="app-lab-ranking")
+    return (f'<div class="app-lab app-lab-forecast" data-lab-layout="forecast">{hero}'
+            + _prediction_overview(frame, date, mode) + strip + '<div class="ui-grid">' + ranking + '</div>'
+            + values_block([(f"ml-{mode}-summary", ml_summary_evidence(mode))])
+            + guide + lab_footer() + '</div>')
 
 
 def build() -> None:
@@ -123,62 +192,15 @@ def build() -> None:
     loto_table = tag_rows(loto_table, [ident for ident, _ in loto_rows], cols=(2, 3)) + values_block(loto_rows)
     de_table = tag_rows(de_table, [ident for ident, _ in de_rows], cols=(2, 3)) + values_block(de_rows)
 
-    loto_page = _base_page(
-        body=f"""
-{
-            page_header(
-                "Dự báo ML — 10 số LOTO đứng đầu",
-                "Xác suất mô hình học máy cho dải 00–99. Sau 18:35 (giờ Việt Nam) quy "
-                "trình sẽ cập nhật dự báo cho ngày hôm sau.",
-            )
-        }
-{nav_links(NAV, current="ml_top10_loto.html")}
-<div class="ui-grid">
-{
-            card(
-                loto_table,
-                title="10 số LOTO đứng đầu (00–99)",
-                aside=_date_badge(loto_date),
-                span=12,
-                flush=True,
-                lift=True,
-            )
-        }
-</div>
-""",
-        page_title="ML — 10 số LOTO đứng đầu",
-        current="ml_top10_loto.html",
-    )
     write_stylesheet(DOCS_DIR)
-    write_page((DOCS_DIR / "ml_top10_loto.html"), loto_page)
-
-    de_page = _base_page(
-        body=f"""
-{
-            page_header(
-                "Dự báo ML — 10 số Đặc Biệt đứng đầu",
-                "Hai số cuối giải Đặc Biệt. Mô hình chuẩn hóa xác suất thành phân phối "
-                "00–99 (tổng xấp xỉ 1).",
-            )
-        }
-{nav_links(NAV, current="ml_top10_de.html")}
-<div class="ui-grid">
-{
-            card(
-                de_table,
-                title="10 số Đặc Biệt đứng đầu (2 số cuối Đặc Biệt)",
-                aside=_date_badge(de_date),
-                span=12,
-                flush=True,
-                lift=True,
-            )
-        }
-</div>
-""",
-        page_title="ML — 10 số Đặc Biệt đứng đầu",
-        current="ml_top10_de.html",
-    )
-    write_page((DOCS_DIR / "ml_top10_de.html"), de_page)
+    for mode, frame, table, date, rows in (
+        ("loto", loto_top, loto_table, loto_date, loto_rows),
+        ("de", de_top, de_table, de_date, de_rows),
+    ):
+        current = f"ml_top10_{mode}.html"
+        name = "LOTO" if mode == "loto" else "Đặc Biệt"
+        body = _forecast_body(frame, table, date, rows, mode)
+        write_page(DOCS_DIR / current, _base_page(body, f"ML — 10 số {name} đứng đầu", current))
 
     index_body = f"""
 {

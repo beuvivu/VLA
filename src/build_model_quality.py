@@ -18,6 +18,7 @@ import json
 from pathlib import Path
 
 from page_output import write_page
+from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
 import numpy as np
 import pandas as pd
 
@@ -25,8 +26,6 @@ from ui_locale import mode_label
 from ui_theme import (
     app_shell_close,
     app_shell_open,
-    card,
-    page_header,
     stylesheet_link,
     write_stylesheet,
 )
@@ -519,6 +518,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
             if any("source" in block for block in modes.values())
             else coverage_cards(report.get("coverage", {})),
             title="Nguồn của các con số bên dưới",
+            ident="app-lab-sources",
             span=12,
             flush=True,
         )
@@ -531,6 +531,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
             card(
                 murphy_table(mu),
                 title=f"Vì sao kỹ năng gần bằng 0 · {name}",
+                ident=f"app-lab-{mode}-brier",
                 span=12,
                 lift=True,
             )
@@ -547,6 +548,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 "nhiễu lấy mẫu của chỗ dùng để kiểm nó.</p>"
                 + calibration_table(block["calibration"]),
                 title=f"Độ hiệu chỉnh · {name}",
+                ident=f"app-lab-{mode}-calibration",
                 span=6,
                 lift=True,
             )
@@ -580,6 +582,7 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
                 f"{verdict}. Tệ hơn đường cơ sở ở "
                 f"{skill.get('share_worse_than_baseline', 0):.0%} số kỳ.</p>",
                 title=f"Kỹ năng theo thời gian · {name}",
+                ident=f"app-lab-{mode}-skill",
                 span=12,
                 lift=True,
             )
@@ -592,16 +595,29 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   {security_meta_tags()}
   {stylesheet_link()}
+  {lab_styles()}
   <title>Chất lượng mô hình — Phân tích XSMB</title>
 </head>
 <body>
 {app_shell_open("model-quality.html")}
-{page_header(
+<div class="app-lab app-lab-quality" data-lab-layout="quality">
+{lab_hero("model-quality.html",
     "Chất lượng mô hình",
-    "Phân rã Brier thành phần hiệu chỉnh và phần phân biệt, để thấy kỹ năng đến từ đâu "
-    "và thiếu ở đâu. Đây là thước đo xác suất, không phải cam kết kết quả.",
+    "Giải phẫu năng lực dự báo: từ độ hiệu chỉnh, độ phân giải đến kỹ năng ngoài mẫu. "
+    "Mỗi kết luận đi cùng dữ liệu và khoảng bất định.",
+    eyebrow="PHÒNG CHẨN ĐOÁN MÔ HÌNH", core="KIỂM ĐỊNH",
+    meta=f"Báo cáo chấm đến: {report.get('covers_through') or 'Chưa có báo cáo'}",
+    action=("#app-lab-sources", "Khám phá báo cáo"),
 )}
+{lab_guide([
+    ("Hiệu chỉnh", "Xác suất dự báo có khớp tỉ lệ thực tế? Đọc đường chéo cùng khoảng Wilson và cỡ mẫu của từng nhóm."),
+    ("Độ sắc & phân giải", "Dự báo phân hóa đến đâu và có tách được kết quả thực tế? Một mô hình chỉ trả về nền có thể hiệu chỉnh tốt nhưng thiếu kỹ năng."),
+    ("Kỹ năng ngoài mẫu", "So sánh dự báo đã công bố với mô hình nền. Khoảng bất định chứa 0 nghĩa là chưa phân biệt được lợi thế với nhiễu."),
+])}
+{lab_jump([("app-lab-sources", "Nguồn đánh giá")] + [
+    (f"app-lab-{mode}-brier", mode_label(mode)) for mode in modes])}
 <div class="ui-grid">{"".join(blocks)}</div>
+{lab_footer()}</div>
 {app_shell_close("model-quality.html")}
 </body>
 </html>

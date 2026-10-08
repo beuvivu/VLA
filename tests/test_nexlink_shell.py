@@ -1,4 +1,4 @@
-"""Nexlink shell must preserve the reference vectors, order and working targets."""
+"""Khung giữ vector Nexlink; menu sắp theo chức năng và mọi đích đều có thật."""
 import hashlib
 import json
 import sys
@@ -10,8 +10,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 ASSETS = ROOT / 'src/assets/nexlink'
-RAIL = ['home', 'crown', 'layers', 'circles', 'components', 'code',
-        'clipboard', 'chart', 'robot', 'plus', 'exit']
+RAIL = ['home', 'tags', 'chart', 'clipboard', 'crown', 'layers', 'robot', 'code', 'plus', 'exit']
 
 
 def test_reference_vectors_are_preserved_in_the_rendered_shell():
@@ -36,14 +35,38 @@ def test_reference_vectors_are_preserved_in_the_rendered_shell():
         assert geometry(original) == geometry(rendered), name
 
 
-def test_full_reference_rail_order_and_separators():
+def test_rail_follows_the_reader_workflow_and_keeps_utilities_separate():
     from app_shell import rail_html
     soup = BeautifulSoup(rail_html('index.html'), 'html.parser')
-    assert [n['data-nexlink-icon'] for n in soup.select('.app-rail-list svg')] == RAIL
+    assert [n['data-nexlink-icon'] for n in soup.select('.app-rail svg')] == RAIL
     assert len(soup.select('.app-rail-divider')) == 3
-    assert len(soup.select('[role=tab]')) == 7
+    assert len(soup.select('[role=tab]')) == 8
+    assert not soup.select('.app-rail-list a, .app-rail-list button:not([role=tab])')
+    assert soup.select_one('[role=tablist] [aria-selected=true][tabindex="0"]')
     for link in soup.select('a[href]'):
         assert (ROOT / 'docs' / link['href'].split('#')[0]).is_file()
+
+
+def test_submenus_separate_statistics_bridges_and_forecasts():
+    """Trang tần suất không lẫn vào soi cầu; xếp hạng kỳ sau ở nhóm dự báo."""
+    from app_shell import panel_html
+
+    for page, group, section in [
+        ('cau-giai-dac-biet.html', 'Thống kê Đặc Biệt', 'Tần suất & chu kỳ'),
+        ('cau-dac-biet-theo-bo-so.html', 'Thống kê Đặc Biệt', 'Tần suất & chu kỳ'),
+        ('soi-cau-dac-biet-bo-so.html', 'Soi cầu', 'Cầu Đặc Biệt'),
+        ('giai-db-ngay-mai.html', 'Dự báo', 'Tham khảo theo lịch sử'),
+    ]:
+        soup = BeautifulSoup(panel_html(page), 'html.parser')
+        assert soup.select_one('#app-panel-title').get_text() == group
+        link = soup.select_one('a[aria-current=page]')
+        assert link['href'] == page
+        section_node = link.find_parent('section')
+        assert section_node is not None, page
+        heading = section_node.find('h3')
+        assert heading.get_text() == section
+        assert section_node['aria-labelledby'] == heading['id']
+        assert not link.find_parent('nav').has_attr('hidden')
 
 
 def test_header_has_the_reference_controls_and_real_dropdown_links():

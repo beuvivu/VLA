@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import math
 from calendar import monthrange
@@ -11,6 +10,8 @@ from typing import Any, Iterable, Sequence
 
 import numpy as np
 import pandas as pd
+
+from safe_io import read_csv_or_empty, read_json_or_empty
 
 from ui_locale import strategy_label, value_label
 
@@ -45,41 +46,33 @@ PRIZE_GROUPS: list[tuple[str, list[str], int]] = [
 
 
 def _read_csv(path: Path, *, dtype: Any = None) -> pd.DataFrame:
-    try:
-        if not path.exists() or path.stat().st_size == 0:
-            return pd.DataFrame()
-        return pd.read_csv(path, dtype=dtype, keep_default_na=False)
-    except Exception:
-        return pd.DataFrame()
+    return read_csv_or_empty(path, dtype=dtype, keep_default_na=False)
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    try:
-        obj = json.loads(path.read_text(encoding="utf-8"))
-        return obj if isinstance(obj, dict) else {"data": obj}
-    except Exception:
-        return {}
+    obj = read_json_or_empty(path)
+    return obj if isinstance(obj, dict) else {"data": obj}
 
 
 def _safe_float(value: Any, default: float = 0.0) -> float:
     try:
         x = float(value)
         return x if math.isfinite(x) else default
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return default
 
 
 def _fmt2(value: Any) -> str:
     try:
         return f"{int(float(value)):02d}"
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return str(value or "").zfill(2)
 
 
 def _fmt_code(value: Any, width: int) -> str:
     try:
         return f"{int(float(value)):0{width}d}"
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         text = str(value or "").strip()
         return text.zfill(width) if text else "—"
 

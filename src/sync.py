@@ -7,6 +7,7 @@ from datetime import datetime, time as dtime, timedelta
 from typing import Iterable
 from zoneinfo import ZoneInfo
 
+from calendar_alignment import known_non_draw_days
 from lottery import Lottery
 from time_policy import DEFAULT_DRAW_CUTOFF, VIETNAM_TIMEZONE, latest_complete_draw_date as _latest_complete_draw_date
 
@@ -43,6 +44,7 @@ def ensure_up_to_date(
     retry_backoff_s: float = 0.8,
     consensus_min_recent: int = 2,
     consensus_recent_days: int = 2,
+    non_draw_days: Iterable[str] | None = None,
 ) -> list[datetime]:
     """Fetch missing draw dates and fill recent holes.
 
@@ -50,6 +52,12 @@ def ensure_up_to_date(
     - Uses draw cutoff to avoid fetching incomplete "today".
     - Fills holes for the last N days (default 365).
     - Retries failed dates (common with flaky sources / anti-bot).
+
+    Ngày không quay KHÔNG phải lỗ cần lấp. Ngày đã ghi trong
+    ``data/non_draw_days.json`` (``non_draw_days`` mặc định đọc tệp ấy) bị bỏ
+    khỏi danh sách cần lấy; ngày mà chính lần lấy này vừa xác định là không quay
+    thì không thử lại. Trước đó mỗi lượt pipeline hỏi lại bốn ngày Tết 2026,
+    mỗi ngày hai lần kèm thời gian ngủ: ~36 giây cho một kết luận đã biết.
     """
     tz = ZoneInfo(tz_name)
     now = datetime.now(tz)
@@ -72,7 +80,11 @@ def ensure_up_to_date(
         if d not in existing_dates:
             missing_set.add(d)
 
-    missing = sorted(missing_set)
+    skip = known_non_draw_days() if non_draw_days is None else frozenset(non_draw_days)
+    known_gaps = {d for d in missing_set if d.isoformat() in skip}
+    if known_gaps:
+        logger.info("Bỏ qua %d ngày không quay đã ghi sổ", len(known_gaps))
+    missing = sorted(missing_set - known_gaps)
     if not missing:
         logger.info("No new/missing dates to fetch (latest stored: %s, target: %s)", existing_last, target)
         lottery.generate_dataframes()
@@ -85,18 +97,27 @@ def ensure_up_to_date(
         had_before = lottery.has_date(d)
 
         ok = False
+        age_days = max(0, (target - d).days)
+        min_agreement = consensus_min_recent if age_days <= consensus_recent_days else 1
         for attempt in range(1, max_retries + 1):
-            age_days = max(0, (target - d).days)
-            min_agreement = consensus_min_recent if age_days <= consensus_recent_days else 1
             lottery.fetch(d, min_agreement=min_agreement)
             if lottery.has_date(d):
                 ok = True
+                break
+            # Trong cửa sổ gần, trùng khít còn có thể là trang nguồn CHƯA cập
+            # nhật kỳ mới (bộ phân tích đóng dấu ngày được hỏi lên kỳ cũ), nên
+            # vẫn thử lại. Ngoài cửa sổ thì trùng khít là ngày không quay.
+            if lottery.is_no_draw(d) and age_days > consensus_recent_days:
                 break
             sleep_s = retry_backoff_s * attempt
             logger.warning("No data for %s (attempt %d/%d). Sleep %.1fs then retry.", d, attempt, max_retries, sleep_s)
             time.sleep(sleep_s)
 
-        if not ok:
+        if not ok and lottery.is_no_draw(d) and age_days > consensus_recent_days:
+            logger.warning(
+                "%s là ngày không quay; ghi vào data/non_draw_days.json để lượt sau bỏ qua", d
+            )
+        elif not ok:
             logger.warning("No source returned data for %s (will retry in next run)", d)
 
         if (not had_before) and lottery.has_date(d):

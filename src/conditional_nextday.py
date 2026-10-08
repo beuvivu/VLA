@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 import argparse
 import json
 from datetime import UTC, datetime
@@ -188,7 +190,7 @@ def main() -> None:
     )
     long_df = compute_loto_nextday_given_special(df_2d, prior_strength=forced_prior)
     long_path = out_dir / "loto_nextday_given_special_long.csv"
-    long_df.to_csv(long_path, index=False)
+    write_code_csv(long_df, long_path, index=False)
 
     top_df = (
         long_df.sort_values(
@@ -200,7 +202,7 @@ def main() -> None:
         .reset_index(drop=True)
     )
     top_path = out_dir / f"loto_nextday_given_special_top{max(1, int(args.top))}.csv"
-    top_df.to_csv(top_path, index=False)
+    write_code_csv(top_df, top_path, index=False)
 
     latest = pd.to_datetime(df_2d["date"]).max().date().isoformat()
     current_special = int(df_2d.sort_values("date").iloc[-1]["special"]) % 100
@@ -208,7 +210,7 @@ def main() -> None:
         ["p_eb", "q_value_fdr", "hits"], ascending=[False, True, False]
     )
     current_path = out_dir / "current_special_next_loto.csv"
-    current.head(max(1, int(args.top))).to_csv(current_path, index=False)
+    write_code_csv(current.head(max(1, int(args.top))), current_path, index=False)
 
     manifest = {
         "schema_version": 2,

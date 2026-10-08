@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Research-only extensions preserved from the final legacy repository audit.
 
 These diagnostics deliberately remain outside the production probability ensemble.
@@ -447,7 +449,7 @@ def run_extensions(
         "loto_acf_bartlett.csv": acf,
     }
     for name, table in tables.items():
-        table.to_csv(out / name, index=False)
+        write_code_csv(table, out / name, index=False)
 
     randomness = {"ks_full_special": ks, "ljung_box_even_tail_count": ljung}
     (out / "randomness_extensions.json").write_text(

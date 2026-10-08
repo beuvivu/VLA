@@ -182,8 +182,12 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
         text = page.read_text(encoding="utf-8")
         assert "ui-shell" in text, name
         assert "https://" not in text, name
-        # Không còn body margin cứng của bản cũ.
-        assert "margin: 24px" not in text and "margin:24px" not in text, name
+        # Chặn margin trên body; khoảng cách 24px của thẻ không phải lỗi này.
+        css = "\n".join(style.get_text() for style in BeautifulSoup(text, "html.parser").find_all("style"))
+        rules = [rule.rpartition("{") for rule in css.split("}")]
+        body_rules = [declarations for selector, _, declarations in rules
+                      if re.search(r"(?<![\w-])body(?![\w-])", selector)]
+        assert not any(re.search(r"\bmargin\s*:\s*24px\b", rule) for rule in body_rules), name
         _grid_rows_do_not_overflow(page)
 
 

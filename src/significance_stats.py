@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lottery_codes import write_code_csv
+
 """Multiple-testing-aware statistical diagnostics for XSMB.
 
 This module deliberately separates *descriptive statistical anomaly* from
@@ -197,7 +199,7 @@ def main() -> None:
     for mode in ("loto", "de"):
         for window in windows:
             table = number_significance(mode, two, sparse, window_days=window)
-            table.to_csv(out_dir / f"number_significance_{mode}_{window}d.csv", index=False)
+            write_code_csv(table, out_dir / f"number_significance_{mode}_{window}d.csv", index=False)
             table.to_json(out_dir / f"number_significance_{mode}_{window}d.json", orient="records", indent=2)
 
     diag = global_diagnostics(two, sparse, window_days=max(windows))

@@ -3,13 +3,13 @@
 Ba phép đối chiếu kia chứng minh Worker TÍNH giống bản Python. Tệp này kiểm
 những thứ chỉ Worker mới có, và đều là loại hỏng âm thầm:
 
-* chặn khuếch đại yêu cầu ra trang nguồn,
+* lượt yêu cầu của người xem không bao giờ gọi trang nguồn,
 * một lượt cron hỏng không được làm đổ lượt sau,
 * thiếu ràng buộc KV phải báo lỗi đọc hiểu được,
 * định tuyến và tiêu đề CORS.
 
-Mỗi kịch bản chạy trong MỘT TIẾN TRÌNH RIÊNG vì ``index.js`` giữ mốc chặn ở
-cấp module; gộp chung thì ca sau thừa hưởng khoá của ca trước.
+Mỗi kịch bản chạy trong MỘT TIẾN TRÌNH RIÊNG để không ca nào thừa hưởng trạng thái
+cấp module của ca trước.
 """
 
 from __future__ import annotations
@@ -76,25 +76,29 @@ def _scenario(name: str) -> dict:
     return json.loads(proc.stdout)
 
 
-@pytest.mark.parametrize("scenario", ["amplification_kv_broken", "amplification_kv_healthy"])
-def test_many_viewers_cannot_amplify_into_a_flood_of_source_requests(scenario: str) -> None:
-    """Trang live thăm dò 5 giây/lần; không chặn thì mỗi lượt kéo theo sáu lượt.
+@pytest.mark.parametrize("kv_state", ["kv_empty", "kv_put_drops"])
+def test_viewer_requests_never_call_the_sources(kv_state: str) -> None:
+    """Trang live thăm dò 5 giây/lần; nếu lượt yêu cầu được thu thập thì mỗi lượt kéo theo sáu.
 
-    Nhánh "KV rỗng thì thu thập ngay" là đúng cho lần gọi đầu sau khi triển
-    khai. Nhưng nếu KV ghi hỏng thì nó biến thành: mỗi người xem, 5 giây một
-    lần, dội sáu lượt vào trang nguồn — đúng lúc các trang ấy tải nặng nhất
-    trong ngày. Mười người xem là hơn 700 lượt mỗi phút.
-
-    Hai lớp khoá: một trong KV, một trong bộ nhớ của isolate. Ca
-    ``kv_broken`` tắt hẳn lớp đầu để chứng minh lớp sau thật sự đỡ được —
-    bản đầu tôi viết chỉ có lớp KV, và đo được 12 lượt sinh 72 lượt gọi.
+    Trước 08-10-2026, KV rỗng thì lượt yêu cầu thu thập ngay, chặn bằng khoá KV cộng mốc trong
+    bộ nhớ. KV nhất quán sau, không đọc-ghi nguyên tử, nên lúc khởi động lạnh mỗi isolate tự
+    chạy một vòng: đo được 12 lượt gọi nguồn cho 12 yêu cầu luân phiên hai isolate. Nay chỉ cron
+    gọi nguồn; KV rỗng thì trả 503 có CORS để trang live chuyển sang live.json dự phòng.
     """
-    out = _scenario(scenario)
-    assert out["all_ok"], "mọi lượt vẫn phải trả lời bình thường"
-    assert out["outbound_fetches"] == SOURCES_PER_COLLECTION, (
-        f"{out['requests']} lượt truy cập sinh {out['outbound_fetches']} lượt gọi ra "
-        f"nguồn; chỉ được phép đúng một vòng thu thập ({SOURCES_PER_COLLECTION})"
+    out = _scenario("requests_never_collect")
+    assert out["outbound_fetches"] == 0, (
+        f"lượt yêu cầu đã gọi nguồn {out['outbound_fetches']} lần; chỉ cron được gọi"
     )
+    assert out[kv_state]["statuses"] == [503], "KV rỗng phải báo lỗi để trang đọc nguồn kế tiếp"
+    assert out[kv_state]["cors"] == ["*"], "thiếu CORS thì trình duyệt chỉ thấy lỗi mạng"
+    assert out[kv_state]["body_status"] == "waiting"
+
+
+def test_the_live_page_treats_a_non_ok_worker_reply_as_a_reason_to_fall_back() -> None:
+    """503 của Worker chỉ có ích khi trang live coi nó là lỗi và đọc nguồn kế tiếp."""
+    page = (ROOT / "docs" / "live.html").read_text(encoding="utf-8")
+    block = page.split("async function fetchSnapshot()")[1].split("throw lastError")[0]
+    assert "if (!response.ok) throw" in block
 
 
 def test_the_scheduled_run_writes_once_and_reads_come_from_storage() -> None:
@@ -173,3 +177,18 @@ def test_routing_and_methods() -> None:
     assert out["unknown_path"] == 404
     assert out["post"] == 405, "chỉ đọc, không nhận ghi"
     assert out["options"] == 204, "preflight CORS phải qua"
+
+
+def test_a_kv_that_cannot_write_does_not_break_the_cron_or_the_reply() -> None:
+    """KV hết hạn mức ghi: lỗi của lượt cron chỉ vào log, lượt sau thử lại; người xem nhận 503
+    có CORS (trang chuyển sang nguồn dự phòng) và lượt đọc không gọi nguồn."""
+    out = _scenario("kv_put_throws")
+    assert out["cron_rejected"] is False, "một lượt cron hỏng không được đổ lượt sau"
+    assert out["outbound_on_cron"] == SOURCES_PER_COLLECTION
+    assert out["statuses"] == [503]
+    assert out["cors"] == ["*"]
+    assert out["outbound_after_reads"] == SOURCES_PER_COLLECTION
+
+
+def test_health_survives_a_corrupt_stored_snapshot() -> None:
+    assert _scenario("health_corrupt_kv") == {"status": 200, "has_snapshot": False}
