@@ -15,4 +15,5 @@ shap>=0.52.0,<1.0; python_version >= "3.12"
 river>=0.26.1,<1.0
 # Phòng thử thách src/vla: cộng đồng Louvain trên đồ thị đồng xuất hiện. Từng chỉ
 # có mặt nhờ ăn theo gói khác trên máy dev, nên CI hỏng ở bước thu thập phép kiểm.
-networkx>=3.0,<4.0
+networkx>=3.6.1,<3.7; python_version < "3.12"
+networkx>=3.7,<4.0; python_version >= "3.12"
