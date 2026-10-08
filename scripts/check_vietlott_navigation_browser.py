@@ -60,6 +60,17 @@ def main():
                             expect(page.locator('#app-panel')).to_have_attribute('aria-hidden', 'true')
                             assert page.locator('#vl-pairs').is_visible()
                             assert page.locator('#app-main').evaluate('el => !el.inert')
+                            # Bảng tần suất chỉ tương tác sau khi người dùng mở.
+                            frequency = page.locator('section[aria-labelledby="vl-frequency"] details').first
+                            frequency.locator('summary').click()
+                            cell = frequency.locator('tbody td').first
+                            expect(cell).to_be_visible()
+                            cell.click()
+                            drawer = page.locator('#app-evidence-drawer')
+                            expect(drawer).to_be_visible()
+                            expect(drawer).to_contain_text('Các kỳ gần nhất được công bố')
+                            page.keyboard.press('Escape')
+                            expect(drawer).not_to_be_visible()
                         else:
                             page.keyboard.press('Escape')
                             expect(page.locator('#app-panel')).to_have_attribute('aria-hidden', 'true')
