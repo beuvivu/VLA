@@ -77,6 +77,61 @@ jobs:
         id: update
         continue-on-error: true
         run: vlm-update --once > results-status.json
+      - name: Tóm tắt trạng thái từng sản phẩm
+        id: update_summary
+        if: always()
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          products = ('mega645', 'power655', 'lotto535', 'max3d', 'max3dpro', 'keno', 'bingo18')
+          statuses = {'caught_up', 'behind_schedule', 'not_advancing', 'invalid_schedule',
+                      'awaiting_publication', 'date_only'}
+          data, source = None, None
+          for filename, label in (('results-status.json', 'lượt cập nhật'),
+                                  ('data/results/status.json', 'checkpoint')):
+              try:
+                  candidate = json.loads(Path(filename).read_text(encoding='utf-8'))
+                  entries = candidate.get('products') if isinstance(candidate, dict) else None
+                  if isinstance(entries, dict) and any(isinstance(entries.get(p), dict) for p in products):
+                      data, source = candidate, label
+                      break
+              except (OSError, ValueError, UnicodeError):
+                  pass
+          lines = ['### Trạng thái cập nhật Vietlott', '']
+          if data is None:
+              lines.append('Trạng thái cập nhật: unavailable')
+          else:
+              lines += [f'Nguồn tóm tắt: {source}',
+                        'Lỗi worker: ' + ('có' if data.get('worker_error') else 'không'), '',
+                        '| Sản phẩm | Kỳ mới nhất | Ngày | Độ mới | Có lỗi |',
+                        '| --- | --- | --- | --- | --- |']
+              for product in products:
+                  entry = data['products'].get(product)
+                  if not isinstance(entry, dict):
+                      entry = {}
+                  draw = entry.get('last_draw_id')
+                  draw = str(draw) if type(draw) is int and 0 <= draw <= 10**12 else '—'
+                  day = entry.get('last_draw_date')
+                  day = day if isinstance(day, str) and re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', day) else '—'
+                  freshness = entry.get('freshness')
+                  status = freshness.get('status') if isinstance(freshness, dict) else None
+                  status = status if isinstance(status, str) and status in statuses else 'unavailable'
+                  error = 'có' if entry.get('error') else 'không'
+                  lines.append(f'| {product} | {draw} | {day} | {status} | {error} |')
+          text = '\n'.join(lines) + '\n'
+          print(text, end='')
+          if os.environ.get('GITHUB_STEP_SUMMARY'):
+              try:
+                  with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a', encoding='utf-8') as output:
+                      output.write(text)
+              except OSError:
+                  print('Không ghi được tóm tắt; xem trạng thái trong log.')
+          PY
       - name: Chấm dự báo cũ và lưu bộ số cho kỳ chưa quay
         continue-on-error: true
         run: vietlott forecast next --product all > forecasts.json

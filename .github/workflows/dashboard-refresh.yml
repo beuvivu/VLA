@@ -34,12 +34,22 @@ jobs:
       - name: Cài đặt thư viện cho bảng điều khiển
         run: python -m pip install --no-cache-dir pandas==2.2.3 numpy==2.2.6
 
-      - name: Tạo bảng điều khiển Markdown từ dữ liệu đã lưu
-        run: python src/build_markdown_dashboard_v3.py
-
-      - name: Xác minh bố cục bảng điều khiển cân đối
+      - name: Ghi nhận bảng điều khiển đã làm mới
+        shell: bash
         run: |
-          python - <<'PY'
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3 4; do
+            if (( attempt > 1 )); then
+              # Bảng phụ thuộc dữ liệu: dựng lại trên main mới, không rebase
+              # bảng cũ lên kết quả vừa được workflow khác công bố.
+              git fetch origin main
+              git reset --hard origin/main
+            fi
+            python src/build_markdown_dashboard_v3.py
+            python - <<'PY'
           from pathlib import Path
 
           p = Path("DASHBOARD.md")
@@ -58,15 +68,18 @@ jobs:
           assert len(text) > 70_000
           print(f"OK DASHBOARD.md {len(text):,} chars")
           PY
-
-      - name: Ghi nhận bảng điều khiển đã làm mới
-        run: |
-          if git diff --quiet -- DASHBOARD.md; then
-            echo "DASHBOARD.md already current"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add DASHBOARD.md
-          git commit -m "chore: refresh balanced markdown dashboard"
-          git push origin HEAD:main
+            if git diff --quiet -- DASHBOARD.md; then
+              echo "DASHBOARD.md already current"
+              exit 0
+            fi
+            git add DASHBOARD.md
+            git commit -m "chore: refresh balanced markdown dashboard"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            if (( attempt < 4 )); then
+              sleep $(( 2 ** attempt + RANDOM % 3 ))
+            fi
+          done
+          echo "::error::Không đẩy được bảng điều khiển sau 4 lần thử."
+          exit 1

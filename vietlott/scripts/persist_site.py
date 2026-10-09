@@ -45,7 +45,7 @@ def persist() -> None:
             if git('rev-parse', 'HEAD') != git('rev-parse', 'origin/main'):
                 raise RuntimeError('Remote advanced during publication; retry required')
             return
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, RuntimeError):
             if attempt == 2:
                 raise
     raise RuntimeError('Unable to synchronize publication branch')
