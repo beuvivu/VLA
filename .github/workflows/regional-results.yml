@@ -41,6 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 1
 
       - uses: actions/setup-python@v7
@@ -52,12 +53,17 @@ jobs:
           python -m pip install --no-cache-dir -r requirements.txt
 
       - name: Đồng bộ Miền Trung và Miền Nam
+        id: collect
+        continue-on-error: true
         env:
           MANUAL_DAYS: ${{ github.event.inputs.backfill_days || '30' }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then MANUAL_DAYS=365; fi
           if [ "${{ github.event_name }}" = "push" ]; then MANUAL_DAYS=30; fi
-          python src/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15
+          python src/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
+
+      - name: Dựng trang từ kết quả đã thu thập
+        run: |
           python src/build_regional_results.py
           python - <<'PY'
           from pathlib import Path
@@ -95,8 +101,8 @@ jobs:
             exit 0
           fi
           git commit -m "data: sync XSMT/XSMN from xskt.com.vn"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - name: Đóng gói GitHub Pages đã cập nhật
         uses: actions/upload-pages-artifact@v5
@@ -109,3 +115,9 @@ jobs:
         uses: actions/deploy-pages@v5
         with:
           artifact_name: regional-pages-${{ github.run_attempt }}
+
+      - name: Báo lỗi nếu chưa thu thập đủ ngày bắt buộc
+        if: ${{ always() && steps.collect.outcome == 'failure' }}
+        run: |
+          echo "::error::Đồng bộ vùng chưa hoàn tất; xem bước thu thập để biết miền và ngày còn thiếu."
+          exit 1

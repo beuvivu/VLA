@@ -1,6 +1,7 @@
 """Run the actual publication helper in a local remote, including rejected pushes."""
 import subprocess
 import sys
+import importlib.util
 from pathlib import Path
 
 import pytest
@@ -41,6 +42,41 @@ def test_rejected_push_never_satisfies_publication_barrier(tmp_path):
     assert result.returncode!=0
     assert git(queued,'rev-parse','HEAD')!=git(queued,'rev-parse','origin/main')
     assert journal.read_text()=='new local result\n'
+
+
+def test_remote_advance_after_accepted_push_retries_publication(tmp_path, monkeypatch):
+    """Commit khác tới sau push vẫn phải được đồng bộ trước khi dựng trang."""
+    _, first, queued = remote_fixture(tmp_path)
+    git(queued, 'pull', '--rebase')
+    journal = queued / 'data/results/results.jsonl'
+    journal.parent.mkdir(parents=True)
+    journal.write_text('new local result\n')
+    spec = importlib.util.spec_from_file_location('persist_site', SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    actual_git = module.git
+    advanced = False
+
+    def advancing_git(*args):
+        nonlocal advanced
+        result = actual_git(*args)
+        if args[0] == 'push' and not advanced:
+            advanced = True
+            git(first, 'pull', '--ff-only', 'origin', 'main')
+            (first / 'README').write_text('concurrent update')
+            git(first, 'add', 'README')
+            git(first, 'commit', '-m', 'concurrent update after publication')
+            git(first, 'push', 'origin', 'main')
+        return result
+
+    monkeypatch.chdir(queued)
+    monkeypatch.setattr(module, 'git', advancing_git)
+    module.persist()
+
+    assert advanced
+    assert git(queued, 'rev-parse', 'HEAD') == git(first, 'rev-parse', 'HEAD')
+    assert (queued / 'README').read_text() == 'concurrent update'
+    assert journal.read_text() == 'new local result\n'
 
 
 def test_workflows_require_persistence_before_site_or_cache_publication(workflow_files):

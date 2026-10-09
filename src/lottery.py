@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from lottery_codes import write_code_csv
 
+import io
 import json
 import logging
 from collections import defaultdict
@@ -14,6 +15,7 @@ import pandas as pd
 from safe_io import read_json_or_empty
 import requests
 
+from atomic_io import atomic_write_text
 from dtos import Result, ResultList
 from excel_export import export_excel_outputs
 from sources import (
@@ -107,13 +109,14 @@ class Lottery:
         def _dump(df: pd.DataFrame, file_name: str) -> None:
             self._paths.data_dir.mkdir(parents=True, exist_ok=True)
             csv_path = self._paths.data_dir / f"{file_name}.csv"
-            write_code_csv(df, csv_path, index=False)
-            df.to_json(
+            csv_buffer = io.StringIO()
+            # Tên đích quyết định độ rộng mã số trong write_code_csv.
+            csv_buffer.name = str(csv_path)
+            write_code_csv(df, csv_buffer, index=False)
+            atomic_write_text(csv_path, csv_buffer.getvalue())
+            atomic_write_text(
                 self._paths.data_dir / f"{file_name}.json",
-                orient="records",
-                date_format="iso",
-                indent=2,
-                index=False,
+                df.to_json(orient="records", date_format="iso", indent=2, index=False),
             )
 
         _dump(self._raw_data, "xsmb")
@@ -132,7 +135,7 @@ class Lottery:
             existing.update(self._fetch_audit)
             # Keep the audit compact: latest 120 requested dates.
             trimmed = dict(sorted(existing.items())[-120:])
-            audit_path.write_text(json.dumps(trimmed, ensure_ascii=False, indent=2), encoding="utf-8")
+            atomic_write_text(audit_path, json.dumps(trimmed, ensure_ascii=False, indent=2))
 
     @staticmethod
     def _result_signature(result: Result) -> tuple[int, ...]:

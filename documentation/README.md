@@ -11,6 +11,7 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`qa/2026-10-10-work-completion.md`](qa/2026-10-10-work-completion.md) | Chốt tiến trình VLA: độ bền tệp kết quả, retry xuất bản, độ mới XSMT/XSMN và bằng chứng CI/nguồn dữ liệu. |
 | [`architecture/vietlott-comparison-ui.md`](architecture/vietlott-comparison-ui.md) | Khung responsive, màu bóng số, hiệu ứng nút, bảng đối chiếu theo từng bộ số và API JavaScript tính tỷ lệ/hạng giải; cập nhật trang ngay sau engine. |
 | [`architecture/2026-10-08-vietlott-main-ui.md`](architecture/2026-10-08-vietlott-main-ui.md) | Đồng bộ font, màu ngày/đêm và bố cục với trang chính; Jackpot đúng kỳ và bộ số nháp Mega/Power trên thiết bị. |
 | [`architecture/2026-10-08-vietlott-navigation.md`](architecture/2026-10-08-vietlott-navigation.md) | Phân hệ Vietlott trong shell Nexlink dùng chung, đích submenu, giới hạn dữ liệu và kiểm chứng. |

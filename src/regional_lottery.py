@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import re
 import time
@@ -20,6 +21,7 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
+from atomic_io import atomic_write_text
 from sources import REGIONAL_SOURCE_NAMES
 
 VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -167,12 +169,11 @@ def write_dataset(path: Path, rows: Iterable[RegionalPrize]) -> None:
     dedup = {row.key: row for row in rows}
     order = {name: i for i, (name, _, _) in enumerate(PRIZE_SPECS)}
     rows = sorted(dedup.values(), key=lambda r: (r.date, r.province, order[r.prize], r.position))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(asdict(row))
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=CSV_FIELDS)
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(asdict(row))
     grouped = {}
     for row in rows:
         grouped.setdefault(row.date, {}).setdefault(row.province, {}).setdefault(row.prize, []).append(row.value)
@@ -181,13 +182,36 @@ def write_dataset(path: Path, rows: Iterable[RegionalPrize]) -> None:
         "source": SOURCE, "timezone": "Asia/Ho_Chi_Minh",
         "draw_dates": len(grouped), "rows": len(rows), "results": grouped,
     }
-    path.with_suffix(".json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    json_text = json.dumps(payload, ensure_ascii=False, indent=2)
+    atomic_write_text(path, buffer.getvalue())
+    atomic_write_text(path.with_suffix(".json"), json_text)
+
+
+def complete_dates(rows: Iterable[RegionalPrize], region: str) -> set[str]:
+    """Ngày có đủ bộ giải hợp lệ cho mọi đài đã lưu của miền đang xét."""
+    grouped: dict[str, dict[str, list[RegionalPrize]]] = {}
+    for row in rows:
+        grouped.setdefault(row.date, {}).setdefault(row.province, []).append(row)
+    expected = {(prize, pos) for prize, count, _ in PRIZE_SPECS for pos in range(1, count + 1)}
+    return {
+        day for day, provinces in grouped.items()
+        if all(
+            province and len(draw) == len(expected)
+            and {(row.prize, row.position) for row in draw} == expected
+            and all(
+                row.region == region and row.source == SOURCE
+                and re.fullmatch(rf"[0-9]{{{SPEC_BY_PRIZE[row.prize][1]}}}", row.value)
+                for row in draw
+            )
+            for province, draw in provinces.items()
+        )
+    }
 
 
 def sync_region(repo_root: Path, region: str, start: date, end: date, *, delay: float = 0.25):
     target = repo_root / "data" / "regions" / f"xs{region}.csv"
     existing = load_csv(target)
-    have = {r.date for r in existing}
+    have = complete_dates(existing, region)
     added: list[RegionalPrize] = []
     attempted = 0
     http = requests.Session()
@@ -197,7 +221,8 @@ def sync_region(repo_root: Path, region: str, start: date, end: date, *, delay: 
             attempted += 1
             try:
                 rows = fetch_day(region, cursor, session=http)
-            except requests.RequestException:
+            except requests.RequestException as exc:
+                print(f"XS{region.upper()}: chưa tải được ngày {cursor} ({type(exc).__name__})")
                 rows = []
             if rows:
                 added.extend(rows)
@@ -216,19 +241,31 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--end-date")
     parser.add_argument("--backfill-days", type=int, default=0)
     parser.add_argument("--delay", type=float, default=0.25)
+    parser.add_argument(
+        "--require-latest", action="store_true",
+        help="Báo lỗi nếu thiếu ngày đích; mặc định trước 18:00 giờ VN yêu cầu hôm qua, sau đó hôm nay",
+    )
     args = parser.parse_args(argv)
-    today = datetime.now(VN_TZ).date()
-    end = date.fromisoformat(args.end_date) if args.end_date else today
+    now = datetime.now(VN_TZ)
+    # Mốc vận hành bảo thủ để kiểm độ mới, không phải giờ quay của từng đài.
+    expected = now.date() - timedelta(days=int(now.hour < 18)) if args.require_latest else now.date()
+    end = date.fromisoformat(args.end_date) if args.end_date else expected
     start = date.fromisoformat(args.start_date) if args.start_date else (
         end - timedelta(days=args.backfill_days - 1) if args.backfill_days > 0 else end
     )
     if start > end:
         parser.error("start-date phải <= end-date")
     root = Path(__file__).resolve().parents[1]
+    missing = False
     for region in (("mt", "mn") if args.region == "both" else (args.region,)):
         attempted, added = sync_region(root, region, start, end, delay=max(0.0, args.delay))
         print(f"XS{region.upper()}: thử {attempted} ngày, thêm {added} dòng ({start} → {end})")
-    return 0
+        if args.require_latest:
+            saved = load_csv(root / "data" / "regions" / f"xs{region}.csv")
+            if end.isoformat() not in complete_dates(saved, region):
+                missing = True
+                print(f"XS{region.upper()}: thiếu kết quả đầy đủ ngày bắt buộc {end}")
+    return int(missing)
 
 
 if __name__ == "__main__":
