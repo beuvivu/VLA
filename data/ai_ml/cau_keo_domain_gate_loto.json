@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-09T17:20:04Z",
+  "generated_at": "2026-10-09T18:11:54Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -86,7 +86,7 @@
   },
   "screen_summary": {
     "partner": {
-      "mean_brier_skill": -5.1607596940740175e-06,
+      "mean_brier_skill": -5.1607596939195856e-06,
       "mean_logloss_skill": -4.94522390301184e-06
     },
     "cap_50": {
@@ -94,7 +94,7 @@
       "mean_logloss_skill": 0.0001414505232201349
     },
     "bo": {
-      "mean_brier_skill": -0.00026117369198422607,
+      "mean_brier_skill": -0.00026117369198430277,
       "mean_logloss_skill": -0.0002362410046872091
     },
     "bong": {
@@ -116,7 +116,7 @@
   "confirmation": {
     "cap_50": {
       "brier_skill": -0.0001545415699468215,
-      "logloss_skill": -0.00013984519038642062,
+      "logloss_skill": -0.00013984519038662293,
       "confirmed": false
     }
   },
@@ -329,7 +329,7 @@
   },
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
-  "all_groups_confirmation_brier_skill": -0.0002775195912159538,
+  "all_groups_confirmation_brier_skill": -0.0002775195912161069,
   "all_groups_confirmation_logloss_skill": -0.0002531133060513602,
   "domain_active": false,
   "domain_trust": 0.0,
