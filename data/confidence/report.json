@@ -200,21 +200,21 @@
   {
    "key": "cau_de",
    "label": "20 cầu vị trí Đặc Biệt tốt nhất",
-   "hits": 222,
+   "hits": 231,
    "n": 20020,
-   "rate": 0.011088911088911088,
+   "rate": 0.011538461538461539,
    "base": 0.01,
-   "z": 1.42134958893666,
+   "z": 1.9772861204797867,
    "in_sample": 0.01514869888475836
   },
   {
    "key": "de_markov",
    "label": "20 ô chuyển đầu Đặc Biệt mạnh nhất",
-   "hits": 19,
+   "hits": 20,
    "n": 1994,
-   "rate": 0.009528585757271816,
+   "rate": 0.010030090270812437,
    "base": 0.01,
-   "z": -0.21861529251227702,
+   "z": 0.013612408313825134,
    "in_sample": null
   }
  ],
@@ -865,7 +865,7 @@
    "c_cau": 0.001998001998001998,
    "tier": "Low/Noise",
    "score": 0.0,
-   "published": false
+   "published": true
   },
   {
    "mode": "loto",
@@ -1008,7 +1008,7 @@
    "c_cau": 0.0,
    "tier": "Low/Noise",
    "score": 0.0,
-   "published": false
+   "published": true
   },
   {
    "mode": "loto",
@@ -1190,7 +1190,7 @@
    "c_cau": 0.0,
    "tier": "Low/Noise",
    "score": 0.0,
-   "published": true
+   "published": false
   },
   {
    "mode": "loto",
@@ -1229,7 +1229,7 @@
    "c_cau": 0.0,
    "tier": "Low/Noise",
    "score": 0.0,
-   "published": true
+   "published": false
   },
   {
    "mode": "loto",
@@ -2854,25 +2854,25 @@
    "02",
    "15",
    "17",
-   "75",
-   "72"
+   "47",
+   "58"
   ],
   "picks_source": "trang 10 số LOTO / 10 số Đặc Biệt",
   "scenarios": 10000,
   "numbers_hit": [
-   574,
-   1997,
-   3073,
-   2482,
-   1323,
-   425,
-   111,
-   14,
-   1,
+   559,
+   2066,
+   3037,
+   2463,
+   1301,
+   468,
+   88,
+   16,
+   2,
    0,
    0
   ],
-  "mean_occurrences": 2.7048,
+  "mean_occurrences": 2.6961,
   "breakeven_loto": 3.7037037037037037,
   "breakeven_de": 100.0,
   "de_hit_share": 0.1045
