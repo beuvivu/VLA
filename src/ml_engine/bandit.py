@@ -42,6 +42,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Final, Literal
 
@@ -128,12 +129,23 @@ class DiscountedThompsonSamplingMAB:
             raise BanditError("tên cánh tay bị trùng")
         if not 0.0 < self.discount <= 1.0:
             raise BanditError(f"discount phải nằm trong (0, 1], nhận {self.discount}")
-        if self.prior_alpha <= 0 or self.prior_beta <= 0:
+        if (not np.isfinite(self.prior_alpha) or not np.isfinite(self.prior_beta)
+                or self.prior_alpha <= 0 or self.prior_beta <= 0):
             raise BanditError("tham số tiên nghiệm phải dương")
         if self.policy not in ("thompson", "ucb1"):
             raise BanditError(f"policy không hỗ trợ: {self.policy}")
         if not self.arms:
             self.arms = {name: ArmState(name=name) for name in self.arm_names}
+        if set(self.arms) != set(self.arm_names):
+            raise BanditError("trạng thái cánh tay không khớp danh mục")
+        counters = [self.total_updates, *(arm.pulls for arm in self.arms.values())]
+        if any(isinstance(value, bool) or not isinstance(value, Integral) or value < 0
+               for value in counters):
+            raise BanditError("bộ đếm phải là số nguyên không âm")
+        for name, arm in self.arms.items():
+            if (arm.name != name or not np.isfinite(arm.successes)
+                    or not np.isfinite(arm.failures) or arm.successes < 0 or arm.failures < 0):
+                raise BanditError("trạng thái phần thưởng phải hữu hạn và không âm")
         if self._rng is None:
             self._rng = np.random.default_rng(self.seed)
 
@@ -431,14 +443,16 @@ class DiscountedThompsonSamplingMAB:
                         name=name,
                         successes=float(state["successes"]),
                         failures=float(state["failures"]),
-                        pulls=int(state["pulls"]),
+                        pulls=state["pulls"],
                     )
                     for name, state in payload["arms"].items()
                 },
-                total_updates=int(payload["total_updates"]),
+                total_updates=payload["total_updates"],
             )
         except KeyError as error:
             raise BanditError(f"trạng thái thiếu trường {error}") from error
+        except (TypeError, ValueError, OverflowError) as error:
+            raise BanditError("trạng thái bandit không hợp lệ") from error
 
         state = payload.get("rng_state")
         if state:

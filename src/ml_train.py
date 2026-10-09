@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import joblib
 import numpy as np
+
+from model_io import atomic_joblib_dump
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
@@ -251,7 +252,7 @@ def train_one(mode: str, out_dir: Path, window_days: int = 2000) -> None:
 
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / f"ml_{mode}.joblib"
-    joblib.dump(
+    atomic_joblib_dump(
         {
             "model_type": "platt_temporal_hgb",
             "model": clf,

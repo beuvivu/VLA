@@ -16,8 +16,9 @@ from datetime import UTC, datetime
 from numbers import Integral
 from pathlib import Path
 
-import joblib
 import numpy as np
+
+from model_io import atomic_joblib_dump
 import pandas as pd
 from scipy.optimize import minimize
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -786,7 +787,7 @@ def train_meta(
         # đang bật khi bằng chứng hiện tại không còn đủ điều kiện.
         models_dir.mkdir(parents=True, exist_ok=True)
         report_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(pack, models_dir / f"meta_{mode}.joblib")
+        atomic_joblib_dump(pack, models_dir / f"meta_{mode}.joblib")
         report = {key: value for key, value in pack.items() if key != "model"}
         (report_dir / f"meta_report_{mode}.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
@@ -914,7 +915,7 @@ def train_meta(
     }
     models_dir.mkdir(parents=True, exist_ok=True)
     model_path = models_dir / f"meta_{mode}.joblib"
-    joblib.dump(pack, model_path)
+    atomic_joblib_dump(pack, model_path)
 
     report_dir.mkdir(parents=True, exist_ok=True)
     report = {

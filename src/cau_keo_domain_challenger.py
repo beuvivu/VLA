@@ -51,6 +51,7 @@ from cau_keo_feature_groups import (
     augment_domain_features,
 )
 from ml_models import PlattCalibratedClassifier
+from model_io import MODEL_LOAD_ERRORS, atomic_joblib_dump
 from ml_validation import (
     PredictionEvaluation,
     ValidationConfig,
@@ -582,7 +583,7 @@ def _ensure_baseline(
         try:
             trust_from_pack(joblib.load(model_path))
             return
-        except (AttributeError, EOFError, ImportError, OSError, ValueError):
+        except MODEL_LOAD_ERRORS:
             # Gói thiếu luật tin hiện hành: học lại nền thay vì đọc trust mặc định.
             pass
     run_baseline(
@@ -701,7 +702,7 @@ def run_mode(
     pack["domain_trained_through_date"] = str(
         pd.to_datetime(X_train["anchor_date"]).max().date()
     )
-    joblib.dump(pack, model_path)
+    atomic_joblib_dump(pack, model_path)
 
     manifest_path = out_dir / f"cau_keo_manifest_{mode}.json"
     manifest = read_json_or_empty(manifest_path)

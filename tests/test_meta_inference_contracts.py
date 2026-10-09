@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import pickle
 import sys
 from datetime import date
 
@@ -124,6 +125,23 @@ def test_required_component_missing_keeps_linear_forecast(tmp_path) -> None:
     np.testing.assert_array_equal(prediction, vector)
     assert trust == 0.0
     assert info["active"] is False
+
+
+@pytest.mark.parametrize("error", [None, pickle.UnpicklingError("private-pack-contents")])
+def test_corrupt_meta_serialization_keeps_linear_vector_without_private_reason(tmp_path, monkeypatch, error):
+    (tmp_path / "meta_loto.joblib").write_bytes(b"not-a-valid-joblib")
+    if error is not None:
+        def invalid_load(*args):
+            raise error
+
+        monkeypatch.setattr(joblib, "load", invalid_load)
+    vector = np.full(100, 0.2)
+    prediction, trust, info = predictor._meta_prediction(
+        tmp_path, "loto", date(2026, 1, 2), *([vector] * 6)
+    )
+    np.testing.assert_array_equal(prediction, vector)
+    assert trust == 0.0 and info["active"] is False
+    assert "private-pack-contents" not in info["reason"]
 
 
 def test_meta_baseline_replays_default_weights_and_categorical_floor() -> None:

@@ -26,11 +26,11 @@ class InferenceReport(BaseModel):
 
 
 def inference_report(h: DrawHistory, sims: int = 1000, alpha: float = 0.05, seed: int | None = 0) -> InferenceReport:
-    per = per_number_deviations(h, sims=sims, seed=seed)
+    per = per_number_deviations(h, sims=sims, seed=seed, alpha=alpha)
     pw = power_equivalence_report(h, alpha)
     hier = hierarchical_report(h)
     seq = sequential_report(h, alpha)
-    cp = changepoint_report(h, sims=max(200, sims // 2), seed=seed)
+    cp = changepoint_report(h, sims=max(200, sims // 2), seed=seed, alpha=alpha)
     top = per.numbers[0]
     findings = [
         f"Per-number: most deviant is {top.number} (z = {top.z:+.2f}); Westfall–Young FWER-adjusted p = {top.p_westfall_young:.2f}"

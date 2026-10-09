@@ -7,27 +7,55 @@ import json
 import numpy as np
 from scipy.special import expit, logit
 
+from vlm.forecast.recovery import NumericalModelError, require_finite
+
 
 class OnlineLogistic:
-    def __init__(self, features: int, base: float, l2: float = .001):
+    def __init__(self, features: int, base: float, l2: float = .001) -> None:
+        if type(features) is not int or features < 1 or not np.isfinite([base, l2]).all() or not 0 < base < 1 or l2 < 0:
+            raise ValueError('Invalid logistic configuration')
         self.features, self.base, self.l2 = features, base, l2
         self.theta = np.zeros(features + 1)
         self.acc = np.zeros_like(self.theta)
+        self.rate_scale = 1.
 
+    def _input(self, x: np.ndarray) -> np.ndarray:
+        x = np.asarray(x, dtype=float)
+        if x.ndim != 2 or x.shape[1] != self.features or not len(x) or not np.isfinite(x).all():
+            raise ValueError('Invalid logistic input')
+        return x
+
+    @np.errstate(over='raise', invalid='raise', divide='raise')
     def predict(self, x: np.ndarray) -> np.ndarray:
-        return expit(x @ self.theta[:-1] + self.theta[-1] + logit(self.base))
+        x = self._input(x)
+        require_finite(self.theta, 'logistic parameters')
+        prediction = expit(x @ self.theta[:-1] + self.theta[-1] + logit(self.base))
+        require_finite(prediction, 'logistic prediction')
+        return prediction
 
+    @np.errstate(over='raise', invalid='raise', divide='raise')
     def learn(self, x: np.ndarray, y: np.ndarray) -> None:
+        """AdaGrad staging: batch hoặc optimizer lỗi không thay trọng số đang dùng."""
+        x, y = self._input(x), np.asarray(y, dtype=float)
+        if y.shape != (len(x),) or not np.isfinite(y).all() or ((y < 0) | (y > 1)).any():
+            raise ValueError('Invalid logistic target')
+        require_finite(self.acc, 'AdaGrad accumulator')
+        if (self.acc < 0).any() or not np.isfinite(self.rate_scale) or not 0 < self.rate_scale <= 1:
+            raise NumericalModelError('Invalid AdaGrad state')
         error = self.predict(x) - y
         gradient = np.append(x.T @ error / len(y), error.mean())
         gradient[:-1] += self.l2 * self.theta[:-1]
+        require_finite(gradient, 'logistic gradient')
         gradient = np.clip(gradient, -1, 1)
-        self.acc += gradient ** 2
-        self.theta -= .08 * gradient / (np.sqrt(self.acc) + 1e-8)
+        acc = self.acc + gradient ** 2
+        theta = self.theta - .08 * self.rate_scale * gradient / (np.sqrt(acc) + 1e-8)
+        require_finite(acc, 'AdaGrad candidate')
+        require_finite(theta, 'logistic candidate')
+        self.acc, self.theta = acc, theta
 
     def to_dict(self) -> dict:
         return {'features':self.features, 'base':self.base, 'l2':self.l2,
-                'theta':self.theta.tolist(), 'acc':self.acc.tolist()}
+                'theta':self.theta.tolist(), 'acc':self.acc.tolist(), 'rate_scale':self.rate_scale}
 
     @classmethod
     def from_dict(cls, data: dict) -> OnlineLogistic:
@@ -39,6 +67,10 @@ class OnlineLogistic:
             setattr(out, key, value)
         if (out.acc < 0).any():
             raise ValueError('Invalid AdaGrad state')
+        scale = data.get('rate_scale', 1.)
+        if isinstance(scale, bool) or not np.isfinite(scale) or not 0 < scale <= 1:
+            raise ValueError('Invalid logistic rate scale')
+        out.rate_scale = float(scale)
         return out
 
 
@@ -49,9 +81,13 @@ class GRU:
     updates. This makes reload/chunk behavior deterministic and bounds memory.
     """
     def __init__(self, features: int, hidden: int = 8, base: float = .5,
-                 seed: int = 20261003, l2: float = .001, lr: float = .006):
+                 seed: int = 20261003, l2: float = .001, lr: float = .006) -> None:
+        if (type(features) is not int or features < 1 or type(hidden) is not int or hidden < 1
+            or not np.isfinite([base, l2, lr]).all() or not 0 < base < 1 or l2 < 0 or lr <= 0):
+            raise ValueError('Invalid GRU configuration')
         self.features, self.hidden, self.base = features, hidden, base
         self.seed, self.l2, self.lr = seed, l2, lr
+        self.rate_scale = 1.
         rng = np.random.default_rng(seed)
         self.params = {}
         for gate in ('r', 'z', 'n'):
@@ -64,11 +100,14 @@ class GRU:
         self.second = {k:np.zeros_like(v) for k, v in self.params.items()}
         self.steps = 0
 
+    @np.errstate(over='raise', invalid='raise', divide='raise')
     def _forward(self, x: np.ndarray) -> tuple[np.ndarray, list]:
         x = np.asarray(x, dtype=float)
-        if x.ndim != 3 or x.shape[-1] != self.features or len(x) == 0 or not np.isfinite(x).all():
+        if x.ndim != 3 or x.shape[-1] != self.features or len(x) == 0 or x.shape[1] == 0 or not np.isfinite(x).all():
             raise ValueError('Invalid GRU input')
         p = self.params
+        for value in p.values():
+            require_finite(value, 'GRU parameters')
         h = np.zeros((x.shape[1], self.hidden))
         cache = []
         for frame in x:
@@ -79,12 +118,14 @@ class GRU:
             h = (1 - z) * previous + z * candidate
             cache.append((frame, previous, r, z, candidate, h))
         logits = h @ p['Wo'] + p['bo'][0] + logit(self.base)
+        require_finite(logits, 'GRU logits')
         return logits, cache
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         logits, _ = self._forward(x)
         return expit(logits)
 
+    @np.errstate(over='raise', invalid='raise', divide='raise')
     def loss_and_gradients(self, x: np.ndarray, y: np.ndarray) -> tuple[float, dict[str, np.ndarray]]:
         logits, cache = self._forward(x)
         y = np.asarray(y, dtype=float)
@@ -113,22 +154,37 @@ class GRU:
                 g[key] += self.l2 * p[key]
         return loss, g
 
+    @np.errstate(over='raise', invalid='raise', divide='raise')
     def learn(self, x: np.ndarray, y: np.ndarray) -> None:
-        _, gradients = self.loss_and_gradients(x, y)
-        norm = np.sqrt(sum(float(np.sum(g**2)) for g in gradients.values()))
-        scale = min(1., 1. / max(norm, 1e-12))
-        self.steps += 1
+        """Adam staging, kiểm loss/gradient và clip norm không tự overflow."""
+        loss, gradients = self.loss_and_gradients(x, y)
+        require_finite(loss, 'GRU loss')
+        for gradient in gradients.values():
+            require_finite(gradient, 'GRU gradient')
+        maximum = max(float(np.max(np.abs(g))) for g in gradients.values())
+        normalized_norm = np.sqrt(sum(float(np.sum((g / maximum)**2)) for g in gradients.values())) if maximum else 0.
+        scale = min(1., (1. / maximum) / max(normalized_norm, 1e-12)) if maximum > 1e-12 else 1.
+        steps = self.steps + 1
+        first, second, params = {}, {}, {}
+        if not np.isfinite(self.rate_scale) or not 0 < self.rate_scale <= 1:
+            raise NumericalModelError('Invalid GRU rate scale')
         for key, gradient in gradients.items():
             gradient = gradient * scale
-            self.first[key] = .9 * self.first[key] + .1 * gradient
-            self.second[key] = .999 * self.second[key] + .001 * gradient**2
-            m = self.first[key] / (1 - .9 ** self.steps)
-            v = self.second[key] / (1 - .999 ** self.steps)
-            self.params[key] -= self.lr * m / (np.sqrt(v) + 1e-8)
+            first[key] = .9 * self.first[key] + .1 * gradient
+            second[key] = .999 * self.second[key] + .001 * gradient**2
+            require_finite(first[key], 'Adam first moment')
+            require_finite(second[key], 'Adam second moment')
+            if (second[key] < 0).any():
+                raise NumericalModelError('Invalid Adam variance')
+            m = first[key] / (1 - .9 ** steps)
+            v = second[key] / (1 - .999 ** steps)
+            params[key] = self.params[key] - self.lr * self.rate_scale * m / (np.sqrt(v) + 1e-8)
+            require_finite(params[key], 'GRU candidate')
+        self.first, self.second, self.params, self.steps = first, second, params, steps
 
     def to_dict(self) -> dict:
         return {'features':self.features, 'hidden':self.hidden, 'base':self.base,
-                'seed':self.seed, 'l2':self.l2, 'lr':self.lr, 'steps':self.steps,
+                'seed':self.seed, 'l2':self.l2, 'lr':self.lr, 'steps':self.steps, 'rate_scale':self.rate_scale,
                 **{name:{k:v.tolist() for k, v in getattr(self, name).items()}
                    for name in ('params', 'first', 'second')}}
 
@@ -144,17 +200,23 @@ class GRU:
                 if value.shape != current[key].shape or not np.isfinite(value).all():
                     raise ValueError('Invalid GRU parameter')
                 current[key] = value
-        out.steps = int(data['steps'])
-        if out.steps < 0 or any((v < 0).any() for v in out.second.values()):
+        out.steps = data['steps']
+        if type(out.steps) is not int or out.steps < 0 or any((v < 0).any() for v in out.second.values()):
             raise ValueError('Invalid Adam checkpoint')
+        scale = data.get('rate_scale', 1.)
+        if isinstance(scale, bool) or not np.isfinite(scale) or not 0 < scale <= 1:
+            raise ValueError('Invalid GRU rate scale')
+        out.rate_scale = float(scale)
         return out
 
 
 class TreeExpert:
     """Periodic bounded tree fit; RF prediction is persisted as JSON tree arrays."""
-    def __init__(self, backend: str, base: float, seed: int = 20261003, depth: int = 4):
+    def __init__(self, backend: str, base: float, seed: int = 20261003, depth: int = 4) -> None:
         if backend not in ('rf', 'xgb', 'lgb'):
             raise ValueError('Unknown tree backend')
+        if not np.isfinite(base) or not 0 < base < 1 or type(depth) is not int or not 1 <= depth <= 10:
+            raise ValueError('Invalid tree configuration')
         module = {'rf':'sklearn', 'xgb':'xgboost', 'lgb':'lightgbm'}[backend]
         if importlib.util.find_spec(module) is None:
             raise ImportError(f'{module} is required; install VLM[ml] for optional boosters')
@@ -165,35 +227,49 @@ class TreeExpert:
 
     def fit(self, x: np.ndarray, y: np.ndarray) -> None:
         x, y = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
-        if x.ndim != 2 or y.shape != (len(x),) or not len(y) or not np.isfinite(x).all() or not np.isfinite(y).all() or (y < 0).any() or (y > 1).any():
+        if x.ndim != 2 or x.shape[1] < 1 or y.shape != (len(x),) or not len(y) or not np.isfinite(x).all() or not np.isfinite(y).all() or (y < 0).any() or (y > 1).any():
             raise ValueError('Invalid tree training data')
-        self.trees, self.booster, self.constant = [], None, None
+        trees, booster, constant = [], None, None
         if np.ptp(y) < 1e-12:
-            self.constant = float(np.clip(y[0], .001, .999))
+            self.trees, self.booster, self.constant = [], None, float(np.clip(y[0], .001, .999))
             return
         if self.backend == 'rf':
             from sklearn.ensemble import RandomForestRegressor
             forest = RandomForestRegressor(n_estimators=24, max_depth=self.depth,
                 min_samples_leaf=max(4, min(64, len(y)//20)), max_features=.7,
                 random_state=self.seed, n_jobs=1).fit(x, y)
-            self.trees = [{'left':e.tree_.children_left.tolist(), 'right':e.tree_.children_right.tolist(),
+            trees = [{'left':e.tree_.children_left.tolist(), 'right':e.tree_.children_right.tolist(),
                            'feature':e.tree_.feature.tolist(), 'threshold':e.tree_.threshold.tolist(),
                            'value':e.tree_.value[:, 0, 0].tolist()} for e in forest.estimators_]
         elif self.backend == 'xgb':
             import xgboost as xgb
-            self.booster = xgb.train({'objective':'binary:logistic', 'max_depth':self.depth,
+            booster = xgb.train({'objective':'binary:logistic', 'max_depth':self.depth,
                 'eta':.05, 'lambda':10, 'min_child_weight':10, 'subsample':.8,
                 'colsample_bytree':.7, 'seed':self.seed, 'nthread':1,
                 'base_score':self.base, 'tree_method':'hist'}, xgb.DMatrix(x, label=y), num_boost_round=24)
         else:
             import lightgbm as lgb
-            self.booster = lgb.train({'objective':'cross_entropy', 'max_depth':self.depth,
+            booster = lgb.train({'objective':'cross_entropy', 'max_depth':self.depth,
                 'num_leaves':2 ** self.depth, 'learning_rate':.05, 'lambda_l2':10,
                 'min_data_in_leaf':max(4, min(64, len(y)//20)), 'feature_fraction':.7,
                 'seed':self.seed, 'num_threads':1, 'verbosity':-1}, lgb.Dataset(x, label=y), num_boost_round=24)
+        # Chỉ thay expert đang chạy sau khi candidate vượt kiểm tra state và prediction.
+        candidate = object.__new__(TreeExpert)
+        candidate.__dict__ = {**self.__dict__, 'trees':trees, 'booster':booster, 'constant':constant}
+        if self.backend == 'rf':
+            try:
+                if not trees:
+                    raise ValueError('Empty fitted forest')
+                self._validate_rf(trees, self.depth, x.shape[1])
+            except (ValueError, TypeError, IndexError) as error:
+                raise NumericalModelError('Invalid fitted RF state') from error
+        candidate.predict(x[:128])
+        self.trees, self.booster, self.constant = trees, booster, constant
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         x = np.asarray(x, dtype=float)
+        if x.ndim != 2 or x.shape[1] < 1 or not len(x) or not np.isfinite(x).all():
+            raise ValueError('Invalid tree prediction input')
         if self.constant is not None:
             return np.full(len(x), self.constant)
         if self.trees:
@@ -211,12 +287,20 @@ class TreeExpert:
                     go_left = x[indices, feature[nd]] <= threshold[nd]
                     node[indices] = np.where(go_left, left[nd], right[nd])
                 result += value[node]
+            require_finite(result, 'RF prediction')
             return np.clip(result / len(self.trees), .001, .999)
         if self.booster is not None:
             if self.backend == 'xgb':
                 import xgboost as xgb
-                return np.clip(self.booster.predict(xgb.DMatrix(x)), .001, .999)
-            return np.clip(self.booster.predict(x), .001, .999)
+                prediction = self.booster.predict(xgb.DMatrix(x))
+            else:
+                prediction = self.booster.predict(x)
+            require_finite(prediction, 'tree prediction')
+            if np.asarray(prediction).shape != (len(x),):
+                raise NumericalModelError('Invalid tree prediction shape')
+            if (np.asarray(prediction) < 0).any() or (np.asarray(prediction) > 1).any():
+                raise NumericalModelError('Invalid tree prediction range')
+            return np.clip(prediction, .001, .999)
         return np.full(len(x), self.base)
 
     def to_dict(self) -> dict:
@@ -226,15 +310,12 @@ class TreeExpert:
         return {'backend':self.backend, 'base':self.base, 'seed':self.seed, 'depth':self.depth,
                 'trees':self.trees, 'constant':self.constant, 'booster':raw}
 
-    @classmethod
-    def from_dict(cls, data: dict, *, features: int | None = None) -> TreeExpert:
-        out = cls(**{k:data[k] for k in ('backend', 'base', 'seed', 'depth')})
-        out.trees, out.constant = data['trees'], data['constant']
-        if (type(out.depth) is not int or not 1 <= out.depth <= 10 or len(out.trees) > 24
-            or out.constant is not None and not 0 <= out.constant <= 1
-            or out.trees and (out.backend != 'rf' or data['booster'] is not None)):
-            raise ValueError('Invalid tree checkpoint')
-        for tree in out.trees:
+    @staticmethod
+    def _validate_rf(trees: list[dict], depth_limit: int, features: int | None) -> None:
+        """Kiểm cấu trúc và giá trị RF cho cả candidate lẫn checkpoint."""
+        if len(trees) > 24:
+            raise ValueError('Invalid RF count')
+        for tree in trees:
             length = len(tree['left'])
             if length < 1 or any(len(tree[k]) != length for k in ('right', 'feature', 'threshold', 'value')):
                 raise ValueError('Invalid RF tree')
@@ -247,7 +328,7 @@ class TreeExpert:
             visited, stack = set(), [(0, 0)]
             while stack:
                 node, depth = stack.pop()
-                if node in visited or depth > out.depth:
+                if node in visited or depth > depth_limit:
                     raise ValueError('Invalid RF topology')
                 visited.add(node)
                 left, right = tree['left'][node], tree['right'][node]
@@ -261,6 +342,16 @@ class TreeExpert:
                     stack.extend([(left, depth + 1), (right, depth + 1)])
             if len(visited) != length:
                 raise ValueError('Unreachable RF nodes')
+
+    @classmethod
+    def from_dict(cls, data: dict, *, features: int | None = None) -> TreeExpert:
+        out = cls(**{k:data[k] for k in ('backend', 'base', 'seed', 'depth')})
+        out.trees, out.constant = data['trees'], data['constant']
+        if (type(out.depth) is not int or not 1 <= out.depth <= 10
+            or out.constant is not None and not 0 <= out.constant <= 1
+            or out.trees and (out.backend != 'rf' or data['booster'] is not None)):
+            raise ValueError('Invalid tree checkpoint')
+        cls._validate_rf(out.trees, out.depth, features)
         if data['booster'] is not None:
             if out.backend == 'xgb':
                 import xgboost as xgb

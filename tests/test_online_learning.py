@@ -375,6 +375,41 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
     assert len(pd.read_csv(out / f"predict_next_de_top4_{target}.csv")) == 4
 
 
+@pytest.mark.parametrize("active", [False, True])
+def test_online_loto_tops_keep_diversity_and_identical_prefixes(online, tmp_path, monkeypatch, active):
+    from pick_diversity import diversified_order
+
+    data, out = tmp_path / "data", tmp_path / "data/predict"
+    out.mkdir(parents=True)
+    frame = history()
+    frame.to_csv(data / "xsmb.csv", index=False)
+    target = "2025-01-21"
+    p = np.full(100, 0.15)
+    p[np.arange(4, 100, 10)] = np.linspace(0.9, 0.8, 10)
+    prediction = pd.DataFrame({"number": range(100), "prob": p})
+    path = out / f"predict_next_loto_all_{target}.csv"
+    prediction.to_csv(path, index=False)
+    original = path.read_bytes()
+    final = p.copy()
+    if active:
+        final[0], final[1] = 0.19, 0.11
+        updated, record = online.advance(online.new_state("loto"), frame, p, target, now=before(target))
+        record["published"] = final.tolist()
+        record["gate"]["active"] = True
+        monkeypatch.setattr(online, "advance", lambda *args, **kwargs: (updated, record))
+    online.run_online("loto", data, out, now=before(target))
+    expected = diversified_order(final, 10)
+    picks = json.loads((out / "picks_loto.json").read_text())
+    for k in (4, 8, 10):
+        top = pd.read_csv(out / f"predict_next_loto_top{k}_{target}.csv")
+        assert top["number"].tolist() == expected[:k]
+        assert picks[f"top{k}"] == [f"{n:02d}" for n in expected[:k]]
+        np.testing.assert_allclose(top["prob"], final[expected[:k]])
+    assert max(np.bincount(np.array(expected) % 10)) <= 3
+    if not active:
+        assert path.read_bytes() == original
+
+
 def _settled_state(online):
     frame = history(24)
     state = online.new_state("loto")

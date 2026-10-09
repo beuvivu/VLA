@@ -75,7 +75,8 @@ class FeatureState:
         graph = self.pairs.copy()
         np.fill_diagonal(graph, 0)
         neighbors = np.argsort(-graph, axis=1, kind='stable')[:, :min(3, n)]
-        cluster = prev[neighbors].mean(axis=1)
+        supported = np.take_along_axis(graph, neighbors, axis=1) > 0
+        cluster = (prev[neighbors] * supported).sum(axis=1) / np.maximum(supported.sum(axis=1), 1)
         if isinstance(self.spec, SetSpec):
             symbols = np.arange(1, n + 1)
             positions = np.zeros(n)
@@ -131,8 +132,11 @@ class FeatureState:
                 'rows':[r.tolist() for r in self.rows]}
 
     @classmethod
-    def from_dict(cls, data: dict) -> FeatureState:
-        out = cls(read_spec(data['spec']))
+    def from_dict(cls, data: dict, *, expected_spec: SetSpec | DigitSpec | None = None) -> FeatureState:
+        spec = read_spec(data['spec'])
+        if expected_spec is not None and spec != expected_spec:
+            raise ValueError('Incompatible feature spec')
+        out = cls(spec)
         out.seen, out.last_id, out.last_date = data['seen'], data['last_id'], data['last_date']
         for name in ('count', 'last_seen', 'censored', 'ema', 'pairs', 'triples'):
             current = getattr(out, name)

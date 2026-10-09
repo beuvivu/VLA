@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import sys
+import pickle
 from pathlib import Path
 
 import numpy as np
+import joblib
 import pandas as pd
 import pytest
 
@@ -21,6 +23,7 @@ from cau_keo_domain_challenger import (
 )
 from cau_keo_feature_groups import DOMAIN_FEATURE_SPECS
 from ml_validation import evaluate_predictions
+from sklearn.dummy import DummyClassifier
 
 
 def _base_frame(anchor: str = "2026-09-01") -> pd.DataFrame:
@@ -209,3 +212,62 @@ def test_ablation_reuses_one_seed_per_fold_and_fails_back_to_baseline(
     manifest = gate["feature_manifest"]
     assert manifest["promoted_groups"] == []
     assert manifest["production_features"] == list(module.FEATURE_COLS)
+
+
+@pytest.mark.parametrize("error", [None, pickle.UnpicklingError("private-pack-contents")])
+def test_corrupt_baseline_serialization_reaches_retrain_without_deleting_pack(tmp_path, monkeypatch, error):
+    import cau_keo_domain_challenger as module
+
+    path = tmp_path / "cau_keo_loto.joblib"
+    path.write_bytes(b"not-a-valid-joblib")
+    (tmp_path / "cau_keo_loto_all.csv").write_text("existing output")
+    if error is not None:
+        def invalid_load(*args):
+            raise error
+
+        monkeypatch.setattr(joblib, "load", invalid_load)
+
+    def fail_train(**kwargs):
+        raise RuntimeError("retrain reached")
+
+    monkeypatch.setattr(module, "run_baseline", fail_train)
+    with pytest.raises(RuntimeError, match="retrain reached"):
+        module._ensure_baseline(mode="loto", models_dir=tmp_path, out_dir=tmp_path,
+                                config=module.CauKeoConfig())
+    assert path.read_bytes() == b"not-a-valid-joblib"
+
+
+def test_domain_pack_dump_failure_keeps_the_previous_baseline(tmp_path, monkeypatch):
+    import cau_keo_domain_challenger as module
+    from cau_keo_ml import TRUST_POLICY_VERSION
+
+    frame = _base_frame()
+    for feature in module.FEATURE_COLS:
+        if feature not in frame:
+            frame[feature] = 0.0
+    labels = pd.Series(np.arange(100) % 2)
+    model = DummyClassifier().fit(frame[module.FEATURE_COLS].to_numpy(), labels)
+    path = tmp_path / "cau_keo_loto.joblib"
+    joblib.dump({"model": model, "features": module.FEATURE_COLS,
+                 "model_trust": 0.0, "base_rate": 0.238,
+                 "trust_policy_version": TRUST_POLICY_VERSION}, path)
+    before = path.read_bytes()
+    (tmp_path / "cau_keo_loto_all.csv").write_text("existing output")
+    monkeypatch.setattr(module, "build_cau_keo_feature_frame", lambda *args, **kwargs: (frame, labels))
+    gate = {"domain_active": False, "domain_trust": 0.0, "confirmed_groups": [],
+            "final_brier_skill": 0.0, "final_logloss_skill": 0.0,
+            "final_evaluation": {}, "reason": "disabled"}
+    monkeypatch.setattr(module, "walk_forward_ablation", lambda *args, **kwargs: (pd.DataFrame(), gate))
+    monkeypatch.setattr(module, "_add_ai_judgement", lambda frame, **kwargs: frame.copy())
+
+    def fail_dump(value, destination):
+        if hasattr(destination, "write"):
+            destination.write(b"partial")
+        else:
+            destination.write_bytes(b"partial")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(joblib, "dump", fail_dump)
+    with pytest.raises(OSError, match="disk full"):
+        module.run_mode("loto", models_dir=tmp_path, out_dir=tmp_path, config=module.CauKeoConfig())
+    assert path.read_bytes() == before

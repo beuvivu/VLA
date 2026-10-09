@@ -161,6 +161,46 @@ def _fast_classifier(**_: object) -> LogisticRegression:
     return LogisticRegression(max_iter=200)
 
 
+def test_training_dump_failure_preserves_incumbent_pack(tmp_path, monkeypatch):
+    path = tmp_path / "cau_keo_loto.joblib"
+    joblib.dump({"incumbent": True}, path)
+    before = path.read_bytes()
+    monkeypatch.setattr(cau_keo_ml, "HistGradientBoostingClassifier", _fast_classifier)
+    X, y = _synthetic_training(120, signal=0.0, seed=7)
+
+    def fail_dump(value, destination):
+        if hasattr(destination, "write"):
+            destination.write(b"partial")
+        else:
+            destination.write_bytes(b"partial")
+        raise OSError("disk full")
+
+    monkeypatch.setattr(joblib, "dump", fail_dump)
+    with pytest.raises(OSError, match="disk full"):
+        _train_model("loto", X, y, tmp_path)
+    assert path.read_bytes() == before
+
+
+def test_corrupt_cached_pack_retrains_without_logging_private_contents(tmp_path, monkeypatch, caplog):
+    path = tmp_path / "cau_keo_loto.joblib"
+    path.write_bytes(b"not-a-valid-joblib")
+    X, y = _synthetic_training(120, signal=0.0, seed=7)
+    monkeypatch.setattr(cau_keo_ml, "build_cau_keo_feature_frame", lambda *args, **kwargs: (X, y))
+
+    def invalid_load(*args):
+        raise ValueError("private-pack-contents")
+
+    def fail_train(*args, **kwargs):
+        raise RuntimeError("retrain reached")
+
+    monkeypatch.setattr(joblib, "load", invalid_load)
+    monkeypatch.setattr(cau_keo_ml, "_train_model", fail_train)
+    with pytest.raises(RuntimeError, match="retrain reached"):
+        cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
+    assert "private-pack-contents" not in caplog.text
+    assert path.read_bytes() == b"not-a-valid-joblib"
+
+
 def test_training_measures_trust_against_the_base_rate_known_before_validation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

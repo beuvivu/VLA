@@ -11,11 +11,14 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
+
 from vietlott_engine.core.products import get_product
-from vietlott_engine.forecast.data import Series, load_series
+from vietlott_engine.forecast.data import Series, SetSpec, load_series
 from vietlott_engine.forecast.engine import refresh as legacy_refresh, state_path
 from vietlott_engine.forecast.schedule import FAST, now_vn, record_window
-from vlm.forecast.pipeline import MLConfig, MLForecaster
+from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
+from vlm.forecast.distribution import Law
 from vlm.updates.lease import WriterLease
 
 _LOCK = threading.RLock()
@@ -41,7 +44,8 @@ def forecast_guard(directory: Path):
 
 def model_config(settings) -> MLConfig:  # type: ignore[no-untyped-def]
     return MLConfig(bootstrap=settings.ml_bootstrap, tree_every=settings.ml_tree_every,
-                    backends=tuple(settings.ml_backends), search_nodes=settings.ml_search_nodes)
+                    backends=tuple(settings.ml_backends), search_nodes=settings.ml_search_nodes,
+                    adaptive=settings.ml_adaptive)
 
 
 def directory_for(state) -> Path:  # type: ignore[no-untyped-def]
@@ -108,6 +112,111 @@ def _event(directory: Path, entry: dict) -> dict:
     return entry
 
 
+def _restore_pending_issue(model: MLForecaster, series: Series, issues: dict) -> bool:
+    """Lấy pending từ issue đầu tiên, kiểm ngữ cảnh thật trước khi chấm kỳ mới."""
+    if model.pending is None:
+        return True
+    try:
+        event = issues[(model.last_id + 1, model.prefix_hash)]
+        pending = event['pending']
+        count = int(np.searchsorted(series.draw_ids, model.last_id, side='right'))
+        if (type(event['target_id']) is not int or series.product != model.product
+            or count < 1 or count != model.prefix_count
+            or int(series.draw_ids[count-1]) != model.last_id
+            or str(series.dates[count-1])[:10] != model.last_date
+            or int(np.sum(np.asarray(series.dates[:count]).astype('datetime64[D]')
+                          == np.datetime64(model.last_date))) != model.draws_on_last_date
+            or _prefix_digest(series, count) != model.prefix_hash
+            or any(type(pending[key]) is not int for key in ('target_id', 'based_on_id', 'draws_on_last_date'))
+            or pending['target_id'] != event['target_id']
+            or pending['history_sha256'] != event['history_sha256']):
+            raise ValueError('Unverified issued ledger context')
+        context = MLForecaster(model.product, MLConfig(backends=()))
+        context.last_id, context.last_date = model.last_id, model.last_date
+        context.draws_on_last_date, context.prefix_hash = model.draws_on_last_date, model.prefix_hash
+        context.pending = pending
+        with np.errstate(over='raise', invalid='raise', divide='raise'):
+            if not context.pending_valid():
+                raise ValueError('Unverified issued ledger event')
+            for name, component in model.components.items():
+                frozen = pending['laws'][name]
+                mixture = np.array(frozen['mixture'])
+                if mixture.ndim != 1:
+                    raise ValueError('Invalid issued ledger mixture shape')
+                law = Law(component.spec, np.array(frozen['values']), mixture)
+                if (not np.isfinite(law.values).all() or not np.isfinite(law.log_values).all()
+                    or not np.isfinite(law.log_den).all() or not np.isfinite(law.mixture).all()
+                    or not np.isclose(law.mixture.sum(), 1.)):
+                    raise ValueError('Nonfinite issued ledger law')
+        model.pending = pending
+        return True
+    except (KeyError, TypeError, ValueError, IndexError, AttributeError, FloatingPointError):
+        model.pending = None
+        return False
+
+
+def _verify_restored_evidence(model: MLForecaster, series: Series, directory: Path) -> None:
+    """Đối chiếu pending và thành tích checkpoint với issue đầu tiên trước update.
+
+    Mất/không khớp ledger chỉ hủy evidence, giữ model đã học. Không dựng lại
+    dự báo quá khứ từ trọng số hiện tại hoặc thay các dòng ledger đã công bố.
+    """
+    if not model.live_scored and model.pending is None:
+        return
+    events = _read_events(directory / 'ml-ledger.jsonl')
+    issues, scores = {}, {}
+    for event in events:
+        if (event['product'] != model.product.value or not isinstance(event['target_id'], (int, float, str))
+            or not isinstance(event.get('history_sha256'), str)):
+            continue
+        identity = (event['target_id'], event.get('history_sha256'))
+        if event['event'] == 'issue':
+            issues.setdefault(identity, event)
+        elif event['event'] == 'score' and type(event['target_id']) is int and event['target_id'] <= model.last_id:
+            scores.setdefault(identity, event)
+    candidates = sorted(scores.values(), key=lambda event:event['target_id'])[-model.live_scored:] if model.live_scored else []
+    verified = _restore_pending_issue(model, series, issues) and len(candidates) == model.live_scored
+    gains = []
+    context = MLForecaster(model.product, MLConfig(backends=()))
+    try:
+        for event in candidates:
+            pending = issues[(event['target_id'], event.get('history_sha256'))]['pending']
+            context.last_id, context.last_date = pending['based_on_id'], pending['based_on_date']
+            context.draws_on_last_date, context.prefix_hash = pending['draws_on_last_date'], pending['history_sha256']
+            context.pending = pending
+            index = int(np.searchsorted(series.draw_ids, event['target_id']))
+            if (not context.pending_valid() or index >= len(series) or int(series.draw_ids[index]) != event['target_id']
+                or index < 1 or int(series.draw_ids[index-1]) != pending['based_on_id']
+                or str(series.dates[index])[:10] != pending['target_date']
+                or pending['history_sha256'] != _prefix_digest(series, index)
+                or event['issued_at'] != pending['made_at'] or event['target_time'] != pending['target_time']):
+                verified = False
+                break
+            gain = 0.
+            for name, component in model.components.items():
+                frozen = pending['laws'][name]
+                law = Law(component.spec, np.array(frozen['values']), np.array(frozen['mixture']))
+                observation = series.obs[name]
+                row = observation['X'][index] if isinstance(component.spec, SetSpec) else observation['C'][index].ravel()
+                bonus = int(observation['bonus'][index]) if isinstance(component.spec, SetSpec) and component.spec.bonus_same_drum else 0
+                gain += law.log_likelihood(row, bonus) - law.null_log_likelihood(row, bonus)
+            if not np.isfinite(gain) or not np.isclose(gain, event['gain_nats'], rtol=1e-10, atol=1e-10):
+                verified = False
+                break
+            gains.append(gain)
+        verified = (verified and len(gains) == model.live_scored
+                    and np.isclose(sum(gains), model.live_log_e, rtol=1e-10, atol=1e-10)
+                    and np.isclose(max([0., *np.cumsum(gains)]), model.max_live_log_e, rtol=1e-10, atol=1e-10)
+                    and np.allclose(gains[-100:], model.live_recent, rtol=1e-10, atol=1e-10))
+    except (KeyError, TypeError, ValueError, IndexError, FloatingPointError):
+        verified = False
+    if not verified:
+        model.live_scored = 0
+        model.live_log_e = model.max_live_log_e = 0.
+        model.live_recent = []
+        model.warnings = list(dict.fromkeys([*model.warnings, 'live_evidence_unverified']))
+
+
 def refresh_snapshot(product: str, series: Series, directory: Path, *, config: MLConfig | None = None,
                      refit: bool = False, issue: bool = True, include_legacy: bool = False,
                      require_config_match: bool = False):
@@ -137,6 +246,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
         if not refit and model.last_id is not None and len(series) and int(series.draw_ids[-1]) < model.last_id:
             return model, 0, {'enabled':True, 'learned_draws':0, 'last_id':model.last_id,
                               'issued':False, 'note':'stale_snapshot_ignored', 'error':None}
+        _verify_restored_evidence(model, series, directory)
         previous_components = model.components
         learned = model.update(series, now=now_vn())
         for score in model.last_live_scores:

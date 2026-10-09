@@ -8,6 +8,8 @@ from numbers import Integral, Real
 from pathlib import Path
 
 import joblib
+
+from model_io import MODEL_LOAD_ERRORS
 import numpy as np
 import pandas as pd
 
@@ -94,7 +96,7 @@ def _load_or_train_model(
     window_days: int,
     latest_data_date: str,
 ) -> dict:
-    """Load a current model; retrain on new data or incompatible feature schema."""
+    """Nạp pack hiện hành; học lại pack cũ/hỏng mà không xoá bản đương nhiệm."""
     if mode not in {"loto", "de"}:
         raise ValueError("mode must be 'loto' or 'de'")
     if (
@@ -110,8 +112,8 @@ def _load_or_train_model(
     if model_path.exists():
         try:
             pack = joblib.load(model_path)
-        except (AttributeError, EOFError, ImportError, OSError, ValueError) as exc:
-            retrain_reason = f"stale serialization: {exc}"
+        except MODEL_LOAD_ERRORS as exc:
+            retrain_reason = f"stale serialization ({type(exc).__name__})"
     else:
         retrain_reason = "model file missing"
 
@@ -124,11 +126,10 @@ def _load_or_train_model(
 
     if retrain_reason:
         logger.info("Retraining %s base ML: %s", mode, retrain_reason)
-        model_path.unlink(missing_ok=True)
         train_one(mode, models_dir, window_days=window_days)
         try:
             pack = joblib.load(model_path)
-        except (AttributeError, EOFError, ImportError, OSError, ValueError) as exc:
+        except MODEL_LOAD_ERRORS as exc:
             raise RuntimeError(f"Could not load retrained {mode} model") from exc
 
     final_issue = _model_pack_issue(

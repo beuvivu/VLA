@@ -177,6 +177,9 @@ class ContinuousLearningPipeline:
         self.tracker = PerformanceTracker()
         self.selected_features: list[str] | None = None
         self._fitted: dict[str, Any] = {}
+        self._fitted_features: dict[str, list[str]] = {}
+        self._refit_failed = False
+        self._model_failed = False
         self._fitted_at = -1
         self._force_refit = False
         self._last_observed_day = -1
@@ -184,6 +187,7 @@ class ContinuousLearningPipeline:
         self._forecast: tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]] | None = None
         self._forecast_mode = self.safe_mode.mode.value
         self._forecast_reason = self.safe_mode.reason
+        self._forecast_model_failed = False
 
     # -- Cánh tay --------------------------------------------------------
 
@@ -242,28 +246,34 @@ class ContinuousLearningPipeline:
         x, y, names = build_training_table(self.observations.counts, start=start, stop=day)
         if len(np.unique(y)) < 2:
             LOGGER.warning("Ngày %d: nhãn chỉ có một lớp, bỏ qua lần khớp này", day)
+            self._refit_failed = True
             return
 
-        fitted: dict[str, Any] = {}
+        # Candidate mới chỉ thay cánh tay đã khớp thành công. Schema riêng giữ
+        # model cũ dùng đúng cột ngay cả khi bộ chọn đặc trưng lần này đổi.
+        fitted = dict(self._fitted)
+        fitted_features = dict(self._fitted_features)
+        failed = False
 
         probe = TabularBooster()
         try:
             probe.fit(x, y)
             result = select_features(probe._model, x, y, names, epsilon=self.config.feature_epsilon)
-            self.selected_features = result.kept
+            selected_features = result.kept
             LOGGER.info("Ngày %d: %s", day, result.describe())
-        except Exception as error:
+        except (ValueError, RuntimeError, TypeError, AttributeError, ImportError, OSError) as error:
             LOGGER.warning("Ngày %d: chọn đặc trưng thất bại (%s); giữ toàn bộ cột", day, error)
-            self.selected_features = list(names)
+            selected_features = list(names)
+            failed = True
 
-        keep = [names.index(name) for name in self.selected_features if name in names]
+        keep = [names.index(name) for name in selected_features if name in names]
         x_selected = x[:, keep]
 
         for name, builder in self.arm_builders.items():
-            model = builder()
-            if model is None:
-                continue
             try:
+                model = builder()
+                if model is None:
+                    continue
                 if isinstance(model, TemporalSequenceModel):
                     model.fit_sequence(self.observations.hits[start:day])
                 elif isinstance(model, RankingBooster):
@@ -275,11 +285,16 @@ class ContinuousLearningPipeline:
                 else:
                     model.fit(x_selected, y)
                 fitted[name] = model
-            except Exception as error:
+                fitted_features[name] = list(selected_features)
+            except (ValueError, RuntimeError, TypeError, AttributeError, ImportError, OSError) as error:
+                failed = True
                 LOGGER.error("Ngày %d: cánh tay %s khớp lỗi: %s", day, name, error)
 
         self._fitted = fitted
+        self._fitted_features = fitted_features
+        self.selected_features = list(selected_features)
         self._fitted_at = day
+        self._refit_failed = failed
 
     def arm_probabilities(self, day: int) -> dict[str, np.ndarray]:
         """Xác suất do từng cánh tay khai báo cho ngày ``day``.
@@ -291,6 +306,7 @@ class ContinuousLearningPipeline:
             Ánh xạ tên cánh tay sang mảng ``(100,)`` xác suất.
         """
         self._check_prediction_day(day)
+        self._model_failed = self._refit_failed
         past = self.observations.counts[:day]
         matrix = build_features(self.observations.counts, day)
         if self.selected_features:
@@ -311,11 +327,13 @@ class ContinuousLearningPipeline:
                 elif isinstance(model, RankingBooster):
                     output[name] = model.predict_proba(matrix.values)
                 else:
-                    output[name] = model.predict_proba(selected)
-            except Exception as error:
+                    features = self._fitted_features.get(name)
+                    values = (matrix.values[:, [matrix.names.index(n) for n in features]]
+                              if features is not None else selected)
+                    output[name] = model.predict_proba(values)
+            except (ValueError, RuntimeError, TypeError, AttributeError, ImportError, OSError) as error:
+                self._model_failed = True
                 LOGGER.error("Ngày %d: cánh tay %s dự đoán lỗi: %s", day, name, error)
-        for name in self.arm_builders:
-            output.setdefault(name, np.full(NUMBER_SPACE, BASELINE_RATE))
         return output
 
     def _check_prediction_day(self, day: int) -> None:
@@ -345,13 +363,15 @@ class ContinuousLearningPipeline:
         self._check_prediction_day(day)
         if day == self._forecast_day and self._forecast is not None:
             return self._copy_forecast()
-        checkpoint = self._fitted, self._fitted_at, self.selected_features, self._force_refit
+        checkpoint = (self._fitted, self._fitted_at, self.selected_features, self._force_refit,
+                      self._fitted_features, self._refit_failed, self._model_failed)
         random_state = deepcopy(self.bandit._rng.bit_generator.state)
         try:
             return self._predict_uncached(day)
         except Exception:
             # Dự báo mới hỏng không được làm mất mô hình hoặc dự báo đang chờ chấm.
-            self._fitted, self._fitted_at, self.selected_features, self._force_refit = checkpoint
+            (self._fitted, self._fitted_at, self.selected_features, self._force_refit,
+             self._fitted_features, self._refit_failed, self._model_failed) = checkpoint
             self.bandit._rng.bit_generator.state = random_state
             raise
 
@@ -366,7 +386,14 @@ class ContinuousLearningPipeline:
             name: validate_probabilities(probability).copy()
             for name, probability in self.arm_probabilities(day).items()
         }
-        weights = self.bandit.select_weights()
+        weights = {name: weight for name, weight in self.bandit.select_weights().items()
+                   if name in per_arm}
+        available_weight = sum(weights.values())
+        if available_weight > 0:
+            weights = {name: weight / available_weight for name, weight in weights.items()}
+        else:
+            # Một cánh tay vắng có thể thắng mọi lần rút; nền vẫn là cánh tay thật.
+            weights = {"baseline": 1.0}
         blended = np.zeros(NUMBER_SPACE)
         for name, probability in per_arm.items():
             blended += weights.get(name, 0.0) * probability
@@ -382,6 +409,7 @@ class ContinuousLearningPipeline:
         self._forecast_day = day
         self._forecast_mode = self.safe_mode.mode.value
         self._forecast_reason = self.safe_mode.reason
+        self._forecast_model_failed = self._model_failed
         self._forecast = final, dict(weights), per_arm
         return self._copy_forecast()
 
@@ -414,16 +442,30 @@ class ContinuousLearningPipeline:
             name: 1.0 - score_day(probability, outcome).brier
             for name, probability in per_arm.items()
         }
-        self.bandit.update_batch(rewards)
-
-        score = self.tracker.add(probabilities, outcome)
-        verdict = self.drift.update(score.brier)
-        if verdict.drifted:
-            self._force_refit = True
-        self.safe_mode.observe(
-            hits_in_top_k / self.config.top_k, drifted=verdict.drifted, day_index=day
-        )
-        self._last_observed_day = day
+        # Chỉ chụp trạng thái học nhỏ; không sao chép observations hay model.
+        components = (self.bandit, self.drift, self.safe_mode)
+        checkpoint = [deepcopy(component.__dict__) for component in components]
+        score_count = len(self.tracker._scores)
+        cursors = self._force_refit, self._last_observed_day
+        try:
+            self.bandit.update_batch(rewards)
+            score = self.tracker.add(probabilities, outcome)
+            verdict = self.drift.update(score.brier)
+            if verdict.drifted:
+                self._force_refit = True
+            self.safe_mode.observe(
+                hits_in_top_k / self.config.top_k, drifted=verdict.drifted,
+                model_failed=self._forecast_model_failed, day_index=day
+            )
+            self._last_observed_day = day
+        except Exception:
+            # Mọi lỗi sau reward đều khôi phục cùng đối tượng để retry chấm một lần.
+            for component, state in zip(components, checkpoint, strict=True):
+                component.__dict__.clear()
+                component.__dict__.update(state)
+            del self.tracker._scores[score_count:]
+            self._force_refit, self._last_observed_day = cursors
+            raise
 
         return DayResult(
             day_index=day,

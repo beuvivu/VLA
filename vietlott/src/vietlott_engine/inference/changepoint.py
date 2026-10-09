@@ -80,7 +80,7 @@ class ChangepointReport(BaseModel):
     interpretation: str
 
 
-def changepoint_report(h: DrawHistory, lengths: tuple[int, ...] = (52, 104, 156, 312), sims: int = 500, seed: int | None = None) -> ChangepointReport:
+def changepoint_report(h: DrawHistory, lengths: tuple[int, ...] = (52, 104, 156, 312), sims: int = 500, seed: int | None = None, alpha: float = 0.05) -> ChangepointReport:
     h.require(max(60, min(lengths)))
     inc = h.incidence.astype(np.float64)
     d, n, k = len(h), h.n, h.k
@@ -118,7 +118,7 @@ def changepoint_report(h: DrawHistory, lengths: tuple[int, ...] = (52, 104, 156,
         change_date=str(h.dates[t_star]),
         direction="rate fell after" if cb[t_star, i_star] > 0 else "rate rose after",
     )
-    sig = [name for name, p in (("window scan", ws.p_value), ("CUSUM", cs.p_value)) if p < 0.05]
+    sig = [name for name, p in (("window scan", ws.p_value), ("CUSUM", cs.p_value)) if p < alpha]
     text = (
         f"Most unusual {ws.window_draws}-draw window: {ws.start_date} → {ws.end_date} (scan-adjusted p = {ws.p_value:.2f}); "
         f"largest rate shift: number {cs.number} around {cs.change_date} (p = {cs.p_value:.2f}). "

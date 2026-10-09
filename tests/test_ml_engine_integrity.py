@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
@@ -14,7 +15,8 @@ import ml_engine.models as learners
 from ml_engine.drift import DriftVerdict
 from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
 from ml_engine.metrics import score_day
-from ml_engine.models import RankingBooster, TemporalSequenceModel
+from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
+from ml_engine.bandit import BanditError, DiscountedThompsonSamplingMAB
 from ml_engine.schema import BASELINE_RATE, DailyRequest, ObservationMatrix, SchemaError
 
 
@@ -258,3 +260,154 @@ def test_cli_rejects_bandit_only_resume_without_rewriting(tmp_path, caplog):
     assert result == 1
     assert "không đủ để tiếp tục" in caplog.text
     assert state.read_text() == '{"legacy": true}'
+
+
+def test_failed_tabular_refit_preserves_the_previous_model(monkeypatch):
+    model = TabularBooster()
+    incumbent = SimpleNamespace(predict_proba=lambda x: np.full((len(x), 2), 0.5))
+    model._model, model.backend = incumbent, "incumbent"
+
+    class Broken:
+        def fit(self, x, y):
+            raise RuntimeError("fit failed")
+
+    monkeypatch.setattr(model, "_build", lambda: (Broken(), "candidate"))
+    with pytest.raises(RuntimeError, match="fit failed"):
+        model.fit(np.zeros((2, 1)), np.array([0, 1]))
+    assert model._model is incumbent
+    assert model.backend == "incumbent"
+    np.testing.assert_array_equal(model.predict_proba(np.zeros((2, 1))), [0.5, 0.5])
+
+
+@pytest.mark.parametrize("field", ["x", "y"])
+def test_linear_fit_rejects_nonfinite_input_before_changing_weights(field):
+    model = TemporalSequenceModel(lookback=1)
+    model.backend = "linear"
+    old = np.zeros((101, 100))
+    model._linear_weights = old
+    x, y = np.zeros((2, 1, 100)), np.zeros((2, 100))
+    (x if field == "x" else y).flat[0] = np.nan
+    with pytest.raises(ValueError, match="hữu hạn"):
+        model._fit_linear(x, y)
+    assert model._linear_weights is old
+
+
+@pytest.mark.parametrize("lookback", [0, -1, 1.5, True])
+def test_sequence_constructor_rejects_invalid_lookback_before_creating_samples(lookback):
+    with pytest.raises(ValueError, match="lookback"):
+        TemporalSequenceModel(lookback=lookback)
+
+
+@pytest.mark.parametrize("bad", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize("kind", ["tabular", "temporal"])
+def test_model_prediction_rejects_nonfinite_output_before_clipping(bad, kind):
+    if kind == "tabular":
+        model = TabularBooster()
+        model._model = SimpleNamespace(predict_proba=lambda x: np.array([[0, bad]]))
+        with pytest.raises(ValueError, match="hữu hạn"):
+            model.predict_proba(np.zeros((1, 1)))
+    else:
+        model = TemporalSequenceModel(lookback=1)
+        model.backend = "linear"
+        model._linear_weights = np.full((101, 100), bad)
+        with pytest.raises(ValueError, match="hữu hạn"):
+            model.predict_sequence(np.ones((1, 100)))
+
+
+@pytest.mark.parametrize("field,value", [
+    ("successes", np.nan), ("failures", np.inf), ("successes", -1),
+    ("pulls", -1), ("pulls", 1.5), ("pulls", True),
+    ("total_updates", -1), ("total_updates", 0.5), ("total_updates", True),
+    ("prior_alpha", np.nan), ("prior_beta", np.inf),
+])
+def test_bandit_rejects_invalid_checkpoint_values(field, value):
+    payload = DiscountedThompsonSamplingMAB(["a"]).to_dict()
+    if field in {"successes", "failures", "pulls"}:
+        payload["arms"]["a"][field] = value
+    else:
+        payload[field] = value
+    with pytest.raises(BanditError):
+        DiscountedThompsonSamplingMAB.from_dict(payload)
+
+
+def test_failed_pipeline_refit_keeps_incumbent_arm_and_feature_columns(pipeline, monkeypatch):
+    pipeline.predict_day(70)
+    incumbent = pipeline._fitted["tabular_boosting"]
+    probabilities = pipeline.arm_probabilities(71)["tabular_boosting"]
+
+    class Broken:
+        def fit(self, x, y):
+            raise RuntimeError("candidate failed")
+
+    pipeline.arm_builders["tabular_boosting"] = Broken
+    # Chọn cột khác để chắc chắn model cũ vẫn nhận đúng schema riêng của nó.
+    monkeypatch.setattr(orchestration, "select_features", lambda *args, **kwargs:
+                        SimpleNamespace(kept=["number"], describe=lambda: "changed"))
+    pipeline._refit(71)
+    assert pipeline._fitted.get("tabular_boosting") is incumbent
+    np.testing.assert_array_equal(pipeline.arm_probabilities(71)["tabular_boosting"], probabilities)
+
+
+def test_failed_initial_arm_is_not_scored_as_a_baseline_alias_and_signals_safe_mode(pipeline):
+    class Broken:
+        def fit(self, x, y):
+            raise RuntimeError("candidate failed")
+
+    pipeline.arm_builders["tabular_boosting"] = Broken
+    result = pipeline.step(70)
+    assert "tabular_boosting" not in result.arm_rewards
+    assert "tabular_boosting" not in result.arm_weights
+    assert pipeline.safe_mode.is_safe
+    assert "mô hình lỗi" in pipeline.safe_mode.reason
+
+
+@pytest.mark.parametrize("stage", ["drift", "safe_mode"])
+def test_step_failure_after_reward_rolls_back_for_retry(pipeline, monkeypatch, stage):
+    issued = pipeline.predict_day(70)[0]
+    before = pipeline.bandit.to_dict()
+    real_update = pipeline.drift.update
+    real_observe = pipeline.safe_mode.observe
+    safe_before = pipeline.safe_mode.state()
+
+    def fail_after_mutation(error):
+        real_update(error)
+        raise RuntimeError("drift failed")
+
+    def fail_safe_after_mutation(*args, **kwargs):
+        real_observe(*args, **kwargs)
+        raise RuntimeError("safe_mode failed")
+
+    if stage == "drift":
+        monkeypatch.setattr(pipeline.drift, "update", fail_after_mutation)
+    else:
+        monkeypatch.setattr(pipeline.drift, "update", lambda error: replace(real_update(error), drifted=True))
+        monkeypatch.setattr(pipeline.safe_mode, "observe", fail_safe_after_mutation)
+    with pytest.raises(RuntimeError, match=f"{stage} failed"):
+        pipeline.step(70)
+    assert pipeline.bandit.to_dict() == before
+    with pytest.raises(ValueError, match="chưa có kỳ"):
+        pipeline.tracker.report()
+    assert len(pipeline.drift._history) == 0
+    assert pipeline._last_observed_day == -1
+    assert not pipeline._force_refit
+    assert pipeline.safe_mode.state() == safe_before
+    monkeypatch.setattr(pipeline.drift, "update", real_update)
+    monkeypatch.setattr(pipeline.safe_mode, "observe", real_observe)
+    result = pipeline.step(70)
+    np.testing.assert_array_equal(result.probabilities, issued)
+    assert pipeline.tracker.report().days == 1
+    assert pipeline.bandit.total_updates == 1
+
+
+def test_unavailable_arm_with_all_weight_falls_back_to_named_baseline(pipeline, monkeypatch):
+    class Broken:
+        def fit(self, x, y):
+            raise RuntimeError("candidate failed")
+
+    pipeline.arm_builders["tabular_boosting"] = Broken
+    monkeypatch.setattr(pipeline.bandit, "select_weights", lambda: {
+        "baseline": 0.0, "frequency": 0.0, "gap_hazard": 0.0, "tabular_boosting": 1.0
+    })
+    probabilities, weights, per_arm = pipeline.predict_day(70)
+    np.testing.assert_array_equal(probabilities, per_arm["baseline"])
+    assert weights == {"baseline": 1.0}

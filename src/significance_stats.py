@@ -21,19 +21,12 @@ from scipy.stats import beta as beta_dist
 from scipy.stats import binomtest, chisquare
 
 from lottery import Lottery
+from statistical_corrections import benjamini_hochberg
 
 
 def _bh_fdr(p_values: np.ndarray) -> np.ndarray:
-    p = np.asarray(p_values, dtype=float)
-    n = len(p)
-    order = np.argsort(p)
-    ranked = p[order]
-    q_ranked = ranked * n / np.arange(1, n + 1)
-    q_ranked = np.minimum.accumulate(q_ranked[::-1])[::-1]
-    q_ranked = np.clip(q_ranked, 0.0, 1.0)
-    q = np.empty_like(q_ranked)
-    q[order] = q_ranked
-    return q
+    """Wrapper tương thích; p-value thiếu không làm mất các kết quả hợp lệ."""
+    return benjamini_hochberg(p_values)
 
 
 def _window_hit_matrix(mode: str, two: pd.DataFrame, sparse: pd.DataFrame, window_days: int) -> tuple[np.ndarray, float, pd.Timestamp, pd.Timestamp]:

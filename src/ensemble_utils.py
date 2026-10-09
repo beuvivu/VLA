@@ -30,15 +30,17 @@ def ensure_full_probs(df: pd.DataFrame) -> np.ndarray:
 
 
 def normalize_distribution(p: np.ndarray) -> np.ndarray:
+    """Chuẩn hoá vector không âm, tránh tràn tổng của các giá trị lớn hữu hạn."""
     values = np.asarray(p, dtype=np.float64)
     if values.size == 0:
         raise ValueError("probability distribution must not be empty")
     if not np.isfinite(values).all() or bool((values < 0.0).any()):
         raise ValueError("probability distribution must be finite and non-negative")
-    s = float(np.sum(values))
-    if s <= 0:
+    maximum = float(np.max(values))
+    if maximum <= 0:
         return np.full(values.shape, 1.0 / values.size, dtype=np.float64)
-    return values / s
+    scaled = values / maximum
+    return scaled / float(np.sum(scaled))
 
 
 #: Sàn xác suất, tính theo tỉ lệ của mức đều. Với 100 con, ``0.05`` nghĩa là
@@ -322,6 +324,14 @@ def weights_provenance(data_dir: Path, mode: str) -> dict:
     out: dict = {"mode": mode, "weights": effective.as_dict()}
     promotion = stored.get("promotion")
 
+    # Metadata huấn luyện có ích cả với hồ sơ cũ chưa có promotion gate.
+    if stored:
+        for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
+            if key in stored:
+                out[key] = stored[key]
+        days_used = stored.get("days_used")
+        out["days_used"] = len(days_used) if isinstance(days_used, list) else 0
+
     if not isinstance(promotion, dict):
         out["xuat_xu"] = "khong_co_ho_so"
         out["ly_do"] = (
@@ -335,11 +345,6 @@ def weights_provenance(data_dir: Path, mode: str) -> dict:
         out["xuat_xu"] = "bi_tu_choi"
     out["ly_do"] = str(promotion.get("reason", ""))
 
-    for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
-        if key in stored:
-            out[key] = stored[key]
-    days_used = stored.get("days_used")
-    out["days_used"] = len(days_used) if isinstance(days_used, list) else 0
     out["tham_dinh"] = {
         "so_ky_khop": promotion.get("train_days"),
         "so_ky_tham_dinh": promotion.get("validation_days"),

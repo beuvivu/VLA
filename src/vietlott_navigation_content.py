@@ -51,7 +51,7 @@ def overview_sections(dashboard: dict) -> str:
                                for n in range(1, maximum + 1)]) + '</details>')
         pair_rows.extend([[escape(name), f'{a:02d}–{c:02d}', str(count), str(stats['count'])]
                           for (a, c), count in stats['pairs']])
-        label = lambda nums: ' · '.join(f'{n:02d} ({stats["counts"][n]})' for n in nums)
+        label = lambda nums, counts=stats['counts']: ' · '.join(f'{n:02d} ({counts[n]})' for n in nums)
         temperatures.append([escape(name), label(stats['hot']), label(stats['cold']), str(stats['count'])])
 
     rendered = [section('vl-frequency', 'Tần suất số chính', ''.join(frequencies) or table([], []),
