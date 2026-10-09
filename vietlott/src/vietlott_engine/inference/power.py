@@ -25,7 +25,7 @@ from scipy import optimize, stats
 
 from vietlott_engine.core.games import DEFAULT_TAX, GameSpec
 from vietlott_engine.core.history import DrawHistory
-from vietlott_engine.game_theory.popularity import divide_out, elementary_symmetric
+from vietlott_engine.game_theory.popularity import elementary_symmetric
 
 
 # ------------------------------------------------------------------ power
@@ -108,18 +108,37 @@ def certified_mean_margin(diff: float, se: float, alpha: float = 0.05) -> float:
 
 # ------------------------------------------------- money value of a bound
 def odds_for_inclusion(target: np.ndarray, k: int, iters: int = 500, tol: float = 1e-10) -> np.ndarray:
-    """Odds w of the conditional-Bernoulli draw model q(S) ∝ Π w_i whose marginal
-    inclusion probabilities equal ``target`` (Σ target = k). Iterative proportional fitting."""
+    """Odds conditional-Bernoulli cho marginal trong simplex Σtarget=k.
+
+    Marginal 0/1 chỉ có odds giới hạn; co 1e-6 về k/n khi có biên để
+    biểu diễn bằng odds dương hữu hạn, vẫn giữ tổng k. DP prefix/suffix
+    tránh triệt tiêu số khi chia đa thức của số gần chắc chắn được lấy.
+    """
     target = np.asarray(target, dtype=np.float64)
+    if (target.ndim != 1 or not isinstance(k, (int, np.integer)) or not 0 < k < target.size
+        or not np.isfinite(target).all() or ((target < 0) | (target > 1)).any()
+        or not np.isclose(target.sum(), k, rtol=0, atol=1e-8)):
+        raise ValueError('Inclusion target must be finite, in [0, 1], and sum to k with 0 < k < n')
+    if ((target == 0) | (target == 1)).any():
+        target = (1 - 1e-6) * target + 1e-6 * k / target.size
     w = target / (1 - target)
     for _ in range(iters):
-        e = elementary_symmetric(w, k)
-        e_wo = divide_out(np.broadcast_to(e, (w.size, k + 1)), w)
-        pi = w * e_wo[:, k - 1] / e[k]
+        w /= w.max()
+        prefix = np.zeros((w.size + 1, k + 1))
+        suffix = np.zeros_like(prefix)
+        prefix[0, 0] = suffix[-1, 0] = 1
+        for i in range(w.size):
+            prefix[i+1] = prefix[i]
+            prefix[i+1, 1:] += w[i] * prefix[i, :-1]
+        for i in range(w.size-1, -1, -1):
+            suffix[i] = suffix[i+1]
+            suffix[i, 1:] += w[i] * suffix[i+1, :-1]
+        e_wo = np.sum(prefix[:-1, :k] * suffix[1:, k-1::-1], axis=1)
+        pi = w * e_wo / prefix[-1, k]
         if np.max(np.abs(pi - target)) < tol:
             break
         w = w * target / pi
-        w /= np.exp(np.mean(np.log(w)))
+    w /= w.max()
     return w
 
 
@@ -200,7 +219,7 @@ def power_equivalence_report(h: DrawHistory, alpha: float = 0.05) -> PowerEquiva
         for i in np.argsort(-margins)[:5]
     ]
     all_margin = float(margins.max())
-    upper = np.array([p0 * (1 + certified_margin(int(c), d, p0, alpha)) if c / d >= p0 else stats.beta.ppf(1 - alpha, c + 1, d - c) for c in counts])
+    upper = np.clip(np.array([p0 * (1 + certified_margin(int(c), d, p0, alpha)) if c / d >= p0 else stats.beta.ppf(1 - alpha, c + 1, d - c) for c in counts]), 0, 1)
     best6 = np.argsort(-upper)[:k]
     target = np.full(n, (k - upper[best6].sum()) / (n - k))  # the others absorb the difference
     target[best6] = upper[best6]
@@ -226,5 +245,7 @@ def power_equivalence_report(h: DrawHistory, alpha: float = 0.05) -> PowerEquiva
             f"probability is certified to lie within ±{all_margin:.1%} of k/n = {p0:.4f} (intersection–union TOST). "
             f"Even if the six most favourable numbers sat at their upper bounds, a ticket's return-to-player "
             f"(min jackpot, fixed prizes) would rise from {fair_rtp:.1%} to at most {best_rtp:.1%}."
+            + (' Boundary marginals are regularized 1e-6 toward k/n for finite positive odds; RTP is an approximation to the boundary limit.'
+               if ((target == 0) | (target == 1)).any() else '')
         ),
     )

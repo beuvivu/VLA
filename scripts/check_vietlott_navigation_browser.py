@@ -31,7 +31,7 @@ def main():
                     for name in ('index.html', 'dashboard.html', 'vietlott.html'):
                         page = context.new_page()
                         errors = []
-                        page.on('pageerror', lambda error: errors.append(str(error)))
+                        page.on('pageerror', lambda error, page_errors=errors: page_errors.append(str(error)))
                         page.goto(f'http://127.0.0.1:{server.server_port}/{name}', wait_until='networkidle')
                         before = page.locator('#app-main').bounding_box()
                         if width < 1200:

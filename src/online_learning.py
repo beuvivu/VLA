@@ -658,7 +658,13 @@ def run_online(
                 "prob", ascending=False, kind="stable"
             ).reset_index(drop=True)
             atomic_write_bytes(prediction_path, write_code_csv(published_frame, index=False).encode("utf-8"))
-        ranked = published_frame.sort_values("prob", ascending=False, kind="stable").copy()
+        if mode == "loto":
+            from pick_diversity import diversified_order
+
+            order = diversified_order(final, 10)
+            ranked = published_frame.set_index("number", drop=False).loc[order].copy()
+        else:
+            ranked = published_frame.sort_values("prob", ascending=False, kind="stable").copy()
         ranked["number_str"] = ranked["number"].map(lambda number: f"{number:02d}")
         for n in (4, 8, 10):
             top_path = out_dir / f"predict_next_{mode}_top{n}_{target}.csv"

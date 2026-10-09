@@ -270,3 +270,33 @@ def test_a_promoted_vector_is_reported_as_learned(tmp_path: Path) -> None:
     assert card["weights"]["w_cau"] == pytest.approx(0.6)
     assert card["days_used"] == 2
     assert card["tham_dinh"]["loi_tuong_doi"] == pytest.approx(0.108)
+
+
+def test_dashboard_weight_card_accepts_missing_optional_day_list(tmp_path: Path) -> None:
+    """Metadata thiếu không làm thẻ trọng số hợp lệ bị crash."""
+    from build_dashboard import _effective_weights
+    from ensemble_utils import weights_provenance
+    path = tmp_path / 'ensemble' / 'weights_loto.json'
+    path.parent.mkdir()
+    path.write_text(json.dumps({'schema_version':7, 'weights':DEFAULT_ENSEMBLE_WEIGHTS.as_dict(),
+        'days_used':None, 'promotion':{'promoted':False, 'reason':'chưa vượt cổng'}}))
+    canonical = weights_provenance(tmp_path, 'loto')
+    card = _effective_weights(tmp_path, 'loto')
+    assert card['weights'] == canonical['weights']
+    assert card['xuat_xu'] == canonical['xuat_xu'] == 'bi_tu_choi'
+    assert card['days_used'] == canonical['days_used'] == 0
+
+
+def test_legacy_learned_weight_card_keeps_optional_training_metadata(tmp_path: Path) -> None:
+    from build_dashboard import _effective_weights
+    path = tmp_path / 'ensemble' / 'weights_loto.json'
+    path.parent.mkdir()
+    metadata = {'learned_at_utc':'2026-09-01T00:00:00Z', 'window_days':120,
+                'half_life_days':30, 'metric':'logloss'}
+    path.write_text(json.dumps({'schema_version':7,
+        'weights':{'w_ml':.1, 'w_cau':.6, 'w_stat':.1, 'w_active':.1, 'w_stable':.1},
+        'days_used':['2026-09-01', '2026-09-02'], **metadata}))
+    card = _effective_weights(tmp_path, 'loto')
+    assert card['xuat_xu'] == 'da_hoc_chua_co_cong'
+    assert all(card.get(key) == value for key, value in metadata.items())
+    assert card.get('days_used') == 2

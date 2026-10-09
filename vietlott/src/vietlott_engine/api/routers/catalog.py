@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from vietlott_engine.analytics.products import DigitReplication, ProductRandomnessReport, digit_replication, product_randomness
 from vietlott_engine.api.deps import AppState, get_state
 from vietlott_engine.api.schemas import ProductSyncRequest
+from vietlott_engine.core.exceptions import InsufficientDataError
 from vietlott_engine.core.products import DIGIT_PRODUCTS, PRODUCT_INFO, SEED_FILES, ProductCode, get_product
 from vietlott_engine.game_theory.fastgames import BingoBetOdds, KenoBacOdds, SideBetOdds, bingo18_odds, keno_odds
 
@@ -70,7 +71,7 @@ def catalogue(state: AppState = Depends(get_state)) -> list[ProductEntry]:
         else:
             try:
                 cov = state.product_history(code).coverage()
-            except Exception:  # noqa: BLE001 — an empty store is reported as 0 draws
+            except InsufficientDataError:
                 cov = {}
             if cov:
                 entry.stored_draws = cov["draws"]

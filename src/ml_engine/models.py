@@ -32,6 +32,7 @@ quy đẳng hướng khớp trên các ngày cuối được giữ riêng, và g
 from __future__ import annotations
 
 import logging
+from numbers import Integral
 from typing import Any, Final, Protocol, runtime_checkable
 
 import numpy as np
@@ -47,6 +48,9 @@ _EPSILON: Final[float] = 1e-6
 
 
 def _clip(values: np.ndarray) -> np.ndarray:
+    """Chặn đầu ra hỏng trước khi kẹp về miền xác suất."""
+    if not np.isfinite(values).all():
+        raise ValueError("đầu ra mô hình phải hữu hạn")
     return np.clip(values, _EPSILON, 1.0 - _EPSILON)
 
 
@@ -148,8 +152,9 @@ class TabularBooster:
         """
         if len(np.unique(y)) < 2:
             raise ValueError("cần cả hai lớp trong nhãn để khớp")
-        self._model, self.backend = self._build()
-        self._model.fit(x, y)
+        candidate, backend = self._build()
+        candidate.fit(x, y)
+        self._model, self.backend = candidate, backend
 
     def predict_proba(self, x: np.ndarray) -> np.ndarray:
         """Xác suất nhãn dương.
@@ -295,6 +300,8 @@ class TemporalSequenceModel:
         learning_rate: float = 0.01,
         seed: int = 0,
     ) -> None:
+        if isinstance(lookback, bool) or not isinstance(lookback, Integral) or lookback <= 0:
+            raise ValueError("lookback phải là số nguyên dương")
         self.name = name
         self.hidden_size = int(hidden_size)
         self.lookback = int(lookback)
@@ -355,6 +362,8 @@ class TemporalSequenceModel:
         Raises:
             ValueError: Khi lịch sử ngắn hơn cửa sổ nhìn lại.
         """
+        if not np.isfinite(hits).all():
+            raise ValueError("lịch sử chuỗi phải hữu hạn")
         sequences, targets = self._windows(hits)
         if self.backend == "torch":
             self._fit_torch(sequences, targets)
@@ -406,6 +415,8 @@ class TemporalSequenceModel:
 
     def _fit_linear(self, sequences: np.ndarray, targets: np.ndarray) -> None:
         """Đường lui: hồi quy ridge đa nhãn trên cửa sổ trễ đã làm phẳng."""
+        if not np.isfinite(sequences).all() or not np.isfinite(targets).all():
+            raise ValueError("đặc trưng và nhãn chuỗi phải hữu hạn")
         flat = sequences.reshape(sequences.shape[0], -1)
         design = np.hstack([flat, np.ones((flat.shape[0], 1), dtype=np.float32)])
         ridge = 10.0 * np.eye(design.shape[1], dtype=np.float64)

@@ -79,16 +79,19 @@ class SnapshotBuilder:
             x[:, hl + 2] = (trans[self.last.astype(bool)].mean(axis=0) - base) / base
         tot = self.cooc.sum()
         if tot > 0:
-            deg = np.maximum(self.cooc.sum(axis=1), 1e-12)
-            with np.errstate(divide="ignore"):
-                pmi = np.log(np.maximum(self.cooc, 1e-12) * tot / np.outer(deg, deg))
+            deg = self.cooc.sum(axis=1)
+            observed = self.cooc > 0
+            pmi = np.zeros_like(self.cooc)
+            # Cạnh chưa từng quan sát không có PMI; epsilon sẽ tạo cạnh giả ở node trống.
+            rows, cols = np.nonzero(observed)
+            pmi[observed] = np.log(self.cooc[observed]) + np.log(tot) - (np.log(deg[rows]) + np.log(deg[cols]))
             adj = np.maximum(pmi, 0.0) * (1 - self._eye)
         else:
             adj = np.zeros((self.n, self.n))
         adj = adj + self._eye
         dinv = 1.0 / np.sqrt(adj.sum(axis=1))
         self._xs.append(x.astype(np.float32))
-        self._as.append((adj * dinv[:, None] * dinv[None, :]).astype(np.float32))
+        self._as.append((adj * (dinv[:, None] * dinv[None, :])).astype(np.float32))
 
     def update(self, row: np.ndarray) -> None:
         xt = np.asarray(row, dtype=np.float64)

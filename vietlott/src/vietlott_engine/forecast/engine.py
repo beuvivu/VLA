@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import tempfile
 from datetime import datetime, timezone
 from itertools import product as iproduct
 from math import comb, log, sqrt
@@ -424,6 +426,35 @@ class Component:
 
 
 # ============================================================================ forecaster
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Ghi staging cùng thư mục, fsync rồi replace; lỗi ghi giữ nguyên bản đã công bố."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, staging = tempfile.mkstemp(prefix=path.name + '.', suffix='.tmp', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(staging, path)
+    finally:
+        if os.path.exists(staging):
+            os.unlink(staging)
+
+
+def _prefix_fingerprint(series: Series, count: int) -> str:
+    """Băm ID, ngày và mọi observation của tiền tố thực sự dùng để học."""
+    digest = hashlib.sha256(series.product.value.encode())
+    digest.update(series.draw_ids[:count].astype('<i8').tobytes())
+    digest.update(np.asarray(series.dates[:count]).astype('datetime64[D]').astype('<i8').tobytes())
+    for name in sorted(series.obs):
+        for key in sorted(series.obs[name]):
+            value = np.asarray(series.obs[name][key][:count], dtype='<i8')
+            digest.update((name + ':' + key).encode())
+            digest.update(np.asarray(value.shape, dtype='<i8').tobytes())
+            digest.update(value.tobytes())
+    return digest.hexdigest()
+
+
 class Forecaster:
     """All components of one product, their state, and the ledger of issued forecasts."""
 
@@ -439,6 +470,7 @@ class Forecaster:
         self.state: dict = {
             "product": self.product.value, "version": VERSION, "last_id": None, "last_date": None, "draws": 0,
             "log_wealth": 0.0, "max_log_wealth": 0.0, "components": {n: c.init_state() for n, c in self.components.items()},
+            "prefix_count": 0, "prefix_hash": "",
         }
 
     # ------------------------------------------------------------------ learning
@@ -446,6 +478,20 @@ class Forecaster:
         """Learn from every draw newer than the last one seen; returns how many."""
         if series.product != self.product:
             raise ValueError(f"series is {series.product.value}, forecaster is {self.product.value}")
+        window = self.state.get('window')
+        if window and window.get('first_id') is not None:
+            series = series.after(window['first_id'] - 1)
+        last_id = self.state['last_id']
+        count = int(np.sum(series.draw_ids <= last_id)) if last_id is not None else 0
+        if last_id is not None and (count != self.state.get('prefix_count')
+                                   or _prefix_fingerprint(series, count) != self.state.get('prefix_hash')):
+            # Học lại trên candidate; refit lỗi giữ model/evidence cũ và không đụng ledger.
+            candidate = Forecaster(self.product, self.keep_trace)
+            if window is not None:
+                candidate.state['window'] = dict(window)
+            learned = candidate.update(series, chunk)
+            self.state, self.trace = candidate.state, candidate.trace
+            return learned
         new = series.after(self.state["last_id"])
         for start in range(0, len(new), chunk):
             part = Series(new.product, new.draw_ids[start : start + chunk], new.dates[start : start + chunk], {c: {k: v[start : start + chunk] for k, v in o.items()} for c, o in new.obs.items()})
@@ -462,6 +508,8 @@ class Forecaster:
             self.state["last_id"] = int(new.draw_ids[-1])
             self.state["last_date"] = str(new.dates[-1])
             self.state["draws"] = int(self.state["draws"] + len(new))
+        self.state['prefix_count'] = len(series)
+        self.state['prefix_hash'] = _prefix_fingerprint(series, len(series))
         return len(new)
 
     # ------------------------------------------------------------------ forecasting
@@ -531,10 +579,7 @@ class Forecaster:
         return _jsonable(self.state)
 
     def save(self, path: Path) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(self.to_dict(), separators=(",", ":")), encoding="utf-8")
-        tmp.replace(path)
+        _atomic_write_text(path, json.dumps(self.to_dict(), separators=(',', ':'), allow_nan=False))
 
     @classmethod
     def load(cls, path: Path) -> "Forecaster":
@@ -638,7 +683,7 @@ def _score_ledger_unlocked(directory: Path, series: Series) -> list[dict]:
                 e["score"] = s
                 scored.append(e)
     if scored:
-        path.write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries), encoding="utf-8")
+        _atomic_write_text(path, "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in entries))
     return scored
 
 

@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 import html
 from pathlib import Path
 
-from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, load_ensemble_weights
+from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, weights_provenance
 
 import pandas as pd
 
@@ -59,51 +59,21 @@ def _latest_date(data_dir: Path) -> str:
 
 
 def _effective_weights(data_dir: Path, mode: str) -> dict:
-    """Trọng số đang có hiệu lực, kèm lý do vì sao nó là nó.
-
-    Ba xuất xứ, không phải hai. Bản trước suy xuất xứ bằng cách so với mặc
-    định, nên kể từ khi bộ học có cổng đề bạt thì nó nói SAI: một tệp hợp lệ,
-    lược đồ 7, mang đúng trọng số mặc định vì cổng đã TỪ CHỐI đề bạt lại bị
-    báo là "tệp trọng số thiếu hoặc sai lược đồ". Xuất xứ phải đọc từ khối
-    ``promotion`` chứ không suy từ giá trị.
-    """
-    effective = load_ensemble_weights(data_dir, mode)
-    stored = _read_json(data_dir / "ensemble" / f"weights_{mode}.json")
-    promotion = stored.get("promotion") if isinstance(stored, dict) else None
-    payload: dict = {"mode": mode, "weights": effective.as_dict()}
-
-    # ``xuat_xu`` là MÃ, ``nguon`` là câu chữ cho người đọc. Hai thứ tách nhau
-    # vì câu chữ là chuyện trình bày: đổi cách viết — kể cả chỉ thêm lại dấu
-    # tiếng Việt — không được làm sai một phép kiểm nào. Dò chuỗi trong
-    # ``nguon`` chính là ghim mặt chữ, và nó đã từng đỏ đúng vì lý do đó.
-    if not isinstance(promotion, dict):
-        learned = effective.as_dict() != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
+    """Ánh xạ provenance chuẩn sang nhãn UI tương thích; không tự đọc hồ sơ."""
+    payload = weights_provenance(data_dir, mode)
+    if payload['xuat_xu'] == 'khong_co_ho_so':
+        learned = payload['weights'] != DEFAULT_ENSEMBLE_WEIGHTS.as_dict()
         payload["xuat_xu"] = "da_hoc_chua_co_cong" if learned else "mac_dinh_dat_tay"
         payload["nguon"] = "đã học (chưa có cổng đề bạt)" if learned else "mặc định đặt tay"
-        if not learned:
-            payload["ly_do"] = (
-                "tệp trọng số thiếu hoặc sai lược đồ" if stored else "chưa có tệp trọng số"
-            )
-            return payload
-    elif promotion.get("promoted"):
-        payload["xuat_xu"] = "da_hoc"
+        if learned:
+            payload.pop('ly_do', None)
+        else:
+            payload['ly_do'] = {'tep trong so thieu hoac sai luoc do':'tệp trọng số thiếu hoặc sai lược đồ',
+                               'chua co tep trong so':'chưa có tệp trọng số'}.get(payload['ly_do'], payload['ly_do'])
+    elif payload['xuat_xu'] == 'da_hoc':
         payload["nguon"] = "đã học và vượt cổng ngoài mẫu"
     else:
-        payload["xuat_xu"] = "bi_tu_choi"
         payload["nguon"] = "mặc định, cổng từ chối đề bạt"
-        payload["ly_do"] = str(promotion.get("reason", ""))
-
-    for key in ("learned_at_utc", "window_days", "half_life_days", "metric"):
-        if key in stored:
-            payload[key] = stored[key]
-    payload["days_used"] = len(stored.get("days_used", []))
-    if isinstance(promotion, dict):
-        payload["tham_dinh"] = {
-            "so_ky_khop": promotion.get("train_days"),
-            "so_ky_tham_dinh": promotion.get("validation_days"),
-            "logloss_ngoai_mau": promotion.get("validation_logloss"),
-            "loi_tuong_doi": promotion.get("relative_gain"),
-        }
     return payload
 
 

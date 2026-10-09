@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     ml_tree_every: int = Field(default=64, ge=1, le=1000)
     ml_search_nodes: int = Field(default=1000, ge=1, le=20000)
     ml_backends: list[Literal['rf', 'xgb', 'lgb']] = ['rf']
+    ml_adaptive: bool = False  # challenger research; chỉ bật sau fit tường minh, không mở gate live
     storage_backend: Literal["duckdb", "memory"] = "duckdb"
     seed_file_dir: Path | None = None  # optional offline JSONL dir loaded on startup when the store is empty
     log_level: str = "INFO"

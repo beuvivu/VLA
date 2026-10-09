@@ -56,6 +56,12 @@ def diebold_mariano(differential: np.ndarray, horizon: int = 1, lag: int | None 
     """DM test on d_t = score_model − score_benchmark (higher = better)."""
     d = np.asarray(differential, dtype=np.float64)
     t = d.size
+    if d.ndim != 1 or t < 2 or not np.isfinite(d).all():
+        raise ValueError('DM requires at least two finite observations in a vector')
+    if not isinstance(horizon, (int, np.integer)) or not 1 <= horizon < t:
+        raise ValueError('Forecast horizon must be positive and less than observations')
+    if lag is not None and (not isinstance(lag, (int, np.integer)) or lag < 0):
+        raise ValueError('HAC lag must be a nonnegative integer')
     lag = max(horizon - 1, newey_west_lag(t), andrews_lag(d)) if lag is None else lag
     se = np.sqrt(newey_west_variance(d, lag) / t)
     stat = float(np.mean(d) / se)
@@ -79,8 +85,29 @@ class CalibrationResult(BaseModel):
 
 
 def spiegelhalter_z(p: np.ndarray, y: np.ndarray) -> tuple[float, float]:
-    p = np.clip(np.asarray(p, dtype=np.float64).ravel(), 1e-9, 1 - 1e-9)
-    y = np.asarray(y, dtype=np.float64).ravel()
+    """Vector dùng Bernoulli; ma trận (kỳ, số) dùng covariance nội kỳ và HAC theo kỳ.
+
+    Tổng residual trong mỗi kỳ giữ phụ thuộc do lấy k số không hoàn lại.
+    HAC Bartlett trên chuỗi tổng này còn xử lý phụ thuộc thời gian của dự báo.
+    """
+    p = np.asarray(p, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    if (p.shape != y.shape or p.ndim not in (1, 2) or not p.size
+        or not np.isfinite(p).all() or not np.isfinite(y).all()
+        or ((p < 0) | (p > 1)).any() or not np.isin(y, [0, 1]).all()):
+        raise ValueError('Calibration needs matching finite probabilities and binary labels')
+    if p.ndim == 2:
+        if len(p) < 2:
+            raise ValueError('Draw-level calibration needs at least two draws')
+        terms = (y - p) * (1 - 2 * p)
+        residual = terms.sum(axis=1)
+        # Tổng triệt tiêu đúng ở law uniform k/n; HAC không được phóng đại roundoff thành tín hiệu.
+        roundoff = np.finfo(float).eps * p.shape[1] * np.maximum(1, np.abs(terms).sum(axis=1))
+        residual = np.where(np.abs(residual) <= roundoff, 0, residual)
+        se = np.sqrt(newey_west_variance(residual) / len(residual))
+        z = float(residual.mean() / se)
+        return z, float(2 * stats.norm.sf(abs(z)))
+    p = np.clip(p, 1e-9, 1 - 1e-9)
     num = np.sum((y - p) * (1 - 2 * p))
     den = np.sqrt(np.sum((1 - 2 * p) ** 2 * p * (1 - p)))
     z = float(num / den) if den > 0 else 0.0

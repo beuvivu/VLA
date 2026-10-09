@@ -1,0 +1,491 @@
+{
+  "protocol": "fixed 400 initial / 200 heldout per product; score then learn",
+  "completed_at": "2026-10-09T16:28:40.355881+00:00",
+  "source_provenance": {
+    "base_commit": "46aa9b53312c457bae21e5a6ee065facc712d4f2",
+    "python_source_tree_sha256": "a7c455bc302936e142316b235c1c6dfcc9350c15337aaa9b224a454086185135",
+    "forecast_scoring_modules": [
+      "vlm/forecast/pipeline.py",
+      "vlm/forecast/models.py",
+      "vlm/forecast/features.py",
+      "vlm/forecast/distribution.py",
+      "vlm/forecast/adaptation.py",
+      "vlm/forecast/recovery.py",
+      "vietlott_engine/forecast/data.py",
+      "vietlott_engine/forecast/schedule.py",
+      "vietlott_engine/core/products.py"
+    ],
+    "forecast_scoring_sha256": "e517638a1380c3bb16b055669a90309a0b0d0d1595ea5bea7550bff33c797484",
+    "note": "All scoring modules match final repository source; later GCN/calibration hardening is outside the VLM benchmark scorer."
+  },
+  "comparisons": {
+    "default_vs_incumbent": [
+      {
+        "product": "mega645",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -1.1377167990733738e-05,
+        "hac_standard_error": 1.0377746865884184e-05,
+        "ci95": [
+          -3.1841633837502174e-05,
+          9.087297856034699e-06
+        ],
+        "p_value_greater": 0.8622650265304707,
+        "hac_lag": 4,
+        "q_value_bh": 0.8622650265304707
+      },
+      {
+        "product": "power655",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -4.541573638920937e-06,
+        "hac_standard_error": 3.956195701394348e-05,
+        "ci95": [
+          -8.255603367597332e-05,
+          7.347288639813145e-05
+        ],
+        "p_value_greater": 0.5455251714707093,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      },
+      {
+        "product": "lotto535",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 0.00038045021999686844,
+        "hac_standard_error": 0.001045420376386664,
+        "ci95": [
+          -0.0016810733327129448,
+          0.0024419737727066817
+        ],
+        "p_value_greater": 0.3584914044512342,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      },
+      {
+        "product": "keno",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 2.307350539677344e-05,
+        "hac_standard_error": 2.0852604716809748e-05,
+        "ci95": [
+          -1.8046924939234524e-05,
+          6.419393573278141e-05
+        ],
+        "p_value_greater": 0.1355204900180553,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      },
+      {
+        "product": "bingo18",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -1.1769845940312607e-06,
+        "hac_standard_error": 4.8574151562093956e-05,
+        "ci95": [
+          -9.696310064837895e-05,
+          9.460913146031644e-05
+        ],
+        "p_value_greater": 0.509629396535869,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      },
+      {
+        "product": "max3d",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 5.742656866658535e-06,
+        "hac_standard_error": 5.302850022058507e-05,
+        "ci95": [
+          -9.882724117517973e-05,
+          0.0001103125549084968
+        ],
+        "p_value_greater": 0.4570432569807579,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      },
+      {
+        "product": "max3dpro",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 7.858570543817223e-07,
+        "hac_standard_error": 1.3827386978004984e-06,
+        "ci95": [
+          -1.940843569736118e-06,
+          3.5125576784995627e-06
+        ],
+        "p_value_greater": 0.2857067252561775,
+        "hac_lag": 4,
+        "q_value_bh": 0.6364460333824943
+      }
+    ],
+    "adaptive_vs_incumbent": [
+      {
+        "product": "mega645",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -3.77525142331514e-05,
+        "hac_standard_error": 0.00011498629062501142,
+        "ci95": [
+          -0.0002645004825303767,
+          0.0001889954540640739
+        ],
+        "p_value_greater": 0.6281830088884883,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "power655",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -4.726482261787623e-06,
+        "hac_standard_error": 7.186954936355324e-05,
+        "ci95": [
+          -0.00014645011046167085,
+          0.00013699714593809562
+        ],
+        "p_value_greater": 0.526118976898477,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "lotto535",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0001719763109166883,
+        "hac_standard_error": 0.0008242052100123669,
+        "ci95": [
+          -0.001797273168606966,
+          0.0014533205467735892
+        ],
+        "p_value_greater": 0.5823317321224037,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "keno",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -5.3792168168769196e-05,
+        "hac_standard_error": 0.0001949960420440893,
+        "ci95": [
+          -0.00043831588938080115,
+          0.00033073155304326273
+        ],
+        "p_value_greater": 0.6082653384692913,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "bingo18",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 5.8521683198575756e-06,
+        "hac_standard_error": 7.596359318954667e-05,
+        "ci95": [
+          -0.0001439447363951469,
+          0.00015564907303486204
+        ],
+        "p_value_greater": 0.46941151946823845,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "max3d",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 0.00039193976588663303,
+        "hac_standard_error": 0.000392588775932106,
+        "ci95": [
+          -0.0003822282400124686,
+          0.0011661077717857347
+        ],
+        "p_value_greater": 0.16026671634761022,
+        "hac_lag": 5,
+        "q_value_bh": 0.6281830088884883
+      },
+      {
+        "product": "max3dpro",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 1.0145361313647072e-05,
+        "hac_standard_error": 0.0007270722639817762,
+        "ci95": [
+          -0.001423609547789155,
+          0.001443900270416449
+        ],
+        "p_value_greater": 0.49445435761845347,
+        "hac_lag": 4,
+        "q_value_bh": 0.6281830088884883
+      }
+    ],
+    "adaptive_vs_default": [
+      {
+        "product": "mega645",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -2.6375346242417662e-05,
+        "hac_standard_error": 0.00010994914028399814,
+        "ci95": [
+          -0.00024319027296030186,
+          0.00019043958047546653
+        ],
+        "p_value_greater": 0.5944350806190997,
+        "hac_lag": 4,
+        "q_value_bh": 0.7571570221138394
+      },
+      {
+        "product": "power655",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -1.849086228666863e-07,
+        "hac_standard_error": 8.222279685763138e-05,
+        "ci95": [
+          -0.00016232469097295538,
+          0.000161954873727222
+        ],
+        "p_value_greater": 0.5008938004418049,
+        "hac_lag": 4,
+        "q_value_bh": 0.7571570221138394
+      },
+      {
+        "product": "lotto535",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0005524265309135568,
+        "hac_standard_error": 0.00042741347397470293,
+        "ci95": [
+          -0.0013952673280193486,
+          0.00029041426619223504
+        ],
+        "p_value_greater": 0.9005965082796693,
+        "hac_lag": 4,
+        "q_value_bh": 0.9005965082796693
+      },
+      {
+        "product": "keno",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -7.686567356554263e-05,
+        "hac_standard_error": 0.0002001122292453815,
+        "ci95": [
+          -0.0004714782936107798,
+          0.00031774694647969447
+        ],
+        "p_value_greater": 0.6489917332404338,
+        "hac_lag": 4,
+        "q_value_bh": 0.7571570221138394
+      },
+      {
+        "product": "bingo18",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 7.029152913888837e-06,
+        "hac_standard_error": 5.169813560789992e-05,
+        "ci95": [
+          -9.4917323923724e-05,
+          0.00010897562975150168
+        ],
+        "p_value_greater": 0.4461274286365177,
+        "hac_lag": 4,
+        "q_value_bh": 0.7571570221138394
+      },
+      {
+        "product": "max3d",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 0.0003861971090199745,
+        "hac_standard_error": 0.00038419135283023994,
+        "ci95": [
+          -0.0003714115434385515,
+          0.0011438057614785004
+        ],
+        "p_value_greater": 0.15861056482240507,
+        "hac_lag": 5,
+        "q_value_bh": 0.7571570221138394
+      },
+      {
+        "product": "max3dpro",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 9.35950425926535e-06,
+        "hac_standard_error": 0.000727224936489986,
+        "ci95": [
+          -0.001424696468395228,
+          0.001443415476913759
+        ],
+        "p_value_greater": 0.4948849709223959,
+        "hac_lag": 4,
+        "q_value_bh": 0.7571570221138394
+      }
+    ],
+    "default_vs_fair": [
+      {
+        "product": "mega645",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0001177953269847265,
+        "hac_standard_error": 0.0002816271560157861,
+        "ci95": [
+          -0.0006731518403290654,
+          0.00043756118635961247
+        ],
+        "p_value_greater": 0.6615163601528851,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "power655",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0001429535962724593,
+        "hac_standard_error": 0.0005969600238051547,
+        "ci95": [
+          -0.0013201328218717164,
+          0.0010342256293267979
+        ],
+        "p_value_greater": 0.5942738476897977,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "lotto535",
+        "observations": 200,
+        "mean_log_gain_difference_nats": 0.0005430263171454008,
+        "hac_standard_error": 0.0019178377462752906,
+        "ci95": [
+          -0.003238866377435192,
+          0.004324919011725993
+        ],
+        "p_value_greater": 0.38895125082728765,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "keno",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0006326049252083266,
+        "hac_standard_error": 0.00043244451142704593,
+        "ci95": [
+          -0.0014853667095426418,
+          0.00022015685912598877
+        ],
+        "p_value_greater": 0.9269561213069969,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "bingo18",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0003349501896875573,
+        "hac_standard_error": 0.00043505540265537514,
+        "ci95": [
+          -0.0011928605380659059,
+          0.0005229601586907912
+        ],
+        "p_value_greater": 0.7782938810199458,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "max3d",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0027926681677629974,
+        "hac_standard_error": 0.001955358178500187,
+        "ci95": [
+          -0.00664854952421263,
+          0.0010632131886866348
+        ],
+        "p_value_greater": 0.922085907965868,
+        "hac_lag": 5,
+        "q_value_bh": 0.9269561213069969
+      },
+      {
+        "product": "max3dpro",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0016811422616139283,
+        "hac_standard_error": 0.015877596400923323,
+        "ci95": [
+          -0.03299107239140276,
+          0.029628787868174904
+        ],
+        "p_value_greater": 0.5420034409837726,
+        "hac_lag": 4,
+        "q_value_bh": 0.9269561213069969
+      }
+    ],
+    "adaptive_vs_fair": [
+      {
+        "product": "mega645",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.00014417067322714417,
+        "hac_standard_error": 0.00030778166127357764,
+        "ci95": [
+          -0.000751102734376252,
+          0.00046276138792196366
+        ],
+        "p_value_greater": 0.6795825054398446,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "power655",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.00014313850489532597,
+        "hac_standard_error": 0.0005484067051250758,
+        "ci95": [
+          -0.0012245726959782609,
+          0.0009382956861876089
+        ],
+        "p_value_greater": 0.6025702737276664,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "lotto535",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -9.400213768155919e-06,
+        "hac_standard_error": 0.001728640685614294,
+        "ci95": [
+          -0.0034182045264251008,
+          0.0033994040988887886
+        ],
+        "p_value_greater": 0.5021612592820834,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "keno",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0007094705987738692,
+        "hac_standard_error": 0.0005016630058766317,
+        "ci95": [
+          -0.001698728246221299,
+          0.0002797870486735606
+        ],
+        "p_value_greater": 0.920052423996762,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "bingo18",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0003279210367736685,
+        "hac_standard_error": 0.00043938684946989286,
+        "ci95": [
+          -0.0011943728100439837,
+          0.0005385307364966468
+        ],
+        "p_value_greater": 0.7712578461852723,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "max3d",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.002406471058743023,
+        "hac_standard_error": 0.0017137396839183466,
+        "ci95": [
+          -0.005785891243589737,
+          0.0009729491261036916
+        ],
+        "p_value_greater": 0.9185704758818374,
+        "hac_lag": 5,
+        "q_value_bh": 0.920052423996762
+      },
+      {
+        "product": "max3dpro",
+        "observations": 200,
+        "mean_log_gain_difference_nats": -0.0016717827573546628,
+        "hac_standard_error": 0.015302726115926504,
+        "ci95": [
+          -0.031848093666548144,
+          0.02850452815183882
+        ],
+        "p_value_greater": 0.54333350995646,
+        "hac_lag": 4,
+        "q_value_bh": 0.920052423996762
+      }
+    ]
+  },
+  "live_certification": false,
+  "adaptive_enabled_by_default": false,
+  "decision": "No promotion: no product shows BH-adjusted p<.05 for challenger vs fair or incumbent."
+}

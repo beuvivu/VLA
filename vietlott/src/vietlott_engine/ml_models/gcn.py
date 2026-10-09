@@ -102,9 +102,15 @@ class GCNPredictor:
     # --------------------------------------------------------------- train
     def fit(self, snaps: Snapshots, t_start: int, t_end: int) -> "GCNPredictor":
         """Train on snapshots t ∈ [t_start, t_end) — callers guarantee t_end ≤ first test index."""
+        if not 0 <= t_start < t_end <= len(snaps.y):
+            raise ValueError('Invalid chronological training interval')
+        if not 0 < self.cfg.validation_fraction < 1:
+            raise ValueError('Validation fraction must lie in (0, 1)')
         idx = np.arange(t_start, t_end)
         n_val = max(1, int(len(idx) * self.cfg.validation_fraction))
         train_idx, val_idx = idx[:-n_val], idx[-n_val:]
+        if not len(train_idx) or not len(val_idx):
+            raise ValueError('Need nonempty training and validation blocks')
         rng = np.random.default_rng(self.cfg.seed)
         a_all, x_all, y_all = snaps.a_hat.astype(np.float64), snaps.x.astype(np.float64), snaps.y.astype(np.float64)
         m = [np.zeros_like(q) for q in self.params.as_list()]
@@ -167,6 +173,10 @@ def walk_forward_skill(snaps: Snapshots, k: int, first_test: int, refit_every: i
     d, n = snaps.y.shape
     base = k / n
     warmup = max(30, first_test // 5)
+    if not warmup + 2 <= first_test <= d - 2:
+        raise ValueError('Need training and validation draws before at least two test draws')
+    if refit_every < 1:
+        raise ValueError('Refit interval must be positive')
     per_draw_gain, model_ll, hits, all_probs = [], [], [], []
     t = first_test
     while t < d:

@@ -33,6 +33,8 @@ from typing import Literal
 
 import joblib
 import numpy as np
+
+from model_io import MODEL_LOAD_ERRORS, atomic_joblib_dump
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import brier_score_loss, log_loss
@@ -635,7 +637,7 @@ def _train_model(
     }
 
     models_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(pack, models_dir / f"cau_keo_{mode}.joblib")
+    atomic_joblib_dump(pack, models_dir / f"cau_keo_{mode}.joblib")
     return pack, report, val_df
 
 
@@ -779,8 +781,8 @@ def _load_or_train(
                     pack.get("trained_through_date"),
                     latest_anchor,
                 )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Cannot load %s (%s). Retraining.", model_path, exc)
+        except (*MODEL_LOAD_ERRORS, RuntimeError) as exc:
+            logger.warning("Cannot load %s (%s). Retraining.", model_path, type(exc).__name__)
 
     if y_train is None:
         raise RuntimeError("supervised target is required for cầu-kèo training")

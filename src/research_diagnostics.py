@@ -18,24 +18,12 @@ import pandas as pd
 from scipy import stats
 
 from lottery import Lottery
+from statistical_corrections import benjamini_hochberg
 
 
 def bh_fdr(values: list[float] | np.ndarray) -> np.ndarray:
-    p = np.asarray(values, dtype=float)
-    out = np.full_like(p, np.nan, dtype=float)
-    finite = np.isfinite(p)
-    if not finite.any():
-        return out
-    pf = p[finite]
-    order = np.argsort(pf)
-    ranked = pf[order]
-    q = ranked * len(ranked) / np.arange(1, len(ranked) + 1)
-    q = np.minimum.accumulate(q[::-1])[::-1]
-    q = np.clip(q, 0.0, 1.0)
-    restored = np.empty_like(q)
-    restored[order] = q
-    out[finite] = restored
-    return out
+    """Wrapper tương thích cho helper BH dùng chung."""
+    return benjamini_hochberg(values)
 
 
 def _runs_test(values: np.ndarray) -> tuple[float, float]:

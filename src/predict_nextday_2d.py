@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Literal
 
 import joblib
+
+from model_io import MODEL_LOAD_ERRORS
 import numpy as np
 import pandas as pd
 
@@ -161,8 +163,8 @@ def _meta_prediction(
 
     try:
         pack = joblib.load(model_path)
-    except (AttributeError, EOFError, ImportError, OSError, ValueError) as exc:
-        fallback["reason"] = f"stacked model load failed: {exc}"
+    except MODEL_LOAD_ERRORS as exc:
+        fallback["reason"] = f"stacked model load failed ({type(exc).__name__})"
         return linear_prob.copy(), 0.0, fallback
 
     if not isinstance(pack, dict):

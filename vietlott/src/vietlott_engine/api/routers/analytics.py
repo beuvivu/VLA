@@ -57,12 +57,14 @@ def gcn_skill(
     state: AppState = Depends(get_state),
 ) -> SkillReport:
     h = state.history(spec)
+    h.require(52)  # 30 warmup + ít nhất 2 train/validation + 20 test.
     return walk_forward_skill(build_snapshots(h), h.k, min(first_test, len(h) - 20), refit_every, GCNConfig(epochs=40), model=model)
 
 
 @router.get("/ml/gcn/next", tags=["ml"])
 def gcn_next(spec: GameSpec = Depends(resolve_game), state: AppState = Depends(get_state)) -> dict:
     h = state.history(spec)
+    h.require(32)  # Cần cả train và validation sau 30 kỳ warmup.
     snaps = build_snapshots(h)
     model = GCNPredictor(snaps.x.shape[2], GCNConfig(epochs=40), h.k / h.n).fit(snaps, 30, len(h))
     p = model.predict_proba(snaps, len(h))[0]

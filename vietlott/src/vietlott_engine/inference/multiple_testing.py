@@ -78,7 +78,7 @@ class PerNumberReport(BaseModel):
     min_westfall_young_p: float
 
 
-def per_number_deviations(h: DrawHistory, sims: int = 2000, seed: int | None = None) -> PerNumberReport:
+def per_number_deviations(h: DrawHistory, sims: int = 2000, seed: int | None = None, alpha: float = 0.05) -> PerNumberReport:
     """Which individual numbers (if any) deviate from k/n, with every correction side by side."""
     n, k, d = h.n, h.k, len(h)
     p0 = k / n
@@ -112,6 +112,6 @@ def per_number_deviations(h: DrawHistory, sims: int = 2000, seed: int | None = N
         draws=d,
         simulations=sims,
         numbers=rows,
-        any_significant_fwer=bool(p_wy.min() < 0.05),
+        any_significant_fwer=bool(p_wy.min() < alpha),
         min_westfall_young_p=float(p_wy.min()),
     )
