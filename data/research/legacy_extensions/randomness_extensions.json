@@ -1,14 +1,14 @@
 {
   "ks_full_special": {
     "name": "ks_full_special_uniformity",
-    "statistic": 0.0209749645390071,
-    "p_value": 0.04769211142178309,
+    "statistic": 0.021074868825336823,
+    "p_value": 0.04598278851159798,
     "note": "H0: full five-digit special prize is Uniform[0,1) after scaling."
   },
   "ljung_box_even_tail_count": {
     "name": "ljung_box_even_tail_count",
-    "statistic": 7.5091173253535315,
-    "p_value": 0.6766641239127951,
+    "statistic": 7.471936437732448,
+    "p_value": 0.6802654214257259,
     "lags": 10,
     "note": "H0: aggregate count of even-ending Loto entries has no serial autocorrelation through the tested lags."
   }
