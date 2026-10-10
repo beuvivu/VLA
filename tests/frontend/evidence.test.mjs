@@ -2,9 +2,25 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
+import { setup as setupShell } from './shell-fixture.mjs';
 
 const root = new URL('../../', import.meta.url);
 const SCRIPT = readFileSync(process.env.APP_EVIDENCE_SCRIPT || new URL('src/assets/app-evidence.js', root), 'utf8');
+
+test('Bằng chứng giữ ngữ cảnh cầu sau khi khung chuyển title sang mô tả trợ năng', t => {
+  const description = '01x02 · 67,76 · 5 ngày';
+  const dom = setupShell({ beforeShell(d) {
+    const link = d.createElement('a');
+    link.id = 'bridge-description'; link.href = '#cau'; link.textContent = '67';
+    link.title = description;
+    d.getElementById('app-main').append(link);
+  } });
+  t.after(() => dom.window.close());
+  dom.window.eval(SCRIPT);
+  const link = dom.window.document.getElementById('bridge-description');
+  assert.equal(link.hasAttribute('title'), false);
+  assert.equal(dom.window.appEvidence.evidenceFor(link).context.label, description);
+});
 
 const REGISTRY = {
   schema: 1,
@@ -192,22 +208,29 @@ test('Đóng bằng nút hoặc Escape trả tiêu điểm về chỗ cũ', t =>
   assert.equal(drawer(dom).open, false);
 });
 
-test('Rê chuột hiện tooltip tóm tắt nguồn và gợi ý thao tác đúng loại con số', async t => {
+test('Rê chuột qua số không hiện tooltip, không thêm viền và vẫn nhấp đánh dấu được', async t => {
   const dom = start(t), tip = $(dom, 'app-evidence-tip');
   $(dom, 'kpi-value').dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
   await wait(220);
-  assert.equal(tip.hidden, false);
-  assert.match(tip.textContent, /Nguồn: Sổ kết quả XSMB đã lưu/);
-  assert.match(tip.textContent, /Suy luận qua 2 bước · Số kỳ/);
-  assert.match(tip.textContent, /Click để xem chi tiết bằng chứng suy luận/);
-  assert.equal($(dom, 'kpi-value').classList.contains('app-evidence-hot'), true);
+  assert.equal(tip.hidden, true);
+  assert.equal($(dom, 'kpi-value').classList.contains('app-evidence-hot'), false);
   $(dom, 'marked').dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
   await wait(220);
-  assert.match(tip.textContent, /Alt \+ nhấp/);
-  assert.equal($(dom, 'kpi-value').classList.contains('app-evidence-hot'), false);
-  $(dom, 'prose').dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
-  await wait(150);
   assert.equal(tip.hidden, true);
+  click(dom, $(dom, 'marked'));
+  assert.equal($(dom, 'marked').classList.contains('marked'), true);
+  assert.equal(drawer(dom), null);
+});
+
+test('Nhấp chuột sau khi dùng bàn phím tắt gợi ý, tiêu điểm của chuột không mở lại tooltip', t => {
+  const dom = start(t), tip = $(dom, 'app-evidence-tip'), special = $(dom, 'special');
+  key(dom, dom.window.document.body, 'Tab');
+  $(dom, 'btn').focus();
+  assert.equal(tip.hidden, false);
+  special.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true }));
+  special.focus();
+  assert.equal(tip.hidden, true);
+  assert.equal(special.hasAttribute('aria-describedby'), false);
 });
 
 test('Danh mục hỏng không làm sập trang: con số vẫn mở được, nguồn rơi về mặc định', t => {
@@ -380,8 +403,16 @@ test('Bàn phím đi qua từng số trong ô nhiều số trước khi sang ô 
   assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '2.344');
 });
 
-test('Bàn phím đi qua điểm dữ liệu SVG có <title> hoặc aria-label, không đếm chữ của <title> hai lần', t => {
+for (const accessibleOnly of [false, true]) test(`Bàn phím đi qua điểm SVG, không đếm mô tả hai lần (bỏ title: ${accessibleOnly})`, t => {
   const dom = start(t), d = dom.window.document, chart = $(dom, 'chart');
+  if (accessibleOnly) {
+    for (const title of chart.querySelectorAll('svg title')) {
+      const desc = d.createElementNS('http://www.w3.org/2000/svg', 'desc');
+      desc.textContent = title.textContent;
+      title.parentElement.setAttribute('aria-label', title.textContent);
+      title.replaceWith(desc);
+    }
+  }
   assert.equal(chart.getAttribute('data-evidence-region'), '', 'biểu đồ chỉ có điểm SVG vẫn là điểm dừng Tab');
   key(dom, d.body, 'Tab');
   chart.focus();

@@ -25,6 +25,67 @@
   var globalClose = lay("app-global-search-close");
   if (!rail || !panel || body.dataset.appShellReady) { return; }
   body.dataset.appShellReady = "true";
+
+  /* Giữ nội dung trợ năng nhưng không để trình duyệt bật tooltip native.
+     Theo dõi đúng nhánh mới/thuộc tính đổi, không quét lại toàn trang mỗi lần. */
+  var titleDescriptions = new WeakMap();
+  function retainTitleText(element, text, svgName) {
+    text = (text || "").trim();
+    var previous = titleDescriptions.get(element);
+    if (!text) {
+      if (previous && element.getAttribute(previous.attribute) === previous.value) {
+        if (previous.base) { element.setAttribute(previous.attribute, previous.base); }
+        else { element.removeAttribute(previous.attribute); }
+      }
+      titleDescriptions.delete(element);
+      return;
+    }
+    if (previous && previous.attribute === "aria-label" && element.getAttribute("aria-label") !== previous.value) {
+      previous = null;
+    }
+    var hasName = element.hasAttribute("aria-label") || element.hasAttribute("aria-labelledby") ||
+      element.getAttribute("alt") || (element.labels && element.labels.length) || element.textContent.trim();
+    var needsName = svgName ? !element.hasAttribute("aria-label") :
+      !hasName && element.matches("button, a, input, select, textarea, [role]");
+    var attribute = previous ? previous.attribute : (needsName ? "aria-label" : "aria-description");
+    if (!previous && element.getAttribute("aria-label") === text) { return; }
+    var current = element.getAttribute(attribute) || "";
+    var base = previous && current === previous.value ? previous.base : current;
+    var value = base && base !== text ? base + "; " + text : text;
+    element.setAttribute(attribute, value);
+    titleDescriptions.set(element, { attribute: attribute, base: base, value: value });
+  }
+  function suppressTitle(element) {
+    if (element.nodeType !== 1) { return; }
+    if (element.hasAttribute("title")) {
+      retainTitleText(element, element.getAttribute("title"), false);
+      element.removeAttribute("title");
+    }
+    if (element.namespaceURI === "http://www.w3.org/2000/svg" && element.localName === "title" && element.parentElement) {
+      var parent = element.parentElement;
+      retainTitleText(parent, element.textContent, true);
+      /* Giữ id của đích aria-labelledby/aria-describedby, không giữ SVG title. */
+      var description = doc.createElementNS(element.namespaceURI, "desc");
+      if (element.id) { description.id = element.id; }
+      description.textContent = element.textContent;
+      parent.replaceChild(description, element);
+    }
+  }
+  function suppressTitles(root) {
+    if (root.nodeType !== 1) { return; }
+    suppressTitle(root);
+    [].slice.call(root.querySelectorAll("[title], svg title")).forEach(suppressTitle);
+  }
+  suppressTitles(body);
+  new MutationObserver(function (changes) {
+    changes.forEach(function (change) {
+      if (change.type === "attributes") { suppressTitle(change.target); }
+      else {
+        suppressTitle(change.target);
+        [].slice.call(change.addedNodes).forEach(suppressTitles);
+      }
+    });
+  }).observe(body, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
   var dropdowns = [].slice.call(doc.querySelectorAll(".app-dropdown"));
 
   function closeDropdowns(restoreFocus) {
@@ -70,13 +131,10 @@
 
   var hoverTimer, leaveTimer;
   var preview = false, previewOriginal = null;
-  var railTooltip = lay("app-rail-tooltip");
   function cancelHover() { clearTimeout(hoverTimer); clearTimeout(leaveTimer); }
-  function hideRailTooltip() { if (railTooltip) { railTooltip.hidden = true; } }
 
   function datTrangThai(mo, transient) {
     if (!transient) { cancelHover(); preview = false; }
-    hideRailTooltip();
     /* Trả focus ra trước khi ẩn hoặc khóa vùng đang chứa nó. */
     if (!mo && toggle && (panel.contains(doc.activeElement) || (hep() && rail.contains(doc.activeElement)))) {
       toggle.focus();
@@ -109,7 +167,7 @@
   }
   doc.addEventListener("keydown", function (ev) {
     if (ev.isComposing) { return; }
-    if (ev.key === "Escape") { cancelHover(); hideRailTooltip(); }
+    if (ev.key === "Escape") { cancelHover(); }
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
       ev.preventDefault(); openGlobalSearch(); return;
     }
@@ -163,13 +221,13 @@
       g.hidden = g.getAttribute("data-app-group") !== chiSo;
     });
     var nut = nutNhom.filter(function (b) { return b.getAttribute("data-app-group") === chiSo; })[0];
-    if (nut && panelTitle) { panelTitle.textContent = nut.getAttribute("title") || ""; }
+    if (nut && panelTitle) { panelTitle.textContent = nut.getAttribute("aria-label") || ""; }
     panel.scrollTop = 0;
     datTrangThai(true, transient);
   }
 
   function endPreview() {
-    cancelHover(); hideRailTooltip();
+    cancelHover();
     if (!preview) { return; }
     preview = false;
     if (previewOriginal !== null) { moNhom(previewOriginal, true); }
@@ -177,7 +235,7 @@
   }
   function leaveNavigation(event) {
     if (event && event.relatedTarget && (rail.contains(event.relatedTarget) || panel.contains(event.relatedTarget))) { return; }
-    cancelHover(); hideRailTooltip();
+    cancelHover();
     if (!preview) { return; }
     leaveTimer = setTimeout(function () {
       if (!panel.contains(doc.activeElement)) { endPreview(); }
@@ -196,13 +254,8 @@
       if (hep() || panel.contains(doc.activeElement) || event.pointerType === "touch" || !finePointer ||
           (globalDialog && globalDialog.open)) { return; }
       if (dangMo() && !preview) { return; }
-      if (railTooltip) {
-        railTooltip.textContent = b.title;
-        railTooltip.style.top = Math.max(8, b.getBoundingClientRect().top) + "px";
-        railTooltip.hidden = false;
-      }
       hoverTimer = setTimeout(function () {
-        if (panel.contains(doc.activeElement)) { hideRailTooltip(); return; }
+        if (panel.contains(doc.activeElement)) { return; }
         if (!preview) {
           previewOriginal = (nutNhom.filter(function (button) { return button.getAttribute("aria-selected") === "true"; })[0] || b).getAttribute("data-app-group");
         }
@@ -211,7 +264,7 @@
       }, 160);
     });
     b.addEventListener("pointerleave", function (event) {
-      clearTimeout(hoverTimer); hideRailTooltip();
+      clearTimeout(hoverTimer);
       if (!event.relatedTarget || (!rail.contains(event.relatedTarget) && !panel.contains(event.relatedTarget))) { leaveNavigation(event); }
     });
     b.addEventListener("click", function () {
@@ -369,9 +422,9 @@
       b.setAttribute("aria-selected", active ? "true" : "false");
       b.tabIndex = active ? 0 : -1;
       if (active) {
-        if (panelTitle) { panelTitle.textContent = b.title; }
+        if (panelTitle) { panelTitle.textContent = b.getAttribute("aria-label"); }
         var crumb = doc.querySelector(".app-crumb:not(.app-crumb--now)");
-        if (crumb) { crumb.textContent = b.title; }
+        if (crumb) { crumb.textContent = b.getAttribute("aria-label"); }
       }
     });
     nhomPanel.forEach(function (g) { g.hidden = g.getAttribute("data-app-group") !== group; });
@@ -402,7 +455,6 @@
     doc.addEventListener("fullscreenchange", function () {
       var label = doc.fullscreenElement ? "Thoát toàn màn hình" : "Toàn màn hình";
       full.setAttribute("aria-label", label);
-      full.setAttribute("title", label);
       full.setAttribute("aria-pressed", doc.fullscreenElement ? "true" : "false");
       var caption = full.querySelector("span");
       if (caption) { caption.textContent = label; }

@@ -16,7 +16,7 @@ export const fixture = JSON.parse(execFileSync('python3', ['-c', build], {
   cwd: fileURLToPath(root), env: { ...process.env, PYTHONPATH: 'src', PYTHONDONTWRITEBYTECODE: '1' }, encoding: 'utf8',
 }));
 
-export function setup({ narrow = false, hash = '', mediaThrows = false } = {}) {
+export function setup({ narrow = false, hash = '', mediaThrows = false, beforeShell = () => {} } = {}) {
   const dom = new JSDOM(fixture.html, {
     url: `https://example.test/index.html${hash}`, runScripts: 'outside-only',
   });
@@ -28,6 +28,7 @@ export function setup({ narrow = false, hash = '', mediaThrows = false } = {}) {
     this.open = false;
     this.dispatchEvent(new dom.window.Event('close'));
   };
+  beforeShell(dom.window.document);
   dom.window.eval(readFileSync(process.env.APP_SHELL_SCRIPT || new URL('src/assets/app-shell.js', root), 'utf8'));
   return dom;
 }

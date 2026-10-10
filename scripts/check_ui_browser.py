@@ -27,13 +27,31 @@ def contrast(colors):
     return (light + .05) / (dark + .05)
 
 
+def check_no_native_tooltips(page):
+    """Không để title của HTML/SVG mở bong bóng; vẫn giữ tiêu đề tài liệu."""
+    expect(page.locator("body [title], body svg title")).to_have_count(0)
+    expect(page.locator("head > title")).to_have_count(1)
+
+
+def check_pointer_has_no_tooltip(page, target):
+    """Dùng chuột thật và chờ quá độ trễ cũ để bắt cả tooltip hẹn giờ."""
+    page.mouse.move(1, 1)
+    target.hover()
+    # Tooltip cũ đợi 150 ms; kiểm ngay sau hover sẽ bỏ lọt hồi quy ấy.
+    page.wait_for_timeout(250)
+    expect(page.locator("#app-evidence-tip")).to_be_hidden()
+    expect(page.locator("#app-rail-tooltip")).to_be_hidden()
+    assert not target.evaluate("e => e.classList.contains('app-evidence-hot')")
+    check_no_native_tooltips(page)
+
+
 def check_evidence(page, name, width, dark):
     """Mọi trang: một con số mở được nguồn & bằng chứng.
 
     Ưu tiên con số chưa có chức năng nhấp (nhấp thường mở ngăn kéo). Trang mà
     mọi con số đều đã có chức năng (ô đánh dấu của trang thống kê) thì dùng
-    Alt + nhấp — đúng lối mà tooltip của những ô ấy chỉ dẫn. Rê chuột chỉ đo
-    ở bản rộng, nền sáng; chữ của giá trị phải đạt AA trên nền ngăn kéo ở cả
+    Alt + nhấp. Rê chuột không được mở tooltip; chữ của giá trị phải đạt AA
+    trên nền ngăn kéo ở cả
     hai chế độ màu; Escape đóng ngăn kéo.
     """
     found = page.evaluate_handle("""() => {
@@ -58,16 +76,7 @@ def check_evidence(page, name, width, dark):
     alt = found.evaluate("r => r && r.alt")
     target = found.evaluate_handle("r => r && r.el").as_element()
     assert target is not None, f"{name}: không tìm thấy con số nào nhận được bằng chứng"
-    if width > 640 and not dark:
-        # Trang trước có thể để con trỏ nằm sẵn đúng chỗ (hai trang ML cùng bố
-        # cục): không di chuột thì trình duyệt không phát mouseover.
-        page.mouse.move(1, 1)
-        target.hover()
-        tip = page.locator("#app-evidence-tip")
-        expect(tip).to_be_visible()
-        text = tip.text_content()
-        assert "Nguồn" in text and "bằng chứng suy luận" in text, text
-        assert ("Alt + nhấp" in text) == bool(alt), text
+    check_pointer_has_no_tooltip(page, target)
     try:
         target.click(modifiers=["Alt"] if alt else [])
     except Exception as error:
@@ -112,12 +121,62 @@ def check_evidence_keeps_existing_clicks(page):
     cell.click()
     assert cell.evaluate("e => e.classList.contains('marked')") != before
     assert not page.locator("#app-evidence-drawer").is_visible()
+    check_pointer_has_no_tooltip(page, cell)
     marked = cell.evaluate("e => e.classList.contains('marked')")
     cell.click(modifiers=["Alt"])
     expect(page.locator("#app-evidence-drawer")).to_be_visible()
     assert cell.evaluate("e => e.classList.contains('marked')") == marked
     page.keyboard.press("Escape")
     cell.click()
+
+
+def check_traditional_result_interactions(page):
+    """Sổ kết quả giữ bấm/Enter/Space, cặp trùng và Alt + bấm khi bỏ tooltip."""
+    # Kết thúc lượt bàn phím trước đó bằng thao tác chuột thật. Tooltip do
+    # bàn phím còn mở là hợp lệ; từ đây mọi focus đều do chuột tạo ra.
+    page.locator("#tr-filter-title").click()
+    results = page.locator("#tr-results")
+    pair_mode = page.locator("#tr-pair-mode")
+    clear = page.locator("#tr-mark-clear")
+    if clear.is_visible():
+        clear.click()
+    pair_mode.uncheck()
+    number = results.locator(".tr-number").first
+    value = number.inner_text().strip()
+    expect(number).to_have_attribute("aria-pressed", "false")
+    assert value[-2:] in (number.get_attribute("aria-label") or "")
+    check_pointer_has_no_tooltip(page, number)
+    number.click()
+    expect(number).to_be_focused()
+    expect(number).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("#app-evidence-drawer")).to_be_hidden()
+    # Lần bấm đã đưa focus vào số: focus do chuột cũng không mở tooltip.
+    check_pointer_has_no_tooltip(page, number)
+    number.press("Enter")
+    expect(number).to_have_attribute("aria-pressed", "false")
+    number.press("Space")
+    expect(number).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("#app-evidence-drawer")).to_be_hidden()
+    clear.click()
+    pair_mode.check()
+    expected = results.locator(".tr-number, .tr-mini").evaluate_all(
+        "(nodes, pair) => nodes.filter(n => n.textContent.trim().slice(-2) === pair).length",
+        value[-2:],
+    )
+    assert expected > 1, "Cần ít nhất hai ô cùng cặp để kiểm tra đánh dấu cặp trùng"
+    number.click()
+    marked = results.locator(".tr-number[data-marked], .tr-mini[data-marked]")
+    expect(marked).to_have_count(expected)
+    check_pointer_has_no_tooltip(page, number)
+    number.click(modifiers=["Alt"])
+    expect(page.locator("#app-evidence-drawer")).to_be_visible()
+    expect(marked).to_have_count(expected)
+    page.keyboard.press("Escape")
+    expect(page.locator("#app-evidence-drawer")).to_be_hidden()
+    clear.click()
+    expect(marked).to_have_count(0)
+    pair_mode.uncheck()
+    check_no_native_tooltips(page)
 
 
 def main():
@@ -222,6 +281,8 @@ def main():
                             state["evidence"] = check_evidence(page, name, width, dark)
                             if name == "tan-suat-loto.html" and not dark:
                                 check_evidence_keeps_existing_clicks(page)
+                            if name == "so-ket-qua-truyen-thong.html":
+                                check_traditional_result_interactions(page)
                             if name in ("index.html", "statistics.html", "tan-suat-cap-loto.html", "live.html"):
                                 page.screenshot(path=str(OUT / f"{name}-{width}-{'dark' if dark else 'light'}.png"))
                             if name == "index.html":

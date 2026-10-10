@@ -47,7 +47,7 @@ test('Bàn phím chọn nhóm theo thứ tự hiển thị và chỉ để một
     assert.deepEqual(tabs.filter(b => b.tabIndex === 0), [tabs[index]]);
     assert.equal(tabs[index].getAttribute('aria-selected'), 'true');
     assert.equal(d.querySelector('.app-panel-group:not([hidden])').id, `app-panel-${index}`);
-    assert.equal(d.getElementById('app-panel-title').textContent, tabs[index].title);
+    assert.equal(d.getElementById('app-panel-title').textContent, tabs[index].getAttribute('aria-label'));
   };
   tabs[0].focus(); press('ArrowDown'); selected(1);
   press('End'); selected(7);
@@ -163,7 +163,7 @@ test('Ctrl K mở tìm kiếm và đưa focus vào ô nhập', () => {
   assert.equal(d.body.classList.contains('app-panel-open'), false); dom.window.close();
 });
 
-test('Nút toàn màn hình đồng bộ tooltip với nhãn và trạng thái khi vào rồi thoát', () => {
+test('Nút toàn màn hình đồng bộ nhãn và trạng thái mà không bật tooltip', () => {
   const dom = setup(), d = dom.window.document;
   const button = d.getElementById('app-fullscreen');
   for (const [element, label, pressed] of [
@@ -172,7 +172,7 @@ test('Nút toàn màn hình đồng bộ tooltip với nhãn và trạng thái k
   ]) {
     d.fullscreenElement = element;
     d.dispatchEvent(new dom.window.Event('fullscreenchange'));
-    assert.equal(button.title, label);
+    assert.equal(button.hasAttribute('title'), false);
     assert.equal(button.getAttribute('aria-label'), label);
     assert.equal(button.getAttribute('aria-pressed'), pressed);
   }
@@ -276,7 +276,7 @@ test('Rời icon trước độ trễ không mở menu; rời preview khôi ph�
   d.getElementById('app-panel').dispatchEvent(new dom.window.Event('pointerleave'));
   await new Promise(resolve => setTimeout(resolve, 250));
   assert.equal(d.getElementById('app-panel').inert, true);
-  assert.equal(d.querySelector('[role=tab][aria-selected=true]').title, 'Kết quả');
+  assert.equal(d.querySelector('[role=tab][aria-selected=true]').getAttribute('aria-label'), 'Kết quả');
   dom.window.close();
 });
 
@@ -288,9 +288,9 @@ test('Hover không ẩn nhóm đang giữ focus bàn phím', async () => {
   await new Promise(resolve => setTimeout(resolve, 190));
   const link = d.querySelector('.app-panel-group:not([hidden]) a');
   link.focus();
-  d.querySelector('[role=tab][title="Thống kê"]').dispatchEvent(new dom.window.Event('pointerenter'));
+  d.querySelector('[role=tab][aria-label="Thống kê"]').dispatchEvent(new dom.window.Event('pointerenter'));
   await new Promise(resolve => setTimeout(resolve, 190));
-  assert.equal(d.querySelector('[role=tab][aria-selected=true]').title, 'Vietlott');
+  assert.equal(d.querySelector('[role=tab][aria-selected=true]').getAttribute('aria-label'), 'Vietlott');
   assert.equal(link.closest('[hidden]'), null);
   dom.window.close();
 });

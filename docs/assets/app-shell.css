@@ -95,10 +95,6 @@ body.app-panel-open .app-panel{transform:none}
   box-shadow:inset 2px 0 0 var(--app-accent);color:var(--app-accent);
   background:color-mix(in srgb,var(--app-accent) 8%,var(--app-surface));
 }
-.app-rail-tooltip{position:fixed;left:calc(var(--app-rail-w) + 8px);z-index:65;
-  max-width:220px;padding:8px 12px;border-radius:var(--app-shell-radius);border:1px solid var(--app-line);
-  background:var(--app-surface);color:var(--app-ink);font-size:12px;box-shadow:0 4px 18px #0002;pointer-events:none}
-.app-rail-tooltip[hidden]{display:none}
 .app-vietlott-card{min-width:0;padding:16px;border:1px solid var(--app-line);border-radius:var(--app-shell-radius);background:var(--app-surface)}
 .app-vietlott-card + .app-vietlott-card{margin-top:12px}
 .vl-cols .app-vietlott-card + .app-vietlott-card{margin-top:0}

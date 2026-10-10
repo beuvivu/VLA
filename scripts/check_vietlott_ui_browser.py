@@ -8,6 +8,7 @@ import re
 from threading import Thread
 
 from playwright.sync_api import expect, sync_playwright
+from check_ui_browser import check_no_native_tooltips, check_pointer_has_no_tooltip
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'ui-browser-artifacts'
@@ -45,6 +46,28 @@ def assert_no_page_overflow(page, label):
         html: document.documentElement.scrollWidth, body: document.body.scrollWidth})''')
     assert sizes['html'] <= sizes['viewport'] + 1, (label, sizes)
     assert sizes['body'] <= sizes['viewport'] + 1, (label, sizes)
+
+
+def check_product_tile_hover(page, label):
+    """Rê chuột trên cả bảy thẻ: số không bị gạch chân bởi liên kết cha."""
+    # Bỏ focus/tooltip còn lại từ lượt kiểm bàn phím trước khi thử chuột.
+    page.locator('.vl-hero h1').click()
+    tiles = page.locator('.vl-tile')
+    expect(tiles).to_have_count(7)
+    for tile in tiles.all():
+        number = tile.locator('.vl-ball').first
+        expect(number).to_be_visible()
+        check_pointer_has_no_tooltip(page, number)
+        decoration = number.evaluate('''ball => {
+            const styles = [];
+            for (let node = ball; node; node = node.parentElement) {
+                styles.push({tag: node.tagName, class: node.className,
+                    line: getComputedStyle(node).textDecorationLine});
+                if (node.classList.contains('vl-tile')) break;
+            }
+            return styles;
+        }''')
+        assert not any('underline' in item['line'] for item in decoration), (label, decoration)
 
 
 def check_single_line_sequences(page, label):
@@ -387,6 +410,11 @@ def main():
                         page.evaluate('document.fonts.ready')
                         assert page.evaluate('document.documentElement.classList.contains("dark")') == (theme == 'dark')
                         label = (name, width, theme)
+                        check_no_native_tooltips(page)
+                        if name == 'vietlott.html':
+                            check_product_tile_hover(page, label)
+                        else:
+                            check_pointer_has_no_tooltip(page, page.locator('.vl-hero .vl-ball, .vl-jackpot-value').first)
                         assert_no_page_overflow(page, label)
                         check_single_line_sequences(page, label)
                         check_max_prize_alignment(page, label)
