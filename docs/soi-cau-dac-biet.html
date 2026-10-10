@@ -138,6 +138,11 @@ border-right:1px solid var(--ui-border);color:var(--ui-ink);
 font-size:var(--tr-num-fs);font-weight:800;font-variant-numeric:tabular-nums;
 letter-spacing:.01em;white-space:nowrap}
 .tr-number:last-child{border-right:0}
+
+.tr-prizes>.tr-prize-row:is([data-prize="prize3"],[data-prize="prize5"]) .tr-number-grid{
+grid-template-columns:repeat(3,minmax(0,1fr))}
+.tr-prizes>.tr-prize-row:is([data-prize="prize3"],[data-prize="prize5"]) .tr-number:nth-child(3n){border-right:0}
+.tr-prizes>.tr-prize-row:is([data-prize="prize3"],[data-prize="prize5"]) .tr-number:nth-child(n+4){border-top:1px solid var(--ui-border)}
 .tr-prize-row[data-prize="special"]{min-height:var(--tr-sp-h)}
 .tr-prize-row[data-prize="special"] .tr-prize-label{color:var(--ui-bad);background:var(--ui-bad-soft)}
 .tr-prize-row[data-prize="special"] .tr-number{min-height:var(--tr-sp-h);

@@ -141,12 +141,12 @@ def test_forecasts_say_whether_they_were_registered_before_the_draw(built) -> No
     assert "Chưa có kết quả đã xác thực" in built["vietlott-power-655.html"]
 
 
-def test_forecast_candidates_render_balls_without_losing_symbols_or_odds() -> None:
+def test_forecast_candidates_render_balls_without_losing_symbols() -> None:
     forecast = _dashboard()["products"][0]["next_forecast"]
     soup = BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser")
     assert [ball.get_text() for ball in soup.select('.vl-ball')] == ["04", "12", "31", "34", "38", "41"]
     assert soup.select_one('.vl-number-sequence') is not None
-    assert "×1.0500 so với ngẫu nhiên" in soup.get_text()
+    assert "so với ngẫu nhiên" not in soup.get_text()
     max_forecast = {"components": [{"name": "digits", "top": [{"numbers": [0, 3, 8]}]}]}
     max_soup = BeautifulSoup(b.forecast_markup("max3d", max_forecast), "html.parser")
     assert [ball.get_text() for ball in max_soup.select('.vl-ball')] == ["038"]

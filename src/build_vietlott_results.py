@@ -296,7 +296,7 @@ def _symbol(product: str, numbers: list) -> str:
 
 
 def forecast_markup(product: str, forecast: dict | None) -> str:
-    """Bộ số engine đề xuất cho kỳ kế tiếp, kèm trạng thái đăng ký và hệ số so với ngẫu nhiên."""
+    """Bộ số engine đề xuất cho kỳ kế tiếp, kèm trạng thái đăng ký."""
     if not forecast:
         return '<p class="vl-muted">Chưa có dự báo hợp lệ cho kỳ kế tiếp.</p>'
     if forecast.get("registered"):
@@ -312,7 +312,6 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     for comp in forecast.get("components") or []:
         rows = []
         for t in (comp.get("top") or [])[:5]:
-            lift = (t["p_model"] / t["p_fair"]) if t.get("p_model") and t.get("p_fair") else None
             numbers = t["numbers"]
             if product in MAX:
                 symbol = _symbol(product, numbers)
@@ -323,7 +322,7 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
             else:
                 sequence = balls(numbers, product=product)
             rows.append(f'<li><div class="vl-ticket-row"><span class="vl-ticket" aria-label="{esc(_symbol(product, numbers))}">{sequence}</span>'
-                        + (f'<small>×{lift:.4f} so với ngẫu nhiên</small>' if lift else "") + "</div></li>")
+                        "</div></li>")
         key = comp.get("name") or ""
         label = {"main": "Bộ số chính", "special": "Số đặc biệt", "digits": "Bộ ba số", "dice": "Bộ ba số"}.get(key, key)
         components.append(f'<div class="vl-forecast-component" data-vl-component="{esc(key)}">'
