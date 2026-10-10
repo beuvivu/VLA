@@ -391,8 +391,11 @@ bạn làm đỏ nó — không có sẵn phép kiểm đỏ nào để đổ l�
 
 ## Nguồn & bằng chứng suy luận của con số — 03-10-2026
 
-Mọi con số trong `#app-main` có tooltip (rê chuột/tiêu điểm: nguồn tóm tắt, số
-bước, gợi ý thao tác) và ngăn kéo `<dialog>` (nhấp: ngữ cảnh, nguồn, các bước,
+Theo yêu cầu ngày 10-10-2026, mọi trang KHÔNG hiện tooltip khi rê chuột hoặc
+nhận tiêu điểm từ chuột; bỏ cả tooltip mặc định từ `title` HTML/SVG, giữ nội
+dung mô tả cho trình đọc màn hình. Các ô Vietlott không gạch chân khi hover.
+Mọi con số trong `#app-main` vẫn có gợi ý khi điều hướng BẰNG BÀN PHÍM (nguồn
+tóm tắt, số bước, gợi ý thao tác) và ngăn kéo `<dialog>` (nhấp: ngữ cảnh, nguồn, các bước,
 độ tin cậy nếu có). `src/assets/app-evidence.js` dùng ủy quyền sự kiện ở cấp
 tài liệu nên phủ cả bảng do JS dựng sau khi tải; nhận diện "con số" bằng chữ
 của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho từng ô.

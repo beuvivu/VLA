@@ -1,6 +1,7 @@
 /* Nguồn & bằng chứng suy luận cho mọi con số trên trang.
 
-   Rê chuột (hoặc đưa tiêu điểm) lên một con số: tooltip xem nhanh nguồn.
+   Gợi ý nguồn chỉ hiện khi điều hướng bằng bàn phím; rê/nhấp chuột không
+   bật tooltip để người xem chọn số và tính cầu liên tục.
    Nhấp: ngăn kéo chi tiết — nguồn dữ liệu, các bước tính, ngữ cảnh của ô.
    Con số đã có chức năng nhấp riêng (đánh dấu ô, chọn số, nút, liên kết) giữ
    nguyên chức năng ấy; bằng chứng của nó mở bằng Alt + nhấp, hoặc nhấn giữ
@@ -53,8 +54,6 @@
   var STOP_AT = { TD: 1, TH: 1, LI: 1, DT: 1, DD: 1, P: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, CAPTION: 1 };
   var NEVER = { TR: 1, THEAD: 1, TBODY: 1, TFOOT: 1, TABLE: 1, UL: 1, OL: 1, DL: 1, SECTION: 1,
     ARTICLE: 1, MAIN: 1, NAV: 1, FORM: 1, HEADER: 1, FOOTER: 1, ASIDE: 1, FIGURE: 1 };
-  var HOVER_DELAY = 150;
-  var HIDE_DELAY = 90;
   var TOUCH_GRACE = 700;
 
   var root = doc.getElementById("app-main") || doc.body;
@@ -245,7 +244,7 @@
   /* Nhãn của một con số đứng ngoài bảng: thuộc tính mô tả, hoặc phần tử anh
      em ngắn ngay cạnh nó hay cạnh tổ tiên gần — không lấy cả khối chữ. */
   function nearbyLabel(el, value) {
-    var own = norm(el.getAttribute("aria-label") || el.getAttribute("title"));
+    var own = norm(el.getAttribute("aria-label") || el.getAttribute("aria-description") || el.getAttribute("title"));
     if (own && !isNumber(own)) { return short(own, 60); }
     for (var node = el, depth = 0; node && node !== root && depth < 3; depth += 1, node = node.parentElement) {
       var prev = node.previousElementSibling;
@@ -416,8 +415,6 @@
   tip.hidden = true;
   doc.body.appendChild(tip);
   var tipFor = null;
-  var showTimer = 0;
-  var hideTimer = 0;
   var lastTouch = 0;
 
   function fillTip(ev, interactive, viaKeyboard) {
@@ -460,7 +457,6 @@
   }
 
   function showTip(el, viaKeyboard) {
-    clearTimeout(hideTimer);
     if (tipFor && tipFor !== el) { unmark(tipFor); }
     var interactive = isInteractive(el);
     fillTip(evidenceFor(el), interactive, viaKeyboard);
@@ -477,34 +473,15 @@
   }
 
   function hideTip() {
-    clearTimeout(showTimer);
     tip.hidden = true;
     if (tipFor) { unmark(tipFor); }
     tipFor = null;
   }
 
   doc.addEventListener("pointerdown", function (event) {
-    if (event.pointerType === "touch") { lastTouch = Date.now(); hideTip(); }
+    if (event.pointerType === "touch") { lastTouch = Date.now(); }
+    hideTip();
   }, true);
-
-  doc.addEventListener("mouseover", function (event) {
-    if (Date.now() - lastTouch < TOUCH_GRACE || drawerOpen()) { return; }
-    var el = valueTarget(event.target);
-    if (el === tipFor) { clearTimeout(hideTimer); return; }
-    clearTimeout(showTimer);
-    if (!el) {
-      if (tipFor) { hideTimer = setTimeout(hideTip, HIDE_DELAY); }
-      return;
-    }
-    showTimer = setTimeout(function () { showTip(el); }, HOVER_DELAY);
-  });
-
-  doc.addEventListener("mouseout", function (event) {
-    if (!tipFor) { clearTimeout(showTimer); return; }
-    var to = event.relatedTarget;
-    if (to && tipFor.contains(to)) { return; }
-    hideTimer = setTimeout(hideTip, HIDE_DELAY);
-  });
 
   doc.addEventListener("focusin", function (event) {
     if (event.target.hasAttribute && event.target.hasAttribute("data-evidence-region")) {
@@ -517,7 +494,7 @@
       return;
     }
     var el = valueTarget(event.target);
-    if (el && el === event.target && !drawerOpen()) { showTip(el, keyboard ? "self" : false); return; }
+    if (keyboard && el && el === event.target && !drawerOpen()) { showTip(el, "self"); return; }
     /* Liên kết hay nút chứa NHIỀU số (cầu "67,76" kèm số ngày, thanh "54 … 59"):
        tiêu điểm nằm trên chính điều khiển, nên Alt + Enter mở số chính của nó.
        Các số còn lại vẫn chọn được bằng mũi tên trong vùng bao quanh. */
@@ -760,7 +737,7 @@
 
   /* Điểm dữ liệu SVG (vòng tròn, cột) không có chữ: con số nằm trong <title>
      hoặc aria-label của nó. Nó là một mục như mọi con số; chữ của chính thẻ
-     <title> thì không — nếu không, một điểm bị đếm hai lần. */
+     <title>/<desc> thì không — nếu không, một điểm bị đếm hai lần. */
   function svgPoint(el) {
     return el.namespaceURI === SVG_NS && /\d/.test(svgLabel(el)) && valueTarget(el) === el;
   }
@@ -775,7 +752,7 @@
         el = node;
       } else {
         var holder = node.parentElement;
-        if (!/\d/.test(node.nodeValue) || (holder && holder.namespaceURI === SVG_NS && holder.localName === "title")) { continue; }
+        if (!/\d/.test(node.nodeValue) || (holder && holder.namespaceURI === SVG_NS && /^(title|desc)$/.test(holder.localName))) { continue; }
         el = valueTarget(node);
       }
       if (!el || el === last || selfFocusable(el) || (region && regionFor(el) !== region)) { continue; }
