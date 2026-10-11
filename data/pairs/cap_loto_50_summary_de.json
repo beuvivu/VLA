@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T16:15:05Z",
+  "generated_at": "2026-10-11T11:37:02Z",
   "mode": "de",
   "history_start": "2015-01-01",
-  "history_end": "2026-10-10",
-  "history_days": 4231,
+  "history_end": "2026-10-11",
+  "history_days": 4232,
   "pair_count": 50,
   "reverse_pair_count": 45,
   "kep_bong_pair_count": 5,
@@ -17,11 +17,9 @@
   ],
   "kep_bong_mean_member_rate_gap_365d": 0.003835616438356164,
   "kep_bong_mean_member_balance_365d": 0.7033333333333334,
-  "kep_bong_mean_phi": -0.009769753707052456,
+  "kep_bong_mean_phi": -0.009767422410085222,
   "reverse_mean_member_rate_gap_365d": 0.006575342465753423,
-  "reverse_mean_member_balance_365d": 0.5062698412698413,
-  "current_cau_scores_aligned": true,
-  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities",
-  "kep_bong_mean_current_cau_score_gap": 7.46316,
-  "kep_bong_mean_current_cau_score_balance": 0.8549977192063493
+  "reverse_mean_member_balance_365d": 0.5055291005291005,
+  "current_cau_scores_aligned": false,
+  "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities"
 }
