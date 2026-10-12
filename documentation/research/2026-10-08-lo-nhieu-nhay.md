@@ -5,12 +5,13 @@ Ngày 08-10-2026. Mã: `src/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_h
 ## Kết luận
 
 Trên 4 228 kỳ XSMB thật, chọn top-5 của bộ lọc (bốn lớp đặc trưng, trọng số tự tối ưu) trúng
-"nhiều nháy" **2,91%** số lượt chọn, KTC95 2,68–3,15%. Chọn bừa trúng **2,97%**. Top-3: 2,87%.
-Bộ lọc không hơn chọn bừa (p = 0,72). Phép đo đủ nhạy để thấy một lợi thế chỉ ×1,13, nên mức
+"nhiều nháy" **2,91%** số lượt chọn (606 lượt), KTC95 2,68–3,15%. Chọn bừa trên chính các kỳ ấy
+kỳ vọng **2,91%** (607,2 lượt). Top-3: 2,87% so với 2,91%. Bộ lọc không hơn chọn bừa (z = −0,05,
+p = 0,52). Phép đo đủ nhạy để thấy một lợi thế chỉ ×1,13, nên mức
 15–25% (gấp 4–6 lần nền) mà đặc tả ban đầu đặt ra bị bác chắc chắn.
 
 Bộ lọc không mù: trên lịch sử giả định có cài tín hiệu, nó đưa đúng ba con được cài lên top-3
-và trúng 19,5% (×6,6, p ≈ 10⁻²⁰). Vì vậy kết luận "không có tín hiệu" là của dữ liệu, không phải
+và trúng 19,5%, so với 3,65% của chọn bừa trên cùng lịch sử (×5,3, z = +12,2). Vì vậy kết luận "không có tín hiệu" là của dữ liệu, không phải
 của công cụ đo.
 
 Bộ lọc không vào pipeline và không có trang trên site. Theo luật đề bạt của kho, một mô hình chỉ
@@ -55,8 +56,10 @@ Cách chấm và chọn:
   vậy tỉ lệ trúng báo ra không mang thiên lệch của phép chọn.
 - **Xác suất hiển thị.** Hiệu chỉnh Platt trên các cặp (điểm, kết quả) ngoài mẫu. Không có tín
   hiệu thì xác suất về mức nền; kỳ tới (sau 07-10-2026), top-5 nhận 2,86–2,89%.
-- **Confidence (High/Medium/Low).** Suy từ kiểm định nhị thức một phía của tỉ lệ trúng ngoài mẫu
-  (High: p < 0,01; Medium: p < 0,05; cả hai đều đòi lift > 1). Một con chỉ tin được tới mức bộ
+- **Confidence (High/Medium/Low).** Suy từ phép so một phía của số lượt trúng ngoài mẫu với chọn
+  bừa trên CHÍNH các kỳ ấy: mỗi kỳ, chọn bừa k trong 100 con theo phân phối siêu bội, cộng qua các
+  kỳ ra điểm z (cùng hàm `random_pick_null` với lượt thử thứ hai). High: p < 0,01; Medium:
+  p < 0,05; cả hai đều đòi lift > 1. Một con chỉ tin được tới mức bộ
   lọc đã chứng minh.
 
 ## Kết quả
@@ -65,10 +68,10 @@ Walk-forward ngoài mẫu qua 4 168 kỳ (kỳ thứ 61 tới kỳ cuối):
 
 | | Lượt chọn | Trúng | Tỉ lệ | Chọn bừa | Lift | p một phía |
 |---|---|---|---|---|---|---|
-| Top-5, trọng số tự tối ưu | 20 840 | 606 | 2,91% | 2,97% | ×0,98 | 0,72 |
-| Top-3, trọng số tự tối ưu | 12 504 | 359 | 2,87% | 2,97% | ×0,97 | 0,76 |
-| Top-5, trọng số cố định gần đặc tả (0,3/0,3/0,2/0,2) | 20 840 | 589 | 2,83% | 2,97% | ×0,95 | — |
-| Top-5, trọng số tốt nhất **nhìn lại** | 20 840 | 682 | 3,27% | 2,97% | ×1,10 | — |
+| Top-5, trọng số tự tối ưu | 20 840 | 606 | 2,91% | 2,91% | ×1,00 | 0,52 |
+| Top-3, trọng số tự tối ưu | 12 504 | 359 | 2,87% | 2,91% | ×0,99 | 0,61 |
+| Top-5, trọng số cố định gần đặc tả (0,3/0,3/0,2/0,2) | 20 840 | 589 | 2,83% | 2,91% | ×0,97 | — |
+| Top-5, trọng số tốt nhất **nhìn lại** | 20 840 | 682 | 3,27% | 2,91% | ×1,12 | — |
 
 Dòng cuối chọn vector trọng số tốt nhất trên chính 4 168 kỳ kiểm, tức cố tình rò rỉ. Ngay cả gian
 lận ấy cũng chỉ được 3,27%. Mức này là thiên lệch do chọn cái tốt nhất trong 286 vector, không
@@ -81,8 +84,15 @@ Thành phần cầu nhịp thưa (phần lớn 100 con cùng điểm), nên ở 
 hoà được phá bằng một hoán vị cố định theo từng kỳ, và tỉ lệ 00–04 ở các kỳ ấy về 4,95%. Các con
 số trong mục này là của bản đã sửa; bản cũ cho top-5 2,89% (603 lượt trúng), top-3 2,91%.
 
+**Mốc so sánh (sửa 12-10-2026).** Bản đầu so số lượt trúng với mức nền LÝ THUYẾT 2,975% bằng kiểm
+định nhị thức. Nhưng 4 168 kỳ chấm có tỉ lệ thực 2,914%, nên chọn bừa trên chính các kỳ ấy chỉ kỳ
+vọng 607 lượt chứ không phải 620. So với lý thuyết thì lift, p và Confidence không đo điều tài liệu
+nói ("hơn chọn bừa"), và một lịch sử có tỉ lệ thực cao hơn lý thuyết sẽ làm cả chọn bừa trông như
+có kỹ năng. Nay cột "Chọn bừa", lift và p đều so với chọn bừa trên chính các kỳ đã chấm. Bản cũ
+cho p = 0,72.
+
 Độ nhạy: với 20 840 lượt chọn, α = 0,01 một phía và lực 80%, phép đo phát hiện được tỉ lệ thật
-≥ 3,35% (lift ×1,13).
+≥ 3,29% (lift ×1,13 so với chọn bừa).
 
 ## Tái lập
 
@@ -95,7 +105,7 @@ CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của 
 
 ## Kiểm thử
 
-`tests/test_multi_hit_vip.py` gồm 15 phép kiểm. Đã thử mười ba đột biến và cả mười ba đều đỏ:
+`tests/test_multi_hit_vip.py` gồm 16 phép kiểm. Đã thử mười lăm đột biến và cả mười lăm đều đỏ:
 
 - cửa sổ đặc trưng gồm cả kỳ đang dự báo (nhìn trước);
 - cửa sổ chọn trọng số gồm cả kỳ t;
@@ -107,7 +117,9 @@ CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của 
 - lưới trọng số thiếu đỉnh;
 - phá hoà theo thứ tự số ở chọn trọng số, ở backtest hoặc ở dự báo (ba đột biến);
 - khoá phá hoà không đổi theo kỳ;
-- bỏ qua `--until`.
+- bỏ qua `--until`;
+- so với mức nền lý thuyết thay vì chọn bừa trên chính các kỳ đã chấm;
+- kỳ vọng của chọn bừa tính cả các kỳ không được chấm.
 
 ## Lượt thử thứ hai — 12-10-2026
 
@@ -227,4 +239,4 @@ Không in một con số như "Xác suất 2+ nháy: 28,5%". Nếu có trang, n�
 - khoảng tin cậy;
 - Confidence suy từ kiểm định.
 
-Trên dữ liệu hiện tại, mọi con đều nhận Confidence Low và xác suất sát 2,97%.
+Trên dữ liệu hiện tại, mọi con đều nhận Confidence Low và xác suất sát mức nền (2,86–2,89%).

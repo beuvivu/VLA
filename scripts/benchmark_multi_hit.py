@@ -1,6 +1,6 @@
 """Lượt thử thứ hai cho "lô nhiều nháy" (≥ 2 nháy một kỳ): dò rộng, chọn trước, kiểm một lần.
 
-Lượt đầu (``src/multi_hit_vip.py``, 08-10-2026) cho top-5 trúng 2,91% so với nền 2,975%. Lượt
+Lượt đầu (``src/multi_hit_vip.py``, 08-10-2026) cho top-5 trúng 2,91%, đúng bằng chọn bừa. Lượt
 này hỏi câu rộng hơn: có CÁCH CHẤM NÀO trong các họ ý tưởng thường gặp — tần suất ở mọi cửa sổ,
 lô gan, lặp kỳ trước, theo thứ trong tuần, thiên lệch theo vị trí giải hay theo chữ số, hồi quy
 logistic và cây tăng cường trên toàn bộ đặc trưng — đưa top-5 lên trên mức nền không?
@@ -58,6 +58,7 @@ from multi_hit_vip import (  # noqa: E402
     counts_matrix,
     draws_from_frame,
     mock_history,
+    random_pick_null,
     until,
 )
 
@@ -265,9 +266,7 @@ def evaluate(scores: np.ndarray, multi: np.ndarray, rows: range, k: int = TOP_K)
     rows = np.asarray(list(rows))
     picked = top_k(scores[rows], k)
     hits = int(np.take_along_axis(multi[rows], picked, axis=1).sum())
-    share = multi[rows].sum(axis=1) / N_NUMBERS
-    expected = float((k * share).sum())
-    variance = float((k * share * (1 - share) * (N_NUMBERS - k) / (N_NUMBERS - 1)).sum())
+    expected, variance = random_pick_null(multi[rows].sum(axis=1), k)
     z = (hits - expected) / np.sqrt(variance) if variance > 0 else 0.0
     return Score(len(rows), len(rows) * k, hits, expected, float(z), float(norm.sf(z)))
 

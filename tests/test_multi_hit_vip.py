@@ -1,6 +1,6 @@
 """Bộ lọc lô nhiều nháy: không nhìn trước, bắt được tín hiệu cài sẵn, không báo tin cậy giả.
 
-Kết luận đo trên 4 228 kỳ thật (top-5 trúng 2,91%, mức nền 2,97%) nằm ở
+Kết luận đo trên 4 228 kỳ thật (top-5 trúng 2,91%, chọn bừa trên cùng các kỳ 2,91%) nằm ở
 ``documentation/research/2026-10-08-lo-nhieu-nhay.md``. Các phép kiểm dưới đây ghim các LUẬT
 khiến con số ấy đáng tin: đặc trưng chỉ đọc quá khứ, trọng số chọn trên các kỳ trước, và bộ lọc
 đủ nhạy để thấy tín hiệu khi tín hiệu có thật.
@@ -169,3 +169,20 @@ def test_until_pins_the_history_a_published_measurement_used(tmp_path) -> None:
     assert report["sau_ky"] == cutoff
     with pytest.raises(ValueError):
         m.until(frame, "1999-01-01")
+
+
+def test_the_backtest_compares_with_random_picks_on_the_same_draws() -> None:
+    """Mỗi kỳ chỉ quay trong 60 con nên tỉ lệ ≥ 2 nháy thật (~4,5%) cao hơn lý thuyết 2,975%. Bộ
+    lọc bị ép chọn ngẫu nhiên (mọi thành phần bằng 0, hoà phá bằng hoán vị) thì trúng đúng như
+    chọn bừa — so với mức nền lý thuyết nó sẽ trông "hơn nền" ×1,5 và nhận Confidence High."""
+    rng = np.random.default_rng(14)
+    draws = rng.integers(0, 60, size=(400, m.LOTO_PER_DRAW))
+    model = m.VIPMultiHitModel(draws)
+    model.components[:] = 0.0
+    model._hits, model._auc = model._score_all_weights()
+    bt = model.backtest()
+    n_multi = model.labels_y[model.cfg.first_evaluated:].sum(axis=1)
+    assert bt.random_rate > 0.04 > model.base
+    assert bt.expected == pytest.approx(bt.top_k * n_multi.sum() / m.N_NUMBERS)
+    assert m.model_confidence(bt.p_value, bt.lift) == "Low"
+    assert 0.8 < bt.lift < 1.2

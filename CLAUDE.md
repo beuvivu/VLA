@@ -298,7 +298,7 @@ hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, n�
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô nhiều nháy" `src/multi_hit_vip.py`
-(08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ so với nền 2,975%, nên không
+(08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ, đúng bằng chọn bừa trên chính các kỳ ấy, nên không
 vào pipeline; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
 (`documentation/research/2026-10-08-lo-nhieu-nhay.md`). Lượt thử thứ hai (12-10-2026,
 `scripts/benchmark_multi_hit.py`): 22 chiến lược kể cả logistic/GBM, chọn trên giai đoạn phát

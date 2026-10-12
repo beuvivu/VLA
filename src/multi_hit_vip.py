@@ -28,8 +28,8 @@ hoà thì lấy AUC. Đánh giá là walk-forward LỒNG NHAU: kỳ t được c
 
 Xác suất in ra là hiệu chỉnh Platt (hồi quy logistic có điều chuẩn) khớp trên các cặp (điểm,
 kết quả) NGOÀI MẪU của walk-forward. Không có tín hiệu thì hệ số về 0 và xác suất về mức nền:
-đó là câu trả lời đúng, không phải lỗi. Confidence Index suy từ kiểm định nhị thức một phía của
-tỉ lệ trúng top-k ngoài mẫu so với mức nền, không đặt tay.
+đó là câu trả lời đúng, không phải lỗi. Confidence Index suy từ phép so một phía của số lượt
+trúng top-k ngoài mẫu với CHỌN BỪA trên chính các kỳ ấy (``random_pick_null``), không đặt tay.
 
 Chạy thử:
 
@@ -48,7 +48,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import binom, binomtest, rankdata
+from scipy.stats import binom, norm, rankdata
 from sklearn.linear_model import LogisticRegression
 
 N_NUMBERS = 100
@@ -313,15 +313,35 @@ def rank_order(scores: np.ndarray, t: int) -> np.ndarray:
 
 # --------------------------------------------------------------------------- backtest
 
+def random_pick_null(n_multi: np.ndarray, k: int) -> tuple[float, float]:
+    """Kỳ vọng và phương sai số lượt trúng khi chọn BỪA k trong 100 con ở từng kỳ, cộng qua các kỳ.
+
+    ``n_multi[t]`` là số con về ≥ 2 nháy ở kỳ t. Chọn bừa k con trong 100 thì số lượt trúng của
+    kỳ ấy theo phân phối siêu bội. So với mức nền LÝ THUYẾT (2,975%) thì sai: lịch sử thật có tỉ lệ
+    riêng (4 168 kỳ chấm: 2,914%), và một lịch sử có tỉ lệ cao hơn lý thuyết sẽ làm cả chọn bừa
+    trông như "hơn nền".
+    """
+    share = np.asarray(n_multi, dtype=float) / N_NUMBERS
+    expected = float((k * share).sum())
+    variance = float((k * share * (1 - share) * (N_NUMBERS - k) / (N_NUMBERS - 1)).sum())
+    return expected, variance
+
+
 @dataclass
 class Backtest:
-    """Kết quả walk-forward lồng nhau trên các kỳ đã quay."""
+    """Kết quả walk-forward lồng nhau trên các kỳ đã quay.
+
+    ``base`` là mức nền lý thuyết, chỉ để hiển thị. ``expected``, lift và p so với chọn bừa trên
+    CHÍNH các kỳ đã chấm (``random_pick_null``).
+    """
 
     top_k: int
     base: float
     draws: int
     picks: int
     hits: int
+    expected: float
+    z: float
     p_value: float
     per_draw: pd.DataFrame
     oos_scores: np.ndarray = field(repr=False)
@@ -333,11 +353,16 @@ class Backtest:
 
     @property
     def expected_hits(self) -> float:
-        return self.picks * self.base
+        return self.expected
+
+    @property
+    def random_rate(self) -> float:
+        """Tỉ lệ trúng kỳ vọng của chọn bừa trên chính các kỳ đã chấm."""
+        return self.expected / self.picks if self.picks else float("nan")
 
     @property
     def lift(self) -> float:
-        return self.hit_rate / self.base if self.picks else float("nan")
+        return self.hits / self.expected if self.expected else float("nan")
 
 
 class VIPMultiHitModel:
@@ -407,8 +432,11 @@ class VIPMultiHitModel:
         draws = len(rows)
         hits = sum(r["trung"] for r in rows)
         picks = draws * k
-        p_value = float(binomtest(hits, picks, self.base, alternative="greater").pvalue) if picks else 1.0
-        return Backtest(k, self.base, draws, picks, hits, p_value, pd.DataFrame(rows),
+        expected, variance = random_pick_null(
+            self.labels_y[self.cfg.first_evaluated:].sum(axis=1), k)
+        z = (hits - expected) / np.sqrt(variance) if variance > 0 else 0.0
+        p_value = float(norm.sf(z)) if picks else 1.0
+        return Backtest(k, self.base, draws, picks, hits, expected, float(z), p_value, pd.DataFrame(rows),
                         np.concatenate(oos_s) if oos_s else np.empty(0),
                         np.concatenate(oos_y) if oos_y else np.empty(0, dtype=bool))
 
@@ -446,7 +474,7 @@ class VIPMultiHitModel:
 # --------------------------------------------------------------------------- tin cậy
 
 def model_confidence(p_value: float, lift: float) -> str:
-    """Mức tin của CẢ bộ lọc, từ kiểm định nhị thức một phía của tỉ lệ trúng top-k ngoài mẫu."""
+    """Mức tin của CẢ bộ lọc, từ phép so một phía của top-k ngoài mẫu với chọn bừa cùng kỳ."""
     if lift > 1 and p_value < 0.01:
         return "High"
     if lift > 1 and p_value < 0.05:
@@ -518,7 +546,8 @@ class VIPReport:
             "trong_so": self.weights,
             "kiem_chung": {"so_ky": bt.draws, "luot_chon": bt.picks, "trung": bt.hits,
                            "ti_le_trung": bt.hit_rate, "ky_vong_chon_bua": bt.expected_hits,
-                           "lift": bt.lift, "p_value": bt.p_value, "confidence": self.model_level},
+                           "ti_le_chon_bua": bt.random_rate, "lift": bt.lift, "z": bt.z,
+                           "p_value": bt.p_value, "confidence": self.model_level},
             "top": [{"so": p.number, "vip_score": p.vip_score, "xac_suat": p.probability,
                      "x_nen": p.lift, "confidence": p.confidence, "ly_do": p.reasons()}
                     for p in self.picks],
@@ -533,8 +562,9 @@ class VIPReport:
             f"Trọng số (chọn trên {self.weight_window} kỳ ngay trước): "
             + ", ".join(f"{COMPONENT_LABELS[k]} {v:.1f}" for k, v in self.weights.items()),
             f"Kiểm chứng walk-forward ngoài mẫu: {bt.draws} kỳ × top-{bt.top_k} = {bt.picks} lượt chọn, "
-            f"trúng {bt.hits} ({pct(bt.hit_rate)}); chọn bừa kỳ vọng {bt.expected_hits:.1f} "
-            f"({pct(bt.base)}). Lift ×{bt.lift:.2f}, p = {bt.p_value:.3g} → Confidence bộ lọc: {self.model_level}.",
+            f"trúng {bt.hits} ({pct(bt.hit_rate)}); chọn bừa trên chính các kỳ ấy kỳ vọng "
+            f"{bt.expected_hits:.1f} ({pct(bt.random_rate)}). Lift ×{bt.lift:.2f}, z = {bt.z:+.2f}, "
+            f"p = {bt.p_value:.3g} → Confidence bộ lọc: {self.model_level}.",
         ]
         if self.model_level == "Low":
             lines.append("⚠ Không có bằng chứng thống kê rằng bộ lọc hơn chọn bừa trên dữ liệu này; "
