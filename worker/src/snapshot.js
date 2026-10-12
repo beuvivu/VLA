@@ -189,6 +189,28 @@ export function independentGroupCount(results) {
   return groups.size;
 }
 
+// Khớp `sources.STALE_PAGE_ERROR`: hai bản phải ghi cùng một chuỗi vào `source_status`.
+export const STALE_PAGE_ERROR = "StalePage: nguồn còn hiện kỳ trước";
+
+/**
+ * Nguồn còn hiện kỳ TRƯỚC: có giá trị, và mọi giá trị trùng đúng ô của kỳ trước. Khớp
+ * `sources.shows_previous_draw` bên Python — trước giờ quay, trang live của cả ba nguồn vẫn
+ * hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+ */
+export function showsPreviousDraw(prizeMap, previous) {
+  if (!previous) return false;
+  let received = 0;
+  for (const key of PRIZE_ORDER) {
+    const before = previous[key] || [];
+    const values = prizeMap[key] || [];
+    for (let i = 0; i < values.length; i += 1) {
+      if (i >= before.length || values[i] !== before[i]) return false;
+      received += 1;
+    }
+  }
+  return received > 0;
+}
+
 // Giờ Việt Nam mà kỳ quay chắc chắn đã xong; khớp `PRIMARY_COMPLETE_BY` bên Python.
 export const PRIMARY_COMPLETE_BY = { hour: 18, minute: 40 };
 
@@ -265,12 +287,26 @@ export function observation({ priority, tier, name, prizeMap, error = null, late
 }
 
 export async function collectSnapshot({
-  nowUtcMs, minAgreement = 1, fetchImpl = fetch, fetchSource = null,
+  nowUtcMs, minAgreement = 1, fetchImpl = fetch, fetchSource = null, previous = null,
 } = {}) {
   const now = nowUtcMs ?? Date.now();
   const date = vietnamParts(now);
-  const fetchFrom = fetchSource
+  const fetchRaw = fetchSource
     ?? ((source, tier, priority) => fetchOne(source, tier, priority, date, fetchImpl));
+  // Nguồn còn hiện kỳ trước bị coi là chưa có gì TRƯỚC khi quyết định chuyển nguồn, như bên
+  // Python (`live_sync.fetch_snapshot`).
+  const fetchFrom = async (source, tier, priority) => {
+    const result = await fetchRaw(source, tier, priority);
+    if (!showsPreviousDraw(result.prizeMap, previous)) return result;
+    return observation({
+      priority,
+      tier,
+      name: result.name,
+      prizeMap: emptyPrizeMap(),
+      error: STALE_PAGE_ERROR,
+      latencyMs: result.status.latency_ms,
+    });
+  };
 
   // Nguồn chính trước. Hai nguồn dự phòng chỉ được gọi khi nó gặp sự cố, và khi ấy chỉ dữ
   // liệu của chúng được hợp nhất: bản rỗng hay kẹt của nguồn chính không được che chúng.

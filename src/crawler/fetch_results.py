@@ -39,9 +39,12 @@ import requests
 from sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
+    STALE_PAGE_ERROR,
     Source,
     default_sources,
+    load_previous_draw,
     primary_has_failed,
+    shows_previous_draw,
     source_consensus_partial,
 )
 
@@ -269,6 +272,9 @@ class PollConfig:
             vòng này. Ngân sách xấu nhất là
             ``max_attempts * request_timeout + backoff``, phải nhỏ hơn
             ``interval_seconds`` để vòng sau không bị trượt.
+        previous_draw: Bảng giải của kỳ đã lưu gần nhất. Nguồn còn hiện đúng kỳ ấy bị coi là
+            chưa có gì (``sources.shows_previous_draw``): trước giờ quay, trang live của mọi
+            nguồn vẫn hiện trọn kỳ hôm qua, và "đủ 27 ô" khi ấy là số của hôm qua.
     """
 
     target: date
@@ -279,6 +285,7 @@ class PollConfig:
     min_agreement: int = 1
     max_rounds: int = 90
     max_attempts: int = 3
+    previous_draw: dict[str, list[str]] | None = None
 
     def __post_init__(self) -> None:
         low, high = self.interval_seconds
@@ -371,6 +378,7 @@ def _fetch_one(
     target: date,
     timeout: float,
     max_attempts: int = 3,
+    previous: dict[str, list[str]] | None = None,
 ) -> tuple[str, dict[str, list[str]], str | None, int, int]:
     """Lấy một nguồn duy nhất, không bao giờ ném ngoại lệ ra ngoài.
 
@@ -382,6 +390,7 @@ def _fetch_one(
         target: Ngày quay.
         timeout: Hạn cho mỗi yêu cầu.
         max_attempts: Số lần thử mỗi yêu cầu.
+        previous: Kỳ đã lưu gần nhất; nguồn còn hiện đúng kỳ ấy trả bảng rỗng.
 
     Returns:
         Bộ ``(tên nguồn, bản đồ giải, lỗi hoặc None, độ trễ ms, số lần thử)``.
@@ -398,6 +407,9 @@ def _fetch_one(
         error = f"{type(exc).__name__}: {str(exc)[:120]}"
     # Lỗi mà nguồn đã tự nuốt vẫn phải nổi lên nhật ký.
     error = error or http.last_error
+    if shows_previous_draw(prize_map, previous):
+        prize_map = {k: [] for k in PRIZE_ORDER}
+        error = STALE_PAGE_ERROR
     latency_ms = int(round((time.perf_counter() - started) * 1000.0))
     return source.name, prize_map, error, latency_ms, http.attempts
 
@@ -409,6 +421,7 @@ def poll_once(
     timeout: float = DEFAULT_REQUEST_TIMEOUT,
     min_agreement: int = 1,
     max_attempts: int = 3,
+    previous: dict[str, list[str]] | None = None,
 ) -> tuple[dict[str, list[str]], int, list[dict[str, object]]]:
     """Một vòng: hỏi song song ĐÚNG các nguồn được đưa vào rồi hợp nhất bằng đồng thuận.
 
@@ -421,6 +434,8 @@ def poll_once(
         target: Ngày quay.
         timeout: Hạn mỗi yêu cầu.
         min_agreement: Số nhóm nguồn độc lập tối thiểu.
+        max_attempts: Số lần thử mỗi yêu cầu.
+        previous: Kỳ đã lưu gần nhất; nguồn còn hiện đúng kỳ ấy bị coi là chưa có gì.
 
     Returns:
         Bộ ``(bản đồ giải đã hợp nhất, số ô đã xác minh, thống kê nguồn)``.
@@ -430,7 +445,7 @@ def poll_once(
 
     with ThreadPoolExecutor(max_workers=max(1, len(sources))) as pool:
         futures = {
-            pool.submit(_fetch_one, source, target, timeout, max_attempts): priority
+            pool.submit(_fetch_one, source, target, timeout, max_attempts, previous): priority
             for priority, source in enumerate(sources, start=1)
         }
         for future in as_completed(futures):
@@ -528,6 +543,7 @@ def poll_until_complete(
             timeout=config.request_timeout,
             min_agreement=config.min_agreement,
             max_attempts=config.max_attempts,
+            previous=config.previous_draw,
         )
         merged, verified_slots, stats = poll_once(sources[:1], config.target, **poll)
         failed, _ = primary_has_failed(merged, target=config.target, now=clock())
@@ -635,6 +651,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--max-attempts", type=int, default=3,
                         help="Số lần thử mỗi yêu cầu (lùi mũ giữa các lần)")
     parser.add_argument("--json-out", default=None, help="Ghi tóm tắt JSON ra tệp")
+    parser.add_argument(
+        "--history", default="data/xsmb.csv",
+        help="Sổ chuẩn; kỳ đã lưu gần nhất dùng để nhận ra nguồn còn hiện kỳ trước.",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -651,6 +671,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         request_timeout=args.timeout,
         min_agreement=args.min_agreement,
         max_attempts=args.max_attempts,
+        previous_draw=load_previous_draw(Path(args.history), before=target),
     )
 
     logger.info(

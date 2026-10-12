@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import logging
 import operator
 import re
@@ -7,6 +8,7 @@ import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time as dtime
+from pathlib import Path
 from typing import Final, Protocol
 
 from bs4 import BeautifulSoup
@@ -611,6 +613,54 @@ def independent_group_count(observations: list[SourceObservation]) -> int:
     return len(
         {source_independence_key(o.name) for o in observations if o.usable}
     )
+
+
+#: Lỗi ghi cho một nguồn còn hiện kỳ TRƯỚC; Python và Worker dùng đúng chuỗi này.
+STALE_PAGE_ERROR: Final[str] = "StalePage: nguồn còn hiện kỳ trước"
+
+
+def shows_previous_draw(
+    prize_map: dict[str, list[str]], previous: dict[str, list[str]] | None
+) -> bool:
+    """Nguồn còn hiện kỳ TRƯỚC: có giá trị, và MỌI giá trị trùng đúng ô của kỳ đã lưu gần nhất.
+
+    Đo trên runner lúc 00:37 ngày 13-10-2026: trang live của cả ba nguồn, và trang theo ngày
+    13-10 của mketqua/minhngoc, đều hiện trọn kỳ 12-10. Sổ chuẩn có chốt "trùng khít kỳ đã
+    lưu" (``Lottery``), bản chụp live thì chưa: lượt thăm dò gặp trang chưa xoá bảng sẽ báo kỳ
+    hôm nay "đã xác minh" bằng số của hôm qua rồi dừng thăm dò. Kỳ mới về dần từ giải nhất
+    (năm chữ số), nên một trang đang quay trùng kỳ trước ở mọi ô đã về gần như không thể.
+    """
+    if not previous:
+        return False
+    received = 0
+    for key in PRIZE_ORDER:
+        before = previous.get(key, [])
+        for index, value in enumerate(prize_map.get(key, [])):
+            if index >= len(before) or value != before[index]:
+                return False
+            received += 1
+    return received > 0
+
+
+def load_previous_draw(path: Path, *, before: date) -> dict[str, list[str]] | None:
+    """Bảng giải của kỳ đã lưu gần nhất TRƯỚC ``before`` trong sổ chuẩn, hoặc ``None``."""
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = [r for r in csv.DictReader(handle) if str(r.get("date", ""))[:10] < before.isoformat()]
+    except OSError:
+        return None
+    if not rows:
+        return None
+    row = max(rows, key=lambda r: str(r["date"])[:10])
+
+    def column(key: str, index: int) -> str:
+        name = key if EXPECTED_COUNTS[key] == 1 else f"{key}_{index}"
+        value = str(row.get(name, "") or "").strip()
+        return value.zfill(EXPECTED_WIDTHS[key]) if value.isdigit() else value
+
+    return {
+        key: [column(key, i) for i in range(1, EXPECTED_COUNTS[key] + 1)] for key in PRIZE_ORDER
+    }
 
 
 def primary_has_failed(

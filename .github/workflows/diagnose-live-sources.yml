@@ -12,11 +12,6 @@ on:
         required: false
         default: ""
         type: string
-  push:
-    branches: ["claude/statistical-audit-2026-09-lwfyt2"]
-    paths:
-      - "scripts/diagnose_live_sources.py"
-      - ".github/workflows/diagnose-live-sources.yml"
 
 permissions:
   contents: read

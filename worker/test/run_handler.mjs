@@ -172,6 +172,37 @@ const SCENARIOS = {
     };
   },
 
+  // Trước giờ quay, trang live của mọi nguồn vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày
+  // 13-10-2026). KV còn ảnh chụp đã xác minh của hôm qua với đúng bảng ấy: bản chụp hôm nay
+  // phải là "waiting", không được báo kỳ hôm nay đã xác minh bằng số của hôm qua.
+  async stale_page_is_not_today() {
+    const kv = new FakeKV();
+    const yesterday = {
+      schema_version: 2, draw_date: "2026-10-12", status: "complete_verified",
+      verified_complete: true,
+      prizes: {
+        special: ["83772"], prize1: ["68785"], prize2: ["50518", "27452"],
+        prize3: ["57053", "92810", "56241", "65128", "33811", "42264"],
+        prize4: ["4753", "1152", "6777", "3507"],
+        prize5: ["9460", "2913", "3232", "2999", "3670", "5129"],
+        prize6: ["939", "751", "594"], prize7: ["66", "21", "34", "78"],
+      },
+    };
+    await kv.put("live.json", JSON.stringify(yesterday));
+    globalThis.fetch = async () => new Response(FULL_PAGE, { status: 200 });
+    const ctx = newCtx();
+    await worker.scheduled({}, { LIVE: kv, MIN_AGREEMENT: "1" }, ctx);
+    await Promise.all(ctx.pending);
+    const parsed = JSON.parse(await kv.get("live.json"));
+    return {
+      draw_date: parsed.draw_date,
+      status: parsed.status,
+      received_values: parsed.received_values,
+      fallback_activated: parsed.failover.fallback_activated,
+      failed_rows: parsed.source_status.filter((r) => r.failed).length,
+    };
+  },
+
   // Sau khi kỳ đã xác minh xong, cron không được gọi nguồn nữa.
   async settled_stops_collecting() {
     const counter = { calls: 0 };
@@ -198,8 +229,11 @@ const SCENARIOS = {
     const afterFive = counter.calls;
 
     // Ảnh chụp của NGÀY KHÁC không được chặn thu thập hôm nay.
+    // Kỳ hôm trước có số KHÁC: cùng số thì nguồn bị coi là còn hiện kỳ trước — đó là kịch
+    // bản "stale_page_is_not_today" bên dưới.
     const stale = JSON.parse(await kv.get("live.json"));
     stale.draw_date = "2000-01-01";
+    stale.prizes = { ...stale.prizes, special: ["00000"] };
     await kv.put("live.json", JSON.stringify(stale));
     const c = newCtx();
     await worker.scheduled({}, env, c);

@@ -152,6 +152,20 @@ def test_a_primary_stuck_after_the_deadline_hands_over_to_the_fallbacks() -> Non
     assert out["supporters"] == ["F1", "F2"], "nguồn chính đã hỏng không được cầm phiếu ở ô nào"
 
 
+def test_a_page_still_showing_yesterday_is_not_todays_result() -> None:
+    """Trước giờ quay, mọi trang live vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+
+    Không có chốt này, lượt cron đầu tiên của khung quay số báo kỳ hôm nay "đã xác minh" bằng
+    số của hôm qua — và ngừng thu thập luôn, vì kỳ đã "xong".
+    """
+    out = _scenario("stale_page_is_not_today")
+    assert out["draw_date"] == "2026-10-13"
+    assert out["status"] == "waiting"
+    assert out["received_values"] == 0
+    assert out["fallback_activated"] is True, "nguồn chính còn hiện kỳ trước là sự cố"
+    assert out["failed_rows"] == ALL_SOURCE_ROWS
+
+
 def test_a_missing_kv_binding_says_exactly_what_to_do() -> None:
     """Quên tạo KV là lỗi hay gặp nhất lúc triển khai lần đầu.
 

@@ -26,9 +26,12 @@ import requests
 from sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
+    STALE_PAGE_ERROR,
     SourceObservation,
     anonymise_snapshot,
     fetch_with_failover,
+    load_previous_draw,
+    shows_previous_draw,
     source_consensus_partial,
     source_independence_key,
 )
@@ -37,7 +40,18 @@ from time_policy import VIETNAM_TZ, iso_local, iso_utc
 TZ = VIETNAM_TZ
 
 
-def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 1) -> dict:
+def fetch_snapshot(
+    *,
+    now: datetime | None = None,
+    min_agreement: int = 1,
+    previous: dict[str, list[str]] | None = None,
+) -> dict:
+    """Bản chụp live của kỳ hôm nay.
+
+    ``previous`` là bảng giải của kỳ đã lưu gần nhất. Nguồn nào còn hiện đúng kỳ ấy bị coi là
+    chưa có gì (``sources.shows_previous_draw``) — TRƯỚC khi quyết định chuyển nguồn, nên nguồn
+    chính còn hiện kỳ trước cũng kích hoạt dự phòng.
+    """
     now = now or datetime.now(TZ)
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -53,6 +67,9 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 1) -> di
         except Exception as exc:  # noqa: BLE001
             prize_map = {k: [] for k in PRIZE_ORDER}
             error = f"{type(exc).__name__}: {str(exc)[:120]}"
+        if shows_previous_draw(prize_map, previous):
+            prize_map = {k: [] for k in PRIZE_ORDER}
+            error = STALE_PAGE_ERROR
         return SourceObservation(
             name=source.name,
             tier=tier,
@@ -149,9 +166,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Build multi-source near-live XSMB JSON.")
     ap.add_argument("--out", default="docs/data/live.json")
     ap.add_argument("--min-agreement", type=int, default=1)
+    ap.add_argument(
+        "--history", default="data/xsmb.csv",
+        help="Sổ chuẩn; kỳ đã lưu gần nhất dùng để nhận ra nguồn còn hiện kỳ trước.",
+    )
     args = ap.parse_args()
 
-    payload = fetch_snapshot(min_agreement=max(1, args.min_agreement))
+    today = datetime.now(TZ).date()
+    payload = fetch_snapshot(
+        min_agreement=max(1, args.min_agreement),
+        previous=load_previous_draw(Path(args.history), before=today),
+    )
     # Ranh giới công khai. Tệp này đi thẳng ra trình duyệt, nên ẩn danh ở ĐÂY
     # chứ không phải ở chỗ hiển thị: chỉ cần một trang khác đọc cùng tệp mà
     # quên ẩn là lộ hết.

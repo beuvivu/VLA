@@ -85,14 +85,34 @@ function alreadySettled(stored, nowUtcMs) {
   }
 }
 
+/**
+ * Bảng giải của kỳ TRƯỚC: ảnh chụp đã xác minh của một ngày khác còn trong KV. Bản Python đọc
+ * sổ chuẩn; Worker không có sổ, nhưng ảnh chụp hôm qua giữ 36 giờ là đúng thứ cần.
+ */
+function previousDraw(stored, nowUtcMs) {
+  if (!stored) return null;
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed.verified_complete === true && parsed.draw_date !== drawDate(nowUtcMs)
+      ? parsed.prizes
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 async function refresh(env) {
   const kv = requireKv(env);
-  if (alreadySettled(await kv.get(KV_KEY), Date.now())) return;
+  const now = Date.now();
+  const stored = await kv.get(KV_KEY);
+  if (alreadySettled(stored, now)) return;
   // Ẩn danh TRƯỚC khi ghi vào KV, không phải lúc trả lời. Mọi đường đọc đều
   // đi qua KV, nên ẩn ở đây là ẩn ở mọi nơi — kể cả những đường sẽ thêm về
   // sau. Chi tiết từng nguồn vẫn xem được bằng `wrangler tail`, không công khai.
   const snapshot = anonymiseSnapshot(await collectSnapshot({
+    nowUtcMs: now,
     minAgreement: Number(env.MIN_AGREEMENT ?? 1),
+    previous: previousDraw(stored, now),
   }));
   // Ghi hỏng (hết hạn mức, sự cố nền tảng) thì lỗi lên tới `scheduled()`, được ghi log, và
   // lượt cron sau — chỉ cách một phút — thử lại.

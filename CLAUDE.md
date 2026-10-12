@@ -263,6 +263,11 @@ vì đo trên runner là hỏng (`RETIRED_SOURCE_NAMES`, vẫn được quét ri
 nguồn khi chưa đo bằng `diagnose-live-sources.yml`. Bản JS của Worker bị buộc khớp bởi
 `test_worker_sources_parity`, `test_source_failover_parity`, `test_worker_snapshot_parity`.
 
+Trước giờ quay, trang live của mọi nguồn vẫn hiện TRỌN kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+Nguồn mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là chưa có gì
+(`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `crawler/fetch_results` và Worker
+— thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua.
+
 Một hàng giải = dòng nhãn + các dòng NGAY SAU mà mọi mẩu là số ASCII đúng độ rộng của giải;
 gặp dòng khác là hết hàng. Trước đó giải 7 (nhãn cuối bảng) vớ số của bảng lô tô, ô chọn tháng
 hay liên kết ngày khi chưa quay — lỗi "trùng lặp giải 7". Mẫu trang thật: `thuc_*` trong

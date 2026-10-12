@@ -30,6 +30,7 @@ from sources import (
     PRIMARY_COMPLETE_BY,
     PRIMARY_SOURCE_NAMES,
     PRIZE_ORDER,
+    STALE_PAGE_ERROR,
 )
 from time_policy import VIETNAM_TZ
 
@@ -122,10 +123,18 @@ def _cases(count: int = 160) -> list[dict]:
                 pmap = {key: list(truth[key]) if key in halves else [] for key in PRIZE_ORDER}
             partials.append((name, pmap))
 
+        # Kỳ đã lưu gần nhất: không có, đúng "sự thật" của ca (nguồn nào chỉ hiện các ô ấy là
+        # còn hiện kỳ trước), hoặc một kỳ khác hẳn.
+        previous = rng.choice([
+            None,
+            truth,
+            {k: [_token(rng, k) for _ in range(EXPECTED_COUNTS[k])] for k in PRIZE_ORDER},
+        ])
         cases.append({
             "now": moment,
             "partials": partials,
             "min_agreement": rng.choice([1, 1, 2]),
+            "previous": previous,
             "index": n,
         })
     return cases
@@ -140,7 +149,9 @@ def _python_payload(case: dict, monkeypatch: pytest.MonkeyPatch) -> dict:
     monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes[:primary])
     monkeypatch.setattr(sources_module, "fallback_sources", lambda: fakes[primary:])
     monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
-    return live_sync.fetch_snapshot(now=case["now"], min_agreement=case["min_agreement"])
+    return live_sync.fetch_snapshot(
+        now=case["now"], min_agreement=case["min_agreement"], previous=case["previous"]
+    )
 
 
 def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
@@ -150,6 +161,7 @@ def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
             "partials": [[name, pmap] for name, pmap in c["partials"]],
             "now_utc": c["now"].astimezone(tz=None).isoformat(),
             "min_agreement": c["min_agreement"],
+            "previous": c["previous"],
         }
         for c in cases
     ]
@@ -226,10 +238,13 @@ def test_the_generated_cases_reach_every_status(
     """Phải chạm đủ các trạng thái, nếu không phép so chỉ kiểm một nhánh."""
     seen = set()
     reasons = set()
+    stale = 0
     for case in _cases():
         payload = _python_payload(case, monkeypatch)
         seen.add(payload["status"])
         reasons.add(payload["failover"]["reason"].split(" mà ")[0])
+        stale += sum(row["error"] == STALE_PAGE_ERROR for row in payload["source_status"])
+    assert stale > 0, "bộ sinh chưa chạm nhánh nguồn còn hiện kỳ trước"
     for status in ("waiting", "live", "partial", "complete_verified", "complete_provisional",
                    "complete_conflict"):
         assert status in seen, f"bộ sinh chưa chạm trạng thái {status}; mới có {sorted(seen)}"

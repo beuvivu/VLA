@@ -243,6 +243,23 @@ nguồn chính thay vì hỏi tuần tự cả tám nguồn (~3,3 phút đo ngà
 `tests/test_source_failover_parity.py` buộc hai bản Python/JS ra cùng kết luận
 trên từng ca, kể cả đúng mốc 18:40:00.
 
+### Nguồn còn hiện kỳ trước không phải kết quả hôm nay
+
+Đo trên runner lúc 00:37 ngày 13-10-2026: trang **live** của cả ba nguồn, và trang
+theo ngày 13-10 của `mketqua.net`/`minhngoc.net.vn`, đều hiện **trọn kỳ 12-10**.
+Sổ chuẩn đã có chốt "trùng khít kỳ đã lưu" (`Lottery`), nhưng bản chụp live và bộ
+thăm dò `crawler/fetch_results.py` thì chưa: lượt thăm dò gặp trang chưa xoá bảng
+sẽ báo kỳ hôm nay "đã xác minh" bằng số của hôm qua, gọi hoàn tất `live_verified`,
+rồi ngừng thăm dò trước cả khi kỳ hôm nay bắt đầu.
+
+Nay nguồn có giá trị mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là
+chưa có gì (`sources.shows_previous_draw`, `snapshot.js::showsPreviousDraw`), với
+lỗi `StalePage` trong `source_status` — TRƯỚC khi quyết định chuyển nguồn, nên nguồn
+chính còn hiện kỳ trước cũng kích hoạt dự phòng. Kỳ trước lấy từ sổ chuẩn
+`data/xsmb.csv` (`--history`) ở bản Python, và từ ảnh chụp đã xác minh của ngày
+khác còn trong KV ở Worker. Kỳ mới về dần từ giải nhất (năm chữ số), nên một trang
+đang quay trùng kỳ trước ở mọi ô đã về gần như không thể.
+
 ### Hàng giải chỉ đọc số của chính nó
 
 Lỗi "trùng lặp giải 7" của trang live: giải 7 là nhãn CUỐI của bảng, và khối

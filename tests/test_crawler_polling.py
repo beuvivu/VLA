@@ -23,7 +23,7 @@ from crawler.fetch_results import (
     poll_until_complete,
     stamp,
 )
-from sources import EXPECTED_COUNTS, PRIZE_ORDER
+from sources import EXPECTED_COUNTS, PRIZE_ORDER, STALE_PAGE_ERROR
 
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 TARGET = date(2026, 9, 7)
@@ -287,6 +287,42 @@ def test_a_primary_stuck_after_18_40_hands_over_to_the_fallbacks() -> None:
 
     assert outcome.verified is True
     assert outcome.prize_map["prize7"] == full["prize7"]
+
+
+def test_a_page_still_showing_yesterday_is_never_verified() -> None:
+    """Trước giờ quay mọi trang live vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+
+    Không có chốt này, lượt thăm dò 18:15 thấy "đủ 27 ô" ngay vòng đầu, gọi hoàn tất
+    ``live_verified`` rồi thoát — trước cả khi kỳ hôm nay bắt đầu quay.
+    """
+    yesterday = _full_prize_map()
+    primary = FakeSource("xoso.vn", [yesterday])
+    backup = FakeSource("du-phong.vn", [yesterday])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 15, tzinfo=TZ))
+
+    outcome = poll_until_complete(
+        _cfg(deadline=dtime(18, 17), previous_draw=yesterday),
+        sources=[primary, backup], sleeper=clock.sleep, clock=clock,
+    )
+
+    assert outcome.verified is False
+    assert outcome.verified_slots == 0
+    assert backup.calls >= 1, "nguồn chính còn hiện kỳ trước là sự cố, phải hỏi dự phòng"
+    assert {row["error"] for row in outcome.source_stats} == {STALE_PAGE_ERROR}
+
+
+def test_todays_draw_is_verified_once_the_page_moves_on() -> None:
+    yesterday = _full_prize_map()
+    today = {**_full_prize_map(), "special": ["00000"]}
+    primary = FakeSource("xoso.vn", [yesterday, today])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 15, tzinfo=TZ))
+
+    outcome = poll_until_complete(
+        _cfg(previous_draw=yesterday), sources=[primary], sleeper=clock.sleep, clock=clock,
+    )
+
+    assert outcome.verified is True
+    assert outcome.prize_map["special"] == ["00000"]
 
 
 def test_polling_stops_the_moment_all_27_are_verified() -> None:
@@ -647,3 +683,31 @@ def test_a_late_start_that_finds_no_result_does_not_keep_polling() -> None:
     assert outcome.verified is False
     assert outcome.rounds == 1
     assert clock.slept == []
+
+
+def test_the_command_line_reads_the_previous_draw_from_the_ledger(tmp_path, monkeypatch) -> None:
+    """Chốt "kỳ trước" chỉ có tác dụng nếu ``main`` thật sự nạp kỳ ấy từ sổ chuẩn."""
+    import crawler.fetch_results as mod
+
+    full = _full_prize_map()
+    header = ["date"] + [
+        key if EXPECTED_COUNTS[key] == 1 else f"{key}_{i}"
+        for key in PRIZE_ORDER
+        for i in range(1, EXPECTED_COUNTS[key] + 1)
+    ]
+    row = ["2026-09-06"] + [value for key in PRIZE_ORDER for value in full[key]]
+    ledger = tmp_path / "xsmb.csv"
+    ledger.write_text(",".join(header) + "\n" + ",".join(row) + "\n", encoding="utf-8")
+
+    seen: list[PollConfig] = []
+
+    def fake_poll(config: PollConfig) -> object:
+        seen.append(config)
+        now = datetime(2026, 9, 7, 18, 15, tzinfo=TZ)
+        return mod.PollOutcome(False, 0, TOTAL_SLOTS, 0, {k: [] for k in PRIZE_ORDER}, now, now)
+
+    monkeypatch.setattr(mod, "poll_until_complete", fake_poll)
+    monkeypatch.delenv("GITHUB_OUTPUT", raising=False)
+    mod.main(["--date", "2026-09-07", "--history", str(ledger)])
+
+    assert seen[0].previous_draw == full

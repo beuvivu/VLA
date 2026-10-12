@@ -12,6 +12,7 @@ for (const c of cases) {
   out.push(await collectSnapshot({
     nowUtcMs: Date.parse(c.now_utc),
     minAgreement: c.min_agreement,
+    previous: c.previous,
     fetchSource: async (source, tier, priority) => {
       if (!(source.name in maps)) throw new Error(`ca không có nguồn ${source.name}`);
       return observation({ priority, tier, name: source.name, prizeMap: maps[source.name] });

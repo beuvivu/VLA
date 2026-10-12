@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo
 
 import live_sync
@@ -114,3 +114,100 @@ def test_two_disagreeing_fallbacks_are_a_conflict_not_a_verified_result(monkeypa
     assert out["verified_complete"] is False
     assert out["status"] == "complete_conflict"
     assert out["conflicts"] == ["special[0]"]
+
+
+# --- Nguồn còn hiện kỳ trước -------------------------------------------------
+# Đo trên runner lúc 00:37 ngày 13-10-2026: trang live của cả ba nguồn hiện trọn kỳ 12-10.
+
+
+def _other_map() -> dict[str, list[str]]:
+    other = _map()
+    other["special"] = ["00000"]
+    return other
+
+
+def test_a_page_still_showing_the_previous_draw_is_not_todays_result(monkeypatch) -> None:
+    _use(
+        monkeypatch,
+        [FakeSource("xoso.com.vn", _map())],
+        [FakeSource("mketqua.net", _map()), FakeSource("www.minhngoc.net.vn", _map())],
+    )
+    payload = live_sync.fetch_snapshot(now=datetime(2026, 10, 13, 18, 8, tzinfo=VN), previous=_map())
+    assert payload["status"] == "waiting"
+    assert payload["received_values"] == 0
+    assert payload["failover"]["fallback_activated"] is True, "nguồn chính còn hiện kỳ trước là sự cố"
+    assert {row["error"] for row in payload["source_status"]} == {sources.STALE_PAGE_ERROR}
+
+
+def test_a_new_draw_coming_in_is_not_mistaken_for_the_previous_one(monkeypatch) -> None:
+    """Kỳ mới về dần: ô nào đã về mà khác kỳ trước là đủ để không phải trang cũ."""
+    drawing = {k: [] for k in PRIZE_ORDER}
+    drawing["prize1"] = ["12345"]
+    _use(monkeypatch, [FakeSource("xoso.com.vn", drawing)], [])
+    payload = live_sync.fetch_snapshot(now=datetime(2026, 10, 13, 18, 16, tzinfo=VN), previous=_map())
+    assert payload["status"] == "live"
+    assert payload["prizes"]["prize1"] == ["12345"]
+    assert payload["source_status"][0]["error"] is None
+
+
+def test_without_a_stored_draw_nothing_is_called_stale(monkeypatch) -> None:
+    _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], [])
+    payload = live_sync.fetch_snapshot(now=datetime(2026, 10, 13, 18, 31, tzinfo=VN), previous=None)
+    assert payload["status"] == "complete_verified"
+
+
+def test_one_differing_value_is_enough_to_be_a_new_draw() -> None:
+    assert sources.shows_previous_draw(_map(), _map()) is True
+    assert sources.shows_previous_draw(_other_map(), _map()) is False
+    partial = {k: (v[:1] if k == "prize1" else []) for k, v in _map().items()}
+    assert sources.shows_previous_draw(partial, _map()) is True
+    assert sources.shows_previous_draw(EMPTY, _map()) is False, "bảng rỗng không phải trang cũ"
+    longer = {**_map(), "prize7": [*_map()["prize7"], "99"]}
+    assert sources.shows_previous_draw(longer, _map()) is False
+
+
+def test_the_previous_draw_is_read_from_the_canonical_ledger(tmp_path) -> None:
+    """Kỳ gần nhất TRƯỚC hôm nay, và số 0 đầu mà CSV có thể đã mất được trả lại đúng độ rộng."""
+    header = (
+        "date,special,prize1,prize2_1,prize2_2,prize3_1,prize3_2,prize3_3,prize3_4,prize3_5,"
+        "prize3_6,prize4_1,prize4_2,prize4_3,prize4_4,prize5_1,prize5_2,prize5_3,prize5_4,"
+        "prize5_5,prize5_6,prize6_1,prize6_2,prize6_3,prize7_1,prize7_2,prize7_3,prize7_4"
+    )
+    row = ",".join(["83772", "68785", "50518", "27452", "57053", "92810", "56241", "65128",
+                    "33811", "42264", "4753", "1152", "6777", "3507", "9460", "2913", "3232",
+                    "2999", "3670", "5129", "939", "751", "594", "66", "21", "34", "78"])
+    older = row.replace("83772", "11111", 1)
+    today = row.replace("83772", "22222", 1).replace(",66,", ",6,", 1)
+    ledger = tmp_path / "xsmb.csv"
+    ledger.write_text(
+        f"{header}\n2026-10-11,{older}\n2026-10-12,{row.replace(',66,', ',6,', 1)}\n2026-10-13,{today}\n",
+        encoding="utf-8",
+    )
+    previous = sources.load_previous_draw(ledger, before=date(2026, 10, 13))
+    assert previous["special"] == ["83772"], "kỳ 12-10, không phải 11-10 hay chính hôm nay"
+    assert previous["prize7"] == ["06", "21", "34", "78"], "số 0 đầu phải được trả lại"
+    assert sources.load_previous_draw(tmp_path / "khong-co.csv", before=date(2026, 10, 13)) is None
+
+
+def test_the_command_line_passes_the_previous_draw_to_the_snapshot(tmp_path, monkeypatch) -> None:
+    header = "date," + ",".join(
+        key if len(values) == 1 else ",".join(f"{key}_{i}" for i in range(1, len(values) + 1))
+        for key, values in _map().items()
+    )
+    row = "2000-01-01," + ",".join(v for values in _map().values() for v in values)
+    ledger = tmp_path / "xsmb.csv"
+    ledger.write_text(f"{header}\n{row}\n", encoding="utf-8")
+
+    seen: list[dict] = []
+    real_snapshot = live_sync.fetch_snapshot
+
+    def fake_snapshot(**kwargs):
+        seen.append(kwargs)
+        return real_snapshot(now=datetime(2026, 10, 13, 10, 0, tzinfo=VN), previous=None)
+
+    _use(monkeypatch, [FakeSource("xoso.com.vn", EMPTY)], [])
+    monkeypatch.setattr(live_sync, "fetch_snapshot", fake_snapshot)
+    monkeypatch.setattr("sys.argv", ["live_sync.py", "--out", str(tmp_path / "live.json"),
+                                     "--history", str(ledger)])
+    live_sync.main()
+    assert seen[0]["previous"] == _map()
