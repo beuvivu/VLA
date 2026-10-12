@@ -59,6 +59,11 @@ def describe(html: str) -> list[str]:
         out.append(f"    --- {AFTER_G7_LINES} dòng từ nhãn giải 7 ở dòng {start} ---")
         for j in range(start, min(len(lines), start + AFTER_G7_LINES)):
             out.append(f"      {j:5d} {lines[j][:90]!r}")
+    # Vùng bảng giải: từ mỗi nhãn đặc biệt có chữ (không phải chữ số trần) tới hết 45 dòng.
+    for start in [i for i, key, line in labels if key == "special"][:3]:
+        out.append(f"    --- vùng bảng giải từ dòng {start} ---")
+        for j in range(start, min(len(lines), start + 45)):
+            out.append(f"      {j:5d} {lines[j][:90]!r}")
     return out
 
 
