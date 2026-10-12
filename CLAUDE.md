@@ -268,6 +268,13 @@ gặp dòng khác là hết hàng. Trước đó giải 7 (nhãn cuối bảng) 
 hay liên kết ngày khi chưa quay — lỗi "trùng lặp giải 7". Mẫu trang thật: `thuc_*` trong
 `tests/fixtures/prize_pages.json`. Chi tiết: `documentation/operations/live-worker.md` mục 6.
 
+`update-data.yml` có ba chặng: `canonical` (chốt và commit kết quả chuẩn) → song song
+`publish-results` (dựng trang chủ/sổ kết quả/soi cầu vị trí rồi triển khai Pages, không commit)
+và `update` (pipeline đầy đủ); `deploy-pages` chờ CẢ HAI nên bản đầy đủ luôn triển khai sau cùng.
+Lượt `live_verified` gọi `sync.py --cutoff 00:00` (12-10-2026 quay khống 3 phút vì mốc 18:35) và
+bị bỏ qua khi kỳ hôm nay đã có dự báo kỳ sau. Đừng gộp lại thành một job: trang chủ khi ấy chờ
+~5 phút pipeline. `tests/test_finalization_timing.py`, `documentation/operations/scheduling.md`.
+
 ## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
 
 Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,
