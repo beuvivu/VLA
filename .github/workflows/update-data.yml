@@ -51,15 +51,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update:
+  # Ba chặng, để trang kết quả không phải chờ phân tích:
+  #   canonical        lấy và commit kết quả chuẩn (vài chục giây sau khi live xác minh);
+  #   publish-results  dựng lại ngay các trang kết quả và triển khai Pages;
+  #   update           pipeline thống kê/AI/ML đầy đủ (~5 phút), rồi deploy-pages lần nữa.
+  # Đo ngày 12-10-2026 khi còn là MỘT job: live xác minh 18:31:48, trang chủ có kết quả lúc
+  # 18:41:20 — 3 phút chờ mốc 18:35 của sync.py, rồi 4,6 phút pipeline trước khi deploy.
+  canonical:
+    name: Chốt kết quả chuẩn
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
     outputs:
-      generated_changed: ${{ steps.commit.outputs.generated_changed }}
       canonical_changed: ${{ steps.canonical_commit.outputs.canonical_changed }}
       canonical_ready: ${{ steps.canonical.outputs.ready }}
+      target: ${{ steps.canonical.outputs.target }}
+      finalized: ${{ steps.guard.outputs.finalized }}
 
     env:
       VN_LOTTERY_ROOT: ${{ github.workspace }}
@@ -116,10 +124,25 @@ jobs:
           if live_verified:
               target = now.date()
           should_run = forced or latest != target.isoformat()
+          reason = "forced-" + dispatch_reason if forced else "scheduled-staleness"
+          # Mỗi lượt live-results thấy kỳ đã xác minh đều gọi lại đây; ngày 12-10-2026 có SÁU
+          # lượt hoàn tất cho cùng một kỳ, mỗi lượt ~8 phút, ba lượt viết lại dự báo LOTO đã công
+          # bố. Kỳ hôm nay đã có trong sổ VÀ đã có dự báo cho kỳ kế tiếp thì pipeline không chạy
+          # lại; nhưng triển khai Pages và hậu kiểm VẪN chạy lại (rẻ, lũy đẳng), vì hai tệp dự
+          # báo chỉ chứng minh phân tích đã xong, không chứng minh hai chặng ấy đã thành công.
+          # Pipeline hỏng giữa chừng thì chưa có dự báo kỳ sau, nên lượt gọi lại chạy đủ.
+          next_day = (target + timedelta(days=1)).isoformat()
+          finalized = live_verified and latest == target.isoformat() and all(
+              os.path.exists(f"data/predict/predict_next_{mode}_all_{next_day}.csv")
+              for mode in ("loto", "de")
+          )
+          if finalized:
+              reason = "already-finalized"
           print(f"run={'true' if should_run else 'false'}")
+          print(f"finalized={'true' if finalized else 'false'}")
           print(f"latest={latest}")
           print(f"target={target.isoformat()}")
-          print(f"reason={'forced-' + dispatch_reason if forced else 'scheduled-staleness'}")
+          print(f"reason={reason}")
           PY
 
       - name: Cài đặt thư viện phụ thuộc
@@ -172,9 +195,15 @@ jobs:
               try:
                   audit = json.loads(Path("data/source_audit.json").read_text(encoding="utf-8"))
                   row = audit.get(target.isoformat(), {})
-                  return bool(row.get("accepted")) and int(row.get("agreement", 0)) >= 2
+                  return bool(row.get("accepted")) and int(row.get("agreement", 0)) >= 1
               except Exception:
                   return False
+
+          # sync.py chỉ lấy kỳ hôm nay khi đã qua mốc cutoff. Lượt live_verified tới trước
+          # 18:35 (12-10-2026: 18:31:48) nên với mốc cố định nó quay khống ~3 phút. Live đã
+          # xác minh kỳ hôm nay xong, nên mốc 00:00 cho sync lấy ngay; sổ chuẩn vẫn chỉ nhận
+          # kết quả đủ 27 giải từ trang theo ngày.
+          cutoff = "00:00" if live_verified else "18:35"
 
           while True:
               target = expected_target()
@@ -191,11 +220,11 @@ jobs:
                   [
                       sys.executable,
                       "src/sync.py",
-                      "--cutoff", "18:35",
+                      "--cutoff", cutoff,
                       "--fill-missing-days-back", "14",
                       "--max-retries", "1",
                       "--retry-backoff-s", "1.5",
-                      "--consensus-min-recent", "2",
+                      "--consensus-min-recent", "1",
                       "--consensus-recent-days", "2",
                   ],
                   check=True,
@@ -248,8 +277,108 @@ jobs:
             echo "canonical_changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+  publish-results:
+    # Chỉ DỰNG các trang kết quả trên dữ liệu vừa chốt, không commit: pipeline ở job update
+    # dựng lại chúng cùng mọi trang khác rồi deploy-pages triển khai bản đầy đủ. Phần dự báo
+    # trên trang chủ trong vài phút ấy vẫn là dự báo đã công bố cho kỳ vừa quay.
+    name: Xuất bản trang kết quả ngay
+    needs: canonical
+    if: ${{ github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && needs.canonical.outputs.finalized != 'true' }}
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      VN_LOTTERY_ROOT: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/src
+      TZ: Asia/Ho_Chi_Minh
+    steps:
+      - name: Lấy commit kết quả chuẩn vừa đẩy
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài đặt thư viện phụ thuộc
+        run: python -m pip install --no-cache-dir -r requirements.txt
+
+      - name: Dựng các trang kết quả
+        # Thứ tự có ràng buộc thật: ô "cầu đẹp nhất" cạnh bảng LOTO đọc soi cầu vị trí của
+        # kỳ vừa quay, và bảng mô phỏng chèn vào trang chủ nên chạy SAU trang chủ.
+        run: |
+          set -euo pipefail
+          python src/position_bridges.py
+          python src/build_position_bridges.py
+          python src/build_landing_page.py
+          python src/build_fun_prediction.py
+          python src/build_traditional_results.py
+
+      - name: Cấu hình GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Tải artifact GitHub Pages lên
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-results-${{ github.run_attempt }}
+          path: docs
+
+      - name: Triển khai lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-results-${{ github.run_attempt }}
+
+  update:
+    name: Thống kê, AI/ML và mọi trang
+    needs: canonical
+    if: ${{ needs.canonical.outputs.canonical_ready == 'true' && needs.canonical.outputs.finalized != 'true' }}
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      generated_changed: ${{ steps.commit.outputs.generated_changed }}
+      canonical_changed: ${{ needs.canonical.outputs.canonical_changed }}
+      canonical_ready: ${{ needs.canonical.outputs.canonical_ready }}
+
+    env:
+      VN_LOTTERY_ROOT: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/src
+      TZ: Asia/Ho_Chi_Minh
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VLA_CACHE_BUST: ${{ github.run_id }}
+
+    steps:
+      - name: Lấy commit kết quả chuẩn vừa đẩy
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Thiết lập Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cài đặt thư viện phụ thuộc
+        run: |
+          python -m pip install --upgrade --no-cache-dir pip wheel setuptools
+          python -m pip install --no-cache-dir -r requirements.txt
+
       - name: Chạy quy trình hoàn tất đầu-cuối nghiêm ngặt
-        if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/pipeline.py \
             --cutoff 18:35 \
@@ -260,7 +389,6 @@ jobs:
             --strict
 
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
-        if: steps.canonical.outputs.ready == 'true'
         run: |
           python src/monitor_health.py \
             --health data/health.json \
@@ -271,7 +399,6 @@ jobs:
             --fail-on-missing
 
       - name: Xác minh các đầu ra đã tạo
-        if: steps.canonical.outputs.ready == 'true'
         run: |
           test -s data/xsmb.csv
           test -s data/xsmb.json
@@ -299,7 +426,6 @@ jobs:
 
       - name: Ghi nhận phân tích và bảng điều khiển đã hoàn tất
         id: commit
-        if: steps.canonical.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -326,8 +452,9 @@ jobs:
 
   trigger-post-finalization:
     name: Kích hoạt kiểm toán và đối soát trực tiếp
-    needs: update
-    if: ${{ needs.update.result == 'success' && needs.update.outputs.canonical_ready == 'true' }}
+    needs: [canonical, update]
+    # Lượt already-finalized bỏ pipeline (update = skipped) nhưng vẫn hậu kiểm lại.
+    if: ${{ always() && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -371,8 +498,10 @@ jobs:
 
   deploy-pages:
     name: Triển khai bảng điều khiển đã làm mới (tùy chọn)
-    needs: update
-    if: ${{ github.event.repository.private == false && needs.update.result == 'success' }}
+    # Chờ cả publish-results (thường đã xong từ lâu) để hai lượt triển khai không chồng nhau
+    # và bản đầy đủ luôn là bản sau cùng; always() vì publish-results được phép hỏng.
+    needs: [canonical, update, publish-results]
+    if: ${{ always() && github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     continue-on-error: true
     runs-on: ubuntu-latest
     permissions:

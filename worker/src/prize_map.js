@@ -92,6 +92,37 @@ export function validPrizeToken(value, key) {
   return new RegExp(`^[0-9]{${width}}$`).test(token) ? token : null;
 }
 
+// --- Hàng giải: dòng nhãn rồi các dòng hàng số ngay sau ---------------------
+
+// Khớp `_LINE_TOKEN` bên Python. `[0-9]` chỉ ASCII ở cả hai bên: chữ số toàn phần rơi
+// vào nhánh "khác", nên dòng chứa chúng bị loại.
+const LINE_TOKEN = /[0-9]+|[^\s0-9,;|]+/gu;
+
+/**
+ * Giá trị của một dòng NẰM SAU nhãn giải, hoặc `null` nếu dòng ấy không phải hàng số.
+ * Xem `_value_line_tokens` bên Python: giải 7 là nhãn cuối của bảng, và trước đây khối
+ * số của nó kéo tới tận bảng lô tô hay ô chọn tháng.
+ */
+export function valueLineTokens(line, key) {
+  const width = EXPECTED_WIDTHS[key];
+  const values = [];
+  for (const token of String(line).match(LINE_TOKEN) || []) {
+    if (!/^[0-9]+$/.test(token) || token.length !== width) return null;
+    values.push(token);
+  }
+  return values;
+}
+
+export function prizeRowValues(lines, labelIdx, stopIdx, key) {
+  const values = validTokens(lines[labelIdx], key).slice();
+  for (let idx = labelIdx + 1; idx < stopIdx; idx += 1) {
+    const row = valueLineTokens(lines[idx], key);
+    if (row === null) break;
+    values.push(...row);
+  }
+  return values.slice(0, EXPECTED_COUNTS[key]);
+}
+
 // --- HTML thành các dòng văn bản -------------------------------------------
 
 const NAMED_ENTITIES = {
@@ -173,13 +204,12 @@ export function extractPartialPrizeMap(html) {
       if (pos > labelPos && key === "special") break;
       if (keyOrder < seenOrder) break;  // một bảng khác đã bắt đầu
       seenOrder = Math.max(seenOrder, keyOrder);
-      const nextIdx = pos + 1 < labels.length
-        ? labels[pos + 1][0]
-        : Math.min(lines.length, lineIdx + 10);
-      const chunk = lines.slice(lineIdx, nextIdx).join(" ");
-      const values = validTokens(chunk, key);
-      if (values.length > 0) prizeMap[key] = values.slice(0, EXPECTED_COUNTS[key]);
-      if (key === "prize7") break;
+      const nextIdx = pos + 1 < labels.length ? labels[pos + 1][0] : lines.length;
+      const values = prizeRowValues(lines, lineIdx, nextIdx, key);
+      if (values.length > 0) prizeMap[key] = values;
+      // Hai nhãn giải 7 liền nhau ("Giải bảy" rồi "G7"): nhãn đầu chưa cho số thì đọc tiếp.
+      const nextKey = pos + 1 < labels.length ? labels[pos + 1][1] : null;
+      if (key === "prize7" && (prizeMap.prize7.length > 0 || nextKey !== "prize7")) break;
     }
     candidates.push(prizeMap);
   }

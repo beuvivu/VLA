@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import SOURCE_PUBLIC_CODE, default_sources
+from sources import PRIMARY_SOURCE_NAMES, SOURCE_PUBLIC_CODE, default_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE = ROOT / "worker" / "test" / "run_sources.mjs"
@@ -66,11 +66,11 @@ def test_source_order_and_urls_match_the_python_catalogue() -> None:
     python = [
         {
             "name": s.name,
-            "tier": "primary" if i < 2 else "fallback",
+            "tier": "primary" if s.name in PRIMARY_SOURCE_NAMES else "fallback",
             "date_urls": list(s.date_urls(NGAY)),
             "live_urls": list(s.live_urls(NGAY)),
         }
-        for i, s in enumerate(default_sources())
+        for s in default_sources()
     ]
     javascript = [
         {k: v for k, v in row.items() if k != "has_select_section"}
@@ -88,14 +88,12 @@ def test_the_public_code_table_matches_entry_for_entry() -> None:
     assert _javascript_payload()["public_codes"] == SOURCE_PUBLIC_CODE
 
 
-def test_only_rolling_ledgers_trim_the_page_before_parsing() -> None:
-    """Hai sổ cái cuộn phải cắt; các nguồn theo ngày thì không.
+def test_no_source_trims_the_page_before_parsing() -> None:
+    """Hai sổ cái cuộn (cần cắt đúng khối ngày) đã nghỉ; ba nguồn còn lại là trang một kỳ.
 
     Cắt nhầm một nguồn không cần cắt sẽ âm thầm bỏ mất phần đầu bảng giải.
     """
-    javascript = _javascript_sources()
-    co_cat = {row["name"] for row in javascript if row["has_select_section"]}
-    assert co_cat == {"hainhay.net", "xskt.vn"}
+    assert [row["name"] for row in _javascript_sources() if row["has_select_section"]] == []
 
 
 def test_ci_sets_up_node_explicitly() -> None:

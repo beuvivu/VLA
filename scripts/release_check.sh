@@ -39,6 +39,7 @@ python - <<'PYSOURCE'
 from sources import (
     FALLBACK_SOURCE_NAMES,
     PRIMARY_SOURCE_NAMES,
+    RETIRED_SOURCE_NAMES,
     SOURCE_INDEPENDENCE_GROUP,
     SOURCE_PUBLIC_CODE,
     default_sources,
@@ -81,12 +82,20 @@ missing = [n for n in listed if n not in blacklist]
 assert not missing, missing
 
 assert sorted(SOURCE_INDEPENDENCE_GROUP) == sorted(listed), sorted(SOURCE_INDEPENDENCE_GROUP)
-assert source_independence_key("www.minhngoc.net.vn") == source_independence_key("xosominhngoc.com")
 
-# Tầng chính phải TỰ đạt được ngưỡng xác minh 2 nhóm độc lập; nếu không thì
-# mọi kỳ quay đều phải rơi xuống tầng dự phòng và thứ tự ưu tiên là vô nghĩa.
-primary_groups = {source_independence_key(n) for n in primary}
-assert len(primary_groups) >= 2, primary_groups
+# Chính sách từ 13-10-2026: MỘT nguồn chính; dự phòng chỉ được gọi khi nó gặp sự cố. Mỗi
+# nguồn là một nhóm độc lập riêng, nên hai dự phòng nói khác nhau là thế hoà chứ không phải
+# một nguồn nói hai lần.
+assert len(primary) == 1, primary
+groups = [source_independence_key(n) for n in listed]
+assert len(set(groups)) == len(groups), groups
+
+# Nguồn đã nghỉ: không còn được gọi, nhưng vẫn bị danh sách đen chặn khỏi tải trọng công khai.
+retired = set(RETIRED_SOURCE_NAMES)
+assert not (retired & set(listed)), sorted(retired & set(listed))
+assert not (retired & set(registry)), sorted(retired & set(registry))
+leaked = sorted(n for n in retired if n not in blacklist)
+assert not leaked, leaked
 
 print("OK source policy", len(primary), "chính /", len(fallback), "dự phòng")
 PYSOURCE

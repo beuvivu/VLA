@@ -42,7 +42,7 @@ def ensure_up_to_date(
     polite_sleep_s: float = 0.15,
     max_retries: int = 2,
     retry_backoff_s: float = 0.8,
-    consensus_min_recent: int = 2,
+    consensus_min_recent: int = 1,
     consensus_recent_days: int = 2,
     non_draw_days: Iterable[str] | None = None,
 ) -> list[datetime]:
@@ -146,7 +146,10 @@ def main() -> None:
     ap.add_argument("--fill-missing-days-back", type=int, default=365)
     ap.add_argument("--max-retries", type=int, default=2)
     ap.add_argument("--retry-backoff-s", type=float, default=0.8)
-    ap.add_argument("--consensus-min-recent", type=int, default=2, help="Sources that must agree for recent/final draws.")
+    ap.add_argument(
+        "--consensus-min-recent", type=int, default=1,
+        help="Số nhóm nguồn phải khớp cho kỳ gần. 1: nguồn chính, dự phòng chỉ khi nguồn chính hỏng.",
+    )
     ap.add_argument("--consensus-recent-days", type=int, default=2, help="Apply consensus to target date and this many prior days.")
     args = ap.parse_args()
 

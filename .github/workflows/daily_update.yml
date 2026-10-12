@@ -208,7 +208,7 @@ jobs:
             --window-start "$WINDOW_START" \
             --deadline "$DEADLINE" \
             --timeout 8 \
-            --min-agreement 2 \
+            --min-agreement 1 \
             --json-out "${RUNNER_TEMP}/poll.json"
 
       - name: Tải lên nhật ký thăm dò

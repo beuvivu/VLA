@@ -61,6 +61,51 @@ thì đo lại, cập nhật `MEASURED_DELAYS`, và phép kiểm nói lịch cò
 
 Phút lẻ vẫn giữ: hàng đợi của GitHub dồn nặng nhất ở phút `:00` và `:30`.
 
+### Đo lại 12-10-2026 — từ live xác minh tới trang "Kết quả hôm nay"
+
+Lịch đã đúng giờ; độ trễ còn lại nằm TRONG `update-data.yml` (lượt 38243236688,
+giờ VN):
+
+| Mốc | Giờ | Ghi chú |
+|---|---|---|
+| Live xác minh, gọi update-data | 18:31:48 | `reason=live_verified` |
+| Bắt đầu chờ kết quả chuẩn | 18:32:43 | sau checkout 28 s, cài đặt 19 s |
+| `sync.py` lấy kỳ hôm nay | 18:35:33 | **quay khống ~3 phút**: `--cutoff 18:35` coi kỳ hôm nay chưa xong |
+| Kết quả chuẩn có trong sổ | 18:36:02 | lấy thật 12 s, tám nguồn hỏi tuần tự |
+| Pipeline thống kê/AI/ML | 18:36:06 → 18:40:44 | trang chủ chờ hết pipeline |
+| Pages triển khai | 18:41:20 | **9,5 phút** sau khi live xác minh |
+
+Tối ấy update-data còn chạy thêm năm lượt cho cùng kỳ (18:48 → 22:46): mỗi lượt
+live-results thấy kỳ đã xác minh lại gọi `live_verified`. Mỗi lượt ~8 phút, và ba
+trong năm lượt ấy viết lại `predict_next_loto_all_2026-10-13.csv` — dự báo đã công
+bố cho kỳ sau — dù sổ kết quả không đổi một dòng (pipeline chưa tất định).
+
+Ba thay đổi (13-10-2026):
+
+1. **Lượt `live_verified` gọi `sync.py --cutoff 00:00`.** Live đã xác minh kỳ
+   hôm nay, nên không chờ mốc 18:35; sổ chuẩn vẫn chỉ nhận kết quả đủ 27 giải
+   từ trang theo ngày. Lượt lịch và phục hồi giữ 18:35. Cùng với chính sách
+   một nguồn chính (`live-worker.md` mục 6), bước lấy còn một lượt gọi.
+2. **Tách ba chặng.** Job `canonical` commit kết quả chuẩn; job
+   `publish-results` dựng ngay trang chủ, sổ kết quả và soi cầu vị trí (~22 s đo
+   trên đúng commit kết quả chuẩn 18:36 ngày 12-10) rồi triển khai Pages, song
+   song với job `update` chạy pipeline đầy đủ. `deploy-pages` chờ cả hai nên
+   bản đầy đủ luôn là bản sau cùng. Ước tính: trang chủ có kết quả ~2–3 phút
+   sau khi live xác minh, thay vì 9,5 phút. Trong vài phút ấy phần dự báo trên
+   trang chủ vẫn là dự báo đã công bố cho kỳ vừa quay.
+3. **Không chạy lại pipeline cho kỳ đã xong.** Lượt `live_verified` tới khi kỳ
+   hôm nay đã có trong sổ VÀ đã có `predict_next_{loto,de}_all_<ngày mai>.csv`
+   thì guard trả `finalized=true` (`already-finalized`): bỏ `publish-results`
+   và `update`, nhưng `deploy-pages` và hậu kiểm VẪN chạy lại — rẻ và lũy đẳng,
+   vì hai tệp dự báo chỉ chứng minh phân tích đã xong, không chứng minh Pages
+   hay hậu kiểm đã thành công. Pipeline hỏng giữa chừng thì chưa có dự báo kỳ
+   sau, nên lượt gọi lại chạy đủ. Lượt gọi tay luôn chạy đủ.
+4. **Nguồn dự phòng còn hiện kỳ trước không chặn nguồn sau.** `Lottery.fetch`
+   bỏ nguồn trả kết quả trùng khít kỳ đã lưu và hỏi nguồn kế tiếp; chỉ kết
+   luận "không quay" khi mọi nguồn có kết quả đều trùng khít.
+
+`tests/test_finalization_timing.py` chạy nguyên các khối ấy lấy từ YAML.
+
 ## Cách chạy đúng giờ chắc chắn
 
 Gọi từ một bộ lập lịch bên ngoài. Cả hai workflow nay nhận

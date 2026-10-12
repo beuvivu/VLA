@@ -9,23 +9,13 @@ import {
   validPrizeToken,
 } from "./prize_map.js";
 
-// Bảng này phải khớp TỪNG MỤC với `SOURCE_INDEPENDENCE_GROUP` trong
-// `src/sources.py`. Nó ánh xạ MỌI nguồn chứ không chỉ hai bản sao — bỏ sót
-// một mục nào thì `support_groups` của ô ấy trả về tên miền đầy đủ thay vì
-// khoá nhóm, và bản JS lệch bản Python ngay ở siêu dữ liệu xác minh.
-//
-// www.minhngoc.net.vn và xosominhngoc.com là hai tên miền cùng thương hiệu
-// Minh Ngọc nên tính là MỘT nhà cung cấp độc lập. Đếm chúng là hai sẽ cho một
-// nguồn duy nhất quyền tự xác minh chính mình.
+// Bảng này phải khớp TỪNG MỤC với `SOURCE_INDEPENDENCE_GROUP` trong `src/sources.py`.
+// Bỏ sót một mục thì `support_groups` của ô ấy trả về tên miền đầy đủ thay vì khoá nhóm,
+// và bản JS lệch bản Python ngay ở siêu dữ liệu xác minh.
 const SOURCE_INDEPENDENCE_GROUP = {
-  "xosothudo.com.vn": "xosothudo",
   "xoso.com.vn": "xoso",
   "mketqua.net": "mketqua",
   "www.minhngoc.net.vn": "minhngoc",
-  "xosominhngoc.com": "minhngoc",
-  "xosodaiphat.com": "xosodaiphat",
-  "hainhay.net": "hainhay",
-  "xskt.vn": "xskt",
 };
 
 export function sourceIndependenceKey(sourceName) {
@@ -42,7 +32,7 @@ export function sourceIndependenceKey(sourceName) {
  *
  * `partials` là mảng [tênNguồn, bảngGiải] và THỨ TỰ CHÍNH LÀ ƯU TIÊN.
  */
-export function sourceConsensusPartial(partials, { minAgreement = 2 } = {}) {
+export function sourceConsensusPartial(partials, { minAgreement = 1 } = {}) {
   if (!Number.isInteger(minAgreement) || minAgreement < 1) {
     throw new Error("minAgreement must be an integer >= 1");
   }

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import csv
 import logging
 import operator
 import re
 import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time as dtime
+from pathlib import Path
 from typing import Final, Protocol
 
 from bs4 import BeautifulSoup
@@ -99,13 +101,54 @@ def _valid_prize_token(value: object, key: str) -> str | None:
     return token if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None else None
 
 
+#: Một dòng tách thành các cụm chữ số ASCII và các cụm KHÁC; khoảng trắng, dấu phẩy, chấm
+#: phẩy và gạch đứng chỉ là dấu phân cách.
+_LINE_TOKEN = re.compile(r"[0-9]+|[^\s0-9,;|]+")
+
+
+def _value_line_tokens(line: str, key: str) -> list[str] | None:
+    """Giá trị của một dòng NẰM SAU nhãn giải, hoặc ``None`` nếu dòng ấy không phải hàng số.
+
+    Hàng số chỉ gồm các số đúng độ rộng của giải và dấu phân cách. Mọi dòng khác — chữ
+    ("Loto Miền Bắc", "Normal"), ngày tháng ("12/10", "XSMB 12/10/2026"), chữ số trần của
+    ô chọn tháng ("8"), số tiền thưởng, ký hiệu chờ ("…", "-") — kết thúc hàng giải. Ba
+    nguồn đều in mỗi giá trị trên một dòng và các ô chưa quay đứng SAU các ô đã quay, nên
+    dừng ở dòng đầu tiên không phải hàng số không bỏ sót giá trị nào.
+
+    Vì sao cần: giải 7 là nhãn CUỐI của bảng, nên trước đây khối số của nó kéo tới nhãn
+    kế tiếp ở tận bảng lô tô hay ô chọn tháng. Khi giải 7 chưa quay, bộ bóc vớ số hai chữ
+    số ở đó: ``xoso.com.vn`` cho ``["10", "11", "12"]`` (tháng), ``xosodaiphat.com`` cho
+    ``["12", "10", "14", "10"]`` (ngày) — đo trên trang thật ngày 13-10-2026.
+    """
+    width = EXPECTED_WIDTHS[key]
+    values: list[str] = []
+    for token in _LINE_TOKEN.findall(line):
+        if not (token.isascii() and token.isdigit()) or len(token) != width:
+            return None
+        values.append(token)
+    return values
+
+
+def _prize_row_values(lines: list[str], label_idx: int, stop_idx: int, key: str) -> list[str]:
+    """Giá trị của một hàng giải: trên chính dòng nhãn, rồi các dòng hàng số ngay sau nó."""
+    values = _valid_tokens(lines[label_idx], key)
+    for idx in range(label_idx + 1, stop_idx):
+        row = _value_line_tokens(lines[idx], key)
+        if row is None:
+            break
+        values.extend(row)
+    return values[: EXPECTED_COUNTS[key]]
+
+
 def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
     """Extract the best labelled XSMB prize block from page text.
 
-    The six configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
+    The configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
     This parser finds candidate prize blocks, enforces exact prize widths and
     returns partial values without zero-filling.  It is therefore safe for live
-    pages where some prizes are not available yet.
+    pages where some prizes are not available yet: a prize's values are read from
+    its label line and the pure number lines right after it, never from whatever
+    text follows an empty row (``_value_line_tokens``).
     """
     soup = BeautifulSoup(text or "", "lxml")
     lines = [re.sub(r"\s+", " ", line).strip() for line in soup.get_text("\n", strip=True).splitlines()]
@@ -142,12 +185,14 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
                 # A new unrelated table has started.
                 break
             seen_order = max(seen_order, key_order)
-            next_idx = labels[pos + 1][0] if pos + 1 < len(labels) else min(len(lines), line_idx + 10)
-            chunk = " ".join(lines[line_idx:next_idx])
-            values = _valid_tokens(chunk, key)
+            next_idx = labels[pos + 1][0] if pos + 1 < len(labels) else len(lines)
+            values = _prize_row_values(lines, line_idx, next_idx, key)
             if values:
-                prize_map[key] = values[: EXPECTED_COUNTS[key]]
-            if key == "prize7":
+                prize_map[key] = values
+            # Giải 7 kết thúc bảng. Hai nhãn giải 7 liền nhau ("Giải bảy" rồi "G7") là
+            # một hàng hai cột nhãn: nhãn đầu chưa cho số thì đọc tiếp nhãn sau.
+            next_key = labels[pos + 1][1] if pos + 1 < len(labels) else None
+            if key == "prize7" and (prize_map["prize7"] or next_key != "prize7"):
                 break
         candidates.append(prize_map)
 
@@ -343,145 +388,42 @@ class MinhNgocSource(_TextPageSource):
         return "https://www.minhngoc.net.vn/xo-so-truc-tiep/mien-bac.html"
 
 
-@dataclass(frozen=True)
-class XosoMinhNgocSource(_TextPageSource):
-    name: str = "xosominhngoc.com"
+#: Chính sách nguồn từ 13-10-2026: MỘT nguồn chính, hai nguồn dự phòng chỉ được gọi khi
+#: nguồn chính gặp sự cố (``primary_has_failed``). Thứ tự trong mỗi tuple là thứ tự gọi và
+#: thứ tự ưu tiên hiển thị.
+#:
+#: Năm nguồn đã nghỉ, đo trên runner ngày 12/13-10-2026: ``xosothudo.com.vn`` (mẫu đường
+#: dẫn chưa từng đúng, cả năm ứng viên đều hỏng) và ``xskt.vn`` (chặn runner) không trả gì
+#: ở bất kỳ lượt nào; ``xosodaiphat.com`` bóc ngày tháng thành giải 7 khi kỳ chưa quay;
+#: ``hainhay.net`` mất trọn giải 7 vì hai nhãn liền nhau; ``xosominhngoc.com`` chỉ là bản
+#: sao của Minh Ngọc. Vì nguồn số một luôn hỏng, tầng chính chưa bao giờ đủ hai nhóm và cả
+#: sáu nguồn dự phòng bị gọi ở MỌI lượt thăm dò.
+PRIMARY_SOURCE_NAMES: tuple[str, ...] = ("xoso.com.vn",)
+FALLBACK_SOURCE_NAMES: tuple[str, ...] = ("mketqua.net", "www.minhngoc.net.vn")
 
-    def date_url(self, selected_date: date) -> str:
-        return f"https://www.xosominhngoc.com/kqxs/mien-bac/{selected_date:%d-%m-%Y}.html"
-
-    def live_url(self, selected_date: date) -> str:
-        return "https://www.xosominhngoc.com/xo-so-truc-tiep/mien-bac.html"
-
-
-@dataclass(frozen=True)
-class XosoDaiPhatSource(_TextPageSource):
-    name: str = "xosodaiphat.com"
-
-    def date_url(self, selected_date: date) -> str:
-        return f"https://xosodaiphat.com/xsmb-{selected_date:%d-%m-%Y}.html"
-
-
-@dataclass(frozen=True)
-class HainhaySource(_TextPageSource):
-    name: str = "hainhay.net"
-
-    def date_url(self, selected_date: date) -> str:
-        return "https://www.hainhay.net/so-ket-qua-truyen-thong/300"
-
-    def live_url(self, selected_date: date) -> str:
-        return "https://www.hainhay.net/"
-
-    def select_section(self, html: str, selected_date: date) -> str:
-        text = BeautifulSoup(html, "lxml").get_text("\n", strip=True)
-        date_patterns = [selected_date.strftime("%d/%m/%Y"), selected_date.strftime("%d-%m-%Y")]
-        starts: list[int] = []
-        for token in date_patterns:
-            starts.extend(m.start() for m in re.finditer(re.escape(token), text))
-        if not starts:
-            return html
-        start = min(starts)
-        # Keep a bounded section.  Hainhay's page is a rolling ledger and the
-        # next XSMB date follows shortly after the current block.
-        next_markers = []
-        for pattern in (r"XSMB\s*[>\-]", r"Kết Quả Miền Bắc\s*\("):
-            m = re.search(pattern, text[start + 80 :], flags=re.IGNORECASE)
-            if m:
-                next_markers.append(start + 80 + m.start())
-        end = min(next_markers) if next_markers else min(len(text), start + 5000)
-        return text[start:end]
-
-
-@dataclass(frozen=True)
-class XsktVnSource(_TextPageSource):
-    """Nguồn bù lịch sử từ sổ kết quả công khai của xskt.vn.
-
-    Trang xskt.vn là một sổ cái cuộn chứa nhiều kỳ trong cùng một tài liệu.
-    Vì vậy phải cắt đúng khối ngày được yêu cầu trước khi đưa qua bộ bóc giải
-    dùng chung; nếu không, mọi ngày thiếu đều có nguy cơ nhận kết quả mới nhất.
-    """
-
-    name: str = "xskt.vn"
-
-    def date_url(self, selected_date: date) -> str:
-        # Dùng sổ cuộn thay vì gửi một lượt HTTP riêng cho từng ngày thiếu.
-        # Tên đường dẫn do xskt.vn đặt; nguồn có thể chỉ trả một phần dải ngày,
-        # vì vậy ngày không xuất hiện luôn được giữ là thiếu, không đoán bừa.
-        return "https://xskt.vn/xsmb-500-ngay/"
-
-    def live_url(self, selected_date: date) -> str:
-        return "https://xskt.vn/"
-
-    def select_section(self, html: str, selected_date: date) -> str:
-        text = BeautifulSoup(html, "lxml").get_text("\n", strip=True)
-        tokens = (
-            selected_date.strftime("%d-%m-%Y"),
-            f"{selected_date.day}-{selected_date.month}-{selected_date.year}",
-            selected_date.strftime("%d/%m/%Y"),
-        )
-        starts = [text.find(token) for token in tokens if text.find(token) >= 0]
-        if not starts:
-            return ""
-        start = min(starts)
-        # Một kỳ XSMB đầy đủ ngắn hơn rất nhiều; 8 000 ký tự đủ rộng để giữ
-        # cả markup rời rạc nhưng vẫn dừng trước các bảng thống kê kế tiếp.
-        return text[start : min(len(text), start + 8000)]
-
-
-@dataclass(frozen=True)
-class XosoThuDoSource(_TextPageSource):
-    """Nguồn ưu tiên số một.
-
-    Mẫu đường dẫn CHƯA kiểm chứng được từ môi trường phát triển: sandbox chặn
-    toàn bộ HTTP ra ngoài (đã đo: ``example.com`` cũng trả 000). Vì vậy nguồn
-    này khai báo nhiều ứng viên và thử lần lượt, thay vì chốt cứng một phỏng
-    đoán rồi hỏng âm thầm.
-
-    Rủi ro được chặn ở tầng dưới chứ không phải ở đây: một nguồn không bóc
-    được gì thì đóng góp rỗng, và ``source_consensus_partial`` đòi ít nhất hai
-    NHÓM nhà cung cấp độc lập khớp nhau mới đánh dấu đã xác minh. Nguồn hỏng
-    làm mất bằng chứng, không làm sai dữ liệu.
-
-    Kiểm chứng bằng ``.github/workflows/inspect-reference-pages.yml`` — runner
-    của Actions gọi ra ngoài được. Khi biết mẫu đúng, rút danh sách còn một.
-    """
-
-    name: str = "xosothudo.com.vn"
-
-    def date_url(self, selected_date: date) -> str:
-        return self.date_urls(selected_date)[0]
-
-    def date_urls(self, selected_date: date) -> tuple[str, ...]:
-        return (
-            f"https://xosothudo.com.vn/xsmb-{selected_date:%d-%m-%Y}.html",
-            f"https://xosothudo.com.vn/ket-qua-xo-so-mien-bac/{selected_date:%d-%m-%Y}.html",
-            f"https://xosothudo.com.vn/xsmb/{selected_date:%d-%m-%Y}.html",
-        )
-
-    def live_urls(self, selected_date: date) -> tuple[str, ...]:
-        return (
-            "https://xosothudo.com.vn/tuong-thuat-truc-tiep-xsmb.html",
-            "https://xosothudo.com.vn/xsmb-truc-tiep.html",
-            *self.date_urls(selected_date),
-        )
-
-
-#: Hai tầng ưu tiên. Thứ tự trong mỗi tuple CHÍNH LÀ thứ tự ưu tiên khi các
-#: nguồn bất đồng, và cũng là thứ tự gọi.
-PRIMARY_SOURCE_NAMES: tuple[str, ...] = ("xosothudo.com.vn", "xoso.com.vn")
-FALLBACK_SOURCE_NAMES: tuple[str, ...] = (
+#: Tên của các nguồn đã nghỉ. Không còn được gọi, nhưng tải trọng công khai vẫn không được
+#: nhắc tới chúng (``known_source_domains``).
+RETIRED_SOURCE_NAMES: tuple[str, ...] = (
+    "xosothudo.com.vn",
     "xskt.vn",
-    "mketqua.net",
-    "www.minhngoc.net.vn",
     "xosominhngoc.com",
     "xosodaiphat.com",
     "hainhay.net",
 )
 
+#: Giờ Việt Nam mà kỳ quay chắc chắn đã xong (đặc biệt về lúc 18:30–18:35). Sau mốc này,
+#: nguồn chính còn thiếu ô là sự cố, không phải "đang quay".
+PRIMARY_COMPLETE_BY: Final[dtime] = dtime(18, 40)
+
 #: Nguồn của lớp dữ liệu Miền Trung/Miền Nam (``regional_lottery``). KHÔNG thuộc
 #: chuỗi nguồn XSMB: không đồng thuận, không dự phòng cho kỳ Miền Bắc. Vietlott
 #: không còn dùng nguồn này từ 07-10-2026: dữ liệu đến từ engine ``vietlott/``.
 REGIONAL_SOURCE_NAMES: tuple[str, ...] = ("xskt.com.vn",)
+
+#: Nguồn của lớp bù trong API Sổ kết quả của Worker (``worker/src/traditional_results.js``).
+#: Chỉ cron gọi, chỉ khi lịch sử chuẩn còn thiếu ngày; KHÔNG thuộc chuỗi nguồn live hay chốt
+#: kết quả XSMB ở trên.
+HISTORY_API_SOURCE_NAMES: tuple[str, ...] = ("xskt.vn",)
 
 #: Mã công khai thay cho tên miền. Mọi thứ ra tới trình duyệt phải dùng mã này.
 #:
@@ -501,14 +443,9 @@ def public_source_code(source_name: str) -> str:
 
 def _source_registry() -> dict[str, Source]:
     return {
-        "xosothudo.com.vn": XosoThuDoSource(),
         "xoso.com.vn": XosoComVnSource(),
-        "xskt.vn": XsktVnSource(),
         "mketqua.net": MketquaSource(),
         "www.minhngoc.net.vn": MinhNgocSource(),
-        "xosominhngoc.com": XosoMinhNgocSource(),
-        "xosodaiphat.com": XosoDaiPhatSource(),
-        "hainhay.net": HainhaySource(),
     }
 
 
@@ -528,16 +465,9 @@ def default_sources() -> list[Source]:
 
 
 SOURCE_INDEPENDENCE_GROUP = {
-    "xosothudo.com.vn": "xosothudo",
     "xoso.com.vn": "xoso",
     "mketqua.net": "mketqua",
-    # These two domains are Minh Ngọc-branded mirrors and therefore count as
-    # one independent provider for verification purposes.
     "www.minhngoc.net.vn": "minhngoc",
-    "xosominhngoc.com": "minhngoc",
-    "xosodaiphat.com": "xosodaiphat",
-    "hainhay.net": "hainhay",
-    "xskt.vn": "xskt",
 }
 
 
@@ -548,7 +478,7 @@ def source_independence_key(source_name: str) -> str:
 def source_consensus_partial(
     partials: list[tuple[str, dict[str, list[str]]]],
     *,
-    min_agreement: int = 2,
+    min_agreement: int = 1,
 ) -> tuple[dict[str, list[str]], dict[str, object]]:
     """Merge partial live results slot-by-slot using source priority + consensus.
 
@@ -679,62 +609,104 @@ class SourceObservation:
 
 
 def independent_group_count(observations: list[SourceObservation]) -> int:
-    """Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được.
-
-    Đếm theo nhóm chứ không theo tên miền: hai trang cùng thương hiệu Minh Ngọc
-    không phải hai lời chứng độc lập.
-    """
+    """Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được."""
     return len(
         {source_independence_key(o.name) for o in observations if o.usable}
     )
 
 
-def primary_tier_is_sufficient(
-    observations: list[SourceObservation], *, min_agreement: int = 2
-) -> tuple[bool, str]:
-    """Tầng chính có đủ để KHÔNG cần gọi dự phòng hay không, kèm lý do.
+#: Lỗi ghi cho một nguồn còn hiện kỳ TRƯỚC; Python và Worker dùng đúng chuỗi này.
+STALE_PAGE_ERROR: Final[str] = "StalePage: nguồn còn hiện kỳ trước"
 
-    Hai điều kiện, và điều kiện thứ hai mới là điều dễ bỏ sót:
 
-    1. Đủ ``min_agreement`` nhóm độc lập trả về dữ liệu dùng được. Thiếu nhóm
-       thì không thể xác minh, dù trang có trả HTTP 200.
-    2. Các nhóm ấy KHÔNG bất đồng ở bất kỳ ô nào. Hai nguồn chính đều chạy tốt
-       mà nói hai số khác nhau thì cũng không xác minh được gì — và im lặng
-       chấp nhận một trong hai theo thứ tự ưu tiên là cách một số sai lọt vào
-       lịch sử. Trường hợp này phải gọi thêm nguồn để phá thế hoà.
+def shows_previous_draw(
+    prize_map: dict[str, list[str]], previous: dict[str, list[str]] | None
+) -> bool:
+    """Nguồn còn hiện kỳ TRƯỚC: có giá trị, và MỌI giá trị trùng đúng ô của kỳ đã lưu gần nhất.
 
-    Thiếu giá trị KHÔNG phải bất đồng: lúc đang quay số các nguồn về số lệch
-    nhịp nhau là chuyện bình thường, và ``source_consensus_partial`` chỉ tính
-    xung đột khi hai nguồn đưa ra hai GIÁ TRỊ khác nhau cho cùng một ô.
+    Đo trên runner lúc 00:37 ngày 13-10-2026: trang live của cả ba nguồn, và trang theo ngày
+    13-10 của mketqua/minhngoc, đều hiện trọn kỳ 12-10. Sổ chuẩn có chốt "trùng khít kỳ đã
+    lưu" (``Lottery``), bản chụp live thì chưa: lượt thăm dò gặp trang chưa xoá bảng sẽ báo kỳ
+    hôm nay "đã xác minh" bằng số của hôm qua rồi dừng thăm dò. Kỳ mới về dần từ giải nhất
+    (năm chữ số), nên một trang đang quay trùng kỳ trước ở mọi ô đã về gần như không thể.
     """
-    groups = independent_group_count(observations)
-    if groups < min_agreement:
-        return False, f"chỉ có {groups} nhóm độc lập, cần {min_agreement}"
-    _, meta = source_consensus_partial(
-        [(o.name, o.prize_map) for o in observations if o.usable],
-        min_agreement=min_agreement,
-    )
-    conflicts = meta["conflicts"]
-    if conflicts:
-        return False, f"tầng chính bất đồng ở {len(conflicts)} ô"
-    return True, "tầng chính đủ"
+    if not previous:
+        return False
+    received = 0
+    for key in PRIZE_ORDER:
+        before = previous.get(key, [])
+        for index, value in enumerate(prize_map.get(key, [])):
+            if index >= len(before) or value != before[index]:
+                return False
+            received += 1
+    return received > 0
+
+
+def load_previous_draw(path: Path, *, before: date) -> dict[str, list[str]] | None:
+    """Bảng giải của kỳ đã lưu gần nhất TRƯỚC ``before`` trong sổ chuẩn, hoặc ``None``."""
+    try:
+        with path.open(newline="", encoding="utf-8") as handle:
+            rows = [r for r in csv.DictReader(handle) if str(r.get("date", ""))[:10] < before.isoformat()]
+    except OSError:
+        return None
+    if not rows:
+        return None
+    row = max(rows, key=lambda r: str(r["date"])[:10])
+
+    def column(key: str, index: int) -> str:
+        name = key if EXPECTED_COUNTS[key] == 1 else f"{key}_{index}"
+        value = str(row.get(name, "") or "").strip()
+        return value.zfill(EXPECTED_WIDTHS[key]) if value.isdigit() else value
+
+    return {
+        key: [column(key, i) for i in range(1, EXPECTED_COUNTS[key] + 1)] for key in PRIZE_ORDER
+    }
+
+
+def primary_has_failed(
+    prize_map: dict[str, list[str]], *, target: date, now: datetime
+) -> tuple[bool, str]:
+    """Nguồn chính có gặp sự cố hay không, kèm lý do. Chỉ khi có sự cố mới gọi dự phòng.
+
+    Hai dạng sự cố:
+
+    1. Không bóc được giá trị nào: lỗi mạng, HTTP khác 200, hay trang đổi bố cục. Trước giờ
+       quay, mọi nguồn đều rỗng, nên gọi dự phòng lúc ấy chỉ tốn thêm yêu cầu — vô hại.
+    2. Đã qua ``PRIMARY_COMPLETE_BY`` của ngày quay mà nguồn chính vẫn thiếu ô: trang kẹt,
+       không còn là "đang quay".
+
+    Thiếu ô TRONG lúc quay là bình thường — các giải về dần — nên không phải sự cố.
+    """
+    received = sum(len(prize_map.get(k, [])) for k in PRIZE_ORDER)
+    if received == 0:
+        return True, "nguồn chính không trả giá trị nào"
+    deadline = datetime.combine(target, PRIMARY_COMPLETE_BY, tzinfo=now.tzinfo)
+    total = sum(EXPECTED_COUNTS.values())
+    if received < total and now >= deadline:
+        return True, f"đã quá {PRIMARY_COMPLETE_BY:%H:%M} mà nguồn chính mới có {received}/{total}"
+    return False, "nguồn chính dùng được"
 
 
 def fetch_with_failover(
     fetch_one,
     *,
-    min_agreement: int = 2,
+    target: date,
+    now: datetime,
     run_batch=None,
+    min_agreement: int = 1,
 ) -> tuple[list[SourceObservation], dict[str, object]]:
-    """Gọi tầng chính trước; chỉ chạm tới dự phòng khi tầng chính không đủ.
+    """Gọi nguồn chính; chỉ gọi dự phòng khi nguồn chính gặp sự cố (``primary_has_failed``).
 
-    ``fetch_one(source, tier, priority) -> SourceObservation`` do bên gọi cung
-    cấp, nên hàm này không tự quyết định cách đi mạng và kiểm thử được bằng
-    hàm giả. ``run_batch(jobs)`` cho phép bên gọi chạy song song; mặc định
-    chạy tuần tự.
+    ``fetch_one(source, tier, priority) -> SourceObservation`` do bên gọi cung cấp, nên hàm
+    này không tự đi mạng và kiểm thử được bằng hàm giả. ``run_batch(jobs)`` cho phép chạy
+    song song hai nguồn dự phòng; mặc định chạy tuần tự.
 
-    Trả về mọi quan sát đã thực hiện, theo đúng thứ tự ưu tiên, kèm nhật ký
-    nói rõ dự phòng có được kích hoạt hay không và vì sao.
+    Nguồn chính là MỘT nhóm, nên ngưỡng ``min_agreement > 1`` (vẫn cấu hình được) cần thêm
+    nhân chứng: khi ấy dự phòng luôn được gọi. Nếu không, một nguồn chính đủ 27 ô "dùng được"
+    mà không bao giờ đạt ngưỡng, và vòng thăm dò chạy tới hạn chót.
+
+    Bên gọi chỉ loại quan sát của nguồn chính khỏi phép hợp nhất khi ``primary_failed``: nó đã
+    hỏng, và bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
     """
     if run_batch is None:
         def run_batch(jobs):
@@ -744,29 +716,30 @@ def fetch_with_failover(
         (source, "primary", index)
         for index, source in enumerate(primary_sources(), start=1)
     ]
-    observations = list(run_batch(primary_jobs))
-    sufficient, reason = primary_tier_is_sufficient(
-        observations, min_agreement=min_agreement
-    )
+    primary = list(run_batch(primary_jobs))
+    failed, reason = primary_has_failed(primary[0].prize_map, target=target, now=now)
+    witnesses = min_agreement > 1
+    if witnesses and not failed:
+        reason = f"cần {min_agreement} nhóm độc lập xác nhận"
     log: dict[str, object] = {
         "primary_attempted": len(primary_jobs),
-        "primary_usable_groups": independent_group_count(observations),
-        "fallback_activated": not sufficient,
+        "primary_failed": failed,
+        "fallback_activated": failed or witnesses,
         "reason": reason,
         "fallback_attempted": 0,
     }
-    if sufficient:
-        return observations, log
+    if not log["fallback_activated"]:
+        return primary, log
 
     offset = len(primary_jobs)
     fallback_jobs = [
         (source, "fallback", offset + index)
         for index, source in enumerate(fallback_sources(), start=1)
     ]
-    observations.extend(run_batch(fallback_jobs))
+    observations = list(run_batch(fallback_jobs))
     log["fallback_attempted"] = len(fallback_jobs)
     log["usable_groups"] = independent_group_count(observations)
-    return observations, log
+    return primary + observations, log
 
 
 # --- Ẩn nguồn khỏi mọi thứ ra tới trình duyệt --------------------------------
@@ -855,8 +828,11 @@ def anonymise_snapshot(payload: dict[str, object]) -> dict[str, object]:
 
 
 def known_source_domains() -> tuple[str, ...]:
-    """Mọi chuỗi định danh nguồn mà tải trọng công khai KHÔNG được chứa."""
-    names = (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES)
-    groups = tuple(dict.fromkeys(SOURCE_INDEPENDENCE_GROUP[n] for n in names))
+    """Mọi chuỗi định danh nguồn mà tải trọng công khai KHÔNG được chứa.
+
+    Gồm cả nguồn đã nghỉ: nghỉ không làm tên của chúng thành được phép in ra.
+    """
+    names = (*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES, *RETIRED_SOURCE_NAMES)
+    groups = tuple(dict.fromkeys(SOURCE_INDEPENDENCE_GROUP.get(n, n) for n in names))
     bare = tuple(n.removeprefix("www.").split(".")[0] for n in names)
     return tuple(dict.fromkeys(names + groups + bare))

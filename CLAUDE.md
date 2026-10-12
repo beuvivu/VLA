@@ -250,6 +250,41 @@ lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 g
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
 
+## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
+
+Theo yêu cầu chủ dự án: nguồn chính `xoso.com.vn`; dự phòng `mketqua.net` rồi
+`www.minhngoc.net.vn`, CHỈ gọi khi nguồn chính gặp sự cố (`sources.primary_has_failed`:
+không bóc được giá trị nào, hoặc đã quá `PRIMARY_COMPLETE_BY` = 18:40 giờ VN mà còn thiếu ô).
+Khi dự phòng được gọi, chỉ dữ liệu dự phòng được hợp nhất — nguồn chính đã hỏng không cầm
+phiếu. Ngưỡng đồng thuận là MỘT nhóm ở mọi nơi (`live_sync`, `fetch_results`, `sync`,
+`update-data.yml`, Worker `MIN_AGREEMENT`, `production_audit`, `reconcile_live_canonical`);
+hai dự phòng nói khác nhau ở một ô là thế hoà, ô ấy không được xác minh. Năm nguồn cũ đã nghỉ
+vì đo trên runner là hỏng (`RETIRED_SOURCE_NAMES`, vẫn được quét riêng tư); đừng thêm lại
+nguồn khi chưa đo bằng `diagnose-live-sources.yml`. Bản JS của Worker bị buộc khớp bởi
+`test_worker_sources_parity`, `test_source_failover_parity`, `test_worker_snapshot_parity`.
+
+Trước giờ quay, trang live của mọi nguồn vẫn hiện TRỌN kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+Nguồn mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là chưa có gì
+(`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `crawler/fetch_results` và Worker
+— thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua. Worker
+lấy kỳ MỚI NHẤT trong ảnh chụp KV, khoá `previous-draw.json` và sổ chuẩn `data/xsmb.json` (khởi
+động lạnh); không có gì để so thì không chốt kỳ đủ ô. Sổ chuẩn
+(`Lottery.fetch`) bỏ nguồn trùng khít rồi hỏi nguồn kế tiếp, không dừng ở nguồn đầu.
+
+Một hàng giải = dòng nhãn + các dòng NGAY SAU mà mọi mẩu là số ASCII đúng độ rộng của giải;
+gặp dòng khác là hết hàng. Trước đó giải 7 (nhãn cuối bảng) vớ số của bảng lô tô, ô chọn tháng
+hay liên kết ngày khi chưa quay — lỗi "trùng lặp giải 7". Mẫu trang thật: `thuc_*` trong
+`tests/fixtures/prize_pages.json`. Chi tiết: `documentation/operations/live-worker.md` mục 6.
+
+`update-data.yml` có ba chặng: `canonical` (chốt và commit kết quả chuẩn) → song song
+`publish-results` (dựng trang chủ/sổ kết quả/soi cầu vị trí rồi triển khai Pages, không commit)
+và `update` (pipeline đầy đủ); `deploy-pages` chờ CẢ HAI nên bản đầy đủ luôn triển khai sau cùng.
+Lượt `live_verified` gọi `sync.py --cutoff 00:00` (12-10-2026 quay khống 3 phút vì mốc 18:35);
+khi kỳ hôm nay đã có dự báo kỳ sau (`finalized`) nó bỏ `publish-results` và `update` nhưng VẪN
+triển khai Pages và hậu kiểm lại. Đừng gộp lại thành một job: trang chủ khi ấy chờ ~5 phút
+pipeline. Điều kiện `if:` của các job được ĐÁNH GIÁ (kể cả `success()` ngầm định) trong
+`tests/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
+
 ## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
 
 Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,

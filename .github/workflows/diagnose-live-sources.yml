@@ -1,0 +1,58 @@
+name: Chẩn đoán nguồn live
+
+# CHẠY TAY. Môi trường phát triển bị chặn mạng, nên muốn biết bộ bóc giải thấy gì trên
+# trang nguồn thật thì phải chạy trên runner. Job chỉ ĐỌC: in bảng giải bóc được và các
+# dòng quanh giải 7 ra log, lưu HTML thô làm hiện vật MỘT ngày, không commit gì.
+
+on:
+  workflow_dispatch:
+    inputs:
+      draw_date:
+        description: "Ngày quay YYYY-MM-DD (để trống là hôm nay VÀ hôm qua giờ VN)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnose-live-sources
+  cancel-in-progress: true
+
+jobs:
+  diagnose:
+    name: Bóc thử trên trang nguồn thật
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+      TZ: Asia/Ho_Chi_Minh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - run: python -m pip install --no-cache-dir -r requirements-live.txt
+
+      - name: Bóc thử từng nguồn
+        env:
+          DRAW_DATE: ${{ inputs.draw_date }}
+        # Để trống thì soi cả kỳ hôm qua (đã xong, làm mốc đối chiếu) lẫn hôm nay.
+        run: |
+          if [[ -n "${DRAW_DATE:-}" ]]; then
+            dates=(--date "$DRAW_DATE")
+          else
+            dates=(--date "$(date +%F)" --date "$(date -d yesterday +%F)")
+          fi
+          python scripts/diagnose_live_sources.py "${dates[@]}" --out-dir "$RUNNER_TEMP/pages"
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: live-source-pages
+          path: ${{ runner.temp }}/pages
+          retention-days: 1
+          if-no-files-found: ignore

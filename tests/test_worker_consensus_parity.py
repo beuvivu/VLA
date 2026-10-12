@@ -21,7 +21,13 @@ from pathlib import Path
 
 import pytest
 
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, source_consensus_partial
+from sources import (
+    EXPECTED_COUNTS,
+    FALLBACK_SOURCE_NAMES,
+    PRIMARY_SOURCE_NAMES,
+    PRIZE_ORDER,
+    source_consensus_partial,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "worker" / "test" / "run_consensus.mjs"
@@ -46,15 +52,9 @@ def _require_node() -> str:
         pytest.skip("không có node trên máy chạy kiểm")
     return node
 
-SOURCE_NAMES = [
-    "xoso.com.vn",
-    "mketqua.net",
-    "www.minhngoc.net.vn",
-    "xosominhngoc.com",
-    "xosodaiphat.com",
-    "hainhay.net",
-    "xskt.vn",
-]
+#: Ba nguồn của danh mục, cộng một tên ngoài danh mục: tên lạ phải tự là nhóm của chính nó
+#: ở CẢ HAI bản, không được rơi vào nhóm của nguồn khác.
+SOURCE_NAMES = [*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES, "nguon-ngoai-danh-muc.example"]
 
 
 def _token(rng: random.Random, key: str) -> str:

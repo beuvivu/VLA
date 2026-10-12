@@ -30,50 +30,24 @@ COMPLETE = """
 def test_source_policy_exact_priority_and_no_removed_provider() -> None:
     """Thứ tự ưu tiên là chính sách, không phải chi tiết cài đặt.
 
-    Nó quyết định giá trị nào được hiện tạm khi chưa đủ đồng thuận, nên một
-    thay đổi thứ tự phải là thay đổi CÓ CHỦ Ý và nhìn thấy được trong diff.
+    Từ 13-10-2026: một nguồn chính, hai nguồn dự phòng theo đúng thứ tự gọi. Đổi danh mục
+    phải là thay đổi CÓ CHỦ Ý và nhìn thấy được trong diff.
     """
-    assert [s.name for s in primary_sources()] == [
-        "xosothudo.com.vn",
-        "xoso.com.vn",
-    ]
-    assert [s.name for s in fallback_sources()] == [
-        "xskt.vn",
-        "mketqua.net",
-        "www.minhngoc.net.vn",
-        "xosominhngoc.com",
-        "xosodaiphat.com",
-        "hainhay.net",
-    ]
+    assert [s.name for s in primary_sources()] == ["xoso.com.vn"]
+    assert [s.name for s in fallback_sources()] == ["mketqua.net", "www.minhngoc.net.vn"]
     assert [s.name for s in default_sources()] == (
         [s.name for s in primary_sources()] + [s.name for s in fallback_sources()]
     )
 
 
-def test_xskt_rolling_ledger_selects_the_requested_date_only() -> None:
-    from datetime import date
+def test_retired_sources_are_neither_called_nor_printable() -> None:
+    """Nguồn đã nghỉ không còn trong danh mục gọi, nhưng tên vẫn bị cấm in ra."""
+    from sources import RETIRED_SOURCE_NAMES, known_source_domains
 
-    from sources import XsktVnSource
-
-    html = """
-    <h2>XSMB chủ nhật ngày 13-09-2026</h2>
-    <div>Đặc Biệt 83799</div><div>G1 63029</div><div>G7 21 88 40 27</div>
-    <h2>XSMB thứ 7 ngày 12-09-2026</h2>
-    <div>Đặc Biệt 58851</div><div>G1 93635</div><div>G7 01 39 43 23</div>
-    """
-    source = XsktVnSource()
-    section = source.select_section(html, date(2026, 9, 12))
-    assert "58851" in section
-    assert "83799" not in section
-
-
-def test_xskt_rolling_ledger_fails_closed_when_date_is_absent() -> None:
-    from datetime import date
-
-    from sources import XsktVnSource
-
-    source = XsktVnSource()
-    assert source.select_section("<h2>XSMB ngày 13-09-2026</h2>", date(2026, 9, 12)) == ""
+    called = {s.name for s in default_sources()}
+    assert called.isdisjoint(RETIRED_SOURCE_NAMES)
+    assert {"xosothudo.com.vn", "xskt.vn", "xosodaiphat.com", "hainhay.net"} <= set(RETIRED_SOURCE_NAMES)
+    assert set(RETIRED_SOURCE_NAMES) <= set(known_source_domains())
 
 
 def test_generic_parser_accepts_complete_exact_width_block() -> None:
@@ -150,12 +124,11 @@ def test_parser_accepts_xosodaiphat_dotted_g_labels() -> None:
     assert parsed["prize7"] == ["88", "34", "47", "00"]
 
 
-def test_minhnngoc_mirrors_count_as_one_independent_group() -> None:
+def test_every_kept_source_is_its_own_independent_group() -> None:
     from sources import source_independence_key
 
-    assert source_independence_key("www.minhngoc.net.vn") == "minhngoc"
-    assert source_independence_key("xosominhngoc.com") == "minhngoc"
-    assert source_independence_key("xoso.com.vn") != "minhngoc"
+    keys = [source_independence_key(s.name) for s in default_sources()]
+    assert keys == ["xoso", "mketqua", "minhngoc"]
 
 
 def test_slot_consensus_rejects_equal_two_group_tie_as_unverified() -> None:
@@ -178,40 +151,51 @@ def test_slot_consensus_rejects_equal_two_group_tie_as_unverified() -> None:
     assert meta["verified_slots"] == 0
 
 
-def test_slot_consensus_accepts_unique_independent_winner_over_mirrors() -> None:
+def test_two_disagreeing_fallbacks_leave_the_slot_unverified() -> None:
+    """Nguồn chính hỏng, hai nguồn dự phòng nói khác nhau: với ngưỡng một nhóm, ô ấy là hoà
+    giữa hai nhóm — hiện tạm giá trị của nguồn ưu tiên hơn, không bao giờ đánh dấu xác minh."""
     maps = []
-    for source, value in [
-        ("xoso.com.vn", "11"),
-        ("xosodaiphat.com", "11"),
-        ("www.minhngoc.net.vn", "22"),
-        ("xosominhngoc.com", "22"),
-    ]:
+    for source, value in [("mketqua.net", "11"), ("www.minhngoc.net.vn", "22")]:
         p = {k: [] for k in PRIZE_ORDER}
         p["prize7"] = [value]
         maps.append((source, p))
 
-    merged, meta = source_consensus_partial(maps, min_agreement=2)
+    merged, meta = source_consensus_partial(maps, min_agreement=1)
     slot = meta["slot_meta"]["prize7[0]"]
     assert merged["prize7"][0] == "11"
-    assert slot["verified"] is True
-    assert slot["ambiguous_tie"] is False
-    assert slot["support_groups"] == ["xoso", "xosodaiphat"]
+    assert slot["verified"] is False
+    assert slot["ambiguous_tie"] is True
+    assert meta["conflicts"] == ["prize7[0]"]
+
+
+class _ManyCandidates:
+    """Nguồn giả có nhiều đường dẫn ứng viên — cơ chế dùng chung của ``_TextPageSource``."""
+
+    def __new__(cls):
+        from sources import _TextPageSource
+
+        class Source(_TextPageSource):
+            name = "nhieu-ung-vien.example"
+
+            def date_urls(self, selected_date):
+                return tuple(f"https://nguon.example/ngay/{n}" for n in range(3))
+
+            def live_urls(self, selected_date):
+                return tuple(f"https://nguon.example/live/{n}" for n in range(3))
+
+        return Source()
 
 
 def test_a_source_tries_every_candidate_url_until_one_parses() -> None:
     """Nguồn có nhiều mẫu đường dẫn phải thử lần lượt, không dừng ở cái đầu.
 
-    Mẫu đường dẫn của nguồn ưu tiên số một CHƯA kiểm chứng được từ môi trường
-    phát triển (sandbox chặn mọi HTTP ra ngoài, đo được cả example.com cũng
-    trả 000). Chốt cứng một phỏng đoán sẽ hỏng ÂM THẦM: trang trả 404, bộ bóc
-    nhận chuỗi rỗng, nguồn báo "không có gì" thay vì "sai địa chỉ".
+    Chốt cứng một phỏng đoán sẽ hỏng ÂM THẦM: trang trả 404, bộ bóc nhận chuỗi rỗng, nguồn
+    báo "không có gì" thay vì "sai địa chỉ".
     """
     from datetime import date
 
-    from sources import XosoThuDoSource
-
     ngay = date(2026, 9, 5)
-    source = XosoThuDoSource()
+    source = _ManyCandidates()
     urls = source.date_urls(ngay)
     assert len(urls) > 1
 
@@ -235,8 +219,6 @@ def test_a_complete_first_candidate_stops_the_remaining_requests() -> None:
     """Bóc đủ 27 giá trị thì dừng — không gọi thừa vào trang nguồn."""
     from datetime import date
 
-    from sources import XosoThuDoSource
-
     seen: list[str] = []
 
     class Http:
@@ -247,7 +229,7 @@ def test_a_complete_first_candidate_stops_the_remaining_requests() -> None:
                 text = COMPLETE
             return R()
 
-    XosoThuDoSource().fetch_partial(date(2026, 9, 5), Http())
+    _ManyCandidates().fetch_partial(date(2026, 9, 5), Http())
     assert len(seen) == 1
 
 
@@ -264,10 +246,8 @@ def test_the_richest_candidate_wins_even_when_a_later_one_also_parses() -> None:
     """
     from datetime import date
 
-    from sources import XosoThuDoSource
-
     ngay = date(2026, 9, 5)
-    source = XosoThuDoSource()
+    source = _ManyCandidates()
     urls = source.live_urls(ngay)
     assert len(urls) > 2
 

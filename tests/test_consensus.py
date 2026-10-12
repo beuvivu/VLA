@@ -84,22 +84,44 @@ def test_consensus_rejects_conflicting_single_sources_without_mutating_canonical
     assert audit["ambiguous_tie"] is False
 
 
-def test_two_minhnngoc_mirrors_alone_do_not_satisfy_two_provider_consensus(tmp_path: Path) -> None:
-    d = date(2026, 8, 30)
-    a = _result(d, special=12345)
-    lot = _lottery(
-        tmp_path,
-        [
-            FakeSource("www.minhngoc.net.vn", a),
-            FakeSource("xosominhngoc.com", a),
-        ],
-    )
+@dataclass
+class CountingSource(FakeSource):
+    calls: int = 0
 
-    assert lot.fetch(d, min_agreement=2) is False
-    assert not lot.has_date(d)
+    def fetch(self, selected_date: date, http: object) -> Result | None:
+        self.calls += 1
+        return self.result
+
+
+def test_the_primary_result_is_taken_without_asking_the_fallbacks(tmp_path: Path) -> None:
+    """Chính sách từ 13-10-2026: nguồn chính trả đủ kỳ thì không gọi nguồn dự phòng nào."""
+    d = date(2026, 10, 12)
+    primary = CountingSource("xoso.com.vn", _result(d, special=38287))
+    backups = [CountingSource("mketqua.net", _result(d, special=11111)),
+               CountingSource("www.minhngoc.net.vn", _result(d, special=22222))]
+    lot = _lottery(tmp_path, [primary, *backups])
+
+    assert lot.fetch(d) is True
+    assert lot._data[d].special == 38287
+    assert [b.calls for b in backups] == [0, 0]
     audit = lot._fetch_audit[d.isoformat()]
+    assert audit["accepted"] is True
     assert audit["agreement"] == 1
-    assert audit["source_agreement"] == 2
+    assert audit["sources"] == ["P1"]
+    assert audit["independent_groups"] == ["G1"]
+
+
+def test_a_failed_primary_hands_over_to_the_first_fallback_in_order(tmp_path: Path) -> None:
+    d = date(2026, 10, 12)
+    primary = CountingSource("xoso.com.vn", None)
+    first = CountingSource("mketqua.net", _result(d, special=11111))
+    second = CountingSource("www.minhngoc.net.vn", _result(d, special=22222))
+    lot = _lottery(tmp_path, [primary, first, second])
+
+    assert lot.fetch(d) is True
+    assert lot._data[d].special == 11111
+    assert (primary.calls, first.calls, second.calls) == (1, 1, 0)
+    assert lot._fetch_audit[d.isoformat()]["sources"] == ["F1"]
 
 
 def test_consensus_rejects_equal_independent_group_tie(tmp_path: Path) -> None:
@@ -125,29 +147,6 @@ def test_consensus_rejects_equal_independent_group_tie(tmp_path: Path) -> None:
     assert audit["ambiguous_tie"] is True
 
 
-def test_consensus_accepts_unique_two_group_winner_over_mirror_pair(tmp_path: Path) -> None:
-    d = date(2026, 9, 1)
-    winner = _result(d, special=12345)
-    mirror_result = _result(d, special=54321)
-    lot = _lottery(
-        tmp_path,
-        [
-            FakeSource("xoso.com.vn", winner),
-            FakeSource("xosodaiphat.com", winner),
-            FakeSource("www.minhngoc.net.vn", mirror_result),
-            FakeSource("xosominhngoc.com", mirror_result),
-        ],
-    )
-
-    assert lot.fetch(d, min_agreement=2) is True
-    assert lot.has_date(d)
-    audit = lot._fetch_audit[d.isoformat()]
-    assert audit["accepted"] is True
-    assert audit["agreement"] == 2
-    assert audit["runner_up_agreement"] == 1
-    assert audit["ambiguous_tie"] is False
-
-
 # --- Ngày không quay -------------------------------------------------------
 #
 # XSMB nghỉ dịp Tết và suốt đợt giãn cách 01-22/4/2020. Vào những ngày đó trang
@@ -168,6 +167,35 @@ def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
 
     lot._sources = [FakeSource("a", stale)]  # type: ignore[attr-defined]
     assert lot.fetch(today, min_agreement=1) is False, "ngày không quay bị ghi thành kỳ"
+    assert not lot.has_date(today)
+
+
+def test_a_source_still_showing_the_stored_draw_hands_over_to_the_next(tmp_path: Path) -> None:
+    """Đo 00:37 ngày 13-10-2026: trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ
+    12-10. Nguồn trước trùng khít thì phải hỏi nguồn sau, không kết luận "không quay"."""
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    fresh = _result(today, special=22602)
+    lot._sources = [  # type: ignore[attr-defined]
+        FakeSource("a", _result(today, special=22601)),
+        FakeSource("b", fresh),
+    ]
+    assert lot.fetch(today, min_agreement=1) is True
+    assert lot._data[today].special == 22602  # type: ignore[attr-defined]
+    assert not lot.is_no_draw(today)
+
+
+def test_only_when_every_answer_repeats_is_the_day_a_non_draw(tmp_path: Path) -> None:
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    stale = _result(today, special=22601)
+    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]  # type: ignore[attr-defined]
+    assert lot.fetch(today, min_agreement=1) is False
+    assert lot.is_no_draw(today)
     assert not lot.has_date(today)
 
 

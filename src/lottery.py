@@ -183,14 +183,18 @@ class Lottery:
     def fetch(self, selected_date: date, *, min_agreement: int = 1) -> bool:
         """Fetch a draw, optionally requiring independent source agreement.
 
-        ``min_agreement=1`` preserves the fast historical backfill behavior. For
-        recent/final draws, ``min_agreement=2`` asks all configured providers and
-        only promotes a candidate when at least two independent parsers agree on
-        every prize field. Conflicting single-source data is never written, and
-        an equal-support tie between distinct verified candidates is rejected.
+        ``min_agreement=1`` (mặc định, cả cho kỳ vừa quay từ 13-10-2026): hỏi các nguồn
+        THEO THỨ TỰ ưu tiên và nhận kết quả đầy đủ đầu tiên — nguồn chính trước, dự phòng
+        chỉ khi nguồn chính không trả được kỳ ấy. ``min_agreement >= 2`` vẫn dùng được: hỏi
+        mọi nguồn và chỉ nhận khi đủ ngần ấy nhóm độc lập khớp từng giải; hoà giữa hai kết
+        quả cùng mức ủng hộ bị từ chối.
         """
         min_agreement = max(1, int(min_agreement))
         candidates: list[tuple[str, Result]] = []
+        # Nguồn trả đúng một kỳ đã lưu (trang chưa cập nhật kỳ mới). Đo 00:37 ngày 13-10-2026:
+        # trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ 12-10. Bỏ nguồn ấy, hỏi
+        # nguồn kế tiếp; chỉ kết luận "không quay" khi MỌI nguồn có kết quả đều trùng khít.
+        twins: list[date] = []
 
         for source in self._sources:
             name = getattr(source, "name", "?")
@@ -206,17 +210,17 @@ class Lottery:
                 logger.warning("Source %s returned date %s for requested %s; skipping", name, result.date, selected_date)
                 continue
 
-            candidates.append((name, result))
             if min_agreement == 1:
                 twin = self._repeats_a_neighbour(selected_date, result)
                 if twin is not None:
                     logger.warning(
-                        "Bỏ %s: trùng khít kỳ %s — ngày không quay, nguồn trả "
-                        "kết quả gần nhất",
-                        selected_date, twin,
+                        "Bỏ %s từ %s: trùng khít kỳ %s — nguồn còn hiện kỳ đã lưu; "
+                        "hỏi nguồn kế tiếp",
+                        selected_date, name, twin,
                     )
-                    self._no_draw.add(selected_date)
-                    return False
+                    twins.append(twin)
+                    continue
+                candidates.append((name, result))
                 self._data[selected_date] = result
                 self._fetch_audit[selected_date.isoformat()] = {
                     "checked_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -228,9 +232,21 @@ class Lottery:
                     # Mã ẩn danh, không phải tên miền: tệp nhật ký này nằm
                     # trong kho công khai.
                     "sources": [public_source_code(name)],
+                    "source_agreement": 1,
+                    "independent_groups": [public_group_code(name)],
                     "candidates": 1,
                 }
                 return True
+            candidates.append((name, result))
+
+        if min_agreement == 1 and twins:
+            logger.warning(
+                "Bỏ %s: mọi nguồn có kết quả đều trùng khít kỳ %s — ngày không quay, "
+                "hoặc nguồn chưa đăng kỳ mới",
+                selected_date, twins[0],
+            )
+            self._no_draw.add(selected_date)
+            return False
 
         grouped: dict[tuple[int, ...], list[tuple[str, Result]]] = defaultdict(list)
         for item in candidates:

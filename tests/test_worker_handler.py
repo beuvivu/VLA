@@ -42,17 +42,17 @@ def _primary_round_fetches() -> int:
     return sum(len(s.live_urls(date(2026, 9, 5))) for s in primary_sources())
 
 
-#: Chỉ tầng CHÍNH được gọi khi nó đủ để xác minh. Trang giả trong kịch bản
-#: kiểm trả cùng một nội dung cho mọi nguồn, nên hai nguồn chính luôn khớp
-#: nhau và tầng dự phòng không bao giờ được chạm tới.
+#: Chỉ nguồn CHÍNH được gọi khi nó dùng được. Runner ghim đồng hồ 18:20 giờ VN, trước mốc
+#: 18:40 mà nguồn chính phải có trọn kỳ, nên trang giả chỉ có ĐB và G7 vẫn là "đang quay"
+#: chứ không phải sự cố, và dự phòng không bao giờ được chạm tới.
 SOURCES_PER_COLLECTION = _primary_round_fetches()
 
 #: Số HÀNG nguồn trong bản chụp — khác hẳn số lượt gọi ra ngoài ở trên.
 #: Một nguồn có thể thử nhiều đường dẫn ứng viên nên hai con số không bằng
 #: nhau, và dùng lẫn chúng là cách một phép kiểm trông như đang kiểm điều
 #: này mà thật ra kiểm điều kia.
-PRIMARY_SOURCE_ROWS = 2
-ALL_SOURCE_ROWS = 8
+PRIMARY_SOURCE_ROWS = 1
+ALL_SOURCE_ROWS = 3
 
 
 def _require_node() -> str:
@@ -110,7 +110,7 @@ def test_the_scheduled_run_writes_once_and_reads_come_from_storage() -> None:
     )
     assert out["schema_version"] == 2, "phải khớp lược đồ bản Python"
     assert out["source_count"] == PRIMARY_SOURCE_ROWS, (
-        "tầng chính đủ thì không được chạm tới nguồn dự phòng"
+        "nguồn chính dùng được thì không được chạm tới nguồn dự phòng"
     )
     assert out["special"] == ["83772"], "dữ liệu phải đi hết đường từ HTML tới payload"
     assert out["cors"] == "*", "trang live ở tên miền khác nên bắt buộc có CORS"
@@ -130,10 +130,64 @@ def test_every_source_failing_still_publishes_a_waiting_snapshot() -> None:
     assert out["wrote_snapshot"] is True
     assert out["status"] == "waiting"
     assert out["fallback_activated"] is True, (
-        "tầng chính hỏng thì PHẢI kích hoạt dự phòng"
+        "nguồn chính hỏng thì PHẢI kích hoạt dự phòng"
     )
     assert out["source_rows"] == ALL_SOURCE_ROWS
     assert out["errors"] == ALL_SOURCE_ROWS, "phải ghi lỗi của TỪNG nguồn"
+
+
+def test_a_primary_stuck_after_the_deadline_hands_over_to_the_fallbacks() -> None:
+    """18:45 mà nguồn chính vẫn chỉ có ĐB và G7: hai dự phòng được gọi và CHỈ chúng được hợp nhất.
+
+    Gộp cả bản kẹt của nguồn chính vào thì ở ô ĐB và G7 nó vẫn chỉ là một phiếu trong ba, nhưng
+    ở các ô còn lại nó vắng mặt — phép hợp nhất không được để một nguồn đã hỏng cầm phiếu.
+    """
+    out = _scenario("primary_stuck_after_deadline")
+    assert out["fallback_activated"] is True
+    assert out["source_rows"] == ALL_SOURCE_ROWS
+    assert out["status"] == "complete_verified", "hai dự phòng khớp nhau trọn kỳ"
+    assert out["prize1"] == ["68785"], "giá trị phải đến từ dự phòng"
+    assert out["prize7"] == ["66", "21", "34", "78"]
+    assert out["hosts"] == ["mketqua.net", "www.minhngoc.net.vn", "xoso.com.vn"]
+    assert out["supporters"] == ["F1", "F2"], "nguồn chính đã hỏng không được cầm phiếu ở ô nào"
+
+
+def test_a_page_still_showing_yesterday_is_not_todays_result() -> None:
+    """Trước giờ quay, mọi trang live vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+
+    Không có chốt này, lượt cron đầu tiên của khung quay số báo kỳ hôm nay "đã xác minh" bằng
+    số của hôm qua — và ngừng thu thập luôn, vì kỳ đã "xong".
+    """
+    out = _scenario("stale_page_is_not_today")
+    assert out["draw_date"] == "2026-10-13"
+    assert out["status"] == "waiting"
+    assert out["received_values"] == 0
+    assert out["fallback_activated"] is True, "nguồn chính còn hiện kỳ trước là sự cố"
+    assert out["failed_rows"] == ALL_SOURCE_ROWS
+    assert out["later_statuses"] == ["waiting"] * 3, (
+        "lượt cron đầu đã ghi đè ảnh chụp hôm qua; các lượt sau vẫn phải nhận ra trang cũ"
+    )
+
+
+def test_a_cold_start_takes_the_previous_draw_from_canonical_history() -> None:
+    """KV trống mà trang nguồn còn hiện kỳ hôm qua: kỳ trước lấy từ sổ chuẩn, không chốt nhầm."""
+    out = _scenario("cold_start_seeds_from_canonical_history")
+    assert out["statuses"] == ["waiting"] * 3
+
+
+def test_the_newest_known_draw_wins_when_canonical_history_lags() -> None:
+    """Sổ chuẩn chưa chốt kỳ hôm qua, ảnh chụp KV thì có: so với kỳ MỚI NHẤT, tức hôm qua."""
+    assert _scenario("canonical_lags_behind_the_kv_snapshot")["status"] == "waiting"
+
+
+def test_with_nothing_to_compare_a_complete_board_is_not_settled() -> None:
+    """KV trống VÀ sổ chuẩn không đọc được: không phân biệt được trang cũ, nên không chốt."""
+    out = _scenario("cold_start_without_history_does_not_settle")
+    assert out["status"] == "complete_provisional"
+    assert out["verified_complete"] is False
+    assert out["outbound_after_second"] > out["outbound_after_first"], (
+        "chưa chốt thì lượt cron sau phải thu thập tiếp"
+    )
 
 
 def test_a_missing_kv_binding_says_exactly_what_to_do() -> None:
