@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from sources import (  # noqa: E402
+    EXPECTED_COUNTS,
     PRIZE_ORDER,
     _label_key,
     _request_page,
@@ -69,27 +70,42 @@ def describe(html: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--date", default="", help="ngày quay YYYY-MM-DD; trống là hôm nay giờ VN")
+    parser.add_argument(
+        "--date", action="append", default=[],
+        help="ngày quay YYYY-MM-DD, lặp được; không có là hôm nay giờ VN",
+    )
     parser.add_argument("--out-dir", type=Path, help="lưu HTML thô vào thư mục này")
     args = parser.parse_args(argv)
-    draw = date.fromisoformat(args.date) if args.date else datetime.now(VIETNAM_TZ).date()
+    draws = [date.fromisoformat(d) for d in args.date if d] or [datetime.now(VIETNAM_TZ).date()]
     if args.out_dir:
         args.out_dir.mkdir(parents=True, exist_ok=True)
     http = requests.Session()
-    print(f"Kỳ quay {draw.isoformat()}")
-    for source in default_sources():
-        for kind, urls in (("live", source.live_urls(draw)), ("ngày", source.date_urls(draw))):
-            for n, url in enumerate(urls, start=1):
-                print(f"\n=== {source.name} [{kind} #{n}] {url}")
-                html = _request_page(http, url, timeout=20)
-                if not html:
-                    print("    không đọc được (lỗi mạng, HTTP khác 200 hoặc trang quá lớn)")
-                    continue
-                print(f"    {len(html) / 1024:.0f} KB")
-                if args.out_dir:
-                    safe = re.sub(r"[^A-Za-z0-9]+", "_", f"{source.name}_{kind}_{n}")
-                    (args.out_dir / f"{safe}.html").write_text(html, encoding="utf-8")
-                print("\n".join(describe(html)))
+    for draw in draws:
+        print(f"\n##### Kỳ quay {draw.isoformat()}")
+        for source in default_sources():
+            for kind, urls in (("live", source.live_urls(draw)), ("ngày", source.date_urls(draw))):
+                for n, url in enumerate(urls, start=1):
+                    print(f"\n=== {source.name} [{kind} #{n}] {url}")
+                    html = _request_page(http, url, timeout=20)
+                    if not html:
+                        print("    không đọc được (lỗi mạng, HTTP khác 200 hoặc trang quá lớn)")
+                        continue
+                    print(f"    {len(html) / 1024:.0f} KB")
+                    if args.out_dir:
+                        safe = re.sub(r"[^A-Za-z0-9]+", "_", f"{draw}_{source.name}_{kind}_{n}")
+                        (args.out_dir / f"{safe}.html").write_text(html, encoding="utf-8")
+                    print("\n".join(describe(html)))
+        # Đúng đường mà live_sync gọi: thấy ở đây là thấy trên trang live.
+        print(f"\n----- {draw.isoformat()}: fetch_partial(live=True) như live_sync -----")
+        for source in default_sources():
+            try:
+                parsed = source.fetch_partial(draw, http, live=True)
+            except Exception as exc:  # noqa: BLE001 — chẩn đoán: in lỗi rồi đi tiếp
+                print(f"  {source.name}: lỗi {type(exc).__name__}")
+                continue
+            received = sum(len(parsed.get(k, [])) for k in PRIZE_ORDER)
+            print(f"  {source.name}: {received}/{sum(EXPECTED_COUNTS.values())} "
+                  f"ĐB={parsed.get('special')} G7={parsed.get('prize7')}")
     return 0
 
 

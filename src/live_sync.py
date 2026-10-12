@@ -2,14 +2,12 @@ from __future__ import annotations
 
 """Near-live multi-source XSMB snapshot for GitHub-only hosting.
 
-Canonical history is intentionally NOT mutated here.  During the draw window we
-poll public sources, merge prize slots by agreement and expose a provisional
-value only when consensus has not yet formed.  Final history promotion remains
-in ``sync.py`` where complete results require multi-source agreement.
+Lịch sử chuẩn KHÔNG bị sửa ở đây; ``sync.py`` mới ghi lịch sử, từ trang theo ngày.
 
-Chính sách nguồn có hai tầng: chỉ gọi hai nguồn chính, và chỉ chạm tới sáu
-nguồn dự phòng khi tầng chính KHÔNG đủ để xác minh — thiếu nhóm độc lập, hoặc
-hai nguồn chính bất đồng. Xem ``sources.fetch_with_failover``.
+Chính sách nguồn (từ 13-10-2026): gọi MỘT nguồn chính; hai nguồn dự phòng chỉ được gọi khi
+nguồn chính gặp sự cố — không trả giá trị nào, hoặc đã quá giờ quay xong mà còn thiếu ô.
+Khi ấy chỉ dữ liệu dự phòng được hợp nhất, và hai dự phòng nói khác nhau ở một ô thì ô ấy
+là xung đột, không được xác minh. Xem ``sources.fetch_with_failover``.
 
 Bản chụp ghi ra đĩa đã được ẩn danh: không tên miền, không thông điệp lỗi,
 không khoá nhóm nhà cung cấp. Tệp này đi thẳng ra trình duyệt nên nó là ranh
@@ -39,7 +37,7 @@ from time_policy import VIETNAM_TZ, iso_local, iso_utc
 TZ = VIETNAM_TZ
 
 
-def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> dict:
+def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 1) -> dict:
     now = now or datetime.now(TZ)
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
@@ -75,10 +73,15 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
         return sorted(done, key=lambda o: o.priority)
 
     observations, failover_log = fetch_with_failover(
-        fetch_one, min_agreement=min_agreement, run_batch=run_batch
+        fetch_one, target=now.date(), now=now, run_batch=run_batch
     )
 
-    partials = [(o.name, o.prize_map) for o in observations]
+    # Nguồn chính đã hỏng thì bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
+    partials = [
+        (o.name, o.prize_map)
+        for o in observations
+        if not (failover_log["fallback_activated"] and o.tier == "primary")
+    ]
     source_status = [
         {
             "priority": o.priority,
@@ -136,8 +139,8 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
         "slot_meta": meta["slot_meta"],
         "failover": failover_log,
         "note": (
-            "GitHub near-live snapshot. Single-source values are provisional; "
-            "canonical history is promoted only after complete multi-source consensus."
+            "GitHub near-live snapshot from the primary source; fallback sources are read "
+            "only when it fails. Canonical history is written from the dated results page."
         ),
     }
 
@@ -145,10 +148,10 @@ def fetch_snapshot(*, now: datetime | None = None, min_agreement: int = 2) -> di
 def main() -> None:
     ap = argparse.ArgumentParser(description="Build multi-source near-live XSMB JSON.")
     ap.add_argument("--out", default="docs/data/live.json")
-    ap.add_argument("--min-agreement", type=int, default=2)
+    ap.add_argument("--min-agreement", type=int, default=1)
     args = ap.parse_args()
 
-    payload = fetch_snapshot(min_agreement=max(2, args.min_agreement))
+    payload = fetch_snapshot(min_agreement=max(1, args.min_agreement))
     # Ranh giới công khai. Tệp này đi thẳng ra trình duyệt, nên ẩn danh ở ĐÂY
     # chứ không phải ở chỗ hiển thị: chỉ cần một trang khác đọc cùng tệp mà
     # quên ẩn là lộ hết.

@@ -92,7 +92,7 @@ async function refresh(env) {
   // đi qua KV, nên ẩn ở đây là ẩn ở mọi nơi — kể cả những đường sẽ thêm về
   // sau. Chi tiết từng nguồn vẫn xem được bằng `wrangler tail`, không công khai.
   const snapshot = anonymiseSnapshot(await collectSnapshot({
-    minAgreement: Number(env.MIN_AGREEMENT ?? 2),
+    minAgreement: Number(env.MIN_AGREEMENT ?? 1),
   }));
   // Ghi hỏng (hết hạn mức, sự cố nền tảng) thì lỗi lên tới `scheduled()`, được ghi log, và
   // lượt cron sau — chỉ cách một phút — thử lại.

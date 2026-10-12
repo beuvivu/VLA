@@ -183,11 +183,11 @@ class Lottery:
     def fetch(self, selected_date: date, *, min_agreement: int = 1) -> bool:
         """Fetch a draw, optionally requiring independent source agreement.
 
-        ``min_agreement=1`` preserves the fast historical backfill behavior. For
-        recent/final draws, ``min_agreement=2`` asks all configured providers and
-        only promotes a candidate when at least two independent parsers agree on
-        every prize field. Conflicting single-source data is never written, and
-        an equal-support tie between distinct verified candidates is rejected.
+        ``min_agreement=1`` (mặc định, cả cho kỳ vừa quay từ 13-10-2026): hỏi các nguồn
+        THEO THỨ TỰ ưu tiên và nhận kết quả đầy đủ đầu tiên — nguồn chính trước, dự phòng
+        chỉ khi nguồn chính không trả được kỳ ấy. ``min_agreement >= 2`` vẫn dùng được: hỏi
+        mọi nguồn và chỉ nhận khi đủ ngần ấy nhóm độc lập khớp từng giải; hoà giữa hai kết
+        quả cùng mức ủng hộ bị từ chối.
         """
         min_agreement = max(1, int(min_agreement))
         candidates: list[tuple[str, Result]] = []
@@ -228,6 +228,8 @@ class Lottery:
                     # Mã ẩn danh, không phải tên miền: tệp nhật ký này nằm
                     # trong kho công khai.
                     "sources": [public_source_code(name)],
+                    "source_agreement": 1,
+                    "independent_groups": [public_group_code(name)],
                     "candidates": 1,
                 }
                 return True

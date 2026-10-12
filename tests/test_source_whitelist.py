@@ -17,7 +17,12 @@ from pathlib import Path
 
 import pytest
 
-from sources import FALLBACK_SOURCE_NAMES, PRIMARY_SOURCE_NAMES, REGIONAL_SOURCE_NAMES
+from sources import (
+    FALLBACK_SOURCE_NAMES,
+    HISTORY_API_SOURCE_NAMES,
+    PRIMARY_SOURCE_NAMES,
+    REGIONAL_SOURCE_NAMES,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,9 +31,13 @@ ALLOWED = {
     *FALLBACK_SOURCE_NAMES,
     # Lớp dữ liệu Miền Trung/Miền Nam, tách khỏi chuỗi nguồn XSMB.
     *REGIONAL_SOURCE_NAMES,
-    # Cùng tên miền, khác tiền tố "www."
+    # Lớp bù của API Sổ kết quả trong Worker: chỉ cron gọi, không nằm trên đường live hay
+    # đường chốt kết quả XSMB.
+    *HISTORY_API_SOURCE_NAMES,
+    # Trang tham chiếu mà workflow đọc tay để học bố cục và luật cầu
+    # (inspect-reference-pages.yml) — không phải nguồn dữ liệu kết quả.
+    "hainhay.net",
     "www.hainhay.net",
-    "www.xosominhngoc.com",
 }
 
 #: Tên miền hạ tầng, không phải nguồn xổ số.
@@ -77,7 +86,9 @@ def test_the_scan_actually_reaches_the_source_catalogue() -> None:
     assert (ROOT / "worker" / "src" / "sources.js") in files
     assert len(files) > 100
     found = LOTTERY_SHAPED.findall((ROOT / "src" / "sources.py").read_text(encoding="utf-8"))
-    assert len(set(found)) >= 6, "biểu thức nhận diện không bắt được danh mục thật"
+    assert set(found) == {"xoso.com.vn", "mketqua.net", "www.minhngoc.net.vn"}, (
+        "biểu thức nhận diện không bắt được danh mục thật"
+    )
 
 
 def test_no_lottery_domain_outside_the_approved_list_appears_in_code_or_data() -> None:

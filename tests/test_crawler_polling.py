@@ -231,10 +231,62 @@ def _cfg(**kw) -> PollConfig:
         window_start=dtime(18, 15),
         deadline=dtime(19, 30),
         interval_seconds=(60.0, 60.0),
-        min_agreement=2,
+        min_agreement=1,
     )
     base.update(kw)
     return PollConfig(**base)
+
+
+# --- Nguồn chính trước, dự phòng chỉ khi nó gặp sự cố ---------------------
+
+
+def test_the_fallbacks_are_not_asked_while_the_primary_answers() -> None:
+    """Chính sách từ 13-10-2026: nguồn chính đủ số thì hai nguồn dự phòng không bị gọi."""
+    full = _full_prize_map()
+    primary, backup = FakeSource("xoso.vn", [full]), FakeSource("du-phong.vn", [full])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 33, tzinfo=TZ))
+
+    outcome = poll_until_complete(_cfg(), sources=[primary, backup], sleeper=clock.sleep, clock=clock)
+
+    assert outcome.verified is True
+    assert (primary.calls, backup.calls) == (1, 0)
+
+
+def test_values_arriving_during_the_draw_do_not_wake_the_fallbacks() -> None:
+    partial = dict(_full_prize_map())
+    partial["prize7"] = []
+    primary, backup = FakeSource("xoso.vn", [partial]), FakeSource("du-phong.vn", [_full_prize_map()])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 25, tzinfo=TZ))
+
+    poll_until_complete(_cfg(deadline=dtime(18, 26)), sources=[primary, backup],
+                        sleeper=clock.sleep, clock=clock)
+
+    assert backup.calls == 0
+
+
+def test_a_dead_primary_hands_the_round_to_the_fallbacks() -> None:
+    full = _full_prize_map()
+    primary, backup = BoomSource("xoso.vn", []), FakeSource("du-phong.vn", [full])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 33, tzinfo=TZ))
+
+    outcome = poll_until_complete(_cfg(), sources=[primary, backup], sleeper=clock.sleep, clock=clock)
+
+    assert outcome.verified is True
+    assert backup.calls == 1
+    assert [row["priority"] for row in outcome.source_stats] == [1, 2]
+
+
+def test_a_primary_stuck_after_18_40_hands_over_to_the_fallbacks() -> None:
+    full = _full_prize_map()
+    partial = dict(full)
+    partial["prize7"] = []
+    primary, backup = FakeSource("xoso.vn", [partial]), FakeSource("du-phong.vn", [full])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 45, tzinfo=TZ))
+
+    outcome = poll_until_complete(_cfg(), sources=[primary, backup], sleeper=clock.sleep, clock=clock)
+
+    assert outcome.verified is True
+    assert outcome.prize_map["prize7"] == full["prize7"]
 
 
 def test_polling_stops_the_moment_all_27_are_verified() -> None:

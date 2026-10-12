@@ -5,9 +5,11 @@ TOÀN BỘ tệp mà trang live thực sự đọc, chứ không chỉ một t�
 phép này xanh thì dù Worker hay GitHub Actions sinh ra tệp, trang cũng hiển
 thị y như nhau.
 
-Chỉ so phần THUẦN. Phần gọi mạng không đối chiếu được vì phụ thuộc mạng thật,
-và proxy trong môi trường dựng không vào được các trang nguồn — giới hạn này
-được nói rõ trong documentation/operations/live-worker.md.
+So cả luật chuyển nguồn: hai bên chạy nguyên đường thu thập (Python ``fetch_snapshot``,
+JS ``collectSnapshot``) với lượt gọi từng nguồn thay bằng bảng giải cho sẵn, nên nhật ký
+``failover`` cũng được so. Chỉ phần đi mạng thật là không đối chiếu được, vì proxy trong môi
+trường dựng không vào được các trang nguồn — giới hạn này được nói rõ trong
+documentation/operations/live-worker.md.
 """
 
 from __future__ import annotations
@@ -22,7 +24,13 @@ from pathlib import Path
 import pytest
 
 import live_sync
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, source_independence_key
+from sources import (
+    EXPECTED_COUNTS,
+    FALLBACK_SOURCE_NAMES,
+    PRIMARY_COMPLETE_BY,
+    PRIMARY_SOURCE_NAMES,
+    PRIZE_ORDER,
+)
 from time_policy import VIETNAM_TZ
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,10 +56,9 @@ def _require_node() -> str:
         pytest.skip("không có node trên máy chạy kiểm")
     return node
 
-SOURCE_NAMES = [
-    "xoso.com.vn", "mketqua.net", "www.minhngoc.net.vn",
-    "xosominhngoc.com", "xosodaiphat.com", "hainhay.net", "xskt.vn",
-]
+#: Đúng danh mục thật: bản JS gọi ``PRIMARY_SOURCES``/``FALLBACK_SOURCES`` của chính nó, còn
+#: bản Python được thay nguồn giả mang cùng tên theo cùng thứ tự.
+SOURCE_NAMES = [*PRIMARY_SOURCE_NAMES, *FALLBACK_SOURCE_NAMES]
 TOTAL_SLOTS = sum(EXPECTED_COUNTS.values())
 
 
@@ -70,23 +77,29 @@ def _token(rng: random.Random, key: str) -> str:
     return "".join(rng.choice("0123456789") for _ in range(width))
 
 
-def _cases(count: int = 120) -> list[dict]:
-    """Sinh ca phủ cả năm trạng thái: waiting, partial, live, complete_*, verified."""
-    rng = random.Random(20260914)
+def _cases(count: int = 160) -> list[dict]:
+    """Sinh ca phủ mọi trạng thái VÀ cả hai nhánh của luật chuyển nguồn.
+
+    Nguồn chính có ba dạng: đi cùng các nguồn khác, rỗng (sự cố ngay), hoặc kẹt ở nửa bảng —
+    kẹt chỉ là sự cố khi đồng hồ đã quá ``PRIMARY_COMPLETE_BY``. Dự phòng có thể khớp nhau,
+    lệch nhau (ô xung đột) hoặc chỉ một bên có dữ liệu.
+    """
+    rng = random.Random(20261013)
     cases = []
     base = datetime(2026, 9, 13, 0, 0, tzinfo=VIETNAM_TZ)
+    halves = PRIZE_ORDER[: len(PRIZE_ORDER) // 2]
     for n in range(count):
         truth = {k: [_token(rng, k) for _ in range(EXPECTED_COUNTS[k])] for k in PRIZE_ORDER}
-        # Ép một phần ca vào đúng khung quay số để chạm nhánh "live", và một
-        # phần ra ngoài khung để chạm nhánh "partial" — hai nhánh ấy chỉ khác
-        # nhau ở ĐỒNG HỒ chứ không ở dữ liệu.
+        # Ép một phần ca vào đúng khung quay số để chạm nhánh "live", một phần ra ngoài để
+        # chạm "partial", và một phần quanh 18:40 để chạm cả hai phía của mốc chuyển nguồn.
         moment = base + timedelta(
-            hours=rng.choice([10, 17, 17, 18, 18, 18, 20]),
+            hours=rng.choice([10, 17, 18, 18, 18, 18, 20]),
             minutes=rng.randrange(0, 60),
             seconds=rng.randrange(0, 60),
         )
         fill = rng.choice([0.0, 0.3, 0.7, 1.0, 1.0])
         agreement = rng.choice(["all", "all", "split", "single"])
+        primary_state = rng.choice(["follows", "follows", "empty", "stuck"])
 
         partials = []
         for name in SOURCE_NAMES:
@@ -96,43 +109,38 @@ def _cases(count: int = 120) -> list[dict]:
                 for idx in range(EXPECTED_COUNTS[key]):
                     if rng.random() > fill:
                         break
-                    if agreement == "all":
-                        vals.append(truth[key][idx])
-                    elif agreement == "split":
+                    if agreement == "split":
                         vals.append(truth[key][idx] if rng.random() < 0.6 else _token(rng, key))
                     else:
-                        vals.append(truth[key][idx] if name == SOURCE_NAMES[0] else "")
+                        vals.append(truth[key][idx])
+                if agreement == "single" and name == SOURCE_NAMES[-1]:
+                    vals = []
                 pmap[key] = vals
+            if name == SOURCE_NAMES[0] and primary_state == "empty":
+                pmap = {key: [] for key in PRIZE_ORDER}
+            elif name == SOURCE_NAMES[0] and primary_state == "stuck":
+                pmap = {key: list(truth[key]) if key in halves else [] for key in PRIZE_ORDER}
             partials.append((name, pmap))
 
         cases.append({
             "now": moment,
             "partials": partials,
-            "min_agreement": rng.choice([2, 2, 2, 3]),
+            "min_agreement": rng.choice([1, 1, 2]),
             "index": n,
         })
     return cases
 
 
 def _python_payload(case: dict, monkeypatch: pytest.MonkeyPatch) -> dict:
-    """Đưa MỌI nguồn giả vào tầng chính, tầng dự phòng để rỗng.
-
-    Phép kiểm này so cách DỰNG bản chụp từ một tập quan sát cho trước, không
-    so chiến lược gọi nguồn — bên JS nhận thẳng ``partials`` chứ không đi
-    mạng. Chiến lược chuyển nguồn có phép đối chiếu riêng ở
-    ``test_source_failover_parity.py``.
-    """
+    """Thay từng nguồn của danh mục bằng nguồn giả CÙNG TÊN, rồi chạy nguyên ``fetch_snapshot``."""
     import sources as sources_module
 
     fakes = [_FakeSource(name, pmap) for name, pmap in case["partials"]]
-    monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes)
-    monkeypatch.setattr(sources_module, "fallback_sources", list)
+    primary = len(PRIMARY_SOURCE_NAMES)
+    monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes[:primary])
+    monkeypatch.setattr(sources_module, "fallback_sources", lambda: fakes[primary:])
     monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
-    payload = live_sync.fetch_snapshot(
-        now=case["now"], min_agreement=case["min_agreement"]
-    )
-    payload.pop("failover", None)
-    return payload
+    return live_sync.fetch_snapshot(now=case["now"], min_agreement=case["min_agreement"])
 
 
 def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
@@ -140,19 +148,6 @@ def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
     payload = [
         {
             "partials": [[name, pmap] for name, pmap in c["partials"]],
-            "source_status": [
-                {
-                    "priority": i + 1,
-                    "tier": "primary",
-                    "source": name,
-                    "provider_group": source_independence_key(name),
-                    "received_values": sum(len(pmap.get(k, [])) for k in PRIZE_ORDER),
-                    "complete": sum(len(pmap.get(k, [])) for k in PRIZE_ORDER) == TOTAL_SLOTS,
-                    "latency_ms": 0,
-                    "error": None,
-                }
-                for i, (name, pmap) in enumerate(c["partials"])
-            ],
             "now_utc": c["now"].astimezone(tz=None).isoformat(),
             "min_agreement": c["min_agreement"],
         }
@@ -165,12 +160,7 @@ def _javascript_payloads(cases: list[dict], tmp_path: Path) -> list[dict]:
         capture_output=True, text=True, timeout=180, check=False,
     )
     assert proc.returncode == 0, f"bản JS hỏng:\n{proc.stderr}"
-    payloads = json.loads(proc.stdout)
-    # ``buildSnapshot`` không tính nhật ký chuyển nguồn — ``collectSnapshot``
-    # mới tính. Bỏ ở cả hai bên để phép so này chỉ nói về cách DỰNG bản chụp.
-    for payload in payloads:
-        payload.pop("failover", None)
-    return payloads
+    return json.loads(proc.stdout)
 
 
 def _normalise_numbers(value):
@@ -235,7 +225,16 @@ def test_the_generated_cases_reach_every_status(
 ) -> None:
     """Phải chạm đủ các trạng thái, nếu không phép so chỉ kiểm một nhánh."""
     seen = set()
+    reasons = set()
     for case in _cases():
-        seen.add(_python_payload(case, monkeypatch)["status"])
-    for status in ("waiting", "live", "complete_verified"):
+        payload = _python_payload(case, monkeypatch)
+        seen.add(payload["status"])
+        reasons.add(payload["failover"]["reason"].split(" mà ")[0])
+    for status in ("waiting", "live", "partial", "complete_verified", "complete_provisional",
+                   "complete_conflict"):
         assert status in seen, f"bộ sinh chưa chạm trạng thái {status}; mới có {sorted(seen)}"
+    assert reasons == {
+        "nguồn chính dùng được",
+        "nguồn chính không trả giá trị nào",
+        f"đã quá {PRIMARY_COMPLETE_BY:%H:%M}",
+    }, f"bộ sinh chưa chạm đủ ba nhánh chuyển nguồn: {sorted(reasons)}"

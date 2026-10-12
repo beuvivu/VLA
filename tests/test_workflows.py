@@ -47,7 +47,7 @@ def test_daily_workflow_has_primary_and_recovery_finalization_times() -> None:
     assert max(minutes) >= 20 * 60, "cần mốc phục hồi muộn"
     assert not [c for c in crons if int(c.split()[0]) in (0, 30)]
     assert "--cutoff 18:35" in text
-    assert '"--consensus-min-recent", "2"' in text
+    assert '"--consensus-min-recent", "1"' in text
     assert "Ghi nhận kết quả chuẩn ngay lập tức" in text
     assert "--fail-on-stale" in text
     assert "--fail-on-missing" in text

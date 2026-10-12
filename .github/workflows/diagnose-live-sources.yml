@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       draw_date:
-        description: "Ngày quay YYYY-MM-DD (để trống là hôm nay giờ VN)"
+        description: "Ngày quay YYYY-MM-DD (để trống là hôm nay VÀ hôm qua giờ VN)"
         required: false
         default: ""
         type: string
@@ -45,7 +45,14 @@ jobs:
       - name: Bóc thử từng nguồn
         env:
           DRAW_DATE: ${{ inputs.draw_date }}
-        run: python scripts/diagnose_live_sources.py --date "${DRAW_DATE:-}" --out-dir "$RUNNER_TEMP/pages"
+        # Để trống thì soi cả kỳ hôm qua (đã xong, làm mốc đối chiếu) lẫn hôm nay.
+        run: |
+          if [[ -n "${DRAW_DATE:-}" ]]; then
+            dates=(--date "$DRAW_DATE")
+          else
+            dates=(--date "$(date +%F)" --date "$(date -d yesterday +%F)")
+          fi
+          python scripts/diagnose_live_sources.py "${dates[@]}" --out-dir "$RUNNER_TEMP/pages"
 
       - uses: actions/upload-artifact@v7
         if: always()

@@ -5,6 +5,12 @@
 // lượt gọi nguồn chỉ vì ca trước đã đặt mốc.
 import worker from "../src/index.js";
 
+// Đồng hồ cố định 18:20 giờ Việt Nam. Nguồn chính chỉ bị coi là hỏng khi đã quá 18:40 mà còn
+// thiếu ô, nên để đồng hồ thật thì kịch bản "normal" (trang giả chỉ có ĐB và G7) gọi hay không
+// gọi nguồn dự phòng tuỳ GIỜ CHẠY KIỂM. Kịch bản "primary_stuck_after_deadline" tự đặt giờ khác.
+let fixedNow = Date.parse("2026-10-13T11:20:00Z");
+Date.now = () => fixedNow;
+
 class FakeKV {
   constructor() { this.store = new Map(); this.puts = 0; }
   async get(key) {
@@ -38,6 +44,14 @@ function makeFetch(counter, { fail = false } = {}) {
     );
   };
 }
+
+const FULL_PAGE = "<div>ĐB 83772</div><div>G1 68785</div>"
+  + "<div>G2 50518 27452</div>"
+  + "<div>G3 57053 92810 56241 65128 33811 42264</div>"
+  + "<div>G4 4753 1152 6777 3507</div>"
+  + "<div>G5 9460 2913 3232 2999 3670 5129</div>"
+  + "<div>G6 939 751 594</div><div>G7 66 21 34 78</div>";
+const STUCK_PAGE = "<div>ĐB 83772</div><div>G7 66 21 34 78</div>";
 
 const newCtx = () => ({ pending: [], waitUntil(p) { this.pending.push(p); } });
 
@@ -82,7 +96,7 @@ const SCENARIOS = {
     const counter = { calls: 0 };
     globalThis.fetch = makeFetch(counter);
     const kv = new FakeKV();
-    const env = { LIVE: kv, MIN_AGREEMENT: "2" };
+    const env = { LIVE: kv, MIN_AGREEMENT: "1" };
     const ctx = newCtx();
 
     await worker.scheduled({}, env, ctx);
@@ -109,8 +123,8 @@ const SCENARIOS = {
   },
 
   // Mọi nguồn cùng chặn: lượt cron không được đổ, và vẫn phải ghi ảnh chụp.
-  // Tầng chính hỏng thì tầng dự phòng phải được kích hoạt, nên bản chụp
-  // phải có đủ CẢ TÁM hàng nguồn chứ không phải hai.
+  // Nguồn chính hỏng thì hai nguồn dự phòng phải được gọi, nên bản chụp
+  // có đủ CẢ BA hàng nguồn chứ không phải một.
   async all_sources_down() {
     globalThis.fetch = makeFetch({ calls: 0 }, { fail: true });
     const kv = new FakeKV();
@@ -131,22 +145,43 @@ const SCENARIOS = {
     };
   },
 
+  // 18:45 giờ VN, nguồn chính vẫn chỉ có ĐB và G7 (kẹt), hai dự phòng có trọn kỳ: dự phòng
+  // được gọi và CHỈ chúng được hợp nhất — bản kẹt của nguồn chính không được che chúng.
+  async primary_stuck_after_deadline() {
+    fixedNow = Date.parse("2026-10-13T11:45:00Z");
+    const hosts = [];
+    globalThis.fetch = async (url) => {
+      const host = new URL(String(url)).hostname;
+      hosts.push(host);
+      const body = host.endsWith("xoso.com.vn") ? STUCK_PAGE : FULL_PAGE;
+      return new Response(body, { status: 200 });
+    };
+    const kv = new FakeKV();
+    const ctx = newCtx();
+    await worker.scheduled({}, { LIVE: kv, MIN_AGREEMENT: "1" }, ctx);
+    await Promise.all(ctx.pending);
+    const parsed = JSON.parse(await kv.get("live.json"));
+    return {
+      status: parsed.status,
+      fallback_activated: parsed.failover.fallback_activated,
+      source_rows: parsed.source_status.length,
+      prize1: parsed.prizes.prize1,
+      prize7: parsed.prizes.prize7,
+      hosts: [...new Set(hosts)].sort(),
+      supporters: [...new Set(Object.values(parsed.slot_meta).flatMap((m) => m.support))].sort(),
+    };
+  },
+
   // Sau khi kỳ đã xác minh xong, cron không được gọi nguồn nữa.
   async settled_stops_collecting() {
     const counter = { calls: 0 };
     // Trả trọn một kỳ để đạt complete_verified ngay vòng đầu.
-    const full = "<div>ĐB 83772</div><div>G1 68785</div>"
-      + "<div>G2 50518 27452</div>"
-      + "<div>G3 57053 92810 56241 65128 33811 42264</div>"
-      + "<div>G4 4753 1152 6777 3507</div>"
-      + "<div>G5 9460 2913 3232 2999 3670 5129</div>"
-      + "<div>G6 939 751 594</div><div>G7 66 21 34 78</div>";
     globalThis.fetch = async () => {
       counter.calls += 1;
-      return new Response(full, { status: 200 });
+      return new Response(FULL_PAGE, { status: 200 });
     };
     const kv = new FakeKV();
-    const env = { LIVE: kv, MIN_AGREEMENT: "2" };
+    const env = { LIVE: kv, MIN_AGREEMENT: "1" };
 
     const ctx = newCtx();
     await worker.scheduled({}, env, ctx);

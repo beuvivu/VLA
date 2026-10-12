@@ -40,32 +40,77 @@ def _map() -> dict[str, list[str]]:
     }
 
 
-def test_live_snapshot_marks_complete_only_when_two_sources_verify_every_slot(monkeypatch) -> None:
-    p = _map()
-    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", p)], [])
-    now = datetime(2026, 8, 30, 18, 30, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
-    out = live_sync.fetch_snapshot(now=now)
+class CountingSource(FakeSource):
+    def __init__(self, name: str, pmap: dict[str, list[str]]):
+        super().__init__(name, pmap)
+        self.calls = 0
+
+    def fetch_partial(self, selected_date, http, *, live=False):
+        self.calls += 1
+        return self.pmap
+
+
+VN = ZoneInfo("Asia/Ho_Chi_Minh")
+EMPTY = {k: [] for k in PRIZE_ORDER}
+
+
+def test_a_complete_primary_is_verified_and_the_fallbacks_stay_untouched(monkeypatch) -> None:
+    """Chính sách từ 13-10-2026: nguồn chính đủ 27 giá trị là đủ; dự phòng không bị gọi."""
+    backups = [CountingSource("mketqua.net", _map()), CountingSource("www.minhngoc.net.vn", _map())]
+    _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], backups)
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 33, tzinfo=VN))
     assert out["status"] == "complete_verified"
     assert out["verified_values"] == 27
     assert out["prizes"]["special"] == ["83772"]
-    assert out["checked_at_local"] == "2026-08-30T18:30:00+07:00"
-    assert out["checked_at_utc"] == "2026-08-30T11:30:00Z"
+    assert out["failover"]["fallback_activated"] is False
+    assert [b.calls for b in backups] == [0, 0]
+    assert out["checked_at_local"] == "2026-08-30T18:33:00+07:00"
+    assert out["checked_at_utc"] == "2026-08-30T11:33:00Z"
 
 
 def test_live_snapshot_normalizes_utc_clock_before_selecting_date(monkeypatch) -> None:
-    p = _map()
-    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", p)], [])
+    _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], [])
     out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 11, 30, tzinfo=UTC))
     assert out["draw_date"] == "2026-08-30"
     assert out["status"] == "complete_verified"
 
 
-def test_live_single_source_is_provisional_not_canonical_verified(monkeypatch) -> None:
-    p = _map()
-    empty = {k: [] for k in PRIZE_ORDER}
-    _use(monkeypatch, [FakeSource("a", p), FakeSource("b", empty)], [])
-    now = datetime(2026, 8, 30, 18, 25, tzinfo=ZoneInfo("Asia/Ho_Chi_Minh"))
-    out = live_sync.fetch_snapshot(now=now)
+def test_a_primary_still_drawing_shows_live_without_calling_the_fallbacks(monkeypatch) -> None:
+    partial = {**EMPTY, "prize1": ["68785"], "prize2": ["50518", "27452"]}
+    backup = CountingSource("mketqua.net", _map())
+    _use(monkeypatch, [FakeSource("xoso.com.vn", partial)], [backup])
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 20, tzinfo=VN))
+    assert out["status"] == "live"
+    assert out["received_values"] == 3
+    assert backup.calls == 0
+
+
+def test_a_dead_primary_is_replaced_by_the_fallbacks(monkeypatch) -> None:
+    _use(monkeypatch, [FakeSource("xoso.com.vn", EMPTY)],
+         [FakeSource("mketqua.net", _map()), FakeSource("www.minhngoc.net.vn", _map())])
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 33, tzinfo=VN))
+    assert out["failover"]["fallback_activated"] is True
+    assert out["status"] == "complete_verified"
+    assert [row["source"] for row in out["source_status"]] == ["xoso.com.vn", "mketqua.net", "www.minhngoc.net.vn"]
+
+
+def test_a_stuck_primary_does_not_mask_the_fallback_values(monkeypatch) -> None:
+    """Sau 18:40 nguồn chính còn thiếu ô là sự cố: chỉ dữ liệu dự phòng được hợp nhất,
+    nên giá trị kẹt của nguồn chính không thành "xung đột" che mất kết quả."""
+    stuck = {**_map(), "special": ["99999"], "prize7": []}
+    _use(monkeypatch, [FakeSource("xoso.com.vn", stuck)], [FakeSource("mketqua.net", _map())])
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 45, tzinfo=VN))
+    assert out["prizes"]["special"] == ["83772"]
+    assert out["conflicts"] == []
+    assert out["status"] == "complete_verified"
+
+
+def test_two_disagreeing_fallbacks_are_a_conflict_not_a_verified_result(monkeypatch) -> None:
+    other = {**_map(), "special": ["11111"]}
+    _use(monkeypatch, [FakeSource("xoso.com.vn", EMPTY)],
+         [FakeSource("mketqua.net", _map()), FakeSource("www.minhngoc.net.vn", other)])
+    out = live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 18, 33, tzinfo=VN))
     assert out["complete"] is True
     assert out["verified_complete"] is False
-    assert out["status"] == "complete_provisional"
+    assert out["status"] == "complete_conflict"
+    assert out["conflicts"] == ["special[0]"]

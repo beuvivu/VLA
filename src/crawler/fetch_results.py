@@ -41,6 +41,7 @@ from sources import (
     PRIZE_ORDER,
     Source,
     default_sources,
+    primary_has_failed,
     source_consensus_partial,
 )
 
@@ -262,7 +263,7 @@ class PollConfig:
             lúc vào nguồn.
         request_timeout: Hạn cho mỗi yêu cầu HTTP.
         min_agreement: Số nhóm nguồn ĐỘC LẬP phải khớp thì một ô mới được coi
-            là đã xác minh.
+            là đã xác minh. Mặc định 1: nguồn chính, dự phòng chỉ khi nó hỏng.
         max_rounds: Trần số vòng, chốt chặn cuối nếu đồng hồ có vấn đề.
         max_attempts: Số lần thử mỗi yêu cầu HTTP trước khi bỏ nguồn đó cho
             vòng này. Ngân sách xấu nhất là
@@ -275,7 +276,7 @@ class PollConfig:
     deadline: dtime = dtime(19, 30)
     interval_seconds: tuple[float, float] = (60.0, 90.0)
     request_timeout: float = DEFAULT_REQUEST_TIMEOUT
-    min_agreement: int = 2
+    min_agreement: int = 1
     max_rounds: int = 90
     max_attempts: int = 3
 
@@ -406,15 +407,14 @@ def poll_once(
     target: date,
     *,
     timeout: float = DEFAULT_REQUEST_TIMEOUT,
-    min_agreement: int = 2,
+    min_agreement: int = 1,
     max_attempts: int = 3,
 ) -> tuple[dict[str, list[str]], int, list[dict[str, object]]]:
-    """Một vòng: hỏi song song mọi nguồn rồi hợp nhất bằng đồng thuận.
+    """Một vòng: hỏi song song ĐÚNG các nguồn được đưa vào rồi hợp nhất bằng đồng thuận.
 
-    Song song chứ không phải dự phòng nối tiếp. Nối tiếp thì tổng thời gian là
-    TỔNG của các nguồn chậm; song song thì là nguồn chậm NHẤT. Quan trọng hơn:
-    phép đồng thuận cần nhiều nguồn cùng lúc để đối chiếu, chứ không phải chỉ
-    lấy nguồn đầu tiên trả lời.
+    Chọn tầng là việc của bên gọi: ``poll_until_complete`` đưa vào nguồn chính, và chỉ khi
+    nó gặp sự cố mới đưa vào hai nguồn dự phòng — hai nguồn ấy chạy song song nên thời gian
+    là nguồn chậm NHẤT chứ không phải tổng.
 
     Args:
         sources: Danh sách nguồn.
@@ -522,13 +522,18 @@ def poll_until_complete(
             break
 
         rounds += 1
-        merged, verified_slots, stats = poll_once(
-            sources,
-            config.target,
+        # Nguồn đầu danh sách là nguồn chính; các nguồn sau chỉ được hỏi khi nó gặp sự cố
+        # (``sources.primary_has_failed``), và khi ấy chỉ dữ liệu của chúng được hợp nhất.
+        poll = dict(
             timeout=config.request_timeout,
             min_agreement=config.min_agreement,
             max_attempts=config.max_attempts,
         )
+        merged, verified_slots, stats = poll_once(sources[:1], config.target, **poll)
+        failed, _ = primary_has_failed(merged, target=config.target, now=clock())
+        if failed and len(sources) > 1:
+            merged, verified_slots, backup = poll_once(sources[1:], config.target, **poll)
+            stats = stats + [{**row, "priority": row["priority"] + 1} for row in backup]
 
         if verified_slots != best_slots:
             # Chỉ ghi khi CÓ thay đổi. Vòng lặp 60 giây suốt một giờ sẽ đẻ ra
@@ -626,7 +631,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--interval-min", type=float, default=60.0)
     parser.add_argument("--interval-max", type=float, default=90.0)
     parser.add_argument("--timeout", type=float, default=DEFAULT_REQUEST_TIMEOUT)
-    parser.add_argument("--min-agreement", type=int, default=2)
+    parser.add_argument("--min-agreement", type=int, default=1)
     parser.add_argument("--max-attempts", type=int, default=3,
                         help="Số lần thử mỗi yêu cầu (lùi mũ giữa các lần)")
     parser.add_argument("--json-out", default=None, help="Ghi tóm tắt JSON ra tệp")

@@ -69,10 +69,10 @@ def test_reconcile_live_uses_only_accepted_canonical(tmp_path: Path):
             {
                 "2026-08-31": {
                     "accepted": True,
-                    "agreement": 4,
-                    "source_agreement": 5,
-                    "independent_groups": ["xoso", "mketqua", "minhngoc", "xosodaiphat"],
-                    "sources": ["xoso.com.vn", "mketqua.net"],
+                    "agreement": 1,
+                    "source_agreement": 1,
+                    "independent_groups": ["xoso"],
+                    "sources": ["xoso.com.vn"],
                 }
             }
         ),
@@ -115,6 +115,58 @@ def test_reconcile_live_rejects_noncanonical_prize_values(
         build_payload(canonical=canonical, audit_path=audit_path)
 
 
+class _SameEvidenceForEveryDate(dict):
+    """Nhật ký nguồn giả: ngày nào cũng trả cùng một dòng bằng chứng."""
+
+    def __init__(self, item: dict) -> None:
+        super().__init__()
+        self._item = item
+
+    def get(self, key, default=None):  # noqa: ARG002
+        return self._item
+
+
+@pytest.mark.parametrize(("agreement", "flagged"), [(1, False), (0, True)])
+def test_one_accepted_source_is_enough_for_the_canonical_draw(
+    monkeypatch: pytest.MonkeyPatch, agreement: int, flagged: bool
+) -> None:
+    """Một nguồn chính, dự phòng chỉ khi nó hỏng: một nguồn ủng hộ là bình thường.
+
+    Trước 13-10-2026 kiểm toán đòi hai nhóm nguồn. Với chính sách mới, giữ ngưỡng ấy là báo
+    động đỏ MỖI NGÀY cho một kết quả hoàn toàn lành; còn không có nguồn nào thì vẫn phải đỏ.
+    """
+    import production_audit
+
+    original = production_audit._json
+
+    def fake_json(path: str) -> dict:
+        if path == "data/source_audit.json":
+            return _SameEvidenceForEveryDate({"accepted": True, "agreement": agreement})
+        return original(path)
+
+    monkeypatch.setattr(production_audit, "_json", fake_json)
+    critical = audit(check_freshness=False, check_docs=False)["critical"]
+    hits = [item for item in critical if item.startswith("source_consensus")]
+    assert bool(hits) is flagged, critical
+    if flagged:
+        assert hits[0].startswith("source_consensus_missing=")
+
+
+@pytest.mark.parametrize(("accepted", "agreement"), [(True, 0), (False, 1)])
+def test_reconcile_live_needs_an_accepted_source(
+    tmp_path: Path, accepted: bool, agreement: int
+) -> None:
+    canonical = tmp_path / "xsmb.csv"
+    canonical.write_text("date,special\n2026-08-31,35644\n", encoding="utf-8")
+    audit_path = tmp_path / "audit.json"
+    audit_path.write_text(
+        json.dumps({"2026-08-31": {"accepted": accepted, "agreement": agreement}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="no accepted source"):
+        build_payload(canonical=canonical, audit_path=audit_path)
+
+
 def _prebuild_critical(critical: list[str]) -> list[str]:
     """Exclude only analytics that release_check deliberately builds after pytest.
 
@@ -150,13 +202,13 @@ def test_prebuild_filter_covers_only_regenerated_analytics():
             "cau_keo_loto_calendar_contract_missing",
             "dynamics_de_calendar_not_verified",
             "stat_signal_loto_target=2026-08-31 expected=2026-09-01",
-            "source_consensus_lt2=2026-09-01",
+            "source_consensus_missing=2026-09-01",
             "health_json_not_ok",
         ]
     )
     assert critical == [
         "missing_or_empty=data/xsmb.csv",
-        "source_consensus_lt2=2026-09-01",
+        "source_consensus_missing=2026-09-01",
         "health_json_not_ok",
     ]
 

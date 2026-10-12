@@ -5,7 +5,8 @@
 // so được nó với bản Python mà không cần mạng.
 //
 // `collectSnapshot` là phần có tác dụng phụ: gọi nguồn rồi giao cho phần
-// thuần. Phần ấy không đối chiếu được vì phụ thuộc mạng thật.
+// thuần. Lượt gọi một nguồn (`fetchSource`) thay được bằng hàm giả, nên phép
+// đối chiếu chạy được cả luật chuyển nguồn; chỉ phần đi mạng thật là không.
 
 import {
   EXPECTED_COUNTS,
@@ -74,7 +75,7 @@ export function roundHalfEven(value, digits = 1) {
   return rounded / factor;
 }
 
-export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement = 2, failover = null }) {
+export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement = 1, failover = null }) {
   const [merged, meta] = sourceConsensusPartial(partials, { minAgreement });
   const received = meta.received_slots;
   const expected = meta.total_slots;
@@ -112,8 +113,8 @@ export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement =
     source_status: sourceStatus,
     slot_meta: meta.slot_meta,
     failover,
-    note: "GitHub near-live snapshot. Single-source values are provisional; "
-      + "canonical history is promoted only after complete multi-source consensus.",
+    note: "GitHub near-live snapshot from the primary source; fallback sources are read "
+      + "only when it fails. Canonical history is written from the dated results page.",
   };
 }
 
@@ -179,11 +180,7 @@ function receivedCount(prizeMap) {
   return received;
 }
 
-/**
- * Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được.
- * Đếm theo nhóm, không theo tên miền: hai trang cùng thương hiệu không phải
- * hai lời chứng độc lập.
- */
+/** Số NHÓM nhà cung cấp độc lập có dữ liệu dùng được. */
 export function independentGroupCount(results) {
   const groups = new Set();
   for (const r of results) {
@@ -192,24 +189,29 @@ export function independentGroupCount(results) {
   return groups.size;
 }
 
+// Giờ Việt Nam mà kỳ quay chắc chắn đã xong; khớp `PRIMARY_COMPLETE_BY` bên Python.
+export const PRIMARY_COMPLETE_BY = { hour: 18, minute: 40 };
+
 /**
- * Tầng chính có đủ để KHÔNG cần gọi dự phòng hay không. Khớp
- * `sources.primary_tier_is_sufficient` bên Python.
+ * Nguồn chính có gặp sự cố hay không. Khớp `sources.primary_has_failed` bên Python:
+ * không bóc được giá trị nào, hoặc đã quá 18:40 giờ VN mà còn thiếu ô. Thiếu ô TRONG lúc
+ * quay là bình thường.
  */
-export function primaryTierIsSufficient(results, minAgreement = 2) {
-  const groups = independentGroupCount(results);
-  if (groups < minAgreement) {
-    return { sufficient: false, reason: `chỉ có ${groups} nhóm độc lập, cần ${minAgreement}` };
+export function primaryHasFailed(prizeMap, nowUtcMs) {
+  const received = receivedCount(prizeMap);
+  if (received === 0) return { failed: true, reason: "nguồn chính không trả giá trị nào" };
+  const t = vietnamParts(nowUtcMs);
+  const pastDeadline = t.hour > PRIMARY_COMPLETE_BY.hour
+    || (t.hour === PRIMARY_COMPLETE_BY.hour && t.minute >= PRIMARY_COMPLETE_BY.minute);
+  const total = totalExpected();
+  if (received < total && pastDeadline) {
+    return {
+      failed: true,
+      reason: `đã quá ${p2(PRIMARY_COMPLETE_BY.hour)}:${p2(PRIMARY_COMPLETE_BY.minute)} `
+        + `mà nguồn chính mới có ${received}/${total}`,
+    };
   }
-  const usable = results.filter((r) => receivedCount(r.prizeMap) > 0);
-  const [, meta] = sourceConsensusPartial(
-    usable.map((r) => [r.name, r.prizeMap]),
-    { minAgreement },
-  );
-  if (meta.conflicts.length > 0) {
-    return { sufficient: false, reason: `tầng chính bất đồng ở ${meta.conflicts.length} ô` };
-  }
-  return { sufficient: true, reason: "tầng chính đủ" };
+  return { failed: false, reason: "nguồn chính dùng được" };
 }
 
 async function fetchOne(source, tier, priority, date, fetchImpl) {
@@ -237,54 +239,66 @@ async function fetchOne(source, tier, priority, date, fetchImpl) {
       }
     }
   }
+  return observation({
+    priority, tier, name: source.name, prizeMap, error, latencyMs: Date.now() - started,
+  });
+}
+
+/** Một quan sát nguồn kèm hàng `source_status`; khớp cách `live_sync.fetch_snapshot` dựng hàng. */
+export function observation({ priority, tier, name, prizeMap, error = null, latencyMs = 0 }) {
+  const received = receivedCount(prizeMap);
   return {
     priority,
-    name: source.name,
+    name,
     prizeMap,
     status: {
       priority,
       tier,
-      source: source.name,
-      provider_group: sourceIndependenceKey(source.name),
-      received_values: best,
-      complete: best === expected,
-      latency_ms: Date.now() - started,
+      source: name,
+      provider_group: sourceIndependenceKey(name),
+      received_values: received,
+      complete: received === totalExpected(),
+      latency_ms: latencyMs,
       error,
     },
   };
 }
 
-export async function collectSnapshot({ nowUtcMs, minAgreement = 2, fetchImpl = fetch } = {}) {
+export async function collectSnapshot({
+  nowUtcMs, minAgreement = 1, fetchImpl = fetch, fetchSource = null,
+} = {}) {
   const now = nowUtcMs ?? Date.now();
   const date = vietnamParts(now);
+  const fetchFrom = fetchSource
+    ?? ((source, tier, priority) => fetchOne(source, tier, priority, date, fetchImpl));
 
-  // Tầng chính trước. Chỉ chạm tới dự phòng khi tầng chính không đủ để xác
-  // minh — thiếu nhóm độc lập, hoặc hai nguồn chính bất đồng.
+  // Nguồn chính trước. Hai nguồn dự phòng chỉ được gọi khi nó gặp sự cố, và khi ấy chỉ dữ
+  // liệu của chúng được hợp nhất: bản rỗng hay kẹt của nguồn chính không được che chúng.
   const results = await Promise.all(
-    PRIMARY_SOURCES.map((source, i) => fetchOne(source, "primary", i + 1, date, fetchImpl)),
+    PRIMARY_SOURCES.map((source, i) => fetchFrom(source, "primary", i + 1)),
   );
-  const verdict = primaryTierIsSufficient(results, minAgreement);
+  const verdict = primaryHasFailed(results[0].prizeMap, now);
   const failover = {
     primary_attempted: PRIMARY_SOURCES.length,
-    primary_usable_groups: independentGroupCount(results),
-    fallback_activated: !verdict.sufficient,
+    fallback_activated: verdict.failed,
     reason: verdict.reason,
     fallback_attempted: 0,
   };
-  if (!verdict.sufficient) {
+  let merged = results;
+  if (verdict.failed) {
     const offset = PRIMARY_SOURCES.length;
     const extra = await Promise.all(
-      FALLBACK_SOURCES.map((source, i) =>
-        fetchOne(source, "fallback", offset + i + 1, date, fetchImpl)),
+      FALLBACK_SOURCES.map((source, i) => fetchFrom(source, "fallback", offset + i + 1)),
     );
+    extra.sort((a, b) => a.priority - b.priority);
     results.push(...extra);
+    merged = extra;
     failover.fallback_attempted = FALLBACK_SOURCES.length;
-    failover.usable_groups = independentGroupCount(results);
+    failover.usable_groups = independentGroupCount(extra);
   }
-  results.sort((a, b) => a.priority - b.priority);
 
   return buildSnapshot({
-    partials: results.map((r) => [r.name, r.prizeMap]),
+    partials: merged.map((r) => [r.name, r.prizeMap]),
     sourceStatus: results.map((r) => r.status),
     nowUtcMs: now,
     minAgreement,

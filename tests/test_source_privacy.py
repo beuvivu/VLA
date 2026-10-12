@@ -61,23 +61,19 @@ def _leaks(payload: object) -> list[str]:
 def _raw_snapshot(monkeypatch: pytest.MonkeyPatch) -> dict:
     """Bản chụp CHƯA ẩn danh, dựng từ những nguồn thật sự bất đồng.
 
-    Bất đồng là quan trọng: chỉ khi có xung đột thì ``slot_meta.observations``
-    mới mang nhiều hơn một giá trị, và mới lộ ra đủ tên nguồn để kiểm.
+    Nguồn chính hỏng nên cả hai nguồn dự phòng được đọc, và chúng bất đồng ở giải Đặc Biệt:
+    chỉ khi có xung đột thì ``slot_meta.observations`` mới mang nhiều hơn một giá trị, và
+    mới lộ ra đủ tên nguồn để kiểm.
     """
     other = {k: list(v) for k, v in FULL.items()}
     other["special"] = ["11111"]
     fakes = [
-        _FakeSource("xosothudo.com.vn", FULL),
-        _FakeSource("xoso.com.vn", other),
-        _FakeSource("xskt.vn", FULL),
-        _FakeSource("mketqua.net", {k: [] for k in PRIZE_ORDER}),
-        _FakeSource("www.minhngoc.net.vn", FULL),
-        _FakeSource("xosominhngoc.com", FULL),
-        _FakeSource("xosodaiphat.com", other),
-        _FakeSource("hainhay.net", FULL),
+        _FakeSource("xoso.com.vn", {k: [] for k in PRIZE_ORDER}),
+        _FakeSource("mketqua.net", FULL),
+        _FakeSource("www.minhngoc.net.vn", other),
     ]
-    monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes[:2])
-    monkeypatch.setattr(sources_module, "fallback_sources", lambda: fakes[2:])
+    monkeypatch.setattr(sources_module, "primary_sources", lambda: fakes[:1])
+    monkeypatch.setattr(sources_module, "fallback_sources", lambda: fakes[1:])
     monkeypatch.setattr(live_sync.requests, "Session", lambda: object())
     return live_sync.fetch_snapshot(now=datetime(2026, 8, 30, 11, 30, tzinfo=UTC))
 
@@ -128,7 +124,7 @@ def test_error_messages_are_dropped_not_truncated() -> None:
     row = public["source_status"][0]
     assert "error" not in row
     assert row["failed"] is True
-    assert row["source_code"] == "P2"
+    assert row["source_code"] == "P1"
     assert _leaks(public) == []
 
 
@@ -217,12 +213,12 @@ def test_the_audit_writer_records_codes_not_domain_names(min_agreement: int) -> 
 
     lot = Lottery(
         http=object(),
-        sources=[_WholeSource("xosothudo.com.vn"), _WholeSource("xoso.com.vn")],
+        sources=[_WholeSource("xoso.com.vn"), _WholeSource("mketqua.net")],
     )
     assert lot.fetch(date(2026, 9, 5), min_agreement=min_agreement) is True
     entry = lot._fetch_audit["2026-09-05"]
     assert _leaks(entry) == [], f"bộ ghi nhật ký để lộ tên nguồn: {entry}"
-    assert set(entry["sources"]) <= {"P1", "P2"}
+    assert set(entry["sources"]) <= {"P1", "F1"}
     if "independent_groups" in entry:
         assert set(entry["independent_groups"]) <= {"G1", "G2"}
 

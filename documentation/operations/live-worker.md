@@ -140,7 +140,7 @@ Bốn phép kiểm đối chiếu chạy trong CI, mỗi phép khoá một tần
 |---|---|
 | `test_worker_parser_parity.py` | Bóc bảng giải từ HTML, 30 mẫu gồm cả trang độc |
 | `test_worker_consensus_parity.py` | Đồng thuận nguồn, 400 ca sinh ngẫu nhiên |
-| `test_worker_snapshot_parity.py` | **Toàn bộ payload live.json**, 120 ca |
+| `test_worker_snapshot_parity.py` | **Toàn bộ payload live.json** kể cả luật chuyển nguồn, 160 ca |
 | `test_worker_sources_parity.py` | Danh mục nguồn, thứ tự ưu tiên, địa chỉ |
 
 | `test_worker_handler.py` | Hành vi vận hành: lượt yêu cầu không gọi nguồn, dừng khi đã xong, cron hỏng không đổ, thiếu KV báo rõ, định tuyến |
@@ -153,7 +153,8 @@ vào địa chỉ.
 
 Ngoại lệ đã biết: trong `consensus.js`, thứ tự hai phần tử đầu của
 `consensus_score` và dấu của phần tử thứ ba là **mã bất khả đạt** với bộ sáu
-nguồn hiện tại — đo trên 9 630 ô sinh ngẫu nhiên, 0 ô mà chúng phân định. Phép
+nguồn cũ — đo trên 9 630 ô sinh ngẫu nhiên, 0 ô mà chúng phân định (chưa đo lại
+với bộ ba nguồn từ 13-10-2026). Phép
 đối chiếu không phân biệt được chúng; chốt chặn ở đó là chú thích trong mã,
 không phải phép kiểm. Ghi rõ để không ai tưởng là đã được khoá.
 
@@ -183,56 +184,80 @@ yêu cầu thì không còn gì để khoá. Nay số đo ấy là 0
 
 Cron chạy mỗi phút suốt khung quay số. Sau khi đủ 27 ô và đã xác minh, không
 còn gì để thu thập, nên Worker dừng gọi nguồn cho tới ngày hôm sau — đo được:
-vòng cron đầu tiên 6 lượt gọi, năm vòng tiếp theo 0 lượt.
+vòng cron đầu tiên 1 lượt gọi (nguồn chính trả trọn kỳ), năm vòng tiếp theo 0 lượt.
 
 Chốt so theo **ngày quay**, không chỉ theo trạng thái. So theo trạng thái thôi
 thì ảnh chụp đã xác minh của hôm qua sẽ chặn luôn việc thu thập hôm nay, và hệ
 thống đứng im vĩnh viễn sau đúng một ngày thành công.
 
-## 6. Chính sách nguồn: hai tầng, ẩn danh
+## 6. Chính sách nguồn: một nguồn chính, hai dự phòng, ẩn danh
 
-### Thứ tự ưu tiên
+### Danh mục (từ 13-10-2026)
 
-| Tầng | Mã | Nguồn |
-|---|---|---|
-| Chính | `P1` | `xosothudo.com.vn` |
-| Chính | `P2` | `xoso.com.vn` |
-| Dự phòng | `F1` | `xskt.vn` |
-| Dự phòng | `F2` | `mketqua.net` |
-| Dự phòng | `F3` | `www.minhngoc.net.vn` |
-| Dự phòng | `F4` | `xosominhngoc.com` |
-| Dự phòng | `F5` | `xosodaiphat.com` |
-| Dự phòng | `F6` | `hainhay.net` |
+| Tầng | Mã | Nhóm | Nguồn |
+|---|---|---|---|
+| Chính | `P1` | `G1` | `xoso.com.vn` |
+| Dự phòng | `F1` | `G2` | `mketqua.net` |
+| Dự phòng | `F2` | `G3` | `www.minhngoc.net.vn` |
 
 Danh sách nằm ở **một chỗ duy nhất**: `PRIMARY_SOURCE_NAMES` và
 `FALLBACK_SOURCE_NAMES` trong `src/sources.py`. Bản JS
 (`worker/src/sources.js`) bị `tests/test_worker_sources_parity.py` buộc khớp
-từng mục, và `src/reconcile_live_canonical.py` nhập lại thay vì chép —
-bản chép tay trước đó là thứ đã bị gỡ.
+từng mục, và `src/reconcile_live_canonical.py` nhập lại thay vì chép.
 
-### Khi nào tầng dự phòng được gọi
+Năm nguồn đã nghỉ, đo trên runner Actions ngày 12/13-10-2026 bằng
+`scripts/diagnose_live_sources.py` (workflow `diagnose-live-sources.yml`):
 
-Chỉ khi tầng chính **không đủ để xác minh**. Hai điều kiện, và điều kiện thứ
-hai mới là điều dễ bỏ sót:
+| Nguồn đã nghỉ | Vì sao |
+|---|---|
+| `xosothudo.com.vn` | Mẫu đường dẫn chưa từng đúng: cả năm ứng viên đều hỏng ở mọi lượt — nguồn "chính số 1" mà không bao giờ trả gì, nên tầng chính không bao giờ đủ và cả sáu dự phòng bị gọi ở MỌI lượt thăm dò |
+| `xskt.vn` | Chặn runner |
+| `xosodaiphat.com` | Khi kỳ chưa quay, bóc liên kết "XSMB 12/10/2026" thành giải 7 `12 10 14 10` |
+| `hainhay.net` | Hai nhãn giải 7 liền nhau làm mất trọn giải 7 |
+| `xosominhngoc.com` | Bản sao của `minhngoc.net.vn`, không thêm bằng chứng độc lập |
 
-1. Không đủ hai **nhóm nhà cung cấp độc lập** trả về dữ liệu bóc được. Trạng
-   thái HTTP 200 mà trang đổi bố cục thì vẫn tính là hỏng.
-2. Hai nguồn chính **bất đồng** ở bất kỳ ô nào. Cả hai đều chạy tốt mà nói hai
-   số khác nhau thì cũng không xác minh được gì, và im lặng lấy nguồn ưu tiên
-   cao hơn là cách một số sai lọt vào lịch sử.
+Tên các nguồn đã nghỉ vẫn nằm trong `RETIRED_SOURCE_NAMES` để phép kiểm riêng
+tư còn quét được chúng. `xskt.vn` vẫn là nguồn **lịch sử** của trang kết quả
+truyền thống (`HISTORY_API_SOURCE_NAMES`), không liên quan tới live.
 
-Thiếu giá trị **không phải** bất đồng: lúc đang quay số các nguồn về số lệch
-nhịp nhau là bình thường. Nếu coi đó là bất đồng thì suốt cả kỳ quay, mỗi lượt
-thăm dò 5 giây sẽ kích hoạt cả sáu nguồn dự phòng.
+### Khi nào nguồn dự phòng được gọi
 
-Quyết định này nằm ở `sources.primary_tier_is_sufficient` và
-`snapshot.js::primaryTierIsSufficient`, và `tests/test_source_failover_parity.py`
-buộc hai bên cho cùng kết luận trên từng ca.
+Chỉ khi nguồn chính **gặp sự cố** (`sources.primary_has_failed`,
+`snapshot.js::primaryHasFailed`):
+
+1. Không bóc được giá trị nào — HTTP hỏng, bị chặn, hay trang đổi bố cục đều
+   rơi vào đây.
+2. Đã quá **18:40 giờ Việt Nam** (`PRIMARY_COMPLETE_BY`) mà vẫn thiếu ô. Thiếu
+   ô TRONG lúc quay là bình thường; quá giờ quay xong mà còn thiếu là nguồn kẹt.
+
+Khi dự phòng được gọi, **chỉ dữ liệu của dự phòng** được hợp nhất: bản rỗng hay
+kẹt của nguồn chính không được cầm phiếu ở ô nào
+(`test_a_primary_stuck_after_the_deadline_hands_over_to_the_fallbacks`). Ngưỡng
+đồng thuận là **một** nhóm (`MIN_AGREEMENT = 1`), nhưng hai dự phòng nói hai số
+khác nhau ở một ô là **thế hoà**: ô ấy là xung đột, không được xác minh
+(`test_two_disagreeing_fallbacks_leave_the_slot_unverified`).
+
+Lịch sử chuẩn (`Lottery.fetch`, `crawler/fetch_results.py`) theo cùng thứ tự:
+lấy kết quả trọn vẹn đầu tiên theo ưu tiên, nên ngày thường chỉ một lượt gọi
+nguồn chính thay vì hỏi tuần tự cả tám nguồn (~3,3 phút đo ngày 12-10).
+`tests/test_source_failover_parity.py` buộc hai bản Python/JS ra cùng kết luận
+trên từng ca, kể cả đúng mốc 18:40:00.
+
+### Hàng giải chỉ đọc số của chính nó
+
+Lỗi "trùng lặp giải 7" của trang live: giải 7 là nhãn CUỐI của bảng, và khối
+số của nó từng kéo tới nhãn kế tiếp ở tận bảng lô tô hay ô chọn tháng. Khi giải
+7 chưa quay, bộ bóc vớ số hai chữ số ở đó — `xoso.com.vn` cho `10 11 12` (ô
+chọn tháng), bảng lô tô cho `06 16 24 24`. Nay một hàng là dòng nhãn cộng các
+dòng NGAY SAU mà mọi mẩu đều là số ASCII đúng độ rộng của giải; gặp dòng khác
+là hết hàng (`_value_line_tokens`, `valueLineTokens`). Mẫu trang thật nằm trong
+`tests/fixtures/prize_pages.json` (`thuc_*`), canh bởi
+`tests/test_live_prize_rows.py` và `test_worker_parser_parity.py`.
 
 ### Ẩn nguồn
 
 Không thứ gì ra tới trình duyệt được mang tên miền nguồn. Bản chụp công khai
-chỉ có mã `P1`/`F3` và mã nhóm `G1`…`G7`; thông điệp lỗi bị **bỏ hẳn** chứ
+chỉ có mã `P1`/`F2` và mã nhóm `G1`…`G3`; thông điệp lỗi bị **bỏ hẳn** chứ
 không cắt ngắn, vì tên miền thường nằm ngay đầu chuỗi.
 
 Phép ẩn danh chạy ở **ranh giới ghi**, không phải lúc hiển thị:
@@ -250,30 +275,15 @@ ai đó vừa thêm thì lộ.
 Chi tiết từng nguồn vẫn xem được khi cần: `wrangler tail` cho Worker, và nhật
 ký chạy của Actions — cả hai đều không công khai.
 
-### Mẫu đường dẫn của nguồn mới chưa được đối chiếu
-
-`xosothudo.com.vn` là nguồn mới, và sandbox phát triển chặn toàn bộ HTTP ra
-ngoài (đo được: `example.com` cũng trả `000`), nên **mẫu đường dẫn của nó chưa
-được đối chiếu với trang thật**. Vì vậy nguồn này khai báo **nhiều đường dẫn
-ứng viên** và thử lần lượt, giữ bản bóc được nhiều giá trị nhất.
-
-Rủi ro được chặn ở tầng dưới: một nguồn không bóc được gì thì đóng góp rỗng,
-và phép đồng thuận đòi hai nhóm độc lập khớp nhau mới đánh dấu đã xác minh.
-Nguồn hỏng làm **mất bằng chứng**, không làm **sai dữ liệu**.
-
-Để xác minh, chạy workflow `inspect-reference-pages.yml` với địa chỉ cần kiểm
-— runner của Actions gọi ra ngoài được. Khi biết mẫu đúng, rút danh sách ứng
-viên còn một.
-
 ## 7. Điều CHƯA kiểm chứng được
 
-**Bộ phân tích chưa từng chạy trên HTML thật trong môi trường dựng.** Proxy
-của môi trường phát triển chặn toàn bộ các trang nguồn (`curl` trả `000`). Mọi
-phép kiểm ở mục 5 chạy trên mẫu dựng tay và dữ liệu sinh ra, **không** phải
-trang thật hôm nay.
+**Proxy của môi trường phát triển chặn toàn bộ các trang nguồn.** Phép kiểm ở
+mục 5 chạy trên mẫu; các mẫu `thuc_*` dựng lại bố cục đo trên trang thật qua
+runner Actions (`diagnose-live-sources.yml`, chạy tay với `draw_date`). Muốn
+xem trang lúc ĐANG quay thì chạy workflow ấy trong khung 18:10–18:35.
 
 **Các nguồn có thể chặn IP trung tâm dữ liệu.** Worker gọi từ mạng Cloudflare,
-không phải từ máy gia đình. Có tám nguồn nên xác suất chặn hết là thấp, nhưng
+không phải từ máy gia đình. Có ba nguồn ở ba nhóm nên xác suất chặn hết là thấp, nhưng
 tôi không đo được từ đây. Bước 4 là phép thử thật đầu tiên: nếu mọi dòng
 `source_status` đều có `failed: true`, đó chính là hiện tượng này.
 

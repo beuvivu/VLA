@@ -55,8 +55,8 @@ def build_payload(*, canonical: Path, audit_path: Path) -> dict:
     draw_date = str(row["date"])[:10]
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     evidence = audit.get(draw_date, {})
-    if not evidence.get("accepted") or int(evidence.get("agreement", 0)) < 2:
-        raise ValueError(f"latest canonical date lacks accepted 2-group consensus: {draw_date}")
+    if not evidence.get("accepted") or int(evidence.get("agreement", 0)) < 1:
+        raise ValueError(f"latest canonical date has no accepted source: {draw_date}")
 
     prizes: dict[str, list[str]] = {}
     for group, fields in FIELDS.items():

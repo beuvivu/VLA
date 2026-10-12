@@ -172,7 +172,7 @@ jobs:
               try:
                   audit = json.loads(Path("data/source_audit.json").read_text(encoding="utf-8"))
                   row = audit.get(target.isoformat(), {})
-                  return bool(row.get("accepted")) and int(row.get("agreement", 0)) >= 2
+                  return bool(row.get("accepted")) and int(row.get("agreement", 0)) >= 1
               except Exception:
                   return False
 
@@ -195,7 +195,7 @@ jobs:
                       "--fill-missing-days-back", "14",
                       "--max-retries", "1",
                       "--retry-backoff-s", "1.5",
-                      "--consensus-min-recent", "2",
+                      "--consensus-min-recent", "1",
                       "--consensus-recent-days", "2",
                   ],
                   check=True,

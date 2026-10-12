@@ -15,11 +15,11 @@ crons = [
   "*/5 12 * * *",
 ]
 
-# Ngưỡng đồng thuận: một giá trị chỉ được đánh dấu ĐÃ XÁC MINH khi có đủ số
-# NHÓM nguồn độc lập ủng hộ. Phải khớp bản Python, nếu không trang live và
-# lịch sử sẽ nói khác nhau về cùng một ô.
+# Ngưỡng đồng thuận: số NHÓM nguồn độc lập phải ủng hộ một giá trị thì nó mới ĐÃ XÁC MINH.
+# Phải khớp bản Python. Từ 13-10-2026 là 1: một nguồn chính, dự phòng chỉ khi nó hỏng; khi
+# hai nguồn dự phòng cùng được đọc mà nói khác nhau, ô ấy là xung đột, không được xác minh.
 [vars]
-MIN_AGREEMENT = "2"
+MIN_AGREEMENT = "1"
 
 # Cron nạp lớp bù cho API Sổ kết quả (/api/v1/traditional-results) từ sổ cuộn 500 ngày của
 # nguồn dự phòng: chỉ khi lịch sử chuẩn còn thiếu ngày, cách nhau tối thiểu 10 phút. Yêu cầu

@@ -160,8 +160,10 @@ def audit(
             item = source_audit.get(latest.isoformat(), {})
             if not item.get("accepted"):
                 critical.append(f"source_audit_not_accepted={latest}")
-            if int(item.get("agreement", 0)) < 2:
-                critical.append(f"source_consensus_lt2={latest}")
+            # Một nguồn chính, dự phòng chỉ khi nguồn chính hỏng (sources.py): kết quả chuẩn
+            # có đúng một nguồn ủng hộ là bình thường, KHÔNG có nguồn nào mới là lỗi.
+            if int(item.get("agreement", 0)) < 1:
+                critical.append(f"source_consensus_missing={latest}")
         except Exception as exc:  # noqa: BLE001
             critical.append(f"source_audit_invalid={exc}")
 

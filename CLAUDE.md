@@ -250,6 +250,24 @@ lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 g
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
 
+## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
+
+Theo yêu cầu chủ dự án: nguồn chính `xoso.com.vn`; dự phòng `mketqua.net` rồi
+`www.minhngoc.net.vn`, CHỈ gọi khi nguồn chính gặp sự cố (`sources.primary_has_failed`:
+không bóc được giá trị nào, hoặc đã quá `PRIMARY_COMPLETE_BY` = 18:40 giờ VN mà còn thiếu ô).
+Khi dự phòng được gọi, chỉ dữ liệu dự phòng được hợp nhất — nguồn chính đã hỏng không cầm
+phiếu. Ngưỡng đồng thuận là MỘT nhóm ở mọi nơi (`live_sync`, `fetch_results`, `sync`,
+`update-data.yml`, Worker `MIN_AGREEMENT`, `production_audit`, `reconcile_live_canonical`);
+hai dự phòng nói khác nhau ở một ô là thế hoà, ô ấy không được xác minh. Năm nguồn cũ đã nghỉ
+vì đo trên runner là hỏng (`RETIRED_SOURCE_NAMES`, vẫn được quét riêng tư); đừng thêm lại
+nguồn khi chưa đo bằng `diagnose-live-sources.yml`. Bản JS của Worker bị buộc khớp bởi
+`test_worker_sources_parity`, `test_source_failover_parity`, `test_worker_snapshot_parity`.
+
+Một hàng giải = dòng nhãn + các dòng NGAY SAU mà mọi mẩu là số ASCII đúng độ rộng của giải;
+gặp dòng khác là hết hàng. Trước đó giải 7 (nhãn cuối bảng) vớ số của bảng lô tô, ô chọn tháng
+hay liên kết ngày khi chưa quay — lỗi "trùng lặp giải 7". Mẫu trang thật: `thuc_*` trong
+`tests/fixtures/prize_pages.json`. Chi tiết: `documentation/operations/live-worker.md` mục 6.
+
 ## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
 
 Ngày 07-10-2026 chủ dự án yêu cầu VLA có ĐỦ tính năng của VLM (kho `beuvivu/VLM`,
