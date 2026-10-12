@@ -267,7 +267,8 @@ Trước giờ quay, trang live của mọi nguồn vẫn hiện TRỌN kỳ hô
 Nguồn mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là chưa có gì
 (`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `crawler/fetch_results` và Worker
 — thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua. Worker
-giữ kỳ trước ở khoá KV `previous-draw.json` vì lượt cron đầu ghi đè ảnh chụp hôm qua. Sổ chuẩn
+lấy kỳ MỚI NHẤT trong ảnh chụp KV, khoá `previous-draw.json` và sổ chuẩn `data/xsmb.json` (khởi
+động lạnh); không có gì để so thì không chốt kỳ đủ ô. Sổ chuẩn
 (`Lottery.fetch`) bỏ nguồn trùng khít rồi hỏi nguồn kế tiếp, không dừng ở nguồn đầu.
 
 Một hàng giải = dòng nhãn + các dòng NGAY SAU mà mọi mẩu là số ASCII đúng độ rộng của giải;

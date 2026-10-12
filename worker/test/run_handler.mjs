@@ -34,6 +34,42 @@ class FakeKV {
   }
 }
 
+// --- Sổ chuẩn giả -------------------------------------------------------------------------
+// Worker đọc `data/xsmb.json` để biết kỳ trước. Lượt đọc sổ KHÔNG phải lượt gọi nguồn, nên bộ
+// fetch giả trả nó riêng và không tính vào bộ đếm của kịch bản.
+const FULL_PRIZES = {
+  special: ["83772"], prize1: ["68785"], prize2: ["50518", "27452"],
+  prize3: ["57053", "92810", "56241", "65128", "33811", "42264"],
+  prize4: ["4753", "1152", "6777", "3507"],
+  prize5: ["9460", "2913", "3232", "2999", "3670", "5129"],
+  prize6: ["939", "751", "594"], prize7: ["66", "21", "34", "78"],
+};
+// Mặc định: kỳ 12-10 khác hẳn bảng giả của các kịch bản.
+const OTHER_PRIZES = { ...FULL_PRIZES, special: ["11111"] };
+
+function historyRow(dateIso, prizes) {
+  const row = { date: `${dateIso}T00:00:00.000` };
+  for (const [key, values] of Object.entries(prizes)) {
+    if (values.length === 1) row[key] = Number(values[0]);
+    else values.forEach((v, i) => { row[`${key}_${i + 1}`] = Number(v); });
+  }
+  return row;
+}
+
+let history = [historyRow("2026-10-12", OTHER_PRIZES)];
+
+function installFetch(handler) {
+  globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith("/data/xsmb.json")) {
+      if (history === null) return new Response("unavailable", { status: 503 });
+      return new Response(JSON.stringify(history), {
+        status: 200, headers: { "content-type": "application/json" },
+      });
+    }
+    return handler(url, init);
+  };
+}
+
 function makeFetch(counter, { fail = false } = {}) {
   return async () => {
     counter.calls += 1;
@@ -71,7 +107,7 @@ const SCENARIOS = {
   // nay không bao giờ gọi nguồn, nên số lượt gọi ra phải bằng 0 dù có bao nhiêu isolate.
   async requests_never_collect() {
     const counter = { calls: 0 };
-    globalThis.fetch = makeFetch(counter);
+    installFetch(makeFetch(counter));
     const other = (await import("../src/index.js?isolate=b")).default;
     const out = {};
     for (const [name, kv] of [["kv_empty", new FakeKV()], ["kv_put_drops", new FakeKV()]]) {
@@ -94,7 +130,7 @@ const SCENARIOS = {
   // Đường bình thường: cron ghi một lần, mọi lượt đọc lấy từ KV.
   async normal() {
     const counter = { calls: 0 };
-    globalThis.fetch = makeFetch(counter);
+    installFetch(makeFetch(counter));
     const kv = new FakeKV();
     const env = { LIVE: kv, MIN_AGREEMENT: "1" };
     const ctx = newCtx();
@@ -126,7 +162,7 @@ const SCENARIOS = {
   // Nguồn chính hỏng thì hai nguồn dự phòng phải được gọi, nên bản chụp
   // có đủ CẢ BA hàng nguồn chứ không phải một.
   async all_sources_down() {
-    globalThis.fetch = makeFetch({ calls: 0 }, { fail: true });
+    installFetch(makeFetch({ calls: 0 }, { fail: true }));
     const kv = new FakeKV();
     const ctx = newCtx();
     await worker.scheduled({}, { LIVE: kv }, ctx);
@@ -150,12 +186,12 @@ const SCENARIOS = {
   async primary_stuck_after_deadline() {
     fixedNow = Date.parse("2026-10-13T11:45:00Z");
     const hosts = [];
-    globalThis.fetch = async (url) => {
+    installFetch(async (url) => {
       const host = new URL(String(url)).hostname;
       hosts.push(host);
       const body = host.endsWith("xoso.com.vn") ? STUCK_PAGE : FULL_PAGE;
       return new Response(body, { status: 200 });
-    };
+    });
     const kv = new FakeKV();
     const ctx = newCtx();
     await worker.scheduled({}, { LIVE: kv, MIN_AGREEMENT: "1" }, ctx);
@@ -180,16 +216,15 @@ const SCENARIOS = {
     const yesterday = {
       schema_version: 2, draw_date: "2026-10-12", status: "complete_verified",
       verified_complete: true,
-      prizes: {
-        special: ["83772"], prize1: ["68785"], prize2: ["50518", "27452"],
-        prize3: ["57053", "92810", "56241", "65128", "33811", "42264"],
-        prize4: ["4753", "1152", "6777", "3507"],
-        prize5: ["9460", "2913", "3232", "2999", "3670", "5129"],
-        prize6: ["939", "751", "594"], prize7: ["66", "21", "34", "78"],
-      },
+      prizes: FULL_PRIZES,
     };
     await kv.put("live.json", JSON.stringify(yesterday));
-    globalThis.fetch = async () => new Response(FULL_PAGE, { status: 200 });
+    // Khoá giữ còn kỳ CŨ HƠN (Worker lỡ một ngày): kỳ trước phải là kỳ MỚI NHẤT trong các nơi.
+    await kv.put("previous-draw.json", JSON.stringify({
+      draw_date: "2026-10-10", verified_complete: true, prizes: OTHER_PRIZES,
+    }));
+    history = [historyRow("2026-10-12", FULL_PRIZES)];
+    installFetch(async () => new Response(FULL_PAGE, { status: 200 }));
     const env = { LIVE: kv, MIN_AGREEMENT: "1" };
     const ctx = newCtx();
     await worker.scheduled({}, env, ctx);
@@ -214,14 +249,75 @@ const SCENARIOS = {
     };
   },
 
+  // Khởi động lạnh: KV trống (Worker mới triển khai, hoặc cả hai khoá đã hết hạn), trang nguồn
+  // còn hiện kỳ hôm qua. Kỳ trước phải lấy từ sổ chuẩn, nếu không lượt cron đầu chốt số của
+  // hôm qua thành kết quả hôm nay và `alreadySettled` chặn cả ngày.
+  async cold_start_seeds_from_canonical_history() {
+    history = [historyRow("2026-10-11", OTHER_PRIZES), historyRow("2026-10-12", FULL_PRIZES)];
+    installFetch(async () => new Response(FULL_PAGE, { status: 200 }));
+    const kv = new FakeKV();
+    const env = { LIVE: kv, MIN_AGREEMENT: "1" };
+    const statuses = [];
+    for (let i = 0; i < 3; i += 1) {
+      const c = newCtx();
+      await worker.scheduled({}, env, c);
+      await Promise.all(c.pending);
+      statuses.push(JSON.parse(await kv.get("live.json")).status);
+    }
+    return { statuses };
+  },
+
+  // Khởi động lạnh VÀ không đọc được sổ chuẩn: không có gì để so, nên kỳ đủ ô không được chốt
+  // — cron phải thu thập tiếp thay vì đứng im cả ngày.
+  async cold_start_without_history_does_not_settle() {
+    history = null;
+    const counter = { calls: 0 };
+    installFetch(async () => {
+      counter.calls += 1;
+      return new Response(FULL_PAGE, { status: 200 });
+    });
+    const kv = new FakeKV();
+    const env = { LIVE: kv, MIN_AGREEMENT: "1" };
+    const c1 = newCtx();
+    await worker.scheduled({}, env, c1);
+    await Promise.all(c1.pending);
+    const first = JSON.parse(await kv.get("live.json"));
+    const afterFirst = counter.calls;
+    const c2 = newCtx();
+    await worker.scheduled({}, env, c2);
+    await Promise.all(c2.pending);
+    return {
+      status: first.status,
+      verified_complete: first.verified_complete,
+      outbound_after_first: afterFirst,
+      outbound_after_second: counter.calls,
+    };
+  },
+
+  // Sổ chuẩn CHẬM một kỳ (hoàn tất hôm qua chưa chạy xong), chỉ ảnh chụp đã xác minh trong KV
+  // biết kỳ hôm qua: kỳ trước vẫn phải là kỳ hôm qua.
+  async canonical_lags_behind_the_kv_snapshot() {
+    history = [historyRow("2026-10-11", OTHER_PRIZES)];
+    const kv = new FakeKV();
+    await kv.put("live.json", JSON.stringify({
+      schema_version: 2, draw_date: "2026-10-12", status: "complete_verified",
+      verified_complete: true, prizes: FULL_PRIZES,
+    }));
+    installFetch(async () => new Response(FULL_PAGE, { status: 200 }));
+    const c = newCtx();
+    await worker.scheduled({}, { LIVE: kv, MIN_AGREEMENT: "1" }, c);
+    await Promise.all(c.pending);
+    return { status: JSON.parse(await kv.get("live.json")).status };
+  },
+
   // Sau khi kỳ đã xác minh xong, cron không được gọi nguồn nữa.
   async settled_stops_collecting() {
     const counter = { calls: 0 };
     // Trả trọn một kỳ để đạt complete_verified ngay vòng đầu.
-    globalThis.fetch = async () => {
+    installFetch(async () => {
       counter.calls += 1;
       return new Response(FULL_PAGE, { status: 200 });
-    };
+    });
     const kv = new FakeKV();
     const env = { LIVE: kv, MIN_AGREEMENT: "1" };
 
@@ -262,7 +358,7 @@ const SCENARIOS = {
   // vào log; người xem nhận 503 có CORS để trang chuyển sang nguồn dự phòng.
   async kv_put_throws() {
     const counter = { calls: 0 };
-    globalThis.fetch = makeFetch(counter);
+    installFetch(makeFetch(counter));
     const kv = new FakeKV();
     kv.put = async () => { throw new Error("KV put failed: quota exceeded"); };
     const ctx = newCtx();
@@ -292,7 +388,7 @@ const SCENARIOS = {
   },
 
   async routing() {
-    globalThis.fetch = makeFetch({ calls: 0 });
+    installFetch(makeFetch({ calls: 0 }));
     const env = { LIVE: new FakeKV() };
     const ctx = newCtx();
     const at = async (path, init) =>

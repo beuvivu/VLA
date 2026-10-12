@@ -169,6 +169,27 @@ def test_a_page_still_showing_yesterday_is_not_todays_result() -> None:
     )
 
 
+def test_a_cold_start_takes_the_previous_draw_from_canonical_history() -> None:
+    """KV trống mà trang nguồn còn hiện kỳ hôm qua: kỳ trước lấy từ sổ chuẩn, không chốt nhầm."""
+    out = _scenario("cold_start_seeds_from_canonical_history")
+    assert out["statuses"] == ["waiting"] * 3
+
+
+def test_the_newest_known_draw_wins_when_canonical_history_lags() -> None:
+    """Sổ chuẩn chưa chốt kỳ hôm qua, ảnh chụp KV thì có: so với kỳ MỚI NHẤT, tức hôm qua."""
+    assert _scenario("canonical_lags_behind_the_kv_snapshot")["status"] == "waiting"
+
+
+def test_with_nothing_to_compare_a_complete_board_is_not_settled() -> None:
+    """KV trống VÀ sổ chuẩn không đọc được: không phân biệt được trang cũ, nên không chốt."""
+    out = _scenario("cold_start_without_history_does_not_settle")
+    assert out["status"] == "complete_provisional"
+    assert out["verified_complete"] is False
+    assert out["outbound_after_second"] > out["outbound_after_first"], (
+        "chưa chốt thì lượt cron sau phải thu thập tiếp"
+    )
+
+
 def test_a_missing_kv_binding_says_exactly_what_to_do() -> None:
     """Quên tạo KV là lỗi hay gặp nhất lúc triển khai lần đầu.
 

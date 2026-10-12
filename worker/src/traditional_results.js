@@ -230,6 +230,23 @@ async function loadPrimary(env, fetchImpl) {
   }
 }
 
+/**
+ * Kỳ chuẩn gần nhất TRƯỚC ngày `beforeIso` trong lịch sử chuẩn, dạng `{ draw_date, prizes }`,
+ * hoặc `null` khi không đọc được. Trang live dùng nó làm "kỳ trước" lúc KV còn trống: trước giờ
+ * quay, trang nguồn vẫn hiện trọn kỳ hôm qua (đo 00:37 ngày 13-10-2026).
+ */
+export async function latestCanonicalDrawBefore(env, beforeIso, { fetchImpl = fetch } = {}) {
+  try {
+    const { rows } = await loadPrimary(env, fetchImpl);
+    const dates = Object.keys(rows).filter((day) => day < beforeIso).sort();
+    if (dates.length === 0) return null;
+    const last = dates[dates.length - 1];
+    return { draw_date: last, prizes: rows[last] };
+  } catch {
+    return null;
+  }
+}
+
 function parseLedgerPage(html) {
   const rows = {};
   const presentDates = new Set();
