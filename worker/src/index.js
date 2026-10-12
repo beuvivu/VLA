@@ -19,6 +19,10 @@ import { anonymiseSnapshot, collectSnapshot, drawDate } from "./snapshot.js";
 import { handleTraditionalResults, refreshFallbackOverlay } from "./traditional_results.js";
 
 const KV_KEY = "live.json";
+// Kỳ đã xác minh gần nhất của một ngày KHÁC. Không thể suy lại từ `live.json`: lượt cron đầu
+// của ngày mới ghi đè nó bằng bản "waiting" cùng ngày, và từ lượt sau trang còn hiện kỳ trước
+// sẽ không còn bị nhận ra.
+const PREVIOUS_KEY = "previous-draw.json";
 // Lượt yêu cầu của người xem CHỈ ĐỌC KV, không bao giờ gọi nguồn.
 //
 // Trước 08-10-2026, KV rỗng thì lượt yêu cầu thu thập ngay, chặn bằng một khoá trong KV cộng
@@ -86,19 +90,36 @@ function alreadySettled(stored, nowUtcMs) {
 }
 
 /**
- * Bảng giải của kỳ TRƯỚC: ảnh chụp đã xác minh của một ngày khác còn trong KV. Bản Python đọc
- * sổ chuẩn; Worker không có sổ, nhưng ảnh chụp hôm qua giữ 36 giờ là đúng thứ cần.
+ * Kỳ đã xác minh của một ngày KHÁC trong một bản ghi KV (ảnh chụp, hoặc bản giữ ở
+ * `PREVIOUS_KEY`), dạng `{ draw_date, prizes }`; `null` nếu không có.
  */
-function previousDraw(stored, nowUtcMs) {
-  if (!stored) return null;
+function verifiedOtherDay(raw, nowUtcMs) {
+  if (!raw) return null;
   try {
-    const parsed = JSON.parse(stored);
+    const parsed = JSON.parse(raw);
     return parsed.verified_complete === true && parsed.draw_date !== drawDate(nowUtcMs)
-      ? parsed.prizes
+      ? { draw_date: parsed.draw_date, verified_complete: true, prizes: parsed.prizes }
       : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Bảng giải của kỳ TRƯỚC. Bản Python đọc sổ chuẩn; Worker không có sổ, nên lấy ảnh chụp đã
+ * xác minh của ngày khác còn trong KV và GIỮ nó ở `PREVIOUS_KEY` trước khi ảnh chụp bị ghi
+ * đè — mọi lượt cron sau trong ngày đọc lại từ đó.
+ */
+async function previousDraw(kv, stored, nowUtcMs) {
+  const fromSnapshot = verifiedOtherDay(stored, nowUtcMs);
+  if (fromSnapshot) {
+    await kv.put(PREVIOUS_KEY, JSON.stringify(fromSnapshot), {
+      // Qua cả kỳ nghỉ Tết dài nhất đã ghi (bốn ngày liền không quay).
+      expirationTtl: 60 * 60 * 24 * 7,
+    });
+    return fromSnapshot.prizes;
+  }
+  return verifiedOtherDay(await kv.get(PREVIOUS_KEY), nowUtcMs)?.prizes ?? null;
 }
 
 async function refresh(env) {
@@ -106,13 +127,14 @@ async function refresh(env) {
   const now = Date.now();
   const stored = await kv.get(KV_KEY);
   if (alreadySettled(stored, now)) return;
+  const previous = await previousDraw(kv, stored, now);
   // Ẩn danh TRƯỚC khi ghi vào KV, không phải lúc trả lời. Mọi đường đọc đều
   // đi qua KV, nên ẩn ở đây là ẩn ở mọi nơi — kể cả những đường sẽ thêm về
   // sau. Chi tiết từng nguồn vẫn xem được bằng `wrangler tail`, không công khai.
   const snapshot = anonymiseSnapshot(await collectSnapshot({
     nowUtcMs: now,
     minAgreement: Number(env.MIN_AGREEMENT ?? 1),
-    previous: previousDraw(stored, now),
+    previous,
   }));
   // Ghi hỏng (hết hạn mức, sự cố nền tảng) thì lỗi lên tới `scheduled()`, được ghi log, và
   // lượt cron sau — chỉ cách một phút — thử lại.

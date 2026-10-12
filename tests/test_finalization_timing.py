@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -170,38 +171,44 @@ def test_other_runs_keep_the_1835_cutoff(tmp_path: Path) -> None:
 # --- Bỏ lượt hoàn tất lặp lại -------------------------------------------------
 
 
-def test_a_repeated_live_verified_call_after_full_finalization_is_skipped(tmp_path: Path) -> None:
+def test_a_repeated_live_verified_call_skips_only_the_pipeline(tmp_path: Path) -> None:
+    """Kỳ đã có dự báo kỳ sau: pipeline không chạy lại, nhưng lượt chạy KHÔNG bị bỏ cả lượt.
+
+    Hai tệp dự báo chỉ chứng minh phân tích đã xong, không chứng minh Pages hay hậu kiểm đã
+    thành công; bỏ cả lượt thì một lần triển khai hỏng không còn đường tự thử lại.
+    """
     runner = Runner(tmp_path)
     runner.stored(runner.today)
     runner.predicted(runner.today + timedelta(days=1))
     out = runner.run("canonical", "guard", event="workflow_dispatch", reason="live_verified")
-    assert out["run"] == "false"
+    assert out["run"] == "true"
+    assert out["finalized"] == "true"
     assert out["reason"] == "already-finalized"
 
 
 @pytest.mark.parametrize("missing", ["loto", "de"])
-def test_a_live_verified_call_still_runs_when_the_pipeline_did_not_finish(
+def test_a_live_verified_call_runs_in_full_when_the_pipeline_did_not_finish(
     tmp_path: Path, missing: str
 ) -> None:
-    """Kết quả đã chốt nhưng chưa có dự báo kỳ sau (pipeline hỏng giữa chừng): phải chạy lại."""
+    """Kết quả đã chốt nhưng chưa có dự báo kỳ sau (pipeline hỏng giữa chừng): chạy lại đủ."""
     runner = Runner(tmp_path)
     runner.stored(runner.today)
     runner.predicted(runner.today + timedelta(days=1), modes=[m for m in ("loto", "de") if m != missing])
     out = runner.run("canonical", "guard", event="workflow_dispatch", reason="live_verified")
-    assert out["run"] == "true"
+    assert (out["run"], out["finalized"]) == ("true", "false")
 
 
-def test_a_live_verified_call_for_a_new_draw_runs(tmp_path: Path) -> None:
-    """Dự báo cho HÔM NAY có từ tối qua; nó không được làm lượt hôm nay bị bỏ qua."""
+def test_a_live_verified_call_for_a_new_draw_runs_in_full(tmp_path: Path) -> None:
+    """Dự báo cho HÔM NAY có từ tối qua; nó không được làm lượt hôm nay bị coi là đã xong."""
     runner = Runner(tmp_path)
     runner.stored(runner.today - timedelta(days=1))
     runner.predicted(runner.today)
     out = runner.run("canonical", "guard", event="workflow_dispatch", reason="live_verified")
-    assert out["run"] == "true"
+    assert (out["run"], out["finalized"]) == ("true", "false")
 
 
-def test_a_manual_run_is_never_skipped(tmp_path: Path) -> None:
-    """Lượt gọi tay luôn chạy, kể cả khi kỳ mà guard nhắm tới đã hoàn tất trọn vẹn."""
+def test_a_manual_run_always_runs_in_full(tmp_path: Path) -> None:
+    """Lượt gọi tay luôn chạy đủ, kể cả khi kỳ mà guard nhắm tới đã hoàn tất trọn vẹn."""
     runner = Runner(tmp_path)
     now = datetime.now(VN)
     # Đúng mốc guard tính cho lượt không phải live_verified: qua 18:35 là hôm nay.
@@ -210,7 +217,87 @@ def test_a_manual_run_is_never_skipped(tmp_path: Path) -> None:
     runner.predicted(target + timedelta(days=1))
     out = runner.run("canonical", "guard", event="workflow_dispatch", reason="manual")
     assert out["target"] == target.isoformat()
-    assert out["run"] == "true"
+    assert (out["run"], out["finalized"]) == ("true", "false")
+
+
+# --- Điều kiện chạy của từng job, đánh giá như GitHub ---------------------------
+#
+# Soi chuỗi trong ``if:`` không thấy được một dấu ngoặc đặt sai. Bộ đánh giá dưới đây dịch
+# đúng tập con cú pháp mà các điều kiện này dùng (``always()``, ``==``, ``!=``, ``&&``, ``||``,
+# ngoặc, chuỗi, tham chiếu ``needs.*``/``github.*``) sang Python rồi tính trên từng kịch bản.
+
+_TOKEN = re.compile(
+    r"\s+|'[^']*'|\b(?:needs|github)(?:\.[A-Za-z0-9_-]+)+|\btrue\b|\bfalse\b"
+    r"|always\(\)|&&|\|\||==|!=|[()]"
+)
+_PYTHON = {"true": "True", "false": "False", "always()": "True", "&&": " and ", "||": " or "}
+
+
+def _condition(job: str):
+    raw = _jobs()[job]["if"].strip()
+    assert raw.startswith("${{") and raw.endswith("}}"), raw
+    body = raw[3:-2].strip()
+    parts: list[str] = []
+    pos = 0
+    while pos < len(body):
+        match = _TOKEN.match(body, pos)
+        assert match, f"cú pháp ngoài tập con đã hỗ trợ ở vị trí {pos}: {body[pos:]!r}"
+        token = match.group(0)
+        if token.startswith(("needs.", "github.")):
+            parts.append(f"ctx[{token!r}]")
+        else:
+            parts.append(_PYTHON.get(token, token))
+        pos = match.end()
+    expr = "".join(parts)
+    needs = _needs(_jobs()[job])
+    # Không có always() thì GitHub ngầm thêm success(): mọi job được cần phải thành công.
+    implicit = "always()" not in body
+
+    def evaluate(ctx: dict) -> bool:
+        if implicit and any(ctx[f"needs.{n}.result"] != "success" for n in needs):
+            return False
+        return bool(eval(expr, {"__builtins__": {}}, {"ctx": ctx}))  # noqa: S307
+
+    return evaluate
+
+
+def _ctx(
+    *, ready: str, finalized: str, update: str, publish: str = "success", canonical: str = "success"
+) -> dict:
+    return {
+        "github.event.repository.private": False,
+        "needs.canonical.result": canonical,
+        "needs.canonical.outputs.canonical_ready": ready,
+        "needs.canonical.outputs.finalized": finalized,
+        "needs.update.result": update,
+        "needs.publish-results.result": publish,
+    }
+
+
+SCENARIOS = {
+    # tên: (ngữ cảnh, publish-results, update, deploy-pages, trigger-post-finalization)
+    "kỳ mới": (_ctx(ready="true", finalized="false", update="success"), True, True, True, True),
+    "đã xong, chạy lại": (_ctx(ready="true", finalized="true", update="skipped", publish="skipped"),
+                          False, False, True, True),
+    "pipeline hỏng": (_ctx(ready="true", finalized="false", update="failure"), True, True, False, False),
+    "chưa có kết quả": (_ctx(ready="false", finalized="false", update="skipped", publish="skipped"),
+                        False, False, False, False),
+    "kết quả trước hỏng": (_ctx(ready="true", finalized="false", update="success", publish="failure"),
+                           True, True, True, True),
+    # Guard đã ghi finalized=true rồi một bước sau của canonical hỏng: không được triển khai.
+    "canonical hỏng sau guard": (_ctx(ready="", finalized="true", update="skipped", publish="skipped",
+                                      canonical="failure"), False, False, False, False),
+}
+
+
+@pytest.mark.parametrize("name", list(SCENARIOS))
+def test_each_job_runs_exactly_when_it_should(name: str) -> None:
+    ctx, publish, update, deploy, trigger = SCENARIOS[name]
+    got = tuple(
+        _condition(job)(ctx)
+        for job in ("publish-results", "update", "deploy-pages", "trigger-post-finalization")
+    )
+    assert got == (publish, update, deploy, trigger), name
 
 
 # --- Trang kết quả đi trước pipeline -------------------------------------------
@@ -237,10 +324,7 @@ def test_the_results_pages_do_not_wait_for_the_analytics_pipeline() -> None:
 
 def test_the_full_deploy_comes_after_the_results_deploy() -> None:
     """Hai lượt triển khai trong cùng một lượt chạy: bản đầy đủ phải là bản sau cùng."""
-    deploy = _jobs()["deploy-pages"]
-    assert _needs(deploy) == {"update", "publish-results"}
-    assert "always()" in deploy["if"], "publish-results hỏng không được chặn bản đầy đủ"
-    assert "needs.update.result == 'success'" in deploy["if"]
+    assert {"update", "publish-results"} <= _needs(_jobs()["deploy-pages"])
 
 
 @pytest.mark.parametrize(

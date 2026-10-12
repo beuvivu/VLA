@@ -67,6 +67,7 @@ jobs:
       canonical_changed: ${{ steps.canonical_commit.outputs.canonical_changed }}
       canonical_ready: ${{ steps.canonical.outputs.ready }}
       target: ${{ steps.canonical.outputs.target }}
+      finalized: ${{ steps.guard.outputs.finalized }}
 
     env:
       VN_LOTTERY_ROOT: ${{ github.workspace }}
@@ -126,17 +127,19 @@ jobs:
           reason = "forced-" + dispatch_reason if forced else "scheduled-staleness"
           # Mỗi lượt live-results thấy kỳ đã xác minh đều gọi lại đây; ngày 12-10-2026 có SÁU
           # lượt hoàn tất cho cùng một kỳ, mỗi lượt ~8 phút, ba lượt viết lại dự báo LOTO đã công
-          # bố. Kỳ hôm nay đã có trong sổ VÀ đã có dự báo cho kỳ kế tiếp thì không còn gì để làm.
-          # Pipeline hỏng giữa chừng thì chưa có dự báo kỳ sau, nên lượt gọi lại vẫn chạy.
+          # bố. Kỳ hôm nay đã có trong sổ VÀ đã có dự báo cho kỳ kế tiếp thì pipeline không chạy
+          # lại; nhưng triển khai Pages và hậu kiểm VẪN chạy lại (rẻ, lũy đẳng), vì hai tệp dự
+          # báo chỉ chứng minh phân tích đã xong, không chứng minh hai chặng ấy đã thành công.
+          # Pipeline hỏng giữa chừng thì chưa có dự báo kỳ sau, nên lượt gọi lại chạy đủ.
           next_day = (target + timedelta(days=1)).isoformat()
-          finalized = latest == target.isoformat() and all(
+          finalized = live_verified and latest == target.isoformat() and all(
               os.path.exists(f"data/predict/predict_next_{mode}_all_{next_day}.csv")
               for mode in ("loto", "de")
           )
-          if live_verified and finalized:
-              should_run = False
+          if finalized:
               reason = "already-finalized"
           print(f"run={'true' if should_run else 'false'}")
+          print(f"finalized={'true' if finalized else 'false'}")
           print(f"latest={latest}")
           print(f"target={target.isoformat()}")
           print(f"reason={reason}")
@@ -280,7 +283,7 @@ jobs:
     # trên trang chủ trong vài phút ấy vẫn là dự báo đã công bố cho kỳ vừa quay.
     name: Xuất bản trang kết quả ngay
     needs: canonical
-    if: ${{ github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' }}
+    if: ${{ github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && needs.canonical.outputs.finalized != 'true' }}
     continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -338,7 +341,7 @@ jobs:
   update:
     name: Thống kê, AI/ML và mọi trang
     needs: canonical
-    if: ${{ needs.canonical.outputs.canonical_ready == 'true' }}
+    if: ${{ needs.canonical.outputs.canonical_ready == 'true' && needs.canonical.outputs.finalized != 'true' }}
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -450,7 +453,8 @@ jobs:
   trigger-post-finalization:
     name: Kích hoạt kiểm toán và đối soát trực tiếp
     needs: [canonical, update]
-    if: ${{ needs.update.result == 'success' && needs.canonical.outputs.canonical_ready == 'true' }}
+    # Lượt already-finalized bỏ pipeline (update = skipped) nhưng vẫn hậu kiểm lại.
+    if: ${{ always() && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -496,8 +500,8 @@ jobs:
     name: Triển khai bảng điều khiển đã làm mới (tùy chọn)
     # Chờ cả publish-results (thường đã xong từ lâu) để hai lượt triển khai không chồng nhau
     # và bản đầy đủ luôn là bản sau cùng; always() vì publish-results được phép hỏng.
-    needs: [update, publish-results]
-    if: ${{ always() && github.event.repository.private == false && needs.update.result == 'success' }}
+    needs: [canonical, update, publish-results]
+    if: ${{ always() && github.event.repository.private == false && needs.canonical.outputs.canonical_ready == 'true' && (needs.update.result == 'success' || (needs.update.result == 'skipped' && needs.canonical.outputs.finalized == 'true')) }}
     continue-on-error: true
     runs-on: ubuntu-latest
     permissions:

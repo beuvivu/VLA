@@ -191,6 +191,10 @@ class Lottery:
         """
         min_agreement = max(1, int(min_agreement))
         candidates: list[tuple[str, Result]] = []
+        # Nguồn trả đúng một kỳ đã lưu (trang chưa cập nhật kỳ mới). Đo 00:37 ngày 13-10-2026:
+        # trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ 12-10. Bỏ nguồn ấy, hỏi
+        # nguồn kế tiếp; chỉ kết luận "không quay" khi MỌI nguồn có kết quả đều trùng khít.
+        twins: list[date] = []
 
         for source in self._sources:
             name = getattr(source, "name", "?")
@@ -206,17 +210,17 @@ class Lottery:
                 logger.warning("Source %s returned date %s for requested %s; skipping", name, result.date, selected_date)
                 continue
 
-            candidates.append((name, result))
             if min_agreement == 1:
                 twin = self._repeats_a_neighbour(selected_date, result)
                 if twin is not None:
                     logger.warning(
-                        "Bỏ %s: trùng khít kỳ %s — ngày không quay, nguồn trả "
-                        "kết quả gần nhất",
-                        selected_date, twin,
+                        "Bỏ %s từ %s: trùng khít kỳ %s — nguồn còn hiện kỳ đã lưu; "
+                        "hỏi nguồn kế tiếp",
+                        selected_date, name, twin,
                     )
-                    self._no_draw.add(selected_date)
-                    return False
+                    twins.append(twin)
+                    continue
+                candidates.append((name, result))
                 self._data[selected_date] = result
                 self._fetch_audit[selected_date.isoformat()] = {
                     "checked_at_utc": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -233,6 +237,16 @@ class Lottery:
                     "candidates": 1,
                 }
                 return True
+            candidates.append((name, result))
+
+        if min_agreement == 1 and twins:
+            logger.warning(
+                "Bỏ %s: mọi nguồn có kết quả đều trùng khít kỳ %s — ngày không quay, "
+                "hoặc nguồn chưa đăng kỳ mới",
+                selected_date, twins[0],
+            )
+            self._no_draw.add(selected_date)
+            return False
 
         grouped: dict[tuple[int, ...], list[tuple[str, Result]]] = defaultdict(list)
         for item in candidates:

@@ -266,7 +266,9 @@ nguồn khi chưa đo bằng `diagnose-live-sources.yml`. Bản JS của Worker 
 Trước giờ quay, trang live của mọi nguồn vẫn hiện TRỌN kỳ hôm qua (đo 00:37 ngày 13-10-2026).
 Nguồn mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là chưa có gì
 (`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `crawler/fetch_results` và Worker
-— thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua.
+— thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua. Worker
+giữ kỳ trước ở khoá KV `previous-draw.json` vì lượt cron đầu ghi đè ảnh chụp hôm qua. Sổ chuẩn
+(`Lottery.fetch`) bỏ nguồn trùng khít rồi hỏi nguồn kế tiếp, không dừng ở nguồn đầu.
 
 Một hàng giải = dòng nhãn + các dòng NGAY SAU mà mọi mẩu là số ASCII đúng độ rộng của giải;
 gặp dòng khác là hết hàng. Trước đó giải 7 (nhãn cuối bảng) vớ số của bảng lô tô, ô chọn tháng
@@ -276,9 +278,11 @@ hay liên kết ngày khi chưa quay — lỗi "trùng lặp giải 7". Mẫu tr
 `update-data.yml` có ba chặng: `canonical` (chốt và commit kết quả chuẩn) → song song
 `publish-results` (dựng trang chủ/sổ kết quả/soi cầu vị trí rồi triển khai Pages, không commit)
 và `update` (pipeline đầy đủ); `deploy-pages` chờ CẢ HAI nên bản đầy đủ luôn triển khai sau cùng.
-Lượt `live_verified` gọi `sync.py --cutoff 00:00` (12-10-2026 quay khống 3 phút vì mốc 18:35) và
-bị bỏ qua khi kỳ hôm nay đã có dự báo kỳ sau. Đừng gộp lại thành một job: trang chủ khi ấy chờ
-~5 phút pipeline. `tests/test_finalization_timing.py`, `documentation/operations/scheduling.md`.
+Lượt `live_verified` gọi `sync.py --cutoff 00:00` (12-10-2026 quay khống 3 phút vì mốc 18:35);
+khi kỳ hôm nay đã có dự báo kỳ sau (`finalized`) nó bỏ `publish-results` và `update` nhưng VẪN
+triển khai Pages và hậu kiểm lại. Đừng gộp lại thành một job: trang chủ khi ấy chờ ~5 phút
+pipeline. Điều kiện `if:` của các job được ĐÁNH GIÁ (kể cả `success()` ngầm định) trong
+`tests/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
 
 ## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
 

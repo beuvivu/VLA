@@ -256,8 +256,10 @@ Nay nguồn có giá trị mà mọi giá trị trùng đúng ô của kỳ đã
 chưa có gì (`sources.shows_previous_draw`, `snapshot.js::showsPreviousDraw`), với
 lỗi `StalePage` trong `source_status` — TRƯỚC khi quyết định chuyển nguồn, nên nguồn
 chính còn hiện kỳ trước cũng kích hoạt dự phòng. Kỳ trước lấy từ sổ chuẩn
-`data/xsmb.csv` (`--history`) ở bản Python, và từ ảnh chụp đã xác minh của ngày
-khác còn trong KV ở Worker. Kỳ mới về dần từ giải nhất (năm chữ số), nên một trang
+`data/xsmb.csv` (`--history`) ở bản Python. Worker không có sổ: nó lấy ảnh chụp
+đã xác minh của ngày khác còn trong KV và GIỮ bản ấy ở khoá `previous-draw.json`
+(7 ngày) trước khi lượt cron đầu của ngày mới ghi đè `live.json` — thiếu bước
+giữ này, từ lượt cron thứ hai trang cũ không còn bị nhận ra. Kỳ mới về dần từ giải nhất (năm chữ số), nên một trang
 đang quay trùng kỳ trước ở mọi ô đã về gần như không thể.
 
 ### Hàng giải chỉ đọc số của chính nó

@@ -164,6 +164,9 @@ def test_a_page_still_showing_yesterday_is_not_todays_result() -> None:
     assert out["received_values"] == 0
     assert out["fallback_activated"] is True, "nguồn chính còn hiện kỳ trước là sự cố"
     assert out["failed_rows"] == ALL_SOURCE_ROWS
+    assert out["later_statuses"] == ["waiting"] * 3, (
+        "lượt cron đầu đã ghi đè ảnh chụp hôm qua; các lượt sau vẫn phải nhận ra trang cũ"
+    )
 
 
 def test_a_missing_kv_binding_says_exactly_what_to_do() -> None:

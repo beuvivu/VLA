@@ -93,10 +93,16 @@ Ba thay đổi (13-10-2026):
    bản đầy đủ luôn là bản sau cùng. Ước tính: trang chủ có kết quả ~2–3 phút
    sau khi live xác minh, thay vì 9,5 phút. Trong vài phút ấy phần dự báo trên
    trang chủ vẫn là dự báo đã công bố cho kỳ vừa quay.
-3. **Bỏ lượt hoàn tất lặp lại.** Lượt `live_verified` tới khi kỳ hôm nay đã có
-   trong sổ VÀ đã có `predict_next_{loto,de}_all_<ngày mai>.csv` thì guard trả
-   `run=false` (`already-finalized`). Pipeline hỏng giữa chừng thì chưa có dự
-   báo kỳ sau, nên lượt gọi lại vẫn chạy. Lượt gọi tay luôn chạy.
+3. **Không chạy lại pipeline cho kỳ đã xong.** Lượt `live_verified` tới khi kỳ
+   hôm nay đã có trong sổ VÀ đã có `predict_next_{loto,de}_all_<ngày mai>.csv`
+   thì guard trả `finalized=true` (`already-finalized`): bỏ `publish-results`
+   và `update`, nhưng `deploy-pages` và hậu kiểm VẪN chạy lại — rẻ và lũy đẳng,
+   vì hai tệp dự báo chỉ chứng minh phân tích đã xong, không chứng minh Pages
+   hay hậu kiểm đã thành công. Pipeline hỏng giữa chừng thì chưa có dự báo kỳ
+   sau, nên lượt gọi lại chạy đủ. Lượt gọi tay luôn chạy đủ.
+4. **Nguồn dự phòng còn hiện kỳ trước không chặn nguồn sau.** `Lottery.fetch`
+   bỏ nguồn trả kết quả trùng khít kỳ đã lưu và hỏi nguồn kế tiếp; chỉ kết
+   luận "không quay" khi mọi nguồn có kết quả đều trùng khít.
 
 `tests/test_finalization_timing.py` chạy nguyên các khối ấy lấy từ YAML.
 

@@ -170,6 +170,35 @@ def test_rejects_a_draw_identical_to_the_previous_day(tmp_path: Path) -> None:
     assert not lot.has_date(today)
 
 
+def test_a_source_still_showing_the_stored_draw_hands_over_to_the_next(tmp_path: Path) -> None:
+    """Đo 00:37 ngày 13-10-2026: trang theo ngày 13-10 của hai nguồn dự phòng hiện trọn kỳ
+    12-10. Nguồn trước trùng khít thì phải hỏi nguồn sau, không kết luận "không quay"."""
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    fresh = _result(today, special=22602)
+    lot._sources = [  # type: ignore[attr-defined]
+        FakeSource("a", _result(today, special=22601)),
+        FakeSource("b", fresh),
+    ]
+    assert lot.fetch(today, min_agreement=1) is True
+    assert lot._data[today].special == 22602  # type: ignore[attr-defined]
+    assert not lot.is_no_draw(today)
+
+
+def test_only_when_every_answer_repeats_is_the_day_a_non_draw(tmp_path: Path) -> None:
+    yesterday, today = date(2026, 2, 15), date(2026, 2, 16)
+    lot = _lottery(tmp_path, [FakeSource("a", _result(yesterday, special=22601))])
+    assert lot.fetch(yesterday, min_agreement=1) is True
+
+    stale = _result(today, special=22601)
+    lot._sources = [FakeSource("a", stale), FakeSource("b", None), FakeSource("c", stale)]  # type: ignore[attr-defined]
+    assert lot.fetch(today, min_agreement=1) is False
+    assert lot.is_no_draw(today)
+    assert not lot.has_date(today)
+
+
 def test_consensus_does_not_rescue_a_repeated_draw(tmp_path: Path) -> None:
     """Đồng thuận hai nguồn KHÔNG cứu được: mọi nguồn cùng đọc một trang
     tin nên chúng nhất trí về chính kết quả cũ. Bốn bản ghi đã lọt vào 393 kỳ

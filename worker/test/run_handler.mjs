@@ -190,16 +190,27 @@ const SCENARIOS = {
     };
     await kv.put("live.json", JSON.stringify(yesterday));
     globalThis.fetch = async () => new Response(FULL_PAGE, { status: 200 });
+    const env = { LIVE: kv, MIN_AGREEMENT: "1" };
     const ctx = newCtx();
-    await worker.scheduled({}, { LIVE: kv, MIN_AGREEMENT: "1" }, ctx);
+    await worker.scheduled({}, env, ctx);
     await Promise.all(ctx.pending);
     const parsed = JSON.parse(await kv.get("live.json"));
+    // Lượt cron đầu đã ghi đè ảnh chụp hôm qua bằng bản "waiting" của hôm nay. Trang nguồn
+    // vẫn hiện kỳ hôm qua: các lượt sau cũng phải nhận ra nó.
+    const later = [];
+    for (let i = 0; i < 3; i += 1) {
+      const c = newCtx();
+      await worker.scheduled({}, env, c);
+      await Promise.all(c.pending);
+      later.push(JSON.parse(await kv.get("live.json")).status);
+    }
     return {
       draw_date: parsed.draw_date,
       status: parsed.status,
       received_values: parsed.received_values,
       fallback_activated: parsed.failover.fallback_activated,
       failed_rows: parsed.source_status.filter((r) => r.failed).length,
+      later_statuses: later,
     };
   },
 
