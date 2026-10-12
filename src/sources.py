@@ -99,13 +99,54 @@ def _valid_prize_token(value: object, key: str) -> str | None:
     return token if re.fullmatch(rf"[0-9]{{{width}}}", token) is not None else None
 
 
+#: Một dòng tách thành các cụm chữ số ASCII và các cụm KHÁC; khoảng trắng, dấu phẩy, chấm
+#: phẩy và gạch đứng chỉ là dấu phân cách.
+_LINE_TOKEN = re.compile(r"[0-9]+|[^\s0-9,;|]+")
+
+
+def _value_line_tokens(line: str, key: str) -> list[str] | None:
+    """Giá trị của một dòng NẰM SAU nhãn giải, hoặc ``None`` nếu dòng ấy không phải hàng số.
+
+    Hàng số chỉ gồm các số đúng độ rộng của giải và dấu phân cách. Mọi dòng khác — chữ
+    ("Loto Miền Bắc", "Normal"), ngày tháng ("12/10", "XSMB 12/10/2026"), chữ số trần của
+    ô chọn tháng ("8"), số tiền thưởng, ký hiệu chờ ("…", "-") — kết thúc hàng giải. Ba
+    nguồn đều in mỗi giá trị trên một dòng và các ô chưa quay đứng SAU các ô đã quay, nên
+    dừng ở dòng đầu tiên không phải hàng số không bỏ sót giá trị nào.
+
+    Vì sao cần: giải 7 là nhãn CUỐI của bảng, nên trước đây khối số của nó kéo tới nhãn
+    kế tiếp ở tận bảng lô tô hay ô chọn tháng. Khi giải 7 chưa quay, bộ bóc vớ số hai chữ
+    số ở đó: ``xoso.com.vn`` cho ``["10", "11", "12"]`` (tháng), ``xosodaiphat.com`` cho
+    ``["12", "10", "14", "10"]`` (ngày) — đo trên trang thật ngày 13-10-2026.
+    """
+    width = EXPECTED_WIDTHS[key]
+    values: list[str] = []
+    for token in _LINE_TOKEN.findall(line):
+        if not (token.isascii() and token.isdigit()) or len(token) != width:
+            return None
+        values.append(token)
+    return values
+
+
+def _prize_row_values(lines: list[str], label_idx: int, stop_idx: int, key: str) -> list[str]:
+    """Giá trị của một hàng giải: trên chính dòng nhãn, rồi các dòng hàng số ngay sau nó."""
+    values = _valid_tokens(lines[label_idx], key)
+    for idx in range(label_idx + 1, stop_idx):
+        row = _value_line_tokens(lines[idx], key)
+        if row is None:
+            break
+        values.extend(row)
+    return values[: EXPECTED_COUNTS[key]]
+
+
 def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
     """Extract the best labelled XSMB prize block from page text.
 
-    The six configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
+    The configured sources use slightly different labels (Đặc Biệt/G1/1, etc.).
     This parser finds candidate prize blocks, enforces exact prize widths and
     returns partial values without zero-filling.  It is therefore safe for live
-    pages where some prizes are not available yet.
+    pages where some prizes are not available yet: a prize's values are read from
+    its label line and the pure number lines right after it, never from whatever
+    text follows an empty row (``_value_line_tokens``).
     """
     soup = BeautifulSoup(text or "", "lxml")
     lines = [re.sub(r"\s+", " ", line).strip() for line in soup.get_text("\n", strip=True).splitlines()]
@@ -142,12 +183,14 @@ def extract_partial_prize_map(text: str) -> dict[str, list[str]]:
                 # A new unrelated table has started.
                 break
             seen_order = max(seen_order, key_order)
-            next_idx = labels[pos + 1][0] if pos + 1 < len(labels) else min(len(lines), line_idx + 10)
-            chunk = " ".join(lines[line_idx:next_idx])
-            values = _valid_tokens(chunk, key)
+            next_idx = labels[pos + 1][0] if pos + 1 < len(labels) else len(lines)
+            values = _prize_row_values(lines, line_idx, next_idx, key)
             if values:
-                prize_map[key] = values[: EXPECTED_COUNTS[key]]
-            if key == "prize7":
+                prize_map[key] = values
+            # Giải 7 kết thúc bảng. Hai nhãn giải 7 liền nhau ("Giải bảy" rồi "G7") là
+            # một hàng hai cột nhãn: nhãn đầu chưa cho số thì đọc tiếp nhãn sau.
+            next_key = labels[pos + 1][1] if pos + 1 < len(labels) else None
+            if key == "prize7" and (prize_map["prize7"] or next_key != "prize7"):
                 break
         candidates.append(prize_map)
 
