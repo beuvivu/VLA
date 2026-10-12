@@ -97,6 +97,114 @@ phải kỹ năng: chọn trên 30 kỳ trước rồi kiểm ngoài mẫu thì 
 - hằng số bị chuẩn hoá thành khác 0;
 - lưới trọng số thiếu đỉnh.
 
+## Lượt thử thứ hai — 12-10-2026
+
+Chủ dự án thấy tỉ lệ trúng còn quá thấp và yêu cầu thử lại. Lượt này không tinh chỉnh bộ lọc cũ
+mà dò rộng: 22 cách chấm thuộc mọi họ ý tưởng thường gặp, gồm cả hai mô hình học trên toàn bộ
+đặc trưng. Mã: `scripts/benchmark_multi_hit.py`. Phép kiểm: `tests/test_benchmark_multi_hit.py`.
+
+### Giao thức, cố định trước khi chạy
+
+- Mọi chiến lược chấm kỳ t chỉ từ các kỳ < t. Hoà điểm phá bằng nhiễu cố định, không thiên về số
+  nhỏ.
+- Giai đoạn phát triển: kỳ 615–3 232 (2 618 kỳ). Giai đoạn kiểm: 1 000 kỳ cuối (kỳ 3 233–4 232, tới
+  12-10-2026).
+- Phép so: top-5 so với chọn bừa 5 trong 100 con của CÙNG kỳ (phân phối siêu bội). Nhờ vậy phép so
+  giữ đúng dao động của chính các kỳ đã quay.
+- Chiến lược có z cao nhất ở giai đoạn phát triển là ứng viên DUY NHẤT. Giai đoạn kiểm chỉ quyết
+  định ứng viên ấy, ngưỡng p một phía < 0,01. Chọn cái tốt nhất trên giai đoạn kiểm là rò rỉ.
+
+Các họ đã thử:
+
+- tần suất nhiều nháy và tổng nháy ở cửa sổ 7/30/100/365 kỳ và toàn lịch sử, cả "nóng" lẫn
+  "lạnh";
+- lô gan dài nhất và vừa về;
+- lặp lại kỳ trước;
+- cùng thứ trong 52 tuần;
+- thiên lệch theo vị trí giải (mỗi vị trí một phân phối, Poisson-nhị thức);
+- thiên lệch chữ số hàng chục/đơn vị;
+- bộ lọc VIP lượt đầu;
+- hồi quy logistic và cây tăng cường (HistGradientBoosting) trên 19 đặc trưng, khớp lại mỗi 250 kỳ.
+
+### Kết quả trên dữ liệu thật
+
+Nền thực đo: 2,91% ở giai đoạn phát triển, 2,95% ở giai đoạn kiểm (lý thuyết 2,975%).
+
+| Chiến lược | Phát triển: tỉ lệ | z | p Holm | Kiểm: tỉ lệ | z |
+|---|---|---|---|---|---|
+| `repeat_yesterday` (lặp kỳ trước) — **ứng viên** | 3,24% | +2,28 | 0,26 | 3,08% | +0,54 |
+| `repeat_multi_yesterday` | 3,21% | +2,07 | 0,43 | 2,92% | −0,14 |
+| `gan_shortest` (vừa về) | 3,12% | +1,43 | 1,00 | 3,28% | +1,40 |
+| `multi_hot_all` | 3,05% | +0,95 | 1,00 | 3,26% | +1,31 |
+| `random` (chọn bừa, đối chứng) | 3,02% | +0,73 | 1,00 | 3,02% | +0,29 |
+| `gbm_all_features` | 2,92% | +0,04 | 1,00 | 2,22% | −3,14 |
+| `vip_v1` (bộ lọc lượt đầu) | 2,90% | −0,06 | 1,00 | 2,96% | +0,03 |
+| `logistic_all_features` | 2,83% | −0,60 | 1,00 | 2,96% | +0,03 |
+| `nhay_hot_100` | 2,99% | +0,57 | 1,00 | 3,50% | +2,34 |
+| `digit_bias` | 2,67% | −1,66 | 1,00 | 3,44% | +2,08 |
+
+Bảng đầy đủ 23 dòng in ra khi chạy script.
+
+Các kết luận:
+
+- **Không chiến lược nào đạt.** Ứng viên trúng 3,08% ở giai đoạn kiểm, z = +0,54, p = 0,29. Ở giai
+  đoạn phát triển, sau hiệu chỉnh Holm, cũng không chiến lược nào có ý nghĩa: p nhỏ nhất là 0,26.
+- **Ai thắng giai đoạn này không thắng giai đoạn sau.** Tương quan hạng (Spearman) giữa z ở hai
+  giai đoạn qua 22 chiến lược là −0,04, tức không có gì. Trên lịch sử có cài tín hiệu, con số ấy là
+  +0,93. `nhay_hot_100` và `digit_bias` đứng đầu giai đoạn kiểm, nhưng ở giai đoạn phát triển lại
+  dưới nền. Đó là dấu hiệu của dao động ngẫu nhiên.
+- **Hai mô hình học không hơn.** Logistic ngang nền. GBM ngang nền ở giai đoạn phát triển rồi
+  kém ở giai đoạn kiểm (z = −3,14). Với 23 chiến lược, xác suất có ít nhất một |z| ≥ 3,14 do ngẫu
+  nhiên là khoảng 4%. Vì vậy đây không được coi là phát hiện.
+
+### Độ nhạy
+
+`--power-check` chạy đúng giao thức trên lịch sử giả định cùng độ dài. Ba con 07, 38, 68 được cài
+thêm ≥ 2 nháy với xác suất 3%/kỳ, tức tỉ lệ của chúng từ ~3% lên ~6%. Kết quả:
+
+- Ứng viên là `multi_hot_all`, z = +11,99 ở giai đoạn phát triển.
+- Ở giai đoạn kiểm, ứng viên trúng 4,52% so với nền 3,01%, z = +6,40: đạt.
+- Logistic và GBM cũng bắt được tín hiệu, với z lần lượt +6,31 và +6,74 ở giai đoạn kiểm.
+
+Công cụ đo không mù. Dữ liệu thật đơn giản là không có tín hiệu cỡ ấy.
+
+### Muốn "trúng thường hơn" thì chỉ còn cách chọn nhiều hơn
+
+Bảng dưới là tỉ lệ kỳ có ÍT NHẤT một con trong top-k trúng, đo trên 1 000 kỳ kiểm:
+
+| k con | ≥ 2 nháy: ứng viên / chọn bừa | ≥ 1 nháy: ứng viên / chọn bừa |
+|---|---|---|
+| 1 | 3,4% / 2,4% | 22,6% / 22,2% |
+| 3 | 9,2% / 8,4% | 54,4% / 53,8% |
+| 5 | 14,4% / 14,8% | 73,9% / 74,2% |
+| 10 | 26,8% / 27,1% | 93,8% / 94,1% |
+| 20 | 46,6% / 47,5% | 99,9% / 99,4% |
+
+Tần suất "có trúng" tăng theo số con chọn, không theo cách chọn. Số tiền phải đặt cũng tăng đúng
+theo tỉ lệ ấy. Tỉ lệ trúng của MỖI con vẫn ở mức nền: 2,975% cho ≥ 2 nháy, 23,8% cho ≥ 1 nháy.
+
+### Tái lập
+
+    python3 scripts/benchmark_multi_hit.py --power-check     # khoảng 2 phút, 4 lõi
+
+`tests/test_benchmark_multi_hit.py` gồm 9 phép kiểm, mỗi phép ghim một điều:
+
+- mọi chiến lược, kể cả hai mô hình học, chỉ đọc quá khứ (đổi các kỳ ≥ t0 không đổi điểm ở kỳ ≤ t0);
+- z của chọn bừa xấp xỉ N(0, 1);
+- ứng viên được chọn chỉ theo giai đoạn phát triển;
+- tín hiệu cài sẵn được tìm ra và đạt;
+- lịch sử công bằng không đạt;
+- mô hình vị trí khởi đầu đúng mức nền;
+- Holm đúng;
+- phá hoà không thiên về số nhỏ.
+
+Đã thử mười đột biến (nhìn trước một kỳ ở đặc trưng, ở độ gan và ở mô hình học; phương sai sai;
+chọn ứng viên theo giai đoạn kiểm hoặc lấy z thấp nhất; Holm không đơn điệu; Poisson-nhị thức
+sai; bỏ phá hoà; ngưỡng luôn đạt), cả mười đều đỏ.
+
+Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lược tần suất thì các nhóm còn lại vẫn bắt
+được tín hiệu cài sẵn.
+
 ## Nếu muốn có trang "VIP"
 
 Không in một con số như "Xác suất 2+ nháy: 28,5%". Nếu có trang, nó phải in từ phép đo, giống
