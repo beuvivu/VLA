@@ -226,6 +226,20 @@
       "special": "07363",
       "source_url": "https://xoso.com.vn/xsmb-11-10-2026.html",
       "checked_at": "2026-10-11T23:43:29+07:00"
+    },
+    "2026-10-12": {
+      "station": "Hà Nội",
+      "special_codes": [
+        "1HR",
+        "2HR",
+        "3HR",
+        "5HR",
+        "12HR",
+        "13HR"
+      ],
+      "special": "38287",
+      "source_url": "https://xoso.com.vn/xsmb-12-10-2026.html",
+      "checked_at": "2026-10-12T18:39:55+07:00"
     }
   }
 }
