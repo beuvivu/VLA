@@ -1,6 +1,6 @@
 """Lượt thử thứ hai cho "lô nhiều nháy" (≥ 2 nháy một kỳ): dò rộng, chọn trước, kiểm một lần.
 
-Lượt đầu (``src/multi_hit_vip.py``, 08-10-2026) cho top-5 trúng 2,89% so với nền 2,975%. Lượt
+Lượt đầu (``src/multi_hit_vip.py``, 08-10-2026) cho top-5 trúng 2,91% so với nền 2,975%. Lượt
 này hỏi câu rộng hơn: có CÁCH CHẤM NÀO trong các họ ý tưởng thường gặp — tần suất ở mọi cửa sổ,
 lô gan, lặp kỳ trước, theo thứ trong tuần, thiên lệch theo vị trí giải hay theo chữ số, hồi quy
 logistic và cây tăng cường trên toàn bộ đặc trưng — đưa top-5 lên trên mức nền không?
@@ -24,8 +24,8 @@ Giao thức, cố định TRƯỚC khi chạy trên dữ liệu thật (đổi g
 
 Chạy:
 
-    python3 scripts/benchmark_multi_hit.py                       # dữ liệu thật, ~2–4 phút
-    python3 scripts/benchmark_multi_hit.py --power-check         # thêm phép kiểm độ nhạy
+    python3 scripts/benchmark_multi_hit.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
+    python3 scripts/benchmark_multi_hit.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
     python3 scripts/benchmark_multi_hit.py --json /tmp/multi.json
 """
 
@@ -58,6 +58,7 @@ from multi_hit_vip import (  # noqa: E402
     counts_matrix,
     draws_from_frame,
     mock_history,
+    until,
 )
 
 WARMUP = 365
@@ -392,11 +393,14 @@ def planted_history(n_draws: int, planted: tuple[int, ...] = (7, 38, 68), plant_
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--csv", default=str(ROOT / "data" / "xsmb-2-digits.csv"))
+    parser.add_argument("--until", help="chỉ dùng các kỳ tới ngày này (YYYY-MM-DD) — để tái lập một phép đo")
     parser.add_argument("--power-check", action="store_true", help="thêm lịch sử giả định có cài tín hiệu")
     parser.add_argument("--json", help="ghi kết quả JSON ra tệp này")
     args = parser.parse_args(argv)
 
     frame = pd.read_csv(args.csv, dtype=str)
+    if args.until:
+        frame = until(frame, args.until)
     draws, labels = draws_from_frame(frame)
     weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
     result = run_protocol(draws, weekdays)

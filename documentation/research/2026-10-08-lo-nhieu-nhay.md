@@ -5,8 +5,8 @@ Ngày 08-10-2026. Mã: `src/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_h
 ## Kết luận
 
 Trên 4 228 kỳ XSMB thật, chọn top-5 của bộ lọc (bốn lớp đặc trưng, trọng số tự tối ưu) trúng
-"nhiều nháy" **2,89%** số lượt chọn, KTC95 2,67–3,13%. Chọn bừa trúng **2,97%**. Top-3: 2,91%.
-Bộ lọc không hơn chọn bừa (p = 0,76). Phép đo đủ nhạy để thấy một lợi thế chỉ ×1,13, nên mức
+"nhiều nháy" **2,91%** số lượt chọn, KTC95 2,68–3,15%. Chọn bừa trúng **2,97%**. Top-3: 2,87%.
+Bộ lọc không hơn chọn bừa (p = 0,72). Phép đo đủ nhạy để thấy một lợi thế chỉ ×1,13, nên mức
 15–25% (gấp 4–6 lần nền) mà đặc tả ban đầu đặt ra bị bác chắc chắn.
 
 Bộ lọc không mù: trên lịch sử giả định có cài tín hiệu, nó đưa đúng ba con được cài lên top-3
@@ -54,7 +54,7 @@ Cách chấm và chọn:
 - **Đánh giá.** Walk-forward lồng nhau: kỳ t được chấm bằng trọng số chọn trên [t − 30, t). Vì
   vậy tỉ lệ trúng báo ra không mang thiên lệch của phép chọn.
 - **Xác suất hiển thị.** Hiệu chỉnh Platt trên các cặp (điểm, kết quả) ngoài mẫu. Không có tín
-  hiệu thì xác suất về mức nền; kỳ tới (sau 07-10-2026), top-5 nhận 2,88–2,90%.
+  hiệu thì xác suất về mức nền; kỳ tới (sau 07-10-2026), top-5 nhận 2,86–2,89%.
 - **Confidence (High/Medium/Low).** Suy từ kiểm định nhị thức một phía của tỉ lệ trúng ngoài mẫu
   (High: p < 0,01; Medium: p < 0,05; cả hai đều đòi lift > 1). Một con chỉ tin được tới mức bộ
   lọc đã chứng minh.
@@ -65,14 +65,21 @@ Walk-forward ngoài mẫu qua 4 168 kỳ (kỳ thứ 61 tới kỳ cuối):
 
 | | Lượt chọn | Trúng | Tỉ lệ | Chọn bừa | Lift | p một phía |
 |---|---|---|---|---|---|---|
-| Top-5, trọng số tự tối ưu | 20 840 | 603 | 2,89% | 2,97% | ×0,97 | 0,76 |
-| Top-3, trọng số tự tối ưu | 12 504 | 364 | 2,91% | 2,97% | ×0,98 | 0,67 |
+| Top-5, trọng số tự tối ưu | 20 840 | 606 | 2,91% | 2,97% | ×0,98 | 0,72 |
+| Top-3, trọng số tự tối ưu | 12 504 | 359 | 2,87% | 2,97% | ×0,97 | 0,76 |
 | Top-5, trọng số cố định gần đặc tả (0,3/0,3/0,2/0,2) | 20 840 | 589 | 2,83% | 2,97% | ×0,95 | — |
 | Top-5, trọng số tốt nhất **nhìn lại** | 20 840 | 682 | 3,27% | 2,97% | ×1,10 | — |
 
 Dòng cuối chọn vector trọng số tốt nhất trên chính 4 168 kỳ kiểm, tức cố tình rò rỉ. Ngay cả gian
 lận ấy cũng chỉ được 3,27%. Mức này là thiên lệch do chọn cái tốt nhất trong 286 vector, không
-phải kỹ năng: chọn trên 30 kỳ trước rồi kiểm ngoài mẫu thì nó về 2,89%.
+phải kỹ năng: chọn trên 30 kỳ trước rồi kiểm ngoài mẫu thì nó về 2,91%.
+
+**Phá hoà (sửa 12-10-2026).** Bản đầu xếp hạng bằng sắp xếp ổn định, nên điểm hoà luôn chọn số nhỏ.
+Thành phần cầu nhịp thưa (phần lớn 100 con cùng điểm), nên ở các kỳ trọng số dồn hết vào cầu nhịp,
+52% lượt chọn rơi vào 00–04 thay vì 5%. Phép chọn trọng số vì thế có thể thưởng cho một chiến lược
+"chọn 00–04" không ai khai báo. Nay chọn trọng số, backtest và dự báo cùng xếp qua `rank_order`:
+hoà được phá bằng một hoán vị cố định theo từng kỳ, và tỉ lệ 00–04 ở các kỳ ấy về 4,95%. Các con
+số trong mục này là của bản đã sửa; bản cũ cho top-5 2,89% (603 lượt trúng), top-3 2,91%.
 
 Độ nhạy: với 20 840 lượt chọn, α = 0,01 một phía và lực 80%, phép đo phát hiện được tỉ lệ thật
 ≥ 3,35% (lift ×1,13).
@@ -81,12 +88,14 @@ phải kỹ năng: chọn trên 30 kỳ trước rồi kiểm ngoài mẫu thì 
 
     python3 src/multi_hit_vip.py --mock                          # 100 kỳ giả định, quay công bằng
     python3 src/multi_hit_vip.py --mock --plant                  # cài tín hiệu cho 07, 38, 68
-    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv    # 4 228 kỳ thật, khoảng 20 giây
-    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv --top-k 3 --json /tmp/vip.json
+    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07              # 4 228 kỳ, ~20 giây
+    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07 --top-k 3 --json /tmp/vip.json
+
+CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của phép đo đã công bố.
 
 ## Kiểm thử
 
-`tests/test_multi_hit_vip.py` gồm 13 phép kiểm. Đã thử tám đột biến và cả tám đều đỏ:
+`tests/test_multi_hit_vip.py` gồm 15 phép kiểm. Đã thử mười ba đột biến và cả mười ba đều đỏ:
 
 - cửa sổ đặc trưng gồm cả kỳ đang dự báo (nhìn trước);
 - cửa sổ chọn trọng số gồm cả kỳ t;
@@ -95,7 +104,10 @@ phải kỹ năng: chọn trên 30 kỳ trước rồi kiểm ngoài mẫu thì 
 - hiệu chỉnh bỏ qua điểm;
 - Confidence không đòi lift > 1;
 - hằng số bị chuẩn hoá thành khác 0;
-- lưới trọng số thiếu đỉnh.
+- lưới trọng số thiếu đỉnh;
+- phá hoà theo thứ tự số ở chọn trọng số, ở backtest hoặc ở dự báo (ba đột biến);
+- khoá phá hoà không đổi theo kỳ;
+- bỏ qua `--until`.
 
 ## Lượt thử thứ hai — 12-10-2026
 
@@ -138,7 +150,7 @@ Nền thực đo: 2,91% ở giai đoạn phát triển, 2,95% ở giai đoạn k
 | `multi_hot_all` | 3,05% | +0,95 | 1,00 | 3,26% | +1,31 |
 | `random` (chọn bừa, đối chứng) | 3,02% | +0,73 | 1,00 | 3,02% | +0,29 |
 | `gbm_all_features` | 2,92% | +0,04 | 1,00 | 2,22% | −3,14 |
-| `vip_v1` (bộ lọc lượt đầu) | 2,90% | −0,06 | 1,00 | 2,96% | +0,03 |
+| `vip_v1` (bộ lọc lượt đầu) | 2,93% | +0,15 | 1,00 | 3,02% | +0,29 |
 | `logistic_all_features` | 2,83% | −0,60 | 1,00 | 2,96% | +0,03 |
 | `nhay_hot_100` | 2,99% | +0,57 | 1,00 | 3,50% | +2,34 |
 | `digit_bias` | 2,67% | −1,66 | 1,00 | 3,44% | +2,08 |
@@ -150,7 +162,7 @@ Các kết luận:
 - **Không chiến lược nào đạt.** Ứng viên trúng 3,08% ở giai đoạn kiểm, z = +0,54, p = 0,29. Ở giai
   đoạn phát triển, sau hiệu chỉnh Holm, cũng không chiến lược nào có ý nghĩa: p nhỏ nhất là 0,26.
 - **Ai thắng giai đoạn này không thắng giai đoạn sau.** Tương quan hạng (Spearman) giữa z ở hai
-  giai đoạn qua 22 chiến lược là −0,04, tức không có gì. Trên lịch sử có cài tín hiệu, con số ấy là
+  giai đoạn qua 22 chiến lược là −0,02, tức không có gì. Trên lịch sử có cài tín hiệu, con số ấy là
   +0,93. `nhay_hot_100` và `digit_bias` đứng đầu giai đoạn kiểm, nhưng ở giai đoạn phát triển lại
   dưới nền. Đó là dấu hiệu của dao động ngẫu nhiên.
 - **Hai mô hình học không hơn.** Logistic ngang nền. GBM ngang nền ở giai đoạn phát triển rồi
@@ -185,7 +197,7 @@ theo tỉ lệ ấy. Tỉ lệ trúng của MỖI con vẫn ở mức nền: 2,9
 
 ### Tái lập
 
-    python3 scripts/benchmark_multi_hit.py --power-check     # khoảng 2 phút, 4 lõi
+    python3 scripts/benchmark_multi_hit.py --until 2026-10-12 --power-check     # khoảng 2 phút, 4 lõi
 
 `tests/test_benchmark_multi_hit.py` gồm 9 phép kiểm, mỗi phép ghim một điều:
 

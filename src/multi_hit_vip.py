@@ -68,6 +68,7 @@ RAW_FEATURES = (
 _F = {name: k for k, name in enumerate(RAW_FEATURES)}
 
 DEFAULT_PLANTED = (7, 38, 68)
+TIE_SEED = 20261008
 
 
 def base_rate(per_draw: int = LOTO_PER_DRAW, p: float = 1 / N_NUMBERS) -> float:
@@ -123,6 +124,16 @@ def draws_from_frame(frame: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
               else [str(k) for k in range(len(frame))])
     values = frame.drop(columns=["date"], errors="ignore").astype(int).to_numpy()
     return validate_draws(values), labels
+
+
+def until(frame: pd.DataFrame, last_date: str) -> pd.DataFrame:
+    """Các kỳ có ``date`` ≤ ``last_date``: CSV lịch sử dài thêm mỗi ngày, nên một phép đo đã
+    công bố chỉ tái lập được khi chốt ngày cuối."""
+    cutoff = pd.Timestamp(last_date)
+    kept = frame[pd.to_datetime(frame["date"]) <= cutoff]
+    if kept.empty:
+        raise ValueError(f"không có kỳ nào tới ngày {last_date}")
+    return kept
 
 
 def validate_draws(draws: np.ndarray | list) -> np.ndarray:
@@ -275,6 +286,31 @@ def weight_grid(step: float) -> np.ndarray:
     return np.array(rows, dtype=float) / units
 
 
+# --------------------------------------------------------------------------- xếp hạng
+
+def tie_keys(t: int, n: int = N_NUMBERS) -> np.ndarray:
+    """Khoá phá hoà của kỳ t: một hoán vị 00–99 cố định theo kỳ, không thiên về con nào.
+
+    Thành phần thưa (cầu nhịp: phần lớn 100 con cùng điểm) làm hoà rất thường. Phá hoà bằng thứ
+    tự số thì hoà nào cũng chọn 00–04, và phép chọn trọng số sẽ thưởng cho một chiến lược "chọn
+    00–04" không ai khai báo: đo trên 4 228 kỳ, ở các kỳ trọng số dồn hết vào cầu nhịp, 52% lượt
+    chọn rơi vào 00–04.
+    """
+    return np.random.default_rng([TIE_SEED, t]).permutation(n)
+
+
+def rank_order(scores: np.ndarray, t: int) -> np.ndarray:
+    """Chỉ số theo điểm GIẢM dần dọc trục 0; hoà phá bằng ``tie_keys(t)``.
+
+    ``scores`` là (100,) hoặc (100, G). Chọn trọng số, backtest và dự báo đều xếp qua hàm này,
+    nên cả ba thấy cùng một thứ tự.
+    """
+    keys = tie_keys(t, scores.shape[0])
+    if scores.ndim == 2:
+        keys = np.broadcast_to(keys[:, None], scores.shape)
+    return np.lexsort((keys, -scores), axis=0)
+
+
 # --------------------------------------------------------------------------- backtest
 
 @dataclass
@@ -331,7 +367,7 @@ class VIPMultiHitModel:
         for t in range(self.cfg.warmup, n_draws):
             scores = self.components[t] @ self.grid.T            # (100, G)
             y = self.labels_y[t]
-            top = np.argsort(-scores, axis=0, kind="stable")[:k]  # hoà: số nhỏ trước
+            top = rank_order(scores, t)[:k]
             hits[t] = y[top].sum(axis=0)
             n_pos = int(y.sum())
             if 0 < n_pos < N_NUMBERS:
@@ -362,7 +398,7 @@ class VIPMultiHitModel:
         for t in range(self.cfg.first_evaluated, len(self.draws)):
             g = self.select_weights(t)
             s = self.scores(t, g)
-            top = np.argsort(-s, kind="stable")[:k]
+            top = rank_order(s, t)[:k]
             hit = int(self.labels_y[t, top].sum())
             rows.append({"ky": self.labels[t], "chon": [f"{i:02d}" for i in top], "trung": hit,
                          **{f"w_{name}": self.grid[g][j] for j, name in enumerate(COMPONENTS)}})
@@ -392,7 +428,7 @@ class VIPMultiHitModel:
         s = self.scores(t, g)
         prob = self.calibrator(bt)(s)
         level = model_confidence(bt.p_value, bt.lift)
-        top = np.argsort(-s, kind="stable")[: self.cfg.top_k]
+        top = rank_order(s, t)[: self.cfg.top_k]
         weights = dict(zip(COMPONENTS, self.grid[g], strict=True))
         picks = []
         for i in top:
@@ -526,6 +562,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--plant", action="store_true",
                         help=f"cài tín hiệu cho {', '.join(f'{n:02d}' for n in DEFAULT_PLANTED)} (kiểm độ nhạy)")
+    parser.add_argument("--until", help="chỉ dùng các kỳ tới ngày này (YYYY-MM-DD) — để tái lập một phép đo")
     parser.add_argument("--last", type=int, default=0, help="chỉ dùng N kỳ gần nhất của CSV")
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--normalisation", choices=["zscore", "minmax"], default="zscore")
@@ -536,6 +573,8 @@ def main(argv: list[str] | None = None) -> int:
         frame = mock_history(args.draws, args.seed, DEFAULT_PLANTED if args.plant else ())
     else:
         frame = pd.read_csv(args.csv, dtype=str)
+        if args.until:
+            frame = until(frame, args.until)
         if args.last:
             frame = frame.tail(args.last)
     draws, labels = draws_from_frame(frame)

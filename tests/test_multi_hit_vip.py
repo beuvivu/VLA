@@ -1,6 +1,6 @@
 """Bộ lọc lô nhiều nháy: không nhìn trước, bắt được tín hiệu cài sẵn, không báo tin cậy giả.
 
-Kết luận đo trên 4 228 kỳ thật (top-5 trúng 2,89%, mức nền 2,97%) nằm ở
+Kết luận đo trên 4 228 kỳ thật (top-5 trúng 2,91%, mức nền 2,97%) nằm ở
 ``documentation/research/2026-10-08-lo-nhieu-nhay.md``. Các phép kiểm dưới đây ghim các LUẬT
 khiến con số ấy đáng tin: đặc trưng chỉ đọc quá khứ, trọng số chọn trên các kỳ trước, và bộ lọc
 đủ nhạy để thấy tín hiệu khi tín hiệu có thật.
@@ -134,3 +134,38 @@ def test_the_cli_runs_on_mock_data_and_writes_the_report(tmp_path, capsys) -> No
     assert len(report["top"]) == 5
     assert all(0 <= row["xac_suat"] <= 1 for row in report["top"])
     assert sum(report["trong_so"].values()) == pytest.approx(1)
+
+
+def test_ties_are_broken_the_same_unbiased_way_in_every_path() -> None:
+    """Mọi thành phần bằng 0 thì mọi con hoà. Chọn trọng số, backtest và dự báo đều phải phá hoà
+    bằng ``rank_order``, không phải thứ tự số: phá theo thứ tự số thì hoà nào cũng chọn 00–04,
+    và phép chọn trọng số thưởng cho một chiến lược "chọn 00–04" không ai khai báo."""
+    model = _model(m.mock_history(150, seed=11))
+    model.components[:] = 0.0
+    model._hits, model._auc = model._score_all_weights()
+    k = model.cfg.top_k
+    zeros = np.zeros(m.N_NUMBERS)
+    for t in range(model.cfg.warmup, len(model.draws)):
+        expected = model.labels_y[t, m.rank_order(zeros, t)[:k]].sum()
+        assert np.all(model._hits[t] == expected), f"kỳ {t}: chọn trọng số xếp hoà khác rank_order"
+    picks = [[int(x) for x in row] for row in model.backtest().per_draw["chon"]]
+    for t, row in zip(range(model.cfg.first_evaluated, len(model.draws)), picks, strict=True):
+        assert row == m.rank_order(zeros, t)[:k].tolist(), f"kỳ {t}: backtest xếp hoà khác rank_order"
+    assert len({x for row in picks for x in row}) > 50
+    report = model.predict_next()
+    assert [int(p.number) for p in report.picks] == m.rank_order(zeros, len(model.draws))[:k].tolist()
+
+
+def test_until_pins_the_history_a_published_measurement_used(tmp_path) -> None:
+    """CSV lịch sử dài thêm mỗi ngày; ``--until`` phải cắt đúng các kỳ tới ngày chốt."""
+    frame = m.mock_history(120, seed=12)
+    csv = tmp_path / "history.csv"
+    frame.to_csv(csv, index=False)
+    cutoff = frame["date"].iloc[99]
+    out = tmp_path / "vip.json"
+    assert m.main(["--csv", str(csv), "--until", cutoff, "--json", str(out)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["so_ky_dung"] == 100
+    assert report["sau_ky"] == cutoff
+    with pytest.raises(ValueError):
+        m.until(frame, "1999-01-01")
