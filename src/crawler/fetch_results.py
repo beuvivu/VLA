@@ -545,11 +545,17 @@ def poll_until_complete(
             max_attempts=config.max_attempts,
             previous=config.previous_draw,
         )
-        merged, verified_slots, stats = poll_once(sources[:1], config.target, **poll)
-        failed, _ = primary_has_failed(merged, target=config.target, now=clock())
-        if failed and len(sources) > 1:
-            merged, verified_slots, backup = poll_once(sources[1:], config.target, **poll)
-            stats = stats + [{**row, "priority": row["priority"] + 1} for row in backup]
+        if config.min_agreement > 1:
+            # Nguồn chính là MỘT nhóm: ngưỡng nhiều nhóm cần mọi nhân chứng ngay từ đầu, nếu
+            # không một nguồn chính đủ 27 ô sẽ không bao giờ đạt ngưỡng mà cũng không bao giờ
+            # bị coi là hỏng.
+            merged, verified_slots, stats = poll_once(sources, config.target, **poll)
+        else:
+            merged, verified_slots, stats = poll_once(sources[:1], config.target, **poll)
+            failed, _ = primary_has_failed(merged, target=config.target, now=clock())
+            if failed and len(sources) > 1:
+                merged, verified_slots, backup = poll_once(sources[1:], config.target, **poll)
+                stats = stats + [{**row, "priority": row["priority"] + 1} for row in backup]
 
         if verified_slots != best_slots:
             # Chỉ ghi khi CÓ thay đổi. Vòng lặp 60 giây suốt một giờ sẽ đẻ ra

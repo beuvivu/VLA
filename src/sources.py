@@ -693,6 +693,7 @@ def fetch_with_failover(
     target: date,
     now: datetime,
     run_batch=None,
+    min_agreement: int = 1,
 ) -> tuple[list[SourceObservation], dict[str, object]]:
     """Gọi nguồn chính; chỉ gọi dự phòng khi nguồn chính gặp sự cố (``primary_has_failed``).
 
@@ -700,7 +701,11 @@ def fetch_with_failover(
     này không tự đi mạng và kiểm thử được bằng hàm giả. ``run_batch(jobs)`` cho phép chạy
     song song hai nguồn dự phòng; mặc định chạy tuần tự.
 
-    Khi dự phòng được gọi, quan sát của nguồn chính KHÔNG được đưa vào phép hợp nhất: nó đã
+    Nguồn chính là MỘT nhóm, nên ngưỡng ``min_agreement > 1`` (vẫn cấu hình được) cần thêm
+    nhân chứng: khi ấy dự phòng luôn được gọi. Nếu không, một nguồn chính đủ 27 ô "dùng được"
+    mà không bao giờ đạt ngưỡng, và vòng thăm dò chạy tới hạn chót.
+
+    Bên gọi chỉ loại quan sát của nguồn chính khỏi phép hợp nhất khi ``primary_failed``: nó đã
     hỏng, và bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
     """
     if run_batch is None:
@@ -713,13 +718,17 @@ def fetch_with_failover(
     ]
     primary = list(run_batch(primary_jobs))
     failed, reason = primary_has_failed(primary[0].prize_map, target=target, now=now)
+    witnesses = min_agreement > 1
+    if witnesses and not failed:
+        reason = f"cần {min_agreement} nhóm độc lập xác nhận"
     log: dict[str, object] = {
         "primary_attempted": len(primary_jobs),
-        "fallback_activated": failed,
+        "primary_failed": failed,
+        "fallback_activated": failed or witnesses,
         "reason": reason,
         "fallback_attempted": 0,
     }
-    if not failed:
+    if not log["fallback_activated"]:
         return primary, log
 
     offset = len(primary_jobs)

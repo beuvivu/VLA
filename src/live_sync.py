@@ -90,14 +90,14 @@ def fetch_snapshot(
         return sorted(done, key=lambda o: o.priority)
 
     observations, failover_log = fetch_with_failover(
-        fetch_one, target=now.date(), now=now, run_batch=run_batch
+        fetch_one, target=now.date(), now=now, run_batch=run_batch, min_agreement=min_agreement
     )
 
     # Nguồn chính đã hỏng thì bản rỗng hay kẹt của nó không được che giá trị của dự phòng.
     partials = [
         (o.name, o.prize_map)
         for o in observations
-        if not (failover_log["fallback_activated"] and o.tier == "primary")
+        if not (failover_log["primary_failed"] and o.tier == "primary")
     ]
     source_status = [
         {

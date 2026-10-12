@@ -211,3 +211,16 @@ def test_the_command_line_passes_the_previous_draw_to_the_snapshot(tmp_path, mon
                                      "--history", str(ledger)])
     live_sync.main()
     assert seen[0]["previous"] == _map()
+
+
+def test_a_two_group_threshold_calls_the_fallbacks_and_keeps_a_healthy_primary(monkeypatch) -> None:
+    """Nguồn chính là MỘT nhóm: ngưỡng 2 cần nhân chứng, và nguồn chính lành vẫn được tính."""
+    backups = [CountingSource("mketqua.net", _map()), CountingSource("www.minhngoc.net.vn", EMPTY)]
+    _use(monkeypatch, [FakeSource("xoso.com.vn", _map())], backups)
+    payload = live_sync.fetch_snapshot(now=datetime(2026, 10, 13, 18, 33, tzinfo=VN), min_agreement=2)
+    assert [b.calls for b in backups] == [1, 1]
+    assert payload["failover"]["primary_failed"] is False
+    assert payload["failover"]["fallback_activated"] is True
+    assert payload["status"] == "complete_verified", "nguồn chính + một dự phòng = hai nhóm"
+    supporters = {name for meta in payload["slot_meta"].values() for name in meta["support"]}
+    assert supporters == {"xoso.com.vn", "mketqua.net"}

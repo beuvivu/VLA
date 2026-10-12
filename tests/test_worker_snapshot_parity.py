@@ -114,7 +114,9 @@ def _cases(count: int = 160) -> list[dict]:
                         vals.append(truth[key][idx] if rng.random() < 0.6 else _token(rng, key))
                     else:
                         vals.append(truth[key][idx])
-                if agreement == "single" and name == SOURCE_NAMES[-1]:
+                # "single": chỉ MỘT nguồn (dự phòng đầu) có dữ liệu — với ngưỡng 2 nhóm, kỳ
+                # đủ ô mà chưa đủ nhân chứng là complete_provisional.
+                if agreement == "single" and name != SOURCE_NAMES[1]:
                     vals = []
                 pmap[key] = vals
             if name == SOURCE_NAMES[0] and primary_state == "empty":
@@ -252,4 +254,5 @@ def test_the_generated_cases_reach_every_status(
         "nguồn chính dùng được",
         "nguồn chính không trả giá trị nào",
         f"đã quá {PRIMARY_COMPLETE_BY:%H:%M}",
-    }, f"bộ sinh chưa chạm đủ ba nhánh chuyển nguồn: {sorted(reasons)}"
+        "cần 2 nhóm độc lập xác nhận",
+    }, f"bộ sinh chưa chạm đủ bốn nhánh chuyển nguồn: {sorted(reasons)}"

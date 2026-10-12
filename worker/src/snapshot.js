@@ -314,21 +314,27 @@ export async function collectSnapshot({
     PRIMARY_SOURCES.map((source, i) => fetchFrom(source, "primary", i + 1)),
   );
   const verdict = primaryHasFailed(results[0].prizeMap, now);
+  // Khớp `sources.fetch_with_failover`: nguồn chính là MỘT nhóm, nên ngưỡng > 1 luôn cần dự
+  // phòng; nguồn chính chỉ bị loại khỏi phép hợp nhất khi nó thật sự hỏng.
+  const witnesses = minAgreement > 1;
   const failover = {
     primary_attempted: PRIMARY_SOURCES.length,
-    fallback_activated: verdict.failed,
-    reason: verdict.reason,
+    primary_failed: verdict.failed,
+    fallback_activated: verdict.failed || witnesses,
+    reason: witnesses && !verdict.failed
+      ? `cần ${minAgreement} nhóm độc lập xác nhận`
+      : verdict.reason,
     fallback_attempted: 0,
   };
   let merged = results;
-  if (verdict.failed) {
+  if (failover.fallback_activated) {
     const offset = PRIMARY_SOURCES.length;
     const extra = await Promise.all(
       FALLBACK_SOURCES.map((source, i) => fetchFrom(source, "fallback", offset + i + 1)),
     );
     extra.sort((a, b) => a.priority - b.priority);
     results.push(...extra);
-    merged = extra;
+    merged = verdict.failed ? extra : results;
     failover.fallback_attempted = FALLBACK_SOURCES.length;
     failover.usable_groups = independentGroupCount(extra);
   }

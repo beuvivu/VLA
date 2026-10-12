@@ -325,6 +325,22 @@ def test_todays_draw_is_verified_once_the_page_moves_on() -> None:
     assert outcome.prize_map["special"] == ["00000"]
 
 
+def test_a_two_group_threshold_asks_every_source_from_the_start() -> None:
+    """Nguồn chính đủ 27 ô vẫn chỉ là một nhóm: ngưỡng 2 phải hỏi cả dự phòng, nếu không
+    vòng thăm dò chạy tới hạn chót mà không bao giờ xác minh được."""
+    full = _full_prize_map()
+    primary, backup = FakeSource("xoso.vn", [full]), FakeSource("du-phong.vn", [full])
+    clock = FakeClock(datetime(2026, 9, 7, 18, 33, tzinfo=TZ))
+
+    outcome = poll_until_complete(
+        _cfg(min_agreement=2), sources=[primary, backup], sleeper=clock.sleep, clock=clock,
+    )
+
+    assert outcome.verified is True
+    assert outcome.rounds == 1
+    assert (primary.calls, backup.calls) == (1, 1)
+
+
 def test_polling_stops_the_moment_all_27_are_verified() -> None:
     """Điểm mấu chốt về chi phí: xong lúc nào thoát lúc đó."""
     full = _full_prize_map()
