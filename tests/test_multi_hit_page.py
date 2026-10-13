@@ -13,6 +13,7 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 from bs4 import BeautifulSoup
 
@@ -90,25 +91,58 @@ def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
 # --------------------------------------------------------------------------- bản đệm lượt hai
 
 
-@pytest.mark.parametrize(("cached", "draws", "source_date", "stale"), [
-    (None, 4233, "2026-10-12", True),
-    ({"version": report.MEASURE_VERSION - 1, "draws": 4233, "source_date": "2026-10-12"},
-     4233, "2026-10-12", True),
-    ({"version": report.MEASURE_VERSION, "draws": 4233, "source_date": "2026-10-12"},
-     4233, "2026-10-12", False),
-    ({"version": report.MEASURE_VERSION, "draws": 4233, "source_date": "2026-10-12"},
-     4233 + report.BENCHMARK_REFRESH_DRAWS - 1, "2026-11-10", False),
-    ({"version": report.MEASURE_VERSION, "draws": 4233, "source_date": "2026-10-12"},
-     4233 + report.BENCHMARK_REFRESH_DRAWS, "2026-11-11", True),
-    # Lịch sử bị cắt hay viết lại: bản đệm đo trên dữ liệu không còn tồn tại.
-    ({"version": report.MEASURE_VERSION, "draws": 4233, "source_date": "2026-10-12"},
-     4200, "2026-09-09", True),
-    ({"version": report.MEASURE_VERSION, "draws": 4233, "source_date": "2026-10-12"},
-     4233, "2026-10-11", True),
+def _history(n: int = 100):
+    draws, labels = m.draws_from_frame(m.mock_history(n, seed=9))
+    return draws, list(labels)
+
+
+def _cached(draws, labels, measured: int, **extra) -> dict:
+    return {"version": report.MEASURE_VERSION, "draws": measured,
+            "history_sha256": report.history_fingerprint(draws, labels, measured), **extra}
+
+
+def test_a_missing_or_older_benchmark_is_remeasured() -> None:
+    draws, labels = _history()
+    assert report.benchmark_is_stale(None, draws, labels)
+    old = _cached(draws, labels, 70, version=report.MEASURE_VERSION - 1)
+    assert report.benchmark_is_stale(old, draws[:70], labels[:70])
+
+
+@pytest.mark.parametrize(("added", "stale"), [
+    (0, False),
+    (report.BENCHMARK_REFRESH_DRAWS - 1, False),
+    (report.BENCHMARK_REFRESH_DRAWS, True),
 ])
-def test_the_benchmark_is_remeasured_only_when_it_has_gone_stale(cached, draws, source_date,
-                                                                 stale) -> None:
-    assert report.benchmark_is_stale(cached, draws, source_date) is stale
+def test_the_benchmark_is_remeasured_after_enough_new_draws(added, stale) -> None:
+    draws, labels = _history()
+    cached = _cached(draws, labels, 60)
+    now = 60 + added
+    assert report.benchmark_is_stale(cached, draws[:now], labels[:now]) is stale
+
+
+def test_correcting_an_old_draw_invalidates_the_benchmark() -> None:
+    """Sửa một ô của kỳ cũ: số kỳ và ngày cuối không đổi, nhưng mọi số đo có thể đã đổi."""
+    draws, labels = _history()
+    cached = _cached(draws, labels, 80)
+    fixed = draws.copy()
+    fixed[10, 3] = (fixed[10, 3] + 1) % 100
+    assert report.benchmark_is_stale(cached, fixed[:80], labels[:80])
+    relabelled = labels[:80].copy()
+    relabelled[5] = "2025-12-31"
+    assert report.benchmark_is_stale(cached, draws[:80], relabelled)
+
+
+def test_a_cut_history_invalidates_the_benchmark() -> None:
+    draws, labels = _history()
+    assert report.benchmark_is_stale(_cached(draws, labels, 80), draws[:79], labels[:79])
+
+
+def test_new_draws_after_the_measured_ones_do_not_invalidate_it() -> None:
+    draws, labels = _history()
+    cached = _cached(draws, labels, 80)
+    later = draws.copy()
+    later[85, 0] = (later[85, 0] + 1) % 100        # sau đoạn đã đo
+    assert not report.benchmark_is_stale(cached, later[:90], labels[:90])
 
 
 def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path, monkeypatch) -> None:
@@ -117,7 +151,8 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
 
     def fake_benchmark(draws, labels):
         calls.append(len(draws))
-        return {"version": report.MEASURE_VERSION, "draws": len(draws), "source_date": labels[-1]}
+        return {"version": report.MEASURE_VERSION, "draws": len(draws),
+                "history_sha256": report.history_fingerprint(draws, labels)}
 
     monkeypatch.setattr(report, "benchmark_section", fake_benchmark)
     assert set(report.run(tmp_path)) == {"vip", "benchmark"}
@@ -126,6 +161,55 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
     assert calls == [80, 80]
     vip = json.loads((tmp_path / report.OUT_DIR / report.VIP_FILE).read_text(encoding="utf-8"))
     assert vip["draws"] == 80
+
+
+# --------------------------------------------------------------------------- "ít nhất một con về"
+
+
+def _scores_for(picks: list[int], n_rows: int) -> np.ndarray:
+    """Điểm chọn đúng con ``picks[t]`` ở hàng t (mọi con khác thấp hơn rõ rệt)."""
+    scores = np.zeros((n_rows, 100))
+    for t, number in enumerate(picks):
+        scores[t, number] = 1.0
+    return scores
+
+
+def test_the_any_hit_error_is_paired_on_the_same_draws() -> None:
+    counts = np.zeros((6, 100))
+    counts[:, 7] = [2, 2, 0, 2, 0, 2]          # con 7 về ≥ 2 nháy ở kỳ 0, 1, 3, 5
+    counts[:, 9] = [2, 0, 0, 2, 2, 0]          # con 9 về ≥ 2 nháy ở kỳ 0, 3, 4
+    rows = range(6)
+    a, b = _scores_for([7] * 6, 6), _scores_for([9] * 6, 6)
+    se = report.paired_any_hit_se(a, b, counts, rows, ks=(1,))["multi"]["1"]
+    diff = np.array([0, 1, 0, 0, -1, 1], dtype=float)
+    assert se == pytest.approx(diff.std(ddof=1) / math.sqrt(6))
+    # Cùng một bộ chọn: hiệu từng kỳ bằng 0, nên sai số của hiệu bằng 0 — công thức hai mẫu độc
+    # lập thì vẫn ra số dương.
+    assert report.paired_any_hit_se(a, a, counts, rows, ks=(1,))["multi"]["1"] == 0.0
+
+
+def test_the_any_hit_error_uses_the_same_top_k_as_the_rates() -> None:
+    import multi_hit_benchmark as bm
+
+    draws, _ = _history(120)
+    counts = m.counts_matrix(draws)
+    rng = np.random.default_rng(1)
+    a, b = rng.random((121, 100)), rng.random((121, 100))
+    rows = range(20, 120)
+    rate_a = bm.any_hit_rates(a, counts, rows, ks=(5,))["single"][5]
+    picks_a = bm.top_k(a[list(rows)], 5)
+    hit_a = (np.take_along_axis(counts[list(rows)], picks_a, axis=1) >= 1).any(axis=1)
+    assert hit_a.mean() == pytest.approx(rate_a)
+    se = report.paired_any_hit_se(a, b, counts, rows, ks=(5,))["single"]["5"]
+    assert 0 < se < 1
+
+
+def test_the_page_prints_the_measured_paired_error(fair_vip, bench) -> None:
+    changed = copy.deepcopy(bench)
+    for k in changed["any_hit"]["paired_se"]["multi"]:
+        changed["any_hit"]["paired_se"]["multi"][k] = 0.01234
+    text = _soup(fair_vip, changed).select_one("#app-vip-any").get_text(" ", strip=True)
+    assert "là 1,2 điểm %" in text
 
 
 # --------------------------------------------------------------------------- kết luận

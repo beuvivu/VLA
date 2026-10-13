@@ -337,20 +337,19 @@ def any_hit_card(bench: dict | None) -> str:
     n = bench["test_draws"]
     widest = max(ks, key=lambda k: abs(cand["multi"][k] - rnd["multi"][k]))
     gap = cand["multi"][widest] - rnd["multi"][widest]
-    share = rnd["multi"][widest]
-    # Sai số chuẩn của hiệu hai tỉ lệ độc lập cỡ ấy trên cùng số kỳ.
-    se = math.sqrt(2 * share * (1 - share) / n) if n else float("nan")
+    # Hai cột đo trên CÙNG các kỳ nên là cặp: sai số chuẩn lấy từ hiệu từng kỳ, do bước đo tính.
+    se = bench["any_hit"]["paired_se"]["multi"][widest]
     return (
         f'<p class="ui-muted">Tỉ lệ kỳ có ÍT NHẤT một con trong top-k trúng, trên '
         f"{_count(n)} kỳ của giai đoạn kiểm: ứng viên «"
-        f"{html.escape(strategy_label(bench['candidate']))}» so với chọn bừa. Đọc hai cột cạnh "
-        "nhau: tỉ lệ cao ở hàng dưới đến từ việc chọn nhiều con, không từ bộ lọc.</p>"
+        f"{html.escape(strategy_label(bench['candidate']))}» so với chọn bừa. Tỉ lệ tăng theo số "
+        "con chọn ở CẢ hai cột; chỉ phần chênh giữa hai cột cùng hàng mới là của chiến lược.</p>"
         + _table(["Số con chọn", "≥ 2 nháy · ứng viên", "≥ 2 nháy · chọn bừa",
                   "≥ 1 nháy · ứng viên", "≥ 1 nháy · chọn bừa"], rows,
                  numeric="ui-r2 ui-r3 ui-r4 ui-r5")
         + f'<p class="ui-muted" data-evidence-split>Chênh lệch lớn nhất ở cột ≥ 2 nháy là top-{widest}: '
-        f"{_num(gap * 100, 1, sign=True)} điểm %, trong khi sai số chuẩn của một hiệu như thế trên "
-        f"{_count(n)} kỳ là {_num(se * 100, 1)} điểm % (|hiệu| / sai số = "
+        f"{_num(gap * 100, 1, sign=True)} điểm %; sai số chuẩn của hiệu ấy, tính từ hiệu từng kỳ "
+        f"trên {_count(n)} kỳ, là {_num(se * 100, 1)} điểm % (|hiệu| / sai số = "
         f"{_num(abs(gap) / se if se else float('nan'), 1)}).</p>"
     )
 

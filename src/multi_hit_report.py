@@ -20,6 +20,7 @@ Không con số nào ở đây được đặt tay: kết luận "hơn / không 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 from datetime import UTC, datetime
@@ -36,7 +37,8 @@ OUT_DIR = "multi_hit"
 VIP_FILE = "vip.json"
 BENCHMARK_FILE = "benchmark.json"
 #: Đổi định nghĩa một số đo thì tăng: bản đệm cũ bị bỏ và đo lại.
-MEASURE_VERSION = 1
+#: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
+MEASURE_VERSION = 2
 #: Giao thức lượt hai đo lại khi lịch sử dài thêm chừng này kỳ (~ một tháng).
 BENCHMARK_REFRESH_DRAWS = 30
 #: Số kỳ gần nhất của walk-forward in lên trang (mỗi kỳ: 5 con đã chọn và con nào trúng).
@@ -57,6 +59,15 @@ def wilson(hits: int, n: int, z: float = float(norm.ppf(0.975))) -> tuple[float,
 def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype=str)
     return draws_from_frame(frame)
+
+
+def history_fingerprint(draws: np.ndarray, labels: list[str], n: int | None = None) -> str:
+    """SHA-256 của ``n`` kỳ đầu (ngày và 27 lô): sửa bất kỳ ô nào trong đoạn ấy là đổi dấu vân tay."""
+    n = len(draws) if n is None else n
+    digest = hashlib.sha256()
+    digest.update("\n".join(labels[:n]).encode("utf-8"))
+    digest.update(np.ascontiguousarray(np.asarray(draws[:n], dtype=np.int16)).tobytes())
+    return digest.hexdigest()
 
 
 # --------------------------------------------------------------------------- bộ lọc VIP
@@ -137,12 +148,35 @@ def _score(s) -> dict:
             "lift": s.lift, "z": s.z, "p": s.p_one_sided}
 
 
+def paired_any_hit_se(candidate: np.ndarray, rival: np.ndarray, counts: np.ndarray, rows: range,
+                      ks: tuple[int, ...] = (1, 3, 5, 10, 20)) -> dict[str, dict[str, float]]:
+    """Sai số chuẩn của HIỆU tỉ lệ "ít nhất một con về" giữa hai chiến lược chấm trên CÙNG các kỳ.
+
+    Hai tỉ lệ đo trên cùng kỳ quay (và hai bộ chọn có thể trùng nhau) nên là một cặp: phương sai
+    lấy từ hiệu từng kỳ dₜ = 1[ứng viên có con về] − 1[đối thủ có con về], không cộng hai phương sai
+    như với hai mẫu độc lập. Chọn top-k đúng như ``multi_hit_benchmark.any_hit_rates``.
+    """
+    import multi_hit_benchmark as bm
+
+    rows = np.asarray(list(rows))
+    got_a = np.take_along_axis(counts[rows], bm.top_k(candidate[rows], max(ks)), axis=1)
+    got_b = np.take_along_axis(counts[rows], bm.top_k(rival[rows], max(ks)), axis=1)
+    out: dict[str, dict[str, float]] = {"multi": {}, "single": {}}
+    for kind, need in (("multi", 2), ("single", 1)):
+        for k in ks:
+            diff = ((got_a[:, :k] >= need).any(axis=1).astype(float)
+                    - (got_b[:, :k] >= need).any(axis=1).astype(float))
+            out[kind][str(k)] = float(diff.std(ddof=1) / math.sqrt(len(diff))) if len(diff) > 1 else float("nan")
+    return out
+
+
 def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     """Giao thức lượt hai trên lịch sử thật, và cùng giao thức trên lịch sử có cài tín hiệu."""
     import multi_hit_benchmark as bm
 
     weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
-    real = bm.run_protocol(draws, weekdays)
+    scores = bm.strategy_scores(draws, weekdays)
+    real = bm.run_protocol(draws, weekdays, scores=scores)
     fake_draws, fake_weekdays = bm.planted_history(len(draws))
     planted = bm.run_protocol(fake_draws, fake_weekdays)
     cand = real["candidate"]
@@ -153,11 +187,14 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     ]
     any_hit = {side: {kind: {str(k): v for k, v in rates.items()} for kind, rates in table.items()}
                for side, table in real["any_hit"].items()}
+    any_hit["paired_se"] = paired_any_hit_se(scores[cand], scores["random"], counts_matrix(draws),
+                                             range(*real["test"]))
     return {
         "version": MEASURE_VERSION,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
         "draws": int(real["draws"]),
+        "history_sha256": history_fingerprint(draws, labels),
         "top_k": bm.TOP_K,
         "alpha": bm.ALPHA,
         "dev": _range_dates(real["dev"], labels),
@@ -186,13 +223,20 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     }
 
 
-def benchmark_is_stale(cached: dict | None, draws: int, source_date: str) -> bool:
-    """Đo lại khi: chưa có, khác phiên bản, lịch sử bị viết lại, hoặc đã dài thêm đủ kỳ."""
+def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
+    """Đo lại khi: chưa có, khác phiên bản, lịch sử bị viết lại, hoặc đã dài thêm đủ kỳ.
+
+    "Viết lại" so dấu vân tay của đúng đoạn lịch sử bản đệm đã đo: sửa một kỳ cũ mà không đổi số
+    kỳ hay ngày cuối vẫn bị bắt, còn kỳ mới nối thêm ở cuối thì không làm bản đệm cũ đi.
+    """
     if not cached or cached.get("version") != MEASURE_VERSION:
         return True
-    if str(cached.get("source_date", "")) > source_date or int(cached.get("draws", 0)) > draws:
+    measured = int(cached.get("draws", 0))
+    if not 0 < measured <= len(draws):
         return True
-    return draws - int(cached.get("draws", 0)) >= BENCHMARK_REFRESH_DRAWS
+    if cached.get("history_sha256") != history_fingerprint(draws, labels, measured):
+        return True
+    return len(draws) - measured >= BENCHMARK_REFRESH_DRAWS
 
 
 # --------------------------------------------------------------------------- ghi
@@ -216,7 +260,7 @@ def run(data_dir: Path, *, force_benchmark: bool = False) -> dict[str, Path]:
     written = {"vip": out / VIP_FILE}
     _write(written["vip"], vip_section(draws, labels))
     bench_path = out / BENCHMARK_FILE
-    if force_benchmark or benchmark_is_stale(_read(bench_path), len(draws), labels[-1]):
+    if force_benchmark or benchmark_is_stale(_read(bench_path), draws, labels):
         _write(bench_path, benchmark_section(draws, labels))
         written["benchmark"] = bench_path
     return written
