@@ -141,66 +141,106 @@ def _cached(draws, labels, measured: int, **extra) -> dict:
             "history_sha256": report.history_fingerprint(draws, labels, measured), **extra}
 
 
-def test_a_missing_or_older_benchmark_is_remeasured() -> None:
+@pytest.fixture
+def register_at(monkeypatch):
+    """Dời ngày đăng ký của lượt hai về kỳ thứ n của một lịch sử giả định (mặc định: 12-10-2026)."""
+    def _register(labels, n: int) -> None:
+        monkeypatch.setattr(report, "SECOND_ROUND_UNTIL", labels[n - 1])
+    return _register
+
+
+def test_a_missing_or_older_benchmark_is_remeasured(register_at) -> None:
     draws, labels = _history()
+    register_at(labels, 70)
     assert report.benchmark_is_stale(None, draws, labels)
     old = _cached(draws, labels, 70, version=report.MEASURE_VERSION - 1)
-    assert report.benchmark_is_stale(old, draws[:70], labels[:70])
+    assert report.benchmark_is_stale(old, draws, labels)
+    assert not report.benchmark_is_stale(_cached(draws, labels, 70), draws, labels)
 
 
-@pytest.mark.parametrize(("added", "stale"), [
-    (0, False),
-    (report.BENCHMARK_REFRESH_DRAWS - 1, False),
-    (report.BENCHMARK_REFRESH_DRAWS, True),
-])
-def test_the_benchmark_is_remeasured_after_enough_new_draws(added, stale) -> None:
-    draws, labels = _history()
+@pytest.mark.parametrize("added", [0, 30, 240])
+def test_new_draws_never_reopen_the_one_time_test(register_at, added) -> None:
+    """Lượt hai là phép kiểm MỘT lần: kỳ mới sau ngày đăng ký không bao giờ làm nó cần đo lại."""
+    draws, labels = _history(300)
+    register_at(labels, 60)
     cached = _cached(draws, labels, 60)
     now = 60 + added
-    assert report.benchmark_is_stale(cached, draws[:now], labels[:now]) is stale
+    assert not report.benchmark_is_stale(cached, draws[:now], labels[:now])
 
 
-def test_correcting_an_old_draw_invalidates_the_benchmark() -> None:
+def test_correcting_an_old_draw_invalidates_the_benchmark(register_at) -> None:
     """Sửa một ô của kỳ cũ: số kỳ và ngày cuối không đổi, nhưng mọi số đo có thể đã đổi."""
     draws, labels = _history()
+    register_at(labels, 80)
     cached = _cached(draws, labels, 80)
     fixed = draws.copy()
     fixed[10, 3] = (fixed[10, 3] + 1) % 100
-    assert report.benchmark_is_stale(cached, fixed[:80], labels[:80])
-    relabelled = labels[:80].copy()
+    assert report.benchmark_is_stale(cached, fixed, labels)
+    relabelled = labels.copy()
     relabelled[5] = "2025-12-31"
-    assert report.benchmark_is_stale(cached, draws[:80], relabelled)
+    assert report.benchmark_is_stale(cached, draws, relabelled)
 
 
-def test_a_cut_history_invalidates_the_benchmark() -> None:
+def test_a_cut_history_invalidates_the_benchmark(register_at) -> None:
     draws, labels = _history()
+    register_at(labels, 80)
     assert report.benchmark_is_stale(_cached(draws, labels, 80), draws[:79], labels[:79])
 
 
-def test_new_draws_after_the_measured_ones_do_not_invalidate_it() -> None:
+def test_a_benchmark_measured_past_the_registered_date_is_rejected(register_at) -> None:
     draws, labels = _history()
-    cached = _cached(draws, labels, 80)
+    register_at(labels, 80)
+    assert report.benchmark_is_stale(_cached(draws, labels, 90), draws, labels)
+
+
+def test_new_draws_after_the_registered_date_do_not_invalidate_it(register_at) -> None:
+    draws, labels = _history()
+    register_at(labels, 80)
     later = draws.copy()
-    later[85, 0] = (later[85, 0] + 1) % 100        # sau đoạn đã đo
-    assert not report.benchmark_is_stale(cached, later[:90], labels[:90])
+    later[85, 0] = (later[85, 0] + 1) % 100        # sau ngày đăng ký
+    assert not report.benchmark_is_stale(_cached(draws, labels, 80), later, labels)
 
 
-def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path, monkeypatch) -> None:
-    m.mock_history(80, seed=5).to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+def test_the_benchmark_reads_only_the_registered_draws(register_at, monkeypatch) -> None:
+    import multi_hit_benchmark as bm
+
+    class Seen(Exception):
+        pass
+
+    def spy(draws, weekdays, **_):
+        raise Seen(len(draws))
+
+    draws, labels = _history()
+    register_at(labels, 80)
+    monkeypatch.setattr(bm, "strategy_scores", spy)
+    with pytest.raises(Seen) as seen:
+        report.benchmark_section(draws, labels)
+    assert seen.value.args == (80,)
+
+
+def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path, monkeypatch,
+                                                                       register_at) -> None:
+    frame = m.mock_history(120, seed=5)
+    _, labels = m.draws_from_frame(frame)
+    register_at(list(labels), 80)
+    frame.iloc[:80].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     calls = []
 
     def fake_benchmark(draws, labels):
-        calls.append(len(draws))
-        return {"version": report.MEASURE_VERSION, "draws": len(draws),
-                "history_sha256": report.history_fingerprint(draws, labels)}
+        n = report.registered_draws(labels)
+        calls.append(n)
+        return {"version": report.MEASURE_VERSION, "draws": n,
+                "history_sha256": report.history_fingerprint(draws, labels, n)}
 
     monkeypatch.setattr(report, "benchmark_section", fake_benchmark)
     assert set(report.run(tmp_path)) == {"vip", "benchmark"}
     assert set(report.run(tmp_path)) == {"vip"}
+    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)       # 40 kỳ mới sau ngày đăng ký
+    assert set(report.run(tmp_path)) == {"vip"}
     assert set(report.run(tmp_path, force_benchmark=True)) == {"vip", "benchmark"}
     assert calls == [80, 80]
     vip = json.loads((tmp_path / report.OUT_DIR / report.VIP_FILE).read_text(encoding="utf-8"))
-    assert vip["draws"] == 80
+    assert vip["draws"] == 120
 
 
 def test_the_recent_baseline_sums_each_displayed_draw(fair_vip) -> None:
@@ -253,19 +293,15 @@ def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_pa
     assert got.vip_state == "current" and got.bench is None
 
 
-@pytest.mark.parametrize(("added", "kept"), [
-    (report.BENCHMARK_REFRESH_DRAWS - 1, True),
-    (report.BENCHMARK_REFRESH_DRAWS, False),
-])
-def test_the_builder_drops_a_benchmark_that_is_overdue(tmp_path, added, kept) -> None:
-    """Lượt hai phải được đo lại sau BENCHMARK_REFRESH_DRAWS kỳ; quá hạn nghĩa là lần làm mới hỏng."""
-    frame = m.mock_history(80 + added, seed=5)
+def test_the_builder_keeps_the_frozen_benchmark_as_new_draws_arrive(tmp_path, register_at) -> None:
+    """Bộ lọc đo lại mỗi ngày; lượt hai đóng băng ở ngày đăng ký vẫn được in, kỳ mới không làm nó cũ."""
+    frame = m.mock_history(120, seed=5)
+    register_at(list(m.draws_from_frame(frame)[1]), 80)
     data = _data_dir(tmp_path, frame.iloc[:80].reset_index(drop=True))
     frame.to_csv(data / "xsmb-2-digits.csv", index=False)
-    _write_vip(data, frame)                     # bộ lọc đã đo lại, lượt hai thì chưa
+    _write_vip(data, frame)
     got = page.load(data)
-    assert got.vip_state == "current"
-    assert (got.bench is not None) is kept
+    assert got.vip_state == "current" and got.bench is not None
 
 
 def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:

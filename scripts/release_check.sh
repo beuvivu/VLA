@@ -369,8 +369,8 @@ python src/build_landing_page.py
 python src/build_fun_prediction.py
 python src/build_traditional_results.py
 python src/build_regional_results.py
-# Lô VIP nhiều nháy: đo lại trên lịch sử hiện tại trước khi dựng (~25 s; lượt hai chỉ đo lại khi
-# bản đệm cũ hay không còn khớp lịch sử), nếu không trang có thể in số đo của một lịch sử cũ.
+# Lô VIP nhiều nháy: đo lại trên lịch sử hiện tại trước khi dựng (~25 s; lượt hai đóng băng ở ngày
+# đăng ký, chỉ đo lại khi đoạn ấy bị sửa), nếu không trang có thể in số đo của một lịch sử cũ.
 python src/multi_hit_report.py
 python src/build_multi_hit_page.py
 python src/cleanup_artifacts.py --retention-days 45

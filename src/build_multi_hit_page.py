@@ -24,8 +24,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
-from multi_hit_report import (BENCHMARK_REFRESH_DRAWS, benchmark_is_stale, benchmark_is_valid, load_history,
-                              vip_status)
+from multi_hit_report import SECOND_ROUND_UNTIL, benchmark_is_valid, load_history, vip_status
 from multi_hit_vip import COMPONENT_LABELS, CONFIDENCE_P
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
@@ -140,7 +139,8 @@ def load(data_dir: Path) -> Loaded:
     Bước đo có thể hỏng giữa chừng (pipeline chạy mềm). Hai tệp vì thế có thể là số đo của một lịch
     sử khác: ``vip.json`` của hôm qua sau khi đã có kỳ mới, hay ``benchmark.json`` của một lịch sử
     mà một kỳ cũ đã được sửa. Tệp bộ lọc không khớp thì trang không in top-k cho một kỳ đã quay;
-    tệp lượt hai không khớp, hoặc đã quá ``BENCHMARK_REFRESH_DRAWS`` kỳ mà chưa đo lại, thì bị bỏ.
+    tệp lượt hai không phải số đo của đúng đoạn lịch sử đã đăng ký (đến ``SECOND_ROUND_UNTIL``) thì
+    bị bỏ.
     """
     folder = data_dir / DATA_DIR
 
@@ -154,11 +154,8 @@ def load(data_dir: Path) -> Loaded:
     if state == "invalid":
         print(f"data/{DATA_DIR}/vip.json không khớp lịch sử hiện tại — không in số đo.")
         vip = None
-    if bench is not None and benchmark_is_stale(bench, draws, labels):
-        # Không khớp lịch sử, hoặc đã quá hạn đo lại: bước đo luôn làm mới đúng ngưỡng, nên bản đệm
-        # quá hạn nghĩa là lần làm mới đã hỏng — trang ghi "chưa kết luận" để lộ ra điều ấy.
-        why = "không khớp lịch sử hiện tại" if not benchmark_is_valid(bench, draws, labels) else "quá hạn đo lại"
-        print(f"data/{DATA_DIR}/benchmark.json {why} — không in.")
+    if bench is not None and not benchmark_is_valid(bench, draws, labels):
+        print(f"data/{DATA_DIR}/benchmark.json không khớp đoạn lịch sử đã đăng ký — không in.")
         bench = None
     behind = len(draws) - int(vip["draws"]) if vip is not None else 0
     return Loaded(vip, bench, state, labels[-1], behind)
@@ -356,7 +353,9 @@ def benchmark_card(bench: dict | None) -> str:
         "chiến lược được chấm, p hiệu chỉnh Holm, và chiến lược có z cao nhất là ứng viên DUY NHẤT. "
         f"Giai đoạn kiểm {_date(bench['test'][0])} → {_date(bench['test'][1])} "
         f"({_count(bench['test_draws'])} kỳ) chỉ quyết định ứng viên ấy: đạt khi p một phía &lt; "
-        f"{_num(bench['alpha'], 2)}. Số đo đến ngày {_date(bench['source_date'])}.</p>"
+        f"{_num(bench['alpha'], 2)}. Đây là phép kiểm MỘT LẦN trên lịch sử đến ngày "
+        f"{_date(bench['registered_until'])}, không đo lại khi có kỳ mới: đo lại mỗi tháng trên 1 000 kỳ "
+        "cuối trượt dần là nhìn lại gần như cùng một tập kiểm ở cùng α.</p>"
         + _table(["Chiến lược (xếp theo z phát triển)", "Phát triển: trúng", "z", "p Holm",
                   "Kiểm: trúng", "z"], rows, numeric="ui-r2 ui-r3 ui-r4 ui-r5 ui-r6")
         + f'<p class="ui-muted" data-evidence-split>Ở giai đoạn kiểm, {glance}/{len(others)} chiến lược '
@@ -433,8 +432,9 @@ def method_card(vip: dict) -> str:
         "(k·p·(1 − p)).",
         f"Mức tin của bộ lọc — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
         "bộ lọc.",
-        "Số đo của bộ lọc tính lại mỗi ngày; lượt thử thứ hai và phép kiểm độ nhạy tính lại khi "
-        f"lịch sử dài thêm {BENCHMARK_REFRESH_DRAWS} kỳ.",
+        "Số đo của bộ lọc tính lại mỗi ngày. Lượt thử thứ hai và phép kiểm độ nhạy là phép kiểm một "
+        f"lần, đóng băng ở lịch sử đến ngày {_date(SECOND_ROUND_UNTIL)}; chỉ đo lại khi chính đoạn lịch "
+        "sử ấy được sửa.",
     ]
     return '<ol class="app-vip-method">' + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ol>"
 

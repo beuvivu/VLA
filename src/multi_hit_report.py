@@ -5,10 +5,13 @@ Hai phần, hai nhịp:
 * ``vip.json`` — hằng ngày. Bộ lọc VIP (``multi_hit_vip``) xếp hạng kỳ kế tiếp, kèm kiểm chứng
   walk-forward lồng nhau trên MỌI kỳ đã quay: mỗi kỳ được chấm bằng trọng số chọn trên 30 kỳ ngay
   trước nó, rồi so với chọn bừa trên CHÍNH các kỳ ấy. ~25 giây trên 4 233 kỳ.
-* ``benchmark.json`` — đệm. Giao thức lượt thử thứ hai (``multi_hit_benchmark``): 22 chiến lược
-  chấm trên giai đoạn phát triển, một ứng viên kiểm MỘT lần trên 1 000 kỳ cuối, kèm phép kiểm độ
-  nhạy trên lịch sử có cài tín hiệu. ~4 phút, nên chỉ đo lại khi lịch sử dài thêm
-  ``BENCHMARK_REFRESH_DRAWS`` kỳ, khi ``MEASURE_VERSION`` đổi, hoặc khi lịch sử bị viết lại.
+* ``benchmark.json`` — đóng băng. Giao thức lượt thử thứ hai (``multi_hit_benchmark``): 22 chiến
+  lược chấm trên giai đoạn phát triển, một ứng viên kiểm MỘT lần trên 1 000 kỳ cuối, kèm phép kiểm
+  độ nhạy trên lịch sử có cài tín hiệu. Phép kiểm một lần chỉ có nghĩa khi nó thật sự chạy một lần:
+  nó đo trên lịch sử đến ``SECOND_ROUND_UNTIL`` (ngày đã chạy và công bố) và KHÔNG đo lại khi có kỳ
+  mới. Đo lại mỗi tháng trên 1 000 kỳ cuối trượt dần là nhìn lại gần như cùng một tập kiểm ở cùng
+  α, nên xác suất "đạt" chỉ do may cộng dồn quá 1%. Chỉ đo lại khi ``MEASURE_VERSION`` đổi hoặc khi
+  chính đoạn lịch sử đã đăng ký bị sửa.
 
 Không con số nào ở đây được đặt tay: kết luận "hơn / không hơn chọn bừa" trên trang suy từ ``z``,
 ``p`` và mức tin mà chính các phép đo trả về.
@@ -38,9 +41,11 @@ VIP_FILE = "vip.json"
 BENCHMARK_FILE = "benchmark.json"
 #: Đổi định nghĩa một số đo thì tăng: bản đệm cũ bị bỏ và đo lại.
 #: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
-MEASURE_VERSION = 2
-#: Giao thức lượt hai đo lại khi lịch sử dài thêm chừng này kỳ (~ một tháng).
-BENCHMARK_REFRESH_DRAWS = 30
+#: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
+MEASURE_VERSION = 3
+#: Lượt thử thứ hai là phép kiểm MỘT LẦN, đã chạy và công bố trên lịch sử đến ngày này. Muốn kiểm
+#: trên kỳ mới thì đăng ký phép kiểm tiến cứu mới với ngày bắt đầu mới, đừng dời ngày này.
+SECOND_ROUND_UNTIL = "2026-10-12"
 #: Số kỳ gần nhất của walk-forward in lên trang (mỗi kỳ: 5 con đã chọn và con nào trúng).
 RECENT_DRAWS = 10
 
@@ -194,10 +199,20 @@ def paired_any_hit_se(candidate: np.ndarray, rival: np.ndarray, counts: np.ndarr
     return out
 
 
+def registered_draws(labels: list[str]) -> int:
+    """Số kỳ của đoạn lịch sử mà lượt hai đã đăng ký: các kỳ có ngày ≤ ``SECOND_ROUND_UNTIL``."""
+    return sum(1 for label in labels if str(label) <= SECOND_ROUND_UNTIL)
+
+
 def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
-    """Giao thức lượt hai trên lịch sử thật, và cùng giao thức trên lịch sử có cài tín hiệu."""
+    """Giao thức lượt hai trên đoạn lịch sử đã đăng ký, và cùng giao thức trên lịch sử có cài tín hiệu.
+
+    Chỉ đọc các kỳ đến ``SECOND_ROUND_UNTIL``: kỳ mới hơn không bao giờ vào phép kiểm một lần này.
+    """
     import multi_hit_benchmark as bm
 
+    n = registered_draws(labels)
+    draws, labels = draws[:n], list(labels[:n])
     weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
     scores = bm.strategy_scores(draws, weekdays)
     real = bm.run_protocol(draws, weekdays, scores=scores)
@@ -219,6 +234,7 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
         "source_date": labels[-1],
         "draws": int(real["draws"]),
         "history_sha256": history_fingerprint(draws, labels),
+        "registered_until": SECOND_ROUND_UNTIL,
         "top_k": bm.TOP_K,
         "alpha": bm.ALPHA,
         "dev": _range_dates(real["dev"], labels),
@@ -248,15 +264,16 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
 
 
 def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
-    """Bản đệm còn là số đo của CHÍNH lịch sử hiện tại: cùng phiên bản, đoạn đã đo không bị sửa.
+    """Bản đệm là số đo của ĐÚNG đoạn lịch sử đã đăng ký, và đoạn ấy chưa bị sửa.
 
-    So dấu vân tay của đúng đoạn lịch sử bản đệm đã đo: sửa một kỳ cũ mà không đổi số kỳ hay ngày
-    cuối vẫn bị bắt, còn kỳ mới nối thêm ở cuối thì không làm số đo cũ sai đi.
+    Đoạn đã đăng ký là các kỳ đến ``SECOND_ROUND_UNTIL``; so dấu vân tay của đoạn ấy trên lịch sử
+    hiện tại. Sửa một kỳ cũ (ô lô hay ngày), cắt lịch sử, hay một bản đệm đo vượt ngày đăng ký đều
+    bị bắt; kỳ mới nối thêm sau ngày ấy thì không bao giờ làm bản đệm cũ đi.
     """
     if not cached or cached.get("version") != MEASURE_VERSION:
         return False
     measured = int(cached.get("draws", 0))
-    if not 0 < measured <= len(draws):
+    if measured <= 0 or measured != registered_draws(labels):
         return False
     return cached.get("history_sha256") == history_fingerprint(draws, labels, measured)
 
@@ -280,10 +297,8 @@ def vip_status(vip: dict | None, draws: np.ndarray, labels: list[str]) -> str:
 
 
 def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
-    """Đo lại khi bản đệm không còn hợp lệ, hoặc lịch sử đã dài thêm ``BENCHMARK_REFRESH_DRAWS`` kỳ."""
-    if not benchmark_is_valid(cached, draws, labels):
-        return True
-    return len(draws) - int(cached["draws"]) >= BENCHMARK_REFRESH_DRAWS
+    """Đo lại CHỈ khi bản đệm không còn là số đo của đoạn đã đăng ký; kỳ mới không mở lại phép kiểm."""
+    return not benchmark_is_valid(cached, draws, labels)
 
 
 # --------------------------------------------------------------------------- ghi

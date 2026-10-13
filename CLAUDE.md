@@ -339,8 +339,10 @@ vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy t
 `src/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/benchmark_multi_hit.py`): 22 chiến lược kể cả
 logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
 hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
-`multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày và `benchmark.json` khi lịch sử dài
-thêm `BENCHMARK_REFRESH_DRAWS` kỳ; `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
+`multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT
+lần, đóng băng ở `SECOND_ROUND_UNTIL` (12-10-2026) — đừng dời ngày ấy hay đo lại trên cửa sổ trượt
+(nhìn lại cùng tập kiểm ở cùng α làm sai số loại I cộng dồn); muốn kiểm kỳ mới thì đăng ký phép kiểm
+tiến cứu mới. `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. `tests/test_multi_hit_page.py` dựng cả lịch sử
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.

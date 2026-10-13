@@ -239,9 +239,12 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
     trên mọi kỳ, khoảng Wilson 95% theo cụm kỳ (cỡ mẫu hiệu dụng Kish), mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
     kiểm chứng.
-  - `benchmark.json`, là bản đệm. Gồm giao thức lượt hai và phép kiểm độ nhạy. Tệp chỉ đo lại khi
-    lịch sử dài thêm `BENCHMARK_REFRESH_DRAWS` = 30 kỳ, khi `MEASURE_VERSION` đổi, hoặc khi lịch
-    sử bị cắt hay viết lại.
+  - `benchmark.json`, đóng băng. Gồm giao thức lượt hai và phép kiểm độ nhạy, đo MỘT lần trên lịch
+    sử đến `SECOND_ROUND_UNTIL` = 12-10-2026, đúng phép đo đã công bố ở mục trên. Kỳ mới không
+    bao giờ mở lại phép kiểm. Nếu đo lại mỗi tháng trên 1 000 kỳ cuối trượt dần, ta nhìn lại gần như
+    cùng một tập kiểm ở cùng α, và xác suất "đạt" chỉ do may cộng dồn quá 1%. Tệp chỉ đo lại khi
+    `MEASURE_VERSION` đổi, hoặc khi chính đoạn lịch sử ấy bị sửa hay bị cắt. Muốn kiểm trên kỳ mới
+    thì đăng ký một phép kiểm tiến cứu mới với ngày bắt đầu mới.
 - **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
   pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
 - **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
@@ -258,8 +261,7 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - `vip.json` chậm hơn sổ (bước đo hỏng sau kỳ mới): trang không in top-5, vì đó là top-5 cho
     một kỳ đã quay. Kiểm chứng của đoạn đã đo vẫn được in.
   - `vip.json` của một lịch sử đã bị sửa: trang không in số đo nào.
-  - `benchmark.json` không khớp, hoặc đã quá `BENCHMARK_REFRESH_DRAWS` kỳ mà chưa đo lại được: trang ghi
-    "chưa kết luận".
+  - `benchmark.json` không phải số đo của đúng đoạn lịch sử đã đăng ký: trang ghi "chưa kết luận".
 
 Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
 Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).
