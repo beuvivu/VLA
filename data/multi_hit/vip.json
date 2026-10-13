@@ -1,6 +1,6 @@
 {
-  "version": 4,
-  "generated_at": "2026-10-13T03:03:09Z",
+  "version": 5,
+  "generated_at": "2026-10-13T03:48:34Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "history_sha256": "33fe746ad89f0a56e00f27162e944a3bbec5210c6fca82ef22366df89bdb6cf8",
@@ -33,9 +33,17 @@
     "random_rate": 0.029142104001917083,
     "lift": 0.9966285667297098,
     "z": -0.08640962771827056,
-    "p_value": 0.5344296031269994,
-    "p_anytime": 0.7263675218478056,
-    "e_max": 1.3767135367728185
+    "p_value": 0.5344296031269994
+  },
+  "prospective": {
+    "after": "2026-10-12",
+    "draws": 0,
+    "picks": 0,
+    "hits": 0,
+    "expected": 0.0,
+    "lift": null,
+    "p_anytime": 1.0,
+    "e_max": 1.0
   },
   "confidence": "Low",
   "picks": [

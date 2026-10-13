@@ -344,7 +344,8 @@ lần, đóng băng ở `SECOND_ROUND_UNTIL` (12-10-2026) — đừng dời ngà
 (nhìn lại cùng tập kiểm ở cùng α làm sai số loại I cộng dồn); muốn kiểm kỳ mới thì đăng ký phép kiểm
 tiến cứu mới. Bộ lọc thì đo lại MỖI ngày, nên mức tin của nó dùng p luôn hợp lệ (e-process,
 `multi_hit_report.anytime_p`): 2 000 lịch sử không kỹ năng xem lại sau mỗi kỳ với p thường vượt 0,05 ở
-30,9%, với p luôn hợp lệ ở 3,45%. `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
+30,9%, với p luôn hợp lệ ở 3,45%. e-process CHỈ chạy trên kỳ quay sau `VIP_FROZEN_AT` (12-10-2026):
+bộ lọc được thiết kế sau khi đã xem lịch sử trước đó, nên walk-forward hồi cứu chỉ là mô tả. `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. `tests/test_multi_hit_page.py` dựng cả lịch sử
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.

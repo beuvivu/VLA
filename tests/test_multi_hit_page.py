@@ -26,9 +26,13 @@ DATA = ROOT / "data" / "multi_hit"
 PLANTED = (7, 38, 68)
 
 
-def _vip_of(frame) -> dict:
+#: Lịch sử giả định bắt đầu 01-01-2026: chốt bộ lọc TRƯỚC đó để mọi kỳ là tiến cứu.
+BEFORE_MOCK = "2025-12-31"
+
+
+def _vip_of(frame, after: str = BEFORE_MOCK) -> dict:
     draws, labels = m.draws_from_frame(frame)
-    return report.vip_section(draws, labels)
+    return report.vip_section(draws, labels, prospective_after=after)
 
 
 @pytest.fixture(scope="module")
@@ -125,7 +129,9 @@ def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
     assert bt["rate"] == pytest.approx(bt["hits"] / bt["picks"])
     assert bt["ci95"][0] < bt["rate"] < bt["ci95"][1]
     assert bt["lift"] == pytest.approx(bt["hits"] / bt["expected"])
-    assert planted_vip["confidence"] == m.model_confidence(bt["p_anytime"], bt["lift"])
+    pro = planted_vip["prospective"]
+    assert pro["lift"] == pytest.approx(pro["hits"] / pro["expected"])
+    assert planted_vip["confidence"] == m.model_confidence(pro["p_anytime"], pro["lift"])
     for pick in planted_vip["picks"]:
         assert pick["confidence"] == m.number_confidence(planted_vip["confidence"], pick["probability"],
                                                          planted_vip["base_theory"])
@@ -177,8 +183,30 @@ def test_every_confidence_on_the_page_follows_the_anytime_p(monkeypatch) -> None
 
 
 def test_anytime_p_still_finds_a_real_edge(planted_vip, fair_vip) -> None:
-    assert planted_vip["backtest"]["p_anytime"] < 1e-6 and planted_vip["confidence"] == "High"
-    assert fair_vip["backtest"]["p_anytime"] > 0.05 and fair_vip["confidence"] == "Low"
+    assert planted_vip["prospective"]["p_anytime"] < 1e-6 and planted_vip["confidence"] == "High"
+    assert fair_vip["prospective"]["p_anytime"] > 0.05 and fair_vip["confidence"] == "Low"
+
+
+def test_a_retrospective_edge_alone_cannot_raise_the_confidence() -> None:
+    """Bộ lọc thiết kế sau khi xem lịch sử: lợi thế trên chính lịch sử ấy không được tính là bằng chứng."""
+    vip = _vip_of(m.mock_history(120, seed=2026, planted=PLANTED), after="2026-12-31")
+    assert vip["backtest"]["p_value"] < 1e-6                     # hồi cứu thì "rất có ý nghĩa"
+    assert vip["prospective"]["draws"] == 0 and vip["prospective"]["lift"] is None
+    json.dumps(vip, allow_nan=False)                             # tệp đo là JSON hợp chuẩn
+    assert vip["confidence"] == "Low"
+    assert {p["confidence"] for p in vip["picks"]} == {"Low"}
+    assert page.verdict(vip, None)["state"] != "hon"
+
+
+def test_only_draws_after_the_freeze_enter_the_e_process() -> None:
+    frame = m.mock_history(120, seed=2026, planted=PLANTED)
+    draws, labels = m.draws_from_frame(frame)
+    vip = _vip_of(frame, after=labels[89])
+    model = m.VIPMultiHitModel(draws, labels, m.VIPConfig())
+    per_draw = model.predict_next().backtest.per_draw
+    later = per_draw[per_draw["ky"] > labels[89]]
+    assert vip["prospective"]["draws"] == len(later) == 30
+    assert vip["prospective"]["hits"] == int(later["trung"].sum())
 
 
 # --------------------------------------------------------------------------- bản đệm lượt hai

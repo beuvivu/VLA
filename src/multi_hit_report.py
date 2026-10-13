@@ -45,7 +45,12 @@ BENCHMARK_FILE = "benchmark.json"
 #: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
 #: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
 #: 4: mức tin của bộ lọc dùng p luôn hợp lệ (e-process), vì trang xem lại kết quả mỗi ngày.
-MEASURE_VERSION = 4
+#: 5: e-process chỉ chạy trên kỳ quay SAU VIP_FROZEN_AT (tiến cứu); hồi cứu chỉ còn để mô tả.
+MEASURE_VERSION = 5
+#: Bộ lọc VIP được thiết kế SAU khi đã xem lịch sử đến ngày này (đặc trưng, tham số, cách chọn trọng
+#: số), nên phần kiểm chứng hồi cứu không phải bằng chứng "chưa từng thấy". Mức tin chỉ tính trên các
+#: kỳ quay sau ngày ấy. Đừng dời ngày; đổi bộ lọc thì đăng ký ngày mới.
+VIP_FROZEN_AT = "2026-10-12"
 #: Lưới hệ số cược λ của e-process một phía (cược top-k trúng NHIỀU hơn chọn bừa). Với k = 5 và tối
 #: đa 13 con về ≥ 2 nháy trong một kỳ, kỳ vọng chọn bừa ≤ 0,65 nên 1 + λ·(H − μ) > 0 với mọi λ ≤ 0,8.
 BET_GRID = (0.05, 0.1, 0.2, 0.4, 0.8)
@@ -125,9 +130,16 @@ def history_fingerprint(draws: np.ndarray, labels: list[str], n: int | None = No
 # --------------------------------------------------------------------------- bộ lọc VIP
 
 
-def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = None) -> dict:
-    """Dự báo kỳ kế tiếp và kiểm chứng walk-forward của bộ lọc VIP."""
+def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = None, *,
+                prospective_after: str | None = None) -> dict:
+    """Dự báo kỳ kế tiếp và kiểm chứng walk-forward của bộ lọc VIP.
+
+    Toàn bộ walk-forward là MÔ TẢ hồi cứu. Mức tin (và vì vậy kết luận "hơn") chỉ suy từ e-process
+    trên các kỳ có ngày > ``prospective_after`` (mặc định ``VIP_FROZEN_AT``): một e-process chỉ
+    kiểm soát báo nhầm khi quy tắc cược được chốt TRƯỚC khi thấy dữ liệu nó chấm.
+    """
     cfg = cfg or VIPConfig()
+    after = VIP_FROZEN_AT if prospective_after is None else prospective_after
     model = VIPMultiHitModel(draws, labels, cfg)
     report = model.predict_next()
     bt = report.backtest
@@ -136,9 +148,14 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
     index = {label: t for t, label in enumerate(labels)}
     rows = [index[k] for k in bt.per_draw["ky"]]
     per_draw_expected = cfg.top_k * (counts[rows] >= 2).sum(axis=1) / 100
-    p_anytime, e_max = anytime_p(bt.per_draw["trung"], per_draw_expected)
-    # Mức tin của bộ lọc lấy p luôn hợp lệ: trang xem lại mỗi ngày (xem anytime_p).
-    level = model_confidence(p_anytime, bt.lift)
+    later = (bt.per_draw["ky"].astype(str) > after).to_numpy()
+    pro_hits = bt.per_draw["trung"].to_numpy()[later]
+    pro_expected = per_draw_expected[later]
+    p_anytime, e_max = anytime_p(pro_hits, pro_expected)
+    pro_lift = float(pro_hits.sum() / pro_expected.sum()) if pro_expected.sum() > 0 else float("nan")
+    # Mức tin lấy p luôn hợp lệ của phần TIẾN CỨU: trang xem lại mỗi ngày (anytime_p), và bộ lọc
+    # được thiết kế sau khi đã xem phần hồi cứu.
+    level = model_confidence(p_anytime, pro_lift)
     base = base_rate()
     recent = []
     for row in bt.per_draw.tail(RECENT_DRAWS).iloc[::-1].itertuples(index=False):
@@ -177,6 +194,14 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
             "lift": bt.lift,
             "z": bt.z,
             "p_value": bt.p_value,
+        },
+        "prospective": {
+            "after": after,
+            "draws": int(later.sum()),
+            "picks": int(later.sum()) * cfg.top_k,
+            "hits": int(pro_hits.sum()),
+            "expected": float(pro_expected.sum()),
+            "lift": pro_lift if later.any() else None,     # chưa có kỳ tiến cứu: không có lift
             "p_anytime": p_anytime,
             "e_max": e_max,
         },

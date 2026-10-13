@@ -112,8 +112,16 @@ def _table(head: list[str], rows: list[list[str]], numeric: str) -> str:
 
 
 def _confidence_rule() -> str:
-    return (f"p luôn hợp lệ — Cao: lift > 1 và p < {_num(CONFIDENCE_P['High'], 2)} · Trung bình: lift > 1 "
-            f"và p < {_num(CONFIDENCE_P['Medium'], 2)} · còn lại Thấp")
+    return (f"p luôn hợp lệ trên các kỳ tiến cứu — Cao: lift > 1 và p < {_num(CONFIDENCE_P['High'], 2)} · "
+            f"Trung bình: lift > 1 và p < {_num(CONFIDENCE_P['Medium'], 2)} · còn lại Thấp")
+
+
+def _prospective_line(pro: dict) -> str:
+    if not pro["draws"]:
+        return f"Chưa có kỳ quay nào sau ngày {_date(pro['after'])}, nên chưa có bằng chứng tiến cứu."
+    return (f"{_count(pro['draws'])} kỳ quay sau ngày {_date(pro['after'])}: top-k trúng "
+            f"{_count(pro['hits'])} lượt so với {_num(pro['expected'], 1)} của chọn bừa, p luôn hợp lệ = "
+            f"{_p(pro['p_anytime'])}.")
 
 
 def strategy_label(name: str) -> str:
@@ -206,9 +214,11 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
         f"top-{vip['config']['top_k']} của bộ lọc trúng ≥ 2 nháy {_count(bt['hits'])}/"
         f"{_count(bt['picks'])} lượt ({_pct(bt['rate'])}); chọn bừa trên chính các kỳ ấy kỳ vọng "
         f"{_num(bt['expected'], 1)} lượt ({_pct(bt['random_rate'])}). "
-        f"z = {_num(bt['z'], 2, sign=True)}, p một phía = {_p(bt['p_value'])} nếu chỉ xem một lần; vì "
-        f"trang xem lại mỗi ngày, mức tin dùng p luôn hợp lệ = {_p(bt['p_anytime'])} → mức tin "
-        f"{_LEVEL_WORD.get(vip['confidence'], vip['confidence'])}."
+        f"z = {_num(bt['z'], 2, sign=True)}, p một phía = {_p(bt['p_value'])}. Đây là mô tả HỒI CỨU: "
+        f"bộ lọc được thiết kế sau khi đã xem lịch sử ấy, nên mức tin chỉ tính trên các kỳ quay sau ngày "
+        f"{_date(vip['prospective']['after'])}, bằng p luôn hợp lệ vì trang xem lại mỗi ngày. "
+        + _prospective_line(vip["prospective"])
+        + f" → mức tin {_LEVEL_WORD.get(vip['confidence'], vip['confidence'])}."
     ]
     if bench is not None:
         ct = bench["candidate_test"]
@@ -241,16 +251,19 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
 def conclusion_card(vip: dict, bench: dict | None) -> str:
     headline, text = verdict_text(vip, bench)
     bt = vip["backtest"]
+    pro = vip["prospective"]
     lo, hi = bt["ci95"]
     kpis = [
-        ("Bộ lọc VIP · ngoài mẫu", _pct(bt["rate"]),
+        ("Bộ lọc VIP · hồi cứu", _pct(bt["rate"]),
          f"KTC 95% {_pct(lo)} – {_pct(hi)} (theo cụm kỳ, deff {_num(bt['design_effect'], 2)}) · "
          f"{_count(bt['hits'])}/{_count(bt['picks'])} lượt"),
         ("Chọn bừa cùng kỳ", _pct(bt["random_rate"]),
          f"Lý thuyết P(X ≥ 2), X ~ Nhị thức(27; 1/100): {_pct(vip['base_theory'], 3)}"),
-        ("So với chọn bừa", f"×{_num(bt['lift'], 3)}",
-         f"z = {_num(bt['z'], 2, sign=True)} · p một lần xem = {_p(bt['p_value'])} · "
-         f"p luôn hợp lệ = {_p(bt['p_anytime'])}"),
+        ("So với chọn bừa · hồi cứu", f"×{_num(bt['lift'], 3)}",
+         f"z = {_num(bt['z'], 2, sign=True)} · p một phía = {_p(bt['p_value'])} (mô tả)"),
+        (f"Tiến cứu sau {_date(pro['after'])}", f"{_count(pro['draws'])} kỳ",
+         (f"trúng {_count(pro['hits'])} / chọn bừa {_num(pro['expected'], 1)} · p luôn hợp lệ = "
+          f"{_p(pro['p_anytime'])}") if pro["draws"] else "chưa có kỳ quay nào"),
     ]
     tiles = "".join(
         '<article class="ui-kpi">'
@@ -432,11 +445,14 @@ def method_card(vip: dict) -> str:
         "Khoảng tin cậy là Wilson 95% trên cỡ mẫu hiệu dụng: các con cùng kỳ chấm trên cùng 27 lô nên "
         "không độc lập, cỡ mẫu được chia cho hệ số thiết kế deff = phương sai số trúng từng kỳ / "
         "(k·p·(1 − p)).",
+        "Bộ lọc được thiết kế sau khi đã xem lịch sử đến ngày "
+        f"{_date(vip['prospective']['after'])}, nên kiểm chứng trên lịch sử ấy là MÔ TẢ hồi cứu, không "
+        "phải bằng chứng chưa từng thấy. Mức tin chỉ tính trên các kỳ quay sau ngày ấy.",
         "Trang chấm lại bộ lọc mỗi ngày, nên p của một lần xem không đủ: xem lại đủ lâu với cùng ngưỡng "
         "thì sớm muộn sẽ vượt ngưỡng chỉ do may. p luôn hợp lệ lấy từ e-process: tích các hệ số cược "
-        "1 + λ·(trúng − kỳ vọng chọn bừa) của từng kỳ, trung bình trên một lưới λ; khi bộ lọc không có "
-        "kỹ năng, xác suất tích ấy có lúc nào vượt 1/α không quá α (bất đẳng thức Ville), nên "
-        "p = 1 / giá trị lớn nhất của tích đúng dù xem bao nhiêu lần.",
+        "1 + λ·(trúng − kỳ vọng chọn bừa) của từng kỳ tiến cứu, trung bình trên một lưới λ chốt sẵn; khi "
+        "bộ lọc không có kỹ năng, xác suất tích ấy có lúc nào vượt 1/α không quá α (bất đẳng thức "
+        "Ville), nên p = 1 / giá trị lớn nhất của tích đúng dù xem bao nhiêu lần.",
         f"Mức tin của bộ lọc — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
         "bộ lọc.",
         "Số đo của bộ lọc tính lại mỗi ngày. Lượt thử thứ hai và phép kiểm độ nhạy là phép kiểm một "

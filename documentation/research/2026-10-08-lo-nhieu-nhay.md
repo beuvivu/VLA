@@ -252,8 +252,12 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - Vì vậy mức tin dùng p luôn hợp lệ (`anytime_p`). Đó là một e-process: trung bình trên lưới λ
     của tích (1 + λ·(Hₜ − k·mₜ/100)) qua các kỳ. Theo bất đẳng thức Ville, p = 1 / max e hợp lệ dù
     xem bao nhiêu lần. Trên cùng mô phỏng: 3,45%.
-  - Trên dữ liệu thật đến 12-10-2026: p của một lần xem là 0,534, p luôn hợp lệ là 0,726, mức tin
-    Thấp.
+  - e-process chỉ chạy trên kỳ quay SAU `VIP_FROZEN_AT` = 12-10-2026. Bộ lọc được thiết kế sau
+    khi đã xem lịch sử trước ngày ấy, và một e-process chỉ kiểm soát báo nhầm khi quy tắc cược được
+    chốt trước khi thấy dữ liệu nó chấm. Walk-forward 4 173 kỳ (2,90% so với 2,91%, p = 0,534) vì
+    vậy chỉ còn là mô tả hồi cứu.
+  - Ngày 12-10-2026 chưa có kỳ tiến cứu nào, nên mức tin là Thấp. Kết luận "không hơn" đứng trên
+    lượt thử thứ hai đã đóng băng và phép kiểm độ nhạy.
 - **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
   pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
 - **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:

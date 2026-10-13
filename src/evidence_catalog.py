@@ -568,9 +568,11 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
             "mẫu hiệu dụng theo cụm kỳ: số lượt chọn chia cho deff = phương sai số trúng từng kỳ / "
             "(k·p·(1 − p)).",
             null,
+            "Walk-forward trên lịch sử đến ngày chốt bộ lọc là mô tả hồi cứu (bộ lọc được thiết kế sau "
+            "khi đã xem lịch sử ấy). Mức tin chỉ tính trên các kỳ quay sau ngày chốt.",
             "Trang chấm lại mỗi ngày, nên mức tin dùng p luôn hợp lệ: e-process = trung bình trên lưới λ "
-            "của tích (1 + λ·(trúng − kỳ vọng chọn bừa)) qua các kỳ; p = 1 / giá trị lớn nhất của nó "
-            "(bất đẳng thức Ville).",
+            "của tích (1 + λ·(trúng − kỳ vọng chọn bừa)) qua các kỳ tiến cứu; p = 1 / giá trị lớn nhất "
+            "của nó (bất đẳng thức Ville).",
             "Mức tin suy từ lift và p luôn hợp lệ theo ngưỡng in trên trang; kết luận «hơn / không "
             "hơn» suy từ mức tin ấy và từ kết quả lượt thử thứ hai.",
         ])),
