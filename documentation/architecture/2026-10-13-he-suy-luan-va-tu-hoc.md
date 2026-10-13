@@ -63,7 +63,7 @@ flowchart TD
     subgraph KB["Kho tri thức (mới)"]
         MINE["Khai phá luật<br/>mine_lag_rules"]
         STORE[("data/knowledge/kb.json<br/>luật · trạng thái · tri thức đã đo")]
-        SCORE["Chấm TIẾN CỨU<br/>e-process, Bonferroni N/α"]
+        SCORE["Chấm TIẾN CỨU<br/>e-process, α chia trước theo lô"]
         ANALOG["Tương tự quá khứ<br/>ContextMemory (vector)<br/>chỉ mô tả, chưa vào Hedge"]
         RULES["Luật đã đăng ký<br/>chỉ mô tả, chưa vào Hedge"]
     end
@@ -158,8 +158,9 @@ sequenceDiagram
   - Tỉ lệ điều kiện được co Beta về tỉ lệ nền của b, với 100 lần quan sát ảo. Chỉ xét tiền đề a đã xảy ra ít nhất 200 lần.
   - Lấy 20 luật có lift cao nhất. Lịch sử không đủ thì đăng ký ít hơn, không bịa.
 - **`score_rule`**: chấm luật CHỈ trên kỳ sau ngày đăng ký, tối đa 180 kỳ, bằng e-process một phía (xem 4.4).
-- **`rule_status`**: `co-bang-chung` khi e-value đạt N/α (N là số luật từng đăng ký, α = 0,01); `het-han` khi quá 180 kỳ mà chưa đạt; còn lại `dang-kiem`.
-- **`measured_knowledge`**: gom kết luận đã đo ở nơi khác thành mục có trạng thái, gồm 15 họ của `confidence_matrix`, giả thuyết đuôi nóng, bộ lọc lô nhiều nháy, cặp xiên 2 và cổng tự học.
+- **`batch_alpha`**: lô thứ k được phần α·6/(π²k²) của α = 0,01, chia đều cho các luật trong lô. Tổng trên mọi lô bằng đúng α. Phần ấy ghi vào từng luật lúc đăng ký (`alpha`, `threshold_e`), nên lô mới không nâng ngưỡng của lô cũ và không rút lại kết luận đã báo. Ngưỡng N/α theo số luật hiện có thì lô k bị xét ở α/k, và tổng α·(1 + 1/2 + …) không bị chặn.
+- **`rule_status`**: `co-bang-chung` khi e-value đạt ngưỡng riêng của luật; `het-han` khi quá 180 kỳ mà chưa đạt; còn lại `dang-kiem`.
+- **`measured_knowledge`**: gom kết luận đã đo ở nơi khác thành mục có trạng thái, gồm 15 họ của `confidence_matrix`, giả thuyết đuôi nóng, bộ lọc lô nhiều nháy, cặp xiên 2 và cổng tự học. Mỗi p của `confidence_matrix` chỉ hiệu chỉnh trong họ của nó, nên kho hiệu chỉnh Holm trên cả 15 họ: qua Holm mới là `co-bang-chung`; qua α riêng mà không qua Holm là `chua-co-bang-chung`.
 
 ## 4. Mã mẫu (trích từ mã đang chạy)
 
@@ -246,7 +247,7 @@ if last_batch_is_older_than(DISCOVERY_EVERY):                    # 30 kỳ
         rules.append({**r, "registered_at": labels[-1]})         # định nghĩa đóng băng từ đây
 for rule in rules:
     score = score_rule(rule, present, labels)                    # chỉ các kỳ SAU ngày đăng ký
-    rule["status"] = rule_status(score, n_registered=len(rules))
+    rule["status"] = rule_status(score, rule["threshold_e"])     # ngưỡng ghi lúc đăng ký
 
 def score_rule(rule, present, labels):
     # Luật bắn ở kỳ t khi a về ở kỳ t−1. Quay công bằng và biết dₜ con khác nhau về
@@ -254,8 +255,11 @@ def score_rule(rule, present, labels):
     paths = np.cumprod(1 + lam * (y - d_t / 100), axis=1).mean(axis=0)   # trung bình trên lưới λ
     return {"e_value": paths[-1], "e_max": max(1, paths.max())}
 
-def rule_status(score, n_registered, horizon=180, alpha=0.01):
-    if score["e_max"] >= n_registered / alpha:    # Ville + Bonferroni: P(báo nhầm) ≤ α dù xem mỗi ngày
+def batch_alpha(k, alpha=0.01):                  # lô k: α·6/(π²k²); Σ mọi lô = α
+    return alpha * 6 / (math.pi ** 2 * k * k)
+
+def rule_status(score, threshold_e, horizon=180):
+    if score["e_max"] >= threshold_e:             # Ville + Bonferroni theo thời gian: P(báo nhầm) ≤ α
         return "co-bang-chung"
     return "het-han" if score["draws_after"] >= horizon else "dang-kiem"
 ```
@@ -286,13 +290,13 @@ Cả hai chuyên gia "học từ quá khứ gần" đều KÉM hằng số, và 
 
 **Kho luật**:
 
-- Lô đầu: 20 luật, đăng ký 12-10-2026, ngưỡng e-value N/α = 2 000.
+- Lô đầu: 20 luật, đăng ký 12-10-2026. Lô được α·6/π² ≈ 0,0061, mỗi luật 1/20 phần ấy, nên ngưỡng e-value của từng luật ≈ 3 290.
 - Chưa có kỳ tiến cứu nào. Lô mới được khai phá sau mỗi 30 kỳ.
 
 **Tri thức đã đo** (`measured`):
 
-- 14/15 họ tín hiệu của `confidence_matrix` không vượt mức ngẫu nhiên.
-- Họ duy nhất có p < 0,01 là "Đứt gãy cấu trúc: số con khác nhau mỗi kỳ" (p = 0,008). Đây là tín hiệu về CẤU TRÚC của sổ kết quả (đáng kiểm nguồn dữ liệu), không phải tín hiệu chọn số.
+- Không họ tín hiệu nào của `confidence_matrix` qua được hiệu chỉnh Holm trên 15 họ.
+- Họ duy nhất có p < 0,01 là "Đứt gãy cấu trúc: số con khác nhau mỗi kỳ": p = 0,008, sau Holm 0,12. Kho ghi nó là `chua-co-bang-chung`: một họ p = 0,008 trong 15 họ là điều thường thấy dưới giả thuyết không. Nếu có, đó là tín hiệu về CẤU TRÚC của sổ kết quả (đáng kiểm nguồn dữ liệu), không phải tín hiệu chọn số.
 - Bộ lọc lô nhiều nháy và cặp xiên 2: chưa có bằng chứng.
 - Tự học LOTO và Đặc Biệt: đang ở chế độ bóng mờ.
 
@@ -354,6 +358,7 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
 - Khai phá tìm ra một luật trễ cài sẵn và không đăng ký luật thiếu dữ liệu.
 - Luật chỉ được chấm sau ngày đăng ký và trong giới hạn số kỳ.
 - E-process đúng trên một đường tính tay và giữ lời hứa trên lịch sử công bằng: chạm 1/α ở không quá α lịch sử. Một luật thật đăng ký trước khi nó xuất hiện thì đạt "có bằng chứng".
-- Ngưỡng Bonferroni; luật đã đăng ký đóng băng; lô mới chờ đủ 30 kỳ.
+- Ngưỡng của từng luật là phần α ghi lúc đăng ký: tổng mọi lô không vượt α, lô mới không rút lại kết luận của lô cũ; luật đã đăng ký đóng băng; lô mới chờ đủ 30 kỳ.
+- Các họ của `confidence_matrix` chỉ thành "có bằng chứng" khi qua Holm trên mọi họ.
 - Lời giải thích cộng đúng ra hỗn hợp và trích đúng xác suất đã công bố; dùng dấu phẩy thập phân.
 - Pipeline chạy bước này sau những gì nó đọc.

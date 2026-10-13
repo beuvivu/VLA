@@ -361,8 +361,10 @@ trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,
 lấp phần "tự bổ sung tri thức" của yêu cầu hệ suy luận/tự học; phần bầu chọn có trọng số và tự chỉnh
 trọng số ĐÃ có ở `online_learning` (Hedge hai trí nhớ, cổng đề bạt), đừng dựng bản thứ hai. Luật trễ
 "a về → b về kỳ sau" được khai phá mỗi `DISCOVERY_EVERY` = 30 kỳ, ĐÓNG BĂNG khi đăng ký (định nghĩa,
-ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng e-process; "có bằng chứng" khi e ≥ N/α
-(N = số luật từng đăng ký). Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
+ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng e-process; "có bằng chứng" khi e đạt
+ngưỡng GHI LÚC ĐĂNG KÝ: lô k được α·6/(π²k²) (`batch_alpha`), tổng mọi lô ≤ α. Đừng quay lại ngưỡng
+N/α theo số luật hiện có: lô k bị xét ở α/k, tổng điều hoà không bị chặn. 15 họ của `confidence_matrix`
+vào kho qua Holm trên mọi họ. Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
 30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
 thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
 (`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.

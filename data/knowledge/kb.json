@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T10:33:07Z",
+  "generated_at": "2026-10-13T10:41:07Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "config": {
@@ -16,6 +16,7 @@
     "shrink": 100.0,
     "horizon": 180,
     "alpha": 0.01,
+    "alpha_spending": "6/(pi^2 k^2)",
     "rule_bets": [
       0.1,
       0.25,
@@ -28,6 +29,7 @@
     {
       "registered_at": "2026-10-12",
       "draws": 4233,
+      "alpha": 0.006079271018540266,
       "rules": [
         "tre-96-52-2026-10-12",
         "tre-34-04-2026-10-12",
@@ -67,6 +69,8 @@
       },
       "if": 96,
       "then": 52,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -92,6 +96,8 @@
       },
       "if": 34,
       "then": 4,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -117,6 +123,8 @@
       },
       "if": 94,
       "then": 10,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -142,6 +150,8 @@
       },
       "if": 51,
       "then": 36,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -167,6 +177,8 @@
       },
       "if": 3,
       "then": 15,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -192,6 +204,8 @@
       },
       "if": 22,
       "then": 14,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -217,6 +231,8 @@
       },
       "if": 47,
       "then": 80,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -242,6 +258,8 @@
       },
       "if": 86,
       "then": 87,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -267,6 +285,8 @@
       },
       "if": 29,
       "then": 39,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -292,6 +312,8 @@
       },
       "if": 37,
       "then": 71,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -317,6 +339,8 @@
       },
       "if": 69,
       "then": 35,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -342,6 +366,8 @@
       },
       "if": 1,
       "then": 3,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -367,6 +393,8 @@
       },
       "if": 76,
       "then": 49,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -392,6 +420,8 @@
       },
       "if": 74,
       "then": 70,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -417,6 +447,8 @@
       },
       "if": 10,
       "then": 55,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -442,6 +474,8 @@
       },
       "if": 51,
       "then": 74,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -467,6 +501,8 @@
       },
       "if": 51,
       "then": 62,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -492,6 +528,8 @@
       },
       "if": 42,
       "then": 67,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -517,6 +555,8 @@
       },
       "if": 45,
       "then": 27,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -542,6 +582,8 @@
       },
       "if": 19,
       "then": 74,
+      "alpha": 0.0003039635509270133,
+      "threshold_e": 3289.8681336964532,
       "prospective": {
         "draws_after": 0,
         "fired": 0,
@@ -554,7 +596,6 @@
       "status": "dang-kiem"
     }
   ],
-  "threshold_e": 2000.0,
   "retired": [],
   "measured": [
     {
@@ -562,105 +603,135 @@
       "kind": "measured",
       "title": "Tần suất LOTO — con về nhiều nhất (z)",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.424"
+      "p": 0.42357642357642356,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.424; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-freq_chi2",
       "kind": "measured",
       "title": "Tần suất LOTO — χ² toàn bảng",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.84"
+      "p": 0.8401598401598401,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.84; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-bayes_post_max",
       "kind": "measured",
       "title": "Bayes LOTO — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.424"
+      "p": 0.42357642357642356,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.424; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-bayes60_post_max",
       "kind": "measured",
       "title": "Bayes LOTO 60 kỳ gần nhất — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.572"
+      "p": 0.5724275724275725,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.572; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-markov_z_max",
       "kind": "measured",
       "title": "Markov LOTO — về rồi về lại (z)",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.184"
+      "p": 0.1838161838161838,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.184; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-pair_z_max",
       "kind": "measured",
       "title": "Bạc nhớ i hôm nay → j ngày mai (z)",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.84"
+      "p": 0.8401598401598401,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.84; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-cau_loto_max",
       "kind": "measured",
       "title": "Cầu vị trí → LOTO — tỉ lệ trúng cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.689"
+      "p": 0.6893106893106893,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.689; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-cau_de_max",
       "kind": "measured",
       "title": "Cầu vị trí → Đặc Biệt — tỉ lệ trúng cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.493"
+      "p": 0.4925074925074925,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.493; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-de_chi2",
       "kind": "measured",
       "title": "Tần suất Đặc Biệt — χ²",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.821"
+      "p": 0.8211788211788211,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.821; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-de_bayes_post_max",
       "kind": "measured",
       "title": "Bayes Đặc Biệt — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.834"
+      "p": 0.8341658341658342,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.834; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-de_markov_z_max",
       "kind": "measured",
       "title": "Đầu Đặc Biệt hôm qua → Đặc Biệt hôm nay (z)",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.509"
+      "p": 0.5094905094905096,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.509; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-de_to_loto",
       "kind": "measured",
       "title": "Đặc Biệt hôm nay → về LOTO ngày mai",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.153"
+      "p": 0.1528471528471529,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.153; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-cusum_max",
       "kind": "measured",
       "title": "Xu hướng dài hạn / đứt gãy từng con (CUSUM)",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.634"
+      "p": 0.6343656343656343,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.634; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-year_persist",
       "kind": "measured",
       "title": "Số nóng năm trước còn nóng năm sau",
       "status": "khong-hon-ngau-nhien",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.664"
+      "p": 0.6643356643356644,
+      "p_holm": 1.0,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.664; sau Holm trên 15 họ: 1"
     },
     {
       "id": "ho-distinct_cusum",
       "kind": "measured",
       "title": "Đứt gãy cấu trúc: số con khác nhau mỗi kỳ",
-      "status": "co-bang-chung",
-      "summary": "tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = 0.00799"
+      "status": "chua-co-bang-chung",
+      "p": 0.007992007992007943,
+      "p_holm": 0.11988011988011915,
+      "summary": "tín hiệu mạnh nhất so với lịch sử công bằng: p = 0.00799; sau Holm trên 15 họ: 0.12"
     },
     {
       "id": "gia-thuyet-duoi-nong",

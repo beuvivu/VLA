@@ -11,9 +11,9 @@ có độ tin cậy hiệu chỉnh đa kiểm (``confidence_matrix``). Module n�
 2. **Tự khai phá tri thức.** Mỗi ``DISCOVERY_EVERY`` kỳ, khai phá một lô luật trễ "a về hôm nay
    → b về ngày mai" có lift cao nhất trên lịch sử đến ngày đăng ký. Lift trong mẫu KHÔNG phải
    bằng chứng (chọn 20 trong 10 000 luật thì luật đẹp nhất luôn đẹp). Luật chỉ được chấm trên
-   các kỳ SAU ngày đăng ký, bằng e-process; "có bằng chứng" khi e-value đạt ``N/α`` với N là
-   số luật từng đăng ký (Bonferroni trên e-value, đúng dù xem lại mỗi ngày). Quá ``HORIZON`` kỳ
-   chưa đạt thì "hết hạn".
+   các kỳ SAU ngày đăng ký, bằng e-process; "có bằng chứng" khi e-value đạt ngưỡng RIÊNG của
+   luật, ghi lúc đăng ký: lô thứ k được α·6/(π²k²), chia đều cho các luật trong lô, nên tổng mọi
+   lô không vượt α dù xem lại mỗi ngày (``batch_alpha``). Quá ``HORIZON`` kỳ chưa đạt thì "hết hạn".
 3. **Bộ nhớ ngữ cảnh (vector memory).** Mỗi kỳ là một vectơ ngữ cảnh (tần suất 30 kỳ, độ gan,
    kỳ trước). Truy vấn ``NEIGHBOURS`` ngữ cảnh quá khứ giống nhất (cosine) và xem kỳ ngay sau
    chúng ra gì: chuyên gia "tương tự quá khứ" (dự báo tương tự — analog forecasting). Được chấm
@@ -41,6 +41,7 @@ import numpy as np
 import pandas as pd
 
 from atomic_io import atomic_write_text
+from digit_sum_rules import holm
 from multi_hit_vip import counts_matrix, draws_from_frame
 from xsmb_domain import baseline_rate
 
@@ -269,9 +270,20 @@ def score_rule(rule: dict, present: np.ndarray, labels: list[str], horizon: int 
             "expected": float(mu.sum()), "e_value": e_now, "e_max": e_max, "p_anytime": 1.0 / e_max}
 
 
-def rule_status(score: dict, n_registered: int, horizon: int = HORIZON, alpha: float = ALPHA) -> str:
-    """Trạng thái suy từ số đo: có bằng chứng / đang kiểm / hết hạn. Ngưỡng Bonferroni trên e-value."""
-    if score["e_max"] >= n_registered / alpha:
+def batch_alpha(k: int, alpha: float = ALPHA) -> float:
+    """Phần α của lô thứ k (k = 1, 2, …): α·6/(π²k²). Tổng trên mọi lô bằng đúng α (chuỗi Basel).
+
+    Phần ấy được chia đều cho các luật của lô và GHI vào từng luật lúc đăng ký, nên ngưỡng của một
+    luật không bao giờ đổi khi có lô mới. Ngưỡng N/α tính theo số luật HIỆN CÓ thì lô k bị xét ở
+    α/k: tổng α·(1 + 1/2 + 1/3 + …) không bị chặn, và một kết luận đã báo có thể bị rút lại chỉ vì
+    đăng ký thêm luật.
+    """
+    return alpha * 6.0 / (math.pi ** 2 * k * k)
+
+
+def rule_status(score: dict, threshold_e: float, horizon: int = HORIZON) -> str:
+    """Trạng thái suy từ số đo: có bằng chứng / đang kiểm / hết hạn. Ngưỡng e-value là của RIÊNG luật."""
+    if score["e_max"] >= threshold_e:
         return "co-bang-chung"
     if score["draws_after"] >= horizon:
         return "het-han"
@@ -287,7 +299,7 @@ def rule_config() -> dict:
     """Mọi tham số định nghĩa một luật và cách chấm nó. Khác bản đã ghi thì đó là một thí nghiệm KHÁC."""
     return {"version": VERSION, "discovery_every": DISCOVERY_EVERY, "rules_per_batch": RULES_PER_BATCH,
             "min_support": MIN_SUPPORT, "shrink": SHRINK, "horizon": HORIZON, "alpha": ALPHA,
-            "rule_bets": list(RULE_BETS)}
+            "alpha_spending": "6/(pi^2 k^2)", "rule_bets": list(RULE_BETS)}
 
 
 def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
@@ -304,8 +316,8 @@ def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
         return previous, retired
     if previous.get("rules"):
         retired.append({"rule_config": previous.get("rule_config"), "version": previous.get("version"),
-                        "last_scored": previous.get("source_date"), "threshold_e": previous.get("threshold_e"),
-                        "batches": previous.get("batches", []), "rules": previous["rules"]})
+                        "last_scored": previous.get("source_date"), "batches": previous.get("batches", []),
+                        "rules": previous["rules"]})
     return None, retired
 
 
@@ -319,6 +331,8 @@ def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) 
     if due:
         registered_at = labels[-1]
         mined = mine_lag_rules(present, len(labels))
+        spent = batch_alpha(len(batches) + 1)
+        share = spent / max(1, len(mined))
         ids = []
         for r in mined:
             rid = f"tre-{r['if']:02d}-{r['then']:02d}-{registered_at}"
@@ -326,14 +340,13 @@ def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) 
             rules.append({"id": rid, "kind": "lag", "registered_at": registered_at,
                           "text": f"{r['if']:02d} về hôm nay → {r['then']:02d} về kỳ sau",
                           "in_sample": {k: r[k] for k in ("support", "together", "rate", "base", "lift")},
-                          "if": r["if"], "then": r["then"]})
-        batches.append({"registered_at": registered_at, "draws": len(labels), "rules": ids})
-    n = len(rules)
+                          "if": r["if"], "then": r["then"], "alpha": share, "threshold_e": 1.0 / share})
+        batches.append({"registered_at": registered_at, "draws": len(labels), "alpha": spent, "rules": ids})
     for rule in rules:
         score = score_rule(rule, present, labels)
         rule["prospective"] = score
-        rule["status"] = rule_status(score, n)
-    return {"batches": batches, "rules": rules, "threshold_e": n / ALPHA}
+        rule["status"] = rule_status(score, rule["threshold_e"])
+    return {"batches": batches, "rules": rules}
 
 
 # --------------------------------------------------------------------------- tri thức đã đo ở nơi khác
@@ -353,10 +366,22 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
     out = []
     conf = _read(data_dir / "confidence" / "report.json")
     if conf:
-        for fam in conf.get("families", []):
+        # Mỗi p chỉ hiệu chỉnh TRONG họ của nó; kho đọc mọi họ cùng lúc nên hiệu chỉnh Holm trên cả
+        # các họ. Không thế thì dưới giả thuyết không, 15 họ ở α = 0,01 cho ~14% có ít nhất một họ
+        # bị gọi là "có bằng chứng". Qua α riêng mà không qua Holm thì chỉ là tín hiệu chưa xác nhận.
+        families = conf.get("families", [])
+        adjusted = holm([float(fam["p"]) for fam in families])
+        for fam, p_holm in zip(families, adjusted, strict=True):
+            if p_holm < ALPHA:
+                status = "co-bang-chung"
+            elif fam["p"] < ALPHA:
+                status = "chua-co-bang-chung"
+            else:
+                status = "khong-hon-ngau-nhien"
             out.append({"id": f"ho-{fam['key']}", "kind": "measured", "title": fam["label"],
-                        "status": "co-bang-chung" if fam["p"] < ALPHA else "khong-hon-ngau-nhien",
-                        "summary": f"tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = {fam['p']:.3g}"})
+                        "status": status, "p": float(fam["p"]), "p_holm": p_holm,
+                        "summary": f"tín hiệu mạnh nhất so với lịch sử công bằng: p = {fam['p']:.3g}; "
+                                   f"sau Holm trên {len(families)} họ: {p_holm:.3g}"})
         # Hai phép kiểm TIẾN CỨU đã đăng ký tự chốt trạng thái (hot_tail_test, digit_sum_hypothesis);
         # kho chỉ đọc lại, không tự suy. Tiến độ tính theo cỡ mẫu đã đăng ký (min_draws), không theo
         # cửa sổ đặc trưng (window).

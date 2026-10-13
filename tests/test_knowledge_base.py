@@ -139,15 +139,23 @@ def test_a_real_rule_registered_before_it_shows_earns_evidence() -> None:
     labels = _labels(900)
     rule = {"if": 12, "then": 34, "registered_at": labels[399]}
     score = kb.score_rule(rule, present, labels, horizon=500)
-    assert kb.rule_status(score, n_registered=20, horizon=500) == "co-bang-chung"
+    assert kb.rule_status(score, kb.RULES_PER_BATCH / kb.batch_alpha(1), horizon=500) == "co-bang-chung"
 
 
 @pytest.mark.parametrize(("e_max", "draws", "status"), [
     (2000.0, 10, "co-bang-chung"), (1999.0, 10, "dang-kiem"), (1999.0, 180, "het-han"), (2000.0, 180, "co-bang-chung"),
 ])
-def test_rule_status_uses_a_bonferroni_e_threshold_and_a_horizon(e_max, draws, status) -> None:
+def test_rule_status_uses_the_rules_own_e_threshold_and_a_horizon(e_max, draws, status) -> None:
     score = {"e_max": e_max, "draws_after": draws}
-    assert kb.rule_status(score, n_registered=20, horizon=180, alpha=0.01) == status
+    assert kb.rule_status(score, 2000.0, horizon=180) == status
+
+
+def test_the_batches_split_alpha_once_and_never_spend_more_than_alpha() -> None:
+    """Phần của lô k cố định từ đầu và cộng mọi lô không vượt α — Bonferroni theo thời gian."""
+    shares = [kb.batch_alpha(k) for k in range(1, 200_001)]
+    assert sum(shares) <= kb.ALPHA and sum(shares) > kb.ALPHA * (1 - 1e-5)
+    assert shares[0] == pytest.approx(kb.ALPHA * 6 / np.pi ** 2)
+    assert np.all(np.diff(shares) < 0)
 
 
 def test_registered_rules_are_frozen_and_a_new_batch_waits_its_turn() -> None:
@@ -162,7 +170,28 @@ def test_registered_rules_are_frozen_and_a_new_batch_waits_its_turn() -> None:
     for r in due["rules"]:
         if r["id"] in frozen:
             assert (r["registered_at"], r["in_sample"], r["if"], r["then"]) == frozen[r["id"]]
-    assert due["threshold_e"] == pytest.approx(2 * kb.RULES_PER_BATCH / kb.ALPHA)
+    # Ngưỡng ghi lúc đăng ký: lô mới không nâng ngưỡng của lô cũ (không rút lại kết luận đã báo).
+    first_batch = set(frozen)
+    for r in due["rules"]:
+        k = 1 if r["id"] in first_batch else 2
+        assert r["alpha"] == pytest.approx(kb.batch_alpha(k) / kb.RULES_PER_BATCH)
+        assert r["threshold_e"] == pytest.approx(1 / r["alpha"])
+    assert [b["alpha"] for b in due["batches"]] == pytest.approx([kb.batch_alpha(1), kb.batch_alpha(2)])
+    assert sum(r["alpha"] for r in due["rules"]) <= kb.ALPHA
+    assert {r["id"]: r["threshold_e"] for r in first["rules"]} == \
+        {r["id"]: r["threshold_e"] for r in due["rules"] if r["id"] in first_batch}
+
+
+def test_a_reported_rule_stays_reported_when_a_later_batch_is_registered(monkeypatch) -> None:
+    """Kết luận của lô 1 không bị rút lại chỉ vì lô 2 ra đời: trạng thái đọc ngưỡng ghi lúc đăng ký."""
+    present, labels = _fair(1300), _labels(1300)
+    own = kb.RULES_PER_BATCH / kb.batch_alpha(1)
+    monkeypatch.setattr(kb, "score_rule", lambda rule, *_: {"e_max": own * 1.001, "draws_after": 1})
+    first = kb.update_rules(None, present[:1200], labels[:1200])
+    due = kb.update_rules(first, present[:1200 + kb.DISCOVERY_EVERY], labels[:1200 + kb.DISCOVERY_EVERY])
+    batch_one = set(due["batches"][0]["rules"])
+    assert {r["status"] for r in due["rules"] if r["id"] in batch_one} == {"co-bang-chung"}
+    assert {r["status"] for r in due["rules"] if r["id"] not in batch_one} == {"dang-kiem"}
 
 
 # --------------------------------------------------------------------------- giải thích
@@ -216,6 +245,19 @@ def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
     assert status == {"ho-a": "co-bang-chung", "ho-b": "khong-hon-ngau-nhien"}
 
 
+@pytest.mark.parametrize(("p_best", "status"), [(0.0005, "co-bang-chung"), (0.00799, "chua-co-bang-chung")])
+def test_evidence_across_confidence_families_survives_a_holm_correction(tmp_path: Path, p_best, status) -> None:
+    """Mười lăm họ, mỗi họ ở α = 0,01: một họ p = 0,008 là điều thường thấy dưới giả thuyết không."""
+    (tmp_path / "confidence").mkdir()
+    families = [{"key": f"h{i}", "label": f"H{i}", "p": 0.5} for i in range(14)]
+    families.append({"key": "best", "label": "Best", "p": p_best})
+    (tmp_path / "confidence" / "report.json").write_text(json.dumps({"families": families}), encoding="utf-8")
+    entries = {e["id"]: e for e in kb.measured_knowledge(tmp_path)}
+    assert entries["ho-best"]["status"] == status
+    assert entries["ho-best"]["p_holm"] == pytest.approx(min(1.0, 15 * p_best))
+    assert {entries[f"ho-h{i}"]["status"] for i in range(14)} == {"khong-hon-ngau-nhien"}
+
+
 @pytest.mark.parametrize(("state", "status"), [("dang_thu", "dang-kiem"), ("xac_nhan", "co-bang-chung"),
                                                ("bac_bo", "khong-dat")])
 def test_a_registered_hypothesis_keeps_its_own_verdict_and_sample_size(tmp_path: Path, state, status) -> None:
@@ -254,7 +296,7 @@ _RULE_CHANGES = {"VERSION": kb.VERSION + 1, "DISCOVERY_EVERY": kb.DISCOVERY_EVER
 def test_rules_carry_over_only_under_the_definition_they_were_registered_with(name, monkeypatch) -> None:
     rule = {"id": "tre-01-02-2026-01-01", "registered_at": "2026-01-01", "prospective": {"e_max": 3.0}}
     previous = json.loads(json.dumps({"version": kb.VERSION, "rule_config": kb.rule_config(),
-                                      "source_date": "2026-02-01", "threshold_e": 2000.0,
+                                      "source_date": "2026-02-01",
                                       "batches": [{"registered_at": "2026-01-01", "rules": [rule["id"]]}],
                                       "rules": [rule], "retired": [{"rules": ["cũ hơn"]}]}))
     kept, retired = kb.carry_over(previous)
