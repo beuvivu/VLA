@@ -1,4 +1,4 @@
-"""Giao thức của lượt thử thứ hai cho lô nhiều nháy (``scripts/benchmark_multi_hit.py``).
+"""Giao thức của lượt thử thứ hai cho lô nhiều nháy (``src/multi_hit_benchmark.py``).
 
 Kết luận "không chiến lược nào hơn chọn bừa" chỉ đáng tin khi chính phép đo đúng: không chiến
 lược nào nhìn trước, phép so với chọn bừa có phân phối đúng, ứng viên được chọn KHÔNG nhìn giai
@@ -7,24 +7,15 @@ lược nào nhìn trước, phép so với chọn bừa có phân phối đúng
 
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
-
 import numpy as np
 import pytest
-
-ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
 def bench():
-    path = ROOT / "scripts" / "benchmark_multi_hit.py"
-    spec = importlib.util.spec_from_file_location("benchmark_multi_hit", path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["benchmark_multi_hit"] = module
-    spec.loader.exec_module(module)
-    return module
+    import multi_hit_benchmark
+
+    return multi_hit_benchmark
 
 
 def _fair(n_draws: int, seed: int) -> tuple[np.ndarray, np.ndarray]:

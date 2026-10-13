@@ -547,6 +547,63 @@ def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tupl
     return evidence, sections
 
 
+def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
+    """Trang Lô VIP nhiều nháy: mọi số là kiểm chứng ngoài mẫu so với chọn bừa cùng kỳ."""
+    loc: Source = {
+        "title": "Bộ lọc lô nhiều nháy và lượt thử thứ hai",
+        "snippet": (
+            "Bộ lọc VIP xếp hạng 100 con theo bốn thành phần; lượt thử thứ hai dò thêm các chiến "
+            "lược thường gặp. Cả hai chấm ngoài mẫu, so với chọn bừa trên chính các kỳ đã quay."
+        ),
+        "url": "lo-vip-nhieu-nhay.html",
+    }
+    null = "Chọn bừa k con trong cùng kỳ trúng theo phân phối siêu bội; cộng qua các kỳ ra z và p một phía."
+    return _ev([loc, _ket_qua(f), _LOTO], [
+        "Một con trúng «nhiều nháy» khi về từ hai lần trở lên trong 27 lô của kỳ.",
+        "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
+    ]), [
+        _sec_heading("Kết luận từ phép đo", "Kết luận từ phép đo", _ev([loc, _ket_qua(f)], [
+            "Walk-forward lồng nhau: mỗi kỳ được chấm bằng trọng số chọn trên các kỳ ngay trước nó.",
+            "Tỉ lệ trúng = số lượt top-k về ≥ 2 nháy / số lượt chọn. Khoảng tin cậy Wilson 95% trên cỡ "
+            "mẫu hiệu dụng theo cụm kỳ: số lượt chọn chia cho deff = phương sai số trúng từng kỳ / "
+            "(k·p·(1 − p)).",
+            null,
+            "Walk-forward trên lịch sử đến ngày chốt bộ lọc là mô tả hồi cứu (bộ lọc được thiết kế sau "
+            "khi đã xem lịch sử ấy). Mức tin chỉ tính trên các kỳ quay sau ngày chốt.",
+            "Trang chấm lại mỗi ngày, nên mức tin dùng p luôn hợp lệ: e-process = trung bình trên lưới λ "
+            "của tích (1 + λ·(trúng − kỳ vọng chọn bừa)) qua các kỳ tiến cứu; p = 1 / giá trị lớn nhất "
+            "của nó (bất đẳng thức Ville).",
+            "Mức tin suy từ lift và p luôn hợp lệ theo ngưỡng in trên trang; kết luận «hơn / không "
+            "hơn» suy từ mức tin ấy và từ kết quả lượt thử thứ hai.",
+        ])),
+        _sec_heading("Top-", "Thứ hạng cho kỳ kế tiếp", _ev([loc], [
+            "VIP Score = tổng có trọng số của bốn thành phần đã chuẩn hoá chéo 100 con.",
+            "Xác suất là hiệu chỉnh Platt khớp trên các cặp (điểm, kết quả) ngoài mẫu; × nền chia nó "
+            "cho mức lý thuyết P(X ≥ 2).",
+        ])),
+        _sec_heading("Các kỳ gần nhất", "Các kỳ gần nhất của kiểm chứng", _ev([loc, _ket_qua(f)], [
+            "Mỗi hàng là một kỳ của chính kiểm chứng walk-forward: các con đã chọn trước kỳ quay và "
+            "số nháy thật của từng con.",
+        ])),
+        _sec_heading("Lượt thử thứ hai", "Lượt thử thứ hai", _ev([loc, _ket_qua(f)], [
+            "Giai đoạn phát triển: mọi chiến lược được chấm, p hiệu chỉnh Holm; chiến lược có z cao "
+            "nhất là ứng viên duy nhất.",
+            "Giai đoạn kiểm (các kỳ cuối) chỉ quyết định ứng viên ấy theo ngưỡng α in trên trang.",
+            null,
+        ])),
+        _sec_heading("Ít nhất một con về", "Ít nhất một con về", _ev([loc], [
+            "Tỉ lệ kỳ của giai đoạn kiểm có ít nhất một con trong top-k về ≥ 2 nháy (hoặc ≥ 1 nháy).",
+            "Hai tỉ lệ đo trên cùng các kỳ nên là cặp: sai số chuẩn của hiệu = độ lệch chuẩn của hiệu "
+            "từng kỳ (ứng viên có con về − chọn bừa có con về) chia căn của số kỳ.",
+        ])),
+        _sec_heading("Phép đo có đủ nhạy", "Phép kiểm độ nhạy", _ev([loc], [
+            "Lịch sử giả định cùng độ dài, 27 lô đều trên 00–99, có cài thêm ≥ 2 nháy cho vài con.",
+            "Chạy đúng giao thức lượt thử thứ hai trên lịch sử ấy: giao thức phải tìm ra và qua được "
+            "giai đoạn kiểm thì kết luận âm trên dữ liệu thật mới có nghĩa.",
+        ])),
+    ]
+
+
 def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
     """Trang → (bằng chứng mặc định, ghi đè theo khối). Phủ MỌI trang xuất bản."""
     tk = lambda *extra: (_thong_ke(f, *extra), [])  # noqa: E731
@@ -584,6 +641,7 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "chu-ky-dac-biet.html": tk("Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử."),
         "cau-dac-biet-theo-bo-so.html": tk("Điểm rơi của từng bộ số ở giải Đặc Biệt: lần về gần nhất, khoảng cách và số lần."),
         "giai-db-ngay-mai.html": tk("Xếp hạng tham khảo cho kỳ kế tiếp, dựng từ chu kỳ và tần suất lịch sử — không phải dự báo đã kiểm định."),
+        "lo-vip-nhieu-nhay.html": _lo_vip(f),
         "tan-suat-loto.html": tk("Ma trận con lô × từng kỳ: mỗi ô là số nháy của con lô ở kỳ ấy."),
         "tan-suat-cap-loto.html": tk("Ma trận 50 họ cặp × từng kỳ; kèm bảng đồng xuất hiện."),
         "cap-lon-loto.html": tk("45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng."),

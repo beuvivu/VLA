@@ -811,6 +811,7 @@ SITE_NAV_SECTIONS: tuple[
             )),
             ("Tham khảo theo lịch sử", (
                 ("giai-db-ngay-mai.html", "Đặc Biệt ngày mai", "ngay-mai"),
+                ("lo-vip-nhieu-nhay.html", "Lô VIP nhiều nháy", "cau-hai-nhay"),
             )),
             ("Đánh giá dự báo", (
                 ("do-tin-cay.html", "Độ tin cậy dự báo", "tin-cay"),

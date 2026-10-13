@@ -473,12 +473,15 @@ class VIPMultiHitModel:
 
 # --------------------------------------------------------------------------- tin cậy
 
+#: Ngưỡng p một phía của từng mức tin bộ lọc (kèm lift > 1); trang Lô VIP in đúng các ngưỡng này.
+CONFIDENCE_P = {"High": 0.01, "Medium": 0.05}
+
+
 def model_confidence(p_value: float, lift: float) -> str:
     """Mức tin của CẢ bộ lọc, từ phép so một phía của top-k ngoài mẫu với chọn bừa cùng kỳ."""
-    if lift > 1 and p_value < 0.01:
-        return "High"
-    if lift > 1 and p_value < 0.05:
-        return "Medium"
+    for level in ("High", "Medium"):
+        if lift > 1 and p_value < CONFIDENCE_P[level]:
+            return level
     return "Low"
 
 

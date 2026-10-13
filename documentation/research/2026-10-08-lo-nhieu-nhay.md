@@ -14,8 +14,9 @@ Bộ lọc không mù: trên lịch sử giả định có cài tín hiệu, nó
 và trúng 19,5%, so với 3,65% của chọn bừa trên cùng lịch sử (×5,3, z = +12,2). Vì vậy kết luận "không có tín hiệu" là của dữ liệu, không phải
 của công cụ đo.
 
-Bộ lọc không vào pipeline và không có trang trên site. Theo luật đề bạt của kho, một mô hình chỉ
-được đưa vào khi thắng cả dự báo hằng số, và bộ lọc này không thắng.
+Bộ lọc không vào tổ hợp xác suất. Theo luật đề bạt của kho, một mô hình chỉ được đưa vào khi
+thắng cả dự báo hằng số, và bộ lọc này không thắng. Từ 13-10-2026 nó có trang riêng
+`docs/lo-vip-nhieu-nhay.html`, in TỪ phép đo (mục cuối).
 
 ## Mức nền
 
@@ -229,14 +230,57 @@ sai; bỏ phá hoà; ngưỡng luôn đạt), cả mười đều đỏ.
 Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lược tần suất thì các nhóm còn lại vẫn bắt
 được tín hiệu cài sẵn.
 
-## Nếu muốn có trang "VIP"
+## Trang «Lô VIP nhiều nháy» — 13-10-2026
 
-Không in một con số như "Xác suất 2+ nháy: 28,5%". Nếu có trang, nó phải in từ phép đo, giống
-`verdict` của trang soi cầu vị trí:
+Trang in từ phép đo, đúng như mục này từng đặt điều kiện. Không con số hay kết luận nào được
+viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
 
-- tỉ lệ trúng ngoài mẫu;
-- mức nền;
-- khoảng tin cậy;
-- Confidence suy từ kiểm định.
+- **Số đo.** `src/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
+  - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
+    trên mọi kỳ, khoảng Wilson 95% theo cụm kỳ (cỡ mẫu hiệu dụng Kish), mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
+    kiểm chứng.
+  - `benchmark.json`, đóng băng. Gồm giao thức lượt hai và phép kiểm độ nhạy, đo MỘT lần trên lịch
+    sử đến `SECOND_ROUND_UNTIL` = 12-10-2026, đúng phép đo đã công bố ở mục trên. Kỳ mới không
+    bao giờ mở lại phép kiểm. Nếu đo lại mỗi tháng trên 1 000 kỳ cuối trượt dần, ta nhìn lại gần như
+    cùng một tập kiểm ở cùng α, và xác suất "đạt" chỉ do may cộng dồn quá 1%. Tệp chỉ đo lại khi
+    `MEASURE_VERSION` đổi, hoặc khi chính đoạn lịch sử ấy bị sửa hay bị cắt. Muốn kiểm trên kỳ mới
+    thì đăng ký một phép kiểm tiến cứu mới với ngày bắt đầu mới.
+- **Mức tin xem lại mỗi ngày.** Bộ lọc được chấm lại mỗi ngày trên lịch sử dài thêm một kỳ. Nếu
+  so p của một lần xem với cùng ngưỡng mỗi ngày, thì sớm muộn sẽ vượt ngưỡng chỉ do may.
+  - Mô phỏng 2 000 lịch sử không kỹ năng, mỗi lịch sử 3 000 kỳ, xem lại sau mỗi kỳ: 30,9% lịch sử
+    có lúc p < 0,05.
+  - Vì vậy mức tin dùng p luôn hợp lệ (`anytime_p`). Đó là một e-process: trung bình trên lưới λ
+    của tích (1 + λ·(Hₜ − k·mₜ/100)) qua các kỳ. Theo bất đẳng thức Ville, p = 1 / max e hợp lệ dù
+    xem bao nhiêu lần. Trên cùng mô phỏng: 3,45%.
+  - e-process chỉ chạy trên kỳ quay SAU `VIP_FROZEN_AT` = 12-10-2026. Bộ lọc được thiết kế sau
+    khi đã xem lịch sử trước ngày ấy, và một e-process chỉ kiểm soát báo nhầm khi quy tắc cược được
+    chốt trước khi thấy dữ liệu nó chấm. Walk-forward 4 173 kỳ (2,90% so với 2,91%, p = 0,534) vì
+    vậy chỉ còn là mô tả hồi cứu.
+  - Ngày 12-10-2026 chưa có kỳ tiến cứu nào, nên mức tin là Thấp. Kết luận "không hơn" đứng trên
+    lượt thử thứ hai đã đóng băng và phép kiểm độ nhạy.
+- **Độ nhạy đo trên nhiều lịch sử.** Phép kiểm độ nhạy chạy lại giao thức trên `POWER_SEEDS` = 20
+  lịch sử cài tín hiệu, mỗi lịch sử một hạt giống. Giao thức được coi là đủ nhạy khi tỉ lệ đạt ≥
+  `POWER_REQUIRED` = 80%, ngưỡng đặt trước. Một lịch sử duy nhất có thể may hoặc rủi.
+  - Kết quả ngày 12-10-2026: 20/20 lịch sử đạt (KTC 95% 84–100%).
+  - Các lượt chạy song song bằng `spawn`, mỗi tiến trình một luồng OpenMP. Nếu dùng `fork` sau
+    khi tiến trình cha đã chạy cây tăng cường, tiến trình con kẹt cứng.
+- **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
+  pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
+- **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
+  - mức tin của bộ lọc: Trung bình hay Cao thì "hơn chọn bừa";
+  - ứng viên lượt hai có qua giai đoạn kiểm hay không;
+  - phép kiểm độ nhạy có bắt được tín hiệu cài sẵn hay không. Nếu không bắt được, trang ghi
+    "chưa kết luận" thay vì "không hơn".
+- **Điều phép kiểm ghim.**
+  - Đưa số đo của lịch sử có cài tín hiệu thì CÙNG trình dựng ấy phải in "hơn chọn bừa".
+  - Ngưỡng mức tin in trên trang là `multi_hit_vip.CONFIDENCE_P`, không phải bản chép.
+- **Vị trí trên site.** Menu Dự báo → Tham khảo theo lịch sử → Lô VIP nhiều nháy.
+- **Tệp đo phải khớp lịch sử.** Cả hai tệp lưu dấu vân tay (SHA-256) của đoạn lịch sử chúng đã đo,
+  và trình dựng đối chiếu với sổ kết quả hiện tại trước khi in.
+  - `vip.json` chậm hơn sổ (bước đo hỏng sau kỳ mới): trang không in top-5, vì đó là top-5 cho
+    một kỳ đã quay. Kiểm chứng của đoạn đã đo vẫn được in.
+  - `vip.json` của một lịch sử đã bị sửa: trang không in số đo nào.
+  - `benchmark.json` không phải số đo của đúng đoạn lịch sử đã đăng ký: trang ghi "chưa kết luận".
 
-Trên dữ liệu hiện tại, mọi con đều nhận Confidence Low và xác suất sát mức nền (2,86–2,89%).
+Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
+Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).

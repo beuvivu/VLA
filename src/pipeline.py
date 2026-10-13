@@ -392,6 +392,11 @@ def main() -> None:
         # 10 000 lịch sử được lưu sẵn; chỉ tính lại khi số kỳ trôi quá 2%.
         _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
         _run(_py("src/build_confidence_page.py"), allow_fail=soft_fail)
+        # Lô VIP nhiều nháy: khung thách đấu, không vào tổ hợp. Bộ lọc đo lại
+        # mỗi ngày (~25 s); lượt hai là phép kiểm một lần, đóng băng ở
+        # SECOND_ROUND_UNTIL, chỉ đo lại khi đoạn lịch sử ấy bị sửa.
+        _run(_py("src/multi_hit_report.py"), allow_fail=soft_fail)
+        _run(_py("src/build_multi_hit_page.py"), allow_fail=soft_fail)
         # Soi cầu vị trí đọc kỳ vừa quay; phải có TRƯỚC trang chủ vì ô "cầu đẹp
         # nhất" nằm cạnh bảng LOTO của khung kết quả hằng ngày.
         _run(_py("src/position_bridges.py"), allow_fail=soft_fail)
