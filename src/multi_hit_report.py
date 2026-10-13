@@ -45,7 +45,7 @@ BENCHMARK_REFRESH_DRAWS = 30
 RECENT_DRAWS = 10
 
 
-def wilson(hits: int, n: int, z: float = float(norm.ppf(0.975))) -> tuple[float, float]:
+def wilson(hits: float, n: float, z: float = float(norm.ppf(0.975))) -> tuple[float, float]:
     """Khoảng tin cậy Wilson 95% của một tỉ lệ; dùng được cả khi số trúng nhỏ."""
     if n <= 0:
         return (float("nan"), float("nan"))
@@ -54,6 +54,24 @@ def wilson(hits: int, n: int, z: float = float(norm.ppf(0.975))) -> tuple[float,
     centre = (p + z * z / (2 * n)) / denom
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
     return (centre - half, centre + half)
+
+
+def draw_level_interval(per_draw_hits, k: int) -> tuple[tuple[float, float], float]:
+    """Khoảng Wilson 95% của tỉ lệ trúng top-k, với cỡ mẫu hiệu dụng tính theo CỤM kỳ.
+
+    k con của cùng một kỳ chấm trên cùng 27 lô nên không phải k phép thử độc lập. Hệ số thiết kế
+    deff = phương sai số trúng từng kỳ / (k·p·(1 − p)); cỡ mẫu hiệu dụng = số lượt chọn / deff
+    (Kish), rồi Wilson trên cỡ mẫu ấy. Trả về (khoảng, deff).
+    """
+    hits = np.asarray(per_draw_hits, dtype=float)
+    picks = len(hits) * k
+    if len(hits) < 2 or picks == 0:
+        return wilson(hits.sum(), picks), float("nan")
+    rate = hits.sum() / picks
+    independent = k * rate * (1 - rate)
+    deff = float(hits.var(ddof=1) / independent) if independent > 0 else 1.0
+    n_eff = picks / deff if deff > 0 else float(picks)
+    return wilson(rate * n_eff, n_eff), deff
 
 
 def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
@@ -79,7 +97,7 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
     model = VIPMultiHitModel(draws, labels, cfg)
     report = model.predict_next()
     bt = report.backtest
-    lo, hi = wilson(bt.hits, bt.picks)
+    (lo, hi), deff = draw_level_interval(bt.per_draw["trung"], cfg.top_k)
     counts = counts_matrix(model.draws)
     recent = []
     for row in bt.per_draw.tail(RECENT_DRAWS).iloc[::-1].itertuples(index=False):
@@ -107,6 +125,7 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
             "hits": bt.hits,
             "rate": bt.hit_rate,
             "ci95": [lo, hi],
+            "design_effect": deff,
             "expected": bt.expected,
             "random_rate": bt.random_rate,
             "lift": bt.lift,

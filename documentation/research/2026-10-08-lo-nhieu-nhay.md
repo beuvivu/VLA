@@ -237,7 +237,7 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
 
 - **Số đo.** `src/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
   - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
-    trên mọi kỳ, khoảng Wilson 95%, mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
+    trên mọi kỳ, khoảng Wilson 95% theo cụm kỳ (cỡ mẫu hiệu dụng Kish), mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
     kiểm chứng.
   - `benchmark.json`, là bản đệm. Gồm giao thức lượt hai và phép kiểm độ nhạy. Tệp chỉ đo lại khi
     lịch sử dài thêm `BENCHMARK_REFRESH_DRAWS` = 30 kỳ, khi `MEASURE_VERSION` đổi, hoặc khi lịch

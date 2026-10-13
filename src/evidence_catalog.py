@@ -564,7 +564,9 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     ]), [
         _sec_heading("Kết luận từ phép đo", "Kết luận từ phép đo", _ev([loc, _ket_qua(f)], [
             "Walk-forward lồng nhau: mỗi kỳ được chấm bằng trọng số chọn trên các kỳ ngay trước nó.",
-            "Tỉ lệ trúng = số lượt top-k về ≥ 2 nháy / số lượt chọn; khoảng tin cậy Wilson 95%.",
+            "Tỉ lệ trúng = số lượt top-k về ≥ 2 nháy / số lượt chọn. Khoảng tin cậy Wilson 95% trên cỡ "
+            "mẫu hiệu dụng theo cụm kỳ: số lượt chọn chia cho deff = phương sai số trúng từng kỳ / "
+            "(k·p·(1 − p)).",
             null,
             "Mức tin suy từ lift và p một phía theo ngưỡng in trên trang; kết luận «hơn / không hơn» "
             "suy từ mức tin ấy và từ kết quả lượt thử thứ hai.",
@@ -586,7 +588,8 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         ])),
         _sec_heading("Ít nhất một con về", "Ít nhất một con về", _ev([loc], [
             "Tỉ lệ kỳ của giai đoạn kiểm có ít nhất một con trong top-k về ≥ 2 nháy (hoặc ≥ 1 nháy).",
-            "Sai số chuẩn của hiệu hai tỉ lệ = căn(2·p·(1 − p)/n), p là tỉ lệ của chọn bừa.",
+            "Hai tỉ lệ đo trên cùng các kỳ nên là cặp: sai số chuẩn của hiệu = độ lệch chuẩn của hiệu "
+            "từng kỳ (ứng viên có con về − chọn bừa có con về) chia căn của số kỳ.",
         ])),
         _sec_heading("Phép đo có đủ nhạy", "Phép kiểm độ nhạy", _ev([loc], [
             "Lịch sử giả định cùng độ dài, 27 lô đều trên 00–99, có cài thêm ≥ 2 nháy cho vài con.",

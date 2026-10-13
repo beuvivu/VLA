@@ -207,7 +207,8 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
     lo, hi = bt["ci95"]
     kpis = [
         ("Bộ lọc VIP · ngoài mẫu", _pct(bt["rate"]),
-         f"KTC 95% {_pct(lo)} – {_pct(hi)} · {_count(bt['hits'])}/{_count(bt['picks'])} lượt"),
+         f"KTC 95% {_pct(lo)} – {_pct(hi)} (theo cụm kỳ, deff {_num(bt['design_effect'], 2)}) · "
+         f"{_count(bt['hits'])}/{_count(bt['picks'])} lượt"),
         ("Chọn bừa cùng kỳ", _pct(bt["random_rate"]),
          f"Lý thuyết P(X ≥ 2), X ~ Nhị thức(27; 1/100): {_pct(vip['base_theory'], 3)}"),
         ("So với chọn bừa", f"×{_num(bt['lift'], 3)}",
@@ -386,7 +387,10 @@ def method_card(vip: dict) -> str:
         "chấm (walk-forward lồng nhau), nên tỉ lệ trúng báo ra không mang thiên lệch của chính phép "
         "chọn trọng số.",
         "Mốc so là chọn bừa k con trong CÙNG kỳ: với m con về ≥ 2 nháy ở kỳ ấy, số lượt trúng theo "
-        "phân phối siêu bội. Cộng qua các kỳ ra z và p một phía; khoảng tin cậy là Wilson 95%.",
+        "phân phối siêu bội. Cộng qua các kỳ ra z và p một phía.",
+        "Khoảng tin cậy là Wilson 95% trên cỡ mẫu hiệu dụng: các con cùng kỳ chấm trên cùng 27 lô nên "
+        "không độc lập, cỡ mẫu được chia cho hệ số thiết kế deff = phương sai số trúng từng kỳ / "
+        "(k·p·(1 − p)).",
         f"Mức tin của bộ lọc — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
         "bộ lọc.",
         "Số đo của bộ lọc tính lại mỗi ngày; lượt thử thứ hai và phép kiểm độ nhạy tính lại khi "

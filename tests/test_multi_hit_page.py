@@ -67,6 +67,42 @@ def test_wilson_interval_matches_the_textbook_value() -> None:
     assert all(math.isnan(x) for x in report.wilson(0, 0))
 
 
+def test_the_interval_is_wilson_on_the_kish_effective_sample() -> None:
+    """deff = phương sai số trúng từng kỳ / (k·p·(1 − p)); Wilson trên số lượt chọn / deff."""
+    k, n = 5, 400
+    hits = np.zeros(n)
+    hits[:60] = 1
+    (lo, hi), deff = report.draw_level_interval(hits, k)
+    p = 60 / (n * k)
+    expected_deff = hits.var(ddof=1) / (k * p * (1 - p))
+    assert deff == pytest.approx(expected_deff)
+    n_eff = n * k / deff
+    assert (lo, hi) == pytest.approx(report.wilson(p * n_eff, n_eff))
+
+
+def test_picks_that_hit_together_widen_the_interval() -> None:
+    """Năm con cùng kỳ trúng hay trượt cùng nhau: thông tin chỉ bằng một phép thử mỗi kỳ."""
+    k, n = 5, 400
+    clustered = np.zeros(n)
+    clustered[:12] = k                       # 60 lượt trúng dồn trong 12 kỳ
+    spread = np.zeros(n)
+    spread[:60] = 1                          # cùng 60 lượt trải trên 60 kỳ
+    (c_lo, c_hi), c_deff = report.draw_level_interval(clustered, k)
+    (s_lo, s_hi), s_deff = report.draw_level_interval(spread, k)
+    assert c_deff > 4 > s_deff
+    assert c_hi - c_lo > 1.8 * (s_hi - s_lo)
+    naive = report.wilson(60, n * k)
+    assert c_hi - c_lo > naive[1] - naive[0]
+
+
+def test_the_published_interval_is_the_draw_level_one(planted_vip) -> None:
+    draws, labels = m.draws_from_frame(m.mock_history(120, seed=2026, planted=PLANTED))
+    bt = m.VIPMultiHitModel(draws, labels, m.VIPConfig()).predict_next().backtest
+    (lo, hi), deff = report.draw_level_interval(bt.per_draw["trung"], bt.top_k)
+    assert planted_vip["backtest"]["ci95"] == pytest.approx([lo, hi])
+    assert planted_vip["backtest"]["design_effect"] == pytest.approx(deff)
+
+
 def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
     draws, labels = m.draws_from_frame(m.mock_history(100, seed=2026))
     counts = m.counts_matrix(draws)
@@ -292,6 +328,17 @@ def test_reasons_use_the_vietnamese_decimal_comma() -> None:
     raw = "Dị thường Poisson +3.44 (2 kỳ ≥2 nháy trong cửa sổ, z = +1.19, lift ×1.17)"
     assert page._vi_decimals(raw) == "Dị thường Poisson +3,44 (2 kỳ ≥2 nháy trong cửa sổ, z = +1,19, lift ×1,17)"
     assert page._vi_decimals("số 07 · kỳ 30.") == "số 07 · kỳ 30."
+
+
+def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
+    """Ngăn kéo bằng chứng phải mô tả đúng phép tính mà bước đo dùng, không phải bản cũ."""
+    import evidence_catalog
+
+    _, sections = evidence_catalog._catalog({})[page.PAGE]
+    steps = {sec["heading"]: " ".join(sec["reasoningTrace"]["steps"]) for sec in sections}
+    assert "hiệu từng kỳ" in steps["Ít nhất một con về"]
+    assert "2·p·(1 − p)" not in steps["Ít nhất một con về"]
+    assert "cụm kỳ" in steps["Kết luận từ phép đo"] and "deff" in steps["Kết luận từ phép đo"]
 
 
 # --------------------------------------------------------------------------- trang đã xuất bản
