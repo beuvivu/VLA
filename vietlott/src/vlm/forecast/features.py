@@ -68,8 +68,19 @@ class FeatureState:
         ma = [np.mean(self.rows[-m:], axis=0) if self.rows else np.full(n, self.base) for m in (10, 50)]
         support = np.flatnonzero(prev > 0)
         if len(support):
-            pair = self.pairs[:, support].mean(axis=1) / max(1, self.seen)
-            triple = self.triples[:, support][:, :, support].mean(axis=(1, 2)) / max(1, self.seen)
+            # Đồng xuất hiện với các số kỳ trước, KHÔNG gồm chính số ấy. Đường chéo pairs[i, i] là
+            # tần suất của i, không phải cặp: gộp vào thì pair_link của số vừa về chỉ là lag1
+            # (tương quan 0,99 trên Mega). triples[i, a, b] đã bằng 0 khi hai chỉ số trùng nhau,
+            # nên chia cho số cặp có thứ tự THẬT m(m − 1), không phải |support|².
+            inside = np.zeros(n, dtype=bool)
+            inside[support] = True
+            partners = len(support) - inside.astype(int)
+            own = np.where(inside, np.diag(self.pairs), 0.)
+            pair_sum = self.pairs[:, support].sum(axis=1) - own
+            pair = np.where(partners > 0, pair_sum / np.maximum(partners, 1), 0.) / max(1, self.seen)
+            triple_sum = self.triples[:, support][:, :, support].sum(axis=(1, 2), dtype=np.float64)
+            ordered = partners * (partners - 1)
+            triple = np.where(ordered > 0, triple_sum / np.maximum(ordered, 1), 0.) / max(1, self.seen)
         else:
             pair = triple = np.zeros(n)
         graph = self.pairs.copy()

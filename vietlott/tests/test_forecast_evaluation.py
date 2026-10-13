@@ -32,6 +32,23 @@ def test_evaluation_scores_frozen_prefix_before_learning() -> None:
     assert changed_result['data_sha256'] != result['data_sha256']
 
 
+def test_evaluation_scores_the_published_ticket_not_the_top_marginals(monkeypatch) -> None:
+    """Tái hiện lỗi 13-10-2026: benchmark chấm k số biên cao nhất trong khi vé công bố là Law.top."""
+    from vlm.forecast.distribution import Law
+
+    from vlm.forecast.distribution import PUBLISHED_TOP_N
+
+    series = mega_series(8)
+    published = [1, 2, 3, 4, 5, 6]
+    # Hết ngân sách nút thì bộ đầu của top phụ thuộc count: chỉ đúng count bảng điều khiển dùng mới ra vé đã phát.
+    monkeypatch.setattr(Law, 'top', lambda self, count, max_nodes=20000: (
+        [{'numbers': published if count == PUBLISHED_TOP_N else [7, 8, 9, 10, 11, 12]}], False))
+    result = evaluate_series(series, MLConfig(bootstrap=8, backends=(), search_nodes=1), initial_draws=4)
+    for t, draw in enumerate(result['draws'], start=4):
+        assert draw['ticket'] == published
+        assert draw['hits'] == float(series.obs['main']['X'][t][:6].sum())
+
+
 @pytest.mark.parametrize('problem', ['no_holdout', 'no_train', 'reversed_dates'])
 def test_evaluation_rejects_invalid_chronology(problem: str) -> None:
     series = mega_series(8)

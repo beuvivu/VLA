@@ -10,6 +10,7 @@ from vietlott_engine.analytics.stats import benjamini_hochberg
 from vietlott_engine.core.products import get_product
 from vietlott_engine.forecast.data import Series, SetSpec
 from vietlott_engine.inference.predictive import diebold_mariano
+from vlm.forecast.distribution import PUBLISHED_TOP_N
 from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
 
 
@@ -53,8 +54,13 @@ def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 40
             result['brier'] += float(np.mean((probability-target)**2))
             result['brier_fair'] += float(np.mean((component.features.base-target)**2))
             if isinstance(component.spec, SetSpec):
-                top = np.argsort(-probability, kind='stable')[:component.spec.k]
-                result['hits'] += float(row[top].sum())
+                # Chấm ĐÚNG vé đã công bố: bộ có xác suất đồng thời cao nhất (Law.top, như bảng điều
+                # khiển và sổ dự báo), không phải k số có xác suất biên cao nhất — hai vé ấy khác
+                # nhau khi hỗn hợp không đều, và chấm vé kia là chấm một dự báo chưa từng phát.
+                published, _ = law.top(PUBLISHED_TOP_N, max_nodes=config.search_nodes)
+                ticket = [int(v) for v in published[0]['numbers']]
+                result['ticket'] = ticket
+                result['hits'] += float(row[np.asarray(ticket) - 1].sum())
                 result['expected_hits'] += component.spec.k**2 / component.spec.n
         if not np.isfinite([result[key] for key in ('gain_nats', 'brier', 'brier_fair', 'hits', 'expected_hits')]).all():
             raise FloatingPointError('Nonfinite evaluation score')

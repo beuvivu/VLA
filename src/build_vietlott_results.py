@@ -49,6 +49,9 @@ PRODUCTS: dict[str, tuple[str, str, str]] = {
 }
 MATRIX = ("mega645", "power655", "lotto535")
 MAX = ("max3d", "max3dpro")
+#: Tỷ lệ một số trên vé trùng kết quả khi chọn bừa = số được quay / số trong lồng (Bingo18: mỗi vị trí 1/6).
+#: Không có mốc này thì "13,3% trùng" của vé Mega trông như dự báo tốt, dù đó đúng bằng ngẫu nhiên.
+FAIR_MATCH_RATE = {"mega645": 6 / 45, "power655": 6 / 55, "lotto535": 5 / 35, "keno": 20 / 80, "bingo18": 1 / 6}
 #: Số đối chiếu hiện trên trang sản phẩm (engine giữ 30).
 COMPARISONS_SHOWN = 10
 
@@ -404,6 +407,8 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
     denominator = sum(pair[1] for pair in pairs)
     percent = _hit_percent(hits, denominator) if denominator else "—"
     detail = f"{hits} / {denominator} {'vị trí' if product == 'bingo18' else 'số chính'} của các vé" if denominator else "Chưa có vé đủ dữ liệu để tính"
+    if denominator and product in FAIR_MATCH_RATE:
+        detail += f" · chọn bừa {100 * FAIR_MATCH_RATE[product]:.1f}%".replace(".", ",")
     if product in MAX:
         percent, detail = "Không áp dụng", "Bộ ba được đối chiếu nguyên vẹn"
     cards = [("Số vé đã chấm", str(len(scored)), "Trong các kỳ hiển thị bên dưới"),

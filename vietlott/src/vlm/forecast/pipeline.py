@@ -23,7 +23,8 @@ from vlm.forecast.models import GRU, OnlineLogistic, TreeExpert
 from vlm.forecast.adaptation import RunningFeatureStats
 from vlm.forecast.recovery import NumericalModelError, RecoveryLog, auto_patch_and_retry, require_finite
 
-VERSION = 2
+# 3 (13-10-2026): pair_link/triple_link không còn gộp đường chéo (tần suất của chính số ấy).
+VERSION = 3
 LIVE_THRESHOLD = float(np.log(140))  # seven active products, family alpha .05
 
 
