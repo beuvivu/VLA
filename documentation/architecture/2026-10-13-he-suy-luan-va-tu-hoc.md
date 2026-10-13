@@ -329,7 +329,7 @@ python src/knowledge_base.py            # cập nhật data/knowledge/kb.json
 PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
 ```
 
-- Pipeline gọi bước này sau `online_learning` và `confidence_matrix`, ở chế độ lỗi mềm. Đây là khung thách đấu, không đổi tổ hợp xác suất.
+- Pipeline gọi bước này sau `online_learning`, `confidence_matrix` và `multi_hit_report`, ở chế độ lỗi mềm. Đây là khung thách đấu, không đổi tổ hợp xác suất.
 - `kb.json` gồm:
   - `batches` và `rules`: luật, ngày đăng ký, số trong mẫu, chấm tiến cứu, trạng thái;
   - `measured`: tri thức đã đo ở nơi khác;

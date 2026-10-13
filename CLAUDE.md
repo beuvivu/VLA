@@ -365,7 +365,7 @@ ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng
 (N = số luật từng đăng ký). Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
 30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
 thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
-(`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning` và `confidence_matrix`.
+(`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
 
