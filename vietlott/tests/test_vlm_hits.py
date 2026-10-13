@@ -107,3 +107,23 @@ def test_monte_carlo_error_accounts_for_simulations_shared_by_every_draw():
     one = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], drawn[:1], 45, simulations=20_000)
     many = portfolio_summary([[[1, 2, 3, 4, 5, 6]]] * 30, drawn, 45, simulations=20_000)
     assert many['any_ticket']['ge3']['monte_carlo_se'] == pytest.approx(30 * one['any_ticket']['ge3']['monte_carlo_se'], rel=1e-6)
+
+
+def test_draws_needed_scans_up_to_the_limit_before_giving_up():
+    """Mốc nhân đôi vượt ``limit`` không được bỏ đoạn giữa: p₀ = 0,1, ×2 cần 78 kỳ, ``limit`` = 100 (mốc 64 chưa đủ)."""
+    p0, lift = 0.1, 2.0
+    reached = [n for n in range(1, 201) if _power(p0, lift, n) >= 0.8]
+    assert reached[0] == 78
+    for limit in range(1, 201):
+        expected = reached[0] if reached[0] <= limit else None
+        assert draws_needed(p0, lift, limit=limit) == expected, limit
+
+
+def test_detectable_lift_reports_an_unattainable_sample_instead_of_lift_one_over_p0():
+    """Một kỳ với p₀ = 0,1 cần 2 kỳ đạt để bác bỏ: công suất bằng 0 ở mọi tỷ lệ, không phải "phát hiện ×10"."""
+    out = detectable_lift(0.1, 1)
+    assert out['critical_reached'] == 2 and out['attainable'] is False
+    assert out['rate'] is None and out['lift'] is None
+    ok = detectable_lift(0.1, 30)
+    assert ok['attainable'] is True and ok['critical_reached'] <= 30
+    assert stats.binom.sf(ok['critical_reached'] - 1, 30, ok['rate']) == pytest.approx(0.8, abs=1e-6)

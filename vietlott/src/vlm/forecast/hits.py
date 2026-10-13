@@ -130,10 +130,15 @@ def detectable_lift(p0: float, draws: int, alpha: float = 0.05, power: float = 0
 
     Returns:
         ``critical_reached`` (số kỳ phải đạt để bác bỏ), ``rate`` và ``lift`` = rate / p₀ cần có.
+        Khi số kỳ tới hạn vượt số kỳ (``attainable`` = False) không kết quả nào bác bỏ được H₀:
+        công suất bằng 0 ở MỌI tỷ lệ, nên ``rate`` và ``lift`` là None, không phải ×(1/p₀).
     """
     if not 0 < p0 < 1 or draws < 1 or not 0 < alpha < 1 or not 0 < power < 1:
         raise ValueError('Tham số công suất không hợp lệ')
     c = _critical_count(p0, draws, alpha)
+    if c > draws:
+        return {'draws': draws, 'alpha': alpha, 'power': power, 'critical_reached': c,
+                'attainable': False, 'rate': None, 'lift': None}
     low, high = p0, 1.0
     for _ in range(200):
         mid = (low + high) / 2
@@ -142,7 +147,7 @@ def detectable_lift(p0: float, draws: int, alpha: float = 0.05, power: float = 0
         else:
             low = mid
     return {'draws': draws, 'alpha': alpha, 'power': power, 'critical_reached': c,
-            'rate': high, 'lift': high / p0}
+            'attainable': True, 'rate': high, 'lift': high / p0}
 
 
 def _critical_counts(p0: float, draws: np.ndarray, alpha: float) -> np.ndarray:
@@ -160,25 +165,27 @@ def draws_needed(p0: float, lift: float, alpha: float = 0.05, power: float = 0.8
 
     Công suất của phép kiểm rời rạc không đơn điệu theo số kỳ (răng cưa: mỗi khi số kỳ đạt tới hạn
     tăng một bậc, công suất tụt xuống), nên không tìm nhị phân được: tìm một mốc đủ bằng cách nhân
-    đôi rồi quét MỌI số kỳ nhỏ hơn. None nếu vượt ``limit``.
+    đôi (mốc cuối chặn ở ``limit``) rồi quét MỌI số kỳ tới mốc ấy. None nếu không số kỳ nào
+    ≤ ``limit`` đạt — kết luận ấy chỉ đưa ra sau khi đã quét hết 1..``limit``: công suất ở chính
+    ``limit`` thấp không loại được một số kỳ nhỏ hơn nằm trên đỉnh răng cưa.
     """
     if lift <= 1 or lift * p0 >= 1:
         raise ValueError('Cần 1 < lift và lift·p₀ < 1')
+    if limit < 1:
+        raise ValueError('limit phải ≥ 1')
 
     def powers(draws: np.ndarray) -> np.ndarray:
         return stats.binom.sf(_critical_counts(p0, draws, alpha) - 1, draws, lift * p0)
 
     high = 1
-    while powers(np.array([high]))[0] < power:
-        high *= 2
-        if high > limit:
-            return None
+    while high < limit and powers(np.array([high]))[0] < power:
+        high = min(high * 2, limit)
     for start in range(1, high + 1, 200_000):
         block = np.arange(start, min(high, start + 199_999) + 1)
         hit = np.flatnonzero(powers(block) >= power)
         if hit.size:
             return int(block[hit[0]])
-    return high
+    return None
 
 
 def poisson_binomial_sf(reached: int, probabilities: Sequence[float]) -> float:
