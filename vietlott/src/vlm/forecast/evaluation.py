@@ -10,6 +10,7 @@ from vietlott_engine.analytics.stats import benjamini_hochberg
 from vietlott_engine.core.products import get_product
 from vietlott_engine.forecast.data import Series, SetSpec
 from vietlott_engine.inference.predictive import diebold_mariano
+from vlm.forecast.distribution import PUBLISHED_TOP_N
 from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
 
 
@@ -56,7 +57,7 @@ def evaluate_series(series: Series, config: MLConfig, *, initial_draws: int = 40
                 # Chấm ĐÚNG vé đã công bố: bộ có xác suất đồng thời cao nhất (Law.top, như bảng điều
                 # khiển và sổ dự báo), không phải k số có xác suất biên cao nhất — hai vé ấy khác
                 # nhau khi hỗn hợp không đều, và chấm vé kia là chấm một dự báo chưa từng phát.
-                published, _ = law.top(1, max_nodes=config.search_nodes)
+                published, _ = law.top(PUBLISHED_TOP_N, max_nodes=config.search_nodes)
                 ticket = [int(v) for v in published[0]['numbers']]
                 result['ticket'] = ticket
                 result['hits'] += float(row[np.asarray(ticket) - 1].sum())

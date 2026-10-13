@@ -24,7 +24,7 @@ from vietlott_engine.forecast.schedule import FAST, MARGIN, VN, WEEKLY, target_d
 from vietlott_engine.game_theory.fastgames import KENO_TABLE, KENO_SIDE_BETS, bingo18_odds
 from vietlott_engine.game_theory.max3d import PRODUCTS as MAX_PRODUCTS
 from vlm.database.schema import DrawRecord
-from vlm.forecast.distribution import Law
+from vlm.forecast.distribution import PUBLISHED_TOP_N, Law
 from vlm.forecast.pipeline import MLForecaster
 
 ACTIVE = tuple(c for c in ProductCode if c != ProductCode.MAX4D)
@@ -139,7 +139,7 @@ def _from_issue(code: ProductCode, event: dict, now: datetime) -> dict | None:
     for name, spec in cfg.components.items():
         raw = p['laws'][name]
         law = Law(spec, np.array(raw['values']), np.array(raw['mixture']))
-        tops, exact = law.top(5, max_nodes=event.get('config', {}).get('search_nodes', 1000))
+        tops, exact = law.top(PUBLISHED_TOP_N, max_nodes=event.get('config', {}).get('search_nodes', 1000))
         components.append({'name': name, 'kind': spec.kind, 'top': tops, 'ranking_exact': exact})
     return {k: p[k] for k in ('target_id', 'target_date', 'target_time', 'made_at', 'based_on_id')} | {
         'product': code.value, 'engine': 'ml', 'registered': True, 'components': components,

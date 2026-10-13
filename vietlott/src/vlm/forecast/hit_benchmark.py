@@ -27,6 +27,7 @@ import hashlib
 import json
 import platform
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -45,7 +46,7 @@ from vietlott_engine.inference.multiple_testing import holm
 from vietlott_engine.inference.predictive import diebold_mariano
 from vlm.database.schema import DrawRecord
 from vlm.forecast import challengers as ch
-from vlm.forecast.distribution import Law
+from vlm.forecast.distribution import PUBLISHED_TOP_N, Law
 from vlm.forecast.hits import detectable_lift, draws_needed, fair_hit_pmf, portfolio_summary, summarize_hits
 from vlm.forecast.pipeline import VERSION as ML_VERSION
 from vlm.forecast.pipeline import MLConfig, MLForecaster, _prefix_digest
@@ -64,7 +65,7 @@ PROTOCOL: dict = {
     'ablation_min_positive_folds': 3,
     'temperature_bounds': (0.0, 2.0),
     'alpha': 0.05,
-    'portfolio_tickets': 5,
+    'portfolio_tickets': PUBLISHED_TOP_N,   # đúng số bộ bảng điều khiển công bố
     'monte_carlo': 20_000,
     'seed': 20261013,
     'promotion': {
@@ -189,7 +190,7 @@ def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0,
         if top_nodes is None:
             ticket = _ticket_from_marginals(pi, spec.k)
         else:
-            ticket = sorted(int(v) for v in tempered.top(1, max_nodes=top_nodes)[0][0]['numbers'])
+            ticket = sorted(int(v) for v in tempered.top(PUBLISHED_TOP_N, max_nodes=top_nodes)[0][0]['numbers'])
         out.append(_record(int(series.draw_ids[t]), str(series.dates[t])[:10], row, bonus, main_ll, bonus_ll,
                            pi, ticket, spec))
     return out
@@ -454,15 +455,22 @@ def _git(root: Path, *args: str) -> str | None:
         return None
 
 
-SOURCES = ('vlm/forecast/hit_benchmark.py', 'vlm/forecast/hits.py', 'vlm/forecast/challengers.py',
-           'vlm/forecast/distribution.py', 'vlm/forecast/features.py', 'vlm/forecast/models.py',
-           'vlm/forecast/pipeline.py', 'vietlott_engine/forecast/engine.py', 'vietlott_engine/forecast/experts.py')
-
-
 def source_manifest() -> dict:
-    """sha256 của từng tệp mã quyết định kết quả — artifact chỉ tái lập được với đúng các tệp này."""
+    """sha256 của MỌI module của dự án (``vlm``, ``vietlott_engine``) đang được nạp — đúng tập mã đã chạy.
+
+    Danh sách viết tay từng bỏ sót module quyết định kết luận (p DM, Holm, dữ liệu, đa thức đối
+    xứng); gọi sau khi chạy xong thì cả module nạp muộn cũng có mặt.
+    """
     base = Path(__file__).resolve().parents[2]
-    return {name: _sha256(base / name) for name in SOURCES}
+    out = {}
+    for module in list(sys.modules.values()):
+        path = getattr(module, '__file__', None)
+        if not path:
+            continue
+        resolved = Path(path).resolve()
+        if resolved.suffix == '.py' and resolved.is_relative_to(base):
+            out[resolved.relative_to(base).as_posix()] = _sha256(resolved)
+    return dict(sorted(out.items()))
 
 
 def _git_state(root: Path) -> dict:

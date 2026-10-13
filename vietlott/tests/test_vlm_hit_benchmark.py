@@ -29,6 +29,18 @@ def _synthetic(t: int, n: int = 45, k: int = 6, hot: float = 0.0, seed: int = 0)
                   {'main': {'X': x, 'bonus': np.zeros(t, dtype=np.int16)}})
 
 
+def test_the_manifest_hashes_every_project_module_that_ran():
+    """Thiếu module p DM hay Holm thì đổi kết luận mà manifest không đổi."""
+    import hashlib
+
+    manifest = hb.source_manifest()
+    for name in ('vietlott_engine/inference/predictive.py', 'vietlott_engine/inference/multiple_testing.py',
+                 'vietlott_engine/forecast/data.py', 'vietlott_engine/game_theory/popularity.py',
+                 'vlm/forecast/hits.py', 'vlm/forecast/challengers.py', 'vlm/forecast/hit_benchmark.py'):
+        assert manifest[name] == hashlib.sha256((ROOT / 'src' / name).read_bytes()).hexdigest()
+    assert all(name.endswith('.py') for name in manifest)
+
+
 def test_split_partitions_the_scored_draws_in_time_order():
     split = hb.make_split(1574)
     segments = split.segments()
@@ -91,14 +103,14 @@ def test_both_ml_arms_score_the_ticket_their_own_law_would_issue(monkeypatch):
     seen = []
 
     def fake_top(self, count, max_nodes=20000):
-        seen.append(max_nodes)
-        return [{'numbers': issued}], True
+        seen.append((count, max_nodes))
+        return [{'numbers': issued if count == hb.PUBLISHED_TOP_N else [1, 2, 3, 4, 5, 7]}], False
 
     monkeypatch.setattr(Law, 'top', fake_top)
     portfolios = [[[1, 2, 3, 4, 5, 6]] * 5 for _ in laws]
     plain, tempered = hb.ml_arm_records(laws, portfolios, series, 5, 0.7, 123)
     assert [r['ticket'] for r in plain] == [[1, 2, 3, 4, 5, 6]] * 5
-    assert [r['ticket'] for r in tempered] == [issued] * 5 and seen == [123] * 5
+    assert [r['ticket'] for r in tempered] == [issued] * 5 and seen == [(hb.PUBLISHED_TOP_N, 123)] * 5
     for t, record in enumerate(tempered, start=5):
         drawn = set((np.flatnonzero(series.obs['main']['X'][t]) + 1).tolist())
         assert record['hits'] == len(drawn & set(issued))

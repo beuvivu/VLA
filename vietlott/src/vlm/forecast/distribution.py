@@ -13,6 +13,12 @@ from vietlott_engine.forecast.engine import inclusion_probabilities
 from vietlott_engine.game_theory.popularity import elementary_symmetric
 
 
+#: Số bộ xếp hạng bảng điều khiển công bố; vé công bố là bộ ĐẦU của ``Law.top(PUBLISHED_TOP_N)``.
+#: Khi tìm kiếm hết ngân sách nút, kết quả ``top`` phụ thuộc ``count`` (gieo ứng viên, ngưỡng cắt), nên
+#: mọi nơi chấm vé đã phát phải gọi đúng số này, không gọi ``top(1)``.
+PUBLISHED_TOP_N = 5
+
+
 class Law:
     def __init__(self, spec: SetSpec | DigitSpec, values: np.ndarray, mixture: np.ndarray):
         self.spec = spec
