@@ -155,7 +155,7 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "ecb0b1db5a686efe1539df32117b47e25a2153f9",
+    "git_commit": "4baed40364fb3097c455c4755c3c094b44f5783c",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -194,7 +194,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "3104c4bb0291d5fe4657bc3adcb5e04741c40a3da2f0a68c343373d6586c8ee7",
+     "vlm/forecast/hits.py": "bfa2fdc86ad9ac3912c74f55212b6bd4ef4f27d2e822bea315a98e6e8e7e0055",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -221,7 +221,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T16:39:04+00:00"
+    "generated_at": "2026-10-13T17:22:26+00:00"
    },
    "split": {
     "dev": {
@@ -3036,6 +3036,8 @@
      "tickets_per_draw": 5,
      "simulations": 20000,
      "seed": 20261013,
+     "exact_draws": 382,
+     "monte_carlo_draws": 0,
      "per_ticket": {
       "draws": 1910,
       "counts": [
@@ -3119,34 +3121,34 @@
       "ge3": {
        "reached": 23,
        "rate": 0.060209424083769635,
-       "expected": 23.7604,
-       "fair_rate": 0.0622,
-       "monte_carlo_se": 0.652393355611875,
-       "p_value_greater": 0.5940033939586009
+       "expected": 23.123375395638583,
+       "fair_rate": 0.06053239632366121,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.5408392837070586
       },
       "ge4": {
        "reached": 3,
        "rate": 0.007853403141361256,
-       "expected": 1.7763000000000002,
-       "fair_rate": 0.0046500000000000005,
-       "monte_carlo_se": 0.18376957440861613,
-       "p_value_greater": 0.2629012282760968
+       "expected": 1.748885827728709,
+       "fair_rate": 0.004578235151122274,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.2555798605476046
       },
       "ge5": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.07640000000000002,
-       "fair_rate": 0.00020000000000000006,
-       "monte_carlo_se": 0.03819713474928651,
-       "p_value_greater": 1.0000000000000084
+       "expected": 0.045258107368147074,
+       "fair_rate": 0.00011847672085902375,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.999999999999982
       },
       "ge6": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.0,
-       "fair_rate": 0.0,
+       "expected": 0.00023449796563806768,
+       "fair_rate": 6.138690199949415e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0
+       "p_value_greater": 1.0000000000000184
       }
      },
      "mean_pairwise_overlap": 5.0,
@@ -3157,6 +3159,8 @@
      "tickets_per_draw": 5,
      "simulations": 20000,
      "seed": 20261013,
+     "exact_draws": 1274,
+     "monte_carlo_draws": 0,
      "per_ticket": {
       "draws": 6370,
       "counts": [
@@ -3240,34 +3244,34 @@
       "ge3": {
        "reached": 72,
        "rate": 0.0565149136577708,
-       "expected": 79.2142,
-       "fair_rate": 0.062177551020408166,
-       "monte_carlo_se": 2.1637957300808406,
-       "p_value_greater": 0.8137711646598017
+       "expected": 77.0839588658647,
+       "fair_rate": 0.06050546221810416,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.7409655748444833
       },
       "ge4": {
        "reached": 5,
        "rate": 0.003924646781789639,
-       "expected": 5.938350000000001,
-       "fair_rate": 0.004661185243328101,
-       "monte_carlo_se": 0.6099863618409485,
-       "p_value_greater": 0.707225444202493
+       "expected": 5.8307597488539065,
+       "fair_rate": 0.00457673449674561,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.6922455758723958
       },
       "ge5": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.25465000000000004,
-       "fair_rate": 0.00019988226059654634,
-       "monte_carlo_se": 0.12645297421021515,
-       "p_value_greater": 1.000000000000031
+       "expected": 0.15091343710175248,
+       "fair_rate": 0.00011845638705004119,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.9999999999999377
       },
       "ge6": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.0,
-       "fair_rate": 0.0,
+       "expected": 0.0007820691314735556,
+       "fair_rate": 6.138690199949416e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0
+       "p_value_greater": 1.0000000000000577
       }
      },
      "mean_pairwise_overlap": 4.9992150706436425,
@@ -3541,10 +3545,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.1539654399998653,
-    "ml_seconds": 258.62144138899976,
-    "challenger_selection_seconds": 10.709096086000045,
-    "total_seconds": 551.3504834670002
+    "legacy_seconds": 3.1665150040007575,
+    "ml_seconds": 252.4235518409996,
+    "challenger_selection_seconds": 10.610791987999619,
+    "total_seconds": 543.8029867810001
    }
   },
   "power655": {
@@ -3558,7 +3562,7 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "ecb0b1db5a686efe1539df32117b47e25a2153f9",
+    "git_commit": "4baed40364fb3097c455c4755c3c094b44f5783c",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3597,7 +3601,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "3104c4bb0291d5fe4657bc3adcb5e04741c40a3da2f0a68c343373d6586c8ee7",
+     "vlm/forecast/hits.py": "bfa2fdc86ad9ac3912c74f55212b6bd4ef4f27d2e822bea315a98e6e8e7e0055",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -3624,7 +3628,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T16:52:51+00:00"
+    "generated_at": "2026-10-13T17:36:12+00:00"
    },
    "split": {
     "dev": {
@@ -6466,6 +6470,8 @@
      "tickets_per_draw": 5,
      "simulations": 20000,
      "seed": 20261013,
+     "exact_draws": 333,
+     "monte_carlo_draws": 0,
      "per_ticket": {
       "draws": 1665,
       "counts": [
@@ -6549,34 +6555,34 @@
       "ge3": {
        "reached": 3,
        "rate": 0.009009009009009009,
-       "expected": 9.407250000000001,
-       "fair_rate": 0.028250000000000004,
-       "monte_carlo_se": 0.390145492793589,
-       "p_value_greater": 0.9958831612487845
+       "expected": 9.827791342952274,
+       "fair_rate": 0.029512886915772595,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.9971045586849052
       },
       "ge4": {
        "reached": 1,
        "rate": 0.003003003003003003,
-       "expected": 0.5993999999999999,
-       "fair_rate": 0.0017999999999999997,
-       "monte_carlo_se": 0.09981254484885886,
-       "p_value_greater": 0.4511554936198229
+       "expected": 0.6120077924295462,
+       "fair_rate": 0.0018378612385271658,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.4580442240972997
       },
       "ge5": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.049949999999999994,
-       "fair_rate": 0.00015,
-       "monte_carlo_se": 0.028837203905570565,
-       "p_value_greater": 1.0000000000000047
+       "expected": 0.013209875585014321,
+       "fair_rate": 3.9669296051094056e-05,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.9999999999999828
       },
       "ge6": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.0,
-       "fair_rate": 0.0,
+       "expected": 5.7434241673975285e-05,
+       "fair_rate": 1.72475200222148e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0
+       "p_value_greater": 0.9999999999999964
       }
      },
      "mean_pairwise_overlap": 4.799999999999999,
@@ -6587,6 +6593,8 @@
      "tickets_per_draw": 5,
      "simulations": 20000,
      "seed": 20261013,
+     "exact_draws": 1109,
+     "monte_carlo_draws": 0,
      "per_ticket": {
       "draws": 5545,
       "counts": [
@@ -6670,34 +6678,34 @@
       "ge3": {
        "reached": 32,
        "rate": 0.028854824165915238,
-       "expected": 31.321550000000002,
-       "fair_rate": 0.02824305680793508,
-       "monte_carlo_se": 1.2982675582146042,
-       "p_value_greater": 0.4757195578555533
+       "expected": 32.72144834324634,
+       "fair_rate": 0.02950536369995161,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.5753276515598593
       },
       "ge4": {
        "reached": 2,
        "rate": 0.0018034265103697023,
-       "expected": 1.9967499999999996,
-       "fair_rate": 0.0018004959422903513,
-       "monte_carlo_se": 0.3321430157643256,
-       "p_value_greater": 0.5933572528534862
+       "expected": 2.0375818976928857,
+       "fair_rate": 0.0018373146056743783,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.6043242907123838
       },
       "ge5": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.16599999999999998,
-       "fair_rate": 0.00014968440036068528,
-       "monte_carlo_se": 0.09580705166926641,
-       "p_value_greater": 1.0000000000000195
+       "expected": 0.043984211620171666,
+       "fair_rate": 3.9661146636764355e-05,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 0.9999999999999398
       },
       "ge6": {
        "reached": 0,
        "rate": 0.0,
-       "expected": 0.0,
-       "fair_rate": 0.0,
+       "expected": 0.00019127499704636215,
+       "fair_rate": 1.7247520022214802e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0
+       "p_value_greater": 0.999999999999988
       }
      },
      "mean_pairwise_overlap": 4.7999098286744815,
@@ -6971,10 +6979,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 2.9023813889998564,
-    "ml_seconds": 391.5510233680002,
-    "challenger_selection_seconds": 10.93468677799956,
-    "total_seconds": 826.8307830470003
+    "legacy_seconds": 3.3271037200001956,
+    "ml_seconds": 399.2114097550002,
+    "challenger_selection_seconds": 11.687820959999954,
+    "total_seconds": 825.1057274330005
    }
   }
  }

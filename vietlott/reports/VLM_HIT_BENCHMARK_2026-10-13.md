@@ -8,7 +8,7 @@ Giao thức đăng ký ngày 2026-10-13 (`vlm.forecast.hit_benchmark.PROTOCOL`).
 
 ## Mega 6/45
 
-Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `ecb0b1db5a68`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
+Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `4baed40364fb`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
 
 ### Test (nhìn một lần)
 
@@ -59,14 +59,14 @@ Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b85
 
 | Đoạn | Kỳ | Trùng trung bình giữa hai vé | Độ phủ | Ít nhất một vé H ≥ 3 (ngẫu nhiên) | H ≥ 4 (ngẫu nhiên) | p H ≥ 3 |
 |---|---:|---:|---:|---:|---:|---:|
-| test | 382 | 5,00 số | 33,3% | 23 (23,8) | 3 (1,78) | 0,5940 |
-| all_scored | 1274 | 5,00 số | 33,3% | 72 (79,2) | 5 (5,94) | 0,8138 |
+| test | 382 | 5,00 số | 33,3% | 23 (23,1) | 3 (1,75) | 0,5408 |
+| all_scored | 1274 | 5,00 số | 33,3% | 72 (77,1) | 5 (5,83) | 0,7410 |
 
 Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơn một vé là do mua nhiều vé, không phải dự báo tốt hơn.
 
 ## Power 6/55
 
-Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `ecb0b1db5a68`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
+Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `4baed40364fb`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
 
 ### Test (nhìn một lần)
 
@@ -117,8 +117,8 @@ Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9
 
 | Đoạn | Kỳ | Trùng trung bình giữa hai vé | Độ phủ | Ít nhất một vé H ≥ 3 (ngẫu nhiên) | H ≥ 4 (ngẫu nhiên) | p H ≥ 3 |
 |---|---:|---:|---:|---:|---:|---:|
-| test | 333 | 4,80 số | 26,7% | 3 (9,4) | 1 (0,60) | 0,9959 |
-| all_scored | 1109 | 4,80 số | 26,7% | 32 (31,3) | 2 (2,00) | 0,4757 |
+| test | 333 | 4,80 số | 26,7% | 3 (9,8) | 1 (0,61) | 0,9971 |
+| all_scored | 1109 | 4,80 số | 26,7% | 32 (32,7) | 2 (2,04) | 0,5753 |
 
 Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơn một vé là do mua nhiều vé, không phải dự báo tốt hơn.
 
