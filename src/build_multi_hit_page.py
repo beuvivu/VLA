@@ -153,8 +153,15 @@ def load(data_dir: Path) -> Loaded:
     folder = data_dir / DATA_DIR
 
     def read(name: str) -> dict | None:
+        """Tệp đọc không được (cụt, hỏng) thì trả ``{}``: có tệp nhưng không phải số đo hợp lệ."""
         path = folder / name
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+        if not path.exists():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
 
     draws, labels = load_history(data_dir)
     vip, bench = read("vip.json"), read("benchmark.json")

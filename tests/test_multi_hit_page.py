@@ -428,6 +428,21 @@ def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
     assert soup.select_one(".app-vip-verdict") is None
 
 
+@pytest.mark.parametrize("garbage", ['{"version": 5, "draws"', "[1, 2, 3]", "\x00\x01"])
+def test_unreadable_measurements_replace_the_old_page(tmp_path, garbage) -> None:
+    """Tệp đo cụt hay hỏng: không làm trình dựng chết (trang cũ còn nguyên), mà coi như không hợp lệ."""
+    data = _data_dir(tmp_path, m.mock_history(80, seed=5))
+    for name in (report.VIP_FILE, report.BENCHMARK_FILE):
+        (data / report.OUT_DIR / name).write_text(garbage, encoding="utf-8")
+    got = page.load(data)
+    assert (got.vip_state, got.vip, got.bench) == ("invalid", None, None)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / page.PAGE).write_text('<p class="app-vip-verdict" data-verdict="hon">cũ</p>', encoding="utf-8")
+    soup = BeautifulSoup(page.build(data, docs).read_text(encoding="utf-8"), "html.parser")
+    assert soup.select_one("[data-vip-unavailable]") is not None
+
+
 def test_the_filter_status_follows_the_history_prefix() -> None:
     draws, labels = _history(90)
     vip = {"version": report.MEASURE_VERSION, "draws": 80,
