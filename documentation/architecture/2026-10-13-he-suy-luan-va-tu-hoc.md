@@ -341,7 +341,7 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
   - `analog`: walk-forward của chuyên gia tương tự;
   - `insights`: lời giải thích top-10 cho LOTO và Đặc Biệt.
 - Luật đã đăng ký không bao giờ bị viết lại: định nghĩa, ngày và số trong mẫu giữ nguyên, chỉ phần chấm tiến cứu được cập nhật.
-- `rule_config` ghi mọi tham số định nghĩa luật và cách chấm (`VERSION`, nhịp khai phá, số luật mỗi lô, `MIN_SUPPORT`, `SHRINK`, `HORIZON`, `ALPHA`, lưới cược). Đổi bất kỳ tham số nào thì `carry_over` cất nguyên các lô cũ vào `retired`, kèm cấu hình và kỳ chấm cuối, KHÔNG chấm lại chúng bằng luật chấm mới, rồi đăng ký lô mới ngay. Lô mới nhận chỉ số k đếm tiếp sau mọi lô đã nghỉ, nên tổng α của cả kho vẫn ≤ α. Đổi ngưỡng hay chân trời giữa chừng mà vẫn chấm tiếp là xem dữ liệu rồi mới chọn phép kiểm.
+- `rule_config` ghi mọi tham số định nghĩa luật và cách chấm (`VERSION`, nhịp khai phá, số luật mỗi lô, `MIN_SUPPORT`, `SHRINK`, `HORIZON`, lưới cược). Đổi bất kỳ tham số nào thì `carry_over` cất nguyên các lô cũ vào `retired`, kèm cấu hình và kỳ chấm cuối, KHÔNG chấm lại chúng bằng luật chấm mới, rồi đăng ký lô mới ngay. Lô mới nhận chỉ số k đếm tiếp sau mọi lô đã nghỉ, nên tổng α của cả kho vẫn ≤ α. Riêng α là ngân sách của CẢ kho (`alpha_budget`), ghi lần tạo đầu: hạ `ALPHA` sau khi lô 1 đã tiêu α·6/π² thì tổng đã vượt ngân sách mới, nâng nó là nới sau khi xem kết quả. Vì thế `run` từ chối mọi lần đổi `ALPHA` trên kho đã có; muốn đổi thì bắt đầu kho mới. Đổi ngưỡng hay chân trời giữa chừng mà vẫn chấm tiếp là xem dữ liệu rồi mới chọn phép kiểm.
 
 ## 8. Giới hạn — điều hệ này KHÔNG hứa
 

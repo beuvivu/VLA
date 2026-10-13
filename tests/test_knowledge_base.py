@@ -211,6 +211,20 @@ def test_a_new_experiment_keeps_counting_batches_so_config_changes_cannot_respen
     assert spent == pytest.approx([kb.batch_alpha(k) for k in (1, 2, 3, 4)]) and sum(spent) <= kb.ALPHA
 
 
+@pytest.mark.parametrize("factor", [0.5, 2.0])
+def test_the_alpha_budget_is_fixed_for_the_life_of_the_knowledge_base(tmp_path: Path, monkeypatch, factor) -> None:
+    """Hạ α sau khi lô 1 đã tiêu thì tổng vượt ngân sách mới; nâng α là xem kết quả rồi mới nới: cả hai bị từ chối."""
+    frame = m.mock_history(1235, seed=8)
+    frame.iloc[:1230].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    first = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+    assert first["alpha_budget"] == kb.ALPHA
+    monkeypatch.setattr(kb, "ALPHA", kb.ALPHA * factor)
+    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    with pytest.raises(ValueError, match="ngân sách α"):
+        kb.run(tmp_path)
+    assert json.loads((tmp_path / "knowledge" / "kb.json").read_text(encoding="utf-8")) == first
+
+
 # --------------------------------------------------------------------------- giải thích
 
 
@@ -308,7 +322,7 @@ def test_run_writes_strict_json_and_keeps_rules_across_runs(tmp_path: Path) -> N
 
 _RULE_CHANGES = {"VERSION": kb.VERSION + 1, "DISCOVERY_EVERY": kb.DISCOVERY_EVERY + 1,
                  "RULES_PER_BATCH": kb.RULES_PER_BATCH + 1, "MIN_SUPPORT": kb.MIN_SUPPORT + 1,
-                 "SHRINK": kb.SHRINK * 2, "HORIZON": kb.HORIZON + 1, "ALPHA": kb.ALPHA / 2,
+                 "SHRINK": kb.SHRINK * 2, "HORIZON": kb.HORIZON + 1,
                  "RULE_BETS": kb.RULE_BETS + (3.0,)}
 
 

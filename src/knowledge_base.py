@@ -298,8 +298,22 @@ HYPOTHESIS_STATUS = {"dang_thu": "dang-kiem", "xac_nhan": "co-bang-chung", "bac_
 def rule_config() -> dict:
     """Mọi tham số định nghĩa một luật và cách chấm nó. Khác bản đã ghi thì đó là một thí nghiệm KHÁC."""
     return {"version": VERSION, "discovery_every": DISCOVERY_EVERY, "rules_per_batch": RULES_PER_BATCH,
-            "min_support": MIN_SUPPORT, "shrink": SHRINK, "horizon": HORIZON, "alpha": ALPHA,
+            "min_support": MIN_SUPPORT, "shrink": SHRINK, "horizon": HORIZON,
             "alpha_spending": "6/(pi^2 k^2)", "rule_bets": list(RULE_BETS)}
+
+
+def alpha_budget(previous: dict | None) -> float:
+    """Ngân sách α của CẢ kho, ghi lần tạo đầu và giữ qua mọi thí nghiệm.
+
+    Chỉ số lô đếm tiếp qua các thí nghiệm, nên tổng mọi lô ≤ ngân sách chỉ khi ngân sách không đổi:
+    hạ ``ALPHA`` sau khi lô 1 đã tiêu α·6/π² thì tổng đã vượt ngân sách mới, không lô nào gỡ lại được.
+    Vì thế đổi ``ALPHA`` trên một kho đã có bị từ chối; muốn đổi thì bắt đầu kho mới.
+    """
+    budget = float((previous or {}).get("alpha_budget", ALPHA))
+    if budget != ALPHA:
+        raise ValueError(f"kho tri thức đã chốt ngân sách α = {budget}, ALPHA hiện là {ALPHA}: "
+                         "đổi α cần một kho mới, không chuyển tiếp")
+    return budget
 
 
 def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
@@ -523,11 +537,14 @@ def run(data_dir: Path) -> Path:
     present, labels = load_history(data_dir)
     out = data_dir / OUT_DIR
     kb_path = out / KB_FILE
-    previous, retired = carry_over(_read(kb_path))
+    stored = _read(kb_path)
+    budget = alpha_budget(stored)
+    previous, retired = carry_over(stored)
     rules = update_rules(previous, present, labels, spent_before=batches_spent(retired))
     memory = ContextMemory(present)
     payload = {
         "version": VERSION,
+        "alpha_budget": budget,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
         "draws": len(labels),

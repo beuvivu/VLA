@@ -1,6 +1,7 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T10:46:18Z",
+  "alpha_budget": 0.01,
+  "generated_at": "2026-10-13T10:51:10Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "config": {
@@ -15,7 +16,6 @@
     "min_support": 200,
     "shrink": 100.0,
     "horizon": 180,
-    "alpha": 0.01,
     "alpha_spending": "6/(pi^2 k^2)",
     "rule_bets": [
       0.1,
