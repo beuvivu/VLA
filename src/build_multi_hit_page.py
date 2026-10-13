@@ -188,7 +188,8 @@ def verdict(vip: dict, bench: dict | None) -> dict:
     """
     beats = vip["confidence"] in ("High", "Medium")
     second = None if bench is None else bool(bench["candidate_passes"])
-    sensitive = None if bench is None else bool(bench["power_check"]["candidate_passes"])
+    # Đủ nhạy = tỉ lệ đạt trên nhiều lịch sử cài tín hiệu ≥ ngưỡng đặt trước, không phải một lượt may.
+    sensitive = None if bench is None else bool(bench["power"]["sensitive"])
     reason = ""
     if beats or second:
         state = "hon"
@@ -240,12 +241,11 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
             + ("ĐẠT" if v["second_round_passes"] else "không đạt")
             + f" ngưỡng α = {_num(bench['alpha'], 2)}."
         )
-        pc = bench["power_check"]
+        pw = bench["power"]
         parts.append(
-            "Cùng giao thức trên lịch sử giả định có cài tín hiệu nhẹ "
-            + ("BẮT ĐƯỢC tín hiệu" if v["protocol_sensitive"] else "KHÔNG bắt được tín hiệu")
-            + f" (giai đoạn kiểm {_pct(pc['candidate_test']['rate'])} so với nền "
-            f"{_pct(pc['base_test'])}), "
+            f"Cùng giao thức trên {pw['runs']} lịch sử giả định có cài tín hiệu nhẹ đạt ở "
+            f"{pw['passes']}/{pw['runs']} lịch sử (độ nhạy {_pct(pw['rate'], 0)}, ngưỡng đặt trước "
+            f"{_pct(pw['required'], 0)}), "
             + ("nên phép đo đủ nhạy để thấy một lợi thế cỡ ấy; nó không loại trừ được một lợi thế nhỏ "
                "hơn." if v["protocol_sensitive"] else "nên kết luận âm ở đây chưa đủ căn cứ.")
         )
@@ -423,14 +423,21 @@ def power_card(bench: dict | None) -> str:
     if bench is None:
         return '<p class="ui-table-empty">Chưa có số đo.</p>'
     pc = bench["power_check"]
+    pw = bench["power"]
     ct = pc["candidate_test"]
     planted = ", ".join(pc["planted"])
+    lo, hi = pw["ci95"]
     return (
         f'<p class="ui-muted" data-evidence-split>Một kết quả âm chỉ đáng đọc khi phép đo đủ nhạy để '
         "thấy một tín hiệu nếu nó có — và khi ấy nó chỉ cho biết không có lợi thế cỡ tín hiệu đã cài, "
         "không loại trừ một lợi thế nhỏ hơn. Lịch sử giả định cùng độ dài "
         f"({_count(bench['draws'])} kỳ, 27 lô đều trên 00–99), mỗi kỳ {planted} được cài thêm "
-        f"≥ 2 nháy với xác suất {_pct(pc['plant_rate'], 0)}. Giao thức chọn «"
+        f"≥ 2 nháy với xác suất {_pct(pc['plant_rate'], 0)}. Chạy lại đúng giao thức trên "
+        f"{pw['runs']} lịch sử như thế (khác hạt giống): ứng viên qua giai đoạn kiểm ở <b>{pw['passes']}/"
+        f"{pw['runs']}</b> lịch sử, tức độ nhạy {_pct(pw['rate'], 0)} (KTC 95% {_pct(lo, 0)} – "
+        f"{_pct(hi, 0)}); ngưỡng đặt trước để coi là đủ nhạy là {_pct(pw['required'], 0)} → "
+        f"<b>{'đủ nhạy' if pw['sensitive'] else 'chưa đủ nhạy'}</b>. Ví dụ lịch sử đầu (hạt giống "
+        f"{pc['seed']}): giao thức chọn «"
         f"{html.escape(strategy_label(pc['candidate']))}» (z phát triển "
         f"{_num(pc['candidate_dev_z'], 2, sign=True)}); giai đoạn kiểm trúng {_pct(ct['rate'])} so với "
         f"nền {_pct(pc['base_test'])}, z = {_num(ct['z'], 2, sign=True)}, p = {_p(ct['p'])} → "

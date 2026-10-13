@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "generated_at": "2026-10-13T03:47:57Z",
+  "version": 6,
+  "generated_at": "2026-10-13T04:51:03Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "history_sha256": "33fe746ad89f0a56e00f27162e944a3bbec5210c6fca82ef22366df89bdb6cf8",
@@ -590,6 +590,39 @@
       }
     }
   },
+  "power": {
+    "runs": 20,
+    "passes": 20,
+    "rate": 1.0,
+    "ci95": [
+      0.8388748419471806,
+      1.0
+    ],
+    "required": 0.8,
+    "sensitive": true,
+    "seeds": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ]
+  },
   "power_check": {
     "planted": [
       "07",
@@ -597,6 +630,7 @@
       "68"
     ],
     "plant_rate": 0.03,
+    "seed": 7,
     "candidate": "multi_hot_all",
     "candidate_passes": true,
     "candidate_dev_z": 11.993350006445501,

@@ -258,6 +258,12 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
     vậy chỉ còn là mô tả hồi cứu.
   - Ngày 12-10-2026 chưa có kỳ tiến cứu nào, nên mức tin là Thấp. Kết luận "không hơn" đứng trên
     lượt thử thứ hai đã đóng băng và phép kiểm độ nhạy.
+- **Độ nhạy đo trên nhiều lịch sử.** Phép kiểm độ nhạy chạy lại giao thức trên `POWER_SEEDS` = 20
+  lịch sử cài tín hiệu, mỗi lịch sử một hạt giống. Giao thức được coi là đủ nhạy khi tỉ lệ đạt ≥
+  `POWER_REQUIRED` = 80%, ngưỡng đặt trước. Một lịch sử duy nhất có thể may hoặc rủi.
+  - Kết quả ngày 12-10-2026: 20/20 lịch sử đạt (KTC 95% 84–100%).
+  - Các lượt chạy song song bằng `spawn`, mỗi tiến trình một luồng OpenMP. Nếu dùng `fork` sau
+    khi tiến trình cha đã chạy cây tăng cường, tiến trình con kẹt cứng.
 - **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
   pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
 - **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:

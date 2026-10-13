@@ -46,7 +46,12 @@ BENCHMARK_FILE = "benchmark.json"
 #: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
 #: 4: mức tin của bộ lọc dùng p luôn hợp lệ (e-process), vì trang xem lại kết quả mỗi ngày.
 #: 5: e-process chỉ chạy trên kỳ quay SAU VIP_FROZEN_AT (tiến cứu); hồi cứu chỉ còn để mô tả.
-MEASURE_VERSION = 5
+#: 6: độ nhạy ước lượng trên POWER_SEEDS lịch sử cài tín hiệu, so với POWER_REQUIRED đặt trước.
+MEASURE_VERSION = 6
+#: Độ nhạy của giao thức lượt hai: chạy lại trên chừng này lịch sử giả định độc lập (khác hạt giống)
+#: và coi là ĐỦ NHẠY khi tỉ lệ đạt ≥ POWER_REQUIRED. Một lịch sử duy nhất có thể may hay rủi.
+POWER_SEEDS = tuple(range(7, 27))
+POWER_REQUIRED = 0.8
 #: Bộ lọc VIP được thiết kế SAU khi đã xem lịch sử đến ngày này (đặc trưng, tham số, cách chọn trọng
 #: số), nên phần kiểm chứng hồi cứu không phải bằng chứng "chưa từng thấy". Mức tin chỉ tính trên các
 #: kỳ quay sau ngày ấy. Đừng dời ngày; đổi bộ lọc thì đăng ký ngày mới.
@@ -268,6 +273,52 @@ def registered_draws(labels: list[str]) -> int:
     return sum(1 for label in labels if str(label) <= SECOND_ROUND_UNTIL)
 
 
+def _planted_run(job: tuple[int, int]) -> dict:
+    """Một lượt giao thức lượt hai trên một lịch sử cài tín hiệu (hàm cấp module để chạy song song)."""
+    import multi_hit_benchmark as bm
+
+    n_draws, seed = job
+    fake_draws, fake_weekdays = bm.planted_history(n_draws, seed=seed)
+    return bm.run_protocol(fake_draws, fake_weekdays)
+
+
+def power_estimate(n_draws: int, seeds: tuple[int, ...] = POWER_SEEDS, run=_planted_run,
+                   workers: int | None = None) -> tuple[list[dict], dict]:
+    """Chạy giao thức trên từng lịch sử cài tín hiệu; trả (các lượt, tóm tắt độ nhạy).
+
+    Độ nhạy = tỉ lệ lượt mà ứng viên qua giai đoạn kiểm; ĐỦ NHẠY khi tỉ lệ ấy ≥ ``POWER_REQUIRED``.
+    """
+    jobs = [(n_draws, seed) for seed in seeds]
+    if workers == 1 or len(jobs) <= 1:
+        runs = [run(job) for job in jobs]
+    else:
+        import multiprocessing
+        import os
+        from concurrent.futures import ProcessPoolExecutor
+
+        # "spawn", không "fork": tiến trình cha đã khởi động OpenMP (cây tăng cường trên dữ liệu thật),
+        # và tách tiến trình bằng fork khi ấy làm tiến trình con kẹt cứng (đo 13-10-2026: 20 phút, 0% CPU).
+        # Mỗi tiến trình con một luồng OpenMP để các lượt song song không tranh nhau cùng lõi.
+        saved = os.environ.get("OMP_NUM_THREADS")
+        os.environ["OMP_NUM_THREADS"] = "1"
+        try:
+            with ProcessPoolExecutor(max_workers=workers,
+                                     mp_context=multiprocessing.get_context("spawn")) as pool:
+                runs = list(pool.map(run, jobs))
+        finally:
+            if saved is None:
+                os.environ.pop("OMP_NUM_THREADS", None)
+            else:
+                os.environ["OMP_NUM_THREADS"] = saved
+    passes = sum(bool(r["candidate_passes"]) for r in runs)
+    total = len(runs)
+    rate = passes / total if total else float("nan")
+    lo, hi = wilson(passes, total)
+    return runs, {"runs": total, "passes": passes, "rate": rate, "ci95": [lo, hi],
+                  "required": POWER_REQUIRED, "sensitive": bool(total and rate >= POWER_REQUIRED),
+                  "seeds": list(seeds)}
+
+
 def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     """Giao thức lượt hai trên đoạn lịch sử đã đăng ký, và cùng giao thức trên lịch sử có cài tín hiệu.
 
@@ -280,8 +331,8 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     weekdays = pd.to_datetime(pd.Series(labels)).dt.weekday.to_numpy()
     scores = bm.strategy_scores(draws, weekdays)
     real = bm.run_protocol(draws, weekdays, scores=scores)
-    fake_draws, fake_weekdays = bm.planted_history(len(draws))
-    planted = bm.run_protocol(fake_draws, fake_weekdays)
+    planted_runs, power = power_estimate(len(draws))
+    planted = planted_runs[0]                    # lượt đầu: in chi tiết làm ví dụ
     cand = real["candidate"]
     strategies = [
         {"name": name, "dev": _score(real["dev_scores"][name]), "dev_holm": real["dev_holm"][name],
@@ -314,9 +365,11 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
         "rank_correlation": _rank_correlation(real),
         "strategies": strategies,
         "any_hit": any_hit,
+        "power": power,
         "power_check": {
             "planted": [f"{n:02d}" for n in bm.PLANTED],
             "plant_rate": bm.PLANT_RATE,
+            "seed": power["seeds"][0],
             "candidate": planted["candidate"],
             "candidate_passes": planted["candidate_passes"],
             "candidate_dev_z": planted["dev_scores"][planted["candidate"]].z,

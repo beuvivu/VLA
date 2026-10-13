@@ -535,9 +535,37 @@ def test_a_second_round_that_passes_turns_the_verdict(fair_vip, bench) -> None:
 
 def test_a_blind_protocol_cannot_conclude_not_better(fair_vip, bench) -> None:
     blind = copy.deepcopy(bench)
-    blind["power_check"]["candidate_passes"] = False
+    blind["power"]["sensitive"] = False
     assert page.verdict(fair_vip, blind)["state"] == "chua-ket-luan"
     assert "chưa đủ căn cứ" in page.verdict_text(fair_vip, blind)[1]
+
+
+def test_sensitivity_is_the_power_over_many_histories_not_one_lucky_run(fair_vip, bench) -> None:
+    """Một lượt cài tín hiệu đạt hay trượt do may không được quyết định kết luận; tỉ lệ đạt mới quyết định."""
+    lucky = copy.deepcopy(bench)
+    lucky["power_check"]["candidate_passes"] = True
+    lucky["power"].update(passes=5, rate=0.5, sensitive=False)
+    assert page.verdict(fair_vip, lucky)["state"] == "chua-ket-luan"
+    unlucky = copy.deepcopy(bench)
+    unlucky["power_check"]["candidate_passes"] = False
+    unlucky["power"].update(passes=19, rate=0.95, sensitive=True)
+    assert page.verdict(fair_vip, unlucky)["state"] == "khong-hon"
+
+
+@pytest.mark.parametrize(("passing", "sensitive"), [(8, True), (7, False)])
+def test_power_is_the_share_of_planted_histories_that_pass(passing, sensitive) -> None:
+    seeds = tuple(range(10))
+    fake = lambda job: {"candidate_passes": job[1] < passing}  # noqa: E731
+    runs, power = report.power_estimate(1000, seeds=seeds, run=fake, workers=1)
+    assert len(runs) == 10 and power["passes"] == passing
+    assert power["rate"] == pytest.approx(passing / 10)
+    assert power["required"] == report.POWER_REQUIRED == 0.8
+    assert power["sensitive"] is sensitive
+    assert power["ci95"][0] < power["rate"] < power["ci95"][1]
+
+
+def test_the_power_check_uses_many_independent_histories() -> None:
+    assert len(report.POWER_SEEDS) >= 20 and len(set(report.POWER_SEEDS)) == len(report.POWER_SEEDS)
 
 
 def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> None:
