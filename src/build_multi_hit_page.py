@@ -537,12 +537,12 @@ def render(vip: dict, bench: dict | None, *, last_date: str = "", behind_by: int
 
 def build(data_dir: Path, docs_dir: Path) -> Path | None:
     got = load(data_dir)
-    if got.vip_state == "missing":
-        print(f"Chưa có data/{DATA_DIR}/vip.json — bỏ qua.")
-        return None
     write_stylesheet(docs_dir)
     out = docs_dir / PAGE
     if got.vip is None:
+        # Thiếu tệp hay tệp không khớp lịch sử: vẫn GHI ĐÈ trang, đừng để trang cũ với số đo cũ.
+        print(f"data/{DATA_DIR}/vip.json {'chưa có' if got.vip_state == 'missing' else 'không khớp'} — "
+              "dựng trang chưa có số đo.")
         write_page(out, render_unavailable(got.last_date))
     else:
         write_page(out, render(got.vip, got.bench, last_date=got.last_date, behind_by=got.behind_by))

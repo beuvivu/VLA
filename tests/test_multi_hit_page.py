@@ -386,6 +386,20 @@ def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) ->
     assert not soup.select("#app-vip-picks")
 
 
+def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
+    """Thiếu vip.json thì trang cũ (với top-k và kết luận cũ) phải bị ghi đè, không được để nguyên."""
+    frame = m.mock_history(80, seed=5)
+    data = _data_dir(tmp_path, frame)
+    (data / report.OUT_DIR / report.VIP_FILE).unlink()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / page.PAGE).write_text('<p class="app-vip-verdict" data-verdict="hon">cũ</p>', encoding="utf-8")
+    out = page.build(data, docs)
+    soup = BeautifulSoup(out.read_text(encoding="utf-8"), "html.parser")
+    assert soup.select_one("[data-vip-unavailable]") is not None
+    assert soup.select_one(".app-vip-verdict") is None
+
+
 def test_the_filter_status_follows_the_history_prefix() -> None:
     draws, labels = _history(90)
     vip = {"version": report.MEASURE_VERSION, "draws": 80,
