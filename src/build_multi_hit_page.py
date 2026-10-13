@@ -1,7 +1,9 @@
-"""Trang «Lô VIP nhiều nháy»: bộ lọc con số về ≥ 2 nháy, in TỪ phép đo.
+"""Trang «Lô VIP nhiều nháy»: con số về ≥ 2 nháy và cặp xiên 2 cho kỳ tới, in TỪ phép đo.
 
 Đọc ``data/multi_hit/vip.json`` và ``data/multi_hit/benchmark.json`` (do ``multi_hit_report.py``
-sinh) rồi dựng ``docs/lo-vip-nhieu-nhay.html``. Không con số hay kết luận nào ở đây được đặt tay:
+sinh) rồi dựng ``docs/lo-vip-nhieu-nhay.html``. Trang gọn theo yêu cầu ngày 13-10-2026: năm con, năm
+cặp và một dòng số đo kiểm chứng cho mỗi khối ở trên cùng; phần giải thích thu vào mục «Chi tiết
+phép đo». Không con số hay kết luận nào ở đây được đặt tay:
 
 * tỉ lệ trúng, khoảng tin cậy, z, p và mức tin của bộ lọc là kiểm chứng walk-forward ngoài mẫu
   trên mọi kỳ đã quay;
@@ -19,13 +21,12 @@ import argparse
 import html
 import json
 import math
-import re
 from pathlib import Path
 from typing import NamedTuple
 
-from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
+from lab_ui import lab_card as card, lab_footer, lab_hero, lab_styles
 from multi_hit_report import SECOND_ROUND_UNTIL, benchmark_is_valid, load_history, vip_status
-from multi_hit_vip import COMPONENT_LABELS, CONFIDENCE_P
+from multi_hit_vip import CONFIDENCE_P
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
 from web_security import security_meta_tags
@@ -60,7 +61,6 @@ STRATEGY_LABELS = {
     "gbm_all_features": "Cây tăng cường · mọi đặc trưng",
 }
 
-_LEVEL_BADGE = {"High": "ui-badge-ok", "Medium": "ui-badge-warn", "Low": "ui-badge-mute"}
 _LEVEL_WORD = {"High": "Cao", "Medium": "Trung bình", "Low": "Thấp"}
 #: Ngưỡng ``z`` mà một chiến lược ở giai đoạn kiểm "trông như có tín hiệu" khi đọc lướt.
 Z_GLANCE = 2.0
@@ -92,16 +92,6 @@ def _p(value: float) -> str:
 def _date(iso: str) -> str:
     y, m, d = iso.split("-")
     return f"{d}/{m}/{y}"
-
-
-def _vi_decimals(text: str) -> str:
-    """Lý do của bộ lọc viết số theo kiểu ``+1.19``; trang tiếng Việt dùng dấu phẩy."""
-    return re.sub(r"(?<=\d)\.(?=\d)", ",", text)
-
-
-def _badge(level: str) -> str:
-    return (f'<span class="ui-badge {_LEVEL_BADGE.get(level, "ui-badge-mute")}">'
-            f"{html.escape(_LEVEL_WORD.get(level, level))}</span>")
 
 
 def _table(head: list[str], rows: list[list[str]], numeric: str) -> str:
@@ -214,6 +204,19 @@ _HEADLINE = {
 }
 
 
+#: Luật chọn cặp không có lượt thử thứ hai hay phép kiểm độ nhạy riêng, nên khi chưa đạt thì chỉ nói
+#: "chưa có bằng chứng", không bao giờ "không hơn".
+_PAIR_HEADLINE = {
+    "hon": "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
+    "chua-co-bang-chung": "Chưa có bằng chứng hơn chọn bừa",
+}
+
+
+def pair_verdict(section: dict) -> str:
+    """Kết luận của khối cặp, rút từ mức tin (p luôn hợp lệ trên các kỳ tiến cứu)."""
+    return "hon" if section["confidence"] in ("High", "Medium") else "chua-co-bang-chung"
+
+
 def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
     """(tiêu đề, đoạn giải thích) của kết luận, mọi con số lấy từ hai tệp đo."""
     v = verdict(vip, bench)
@@ -290,41 +293,58 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
         f'<span class="ui-kpi-sub">{html.escape(_confidence_rule())}</span></article>'
     )
     return (
-        f'<p class="app-vip-verdict" data-verdict="{verdict(vip, bench)["state"]}">'
-        f"<b>{html.escape(headline)}.</b></p>"
-        f'<p class="ui-muted" data-evidence-split>{html.escape(text)}</p>'
+        f'<p class="ui-muted" data-evidence-split><b>{html.escape(headline)}.</b> {html.escape(text)}</p>'
         f'<div class="ui-kpi-grid" data-evidence-split>{tiles}</div>'
     )
 
 
-def picks_card(vip: dict) -> str:
-    rows = [[str(rank), f"<b>{html.escape(p['number'])}</b>", _num(p["vip_score"], 3),
-             _pct(p["probability"]), f"×{_num(p['x_base'], 2)}", _badge(p["confidence"])]
-            for rank, p in enumerate(vip["picks"], 1)]
-    # Lý do dài, nên in thành danh sách dưới bảng thay vì một cột bị cắt.
-    reasons = "".join(
-        f"<li><b>{html.escape(p['number'])}</b>: "
-        f"{html.escape('; '.join(_vi_decimals(r) for r in p['reasons']))}</li>"
-        for p in vip["picks"]
-    )
-    weights = ", ".join(f"{COMPONENT_LABELS.get(k, k)} {_num(v, 1)}" for k, v in vip["weights"].items())
-    low = vip["confidence"] == "Low"
+def _check_line(bt: dict, pro: dict, what: str) -> str:
+    """Một dòng số đo: tỉ lệ trúng đã kiểm trên mọi kỳ, và phần tiến cứu sau ngày chốt."""
+    retro = (f"Đã kiểm {_count(bt['draws'])} kỳ: {what} trúng {_pct(bt['rate'])} · chọn bừa cùng kỳ "
+             f"{_pct(bt['random_rate'])}")
+    after = _date(pro["after"])
+    later = (f"sau {after}: {_count(pro['draws'])} kỳ, trúng {_count(pro['hits'])} / chọn bừa "
+             f"{_num(pro['expected'], 1)}") if pro["draws"] else f"sau {after}: chưa có kỳ nào"
+    return f'<p class="app-vip-line" data-evidence-split>{html.escape(retro)} · {html.escape(later)}.</p>'
+
+
+def _strip(items: list[tuple[str, str]], label: str, extra: str = "") -> str:
+    lis = "".join(f"<li><b>{html.escape(big)}</b><small>{html.escape(small)}</small></li>"
+                  for big, small in items)
+    return (f'<ol class="app-lab-number-strip app-vip-strip{extra}" aria-label="{html.escape(label)}">'
+            f"{lis}</ol>")
+
+
+def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> str:
+    """Năm con cho kỳ tới, kết luận và một dòng số đo. ``picks=False``: số đo chậm hơn sổ, không in con."""
+    v = verdict(vip, bench)
+    head = ""
+    if picks:
+        head = _strip([(p["number"], f"P {_pct(p['probability'])}") for p in vip["picks"]],
+                      "Các con xếp cao nhất để về từ hai nháy ở kỳ tới")
     return (
-        f'<p class="ui-muted">Xếp hạng cho kỳ kế tiếp sau ngày {_date(vip["source_date"])}, trên '
-        f"{_count(vip['draws'])} kỳ dữ liệu. Trọng số chọn trên {vip['config']['weight_window']} kỳ "
-        f"ngay trước: {html.escape(weights)}.</p>"
-        + _table(["#", "Số", "VIP Score", "P(≥ 2 nháy) hiệu chỉnh", "× nền", "Tin cậy"], rows,
-                 numeric="ui-r1 ui-r3 ui-r4 ui-r5")
-        + '<p class="ui-muted">Hai thành phần đóng góp lớn nhất của từng con (trọng số × điểm đã '
-        f'chuẩn hoá, kèm số đo thô):</p><ul class="app-vip-reasons">{reasons}</ul>'
-        + '<p class="ui-muted">Xác suất là hiệu chỉnh Platt khớp trên các cặp (điểm, kết quả) NGOÀI '
-        "MẪU của walk-forward; × nền là xác suất ấy chia cho mức lý thuyết "
-        f"{_pct(vip['base_theory'], 3)}. "
-        + (f"Bộ lọc chưa chứng minh được kỹ năng, nên xác suất nằm sát mức nền và {len(vip['picks'])} "
-           "con này chỉ là thứ hạng của một quy tắc, không phải dự báo có kỹ năng."
-           if low else
-           "Một con chỉ được tin tới mức bộ lọc đã chứng minh, và khi xác suất hiệu chỉnh vượt nền.")
-        + "</p>"
+        head
+        + f'<p class="app-vip-verdict" data-verdict="{v["state"]}">'
+        f"<b>{html.escape(_HEADLINE[(v['state'], v['reason'])])}.</b></p>"
+        + _check_line(vip["backtest"], vip["prospective"], f"top-{vip['config']['top_k']}")
+    )
+
+
+def pairs_card(section: dict | None, *, picks: bool = True) -> str:
+    """Năm cặp xiên 2 cho kỳ tới, kết luận và một dòng số đo."""
+    if section is None:
+        return '<p class="ui-table-empty">Chưa đủ lịch sử để chọn cặp.</p>'
+    window = section["config"]["window"]
+    head = ""
+    if picks:
+        head = _strip([(" · ".join(p["pair"]), f"{p['together']}/{window} kỳ") for p in section["picks"]],
+                      "Các cặp xiên 2 hay về cùng nhau nhất", " app-vip-strip-pairs")
+    state = pair_verdict(section)
+    return (
+        head
+        + f'<p class="app-vip-pair-verdict" data-verdict="{state}"><b>'
+        f"{html.escape(_PAIR_HEADLINE[state])}.</b></p>"
+        + _check_line(section["backtest"], section["prospective"], f"{section['config']['top_k']} cặp")
     )
 
 
@@ -335,22 +355,37 @@ def _pick_chip(pick: dict) -> str:
             f"{html.escape(pick['number'])} · {hits} nháy</span>")
 
 
+def _pair_chip(pick: dict) -> str:
+    tone = "ui-badge-ok" if pick["hit"] else "ui-badge-mute"
+    return (f'<span class="ui-badge {tone}" data-hit="{int(pick["hit"])}">'
+            f"{html.escape(' · '.join(pick['pair']))}</span>")
+
+
 def recent_card(vip: dict) -> str:
     recent = vip["recent"]
     if not recent:
         return '<p class="ui-table-empty">Chưa có kỳ nào được chấm.</p>'
-    rows = [[_date(r["date"]), " ".join(_pick_chip(p) for p in r["picks"]), str(r["multi"])]
-            for r in recent]
+    pairs = {r["date"]: r for r in (vip.get("pairs") or {}).get("recent", [])}
     k = vip["config"]["top_k"]
+    rows = []
+    for r in recent:
+        p = pairs.get(r["date"])
+        rows.append([_date(r["date"]), " ".join(_pick_chip(x) for x in r["picks"]), str(r["multi"]),
+                     " ".join(_pair_chip(x) for x in p["picks"]) if p else "—",
+                     str(p["hits"]) if p else "—"])
     hits = sum(r["multi"] for r in recent)
     # Kỳ vọng của chọn bừa phụ thuộc số con về ≥ 2 nháy của TỪNG kỳ đang hiện, không phải trung bình.
     expected = sum(r["expected"] for r in recent)
+    line = (f"{len(recent)} kỳ: lô trúng {hits}/{len(recent) * k} lượt ≥ 2 nháy (chọn bừa kỳ vọng "
+            f"{_num(expected, 2)})")
+    shown = [pairs[r["date"]] for r in recent if r["date"] in pairs]
+    if shown:
+        line += (f" · cặp trúng {sum(p['hits'] for p in shown)}/{sum(len(p['picks']) for p in shown)} "
+                 f"(chọn bừa kỳ vọng {_num(sum(p['expected'] for p in shown), 2)})")
     return (
-        f'<p class="ui-muted" data-evidence-split>{len(recent)} kỳ gần nhất của chính kiểm chứng '
-        f"walk-forward: mỗi kỳ, {k} con bộ lọc đã chọn TRƯỚC khi quay và số nháy thật của từng con. "
-        f"Cộng lại {hits}/{len(recent) * k} lượt về ≥ 2 nháy; chọn bừa kỳ vọng "
-        f"{_num(expected, 2)}. {len(recent)} kỳ quá ít để kết luận — kết luận nằm ở khối trên.</p>"
-        + _table(["Kỳ", f"Top-{k} đã chọn · số nháy về", "Con ≥ 2 nháy"], rows, numeric="ui-r3")
+        f'<p class="app-vip-line" data-evidence-split>{html.escape(line)}.</p>'
+        + _table(["Kỳ", f"Top-{k} lô · số nháy về", "Lô ≥ 2 nháy", "Cặp xiên 2 (xanh = cùng về)",
+                  "Cặp trúng"], rows, numeric="ui-r3 ui-r5")
     )
 
 
@@ -477,6 +512,20 @@ def method_card(vip: dict) -> str:
         f"lần, đóng băng ở lịch sử đến ngày {_date(SECOND_ROUND_UNTIL)}; chỉ đo lại khi chính đoạn lịch "
         "sử ấy được sửa.",
     ]
+    pairs = vip.get("pairs")
+    if pairs is not None:
+        pc = pairs["config"]
+        items += [
+            f"Cặp xiên 2: điểm của một cặp là số kỳ trong {pc['window']} kỳ gần nhất mà cả hai con cùng "
+            "về; hoà điểm thì cặp cùng về gần đây hơn đứng trước. Lấy "
+            f"{pc['top_k']} cặp, mỗi con nằm trong tối đa {pc['max_per_number']} cặp. Luật chốt trước khi "
+            "kiểm chứng.",
+            "Hai con định trước cùng về với xác suất 1 − 2·0,99²⁷ + 0,98²⁷ = "
+            f"{_pct(pairs['base_theory'], 2)}. Mốc so là chọn bừa cùng số cặp trong CÙNG kỳ: kỳ có d con "
+            "khác nhau về thì C(d, 2) trong 4 950 cặp cùng về. Sai số lấy từ hiệu từng kỳ vì các cặp chung "
+            f"một con trúng hay trượt cùng nhau. Mức tin tính như bộ lọc, trên các kỳ sau ngày "
+            f"{_date(pairs['prospective']['after'])}.",
+        ]
     return '<ol class="app-vip-method">' + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ol>"
 
 
@@ -488,9 +537,8 @@ def behind_notice(vip: dict, last_date: str, behind_by: int) -> str:
     return (
         f'<p class="ui-table-empty" data-vip-behind="{behind_by}">Chưa có xếp hạng cho kỳ kế tiếp: '
         f"số đo của bộ lọc dừng ở ngày {_date(vip['source_date'])}, còn sổ kết quả đã có thêm "
-        f"{behind_by} kỳ (đến ngày {_date(last_date)}). Top-{vip['config']['top_k']} của lần đo ấy là "
-        "cho một kỳ đã quay nên không in; các khối kiểm chứng bên dưới vẫn đúng cho đoạn lịch sử đã "
-        "đo.</p>"
+        f"{behind_by} kỳ (đến ngày {_date(last_date)}). Các con và cặp của lần đo ấy là cho một kỳ đã "
+        "quay nên không in; số đo kiểm chứng vẫn đúng cho đoạn lịch sử đã đo.</p>"
     )
 
 
@@ -510,11 +558,11 @@ def _page(body: str, meta: str) -> str:
 <div class="app-lab app-lab-multi-hit" data-lab-layout="multi-hit">
 {lab_hero(PAGE,
     "Lô VIP nhiều nháy",
-    "Con số nào sẽ về từ hai nháy trở lên? Bộ lọc xếp hạng 100 con, rồi tự chấm mình trên mọi kỳ "
-    "đã quay so với chọn bừa.",
-    eyebrow="KHUNG THÁCH ĐẤU · LÔ ≥ 2 NHÁY", core="ĐỐI CHỨNG",
+    "Đề xuất cho kỳ tới: năm con dễ về từ hai nháy nhất theo mô hình, và năm cặp xiên 2 hay về "
+    "cùng nhau nhất. Mỗi khối kèm tỉ lệ trúng đã kiểm trên mọi kỳ đã quay.",
+    eyebrow="LÔ ≥ 2 NHÁY · XIÊN 2", core="ĐỐI CHỨNG",
     meta=meta,
-    action=("#app-lab-conclusion", "Đọc kết luận"),
+    action=("#app-vip-picks", "Xem đề xuất"),
 )}
 {body}
 {lab_footer()}</div>
@@ -535,36 +583,29 @@ def render_unavailable(last_date: str) -> str:
 
 
 def render(vip: dict, bench: dict | None, *, last_date: str = "", behind_by: int = 0) -> str:
-    picks = picks_card(vip) if behind_by <= 0 else behind_notice(vip, last_date, behind_by)
-    blocks = [
-        card(conclusion_card(vip, bench), title="Kết luận từ phép đo", span=12,
-             ident="app-lab-conclusion"),
-        card(picks, title=f"Top-{vip['config']['top_k']} cho kỳ kế tiếp", span=12, lift=True,
+    fresh = behind_by <= 0
+    notice = "" if fresh else behind_notice(vip, last_date, behind_by)
+    top = [
+        card(notice + picks_card(vip, bench, picks=fresh), title="Lô về ≥ 2 nháy · kỳ tới", span=6,
              ident="app-vip-picks"),
-        card(recent_card(vip), title="Các kỳ gần nhất của kiểm chứng", span=12, lift=True,
-             ident="app-vip-recent"),
-        card(benchmark_card(bench), title="Lượt thử thứ hai: dò rộng, chọn trước, kiểm một lần",
-             span=12, lift=True, ident="app-vip-benchmark"),
-        card(any_hit_card(bench), title="Ít nhất một con về", span=12, lift=True, ident="app-vip-any"),
-        card(power_card(bench), title="Phép đo có đủ nhạy?", span=12, lift=True, ident="app-vip-power"),
-        card(method_card(vip), title="Cách đo", span=12, lift=True, ident="app-vip-method"),
+        card(pairs_card(vip.get("pairs"), picks=fresh), title="Xiên 2 · cặp cùng về kỳ tới", span=6,
+             ident="app-vip-pairs"),
+        card(recent_card(vip), title="10 kỳ gần nhất", span=12, lift=True, ident="app-vip-recent"),
     ]
+    detail = [
+        card(conclusion_card(vip, bench), title="Kết luận từ phép đo", span=12, ident="app-lab-conclusion"),
+        card(benchmark_card(bench), title="Lượt thử thứ hai: dò rộng, chọn trước, kiểm một lần",
+             span=12, ident="app-vip-benchmark"),
+        card(any_hit_card(bench), title="Ít nhất một con về", span=12, ident="app-vip-any"),
+        card(power_card(bench), title="Phép đo có đủ nhạy?", span=12, ident="app-vip-power"),
+        card(method_card(vip), title="Cách đo", span=12, ident="app-vip-method"),
+    ]
+    # Giải thích dài thu vào một mục mở rộng; nút "Cách đọc báo cáo" của phần đầu trang trỏ vào nó.
     body = (
-        lab_guide([
-            ("Nhiều nháy", "Một con số về từ hai lần trở lên trong 27 lô của cùng một kỳ."),
-            ("Walk-forward lồng nhau", "Mỗi kỳ được chấm bằng mô hình và trọng số chỉ học từ các kỳ "
-             "trước nó, nên tỉ lệ trúng là ngoài mẫu."),
-            ("Chọn bừa cùng kỳ", "Mốc so: chọn ngẫu nhiên cùng số con trong chính kỳ ấy. Hơn mốc này "
-             "một cách có ý nghĩa thống kê mới gọi là có kỹ năng."),
-            ("Mức tin", "Suy từ p luôn hợp lệ của phép so với chọn bừa (đúng dù trang xem lại mỗi "
-             "ngày), không đặt tay; không phải xác suất trúng."),
-        ])
-        + "\n"
-        + lab_jump([("app-lab-conclusion", "Kết luận"), ("app-vip-picks", "Top kỳ tới"),
-                    ("app-vip-recent", "Kỳ gần nhất"), ("app-vip-benchmark", "Lượt thử thứ hai"),
-                    ("app-vip-power", "Độ nhạy"), ("app-vip-method", "Cách đo")])
-        + "\n"
-        + f'<div class="ui-grid">{"".join(blocks)}</div>'
+        f'<div class="ui-grid">{"".join(top)}</div>\n'
+        '<details class="app-lab-guide app-vip-details" id="app-lab-guide"><summary>Chi tiết phép đo '
+        "<span>KIỂM CHỨNG &amp; PHƯƠNG PHÁP</span></summary>"
+        f'<div class="ui-grid">{"".join(detail)}</div></details>'
     )
     return _page(body, f"Dữ liệu đến: {_date(vip['source_date'])} · {_count(vip['draws'])} kỳ")
 

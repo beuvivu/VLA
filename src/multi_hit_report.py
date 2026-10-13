@@ -4,14 +4,15 @@ Hai phần, hai nhịp:
 
 * ``vip.json`` — hằng ngày. Bộ lọc VIP (``multi_hit_vip``) xếp hạng kỳ kế tiếp, kèm kiểm chứng
   walk-forward lồng nhau trên MỌI kỳ đã quay: mỗi kỳ được chấm bằng trọng số chọn trên 30 kỳ ngay
-  trước nó, rồi so với chọn bừa trên CHÍNH các kỳ ấy. ~25 giây trên 4 233 kỳ.
+  trước nó, rồi so với chọn bừa trên CHÍNH các kỳ ấy. Kèm năm cặp xiên 2 (``multi_hit_pairs``) với
+  kiểm chứng walk-forward của riêng luật chọn cặp. ~25 giây trên 4 233 kỳ.
 * ``benchmark.json`` — đóng băng. Giao thức lượt thử thứ hai (``multi_hit_benchmark``): 22 chiến
   lược chấm trên giai đoạn phát triển, một ứng viên kiểm MỘT lần trên 1 000 kỳ cuối, kèm phép kiểm
   độ nhạy trên lịch sử có cài tín hiệu. Phép kiểm một lần chỉ có nghĩa khi nó thật sự chạy một lần:
   nó đo trên lịch sử đến ``SECOND_ROUND_UNTIL`` (ngày đã chạy và công bố) và KHÔNG đo lại khi có kỳ
   mới. Đo lại mỗi tháng trên 1 000 kỳ cuối trượt dần là nhìn lại gần như cùng một tập kiểm ở cùng
-  α, nên xác suất "đạt" chỉ do may cộng dồn quá 1%. Chỉ đo lại khi ``MEASURE_VERSION`` đổi hoặc khi
-  chính đoạn lịch sử đã đăng ký bị sửa.
+  α, nên xác suất "đạt" chỉ do may cộng dồn quá 1%. Chỉ đo lại khi ``BENCHMARK_VERSION`` đổi hoặc
+  khi chính đoạn lịch sử đã đăng ký bị sửa.
 
 Không con số nào ở đây được đặt tay: kết luận "hơn / không hơn chọn bừa" trên trang suy từ ``z``,
 ``p`` và mức tin mà chính các phép đo trả về.
@@ -34,6 +35,7 @@ import pandas as pd
 from scipy.special import logsumexp
 from scipy.stats import norm, spearmanr
 
+import multi_hit_pairs as pairs
 from atomic_io import atomic_write_text
 from multi_hit_vip import (VIPConfig, VIPMultiHitModel, base_rate, counts_matrix, draws_from_frame,
                            model_confidence, number_confidence)
@@ -41,13 +43,18 @@ from multi_hit_vip import (VIPConfig, VIPMultiHitModel, base_rate, counts_matrix
 OUT_DIR = "multi_hit"
 VIP_FILE = "vip.json"
 BENCHMARK_FILE = "benchmark.json"
-#: Đổi định nghĩa một số đo thì tăng: bản đệm cũ bị bỏ và đo lại.
+#: Đổi định nghĩa một số đo thì tăng phiên bản của TỆP chứa nó: bản cũ bị bỏ và đo lại.
 #: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
 #: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
 #: 4: mức tin của bộ lọc dùng p luôn hợp lệ (e-process), vì trang xem lại kết quả mỗi ngày.
 #: 5: e-process chỉ chạy trên kỳ quay SAU VIP_FROZEN_AT (tiến cứu); hồi cứu chỉ còn để mô tả.
 #: 6: độ nhạy ước lượng trên POWER_SEEDS lịch sử cài tín hiệu, so với POWER_REQUIRED đặt trước.
-MEASURE_VERSION = 6
+#: 7 (chỉ vip.json): thêm cặp xiên 2 cùng về (``multi_hit_pairs``).
+MEASURE_VERSION = 7
+#: Phiên bản của benchmark.json. Tách khỏi MEASURE_VERSION vì lượt hai là phép kiểm MỘT lần đã
+#: đóng băng: đổi số đo hằng ngày không được buộc nó chạy lại. Chỉ tăng khi định nghĩa của chính
+#: lượt hai (hay phép kiểm độ nhạy của nó) đổi.
+BENCHMARK_VERSION = 6
 #: Độ nhạy của giao thức lượt hai: chạy lại trên chừng này lịch sử giả định độc lập (khác hạt giống)
 #: và coi là ĐỦ NHẠY khi tỉ lệ đạt ≥ POWER_REQUIRED. Một lịch sử duy nhất có thể may hay rủi.
 POWER_SEEDS = tuple(range(7, 27))
@@ -218,6 +225,93 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
             for p in report.picks
         ],
         "recent": recent,
+        "pairs": pairs_section(draws, labels, prospective_after=prospective_after),
+    }
+
+
+# --------------------------------------------------------------------------- cặp xiên 2
+
+
+def _finite(value: float) -> float | None:
+    """JSON hợp chuẩn không có NaN: số không xác định ghi thành null."""
+    return float(value) if math.isfinite(value) else None
+
+
+def pairs_section(draws: np.ndarray, labels: list[str], *,
+                  prospective_after: str | None = None) -> dict | None:
+    """Năm cặp xiên 2 cho kỳ kế tiếp và kiểm chứng walk-forward của luật chọn cặp.
+
+    Như bộ lọc VIP: walk-forward trên lịch sử đến ngày chốt luật (``multi_hit_pairs.FROZEN_AT``) là
+    mô tả hồi cứu; mức tin chỉ suy từ p luôn hợp lệ trên các kỳ SAU ngày ấy. Lịch sử chưa dài hơn
+    cửa sổ của luật thì trả ``None``.
+    """
+    after = pairs.FROZEN_AT if prospective_after is None else prospective_after
+    if len(draws) <= pairs.WINDOW:
+        return None
+    present = counts_matrix(draws) >= 1
+    wf = pairs.walk_forward(present)
+    k = pairs.TOP_K
+    hits, expected = wf["hits"], wf["expected"]
+    n = len(hits)
+    diff = hits - expected
+    # Các cặp chung một con trúng/trượt cùng nhau: sai số lấy từ hiệu từng kỳ, không giả định độc lập.
+    se = float(diff.std(ddof=1) * math.sqrt(n)) if n > 1 else float("nan")
+    z = float(diff.sum() / se) if se > 0 else float("nan")
+    (lo, hi), deff = draw_level_interval(hits, k)
+    dates = [labels[t] for t in wf["rows"]]
+    later = np.array([str(d) > after for d in dates], dtype=bool)
+    p_anytime, e_max = anytime_p(hits[later], expected[later])
+    pro_expected = float(expected[later].sum())
+    pro_lift = float(hits[later].sum() / pro_expected) if pro_expected > 0 else float("nan")
+    level = model_confidence(p_anytime, pro_lift)
+    recent = []
+    for j in range(n - 1, max(n - RECENT_DRAWS, 0) - 1, -1):
+        t = wf["rows"][j]
+        row = present[t]
+        recent.append({
+            "date": labels[t],
+            "picks": [{"pair": pairs.pair_label(i),
+                       "hit": bool(row[pairs.PAIR_A[i]] and row[pairs.PAIR_B[i]])}
+                      for i in wf["picks"][j]],
+            "hits": int(hits[j]),
+            "expected": float(expected[j]),
+        })
+    return {
+        "frozen_at": after,
+        "base_theory": pairs.base_rate(),
+        "config": {"window": pairs.WINDOW, "top_k": k, "max_per_number": pairs.MAX_PER_NUMBER},
+        "picks": [
+            {"pair": pairs.pair_label(i), "together": together,
+             "last_date": labels[last] if last >= 0 else None}
+            for i, together, last in zip(wf["picks"][-1], wf["together"], wf["last"], strict=True)
+        ],
+        "backtest": {
+            "first_date": str(dates[0]),
+            "last_date": str(dates[-1]),
+            "draws": n,
+            "picks": n * k,
+            "hits": int(hits.sum()),
+            "rate": float(hits.sum() / (n * k)),
+            "ci95": [_finite(lo), _finite(hi)],
+            "design_effect": _finite(deff),
+            "expected": float(expected.sum()),
+            "random_rate": float(expected.sum() / (n * k)),
+            "lift": _finite(hits.sum() / expected.sum()) if expected.sum() > 0 else None,
+            "z": _finite(z),
+            "p_value": _finite(float(norm.sf(z))) if math.isfinite(z) else None,
+        },
+        "prospective": {
+            "after": after,
+            "draws": int(later.sum()),
+            "picks": int(later.sum()) * k,
+            "hits": int(hits[later].sum()),
+            "expected": pro_expected,
+            "lift": pro_lift if later.any() and math.isfinite(pro_lift) else None,
+            "p_anytime": p_anytime,
+            "e_max": e_max,
+        },
+        "confidence": level,
+        "recent": recent,
     }
 
 
@@ -344,7 +438,7 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     any_hit["paired_se"] = paired_any_hit_se(scores[cand], scores["random"], counts_matrix(draws),
                                              range(*real["test"]))
     return {
-        "version": MEASURE_VERSION,
+        "version": BENCHMARK_VERSION,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
         "draws": int(real["draws"]),
@@ -387,7 +481,7 @@ def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]
     hiện tại. Sửa một kỳ cũ (ô lô hay ngày), cắt lịch sử, hay một bản đệm đo vượt ngày đăng ký đều
     bị bắt; kỳ mới nối thêm sau ngày ấy thì không bao giờ làm bản đệm cũ đi.
     """
-    if not cached or cached.get("version") != MEASURE_VERSION:
+    if not cached or cached.get("version") != BENCHMARK_VERSION:
         return False
     measured = int(cached.get("draws", 0))
     if measured <= 0 or measured != registered_draws(labels):

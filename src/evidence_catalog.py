@@ -550,10 +550,11 @@ def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tupl
 def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     """Trang Lô VIP nhiều nháy: mọi số là kiểm chứng ngoài mẫu so với chọn bừa cùng kỳ."""
     loc: Source = {
-        "title": "Bộ lọc lô nhiều nháy và lượt thử thứ hai",
+        "title": "Bộ lọc lô nhiều nháy, cặp xiên 2 và lượt thử thứ hai",
         "snippet": (
-            "Bộ lọc VIP xếp hạng 100 con theo bốn thành phần; lượt thử thứ hai dò thêm các chiến "
-            "lược thường gặp. Cả hai chấm ngoài mẫu, so với chọn bừa trên chính các kỳ đã quay."
+            "Bộ lọc VIP xếp hạng 100 con theo bốn thành phần; luật cặp xiên 2 xếp 4 950 cặp theo số kỳ "
+            "cùng về gần đây; lượt thử thứ hai dò thêm các chiến lược thường gặp. Cả ba chấm ngoài "
+            "mẫu, so với chọn bừa trên chính các kỳ đã quay."
         ),
         "url": "lo-vip-nhieu-nhay.html",
     }
@@ -576,14 +577,24 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
             "Mức tin suy từ lift và p luôn hợp lệ theo ngưỡng in trên trang; kết luận «hơn / không "
             "hơn» suy từ mức tin ấy và từ kết quả lượt thử thứ hai.",
         ])),
-        _sec_heading("Top-", "Thứ hạng cho kỳ kế tiếp", _ev([loc], [
-            "VIP Score = tổng có trọng số của bốn thành phần đã chuẩn hoá chéo 100 con.",
-            "Xác suất là hiệu chỉnh Platt khớp trên các cặp (điểm, kết quả) ngoài mẫu; × nền chia nó "
-            "cho mức lý thuyết P(X ≥ 2).",
+        _sec_heading("Lô về ≥ 2 nháy", "Năm con cho kỳ kế tiếp", _ev([loc, _ket_qua(f)], [
+            "VIP Score = tổng có trọng số của bốn thành phần đã chuẩn hoá chéo 100 con; năm con điểm "
+            "cao nhất được in theo thứ hạng.",
+            "P là xác suất về ≥ 2 nháy, hiệu chỉnh Platt khớp trên các cặp (điểm, kết quả) ngoài mẫu.",
+            "Dòng số đo: tỉ lệ trúng của top-5 trên mọi kỳ đã chấm so với chọn bừa 5 con trong cùng "
+            "kỳ, và phần tiến cứu sau ngày chốt bộ lọc.",
         ])),
-        _sec_heading("Các kỳ gần nhất", "Các kỳ gần nhất của kiểm chứng", _ev([loc, _ket_qua(f)], [
-            "Mỗi hàng là một kỳ của chính kiểm chứng walk-forward: các con đã chọn trước kỳ quay và "
-            "số nháy thật của từng con.",
+        _sec_heading("Xiên 2", "Năm cặp xiên 2 cho kỳ kế tiếp", _ev([loc, _ket_qua(f)], [
+            "Điểm của một cặp = số kỳ trong 100 kỳ gần nhất mà cả hai con cùng về; hoà điểm thì cặp "
+            "cùng về gần đây hơn đứng trước. Mỗi con nằm trong tối đa hai cặp.",
+            "Hai con định trước cùng về với xác suất 1 − 2·0,99²⁷ + 0,98²⁷ ≈ 5,49%. Mốc so là chọn bừa "
+            "cùng số cặp trong cùng kỳ: kỳ có d con khác nhau về thì C(d, 2) trong 4 950 cặp cùng về.",
+            "Kết luận chỉ suy từ p luôn hợp lệ trên các kỳ sau ngày chốt luật; chưa đạt thì trang ghi "
+            "«chưa có bằng chứng», không ghi «không hơn».",
+        ])),
+        _sec_heading("10 kỳ gần nhất", "Các kỳ gần nhất của kiểm chứng", _ev([loc, _ket_qua(f)], [
+            "Mỗi hàng là một kỳ của chính kiểm chứng walk-forward: các con và các cặp đã chọn trước "
+            "kỳ quay, số nháy thật của từng con, và cặp nào đã cùng về.",
         ])),
         _sec_heading("Lượt thử thứ hai", "Lượt thử thứ hai", _ev([loc, _ket_qua(f)], [
             "Giai đoạn phát triển: mọi chiến lược được chấm, p hiệu chỉnh Holm; chiến lược có z cao "
