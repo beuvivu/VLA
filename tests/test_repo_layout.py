@@ -83,12 +83,49 @@ def unresolved_imports(scripts: Path, src: Path) -> list[str]:
     return bad
 
 
+#: Kiểm kê phụ thuộc đã đóng băng ở ngày lập: ghi đường dẫn của THỜI ĐIỂM ấy, không sửa theo.
+FROZEN_SNAPSHOTS = {"documentation/qa/2026-10-09-python-dependencies.json"}
+SCRIPT_REF = re.compile(r"(?<![\w/.-])scripts/[\w/.-]+\.(?:py|sh)\b")
+
+
+def dead_script_references(root: Path, files: list[str]) -> list[str]:
+    """``scripts/…`` được nhắc trong tệp của kho mà không tồn tại ở gốc kho hay ở ``vietlott/``.
+
+    Engine Vietlott có ``scripts/`` riêng; workflow ``vlm-*`` chạy với ``working-directory: vietlott``.
+    """
+    bad = []
+    for rel in files:
+        if rel in FROZEN_SNAPSHOTS or rel.startswith(("vietlott/", "data/")):
+            continue
+        try:
+            text = (root / rel).read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for ref in sorted(set(SCRIPT_REF.findall(text))):
+            if not (root / ref).exists() and not (root / "vietlott" / ref).exists():
+                bad.append(f"{rel}: {ref}")
+    return bad
+
+
+def _tracked(root: Path) -> list[str]:
+    import subprocess
+
+    out = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True, check=True)
+    return out.stdout.split()
+
+
 def test_docs_holds_only_the_published_site() -> None:
     assert not docs_offenders(ROOT / "docs")
 
 
 def test_every_script_sits_in_a_group_and_finds_the_repository_root() -> None:
     assert not script_offenders(ROOT / "scripts")
+
+
+def test_every_mention_of_a_script_points_at_a_file_that_exists() -> None:
+    """Đổi chỗ hay xoá script mà còn sót đường dẫn cũ ở workflow, test, tài liệu hay lệnh tái lập."""
+    own = Path(__file__).resolve().relative_to(ROOT).as_posix()     # mẫu dựng sẵn của chính luật
+    assert not dead_script_references(ROOT, [f for f in _tracked(ROOT) if f != own])
 
 
 def test_every_script_import_resolves() -> None:
@@ -134,3 +171,15 @@ def test_the_import_rule_catches_a_removed_sibling(tmp_path: Path) -> None:
     assert unresolved_imports(scripts, src) == []
     (scripts / "browser" / "helper.py").unlink()
     assert unresolved_imports(scripts, src) == ["browser/main.py: import helper"]
+
+
+def test_the_reference_rule_catches_a_stale_path(tmp_path: Path) -> None:
+    (tmp_path / "scripts" / "ops").mkdir(parents=True)
+    (tmp_path / "scripts" / "ops" / "tool.py").write_text("", encoding="utf-8")
+    (tmp_path / "vietlott" / "scripts").mkdir(parents=True)
+    (tmp_path / "vietlott" / "scripts" / "build_site.py").write_text("", encoding="utf-8")
+    (tmp_path / "a.json").write_text('{"run": "python scripts/ops/tool.py; python scripts/build_site.py"}',
+                                     encoding="utf-8")
+    assert dead_script_references(tmp_path, ["a.json"]) == []
+    (tmp_path / "b.md").write_text("python scripts/tool.py", encoding="utf-8")
+    assert dead_script_references(tmp_path, ["a.json", "b.md"]) == ["b.md: scripts/tool.py"]

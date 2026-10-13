@@ -311,7 +311,7 @@ Avoid: xóa cache tự động theo lịch hoặc giả định cache package l�
 Regression guard: `test_production_refreshes_do_not_restore_package_caches` và
 `test_cache_purge_is_explicit_and_not_scheduled`.
 
-Affected modules: `.github/workflows/*.yml`, `scripts/purge_github_caches.sh`.
+Affected modules: `.github/workflows/*.yml`, `scripts/ops/purge_github_caches.py` (tệp bọc `.sh` đã bỏ ngày 13-10-2026).
 
 Confidence: high
 
