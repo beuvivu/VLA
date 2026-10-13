@@ -1,0 +1,6884 @@
+{
+ "protocol": {
+  "registered_at": "2026-10-13",
+  "products": [
+   "mega645",
+   "power655"
+  ],
+  "frozen_last_id": {
+   "mega645": 1574,
+   "power655": 1409
+  },
+  "warmup": 300,
+  "split": {
+   "dev": 0.5,
+   "validation": 0.2,
+   "test": 0.3
+  },
+  "refit_every": 26,
+  "l2_grid": [
+   0.01,
+   0.1,
+   1.0,
+   10.0
+  ],
+  "shrink_half_lives": [
+   null,
+   500,
+   100,
+   30
+  ],
+  "shrink_priors": [
+   20.0,
+   100.0,
+   500.0
+  ],
+  "ablation_folds": 4,
+  "ablation_min_positive_folds": 3,
+  "temperature_bounds": [
+   0.0,
+   2.0
+  ],
+  "alpha": 0.05,
+  "portfolio_tickets": 5,
+  "monte_carlo": 20000,
+  "seed": 20261013,
+  "promotion": {
+   "beats_fair_holm": "Δ log-score so với công bằng trên test > 0, DM HAC một phía, Holm trên mọi ứng viên × sản phẩm, p < α",
+   "beats_incumbents": "Δ so với TỪNG mô hình đang chạy (legacy, ML) trên test > 0, DM một phía p < α",
+   "validation_positive": "Δ so với công bằng trên validation > 0",
+   "stable_thirds": "Δ so với công bằng > 0 ở ít nhất 2 trong 3 đoạn liền của test",
+   "brier_not_worse": "Brier biên trên test ≤ Brier công bằng",
+   "then": "Đạt cả năm: đủ điều kiện CHẠY THỬ TIẾN CỨU; xác suất triển khai chỉ đổi khi qua cổng live hiện có"
+  }
+ },
+ "decision": {
+  "mega645:legacy_tempered": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": false,
+    "stable_thirds": false,
+    "brier_not_worse": false
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "mega645:ml_tempered": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": true,
+    "stable_thirds": false,
+    "brier_not_worse": false
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "mega645:shrink": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": true,
+    "stable_thirds": false,
+    "brier_not_worse": true
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "mega645:causal": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": false,
+    "stable_thirds": false,
+    "brier_not_worse": true
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "power655:legacy_tempered": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": false,
+    "stable_thirds": true,
+    "brier_not_worse": true
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "power655:ml_tempered": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": true,
+    "stable_thirds": false,
+    "brier_not_worse": false
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "power655:shrink": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": true,
+    "stable_thirds": false,
+    "brier_not_worse": false
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "power655:causal": {
+   "checks": {
+    "beats_fair_holm": false,
+    "beats_incumbents": false,
+    "validation_positive": true,
+    "stable_thirds": false,
+    "brier_not_worse": false
+   },
+   "holm_p_vs_fair": 1.0,
+   "eligible_for_prospective_trial": false
+  },
+  "verdict": "keep_production"
+ },
+ "results": {
+  "mega645": {
+   "product": "mega645",
+   "protocol_registered_at": "2026-10-13",
+   "provenance": {
+    "seed_sha256": "51220ad0a6077535f1d0cf55fdafe80dfe55bbe57665f12920af8dfaede4d8d5",
+    "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
+    "history_sha256": "909d636b858ec671886338b36ed0e320295ed1802de7f07aac1b90c6a644998f",
+    "first_id": 1,
+    "last_id": 1574,
+    "first_date": "2016-07-20",
+    "last_date": "2026-10-11",
+    "git_commit": "66b8366b5402be89b26380348c98459cccaa00f0",
+    "git_dirty": false,
+    "source_sha256": {
+     "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
+     "vlm/forecast/hits.py": "b431c1c7b1c9d46eb1e9d44be6f0acc984dd8f4e5f96ec4c7fbdda5513fafde1",
+     "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
+     "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
+     "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
+     "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
+     "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
+     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
+     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96"
+    },
+    "versions": {
+     "python": "3.11.15",
+     "legacy_engine": "3.5.0",
+     "ml_checkpoint": 3,
+     "numpy": "2.2.6",
+     "scipy": "1.17.1",
+     "scikit-learn": "1.9.1",
+     "pydantic": "2.11.4"
+    },
+    "ml_config": {
+     "bootstrap": 1000,
+     "warmup": 32,
+     "tree_every": 64,
+     "tree_buffer": 64,
+     "search_nodes": 1000,
+     "backends": [
+      "rf"
+     ],
+     "seed": 20261003,
+     "adaptive": false
+    },
+    "seed": 20261013,
+    "generated_at": "2026-10-13T14:04:23+00:00"
+   },
+   "split": {
+    "dev": {
+     "first_id": 301,
+     "last_id": 937,
+     "first_date": "2018-06-24",
+     "last_date": "2022-09-07",
+     "draws": 637
+    },
+    "validation": {
+     "first_id": 938,
+     "last_id": 1192,
+     "first_date": "2022-09-09",
+     "last_date": "2024-05-01",
+     "draws": 255
+    },
+    "test": {
+     "first_id": 1193,
+     "last_id": 1574,
+     "first_date": "2024-05-03",
+     "last_date": "2026-10-11",
+     "draws": 382
+    },
+    "warmup_draws": 300
+   },
+   "selection": {
+    "shrink": {
+     "half_life": 30,
+     "prior": 20.0,
+     "tau_dev": 0.09551140283625074,
+     "dev_mean_ll": -15.911661505244519,
+     "tau_validation": 0.28522880754208657,
+     "grid": [
+      {
+       "half_life": null,
+       "prior": 20.0,
+       "tau_dev": 0.06190542080022011,
+       "dev_mean_ll": -15.912791544773409
+      },
+      {
+       "half_life": null,
+       "prior": 100.0,
+       "tau_dev": 0.06388331250890203,
+       "dev_mean_ll": -15.912815414693917
+      },
+      {
+       "half_life": null,
+       "prior": 500.0,
+       "tau_dev": 0.06523754307833518,
+       "dev_mean_ll": -15.912877912901843
+      },
+      {
+       "half_life": 500,
+       "prior": 20.0,
+       "tau_dev": 0.055520928214535886,
+       "dev_mean_ll": -15.91280559219221
+      },
+      {
+       "half_life": 500,
+       "prior": 100.0,
+       "tau_dev": 0.05990054758667409,
+       "dev_mean_ll": -15.912827957756015
+      },
+      {
+       "half_life": 500,
+       "prior": 500.0,
+       "tau_dev": 0.07690559262406077,
+       "dev_mean_ll": -15.912874734694078
+      },
+      {
+       "half_life": 100,
+       "prior": 20.0,
+       "tau_dev": 0.08072364128849678,
+       "dev_mean_ll": -15.912463270629791
+      },
+      {
+       "half_life": 100,
+       "prior": 100.0,
+       "tau_dev": 0.11756883238140464,
+       "dev_mean_ll": -15.91249602465079
+      },
+      {
+       "half_life": 100,
+       "prior": 500.0,
+       "tau_dev": 0.29908701809913407,
+       "dev_mean_ll": -15.912536522648475
+      },
+      {
+       "half_life": 30,
+       "prior": 20.0,
+       "tau_dev": 0.09551140283625074,
+       "dev_mean_ll": -15.911661505244519
+      },
+      {
+       "half_life": 30,
+       "prior": 100.0,
+       "tau_dev": 0.20550991834395646,
+       "dev_mean_ll": -15.911818172969578
+      },
+      {
+       "half_life": 30,
+       "prior": 500.0,
+       "tau_dev": 0.746705701897371,
+       "dev_mean_ll": -15.91190355331286
+      }
+     ]
+    },
+    "causal": {
+     "l2": 10.0,
+     "l2_grid": [
+      {
+       "l2": 0.01,
+       "dev_mean_ll": -15.918871444456336
+      },
+      {
+       "l2": 0.1,
+       "dev_mean_ll": -15.917993826137975
+      },
+      {
+       "l2": 1.0,
+       "dev_mean_ll": -15.916334395204746
+      },
+      {
+       "l2": 10.0,
+       "dev_mean_ll": -15.914181960001617
+      }
+     ],
+     "ablation": [
+      {
+       "group": "frequency",
+       "delta_per_fold": [
+        -0.0017608369453112895,
+        -0.0008635716640469056,
+        0.0003643509660083693,
+        4.379971214898684e-05
+       ],
+       "mean_delta": -0.0005540644828002097,
+       "keep": false
+      },
+      {
+       "group": "gap_lag",
+       "delta_per_fold": [
+        0.0019397677885525124,
+        -0.0016595105755730008,
+        0.0003641618026472965,
+        -0.0007477949625977563
+       ],
+       "mean_delta": -2.5843986742737056e-05,
+       "keep": false
+      },
+      {
+       "group": "calendar",
+       "delta_per_fold": [
+        -1.2635125270463412e-05,
+        -0.00026466410501987736,
+        -0.00022103202765738105,
+        -4.3842107155842215e-05
+       ],
+       "mean_delta": -0.00013554334127589102,
+       "keep": false
+      },
+      {
+       "group": "cooccurrence",
+       "delta_per_fold": [
+        0.00037535328311593953,
+        -0.0005435909729427755,
+        -0.00020011359260445655,
+        7.093275382482556e-05
+       ],
+       "mean_delta": -7.435463215161675e-05,
+       "keep": false
+      }
+     ],
+     "groups": [],
+     "tau_validation": 0.0
+    },
+    "legacy_tau_validation": 0.0005600671641451662,
+    "ml_tau_validation": 1.9994399328358547
+   },
+   "legacy_consistency_max_abs_nats": 3.197442310920451e-14,
+   "segments": {
+    "dev": {
+     "legacy": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -0.0008483828470498402,
+      "mean_main_gain_nats": -0.0008483828470498402,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11556011060399517,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.00046043111081488783,
+       "bins": [
+        {
+         "lift_range": [
+          0.9,
+          0.97
+         ],
+         "count": 238,
+         "predicted": 0.12849265597037904,
+         "observed": 0.13025210084033614
+        },
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28148,
+         "predicted": 0.13332455659312545,
+         "observed": 0.13354412391644166
+        },
+        {
+         "lift_range": [
+          1.03,
+          1.1
+         ],
+         "count": 279,
+         "predicted": 0.1383481322428468,
+         "observed": 0.11469534050179211
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        279,
+        255,
+        92,
+        11,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.7409733124018838,
+       "mean_ci95": [
+        0.6814481467598792,
+        0.8004984780438884
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -1.9003829414227085,
+       "levels": {
+        "ge3": {
+         "reached": 11,
+         "rate": 0.01726844583987441,
+         "ci95": [
+          0.008651065726577997,
+          0.03068757040388544
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.7245275200768941,
+         "p_value_greater": 0.8929721622262364
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -3.314088597006093e-07,
+      "mean_main_gain_nats": -3.314088597006093e-07,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555729630704,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        284,
+        257,
+        84,
+        11,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.7252747252747253,
+       "mean_ci95": [
+        0.6656966172508544,
+        0.7848528332985961
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -2.4058039364819392,
+       "levels": {
+        "ge3": {
+         "reached": 12,
+         "rate": 0.018838304552590265,
+         "ci95": [
+          0.009770972094100903,
+          0.03267532621546366
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.7903936582657027,
+         "p_value_greater": 0.8302162969610325
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.0015698587127158557,
+         "ci95": [
+          3.974459161379537e-05,
+          0.008715370606138905
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 1.1265721063077894,
+         "p_value_greater": 0.5886321698034295
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -0.00018487719670042118,
+      "mean_main_gain_nats": -0.00018487719670042118,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555642834623006,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 5.551115123125783e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.1333333333333334,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        246,
+        275,
+        109,
+        7,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.8069073783359497,
+       "mean_ci95": [
+        0.7484317052733475,
+        0.865383051398552
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.22238523782606034,
+       "levels": {
+        "ge3": {
+         "reached": 7,
+         "rate": 0.01098901098901099,
+         "ci95": [
+          0.004429250109219916,
+          0.02250982824625567
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.46106296732166,
+         "p_value_greater": 0.9936702760590644
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -0.00046577707323191235,
+      "mean_main_gain_nats": -0.00046577707323191235,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555759878673916,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        246,
+        275,
+        109,
+        7,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.8069073783359497,
+       "mean_ci95": [
+        0.7484317052733475,
+        0.865383051398552
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.22238523782606034,
+       "levels": {
+        "ge3": {
+         "reached": 7,
+         "rate": 0.01098901098901099,
+         "ci95": [
+          0.004429250109219916,
+          0.02250982824625567
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.46106296732166,
+         "p_value_greater": 0.9936702760590644
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": 0.0006168605958484925,
+      "mean_main_gain_nats": 0.0006168605958484925,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555232890054416,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        253,
+        293,
+        81,
+        8,
+        2,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.7645211930926217,
+       "mean_ci95": [
+        0.7069123090216725,
+        0.8221300771635709
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -1.1422514488338624,
+       "levels": {
+        "ge3": {
+         "reached": 10,
+         "rate": 0.015698587127158554,
+         "ci95": [
+          0.0075530854642135185,
+          0.028680271328254882
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.6586613818880857,
+         "p_value_greater": 0.9380647066338154
+        },
+        "ge4": {
+         "reached": 2,
+         "rate": 0.0031397174254317113,
+         "ci95": [
+          0.00038046077110304735,
+          0.011295321455046317
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 2.2531442126155787,
+         "p_value_greater": 0.22297260683281775
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        243,
+        293,
+        87,
+        13,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.8006279434850864,
+       "mean_ci95": [
+        0.7416312688625202,
+        0.8596246181076526
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.02021683980236808,
+       "levels": {
+        "ge3": {
+         "reached": 14,
+         "rate": 0.02197802197802198,
+         "ci95": [
+          0.0120664453992553,
+          0.03660066696111291
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 0.92212593464332,
+         "p_value_greater": 0.6564557994532396
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.0015698587127158557,
+         "ci95": [
+          3.974459161379537e-05,
+          0.008715370606138905
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 1.1265721063077894,
+         "p_value_greater": 0.5886321698034295
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 637,
+      "first_id": 301,
+      "last_id": 937,
+      "first_date": "2018-06-24",
+      "last_date": "2022-09-07",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 28665,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 637,
+       "counts": [
+        261,
+        261,
+        98,
+        16,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        255.1596735935647,
+        270.169066157892,
+        96.48895219924715,
+        14.294659585073651,
+        0.8692698396328572,
+        0.018300417676481204,
+        7.820691314735557e-05
+       ],
+       "mean_hits": 0.7990580847723705,
+       "mean_ci95": [
+        0.7368725321736249,
+        0.8612436373711161
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.03032525970355499,
+       "levels": {
+        "ge3": {
+         "reached": 17,
+         "rate": 0.026687598116169546,
+         "ci95": [
+          0.015621675341538393,
+          0.0423863818494193
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 15.182308049296138,
+         "lift": 1.1197243492097457,
+         "p_value_greater": 0.35251621690710766
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.0015698587127158557,
+         "ci95": [
+          3.974459161379537e-05,
+          0.008715370606138905
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.8876484642224857,
+         "lift": 1.1265721063077894,
+         "p_value_greater": 0.5886321698034295
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.01837862458962856,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.005774283918520872
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 7.820691314735557e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    },
+    "validation": {
+     "legacy": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": -0.0002948196672808186,
+      "mean_main_gain_nats": -0.0002948196672808186,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555859985537537,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0003723816933648928,
+       "bins": [
+        {
+         "lift_range": [
+          0.9,
+          0.97
+         ],
+         "count": 78,
+         "predicted": 0.12877371557233147,
+         "observed": 0.1282051282051282
+        },
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11295,
+         "predicted": 0.13332124480162186,
+         "observed": 0.133510402833112
+        },
+        {
+         "lift_range": [
+          1.03,
+          1.1
+         ],
+         "count": 102,
+         "predicted": 0.13815872697097228,
+         "observed": 0.11764705882352941
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        95,
+        110,
+        40,
+        10,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.8627450980392157,
+       "mean_ci95": [
+        0.7617941990115275,
+        0.963695997066904
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 1.2781236973143035,
+       "levels": {
+        "ge3": {
+         "reached": 10,
+         "rate": 0.0392156862745098,
+         "ci95": [
+          0.018962972613647273,
+          0.07093477508768539
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 1.6453619618145512,
+         "p_value_greater": 0.08685418317022653
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": -2.27617150239983e-07,
+      "mean_main_gain_nats": -2.27617150239983e-07,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555675156104,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        96,
+        107,
+        44,
+        8,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.8588235294117647,
+       "mean_ci95": [
+        0.7588496503355919,
+        0.9587974084879374
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 1.1982409662321594,
+       "levels": {
+        "ge3": {
+         "reached": 8,
+         "rate": 0.03137254901960784,
+         "ci95": [
+          0.01363984256818659,
+          0.060878216313611476
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 1.316289569451641,
+         "p_value_greater": 0.2652168703337074
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": 0.00013375004997306534,
+      "mean_main_gain_nats": 0.00013375004997306534,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.1155548717049519,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        105,
+        106,
+        38,
+        5,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.788235294117647,
+       "mean_ci95": [
+        0.690182390137073,
+        0.886288198098221
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.23964819324643188,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.023529411764705882,
+         "ci95": [
+          0.00868272105703404,
+          0.05050746105489563
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 0.9872171770887308,
+         "p_value_greater": 0.5687801675645248
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.00392156862745098,
+         "ci95": [
+          9.928059286274444e-05,
+          0.021654724805653808
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 2.8142213008551438,
+         "p_value_greater": 0.2992372478148606
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": 0.00022241317133668052,
+      "mean_main_gain_nats": 0.00022241317133668052,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555445756007728,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        105,
+        106,
+        38,
+        5,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.788235294117647,
+       "mean_ci95": [
+        0.690182390137073,
+        0.886288198098221
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.23964819324643188,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.023529411764705882,
+         "ci95": [
+          0.00868272105703404,
+          0.05050746105489563
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 0.9872171770887308,
+         "p_value_greater": 0.5687801675645248
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.00392156862745098,
+         "ci95": [
+          9.928059286274444e-05,
+          0.021654724805653808
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 2.8142213008551438,
+         "p_value_greater": 0.2992372478148606
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": 0.00010015061205435964,
+      "mean_main_gain_nats": 0.00010015061205435964,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555503396266803,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        98,
+        114,
+        37,
+        6,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.807843137254902,
+       "mean_ci95": [
+        0.7132023284683869,
+        0.902483946041417
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.15976546216428794,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.023529411764705882,
+         "ci95": [
+          0.00868272105703404,
+          0.05050746105489563
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 0.9872171770887308,
+         "p_value_greater": 0.5687801675645248
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        102,
+        103,
+        47,
+        3,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.807843137254902,
+       "mean_ci95": [
+        0.7125717372136711,
+        0.9031145372961329
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.15976546216428794,
+       "levels": {
+        "ge3": {
+         "reached": 3,
+         "rate": 0.011764705882352941,
+         "ci95": [
+          0.0024327675633168252,
+          0.03399457595135738
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 0.4936085885443654,
+         "p_value_greater": 0.9434671548363872
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 255,
+      "first_id": 938,
+      "last_id": 1192,
+      "first_date": "2022-09-09",
+      "last_date": "2024-05-01",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 11475,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 255,
+       "counts": [
+        112,
+        108,
+        27,
+        8,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        102.14398236477079,
+        108.15245191563966,
+        38.62587568415702,
+        5.722351953208448,
+        0.3479808620194326,
+        0.007325912884619634,
+        3.1307320019742026e-05
+       ],
+       "mean_hits": 0.7294117647058823,
+       "mean_ci95": [
+        0.6339065030153336,
+        0.824917026396431
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -1.4378891594785914,
+       "levels": {
+        "ge3": {
+         "reached": 8,
+         "rate": 0.03137254901960784,
+         "ci95": [
+          0.01363984256818659,
+          0.060878216313611476
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 6.07769003543252,
+         "lift": 1.316289569451641,
+         "p_value_greater": 0.2652168703337074
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.355338082224072,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.007357220204639376,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.014362061293269883
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 3.1307320019742026e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    },
+    "test": {
+     "legacy": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -0.0006126865625044121,
+      "mean_main_gain_nats": -0.0006126865625044121,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555865999096347,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.1333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        175,
+        159,
+        39,
+        9,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.6910994764397905,
+       "mean_ci95": [
+        0.6157838257158476,
+        0.7664151271637335
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -2.715092585657275,
+       "levels": {
+        "ge3": {
+         "reached": 9,
+         "rate": 0.02356020942408377,
+         "ci95": [
+          0.010828533673302112,
+          0.044252099033177915
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 0.9885093461686899,
+         "p_value_greater": 0.5597864615096081
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -2.99866612629823e-07,
+      "mean_main_gain_nats": -2.99866612629823e-07,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555713057272,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        176,
+        159,
+        36,
+        11,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.6910994764397905,
+       "mean_ci95": [
+        0.614733101953894,
+        0.7674658509256871
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -2.715092585657275,
+       "levels": {
+        "ge3": {
+         "reached": 11,
+         "rate": 0.028795811518324606,
+         "ci95": [
+          0.014460585788847189,
+          0.05093866932389858
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 1.208178089761732,
+         "p_value_greater": 0.30517837187075764
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -9.12325099533935e-05,
+      "mean_main_gain_nats": -9.12325099533935e-05,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555600849592541,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 5.551115123125783e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.1333333333333334,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        155,
+        167,
+        51,
+        9,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.774869109947644,
+       "mean_ci95": [
+        0.6979673848614201,
+        0.851770835033868
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.6265598274593723,
+       "levels": {
+        "ge3": {
+         "reached": 9,
+         "rate": 0.02356020942408377,
+         "ci95": [
+          0.010828533673302112,
+          0.044252099033177915
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 0.9885093461686899,
+         "p_value_greater": 0.5597864615096081
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -0.00026099231473692764,
+      "mean_main_gain_nats": -0.00026099231473692764,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555683467648394,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.13333333333333336,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        155,
+        167,
+        51,
+        9,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.774869109947644,
+       "mean_ci95": [
+        0.6979673848614201,
+        0.851770835033868
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.6265598274593723,
+       "levels": {
+        "ge3": {
+         "reached": 9,
+         "rate": 0.02356020942408377,
+         "ci95": [
+          0.010828533673302112,
+          0.044252099033177915
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 0.9885093461686899,
+         "p_value_greater": 0.5597864615096081
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": 0.00024127119673942566,
+      "mean_main_gain_nats": 0.00024127119673942566,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555430349158478,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        152,
+        175,
+        47,
+        8,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.7670157068062827,
+       "mean_ci95": [
+        0.6922816456653711,
+        0.8417497679471944
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -0.8223597735404258,
+       "levels": {
+        "ge3": {
+         "reached": 8,
+         "rate": 0.020942408376963352,
+         "ci95": [
+          0.00908377431867081,
+          0.04084641469710543
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 0.8786749743721688,
+         "p_value_greater": 0.691118885334017
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        161,
+        166,
+        48,
+        7,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.7408376963350786,
+       "mean_ci95": [
+        0.6659122092291017,
+        0.8157631834410555
+       ],
+       "fair_mean": 0.8,
+       "z_mean": -1.4750262604772704,
+       "levels": {
+        "ge3": {
+         "reached": 7,
+         "rate": 0.01832460732984293,
+         "ci95": [
+          0.007398395930679398,
+          0.037389717176431615
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 0.7688406025756476,
+         "p_value_greater": 0.805869746694489
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 382,
+      "first_id": 1193,
+      "last_id": 1574,
+      "first_date": "2024-05-03",
+      "last_date": "2026-10-11",
+      "mean_log_gain_nats": -5.329070518200751e-15,
+      "mean_main_gain_nats": -5.329070518200751e-15,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.11555555555555559,
+      "brier_fair": 0.11555555555555556,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 17190,
+         "predicted": 0.13333333333333333,
+         "observed": 0.13333333333333333
+        }
+       ]
+      },
+      "hits": {
+       "draws": 382,
+       "counts": [
+        151,
+        159,
+        59,
+        13,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        153.0156912287939,
+        162.01661424225236,
+        57.86307651509013,
+        8.572307631865204,
+        0.5212889776134246,
+        0.010974504791861569,
+        4.6899593127613545e-05
+       ],
+       "mean_hits": 0.8272251308900523,
+       "mean_ci95": [
+        0.7456376503094985,
+        0.9088126114706062
+       ],
+       "fair_mean": 0.8,
+       "z_mean": 0.678773146414317,
+       "levels": {
+        "ge3": {
+         "reached": 13,
+         "rate": 0.034031413612565446,
+         "ci95": [
+          0.018242366838045587,
+          0.05749173359414229
+         ],
+         "fair_rate": 0.023834078570323606,
+         "expected": 9.104618013863618,
+         "lift": 1.4278468333547742,
+         "p_value_greater": 0.12933451246733674
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 0.0013934826753885176,
+         "expected": 0.5323103819984137,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 2.885184393976226e-05,
+         "expected": 0.011021404384989183,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.009610275788286627
+         ],
+         "fair_rate": 1.2277380399898834e-07,
+         "expected": 4.6899593127613545e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    }
+   },
+   "tests": {
+    "validation": {
+     "legacy": {
+      "vs_fair": {
+       "mean_difference_nats": -0.0002948196672808186,
+       "hac_se": 0.0017888971129089008,
+       "p_value_greater": 0.5652586559721546,
+       "thirds": [
+        0.0016391249146384221,
+        -0.0028553352146046466,
+        0.00033175129812376854
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.00042856971725388395,
+       "hac_se": 0.0018018480549091074,
+       "p_value_greater": 0.5937245825403836,
+       "thirds": [
+        0.00042267062702629904,
+        -0.0027867801229394472,
+        0.0010784003441514966
+       ]
+      }
+     },
+     "legacy_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": -2.27617150239983e-07,
+       "hac_se": 1.0240637451004346e-06,
+       "p_value_greater": 0.5876886542411722,
+       "thirds": [
+        9.55780002259383e-07,
+        -1.8311378591729475e-06,
+        1.9250640619361549e-07
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0002945920501305786,
+       "hac_se": 0.001787882637200729,
+       "p_value_greater": 0.43475460634357216,
+       "thirds": [
+        -0.0016381691346361628,
+        0.0028535040767454735,
+        -0.00033155879171757494
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.00013397766712330535,
+       "hac_se": 0.000533539344295234,
+       "p_value_greater": 0.5988440701150699,
+       "thirds": [
+        -0.0012154985076098638,
+        6.672395380602622e-05,
+        0.0007468415524339216
+       ]
+      }
+     },
+     "ml": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00013375004997306534,
+       "hac_se": 0.0005336828546713855,
+       "p_value_greater": 0.4013463517545528,
+       "thirds": [
+        0.0012164542876121232,
+        -6.855509166519916e-05,
+        -0.0007466490460277279
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.00042856971725388395,
+       "hac_se": 0.0018018480549091074,
+       "p_value_greater": 0.40627541745961643,
+       "thirds": [
+        -0.00042267062702629904,
+        0.0027867801229394472,
+        -0.0010784003441514966
+       ]
+      }
+     },
+     "ml_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00022241317133668052,
+       "hac_se": 0.0010572911738549538,
+       "p_value_greater": 0.4169381081058395,
+       "thirds": [
+        0.002401582383797272,
+        -0.00017216631535513848,
+        -0.0015621765544320918
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0005172328386174991,
+       "hac_se": 0.0019592560591600553,
+       "p_value_greater": 0.3961985283900787,
+       "thirds": [
+        0.0007624574691588497,
+        0.002683168899249508,
+        -0.0018939278525558604
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 8.866312136361518e-05,
+       "hac_se": 0.0005248441130029721,
+       "p_value_greater": 0.4331224425062636,
+       "thirds": [
+        0.0011851280961851487,
+        -0.0001036112236899393,
+        -0.0008155275084043639
+       ]
+      }
+     },
+     "shrink": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00010015061205435964,
+       "hac_se": 0.0009215698479535194,
+       "p_value_greater": 0.45685796991685684,
+       "thirds": [
+        -0.0005525047231393726,
+        0.0020281161319303884,
+        -0.0011751595726279367
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0003949702793351782,
+       "hac_se": 0.0023061143152434695,
+       "p_value_greater": 0.4322055813645516,
+       "thirds": [
+        -0.0021916296377777946,
+        0.004883451346535035,
+        -0.0015069108707517053
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -3.3599437918705714e-05,
+       "hac_se": 0.0010618986721046852,
+       "p_value_greater": 0.5125836274979492,
+       "thirds": [
+        -0.0017689590107514957,
+        0.0020966712235955874,
+        -0.0004285105266002088
+       ]
+      }
+     },
+     "causal": {
+      "vs_fair": {
+       "mean_difference_nats": 0.0,
+       "hac_se": 0.0,
+       "p_value_greater": 1.0,
+       "thirds": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "identical": true
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0002948196672754895,
+       "hac_se": 0.0017888971129089008,
+       "p_value_greater": 0.43474134402901426,
+       "thirds": [
+        -0.0016391249146437512,
+        0.0028553352145993176,
+        -0.0003317512981290976
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.00013375004997839441,
+       "hac_se": 0.0005336828546713855,
+       "p_value_greater": 0.5986536482492963,
+       "thirds": [
+        -0.0012164542876174523,
+        6.855509165987009e-05,
+        0.0007466490460223988
+       ]
+      }
+     }
+    },
+    "test": {
+     "legacy": {
+      "vs_fair": {
+       "mean_difference_nats": -0.0006126865625044121,
+       "hac_se": 0.00024105260648271646,
+       "p_value_greater": 0.9942330583086628,
+       "thirds": [
+        -0.0008949536829248456,
+        -0.0004653854121244222,
+        -0.0004754980167126263
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.0005214540525510185,
+       "hac_se": 0.00044034336238137105,
+       "p_value_greater": 0.8811568580680418,
+       "thirds": [
+        -0.00012343778325231425,
+        -0.0011796787527030882,
+        -0.00026437960807008384
+       ]
+      }
+     },
+     "legacy_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": -2.99866612629823e-07,
+       "hac_se": 1.4418624316310787e-07,
+       "p_value_greater": 0.9807641123370945,
+       "thirds": [
+        -4.0017468663777755e-07,
+        -2.6123484466785966e-07,
+        -2.3740047922943831e-07
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0006123866958917822,
+       "hac_se": 0.00024091012803744693,
+       "p_value_greater": 0.005762760971660985,
+       "thirds": [
+        0.0008945535082382078,
+        0.0004651241772797544,
+        0.00047526061623339686
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 9.093264334076367e-05,
+       "hac_se": 0.0003745426886166951,
+       "p_value_greater": 0.40427511779451164,
+       "thirds": [
+        0.0007711157249858935,
+        -0.0007145545754233339,
+        0.00021088100816331302
+       ]
+      }
+     },
+     "ml": {
+      "vs_fair": {
+       "mean_difference_nats": -9.12325099533935e-05,
+       "hac_se": 0.0003745457512085241,
+       "p_value_greater": 0.5960335990509698,
+       "thirds": [
+        -0.0007715158996725313,
+        0.000714293340578666,
+        -0.00021111840864254246
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0005214540525510185,
+       "hac_se": 0.00044034336238137105,
+       "p_value_greater": 0.11884314193195818,
+       "thirds": [
+        0.00012343778325231425,
+        0.0011796787527030882,
+        0.00026437960807008384
+       ]
+      }
+     },
+     "ml_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": -0.00026099231473692764,
+       "hac_se": 0.0007498955920607404,
+       "p_value_greater": 0.6358271035956456,
+       "thirds": [
+        -0.0016444194065105416,
+        0.001372823748507277,
+        -0.0005004881595006395
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.00035169424776748437,
+       "hac_se": 0.0007813883891931433,
+       "p_value_greater": 0.3266635204540913,
+       "thirds": [
+        -0.0007494657235856961,
+        0.0018382091606316993,
+        -2.4990142788013146e-05
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.00016975980478353415,
+       "hac_se": 0.0003761213346943239,
+       "p_value_greater": 0.6737876613969737,
+       "thirds": [
+        -0.0008729035068380103,
+        0.000658530407928611,
+        -0.000289369750858097
+       ]
+      }
+     },
+     "shrink": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00024127119673942566,
+       "hac_se": 0.0006764014852670349,
+       "p_value_greater": 0.36093237115302595,
+       "thirds": [
+        -0.0012487516312139069,
+        0.0024032909160439766,
+        -0.00041899323139956183
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0008539577592438376,
+       "hac_se": 0.0006516520321896838,
+       "p_value_greater": 0.09570663390222062,
+       "thirds": [
+        -0.0003537979482890613,
+        0.002868676328168399,
+        5.650478531306445e-05
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 0.00033250370669281917,
+       "hac_se": 0.0007552511540118547,
+       "p_value_greater": 0.33020938623436974,
+       "thirds": [
+        -0.00047723573154137555,
+        0.0016889975754653106,
+        -0.0002078748227570194
+       ]
+      }
+     },
+     "causal": {
+      "vs_fair": {
+       "mean_difference_nats": 0.0,
+       "hac_se": 0.0,
+       "p_value_greater": 1.0,
+       "thirds": [
+        0.0,
+        0.0,
+        0.0
+       ],
+       "identical": true
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.000612686562499083,
+       "hac_se": 0.00024105260648271646,
+       "p_value_greater": 0.005766941691694854,
+       "thirds": [
+        0.0008949536829195165,
+        0.00046538541211909316,
+        0.00047549801670729725
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 9.123250994806443e-05,
+       "hac_se": 0.0003745457512085241,
+       "p_value_greater": 0.4039664009545297,
+       "thirds": [
+        0.0007715158996672022,
+        -0.0007142933405839951,
+        0.0002111184086372134
+       ]
+      }
+     }
+    }
+   },
+   "hit_power": {
+    "ge3": {
+     "fair_rate": 0.023834078570323606,
+     "test": {
+      "draws": 382,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 15,
+      "rate": 0.04719062918376766,
+      "lift": 1.9799644884332077
+     },
+     "all_scored": {
+      "draws": 1274,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 41,
+      "rate": 0.036228113021125025,
+      "lift": 1.5200131573885778
+     },
+     "draws_needed_for_lift_2": 379,
+     "draws_needed_for_lift_1_2": 6967
+    },
+    "ge4": {
+     "fair_rate": 0.0013934826753885176,
+     "test": {
+      "draws": 382,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 3,
+      "rate": 0.011168269494231721,
+      "lift": 8.014645385611193
+     },
+     "all_scored": {
+      "draws": 1274,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 5,
+      "rate": 0.00526986058590978,
+      "lift": 3.7817912479180897
+     },
+     "draws_needed_for_lift_2": 6899,
+     "draws_needed_for_lift_1_2": 124188
+    }
+   },
+   "portfolio_ml": {
+    "test": {
+     "draws": 382,
+     "tickets_per_draw": 5,
+     "simulations": 20000,
+     "seed": 20261013,
+     "per_ticket": {
+      "draws": 1910,
+      "counts": [
+       776,
+       815,
+       264,
+       52,
+       3,
+       0,
+       0
+      ],
+      "expected_counts": [
+       765.0784561439694,
+       810.0830712112618,
+       289.31538257545066,
+       42.86153815932602,
+       2.606444888067123,
+       0.05487252395930785,
+       0.00023449796563806773
+      ],
+      "mean_hits": 0.7910994764397906,
+      "mean_ci95": [
+       0.7556444344753744,
+       0.8265545184042068
+      ],
+      "fair_mean": 0.8,
+      "z_mean": -0.4961982546850994,
+      "levels": {
+       "ge3": {
+        "reached": 55,
+        "rate": 0.028795811518324606,
+        "ci95": [
+         0.021765006311873912,
+         0.03731826119850251
+        ],
+        "fair_rate": 0.023834078570323606,
+        "expected": 45.52309006931809,
+        "lift": 1.208178089761732,
+        "p_value_greater": 0.09179578062008639
+       },
+       "ge4": {
+        "reached": 3,
+        "rate": 0.0015706806282722514,
+        "ci95": [
+         0.00032402930794234397,
+         0.004583269809210801
+        ],
+        "fair_rate": 0.0013934826753885176,
+        "expected": 2.6615519099920686,
+        "lift": 1.1271619346356991,
+        "p_value_greater": 0.4970247541431567
+       },
+       "ge5": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.0019294866422737117
+        ],
+        "fair_rate": 2.885184393976226e-05,
+        "expected": 0.05510702192494592,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       },
+       "ge6": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.0019294866422737117
+        ],
+        "fair_rate": 1.2277380399898834e-07,
+        "expected": 0.00023449796563806773,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       }
+      }
+     },
+     "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket": {
+      "ge3": {
+       "reached": 23,
+       "rate": 0.060209424083769635,
+       "expected": 23.7604,
+       "fair_rate": 0.0622,
+       "monte_carlo_se": 0.03337851338810643,
+       "p_value_greater": 0.5940033939586009
+      },
+      "ge4": {
+       "reached": 3,
+       "rate": 0.007853403141361256,
+       "expected": 1.7763000000000002,
+       "fair_rate": 0.0046500000000000005,
+       "monte_carlo_se": 0.009402234322223627,
+       "p_value_greater": 0.2629012282760968
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.07640000000000002,
+       "fair_rate": 0.00020000000000000006,
+       "monte_carlo_se": 0.0019542865705929617,
+       "p_value_greater": 1.0000000000000084
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.0,
+       "fair_rate": 0.0,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 1.0
+      }
+     },
+     "mean_pairwise_overlap": 5.0,
+     "mean_coverage": 0.33333333333333337
+    },
+    "all_scored": {
+     "draws": 1274,
+     "tickets_per_draw": 5,
+     "simulations": 20000,
+     "seed": 20261013,
+     "per_ticket": {
+      "draws": 6370,
+      "counts": [
+       2555,
+       2701,
+       987,
+       122,
+       5,
+       0,
+       0
+      ],
+      "expected_counts": [
+       2551.596735935647,
+       2701.6906615789203,
+       964.8895219924716,
+       142.94659585073651,
+       8.692698396328572,
+       0.18300417676481204,
+       0.0007820691314735557
+      ],
+      "mean_hits": 0.7945054945054945,
+      "mean_ci95": [
+       0.7755183296064093,
+       0.8134926594045796
+      ],
+      "fair_mean": 0.8,
+      "z_mean": -0.5593985325795573,
+      "levels": {
+       "ge3": {
+        "reached": 127,
+        "rate": 0.019937205651491367,
+        "ci95": [
+         0.016647169881846967,
+         0.02367644508289851
+        ],
+        "fair_rate": 0.023834078570323606,
+        "expected": 151.82308049296137,
+        "lift": 0.8364999549978689,
+        "p_value_greater": 0.9833069355817184
+       },
+       "ge4": {
+        "reached": 5,
+        "rate": 0.0007849293563579278,
+        "ci95": [
+         0.0002549119832160712,
+         0.00183080466697516
+        ],
+        "fair_rate": 0.0013934826753885176,
+        "expected": 8.876484642224858,
+        "lift": 0.5632860531538947,
+        "p_value_greater": 0.9408462836951024
+       },
+       "ge5": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.000578934307945879
+        ],
+        "fair_rate": 2.885184393976226e-05,
+        "expected": 0.1837862458962856,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       },
+       "ge6": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.000578934307945879
+        ],
+        "fair_rate": 1.2277380399898834e-07,
+        "expected": 0.0007820691314735557,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       }
+      }
+     },
+     "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket": {
+      "ge3": {
+       "reached": 72,
+       "rate": 0.0565149136577708,
+       "expected": 79.2142,
+       "fair_rate": 0.062177551020408166,
+       "monte_carlo_se": 0.060946105564670824,
+       "p_value_greater": 0.8137711646598017
+      },
+      "ge4": {
+       "reached": 5,
+       "rate": 0.003924646781789639,
+       "expected": 5.938350000000001,
+       "fair_rate": 0.004661185243328101,
+       "monte_carlo_se": 0.017191076889625033,
+       "p_value_greater": 0.707225444202493
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.25465000000000004,
+       "fair_rate": 0.00019988226059654634,
+       "monte_carlo_se": 0.003567905110145167,
+       "p_value_greater": 1.000000000000031
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.0,
+       "fair_rate": 0.0,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 1.0
+      }
+     },
+     "mean_pairwise_overlap": 4.9992150706436425,
+     "mean_coverage": 0.33312401883830456
+    }
+   },
+   "hits_all_scored_descriptive": {
+    "legacy": {
+     "draws": 1274,
+     "counts": [
+      549,
+      524,
+      171,
+      30,
+      0,
+      0,
+      0
+     ],
+     "expected_counts": [
+      510.3193471871294,
+      540.338132315784,
+      192.9779043984943,
+      28.589319170147302,
+      1.7385396792657144,
+      0.03660083535296241,
+      0.00015641382629471114
+     ],
+     "mean_hits": 0.750392464678179,
+     "mean_ci95": [
+      0.7079062995660006,
+      0.7928786297903574
+     ],
+     "fair_mean": 0.8,
+     "z_mean": -2.258683393909948,
+     "levels": {
+      "ge3": {
+       "reached": 30,
+       "rate": 0.023547880690737835,
+       "ci95": [
+        0.015942737702327247,
+        0.03344645454603525
+       ],
+       "fair_rate": 0.023834078570323606,
+       "expected": 30.364616098592276,
+       "lift": 0.9879920728321285,
+       "p_value_greater": 0.5517696535509469
+      },
+      "ge4": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 0.0013934826753885176,
+       "expected": 1.7752969284449713,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 2.885184393976226e-05,
+       "expected": 0.03675724917925712,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 1.2277380399898834e-07,
+       "expected": 0.00015641382629471114,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    },
+    "ml": {
+     "draws": 1274,
+     "counts": [
+      506,
+      548,
+      198,
+      21,
+      1,
+      0,
+      0
+     ],
+     "expected_counts": [
+      510.3193471871294,
+      540.338132315784,
+      192.9779043984943,
+      28.589319170147302,
+      1.7385396792657144,
+      0.03660083535296241,
+      0.00015641382629471114
+     ],
+     "mean_hits": 0.793563579277865,
+     "mean_ci95": [
+      0.7515808069211602,
+      0.8355463516345698
+     ],
+     "fair_mean": 0.8,
+     "z_mean": -0.29305702262755795,
+     "levels": {
+      "ge3": {
+       "reached": 22,
+       "rate": 0.01726844583987441,
+       "ci95": [
+        0.010852874926069726,
+        0.026028471934458158
+       ],
+       "fair_rate": 0.023834078570323606,
+       "expected": 30.364616098592276,
+       "lift": 0.7245275200768941,
+       "p_value_greater": 0.9540833210667868
+      },
+      "ge4": {
+       "reached": 1,
+       "rate": 0.0007849293563579278,
+       "ci95": [
+        1.9872493264891967e-05,
+        0.004365507829533047
+       ],
+       "fair_rate": 0.0013934826753885176,
+       "expected": 1.7752969284449713,
+       "lift": 0.5632860531538947,
+       "p_value_greater": 0.8307765082793656
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 2.885184393976226e-05,
+       "expected": 0.03675724917925712,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 1.2277380399898834e-07,
+       "expected": 0.00015641382629471114,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    },
+    "fair": {
+     "draws": 1274,
+     "counts": [
+      524,
+      528,
+      184,
+      37,
+      1,
+      0,
+      0
+     ],
+     "expected_counts": [
+      510.3193471871294,
+      540.338132315784,
+      192.9779043984943,
+      28.589319170147302,
+      1.7385396792657144,
+      0.03660083535296241,
+      0.00015641382629471114
+     ],
+     "mean_hits": 0.793563579277865,
+     "mean_ci95": [
+      0.7497009853186642,
+      0.8374261732370658
+     ],
+     "fair_mean": 0.8,
+     "z_mean": -0.29305702262755795,
+     "levels": {
+      "ge3": {
+       "reached": 38,
+       "rate": 0.029827315541601257,
+       "ci95": [
+        0.02119220921100044,
+        0.040712047155084946
+       ],
+       "fair_rate": 0.023834078570323606,
+       "expected": 30.364616098592276,
+       "lift": 1.251456625587363,
+       "p_value_greater": 0.09799693020884448
+      },
+      "ge4": {
+       "reached": 1,
+       "rate": 0.0007849293563579278,
+       "ci95": [
+        1.9872493264891967e-05,
+        0.004365507829533047
+       ],
+       "fair_rate": 0.0013934826753885176,
+       "expected": 1.7752969284449713,
+       "lift": 0.5632860531538947,
+       "p_value_greater": 0.8307765082793656
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 2.885184393976226e-05,
+       "expected": 0.03675724917925712,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0028913218302233992
+       ],
+       "fair_rate": 1.2277380399898834e-07,
+       "expected": 0.00015641382629471114,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    }
+   },
+   "tickets": {
+    "legacy": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "legacy_tempered": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "ml": {
+     "tickets_per_draw": 5,
+     "budget_vnd_per_draw": 50000
+    },
+    "ml_tempered": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "shrink": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "causal": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "fair": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    }
+   },
+   "timings": {
+    "legacy_seconds": 3.0572686059999796,
+    "ml_seconds": 255.59709234000002,
+    "challenger_selection_seconds": 10.869334263999917,
+    "total_seconds": 283.47366230600005
+   }
+  },
+  "power655": {
+   "product": "power655",
+   "protocol_registered_at": "2026-10-13",
+   "provenance": {
+    "seed_sha256": "a87533b01eab4070f5986c650e7642543dd35a5d8f2ddbf85f1f58a00c6570a8",
+    "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
+    "history_sha256": "743b0454e9c6422a45edca1ce5f962829f4dd80f6b140d382d5ecb7916f95b40",
+    "first_id": 1,
+    "last_id": 1409,
+    "first_date": "2017-08-01",
+    "last_date": "2026-10-10",
+    "git_commit": "66b8366b5402be89b26380348c98459cccaa00f0",
+    "git_dirty": false,
+    "source_sha256": {
+     "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
+     "vlm/forecast/hits.py": "b431c1c7b1c9d46eb1e9d44be6f0acc984dd8f4e5f96ec4c7fbdda5513fafde1",
+     "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
+     "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
+     "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
+     "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
+     "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
+     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
+     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96"
+    },
+    "versions": {
+     "python": "3.11.15",
+     "legacy_engine": "3.5.0",
+     "ml_checkpoint": 3,
+     "numpy": "2.2.6",
+     "scipy": "1.17.1",
+     "scikit-learn": "1.9.1",
+     "pydantic": "2.11.4"
+    },
+    "ml_config": {
+     "bootstrap": 1000,
+     "warmup": 32,
+     "tree_every": 64,
+     "tree_buffer": 64,
+     "search_nodes": 1000,
+     "backends": [
+      "rf"
+     ],
+     "seed": 20261003,
+     "adaptive": false
+    },
+    "seed": 20261013,
+    "generated_at": "2026-10-13T14:11:36+00:00"
+   },
+   "split": {
+    "dev": {
+     "first_id": 301,
+     "last_id": 854,
+     "first_date": "2019-07-06",
+     "last_date": "2023-03-18",
+     "draws": 554
+    },
+    "validation": {
+     "first_id": 855,
+     "last_id": 1076,
+     "first_date": "2023-03-21",
+     "last_date": "2024-08-20",
+     "draws": 222
+    },
+    "test": {
+     "first_id": 1077,
+     "last_id": 1409,
+     "first_date": "2024-08-22",
+     "last_date": "2026-10-10",
+     "draws": 333
+    },
+    "warmup_draws": 300
+   },
+   "selection": {
+    "shrink": {
+     "half_life": 500,
+     "prior": 20.0,
+     "tau_dev": -0.17447074797295822,
+     "dev_mean_ll": -21.072780534157452,
+     "tau_validation": 0.4291267645469588,
+     "grid": [
+      {
+       "half_life": null,
+       "prior": 20.0,
+       "tau_dev": -0.15662051354097667,
+       "dev_mean_ll": -21.073147432840656
+      },
+      {
+       "half_life": null,
+       "prior": 100.0,
+       "tau_dev": -0.17735272445990216,
+       "dev_mean_ll": -21.073199789148358
+      },
+      {
+       "half_life": null,
+       "prior": 500.0,
+       "tau_dev": -0.2748091578572369,
+       "dev_mean_ll": -21.073325753335595
+      },
+      {
+       "half_life": 500,
+       "prior": 20.0,
+       "tau_dev": -0.17447074797295822,
+       "dev_mean_ll": -21.072780534157452
+      },
+      {
+       "half_life": 500,
+       "prior": 100.0,
+       "tau_dev": -0.20896448794945363,
+       "dev_mean_ll": -21.072826075926734
+      },
+      {
+       "half_life": 500,
+       "prior": 500.0,
+       "tau_dev": -0.37817831544981056,
+       "dev_mean_ll": -21.072904131718197
+      },
+      {
+       "half_life": 100,
+       "prior": 20.0,
+       "tau_dev": -0.11065055369781966,
+       "dev_mean_ll": -21.0731959268882
+      },
+      {
+       "half_life": 100,
+       "prior": 100.0,
+       "tau_dev": -0.1655683575821621,
+       "dev_mean_ll": -21.073221931938257
+      },
+      {
+       "half_life": 100,
+       "prior": 500.0,
+       "tau_dev": -0.44023024895912205,
+       "dev_mean_ll": -21.073238174269605
+      },
+      {
+       "half_life": 30,
+       "prior": 20.0,
+       "tau_dev": -0.04611023235394212,
+       "dev_mean_ll": -21.073894712772134
+      },
+      {
+       "half_life": 30,
+       "prior": 100.0,
+       "tau_dev": -0.10822501927592255,
+       "dev_mean_ll": -21.073879404241968
+      },
+      {
+       "half_life": 30,
+       "prior": 500.0,
+       "tau_dev": -0.419282864970987,
+       "dev_mean_ll": -21.07385968091364
+      }
+     ]
+    },
+    "causal": {
+     "l2": 10.0,
+     "l2_grid": [
+      {
+       "l2": 0.01,
+       "dev_mean_ll": -21.089245324047152
+      },
+      {
+       "l2": 0.1,
+       "dev_mean_ll": -21.086274612477293
+      },
+      {
+       "l2": 1.0,
+       "dev_mean_ll": -21.08046299300048
+      },
+      {
+       "l2": 10.0,
+       "dev_mean_ll": -21.07535334418097
+      }
+     ],
+     "ablation": [
+      {
+       "group": "frequency",
+       "delta_per_fold": [
+        0.0008123410255069911,
+        -0.0012005521411275458,
+        0.0005612107776862091,
+        -0.0010046230463484475
+       ],
+       "mean_delta": -0.00020790584607069827,
+       "keep": false
+      },
+      {
+       "group": "gap_lag",
+       "delta_per_fold": [
+        -0.0025820151504840605,
+        0.0006803575941562061,
+        -0.0014286144592499518,
+        -0.000982291227148941
+       ],
+       "mean_delta": -0.0010781408106816867,
+       "keep": false
+      },
+      {
+       "group": "calendar",
+       "delta_per_fold": [
+        -0.0023526418862156243,
+        0.0012957497000591351,
+        0.0001486598448739915,
+        -0.000998274042150392
+       ],
+       "mean_delta": -0.0004766265958582224,
+       "keep": false
+      },
+      {
+       "group": "cooccurrence",
+       "delta_per_fold": [
+        -0.0005885014928526157,
+        0.00021290267548832042,
+        9.593273742849188e-05,
+        0.0004034005605293777
+       ],
+       "mean_delta": 3.093362014839357e-05,
+       "keep": true
+      }
+     ],
+     "groups": [
+      "cooccurrence"
+     ],
+     "tau_validation": 1.6366950920703702
+    },
+    "legacy_tau_validation": 0.0005600671641451662,
+    "ml_tau_validation": 0.8950087718041347
+   },
+   "legacy_consistency_max_abs_nats": 2.531308496145357e-14,
+   "segments": {
+    "dev": {
+     "legacy": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": -0.0006178346657787663,
+      "mean_main_gain_nats": -0.0006856920257295062,
+      "mean_bonus_gain_nats": 6.785735995073997e-05,
+      "brier": 0.09719256263069358,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 6.683156424043692e-05,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30461,
+         "predicted": 0.10908971541048544,
+         "observed": 0.1091231410656249
+        },
+        {
+         "lift_range": [
+          1.03,
+          1.1
+         ],
+         "count": 9,
+         "predicted": 0.11313098680033523,
+         "observed": 0.0
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        279,
+        214,
+        57,
+        4,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.6137184115523465,
+       "mean_ci95": [
+        0.5554773620013479,
+        0.6719594611033451
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.3210372003180633,
+       "levels": {
+        "ge3": {
+         "reached": 4,
+         "rate": 0.007220216606498195,
+         "ci95": [
+          0.001970667610063054,
+          0.018382705936580906
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 0.541676003395276,
+         "p_value_greater": 0.9374216891881588
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": -3.5450114392964663e-07,
+      "mean_main_gain_nats": -3.6583591484853654e-07,
+      "mean_bonus_gain_nats": 1.1334770918889925e-08,
+      "brier": 0.09719008396152529,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30470,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        279,
+        212,
+        58,
+        5,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.6191335740072202,
+       "mean_ci95": [
+        0.5601083727002276,
+        0.6781587753142129
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.1458192436842367,
+       "levels": {
+        "ge3": {
+         "reached": 5,
+         "rate": 0.009025270758122744,
+         "ci95": [
+          0.0029367899676611985,
+          0.02093546337111649
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 0.677095004244095,
+         "p_value_greater": 0.8610275857294823
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": 3.430658420612711e-05,
+      "mean_main_gain_nats": -0.00023100716515269746,
+      "mean_bonus_gain_nats": 0.00026531374935882454,
+      "brier": 0.09719125532271011,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 4.163336342344337e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30470,
+         "predicted": 0.10909090909090913,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        282,
+        202,
+        62,
+        8,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.631768953068592,
+       "mean_ci95": [
+        0.5702116641156963,
+        0.6933262420214877
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.7369773448719744,
+       "levels": {
+        "ge3": {
+         "reached": 8,
+         "rate": 0.01444043321299639,
+         "ci95": [
+          0.006254425583026213,
+          0.028254322789138003
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 1.083352006790552,
+         "p_value_greater": 0.4587598987129929
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": 2.910781885269457e-05,
+      "mean_main_gain_nats": -0.00020997835862089347,
+      "mean_bonus_gain_nats": 0.00023908617747358803,
+      "brier": 0.09719111952061184,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30470,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        282,
+        202,
+        62,
+        8,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.631768953068592,
+       "mean_ci95": [
+        0.5702116641156963,
+        0.6933262420214877
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.7369773448719744,
+       "levels": {
+        "ge3": {
+         "reached": 8,
+         "rate": 0.01444043321299639,
+         "ci95": [
+          0.006254425583026213,
+          0.028254322789138003
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 1.083352006790552,
+         "p_value_greater": 0.4587598987129929
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": 0.0010041945795078492,
+      "mean_main_gain_nats": 0.0012460306206561658,
+      "mean_bonus_gain_nats": -0.0002418360411483165,
+      "brier": 0.09718559440164917,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30470,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        255,
+        225,
+        65,
+        9,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.6895306859205776,
+       "mean_ci95": [
+        0.6277978621257628,
+        0.7512635097153925
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 1.13201419255551,
+       "levels": {
+        "ge3": {
+         "reached": 9,
+         "rate": 0.016245487364620937,
+         "ci95": [
+          0.0074546878740280485,
+          0.03061422388553741
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 1.2187710076393707,
+         "p_value_greater": 0.32166943450720603
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": 0.0004484433673463961,
+      "mean_main_gain_nats": 0.0006176312840520107,
+      "mean_bonus_gain_nats": -0.00016918791670561458,
+      "brier": 0.09718784840122686,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 1.9073434496946387e-06,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30452,
+         "predicted": 0.10908876072581583,
+         "observed": 0.10908971496125049
+        },
+        {
+         "lift_range": [
+          1.03,
+          1.1
+         ],
+         "count": 18,
+         "predicted": 0.11272546541422618,
+         "observed": 0.1111111111111111
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        245,
+        232,
+        64,
+        13,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.720216606498195,
+       "mean_ci95": [
+        0.6569688099575892,
+        0.7834644030388007
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 2.124915946813861,
+       "levels": {
+        "ge3": {
+         "reached": 13,
+         "rate": 0.023465703971119134,
+         "ci95": [
+          0.012552294635658767,
+          0.03979280992937283
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 1.7604470110346468,
+         "p_value_greater": 0.03753581740768322
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 554,
+      "first_id": 301,
+      "last_id": 854,
+      "first_date": "2019-07-06",
+      "last_date": "2023-03-18",
+      "mean_log_gain_nats": 0.0,
+      "mean_main_gain_nats": 0.0,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.09719008264462807,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 1.3877787807814457e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 30470,
+         "predicted": 0.1090909090909091,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 554,
+       "counts": [
+        273,
+        212,
+        62,
+        7,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        267.23425026324026,
+        218.64620476083294,
+        60.735056878009146,
+        7.041745724986568,
+        0.337104848536591,
+        0.005618414142276517,
+        1.9110252184614003e-05
+       ],
+       "mean_hits": 0.644404332129964,
+       "mean_ci95": [
+        0.5836639931820635,
+        0.7051446710778644
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.3281354460597121,
+       "levels": {
+        "ge3": {
+         "reached": 7,
+         "rate": 0.01263537906137184,
+         "ci95": [
+          0.005094759882103756,
+          0.025859581855516015
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 7.384488097917621,
+         "lift": 0.9479330059417329,
+         "p_value_greater": 0.6071727349733897
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.34274237293105214,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.005637524394461132,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.0066365076380498125
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.9110252184614003e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    },
+    "validation": {
+     "legacy": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": -0.00047726777649148767,
+      "mean_main_gain_nats": -0.0003491698889998257,
+      "mean_bonus_gain_nats": -0.00012809788749166192,
+      "brier": 0.0971914692756231,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        117,
+        82,
+        19,
+        4,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.5945945945945946,
+       "mean_ci95": [
+        0.49896844044275185,
+        0.6902207487464374
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.2279597827298119,
+       "levels": {
+        "ge3": {
+         "reached": 4,
+         "rate": 0.018018018018018018,
+         "ci95": [
+          0.004930582072610852,
+          0.0454882059436946
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.351750026490914,
+         "p_value_greater": 0.34354666732817135
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": -2.725046014785794e-07,
+      "mean_main_gain_nats": -2.1168705721663628e-07,
+      "mean_bonus_gain_nats": -6.081754426194312e-08,
+      "brier": 0.09719008340667362,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        118,
+        82,
+        19,
+        3,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.581081081081081,
+       "mean_ci95": [
+        0.4877477748472148,
+        0.6744143873149473
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.5047539960500562,
+       "levels": {
+        "ge3": {
+         "reached": 3,
+         "rate": 0.013513513513513514,
+         "ci95": [
+          0.002795528643774645,
+          0.03898213771711604
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.0138125198681855,
+         "p_value_greater": 0.5690523947032098
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": 0.00014322621028875918,
+      "mean_main_gain_nats": -8.470454382179691e-05,
+      "mean_bonus_gain_nats": 0.00022793075411055609,
+      "brier": 0.09718992625549333,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 4.163336342344337e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090913,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        100,
+        95,
+        23,
+        4,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.6891891891891891,
+       "mean_ci95": [
+        0.59272211681754,
+        0.7856562615608383
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 0.709599710511899,
+       "levels": {
+        "ge3": {
+         "reached": 4,
+         "rate": 0.018018018018018018,
+         "ci95": [
+          0.004930582072610852,
+          0.0454882059436946
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.351750026490914,
+         "p_value_greater": 0.34354666732817135
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": 0.0001452592439109867,
+      "mean_main_gain_nats": -5.909141820711969e-05,
+      "mean_bonus_gain_nats": 0.0002043506621181064,
+      "brier": 0.09718992603843264,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        100,
+        95,
+        23,
+        4,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.6891891891891891,
+       "mean_ci95": [
+        0.59272211681754,
+        0.7856562615608383
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 0.709599710511899,
+       "levels": {
+        "ge3": {
+         "reached": 4,
+         "rate": 0.018018018018018018,
+         "ci95": [
+          0.004930582072610852,
+          0.0454882059436946
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.351750026490914,
+         "p_value_greater": 0.34354666732817135
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": 0.00016280003394174278,
+      "mean_main_gain_nats": -0.00015656074695859337,
+      "mean_bonus_gain_nats": 0.0003193607809003361,
+      "brier": 0.09719064815870095,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        110,
+        87,
+        19,
+        5,
+        1,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.6486486486486487,
+       "mean_ci95": [
+        0.5469716088538126,
+        0.7503256884434848
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.1207829294488342,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.02702702702702703,
+         "ci95": [
+          0.009981657328698825,
+          0.057895285477225535
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 2.027625039736371,
+         "p_value_greater": 0.07850899273199954
+        },
+        "ge4": {
+         "reached": 1,
+         "rate": 0.0045045045045045045,
+         "ci95": [
+          0.00011403767731910969,
+          0.02484059529902733
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 7.280965799923147,
+         "p_value_greater": 0.12836709085179204
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": 0.00045733927221713275,
+      "mean_main_gain_nats": 0.0005021492428504647,
+      "mean_bonus_gain_nats": -4.4809970633331973e-05,
+      "brier": 0.09718827217545167,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.00012477766211985023,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12199,
+         "predicted": 0.10908777503297333,
+         "observed": 0.10902532994507746
+        },
+        {
+         "lift_range": [
+          1.03,
+          1.1
+         ],
+         "count": 11,
+         "predicted": 0.11256657934166286,
+         "observed": 0.18181818181818182
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        104,
+        95,
+        20,
+        3,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.6486486486486487,
+       "mean_ci95": [
+        0.5559305755957462,
+        0.7413667217015512
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.1207829294488342,
+       "levels": {
+        "ge3": {
+         "reached": 3,
+         "rate": 0.013513513513513514,
+         "ci95": [
+          0.002795528643774645,
+          0.03898213771711604
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.0138125198681855,
+         "p_value_greater": 0.5690523947032098
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 222,
+      "first_id": 855,
+      "last_id": 1076,
+      "first_date": "2023-03-21",
+      "last_date": "2024-08-20",
+      "mean_log_gain_nats": 0.0,
+      "mean_main_gain_nats": 0.0,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.09719008264462808,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 4.163336342344337e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 12210,
+         "predicted": 0.10909090909090913,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 222,
+       "counts": [
+        113,
+        87,
+        17,
+        5,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        107.08664902245368,
+        87.61634920018938,
+        24.337874777830383,
+        2.821782582936856,
+        0.1350853364171899,
+        0.002251422273619832,
+        7.657898889863373e-06
+       ],
+       "mean_hits": 0.6126126126126126,
+       "mean_ci95": [
+        0.516502912647808,
+        0.7087223125774171
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -0.8589008316361526,
+       "levels": {
+        "ge3": {
+         "reached": 5,
+         "rate": 0.02252252252252252,
+         "ci95": [
+          0.007352514365578208,
+          0.05177454182770166
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 2.9591269995265557,
+         "lift": 1.6896875331136423,
+         "p_value_greater": 0.17675277525123737
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.1373444165896996,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.0022590801725096954,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.016479280352441023
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 7.657898889863373e-06,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    },
+    "test": {
+     "legacy": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": 0.0005750419322207655,
+      "mean_main_gain_nats": 0.0004949263867923572,
+      "mean_bonus_gain_nats": 8.011554542840837e-05,
+      "brier": 0.09718823037904605,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 6.867722437028633e-05,
+       "bins": [
+        {
+         "lift_range": [
+          0.9,
+          0.97
+         ],
+         "count": 13,
+         "predicted": 0.10546833214069669,
+         "observed": 0.15384615384615385
+        },
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18302,
+         "predicted": 0.10909348222501207,
+         "observed": 0.10905911922194296
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        147,
+        134,
+        47,
+        5,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.7297297297297297,
+       "mean_ci95": [
+        0.6482501389013103,
+        0.8112093205581491
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 1.886085485774921,
+       "levels": {
+        "ge3": {
+         "reached": 5,
+         "rate": 0.015015015015015015,
+         "ci95": [
+          0.004892840469211233,
+          0.03469034840675091
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 1.126458355409095,
+         "p_value_greater": 0.456782596075661
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "legacy_tempered": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": 4.2440952671104446e-07,
+      "mean_main_gain_nats": 3.470163869089881e-07,
+      "mean_bonus_gain_nats": 7.739313980205633e-08,
+      "brier": 0.09719008139547183,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 1.3877787807814457e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090907,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        147,
+        134,
+        46,
+        6,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.7327327327327328,
+       "mean_ci95": [
+        0.6504968362785969,
+        0.8149686291868686
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 1.9614193287071073,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.018018018018018018,
+         "ci95": [
+          0.00664028457214495,
+          0.038803173856013
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 1.351750026490914,
+         "p_value_greater": 0.285989830423442
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": -0.0005140637059763241,
+      "mean_main_gain_nats": -0.0007755925014116542,
+      "mean_bonus_gain_nats": 0.0002615287954353301,
+      "brier": 0.09719273394418039,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090911,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        169,
+        134,
+        29,
+        1,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.5855855855855856,
+       "mean_ci95": [
+        0.5143915662649516,
+        0.6567796049062196
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.7299389749700262,
+       "levels": {
+        "ge3": {
+         "reached": 1,
+         "rate": 0.003003003003003003,
+         "ci95": [
+          7.602656324062971e-05,
+          0.01661726083649053
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 0.225291671081819,
+         "p_value_greater": 0.9885359425437289
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "ml_tempered": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": -0.00044705864607453807,
+      "mean_main_gain_nats": -0.0006818172678039575,
+      "mean_bonus_gain_nats": 0.00023475862172941944,
+      "brier": 0.09719242525819814,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        169,
+        134,
+        29,
+        1,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.5855855855855856,
+       "mean_ci95": [
+        0.5143915662649516,
+        0.6567796049062196
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.7299389749700262,
+       "levels": {
+        "ge3": {
+         "reached": 1,
+         "rate": 0.003003003003003003,
+         "ci95": [
+          7.602656324062971e-05,
+          0.01661726083649053
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 0.225291671081819,
+         "p_value_greater": 0.9885359425437289
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "shrink": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": -0.002005102408430684,
+      "mean_main_gain_nats": -0.00150443248080274,
+      "mean_bonus_gain_nats": -0.0005006699276279442,
+      "brier": 0.09719551222923546,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        178,
+        122,
+        30,
+        3,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.5735735735735735,
+       "mean_ci95": [
+        0.4988682063248618,
+        0.6482789408222853
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -2.0312743466987717,
+       "levels": {
+        "ge3": {
+         "reached": 3,
+         "rate": 0.009009009009009009,
+         "ci95": [
+          0.0018617415619363255,
+          0.026101016169338416
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 0.675875013245457,
+         "p_value_greater": 0.8213072661680617
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "causal": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": -0.0019551201554611807,
+      "mean_main_gain_nats": -0.0013617985388952652,
+      "mean_bonus_gain_nats": -0.0005933216165659155,
+      "brier": 0.0971949723889242,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 0.0,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090909,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        167,
+        138,
+        25,
+        3,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.5915915915915916,
+       "mean_ci95": [
+        0.51950697969945,
+        0.6636762034837331
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": -1.5792712891056533,
+       "levels": {
+        "ge3": {
+         "reached": 3,
+         "rate": 0.009009009009009009,
+         "ci95": [
+          0.0018617415619363255,
+          0.026101016169338416
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 0.675875013245457,
+         "p_value_greater": 0.8213072661680617
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     },
+     "fair": {
+      "draws": 333,
+      "first_id": 1077,
+      "last_id": 1409,
+      "first_date": "2024-08-22",
+      "last_date": "2026-10-10",
+      "mean_log_gain_nats": 0.0,
+      "mean_main_gain_nats": 0.0,
+      "mean_bonus_gain_nats": 0.0,
+      "brier": 0.09719008264462808,
+      "brier_fair": 0.09719008264462808,
+      "reliability": {
+       "ece": 2.7755575615628914e-17,
+       "bins": [
+        {
+         "lift_range": [
+          0.97,
+          1.03
+         ],
+         "count": 18315,
+         "predicted": 0.10909090909090911,
+         "observed": 0.10909090909090909
+        }
+       ]
+      },
+      "hits": {
+       "draws": 333,
+       "counts": [
+        155,
+        141,
+        31,
+        6,
+        0,
+        0,
+        0
+       ],
+       "expected_counts": [
+        160.62997353368053,
+        131.42452380028408,
+        36.50681216674557,
+        4.232673874405284,
+        0.20262800462578484,
+        0.0033771334104297475,
+        1.148684833479506e-05
+       ],
+       "mean_hits": 0.6636636636636637,
+       "mean_ci95": [
+        0.5859989259780232,
+        0.7413284013493042
+       ],
+       "fair_mean": 0.6545454545454545,
+       "z_mean": 0.22874094126682015,
+       "levels": {
+        "ge3": {
+         "reached": 6,
+         "rate": 0.018018018018018018,
+         "ci95": [
+          0.00664028457214495,
+          0.038803173856013
+         ],
+         "fair_rate": 0.013329400898768268,
+         "expected": 4.438690499289833,
+         "lift": 1.351750026490914,
+         "p_value_greater": 0.285989830423442
+        },
+        "ge4": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 0.000618668543196845,
+         "expected": 0.2060166248845494,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge5": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 1.0176036813106736e-05,
+         "expected": 0.003388620258764543,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        },
+        "ge6": {
+         "reached": 0,
+         "rate": 0.0,
+         "ci95": [
+          0.0,
+          0.011016584124038694
+         ],
+         "fair_rate": 3.449504004442961e-08,
+         "expected": 1.148684833479506e-05,
+         "lift": 0.0,
+         "p_value_greater": 1.0
+        }
+       }
+      }
+     }
+    }
+   },
+   "tests": {
+    "validation": {
+     "legacy": {
+      "vs_fair": {
+       "mean_difference_nats": -0.00047726777649148767,
+       "hac_se": 0.0002538861788135962,
+       "p_value_greater": 0.9689863776971763,
+       "thirds": [
+        -0.0007130875596847937,
+        -0.0005208810940859178,
+        -0.00019783467570375155
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.0006204939867802469,
+       "hac_se": 0.0007316122497872793,
+       "p_value_greater": 0.8008235083242525,
+       "thirds": [
+        -0.00036999022893120456,
+        -0.0016727662137962641,
+        0.0001812744823867282
+       ]
+      }
+     },
+     "legacy_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": -2.725046014785794e-07,
+       "hac_se": 1.548513599687402e-07,
+       "p_value_greater": 0.9597472441301177,
+       "thirds": [
+        -4.0934814664666036e-07,
+        -3.35318812920464e-07,
+        -7.284684486861379e-08
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.00047699527189000907,
+       "hac_se": 0.00025373333796469867,
+       "p_value_greater": 0.031009600999993506,
+       "thirds": [
+        0.000712678211538147,
+        0.0005205457752729974,
+        0.00019776182885888294
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.00014349871489023776,
+       "hac_se": 0.0007065566527806626,
+       "p_value_greater": 0.5801977522041626,
+       "thirds": [
+        0.0003426879826069424,
+        -0.0011522204385232668,
+        0.0003790363112456111
+       ]
+      }
+     },
+     "ml": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00014322621028875918,
+       "hac_se": 0.0007065695523278597,
+       "p_value_greater": 0.4199539087605593,
+       "thirds": [
+        -0.0003430973307535891,
+        0.0011518851197103463,
+        -0.00037910915809047976
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0006204939867802469,
+       "hac_se": 0.0007316122497872793,
+       "p_value_greater": 0.19917649167574747,
+       "thirds": [
+        0.00036999022893120456,
+        0.0016727662137962641,
+        -0.0001812744823867282
+       ]
+      }
+     },
+     "ml_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": 0.0001452592439109867,
+       "hac_se": 0.0006298935842572154,
+       "p_value_greater": 0.40911764202953715,
+       "thirds": [
+        -0.00029513334679362533,
+        0.0010296292376409297,
+        -0.00029871815911434443
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0006225270204024743,
+       "hac_se": 0.0006595648042974487,
+       "p_value_greater": 0.17368291235252786,
+       "thirds": [
+        0.0004179542128911683,
+        0.0015505103317268475,
+        -0.0001008834834105929
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 2.033033622227508e-06,
+       "hac_se": 7.742846864365846e-05,
+       "p_value_greater": 0.48956163629845406,
+       "thirds": [
+        4.7963983959963775e-05,
+        -0.00012225588206941655,
+        8.03909989761353e-05
+       ]
+      }
+     },
+     "shrink": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00016280003394174278,
+       "hac_se": 0.0013459507027299687,
+       "p_value_greater": 0.45202600844173413,
+       "thirds": [
+        0.0014763674017718674,
+        0.0014282976265485386,
+        -0.002416264926495178
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0006400678104332304,
+       "hac_se": 0.0015066755486299232,
+       "p_value_greater": 0.3360388566200185,
+       "thirds": [
+        0.002189454961456661,
+        0.0019491787206344564,
+        -0.0022184302507914262
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 1.957382365298361e-05,
+       "hac_se": 0.0014378894357129494,
+       "p_value_greater": 0.4945877830250621,
+       "thirds": [
+        0.0018194647325254565,
+        0.0002764125068381922,
+        -0.002037155768404698
+       ]
+      }
+     },
+     "causal": {
+      "vs_fair": {
+       "mean_difference_nats": 0.00045733927221713275,
+       "hac_se": 0.0015770674984623288,
+       "p_value_greater": 0.38629638364780594,
+       "thirds": [
+        -0.0015756721232795153,
+        0.003469390786591103,
+        -0.0005217008466601897
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": 0.0009346070487086204,
+       "hac_se": 0.0016851237045833894,
+       "p_value_greater": 0.2902841592123644,
+       "thirds": [
+        -0.0008625845635947215,
+        0.003990271880677021,
+        -0.00032386617095643815
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 0.0003141130619283736,
+       "hac_se": 0.001666550735258458,
+       "p_value_greater": 0.42550267031385797,
+       "thirds": [
+        -0.0012325747925259261,
+        0.002317505666880757,
+        -0.00014259168856970998
+       ]
+      }
+     }
+    },
+    "test": {
+     "legacy": {
+      "vs_fair": {
+       "mean_difference_nats": 0.0005750419322207655,
+       "hac_se": 0.0007252399053209248,
+       "p_value_greater": 0.21454826784357797,
+       "thirds": [
+        0.0006196477186635105,
+        0.0004929685563662339,
+        0.0006125095216325523
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 0.0010891056381970897,
+       "hac_se": 0.0008950297336528118,
+       "p_value_greater": 0.11261303201793875,
+       "thirds": [
+        0.00219862825255163,
+        -0.0005787705512493692,
+        0.0016474592132890084
+       ]
+      }
+     },
+     "legacy_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": 4.2440952671104446e-07,
+       "hac_se": 4.2458332415974803e-07,
+       "p_value_greater": 0.15948163000118007,
+       "thirds": [
+        4.1474521380821203e-07,
+        3.5752270823543277e-07,
+        5.009606580894886e-07
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": -0.0005746175226940545,
+       "hac_se": 0.000724817502960795,
+       "p_value_greater": 0.7854158322017183,
+       "thirds": [
+        -0.0006192329734497023,
+        -0.0004926110336579985,
+        -0.0006120085609744628
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 0.0005144881155030352,
+       "hac_se": 0.0005115722932091676,
+       "p_value_greater": 0.15800953483979033,
+       "thirds": [
+        0.0015793952791019277,
+        -0.0010713815849073677,
+        0.0010354506523145455
+       ]
+      }
+     },
+     "ml": {
+      "vs_fair": {
+       "mean_difference_nats": -0.0005140637059763241,
+       "hac_se": 0.0005115630070776617,
+       "p_value_greater": 0.8417954661081843,
+       "thirds": [
+        -0.0015789805338881195,
+        0.001071739107615603,
+        -0.0010349496916564561
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": -0.0010891056381970897,
+       "hac_se": 0.0008950297336528118,
+       "p_value_greater": 0.8873869679820613,
+       "thirds": [
+        -0.00219862825255163,
+        0.0005787705512493692,
+        -0.0016474592132890084
+       ]
+      }
+     },
+     "ml_tempered": {
+      "vs_fair": {
+       "mean_difference_nats": -0.00044705864607453807,
+       "hac_se": 0.0004571789618264332,
+       "p_value_greater": 0.8352099707464135,
+       "thirds": [
+        -0.0013910702538872204,
+        0.0009773699464262014,
+        -0.0009274756307625952
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": -0.0010221005782953035,
+       "hac_se": 0.0008635370320436992,
+       "p_value_greater": 0.8809429895368668,
+       "thirds": [
+        -0.002010717972550731,
+        0.0004844013900599675,
+        -0.0015399851523951475
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": 6.70050599017861e-05,
+       "hac_se": 5.516627436639854e-05,
+       "p_value_greater": 0.1130387083849409,
+       "thirds": [
+        0.00018791028000089918,
+        -9.436916118940171e-05,
+        0.00010747406089386082
+       ]
+      }
+     },
+     "shrink": {
+      "vs_fair": {
+       "mean_difference_nats": -0.002005102408430684,
+       "hac_se": 0.0011108413540300238,
+       "p_value_greater": 0.9637988791356988,
+       "thirds": [
+        -0.0031161394214652403,
+        -0.0019703922167003864,
+        -0.0009287755871264263
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": -0.00258014434065145,
+       "hac_se": 0.0017655728918617567,
+       "p_value_greater": 0.927267819647469,
+       "thirds": [
+        -0.003735787140128751,
+        -0.00246336077306662,
+        -0.0015412851087589787
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.0014910387024543602,
+       "hac_se": 0.0011823844600654966,
+       "p_value_greater": 0.8955694604432142,
+       "thirds": [
+        -0.0015371588875771208,
+        -0.0030421313243159894,
+        0.0001061741045300297
+       ]
+      }
+     },
+     "causal": {
+      "vs_fair": {
+       "mean_difference_nats": -0.0019551201554611807,
+       "hac_se": 0.0009101716222876575,
+       "p_value_greater": 0.9836549489419223,
+       "thirds": [
+        -0.003942568991033447,
+        -0.002686992449152293,
+        0.0007642009738021977
+       ]
+      },
+      "vs_legacy": {
+       "mean_difference_nats": -0.002530162087681946,
+       "hac_se": 0.001392870973089196,
+       "p_value_greater": 0.964692782031017,
+       "thirds": [
+        -0.0045622167096969575,
+        -0.003179961005518527,
+        0.00015169145216964542
+       ]
+      },
+      "vs_ml": {
+       "mean_difference_nats": -0.0014410564494848565,
+       "hac_se": 0.0010177612294017438,
+       "p_value_greater": 0.920818343796109,
+       "thirds": [
+        -0.002363588457145327,
+        -0.003758731556767896,
+        0.0017991506654586537
+       ]
+      }
+     }
+    }
+   },
+   "hit_power": {
+    "ge3": {
+     "fair_rate": 0.013329400898768268,
+     "test": {
+      "draws": 333,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 9,
+      "rate": 0.03399981475823227,
+      "lift": 2.5507384027570286
+     },
+     "all_scored": {
+      "draws": 1109,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 22,
+      "rate": 0.023231027092672052,
+      "lift": 1.7428410525801474
+     },
+     "draws_needed_for_lift_2": 720,
+     "draws_needed_for_lift_1_2": 12656
+    },
+    "ge4": {
+     "fair_rate": 0.000618668543196845,
+     "test": {
+      "draws": 333,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 2,
+      "rate": 0.008965031284199178,
+      "lift": 14.490847130959958
+     },
+     "all_scored": {
+      "draws": 1109,
+      "alpha": 0.05,
+      "power": 0.8,
+      "critical_reached": 3,
+      "rate": 0.003854494768073813,
+      "lift": 6.230306697276846
+     },
+     "draws_needed_for_lift_2": 16435,
+     "draws_needed_for_lift_1_2": 274177
+    }
+   },
+   "portfolio_ml": {
+    "test": {
+     "draws": 333,
+     "tickets_per_draw": 5,
+     "simulations": 20000,
+     "seed": 20261013,
+     "per_ticket": {
+      "draws": 1665,
+      "counts": [
+       815,
+       683,
+       160,
+       6,
+       1,
+       0,
+       0
+      ],
+      "expected_counts": [
+       803.1498676684026,
+       657.1226190014203,
+       182.53406083372786,
+       21.16336937202642,
+       1.0131400231289243,
+       0.016885667052148737,
+       5.74342416739753e-05
+      ],
+      "mean_hits": 0.6156156156156156,
+      "mean_ci95": [
+       0.5830877104953484,
+       0.6481435207358829
+      ],
+      "fair_mean": 0.6545454545454545,
+      "z_mean": -2.183745206932674,
+      "levels": {
+       "ge3": {
+        "reached": 7,
+        "rate": 0.004204204204204204,
+        "ci95": [
+         0.0016919279675564646,
+         0.008642969218891154
+        ],
+        "fair_rate": 0.013329400898768268,
+        "expected": 22.193452496449165,
+        "lift": 0.3154083395145466,
+        "p_value_greater": 0.9999527231632072
+       },
+       "ge4": {
+        "reached": 1,
+        "rate": 0.0006006006006006006,
+        "ci95": [
+         1.5205775072285467e-05,
+         0.0033417419147962354
+        ],
+        "fair_rate": 0.000618668543196845,
+        "expected": 1.0300831244227469,
+        "lift": 0.9707954399897529,
+        "p_value_greater": 0.6431364902430804
+       },
+       "ge5": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.002213090711357889
+        ],
+        "fair_rate": 1.0176036813106736e-05,
+        "expected": 0.016943101293822715,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       },
+       "ge6": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.002213090711357889
+        ],
+        "fair_rate": 3.449504004442961e-08,
+        "expected": 5.74342416739753e-05,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       }
+      }
+     },
+     "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket": {
+      "ge3": {
+       "reached": 3,
+       "rate": 0.009009009009009009,
+       "expected": 9.407250000000001,
+       "fair_rate": 0.028250000000000004,
+       "monte_carlo_se": 0.021379306802957857,
+       "p_value_greater": 0.9958831612487845
+      },
+      "ge4": {
+       "reached": 1,
+       "rate": 0.003003003003003003,
+       "expected": 0.5993999999999999,
+       "fair_rate": 0.0017999999999999997,
+       "monte_carlo_se": 0.005469557020454215,
+       "p_value_greater": 0.4511554936198229
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.049949999999999994,
+       "fair_rate": 0.00015,
+       "monte_carlo_se": 0.001580229532378129,
+       "p_value_greater": 1.0000000000000047
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.0,
+       "fair_rate": 0.0,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 1.0
+      }
+     },
+     "mean_pairwise_overlap": 4.799999999999999,
+     "mean_coverage": 0.2666666666666666
+    },
+    "all_scored": {
+     "draws": 1109,
+     "tickets_per_draw": 5,
+     "simulations": 20000,
+     "seed": 20261013,
+     "per_ticket": {
+      "draws": 5545,
+      "counts": [
+       2741,
+       2140,
+       597,
+       64,
+       3,
+       0,
+       0
+      ],
+      "expected_counts": [
+       2674.7543640968725,
+       2188.435388806532,
+       607.8987191129255,
+       70.48101091164354,
+       3.374090947897829,
+       0.05623484913163048,
+       0.00019127499704636218
+      ],
+      "mean_hits": 0.6380522993688007,
+      "mean_ci95": [
+       0.6190295786994044,
+       0.657075020038197
+      ],
+      "fair_mean": 0.6545454545454545,
+      "z_mean": -1.6883666277848377,
+      "levels": {
+       "ge3": {
+        "reached": 67,
+        "rate": 0.012082957619477006,
+        "ci95": [
+         0.009376058946799519,
+         0.015319855787099778
+        ],
+        "fair_rate": 0.013329400898768268,
+        "expected": 73.91152798367004,
+        "lift": 0.9064891746630231,
+        "p_value_greater": 0.8060584713164674
+       },
+       "ge4": {
+        "reached": 3,
+        "rate": 0.0005410279531109107,
+        "ci95": [
+         0.000111586870879748,
+         0.0015802912080901254
+        ],
+        "fair_rate": 0.000618668543196845,
+        "expected": 3.4305170720265052,
+        "lift": 0.8745037371954583,
+        "p_value_greater": 0.6661941037814514
+       },
+       "ge5": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.0006650410622098757
+        ],
+        "fair_rate": 1.0176036813106736e-05,
+        "expected": 0.05642612412867685,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       },
+       "ge6": {
+        "reached": 0,
+        "rate": 0.0,
+        "ci95": [
+         0.0,
+         0.0006650410622098757
+        ],
+        "fair_rate": 3.449504004442961e-08,
+        "expected": 0.00019127499704636218,
+        "lift": 0.0,
+        "p_value_greater": 1.0
+       }
+      }
+     },
+     "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket": {
+      "ge3": {
+       "reached": 32,
+       "rate": 0.028854824165915238,
+       "expected": 31.321550000000002,
+       "fair_rate": 0.02824305680793508,
+       "monte_carlo_se": 0.039010831737800726,
+       "p_value_greater": 0.4757195578555533
+      },
+      "ge4": {
+       "reached": 2,
+       "rate": 0.0018034265103697023,
+       "expected": 1.9967499999999996,
+       "fair_rate": 0.0018004959422903513,
+       "monte_carlo_se": 0.009982872338410423,
+       "p_value_greater": 0.5933572528534862
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.16599999999999998,
+       "fair_rate": 0.00014968440036068528,
+       "monte_carlo_se": 0.002880756280909581,
+       "p_value_greater": 1.0000000000000195
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "expected": 0.0,
+       "fair_rate": 0.0,
+       "monte_carlo_se": 0.0,
+       "p_value_greater": 1.0
+      }
+     },
+     "mean_pairwise_overlap": 4.7999098286744815,
+     "mean_coverage": 0.26669672377517284
+    }
+   },
+   "hits_all_scored_descriptive": {
+    "legacy": {
+     "draws": 1109,
+     "counts": [
+      543,
+      430,
+      123,
+      13,
+      0,
+      0,
+      0
+     ],
+     "expected_counts": [
+      534.9508728193745,
+      437.6870777613064,
+      121.5797438225851,
+      14.096202182328708,
+      0.6748181895795657,
+      0.011246969826326097,
+      3.825499940927244e-05
+     ],
+     "mean_hits": 0.6447249774571686,
+     "mean_ci95": [
+      0.6021691386627662,
+      0.687280816251571
+     ],
+     "fair_mean": 0.6545454545454545,
+     "z_mean": -0.4495837431114745,
+     "levels": {
+      "ge3": {
+       "reached": 13,
+       "rate": 0.011722272317403066,
+       "ci95": [
+        0.006255972262965718,
+        0.01996202587340389
+       ],
+       "fair_rate": 0.013329400898768268,
+       "expected": 14.782305596734009,
+       "lift": 0.8794297963148733,
+       "p_value_greater": 0.7155752050765939
+      },
+      "ge4": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 0.000618668543196845,
+       "expected": 0.6861034144053011,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 1.0176036813106736e-05,
+       "expected": 0.011285224825735369,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 3.449504004442961e-08,
+       "expected": 3.825499940927244e-05,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    },
+    "ml": {
+     "draws": 1109,
+     "counts": [
+      551,
+      431,
+      114,
+      13,
+      0,
+      0,
+      0
+     ],
+     "expected_counts": [
+      534.9508728193745,
+      437.6870777613064,
+      121.5797438225851,
+      14.096202182328708,
+      0.6748181895795657,
+      0.011246969826326097,
+      3.825499940927244e-05
+     ],
+     "mean_hits": 0.6293958521190262,
+     "mean_ci95": [
+      0.5873339449422212,
+      0.6714577592958311
+     ],
+     "fair_mean": 0.6545454545454545,
+     "z_mean": -1.151354694378969,
+     "levels": {
+      "ge3": {
+       "reached": 13,
+       "rate": 0.011722272317403066,
+       "ci95": [
+        0.006255972262965718,
+        0.01996202587340389
+       ],
+       "fair_rate": 0.013329400898768268,
+       "expected": 14.782305596734009,
+       "lift": 0.8794297963148733,
+       "p_value_greater": 0.7155752050765939
+      },
+      "ge4": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 0.000618668543196845,
+       "expected": 0.6861034144053011,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 1.0176036813106736e-05,
+       "expected": 0.011285224825735369,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 3.449504004442961e-08,
+       "expected": 3.825499940927244e-05,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    },
+    "fair": {
+     "draws": 1109,
+     "counts": [
+      541,
+      440,
+      110,
+      18,
+      0,
+      0,
+      0
+     ],
+     "expected_counts": [
+      534.9508728193745,
+      437.6870777613064,
+      121.5797438225851,
+      14.096202182328708,
+      0.6748181895795657,
+      0.011246969826326097,
+      3.825499940927244e-05
+     ],
+     "mean_hits": 0.6438232642019838,
+     "mean_ci95": [
+      0.6011098486912323,
+      0.6865366797127352
+     ],
+     "fair_mean": 0.6545454545454545,
+     "z_mean": -0.49086438730368,
+     "levels": {
+      "ge3": {
+       "reached": 18,
+       "rate": 0.016230838593327322,
+       "ci95": [
+        0.009647055660740181,
+        0.02553081014456177
+       ],
+       "fair_rate": 0.013329400898768268,
+       "expected": 14.782305596734009,
+       "lift": 1.2176720256667475,
+       "p_value_greater": 0.23174386700521837
+      },
+      "ge4": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 0.000618668543196845,
+       "expected": 0.6861034144053011,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge5": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 1.0176036813106736e-05,
+       "expected": 0.011285224825735369,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      },
+      "ge6": {
+       "reached": 0,
+       "rate": 0.0,
+       "ci95": [
+        0.0,
+        0.0033207854552682456
+       ],
+       "fair_rate": 3.449504004442961e-08,
+       "expected": 3.825499940927244e-05,
+       "lift": 0.0,
+       "p_value_greater": 1.0
+      }
+     }
+    }
+   },
+   "tickets": {
+    "legacy": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "legacy_tempered": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "ml": {
+     "tickets_per_draw": 5,
+     "budget_vnd_per_draw": 50000
+    },
+    "ml_tempered": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "shrink": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "causal": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    },
+    "fair": {
+     "tickets_per_draw": 1,
+     "budget_vnd_per_draw": 10000
+    }
+   },
+   "timings": {
+    "legacy_seconds": 3.1874795020000875,
+    "ml_seconds": 402.621015427,
+    "challenger_selection_seconds": 10.984417613000005,
+    "total_seconds": 433.3638549330001
+   }
+  }
+ }
+}

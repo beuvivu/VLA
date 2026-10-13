@@ -93,3 +93,61 @@ Drift của đặc trưng không bao giờ là bằng chứng mô hình dự bá
   hoặc khôi phục `data/forecast/ml/<p>.json.gz` từ cache trạng thái `vqe-state-` của workflow.
   Rollback legacy: `vietlott forecast fit` hoặc khôi phục `data/forecast/<p>.json`. Rollback về
   luật công bằng không cần thao tác: đó là mặc định khi cổng chưa mở.
+
+## Kiểm toán nguyên nhân (13-10-2026)
+
+Ba loại được tách bạch: xác suất TÍNH SAI, xác suất THIẾU HIỆU CHUẨN, và xác suất hợp lệ nhưng
+CHƯA CÓ SỨC DỰ BÁO.
+
+**Đã kiểm, không có lỗi:**
+
+- Dữ liệu: Mega #1–#1574 và Power #1–#1409 liền mạch, ngày tăng ngặt, không kỳ trùng, mỗi kỳ đúng
+  sáu số phân biệt trong phạm vi, số đặc biệt Power luôn nằm ngoài bộ chính, nhật ký kết quả không
+  mâu thuẫn seed. Power có một bộ lặp lại ở #647 và #993 (cách nhau hơn hai năm, khác số đặc biệt):
+  hợp lệ — khả năng có ít nhất một cặp trùng trên chừng ấy kỳ khoảng 3%.
+- Hai sổ dự báo: mọi dòng Mega/Power ghi trước giờ quay ít nhất 5 phút, `target_id = based_on_id + 1`,
+  ngày đích khớp ngày quay thật, điểm đã ghi khớp tính lại; nhiều dòng cho cùng một kỳ thì bảng
+  điều khiển và bảng thành tích chỉ lấy dòng ghi SỚM NHẤT.
+- Đơn vị xác suất: π các số chính cộng đúng 6 ở cả legacy lẫn ML, luật trên bộ sáu số chuẩn hoá
+  đúng, hỗn hợp trộn các LUẬT chứ không nhân các xác suất biên; Power có P(b | bộ chính) =
+  w_b / Σ_{i∉S} wᵢ, và H chỉ đếm số chính (bảng điều khiển ghi `bonus_hit` riêng).
+- Nhân quả: đặc trưng ML là ảnh chụp trước kỳ, chuẩn hoá chạy chỉ dùng kỳ đã biết, legacy chấm
+  rồi mới học; benchmark dựng lại luật legacy và khớp phần tăng e-value của engine tới 10⁻¹³ nats.
+
+**Tính sai — đã sửa, có phép kiểm tái hiện:**
+
+1. `pair_link`/`triple_link` (đặc trưng giả): `pairs[i, i]` là tần suất của chính số i, không phải
+   cặp. Gộp nó vào thì `pair_link` của số vừa về tương quan 0,99 với `lag1` (Mega; Power 0,97),
+   tức "đồng xuất hiện" thực chất là "có về kỳ trước". `triple_link` chia cho |S|² trong khi chỉ
+   m(m − 1) ô có nghĩa. Checkpoint ML lên version 3.
+2. `evaluate_series` chấm sáu số có π cao nhất, trong khi vé ML công bố là bộ có xác suất đồng
+   thời cao nhất (`Law.top`) — trên Power, ví dụ `6 13 36 39 43 45` so với `13 36 39 43 45 54`.
+   Benchmark cũ vì thế báo số trùng của một vé chưa từng phát.
+3. Trang Vietlott in "tỷ lệ trùng theo từng vé" (ví dụ 13%) mà không có mốc; 13,3% chính là tỷ lệ
+   của vé chọn bừa ở Mega. Nay in "chọn bừa k/n" bên cạnh.
+
+**Thiếu hiệu chuẩn — đo được, production không đổi:**
+
+- Legacy trên Mega kém luật công bằng có ý nghĩa ngoài mẫu, và nhiệt độ học trên validation gần
+  bằng 0: các hệ số "×" mà legacy tự báo cho bộ đề xuất nên đọc là ×1. Không chỉnh engine: hỗn
+  hợp ấy là e-process, phải giữ chuyên gia khác công bằng để có công suất; câu kết luận của nó vốn
+  đã nói "mọi bộ số vẫn có cùng xác suất" khi chưa có bằng chứng, và xác suất triển khai là công bằng.
+- ML: nhiệt độ validation không ổn định (Mega chạm biên trên, test lại kém hơn bản gốc), nên
+  không hiệu chuẩn production bằng nó.
+
+**Hợp lệ nhưng chưa có sức dự báo:** không nhánh nào thắng luật công bằng có ý nghĩa trên test;
+H ≥ 4 không xuất hiện ở nhánh nào trên test (kỳ vọng ngẫu nhiên 0,53 kỳ Mega, 0,21 kỳ Power), và
+cỡ mẫu chỉ đủ phát hiện mức tăng ×8 (Mega) hoặc ×14 (Power).
+
+**Ghi nhận về danh mục 5 vé của ML:** năm bộ xác suất cao nhất của một luật gần đều là các "hàng
+xóm" của nhau — trung bình hai vé chung 5/6 số (Mega) và 4,8/6 (Power), độ phủ 27–33%. Đó là xếp
+hạng, không phải danh mục mua; ai mua cả năm vé chủ yếu mua lại cùng một rủi ro.
+
+## Hướng tiếp theo
+
+- Bằng chứng thật chỉ đến từ các kỳ SAU 13-10-2026: luồng live sẵn có (sổ ghi trước giờ quay, cổng
+  e-value) tiếp tục chạy; đừng chạy lại benchmark hồi cứu này với cấu hình khác rồi gọi là test.
+- Nguồn tín hiệu duy nhất có thể là vật lý (máy quay, bộ bóng) — chỉ khi Vietlott công bố siêu dữ
+  liệu ấy; mọi đặc trưng thuần lịch sử kết quả đã được thử và bị ablation loại.
+- Nếu cần nhiều vé, dùng danh mục ít trùng (`MLForecaster.portfolio`) và đo nó bằng
+  `hits.portfolio_summary`, với số vé và ngân sách cố định.
