@@ -346,7 +346,12 @@ tiến cứu mới. Bộ lọc thì đo lại MỖI ngày, nên mức tin của 
 `multi_hit_report.anytime_p`): 2 000 lịch sử không kỹ năng xem lại sau mỗi kỳ với p thường vượt 0,05 ở
 30,9%, với p luôn hợp lệ ở 3,45%. e-process CHỈ chạy trên kỳ quay sau `VIP_FROZEN_AT` (12-10-2026):
 bộ lọc được thiết kế sau khi đã xem lịch sử trước đó, nên walk-forward hồi cứu chỉ là mô tả. `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
-từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. `tests/test_multi_hit_page.py` dựng cả lịch sử
+từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. Từ 13-10-2026 trang GỌN theo yêu cầu: năm con ≥ 2 nháy và
+năm cặp xiên 2 (`src/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
+cùng kỳ; 4 133 kỳ trúng 5,49% so với 5,52% chọn bừa) ở trên cùng, mỗi khối MỘT dòng số đo; giải thích
+thu vào «Chi tiết phép đo». Cặp không có phép kiểm độ nhạy nên chỉ được nói "chưa có bằng chứng", không
+"không hơn". `benchmark.json` có phiên bản riêng (`BENCHMARK_VERSION`): đổi khuôn `vip.json`
+(`MEASURE_VERSION`) không được mở lại phép kiểm một lần. `tests/test_multi_hit_page.py` dựng cả lịch sử
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 

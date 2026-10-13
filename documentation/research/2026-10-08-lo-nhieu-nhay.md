@@ -284,3 +284,64 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
 
 Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
 Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).
+
+## Trang gọn và cặp xiên 2 — 13-10-2026
+
+Chủ dự án yêu cầu trang bớt giải thích, đưa ra các con số và cặp số cho kỳ tới, "mạnh dạn đề xuất
+trên cơ sở đã tính toán qua các kỳ quay". Trang nay mở bằng hai khối:
+
+- **Lô về ≥ 2 nháy:** năm con của bộ lọc VIP, mỗi con kèm xác suất hiệu chỉnh.
+- **Xiên 2:** năm cặp hay về cùng nhau nhất (luật bên dưới), mỗi cặp kèm số kỳ cùng về.
+
+Mỗi khối kèm MỘT dòng số đo: tỉ lệ trúng đã kiểm trên mọi kỳ so với chọn bừa cùng kỳ, phần tiến
+cứu, và kết luận suy từ số đo. Tiếp theo là bảng 10 kỳ gần nhất. Mọi phần giải thích (kết luận đầy
+đủ, lượt thử thứ hai, độ nhạy, cách đo) thu vào mục mở rộng «Chi tiết phép đo».
+
+### Luật chọn cặp, chốt trước khi kiểm chứng
+
+`src/multi_hit_pairs.py`. Luật và tham số được chốt TRƯỚC khi chạy kiểm chứng; không tham số nào
+được dò trên kết quả.
+
+1. Điểm của cặp (a, b) ở kỳ t = số kỳ trong 100 kỳ ngay trước t mà cả a lẫn b cùng về (mỗi con
+   ≥ 1 nháy).
+2. Hoà điểm thì cặp cùng về gần đây hơn đứng trước; còn hoà thì phá bằng một hoán vị cố định theo
+   kỳ.
+3. Lấy 5 cặp, mỗi con nằm trong tối đa 2 cặp: năm cặp cùng chứa một con gần như là một lần đặt.
+
+Mức nền: hai con định trước cùng về với xác suất 1 − 2·0,99²⁷ + 0,98²⁷ ≈ 5,49%. Mốc so là chọn
+bừa 5 cặp trong CÙNG kỳ: kỳ có d con khác nhau về thì C(d, 2) trong 4 950 cặp cùng về. Các cặp
+chung một con trúng hay trượt cùng nhau, nên z lấy sai số từ hiệu từng kỳ, và khoảng tin cậy tính
+theo cụm kỳ như bộ lọc.
+
+### Kết quả trên dữ liệu thật
+
+Walk-forward trên 4 133 kỳ (15-04-2015 → 12-10-2026):
+
+| | Trúng | Chọn bừa cùng kỳ | z | p một phía |
+|---|---|---|---|---|
+| 5 cặp xiên 2 | 5,49% (1 135/20 665) | 5,52% | −0,16 | 0,565 |
+
+Không có lợi thế. Như bộ lọc, phần này là MÔ TẢ hồi cứu: luật được thiết kế khi đã có lịch sử đến
+12-10-2026. Mức tin chỉ tính bằng p luôn hợp lệ trên các kỳ sau `multi_hit_pairs.FROZEN_AT` =
+12-10-2026. Vì không có phép kiểm độ nhạy riêng cho cặp, khi chưa đạt trang chỉ ghi "chưa có bằng
+chứng hơn chọn bừa", không bao giờ ghi "không hơn".
+
+### Phiên bản tệp đo tách đôi
+
+`vip.json` đổi khuôn (thêm khoá `pairs`), nên `MEASURE_VERSION` = 7. `benchmark.json` là phép kiểm
+một lần đã đóng băng, nên có phiên bản riêng `BENCHMARK_VERSION` = 6. Đổi khuôn số đo hằng ngày
+không được buộc phép kiểm ấy chạy lại.
+
+### Phép kiểm
+
+`tests/test_multi_hit_page.py` ghim các điều sau:
+
+- điểm của kỳ t chỉ đọc các kỳ trước t (đảo mọi kỳ từ t trở đi không đổi các cặp đã chọn cho kỳ ≤ t);
+- số trúng và mốc C(d, 2)/4 950 của từng kỳ;
+- số kỳ cùng về trong cửa sổ, và ngày cùng về gần nhất in trên trang;
+- luật phá hoà và trần 2 cặp mỗi con;
+- lịch sử có cài một cặp hay đi cùng nhau thì luật tìm ra cặp ấy và trang PHẢI in "có bằng chứng
+  hơn chọn bừa";
+- lịch sử công bằng không bao giờ in "không hơn";
+- chỉ các kỳ sau ngày chốt vào mức tin;
+- mọi mục của ngăn kéo bằng chứng trỏ vào một thẻ có thật trên trang.

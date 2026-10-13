@@ -18,6 +18,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 import build_multi_hit_page as page
+import multi_hit_pairs as pairs
 import multi_hit_report as report
 import multi_hit_vip as m
 
@@ -218,7 +219,7 @@ def _history(n: int = 100):
 
 
 def _cached(draws, labels, measured: int, **extra) -> dict:
-    return {"version": report.MEASURE_VERSION, "draws": measured,
+    return {"version": report.BENCHMARK_VERSION, "draws": measured,
             "history_sha256": report.history_fingerprint(draws, labels, measured), **extra}
 
 
@@ -234,9 +235,20 @@ def test_a_missing_or_older_benchmark_is_remeasured(register_at) -> None:
     draws, labels = _history()
     register_at(labels, 70)
     assert report.benchmark_is_stale(None, draws, labels)
-    old = _cached(draws, labels, 70, version=report.MEASURE_VERSION - 1)
+    old = _cached(draws, labels, 70, version=report.BENCHMARK_VERSION - 1)
     assert report.benchmark_is_stale(old, draws, labels)
     assert not report.benchmark_is_stale(_cached(draws, labels, 70), draws, labels)
+
+
+def test_a_new_daily_measurement_format_does_not_reopen_the_one_time_test(register_at, monkeypatch) -> None:
+    """vip.json đổi khuôn (thêm cặp xiên 2) không được buộc phép kiểm một lần đã đóng băng chạy lại."""
+    draws, labels = _history()
+    register_at(labels, 70)
+    cached = _cached(draws, labels, 70)
+    monkeypatch.setattr(report, "MEASURE_VERSION", report.MEASURE_VERSION + 1)
+    assert not report.benchmark_is_stale(cached, draws, labels)
+    monkeypatch.setattr(report, "BENCHMARK_VERSION", report.BENCHMARK_VERSION + 1)
+    assert report.benchmark_is_stale(cached, draws, labels)
 
 
 @pytest.mark.parametrize("added", [0, 30, 240])
@@ -310,7 +322,7 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
     def fake_benchmark(draws, labels):
         n = report.registered_draws(labels)
         calls.append(n)
-        return {"version": report.MEASURE_VERSION, "draws": n,
+        return {"version": report.BENCHMARK_VERSION, "draws": n,
                 "history_sha256": report.history_fingerprint(draws, labels, n)}
 
     monkeypatch.setattr(report, "benchmark_section", fake_benchmark)
@@ -338,7 +350,7 @@ def _data_dir(tmp_path, frame) -> Path:
     out = tmp_path / report.OUT_DIR
     out.mkdir()
     (out / report.VIP_FILE).write_text(json.dumps(report.vip_section(draws, labels)), encoding="utf-8")
-    bench = {"version": report.MEASURE_VERSION, "draws": len(draws),
+    bench = {"version": report.BENCHMARK_VERSION, "draws": len(draws),
              "history_sha256": report.history_fingerprint(draws, labels)}
     (out / report.BENCHMARK_FILE).write_text(json.dumps(bench), encoding="utf-8")
     return tmp_path
@@ -386,17 +398,20 @@ def test_the_builder_keeps_the_frozen_benchmark_as_new_draws_arrive(tmp_path, re
 
 
 def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:
-    """Sổ có thêm kỳ mà bước đo hỏng: top-k của lần đo cũ là cho một kỳ ĐÃ quay."""
-    frame = m.mock_history(86, seed=5)
-    data = _data_dir(tmp_path, frame.iloc[:80].reset_index(drop=True))
+    """Sổ có thêm kỳ mà bước đo hỏng: con và cặp của lần đo cũ là cho một kỳ ĐÃ quay."""
+    frame = m.mock_history(126, seed=5)
+    data = _data_dir(tmp_path, frame.iloc[:120].reset_index(drop=True))
     frame.to_csv(data / "xsmb-2-digits.csv", index=False)
     got = page.load(data)
     assert (got.vip_state, got.behind_by) == ("behind", 6)
+    assert got.vip["pairs"]["picks"]                             # có cặp đã đo, nhưng không được in
     soup = BeautifulSoup(page.render(got.vip, None, last_date=got.last_date,
                                      behind_by=got.behind_by), "html.parser")
     assert soup.select_one("#app-vip-picks [data-vip-behind]")["data-vip-behind"] == "6"
-    assert not soup.select("#app-vip-picks tbody tr")
+    assert not soup.select("#app-vip-picks .app-vip-strip li")
+    assert not soup.select("#app-vip-pairs .app-vip-strip li")
     assert soup.select_one(".app-vip-verdict") is not None      # kiểm chứng của đoạn đã đo vẫn in
+    assert soup.select_one(".app-vip-pair-verdict") is not None
 
 
 def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) -> None:
@@ -577,6 +592,18 @@ def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> Non
     assert "Chưa có số đo của lượt thử thứ hai" in soup.get_text()
 
 
+@pytest.mark.parametrize("case", ["fair", "planted", "no-bench"])
+def test_the_detailed_conclusion_carries_the_same_headline(case, fair_vip, planted_vip, bench) -> None:
+    """Kết luận ở khối trên và kết luận đầy đủ trong «Chi tiết phép đo» không được nói hai điều khác nhau."""
+    vip, b = {"fair": (fair_vip, bench), "planted": (planted_vip, bench), "no-bench": (fair_vip, None)}[case]
+    soup = _soup(vip, b)
+    top = soup.select_one(".app-vip-verdict b").get_text(strip=True)
+    detail = soup.select_one("#app-lab-conclusion p b").get_text(strip=True)
+    assert top == detail
+    v = page.verdict(vip, b)
+    assert top == page._HEADLINE[(v["state"], v["reason"])] + "."
+
+
 def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> None:
     """Bằng chứng dương của chính bộ lọc không cần lượt hai để đứng vững."""
     assert _verdict(_soup(planted_vip, None)) == "hon"
@@ -608,11 +635,17 @@ def test_the_confidence_rule_on_the_page_is_the_model_s_rule(fair_vip) -> None:
 # --------------------------------------------------------------------------- bảng
 
 
-def test_the_picks_table_lists_the_measured_top_k(planted_vip) -> None:
-    rows = _soup(planted_vip, None).select("#app-vip-picks tbody tr")
-    numbers = [r.select("td")[1].get_text(strip=True) for r in rows]
+def _strip(soup: BeautifulSoup, ident: str) -> list[str]:
+    return [li.select_one("b").get_text(strip=True) for li in soup.select(f"#{ident} .app-vip-strip li")]
+
+
+def test_the_picks_strip_lists_the_measured_top_k(planted_vip) -> None:
+    soup = _soup(planted_vip, None)
+    numbers = _strip(soup, "app-vip-picks")
     assert numbers == [p["number"] for p in planted_vip["picks"]]
     assert {int(n) for n in PLANTED} <= {int(n) for n in numbers}
+    probs = [li.select_one("small").get_text(strip=True) for li in soup.select("#app-vip-picks .app-vip-strip li")]
+    assert probs == [f"P {page._pct(p['probability'])}" for p in planted_vip["picks"]]
 
 
 def test_every_strategy_of_the_benchmark_has_a_reader_facing_label(bench) -> None:
@@ -628,12 +661,6 @@ def test_the_candidate_row_is_marked_and_only_that_row(bench, fair_vip) -> None:
     assert marked == [f"{page.strategy_label(bench['candidate'])} ứng viên"]
 
 
-def test_reasons_use_the_vietnamese_decimal_comma() -> None:
-    raw = "Dị thường Poisson +3.44 (2 kỳ ≥2 nháy trong cửa sổ, z = +1.19, lift ×1.17)"
-    assert page._vi_decimals(raw) == "Dị thường Poisson +3,44 (2 kỳ ≥2 nháy trong cửa sổ, z = +1,19, lift ×1,17)"
-    assert page._vi_decimals("số 07 · kỳ 30.") == "số 07 · kỳ 30."
-
-
 def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
     """Ngăn kéo bằng chứng phải mô tả đúng phép tính mà bước đo dùng, không phải bản cũ."""
     import evidence_catalog
@@ -643,6 +670,183 @@ def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
     assert "hiệu từng kỳ" in steps["Ít nhất một con về"]
     assert "2·p·(1 − p)" not in steps["Ít nhất một con về"]
     assert "cụm kỳ" in steps["Kết luận từ phép đo"] and "deff" in steps["Kết luận từ phép đo"]
+    assert "C(d, 2)" in steps["Xiên 2"] and "chưa có bằng chứng" in steps["Xiên 2"]
+
+
+def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> None:
+    """Ngăn kéo nhận khối theo tiền tố tiêu đề: đổi tên thẻ mà quên danh mục là mất bằng chứng."""
+    import evidence_catalog
+
+    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    titles = [h.get_text(strip=True) for h in _soup(vip, bench).select(".ui-card-head h2")]
+    _, sections = evidence_catalog._catalog({})[page.PAGE]
+    assert len(sections) >= 7
+    for sec in sections:
+        assert any(title.startswith(sec["heading"]) for title in titles), sec["heading"]
+
+
+# --------------------------------------------------------------------------- cặp xiên 2
+
+
+def _pair_frame(n: int, pair: tuple[int, int] | None = None, rate: float = 0.4, seed: int = 11):
+    """Lịch sử giả định cùng khuôn sổ thật; ``pair`` (nếu có) được cài cùng về với xác suất ``rate``."""
+    frame = m.mock_history(n, seed=seed)
+    if pair is not None:
+        rng = np.random.default_rng(seed + 1)
+        cols = [c for c in frame.columns if c != "date"]
+        for t in np.flatnonzero(rng.random(n) < rate):
+            a, b = rng.choice(len(cols), size=2, replace=False)
+            frame.loc[t, cols[a]], frame.loc[t, cols[b]] = pair
+    return frame
+
+
+def _pairs_of(frame, after: str = BEFORE_MOCK) -> dict:
+    draws, labels = m.draws_from_frame(frame)
+    return report.pairs_section(draws, labels, prospective_after=after)
+
+
+def _present(frame) -> np.ndarray:
+    return m.counts_matrix(m.draws_from_frame(frame)[0]) >= 1
+
+
+def test_the_pair_baseline_is_two_fixed_numbers_both_coming() -> None:
+    assert pairs.base_rate() == pytest.approx(1 - 2 * 0.99 ** 27 + 0.98 ** 27)
+    present = _present(m.mock_history(4000, seed=3))
+    assert (present[:, 12] & present[:, 34]).mean() == pytest.approx(pairs.base_rate(), abs=0.012)
+
+
+def test_pair_picks_read_only_earlier_draws() -> None:
+    present = _present(m.mock_history(260, seed=4))
+    before = pairs.walk_forward(present)
+    t = 200
+    changed = present.copy()
+    changed[t:] = ~changed[t:]                       # đảo toàn bộ từ kỳ t trở đi
+    after = pairs.walk_forward(changed)
+    upto = t - pairs.WINDOW + 1                     # các hàng chọn cho kỳ ≤ t
+    assert (before["picks"][:upto] == after["picks"][:upto]).all()
+    assert not (before["picks"][upto:] == after["picks"][upto:]).all()
+
+
+def test_pair_hits_and_the_same_draw_baseline() -> None:
+    present = _present(m.mock_history(180, seed=6))
+    wf = pairs.walk_forward(present)
+    for j, t in enumerate(wf["rows"]):
+        row = present[t]
+        chosen = wf["picks"][j]
+        assert wf["hits"][j] == sum(bool(row[pairs.PAIR_A[i]] and row[pairs.PAIR_B[i]]) for i in chosen)
+        d = int(row.sum())
+        # Chọn bừa k cặp trong 4 950: kỳ có d con khác nhau về thì C(d, 2) cặp cùng về.
+        assert wf["expected"][j] == pytest.approx(pairs.TOP_K * math.comb(d, 2) / 4950)
+
+
+def test_the_pair_score_counts_draws_together_in_the_window() -> None:
+    present = _present(m.mock_history(150, seed=7))
+    wf = pairs.walk_forward(present)
+    window = present[-pairs.WINDOW:]
+    for i, together, last in zip(wf["picks"][-1], wf["together"], wf["last"], strict=True):
+        a, b = pairs.PAIR_A[i], pairs.PAIR_B[i]
+        both = window[:, a] & window[:, b]
+        assert together == int(both.sum())
+        assert last == len(present) - pairs.WINDOW + int(np.flatnonzero(both)[-1])
+
+
+def test_the_measurement_prints_each_pair_s_own_window_count() -> None:
+    frame = _pair_frame(300, pair=(12, 34))
+    section = _pairs_of(frame)
+    present, labels = _present(frame), list(frame["date"])
+    window = present[-pairs.WINDOW:]
+    assert section["picks"][0]["together"] > section["picks"][-1]["together"]
+    for pick in section["picks"]:
+        a, b = (int(x) for x in pick["pair"])
+        both = window[:, a] & window[:, b]
+        assert pick["together"] == int(both.sum())
+        assert pick["last_date"] == labels[len(labels) - pairs.WINDOW + int(np.flatnonzero(both)[-1])]
+
+
+def test_ties_go_to_the_pair_that_came_together_more_recently() -> None:
+    together = np.zeros(pairs.N_PAIRS, dtype=int)
+    last = np.full(pairs.N_PAIRS, -1)
+    old, recent = 10, 4000                          # hai cặp cùng điểm cao nhất
+    together[[old, recent]] = 9
+    last[old], last[recent] = 50, 90
+    assert pairs.pick_pairs(together, last, t=100, k=2) == [recent, old]
+
+
+def test_a_number_sits_in_at_most_two_pairs() -> None:
+    present = _present(m.mock_history(150, seed=8))
+    present[:, 5] = True                            # con 5 về mọi kỳ: mọi cặp có 5 đều điểm cao
+    picks = pairs.walk_forward(present)["picks"]
+    for row in picks:
+        used = np.bincount(np.concatenate([pairs.PAIR_A[row], pairs.PAIR_B[row]]), minlength=100)
+        assert used.max() <= pairs.MAX_PER_NUMBER
+    assert (np.bincount(np.concatenate([pairs.PAIR_A[picks[-1]], pairs.PAIR_B[picks[-1]]]),
+                        minlength=100)[5] == pairs.MAX_PER_NUMBER)
+
+
+def test_the_pair_rule_finds_a_planted_pair_and_the_page_says_so() -> None:
+    section = _pairs_of(_pair_frame(400, pair=(12, 34)))
+    assert section["picks"][0]["pair"] == ["12", "34"]
+    assert section["backtest"]["lift"] > 2 and section["backtest"]["p_value"] < 1e-6
+    assert section["prospective"]["p_anytime"] < 0.01 and section["confidence"] == "High"
+    assert page.pair_verdict(section) == "hon"
+    text = BeautifulSoup(page.pairs_card(section), "html.parser").get_text(" ", strip=True)
+    assert "Có bằng chứng hơn chọn bừa" in text
+
+
+def test_a_fair_history_has_no_pair_evidence_and_never_reads_not_better() -> None:
+    section = _pairs_of(_pair_frame(400))
+    assert section["confidence"] == "Low" and page.pair_verdict(section) == "chua-co-bang-chung"
+    soup = BeautifulSoup(page.pairs_card(section), "html.parser")
+    assert soup.select_one(".app-vip-pair-verdict").get_text(strip=True) == "Chưa có bằng chứng hơn chọn bừa."
+    assert "không hơn" not in soup.get_text().lower()
+
+
+def test_a_retrospective_pair_edge_alone_cannot_raise_the_confidence() -> None:
+    frame = _pair_frame(400, pair=(12, 34))
+    section = _pairs_of(frame, after=frame["date"].iloc[-1])
+    assert section["backtest"]["p_value"] < 1e-6
+    assert section["prospective"]["draws"] == 0 and section["prospective"]["lift"] is None
+    assert section["confidence"] == "Low"
+
+
+def test_only_draws_after_the_pair_freeze_are_prospective() -> None:
+    frame = _pair_frame(220)
+    labels = list(frame["date"])
+    section = _pairs_of(frame, after=labels[189])
+    assert section["prospective"]["draws"] == 30
+    wf = pairs.walk_forward(_present(frame))
+    assert section["prospective"]["hits"] == int(wf["hits"][-30:].sum())
+
+
+def test_the_pair_measurement_is_strict_json_even_when_short() -> None:
+    assert _pairs_of(m.mock_history(pairs.WINDOW, seed=1)) is None
+    section = _pairs_of(m.mock_history(pairs.WINDOW + 1, seed=1))
+    assert section["backtest"]["draws"] == 1
+    json.dumps(section, allow_nan=False)
+    assert "Chưa đủ lịch sử" in page.pairs_card(None)
+
+
+def test_the_pairs_strip_lists_the_measured_pairs() -> None:
+    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    soup = _soup(vip, None)
+    assert _strip(soup, "app-vip-pairs") == [" · ".join(p["pair"]) for p in vip["pairs"]["picks"]]
+    window = vip["pairs"]["config"]["window"]
+    counts = [li.select_one("small").get_text(strip=True) for li in soup.select("#app-vip-pairs .app-vip-strip li")]
+    assert counts == [f"{p['together']}/{window} kỳ" for p in vip["pairs"]["picks"]]
+
+
+def test_the_recent_table_shows_each_draw_s_pairs(tmp_path) -> None:
+    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    rows = _soup(vip, None).select("#app-vip-recent tbody tr")
+    by_date = {r["date"]: r for r in vip["pairs"]["recent"]}
+    assert len(rows) == len(vip["recent"])
+    for tr, r in zip(rows, vip["recent"], strict=True):
+        cells = tr.select("td")
+        shown = by_date[r["date"]]
+        assert [c.get_text(strip=True) for c in cells[3].select(".ui-badge")] == [
+            " · ".join(x["pair"]) for x in shown["picks"]]
+        assert [int(c["data-hit"]) for c in cells[3].select(".ui-badge")] == [int(x["hit"]) for x in shown["picks"]]
+        assert cells[4].get_text(strip=True) == str(shown["hits"])
 
 
 # --------------------------------------------------------------------------- trang đã xuất bản
@@ -653,5 +857,6 @@ def test_the_published_page_agrees_with_the_published_measurement() -> None:
     bench = json.loads((DATA / "benchmark.json").read_text(encoding="utf-8"))
     soup = BeautifulSoup((ROOT / "docs" / page.PAGE).read_text(encoding="utf-8"), "html.parser")
     assert _verdict(soup) == page.verdict(vip, bench)["state"]
-    picks = [r.select("td")[1].get_text(strip=True) for r in soup.select("#app-vip-picks tbody tr")]
-    assert picks == [p["number"] for p in vip["picks"]]
+    assert _strip(soup, "app-vip-picks") == [p["number"] for p in vip["picks"]]
+    assert _strip(soup, "app-vip-pairs") == [" · ".join(p["pair"]) for p in vip["pairs"]["picks"]]
+    assert soup.select_one(".app-vip-pair-verdict")["data-verdict"] == page.pair_verdict(vip["pairs"])
