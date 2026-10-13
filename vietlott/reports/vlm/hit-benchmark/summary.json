@@ -155,10 +155,10 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "c8378142324da594462bef72ddfb42682546ba58",
+    "git_commit": "08913499f225678b3feae75e83bfcb730b7749c3",
     "git_dirty": false,
     "source_sha256": {
-     "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
+     "vlm/forecast/hit_benchmark.py": "61b6f6ff87ce07b21cc0ac1c077bb5445253b80f3422d5c29ad6a042c6a5b806",
      "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
@@ -190,7 +190,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T14:36:25+00:00"
+    "generated_at": "2026-10-13T14:57:11+00:00"
    },
    "split": {
     "dev": {
@@ -3506,10 +3506,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.785729774000174,
-    "ml_seconds": 259.1729123609998,
-    "challenger_selection_seconds": 20.662266703000114,
-    "total_seconds": 298.5565112270001
+    "legacy_seconds": 3.1737088339996262,
+    "ml_seconds": 260.84608214000036,
+    "challenger_selection_seconds": 10.811227628999404,
+    "total_seconds": 366.08872608300044
    }
   },
   "power655": {
@@ -3523,10 +3523,10 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "c8378142324da594462bef72ddfb42682546ba58",
+    "git_commit": "08913499f225678b3feae75e83bfcb730b7749c3",
     "git_dirty": false,
     "source_sha256": {
-     "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
+     "vlm/forecast/hit_benchmark.py": "61b6f6ff87ce07b21cc0ac1c077bb5445253b80f3422d5c29ad6a042c6a5b806",
      "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
@@ -3558,7 +3558,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T14:43:48+00:00"
+    "generated_at": "2026-10-13T15:08:02+00:00"
    },
    "split": {
     "dev": {
@@ -6874,10 +6874,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.5118045789999996,
-    "ml_seconds": 409.3586604580005,
-    "challenger_selection_seconds": 11.305167845000142,
-    "total_seconds": 442.4785679939996
+    "legacy_seconds": 3.2869913429994995,
+    "ml_seconds": 416.6356881720003,
+    "challenger_selection_seconds": 11.618868196000221,
+    "total_seconds": 650.2047797429996
    }
   }
  }
