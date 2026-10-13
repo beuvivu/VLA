@@ -69,7 +69,9 @@ vé ấy (`hits.any_ticket_tail`: chia hợp các vé thành vùng Venn, số co
 nhiều chiều). Mức hiếm như H = 6 vì thế có mốc 1/C(N,6) cho mỗi vé thay vì 0 — một mẫu mô phỏng
 hữu hạn không bao giờ gặp nó và cho p = 0. Monte Carlo chỉ còn là dự phòng cho danh mục quá lớn để
 liệt kê, và ước lượng khi ấy bị kẹp vào cận chính xác (`hits.union_bounds`: Bonferroni bậc hai
-Σ P(Aᵢ) − Σ P(Aᵢ ∩ Aⱼ) ở dưới, Σ P(Aᵢ) ở trên — ở mức hiếm hai cận gần trùng). Danh mục của ML
+Σ P(Aᵢ) − Σ P(Aᵢ ∩ Aⱼ) ở dưới, Σ P(Aᵢ) ở trên — ở mức hiếm hai cận gần trùng); ước lượng ấy chỉ
+vào số kỳ vọng mô tả, còn phép kiểm của kỳ đó dùng cận TRÊN chính xác để p không bao giờ nhỏ đi vì sai
+số mô phỏng. Benchmark đã đăng ký tính chính xác mọi kỳ, không đi qua nhánh này. Danh mục của ML
 học lại sau mỗi kỳ, nên mốc của kỳ t phụ thuộc các kết quả trước; tổng số kỳ đạt khi ấy KHÔNG theo
 Poisson–nhị thức của dãy mốc đã thực hiện (ba kỳ đủ để nó bác bỏ 5,84% ở α = 5%). p báo cáo là
 e-process cho xác suất dự đoán được (`hits.predictable_p_value`: trung bình tỉ số hợp lý trên lưới hệ

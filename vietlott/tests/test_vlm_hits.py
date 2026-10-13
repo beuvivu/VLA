@@ -236,3 +236,18 @@ def test_a_tiny_simulation_cannot_push_one_ticket_off_its_exact_null():
         out = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45, simulations=simulations, exact_limit=0)
         for level in (3, 4, 5, 6):
             assert out['any_ticket'][f'ge{level}']['fair_rate'] == pytest.approx(fair[level:].sum(), rel=1e-12)
+
+
+def test_fallback_p_values_use_an_exact_upper_bound_not_the_point_estimate():
+    """Ước lượng điểm Monte Carlo của SIX ở H ≥ 3 (0,1070) thấp hơn xác suất thật (0,1099): đưa nó vào phép kiểm làm p nhỏ đi."""
+    drawn = [[1, 2, 3, 20, 21, 22]] * 6 + [[30, 31, 32, 33, 34, 35]] * 4
+    fallback = portfolio_summary([SIX] * 10, drawn, 45, exact_limit=0)['any_ticket']
+    exact = portfolio_summary([SIX] * 10, drawn, 45)['any_ticket']
+    upper = union_bounds(SIX, 45)[1]
+    best = [max(hit_count(t, d, 45) for t in SIX) for d in drawn]
+    for level in (3, 4, 5, 6):
+        fb, ex = fallback[f'ge{level}'], exact[f'ge{level}']
+        assert fb['p_value_greater'] >= ex['p_value_greater'] - 1e-12
+        assert fb['p_value_fixed_portfolios'] >= ex['p_value_fixed_portfolios'] - 1e-12
+        assert fb['p_value_greater'] == pytest.approx(predictable_p_value([b >= level for b in best], [upper[level]] * 10), rel=1e-12)
+    assert fallback['ge3']['p_value_greater'] < 0.05  # cận trên vẫn đủ chặt để thấy tín hiệu cài sẵn

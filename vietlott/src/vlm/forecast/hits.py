@@ -308,7 +308,10 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     trên chính bộ vé (``any_ticket_tail``). Danh mục quá lớn để liệt kê (cận vượt ``exact_limit``)
     mới dùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ, kèm sai số Monte Carlo);
     khi ấy ước lượng bị kẹp vào cận chính xác ``union_bounds`` (Bonferroni bậc hai, tổng các vé) — mức
-    hiếm không gặp trong mẫu hữu hạn không thành xác suất 0, cũng không thành cận của một vé.
+    hiếm không gặp trong mẫu hữu hạn không thành xác suất 0, cũng không thành cận của một vé. Ước lượng
+    điểm ấy CHỈ dùng cho số kỳ vọng mô tả: phép kiểm của kỳ đó dùng cận TRÊN chính xác Σ P(Aᵢ), vì một
+    ước lượng thấp hơn xác suất thật làm p nhỏ đi. Mọi thừa số của e-process không tăng theo p_t, nên
+    p̃_t ≥ p_t vẫn cho siêu martingale — p chỉ có thể lớn hơn; Poisson–nhị thức cũng đơn điệu như thế.
 
     ``p_value_greater`` là p luôn hợp lệ (``predictable_p_value``): danh mục của mô hình học lại sau
     mỗi kỳ nên xác suất mốc phụ thuộc kết quả trước. ``p_value_fixed_portfolios`` (Poisson–nhị thức)
@@ -324,6 +327,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     per_ticket = []
     best = []
     fair_any = {level: [] for level in LEVELS}
+    null_for_test = {level: [] for level in LEVELS}  # chính xác, hoặc cận trên chính xác ở nhánh dự phòng
     # Mọi kỳ dùng CÙNG các mô phỏng, nên ước lượng của các kỳ tương quan: sai số của tổng kỳ vọng
     # phải tính từ tổng theo TỪNG mô phỏng, không cộng phương sai như thể độc lập.
     aggregate = {level: np.zeros(simulations) for level in LEVELS}
@@ -336,6 +340,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
         if tail is not None:
             for level in LEVELS:
                 fair_any[level].append(float(tail[level]))
+                null_for_test[level].append(float(tail[level]))
         else:
             if incidence is None:
                 rng = np.random.default_rng(seed)
@@ -349,6 +354,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
             for level in LEVELS:
                 reached = simulated >= level
                 fair_any[level].append(float(np.clip(reached.mean(), lower[level], upper[level])))
+                null_for_test[level].append(float(upper[level]))
                 aggregate[level] += reached
         pairs = [len(set(a) & set(b)) for a, b in combinations(tickets, 2)]
         overlap.append(float(np.mean(pairs)) if pairs else 0.0)
@@ -363,14 +369,15 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
             'reached': reached, 'rate': reached / len(best), 'expected': expected,
             'fair_rate': expected / len(best),
             'monte_carlo_se': float(aggregate[level].std(ddof=1) / np.sqrt(simulations)),
-            'p_value_greater': predictable_p_value(best_arr >= level, probabilities),
-            'p_value_fixed_portfolios': poisson_binomial_sf(reached, probabilities),
+            'p_value_greater': predictable_p_value(best_arr >= level, null_for_test[level]),
+            'p_value_fixed_portfolios': poisson_binomial_sf(reached, null_for_test[level]),
         }
     return {'draws': len(portfolios), 'tickets_per_draw': size, 'simulations': simulations, 'seed': seed,
             'exact_draws': len(portfolios) - monte_carlo_draws, 'monte_carlo_draws': monte_carlo_draws,
             'per_ticket': summarize_hits(per_ticket, n, k, len(portfolios[0][0])),
             'per_ticket_note': 'Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.',
             'any_ticket_note': ('p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); '
-                                'p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.'),
+                                'p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ. Kỳ tính bằng '
+                                'Monte Carlo kiểm bằng cận trên chính xác, không bằng ước lượng điểm.'),
             'any_ticket': any_level, 'mean_pairwise_overlap': float(np.mean(overlap)),
             'mean_coverage': float(np.mean(coverage))}
