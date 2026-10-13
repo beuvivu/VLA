@@ -58,7 +58,7 @@ và z theo phương sai siêu bội. Đơn vị là kỳ quay.
 
 H ≥ 4 hiếm: Mega 0,139%, Power 0,062% mỗi vé. `hits.detectable_lift` cho hệ số tăng nhỏ nhất
 phát hiện được với công suất 80%: trên ~380 kỳ test chỉ một mức tăng khoảng ×8 (Mega) hoặc ×14
-(Power) mới thấy được, và để phát hiện ×2 cần ~6.900 kỳ Mega (≈ 44 năm quay). Vì thế H ≥ 4 được
+(Power) mới thấy được, và để phát hiện ×2 cần 6.502 kỳ Mega (≈ 42 năm quay) hoặc 14.647 kỳ Power. Vì thế H ≥ 4 được
 báo cáo nhưng KHÔNG dùng để đề bạt; "không thấy H ≥ 4" trên cửa sổ này là "chưa đủ bằng chứng".
 
 Nhiều vé: `hits.portfolio_summary` cố định số vé, tách chỉ số từng vé với "ít nhất một vé đạt

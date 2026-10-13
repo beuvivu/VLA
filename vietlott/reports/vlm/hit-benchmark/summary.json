@@ -155,11 +155,11 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "66b8366b5402be89b26380348c98459cccaa00f0",
+    "git_commit": "c8378142324da594462bef72ddfb42682546ba58",
     "git_dirty": false,
     "source_sha256": {
      "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
-     "vlm/forecast/hits.py": "b431c1c7b1c9d46eb1e9d44be6f0acc984dd8f4e5f96ec4c7fbdda5513fafde1",
+     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
@@ -190,7 +190,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T14:04:23+00:00"
+    "generated_at": "2026-10-13T14:36:25+00:00"
    },
    "split": {
     "dev": {
@@ -2970,8 +2970,8 @@
       "rate": 0.036228113021125025,
       "lift": 1.5200131573885778
      },
-     "draws_needed_for_lift_2": 379,
-     "draws_needed_for_lift_1_2": 6967
+     "draws_needed_for_lift_2": 355,
+     "draws_needed_for_lift_1_2": 6895
     },
     "ge4": {
      "fair_rate": 0.0013934826753885176,
@@ -2991,8 +2991,8 @@
       "rate": 0.00526986058590978,
       "lift": 3.7817912479180897
      },
-     "draws_needed_for_lift_2": 6899,
-     "draws_needed_for_lift_1_2": 124188
+     "draws_needed_for_lift_2": 6502,
+     "draws_needed_for_lift_1_2": 120492
     }
    },
    "portfolio_ml": {
@@ -3086,7 +3086,7 @@
        "rate": 0.060209424083769635,
        "expected": 23.7604,
        "fair_rate": 0.0622,
-       "monte_carlo_se": 0.03337851338810643,
+       "monte_carlo_se": 0.652393355611875,
        "p_value_greater": 0.5940033939586009
       },
       "ge4": {
@@ -3094,7 +3094,7 @@
        "rate": 0.007853403141361256,
        "expected": 1.7763000000000002,
        "fair_rate": 0.0046500000000000005,
-       "monte_carlo_se": 0.009402234322223627,
+       "monte_carlo_se": 0.18376957440861613,
        "p_value_greater": 0.2629012282760968
       },
       "ge5": {
@@ -3102,7 +3102,7 @@
        "rate": 0.0,
        "expected": 0.07640000000000002,
        "fair_rate": 0.00020000000000000006,
-       "monte_carlo_se": 0.0019542865705929617,
+       "monte_carlo_se": 0.03819713474928651,
        "p_value_greater": 1.0000000000000084
       },
       "ge6": {
@@ -3207,7 +3207,7 @@
        "rate": 0.0565149136577708,
        "expected": 79.2142,
        "fair_rate": 0.062177551020408166,
-       "monte_carlo_se": 0.060946105564670824,
+       "monte_carlo_se": 2.1637957300808406,
        "p_value_greater": 0.8137711646598017
       },
       "ge4": {
@@ -3215,7 +3215,7 @@
        "rate": 0.003924646781789639,
        "expected": 5.938350000000001,
        "fair_rate": 0.004661185243328101,
-       "monte_carlo_se": 0.017191076889625033,
+       "monte_carlo_se": 0.6099863618409485,
        "p_value_greater": 0.707225444202493
       },
       "ge5": {
@@ -3223,7 +3223,7 @@
        "rate": 0.0,
        "expected": 0.25465000000000004,
        "fair_rate": 0.00019988226059654634,
-       "monte_carlo_se": 0.003567905110145167,
+       "monte_carlo_se": 0.12645297421021515,
        "p_value_greater": 1.000000000000031
       },
       "ge6": {
@@ -3506,10 +3506,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.0572686059999796,
-    "ml_seconds": 255.59709234000002,
-    "challenger_selection_seconds": 10.869334263999917,
-    "total_seconds": 283.47366230600005
+    "legacy_seconds": 3.785729774000174,
+    "ml_seconds": 259.1729123609998,
+    "challenger_selection_seconds": 20.662266703000114,
+    "total_seconds": 298.5565112270001
    }
   },
   "power655": {
@@ -3523,11 +3523,11 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "66b8366b5402be89b26380348c98459cccaa00f0",
+    "git_commit": "c8378142324da594462bef72ddfb42682546ba58",
     "git_dirty": false,
     "source_sha256": {
      "vlm/forecast/hit_benchmark.py": "0179431a10cd19d197123900a8277467e2298662997d5c84b6eb7a9d996125ff",
-     "vlm/forecast/hits.py": "b431c1c7b1c9d46eb1e9d44be6f0acc984dd8f4e5f96ec4c7fbdda5513fafde1",
+     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
@@ -3558,7 +3558,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T14:11:36+00:00"
+    "generated_at": "2026-10-13T14:43:48+00:00"
    },
    "split": {
     "dev": {
@@ -6338,8 +6338,8 @@
       "rate": 0.023231027092672052,
       "lift": 1.7428410525801474
      },
-     "draws_needed_for_lift_2": 720,
-     "draws_needed_for_lift_1_2": 12656
+     "draws_needed_for_lift_2": 637,
+     "draws_needed_for_lift_1_2": 12462
     },
     "ge4": {
      "fair_rate": 0.000618668543196845,
@@ -6359,8 +6359,8 @@
       "rate": 0.003854494768073813,
       "lift": 6.230306697276846
      },
-     "draws_needed_for_lift_2": 16435,
-     "draws_needed_for_lift_1_2": 274177
+     "draws_needed_for_lift_2": 14647,
+     "draws_needed_for_lift_1_2": 271401
     }
    },
    "portfolio_ml": {
@@ -6454,7 +6454,7 @@
        "rate": 0.009009009009009009,
        "expected": 9.407250000000001,
        "fair_rate": 0.028250000000000004,
-       "monte_carlo_se": 0.021379306802957857,
+       "monte_carlo_se": 0.390145492793589,
        "p_value_greater": 0.9958831612487845
       },
       "ge4": {
@@ -6462,7 +6462,7 @@
        "rate": 0.003003003003003003,
        "expected": 0.5993999999999999,
        "fair_rate": 0.0017999999999999997,
-       "monte_carlo_se": 0.005469557020454215,
+       "monte_carlo_se": 0.09981254484885886,
        "p_value_greater": 0.4511554936198229
       },
       "ge5": {
@@ -6470,7 +6470,7 @@
        "rate": 0.0,
        "expected": 0.049949999999999994,
        "fair_rate": 0.00015,
-       "monte_carlo_se": 0.001580229532378129,
+       "monte_carlo_se": 0.028837203905570565,
        "p_value_greater": 1.0000000000000047
       },
       "ge6": {
@@ -6575,7 +6575,7 @@
        "rate": 0.028854824165915238,
        "expected": 31.321550000000002,
        "fair_rate": 0.02824305680793508,
-       "monte_carlo_se": 0.039010831737800726,
+       "monte_carlo_se": 1.2982675582146042,
        "p_value_greater": 0.4757195578555533
       },
       "ge4": {
@@ -6583,7 +6583,7 @@
        "rate": 0.0018034265103697023,
        "expected": 1.9967499999999996,
        "fair_rate": 0.0018004959422903513,
-       "monte_carlo_se": 0.009982872338410423,
+       "monte_carlo_se": 0.3321430157643256,
        "p_value_greater": 0.5933572528534862
       },
       "ge5": {
@@ -6591,7 +6591,7 @@
        "rate": 0.0,
        "expected": 0.16599999999999998,
        "fair_rate": 0.00014968440036068528,
-       "monte_carlo_se": 0.002880756280909581,
+       "monte_carlo_se": 0.09580705166926641,
        "p_value_greater": 1.0000000000000195
       },
       "ge6": {
@@ -6874,10 +6874,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.1874795020000875,
-    "ml_seconds": 402.621015427,
-    "challenger_selection_seconds": 10.984417613000005,
-    "total_seconds": 433.3638549330001
+    "legacy_seconds": 3.5118045789999996,
+    "ml_seconds": 409.3586604580005,
+    "challenger_selection_seconds": 11.305167845000142,
+    "total_seconds": 442.4785679939996
    }
   }
  }

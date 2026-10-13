@@ -327,7 +327,7 @@ Kiểm chứng xác suất và số khớp H cho Mega/Power (13-10-2026, `vietlo
 Power KHÔNG cộng vào H), `vlm.forecast.challengers`, `vlm.forecast.hit_benchmark` (giao thức `PROTOCOL` đăng ký
 13-10-2026: 300 kỳ khởi động, dev 50% · validation 20% · test 30%, chọn/ablation/hiệu chuẩn chỉ trên
 dev/validation, test nhìn một lần, năm điều kiện đề bạt, Holm). Đừng sửa `PROTOCOL` rồi gọi test là độc lập —
-đăng ký giao thức mới. H ≥ 4 không đủ công suất để đề bạt (phát hiện ×2 cần ~6.900 kỳ Mega); báo cáo nó, đừng
+đăng ký giao thức mới. H ≥ 4 không đủ công suất để đề bạt (phát hiện ×2 cần 6.502 kỳ Mega, 14.647 kỳ Power); báo cáo nó, đừng
 dùng nó. Benchmark và bảng điều khiển phải chấm ĐÚNG vé đã phát: ML là `Law.top`, legacy là 6 số π cao nhất.
 Checkpoint ML version 3: `pair_link`/`triple_link` không gộp tần suất của chính số ấy (bản cũ tương quan 0,99
 với `lag1`). Trang Vietlott in "chọn bừa k/n" cạnh tỷ lệ trùng theo vé (`FAIR_MATCH_RATE`).
