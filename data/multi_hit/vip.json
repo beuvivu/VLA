@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-10-13T01:28:30Z",
+  "generated_at": "2026-10-13T01:39:11Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "base_theory": 0.02974563628550431,
@@ -117,7 +117,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
     },
     {
       "date": "2026-10-11",
@@ -143,7 +145,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 4,
+      "expected": 0.2
     },
     {
       "date": "2026-10-10",
@@ -169,7 +173,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 1,
+      "expected": 0.05
     },
     {
       "date": "2026-10-09",
@@ -195,7 +201,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 5,
+      "expected": 0.25
     },
     {
       "date": "2026-10-08",
@@ -221,7 +229,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
     },
     {
       "date": "2026-10-07",
@@ -247,7 +257,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 4,
+      "expected": 0.2
     },
     {
       "date": "2026-10-06",
@@ -273,7 +285,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
     },
     {
       "date": "2026-10-05",
@@ -299,7 +313,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
     },
     {
       "date": "2026-10-04",
@@ -325,7 +341,9 @@
           "hits": 0
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 2,
+      "expected": 0.1
     },
     {
       "date": "2026-10-03",
@@ -351,7 +369,9 @@
           "hits": 1
         }
       ],
-      "multi": 0
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
     }
   ]
 }

@@ -114,6 +114,10 @@ def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
         for pick in row["picks"]:
             assert pick["hits"] == counts[t, int(pick["number"])]
         assert row["multi"] == sum(p["hits"] >= 2 for p in row["picks"])
+        # Mốc chọn bừa của TỪNG kỳ: k con trong 100, m con về ≥ 2 nháy → k·m/100.
+        m_t = int((counts[t] >= 2).sum())
+        assert row["numbers_multi"] == m_t
+        assert row["expected"] == pytest.approx(fair_vip["config"]["top_k"] * m_t / 100)
 
 
 def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
@@ -197,6 +201,44 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
     assert calls == [80, 80]
     vip = json.loads((tmp_path / report.OUT_DIR / report.VIP_FILE).read_text(encoding="utf-8"))
     assert vip["draws"] == 80
+
+
+def test_the_recent_baseline_sums_each_displayed_draw(fair_vip) -> None:
+    changed = copy.deepcopy(fair_vip)
+    for i, row in enumerate(changed["recent"]):
+        row["expected"] = 0.1 * (i + 1)          # tổng 5,5 — khác hẳn mọi trung bình toàn lịch sử
+    text = _soup(changed, None).select_one("#app-vip-recent").get_text(" ", strip=True)
+    assert "chọn bừa kỳ vọng 5,50" in text
+
+
+def _data_dir(tmp_path, frame) -> Path:
+    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    draws, labels = m.draws_from_frame(frame)
+    out = tmp_path / report.OUT_DIR
+    out.mkdir()
+    (out / report.VIP_FILE).write_text(json.dumps(report.vip_section(draws, labels)), encoding="utf-8")
+    bench = {"version": report.MEASURE_VERSION, "draws": len(draws),
+             "history_sha256": report.history_fingerprint(draws, labels)}
+    (out / report.BENCHMARK_FILE).write_text(json.dumps(bench), encoding="utf-8")
+    return tmp_path
+
+
+def test_the_builder_prints_a_benchmark_that_matches_the_history(tmp_path) -> None:
+    frame = m.mock_history(80, seed=5)
+    vip, bench = page.load(_data_dir(tmp_path, frame))
+    assert vip is not None and bench is not None
+
+
+def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_path) -> None:
+    """Bước đo hỏng sau khi một kỳ cũ được sửa: vip.json mới, benchmark.json của lịch sử cũ."""
+    frame = m.mock_history(80, seed=5)
+    data = _data_dir(tmp_path, frame)
+    fixed = frame.copy()
+    column = [c for c in fixed.columns if c != "date"][0]
+    fixed.loc[3, column] = (int(fixed.loc[3, column]) + 1) % 100
+    fixed.to_csv(data / "xsmb-2-digits.csv", index=False)
+    vip, bench = page.load(data)
+    assert vip is not None and bench is None
 
 
 # --------------------------------------------------------------------------- "ít nhất một con về"

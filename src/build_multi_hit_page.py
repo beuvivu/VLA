@@ -23,7 +23,7 @@ import re
 from pathlib import Path
 
 from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
-from multi_hit_report import BENCHMARK_REFRESH_DRAWS
+from multi_hit_report import BENCHMARK_REFRESH_DRAWS, benchmark_is_valid, load_history
 from multi_hit_vip import COMPONENT_LABELS, CONFIDENCE_P
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
@@ -123,13 +123,25 @@ def strategy_label(name: str) -> str:
 
 
 def load(data_dir: Path) -> tuple[dict | None, dict | None]:
+    """Đọc hai tệp đo. Bản đệm lượt hai không khớp lịch sử hiện tại thì bị bỏ (trả None).
+
+    Bước đo có thể hỏng giữa chừng — đã ghi ``vip.json`` mới nhưng chưa kịp đo lại lượt hai sau khi
+    một kỳ cũ được sửa. Khi ấy trang in "chưa có số đo của lượt thử thứ hai" thay vì ghép số đo của
+    một lịch sử không còn tồn tại.
+    """
     folder = data_dir / DATA_DIR
 
     def read(name: str) -> dict | None:
         path = folder / name
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
-    return read("vip.json"), read("benchmark.json")
+    vip, bench = read("vip.json"), read("benchmark.json")
+    if bench is not None:
+        draws, labels = load_history(data_dir)
+        if not benchmark_is_valid(bench, draws, labels):
+            print(f"data/{DATA_DIR}/benchmark.json không khớp lịch sử hiện tại — không in.")
+            bench = None
+    return vip, bench
 
 
 def verdict(vip: dict, bench: dict | None) -> dict:
@@ -282,12 +294,13 @@ def recent_card(vip: dict) -> str:
             for r in recent]
     k = vip["config"]["top_k"]
     hits = sum(r["multi"] for r in recent)
-    expected = len(recent) * k * vip["backtest"]["random_rate"]
+    # Kỳ vọng của chọn bừa phụ thuộc số con về ≥ 2 nháy của TỪNG kỳ đang hiện, không phải trung bình.
+    expected = sum(r["expected"] for r in recent)
     return (
         f'<p class="ui-muted" data-evidence-split>{len(recent)} kỳ gần nhất của chính kiểm chứng '
-        f"walk-forward: mỗi kỳ, năm con bộ lọc đã chọn TRƯỚC khi quay và số nháy thật của từng con. "
+        f"walk-forward: mỗi kỳ, {k} con bộ lọc đã chọn TRƯỚC khi quay và số nháy thật của từng con. "
         f"Cộng lại {hits}/{len(recent) * k} lượt về ≥ 2 nháy; chọn bừa kỳ vọng "
-        f"{_num(expected, 1)}. {len(recent)} kỳ quá ít để kết luận — kết luận nằm ở khối trên.</p>"
+        f"{_num(expected, 2)}. {len(recent)} kỳ quá ít để kết luận — kết luận nằm ở khối trên.</p>"
         + _table(["Kỳ", f"Top-{k} đã chọn · số nháy về", "Con ≥ 2 nháy"], rows, numeric="ui-r3")
     )
 

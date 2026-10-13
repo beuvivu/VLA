@@ -102,10 +102,14 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
     recent = []
     for row in bt.per_draw.tail(RECENT_DRAWS).iloc[::-1].itertuples(index=False):
         t = labels.index(row.ky)
+        multi_today = int((counts[t] >= 2).sum())
         recent.append({
             "date": row.ky,
             "picks": [{"number": n, "hits": int(counts[t, int(n)])} for n in row.chon],
             "multi": int(row.trung),
+            # Chọn bừa k con trong CÙNG kỳ có m con về ≥ 2 nháy: kỳ vọng k·m/100 (siêu bội).
+            "numbers_multi": multi_today,
+            "expected": cfg.top_k * multi_today / 100,
         })
     evaluated = bt.per_draw["ky"]
     return {
@@ -242,20 +246,25 @@ def benchmark_section(draws: np.ndarray, labels: list[str]) -> dict:
     }
 
 
-def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
-    """Đo lại khi: chưa có, khác phiên bản, lịch sử bị viết lại, hoặc đã dài thêm đủ kỳ.
+def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
+    """Bản đệm còn là số đo của CHÍNH lịch sử hiện tại: cùng phiên bản, đoạn đã đo không bị sửa.
 
-    "Viết lại" so dấu vân tay của đúng đoạn lịch sử bản đệm đã đo: sửa một kỳ cũ mà không đổi số
-    kỳ hay ngày cuối vẫn bị bắt, còn kỳ mới nối thêm ở cuối thì không làm bản đệm cũ đi.
+    So dấu vân tay của đúng đoạn lịch sử bản đệm đã đo: sửa một kỳ cũ mà không đổi số kỳ hay ngày
+    cuối vẫn bị bắt, còn kỳ mới nối thêm ở cuối thì không làm số đo cũ sai đi.
     """
     if not cached or cached.get("version") != MEASURE_VERSION:
-        return True
+        return False
     measured = int(cached.get("draws", 0))
     if not 0 < measured <= len(draws):
+        return False
+    return cached.get("history_sha256") == history_fingerprint(draws, labels, measured)
+
+
+def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:
+    """Đo lại khi bản đệm không còn hợp lệ, hoặc lịch sử đã dài thêm ``BENCHMARK_REFRESH_DRAWS`` kỳ."""
+    if not benchmark_is_valid(cached, draws, labels):
         return True
-    if cached.get("history_sha256") != history_fingerprint(draws, labels, measured):
-        return True
-    return len(draws) - measured >= BENCHMARK_REFRESH_DRAWS
+    return len(draws) - int(cached["draws"]) >= BENCHMARK_REFRESH_DRAWS
 
 
 # --------------------------------------------------------------------------- ghi
