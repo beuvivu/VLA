@@ -42,6 +42,25 @@ def test_feature_state_reload_preserves_pairs_triples_and_time():
         a.snapshot(4, '2025-01-01')
 
 
+def test_pair_and_triple_links_count_partners_not_the_number_itself():
+    """Tái hiện lỗi 13-10-2026: pair_link gộp pairs[i, i] (tần suất của i) nên trùng lag1."""
+    pairs = FeatureState(SetSpec(6, 2))
+    for did, row in enumerate(([1, 0, 0, 0, 1, 0], [0, 1, 0, 0, 1, 0], [0, 0, 0, 0, 1, 1]), start=1):
+        pairs.observe(np.array(row, float), did, '2026-01-01')
+    out = pairs.snapshot(4, '2026-01-02')
+    link = out[:, pairs.names.index('pair_link')]
+    # Số 5 về cả ba kỳ nhưng chỉ đi cùng số 6 một lần: 1 cặp / 1 bạn / 3 kỳ.
+    assert link[4] == pytest.approx(1 / 3)
+    assert link[5] == pytest.approx(1 / 3)
+    assert link[0] == pytest.approx((1 + 0) / 2 / 3)  # số 1 ngoài kỳ trước: hai bạn 5, 6
+    triples = FeatureState(SetSpec(6, 3))
+    for did, row in enumerate(([1, 1, 1, 0, 0, 0], [1, 1, 0, 1, 0, 0], [1, 1, 0, 0, 1, 0]), start=1):
+        triples.observe(np.array(row, float), did, '2026-01-01')
+    tri = triples.snapshot(4, '2026-01-02')[:, triples.names.index('triple_link')]
+    assert tri[0] == pytest.approx(1 / 3)  # bộ (1, 2, 5) một lần; hai cặp có thứ tự (2, 5), (5, 2)
+    assert tri[2] == pytest.approx(2 / 6 / 3)  # số 3: bộ (3, 1, 2); sáu cặp có thứ tự trong {1, 2, 5}
+
+
 def test_set_law_is_normalized_and_mixture_not_product_of_marginals():
     law = Law(SetSpec(4, 2), np.array([[1, 2, 3, 4], [4, 3, 2, 1]]), np.array([.75, .25]))
     probs = [law.probability(list(c)) for c in combinations(range(1, 5), 2)]

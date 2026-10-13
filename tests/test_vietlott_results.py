@@ -212,7 +212,17 @@ def test_comparison_summary_weights_by_total_selected_numbers() -> None:
     summary = soup.select_one('.vl-comparison-stat:last-child')
     assert summary.select_one('strong').get_text() == "71,4%"
     assert "5 / 7" in summary.get_text()
+    assert "chọn bừa 25,0%" in summary.get_text()        # Keno: 20 trong 80 số
     assert "Chưa phân hạng cược" in soup.get_text()
+
+
+@pytest.mark.parametrize(("product", "fair"), [("mega645", "13,3%"), ("power655", "10,9%"), ("lotto535", "14,3%")])
+def test_match_rate_is_printed_next_to_what_random_tickets_would_get(product, fair) -> None:
+    """13,3% số trùng của vé Mega đúng bằng chọn bừa; không có mốc thì nó trông như dự báo tốt."""
+    comparison = {"status": "matched", "target_id": 1, "result": {"numbers": [1, 2, 3, 4, 5, 6]},
+                  "tickets": [{"numbers": [1, 7, 8, 9, 10, 11], "matched_numbers": [1], "hits": 1}]}
+    summary = BeautifulSoup(b.comparisons_markup(product, [comparison]), "html.parser").select_one('.vl-comparison-stat:last-child')
+    assert f"chọn bừa {fair}" in summary.get_text()
 
 
 def test_unscored_comparisons_have_no_fake_zero_percentage() -> None:

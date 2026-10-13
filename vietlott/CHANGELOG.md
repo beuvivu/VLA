@@ -1,5 +1,12 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — kiểm chứng xác suất và số khớp H (13-10-2026)
+
+- **Sửa đặc trưng ML:** `pair_link`/`triple_link` không còn gộp tần suất của chính số ấy (đường chéo); checkpoint ML lên version 3, bản cũ được học lại.
+- **Sửa chấm benchmark ML:** `evaluate_series` chấm đúng vé công bố (`Law.top`) thay vì sáu số biên cao nhất.
+- **`vlm.forecast.hits`:** phân bố H của vé chốt trước kỳ quay so với siêu bội, Clopper–Pearson, p nhị thức chính xác, phân tích công suất, danh mục nhiều vé có mốc Monte Carlo.
+- **`vlm.forecast.challengers`, `vlm.forecast.hit_benchmark`, `scripts/hit_benchmark.py`:** giao thức walk-forward đăng ký trước (dev/validation/test), challenger co về công bằng và conditional logit trên đặc trưng nhân quả, ablation theo nhóm, hiệu chuẩn nhiệt độ, luật đề bạt năm điều kiện, artifact có provenance. Báo cáo: `reports/VLM_HIT_BENCHMARK_2026-10-13.md`; tài liệu: `docs/VLM_HIT_BENCHMARK.md`.
+
 ## 4.0.0 — repo riêng, bộ cài hoàn chỉnh
 
 Tách khỏi VLA thành repo độc lập.

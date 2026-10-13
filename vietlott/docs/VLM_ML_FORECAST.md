@@ -137,7 +137,9 @@ hạn, xóa evidence/pending cũ. State hỏng được giữ với suffix `.inv
 lại và báo `checkpoint_recovered`. File `ml-ledger.jsonl` lưu immutable issue/
 score events; workflow commit ledger và cache state ML. Cache mất thì evidence
 live không được dựng lại bằng một backtest giả.
-Checkpoint version 2 không nhận evidence từ state version 1. Journal dự báo
+Checkpoint version 2 không nhận evidence từ state version 1. Version 3 (13-10-2026): `pair_link` và
+`triple_link` chỉ đếm các số KHÁC của kỳ trước — bản cũ gộp `pairs[i, i]` (tần suất của chính số ấy), nên
+`pair_link` gần như trùng `lag1` (tương quan 0,99); checkpoint version 2 được cất `.invalid` và học lại. Journal dự báo
 phục hồi fragment cuối bị ghi dở (kể cả byte UTF-8 bị cắt), giữ bản `.corrupt`
 và chuẩn hóa newline. Record hỏng giữa file hoặc record hoàn chỉnh sai định
 dạng vẫn là lỗi cần kiểm tra, không bị bỏ qua âm thầm.
@@ -154,6 +156,10 @@ sản phẩm còn lại trả ghi chú để tránh chuyển một tuple dự b�
 Không mua vé, không tự đặt cược, không dùng martingale/gấp thếp để đuổi lỗ.
 
 ## Tái lập kiểm định
+
+`evaluate_series` chấm số trùng của ĐÚNG vé công bố (`Law.top`, ghi vào `draws[].ticket`), không phải sáu số có xác
+suất biên cao nhất — hai vé ấy khác nhau khi hỗn hợp không đều. Kiểm chứng số khớp H, mốc siêu bội, hiệu chuẩn
+và challenger: `docs/VLM_HIT_BENCHMARK.md`.
 
 ```bash
 python scripts/ml_report.py --bootstrap 1000 --out reports/ml-rf-diagnostics.json
