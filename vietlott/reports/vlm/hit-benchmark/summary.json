@@ -147,6 +147,59 @@
   "mega645": {
    "product": "mega645",
    "protocol_registered_at": "2026-10-13",
+   "protocol": {
+    "registered_at": "2026-10-13",
+    "products": [
+     "mega645",
+     "power655"
+    ],
+    "frozen_last_id": {
+     "mega645": 1574,
+     "power655": 1409
+    },
+    "warmup": 300,
+    "split": {
+     "dev": 0.5,
+     "validation": 0.2,
+     "test": 0.3
+    },
+    "refit_every": 26,
+    "l2_grid": [
+     0.01,
+     0.1,
+     1.0,
+     10.0
+    ],
+    "shrink_half_lives": [
+     null,
+     500,
+     100,
+     30
+    ],
+    "shrink_priors": [
+     20.0,
+     100.0,
+     500.0
+    ],
+    "ablation_folds": 4,
+    "ablation_min_positive_folds": 3,
+    "temperature_bounds": [
+     0.0,
+     2.0
+    ],
+    "alpha": 0.05,
+    "portfolio_tickets": 5,
+    "monte_carlo": 20000,
+    "seed": 20261013,
+    "promotion": {
+     "beats_fair_holm": "Δ log-score so với công bằng trên test > 0, DM HAC một phía, Holm trên mọi ứng viên × sản phẩm, p < α",
+     "beats_incumbents": "Δ so với TỪNG mô hình đang chạy (legacy, ML) trên test > 0, DM một phía p < α",
+     "validation_positive": "Δ so với công bằng trên validation > 0",
+     "stable_thirds": "Δ so với công bằng > 0 ở ít nhất 2 trong 3 đoạn liền của test",
+     "brier_not_worse": "Brier biên trên test ≤ Brier công bằng",
+     "then": "Đạt cả năm: đủ điều kiện CHẠY THỬ TIẾN CỨU; xác suất triển khai chỉ đổi khi qua cổng live hiện có"
+    }
+   },
    "provenance": {
     "seed_sha256": "51220ad0a6077535f1d0cf55fdafe80dfe55bbe57665f12920af8dfaede4d8d5",
     "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
@@ -155,7 +208,7 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "4baed40364fb3097c455c4755c3c094b44f5783c",
+    "git_commit": "95ef3204d7c660ae7700298f6de8b9b7db8da130",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -193,8 +246,8 @@
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
-     "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "bfa2fdc86ad9ac3912c74f55212b6bd4ef4f27d2e822bea315a98e6e8e7e0055",
+     "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
+     "vlm/forecast/hits.py": "6dbfe711658f5633b31ecdc8cba819ce74dd025184a12e5eea0075c5312e9335",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -221,7 +274,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T17:22:26+00:00"
+    "generated_at": "2026-10-13T17:56:49+00:00"
    },
    "split": {
     "dev": {
@@ -3117,6 +3170,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
      "any_ticket": {
       "ge3": {
        "reached": 23,
@@ -3124,7 +3178,8 @@
        "expected": 23.123375395638583,
        "fair_rate": 0.06053239632366121,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.5408392837070586
+       "p_value_greater": 0.48176619466841686,
+       "p_value_fixed_portfolios": 0.5408392837070586
       },
       "ge4": {
        "reached": 3,
@@ -3132,7 +3187,8 @@
        "expected": 1.748885827728709,
        "fair_rate": 0.004578235151122274,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.2555798605476046
+       "p_value_greater": 0.645487906384063,
+       "p_value_fixed_portfolios": 0.2555798605476046
       },
       "ge5": {
        "reached": 0,
@@ -3140,7 +3196,8 @@
        "expected": 0.045258107368147074,
        "fair_rate": 0.00011847672085902375,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.999999999999982
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.999999999999982
       },
       "ge6": {
        "reached": 0,
@@ -3148,7 +3205,8 @@
        "expected": 0.00023449796563806768,
        "fair_rate": 6.138690199949415e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0000000000000184
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 1.0000000000000184
       }
      },
      "mean_pairwise_overlap": 5.0,
@@ -3240,6 +3298,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
      "any_ticket": {
       "ge3": {
        "reached": 72,
@@ -3247,7 +3306,8 @@
        "expected": 77.0839588658647,
        "fair_rate": 0.06050546221810416,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.7409655748444833
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.7409655748444833
       },
       "ge4": {
        "reached": 5,
@@ -3255,7 +3315,8 @@
        "expected": 5.8307597488539065,
        "fair_rate": 0.00457673449674561,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.6922455758723958
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.6922455758723958
       },
       "ge5": {
        "reached": 0,
@@ -3263,7 +3324,8 @@
        "expected": 0.15091343710175248,
        "fair_rate": 0.00011845638705004119,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.9999999999999377
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.9999999999999377
       },
       "ge6": {
        "reached": 0,
@@ -3271,7 +3333,8 @@
        "expected": 0.0007820691314735556,
        "fair_rate": 6.138690199949416e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 1.0000000000000577
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 1.0000000000000577
       }
      },
      "mean_pairwise_overlap": 4.9992150706436425,
@@ -3545,15 +3608,68 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.1665150040007575,
-    "ml_seconds": 252.4235518409996,
-    "challenger_selection_seconds": 10.610791987999619,
-    "total_seconds": 543.8029867810001
+    "legacy_seconds": 3.3092394079994847,
+    "ml_seconds": 248.8592639260005,
+    "challenger_selection_seconds": 10.746704060000411,
+    "total_seconds": 540.5719668910006
    }
   },
   "power655": {
    "product": "power655",
    "protocol_registered_at": "2026-10-13",
+   "protocol": {
+    "registered_at": "2026-10-13",
+    "products": [
+     "mega645",
+     "power655"
+    ],
+    "frozen_last_id": {
+     "mega645": 1574,
+     "power655": 1409
+    },
+    "warmup": 300,
+    "split": {
+     "dev": 0.5,
+     "validation": 0.2,
+     "test": 0.3
+    },
+    "refit_every": 26,
+    "l2_grid": [
+     0.01,
+     0.1,
+     1.0,
+     10.0
+    ],
+    "shrink_half_lives": [
+     null,
+     500,
+     100,
+     30
+    ],
+    "shrink_priors": [
+     20.0,
+     100.0,
+     500.0
+    ],
+    "ablation_folds": 4,
+    "ablation_min_positive_folds": 3,
+    "temperature_bounds": [
+     0.0,
+     2.0
+    ],
+    "alpha": 0.05,
+    "portfolio_tickets": 5,
+    "monte_carlo": 20000,
+    "seed": 20261013,
+    "promotion": {
+     "beats_fair_holm": "Δ log-score so với công bằng trên test > 0, DM HAC một phía, Holm trên mọi ứng viên × sản phẩm, p < α",
+     "beats_incumbents": "Δ so với TỪNG mô hình đang chạy (legacy, ML) trên test > 0, DM một phía p < α",
+     "validation_positive": "Δ so với công bằng trên validation > 0",
+     "stable_thirds": "Δ so với công bằng > 0 ở ít nhất 2 trong 3 đoạn liền của test",
+     "brier_not_worse": "Brier biên trên test ≤ Brier công bằng",
+     "then": "Đạt cả năm: đủ điều kiện CHẠY THỬ TIẾN CỨU; xác suất triển khai chỉ đổi khi qua cổng live hiện có"
+    }
+   },
    "provenance": {
     "seed_sha256": "a87533b01eab4070f5986c650e7642543dd35a5d8f2ddbf85f1f58a00c6570a8",
     "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
@@ -3562,7 +3678,7 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "4baed40364fb3097c455c4755c3c094b44f5783c",
+    "git_commit": "95ef3204d7c660ae7700298f6de8b9b7db8da130",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3600,8 +3716,8 @@
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
-     "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "bfa2fdc86ad9ac3912c74f55212b6bd4ef4f27d2e822bea315a98e6e8e7e0055",
+     "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
+     "vlm/forecast/hits.py": "6dbfe711658f5633b31ecdc8cba819ce74dd025184a12e5eea0075c5312e9335",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -3628,7 +3744,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T17:36:12+00:00"
+    "generated_at": "2026-10-13T18:10:46+00:00"
    },
    "split": {
     "dev": {
@@ -6551,6 +6667,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
      "any_ticket": {
       "ge3": {
        "reached": 3,
@@ -6558,7 +6675,8 @@
        "expected": 9.827791342952274,
        "fair_rate": 0.029512886915772595,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.9971045586849052
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.9971045586849052
       },
       "ge4": {
        "reached": 1,
@@ -6566,7 +6684,8 @@
        "expected": 0.6120077924295462,
        "fair_rate": 0.0018378612385271658,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.4580442240972997
+       "p_value_greater": 0.5347669278569359,
+       "p_value_fixed_portfolios": 0.4580442240972997
       },
       "ge5": {
        "reached": 0,
@@ -6574,7 +6693,8 @@
        "expected": 0.013209875585014321,
        "fair_rate": 3.9669296051094056e-05,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.9999999999999828
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.9999999999999828
       },
       "ge6": {
        "reached": 0,
@@ -6582,7 +6702,8 @@
        "expected": 5.7434241673975285e-05,
        "fair_rate": 1.72475200222148e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.9999999999999964
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.9999999999999964
       }
      },
      "mean_pairwise_overlap": 4.799999999999999,
@@ -6674,6 +6795,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
      "any_ticket": {
       "ge3": {
        "reached": 32,
@@ -6681,7 +6803,8 @@
        "expected": 32.72144834324634,
        "fair_rate": 0.02950536369995161,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.5753276515598593
+       "p_value_greater": 0.3116487614481836,
+       "p_value_fixed_portfolios": 0.5753276515598593
       },
       "ge4": {
        "reached": 2,
@@ -6689,7 +6812,8 @@
        "expected": 2.0375818976928857,
        "fair_rate": 0.0018373146056743783,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.6043242907123838
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.6043242907123838
       },
       "ge5": {
        "reached": 0,
@@ -6697,7 +6821,8 @@
        "expected": 0.043984211620171666,
        "fair_rate": 3.9661146636764355e-05,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.9999999999999398
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.9999999999999398
       },
       "ge6": {
        "reached": 0,
@@ -6705,7 +6830,8 @@
        "expected": 0.00019127499704636215,
        "fair_rate": 1.7247520022214802e-07,
        "monte_carlo_se": 0.0,
-       "p_value_greater": 0.999999999999988
+       "p_value_greater": 1.0,
+       "p_value_fixed_portfolios": 0.999999999999988
       }
      },
      "mean_pairwise_overlap": 4.7999098286744815,
@@ -6979,10 +7105,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.3271037200001956,
-    "ml_seconds": 399.2114097550002,
-    "challenger_selection_seconds": 11.687820959999954,
-    "total_seconds": 825.1057274330005
+    "legacy_seconds": 3.0861747079998167,
+    "ml_seconds": 397.39186031899953,
+    "challenger_selection_seconds": 11.327308773999903,
+    "total_seconds": 836.7106463649998
    }
   }
  }
