@@ -320,8 +320,10 @@ def select_challengers(series: Series, split: Split) -> dict:
     groups = [a['group'] for a in ablation if a['keep']]
     columns = [i for i, name in enumerate(ch.FEATURES) if any(name in ch.GROUPS[g] for g in groups)]
     if columns:
-        causal_val = ch.causal_walk_forward(phi, x, columns, l2, d_end, v_end, every)
-        causal_tau = ch.fit_temperature(causal_val, val_x, val_b, PROTOCOL['temperature_bounds'])
+        # Cùng chuỗi η (bắt đầu ở warmup, học lại cùng nhịp) mà challenger_eta sẽ chấm: học lại từ
+        # dev_end thì lịch học lại lệch (Power lệch 8 kỳ) và τ được chỉnh trên một chuỗi khác.
+        aligned = ch.causal_walk_forward(phi, x, columns, l2, w, v_end, every)
+        causal_tau = ch.fit_temperature(aligned[d_end - w:], val_x, val_b, PROTOCOL['temperature_bounds'])
     else:
         causal_tau = 0.0  # không nhóm nào ổn định: challenger chính là luật công bằng
     return {'shrink': {**best, 'tau_validation': shrink_tau, 'grid': shrink_log},
@@ -394,11 +396,19 @@ def paired_test(candidate: list[dict], baseline: list[dict] | None) -> dict:
 
 
 def promotion_decision(results: dict) -> dict:
-    """Áp luật đề bạt đã đăng ký lên kết quả test của mọi ứng viên × sản phẩm."""
+    """Áp luật đề bạt đã đăng ký lên kết quả test của mọi ứng viên × sản phẩm.
+
+    Họ Holm CỐ ĐỊNH là mọi ứng viên × mọi sản phẩm đã đăng ký; giả thuyết vắng mặt (chạy một sản
+    phẩm, hay không có ML) được tính p = 1 nên không làm họ hiệu chỉnh nhỏ lại. Lượt chạy thiếu thì
+    không xét đề bạt (``incomplete_run``).
+    """
     alpha = PROTOCOL['alpha']
-    keys = [(p, c) for p in results for c in CANDIDATES if c in results[p]['tests']['test']]
-    p_fair = [results[p]['tests']['test'][c]['vs_fair']['p_value_greater'] for p, c in keys]
-    adjusted = dict(zip(keys, holm(p_fair)))
+    family = [(p, c) for p in PROTOCOL['products'] for c in CANDIDATES]
+    present = {(p, c) for p, c in family if p in results and c in results[p]['tests']['test']}
+    p_fair = [results[p]['tests']['test'][c]['vs_fair']['p_value_greater'] if (p, c) in present else 1.0 for p, c in family]
+    adjusted = dict(zip(family, holm(p_fair)))
+    complete = len(present) == len(family)
+    keys = [key for key in family if key in present]
     out = {}
     for product, candidate in keys:
         tests = results[product]['tests']
@@ -416,8 +426,13 @@ def promotion_decision(results: dict) -> dict:
         checks = {name: bool(value) for name, value in checks.items()}
         out[f'{product}:{candidate}'] = {'checks': checks, 'holm_p_vs_fair': float(adjusted[(product, candidate)]),
                                          'eligible_for_prospective_trial': all(checks.values())}
-    out['verdict'] = ('challenger_eligible' if any(v['eligible_for_prospective_trial'] for v in out.values() if isinstance(v, dict))
-                      else 'keep_production')
+    if not complete:
+        for value in out.values():
+            value['eligible_for_prospective_trial'] = False
+        out['verdict'] = 'incomplete_run'
+    else:
+        out['verdict'] = ('challenger_eligible' if any(v['eligible_for_prospective_trial'] for v in out.values() if isinstance(v, dict))
+                          else 'keep_production')
     return out
 
 
@@ -641,7 +656,10 @@ def render_report(results: dict[str, dict], decision: dict) -> str:
     verdict = decision['verdict']
     eligible = [key for key, value in decision.items() if isinstance(value, dict) and value['eligible_for_prospective_trial']]
     lines += ['## Kết luận', '']
-    if verdict == 'keep_production':
+    if verdict == 'incomplete_run':
+        lines.append('**Lượt chạy thiếu sản phẩm hoặc nhánh đã đăng ký: không xét đề bạt.** Chạy đủ '
+                     '`python scripts/hit_benchmark.py` (cả hai sản phẩm, có bộ ML) để có kết luận.')
+    elif verdict == 'keep_production':
         lines.append('**Challenger chưa chứng minh lợi thế.** Không ứng viên nào đạt đủ năm điều kiện đề bạt đã đăng ký; '
                      'giữ production: xác suất triển khai vẫn là luật công bằng (cổng live của bộ ML chưa mở), '
                      'vé công bố giữ nguyên quy tắc hiện có.')

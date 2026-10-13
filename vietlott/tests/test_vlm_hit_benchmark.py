@@ -150,12 +150,42 @@ def _fake_results(gain: float, p: float, incumbents_beaten: bool = True, brier: 
     return {'tests': {'test': test}, 'segments': {'test': seg, 'validation': seg}}
 
 
+def _both(**kwargs) -> dict:
+    return {product: _fake_results(**kwargs) for product in hb.PROTOCOL['products']}
+
+
 def test_promotion_requires_every_registered_condition_and_corrects_for_multiplicity():
-    win = hb.promotion_decision({'mega645': _fake_results(0.01, 1e-6)})
+    win = hb.promotion_decision(_both(gain=0.01, p=1e-6))
     assert win['verdict'] == 'challenger_eligible'
-    # p = 0,02 đơn lẻ < α nhưng Holm trên 4 ứng viên đẩy lên 0,08.
-    holm = hb.promotion_decision({'mega645': _fake_results(0.01, 0.02)})
-    assert holm['verdict'] == 'keep_production'
-    assert not hb.promotion_decision({'mega645': _fake_results(0.01, 1e-6, incumbents_beaten=False)})['mega645:shrink']['eligible_for_prospective_trial']
-    assert not hb.promotion_decision({'mega645': _fake_results(0.01, 1e-6, brier=0.2)})['mega645:shrink']['eligible_for_prospective_trial']
-    assert not hb.promotion_decision({'mega645': _fake_results(-0.01, 1e-6)})['mega645:shrink']['eligible_for_prospective_trial']
+    # p = 0,01 đơn lẻ < α nhưng Holm trên 8 ứng viên × sản phẩm đẩy lên 0,08.
+    assert hb.promotion_decision(_both(gain=0.01, p=0.01))['verdict'] == 'keep_production'
+    assert not hb.promotion_decision(_both(gain=0.01, p=1e-6, incumbents_beaten=False))['mega645:shrink']['eligible_for_prospective_trial']
+    assert not hb.promotion_decision(_both(gain=0.01, p=1e-6, brier=0.2))['mega645:shrink']['eligible_for_prospective_trial']
+    assert not hb.promotion_decision(_both(gain=-0.01, p=1e-6))['mega645:shrink']['eligible_for_prospective_trial']
+
+
+def test_a_partial_run_keeps_the_full_holm_family_and_cannot_promote():
+    """Chạy một sản phẩm: họ Holm vẫn 8 giả thuyết (p = 0,01 → 0,08), và lượt thiếu không đề bạt ai."""
+    partial = hb.promotion_decision({'mega645': _fake_results(0.01, 0.01)})
+    assert partial['verdict'] == 'incomplete_run'
+    assert partial['mega645:shrink']['holm_p_vs_fair'] == pytest.approx(0.08)
+    assert not any(v['eligible_for_prospective_trial'] for v in partial.values() if isinstance(v, dict))
+    no_ml = _both(gain=0.01, p=1e-6)
+    for product in no_ml.values():
+        del product['tests']['test']['ml_tempered']
+    assert hb.promotion_decision(no_ml)['verdict'] == 'incomplete_run'
+
+
+def test_the_causal_temperature_is_fitted_on_the_stream_that_is_scored():
+    """τ của challenger nhân quả phải chỉnh trên ĐÚNG chuỗi η được chấm (học lại từ warmup)."""
+    series = _synthetic(1000, hot=0.7, seed=3)
+    split = hb.make_split(len(series))
+    assert (split.dev_end - split.warmup) % hb.PROTOCOL['refit_every'] != 0   # lịch lệch nếu học lại từ dev_end
+    chosen = hb.select_challengers(series, split)
+    causal = chosen['causal']
+    assert causal['groups']
+    raw = hb.challenger_eta(series, {**chosen, 'causal': {**causal, 'tau_validation': 1.0}}, split.warmup, split.val_end)['causal']
+    x = series.obs['main']['X']
+    expected = ch.fit_temperature(raw[split.dev_end - split.warmup:], x[split.dev_end:split.val_end], None,
+                                  hb.PROTOCOL['temperature_bounds'])
+    assert causal['tau_validation'] == pytest.approx(expected, abs=1e-9)
