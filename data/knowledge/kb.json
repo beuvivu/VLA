@@ -1,16 +1,28 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T10:21:51Z",
+  "generated_at": "2026-10-13T10:33:07Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "config": {
     "window": 30,
     "neighbours": 50,
-    "prior": 50.0,
+    "prior": 50.0
+  },
+  "rule_config": {
+    "version": 1,
     "discovery_every": 30,
     "rules_per_batch": 20,
+    "min_support": 200,
+    "shrink": 100.0,
     "horizon": 180,
-    "alpha": 0.01
+    "alpha": 0.01,
+    "rule_bets": [
+      0.1,
+      0.25,
+      0.5,
+      1.0,
+      2.0
+    ]
   },
   "batches": [
     {
@@ -543,6 +555,7 @@
     }
   ],
   "threshold_e": 2000.0,
+  "retired": [],
   "measured": [
     {
       "id": "ho-freq_z_max",

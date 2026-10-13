@@ -46,8 +46,6 @@ flowchart TD
         BAYES["Bayes tần suất 30/180/toàn bộ<br/>tiên nghiệm = tần suất (A → B)"]
         LAG["Điều kiện trễ / Markov bậc 1"]
         ML["ML · cầu-kèo · xếp chồng<br/>co theo model_trust"]
-        ANALOG["Tương tự quá khứ<br/>ContextMemory (vector)"]
-        RULES["Luật trong kho tri thức"]
     end
 
     subgraph FUSE["Tầng hợp nhất (bầu chọn có trọng số)"]
@@ -66,6 +64,8 @@ flowchart TD
         MINE["Khai phá luật<br/>mine_lag_rules"]
         STORE[("data/knowledge/kb.json<br/>luật · trạng thái · tri thức đã đo")]
         SCORE["Chấm TIẾN CỨU<br/>e-process, Bonferroni N/α"]
+        ANALOG["Tương tự quá khứ<br/>ContextMemory (vector)<br/>chỉ mô tả, chưa vào Hedge"]
+        RULES["Luật đã đăng ký<br/>chỉ mô tả, chưa vào Hedge"]
     end
 
     VALID --> STATS
@@ -74,13 +74,14 @@ flowchart TD
     BRIDGE --> ML
     VALID --> ANALOG
     MINE --> STORE --> RULES
-    BAYES & LAG & ML & ANALOG & RULES --> HEDGE
+    BAYES & LAG & ML --> HEDGE
     ML --> BLEND --> HEDGE
     HEDGE --> GATE
     GATE -- "có" --> PRED
     GATE -- "chưa" --> PRED
     PRED --> CONF --> XAI
     STORE --> XAI
+    ANALOG & RULES -. "dẫn chứng, không đổi xác suất" .-> XAI
 
     PRED -. "kết quả quay thật" .-> FEEDBACK["Vòng phản hồi<br/>Brier / log-loss từng chuyên gia<br/>skill_monitor (z = 3)"]
     FEEDBACK -. "cập nhật trọng số" .-> HEDGE
@@ -335,7 +336,8 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
   - `measured`: tri thức đã đo ở nơi khác;
   - `analog`: walk-forward của chuyên gia tương tự;
   - `insights`: lời giải thích top-10 cho LOTO và Đặc Biệt.
-- Luật đã đăng ký không bao giờ bị viết lại: định nghĩa, ngày và số trong mẫu giữ nguyên, chỉ phần chấm tiến cứu được cập nhật. Muốn đổi cách khai phá thì tăng `VERSION` và bắt đầu lô mới.
+- Luật đã đăng ký không bao giờ bị viết lại: định nghĩa, ngày và số trong mẫu giữ nguyên, chỉ phần chấm tiến cứu được cập nhật.
+- `rule_config` ghi mọi tham số định nghĩa luật và cách chấm (`VERSION`, nhịp khai phá, số luật mỗi lô, `MIN_SUPPORT`, `SHRINK`, `HORIZON`, `ALPHA`, lưới cược). Đổi bất kỳ tham số nào thì `carry_over` cất nguyên các lô cũ vào `retired`, kèm cấu hình và kỳ chấm cuối, KHÔNG chấm lại chúng bằng luật chấm mới, rồi đăng ký lô mới ngay. Đổi ngưỡng hay chân trời giữa chừng mà vẫn chấm tiếp là xem dữ liệu rồi mới chọn phép kiểm.
 
 ## 8. Giới hạn — điều hệ này KHÔNG hứa
 

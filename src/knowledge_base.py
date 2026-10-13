@@ -283,6 +283,32 @@ STATUS_WORD = {"co-bang-chung": "Có bằng chứng", "dang-kiem": "Đang kiểm
 HYPOTHESIS_STATUS = {"dang_thu": "dang-kiem", "xac_nhan": "co-bang-chung", "bac_bo": "khong-dat"}
 
 
+def rule_config() -> dict:
+    """Mọi tham số định nghĩa một luật và cách chấm nó. Khác bản đã ghi thì đó là một thí nghiệm KHÁC."""
+    return {"version": VERSION, "discovery_every": DISCOVERY_EVERY, "rules_per_batch": RULES_PER_BATCH,
+            "min_support": MIN_SUPPORT, "shrink": SHRINK, "horizon": HORIZON, "alpha": ALPHA,
+            "rule_bets": list(RULE_BETS)}
+
+
+def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
+    """Tách kho đã ghi thành (phần được chấm tiếp, các thí nghiệm đã nghỉ).
+
+    Luật của kho ghi bằng phiên bản hay cấu hình khác KHÔNG được chấm lại bằng cách chấm mới: ngưỡng,
+    lưới cược hay chân trời đổi giữa chừng là xem dữ liệu rồi mới chọn phép kiểm. Chúng được cất
+    nguyên vẹn vào ``retired`` (với cấu hình và kỳ chấm cuối của chúng) và lô mới đăng ký ngay.
+    """
+    if not previous:
+        return None, []
+    retired = list(previous.get("retired", []))
+    if previous.get("rule_config") == rule_config():
+        return previous, retired
+    if previous.get("rules"):
+        retired.append({"rule_config": previous.get("rule_config"), "version": previous.get("version"),
+                        "last_scored": previous.get("source_date"), "threshold_e": previous.get("threshold_e"),
+                        "batches": previous.get("batches", []), "rules": previous["rules"]})
+    return None, retired
+
+
 def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) -> dict:
     """Giữ nguyên mọi luật đã đăng ký (định nghĩa, ngày, số trong mẫu), chấm lại, thêm lô mới khi đến hạn."""
     batches = list((previous or {}).get("batches", []))
@@ -459,7 +485,7 @@ def run(data_dir: Path) -> Path:
     present, labels = load_history(data_dir)
     out = data_dir / OUT_DIR
     kb_path = out / KB_FILE
-    previous = _read(kb_path)
+    previous, retired = carry_over(_read(kb_path))
     rules = update_rules(previous, present, labels)
     memory = ContextMemory(present)
     payload = {
@@ -467,9 +493,10 @@ def run(data_dir: Path) -> Path:
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
         "draws": len(labels),
-        "config": {"window": WINDOW, "neighbours": NEIGHBOURS, "prior": PRIOR, "discovery_every": DISCOVERY_EVERY,
-                   "rules_per_batch": RULES_PER_BATCH, "horizon": HORIZON, "alpha": ALPHA},
+        "config": {"window": WINDOW, "neighbours": NEIGHBOURS, "prior": PRIOR},
+        "rule_config": rule_config(),
         **rules,
+        "retired": retired,
         "measured": measured_knowledge(data_dir),
         "analog": evaluate_analog(present, labels),
         "insights": {mode: insights(data_dir, mode, rules["rules"], memory, labels) for mode in ("loto", "de")},

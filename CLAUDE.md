@@ -366,6 +366,8 @@ ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng
 30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
 thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
 (`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.
+Đổi bất kỳ tham số nào trong `rule_config()` (kể cả `VERSION`, `HORIZON`, `ALPHA`, lưới cược) thì `carry_over`
+cất nguyên lô cũ vào `retired` — KHÔNG chấm lại bằng luật chấm mới — và đăng ký lô mới ngay.
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
 

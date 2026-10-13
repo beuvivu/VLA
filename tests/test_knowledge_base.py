@@ -244,6 +244,47 @@ def test_run_writes_strict_json_and_keeps_rules_across_runs(tmp_path: Path) -> N
     assert second["insights"] == {"loto": None, "de": None}        # chưa có sổ tự học: không bịa
 
 
+_RULE_CHANGES = {"VERSION": kb.VERSION + 1, "DISCOVERY_EVERY": kb.DISCOVERY_EVERY + 1,
+                 "RULES_PER_BATCH": kb.RULES_PER_BATCH + 1, "MIN_SUPPORT": kb.MIN_SUPPORT + 1,
+                 "SHRINK": kb.SHRINK * 2, "HORIZON": kb.HORIZON + 1, "ALPHA": kb.ALPHA / 2,
+                 "RULE_BETS": kb.RULE_BETS + (3.0,)}
+
+
+@pytest.mark.parametrize("name", sorted(_RULE_CHANGES))
+def test_rules_carry_over_only_under_the_definition_they_were_registered_with(name, monkeypatch) -> None:
+    rule = {"id": "tre-01-02-2026-01-01", "registered_at": "2026-01-01", "prospective": {"e_max": 3.0}}
+    previous = json.loads(json.dumps({"version": kb.VERSION, "rule_config": kb.rule_config(),
+                                      "source_date": "2026-02-01", "threshold_e": 2000.0,
+                                      "batches": [{"registered_at": "2026-01-01", "rules": [rule["id"]]}],
+                                      "rules": [rule], "retired": [{"rules": ["cũ hơn"]}]}))
+    kept, retired = kb.carry_over(previous)
+    assert kept is previous and retired == [{"rules": ["cũ hơn"]}]
+    monkeypatch.setattr(kb, name, _RULE_CHANGES[name])
+    kept, retired = kb.carry_over(previous)
+    assert kept is None
+    assert retired[0] == {"rules": ["cũ hơn"]}
+    assert retired[1]["rules"] == [rule] and retired[1]["last_scored"] == "2026-02-01"
+    assert retired[1]["rule_config"] == previous["rule_config"] != kb.rule_config()
+
+
+def test_a_changed_rule_definition_retires_the_old_batch_unscored_and_registers_now(tmp_path: Path,
+                                                                                   monkeypatch) -> None:
+    frame = m.mock_history(1240, seed=8)
+    frame.iloc[:1230].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    first = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+    assert first["retired"] == [] and first["rule_config"] == kb.rule_config()
+    frame.iloc[:1235].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    same = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+    assert same["batches"] == first["batches"] and same["retired"] == []     # cùng luật, chưa đến hạn
+    monkeypatch.setattr(kb, "HORIZON", kb.HORIZON + 1)
+    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    changed = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+    assert [b["registered_at"] for b in changed["batches"]] == [frame["date"].iloc[-1]]
+    assert changed["retired"][0]["rules"] == same["rules"]                   # cất nguyên, không chấm lại
+    assert changed["retired"][0]["rule_config"]["horizon"] == kb.HORIZON - 1
+    assert {r["id"] for r in changed["rules"]}.isdisjoint({r["id"] for r in same["rules"]})
+
+
 def test_the_pipeline_builds_the_knowledge_base_after_what_it_reads() -> None:
     """Kho tri thức đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy: đứng sau cả ba."""
     source = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(encoding="utf-8")
