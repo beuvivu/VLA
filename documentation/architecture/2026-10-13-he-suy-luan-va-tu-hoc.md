@@ -118,7 +118,7 @@ sequenceDiagram
 | 2a. Tự quét, bóc tách, phân loại tri thức | Các giả thuyết đăng ký tay: `hot_tail_test`, `digit_sum_hypothesis` | `mine_lag_rules`: mỗi 30 kỳ khai phá 20 luật "a về → b về kỳ sau"; `measured_knowledge`: gom kết luận của mọi phép đo đã có; phân loại bằng trạng thái suy từ số đo |
 | 2b. Kho tri thức rule-based + vector | — | `data/knowledge/kb.json` (luật, lô đăng ký, trạng thái, số đo); `ContextMemory`: vectơ ngữ cảnh 300 chiều, truy vấn cosine |
 | 3a. Vòng phản hồi | `online_learning.advance` chấm Brier từng chuyên gia mỗi kỳ; `skill_monitor` chấm thứ ĐÃ công bố, báo động z = 3 | `score_rule` chấm luật trên kỳ mới mỗi ngày |
-| 3b. Tự chỉnh trọng số ngắn/dài hạn | Hedge hai trí nhớ: dài hạn (tổng loss), ngắn hạn (chiết khấu 0,97, nửa đời ≈ 23 kỳ), fixed-share 0,03; `learn_ensemble_weights` có cổng ngoài mẫu so với MẶC ĐỊNH; `ml_engine.bandit` (Thompson có chiết khấu) | — |
+| 3b. Tự chỉnh trọng số ngắn/dài hạn | Hedge hai trí nhớ: dài hạn (tổng loss), ngắn hạn (chiết khấu 0,97, nửa đời ≈ 23 kỳ), fixed-share 0,03; `learn_ensemble_weights` có cổng ngoài mẫu so với MẶC ĐỊNH; `ml_engine.bandit` (Thompson có chiết khấu; phân hệ nghiên cứu, chưa nối vào pipeline) | — |
 | 4a. Bayes / Markov chuỗi sự kiện | `confidence_matrix` (Bayes, Markov, cầu), `markov_stats`, `conditional_nextday`, chuyên gia `lag_repeat` | — |
 | 4b. Độ tin cậy + giải thích | Độ tin cậy ba tầng hiệu chỉnh trên 10 000 lịch sử công bằng; ngăn kéo bằng chứng trên mọi trang (`evidence_catalog`) | `knowledge_base.explain`: đóng góp từng chuyên gia, tầng tin cậy, luật đang bắn, ngữ cảnh tương tự, câu giải thích |
 
@@ -305,8 +305,7 @@ Cả hai chuyên gia "học từ quá khứ gần" đều KÉM hằng số, và 
 | `scikit-learn` | Hồi quy logistic, hiệu chỉnh Platt/isotonic |
 | `lightgbm` | Cây tăng cường cho ML và cầu-kèo |
 | `joblib` | Lưu mô hình |
-| `optuna` | Dò siêu tham số walk-forward (`ml_engine`) |
-| `shap` | Tầm quan trọng đặc trưng (`ml_engine.selection`) |
+| `optuna`, `shap`, `river` | Chỉ phân hệ nghiên cứu `ml_engine` (dò siêu tham số, tầm quan trọng đặc trưng, ADWIN). `ml_engine` không nằm trong pipeline: lần chạy gần nhất là chạy tay ngày 06-09-2026, và `WalkForwardValidator.tune` (nơi duy nhất dùng Optuna) không được gọi ở đâu. Các gói này được cài trên CI để kiểm thử phân hệ ấy. |
 
 **Khi nào cần thêm** (chưa cần bây giờ):
 

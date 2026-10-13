@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
 try:
     from critical_css_generated import CRITICAL_CSS as _GENERATED
@@ -44,13 +43,6 @@ _FALLBACK_CRITICAL = (
 
 CRITICAL_CSS = _GENERATED or _FALLBACK_CRITICAL
 
-
-def ensure_critical_css_file(assets_dir: Path | None = None) -> Path:
-    root = Path(__file__).resolve().parents[1]
-    path = (assets_dir or (root / "docs" / "assets")) / "critical.css"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(CRITICAL_CSS, encoding="utf-8")
-    return path
 
 
 def stylesheet_link() -> str:

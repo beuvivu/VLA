@@ -328,8 +328,8 @@ def _attach_visual_system(path: Path, html: str) -> str:
     target.parent.mkdir(parents=True, exist_ok=True)
     write_stylesheet_text(target, css.read_text(encoding="utf-8"))
     # `assets/critical.css` cũng phải được ghi lại từ `CRITICAL_CSS`, không
-    # phải để nguyên hiện vật đã commit. `ensure_critical_css_file` trước đây
-    # KHÔNG được gọi ở đâu cả, nên tệp xuất bản là một bản chép tay đứng im:
+    # phải để nguyên hiện vật đã commit. Hàm ghi riêng tệp này trước đây (đã gỡ
+    # 13-10-2026) KHÔNG được gọi ở đâu cả, nên tệp xuất bản là một bản chép tay đứng im:
     # nó còn mang chú thích `/* critical shell ... */` mà nguồn không có, và
     # nó trôi khỏi `CRITICAL_CSS` mà không dấu hiệu gì. Mỗi trang ghi ra đều
     # ghi lại tệp này, cùng chỗ với biểu định kiểu anh em ngay trên.

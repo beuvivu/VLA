@@ -119,16 +119,3 @@ def pair_label(i: int) -> list[str]:
     return [f"{int(PAIR_A[i]):02d}", f"{int(PAIR_B[i]):02d}"]
 
 
-def planted_present(n_draws: int, pair: tuple[int, int], rate: float, seed: int = 2026) -> np.ndarray:
-    """Lịch sử giả định: 27 lô đều, và cặp ``pair`` được cài cùng về thêm với xác suất ``rate``.
-
-    Dùng để kiểm luật có BẮT được một cặp thật sự hay đi cùng nhau hay không.
-    """
-    rng = np.random.default_rng(seed)
-    draws = rng.integers(0, N_NUMBERS, size=(n_draws, 27))
-    present = np.zeros((n_draws, N_NUMBERS), dtype=bool)
-    present[np.arange(n_draws)[:, None], draws] = True
-    planted = rng.random(n_draws) < rate
-    present[planted, pair[0]] = True
-    present[planted, pair[1]] = True
-    return present

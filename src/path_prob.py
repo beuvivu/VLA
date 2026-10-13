@@ -312,12 +312,6 @@ def fit_paths(
     return stats, raw_by_date, dates[: anchor_idx + 1]
 
 
-def _filter_paths(stats: list[PathStats], params: PathParams, kind: FilterKind) -> list[PathStats]:
-    stats = [s for s in stats if s.trials >= params.min_trials]
-    if kind == "active":
-        return [s for s in stats if s.current_streak >= params.min_current_streak]
-    return [s for s in stats if s.max_streak >= params.min_max_streak]
-
 
 def paths_to_dataframe(stats: list[PathStats]) -> pd.DataFrame:
     return pd.DataFrame(
@@ -509,35 +503,6 @@ def predict_from_fitted_paths(
     )
     return out.head(top_numbers).reset_index(drop=True)
 
-
-def predict_next_day_full(
-    *,
-    df_raw: pd.DataFrame,
-    df_2digits: pd.DataFrame,
-    params: PathParams,
-    mode: Mode,
-    kind: FilterKind,
-    top_numbers: int = 20,
-    anchor_date: Optional[date] = None,
-    scope: str = "all",
-    bias_special_touch: float = 1.0,
-    bias_special_both: float = 1.0,
-) -> pd.DataFrame:
-    stats, raw_by_date, dates = fit_paths(
-        df_raw=df_raw, df_2digits=df_2digits, params=params, mode=mode, anchor_date=anchor_date, scope=scope
-    )
-    return predict_from_fitted_paths_full(
-        stats=stats,
-        raw_by_date=raw_by_date,
-        dates=dates,
-        params=params,
-        kind=kind,
-        mode=mode,
-        anchor_date=anchor_date,
-        scope=scope,
-        bias_special_touch=bias_special_touch,
-        bias_special_both=bias_special_both,
-    )
 
 
 def predict_next_day(

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Final, Iterable
 
 import numpy as np
-import pandas as pd
 
 from xsmb_domain import LOTO_BASELINE_RATE
 
@@ -16,17 +15,6 @@ from xsmb_domain import LOTO_BASELINE_RATE
 #: Phiên bản lược đồ tối thiểu của ``weights_<mode>.json`` được phép dùng.
 MIN_WEIGHTS_SCHEMA: Final[int] = 5
 
-
-def ensure_full_probs(df: pd.DataFrame) -> np.ndarray:
-    """Return length-100 probability vector indexed by number 0..99."""
-    p = np.zeros(100, dtype=np.float64)
-    if df is None or df.empty:
-        return p
-    nums = df["number"].astype(int).to_numpy()
-    probs = df["prob"].astype(float).to_numpy()
-    mask = (nums >= 0) & (nums < 100)
-    p[nums[mask]] = probs[mask]
-    return p
 
 
 def normalize_distribution(p: np.ndarray) -> np.ndarray:

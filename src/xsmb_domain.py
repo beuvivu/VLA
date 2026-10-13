@@ -183,25 +183,3 @@ def reverse_indices() -> np.ndarray:
     return (10 * (numbers % 10) + numbers // 10).astype(np.int16)
 
 
-def wilson_interval(successes: int, trials: int, z: float = 1.96) -> tuple[float, float]:
-    """Wilson score interval for a binomial proportion.
-
-    Consolidates three byte-identical private copies (``association_rules``,
-    ``crosslag_positional_lab``, ``strategy_lab``).
-
-    NOTE ON INDEPENDENCE: ``trials`` must be independent Bernoulli draws.  When
-    a rule selects several numbers on the same draw day, those picks share the
-    day's realised outcome and are *not* independent; aggregate to one
-    observation per day (or use a day-block bootstrap) before calling this.
-    """
-    n = int(trials)
-    if n <= 0:
-        return float("nan"), float("nan")
-    k = int(successes)
-    if not 0 <= k <= n:
-        raise ValueError("successes must be within 0..trials")
-    p = k / n
-    denominator = 1.0 + z * z / n
-    centre = p + z * z / (2.0 * n)
-    margin = z * np.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n))
-    return float((centre - margin) / denominator), float((centre + margin) / denominator)

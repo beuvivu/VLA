@@ -86,9 +86,6 @@ def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
     return counts_matrix(draws) >= 1, list(labels)
 
 
-def _distinct(present: np.ndarray) -> np.ndarray:
-    return present.sum(axis=1)
-
 
 # --------------------------------------------------------------------------- bộ nhớ ngữ cảnh
 

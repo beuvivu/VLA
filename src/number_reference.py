@@ -110,15 +110,6 @@ def reverse(value: int | str) -> str:
 lon = reverse
 
 
-def bong_duong_digit(value: int) -> int:
-    return BONG_DUONG[_digit(value)]
-
-
-def bong_digit(value: int) -> int:
-    """Backward-compatible alias for bóng dương digit."""
-
-    return bong_duong_digit(value)
-
 
 def bong_duong(value: int | str) -> str:
     s = normalize_two_digit(value)
@@ -130,9 +121,6 @@ def bong(value: int | str) -> str:
 
     return bong_duong(value)
 
-
-def bong_am_digit(value: int) -> int:
-    return BONG_AM[_digit(value)]
 
 
 def bong_am(value: int | str) -> str:
@@ -150,15 +138,6 @@ def cap_bong_am(value: int | str) -> frozenset[str]:
     return frozenset({s, bong_am(s)})
 
 
-def complement9_digit(value: int) -> int:
-    """Mathematical 9-complement, deliberately not called bóng."""
-
-    return 9 - _digit(value)
-
-
-def complement9(value: int | str) -> str:
-    s = normalize_two_digit(value)
-    return f"{9 - int(s[0])}{9 - int(s[1])}"
 
 
 @lru_cache(maxsize=100)

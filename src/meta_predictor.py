@@ -20,7 +20,6 @@ import numpy as np
 
 from model_io import atomic_joblib_dump
 import pandas as pd
-from scipy.optimize import minimize
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from calibration import CalibParams, apply_calibration
@@ -498,62 +497,6 @@ def _row_probs_to_day_matrix(
     return np.vstack([_safe_prob(row, mode) for row in matrix])
 
 
-def _blend_arrays(
-    arrays: dict[str, np.ndarray], component_cols: list[str], weights: np.ndarray
-) -> np.ndarray:
-    out = np.zeros_like(arrays[component_cols[0]], dtype=np.float64)
-    for i, col in enumerate(component_cols):
-        out += float(weights[i]) * arrays[col]
-    return out
-
-
-def _optimize_linear_weights(
-    mode: str,
-    arrays: dict[str, np.ndarray],
-    component_cols: list[str],
-    y: np.ndarray,
-    day_weights: np.ndarray,
-) -> np.ndarray:
-    k = len(component_cols)
-    prior = np.full(k, 1.0 / k, dtype=float)
-    # Stack once: SLSQP evaluates the objective ~(k+1) x maxiter times, and the
-    # old per-day Python loop re-paid that cost on every single evaluation
-    # (~3.2s of pure interpreter overhead for a 240-day window).  The vectorised
-    # form is ~9x faster and numerically identical.
-    stack = np.stack([np.asarray(arrays[col], dtype=np.float64) for col in component_cols])
-    y_arr = np.asarray(y, dtype=np.float64)
-    y_idx = np.argmax(y_arr, axis=1) if mode == "de" else None
-
-    def objective(x: np.ndarray) -> float:
-        w = np.clip(x, 0.0, 1.0)
-        w = w / max(float(w.sum()), 1e-12)
-        p = np.tensordot(w, stack, axes=(0, 0))
-        if mode == "de":
-            p = np.clip(p, 0.0, None)
-            totals = p.sum(axis=1, keepdims=True)
-            p = np.divide(p, totals, out=np.full_like(p, 1.0 / p.shape[1]), where=totals > 0)
-            picked = np.clip(p[np.arange(p.shape[0]), y_idx], 1e-12, 1.0)
-            losses = -np.log(picked)
-        else:
-            pc = np.clip(p, 1e-6, 1.0 - 1e-6)
-            losses = -(y_arr * np.log(pc) + (1.0 - y_arr) * np.log1p(-pc)).mean(axis=1)
-        ll = float(np.average(losses, weights=day_weights))
-        return ll + 0.02 * float(np.square(w - prior).sum())
-
-    bounds = [(0.0, 0.80)] * k
-    constraints = ({"type": "eq", "fun": lambda x: np.sum(x) - 1.0},)
-    result = minimize(
-        objective,
-        x0=prior,
-        bounds=bounds,
-        constraints=constraints,
-        method="SLSQP",
-        options={"maxiter": 200},
-    )
-    if not result.success:
-        return prior
-    w = np.clip(result.x, 0.0, 1.0)
-    return w / max(float(w.sum()), 1e-12)
 
 
 def _baseline_validation(
