@@ -14,8 +14,9 @@ Bộ lọc không mù: trên lịch sử giả định có cài tín hiệu, nó
 và trúng 19,5%, so với 3,65% của chọn bừa trên cùng lịch sử (×5,3, z = +12,2). Vì vậy kết luận "không có tín hiệu" là của dữ liệu, không phải
 của công cụ đo.
 
-Bộ lọc không vào pipeline và không có trang trên site. Theo luật đề bạt của kho, một mô hình chỉ
-được đưa vào khi thắng cả dự báo hằng số, và bộ lọc này không thắng.
+Bộ lọc không vào tổ hợp xác suất. Theo luật đề bạt của kho, một mô hình chỉ được đưa vào khi
+thắng cả dự báo hằng số, và bộ lọc này không thắng. Từ 13-10-2026 nó có trang riêng
+`docs/lo-vip-nhieu-nhay.html`, in TỪ phép đo (mục cuối).
 
 ## Mức nền
 
@@ -229,14 +230,29 @@ sai; bỏ phá hoà; ngưỡng luôn đạt), cả mười đều đỏ.
 Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lược tần suất thì các nhóm còn lại vẫn bắt
 được tín hiệu cài sẵn.
 
-## Nếu muốn có trang "VIP"
+## Trang «Lô VIP nhiều nháy» — 13-10-2026
 
-Không in một con số như "Xác suất 2+ nháy: 28,5%". Nếu có trang, nó phải in từ phép đo, giống
-`verdict` của trang soi cầu vị trí:
+Trang in từ phép đo, đúng như mục này từng đặt điều kiện. Không con số hay kết luận nào được
+viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
 
-- tỉ lệ trúng ngoài mẫu;
-- mức nền;
-- khoảng tin cậy;
-- Confidence suy từ kiểm định.
+- **Số đo.** `src/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
+  - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
+    trên mọi kỳ, khoảng Wilson 95%, mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
+    kiểm chứng.
+  - `benchmark.json`, là bản đệm. Gồm giao thức lượt hai và phép kiểm độ nhạy. Tệp chỉ đo lại khi
+    lịch sử dài thêm `BENCHMARK_REFRESH_DRAWS` = 30 kỳ, khi `MEASURE_VERSION` đổi, hoặc khi lịch
+    sử bị cắt hay viết lại.
+- **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
+  pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
+- **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
+  - mức tin của bộ lọc: Trung bình hay Cao thì "hơn chọn bừa";
+  - ứng viên lượt hai có qua giai đoạn kiểm hay không;
+  - phép kiểm độ nhạy có bắt được tín hiệu cài sẵn hay không. Nếu không bắt được, trang ghi
+    "chưa kết luận" thay vì "không hơn".
+- **Điều phép kiểm ghim.**
+  - Đưa số đo của lịch sử có cài tín hiệu thì CÙNG trình dựng ấy phải in "hơn chọn bừa".
+  - Ngưỡng mức tin in trên trang là `multi_hit_vip.CONFIDENCE_P`, không phải bản chép.
+- **Vị trí trên site.** Menu Dự báo → Tham khảo theo lịch sử → Lô VIP nhiều nháy.
 
-Trên dữ liệu hiện tại, mọi con đều nhận Confidence Low và xác suất sát mức nền (2,86–2,89%).
+Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
+Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).

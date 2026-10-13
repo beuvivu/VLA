@@ -369,6 +369,8 @@ python src/build_landing_page.py
 python src/build_fun_prediction.py
 python src/build_traditional_results.py
 python src/build_regional_results.py
+# Lô VIP nhiều nháy chỉ đọc data/multi_hit/*.json đã đo; dựng lại để trang đi theo tệp đo.
+python src/build_multi_hit_page.py
 python src/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
@@ -448,6 +450,9 @@ required=(
   docs/dashboard.html
   docs/model-quality.html
   docs/do-tin-cay.html
+  docs/lo-vip-nhieu-nhay.html
+  data/multi_hit/vip.json
+  data/multi_hit/benchmark.json
   docs/soi-cau-vi-tri.html
   docs/soi-cau-loto.html
   docs/tao-phoi-tuan.html

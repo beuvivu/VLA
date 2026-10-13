@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-13T00:45:06Z",
+  "source_date": "2026-10-12",
+  "draws": 4233,
+  "base_theory": 0.02974563628550431,
+  "config": {
+    "top_k": 5,
+    "window": 30,
+    "weight_window": 30,
+    "normalisation": "zscore"
+  },
+  "weights": {
+    "frequency": 0.0,
+    "poisson_anomaly": 0.8,
+    "co_occurrence": 0.2,
+    "pattern": 0.0
+  },
+  "backtest": {
+    "first_date": "2015-03-06",
+    "last_date": "2026-10-12",
+    "draws": 4173,
+    "picks": 20865,
+    "hits": 606,
+    "rate": 0.029043853342918764,
+    "ci95": [
+      0.02685051813670286,
+      0.03141057226545701
+    ],
+    "expected": 608.05,
+    "random_rate": 0.029142104001917083,
+    "lift": 0.9966285667297098,
+    "z": -0.08640962771827056,
+    "p_value": 0.5344296031269994
+  },
+  "confidence": "Low",
+  "picks": [
+    {
+      "number": "32",
+      "vip_score": 3.8524045851305915,
+      "probability": 0.02831977310883158,
+      "x_base": 0.952064794883289,
+      "confidence": "Low",
+      "reasons": [
+        "Dị thường Poisson +3.44 (2 kỳ ≥2 nháy trong cửa sổ, z = +1.19, phân tán +1.70)",
+        "Đồng xuất hiện kỳ trước +0.41 (lift điều kiện ×1.17)"
+      ]
+    },
+    {
+      "number": "41",
+      "vip_score": 2.2891525462480695,
+      "probability": 0.028667442821221866,
+      "x_base": 0.9637528861734966,
+      "confidence": "Low",
+      "reasons": [
+        "Dị thường Poisson +2.35 (3 kỳ ≥2 nháy trong cửa sổ, z = +2.27, phân tán +0.81)",
+        "Đồng xuất hiện kỳ trước -0.06 (lift điều kiện ×0.95)"
+      ]
+    },
+    {
+      "number": "19",
+      "vip_score": 2.149345951079448,
+      "probability": 0.02869873706662946,
+      "x_base": 0.9648049478980207,
+      "confidence": "Low",
+      "reasons": [
+        "Dị thường Poisson +1.88 (3 kỳ ≥2 nháy trong cửa sổ, z = +2.27, phân tán +0.54)",
+        "Đồng xuất hiện kỳ trước +0.27 (lift điều kiện ×1.10)"
+      ]
+    },
+    {
+      "number": "51",
+      "vip_score": 1.9066571802416783,
+      "probability": 0.028753139152261672,
+      "x_base": 0.9666338576954125,
+      "confidence": "Low",
+      "reasons": [
+        "Dị thường Poisson +2.12 (5 kỳ ≥2 nháy trong cửa sổ, z = +4.41, phân tán +0.17)",
+        "Đồng xuất hiện kỳ trước -0.21 (lift điều kiện ×0.88)"
+      ]
+    },
+    {
+      "number": "92",
+      "vip_score": 1.7792391846215165,
+      "probability": 0.028781741729857237,
+      "x_base": 0.9675954299180078,
+      "confidence": "Low",
+      "reasons": [
+        "Dị thường Poisson +1.52 (3 kỳ ≥2 nháy trong cửa sổ, z = +2.27, phân tán +0.34)",
+        "Đồng xuất hiện kỳ trước +0.26 (lift điều kiện ×1.09)"
+      ]
+    }
+  ],
+  "recent": [
+    {
+      "date": "2026-10-12",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "41",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "51",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-11",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "30",
+          "hits": 0
+        },
+        {
+          "number": "83",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-10",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "45",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-09",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "35",
+          "hits": 1
+        },
+        {
+          "number": "45",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-08",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "45",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 1
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "62",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-07",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 1
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "51",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-06",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 1
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "91",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-05",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 1
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "88",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-04",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "88",
+          "hits": 0
+        }
+      ],
+      "multi": 0
+    },
+    {
+      "date": "2026-10-03",
+      "picks": [
+        {
+          "number": "32",
+          "hits": 0
+        },
+        {
+          "number": "92",
+          "hits": 0
+        },
+        {
+          "number": "19",
+          "hits": 0
+        },
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "41",
+          "hits": 1
+        }
+      ],
+      "multi": 0
+    }
+  ]
+}

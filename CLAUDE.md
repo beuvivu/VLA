@@ -50,14 +50,14 @@ các phép kiểm bất biến trang trên mỗi commit của pipeline.
 
 Giao diện đang phát triển theo yêu cầu ngày 26-09-2026 kết hợp Crafto Application
 với khung Nexlink. Dark/Light phải đồng bộ trên mọi trang; KHÔNG khôi phục
-khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười bốn
+khối pinlight cũ. Dock chân trang đã nghỉ, không sinh lại. Bộ "Master Design System" trong lịch sử không phải nguồn chuẩn. Mười lăm
 trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
 `build_model_quality`, `build_confidence_page`, `build_position_bridges`,
 `build_bridge_pages`,
 `build_markdown_dashboard_v3`,
 `build_statistics_dashboard`, `build_landing_page`, `build_fun_prediction`,
-`build_research_lab`, `build_stat_pages`, `build_traditional_results`) sinh
-ra 39 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
+`build_research_lab`, `build_stat_pages`, `build_traditional_results`,
+`build_multi_hit_page`) sinh ra 40 trang trong `docs/`, gọi từ khối `if not args.skip_docs` của
 `src/pipeline.py`.
 
 Đọc trước khi sửa frontend:
@@ -334,10 +334,15 @@ hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, n�
 phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô nhiều nháy" `src/multi_hit_vip.py`
 (08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ, đúng bằng chọn bừa trên chính các kỳ ấy, nên không
-vào pipeline; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
+vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
 (`documentation/research/2026-10-08-lo-nhieu-nhay.md`). Lượt thử thứ hai (12-10-2026,
-`scripts/benchmark_multi_hit.py`): 22 chiến lược kể cả logistic/GBM, chọn trên giai đoạn phát
-triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa hai giai đoạn tương quan −0,02. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
+`src/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/benchmark_multi_hit.py`): 22 chiến lược kể cả
+logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
+hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
+`multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày và `benchmark.json` khi lịch sử dài
+thêm `BENCHMARK_REFRESH_DRAWS` kỳ; `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
+từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. `tests/test_multi_hit_page.py` dựng cả lịch sử
+có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
