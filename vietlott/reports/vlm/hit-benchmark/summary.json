@@ -208,7 +208,7 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "95ef3204d7c660ae7700298f6de8b9b7db8da130",
+    "git_commit": "b71aecce8b6203bb57bc0a4d398591394f32b44a",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -247,7 +247,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
-     "vlm/forecast/hits.py": "6dbfe711658f5633b31ecdc8cba819ce74dd025184a12e5eea0075c5312e9335",
+     "vlm/forecast/hits.py": "3d70b04890a3fd1828669ad4fe8ce72676b8ca0d082b0b270180ecc6dd66257f",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -274,7 +274,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T17:56:49+00:00"
+    "generated_at": "2026-10-13T18:39:06+00:00"
    },
    "split": {
     "dev": {
@@ -3608,10 +3608,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.3092394079994847,
-    "ml_seconds": 248.8592639260005,
-    "challenger_selection_seconds": 10.746704060000411,
-    "total_seconds": 540.5719668910006
+    "legacy_seconds": 3.062922463999712,
+    "ml_seconds": 248.28173515000162,
+    "challenger_selection_seconds": 10.981485460999465,
+    "total_seconds": 544.9928522439986
    }
   },
   "power655": {
@@ -3678,7 +3678,7 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "95ef3204d7c660ae7700298f6de8b9b7db8da130",
+    "git_commit": "b71aecce8b6203bb57bc0a4d398591394f32b44a",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3717,7 +3717,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
-     "vlm/forecast/hits.py": "6dbfe711658f5633b31ecdc8cba819ce74dd025184a12e5eea0075c5312e9335",
+     "vlm/forecast/hits.py": "3d70b04890a3fd1828669ad4fe8ce72676b8ca0d082b0b270180ecc6dd66257f",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -3744,7 +3744,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T18:10:46+00:00"
+    "generated_at": "2026-10-13T18:52:48+00:00"
    },
    "split": {
     "dev": {
@@ -7105,10 +7105,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.0861747079998167,
-    "ml_seconds": 397.39186031899953,
-    "challenger_selection_seconds": 11.327308773999903,
-    "total_seconds": 836.7106463649998
+    "legacy_seconds": 3.377374162000706,
+    "ml_seconds": 396.232855025999,
+    "challenger_selection_seconds": 11.758006916999875,
+    "total_seconds": 821.8685830400009
    }
   }
  }
