@@ -284,6 +284,22 @@ def any_ticket_tail(tickets: Sequence[Sequence[int]], n: int, k: int = 6, limit:
     return tail
 
 
+def union_bounds(tickets: Sequence[Sequence[int]], n: int, k: int = 6) -> tuple[np.ndarray, np.ndarray]:
+    """Cận CHÍNH XÁC của P(ít nhất một vé ≥ L), L = 0..k, khi danh mục quá lớn để liệt kê.
+
+    Trên: Σ P(Aᵢ). Dưới: Bonferroni bậc hai Σ P(Aᵢ) − Σ_{i<j} P(Aᵢ ∩ Aⱼ) (không nhỏ hơn vé tốt nhất),
+    với P(Aᵢ ∩ Aⱼ) = P(Aᵢ) + P(Aⱼ) − P(Aᵢ ∪ Aⱼ) tính bằng ``any_ticket_tail`` trên hai vé. Ở mức hiếm
+    hai cận gần trùng nhau (sáu vé khác nhau: H = 6 đúng 6/C(n, 6)), nên một sự kiện mà mẫu mô phỏng
+    hữu hạn chưa gặp không kéo ước lượng xuống cận của MỘT vé.
+    """
+    single = np.array([any_ticket_tail([t], n, k, limit=10**9) for t in tickets])
+    total = single.sum(axis=0)
+    joint = np.zeros(k + 1)
+    for i, j in combinations(range(len(tickets)), 2):
+        joint += single[i] + single[j] - any_ticket_tail([tickets[i], tickets[j]], n, k, limit=10**9)
+    return np.maximum(single.max(axis=0), total - joint), np.minimum(total, 1.0)
+
+
 def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequence[Sequence[int]], n: int,
                       k: int = 6, simulations: int = 20_000, seed: int = 20261013, exact_limit: int = 200_000) -> dict:
     """Nhiều vé mỗi kỳ, số vé CỐ ĐỊNH: tách chỉ số từng vé với "ít nhất một vé đạt mức".
@@ -291,8 +307,8 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     Mốc ngẫu nhiên của "ít nhất một vé ≥ L" phụ thuộc độ trùng giữa các vé, nên được tính chính xác
     trên chính bộ vé (``any_ticket_tail``). Danh mục quá lớn để liệt kê (cận vượt ``exact_limit``)
     mới dùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ, kèm sai số Monte Carlo);
-    khi ấy ước lượng bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé] — mức hiếm không gặp trong
-    mẫu hữu hạn không thành xác suất 0 và p = 0.
+    khi ấy ước lượng bị kẹp vào cận chính xác ``union_bounds`` (Bonferroni bậc hai, tổng các vé) — mức
+    hiếm không gặp trong mẫu hữu hạn không thành xác suất 0, cũng không thành cận của một vé.
 
     ``p_value_greater`` là p luôn hợp lệ (``predictable_p_value``): danh mục của mô hình học lại sau
     mỗi kỳ nên xác suất mốc phụ thuộc kết quả trước. ``p_value_fixed_portfolios`` (Poisson–nhị thức)
@@ -329,10 +345,10 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
             monte_carlo_draws += 1
             index = np.asarray([[v - 1 for v in t] for t in tickets])
             simulated = incidence[:, index].sum(axis=2).max(axis=1)  # (S,) số khớp tốt nhất trong danh mục
+            lower, upper = union_bounds(tickets, n, k)
             for level in LEVELS:
                 reached = simulated >= level
-                single = [float(fair_hit_pmf(n, k, len(t))[level:].sum()) for t in tickets]
-                fair_any[level].append(float(np.clip(reached.mean(), max(single), min(1.0, sum(single)))))
+                fair_any[level].append(float(np.clip(reached.mean(), lower[level], upper[level])))
                 aggregate[level] += reached
         pairs = [len(set(a) & set(b)) for a, b in combinations(tickets, 2)]
         overlap.append(float(np.mean(pairs)) if pairs else 0.0)

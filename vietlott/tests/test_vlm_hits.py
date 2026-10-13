@@ -8,7 +8,7 @@ from scipy import stats
 
 from vlm.forecast.hits import (
     any_ticket_tail, clopper_pearson, detectable_lift, draws_needed, fair_hit_pmf, hit_count, poisson_binomial_sf,
-    portfolio_summary, predictable_p_value, summarize_hits,
+    portfolio_summary, predictable_p_value, summarize_hits, union_bounds,
 )
 
 
@@ -167,7 +167,7 @@ def test_rare_portfolio_hits_get_their_exact_null_not_zero():
     assert five['ge6']['fair_rate'] == pytest.approx(5 / comb(45, 6), rel=1e-12)
     assert five['ge5']['fair_rate'] == pytest.approx(5 * fair_hit_pmf(45)[5:].sum(), rel=1e-12)
     fallback = portfolio_summary([disjoint], [[1, 2, 3, 4, 5, 6]], 45, exact_limit=0)['any_ticket']['ge6']
-    assert 1 / comb(45, 6) <= fallback['fair_rate'] <= 5 / comb(45, 6) and fallback['p_value_greater'] > 0
+    assert fallback['fair_rate'] == pytest.approx(5 / comb(45, 6), rel=1e-12) and fallback['p_value_greater'] > 0
 
 
 #: p_t phụ thuộc kỳ trước (danh mục học lại theo kết quả): sau một lần đạt, kỳ sau chắc chắn đạt.
@@ -207,3 +207,32 @@ def test_the_predictable_p_value_detects_a_real_lift_and_impossible_hits():
     assert predictable_p_value([False, True], [0.5, 0.0]) == 0
     with pytest.raises(ValueError):
         predictable_p_value([True], [0.1], lifts=[1.0])
+
+
+#: Sáu vé khác nhau, chồng lấn nhiều mức: H = 6 của danh mục đúng 6/C(45, 6).
+SIX = [[1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 7], [1, 2, 3, 4, 8, 9], [1, 2, 10, 11, 12, 13],
+       [5, 6, 7, 8, 9, 10], [11, 12, 13, 14, 15, 16]]
+
+
+def test_the_monte_carlo_fallback_is_pinned_by_exact_bounds_not_by_one_ticket():
+    """20.000 mô phỏng không gặp H = 6: mốc dự phòng phải là 6/C(45, 6), không phải cận 1/C(45, 6) của một vé."""
+    exact = any_ticket_tail(SIX, 45, limit=10**9)
+    fallback = portfolio_summary([SIX], [[1, 2, 3, 4, 5, 6]], 45, exact_limit=0)
+    assert fallback['monte_carlo_draws'] == 1
+    assert fallback['any_ticket']['ge6']['fair_rate'] == pytest.approx(6 / comb(45, 6), rel=1e-12)
+    assert fallback['any_ticket']['ge5']['fair_rate'] == pytest.approx(exact[5], rel=0.04)
+    rng = np.random.default_rng(11)
+    for _ in range(30):
+        tickets = [sorted(int(v) for v in rng.choice(16, 6, replace=False) + 1) for _ in range(5)]
+        lower, upper = union_bounds(tickets, 16)
+        tail = any_ticket_tail(tickets, 16, limit=10**9)
+        assert np.all(lower <= tail + 1e-12) and np.all(tail <= upper + 1e-12)
+
+
+def test_a_tiny_simulation_cannot_push_one_ticket_off_its_exact_null():
+    """Một vé: hai cận trùng giá trị siêu bội, nên mẫu mô phỏng nhỏ ước lượng thừa hay thiếu đều bị kẹp về đúng nó."""
+    fair = fair_hit_pmf(45)
+    for simulations in (10, 30, 100, 300):
+        out = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45, simulations=simulations, exact_limit=0)
+        for level in (3, 4, 5, 6):
+            assert out['any_ticket'][f'ge{level}']['fair_rate'] == pytest.approx(fair[level:].sum(), rel=1e-12)
