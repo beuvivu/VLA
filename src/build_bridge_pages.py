@@ -224,9 +224,6 @@ def render(key: str, report: dict) -> str:
 """
 
 
-def tool_payload(report: dict, specials: list[list[str]]) -> dict:
-    return {"source_date": report["source_date"], "specials": specials}
-
 
 def render_tool(specials: list[list[str]]) -> str:
     """Tạo phôi tuần: bảng giải Đặc Biệt theo tuần, tách 3 chữ số đầu và 2 chữ số cuối."""

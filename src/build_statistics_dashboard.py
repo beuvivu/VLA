@@ -57,11 +57,6 @@ def _safe_columns(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
     return df.loc[:, available].copy() if available else df.copy()
 
 
-def _num_series(df: pd.DataFrame, col: str) -> pd.Series:
-    if df.empty or col not in df.columns:
-        return pd.Series(dtype=float)
-    return pd.to_numeric(df[col], errors="coerce").fillna(0.0).astype(float)
-
 
 def _number_to_int(value: object) -> int | None:
     if pd.isna(value):

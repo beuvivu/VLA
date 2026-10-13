@@ -166,7 +166,9 @@ def pack_virt_payloads(html: str) -> str:
         idx += 1
         try:
             payloads[key] = json.loads(html_lib.unescape(m.group(2)))
-        except Exception:
+        except json.JSONDecodeError as exc:
+            # Ma trận rỗng thay cho dữ liệu hỏng: phải nói ra, nếu không trang mất số mà không ai biết.
+            print(f"[WARN] data-virt-payload {key} không phải JSON hợp lệ: {exc}")
             payloads[key] = []
         pre = re.sub(r'\s*data-virt-id="[^"]*"', '', m.group(1))
         post = re.sub(r'\s*data-virt-id="[^"]*"', '', m.group(3))

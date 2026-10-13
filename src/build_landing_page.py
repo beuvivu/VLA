@@ -201,15 +201,6 @@ def _mix(low: str, high: str, t: float) -> str:
     return _rgb_to_hex(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def _luminance(hex_color: str) -> float:
-    rgb = [v / 255 for v in _hex_to_rgb(hex_color)]
-
-    def linear(c: float) -> float:
-        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-
-    r, g, b = [linear(c) for c in rgb]
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
 
 def _style_for_value(
     value: float, min_value: float, max_value: float, palette: str
@@ -441,46 +432,6 @@ def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
     # phần dư cuộn ngang trong khung thay vì đẩy cả trang tràn ra ngoài.
     return f"<div class='matrix-wrap'><div class='tiny-matrix'>{header}{''.join(cells)}</div></div>"
 
-
-def _render_head_tail_lists(latest: Mapping[str, Any], which: str | None = None) -> str:
-    """Danh sách số đã về gom theo hàng chục hoặc hàng đơn vị.
-
-    Args:
-        latest: Bản ghi kỳ gần nhất.
-        which: ``"heads"`` hoặc ``"tails"`` để lấy riêng một bảng; bỏ trống thì
-            trả về cả hai trong một lưới, như trước.
-
-    Returns:
-        Chuỗi HTML.
-
-    Tách được từng bảng vì bố cục mới xếp Kết quả / Chục / Đơn vị thành ba thẻ
-    ngang hàng, mà ba thẻ thì cần ba khối rời — không thể là một thẻ chứa hai.
-    """
-
-    def block(title: str, data: Mapping[str, Sequence[str]]) -> str:
-        rows = []
-        for digit in range(10):
-            values = data.get(str(digit), [])
-            badges = (
-                "".join(f"<span class='mini-badge'>{html.escape(v)}</span>" for v in values)
-                or "<span class='muted'>—</span>"
-            )
-            rows.append(f"<div class='head-tail-row'><b>{digit}</b><div>{badges}</div></div>")
-        head = f"<h4>{html.escape(title)}</h4>" if title else ""
-        return f"<div class='head-tail-card'>{head}{''.join(rows)}</div>"
-
-    # Khi tách thành thẻ riêng, tiêu đề đã nằm ở đầu thẻ — giữ thêm <h4> bên
-    # trong là nói hai lần cùng một câu.
-    if which == "heads":
-        return block("", latest.get("heads", {}))
-    if which == "tails":
-        return block("", latest.get("tails", {}))
-    return (
-        "<div class='head-tail-grid'>"
-        + block("Theo hàng chục / đầu", latest.get("heads", {}))
-        + block("Theo hàng đơn vị / đuôi", latest.get("tails", {}))
-        + "</div>"
-    )
 
 
 def _render_matrix_card(
@@ -780,25 +731,6 @@ def _render_table(
     </article>
     """
 
-
-def _render_special_board(repo_root: Path, kind: str) -> str:
-    if kind == "week":
-        df = _read_csv(repo_root / "data" / "advanced" / "special_week_board.csv", dtype=str).tail(
-            8
-        )
-        title = "Bảng Đặc Biệt theo tuần"
-        subtitle = "8 tuần gần nhất, chia theo thứ trong tuần."
-        cols = ["week_key", "T2", "T3", "T4", "T5", "T6", "T7", "CN"]
-    else:
-        df = _read_csv(repo_root / "data" / "advanced" / "special_month_board.csv", dtype=str).tail(
-            4
-        )
-        title = "Bảng Đặc Biệt theo tháng"
-        subtitle = "4 tháng gần nhất, giữ đủ cột ngày 01–31."
-        cols = ["month_key"] + [f"{i:02d}" for i in range(1, 32)]
-    return _render_table(
-        title=title, subtitle=subtitle, df=df, columns=cols, limit=10, dense=True, searchable=False
-    )
 
 
 def _render_group_bars(repo_root: Path, period: str) -> str:

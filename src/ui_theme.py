@@ -1286,7 +1286,3 @@ def dataframe_table(
     return render_table(headers, rows, align=align, empty=empty, key_column=key_column)
 
 
-def table_wrap(inner_html: str) -> str:
-    """Bọc bảng HTML có sẵn (ví dụ ``DataFrame.to_html``) vào vùng cuộn chuẩn."""
-
-    return f'<div class="ui-table-wrap">{inner_html}</div>'

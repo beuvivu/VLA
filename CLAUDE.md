@@ -355,6 +355,24 @@ thu vào «Chi tiết phép đo». Cặp không có phép kiểm độ nhạy n�
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
+## Kho tri thức và lời giải thích — 13-10-2026
+
+`src/knowledge_base.py` (kiến trúc: `documentation/architecture/2026-10-13-he-suy-luan-va-tu-hoc.md`)
+lấp phần "tự bổ sung tri thức" của yêu cầu hệ suy luận/tự học; phần bầu chọn có trọng số và tự chỉnh
+trọng số ĐÃ có ở `online_learning` (Hedge hai trí nhớ, cổng đề bạt), đừng dựng bản thứ hai. Luật trễ
+"a về → b về kỳ sau" được khai phá mỗi `DISCOVERY_EVERY` = 30 kỳ, ĐÓNG BĂNG khi đăng ký (định nghĩa,
+ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng e-process; "có bằng chứng" khi e đạt
+ngưỡng GHI LÚC ĐĂNG KÝ: lô k được α·6/(π²k²) (`batch_alpha`), tổng mọi lô ≤ α. Đừng quay lại ngưỡng
+N/α theo số luật hiện có: lô k bị xét ở α/k, tổng điều hoà không bị chặn; chỉ số lô đếm tiếp qua thí
+nghiệm đã nghỉ (`batches_spent`). 15 họ của `confidence_matrix` vào kho là ẢNH CHỤP (p tính lại mỗi ngày
+trên lịch sử dồn), không bao giờ "có bằng chứng"; Holm trên mọi họ chỉ phân loại. Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
+30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
+thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
+(`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.
+Đổi bất kỳ tham số nào trong `rule_config()` (kể cả `VERSION`, `HORIZON`, lưới cược) thì `carry_over`
+cất nguyên lô cũ vào `retired` — KHÔNG chấm lại bằng luật chấm mới — và đăng ký lô mới ngay.
+Ngân sách α (`alpha_budget`) chốt khi tạo kho: đổi `ALPHA` trên kho đã có bị `run` từ chối.
+
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
 
 `src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng

@@ -579,8 +579,10 @@ def _load_ml_probs(data_dir: Path, mode: str) -> pd.DataFrame:
             out["number_str"] = out["number"].astype(str).str.extract(r"(\d+)")[0].fillna("0").astype(int).map(_fmt2)
             out["ml_prob"] = pd.to_numeric(out["prob"], errors="coerce").fillna(0.0)
             return out[["number_str", "ml_prob"]].groupby("number_str", as_index=False)["ml_prob"].max()
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("Cannot load ML probabilities from %s: %s", path, exc)
+        except (OSError, ValueError) as exc:
+            # Tệp hỏng không được làm sập bảng thống kê, nhưng cũng không được im lặng: cột ml_prob
+            # sẽ bằng 0 cho mọi con, nên phải hiện ở mức cảnh báo.
+            logger.warning("Không đọc được xác suất ML từ %s: %s", path, exc)
     return pd.DataFrame({"number_str": [_fmt2(i) for i in NUMBER_COLS], "ml_prob": np.zeros(100)})
 
 

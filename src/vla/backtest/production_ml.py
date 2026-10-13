@@ -45,9 +45,6 @@ class ProductionMLModel:
         self.y = y.to_numpy(dtype=int)
         self.dates = pd.to_datetime(X["date"])
 
-    def available_rows(self) -> set[int]:
-        """Hàng neo có trong bảng production (bỏ các bước qua kỳ nghỉ Tết)."""
-        return set(np.unique(self.row).tolist())
 
     def fit(self, X: np.ndarray, hit: np.ndarray, rows: np.ndarray) -> "ProductionMLModel":
         last = int(np.max(rows))

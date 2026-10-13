@@ -45,10 +45,6 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     N = len(null)
     col = {n: i for i, n in enumerate(NAMES)}
 
-    def fw_conf(name: str, value: float) -> float:
-        """Tin cậy hiệu chỉnh đa kiểm: tỉ lệ lịch sử công bằng có max < value."""
-        return float((null[:, col[name]] < value).mean())
-
     def p_upper(name: str, value: float) -> float:
         return float(((null[:, col[name]] >= value).sum() + 1) / (N + 1))
 

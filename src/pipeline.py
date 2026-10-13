@@ -397,6 +397,10 @@ def main() -> None:
         # SECOND_ROUND_UNTIL, chỉ đo lại khi đoạn lịch sử ấy bị sửa.
         _run(_py("src/multi_hit_report.py"), allow_fail=soft_fail)
         _run(_py("src/build_multi_hit_page.py"), allow_fail=soft_fail)
+        # Kho tri thức: luật tự khai phá (chỉ chấm tiến cứu), bộ nhớ ngữ cảnh và lời giải thích
+        # top-10. Đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy, nên đứng sau
+        # cả ba. Khung thách đấu: không đổi tổ hợp xác suất.
+        _run(_py("src/knowledge_base.py"), allow_fail=soft_fail)
         # Soi cầu vị trí đọc kỳ vừa quay; phải có TRƯỚC trang chủ vì ô "cầu đẹp
         # nhất" nằm cạnh bảng LOTO của khung kết quả hằng ngày.
         _run(_py("src/position_bridges.py"), allow_fail=soft_fail)
