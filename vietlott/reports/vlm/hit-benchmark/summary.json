@@ -155,7 +155,7 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "7cae2e93ca92d06cf8116c13b4486f9490861188",
+    "git_commit": "ecb0b1db5a686efe1539df32117b47e25a2153f9",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -194,7 +194,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
+     "vlm/forecast/hits.py": "3104c4bb0291d5fe4657bc3adcb5e04741c40a3da2f0a68c343373d6586c8ee7",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -221,7 +221,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T16:10:50+00:00"
+    "generated_at": "2026-10-13T16:39:04+00:00"
    },
    "split": {
     "dev": {
@@ -2990,6 +2990,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 15,
+      "attainable": true,
       "rate": 0.04719062918376766,
       "lift": 1.9799644884332077
      },
@@ -2998,6 +2999,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 41,
+      "attainable": true,
       "rate": 0.036228113021125025,
       "lift": 1.5200131573885778
      },
@@ -3011,6 +3013,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 3,
+      "attainable": true,
       "rate": 0.011168269494231721,
       "lift": 8.014645385611193
      },
@@ -3019,6 +3022,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 5,
+      "attainable": true,
       "rate": 0.00526986058590978,
       "lift": 3.7817912479180897
      },
@@ -3537,10 +3541,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.4782601889999114,
-    "ml_seconds": 265.342789694,
-    "challenger_selection_seconds": 10.747838824999917,
-    "total_seconds": 572.71635064
+    "legacy_seconds": 3.1539654399998653,
+    "ml_seconds": 258.62144138899976,
+    "challenger_selection_seconds": 10.709096086000045,
+    "total_seconds": 551.3504834670002
    }
   },
   "power655": {
@@ -3554,7 +3558,7 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "7cae2e93ca92d06cf8116c13b4486f9490861188",
+    "git_commit": "ecb0b1db5a686efe1539df32117b47e25a2153f9",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3593,7 +3597,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
-     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
+     "vlm/forecast/hits.py": "3104c4bb0291d5fe4657bc3adcb5e04741c40a3da2f0a68c343373d6586c8ee7",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -3620,7 +3624,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T16:25:15+00:00"
+    "generated_at": "2026-10-13T16:52:51+00:00"
    },
    "split": {
     "dev": {
@@ -6416,6 +6420,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 9,
+      "attainable": true,
       "rate": 0.03399981475823227,
       "lift": 2.5507384027570286
      },
@@ -6424,6 +6429,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 22,
+      "attainable": true,
       "rate": 0.023231027092672052,
       "lift": 1.7428410525801474
      },
@@ -6437,6 +6443,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 2,
+      "attainable": true,
       "rate": 0.008965031284199178,
       "lift": 14.490847130959958
      },
@@ -6445,6 +6452,7 @@
       "alpha": 0.05,
       "power": 0.8,
       "critical_reached": 3,
+      "attainable": true,
       "rate": 0.003854494768073813,
       "lift": 6.230306697276846
      },
@@ -6963,10 +6971,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 2.9710852390001037,
-    "ml_seconds": 416.1212322240001,
-    "challenger_selection_seconds": 10.911651249999977,
-    "total_seconds": 865.3302528009999
+    "legacy_seconds": 2.9023813889998564,
+    "ml_seconds": 391.5510233680002,
+    "challenger_selection_seconds": 10.93468677799956,
+    "total_seconds": 826.8307830470003
    }
   }
  }
