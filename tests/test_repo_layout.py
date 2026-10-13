@@ -10,11 +10,17 @@
 
 from __future__ import annotations
 
+import ast
+import importlib.util
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_GROUPS = {"release", "browser", "ops", "research", "reference"}
+#: Thư viện chỉ được cài trong job của chính script (trình duyệt, đọc trang tham chiếu), không có
+#: trong môi trường kiểm thử chung.
+TOOL_ONLY = {"playwright"}
 
 
 def _files(base: Path) -> list[Path]:
@@ -50,12 +56,43 @@ def script_offenders(scripts: Path) -> list[str]:
     return sorted(bad)
 
 
+def unresolved_imports(scripts: Path, src: Path) -> list[str]:
+    """Import của script không tìm thấy ở đâu: thư viện chuẩn, ``src/``, cùng thư mục, đã cài, hay ``TOOL_ONLY``.
+
+    Ngày 13-10-2026 một script bị xoá vì không ai nhắc tới TÊN TỆP của nó, trong khi script khác
+    import nó theo TÊN MODULE; job trình duyệt của CI chết ở dòng import.
+    """
+    src_modules = {p.stem for p in src.glob("*.py")}
+    src_modules |= {p.name for p in src.iterdir() if (p / "__init__.py").exists()}
+    bad = []
+    for path in sorted(scripts.glob("*/*.py")):
+        siblings = {p.stem for p in path.parent.glob("*.py")}
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Import):
+                names = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                names = [node.module.split(".")[0]]
+            else:
+                continue
+            for name in names:
+                if (name == "__future__" or name in sys.stdlib_module_names or name in src_modules
+                        or name in siblings or name in TOOL_ONLY):
+                    continue
+                if importlib.util.find_spec(name) is None:
+                    bad.append(f"{path.relative_to(scripts).as_posix()}: import {name}")
+    return bad
+
+
 def test_docs_holds_only_the_published_site() -> None:
     assert not docs_offenders(ROOT / "docs")
 
 
 def test_every_script_sits_in_a_group_and_finds_the_repository_root() -> None:
     assert not script_offenders(ROOT / "scripts")
+
+
+def test_every_script_import_resolves() -> None:
+    assert not unresolved_imports(ROOT / "scripts", ROOT / "src")
 
 
 def test_the_layout_rules_catch_a_stray_file(tmp_path: Path) -> None:
@@ -84,3 +121,16 @@ def test_the_layout_rules_catch_a_stray_file(tmp_path: Path) -> None:
         'ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"\n', encoding="utf-8")
     found = script_offenders(scripts)
     assert [f.split(":")[0] for f in found] == ["loose.py", "ops/shallow.py", "release/shallow.sh"]
+
+
+def test_the_import_rule_catches_a_removed_sibling(tmp_path: Path) -> None:
+    scripts, src = tmp_path / "scripts", tmp_path / "src"
+    (scripts / "browser").mkdir(parents=True)
+    src.mkdir()
+    (src / "ui_theme.py").write_text("", encoding="utf-8")
+    (scripts / "browser" / "helper.py").write_text("import json\n", encoding="utf-8")
+    (scripts / "browser" / "main.py").write_text(
+        "from helper import x\nimport ui_theme\nfrom playwright.sync_api import sync_playwright\n", encoding="utf-8")
+    assert unresolved_imports(scripts, src) == []
+    (scripts / "browser" / "helper.py").unlink()
+    assert unresolved_imports(scripts, src) == ["browser/main.py: import helper"]
