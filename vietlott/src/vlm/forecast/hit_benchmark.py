@@ -168,8 +168,13 @@ def _record(draw_id: int, day: str, row: np.ndarray, bonus: int, main_ll: float,
     return out
 
 
-def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0) -> list[dict]:
-    """Chấm các luật hỗn hợp đã lưu (một luật mỗi kỳ, đã dựng TRƯỚC kỳ đó) — nhiệt độ τ trên trọng số."""
+def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0,
+                 top_nodes: int | None = None) -> list[dict]:
+    """Chấm các luật hỗn hợp đã lưu (một luật mỗi kỳ, đã dựng TRƯỚC kỳ đó) — nhiệt độ τ trên trọng số.
+
+    Vé: 6 số π cao nhất (quy tắc legacy) hoặc, khi có ``top_nodes``, bộ xác suất đồng thời cao nhất
+    ``Law.top`` của CHÍNH luật đã hiệu chuẩn (quy tắc họ ML) — luôn là vé mà luật ấy sẽ phát.
+    """
     spec = laws[0].spec
     out = []
     for offset, law in enumerate(laws):
@@ -181,9 +186,28 @@ def _law_records(laws: list[Law], series: Series, start: int, tau: float = 1.0) 
         # Số đặc biệt Power chấm riêng: log P(b | bộ chính) = log P(bộ chính, b) − log P(bộ chính).
         bonus_ll = tempered.log_likelihood(row, bonus) - main_ll if spec.bonus_same_drum else 0.
         pi = tempered.marginals()
+        if top_nodes is None:
+            ticket = _ticket_from_marginals(pi, spec.k)
+        else:
+            ticket = sorted(int(v) for v in tempered.top(1, max_nodes=top_nodes)[0][0]['numbers'])
         out.append(_record(int(series.draw_ids[t]), str(series.dates[t])[:10], row, bonus, main_ll, bonus_ll,
-                           pi, _ticket_from_marginals(pi, spec.k), spec))
+                           pi, ticket, spec))
     return out
+
+
+def ml_arm_records(laws: list[Law], portfolios: list[list[list[int]]], series: Series, start: int,
+                   tau: float, search_nodes: int) -> tuple[list[dict], list[dict]]:
+    """Nhánh ML và ML + τ; cả hai chấm vé mà CHÍNH luật của nhánh sẽ phát (``Law.top``), không phải top biên.
+
+    Nhánh ML dùng đúng danh mục đã xếp hạng lúc chạy (vé đầu là vé công bố); nhánh τ xếp hạng lại
+    trên luật đã hiệu chuẩn, vì τ có thể đổi bộ xác suất cao nhất.
+    """
+    plain = _law_records(laws, series, start)
+    for record, tickets in zip(plain, portfolios):
+        record['ticket'] = sorted(tickets[0])
+        record['hits'] = len(set(record['ticket']) & set(_drawn(series, record['id'])))
+        record['portfolio'] = tickets
+    return plain, _law_records(laws, series, start, tau, top_nodes=search_nodes)
 
 
 def _mixture_main_log_likelihood(law: Law, row: np.ndarray) -> float:
@@ -459,13 +483,8 @@ def benchmark_product(product: str, root: Path, *, ml_config: MLConfig | None = 
         t0 = time.perf_counter()
         ml_laws, portfolios = run_ml(series, w, end, config, PROTOCOL['portfolio_tickets'])
         timings['ml_seconds'] = time.perf_counter() - t0
-        arms['ml'] = _law_records(ml_laws, series, w)
-        for record, tickets in zip(arms['ml'], portfolios):
-            record['ticket'] = sorted(tickets[0])  # vé ML công bố là bộ xác suất cao nhất (Law.top), không phải top biên
-            record['hits'] = len(set(record['ticket']) & set(_drawn(series, record['id'])))
-            record['portfolio'] = tickets
         ml_tau = ch_fit_law_temperature(ml_laws[d_end - w:v_end - w], series, d_end)
-        arms['ml_tempered'] = _law_records(ml_laws, series, w, ml_tau)
+        arms['ml'], arms['ml_tempered'] = ml_arm_records(ml_laws, portfolios, series, w, ml_tau, config.search_nodes)
 
     t0 = time.perf_counter()
     chosen = select_challengers(series, split)

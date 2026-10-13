@@ -79,6 +79,31 @@ def test_rebuilt_legacy_law_scores_exactly_what_the_engine_scores():
         assert record['ticket'] == sorted(int(i) + 1 for i in np.argsort(-law.marginals(), kind='stable')[:6])
 
 
+def test_both_ml_arms_score_the_ticket_their_own_law_would_issue(monkeypatch):
+    """Nhánh ML + τ từng chấm 6 số biên cao nhất, không phải Law.top của luật đã hiệu chuẩn."""
+    from vietlott_engine.forecast.data import SetSpec
+    from vlm.forecast.distribution import Law
+
+    series = _synthetic(10)
+    rng = np.random.default_rng(4)
+    laws = [Law(SetSpec(45, 6), rng.uniform(0.5, 2.0, (2, 45)), np.array([0.6, 0.4])) for _ in range(5)]
+    issued = [40, 41, 42, 43, 44, 45]
+    seen = []
+
+    def fake_top(self, count, max_nodes=20000):
+        seen.append(max_nodes)
+        return [{'numbers': issued}], True
+
+    monkeypatch.setattr(Law, 'top', fake_top)
+    portfolios = [[[1, 2, 3, 4, 5, 6]] * 5 for _ in laws]
+    plain, tempered = hb.ml_arm_records(laws, portfolios, series, 5, 0.7, 123)
+    assert [r['ticket'] for r in plain] == [[1, 2, 3, 4, 5, 6]] * 5
+    assert [r['ticket'] for r in tempered] == [issued] * 5 and seen == [123] * 5
+    for t, record in enumerate(tempered, start=5):
+        drawn = set((np.flatnonzero(series.obs['main']['X'][t]) + 1).tolist())
+        assert record['hits'] == len(drawn & set(issued))
+
+
 def test_power_bonus_is_scored_separately_and_never_counted_as_a_main_hit():
     spec = CONFIGS[ProductCode.POWER_655].components['main']
     row = np.zeros(55)
