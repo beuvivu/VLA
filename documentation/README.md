@@ -68,6 +68,31 @@ forecasting guarantee.
 | [`operations/scheduling.md`](operations/scheduling.md) | Lịch chạy các workflow và ràng buộc thời gian. |
 | [`history/legacy-consolidation.md`](history/legacy-consolidation.md) | Consolidated migration, retirement acceptance and forensic re-audit record for the three predecessor repositories. |
 
+## Kế hoạch, giao diện và nghiệm thu (chuyển từ `docs/` ngày 13-10-2026)
+
+| Document | Scope |
+| --- | --- |
+| [`architecture/2026-09-26-theme-search-icons-design.md`](architecture/2026-09-26-theme-search-icons-design.md) | Đặc tả chủ đề sáng/tối, biểu tượng SVG và tìm kiếm toàn cục (nguồn chuẩn của hợp đồng giao diện 26-09-2026). |
+| [`plans/2026-09-26-compact-results-calendar.md`](plans/2026-09-26-compact-results-calendar.md) | Kế hoạch: bảng kết quả gọn và lịch vạn niên. |
+| [`plans/2026-09-26-crafto-integration.md`](plans/2026-09-26-crafto-integration.md) | Kế hoạch tích hợp ngôn ngữ thị giác Crafto Application. |
+| [`plans/2026-09-26-theme-search-icons.md`](plans/2026-09-26-theme-search-icons.md) | Kế hoạch hoàn thiện theme, tìm kiếm và biểu tượng. |
+| [`plans/2026-09-27-home-live-navigation.md`](plans/2026-09-27-home-live-navigation.md) | Kế hoạch tinh chỉnh trang chủ và trang trực tiếp. |
+| [`plans/2026-09-27-pending-ci.md`](plans/2026-09-27-pending-ci.md) | Kế hoạch hoàn tất PR và khoảng trống CI. |
+| [`plans/2026-10-07-leading-zero.md`](plans/2026-10-07-leading-zero.md) | Kế hoạch giữ số 0 đầu trong mọi bảng số. |
+| [`plans/2026-10-08-dashboard-tables.md`](plans/2026-10-08-dashboard-tables.md) | Kế hoạch bố cục bảng của trang Dashboard. |
+| [`plans/2026-10-08-pending-prs.md`](plans/2026-10-08-pending-prs.md) | Kế hoạch hoàn tất các PR đang dở ngày 08-10-2026. |
+| [`qa/2026-09-25-soat-tu-phuc-hoi.md`](qa/2026-09-25-soat-tu-phuc-hoi.md) | Soát sâu, tự sửa và tự phục hồi ngày 25-09-2026. |
+| [`qa/crafto-integration-2026-09-26.md`](qa/crafto-integration-2026-09-26.md) | Kiểm chứng tích hợp Crafto Application. |
+| [`qa/theme-search-icons-2026-09-26.md`](qa/theme-search-icons-2026-09-26.md) | Nghiệm thu giao diện sáng/tối, tìm kiếm và SVG. |
+| [`qa/vla-deep-audit-report.md`](qa/vla-deep-audit-report.md) | Báo cáo soát sâu và gia cố sản xuất. |
+| [`ui/VLA_MASTER_UIUX_SPEC.md`](ui/VLA_MASTER_UIUX_SPEC.md) | Bản prompt UI/UX của chủ dự án, giữ để tham chiếu; CHƯA có hiệu lực (xem CLAUDE.md). |
+| [`ui/crafto-integration-2026-09-26.md`](ui/crafto-integration-2026-09-26.md) | Thiết kế: Crafto Application × giao diện thống kê. |
+| [`ui/crafto-landing-background.md`](ui/crafto-landing-background.md) | Nền Crafto cho trang chủ / landing: trạng thái thật. |
+| [`ui/implementation-progress.md`](ui/implementation-progress.md) | Tiến độ giao diện. |
+| [`ui/nexlink-design-system.md`](ui/nexlink-design-system.md) | Hệ thiết kế Nexlink áp cho kho: số đo, không phải ước. |
+| [`ui/theme-contrast-2026-09-26.md`](ui/theme-contrast-2026-09-26.md) | Số đo độ tương phản bảng màu sáng/tối. |
+| [`ui/vla-ui-transformation-report.md`](ui/vla-ui-transformation-report.md) | Báo cáo khung ứng dụng hai cấp. |
+
 ## Related material outside this directory
 
 | Location | Content |
