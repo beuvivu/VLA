@@ -355,6 +355,18 @@ thu vào «Chi tiết phép đo». Cặp không có phép kiểm độ nhạy n�
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
+## Kho tri thức và lời giải thích — 13-10-2026
+
+`src/knowledge_base.py` (kiến trúc: `documentation/architecture/2026-10-13-he-suy-luan-va-tu-hoc.md`)
+lấp phần "tự bổ sung tri thức" của yêu cầu hệ suy luận/tự học; phần bầu chọn có trọng số và tự chỉnh
+trọng số ĐÃ có ở `online_learning` (Hedge hai trí nhớ, cổng đề bạt), đừng dựng bản thứ hai. Luật trễ
+"a về → b về kỳ sau" được khai phá mỗi `DISCOVERY_EVERY` = 30 kỳ, ĐÓNG BĂNG khi đăng ký (định nghĩa,
+ngày, số trong mẫu) và chỉ chấm trên kỳ SAU ngày đăng ký bằng e-process; "có bằng chứng" khi e ≥ N/α
+(N = số luật từng đăng ký). Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
+30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
+thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
+(`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning` và `confidence_matrix`.
+
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
 
 `src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng

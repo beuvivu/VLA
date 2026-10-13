@@ -392,6 +392,10 @@ def main() -> None:
         # 10 000 lịch sử được lưu sẵn; chỉ tính lại khi số kỳ trôi quá 2%.
         _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
         _run(_py("src/build_confidence_page.py"), allow_fail=soft_fail)
+        # Kho tri thức: luật tự khai phá (chỉ chấm tiến cứu), bộ nhớ ngữ cảnh và lời giải thích
+        # top-10. Đọc sổ tự học và báo cáo Confidence vừa ghi, nên đứng sau cả hai. Khung thách
+        # đấu: không đổi tổ hợp xác suất.
+        _run(_py("src/knowledge_base.py"), allow_fail=soft_fail)
         # Lô VIP nhiều nháy: khung thách đấu, không vào tổ hợp. Bộ lọc đo lại
         # mỗi ngày (~25 s); lượt hai là phép kiểm một lần, đóng băng ở
         # SECOND_ROUND_UNTIL, chỉ đo lại khi đoạn lịch sử ấy bị sửa.
