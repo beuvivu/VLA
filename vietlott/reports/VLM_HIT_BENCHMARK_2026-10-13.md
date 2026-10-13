@@ -8,7 +8,7 @@ Giao thức đăng ký ngày 2026-10-13 (`vlm.forecast.hit_benchmark.PROTOCOL`).
 
 ## Mega 6/45
 
-Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `08913499f225`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
+Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `c20c0529622e`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
 
 ### Test (nhìn một lần)
 
@@ -66,7 +66,7 @@ Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơ
 
 ## Power 6/55
 
-Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `08913499f225`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
+Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `c20c0529622e`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
 
 ### Test (nhìn một lần)
 
@@ -78,7 +78,7 @@ Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9
 | ML đang chạy | -0,000514 | 0,8418 | 2,65 | 0,00 | 0,586 | 1 | 0 | 0 | 0 |
 | ML + hiệu chuẩn τ | -0,000447 | 0,8352 | 2,34 | 0,00 | 0,586 | 1 | 0 | 0 | 0 |
 | Challenger co về công bằng | -0,002005 | 0,9638 | 5,43 | 0,00 | 0,574 | 3 | 0 | 0 | 0 |
-| Challenger đặc trưng nhân quả | -0,001955 | 0,9837 | 4,89 | 0,00 | 0,592 | 3 | 0 | 0 | 0 |
+| Challenger đặc trưng nhân quả | -0,002433 | 0,9851 | 6,10 | 0,02 | 0,592 | 3 | 0 | 0 | 0 |
 | *Kỳ vọng siêu bội* | 0 | — | 0 | — | 0,655 | 4,44 | 0,21 | 0,003 | 0,0000 |
 
 | Ứng viên | So với | Δ (nats/kỳ) | p một phía (DM HAC) |
@@ -89,13 +89,13 @@ Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9
 | ML + hiệu chuẩn τ | ML đang chạy | 0,000067 | 0,1130 |
 | Challenger co về công bằng | Legacy đang chạy | -0,002580 | 0,9273 |
 | Challenger co về công bằng | ML đang chạy | -0,001491 | 0,8956 |
-| Challenger đặc trưng nhân quả | Legacy đang chạy | -0,002530 | 0,9647 |
-| Challenger đặc trưng nhân quả | ML đang chạy | -0,001441 | 0,9208 |
+| Challenger đặc trưng nhân quả | Legacy đang chạy | -0,003008 | 0,9713 |
+| Challenger đặc trưng nhân quả | ML đang chạy | -0,001919 | 0,9447 |
 
 ### Chọn cấu hình (chỉ dev/validation)
 
 - Co về công bằng: nửa đời 500, độ co 20, τ dev -0,174, τ validation 0,429.
-- Đặc trưng nhân quả: λ = 10.0; ablation Δ trung bình theo nhóm: frequency -2,08·10⁻⁴ (bỏ), gap_lag -10,78·10⁻⁴ (bỏ), calendar -4,77·10⁻⁴ (bỏ), cooccurrence 0,31·10⁻⁴ (giữ). Nhóm giữ lại: cooccurrence; τ validation 1,637.
+- Đặc trưng nhân quả: λ = 10.0; ablation Δ trung bình theo nhóm: frequency -2,08·10⁻⁴ (bỏ), gap_lag -10,78·10⁻⁴ (bỏ), calendar -4,77·10⁻⁴ (bỏ), cooccurrence 0,31·10⁻⁴ (giữ). Nhóm giữ lại: cooccurrence; τ validation 2,000.
 - Hiệu chuẩn nhiệt độ trên validation: legacy τ = 0,0006, ML τ = 0,8950 (τ = 1: giữ nguyên; τ → 0: dữ liệu đòi co hẳn về công bằng).
 
 ### Công suất thống kê của H
