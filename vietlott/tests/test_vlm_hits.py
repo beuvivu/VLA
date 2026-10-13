@@ -65,6 +65,21 @@ def test_power_analysis_is_consistent_with_the_exact_test():
     assert crit['lift'] <= 2.0 + 1e-9
 
 
+def _power(p0: float, lift: float, draws: int) -> float:
+    c = detectable_lift(p0, draws)['critical_reached']
+    return float(stats.binom.sf(c - 1, draws, lift * p0))
+
+
+def test_draws_needed_is_the_smallest_sample_despite_the_sawtooth_power():
+    """Công suất phép kiểm rời rạc răng cưa: tìm nhị phân trả số kỳ quá lớn (Mega ×2: 6.899 thay vì 6.502)."""
+    p0, lift = 0.05, 2.0
+    needed = draws_needed(p0, lift)
+    assert _power(p0, lift, needed) >= 0.8
+    assert all(_power(p0, lift, n) < 0.8 for n in range(1, needed))
+    mega = float(fair_hit_pmf(45)[4:].sum())
+    assert draws_needed(mega, 2.0) < 6899
+
+
 def test_poisson_binomial_reduces_to_binomial():
     assert poisson_binomial_sf(3, [0.1] * 20) == pytest.approx(stats.binom.sf(2, 20, 0.1))
     assert poisson_binomial_sf(0, [0.3, 0.6]) == pytest.approx(1)
@@ -83,3 +98,12 @@ def test_portfolio_separates_per_ticket_from_any_ticket_and_needs_fixed_size():
     assert spread['any_ticket']['ge3']['fair_rate'] > single['any_ticket']['ge3']['fair_rate']
     with pytest.raises(ValueError):
         portfolio_summary([[[1, 2, 3, 4, 5, 6]], [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]], drawn[:2], 45)
+
+
+def test_monte_carlo_error_accounts_for_simulations_shared_by_every_draw():
+    """Cùng một danh mục trên 30 kỳ: sai số của tổng là 30 × sai số một kỳ, không phải √30 ×."""
+    rng = np.random.default_rng(9)
+    drawn = [sorted(rng.choice(45, 6, replace=False) + 1) for _ in range(30)]
+    one = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], drawn[:1], 45, simulations=20_000)
+    many = portfolio_summary([[[1, 2, 3, 4, 5, 6]]] * 30, drawn, 45, simulations=20_000)
+    assert many['any_ticket']['ge3']['monte_carlo_se'] == pytest.approx(30 * one['any_ticket']['ge3']['monte_carlo_se'], rel=1e-6)

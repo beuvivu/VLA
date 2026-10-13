@@ -145,27 +145,39 @@ def detectable_lift(p0: float, draws: int, alpha: float = 0.05, power: float = 0
             'rate': high, 'lift': high / p0}
 
 
+def _critical_counts(p0: float, draws: np.ndarray, alpha: float) -> np.ndarray:
+    """``_critical_count`` cho cả một mảng số kỳ (vectơ hoá)."""
+    c = stats.binom.isf(alpha, draws, p0).astype(np.int64)
+    while (high := stats.binom.sf(c - 1, draws, p0) > alpha).any():
+        c += high
+    while (low := (c > 0) & (stats.binom.sf(c - 2, draws, p0) <= alpha)).any():
+        c -= low
+    return c
+
+
 def draws_needed(p0: float, lift: float, alpha: float = 0.05, power: float = 0.8, limit: int = 10_000_000) -> int | None:
-    """Số kỳ tối thiểu để phát hiện tỷ lệ lift·p₀ với công suất cho trước; None nếu vượt ``limit``."""
+    """Số kỳ NHỎ NHẤT mà phép kiểm nhị thức chính xác đạt công suất cho trước với tỷ lệ lift·p₀.
+
+    Công suất của phép kiểm rời rạc không đơn điệu theo số kỳ (răng cưa: mỗi khi số kỳ đạt tới hạn
+    tăng một bậc, công suất tụt xuống), nên không tìm nhị phân được: tìm một mốc đủ bằng cách nhân
+    đôi rồi quét MỌI số kỳ nhỏ hơn. None nếu vượt ``limit``.
+    """
     if lift <= 1 or lift * p0 >= 1:
         raise ValueError('Cần 1 < lift và lift·p₀ < 1')
 
-    def enough(draws: int) -> bool:
-        c = _critical_count(p0, draws, alpha)
-        return bool(stats.binom.sf(c - 1, draws, lift * p0) >= power)
+    def powers(draws: np.ndarray) -> np.ndarray:
+        return stats.binom.sf(_critical_counts(p0, draws, alpha) - 1, draws, lift * p0)
 
     high = 1
-    while not enough(high):
+    while powers(np.array([high]))[0] < power:
         high *= 2
         if high > limit:
             return None
-    low = high // 2
-    while high - low > 1:
-        mid = (low + high) // 2
-        if enough(mid):
-            high = mid
-        else:
-            low = mid
+    for start in range(1, high + 1, 200_000):
+        block = np.arange(start, min(high, start + 199_999) + 1)
+        hit = np.flatnonzero(powers(block) >= power)
+        if hit.size:
+            return int(block[hit[0]])
     return high
 
 
@@ -199,6 +211,9 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     per_ticket = []
     best = []
     fair_any = {level: [] for level in LEVELS}
+    # Mọi kỳ dùng CÙNG các mô phỏng, nên ước lượng của các kỳ tương quan: sai số của tổng kỳ vọng
+    # phải tính từ tổng theo TỪNG mô phỏng, không cộng phương sai như thể độc lập.
+    aggregate = {level: np.zeros(simulations) for level in LEVELS}
     overlap, coverage = [], []
     for tickets, result in zip(portfolios, drawn):
         hits = [hit_count(list(t), list(result), n) for t in tickets]
@@ -207,7 +222,9 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
         index = np.asarray([[v - 1 for v in t] for t in tickets])
         simulated = incidence[:, index].sum(axis=2).max(axis=1)  # (S,) số khớp tốt nhất trong danh mục
         for level in LEVELS:
-            fair_any[level].append(float((simulated >= level).mean()))
+            reached = simulated >= level
+            fair_any[level].append(float(reached.mean()))
+            aggregate[level] += reached
         pairs = [len(set(a) & set(b)) for a, b in combinations(tickets, 2)]
         overlap.append(float(np.mean(pairs)) if pairs else 0.0)
         coverage.append(len({v for t in tickets for v in t}) / (size * len(tickets[0])))
@@ -220,7 +237,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
         any_level[f'ge{level}'] = {
             'reached': reached, 'rate': reached / len(best), 'expected': expected,
             'fair_rate': expected / len(best),
-            'monte_carlo_se': float(np.sqrt(np.sum(np.asarray(probabilities) * (1 - np.asarray(probabilities)) / simulations))),
+            'monte_carlo_se': float(aggregate[level].std(ddof=1) / np.sqrt(simulations)),
             'p_value_greater': poisson_binomial_sf(reached, probabilities),
         }
     return {'draws': len(portfolios), 'tickets_per_draw': size, 'simulations': simulations, 'seed': seed,
