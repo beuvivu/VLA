@@ -150,26 +150,32 @@ def verdict(vip: dict, bench: dict | None) -> dict:
     * ``vip_beats_random``: mức tin của bộ lọc là Trung bình/Cao, tức lift > 1 và p một phía < 0,05
       trên kiểm chứng walk-forward.
     * ``second_round_passes``: ứng viên duy nhất của lượt thử thứ hai qua giai đoạn kiểm.
-    * ``protocol_sensitive``: cùng giao thức bắt được tín hiệu cài sẵn. Không bắt được thì mọi kết
-      luận âm chỉ là "chưa kết luận".
+    * ``protocol_sensitive``: cùng giao thức bắt được tín hiệu cài sẵn. Không bắt được — hoặc
+      CHƯA CÓ số đo lượt hai và phép kiểm độ nhạy (thiếu tệp, hay tệp bị loại vì lịch sử đã đổi) —
+      thì một kết luận âm không có căn cứ: trang ghi "chưa kết luận".
     """
     beats = vip["confidence"] in ("High", "Medium")
     second = None if bench is None else bool(bench["candidate_passes"])
     sensitive = None if bench is None else bool(bench["power_check"]["candidate_passes"])
+    reason = ""
     if beats or second:
         state = "hon"
+    elif sensitive is None:
+        state, reason = "chua-ket-luan", "thieu-so-do"
     elif sensitive is False:
-        state = "chua-ket-luan"
+        state, reason = "chua-ket-luan", "giao-thuc-mu"
     else:
         state = "khong-hon"
-    return {"state": state, "vip_beats_random": beats, "second_round_passes": second,
-            "protocol_sensitive": sensitive}
+    return {"state": state, "reason": reason, "vip_beats_random": beats,
+            "second_round_passes": second, "protocol_sensitive": sensitive}
 
 
 _HEADLINE = {
-    "hon": "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
-    "khong-hon": "Không hơn chọn bừa",
-    "chua-ket-luan": "Chưa kết luận được: giao thức không bắt được tín hiệu cài sẵn",
+    ("hon", ""): "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
+    ("khong-hon", ""): "Không hơn chọn bừa",
+    ("chua-ket-luan", "giao-thuc-mu"): "Chưa kết luận được: giao thức không bắt được tín hiệu cài sẵn",
+    ("chua-ket-luan", "thieu-so-do"): "Chưa kết luận được: chưa có số đo của lượt thử thứ hai và "
+                                      "phép kiểm độ nhạy",
 }
 
 
@@ -206,8 +212,9 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
             + ("có nghĩa." if v["protocol_sensitive"] else "chưa đủ căn cứ.")
         )
     else:
-        parts.append("Chưa có số đo của lượt thử thứ hai.")
-    return _HEADLINE[v["state"]], " ".join(parts)
+        parts.append("Chưa có số đo của lượt thử thứ hai, nên chưa biết phép đo có đủ nhạy để thấy "
+                     "một tín hiệu nếu nó có.")
+    return _HEADLINE[(v["state"], v["reason"])], " ".join(parts)
 
 
 # --------------------------------------------------------------------------- các khối

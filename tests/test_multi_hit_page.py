@@ -321,10 +321,25 @@ def test_a_blind_protocol_cannot_conclude_not_better(fair_vip, bench) -> None:
     assert "chưa đủ căn cứ" in page.verdict_text(fair_vip, blind)[1]
 
 
-def test_without_a_benchmark_the_page_still_builds_from_the_filter_alone(fair_vip) -> None:
+def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> None:
+    """Thiếu (hay bị loại) số đo lượt hai thì chưa biết phép đo có đủ nhạy: không được nói "không hơn"."""
     soup = _soup(fair_vip, None)
-    assert _verdict(soup) == "khong-hon"
+    assert _verdict(soup) == "chua-ket-luan"
+    headline = soup.select_one(".app-vip-verdict").get_text(strip=True)
+    assert headline.startswith("Chưa kết luận được: chưa có số đo của lượt thử thứ hai")
     assert "Chưa có số đo của lượt thử thứ hai" in soup.get_text()
+
+
+def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> None:
+    """Bằng chứng dương của chính bộ lọc không cần lượt hai để đứng vững."""
+    assert _verdict(_soup(planted_vip, None)) == "hon"
+
+
+def test_the_release_check_measures_before_it_builds_the_page() -> None:
+    """release_check dựng trang trên lịch sử hiện tại: bước đo phải chạy NGAY TRƯỚC trình dựng."""
+    lines = [ln.strip() for ln in (ROOT / "scripts" / "release_check.sh").read_text(encoding="utf-8").splitlines()]
+    build = lines.index("python src/build_multi_hit_page.py")
+    assert lines[build - 1] == "python src/multi_hit_report.py"
 
 
 def test_the_verdict_prints_the_measured_numbers(planted_vip, bench) -> None:
