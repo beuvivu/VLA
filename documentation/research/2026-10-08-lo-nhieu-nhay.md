@@ -245,6 +245,15 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
     cùng một tập kiểm ở cùng α, và xác suất "đạt" chỉ do may cộng dồn quá 1%. Tệp chỉ đo lại khi
     `MEASURE_VERSION` đổi, hoặc khi chính đoạn lịch sử ấy bị sửa hay bị cắt. Muốn kiểm trên kỳ mới
     thì đăng ký một phép kiểm tiến cứu mới với ngày bắt đầu mới.
+- **Mức tin xem lại mỗi ngày.** Bộ lọc được chấm lại mỗi ngày trên lịch sử dài thêm một kỳ. Nếu
+  so p của một lần xem với cùng ngưỡng mỗi ngày, thì sớm muộn sẽ vượt ngưỡng chỉ do may.
+  - Mô phỏng 2 000 lịch sử không kỹ năng, mỗi lịch sử 3 000 kỳ, xem lại sau mỗi kỳ: 30,9% lịch sử
+    có lúc p < 0,05.
+  - Vì vậy mức tin dùng p luôn hợp lệ (`anytime_p`). Đó là một e-process: trung bình trên lưới λ
+    của tích (1 + λ·(Hₜ − k·mₜ/100)) qua các kỳ. Theo bất đẳng thức Ville, p = 1 / max e hợp lệ dù
+    xem bao nhiêu lần. Trên cùng mô phỏng: 3,45%.
+  - Trên dữ liệu thật đến 12-10-2026: p của một lần xem là 0,534, p luôn hợp lệ là 0,726, mức tin
+    Thấp.
 - **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
   pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
 - **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:

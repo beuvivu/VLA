@@ -31,10 +31,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.special import logsumexp
 from scipy.stats import norm, spearmanr
 
 from atomic_io import atomic_write_text
-from multi_hit_vip import VIPConfig, VIPMultiHitModel, base_rate, counts_matrix, draws_from_frame
+from multi_hit_vip import (VIPConfig, VIPMultiHitModel, base_rate, counts_matrix, draws_from_frame,
+                           model_confidence, number_confidence)
 
 OUT_DIR = "multi_hit"
 VIP_FILE = "vip.json"
@@ -42,7 +44,11 @@ BENCHMARK_FILE = "benchmark.json"
 #: Đổi định nghĩa một số đo thì tăng: bản đệm cũ bị bỏ và đo lại.
 #: 2: thêm dấu vân tay lịch sử và sai số chuẩn GHÉP CẶP của "ít nhất một con về".
 #: 3: lượt hai đóng băng ở lịch sử đến SECOND_ROUND_UNTIL, không còn đo lại theo cửa sổ trượt.
-MEASURE_VERSION = 3
+#: 4: mức tin của bộ lọc dùng p luôn hợp lệ (e-process), vì trang xem lại kết quả mỗi ngày.
+MEASURE_VERSION = 4
+#: Lưới hệ số cược λ của e-process một phía (cược top-k trúng NHIỀU hơn chọn bừa). Với k = 5 và tối
+#: đa 13 con về ≥ 2 nháy trong một kỳ, kỳ vọng chọn bừa ≤ 0,65 nên 1 + λ·(H − μ) > 0 với mọi λ ≤ 0,8.
+BET_GRID = (0.05, 0.1, 0.2, 0.4, 0.8)
 #: Lượt thử thứ hai là phép kiểm MỘT LẦN, đã chạy và công bố trên lịch sử đến ngày này. Muốn kiểm
 #: trên kỳ mới thì đăng ký phép kiểm tiến cứu mới với ngày bắt đầu mới, đừng dời ngày này.
 SECOND_ROUND_UNTIL = "2026-10-12"
@@ -79,6 +85,29 @@ def draw_level_interval(per_draw_hits, k: int) -> tuple[tuple[float, float], flo
     return wilson(rate * n_eff, n_eff), deff
 
 
+def anytime_p(hits, expected, grid: tuple[float, ...] = BET_GRID) -> tuple[float, float]:
+    """p LUÔN HỢP LỆ cho "top-k trúng nhiều hơn chọn bừa", đúng cả khi xem lại sau MỖI kỳ mới.
+
+    Trang chấm lại bộ lọc mỗi ngày trên lịch sử dài thêm một kỳ. So p của một lần xem với cùng ngưỡng
+    mỗi ngày thì sớm muộn sẽ vượt ngưỡng chỉ do may. Ở đây: với mỗi kỳ t, Hₜ là số lượt trúng của
+    top-k và μₜ = k·mₜ/100 là kỳ vọng của chọn bừa trong CÙNG kỳ; khi bộ lọc không có kỹ năng,
+    E[Hₜ − μₜ | các kỳ trước] = 0. Tích Π (1 + λ·(Hₜ − μₜ)) là martingale không âm, trung bình trên
+    lưới λ cũng vậy (e-process). Bất đẳng thức Ville: P(có lúc nào e ≥ 1/α) ≤ α, nên
+    p = 1 / max e (chặn ở 1) hợp lệ dù xem bao nhiêu lần. Trả về (p, max e).
+    """
+    diff = np.asarray(hits, dtype=float) - np.asarray(expected, dtype=float)
+    if diff.size == 0:
+        return 1.0, 1.0
+    lam = np.asarray(grid, dtype=float)[:, None]
+    factors = 1.0 + lam * diff[None, :]
+    if (factors <= 0).any():
+        raise ValueError("hệ số cược làm vốn âm — thu hẹp BET_GRID")
+    log_paths = np.cumsum(np.log(factors), axis=1)
+    log_mix = logsumexp(log_paths, axis=0) - math.log(len(grid))
+    best = max(0.0, float(log_mix.max()))
+    return math.exp(-best), math.exp(best)
+
+
 def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype=str)
     return draws_from_frame(frame)
@@ -104,9 +133,16 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
     bt = report.backtest
     (lo, hi), deff = draw_level_interval(bt.per_draw["trung"], cfg.top_k)
     counts = counts_matrix(model.draws)
+    index = {label: t for t, label in enumerate(labels)}
+    rows = [index[k] for k in bt.per_draw["ky"]]
+    per_draw_expected = cfg.top_k * (counts[rows] >= 2).sum(axis=1) / 100
+    p_anytime, e_max = anytime_p(bt.per_draw["trung"], per_draw_expected)
+    # Mức tin của bộ lọc lấy p luôn hợp lệ: trang xem lại mỗi ngày (xem anytime_p).
+    level = model_confidence(p_anytime, bt.lift)
+    base = base_rate()
     recent = []
     for row in bt.per_draw.tail(RECENT_DRAWS).iloc[::-1].itertuples(index=False):
-        t = labels.index(row.ky)
+        t = index[row.ky]
         multi_today = int((counts[t] >= 2).sum())
         recent.append({
             "date": row.ky,
@@ -141,11 +177,14 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
             "lift": bt.lift,
             "z": bt.z,
             "p_value": bt.p_value,
+            "p_anytime": p_anytime,
+            "e_max": e_max,
         },
-        "confidence": report.model_level,
+        "confidence": level,
         "picks": [
             {"number": p.number, "vip_score": p.vip_score, "probability": p.probability,
-             "x_base": p.lift, "confidence": p.confidence, "reasons": p.reasons()}
+             "x_base": p.lift, "confidence": number_confidence(level, p.probability, base),
+             "reasons": p.reasons()}
             for p in report.picks
         ],
         "recent": recent,

@@ -112,8 +112,8 @@ def _table(head: list[str], rows: list[list[str]], numeric: str) -> str:
 
 
 def _confidence_rule() -> str:
-    return (f"Cao: lift > 1 và p < {_num(CONFIDENCE_P['High'], 2)} · Trung bình: lift > 1 và "
-            f"p < {_num(CONFIDENCE_P['Medium'], 2)} · còn lại Thấp")
+    return (f"p luôn hợp lệ — Cao: lift > 1 và p < {_num(CONFIDENCE_P['High'], 2)} · Trung bình: lift > 1 "
+            f"và p < {_num(CONFIDENCE_P['Medium'], 2)} · còn lại Thấp")
 
 
 def strategy_label(name: str) -> str:
@@ -206,7 +206,8 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
         f"top-{vip['config']['top_k']} của bộ lọc trúng ≥ 2 nháy {_count(bt['hits'])}/"
         f"{_count(bt['picks'])} lượt ({_pct(bt['rate'])}); chọn bừa trên chính các kỳ ấy kỳ vọng "
         f"{_num(bt['expected'], 1)} lượt ({_pct(bt['random_rate'])}). "
-        f"z = {_num(bt['z'], 2, sign=True)}, p một phía = {_p(bt['p_value'])} → mức tin "
+        f"z = {_num(bt['z'], 2, sign=True)}, p một phía = {_p(bt['p_value'])} nếu chỉ xem một lần; vì "
+        f"trang xem lại mỗi ngày, mức tin dùng p luôn hợp lệ = {_p(bt['p_anytime'])} → mức tin "
         f"{_LEVEL_WORD.get(vip['confidence'], vip['confidence'])}."
     ]
     if bench is not None:
@@ -248,7 +249,8 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
         ("Chọn bừa cùng kỳ", _pct(bt["random_rate"]),
          f"Lý thuyết P(X ≥ 2), X ~ Nhị thức(27; 1/100): {_pct(vip['base_theory'], 3)}"),
         ("So với chọn bừa", f"×{_num(bt['lift'], 3)}",
-         f"z = {_num(bt['z'], 2, sign=True)} · p một phía = {_p(bt['p_value'])}"),
+         f"z = {_num(bt['z'], 2, sign=True)} · p một lần xem = {_p(bt['p_value'])} · "
+         f"p luôn hợp lệ = {_p(bt['p_anytime'])}"),
     ]
     tiles = "".join(
         '<article class="ui-kpi">'
@@ -430,6 +432,11 @@ def method_card(vip: dict) -> str:
         "Khoảng tin cậy là Wilson 95% trên cỡ mẫu hiệu dụng: các con cùng kỳ chấm trên cùng 27 lô nên "
         "không độc lập, cỡ mẫu được chia cho hệ số thiết kế deff = phương sai số trúng từng kỳ / "
         "(k·p·(1 − p)).",
+        "Trang chấm lại bộ lọc mỗi ngày, nên p của một lần xem không đủ: xem lại đủ lâu với cùng ngưỡng "
+        "thì sớm muộn sẽ vượt ngưỡng chỉ do may. p luôn hợp lệ lấy từ e-process: tích các hệ số cược "
+        "1 + λ·(trúng − kỳ vọng chọn bừa) của từng kỳ, trung bình trên một lưới λ; khi bộ lọc không có "
+        "kỹ năng, xác suất tích ấy có lúc nào vượt 1/α không quá α (bất đẳng thức Ville), nên "
+        "p = 1 / giá trị lớn nhất của tích đúng dù xem bao nhiêu lần.",
         f"Mức tin của bộ lọc — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
         "bộ lọc.",
         "Số đo của bộ lọc tính lại mỗi ngày. Lượt thử thứ hai và phép kiểm độ nhạy là phép kiểm một "
@@ -515,8 +522,8 @@ def render(vip: dict, bench: dict | None, *, last_date: str = "", behind_by: int
              "trước nó, nên tỉ lệ trúng là ngoài mẫu."),
             ("Chọn bừa cùng kỳ", "Mốc so: chọn ngẫu nhiên cùng số con trong chính kỳ ấy. Hơn mốc này "
              "một cách có ý nghĩa thống kê mới gọi là có kỹ năng."),
-            ("Mức tin", "Suy từ p một phía của phép so với chọn bừa, không đặt tay; không phải xác "
-             "suất trúng."),
+            ("Mức tin", "Suy từ p luôn hợp lệ của phép so với chọn bừa (đúng dù trang xem lại mỗi "
+             "ngày), không đặt tay; không phải xác suất trúng."),
         ])
         + "\n"
         + lab_jump([("app-lab-conclusion", "Kết luận"), ("app-vip-picks", "Top kỳ tới"),

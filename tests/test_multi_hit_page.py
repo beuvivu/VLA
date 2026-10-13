@@ -125,7 +125,60 @@ def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
     assert bt["rate"] == pytest.approx(bt["hits"] / bt["picks"])
     assert bt["ci95"][0] < bt["rate"] < bt["ci95"][1]
     assert bt["lift"] == pytest.approx(bt["hits"] / bt["expected"])
-    assert planted_vip["confidence"] == m.model_confidence(bt["p_value"], bt["lift"])
+    assert planted_vip["confidence"] == m.model_confidence(bt["p_anytime"], bt["lift"])
+    for pick in planted_vip["picks"]:
+        assert pick["confidence"] == m.number_confidence(planted_vip["confidence"], pick["probability"],
+                                                         planted_vip["base_theory"])
+
+
+# --------------------------------------------------------------------------- p luôn hợp lệ
+
+
+def test_anytime_p_on_a_hand_computed_path() -> None:
+    # Cược λ = 1: vốn 1 → 1,5 (trúng 1, kỳ vọng 0,5) → 0,75 (trượt). Đỉnh 1,5 → p = 1/1,5.
+    p, e_max = report.anytime_p([1, 0], [0.5, 0.5], grid=(1.0,))
+    assert e_max == pytest.approx(1.5) and p == pytest.approx(1 / 1.5)
+    # Không bao giờ hơn kỳ vọng: vốn không lên khỏi 1, p = 1.
+    assert report.anytime_p([0, 0, 0], [0.2, 0.3, 0.1]) == (1.0, 1.0)
+    with pytest.raises(ValueError):
+        report.anytime_p([0], [0.5], grid=(3.0,))         # cược làm vốn âm
+
+
+def _null_paths(n_hist: int, n_draws: int, seed: int = 1):
+    """Lịch sử KHÔNG có kỹ năng: mỗi kỳ m con về ≥ 2 nháy, top-5 trúng theo siêu bội."""
+    rng = np.random.default_rng(seed)
+    for _ in range(n_hist):
+        m_t = rng.binomial(100, 0.0297, size=n_draws)
+        yield rng.hypergeometric(m_t, 100 - m_t, 5), 5 * m_t / 100, m_t
+
+
+def test_looking_every_day_needs_the_anytime_p() -> None:
+    """Xem lại sau mỗi kỳ với cùng ngưỡng 0,05: p một lần xem vượt ngưỡng ở quá nhiều lịch sử
+    không kỹ năng; p luôn hợp lệ giữ đúng mức đã hứa."""
+    from scipy.stats import norm
+
+    naive = anytime = 0
+    n_hist = 400
+    for hits, mu, m_t in _null_paths(n_hist, 1500):
+        var = 5 * (m_t / 100) * (1 - m_t / 100) * 95 / 99
+        z = np.cumsum(hits - mu)[200:] / np.sqrt(np.cumsum(var)[200:])
+        naive += bool((norm.sf(z) < 0.05).any())
+        anytime += report.anytime_p(hits, mu)[0] < 0.05
+    assert naive / n_hist > 0.15              # vấn đề có thật trong chính thiết lập này
+    assert anytime / n_hist <= 0.05
+
+
+def test_every_confidence_on_the_page_follows_the_anytime_p(monkeypatch) -> None:
+    """Mô hình tự báo High trên lịch sử cài tín hiệu; nếu p luôn hợp lệ không đạt thì không con nào được tin."""
+    monkeypatch.setattr(report, "anytime_p", lambda hits, expected: (1.0, 1.0))
+    vip = _vip_of(m.mock_history(120, seed=2026, planted=PLANTED))
+    assert vip["confidence"] == "Low"
+    assert {p["confidence"] for p in vip["picks"]} == {"Low"}
+
+
+def test_anytime_p_still_finds_a_real_edge(planted_vip, fair_vip) -> None:
+    assert planted_vip["backtest"]["p_anytime"] < 1e-6 and planted_vip["confidence"] == "High"
+    assert fair_vip["backtest"]["p_anytime"] > 0.05 and fair_vip["confidence"] == "Low"
 
 
 # --------------------------------------------------------------------------- bản đệm lượt hai
