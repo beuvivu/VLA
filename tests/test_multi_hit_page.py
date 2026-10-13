@@ -592,6 +592,18 @@ def test_without_a_benchmark_a_negative_result_is_not_concluded(fair_vip) -> Non
     assert "Chưa có số đo của lượt thử thứ hai" in soup.get_text()
 
 
+@pytest.mark.parametrize("case", ["fair", "planted", "no-bench"])
+def test_the_detailed_conclusion_carries_the_same_headline(case, fair_vip, planted_vip, bench) -> None:
+    """Kết luận ở khối trên và kết luận đầy đủ trong «Chi tiết phép đo» không được nói hai điều khác nhau."""
+    vip, b = {"fair": (fair_vip, bench), "planted": (planted_vip, bench), "no-bench": (fair_vip, None)}[case]
+    soup = _soup(vip, b)
+    top = soup.select_one(".app-vip-verdict b").get_text(strip=True)
+    detail = soup.select_one("#app-lab-conclusion p b").get_text(strip=True)
+    assert top == detail
+    v = page.verdict(vip, b)
+    assert top == page._HEADLINE[(v["state"], v["reason"])] + "."
+
+
 def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> None:
     """Bằng chứng dương của chính bộ lọc không cần lượt hai để đứng vững."""
     assert _verdict(_soup(planted_vip, None)) == "hon"

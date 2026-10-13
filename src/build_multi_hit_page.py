@@ -558,8 +558,8 @@ def _page(body: str, meta: str) -> str:
 <div class="app-lab app-lab-multi-hit" data-lab-layout="multi-hit">
 {lab_hero(PAGE,
     "Lô VIP nhiều nháy",
-    "Đề xuất cho kỳ tới: năm con dễ về từ hai nháy nhất theo mô hình, và năm cặp xiên 2 hay về "
-    "cùng nhau nhất. Mỗi khối kèm tỉ lệ trúng đã kiểm trên mọi kỳ đã quay.",
+    "Đề xuất cho kỳ tới: năm con được mô hình xếp cao nhất để về từ hai nháy, và năm cặp xiên 2 "
+    "hay về cùng nhau nhất. Mỗi khối kèm tỉ lệ trúng đã kiểm trên mọi kỳ đã quay.",
     eyebrow="LÔ ≥ 2 NHÁY · XIÊN 2", core="ĐỐI CHỨNG",
     meta=meta,
     action=("#app-vip-picks", "Xem đề xuất"),
