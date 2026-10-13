@@ -13,8 +13,9 @@ với cỡ mẫu hiện có, chỉ một mức tăng rất lớn mới có thể
 đúng là "chưa đủ bằng chứng", không phải "không có".
 
 Nhiều vé mỗi kỳ được tách bạch: chỉ số theo TỪNG vé khác với "ít nhất một vé đạt mức", và mốc
-ngẫu nhiên của "ít nhất một vé" phụ thuộc độ trùng giữa các vé nên được ước lượng Monte Carlo trên
-chính bộ vé ấy (kèm sai số Monte Carlo). Nhiều vé hơn KHÔNG phải dự báo tốt hơn.
+ngẫu nhiên của "ít nhất một vé" phụ thuộc độ trùng giữa các vé nên được tính CHÍNH XÁC trên chính bộ
+vé ấy (liệt kê theo vùng giao của các vé); Monte Carlo chỉ là dự phòng khi danh mục quá lớn. Nhiều
+vé hơn KHÔNG phải dự báo tốt hơn.
 """
 
 from __future__ import annotations
@@ -198,23 +199,70 @@ def poisson_binomial_sf(reached: int, probabilities: Sequence[float]) -> float:
     return float(dist[max(reached, 0):].sum())
 
 
+def any_ticket_tail(tickets: Sequence[Sequence[int]], n: int, k: int = 6, limit: int = 200_000) -> np.ndarray | None:
+    """P(số khớp TỐT NHẤT trong danh mục ≥ L), L = 0..k, CHÍNH XÁC khi kết quả là k số rút đều từ n số.
+
+    Hợp các vé được chia thành vùng theo tập vé chứa số ấy (vùng Venn). Kết quả rút đều nên số con rơi
+    vào từng vùng theo siêu bội nhiều chiều, P(c) = Π C(cỡ vùng, c_vùng) · C(n − |hợp|, k − Σc) / C(n, k),
+    và số khớp của mỗi vé là tổng c trên các vùng của nó. Liệt kê mọi c (số nguyên, không làm tròn) cho
+    phân phối của số khớp tốt nhất — kể cả mức hiếm mà một mẫu mô phỏng hữu hạn không bao giờ gặp.
+
+    Returns:
+        Mảng k + 1 phần tử; None khi cận số tổ hợp C(k + số vùng, k) vượt ``limit`` (dùng Monte Carlo).
+    """
+    sets = [set(t) for t in tickets]
+    regions: dict[tuple[bool, ...], int] = {}
+    for v in set().union(*sets):
+        key = tuple(v in s for s in sets)
+        regions[key] = regions.get(key, 0) + 1
+    keys = list(regions)
+    if comb(k + len(keys), k) > limit:
+        return None
+    sizes = [regions[key] for key in keys]
+    owned = [[a for a, key in enumerate(keys) if key[t]] for t in range(len(sets))]
+    outside = n - sum(sizes)
+    weights = [0] * (k + 1)
+    counts = [0] * len(keys)
+
+    def walk(region: int, left: int, weight: int) -> None:
+        if region == len(keys):
+            w = weight * comb(outside, left)
+            if w:
+                weights[max(sum(counts[a] for a in regions_of) for regions_of in owned)] += w
+            return
+        for c in range(min(sizes[region], left) + 1):
+            counts[region] = c
+            walk(region + 1, left - c, weight * comb(sizes[region], c))
+        counts[region] = 0
+
+    walk(0, k, 1)
+    total = comb(n, k)
+    tail = np.zeros(k + 1)
+    acc = 0
+    for level in range(k, -1, -1):
+        acc += weights[level]
+        tail[level] = acc / total
+    return tail
+
+
 def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequence[Sequence[int]], n: int,
-                      k: int = 6, simulations: int = 20_000, seed: int = 20261013) -> dict:
+                      k: int = 6, simulations: int = 20_000, seed: int = 20261013, exact_limit: int = 200_000) -> dict:
     """Nhiều vé mỗi kỳ, số vé CỐ ĐỊNH: tách chỉ số từng vé với "ít nhất một vé đạt mức".
 
-    Mốc ngẫu nhiên của "ít nhất một vé ≥ L" phụ thuộc độ trùng giữa các vé, nên được ước lượng bằng
-    cùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ), kèm sai số Monte Carlo.
-    Số kỳ đạt được so với tổng các xác suất ấy bằng p Poisson–nhị thức một phía.
+    Mốc ngẫu nhiên của "ít nhất một vé ≥ L" phụ thuộc độ trùng giữa các vé, nên được tính chính xác
+    trên chính bộ vé (``any_ticket_tail``). Danh mục quá lớn để liệt kê (cận vượt ``exact_limit``)
+    mới dùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ, kèm sai số Monte Carlo);
+    khi ấy ước lượng bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé] — mức hiếm không gặp trong
+    mẫu hữu hạn không thành xác suất 0 và p = 0. Số kỳ đạt được so với tổng các xác suất ấy bằng p
+    Poisson–nhị thức một phía.
     """
     if len(portfolios) != len(drawn) or not portfolios:
         raise ValueError('Mỗi kỳ cần đúng một danh mục vé')
     size = len(portfolios[0])
     if size < 1 or any(len(p) != size for p in portfolios):
         raise ValueError('Số vé mỗi kỳ phải cố định khi so sánh')
-    rng = np.random.default_rng(seed)
-    sample = np.argsort(rng.random((simulations, n)), axis=1)[:, :k]
-    incidence = np.zeros((simulations, n), dtype=bool)
-    np.put_along_axis(incidence, sample, True, axis=1)
+    incidence = None
+    monte_carlo_draws = 0
     per_ticket = []
     best = []
     fair_any = {level: [] for level in LEVELS}
@@ -226,12 +274,24 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
         hits = [hit_count(list(t), list(result), n) for t in tickets]
         per_ticket.extend(hits)
         best.append(max(hits))
-        index = np.asarray([[v - 1 for v in t] for t in tickets])
-        simulated = incidence[:, index].sum(axis=2).max(axis=1)  # (S,) số khớp tốt nhất trong danh mục
-        for level in LEVELS:
-            reached = simulated >= level
-            fair_any[level].append(float(reached.mean()))
-            aggregate[level] += reached
+        tail = any_ticket_tail(tickets, n, k, exact_limit)
+        if tail is not None:
+            for level in LEVELS:
+                fair_any[level].append(float(tail[level]))
+        else:
+            if incidence is None:
+                rng = np.random.default_rng(seed)
+                sample = np.argsort(rng.random((simulations, n)), axis=1)[:, :k]
+                incidence = np.zeros((simulations, n), dtype=bool)
+                np.put_along_axis(incidence, sample, True, axis=1)
+            monte_carlo_draws += 1
+            index = np.asarray([[v - 1 for v in t] for t in tickets])
+            simulated = incidence[:, index].sum(axis=2).max(axis=1)  # (S,) số khớp tốt nhất trong danh mục
+            for level in LEVELS:
+                reached = simulated >= level
+                single = [float(fair_hit_pmf(n, k, len(t))[level:].sum()) for t in tickets]
+                fair_any[level].append(float(np.clip(reached.mean(), max(single), min(1.0, sum(single)))))
+                aggregate[level] += reached
         pairs = [len(set(a) & set(b)) for a, b in combinations(tickets, 2)]
         overlap.append(float(np.mean(pairs)) if pairs else 0.0)
         coverage.append(len({v for t in tickets for v in t}) / (size * len(tickets[0])))
@@ -248,6 +308,7 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
             'p_value_greater': poisson_binomial_sf(reached, probabilities),
         }
     return {'draws': len(portfolios), 'tickets_per_draw': size, 'simulations': simulations, 'seed': seed,
+            'exact_draws': len(portfolios) - monte_carlo_draws, 'monte_carlo_draws': monte_carlo_draws,
             'per_ticket': summarize_hits(per_ticket, n, k, len(portfolios[0][0])),
             'per_ticket_note': 'Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.',
             'any_ticket': any_level, 'mean_pairwise_overlap': float(np.mean(overlap)),

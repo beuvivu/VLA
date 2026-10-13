@@ -7,7 +7,7 @@ import pytest
 from scipy import stats
 
 from vlm.forecast.hits import (
-    clopper_pearson, detectable_lift, draws_needed, fair_hit_pmf, hit_count, poisson_binomial_sf,
+    any_ticket_tail, clopper_pearson, detectable_lift, draws_needed, fair_hit_pmf, hit_count, poisson_binomial_sf,
     portfolio_summary, summarize_hits,
 )
 
@@ -90,12 +90,16 @@ def test_portfolio_separates_per_ticket_from_any_ticket_and_needs_fixed_size():
     drawn = [sorted(rng.choice(45, 6, replace=False) + 1) for _ in range(30)]
     single = portfolio_summary([[[1, 2, 3, 4, 5, 6]]] * 30, drawn, 45, simulations=40_000)
     fair = fair_hit_pmf(45)
-    assert single['any_ticket']['ge3']['fair_rate'] == pytest.approx(fair[3:].sum(), abs=0.003)
+    assert single['any_ticket']['ge3']['fair_rate'] == pytest.approx(fair[3:].sum(), rel=1e-12)
+    assert single['exact_draws'] == 30 and single['any_ticket']['ge3']['monte_carlo_se'] == 0
     copies = portfolio_summary([[[1, 2, 3, 4, 5, 6]] * 5] * 30, drawn, 45, simulations=40_000)
     assert copies['any_ticket']['ge3']['fair_rate'] == pytest.approx(single['any_ticket']['ge3']['fair_rate'])
     assert copies['mean_pairwise_overlap'] == 6 and copies['mean_coverage'] == pytest.approx(0.2)
     spread = portfolio_summary([[[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]] * 30, drawn, 45, simulations=40_000)
     assert spread['any_ticket']['ge3']['fair_rate'] > single['any_ticket']['ge3']['fair_rate']
+    spread_mc = portfolio_summary([[[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]] * 30, drawn, 45, simulations=40_000, exact_limit=0)
+    assert spread_mc['monte_carlo_draws'] == 30
+    assert spread_mc['any_ticket']['ge3']['fair_rate'] == pytest.approx(spread['any_ticket']['ge3']['fair_rate'], abs=0.003)
     with pytest.raises(ValueError):
         portfolio_summary([[[1, 2, 3, 4, 5, 6]], [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]], drawn[:2], 45)
 
@@ -104,8 +108,9 @@ def test_monte_carlo_error_accounts_for_simulations_shared_by_every_draw():
     """Cùng một danh mục trên 30 kỳ: sai số của tổng là 30 × sai số một kỳ, không phải √30 ×."""
     rng = np.random.default_rng(9)
     drawn = [sorted(rng.choice(45, 6, replace=False) + 1) for _ in range(30)]
-    one = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], drawn[:1], 45, simulations=20_000)
-    many = portfolio_summary([[[1, 2, 3, 4, 5, 6]]] * 30, drawn, 45, simulations=20_000)
+    one = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], drawn[:1], 45, simulations=20_000, exact_limit=0)
+    many = portfolio_summary([[[1, 2, 3, 4, 5, 6]]] * 30, drawn, 45, simulations=20_000, exact_limit=0)
+    assert many['monte_carlo_draws'] == 30 and one['any_ticket']['ge3']['monte_carlo_se'] > 0
     assert many['any_ticket']['ge3']['monte_carlo_se'] == pytest.approx(30 * one['any_ticket']['ge3']['monte_carlo_se'], rel=1e-6)
 
 
@@ -127,3 +132,35 @@ def test_detectable_lift_reports_an_unattainable_sample_instead_of_lift_one_over
     ok = detectable_lift(0.1, 30)
     assert ok['attainable'] is True and ok['critical_reached'] <= 30
     assert stats.binom.sf(ok['critical_reached'] - 1, 30, ok['rate']) == pytest.approx(0.8, abs=1e-6)
+
+
+def _enumerated_tail(tickets, n, k):
+    counts = np.zeros(k + 1)
+    for drawn in combinations(range(1, n + 1), k):
+        counts[max(len(set(drawn) & set(t)) for t in tickets)] += 1
+    return counts[::-1].cumsum()[::-1] / comb(n, k)
+
+
+@pytest.mark.parametrize('tickets', [
+    [[1, 2, 3, 4], [3, 4, 5, 6], [7, 8, 9, 10], [1, 5, 9, 11]],
+    [[1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 3, 6]],
+    [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
+    [[2, 4, 6, 8]] * 3,
+])
+def test_any_ticket_tail_matches_enumeration_of_every_draw(tickets):
+    """Phân phối của số khớp TỐT NHẤT trong danh mục khớp liệt kê mọi C(12, 4) kết quả."""
+    np.testing.assert_allclose(any_ticket_tail(tickets, 12, 4), _enumerated_tail(tickets, 12, 4), rtol=1e-12)
+    assert any_ticket_tail(tickets, 12, 4, limit=1) is None
+
+
+def test_rare_portfolio_hits_get_their_exact_null_not_zero():
+    """Một vé trúng đủ 6 số: mốc là 1/C(45, 6), không phải 0 vì 20.000 mô phỏng chưa gặp lần nào."""
+    six = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45)['any_ticket']['ge6']
+    assert six['fair_rate'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
+    assert six['p_value_greater'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
+    disjoint = [[6 * i + j for j in range(1, 7)] for i in range(5)]
+    five = portfolio_summary([disjoint], [[1, 2, 3, 4, 5, 6]], 45)['any_ticket']
+    assert five['ge6']['fair_rate'] == pytest.approx(5 / comb(45, 6), rel=1e-12)
+    assert five['ge5']['fair_rate'] == pytest.approx(5 * fair_hit_pmf(45)[5:].sum(), rel=1e-12)
+    fallback = portfolio_summary([disjoint], [[1, 2, 3, 4, 5, 6]], 45, exact_limit=0)['any_ticket']['ge6']
+    assert 1 / comb(45, 6) <= fallback['fair_rate'] <= 5 / comb(45, 6) and fallback['p_value_greater'] > 0

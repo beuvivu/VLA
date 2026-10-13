@@ -40,7 +40,8 @@ Các nhánh:
 | Công bằng | luật đều; vé ngẫu nhiên chốt trước để kiểm mốc siêu bội | ngẫu nhiên |
 | Legacy | `vietlott_engine.forecast` (hỗn hợp chuyên gia, e-value) | 6 số π cao nhất — đúng vé ghi sổ |
 | ML | `vlm.forecast` (logistic, GRU, RF; fixed-share) | bộ đầu của `Law.top(PUBLISHED_TOP_N)` — đúng vé trên bảng điều khiển |
-| … + hiệu chuẩn τ | trọng số mỗi chuyên gia mũ τ, τ học trên validation | 6 số π cao nhất |
+| Legacy + hiệu chuẩn τ | trọng số mỗi chuyên gia mũ τ, τ học trên validation | 6 số π cao nhất (như legacy) |
+| ML + hiệu chuẩn τ | như trên, trên luật ML | bộ đầu của `Law.top(PUBLISHED_TOP_N)` của luật ĐÃ hiệu chuẩn (như ML) |
 | Co về công bằng | tần suất mũ hoá, co Beta về k/n, nhiệt độ | 6 số trọng số cao nhất |
 | Đặc trưng nhân quả | conditional logit: tần suất, gap/lag, lịch, đồng xuất hiện trễ; L2; học lại mỗi 26 kỳ | 6 số trọng số cao nhất |
 
@@ -62,8 +63,12 @@ phát hiện được với công suất 80%: trên ~380 kỳ test chỉ một m
 báo cáo nhưng KHÔNG dùng để đề bạt; "không thấy H ≥ 4" trên cửa sổ này là "chưa đủ bằng chứng".
 
 Nhiều vé: `hits.portfolio_summary` cố định số vé, tách chỉ số từng vé với "ít nhất một vé đạt
-mức", đo độ trùng và độ phủ, và ước lượng mốc ngẫu nhiên của "ít nhất một vé" bằng Monte Carlo
-trên CHÍNH bộ vé ấy. Năm vé tốn năm lần tiền; tăng số vé không phải dự báo tốt hơn.
+mức", đo độ trùng và độ phủ, và tính CHÍNH XÁC mốc ngẫu nhiên của "ít nhất một vé" trên CHÍNH bộ
+vé ấy (`hits.any_ticket_tail`: chia hợp các vé thành vùng Venn, số con rơi vào mỗi vùng theo siêu bội
+nhiều chiều). Mức hiếm như H = 6 vì thế có mốc 1/C(N,6) cho mỗi vé thay vì 0 — một mẫu mô phỏng
+hữu hạn không bao giờ gặp nó và cho p = 0. Monte Carlo chỉ còn là dự phòng cho danh mục quá lớn để
+liệt kê, và ước lượng khi ấy bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé]. Năm vé tốn năm
+lần tiền; tăng số vé không phải dự báo tốt hơn.
 
 ## Điều kiện đề bạt (đăng ký trước)
 
