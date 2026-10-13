@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from vietlott_engine.paths import enter_project
-from vlm.forecast.hit_benchmark import PROTOCOL, benchmark_product, promotion_decision, render_report
+from vlm.forecast.hit_benchmark import PROTOCOL, benchmark_product, promotion_decision, protocol_mismatches, render_report
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,6 +31,10 @@ def main(argv: list[str] | None = None) -> int:
         for product in args.products.split(','):
             with gzip.open(args.out_dir / f'{product}.json.gz', 'rt', encoding='utf-8') as stream:
                 results[product] = json.load(stream)
+        stale = protocol_mismatches(results)
+        if stale:
+            raise SystemExit(f'Artifact {", ".join(stale)} không chạy theo PROTOCOL hiện hành: chạy lại benchmark, '
+                             'đừng chấm số đo của giao thức khác bằng luật đề bạt mới.')
         decision = promotion_decision(results)
         args.report.write_text(render_report(results, decision), encoding='utf-8')
         print('kết luận:', decision['verdict'])

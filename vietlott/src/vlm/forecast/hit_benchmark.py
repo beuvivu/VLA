@@ -455,6 +455,21 @@ def _git(root: Path, *args: str) -> str | None:
         return None
 
 
+def _plain(value):
+    """Dạng JSON của một giá trị (tuple → list…), để so giao thức trong bộ nhớ với giao thức đọc từ tệp."""
+    return json.loads(json.dumps(value, ensure_ascii=False))
+
+
+def protocol_mismatches(results: dict) -> list[str]:
+    """Sản phẩm có artifact KHÔNG chạy theo ``PROTOCOL`` hiện hành (hoặc không ghi giao thức).
+
+    Dựng lại báo cáo từ artifact như thế sẽ chấm số đo của giao thức cũ bằng luật đề bạt mới và dán
+    nhãn giao thức mới lên chúng; nơi gọi phải từ chối và chạy lại.
+    """
+    current = _plain(PROTOCOL)
+    return [product for product, result in results.items() if result.get('protocol') != current]
+
+
 def source_manifest() -> dict:
     """sha256 của MỌI module của dự án (``vlm``, ``vietlott_engine``) đang được nạp — đúng tập mã đã chạy.
 
@@ -562,7 +577,7 @@ def benchmark_product(product: str, root: Path, *, ml_config: MLConfig | None = 
                           for name in ('legacy', 'ml', 'fair') if name in arms}
     timings['total_seconds'] = time.perf_counter() - started
     return {
-        'product': product, 'protocol_registered_at': PROTOCOL['registered_at'],
+        'product': product, 'protocol_registered_at': PROTOCOL['registered_at'], 'protocol': _plain(PROTOCOL),
         'provenance': {**provenance, **_git_state(root), 'source_sha256': source_manifest(), 'versions': _versions(),
                        'ml_config': config.model_dump(mode='json'), 'seed': PROTOCOL['seed'],
                        'generated_at': datetime.now(timezone.utc).isoformat(timespec='seconds')},
@@ -741,13 +756,15 @@ def render_report(results: dict[str, dict], decision: dict) -> str:
         lines.append('')
         if r.get('portfolio_ml'):
             lines += ['### Danh mục 5 vé của ML (ngân sách cố định 50.000 đ/kỳ)', '',
-                      '| Đoạn | Kỳ | Trùng trung bình giữa hai vé | Độ phủ | Ít nhất một vé H ≥ 3 (ngẫu nhiên) | H ≥ 4 (ngẫu nhiên) | p H ≥ 3 |',
+                      '| Đoạn | Kỳ | Trùng trung bình giữa hai vé | Độ phủ | Ít nhất một vé H ≥ 3 (ngẫu nhiên) | H ≥ 4 (ngẫu nhiên) | p H ≥ 3 (luôn hợp lệ) |',
                       '|---|---:|---:|---:|---:|---:|---:|']
             for seg_name, pf in r['portfolio_ml'].items():
                 a3, a4 = pf['any_ticket']['ge3'], pf['any_ticket']['ge4']
                 lines.append(f'| {seg_name} | {pf["draws"]} | {_vn(pf["mean_pairwise_overlap"], 2)} số | {_vn(pf["mean_coverage"] * 100, 1)}% | '
                              f'{a3["reached"]} ({_vn(a3["expected"], 1)}) | {a4["reached"]} ({_vn(a4["expected"], 2)}) | {_p(a3["p_value_greater"])} |')
-            lines += ['', 'Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơn một vé là do mua nhiều vé, không phải dự báo tốt hơn.', '']
+            lines += ['', 'Mốc ngẫu nhiên tính chính xác trên chính bộ vé của từng kỳ. Danh mục học lại sau mỗi kỳ nên mốc phụ thuộc '
+                      'kết quả trước; p là e-process luôn hợp lệ cho xác suất dự đoán được, không phải Poisson–nhị thức.', '',
+                      'Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơn một vé là do mua nhiều vé, không phải dự báo tốt hơn.', '']
     lines += ['## Điều kiện đề bạt (đã đăng ký)', '']
     lines += [f'- {key}: {text}' for key, text in PROTOCOL['promotion'].items()]
     lines += ['', '| Ứng viên | Thắng công bằng (Holm) | Thắng legacy và ML | Validation dương | Ổn định 2/3 đoạn | Brier không kém | Đủ điều kiện |',

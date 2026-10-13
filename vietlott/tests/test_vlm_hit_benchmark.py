@@ -201,3 +201,37 @@ def test_the_causal_temperature_is_fitted_on_the_stream_that_is_scored():
     expected = ch.fit_temperature(raw[split.dev_end - split.warmup:], x[split.dev_end:split.val_end], None,
                                   hb.PROTOCOL['temperature_bounds'])
     assert causal['tau_validation'] == pytest.approx(expected, abs=1e-9)
+
+
+def _load_artifacts(directory: Path) -> dict:
+    import gzip
+
+    out = {}
+    for product in hb.PROTOCOL['products']:
+        with gzip.open(directory / f'{product}.json.gz', 'rt', encoding='utf-8') as stream:
+            out[product] = json.load(stream)
+    return out
+
+
+def test_the_committed_artifacts_were_produced_under_the_current_protocol():
+    """Đổi PROTOCOL mà không chạy lại thì báo cáo đã commit không còn là số đo của giao thức đang khai."""
+    assert hb.protocol_mismatches(_load_artifacts(ROOT / 'reports' / 'vlm' / 'hit-benchmark')) == []
+
+
+def test_rendering_refuses_artifacts_from_another_protocol(tmp_path, monkeypatch):
+    import gzip
+    import runpy
+
+    changed = json.loads(json.dumps(hb.PROTOCOL))
+    changed['alpha'] = 0.1
+    assert hb.protocol_mismatches({'mega645': {'protocol': json.loads(json.dumps(hb.PROTOCOL))}}) == []
+    assert hb.protocol_mismatches({'mega645': {'protocol': changed}, 'power655': {}}) == ['mega645', 'power655']
+    for product in hb.PROTOCOL['products']:
+        with gzip.open(tmp_path / f'{product}.json.gz', 'wt', encoding='utf-8') as stream:
+            json.dump({'protocol': changed}, stream)
+    monkeypatch.chdir(ROOT)
+    main = runpy.run_path(str(ROOT / 'scripts' / 'hit_benchmark.py'))['main']
+    report = tmp_path / 'report.md'
+    with pytest.raises(SystemExit, match='PROTOCOL'):
+        main(['--render-only', '--out-dir', str(tmp_path), '--report', str(report)])
+    assert not report.exists()

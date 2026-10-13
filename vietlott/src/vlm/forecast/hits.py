@@ -22,12 +22,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from itertools import combinations
-from math import comb, sqrt
+from math import comb, exp, log, sqrt
 
 import numpy as np
 from scipy import stats
+from scipy.special import logsumexp
 
 LEVELS = (3, 4, 5, 6)
+#: Lưới hệ số tăng r của e-process cho xác suất dự đoán được (chốt 13-10-2026; đổi lưới là đổi phép kiểm).
+PREDICTABLE_LIFTS = (1.25, 1.5, 2.0, 3.0, 5.0, 10.0)
 
 
 def fair_hit_pmf(n: int, k: int = 6, ticket: int = 6) -> np.ndarray:
@@ -199,6 +202,42 @@ def poisson_binomial_sf(reached: int, probabilities: Sequence[float]) -> float:
     return float(dist[max(reached, 0):].sum())
 
 
+def predictable_p_value(reached: Sequence[bool], probabilities: Sequence[float],
+                        lifts: Sequence[float] = PREDICTABLE_LIFTS) -> float:
+    """p một phía LUÔN hợp lệ khi xác suất mốc p_t của mỗi kỳ chỉ phụ thuộc các kỳ TRƯỚC (dự đoán được).
+
+    Danh mục học lại sau mỗi kỳ nên p_t phụ thuộc các kết quả trước; khi ấy tổng các chỉ báo KHÔNG theo
+    Poisson–nhị thức của dãy p đã thực hiện (ba kỳ đủ để Poisson–nhị thức bác bỏ 5,84% ở α = 5%). Dưới
+    H₀, P(X_t = 1 | quá khứ) = p_t, nên tỉ số hợp lý của Bernoulli(min(r·p_t, 1)) so với Bernoulli(p_t)
+    nhân dồn là martingale không âm kỳ vọng 1, và trung bình đều trên lưới r cũng vậy. Theo bất đẳng thức
+    Ville, p = min(1, 1 / max_t E_t) hợp lệ ở mọi thời điểm, kể cả khi dừng theo dữ liệu.
+
+    Args:
+        reached: Chỉ báo đạt mức của từng kỳ, theo THỨ TỰ THỜI GIAN.
+        probabilities: p_t dưới H₀, tính trước kỳ t.
+    """
+    r = np.asarray(lifts, dtype=float)
+    if r.size == 0 or (r <= 1).any():
+        raise ValueError('Cần lưới hệ số tăng r > 1')
+    log_wealth = np.zeros(r.size)
+    best = 0.0
+    for x, p in zip(reached, probabilities, strict=True):
+        p = float(p)
+        if not 0 <= p <= 1:
+            raise ValueError('Xác suất ngoài [0, 1]')
+        if p == 0:
+            if x:
+                return 0.0  # đạt một mức bất khả dưới H₀
+            continue
+        if p == 1:
+            continue
+        q = np.minimum(r * p, 1.0)
+        with np.errstate(divide='ignore'):
+            log_wealth += np.log(q / p) if x else np.log1p(-q) - np.log1p(-p)
+        best = max(best, float(logsumexp(log_wealth)) - log(r.size))
+    return min(1.0, exp(-best))
+
+
 def any_ticket_tail(tickets: Sequence[Sequence[int]], n: int, k: int = 6, limit: int = 200_000) -> np.ndarray | None:
     """P(số khớp TỐT NHẤT trong danh mục ≥ L), L = 0..k, CHÍNH XÁC khi kết quả là k số rút đều từ n số.
 
@@ -253,8 +292,11 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
     trên chính bộ vé (``any_ticket_tail``). Danh mục quá lớn để liệt kê (cận vượt ``exact_limit``)
     mới dùng ``simulations`` kết quả rút đều (số ngẫu nhiên chung cho mọi kỳ, kèm sai số Monte Carlo);
     khi ấy ước lượng bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé] — mức hiếm không gặp trong
-    mẫu hữu hạn không thành xác suất 0 và p = 0. Số kỳ đạt được so với tổng các xác suất ấy bằng p
-    Poisson–nhị thức một phía.
+    mẫu hữu hạn không thành xác suất 0 và p = 0.
+
+    ``p_value_greater`` là p luôn hợp lệ (``predictable_p_value``): danh mục của mô hình học lại sau
+    mỗi kỳ nên xác suất mốc phụ thuộc kết quả trước. ``p_value_fixed_portfolios`` (Poisson–nhị thức)
+    chỉ đúng khi MỌI danh mục được chốt trước cả cửa sổ. ``portfolios`` và ``drawn`` theo thứ tự thời gian.
     """
     if len(portfolios) != len(drawn) or not portfolios:
         raise ValueError('Mỗi kỳ cần đúng một danh mục vé')
@@ -305,11 +347,14 @@ def portfolio_summary(portfolios: Sequence[Sequence[Sequence[int]]], drawn: Sequ
             'reached': reached, 'rate': reached / len(best), 'expected': expected,
             'fair_rate': expected / len(best),
             'monte_carlo_se': float(aggregate[level].std(ddof=1) / np.sqrt(simulations)),
-            'p_value_greater': poisson_binomial_sf(reached, probabilities),
+            'p_value_greater': predictable_p_value(best_arr >= level, probabilities),
+            'p_value_fixed_portfolios': poisson_binomial_sf(reached, probabilities),
         }
     return {'draws': len(portfolios), 'tickets_per_draw': size, 'simulations': simulations, 'seed': seed,
             'exact_draws': len(portfolios) - monte_carlo_draws, 'monte_carlo_draws': monte_carlo_draws,
             'per_ticket': summarize_hits(per_ticket, n, k, len(portfolios[0][0])),
             'per_ticket_note': 'Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.',
+            'any_ticket_note': ('p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); '
+                                'p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.'),
             'any_ticket': any_level, 'mean_pairwise_overlap': float(np.mean(overlap)),
             'mean_coverage': float(np.mean(coverage))}

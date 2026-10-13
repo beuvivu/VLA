@@ -1,5 +1,5 @@
 """Số khớp H: mốc siêu bội, khoảng tin cậy, công suất, danh mục nhiều vé."""
-from itertools import combinations
+from itertools import combinations, product
 from math import comb
 
 import numpy as np
@@ -8,7 +8,7 @@ from scipy import stats
 
 from vlm.forecast.hits import (
     any_ticket_tail, clopper_pearson, detectable_lift, draws_needed, fair_hit_pmf, hit_count, poisson_binomial_sf,
-    portfolio_summary, summarize_hits,
+    portfolio_summary, predictable_p_value, summarize_hits,
 )
 
 
@@ -100,6 +100,9 @@ def test_portfolio_separates_per_ticket_from_any_ticket_and_needs_fixed_size():
     spread_mc = portfolio_summary([[[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]] * 30, drawn, 45, simulations=40_000, exact_limit=0)
     assert spread_mc['monte_carlo_draws'] == 30
     assert spread_mc['any_ticket']['ge3']['fair_rate'] == pytest.approx(spread['any_ticket']['ge3']['fair_rate'], abs=0.003)
+    ge3 = spread['any_ticket']['ge3']
+    best = [max(hit_count(t, d, 45) for t in ([1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12])) for d in drawn]
+    assert ge3['p_value_greater'] == pytest.approx(predictable_p_value([b >= 3 for b in best], [ge3['fair_rate']] * 30), rel=1e-9)
     with pytest.raises(ValueError):
         portfolio_summary([[[1, 2, 3, 4, 5, 6]], [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]], drawn[:2], 45)
 
@@ -157,10 +160,50 @@ def test_rare_portfolio_hits_get_their_exact_null_not_zero():
     """Một vé trúng đủ 6 số: mốc là 1/C(45, 6), không phải 0 vì 20.000 mô phỏng chưa gặp lần nào."""
     six = portfolio_summary([[[1, 2, 3, 4, 5, 6]]], [[1, 2, 3, 4, 5, 6]], 45)['any_ticket']['ge6']
     assert six['fair_rate'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
-    assert six['p_value_greater'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
+    assert six['p_value_fixed_portfolios'] == pytest.approx(1 / comb(45, 6), rel=1e-12)
+    assert 0 < six['p_value_greater'] < 1
     disjoint = [[6 * i + j for j in range(1, 7)] for i in range(5)]
     five = portfolio_summary([disjoint], [[1, 2, 3, 4, 5, 6]], 45)['any_ticket']
     assert five['ge6']['fair_rate'] == pytest.approx(5 / comb(45, 6), rel=1e-12)
     assert five['ge5']['fair_rate'] == pytest.approx(5 * fair_hit_pmf(45)[5:].sum(), rel=1e-12)
     fallback = portfolio_summary([disjoint], [[1, 2, 3, 4, 5, 6]], 45, exact_limit=0)['any_ticket']['ge6']
     assert 1 / comb(45, 6) <= fallback['fair_rate'] <= 5 / comb(45, 6) and fallback['p_value_greater'] > 0
+
+
+#: p_t phụ thuộc kỳ trước (danh mục học lại theo kết quả): sau một lần đạt, kỳ sau chắc chắn đạt.
+ADAPTIVE = {(): 0.08, (0,): 0.08, (1,): 1.0, (0, 0): 0.5, (0, 1): 0.25, (1, 0): 0.5, (1, 1): 0.5}
+
+
+def _exact_rejection(rule, design, horizon, alpha=0.05):
+    """P(rule ≤ α) dưới H₀, liệt kê mọi dãy kết quả: P(X_t = 1 | quá khứ) = design[quá khứ]."""
+    total = 0.0
+    for xs in product((0, 1), repeat=horizon):
+        prob, ps = 1.0, []
+        for t in range(horizon):
+            ps.append(design[xs[:t]])
+            prob *= ps[-1] if xs[t] else 1 - ps[-1]
+        if prob and rule(xs, ps) <= alpha:
+            total += prob
+    return total
+
+
+def test_adaptive_portfolios_need_a_p_value_valid_for_predictable_probabilities():
+    """Poisson–nhị thức trên dãy p đã thực hiện bác bỏ 5,84% ở α = 5% khi p_t học theo kết quả; e-process không vượt α."""
+    pb = _exact_rejection(lambda xs, ps: poisson_binomial_sf(sum(xs), ps), ADAPTIVE, 3)
+    assert pb == pytest.approx(0.0584, abs=1e-4)
+    assert _exact_rejection(predictable_p_value, ADAPTIVE, 3) <= 0.05
+    rng = np.random.default_rng(5)
+    for _ in range(200):
+        design = {h: float(rng.choice([0.01, 0.05, 0.1, 0.3, 0.6, 1.0])) for t in range(4) for h in product((0, 1), repeat=t)}
+        for alpha in (0.05, 0.2):
+            assert _exact_rejection(predictable_p_value, design, 4, alpha) <= alpha + 1e-12
+
+
+def test_the_predictable_p_value_detects_a_real_lift_and_impossible_hits():
+    rng = np.random.default_rng(3)
+    p = rng.uniform(0.02, 0.2, 400)
+    assert predictable_p_value(rng.random(400) < 3 * p, p) < 1e-6
+    assert predictable_p_value(rng.random(400) < p, p) > 0.05
+    assert predictable_p_value([False, True], [0.5, 0.0]) == 0
+    with pytest.raises(ValueError):
+        predictable_p_value([True], [0.1], lifts=[1.0])

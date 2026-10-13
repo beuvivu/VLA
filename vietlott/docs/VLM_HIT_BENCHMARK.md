@@ -9,9 +9,10 @@ nhất: `reports/VLM_HIT_BENCHMARK_2026-10-13.md`; artifact đầy đủ: `repor
 ```bash
 cd vietlott
 python -m pip install -e ".[dev]"
-python scripts/hit_benchmark.py                      # cả hai sản phẩm, gồm bộ ML (~10 phút)
+python scripts/hit_benchmark.py                      # cả hai sản phẩm, gồm bộ ML (12–25 phút tuỳ máy)
 python scripts/hit_benchmark.py --no-ml              # nhanh, không đủ để đề bạt
 python scripts/hit_benchmark.py --render-only        # dựng lại báo cáo từ artifact đã ghi
+                                                     # (từ chối artifact chạy theo PROTOCOL khác)
 ```
 
 Mỗi `<sản phẩm>.json.gz` lưu: hash seed, nhật ký kết quả và toàn bộ lịch sử dùng để học
@@ -67,8 +68,13 @@ mức", đo độ trùng và độ phủ, và tính CHÍNH XÁC mốc ngẫu nhi
 vé ấy (`hits.any_ticket_tail`: chia hợp các vé thành vùng Venn, số con rơi vào mỗi vùng theo siêu bội
 nhiều chiều). Mức hiếm như H = 6 vì thế có mốc 1/C(N,6) cho mỗi vé thay vì 0 — một mẫu mô phỏng
 hữu hạn không bao giờ gặp nó và cho p = 0. Monte Carlo chỉ còn là dự phòng cho danh mục quá lớn để
-liệt kê, và ước lượng khi ấy bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé]. Năm vé tốn năm
-lần tiền; tăng số vé không phải dự báo tốt hơn.
+liệt kê, và ước lượng khi ấy bị kẹp vào khoảng chính xác [vé tốt nhất, tổng các vé]. Danh mục của ML
+học lại sau mỗi kỳ, nên mốc của kỳ t phụ thuộc các kết quả trước; tổng số kỳ đạt khi ấy KHÔNG theo
+Poisson–nhị thức của dãy mốc đã thực hiện (ba kỳ đủ để nó bác bỏ 5,84% ở α = 5%). p báo cáo là
+e-process cho xác suất dự đoán được (`hits.predictable_p_value`: trung bình tỉ số hợp lý trên lưới hệ
+số tăng cố định, p = 1/max E theo Ville), hợp lệ ở mọi thời điểm; Poisson–nhị thức chỉ còn dưới tên
+`p_value_fixed_portfolios`, đúng khi mọi danh mục chốt trước cả cửa sổ. Năm vé tốn năm lần tiền;
+tăng số vé không phải dự báo tốt hơn.
 
 ## Điều kiện đề bạt (đăng ký trước)
 
