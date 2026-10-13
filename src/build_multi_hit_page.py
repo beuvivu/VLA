@@ -21,9 +21,10 @@ import json
 import math
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
-from multi_hit_report import BENCHMARK_REFRESH_DRAWS, benchmark_is_valid, load_history
+from multi_hit_report import BENCHMARK_REFRESH_DRAWS, benchmark_is_valid, load_history, vip_status
 from multi_hit_vip import COMPONENT_LABELS, CONFIDENCE_P
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
@@ -122,12 +123,23 @@ def strategy_label(name: str) -> str:
 # --------------------------------------------------------------------------- kết luận
 
 
-def load(data_dir: Path) -> tuple[dict | None, dict | None]:
-    """Đọc hai tệp đo. Bản đệm lượt hai không khớp lịch sử hiện tại thì bị bỏ (trả None).
+class Loaded(NamedTuple):
+    """Hai tệp đo đã đối chiếu với lịch sử hiện tại."""
 
-    Bước đo có thể hỏng giữa chừng — đã ghi ``vip.json`` mới nhưng chưa kịp đo lại lượt hai sau khi
-    một kỳ cũ được sửa. Khi ấy trang in "chưa có số đo của lượt thử thứ hai" thay vì ghép số đo của
-    một lịch sử không còn tồn tại.
+    vip: dict | None
+    bench: dict | None
+    vip_state: str          # "current" | "behind" | "invalid" | "missing"
+    last_date: str          # kỳ mới nhất của sổ kết quả
+    behind_by: int          # số kỳ sổ có thêm sau lần đo bộ lọc
+
+
+def load(data_dir: Path) -> Loaded:
+    """Đọc hai tệp đo và đối chiếu từng tệp với lịch sử hiện tại.
+
+    Bước đo có thể hỏng giữa chừng (pipeline chạy mềm). Hai tệp vì thế có thể là số đo của một lịch
+    sử khác: ``vip.json`` của hôm qua sau khi đã có kỳ mới, hay ``benchmark.json`` của một lịch sử
+    mà một kỳ cũ đã được sửa. Tệp bộ lọc không khớp thì trang không in top-k cho một kỳ đã quay;
+    tệp lượt hai không khớp thì bị bỏ.
     """
     folder = data_dir / DATA_DIR
 
@@ -135,13 +147,17 @@ def load(data_dir: Path) -> tuple[dict | None, dict | None]:
         path = folder / name
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
+    draws, labels = load_history(data_dir)
     vip, bench = read("vip.json"), read("benchmark.json")
-    if bench is not None:
-        draws, labels = load_history(data_dir)
-        if not benchmark_is_valid(bench, draws, labels):
-            print(f"data/{DATA_DIR}/benchmark.json không khớp lịch sử hiện tại — không in.")
-            bench = None
-    return vip, bench
+    state = "missing" if vip is None else vip_status(vip, draws, labels)
+    if state == "invalid":
+        print(f"data/{DATA_DIR}/vip.json không khớp lịch sử hiện tại — không in số đo.")
+        vip = None
+    if bench is not None and not benchmark_is_valid(bench, draws, labels):
+        print(f"data/{DATA_DIR}/benchmark.json không khớp lịch sử hiện tại — không in.")
+        bench = None
+    behind = len(draws) - int(vip["draws"]) if vip is not None else 0
+    return Loaded(vip, bench, state, labels[-1], behind)
 
 
 def verdict(vip: dict, bench: dict | None) -> dict:
@@ -422,20 +438,18 @@ def method_card(vip: dict) -> str:
 # --------------------------------------------------------------------------- trang
 
 
-def render(vip: dict, bench: dict | None) -> str:
-    blocks = [
-        card(conclusion_card(vip, bench), title="Kết luận từ phép đo", span=12,
-             ident="app-lab-conclusion"),
-        card(picks_card(vip), title=f"Top-{vip['config']['top_k']} cho kỳ kế tiếp", span=12, lift=True,
-             ident="app-vip-picks"),
-        card(recent_card(vip), title="Các kỳ gần nhất của kiểm chứng", span=12, lift=True,
-             ident="app-vip-recent"),
-        card(benchmark_card(bench), title="Lượt thử thứ hai: dò rộng, chọn trước, kiểm một lần",
-             span=12, lift=True, ident="app-vip-benchmark"),
-        card(any_hit_card(bench), title="Ít nhất một con về", span=12, lift=True, ident="app-vip-any"),
-        card(power_card(bench), title="Phép đo có đủ nhạy?", span=12, lift=True, ident="app-vip-power"),
-        card(method_card(vip), title="Cách đo", span=12, lift=True, ident="app-vip-method"),
-    ]
+def behind_notice(vip: dict, last_date: str, behind_by: int) -> str:
+    """Thay cho top-k khi số đo bộ lọc chậm hơn sổ kết quả: top-k ấy là cho một kỳ đã quay."""
+    return (
+        f'<p class="ui-table-empty" data-vip-behind="{behind_by}">Chưa có xếp hạng cho kỳ kế tiếp: '
+        f"số đo của bộ lọc dừng ở ngày {_date(vip['source_date'])}, còn sổ kết quả đã có thêm "
+        f"{behind_by} kỳ (đến ngày {_date(last_date)}). Top-{vip['config']['top_k']} của lần đo ấy là "
+        "cho một kỳ đã quay nên không in; các khối kiểm chứng bên dưới vẫn đúng cho đoạn lịch sử đã "
+        "đo.</p>"
+    )
+
+
+def _page(body: str, meta: str) -> str:
     return f"""<!doctype html>
 <html lang="vi">
 <head>
@@ -454,22 +468,10 @@ def render(vip: dict, bench: dict | None) -> str:
     "Con số nào sẽ về từ hai nháy trở lên? Bộ lọc xếp hạng 100 con, rồi tự chấm mình trên mọi kỳ "
     "đã quay so với chọn bừa.",
     eyebrow="KHUNG THÁCH ĐẤU · LÔ ≥ 2 NHÁY", core="ĐỐI CHỨNG",
-    meta=f"Dữ liệu đến: {_date(vip['source_date'])} · {_count(vip['draws'])} kỳ",
+    meta=meta,
     action=("#app-lab-conclusion", "Đọc kết luận"),
 )}
-{lab_guide([
-    ("Nhiều nháy", "Một con số về từ hai lần trở lên trong 27 lô của cùng một kỳ."),
-    ("Walk-forward lồng nhau", "Mỗi kỳ được chấm bằng mô hình và trọng số chỉ học từ các kỳ "
-     "trước nó, nên tỉ lệ trúng là ngoài mẫu."),
-    ("Chọn bừa cùng kỳ", "Mốc so: chọn ngẫu nhiên cùng số con trong chính kỳ ấy. Hơn mốc này một "
-     "cách có ý nghĩa thống kê mới gọi là có kỹ năng."),
-    ("Mức tin", "Suy từ p một phía của phép so với chọn bừa, không đặt tay; không phải xác suất "
-     "trúng."),
-])}
-{lab_jump([("app-lab-conclusion", "Kết luận"), ("app-vip-picks", "Top kỳ tới"),
-           ("app-vip-recent", "Kỳ gần nhất"), ("app-vip-benchmark", "Lượt thử thứ hai"),
-           ("app-vip-power", "Độ nhạy"), ("app-vip-method", "Cách đo")])}
-<div class="ui-grid">{"".join(blocks)}</div>
+{body}
 {lab_footer()}</div>
 {app_shell_close(PAGE)}
 </body>
@@ -477,14 +479,62 @@ def render(vip: dict, bench: dict | None) -> str:
 """
 
 
+def render_unavailable(last_date: str) -> str:
+    """Trang khi không có số đo nào khớp lịch sử hiện tại: không in con số nào của lịch sử khác."""
+    body = card(
+        '<p class="ui-table-empty" data-vip-unavailable>Chưa có số đo của bộ lọc khớp với sổ kết quả '
+        f"hiện tại (đến ngày {_date(last_date)}). Trang không in số đo của một lịch sử khác; số đo "
+        "sẽ có lại ở lượt cập nhật kế tiếp.</p>",
+        title="Kết luận từ phép đo", span=12, ident="app-lab-conclusion")
+    return _page(f'<div class="ui-grid">{body}</div>', f"Sổ kết quả đến: {_date(last_date)}")
+
+
+def render(vip: dict, bench: dict | None, *, last_date: str = "", behind_by: int = 0) -> str:
+    picks = picks_card(vip) if behind_by <= 0 else behind_notice(vip, last_date, behind_by)
+    blocks = [
+        card(conclusion_card(vip, bench), title="Kết luận từ phép đo", span=12,
+             ident="app-lab-conclusion"),
+        card(picks, title=f"Top-{vip['config']['top_k']} cho kỳ kế tiếp", span=12, lift=True,
+             ident="app-vip-picks"),
+        card(recent_card(vip), title="Các kỳ gần nhất của kiểm chứng", span=12, lift=True,
+             ident="app-vip-recent"),
+        card(benchmark_card(bench), title="Lượt thử thứ hai: dò rộng, chọn trước, kiểm một lần",
+             span=12, lift=True, ident="app-vip-benchmark"),
+        card(any_hit_card(bench), title="Ít nhất một con về", span=12, lift=True, ident="app-vip-any"),
+        card(power_card(bench), title="Phép đo có đủ nhạy?", span=12, lift=True, ident="app-vip-power"),
+        card(method_card(vip), title="Cách đo", span=12, lift=True, ident="app-vip-method"),
+    ]
+    body = (
+        lab_guide([
+            ("Nhiều nháy", "Một con số về từ hai lần trở lên trong 27 lô của cùng một kỳ."),
+            ("Walk-forward lồng nhau", "Mỗi kỳ được chấm bằng mô hình và trọng số chỉ học từ các kỳ "
+             "trước nó, nên tỉ lệ trúng là ngoài mẫu."),
+            ("Chọn bừa cùng kỳ", "Mốc so: chọn ngẫu nhiên cùng số con trong chính kỳ ấy. Hơn mốc này "
+             "một cách có ý nghĩa thống kê mới gọi là có kỹ năng."),
+            ("Mức tin", "Suy từ p một phía của phép so với chọn bừa, không đặt tay; không phải xác "
+             "suất trúng."),
+        ])
+        + "\n"
+        + lab_jump([("app-lab-conclusion", "Kết luận"), ("app-vip-picks", "Top kỳ tới"),
+                    ("app-vip-recent", "Kỳ gần nhất"), ("app-vip-benchmark", "Lượt thử thứ hai"),
+                    ("app-vip-power", "Độ nhạy"), ("app-vip-method", "Cách đo")])
+        + "\n"
+        + f'<div class="ui-grid">{"".join(blocks)}</div>'
+    )
+    return _page(body, f"Dữ liệu đến: {_date(vip['source_date'])} · {_count(vip['draws'])} kỳ")
+
+
 def build(data_dir: Path, docs_dir: Path) -> Path | None:
-    vip, bench = load(data_dir)
-    if vip is None:
+    got = load(data_dir)
+    if got.vip_state == "missing":
         print(f"Chưa có data/{DATA_DIR}/vip.json — bỏ qua.")
         return None
     write_stylesheet(docs_dir)
     out = docs_dir / PAGE
-    write_page(out, render(vip, bench))
+    if got.vip is None:
+        write_page(out, render_unavailable(got.last_date))
+    else:
+        write_page(out, render(got.vip, got.bench, last_date=got.last_date, behind_by=got.behind_by))
     return out
 
 

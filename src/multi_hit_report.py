@@ -117,6 +117,7 @@ def vip_section(draws: np.ndarray, labels: list[str], cfg: VIPConfig | None = No
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
         "draws": int(len(model.draws)),
+        "history_sha256": history_fingerprint(draws, labels),
         "base_theory": base_rate(),
         "config": {"top_k": cfg.top_k, "window": cfg.window, "weight_window": cfg.weight_window,
                    "normalisation": cfg.normalisation},
@@ -258,6 +259,24 @@ def benchmark_is_valid(cached: dict | None, draws: np.ndarray, labels: list[str]
     if not 0 < measured <= len(draws):
         return False
     return cached.get("history_sha256") == history_fingerprint(draws, labels, measured)
+
+
+def vip_status(vip: dict | None, draws: np.ndarray, labels: list[str]) -> str:
+    """Số đo bộ lọc so với lịch sử hiện tại: ``current``, ``behind`` hay ``invalid``.
+
+    * ``current``: đo trên đúng lịch sử hiện tại.
+    * ``behind``: đoạn đã đo còn nguyên nhưng sổ đã có thêm kỳ (bước đo hỏng sau kỳ mới). Kiểm chứng
+      vẫn đúng cho đoạn ấy, nhưng top-k là cho một kỳ ĐÃ quay.
+    * ``invalid``: thiếu tệp, khác phiên bản, hoặc đoạn đã đo bị sửa/cắt.
+    """
+    if not vip or vip.get("version") != MEASURE_VERSION:
+        return "invalid"
+    measured = int(vip.get("draws", 0))
+    if not 0 < measured <= len(draws):
+        return "invalid"
+    if vip.get("history_sha256") != history_fingerprint(draws, labels, measured):
+        return "invalid"
+    return "current" if measured == len(draws) else "behind"
 
 
 def benchmark_is_stale(cached: dict | None, draws: np.ndarray, labels: list[str]) -> bool:

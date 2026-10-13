@@ -253,6 +253,12 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - Đưa số đo của lịch sử có cài tín hiệu thì CÙNG trình dựng ấy phải in "hơn chọn bừa".
   - Ngưỡng mức tin in trên trang là `multi_hit_vip.CONFIDENCE_P`, không phải bản chép.
 - **Vị trí trên site.** Menu Dự báo → Tham khảo theo lịch sử → Lô VIP nhiều nháy.
+- **Tệp đo phải khớp lịch sử.** Cả hai tệp lưu dấu vân tay (SHA-256) của đoạn lịch sử chúng đã đo,
+  và trình dựng đối chiếu với sổ kết quả hiện tại trước khi in.
+  - `vip.json` chậm hơn sổ (bước đo hỏng sau kỳ mới): trang không in top-5, vì đó là top-5 cho
+    một kỳ đã quay. Kiểm chứng của đoạn đã đo vẫn được in.
+  - `vip.json` của một lịch sử đã bị sửa: trang không in số đo nào.
+  - `benchmark.json` không khớp: trang ghi "chưa kết luận".
 
 Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
 Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).

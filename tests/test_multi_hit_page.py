@@ -223,22 +223,77 @@ def _data_dir(tmp_path, frame) -> Path:
     return tmp_path
 
 
-def test_the_builder_prints_a_benchmark_that_matches_the_history(tmp_path) -> None:
-    frame = m.mock_history(80, seed=5)
-    vip, bench = page.load(_data_dir(tmp_path, frame))
-    assert vip is not None and bench is not None
+def _write_vip(data: Path, frame) -> None:
+    draws, labels = m.draws_from_frame(frame)
+    path = data / report.OUT_DIR / report.VIP_FILE
+    path.write_text(json.dumps(report.vip_section(draws, labels)), encoding="utf-8")
 
 
-def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_path) -> None:
-    """Bước đo hỏng sau khi một kỳ cũ được sửa: vip.json mới, benchmark.json của lịch sử cũ."""
-    frame = m.mock_history(80, seed=5)
-    data = _data_dir(tmp_path, frame)
+def _corrected(frame):
     fixed = frame.copy()
     column = [c for c in fixed.columns if c != "date"][0]
     fixed.loc[3, column] = (int(fixed.loc[3, column]) + 1) % 100
+    return fixed
+
+
+def test_the_builder_prints_measurements_that_match_the_history(tmp_path) -> None:
+    got = page.load(_data_dir(tmp_path, m.mock_history(80, seed=5)))
+    assert got.vip is not None and got.bench is not None
+    assert (got.vip_state, got.behind_by) == ("current", 0)
+
+
+def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_path) -> None:
+    """Một kỳ cũ được sửa; bộ lọc đã đo lại nhưng lượt hai thì chưa (bước đo hỏng giữa chừng)."""
+    frame = m.mock_history(80, seed=5)
+    data = _data_dir(tmp_path, frame)
+    fixed = _corrected(frame)
     fixed.to_csv(data / "xsmb-2-digits.csv", index=False)
-    vip, bench = page.load(data)
-    assert vip is not None and bench is None
+    _write_vip(data, fixed)
+    got = page.load(data)
+    assert got.vip_state == "current" and got.bench is None
+
+
+def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:
+    """Sổ có thêm kỳ mà bước đo hỏng: top-k của lần đo cũ là cho một kỳ ĐÃ quay."""
+    frame = m.mock_history(86, seed=5)
+    data = _data_dir(tmp_path, frame.iloc[:80].reset_index(drop=True))
+    frame.to_csv(data / "xsmb-2-digits.csv", index=False)
+    got = page.load(data)
+    assert (got.vip_state, got.behind_by) == ("behind", 6)
+    soup = BeautifulSoup(page.render(got.vip, None, last_date=got.last_date,
+                                     behind_by=got.behind_by), "html.parser")
+    assert soup.select_one("#app-vip-picks [data-vip-behind]")["data-vip-behind"] == "6"
+    assert not soup.select("#app-vip-picks tbody tr")
+    assert soup.select_one(".app-vip-verdict") is not None      # kiểm chứng của đoạn đã đo vẫn in
+
+
+def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) -> None:
+    frame = m.mock_history(80, seed=5)
+    data = _data_dir(tmp_path, frame)
+    _corrected(frame).to_csv(data / "xsmb-2-digits.csv", index=False)
+    got = page.load(data)
+    assert got.vip_state == "invalid" and got.vip is None and got.bench is None
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    out = page.build(data, docs)
+    soup = BeautifulSoup(out.read_text(encoding="utf-8"), "html.parser")
+    assert soup.select_one("[data-vip-unavailable]") is not None
+    assert soup.select_one(".app-vip-verdict") is None
+    assert not soup.select("#app-vip-picks")
+
+
+def test_the_filter_status_follows_the_history_prefix() -> None:
+    draws, labels = _history(90)
+    vip = {"version": report.MEASURE_VERSION, "draws": 80,
+           "history_sha256": report.history_fingerprint(draws, labels, 80)}
+    assert report.vip_status(vip, draws[:80], labels[:80]) == "current"
+    assert report.vip_status(vip, draws, labels) == "behind"
+    fixed = draws.copy()
+    fixed[2, 0] = (fixed[2, 0] + 1) % 100
+    assert report.vip_status(vip, fixed, labels) == "invalid"
+    assert report.vip_status(vip, draws[:79], labels[:79]) == "invalid"
+    assert report.vip_status({**vip, "version": report.MEASURE_VERSION - 1}, draws[:80], labels[:80]) == "invalid"
+    assert report.vip_status(None, draws, labels) == "invalid"
 
 
 # --------------------------------------------------------------------------- "ít nhất một con về"
