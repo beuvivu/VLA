@@ -194,6 +194,23 @@ def test_a_reported_rule_stays_reported_when_a_later_batch_is_registered(monkeyp
     assert {r["status"] for r in due["rules"] if r["id"] not in batch_one} == {"dang-kiem"}
 
 
+def test_a_new_experiment_keeps_counting_batches_so_config_changes_cannot_respend_alpha(tmp_path: Path,
+                                                                                       monkeypatch) -> None:
+    frame = m.mock_history(1270, seed=8)
+    for upto in (1230, 1230 + kb.DISCOVERY_EVERY):                  # thí nghiệm đầu: hai lô
+        frame.iloc[:upto].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+        first = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+    assert [b["index"] for b in first["batches"]] == [1, 2]
+    for step, name in enumerate(("HORIZON", "SHRINK"), start=1):
+        monkeypatch.setattr(kb, name, getattr(kb, name) + 1)
+        frame.iloc[:1230 + kb.DISCOVERY_EVERY + step].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+        later = json.loads(kb.run(tmp_path).read_text(encoding="utf-8"))
+        assert [b["index"] for b in later["batches"]] == [step + 2]
+        assert later["batches"][0]["alpha"] == pytest.approx(kb.batch_alpha(step + 2))
+    spent = [b["alpha"] for r in later["retired"] for b in r["batches"]] + [b["alpha"] for b in later["batches"]]
+    assert spent == pytest.approx([kb.batch_alpha(k) for k in (1, 2, 3, 4)]) and sum(spent) <= kb.ALPHA
+
+
 # --------------------------------------------------------------------------- giải thích
 
 
@@ -242,12 +259,14 @@ def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
     report = {"families": [{"key": "a", "label": "A", "p": 0.004}, {"key": "b", "label": "B", "p": 0.3}]}
     (tmp_path / "confidence" / "report.json").write_text(json.dumps(report), encoding="utf-8")
     status = {e["id"]: e["status"] for e in kb.measured_knowledge(tmp_path)}
-    assert status == {"ho-a": "co-bang-chung", "ho-b": "khong-hon-ngau-nhien"}
+    assert status == {"ho-a": "tin-hieu-anh-chup", "ho-b": "khong-hon-ngau-nhien"}
 
 
-@pytest.mark.parametrize(("p_best", "status"), [(0.0005, "co-bang-chung"), (0.00799, "chua-co-bang-chung")])
-def test_evidence_across_confidence_families_survives_a_holm_correction(tmp_path: Path, p_best, status) -> None:
-    """Mười lăm họ, mỗi họ ở α = 0,01: một họ p = 0,008 là điều thường thấy dưới giả thuyết không."""
+@pytest.mark.parametrize(("p_best", "status"), [(0.0, "tin-hieu-anh-chup"), (0.0005, "tin-hieu-anh-chup"),
+                                                (0.00799, "chua-co-bang-chung")])
+def test_confidence_families_are_holm_classified_snapshots_never_evidence(tmp_path: Path, p_best, status) -> None:
+    """Mười lăm họ, mỗi họ ở α = 0,01: một họ p = 0,008 là điều thường thấy dưới giả thuyết không.
+    Và p tính lại mỗi ngày trên lịch sử dồn thì dù nhỏ đến đâu cũng chỉ là ảnh chụp, không là bằng chứng."""
     (tmp_path / "confidence").mkdir()
     families = [{"key": f"h{i}", "label": f"H{i}", "p": 0.5} for i in range(14)]
     families.append({"key": "best", "label": "Best", "p": p_best})
@@ -256,6 +275,7 @@ def test_evidence_across_confidence_families_survives_a_holm_correction(tmp_path
     assert entries["ho-best"]["status"] == status
     assert entries["ho-best"]["p_holm"] == pytest.approx(min(1.0, 15 * p_best))
     assert {entries[f"ho-h{i}"]["status"] for i in range(14)} == {"khong-hon-ngau-nhien"}
+    assert {e["kind"] for e in entries.values()} == {"snapshot"}
 
 
 @pytest.mark.parametrize(("state", "status"), [("dang_thu", "dang-kiem"), ("xac_nhan", "co-bang-chung"),

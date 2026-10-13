@@ -321,8 +321,17 @@ def carry_over(previous: dict | None) -> tuple[dict | None, list[dict]]:
     return None, retired
 
 
-def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) -> dict:
-    """Giữ nguyên mọi luật đã đăng ký (định nghĩa, ngày, số trong mẫu), chấm lại, thêm lô mới khi đến hạn."""
+def batches_spent(retired: list[dict]) -> int:
+    """Số lô các thí nghiệm đã nghỉ từng đăng ký: chúng đã tiêu phần α của mình, lô mới đếm tiếp."""
+    return sum(len(r.get("batches", [])) for r in retired)
+
+
+def update_rules(previous: dict | None, present: np.ndarray, labels: list[str], spent_before: int = 0) -> dict:
+    """Giữ nguyên mọi luật đã đăng ký (định nghĩa, ngày, số trong mẫu), chấm lại, thêm lô mới khi đến hạn.
+
+    ``spent_before`` là số lô đã đăng ký ở các thí nghiệm đã nghỉ. Chỉ số lô k đếm tiếp từ đó, không
+    về 1 khi đổi cấu hình: nếu không, mỗi lần đổi lại tiêu gần trọn α.
+    """
     batches = list((previous or {}).get("batches", []))
     rules = list((previous or {}).get("rules", []))
     index = {d: t for t, d in enumerate(labels)}
@@ -331,7 +340,8 @@ def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) 
     if due:
         registered_at = labels[-1]
         mined = mine_lag_rules(present, len(labels))
-        spent = batch_alpha(len(batches) + 1)
+        k = spent_before + len(batches) + 1
+        spent = batch_alpha(k)
         share = spent / max(1, len(mined))
         ids = []
         for r in mined:
@@ -341,7 +351,8 @@ def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) 
                           "text": f"{r['if']:02d} về hôm nay → {r['then']:02d} về kỳ sau",
                           "in_sample": {k: r[k] for k in ("support", "together", "rate", "base", "lift")},
                           "if": r["if"], "then": r["then"], "alpha": share, "threshold_e": 1.0 / share})
-        batches.append({"registered_at": registered_at, "draws": len(labels), "alpha": spent, "rules": ids})
+        batches.append({"registered_at": registered_at, "draws": len(labels), "index": k, "alpha": spent,
+                        "rules": ids})
     for rule in rules:
         score = score_rule(rule, present, labels)
         rule["prospective"] = score
@@ -366,19 +377,21 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
     out = []
     conf = _read(data_dir / "confidence" / "report.json")
     if conf:
-        # Mỗi p chỉ hiệu chỉnh TRONG họ của nó; kho đọc mọi họ cùng lúc nên hiệu chỉnh Holm trên cả
-        # các họ. Không thế thì dưới giả thuyết không, 15 họ ở α = 0,01 cho ~14% có ít nhất một họ
-        # bị gọi là "có bằng chứng". Qua α riêng mà không qua Holm thì chỉ là tín hiệu chưa xác nhận.
+        # Các họ của confidence_matrix là ẢNH CHỤP: p tính lại mỗi ngày trên lịch sử dồn, nên xem
+        # lại hằng ngày thì xác suất có lúc vượt ngưỡng lớn hơn α nhiều, và một lần vượt có thể biến
+        # mất hôm sau. Vì thế chúng không bao giờ là "có bằng chứng" — muốn thế phải đăng ký phép kiểm
+        # tiến cứu (như hot_tail_test). Holm trên mọi họ chỉ để phân loại ảnh chụp: mỗi p chỉ hiệu
+        # chỉnh TRONG họ của nó, 15 họ ở α = 0,01 cho ~14% có ít nhất một họ vượt dưới giả thuyết không.
         families = conf.get("families", [])
         adjusted = holm([float(fam["p"]) for fam in families])
         for fam, p_holm in zip(families, adjusted, strict=True):
             if p_holm < ALPHA:
-                status = "co-bang-chung"
+                status = "tin-hieu-anh-chup"
             elif fam["p"] < ALPHA:
                 status = "chua-co-bang-chung"
             else:
                 status = "khong-hon-ngau-nhien"
-            out.append({"id": f"ho-{fam['key']}", "kind": "measured", "title": fam["label"],
+            out.append({"id": f"ho-{fam['key']}", "kind": "snapshot", "title": fam["label"],
                         "status": status, "p": float(fam["p"]), "p_holm": p_holm,
                         "summary": f"tín hiệu mạnh nhất so với lịch sử công bằng: p = {fam['p']:.3g}; "
                                    f"sau Holm trên {len(families)} họ: {p_holm:.3g}"})
@@ -511,7 +524,7 @@ def run(data_dir: Path) -> Path:
     out = data_dir / OUT_DIR
     kb_path = out / KB_FILE
     previous, retired = carry_over(_read(kb_path))
-    rules = update_rules(previous, present, labels)
+    rules = update_rules(previous, present, labels, spent_before=batches_spent(retired))
     memory = ContextMemory(present)
     payload = {
         "version": VERSION,

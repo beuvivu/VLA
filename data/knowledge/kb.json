@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T10:41:07Z",
+  "generated_at": "2026-10-13T10:46:18Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "config": {
@@ -29,6 +29,7 @@
     {
       "registered_at": "2026-10-12",
       "draws": 4233,
+      "index": 1,
       "alpha": 0.006079271018540266,
       "rules": [
         "tre-96-52-2026-10-12",
@@ -600,7 +601,7 @@
   "measured": [
     {
       "id": "ho-freq_z_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Tần suất LOTO — con về nhiều nhất (z)",
       "status": "khong-hon-ngau-nhien",
       "p": 0.42357642357642356,
@@ -609,7 +610,7 @@
     },
     {
       "id": "ho-freq_chi2",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Tần suất LOTO — χ² toàn bảng",
       "status": "khong-hon-ngau-nhien",
       "p": 0.8401598401598401,
@@ -618,7 +619,7 @@
     },
     {
       "id": "ho-bayes_post_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Bayes LOTO — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
       "p": 0.42357642357642356,
@@ -627,7 +628,7 @@
     },
     {
       "id": "ho-bayes60_post_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Bayes LOTO 60 kỳ gần nhất — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
       "p": 0.5724275724275725,
@@ -636,7 +637,7 @@
     },
     {
       "id": "ho-markov_z_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Markov LOTO — về rồi về lại (z)",
       "status": "khong-hon-ngau-nhien",
       "p": 0.1838161838161838,
@@ -645,7 +646,7 @@
     },
     {
       "id": "ho-pair_z_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Bạc nhớ i hôm nay → j ngày mai (z)",
       "status": "khong-hon-ngau-nhien",
       "p": 0.8401598401598401,
@@ -654,7 +655,7 @@
     },
     {
       "id": "ho-cau_loto_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Cầu vị trí → LOTO — tỉ lệ trúng cao nhất",
       "status": "khong-hon-ngau-nhien",
       "p": 0.6893106893106893,
@@ -663,7 +664,7 @@
     },
     {
       "id": "ho-cau_de_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Cầu vị trí → Đặc Biệt — tỉ lệ trúng cao nhất",
       "status": "khong-hon-ngau-nhien",
       "p": 0.4925074925074925,
@@ -672,7 +673,7 @@
     },
     {
       "id": "ho-de_chi2",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Tần suất Đặc Biệt — χ²",
       "status": "khong-hon-ngau-nhien",
       "p": 0.8211788211788211,
@@ -681,7 +682,7 @@
     },
     {
       "id": "ho-de_bayes_post_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Bayes Đặc Biệt — hậu nghiệm cao nhất",
       "status": "khong-hon-ngau-nhien",
       "p": 0.8341658341658342,
@@ -690,7 +691,7 @@
     },
     {
       "id": "ho-de_markov_z_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Đầu Đặc Biệt hôm qua → Đặc Biệt hôm nay (z)",
       "status": "khong-hon-ngau-nhien",
       "p": 0.5094905094905096,
@@ -699,7 +700,7 @@
     },
     {
       "id": "ho-de_to_loto",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Đặc Biệt hôm nay → về LOTO ngày mai",
       "status": "khong-hon-ngau-nhien",
       "p": 0.1528471528471529,
@@ -708,7 +709,7 @@
     },
     {
       "id": "ho-cusum_max",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Xu hướng dài hạn / đứt gãy từng con (CUSUM)",
       "status": "khong-hon-ngau-nhien",
       "p": 0.6343656343656343,
@@ -717,7 +718,7 @@
     },
     {
       "id": "ho-year_persist",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Số nóng năm trước còn nóng năm sau",
       "status": "khong-hon-ngau-nhien",
       "p": 0.6643356643356644,
@@ -726,7 +727,7 @@
     },
     {
       "id": "ho-distinct_cusum",
-      "kind": "measured",
+      "kind": "snapshot",
       "title": "Đứt gãy cấu trúc: số con khác nhau mỗi kỳ",
       "status": "chua-co-bang-chung",
       "p": 0.007992007992007943,

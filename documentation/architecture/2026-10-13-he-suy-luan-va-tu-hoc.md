@@ -158,9 +158,9 @@ sequenceDiagram
   - Tỉ lệ điều kiện được co Beta về tỉ lệ nền của b, với 100 lần quan sát ảo. Chỉ xét tiền đề a đã xảy ra ít nhất 200 lần.
   - Lấy 20 luật có lift cao nhất. Lịch sử không đủ thì đăng ký ít hơn, không bịa.
 - **`score_rule`**: chấm luật CHỈ trên kỳ sau ngày đăng ký, tối đa 180 kỳ, bằng e-process một phía (xem 4.4).
-- **`batch_alpha`**: lô thứ k được phần α·6/(π²k²) của α = 0,01, chia đều cho các luật trong lô. Tổng trên mọi lô bằng đúng α. Phần ấy ghi vào từng luật lúc đăng ký (`alpha`, `threshold_e`), nên lô mới không nâng ngưỡng của lô cũ và không rút lại kết luận đã báo. Ngưỡng N/α theo số luật hiện có thì lô k bị xét ở α/k, và tổng α·(1 + 1/2 + …) không bị chặn.
+- **`batch_alpha`**: lô thứ k được phần α·6/(π²k²) của α = 0,01, chia đều cho các luật trong lô. Tổng trên mọi lô bằng đúng α. Phần ấy ghi vào từng luật lúc đăng ký (`alpha`, `threshold_e`), nên lô mới không nâng ngưỡng của lô cũ và không rút lại kết luận đã báo. Ngưỡng N/α theo số luật hiện có thì lô k bị xét ở α/k, và tổng α·(1 + 1/2 + …) không bị chặn. Chỉ số k đếm tiếp qua các thí nghiệm đã nghỉ (`batches_spent`), nên đổi cấu hình không tiêu lại α.
 - **`rule_status`**: `co-bang-chung` khi e-value đạt ngưỡng riêng của luật; `het-han` khi quá 180 kỳ mà chưa đạt; còn lại `dang-kiem`.
-- **`measured_knowledge`**: gom kết luận đã đo ở nơi khác thành mục có trạng thái, gồm 15 họ của `confidence_matrix`, giả thuyết đuôi nóng, bộ lọc lô nhiều nháy, cặp xiên 2 và cổng tự học. Mỗi p của `confidence_matrix` chỉ hiệu chỉnh trong họ của nó, nên kho hiệu chỉnh Holm trên cả 15 họ: qua Holm mới là `co-bang-chung`; qua α riêng mà không qua Holm là `chua-co-bang-chung`.
+- **`measured_knowledge`**: gom kết luận đã đo ở nơi khác thành mục có trạng thái, gồm 15 họ của `confidence_matrix`, giả thuyết đuôi nóng, bộ lọc lô nhiều nháy, cặp xiên 2 và cổng tự học. Các họ của `confidence_matrix` là ẢNH CHỤP: p tính lại mỗi ngày trên lịch sử dồn, nên xem lại hằng ngày thì xác suất có lúc vượt ngưỡng lớn hơn α nhiều. Vì thế chúng không bao giờ là `co-bang-chung`; muốn thế phải đăng ký phép kiểm tiến cứu. Holm trên cả 15 họ chỉ để phân loại: qua Holm là `tin-hieu-anh-chup`, qua α riêng mà không qua Holm là `chua-co-bang-chung`.
 
 ## 4. Mã mẫu (trích từ mã đang chạy)
 
@@ -341,7 +341,7 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
   - `analog`: walk-forward của chuyên gia tương tự;
   - `insights`: lời giải thích top-10 cho LOTO và Đặc Biệt.
 - Luật đã đăng ký không bao giờ bị viết lại: định nghĩa, ngày và số trong mẫu giữ nguyên, chỉ phần chấm tiến cứu được cập nhật.
-- `rule_config` ghi mọi tham số định nghĩa luật và cách chấm (`VERSION`, nhịp khai phá, số luật mỗi lô, `MIN_SUPPORT`, `SHRINK`, `HORIZON`, `ALPHA`, lưới cược). Đổi bất kỳ tham số nào thì `carry_over` cất nguyên các lô cũ vào `retired`, kèm cấu hình và kỳ chấm cuối, KHÔNG chấm lại chúng bằng luật chấm mới, rồi đăng ký lô mới ngay. Đổi ngưỡng hay chân trời giữa chừng mà vẫn chấm tiếp là xem dữ liệu rồi mới chọn phép kiểm.
+- `rule_config` ghi mọi tham số định nghĩa luật và cách chấm (`VERSION`, nhịp khai phá, số luật mỗi lô, `MIN_SUPPORT`, `SHRINK`, `HORIZON`, `ALPHA`, lưới cược). Đổi bất kỳ tham số nào thì `carry_over` cất nguyên các lô cũ vào `retired`, kèm cấu hình và kỳ chấm cuối, KHÔNG chấm lại chúng bằng luật chấm mới, rồi đăng ký lô mới ngay. Lô mới nhận chỉ số k đếm tiếp sau mọi lô đã nghỉ, nên tổng α của cả kho vẫn ≤ α. Đổi ngưỡng hay chân trời giữa chừng mà vẫn chấm tiếp là xem dữ liệu rồi mới chọn phép kiểm.
 
 ## 8. Giới hạn — điều hệ này KHÔNG hứa
 
@@ -359,6 +359,6 @@ PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
 - Luật chỉ được chấm sau ngày đăng ký và trong giới hạn số kỳ.
 - E-process đúng trên một đường tính tay và giữ lời hứa trên lịch sử công bằng: chạm 1/α ở không quá α lịch sử. Một luật thật đăng ký trước khi nó xuất hiện thì đạt "có bằng chứng".
 - Ngưỡng của từng luật là phần α ghi lúc đăng ký: tổng mọi lô không vượt α, lô mới không rút lại kết luận của lô cũ; luật đã đăng ký đóng băng; lô mới chờ đủ 30 kỳ.
-- Các họ của `confidence_matrix` chỉ thành "có bằng chứng" khi qua Holm trên mọi họ.
+- Các họ của `confidence_matrix` là ảnh chụp, không bao giờ "có bằng chứng"; Holm trên mọi họ chỉ phân loại chúng. Đổi cấu hình luật không tiêu lại α: chỉ số lô đếm tiếp qua các thí nghiệm đã nghỉ.
 - Lời giải thích cộng đúng ra hỗn hợp và trích đúng xác suất đã công bố; dùng dấu phẩy thập phân.
 - Pipeline chạy bước này sau những gì nó đọc.
