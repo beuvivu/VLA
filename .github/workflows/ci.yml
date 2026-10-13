@@ -89,12 +89,12 @@ jobs:
         env:
           UI_BROWSER_REQUIRED: "1"
         run: python -m pytest tests/test_app_shell.py::test_touch_can_reach_every_navigation_link_on_a_phone -q
-      - run: python scripts/check_ui_browser.py
-      - run: python scripts/check_dashboard_browser.py
-      - run: python scripts/check_vietlott_navigation_browser.py
-      - run: python scripts/check_vietlott_ui_browser.py
-      - run: python scripts/check_stat_tables_browser.py
-      - run: python scripts/check_bridge_workspace_browser.py
+      - run: python scripts/browser/check_ui_browser.py
+      - run: python scripts/browser/check_dashboard_browser.py
+      - run: python scripts/browser/check_vietlott_navigation_browser.py
+      - run: python scripts/browser/check_vietlott_ui_browser.py
+      - run: python scripts/browser/check_stat_tables_browser.py
+      - run: python scripts/browser/check_bridge_workspace_browser.py
       - name: Lưu ảnh và kết quả kiểm tra giao diện
         if: always()
         uses: actions/upload-artifact@v7
@@ -150,13 +150,13 @@ jobs:
           npm test --prefix tests/frontend
 
       - name: Kiểm tra phát hành lõi
-        run: bash scripts/release_check.sh
+        run: bash scripts/release/release_check.sh
 
       - name: Kiểm tra cổng ngoài mẫu của challenger miền số
-        run: bash scripts/domain_challenger_check.sh
+        run: bash scripts/release/domain_challenger_check.sh
 
       - name: Kiểm tra miền số, cặp số và tính toàn vẹn Excel
-        run: bash scripts/number_integrity_check.sh
+        run: bash scripts/release/number_integrity_check.sh
 
       - name: Kiểm tra phát hành lớp nghiên cứu
-        run: bash scripts/research_release_check.sh
+        run: bash scripts/release/research_release_check.sh

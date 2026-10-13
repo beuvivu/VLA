@@ -50,4 +50,4 @@ jobs:
         env:
           URLS: ${{ inputs.urls }}
           MAX_ROWS: ${{ inputs.max_rows }}
-        run: python scripts/inspect_reference_bridge.py
+        run: python scripts/reference/inspect_reference_bridge.py

@@ -203,7 +203,7 @@ def main() -> None:
     )
     parser.add_argument("--data-dir", default="data/ai_ml")
     parser.add_argument(
-        "--output", default="docs/research/experiment_results.json"
+        "--output", default="data/research/experiment_results.json"
     )
     args = parser.parse_args()
     payload = build_report(data_dir=Path(args.data_dir), output=Path(args.output))

@@ -537,7 +537,7 @@ def main() -> None:
     ap.add_argument("--out-dir", default="data/ensemble")
     ap.add_argument("--window-days", type=int, default=180)
     ap.add_argument("--min-days", type=int, default=20)
-    # Tên cờ giữ nguyên vì pipeline.py và scripts/release_check.sh đang truyền
+    # Tên cờ giữ nguyên vì pipeline.py và scripts/release/release_check.sh đang truyền
     # nó; đơn vị THẬT là số kỳ quay, xem chú thích của _day_weights.
     ap.add_argument("--half-life-days", type=int, default=45)
     args = ap.parse_args()

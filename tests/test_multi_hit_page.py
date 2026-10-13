@@ -611,7 +611,7 @@ def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> 
 
 def test_the_release_check_measures_before_it_builds_the_page() -> None:
     """release_check dựng trang trên lịch sử hiện tại: bước đo phải chạy NGAY TRƯỚC trình dựng."""
-    lines = [ln.strip() for ln in (ROOT / "scripts" / "release_check.sh").read_text(encoding="utf-8").splitlines()]
+    lines = [ln.strip() for ln in (ROOT / "scripts" / "release" / "release_check.sh").read_text(encoding="utf-8").splitlines()]
     build = lines.index("python src/build_multi_hit_page.py")
     assert lines[build - 1] == "python src/multi_hit_report.py"
 

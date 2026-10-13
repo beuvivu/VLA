@@ -3,7 +3,7 @@
 Ngày: 04-10-2026. Dữ liệu: 4 225 kỳ, 01-01-2015 → 04-10-2026.
 Tái lập (≈ 35 phút, 4 lõi):
 
-    PYTHONPATH=src python3 scripts/benchmark_component_trust.py --last 1000
+    PYTHONPATH=src python3 scripts/research/benchmark_component_trust.py --last 1000
 
 Số liệu thô: `data/research/model_overhaul/component_trust.json`.
 

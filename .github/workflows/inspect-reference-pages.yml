@@ -66,4 +66,4 @@ jobs:
           DUMP_LINKS: ${{ inputs.dump_links }}
           HTML_SELECTOR: ${{ inputs.html_selector }}
           HTML_COUNT: ${{ inputs.html_count }}
-        run: python scripts/inspect_reference_pages.py
+        run: python scripts/reference/inspect_reference_pages.py

@@ -18,7 +18,7 @@ CI đã qua 2.421 kiểm thử nhưng dừng trong `release_check.sh`: bộ ch�
 
 Chín kiểm thử mới chạy vòng đời thiếu mẫu/ghi đè model cũ, dự báo dự phòng, CLI nghiêm ngặt, lỗi bộ chọn/estimator và chính khối Python trong shell phát hành. Hai mode đều có phép huấn luyện thật trên fixture 100 ngày trong thư mục tạm; dữ liệu mô phỏng không trở thành bằng chứng production.
 
-Vòng kiểm đầu trước sửa: 7 thất bại, 1 đạt. Kiểm lỗi bộ chọn được bổ sung trong lượt đột biến. Nhóm liên quan sau sửa: **60 đạt** trong 8,64 giây. Ruff cho `src`/`tests`, `bash -n scripts/release_check.sh` và `git diff --check` đạt. Cả **5 đột biến** canh ghi đè pack, phạm vi bắt ngoại lệ, model luôn bị tắt, lý do fallback và cổng phát hành đều bị phát hiện.
+Vòng kiểm đầu trước sửa: 7 thất bại, 1 đạt. Kiểm lỗi bộ chọn được bổ sung trong lượt đột biến. Nhóm liên quan sau sửa: **60 đạt** trong 8,64 giây. Ruff cho `src`/`tests`, `bash -n scripts/release/release_check.sh` và `git diff --check` đạt. Cả **5 đột biến** canh ghi đè pack, phạm vi bắt ngoại lệ, model luôn bị tắt, lý do fallback và cổng phát hành đều bị phát hiện.
 
 Lệnh kiểm nhóm liên quan:
 

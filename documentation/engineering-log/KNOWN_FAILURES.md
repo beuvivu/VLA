@@ -52,6 +52,6 @@ fallback, not an absolute real-time SLA.
 
 Lệnh `gh cache list --repo beuvivu/VLA` và `gh cache delete --all --confirm
 --repo beuvivu/VLA` đã được thử nhưng `gh` không được cài đặt. Đã bổ sung
-`scripts/purge_github_caches.py`, dùng REST API tương đương với token `GH_TOKEN`,
+`scripts/ops/purge_github_caches.py`, dùng REST API tương đương với token `GH_TOKEN`,
 và workflow thủ công `.github/workflows/cache-purge.yml`; thao tác vẫn yêu cầu
 `--confirm` và quyền `actions: write`.

@@ -305,7 +305,7 @@ def test_the_power_check_measures_each_mode_on_its_own_history(monkeypatch: pyte
     from pathlib import Path
     from types import SimpleNamespace
 
-    path = Path(__file__).resolve().parents[1] / "scripts" / "benchmark_probability_models.py"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "research" / "benchmark_probability_models.py"
     spec = importlib.util.spec_from_file_location("benchmark_power_check", path)
     bench = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bench)
@@ -354,7 +354,7 @@ def _benchmark_module():
     import importlib.util
     from pathlib import Path
 
-    path = Path(__file__).resolve().parents[1] / "scripts" / "benchmark_probability_models.py"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "research" / "benchmark_probability_models.py"
     spec = importlib.util.spec_from_file_location("benchmark_recorded", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

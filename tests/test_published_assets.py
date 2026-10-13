@@ -30,8 +30,8 @@ _THAM_CHIEU = re.compile(r'(?:href|src)="((?!https?:|data:|mailto:|#)[^"]+)"')
 #: Chúng không xuất hiện trên trang nào, nhưng KHÔNG chết: có mã phát ra
 #: chúng, chỉ là mã ấy chạy tay chứ không nằm trong quy trình. Đo được:
 #:
-#:     matrix-virt.js        scripts/optimize_index_dom.py
-#:     apply-data-styles.js  scripts/patch_csp_no_inline.py
+#:     matrix-virt.js        scripts/ops/optimize_index_dom.py
+#:     apply-data-styles.js  scripts/ops/patch_csp_no_inline.py
 NGOAI_LE = {
     "assets/matrix-virt.js",
     "assets/apply-data-styles.js",

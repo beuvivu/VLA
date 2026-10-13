@@ -1,7 +1,7 @@
 """Khung ứng dụng dùng chung: hai cấp điều hướng, thanh trên, vùng nội dung.
 
 Dựng theo số đo THẬT của trang tham chiếu mà chủ dự án chọn, lấy bằng
-``scripts/inspect_reference_shell.py`` chạy trên runner Actions (proxy môi
+``scripts/reference/inspect_reference_shell.py`` chạy trên runner Actions (proxy môi
 trường phát triển chặn trang đó). Các con số dưới đây là đo, không phải ước:
 
     dải biểu tượng      80px, bóng trong rgba(41,41,75,.05) 0 0 10px

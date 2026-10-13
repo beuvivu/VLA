@@ -51,7 +51,7 @@ Một tín hiệu duy nhất sống sót qua Bonferroni đã không tái lặp �
 
 ### 1.3 Đo mới: hàm mất mát và hiệu chuẩn
 
-`scripts/demo_probability_losses.py`, 203 200 hàng (ngày × con số),
+`scripts/research/demo_probability_losses.py`, 203 200 hàng (ngày × con số),
 2021-01-27 → 2026-09-13, cắt theo thời gian 70/15/15, huấn luyện thật bằng
 LightGBM với hàm mục tiêu tùy biến.
 
@@ -551,10 +551,10 @@ thiết kế trò chơi, không phải từ dữ liệu.
 
 ## 6. Mã demo
 
-`scripts/demo_probability_losses.py` — chạy được, trên dữ liệu thật:
+`scripts/research/demo_probability_losses.py` — chạy được, trên dữ liệu thật:
 
 ```bash
-PYTHONPATH=src python3 scripts/demo_probability_losses.py
+PYTHONPATH=src python3 scripts/research/demo_probability_losses.py
 ```
 
 Nó minh hoạ đúng ba thứ đề bài yêu cầu:

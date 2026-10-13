@@ -12,7 +12,7 @@ kỳ mới vào sổ cái, chấm với kết quả thật, và bằng chứng c
 Mọi tham số dưới đây chốt trước kỳ đầu tiên được chấm và KHÔNG được sửa để vừa
 kết quả: sửa thì đăng ký giả thuyết mới với ngày bắt đầu mới (như
 ``hot_tail_test``). Quy tắc nào được XÁC NHẬN cũng không tự vào tổ hợp xác suất:
-nó vẫn phải qua ``scripts/benchmark_probability_models.py`` và thắng cả hằng số
+nó vẫn phải qua ``scripts/research/benchmark_probability_models.py`` và thắng cả hằng số
 lẫn mô hình đang chạy.
 
 Thống kê, mỗi quy tắc r và mỗi kỳ t từ ``FIRST_TARGET``:

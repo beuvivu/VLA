@@ -28,7 +28,7 @@ def test_http_collection_does_not_depend_on_anti_bot_bypass_package() -> None:
 
 
 def test_release_checks_do_not_use_fixed_shared_temporary_files() -> None:
-    release_check = (ROOT / "scripts" / "release_check.sh").read_text(
+    release_check = (ROOT / "scripts" / "release" / "release_check.sh").read_text(
         encoding="utf-8"
     )
     assert "/tmp/production-audit-release.json" not in release_check
