@@ -184,7 +184,7 @@ CI chạy khi đẩy mã hoặc mở yêu cầu hợp nhất. Có thể nghiệm
 
 ```bash
 python -m pip install -r requirements-dev.txt
-bash scripts/release_check.sh
+bash scripts/release/release_check.sh
 ```
 
 Kiểm tra phát hành xác minh cú pháp/phân tích tĩnh, kiểm thử đơn vị, chính sách nguồn, thử nhanh huấn luyện/dự báo, thống kê Bayes, tính toàn vẹn dữ liệu và các đầu ra bắt buộc từ dữ liệu đã ghi nhận.
@@ -192,17 +192,25 @@ Kiểm tra phát hành xác minh cú pháp/phân tích tĩnh, kiểm thử đơn
 ## Cấu trúc repository
 
 ```text
-.github/workflows/      CI, trực tiếp, hoàn tất hằng ngày, triển khai Pages
-src/                    nguồn, kiểm định, thống kê, AI/ML, bộ dựng trang
-src/templates/          mẫu để tạo README và trang
-tests/                  kiểm thử hồi quy + dữ liệu/nguồn/ML
-data/                   dữ liệu chuẩn + đầu ra phân tích
-models/                 artifact mô hình đã huấn luyện
-images/                 hình trực quan đã tạo
-docs/                   trang web tĩnh GitHub Pages
-scripts/release_check.sh
-requirements*.txt
-README.md
+.github/workflows/   CI, kết quả trực tiếp, hoàn tất hằng ngày, triển khai Pages
+src/                 mã nguồn: nguồn dữ liệu, thống kê, AI/ML, trình dựng trang
+src/templates/       mẫu HTML/CSS/JS và mẫu README
+src/assets/          tài nguyên trang (JS, phông, biểu tượng)
+tests/               kiểm thử Python; tests/frontend/ kiểm thử Node
+data/                dữ liệu chuẩn và đầu ra phân tích
+models/              mô hình đã huấn luyện
+images/              biểu đồ đã tạo
+docs/                CHỈ trang web tĩnh GitHub Pages
+documentation/       tài liệu viết tay: kiến trúc, vận hành, nghiên cứu, QA, kế hoạch, giao diện
+scripts/release/     bốn kịch bản chốt phát hành
+scripts/browser/     kiểm tra giao diện bằng trình duyệt thật
+scripts/ops/         vận hành, bảo trì (điều hướng, CSS tới hạn, bộ đệm, đúng giờ)
+scripts/research/    tái lập các phép đo nghiên cứu
+scripts/reference/   đọc trang tham chiếu qua runner Actions
+vietlott/            engine Vietlott, dự án tự đủ chạy riêng
+worker/              Cloudflare Worker cho kết quả trực tiếp
+config/              bảng thuật ngữ số
+requirements*.txt    phụ thuộc theo môi trường (cơ bản, phát triển, trực tiếp, ML)
 ```
 
 ## Ghi chú về xác suất

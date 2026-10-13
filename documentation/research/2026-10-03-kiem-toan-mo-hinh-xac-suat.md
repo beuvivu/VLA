@@ -3,7 +3,7 @@
 Ngày: 03-10-2026. Dữ liệu: 4 223 kỳ, 01-01-2015 → 02-10-2026.
 Tái lập (≈ 55 phút, 4 lõi; phần lớn là đo học lại mỗi kỳ trên 200 kỳ ở mục 3.1):
 
-    PYTHONPATH=src python3 scripts/benchmark_probability_models.py --last 1000 --power-check --refit-check 200
+    PYTHONPATH=src python3 scripts/research/benchmark_probability_models.py --last 1000 --power-check --refit-check 200
 
 Số liệu thô: `data/research/model_overhaul/benchmark.json`, `daily_logloss.csv`.
 
@@ -143,7 +143,7 @@ Sau khi sửa (mục 2), nó biến mất ở cả hai khối: 54/997 (5,4%, p =
 
 Bản PMI cũ cho cặp số chưa có dữ liệu một giá trị dương lớn, nên mô hình có thứ để "bám". Đây chính là
 cách một con số đẹp xuất hiện khi đọc nhiều chỉ số sau khi chạy (30 chỉ số ở đây). Kiểm lặp lại:
-`scripts/replicate_top5_special.py` → `data/research/model_overhaul/top5_replication.json`.
+`scripts/research/replicate_top5_special.py` → `data/research/model_overhaul/top5_replication.json`.
 
 **ROI.** Không chiến lược nào hoàn vốn. Theo luật trả thưởng, đánh ngẫu nhiên hoàn khoảng 0,94 (lô)
 và 0,70 (Đặc Biệt). Chiến lược "chỉ đánh khi kỳ vọng dương theo xác suất mô hình":
@@ -219,7 +219,7 @@ nguyên từng byte; nhãn đã ghi không bị đè. Dòng mới mang nhãn nga
 
 `ml_train.model_trust` trộn `p = trust·thô + (1 − trust)·nền`. Công thức cũ `clip(0,35 + 20·s, 0,35, 1)`
 (s = kỹ năng thẩm định, kém hơn trong logloss/Brier) giữ 35% mô hình thô cả khi s ≤ 0. Đo bằng
-`scripts/benchmark_model_trust.py` → `data/research/model_overhaul/trust_floor.json`: walk-forward 997
+`scripts/research/benchmark_model_trust.py` → `data/research/model_overhaul/trust_floor.json`: walk-forward 997
 kỳ, học lại mỗi 50 kỳ, mọi luật chấm trên CÙNG bộ xác suất thô. Kỹ năng thẩm định của 20 lần học nằm
 trong [−0,035%, +0,025%] cho LOTO — tức thực chất bằng 0.
 

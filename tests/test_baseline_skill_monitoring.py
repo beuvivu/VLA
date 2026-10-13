@@ -227,7 +227,7 @@ def test_release_check_runs_the_skill_gate_strictly() -> None:
     Thiếu ``--require-baseline`` thì một thay đổi như thế sẽ tự tắt cổng trong
     im lặng, đúng lớp lỗi mà cổng sinh ra để chặn.
     """
-    script = (ROOT / "scripts/release_check.sh").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/release/release_check.sh").read_text(encoding="utf-8")
     assert "src/check_baseline_skill.py --require-baseline" in script
 
 

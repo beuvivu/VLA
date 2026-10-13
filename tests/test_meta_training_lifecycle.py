@@ -139,7 +139,7 @@ def test_release_check_accepts_truthful_shortage_but_rejects_enabled_pack(tmp_pa
     for mode in ("loto", "de"):
         _train(tmp_path, mode, _history(mode, 28))
     root = Path(__file__).resolve().parents[1]
-    script = (root / "scripts/release_check.sh").read_text()
+    script = (root / "scripts/release/release_check.sh").read_text()
     code = script.split("python - <<PYMETA\n", 1)[1].split("\nPYMETA", 1)[0]
     code = code.replace("$TMP_MODELS", str(tmp_path / "models"))
     code = code.replace("$TMP_PRED", str(tmp_path / "reports"))

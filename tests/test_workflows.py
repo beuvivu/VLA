@@ -109,7 +109,7 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
     assert "workflow_dispatch:" in text
     assert "schedule:" not in text
     assert "actions: write" in text
-    assert "scripts/purge_github_caches.py --confirm" in text
+    assert "scripts/ops/purge_github_caches.py --confirm" in text
 
 
 # --- Thu thập đúng giờ ------------------------------------------------------
@@ -274,7 +274,7 @@ def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
     cách sửa nào ngoài chạy tay đúng trình dựng.
     """
     chain = (
-        Path(__file__).resolve().parents[1] / "scripts" / "release_check.sh"
+        Path(__file__).resolve().parents[1] / "scripts" / "release" / "release_check.sh"
     ).read_text(encoding="utf-8")
 
     builders = [

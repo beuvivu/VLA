@@ -1,0 +1,469 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT="${VN_LOTTERY_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+cd "$ROOT"
+
+export PYTHONPATH="${PYTHONPATH:-$ROOT/src}"
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}"
+export MKL_NUM_THREADS="${MKL_NUM_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
+
+printf '%s\n' "== GitHub-only structure =="
+for forbidden in \
+  requirements-hosting.txt passenger_wsgi.py deploy hosting \
+  src/webapp.py src/hosting_health.py src/scheduler.py; do
+  if [[ -e "$forbidden" ]]; then
+    echo "Forbidden server-deployment artifact still exists: $forbidden" >&2
+    exit 2
+  fi
+done
+
+printf '%s\n' "== Lint + Python syntax =="
+ruff check --select E9,F63,F7,F82 src tests
+python -m compileall -q src tests
+
+printf '%s\n' "== Unit/regression tests =="
+python -m pytest -q
+
+printf '%s\n' "== Source policy =="
+# Cổng này TỪNG chép cứng bảy tên miền vào đây. Hai lượt đổi chính sách nguồn
+# sau đó, bản chép lệch khỏi `src/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
+# một bản sao danh sách luôn sinh ra. Danh sách đã có chỗ khai báo duy nhất
+# (`PRIMARY_SOURCE_NAMES`/`FALLBACK_SOURCE_NAMES`) và đã được ghim bởi
+# `tests/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
+# đơn lẻ không tự kiểm được: đăng ký, mã ẩn danh, nhóm độc lập và danh sách
+# đen chống lộ nguồn phải phủ khớp nhau.
+python - <<'PYSOURCE'
+from sources import (
+    FALLBACK_SOURCE_NAMES,
+    PRIMARY_SOURCE_NAMES,
+    RETIRED_SOURCE_NAMES,
+    SOURCE_INDEPENDENCE_GROUP,
+    SOURCE_PUBLIC_CODE,
+    default_sources,
+    fallback_sources,
+    known_source_domains,
+    primary_sources,
+    source_independence_key,
+)
+from sources import _source_registry
+
+primary = list(PRIMARY_SOURCE_NAMES)
+fallback = list(FALLBACK_SOURCE_NAMES)
+listed = primary + fallback
+
+assert len(set(listed)) == len(listed), listed
+assert not (set(primary) & set(fallback)), (primary, fallback)
+
+# Không còn nguồn mồ côi: xoá một nguồn khỏi chính sách mà để lại lớp cào của
+# nó trong đăng ký là "xoá chưa tới nơi", và lần sau có người gọi lại được.
+registry = _source_registry()
+assert sorted(registry) == sorted(listed), (sorted(registry), sorted(listed))
+for name, source in registry.items():
+    assert source.name == name, (name, source.name)
+
+assert [s.name for s in primary_sources()] == primary
+assert [s.name for s in fallback_sources()] == fallback
+assert [s.name for s in default_sources()] == listed, "tầng chính phải đứng trước tầng dự phòng"
+
+# Ẩn danh hoá: mọi nguồn phải có mã, mã không được trùng, và không mã nào
+# được chính là tên miền.
+assert sorted(SOURCE_PUBLIC_CODE) == sorted(listed), sorted(SOURCE_PUBLIC_CODE)
+codes = [SOURCE_PUBLIC_CODE[n] for n in listed]
+assert len(set(codes)) == len(codes), codes
+assert all(c not in n for c, n in zip(codes, listed)), codes
+
+# Danh sách đen chống lộ nguồn phải phủ HẾT tên miền thật, nếu không phép
+# ẩn danh hoá sẽ để lọt đúng cái nó sinh ra để chặn.
+blacklist = set(known_source_domains())
+missing = [n for n in listed if n not in blacklist]
+assert not missing, missing
+
+assert sorted(SOURCE_INDEPENDENCE_GROUP) == sorted(listed), sorted(SOURCE_INDEPENDENCE_GROUP)
+
+# Chính sách từ 13-10-2026: MỘT nguồn chính; dự phòng chỉ được gọi khi nó gặp sự cố. Mỗi
+# nguồn là một nhóm độc lập riêng, nên hai dự phòng nói khác nhau là thế hoà chứ không phải
+# một nguồn nói hai lần.
+assert len(primary) == 1, primary
+groups = [source_independence_key(n) for n in listed]
+assert len(set(groups)) == len(groups), groups
+
+# Nguồn đã nghỉ: không còn được gọi, nhưng vẫn bị danh sách đen chặn khỏi tải trọng công khai.
+retired = set(RETIRED_SOURCE_NAMES)
+assert not (retired & set(listed)), sorted(retired & set(listed))
+assert not (retired & set(registry)), sorted(retired & set(registry))
+leaked = sorted(n for n in retired if n not in blacklist)
+assert not leaked, leaked
+
+print("OK source policy", len(primary), "chính /", len(fallback), "dự phòng")
+PYSOURCE
+
+printf '%s\n' "== Data integrity + canonical statistics =="
+python src/validate_data.py --lookback-days 90 --out data/health.json
+python src/statistical_signal.py --mode both
+python src/significance_stats.py --windows 30,90,365
+# Rebuild the current production cầu-kèo artifacts and model pack from the
+# calendar-validated feature builder.  The final supervised anchor is necessarily
+# one day behind the latest canonical draw because its label is that latest draw.
+python src/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20 --force-train
+python src/statistical_matrices.py
+python src/conditional_matrices.py --top 500
+python src/statistics_ai_overlay.py
+
+printf '%s\n' "== Calendar-safe conditional and AI-overlay integrity =="
+python - <<'PYCANON'
+import json
+from datetime import timedelta
+from pathlib import Path
+
+import pandas as pd
+
+def _starts_a_gap(day: str, have: set[str]) -> bool:
+    """``day`` là ngày nghỉ ĐẦU TIÊN của một cụm, tức nơi chuỗi bị đứt một lần."""
+    prev = (pd.Timestamp(day) - pd.Timedelta(days=1)).date().isoformat()
+    return prev in have
+
+latest = pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"]).max().date()
+expected_target = (latest + timedelta(days=1)).isoformat()
+rows = len(pd.read_csv("data/xsmb.csv", usecols=["date"]))
+
+# XSMB nghỉ quay dịp Tết và suốt đợt giãn cách 01-22/4/2020, nên chuỗi ngày
+# CÓ ranh giới không liền kề — đó là thực tế, không phải lỗi. Ba khẳng định cũ
+# đòi 0 ranh giới bị bỏ qua; chúng chỉ xanh chừng nào 50 bản ghi bịa còn lấp
+# vào chỗ trống. Điều đáng kiểm là số ranh giới bỏ qua khớp đúng số ngày nghỉ
+# đã biết, và phép tính chỉ đếm chuyển tiếp +1 ngày thật.
+skip = sorted(json.loads(Path("data/non_draw_days.json").read_text(encoding="utf-8"))["ngay_khong_quay"])
+have = set(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"].astype(str))
+boundaries = sum(1 for d in skip if d not in have and _starts_a_gap(d, have))
+
+cond = json.loads(Path("data/advanced/conditional_matrices_diagnostics.json").read_text(encoding="utf-8"))
+assert cond["calendar_rows"] == rows, cond
+assert cond["exact_next_day_pairs"] + cond["skipped_nonconsecutive_boundaries"] == max(0, rows - 1), cond
+assert cond["skipped_nonconsecutive_boundaries"] == boundaries, (cond, boundaries)
+for name in (
+    "conditional_loto_after_special_top500.csv",
+    "conditional_special_after_special_top500.csv",
+    "conditional_loto_after_loto_top500.csv",
+):
+    path = Path("data/advanced") / name
+    assert path.is_file() and path.stat().st_size > 0, path
+
+ai = json.loads(Path("data/advanced/ai_ml_signal_diagnostics.json").read_text(encoding="utf-8"))
+assert ai["anchor_date"] == latest.isoformat(), ai
+assert ai["target_date"] == expected_target, ai
+for mode in ("loto", "de"):
+    table = pd.read_csv(f"data/advanced/ai_ml_signal_{mode}.csv")
+    assert len(table) == 100, (mode, len(table))
+    assert set(table["number"].astype(int)) == set(range(100)), mode
+    assert set(table["target_date"].astype(str)) == {expected_target}, mode
+    assert table["ml_available"].astype(str).str.lower().isin(["true", "false"]).all(), mode
+    diag = ai["modes"][mode]["ml"]
+    if diag["available"]:
+        assert diag["source"] in {"cau_keo", "base_ml", "ensemble_exact"}, diag
+        assert diag["attempts"][-1]["status"] == "ok", diag
+    else:
+        assert table["ml_source"].eq("unavailable").all(), mode
+print("OK canonical conditional/AI overlays", latest, "->", expected_target)
+PYCANON
+
+printf '%s\n' "== Higher-order dynamics integrity =="
+python - <<'PYDYN'
+import json
+import numpy as np
+import pandas as pd
+
+for mode in ("loto", "de"):
+    cur = pd.read_csv(f"data/number_dynamics/current_dynamics_{mode}.csv")
+    trans = pd.read_csv(f"data/number_dynamics/transition_prob_lag1_{mode}.csv")
+    lift = pd.read_csv(f"data/number_dynamics/transition_lift_lag1_{mode}.csv")
+    phi = pd.read_csv(f"data/number_dynamics/cooccurrence_phi_{mode}.csv")
+    lag = pd.read_csv(f"data/number_dynamics/lag_dependency_{mode}.csv")
+    diag = json.load(open(f"data/number_dynamics/diagnostics_{mode}.json", encoding="utf-8"))
+
+    assert len(cur) == 100, (mode, len(cur))
+    assert trans.shape == (100, 101), (mode, trans.shape)
+    assert lift.shape == (100, 101), (mode, lift.shape)
+    assert phi.shape == (100, 101), (mode, phi.shape)
+    assert len(lag) == 100 * 2 * 6, (mode, len(lag))
+    p = cur.sort_values("number")["prob"].to_numpy(dtype=float)
+    assert np.isfinite(p).all(), mode
+    if mode == "de":
+        assert np.isclose(float(p.sum()), 1.0, atol=1e-8), float(p.sum())
+    else:
+        assert ((p > 0.0) & (p < 1.0)).all(), mode
+    assert diag["calendar_contiguous"] is True, diag
+    assert 0.15 <= float(diag["global_dynamics_reliability"]) <= 0.80, diag
+    print("OK dynamics", mode, "reliability=", diag["global_dynamics_reliability"])
+PYDYN
+
+printf '%s\n' "== Fresh base-ML train/predict smoke =="
+TMP_MODELS="$(mktemp -d)"
+TMP_PRED="$(mktemp -d)"
+TMP_CAU="$(mktemp -d)"
+trap 'rm -rf "$TMP_MODELS" "$TMP_PRED" "$TMP_CAU"' EXIT
+python src/ml_train.py --mode loto --out-dir "$TMP_MODELS" --window-days 365
+python src/ml_train.py --mode de --out-dir "$TMP_MODELS" --window-days 365
+python src/ml_predict.py --models-dir "$TMP_MODELS" --out-dir "$TMP_PRED" --window-days 365 --top 3
+
+test -s "$TMP_PRED/predict_next_loto_ml_all.csv"
+test -s "$TMP_PRED/predict_next_de_ml_all.csv"
+
+printf '%s\n' "== Leakage-safe stacked-ML challenger =="
+python src/meta_predictor.py \
+  --mode loto --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
+  --window-days 240 --min-days 100 --half-life-days 90
+python src/meta_predictor.py \
+  --mode de --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
+  --window-days 240 --min-days 100 --half-life-days 90
+
+test -s "$TMP_MODELS/meta_loto.joblib"
+test -s "$TMP_MODELS/meta_de.joblib"
+test -s "$TMP_PRED/meta_report_loto.json"
+test -s "$TMP_PRED/meta_report_de.json"
+
+python - <<PYMETA
+import joblib
+import math
+import json
+from pathlib import Path
+from meta_predictor import COMPONENT_TIERS, META_SCHEMA_VERSION
+
+for mode in ("loto", "de"):
+    path = "$TMP_MODELS/meta_" + mode + ".joblib"
+    pack = joblib.load(path)
+    assert int(pack["schema_version"]) == META_SCHEMA_VERSION, path
+    assert pack["mode"] == mode, path
+    assert 0.0 <= float(pack["meta_trust"]) <= 0.40, pack["meta_trust"]
+    report = json.loads(Path("$TMP_PRED/meta_report_" + mode + ".json").read_text())
+    assert report["status"] == pack["status"], mode
+    if pack["status"] == "insufficient_history":
+        # Thiếu lịch sử là trạng thái được kiểm, không phải model đã học.
+        # Không nới sàn, bịa metric hoặc giữ lại challenger cũ đang bật.
+        assert pack["model"] is None, mode
+        assert pack["quality_pass"] is False and pack["meta_trust"] == 0.0, mode
+        assert report["quality_pass"] is False and report["meta_trust"] == 0.0, mode
+        minimum = pack["minimum_history_days"]
+        maturity = pack["tier_maturity_days"]
+        assert type(minimum) is int and minimum >= 100, (mode, minimum)
+        assert set(maturity) == {name for name, _, _ in COMPONENT_TIERS}, (mode, maturity)
+        assert all(type(n) is int and 0 <= n < minimum for n in maturity.values()), maturity
+        assert pack["history_days"] == max(maturity.values()), mode
+        assert report["tier_maturity_days"] == maturity, mode
+        assert pack.get("trained_through_target_date") is None, mode
+        assert pack.get("validation_logloss") is None, mode
+        assert pack.get("validation_brier") is None, mode
+        print("OK stacked ML disabled", mode, maturity, "minimum=", minimum)
+        continue
+    assert pack["status"] == "trained", (mode, pack["status"])
+    assert callable(getattr(pack["model"], "predict_proba", None)), mode
+    for key in (
+        "validation_logloss",
+        "validation_brier",
+        "baseline_validation_logloss",
+        "baseline_validation_brier",
+        "logloss_skill",
+        "brier_skill",
+        "constant_validation_logloss",
+        "constant_logloss_skill",
+    ):
+        assert math.isfinite(float(pack[key])), (mode, key, pack[key])
+    # Bật mà không thắng dự báo hằng số là đúng lỗi của lượt 25-09-2026.
+    if pack["quality_pass"]:
+        assert float(pack["constant_logloss_skill"]) > 0.003, (mode, pack["constant_logloss_skill"])
+    assert len(pack["validation_days"]) >= 15, mode
+    print(
+        "OK stacked ML",
+        mode,
+        "quality=",
+        pack["quality_pass"],
+        "trust=",
+        pack["meta_trust"],
+        "skill=",
+        pack["logloss_skill"],
+        "constant_skill=",
+        pack["constant_logloss_skill"],
+    )
+PYMETA
+
+printf '%s\n' "== Production model artifact compatibility =="
+python - <<'PYMODEL'
+from datetime import timedelta
+
+import joblib
+import pandas as pd
+from cau_keo_ml import FEATURE_COLS as CAU_FEATURE_COLS
+from ml_train import FEATURE_SCHEMA_VERSION
+
+calendar = sorted(
+    pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"])
+    .dt.date.unique()
+)
+assert len(calendar) >= 2, len(calendar)
+latest_date = calendar[-1]
+latest = latest_date.isoformat()
+last_supervised_anchor = calendar[-2].isoformat()
+assert calendar[-2] + timedelta(days=1) == latest_date, calendar[-2:]
+
+for path in ["models/ml_loto.joblib", "models/ml_de.joblib"]:
+    obj = joblib.load(path)
+    assert isinstance(obj, dict) and "model" in obj, path
+    assert int(obj.get("feature_schema_version", 0)) == FEATURE_SCHEMA_VERSION, path
+    assert str(obj.get("trained_through_date")) == latest, (path, obj.get("trained_through_date"), latest)
+    print("OK", path, "trust=", obj.get("model_trust"))
+
+for path in ["models/cau_keo_loto.joblib", "models/cau_keo_de.joblib"]:
+    obj = joblib.load(path)
+    assert isinstance(obj, dict) and "model" in obj, path
+    assert obj.get("features") == CAU_FEATURE_COLS, path
+    # Cầu-kèo rows are (anchor t -> target t+1).  The newest canonical draw is
+    # the newest *label*, so the latest trainable anchor is exactly one day prior.
+    assert str(obj.get("trained_through_date")) == last_supervised_anchor, (
+        path,
+        obj.get("trained_through_date"),
+        last_supervised_anchor,
+    )
+    assert obj.get("calendar_contract") == "daily-contiguous raw and two-digit histories", obj
+    print(
+        "OK",
+        path,
+        "supervised_anchor=",
+        obj.get("trained_through_date"),
+        "target_through=",
+        latest,
+    )
+PYMODEL
+
+printf '%s\n' "== Cầu-kèo production-path smoke =="
+python src/cau_keo_ml.py \
+  --mode both --models-dir models --out-dir "$TMP_CAU" \
+  --window-days 2000 --top 3
+for path in \
+  "$TMP_CAU/cau_keo_loto_all.csv" \
+  "$TMP_CAU/cau_keo_de_all.csv" \
+  "$TMP_CAU/cau_keo_manifest_loto.json" \
+  "$TMP_CAU/cau_keo_manifest_de.json"; do
+  test -s "$path" || { echo "Missing cầu-kèo smoke output: $path" >&2; exit 3; }
+done
+python - <<PYCAU
+import json
+from pathlib import Path
+for mode in ("loto", "de"):
+    obj = json.loads(Path("$TMP_CAU/cau_keo_manifest_" + mode + ".json").read_text(encoding="utf-8"))
+    assert obj["calendar_contract"] == "daily-contiguous raw and two-digit histories", obj
+print("OK cau-keo calendar-safe smoke")
+PYCAU
+
+printf '%s\n' "== Static GitHub Pages builders =="
+# build_docs.py dựng bốn trang soi-path. Trước đây nó KHÔNG nằm trong chuỗi
+# này, nên các trang đó là hiện vật cũ nằm im: mỗi lần đổi SITE_NAV là chúng
+# lệch khỏi phần còn lại và test điều hướng đỏ. Chạy TRƯỚC build_landing_page
+# vì cả hai cùng ghi docs/index.html và bản của landing mới là bản đúng.
+python src/build_docs.py
+python src/build_docs_ml.py
+python src/build_dashboard.py
+python src/build_markdown_dashboard.py
+python src/build_statistics_dashboard.py
+python src/build_landing_page.py
+python src/build_fun_prediction.py
+python src/build_traditional_results.py
+python src/build_regional_results.py
+# Lô VIP nhiều nháy: đo lại trên lịch sử hiện tại trước khi dựng (~25 s; lượt hai đóng băng ở ngày
+# đăng ký, chỉ đo lại khi đoạn ấy bị sửa), nếu không trang có thể in số đo của một lịch sử cũ.
+python src/multi_hit_report.py
+python src/build_multi_hit_page.py
+python src/cleanup_artifacts.py --retention-days 45
+
+printf '%s\n' "== Fun prediction board integrity =="
+python - <<'PYFUN'
+import json
+from pathlib import Path
+
+payload = json.loads(Path("data/predict/fun_draw_next.json").read_text(encoding="utf-8"))
+assert payload["kind"] == "entertainment_simulation"
+assert len(payload["groups"]) == 8
+assert len(payload["rows"]) == 27
+assert len(payload["top_loto"]) == 10
+assert len(payload["top_de"]) == 10
+assert payload["target_date"] > payload["anchor_date"]
+for page in ("docs/index.html", "docs/landing.html", "docs/landing_desktop.html"):
+    text = Path(page).read_text(encoding="utf-8")
+    assert text.count('id="du-doan-vui"') == 1, page
+    assert "Không phải kết quả thật" in text, page
+print("OK fun prediction", payload["anchor_date"], "->", payload["target_date"])
+PYFUN
+
+printf '%s\n' "== Model skill vs baseline =="
+# Báo động khi mô hình tệ hơn đường cơ sở quá ngưỡng. Đợt hồi quy 12/2025-01/2026
+# (kỹ năng lô tô khoảng -73% suốt 22 ngày) đã trôi qua tám tháng không ai phát
+# hiện vì không có bước đối chứng nào như thế này.
+#
+# --require-baseline: lịch sử đã được sinh lại đối chứng cho toàn bộ 219 ngày,
+# nên thiếu cột baseline từ nay là dấu hiệu pipeline hỏng, không phải dữ liệu
+# chưa kịp tích. Không có cờ này, một thay đổi làm pipeline ngừng ghi đối chứng
+# sẽ tự tắt cổng trong im lặng - đúng lớp lỗi mà cổng sinh ra để chặn.
+python src/check_baseline_skill.py --require-baseline
+
+printf '%s\n' "== Post-build production consistency =="
+python src/production_audit.py \
+  --consistency-only \
+  --strict \
+  --json-out "$TMP_PRED/production-audit-release.json"
+
+printf '%s\n' "== Required outputs =="
+required=(
+  data/xsmb.csv
+  data/xsmb.json
+  data/source_audit.json
+  data/history/pred_loto.csv
+  data/history/pred_de.csv
+  data/ai_ml/cau_keo_loto_top20.csv
+  data/ai_ml/cau_keo_de_top20.csv
+  data/significance/global_diagnostics.json
+  data/statistical_signal/predict_next_loto_stat_all.csv
+  data/statistical_signal/predict_next_de_stat_all.csv
+  data/number_dynamics/current_dynamics_loto.csv
+  data/number_dynamics/current_dynamics_de.csv
+  data/number_dynamics/transition_prob_lag1_loto.csv
+  data/number_dynamics/transition_prob_lag1_de.csv
+  data/number_dynamics/transition_lift_lag1_loto.csv
+  data/number_dynamics/transition_lift_lag1_de.csv
+  data/number_dynamics/cooccurrence_phi_loto.csv
+  data/number_dynamics/cooccurrence_phi_de.csv
+  data/number_dynamics/lag_dependency_loto.csv
+  data/number_dynamics/lag_dependency_de.csv
+  data/number_dynamics/diagnostics_loto.json
+  data/number_dynamics/diagnostics_de.json
+  data/advanced/conditional_matrices_diagnostics.json
+  data/advanced/ai_ml_signal_diagnostics.json
+  data/advanced/ai_ml_signal_loto.csv
+  data/advanced/ai_ml_signal_de.csv
+  data/predict/fun_draw_next.json
+  data/predict/fun_draw_next.csv
+  docs/live.html
+  models/ml_loto.joblib
+  models/ml_de.joblib
+  models/cau_keo_loto.joblib
+  models/cau_keo_de.joblib
+  DASHBOARD.md
+  docs/index.html
+  docs/statistics.html
+  docs/dashboard.html
+  docs/model-quality.html
+  docs/do-tin-cay.html
+  docs/lo-vip-nhieu-nhay.html
+  data/multi_hit/vip.json
+  data/multi_hit/benchmark.json
+  docs/soi-cau-vi-tri.html
+  docs/soi-cau-loto.html
+  docs/tao-phoi-tuan.html
+  docs/so-ket-qua-truyen-thong.html
+  docs/ket-qua-mien-trung.html
+  docs/ket-qua-mien-nam.html
+)
+for path in "${required[@]}"; do
+  test -s "$path" || { echo "Missing/empty output: $path" >&2; exit 3; }
+done
+
+echo "OK GitHub-only release check"

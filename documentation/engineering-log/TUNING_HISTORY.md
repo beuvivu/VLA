@@ -169,7 +169,7 @@ Evaluation period: kỳ đích 2023-12-25 → 2026-10-04, 1 000 kỳ liên tiế
 
 Walk-forward configuration: cầu vị trí dựng lại mỗi kỳ (tham số pipeline);
 cầu-kèo học lại mỗi 50 kỳ bằng `cau_keo_ml._train_model`; ML và thống kê lấy tỉ
-lệ nền; `scripts/benchmark_component_trust.py --last 1000`.
+lệ nền; `scripts/research/benchmark_component_trust.py --last 1000`.
 
 Metrics before: logloss `0.548770`, so với hằng số z = `-3.33`; tổng trung vị
 `24.22` (active `24.49`, stable `26.47`).

@@ -206,7 +206,7 @@ Danh sách nằm ở **một chỗ duy nhất**: `PRIMARY_SOURCE_NAMES` và
 từng mục, và `src/reconcile_live_canonical.py` nhập lại thay vì chép.
 
 Năm nguồn đã nghỉ, đo trên runner Actions ngày 12/13-10-2026 bằng
-`scripts/diagnose_live_sources.py` (workflow `diagnose-live-sources.yml`):
+`scripts/ops/diagnose_live_sources.py` (workflow `diagnose-live-sources.yml`):
 
 | Nguồn đã nghỉ | Vì sao |
 |---|---|

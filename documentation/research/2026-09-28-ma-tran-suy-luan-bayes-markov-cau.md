@@ -3,7 +3,7 @@
 Ngày đo: 28-09-2026. Dữ liệu: `data/xsmb-2-digits.csv`, 4 218 kỳ (01-01-2015 → 27-09-2026).
 Tái lập:
 
-    python3 scripts/inference_matrix_audit.py --sims 10000 --out-dir <thư mục>
+    python3 scripts/research/inference_matrix_audit.py --sims 10000 --out-dir <thư mục>
 
 (khoảng 8 phút trên 4 lõi; hạt giống cố định `20260928`, nên cùng dữ liệu cho cùng số.)
 Bản production của phân tích này chạy mỗi lượt pipeline ở `src/confidence_matrix.py`

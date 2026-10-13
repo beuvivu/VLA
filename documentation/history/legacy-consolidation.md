@@ -90,7 +90,7 @@ layer is harder to overfit.
 | `src/research_firewall.py` | 27×27 positional hypothesis search with chronological train/validation/holdout and reality check. |
 | `src/strategy_lab.py` | Standardized walk-forward comparison of deterministic strategy families, agreement curves and diversity. |
 | `src/build_research_lab.py` | Static GitHub Pages research interface. |
-| `scripts/research_release_check.sh` | Strict real-data CI gate for the research plane. |
+| `scripts/release/research_release_check.sh` | Strict real-data CI gate for the research plane. |
 
 ### Retirement criterion set at this stage
 
@@ -228,7 +228,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | Cycle / hazard descriptive statistics | `src/cycle_stats.py`, `src/hazard_stats.py` | Calendar-day gap definitions and explicit boundary-censoring semantics | calendar-gap statistics tests | HARDENED |
 | Positional path engine | `src/run_path_ui.py`, path model/probability core | Runtime verifies raw/two-digit daily continuity and date-axis equality before lag-day interpretation | strict pipeline + release checks | HARDENED |
 | Legacy path CLI | ~~`src/run_path.py`~~ -> `src/run_path_ui.py` | Duplicate engine removed; the delegating wrapper was deleted on 2026-10-06 (no caller anywhere). Run `src/run_path_ui.py` directly | strict pipeline + release checks | REMOVED |
-| Path walk-forward evaluation | `src/path_backtest.py`, `src/path_timeline_evidence.py` | Exact next-calendar-day scoring and no-lookahead timeline evidence | `test_path_timeline_evidence.py` + calendar regression coverage | HARDENED |
+| Path walk-forward evaluation | `scripts/research/path_backtest.py`, `src/path_timeline_evidence.py` | Exact next-calendar-day scoring and no-lookahead timeline evidence | `test_path_timeline_evidence.py` + calendar regression coverage | HARDENED |
 | Base ML | `src/ml_features.py`, `src/ml_train.py`, `src/ml_predict.py` | Existing leakage-safe chronology retained; schema/date-aware retraining and natural-prevalence calibration retained | fresh train/predict smoke in `release_check.sh` | HARDENED / RETAINED |
 | Cầu-kèo ML | `src/cau_keo_ml.py` | Raw and two-digit histories must be daily-contiguous and date-aligned before rolling/gap/t-1/t+1/path features; model feature schema/hyperparameters unchanged | `test_cau_keo_calendar.py`, `test_cau_keo_ml.py`, production-path release smoke | HARDENED |
 | Component artifact availability | `src/ensemble_components.py` | Exactly 100 unique `00..99` probabilities, finite/range/nonzero checks, strict availability flags, target/anchor date validation | `test_ensemble_component_availability.py` | HARDENED |
@@ -245,8 +245,8 @@ passed, the core release gate passed, and the research-plane release gate passed
 | Research Lab UI | `src/build_research_lab.py` | Source-backed research outputs rendered without automatic production promotion | research release check | MIGRATED / RESEARCH-ONLY |
 | Markdown dashboard | `src/build_markdown_dashboard_v3.py` | V3 is sole canonical renderer | release static-builder smoke | RETAINED |
 | Legacy Markdown dashboard command | `src/build_markdown_dashboard.py` -> v3 | Independent ~34KB old renderer removed; command delegates to v3 | release check invokes legacy command and validates output downstream | SUPERSEDED |
-| End-to-end release gate | `scripts/release_check.sh` | Unit suite + real data integrity + canonical conditionals + date-safe overlay + dynamics + fresh ML + stacked ML + cầu-kèo + builders + production consistency | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
-| Research release gate | `scripts/research_release_check.sh` | Real-history research diagnostics, conditional, cross-lag, strategy and UI integrity | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
+| End-to-end release gate | `scripts/release/release_check.sh` | Unit suite + real data integrity + canonical conditionals + date-safe overlay + dynamics + fresh ML + stacked ML + cầu-kèo + builders + production consistency | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
+| Research release gate | `scripts/release/research_release_check.sh` | Real-history research diagnostics, conditional, cross-lag, strategy and UI integrity | GitHub CI run 120; final documentation-head rerun required | HARDENED / VERIFIED |
 | Runtime production audit | `src/production_audit.py` | Canonical gaps, consensus, prediction target dates, conditional pair counts, overlay target, dynamics calendar, cầu manifest target, docs | release check + post-finalization workflow | HARDENED / VERIFIED |
 | Daily generated-state transaction | `.github/workflows/update-data.yml` | Strict pipeline runs before broad `git add data models images docs ...`; new artifacts persist in same analytics transaction | production workflow structure | RETAINED / VERIFIED BY FINALIZATION AFTER MERGE |
 | Server-only deployment stacks | historical hosting/webapp/scheduler artifacts | Not part of GitHub-only architecture; explicitly forbidden by release check | forbidden-artifact loop in `release_check.sh` | EXCLUDED |
@@ -271,7 +271,7 @@ passed, the core release gate passed, and the research-plane release gate passed
 | `src/legacy_advanced_diagnostics.py` | Advanced legacy diagnostics retained under research controls; MIGRATED / RESEARCH-ONLY. |
 | `src/markov_stats.py` | Exact next-calendar-day transition contract; HARDENED. |
 | `src/number_dynamics.py` | Full calendar guard around higher-order row-index math; HARDENED. |
-| `src/path_backtest.py` | Exact next-day evaluation; HARDENED. |
+| `scripts/research/path_backtest.py` | Exact next-day evaluation; HARDENED. |
 | `src/path_timeline_evidence.py` | No-lookahead timeline evidence; MIGRATED/HARDENED. |
 | `src/pipeline.py` | Validation-before-analytics and canonical post-processors; HARDENED. |
 | `src/predict_nextday_2d.py` | Availability-aware degraded blend; HARDENED. |

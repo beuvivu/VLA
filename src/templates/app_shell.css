@@ -1,5 +1,5 @@
 /* Khung ứng dụng dùng chung. Mọi con số dưới đây là SỐ ĐO của trang tham
-   chiếu, lấy bằng scripts/inspect_reference_shell.py chạy trên runner Actions.
+   chiếu, lấy bằng scripts/reference/inspect_reference_shell.py chạy trên runner Actions.
    Xem src/app_shell.py để biết bảng số đo đầy đủ. */
 :root{
   --app-rail-w:80px;

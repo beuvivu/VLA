@@ -7,7 +7,7 @@ lọc đúng, trả về rỗng, và hiện "Chưa có kết quả trong khoản
 như thể hôm đó không quay.
 
 Phần render (chân bảng, tràn ngang) được đo bằng trình duyệt thật trong
-``scripts/check_traditional_results_page.py``; ở đây chỉ khoá lại các quy
+``scripts/browser/check_traditional_results_page.py``; ở đây chỉ khoá lại các quy
 tắc CSS mà phép đo ấy đã chứng minh là cần.
 """
 
@@ -272,7 +272,7 @@ def test_the_hidden_attribute_is_made_to_actually_hide() -> None:
 
     Cả ba đều mang ``hidden`` đúng lúc, nên mọi phép kiểm soi THUỘC TÍNH đều
     xanh — kể cả phép kiểm của tôi. Chỉ phép đo thứ người dùng THẤY mới bắt
-    được, và `scripts/check_traditional_results_page.py` nay làm việc đó.
+    được, và `scripts/browser/check_traditional_results_page.py` nay làm việc đó.
     """
     assert "[hidden]{display:none!important}" in CSS_CODE
 

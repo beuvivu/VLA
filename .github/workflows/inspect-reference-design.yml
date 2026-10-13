@@ -46,4 +46,4 @@ jobs:
       - name: Đọc và in đặc tính thiết kế
         env:
           URLS: ${{ inputs.urls }}
-        run: python scripts/inspect_reference_design.py
+        run: python scripts/reference/inspect_reference_design.py

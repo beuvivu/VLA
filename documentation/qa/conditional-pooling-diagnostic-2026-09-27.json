@@ -8,8 +8,8 @@
   "regression_test_fallback": "per_number_training_marginal",
   "fully_pooled_strength": 1000000.0,
   "reproduce": [
-    "python scripts/diagnose_conditional_pooling.py --seeds 1000 --scenarios null",
-    "python scripts/diagnose_conditional_pooling.py --seeds 20 --scenarios null source42_prefers_first20"
+    "python scripts/research/diagnose_conditional_pooling.py --seeds 1000 --scenarios null",
+    "python scripts/research/diagnose_conditional_pooling.py --seeds 20 --scenarios null source42_prefers_first20"
   ],
   "null_1000": {
     "seeds": [

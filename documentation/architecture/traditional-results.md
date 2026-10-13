@@ -121,7 +121,7 @@ phím. Nút "Bỏ đánh dấu (n)" ẩn khi chưa có dấu nào.
 
 ### Kiểm chứng bằng trình duyệt thật
 
-`scripts/check_traditional_results_page.py` mở trang trong Chromium và đo.
+`scripts/browser/check_traditional_results_page.py` mở trang trong Chromium và đo.
 Hai lỗi chỉ lộ ra khi render, không đọc CSS mà thấy được:
 
 1. Chân bảng lấn lề: bản cũ đo được **1 px** giữa hàng giải cuối và cạnh

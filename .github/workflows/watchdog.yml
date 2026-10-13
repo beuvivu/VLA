@@ -68,7 +68,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-        run: python scripts/check_on_time_trigger.py
+        run: python scripts/ops/check_on_time_trigger.py
 
       - name: Kiểm toán production và kích hoạt phục hồi khi cần
         env:

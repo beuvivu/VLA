@@ -1,7 +1,7 @@
 """Nguồn & bằng chứng của con số: danh mục, cách gắn vào trang, bằng chứng ML.
 
 Phần hành vi trên trình duyệt nằm ở ``tests/frontend/evidence.test.mjs`` và
-``scripts/check_ui_browser.py``; ở đây là hợp đồng phía dựng trang.
+``scripts/browser/check_ui_browser.py``; ở đây là hợp đồng phía dựng trang.
 """
 
 from __future__ import annotations

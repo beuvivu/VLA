@@ -516,7 +516,7 @@ def test_the_first_frame_paints_the_background_from_tokens_not_a_copy() -> None:
 
     Màu nền từng có BỐN bản sao: ``ui_theme``, module sinh ra, bản dự phòng
     trong ``css_links``, và một chuỗi ghim cứng trong
-    ``scripts/extract_critical_css.py``. Bản thứ tư không ai canh, nên sau khi
+    ``scripts/ops/extract_critical_css.py``. Bản thứ tư không ai canh, nên sau khi
     đổi bảng màu thì khung vẽ ĐẦU TIÊN vẫn là nền cũ. Phép kiểm trên chỉ soi
     ``--ui-bg`` nên nó không thấy — nó không đọc thuộc tính ``background``.
     """

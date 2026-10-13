@@ -31,7 +31,7 @@ def test_critical_styles_have_matching_light_and_dark_tokens() -> None:
     import importlib.util
 
     root = Path(__file__).resolve().parents[1]
-    spec = importlib.util.spec_from_file_location("critical_extractor", root / "scripts/extract_critical_css.py")
+    spec = importlib.util.spec_from_file_location("critical_extractor", root / "scripts/ops/extract_critical_css.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     css = (':root{--ui-bg:#ffffff;--ui-ink:#111111;--ui-surface:#eeeeee;}'

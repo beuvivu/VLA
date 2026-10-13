@@ -48,4 +48,4 @@ jobs:
       - name: Đo bố cục đã render
         env:
           URLS: ${{ inputs.urls }}
-        run: python scripts/inspect_reference_layout.py
+        run: python scripts/reference/inspect_reference_layout.py

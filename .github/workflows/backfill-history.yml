@@ -107,7 +107,7 @@ jobs:
       - name: Kiểm tính toàn vẹn dữ liệu sau khi bổ sung
         # Backfill ghi thẳng vào nguồn sự thật của kho. Đẩy lên mà chưa kiểm
         # thì một dải hỏng sẽ lặng lẽ làm lệch mọi thống kê phía sau.
-        run: bash scripts/number_integrity_check.sh
+        run: bash scripts/release/number_integrity_check.sh
 
       - name: Ghi nhận dữ liệu mới
         # Lần chạy kéo dài hàng giờ, trong khi quy trình hàng ngày đẩy commit

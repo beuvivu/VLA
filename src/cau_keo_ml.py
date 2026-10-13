@@ -675,7 +675,7 @@ def trusted_probability(
     xác suất THÔ của Đặc Biệt kém dự báo hằng số z = −2,18, bản co hơn bản thô
     z = +2,18; LOTO thô ngang hằng số và bản co ngang bản thô (z = −0,02). Kỹ năng
     thẩm định dương ở 10/21 (LOTO) và 9/21 (Đặc Biệt) lần học nhưng trust trung
-    bình chỉ 0,0007 và 0,0001 (``scripts/benchmark_component_trust.py``).
+    bình chỉ 0,0007 và 0,0001 (``scripts/research/benchmark_component_trust.py``).
     Đặc Biệt chuẩn hoá lại về tổng 1.
     """
     p = float(trust) * np.asarray(raw, dtype=float) + (1.0 - float(trust)) * float(base_rate)

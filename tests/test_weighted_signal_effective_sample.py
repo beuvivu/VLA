@@ -93,7 +93,7 @@ def test_selection_scores_are_invariant_to_the_units_of_recency_weights(monkeypa
 
 def test_backtest_uses_the_same_effective_posterior_as_publication(monkeypatch):
     """Replay phải dùng công thức ESS đúng trên mẫu κ=1 đã tính độc lập."""
-    path = Path(__file__).resolve().parents[1] / "scripts" / "backtest_pooling.py"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "research" / "backtest_pooling.py"
     spec = importlib.util.spec_from_file_location("backtest_pooling_effective_sample", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

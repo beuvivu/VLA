@@ -98,11 +98,11 @@ TÔ, không phải màu CHỮ.
 - `test_the_three_copies_of_the_page_background_agree` và
   `test_the_first_frame_paints_the_background_from_tokens_not_a_copy` — màu nền
   từng có BỐN bản sao (`ui_theme`, module sinh ra, bản dự phòng trong
-  `css_links`, và một chuỗi ghim trong `scripts/extract_critical_css.py`).
+  `css_links`, và một chuỗi ghim trong `scripts/ops/extract_critical_css.py`).
 - `PAGE_GROUND` / `BRAND_RAMP` trong `tests/test_ui_design_system.py` là HỢP
   ĐỒNG: mọi chủ sở hữu style phải khai cùng một nền và cùng một dốc nhấn.
 
-`docs/ui-ux/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
+`documentation/ui/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
 giữ lại để tham chiếu. Nó **chưa có hiệu lực** — tầng trình bày nó mô tả đã
 bị gỡ. Đừng coi nó là luật của kho cho tới khi chủ dự án nói bắt đầu lại.
 
@@ -187,7 +187,7 @@ thủ hỏng không chứng minh được gì.
 
 `ml_train.model_trust` = `clip(20·s, 0, 1)`, s là kỹ năng thẩm định (kém hơn trong logloss/Brier).
 Sàn 0,35 cũ trộn 35% mô hình thô cả khi s ≤ 0; walk-forward 997 kỳ đo nó làm LOTO kém hằng số
-(z = −2,40), bỏ sàn hơn sàn z = +2,44 (`scripts/benchmark_model_trust.py`). Đừng khôi phục sàn. Khi
+(z = −2,40), bỏ sàn hơn sàn z = +2,44 (`scripts/research/benchmark_model_trust.py`). Đừng khôi phục sàn. Khi
 trust = 0 mọi xác suất ML bằng nền; `ml_predict.rank_predictions` xếp hoà theo xác suất thô.
 
 Cầu-kèo (`cau_keo_ml`, trọng số tổ hợp 0,30) dùng CÙNG luật từ 04-10-2026: cột `prob` =
@@ -211,7 +211,7 @@ kém hằng số chỉ vì SAI MỨC. Mọi nơi chấm vector tổ hợp — `p
 `feature_attribution` — phải gọi hàm ấy; đừng chép lại `clip01`
 (`tests/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
 `policy_blend`, và trang Chất lượng chốt dòng cũ (không có cột) bằng `anchor_loto=False`.
-Số đo: `scripts/benchmark_component_trust.py`,
+Số đo: `scripts/research/benchmark_component_trust.py`,
 `documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.
 
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
@@ -331,12 +331,12 @@ giữ nguyên làm lưu trữ, không còn được ghi.
 walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 03-10-2026 nó không
 hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
-phải qua `scripts/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
+phải qua `scripts/research/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
 bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô nhiều nháy" `src/multi_hit_vip.py`
 (08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ, đúng bằng chọn bừa trên chính các kỳ ấy, nên không
 vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
 (`documentation/research/2026-10-08-lo-nhieu-nhay.md`). Lượt thử thứ hai (12-10-2026,
-`src/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/benchmark_multi_hit.py`): 22 chiến lược kể cả
+`src/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/research/benchmark_multi_hit.py`): 22 chiến lược kể cả
 logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
 hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
 `multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT
@@ -438,7 +438,7 @@ Khối `run:` của workflow là MÃ, không phải văn bản:
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.
 
-Số kiểm thử và bằng chứng phát hành gần nhất nằm trong PR và `docs/audit/`.
+Số kiểm thử và bằng chứng phát hành gần nhất nằm trong PR và `documentation/qa/`.
 Bốn kịch bản chốt phát hành
 (`release_check.sh`, `domain_challenger_check.sh`, `number_integrity_check.sh`,
 `research_release_check.sh`) cũng xanh. Đỏ một phép kiểm nghĩa là thay đổi của
@@ -502,9 +502,9 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
 - Mọi bề mặt/chữ/viền/control/modal phải đọc token; màu có nghĩa dữ liệu dùng
   cặp token riêng, kiểm AA cả hai theme. Không dùng OS media riêng để bỏ qua
   lựa chọn sáng tường minh. Bản in đặt lại token sáng để chữ đọc được.
-- Sửa ui_theme thì dựng ui.css, chạy `scripts/extract_critical_css.py`, rồi
+- Sửa ui_theme thì dựng ui.css, chạy `scripts/ops/extract_critical_css.py`, rồi
   dựng HTML bằng process mới để không giữ module critical đã import.
 - `tests/frontend` chạy bằng `npm ci --prefix tests/frontend` và
   `npm test --prefix tests/frontend`; fixture shell lấy từ generator nguồn.
 
-Đặc tả: `docs/superpowers/specs/2026-09-26-theme-search-icons-design.md`.
+Đặc tả: `documentation/architecture/2026-09-26-theme-search-icons-design.md`.

@@ -22,11 +22,11 @@ Giao thức, cố định TRƯỚC khi chạy trên dữ liệu thật (đổi g
 6. Độ nhạy: cùng giao thức trên lịch sử giả định có cài tín hiệu nhẹ phải tìm ra và qua được
    giai đoạn kiểm (``--power-check``).
 
-Chạy (``scripts/benchmark_multi_hit.py`` là lớp vỏ dòng lệnh của module này):
+Chạy (``scripts/research/benchmark_multi_hit.py`` là lớp vỏ dòng lệnh của module này):
 
-    python3 scripts/benchmark_multi_hit.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
-    python3 scripts/benchmark_multi_hit.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
-    python3 scripts/benchmark_multi_hit.py --json /tmp/multi.json
+    python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12                 # dữ liệu thật, ~2 phút
+    python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12 --power-check   # thêm kiểm độ nhạy
+    python3 scripts/research/benchmark_multi_hit.py --json /tmp/multi.json
 
 Trang «Lô VIP nhiều nháy» in kết quả của giao thức này qua ``multi_hit_report.py``.
 """

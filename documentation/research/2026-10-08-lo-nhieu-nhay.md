@@ -126,7 +126,7 @@ CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của 
 
 Chủ dự án thấy tỉ lệ trúng còn quá thấp và yêu cầu thử lại. Lượt này không tinh chỉnh bộ lọc cũ
 mà dò rộng: 22 cách chấm thuộc mọi họ ý tưởng thường gặp, gồm cả hai mô hình học trên toàn bộ
-đặc trưng. Mã: `scripts/benchmark_multi_hit.py`. Phép kiểm: `tests/test_benchmark_multi_hit.py`.
+đặc trưng. Mã: `scripts/research/benchmark_multi_hit.py`. Phép kiểm: `tests/test_benchmark_multi_hit.py`.
 
 ### Giao thức, cố định trước khi chạy
 
@@ -210,7 +210,7 @@ theo tỉ lệ ấy. Tỉ lệ trúng của MỖI con vẫn ở mức nền: 2,9
 
 ### Tái lập
 
-    python3 scripts/benchmark_multi_hit.py --until 2026-10-12 --power-check     # khoảng 2 phút, 4 lõi
+    python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12 --power-check     # khoảng 2 phút, 4 lõi
 
 `tests/test_benchmark_multi_hit.py` gồm 9 phép kiểm, mỗi phép ghim một điều:
 
@@ -265,7 +265,7 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - Các lượt chạy song song bằng `spawn`, mỗi tiến trình một luồng OpenMP. Nếu dùng `fork` sau
     khi tiến trình cha đã chạy cây tăng cường, tiến trình con kẹt cứng.
 - **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
-  pipeline gọi được. `scripts/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
+  pipeline gọi được. `scripts/research/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
 - **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
   - mức tin của bộ lọc: Trung bình hay Cao thì "hơn chọn bừa";
   - ứng viên lượt hai có qua giai đoạn kiểm hay không;

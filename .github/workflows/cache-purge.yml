@@ -26,4 +26,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          python3 scripts/purge_github_caches.py --confirm --repo "$GITHUB_REPOSITORY"
+          python3 scripts/ops/purge_github_caches.py --confirm --repo "$GITHUB_REPOSITORY"

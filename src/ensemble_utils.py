@@ -109,7 +109,7 @@ def anchor_loto_level(p: np.ndarray) -> np.ndarray:
     của việc chọn top quy tắc — nên tổ hợp trọng số mặc định ra tổng 24,22 và kém
     dự báo hằng số z = −3,33. Chỉ neo mức đã đưa nó về z = +1,76; neo xong, từng
     nhánh cầu vị trí cũng về ngang hằng số (z = −0,06 và −0,03;
-    ``scripts/benchmark_component_trust.py``).
+    ``scripts/research/benchmark_component_trust.py``).
 
     Nhân cùng một hệ số nên giữ nguyên thứ hạng của mọi con. Nhận vector 100 số
     hoặc ma trận ``(kỳ, 100)``; hàng có tổng 0 nhận đúng tỉ lệ nền. Hàng mà phép

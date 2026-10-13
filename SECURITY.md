@@ -56,12 +56,12 @@ kiểm soát của họ.
 python -m pytest -q
 python -m ruff check .
 python -m compileall -q src tests
-bash scripts/number_integrity_check.sh
-bash scripts/domain_challenger_check.sh
-bash scripts/research_release_check.sh
+bash scripts/release/number_integrity_check.sh
+bash scripts/release/domain_challenger_check.sh
+bash scripts/release/research_release_check.sh
 ```
 
-`scripts/release_check.sh` là cổng tích hợp đầy đủ, bao gồm kiểm tra dữ liệu,
+`scripts/release/release_check.sh` là cổng tích hợp đầy đủ, bao gồm kiểm tra dữ liệu,
 artifact, rò rỉ thời gian và production audit.
 
 ## Giới hạn đã biết

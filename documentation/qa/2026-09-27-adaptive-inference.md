@@ -19,7 +19,7 @@ git diff --check
 
 - Toàn bộ `tests`: **2.421 passed, 7 skipped, 28 warnings**, 320,29 giây; exit code 0.
 - Bảy test bị bỏ qua đều cần Playwright/trình duyệt chưa được cài ở môi trường này. Không tính chúng là đã đạt; trạng thái kiểm tra Chromium của GitHub Actions được theo dõi riêng trên PR.
-- `ruff check src tests scripts/diagnose_conditional_pooling.py`: đạt.
+- `ruff check src tests scripts/research/diagnose_conditional_pooling.py`: đạt.
 - `git diff --check`: đạt.
 - CLI chẩn đoán hai seed/hai kịch bản chạy được; đầu vào `--seeds 0` bị từ chối. Smoke trên dữ liệu thật cho các tầng Bayes/meta, ML tuần tự và online/retry đều đạt.
 
@@ -60,8 +60,8 @@ Moment mới khôi phục tham số đúng hơn dưới giả định mô hình 
 [Số đo chi tiết](conditional-pooling-diagnostic-2026-09-27.json) lưu cả kết quả bất lợi và định nghĩa fixture. Tái lập bằng:
 
 ```bash
-python scripts/diagnose_conditional_pooling.py --seeds 1000 --scenarios null
-python scripts/diagnose_conditional_pooling.py --seeds 20 --scenarios null source42_prefers_first20
+python scripts/research/diagnose_conditional_pooling.py --seeds 1000 --scenarios null
+python scripts/research/diagnose_conditional_pooling.py --seeds 20 --scenarios null source42_prefers_first20
 ```
 
 Script chẩn đoán giữ fallback về trung bình scalar cho hàng nguồn vắng của phép so sánh lịch sử, và dùng κ=10⁶ để xấp xỉ co hoàn toàn. Test regression mới dùng baseline riêng từng số cho hàng vắng và co hoàn toàn chính xác. Vì vậy số đo của hai phép kiểm có thể khác rất nhỏ; không dùng lẫn các số này làm ngưỡng test.

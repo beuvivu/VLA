@@ -6,7 +6,7 @@ pandas 3.0 GIỮ giá trị thiếu là NaN qua ``astype(str)`` thay vì tạo c
 tức toàn bộ quy trình phát hành dừng lại.
 
 Bộ test pytest không bắt được vì đường này chỉ chạy trong
-``scripts/release_check.sh``. Đây là phép kiểm bù cho khoảng trống đó.
+``scripts/release/release_check.sh``. Đây là phép kiểm bù cho khoảng trống đó.
 """
 
 from __future__ import annotations

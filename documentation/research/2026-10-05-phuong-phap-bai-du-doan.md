@@ -120,7 +120,7 @@ số của năm quy tắc cho từng kỳ mới vào `data/hypotheses/digit_sum_
 đè) và chấm với kết quả thật. Sau 180 kỳ: p một phía Poisson-nhị thức, Holm cho năm quy tắc,
 α = 0,01. Kết luận chốt trên ĐÚNG 180 kỳ đầu rồi đóng băng — sổ ghi tiếp nhưng không tính lại,
 vì tính lại mỗi ngày trên sổ dài dần là nhìn nhiều lần và phá α. Trang Độ tin cậy in trạng thái và bộ số kỳ kế tiếp (mô tả quy tắc, không phải dự báo).
-Quy tắc được XÁC NHẬN vẫn phải qua `scripts/benchmark_probability_models.py` trước khi vào tổ hợp
+Quy tắc được XÁC NHẬN vẫn phải qua `scripts/research/benchmark_probability_models.py` trước khi vào tổ hợp
 xác suất. Không sửa tham số đã đăng ký; muốn đổi thì đăng ký giả thuyết mới.
 
 ## 5. Cách dùng trong kho
@@ -130,5 +130,5 @@ xác suất. Không sửa tham số đã đăng ký; muốn đổi thì đăng k
   kỹ năng.
 - `backtest`, `frame_backtest`: chấm mọi quy tắc mới theo cùng mốc (kèm p, Wilson, Holm).
 - `digit_sum_hypothesis.evaluate`: trạng thái phép kiểm tiến cứu, cộng dồn từng kỳ. Quy tắc nào muốn vào tổ hợp
-  xác suất phải qua `scripts/benchmark_probability_models.py` và thắng CẢ hằng số LẪN mô hình đang
+  xác suất phải qua `scripts/research/benchmark_probability_models.py` và thắng CẢ hằng số LẪN mô hình đang
   chạy; năm quy tắc này không thắng hằng số nên không vào.

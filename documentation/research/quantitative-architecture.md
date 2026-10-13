@@ -1,7 +1,7 @@
 # Kiến trúc thuật toán định lượng cho XSMB
 
 > Báo cáo nghiên cứu định lượng. Mọi con số trong tài liệu này đều tái lập được
-> bằng `src/run_randomness_report.py` và `src/run_model_benchmark.py`; không có
+> bằng `scripts/research/run_randomness_report.py` và `scripts/research/run_model_benchmark.py`; không có
 > con số nào được viết tay.
 
 ---
@@ -1088,11 +1088,11 @@ Một kết luận không kèm điều kiện bác bỏ thì không phải kết
 đây là những gì sẽ làm tôi đổi ý, và toàn bộ đều đã được cài đặt sẵn để chạy:
 
 1. **Phép kiểm cấu trúc qua được Bonferroni *và* lặp lại ở cả hai nửa.** Chạy
-   `src/run_randomness_report.py`; điều kiện là `significant_after_bonferroni ≥ 1`
+   `scripts/research/run_randomness_report.py`; điều kiện là `significant_after_bonferroni ≥ 1`
    và `replication.replicates == true`.
 2. **Một mô hình đạt t ghép cặp > 2.5 trên ít nhất 200 ngày cuốn chiếu, và kỹ
    năng của nó vượt phân vị 95% của phân phối xáo trộn.** Chạy
-   `src/run_model_benchmark.py`.
+   `scripts/research/run_model_benchmark.py`.
 3. **Kết hợp co rút tự chuyển trọng số khỏi nền trên dữ liệu sản xuất.** Đây là
    tín hiệu mạnh nhất vì nó không cần ai phải nhìn: hệ thống tự phát hiện.
 4. **Có thêm dữ liệu.** Ngưỡng phát hiện co theo `1/√n`. Để hạ mức +25.4%
@@ -1109,10 +1109,10 @@ thống có thể đưa ra là con số nền — và kiến trúc ở Phần 4 
 
 ```bash
 # Phần 0 — bộ kiểm định cấu trúc và phân tích công suất (~17 giây)
-PYTHONPATH=src python src/run_randomness_report.py
+PYTHONPATH=src python scripts/research/run_randomness_report.py
 
 # Phần 1 — đấu trường mô hình và đối chứng xáo trộn (~25 phút)
-PYTHONPATH=src python src/run_model_benchmark.py
+PYTHONPATH=src python scripts/research/run_model_benchmark.py
 
 # Kiểm thử: bất biến không-rò-rỉ, đối chứng dương/âm, hành vi kiến trúc
 PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
@@ -1123,7 +1123,7 @@ PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
 |---|---|
 | `src/randomness_battery.py` | 7 phép kiểm cấu trúc, phân phối rỗng Monte Carlo, phân tích công suất |
 | `src/modeling/benchmark.py` | 11 họ mô hình + kết hợp co rút, đánh giá cuốn chiếu |
-| `src/run_randomness_report.py` | → `data/research/randomness_report.json` |
-| `src/run_model_benchmark.py` | → `data/research/model_benchmark.json` |
+| `scripts/research/run_randomness_report.py` | → `data/research/randomness_report.json` |
+| `scripts/research/run_model_benchmark.py` | → `data/research/model_benchmark.json` |
 | `tests/test_randomness_battery.py` | 29 phép kiểm |
 | `tests/test_model_benchmark.py` | 61 phép kiểm, gồm bất biến không-rò-rỉ cho mọi mô hình |

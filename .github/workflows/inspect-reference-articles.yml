@@ -69,4 +69,4 @@ jobs:
           MAX_ARTICLES: ${{ inputs.max_articles }}
           MAX_LIST_PAGES: ${{ inputs.max_list_pages }}
           TEXT_CHARS: ${{ inputs.text_chars }}
-        run: python scripts/inspect_reference_articles.py
+        run: python scripts/reference/inspect_reference_articles.py

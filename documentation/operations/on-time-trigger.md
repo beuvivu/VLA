@@ -246,7 +246,7 @@ Rủi ro thật không nằm ở lúc dựng mà ở **90 ngày sau**, khi token
 đó lưới cron vẫn đưa dữ liệu về — muộn, nhưng về — nên không có gì đỏ lên. Bản
 dự phòng chạy đủ tốt để giấu việc bản chính đã hỏng.
 
-`watchdog.yml` nay chạy `scripts/check_on_time_trigger.py` mỗi lần, và nó nhìn
+`watchdog.yml` nay chạy `scripts/ops/check_on_time_trigger.py` mỗi lần, và nó nhìn
 vào **sự vắng mặt** của `repository_dispatch`:
 
 | Trạng thái | Nghĩa là | Mã thoát |
