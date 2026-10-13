@@ -208,7 +208,7 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "b71aecce8b6203bb57bc0a4d398591394f32b44a",
+    "git_commit": "6d933aa04e4ea9ab42eb11049b3a585ecd72a18b",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -247,7 +247,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
-     "vlm/forecast/hits.py": "3d70b04890a3fd1828669ad4fe8ce72676b8ca0d082b0b270180ecc6dd66257f",
+     "vlm/forecast/hits.py": "83edbc7856879347d721de09655967da5eee5828437d8c68a3e45c59d44f4386",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -274,7 +274,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T18:39:06+00:00"
+    "generated_at": "2026-10-13T19:24:52+00:00"
    },
    "split": {
     "dev": {
@@ -3170,7 +3170,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
-     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ. Kỳ tính bằng Monte Carlo kiểm bằng cận trên chính xác, không bằng ước lượng điểm.",
      "any_ticket": {
       "ge3": {
        "reached": 23,
@@ -3298,7 +3298,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
-     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ. Kỳ tính bằng Monte Carlo kiểm bằng cận trên chính xác, không bằng ước lượng điểm.",
      "any_ticket": {
       "ge3": {
        "reached": 72,
@@ -3608,10 +3608,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.062922463999712,
-    "ml_seconds": 248.28173515000162,
-    "challenger_selection_seconds": 10.981485460999465,
-    "total_seconds": 544.9928522439986
+    "legacy_seconds": 3.2717723789992306,
+    "ml_seconds": 246.99682093500087,
+    "challenger_selection_seconds": 10.954210388999854,
+    "total_seconds": 539.2129193209985
    }
   },
   "power655": {
@@ -3678,7 +3678,7 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "b71aecce8b6203bb57bc0a4d398591394f32b44a",
+    "git_commit": "6d933aa04e4ea9ab42eb11049b3a585ecd72a18b",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3717,7 +3717,7 @@
      "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
-     "vlm/forecast/hits.py": "3d70b04890a3fd1828669ad4fe8ce72676b8ca0d082b0b270180ecc6dd66257f",
+     "vlm/forecast/hits.py": "83edbc7856879347d721de09655967da5eee5828437d8c68a3e45c59d44f4386",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
@@ -3744,7 +3744,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T18:52:48+00:00"
+    "generated_at": "2026-10-13T19:38:46+00:00"
    },
    "split": {
     "dev": {
@@ -6667,7 +6667,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
-     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ. Kỳ tính bằng Monte Carlo kiểm bằng cận trên chính xác, không bằng ước lượng điểm.",
      "any_ticket": {
       "ge3": {
        "reached": 3,
@@ -6795,7 +6795,7 @@
       }
      },
      "per_ticket_note": "Vé trong cùng kỳ chấm trên cùng một kết quả nên không độc lập; p theo từng vé chỉ mô tả.",
-     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ.",
+     "any_ticket_note": "p_value_greater luôn hợp lệ kể cả khi danh mục học lại sau mỗi kỳ (e-process, Ville); p_value_fixed_portfolios chỉ đúng khi mọi danh mục chốt trước cả cửa sổ. Kỳ tính bằng Monte Carlo kiểm bằng cận trên chính xác, không bằng ước lượng điểm.",
      "any_ticket": {
       "ge3": {
        "reached": 32,
@@ -7105,10 +7105,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.377374162000706,
-    "ml_seconds": 396.232855025999,
-    "challenger_selection_seconds": 11.758006916999875,
-    "total_seconds": 821.8685830400009
+    "legacy_seconds": 3.128661626000394,
+    "ml_seconds": 399.346504557001,
+    "challenger_selection_seconds": 12.054738109000027,
+    "total_seconds": 832.8666808320013
    }
   }
  }
