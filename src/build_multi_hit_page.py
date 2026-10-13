@@ -204,7 +204,9 @@ def verdict(vip: dict, bench: dict | None) -> dict:
 
 _HEADLINE = {
     ("hon", ""): "Có bằng chứng hơn chọn bừa — cần kiểm lại trên các kỳ chưa từng thấy",
-    ("khong-hon", ""): "Không hơn chọn bừa",
+    # Không bác bỏ được "không kỹ năng" chưa phải là chứng minh không có lợi thế: lợi thế nhỏ hơn mức
+    # phép kiểm độ nhạy thấy được vẫn tương thích với số đo. Vì vậy tiêu đề nói "không có bằng chứng".
+    ("khong-hon", ""): "Không có bằng chứng hơn chọn bừa",
     ("chua-ket-luan", "giao-thuc-mu"): "Chưa kết luận được: giao thức không bắt được tín hiệu cài sẵn",
     ("chua-ket-luan", "thieu-so-do"): "Chưa kết luận được: chưa có số đo của lượt thử thứ hai và "
                                       "phép kiểm độ nhạy",
@@ -243,8 +245,9 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
             "Cùng giao thức trên lịch sử giả định có cài tín hiệu nhẹ "
             + ("BẮT ĐƯỢC tín hiệu" if v["protocol_sensitive"] else "KHÔNG bắt được tín hiệu")
             + f" (giai đoạn kiểm {_pct(pc['candidate_test']['rate'])} so với nền "
-            f"{_pct(pc['base_test'])}), nên kết luận âm ở đây "
-            + ("có nghĩa." if v["protocol_sensitive"] else "chưa đủ căn cứ.")
+            f"{_pct(pc['base_test'])}), "
+            + ("nên phép đo đủ nhạy để thấy một lợi thế cỡ ấy; nó không loại trừ được một lợi thế nhỏ "
+               "hơn." if v["protocol_sensitive"] else "nên kết luận âm ở đây chưa đủ căn cứ.")
         )
     else:
         parts.append("Chưa có số đo của lượt thử thứ hai, nên chưa biết phép đo có đủ nhạy để thấy "
@@ -423,8 +426,9 @@ def power_card(bench: dict | None) -> str:
     ct = pc["candidate_test"]
     planted = ", ".join(pc["planted"])
     return (
-        f'<p class="ui-muted" data-evidence-split>Một kết luận "không hơn chọn bừa" chỉ có nghĩa '
-        "khi phép đo đủ nhạy để thấy một tín hiệu nếu nó có. Lịch sử giả định cùng độ dài "
+        f'<p class="ui-muted" data-evidence-split>Một kết quả âm chỉ đáng đọc khi phép đo đủ nhạy để '
+        "thấy một tín hiệu nếu nó có — và khi ấy nó chỉ cho biết không có lợi thế cỡ tín hiệu đã cài, "
+        "không loại trừ một lợi thế nhỏ hơn. Lịch sử giả định cùng độ dài "
         f"({_count(bench['draws'])} kỳ, 27 lô đều trên 00–99), mỗi kỳ {planted} được cài thêm "
         f"≥ 2 nháy với xác suất {_pct(pc['plant_rate'], 0)}. Giao thức chọn «"
         f"{html.escape(strategy_label(pc['candidate']))}» (z phát triển "

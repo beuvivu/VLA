@@ -513,7 +513,10 @@ def test_a_fair_history_reads_not_better_than_random(fair_vip, bench) -> None:
     assert fair_vip["confidence"] == "Low"
     soup = _soup(fair_vip, bench)
     assert _verdict(soup) == "khong-hon"
-    assert soup.select_one(".app-vip-verdict").get_text(strip=True).startswith("Không hơn chọn bừa")
+    headline = soup.select_one(".app-vip-verdict").get_text(strip=True)
+    # Không bác bỏ được "không kỹ năng" không phải chứng minh không có lợi thế.
+    assert headline.startswith("Không có bằng chứng hơn chọn bừa")
+    assert "không loại trừ được một lợi thế nhỏ hơn" in soup.select_one("#app-lab-conclusion").get_text()
 
 
 def test_a_planted_history_reads_better_than_random(planted_vip, bench) -> None:
