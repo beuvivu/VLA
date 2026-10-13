@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "generated_at_utc": "2026-10-13T11:16:14Z",
-  "anchor_date": "2026-10-12",
-  "target_date": "2026-10-13",
+  "generated_at_utc": "2026-10-13T11:38:30Z",
+  "anchor_date": "2026-10-13",
+  "target_date": "2026-10-14",
   "modes": {
     "loto": {
       "schema_version": 1,
       "mode": "loto",
-      "target_date": "2026-10-13",
+      "target_date": "2026-10-14",
       "ml": {
         "available": true,
         "source": "cau_keo",
@@ -36,7 +36,7 @@
     "de": {
       "schema_version": 1,
       "mode": "de",
-      "target_date": "2026-10-13",
+      "target_date": "2026-10-14",
       "ml": {
         "available": true,
         "source": "cau_keo",
