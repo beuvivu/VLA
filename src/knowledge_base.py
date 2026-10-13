@@ -279,6 +279,8 @@ def rule_status(score: dict, n_registered: int, horizon: int = HORIZON, alpha: f
 
 
 STATUS_WORD = {"co-bang-chung": "Có bằng chứng", "dang-kiem": "Đang kiểm tiến cứu", "het-han": "Hết hạn, không đạt"}
+#: Trạng thái của phép kiểm tiến cứu đã đăng ký → trạng thái trong kho.
+HYPOTHESIS_STATUS = {"dang_thu": "dang-kiem", "xac_nhan": "co-bang-chung", "bac_bo": "khong-dat"}
 
 
 def update_rules(previous: dict | None, present: np.ndarray, labels: list[str]) -> dict:
@@ -329,11 +331,19 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
             out.append({"id": f"ho-{fam['key']}", "kind": "measured", "title": fam["label"],
                         "status": "co-bang-chung" if fam["p"] < ALPHA else "khong-hon-ngau-nhien",
                         "summary": f"tín hiệu mạnh nhất so với 10 000 lịch sử công bằng: p = {fam['p']:.3g}"})
-        hot = conf.get("hot_tail") or {}
-        if hot:
-            out.append({"id": "gia-thuyet-duoi-nong", "kind": "hypothesis", "title": "Giả thuyết đuôi nóng",
-                        "status": "dang-kiem" if hot.get("draws", 0) < hot.get("window", 180) else "da-kiem",
-                        "summary": f"{hot.get('draws', 0)}/{hot.get('window', 180)} kỳ tiến cứu, z = {hot.get('z')}"})
+        # Hai phép kiểm TIẾN CỨU đã đăng ký tự chốt trạng thái (hot_tail_test, digit_sum_hypothesis);
+        # kho chỉ đọc lại, không tự suy. Tiến độ tính theo cỡ mẫu đã đăng ký (min_draws), không theo
+        # cửa sổ đặc trưng (window).
+        for key, ident, title in (("hot_tail", "gia-thuyet-duoi-nong", "Giả thuyết đuôi nóng"),
+                                  ("digit_sum", "gia-thuyet-tong-bong-cham", "Giả thuyết tổng – bóng – chạm")):
+            hyp = conf.get(key) or {}
+            if not hyp:
+                continue
+            summary = f"{hyp.get('draws', 0)}/{hyp.get('min_draws')} kỳ tiến cứu đã đăng ký"
+            if hyp.get("z") is not None:
+                summary += f", z = {_vn(float(hyp['z']))}"
+            out.append({"id": ident, "kind": "hypothesis", "title": title,
+                        "status": HYPOTHESIS_STATUS.get(hyp.get("state"), "dang-kiem"), "summary": summary})
     vip = _read(data_dir / "multi_hit" / "vip.json")
     if vip:
         level = vip.get("confidence", "Low")

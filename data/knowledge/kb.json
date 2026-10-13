@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T09:20:11Z",
+  "generated_at": "2026-10-13T10:21:51Z",
   "source_date": "2026-10-12",
   "draws": 4233,
   "config": {
@@ -653,8 +653,15 @@
       "id": "gia-thuyet-duoi-nong",
       "kind": "hypothesis",
       "title": "Giả thuyết đuôi nóng",
-      "status": "da-kiem",
-      "summary": "14/7 kỳ tiến cứu, z = 0.8302243691211513"
+      "status": "dang-kiem",
+      "summary": "14/180 kỳ tiến cứu đã đăng ký, z = 0,83"
+    },
+    {
+      "id": "gia-thuyet-tong-bong-cham",
+      "kind": "hypothesis",
+      "title": "Giả thuyết tổng – bóng – chạm",
+      "status": "dang-kiem",
+      "summary": "7/180 kỳ tiến cứu đã đăng ký"
     },
     {
       "id": "bo-loc-lo-nhieu-nhay",

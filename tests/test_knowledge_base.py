@@ -216,6 +216,18 @@ def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
     assert status == {"ho-a": "co-bang-chung", "ho-b": "khong-hon-ngau-nhien"}
 
 
+@pytest.mark.parametrize(("state", "status"), [("dang_thu", "dang-kiem"), ("xac_nhan", "co-bang-chung"),
+                                               ("bac_bo", "khong-dat")])
+def test_a_registered_hypothesis_keeps_its_own_verdict_and_sample_size(tmp_path: Path, state, status) -> None:
+    """14 kỳ của một phép kiểm 180 kỳ là đang thử, dù cửa sổ đặc trưng chỉ 7 ngày."""
+    (tmp_path / "confidence").mkdir()
+    hot = {"window": 7, "min_draws": 180, "draws": 14, "z": 0.83, "state": state}
+    (tmp_path / "confidence" / "report.json").write_text(json.dumps({"hot_tail": hot}), encoding="utf-8")
+    entry = {e["id"]: e for e in kb.measured_knowledge(tmp_path)}["gia-thuyet-duoi-nong"]
+    assert entry["status"] == status
+    assert entry["summary"].startswith("14/180 kỳ tiến cứu") and "0,83" in entry["summary"]
+
+
 def test_run_writes_strict_json_and_keeps_rules_across_runs(tmp_path: Path) -> None:
     frame = m.mock_history(1260, seed=8)
     frame.iloc[:1230].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
