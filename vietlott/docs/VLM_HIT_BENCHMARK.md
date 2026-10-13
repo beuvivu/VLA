@@ -15,8 +15,8 @@ python scripts/hit_benchmark.py --render-only        # dựng lại báo cáo t�
 ```
 
 Mỗi `<sản phẩm>.json.gz` lưu: hash seed, nhật ký kết quả và toàn bộ lịch sử dùng để học
-(`history_sha256`), commit git và cờ `git_dirty`, sha256 từng tệp mã quyết định kết quả
-(`source_sha256`), phiên bản Python/NumPy/SciPy/scikit-learn, cấu hình ML, seed, ranh giới
+(`history_sha256`), commit git và cờ `git_dirty`, sha256 mọi module dự án đã nạp lúc chạy, lấy từ
+`sys.modules` (`source_sha256`), phiên bản Python/NumPy/SciPy/scikit-learn, cấu hình ML, seed, ranh giới
 dev/validation/test (ID và ngày), và cho TỪNG kỳ của mọi nhánh: xác suất biên π của 45/55 số, vé,
 log-score bộ chính, log-score số đặc biệt (Power), Brier, số khớp H; danh mục 5 vé của ML; số vé
 và ngân sách mỗi kỳ; thời gian chạy. Hai lần chạy trên cùng `history_sha256` và cùng
@@ -39,7 +39,7 @@ Các nhánh:
 |---|---|---|
 | Công bằng | luật đều; vé ngẫu nhiên chốt trước để kiểm mốc siêu bội | ngẫu nhiên |
 | Legacy | `vietlott_engine.forecast` (hỗn hợp chuyên gia, e-value) | 6 số π cao nhất — đúng vé ghi sổ |
-| ML | `vlm.forecast` (logistic, GRU, RF; fixed-share) | `Law.top` — đúng vé trên bảng điều khiển |
+| ML | `vlm.forecast` (logistic, GRU, RF; fixed-share) | bộ đầu của `Law.top(PUBLISHED_TOP_N)` — đúng vé trên bảng điều khiển |
 | … + hiệu chuẩn τ | trọng số mỗi chuyên gia mũ τ, τ học trên validation | 6 số π cao nhất |
 | Co về công bằng | tần suất mũ hoá, co Beta về k/n, nhiệt độ | 6 số trọng số cao nhất |
 | Đặc trưng nhân quả | conditional logit: tần suất, gap/lag, lịch, đồng xuất hiện trễ; L2; học lại mỗi 26 kỳ | 6 số trọng số cao nhất |
@@ -84,8 +84,8 @@ Drift của đặc trưng không bao giờ là bằng chứng mô hình dự bá
 
 - Xác suất triển khai (`p_deployed`) là luật công bằng cho tới khi cổng live mở; benchmark này
   không đổi điều đó.
-- Vé công bố giữ quy tắc cũ: legacy = 6 số π cao nhất (sổ `ledger.jsonl`), ML = `Law.top`
-  (`ml-ledger.jsonl`). Sổ chỉ ghi thêm; bảng điều khiển lấy bản ghi SỚM NHẤT trước giờ quay.
+- Vé công bố giữ quy tắc cũ: legacy = 6 số π cao nhất (sổ `ledger.jsonl`), ML = bộ đầu của
+  `Law.top(PUBLISHED_TOP_N)` (`ml-ledger.jsonl`). Sổ chỉ ghi thêm; bảng điều khiển lấy bản ghi SỚM NHẤT trước giờ quay.
 - Checkpoint ML lên version 3 ngày 13-10-2026 (`pair_link`/`triple_link` không còn gộp tần suất
   của chính số ấy). Checkpoint version 2 được cất thành `.invalid`, mô hình học lại từ lịch sử và
   báo `checkpoint_recovered`; bằng chứng live bắt đầu lại — sổ `ml-ledger.jsonl` giữ nguyên.

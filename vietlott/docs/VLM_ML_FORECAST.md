@@ -157,7 +157,7 @@ Không mua vé, không tự đặt cược, không dùng martingale/gấp thếp
 
 ## Tái lập kiểm định
 
-`evaluate_series` chấm số trùng của ĐÚNG vé công bố (`Law.top`, ghi vào `draws[].ticket`), không phải sáu số có xác
+`evaluate_series` chấm số trùng của ĐÚNG vé công bố (bộ đầu của `Law.top(PUBLISHED_TOP_N)`, cùng lệnh gọi với bảng điều khiển, ghi vào `draws[].ticket`), không phải sáu số có xác
 suất biên cao nhất — hai vé ấy khác nhau khi hỗn hợp không đều. Kiểm chứng số khớp H, mốc siêu bội, hiệu chuẩn
 và challenger: `docs/VLM_HIT_BENCHMARK.md`.
 

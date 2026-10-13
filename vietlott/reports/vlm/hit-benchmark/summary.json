@@ -155,18 +155,49 @@
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "c20c0529622e3d1476749ef962579fb39233bd01",
+    "git_commit": "7cae2e93ca92d06cf8116c13b4486f9490861188",
     "git_dirty": false,
     "source_sha256": {
-     "vlm/forecast/hit_benchmark.py": "8e9d447d45d303fcd598af15b229b8d9bce37efdf8aca3343b59b83636d93885",
-     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
+     "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
+     "vietlott_engine/analytics/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/analytics/stats.py": "968d62b810fef11526a2cc54e06948b8adf13b70662874f6cb5d7c0337001f57",
+     "vietlott_engine/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/core/exceptions.py": "3f950e14684f7d4d195232b89bacfbe2d2e2f6aaadc893a51939ad6153129e65",
+     "vietlott_engine/core/games.py": "6158d442a363fd73bfe2cfe8cf07565841dd7fb4c4cb0b32492251d96e54ffb5",
+     "vietlott_engine/core/history.py": "518cfd6a7f54418478f1c0fef966efa17c4796a1aef3eb7b6d4c15b7199a1f57",
+     "vietlott_engine/core/logging.py": "07b6b67e50e952887339d9cdf2d49a134895a89aa8b56446f48d3e8f2a6beb5b",
+     "vietlott_engine/core/models.py": "d4c1606d4342c823ce79da606a6ceb791164a7acd96e1974a32d32f97405ddad",
+     "vietlott_engine/core/products.py": "4e3e7f48f75050fd2edd752cb369c37c39a72640131fc9de1de3792ec9c3514a",
+     "vietlott_engine/crawler/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/crawler/http.py": "249b19b3e83bea5d1a13bb8d6c7f969861eba2abb85339297009ef6817ecdb3d",
+     "vietlott_engine/crawler/schemas.py": "8bbdf4bf40faaa29b9c42a4b1e738fed0576aab344253b42ab72704dc8e261a9",
+     "vietlott_engine/crawler/sources/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/crawler/sources/base.py": "8a309c5456962496dede58f6ff9c220d5d580d7a5a33e1aeaa756e2c40f18a31",
+     "vietlott_engine/crawler/sources/mirror.py": "7ac6c1dafc7c842139e38fd2700793c063a108c16de445f41050051c44f2aaa8",
+     "vietlott_engine/forecast/__init__.py": "11c74a894c889858ddc95043193085e55c338a13d98de8c16ad715ffb2c47925",
+     "vietlott_engine/forecast/data.py": "889f93d56e776a3918a02bf907e92bfaa6bec69852993d9ade1dd09dd7204a6a",
+     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
+     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96",
+     "vietlott_engine/forecast/schedule.py": "9d82c4b0ba08d2f7e4e44ce921458235310bb1185de744523439506516171b7b",
+     "vietlott_engine/game_theory/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/game_theory/popularity.py": "d232d9d75c1a47fc3c781057a61a70d2a86f0d2329f6c1a4b6ae53265662fd65",
+     "vietlott_engine/inference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/inference/multiple_testing.py": "85b7dc8232920969208bb863af2db118c3d7088faa87d22ed6e5c7242b8ab257",
+     "vietlott_engine/inference/predictive.py": "7f261c50dc16b2cc4e03def815cb8e8d97faa324561428ecc2758ba7d00d421a",
+     "vietlott_engine/paths.py": "31ac1a858a9b910487c67891d4b6ce35cbc69db73c9774770ae9662b2a2dbb29",
+     "vlm/__init__.py": "59547168725c8126d905a340846f406d8407cf43c6b963ae9718b9de1c5c38e0",
+     "vlm/database/__init__.py": "8db02f192b1a4fcb3480ab61bda4521af47bd9939c50ebdaedb3d1ad03b476a9",
+     "vlm/database/schema.py": "8eb817c2994ae1492129131b5959f91dd113158d40d8d04c6cd9953d282b244b",
+     "vlm/forecast/__init__.py": "a8a65aefed2a3f8b1a726d7b6c4714abe233ca6902b2fdc50937bf2e09b4fde1",
+     "vlm/forecast/adaptation.py": "07c5054f5f3788ccb3aa5b3e6898a6ef476c5c87b2f8c90ddb754781be730f2b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
-     "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
+     "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
+     "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
+     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
-     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
-     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96"
+     "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
     },
     "versions": {
      "python": "3.11.15",
@@ -190,7 +221,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T15:22:11+00:00"
+    "generated_at": "2026-10-13T16:10:50+00:00"
    },
    "split": {
     "dev": {
@@ -3506,10 +3537,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.123617426000237,
-    "ml_seconds": 259.6432511089997,
-    "challenger_selection_seconds": 11.687845851999555,
-    "total_seconds": 365.98649252500036
+    "legacy_seconds": 3.4782601889999114,
+    "ml_seconds": 265.342789694,
+    "challenger_selection_seconds": 10.747838824999917,
+    "total_seconds": 572.71635064
    }
   },
   "power655": {
@@ -3523,18 +3554,49 @@
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "c20c0529622e3d1476749ef962579fb39233bd01",
+    "git_commit": "7cae2e93ca92d06cf8116c13b4486f9490861188",
     "git_dirty": false,
     "source_sha256": {
-     "vlm/forecast/hit_benchmark.py": "8e9d447d45d303fcd598af15b229b8d9bce37efdf8aca3343b59b83636d93885",
-     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
+     "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
+     "vietlott_engine/analytics/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/analytics/stats.py": "968d62b810fef11526a2cc54e06948b8adf13b70662874f6cb5d7c0337001f57",
+     "vietlott_engine/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/core/exceptions.py": "3f950e14684f7d4d195232b89bacfbe2d2e2f6aaadc893a51939ad6153129e65",
+     "vietlott_engine/core/games.py": "6158d442a363fd73bfe2cfe8cf07565841dd7fb4c4cb0b32492251d96e54ffb5",
+     "vietlott_engine/core/history.py": "518cfd6a7f54418478f1c0fef966efa17c4796a1aef3eb7b6d4c15b7199a1f57",
+     "vietlott_engine/core/logging.py": "07b6b67e50e952887339d9cdf2d49a134895a89aa8b56446f48d3e8f2a6beb5b",
+     "vietlott_engine/core/models.py": "d4c1606d4342c823ce79da606a6ceb791164a7acd96e1974a32d32f97405ddad",
+     "vietlott_engine/core/products.py": "4e3e7f48f75050fd2edd752cb369c37c39a72640131fc9de1de3792ec9c3514a",
+     "vietlott_engine/crawler/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/crawler/http.py": "249b19b3e83bea5d1a13bb8d6c7f969861eba2abb85339297009ef6817ecdb3d",
+     "vietlott_engine/crawler/schemas.py": "8bbdf4bf40faaa29b9c42a4b1e738fed0576aab344253b42ab72704dc8e261a9",
+     "vietlott_engine/crawler/sources/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/crawler/sources/base.py": "8a309c5456962496dede58f6ff9c220d5d580d7a5a33e1aeaa756e2c40f18a31",
+     "vietlott_engine/crawler/sources/mirror.py": "7ac6c1dafc7c842139e38fd2700793c063a108c16de445f41050051c44f2aaa8",
+     "vietlott_engine/forecast/__init__.py": "11c74a894c889858ddc95043193085e55c338a13d98de8c16ad715ffb2c47925",
+     "vietlott_engine/forecast/data.py": "889f93d56e776a3918a02bf907e92bfaa6bec69852993d9ade1dd09dd7204a6a",
+     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
+     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96",
+     "vietlott_engine/forecast/schedule.py": "9d82c4b0ba08d2f7e4e44ce921458235310bb1185de744523439506516171b7b",
+     "vietlott_engine/game_theory/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/game_theory/popularity.py": "d232d9d75c1a47fc3c781057a61a70d2a86f0d2329f6c1a4b6ae53265662fd65",
+     "vietlott_engine/inference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "vietlott_engine/inference/multiple_testing.py": "85b7dc8232920969208bb863af2db118c3d7088faa87d22ed6e5c7242b8ab257",
+     "vietlott_engine/inference/predictive.py": "7f261c50dc16b2cc4e03def815cb8e8d97faa324561428ecc2758ba7d00d421a",
+     "vietlott_engine/paths.py": "31ac1a858a9b910487c67891d4b6ce35cbc69db73c9774770ae9662b2a2dbb29",
+     "vlm/__init__.py": "59547168725c8126d905a340846f406d8407cf43c6b963ae9718b9de1c5c38e0",
+     "vlm/database/__init__.py": "8db02f192b1a4fcb3480ab61bda4521af47bd9939c50ebdaedb3d1ad03b476a9",
+     "vlm/database/schema.py": "8eb817c2994ae1492129131b5959f91dd113158d40d8d04c6cd9953d282b244b",
+     "vlm/forecast/__init__.py": "a8a65aefed2a3f8b1a726d7b6c4714abe233ca6902b2fdc50937bf2e09b4fde1",
+     "vlm/forecast/adaptation.py": "07c5054f5f3788ccb3aa5b3e6898a6ef476c5c87b2f8c90ddb754781be730f2b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
-     "vlm/forecast/distribution.py": "edfcd33923501449c15fcf0813d71832af6188e3c315b40b8d207353c7a99336",
+     "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
+     "vlm/forecast/hit_benchmark.py": "ddd036fd5b5b16ff17cc8f9b32ebea01275159d5d1d5fa6e6d540fad2aba3c97",
+     "vlm/forecast/hits.py": "fdf47566c40334fd275007eb55ff1d7163ab4b886103f81b0a33b6bf4dab058b",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
      "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
-     "vietlott_engine/forecast/engine.py": "cea13242189676589f4c89f6567e81c48aceede02073ad8a3d8e197b959a7a9d",
-     "vietlott_engine/forecast/experts.py": "429ca4ce6f25a5772a28e74a12cd113d7ae632d10620d6621e97487186e62e96"
+     "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
     },
     "versions": {
      "python": "3.11.15",
@@ -3558,7 +3620,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T15:32:43+00:00"
+    "generated_at": "2026-10-13T16:25:15+00:00"
    },
    "split": {
     "dev": {
@@ -6901,10 +6963,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.0609821660000307,
-    "ml_seconds": 406.7094963059999,
-    "challenger_selection_seconds": 11.400339654000163,
-    "total_seconds": 631.6786489209999
+    "legacy_seconds": 2.9710852390001037,
+    "ml_seconds": 416.1212322240001,
+    "challenger_selection_seconds": 10.911651249999977,
+    "total_seconds": 865.3302528009999
    }
   }
  }
