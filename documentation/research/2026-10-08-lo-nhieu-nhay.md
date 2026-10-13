@@ -258,7 +258,8 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - `vip.json` chậm hơn sổ (bước đo hỏng sau kỳ mới): trang không in top-5, vì đó là top-5 cho
     một kỳ đã quay. Kiểm chứng của đoạn đã đo vẫn được in.
   - `vip.json` của một lịch sử đã bị sửa: trang không in số đo nào.
-  - `benchmark.json` không khớp: trang ghi "chưa kết luận".
+  - `benchmark.json` không khớp, hoặc đã quá `BENCHMARK_REFRESH_DRAWS` kỳ mà chưa đo lại được: trang ghi
+    "chưa kết luận".
 
 Không in một con số như "Xác suất 2+ nháy: 28,5%". Trên dữ liệu hiện tại, mọi con đều nhận
 Confidence Low và xác suất sát mức nền (2,83–2,88% ngày 12-10-2026).

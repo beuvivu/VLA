@@ -253,6 +253,21 @@ def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_pa
     assert got.vip_state == "current" and got.bench is None
 
 
+@pytest.mark.parametrize(("added", "kept"), [
+    (report.BENCHMARK_REFRESH_DRAWS - 1, True),
+    (report.BENCHMARK_REFRESH_DRAWS, False),
+])
+def test_the_builder_drops_a_benchmark_that_is_overdue(tmp_path, added, kept) -> None:
+    """Lượt hai phải được đo lại sau BENCHMARK_REFRESH_DRAWS kỳ; quá hạn nghĩa là lần làm mới hỏng."""
+    frame = m.mock_history(80 + added, seed=5)
+    data = _data_dir(tmp_path, frame.iloc[:80].reset_index(drop=True))
+    frame.to_csv(data / "xsmb-2-digits.csv", index=False)
+    _write_vip(data, frame)                     # bộ lọc đã đo lại, lượt hai thì chưa
+    got = page.load(data)
+    assert got.vip_state == "current"
+    assert (got.bench is not None) is kept
+
+
 def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:
     """Sổ có thêm kỳ mà bước đo hỏng: top-k của lần đo cũ là cho một kỳ ĐÃ quay."""
     frame = m.mock_history(86, seed=5)

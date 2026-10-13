@@ -24,7 +24,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 from lab_ui import lab_card as card, lab_footer, lab_guide, lab_hero, lab_jump, lab_styles
-from multi_hit_report import BENCHMARK_REFRESH_DRAWS, benchmark_is_valid, load_history, vip_status
+from multi_hit_report import (BENCHMARK_REFRESH_DRAWS, benchmark_is_stale, benchmark_is_valid, load_history,
+                              vip_status)
 from multi_hit_vip import COMPONENT_LABELS, CONFIDENCE_P
 from page_output import write_page
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
@@ -139,7 +140,7 @@ def load(data_dir: Path) -> Loaded:
     Bước đo có thể hỏng giữa chừng (pipeline chạy mềm). Hai tệp vì thế có thể là số đo của một lịch
     sử khác: ``vip.json`` của hôm qua sau khi đã có kỳ mới, hay ``benchmark.json`` của một lịch sử
     mà một kỳ cũ đã được sửa. Tệp bộ lọc không khớp thì trang không in top-k cho một kỳ đã quay;
-    tệp lượt hai không khớp thì bị bỏ.
+    tệp lượt hai không khớp, hoặc đã quá ``BENCHMARK_REFRESH_DRAWS`` kỳ mà chưa đo lại, thì bị bỏ.
     """
     folder = data_dir / DATA_DIR
 
@@ -153,8 +154,11 @@ def load(data_dir: Path) -> Loaded:
     if state == "invalid":
         print(f"data/{DATA_DIR}/vip.json không khớp lịch sử hiện tại — không in số đo.")
         vip = None
-    if bench is not None and not benchmark_is_valid(bench, draws, labels):
-        print(f"data/{DATA_DIR}/benchmark.json không khớp lịch sử hiện tại — không in.")
+    if bench is not None and benchmark_is_stale(bench, draws, labels):
+        # Không khớp lịch sử, hoặc đã quá hạn đo lại: bước đo luôn làm mới đúng ngưỡng, nên bản đệm
+        # quá hạn nghĩa là lần làm mới đã hỏng — trang ghi "chưa kết luận" để lộ ra điều ấy.
+        why = "không khớp lịch sử hiện tại" if not benchmark_is_valid(bench, draws, labels) else "quá hạn đo lại"
+        print(f"data/{DATA_DIR}/benchmark.json {why} — không in.")
         bench = None
     behind = len(draws) - int(vip["draws"]) if vip is not None else 0
     return Loaded(vip, bench, state, labels[-1], behind)
