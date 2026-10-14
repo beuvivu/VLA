@@ -672,13 +672,6 @@
     "conditional_rate":0.0638297872
   },
   {
-    "prev_special_2d":"18",
-    "next_special_2d":"45",
-    "count":3,
-    "base_count":48,
-    "conditional_rate":0.0625
-  },
-  {
     "prev_special_2d":"57",
     "next_special_2d":"69",
     "count":3,
@@ -754,6 +747,13 @@
     "count":2,
     "base_count":32,
     "conditional_rate":0.0625
+  },
+  {
+    "prev_special_2d":"18",
+    "next_special_2d":"45",
+    "count":3,
+    "base_count":49,
+    "conditional_rate":0.0612244898
   },
   {
     "prev_special_2d":"38",

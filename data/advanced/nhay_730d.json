@@ -1,7 +1,7 @@
 [
   {
     "value":33,
-    "days_1":145,
+    "days_1":146,
     "days_2":14,
     "days_3":4,
     "days_4_plus":1,
@@ -19,7 +19,7 @@
   },
   {
     "value":71,
-    "days_1":136,
+    "days_1":137,
     "days_2":18,
     "days_3":3,
     "days_4_plus":1,
@@ -28,7 +28,7 @@
   },
   {
     "value":75,
-    "days_1":164,
+    "days_1":163,
     "days_2":24,
     "days_3":2,
     "days_4_plus":1,
@@ -37,7 +37,7 @@
   },
   {
     "value":64,
-    "days_1":162,
+    "days_1":161,
     "days_2":20,
     "days_3":2,
     "days_4_plus":1,
@@ -82,7 +82,7 @@
   },
   {
     "value":36,
-    "days_1":143,
+    "days_1":142,
     "days_2":21,
     "days_3":4,
     "days_4_plus":0,
@@ -127,7 +127,7 @@
   },
   {
     "value":45,
-    "days_1":150,
+    "days_1":151,
     "days_2":23,
     "days_3":3,
     "days_4_plus":0,
@@ -162,6 +162,15 @@
     "value_str":"83"
   },
   {
+    "value":4,
+    "days_1":131,
+    "days_2":21,
+    "days_3":3,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"04"
+  },
+  {
     "value":68,
     "days_1":165,
     "days_2":20,
@@ -178,6 +187,15 @@
     "days_4_plus":0,
     "max_nhay":3,
     "value_str":"14"
+  },
+  {
+    "value":16,
+    "days_1":151,
+    "days_2":20,
+    "days_3":3,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"16"
   },
   {
     "value":5,
@@ -198,31 +216,13 @@
     "value_str":"87"
   },
   {
-    "value":4,
+    "value":20,
     "days_1":131,
     "days_2":20,
     "days_3":3,
     "days_4_plus":0,
     "max_nhay":3,
-    "value_str":"04"
-  },
-  {
-    "value":20,
-    "days_1":130,
-    "days_2":20,
-    "days_3":3,
-    "days_4_plus":0,
-    "max_nhay":3,
     "value_str":"20"
-  },
-  {
-    "value":16,
-    "days_1":151,
-    "days_2":19,
-    "days_3":3,
-    "days_4_plus":0,
-    "max_nhay":3,
-    "value_str":"16"
   },
   {
     "value":78,
@@ -244,7 +244,7 @@
   },
   {
     "value":53,
-    "days_1":149,
+    "days_1":150,
     "days_2":28,
     "days_3":2,
     "days_4_plus":0,
@@ -253,7 +253,7 @@
   },
   {
     "value":62,
-    "days_1":163,
+    "days_1":164,
     "days_2":25,
     "days_3":2,
     "days_4_plus":0,
@@ -280,7 +280,7 @@
   },
   {
     "value":47,
-    "days_1":148,
+    "days_1":149,
     "days_2":23,
     "days_3":2,
     "days_4_plus":0,
@@ -289,7 +289,7 @@
   },
   {
     "value":98,
-    "days_1":133,
+    "days_1":132,
     "days_2":23,
     "days_3":2,
     "days_4_plus":0,
@@ -307,7 +307,7 @@
   },
   {
     "value":89,
-    "days_1":145,
+    "days_1":144,
     "days_2":22,
     "days_3":2,
     "days_4_plus":0,
@@ -370,7 +370,7 @@
   },
   {
     "value":25,
-    "days_1":148,
+    "days_1":147,
     "days_2":19,
     "days_3":2,
     "days_4_plus":0,
@@ -378,17 +378,8 @@
     "value_str":"25"
   },
   {
-    "value":56,
-    "days_1":142,
-    "days_2":19,
-    "days_3":2,
-    "days_4_plus":0,
-    "max_nhay":3,
-    "value_str":"56"
-  },
-  {
     "value":1,
-    "days_1":152,
+    "days_1":151,
     "days_2":18,
     "days_3":2,
     "days_4_plus":0,
@@ -414,6 +405,15 @@
     "value_str":"43"
   },
   {
+    "value":56,
+    "days_1":142,
+    "days_2":18,
+    "days_3":2,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"56"
+  },
+  {
     "value":57,
     "days_1":162,
     "days_2":17,
@@ -433,7 +433,7 @@
   },
   {
     "value":79,
-    "days_1":158,
+    "days_1":159,
     "days_2":17,
     "days_3":2,
     "days_4_plus":0,
@@ -442,7 +442,7 @@
   },
   {
     "value":82,
-    "days_1":146,
+    "days_1":145,
     "days_2":17,
     "days_3":2,
     "days_4_plus":0,
@@ -460,7 +460,7 @@
   },
   {
     "value":12,
-    "days_1":152,
+    "days_1":151,
     "days_2":16,
     "days_3":2,
     "days_4_plus":0,
@@ -496,7 +496,7 @@
   },
   {
     "value":94,
-    "days_1":155,
+    "days_1":154,
     "days_2":29,
     "days_3":1,
     "days_4_plus":0,
@@ -531,15 +531,6 @@
     "value_str":"54"
   },
   {
-    "value":50,
-    "days_1":152,
-    "days_2":23,
-    "days_3":1,
-    "days_4_plus":0,
-    "max_nhay":3,
-    "value_str":"50"
-  },
-  {
     "value":0,
     "days_1":130,
     "days_2":23,
@@ -558,8 +549,17 @@
     "value_str":"61"
   },
   {
+    "value":50,
+    "days_1":152,
+    "days_2":22,
+    "days_3":1,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"50"
+  },
+  {
     "value":66,
-    "days_1":150,
+    "days_1":151,
     "days_2":22,
     "days_3":1,
     "days_4_plus":0,
@@ -568,7 +568,7 @@
   },
   {
     "value":39,
-    "days_1":147,
+    "days_1":148,
     "days_2":22,
     "days_3":1,
     "days_4_plus":0,
@@ -605,7 +605,7 @@
   {
     "value":55,
     "days_1":128,
-    "days_2":21,
+    "days_2":20,
     "days_3":1,
     "days_4_plus":0,
     "max_nhay":3,
@@ -613,7 +613,7 @@
   },
   {
     "value":99,
-    "days_1":158,
+    "days_1":157,
     "days_2":19,
     "days_3":1,
     "days_4_plus":0,
@@ -631,7 +631,7 @@
   },
   {
     "value":63,
-    "days_1":161,
+    "days_1":162,
     "days_2":18,
     "days_3":1,
     "days_4_plus":0,
@@ -649,7 +649,7 @@
   },
   {
     "value":13,
-    "days_1":174,
+    "days_1":175,
     "days_2":17,
     "days_3":1,
     "days_4_plus":0,
@@ -658,7 +658,7 @@
   },
   {
     "value":95,
-    "days_1":168,
+    "days_1":169,
     "days_2":17,
     "days_3":1,
     "days_4_plus":0,
@@ -667,7 +667,7 @@
   },
   {
     "value":41,
-    "days_1":137,
+    "days_1":138,
     "days_2":17,
     "days_3":1,
     "days_4_plus":0,
@@ -693,8 +693,17 @@
     "value_str":"49"
   },
   {
+    "value":3,
+    "days_1":153,
+    "days_2":16,
+    "days_3":1,
+    "days_4_plus":0,
+    "max_nhay":3,
+    "value_str":"03"
+  },
+  {
     "value":26,
-    "days_1":142,
+    "days_1":141,
     "days_2":16,
     "days_3":1,
     "days_4_plus":0,
@@ -703,21 +712,12 @@
   },
   {
     "value":18,
-    "days_1":140,
+    "days_1":139,
     "days_2":16,
     "days_3":1,
     "days_4_plus":0,
     "max_nhay":3,
     "value_str":"18"
-  },
-  {
-    "value":3,
-    "days_1":154,
-    "days_2":15,
-    "days_3":1,
-    "days_4_plus":0,
-    "max_nhay":3,
-    "value_str":"03"
   },
   {
     "value":73,
@@ -766,7 +766,7 @@
   },
   {
     "value":96,
-    "days_1":138,
+    "days_1":139,
     "days_2":25,
     "days_3":0,
     "days_4_plus":0,
@@ -776,7 +776,7 @@
   {
     "value":52,
     "days_1":155,
-    "days_2":23,
+    "days_2":24,
     "days_3":0,
     "days_4_plus":0,
     "max_nhay":2,
@@ -784,7 +784,7 @@
   },
   {
     "value":59,
-    "days_1":124,
+    "days_1":125,
     "days_2":23,
     "days_3":0,
     "days_4_plus":0,
@@ -811,7 +811,7 @@
   },
   {
     "value":69,
-    "days_1":158,
+    "days_1":159,
     "days_2":19,
     "days_3":0,
     "days_4_plus":0,
@@ -837,22 +837,22 @@
     "value_str":"28"
   },
   {
-    "value":70,
-    "days_1":142,
-    "days_2":18,
-    "days_3":0,
-    "days_4_plus":0,
-    "max_nhay":2,
-    "value_str":"70"
-  },
-  {
     "value":84,
-    "days_1":149,
+    "days_1":148,
     "days_2":17,
     "days_3":0,
     "days_4_plus":0,
     "max_nhay":2,
     "value_str":"84"
+  },
+  {
+    "value":70,
+    "days_1":142,
+    "days_2":17,
+    "days_3":0,
+    "days_4_plus":0,
+    "max_nhay":2,
+    "value_str":"70"
   },
   {
     "value":77,
@@ -874,7 +874,7 @@
   },
   {
     "value":29,
-    "days_1":136,
+    "days_1":135,
     "days_2":16,
     "days_3":0,
     "days_4_plus":0,
@@ -892,7 +892,7 @@
   },
   {
     "value":42,
-    "days_1":164,
+    "days_1":163,
     "days_2":9,
     "days_3":0,
     "days_4_plus":0,

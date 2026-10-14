@@ -1,291 +1,331 @@
 [
   {
     "period_kind":"day",
-    "period_key":"2026-10-13",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":6,
+    "freq":5,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":0,
+    "freq":4,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":5,
+    "freq":4,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":1,
+    "freq":3,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":4,
+    "freq":3,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":3,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
     "group_type":"head",
     "group_value":7,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":9,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":2,
+    "freq":1,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"head",
+    "group_value":8,
+    "freq":1,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":3,
+    "freq":6,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":6,
+    "freq":5,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":9,
+    "freq":4,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":2,
+    "freq":3,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":5,
+    "freq":3,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":1,
+    "freq":2,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":4,
+    "freq":2,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":0,
+    "freq":1,
+    "rank_in_period_group":6
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"tail",
+    "group_value":7,
+    "freq":1,
+    "rank_in_period_group":6
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":4,
+    "freq":6,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":7,
+    "freq":4,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":2,
+    "freq":3,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":5,
+    "freq":3,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":8,
+    "freq":3,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":1,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":3,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":6,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"day",
+    "period_key":"2026-10-14",
+    "group_type":"total",
+    "group_value":9,
+    "freq":2,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":7,
+    "freq":16,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":6,
+    "freq":10,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":8,
+    "freq":10,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":1,
+    "freq":9,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":5,
+    "freq":9,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":4,
+    "freq":8,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":0,
+    "freq":5,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":3,
+    "freq":5,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":9,
+    "freq":5,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"head",
+    "group_value":2,
+    "freq":4,
+    "rank_in_period_group":6
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":6,
     "freq":11,
     "rank_in_period_group":1
   },
   {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":1,
-    "freq":5,
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":5,
+    "freq":10,
     "rank_in_period_group":2
   },
   {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":6,
-    "freq":3,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":4,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":5,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":8,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"head",
-    "group_value":9,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":8,
-    "freq":6,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
+    "period_kind":"week",
+    "period_key":"2026-W42",
     "group_type":"tail",
     "group_value":7,
-    "freq":5,
+    "freq":10,
     "rank_in_period_group":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":5,
-    "freq":4,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":4,
-    "freq":3,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":9,
-    "freq":3,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":0,
-    "freq":2,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":1,
-    "freq":2,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":2,
-    "freq":1,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"tail",
-    "group_value":3,
-    "freq":1,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":5,
-    "freq":5,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":4,
-    "freq":4,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":8,
-    "freq":4,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":9,
-    "freq":4,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":2,
-    "freq":3,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":3,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":6,
-    "freq":2,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":0,
-    "freq":1,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":1,
-    "freq":1,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"day",
-    "period_key":"2026-10-13",
-    "group_type":"total",
-    "group_value":7,
-    "freq":1,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":7,
-    "freq":14,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":8,
-    "freq":9,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":1,
-    "freq":6,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":4,
-    "freq":5,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":5,
-    "freq":5,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":6,
-    "freq":5,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":2,
-    "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":3,
-    "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":9,
-    "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"head",
-    "group_value":0,
-    "freq":1,
-    "rank_in_period_group":6
   },
   {
     "period_kind":"week",
@@ -293,102 +333,70 @@
     "group_type":"tail",
     "group_value":8,
     "freq":10,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":7,
-    "freq":9,
     "rank_in_period_group":2
   },
   {
     "period_kind":"week",
     "period_key":"2026-W42",
     "group_type":"tail",
-    "group_value":5,
-    "freq":7,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":6,
-    "freq":6,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":0,
-    "freq":5,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":4,
-    "freq":5,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":1,
-    "freq":4,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
     "group_value":9,
-    "freq":4,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":2,
-    "freq":3,
-    "rank_in_period_group":7
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"tail",
-    "group_value":3,
-    "freq":1,
-    "rank_in_period_group":8
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"total",
-    "group_value":5,
     "freq":8,
-    "rank_in_period_group":1
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":3,
+    "freq":7,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":4,
+    "freq":7,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":0,
+    "freq":6,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":1,
+    "freq":6,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"tail",
+    "group_value":2,
+    "freq":6,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"week",
     "period_key":"2026-W42",
     "group_type":"total",
     "group_value":4,
-    "freq":7,
-    "rank_in_period_group":2
+    "freq":13,
+    "rank_in_period_group":1
   },
   {
     "period_kind":"week",
     "period_key":"2026-W42",
     "group_type":"total",
-    "group_value":9,
-    "freq":7,
+    "group_value":5,
+    "freq":11,
     "rank_in_period_group":2
   },
   {
@@ -396,15 +404,7 @@
     "period_key":"2026-W42",
     "group_type":"total",
     "group_value":2,
-    "freq":6,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"total",
-    "group_value":6,
-    "freq":6,
+    "freq":9,
     "rank_in_period_group":3
   },
   {
@@ -412,16 +412,48 @@
     "period_key":"2026-W42",
     "group_type":"total",
     "group_value":8,
-    "freq":6,
+    "freq":9,
     "rank_in_period_group":3
   },
   {
     "period_kind":"week",
     "period_key":"2026-W42",
     "group_type":"total",
+    "group_value":9,
+    "freq":9,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"total",
+    "group_value":6,
+    "freq":8,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"total",
     "group_value":3,
+    "freq":7,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"total",
+    "group_value":7,
+    "freq":7,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"week",
+    "period_key":"2026-W42",
+    "group_type":"total",
+    "group_value":1,
     "freq":5,
-    "rank_in_period_group":4
+    "rank_in_period_group":6
   },
   {
     "period_kind":"week",
@@ -429,214 +461,198 @@
     "group_type":"total",
     "group_value":0,
     "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"total",
-    "group_value":1,
-    "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"week",
-    "period_key":"2026-W42",
-    "group_type":"total",
-    "group_value":7,
-    "freq":3,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":7,
-    "freq":47,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":5,
-    "freq":46,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":8,
-    "freq":39,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":3,
-    "freq":38,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":4,
-    "freq":38,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":0,
-    "freq":34,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":6,
-    "freq":31,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":9,
-    "freq":31,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"head",
-    "group_value":1,
-    "freq":29,
     "rank_in_period_group":7
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "group_type":"head",
-    "group_value":2,
-    "freq":18,
-    "rank_in_period_group":8
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
     "group_value":5,
-    "freq":47,
+    "freq":50,
     "rank_in_period_group":1
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":4,
-    "freq":42,
-    "rank_in_period_group":2
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":1,
-    "freq":35,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
+    "group_type":"head",
     "group_value":7,
-    "freq":35,
-    "rank_in_period_group":3
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":3,
-    "freq":34,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":8,
-    "freq":34,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":9,
-    "freq":34,
-    "rank_in_period_group":4
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":6,
-    "freq":33,
-    "rank_in_period_group":5
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":2,
-    "freq":29,
-    "rank_in_period_group":6
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"tail",
-    "group_value":0,
-    "freq":28,
-    "rank_in_period_group":7
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"total",
-    "group_value":9,
-    "freq":47,
-    "rank_in_period_group":1
-  },
-  {
-    "period_kind":"month",
-    "period_key":"2026-10",
-    "group_type":"total",
-    "group_value":6,
-    "freq":43,
+    "freq":49,
     "rank_in_period_group":2
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
-    "group_type":"total",
-    "group_value":8,
+    "group_type":"head",
+    "group_value":4,
     "freq":41,
     "rank_in_period_group":3
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":3,
+    "freq":40,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":8,
+    "freq":40,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":0,
+    "freq":38,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":6,
+    "freq":36,
+    "rank_in_period_group":6
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":9,
+    "freq":33,
+    "rank_in_period_group":7
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":1,
+    "freq":32,
+    "rank_in_period_group":8
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"head",
+    "group_value":2,
+    "freq":19,
+    "rank_in_period_group":9
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":5,
+    "freq":50,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":4,
+    "freq":44,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":3,
+    "freq":40,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":6,
+    "freq":38,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":9,
+    "freq":38,
+    "rank_in_period_group":4
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":1,
+    "freq":37,
+    "rank_in_period_group":5
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":7,
+    "freq":36,
+    "rank_in_period_group":6
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":8,
+    "freq":34,
+    "rank_in_period_group":7
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":2,
+    "freq":32,
+    "rank_in_period_group":8
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"tail",
+    "group_value":0,
+    "freq":29,
+    "rank_in_period_group":9
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"total",
+    "group_value":9,
+    "freq":49,
+    "rank_in_period_group":1
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"total",
+    "group_value":6,
+    "freq":45,
+    "rank_in_period_group":2
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
+    "group_type":"total",
+    "group_value":8,
+    "freq":44,
+    "rank_in_period_group":3
+  },
+  {
+    "period_kind":"month",
+    "period_key":"2026-10",
     "group_type":"total",
     "group_value":2,
-    "freq":37,
+    "freq":40,
     "rank_in_period_group":4
   },
   {
@@ -644,32 +660,32 @@
     "period_key":"2026-10",
     "group_type":"total",
     "group_value":7,
-    "freq":36,
-    "rank_in_period_group":5
+    "freq":40,
+    "rank_in_period_group":4
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "group_type":"total",
     "group_value":4,
-    "freq":32,
-    "rank_in_period_group":6
+    "freq":38,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "group_type":"total",
     "group_value":5,
-    "freq":31,
-    "rank_in_period_group":7
+    "freq":34,
+    "rank_in_period_group":6
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "group_type":"total",
     "group_value":1,
-    "freq":30,
-    "rank_in_period_group":8
+    "freq":32,
+    "rank_in_period_group":7
   },
   {
     "period_kind":"month",
@@ -677,22 +693,22 @@
     "group_type":"total",
     "group_value":0,
     "freq":28,
-    "rank_in_period_group":9
+    "rank_in_period_group":8
   },
   {
     "period_kind":"month",
     "period_key":"2026-10",
     "group_type":"total",
     "group_value":3,
-    "freq":26,
-    "rank_in_period_group":10
+    "freq":28,
+    "rank_in_period_group":8
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"head",
     "group_value":9,
-    "freq":799,
+    "freq":801,
     "rank_in_period_group":1
   },
   {
@@ -700,7 +716,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":3,
-    "freq":791,
+    "freq":793,
     "rank_in_period_group":2
   },
   {
@@ -708,23 +724,23 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":5,
-    "freq":785,
+    "freq":789,
     "rank_in_period_group":3
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"head",
-    "group_value":8,
-    "freq":778,
+    "group_value":6,
+    "freq":780,
     "rank_in_period_group":4
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"head",
-    "group_value":6,
-    "freq":775,
+    "group_value":8,
+    "freq":779,
     "rank_in_period_group":5
   },
   {
@@ -732,7 +748,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":4,
-    "freq":767,
+    "freq":770,
     "rank_in_period_group":6
   },
   {
@@ -740,7 +756,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":1,
-    "freq":764,
+    "freq":767,
     "rank_in_period_group":7
   },
   {
@@ -748,7 +764,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":7,
-    "freq":730,
+    "freq":732,
     "rank_in_period_group":8
   },
   {
@@ -756,7 +772,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":0,
-    "freq":717,
+    "freq":721,
     "rank_in_period_group":9
   },
   {
@@ -764,7 +780,7 @@
     "period_key":"2026",
     "group_type":"head",
     "group_value":2,
-    "freq":708,
+    "freq":709,
     "rank_in_period_group":10
   },
   {
@@ -772,7 +788,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":4,
-    "freq":799,
+    "freq":801,
     "rank_in_period_group":1
   },
   {
@@ -780,7 +796,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":1,
-    "freq":793,
+    "freq":795,
     "rank_in_period_group":2
   },
   {
@@ -788,7 +804,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":2,
-    "freq":791,
+    "freq":794,
     "rank_in_period_group":3
   },
   {
@@ -796,7 +812,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":7,
-    "freq":783,
+    "freq":784,
     "rank_in_period_group":4
   },
   {
@@ -804,7 +820,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":0,
-    "freq":773,
+    "freq":774,
     "rank_in_period_group":5
   },
   {
@@ -812,7 +828,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":3,
-    "freq":765,
+    "freq":771,
     "rank_in_period_group":6
   },
   {
@@ -820,7 +836,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":9,
-    "freq":741,
+    "freq":745,
     "rank_in_period_group":7
   },
   {
@@ -828,7 +844,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":5,
-    "freq":739,
+    "freq":742,
     "rank_in_period_group":8
   },
   {
@@ -844,7 +860,7 @@
     "period_key":"2026",
     "group_type":"tail",
     "group_value":6,
-    "freq":709,
+    "freq":714,
     "rank_in_period_group":10
   },
   {
@@ -852,7 +868,7 @@
     "period_key":"2026",
     "group_type":"total",
     "group_value":9,
-    "freq":802,
+    "freq":804,
     "rank_in_period_group":1
   },
   {
@@ -860,7 +876,7 @@
     "period_key":"2026",
     "group_type":"total",
     "group_value":6,
-    "freq":779,
+    "freq":781,
     "rank_in_period_group":2
   },
   {
@@ -868,7 +884,7 @@
     "period_key":"2026",
     "group_type":"total",
     "group_value":4,
-    "freq":771,
+    "freq":777,
     "rank_in_period_group":3
   },
   {
@@ -884,47 +900,47 @@
     "period_key":"2026",
     "group_type":"total",
     "group_value":5,
-    "freq":764,
-    "rank_in_period_group":5
+    "freq":767,
+    "rank_in_period_group":4
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"total",
     "group_value":1,
-    "freq":755,
-    "rank_in_period_group":6
+    "freq":757,
+    "rank_in_period_group":5
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"total",
     "group_value":7,
-    "freq":752,
-    "rank_in_period_group":7
+    "freq":756,
+    "rank_in_period_group":6
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"total",
     "group_value":2,
-    "freq":748,
-    "rank_in_period_group":8
+    "freq":751,
+    "rank_in_period_group":7
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"total",
     "group_value":8,
-    "freq":743,
-    "rank_in_period_group":9
+    "freq":746,
+    "rank_in_period_group":8
   },
   {
     "period_kind":"year",
     "period_key":"2026",
     "group_type":"total",
     "group_value":3,
-    "freq":733,
-    "rank_in_period_group":10
+    "freq":735,
+    "rank_in_period_group":9
   }
 ]
