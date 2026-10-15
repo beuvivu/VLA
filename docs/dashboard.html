@@ -70,7 +70,7 @@
 .app-lab-number-strip{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:0 0 24px;counter-reset:lab-rank}
 .app-lab-number-strip li{counter-increment:lab-rank;min-width:0;padding:17px 4px 13px;border:1px solid var(--lab-edge);border-radius:12px;background:var(--ui-surface);color:var(--ui-ink);text-align:center;transition:border-color .2s,box-shadow .2s}
 .app-lab-number-strip li::before{content:"#" counter(lab-rank);display:block;font:500 9px var(--ui-mono,monospace);color:var(--ui-ink-soft);margin-bottom:9px}.app-lab-number-strip b{font:600 clamp(20px,2.1vw,29px)/1.2 var(--ui-mono,monospace);letter-spacing:-.04em}.app-lab-number-strip li:hover{border-color:var(--ui-brand-ink);box-shadow:0 0 22px var(--ui-brand-soft)}
-.app-vip-strip{grid-template-columns:repeat(5,minmax(0,1fr));margin:0 0 18px}.app-vip-strip li{padding:14px 4px 12px}.app-vip-strip li small{display:block;margin-top:6px;font:500 10px/1.4 var(--ui-mono,monospace);color:var(--ui-ink-soft)}.app-vip-strip-pairs b{font-size:clamp(15px,1.5vw,21px);white-space:nowrap}
+.app-vip-strip{grid-template-columns:repeat(5,minmax(0,1fr));margin:0 0 18px}.app-vip-strip li{padding:14px 4px 12px}.app-vip-strip li small{display:block;margin-top:6px;font:500 10px/1.4 var(--ui-mono,monospace);color:var(--ui-ink-soft)}.app-vip-strip li small+small{margin-top:2px;font-family:inherit}.app-vip-strip-pairs b{font-size:clamp(15px,1.5vw,21px);white-space:nowrap}
 .app-vip-verdict,.app-vip-pair-verdict{margin:0 0 6px;color:var(--ui-ink)}.app-vip-line{margin:0;font-size:12px;line-height:1.7;color:var(--ui-ink-soft)}.app-vip-details>.ui-grid{padding:0 24px 24px}
 .app-lab-forecast .ui-table{table-layout:fixed}.app-lab-forecast .ui-table :is(th,td){padding:15px 24px}.app-lab-forecast .ui-table th:first-child{width:12%}.app-lab-forecast .ui-table td:nth-child(2){font:650 22px var(--ui-mono,monospace)}
 .app-lab-quality .ui-card-body>svg{border:1px solid var(--lab-edge);border-radius:10px;padding:12px;background:var(--ui-surface-2);margin-bottom:20px}.app-lab-quality .ui-table{min-width:500px}.app-lab-confidence .ui-table{min-width:680px}
@@ -450,7 +450,7 @@ body[data-app-hidden="true"] .app-lab :is(.app-lab-orbit-spin,.app-lab-pulse,.ap
 <h1>Trung tâm điều khiển AI/ML</h1><p class="app-lab-lead">Theo dõi hai kênh dự báo trong cùng một không gian: xác suất tổ hợp, danh sách gợi ý, trọng số có hiệu lực và các bước hiệu chỉnh.</p>
 <div class="app-lab-hero-actions"><a class="app-lab-primary" href="#app-lab-loto">Mở bảng xác suất<span aria-hidden="true">↘</span></a>
 <a class="app-lab-secondary" href="#app-lab-guide">Cách đọc báo cáo <span aria-hidden="true">↓</span></a></div>
-<p class="app-lab-meta">Bản dựng: 15/10/2026 19:58 UTC+7</p></div>
+<p class="app-lab-meta">Bản dựng: 15/10/2026 22:39 UTC+7</p></div>
 <figure class="app-lab-orbit"><svg viewBox="0 0 480 360" aria-hidden="true" focusable="false">
   <defs>
     <radialGradient id="app-lab-core-glow"><stop stop-color="#65d8f5" stop-opacity=".24"/><stop offset="1" stop-color="#65d8f5" stop-opacity="0"/></radialGradient>
