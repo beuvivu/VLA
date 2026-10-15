@@ -8,7 +8,7 @@ Giao thức đăng ký ngày 2026-10-13 (`vlm.forecast.hit_benchmark.PROTOCOL`).
 
 ## Mega 6/45
 
-Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `6d933aa04e4e`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
+Dữ liệu #1–#1574 (2016-07-20 → 2026-10-11), `history_sha256` `909d636b858ec671…`, commit `e00a6c718bfa`. Bỏ 300 kỳ đầu; dev #301–#937 (637 kỳ), validation #938–#1192 (255), test #1193–#1574 (2024-05-03 → 2026-10-11, 382 kỳ).
 
 ### Test (nhìn một lần)
 
@@ -68,7 +68,7 @@ Năm vé tốn năm lần tiền vé; xác suất "ít nhất một vé" cao hơ
 
 ## Power 6/55
 
-Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `6d933aa04e4e`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
+Dữ liệu #1–#1409 (2017-08-01 → 2026-10-10), `history_sha256` `743b0454e9c6422a…`, commit `e00a6c718bfa`. Bỏ 300 kỳ đầu; dev #301–#854 (554 kỳ), validation #855–#1076 (222), test #1077–#1409 (2024-08-22 → 2026-10-10, 333 kỳ).
 
 ### Test (nhìn một lần)
 
