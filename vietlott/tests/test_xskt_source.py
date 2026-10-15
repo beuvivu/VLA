@@ -175,3 +175,20 @@ def test_xskt_refuses_a_page_window_that_would_leave_a_gap():
     client = _Client({"https://xskt.com.vn/xslotto-5-35": LOTTO_13H + LOTTO})
     with pytest.raises(SourceError, match="#901"):
         asyncio.run(XsktDrawSource(client, "https://xskt.com.vn").fetch(get_game(GameCode.LOTTO_535), since_id=900))
+
+
+def _lotto_table(draw_id: int, day: int, numbers: str, special: str) -> str:
+    return (f'<table class="result"><tr><td class="kmt" colspan="2"><a href="/xslotto-13h/ngay-{day}-10-2026">'
+            f'<b>#{draw_id:05d} (13h)</b></a></td></tr><tr><td class="megaresult"><em>{numbers} <span>{special}</span>'
+            '</em></td></tr></table>')
+
+
+def test_later_sources_are_asked_from_the_merged_tail_not_the_original_cursor():
+    """Kho ở #920, bản sao lấp #921–#927, trang xskt chỉ giữ #925–#928: vẫn nối được #928."""
+    archive = _Fixed("nhanaz", [Draw(game=GameCode.LOTTO_535, draw_id=i, draw_date=date(2026, 10, i - 920),
+                                     numbers=(1, 2, 3, 4, 5), bonus=6, source="nhanaz") for i in range(921, 928)])
+    page = "".join(_lotto_table(i, i - 920, "01 02 03 04 05", "06") for i in range(925, 929))
+    client = _Client({"https://xskt.com.vn/xslotto-5-35": page})
+    chain = FallbackDrawSource([archive, XsktDrawSource(client, "https://xskt.com.vn")])
+    got = asyncio.run(chain.fetch(get_game(GameCode.LOTTO_535), since_id=920))
+    assert [d.draw_id for d in got.draws] == list(range(921, 929)) and got.draws[-1].source == "xskt"

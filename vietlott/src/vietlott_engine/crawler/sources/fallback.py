@@ -97,8 +97,11 @@ class FallbackDrawSource(DrawSource):
         result: FetchResult | None = None
         used: list[str] = []
         for src in self.sources:
+            # Nguồn sau được hỏi từ đuôi kết quả đã gộp: trang chỉ giữ vài kỳ gần nhất (xskt) vẫn
+            # nối được khi các nguồn trước đã lấp đoạn giữa.
+            cursor = result.draws[-1].draw_id if result is not None else since_id
             try:
-                res = await asyncio.wait_for(src.fetch(spec, since_id), self.source_timeout_s)
+                res = await asyncio.wait_for(src.fetch(spec, cursor), self.source_timeout_s)
             except (SourceError, OSError, KeyError, ValueError, TimeoutError) as exc:
                 msg = (str(exc).splitlines() or [type(exc).__name__])[0][:300]
                 log.warning("%s: source %s failed (%s); trying the next one", spec.code.value, src.name, msg)
