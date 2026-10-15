@@ -365,8 +365,17 @@ lần, đóng băng ở `SECOND_ROUND_UNTIL` (12-10-2026) — đừng dời ngà
 (nhìn lại cùng tập kiểm ở cùng α làm sai số loại I cộng dồn); muốn kiểm kỳ mới thì đăng ký phép kiểm
 tiến cứu mới. Bộ lọc thì đo lại MỖI ngày, nên mức tin của nó dùng p luôn hợp lệ (e-process,
 `multi_hit_report.anytime_p`): 2 000 lịch sử không kỹ năng xem lại sau mỗi kỳ với p thường vượt 0,05 ở
-30,9%, với p luôn hợp lệ ở 3,45%. e-process CHỈ chạy trên kỳ quay sau `VIP_FROZEN_AT` (12-10-2026):
-bộ lọc được thiết kế sau khi đã xem lịch sử trước đó, nên walk-forward hồi cứu chỉ là mô tả. `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
+30,9%, với p luôn hợp lệ ở 3,45%. e-process CHỈ chạy trên kỳ quay sau ngày chốt của luật đang in
+(`multi_hit_next_day.FROZEN_AT` = 15-10-2026; bộ lọc VIP cũ: `VIP_FROZEN_AT` = 12-10-2026): luật được
+thiết kế sau khi đã xem lịch sử trước đó, nên walk-forward hồi cứu chỉ là mô tả.
+Từ 15-10-2026 năm con trên trang là LÔ RƠI (`src/multi_hit_next_day.py`), theo yêu cầu "con số tỉ lệ về
+ngày hôm sau trên 2 nháy cao, không phải con khan": chỉ con đã về ở kỳ mới nhất; xác suất = xu hướng riêng
+(tỉ lệ kỳ ≥ 2 nháy, co Bayes thực nghiệm bằng mômen) × hệ số nhóm theo số nháy vừa về (quan sát / KỲ VỌNG
+theo xu hướng riêng — nhân tỉ lệ thô của nhóm là đếm hai lần). Bộ lọc VIP nghỉ vì chỉ số phân tán
+var/mean thưởng con về thưa dồn cục: con 32 đứng đầu mười kỳ liền khi gan 10 → 19 kỳ. Đếm đến 15-10-2026:
+về ≥ 2 nháy → kỳ sau 3,11% (384/12 353), 1 nháy 2,90%, không về 2,92%; walk-forward 3,04% so với 2,91% chọn
+bừa (z = +1,09), xác suất đã in TB 2,92% — trang in các số ấy TỪ phép đo, đừng viết "tỉ lệ cao"
+(`documentation/research/2026-10-15-lo-roi-ti-le-ky-sau.md`, `tests/test_multi_hit_next_day.py`). `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. Từ 13-10-2026 trang GỌN theo yêu cầu: năm con ≥ 2 nháy và
 năm cặp xiên 2 (`src/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
 cùng kỳ; 4 133 kỳ trúng 5,49% so với 5,52% chọn bừa) ở trên cùng, mỗi khối MỘT dòng số đo; giải thích

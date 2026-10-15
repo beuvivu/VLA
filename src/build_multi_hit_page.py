@@ -5,7 +5,10 @@ sinh) rồi dựng ``docs/lo-vip-nhieu-nhay.html``. Trang gọn theo yêu cầu 
 cặp và một dòng số đo kiểm chứng cho mỗi khối ở trên cùng; phần giải thích thu vào mục «Chi tiết
 phép đo». Không con số hay kết luận nào ở đây được đặt tay:
 
-* tỉ lệ trúng, khoảng tin cậy, z, p và mức tin của bộ lọc là kiểm chứng walk-forward ngoài mẫu
+* năm con là "lô rơi": con vừa về ở kỳ mới nhất có tỉ lệ về ≥ 2 nháy ở kỳ sau cao nhất
+  (``multi_hit_next_day``); tỉ lệ in cạnh mỗi con và tỉ lệ của từng nhóm (không về, về 1 nháy, về
+  ≥ 2 nháy) là số ĐẾM trên mọi cặp kỳ đã quay;
+* tỉ lệ trúng, khoảng tin cậy, z, p và mức tin của luật là kiểm chứng walk-forward ngoài mẫu
   trên mọi kỳ đã quay;
 * "hơn / không hơn chọn bừa" suy từ mức tin ấy (``multi_hit_vip.model_confidence``) và từ việc
   ứng viên của lượt thử thứ hai có qua được giai đoạn kiểm hay không;
@@ -128,7 +131,7 @@ class Loaded(NamedTuple):
     bench: dict | None
     vip_state: str          # "current" | "behind" | "invalid" | "missing"
     last_date: str          # kỳ mới nhất của sổ kết quả
-    behind_by: int          # số kỳ sổ có thêm sau lần đo bộ lọc
+    behind_by: int          # số kỳ sổ có thêm sau lần đo luật
 
 
 def load(data_dir: Path) -> Loaded:
@@ -136,7 +139,7 @@ def load(data_dir: Path) -> Loaded:
 
     Bước đo có thể hỏng giữa chừng (pipeline chạy mềm). Hai tệp vì thế có thể là số đo của một lịch
     sử khác: ``vip.json`` của hôm qua sau khi đã có kỳ mới, hay ``benchmark.json`` của một lịch sử
-    mà một kỳ cũ đã được sửa. Tệp bộ lọc không khớp thì trang không in top-k cho một kỳ đã quay;
+    mà một kỳ cũ đã được sửa. Tệp năm con không khớp thì trang không in top-k cho một kỳ đã quay;
     tệp lượt hai không phải số đo của đúng đoạn lịch sử đã đăng ký (đến ``SECOND_ROUND_UNTIL``) thì
     bị bỏ.
     """
@@ -169,7 +172,7 @@ def load(data_dir: Path) -> Loaded:
 def verdict(vip: dict, bench: dict | None) -> dict:
     """Kết luận của trang, rút TỪ số đo; không có nhánh nào chọn câu chữ theo ý người viết.
 
-    * ``vip_beats_random``: mức tin của bộ lọc là Trung bình/Cao, tức lift > 1 và p một phía < 0,05
+    * ``vip_beats_random``: mức tin của luật năm con là Trung bình/Cao, tức lift > 1 và p một phía < 0,05
       trên kiểm chứng walk-forward.
     * ``second_round_passes``: ứng viên duy nhất của lượt thử thứ hai qua giai đoạn kiểm.
     * ``protocol_sensitive``: cùng giao thức bắt được tín hiệu cài sẵn. Không bắt được — hoặc
@@ -223,12 +226,12 @@ def verdict_text(vip: dict, bench: dict | None) -> tuple[str, str]:
     bt = vip["backtest"]
     parts = [
         f"Trên {_count(bt['draws'])} kỳ ({_date(bt['first_date'])} → {_date(bt['last_date'])}), "
-        f"mỗi kỳ chấm bằng trọng số chọn trên {vip['config']['weight_window']} kỳ ngay trước nó, "
-        f"top-{vip['config']['top_k']} của bộ lọc trúng ≥ 2 nháy {_count(bt['hits'])}/"
-        f"{_count(bt['picks'])} lượt ({_pct(bt['rate'])}); chọn bừa trên chính các kỳ ấy kỳ vọng "
+        f"mỗi kỳ chỉ dùng các kỳ trước nó, top-{vip['config']['top_k']} của luật lô rơi trúng ≥ 2 nháy "
+        f"{_count(bt['hits'])}/{_count(bt['picks'])} lượt ({_pct(bt['rate'])}; xác suất đã in cho các "
+        f"con ấy trung bình {_pct(bt['predicted'])}); chọn bừa trên chính các kỳ ấy kỳ vọng "
         f"{_num(bt['expected'], 1)} lượt ({_pct(bt['random_rate'])}). "
         f"z = {_num(bt['z'], 2, sign=True)}, p một phía = {_p(bt['p_value'])}. Đây là mô tả HỒI CỨU: "
-        f"bộ lọc được thiết kế sau khi đã xem lịch sử ấy, nên mức tin chỉ tính trên các kỳ quay sau ngày "
+        f"luật được thiết kế sau khi đã xem lịch sử ấy, nên mức tin chỉ tính trên các kỳ quay sau ngày "
         f"{_date(vip['prospective']['after'])}, bằng p luôn hợp lệ vì trang xem lại mỗi ngày. "
         + _prospective_line(vip["prospective"])
         + f" → mức tin {_LEVEL_WORD.get(vip['confidence'], vip['confidence'])}."
@@ -267,9 +270,11 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
     pro = vip["prospective"]
     lo, hi = bt["ci95"]
     kpis = [
-        ("Bộ lọc VIP · hồi cứu", _pct(bt["rate"]),
+        ("Luật lô rơi · hồi cứu", _pct(bt["rate"]),
          f"KTC 95% {_pct(lo)} – {_pct(hi)} (theo cụm kỳ, deff {_num(bt['design_effect'], 2)}) · "
          f"{_count(bt['hits'])}/{_count(bt['picks'])} lượt"),
+        ("Xác suất đã in · trung bình", _pct(bt["predicted"]),
+         "của các con được chọn, so với tỉ lệ trúng thật ngay bên cạnh"),
         ("Chọn bừa cùng kỳ", _pct(bt["random_rate"]),
          f"Lý thuyết P(X ≥ 2), X ~ Nhị thức(27; 1/100): {_pct(vip['base_theory'], 3)}"),
         ("So với chọn bừa · hồi cứu", f"×{_num(bt['lift'], 3)}",
@@ -287,7 +292,7 @@ def conclusion_card(vip: dict, bench: dict | None) -> str:
     )
     tiles += (
         '<article class="ui-kpi">'
-        '<span class="ui-kpi-label">Mức tin của bộ lọc</span>'
+        '<span class="ui-kpi-label">Mức tin của luật</span>'
         f'<b class="ui-kpi-value" data-level="{html.escape(vip["confidence"])}">'
         f'{html.escape(_LEVEL_WORD.get(vip["confidence"], vip["confidence"]))}</b>'
         f'<span class="ui-kpi-sub">{html.escape(_confidence_rule())}</span></article>'
@@ -308,11 +313,26 @@ def _check_line(bt: dict, pro: dict, what: str) -> str:
     return f'<p class="app-vip-line" data-evidence-split>{html.escape(retro)} · {html.escape(later)}.</p>'
 
 
-def _strip(items: list[tuple[str, str]], label: str, extra: str = "") -> str:
-    lis = "".join(f"<li><b>{html.escape(big)}</b><small>{html.escape(small)}</small></li>"
-                  for big, small in items)
+def _strip(items: list[tuple[str, ...]], label: str, extra: str = "") -> str:
+    """Dải số: mỗi mục là (số, dòng phụ, …); mỗi dòng phụ một thẻ ``small``."""
+    lis = "".join(f"<li><b>{html.escape(big)}</b>"
+                  + "".join(f"<small>{html.escape(line)}</small>" for line in lines) + "</li>"
+                  for big, *lines in items)
     return (f'<ol class="app-lab-number-strip app-vip-strip{extra}" aria-label="{html.escape(label)}">'
             f"{lis}</ol>")
+
+
+def _came(nhay: int) -> str:
+    return "không về" if nhay == 0 else f"về {nhay} nháy"
+
+
+def states_line(vip: dict) -> str:
+    """Tỉ lệ về ≥ 2 nháy ở kỳ sau của từng nhóm, ĐẾM trên mọi cặp kỳ đã quay (nhóm cao trước)."""
+    parts = [f"{r['label']} → {_pct(r['rate'])} ({_count(r['observed'])}/{_count(r['seen'])} lần)"
+             for r in sorted(vip["states"], key=lambda r: -r["state"])]
+    return (f'<p class="app-vip-line app-vip-states" data-evidence-split>Chỉ xét các con đã về ở kỳ '
+            f"{html.escape(_date(vip['source_date']))}. Tỉ lệ một con về ≥ 2 nháy ở kỳ SAU, đếm trên mọi kỳ "
+            f"đã quay: {html.escape(' · '.join(parts))}.</p>")
 
 
 def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> str:
@@ -320,8 +340,8 @@ def picks_card(vip: dict, bench: dict | None = None, *, picks: bool = True) -> s
     v = verdict(vip, bench)
     head = ""
     if picks:
-        head = _strip([(p["number"], f"P {_pct(p['probability'])}") for p in vip["picks"]],
-                      "Các con xếp cao nhất để về từ hai nháy ở kỳ tới")
+        head = _strip([(p["number"], _pct(p["probability"]), _came(p["today"])) for p in vip["picks"]],
+                      "Các con vừa về có tỉ lệ về từ hai nháy ở kỳ tới cao nhất") + states_line(vip)
     return (
         head
         + f'<p class="app-vip-verdict" data-verdict="{v["state"]}">'
@@ -487,28 +507,35 @@ def method_card(vip: dict) -> str:
         "Một kỳ có 27 lô (hai số cuối của 27 giải). Quay công bằng thì số nháy của một con định "
         "trước là X ~ Nhị thức(27; 1/100), nên chọn bừa một con trúng ≥ 2 nháy với xác suất "
         f"P(X ≥ 2) = {_pct(vip['base_theory'], 3)}.",
-        "Bộ lọc VIP cộng bốn thành phần đã chuẩn hoá chéo 100 con trong cùng kỳ: tần suất & điểm "
-        "rơi, dị thường Poisson (số kỳ ≥ 2 nháy so với kỳ vọng), đồng xuất hiện với các con đã về "
-        f"kỳ trước, và cầu nhịp. Cửa sổ {cfg['window']} kỳ; đặc trưng của kỳ t chỉ đọc các kỳ trước t.",
-        f"Trọng số chọn trên lưới đơn hình bằng backtest {cfg['weight_window']} kỳ NGAY TRƯỚC kỳ được "
-        "chấm (walk-forward lồng nhau), nên tỉ lệ trúng báo ra không mang thiên lệch của chính phép "
-        "chọn trọng số.",
+        "Luật lô rơi chỉ xét các con đã về ở kỳ mới nhất. Nhóm của một con là số nháy của nó ở kỳ ấy "
+        "(không về, về 1 nháy, về ≥ 2 nháy); tỉ lệ của nhóm là số lần một con ở nhóm ấy về ≥ 2 nháy ở "
+        "kỳ SAU, đếm trên mọi cặp kỳ đã quay.",
+        "Xu hướng riêng của từng con là tỉ lệ kỳ nó về ≥ 2 nháy trên toàn lịch sử, co về mức chung theo "
+        "Bayes thực nghiệm: phương sai giữa 100 con trừ phần mà dao động nhị thức tự sinh ra. Hiện trọng "
+        f"số của xu hướng riêng là {_num(vip['shrink'], 2)} (0 = mọi con như nhau, 1 = tin hẳn tỉ lệ riêng).",
+        "Xác suất in cạnh mỗi con = xu hướng riêng × hệ số nhóm, với hệ số nhóm = số lần về ≥ 2 nháy "
+        "quan sát được ở nhóm / số lần kỳ vọng theo xu hướng riêng của các con trong nhóm (tiên nghiệm "
+        f"{_num(cfg['state_prior'], 0)} lần đúng như kỳ vọng). Xếp các con đã về theo xác suất ấy; mọi "
+        "đại lượng của kỳ t chỉ đọc các kỳ trước t, nên kiểm chứng trên mọi kỳ là walk-forward thật.",
+        "Bộ lọc VIP cũ (bốn thành phần, trọng số chọn lại mỗi ngày trên 30 kỳ) đã nghỉ ngày 15/10/2026: "
+        "chỉ số phương sai/trung bình của nó cao nhất ở con về thưa nhưng dồn cục, nên nó đẩy con gan lên "
+        "đầu — con 32 đứng đầu mười kỳ liền khi đang gan 10 → 19 kỳ.",
         "Mốc so là chọn bừa k con trong CÙNG kỳ: với m con về ≥ 2 nháy ở kỳ ấy, số lượt trúng theo "
         "phân phối siêu bội. Cộng qua các kỳ ra z và p một phía.",
         "Khoảng tin cậy là Wilson 95% trên cỡ mẫu hiệu dụng: các con cùng kỳ chấm trên cùng 27 lô nên "
         "không độc lập, cỡ mẫu được chia cho hệ số thiết kế deff = phương sai số trúng từng kỳ / "
         "(k·p·(1 − p)).",
-        "Bộ lọc được thiết kế sau khi đã xem lịch sử đến ngày "
+        "Luật được thiết kế sau khi đã xem lịch sử đến ngày "
         f"{_date(vip['prospective']['after'])}, nên kiểm chứng trên lịch sử ấy là MÔ TẢ hồi cứu, không "
         "phải bằng chứng chưa từng thấy. Mức tin chỉ tính trên các kỳ quay sau ngày ấy.",
-        "Trang chấm lại bộ lọc mỗi ngày, nên p của một lần xem không đủ: xem lại đủ lâu với cùng ngưỡng "
+        "Trang chấm lại luật mỗi ngày, nên p của một lần xem không đủ: xem lại đủ lâu với cùng ngưỡng "
         "thì sớm muộn sẽ vượt ngưỡng chỉ do may. p luôn hợp lệ lấy từ e-process: tích các hệ số cược "
         "1 + λ·(trúng − kỳ vọng chọn bừa) của từng kỳ tiến cứu, trung bình trên một lưới λ chốt sẵn; khi "
-        "bộ lọc không có kỹ năng, xác suất tích ấy có lúc nào vượt 1/α không quá α (bất đẳng thức "
+        "luật không có kỹ năng, xác suất tích ấy có lúc nào vượt 1/α không quá α (bất đẳng thức "
         "Ville), nên p = 1 / giá trị lớn nhất của tích đúng dù xem bao nhiêu lần.",
-        f"Mức tin của bộ lọc — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
-        "bộ lọc.",
-        "Số đo của bộ lọc tính lại mỗi ngày. Lượt thử thứ hai và phép kiểm độ nhạy là phép kiểm một "
+        f"Mức tin của luật — {_confidence_rule()}. Mức tin của từng con không vượt mức tin của "
+        "luật.",
+        "Số đo của luật tính lại mỗi ngày. Lượt thử thứ hai và phép kiểm độ nhạy là phép kiểm một "
         f"lần, đóng băng ở lịch sử đến ngày {_date(SECOND_ROUND_UNTIL)}; chỉ đo lại khi chính đoạn lịch "
         "sử ấy được sửa.",
     ]
@@ -523,7 +550,7 @@ def method_card(vip: dict) -> str:
             "Hai con định trước cùng về với xác suất 1 − 2·0,99²⁷ + 0,98²⁷ = "
             f"{_pct(pairs['base_theory'], 2)}. Mốc so là chọn bừa cùng số cặp trong CÙNG kỳ: kỳ có d con "
             "khác nhau về thì C(d, 2) trong 4 950 cặp cùng về. Sai số lấy từ hiệu từng kỳ vì các cặp chung "
-            f"một con trúng hay trượt cùng nhau. Mức tin tính như bộ lọc, trên các kỳ sau ngày "
+            f"một con trúng hay trượt cùng nhau. Mức tin tính như năm con, trên các kỳ sau ngày "
             f"{_date(pairs['prospective']['after'])}.",
         ]
     return '<ol class="app-vip-method">' + "".join(f"<li>{html.escape(i)}</li>" for i in items) + "</ol>"
@@ -533,10 +560,10 @@ def method_card(vip: dict) -> str:
 
 
 def behind_notice(vip: dict, last_date: str, behind_by: int) -> str:
-    """Thay cho top-k khi số đo bộ lọc chậm hơn sổ kết quả: top-k ấy là cho một kỳ đã quay."""
+    """Thay cho top-k khi số đo của luật chậm hơn sổ kết quả: top-k ấy là cho một kỳ đã quay."""
     return (
         f'<p class="ui-table-empty" data-vip-behind="{behind_by}">Chưa có xếp hạng cho kỳ kế tiếp: '
-        f"số đo của bộ lọc dừng ở ngày {_date(vip['source_date'])}, còn sổ kết quả đã có thêm "
+        f"số đo của luật dừng ở ngày {_date(vip['source_date'])}, còn sổ kết quả đã có thêm "
         f"{behind_by} kỳ (đến ngày {_date(last_date)}). Các con và cặp của lần đo ấy là cho một kỳ đã "
         "quay nên không in; số đo kiểm chứng vẫn đúng cho đoạn lịch sử đã đo.</p>"
     )
@@ -558,8 +585,8 @@ def _page(body: str, meta: str) -> str:
 <div class="app-lab app-lab-multi-hit" data-lab-layout="multi-hit">
 {lab_hero(PAGE,
     "Lô VIP nhiều nháy",
-    "Đề xuất cho kỳ tới: năm con được mô hình xếp cao nhất để về từ hai nháy, và năm cặp xiên 2 "
-    "hay về cùng nhau nhất. Mỗi khối kèm tỉ lệ trúng đã kiểm trên mọi kỳ đã quay.",
+    "Đề xuất cho kỳ tới: năm con vừa về có tỉ lệ về từ hai nháy ở kỳ sau cao nhất, đếm trên mọi kỳ "
+    "đã quay, và năm cặp xiên 2 hay về cùng nhau nhất. Mỗi khối kèm tỉ lệ trúng đã kiểm.",
     eyebrow="LÔ ≥ 2 NHÁY · XIÊN 2", core="ĐỐI CHỨNG",
     meta=meta,
     action=("#app-vip-picks", "Xem đề xuất"),
@@ -575,7 +602,7 @@ def _page(body: str, meta: str) -> str:
 def render_unavailable(last_date: str) -> str:
     """Trang khi không có số đo nào khớp lịch sử hiện tại: không in con số nào của lịch sử khác."""
     body = card(
-        '<p class="ui-table-empty" data-vip-unavailable>Chưa có số đo của bộ lọc khớp với sổ kết quả '
+        '<p class="ui-table-empty" data-vip-unavailable>Chưa có số đo của luật khớp với sổ kết quả '
         f"hiện tại (đến ngày {_date(last_date)}). Trang không in số đo của một lịch sử khác; số đo "
         "sẽ có lại ở lượt cập nhật kế tiếp.</p>",
         title="Kết luận từ phép đo", span=12, ident="app-lab-conclusion")

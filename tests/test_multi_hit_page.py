@@ -18,6 +18,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 import build_multi_hit_page as page
+import multi_hit_next_day as nd
 import multi_hit_pairs as pairs
 import multi_hit_report as report
 import multi_hit_vip as m
@@ -27,7 +28,7 @@ DATA = ROOT / "data" / "multi_hit"
 PLANTED = (7, 38, 68)
 
 
-#: Lịch sử giả định bắt đầu 01-01-2026: chốt bộ lọc TRƯỚC đó để mọi kỳ là tiến cứu.
+#: Lịch sử giả định bắt đầu 01-01-2026: chốt luật TRƯỚC đó để mọi kỳ là tiến cứu.
 BEFORE_MOCK = "2025-12-31"
 
 
@@ -100,10 +101,14 @@ def test_picks_that_hit_together_widen_the_interval() -> None:
     assert c_hi - c_lo > naive[1] - naive[0]
 
 
+def _walk(frame) -> nd.WalkForward:
+    counts = m.counts_matrix(m.draws_from_frame(frame)[0])
+    return nd.walk_forward(counts, nd.estimate(counts))
+
+
 def test_the_published_interval_is_the_draw_level_one(planted_vip) -> None:
-    draws, labels = m.draws_from_frame(m.mock_history(120, seed=2026, planted=PLANTED))
-    bt = m.VIPMultiHitModel(draws, labels, m.VIPConfig()).predict_next().backtest
-    (lo, hi), deff = report.draw_level_interval(bt.per_draw["trung"], bt.top_k)
+    wf = _walk(m.mock_history(120, seed=2026, planted=PLANTED))
+    (lo, hi), deff = report.draw_level_interval(wf.hits, nd.TOP_K)
     assert planted_vip["backtest"]["ci95"] == pytest.approx([lo, hi])
     assert planted_vip["backtest"]["design_effect"] == pytest.approx(deff)
 
@@ -128,6 +133,10 @@ def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
 def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
     bt = planted_vip["backtest"]
     assert bt["rate"] == pytest.approx(bt["hits"] / bt["picks"])
+    wf = _walk(m.mock_history(120, seed=2026, planted=PLANTED))
+    assert bt["hits"] == int(wf.hits.sum()) and bt["draws"] == len(wf.rows)
+    # Xác suất đã in cho các con được chọn, để đặt cạnh tỉ lệ trúng thật.
+    assert bt["predicted"] == pytest.approx(float(wf.predicted.mean()))
     assert bt["ci95"][0] < bt["rate"] < bt["ci95"][1]
     assert bt["lift"] == pytest.approx(bt["hits"] / bt["expected"])
     pro = planted_vip["prospective"]
@@ -201,13 +210,20 @@ def test_a_retrospective_edge_alone_cannot_raise_the_confidence() -> None:
 
 def test_only_draws_after_the_freeze_enter_the_e_process() -> None:
     frame = m.mock_history(120, seed=2026, planted=PLANTED)
-    draws, labels = m.draws_from_frame(frame)
+    _, labels = m.draws_from_frame(frame)
     vip = _vip_of(frame, after=labels[89])
-    model = m.VIPMultiHitModel(draws, labels, m.VIPConfig())
-    per_draw = model.predict_next().backtest.per_draw
-    later = per_draw[per_draw["ky"] > labels[89]]
-    assert vip["prospective"]["draws"] == len(later) == 30
-    assert vip["prospective"]["hits"] == int(later["trung"].sum())
+    wf = _walk(frame)
+    later = wf.rows > 89
+    assert vip["prospective"]["draws"] == int(later.sum()) == 30
+    assert vip["prospective"]["hits"] == int(wf.hits[later].sum())
+
+
+def test_the_rule_is_frozen_on_the_day_it_was_designed() -> None:
+    """Luật mới đăng ký ngày chốt mới; ngày chốt của bộ lọc VIP đã nghỉ giữ nguyên làm lịch sử."""
+    assert nd.FROZEN_AT == "2026-10-15" and report.VIP_FROZEN_AT == "2026-10-12"
+    frame = m.mock_history(120, seed=2026)
+    draws, labels = m.draws_from_frame(frame)
+    assert report.vip_section(draws, labels)["prospective"]["after"] == nd.FROZEN_AT
 
 
 # --------------------------------------------------------------------------- bản đệm lượt hai
@@ -643,9 +659,35 @@ def test_the_picks_strip_lists_the_measured_top_k(planted_vip) -> None:
     soup = _soup(planted_vip, None)
     numbers = _strip(soup, "app-vip-picks")
     assert numbers == [p["number"] for p in planted_vip["picks"]]
-    assert {int(n) for n in PLANTED} <= {int(n) for n in numbers}
-    probs = [li.select_one("small").get_text(strip=True) for li in soup.select("#app-vip-picks .app-vip-strip li")]
-    assert probs == [f"P {page._pct(p['probability'])}" for p in planted_vip["picks"]]
+    counts = m.counts_matrix(m.draws_from_frame(m.mock_history(120, seed=2026, planted=PLANTED))[0])
+    came = {n for n in PLANTED if counts[-1, n] >= 1}
+    assert came and came <= {int(n) for n in numbers}      # con cài tín hiệu vừa về thì phải được chọn
+    lines = [[x.get_text(strip=True) for x in li.select("small")]
+             for li in soup.select("#app-vip-picks .app-vip-strip li")]
+    assert lines == [[page._pct(p["probability"]), page._came(p["today"])] for p in planted_vip["picks"]]
+    assert [p["today"] for p in planted_vip["picks"]] == [int(counts[-1, int(n)]) for n in numbers]
+
+
+def test_the_state_line_prints_the_counted_next_draw_rates(fair_vip) -> None:
+    """Tỉ lệ kỳ sau của từng nhóm là số ĐẾM của bước đo, in nguyên phân số."""
+    changed = copy.deepcopy(fair_vip)
+    changed["states"][2].update(observed=123, seen=4567, rate=123 / 4567)
+    text = _soup(changed, None).select_one("#app-vip-picks .app-vip-states").get_text(" ", strip=True)
+    assert f"về ≥ 2 nháy → {page._pct(123 / 4567)} (123/4.567 lần)" in text
+    for row in changed["states"][:2]:
+        assert f"{row['label']} → {page._pct(row['rate'])}" in text
+    assert text.index("về ≥ 2 nháy") < text.index("về 1 nháy") < text.index("không về")
+
+
+def test_the_conclusion_sets_the_printed_rate_beside_the_real_one(planted_vip) -> None:
+    changed = copy.deepcopy(planted_vip)
+    changed["backtest"]["predicted"] = 0.0777
+    soup = _soup(changed, None)
+    assert "trung bình 7,77%" in soup.select_one("#app-lab-conclusion p").get_text()
+    tiles = {t.select_one(".ui-kpi-label").get_text(strip=True): t.select_one(".ui-kpi-value").get_text(strip=True)
+             for t in soup.select("#app-lab-conclusion .ui-kpi")}
+    assert tiles["Xác suất đã in · trung bình"] == "7,77%"
+    assert tiles["Luật lô rơi · hồi cứu"] == page._pct(changed["backtest"]["rate"])
 
 
 def test_every_strategy_of_the_benchmark_has_a_reader_facing_label(bench) -> None:
@@ -671,6 +713,9 @@ def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
     assert "2·p·(1 − p)" not in steps["Ít nhất một con về"]
     assert "cụm kỳ" in steps["Kết luận từ phép đo"] and "deff" in steps["Kết luận từ phép đo"]
     assert "C(d, 2)" in steps["Xiên 2"] and "chưa có bằng chứng" in steps["Xiên 2"]
+    picks = steps["Lô về ≥ 2 nháy"]
+    assert "kỳ sau" in picks and "đã về ở kỳ mới nhất" in picks
+    assert "Platt" not in picks and "VIP Score" not in picks
 
 
 def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> None:

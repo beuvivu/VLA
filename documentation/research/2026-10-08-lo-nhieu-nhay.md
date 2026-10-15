@@ -2,6 +2,11 @@
 
 Ngày 08-10-2026. Mã: `src/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_hit_vip.py`.
 
+> Cập nhật 15-10-2026: bộ lọc này đã nghỉ khỏi trang «Lô VIP nhiều nháy». Thành phần phân tán
+> (phương sai/trung bình) của nó đẩy con gan lên đầu. Năm con trên trang nay là lô rơi theo tỉ lệ
+> về ≥ 2 nháy ở kỳ sau, xem `2026-10-15-lo-roi-ti-le-ky-sau.md`. Module vẫn được giữ làm chiến lược
+> «Bộ lọc VIP (lượt một)» của lượt thử thứ hai đã đóng băng.
+
 ## Kết luận
 
 Trên 4 228 kỳ XSMB thật, chọn top-5 của bộ lọc (bốn lớp đặc trưng, trọng số tự tối ưu) trúng

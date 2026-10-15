@@ -550,11 +550,11 @@ def _vietlott(step: str, *, overview: bool = False, picks: bool = False) -> tupl
 def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     """Trang Lô VIP nhiều nháy: mọi số là kiểm chứng ngoài mẫu so với chọn bừa cùng kỳ."""
     loc: Source = {
-        "title": "Bộ lọc lô nhiều nháy, cặp xiên 2 và lượt thử thứ hai",
+        "title": "Luật lô rơi nhiều nháy, cặp xiên 2 và lượt thử thứ hai",
         "snippet": (
-            "Bộ lọc VIP xếp hạng 100 con theo bốn thành phần; luật cặp xiên 2 xếp 4 950 cặp theo số kỳ "
-            "cùng về gần đây; lượt thử thứ hai dò thêm các chiến lược thường gặp. Cả ba chấm ngoài "
-            "mẫu, so với chọn bừa trên chính các kỳ đã quay."
+            "Luật lô rơi xếp các con vừa về theo tỉ lệ về ≥ 2 nháy ở kỳ sau đếm trên mọi kỳ đã quay; "
+            "luật cặp xiên 2 xếp 4 950 cặp theo số kỳ cùng về gần đây; lượt thử thứ hai dò thêm các "
+            "chiến lược thường gặp. Cả ba chấm ngoài mẫu, so với chọn bừa trên chính các kỳ đã quay."
         ),
         "url": "lo-vip-nhieu-nhay.html",
     }
@@ -564,12 +564,12 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
         "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
     ]), [
         _sec_heading("Kết luận từ phép đo", "Kết luận từ phép đo", _ev([loc, _ket_qua(f)], [
-            "Walk-forward lồng nhau: mỗi kỳ được chấm bằng trọng số chọn trên các kỳ ngay trước nó.",
+            "Walk-forward: mọi đại lượng dùng để chọn con cho kỳ t chỉ đọc các kỳ trước t.",
             "Tỉ lệ trúng = số lượt top-k về ≥ 2 nháy / số lượt chọn. Khoảng tin cậy Wilson 95% trên cỡ "
             "mẫu hiệu dụng theo cụm kỳ: số lượt chọn chia cho deff = phương sai số trúng từng kỳ / "
             "(k·p·(1 − p)).",
             null,
-            "Walk-forward trên lịch sử đến ngày chốt bộ lọc là mô tả hồi cứu (bộ lọc được thiết kế sau "
+            "Walk-forward trên lịch sử đến ngày chốt luật là mô tả hồi cứu (luật được thiết kế sau "
             "khi đã xem lịch sử ấy). Mức tin chỉ tính trên các kỳ quay sau ngày chốt.",
             "Trang chấm lại mỗi ngày, nên mức tin dùng p luôn hợp lệ: e-process = trung bình trên lưới λ "
             "của tích (1 + λ·(trúng − kỳ vọng chọn bừa)) qua các kỳ tiến cứu; p = 1 / giá trị lớn nhất "
@@ -578,11 +578,13 @@ def _lo_vip(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
             "hơn» suy từ mức tin ấy và từ kết quả lượt thử thứ hai.",
         ])),
         _sec_heading("Lô về ≥ 2 nháy", "Năm con cho kỳ kế tiếp", _ev([loc, _ket_qua(f)], [
-            "VIP Score = tổng có trọng số của bốn thành phần đã chuẩn hoá chéo 100 con; năm con điểm "
-            "cao nhất được in theo thứ hạng.",
-            "P là xác suất về ≥ 2 nháy, hiệu chỉnh Platt khớp trên các cặp (điểm, kết quả) ngoài mẫu.",
+            "Chỉ xét các con đã về ở kỳ mới nhất. Nhóm = số nháy ở kỳ ấy (không về, 1 nháy, ≥ 2 nháy); "
+            "tỉ lệ nhóm = số lần một con ở nhóm ấy về ≥ 2 nháy ở kỳ sau / số lần ở nhóm, đếm trên mọi "
+            "cặp kỳ đã quay.",
+            "Xác suất của một con = xu hướng riêng (tỉ lệ kỳ về ≥ 2 nháy, co về mức chung theo Bayes "
+            "thực nghiệm) × hệ số nhóm (quan sát / kỳ vọng theo xu hướng riêng của các con trong nhóm).",
             "Dòng số đo: tỉ lệ trúng của top-5 trên mọi kỳ đã chấm so với chọn bừa 5 con trong cùng "
-            "kỳ, và phần tiến cứu sau ngày chốt bộ lọc.",
+            "kỳ, và phần tiến cứu sau ngày chốt luật.",
         ])),
         _sec_heading("Xiên 2", "Năm cặp xiên 2 cho kỳ kế tiếp", _ev([loc, _ket_qua(f)], [
             "Điểm của một cặp = số kỳ trong 100 kỳ gần nhất mà cả hai con cùng về; hoà điểm thì cặp "
