@@ -425,7 +425,7 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
     vip = _read(data_dir / "multi_hit" / "vip.json")
     if vip:
         level = vip.get("confidence", "Low")
-        out.append({"id": "bo-loc-lo-nhieu-nhay", "kind": "challenger", "title": "Bộ lọc lô ≥ 2 nháy",
+        out.append({"id": "bo-loc-lo-nhieu-nhay", "kind": "challenger", "title": "Luật lô rơi ≥ 2 nháy",
                     "status": "co-bang-chung" if level in ("High", "Medium") else "chua-co-bang-chung",
                     "summary": f"hồi cứu {vip['backtest']['rate']:.4f} so với chọn bừa {vip['backtest']['random_rate']:.4f}"})
         pairs = vip.get("pairs")
