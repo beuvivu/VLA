@@ -141,3 +141,37 @@ def test_the_source_can_be_chosen_through_the_environment(monkeypatch):
     settings = Settings()
     assert settings.source == "xskt"
     assert isinstance(build_source(settings, object()), XsktDrawSource)  # type: ignore[arg-type]
+
+
+def test_a_partially_caught_up_archive_is_extended_by_the_later_source():
+    """Kho dừng ở #926, bản sao mới có #927, xskt đã có #928: lấy cả hai, #927 vẫn từ bản sao."""
+    client = _Client({"https://xskt.com.vn/xslotto-5-35": LOTTO_13H + LOTTO})
+    chain = FallbackDrawSource([_Stale(), XsktDrawSource(client, "https://xskt.com.vn")])
+    got = asyncio.run(chain.fetch(get_game(GameCode.LOTTO_535), since_id=926))
+    assert [(d.draw_id, d.source) for d in got.draws] == [(927, "nhanaz"), (928, "xskt")]
+    assert chain.name == "auto:nhanaz+xskt" and chain.log.used == "nhanaz"
+
+
+class _Fixed(DrawSource):
+    def __init__(self, name: str, draws: list[Draw]) -> None:
+        self.name, self.draws = name, draws
+
+    async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+        return FetchResult(draws=[d for d in self.draws if since_id is None or d.draw_id > since_id])
+
+
+def _mega(draw_id: int, numbers: tuple[int, ...] = (1, 2, 3, 4, 5, 6)) -> Draw:
+    return Draw(game=GameCode.MEGA_645, draw_id=draw_id, draw_date=date(2026, 10, 1 + draw_id - 927), numbers=numbers)
+
+
+def test_a_later_source_never_replaces_a_draw_and_never_leaves_a_gap():
+    first = _Fixed("nhanaz", [_mega(927)])
+    later = _Fixed("xskt", [_mega(927, (7, 8, 9, 10, 11, 12)), _mega(928), _mega(930)])
+    got = asyncio.run(FallbackDrawSource([first, later]).fetch(get_game(GameCode.MEGA_645), since_id=926))
+    assert [d.draw_id for d in got.draws] == [927, 928] and got.draws[0].numbers == (1, 2, 3, 4, 5, 6)
+
+
+def test_xskt_refuses_a_page_window_that_would_leave_a_gap():
+    client = _Client({"https://xskt.com.vn/xslotto-5-35": LOTTO_13H + LOTTO})
+    with pytest.raises(SourceError, match="#901"):
+        asyncio.run(XsktDrawSource(client, "https://xskt.com.vn").fetch(get_game(GameCode.LOTTO_535), since_id=900))

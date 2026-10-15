@@ -135,4 +135,8 @@ class XsktDrawSource(DrawSource):
             # không coi là "không có kỳ mới".
             raise SourceError(f"{url}: không đọc được kỳ nào")
         result.draws = [d for d in result.draws if since_id is None or d.draw_id > since_id]
+        if since_id is not None and result.draws and result.draws[0].draw_id != since_id + 1:
+            # Trang tổng chỉ có vài kỳ gần nhất: nhận nó sẽ để hở #since_id+1… mà lượt sau
+            # (since_id đã vượt) không bao giờ bù. Báo lỗi để chuỗi hỏi nguồn có đủ lịch sử.
+            raise SourceError(f"{url}: trang bắt đầu ở #{result.draws[0].draw_id}, còn thiếu từ #{since_id + 1}")
         return result
