@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T11:36:25Z",
+  "generated_at": "2026-10-15T11:34:49Z",
   "mode": "de",
   "history_start": "2015-01-01",
-  "history_end": "2026-10-14",
-  "history_days": 4235,
+  "history_end": "2026-10-15",
+  "history_days": 4236,
   "pair_count": 50,
   "reverse_pair_count": 45,
   "kep_bong_pair_count": 5,
@@ -15,11 +15,11 @@
     "33-88",
     "44-99"
   ],
-  "kep_bong_mean_member_rate_gap_365d": 0.004383561643835616,
-  "kep_bong_mean_member_balance_365d": 0.6633333333333333,
-  "kep_bong_mean_phi": -0.009760435190052198,
-  "reverse_mean_member_rate_gap_365d": 0.006514459665144596,
-  "reverse_mean_member_balance_365d": 0.5107142857142857,
+  "kep_bong_mean_member_rate_gap_365d": 0.0049315068493150675,
+  "kep_bong_mean_member_balance_365d": 0.6300000000000001,
+  "kep_bong_mean_phi": -0.009781441959376552,
+  "reverse_mean_member_rate_gap_365d": 0.006453576864535768,
+  "reverse_mean_member_balance_365d": 0.5121957671957672,
   "current_cau_scores_aligned": false,
   "predictive_policy": "pair relations provide shared evidence/candidate features; production predictive weight requires leakage-safe validation and must not force equal probabilities"
 }
