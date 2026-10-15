@@ -1,5 +1,10 @@
 # Lô rơi nhiều nháy — chọn theo tỉ lệ về ≥ 2 nháy ở kỳ sau (15-10-2026)
 
+> Cập nhật cùng ngày: luật lô rơi đã nghỉ khỏi trang. Nó chỉ liệt kê con vừa về nên trông như thống kê
+> hôm nay, không phải phỏng đoán. Trang nay in dự báo kỳ sau của mô hình Lô VIP (kinh nghiệm cầu kèo,
+> cầu hai nháy, dữ liệu nhiều nháy), xem `2026-10-15-lo-vip-cau-keo.md`. Module `multi_hit_next_day.py`
+> đã gỡ; các số đo dưới đây vẫn đúng và được giữ làm lịch sử.
+
 ## Yêu cầu
 
 Chủ dự án, về trang `docs/lo-vip-nhieu-nhay.html`: "bảng này sai hoàn toàn mục đích, toàn lựa chọn

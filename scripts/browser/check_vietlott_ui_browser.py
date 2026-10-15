@@ -223,8 +223,12 @@ def check_reduced_motion(page, button, label):
 def check_registered_comparisons(page, label):
     """Registered tickets keep their own score and never turn pending draws into zero hits."""
     for summary in page.locator('.vl-comparison-summary').all():
-        expect(summary.locator('.vl-comparison-stat')).to_have_count(4)
-        for stat in summary.locator('.vl-comparison-stat').all():
+        stats = summary.locator('.vl-comparison-stat')
+        # Ô thứ năm chỉ có khi đã có kỳ chấm theo danh mục vé rời nhau (coverage-v1, 15-10-2026).
+        assert stats.count() in (4, 5), (label, stats.count())
+        if stats.count() == 5:
+            expect(stats.nth(4).locator(':scope > span')).to_have_text('Kỳ có vé trúng từ 2 số')
+        for stat in stats.all():
             box = stat.bounding_box()
             assert box['width'] > 0 and box['x'] >= -1, (label, box)
             assert box['x'] + box['width'] <= page.viewport_size['width'] + 1, (label, box)

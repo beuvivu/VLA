@@ -1,7 +1,7 @@
 {
   "version": 1,
   "alpha_budget": 0.01,
-  "generated_at": "2026-10-15T15:40:02Z",
+  "generated_at": "2026-10-15T18:47:29Z",
   "source_date": "2026-10-15",
   "draws": 4236,
   "config": {
@@ -751,9 +751,9 @@
     {
       "id": "bo-loc-lo-nhieu-nhay",
       "kind": "challenger",
-      "title": "Luật lô rơi ≥ 2 nháy",
+      "title": "Mô hình Lô VIP ≥ 2 nháy",
       "status": "chua-co-bang-chung",
-      "summary": "hồi cứu 0.0304 so với chọn bừa 0.0291"
+      "summary": "hồi cứu 0.0299 so với chọn bừa 0.0292"
     },
     {
       "id": "cap-xien-2",

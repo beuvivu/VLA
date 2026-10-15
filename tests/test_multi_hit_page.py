@@ -14,11 +14,12 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
 import build_multi_hit_page as page
-import multi_hit_next_day as nd
+import multi_hit_forecast as mf
 import multi_hit_pairs as pairs
 import multi_hit_report as report
 import multi_hit_vip as m
@@ -28,23 +29,33 @@ DATA = ROOT / "data" / "multi_hit"
 PLANTED = (7, 38, 68)
 
 
-#: Lịch sử giả định bắt đầu 01-01-2026: chốt luật TRƯỚC đó để mọi kỳ là tiến cứu.
+#: Lịch sử giả định bắt đầu 01-01-2026: chốt mô hình TRƯỚC đó để mọi kỳ là tiến cứu.
 BEFORE_MOCK = "2025-12-31"
+#: Mô hình Lô VIP cỡ nhỏ cho lịch sử giả định vài trăm kỳ (mặc định cần 60 + 365 kỳ).
+SMALL = mf.ForecastConfig(warmup=40, refit=40, min_history_days=20)
 
 
-def _vip_of(frame, after: str = BEFORE_MOCK) -> dict:
-    draws, labels = m.draws_from_frame(frame)
-    return report.vip_section(draws, labels, prospective_after=after)
+def _mock(n: int, seed: int, planted: tuple[int, ...] = ()):
+    return mf.mock_raw_history(n, seed=seed, planted=planted)
+
+
+def _counts(history) -> np.ndarray:
+    return m.counts_matrix(m.draws_from_frame(history[1])[0])
+
+
+def _vip_of(history, after: str = BEFORE_MOCK) -> dict:
+    raw, two = history
+    return report.vip_section(raw, two, cfg=SMALL, prospective_after=after)
 
 
 @pytest.fixture(scope="module")
 def fair_vip() -> dict:
-    return _vip_of(m.mock_history(100, seed=2026))
+    return _vip_of(_mock(150, seed=2026))
 
 
 @pytest.fixture(scope="module")
 def planted_vip() -> dict:
-    return _vip_of(m.mock_history(120, seed=2026, planted=PLANTED))
+    return _vip_of(_mock(150, seed=2026, planted=PLANTED))
 
 
 @pytest.fixture(scope="module")
@@ -101,21 +112,21 @@ def test_picks_that_hit_together_widen_the_interval() -> None:
     assert c_hi - c_lo > naive[1] - naive[0]
 
 
-def _walk(frame) -> nd.WalkForward:
-    counts = m.counts_matrix(m.draws_from_frame(frame)[0])
-    return nd.walk_forward(counts, nd.estimate(counts))
+def _walk(history) -> mf.WalkForward:
+    return mf.walk_forward(mf.build_table(*history, SMALL), SMALL)
 
 
 def test_the_published_interval_is_the_draw_level_one(planted_vip) -> None:
-    wf = _walk(m.mock_history(120, seed=2026, planted=PLANTED))
-    (lo, hi), deff = report.draw_level_interval(wf.hits, nd.TOP_K)
+    wf = _walk(_mock(150, seed=2026, planted=PLANTED))
+    (lo, hi), deff = report.draw_level_interval(wf.hits, mf.TOP_K)
     assert planted_vip["backtest"]["ci95"] == pytest.approx([lo, hi])
     assert planted_vip["backtest"]["design_effect"] == pytest.approx(deff)
 
 
 def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
-    draws, labels = m.draws_from_frame(m.mock_history(100, seed=2026))
-    counts = m.counts_matrix(draws)
+    history = _mock(150, seed=2026)
+    _, labels = m.draws_from_frame(history[1])
+    counts = _counts(history)
     assert len(fair_vip["recent"]) == report.RECENT_DRAWS
     assert fair_vip["recent"][0]["date"] == labels[-1]           # mới nhất trước
     for row in fair_vip["recent"]:
@@ -133,10 +144,10 @@ def test_the_recent_rows_count_the_real_nhay_of_each_pick(fair_vip) -> None:
 def test_the_backtest_block_is_the_model_s_own_numbers(planted_vip) -> None:
     bt = planted_vip["backtest"]
     assert bt["rate"] == pytest.approx(bt["hits"] / bt["picks"])
-    wf = _walk(m.mock_history(120, seed=2026, planted=PLANTED))
+    wf = _walk(_mock(150, seed=2026, planted=PLANTED))
     assert bt["hits"] == int(wf.hits.sum()) and bt["draws"] == len(wf.rows)
     # Xác suất đã in cho các con được chọn, để đặt cạnh tỉ lệ trúng thật.
-    assert bt["predicted"] == pytest.approx(float(wf.predicted.mean()))
+    assert bt["predicted"] == pytest.approx(float(wf.printed.mean()))
     assert bt["ci95"][0] < bt["rate"] < bt["ci95"][1]
     assert bt["lift"] == pytest.approx(bt["hits"] / bt["expected"])
     pro = planted_vip["prospective"]
@@ -187,7 +198,7 @@ def test_looking_every_day_needs_the_anytime_p() -> None:
 def test_every_confidence_on_the_page_follows_the_anytime_p(monkeypatch) -> None:
     """Mô hình tự báo High trên lịch sử cài tín hiệu; nếu p luôn hợp lệ không đạt thì không con nào được tin."""
     monkeypatch.setattr(report, "anytime_p", lambda hits, expected: (1.0, 1.0))
-    vip = _vip_of(m.mock_history(120, seed=2026, planted=PLANTED))
+    vip = _vip_of(_mock(150, seed=2026, planted=PLANTED))
     assert vip["confidence"] == "Low"
     assert {p["confidence"] for p in vip["picks"]} == {"Low"}
 
@@ -199,7 +210,7 @@ def test_anytime_p_still_finds_a_real_edge(planted_vip, fair_vip) -> None:
 
 def test_a_retrospective_edge_alone_cannot_raise_the_confidence() -> None:
     """Bộ lọc thiết kế sau khi xem lịch sử: lợi thế trên chính lịch sử ấy không được tính là bằng chứng."""
-    vip = _vip_of(m.mock_history(120, seed=2026, planted=PLANTED), after="2026-12-31")
+    vip = _vip_of(_mock(150, seed=2026, planted=PLANTED), after="2026-12-31")
     assert vip["backtest"]["p_value"] < 1e-6                     # hồi cứu thì "rất có ý nghĩa"
     assert vip["prospective"]["draws"] == 0 and vip["prospective"]["lift"] is None
     json.dumps(vip, allow_nan=False)                             # tệp đo là JSON hợp chuẩn
@@ -209,21 +220,21 @@ def test_a_retrospective_edge_alone_cannot_raise_the_confidence() -> None:
 
 
 def test_only_draws_after_the_freeze_enter_the_e_process() -> None:
-    frame = m.mock_history(120, seed=2026, planted=PLANTED)
-    _, labels = m.draws_from_frame(frame)
-    vip = _vip_of(frame, after=labels[89])
-    wf = _walk(frame)
-    later = wf.rows > 89
+    history = _mock(150, seed=2026, planted=PLANTED)
+    _, labels = m.draws_from_frame(history[1])
+    vip = _vip_of(history, after=labels[119])
+    table = mf.build_table(*history, SMALL)
+    wf = mf.walk_forward(table, SMALL)
+    later = table.anchors[wf.rows] + 1 > 119          # kỳ được dự báo nằm sau ngày chốt
     assert vip["prospective"]["draws"] == int(later.sum()) == 30
     assert vip["prospective"]["hits"] == int(wf.hits[later].sum())
 
 
 def test_the_rule_is_frozen_on_the_day_it_was_designed() -> None:
     """Luật mới đăng ký ngày chốt mới; ngày chốt của bộ lọc VIP đã nghỉ giữ nguyên làm lịch sử."""
-    assert nd.FROZEN_AT == "2026-10-15" and report.VIP_FROZEN_AT == "2026-10-12"
-    frame = m.mock_history(120, seed=2026)
-    draws, labels = m.draws_from_frame(frame)
-    assert report.vip_section(draws, labels)["prospective"]["after"] == nd.FROZEN_AT
+    assert mf.FROZEN_AT == "2026-10-15" and report.VIP_FROZEN_AT == "2026-10-12"
+    raw, two = _mock(150, seed=2026)
+    assert report.vip_section(raw, two, cfg=SMALL)["prospective"]["after"] == mf.FROZEN_AT
 
 
 # --------------------------------------------------------------------------- bản đệm lượt hai
@@ -329,10 +340,10 @@ def test_the_benchmark_reads_only_the_registered_draws(register_at, monkeypatch)
 
 def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path, monkeypatch,
                                                                        register_at) -> None:
-    frame = m.mock_history(120, seed=5)
-    _, labels = m.draws_from_frame(frame)
+    history = _mock(120, seed=5)
+    _, labels = m.draws_from_frame(history[1])
     register_at(list(labels), 80)
-    frame.iloc[:80].to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
+    _write_history(tmp_path, _head(history, 80))
     calls = []
 
     def fake_benchmark(draws, labels):
@@ -342,11 +353,11 @@ def test_run_writes_the_filter_daily_and_the_benchmark_only_when_stale(tmp_path,
                 "history_sha256": report.history_fingerprint(draws, labels, n)}
 
     monkeypatch.setattr(report, "benchmark_section", fake_benchmark)
-    assert set(report.run(tmp_path)) == {"vip", "benchmark"}
-    assert set(report.run(tmp_path)) == {"vip"}
-    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)       # 40 kỳ mới sau ngày đăng ký
-    assert set(report.run(tmp_path)) == {"vip"}
-    assert set(report.run(tmp_path, force_benchmark=True)) == {"vip", "benchmark"}
+    assert set(report.run(tmp_path, cfg=SMALL)) == {"vip", "benchmark"}
+    assert set(report.run(tmp_path, cfg=SMALL)) == {"vip"}
+    _write_history(tmp_path, history)                               # 40 kỳ mới sau ngày đăng ký
+    assert set(report.run(tmp_path, cfg=SMALL)) == {"vip"}
+    assert set(report.run(tmp_path, force_benchmark=True, cfg=SMALL)) == {"vip", "benchmark"}
     assert calls == [80, 80]
     vip = json.loads((tmp_path / report.OUT_DIR / report.VIP_FILE).read_text(encoding="utf-8"))
     assert vip["draws"] == 120
@@ -360,43 +371,53 @@ def test_the_recent_baseline_sums_each_displayed_draw(fair_vip) -> None:
     assert "chọn bừa kỳ vọng 5,50" in text
 
 
-def _data_dir(tmp_path, frame) -> Path:
-    frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
-    draws, labels = m.draws_from_frame(frame)
+def _head(history, n: int):
+    return tuple(frame.iloc[:n].reset_index(drop=True) for frame in history)
+
+
+def _write_history(data: Path, history) -> None:
+    raw, two = history
+    raw.to_csv(data / "xsmb.csv", index=False)
+    two.to_csv(data / "xsmb-2-digits.csv", index=False)
+
+
+def _data_dir(tmp_path, history) -> Path:
+    _write_history(tmp_path, history)
+    draws, labels = m.draws_from_frame(history[1])
     out = tmp_path / report.OUT_DIR
     out.mkdir()
-    (out / report.VIP_FILE).write_text(json.dumps(report.vip_section(draws, labels)), encoding="utf-8")
+    (out / report.VIP_FILE).write_text(json.dumps(report.vip_section(*history, cfg=SMALL)), encoding="utf-8")
     bench = {"version": report.BENCHMARK_VERSION, "draws": len(draws),
              "history_sha256": report.history_fingerprint(draws, labels)}
     (out / report.BENCHMARK_FILE).write_text(json.dumps(bench), encoding="utf-8")
     return tmp_path
 
 
-def _write_vip(data: Path, frame) -> None:
-    draws, labels = m.draws_from_frame(frame)
+def _write_vip(data: Path, history) -> None:
     path = data / report.OUT_DIR / report.VIP_FILE
-    path.write_text(json.dumps(report.vip_section(draws, labels)), encoding="utf-8")
+    path.write_text(json.dumps(report.vip_section(*history, cfg=SMALL)), encoding="utf-8")
 
 
-def _corrected(frame):
-    fixed = frame.copy()
-    column = [c for c in fixed.columns if c != "date"][0]
-    fixed.loc[3, column] = (int(fixed.loc[3, column]) + 1) % 100
-    return fixed
+def _corrected(history):
+    """Sửa một kỳ cũ ở CẢ hai sổ (giải 7 có hai chữ số nên hai sổ ghi cùng một số)."""
+    raw, two = (frame.copy() for frame in history)
+    for frame in (raw, two):
+        frame.loc[3, "prize7_1"] = (int(frame.loc[3, "prize7_1"]) + 1) % 100
+    return raw, two
 
 
 def test_the_builder_prints_measurements_that_match_the_history(tmp_path) -> None:
-    got = page.load(_data_dir(tmp_path, m.mock_history(80, seed=5)))
+    got = page.load(_data_dir(tmp_path, _mock(80, seed=5)))
     assert got.vip is not None and got.bench is not None
     assert (got.vip_state, got.behind_by) == ("current", 0)
 
 
 def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_path) -> None:
     """Một kỳ cũ được sửa; bộ lọc đã đo lại nhưng lượt hai thì chưa (bước đo hỏng giữa chừng)."""
-    frame = m.mock_history(80, seed=5)
-    data = _data_dir(tmp_path, frame)
-    fixed = _corrected(frame)
-    fixed.to_csv(data / "xsmb-2-digits.csv", index=False)
+    history = _mock(80, seed=5)
+    data = _data_dir(tmp_path, history)
+    fixed = _corrected(history)
+    _write_history(data, fixed)
     _write_vip(data, fixed)
     got = page.load(data)
     assert got.vip_state == "current" and got.bench is None
@@ -404,20 +425,20 @@ def test_the_builder_drops_a_benchmark_of_a_history_that_no_longer_exists(tmp_pa
 
 def test_the_builder_keeps_the_frozen_benchmark_as_new_draws_arrive(tmp_path, register_at) -> None:
     """Bộ lọc đo lại mỗi ngày; lượt hai đóng băng ở ngày đăng ký vẫn được in, kỳ mới không làm nó cũ."""
-    frame = m.mock_history(120, seed=5)
-    register_at(list(m.draws_from_frame(frame)[1]), 80)
-    data = _data_dir(tmp_path, frame.iloc[:80].reset_index(drop=True))
-    frame.to_csv(data / "xsmb-2-digits.csv", index=False)
-    _write_vip(data, frame)
+    history = _mock(120, seed=5)
+    register_at(list(m.draws_from_frame(history[1])[1]), 80)
+    data = _data_dir(tmp_path, _head(history, 80))
+    _write_history(data, history)
+    _write_vip(data, history)
     got = page.load(data)
     assert got.vip_state == "current" and got.bench is not None
 
 
 def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> None:
     """Sổ có thêm kỳ mà bước đo hỏng: con và cặp của lần đo cũ là cho một kỳ ĐÃ quay."""
-    frame = m.mock_history(126, seed=5)
-    data = _data_dir(tmp_path, frame.iloc[:120].reset_index(drop=True))
-    frame.to_csv(data / "xsmb-2-digits.csv", index=False)
+    history = _mock(126, seed=5)
+    data = _data_dir(tmp_path, _head(history, 120))
+    _write_history(data, history)
     got = page.load(data)
     assert (got.vip_state, got.behind_by) == ("behind", 6)
     assert got.vip["pairs"]["picks"]                             # có cặp đã đo, nhưng không được in
@@ -431,9 +452,9 @@ def test_a_filter_measurement_behind_the_history_prints_no_picks(tmp_path) -> No
 
 
 def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) -> None:
-    frame = m.mock_history(80, seed=5)
-    data = _data_dir(tmp_path, frame)
-    _corrected(frame).to_csv(data / "xsmb-2-digits.csv", index=False)
+    history = _mock(80, seed=5)
+    data = _data_dir(tmp_path, history)
+    _write_history(data, _corrected(history))
     got = page.load(data)
     assert got.vip_state == "invalid" and got.vip is None and got.bench is None
     docs = tmp_path / "docs"
@@ -447,8 +468,7 @@ def test_a_filter_measurement_of_a_corrected_history_prints_nothing(tmp_path) ->
 
 def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
     """Thiếu vip.json thì trang cũ (với top-k và kết luận cũ) phải bị ghi đè, không được để nguyên."""
-    frame = m.mock_history(80, seed=5)
-    data = _data_dir(tmp_path, frame)
+    data = _data_dir(tmp_path, _mock(80, seed=5))
     (data / report.OUT_DIR / report.VIP_FILE).unlink()
     docs = tmp_path / "docs"
     docs.mkdir()
@@ -462,7 +482,7 @@ def test_a_missing_filter_measurement_replaces_the_old_page(tmp_path) -> None:
 @pytest.mark.parametrize("garbage", ['{"version": 5, "draws"', "[1, 2, 3]", "\x00\x01"])
 def test_unreadable_measurements_replace_the_old_page(tmp_path, garbage) -> None:
     """Tệp đo cụt hay hỏng: không làm trình dựng chết (trang cũ còn nguyên), mà coi như không hợp lệ."""
-    data = _data_dir(tmp_path, m.mock_history(80, seed=5))
+    data = _data_dir(tmp_path, _mock(80, seed=5))
     for name in (report.VIP_FILE, report.BENCHMARK_FILE):
         (data / report.OUT_DIR / name).write_text(garbage, encoding="utf-8")
     got = page.load(data)
@@ -659,24 +679,41 @@ def test_the_picks_strip_lists_the_measured_top_k(planted_vip) -> None:
     soup = _soup(planted_vip, None)
     numbers = _strip(soup, "app-vip-picks")
     assert numbers == [p["number"] for p in planted_vip["picks"]]
-    counts = m.counts_matrix(m.draws_from_frame(m.mock_history(120, seed=2026, planted=PLANTED))[0])
-    came = {n for n in PLANTED if counts[-1, n] >= 1}
-    assert came and came <= {int(n) for n in numbers}      # con cài tín hiệu vừa về thì phải được chọn
-    lines = [[x.get_text(strip=True) for x in li.select("small")]
+    assert {int(n) for n in PLANTED} <= {int(n) for n in numbers}   # mô hình bắt được con cài tín hiệu
+    probs = [[x.get_text(strip=True) for x in li.select("small")]
              for li in soup.select("#app-vip-picks .app-vip-strip li")]
-    assert lines == [[page._pct(p["probability"]), page._came(p["today"])] for p in planted_vip["picks"]]
-    assert [p["today"] for p in planted_vip["picks"]] == [int(counts[-1, int(n)]) for n in numbers]
+    assert probs == [[page._pct(p["probability"])] for p in planted_vip["picks"]]
 
 
-def test_the_state_line_prints_the_counted_next_draw_rates(fair_vip) -> None:
-    """Tỉ lệ kỳ sau của từng nhóm là số ĐẾM của bước đo, in nguyên phân số."""
+def test_the_card_names_the_draw_it_forecasts(planted_vip) -> None:
+    """Khối trên cùng là DỰ BÁO cho kỳ kế tiếp, không phải thống kê kỳ đã quay."""
+    history = _mock(150, seed=2026, planted=PLANTED)
+    last = m.draws_from_frame(history[1])[1][-1]
+    assert planted_vip["source_date"] == last
+    assert planted_vip["target_date"] == (pd.Timestamp(last) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    title = _soup(planted_vip, None).select_one("#app-vip-picks .ui-card-head h2").get_text(strip=True)
+    assert title == f"Lô VIP ≥ 2 nháy · dự báo kỳ {page._date(planted_vip['target_date'])}"
+
+
+def test_every_pick_prints_its_reasons(planted_vip) -> None:
+    changed = copy.deepcopy(planted_vip)
+    changed["picks"][0]["reasons"] = ["bóng của Đặc Biệt 66", "3 cầu hai nháy đang chạy"]
+    changed["picks"][1]["reasons"] = []
+    rows = _soup(changed, None).select("#app-vip-picks .app-vip-reasons li")
+    assert [r.select_one("b").get_text(strip=True) for r in rows] == [p["number"] for p in changed["picks"]]
+    assert rows[0].get_text(" ", strip=True).endswith("bóng của Đặc Biệt 66 · 3 cầu hai nháy đang chạy")
+    assert "không có tín hiệu nổi bật" in rows[1].get_text()
+
+
+def test_the_bridge_experience_line_prints_the_counted_rates(fair_vip) -> None:
+    """Kinh nghiệm cầu hai nháy là số ĐẾM của bước đo, in nguyên phân số, nhóm nhiều cầu trước."""
     changed = copy.deepcopy(fair_vip)
-    changed["states"][2].update(observed=123, seen=4567, rate=123 / 4567)
-    text = _soup(changed, None).select_one("#app-vip-picks .app-vip-states").get_text(" ", strip=True)
-    assert f"về ≥ 2 nháy → {page._pct(123 / 4567)} (123/4.567 lần)" in text
-    for row in changed["states"][:2]:
+    changed["experience"][2].update(observed=123, seen=4567, rate=123 / 4567)
+    text = _soup(changed, None).select_one("#app-vip-picks .app-vip-experience").get_text(" ", strip=True)
+    assert f"từ 5 cầu → {page._pct(123 / 4567)} (123/4.567 lần)" in text
+    for row in changed["experience"][:2]:
         assert f"{row['label']} → {page._pct(row['rate'])}" in text
-    assert text.index("về ≥ 2 nháy") < text.index("về 1 nháy") < text.index("không về")
+    assert text.index("từ 5 cầu") < text.index("1–4 cầu") < text.index("không có cầu")
 
 
 def test_the_conclusion_sets_the_printed_rate_beside_the_real_one(planted_vip) -> None:
@@ -687,7 +724,7 @@ def test_the_conclusion_sets_the_printed_rate_beside_the_real_one(planted_vip) -
     tiles = {t.select_one(".ui-kpi-label").get_text(strip=True): t.select_one(".ui-kpi-value").get_text(strip=True)
              for t in soup.select("#app-lab-conclusion .ui-kpi")}
     assert tiles["Xác suất đã in · trung bình"] == "7,77%"
-    assert tiles["Luật lô rơi · hồi cứu"] == page._pct(changed["backtest"]["rate"])
+    assert tiles["Lô VIP · hồi cứu"] == page._pct(changed["backtest"]["rate"])
 
 
 def test_every_strategy_of_the_benchmark_has_a_reader_facing_label(bench) -> None:
@@ -713,16 +750,17 @@ def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
     assert "2·p·(1 − p)" not in steps["Ít nhất một con về"]
     assert "cụm kỳ" in steps["Kết luận từ phép đo"] and "deff" in steps["Kết luận từ phép đo"]
     assert "C(d, 2)" in steps["Xiên 2"] and "chưa có bằng chứng" in steps["Xiên 2"]
-    picks = steps["Lô về ≥ 2 nháy"]
-    assert "kỳ sau" in picks and "đã về ở kỳ mới nhất" in picks
-    assert "Platt" not in picks and "VIP Score" not in picks
+    picks = steps["Lô VIP ≥ 2 nháy"]
+    assert "kỳ sau" in picks and "kinh nghiệm cầu kèo" in picks
+    assert "số cầu hai nháy và cầu LOTO đang chạy" in picks and "Kinh nghiệm cầu hai nháy =" in picks
+    assert "VIP Score" not in picks and "Nhóm = số nháy" not in picks
 
 
 def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> None:
     """Ngăn kéo nhận khối theo tiền tố tiêu đề: đổi tên thẻ mà quên danh mục là mất bằng chứng."""
     import evidence_catalog
 
-    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    vip = _vip_of(_pair_history(160, pair=(12, 34)))
     titles = [h.get_text(strip=True) for h in _soup(vip, bench).select(".ui-card-head h2")]
     _, sections = evidence_catalog._catalog({})[page.PAGE]
     assert len(sections) >= 7
@@ -743,6 +781,20 @@ def _pair_frame(n: int, pair: tuple[int, int] | None = None, rate: float = 0.4, 
             a, b = rng.choice(len(cols), size=2, replace=False)
             frame.loc[t, cols[a]], frame.loc[t, cols[b]] = pair
     return frame
+
+
+def _pair_history(n: int, pair: tuple[int, int], rate: float = 0.4, seed: int = 11):
+    """Như ``_pair_frame`` nhưng có cả sổ kết quả đầy đủ (cho mô hình Lô VIP): cặp cài vào hai số cuối
+    của hai giải ngẫu nhiên ở CẢ hai sổ."""
+    raw, two = mf.mock_raw_history(n, seed=seed)
+    rng = np.random.default_rng(seed + 1)
+    cols = [c for c in two.columns if c != "date"]
+    for t in np.flatnonzero(rng.random(n) < rate):
+        a, b = rng.choice(len(cols), size=2, replace=False)
+        for col, number in ((cols[a], pair[0]), (cols[b], pair[1])):
+            raw.loc[t, col] = int(raw.loc[t, col]) // 100 * 100 + number
+            two.loc[t, col] = number
+    return raw, two
 
 
 def _pairs_of(frame, after: str = BEFORE_MOCK) -> dict:
@@ -872,7 +924,7 @@ def test_the_pair_measurement_is_strict_json_even_when_short() -> None:
 
 
 def test_the_pairs_strip_lists_the_measured_pairs() -> None:
-    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    vip = _vip_of(_pair_history(160, pair=(12, 34)))
     soup = _soup(vip, None)
     assert _strip(soup, "app-vip-pairs") == [" · ".join(p["pair"]) for p in vip["pairs"]["picks"]]
     window = vip["pairs"]["config"]["window"]
@@ -881,7 +933,7 @@ def test_the_pairs_strip_lists_the_measured_pairs() -> None:
 
 
 def test_the_recent_table_shows_each_draw_s_pairs(tmp_path) -> None:
-    vip = _vip_of(_pair_frame(160, pair=(12, 34)))
+    vip = _vip_of(_pair_history(160, pair=(12, 34)))
     rows = _soup(vip, None).select("#app-vip-recent tbody tr")
     by_date = {r["date"]: r for r in vip["pairs"]["recent"]}
     assert len(rows) == len(vip["recent"])
