@@ -39,6 +39,7 @@ from sklearn.preprocessing import StandardScaler
 
 import cau_keo_ml as ck
 from bridge_rules import step_matrix
+from calendar_alignment import known_non_draw_days
 from multi_hit_vip import N_NUMBERS, counts_matrix, draws_from_frame, tie_keys
 from position_bridges import COLUMNS, WIDTHS, load_draws, pair_index, run_lengths
 
@@ -128,6 +129,19 @@ def multi_features(counts: np.ndarray) -> dict[str, np.ndarray]:
     }
 
 
+def next_draw_date(last: str, closed: frozenset[str] | None = None) -> str:
+    """Kỳ quay kế tiếp sau ngày ``last``: ngày lịch kế tiếp, bỏ qua các ngày nghỉ quay đã khai
+    (``data/non_draw_days.json``, ví dụ Tết). Ngày lịch kế tiếp trơn sẽ ghi dự báo cho một kỳ không có.
+    """
+    closed = known_non_draw_days() if closed is None else closed
+    day = pd.Timestamp(last) + pd.Timedelta(days=1)
+    for _ in range(366):
+        if day.strftime("%Y-%m-%d") not in closed:
+            return day.strftime("%Y-%m-%d")
+        day += pd.Timedelta(days=1)
+    raise ValueError(f"không có kỳ quay nào trong một năm sau {last}")
+
+
 @dataclass
 class Table:
     """Bảng (kỳ neo × 100 con × đặc trưng). Kỳ neo cuối là kỳ đã quay mới nhất: chưa có nhãn."""
@@ -141,8 +155,12 @@ class Table:
     special: np.ndarray        # (T,) hai số cuối giải Đặc Biệt từng kỳ
 
 
-def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None = None) -> Table:
-    """Đặc trưng của mọi kỳ neo có đủ lịch sử, ghép từ cầu kèo, cầu vị trí và nhiều nháy."""
+def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None = None, *,
+                closed: frozenset[str] | None = None) -> Table:
+    """Đặc trưng của mọi kỳ neo có đủ lịch sử, ghép từ cầu kèo, cầu vị trí và nhiều nháy.
+
+    ``closed``: ngày nghỉ quay (mặc định ``known_non_draw_days``) để tính kỳ được dự báo.
+    """
     cfg = cfg or ForecastConfig()
     ck_cfg = ck.CauKeoConfig(min_history_days=cfg.min_history_days, window_days=10**7)
     hist, _ = ck.build_cau_keo_feature_frame("loto", include_target=True, config=ck_cfg, raw=raw, two=two)
@@ -170,7 +188,7 @@ def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None
     labelled = anchors + 1 < len(counts)
     y[labelled] = (counts[anchors[labelled] + 1] >= 2).astype(float)
     special = (values[:, 0] % 100).astype(int)
-    return Table(anchors, dates, str(frame["predict_for_date"].iloc[-1]), X, y, counts, special)
+    return Table(anchors, dates, next_draw_date(dates[-1], closed), X, y, counts, special)
 
 
 # --------------------------------------------------------------------------- mô hình

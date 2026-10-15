@@ -79,6 +79,18 @@ def test_the_label_is_the_next_draw_coming_twice(planted_table) -> None:
     assert t.target_date == (pd.Timestamp(t.dates[-1]) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
 
 
+def test_the_forecast_skips_registered_non_draw_days() -> None:
+    """Dữ liệu đến 15-02 mà 16–19-02 nghỉ Tết: kỳ được dự báo là 20-02, không phải một kỳ không có."""
+    tet = frozenset({"2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19"})
+    assert mf.next_draw_date("2026-02-15", tet) == "2026-02-20"
+    assert mf.next_draw_date("2026-02-14", tet) == "2026-02-15"
+    history = mf.mock_raw_history(80, seed=4)           # 01-01 → 21-03-2026
+    last = history[1]["date"].iloc[-1]
+    closed = frozenset({(pd.Timestamp(last) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")})
+    table = mf.build_table(*history, SMALL, closed=closed)
+    assert table.target_date == (pd.Timestamp(last) + pd.Timedelta(days=2)).strftime("%Y-%m-%d")
+
+
 def test_each_block_is_scored_by_a_model_that_never_saw_it(planted_table, monkeypatch) -> None:
     seen = []
     real_fit = mf.fit
@@ -178,7 +190,7 @@ def test_the_published_forecast_is_for_the_draw_after_the_latest() -> None:
     draws, labels = m.draws_from_frame(frame)
     counts = m.counts_matrix(draws)
     assert vip["rule"] == mf.RULE and labels[vip["draws"] - 1] == vip["source_date"]
-    assert vip["target_date"] == (pd.Timestamp(vip["source_date"]) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    assert vip["target_date"] == mf.next_draw_date(vip["source_date"])
     assert len(vip["picks"]) == vip["config"]["top_k"]
     assert all(p["reasons"] for p in vip["picks"])
     assert vip["recent"]
