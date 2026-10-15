@@ -17,7 +17,7 @@ from scipy.special import logsumexp
 from vietlott_engine.core.products import PRODUCT_INFO, ProductCode, get_product
 from vietlott_engine.forecast.data import CONFIGS, DigitSpec, Series, SetSpec
 from vietlott_engine.forecast.schedule import FAST, MARGIN, VN, WEEKLY, target_draw_time
-from vlm.forecast.distribution import Law
+from vlm.forecast.distribution import COVERAGE_RULE, Law
 from vlm.forecast.features import FeatureState
 from vlm.forecast.models import GRU, OnlineLogistic, TreeExpert
 from vlm.forecast.adaptation import RunningFeatureStats
@@ -454,7 +454,8 @@ class MLForecaster:
         self.pending = {'target_id':target_id, 'target_date':day, 'target_time':target.isoformat(),
                         'based_on_id':self.last_id, 'based_on_date':self.last_date,
                         'draws_on_last_date':self.draws_on_last_date, 'history_sha256':self.prefix_hash,
-                        'made_at':made.isoformat(), 'laws':{name:comp.law(day, next_id=target_id).to_dict() for name, comp in self.components.items()}}
+                        'made_at':made.isoformat(), 'ticket_rule':COVERAGE_RULE,
+                        'laws':{name:comp.law(day, next_id=target_id).to_dict() for name, comp in self.components.items()}}
         return True
 
     def _target_context(self) -> dict:

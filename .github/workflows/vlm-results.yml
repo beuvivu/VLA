@@ -10,9 +10,22 @@ name: VLM · Tự cập nhật kết quả từng sản phẩm Vietlott
 # để kiểm và lưu thành artifact, còn trang Vietlott của site dựng từ dữ liệu này.
 on:
   schedule:
+    # Lịch của GitHub chỉ là "cố gắng tốt nhất": đo 13–15/10/2026, mốc mười phút này chạy cách
+    # nhau 1–5 giờ, kết quả Vietlott vào kho trễ trung vị 5,6–8,6 giờ. Hai đường dưới chạy đúng giờ.
     - cron: "*/10 23,0-15 * * *"
     - cron: "17 16-22 * * *"
   workflow_dispatch:
+  repository_dispatch:
+    # Đường ĐÚNG GIỜ: bộ hẹn giờ bên ngoài POST event_type "vietlott-results" sau mỗi khung quay
+    # (giờ VN: Lotto 13:15/13:35, Mega/Power/Max 18:40/19:05, Lotto 21:15/21:35) — xem
+    # documentation/operations/scheduling.md.
+    types: [vietlott-results]
+  workflow_run:
+    # Lượt chốt XSMB được bộ hẹn giờ ngoài gọi lúc 18:35; nối sau nó để bắt kỳ 18:00 của
+    # Mega/Power/Max ngay cả khi chưa đặt lịch riêng cho Vietlott.
+    workflows: ["Hoàn tất XSMB, thống kê và AI/ML"]
+    types: [completed]
+    branches: [main]
   push:
     branches: [main]
     paths:
@@ -37,6 +50,11 @@ defaults:
 
 jobs:
   results:
+    # workflow_run chỉ theo lượt XSMB trên main của chính kho; job tự checkout main nên không chạy mã lạ.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:

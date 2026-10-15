@@ -30,9 +30,12 @@ class Settings(BaseSettings):
     product_mirror_base_url: str = "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data"
     # fallback when vietlott.vn is unreachable (README §1.7)
     nhanaz_base_url: str = "https://raw.githubusercontent.com/NhanAZ-Data/vietlott-research/main/datasets"
+    xskt_base_url: str = "https://xskt.com.vn"
     nhanaz_dir: Path | None = None  # local clone / ZIP of NhanAZ-Data/vietlott-research (or the 1.3.0 product cache)
     v130_dir: Path | None = None  # Vietlott Quant Engine 1.3.0 package root (its data/products snapshot)
-    fallback_order: list[str] = ["vietlott", "nhanaz", "github_mirror", "v130"]
+    # xskt: trang đăng lại có kết quả ngay sau kỳ quay (Mega/Power/Lotto); đứng sau bản sao cộng đồng,
+    # chỉ được hỏi khi các nguồn trước không có kỳ mới. Chuỗi sản phẩm khác bỏ qua nó.
+    fallback_order: list[str] = ["vietlott", "nhanaz", "xskt", "github_mirror", "v130"]
     http_timeout_s: float = 20.0
     max_retries: int = 5
     backoff_base_s: float = 0.5

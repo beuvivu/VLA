@@ -298,11 +298,33 @@ def _symbol(product: str, numbers: list) -> str:
     return " ".join(_two(x) for x in numbers)
 
 
+def shown_forecast(data: dict) -> dict | None:
+    """Dự báo cần hiện: kỳ kế tiếp; nếu kỳ ấy ĐÃ quay mà kết quả chưa vào dữ liệu thì chính bộ số
+    đã ghi trước giờ quay, gắn ``awaiting_result``.
+
+    Engine bỏ dự báo khỏi ``next_forecast`` khi đã qua giờ quay; kỳ sau chỉ ghi được khi có kết quả.
+    Kết quả Vietlott vào kho trễ trung vị 5,6–8,6 giờ (đo 15-10-2026), nên trước đây thẻ trống
+    "Chưa có dự báo hợp lệ" gần như suốt thời gian ấy — nhất là Lotto 5/35, hai kỳ mỗi ngày.
+    """
+    if data.get("next_forecast"):
+        return data["next_forecast"]
+    latest = data.get("latest") or {}
+    if not isinstance(latest.get("draw_id"), int):
+        return None
+    for c in data.get("comparisons") or []:
+        if c.get("status") == "pending" and c.get("target_id") == latest["draw_id"] + 1 and c.get("components"):
+            return {**c, "awaiting_result": True}
+    return None
+
+
 def forecast_markup(product: str, forecast: dict | None) -> str:
     """Bộ số engine đề xuất cho kỳ kế tiếp, kèm trạng thái đăng ký."""
     if not forecast:
         return '<p class="vl-muted">Chưa có dự báo hợp lệ cho kỳ kế tiếp.</p>'
-    if forecast.get("registered"):
+    if forecast.get("awaiting_result"):
+        state = (f'<span class="vl-badge vl-badge--warn">Đã quay, đang chờ kết quả</span> bộ số ghi lúc '
+                 f'{stamp_label(forecast.get("made_at"))}')
+    elif forecast.get("registered"):
         state = (f'<span class="vl-badge vl-badge--ok">Đã đăng ký trước kỳ</span> ghi lúc '
                  f'{stamp_label(forecast.get("made_at"))}')
     else:
@@ -311,6 +333,9 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     if forecast.get("target_date"):
         target += f" · {day_label(forecast['target_date'])}"
     parts = [f'<p class="vl-forecast-head"><strong>{target}</strong> · {state}</p>']
+    if forecast.get("awaiting_result"):
+        parts.append('<p class="vl-muted">Kết quả kỳ này chưa có trong dữ liệu. Bộ số cho kỳ sau được ghi '
+                     'ngay khi kết quả về, luôn trước giờ quay.</p>')
     components = []
     for comp in forecast.get("components") or []:
         rows = []
@@ -329,9 +354,29 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
         key = comp.get("name") or ""
         label = {"main": "Bộ số chính", "special": "Số đặc biệt", "digits": "Bộ ba số", "dice": "Bộ ba số"}.get(key, key)
         components.append(f'<div class="vl-forecast-component" data-vl-component="{esc(key)}">'
-                          f'<h4 class="vl-forecast-label">{esc(label)}</h4><ol class="vl-tickets">{"".join(rows)}</ol></div>')
+                          f'<h4 class="vl-forecast-label">{esc(label)}</h4><ol class="vl-tickets">{"".join(rows)}</ol>'
+                          f'{coverage_note(comp.get("coverage"), len(rows))}</div>')
     parts.append('<div class="vl-forecast-layout"><div class="vl-forecast-components">' + "".join(components) + '</div></div>')
     return "".join(parts)
+
+
+def _pct(value: float) -> str:
+    return f"{100 * value:.1f}%".replace(".", ",")
+
+
+def coverage_note(coverage: dict | None, tickets: int) -> str:
+    """Mốc chính xác của danh mục rời nhau, in TỪ số engine tính (``coverage_summary``), không viết cứng."""
+    if not coverage:
+        return ""
+    try:
+        any2, any3 = coverage["any_ticket_ge"]["2"], coverage["any_ticket_ge"]["3"]
+        one2 = coverage["one_ticket_ge"]["2"]
+        covered, pool = int(coverage["covered"]), int(coverage["pool"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+    return (f'<p class="vl-muted vl-coverage-note">{tickets} vé rời nhau, phủ {covered}/{pool} số. Khi quay ngẫu nhiên, '
+            f'ít nhất một vé trúng từ 2 số trở lên ở {_pct(any2)} số kỳ (từ 3 số: {_pct(any3)}); một vé riêng lẻ: '
+            f'{_pct(one2)}. Xác suất của từng vé không đổi; {tickets} vé tốn {tickets} lần tiền vé.</p>')
 
 
 def _ticket_score(product: str, ticket: dict) -> tuple[int, int] | None:
@@ -415,6 +460,15 @@ def _comparison_summary(product: str, comparisons: list[dict]) -> str:
              ("Kỳ chờ kết quả", str(sum(c.get("status") == "pending" for c in comparisons)), "Chưa được đưa vào tỷ lệ"),
              ("Kỳ lệch ngày", str(sum(c.get("status") == "date_mismatch" for c in comparisons)), "Cần kiểm tra lại kỳ đối chiếu"),
              ("Tỷ lệ trùng theo từng vé", percent, detail)]
+    covered = [c for c in comparisons if c.get("status") == "matched"
+               and any(comp.get("coverage") for comp in c.get("components") or [])]
+    if covered and product in MATRIX:
+        # Chấm đúng danh mục đã phát; mốc kỳ vọng là tổng xác suất CHÍNH XÁC của từng kỳ.
+        reached = sum(max((t.get("hits") or 0 for t in c.get("tickets") or []), default=0) >= 2 for c in covered)
+        expected = sum(next(comp["coverage"]["any_ticket_ge"]["2"] for comp in c["components"] if comp.get("coverage"))
+                       for c in covered)
+        cards.append(("Kỳ có vé trúng từ 2 số", f"{reached} / {len(covered)}",
+                      f"Quay ngẫu nhiên kỳ vọng {expected:.1f} kỳ".replace(".", ",") + " · danh mục vé rời nhau"))
     return '<div class="vl-comparison-summary">' + "".join(
         f'<div class="vl-comparison-stat"><span>{esc(label)}</span><strong>{esc(value)}</strong><small>{esc(note)}</small></div>'
         for label, value, note in cards) + "</div>"
@@ -674,7 +728,7 @@ def page(product: str, data: dict | None, analysis: dict | None) -> str:
                 f'{draw_card(product, latest)}{prize_table(product, latest)}</section>'
                 '<div class="vl-cols">'
                 f'<section class="vl-section" aria-labelledby="vl-next"><h2 id="vl-next">Dự báo kỳ kế tiếp</h2>'
-                f'{forecast_markup(product, data.get("next_forecast"))}</section>'
+                f'{forecast_markup(product, shown_forecast(data))}</section>'
                 f'<section class="vl-section" aria-labelledby="vl-analysis"><h2 id="vl-analysis">Mô hình tự học có '
                 f'vượt ngẫu nhiên?</h2>{analysis_markup(analysis)}</section></div>'
                 f'<section class="vl-section" aria-labelledby="vl-compare"><h2 id="vl-compare">Đối chiếu dự báo</h2>'
@@ -701,11 +755,12 @@ def overview(dashboard: dict) -> str:
         latest = data.get("latest")
         head = (f'Kỳ #{esc(latest["draw_id"])} · {day_label(latest.get("draw_date"))}' if latest else "Chưa có kết quả")
         result = f'<div class="vl-result">{result_markup(code, latest)}</div>' if latest else ""
-        nxt = data.get("next_forecast")
+        nxt = shown_forecast(data)
         follow = ""
         if nxt:
-            follow = (f'<p>Dự báo kỳ #{esc(nxt.get("target_id"))}: '
-                      + ("đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo") + "</p>")
+            state = ("đã quay, đang chờ kết quả" if nxt.get("awaiting_result")
+                     else "đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo")
+            follow = f'<p>Dự báo kỳ #{esc(nxt.get("target_id"))}: {state}</p>'
         ev = (analysis.get(code) or {}).get("evidence") or {}
         signal = " · có tín hiệu thống kê" if ev.get("found") else ""
         tiles.append(f'<a class="vl-tile" href="{file}"><div class="vl-tile-heading"><h2>{esc(name)}</h2>'

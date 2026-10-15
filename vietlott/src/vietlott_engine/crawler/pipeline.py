@@ -170,6 +170,10 @@ def build_source(settings: Settings, client: AsyncHttpClient | None, kind: str |
         return FallbackDrawSource(chain, settings.source_timeout_s)
     if kind == "github_mirror":
         return GithubMirrorSource(client, settings.github_mirror_base_url)
+    if kind == "xskt":
+        from vietlott_engine.crawler.sources.xskt import XsktDrawSource
+
+        return XsktDrawSource(client, settings.xskt_base_url)
     if kind == "vietlott":
         return VietlottOfficialSource(client, settings.vietlott_base_url, settings.official_max_pages, settings.max_concurrency, bootstrap_cookie=settings.vietlott_cookie_bootstrap)
     raise ValueError(f"unknown source {kind!r}")

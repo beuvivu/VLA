@@ -925,7 +925,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("sync", help="download draws into DuckDB/Parquet")
     s.add_argument("--game", default="all", choices=game_choices)
-    s.add_argument("--source", choices=["github_mirror", "vietlott", "file", "nhanaz", "v130", "auto"])
+    s.add_argument("--source", choices=["github_mirror", "vietlott", "file", "nhanaz", "xskt", "v130", "auto"])
     s.add_argument("--path", help="directory or .jsonl file for --source file; archive / 1.3.0 folder for nhanaz / v130")
     s.add_argument("--full", action="store_true", help="re-download everything")
     s.set_defaults(func=cmd_sync)

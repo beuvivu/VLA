@@ -533,3 +533,70 @@ def test_missing_finance_describes_missing_data_without_claiming_nonpublication(
     assert 'chưa có dữ liệu' in table.caption.get_text().lower()
     assert 'chưa có dữ liệu' in card.select_one('.vl-jackpot-note').get_text().lower()
     assert 'chưa công bố' not in card.get_text().lower()
+
+
+def _lotto_waiting(target_id: int = 947) -> dict:
+    latest = _matrix(946, None, numbers=(9, 10, 18, 28, 35), bonus=7)
+    pending = {"status": "pending", "product": "lotto535", "target_id": target_id, "target_date": "2026-10-15",
+               "target_time": "2026-10-15T13:00:00+07:00", "made_at": "2026-10-15T00:34:42+07:00",
+               "registered": True, "engine": "ml", "tickets": [],
+               "components": [{"name": "main", "kind": "set", "top": [{"numbers": [3, 8, 14, 22, 31]}]},
+                              {"name": "special", "kind": "set", "top": [{"numbers": [5]}]}]}
+    return {"product": "lotto535", "latest": latest, "draws": [latest], "next_forecast": None,
+            "comparisons": [pending]}
+
+
+def test_a_drawn_target_waiting_for_its_result_shows_the_numbers_registered_before_the_draw() -> None:
+    """Kết quả về trễ hàng giờ: thẻ không còn "Chưa có dự báo hợp lệ" mà hiện chính bộ số đã ghi."""
+    data = _lotto_waiting()
+    shown = b.shown_forecast(data)
+    assert shown["target_id"] == 947 and shown["awaiting_result"]
+    soup = BeautifulSoup(b.forecast_markup("lotto535", shown), "html.parser")
+    text = soup.get_text(" ", strip=True)
+    assert "Kỳ #947" in text and "Đã quay, đang chờ kết quả" in text and "00:34 15/10/2026" in text
+    assert [x.get_text() for x in soup.select(".vl-ball")] == ["03", "08", "14", "22", "31", "05"]
+    assert "Chưa có dự báo hợp lệ" not in text
+    # Chỉ mượn đúng kỳ kế tiếp của kỳ mới nhất, không lấy một kỳ chờ nào khác.
+    assert b.shown_forecast(_lotto_waiting(target_id=945)) is None
+    assert b.shown_forecast({**data, "next_forecast": {"target_id": 948}})["target_id"] == 948
+
+
+def test_the_overview_card_shows_the_waiting_forecast(tmp_path: Path) -> None:
+    dashboard = _dashboard()
+    dashboard["products"][1] = {**dashboard["products"][1], **_lotto_waiting()}
+    page = BeautifulSoup((b.build(tmp_path, dashboard=dashboard)[0].parent / "vietlott.html").read_text(encoding="utf-8"),
+                         "html.parser")
+    section = page.find(id="vl-predictions").find_parent("section")
+    card = next(a for a in section.select(".app-vietlott-card") if "Lotto 5/35" in a.get_text())
+    assert "Đã quay, đang chờ kết quả" in card.get_text() and "Chưa có dự báo hợp lệ" not in card.get_text()
+
+
+COVERAGE = {"rule": "coverage-v1", "covered": 30, "pool": 45,
+            "any_ticket_ge": {"2": 0.70948, "3": 0.11868}, "one_ticket_ge": {"2": 0.17528, "3": 0.02383}}
+
+
+def test_the_coverage_note_prints_the_engine_exact_rates_not_hard_coded_ones() -> None:
+    forecast = {"target_id": 1577, "registered": True, "made_at": "2026-10-16T19:30:00+07:00",
+                "components": [{"name": "main", "kind": "set", "coverage": COVERAGE,
+                                "top": [{"numbers": list(range(1 + 6 * j, 7 + 6 * j))} for j in range(5)]}]}
+    text = BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text(" ", strip=True)
+    assert "5 vé rời nhau, phủ 30/45 số" in text and "70,9%" in text and "11,9%" in text and "17,5%" in text
+    assert "Xác suất của từng vé không đổi" in text
+    changed = {**COVERAGE, "any_ticket_ge": {"2": 0.5367, "3": 0.0665}}
+    forecast["components"][0]["coverage"] = changed
+    assert "53,7%" in BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text()
+    del forecast["components"][0]["coverage"]
+    assert "rời nhau" not in BeautifulSoup(b.forecast_markup("mega645", forecast), "html.parser").get_text()
+
+
+def test_the_summary_counts_draws_where_some_published_ticket_hit_two_numbers() -> None:
+    def matched(hits: list[int]) -> dict:
+        return {"status": "matched", "target_id": 1, "components": [{"name": "main", "coverage": COVERAGE}],
+                "tickets": [{"numbers": [1, 2, 3, 4, 5, 6], "hits": h} for h in hits]}
+    summary = BeautifulSoup(b._comparison_summary("mega645", [matched([2, 0, 0, 1, 0]), matched([1, 1, 0, 0, 0])]),
+                            "html.parser")
+    stat = next(s for s in summary.select(".vl-comparison-stat") if "Kỳ có vé trúng từ 2 số" in s.get_text())
+    assert stat.strong.get_text() == "1 / 2" and "kỳ vọng 1,4 kỳ" in stat.small.get_text()
+    plain = BeautifulSoup(b._comparison_summary("mega645", [{**matched([2]), "components": [{"name": "main"}]}]),
+                          "html.parser")
+    assert "Kỳ có vé trúng từ 2 số" not in plain.get_text()
