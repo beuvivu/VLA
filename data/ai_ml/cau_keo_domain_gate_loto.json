@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-15T15:38:26Z",
+  "generated_at": "2026-10-15T19:56:45Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -90,7 +90,7 @@
       "mean_logloss_skill": 0.00014858440406750032
     },
     "cap_50": {
-      "mean_brier_skill": 0.0001248980516742762,
+      "mean_brier_skill": 0.0001248980516741995,
       "mean_logloss_skill": 0.00011501526360278226
     },
     "bo": {
@@ -327,10 +327,10 @@
       ],
       "oos_dates": 30,
       "oos_rows": 3000,
-      "baseline_brier": 0.1789265446691045,
+      "baseline_brier": 0.17892654466910446,
       "challenger_brier": 0.17893399683708436,
-      "brier_improvement": -7.452167979871138e-06,
-      "brier_skill": -4.1649314771336526e-05,
+      "brier_improvement": -7.452167979898894e-06,
+      "brier_skill": -4.1649314771491655e-05,
       "brier_improvement_ci": {
         "confidence_level": 0.95,
         "lower": -5.8001705301587136e-05,
@@ -343,7 +343,7 @@
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
         "lower": -0.0001618809211499955,
-        "upper": 0.0001269663750231769
+        "upper": 0.00012696637502317414
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -360,10 +360,10 @@
     ],
     "oos_dates": 30,
     "oos_rows": 3000,
-    "baseline_brier": 0.1789265446691045,
+    "baseline_brier": 0.17892654466910446,
     "challenger_brier": 0.17893399683708436,
-    "brier_improvement": -7.452167979871138e-06,
-    "brier_skill": -4.1649314771336526e-05,
+    "brier_improvement": -7.452167979898894e-06,
+    "brier_skill": -4.1649314771491655e-05,
     "brier_improvement_ci": {
       "confidence_level": 0.95,
       "lower": -5.8001705301587136e-05,
@@ -376,13 +376,13 @@
     "logloss_improvement_ci": {
       "confidence_level": 0.95,
       "lower": -0.0001618809211499955,
-      "upper": 0.0001269663750231769
+      "upper": 0.00012696637502317414
     },
     "bootstrap_replicates": 1000,
     "bootstrap_seed": 20260902,
     "holdout_consumed": true
   },
-  "final_brier_skill": -4.1649314771336526e-05,
+  "final_brier_skill": -4.1649314771491655e-05,
   "final_logloss_skill": -3.950485018270192e-05,
   "all_groups_confirmation_brier_skill": 0.00033759209734341805,
   "all_groups_confirmation_logloss_skill": 0.0003184361912341686,
