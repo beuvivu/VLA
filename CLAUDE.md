@@ -373,7 +373,10 @@ yêu cầu "dựa trên dữ liệu và kinh nghiệm cầu kèo, không phải 
 `cau_keo_ml` (trừ 6 đặc trưng định danh/lịch), số cầu hai nháy (≥ 2 kỳ) và cầu LOTO (≥ 3 kỳ) đang chạy báo
 con ấy — đếm khớp `bridge_rules.find` —, và dữ liệu nhiều nháy; logistic, C chọn bằng thẩm định trong theo
 thời gian, walk-forward học lại mỗi 250 kỳ, xác suất in ra hiệu chỉnh Platt CHỈ trên lượt chọn ngoài mẫu
-của các khối trước; lý do mỗi con = đóng góp dương lớn nhất. Đo đến 15-10-2026: 2,99% so với 2,92% chọn bừa
+của các khối trước; lý do mỗi con = đóng góp dương lớn nhất. Năm con công bố do mô hình CỦA KHỐI đang chạy
+chọn (`WalkForward.forecast`) — đừng học lại trên mọi kỳ để công bố: phần tiến cứu sẽ chấm năm con khác năm
+con người đọc đã thấy. Kỳ được dự báo bỏ qua `known_non_draw_days` (`next_draw_date`), và đặc trưng thứ/tháng/
+năm của kỳ ấy tính theo đúng ngày quay (`build_cau_keo_feature_frame(next_date=...)`). Đo đến 15-10-2026: 2,99% so với 2,92% chọn bừa
 (z = +0,58), xác suất đã in TB 2,86%; kinh nghiệm cầu hai nháy ngang mức chung (0 cầu 2,94%, 1–4 cầu
 2,82%, 5+ cầu 3,95% trên 481 lần) — trang in các số ấy TỪ phép đo, đừng viết "tỉ lệ cao"
 (`documentation/research/2026-10-15-lo-vip-cau-keo.md`, `tests/test_multi_hit_forecast.py`). Đã nghỉ: bộ

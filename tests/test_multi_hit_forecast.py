@@ -101,11 +101,48 @@ def test_each_block_is_scored_by_a_model_that_never_saw_it(planted_table, monkey
 
     monkeypatch.setattr(mf, "fit", spy)
     wf = mf.walk_forward(planted_table, SMALL)
-    assert seen == [b["start"] for b in wf.blocks] == list(range(SMALL.warmup, len(planted_table.anchors) - 1,
+    assert seen == [b["start"] for b in wf.blocks] == list(range(SMALL.warmup, len(planted_table.anchors),
                                                                  SMALL.refit))
     assert (wf.rows >= SMALL.warmup).all() and wf.rows[-1] == len(planted_table.anchors) - 2
     for j, r in enumerate(wf.rows):
         assert wf.hits[j] == int(planted_table.y[r, wf.picks[j]].sum())
+
+
+@pytest.mark.parametrize("n", [130, 141])
+def test_the_published_picks_are_the_ones_scored_when_the_draw_arrives(n) -> None:
+    """Năm con công bố hôm nay (kỳ neo cuối) phải đúng là năm con walk-forward chấm khi kỳ ấy có kết
+    quả, cùng xác suất đã in — kể cả khi kỳ neo cuối mở đầu một khối mới (n = 141)."""
+    raw, two = mf.mock_raw_history(n + 1, seed=21, planted=PLANTED)
+    today = mf.walk_forward(mf.build_table(raw.iloc[:n], two.iloc[:n], SMALL), SMALL)
+    tomorrow_table = mf.build_table(raw, two, SMALL)
+    tomorrow = mf.walk_forward(tomorrow_table, SMALL)
+    row = int(np.flatnonzero(tomorrow.rows == len(tomorrow_table.anchors) - 2)[0])
+    assert list(tomorrow.picks[row]) == list(today.forecast.picks)
+    assert np.allclose(tomorrow.printed[row], today.forecast.printed)
+
+
+def test_the_forecast_row_uses_the_real_next_draw_date() -> None:
+    """Kỳ tới sau ngày nghỉ: đặc trưng cùng thứ / từ đầu tháng / đầu năm tính theo ngày quay thật."""
+    import cau_keo_ml as ck
+
+    raw, two = mf.mock_raw_history(80, seed=4)
+    last = pd.Timestamp(two["date"].iloc[-1])
+    closed = frozenset((last + pd.Timedelta(days=d)).strftime("%Y-%m-%d") for d in (1, 2, 3))
+    table = mf.build_table(raw, two, SMALL, closed=closed)
+    target = (last + pd.Timedelta(days=4)).strftime("%Y-%m-%d")
+    assert table.target_date == target
+    ck_cfg = ck.CauKeoConfig(min_history_days=SMALL.min_history_days, window_days=10**7)
+    frame, _ = ck.build_cau_keo_feature_frame("loto", include_target=False, config=ck_cfg, raw=raw, two=two,
+                                              next_date=target)
+    assert frame["predict_for_date"].iloc[0] == target
+    assert int(frame["weekday_next"].iloc[0]) == pd.Timestamp(target).weekday()
+    j = mf.FEATURES.index("same_weekday_freq_364")
+    assert np.array_equal(table.X[-1, :, j], frame["same_weekday_freq_364"].to_numpy(dtype=float))
+    naive, _ = ck.build_cau_keo_feature_frame("loto", include_target=False, config=ck_cfg, raw=raw, two=two)
+    assert not np.array_equal(naive["same_weekday_freq_364"].to_numpy(), frame["same_weekday_freq_364"].to_numpy())
+    with pytest.raises(ValueError, match="next_date"):
+        ck.build_cau_keo_feature_frame("loto", include_target=True, config=ck_cfg, raw=raw, two=two,
+                                       next_date=target)
 
 
 def test_the_printed_rate_is_calibrated_only_on_earlier_blocks(planted_table, monkeypatch) -> None:

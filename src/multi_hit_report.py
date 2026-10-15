@@ -202,21 +202,19 @@ def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastC
             "numbers_multi": multi_today,
             "expected": k * multi_today / 100,
         })
-    # Dự báo kỳ tới: học trên MỌI kỳ có nhãn, hiệu chỉnh trên mọi lượt chọn ngoài mẫu của walk-forward.
-    model = forecast.fit(table.X[:-1], table.y[:-1])
+    # Dự báo kỳ tới: mô hình và hiệu chỉnh của chính khối walk-forward chứa kỳ ấy, để ngày mai phần
+    # tiến cứu chấm đúng năm con người đọc đã thấy hôm nay.
+    fc = wf.forecast
+    model = fc.model
     last = len(table.anchors) - 1
-    scores = model.score(table.X[last:])[0]
-    calibrate = forecast.Calibrator(wf.scores.ravel(),
-                                    np.concatenate([table.y[r, p] for r, p in zip(wf.rows, wf.picks, strict=True)]))
     special = int(table.special[table.anchors[last]])
     picks = []
-    for i in forecast.rank(scores, int(table.anchors[last]) + 1)[:k]:
-        prob = float(calibrate(scores[i:i + 1])[0])
+    for i, prob in zip(fc.picks, fc.printed, strict=True):
         picks.append({
             "number": f"{i:02d}",
-            "probability": prob,
-            "x_base": prob / base,
-            "confidence": number_confidence(level, prob, base),
+            "probability": float(prob),
+            "x_base": float(prob) / base,
+            "confidence": number_confidence(level, float(prob), base),
             "reasons": forecast.reasons(model, table.X[last, i], int(i), special),
         })
     return {

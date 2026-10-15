@@ -1,6 +1,6 @@
 {
   "version": 9,
-  "generated_at": "2026-10-15T18:40:02Z",
+  "generated_at": "2026-10-15T19:13:43Z",
   "source_date": "2026-10-15",
   "target_date": "2026-10-16",
   "draws": 4236,
@@ -21,7 +21,7 @@
   },
   "model": {
     "C": 0.001,
-    "inner_gain": 2.6813175931089672e-05,
+    "inner_gain": 2.9430014870657217e-05,
     "blocks": [
       {
         "start_date": "2016-03-10",
@@ -158,8 +158,8 @@
   "picks": [
     {
       "number": "11",
-      "probability": 0.034156275142511384,
-      "x_base": 1.148278517718462,
+      "probability": 0.034320971245844156,
+      "x_base": 1.1538153333290606,
       "confidence": "Low",
       "reasons": [
         "bóng của Đặc Biệt 66",
@@ -168,8 +168,8 @@
     },
     {
       "number": "66",
-      "probability": 0.03310686854064318,
-      "x_base": 1.1129991714709722,
+      "probability": 0.03185058793950078,
+      "x_base": 1.0707650572269742,
       "confidence": "Low",
       "reasons": [
         "về ≥ 2 nháy ở kỳ mới nhất",
@@ -178,8 +178,8 @@
     },
     {
       "number": "48",
-      "probability": 0.03078945374465323,
-      "x_base": 1.0350914483432179,
+      "probability": 0.030724430365523123,
+      "x_base": 1.0329054679020533,
       "confidence": "Low",
       "reasons": [
         "cùng tổng với Đặc Biệt 66",
@@ -187,9 +187,9 @@
       ]
     },
     {
-      "number": "61",
-      "probability": 0.030487362008812982,
-      "x_base": 1.0249356146289643,
+      "number": "62",
+      "probability": 0.030571748503328867,
+      "x_base": 1.0277725515734601,
       "confidence": "Low",
       "reasons": [
         "đầu 6 về 22 lần/7 kỳ",
@@ -197,9 +197,9 @@
       ]
     },
     {
-      "number": "62",
-      "probability": 0.030396474347756695,
-      "x_base": 1.0218801190199973,
+      "number": "61",
+      "probability": 0.03046937145876087,
+      "x_base": 1.0243308015437966,
       "confidence": "Low",
       "reasons": [
         "đầu 6 về 22 lần/7 kỳ",

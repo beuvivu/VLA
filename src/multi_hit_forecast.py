@@ -163,11 +163,14 @@ def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None
     """
     cfg = cfg or ForecastConfig()
     ck_cfg = ck.CauKeoConfig(min_history_days=cfg.min_history_days, window_days=10**7)
-    hist, _ = ck.build_cau_keo_feature_frame("loto", include_target=True, config=ck_cfg, raw=raw, two=two)
-    nxt, _ = ck.build_cau_keo_feature_frame("loto", include_target=False, config=ck_cfg, raw=raw, two=two)
-    frame = pd.concat([hist, nxt], ignore_index=True)
     two_sorted = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date")
     draws, dates = draws_from_frame(two_sorted.reset_index(drop=True))
+    target = next_draw_date(dates[-1], closed)
+    hist, _ = ck.build_cau_keo_feature_frame("loto", include_target=True, config=ck_cfg, raw=raw, two=two)
+    # Kỳ tới có thể cách kỳ cuối nhiều ngày (nghỉ Tết): đặc trưng thứ/tháng/năm tính theo ngày ấy.
+    nxt, _ = ck.build_cau_keo_feature_frame("loto", include_target=False, config=ck_cfg, raw=raw, two=two,
+                                            next_date=target)
+    frame = pd.concat([hist, nxt], ignore_index=True)
     counts = counts_matrix(draws)
     index = {d: i for i, d in enumerate(dates)}
     frame["t"] = pd.to_datetime(frame["anchor_date"]).dt.strftime("%Y-%m-%d").map(index)
@@ -188,7 +191,7 @@ def build_table(raw: pd.DataFrame, two: pd.DataFrame, cfg: ForecastConfig | None
     labelled = anchors + 1 < len(counts)
     y[labelled] = (counts[anchors[labelled] + 1] >= 2).astype(float)
     special = (values[:, 0] % 100).astype(int)
-    return Table(anchors, dates, next_draw_date(dates[-1], closed), X, y, counts, special)
+    return Table(anchors, dates, target, X, y, counts, special)
 
 
 # --------------------------------------------------------------------------- mô hình
@@ -255,6 +258,16 @@ def rank(scores: np.ndarray, t: int) -> np.ndarray:
 
 
 @dataclass
+class Forecast:
+    """Năm con cho kỳ chưa quay: CÙNG mô hình và hiệu chỉnh mà walk-forward sẽ dùng để chấm kỳ ấy."""
+
+    picks: np.ndarray          # (k,)
+    scores: np.ndarray         # (k,) logit
+    printed: np.ndarray        # (k,) xác suất in ra
+    model: Model
+
+
+@dataclass
 class WalkForward:
     rows: np.ndarray           # vị trí kỳ neo được chấm trong bảng
     picks: np.ndarray          # (n, k)
@@ -262,22 +275,33 @@ class WalkForward:
     printed: np.ndarray        # (n, k) xác suất đã in (hiệu chỉnh bằng các khối trước)
     scores: np.ndarray         # (n, k) logit của các con đã chọn
     blocks: list[dict] = field(default_factory=list)
+    forecast: Forecast | None = None
 
 
 def walk_forward(table: Table, cfg: ForecastConfig | None = None) -> WalkForward:
-    """Chấm mọi kỳ neo có nhãn từ ``warmup``: mỗi khối ``refit`` kỳ dùng mô hình học trên các kỳ trước."""
+    """Chấm mọi kỳ neo có nhãn từ ``warmup``: mỗi khối ``refit`` kỳ dùng mô hình học trên các kỳ trước.
+
+    Kỳ neo cuối (chưa quay) được dự báo bằng mô hình của chính khối chứa nó, nên năm con đã công bố
+    hôm nay là đúng năm con mà walk-forward chấm khi kỳ ấy có kết quả: mô hình đầu khối chỉ học trên
+    các kỳ trước khối, và hiệu chỉnh chỉ dùng lượt chọn của các khối trước — cả hai không đổi khi sổ
+    dài thêm. Học lại trên mọi kỳ rồi công bố thì phần tiến cứu chấm một mô hình người đọc chưa thấy.
+    """
     cfg = cfg or ForecastConfig()
-    labelled = len(table.anchors) - 1          # kỳ neo cuối chưa có nhãn
+    last = len(table.anchors) - 1               # kỳ neo cuối chưa có nhãn
     rows, picks, hits, printed, scores, blocks = [], [], [], [], [], []
-    for start in range(cfg.warmup, labelled, cfg.refit):
+    forecast = None
+    for start in range(cfg.warmup, last + 1, cfg.refit):
         model = fit(table.X[:start], table.y[:start])
         calibrate = Calibrator(np.concatenate(scores).ravel() if scores else np.empty(0),
                                np.concatenate([table.y[r, p] for r, p in zip(rows, picks, strict=True)]).ravel()
                                if rows else np.empty(0))
-        stop = min(start + cfg.refit, labelled)
+        stop = min(start + cfg.refit, last + 1)
         block_scores = model.score(table.X[start:stop])
         for j, r in enumerate(range(start, stop)):
             top = rank(block_scores[j], int(table.anchors[r]) + 1)[: cfg.top_k]
+            if r == last:
+                forecast = Forecast(top, block_scores[j, top], calibrate(block_scores[j, top]), model)
+                continue
             rows.append(r)
             picks.append(top)
             hits.append(int(table.y[r, top].sum()))
@@ -287,7 +311,7 @@ def walk_forward(table: Table, cfg: ForecastConfig | None = None) -> WalkForward
     k = cfg.top_k
     return WalkForward(np.array(rows, dtype=int), np.array(picks, dtype=int).reshape(-1, k),
                        np.array(hits, dtype=int), np.array(printed, dtype=float).reshape(-1, k),
-                       np.array(scores, dtype=float).reshape(-1, k), blocks)
+                       np.array(scores, dtype=float).reshape(-1, k), blocks, forecast)
 
 
 # --------------------------------------------------------------------------- giải thích

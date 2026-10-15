@@ -58,6 +58,11 @@ Có 42 đặc trưng, mọi đặc trưng của kỳ t chỉ đọc các kỳ �
 - **Xác suất in ra:** hiệu chỉnh Platt chỉ trên các lượt chọn ngoài mẫu của những khối TRƯỚC, nên
   "xác suất đã in" so được với tỉ lệ trúng thật.
 - **Lý do mỗi con:** các tín hiệu có đóng góp dương lớn nhất, tức hệ số × giá trị đã chuẩn hoá.
+- **Năm con công bố:** do chính mô hình và hiệu chỉnh của khối walk-forward đang chạy chọn, không phải
+  một mô hình học lại trên mọi kỳ. Nhờ vậy khi kỳ ấy có kết quả, phần kiểm chứng (và e-process tiến
+  cứu) chấm đúng năm con người đọc đã thấy (theo review Codex trên PR #171).
+- **Kỳ được dự báo:** kỳ quay kế tiếp, bỏ qua ngày nghỉ đã khai trong `data/non_draw_days.json`. Đặc
+  trưng cùng thứ / từ đầu tháng / từ đầu năm của kỳ ấy tính theo đúng ngày quay đó.
 - **Đặc trưng cầu kèo:** `cau_keo_ml.build_cau_keo_feature_frame` nay nhận `raw`/`two` truyền vào,
   để phép kiểm chạy được trên lịch sử giả định. Bỏ trống thì vẫn đọc sổ thật như cũ.
 
@@ -76,11 +81,11 @@ Dự báo cho kỳ 16-10-2026:
 
 | Con | Xác suất | Lý do |
 |---|---|---|
-| 11 | 3,42% | bóng của Đặc Biệt 66, cùng tổng |
-| 66 | 3,31% | về ≥ 2 nháy kỳ mới nhất, cùng tổng |
-| 48 | 3,08% | cùng tổng, về 28/90 kỳ |
+| 11 | 3,43% | bóng của Đặc Biệt 66, cùng tổng |
+| 66 | 3,19% | về ≥ 2 nháy kỳ mới nhất, cùng tổng |
+| 48 | 3,07% | cùng tổng, về 28/90 kỳ |
+| 62 | 3,06% | đầu 6 nóng, cùng đầu với Đặc Biệt |
 | 61 | 3,05% | đầu 6 nóng, cùng đầu với Đặc Biệt |
-| 62 | 3,04% | đầu 6 nóng, cùng đầu với Đặc Biệt |
 
 **Kết luận trung thực:** trang nay là phỏng đoán cho kỳ sau, dựng từ đúng dữ liệu và kinh nghiệm cầu
 kèo chủ dự án muốn. Nhưng cả kinh nghiệm cầu lẫn mô hình gộp đều không đưa tỉ lệ về ≥ 2 nháy lên rõ

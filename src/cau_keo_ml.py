@@ -336,12 +336,17 @@ def build_cau_keo_feature_frame(
     config: CauKeoConfig,
     raw: pd.DataFrame | None = None,
     two: pd.DataFrame | None = None,
+    next_date: str | pd.Timestamp | None = None,
 ) -> tuple[pd.DataFrame, pd.Series | None]:
     """Build explainable calendar-safe cầu-kèo features.
 
     ``raw``/``two`` (đủ cả hai) thay cho sổ kết quả của ``Lottery``: cùng khuôn ``xsmb.csv`` và
-    ``xsmb-2-digits.csv``. Bỏ trống thì đọc sổ thật như trước.
+    ``xsmb-2-digits.csv``. Bỏ trống thì đọc sổ thật như trước. ``next_date`` (chỉ khi
+    ``include_target=False``): ngày của kỳ được dự báo khi nó không phải ngày lịch kế tiếp (kỳ nghỉ
+    quay); các đặc trưng theo thứ/tháng/năm của kỳ đích tính theo ngày ấy.
     """
+    if next_date is not None and include_target:
+        raise ValueError("next_date chỉ dùng cho khung dự báo kỳ tới (include_target=False)")
     if (raw is None) != (two is None):
         raise ValueError("raw và two phải cùng được truyền, hoặc cùng bỏ trống")
     if raw is None:
@@ -438,6 +443,8 @@ def build_cau_keo_feature_frame(
         target_date = (
             dates[t + 1]
             if include_target
+            else pd.Timestamp(next_date).normalize()
+            if next_date is not None
             else dates[t] + pd.Timedelta(days=1)
         )
         target_weekday = int(target_date.weekday())

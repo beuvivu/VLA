@@ -521,10 +521,12 @@ def method_card(vip: dict) -> str:
         f"100 kỳ) — {cfg['features']} đặc trưng.",
         "Hồi quy logistic trên đặc trưng đã chuẩn hoá, nhãn là kỳ sau về ≥ 2 nháy. Độ điều chuẩn chọn "
         f"trên lưới {', '.join(_num(c, 4) for c in cfg['c_grid'])} bằng log-loss của 20% kỳ cuối trong "
-        f"phần huấn luyện; lần học cho kỳ tới chọn C = {_num(vip['model']['C'], 4)}, hơn dự báo hằng số "
+        f"phần huấn luyện; mô hình của khối đang chạy chọn C = {_num(vip['model']['C'], 4)}, hơn dự báo hằng số "
         f"{_num(vip['model']['inner_gain'] * 1e6, 1)} phần triệu log-loss trên lát thẩm định ấy.",
         f"Walk-forward: học lại mỗi {cfg['refit']} kỳ trên mọi kỳ trước đó (khởi động {cfg['warmup']} kỳ), "
-        "nên mỗi kỳ được chấm bằng mô hình chưa thấy kỳ ấy. Xác suất in cạnh mỗi con là hiệu chỉnh "
+        "nên mỗi kỳ được chấm bằng mô hình chưa thấy kỳ ấy. Năm con của kỳ tới do chính mô hình của khối "
+        "đang chạy chọn, nên khi kỳ ấy có kết quả, phần kiểm chứng chấm đúng năm con đã in hôm nay. "
+        "Xác suất in cạnh mỗi con là hiệu chỉnh "
         "Platt trên các lượt chọn NGOÀI MẪU của những khối trước; «xác suất đã in» trong phần kết luận "
         "là chính các số đã in ấy, đặt cạnh tỉ lệ trúng thật.",
         "Lý do của từng con là các tín hiệu đẩy con ấy lên nhiều nhất: hệ số của mô hình × giá trị đã "
