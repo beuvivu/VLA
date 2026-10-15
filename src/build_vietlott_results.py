@@ -298,9 +298,18 @@ def _symbol(product: str, numbers: list) -> str:
     return " ".join(_two(x) for x in numbers)
 
 
-def shown_forecast(data: dict) -> dict | None:
-    """Dự báo cần hiện: kỳ kế tiếp; nếu kỳ ấy ĐÃ quay mà kết quả chưa vào dữ liệu thì chính bộ số
-    đã ghi trước giờ quay, gắn ``awaiting_result``.
+def _drawn(target_time: object, now: object) -> bool | None:
+    """Kỳ đã tới giờ quay lúc dựng trang chưa; None khi thiếu hay không đọc được một trong hai mốc."""
+    try:
+        return datetime.fromisoformat(str(now)) >= datetime.fromisoformat(str(target_time))
+    except (TypeError, ValueError):
+        return None
+
+
+def shown_forecast(data: dict, now: str | None = None) -> dict | None:
+    """Dự báo cần hiện: kỳ kế tiếp; nếu kỳ ấy đã qua mốc khoá mà kết quả chưa vào dữ liệu thì chính
+    bộ số đã ghi trước giờ quay, gắn ``awaiting_result`` và ``drawn`` (so ``now`` — giờ dựng trang —
+    với giờ quay: engine chuyển dự báo sang "chờ" từ 5 phút TRƯỚC giờ quay, khi kỳ chưa quay).
 
     Engine bỏ dự báo khỏi ``next_forecast`` khi đã qua giờ quay; kỳ sau chỉ ghi được khi có kết quả.
     Kết quả Vietlott vào kho trễ trung vị 5,6–8,6 giờ (đo 15-10-2026), nên trước đây thẻ trống
@@ -313,7 +322,7 @@ def shown_forecast(data: dict) -> dict | None:
         return None
     for c in data.get("comparisons") or []:
         if c.get("status") == "pending" and c.get("target_id") == latest["draw_id"] + 1 and c.get("components"):
-            return {**c, "awaiting_result": True}
+            return {**c, "awaiting_result": True, "drawn": _drawn(c.get("target_time"), now)}
     return None
 
 
@@ -322,7 +331,9 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
     if not forecast:
         return '<p class="vl-muted">Chưa có dự báo hợp lệ cho kỳ kế tiếp.</p>'
     if forecast.get("awaiting_result"):
-        state = (f'<span class="vl-badge vl-badge--warn">Đã quay, đang chờ kết quả</span> bộ số ghi lúc '
+        label = {True: "Đã quay, đang chờ kết quả", False: "Sắp quay, bộ số đã khoá"}.get(
+            forecast.get("drawn"), "Đã khoá, đang chờ kết quả")
+        state = (f'<span class="vl-badge vl-badge--warn">{label}</span> bộ số ghi lúc '
                  f'{stamp_label(forecast.get("made_at"))}')
     elif forecast.get("registered"):
         state = (f'<span class="vl-badge vl-badge--ok">Đã đăng ký trước kỳ</span> ghi lúc '
@@ -334,8 +345,10 @@ def forecast_markup(product: str, forecast: dict | None) -> str:
         target += f" · {day_label(forecast['target_date'])}"
     parts = [f'<p class="vl-forecast-head"><strong>{target}</strong> · {state}</p>']
     if forecast.get("awaiting_result"):
-        parts.append('<p class="vl-muted">Kết quả kỳ này chưa có trong dữ liệu. Bộ số cho kỳ sau được ghi '
-                     'ngay khi kết quả về, luôn trước giờ quay.</p>')
+        parts.append('<p class="vl-muted">' + ("Bộ số đã khoá trước giờ quay và được đối chiếu ngay khi có kết quả."
+                                                if forecast.get("drawn") is False else
+                                                "Kết quả kỳ này chưa có trong dữ liệu. Bộ số cho kỳ sau được ghi ngay "
+                                                "khi kết quả về, luôn trước giờ quay.") + '</p>')
     components = []
     for comp in forecast.get("components") or []:
         rows = []
@@ -701,7 +714,7 @@ def comparison_widget(product: str) -> str:
             '<noscript><p class="vl-muted">Bật JavaScript để đối chiếu bộ số vừa nhập.</p></noscript></form></section>')
 
 
-def page(product: str, data: dict | None, analysis: dict | None) -> str:
+def page(product: str, data: dict | None, analysis: dict | None, now: str | None = None) -> str:
     name, file, desc = PRODUCTS[product]
     latest = (data or {}).get("latest")
     draws = (data or {}).get("draws") or []
@@ -728,7 +741,7 @@ def page(product: str, data: dict | None, analysis: dict | None) -> str:
                 f'{draw_card(product, latest)}{prize_table(product, latest)}</section>'
                 '<div class="vl-cols">'
                 f'<section class="vl-section" aria-labelledby="vl-next"><h2 id="vl-next">Dự báo kỳ kế tiếp</h2>'
-                f'{forecast_markup(product, shown_forecast(data))}</section>'
+                f'{forecast_markup(product, shown_forecast(data, now))}</section>'
                 f'<section class="vl-section" aria-labelledby="vl-analysis"><h2 id="vl-analysis">Mô hình tự học có '
                 f'vượt ngẫu nhiên?</h2>{analysis_markup(analysis)}</section></div>'
                 f'<section class="vl-section" aria-labelledby="vl-compare"><h2 id="vl-compare">Đối chiếu dự báo</h2>'
@@ -755,11 +768,11 @@ def overview(dashboard: dict) -> str:
         latest = data.get("latest")
         head = (f'Kỳ #{esc(latest["draw_id"])} · {day_label(latest.get("draw_date"))}' if latest else "Chưa có kết quả")
         result = f'<div class="vl-result">{result_markup(code, latest)}</div>' if latest else ""
-        nxt = shown_forecast(data)
+        nxt = shown_forecast(data, dashboard.get("generated_at"))
         follow = ""
         if nxt:
-            state = ("đã quay, đang chờ kết quả" if nxt.get("awaiting_result")
-                     else "đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo")
+            state = (("sắp quay, bộ số đã khoá" if nxt.get("drawn") is False else "đang chờ kết quả")
+                     if nxt.get("awaiting_result") else "đã đăng ký trước kỳ" if nxt.get("registered") else "tham khảo")
             follow = f'<p>Dự báo kỳ #{esc(nxt.get("target_id"))}: {state}</p>'
         ev = (analysis.get(code) or {}).get("evidence") or {}
         signal = " · có tín hiệu thống kê" if ev.get("found") else ""
@@ -805,7 +818,7 @@ def build(root: Path = ROOT, *, dashboard: dict | None = None, cache_states: Pat
     write_page(out[0], overview(dashboard))
     for code, (_name, file, _desc) in PRODUCTS.items():
         target = docs / file
-        write_page(target, page(code, by_code.get(code), analysis.get(code)))
+        write_page(target, page(code, by_code.get(code), analysis.get(code), dashboard.get("generated_at")))
         out.append(target)
     return out
 

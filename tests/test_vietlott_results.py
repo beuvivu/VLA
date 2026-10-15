@@ -549,8 +549,8 @@ def _lotto_waiting(target_id: int = 947) -> dict:
 def test_a_drawn_target_waiting_for_its_result_shows_the_numbers_registered_before_the_draw() -> None:
     """Kết quả về trễ hàng giờ: thẻ không còn "Chưa có dự báo hợp lệ" mà hiện chính bộ số đã ghi."""
     data = _lotto_waiting()
-    shown = b.shown_forecast(data)
-    assert shown["target_id"] == 947 and shown["awaiting_result"]
+    shown = b.shown_forecast(data, "2026-10-15T17:44:00+07:00")
+    assert shown["target_id"] == 947 and shown["awaiting_result"] and shown["drawn"] is True
     soup = BeautifulSoup(b.forecast_markup("lotto535", shown), "html.parser")
     text = soup.get_text(" ", strip=True)
     assert "Kỳ #947" in text and "Đã quay, đang chờ kết quả" in text and "00:34 15/10/2026" in text
@@ -561,8 +561,18 @@ def test_a_drawn_target_waiting_for_its_result_shows_the_numbers_registered_befo
     assert b.shown_forecast({**data, "next_forecast": {"target_id": 948}})["target_id"] == 948
 
 
+def test_the_pre_draw_lock_window_is_not_called_drawn() -> None:
+    """Engine chuyển dự báo sang "chờ" từ 5 phút TRƯỚC giờ quay: lúc ấy kỳ chưa quay."""
+    early = b.shown_forecast(_lotto_waiting(), "2026-10-15T12:57:00+07:00")
+    text = BeautifulSoup(b.forecast_markup("lotto535", early), "html.parser").get_text(" ", strip=True)
+    assert early["drawn"] is False and "Sắp quay, bộ số đã khoá" in text and "Đã quay" not in text
+    unknown = BeautifulSoup(b.forecast_markup("lotto535", b.shown_forecast(_lotto_waiting())), "html.parser").get_text()
+    assert "Đã khoá, đang chờ kết quả" in unknown and "Đã quay" not in unknown
+
+
 def test_the_overview_card_shows_the_waiting_forecast(tmp_path: Path) -> None:
     dashboard = _dashboard()
+    dashboard["generated_at"] = "2026-10-15T17:44:00+07:00"
     dashboard["products"][1] = {**dashboard["products"][1], **_lotto_waiting()}
     page = BeautifulSoup((b.build(tmp_path, dashboard=dashboard)[0].parent / "vietlott.html").read_text(encoding="utf-8"),
                          "html.parser")

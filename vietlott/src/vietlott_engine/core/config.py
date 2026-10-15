@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # --- crawler
     http_backend: Literal["httpx", "curl_cffi"] = "httpx"
-    source: Literal["github_mirror", "vietlott", "file", "nhanaz", "v130", "auto"] = "github_mirror"
+    source: Literal["github_mirror", "vietlott", "file", "nhanaz", "xskt", "v130", "auto"] = "github_mirror"
     github_mirror_base_url: str = "https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data"
     prize_winners_base_url: str = "https://raw.githubusercontent.com/Compal123/vietlot-ai/main/data"
     prize_power_history_url: str = "https://raw.githubusercontent.com/leoodz/vn-vietlott/main/results/power6x55.json"

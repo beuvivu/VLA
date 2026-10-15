@@ -133,3 +133,11 @@ def test_the_default_chain_asks_xskt_after_the_archive_and_only_for_matrix_games
     products = ProductSyncPipeline(object(), object(), vietlott_base_url="", mirror_base_url="", canonical_base_url="",  # type: ignore[arg-type]
                                    fallback_order=order)
     assert "xskt" not in products.chain(ProductCode.MAX3D)
+
+
+def test_the_source_can_be_chosen_through_the_environment(monkeypatch):
+    """``VQE_SOURCE=xskt`` phải qua được kiểm cấu hình, không chỉ cờ dòng lệnh."""
+    monkeypatch.setenv("VQE_SOURCE", "xskt")
+    settings = Settings()
+    assert settings.source == "xskt"
+    assert isinstance(build_source(settings, object()), XsktDrawSource)  # type: ignore[arg-type]
