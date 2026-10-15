@@ -18,6 +18,11 @@ from vietlott_engine.game_theory.popularity import elementary_symmetric
 #: mọi nơi chấm vé đã phát phải gọi đúng số này, không gọi ``top(1)``.
 PUBLISHED_TOP_N = 5
 
+#: Quy tắc dựng các vé công bố từ luật đã ghi trước kỳ quay (từ 15-10-2026). Ghi vào sổ CÙNG lần ghi
+#: luật (``pending['ticket_rule']``), nên lượt chấm biết vé nào đã thật sự được phát; dự báo ghi trước
+#: ngày ấy không có khoá này và giữ ``Law.top`` — không kỳ cũ nào bị chấm lại bằng quy tắc mới.
+COVERAGE_RULE = 'coverage-v1'
+
 
 class Law:
     def __init__(self, spec: SetSpec | DigitSpec, values: np.ndarray, mixture: np.ndarray):
@@ -155,3 +160,25 @@ class Law:
 
     def to_dict(self) -> dict:
         return {'values':self.values.tolist(), 'mixture':self.mixture.tolist()}
+
+
+def coverage_tickets(law: Law, count: int = PUBLISHED_TOP_N) -> list[list[int]]:
+    """``count`` vé RỜI NHAU từ ``count·k`` số có xác suất biên cao nhất, chia xoay vòng theo hạng.
+
+    Vì sao không dùng ``Law.top``: luật ML gần như đều (trọng số lớn nhất/nhỏ nhất ≈ 1,01), nên các
+    bộ xác suất cao nhất chung nhau 5/6 số — năm vé gần như là MỘT vé — và khi một đặc trưng nhị phân
+    có hệ số nhiễu lớn nhất (``lag2`` ở Power ngày 14-10-2026) thì bộ đầu chép nguyên một kỳ cũ.
+    Với số vé cố định, vé rời nhau làm cực đại xác suất "ít nhất một vé trúng ≥ 2 số" (dò cục bộ trên
+    ``hits.any_ticket_tail`` không tìm được cách xếp nào hơn); xác suất của TỪNG vé và tổng số trùng
+    kỳ vọng không đổi. Chia xoay vòng (vé j nhận hạng j, j + count, …) để không vé nào gom cả nhóm số
+    đầu bảng — nhóm ấy thường là một kỳ cũ khi hệ số nhiễu rơi vào ``lag1``/``lag2``.
+
+    Raises:
+        ValueError: luật không phải bộ số, hoặc ``count·k`` vượt số số trong lồng cầu.
+    """
+    spec = law.spec
+    if not isinstance(spec, SetSpec) or count < 1 or count * spec.k > spec.n:
+        raise ValueError('Vé rời nhau cần luật bộ số và count·k ≤ n')
+    marginals = law.marginals()
+    order = sorted(range(spec.n), key=lambda i: (-float(marginals[i]), i))[:count * spec.k]
+    return [sorted(int(i) + 1 for i in order[j::count]) for j in range(count)]

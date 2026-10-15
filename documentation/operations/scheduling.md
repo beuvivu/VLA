@@ -115,6 +115,7 @@ Gọi từ một bộ lập lịch bên ngoài. Cả hai workflow nay nhận
 |---|---|
 | `live-results.yml` | `live-window` |
 | `update-data.yml` | `daily-finalize` |
+| `vlm-results.yml` (kết quả Vietlott) | `vietlott-results` |
 
 ### Bước 1 — tạo token
 
@@ -133,6 +134,21 @@ curl -X POST \
 
 Đặt lệnh trên chạy lúc **18:05 giờ Việt Nam** (11:05 UTC) cho `live-window`, và
 **18:35 giờ Việt Nam** (11:35 UTC) cho `daily-finalize`.
+
+Vietlott (`"event_type":"vietlott-results"`), sau từng khung quay, mỗi khung hai lần phòng
+nguồn đăng chậm:
+
+| Giờ Việt Nam | UTC | Bắt kỳ |
+|---|---|---|
+| 13:15 và 13:35 | 06:15 và 06:35 | Lotto 5/35 13:00 |
+| 18:40 và 19:05 | 11:40 và 12:05 | Mega 6/45, Power 6/55, Max 3D, Max 3D Pro 18:00 |
+| 21:15 và 21:35 | 14:15 và 14:35 | Lotto 5/35 21:00 |
+
+Chưa đặt các mốc này thì `vlm-results.yml` vẫn chạy ngay sau lượt `daily-finalize` (nối bằng
+`workflow_run`), nên kỳ 18:00 không phải chờ lịch của GitHub. Đo 13–15/10/2026 trước khi có hai
+đường này: lịch "mỗi 10 phút" của GitHub chạy cách nhau 1–5 giờ, kết quả Vietlott vào kho trễ
+trung vị 5,6 giờ (Mega) đến 8,6 giờ (Lotto 5/35), có kỳ 34 giờ; dự báo Lotto kỳ 21:00 gần như
+không bao giờ kịp ghi trước giờ quay.
 
 ### Bước 3 — chọn nơi chạy lệnh
 

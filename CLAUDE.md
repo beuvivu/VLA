@@ -332,6 +332,17 @@ dùng nó. Benchmark và bảng điều khiển phải chấm ĐÚNG vé đã ph
 bảng điều khiển), legacy là 6 số π cao nhất.
 Checkpoint ML version 3: `pair_link`/`triple_link` không gộp tần suất của chính số ấy (bản cũ tương quan 0,99
 với `lag1`). Trang Vietlott in "chọn bừa k/n" cạnh tỷ lệ trùng theo vé (`FAIR_MATCH_RATE`).
+Vé công bố từ 15-10-2026 (`ticket_rule = coverage-v1`, ghi vào `pending` CÙNG lần ghi luật): năm vé RỜI NHAU
+chia xoay vòng từ 30 số (Lotto: 25) có xác suất biên cao nhất (`distribution.coverage_tickets`). Luật ML gần
+đều nên `Law.top` cho năm vé chung 5/6 số, và ngày 14-10-2026 hệ số nhiễu của `lag2` đẩy vé đầu Power chép
+nguyên kỳ #1409. Với cùng năm vé, "ít nhất một vé trúng ≥ 2 số" lên 70,9% (Mega), 53,7% (Power), 61,1%
+(Lotto) — dò cục bộ không tìm được cách xếp nào hơn; xác suất TỪNG vé không đổi, đừng nói là "tăng xác suất
+trúng". Lần ghi KHÔNG có khoá ấy giữ `Law.top` (không chấm lại kỳ cũ bằng quy tắc mới); benchmark H đã đăng
+ký vẫn chấm `Law.top`. Mốc in trên trang lấy từ `dashboard.coverage_summary` (`hits.any_ticket_tail`), không
+viết cứng. Kỳ đã qua giờ quay mà chưa có kết quả: thẻ hiện chính bộ số đã ghi, nhãn "Đã quay, đang chờ kết
+quả" (`build_vietlott_results.shown_forecast`). Kết quả Mega/Power/Lotto: chuỗi `auto` hỏi `xskt` (trang
+đăng lại, đọc được từ runner) SAU bản sao NhanAZ (trễ hàng giờ); `vlm-results.yml` nhận `repository_dispatch`
+`vietlott-results` và chạy sau lượt `daily-finalize` — lịch mười phút của GitHub chạy cách nhau 1–5 giờ.
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 

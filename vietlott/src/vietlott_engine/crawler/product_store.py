@@ -188,6 +188,8 @@ class ProductSyncPipeline:
                 continue
             if s == "vietlott" and product == ProductCode.MAX4D:
                 continue  # discontinued: no live list
+            if s == "xskt":
+                continue  # chỉ có Mega/Power/Lotto (đường SyncPipeline), không có sản phẩm này
             out.append(s)
         return out
 

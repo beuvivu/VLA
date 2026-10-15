@@ -66,7 +66,7 @@ def overview_sections(dashboard: dict) -> str:
         data = by_code.get(code, {})
         model = analysis.get(code) or {}
         evidence = model.get('evidence') or {}
-        forecast = data.get('next_forecast')
+        forecast = b.shown_forecast(data, dashboard.get('generated_at'))
         heading = f'<h3><a href="{file}">{escape(name)}</a></h3>'
         prediction_cards.append('<article class="app-vietlott-card">' + heading + b.forecast_markup(code, forecast) + '</article>')
         confidence_cards.append('<article class="app-vietlott-card">' + heading

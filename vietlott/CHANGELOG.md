@@ -1,5 +1,10 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — vé công bố rời nhau, nguồn kết quả nhanh (15-10-2026)
+
+- **Vé công bố:** lần ghi mới mang `ticket_rule = coverage-v1`; bảng điều khiển dựng năm vé rời nhau từ luật đã ghi (`distribution.coverage_tickets`) kèm mốc chính xác "ít nhất một vé ≥ 2/≥ 3 số" (`dashboard.coverage_summary`). Mega 30,6% → 70,9%, Power 22,2% → 53,7% với cùng năm vé; xác suất từng vé không đổi. Lần ghi cũ giữ `Law.top`.
+- **Nguồn `xskt`** cho Mega/Power/Lotto (`crawler/sources/xskt.py`), đứng sau bản sao NhanAZ trong `fallback_order`; trang không đọc được báo lỗi để chuỗi hỏi nguồn sau. Chuỗi sản phẩm (Max 3D, Keno…) bỏ qua nó.
+
 ## Chưa phát hành — kiểm chứng xác suất và số khớp H (13-10-2026)
 
 - **Sửa đặc trưng ML:** `pair_link`/`triple_link` không còn gộp tần suất của chính số ấy (đường chéo); checkpoint ML lên version 3, bản cũ được học lại.

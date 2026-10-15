@@ -86,23 +86,54 @@ class FallbackDrawSource(DrawSource):
         self.log = FallbackLog()
 
     async def fetch(self, spec: GameSpec, since_id: int | None = None) -> FetchResult:
+        """Nguồn ĐẦU TIÊN có kỳ mới quyết định các kỳ nó đưa; nguồn sau chỉ NỐI THÊM kỳ liền mạch
+        ngay sau kỳ cao nhất đã có, không bao giờ thay một kỳ nguồn trước đã đưa.
+
+        Dừng ở nguồn đầu tiên thì một bản sao bắt kịp một phần (có #927, chưa có #928) che mất kỳ mà
+        nguồn sau đã có, và kho trễ thêm một lượt chạy — đúng lúc đang bù các lượt bị lỡ.
+        """
         self.log = FallbackLog()
         empty = None
+        result: FetchResult | None = None
+        used: list[str] = []
         for src in self.sources:
+            # Nguồn sau được hỏi từ đuôi kết quả đã gộp: trang chỉ giữ vài kỳ gần nhất (xskt) vẫn
+            # nối được khi các nguồn trước đã lấp đoạn giữa.
+            cursor = result.draws[-1].draw_id if result is not None else since_id
             try:
-                res = await asyncio.wait_for(src.fetch(spec, since_id), self.source_timeout_s)
+                res = await asyncio.wait_for(src.fetch(spec, cursor), self.source_timeout_s)
             except (SourceError, OSError, KeyError, ValueError, TimeoutError) as exc:
                 msg = (str(exc).splitlines() or [type(exc).__name__])[0][:300]
                 log.warning("%s: source %s failed (%s); trying the next one", spec.code.value, src.name, msg)
                 self.log.attempts.append(Attempt(src.name, False, error=msg))
                 continue
-            if not res.draws:
-                self.log.attempts.append(Attempt(src.name, False, error='no newer draws'))
-                empty = empty or res
+            if result is None:
+                if not res.draws:
+                    self.log.attempts.append(Attempt(src.name, False, error='no newer draws'))
+                    empty = empty or res
+                    continue
+                result = FetchResult(draws=sorted(res.draws, key=lambda d: d.draw_id), rejected=list(res.rejected))
+                self.log.attempts.append(Attempt(src.name, True, rows=len(res.draws)))
+                used.append(src.name)
                 continue
-            self.log.attempts.append(Attempt(src.name, True, rows=len(res.draws)))
-            self.name = f"auto:{src.name}"
-            return res
+            extra, nxt = [], result.draws[-1].draw_id + 1
+            for draw in sorted(res.draws, key=lambda d: d.draw_id):
+                if draw.draw_id < nxt:
+                    continue
+                if draw.draw_id != nxt:
+                    break  # khoảng hở: không nối, kẻo lượt sau (since_id đã vượt) không bù được
+                extra.append(draw)
+                nxt += 1
+            if extra:
+                result.draws += extra
+                result.rejected += res.rejected
+                self.log.attempts.append(Attempt(src.name, True, rows=len(extra)))
+                used.append(src.name)
+            else:
+                self.log.attempts.append(Attempt(src.name, False, error=f'no draws after #{nxt - 1}'))
+        if result is not None:
+            self.name = "auto:" + "+".join(used)
+            return result
         if empty is not None:
             return empty  # empty is legitimate, but must not hide a newer fallback
         raise SourceError("all sources failed: " + "; ".join(f"{a.source}: {a.error}" for a in self.log.attempts))

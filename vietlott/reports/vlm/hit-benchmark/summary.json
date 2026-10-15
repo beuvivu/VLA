@@ -202,13 +202,13 @@
    },
    "provenance": {
     "seed_sha256": "51220ad0a6077535f1d0cf55fdafe80dfe55bbe57665f12920af8dfaede4d8d5",
-    "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
+    "journal_sha256": "cfb25e4f37cdc4aae6f685fbcf72dbcefbd64702aaecf760fbb8286575f6c83f",
     "history_sha256": "909d636b858ec671886338b36ed0e320295ed1802de7f07aac1b90c6a644998f",
     "first_id": 1,
     "last_id": 1574,
     "first_date": "2016-07-20",
     "last_date": "2026-10-11",
-    "git_commit": "6d933aa04e4ea9ab42eb11049b3a585ecd72a18b",
+    "git_commit": "e00a6c718bfa70cd4f8bf7b20e7d712b948ff7f3",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -244,12 +244,12 @@
      "vlm/forecast/__init__.py": "a8a65aefed2a3f8b1a726d7b6c4714abe233ca6902b2fdc50937bf2e09b4fde1",
      "vlm/forecast/adaptation.py": "07c5054f5f3788ccb3aa5b3e6898a6ef476c5c87b2f8c90ddb754781be730f2b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
-     "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
+     "vlm/forecast/distribution.py": "0c2e59da125d5a6d916cb4d2cd4bd537d5cb6797a987436a169fe62781cf78e9",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
      "vlm/forecast/hits.py": "83edbc7856879347d721de09655967da5eee5828437d8c68a3e45c59d44f4386",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
-     "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
+     "vlm/forecast/pipeline.py": "16b4c465fc0236eb1442e2d972b732a3e3c223feac131c43091dd255043974d3",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
     },
     "versions": {
@@ -274,7 +274,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T19:24:52+00:00"
+    "generated_at": "2026-10-15T11:27:35+00:00"
    },
    "split": {
     "dev": {
@@ -3608,10 +3608,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.2717723789992306,
-    "ml_seconds": 246.99682093500087,
-    "challenger_selection_seconds": 10.954210388999854,
-    "total_seconds": 539.2129193209985
+    "legacy_seconds": 3.4922851119999905,
+    "ml_seconds": 251.72022976800008,
+    "challenger_selection_seconds": 10.748584220999874,
+    "total_seconds": 539.9534650549999
    }
   },
   "power655": {
@@ -3672,13 +3672,13 @@
    },
    "provenance": {
     "seed_sha256": "a87533b01eab4070f5986c650e7642543dd35a5d8f2ddbf85f1f58a00c6570a8",
-    "journal_sha256": "68f0bc3e92dac6f3f4b7fb336a312225f7217d172c83760b1b93a9cd47170c87",
+    "journal_sha256": "cfb25e4f37cdc4aae6f685fbcf72dbcefbd64702aaecf760fbb8286575f6c83f",
     "history_sha256": "743b0454e9c6422a45edca1ce5f962829f4dd80f6b140d382d5ecb7916f95b40",
     "first_id": 1,
     "last_id": 1409,
     "first_date": "2017-08-01",
     "last_date": "2026-10-10",
-    "git_commit": "6d933aa04e4ea9ab42eb11049b3a585ecd72a18b",
+    "git_commit": "e00a6c718bfa70cd4f8bf7b20e7d712b948ff7f3",
     "git_dirty": false,
     "source_sha256": {
      "vietlott_engine/__init__.py": "58a381a43f551e1762b658aab2fe66a617a748c5f7f1e6006ca67d30f004147c",
@@ -3714,12 +3714,12 @@
      "vlm/forecast/__init__.py": "a8a65aefed2a3f8b1a726d7b6c4714abe233ca6902b2fdc50937bf2e09b4fde1",
      "vlm/forecast/adaptation.py": "07c5054f5f3788ccb3aa5b3e6898a6ef476c5c87b2f8c90ddb754781be730f2b",
      "vlm/forecast/challengers.py": "308fb65033fe6d06497ece5d76f8bebc4584a832e470ca0021d472960d6bd59c",
-     "vlm/forecast/distribution.py": "2de0b1ff9a8ac935090f1e97de166d41cfeada43fea2ca67d9407a59033d43e6",
+     "vlm/forecast/distribution.py": "0c2e59da125d5a6d916cb4d2cd4bd537d5cb6797a987436a169fe62781cf78e9",
      "vlm/forecast/features.py": "e377195f309e3c5aeab56d2706cc494310bff8072f862b065623a8dfd8268214",
      "vlm/forecast/hit_benchmark.py": "1eadd915377d4a6d006e33d0370e456754590a5479d2e6ec128d051189a2437e",
      "vlm/forecast/hits.py": "83edbc7856879347d721de09655967da5eee5828437d8c68a3e45c59d44f4386",
      "vlm/forecast/models.py": "524932f177adc4a07adbeede080bc7f305d95c347de48c45b82f455b8ec335a5",
-     "vlm/forecast/pipeline.py": "43552f241722579d113cb862abbde0f6d4aadd97b365498ed6193478f099c63d",
+     "vlm/forecast/pipeline.py": "16b4c465fc0236eb1442e2d972b732a3e3c223feac131c43091dd255043974d3",
      "vlm/forecast/recovery.py": "1a090438d91867e1a4dd7e939de5bdae9963c0071e836fa592758ceefa074b68"
     },
     "versions": {
@@ -3744,7 +3744,7 @@
      "adaptive": false
     },
     "seed": 20261013,
-    "generated_at": "2026-10-13T19:38:46+00:00"
+    "generated_at": "2026-10-15T11:41:50+00:00"
    },
    "split": {
     "dev": {
@@ -7105,10 +7105,10 @@
     }
    },
    "timings": {
-    "legacy_seconds": 3.128661626000394,
-    "ml_seconds": 399.346504557001,
-    "challenger_selection_seconds": 12.054738109000027,
-    "total_seconds": 832.8666808320013
+    "legacy_seconds": 2.7889443300000494,
+    "ml_seconds": 404.37845672000003,
+    "challenger_selection_seconds": 11.276254636999965,
+    "total_seconds": 854.3503825549997
    }
   }
  }

@@ -51,3 +51,37 @@ def test_actual_build_guard_accepts_trusted_completed_updates_or_direct_events(
                                      head_repository=SimpleNamespace(full_name=repo)),
     ))
     assert eval(expression, {"__builtins__": {}}, {"github": github}) is allowed
+
+
+def test_results_sync_has_on_time_triggers_that_follow_the_externally_scheduled_xsmb_run() -> None:
+    """Lịch mười phút của GitHub chạy cách nhau 1–5 giờ; hai đường này mới chạy đúng giờ.
+
+    Đổi tên workflow XSMB mà không đổi ở đây thì ``workflow_run`` im lặng không bao giờ bắn.
+    """
+    triggers = _workflow("vlm-results.yml")[True]
+    assert triggers["repository_dispatch"]["types"] == ["vietlott-results"]
+    follow = triggers["workflow_run"]
+    assert follow["workflows"] == [_workflow("update-data.yml")["name"]]
+    assert follow["types"] == ["completed"] and follow["branches"] == ["main"]
+    # Không vòng: lượt XSMB không theo lượt Vietlott.
+    upstream = (_workflow("update-data.yml")[True].get("workflow_run") or {}).get("workflows", [])
+    assert _workflow("vlm-results.yml")["name"] not in upstream
+
+
+@pytest.mark.parametrize("event,branch,repo,allowed", [
+    ("workflow_run", "main", "beuvivu/VLA", True),
+    ("workflow_run", "feature", "beuvivu/VLA", False),
+    ("workflow_run", "main", "someone/VLA", False),
+    ("repository_dispatch", None, None, True),
+    ("schedule", None, None, True),
+    ("workflow_dispatch", None, None, True),
+])
+def test_results_sync_only_follows_xsmb_runs_of_this_repository_main(event: str, branch: str | None,
+                                                                       repo: str | None, allowed: bool) -> None:
+    guard = _workflow("vlm-results.yml")["jobs"]["results"]["if"]
+    expression = guard.replace("&&", " and ").replace("||", " or ")
+    github = SimpleNamespace(event_name=event, repository="beuvivu/VLA", event=SimpleNamespace(
+        repository=SimpleNamespace(default_branch="main"),
+        workflow_run=SimpleNamespace(head_branch=branch, head_repository=SimpleNamespace(full_name=repo)),
+    ))
+    assert eval(expression, {"__builtins__": {}}, {"github": github}) is allowed
