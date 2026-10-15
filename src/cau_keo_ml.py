@@ -334,12 +334,22 @@ def build_cau_keo_feature_frame(
     *,
     include_target: bool,
     config: CauKeoConfig,
+    raw: pd.DataFrame | None = None,
+    two: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, pd.Series | None]:
-    """Build explainable calendar-safe cầu-kèo features."""
-    lot = Lottery()
-    lot.load()
-    raw = _ensure_datetime(lot.get_raw_data())
-    two = _ensure_datetime(lot.get_2_digits_data())
+    """Build explainable calendar-safe cầu-kèo features.
+
+    ``raw``/``two`` (đủ cả hai) thay cho sổ kết quả của ``Lottery``: cùng khuôn ``xsmb.csv`` và
+    ``xsmb-2-digits.csv``. Bỏ trống thì đọc sổ thật như trước.
+    """
+    if (raw is None) != (two is None):
+        raise ValueError("raw và two phải cùng được truyền, hoặc cùng bỏ trống")
+    if raw is None:
+        lot = Lottery()
+        lot.load()
+        raw, two = lot.get_raw_data(), lot.get_2_digits_data()
+    raw = _ensure_datetime(raw)
+    two = _ensure_datetime(two)
     if raw.empty or two.empty:
         raise RuntimeError("No data loaded. Run src/sync.py first.")
 

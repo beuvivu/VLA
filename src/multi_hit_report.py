@@ -2,10 +2,11 @@
 
 Hai phần, hai nhịp:
 
-* ``vip.json`` — hằng ngày. Luật lô rơi theo tỉ lệ về ≥ 2 nháy kỳ sau (``multi_hit_next_day``, từ
-  15-10-2026; thay bộ lọc VIP ``multi_hit_vip``) xếp hạng kỳ kế tiếp, kèm kiểm chứng walk-forward
-  trên MỌI kỳ đã quay: mỗi kỳ chỉ dùng các kỳ trước nó, rồi so với chọn bừa trên CHÍNH các kỳ ấy.
-  Kèm năm cặp xiên 2 (``multi_hit_pairs``) với kiểm chứng walk-forward của riêng luật chọn cặp.
+* ``vip.json`` — hằng ngày. Mô hình Lô VIP (``multi_hit_forecast``: kinh nghiệm cầu kèo, cầu hai
+  nháy, cầu LOTO và dữ liệu nhiều nháy) dự báo năm con về ≥ 2 nháy ở kỳ kế tiếp, kèm lý do từng con
+  và kiểm chứng walk-forward trên MỌI kỳ đã quay: mỗi kỳ chỉ dùng mô hình học trên các kỳ trước nó,
+  rồi so với chọn bừa trên CHÍNH các kỳ ấy. Kèm năm cặp xiên 2 (``multi_hit_pairs``) với kiểm chứng
+  walk-forward của riêng luật chọn cặp. ~60 giây trên 4 236 kỳ.
 * ``benchmark.json`` — đóng băng. Giao thức lượt thử thứ hai (``multi_hit_benchmark``): 22 chiến
   lược chấm trên giai đoạn phát triển, một ứng viên kiểm MỘT lần trên 1 000 kỳ cuối, kèm phép kiểm
   độ nhạy trên lịch sử có cài tín hiệu. Phép kiểm một lần chỉ có nghĩa khi nó thật sự chạy một lần:
@@ -35,7 +36,7 @@ import pandas as pd
 from scipy.special import logsumexp
 from scipy.stats import norm, spearmanr
 
-import multi_hit_next_day as next_day
+import multi_hit_forecast as forecast
 import multi_hit_pairs as pairs
 from atomic_io import atomic_write_text
 from multi_hit_vip import (base_rate, counts_matrix, draws_from_frame, model_confidence, number_confidence,
@@ -51,9 +52,11 @@ BENCHMARK_FILE = "benchmark.json"
 #: 5: e-process chỉ chạy trên kỳ quay SAU VIP_FROZEN_AT (tiến cứu); hồi cứu chỉ còn để mô tả.
 #: 6: độ nhạy ước lượng trên POWER_SEEDS lịch sử cài tín hiệu, so với POWER_REQUIRED đặt trước.
 #: 7 (chỉ vip.json): thêm cặp xiên 2 cùng về (``multi_hit_pairs``).
-#: 8 (chỉ vip.json): năm con chọn bằng luật lô rơi theo tỉ lệ kỳ sau (``multi_hit_next_day``), thay
-#:   bộ lọc VIP; bộ lọc ấy đẩy con gan lên đầu (con 32 đứng đầu mười kỳ liền khi gan 10 → 19 kỳ).
-MEASURE_VERSION = 8
+#: 8 (chỉ vip.json): năm con chọn bằng luật lô rơi theo tỉ lệ kỳ sau, thay bộ lọc VIP; bộ lọc ấy
+#:   đẩy con gan lên đầu (con 32 đứng đầu mười kỳ liền khi gan 10 → 19 kỳ).
+#: 9 (chỉ vip.json): năm con là DỰ BÁO của mô hình Lô VIP (``multi_hit_forecast``) từ kinh nghiệm cầu
+#:   kèo và cầu hai nháy, kèm lý do từng con; luật lô rơi chỉ liệt kê con vừa về nên đã nghỉ.
+MEASURE_VERSION = 9
 #: Phiên bản của benchmark.json. Tách khỏi MEASURE_VERSION vì lượt hai là phép kiểm MỘT lần đã
 #: đóng băng: đổi số đo hằng ngày không được buộc nó chạy lại. Chỉ tăng khi định nghĩa của chính
 #: lượt hai (hay phép kiểm độ nhạy của nó) đổi.
@@ -63,7 +66,7 @@ BENCHMARK_VERSION = 6
 POWER_SEEDS = tuple(range(7, 27))
 POWER_REQUIRED = 0.8
 #: Ngày chốt của bộ lọc VIP đã nghỉ (lượt một). Tiến cứu của nó dừng ở 3 kỳ sau ngày này: trúng 0
-#: lượt so với 0,55 của chọn bừa. Năm con trên trang nay theo ``multi_hit_next_day.FROZEN_AT``.
+#: lượt so với 0,55 của chọn bừa. Năm con trên trang nay theo ``multi_hit_forecast.FROZEN_AT``.
 VIP_FROZEN_AT = "2026-10-12"
 #: Lưới hệ số cược λ của e-process một phía (cược top-k trúng NHIỀU hơn chọn bừa). Với k = 5 và tối
 #: đa 13 con về ≥ 2 nháy trong một kỳ, kỳ vọng chọn bừa ≤ 0,65 nên 1 + λ·(H − μ) > 0 với mọi λ ≤ 0,8.
@@ -127,6 +130,12 @@ def anytime_p(hits, expected, grid: tuple[float, ...] = BET_GRID) -> tuple[float
     return math.exp(-best), math.exp(best)
 
 
+def load_raw(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Sổ kết quả đầy đủ và sổ hai số, đọc dạng chuỗi như mọi bước khác của pipeline."""
+    return (pd.read_csv(data_dir / "xsmb.csv", dtype={"date": str}),
+            pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype=str))
+
+
 def load_history(data_dir: Path) -> tuple[np.ndarray, list[str]]:
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", dtype=str)
     return draws_from_frame(frame)
@@ -144,52 +153,46 @@ def history_fingerprint(draws: np.ndarray, labels: list[str], n: int | None = No
 # --------------------------------------------------------------------------- lô rơi theo tỉ lệ kỳ sau
 
 
-def _state_rows(est: next_day.Estimates, t: int) -> list[dict]:
-    """Tỉ lệ về ≥ 2 nháy ở kỳ sau của từng nhóm, đếm trên mọi cặp kỳ trước kỳ ``t``."""
-    out = []
-    for s in next_day.STATES:
-        seen, observed = int(est.seen[t, s]), int(est.observed[t, s])
-        out.append({"state": s, "label": next_day.STATE_LABELS[s], "seen": seen, "observed": observed,
-                    "rate": observed / seen if seen else None,
-                    "expected": float(est.expected[t, s]), "factor": float(est.factor[t, s])})
-    return out
-
-
-def vip_section(draws: np.ndarray, labels: list[str], *, top_k: int = next_day.TOP_K,
+def vip_section(raw: pd.DataFrame, two: pd.DataFrame, *, cfg: forecast.ForecastConfig | None = None,
                 prospective_after: str | None = None) -> dict:
-    """Năm con cho kỳ kế tiếp theo luật lô rơi, và kiểm chứng walk-forward của chính luật ấy.
+    """Năm con dự báo cho kỳ kế tiếp từ mô hình Lô VIP, và kiểm chứng walk-forward của chính mô hình ấy.
 
-    Toàn bộ walk-forward là MÔ TẢ hồi cứu: luật được thiết kế sau khi đã xem lịch sử ấy. Mức tin (và
-    vì vậy kết luận "hơn") chỉ suy từ e-process trên các kỳ có ngày > ``prospective_after`` (mặc
-    định ``multi_hit_next_day.FROZEN_AT``): một e-process chỉ kiểm soát báo nhầm khi quy tắc cược
-    được chốt TRƯỚC khi thấy dữ liệu nó chấm.
+    Toàn bộ walk-forward là MÔ TẢ hồi cứu: mô hình được thiết kế sau khi đã xem lịch sử ấy. Mức tin (và
+    vì vậy kết luận "hơn") chỉ suy từ e-process trên các kỳ có ngày > ``prospective_after`` (mặc định
+    ``multi_hit_forecast.FROZEN_AT``): một e-process chỉ kiểm soát báo nhầm khi quy tắc cược được chốt
+    TRƯỚC khi thấy dữ liệu nó chấm.
     """
-    after = next_day.FROZEN_AT if prospective_after is None else prospective_after
-    counts = counts_matrix(draws)
-    if len(counts) <= next_day.WARMUP:
-        raise ValueError(f"cần nhiều hơn {next_day.WARMUP} kỳ để chấm luật")
-    est = next_day.estimate(counts)
-    wf = next_day.walk_forward(counts, est, top_k)
-    n_multi = (counts[wf.rows] >= 2).sum(axis=1)
+    cfg = cfg or forecast.ForecastConfig()
+    after = forecast.FROZEN_AT if prospective_after is None else prospective_after
+    table = forecast.build_table(raw, two, cfg)
+    if len(table.anchors) <= cfg.warmup + 1:
+        raise ValueError(f"cần hơn {cfg.warmup + 1} kỳ có đặc trưng để chấm mô hình")
+    wf = forecast.walk_forward(table, cfg)
+    ordered = two.assign(date=pd.to_datetime(two["date"]).dt.strftime("%Y-%m-%d")).sort_values("date")
+    draws, labels = draws_from_frame(ordered.reset_index(drop=True))
+    counts = table.counts
+    k = cfg.top_k
+    evaluated = table.anchors[wf.rows] + 1          # kỳ được dự báo
+    n_multi = (counts[evaluated] >= 2).sum(axis=1)
     hits = wf.hits
-    picks_total = len(wf.rows) * top_k
-    expected, variance = random_pick_null(n_multi, top_k)
+    picks_total = len(wf.rows) * k
+    expected, variance = random_pick_null(n_multi, k)
     z = float((hits.sum() - expected) / math.sqrt(variance)) if variance > 0 else 0.0
-    (lo, hi), deff = draw_level_interval(hits, top_k)
-    per_draw_expected = top_k * n_multi / 100
-    dates = [labels[t] for t in wf.rows]
+    (lo, hi), deff = draw_level_interval(hits, k)
+    per_draw_expected = k * n_multi / 100
+    dates = [labels[t] for t in evaluated]
     later = np.array([str(d) > after for d in dates], dtype=bool)
     pro_hits = hits[later]
     pro_expected = per_draw_expected[later]
     p_anytime, e_max = anytime_p(pro_hits, pro_expected)
     pro_lift = float(pro_hits.sum() / pro_expected.sum()) if pro_expected.sum() > 0 else float("nan")
-    # Mức tin lấy p luôn hợp lệ của phần TIẾN CỨU: trang xem lại mỗi ngày (anytime_p), và luật được
+    # Mức tin lấy p luôn hợp lệ của phần TIẾN CỨU: trang xem lại mỗi ngày (anytime_p), và mô hình được
     # thiết kế sau khi đã xem phần hồi cứu.
     level = model_confidence(p_anytime, pro_lift)
     base = base_rate()
     recent = []
     for j in range(len(wf.rows) - 1, max(len(wf.rows) - RECENT_DRAWS, 0) - 1, -1):
-        t = int(wf.rows[j])
+        t = int(evaluated[j])
         multi_today = int((counts[t] >= 2).sum())
         recent.append({
             "date": labels[t],
@@ -197,34 +200,40 @@ def vip_section(draws: np.ndarray, labels: list[str], *, top_k: int = next_day.T
             "multi": int(hits[j]),
             # Chọn bừa k con trong CÙNG kỳ có m con về ≥ 2 nháy: kỳ vọng k·m/100 (siêu bội).
             "numbers_multi": multi_today,
-            "expected": top_k * multi_today / 100,
+            "expected": k * multi_today / 100,
         })
-    nxt = len(counts)
+    # Dự báo kỳ tới: học trên MỌI kỳ có nhãn, hiệu chỉnh trên mọi lượt chọn ngoài mẫu của walk-forward.
+    model = forecast.fit(table.X[:-1], table.y[:-1])
+    last = len(table.anchors) - 1
+    scores = model.score(table.X[last:])[0]
+    calibrate = forecast.Calibrator(wf.scores.ravel(),
+                                    np.concatenate([table.y[r, p] for r, p in zip(wf.rows, wf.picks, strict=True)]))
+    special = int(table.special[table.anchors[last]])
     picks = []
-    for i in next_day.picks(counts, est, nxt, top_k):
-        prob = float(est.prob[nxt, i])
+    for i in forecast.rank(scores, int(table.anchors[last]) + 1)[:k]:
+        prob = float(calibrate(scores[i:i + 1])[0])
         picks.append({
             "number": f"{i:02d}",
-            "today": int(counts[nxt - 1, i]),
-            "state": int(est.state[nxt, i]),
             "probability": prob,
             "x_base": prob / base,
             "confidence": number_confidence(level, prob, base),
-            "own_multi": int(est.own_multi[nxt, i]),
-            "propensity": float(est.propensity[nxt, i]),
+            "reasons": forecast.reasons(model, table.X[last, i], int(i), special),
         })
     return {
         "version": MEASURE_VERSION,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "source_date": labels[-1],
-        "draws": int(len(counts)),
+        "target_date": table.target_date,
+        "draws": int(len(draws)),
         "history_sha256": history_fingerprint(draws, labels),
         "base_theory": base,
-        "rule": next_day.RULE,
-        "config": {"top_k": top_k, "warmup": next_day.WARMUP, "state_prior": next_day.STATE_PRIOR},
-        "states": _state_rows(est, nxt),
-        "pooled": float(est.pooled[nxt]),
-        "shrink": float(est.shrink[nxt]),
+        "rule": forecast.RULE,
+        "config": {"top_k": k, "warmup": cfg.warmup, "refit": cfg.refit, "c_grid": list(forecast.C_GRID),
+                   "features": len(forecast.FEATURES)},
+        "model": {"C": model.C, "inner_gain": model.inner_gain,
+                  "blocks": [{"start_date": labels[int(table.anchors[b["start"]]) + 1], "C": b["C"],
+                              "inner_gain": b["inner_gain"]} for b in wf.blocks]},
+        "experience": forecast.bridge_experience(table),
         "backtest": {
             "first_date": str(dates[0]),
             "last_date": str(dates[-1]),
@@ -239,13 +248,13 @@ def vip_section(draws: np.ndarray, labels: list[str], *, top_k: int = next_day.T
             "lift": _finite(hits.sum() / expected) if expected > 0 else None,
             "z": z,
             "p_value": float(norm.sf(z)),
-            # Xác suất TB đã in cho các con được chọn: so với tỉ lệ trúng để thấy xác suất có thật không.
-            "predicted": float(wf.predicted.mean()),
+            # Xác suất TB đã in cho các con được chọn (hiệu chỉnh bằng các khối trước): so với tỉ lệ trúng.
+            "predicted": float(wf.printed.mean()),
         },
         "prospective": {
             "after": after,
             "draws": int(later.sum()),
-            "picks": int(later.sum()) * top_k,
+            "picks": int(later.sum()) * k,
             "hits": int(pro_hits.sum()),
             "expected": float(pro_expected.sum()),
             "lift": pro_lift if later.any() and math.isfinite(pro_lift) else None,
@@ -557,11 +566,12 @@ def _write(path: Path, payload: dict) -> None:
     atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
 
-def run(data_dir: Path, *, force_benchmark: bool = False) -> dict[str, Path]:
+def run(data_dir: Path, *, force_benchmark: bool = False,
+        cfg: forecast.ForecastConfig | None = None) -> dict[str, Path]:
     draws, labels = load_history(data_dir)
     out = data_dir / OUT_DIR
     written = {"vip": out / VIP_FILE}
-    _write(written["vip"], vip_section(draws, labels))
+    _write(written["vip"], vip_section(*load_raw(data_dir), cfg=cfg))
     bench_path = out / BENCHMARK_FILE
     if force_benchmark or benchmark_is_stale(_read(bench_path), draws, labels):
         _write(bench_path, benchmark_section(draws, labels))
