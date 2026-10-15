@@ -201,7 +201,7 @@ def vip_section(draws: np.ndarray, labels: list[str], *, top_k: int = next_day.T
         })
     nxt = len(counts)
     picks = []
-    for i in next_day.order(counts, est, nxt)[:top_k]:
+    for i in next_day.picks(counts, est, nxt, top_k):
         prob = float(est.prob[nxt, i])
         picks.append({
             "number": f"{i:02d}",

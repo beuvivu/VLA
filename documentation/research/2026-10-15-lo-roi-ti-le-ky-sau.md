@@ -120,4 +120,6 @@ này sửa đúng điều chủ dự án chỉ ra — không còn chọn con kh�
   - số đo đã xuất bản: năm con và mười kỳ gần nhất đều là con đã về ở kỳ trước.
 - **`tests/test_multi_hit_page.py`**: dải số in xác suất và số nháy vừa về; dòng tỉ lệ nhóm in đúng
   phân số; ô "Xác suất đã in" đặt cạnh tỉ lệ trúng thật.
-- **16 đột biến** đều đỏ đúng chỗ.
+- **17 đột biến** đều đỏ đúng chỗ.
+- Kỳ có ít hơn 5 con khác nhau bị từ chối thẳng (`multi_hit_next_day.picks`) thay vì lấp chỗ trống
+  bằng con không về. Lịch sử thật không có kỳ nào như vậy: ít nhất 15 con khác nhau trên 4 236 kỳ.

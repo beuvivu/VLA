@@ -128,6 +128,19 @@ def order(counts: np.ndarray, est: Estimates, t: int) -> np.ndarray:
     return np.lexsort((tie_keys(t), -est.prob[t], ~came))
 
 
+def picks(counts: np.ndarray, est: Estimates, t: int, k: int = TOP_K) -> np.ndarray:
+    """``k`` con cho kỳ t, con nào cũng đã về ở kỳ t − 1.
+
+    Kỳ có ít hơn ``k`` con khác nhau thì từ chối thẳng thay vì lấp chỗ trống bằng con không về: luật
+    hứa "lô rơi", và một danh sách lẫn con không về sẽ phá đúng lời hứa ấy. Lịch sử thật không có kỳ
+    nào như vậy (ít nhất 15 con khác nhau trên 4 236 kỳ), nên đây là chốt chặn dữ liệu hỏng.
+    """
+    came = int((np.asarray(counts)[t - 1] >= 1).sum())
+    if came < k:
+        raise ValueError(f"kỳ {t - 1} chỉ có {came} con khác nhau, không đủ {k} con lô rơi")
+    return order(counts, est, t)[:k]
+
+
 @dataclass(frozen=True)
 class WalkForward:
     rows: np.ndarray        # các kỳ được chấm
@@ -140,7 +153,7 @@ def walk_forward(counts: np.ndarray, est: Estimates, k: int = TOP_K, warmup: int
     """Chấm luật trên mọi kỳ từ ``warmup`` tới kỳ cuối đã quay."""
     counts = np.asarray(counts)
     rows = np.arange(min(warmup, len(counts)), len(counts))
-    picks = np.array([order(counts, est, t)[:k] for t in rows], dtype=int).reshape(len(rows), k)
-    hits = (np.take_along_axis(counts[rows], picks, axis=1) >= 2).sum(axis=1) if len(rows) else np.zeros(0)
-    predicted = np.take_along_axis(est.prob[rows], picks, axis=1) if len(rows) else np.zeros((0, k))
-    return WalkForward(rows, picks, np.asarray(hits, dtype=int), predicted)
+    chosen = np.array([picks(counts, est, t, k) for t in rows], dtype=int).reshape(len(rows), k)
+    hits = (np.take_along_axis(counts[rows], chosen, axis=1) >= 2).sum(axis=1) if len(rows) else np.zeros(0)
+    predicted = np.take_along_axis(est.prob[rows], chosen, axis=1) if len(rows) else np.zeros((0, k))
+    return WalkForward(rows, chosen, np.asarray(hits, dtype=int), predicted)

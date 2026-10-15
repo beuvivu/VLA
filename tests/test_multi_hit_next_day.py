@@ -114,6 +114,27 @@ def test_only_numbers_that_came_in_the_latest_draw_are_picked(planted) -> None:
     assert skipped.any() and not (wf.picks[skipped] == best[skipped, None]).any()
 
 
+def test_a_draw_with_fewer_distinct_numbers_than_picks_is_refused() -> None:
+    """Không lấp chỗ trống bằng con không về: kỳ chỉ có 3 con khác nhau thì luật từ chối, cả ở
+    walk-forward lẫn ở năm con cho kỳ tới."""
+    import multi_hit_report as report
+
+    frame = m.mock_history(60, seed=8)
+    cols = [c for c in frame.columns if c != "date"]
+    frame.loc[59, cols] = [11, 22, 33] * 9
+    counts = _counts(frame)
+    est = nd.estimate(counts)
+    assert len(nd.picks(counts, est, 59)) == nd.TOP_K           # kỳ 58 bình thường
+    with pytest.raises(ValueError, match="3 con khác nhau"):
+        nd.picks(counts, est, 60)
+    with pytest.raises(ValueError, match="3 con khác nhau"):
+        report.vip_section(*m.draws_from_frame(frame))
+    frame.loc[59, cols] = m.mock_history(1, seed=9).loc[0, cols].tolist()   # kỳ cuối bình thường lại
+    frame.loc[30, cols] = [44] * 27                     # một kỳ giữa lịch sử: walk-forward cũng từ chối
+    with pytest.raises(ValueError, match="1 con khác nhau"):
+        nd.walk_forward(_counts(frame), nd.estimate(_counts(frame)))
+
+
 def test_candidates_are_ranked_by_probability_then_by_the_draw_s_fixed_permutation() -> None:
     counts = np.zeros((3, 100), dtype=int)
     counts[:, :27] = 1                      # mọi kỳ: 00–26 về 1 nháy, không con nào khác biệt
