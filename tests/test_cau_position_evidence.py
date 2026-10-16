@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from cau_position_evidence import _pretty_position_label, _rule_score, _summary_text
 
@@ -43,3 +44,14 @@ def test_reason_prints_the_shrunk_next_draw_probability_not_the_in_sample_rate()
     legacy = _row_reason(pd.Series({k: v for k, v in row.items() if k not in {"p_post", "streak_shift"}}
                                    | {"rule_kind": "stable"}))
     assert "dự báo" not in legacy
+
+
+def test_next_probability_stays_a_probability_at_the_edges() -> None:
+    from cau_position_evidence import _next_probability
+
+    high = _next_probability(pd.Series({"p_post": 0.999, "streak_shift": 0.01, "rule_kind": "active"}))
+    low = _next_probability(pd.Series({"p_post": 0.001, "streak_shift": -0.01, "rule_kind": "active"}))
+    assert high == pytest.approx(1 - 1e-6)
+    assert low == pytest.approx(1e-6)
+    # Cầu bền không cộng kinh nghiệm chuỗi.
+    assert _next_probability(pd.Series({"p_post": 0.3, "streak_shift": 0.5, "rule_kind": "stable"})) == 0.3

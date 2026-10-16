@@ -228,15 +228,16 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - bằng chứng của ngày neo khác không được in;
   - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch;
   - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
-- **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu.
-- **22 đột biến** đều đỏ đúng chỗ:
+- **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
+  xác suất ấy dùng chung `rule_next_probability` nên luôn nằm trong (0, 1).
+- **23 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi;
   - τ² luôn bằng 0; τ² không trừ bậc tự do;
   - dự báo dùng tỉ lệ lịch sử; cầu thiếu hậu nghiệm vẫn được nhận;
   - trang bỏ cờ gộp; trang bỏ cột dự báo; trang không cộng chuỗi cho cầu đang chạy;
-  - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử;
+  - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử; câu lý do không chặn biên;
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
     cứng phạm vi;
   - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch; Q đo quanh tỉ lệ chung.

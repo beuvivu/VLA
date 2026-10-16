@@ -31,7 +31,7 @@ from safe_io import read_csv_or_empty
 
 from lottery import Lottery
 from path_models import PathParams, index_to_label
-from path_prob import fit_paths, paths_to_dataframe
+from path_prob import fit_paths, paths_to_dataframe, rule_next_probability
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -192,9 +192,10 @@ def _next_probability(row: pd.Series) -> float | None:
     if pd.isna(p_post):
         return None
     shift = pd.to_numeric(row.get("streak_shift"), errors="coerce")
-    if str(row.get("rule_kind", "")) == "active" and pd.notna(shift):
-        p_post += shift
-    return float(p_post)
+    # Cùng hàm với bước gợi ý của trang soi cầu (cộng chuỗi, chặn biên).
+    frame = pd.DataFrame({"p_post": [float(p_post)], "streak_shift": [0.0 if pd.isna(shift) else float(shift)]})
+    kind = "active" if str(row.get("rule_kind", "")) == "active" else "stable"
+    return float(rule_next_probability(frame, kind=kind)[0])
 
 
 def _row_reason(row: pd.Series) -> str:
