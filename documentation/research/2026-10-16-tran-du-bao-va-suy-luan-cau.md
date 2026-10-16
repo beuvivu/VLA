@@ -136,7 +136,8 @@ con khác.
 Tái lập bằng `PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000`
 (khoảng 20 phút, 4 lõi). Số liệu thô nằm ở `data/research/model_overhaul/bridge_inference.json`.
 
-Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline. Bản cũ được tái lập từng
+Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline, trên thuật toán cuối cùng
+(commit 14e96040, sau mọi sửa chữa theo review). Bản cũ được tái lập từng
 bit: sai lệch 0,0 so với mã trước 16-10-2026 ở cả bốn ô, kiểm trên hai ngày neo. Mốc hằng số là tỉ
 lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt).
 
@@ -153,16 +154,16 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 | Ô | Mới so với cũ | Cũ so với hằng số | Mới so với hằng số | Tổng LOTO (trung vị): cũ → mới |
 |---|---:|---:|---:|---:|
-| LOTO đang chạy | **z = +7,86** (nửa +5,73 / +5,38) | z = −8,09 | z = −1,65 | 24,48 → 23,82 |
+| LOTO đang chạy | **z = +7,86** (nửa +5,73 / +5,38) | z = −8,09 | z = −1,62 | 24,48 → 23,82 |
 | LOTO ổn định | **z = +38,25** (nửa +26,61 / +27,48) | z = −38,55 | z = −1,62 | 26,46 → 23,82 |
-| Đặc Biệt đang chạy | z = +1,10 | z = −0,75 | z = +0,83 | — |
+| Đặc Biệt đang chạy | z = +1,10 | z = −0,75 | z = +0,85 | — |
 | Đặc Biệt ổn định | z = +1,08 (nửa +0,63 / +0,91) | z = −0,97 | z = +0,84 | — |
 
 **Tổ hợp** (trọng số mặc định, chốt bằng `finalize_blend`):
 
 | | Mới so với cũ | Mới so với hằng số |
 |---|---:|---:|
-| LOTO | z = −0,42 (nửa +0,23 / −0,84) | z = +0,43 |
+| LOTO | z = −0,42 (nửa +0,23 / −0,83) | z = +0,43 |
 | Đặc Biệt | z = +0,27 | z = +0,98 |
 
 **Quyết định: đạt cả ba luật, nên đổi.**
@@ -177,11 +178,11 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - Nhánh cũ kém hằng số rất xa (LOTO ổn định z = −38,55) vì lời nguyền người thắng ở MỨC.
   - Ở tầng tổ hợp, `finalize_blend` đã neo mức từ 04-10, nên hai bản ngang nhau. Đó là điều mong
     đợi: tổ hợp đã ở trần, và phép sửa này không được phép làm nó tệ đi.
-- **Nhánh LOTO mới vẫn nhỉnh kém hằng số**, z = −1,65 và −1,62, cùng dấu ở cả hai nửa nhưng không
+- **Nhánh LOTO mới vẫn nhỉnh kém hằng số**, z = −1,62 ở cả hai nhánh, cùng dấu ở cả hai nửa nhưng không
   có ý nghĩa thống kê. Có hai nguồn, ghi ra thay vì sửa sau khi đã xem kết quả:
   - tâm co là tỉ lệ trúng chung của cửa sổ 365 kỳ (tổng trung vị 23,82), không phải mốc tích luỹ;
   - ở 53% số ngày, phương pháp mô men rơi về phía dương do nhiễu nên κ hữu hạn. Phần chênh được giữ
-    khi ấy không quá 1,0%, và độ lệch lớn nhất của kinh nghiệm chuỗi so với nền là 0,06 điểm phần
+    khi ấy không quá 1,0%, và độ lệch lớn nhất của kinh nghiệm chuỗi so với nền là 0,03 điểm phần
     trăm.
 
   Docstring của `hierarchical_pooling.fit_shrinkage_to_prior_rows` đã cảnh báo đúng hiện tượng này:
