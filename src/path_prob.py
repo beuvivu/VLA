@@ -8,6 +8,11 @@ import numpy as np
 import pandas as pd
 
 from calendar_alignment import calendar_lag_pairs
+from hierarchical_pooling import (
+    MAX_PRIOR_STRENGTH,
+    fit_shrinkage_to_prior,
+    random_effects_posterior,
+)
 from path_models import (
     PathParams,
     build_daily_targets,
@@ -19,9 +24,24 @@ from xsmb_domain import TOTAL_DIGITS, baseline_rate, raw_digit_matrix
 Mode = Literal["loto", "de"]
 FilterKind = Literal["stable", "active"]
 
+#: Nhóm độ dài chuỗi khi học "kinh nghiệm cầu đang chạy": 0, 1, …, 7 và từ 8
+#: trở lên. Chuỗi dài hơn quá hiếm để đứng riêng (LOTO, 4 năm, mọi cầu: chuỗi
+#: 9 có 445 lần, chuỗi 11+ có 22 lần).
+STREAK_BUCKETS = 9
+
 
 @dataclass
 class PathStats:
+    """Một đường cầu (cặp vị trí, độ trễ) và các số đo của nó trong cửa sổ.
+
+    ``p_mean`` là tỉ lệ trúng TRONG MẪU (làm trơn Laplace), giữ cho cột "Tỷ lệ
+    lịch sử". ``p_post`` là xác suất trúng kỳ tới theo Bayes thực nghiệm: tỉ lệ
+    trung bình của mọi cầu cùng độ trễ, cộng phần riêng của cầu này co theo
+    mức chênh THẬT giữa các cầu (``BridgeEvidence.rule_prior_strength``).
+    ``streak_shift`` là phần kinh nghiệm theo chuỗi hiện tại, học từ mọi cầu;
+    nhánh "đang chạy" cộng nó vào, nhánh "ổn định" thì không.
+    """
+
     lag: int
     i: int
     j: int
@@ -32,6 +52,71 @@ class PathStats:
     current_streak: int
     special_touch: int
     special_both: int
+    p_post: float = float("nan")
+    streak_shift: float = 0.0
+
+
+@dataclass(frozen=True)
+class BridgeEvidence:
+    """Kinh nghiệm cầu học từ MỌI đường cầu trong cửa sổ, không chỉ cầu được giữ.
+
+    Câu hỏi thứ nhất: các cầu có khác nhau thật không? Nếu mọi cầu cùng một tỉ
+    lệ thật, tỉ lệ quan sát của chúng vẫn tản ra đúng bằng dao động nhị thức;
+    ``variance_ratio`` là phương sai quan sát chia mức ấy. Chỉ phần VƯỢT mới cho
+    cầu tốt quyền giữ tỉ lệ riêng — ``hierarchical_pooling.fit_shrinkage_to_prior``.
+    Không có phần vượt thì κ chạm trần và mọi cầu co về nền: chọn top cầu từ
+    hàng nghìn cầu khi ấy chỉ là chọn nhiễu, và tỉ lệ lịch sử của cầu được chọn
+    mang lời nguyền người thắng.
+
+    Câu hỏi thứ hai: cầu đang chạy s kỳ có trúng tiếp nhiều hơn không?
+    ``streak_hits``/``streak_trials`` đếm, trên mọi cầu và mọi kỳ của cửa sổ,
+    lần trúng ở kỳ kế tiếp theo độ dài chuỗi NGAY TRƯỚC kỳ ấy; hậu nghiệm co
+    về tỉ lệ chung theo mô hình hiệu ứng ngẫu nhiên
+    (``hierarchical_pooling.random_effects_posterior``), ``streak_between_variance``
+    là phương sai thật giữa các độ dài; bằng 0 thì mọi độ dài co hẳn về nền.
+
+    Các lần chấm của những cầu cùng kỳ tương quan với nhau qua chính kỳ quay ấy
+    (kỳ về nhiều con khác nhau thì mọi cầu LOTO cùng dễ trúng hơn), nên số lần
+    ở đây không phải số quan sát độc lập.
+    """
+
+    mode: str
+    rules: int
+    trials: int
+    base_rate: float
+    variance_ratio: float
+    rule_prior_strength: float
+    rule_shrinkage: float
+    streak_hits: tuple[int, ...]
+    streak_trials: tuple[int, ...]
+    streak_between_variance: float
+    streak_posterior: tuple[float, ...]
+
+    @property
+    def rules_fully_pooled(self) -> bool:
+        return self.rule_prior_strength >= MAX_PRIOR_STRENGTH
+
+    @property
+    def streaks_fully_pooled(self) -> bool:
+        return self.streak_between_variance <= 0.0
+
+    def as_dict(self) -> dict:
+        return {
+            "mode": self.mode,
+            "rules": self.rules,
+            "trials": self.trials,
+            "base_rate": self.base_rate,
+            "variance_ratio": self.variance_ratio,
+            "rule_prior_strength": self.rule_prior_strength,
+            "rule_shrinkage": self.rule_shrinkage,
+            "rules_fully_pooled": self.rules_fully_pooled,
+            "streak_buckets": STREAK_BUCKETS,
+            "streak_hits": list(self.streak_hits),
+            "streak_trials": list(self.streak_trials),
+            "streak_between_variance": self.streak_between_variance,
+            "streaks_fully_pooled": self.streaks_fully_pooled,
+            "streak_posterior": list(self.streak_posterior),
+        }
 
 
 def _resolve_anchor_index(dates: list[date], anchor_date: Optional[date]) -> int:
@@ -51,19 +136,37 @@ def _streak_stats(hit_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     ``n_rules`` elements on every one of the ``trials`` iterations.  Doing the
     same arithmetic in place is ~7x faster and bit-identical.
     """
-    if hit_matrix.size == 0:
-        n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
-        z = np.zeros(n_rules, dtype=np.int16)
-        return z, z.copy()
+    max_streak, current, _, _ = _streak_walk(hit_matrix, buckets=0)
+    return max_streak, current
 
-    n_rules = hit_matrix.shape[1]
+
+def _streak_walk(
+    hit_matrix: np.ndarray, *, buckets: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Như ``_streak_stats``, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
+
+    Kỳ thứ t được xếp vào nhóm ``min(chuỗi sau kỳ t−1, buckets−1)``; chuỗi tính
+    từ đầu cửa sổ, giống hệt ``current_streak``. ``buckets=0`` bỏ phần đếm.
+    """
+    n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
+    exp_hits = np.zeros(max(buckets, 0), dtype=np.int64)
+    exp_trials = np.zeros(max(buckets, 0), dtype=np.int64)
+    if hit_matrix.size == 0:
+        z = np.zeros(n_rules, dtype=np.int16)
+        return z, z.copy(), exp_hits, exp_trials
+
     cur = np.zeros(n_rules, dtype=np.int16)
     max_streak = np.zeros(n_rules, dtype=np.int16)
+    cap = buckets - 1
     for row in hit_matrix:
+        if buckets > 0:
+            group = np.minimum(cur, cap)
+            exp_trials += np.bincount(group, minlength=buckets)
+            exp_hits += np.bincount(group, weights=row, minlength=buckets).astype(np.int64)
         cur += 1
         cur *= row  # bool -> 0/1: resets every rule that missed
         np.maximum(max_streak, cur, out=max_streak)
-    return max_streak, cur
+    return max_streak, cur, exp_hits, exp_trials
 
 
 def _select_rule_indices(
@@ -105,29 +208,6 @@ def _select_rule_indices(
     )
     keep_local = np.argpartition(score, -cap)[-cap:]
     return idx[keep_local[np.argsort(score[keep_local])[::-1]]]
-
-
-def selection_shrinkage_strength(n_screened: int, n_kept: int, base: float = 6.0) -> float:
-    """Extra prior weight needed because ``p_mean`` was *selected*, not observed.
-
-    ``_select_rule_indices`` keeps the top ``n_kept`` of ``n_screened`` rules
-    using a score that is monotone in the in-sample hit rate.  The surviving
-    ``p_mean`` values are therefore order statistics from the upper tail, not
-    unbiased estimates: the winner's curse inflates them by roughly the tail
-    quantile of the sampling noise.  With ~5,600 rules screened per lag and 300
-    kept, that is a real bias, and the previous fixed ``prior_strength = 6.0``
-    (about 5% of a rule's own ``min_trials = 60`` evidence) does not touch it.
-
-    We scale the prior by ``sqrt(2 * ln(screened / kept))`` — the standard
-    Gaussian-maximum growth rate — so heavier screening shrinks harder toward
-    the baseline.  No screening (``kept >= screened``) leaves ``base``
-    unchanged, preserving current behaviour where selection did not occur.
-    """
-    screened = max(int(n_screened), 1)
-    kept = max(int(n_kept), 1)
-    if kept >= screened:
-        return float(base)
-    return float(base) * float(np.sqrt(1.0 + 2.0 * np.log(screened / kept)))
 
 
 @dataclass
@@ -201,6 +281,29 @@ def fit_paths(
     scope: str = "all",
     prepared: PreparedPathHistory | None = None,
 ) -> tuple[list[PathStats], dict[date, np.ndarray], list[date]]:
+    """``fit_paths_with_evidence`` bỏ phần kinh nghiệm cầu (giữ chữ ký cũ)."""
+    stats, raw_by_date, dates, _ = fit_paths_with_evidence(
+        df_raw=df_raw,
+        df_2digits=df_2digits,
+        params=params,
+        mode=mode,
+        anchor_date=anchor_date,
+        scope=scope,
+        prepared=prepared,
+    )
+    return stats, raw_by_date, dates
+
+
+def fit_paths_with_evidence(
+    *,
+    df_raw: pd.DataFrame | None = None,
+    df_2digits: pd.DataFrame | None = None,
+    params: PathParams,
+    mode: Mode,
+    anchor_date: Optional[date] = None,
+    scope: str = "all",
+    prepared: PreparedPathHistory | None = None,
+) -> tuple[list[PathStats], dict[date, np.ndarray], list[date], BridgeEvidence | None]:
     """Fit path rules using history up to ``anchor_date`` (inclusive).
 
     The implementation precomputes every position-pair number once per draw,
@@ -218,7 +321,7 @@ def fit_paths(
 
     dates = prepared.dates
     if not dates:
-        return [], {}, []
+        return [], {}, [], None
 
     raw_matrix = prepared.raw_matrix
     raw_digits = list(raw_matrix)
@@ -246,7 +349,7 @@ def fit_paths(
     idx_end = anchor_idx
     idx_start = max(0, anchor_idx - params.window_days + 1)
 
-    stats: list[PathStats] = []
+    fitted_lags: list[tuple] = []
     for lag in range(1, params.lag_max + 1):
         # CRITICAL: ``lag`` must mean the same thing here as it does at
         # prediction time.  ``predict_from_fitted_paths_full`` resolves a rule's
@@ -279,7 +382,9 @@ def fit_paths(
 
         trials = int(hit_matrix.shape[0])
         hits = hit_matrix.sum(axis=0, dtype=np.int32)
-        max_streak, current_streak = _streak_stats(hit_matrix)
+        max_streak, current_streak, exp_hits, exp_trials = _streak_walk(
+            hit_matrix, buckets=STREAK_BUCKETS
+        )
         p_mean = (hits + params.alpha) / (trials + params.alpha + params.beta)
 
         selected = _select_rule_indices(
@@ -290,7 +395,18 @@ def fit_paths(
             params=params,
             mode=mode,
         )
+        fitted_lags.append(
+            (lag, trials, hits, p_mean, max_streak, current_streak, selected,
+             exp_hits, exp_trials)
+        )
+
+    evidence = _bridge_evidence(fitted_lags, mode=mode)
+    stats: list[PathStats] = []
+    for lag, trials, hits, p_mean, max_streak, current_streak, selected, _, _ in fitted_lags:
+        center = evidence.base_rate
+        keep = 1.0 - evidence.rule_shrinkage
         for k in selected:
+            group = min(int(current_streak[k]), STREAK_BUCKETS - 1)
             stats.append(
                 PathStats(
                     lag=lag,
@@ -303,13 +419,53 @@ def fit_paths(
                     current_streak=int(current_streak[k]),
                     special_touch=int(special_touch[k]),
                     special_both=int(special_both[k]),
+                    p_post=center + keep * (float(hits[k]) / trials - center),
+                    streak_shift=evidence.streak_posterior[group] - evidence.base_rate,
                 )
             )
 
     # Truncated at the anchor: with a shared PreparedPathHistory the arrays
     # span the whole dataset, and the prediction step looks rules up by date.
     raw_by_date = {dates[i]: raw_digits[i] for i in range(anchor_idx + 1)}
-    return stats, raw_by_date, dates[: anchor_idx + 1]
+    return stats, raw_by_date, dates[: anchor_idx + 1], evidence
+
+
+def _bridge_evidence(fitted_lags: list[tuple], *, mode: str) -> BridgeEvidence | None:
+    """Học kinh nghiệm cầu từ mọi cầu của mọi độ trễ — xem ``BridgeEvidence``.
+
+    Một tâm và một κ chung cho mọi độ trễ. Trên một trò chơi công bằng, mọi cầu
+    trúng với cùng một xác suất bất kể độ trễ hay con số nó báo; tỉ lệ chung của
+    từng độ trễ chỉ khác nhau vì cú sốc theo kỳ (kỳ gốc có nhiều chữ số 6 thì
+    nhiều cầu cùng báo 66), nên lấy tâm riêng từng độ trễ là đưa nhiễu vào. Gộp
+    30 độ trễ còn làm ước lượng phần vượt bớt nhiễu khoảng √30 lần.
+    """
+    if not fitted_lags:
+        return None
+    succ = np.concatenate([f[2] for f in fitted_lags]).astype(float)
+    n = np.concatenate([np.full(f[2].size, f[1], dtype=float) for f in fitted_lags])
+    base = float(succ.sum() / n.sum())
+    kappa = fit_shrinkage_to_prior(succ, n, base)
+    harmonic_n = float(n.size / np.sum(1.0 / n))
+    rates = succ / n
+    binomial = float(np.mean(base * (1.0 - base) / n))
+    observed = float(np.mean((rates - base) ** 2))
+
+    exp_hits = np.sum([f[7] for f in fitted_lags], axis=0).astype(float)
+    exp_trials = np.sum([f[8] for f in fitted_lags], axis=0).astype(float)
+    streak_post, _, streak_tau2 = random_effects_posterior(exp_hits, exp_trials)
+    return BridgeEvidence(
+        mode=mode,
+        rules=int(succ.size),
+        trials=int(round(float(np.mean(n)))),
+        base_rate=base,
+        variance_ratio=observed / binomial if binomial > 0 else float("nan"),
+        rule_prior_strength=float(kappa),
+        rule_shrinkage=float(kappa / (kappa + harmonic_n)),
+        streak_hits=tuple(int(v) for v in exp_hits),
+        streak_trials=tuple(int(v) for v in exp_trials),
+        streak_between_variance=float(streak_tau2),
+        streak_posterior=tuple(float(v) for v in streak_post),
+    )
 
 
 
@@ -327,6 +483,8 @@ def paths_to_dataframe(stats: list[PathStats]) -> pd.DataFrame:
                 "current_streak": s.current_streak,
                 "special_touch": s.special_touch,
                 "special_both": s.special_both,
+                "p_post": s.p_post,
+                "streak_shift": s.streak_shift,
             }
             for s in stats
         ]
@@ -353,7 +511,6 @@ def _empty_prediction(mode: Mode = "loto") -> pd.DataFrame:
             "prob": np.full(100, base, dtype=np.float64),
             "support_paths_count": np.zeros(100, dtype=np.int32),
             "evidence_weight": np.zeros(100, dtype=np.float64),
-            "prior_strength": np.zeros(100, dtype=np.float64),
         }
     )
 
@@ -424,7 +581,14 @@ def predict_from_fitted_paths_full(
     if paths.empty:
         return _empty_prediction(mode)
 
-    p = paths["p_mean"].astype(float).to_numpy()
+    # Xác suất trúng kỳ tới của từng cầu theo kinh nghiệm học từ MỌI cầu
+    # (``BridgeEvidence``), không phải tỉ lệ lịch sử của chính cầu đã được chọn
+    # ra từ hàng nghìn cầu. Nhánh "đang chạy" cộng phần kinh nghiệm theo chuỗi.
+    p = paths["p_post"].astype(float).to_numpy()
+    if np.isnan(p).any():
+        raise ValueError("đường cầu thiếu p_post: dựng lại bằng fit_paths")
+    if kind == "active":
+        p = p + paths["streak_shift"].astype(float).to_numpy()
     if scope in {"near_special", "special_only"}:
         touched = paths["special_touch"].astype(bool).to_numpy()
         both = paths["special_both"].astype(bool).to_numpy()
@@ -447,14 +611,11 @@ def predict_from_fitted_paths_full(
     weighted_p = np.bincount(nums, weights=weights * p, minlength=100).astype(np.float64)
 
     baseline = baseline_rate(mode)
-    # Selection-aware shrinkage: ``p_mean`` reaching this point survived a
-    # top-``top_rules_per_lag``-of-all-pairs screen inside ``fit_paths``, so it
-    # carries winner's-curse bias.  See ``selection_shrinkage_strength``.
-    n_pairs_screened = len(enumerate_position_pairs(TOTAL_DIGITS)[0])
-    prior_strength = selection_shrinkage_strength(
-        n_screened=n_pairs_screened, n_kept=int(params.top_rules_per_lag)
-    )
-    prob = (weighted_p + prior_strength * baseline) / (weight_sum + prior_strength)
+    # Hậu nghiệm của từng cầu đã co theo mức chênh thật giữa các cầu, nên không
+    # cần co thêm lần nữa ở đây: trung bình có trọng số của các cầu cùng báo
+    # một con là ước lượng cho con ấy. Các cầu cùng báo một con tương quan với
+    # nhau (chung chữ số, chung kỳ gốc), nên lấy TRUNG BÌNH chứ không cộng dồn.
+    prob = np.divide(weighted_p, weight_sum, out=np.full(100, baseline), where=weight_sum > 0)
     prob = np.where(support > 0, prob, baseline)
     if mode == "de":
         prob = prob / max(float(prob.sum()), 1e-12)
@@ -465,9 +626,6 @@ def predict_from_fitted_paths_full(
             "prob": prob,
             "support_paths_count": support,
             "evidence_weight": weight_sum,
-            # Effective sample size behind each number's estimate, so downstream
-            # tables can show that a 25.1% and a 24.6% are not distinguishable.
-            "prior_strength": prior_strength,
         }
     )
 

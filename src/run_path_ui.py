@@ -14,7 +14,7 @@ from calendar_alignment import require_daily_contiguous
 from lottery import Lottery
 from path_models import PathParams, build_daily_targets, index_to_label
 from path_prob import (
-    fit_paths,
+    fit_paths_with_evidence,
     paths_to_dataframe,
     predict_from_fitted_paths,
     predict_from_fitted_paths_full,
@@ -129,6 +129,8 @@ def _build_path_lines(
         "i",
         "j",
         "p_mean",
+        "p_post",
+        "streak_shift",
         "hits",
         "trials",
         "current_streak",
@@ -236,7 +238,7 @@ def main() -> None:
     anchor = _parse_date(args.bien_ngay) if args.bien_ngay else None
     anchor_date = _resolve_anchor_date(dates, anchor)
 
-    stats, raw_by_date, fitted_dates = fit_paths(
+    stats, raw_by_date, fitted_dates, evidence = fit_paths_with_evidence(
         df_raw=df_raw,
         df_2digits=df_2d,
         params=params,
@@ -383,6 +385,16 @@ def main() -> None:
     }
     (out_dir / f"path_manifest_{args.mode}.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
+    )
+    # Kinh nghiệm cầu học từ mọi đường cầu: trang soi cầu in nó và suy câu kết
+    # luận TỪ nó, không viết cứng.
+    (out_dir / f"bridge_evidence_{args.mode}.json").write_text(
+        json.dumps(
+            {"anchor_date": anchor_date.isoformat(), **(evidence.as_dict() if evidence else {})},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
     )
 
     _save_picks(out_dir, args.mode, pred_active, pred_stable)

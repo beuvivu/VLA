@@ -347,3 +347,42 @@ def fit_shrinkage_to_prior_rows(
     out[good] = np.clip(kappa[good], 1e-6, MAX_PRIOR_STRENGTH)
     out[~np.isfinite(out)] = MAX_PRIOR_STRENGTH
     return out
+
+
+def random_effects_posterior(
+    successes: np.ndarray, trials: np.ndarray
+) -> tuple[np.ndarray, float, float]:
+    """Hậu nghiệm từng nhóm theo mô hình hiệu ứng ngẫu nhiên DerSimonian–Laird.
+
+    Dùng khi cỡ mẫu các nhóm chênh nhau rất xa (nhóm "chuỗi 0" của kinh nghiệm
+    cầu có hàng chục triệu lần chấm, nhóm "chuỗi 8+" vài trăm). Phương pháp mô
+    men KHÔNG trọng số của ``fit_shrinkage_to_prior`` khi ấy bị chính các nhóm
+    nhiễu nhất chi phối: đo trên lịch sử công bằng giả định, nó giữ lại tới 1,4
+    điểm phần trăm nhiễu ở nhóm ít dữ liệu. Ở đây mỗi nhóm nặng theo độ chính
+    xác ``1/vᵢ``, ``vᵢ = m(1−m)/nᵢ``:
+
+    * ``Q = Σ wᵢ(rᵢ − m)²`` — không có khác biệt thật thì ``E[Q] = k − 1``;
+    * ``τ² = max(0, (Q − (k − 1)) / (Σw − Σw²/Σw))`` — phương sai THẬT giữa nhóm;
+    * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``.
+
+    ``τ² = 0`` thì mọi nhóm co hẳn về ``m``. Nhóm không có lần thử nào nhận ``m``.
+    Trả về ``(hậu nghiệm, m, τ²)``.
+    """
+    counts = np.asarray(successes, dtype=float).reshape(-1)
+    n = np.asarray(trials, dtype=float).reshape(-1)
+    counts = _validate_counts(counts, n, allow_zero=True)
+    used = n > 0
+    if not used.any():
+        raise ValueError("cần ít nhất một nhóm có phép thử")
+    m = float(counts[used].sum() / n[used].sum())
+    post = np.full(counts.size, m)
+    if used.sum() < 2 or not 0.0 < m < 1.0:
+        return post, m, 0.0
+    rates = counts[used] / n[used]
+    v = m * (1.0 - m) / n[used]
+    w = 1.0 / v
+    q = float(np.sum(w * (rates - m) ** 2))
+    scale = float(w.sum() - np.sum(w**2) / w.sum())
+    tau2 = max(0.0, (q - (used.sum() - 1)) / scale) if scale > 0 else 0.0
+    post[used] = m + tau2 / (tau2 + v) * (rates - m)
+    return post, m, tau2
