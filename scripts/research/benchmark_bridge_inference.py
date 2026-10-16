@@ -28,6 +28,12 @@ Luật quyết định chốt TRƯỚC khi đo:
 3. Tổ hợp mới không kém dự báo hằng số với z ≤ −2.
 
     PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000
+
+Với cửa sổ 2 000 kỳ, một lượt mất khoảng 2,6 giờ trên 4 lõi; chạy theo phần rồi gộp::
+
+    for k in 1 2 3 4; do PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py \\
+        --last 2000 --parts 4 --part $k; done
+    PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000 --parts 4 --merge
 """
 
 from __future__ import annotations
@@ -172,32 +178,46 @@ def decide(report: dict) -> dict:
             "adopt": bool(rule1 and rule2 and rule3)}
 
 
-def run(last: int, workers: int) -> dict:
+def _history():
     lot = Lottery()
     lot.load()
     raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
     two = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
     dates = normalize_dates(raw["date"])
-    source, target = consecutive_next_pairs(dates)
-    source, target = source[-last:], target[-last:]
     _, loto_targets, de_targets = build_daily_targets(two)
     hit_loto = np.zeros((len(two), 100))
     for t, numbers in enumerate(loto_targets):
         hit_loto[t, list(numbers)] = 1.0
     hit_de = np.eye(100)[np.asarray(de_targets, dtype=int)]
+    return raw, two, dates, {"loto": hit_loto, "de": hit_de}
 
+
+def run_part(last: int, workers: int, part: int, parts: int) -> dict:
+    """Chấm một phần (liên tiếp) của ``last`` kỳ cuối; trả về logloss TỪNG KỲ để gộp sau.
+
+    Với cửa sổ 2 000 kỳ, mỗi kỳ neo mất ~19 giây cho cả hai chế độ, nên 2 000 kỳ
+    vượt giới hạn thời gian của một lượt chạy; chia phần không đổi phép đo — bước
+    gộp nối đúng các kỳ theo thứ tự rồi mới tính z.
+    """
+    raw, two, dates, hit = _history()
+    source, target = consecutive_next_pairs(dates)
+    source, target = source[-last:], target[-last:]
+    bounds = np.linspace(0, len(source), parts + 1).astype(int)
+    lo, hi = bounds[part - 1], bounds[part]
+    source, target = source[lo:hi], target[lo:hi]
     prepared = prepare_path_history(raw, two)
     anchors = [dates[i].date() for i in source]
     with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(prepared,)) as pool:
         days = list(pool.map(_day, anchors, chunksize=8))
-    print(f"[cầu vị trí] {len(days)} kỳ", flush=True)
+    print(f"[cầu vị trí] phần {part}/{parts}: {len(days)} kỳ", flush=True)
 
     weights = DEFAULT_ENSEMBLE_WEIGHTS
-    report: dict = {}
+    out: dict = {"target": [int(t) for t in target],
+                 "first_target": str(dates[target[0]].date()),
+                 "last_target": str(dates[target[-1]].date())}
     for mode in MODES:
-        hits = (hit_loto if mode == "loto" else hit_de)[target]
-        ref = evaluator.daily_logloss(mode, evaluator.cumulative_reference(
-            mode, hit_loto if mode == "loto" else hit_de, target), hits)
+        hits = hit[mode][target]
+        ref = evaluator.daily_logloss(mode, evaluator.cumulative_reference(mode, hit[mode], target), hits)
         base = baseline_rate(mode)
         vec = {(k, v): np.vstack([d[(mode, k, v)] for d in days]) for k in KINDS for v in ("old", "new")}
         flat = (weights.w_ml + weights.w_stat + weights.w_cau) * base
@@ -206,19 +226,41 @@ def run(last: int, workers: int) -> dict:
                for v in ("old", "new")}
         ll = {f"{k}_{v}": evaluator.daily_logloss(mode, p, hits) for (k, v), p in vec.items()}
         ll.update({f"ensemble_{v}": evaluator.daily_logloss(mode, p, hits) for v, p in ens.items()})
-        ev = [d[(mode, "evidence")] for d in days]
+        sums = {f"{k}_{v}": p.sum(axis=1) for (k, v), p in vec.items()}
+        sums.update({f"ensemble_{v}": p.sum(axis=1) for v, p in ens.items()})
+        out[mode] = {
+            "constant": [float(x) for x in ref],
+            "logloss": {k: [float(x) for x in v] for k, v in ll.items()},
+            "sums": {k: [float(x) for x in v] for k, v in sums.items()},
+            "evidence": [d[(mode, "evidence")] for d in days],
+        }
+    return out
+
+
+def merge(parts: list[dict]) -> dict:
+    """Nối các phần theo thứ tự kỳ đích rồi tính z và luật quyết định như một lượt liền."""
+    parts = sorted(parts, key=lambda p: p["target"][0])
+    targets = [t for p in parts for t in p["target"]]
+    if targets != sorted(targets) or len(set(targets)) != len(targets):
+        raise ValueError("các phần chồng nhau hoặc thiếu thứ tự kỳ đích")
+    report: dict = {}
+    for mode in MODES:
+        ref = np.concatenate([p[mode]["constant"] for p in parts])
+        names = list(parts[0][mode]["logloss"])
+        ll = {k: np.concatenate([p[mode]["logloss"][k] for p in parts]) for k in names}
+        sums = {k: np.concatenate([p[mode]["sums"][k] for p in parts]) for k in parts[0][mode]["sums"]}
+        ev = [e for p in parts for e in p[mode]["evidence"]]
+        base = baseline_rate(mode)
         report[mode] = {
-            "days": len(days),
-            "first_target": str(dates[target[0]].date()),
-            "last_target": str(dates[target[-1]].date()),
+            "days": int(len(ref)),
+            "first_target": parts[0]["first_target"],
+            "last_target": parts[-1]["last_target"],
             "constant_logloss": float(ref.mean()),
             "logloss": {k: float(v.mean()) for k, v in ll.items()},
             "vs_constant": {k: _paired(v, ref) for k, v in ll.items()},
             "branch_new_vs_old": {k: _paired(ll[f"{k}_new"], ll[f"{k}_old"]) for k in KINDS},
             "ensemble_new_vs_old": _paired(ll["ensemble_new"], ll["ensemble_old"]),
-            "median_sum": {name: float(np.median(p.sum(axis=1)))
-                           for name, p in {**{f"{k}_{v}": p for (k, v), p in vec.items()},
-                                           **{f"ensemble_{v}": p for v, p in ens.items()}}.items()},
+            "median_sum": {k: float(np.median(v)) for k, v in sums.items()},
             "expected_sum": float(100 * base) if mode == "loto" else 1.0,
             "evidence": {
                 "variance_ratio_median": float(np.median([e["variance_ratio"] for e in ev])),
@@ -244,15 +286,37 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--last", type=int, default=2000)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--parts", type=int, default=1, help="chia --last kỳ thành ngần ấy phần liên tiếp")
+    ap.add_argument("--part", type=int, default=0,
+                    help="chỉ chấm phần này (1..parts) và ghi vào --parts-dir; 0 = chấm mọi phần rồi gộp")
+    # Tệp từng phần là sản phẩm trung gian: để ở data/tmp (đã .gitignore).
+    ap.add_argument("--parts-dir", type=Path, default=ROOT / "data" / "tmp" / "bridge_inference_parts")
+    ap.add_argument("--merge", action="store_true", help="chỉ gộp các phần đã có trong --parts-dir")
+    ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args()
+    if args.part:
+        args.parts_dir.mkdir(parents=True, exist_ok=True)
+        part = run_part(args.last, args.workers, args.part, args.parts)
+        dest = args.parts_dir / f"part_{args.part}_of_{args.parts}.json"
+        dest.write_text(json.dumps(part, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"[OK] {dest}")
+        return
+    if args.merge:
+        parts = [json.loads(f.read_text(encoding="utf-8"))
+                 for f in sorted(args.parts_dir.glob(f"part_*_of_{args.parts}.json"))]
+        if len(parts) != args.parts:
+            raise SystemExit(f"cần {args.parts} phần, mới có {len(parts)}")
+    else:
+        parts = [run_part(args.last, args.workers, k, args.parts) for k in range(1, args.parts + 1)]
     report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               "last": args.last,
+              "window_days": PRODUCTION_WINDOW_DAYS,
               "assumptions": ("Tổ hợp mô phỏng: ML, thống kê và cầu-kèo bằng tỉ lệ nền; cầu vị trí "
                               "từ walk-forward; trọng số mặc định; không hiệu chỉnh, không xếp chồng."),
-              **run(args.last, args.workers)}
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"[OK] {OUT}  quyết định: {report['decision']}")
+              **merge(parts)}
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"[OK] {args.out}  quyết định: {report['decision']}")
 
 
 if __name__ == "__main__":
