@@ -280,13 +280,6 @@
     "conditional_rate":0.425
   },
   {
-    "prev_special_2d":"66",
-    "next_loto":"84",
-    "count":17,
-    "base_count":40,
-    "conditional_rate":0.425
-  },
-  {
     "prev_special_2d":"84",
     "next_loto":"38",
     "count":14,
@@ -373,6 +366,13 @@
   {
     "prev_special_2d":"21",
     "next_loto":"55",
+    "count":17,
+    "base_count":41,
+    "conditional_rate":0.4146341463
+  },
+  {
+    "prev_special_2d":"66",
+    "next_loto":"84",
     "count":17,
     "base_count":41,
     "conditional_rate":0.4146341463
@@ -688,20 +688,6 @@
   {
     "prev_special_2d":"46",
     "next_loto":"81",
-    "count":16,
-    "base_count":40,
-    "conditional_rate":0.4
-  },
-  {
-    "prev_special_2d":"66",
-    "next_loto":"00",
-    "count":16,
-    "base_count":40,
-    "conditional_rate":0.4
-  },
-  {
-    "prev_special_2d":"66",
-    "next_loto":"32",
     "count":16,
     "base_count":40,
     "conditional_rate":0.4
@@ -1038,6 +1024,27 @@
   {
     "prev_special_2d":"50",
     "next_loto":"64",
+    "count":16,
+    "base_count":41,
+    "conditional_rate":0.3902439024
+  },
+  {
+    "prev_special_2d":"66",
+    "next_loto":"00",
+    "count":16,
+    "base_count":41,
+    "conditional_rate":0.3902439024
+  },
+  {
+    "prev_special_2d":"66",
+    "next_loto":"32",
+    "count":16,
+    "base_count":41,
+    "conditional_rate":0.3902439024
+  },
+  {
+    "prev_special_2d":"66",
+    "next_loto":"34",
     "count":16,
     "base_count":41,
     "conditional_rate":0.3902439024
@@ -1577,20 +1584,6 @@
   {
     "prev_special_2d":"46",
     "next_loto":"36",
-    "count":15,
-    "base_count":40,
-    "conditional_rate":0.375
-  },
-  {
-    "prev_special_2d":"66",
-    "next_loto":"34",
-    "count":15,
-    "base_count":40,
-    "conditional_rate":0.375
-  },
-  {
-    "prev_special_2d":"66",
-    "next_loto":"89",
     "count":15,
     "base_count":40,
     "conditional_rate":0.375
@@ -2277,6 +2270,13 @@
   {
     "prev_special_2d":"50",
     "next_loto":"35",
+    "count":15,
+    "base_count":41,
+    "conditional_rate":0.3658536585
+  },
+  {
+    "prev_special_2d":"66",
+    "next_loto":"89",
     "count":15,
     "base_count":41,
     "conditional_rate":0.3658536585
