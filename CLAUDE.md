@@ -475,7 +475,9 @@ riêng theo mức chênh thật giữa các cầu (`fit_shrinkage_to_prior`, m�
 trễ — tâm riêng từng độ trễ là đưa cú sốc theo kỳ vào), và nhánh "đang chạy" cộng `streak_shift` —
 tỉ lệ trúng tiếp theo độ dài chuỗi, co bằng DerSimonian–Laird với phương sai THEO CỤM KỲ QUAY
 (`streak_experience`; phương pháp mô men không trọng số giữ 1,4 điểm % nhiễu ở nhóm ít dữ liệu,
-và coi hàng nghìn cầu cùng kỳ là độc lập thì cú sốc theo kỳ thành τ² dương). Phần riêng giữ
+và coi hàng nghìn cầu cùng kỳ là độc lập thì cú sốc theo kỳ thành τ² dương), đo so với tỉ lệ riêng
+THÔ của từng cầu bỏ ra chuỗi đang chạy (không phải tỉ lệ chung hay `p_post`: thế là tính chất lượng
+cầu hai lần). Phần riêng giữ
 `N/(N + κ)` theo số lần chấm của TỪNG độ trễ; trang in phạm vi/độ trễ đúng cấu hình. Đo 15-10-2026 trên cửa sổ 2 000 kỳ của pipeline: độ tản
 giữa 170 130 cầu bằng 1,00 lần nhị thức, chuỗi 0–8+ trúng tiếp 23,5–24,0% so với nền 23,8% — mọi cầu co
 về nền. Walk-forward 2 000 kỳ: nhánh LOTO mới hơn cũ z = +7,86 (đang chạy) và +38,25 (ổn định), tổ hợp không đổi (z = −0,42; +0,27) vì `finalize_blend` đã neo mức; nhánh mới vẫn nhỉnh kém hằng số z ≈ −1,6 (tâm là tỉ lệ cửa sổ 365 kỳ) — ghi ra, không chỉnh sau khi xem. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê

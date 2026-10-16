@@ -390,13 +390,24 @@ def random_effects_posterior(
         if v.shape != counts.shape or not np.all(np.isfinite(v[used])) or np.any(v[used] <= 0):
             raise ValueError("variances phải cùng hình, hữu hạn và dương ở mọi nhóm có phép thử")
         v = v[used]
-    w = 1.0 / v
-    # Q đo quanh trung bình nghịch đảo phương sai: chỉ tâm ấy làm E[Q] = k − 1
-    # khi không có khác biệt thật. Với phương sai nhị thức nó trùng tỉ lệ chung
-    # m; với phương sai theo cụm thì không, và đo quanh m sẽ thổi Q lên.
-    center = float(np.sum(w * rates) / w.sum())
-    q = float(np.sum(w * (rates - center) ** 2))
-    scale = float(w.sum() - np.sum(w**2) / w.sum())
-    tau2 = max(0.0, (q - (used.sum() - 1)) / scale) if scale > 0 else 0.0
+    tau2 = dersimonian_laird_tau2(rates, v)
     post[used] = m + tau2 / (tau2 + v) * (rates - m)
     return post, m, tau2
+
+
+def dersimonian_laird_tau2(rates: np.ndarray, variances: np.ndarray) -> float:
+    """Phương sai THẬT giữa các nhóm theo DerSimonian–Laird (xem ``random_effects_posterior``).
+
+    Q đo quanh trung bình nghịch đảo phương sai: chỉ tâm ấy làm E[Q] = k − 1 khi
+    không có khác biệt thật. Với phương sai nhị thức nó trùng tỉ lệ chung; với
+    phương sai theo cụm thì không, và đo quanh tỉ lệ chung sẽ thổi Q lên.
+    """
+    r = np.asarray(rates, dtype=float).reshape(-1)
+    v = np.asarray(variances, dtype=float).reshape(-1)
+    if r.size < 2:
+        return 0.0
+    w = 1.0 / v
+    center = float(np.sum(w * r) / w.sum())
+    q = float(np.sum(w * (r - center) ** 2))
+    scale = float(w.sum() - np.sum(w**2) / w.sum())
+    return max(0.0, (q - (r.size - 1)) / scale) if scale > 0 else 0.0

@@ -41,20 +41,32 @@ WIDTHS = [width for _, width in FIELD_WIDTHS]
 LAST_TWO = [(sum(WIDTHS[:k]) + w - 2, sum(WIDTHS[:k]) + w - 1) for k, w in enumerate(WIDTHS)]
 
 
-def _history(n_draws: int = 300, *, persist: float = 0.0, seed: int = 7):
+def _history(n_draws: int = 300, *, persist: float = 0.0, momentum: tuple[float, float] | None = None,
+             seed: int = 7):
     """Lịch sử giả định; ``persist``: mỗi giải giữ hai số cuối của kỳ trước với xác suất ấy.
 
     Cửa sổ của ``PARAMS`` phủ trọn lịch sử, nên số lần chấm khác nhau theo độ trễ (300 − trễ).
 
-    Khi ``persist > 0``, 27 đường cầu (trễ 1, hai chữ số cuối của cùng một giải)
-    là cầu THẬT: chúng trúng với xác suất ≈ persist + (1 − persist)·nền.
+    Khi ``persist > 0``, giải k chép hai số cuối của giải k + 1 (vòng) ở kỳ trước,
+    với xác suất ấy: 27 đường cầu (trễ 1, hai chữ số cuối của một giải) là cầu
+    THẬT nhưng KHÔNG nhớ — mỗi kỳ trúng với cùng xác suất ≈ persist + (1 − persist)·nền.
+    Chép VÒNG chứ không tự chép: tự chép làm cầu trễ 2 trúng ở hai kỳ liền nhau dùng
+    chung một lần chép, tức là có hiệu ứng chuỗi thật.
+
+    ``momentum = (cao, thấp)``: giải TỰ chép số của chính nó với xác suất "cao" nếu kỳ
+    trước vừa chép, "thấp" nếu không — cầu có hiệu ứng chuỗi thật.
     """
     rng = np.random.default_rng(seed)
     values = np.column_stack([rng.integers(0, 10**w, size=n_draws) for w in WIDTHS]).astype(np.int64)
+    kept = np.zeros(len(WIDTHS), dtype=bool)
+    count = len(WIDTHS)
     for t in range(1, n_draws):
-        for k in range(len(WIDTHS)):
-            if rng.random() < persist:
-                values[t, k] = values[t, k] // 100 * 100 + values[t - 1, k] % 100
+        for k in range(count):
+            chance = persist if momentum is None else momentum[0 if kept[k] else 1]
+            kept[k] = rng.random() < chance
+            if kept[k]:
+                source = k if momentum is not None else (k + 1) % count
+                values[t, k] = values[t, k] // 100 * 100 + values[t - 1, source] % 100
     dates = pd.date_range("2025-01-01", periods=n_draws, freq="D").date
     raw = pd.DataFrame(values, columns=COLUMNS)
     raw.insert(0, "date", dates)
@@ -82,21 +94,29 @@ def test_streak_walk_counts_match_brute_force() -> None:
     rng = np.random.default_rng(3)
     hit = rng.random((60, 25)) < 0.45
     buckets = 4
-    max_streak, current, row_hits, row_trials = _streak_walk(hit, buckets=buckets)
-    want_hits = np.zeros((hit.shape[0], buckets), dtype=int)
-    want_trials = np.zeros((hit.shape[0], buckets), dtype=int)
+    totals = hit.sum(axis=0)
+    max_streak, current, row_hits, row_trials, row_expected = _streak_walk(
+        hit, buckets=buckets, rule_hits=totals
+    )
+    n = hit.shape[0]
+    want_hits = np.zeros((n, buckets), dtype=int)
+    want_trials = np.zeros((n, buckets), dtype=int)
+    want_expected = np.zeros((n, buckets))
     for r in range(hit.shape[1]):
         run = best = 0
-        for t in range(hit.shape[0]):
+        for t in range(n):
             group = min(run, buckets - 1)
             want_trials[t, group] += 1
             want_hits[t, group] += int(hit[t, r])
+            # Tỉ lệ riêng của cầu bỏ ra chuỗi đang chạy và kỳ đang chấm.
+            want_expected[t, group] += (totals[r] - run - int(hit[t, r])) / (n - run - 1)
             run = run + 1 if hit[t, r] else 0
             best = max(best, run)
         assert max_streak[r] == best
         assert current[r] == run
     np.testing.assert_array_equal(row_trials, want_trials)
     np.testing.assert_array_equal(row_hits, want_hits)
+    np.testing.assert_allclose(row_expected, want_expected)
 
 
 def test_a_fair_history_pools_every_bridge_to_the_common_rate(fair) -> None:
@@ -149,8 +169,18 @@ def test_streak_experience_follows_the_data(fair, planted) -> None:
     assert len(fair_ev.streak_posterior) == STREAK_BUCKETS
     fair_post = np.array(fair_ev.streak_posterior)
     assert np.abs(fair_post - fair_ev.base_rate).max() < 0.01
-    # Cầu thật trúng thành chuỗi dài, nên "đang chạy lâu" có nghĩa ở lịch sử ấy.
-    assert planted_ev.streak_posterior[-1] > planted_ev.base_rate + 0.01
+    # Cầu thật nhưng không nhớ: chúng hay chạy dài chỉ VÌ tỉ lệ riêng cao, mà p_post
+    # đã chứa tỉ lệ ấy. Nhóm chuỗi dài vẫn trúng nhiều hơn nền khi nhìn thô...
+    raw_top = planted_ev.streak_hits[-1] / planted_ev.streak_trials[-1]
+    assert raw_top > planted_ev.base_rate + 0.02
+    # ...nhưng sau khi trừ phần chất lượng cầu thì không còn hiệu ứng chuỗi để cộng thêm.
+    assert abs(planted_ev.streak_posterior[-1] - planted_ev.base_rate) < 0.005
+
+
+def test_a_real_streak_effect_survives_the_rule_quality_adjustment() -> None:
+    """Giải giữ số với xác suất 0,85 nếu kỳ trước vừa giữ, 0,05 nếu không: cầu chạy dài trúng tiếp thật."""
+    *_, ev = _fit(*_history(momentum=(0.85, 0.05)))
+    assert ev.streak_posterior[-1] > ev.base_rate + 0.01
 
 
 def _rule(p_post: float, shift: float, *, i: int, j: int) -> PathStats:

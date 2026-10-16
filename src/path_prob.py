@@ -10,8 +10,8 @@ import pandas as pd
 from calendar_alignment import calendar_lag_pairs
 from hierarchical_pooling import (
     MAX_PRIOR_STRENGTH,
+    dersimonian_laird_tau2,
     fit_shrinkage_to_prior,
-    random_effects_posterior,
 )
 from path_models import (
     PathParams,
@@ -140,40 +140,50 @@ def _streak_stats(hit_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     ``n_rules`` elements on every one of the ``trials`` iterations.  Doing the
     same arithmetic in place is ~7x faster and bit-identical.
     """
-    max_streak, current, _, _ = _streak_walk(hit_matrix, buckets=0)
+    max_streak, current, *_ = _streak_walk(hit_matrix, buckets=0)
     return max_streak, current
 
 
 def _streak_walk(
-    hit_matrix: np.ndarray, *, buckets: int
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    hit_matrix: np.ndarray, *, buckets: int, rule_hits: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Như ``_streak_stats``, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
 
     Kỳ thứ t được xếp vào nhóm ``min(chuỗi sau kỳ t−1, buckets−1)``; chuỗi tính
     từ đầu cửa sổ, giống hệt ``current_streak``. Số đếm trả về THEO TỪNG KỲ
     (hình ``(kỳ, buckets)``) để phương sai tính được theo cụm kỳ quay
-    (``streak_experience``). ``buckets=0`` bỏ phần đếm.
+    (``streak_experience``). ``rule_hits`` (số lần trúng của từng cầu trong cả cửa
+    sổ) thì cộng thêm, theo kỳ và nhóm, số lần trúng KỲ VỌNG theo tỉ lệ riêng
+    của từng cầu — ước lượng BỎ RA chính chuỗi đang chạy và kỳ đang chấm:
+    ``(trúng − chuỗi − trúng kỳ này) / (số kỳ − chuỗi − 1)``. Cầu không nhớ thì
+    phần trúng vượt kỳ vọng ấy bằng 0, dù cầu tốt hay chạy dài. ``buckets=0`` bỏ
+    phần đếm.
     """
     n_rows = hit_matrix.shape[0] if hit_matrix.ndim == 2 else 0
     n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
     row_hits = np.zeros((n_rows, max(buckets, 0)), dtype=np.int64)
     row_trials = np.zeros((n_rows, max(buckets, 0)), dtype=np.int64)
+    row_rate = np.zeros((n_rows, max(buckets, 0)), dtype=np.float64)
     if hit_matrix.size == 0:
         z = np.zeros(n_rules, dtype=np.int16)
-        return z, z.copy(), row_hits, row_trials
+        return z, z.copy(), row_hits, row_trials, row_rate
 
     cur = np.zeros(n_rules, dtype=np.int16)
     max_streak = np.zeros(n_rules, dtype=np.int16)
     cap = buckets - 1
+    n_trials = float(n_rows)
     for t, row in enumerate(hit_matrix):
         if buckets > 0:
             group = np.minimum(cur, cap)
             row_trials[t] = np.bincount(group, minlength=buckets)
             row_hits[t] = np.bincount(group, weights=row, minlength=buckets)
+            if rule_hits is not None:
+                own = (rule_hits - cur - row) / np.maximum(n_trials - cur - 1.0, 1.0)
+                row_rate[t] = np.bincount(group, weights=own, minlength=buckets)
         cur += 1
         cur *= row  # bool -> 0/1: resets every rule that missed
         np.maximum(max_streak, cur, out=max_streak)
-    return max_streak, cur, row_hits, row_trials
+    return max_streak, cur, row_hits, row_trials, row_rate
 
 
 def _select_rule_indices(
@@ -361,6 +371,9 @@ def fit_paths_with_evidence(
     # một kỳ quay thuộc cùng một cụm.
     day_hits = np.zeros((idx_end - idx_start + 1, STREAK_BUCKETS), dtype=np.int64)
     day_trials = np.zeros_like(day_hits)
+    # Số lần trúng kỳ vọng theo tỉ lệ riêng của từng cầu (bỏ chuỗi đang chạy):
+    # hiệu ứng chuỗi chỉ là phần trúng VƯỢT mức ấy.
+    day_expected = np.zeros(day_hits.shape, dtype=np.float64)
     for lag in range(1, params.lag_max + 1):
         # CRITICAL: ``lag`` must mean the same thing here as it does at
         # prediction time.  ``predict_from_fitted_paths_full`` resolves a rule's
@@ -393,12 +406,13 @@ def fit_paths_with_evidence(
 
         trials = int(hit_matrix.shape[0])
         hits = hit_matrix.sum(axis=0, dtype=np.int32)
-        max_streak, current_streak, row_hits, row_trials = _streak_walk(
-            hit_matrix, buckets=STREAK_BUCKETS
+        max_streak, current_streak, row_hits, row_trials, row_expected = _streak_walk(
+            hit_matrix, buckets=STREAK_BUCKETS, rule_hits=hits
         )
         # ``target_idx`` không lặp trong một độ trễ nên cộng chỉ số trực tiếp là đúng.
         day_hits[target_idx - idx_start] += row_hits
         day_trials[target_idx - idx_start] += row_trials
+        day_expected[target_idx - idx_start] += row_expected
         p_mean = (hits + params.alpha) / (trials + params.alpha + params.beta)
 
         selected = _select_rule_indices(
@@ -411,7 +425,9 @@ def fit_paths_with_evidence(
         )
         fitted_lags.append((lag, trials, hits, p_mean, max_streak, current_streak, selected))
 
-    evidence = _bridge_evidence(fitted_lags, day_hits, day_trials, mode=mode, scope=scope)
+    evidence = _bridge_evidence(
+        fitted_lags, day_hits, day_trials, day_expected, mode=mode, scope=scope
+    )
     stats: list[PathStats] = []
     for lag, trials, hits, p_mean, max_streak, current_streak, selected in fitted_lags:
         center = evidence.base_rate
@@ -443,7 +459,7 @@ def fit_paths_with_evidence(
 
 
 def streak_experience(
-    day_hits: np.ndarray, day_trials: np.ndarray
+    day_hits: np.ndarray, day_trials: np.ndarray, expected: np.ndarray | None = None
 ) -> tuple[np.ndarray, float, float]:
     """Hậu nghiệm tỉ lệ trúng tiếp theo nhóm độ dài chuỗi, phương sai theo cụm kỳ quay.
 
@@ -451,36 +467,48 @@ def streak_experience(
     con khác nhau thì mọi cầu LOTO cùng dễ trúng hơn. Coi ``n`` lượt chấm là
     ``n`` phép thử nhị thức thì phương sai nhóm "chuỗi 0" bị đánh giá thấp hàng
     trăm lần, và chênh lệch ngẫu nhiên rất nhỏ giữa các nhóm thành τ² dương. Ở
-    đây phương sai của tỉ lệ nhóm s là ước lượng cụm (sandwich) theo kỳ:
-    ``C/(C−1)·Σₜ(hₜₛ − rₛ·nₜₛ)² / Nₛ²``, không nhỏ hơn mức nhị thức. τ² học trên
-    các nhóm có ít nhất hai kỳ; hậu nghiệm co về tỉ lệ chung của MỌI lượt chấm.
+    đây phương sai của nhóm s là ước lượng cụm (sandwich) theo kỳ, không nhỏ
+    hơn mức nhị thức. τ² học trên các nhóm có ít nhất hai kỳ; hậu nghiệm co về
+    tỉ lệ chung của MỌI lượt chấm.
 
-    ``day_hits``/``day_trials`` hình ``(kỳ, nhóm)``. Trả ``(hậu nghiệm, m, τ²)``.
+    ``expected`` (cùng hình): số lần trúng mà riêng tỉ lệ của từng cầu đã giải
+    thích (``_streak_walk(rule_hits=...)``). Khi các cầu khác nhau thật, cầu tốt
+    hay rơi vào nhóm chuỗi dài; ``p_post`` đã mang chất lượng cầu, nên hiệu ứng
+    chuỗi chỉ được là phần trúng VƯỢT tỉ lệ riêng — không thì tính chất lượng cầu
+    hai lần. Kỳ vọng dùng tỉ lệ THÔ bỏ chuỗi, không dùng ``p_post``: ``p_post`` đã
+    co về nền, và phần chất lượng bị co mất sẽ lại hiện ra thành "hiệu ứng chuỗi".
+    Bỏ trống thì kỳ vọng là tỉ lệ chung.
+
+    ``day_hits``/``day_trials`` hình ``(kỳ, nhóm)``. Trả ``(hậu nghiệm, m, τ²)``;
+    hậu nghiệm là ``m`` cộng hiệu ứng chuỗi đã co.
     """
-    hits = day_hits.sum(axis=0).astype(float)
-    trials = day_trials.sum(axis=0).astype(float)
+    day_hits = np.asarray(day_hits, dtype=float)
+    day_trials = np.asarray(day_trials, dtype=float)
+    hits = day_hits.sum(axis=0)
+    trials = day_trials.sum(axis=0)
     used = trials > 0
     if not used.any():
         raise ValueError("không có lượt chấm nào để học kinh nghiệm chuỗi")
     base = float(hits[used].sum() / trials[used].sum())
-    rates = np.divide(hits, trials, out=np.full_like(hits, base), where=used)
-    resid = day_hits - day_trials * rates[None, :]
+    if expected is None:
+        expected = day_trials * base
+    expected = np.asarray(expected, dtype=float)
+    if expected.shape != day_hits.shape:
+        raise ValueError("expected phải cùng hình với day_hits")
+    safe_n = np.where(used, trials, 1.0)
+    excess = np.where(used, (hits - expected.sum(axis=0)) / safe_n, 0.0)
+    resid = (day_hits - expected) - day_trials * excess[None, :]
     clusters = (day_trials > 0).sum(axis=0)
     factor = np.divide(clusters, clusters - 1, out=np.ones_like(trials), where=clusters > 1)
-    safe_n = np.where(used, trials, 1.0)
     cluster_var = factor * (resid**2).sum(axis=0) / safe_n**2
     variances = np.maximum(cluster_var, base * (1.0 - base) / safe_n)
     # Nhóm chỉ xuất hiện trong MỘT kỳ quay chỉ có một quan sát độc lập: phương
     # sai cụm không ước lượng được, và sàn nhị thức lại coi hàng nghìn lượt chấm
     # của kỳ ấy là độc lập. Nhóm như thế co hẳn về tỉ lệ chung.
     reliable = used & (clusters >= 2)
-    tau2 = 0.0
-    if reliable.sum() >= 2:
-        _, _, tau2 = random_effects_posterior(
-            hits[reliable], trials[reliable], variances=variances[reliable]
-        )
+    tau2 = dersimonian_laird_tau2(base + excess[reliable], variances[reliable])
     post = np.full(hits.size, base)
-    post[reliable] = base + tau2 / (tau2 + variances[reliable]) * (rates[reliable] - base)
+    post[reliable] = base + tau2 / (tau2 + variances[reliable]) * excess[reliable]
     return post, base, tau2
 
 
@@ -488,6 +516,7 @@ def _bridge_evidence(
     fitted_lags: list[tuple],
     day_hits: np.ndarray,
     day_trials: np.ndarray,
+    day_expected: np.ndarray,
     *,
     mode: str,
     scope: str,
@@ -513,7 +542,7 @@ def _bridge_evidence(
 
     exp_hits = day_hits.sum(axis=0)
     exp_trials = day_trials.sum(axis=0)
-    streak_post, _, streak_tau2 = streak_experience(day_hits, day_trials)
+    streak_post, _, streak_tau2 = streak_experience(day_hits, day_trials, day_expected)
     return BridgeEvidence(
         mode=mode,
         scope=scope,

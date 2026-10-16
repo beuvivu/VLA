@@ -117,6 +117,15 @@ Mỗi đường cầu nhận **xác suất trúng kỳ tới** theo kinh nghiệ
     không có khác biệt thật. Hậu nghiệm vẫn co về tỉ lệ chung (theo review Codex).
   - Nhóm chỉ xuất hiện trong một kỳ quay có đúng một quan sát độc lập, nên co hẳn về tỉ lệ chung
     (theo review Codex).
+  - Hiệu ứng chuỗi là phần trúng VƯỢT tỉ lệ riêng của chính các cầu trong nhóm, không phải vượt
+    tỉ lệ chung (theo review Codex). Khi các cầu khác nhau thật, cầu tốt hay chạy dài; `p_post` đã
+    mang chất lượng cầu, nên đo chuỗi so với tỉ lệ chung là tính chất lượng hai lần. Tỉ lệ riêng
+    dùng ở đây là tỉ lệ THÔ, bỏ ra chính chuỗi đang chạy và kỳ đang chấm. Không dùng `p_post`, vì
+    `p_post` đã co về nền và phần chất lượng bị co mất sẽ lại hiện ra thành "hiệu ứng chuỗi". Trên
+    lịch sử giả định có cầu thật nhưng không nhớ:
+    - nhóm chuỗi dài vẫn trúng hơn nền khi nhìn thô;
+    - kinh nghiệm chuỗi sau điều chỉnh về sát nền;
+    - với cầu có trí nhớ thật, phần vượt vẫn được giữ.
   - Đo trên 80 lịch sử giả định có cú sốc theo kỳ nhưng không có khác biệt thật giữa nhóm: phương
     sai theo cụm co hoàn toàn ở 72,5% số lần, phương sai nhị thức chỉ 21%.
   - Phương pháp mô men không trọng số bị loại vì nhóm nhiễu nhất chi phối nó: trên lịch sử công
@@ -215,7 +224,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (18 phép) ghim:
+- **`tests/test_bridge_inference.py`** (19 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -228,6 +237,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - DerSimonian–Laird co hoàn toàn khoảng một nửa số lần khi không có khác biệt thật, và giữ khác
     biệt thật;
   - kinh nghiệm chuỗi coi một kỳ quay là một cụm, và nhóm chỉ thấy trong một kỳ co hẳn về nền;
+  - cầu thật nhưng không nhớ không sinh hiệu ứng chuỗi; cầu có trí nhớ thì có;
   - phần riêng giữ theo đúng số lần chấm của từng độ trễ;
   - trang in đúng phạm vi đã cấu hình;
   - bằng chứng của ngày neo khác không được in;
@@ -235,10 +245,11 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
   xác suất ấy dùng chung `rule_next_probability` nên luôn nằm trong (0, 1).
-- **23 đột biến** đều đỏ đúng chỗ:
+- **25 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi; nhóm chỉ một kỳ vẫn được học;
+  - chuỗi không trừ chất lượng cầu; tỉ lệ riêng không bỏ chuỗi đang chạy;
   - τ² luôn bằng 0; τ² không trừ bậc tự do;
   - dự báo dùng tỉ lệ lịch sử; cầu thiếu hậu nghiệm vẫn được nhận;
   - trang bỏ cờ gộp; trang bỏ cột dự báo;
