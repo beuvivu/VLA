@@ -12,7 +12,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-FILES = ('data/results/results.jsonl', 'data/forecast/ledger.jsonl', 'data/forecast/ml-ledger.jsonl')
+FILES = ('data/results/results.jsonl', 'data/forecast/ledger.jsonl', 'data/forecast/ml-ledger.jsonl',
+         'data/forecast/multi-agent-summary.json')
 
 
 def git(*args: str) -> str:

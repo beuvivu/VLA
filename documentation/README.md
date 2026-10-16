@@ -122,3 +122,8 @@ forecasting guarantee.
 - [Hướng dẫn vận hành tự học](operations/adaptive-inference.md)
 - [Kết quả kiểm chứng và giới hạn](qa/2026-09-27-adaptive-inference.md)
 - [Sửa tích hợp CI và vòng đời stacking](qa/2026-09-27-stacking-integration.md)
+
+## Tích hợp đa thuật toán ngày 17-10-2026
+
+- [Kiến trúc và kế hoạch tích hợp](architecture/2026-10-17-multi-agent-integration.md)
+- [Kết quả kiểm chứng](qa/2026-10-17-multi-agent-integration.md)

@@ -27,6 +27,7 @@ data/results/writer.lock
 data/forecast/*
 !data/forecast/ledger.jsonl
 !data/forecast/ml-ledger.jsonl
+!data/forecast/multi-agent-summary.json
 data/forecast.lock
 data/local/
 reports/*.json

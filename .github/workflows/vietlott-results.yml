@@ -37,6 +37,7 @@ on:
       - "vietlott/src/vlm/web/**"
       - "vietlott/data/results/results.jsonl"
       - "vietlott/data/forecast/*ledger.jsonl"
+      - "vietlott/data/forecast/multi-agent-summary.json"
       - ".github/workflows/vietlott-results.yml"
 
 permissions:
@@ -99,6 +100,10 @@ jobs:
             vietlott/data/results/status.json
           key: vqe-state-${{ github.run_id }}
           restore-keys: vqe-state-
+
+      - name: Giữ bản tóm tắt mô hình đã commit
+        # Cache *.json có thể cũ hơn sổ công bố; bản tóm tắt theo đúng checkout.
+        run: git restore --source=HEAD -- vietlott/data/forecast/multi-agent-summary.json
 
       - name: Dựng trang Vietlott
         run: python src/build_vietlott_results.py --cache-states vietlott/data/forecast

@@ -22,9 +22,10 @@ from vlm.forecast.features import FeatureState
 from vlm.forecast.models import GRU, OnlineLogistic, TreeExpert
 from vlm.forecast.adaptation import RunningFeatureStats
 from vlm.forecast.recovery import NumericalModelError, RecoveryLog, auto_patch_and_retry, require_finite
+from vlm.forecast.multi_agent import MultiAgentExpert
 
 # 3 (13-10-2026): pair_link/triple_link không còn gộp đường chéo (tần suất của chính số ấy).
-VERSION = 3
+VERSION = 4
 LIVE_THRESHOLD = float(np.log(140))  # seven active products, family alpha .05
 
 
@@ -38,6 +39,7 @@ class MLConfig(BaseModel):
     backends: tuple[str, ...] = ('rf',)
     seed: int = 20261003
     adaptive: bool = Field(False, strict=True)
+    multi_agent: bool = Field(False, strict=True)
 
 
 def _validate_series(series: Series, now: datetime) -> None:
@@ -96,6 +98,11 @@ class MLComponent:
             raise ValueError('Tree backends must be unique')
         self.names = ['uniform', 'logistic_l2_.001', 'logistic_l2_.01',
                       *(['adaptive_logistic'] if config.adaptive else []), 'gru', *config.backends]
+        self.base_expert_count = len(self.names)
+        self.multi_agent = (MultiAgentExpert(spec.n, spec.k, config.seed)
+                            if config.multi_agent and isinstance(spec, SetSpec) else None)
+        if self.multi_agent is not None:
+            self.names.append('multi_agent')
         self.statistics = RunningFeatureStats(f)
         self.recovery = RecoveryLog()
         self.prior = np.full(len(self.names), .5 / (len(self.names) - 1))
@@ -127,7 +134,7 @@ class MLComponent:
         nodes = self.features.nodes
         probabilities = [np.full(nodes, self.features.base)]
         models = [*self.logistics, self.gru, *self.trees]
-        for name, model in zip(self.names[1:], models):
+        for name, model in zip(self.names[1:self.base_expert_count], models):
             try:
                 data = seq if model is self.gru else self.statistics.normalize(x) if name == 'adaptive_logistic' else x
                 prediction = np.asarray(model.predict(data), dtype=float)
@@ -146,7 +153,12 @@ class MLComponent:
             values = np.exp(z)
         else:
             values = p.reshape(-1, self.spec.positions, self.spec.alphabet)
-        return Law(self.spec, values, self.weights)
+        mixture = self.weights
+        if self.multi_agent is not None:
+            nested_values, nested_weights = self.multi_agent.distribution()
+            values = np.concatenate((values, nested_values), axis=0)
+            mixture = np.concatenate((self.weights[:-1], self.weights[-1] * nested_weights))
+        return Law(self.spec, values, mixture)
 
     def observe(self, row: np.ndarray, draw_id: int, draw_date: str, bonus: int = 0) -> float:
         """Commit đúng một observation; lỗi ngoài phạm vi phục hồi giữ component cũ."""
@@ -164,7 +176,13 @@ class MLComponent:
         seq = np.stack([np.zeros_like(x)] * (8-len(frames)) + frames)
         law = self.law(draw_date, next_id=draw_id)
         ll = law.expert_log_likelihood(row, bonus)
-        mix_ll = float(logsumexp(law.log_mix + ll))
+        if self.multi_agent is not None:
+            ll = np.r_[ll[:-4], self.multi_agent.group_log_likelihood(ll[-4:])]
+            with np.errstate(divide='ignore'):
+                parent_log_mix = np.log(self.weights)
+        else:
+            parent_log_mix = law.log_mix
+        mix_ll = float(logsumexp(parent_log_mix + ll))
         gain = mix_ll - law.null_log_likelihood(row, bonus)
         divisor = 1 if isinstance(self.spec, SetSpec) else self.spec.per_draw
         target = row / divisor
@@ -181,13 +199,15 @@ class MLComponent:
             np.add.at(self.reliability[:, 2], bins, target)
             self.recent_gain = (self.recent_gain + [gain])[-500:]
         # Full-information policy feedback, proper reward; no draw can affect its own score.
-        posterior = np.exp(law.log_mix + ll - mix_ll)
+        posterior = np.exp(parent_log_mix + ll - mix_ll)
         self.weights = .999 * posterior + .001 * self.prior
         for name, model in zip(self.names[1:1+len(self.logistics)], self.logistics):
             data = self.statistics.normalize(x) if name == 'adaptive_logistic' else x
             self._learn_safely(model, name, data, target, draw_id)
         self._learn_safely(self.gru, 'gru', seq, target, draw_id)
         self.buffer = (self.buffer + [(x.copy(), target.copy())])[-self.config.tree_buffer:]
+        if self.multi_agent is not None:
+            self.multi_agent.learn(row)
         self.features.observe(row, draw_id, draw_date)
         self.frames = frames
         if self.features.seen >= self.config.warmup and self.features.seen % self.config.tree_every == 0:
@@ -233,7 +253,8 @@ class MLComponent:
                                for c, p, o in self.reliability],
                 'evaluation':'retrospective_prequential_exploratory',
                 'recovery':self.recovery.to_dict(), 'feature_statistics':self.statistics.report(),
-                'learning_rate_scales':dict(zip(self.names[1:1+len(self.logistics)], [m.rate_scale for m in self.logistics])) | {'gru':self.gru.rate_scale}}
+                'learning_rate_scales':dict(zip(self.names[1:1+len(self.logistics)], [m.rate_scale for m in self.logistics])) | {'gru':self.gru.rate_scale},
+                'multi_agent':self.multi_agent.report() if self.multi_agent is not None else None}
 
     def to_dict(self) -> dict:
         return {'features':self.features.to_dict(), 'logistics':[m.to_dict() for m in self.logistics],
@@ -241,7 +262,8 @@ class MLComponent:
                 'frames':[x.tolist() for x in self.frames], 'buffer':[[x.tolist(), y.tolist()] for x, y in self.buffer],
                 'scored':self.scored, 'log_gain':self.log_gain, 'expert_nll':self.expert_nll.tolist(),
                 'brier':self.brier, 'brier_fair':self.brier_fair, 'reliability':self.reliability.tolist(),
-                'recent_gain':self.recent_gain, 'statistics':self.statistics.to_dict(), 'recovery':self.recovery.to_dict()}
+                'recent_gain':self.recent_gain, 'statistics':self.statistics.to_dict(), 'recovery':self.recovery.to_dict(),
+                'multi_agent':self.multi_agent.to_dict() if self.multi_agent is not None else None}
 
     @classmethod
     def from_dict(cls, spec: SetSpec | DigitSpec, config: MLConfig, data: dict) -> MLComponent:
@@ -249,6 +271,12 @@ class MLComponent:
         out.features = FeatureState.from_dict(data['features'], expected_spec=spec)
         if out.features.spec != spec:
             raise ValueError('Incompatible feature spec')
+        if out.multi_agent is not None:
+            out.multi_agent = MultiAgentExpert.from_dict(data['multi_agent'], n=spec.n, k=spec.k, seed=config.seed)
+            if out.multi_agent.knowledge.total_observations != out.features.seen:
+                raise ValueError('Lịch sử nhóm đa thuật toán không khớp component.')
+        elif data.get('multi_agent') is not None:
+            raise ValueError('Checkpoint chứa nhóm đa thuật toán ngoài cấu hình.')
         blueprints = {'logistics':[m.to_dict() for m in out.logistics], 'gru':out.gru.to_dict(),
                       'trees':[m.to_dict() for m in out.trees]}
         if len(data['logistics']) != len(out.logistics) or len(data['trees']) != len(out.trees):
@@ -455,6 +483,9 @@ class MLForecaster:
                         'based_on_id':self.last_id, 'based_on_date':self.last_date,
                         'draws_on_last_date':self.draws_on_last_date, 'history_sha256':self.prefix_hash,
                         'made_at':made.isoformat(), 'ticket_rule':COVERAGE_RULE,
+                        'confidence':self.confidence(),
+                        'multi_agent':{name:comp.multi_agent.report() for name, comp in self.components.items()
+                                       if comp.multi_agent is not None},
                         'laws':{name:comp.law(day, next_id=target_id).to_dict() for name, comp in self.components.items()}}
         return True
 
@@ -610,7 +641,7 @@ class MLForecaster:
         if len(raw) > 128 * 1024 * 1024:
             raise ValueError('Checkpoint too large')
         data = json.loads(raw)
-        if data['version'] != VERSION:
+        if data['version'] not in (3, VERSION):
             raise ValueError('Incompatible ML checkpoint')
         json.dumps(data, allow_nan=False)
         out = cls(data['product'], MLConfig.model_validate(data['config']))
