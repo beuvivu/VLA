@@ -24,6 +24,8 @@ from app_icons import icon_svg
 from calendar_widget import render_calendar
 from cau_keo_daily_top import top_by_cau_score
 from draw_metadata import load_draw_metadata, station_for_date
+from daily_forecast import load_daily_forecast
+from evidence_catalog import values_block
 from build_position_bridges import best_panel, bridge_css
 from build_position_bridges import load as load_position_bridges
 from shared_results import draw_from_row, render_result_board, shared_results_css
@@ -814,6 +816,60 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     )
 
 
+def _render_daily_forecast(repo_root: Path, anchor_date: str) -> str:
+    """Thẻ gọn cạnh kết quả: chỉ hiện xác suất của đúng kỳ tiếp theo."""
+    forecast = load_daily_forecast(repo_root / "data", anchor_date)
+    heading = '<h3>Dự báo kỳ tiếp theo</h3>'
+    if forecast is None:
+        return (
+            '<aside class="app-next-forecast" aria-label="Dự báo kỳ tiếp theo">'
+            f'{heading}<p class="app-forecast-note">Dự báo đang được cập nhật sau kỳ kết quả mới nhất.</p></aside>'
+        )
+    target = forecast["target_date"]
+    shown_date = datetime.fromisoformat(target).strftime("%d/%m/%Y")
+    groups, evidence = [], []
+    for mode, label, meaning in (
+        ("de", "Đặc Biệt", "Hai số cuối giải Đặc Biệt"),
+        ("loto", "LOTO", "Xuất hiện ít nhất một lần"),
+    ):
+        items = []
+        for item in forecast["groups"][mode]:
+            number, probability = item["number"], item["prob"]
+            ident = f"daily-forecast-{mode}-{number}"
+            percent = f"{100 * probability:.2f}%".replace(".", ",")
+            items.append(
+                '<li class="app-forecast-pick">'
+                f'<b data-evidence="{ident}">{number}</b>'
+                f'<span data-evidence="{ident}">{percent}</span></li>'
+            )
+            evidence.append((ident, {
+                "sources": [{"title": f"Dự báo tổ hợp {label} · {shown_date}",
+                             "snippet": "Xác suất đã công bố của mô hình tổ hợp cho kỳ được ghi trên thẻ.",
+                             "url": "model-quality.html"}],
+                "reasoningTrace": {"steps": [
+                    f"Dùng kết quả đến kỳ {anchor_date}, dự báo kỳ {target}.",
+                    f"Số {number}: {meaning.lower()}; xác suất gốc {probability:.12g}.",
+                    "Nhân xác suất với 100 và làm tròn hai chữ số thập phân để hiển thị phần trăm.",
+                    ("Chọn theo xác suất giảm dần, tối đa ba số cùng đuôi; xác suất không đổi."
+                     if mode == "loto" else "Chọn năm số có xác suất cao nhất; khi bằng nhau, số nhỏ đứng trước."),
+                    "Đây là ước tính của mô hình, không bảo đảm kết quả kỳ quay.",
+                ]},
+            }))
+        groups.append(
+            f'<section class="app-forecast-group" data-forecast-mode="{mode}">'
+            f'<div class="app-forecast-label"><h4>Top 5 {label}</h4><span>{meaning}</span></div>'
+            f'<ol class="app-forecast-picks">{"".join(items)}</ol></section>'
+        )
+    return (
+        f'<aside class="app-next-forecast" data-forecast-date="{target}" aria-label="Dự báo kỳ tiếp theo">'
+        f'<div class="app-forecast-head">{heading}<time datetime="{target}">Kỳ {shown_date}</time></div>'
+        f'<div class="app-forecast-groups">{"".join(groups)}</div>'
+        '<p class="app-forecast-note">Xác suất mô hình · LOTO tối đa 3 số cùng đuôi. '
+        '<a href="model-quality.html">Xem kiểm định →</a></p>'
+        f'{values_block(evidence)}</aside>'
+    )
+
+
 #: Biểu định kiểu của trang tổng hợp.
 #:
 #: Trước đây 1 250 dòng CSS này nằm TRONG f-string của ``_render_html``,
@@ -824,6 +880,43 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 #: Khối này KHÔNG nội suy biến nào (đã kiểm: 0 chỗ), nên nó là văn bản
 #: thuần và thuộc về một hằng số, không thuộc về thân hàm.
 _LANDING_CSS = """\
+    /* Thẻ dự báo lấp phần dưới hai bảng phụ, giữ nguyên bảng giải bên trái. */
+    #app-daily-results .tr-day-extra { display: contents; }
+    #app-daily-results .app-next-forecast { grid-column: 1 / -1; }
+    .app-next-forecast {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+      min-width: 0; padding: 16px; border: 1px solid var(--ui-border);
+      border-radius: 12px; background: var(--ui-surface-2); color: var(--ui-ink);
+    }
+    .app-forecast-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .app-next-forecast h3 { margin: 0; font-size: 14px; }
+    .app-forecast-head time { font-size: 11px; font-weight: 700; color: var(--ui-ink-soft); }
+    .app-forecast-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .app-forecast-group { min-width: 0; }
+    .app-forecast-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; }
+    .app-forecast-label h4 { margin: 0; font-size: 12px; }
+    .app-forecast-label > span { font-size: 10px; color: var(--ui-ink-soft); }
+    .app-forecast-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .app-forecast-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 2px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); font-variant-numeric: tabular-nums; }
+    .app-forecast-pick b { font-size: 22px; line-height: 1.1; color: var(--ui-ink); }
+    .app-forecast-group[data-forecast-mode="de"] .app-forecast-pick b { color: var(--ui-special-ink); }
+    .app-forecast-pick span { font-size: 11px; color: var(--ui-ink-soft); white-space: nowrap; }
+    .app-forecast-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--ui-ink-soft); }
+    .app-forecast-note a { color: var(--ui-brand-ink); font-weight: 600; white-space: nowrap; }
+    @media (min-width: 1321px) {
+      #app-daily-results .tr-day-grid { grid-template-rows: auto 1fr; }
+      #app-daily-results .tr-prizes { grid-column: 1; grid-row: 1 / 3; }
+      #app-daily-results .tr-day-side { grid-column: 2; grid-row: 1; }
+      #app-daily-results .app-bridge-best { grid-column: 3; grid-row: 1; }
+      #app-daily-results .app-next-forecast { grid-column: 2 / 4; grid-row: 2; align-self: stretch; }
+    }
+    @media (max-width: 1320px) {
+      #app-daily-results .app-bridge-best { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .app-forecast-groups { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .app-next-forecast { padding: 12px; }
+    }
     :root {
       --bg: var(--ui-bg);
       --bg-2: var(--ui-bg-2);
@@ -2023,6 +2116,8 @@ def _render_html(
     latest = _latest_draw(repo_root)
     bridge_panel = (best_panel(load_position_bridges(repo_root / "data"), latest["date"])
                     if latest.get("draw") else "")
+    daily_panel = bridge_panel + (_render_daily_forecast(repo_root, latest["date"])
+                                 if latest.get("draw") else "")
     explain_map = _load_explain_map(repo_root)
     if generated_at is None:
         generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
@@ -2220,7 +2315,7 @@ def _render_html(
       </div>
 
       <section id="ket-qua" class="section" aria-label="Kết quả hàng ngày">
-        {render_result_board(latest.get("draw"), include_loto=False, extra=bridge_panel)}
+        {render_result_board(latest.get("draw"), include_loto=False, extra=daily_panel)}
         <p class="app-result-note">Bấm vào từng ô giải để đánh dấu; bấm lại để bỏ chọn.
           <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả</a></p>
       </section>
