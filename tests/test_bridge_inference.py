@@ -287,9 +287,21 @@ def test_streak_experience_variance_is_the_cluster_sandwich() -> None:
     trials = np.array([[10, 4], [6, 0], [10, 5]])
     post, base, _ = streak_experience(hits, trials)
     assert base == pytest.approx(11 / 35)
-    # Một nhóm chỉ có MỘT cụm thì không có gì để so: dùng sàn nhị thức, không chia cho 0.
+    # Một nhóm chỉ có MỘT cụm thì không có gì để so: không chia cho 0.
     single = streak_experience(np.array([[2, 0]]), np.array([[9, 0]]))
     assert np.isfinite(single[0]).all()
+
+
+def test_a_streak_group_seen_in_one_draw_only_pools_to_the_common_rate() -> None:
+    """Nghìn lượt chấm trong MỘT kỳ vẫn chỉ là một quan sát độc lập."""
+    rng = np.random.default_rng(5)
+    trials = rng.poisson([4000, 900, 200], size=(200, 3))
+    hits = rng.binomial(trials, 0.24)
+    rare_hits = np.zeros((200, 1), dtype=int)
+    rare_trials = np.zeros((200, 1), dtype=int)
+    rare_trials[17], rare_hits[17] = 3000, 2700  # một kỳ duy nhất, 90% trúng
+    post, base, _ = streak_experience(np.hstack([hits, rare_hits]), np.hstack([trials, rare_trials]))
+    assert post[-1] == base
 
 
 def test_evidence_from_another_anchor_is_not_shown(tmp_path, fair) -> None:

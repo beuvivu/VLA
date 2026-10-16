@@ -113,6 +113,8 @@ Mỗi đường cầu nhận **xác suất trúng kỳ tới** theo kinh nghiệ
     giữa các nhóm thành τ² dương (theo review Codex).
   - Thống kê Q đo quanh trung bình theo nghịch đảo phương sai, chỉ tâm ấy cho E[Q] = k − 1 khi
     không có khác biệt thật. Hậu nghiệm vẫn co về tỉ lệ chung (theo review Codex).
+  - Nhóm chỉ xuất hiện trong một kỳ quay có đúng một quan sát độc lập, nên co hẳn về tỉ lệ chung
+    (theo review Codex).
   - Đo trên 80 lịch sử giả định có cú sốc theo kỳ nhưng không có khác biệt thật giữa nhóm: phương
     sai theo cụm co hoàn toàn ở 72,5% số lần, phương sai nhị thức chỉ 21%.
   - Phương pháp mô men không trọng số bị loại vì nhóm nhiễu nhất chi phối nó: trên lịch sử công
@@ -210,7 +212,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (17 phép) ghim:
+- **`tests/test_bridge_inference.py`** (18 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -222,7 +224,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - trang in cột dự báo và khối kinh nghiệm;
   - DerSimonian–Laird co hoàn toàn khoảng một nửa số lần khi không có khác biệt thật, và giữ khác
     biệt thật;
-  - kinh nghiệm chuỗi coi một kỳ quay là một cụm;
+  - kinh nghiệm chuỗi coi một kỳ quay là một cụm, và nhóm chỉ thấy trong một kỳ co hẳn về nền;
   - phần riêng giữ theo đúng số lần chấm của từng độ trễ;
   - trang in đúng phạm vi đã cấu hình;
   - bằng chứng của ngày neo khác không được in;
@@ -233,10 +235,10 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 - **23 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
-  - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi;
+  - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi; nhóm chỉ một kỳ vẫn được học;
   - τ² luôn bằng 0; τ² không trừ bậc tự do;
   - dự báo dùng tỉ lệ lịch sử; cầu thiếu hậu nghiệm vẫn được nhận;
-  - trang bỏ cờ gộp; trang bỏ cột dự báo; trang không cộng chuỗi cho cầu đang chạy;
+  - trang bỏ cờ gộp; trang bỏ cột dự báo;
   - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử; câu lý do không chặn biên;
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
     cứng phạm vi;

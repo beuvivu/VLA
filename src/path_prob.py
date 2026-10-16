@@ -452,7 +452,8 @@ def streak_experience(
     ``n`` phép thử nhị thức thì phương sai nhóm "chuỗi 0" bị đánh giá thấp hàng
     trăm lần, và chênh lệch ngẫu nhiên rất nhỏ giữa các nhóm thành τ² dương. Ở
     đây phương sai của tỉ lệ nhóm s là ước lượng cụm (sandwich) theo kỳ:
-    ``C/(C−1)·Σₜ(hₜₛ − rₛ·nₜₛ)² / Nₛ²``, không nhỏ hơn mức nhị thức.
+    ``C/(C−1)·Σₜ(hₜₛ − rₛ·nₜₛ)² / Nₛ²``, không nhỏ hơn mức nhị thức. τ² học trên
+    các nhóm có ít nhất hai kỳ; hậu nghiệm co về tỉ lệ chung của MỌI lượt chấm.
 
     ``day_hits``/``day_trials`` hình ``(kỳ, nhóm)``. Trả ``(hậu nghiệm, m, τ²)``.
     """
@@ -469,7 +470,18 @@ def streak_experience(
     safe_n = np.where(used, trials, 1.0)
     cluster_var = factor * (resid**2).sum(axis=0) / safe_n**2
     variances = np.maximum(cluster_var, base * (1.0 - base) / safe_n)
-    return random_effects_posterior(hits, trials, variances=variances)
+    # Nhóm chỉ xuất hiện trong MỘT kỳ quay chỉ có một quan sát độc lập: phương
+    # sai cụm không ước lượng được, và sàn nhị thức lại coi hàng nghìn lượt chấm
+    # của kỳ ấy là độc lập. Nhóm như thế co hẳn về tỉ lệ chung.
+    reliable = used & (clusters >= 2)
+    tau2 = 0.0
+    if reliable.sum() >= 2:
+        _, _, tau2 = random_effects_posterior(
+            hits[reliable], trials[reliable], variances=variances[reliable]
+        )
+    post = np.full(hits.size, base)
+    post[reliable] = base + tau2 / (tau2 + variances[reliable]) * (rates[reliable] - base)
+    return post, base, tau2
 
 
 def _bridge_evidence(
