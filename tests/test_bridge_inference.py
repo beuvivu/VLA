@@ -315,3 +315,18 @@ def test_the_displayed_rule_probability_is_the_one_the_picks_use() -> None:
         mode="loto", scope="special_only", bias_special_both=1.5,
     ).set_index("number")["prob"]
     assert picked[77] == pytest.approx(shown[0])
+
+
+def test_random_effects_centres_q_on_the_inverse_variance_mean() -> None:
+    """Phương sai không tỉ lệ với số phép thử: Q phải đo quanh trung bình nghịch đảo phương sai.
+
+    Nhóm đầu nhiều phép thử nhưng rất nhiễu (0,30), nhóm sau ít phép thử nhưng chính xác
+    (0,20). Quanh trung bình nghịch đảo phương sai (≈ 0,201) Q ≈ 0,99 ≤ k − 1, nên τ² = 0;
+    quanh tỉ lệ chung theo số phép thử (≈ 0,299) Q ≈ 98 và τ² dương giả.
+    """
+    hits = np.array([300.0, 2.0])
+    trials = np.array([1000.0, 10.0])
+    post, mean, tau2 = random_effects_posterior(hits, trials, variances=np.array([1e-2, 1e-4]))
+    assert tau2 == 0.0
+    assert mean == pytest.approx(302 / 1010)
+    np.testing.assert_allclose(post, mean)

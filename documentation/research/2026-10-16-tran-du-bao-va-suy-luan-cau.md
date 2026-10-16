@@ -111,8 +111,10 @@ Mỗi đường cầu nhận **xác suất trúng kỳ tới** theo kinh nghiệ
     Hàng nghìn cầu chấm trên cùng một kỳ không độc lập với nhau: kỳ về nhiều con khác nhau thì mọi
     cầu LOTO cùng dễ trúng hơn. Coi chúng là phép thử độc lập thì chênh lệch ngẫu nhiên rất nhỏ
     giữa các nhóm thành τ² dương (theo review Codex).
-  - Đo trên 60 lịch sử giả định có cú sốc theo kỳ nhưng không có khác biệt thật giữa nhóm: phương
-    sai theo cụm co hoàn toàn ở 67,5% số lần, phương sai nhị thức chỉ 21%.
+  - Thống kê Q đo quanh trung bình theo nghịch đảo phương sai, chỉ tâm ấy cho E[Q] = k − 1 khi
+    không có khác biệt thật. Hậu nghiệm vẫn co về tỉ lệ chung (theo review Codex).
+  - Đo trên 80 lịch sử giả định có cú sốc theo kỳ nhưng không có khác biệt thật giữa nhóm: phương
+    sai theo cụm co hoàn toàn ở 72,5% số lần, phương sai nhị thức chỉ 21%.
   - Phương pháp mô men không trọng số bị loại vì nhóm nhiễu nhất chi phối nó: trên lịch sử công
     bằng giả định, nó giữ lại tới 1,4 điểm phần trăm nhiễu ở nhóm ít dữ liệu.
   - τ² = 0 thì mọi độ dài co hẳn về nền. Trên dữ liệu thật, LOTO có τ² = 0. Đặc Biệt có τ² rất nhỏ:
@@ -208,7 +210,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (16 phép) ghim:
+- **`tests/test_bridge_inference.py`** (17 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -224,9 +226,10 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - phần riêng giữ theo đúng số lần chấm của từng độ trễ;
   - trang in đúng phạm vi đã cấu hình;
   - bằng chứng của ngày neo khác không được in;
-  - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch.
+  - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch;
+  - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu.
-- **21 đột biến** đều đỏ đúng chỗ:
+- **22 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi;
@@ -236,7 +239,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử;
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
     cứng phạm vi;
-  - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch.
+  - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch; Q đo quanh tỉ lệ chung.
 
 **Một bài học về đột biến.** Đột biến "đếm sau khi cập nhật chuỗi" chỉ đổi chỗ hai khối mã, nên tệp
 giữ nguyên kích thước. Khi tệp được khôi phục trong cùng giây, Python vẫn tin bản `.pyc` của mã đột

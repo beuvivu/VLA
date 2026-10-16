@@ -361,9 +361,11 @@ def random_effects_posterior(
     điểm phần trăm nhiễu ở nhóm ít dữ liệu. Ở đây mỗi nhóm nặng theo độ chính
     xác ``1/vᵢ``, ``vᵢ = m(1−m)/nᵢ``:
 
-    * ``Q = Σ wᵢ(rᵢ − m)²`` — không có khác biệt thật thì ``E[Q] = k − 1``;
+    * ``Q = Σ wᵢ(rᵢ − r̄_w)²``, ``r̄_w`` là trung bình theo trọng số ``wᵢ`` — không
+      có khác biệt thật thì ``E[Q] = k − 1``;
     * ``τ² = max(0, (Q − (k − 1)) / (Σw − Σw²/Σw))`` — phương sai THẬT giữa nhóm;
-    * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``.
+    * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``, co về tỉ lệ chung ``m`` (tổng lần
+      thành công / tổng phép thử) — mức mà dự báo neo vào.
 
     ``τ² = 0`` thì mọi nhóm co hẳn về ``m``. Nhóm không có lần thử nào nhận ``m``.
     ``variances`` (cùng hình) thay ``vᵢ`` khi các phép thử trong một nhóm không
@@ -389,7 +391,11 @@ def random_effects_posterior(
             raise ValueError("variances phải cùng hình, hữu hạn và dương ở mọi nhóm có phép thử")
         v = v[used]
     w = 1.0 / v
-    q = float(np.sum(w * (rates - m) ** 2))
+    # Q đo quanh trung bình nghịch đảo phương sai: chỉ tâm ấy làm E[Q] = k − 1
+    # khi không có khác biệt thật. Với phương sai nhị thức nó trùng tỉ lệ chung
+    # m; với phương sai theo cụm thì không, và đo quanh m sẽ thổi Q lên.
+    center = float(np.sum(w * rates) / w.sum())
+    q = float(np.sum(w * (rates - center) ** 2))
     scale = float(w.sum() - np.sum(w**2) / w.sum())
     tau2 = max(0.0, (q - (used.sum() - 1)) / scale) if scale > 0 else 0.0
     post[used] = m + tau2 / (tau2 + v) * (rates - m)
