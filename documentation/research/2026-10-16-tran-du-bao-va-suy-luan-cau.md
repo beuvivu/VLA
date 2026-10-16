@@ -67,27 +67,29 @@ lý do của cầu-kèo vẫn in con số thổi ấy.
 ### Câu hỏi đúng và câu trả lời của dữ liệu
 
 **Câu hỏi 1: các cầu có khác nhau thật không?** Nếu mọi cầu có cùng một tỉ lệ thật, tỉ lệ quan
-sát của chúng vẫn tản ra đúng bằng dao động nhị thức. Đo trên mọi cầu của cửa sổ 365 kỳ, ngày neo
+sát của chúng vẫn tản ra đúng bằng dao động nhị thức. Đo trên mọi cầu của cửa sổ 2 000 kỳ mà
+pipeline dùng (`pipeline.py --window-days 2000`, khoảng 1 981 lần chấm mỗi cầu), ngày neo
 15-10-2026:
 
 | | Đường cầu | Độ tản so với nhị thức | Tỉ lệ trúng của cầu "tốt nhất" |
 |---|---:|---:|---:|
-| LOTO | 170 130 | 0,99 lần | 34,4% (nền 23,8%) |
-| Đặc Biệt | 170 130 | 1,00 lần | 4,2% (nền 1,0%) |
+| LOTO | 170 130 | 1,00 lần (0,998) | 28,2% (nền 23,8%) |
+| Đặc Biệt | 170 130 | 1,00 lần (0,999) | 2,1% (nền 1,0%) |
 
-Không có phần vượt. Tách riêng từng độ trễ cũng vậy: tỉ số dao động từ 0,93 đến 1,03 (LOTO) và từ
-0,92 đến 1,07 (Đặc Biệt), quanh 1. Một cầu trúng 34% trong 365 kỳ là đúng cỡ cầu may mắn nhất trong
-170 130 cầu.
+Không có phần vượt. Tách riêng từng độ trễ cũng vậy: tỉ số dao động từ 0,96 đến 1,06 (LOTO) và từ
+0,93 đến 1,05 (Đặc Biệt), quanh 1. Một cầu trúng 28% trong 2 000 kỳ là đúng cỡ cầu may mắn nhất
+trong 170 130 cầu. Cửa sổ 365 kỳ cho cùng kết luận: 0,99 lần, cầu tốt nhất 34,4%.
 
 **Câu hỏi 2: cầu đang chạy dài có trúng tiếp nhiều hơn không?** Đếm trên mọi cầu và mọi kỳ của
-cửa sổ, tỉ lệ trúng ở kỳ kế tiếp theo độ dài chuỗi ngay trước kỳ ấy (LOTO, ngày neo 15-10-2026):
+cửa sổ 2 000 kỳ, tỉ lệ trúng ở kỳ kế tiếp theo độ dài chuỗi ngay trước kỳ ấy (LOTO, ngày neo
+15-10-2026):
 
 | Chuỗi trước kỳ | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8+ |
 |---|---|---|---|---|---|---|---|---|---|
-| Lần chấm | 46,9 tr | 11,1 tr | 2,63 tr | 623 nghìn | 148 nghìn | 35 246 | 8 286 | 1 948 | 608 |
-| Trúng tiếp | 23,76% | 23,75% | 23,73% | 23,73% | 23,93% | 23,56% | 23,51% | 23,72% | 24,18% |
+| Lần chấm | 257 tr | 61,1 tr | 14,5 tr | 3,46 tr | 823 nghìn | 196 nghìn | 46 692 | 10 993 | 3 404 |
+| Trúng tiếp | 23,81% | 23,81% | 23,79% | 23,82% | 23,85% | 23,80% | 23,54% | 23,53% | 24,03% |
 
-Cửa sổ bốn năm cho cùng kết quả: chuỗi 3–8 trúng tiếp 23,5–23,9%, so với nền 23,8%.
+Nền là 23,81%. Cửa sổ 365 kỳ cho cùng kết quả: mọi độ dài chuỗi trúng tiếp 23,5–24,2%.
 
 ### Phép suy luận mới (`path_prob.BridgeEvidence`)
 
@@ -119,8 +121,8 @@ Mỗi đường cầu nhận **xác suất trúng kỳ tới** theo kinh nghiệ
     sai theo cụm co hoàn toàn ở 72,5% số lần, phương sai nhị thức chỉ 21%.
   - Phương pháp mô men không trọng số bị loại vì nhóm nhiễu nhất chi phối nó: trên lịch sử công
     bằng giả định, nó giữ lại tới 1,4 điểm phần trăm nhiễu ở nhóm ít dữ liệu.
-  - τ² = 0 thì mọi độ dài co hẳn về nền. Trên dữ liệu thật, LOTO có τ² = 0. Đặc Biệt có τ² rất nhỏ:
-    nhóm chuỗi 1 nhận 1,005% so với 1,000%.
+  - τ² = 0 thì mọi độ dài co hẳn về nền. Trên dữ liệu thật (cửa sổ 2 000 kỳ của pipeline), cả
+    LOTO lẫn Đặc Biệt đều có τ² = 0.
 - **Một con số** nhận trung bình (theo độ tin cậy) dự báo của các cầu đủ điều kiện cùng báo nó.
   Các cầu ấy tương quan với nhau qua chung chữ số và chung kỳ gốc, nên lấy trung bình chứ không
   cộng dồn.
@@ -134,7 +136,7 @@ con khác.
 ## 3. Đo ngoài mẫu
 
 Tái lập bằng `PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000`
-(khoảng 20 phút, 4 lõi). Số liệu thô nằm ở `data/research/model_overhaul/bridge_inference.json`.
+(khoảng 2 giờ, 4 lõi, với cửa sổ 2 000 kỳ của pipeline). Số liệu thô nằm ở `data/research/model_overhaul/bridge_inference.json`.
 
 Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline, trên thuật toán cuối cùng
 (commit 14e96040, sau mọi sửa chữa theo review). Bản cũ được tái lập từng

@@ -13,7 +13,8 @@ co theo mức chênh THẬT giữa các cầu (Bayes thực nghiệm, phương p
 nhánh "đang chạy" cộng phần kinh nghiệm theo độ dài chuỗi, học trên mọi cầu.
 
 Walk-forward trên ``--last`` kỳ cuối, cầu dựng lại mỗi kỳ bằng đúng tham số của
-pipeline. Mốc hằng số: tỉ lệ nền tích luỹ (LOTO), 1/100 (Đặc Biệt) — cùng mốc
+pipeline — cửa sổ lấy từ mặc định của ``pipeline.py`` (``--window-days`` 2000, cũng là
+giá trị ``update-data.yml`` truyền vào), không viết cứng 365 như phép đo 04-10-2026. Mốc hằng số: tỉ lệ nền tích luỹ (LOTO), 1/100 (Đặc Biệt) — cùng mốc
 với ``benchmark_component_trust``.
 
 Luật quyết định chốt TRƯỚC khi đo:
@@ -60,9 +61,11 @@ from xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
 OUT = ROOT / "data" / "research" / "model_overhaul" / "bridge_inference.json"
 MODES = ("loto", "de")
 KINDS = ("active", "stable")
-#: Đúng tham số ``run_path_ui`` dùng trong pipeline.
-PATH_PARAMS = PathParams(lag_max=30, window_days=365, min_trials=60, min_max_streak=3,
-                         min_current_streak=3, top_rules_per_lag=300)
+#: Cửa sổ production: ``pipeline.py`` mặc định ``--window-days 2000`` và truyền nó cho
+#: ``run_path_ui``; ``update-data.yml`` cũng truyền 2000. ``path_manifest_<mode>.json`` ghi lại.
+PRODUCTION_WINDOW_DAYS = 2000
+PATH_PARAMS = PathParams(lag_max=30, window_days=PRODUCTION_WINDOW_DAYS, min_trials=60,
+                         min_max_streak=3, min_current_streak=3, top_rules_per_lag=300)
 
 _PREPARED = None
 
