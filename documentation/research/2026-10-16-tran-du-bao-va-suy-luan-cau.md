@@ -195,7 +195,10 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
     tiếp theo độ dài chuỗi. Câu kết luận suy TỪ số đo của ngày neo; một phép kiểm dựng cả hai
     trường hợp (có và không có phần vượt) để trang PHẢI nói khác nhau.
   - Phạm vi (cặp vị trí, độ trễ) in theo đúng cấu hình đã sinh dự báo, đọc từ
-    `bridge_evidence_<mode>.json`.
+    `bridge_evidence_<mode>.json`. Tệp ấy khác ngày neo của trang thì khối bị bỏ, không ghép
+    kinh nghiệm của ngày này với bảng cầu của ngày khác.
+  - Cột «Dự báo kỳ tới» và xác suất dùng để xếp gợi ý cùng do `path_prob.rule_next_probability`
+    tính, kể cả thiên lệch khi chạy phạm vi gần Đặc Biệt.
   - Ghi chú tự mâu thuẫn "không phải xác suất đã hiệu chuẩn" đã bỏ.
 - **Câu lý do của cầu-kèo** (`cau_position_evidence`): thay "lịch sử 117/361, p≈0.324" bằng "trúng
   117/361 kỳ trong cửa sổ; dự báo kỳ tới 23,76% theo kinh nghiệm mọi đường cầu".
@@ -205,7 +208,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (14 phép) ghim:
+- **`tests/test_bridge_inference.py`** (16 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -219,9 +222,11 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
     biệt thật;
   - kinh nghiệm chuỗi coi một kỳ quay là một cụm;
   - phần riêng giữ theo đúng số lần chấm của từng độ trễ;
-  - trang in đúng phạm vi đã cấu hình.
+  - trang in đúng phạm vi đã cấu hình;
+  - bằng chứng của ngày neo khác không được in;
+  - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch.
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu.
-- **18 đột biến** đều đỏ đúng chỗ:
+- **21 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi;
@@ -230,7 +235,8 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - trang bỏ cờ gộp; trang bỏ cột dự báo; trang không cộng chuỗi cho cầu đang chạy;
   - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử;
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
-    cứng phạm vi.
+    cứng phạm vi;
+  - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch.
 
 **Một bài học về đột biến.** Đột biến "đếm sau khi cập nhật chuỗi" chỉ đổi chỗ hai khối mã, nên tệp
 giữ nguyên kích thước. Khi tệp được khôi phục trong cùng giây, Python vẫn tin bản `.pyc` của mã đột

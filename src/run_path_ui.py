@@ -18,6 +18,7 @@ from path_prob import (
     paths_to_dataframe,
     predict_from_fitted_paths,
     predict_from_fitted_paths_full,
+    rule_next_probability,
 )
 
 
@@ -131,6 +132,7 @@ def _build_path_lines(
         "p_mean",
         "p_post",
         "streak_shift",
+        "p_next",
         "hits",
         "trials",
         "current_streak",
@@ -259,6 +261,14 @@ def main() -> None:
         (stats_df["trials"] >= params.min_trials)
         & (stats_df["current_streak"] >= params.min_current_streak)
     ].copy()
+    # Cột «Dự báo kỳ tới» của trang: đúng xác suất từng cầu mà bước gợi ý dùng.
+    bias = {
+        "scope": args.scope,
+        "bias_special_touch": args.bias_special_touch,
+        "bias_special_both": args.bias_special_both,
+    }
+    stable_df["p_next"] = rule_next_probability(stable_df, kind="stable", **bias)
+    active_df["p_next"] = rule_next_probability(active_df, kind="active", **bias)
     write_code_csv(stable_df, out_dir / f"paths_{args.mode}_stable.csv", index=False)
     write_code_csv(active_df, out_dir / f"paths_{args.mode}_active.csv", index=False)
 

@@ -25,10 +25,11 @@ from path_prob import (
     PathStats,
     _streak_walk,
     fit_paths_with_evidence,
-    streak_experience,
     paths_to_dataframe,
     predict_from_fitted_paths_full,
     prepare_path_history,
+    rule_next_probability,
+    streak_experience,
 )
 from xsmb_domain import FIELD_WIDTHS
 
@@ -193,7 +194,7 @@ def test_the_page_states_what_the_measurement_says(tmp_path, fair, pooled) -> No
     *_, ev = fair
     (tmp_path / "bridge_evidence_loto.json").write_text(json.dumps(_payload(ev, pooled=pooled)),
                                                        encoding="utf-8")
-    exp = build_docs._bridge_experience(tmp_path, mode="loto", kind="active")
+    exp = build_docs._bridge_experience(tmp_path, mode="loto", kind="active", anchor_date="2025-10-27")
     assert exp["rules"] == "17.013"
     assert exp["scope_text"] == "mọi cặp vị trí × độ trễ 1–3"
     if pooled:
@@ -215,6 +216,7 @@ def test_the_soi_path_page_prints_the_forecast_and_the_experience(tmp_path, fair
                                                        encoding="utf-8")
     # Độ lệch chuỗi khác 0 để cột dự báo của nhánh đang chạy PHẢI khác hậu nghiệm.
     frame = paths_to_dataframe(stats).head(2).assign(streak_shift=0.0125)
+    frame["p_next"] = rule_next_probability(frame, kind="active")
     ui = frame.assign(**{"2025-10-27_num": 12, "2025-10-27_hit": 1, "2025-10-27_is_de": 0})
     picks = pd.DataFrame({"number": [12, 34], "prob": [0.2381, 0.2379], "support_paths_count": [3, 2]})
     env = Environment(loader=FileSystemLoader(str(build_docs.Path(build_docs.__file__).parent / "templates")),
@@ -224,13 +226,15 @@ def test_the_soi_path_page_prints_the_forecast_and_the_experience(tmp_path, fair
         env, out_path=out, title="SOI CẦU", mode="loto", kind="active", other_link=None,
         other_kind_label="", other_mode_label="", index_link="index.html",
         anchor_date="2025-10-27", display_days=1, ui_df=ui, picks_df=picks,
-        experience=build_docs._bridge_experience(tmp_path, mode="loto", kind="active"),
+        experience=build_docs._bridge_experience(tmp_path, mode="loto", kind="active",
+                                                 anchor_date="2025-10-27"),
     )
     html = out.read_text(encoding="utf-8")
     assert "Kinh nghiệm học từ mọi đường cầu" in html
     assert "không có phần vượt nào" in html
     assert "Dự báo kỳ tới" in html
-    want = (frame["p_post"] + frame["streak_shift"]).iloc[0] * 100
+    want = frame["p_next"].iloc[0] * 100
+    assert want == pytest.approx((frame["p_post"] + 0.0125).iloc[0] * 100)
     assert f"<td>{round(want, 2)}</td>" in html
     assert "không phải xác suất đã hiệu chuẩn" not in html
 
@@ -259,7 +263,7 @@ def test_the_page_names_the_configured_scope_and_lags(tmp_path, fair) -> None:
     *_, ev = fair
     payload = _payload(ev, pooled=True) | {"scope": "special_only", "lag_max": 7}
     (tmp_path / "bridge_evidence_de.json").write_text(json.dumps(payload), encoding="utf-8")
-    exp = build_docs._bridge_experience(tmp_path, mode="de", kind="stable")
+    exp = build_docs._bridge_experience(tmp_path, mode="de", kind="stable", anchor_date="2025-10-27")
     assert exp["scope_text"] == "các cặp vị trí trong giải Đặc Biệt × độ trễ 1–7"
 
 
@@ -286,3 +290,28 @@ def test_streak_experience_variance_is_the_cluster_sandwich() -> None:
     # Một nhóm chỉ có MỘT cụm thì không có gì để so: dùng sàn nhị thức, không chia cho 0.
     single = streak_experience(np.array([[2, 0]]), np.array([[9, 0]]))
     assert np.isfinite(single[0]).all()
+
+
+def test_evidence_from_another_anchor_is_not_shown(tmp_path, fair) -> None:
+    *_, ev = fair
+    (tmp_path / "bridge_evidence_loto.json").write_text(json.dumps(_payload(ev, pooled=True)),
+                                                       encoding="utf-8")
+    assert build_docs._bridge_experience(tmp_path, mode="loto", kind="stable", anchor_date="2025-10-26") == {}
+    assert build_docs._bridge_experience(tmp_path, mode="loto", kind="stable", anchor_date="2025-10-27")
+
+
+def test_the_displayed_rule_probability_is_the_one_the_picks_use() -> None:
+    """Phạm vi gần Đặc Biệt nhân thiên lệch: cột trên trang và xác suất của con số phải cùng một số."""
+    digits = np.zeros(107, dtype=np.uint8)
+    digits[[3, 4]] = 7  # hai chữ số cuối của Đặc Biệt → cầu báo 77
+    day = date(2026, 1, 1)
+    rule = _rule(0.02, 0.0, i=3, j=4)
+    rule.special_touch = rule.special_both = 1
+    frame = paths_to_dataframe([rule])
+    shown = rule_next_probability(frame, kind="stable", scope="special_only", bias_special_both=1.5)
+    assert shown[0] == pytest.approx(0.03)
+    picked = predict_from_fitted_paths_full(
+        stats=[rule], raw_by_date={day: digits}, dates=[day], params=PARAMS, kind="stable",
+        mode="loto", scope="special_only", bias_special_both=1.5,
+    ).set_index("number")["prob"]
+    assert picked[77] == pytest.approx(shown[0])

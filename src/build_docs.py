@@ -133,15 +133,22 @@ _SCOPE_TEXT = {
 }
 
 
-def _bridge_experience(path_ui_dir: Path, *, mode: str, kind: str) -> dict[str, Any]:
+def _bridge_experience(
+    path_ui_dir: Path, *, mode: str, kind: str, anchor_date: str
+) -> dict[str, Any]:
     """Kinh nghiệm học từ MỌI đường cầu (``path_prob.BridgeEvidence``) và câu kết luận.
 
     Câu kết luận suy TỪ số đo của ngày neo, không viết cứng: nếu một ngày các
     cầu thật sự khác nhau, trang sẽ nói thế và in phần chênh được giữ lại.
-    Thiếu tệp (lượt dựng cũ) thì trả rỗng và trang bỏ khối này.
+    Thiếu tệp (lượt dựng cũ) thì trả rỗng và trang bỏ khối này. Tệp là của MỘT
+    ngày neo: khác ngày neo của trang (chạy lại ``--bien-ngay`` cho ngày cũ, hay
+    lượt dựng hỏng giữa chừng) thì cũng bỏ khối, không ghép kinh nghiệm của
+    ngày này với bảng cầu của ngày khác.
     """
     payload = read_json_or_empty(path_ui_dir / f"bridge_evidence_{mode}.json")
     if not isinstance(payload, dict) or "variance_ratio" not in payload:
+        return {}
+    if payload.get("anchor_date") != anchor_date:
         return {}
     base = float(payload["base_rate"])
     ratio = _dec(float(payload["variance_ratio"]))
@@ -249,11 +256,9 @@ def _render_page(
         j_label = str(r.get("j_label", "")) or index_to_label(j)
 
         p_mean = float(r.get("p_mean", 0.0))
-        p_next = None
-        if "p_post" in ui_df.columns and pd.notna(r.get("p_post")):
-            p_next = float(r["p_post"])
-            if kind == "active" and pd.notna(r.get("streak_shift")):
-                p_next += float(r["streak_shift"])
+        # ``p_next`` do ``path_prob.rule_next_probability`` tính ở bước dựng dữ
+        # liệu: cùng thiên lệch và chặn biên với bước gợi ý.
+        p_next = float(r["p_next"]) if pd.notna(r.get("p_next")) else None
         # show streaks
         if kind == "active":
             streak = (
@@ -341,7 +346,9 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             # gặp, không phải sự cố. Thông điệp cũ ("hãy chạy lại bước tạo dữ
             # liệu") hướng người đọc đi sửa một thứ không hỏng.
             empty_reason = _empty_reason(path_ui_dir, mode=mode, kind=kind, rows=len(ui_df))
-            experience = _bridge_experience(path_ui_dir, mode=mode, kind=kind)
+            experience = _bridge_experience(
+                path_ui_dir, mode=mode, kind=kind, anchor_date=anchor_date
+            )
 
             out_name = f"soi-path-{mode}-{kind}.html"
             out_path = docs_dir / out_name

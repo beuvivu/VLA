@@ -566,6 +566,34 @@ def _empty_prediction(mode: Mode = "loto") -> pd.DataFrame:
     )
 
 
+def rule_next_probability(
+    paths: pd.DataFrame,
+    *,
+    kind: FilterKind,
+    scope: str = "all",
+    bias_special_touch: float = 1.0,
+    bias_special_both: float = 1.0,
+) -> np.ndarray:
+    """Xác suất trúng kỳ tới của từng đường cầu — đúng con số dùng để xếp hạng con số.
+
+    Theo kinh nghiệm học từ MỌI cầu (``BridgeEvidence``), không phải tỉ lệ lịch
+    sử của chính cầu đã được chọn ra từ hàng nghìn cầu. Nhánh "đang chạy" cộng
+    phần kinh nghiệm theo chuỗi; phạm vi gần Đặc Biệt nhân hệ số thiên lệch đã
+    cấu hình. ``predict_from_fitted_paths_full`` và cột «Dự báo kỳ tới» của trang
+    soi cầu cùng gọi hàm này, nên bảng và gợi ý không thể nói hai con số khác nhau.
+    """
+    p = paths["p_post"].astype(float).to_numpy()
+    if np.isnan(p).any():
+        raise ValueError("đường cầu thiếu p_post: dựng lại bằng fit_paths")
+    if kind == "active":
+        p = p + paths["streak_shift"].astype(float).to_numpy()
+    if scope in {"near_special", "special_only"}:
+        touched = paths["special_touch"].astype(bool).to_numpy()
+        both = paths["special_both"].astype(bool).to_numpy()
+        p = np.where(both, p * float(bias_special_both), np.where(touched, p * float(bias_special_touch), p))
+    return np.clip(p, 1e-6, 1 - 1e-6)
+
+
 def predict_from_fitted_paths_full(
     *,
     stats: list[PathStats],
@@ -632,19 +660,13 @@ def predict_from_fitted_paths_full(
     if paths.empty:
         return _empty_prediction(mode)
 
-    # Xác suất trúng kỳ tới của từng cầu theo kinh nghiệm học từ MỌI cầu
-    # (``BridgeEvidence``), không phải tỉ lệ lịch sử của chính cầu đã được chọn
-    # ra từ hàng nghìn cầu. Nhánh "đang chạy" cộng phần kinh nghiệm theo chuỗi.
-    p = paths["p_post"].astype(float).to_numpy()
-    if np.isnan(p).any():
-        raise ValueError("đường cầu thiếu p_post: dựng lại bằng fit_paths")
-    if kind == "active":
-        p = p + paths["streak_shift"].astype(float).to_numpy()
-    if scope in {"near_special", "special_only"}:
-        touched = paths["special_touch"].astype(bool).to_numpy()
-        both = paths["special_both"].astype(bool).to_numpy()
-        p = np.where(both, p * float(bias_special_both), np.where(touched, p * float(bias_special_touch), p))
-    p = np.clip(p, 1e-6, 1 - 1e-6)
+    p = rule_next_probability(
+        paths,
+        kind=kind,
+        scope=scope,
+        bias_special_touch=bias_special_touch,
+        bias_special_both=bias_special_both,
+    )
 
     trials = paths["trials"].astype(float).to_numpy()
     reliability = trials / (trials + 120.0)
