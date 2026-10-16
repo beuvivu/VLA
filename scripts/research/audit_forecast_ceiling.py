@@ -12,7 +12,8 @@ mỗi dạng một phép thử, rồi đặt kỹ năng ĐÃ CÔNG BỐ của h�
    sử không — lệch thật thì tương quan dương giữa hai nửa.
 2. Các chữ số trong CÙNG một kỳ có độc lập không (phương sai số đếm theo ngày
    so với nhị thức).
-3. Lô về hôm nay có làm đổi khả năng về ở kỳ sau không (độ trễ 1, 2, 3, 7).
+3. Lô về hôm nay có làm đổi khả năng về ở kỳ sau không (độ trễ 1, 2, 3, 7); sai số theo
+   cụm kỳ đích.
 4. Mô hình tần suất chữ số gần đây (cửa sổ W kỳ, co về đều với độ mạnh k):
    walk-forward so với dự báo đều — dạng duy nhất khai thác được lệch vật lý
    nếu lệch ấy trôi theo thời gian.
@@ -89,12 +90,28 @@ def _appearance(last_two: np.ndarray) -> np.ndarray:
 
 
 def lag_dependence(hit: np.ndarray) -> list[dict]:
+    """P(về | đã về trước đó ``lag`` kỳ) − P(về | chưa về), sai số theo cụm KỲ ĐÍCH.
+
+    100 chỉ báo của một kỳ đích cùng sinh ra từ 27 giải nên không độc lập; coi
+    chúng là 100 phép thử Bernoulli thì sai số không có phân phối đã nêu. Mỗi
+    kỳ đích là một cụm: phương sai của hai tỉ lệ (ước lượng tỉ số) và hiệp
+    phương sai giữa chúng tính từ phần dư theo kỳ.
+    """
     out = []
     for lag in (1, 2, 3, 7):
         x, y = hit[:-lag], hit[lag:]
-        p1, p0 = float(y[x].mean()), float(y[~x].mean())
-        se = np.sqrt(p1 * (1 - p1) / x.sum() + p0 * (1 - p0) / (~x).sum())
-        out.append({"lag": lag, "after_hit": p1, "after_miss": p0, "z": float((p1 - p0) / se)})
+        a = (x & y).sum(axis=1).astype(float)      # trúng sau khi đã về, theo kỳ đích
+        b = x.sum(axis=1).astype(float)            # số con đã về, theo kỳ đích
+        c = (~x & y).sum(axis=1).astype(float)
+        d = (~x).sum(axis=1).astype(float)
+        p1, p0 = a.sum() / b.sum(), c.sum() / d.sum()
+        r1, r0 = a - p1 * b, c - p0 * d
+        clusters = len(a)
+        factor = clusters / (clusters - 1)
+        var = factor * (np.sum(r1**2) / b.sum() ** 2 + np.sum(r0**2) / d.sum() ** 2
+                        - 2 * np.sum(r1 * r0) / (b.sum() * d.sum()))
+        out.append({"lag": lag, "after_hit": float(p1), "after_miss": float(p0),
+                    "z": float((p1 - p0) / np.sqrt(var))})
     return out
 
 

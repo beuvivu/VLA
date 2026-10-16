@@ -28,7 +28,7 @@ Tái lập bằng `PYTHONPATH=src python3 scripts/research/audit_forecast_ceilin
 |---|---|---|
 | Bi hoặc lồng lệch chữ số theo vị trí | Lệch của 54 (giải × hàng chục/đơn vị) ở nửa đầu so với nửa sau | Tương quan +0,03 ± 0,05; số phép p < 0,01 là 0 (nửa đầu) và 1 (nửa sau) trên 54 |
 | Các chữ số trong cùng kỳ phụ thuộc nhau | Phương sai số lần một chữ số xuất hiện trong một kỳ | 2,43 (chục), 2,42 (đơn vị); nhị thức là 2,43 |
-| Lô về hôm nay kéo theo kỳ sau | P(về \| đã về) − P(về \| chưa về), độ trễ 1, 2, 3, 7 | z = +0,74, +0,69, +0,55, +1,14 |
+| Lô về hôm nay kéo theo kỳ sau | P(về \| đã về) − P(về \| chưa về), độ trễ 1, 2, 3, 7; sai số theo cụm kỳ đích (100 con của một kỳ không độc lập) | z = +0,74, +0,69, +0,55, +1,13 |
 | Lệch vật lý trôi theo thời gian | Mô hình tần suất chữ số trong W kỳ gần nhất, co về đều với độ mạnh k (20 cấu hình), walk-forward 3 836 kỳ | Cả 20 cấu hình đều kém dự báo đều. Tốt nhất là W = 60, k = 5 000 với z = −0,61; co càng mạnh càng đỡ kém |
 | Cầu vị trí khác nhau thật | Tỉ lệ trúng của 170 130 đường cầu, so độ tản với dao động nhị thức | 0,99 lần (LOTO), 1,00 lần (Đặc Biệt) — mục 2 |
 | Cầu đang chạy dài trúng tiếp nhiều hơn | Tỉ lệ trúng tiếp theo độ dài chuỗi, đếm trên mọi đường cầu | 23,5–24,2% ở mọi độ dài, so với nền 23,76% — mục 2 |
