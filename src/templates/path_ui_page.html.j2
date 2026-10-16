@@ -196,7 +196,7 @@
               <div class="small">trễ={{ row.lag }} · A={{ row.i }} ({{ row.i_label }}) · B={{ row.j }} ({{ row.j_label }})</div>
             </td>
             <td>{{ (row.p_mean*100)|round(2) }}</td>
-            <td>{% if row.p_next is not none %}{{ (row.p_next*100)|round(2) }}{% else %}—{% endif %}</td>
+            <td>{% if row.p_next is defined and row.p_next is not none %}{{ (row.p_next*100)|round(2) }}{% else %}—{% endif %}</td>
             <td class="mono">{{ row.streak }}</td>
             {% for cell in row.cells %}
               {% if cell.hitde %}

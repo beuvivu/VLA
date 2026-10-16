@@ -72,11 +72,12 @@ sát của chúng vẫn tản ra đúng bằng dao động nhị thức. Đo tr�
 
 | | Đường cầu | Độ tản so với nhị thức | Tỉ lệ trúng của cầu "tốt nhất" |
 |---|---:|---:|---:|
-| LOTO | 170 130 | 0,99 lần | 32,4% (nền 23,8%) |
-| Đặc Biệt | 170 130 | 1,00 lần | 3,9% (nền 1,0%) |
+| LOTO | 170 130 | 0,99 lần | 34,4% (nền 23,8%) |
+| Đặc Biệt | 170 130 | 1,00 lần | 4,2% (nền 1,0%) |
 
-Không có phần vượt. Tách riêng từng độ trễ cũng vậy: tỉ số dao động từ 0,92 đến 1,03. Một cầu
-trúng 32% trong 365 kỳ là đúng cỡ cầu may mắn nhất trong 5 671 cầu cùng độ trễ.
+Không có phần vượt. Tách riêng từng độ trễ cũng vậy: tỉ số dao động từ 0,93 đến 1,03 (LOTO) và từ
+0,92 đến 1,07 (Đặc Biệt), quanh 1. Một cầu trúng 34% trong 365 kỳ là đúng cỡ cầu may mắn nhất trong
+170 130 cầu.
 
 **Câu hỏi 2: cầu đang chạy dài có trúng tiếp nhiều hơn không?** Đếm trên mọi cầu và mọi kỳ của
 cửa sổ, tỉ lệ trúng ở kỳ kế tiếp theo độ dài chuỗi ngay trước kỳ ấy (LOTO, ngày neo 15-10-2026):
@@ -134,7 +135,47 @@ Luật quyết định chốt TRƯỚC khi đo, ghi trong docstring của kịch
 2. **Tổ hợp:** bản mới không kém bản cũ với z ≤ −2 ở cả hai chế độ.
 3. **Hằng số:** tổ hợp mới không kém dự báo hằng số với z ≤ −2.
 
-KẾT_QUẢ_ĐO
+Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
+
+**Nhánh cầu** (chính vector trang soi cầu in):
+
+| Ô | Mới so với cũ | Cũ so với hằng số | Mới so với hằng số | Tổng LOTO (trung vị): cũ → mới |
+|---|---:|---:|---:|---:|
+| LOTO đang chạy | **z = +7,86** (nửa +5,73 / +5,38) | z = −8,09 | z = −1,65 | 24,48 → 23,82 |
+| LOTO ổn định | **z = +38,25** (nửa +26,61 / +27,48) | z = −38,55 | z = −1,62 | 26,46 → 23,82 |
+| Đặc Biệt đang chạy | z = +1,10 | z = −0,75 | z = +0,83 | — |
+| Đặc Biệt ổn định | z = +1,08 (nửa +0,63 / +0,91) | z = −0,97 | z = +0,84 | — |
+
+**Tổ hợp** (trọng số mặc định, chốt bằng `finalize_blend`):
+
+| | Mới so với cũ | Mới so với hằng số |
+|---|---:|---:|
+| LOTO | z = −0,42 (nửa +0,23 / −0,84) | z = +0,43 |
+| Đặc Biệt | z = +0,27 | z = +0,98 |
+
+**Quyết định: đạt cả ba luật, nên đổi.**
+
+1. Nhánh: thấp nhất z = +1,08, cao nhất z = +38,25.
+2. Tổ hợp so với cũ: thấp nhất z = −0,42.
+3. Tổ hợp so với hằng số: thấp nhất z = +0,43.
+
+Đọc cho đúng:
+
+- **Phần thắng lớn nằm ở nhánh, không ở tổ hợp.**
+  - Nhánh cũ kém hằng số rất xa (LOTO ổn định z = −38,55) vì lời nguyền người thắng ở MỨC.
+  - Ở tầng tổ hợp, `finalize_blend` đã neo mức từ 04-10, nên hai bản ngang nhau. Đó là điều mong
+    đợi: tổ hợp đã ở trần, và phép sửa này không được phép làm nó tệ đi.
+- **Nhánh LOTO mới vẫn nhỉnh kém hằng số**, z = −1,65 và −1,62, cùng dấu ở cả hai nửa nhưng không
+  có ý nghĩa thống kê. Có hai nguồn, ghi ra thay vì sửa sau khi đã xem kết quả:
+  - tâm co là tỉ lệ trúng chung của cửa sổ 365 kỳ (tổng trung vị 23,82), không phải mốc tích luỹ;
+  - ở 53% số ngày, phương pháp mô men rơi về phía dương do nhiễu nên κ hữu hạn. Phần chênh được giữ
+    khi ấy không quá 1,0%, và độ lệch lớn nhất của kinh nghiệm chuỗi so với nền là 0,06 điểm phần
+    trăm.
+
+  Docstring của `hierarchical_pooling.fit_shrinkage_to_prior_rows` đã cảnh báo đúng hiện tượng này:
+  κ hữu hạn không phải một phát hiện.
+- Độ tản giữa các cầu qua 2 000 ngày neo: trung vị 1,00 lần nhị thức, khoảng 0,99–1,01 (LOTO);
+  trung vị 1,00 lần, khoảng 0,99–1,01 (Đặc Biệt).
 
 ## 4. Điều thay đổi với người đọc
 

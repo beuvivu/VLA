@@ -476,7 +476,7 @@ trễ — tâm riêng từng độ trễ là đưa cú sốc theo kỳ vào), v�
 tỉ lệ trúng tiếp theo độ dài chuỗi, co bằng DerSimonian–Laird (`random_effects_posterior`; phương
 pháp mô men không trọng số giữ 1,4 điểm % nhiễu ở nhóm ít dữ liệu). Đo 15-10-2026: độ tản giữa
 170 130 cầu bằng 0,99 lần nhị thức, chuỗi 3–8 trúng tiếp 23,5–23,9% so với nền 23,8% — mọi cầu co về
-nền. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
+nền. Walk-forward 2 000 kỳ: nhánh LOTO mới hơn cũ z = +7,86 (đang chạy) và +38,25 (ổn định), tổ hợp không đổi (z = −0,42; +0,27) vì `finalize_blend` đã neo mức; nhánh mới vẫn nhỉnh kém hằng số z ≈ −1,6 (tâm là tỉ lệ cửa sổ 365 kỳ) — ghi ra, không chỉnh sau khi xem. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
 trong mẫu). Trang in câu kết luận TỪ `bridge_evidence_<mode>.json`
 (`documentation/research/2026-10-16-tran-du-bao-va-suy-luan-cau.md`, `tests/test_bridge_inference.py`).
 Trần dự báo của cả hệ thống (lệch chữ số, phụ thuộc giữa các kỳ, mô hình tần suất gần) đo bằng
