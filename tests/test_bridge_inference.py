@@ -25,13 +25,14 @@ from path_prob import (
     PathStats,
     _streak_walk,
     fit_paths_with_evidence,
+    streak_experience,
     paths_to_dataframe,
     predict_from_fitted_paths_full,
     prepare_path_history,
 )
 from xsmb_domain import FIELD_WIDTHS
 
-PARAMS = PathParams(lag_max=3, window_days=240, min_trials=60, min_max_streak=3,
+PARAMS = PathParams(lag_max=3, window_days=300, min_trials=60, min_max_streak=3,
                     min_current_streak=3, top_rules_per_lag=100)
 COLUMNS = [name for name, _ in FIELD_WIDTHS]
 WIDTHS = [width for _, width in FIELD_WIDTHS]
@@ -41,6 +42,8 @@ LAST_TWO = [(sum(WIDTHS[:k]) + w - 2, sum(WIDTHS[:k]) + w - 1) for k, w in enume
 
 def _history(n_draws: int = 300, *, persist: float = 0.0, seed: int = 7):
     """Lịch sử giả định; ``persist``: mỗi giải giữ hai số cuối của kỳ trước với xác suất ấy.
+
+    Cửa sổ của ``PARAMS`` phủ trọn lịch sử, nên số lần chấm khác nhau theo độ trễ (300 − trễ).
 
     Khi ``persist > 0``, 27 đường cầu (trễ 1, hai chữ số cuối của cùng một giải)
     là cầu THẬT: chúng trúng với xác suất ≈ persist + (1 − persist)·nền.
@@ -78,21 +81,21 @@ def test_streak_walk_counts_match_brute_force() -> None:
     rng = np.random.default_rng(3)
     hit = rng.random((60, 25)) < 0.45
     buckets = 4
-    max_streak, current, exp_hits, exp_trials = _streak_walk(hit, buckets=buckets)
-    want_hits = np.zeros(buckets, dtype=int)
-    want_trials = np.zeros(buckets, dtype=int)
+    max_streak, current, row_hits, row_trials = _streak_walk(hit, buckets=buckets)
+    want_hits = np.zeros((hit.shape[0], buckets), dtype=int)
+    want_trials = np.zeros((hit.shape[0], buckets), dtype=int)
     for r in range(hit.shape[1]):
         run = best = 0
         for t in range(hit.shape[0]):
             group = min(run, buckets - 1)
-            want_trials[group] += 1
-            want_hits[group] += int(hit[t, r])
+            want_trials[t, group] += 1
+            want_hits[t, group] += int(hit[t, r])
             run = run + 1 if hit[t, r] else 0
             best = max(best, run)
         assert max_streak[r] == best
         assert current[r] == run
-    np.testing.assert_array_equal(exp_trials, want_trials)
-    np.testing.assert_array_equal(exp_hits, want_hits)
+    np.testing.assert_array_equal(row_trials, want_trials)
+    np.testing.assert_array_equal(row_hits, want_hits)
 
 
 def test_a_fair_history_pools_every_bridge_to_the_common_rate(fair) -> None:
@@ -119,6 +122,12 @@ def test_real_bridges_keep_part_of_their_own_rate(planted) -> None:
     assert ev.rule_shrinkage < 0.95
     real = [s for s in stats if s.lag == 1 and (s.i, s.j) in LAST_TWO]
     assert len(real) >= 20
+    # Phần riêng giữ theo đúng số lần chấm của từng độ trễ: N/(N + κ).
+    for s in stats:
+        keep = s.trials / (s.trials + ev.rule_prior_strength)
+        want = ev.base_rate + keep * (s.hits / s.trials - ev.base_rate)
+        assert s.p_post == pytest.approx(want, rel=1e-12, abs=0)
+    assert len({s.trials for s in stats}) > 1
     for s in real:
         assert s.p_post > ev.base_rate + 0.05
         assert s.p_post < s.hits / s.trials  # vẫn co một phần về tỉ lệ chung
@@ -186,6 +195,7 @@ def test_the_page_states_what_the_measurement_says(tmp_path, fair, pooled) -> No
                                                        encoding="utf-8")
     exp = build_docs._bridge_experience(tmp_path, mode="loto", kind="active")
     assert exp["rules"] == "17.013"
+    assert exp["scope_text"] == "mọi cặp vị trí × độ trễ 1–3"
     if pooled:
         assert "không có phần vượt nào" in exp["verdict"]
         assert "giữ" not in exp["verdict"]
@@ -203,7 +213,8 @@ def test_the_soi_path_page_prints_the_forecast_and_the_experience(tmp_path, fair
     stats, *_, ev = fair
     (tmp_path / "bridge_evidence_loto.json").write_text(json.dumps(_payload(ev, pooled=True)),
                                                        encoding="utf-8")
-    frame = paths_to_dataframe(stats).head(2)
+    # Độ lệch chuỗi khác 0 để cột dự báo của nhánh đang chạy PHẢI khác hậu nghiệm.
+    frame = paths_to_dataframe(stats).head(2).assign(streak_shift=0.0125)
     ui = frame.assign(**{"2025-10-27_num": 12, "2025-10-27_hit": 1, "2025-10-27_is_de": 0})
     picks = pd.DataFrame({"number": [12, 34], "prob": [0.2381, 0.2379], "support_paths_count": [3, 2]})
     env = Environment(loader=FileSystemLoader(str(build_docs.Path(build_docs.__file__).parent / "templates")),
@@ -242,3 +253,36 @@ def test_random_effects_keeps_real_differences_and_gives_empty_groups_the_mean()
     assert post[-1] == mean
     # Nhóm nhiều dữ liệu và khác thật thì gần như giữ nguyên tỉ lệ của mình.
     np.testing.assert_allclose(post[:30], hits[:30] / trials[:30], atol=0.002)
+
+
+def test_the_page_names_the_configured_scope_and_lags(tmp_path, fair) -> None:
+    *_, ev = fair
+    payload = _payload(ev, pooled=True) | {"scope": "special_only", "lag_max": 7}
+    (tmp_path / "bridge_evidence_de.json").write_text(json.dumps(payload), encoding="utf-8")
+    exp = build_docs._bridge_experience(tmp_path, mode="de", kind="stable")
+    assert exp["scope_text"] == "các cặp vị trí trong giải Đặc Biệt × độ trễ 1–7"
+
+
+def _clustered_null(seed: int):
+    """Không có khác biệt thật giữa các nhóm chuỗi, nhưng mọi lượt chấm cùng kỳ chung một cú sốc."""
+    rng = np.random.default_rng(seed)
+    rate = np.clip(0.24 + rng.normal(0, 0.03, 250), 0.05, 0.9)
+    expected = np.array([5000, 1200, 300, 70, 17, 4, 1, 0.3, 0.1])
+    trials = rng.poisson(expected[None, :] * rng.lognormal(0, 0.6, (250, 9)))
+    return rng.binomial(trials, rate[:, None]), trials
+
+
+def test_streak_experience_treats_one_draw_as_one_cluster() -> None:
+    """Coi lượt chấm cùng kỳ là độc lập thì cú sốc theo kỳ thành "khác biệt giữa nhóm"."""
+    pooled = [streak_experience(*_clustered_null(seed))[2] == 0.0 for seed in range(60)]
+    assert np.mean(pooled) > 0.45
+
+
+def test_streak_experience_variance_is_the_cluster_sandwich() -> None:
+    hits = np.array([[3, 1], [0, 0], [5, 2]])
+    trials = np.array([[10, 4], [6, 0], [10, 5]])
+    post, base, _ = streak_experience(hits, trials)
+    assert base == pytest.approx(11 / 35)
+    # Một nhóm chỉ có MỘT cụm thì không có gì để so: dùng sàn nhị thức, không chia cho 0.
+    single = streak_experience(np.array([[2, 0]]), np.array([[9, 0]]))
+    assert np.isfinite(single[0]).all()

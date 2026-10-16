@@ -473,8 +473,10 @@ cầu mỗi độ trễ nên tỉ lệ ấy mang lời nguyền người thắng
 23,76). `fit_paths_with_evidence` học `BridgeEvidence` từ MỌI cầu của mọi độ trễ: `p_post` co phần
 riêng theo mức chênh thật giữa các cầu (`fit_shrinkage_to_prior`, một tâm và một κ chung cho 30 độ
 trễ — tâm riêng từng độ trễ là đưa cú sốc theo kỳ vào), và nhánh "đang chạy" cộng `streak_shift` —
-tỉ lệ trúng tiếp theo độ dài chuỗi, co bằng DerSimonian–Laird (`random_effects_posterior`; phương
-pháp mô men không trọng số giữ 1,4 điểm % nhiễu ở nhóm ít dữ liệu). Đo 15-10-2026: độ tản giữa
+tỉ lệ trúng tiếp theo độ dài chuỗi, co bằng DerSimonian–Laird với phương sai THEO CỤM KỲ QUAY
+(`streak_experience`; phương pháp mô men không trọng số giữ 1,4 điểm % nhiễu ở nhóm ít dữ liệu,
+và coi hàng nghìn cầu cùng kỳ là độc lập thì cú sốc theo kỳ thành τ² dương). Phần riêng giữ
+`N/(N + κ)` theo số lần chấm của TỪNG độ trễ; trang in phạm vi/độ trễ đúng cấu hình. Đo 15-10-2026: độ tản giữa
 170 130 cầu bằng 0,99 lần nhị thức, chuỗi 3–8 trúng tiếp 23,5–23,9% so với nền 23,8% — mọi cầu co về
 nền. Walk-forward 2 000 kỳ: nhánh LOTO mới hơn cũ z = +7,86 (đang chạy) và +38,25 (ổn định), tổ hợp không đổi (z = −0,42; +0,27) vì `finalize_blend` đã neo mức; nhánh mới vẫn nhỉnh kém hằng số z ≈ −1,6 (tâm là tỉ lệ cửa sổ 365 kỳ) — ghi ra, không chỉnh sau khi xem. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
 trong mẫu). Trang in câu kết luận TỪ `bridge_evidence_<mode>.json`

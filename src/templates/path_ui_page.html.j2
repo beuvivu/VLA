@@ -132,7 +132,7 @@
   {% if experience %}
   <section class="card path-experience" aria-labelledby="path-experience-title">
     <h2 id="path-experience-title" class="path-experience-title">Kinh nghiệm học từ mọi đường cầu</h2>
-    <p class="small path-experience-scope">Ngày neo {{ experience.anchor_date }} · {{ experience.rules }} đường cầu (mọi cặp vị trí × độ trễ 1–30), mỗi đường chấm trên {{ experience.trials }} kỳ gần nhất · tỉ lệ trúng chung {{ experience.base_pct }}%.</p>
+    <p class="small path-experience-scope">Ngày neo {{ experience.anchor_date }} · {{ experience.rules }} đường cầu ({{ experience.scope_text }}), mỗi đường chấm trên {{ experience.trials }} kỳ gần nhất · tỉ lệ trúng chung {{ experience.base_pct }}%.</p>
     <p class="path-experience-verdict">{{ experience.verdict }}</p>
     {% if experience.streak_rows %}
     <div class="path-experience-scroll">

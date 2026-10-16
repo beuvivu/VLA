@@ -71,8 +71,8 @@ class BridgeEvidence:
     Câu hỏi thứ hai: cầu đang chạy s kỳ có trúng tiếp nhiều hơn không?
     ``streak_hits``/``streak_trials`` đếm, trên mọi cầu và mọi kỳ của cửa sổ,
     lần trúng ở kỳ kế tiếp theo độ dài chuỗi NGAY TRƯỚC kỳ ấy; hậu nghiệm co
-    về tỉ lệ chung theo mô hình hiệu ứng ngẫu nhiên
-    (``hierarchical_pooling.random_effects_posterior``), ``streak_between_variance``
+    về tỉ lệ chung theo mô hình hiệu ứng ngẫu nhiên với phương sai theo cụm kỳ
+    quay (``streak_experience``), ``streak_between_variance``
     là phương sai thật giữa các độ dài; bằng 0 thì mọi độ dài co hẳn về nền.
 
     Các lần chấm của những cầu cùng kỳ tương quan với nhau qua chính kỳ quay ấy
@@ -81,6 +81,8 @@ class BridgeEvidence:
     """
 
     mode: str
+    scope: str
+    lag_max: int
     rules: int
     trials: int
     base_rate: float
@@ -103,6 +105,8 @@ class BridgeEvidence:
     def as_dict(self) -> dict:
         return {
             "mode": self.mode,
+            "scope": self.scope,
+            "lag_max": self.lag_max,
             "rules": self.rules,
             "trials": self.trials,
             "base_rate": self.base_rate,
@@ -146,27 +150,30 @@ def _streak_walk(
     """Như ``_streak_stats``, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
 
     Kỳ thứ t được xếp vào nhóm ``min(chuỗi sau kỳ t−1, buckets−1)``; chuỗi tính
-    từ đầu cửa sổ, giống hệt ``current_streak``. ``buckets=0`` bỏ phần đếm.
+    từ đầu cửa sổ, giống hệt ``current_streak``. Số đếm trả về THEO TỪNG KỲ
+    (hình ``(kỳ, buckets)``) để phương sai tính được theo cụm kỳ quay
+    (``streak_experience``). ``buckets=0`` bỏ phần đếm.
     """
+    n_rows = hit_matrix.shape[0] if hit_matrix.ndim == 2 else 0
     n_rules = hit_matrix.shape[1] if hit_matrix.ndim == 2 else 0
-    exp_hits = np.zeros(max(buckets, 0), dtype=np.int64)
-    exp_trials = np.zeros(max(buckets, 0), dtype=np.int64)
+    row_hits = np.zeros((n_rows, max(buckets, 0)), dtype=np.int64)
+    row_trials = np.zeros((n_rows, max(buckets, 0)), dtype=np.int64)
     if hit_matrix.size == 0:
         z = np.zeros(n_rules, dtype=np.int16)
-        return z, z.copy(), exp_hits, exp_trials
+        return z, z.copy(), row_hits, row_trials
 
     cur = np.zeros(n_rules, dtype=np.int16)
     max_streak = np.zeros(n_rules, dtype=np.int16)
     cap = buckets - 1
-    for row in hit_matrix:
+    for t, row in enumerate(hit_matrix):
         if buckets > 0:
             group = np.minimum(cur, cap)
-            exp_trials += np.bincount(group, minlength=buckets)
-            exp_hits += np.bincount(group, weights=row, minlength=buckets).astype(np.int64)
+            row_trials[t] = np.bincount(group, minlength=buckets)
+            row_hits[t] = np.bincount(group, weights=row, minlength=buckets)
         cur += 1
         cur *= row  # bool -> 0/1: resets every rule that missed
         np.maximum(max_streak, cur, out=max_streak)
-    return max_streak, cur, exp_hits, exp_trials
+    return max_streak, cur, row_hits, row_trials
 
 
 def _select_rule_indices(
@@ -350,6 +357,10 @@ def fit_paths_with_evidence(
     idx_start = max(0, anchor_idx - params.window_days + 1)
 
     fitted_lags: list[tuple] = []
+    # Kinh nghiệm chuỗi cộng THEO KỲ ĐÍCH: mọi cầu của mọi độ trễ chấm trên cùng
+    # một kỳ quay thuộc cùng một cụm.
+    day_hits = np.zeros((idx_end - idx_start + 1, STREAK_BUCKETS), dtype=np.int64)
+    day_trials = np.zeros_like(day_hits)
     for lag in range(1, params.lag_max + 1):
         # CRITICAL: ``lag`` must mean the same thing here as it does at
         # prediction time.  ``predict_from_fitted_paths_full`` resolves a rule's
@@ -382,9 +393,12 @@ def fit_paths_with_evidence(
 
         trials = int(hit_matrix.shape[0])
         hits = hit_matrix.sum(axis=0, dtype=np.int32)
-        max_streak, current_streak, exp_hits, exp_trials = _streak_walk(
+        max_streak, current_streak, row_hits, row_trials = _streak_walk(
             hit_matrix, buckets=STREAK_BUCKETS
         )
+        # ``target_idx`` không lặp trong một độ trễ nên cộng chỉ số trực tiếp là đúng.
+        day_hits[target_idx - idx_start] += row_hits
+        day_trials[target_idx - idx_start] += row_trials
         p_mean = (hits + params.alpha) / (trials + params.alpha + params.beta)
 
         selected = _select_rule_indices(
@@ -395,16 +409,14 @@ def fit_paths_with_evidence(
             params=params,
             mode=mode,
         )
-        fitted_lags.append(
-            (lag, trials, hits, p_mean, max_streak, current_streak, selected,
-             exp_hits, exp_trials)
-        )
+        fitted_lags.append((lag, trials, hits, p_mean, max_streak, current_streak, selected))
 
-    evidence = _bridge_evidence(fitted_lags, mode=mode)
+    evidence = _bridge_evidence(fitted_lags, day_hits, day_trials, mode=mode, scope=scope)
     stats: list[PathStats] = []
-    for lag, trials, hits, p_mean, max_streak, current_streak, selected, _, _ in fitted_lags:
+    for lag, trials, hits, p_mean, max_streak, current_streak, selected in fitted_lags:
         center = evidence.base_rate
-        keep = 1.0 - evidence.rule_shrinkage
+        # Phần riêng giữ theo đúng số lần chấm của độ trễ này: N/(N + κ).
+        keep = trials / (trials + evidence.rule_prior_strength)
         for k in selected:
             group = min(int(current_streak[k]), STREAK_BUCKETS - 1)
             stats.append(
@@ -430,7 +442,44 @@ def fit_paths_with_evidence(
     return stats, raw_by_date, dates[: anchor_idx + 1], evidence
 
 
-def _bridge_evidence(fitted_lags: list[tuple], *, mode: str) -> BridgeEvidence | None:
+def streak_experience(
+    day_hits: np.ndarray, day_trials: np.ndarray
+) -> tuple[np.ndarray, float, float]:
+    """Hậu nghiệm tỉ lệ trúng tiếp theo nhóm độ dài chuỗi, phương sai theo cụm kỳ quay.
+
+    Hàng nghìn đường cầu chấm trên CÙNG một kỳ quay không độc lập: kỳ về nhiều
+    con khác nhau thì mọi cầu LOTO cùng dễ trúng hơn. Coi ``n`` lượt chấm là
+    ``n`` phép thử nhị thức thì phương sai nhóm "chuỗi 0" bị đánh giá thấp hàng
+    trăm lần, và chênh lệch ngẫu nhiên rất nhỏ giữa các nhóm thành τ² dương. Ở
+    đây phương sai của tỉ lệ nhóm s là ước lượng cụm (sandwich) theo kỳ:
+    ``C/(C−1)·Σₜ(hₜₛ − rₛ·nₜₛ)² / Nₛ²``, không nhỏ hơn mức nhị thức.
+
+    ``day_hits``/``day_trials`` hình ``(kỳ, nhóm)``. Trả ``(hậu nghiệm, m, τ²)``.
+    """
+    hits = day_hits.sum(axis=0).astype(float)
+    trials = day_trials.sum(axis=0).astype(float)
+    used = trials > 0
+    if not used.any():
+        raise ValueError("không có lượt chấm nào để học kinh nghiệm chuỗi")
+    base = float(hits[used].sum() / trials[used].sum())
+    rates = np.divide(hits, trials, out=np.full_like(hits, base), where=used)
+    resid = day_hits - day_trials * rates[None, :]
+    clusters = (day_trials > 0).sum(axis=0)
+    factor = np.divide(clusters, clusters - 1, out=np.ones_like(trials), where=clusters > 1)
+    safe_n = np.where(used, trials, 1.0)
+    cluster_var = factor * (resid**2).sum(axis=0) / safe_n**2
+    variances = np.maximum(cluster_var, base * (1.0 - base) / safe_n)
+    return random_effects_posterior(hits, trials, variances=variances)
+
+
+def _bridge_evidence(
+    fitted_lags: list[tuple],
+    day_hits: np.ndarray,
+    day_trials: np.ndarray,
+    *,
+    mode: str,
+    scope: str,
+) -> BridgeEvidence | None:
     """Học kinh nghiệm cầu từ mọi cầu của mọi độ trễ — xem ``BridgeEvidence``.
 
     Một tâm và một κ chung cho mọi độ trễ. Trên một trò chơi công bằng, mọi cầu
@@ -450,11 +499,13 @@ def _bridge_evidence(fitted_lags: list[tuple], *, mode: str) -> BridgeEvidence |
     binomial = float(np.mean(base * (1.0 - base) / n))
     observed = float(np.mean((rates - base) ** 2))
 
-    exp_hits = np.sum([f[7] for f in fitted_lags], axis=0).astype(float)
-    exp_trials = np.sum([f[8] for f in fitted_lags], axis=0).astype(float)
-    streak_post, _, streak_tau2 = random_effects_posterior(exp_hits, exp_trials)
+    exp_hits = day_hits.sum(axis=0)
+    exp_trials = day_trials.sum(axis=0)
+    streak_post, _, streak_tau2 = streak_experience(day_hits, day_trials)
     return BridgeEvidence(
         mode=mode,
+        scope=scope,
+        lag_max=int(max(f[0] for f in fitted_lags)),
         rules=int(succ.size),
         trials=int(round(float(np.mean(n)))),
         base_rate=base,

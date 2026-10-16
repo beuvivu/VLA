@@ -350,7 +350,7 @@ def fit_shrinkage_to_prior_rows(
 
 
 def random_effects_posterior(
-    successes: np.ndarray, trials: np.ndarray
+    successes: np.ndarray, trials: np.ndarray, *, variances: np.ndarray | None = None
 ) -> tuple[np.ndarray, float, float]:
     """Hậu nghiệm từng nhóm theo mô hình hiệu ứng ngẫu nhiên DerSimonian–Laird.
 
@@ -366,6 +366,8 @@ def random_effects_posterior(
     * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``.
 
     ``τ² = 0`` thì mọi nhóm co hẳn về ``m``. Nhóm không có lần thử nào nhận ``m``.
+    ``variances`` (cùng hình) thay ``vᵢ`` khi các phép thử trong một nhóm không
+    độc lập — ví dụ phương sai theo cụm của ``path_prob.streak_experience``.
     Trả về ``(hậu nghiệm, m, τ²)``.
     """
     counts = np.asarray(successes, dtype=float).reshape(-1)
@@ -379,7 +381,13 @@ def random_effects_posterior(
     if used.sum() < 2 or not 0.0 < m < 1.0:
         return post, m, 0.0
     rates = counts[used] / n[used]
-    v = m * (1.0 - m) / n[used]
+    if variances is None:
+        v = m * (1.0 - m) / n[used]
+    else:
+        v = np.asarray(variances, dtype=float).reshape(-1)
+        if v.shape != counts.shape or not np.all(np.isfinite(v[used])) or np.any(v[used] <= 0):
+            raise ValueError("variances phải cùng hình, hữu hạn và dương ở mọi nhóm có phép thử")
+        v = v[used]
     w = 1.0 / v
     q = float(np.sum(w * (rates - m) ** 2))
     scale = float(w.sum() - np.sum(w**2) / w.sum())

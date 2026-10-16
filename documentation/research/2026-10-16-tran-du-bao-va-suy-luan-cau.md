@@ -98,17 +98,25 @@ Mỗi đường cầu nhận **xác suất trúng kỳ tới** theo kinh nghiệ
   phương pháp mô men (`hierarchical_pooling.fit_shrinkage_to_prior`), dùng một tâm và một κ chung
   cho 30 độ trễ:
   - `p_post = m + N/(N + κ)·(trúng/N − m)`;
-  - m là tỉ lệ trúng chung của mọi cầu.
+  - m là tỉ lệ trúng chung của mọi cầu;
+  - N là số lần chấm của chính độ trễ ấy, không phải một trung bình chung (theo review Codex).
 
   Không có phần chênh vượt thì κ chạm trần và mọi cầu co về m. Hậu nghiệm Bayes không bị việc chọn
   top cầu làm lệch, nên lời nguyền người thắng biến mất mà không cần độ co đặt tay.
 - **Kinh nghiệm theo độ dài chuỗi, chỉ cộng cho nhánh "đang chạy".** Tỉ lệ trúng tiếp theo nhóm
   chuỗi 0…7, 8+ được co bằng mô hình hiệu ứng ngẫu nhiên DerSimonian–Laird
-  (`hierarchical_pooling.random_effects_posterior`), mỗi nhóm nặng theo độ chính xác.
+  (`path_prob.streak_experience` → `hierarchical_pooling.random_effects_posterior`), mỗi nhóm
+  nặng theo độ chính xác.
+  - Phương sai mỗi nhóm tính theo **cụm kỳ quay** (ước lượng sandwich), không nhỏ hơn mức nhị thức.
+    Hàng nghìn cầu chấm trên cùng một kỳ không độc lập với nhau: kỳ về nhiều con khác nhau thì mọi
+    cầu LOTO cùng dễ trúng hơn. Coi chúng là phép thử độc lập thì chênh lệch ngẫu nhiên rất nhỏ
+    giữa các nhóm thành τ² dương (theo review Codex).
+  - Đo trên 60 lịch sử giả định có cú sốc theo kỳ nhưng không có khác biệt thật giữa nhóm: phương
+    sai theo cụm co hoàn toàn ở 67,5% số lần, phương sai nhị thức chỉ 21%.
   - Phương pháp mô men không trọng số bị loại vì nhóm nhiễu nhất chi phối nó: trên lịch sử công
     bằng giả định, nó giữ lại tới 1,4 điểm phần trăm nhiễu ở nhóm ít dữ liệu.
   - τ² = 0 thì mọi độ dài co hẳn về nền. Trên dữ liệu thật, LOTO có τ² = 0. Đặc Biệt có τ² rất nhỏ:
-    nhóm chuỗi 1 nhận 1,011% so với 1,000%.
+    nhóm chuỗi 1 nhận 1,005% so với 1,000%.
 - **Một con số** nhận trung bình (theo độ tin cậy) dự báo của các cầu đủ điều kiện cùng báo nó.
   Các cầu ấy tương quan với nhau qua chung chữ số và chung kỳ gốc, nên lấy trung bình chứ không
   cộng dồn.
@@ -186,6 +194,8 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - Khối mới «Kinh nghiệm học từ mọi đường cầu» in độ tản so với dao động ngẫu nhiên và bảng trúng
     tiếp theo độ dài chuỗi. Câu kết luận suy TỪ số đo của ngày neo; một phép kiểm dựng cả hai
     trường hợp (có và không có phần vượt) để trang PHẢI nói khác nhau.
+  - Phạm vi (cặp vị trí, độ trễ) in theo đúng cấu hình đã sinh dự báo, đọc từ
+    `bridge_evidence_<mode>.json`.
   - Ghi chú tự mâu thuẫn "không phải xác suất đã hiệu chuẩn" đã bỏ.
 - **Câu lý do của cầu-kèo** (`cau_position_evidence`): thay "lịch sử 117/361, p≈0.324" bằng "trúng
   117/361 kỳ trong cửa sổ; dự báo kỳ tới 23,76% theo kinh nghiệm mọi đường cầu".
@@ -195,7 +205,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (11 phép) ghim:
+- **`tests/test_bridge_inference.py`** (14 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -206,16 +216,21 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - trang nói đúng điều số đo nói, ở cả hai trường hợp;
   - trang in cột dự báo và khối kinh nghiệm;
   - DerSimonian–Laird co hoàn toàn khoảng một nửa số lần khi không có khác biệt thật, và giữ khác
-    biệt thật.
+    biệt thật;
+  - kinh nghiệm chuỗi coi một kỳ quay là một cụm;
+  - phần riêng giữ theo đúng số lần chấm của từng độ trễ;
+  - trang in đúng phạm vi đã cấu hình.
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu.
-- **15 đột biến** đều đỏ đúng chỗ:
+- **18 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi;
   - τ² luôn bằng 0; τ² không trừ bậc tự do;
   - dự báo dùng tỉ lệ lịch sử; cầu thiếu hậu nghiệm vẫn được nhận;
   - trang bỏ cờ gộp; trang bỏ cột dự báo; trang không cộng chuỗi cho cầu đang chạy;
-  - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử.
+  - câu lý do bỏ chuỗi; câu lý do in tỉ lệ lịch sử;
+  - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
+    cứng phạm vi.
 
 **Một bài học về đột biến.** Đột biến "đếm sau khi cập nhật chuỗi" chỉ đổi chỗ hai khối mã, nên tệp
 giữ nguyên kích thước. Khi tệp được khôi phục trong cùng giây, Python vẫn tin bản `.pyc` của mã đột

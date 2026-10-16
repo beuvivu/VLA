@@ -125,6 +125,14 @@ def _int(value: int) -> str:
     return f"{int(value):,}".replace(",", ".")
 
 
+#: Phạm vi vị trí của ``path_models.get_scope_indices``, in đúng cấu hình đã sinh dự báo.
+_SCOPE_TEXT = {
+    "all": "mọi cặp vị trí",
+    "near_special": "các cặp vị trí trong giải Đặc Biệt, giải nhất và giải nhì",
+    "special_only": "các cặp vị trí trong giải Đặc Biệt",
+}
+
+
 def _bridge_experience(path_ui_dir: Path, *, mode: str, kind: str) -> dict[str, Any]:
     """Kinh nghiệm học từ MỌI đường cầu (``path_prob.BridgeEvidence``) và câu kết luận.
 
@@ -179,8 +187,11 @@ def _bridge_experience(path_ui_dir: Path, *, mode: str, kind: str) -> dict[str, 
             "Sau khi co theo Bayes thực nghiệm, độ dài chuỗi xê dịch xác suất kỳ tới nhiều nhất "
             f"{_pct(spread)} điểm phần trăm."
         )
+    lag_max = int(payload.get("lag_max", 0))
+    scope = _SCOPE_TEXT.get(str(payload.get("scope", "")), "các cặp vị trí đã quét")
     return {
         "anchor_date": payload.get("anchor_date"),
+        "scope_text": f"{scope} × độ trễ 1–{lag_max}" if lag_max else scope,
         "rules": rules,
         "trials": _int(payload["trials"]),
         "base_pct": _pct(base),
