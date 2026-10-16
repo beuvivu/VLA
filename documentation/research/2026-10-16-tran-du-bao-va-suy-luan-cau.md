@@ -144,8 +144,12 @@ con khác.
 
 ## 3. Đo ngoài mẫu
 
-Tái lập bằng `PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000`
-(khoảng 2 giờ, 4 lõi, với cửa sổ 2 000 kỳ của pipeline). Số liệu thô nằm ở `data/research/model_overhaul/bridge_inference.json`.
+Tái lập bằng `PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000`.
+Với cửa sổ 2 000 kỳ của pipeline, mỗi ngày neo mất khoảng 19 giây cho cả hai chế độ, tức gần 3 giờ
+trên 4 lõi. Vì thế kịch bản chạy theo phần (`--parts 4 --part k`) rồi gộp (`--merge`). Mỗi phần ghi
+danh tính lượt đo: tham số, băm dữ liệu, băm mã của cầu. Bước gộp từ chối phần thuộc lượt khác và
+đòi các kỳ đích ghép lại trùng đúng dãy kỳ đích. Số liệu thô nằm ở
+`data/research/model_overhaul/bridge_inference.json`.
 
 Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline, trên thuật toán cuối cùng
 (commit 14e96040, sau mọi sửa chữa theo review). Bản cũ được tái lập từng
@@ -224,7 +228,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (19 phép) ghim:
+- **`tests/test_bridge_inference.py`** (20 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -243,9 +247,10 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - bằng chứng của ngày neo khác không được in;
   - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch;
   - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
+  - phép đo chỉ gộp các phần của cùng một lượt (cùng tham số, dữ liệu, mã, đủ kỳ đích).
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
   xác suất ấy dùng chung `rule_next_probability` nên luôn nằm trong (0, 1).
-- **25 đột biến** đều đỏ đúng chỗ:
+- **28 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi; nhóm chỉ một kỳ vẫn được học;
@@ -257,6 +262,7 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
     cứng phạm vi;
   - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch; Q đo quanh tỉ lệ chung.
+  - gộp không so danh tính lượt đo; gộp chỉ kiểm "có thứ tự, không trùng"; gộp không kiểm đủ phần.
 
 **Một bài học về đột biến.** Đột biến "đếm sau khi cập nhật chuỗi" chỉ đổi chỗ hai khối mã, nên tệp
 giữ nguyên kích thước. Khi tệp được khôi phục trong cùng giây, Python vẫn tin bản `.pyc` của mã đột
