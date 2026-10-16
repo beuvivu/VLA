@@ -9,8 +9,10 @@ có cầu thật thì cầu ấy giữ được phần tỉ lệ riêng.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -372,3 +374,55 @@ def test_random_effects_centres_q_on_the_inverse_variance_mean() -> None:
     assert tau2 == 0.0
     assert mean == pytest.approx(302 / 1010)
     np.testing.assert_allclose(post, mean)
+
+
+def _benchmark_script():
+    path = Path(__file__).resolve().parents[1] / "scripts" / "research" / "benchmark_bridge_inference.py"
+    spec = importlib.util.spec_from_file_location("benchmark_bridge_inference", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _benchmark_part(run: dict, part: int, target: list[int], seed: int) -> dict:
+    rng = np.random.default_rng(seed)
+    n = len(target)
+    names = [f"{k}_{v}" for k in ("active", "stable", "ensemble") for v in ("old", "new")]
+
+    def block(base: float) -> dict:
+        return {"constant": list(rng.normal(1.0, 0.1, n)),
+                "logloss": {k: list(rng.normal(1.0, 0.1, n)) for k in names},
+                "sums": {k: list(rng.normal(100 * base, 0.1, n)) for k in names},
+                "evidence": [{"variance_ratio": 1.0, "rules_fully_pooled": True, "rule_shrinkage": 0.0,
+                              "streak_posterior": [base] * STREAK_BUCKETS, "base_rate": base}] * n}
+
+    return {"run": dict(run), "part": part, "target": target,
+            "first_target": f"t{target[0]}", "last_target": f"t{target[-1]}",
+            "loto": block(0.2377), "de": block(0.01)}
+
+
+def test_the_benchmark_merges_only_parts_of_the_same_run() -> None:
+    """Các phần có kỳ đích tăng dần, không trùng vẫn có thể thuộc lượt đo khác.
+
+    Phần cũ (dữ liệu hay mã đã đổi) và phần chạy với ``--last`` khác đều qua
+    được phép "có thứ tự, không trùng"; bước gộp phải từ chối cả hai.
+    """
+    bench = _benchmark_script()
+    run = {"last": 6, "parts": 2, "window_days": 2000, "draws": 100, "last_date": "2026-10-15",
+           "data_sha256": "data", "code_sha256": "code"}
+    expected = [94, 95, 96, 97, 98, 99]
+    good = [_benchmark_part(run, 1, [94, 95, 96], 1), _benchmark_part(run, 2, [97, 98, 99], 2)]
+    report = bench.merge(list(reversed(good)), run=run, expected_target=expected)
+    assert report["loto"]["days"] == 6
+    assert report["loto"]["first_target"] == "t94" and report["loto"]["last_target"] == "t99"
+
+    stale = _benchmark_part({**run, "data_sha256": "older"}, 2, [97, 98, 99], 2)
+    with pytest.raises(ValueError, match="lượt đo khác"):
+        bench.merge([good[0], stale], run=run, expected_target=expected)
+
+    shifted = [_benchmark_part(run, 1, [90, 91, 92], 1), _benchmark_part(run, 2, [93, 94, 95], 2)]
+    with pytest.raises(ValueError, match="không trùng"):
+        bench.merge(shifted, run=run, expected_target=expected)
+
+    with pytest.raises(ValueError, match="cần đúng các phần"):
+        bench.merge([good[0], good[0]], run=run, expected_target=expected)

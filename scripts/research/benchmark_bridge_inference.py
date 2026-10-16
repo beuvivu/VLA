@@ -39,6 +39,7 @@ Với cửa sổ 2 000 kỳ, một lượt mất khoảng 2,6 giờ trên 4 lõi
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from concurrent.futures import ProcessPoolExecutor
@@ -192,6 +193,28 @@ def _history():
     return raw, two, dates, {"loto": hit_loto, "de": hit_de}
 
 
+#: Mã nguồn quyết định xác suất của cầu: đổi một tệp là đổi phép đo.
+_CODE_FILES = ("src/path_prob.py", "src/path_models.py", "src/hierarchical_pooling.py")
+
+
+def run_identity(raw: pd.DataFrame, *, last: int, parts: int) -> dict:
+    """Danh tính một lượt đo: tham số, ảnh chụp dữ liệu và mã nguồn của cầu.
+
+    Mọi phần của cùng một lượt phải mang đúng danh tính này; bước gộp từ chối
+    phần cũ (dữ liệu hay mã đã đổi) hoặc phần chạy với ``--last``/``--parts`` khác.
+    """
+    data = hashlib.sha256(raw.to_csv(index=False).encode("utf-8")).hexdigest()
+    code = hashlib.sha256(b"".join((ROOT / f).read_bytes() for f in _CODE_FILES)).hexdigest()
+    return {"last": int(last), "parts": int(parts), "window_days": PRODUCTION_WINDOW_DAYS,
+            "draws": int(len(raw)), "last_date": str(pd.Timestamp(raw["date"].iloc[-1]).date()),
+            "data_sha256": data, "code_sha256": code}
+
+
+def expected_targets(dates, last: int) -> list[int]:
+    """Chỉ số kỳ đích của ``last`` cặp (kỳ neo, kỳ kế) cuối — thứ tự mà các phần phải ghép lại thành."""
+    return [int(t) for t in consecutive_next_pairs(dates)[1][-last:]]
+
+
 def run_part(last: int, workers: int, part: int, parts: int) -> dict:
     """Chấm một phần (liên tiếp) của ``last`` kỳ cuối; trả về logloss TỪNG KỲ để gộp sau.
 
@@ -212,7 +235,9 @@ def run_part(last: int, workers: int, part: int, parts: int) -> dict:
     print(f"[cầu vị trí] phần {part}/{parts}: {len(days)} kỳ", flush=True)
 
     weights = DEFAULT_ENSEMBLE_WEIGHTS
-    out: dict = {"target": [int(t) for t in target],
+    out: dict = {"run": run_identity(raw, last=last, parts=parts),
+                 "part": int(part),
+                 "target": [int(t) for t in target],
                  "first_target": str(dates[target[0]].date()),
                  "last_target": str(dates[target[-1]].date())}
     for mode in MODES:
@@ -237,12 +262,23 @@ def run_part(last: int, workers: int, part: int, parts: int) -> dict:
     return out
 
 
-def merge(parts: list[dict]) -> dict:
-    """Nối các phần theo thứ tự kỳ đích rồi tính z và luật quyết định như một lượt liền."""
-    parts = sorted(parts, key=lambda p: p["target"][0])
+def merge(parts: list[dict], *, run: dict, expected_target: list[int]) -> dict:
+    """Nối các phần theo thứ tự kỳ đích rồi tính z và luật quyết định như một lượt liền.
+
+    Chỉ gộp khi mọi phần mang đúng danh tính ``run`` của lượt hiện tại (tham số,
+    dữ liệu, mã), đủ các phần 1..``parts``, và các kỳ đích nối lại TRÙNG từng
+    phần tử với ``expected_target``: các kỳ có thứ tự và không trùng chưa đủ —
+    một phần cũ hay chạy với ``--last`` khác vẫn qua được phép ấy.
+    """
+    for p in parts:
+        if p.get("run") != run:
+            raise ValueError(f"phần {p.get('part')} thuộc lượt đo khác: {p.get('run')} ≠ {run}")
+    if sorted(p["part"] for p in parts) != list(range(1, run["parts"] + 1)):
+        raise ValueError(f"cần đúng các phần 1..{run['parts']}, có {sorted(p['part'] for p in parts)}")
+    parts = sorted(parts, key=lambda p: p["part"])
     targets = [t for p in parts for t in p["target"]]
-    if targets != sorted(targets) or len(set(targets)) != len(targets):
-        raise ValueError("các phần chồng nhau hoặc thiếu thứ tự kỳ đích")
+    if targets != list(expected_target):
+        raise ValueError("các kỳ đích ghép lại không trùng dãy kỳ đích của lượt đo")
     report: dict = {}
     for mode in MODES:
         ref = np.concatenate([p[mode]["constant"] for p in parts])
@@ -304,16 +340,17 @@ def main() -> None:
     if args.merge:
         parts = [json.loads(f.read_text(encoding="utf-8"))
                  for f in sorted(args.parts_dir.glob(f"part_*_of_{args.parts}.json"))]
-        if len(parts) != args.parts:
-            raise SystemExit(f"cần {args.parts} phần, mới có {len(parts)}")
     else:
         parts = [run_part(args.last, args.workers, k, args.parts) for k in range(1, args.parts + 1)]
+    raw, _, dates, _ = _history()
+    run = run_identity(raw, last=args.last, parts=args.parts)
     report = {"generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               "last": args.last,
               "window_days": PRODUCTION_WINDOW_DAYS,
+              "run": run,
               "assumptions": ("Tổ hợp mô phỏng: ML, thống kê và cầu-kèo bằng tỉ lệ nền; cầu vị trí "
                               "từ walk-forward; trọng số mặc định; không hiệu chỉnh, không xếp chồng."),
-              **merge(parts)}
+              **merge(parts, run=run, expected_target=expected_targets(dates, args.last))}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"[OK] {args.out}  quyết định: {report['decision']}")
