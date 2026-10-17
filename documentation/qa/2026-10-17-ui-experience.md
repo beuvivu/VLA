@@ -75,6 +75,15 @@ workflow, cache và thời điểm chốt đạt 126 kiểm thử. Các mutation
 gộp sạch, giải xung đột ngoài manifest hoặc nới giới hạn thử lại đều bị bắt.
 Bao phủ cả shallow clone và commit sửa manifest trở thành rỗng sau push race.
 
+## Điều chỉnh màu và viền theo chủ dự án
+
+Khôi phục tông xanh dương cũ cho các số và điểm nhấn đã đổi sang xanh ngọc;
+bỏ viền và vòng sáng trang trí quanh số. Chọn số dùng nền nhạt, giữ focus
+bàn phím. Số vẫn lớn và toàn bộ bố cục/tương tác nâng cấp được giữ.
+Kiểm lại 116 Python và 182 frontend: đạt. Chromium 390/1440 px × sáng/tối
+trên sáu trang đại diện: 24 trạng thái đạt; nút số có border 0px, không
+box-shadow, dùng màu cũ #4F46E5 ở theme sáng, tương phản AA đạt cả hai theme.
+
 ## Dựng và vận hành
 
 Dựng landing, statistics, các trang thống kê chi tiết; chèn mô phỏng bằng

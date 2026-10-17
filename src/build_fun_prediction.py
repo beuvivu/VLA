@@ -488,10 +488,10 @@ FUN_CSS = r"""
 .fun-prob-list { display: grid; gap: 6px; }
 .fun-prob-row { display: grid; grid-template-columns: 28px 30px minmax(0, 1fr) 67px; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; border: 0; border-radius: 10px; background: var(--ui-surface); cursor: pointer; color: var(--ui-ink); }
 .fun-rank { color: var(--ui-ink-soft); font-size: 10px; font-weight: 800; }
-.fun-prob-row b { font-size: 22px; color: var(--ui-ok); }
+.fun-prob-row b { font-size: 22px; color: var(--ui-brand-ink); }
 .fun-prob-row strong { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
 .fun-prob-track { height: 7px; overflow: hidden; border-radius: 99px; background: var(--ui-border); }
-.fun-prob-track i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: var(--ui-ok); }
+.fun-prob-track i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: var(--ui-chart-1); }
 .fun-prob-card.de .fun-prob-track i { background: var(--ui-warn); }
 .fun-prob-card.de .fun-prob-row b { color: var(--ui-warn); }
 .fun-disclaimer { margin-top: 12px; padding: 10px 12px; border-radius: 13px; background: var(--ui-warn-soft); border: 1px solid var(--ui-warn-border); color: var(--ui-warn); font-size: 11px; line-height: 1.5; }
@@ -522,7 +522,7 @@ FUN_CSS = r"""
 .fun-simulation-card .fun-warning { margin: 0; padding: 4px 8px; }
 .fun-simulation-card .app-prize-table { --app-prize-label: 70px; }
 .fun-simulation-card .app-prize-table .app-prize-label { padding: 8px; font-size: 11px; }
-.fun-simulation-card .app-prize-table .app-prize-number { min-height: 44px; padding: 8px 4px; font-size: 22px; letter-spacing: -.02em; color: var(--ui-ok); }
+.fun-simulation-card .app-prize-table .app-prize-number { min-height: 44px; padding: 8px 4px; font-size: 22px; letter-spacing: -.02em; color: var(--ui-brand-ink); }
 .fun-simulation-card .app-prize-table [data-prize="special"] .app-prize-number { min-height: 64px; font-size: 34px; letter-spacing: .03em; color: var(--ui-warn); }
 .fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-values,
 .fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-values { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -263,3 +263,9 @@ nguyên ID, script và dữ liệu. CSS nguồn riêng được nhúng lại v�
 thoại, mặc định xem tháng có kết quả mới nhất; luôn chuyển được về 12 tháng.
 Năm/tháng và tìm số phối hợp cùng bộ đếm; ngày thiếu kết quả khác ngày không
 tồn tại trong lịch. Màu đuôi và màu kết quả khớp bộ lọc dùng token semantic.
+
+Điều chỉnh theo chủ dự án ngày 17/10: các số và điểm nhấn trang dùng lại
+tông xanh dương cũ (`--ui-brand-ink`/`--ui-brand-soft`); biểu đồ dùng
+`--ui-chart-1`. Bỏ viền và vòng sáng trang trí mới quanh số, kể cả khi chọn.
+Trạng thái chọn dùng nền nhạt; chỉ tiêu điểm bàn phím giữ viền focus riêng.
+Màu có ý nghĩa của ô nháy, cảnh báo và trạng thái dữ liệu vẫn theo chú giải.

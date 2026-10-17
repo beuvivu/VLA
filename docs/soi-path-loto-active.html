@@ -74,7 +74,7 @@
 @media(max-width:640px){.path-page .path-shell{padding:12px 12px calc(env(safe-area-inset-bottom) + 2.5rem)}.path-page .path-hero{padding:.9rem;border-radius:16px}.path-page .card{border-radius:16px;padding:12px}.path-page .quick-grid{grid-template-columns:1fr 1fr}}
 </style>
 <style id="app-analysis-workspace-style">
-body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-ok);--app-workspace-soft:var(--ui-ok-soft);--app-workspace-line:var(--ui-ok-border)}
+body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
 body.app-workspace-detail:not(.sp-page-dau-duoi-loto):not(.sp-page-cap-lon-loto):not(.sp-page-lo-gan):not(.app-workspace-overview) {--app-workspace-accent:var(--ui-warn);--app-workspace-soft:var(--ui-warn-soft);--app-workspace-line:var(--ui-warn-border)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero) {position:relative;isolation:isolate;padding:32px;margin:0 0 16px;border:1px solid var(--ui-border);border-radius:24px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm);overflow:hidden;color:var(--ui-ink)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero)::after {content:"";position:absolute;inset:0 0 0 auto;width:32%;z-index:-1;background:radial-gradient(ellipse at right top,var(--app-workspace-soft),transparent 74%);pointer-events:none}
@@ -89,7 +89,7 @@ body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero) p {color
 .app-workspace :is(.app-workspace-guide a,.app-workspace-table,.app-workspace-controls :is(input,select,button)):focus-visible {outline:3px solid var(--ui-brand-ink);outline-offset:3px}
 body.app-workspace .app-workspace-filter {margin:0 0 24px;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:16px;box-shadow:var(--ui-sh-sm);min-width:0;overflow:hidden}
 .app-workspace .app-workspace-filter > header {display:flex;align-items:center;gap:16px;padding:24px;border-bottom:1px solid var(--ui-border)}
-.app-workspace .app-workspace-step {display:grid;place-items:center;flex:none;width:40px;height:40px;border:1px solid var(--app-workspace-line);border-radius:12px;background:var(--app-workspace-soft);color:var(--app-workspace-accent);font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.app-workspace .app-workspace-step {display:grid;place-items:center;flex:none;width:40px;height:40px;border:0;border-radius:12px;background:var(--app-workspace-soft);color:var(--app-workspace-accent);font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
 .app-workspace .app-workspace-filter h2 {margin:0;font-size:16px;color:var(--ui-ink)}
 .app-workspace .app-workspace-filter p {margin:4px 0 0;color:var(--ui-ink-soft);font-size:12px;line-height:1.6}
 body.app-workspace .app-workspace-controls {display:flex;flex-wrap:wrap;align-items:end;gap:16px;padding:24px;margin:0;border:0;border-radius:0;background:var(--ui-surface);box-shadow:none;backdrop-filter:none}
@@ -109,21 +109,21 @@ body.app-workspace .sp-duo {display:grid;grid-template-columns:repeat(2,minmax(0
 body.app-workspace .sp-duo > div {min-width:0;overflow:auto;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:16px;padding:24px;backdrop-filter:none;box-shadow:var(--ui-sh-sm)}
 body.app-workspace .sp-duo h3 {margin:0 0 16px;font-size:16px;color:var(--ui-ink)}
 body.app-workspace .sp-duo table {width:100%}
-body.app-workspace .sp-duo table td:first-child {font-size:24px;font-weight:800;color:var(--ui-ok)}
-body.app-workspace .sp-duo table td:nth-child(2) {font-size:18px;font-weight:750;color:var(--ui-ok)}
+body.app-workspace .sp-duo table td:first-child {font-size:24px;font-weight:800;color:var(--ui-brand-ink)}
+body.app-workspace .sp-duo table td:nth-child(2) {font-size:18px;font-weight:750;color:var(--ui-brand-ink)}
 body.app-workspace .sp-recent-grid {gap:24px;margin-top:24px}
 body.app-workspace .sp-recent-card {padding:24px;background:var(--ui-surface);border-color:var(--ui-border);backdrop-filter:none}
 body.app-workspace .sp-recent-card .app-workspace-table {border:0;box-shadow:none;border-radius:8px}
 body.app-workspace .sp-recent-card .app-workspace-section-title {margin:0 0 16px}
-body.app-workspace .app-cau-metrics > div {border-top:3px solid var(--ui-ok-border);background:var(--ui-surface)}
-body.app-workspace .app-cau-metrics [data-cau-metric=total] {color:var(--ui-ok);font-size:40px}
+body.app-workspace .app-cau-metrics > div {border-top:3px solid var(--ui-border);background:var(--ui-surface)}
+body.app-workspace .app-cau-metrics [data-cau-metric=total] {color:var(--ui-brand-ink);font-size:40px}
 body.app-workspace .app-cau-metrics [data-cau-metric=longest] {color:var(--ui-warn);font-size:40px}
 body.app-workspace .app-cau-metrics > div:nth-child(2) {border-top-color:var(--ui-warn-border)}
-body.app-workspace .app-cau-groups b {color:var(--ui-ok);font-size:22px;font-variant-numeric:tabular-nums}
-body.app-workspace .app-cau-cell:not([aria-pressed=true]) b {color:var(--ui-ok);font-size:18px}
+body.app-workspace .app-cau-groups b {color:var(--ui-brand-ink);font-size:22px;font-variant-numeric:tabular-nums}
+body.app-workspace .app-cau-cell:not([aria-pressed=true]) b {color:var(--ui-brand-ink);font-size:18px}
 body.app-workspace .app-cau-tabs {scroll-padding-inline:16px}
-body.app-workspace .quick-number {font-size:26px;color:var(--ui-ok)}
-body.app-workspace .quick-pick {border-left:3px solid var(--ui-ok-border)}
+body.app-workspace .quick-number {font-size:26px;color:var(--ui-brand-ink)}
+body.app-workspace .quick-pick {border-left:1px solid var(--ui-border)}
 body.app-workspace .path-overview {gap:24px;margin-top:24px!important}
 body.app-workspace .path-overview > .card {min-width:0}
 body.app-workspace .app-workspace-hero.app-lab-hero,body.app-workspace .app-workspace-hero.rl-hero {margin-bottom:16px}
@@ -131,18 +131,18 @@ body.app-workspace .ui-kpi-value {font-variant-numeric:tabular-nums}
 
 body.app-workspace-overview .bf-distributions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 body.app-workspace-overview .bf-distribution:last-child {grid-column:1/-1}
-body.app-workspace-overview .bf-distribution .sp-table td:first-child {font-size:26px;font-weight:800;color:var(--ui-ok)}
-body.app-workspace-overview .bf-distribution .sp-table td:nth-child(2) {font-size:22px;font-weight:750;color:var(--ui-ok)}
+body.app-workspace-overview .bf-distribution .sp-table td:first-child {font-size:26px;font-weight:800;color:var(--ui-brand-ink)}
+body.app-workspace-overview .bf-distribution .sp-table td:nth-child(2) {font-size:22px;font-weight:750;color:var(--ui-brand-ink)}
 body.app-workspace-overview .bf-distribution .sp-table td:nth-child(3) {font-size:16px;font-weight:650}
 body.app-workspace-overview .bf-distribution .sp-table td {padding:12px 16px}
-body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(2) {font-size:26px;font-weight:800;color:var(--ui-ok)}
-body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(3) {font-size:20px;font-weight:750;color:var(--ui-ok)}
+body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(2) {font-size:26px;font-weight:800;color:var(--ui-brand-ink)}
+body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(3) {font-size:20px;font-weight:750;color:var(--ui-brand-ink)}
 body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(5) {color:var(--ui-warn);font-weight:750}
 body.app-workspace-overview .sp-matrix {gap:8px}
-body.app-workspace-overview .sp-cell {padding:12px 8px;border:1px solid var(--ui-ok-border);border-radius:12px;background:var(--ui-surface);min-height:80px}
-body.app-workspace-overview .sp-cell b {font-size:26px;line-height:1.3;color:var(--ui-ok)}
+body.app-workspace-overview .sp-cell {padding:12px 8px;border:0;border-radius:12px;background:var(--ui-surface);min-height:80px}
+body.app-workspace-overview .sp-cell b {font-size:26px;line-height:1.3;color:var(--ui-brand-ink)}
 body.app-workspace-overview .sp-cell i {font-size:15px;font-weight:650;color:var(--ui-ink-soft)}
-body.app-workspace-overview .sp-kpi-card strong {font-size:36px;color:var(--ui-ok)}
+body.app-workspace-overview .sp-kpi-card strong {font-size:36px;color:var(--ui-brand-ink)}
 body.app-workspace-overview .sp-kpi-card:last-child strong {color:var(--ui-warn)}
 @media(max-width:1000px) {
   .app-workspace .app-workspace-guide {grid-template-columns:minmax(0,1fr);gap:16px}
@@ -182,7 +182,7 @@ body.app-workspace:is([data-app-workspace-page="lo-gan"],[data-app-workspace-pag
 body.app-workspace #sp-pair-gan td:nth-child(3):not(.marked) {font-size:20px;font-weight:750;color:var(--ui-warn)}
 body.app-workspace:is([data-app-workspace-page="cap-lon-loto"],[data-app-workspace-page="cau-giai-dac-biet"]) :is(#sp-lon,#sp-kep) td:nth-child(2):not(.marked) {font-size:24px;font-weight:800;color:var(--app-workspace-accent)}
 body.app-workspace .sp-table td.marked,body.app-workspace .sp-table td.marked b {color:var(--ui-mark-ink)}
-body.app-workspace .sp-bar {background:var(--ui-ok)}
+body.app-workspace .sp-bar {background:var(--ui-chart-1)}
 </style>
 <link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" media="print" onload="this.media='all'" data-ui-visual-system>
 <noscript><link rel="stylesheet" href="assets/ui-visual-system.css?rev=381025f6cc65bc79" data-ui-visual-system></noscript>
