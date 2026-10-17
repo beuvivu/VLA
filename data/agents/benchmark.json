@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "evidence_type": "retrospective_diagnostic",
+  "prospective_draws": 0,
+  "promotion_allowed": false,
+  "input_fingerprint": {
+    "count": 4237,
+    "last_date": "2026-10-16",
+    "digest": "c8766e9db718a3410868aa278c28f11eb4f3e2c78b18145f60df028959a6834b"
+  },
+  "requested_draws": 60,
+  "modes": {
+    "de": {
+      "draws": 60,
+      "first_date": "2026-08-18",
+      "last_date": "2026-10-16",
+      "incumbent_recorded_draws": 46,
+      "incumbent_missing_uses_constant": 14,
+      "agents": {
+        "incumbent": {
+          "brier": 0.4950098034105395,
+          "logloss": 4.605975378057938,
+          "gain_vs_constant": {
+            "mean": -0.0008051920698472899,
+            "lower": -0.013216095107821908,
+            "se": 0.003102725759493655,
+            "blocks": 8
+          }
+        },
+        "constant": {
+          "brier": 0.49500000000000005,
+          "logloss": 4.605170185988089,
+          "gain_vs_constant": {
+            "mean": 0.0,
+            "lower": 0.0,
+            "se": 0.0,
+            "blocks": 8
+          }
+        },
+        "statistical": {
+          "brier": 0.49513081315673635,
+          "logloss": 4.614529088469288,
+          "gain_vs_constant": {
+            "mean": -0.009358902481197143,
+            "lower": -0.046029070470684996,
+            "se": 0.009167541997371962,
+            "blocks": 8
+          }
+        },
+        "probabilistic": {
+          "brier": 0.4949204116813377,
+          "logloss": 4.600199577352222,
+          "gain_vs_constant": {
+            "mean": 0.004970608635869955,
+            "lower": -0.12246254117807434,
+            "se": 0.031858287453486074,
+            "blocks": 8
+          }
+        },
+        "pattern": {
+          "brier": 0.494970604757711,
+          "logloss": 4.602096837560603,
+          "gain_vs_constant": {
+            "mean": 0.0030733484274899857,
+            "lower": -0.018916369061282717,
+            "se": 0.0054974293721931754,
+            "blocks": 8
+          }
+        },
+        "mixture": {
+          "brier": 0.4949558878873851,
+          "logloss": 4.600817470909536,
+          "gain_vs_constant": {
+            "mean": 0.004352715078554844,
+            "lower": -0.026647416695887858,
+            "se": 0.007750032943610675,
+            "blocks": 8
+          }
+        }
+      }
+    },
+    "loto": {
+      "draws": 60,
+      "first_date": "2026-08-18",
+      "last_date": "2026-10-16",
+      "incumbent_recorded_draws": 46,
+      "incumbent_missing_uses_constant": 14,
+      "agents": {
+        "incumbent": {
+          "brier": 0.18057701582187932,
+          "logloss": 0.547037209559741,
+          "gain_vs_constant": {
+            "mean": -2.1652138283523303e-05,
+            "lower": -0.0002075902442119927,
+            "se": 4.6484526482117353e-05,
+            "blocks": 8
+          }
+        },
+        "constant": {
+          "brier": 0.18056908931008245,
+          "logloss": 0.5470155574214576,
+          "gain_vs_constant": {
+            "mean": 0.0,
+            "lower": 0.0,
+            "se": 0.0,
+            "blocks": 8
+          }
+        },
+        "statistical": {
+          "brier": 0.18059025463919057,
+          "logloss": 0.5470760814454186,
+          "gain_vs_constant": {
+            "mean": -6.052402396115227e-05,
+            "lower": -0.000756842952851306,
+            "se": 0.00017407973222253843,
+            "blocks": 8
+          }
+        },
+        "probabilistic": {
+          "brier": 0.18058967720221591,
+          "logloss": 0.5470717813339067,
+          "gain_vs_constant": {
+            "mean": -5.6223912449208475e-05,
+            "lower": -0.0005901831842241436,
+            "se": 0.00013348981794373378,
+            "blocks": 8
+          }
+        },
+        "pattern": {
+          "brier": 0.18057133132335693,
+          "logloss": 0.5470217447916266,
+          "gain_vs_constant": {
+            "mean": -6.187370169152828e-06,
+            "lower": -0.00012193442365963664,
+            "se": 2.8936763372620953e-05,
+            "blocks": 8
+          }
+        },
+        "mixture": {
+          "brier": 0.18057126432854145,
+          "logloss": 0.5470216770764744,
+          "gain_vs_constant": {
+            "mean": -6.119655016943263e-06,
+            "lower": -0.00024109096063992013,
+            "se": 5.874282640574422e-05,
+            "blocks": 8
+          }
+        }
+      }
+    }
+  }
+}

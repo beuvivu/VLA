@@ -127,3 +127,6 @@ forecasting guarantee.
 
 - [Kiến trúc và kế hoạch tích hợp](architecture/2026-10-17-multi-agent-integration.md)
 - [Kết quả kiểm chứng](qa/2026-10-17-multi-agent-integration.md)
+- [Kiến trúc ba tác tử XSMB](architecture/2026-10-17-xsmb-multi-agent.md)
+- [Kế hoạch triển khai ba tác tử XSMB](plans/2026-10-17-xsmb-multi-agent.md)
+- [Kiểm chứng và số đo ba tác tử XSMB](qa/2026-10-17-xsmb-multi-agent.md)
