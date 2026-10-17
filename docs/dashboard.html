@@ -74,6 +74,7 @@
 .app-vip-verdict,.app-vip-pair-verdict{margin:0 0 6px;color:var(--ui-ink)}.app-vip-line{margin:0;font-size:12px;line-height:1.7;color:var(--ui-ink-soft)}.app-vip-details>.ui-grid{padding:0 24px 24px}
 .app-lab-forecast .ui-table{table-layout:fixed}.app-lab-forecast .ui-table :is(th,td){padding:15px 24px}.app-lab-forecast .ui-table th:first-child{width:12%}.app-lab-forecast .ui-table td:nth-child(2){font:650 22px var(--ui-mono,monospace)}
 .app-lab-quality .ui-card-body>svg{border:1px solid var(--lab-edge);border-radius:10px;padding:12px;background:var(--ui-surface-2);margin-bottom:20px}.app-lab-quality .ui-table{min-width:500px}.app-lab-confidence .ui-table{min-width:680px}
+.app-lab-confidence #app-agents .app-agent-picks{min-width:0;table-layout:fixed}.app-lab-confidence #app-agents .app-agent-picks th:first-child{width:16%}
 @keyframes app-lab-orbit{to{transform:rotate(360deg)}}@keyframes app-lab-flow{to{stroke-dashoffset:-152}}@keyframes app-lab-drift{50%{transform:translate(-3%,4%) scale(1.06)}}@keyframes app-lab-scan{from{background-position:160% 0}to{background-position:-80% 0}}
 @media(prefers-reduced-motion:no-preference){body[data-app-motion="on"] .app-lab-orbit-spin{animation:app-lab-orbit 80s linear infinite}body[data-app-motion="on"] .app-lab-pulse{animation:app-lab-flow 12s linear infinite}body[data-app-motion="on"] .app-lab-aurora{animation:app-lab-drift 18s ease-in-out infinite}body[data-app-motion="on"] .app-lab-scan{animation:app-lab-scan 16s linear infinite}}
 body[data-app-hidden="true"] .app-lab :is(.app-lab-orbit-spin,.app-lab-pulse,.app-lab-aurora,.app-lab-scan){animation-play-state:paused}
@@ -450,7 +451,7 @@ body[data-app-hidden="true"] .app-lab :is(.app-lab-orbit-spin,.app-lab-pulse,.ap
 <h1>Trung tâm điều khiển AI/ML</h1><p class="app-lab-lead">Theo dõi hai kênh dự báo trong cùng một không gian: xác suất tổ hợp, danh sách gợi ý, trọng số có hiệu lực và các bước hiệu chỉnh.</p>
 <div class="app-lab-hero-actions"><a class="app-lab-primary" href="#app-lab-loto">Mở bảng xác suất<span aria-hidden="true">↘</span></a>
 <a class="app-lab-secondary" href="#app-lab-guide">Cách đọc báo cáo <span aria-hidden="true">↓</span></a></div>
-<p class="app-lab-meta">Bản dựng: 17/10/2026 05:51 UTC+7</p></div>
+<p class="app-lab-meta">Bản dựng: 17/10/2026 09:47 UTC+7</p></div>
 <figure class="app-lab-orbit"><svg viewBox="0 0 480 360" aria-hidden="true" focusable="false">
   <defs>
     <radialGradient id="app-lab-core-glow"><stop stop-color="#65d8f5" stop-opacity=".24"/><stop offset="1" stop-color="#65d8f5" stop-opacity="0"/></radialGradient>
