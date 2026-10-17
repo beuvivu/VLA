@@ -223,6 +223,73 @@ def check_small_selection(page, pair_page):
     select_days(page, 10)
 
 
+def check_detail_tables(page, base, out: Path, width, dark):
+    """Giữ cỡ số khi chọn, đủ ma trận Đầu–Đuôi và phân cấp bảng chi tiết."""
+    results = []
+
+    def select_without_resize(value):
+        size = value.evaluate("e => getComputedStyle(e).fontSize")
+        value.click()
+        assert value.evaluate("e => getComputedStyle(e).fontSize") == size, size
+        value.click()
+
+    for name in ("cap-lon-loto.html", "cau-giai-dac-biet.html", "giai-dac-biet-theo-tong.html"):
+        page.goto(f"{base}/{name}", wait_until="load")
+        if page.locator("html").evaluate("e => e.classList.contains('dark')") != dark:
+            page.locator("#app-theme").click()
+        page.evaluate("async () => {await document.fonts.ready; await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))}")
+        page.locator("#sp-clear-marks").click()
+        if name == "cau-giai-dac-biet.html":
+            grid = page.locator("#sp-grid")
+            expect(grid.locator("tbody tr")).to_have_count(10)
+            expect(grid.locator("tbody td")).to_have_count(110)
+            state = grid.evaluate("e => ({view:e.parentElement.clientHeight, full:e.parentElement.scrollHeight})")
+            assert state["full"] <= state["view"] + 1, state
+            values = [grid.locator("tbody td:not(:first-child) b").first,
+                      page.locator("#sp-lon tbody td:nth-child(2)").first]
+            if grid.locator(".sp-none").count():
+                values.append(grid.locator(".sp-none").first)
+            for value in values:
+                assert float(value.evaluate("e => getComputedStyle(e).fontSize").removesuffix("px")) >= 24
+                select_without_resize(value)
+        elif name == "cap-lon-loto.html":
+            cards = page.locator(".app-reverse-card").evaluate_all("nodes => nodes.map(e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})")
+            assert len(cards) == 2, cards
+            a, b = cards
+            if width >= 1024:
+                assert abs(a["y"] - b["y"]) <= 1 and b["x"] > a["x"] + a["w"], cards
+            else:
+                assert b["y"] >= a["y"] + a["h"], cards
+            for primary, auxiliary in (("#sp-grid tbody td:nth-child(2)", "#sp-grid tbody td:nth-child(3)"),
+                                       ("#sp-kep tbody td:first-child", "#sp-kep tbody td:nth-child(2)")):
+                sizes = [float(page.locator(selector).first.evaluate("e => getComputedStyle(e).fontSize").removesuffix("px"))
+                         for selector in (primary, auxiliary)]
+                assert sizes[0] > sizes[1], sizes
+                select_without_resize(page.locator(primary).first)
+        else:
+            if width >= 1024:
+                tops = page.locator(".app-total-overview table tbody tr:first-child").evaluate_all(
+                    "nodes => nodes.map(e => e.getBoundingClientRect().top)")
+                assert len(tops) == 2 and abs(tops[0] - tops[1]) <= 1, tops
+            for selector in ("#sp-grid tbody td:first-child", "#sp-parity tbody td:first-child",
+                             "#sp-trans tbody td:first-child", "#sp-trans tbody td:nth-child(2)"):
+                select_without_resize(page.locator(selector).first)
+            for table_id, expected in (("sp-grid", [.2, .32, .24, .24]),
+                                       ("sp-parity", [.2, .2, .3, .3]),
+                                       ("sp-trans", [.18, .18, .14, .18, .16, .16])):
+                state = page.locator("#" + table_id).evaluate("""e => ({
+                  widths:Array.from(e.tBodies[0].rows[0].cells,c => c.getBoundingClientRect().width/e.getBoundingClientRect().width),
+                  sizes:Array.from(e.tBodies[0].rows[0].cells,c => parseFloat(getComputedStyle(c).fontSize)),
+                  clipped:Array.from(e.querySelectorAll('tbody td')).filter(c => c.scrollWidth>c.clientWidth+1).map(c => c.textContent)
+                })""")
+                assert all(abs(a - b) < .015 for a, b in zip(state["widths"], expected, strict=True)), state
+                assert state["sizes"][0] > max(state["sizes"][2:]) and not state["clipped"], state
+        assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1
+        page.screenshot(path=str(out / f"detail-{name}-{width}-{'dark' if dark else 'light'}.png"))
+        results.append({"page": name, "width": width, "dark": dark, "detail_layout": "passed"})
+    return results
+
+
 def check_stat_tables(page, base, out: Path, width, dark):
     """Kiểm tra bộ lọc ngắn/dài và đổi trục trên dữ liệu đã xuất bản."""
     results = []
@@ -279,6 +346,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
             raise
         finally:
             page.remove_listener("pageerror", record_error)
+    results.extend(check_detail_tables(page, base, out, width, dark))
     return results
 
 

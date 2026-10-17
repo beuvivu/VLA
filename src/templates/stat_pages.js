@@ -494,7 +494,9 @@ function table(el, headers, rows, opts) {
 // lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
-const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index");
+// Ba bảng đổi từ tọa độ hàng sang danh tính: không nạp lại khóa vị trí cũ.
+const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet)\.html$/.test(location.pathname) ? ".identity-v3" : "";
+const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index") + MARK_IDENTITY_SUFFIX;
 
 // Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
 // thứ được đánh dấu có bản chất khác nhau.
@@ -641,9 +643,19 @@ function paintMarks() {
 function toggleMark(td) {
   const key = td.dataset.key;
   const pair = markPair(td);
-  if (pair !== null && PAIR_MARKS.has(pair)) PAIR_MARKS.delete(pair);
+  const clearPairCells = () => {
+    // Một cặp đã chọn theo nhóm không giữ thêm dấu riêng chồng bên dưới.
+    for (const saved of MARKS) if (pairInKey(saved) === pair) MARKS.delete(saved);
+  };
+  if (pair !== null && PAIR_MARKS.has(pair)) {
+    PAIR_MARKS.delete(pair);
+    clearPairCells();
+  }
   else if (MARKS.has(key)) MARKS.delete(key);
-  else if (pairModeOn() && pair !== null) PAIR_MARKS.add(pair);
+  else if (pairModeOn() && pair !== null) {
+    clearPairCells();
+    PAIR_MARKS.add(pair);
+  }
   else MARKS.add(key);
 }
 
@@ -660,6 +672,27 @@ function bindMarking() {
   // rồi tắt đi — những dấu ấy phải còn nguyên vì họ không hề bỏ chọn chúng.
   const pairBox = $("sp-pair-mode");
   if (pairBox) pairBox.addEventListener("change", paintMarks);
+
+  // Cặp dùng chung toàn site: tab đang mở cũng phải thấy thay đổi ngay.
+  window.addEventListener("storage", (ev) => {
+    const pairsChanged = ev.key === PAIR_KEY || ev.key === null;
+    const cellsChanged = ev.key === MARK_KEY || ev.key === null;
+    if (!pairsChanged && !cellsChanged) return;
+    if (pairsChanged) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PAIR_KEY) || "[]");
+        PAIR_MARKS = new Set(Array.isArray(saved) ? saved.filter(value => asPair(value) === value) : []);
+      } catch (err) { PAIR_MARKS = new Set(); }
+    }
+    if (cellsChanged) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(MARK_KEY) || "{}");
+        const cells = Array.isArray(saved) ? saved : saved && saved.cells;
+        MARKS = new Set(Array.isArray(cells) ? cells.filter(value => typeof value === "string") : []);
+      } catch (err) { MARKS = new Set(); }
+    }
+    paintMarks();
+  });
 
   const clear = $("sp-clear-marks");
   if (clear) {
@@ -1099,7 +1132,7 @@ function renderReversePairs() {
     .sort((x, y) => y[4] - x[4]);
 
   table($("sp-grid"),
-    ["Hạng", "Cặp lộn", "Về của số đầu", "Về của số lộn", "Tổng", "Lệch"],
+    ["Hạng", "Cặp số", "Lượt thuận", "Lượt lộn", "Tổng lượt", "Chênh lệch"],
     pairs.map((p, k) => [
       k + 1,
       `${pad2(p[0])} ↔ ${pad2(p[1])}`,
@@ -1109,18 +1142,20 @@ function renderReversePairs() {
       (p[2] - p[3] > 0 ? "+" : "") + (p[2] - p[3]),
     ]), {
       numeric: [0, 2, 3, 4, 5],
+      key: (y, i) => `reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}`,
       // Ô hiện "01 ↔ 10", KHÔNG phải dạng "01-10" mà asPair() nhận. Khai
       // thẳng từ dữ liệu thay vì nới lỏng asPair(): dấu ↔ mang nghĩa LỘN, còn
       // dấu - trong khoá mang nghĩa HỌ CẶP; trộn hai thứ là dựng lại đúng lỗi
       // mà chú thích "lộn khác bóng" ở trên đã cảnh báo.
       pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
     });
+  $("sp-grid").prepend(mk("colgroup", null, [9,25,16.5,16.5,16.5,16.5].map(width => mk("col", {style: `width:${width}%`}))));
 
   const kep = $("sp-kep");
   if (kep) {
     const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
     table(kep, ["Số kép", "Số lần về"], ds,
-      { numeric: [1], pairOf: pairCols(ds, 0) });
+      { numeric: [1], pairOf: pairCols(ds, 0), key: (y, i) => `double|number${ds[y][0]}|field${i}` });
   }
 }
 
@@ -1577,6 +1612,7 @@ function weekGrid(rows) {
   return {
     body: order.map((w) => weeks.get(w)),
     pairs: order.map((w) => pairs.get(w)),
+    weeks: order,
   };
 }
 
@@ -1585,7 +1621,8 @@ function renderSpecialByWeek() {
   setCount(rows);
   const grid = weekGrid(rows);
   table($("sp-grid"), WEEKDAYS, grid.body,
-    { rowHead: false, pairOf: (y, i) => (grid.pairs[y] || [])[i] || null });
+    { rowHead: false, pairOf: (y, i) => (grid.pairs[y] || [])[i] || null,
+      key: (y, i) => `special-week|week${grid.weeks[y]}|day${i}` });
 }
 
 /** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
@@ -1920,6 +1957,7 @@ function renderSpecialBridge() {
   // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
+  $("sp-grid").prepend(mk("colgroup", null, [12,...Array(10).fill(8.8)].map(width => mk("col", {style: `width:${width}%`}))));
 
   // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
@@ -1930,7 +1968,8 @@ function renderSpecialBridge() {
       .sort((x, y) => y[2] - x[2]);
     const lonBody = pairs.map((p, k) => [k + 1, `${pad2(p[0])} - ${pad2(p[1])}`, p[2]]);
     table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"], lonBody,
-      { numeric: [0, 2], pairOf: pairCols(lonBody, 1) });
+      { numeric: [0, 2], pairOf: pairCols(lonBody, 1),
+        key: (y, i) => `special-reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}` });
   }
 
   // 3. Ba kỳ gần nhất, đủ giải.
@@ -1969,6 +2008,12 @@ function tongOf(special) {
 function renderSpecialByTong() {
   const rows = selected();
   setCount(rows);
+  const fitColumns = () => Object.entries({
+    "sp-grid": [20,32,24,24],
+    "sp-parity": [20,20,30,30],
+    "sp-trans": [18,18,14,18,16,16],
+  }).forEach(([id, widths]) => $(id).prepend(mk("colgroup", null,
+    widths.map(width => mk("col", {style: `width:${width}%`})))));
   if (!rows.length) {
     // Không return trắng: bảng sẽ giữ số liệu của dải trước. Dựng lại cả ba
     // với đúng tiêu đề của chúng để table() gắn dòng "dải rỗng".
@@ -1977,6 +2022,7 @@ function renderSpecialByTong() {
       "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"], []);
     table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
       "Hôm sau tổng lẻ"], []);
+    fitColumns();
     return;
   }
 
@@ -2049,4 +2095,5 @@ function renderSpecialByTong() {
     table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
       body, { numeric: [0, 1, 2, 3] });
   }
+  fitColumns();
 }

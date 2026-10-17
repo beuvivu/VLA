@@ -387,8 +387,19 @@ PAGES: tuple[StatPage, ...] = (
         title="Giải Đặc Biệt theo tổng",
         subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
         controls=_range_controls(pairs=False),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Hôm trước tổng X thì hôm sau tổng Y</h3>'
+        body='<div class="app-total-overview">'
+             '<section class="app-total-card" aria-labelledby="app-total-gap-title">'
+             '<header><h2 id="app-total-gap-title">Khoảng cách theo tổng</h2>'
+             '<p>Đối chiếu chữ số tổng, lần xuất hiện gần nhất và số kỳ chưa về.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
+             '<section class="app-total-card" aria-labelledby="app-total-parity-title">'
+             '<header><h2 id="app-total-parity-title">Chẵn lẻ của tổng hôm sau</h2>'
+             '<p>Tỷ lệ lịch sử sau mỗi tổng, kèm số kỳ được đối chiếu.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div></section></div>'
+             '<section class="app-total-card app-total-transition" aria-labelledby="app-total-transition-title">'
+             '<header><h2 id="app-total-transition-title">Hôm trước tổng X thì hôm sau tổng Y</h2>'
+             '<p>Hai chữ số tổng đứng trước; số lượt, cỡ mẫu và độ lệch ở phía sau.</p></header>'
+             '<details class="app-total-method"><summary>Cách đọc bảng chuyển tổng</summary>'
              '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
              '10 giá trị. Cột <b>Tỉ lệ</b> quanh 10 % nghĩa là không phân biệt được với '
              'ngẫu nhiên. Bảng xếp theo <b>lệch chuẩn hoá</b> '
@@ -397,10 +408,8 @@ PAGES: tuple[StatPage, ...] = (
              'nên chỉ mẫu đủ lớn mới lên được. Quanh ±2 vẫn là mức thường gặp khi xét 100 ô. '
              'Đây là thống kê MÔ TẢ trên lịch sử, '
              'không phải xác suất đã hiệu chuẩn, và chỉ đếm các kỳ LIỀN KỀ thật — ranh giới '
-             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div>'
-             '<h3 class="sp-subhead">Chẵn lẻ của tổng hôm sau</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div>',
+             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p></details>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div></section>',
         render="renderSpecialByTong",
     ),
     StatPage(
@@ -408,7 +417,7 @@ PAGES: tuple[StatPage, ...] = (
         title="Cầu giải Đặc Biệt",
         subtitle="Tần suất hai số cuối giải Đặc Biệt theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
+        body='<div class="sp-scroll app-special-matrix"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp lộn của giải Đặc Biệt</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-lon"></table></div>'
              '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
@@ -420,9 +429,15 @@ PAGES: tuple[StatPage, ...] = (
         title="Cặp lộn LOTO",
         subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Số kép — đảo lại chính nó nên không có số lộn</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div>',
+        body='<div class="app-reverse-layout">'
+             '<section class="app-reverse-card" aria-labelledby="app-reverse-title">'
+             '<header><h2 id="app-reverse-title">45 cặp lộn</h2>'
+             '<p>Lượt thuận / lộn ứng với số bên trái / bên phải của cặp.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
+             '<section class="app-reverse-card" aria-labelledby="app-double-title">'
+             '<header><h2 id="app-double-title">10 số kép</h2>'
+             '<p>Đảo hai chữ số vẫn giữ nguyên.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div></section></div>',
         render="renderReversePairs",
     ),
     StatPage(

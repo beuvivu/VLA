@@ -262,6 +262,28 @@ tổng và các kỳ gần đây có chú giải riêng, cập nhật theo bộ 
 ưu tiên hơn màu tần suất. Hai bảng tổng giữ cột chữ số / số lần / tỉ lệ /
 biểu đồ theo đúng 20% / 20% / 20% / 40%; tiêu đề xuống dòng trên điện thoại.
 
+Cặp lộn đặt bảng 45 cặp và bảng 10 số kép song song từ 1024px, tỷ lệ 2,4:1;
+khung hẹp xếp dọc và cuộn bên trong bảng. Cặp số / số kép lớn hơn hạng và
+số lượt; giữ tông xanh cũ, không thêm vòng viền quanh số.
+
+Cầu giải Đặc Biệt giữ số ma trận và cặp lộn ở 24px khi chọn / bỏ chọn;
+nhãn Đầu và số lượt nhỏ hơn. Ma trận hiện đủ mười hàng, không giới hạn
+chiều cao gây cuộn dọc nội bộ. Phạm vi CSS dùng `data-app-workspace-page`
+vì trang này không có lớp `sp-page` cũ.
+
+Trang Theo tổng đặt gan và chẵn/lẻ cùng hàng trên máy tính, bảng chuyển
+tổng dùng trọn chiều ngang ở dưới. Cột gan chia 20/32/24/24%; chẵn/lẻ
+20/20/30/30%; chuyển tổng 18/18/14/18/16/16%. Chữ số tổng dùng xanh cũ,
+lớn hơn số kỳ, tỷ lệ và độ lệch; dấu chọn giữ nguyên cỡ chữ. Điện thoại
+xếp thẻ dọc, hai bảng đầu co theo khung; bảng chuyển tổng cuộn ngang.
+
+Dấu cặp dùng đúng định danh hai chữ số hoặc họ cặp, không đọc từ số nháy /
+thứ hạng. Khi chọn cả cặp, dấu riêng của chính cặp ấy được hợp nhất để bỏ
+chọn không bị kẹt. Dấu cặp đồng bộ qua sự kiện storage giữa các tab. Bảng
+tuần bám tuần/ngày; các danh sách cặp lộn và số kép bám số/cột, giữ dấu khi
+lọc hoặc đổi hạng. Ba trang thay khóa ô dùng phiên bản v3 để tránh nạp nhầm
+tọa độ cũ; kho dấu cặp v1 toàn site được giữ nguyên.
+
 `analysis_workspace.refine_workspace` đọc phạm vi từ điều hướng Soi cầu,
 Dự báo, Nghiên cứu & công cụ, cộng các trang thống kê chi tiết được chỉ định.
 Nó bổ sung phân cấp, hướng dẫn, bộ lọc và thẻ tại ranh giới `write_page`, giữ
