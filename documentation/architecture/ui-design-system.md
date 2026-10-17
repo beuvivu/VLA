@@ -268,4 +268,6 @@ tồn tại trong lịch. Màu đuôi và màu kết quả khớp bộ lọc dù
 tông xanh dương cũ (`--ui-brand-ink`/`--ui-brand-soft`); biểu đồ dùng
 `--ui-chart-1`. Bỏ viền và vòng sáng trang trí mới quanh số, kể cả khi chọn.
 Trạng thái chọn dùng nền nhạt; chỉ tiêu điểm bàn phím giữ viền focus riêng.
+Các điểm nhấn nâu mới cũng được gỡ: số giải đặc biệt trở lại đỏ
+`--ui-special-ink`, nội dung phân tích dùng xanh cũ hoặc màu chữ vốn có.
 Màu có ý nghĩa của ô nháy, cảnh báo và trạng thái dữ liệu vẫn theo chú giải.

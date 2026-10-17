@@ -912,7 +912,7 @@ _LANDING_CSS = """\
     .app-forecast-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
     .app-forecast-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 2px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); font-variant-numeric: tabular-nums; }
     .app-forecast-pick b { font-size: clamp(26px, 2vw, 34px); line-height: 1.1; color: var(--ui-brand-ink); }
-    .app-forecast-group[data-forecast-mode="de"] .app-forecast-pick b { color: var(--ui-warn); }
+    .app-forecast-group[data-forecast-mode="de"] .app-forecast-pick b { color: var(--ui-special-ink); }
     .app-forecast-pick span { font-size: 12px; color: var(--ui-ink-2); white-space: nowrap; }
     .app-forecast-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--ui-ink-soft); }
     .app-forecast-note a { color: var(--ui-brand-ink); font-weight: 600; white-space: nowrap; }
@@ -1450,7 +1450,7 @@ _LANDING_CSS = """\
     .app-pair-number { min-width: 40px; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-brand-ink); font: inherit; font-size: 18px; font-weight: 800; cursor: pointer; }
     .app-pair-number:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 3px; }
     .app-number-selected { box-shadow: none; background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
-    .app-number-selected[data-mode="de"] { background: var(--ui-warn-soft); color: var(--ui-warn); }
+    .app-number-selected[data-mode="de"] { background: var(--ui-special-bg); color: var(--ui-special-ink); }
     .app-pair-feedback { margin: 8px 0 16px; color: var(--ui-brand-ink); font-size: 13px; min-height: 1.5em; }
     .stat-table.dense th, .stat-table.dense td {
       padding: 7px 8px;
@@ -1644,17 +1644,14 @@ _LANDING_CSS = """\
     .next-day .bar-list { grid-template-columns: minmax(0, 1fr); }
     .next-day .bar-row { grid-template-columns: 56px minmax(0, 1fr) 72px; min-height: 56px; gap: 16px; padding: 8px; }
     .next-day .bar-label { font-size: 28px; line-height: 1.15; color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
-    .next-day [data-ranking-mode="de"] .bar-label { color: var(--ui-warn); }
+    .next-day [data-ranking-mode="de"] .bar-label { color: var(--ui-ink); }
     .next-day .bar-value { font-size: 14px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
     .next-day .card-head { min-height: 128px; }
-    .app-ranking-card[data-ranking-mode="de"] { --app-ranking-color: var(--ui-warn); }
     .app-ranking-card[data-ranking-mode="loto"] { --app-ranking-color: var(--ui-chart-1); }
     #app-daily-results .tr-number { font-size: clamp(20px, 1.6vw, 24px); }
     #app-daily-results [data-prize="special"] .tr-number { font-size: clamp(30px, 3vw, 40px); }
     #app-daily-results .tr-mini:not([data-marked]) { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
-    #app-daily-results .app-bridge-best h3, .inspect-paths h4 { color: var(--ui-warn); }
-    #app-daily-results .app-bridge-best { border-color: var(--ui-warn-border); }
-    #app-daily-results .app-bridge-num { color: var(--ui-warn); font-size: 16px; }
+    #app-daily-results .app-bridge-num { font-size: 16px; }
     #app-daily-results .app-bridge-streak { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
     /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
        dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
@@ -1736,7 +1733,6 @@ _LANDING_CSS = """\
       font-size: 13px;
       line-height: 1.45;
     }
-    .position-list li b { color: var(--ui-warn); }
     .inspect-meta strong { color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
     .empty, .muted { color: var(--muted); }
     .empty {

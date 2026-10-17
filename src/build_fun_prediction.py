@@ -492,8 +492,8 @@ FUN_CSS = r"""
 .fun-prob-row strong { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
 .fun-prob-track { height: 7px; overflow: hidden; border-radius: 99px; background: var(--ui-border); }
 .fun-prob-track i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: var(--ui-chart-1); }
-.fun-prob-card.de .fun-prob-track i { background: var(--ui-warn); }
-.fun-prob-card.de .fun-prob-row b { color: var(--ui-warn); }
+.fun-prob-card.de .fun-prob-track i { background: linear-gradient(90deg, #fb923c, #e11d48); }
+.fun-prob-card.de .fun-prob-row b { color: var(--ui-ink); }
 .fun-disclaimer { margin-top: 12px; padding: 10px 12px; border-radius: 13px; background: var(--ui-warn-soft); border: 1px solid var(--ui-warn-border); color: var(--ui-warn); font-size: 11px; line-height: 1.5; }
 @media (max-width: 900px) {
   .fun-pred-grid { grid-template-columns: 1fr; }
@@ -523,7 +523,7 @@ FUN_CSS = r"""
 .fun-simulation-card .app-prize-table { --app-prize-label: 70px; }
 .fun-simulation-card .app-prize-table .app-prize-label { padding: 8px; font-size: 11px; }
 .fun-simulation-card .app-prize-table .app-prize-number { min-height: 44px; padding: 8px 4px; font-size: 22px; letter-spacing: -.02em; color: var(--ui-brand-ink); }
-.fun-simulation-card .app-prize-table [data-prize="special"] .app-prize-number { min-height: 64px; font-size: 34px; letter-spacing: .03em; color: var(--ui-warn); }
+.fun-simulation-card .app-prize-table [data-prize="special"] .app-prize-number { min-height: 64px; font-size: 34px; letter-spacing: .03em; color: var(--ui-special-ink); }
 .fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-values,
 .fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(3),

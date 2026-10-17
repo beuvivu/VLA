@@ -168,7 +168,7 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .app-frequency-member small{display:block;font-size:11px;line-height:1.6;color:var(--ui-ink-soft);font-weight:500;white-space:normal}
 .app-frequency-spark{display:block;width:100%;height:44px;max-width:320px;overflow:visible;color:var(--ui-chart-1);margin:8px 0}
 .app-frequency-spark path{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.app-frequency-spark.app-frequency-falling{color:var(--ui-warn)}
+.app-frequency-spark.app-frequency-falling{color:var(--ui-special-ink)}
 .app-frequency-history{margin-top:16px;border-top:1px solid var(--ui-border);padding-top:8px}
 .app-frequency-history summary{font-size:12px;font-weight:650;line-height:1.6;color:var(--ui-brand-ink);cursor:pointer;padding:8px 0}
 .app-frequency-history-scroll{max-height:320px;overflow:auto;overscroll-behavior:contain;margin-top:8px;border:1px solid var(--ui-border);border-radius:8px}
@@ -182,7 +182,7 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-member-heading b{font-size:20px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-count{font-size:11px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-spark{height:32px;margin:4px 0}
-.app-frequency-onboarding{padding:24px;margin-bottom:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-warn-soft)}
+.app-frequency-onboarding{padding:24px;margin-bottom:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-brand-soft)}
 .app-frequency-onboarding h2{font-size:18px;color:var(--ui-ink);margin:0 0 16px}
 .app-frequency-onboarding ol{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding-left:24px;margin:0}
 .app-frequency-onboarding li{font-size:13px;color:var(--ui-ink);line-height:1.65;padding-left:4px}

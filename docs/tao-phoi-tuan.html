@@ -257,7 +257,6 @@ body.app-phoi-page .app-phoi-tail {margin-left:2px}
   </style>
 <style id="app-analysis-workspace-style">
 body.app-workspace {background:var(--ui-canvas);--app-workspace-accent:var(--ui-brand-ink);--app-workspace-soft:var(--ui-brand-soft);--app-workspace-line:var(--ui-border)}
-body.app-workspace-detail:not(.sp-page-dau-duoi-loto):not(.sp-page-cap-lon-loto):not(.sp-page-lo-gan):not(.app-workspace-overview) {--app-workspace-accent:var(--ui-warn);--app-workspace-soft:var(--ui-warn-soft);--app-workspace-line:var(--ui-warn-border)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero) {position:relative;isolation:isolate;padding:32px;margin:0 0 16px;border:1px solid var(--ui-border);border-radius:24px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm);overflow:hidden;color:var(--ui-ink)}
 body.app-workspace .app-workspace-hero:not(.app-lab-hero):not(.rl-hero)::after {content:"";position:absolute;inset:0 0 0 auto;width:32%;z-index:-1;background:radial-gradient(ellipse at right top,var(--app-workspace-soft),transparent 74%);pointer-events:none}
 body.app-workspace .app-workspace-hero h1 {font-size:clamp(26px,3vw,40px);line-height:1.2;letter-spacing:-.035em;margin:8px 0 16px;max-width:30ch}
@@ -299,8 +298,7 @@ body.app-workspace .sp-recent-card .app-workspace-table {border:0;box-shadow:non
 body.app-workspace .sp-recent-card .app-workspace-section-title {margin:0 0 16px}
 body.app-workspace .app-cau-metrics > div {border-top:3px solid var(--ui-border);background:var(--ui-surface)}
 body.app-workspace .app-cau-metrics [data-cau-metric=total] {color:var(--ui-brand-ink);font-size:40px}
-body.app-workspace .app-cau-metrics [data-cau-metric=longest] {color:var(--ui-warn);font-size:40px}
-body.app-workspace .app-cau-metrics > div:nth-child(2) {border-top-color:var(--ui-warn-border)}
+body.app-workspace .app-cau-metrics [data-cau-metric=longest] {color:var(--ui-ink);font-size:40px}
 body.app-workspace .app-cau-groups b {color:var(--ui-brand-ink);font-size:22px;font-variant-numeric:tabular-nums}
 body.app-workspace .app-cau-cell:not([aria-pressed=true]) b {color:var(--ui-brand-ink);font-size:18px}
 body.app-workspace .app-cau-tabs {scroll-padding-inline:16px}
@@ -319,13 +317,13 @@ body.app-workspace-overview .bf-distribution .sp-table td:nth-child(3) {font-siz
 body.app-workspace-overview .bf-distribution .sp-table td {padding:12px 16px}
 body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(2) {font-size:26px;font-weight:800;color:var(--ui-brand-ink)}
 body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(3) {font-size:20px;font-weight:750;color:var(--ui-brand-ink)}
-body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(5) {color:var(--ui-warn);font-weight:750}
+body.app-workspace-overview .bf-ranking #sp-grid td:nth-child(5) {font-weight:750}
 body.app-workspace-overview .sp-matrix {gap:8px}
 body.app-workspace-overview .sp-cell {padding:12px 8px;border:0;border-radius:12px;background:var(--ui-surface);min-height:80px}
 body.app-workspace-overview .sp-cell b {font-size:26px;line-height:1.3;color:var(--ui-brand-ink)}
 body.app-workspace-overview .sp-cell i {font-size:15px;font-weight:650;color:var(--ui-ink-soft)}
 body.app-workspace-overview .sp-kpi-card strong {font-size:36px;color:var(--ui-brand-ink)}
-body.app-workspace-overview .sp-kpi-card:last-child strong {color:var(--ui-warn)}
+body.app-workspace-overview .sp-kpi-card:last-child strong {color:var(--ui-ink)}
 @media(max-width:1000px) {
   .app-workspace .app-workspace-guide {grid-template-columns:minmax(0,1fr);gap:16px}
   .app-workspace .app-workspace-guide nav {justify-content:flex-start}
@@ -358,10 +356,10 @@ body.app-workspace:is([data-app-workspace-page="lo-gan"],[data-app-workspace-pag
 body.app-workspace #sp-pair-gan td:first-child:not(.marked),
 body.app-workspace[data-app-workspace-page="cap-lon-loto"] #sp-grid td:nth-child(2):not(.marked),
 body.app-workspace:is([data-app-workspace-page="chu-ky-dac-biet"],[data-app-workspace-page="giai-db-ngay-mai"]) #sp-grid td:nth-child(2):not(.marked) {font-size:26px;line-height:1.35;font-weight:800;color:var(--app-workspace-accent);font-variant-numeric:tabular-nums}
-body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] #sp-grid td:not(.marked) b {font-size:24px;color:var(--ui-warn)}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] #sp-grid td:not(.marked) b {font-size:24px}
 body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] #sp-grid .sp-times {display:block;font-size:11px;margin-top:4px;color:var(--ui-ink-soft)}
 body.app-workspace:is([data-app-workspace-page="lo-gan"],[data-app-workspace-page="cau-dac-biet-theo-bo-so"],[data-app-workspace-page="chu-ky-dac-biet"]) #sp-grid td:nth-child(3):not(.marked),
-body.app-workspace #sp-pair-gan td:nth-child(3):not(.marked) {font-size:20px;font-weight:750;color:var(--ui-warn)}
+body.app-workspace #sp-pair-gan td:nth-child(3):not(.marked) {font-size:20px;font-weight:750}
 body.app-workspace:is([data-app-workspace-page="cap-lon-loto"],[data-app-workspace-page="cau-giai-dac-biet"]) :is(#sp-lon,#sp-kep) td:nth-child(2):not(.marked) {font-size:24px;font-weight:800;color:var(--app-workspace-accent)}
 body.app-workspace .sp-table td.marked,body.app-workspace .sp-table td.marked b {color:var(--ui-mark-ink)}
 body.app-workspace .sp-bar {background:var(--ui-chart-1)}

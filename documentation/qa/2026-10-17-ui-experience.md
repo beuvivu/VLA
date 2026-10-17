@@ -28,7 +28,7 @@ Python, 182 frontend và các cổng Chromium, gồm 104 trạng thái ma trận
 - Nhấp đơn chọn số/calculator ngay; nhấp đúp mở căn cứ ở trang chủ và các
   biến thể landing; bàn phím/nhấn giữ và thao tác ở trang khác được giữ.
 - Cột thanh xác suất cùng kích thước, ba bảng ngày mai cùng hàng/chiều cao;
-  số chính emerald/amber, không dùng màu điều hướng làm thang dữ liệu mới.
+  màu số theo điều chỉnh của chủ dự án bên dưới.
 - Dọc hiển thị thẻ, Ngang giữ ma trận và virtualization. Kiểm tra số lượt ở
   các dải 30/60/90, dải rỗng/ngắn, chọn họ cặp và lịch sử mở theo nhu cầu.
 - Demo tách bộ nhớ khỏi dữ liệu thật, vẫn hoạt động khi storage bị chặn.
@@ -83,6 +83,14 @@ bàn phím. Số vẫn lớn và toàn bộ bố cục/tương tác nâng cấp 
 Kiểm lại 116 Python và 182 frontend: đạt. Chromium 390/1440 px × sáng/tối
 trên sáu trang đại diện: 24 trạng thái đạt; nút số có border 0px, không
 box-shadow, dùng màu cũ #4F46E5 ở theme sáng, tương phản AA đạt cả hai theme.
+
+Theo yêu cầu tiếp theo, gỡ điểm nhấn nâu mới ở trang chủ và các workspace;
+số giải đặc biệt dùng lại đỏ, các chỉ số khác dùng xanh hoặc màu chữ cũ.
+Giữ số lớn, chọn nền nhạt, không thêm viền. Kiểm lại 116 Python và 182
+frontend đều đạt. Chromium kiểm tám trang × 390/1440 px × sáng/tối: 32
+trạng thái đạt, tương phản AA, không tràn trang hoặc lỗi JavaScript; chọn
+số không viền, nhấp đúp và hai chiều tần suất hoạt động. Lượt đo hình học
+dùng giảm chuyển động để đọc vị trí ổn định sau khi mở ngăn căn cứ.
 
 ## Dựng và vận hành
 
