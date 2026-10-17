@@ -430,10 +430,12 @@ PAGES: tuple[StatPage, ...] = (
         title="Đầu đuôi LOTO",
         subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn.",
         controls=_range_controls(pairs=False),
-        body='<div class="sp-duo">'
+        body='<div id="app-head-tail-legend" class="app-head-tail-legend" aria-label="Thang màu tổng lượt Đầu và Đuôi"></div>'
+             '<div class="sp-duo">'
              '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
              '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-tail"></table></div>'
              '</div>'
+             '<div id="app-head-tail-day-legend" class="app-head-tail-legend" aria-label="Thang màu số nháy từng kỳ"></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐẦU</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-head"></table></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐUÔI (đít)</h3>'

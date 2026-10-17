@@ -1237,6 +1237,40 @@ function renderPairFrequency() {
 function renderHeadTail() {
   const rows = selected();
   setCount(rows);
+  // Hai bảng cùng một phép đo dùng chung trần; nhiều lượt có nền đậm hơn.
+  const shade = (value, max) => {
+    if (!value) return "";
+    const ratio = Math.min(1, value / Math.max(1, max));
+    const ramp = (theme, low, high) => {
+      const rgb = low.map((v, i) => Math.round(v + (high[i] - v) * ratio));
+      const linear = rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+      const luminance = linear.reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+      // Điểm giao tương phản trắng/đen; mọi mức nền đạt ít nhất 4,58:1.
+      const ink = luminance > .179 ? "#000000" : "#ffffff";
+      return `--app-hit-bg-${theme}:rgb(${rgb.join(",")});--app-hit-ink-${theme}:${ink};`;
+    };
+    return ramp("light", [239,248,255], [7,89,133]) + ramp("dark", [85,120,148], [7,62,98]);
+  };
+  const paint = (cell, value, max, label) => {
+    cell.classList.add("app-head-tail-heat");
+    cell.dataset.appHitCount = String(value);
+    cell.setAttribute("style", shade(value, max));
+    cell.setAttribute("aria-label", `${label} · ${value} lượt`);
+  };
+  const legend = (id, max, daily) => {
+    const host = $(id);
+    if (!host) return;
+    if (!rows.length) { fill(host, "Không có kỳ phù hợp với bộ lọc."); return; }
+    const values = daily
+      ? [...Array.from({length: Math.min(max, 5) + 1}, (_, i) => i), ...(max > 5 ? [max] : [])]
+      : [...new Set([0, ...[.25,.5,.75,1].map(t => Math.ceil(max * t))])];
+    fill(host, [mk("span", {class: "app-head-tail-legend-label"}, daily ? "Nháy trong một kỳ · ít → nhiều" : "Tổng lượt trong dải · ít → nhiều"),
+      ...values.map(value => {
+        const chip = mk("span", {class: "app-head-tail-swatch"}, value);
+        paint(chip, value, max, daily ? "Nháy mỗi kỳ" : "Tổng lượt");
+        return chip;
+      }), mk("small", null, "Cùng thang màu cho Đầu và Đuôi.")]);
+  };
   const head = new Array(10).fill(0);
   const tail = new Array(10).fill(0);
   rows.forEach((r) => r.n.forEach((x) => {
@@ -1244,36 +1278,52 @@ function renderHeadTail() {
     tail[parseInt(x[1], 10)] += 1;
   }));
   const total = rows.length * 27;
+  const rangeMax = Math.max(1, ...head, ...tail);
   const build = (el, counts, label) => {
     const max = Math.max(...counts, 1);
-    table(el, [label, "Số lần", "Tỉ lệ", ""],
+    table(el, [label, "Số lần", "Tỉ lệ", "Biểu đồ"],
       counts.map((v, i) => [
         i, v, total ? ((v / total) * 100).toFixed(2) + "%" : "—",
         mk("span", { class: "sp-bar", style: `width:${(100 * v / max).toFixed(1)}%` }),
       ]), { numeric: [0, 1, 2] });
+    el.prepend(mk("colgroup", null, [20,20,20,40].map(width => mk("col", {style: `width:${width}%`}))));
+    counts.forEach((value, digit) => {
+      const cells = el.tBodies[0].rows[digit].cells;
+      paint(cells[0], value, rangeMax, `${label} ${digit}`);
+      paint(cells[1], value, rangeMax, `${label} ${digit}`);
+    });
   };
   build($("sp-head"), head, "Chữ số đầu");
   build($("sp-tail"), tail, "Chữ số đuôi");
+  legend("app-head-tail-legend", rangeMax, false);
 
   // Ba ma trận NGÀY x chữ số, đúng bố cục trang tham chiếu. Bảng gộp phía
   // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
   // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
   //
   // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng Đặc Biệt.
-  const perDay = (pick, label, el) => {
-    const recent = rows.slice(-20).reverse();
+  const recent = rows.slice(-20).reverse();
+  const daily = recent.map(r => {
+    const counts = {head:new Array(10).fill(0), tail:new Array(10).fill(0), sum:new Array(10).fill(0)};
+    r.n.forEach(x => {counts.head[+x[0]]++; counts.tail[+x[1]]++; counts.sum[(+x[0] + +x[1]) % 10]++;});
+    return counts;
+  });
+  const dayMax = Math.max(1, ...daily.flatMap(day => [...day.head, ...day.tail]));
+  const perDay = (kind, label, el) => {
     const headers = ["Ngày"].concat(
       Array.from({ length: 10 }, (_, d) => `${label} ${d}`));
-    table(el, headers, recent.map((r) => {
-      const count = new Array(10).fill(0);
-      r.n.forEach((x) => { count[pick(+x[0], +x[1])] += 1; });
+    table(el, headers, recent.map((r, index) => {
+      const count = daily[index][kind];
       return [viDate(r.d)].concat(
         count.map((v) => (v ? `${v} lần` : mk("span", { class: "sp-zero" }, "0"))));
     }), { numeric: Array.from({ length: 10 }, (_, i) => i + 1) });
+    if (kind !== "sum") daily.forEach((day, index) => day[kind].forEach((value, digit) =>
+      paint(el.tBodies[0].rows[index].cells[digit + 1], value, dayMax, `${label} ${digit} · ${recent[index].d}`)));
   };
-  perDay((d) => d, "Đầu", $("sp-day-head"));
-  perDay((_, u) => u, "Đuôi", $("sp-day-tail"));
-  perDay((d, u) => (d + u) % 10, "Tổng", $("sp-day-sum"));
+  perDay("head", "Đầu", $("sp-day-head"));
+  perDay("tail", "Đuôi", $("sp-day-tail"));
+  perDay("sum", "Tổng", $("sp-day-sum"));
+  legend("app-head-tail-day-legend", dayMax, true);
 }
 
 function specialGaps() {

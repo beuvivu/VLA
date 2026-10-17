@@ -116,6 +116,22 @@ cuộn trong hàng. Giữ cỡ chữ, màu và tỷ lệ các rãnh thanh xác s
 không cắt số, hai bảng phụ cùng độ rộng và các thanh thẳng hàng. Đã xem
 ảnh render sáng/tối trước khi xuất bản.
 
+## Điều chỉnh Đầu đuôi theo số lượt và tỷ lệ cột
+
+Hai bảng tổng Đầu/Đuôi dùng tỷ lệ chữ số / số lần / tỉ lệ / biểu đồ là
+20% / 20% / 20% / 40%. Chữ số và số lượt có nền xanh đậm dần theo tổng
+lượt; các ô từng kỳ đậm dần theo số nháy. Đầu và Đuôi dùng cùng thang,
+chú giải cập nhật theo bộ lọc; dấu chọn ưu tiên hơn nền tần suất.
+
+252 kiểm thử Python và 187 frontend đạt. Chromium kiểm 40 trạng thái:
+320/390/768/1440px × sáng/tối, dải 1/30/90 kỳ/toàn lịch sử và dải rỗng.
+Đối chiếu trực tiếp tổng lượt, phần trăm và từng ô Đầu/Đuôi/Tổng với dữ
+liệu gốc; đo tỷ lệ bốn cột, tương phản AA và không tràn trang. Kiểm nhấp
+chọn/bỏ chọn, rê chuột giữ màu và dải rỗng xóa dữ liệu cũ. Đã xem ảnh
+render hai bảng tổng và các bảng từng kỳ trên mobile/desktop, sáng/tối.
+RGB tám bit có thể cùng màu khi hai tổng lịch sử rất gần nhau; thứ tự độ
+đậm không đảo, các mức nháy từng kỳ phân biệt được.
+
 ## Dựng và vận hành
 
 Dựng landing, statistics, các trang thống kê chi tiết; chèn mô phỏng bằng

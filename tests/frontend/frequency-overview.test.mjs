@@ -19,7 +19,7 @@ from page_output import _attach_evidence
 draws = json.load(sys.stdin)
 with TemporaryDirectory() as directory:
  print(json.dumps({page.slug: _attach_evidence(Path(directory) / (page.slug + ".html"), render_page(page, draws, generated="2026-09-03T19:00:00Z"))
-                  for page in PAGES if page.slug in {"tan-suat-loto", "tan-suat-cap-loto", "thong-ke-tong-hop"}}))`;
+                  for page in PAGES if page.slug in {"tan-suat-loto", "tan-suat-cap-loto", "thong-ke-tong-hop", "dau-duoi-loto"}}))`;
 const pages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python3', ['-c', build], {
   cwd: fileURLToPath(root), env: { ...process.env, PYTHONPATH: 'src' }, input: JSON.stringify(draws), encoding: 'utf8',
 }));
@@ -343,4 +343,68 @@ test('bàn phím từ vùng cuộn chỉ đánh dấu họ cặp đang hiện sa
   region.focus();
   region.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: 'ArrowDown', bubbles: true, cancelable: true}));
   assert.match(d.activeElement.dataset.key, /^p\|c12-21\|d/);
+});
+
+test('Đầu đuôi: số lượt đúng, cùng giá trị cùng màu và nhiều lượt tối hơn ở cả hai theme', t => {
+  const dom = setup(t, 'dau-duoi-loto'), d = dom.window.document;
+  dom.window.__D_DRAWS__.push({d:'2026-09-04',s:'00010',n:Array.from({length:27},(_,i)=>'1'+i%10)});
+  change(dom, 'sp-to', '2026-09-04');
+  const expected = { 'sp-head': [34,39,1,3,2,29,0,0,0,0], 'sp-tail': [37,14,5,5,6,32,3,2,2,2] };
+  const brightness = rgb => rgb.match(/\d+/g).map(Number).reduce((s, v, i) => s + v * [.2126,.7152,.0722][i], 0);
+  const colors = new Map();
+  for (const [id, counts] of Object.entries(expected)) {
+    for (const [index, row] of [...d.querySelectorAll(`#${id} tbody tr`)].entries()) {
+      assert.equal(Number(row.cells[1].textContent), counts[index]);
+      for (const cell of [row.cells[0], row.cells[1]]) {
+        assert.equal(Number(cell.dataset.appHitCount), counts[index]);
+        assert.ok(cell.hasAttribute('data-app-hit-count'));
+        if (!counts[index]) continue;
+        const pair = ['light', 'dark'].map(theme => cell.style.getPropertyValue(`--app-hit-bg-${theme}`));
+        assert.ok(pair.every(Boolean));
+        if (colors.has(counts[index])) assert.deepEqual(pair, colors.get(counts[index]));
+        colors.set(counts[index], pair);
+      }
+    }
+  }
+  const ordered = [...colors.entries()].sort((a,b) => a[0] - b[0]);
+  for (let i = 1; i < ordered.length; i++) for (const theme of [0,1]) {
+    assert.ok(brightness(ordered[i][1][theme]) < brightness(ordered[i-1][1][theme]));
+  }
+});
+
+test('Đầu đuôi: màu từng kỳ theo đúng nháy, cùng thang và cập nhật khi lọc ngày', t => {
+  const dom = setup(t, 'dau-duoi-loto'), d = dom.window.document;
+  for (const [id, digitAt] of [['sp-day-head',0], ['sp-day-tail',1]]) {
+    for (const [index, row] of [...d.querySelectorAll(`#${id} tbody tr`)].entries()) {
+      const draw = draws.at(-index - 1);
+      for (let digit = 0; digit < 10; digit++) {
+        const count = draw.n.filter(n => Number(n[digitAt]) === digit).length;
+        const cell = row.cells[digit + 1];
+        assert.equal(cell.dataset.appHitCount, String(count));
+        assert.equal(parseInt(cell.textContent, 10), count);
+      }
+    }
+  }
+  const first = d.querySelector('#sp-day-head tbody tr').cells[2];
+  first.click();
+  const key = first.dataset.key;
+  change(dom, 'sp-from', '2026-09-02');
+  const marked = d.querySelector(`#sp-day-head [data-key="${key}"]`);
+  assert.ok(marked.classList.contains('marked'));
+  assert.equal(marked.dataset.appHitCount, '10');
+  assert.equal(d.querySelector('#sp-head tbody tr').cells[1].dataset.appHitCount, '10');
+  assert.equal(d.querySelectorAll('#sp-day-head tbody tr').length, 2);
+  const swatches = d.querySelectorAll('#app-head-tail-day-legend [data-app-hit-count]');
+  assert.equal(swatches[swatches.length-1].dataset.appHitCount, '22');
+});
+
+test('Đầu đuôi: dải rỗng không giữ lại thang màu hay dữ liệu cũ', t => {
+  const dom = setup(t, 'dau-duoi-loto'), d = dom.window.document;
+  change(dom, 'sp-from', '2026-09-04');
+  assert.equal(d.querySelectorAll('#sp-day-head .app-head-tail-heat, #sp-day-tail .app-head-tail-heat').length, 0);
+  assert.match(d.getElementById('app-head-tail-day-legend').textContent, /Không có kỳ/);
+  for (const cell of d.querySelectorAll('#sp-head [data-app-hit-count],#sp-tail [data-app-hit-count]')) {
+    assert.equal(cell.dataset.appHitCount, '0');
+    assert.equal(cell.style.getPropertyValue('--app-hit-bg-light'), '');
+  }
 });

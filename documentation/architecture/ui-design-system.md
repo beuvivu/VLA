@@ -256,6 +256,12 @@ không bám vị trí ô; lịch sử dài dựng theo vùng ngày đang xem. De
 liệu thật có trạng thái lưu riêng. Bộ chọn chiều cũ vẫn làm cầu nối nội bộ,
 không là giao diện chính.
 
+Trang Đầu đuôi dùng màu xanh liên tục nhạt → đậm theo số lượt, với chữ đạt
+AA trên từng màu nền ở cả sáng/tối. Đầu và Đuôi dùng chung trần màu; bảng
+tổng và các kỳ gần đây có chú giải riêng, cập nhật theo bộ lọc. Dấu chọn
+ưu tiên hơn màu tần suất. Hai bảng tổng giữ cột chữ số / số lần / tỉ lệ /
+biểu đồ theo đúng 20% / 20% / 20% / 40%; tiêu đề xuống dòng trên điện thoại.
+
 `analysis_workspace.refine_workspace` đọc phạm vi từ điều hướng Soi cầu,
 Dự báo, Nghiên cứu & công cụ, cộng các trang thống kê chi tiết được chỉ định.
 Nó bổ sung phân cấp, hướng dẫn, bộ lọc và thẻ tại ranh giới `write_page`, giữ
