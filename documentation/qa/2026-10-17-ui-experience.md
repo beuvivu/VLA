@@ -15,8 +15,9 @@
 
 Lượt Python toàn kho: **3.799 đạt, 1 bỏ qua, 1 guard CSS báo sai** trong
 503,70 giây. Sau khi sửa guard, chạy lại toàn bộ `test_ui_design_system.py`:
-**53 đạt**, gồm 16 trường hợp guard mới. CI chạy lại toàn bộ trên commit xuất
-bản; lượt local ban đầu không được ghi nhận là toàn bộ xanh.
+**53 đạt**, gồm 16 trường hợp guard mới. CI trên commit `ce83f59` xác nhận
+**3.808 Python đạt, 9 bỏ qua** trong 573,60 giây; toàn bộ cổng phát hành lõi,
+challenger, Excel và nghiên cứu đều đạt.
 
 ## Các luồng đã đối chiếu
 
@@ -41,6 +42,13 @@ cuộn sau thao tác Bỏ hết → 12–21. Review lại và 15 kiểm thử t�
 Guard margin cũ nhận nhầm `body .card` là chính `body`; khoảng cách thẻ 24px
 bị báo sai. Guard được kiểm lại theo phần tử đích của selector, giữ chặn
 margin 24px trên body và cho phép khoảng cách của thành phần con.
+
+Runner CI phát hiện thêm race trong phép kiểm lịch sử trên thẻ: thao tác mở
+`details` đổi `open` trước khi sự kiện `toggle` dựng lịch sử. Đọc số hàng ngay
+lập tức có thể thấy 0, sau sự kiện thấy đúng 60. Đã đổi phép kiểm sang chờ
+đúng thẻ mở và đúng số hàng bằng Playwright `expect`, giữ các kiểm tra đánh
+dấu. Trì hoãn có kiểm soát 250 ms xác nhận điều kiện chờ; tắt renderer vẫn
+làm phép kiểm thất bại. Ứng dụng và dữ liệu không đổi trong bản sửa phép kiểm.
 
 ## Dựng và vận hành
 

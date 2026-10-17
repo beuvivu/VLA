@@ -1,6 +1,8 @@
 """Đo đủ dữ liệu, chiều cao, tiêu đề dính và cuộn ngang của năm bảng thống kê."""
 from pathlib import Path
 
+from playwright.sync_api import expect
+
 
 FREQUENCY_PAGES = ("tan-suat-loto.html", "tan-suat-cap-loto.html")
 CALENDAR_PAGES = ("bang-dac-biet.html", "bang-dac-biet-thang.html", "bang-dac-biet-nam.html")
@@ -194,7 +196,9 @@ def check_full_history(page):
     assert state['charts'] == 100, state
     detail = page.locator('.app-frequency-history').first
     detail.locator('summary').click()
-    assert detail.locator('tbody tr').count() == min(60, page.evaluate('DRAWS.length'))
+    expect(detail).to_have_attribute('open', '')
+    # Sự kiện toggle dựng lịch sử ở lượt tác vụ sau thao tác mở thẻ.
+    expect(detail.locator('tbody tr')).to_have_count(min(60, page.evaluate('DRAWS.length')))
     cell = detail.locator('td[data-key]').first
     cell.click()
     assert cell.evaluate("cell => cell.classList.contains('marked')")
