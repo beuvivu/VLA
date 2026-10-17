@@ -741,8 +741,8 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
 <div id="bf-demo-banner" class="bf-demo-banner" hidden>DỮ LIỆU MINH HỌA · 45 kỳ giả lập, tách riêng dữ liệu và đánh dấu của bạn.</div>
 <section id="app-frequency-onboarding" class="app-frequency-onboarding" aria-labelledby="app-frequency-demo-title" hidden>
   <h2 id="app-frequency-demo-title">Thử đọc tần suất trong 3 bước</h2>
-  <ol><li><b>Chọn dải</b><span>Bấm 30 kỳ hoặc đổi ngày; mọi tổng lượt và biểu đồ cập nhật cùng lúc.</span></li><li><b>Đọc xu hướng</b><span>Dọc: mỗi số một thẻ. Ngang: đối chiếu ma trận. Biểu đồ đi từ kỳ cũ đến kỳ mới.</span></li><li><b>Đối chiếu</b><span>Mở lịch sử từng kỳ, bấm ô để đánh dấu. Xem bảng xếp hạng và mốc ngẫu nhiên phía dưới.</span></li></ol>
-  <p>Màu xanh: mức lượt/kỳ nửa sau bằng hoặc cao hơn nửa đầu. Màu hổ phách: thấp hơn. Đây là mô tả lịch sử, không dự báo.</p>
+  <ol><li><b>Chọn dải</b><span>Bấm 30 kỳ hoặc đổi ngày; mọi tổng lượt và biểu đồ cập nhật cùng lúc.</span></li><li><b>Đọc xu hướng</b><span>Ngang: số theo hàng. Dọc: ngày theo hàng. Biểu đồ đi từ kỳ cũ đến kỳ mới.</span></li><li><b>Đối chiếu</b><span>Bấm ô của số và ngày cần theo dõi để đánh dấu. Xem bảng xếp hạng và mốc ngẫu nhiên phía dưới.</span></li></ol>
+  <p>Màu xanh: mức lượt/kỳ nửa sau bằng hoặc cao hơn nửa đầu. Màu đỏ: thấp hơn. Đây là mô tả lịch sử, không dự báo.</p>
 </section>
 <section class="bf-card bf-filters" aria-labelledby="bf-filter-title">
   <header class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Bộ lọc &amp; lựa chọn</h2></div><span>Cập nhật ngay khi thay đổi</span></header>
@@ -752,9 +752,8 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
 <section class="bf-kpis" aria-label="Tổng quan dải đã chọn" id="bf-kpis"></section>
 <section class="bf-card bf-matrix-card" aria-labelledby="bf-matrix-title">
   <header class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note" data-evidence-split></span></header>
-  <div class="app-frequency-toolbar"><div class="app-frequency-orientation" role="group" aria-label="Chiều xem tần suất"><button type="button" data-app-orientation="horizontal" aria-pressed="true">Ngang</button><button type="button" data-app-orientation="vertical" aria-pressed="false">Dọc</button></div><p id="app-frequency-view-help">Ngang: đối chiếu các kỳ. Dọc: từng số và lịch sử mở theo nhu cầu.</p></div>
-  <p class="app-frequency-chart-help">Xu hướng theo dải đã chọn · cùng thang lượt/kỳ · cũ → mới. Xanh: nửa sau ≥ nửa đầu; hổ phách: giảm. Tổng lượt gồm cả các lần về lặp trong cùng kỳ.</p>
-  <div id="app-frequency-cards" class="app-frequency-cards" aria-label="Xu hướng số theo dải đã chọn"></div>
+  <div class="app-frequency-toolbar"><div class="app-frequency-orientation" role="group" aria-label="Chiều xem tần suất"><button type="button" data-app-orientation="horizontal" aria-pressed="true">Ngang</button><button type="button" data-app-orientation="vertical" aria-pressed="false">Dọc</button></div><p id="app-frequency-view-help">Ngang: số theo hàng, ngày theo cột. Dọc: ngày theo hàng, số theo cột.</p></div>
+  <p class="app-frequency-chart-help">Xu hướng theo dải đã chọn · cùng thang lượt/kỳ · cũ → mới. Xanh: nửa sau ≥ nửa đầu; đỏ: giảm. Tổng lượt gồm cả các lần về lặp trong cùng kỳ.</p>
   <div class="bf-legend" aria-label="Chú thích số nháy">
     <span><i class="bf-swatch is-empty"></i>Không về</span>
     <span><i class="bf-swatch sp-n1">1</i>1 nháy</span>

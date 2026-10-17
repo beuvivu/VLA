@@ -25,24 +25,27 @@ def choose_orientation(page, orientation):
     page.locator(f'[data-app-orientation="{value}"]').click()
 
 
-def check_vertical_cards(page):
-    """Dọc chỉ cuộn trang; biểu đồ và badge phải lấy đúng các kỳ đã chọn."""
+def check_vertical_matrix(page):
+    """Chiều dọc hoán đổi trục; số lượt, đồ thị và danh tính ô không thay đổi."""
     state = page.evaluate("""() => {
-      const cards = document.getElementById('app-frequency-cards');
-      const rows = selected(), counts = countLoto(rows);
-      const charts = Array.from(cards.querySelectorAll('.app-frequency-spark'));
+      const table = document.getElementById('sp-matrix-grid');
+      const counts = countLoto(selected());
+      const head = Array.from(table.tHead.rows[0].cells);
+      const charts = Array.from(table.querySelectorAll('thead .app-frequency-spark'));
+      const cells = Array.from(table.querySelectorAll('tbody td[data-key]')).filter(c => c.cellIndex > 0);
       return {pageOverflow:document.documentElement.scrollWidth-innerWidth,
-        tableHidden:document.querySelector('.bf-matrix-scroll').hidden,
-        cards:cards.querySelectorAll('.app-frequency-card').length, charts:charts.length,
+        tableHidden:table.parentElement.hidden, first:head[0].textContent,
+        columns:head.filter(c => !c.hidden).length - 1, charts:charts.length,
         scaleCount:new Set(charts.map(chart => chart.dataset.scale)).size,
         incorrect:charts.filter(chart => Number(chart.dataset.total) !==
           counts[Number(chart.parentElement.dataset.appNumber)]).length,
-        histories:cards.querySelectorAll('table').length,
-        tooWide:Array.from(cards.children).some(card => card.getBoundingClientRect().right > innerWidth + 1)};
+        wrongAxis:cells.filter(c => !c.dataset.key.startsWith(head[c.cellIndex].dataset.key + '|d') ||
+          !c.dataset.key.endsWith(c.parentElement.cells[0].dataset.key.slice(1))).length};
     }""")
-    assert state['pageOverflow'] <= 1 and not state['tooWide'], state
-    assert state['tableHidden'] and not state['incorrect'], state
-    assert state['scaleCount'] <= 1 and state['histories'] == 0, state
+    assert state['pageOverflow'] <= 1 and not state['tableHidden'], state
+    assert state['first'] == 'Ngày' and state['charts'] > 0, state
+    assert not state['incorrect'] and not state['wrongAxis'] and state['scaleCount'] == 1, state
+    check_geometry(page, '#sp-matrix-grid')
     return state
 
 
@@ -107,7 +110,7 @@ def check_geometry(page, selector):
 def check_full_history(page):
     """Cuộn tới ngày cũ nhất, quay lại và đổi chiều mà không dựng hàng trăm nghìn ô."""
     results = []
-    for orientation in ("Xem theo chiều ngang",):
+    for orientation in ("Xem theo chiều ngang", "Xem theo chiều dọc"):
         choose_orientation(page, orientation)
         page.locator("#sp-sort").select_option('hit-desc')
         select_days(page, page.evaluate("DRAWS.length"))
@@ -190,19 +193,6 @@ def check_full_history(page):
         page.wait_for_function("!document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
         page.evaluate("window.scrollBy(0, 200)")
         check_geometry(page, "#sp-matrix-grid")
-    choose_orientation(page, 'Xem theo chiều dọc')
-    select_days(page, page.evaluate('DRAWS.length'))
-    state = check_vertical_cards(page)
-    assert state['charts'] == 100, state
-    detail = page.locator('.app-frequency-history').first
-    detail.locator('summary').click()
-    expect(detail).to_have_attribute('open', '')
-    # Sự kiện toggle dựng lịch sử ở lượt tác vụ sau thao tác mở thẻ.
-    expect(detail.locator('tbody tr')).to_have_count(min(60, page.evaluate('DRAWS.length')))
-    cell = detail.locator('td[data-key]').first
-    cell.click()
-    assert cell.evaluate("cell => cell.classList.contains('marked')")
-    results.append({'days':'all', 'orientation':'Dọc theo thẻ', **state})
     return results
 
 
@@ -214,8 +204,9 @@ def check_small_selection(page, pair_page):
         page.locator('details').filter(has=page.locator('#bf-pair-picker')).locator('summary').click()
         page.locator('[data-bf-pick="none"]').click()
         page.locator('[data-bf-pair]').first.click()
-        page.wait_for_function("document.querySelectorAll('.app-frequency-card').length === 1")
-        assert check_vertical_cards(page)['charts'] == 2
+        page.wait_for_function("document.querySelectorAll('#sp-matrix-grid thead .app-frequency-spark').length === 2")
+        state = check_vertical_matrix(page)
+        assert state['charts'] == 2 and state['columns'] == 1, state
         page.locator('[data-bf-pick="all"]').click()
     page.evaluate("""() => {
       const from = document.getElementById('sp-from');
@@ -262,7 +253,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                             actual:dates.size, pending:pendingDay(selected()) ? 1 : 0};
                         }""")
                         assert not counts["missing"] and counts["actual"] == counts["expected"] + counts["pending"], counts
-                    geometry = check_vertical_cards(page) if frequency and orientation.endswith('dọc') else check_geometry(page, selector)
+                    geometry = check_vertical_matrix(page) if frequency and orientation.endswith('dọc') else check_geometry(page, selector)
                     if name == "bang-dac-biet.html":
                         assert page.locator('#sp-grid .sp-de').count() == page.evaluate('selected().length')
                     results.append({"page":name, "width":width, "dark":dark, "days":days,

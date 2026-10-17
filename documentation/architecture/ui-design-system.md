@@ -246,12 +246,14 @@ thao tác căn cứ riêng của chúng. Các hàng xác suất trang chủ chia
 rãnh 56px / phần còn lại / 72px; ba bảng ngày mai có sàn 400px và cuộn bên
 trong, không đẩy rộng toàn trang.
 
-Tần suất LOTO/cặp có hai cách đọc công khai: Ngang giữ ma trận theo kỳ, Dọc
-hiển thị thẻ từng số/họ cặp, mặc định trên điện thoại. Mỗi số có tổng lượt
-và đường diễn biến từ chính dải được lọc; đồ thị dùng cùng trần lượt/kỳ trong
-một dải. Đây là số đo lịch sử, không phải xác suất dự đoán. Lịch sử trên thẻ
-chỉ được dựng khi mở và chia 60 kỳ/lượt. Demo và dữ liệu thật có trạng thái
-lưu riêng. Bộ chọn chiều cũ vẫn làm cầu nối nội bộ, không là giao diện chính.
+Tần suất LOTO/cặp dùng cùng một ma trận với hai trục hoán đổi: Ngang đặt số
+hoặc họ cặp theo hàng, ngày theo cột; Dọc đặt ngày theo hàng, số hoặc họ cặp
+theo cột, mặc định trên điện thoại. Mỗi số có tổng lượt và đường diễn biến
+ở nhãn hàng hoặc đầu cột, lấy đúng dải lọc và cùng trần lượt/kỳ. Đây là số
+đo lịch sử, không phải xác suất dự đoán. Dấu chọn bám theo số/họ cặp và ngày,
+không bám vị trí ô; lịch sử dài dựng theo vùng ngày đang xem. Demo và dữ
+liệu thật có trạng thái lưu riêng. Bộ chọn chiều cũ vẫn làm cầu nối nội bộ,
+không là giao diện chính.
 
 `analysis_workspace.refine_workspace` đọc phạm vi từ điều hướng Soi cầu,
 Dự báo, Nghiên cứu & công cụ, cộng các trang thống kê chi tiết được chỉ định.

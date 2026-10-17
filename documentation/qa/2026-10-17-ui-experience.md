@@ -29,8 +29,8 @@ Python, 182 frontend và các cổng Chromium, gồm 104 trạng thái ma trận
   biến thể landing; bàn phím/nhấn giữ và thao tác ở trang khác được giữ.
 - Cột thanh xác suất cùng kích thước, ba bảng ngày mai cùng hàng/chiều cao;
   màu số theo điều chỉnh của chủ dự án bên dưới.
-- Dọc hiển thị thẻ, Ngang giữ ma trận và virtualization. Kiểm tra số lượt ở
-  các dải 30/60/90, dải rỗng/ngắn, chọn họ cặp và lịch sử mở theo nhu cầu.
+- Dọc chuyển vị ma trận Ngang theo điều chỉnh tiếp theo bên dưới. Kiểm tra
+  số lượt ở các dải 30/60/90, dải rỗng/ngắn, chọn họ cặp và toàn bộ lịch sử.
 - Demo tách bộ nhớ khỏi dữ liệu thật, vẫn hoạt động khi storage bị chặn.
 - Lịch năm giữ số 0 đầu, năm nhuận, ngày thiếu/ngày không tồn tại và bản ghi
   hợp lệ cuối cùng. Điện thoại xem một tháng; người dùng chọn đủ năm được.
@@ -91,6 +91,20 @@ frontend đều đạt. Chromium kiểm tám trang × 390/1440 px × sáng/tối
 trạng thái đạt, tương phản AA, không tràn trang hoặc lỗi JavaScript; chọn
 số không viền, nhấp đúp và hai chiều tần suất hoạt động. Lượt đo hình học
 dùng giảm chuyển động để đọc vị trí ổn định sau khi mở ngăn căn cứ.
+
+## Điều chỉnh ma trận dọc theo chủ dự án
+
+Hai trang tần suất dùng cùng một ma trận: Ngang đặt số/họ cặp theo hàng,
+ngày theo cột; Dọc hoán đổi hai trục. Bỏ danh sách thẻ và lịch sử mở riêng.
+Đồ thị cùng badge tổng lượt nằm ở nhãn hàng hoặc đầu cột theo chiều xem;
+dữ liệu, màu nháy, ô chờ, Đặc Biệt và dấu chọn giữ nguyên danh tính.
+
+254 kiểm thử Python, 184 frontend đều đạt. Kiểm thử mới thất bại trên bản
+cũ rồi đạt trên bản sửa, đối chiếu từng ô khi xoay/sắp xếp và giữ dấu chọn.
+Bổ sung chặn selector của nút đổi chiều trùng với bảng. Bộ Chromium đạt
+160 trường hợp trên 390/1440 px và sáng/tối: có cả dữ liệu minh họa/thật,
+30/60/90 kỳ, toàn lịch sử với cả hai chiều, biên bàn phím, cuộn, dải rỗng
+và chọn một họ cặp. Đã xem ảnh render mobile/desktop, sáng/tối.
 
 ## Dựng và vận hành
 

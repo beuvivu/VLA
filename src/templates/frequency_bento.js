@@ -39,21 +39,21 @@ function installFrequencyBento(renderName) {
   orientation.closest(".sp-controls").classList.add("app-frequency-controls");
   function syncOrientation() {
     const vertical = orientation.value === "Xem theo chiều dọc";
-    $("app-frequency-cards").classList.toggle("app-frequency-vertical", vertical);
-    grid.parentElement.hidden = vertical;
-    document.querySelectorAll("[data-app-orientation]").forEach(button => {
+    grid.dataset.appMatrixOrientation = vertical ? "vertical" : "horizontal";
+    grid.parentElement.hidden = false;
+    document.querySelectorAll("button[data-app-orientation]").forEach(button => {
       button.setAttribute("aria-pressed", String(button.dataset.appOrientation === (vertical ? "vertical" : "horizontal")));
     });
     $("app-frequency-view-help").textContent = vertical
-      ? "Mỗi thẻ là một số hoặc họ cặp. Mở lịch sử để đối chiếu và đánh dấu từng kỳ."
-      : "Ma trận theo kỳ ở dưới các biểu đồ. Cuộn ngang; dùng phím mũi tên trong vùng bảng.";
+      ? "Dọc: mỗi hàng là một kỳ, mỗi cột là một số hoặc họ cặp. Ngày mới nhất ở trên."
+      : "Ngang: mỗi hàng là một số hoặc họ cặp, mỗi cột là một kỳ. Ngày mới nhất ở bên trái.";
   }
   orientation.addEventListener("change", () => {
     manualOrientation = orientation.value === "Xem theo chiều dọc" ? "vertical" : "horizontal";
     try { localStorage.setItem(orientationKey, manualOrientation); } catch (e) {}
     syncOrientation();
   });
-  document.querySelectorAll("[data-app-orientation]").forEach(button => {
+  document.querySelectorAll("button[data-app-orientation]").forEach(button => {
     button.addEventListener("click", () => {
       setOrientation(button.dataset.appOrientation);
       orientation.dispatchEvent(new Event("change", {bubbles: true}));
@@ -69,23 +69,29 @@ function installFrequencyBento(renderName) {
 
   let matrixChartMember = null, matrixChartGroups = [];
   function drawMatrixChartLabels() {
-    if (!matrixChartMember || orientation.value === "Xem theo chiều dọc") return;
-    const cells = new Map(Array.from(grid.querySelectorAll("tbody td:first-child[data-key]"), cell => [cell.dataset.key, cell]));
+    if (!matrixChartMember) return;
+    const vertical = orientation.value === "Xem theo chiều dọc";
+    const selector = vertical ? "thead th[data-key]" : "tbody td:first-child[data-key]";
+    const cells = new Map(Array.from(grid.querySelectorAll(selector), cell => [cell.dataset.key, cell]));
     matrixChartGroups.forEach(group => {
       const family = group.map(pad2).join("-");
       const key = pairPage ? `p|c${family}` : `m|n${family}`;
       const cell = cells.get(key);
-      if (cell) fill(cell, [pairPage ? mk("b", null, family.replace("-", "–")) : null, ...group.map(matrixChartMember)]);
+      if (cell) {
+        cell.classList.toggle("app-frequency-pair-label", pairPage);
+        fill(cell, [pairPage ? mk("b", null, family.replace("-", "–")) : null,
+          mk("div", {class: "app-frequency-members"}, group.map(matrixChartMember))]);
+      }
     });
   }
   /** Một đường cho mỗi số, gộp tối đa 24 nhóm kỳ và dùng chung trần lượt/kỳ. */
-  function drawRangeCards(rows, counts) {
-    const host = $("app-frequency-cards");
+  function drawRangeCharts(rows, counts) {
     syncOrientation();
-    if (!rows.length) {
-      fill(host, mk("p", {class: "sp-empty-row"}, "Không có kỳ trong dải đã chọn. Hãy chọn lại ngày hoặc thứ."));
-      return;
-    }
+    grid.classList.add("app-frequency-chart-matrix");
+    grid.dataset.appFrequencyKind = pairPage ? "pair" : "number";
+    matrixChartMember = null;
+    matrixChartGroups = [];
+    if (!rows.length) return;
     const daily = rows.map(row => {
       const values = new Array(100).fill(0);
       row.n.forEach(number => {values[Number(number)]++;});
@@ -118,75 +124,11 @@ function installFrequencyBento(renderName) {
         mk("small", null, `${rows.length} kỳ · ${rows.length < 2 ? "Cần ≥ 2 kỳ để so xu hướng" : falling ? "↓ Mức lượt/kỳ giảm" : "→ Mức lượt/kỳ bằng hoặc tăng"}`),
       ]);
     };
-    let groups = pairPage ? CAP50.filter(pair => pickedPairs.has(pair.map(pad2).join("-"))) : Array.from({length: 100}, (_, i) => [i]).filter(([number]) => isPicked(number));
-    const sort = $("sp-sort")?.value || "num";
-    const gan = group => {
-      let distance = 0;
-      for (let i = daily.length - 1; i >= 0 && !group.some(number => daily[i][number]); i--) distance++;
-      return distance;
-    };
-    if (sort !== "num") {
-      const score = group => sort.startsWith("gan") ? gan(group) : group.reduce((sum, number) => sum + counts[number], 0);
-      const direction = sort.endsWith("-asc") ? 1 : -1;
-      groups.sort((a, b) => (score(a) - score(b)) * direction || a[0] - b[0]);
-    }
-    if (orientation.value !== "Xem theo chiều dọc") {
-      fill(host, []);
-      grid.classList.add("app-frequency-chart-matrix");
-      matrixChartMember = member;
-      matrixChartGroups = groups;
-      drawMatrixChartLabels();
-      return;
-    }
-    matrixChartMember = null;
-    grid.classList.remove("app-frequency-chart-matrix");
-    fill(host, groups.length ? groups.map(group => {
-      const family = group.map(pad2).join("-");
-      const content = mk("div", {class: "app-frequency-history-content"});
-      const details = mk("details", {class: "app-frequency-history"}, [mk("summary", null, "Lịch sử từng kỳ · bấm ô để đánh dấu"), content]);
-      details.addEventListener("toggle", () => {
-        if (!details.isConnected) return;
-        if (!details.open) { fill(content, []); return; }
-        host.querySelectorAll("details[open]").forEach(other => { if (other !== details) { other.open = false; fill(other.lastElementChild, []); } });
-        let limit = 60;
-        const drawHistory = () => {
-          const shown = rows.slice(-limit).reverse();
-          const tableNode = mk("table", {class: "sp-table sp-nhay", "aria-label": `Lịch sử ${family}`}, [
-            mk("thead", null, mk("tr", null, [mk("th", {scope: "col"}, "Kỳ quay"), mk("th", {scope: "col"}, "Lượt về")])),
-            mk("tbody", null, shown.map(row => {
-              const count = row.n.filter(number => group.includes(Number(number))).length;
-              const key = pairPage ? `p|c${family}|d${row.d}` : `m|n${family}|d${row.d}`;
-              const special = group.includes(Number(String(row.s).slice(-2)));
-              return mk("tr", null, [mk("th", {scope: "row"}, viDate(row.d)), mk("td", {
-                class: `cell ${count ? "sp-hit sp-n" + Math.min(count, 5) : "is-empty"}${special && count ? " sp-de-hit" : ""}`,
-                "data-key": key, tabindex: "-1", "aria-label": `${family} · ${row.d} · ${count} lượt${special && count ? " · Đặc Biệt" : ""}`,
-              }, count)]);
-            })),
-          ]);
-          const region = mk("div", {class: "app-frequency-history-scroll", role: "region", tabindex: "0", "aria-label": `Lịch sử ${family}, phím mũi tên để di chuyển`}, tableNode);
-          region.addEventListener("keydown", event => {
-            const cells = Array.from(tableNode.querySelectorAll("td[data-key]"));
-            const current = event.target.closest("td[data-key]");
-            if (["Enter", " "].includes(event.key) && current) { event.preventDefault(); current.click(); }
-            if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
-            event.preventDefault();
-            const at = cells.indexOf(current);
-            const next = event.key === "Home" ? 0 : event.key === "End" ? cells.length - 1 : Math.max(0, Math.min(cells.length - 1, at + (event.key === "ArrowUp" ? -1 : 1)));
-            cells[next]?.focus({preventScroll: true});
-            cells[next]?.scrollIntoView({block: "nearest"});
-          });
-          const more = mk("button", {type: "button", class: "app-frequency-more"}, `Xem thêm kỳ (${Math.min(limit, rows.length)}/${rows.length})`);
-          more.addEventListener("click", () => { limit += 60; drawHistory(); });
-          fill(content, [region, limit < rows.length ? more : null]);
-          paintMarks();
-        };
-        drawHistory();
-      });
-      return mk("article", {class: "app-frequency-card", "data-app-family": family}, [
-        pairPage ? mk("h3", null, [`Họ ${family.replace("-", "–")}`, mk("span", {class: "app-frequency-family-total"}, `${group.reduce((sum, number) => sum + counts[number], 0)} lượt`)]) : null,
-        mk("div", {class: "app-frequency-members"}, group.map(member)), details,
-      ]);
-    }) : mk("p", {class: "sp-empty-row"}, "Chưa chọn số nào. Mở phần lựa chọn để thêm số."));
+    matrixChartGroups = pairPage
+      ? CAP50.filter(pair => pickedPairs.has(pair.map(pad2).join("-")))
+      : Array.from({length: 100}, (_, i) => [i]).filter(([number]) => isPicked(number));
+    matrixChartMember = member;
+    drawMatrixChartLabels();
   }
 
   const dateOf = cell => /\|d(\d{4}-\d{2}-\d{2})/.exec(cell.dataset.key || "")?.[1];
@@ -217,7 +159,7 @@ function installFrequencyBento(renderName) {
       // Dòng phụ in kết quả tính được thì khai để số trong câu có bằng chứng.
       mk("small", {"data-evidence-split": computed}, hint),
     ])));
-    drawRangeCards(rows, counts);
+    drawRangeCharts(rows, counts);
     decorateCells(rows, specials);
     document.querySelectorAll("[title]").forEach(node => node.removeAttribute("title"));
     if (pairPage) {

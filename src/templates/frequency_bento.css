@@ -148,19 +148,14 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .sp-overview-page .sp-controls>.sp-chips{grid-area:quick}
 .sp-overview-page .sp-chips .sp-chip{border-radius:8px;padding:8px 12px;font-size:12px}
 @media(max-width:800px){.bf-page .sp-controls{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"from to" "orient weekday" "sort gan" "quick quick" "count count" "marks marks"}.bf-page .sp-quick button{flex:1 1 auto;min-height:36px}.sp-overview-page .sp-controls{grid-template-areas:"from to" "weekday weekday" "quick quick" "count count" "marks marks"}}
-/* Hai cách đọc cùng dải: ma trận hoặc thẻ dọc, không chuyển hướng chữ. */
+/* Cùng một ma trận; đổi chiều bằng hoán đổi trục ngày và số. */
 .app-frequency-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:16px}
 .app-frequency-toolbar p,.app-frequency-chart-help{font-size:12px;line-height:1.7;color:var(--ui-ink-soft);margin:0}
 .app-frequency-chart-help{margin-bottom:16px}
 .app-frequency-orientation{display:flex;gap:4px;padding:4px;background:var(--ui-surface-2);border:1px solid var(--ui-border);border-radius:12px}
 .app-frequency-orientation button{min-height:40px;padding:8px 24px;border:0;border-radius:8px;background:transparent;color:var(--ui-ink-soft);font:inherit;font-size:13px;font-weight:700}
 .app-frequency-orientation [aria-pressed=true]{background:var(--ui-brand);color:var(--ui-on-brand)}
-.app-frequency-cards:empty{display:none}
-.app-frequency-cards.app-frequency-vertical{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:16px}
-.app-frequency-card{padding:16px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface-2);min-width:0;overflow:hidden}
-.app-frequency-card h3{display:flex;justify-content:space-between;gap:16px;margin:0 0 16px;color:var(--ui-ink);font-size:17px}
-.app-frequency-family-total{font-size:14px;color:var(--ui-brand-ink);white-space:nowrap}
-.app-frequency-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:16px}
+.app-frequency-members{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 .app-frequency-member{min-width:0;text-align:left}
 .app-frequency-member-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .app-frequency-member-heading b{font-size:24px;font-weight:800;color:var(--ui-ink);font-variant-numeric:tabular-nums}
@@ -169,16 +164,10 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .app-frequency-spark{display:block;width:100%;height:44px;max-width:320px;overflow:visible;color:var(--ui-chart-1);margin:8px 0}
 .app-frequency-spark path{stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .app-frequency-spark.app-frequency-falling{color:var(--ui-special-ink)}
-.app-frequency-history{margin-top:16px;border-top:1px solid var(--ui-border);padding-top:8px}
-.app-frequency-history summary{font-size:12px;font-weight:650;line-height:1.6;color:var(--ui-brand-ink);cursor:pointer;padding:8px 0}
-.app-frequency-history-scroll{max-height:320px;overflow:auto;overscroll-behavior:contain;margin-top:8px;border:1px solid var(--ui-border);border-radius:8px}
-.app-frequency-history-scroll .sp-table{width:100%;font-size:14px}
-.app-frequency-history-scroll :is(th,td){padding:12px;text-align:center}
-.app-frequency-history-scroll th{color:var(--ui-ink-soft);background:var(--ui-surface)}
-.app-frequency-more{margin-top:8px;padding:8px 16px;min-height:40px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface);color:var(--ui-brand-ink);font:inherit;font-size:12px}
-.bf-page #sp-matrix-grid.app-frequency-chart-matrix :is(td,th):first-child{width:176px;min-width:176px;max-width:176px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix td:first-child{padding:8px}
-.bf-page #sp-matrix-grid.app-frequency-chart-matrix td:first-child>b{display:block;font-size:16px;margin-bottom:8px}
+.bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-pair-label>b{display:block;font-size:16px;margin-bottom:8px}
+.bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-pair-label .app-frequency-members{grid-template-columns:repeat(2,minmax(0,1fr))}
+.bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-pair-label .app-frequency-member-heading{flex-direction:column;gap:4px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-member-heading b{font-size:20px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-count{font-size:11px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-spark{height:32px;margin:4px 0}
@@ -193,12 +182,15 @@ body.bf-page[data-ui-page] .bf-pair-grid button[aria-pressed=true] {background:v
 .bf-page .bf-totals .bf-pair-totals .sp-cell b{font-size:18px}
 .bf-page .bf-totals .bf-pair-totals .sp-cell i{font-size:16px}
 .bf-page .bf-totals .bf-pair-totals .sp-cell i::after{content:" lượt";font-size:11px;font-style:normal;font-weight:500}
-.bf-page .app-frequency-history-scroll td.marked{outline:2px solid var(--ui-brand);outline-offset:-3px}
-@media(max-width:700px){.app-frequency-onboarding{padding:16px}.app-frequency-onboarding ol{grid-template-columns:minmax(0,1fr);gap:16px}.app-frequency-toolbar{gap:8px}.app-frequency-card{padding:16px 12px}.app-frequency-members{gap:12px}.bf-page .bf-totals .bf-pair-totals{grid-template-columns:repeat(3,minmax(0,1fr))}.bf-page .bf-totals .bf-pair-totals .sp-cell b{font-size:16px}.bf-page .bf-totals .bf-pair-totals .sp-cell i{font-size:15px}}
+@media(max-width:700px){.app-frequency-onboarding{padding:16px}.app-frequency-onboarding ol{grid-template-columns:minmax(0,1fr);gap:16px}.app-frequency-toolbar{gap:8px}.bf-page .bf-totals .bf-pair-totals{grid-template-columns:repeat(3,minmax(0,1fr))}.bf-page .bf-totals .bf-pair-totals .sp-cell b{font-size:16px}.bf-page .bf-totals .bf-pair-totals .sp-cell i{font-size:15px}}
 .bf-page .app-frequency-controls{grid-template-areas:"from to weekday sort" "quick quick gan gan" "count count count count" "marks marks marks marks"}
 .bf-page .bf-totals #sp-matrix .sp-cell i::after{content:" lượt";font-size:10px;font-weight:500}
 @media(max-width:800px){.bf-page .app-frequency-controls{grid-template-areas:"from to" "weekday sort" "quick quick" "gan gan" "count count" "marks marks"}}
-body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix{width:max(100%,calc(176px + var(--sp-data-columns,90) * 54px))}
-body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix :is(td,th):first-child{width:176px;min-width:176px;max-width:176px}
+body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix{--app-frequency-label-width:176px;--app-frequency-cell-width:54px;width:max(100%,calc(var(--app-frequency-label-width) + var(--sp-data-columns,90) * var(--app-frequency-cell-width)))}
+body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix :is(td,th):first-child{width:var(--app-frequency-label-width);min-width:var(--app-frequency-label-width);max-width:var(--app-frequency-label-width)}
+body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical]{--app-frequency-label-width:86px;--app-frequency-cell-width:96px}
+body.bf-page[data-ui-page] .sp-table-layout #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical][data-app-frequency-kind=pair]{--app-frequency-cell-width:160px}
+.bf-page #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical] thead th:not(:first-child){padding:8px;vertical-align:top}
+.bf-page #sp-matrix-grid.app-frequency-chart-matrix[data-app-matrix-orientation=vertical] .app-frequency-member-heading{flex-direction:column;gap:4px}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-member small{display:none}
 .bf-page #sp-matrix-grid.app-frequency-chart-matrix .app-frequency-spark{height:24px}

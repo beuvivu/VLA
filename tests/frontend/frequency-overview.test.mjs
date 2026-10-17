@@ -113,7 +113,7 @@ test('đổi chiều, sắp xếp và bàn phím giữ danh tính dấu của ô
   change(dom, 'sp-orient', 'Xem theo chiều dọc');
   assert.equal(d.querySelector(`[data-key="${key}"]`).classList.contains('marked'), true);
   change(dom, 'sp-sort', 'hit-desc');
-  assert.equal(d.querySelector('#sp-matrix-grid thead th:nth-child(2)').textContent, '55');
+  assert.equal(d.querySelector('#sp-matrix-grid thead th:nth-child(2)').dataset.key, 'm|n55');
   const cell = d.querySelector(`[data-key="${key}"]`);
   cell.focus();
   cell.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
@@ -213,13 +213,15 @@ test('chu kỳ Đặc Biệt lấy cả lần về ngoài dải LOTO và vẫn g
 });
 
 
-test('mobile mặc định Dọc đọc đủ số trong card và nhớ nút đổi chiều thủ công', t => {
+test('mobile mặc định Dọc là ma trận ngày theo hàng, giữ đủ số và nhớ chiều thủ công', t => {
   const dom = setup(t, 'tan-suat-loto', { mobile: true }), d = dom.window.document;
   assert.equal(d.querySelector('[data-app-orientation="vertical"]').getAttribute('aria-pressed'), 'true');
-  assert.equal(d.querySelector('.bf-matrix-scroll').hidden, true);
-  assert.equal(d.querySelectorAll('.app-frequency-card').length, 100);
-  assert.equal(d.querySelectorAll('.app-frequency-spark').length, 100);
-  assert.equal(d.querySelectorAll('.app-frequency-history table').length, 0);
+  assert.equal(d.querySelectorAll('[data-app-orientation]').length, 2);
+  assert.equal(d.querySelectorAll('table[aria-pressed]').length, 0);
+  assert.equal(d.querySelector('.bf-matrix-scroll').hidden, false);
+  assert.equal(d.querySelector('#sp-matrix-grid thead th').textContent, 'Ngày');
+  assert.equal(d.querySelectorAll('#sp-matrix-grid thead .app-frequency-spark').length, 100);
+  assert.deepEqual([...d.querySelectorAll('#sp-matrix-grid tbody td:first-child:not(.sp-pending)')].map(c => c.textContent), ['03-09', '02-09', '01-09']);
   d.querySelector('[data-app-orientation="horizontal"]').click();
   assert.equal(d.querySelector('.bf-matrix-scroll').hidden, false);
   assert.equal(dom.window.localStorage.getItem('sp.orientation.v1.tan-suat-loto.html'), 'horizontal');
@@ -243,25 +245,50 @@ test('badge và sparkline theo chính dải đã chọn, cùng thang và rõ lư
   assert.equal(spark('00').dataset.total, '0');
   change(dom, 'sp-to', '2026-09-01');
   assert.equal(d.querySelectorAll('.app-frequency-spark').length, 0);
-  assert.match(d.getElementById('app-frequency-cards').textContent, /Không có kỳ/);
+  assert.match(d.getElementById('sp-matrix-grid').textContent, /Không có kỳ/);
 });
 
-test('Dọc họ cặp có đúng100 chart thành viên và chỉ dựng lịch sử khi mở', t => {
+test('Dọc họ cặp đặt 50 họ trên đầu cột với 100 chart thành viên, đánh dấu đúng từng kỳ', t => {
   const dom = setup(t, 'tan-suat-cap-loto', { mobile: true }), d = dom.window.document;
-  assert.equal(d.querySelectorAll('.app-frequency-card').length, 50);
-  assert.equal(d.querySelectorAll('.app-frequency-spark').length, 100);
-  const card = d.querySelector('[data-app-family="12-21"]');
-  assert.match(card.querySelector('.app-frequency-family-total').textContent, /3 lượt/);
-  const detail = card.querySelector('details');
-  detail.open = true;
-  detail.dispatchEvent(new dom.window.Event('toggle'));
-  assert.equal(d.querySelectorAll('.app-frequency-history table').length, 1);
-  const mark = card.querySelector('[data-key="p|c12-21|d2026-09-01"]');
+  assert.equal(d.querySelector('.bf-matrix-scroll').hidden, false);
+  assert.equal(d.querySelectorAll('#sp-matrix-grid thead th[data-key]').length, 50);
+  assert.equal(d.querySelectorAll('#sp-matrix-grid thead .app-frequency-spark').length, 100);
+  const header = d.querySelector('#sp-matrix-grid th[data-key="p|c12-21"]');
+  assert.match(header.querySelector('[data-app-number="12"] .app-frequency-count').textContent, /2 lượt/);
+  assert.match(header.querySelector('[data-app-number="21"] .app-frequency-count').textContent, /1 lượt/);
+  const mark = d.querySelector('#sp-matrix-grid [data-key="p|c12-21|d2026-09-01"]');
+  assert.equal(mark.textContent, '3');
   mark.click();
   assert.equal(mark.classList.contains('marked'), true);
   change(dom, 'sp-from', '2026-09-02');
-  assert.match(d.querySelector('[data-app-family="12-21"] .app-frequency-family-total').textContent, /0 lượt/);
+  assert.match(d.querySelector('#sp-matrix-grid th[data-key="p|c12-21"] [data-app-number="12"] .app-frequency-count').textContent, /0 lượt/);
 });
+
+for (const slug of ['tan-suat-loto', 'tan-suat-cap-loto']) {
+  test(`${slug}: xoay ma trận giữ nguyên từng ô, màu nháy, Đặc Biệt và dấu chọn sau sắp xếp`, t => {
+    const dom = setup(t, slug), d = dom.window.document;
+    const read = () => new Map([...d.querySelectorAll('#sp-matrix-grid tbody td[data-key]')]
+      .filter(cell => /\|(n\d{2}|c\d{2}-\d{2})\|d/.test(cell.dataset.key))
+      .map(cell => [cell.dataset.key, {value: Number(cell.textContent) || 0,
+        tier: [1, 2, 3, 4, 5].find(n => cell.classList.contains('sp-n' + n)) || 0,
+        special: cell.classList.contains('sp-de-hit'), marked: cell.classList.contains('marked')}]));
+    const key = slug === 'tan-suat-loto' ? 'm|n12|d2026-09-01' : 'p|c12-21|d2026-09-01';
+    const mark = d.querySelector(`#sp-matrix-grid td[data-key="${key}"]`);
+    mark.click();
+    const horizontal = read();
+    assert.equal(horizontal.get(key).value, slug === 'tan-suat-loto' ? 2 : 3);
+    assert.equal(horizontal.get(key).special, true);
+    assert.equal(horizontal.get(key).marked, true);
+    d.querySelector('[data-app-orientation="vertical"]').click();
+    assert.equal(d.querySelector('.bf-matrix-scroll').hidden, false);
+    assert.deepEqual(read(), horizontal);
+    assert.equal(d.querySelector('#sp-matrix-grid thead th').textContent, 'Ngày');
+    change(dom, 'sp-sort', 'hit-desc');
+    assert.deepEqual(read(), horizontal);
+    d.querySelector('[data-app-orientation="horizontal"]').click();
+    assert.deepEqual(read(), horizontal);
+  });
+}
 
 test('demo có hướng dẫn thao tác, bộ nhớ riêng và vẫn chạy khi storage bị chặn', t => {
   const dom = setup(t, 'tan-suat-loto', { query: '?demo=1', mobile: true }), d = dom.window.document;
