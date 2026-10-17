@@ -32,6 +32,12 @@ Manifest mô tả gói trang cụ thể; nó không phải chữ ký số, khôn
 kỹ năng dự báo. Job cập nhật một phần chốt manifest ngay trước upload để
 không dùng manifest của lượt dựng trước.
 
+Bot dựng trang Vietlott còn chốt trước bước ghi git, rồi stage toàn bộ
+`docs/*.html` và `docs/assets`. Nhờ đó commit chứa cả trang mới, URL tài
+nguyên và manifest tương ứng. Bước chốt ngay trước upload vẫn được giữ để
+kiểm lại ảnh chụp sau `git pull --rebase`; xung đột rebase làm job dừng,
+không ghi đè cưỡng bức.
+
 ## Dựng lại giao diện từ nguồn chuẩn
 
 ```bash
@@ -70,5 +76,7 @@ trình duyệt tải đúng CSS/JavaScript khi website thay đổi.
   nhúng, tham chiếu ngoài phạm vi, manifest, thiếu tệp và thứ tự pipeline.
 - `tests/test_cache_purge.py`, `tests/test_workflows.py`: hợp đồng API,
   phân trang, lỗi mạng, xác minh xóa và phạm vi trigger/quyền workflow.
+- `tests/test_vietlott_release_snapshot.py`: chạy shell ghi trang trong kho
+  tạm, kiểm manifest từ nội dung đã commit và không để sót thay đổi `docs/`.
 - Bộ kiểm trang đã xuất, JavaScript, và Chromium trên desktop/mobile.
 - Sau cập nhật main, kiểm kết quả CI/Pages/cache purge cùng mã phát hành public.

@@ -113,9 +113,11 @@ jobs:
         if: github.ref_name == github.event.repository.default_branch
         run: |
           set -euo pipefail
+          # Trang, URL tài nguyên và manifest phải thuộc cùng ảnh chụp trong git.
+          python3 src/site_assets.py --refresh docs --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/vietlott*.html docs/assets/vietlott-picks.js docs/assets/vietlott-comparison.js
+          git add docs/*.html docs/assets
           if ! git diff --cached --quiet; then
             git commit -m "docs: dựng lại trang Vietlott từ engine"
             git pull --rebase origin "${GITHUB_REF_NAME}"

@@ -19,6 +19,10 @@ Lượt Python toàn kho: **3.799 đạt, 1 bỏ qua, 1 guard CSS báo sai** tro
 **3.808 Python đạt, 9 bỏ qua** trong 573,60 giây; toàn bộ cổng phát hành lõi,
 challenger, Excel và nghiên cứu đều đạt.
 
+CI `39007970894` trên bản sửa phép kiểm `fcbaca9` đạt toàn bộ job: 3.808
+Python, 182 frontend và các cổng Chromium, gồm 104 trạng thái ma trận cùng
+72 trường hợp Soi cầu. CodeQL và pipeline dựng/triển khai tự động cũng đạt.
+
 ## Các luồng đã đối chiếu
 
 - Nhấp đơn chọn số/calculator ngay; nhấp đúp mở căn cứ ở trang chủ và các
@@ -49,6 +53,14 @@ lập tức có thể thấy 0, sau sự kiện thấy đúng 60. Đã đổi ph
 đúng thẻ mở và đúng số hàng bằng Playwright `expect`, giữ các kiểm tra đánh
 dấu. Trì hoãn có kiểm soát 250 ms xác nhận điều kiện chờ; tắt renderer vẫn
 làm phép kiểm thất bại. Ứng dụng và dữ liệu không đổi trong bản sửa phép kiểm.
+
+Lượt bot Vietlott tiếp theo cho thấy manifest trong git chưa được cập nhật
+cùng hai trang nó vừa dựng; gói public vẫn đúng vì được chốt trước upload.
+Đã bổ sung chốt trước commit và stage đủ HTML/tài nguyên; giữ chốt sau
+rebase trước upload. Kiểm thử chạy shell thật trong kho tạm xác nhận nội
+dung đã commit nhất quán, kể cả URL của trang dùng tài nguyên chung. Hai
+biến thể bỏ chốt hoặc stage hẹp đều bị kiểm thử bắt lỗi; 14 kiểm thử liên
+quan đạt. Pull/push được giả lập nên phép kiểm này không mô phỏng race remote.
 
 ## Dựng và vận hành
 
