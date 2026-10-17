@@ -4,8 +4,8 @@
    bật tooltip để người xem chọn số và tính cầu liên tục.
    Nhấp: ngăn kéo chi tiết — nguồn dữ liệu, các bước tính, ngữ cảnh của ô.
    Con số đã có chức năng nhấp riêng (đánh dấu ô, chọn số, nút, liên kết) giữ
-   nguyên chức năng ấy; bằng chứng của nó mở bằng Alt + nhấp, hoặc nhấn giữ
-   trên màn hình cảm ứng.
+   nguyên chức năng ấy; trang chủ mở bằng chứng bằng nhấp đúp, trang khác
+   bằng Alt + nhấp; cả hai giữ nhấn giữ trên màn hình cảm ứng.
 
    Danh mục nằm trong khối JSON #app-evidence-data do page_output chèn vào
    <head>. Phần tử khai data-evidence="<id>" lấy bằng chứng riêng trong
@@ -28,6 +28,7 @@
 
   var doc = document;
   var win = window;
+  var homeEvidence = /(?:^|\/)(?:index\.html|landing\.html|landing_desktop\.html)?$/.test(win.location.pathname);
   if (!doc.body || doc.body.dataset.appEvidenceReady) { return; }
   doc.body.dataset.appEvidenceReady = "true";
 
@@ -438,8 +439,8 @@
         : viaKeyboard
           ? "Enter để xem chi tiết bằng chứng suy luận"
           : interactive
-            ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
-            : "Click để xem chi tiết bằng chứng suy luận"));
+            ? (homeEvidence ? "Nhấp đúp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận" : "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận")
+            : (homeEvidence ? "Nhấp đúp để xem chi tiết bằng chứng suy luận" : "Click để xem chi tiết bằng chứng suy luận")));
     tip.replaceChildren.apply(tip, lines);
   }
 
@@ -663,7 +664,18 @@
 
   /* Alt + nhấp: chạy ở pha bắt để tới trước mọi trình xử lý của trang. */
   doc.addEventListener("click", function (event) {
-    if (!event.altKey || event.button !== 0) { return; }
+    if (homeEvidence || !event.altKey || event.button !== 0) { return; }
+    var el = valueTarget(event.target);
+    if (!el) { return; }
+    event.preventDefault();
+    event.stopPropagation();
+    openFor(el);
+  }, true);
+
+  /* Trang chủ: hai lần nhấp vẫn chọn số theo chức năng sẵn có, rồi sự kiện
+     nhấp đúp mở bằng chứng. Không trì hoãn thao tác chọn số hay máy tính. */
+  doc.addEventListener("dblclick", function (event) {
+    if (!homeEvidence || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) { return; }
     var el = valueTarget(event.target);
     if (!el) { return; }
     event.preventDefault();
@@ -673,7 +685,7 @@
 
   /* Nhấp thường: pha nổi, sau trình xử lý của trang; chỉ số chưa có chức năng nhấp. */
   doc.addEventListener("click", function (event) {
-    if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
+    if (homeEvidence || event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
         event.metaKey || event.shiftKey) { return; }
     var el = valueTarget(event.target);
     if (!el || isInteractive(el) || hasSelection()) { return; }

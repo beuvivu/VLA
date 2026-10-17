@@ -237,3 +237,29 @@ Canh: `test_theme_script_is_local_synchronous_and_precedes_styles`,
 `test_data_state_pairs_are_readable_in_each_theme`,
 `test_renderer_keeps_uniform_geometry_and_accessibility`; các bộ kiểm
 JavaScript tại `tests/frontend/theme.test.mjs` và `tests/frontend/search.test.mjs`.
+
+## 12. Trải nghiệm thống kê, cập nhật 17/10/2026
+
+Trang chủ và hai biến thể landing mở căn cứ số bằng **nhấp đúp**; nhấp đơn
+vẫn chọn số ngay, bàn phím và nhấn giữ vẫn hoạt động. Các trang khác giữ
+thao tác căn cứ riêng của chúng. Các hàng xác suất trang chủ chia cùng ba
+rãnh 56px / phần còn lại / 72px; ba bảng ngày mai có sàn 400px và cuộn bên
+trong, không đẩy rộng toàn trang.
+
+Tần suất LOTO/cặp có hai cách đọc công khai: Ngang giữ ma trận theo kỳ, Dọc
+hiển thị thẻ từng số/họ cặp, mặc định trên điện thoại. Mỗi số có tổng lượt
+và đường diễn biến từ chính dải được lọc; đồ thị dùng cùng trần lượt/kỳ trong
+một dải. Đây là số đo lịch sử, không phải xác suất dự đoán. Lịch sử trên thẻ
+chỉ được dựng khi mở và chia 60 kỳ/lượt. Demo và dữ liệu thật có trạng thái
+lưu riêng. Bộ chọn chiều cũ vẫn làm cầu nối nội bộ, không là giao diện chính.
+
+`analysis_workspace.refine_workspace` đọc phạm vi từ điều hướng Soi cầu,
+Dự báo, Nghiên cứu & công cụ, cộng các trang thống kê chi tiết được chỉ định.
+Nó bổ sung phân cấp, hướng dẫn, bộ lọc và thẻ tại ranh giới `write_page`, giữ
+nguyên ID, script và dữ liệu. CSS nguồn riêng được nhúng lại với một ID cố
+định, nên cập nhật hằng ngày và làm mới trang đã bọc đều giữ đúng thiết kế.
+
+`statistics.html#bang-db` có lịch Đặc Biệt theo năm, giữ đủ số gốc. Trên điện
+thoại, mặc định xem tháng có kết quả mới nhất; luôn chuyển được về 12 tháng.
+Năm/tháng và tìm số phối hợp cùng bộ đếm; ngày thiếu kết quả khác ngày không
+tồn tại trong lịch. Màu đuôi và màu kết quả khớp bộ lọc dùng token semantic.

@@ -24,8 +24,8 @@ const pages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON |
   cwd: fileURLToPath(root), env: { ...process.env, PYTHONPATH: 'src' }, input: JSON.stringify(draws), encoding: 'utf8',
 }));
 
-function setup(t, slug, { evidence = false, query = '' } = {}) {
-  let html = pages[slug];
+function setup(t, slug, { evidence = false, query = '', mobile = false, savedOrientation = '', storageBlocked = false, sourcePages = pages } = {}) {
+  let html = sourcePages[slug];
   for (const [override, name] of [
     [process.env.APP_FREQUENCY_PRESENTATION, 'frequency_bento.js'],
     [process.env.APP_STAT_ENGINE, 'stat_pages.js'],
@@ -36,6 +36,9 @@ function setup(t, slug, { evidence = false, query = '' } = {}) {
     url: `https://example.test/${slug}.html${query}`, runScripts: 'dangerously', pretendToBeVisual: true,
     beforeParse(window) {
       window.ResizeObserver = class { observe() {} };
+      window.matchMedia = () => ({ matches: mobile, addEventListener() {} });
+      if (savedOrientation) window.localStorage.setItem('sp.orientation.v1.' + (query ? 'demo.' : '') + slug + '.html', savedOrientation);
+      if (storageBlocked) Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } });
       window.HTMLElement.prototype.scrollIntoView = function () {};
       window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
       window.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new window.Event('close')); };
@@ -207,4 +210,110 @@ test('chu kỳ Đặc Biệt lấy cả lần về ngoài dải LOTO và vẫn g
   assert.match(drawer(dom).querySelector('.app-evidence-sources').textContent, /4 kỳ.*01-09-2026.*04-09-2026/);
   assert.match(drawer(dom).querySelector('.app-evidence-steps').textContent, /khoảng cách.*01.*1 kỳ/);
   assert.doesNotMatch(drawer(dom).querySelector('.app-evidence-steps').textContent, /tính lại theo bộ lọc/);
+});
+
+
+test('mobile mặc định Dọc đọc đủ số trong card và nhớ nút đổi chiều thủ công', t => {
+  const dom = setup(t, 'tan-suat-loto', { mobile: true }), d = dom.window.document;
+  assert.equal(d.querySelector('[data-app-orientation="vertical"]').getAttribute('aria-pressed'), 'true');
+  assert.equal(d.querySelector('.bf-matrix-scroll').hidden, true);
+  assert.equal(d.querySelectorAll('.app-frequency-card').length, 100);
+  assert.equal(d.querySelectorAll('.app-frequency-spark').length, 100);
+  assert.equal(d.querySelectorAll('.app-frequency-history table').length, 0);
+  d.querySelector('[data-app-orientation="horizontal"]').click();
+  assert.equal(d.querySelector('.bf-matrix-scroll').hidden, false);
+  assert.equal(dom.window.localStorage.getItem('sp.orientation.v1.tan-suat-loto.html'), 'horizontal');
+  assert.equal(d.querySelectorAll('#sp-matrix-grid [tabindex="0"]').length, 0);
+  const saved = setup(t, 'tan-suat-loto', { mobile: true, savedOrientation: 'horizontal' });
+  assert.equal(saved.window.document.querySelector('.bf-matrix-scroll').hidden, false);
+});
+
+test('badge và sparkline theo chính dải đã chọn, cùng thang và rõ lượt/kỳ', t => {
+  const dom = setup(t, 'tan-suat-loto', { mobile: true }), d = dom.window.document;
+  const card = n => d.querySelector(`[data-app-number="${n}"]`);
+  const spark = n => card(n).querySelector('.app-frequency-spark');
+  assert.match(card('00').querySelector('.app-frequency-count').textContent, /24 lượt/);
+  assert.match(card('00').textContent, /3 kỳ/);
+  const path = spark('00').querySelector('path').getAttribute('d');
+  assert.equal(new Set([...d.querySelectorAll('.app-frequency-spark')].map(s => s.dataset.scale)).size, 1);
+  change(dom, 'sp-from', '2026-09-02');
+  assert.match(card('00').querySelector('.app-frequency-count').textContent, /0 lượt/);
+  assert.match(card('00').textContent, /2 kỳ/);
+  assert.notEqual(spark('00').querySelector('path').getAttribute('d'), path);
+  assert.equal(spark('00').dataset.total, '0');
+  change(dom, 'sp-to', '2026-09-01');
+  assert.equal(d.querySelectorAll('.app-frequency-spark').length, 0);
+  assert.match(d.getElementById('app-frequency-cards').textContent, /Không có kỳ/);
+});
+
+test('Dọc họ cặp có đúng100 chart thành viên và chỉ dựng lịch sử khi mở', t => {
+  const dom = setup(t, 'tan-suat-cap-loto', { mobile: true }), d = dom.window.document;
+  assert.equal(d.querySelectorAll('.app-frequency-card').length, 50);
+  assert.equal(d.querySelectorAll('.app-frequency-spark').length, 100);
+  const card = d.querySelector('[data-app-family="12-21"]');
+  assert.match(card.querySelector('.app-frequency-family-total').textContent, /3 lượt/);
+  const detail = card.querySelector('details');
+  detail.open = true;
+  detail.dispatchEvent(new dom.window.Event('toggle'));
+  assert.equal(d.querySelectorAll('.app-frequency-history table').length, 1);
+  const mark = card.querySelector('[data-key="p|c12-21|d2026-09-01"]');
+  mark.click();
+  assert.equal(mark.classList.contains('marked'), true);
+  change(dom, 'sp-from', '2026-09-02');
+  assert.match(d.querySelector('[data-app-family="12-21"] .app-frequency-family-total').textContent, /0 lượt/);
+});
+
+test('demo có hướng dẫn thao tác, bộ nhớ riêng và vẫn chạy khi storage bị chặn', t => {
+  const dom = setup(t, 'tan-suat-loto', { query: '?demo=1', mobile: true }), d = dom.window.document;
+  assert.equal(d.getElementById('app-frequency-onboarding').hidden, false);
+  assert.match(d.getElementById('app-frequency-onboarding').textContent, /Chọn dải.*Đọc xu hướng.*Đối chiếu/s);
+  d.querySelector('[data-app-orientation="horizontal"]').click();
+  assert.equal(dom.window.localStorage.getItem('sp.orientation.v1.demo.tan-suat-loto.html'), 'horizontal');
+  assert.equal(dom.window.localStorage.getItem('sp.orientation.v1.tan-suat-loto.html'), null);
+  const blocked = setup(t, 'tan-suat-loto', { mobile: true, storageBlocked: true });
+  assert.equal(blocked.window.document.querySelectorAll('.app-frequency-spark').length, 100);
+});
+
+
+test('đổi30/60/90 kỳ đổi tổng badge thực tế và chart, giữ đúng counts ở cả hai chiều', t => {
+  const history = Array.from({length: 95}, (_, i) => ({
+    d: new Date(Date.UTC(2026, 5, i + 1)).toISOString().slice(0, 10), s: '00012',
+    n: [...Array(i % 4).fill('12'), ...Array(27 - i % 4).fill('55')],
+  }));
+  const sourcePages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python3', ['-c', build], {
+    cwd: fileURLToPath(root), env: {...process.env, PYTHONPATH: 'src'}, input: JSON.stringify(history), encoding: 'utf8',
+  }));
+  const dom = setup(t, 'tan-suat-loto', {mobile: true, sourcePages}), d = dom.window.document;
+  const paths = new Set();
+  for (const days of [30, 60, 90]) {
+    d.querySelector(`#sp-quick [data-days="${days}"]`).click();
+    const expected = history.slice(-days).reduce((sum, row) => sum + row.n.filter(n => n === '12').length, 0);
+    const member = d.querySelector('[data-app-number="12"]');
+    assert.equal(Number(member.querySelector('svg').dataset.total), expected);
+    assert.match(member.querySelector('small').textContent, new RegExp(`${days} kỳ`));
+    paths.add(member.querySelector('path').getAttribute('d'));
+    d.querySelector('[data-app-orientation="horizontal"]').click();
+    assert.equal(Number(d.querySelector('[data-app-number="12"] svg').dataset.total), expected);
+    assert.equal(d.querySelectorAll('.app-frequency-spark').length, 100);
+    d.querySelector('[data-app-orientation="vertical"]').click();
+  }
+  assert.ok(paths.size > 1, 'đường biểu đồ phải tính lại theo dải, không giữ30kỳ');
+});
+
+
+test('bàn phím từ vùng cuộn chỉ đánh dấu họ cặp đang hiện sau lọc', t => {
+  const dom = setup(t, 'tan-suat-cap-loto'), d = dom.window.document;
+  d.querySelector('[data-app-orientation="horizontal"]').click();
+  d.querySelector('[data-bf-pick="none"]').click();
+  d.querySelector('[data-bf-pair="12-21"]').click();
+  const region = d.querySelector('.bf-matrix-scroll');
+  region.focus();
+  region.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}));
+  const marked = [...d.querySelectorAll('#sp-matrix-grid td.marked')];
+  assert.equal(marked.length, 1);
+  assert.match(marked[0].dataset.key, /^p\|c12-21\|d/);
+  assert.equal(marked[0].parentElement.hidden, false);
+  region.focus();
+  region.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: 'ArrowDown', bubbles: true, cancelable: true}));
+  assert.match(d.activeElement.dataset.key, /^p\|c12-21\|d/);
 });

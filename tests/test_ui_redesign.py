@@ -911,7 +911,7 @@ def test_next_day_cards_keep_three_horizontal_tracks_with_internal_scroll() -> N
     rule = re.search(r"\.next-day\{([^}]*)\}", css)
     assert rule, "không tìm thấy quy tắc .next-day"
     body = rule.group(1)
-    assert "grid-template-columns:repeat(3,minmax(360px,1fr))" in body
+    assert "grid-template-columns:repeat(3,minmax(400px,1fr))" in body
     assert "overflow-x:auto" in body and "align-items:stretch" in body
 
 

@@ -76,7 +76,9 @@ const pad2 = (n) => String(n).padStart(2, "0");
  * quy ước ấy. `true` cho thuộc tính cờ (`checked`), in ra `checked=""`.
  */
 function mk(tag, attrs, kids) {
-  const node = document.createElement(tag);
+  const node = ["svg", "path"].includes(tag)
+    ? document.createElementNS("http://www.w3.org/2000/svg", tag)
+    : document.createElement(tag);
   if (attrs) {
     for (const k in attrs) {
       const v = attrs[k];

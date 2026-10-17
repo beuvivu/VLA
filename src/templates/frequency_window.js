@@ -62,7 +62,7 @@ function renderFrequencyWindow(el, headers, rows, opts) {
       const target = el.querySelector(`[aria-rowindex="${focusRow}"] [aria-colindex="${focusCol}"]`);
       if (target) {
         el.querySelector('[tabindex="0"]')?.setAttribute('tabindex', '-1');
-        target.tabIndex = 0;
+        target.tabIndex = el.closest('.bf-page') ? -1 : 0;
         target.focus({preventScroll: true});
       }
     }
@@ -87,7 +87,7 @@ function renderFrequencyWindow(el, headers, rows, opts) {
       const target = el.querySelector(`[aria-rowindex="${nextRow + 2}"] [aria-colindex="${nextCol + 1}"]`);
       if (target) {
         cell.tabIndex = -1;
-        target.tabIndex = 0;
+        target.tabIndex = el.closest('.bf-page') ? -1 : 0;
         target.focus({preventScroll: true});
         target.scrollIntoView({block: 'nearest', inline: 'nearest'});
       }

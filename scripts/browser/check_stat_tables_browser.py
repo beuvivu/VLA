@@ -17,6 +17,33 @@ def select_days(page, days):
     }""", days)
 
 
+def choose_orientation(page, orientation):
+    """Hai nút công khai giữ bộ chọn nội bộ cho hợp đồng dữ liệu cũ."""
+    value = "vertical" if orientation.endswith("dọc") else "horizontal"
+    page.locator(f'[data-app-orientation="{value}"]').click()
+
+
+def check_vertical_cards(page):
+    """Dọc chỉ cuộn trang; biểu đồ và badge phải lấy đúng các kỳ đã chọn."""
+    state = page.evaluate("""() => {
+      const cards = document.getElementById('app-frequency-cards');
+      const rows = selected(), counts = countLoto(rows);
+      const charts = Array.from(cards.querySelectorAll('.app-frequency-spark'));
+      return {pageOverflow:document.documentElement.scrollWidth-innerWidth,
+        tableHidden:document.querySelector('.bf-matrix-scroll').hidden,
+        cards:cards.querySelectorAll('.app-frequency-card').length, charts:charts.length,
+        scaleCount:new Set(charts.map(chart => chart.dataset.scale)).size,
+        incorrect:charts.filter(chart => Number(chart.dataset.total) !==
+          counts[Number(chart.parentElement.dataset.appNumber)]).length,
+        histories:cards.querySelectorAll('table').length,
+        tooWide:Array.from(cards.children).some(card => card.getBoundingClientRect().right > innerWidth + 1)};
+    }""")
+    assert state['pageOverflow'] <= 1 and not state['tooWide'], state
+    assert state['tableHidden'] and not state['incorrect'], state
+    assert state['scaleCount'] <= 1 and state['histories'] == 0, state
+    return state
+
+
 def check_geometry(page, selector):
     """Đo DOM đã bố trí: không cắt hàng, không tràn trang, ghim đúng hai trục."""
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
@@ -78,8 +105,8 @@ def check_geometry(page, selector):
 def check_full_history(page):
     """Cuộn tới ngày cũ nhất, quay lại và đổi chiều mà không dựng hàng trăm nghìn ô."""
     results = []
-    for orientation in ("Xem theo chiều ngang", "Xem theo chiều dọc"):
-        page.locator("#sp-orient").select_option(value=orientation)
+    for orientation in ("Xem theo chiều ngang",):
+        choose_orientation(page, orientation)
         page.locator("#sp-sort").select_option('hit-desc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.wait_for_function("document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
@@ -161,21 +188,30 @@ def check_full_history(page):
         page.wait_for_function("!document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
         page.evaluate("window.scrollBy(0, 200)")
         check_geometry(page, "#sp-matrix-grid")
+    choose_orientation(page, 'Xem theo chiều dọc')
+    select_days(page, page.evaluate('DRAWS.length'))
+    state = check_vertical_cards(page)
+    assert state['charts'] == 100, state
+    detail = page.locator('.app-frequency-history').first
+    detail.locator('summary').click()
+    assert detail.locator('tbody tr').count() == min(60, page.evaluate('DRAWS.length'))
+    cell = detail.locator('td[data-key]').first
+    cell.click()
+    assert cell.evaluate("cell => cell.classList.contains('marked')")
+    results.append({'days':'all', 'orientation':'Dọc theo thẻ', **state})
     return results
 
 
 def check_small_selection(page, pair_page):
     """Khung cũng phải co lại sau dải rỗng hoặc chỉ còn một cặp."""
     if pair_page:
-        page.locator('#sp-orient').select_option(value='Xem theo chiều dọc')
+        choose_orientation(page, 'Xem theo chiều dọc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.locator('details').filter(has=page.locator('#bf-pair-picker')).locator('summary').click()
         page.locator('[data-bf-pick="none"]').click()
         page.locator('[data-bf-pair]').first.click()
-        page.wait_for_function("document.querySelectorAll('#sp-matrix-grid thead th:not([hidden])').length === 2")
-        page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
-        size = page.locator('#sp-matrix-grid').evaluate("e => ({width:e.offsetWidth, frame:e.parentElement.clientWidth})")
-        assert abs(size['width'] - size['frame']) <= 1, size
+        page.wait_for_function("document.querySelectorAll('.app-frequency-card').length === 1")
+        assert check_vertical_cards(page)['charts'] == 2
         page.locator('[data-bf-pick="all"]').click()
     page.evaluate("""() => {
       const from = document.getElementById('sp-from');
@@ -183,6 +219,7 @@ def check_small_selection(page, pair_page):
       from.value = DRAWS.at(-1).d;
       from.dispatchEvent(new Event('change', {bubbles:true}));
     }""")
+    choose_orientation(page, 'Xem theo chiều ngang')
     page.wait_for_function("document.querySelector('#sp-matrix-grid .sp-empty-row')")
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
     state = page.locator('#sp-matrix-grid').evaluate("""e => ({width:e.offsetWidth,
@@ -212,7 +249,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                 orientations = ("Xem theo chiều ngang", "Xem theo chiều dọc") if frequency else (None,)
                 for orientation in orientations:
                     if orientation:
-                        page.locator("#sp-orient").select_option(value=orientation)
+                        choose_orientation(page, orientation)
                         counts = page.evaluate("""() => {
                           const expected = selected().map(r => r.d);
                           const dates = new Set(Array.from(document.querySelectorAll('#sp-matrix-grid [data-key]'),
@@ -221,7 +258,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                             actual:dates.size, pending:pendingDay(selected()) ? 1 : 0};
                         }""")
                         assert not counts["missing"] and counts["actual"] == counts["expected"] + counts["pending"], counts
-                    geometry = check_geometry(page, selector)
+                    geometry = check_vertical_cards(page) if frequency and orientation.endswith('dọc') else check_geometry(page, selector)
                     if name == "bang-dac-biet.html":
                         assert page.locator('#sp-grid .sp-de').count() == page.evaluate('selected().length')
                     results.append({"page":name, "width":width, "dark":dark, "days":days,

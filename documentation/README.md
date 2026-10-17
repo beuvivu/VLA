@@ -28,6 +28,8 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`plans/2026-10-17-ui-experience.md`](plans/2026-10-17-ui-experience.md) | Phạm vi và tiêu chí nghiệm thu giao diện trang chủ, ma trận, workspace phân tích và Đặc Biệt theo năm. |
+| [`qa/2026-10-17-ui-experience.md`](qa/2026-10-17-ui-experience.md) | Bằng chứng kiểm thử và render, lỗi được phát hiện trong nghiệm thu, cách dựng giữ nguyên dữ liệu. |
 | [`qa/2026-10-10-step-4-5-verification.md`](qa/2026-10-10-step-4-5-verification.md) | Đối chiếu và khép bước 4–5: dependency/BH-FDR, source manifest benchmark tự động, kiểm scan/source mutation, hai benchmark mới và bằng chứng kiểm thử/CI. |
 | [`qa/2026-10-10-work-completion.md`](qa/2026-10-10-work-completion.md) | Chốt tiến trình VLA: độ bền tệp kết quả, retry xuất bản, độ mới XSMT/XSMN và bằng chứng CI/nguồn dữ liệu. |
 | [`architecture/vietlott-comparison-ui.md`](architecture/vietlott-comparison-ui.md) | Khung responsive, màu bóng số, hiệu ứng nút, bảng đối chiếu theo từng bộ số và API JavaScript tính tỷ lệ/hạng giải; cập nhật trang ngay sau engine. |
