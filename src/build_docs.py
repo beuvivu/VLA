@@ -43,6 +43,7 @@ class UiRow:
     p_mean: float
     streak: str
     cells: list[Cell]
+    p_next: float | None = None
 
 
 def _latest_anchor_date(path_ui_dir: Path, mode: str) -> str:
@@ -110,6 +111,104 @@ def _empty_reason(path_ui_dir: Path, *, mode: str, kind: str, rows: int) -> dict
     }
 
 
+def _dec(value: float, digits: int = 2) -> str:
+    """Số thập phân kiểu Việt Nam: dấu phẩy thập phân."""
+    return f"{value:.{digits}f}".replace(".", ",")
+
+
+def _pct(value: float, digits: int = 2) -> str:
+    return _dec(value * 100, digits)
+
+
+def _int(value: int) -> str:
+    """Số nguyên kiểu Việt Nam: dấu chấm phân nghìn."""
+    return f"{int(value):,}".replace(",", ".")
+
+
+#: Phạm vi vị trí của ``path_models.get_scope_indices``, in đúng cấu hình đã sinh dự báo.
+_SCOPE_TEXT = {
+    "all": "mọi cặp vị trí",
+    "near_special": "các cặp vị trí trong giải Đặc Biệt, giải nhất và giải nhì",
+    "special_only": "các cặp vị trí trong giải Đặc Biệt",
+}
+
+
+def _bridge_experience(
+    path_ui_dir: Path, *, mode: str, kind: str, anchor_date: str
+) -> dict[str, Any]:
+    """Kinh nghiệm học từ MỌI đường cầu (``path_prob.BridgeEvidence``) và câu kết luận.
+
+    Câu kết luận suy TỪ số đo của ngày neo, không viết cứng: nếu một ngày các
+    cầu thật sự khác nhau, trang sẽ nói thế và in phần chênh được giữ lại.
+    Thiếu tệp (lượt dựng cũ) thì trả rỗng và trang bỏ khối này. Tệp là của MỘT
+    ngày neo: khác ngày neo của trang (chạy lại ``--bien-ngay`` cho ngày cũ, hay
+    lượt dựng hỏng giữa chừng) thì cũng bỏ khối, không ghép kinh nghiệm của
+    ngày này với bảng cầu của ngày khác.
+    """
+    payload = read_json_or_empty(path_ui_dir / f"bridge_evidence_{mode}.json")
+    if not isinstance(payload, dict) or "variance_ratio" not in payload:
+        return {}
+    if payload.get("anchor_date") != anchor_date:
+        return {}
+    base = float(payload["base_rate"])
+    ratio = _dec(float(payload["variance_ratio"]))
+    rules = _int(payload["rules"])
+    if payload.get("rules_fully_pooled"):
+        verdict = (
+            f"Tỉ lệ trúng của {rules} đường cầu tản ra {ratio} lần mức mà dao động ngẫu "
+            "nhiên tự sinh ra, không có phần vượt nào: không cầu nào tốt hơn cầu nào một "
+            f"cách thật sự, nên mọi cầu co về tỉ lệ chung {_pct(base)}%. Tỉ lệ lịch sử cao "
+            "của một cầu được chọn ra từ hàng nghìn cầu là may, không phải dấu hiệu."
+        )
+    else:
+        keep = 1.0 - float(payload["rule_shrinkage"])
+        verdict = (
+            f"Tỉ lệ trúng của {rules} đường cầu tản ra {ratio} lần mức dao động ngẫu nhiên. "
+            f"Phần vượt cho mỗi cầu giữ {_pct(keep, 1)}% chênh lệch riêng so với tỉ lệ chung "
+            f"{_pct(base)}%; phần còn lại co về tỉ lệ chung."
+        )
+
+    hits = payload.get("streak_hits") or []
+    tot = payload.get("streak_trials") or []
+    post = payload.get("streak_posterior") or []
+    buckets = len(tot)
+    rows = [
+        {
+            "label": f"{s}+" if s == buckets - 1 else str(s),
+            "trials": _int(n),
+            "raw": _pct(int(h) / int(n)),
+            "post": _pct(float(q)),
+        }
+        for s, (h, n, q) in enumerate(zip(hits, tot, post, strict=True))
+        if n
+    ]
+    shown = [float(q) for q, n in zip(post, tot, strict=True) if n]
+    spread = max(abs(q - base) for q in shown) if shown else 0.0
+    if payload.get("streaks_fully_pooled"):
+        streak_verdict = (
+            "Chênh lệch giữa các độ dài chuỗi không vượt dao động ngẫu nhiên: cầu đang chạy "
+            "dài hơn không trúng tiếp nhiều hơn, nên mọi độ dài co về tỉ lệ chung."
+        )
+    else:
+        streak_verdict = (
+            "Sau khi co theo Bayes thực nghiệm, độ dài chuỗi xê dịch xác suất kỳ tới nhiều nhất "
+            f"{_pct(spread)} điểm phần trăm."
+        )
+    lag_max = int(payload.get("lag_max", 0))
+    scope = _SCOPE_TEXT.get(str(payload.get("scope", "")), "các cặp vị trí đã quét")
+    return {
+        "anchor_date": payload.get("anchor_date"),
+        "scope_text": f"{scope} × độ trễ 1–{lag_max}" if lag_max else scope,
+        "rules": rules,
+        "trials": _int(payload["trials"]),
+        "base_pct": _pct(base),
+        "verdict": verdict,
+        "streak_rows": rows,
+        "streak_verdict": streak_verdict,
+        "uses_streak": kind == "active",
+    }
+
+
 def _render_page(
     env: Environment,
     *,
@@ -126,6 +225,7 @@ def _render_page(
     ui_df: pd.DataFrame,
     picks_df: pd.DataFrame,
     empty_reason: dict[str, Any] | None = None,
+    experience: dict[str, Any] | None = None,
 ) -> None:
     tpl = env.get_template("path_ui_page.html.j2")
 
@@ -156,6 +256,9 @@ def _render_page(
         j_label = str(r.get("j_label", "")) or index_to_label(j)
 
         p_mean = float(r.get("p_mean", 0.0))
+        # ``p_next`` do ``path_prob.rule_next_probability`` tính ở bước dựng dữ
+        # liệu: cùng thiên lệch và chặn biên với bước gợi ý.
+        p_next = float(r["p_next"]) if pd.notna(r.get("p_next")) else None
         # show streaks
         if kind == "active":
             streak = (
@@ -192,6 +295,7 @@ def _render_page(
                 p_mean=p_mean,
                 streak=streak,
                 cells=cells,
+                p_next=p_next,
             )
         )
 
@@ -208,6 +312,7 @@ def _render_page(
         anchor_date=anchor_date,
         display_days=display_days,
         empty_reason=empty_reason or {},
+        experience=experience or {},
         days=days,
         rows=rows,
         picks=picks,
@@ -241,6 +346,9 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
             # gặp, không phải sự cố. Thông điệp cũ ("hãy chạy lại bước tạo dữ
             # liệu") hướng người đọc đi sửa một thứ không hỏng.
             empty_reason = _empty_reason(path_ui_dir, mode=mode, kind=kind, rows=len(ui_df))
+            experience = _bridge_experience(
+                path_ui_dir, mode=mode, kind=kind, anchor_date=anchor_date
+            )
 
             out_name = f"soi-path-{mode}-{kind}.html"
             out_path = docs_dir / out_name
@@ -264,6 +372,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
                 ui_df=ui_df,
                 picks_df=picks_df,
                 empty_reason=empty_reason,
+                experience=experience,
             )
 
             index_items.append(

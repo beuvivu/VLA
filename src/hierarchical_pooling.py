@@ -347,3 +347,67 @@ def fit_shrinkage_to_prior_rows(
     out[good] = np.clip(kappa[good], 1e-6, MAX_PRIOR_STRENGTH)
     out[~np.isfinite(out)] = MAX_PRIOR_STRENGTH
     return out
+
+
+def random_effects_posterior(
+    successes: np.ndarray, trials: np.ndarray, *, variances: np.ndarray | None = None
+) -> tuple[np.ndarray, float, float]:
+    """Hậu nghiệm từng nhóm theo mô hình hiệu ứng ngẫu nhiên DerSimonian–Laird.
+
+    Dùng khi cỡ mẫu các nhóm chênh nhau rất xa (nhóm "chuỗi 0" của kinh nghiệm
+    cầu có hàng chục triệu lần chấm, nhóm "chuỗi 8+" vài trăm). Phương pháp mô
+    men KHÔNG trọng số của ``fit_shrinkage_to_prior`` khi ấy bị chính các nhóm
+    nhiễu nhất chi phối: đo trên lịch sử công bằng giả định, nó giữ lại tới 1,4
+    điểm phần trăm nhiễu ở nhóm ít dữ liệu. Ở đây mỗi nhóm nặng theo độ chính
+    xác ``1/vᵢ``, ``vᵢ = m(1−m)/nᵢ``:
+
+    * ``Q = Σ wᵢ(rᵢ − r̄_w)²``, ``r̄_w`` là trung bình theo trọng số ``wᵢ`` — không
+      có khác biệt thật thì ``E[Q] = k − 1``;
+    * ``τ² = max(0, (Q − (k − 1)) / (Σw − Σw²/Σw))`` — phương sai THẬT giữa nhóm;
+    * hậu nghiệm ``m + τ²/(τ² + vᵢ)·(rᵢ − m)``, co về tỉ lệ chung ``m`` (tổng lần
+      thành công / tổng phép thử) — mức mà dự báo neo vào.
+
+    ``τ² = 0`` thì mọi nhóm co hẳn về ``m``. Nhóm không có lần thử nào nhận ``m``.
+    ``variances`` (cùng hình) thay ``vᵢ`` khi các phép thử trong một nhóm không
+    độc lập — ví dụ phương sai theo cụm của ``path_prob.streak_experience``.
+    Trả về ``(hậu nghiệm, m, τ²)``.
+    """
+    counts = np.asarray(successes, dtype=float).reshape(-1)
+    n = np.asarray(trials, dtype=float).reshape(-1)
+    counts = _validate_counts(counts, n, allow_zero=True)
+    used = n > 0
+    if not used.any():
+        raise ValueError("cần ít nhất một nhóm có phép thử")
+    m = float(counts[used].sum() / n[used].sum())
+    post = np.full(counts.size, m)
+    if used.sum() < 2 or not 0.0 < m < 1.0:
+        return post, m, 0.0
+    rates = counts[used] / n[used]
+    if variances is None:
+        v = m * (1.0 - m) / n[used]
+    else:
+        v = np.asarray(variances, dtype=float).reshape(-1)
+        if v.shape != counts.shape or not np.all(np.isfinite(v[used])) or np.any(v[used] <= 0):
+            raise ValueError("variances phải cùng hình, hữu hạn và dương ở mọi nhóm có phép thử")
+        v = v[used]
+    tau2 = dersimonian_laird_tau2(rates, v)
+    post[used] = m + tau2 / (tau2 + v) * (rates - m)
+    return post, m, tau2
+
+
+def dersimonian_laird_tau2(rates: np.ndarray, variances: np.ndarray) -> float:
+    """Phương sai THẬT giữa các nhóm theo DerSimonian–Laird (xem ``random_effects_posterior``).
+
+    Q đo quanh trung bình nghịch đảo phương sai: chỉ tâm ấy làm E[Q] = k − 1 khi
+    không có khác biệt thật. Với phương sai nhị thức nó trùng tỉ lệ chung; với
+    phương sai theo cụm thì không, và đo quanh tỉ lệ chung sẽ thổi Q lên.
+    """
+    r = np.asarray(rates, dtype=float).reshape(-1)
+    v = np.asarray(variances, dtype=float).reshape(-1)
+    if r.size < 2:
+        return 0.0
+    w = 1.0 / v
+    center = float(np.sum(w * r) / w.sum())
+    q = float(np.sum(w * (r - center) ** 2))
+    scale = float(w.sum() - np.sum(w**2) / w.sum())
+    return max(0.0, (q - (r.size - 1)) / scale) if scale > 0 else 0.0
