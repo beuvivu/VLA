@@ -17,7 +17,9 @@ Sau trình dựng cuối, pipeline và cả năm bước đóng gói Pages gọi
 python3 src/site_assets.py --refresh docs --check
 ```
 
-Lệnh kiểm sự tồn tại và phiên bản của tham chiếu tài nguyên, chốt lại mọi
+Lệnh kiểm sự tồn tại và phiên bản của tham chiếu tài nguyên, đồng thời chặn
+trang có khung `app-main`/`app-header`/`app-rail` bị nhân đôi hoặc thiếu một
+thành phần. Sau đó chốt lại mọi
 trang, ghi `docs/assets/release.json` chứa băm trang/tài nguyên và mã phát
 hành xác định theo nội dung. Thiếu tệp hoặc kiểm tra không khớp thì dừng
 đóng gói. Có thể kiểm lại mà không ghi:
@@ -39,6 +41,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/ops/refresh_navigation.py
 Lệnh dựng stylesheet, sinh Critical CSS rồi mở tiến trình Python mới để
 đồng bộ khung từng trang. Tiến trình mới đọc module Critical CSS vừa sinh;
 không tái sử dụng module đã nạp trong lượt trước. Cuối cùng chốt và kiểm gói.
+Workflow cập nhật vùng cũng dùng chính lệnh này, không gọi trực tiếp
+`app_shell.wrap_page`; HTML, tài nguyên và manifest được ghi cùng commit.
+Đuôi khung nhận cả URL script có tham số phiên bản để sửa được trang cũ đã lồng.
 Muốn dựng lại cả nội dung thống kê, dùng pipeline theo đúng thứ tự hiện có;
 landing phải sau `build_docs`, mô phỏng phải sau landing, thống kê chi tiết
 phải sau khi dữ liệu được chốt.

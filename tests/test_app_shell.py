@@ -68,6 +68,19 @@ def test_no_published_page_carries_the_shell_twice(page: Path) -> None:
         )
 
 
+@pytest.mark.parametrize("query", ["?rev=0123456789abcdef", "?rev=old&amp;mode=fast#tail"])
+def test_wrapping_a_versioned_page_keeps_one_shell(query: str) -> None:
+    from app_shell import wrap_page
+
+    original = '<html><head></head><body><p id="business">07</p></body></html>'
+    once = wrap_page(original, "index.html")
+    versioned = once.replace('src="assets/app-shell.js"', f'src="assets/app-shell.js{query}"')
+    repaired = wrap_page(versioned, "index.html")
+    assert repaired == once
+    assert repaired.count('class="app-main"') == 1
+    assert '<p id="business">07</p>' in repaired
+
+
 def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     """Bọc khung phải LUỸ ĐẲNG, và phải SỬA được trang đã bọc chồng.
 

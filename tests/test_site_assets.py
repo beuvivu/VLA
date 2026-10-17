@@ -100,6 +100,16 @@ def test_duplicate_revision_and_missing_manifest_are_rejected(tmp_path: Path) ->
     assert any("object" in issue for issue in check_site(tmp_path))
 
 
+@pytest.mark.parametrize("component", ["app-main", "app-header", "app-rail"])
+def test_duplicate_shell_blocks_release_before_writing(tmp_path: Path, component: str) -> None:
+    page, _ = _site(tmp_path)
+    shell = ''.join(f'<div class="{name}">07</div>' for name in ("app-main", "app-header", "app-rail", component))
+    page.write_text(page.read_text().replace('07', shell), encoding="utf-8")
+    with pytest.raises(ValueError, match="khung"):
+        refresh_site(tmp_path)
+    assert not (tmp_path / 'assets/release.json').exists()
+
+
 def test_output_boundary_is_idempotent_with_versioned_shell(tmp_path: Path) -> None:
     from page_output import write_page
 

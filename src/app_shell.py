@@ -297,7 +297,8 @@ _MO_MAIN = re.compile(
 #: ``src`` trùng nhau lại làm một. Bản đòi script bắt buộc vì thế bỏ cuộc ở
 #: đúng tệp duy nhất cần bóc, rồi bọc thêm lớp nữa.
 _DUOI_KHUNG: Final[re.Pattern[str]] = re.compile(
-    r"</(?:main|div)>\s*(?:<script\b[^>]*\bsrc=\"assets/app-shell\.js\"[^>]*>\s*</script>\s*)?\Z"
+    r"</(?:main|div)>\s*(?:<script\b[^>]*\bsrc\s*=\s*([\"'])"
+    r"assets/app-shell\.js(?:[?#][^\"']*)?\1[^>]*>\s*</script>\s*)?\Z"
 )
 _MO_BODY = re.compile(r"(<body\b[^>]*>)", re.I)
 _DONG_BODY = re.compile(r"</body\s*>", re.I)

@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import os
 import re
+import shlex
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -110,6 +115,72 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
     assert "schedule:" not in text
     assert "actions: write" in text
     assert "scripts/ops/purge_github_caches.py --confirm" in text
+
+
+def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path: Path) -> None:
+    """Dựng vùng phải qua write_page của helper, không tự bọc chồng shell."""
+    workflow = yaml.safe_load(_text("regional-results.yml"))
+    steps = workflow["jobs"]["sync"]["steps"]
+    step = next(step for step in steps if "src/build_regional_results.py" in step.get("run", ""))
+    assert "wrap_page" not in step["run"]
+    assert "app_shell" not in step["run"]
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_python = fake_bin / "python"
+    fake_python.write_text('#!/bin/bash\nprintf "%s\\n" "$*" >> "$PYTHON_CALLS"\n')
+    fake_python.chmod(0o755)
+    calls = tmp_path / "python-calls"
+    env = dict(os.environ, PATH=f"{fake_bin}:{os.environ['PATH']}", PYTHON_CALLS=str(calls))
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
+        cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert calls.read_text().splitlines() == [
+        "src/build_regional_results.py", "scripts/ops/refresh_navigation.py"
+    ]
+
+
+def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(tmp_path: Path) -> None:
+    """Chạy git thật để phát hiện HTML đã ghi nhưng manifest hoặc shell bị bỏ sót."""
+    workflow = yaml.safe_load(_text("regional-results.yml"))
+    steps = workflow["jobs"]["sync"]["steps"]
+    step = next(step for step in steps if "git add data/regions/" in step.get("run", ""))
+    real_git = shutil.which("git")
+    assert real_git is not None
+    subprocess.run([real_git, "init", "-q", str(tmp_path)], check=True)
+    expected = {
+        "data/regions/xsmt.csv", "data/regions/xsmt.json",
+        "data/regions/xsmn.csv", "data/regions/xsmn.json",
+        "docs/index.html", "docs/assets/release.json", "docs/assets/app-shell.js",
+        "docs/assets/ui.css", "docs/assets/icons/probe.svg",
+    }
+    for relative in expected:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"Nội dung mới: {relative}\n", encoding="utf-8")
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    git = fake_bin / "git"
+    # Chỉ thay hai lệnh mạng; add, diff, commit vẫn dùng Git thật trên kho tạm.
+    git.write_text(
+        '#!/bin/bash\ncase "$1" in pull|push) exit 0 ;; esac\n'
+        f'exec {shlex.quote(real_git)} "$@"\n'
+    )
+    git.chmod(0o755)
+    env = dict(os.environ, PATH=f"{fake_bin}:{os.environ['PATH']}")
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
+        cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    committed = subprocess.run(
+        [real_git, "ls-tree", "--name-only", "-r", "HEAD"],
+        cwd=tmp_path, capture_output=True, text=True, check=True,
+    )
+    assert set(committed.stdout.splitlines()) == expected
 
 
 # --- Thu thập đúng giờ ------------------------------------------------------

@@ -41,11 +41,12 @@ def _asset_path(page: Path, url: str) -> Path | None:
 
 
 class _AssetReferences(HTMLParser):
-    """Lấy vị trí thuộc tính thật, giữ nguyên từng byte của phần còn lại."""
+    """Lấy thuộc tính thật và đếm khung, không đọc nhầm dữ liệu trong script."""
 
     def __init__(self, source: str) -> None:
         super().__init__(convert_charrefs=False)
         self.references: list[tuple[int, int, str, bool]] = []
+        self.shell_counts = dict.fromkeys(("app-main", "app-header", "app-rail"), 0)
         self._lines = [0]
         for match in re.finditer("\n", source):
             self._lines.append(match.end())
@@ -53,6 +54,10 @@ class _AssetReferences(HTMLParser):
         self.close()
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        classes = next((value for name, value in attrs if name == "class"), "") or ""
+        for name in classes.split():
+            if name in self.shell_counts:
+                self.shell_counts[name] += 1
         wanted = {"script": "src", "link": "href", "a": "href"}.get(tag)
         if not wanted:
             return
@@ -96,7 +101,12 @@ def rewrite_assets(page: Path, source: str, *, strip: bool = False) -> str:
 
 def _reference_issues(page: Path, source: str) -> list[str]:
     issues: list[str] = []
-    for _, _, url, _ in _AssetReferences(source).references:
+    parsed = _AssetReferences(source)
+    if any(parsed.shell_counts.values()):
+        for name, count in parsed.shell_counts.items():
+            if count != 1:
+                issues.append(f"{page.name}: khung {name} có {count} bản, cần đúng 1")
+    for _, _, url, _ in parsed.references:
         target = _asset_path(page, url)
         if target is None:
             continue
