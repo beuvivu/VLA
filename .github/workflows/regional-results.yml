@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/regional_lottery.py'
       - 'src/build_regional_results.py'
+      - 'scripts/ops/push_generated_site.py'
       - '.github/workflows/regional-results.yml'
   workflow_dispatch:
     inputs:
@@ -96,8 +97,7 @@ jobs:
             exit 0
           fi
           git commit -m "data: sync XSMT/XSMN from xskt.com.vn"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          python3 scripts/ops/push_generated_site.py --branch main
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
         run: python3 src/site_assets.py --refresh docs --check

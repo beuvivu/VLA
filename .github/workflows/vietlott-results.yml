@@ -34,6 +34,7 @@ on:
       - "src/assets/vietlott-comparison.js"
       - "src/vietlott_navigation_content.py"
       - "src/evidence_catalog.py"
+      - "scripts/ops/push_generated_site.py"
       - "vietlott/src/vlm/web/**"
       - "vietlott/data/results/results.jsonl"
       - "vietlott/data/forecast/*ledger.jsonl"
@@ -120,8 +121,7 @@ jobs:
           git add docs/*.html docs/assets
           if ! git diff --cached --quiet; then
             git commit -m "docs: dựng lại trang Vietlott từ engine"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            python3 scripts/ops/push_generated_site.py --branch "${GITHUB_REF_NAME}"
           fi
 
       - name: Chốt phiên bản và kiểm tra tài nguyên

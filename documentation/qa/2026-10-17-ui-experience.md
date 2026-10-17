@@ -62,6 +62,19 @@ dung đã commit nhất quán, kể cả URL của trang dùng tài nguyên chun
 biến thể bỏ chốt hoặc stage hẹp đều bị kiểm thử bắt lỗi; 14 kiểm thử liên
 quan đạt. Pull/push được giả lập nên phép kiểm này không mô phỏng race remote.
 
+Khi bot Vietlott và pipeline XSMB chạy cùng lúc, lượt `39009031543` dựng và
+kiểm dữ liệu thành công nhưng xung đột rebase ở riêng `release.json`. Hai bot
+đã sinh manifest từ hai ảnh chụp khác nhau. Luồng ghi website được chuyển
+sang helper dùng chung: chỉ tái tạo manifest khi đó là tệp xung đột duy nhất,
+chốt lại cây mã hợp nhất rồi đẩy fast-forward. Xung đột nội dung khác vẫn
+dừng và không ghi đè remote. Các fixture ghi trang dùng bare remote thật để
+kiểm cả nội dung đã đẩy, thay cho việc giả lập pull/push.
+
+Review độc lập xác nhận helper; bộ kiểm liên quan gồm ghi trang, tài nguyên,
+workflow, cache và thời điểm chốt đạt 126 kiểm thử. Các mutation bỏ chốt sau
+gộp sạch, giải xung đột ngoài manifest hoặc nới giới hạn thử lại đều bị bắt.
+Bao phủ cả shallow clone và commit sửa manifest trở thành rỗng sau push race.
+
 ## Dựng và vận hành
 
 Dựng landing, statistics, các trang thống kê chi tiết; chèn mô phỏng bằng

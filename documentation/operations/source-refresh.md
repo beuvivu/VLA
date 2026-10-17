@@ -35,8 +35,15 @@ không dùng manifest của lượt dựng trước.
 Bot dựng trang Vietlott còn chốt trước bước ghi git, rồi stage toàn bộ
 `docs/*.html` và `docs/assets`. Nhờ đó commit chứa cả trang mới, URL tài
 nguyên và manifest tương ứng. Bước chốt ngay trước upload vẫn được giữ để
-kiểm lại ảnh chụp sau `git pull --rebase`; xung đột rebase làm job dừng,
-không ghi đè cưỡng bức.
+kiểm lại ảnh chụp sau khi đồng bộ nhánh.
+
+Ba luồng ghi website (Vietlott, kết quả vùng, phân tích XSMB) dùng
+`scripts/ops/push_generated_site.py`. Helper chỉ nhận cây mã đã commit và
+sạch, gộp nhánh remote rồi chốt lại gói trang trước khi đẩy fast-forward.
+Nếu chỉ `docs/assets/release.json` xung đột, nó tái tạo tệp dẫn xuất này từ
+cây mã đã gộp; xung đột HTML, source hoặc dữ liệu vẫn làm job dừng. Manifest
+cũng được kiểm lại sau lần gộp không xung đột. Không force-push, không chọn
+bỏ nội dung của một bot; số lần thử lại khi remote tiến thêm được giới hạn.
 
 ## Dựng lại giao diện từ nguồn chuẩn
 
@@ -78,5 +85,8 @@ trình duyệt tải đúng CSS/JavaScript khi website thay đổi.
   phân trang, lỗi mạng, xác minh xóa và phạm vi trigger/quyền workflow.
 - `tests/test_vietlott_release_snapshot.py`: chạy shell ghi trang trong kho
   tạm, kiểm manifest từ nội dung đã commit và không để sót thay đổi `docs/`.
+- `tests/test_push_generated_site.py`: các bot dùng clone và bare remote
+  tạm thật; bảo toàn thay đổi hai phía, chốt manifest sau rebase và chặn
+  xung đột ngoài tệp dẫn xuất.
 - Bộ kiểm trang đã xuất, JavaScript, và Chromium trên desktop/mobile.
 - Sau cập nhật main, kiểm kết quả CI/Pages/cache purge cùng mã phát hành public.

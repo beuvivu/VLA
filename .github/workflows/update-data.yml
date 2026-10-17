@@ -449,8 +449,7 @@ jobs:
             exit 1
           fi
 
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          python3 scripts/ops/push_generated_site.py --branch "${GITHUB_REF_NAME}"
           echo "generated_changed=true" >> "$GITHUB_OUTPUT"
 
   trigger-post-finalization:
