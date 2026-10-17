@@ -1626,11 +1626,11 @@ _LANDING_CSS = """\
 
     .matrix-full { width: 100%; margin-bottom: 24px; }
 
-    /* Ba thẻ luôn cùng một hàng. Mô phỏng chỉ còn bảng giải; khi khung hẹp,
-       người đọc cuộn trong khu này, không kéo cả trang rộng ra. */
+    /* Ưu tiên bảng kết quả theo tỷ lệ 2:1:1. Khung hẹp cuộn trong khu này,
+       không kéo cả trang rộng ra. */
     .next-day {
       display: grid;
-      grid-template-columns: repeat(3, minmax(400px, 1fr));
+      grid-template-columns: minmax(400px, 2fr) repeat(2, minmax(280px, 1fr));
       grid-auto-flow: column;
       gap: 16px;
       align-items: stretch;

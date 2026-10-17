@@ -243,8 +243,9 @@ JavaScript tại `tests/frontend/theme.test.mjs` và `tests/frontend/search.test
 Trang chủ và hai biến thể landing mở căn cứ số bằng **nhấp đúp**; nhấp đơn
 vẫn chọn số ngay, bàn phím và nhấn giữ vẫn hoạt động. Các trang khác giữ
 thao tác căn cứ riêng của chúng. Các hàng xác suất trang chủ chia cùng ba
-rãnh 56px / phần còn lại / 72px; ba bảng ngày mai có sàn 400px và cuộn bên
-trong, không đẩy rộng toàn trang.
+rãnh 56px / phần còn lại / 72px. Hàng ba bảng ưu tiên bảng kết quả mô phỏng
+theo tỷ lệ 2:1:1: bảng kết quả có sàn 400px, hai bảng dự báo có sàn 280px.
+Khung hẹp cuộn bên trong, không đẩy rộng toàn trang.
 
 Tần suất LOTO/cặp dùng cùng một ma trận với hai trục hoán đổi: Ngang đặt số
 hoặc họ cặp theo hàng, ngày theo cột; Dọc đặt ngày theo hàng, số hoặc họ cặp

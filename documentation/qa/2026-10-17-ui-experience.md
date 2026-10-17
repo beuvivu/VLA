@@ -106,6 +106,16 @@ Bổ sung chặn selector của nút đổi chiều trùng với bảng. Bộ Ch
 30/60/90 kỳ, toàn lịch sử với cả hai chiều, biên bàn phím, cuộn, dải rỗng
 và chọn một họ cặp. Đã xem ảnh render mobile/desktop, sáng/tối.
 
+## Điều chỉnh tỷ lệ Dự báo vui
+
+Theo yêu cầu tiếp theo, bảng kết quả mô phỏng chiếm hai phần chiều rộng,
+hai bảng dự báo mỗi bảng một phần. Sàn tương ứng 400/280/280px; khung hẹp
+cuộn trong hàng. Giữ cỡ chữ, màu và tỷ lệ các rãnh thanh xác suất.
+83 kiểm thử Python và 20 trạng thái Chromium đạt: bốn độ rộng 390/1024/
+1440/1920px, sáng/tối; bản máy tính cố định đo ở 1440/1920px. Đủ 27 số,
+không cắt số, hai bảng phụ cùng độ rộng và các thanh thẳng hàng. Đã xem
+ảnh render sáng/tối trước khi xuất bản.
+
 ## Dựng và vận hành
 
 Dựng landing, statistics, các trang thống kê chi tiết; chèn mô phỏng bằng
