@@ -208,6 +208,9 @@ def _inject_source_detail_style(path: Path, html: str) -> str:
 
 
 def write_page(path: Path, html: str) -> None:
+    from site_assets import rewrite_assets
+
+    html = rewrite_assets(path, html, strip=True)
     refined = refine_page(path, html)
     refined = _inject_source_detail_style(path, refined)
     refined = _attach_visual_system(path, refined)
@@ -220,7 +223,7 @@ def write_page(path: Path, html: str) -> None:
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
     refined = _attach_evidence(path, refined)
-    path.write_text(strip_comments(refined), encoding="utf-8")
+    path.write_text(rewrite_assets(path, strip_comments(refined)), encoding="utf-8")
 
 
 def _attach_theme_bootstrap(path: Path, html: str) -> str:

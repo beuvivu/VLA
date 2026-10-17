@@ -130,3 +130,4 @@ forecasting guarantee.
 - [Kiến trúc ba tác tử XSMB](architecture/2026-10-17-xsmb-multi-agent.md)
 - [Kế hoạch triển khai ba tác tử XSMB](plans/2026-10-17-xsmb-multi-agent.md)
 - [Kiểm chứng và số đo ba tác tử XSMB](qa/2026-10-17-xsmb-multi-agent.md)
+- [Làm mới source, cache và tài nguyên xuất bản](operations/source-refresh.md)

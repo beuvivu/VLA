@@ -104,6 +104,9 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        run: python3 src/site_assets.py --refresh docs --check
+
       - name: Đóng gói GitHub Pages đã cập nhật
         uses: actions/upload-pages-artifact@v5
         with:

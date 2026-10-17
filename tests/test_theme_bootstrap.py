@@ -1,6 +1,7 @@
 """Khôi phục chủ đề trước khung vẽ đầu tiên, không nhân script khi xuất lại."""
 
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -15,11 +16,13 @@ def test_theme_script_is_local_synchronous_and_precedes_styles(tmp_path: Path) -
     write_page(page, source)
     once = page.read_text()
     soup = BeautifulSoup(once, "html.parser")
-    script = soup.select_one('head script[src="assets/app-theme.js"]')
+    script = soup.select_one('head script[data-app-theme]')
     assert script is not None
+    assert urlsplit(script["src"]).path == "assets/app-theme.js"
+    assert not urlsplit(script["src"]).scheme and not urlsplit(script["src"]).netloc
     assert not script.has_attr("defer") and not script.has_attr("async")
-    assert once.index('Content-Security-Policy') < once.index('src="assets/app-theme.js"')
-    assert once.index('src="assets/app-theme.js"') < once.index('<style')
+    assert once.index('Content-Security-Policy') < once.index('src="' + script["src"] + '"')
+    assert once.index('src="' + script["src"] + '"') < once.index('<style')
     assert (tmp_path / "assets/app-theme.js").read_text() == (
         Path(__file__).resolve().parents[1] / "src/assets/app-theme.js"
     ).read_text()

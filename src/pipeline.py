@@ -435,6 +435,10 @@ def main() -> None:
         allow_fail=soft_fail,
     )
 
+    if not args.skip_docs:
+        # Chốt mọi URL sau trình dựng cuối: không cho xuất bản tham chiếu cũ/thiếu.
+        _run(_py("src/site_assets.py", "--refresh", "docs", "--check"), allow_fail=False)
+
     logging.info("DONE")
 
 
