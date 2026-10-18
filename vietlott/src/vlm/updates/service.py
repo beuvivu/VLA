@@ -133,21 +133,19 @@ def _stage_pending(state, records, previous):  # type: ignore[no-untyped-def]
     payload = {'version':1, 'records':[{'before':before.model_dump(mode='json') if before else None,
                                       'after':after.model_dump(mode='json')}
                                      for before,after in pending.values()]}
-    with tempfile.NamedTemporaryFile('w', dir=path.parent, delete=False, encoding='utf-8') as out:
-        name = out.name
-        try:
+    name = None
+    try:
+        with tempfile.NamedTemporaryFile('w', dir=path.parent, delete=False, encoding='utf-8') as out:
+            name = out.name
             json.dump(payload, out)
             out.flush()
             os.fsync(out.fileno())
-        except BaseException:
-            os.unlink(name)
-            raise
-    try:
         os.replace(name, path)
         _fsync_directory(path.parent)
         _fsync_directory(path.parent.parent)
     finally:
-        if os.path.exists(name):
+        # Đóng handle trước cleanup: Windows không cho unlink tệp đang mở.
+        if name is not None and os.path.exists(name):
             os.unlink(name)
 
 

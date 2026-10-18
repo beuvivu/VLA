@@ -173,6 +173,12 @@ xanh sau sửa. Bộ recovery/crawler/API/benchmark liên quan chạy lại đ�
 459 ca root liên quan và 209 ca frontend đạt, Ruff root/engine sạch.
 CI trên GitHub và triển khai được xác minh riêng khi hoàn tất tích hợp.
 
+CI Windows phát hiện thêm cleanup outbox chạy khi handle tệp tạm còn mở,
+làm lỗi unlink che lỗi fsync gốc. Cleanup nay chạy sau khi thoát context
+tệp; test mô phỏng quy tắc unlink Windows đã đỏ trước sửa và xanh sau sửa.
+Fixture sửa checkpoint cũng đóng rõ kết nối SQLite: context giao dịch của
+SQLite chỉ commit/rollback, không tự đóng connection. Không bỏ test Windows.
+
 - [ ] PR thay dự báo phải chứng minh không nhìn trước, cutoff ở ranh giới công bố và khả năng khôi phục bản đã đóng băng.
 - [ ] Thay định nghĩa thành phần thì tăng policy/schema theo hợp đồng hiện có; không viết lại ledger để khớp định nghĩa mới.
 - [ ] Mô hình mới phải thắng cả đối chứng hằng số và mô hình đương nhiệm trên giao thức ngoài mẫu đã đăng ký; giữ tập kiểm đóng băng.

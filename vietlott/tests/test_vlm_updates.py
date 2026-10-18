@@ -5,6 +5,38 @@ from datetime import datetime, timedelta
 import pytest
 
 
+def test_pending_fsync_failure_closes_temp_before_cleanup(tmp_path, monkeypatch):
+    """Mô phỏng Windows: không unlink tệp còn mở, không che lỗi fsync gốc."""
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    from vlm.updates import service
+
+    state = AppState(Settings(data_dir=tmp_path), InMemoryRepository())
+    record = DrawRecord.from_legacy('mega645', {'id':1, 'date':'2026-10-07', 'result':[1,2,3,4,5,6]})
+    handles = []
+    original_temp = service.tempfile.NamedTemporaryFile
+    original_unlink = service.os.unlink
+    def track_temp(*args, **kwargs):
+        handle = original_temp(*args, **kwargs)
+        handles.append(handle)
+        return handle
+    def refuse_open_unlink(path, *args, **kwargs):
+        if any(not handle.closed for handle in handles):
+            raise PermissionError('temporary file is still open')
+        return original_unlink(path, *args, **kwargs)
+    def fail_fsync(_fd):
+        raise OSError('original fsync failure')
+    monkeypatch.setattr(service.tempfile, 'NamedTemporaryFile', track_temp)
+    monkeypatch.setattr(service.os, 'unlink', refuse_open_unlink)
+    monkeypatch.setattr(service.os, 'fsync', fail_fsync)
+    with pytest.raises(OSError, match='original fsync failure'):
+        service._stage_pending(state, [record], {})
+    assert all(handle.closed for handle in handles)
+    assert list((tmp_path / 'updates').iterdir()) == []
+
+
 @pytest.mark.parametrize('product,now,want', [
     ('mega645','2026-10-03T19:00:00+07:00','2026-10-02T18:30:00+07:00'),
     ('power655','2026-10-03T18:29:59+07:00','2026-10-01T18:30:00+07:00'),
