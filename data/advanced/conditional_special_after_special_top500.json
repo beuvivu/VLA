@@ -105,13 +105,6 @@
     "conditional_rate":0.0833333333
   },
   {
-    "prev_special_2d":"38",
-    "next_special_2d":"97",
-    "count":4,
-    "base_count":49,
-    "conditional_rate":0.0816326531
-  },
-  {
     "prev_special_2d":"48",
     "next_special_2d":"16",
     "count":4,
@@ -124,6 +117,13 @@
     "count":3,
     "base_count":37,
     "conditional_rate":0.0810810811
+  },
+  {
+    "prev_special_2d":"38",
+    "next_special_2d":"97",
+    "count":4,
+    "base_count":50,
+    "conditional_rate":0.08
   },
   {
     "prev_special_2d":"31",
@@ -756,13 +756,6 @@
     "conditional_rate":0.0612244898
   },
   {
-    "prev_special_2d":"38",
-    "next_special_2d":"28",
-    "count":3,
-    "base_count":49,
-    "conditional_rate":0.0612244898
-  },
-  {
     "prev_special_2d":"48",
     "next_special_2d":"76",
     "count":3,
@@ -873,6 +866,13 @@
     "count":2,
     "base_count":33,
     "conditional_rate":0.0606060606
+  },
+  {
+    "prev_special_2d":"38",
+    "next_special_2d":"28",
+    "count":3,
+    "base_count":50,
+    "conditional_rate":0.06
   },
   {
     "prev_special_2d":"49",
