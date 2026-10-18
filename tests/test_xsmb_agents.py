@@ -97,6 +97,7 @@ def test_engine_is_idempotent_preserves_public_vector_and_explains_mixture(tmp_p
     report = engine.run(tmp_path, now=clock(frame))
     again = engine.run(tmp_path, now=clock(frame))
     assert report == again
+    assert engine.run(tmp_path, now=clock(frame).replace(hour=19)) == report
     for path, content in snapshots.items():
         assert path.read_bytes() == content
     for mode, item in report['modes'].items():
@@ -238,6 +239,113 @@ def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_pa
     with pytest.raises(ValueError, match='cutoff|18:00|quá giờ'):
         PredictiveEngine().run(tmp_path)
     assert not (tmp_path / 'online' / 'agents_de.json').exists()
+
+
+@pytest.mark.parametrize('slow_phase', ['serialization', 'fsync'])
+def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkeypatch, slow_phase):
+    import atomic_io
+    import xsmb_agents.engine as engine_module
+    from xsmb_agents import PredictiveEngine
+    frame = history(40)
+    frame.to_csv(tmp_path / 'xsmb.csv', index=False)
+    pred = tmp_path / 'predict'
+    pred.mkdir()
+    target = clock(frame).date().isoformat()
+    for mode in ('de', 'loto'):
+        pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
+            pred / f'predict_next_{mode}_all_{target}.csv', index=False)
+    moment = [clock(frame).replace(hour=17, minute=59)]
+    monkeypatch.setattr(engine_module, 'now_vietnam', lambda: moment[0])
+    real_json = online._json_bytes
+
+    def delayed_json(value):
+        result = real_json(value)
+        if slow_phase == 'serialization' and isinstance(value, dict) and '_checksum' in value:
+            moment[0] = clock(frame).replace(hour=18, minute=1)
+        return result
+
+    monkeypatch.setattr(online, '_json_bytes', delayed_json)
+    real_fsync = atomic_io.os.fsync
+
+    def delayed_fsync(fd):
+        real_fsync(fd)
+        if slow_phase == 'fsync':
+            moment[0] = clock(frame).replace(hour=18, minute=1)
+
+    monkeypatch.setattr(atomic_io.os, 'fsync', delayed_fsync)
+    with pytest.raises(ValueError, match='cutoff|18:00|quá giờ'):
+        PredictiveEngine().run(tmp_path)
+    assert not (tmp_path / 'online' / 'agents_de.json').exists()
+    assert list((tmp_path / 'online').glob('.agents_de.json.*')) == []
+
+
+@pytest.mark.parametrize('mode', ['de', 'loto'])
+def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mode, monkeypatch):
+    """100 số dùng chung thống kê nhóm; nén sổ không được nhân việc giải mã 100 lần."""
+    import base64
+    import copy
+    import hashlib
+    import zlib
+    from xsmb_agents.engine import MetaLearner, PredictiveEngine
+    frame = history(40)
+    p = np.linspace(1, 2, 100)
+    p = p / p.sum() if mode == 'de' else p / 7
+    predictions = {name: p for name in ('statistical', 'probabilistic', 'pattern')}
+    state, record = online.advance(online.new_state(mode, profile='agents'), frame, p,
+                                   clock(frame).date().isoformat(), now=clock(frame),
+                                   expert_predictions=predictions)
+    record['agent_diagnostics'] = {'pattern': {'status': 'insufficient_history'}}
+    record['knowledge_snapshot'] = {}
+    settled = []
+    for index in range(68):
+        item = copy.deepcopy(record)
+        if index < 20:
+            item['experts']['incumbent'] = np.full(100, baseline_rate(mode)).tolist()
+        labels = np.zeros(100)
+        labels[index % 100] = 1
+        if mode == 'loto':
+            labels[(np.arange(23) + index) % 100] = 1
+        item['settlement'] = {'status': 'scored', 'labels': labels.tolist(),
+                              'scores': online._scores(mode, item, labels)}
+        settled.append(item)
+    # Bản chưa chốt và ngày nghỉ không được trộn thành mẫu hiệu chuẩn.
+    raw = online._json_bytes(settled + [{'settlement': None}, {'settlement': {'status': 'non_draw'}}])
+    state['archive'] = [{'count': 70, 'sha256': hashlib.sha256(raw).hexdigest(),
+                         'zlib_base64': base64.b64encode(zlib.compress(raw)).decode()}]
+    state['records'] = [record]
+    learner = MetaLearner.__new__(MetaLearner)
+    learner.mode, learner.state = mode, state
+    expected = []
+    width = .01 if mode == 'de' else .05
+    for probability in p:
+        residuals = []
+        for item in settled:
+            historical_p = np.asarray(item['experts']['incumbent'])
+            selected = np.floor(historical_p / width) == np.floor(probability / width)
+            if selected.any():
+                residuals.append(float((np.asarray(item['settlement']['labels'])[selected]
+                                        - historical_p[selected]).mean()))
+        if len(residuals) < 60:
+            expected.append(None)
+            continue
+        stats = online._gain_stats(residuals)
+        center, radius = probability + stats['mean'], 1.96 * stats['se']
+        expected.append({'lower': max(0.0, center - radius), 'upper': min(1.0, center + radius),
+                         'draws': len(residuals), 'method': 'Xấp xỉ 95% theo nhóm, SE khối 7 kỳ',
+                         'per_number_guarantee': False})
+    real_decompress = zlib.decompress
+    calls = []
+
+    def counted_decompress(*args, **kwargs):
+        calls.append(None)
+        return real_decompress(*args, **kwargs)
+
+    monkeypatch.setattr(zlib, 'decompress', counted_decompress)
+    report = PredictiveEngine.explain(learner, record)
+    assert [item['calibration_band'] for item in report['items']] == expected
+    assert len(calls) <= 2, 'Chỉ giải mã một lần cho confidence_matrix và một lần cho toàn bộ bands'
+    learner.state = {**state, 'archive': [], 'records': settled[:59]}
+    assert learner.calibration_band(float(p[0])) is None
 
 
 def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observations():

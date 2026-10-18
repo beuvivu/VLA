@@ -223,6 +223,39 @@ def check_small_selection(page, pair_page):
     select_days(page, 10)
 
 
+def check_gan_keyboard(page):
+    """Popup thật giữ Tab bên trong, đóng trả focus và đổi mode không mất focus."""
+    trigger = page.locator('#sp-gan-pick')
+    trigger.focus()
+    trigger.select_option('12')
+    modal = page.locator('#sp-gan-modal')
+    expect(modal).to_have_attribute('open', '')
+    expect(modal.locator('[data-close]')).to_be_focused()
+    expect(modal).to_have_accessible_name('Chu kỳ gan · số 12')
+    for key in ('Shift+Tab', *('Tab',) * 8):
+        page.keyboard.press(key)
+        assert modal.evaluate('e => e.contains(document.activeElement)'), key
+    page.keyboard.press('Escape')
+    expect(modal).to_be_hidden()
+    expect(trigger).to_be_focused()
+
+    trigger.select_option('12')
+    mode = modal.locator('[data-gmode="de"]')
+    mode.focus()
+    page.keyboard.press('Enter')
+    expect(modal.locator('[data-gmode="de"]')).to_be_focused()
+    expect(modal.locator('[data-gmode="de"]')).to_have_class('sp-btn on')
+    if page.locator('#sp-picker').count():
+        modal.locator('[data-gfilter="12"]').click()
+        keys = page.locator('#sp-matrix-grid [data-key*="|n"]').evaluate_all(
+            'nodes => [...new Set(nodes.map(e => /\\|n(\\d{2})/.exec(e.dataset.key)[1]))]')
+        assert keys == ['12'], keys
+    else:
+        modal.locator('[data-close]').click()
+    expect(modal).to_be_hidden()
+    expect(trigger).to_be_focused()
+
+
 def check_detail_tables(page, base, out: Path, width, dark):
     """Giữ cỡ số khi chọn, đủ ma trận Đầu–Đuôi và phân cấp bảng chi tiết."""
     results = []
@@ -330,6 +363,8 @@ def check_stat_tables(page, base, out: Path, width, dark):
                 results.extend({"page":name, "width":width, "dark":dark, **state}
                                for state in check_full_history(page))
                 check_small_selection(page, name == 'tan-suat-cap-loto.html')
+            if frequency:
+                check_gan_keyboard(page)
             if name in ('bang-dac-biet-thang.html', 'bang-dac-biet-nam.html'):
                 picker = page.locator('#sp-year' if name.endswith('thang.html') else '#sp-month')
                 values = picker.locator('option').evaluate_all('nodes => nodes.map(n => n.value)')

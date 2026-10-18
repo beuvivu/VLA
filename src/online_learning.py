@@ -16,6 +16,7 @@ import copy
 import hashlib
 import json
 import zlib
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -637,10 +638,27 @@ def advance(
     return result, copy.deepcopy(record)
 
 
-def save_state(path: Path, state: dict) -> None:
+def save_state(
+    path: Path, state: dict, *, forecast_target: str | None = None,
+    clock: Callable[[], datetime] | None = None,
+) -> None:
     """Ghi JSON nguyên tử có checksum; lỗi không đè lên sổ đang dùng."""
     _validate_state(state, state["mode"])
-    atomic_write_bytes(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
+    payload = _json_bytes({**state, "_checksum": _digest(state)})
+    # Chấm lại, mã hóa và ghi đĩa đều có thể vượt hạn. Kiểm sớm rồi kiểm lại
+    # sau fsync, ngay trước replace; khôi phục bản đóng băng không bị chặn.
+    before_replace = None
+    if forecast_target is not None:
+        deadline = datetime.combine(_date(forecast_target), FORECAST_CUTOFF, VIETNAM_TZ)
+
+        def check_cutoff() -> None:
+            local = _clock(clock() if clock is not None else now_vietnam())
+            if local >= deadline:
+                raise ValueError("Đã quá cutoff 18:00 ICT trước khi ghi sổ")
+
+        check_cutoff()
+        before_replace = check_cutoff
+    atomic_write_bytes(Path(path), payload, before_replace=before_replace)
 
 
 def load_state(path: Path, mode: str, *, profile: str = "legacy") -> dict:
@@ -695,13 +713,15 @@ def run_online(
     data_dir = Path(data_dir)
     out_dir = Path(out_dir) if out_dir is not None else data_dir / "predict"
     state_path = data_dir / "online" / f"{mode}.json"
-    local = _clock(now or now_vietnam())
+    clock = (lambda: _clock(now)) if now is not None else (lambda: _clock(now_vietnam()))
     with _locked(state_path.with_suffix(".lock")):
+        local = clock()
         frame = _history(pd.read_csv(data_dir / "xsmb.csv", dtype={"date": str}))
         target = (_date(frame.iloc[-1]["date"]) + timedelta(days=1)).isoformat()
         prediction_path = out_dir / f"predict_next_{mode}_all_{target}.csv"
         published_frame, incumbent = _prediction_frame(prediction_path, mode)
         state = load_state(state_path, mode)
+        existing = any(record["target_date"] == target for record in state["records"])
         updated, record = advance(state, frame, incumbent, target, now=local)
         report = {
             "schema_version": SCHEMA_VERSION,
@@ -723,7 +743,7 @@ def run_online(
             "journal_sha256": _digest(updated),
         }
         # Sổ ghi trước artifact: nếu tiến trình ngắt, chạy lại khôi phục chính vector này.
-        save_state(state_path, updated)
+        save_state(state_path, updated, forecast_target=None if existing else target, clock=clock)
         final = np.asarray(record["published"])
         changed = not np.array_equal(incumbent, final)
         if changed:

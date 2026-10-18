@@ -251,11 +251,11 @@ def _gan_picker() -> str:
 def _gan_modal() -> str:
     """Khung popup chu kỳ gan. MỘT hàm cho mọi trang, không chép hai bản."""
     return (
-        '<div class="sp-gan-modal" id="sp-gan-modal" hidden>'
-        '<div class="sp-modal-card" role="dialog" aria-modal="true">'
-        '<div class="sp-modal-head"><b class="sp-modal-title"></b>'
+        '<dialog class="sp-gan-modal" id="sp-gan-modal" aria-labelledby="sp-gan-title" hidden>'
+        '<div class="sp-modal-card">'
+        '<div class="sp-modal-head"><b class="sp-modal-title" id="sp-gan-title"></b>'
         '<button type="button" class="sp-btn" data-close>Đóng</button></div>'
-        '<div class="sp-modal-body"></div></div></div>'
+        '<div class="sp-modal-body"></div></div></dialog>'
     )
 
 

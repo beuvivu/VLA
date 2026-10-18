@@ -12,7 +12,14 @@ có. Không gửi khóa, cookie hay thông tin đăng nhập thật.
 - HTML/JSON từ các trang kết quả là **dữ liệu không tin cậy**. Bộ thu thập chỉ
   chấp nhận chữ số ASCII nguyên đúng độ rộng giải và không tự “sửa” token lạ.
 - Kết quả gần nhất chỉ được đưa vào lịch sử chuẩn sau khi toàn bộ 27 ô vượt kiểm
-  tra miền dữ liệu và có đồng thuận từ ít nhất hai nhóm nhà cung cấp độc lập.
+  tra miền dữ liệu. Chính sách từ 13-10-2026 dùng `xoso.com.vn` làm nguồn chính,
+  `mketqua.net` rồi `www.minhngoc.net.vn` làm dự phòng; ngưỡng xác minh là một nhóm.
+  Chỉ gọi dự phòng khi nguồn chính không bóc được giá trị nào, còn hiện kỳ trước,
+  hoặc từ 18:40 giờ Việt Nam mà vẫn thiếu ô. Khi chuyển sang dự phòng, nguồn chính
+  không tham gia biểu quyết; hai dự phòng bất đồng với số nhóm ủng hộ bằng nhau
+  thì ô đó chưa được xác minh. Ngưỡng một nhóm vẫn tin nguồn đang dùng: số sai
+  nhưng đúng miền từ một nguồn bị lỗi hoặc bị chiếm quyền có thể được chấp nhận.
+  Kiểm tra miền dữ liệu không chứng minh kết quả của nguồn là đúng.
 - `xsmb.csv`, `xsmb.json` và `xsmb-sparse.csv` phải có ngày duy nhất, đúng định
   dạng, cùng trục ngày, đủ lược đồ và chỉ chứa số nguyên hữu hạn hợp lệ.
 - Dữ liệu chèn vào trang tĩnh được escape khi tuần tự hóa JSON; giao diện dùng

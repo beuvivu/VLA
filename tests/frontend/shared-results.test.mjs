@@ -130,6 +130,22 @@ test('chế độ cặp, đổi bố cục, dựng lại và xoá dấu của S�
   assert.equal(d.getElementById('tr-mark-clear').hidden, true);
 });
 
+test('chọn cả cặp gộp dấu ô riêng để bấm bỏ cặp không còn ô mắc dấu', t => {
+  const dom = setup(t, 'traditional'), d = dom.window.document;
+  const numbers = d.querySelectorAll('.tr-number');
+  numbers[4].click();
+  assert.deepEqual(marked(d), [numbers[4]]);
+  const pairMode = d.getElementById('tr-pair-mode');
+  pairMode.checked = true;
+  pairMode.dispatchEvent(new dom.window.Event('change'));
+  numbers[5].click();
+  assert.equal(marked(d).length, 12);
+  assert.equal(d.getElementById('tr-mark-clear').textContent, 'Bỏ đánh dấu (1)');
+  numbers[4].click();
+  assert.equal(marked(d).length, 0);
+  assert.equal(d.getElementById('tr-mark-clear').hidden, true);
+});
+
 test('thiếu ký hiệu không nhận mã hôm trước và metadata chỉ được dựng thành chữ', t => {
   const dom = setup(t), d = dom.window.document;
   const shared = dom.window.TraditionalResults;

@@ -15,13 +15,16 @@ from __future__ import annotations
 import io
 import os
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
 
 
-def atomic_write_bytes(path: Path, content: bytes) -> None:
-    """Thay ``path`` bằng ``content``; lỗi ở bất kỳ bước nào giữ nguyên tệp cũ."""
+def atomic_write_bytes(
+    path: Path, content: bytes, *, before_replace: Callable[[], None] | None = None,
+) -> None:
+    """Thay đích nguyên tử; chốt tùy chọn sau fsync có thể hủy mà giữ tệp cũ."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -30,6 +33,8 @@ def atomic_write_bytes(path: Path, content: bytes) -> None:
             stream.write(content)
             stream.flush()
             os.fsync(stream.fileno())
+        if before_replace is not None:
+            before_replace()
         os.replace(temporary, path)
     finally:
         if os.path.exists(temporary):

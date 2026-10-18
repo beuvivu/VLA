@@ -28,6 +28,9 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`qa/2026-10-18-quality-plan.md`](qa/2026-10-18-quality-plan.md) | Phạm vi, ràng buộc và kế hoạch kiểm toán XSMB, Vietlott, UI, bảo mật và kiểm chứng. |
+| [`qa/2026-10-18-repository-audit.md`](qa/2026-10-18-repository-audit.md) | Lỗi đã tái hiện, mã đã sửa, số đo hiệu năng, kiểm thử và checklist duy trì chất lượng toàn repo. |
+| [`qa/2026-10-18-pairs-and-special-marks.md`](qa/2026-10-18-pairs-and-special-marks.md) | Kiểm chứng bố cục cặp lộn, dấu chọn Đặc Biệt và các bảng theo tổng. |
 | [`plans/2026-10-17-ui-experience.md`](plans/2026-10-17-ui-experience.md) | Phạm vi và tiêu chí nghiệm thu giao diện trang chủ, ma trận, workspace phân tích và Đặc Biệt theo năm. |
 | [`qa/2026-10-17-ui-experience.md`](qa/2026-10-17-ui-experience.md) | Bằng chứng kiểm thử và render, lỗi được phát hiện trong nghiệm thu, cách dựng giữ nguyên dữ liệu. |
 | [`qa/2026-10-10-step-4-5-verification.md`](qa/2026-10-10-step-4-5-verification.md) | Đối chiếu và khép bước 4–5: dependency/BH-FDR, source manifest benchmark tự động, kiểm scan/source mutation, hai benchmark mới và bằng chứng kiểm thử/CI. |

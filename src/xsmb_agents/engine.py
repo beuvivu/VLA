@@ -33,9 +33,10 @@ class MetaLearner:
                                             now=now, expert_predictions=predictions)
         return record
 
-    def save(self) -> None:
+    def save(self, *, forecast_target: str | None = None,
+             clock: Callable[[], datetime] | None = None) -> None:
         """Kiểm checksum, cấu trúc và điểm trước khi thay sổ nguyên tử."""
-        online.save_state(self.path, self.state)
+        online.save_state(self.path, self.state, forecast_target=forecast_target, clock=clock)
 
     def confidence_matrix(self) -> dict:
         """Loss của từng tầng, cỡ mẫu thật và hiệu quả so với nền."""
@@ -55,29 +56,42 @@ class MetaLearner:
         return rows
 
     def calibration_band(self, probability: float) -> dict | None:
+        """Khoảng của một con, dùng chung phép chấm theo nhóm với báo cáo."""
+        return self.calibration_bands([probability])[0]
+
+    def calibration_bands(self, probabilities: list[float] | np.ndarray) -> list[dict | None]:
         """Sai số hiệu chuẩn theo nhóm, SE khối theo kỳ; thiếu mẫu trả null.
 
         Đây là khoảng xấp xỉ cho nhóm xác suất tương tự, không phải chứng
-        minh về một con cụ thể hay xác suất mô hình đúng.
+        minh về một con cụ thể hay xác suất mô hình đúng. Giải nén sổ một
+        lần cho cả vector; các con cùng nhóm dùng chung sai số và cỡ mẫu.
         """
-        residuals = []
+        width = .01 if self.mode == "de" else .05
+        buckets = np.floor(np.asarray(probabilities, dtype=float) / width)
+        residuals = {bucket: [] for bucket in np.unique(buckets)}
         for record in online._all_records(self.state):
             if not online._is_scored(record):
                 continue
             p = np.asarray(record["experts"]["incumbent"])
             y = np.asarray(record["settlement"]["labels"])
-            width = .01 if self.mode == "de" else .05
-            selected = np.floor(p / width) == np.floor(probability / width)
-            if selected.any():
-                residuals.append(float((y[selected] - p[selected]).mean()))
-        if len(residuals) < 60:
-            return None
-        stats = online._gain_stats(residuals)
-        center = probability + stats["mean"]
-        radius = 1.96 * stats["se"]
-        return {"lower": max(0.0, center - radius), "upper": min(1.0, center + radius),
-                "draws": len(residuals), "method": "Xấp xỉ 95% theo nhóm, SE khối 7 kỳ",
-                "per_number_guarantee": False}
+            historical_buckets = np.floor(p / width)
+            for bucket, values in residuals.items():
+                selected = historical_buckets == bucket
+                if selected.any():
+                    values.append(float((y[selected] - p[selected]).mean()))
+        stats_by_bucket = {bucket: online._gain_stats(values)
+                           for bucket, values in residuals.items() if len(values) >= 60}
+        bands = []
+        for probability, bucket in zip(probabilities, buckets, strict=True):
+            stats = stats_by_bucket.get(bucket)
+            if stats is None:
+                bands.append(None)
+                continue
+            center, radius = float(probability) + stats["mean"], 1.96 * stats["se"]
+            bands.append({"lower": max(0.0, center - radius), "upper": min(1.0, center + radius),
+                          "draws": len(residuals[bucket]), "method": "Xấp xỉ 95% theo nhóm, SE khối 7 kỳ",
+                          "per_number_guarantee": False})
+        return bands
 
 
 class PredictiveEngine:
@@ -137,7 +151,7 @@ class PredictiveEngine:
             if existing is None and clock() >= datetime.combine(
                     online._date(target), online.FORECAST_CUTOFF, online.VIETNAM_TZ):
                 raise ValueError("Đã quá cutoff 18:00 ICT trước khi ghi sổ")
-            learner.save()
+            learner.save(forecast_target=target if existing is None else None, clock=clock)
             modes[mode] = self.explain(learner, record)
         report = {"schema_version": 1, "anchor_date": anchor, "target_date": target,
                   "generated_at": min(item["generated_at"] for item in modes.values()),
@@ -163,6 +177,7 @@ class PredictiveEngine:
         pattern = record["agent_diagnostics"]["pattern"]
         if pattern.get("status") == "fitted" and not pattern["converged"]:
             risks.append("Mạng mẫu hình chưa hội tụ trong giới hạn huấn luyện; cần đọc cùng loss tiến cứu.")
+        calibration_bands = learner.calibration_bands(incumbent)
         items = []
         for number in range(100):
             contributions = [{"agent": name, "label": LABELS[name], "weight": record['weights'][name],
@@ -175,7 +190,7 @@ class PredictiveEngine:
                           "candidate_probability": float(candidate[number]),
                           "hit_probability_percent": float(100 * incumbent[number]),
                           "contributions": contributions,
-                          "calibration_band": learner.calibration_band(float(incumbent[number])),
+                          "calibration_band": calibration_bands[number],
                           "reasoning_path": [
                               f"Chỉ dùng lịch sử đến {record['anchor_fingerprint']['last_date']}.",
                               "Tần suất làm tiên nghiệm cho Markov/đồ thị; mạng đọc đặc trưng chuỗi và ngữ cảnh tương tự.",

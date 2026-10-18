@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.games import GameSpec
 from vietlott_engine.core.logging import get_logger
+from vietlott_engine.core.models import Draw
 from vietlott_engine.core.products import ProductCode
 from vietlott_engine.crawler.official_data import import_canonical
 from vietlott_engine.crawler.sources.base import DrawSource, FetchResult
@@ -86,8 +87,11 @@ class FallbackDrawSource(DrawSource):
         self.log = FallbackLog()
 
     async def fetch(self, spec: GameSpec, since_id: int | None = None) -> FetchResult:
-        """Nguồn ĐẦU TIÊN có kỳ mới quyết định các kỳ nó đưa; nguồn sau chỉ NỐI THÊM kỳ liền mạch
-        ngay sau kỳ cao nhất đã có, không bao giờ thay một kỳ nguồn trước đã đưa.
+        """Nguồn đứng trước quyết định các kỳ nó đưa, kể cả khi đang chờ lấp khoảng hở.
+
+        Khi có cursor, chỉ phát đoạn liền mạch ngay sau cursor. Nguồn sau được hỏi từ cuối đoạn
+        ấy để lấp chỗ thiếu, không nhảy tới kỳ cao nhất còn nằm trong bộ đệm. Khởi động không có
+        cursor vẫn giữ toàn bộ lô đầu, vì nguồn có thể chỉ giữ một phần lịch sử.
 
         Dừng ở nguồn đầu tiên thì một bản sao bắt kịp một phần (có #927, chưa có #928) che mất kỳ mà
         nguồn sau đã có, và kho trễ thêm một lượt chạy — đúng lúc đang bù các lượt bị lỡ.
@@ -95,6 +99,8 @@ class FallbackDrawSource(DrawSource):
         self.log = FallbackLog()
         empty = None
         result: FetchResult | None = None
+        pending: dict[int, tuple[Draw, int]] = {}
+        rejected_by_attempt: dict[int, list[tuple[str, str]]] = {}
         used: list[str] = []
         for src in self.sources:
             # Nguồn sau được hỏi từ đuôi kết quả đã gộp: trang chỉ giữ vài kỳ gần nhất (xskt) vẫn
@@ -106,6 +112,28 @@ class FallbackDrawSource(DrawSource):
                 msg = (str(exc).splitlines() or [type(exc).__name__])[0][:300]
                 log.warning("%s: source %s failed (%s); trying the next one", spec.code.value, src.name, msg)
                 self.log.attempts.append(Attempt(src.name, False, error=msg))
+                continue
+            if since_id is not None:
+                attempt_index = len(self.log.attempts)
+                self.log.attempts.append(Attempt(src.name, False, error=f'no contiguous draws after #{cursor}'))
+                rejected_by_attempt[attempt_index] = res.rejected
+                if not res.draws:
+                    empty = empty or res
+                for draw in res.draws:
+                    if draw.draw_id > cursor:
+                        pending.setdefault(draw.draw_id, (draw, attempt_index))
+                extra, nxt = [], cursor + 1
+                while nxt in pending:
+                    draw, origin = pending.pop(nxt)
+                    extra.append(draw)
+                    attempt = self.log.attempts[origin]
+                    attempt.ok, attempt.error = True, None
+                    attempt.rows += 1
+                    nxt += 1
+                if extra:
+                    if result is None:
+                        result = FetchResult()
+                    result.draws += extra
                 continue
             if result is None:
                 if not res.draws:
@@ -132,8 +160,14 @@ class FallbackDrawSource(DrawSource):
             else:
                 self.log.attempts.append(Attempt(src.name, False, error=f'no draws after #{nxt - 1}'))
         if result is not None:
+            if since_id is not None:
+                used = [attempt.source for attempt in self.log.attempts if attempt.ok]
+                result.rejected = [item for index, rejected in rejected_by_attempt.items()
+                                   if self.log.attempts[index].ok for item in rejected]
             self.name = "auto:" + "+".join(used)
             return result
+        if pending:
+            raise SourceError(f"all sources exhausted with missing draw #{since_id + 1}")
         if empty is not None:
             return empty  # empty is legitimate, but must not hide a newer fallback
         raise SourceError("all sources failed: " + "; ".join(f"{a.source}: {a.error}" for a in self.log.attempts))

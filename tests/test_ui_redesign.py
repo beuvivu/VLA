@@ -902,16 +902,16 @@ def test_no_page_shows_a_raw_html_entity(page: Path) -> None:
     assert "&amp;lt;" not in text, page.name
 
 
-# --- Khu dự đoán ngày mai: xếp dọc ----------------------------------------
+# --- Khu dự đoán ngày mai: ba thẻ ngang, mô phỏng được ưu tiên --------------
 
 
-def test_next_day_cards_keep_three_horizontal_tracks_with_internal_scroll() -> None:
-    """Yêu cầu mới giữ ba thẻ ngang, kể cả khi màn hẹp cần cuộn nội bộ."""
+def test_next_day_cards_prioritize_simulation_with_internal_scroll() -> None:
+    """Giữ bố cục 2:1:1 đã có ở generator và cuộn nội bộ khi màn hẹp."""
     css = _css(DOCS / "index.html")
     rule = re.search(r"\.next-day\{([^}]*)\}", css)
     assert rule, "không tìm thấy quy tắc .next-day"
     body = rule.group(1)
-    assert "grid-template-columns:repeat(3,minmax(400px,1fr))" in body
+    assert "grid-template-columns:minmax(400px,2fr)repeat(2,minmax(280px,1fr))" in body
     assert "overflow-x:auto" in body and "align-items:stretch" in body
 
 

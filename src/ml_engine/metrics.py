@@ -21,15 +21,11 @@ sót:
 Ngưỡng hòa vốn là con số quan trọng nhất trong tệp này
 -------------------------------------------------------
 
-Với luật chi trả LOTO thông thường (đặt 23, trúng được 80), tỉ lệ trúng cần để
-hòa vốn là ``23/80 = 28.75%``, trong khi nền là 23.77%. Nghĩa là hệ thống phải
-đạt mức cải thiện **tương đối +21%** chỉ để *không lỗ*.
-
-Con số đó gần như trùng với mức chênh lệch nhỏ nhất mà 391 kỳ đủ sức phát hiện
-(+25.4%). Hai đại lượng này đến từ hai phép tính hoàn toàn độc lập, và việc
-chúng gặp nhau nói lên điều cốt lõi: **ngưỡng để có lãi nằm đúng ở ranh giới
-khả năng phát hiện của dữ liệu**. Một hệ thống báo rằng nó vượt ngưỡng đó, trên
-lịch sử cỡ này, gần như chắc chắn đang đo may rủi.
+Với luật chi trả LOTO thông thường (đặt 23, nhận 80 mỗi nháy), số nháy kỳ vọng
+cần để hòa vốn là ``23/80 = 0.2875`` trên mỗi con mỗi kỳ. Nền là
+``27/100 = 0.27`` nháy, nên cần cải thiện **tương đối +6.48%** để hòa vốn.
+Xác suất về ít nhất một lần (23.77%) chỉ dùng chấm xác suất và Hit-Rate;
+không thể dùng thay số nháy để tính doanh thu hay suy công suất kiểm định ROI.
 """
 
 from __future__ import annotations
@@ -40,6 +36,7 @@ from typing import Final
 import numpy as np
 
 from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
+from xsmb_domain import LOTO_DRAWS_PER_DAY
 
 _EPSILON: Final[float] = 1e-6
 
@@ -49,6 +46,7 @@ DEFAULT_K_VALUES: Final[tuple[int, ...]] = (3, 5, 10, 27)
 #: Luật chi trả LOTO thông thường, đơn vị nghìn đồng cho một điểm.
 DEFAULT_STAKE: Final[float] = 23.0
 DEFAULT_PAYOUT: Final[float] = 80.0
+BASELINE_OCCURRENCES: Final[float] = LOTO_DRAWS_PER_DAY / NUMBER_SPACE
 
 
 @dataclass(frozen=True)
@@ -57,7 +55,7 @@ class EconomicModel:
 
     Attributes:
         stake: Chi phí đặt một điểm.
-        payout: Số tiền nhận về khi một điểm trúng.
+        payout: Số tiền nhận về cho mỗi nháy của một điểm.
     """
 
     stake: float = DEFAULT_STAKE
@@ -71,17 +69,17 @@ class EconomicModel:
 
     @property
     def break_even_rate(self) -> float:
-        """Tỉ lệ trúng cần có để hòa vốn."""
+        """Số nháy kỳ vọng trên mỗi con mỗi kỳ cần có để hòa vốn."""
         return self.stake / self.payout
 
     @property
     def baseline_edge(self) -> float:
-        """Lợi thế (âm) của người chơi ở đúng tỉ lệ nền, tính theo tỉ lệ đặt cược."""
-        return (BASELINE_RATE * self.payout - self.stake) / self.stake
+        """Lợi thế (âm) với số nháy nền, tính theo tỉ lệ đặt cược."""
+        return (BASELINE_OCCURRENCES * self.payout - self.stake) / self.stake
 
     def required_relative_lift(self) -> float:
-        """Mức cải thiện tương đối so với nền để hòa vốn."""
-        return self.break_even_rate / BASELINE_RATE - 1.0
+        """Mức cải thiện số nháy tương đối so với nền để hòa vốn."""
+        return self.break_even_rate / BASELINE_OCCURRENCES - 1.0
 
 
 @dataclass(frozen=True)
@@ -95,6 +93,7 @@ class DailyScore:
         baseline_brier: Điểm Brier của nền.
         hit_rate_at: Số con trúng trong Top-K, theo từng K.
         actual_hits: Tổng số con thực về trong kỳ.
+        occurrences_at: Tổng số nháy trong Top-K, chỉ dùng tính tiền thưởng.
     """
 
     logloss: float
@@ -103,6 +102,7 @@ class DailyScore:
     baseline_brier: float
     hit_rate_at: dict[int, int]
     actual_hits: int
+    occurrences_at: dict[int, int]
 
 
 def validate_probabilities(probabilities: np.ndarray) -> np.ndarray:
@@ -122,6 +122,7 @@ def score_day(
     outcome: np.ndarray,
     *,
     k_values: tuple[int, ...] = DEFAULT_K_VALUES,
+    counts: np.ndarray | None = None,
 ) -> DailyScore:
     """Chấm một kỳ.
 
@@ -129,6 +130,8 @@ def score_day(
         probabilities: Mảng ``(100,)`` xác suất khai báo.
         outcome: Mảng ``(100,)`` giá trị 0/1, con đó có về hay không.
         k_values: Các mức K cần tính Hit-Rate.
+        counts: Số nháy thực cho 100 con, phải khớp ``outcome``. Khi không
+            truyền, chỉ biết mỗi con về ít nhất một nháy nên dùng ``outcome``.
 
     Returns:
         Điểm của kỳ đó.
@@ -142,6 +145,14 @@ def score_day(
         raise ValueError(f"cần hai mảng dạng ({NUMBER_SPACE},)")
     if not np.all(np.isfinite(outcome)) or not np.all((outcome == 0) | (outcome == 1)):
         raise ValueError("outcome phải hữu hạn và nhị phân 0/1")
+    occurrences = outcome if counts is None else np.asarray(counts)
+    if occurrences.shape != (NUMBER_SPACE,):
+        raise ValueError(f"counts phải có dạng ({NUMBER_SPACE},)")
+    if (occurrences.dtype.kind not in "buif" or not np.all(np.isfinite(occurrences))
+            or np.any(occurrences < 0) or np.any(occurrences != np.floor(occurrences))):
+        raise ValueError("counts phải là số nguyên hữu hạn không âm")
+    if not np.array_equal(occurrences > 0, outcome > 0):
+        raise ValueError("counts phải khớp các con về trong outcome")
 
     p = np.clip(probabilities, _EPSILON, 1.0 - _EPSILON)
     y = outcome.astype(float)
@@ -155,6 +166,7 @@ def score_day(
         baseline_brier=float(np.mean((b - y) ** 2)),
         hit_rate_at={k: int(y[order[:k]].sum()) for k in k_values},
         actual_hits=int(y.sum()),
+        occurrences_at={k: int(occurrences[order[:k]].sum()) for k in k_values},
     )
 
 
@@ -229,17 +241,20 @@ class PerformanceTracker:
         self.economics = economics or EconomicModel()
         self._scores: list[DailyScore] = []
 
-    def add(self, probabilities: np.ndarray, outcome: np.ndarray) -> DailyScore:
+    def add(
+        self, probabilities: np.ndarray, outcome: np.ndarray, *, counts: np.ndarray | None = None
+    ) -> DailyScore:
         """Chấm và ghi nhận một kỳ.
 
         Args:
             probabilities: Xác suất khai báo cho 100 con.
             outcome: Kết quả thật, 0/1 cho 100 con.
+            counts: Số nháy thực; khi thiếu chỉ ghi một nháy cho mỗi con về.
 
         Returns:
             Điểm của kỳ vừa thêm.
         """
-        score = score_day(probabilities, outcome, k_values=self.k_values)
+        score = score_day(probabilities, outcome, k_values=self.k_values, counts=counts)
         self._scores.append(score)
         return score
 
@@ -291,7 +306,8 @@ class PerformanceTracker:
             random_rate[k] = float((k / NUMBER_SPACE) * actual.mean())
             precision[k] = float((hits / k).mean())
             recall[k] = float((hits / np.maximum(actual, 1.0)).mean())
-            revenue = hits * self.economics.payout
+            occurrences = np.array([s.occurrences_at.get(k, 0) for s in self._scores], dtype=float)
+            revenue = occurrences * self.economics.payout
             cost = k * self.economics.stake
             profit[k] = float(((revenue - cost) / cost).mean())
 

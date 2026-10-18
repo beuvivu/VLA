@@ -67,22 +67,19 @@ Bộ mã nguồn vận hành hoàn toàn trên GitHub để tự động thu th�
 
 ### Nguồn dữ liệu theo thứ tự ưu tiên
 
-1. `xoso.com.vn`
-2. `mketqua.net`
-3. `www.minhngoc.net.vn`
-4. `xosominhngoc.com`
-5. `xosodaiphat.com`
-6. `hainhay.net`
-7. `xskt.vn`
+1. Nguồn chính: `xoso.com.vn`.
+2. Dự phòng theo thứ tự ưu tiên: `mketqua.net`, rồi `www.minhngoc.net.vn`.
 
-Kết quả mới không được ghi thẳng vào lịch sử chỉ vì một trang web đã hiển thị. Với kỳ quay gần nhất, hệ thống chuẩn hóa đúng độ dài từng giải, đối chiếu toàn bộ 27 giá trị và yêu cầu **ít nhất 2 nhóm nhà cung cấp độc lập** đồng thuận. Hai tên miền Minh Ngọc được coi là cùng một nhóm nhà cung cấp để tránh đếm trang phản chiếu như hai xác nhận độc lập.
+Theo chính sách từ 13-10-2026, chỉ gọi dự phòng khi nguồn chính gặp sự cố: không bóc được giá trị nào, hoặc từ **18:40 giờ Việt Nam** của kỳ quay mà vẫn thiếu ô (`sources.primary_has_failed`). Thiếu ô trong lúc quay trước mốc này là bình thường. Khi nguồn chính gặp sự cố, chỉ dữ liệu dự phòng được hợp nhất; nguồn chính không tham gia biểu quyết.
 
-Dữ liệu trực tiếp là tạm thời và được giữ tách biệt khỏi lịch sử chuẩn cho tới khi đủ đồng thuận.
+Hệ thống chỉ nhận số ASCII đúng độ dài từng giải và chỉ ghi kết quả mới vào lịch sử chuẩn khi đủ **27 ô được xác minh**, với ngưỡng **ít nhất 1 nhóm nhà cung cấp** cho mỗi ô. Nếu hai dự phòng trả số khác nhau ở cùng ô thì đó là thế hòa: số ưu tiên có thể hiện tạm thời nhưng ô ấy chưa được xác minh. Trang mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị loại là dữ liệu cũ (`StalePage`), không được dùng để xác minh kỳ mới.
+
+Dữ liệu trực tiếp là tạm thời và được giữ tách biệt khỏi lịch sử chuẩn cho tới khi đủ điều kiện xác minh.
 
 ## Chức năng chính
 
 - Thu thập đa nguồn, thử lại, kiểm toán nguồn và cổng sức khỏe dữ liệu.
-- XSMB gần thời gian thực bằng GitHub Actions: 7 nguồn được tải song song, hợp nhất từng ô giải và cập nhật JSON trực tiếp khi dữ liệu thay đổi.
+- XSMB gần thời gian thực bằng GitHub Actions: thăm dò nguồn chính, chỉ gọi hai dự phòng khi nguồn chính gặp sự cố, hợp nhất từng ô giải và cập nhật JSON trực tiếp khi dữ liệu thay đổi.
 - Bộ phân tích cú pháp nghiêm ngặt: không chèn số 0 vào chỗ trống hoặc số đang quay chưa đủ độ dài.
 - Thống kê tần suất, gan, chu kỳ, nháy, đầu/đuôi/tổng, chạm, cặp lộn, lô rơi, ma trận ngày/tuần/tháng/năm.
 - Kiểm định thống kê với co Bayes, khoảng tin cậy, kiểm soát nhiều phép thử/FDR và chẩn đoán entropy/dịch chuyển.
@@ -138,7 +135,7 @@ Vào:
 Lần chạy đầu sẽ:
 
 1. Nạp lịch sử đã ghi nhận.
-2. Đồng bộ ngày thiếu từ 7 nguồn.
+2. Đồng bộ ngày thiếu theo chính sách một nguồn chính và hai dự phòng.
 3. Chỉ đưa kết quả mới vào dữ liệu chuẩn khi vượt cổng kiểm định/đồng thuận.
 4. Chạy thống kê và kiểm định.
 5. Khớp lại đường cầu.
@@ -158,7 +155,7 @@ Workflow:
 
 `Kết quả XSMB gần thời gian thực`
 
-được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp tải 7 nguồn song song; chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
+được lập lịch lúc **18:00 Asia/Ho_Chi_Minh (UTC+7)**. Một tiến trình chạy trong cửa sổ quay và thăm dò khoảng **15 giây/lần** trong tối đa 60 phút. Mỗi ảnh chụp hỏi nguồn chính trước; hai dự phòng chỉ được gọi khi nguồn chính không trả giá trị nào hoặc từ 18:40 vẫn thiếu ô. Chỉ dữ liệu thay đổi mới được buộc xuất bản thành `live/live.json` trên nhánh `live`.
 
 `docs/live.html` đọc JSON gốc từ nhánh `live`, vì vậy không phải dựng lại toàn bộ GitHub Pages mỗi lần có thêm một giải.
 
@@ -166,7 +163,7 @@ Các trạng thái trực tiếp:
 
 - `waiting`: đang chờ, chưa có giá trị.
 - `live`: đang có kết quả từng phần.
-- `complete_provisional`: đủ 27 giá trị nhưng chưa đủ đồng thuận độc lập.
+- `complete_provisional`: đủ 27 giá trị nhưng chưa đủ điều kiện xác minh toàn bộ ô.
 - `complete_conflict`: đã đủ nhưng các nguồn còn xung đột.
 - `complete_verified`: toàn bộ 27 ô đã được xác minh; tác vụ trực tiếp có thể dừng.
 
@@ -189,9 +186,9 @@ Hệ thống vận hành tự động bằng GitHub Actions; không cần chạy
 
 | Lớp tự động | Giờ Việt Nam | Hành vi |
 |---|---|---|
-| Gần thời gian thực chính | **18:00** | Mở cửa sổ trực tiếp trước giờ quay, thăm dò khoảng 15 giây/lần và kiểm chứng nhiều nguồn. |
+| Gần thời gian thực chính | **18:00** | Mở cửa sổ trực tiếp trước giờ quay, thăm dò khoảng 15 giây/lần từ nguồn chính; chỉ gọi dự phòng khi nguồn chính gặp sự cố. |
 | Bộ giám sát trực tiếp | **17:55, 18:05, 18:15, 18:25, 18:45** | Nếu dữ liệu trực tiếp chưa có nhịp báo của ngày hiện tại, tự gọi lại quy trình trực tiếp. |
-| Hoàn tất hằng ngày | **18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00** | Thăm dò/tải, yêu cầu ≥2 nhóm nhà cung cấp độc lập, ghi dữ liệu chuẩn trước rồi mới chạy thống kê + AI/ML + dự báo + README + Pages. |
+| Hoàn tất hằng ngày | **18:30, 18:40, 18:50, 19:00, 19:10, 19:20, 19:30, 19:45, 20:00** | Thăm dò/tải theo chính sách một nguồn chính và hai dự phòng, yêu cầu ≥1 nhóm nhà cung cấp cho mỗi ô và không có thế hòa, ghi dữ liệu chuẩn trước rồi mới chạy thống kê + AI/ML + dự báo + README + Pages. |
 | Phục hồi dữ liệu chuẩn | **19:05, 19:25, 19:45, 20:05** | Nếu dữ liệu chuẩn còn cũ hoặc kiểm toán artifact không đạt, tự gọi lại quy trình hoàn tất hằng ngày. |
 | Phục hồi Pages | **20:10–20:35** | Thử lại việc triển khai Pages độc lập khi dữ liệu chuẩn đã ổn. |
 | Lưới an toàn qua đêm | **07:15** | Kiểm tra lại dữ liệu chuẩn, dự báo, README, artifact mô hình, bảng điều khiển và đối soát dữ liệu trực tiếp. |

@@ -72,6 +72,38 @@ def test_atomic_write_keeps_the_old_file_and_leaves_no_temporary(tmp_path: Path)
     assert [p.name for p in tmp_path.iterdir()] == ["sổ.csv"]
 
 
+@pytest.mark.parametrize("reject", [False, True])
+def test_atomic_write_checks_guard_after_fsync_and_before_replacing(tmp_path, monkeypatch, reject):
+    """Chốt ngay sau ghi đĩa được quyền hủy thay đích, không để lại tệp tạm."""
+    target = tmp_path / "journal.json"
+    target.write_bytes(b"old")
+    events = []
+    real_fsync = atomic_io.os.fsync
+
+    def synced(fd):
+        real_fsync(fd)
+        events.append("fsync")
+
+    def guard():
+        events.append("guard")
+        assert events == ["fsync", "guard"]
+        assert target.read_bytes() == b"old"
+        temporary, = tmp_path.glob(".journal.json.*")
+        assert temporary.read_bytes() == b"new"
+        if reject:
+            raise ValueError("cutoff")
+
+    monkeypatch.setattr(atomic_io.os, "fsync", synced)
+    if reject:
+        with pytest.raises(ValueError, match="cutoff"):
+            atomic_io.atomic_write_bytes(target, b"new", before_replace=guard)
+    else:
+        atomic_io.atomic_write_bytes(target, b"new", before_replace=guard)
+    assert events == ["fsync", "guard"]
+    assert target.read_bytes() == (b"old" if reject else b"new")
+    assert list(tmp_path.iterdir()) == [target]
+
+
 def test_fun_draw_ledger_survives_a_crash_mid_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     (tmp_path / "fun_draw").mkdir()
     shutil.copy(DATA / fun_draw_ledger.LEDGER, tmp_path / fun_draw_ledger.LEDGER)
