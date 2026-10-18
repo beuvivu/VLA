@@ -13,12 +13,13 @@ from vietlott_engine.core.config import Settings
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.games import GameCode, get_game
 from vietlott_engine.core.models import Draw
-from vietlott_engine.crawler.pipeline import build_source
+from vietlott_engine.crawler.pipeline import SyncPipeline, build_source
 from vietlott_engine.crawler.product_store import ProductSyncPipeline
 from vietlott_engine.crawler.sources.base import DrawSource, FetchResult
 from vietlott_engine.crawler.sources.fallback import FallbackDrawSource
 from vietlott_engine.crawler.sources.xskt import XsktDrawSource, parse_page
 from vietlott_engine.core.products import ProductCode
+from vietlott_engine.crawler.storage import InMemoryRepository
 
 MEGA = (
     '<table class="result"><tr><td class="kmt" colspan="2"><span>Kỳ mở thưởng:</span> '
@@ -155,8 +156,10 @@ def test_a_partially_caught_up_archive_is_extended_by_the_later_source():
 class _Fixed(DrawSource):
     def __init__(self, name: str, draws: list[Draw]) -> None:
         self.name, self.draws = name, draws
+        self.cursors: list[int | None] = []
 
     async def fetch(self, spec, since_id=None):  # type: ignore[no-untyped-def]
+        self.cursors.append(since_id)
         return FetchResult(draws=[d for d in self.draws if since_id is None or d.draw_id > since_id])
 
 
@@ -192,3 +195,93 @@ def test_later_sources_are_asked_from_the_merged_tail_not_the_original_cursor():
     chain = FallbackDrawSource([archive, XsktDrawSource(client, "https://xskt.com.vn")])
     got = asyncio.run(chain.fetch(get_game(GameCode.LOTTO_535), since_id=920))
     assert [d.draw_id for d in got.draws] == list(range(921, 929)) and got.draws[-1].source == "xskt"
+
+
+def _gap_draw(draw_id: int, source: str, numbers=(1, 2, 3, 4, 5, 6)) -> Draw:
+    return Draw(game="mega645", draw_id=draw_id, draw_date=date(2026, 10, 7 + 2 * (draw_id - 1)),
+                numbers=numbers, source=source)
+
+
+def test_first_source_gap_is_filled_without_losing_its_buffered_draw():
+    repo = InMemoryRepository([_gap_draw(1, "canonical")])
+    primary = _Fixed("primary", [_gap_draw(3, "primary")])
+    backup = _Fixed("backup", [_gap_draw(2, "backup"), _gap_draw(3, "backup", (7, 8, 9, 10, 11, 12))])
+    chain = FallbackDrawSource([primary, backup])
+    report = asyncio.run(SyncPipeline(chain, repo).run(get_game("mega645")))
+    draws = repo.load("mega645")
+    assert [draw.draw_id for draw in draws] == [1, 2, 3]
+    assert (draws[2].numbers, draws[2].source) == ((1, 2, 3, 4, 5, 6), "primary")
+    assert backup.cursors == [1]
+    assert [(a.source, a.ok, a.rows) for a in chain.log.attempts] == [("primary", True, 1), ("backup", True, 1)]
+    assert chain.name == "auto:primary+backup" and report.integrity.id_gaps == []
+
+
+def test_first_source_internal_gap_keeps_descending_buffer_and_advances_cursor():
+    primary = _Fixed("primary", [_gap_draw(4, "primary"), _gap_draw(2, "primary")])
+    backup = _Fixed("backup", [_gap_draw(5, "backup"), _gap_draw(4, "backup", (7, 8, 9, 10, 11, 12)),
+                               _gap_draw(3, "backup")])
+    chain = FallbackDrawSource([primary, backup])
+    got = asyncio.run(chain.fetch(get_game("mega645"), since_id=1))
+    assert [draw.draw_id for draw in got.draws] == [2, 3, 4, 5]
+    assert (got.draws[2].numbers, got.draws[2].source) == ((1, 2, 3, 4, 5, 6), "primary")
+    assert backup.cursors == [2]
+    assert [(a.source, a.rows) for a in chain.log.attempts] == [("primary", 2), ("backup", 2)]
+
+
+@pytest.mark.parametrize("fails", [False, True])
+def test_unresolved_internal_gap_does_not_publish_buffered_later_draw(fails):
+    class Backup(_Fixed):
+        async def fetch(self, spec, since_id=None):
+            if fails:
+                raise SourceError("unavailable")
+            return await super().fetch(spec, since_id)
+
+    primary = _Fixed("primary", [_gap_draw(2, "primary"), _gap_draw(4, "primary")])
+    got = asyncio.run(FallbackDrawSource([primary, Backup("backup", [])]).fetch(get_game("mega645"), since_id=1))
+    assert [draw.draw_id for draw in got.draws] == [2]
+
+
+def test_missing_first_new_draw_remains_an_error_after_all_sources():
+    chain = FallbackDrawSource([_Fixed("primary", [_gap_draw(3, "primary")]),
+                                _Fixed("backup", [_gap_draw(4, "backup")])])
+    with pytest.raises(SourceError, match="#2"):
+        asyncio.run(chain.fetch(get_game("mega645"), since_id=1))
+
+
+def test_source_failure_does_not_discard_buffered_primary_draw():
+    class Unavailable(DrawSource):
+        name = "unavailable"
+
+        async def fetch(self, spec, since_id=None):
+            raise SourceError("unavailable")
+
+    primary = _Fixed("primary", [_gap_draw(3, "primary")])
+    backup = _Fixed("backup", [_gap_draw(2, "backup"), _gap_draw(3, "backup"), _gap_draw(4, "backup")])
+    chain = FallbackDrawSource([primary, Unavailable(), backup])
+    got = asyncio.run(chain.fetch(get_game("mega645"), since_id=1))
+    assert [(draw.draw_id, draw.source) for draw in got.draws] == [(2, "backup"), (3, "primary"), (4, "backup")]
+    assert backup.cursors == [1]
+
+
+def test_buffered_contributors_retain_their_rejected_rows_once():
+    class Source(_Fixed):
+        async def fetch(self, spec, since_id=None):
+            if self.name == "unavailable":
+                raise SourceError("unavailable")
+            result = await super().fetch(spec, since_id)
+            result.rejected.append((self.name, "invalid row"))
+            return result
+
+    chain = FallbackDrawSource([Source("primary", [_gap_draw(3, "primary")]), Source("unavailable", []),
+                                Source("backup", [_gap_draw(2, "backup"), _gap_draw(3, "backup")])])
+    got = asyncio.run(chain.fetch(get_game("mega645"), since_id=1))
+    assert [draw.draw_id for draw in got.draws] == [2, 3]
+    assert got.rejected == [("primary", "invalid row"), ("backup", "invalid row")]
+
+
+def test_cold_start_retains_the_first_available_batch_without_inferring_its_prefix():
+    primary = _Fixed("primary", [_mega(929), _mega(927)])
+    backup = _Fixed("backup", [_mega(930)])
+    got = asyncio.run(FallbackDrawSource([primary, backup]).fetch(get_game("mega645"), since_id=None))
+    assert [draw.draw_id for draw in got.draws] == [927, 929, 930]
+    assert primary.cursors == [None] and backup.cursors == [929]

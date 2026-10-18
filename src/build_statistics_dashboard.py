@@ -706,7 +706,7 @@ def _board_year_table(raw: pd.DataFrame) -> str:
     view["special"] = view.get("special", pd.Series("", index=view.index)).map(_full_special_value)
     # Cùng cách xử lý bản ghi trùng của bảng tuần/tháng: lấy kết quả hợp lệ cuối.
     results = view.loc[view["special"].ne("")].drop_duplicates("date", keep="last")
-    prizes = dict(zip(results["date"].dt.strftime("%Y-%m-%d"), results["special"]))
+    prizes = dict(zip(results["date"].dt.strftime("%Y-%m-%d"), results["special"], strict=True))
     options = "".join(
         f'<option value="{year}"{" selected" if index == 0 else ""}>{year}</option>'
         for index, year in enumerate(years)

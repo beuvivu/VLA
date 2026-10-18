@@ -78,6 +78,174 @@ def _journal_identity(record: DrawRecord) -> tuple:
     return (*_identity(record), json.dumps(finance, sort_keys=True))
 
 
+def _fsync_directory(path):  # type: ignore[no-untyped-def]
+    # Windows chỉ bảo đảm fsync file + replace; directory fsync dành cho POSIX.
+    if os.name == 'nt' or not hasattr(os, 'O_DIRECTORY'):
+        return
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _pending_path(state, product):  # type: ignore[no-untyped-def]
+    return journal_path(state).parent / f'pending-{product}.json'
+
+
+def _read_pending(path):  # type: ignore[no-untyped-def]
+    """Outbox lỗi phải dừng phục hồi, không tự bỏ bản ghi chưa commit."""
+    raw = json.loads(path.read_text(encoding='utf-8'))
+    if not isinstance(raw, dict) or raw.get('version') != 1 or not isinstance(raw.get('records'), list):
+        raise ValueError('invalid pending results')
+    records = {}
+    for item in raw['records']:
+        if not isinstance(item, dict) or set(item) != {'before','after'}:
+            raise ValueError('invalid pending result')
+        after = DrawRecord.model_validate(item['after'])
+        before = DrawRecord.model_validate(item['before']) if item['before'] is not None else None
+        key = (after.game_type, after.draw_id)
+        if path.name != f'pending-{after.game_type.value}.json' or key in records or (
+                before is not None and (before.game_type, before.draw_id) != key):
+            raise ValueError('invalid pending result identity')
+        records[key] = (before, after)
+    return records
+
+
+def _stage_pending(state, records, previous):  # type: ignore[no-untyped-def]
+    """Ghi CAS delta bền trước journal/cache với baseline của batch hiện tại."""
+    changed = [r for r in records if previous.get((r.game_type,r.draw_id)) is None or
+               _journal_identity(previous[(r.game_type,r.draw_id)]) != _journal_identity(r)]
+    if not changed:
+        return
+    product = changed[0].game_type.value
+    path = _pending_path(state, product)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = _read_pending(path) if path.exists() else {}
+    for record in changed:
+        key = (record.game_type,record.draw_id)
+        before = previous.get(key)
+        if key in pending:
+            original, staged = pending[key]
+            if not _matches_pending(before, original, staged):
+                raise ValueError('pending result conflicts with cache')
+        pending[key] = (before, record)
+    payload = {'version':1, 'records':[{'before':before.model_dump(mode='json') if before else None,
+                                      'after':after.model_dump(mode='json')}
+                                     for before,after in pending.values()]}
+    name = None
+    try:
+        with tempfile.NamedTemporaryFile('w', dir=path.parent, delete=False, encoding='utf-8') as out:
+            name = out.name
+            json.dump(payload, out)
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(name, path)
+        _fsync_directory(path.parent)
+        _fsync_directory(path.parent.parent)
+    finally:
+        # Đóng handle trước cleanup: Windows không cho unlink tệp đang mở.
+        if name is not None and os.path.exists(name):
+            os.unlink(name)
+
+
+def _clear_pending(state, product):  # type: ignore[no-untyped-def]
+    path = _pending_path(state, product)
+    if path.exists():
+        # JSON đọc đủ sau một fsync lỗi chưa chứng minh journal đã bền.
+        # Barrier này vẫn chạy khi _append vừa dedup mà không ghi byte mới.
+        with journal_path(state).open('ab') as out:
+            out.flush()
+            os.fsync(out.fileno())
+        path.unlink()
+        _fsync_directory(path.parent)
+
+
+def _matches_pending(cached, before, after):  # type: ignore[no-untyped-def]
+    if cached is None:
+        return True
+    actual, target = _journal_identity(cached), _journal_identity(after)
+    expected = _journal_identity(before) if before is not None else None
+    if actual in (expected, target):
+        return True
+    if expected is not None and actual[:3] == target[:3]:
+        baseline_finance = json.loads(expected[3])
+        if baseline_finance['finance_source'] is None and baseline_finance['field_sources'] is None:
+            # Kỳ đã có số nhưng chưa có bảng giải cũng đi qua bước ghi Draw
+            # trước PrizeRecord khi replay. Chỉ nhận đúng giá trị đã stage,
+            # thiếu provenance; không nhận bảng giải thứ ba từ cache.
+            intermediate_finance = json.loads(target[3])
+            intermediate_finance.update(field_sources=None, finance_source=None)
+            if actual[3] == json.dumps(intermediate_finance, sort_keys=True):
+                return True
+    if expected is None and actual[:3] == target[:3]:
+        # Kỳ mới có thể đã ghi draws nhưng chưa ghi bảng prizes tương ứng.
+        bare = _journal_identity(after.model_copy(update={
+            'jackpot1_value':None, 'jackpot2_value':None, 'jackpot1_winners':None,
+            'jackpot2_winners':None, 'sub_prizes_json':None}))[3]
+        finance = json.loads(target[3])
+        finance.update(field_sources=None, finance_source=None)
+        return actual[3] in (bare, json.dumps(finance, sort_keys=True))
+    # Upsert số và loại finance cũ là hai bước: nhận đúng trạng thái trung gian
+    # do chúng tạo ra, không nhận bộ số hoặc giá trị tài chính thứ ba.
+    return expected is not None and expected[:3] != target[:3] and (
+        actual[:3] in (expected[:3], target[:3]) and actual[3] in (expected[3], target[3]))
+
+
+def _replay_pending(state, product=None):  # type: ignore[no-untyped-def]
+    """Chỉ hoàn tất outbox nếu cache còn baseline đã lưu hoặc đúng bản mới."""
+    directory = journal_path(state).parent
+    paths = list(directory.glob('pending-*.json')) if product is None else [_pending_path(state, product)]
+    # Xác thực tất cả trước khi bắt đầu sửa cache.
+    pending = [(path,_read_pending(path)) for path in paths if path.exists()]
+    pending_keys = set()
+    for path, records in pending:
+        code = path.name[len('pending-'):-len('.json')]
+        if code in GAMES:
+            current = {(r.game_type,r.draw_id):r for r in _matrix_records(state.repository, get_game(code))}
+        else:
+            history = state.product_store().load(ProductCode(code), include_unconfirmed=True)
+            current = {(code,int(r['id'])):DrawRecord.from_legacy(code,r) for r in history_to_rows(history)}
+        conflict = False
+        for key, (before, after) in records.items():
+            cached = current.get(key)
+            if not _matches_pending(cached, before, after):
+                state.replay_conflicts.append({'game_type':code, 'draw_id':after.draw_id})
+                conflict = True
+                continue
+            _append(state, [after])
+            if code in GAMES:
+                if before is not None and _identity(before) != _identity(after):
+                    state.repository.invalidate_finance(code, [after.draw_id])
+                winners = dict((after.sub_prizes_json or {}).get('winners', {}))
+                for tier in ('jackpot1','jackpot2'):
+                    count = getattr(after, tier + '_winners')
+                    if count is not None:
+                        winners[tier] = count
+                state.repository.upsert([Draw(game=code, draw_id=after.draw_id, draw_date=after.draw_date.date(),
+                    numbers=after.winning_numbers, bonus=after.bonus_number, source=after.source,
+                    jackpot1_value=after.jackpot1_value, jackpot2_value=after.jackpot2_value,
+                    tier_winners=winners or None)])
+                pots = {tier:getattr(after,tier+'_value') for tier in ('jackpot1','jackpot2')
+                        if getattr(after,tier+'_value') is not None}
+                if (winners or pots) and 'finance_source' in (after.sub_prizes_json or {}):
+                    state.repository.upsert_prizes([PrizeRecord(game=code, draw_id=after.draw_id,
+                        draw_date=after.draw_date.date(), winners=winners, jackpot_pots=pots or None,
+                        source=(after.sub_prizes_json or {}).get('finance_source', after.source))])
+                state.invalidate(get_game(code))
+            else:
+                state.product_store().upsert(ProductCode(code), [{'id':after.draw_id,
+                    'date':after.draw_date.date().isoformat(), 'result':list(after.winning_numbers)}], after.source)
+                state.invalidate_product(ProductCode(code))
+        if not conflict:
+            _clear_pending(state, code)
+        else:
+            # Toàn outbox còn tồn tại phải giữ nguyên metadata cho lần CAS sau.
+            # Journal thường chỉ xử lý các key không còn thuộc outbox.
+            pending_keys.update(records)
+    return pending_keys
+
+
 def _journal_index(state) -> dict:  # type: ignore[no-untyped-def]
     if state._journal_seen is None:
         state._journal_seen = {(r.game_type,r.draw_id):_journal_identity(r) for r in _read_journal(journal_path(state))}
@@ -91,8 +259,9 @@ def _product_baseline(history) -> dict:  # type: ignore[no-untyped-def]
             for i,day,values in zip(history.draw_ids,history.dates,history.values)}
 
 
-def _product_records(code, history, baseline: dict, journal_ids: set[int], source: str) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
-    newest = str(history.dates.max()) if len(history) else None
+def _product_records(code, history, baseline: dict, journal_ids: set[int], source: str,
+                     *, keep_latest: bool = True) -> list[DrawRecord]:  # type: ignore[no-untyped-def]
+    newest = str(history.dates.max()) if keep_latest and len(history) else None
     records = []
     for i, day, values in zip(history.draw_ids,history.dates,history.values):
         identity = (str(day),tuple(values.tolist()))
@@ -157,6 +326,7 @@ def _matrix_records(repository, spec) -> list[DrawRecord]:  # type: ignore[no-un
 
 def replay_results(state) -> int:  # type: ignore[no-untyped-def]
     """Recover committed draw results when a database/cache was lost."""
+    pending_keys = _replay_pending(state)
     path = journal_path(state)
     if not path.exists():
         return 0
@@ -166,6 +336,8 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
     prizes = []
     existing = {spec.code.value:{d.draw_id:d for d in state.repository.load(spec.code)} for spec in GAMES.values()}
     for r in records.values():
+        if (r.game_type,r.draw_id) in pending_keys:
+            continue
         if r.game_type in GAMES:
             current = existing[r.game_type].get(r.draw_id)
             if current is not None:
@@ -224,9 +396,40 @@ def replay_results(state) -> int:  # type: ignore[no-untyped-def]
 async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: bool = False,
                       learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
     async with state.sync_lock(spec.code.value):
-        before = {(r.game_type,r.draw_id):_journal_identity(r) for r in _matrix_records(state.repository, spec)}
+        if _replay_pending(state, spec.code.value):
+            raise ValueError('pending result conflicts with cache')
+        previous = {(r.game_type,r.draw_id):r for r in _matrix_records(state.repository, spec)}
+        before = {key:_journal_identity(r) for key,r in previous.items()}
+        cached_draws = {d.draw_id:d for d in state.repository.load(spec.code)}
+        cached_finance = {p.draw_id:p for p in state.repository.load_prizes(spec.code)}
+        def persist_results(draws):
+            # Lưu delta trước cache: lỗi ghi không được làm mất baseline lần thử lại.
+            records = []
+            prepared = []
+            for draw in draws:
+                old_identity = before.get((draw.game.value, draw.draw_id))
+                corrected = old_identity is not None and old_identity[:3] != _identity(_matrix_record(draw))
+                if corrected:
+                    # Finance của correction sẽ bị loại sau upsert, không lưu lại ở đây.
+                    draw = draw.model_copy(update={
+                        'jackpot1_value':None, 'jackpot2_value':None, 'tier_winners':None})
+                elif isinstance(state.repository, DuckDBRepository) and draw.draw_id in cached_draws:
+                    # Khớp COALESCE của DuckDB để CAS ghi đúng trạng thái sau upsert.
+                    cached = cached_draws[draw.draw_id]
+                    draw = draw.model_copy(update={
+                        'jackpot1_value':draw.jackpot1_value if draw.jackpot1_value is not None else cached.jackpot1_value,
+                        'jackpot2_value':draw.jackpot2_value if draw.jackpot2_value is not None else cached.jackpot2_value,
+                        'tier_winners':draw.tier_winners or cached.tier_winners})
+                record = _matrix_record(draw, None if corrected else cached_finance.get(draw.draw_id))
+                if old_identity != _journal_identity(record):
+                    records.append(record)
+                prepared.append(draw)
+            _stage_pending(state, records, previous)
+            _append(state, records)
+            return prepared
         async with build_http_client(state.settings) as client:
-            report = await SyncPipeline(build_source(state.settings, client, source), state.repository).run(spec, full_refresh)
+            report = await SyncPipeline(build_source(state.settings, client, source), state.repository).run(
+                spec, full_refresh, before_upsert=persist_results)
         changed = [d.draw_id for d in state.repository.load(spec.code)
                    if (d.game.value, d.draw_id) in before
                    and before[(d.game.value, d.draw_id)][:3] != _identity(_matrix_record(d))]
@@ -237,6 +440,7 @@ async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: b
                 # Pipeline đã xuất trước bước loại finance của bộ số cũ.
                 state.repository.export_parquet(spec.code)
         _append(state, _matrix_records(state.repository, spec), baseline=before)
+        _clear_pending(state, spec.code.value)
         state.invalidate(spec)
     return {**report.to_dict(), 'learning':await _learn(state, spec.code.value) if learn else None}
 
@@ -244,20 +448,32 @@ async def sync_matrix(state, spec, *, source: str | None = None, full_refresh: b
 async def sync_product(state, code, *, source: str = 'auto', max_pages: int | None = None, full: bool = False,
                        learn: bool = True) -> dict:  # type: ignore[no-untyped-def]
     async with state.sync_lock(code.value):
+        if _replay_pending(state, code.value):
+            raise ValueError('pending result conflicts with cache')
         s, store = state.settings, state.product_store()
         history = await asyncio.to_thread(store.load, code, include_unconfirmed=True)
         before = await asyncio.to_thread(_product_baseline, history)
+        def persist_results(accepted, origin):
+            # Chỉ dựng DrawRecord cho delta; không ghi lại toàn bộ seed Keno.
+            records = _product_records(code, accepted, before, set(), origin, keep_latest=False)
+            previous = {(code.value,r.draw_id):DrawRecord.from_legacy(code.value,
+                {'id':r.draw_id,'date':before[r.draw_id][0],'result':before[r.draw_id][1]})
+                for r in records if r.draw_id in before}
+            _stage_pending(state, records, previous)
+            _append(state, records)
         async with build_http_client(s) as client:
             pipe = ProductSyncPipeline(client, store, vietlott_base_url=s.vietlott_base_url,
                 mirror_base_url=s.product_mirror_base_url, canonical_base_url=s.canonical_base_url,
                 bootstrap_cookie=s.vietlott_cookie_bootstrap, pages_per_batch=s.max_concurrency,
                 nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir,
                 fallback_order=s.fallback_order, source_timeout_s=s.source_timeout_s)
-            report = await pipe.run(code, source, max_pages or s.product_sync_max_pages, full)
+            report = await pipe.run(code, source, max_pages or s.product_sync_max_pages, full,
+                                    before_upsert=persist_results)
         h = await asyncio.to_thread(store.load, code)
         journal_ids = {i for (product,i) in _journal_index(state) if product == code.value}
         records = await asyncio.to_thread(_product_records, code, h, before, journal_ids, report.source_used or source)
         _append(state, records)
+        _clear_pending(state, code.value)
         state.invalidate_product(code)
     return {**report.to_dict(), 'learning':await _learn(state, code.value) if learn else None}
 
@@ -310,17 +526,29 @@ async def update_product(state, product: str, *, learn: bool = True) -> dict:  #
         try:
             async with state.sync_lock(product):
                 before = {(r.game_type, r.draw_id):_journal_identity(r) for r in _matrix_records(state.repository, spec)}
+                def persist_finance(additions, accepted):
+                    # Chỉ journal bảng đã qua gate danh tính và ưu tiên nguồn.
+                    draws = {d.draw_id:d for d in state.repository.load(spec.code)}
+                    draws.update((d.draw_id,d) for d in additions)
+                    finance = {p.draw_id:p for p in accepted}
+                    affected = set(finance) | {d.draw_id for d in additions}
+                    records = [_matrix_record(draws[draw_id], finance.get(draw_id)) for draw_id in sorted(affected)]
+                    previous = {(r.game_type,r.draw_id):r for r in _matrix_records(state.repository, spec)}
+                    _stage_pending(state, records, previous)
+                    _append(state, records)
                 try:
                     async with build_http_client(state.settings) as client:
                         s = state.settings
                         finance = await asyncio.wait_for(sync_canonical_prizes(client, state.repository, spec,
                             source='auto', last=3, canonical_base_url=s.canonical_base_url,
                             vietlott_base_url=s.vietlott_base_url, bootstrap_cookie=s.vietlott_cookie_bootstrap,
-                            nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir), min(45, s.auto_update_timeout_s / 4))
+                            nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir,
+                            before_upsert=persist_finance), min(45, s.auto_update_timeout_s / 4))
                         prize_error = 'SourceError' if finance.error else None
-                finally:
-                    # Cả phần finance đã lấy trước một timeout cũng phải được lưu.
                     _append(state, _matrix_records(state.repository, spec), baseline=before)
+                    _clear_pending(state, product)
+                finally:
+                    # Từng batch đã journal trước upsert, cả khi batch sau timeout.
                     state.invalidate(spec)
         except Exception as exc:
             prize_error = type(exc).__name__

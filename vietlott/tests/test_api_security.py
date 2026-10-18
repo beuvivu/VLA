@@ -12,15 +12,18 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import pytest
+import numpy as np
 import yaml
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from vietlott_engine.api.main import create_app
+from vietlott_engine.api.routers import analytics
 from vietlott_engine.core.config import Settings
 from vietlott_engine.core.games import MEGA_645
 from vietlott_engine.core.models import Draw
 from vietlott_engine.crawler.storage import InMemoryRepository
+from vietlott_engine.ml_models.gcn import SkillReport
 from tests.conftest import make_history
 
 TOKEN = "s3cret-token-for-tests"
@@ -38,18 +41,104 @@ def _repo() -> InMemoryRepository:
 
 
 @pytest.fixture()
-def guarded() -> TestClient:
-    with TestClient(create_app(Settings(storage_backend="memory", api_token=TOKEN), repository=_repo())) as c:
+def guarded(tmp_path: Path) -> TestClient:
+    settings = Settings(storage_backend="memory", api_token=TOKEN, data_dir=tmp_path,
+                        forecast_dir=tmp_path / "forecast", calibration_dir=tmp_path / "calibration",
+                        auto_update_dir=tmp_path / "updates")
+    with TestClient(create_app(settings, repository=_repo())) as c:
         yield c
 
 
 @pytest.fixture()
-def default() -> TestClient:
-    with TestClient(create_app(Settings(storage_backend="memory"), repository=_repo())) as c:
+def default(tmp_path: Path) -> TestClient:
+    settings = Settings(storage_backend="memory", data_dir=tmp_path,
+                        forecast_dir=tmp_path / "forecast", calibration_dir=tmp_path / "calibration",
+                        auto_update_dir=tmp_path / "updates")
+    with TestClient(create_app(settings, repository=_repo())) as c:
         yield c
 
 
 EV = ("/games/mega645/ev", {"ticket": [3, 17, 22, 35, 41, 44], "jackpot1": 45e9})
+GCN_PATHS = ("/games/mega645/ml/gcn/next", "/games/mega645/ml/gcn/skill")
+
+
+@pytest.mark.parametrize("client_fixture", ["guarded", "default"])
+def test_security_clients_keep_forecast_artifacts_in_temporary_data(
+    request: pytest.FixtureRequest, tmp_path: Path, client_fixture: str,
+) -> None:
+    client = request.getfixturevalue(client_fixture)
+    assert client.app.state.vqe.settings.data_dir.resolve() == tmp_path
+    response = client.get("/ml/forecast/mega645", headers={"Authorization": f"Bearer {TOKEN}"})
+    assert response.status_code == 200
+    assert (tmp_path / "forecast" / "multi-agent-summary.json").is_file()
+
+
+@pytest.fixture()
+def gcn_training(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Giữ router và middleware thật; thay phần huấn luyện tốn CPU bằng kết quả cố định."""
+    calls: list[str] = []
+
+    def fit(self, *_):
+        calls.append("next")
+        return self
+
+    def skill(*_, **__):
+        calls.append("skill")
+        return SkillReport(**{
+            name: "gcn" if name == "model" else 20 if name == "test_draws" else 0.0
+            for name in SkillReport.model_fields
+        })
+
+    monkeypatch.setattr(analytics.GCNPredictor, "fit", fit)
+    monkeypatch.setattr(analytics.GCNPredictor, "predict_proba", lambda *_: np.full((1, 45), 6 / 45))
+    monkeypatch.setattr(analytics, "walk_forward_skill", skill)
+    return calls
+
+
+@pytest.mark.parametrize("path", GCN_PATHS)
+def test_training_get_requires_the_configured_token(
+    guarded: TestClient, gcn_training: list[str], path: str,
+) -> None:
+    assert guarded.get(path).status_code == 401
+    assert guarded.get(path, headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert not gcn_training, "yêu cầu bị chặn không được chạy huấn luyện"
+    assert guarded.get(path, headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 200
+    assert gcn_training == [path.rsplit("/", 1)[-1]]
+
+
+@pytest.mark.parametrize("path", GCN_PATHS)
+@pytest.mark.parametrize("headers", [{"Origin": EVIL}, {"Sec-Fetch-Site": "cross-site"}])
+def test_without_a_token_cross_site_training_get_is_refused(
+    default: TestClient, gcn_training: list[str], path: str, headers: dict,
+) -> None:
+    assert default.get(path, headers=headers).status_code == 403
+    assert not gcn_training, "yêu cầu từ trang lạ không được chạy huấn luyện"
+    assert default.get(path).status_code == 200
+    assert gcn_training == [path.rsplit("/", 1)[-1]]
+
+
+@pytest.mark.parametrize("deployment", ["mounted", "root_path"])
+@pytest.mark.parametrize("path", GCN_PATHS)
+def test_a_prefixed_training_get_cannot_skip_the_token(
+    tmp_path: Path, deployment: str, path: str, gcn_training: list[str],
+) -> None:
+    app = create_app(Settings(storage_backend="memory", api_token=TOKEN, data_dir=tmp_path,
+                              seed_file_dir=None, auto_update_enabled=False), repository=_repo())
+    with ExitStack() as stack:
+        if deployment == "mounted":
+            stack.enter_context(TestClient(app))
+            parent = FastAPI()
+            parent.mount("/vqe", app)
+            client = TestClient(parent)
+        else:
+            client = TestClient(app, root_path="/vqe")
+        stack.enter_context(client)
+        # URL có ký tự mã hoá và dấu / cuối vẫn đi qua cùng cổng trước router/redirect.
+        target = "/vqe" + path.replace("mega645", "%6Dega645") + "/?record=off"
+        assert client.get(target).status_code == 401
+        assert not gcn_training
+        assert client.get(target, headers={"Authorization": f"Bearer {TOKEN}"}).status_code == 200
+        assert gcn_training == [path.rsplit("/", 1)[-1]]
 
 
 def test_without_a_configured_token_requests_behave_as_before(default: TestClient) -> None:
@@ -77,6 +166,8 @@ def test_openapi_exposes_bearer_for_guarded_try_it_out(guarded: TestClient) -> N
         ("/forecast/{product}", "get"),
         ("/forecast/{product}/evidence", "get"),
         ("/ml/forecast/{product}", "get"),
+        ("/games/{game}/ml/gcn/next", "get"),
+        ("/games/{game}/ml/gcn/skill", "get"),
     ):
         assert schema["paths"][path][method].get("security") == [{bearer: []}], (path, method)
     for path in ("/health", "/games/{game}/draws", "/forecast/{product}/scoreboard"):

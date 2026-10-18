@@ -26,9 +26,12 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
+from typing import Callable
 
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.logging import get_logger
+from vietlott_engine.core.models import Draw
+from vietlott_engine.core.prizes import PrizeRecord
 from vietlott_engine.core.products import (
     EXCLUSIONS_FILE,
     SEED_FILES,
@@ -224,13 +227,14 @@ class ProductSyncPipeline:
             return await self._jsonl(f"{self.canonical_base_url}/{CANONICAL_FILES[product]}")
         raise SourceError(f"unknown product source {source!r}")
 
-    async def run(self, product: ProductCode, source: str = "auto", max_pages: int = 50, full: bool = False) -> ProductSyncReport:
+    async def run(self, product: ProductCode, source: str = "auto", max_pages: int = 50, full: bool = False,
+                  *, before_upsert: Callable[[ProductHistory, str], None] | None = None) -> ProductSyncReport:
         t0 = time.perf_counter()
         self._pending_exclusions = []
         attempts: list[dict] = []
         rows: list[dict] = []
         used = None
-        best_rows, best_source, best_id = [], None, -1
+        best_rows, best_source, best_id, best_parsed = [], None, -1, None
         known_max = self.store.max_draw_id(product) or 0
         for s in self.chain(product) if source == "auto" else [source]:
             try:
@@ -244,7 +248,7 @@ class ProductSyncPipeline:
             parsed, _ = parse_product_rows(product, rows, s)
             source_max = int(parsed.draw_ids.max()) if len(parsed) else -1
             if source_max > best_id:
-                best_rows, best_source, best_id = rows, s, source_max
+                best_rows, best_source, best_id, best_parsed = rows, s, source_max, parsed
             if source == 'auto' and source_max <= known_max:
                 attempts[-1]['stale'] = True
                 continue
@@ -252,7 +256,13 @@ class ProductSyncPipeline:
             break
         if used is None and best_source is not None:
             rows, used = best_rows, best_source
+            parsed = best_parsed
         error = None if used else "; ".join(f"{a['source']}: {a['error']}" for a in attempts)
+        if rows and before_upsert is not None:
+            # Hook nhận đúng dòng đã xác thực, bỏ cả thông báo loại kỳ mới tải.
+            excluded = self.store.exclusions().get(product.value, set()) | {
+                int(e['draw_id']) for e in self._pending_exclusions if e['product'] == product.value}
+            before_upsert(drop_ids(parsed, excluded), used or source)
         inserted, rejected = self.store.upsert(product, rows, used or source) if rows else (0, 0)
         excl = self.store.add_exclusions(self._pending_exclusions)
         h = self.store.load(product)
@@ -349,6 +359,7 @@ async def sync_canonical_prizes(
     nhanaz_dir: Path | None = None,
     v130_dir: Path | None = None,
     fallback_order: list[str] | None = None,
+    before_upsert: Callable[[list[Draw], list[PrizeRecord]], None] | None = None,
 ) -> CanonicalPrizeReport:
     """Official prize tables → repository.
 
@@ -413,6 +424,8 @@ async def sync_canonical_prizes(
                 imported_prizes[prize.draw_id] = prize
                 accepted.append(prize)
         # Đồng bộ bảng giải không được sửa số quay để tự làm cho bảng giải khớp.
+        if before_upsert is not None:
+            before_upsert(additions, accepted)
         draws_inserted += repository.upsert(additions) if additions else 0
         prizes_inserted += repository.upsert_prizes(accepted) if accepted else 0
         missing = [did for did in targets if did not in prizes or prizes[did].draw_date != known[did].draw_date

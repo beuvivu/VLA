@@ -1,6 +1,7 @@
 """Giao thức benchmark: dữ liệu đóng băng, chia đoạn, nhân quả, chấm đúng mô hình, luật đề bạt."""
 import json
 import shutil
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -114,6 +115,27 @@ def test_both_ml_arms_score_the_ticket_their_own_law_would_issue(monkeypatch):
     for t, record in enumerate(tempered, start=5):
         drawn = set((np.flatnonzero(series.obs['main']['X'][t]) + 1).tolist())
         assert record['hits'] == len(drawn & set(issued))
+
+
+@pytest.mark.parametrize('multi_agent', [False, True])
+def test_ml_benchmark_learns_feedback_only_for_later_forecasts(multi_agent):
+    """Đổi nhãn kỳ đầu holdout phải đổi law kỳ sau, không đổi chính law đã phát trước nhãn."""
+    from vlm.forecast.pipeline import MLConfig
+
+    series = _synthetic(8)
+    changed = deepcopy(series)
+    start = 3
+    changed.obs['main']['X'][start] = np.roll(series.obs['main']['X'][start], 11)
+    assert not np.array_equal(changed.obs['main']['X'][start], series.obs['main']['X'][start])
+    config = MLConfig(bootstrap=8, warmup=1, backends=(), search_nodes=1,
+                      multi_agent=multi_agent)
+
+    original, _ = hb.run_ml(series, start, len(series), config, hb.PUBLISHED_TOP_N)
+    altered, _ = hb.run_ml(changed, start, len(series), config, hb.PUBLISHED_TOP_N)
+
+    np.testing.assert_array_equal(original[0].marginals(), altered[0].marginals())
+    assert not np.allclose(original[1].marginals(), altered[1].marginals(),
+                           rtol=1e-12, atol=1e-12)
 
 
 def test_power_bonus_is_scored_separately_and_never_counted_as_a_main_hit():

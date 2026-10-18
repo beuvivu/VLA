@@ -288,6 +288,73 @@ test('Bàn phím: mũi tên chọn số theo hàng/cột, Enter mở đúng số
   assert.equal(activeText(dom), '23,936%', 'quay lại đúng số đang chọn');
 });
 
+test('Bàn phím bỏ qua hàng và ô bị bộ lọc ẩn khỏi bảng', t => {
+  const dom = start(t), d = dom.window.document, table = d.querySelector('#ai-ml table');
+  table.rows[1].hidden = true;
+  table.rows[2].cells[1].hidden = true;
+  key(dom, d.body, 'Tab');
+  table.focus();
+  assert.equal(activeText(dom), '2', 'không chọn hàng đã ẩn');
+  key(dom, table, 'ArrowRight');
+  assert.equal(activeText(dom), '23,936%', 'không chọn ô đã ẩn');
+  key(dom, table, 'Enter');
+  assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '23,936%');
+});
+
+for (const [label, hidden] of [
+  ['details đóng', '<details><summary>Chi tiết</summary><span>42</span></details>'],
+  ['display none trên tổ tiên', '<div style="display:none"><span>42</span></div>'],
+  ['visibility hidden', '<span style="visibility:hidden">42</span>'],
+]) {
+  test(`Bàn phím bỏ qua số trong ${label}`, t => {
+    const dom = new JSDOM(`<main id="app-main"><section id="values">${hidden}<span>45</span></section></main>`,
+      {url: 'https://example.test/statistics.html', runScripts: 'outside-only'});
+    t.after(() => dom.window.close());
+    dom.window.eval(SCRIPT);
+    key(dom, dom.window.document.body, 'Tab');
+    dom.window.document.getElementById('values').focus();
+    assert.equal(activeText(dom), '45');
+  });
+}
+
+for (const name of ['Enter', 'ArrowRight']) {
+  test(`${name} bỏ số đang chọn nếu hàng vừa bị bộ lọc ẩn`, t => {
+    const dom = start(t), d = dom.window.document, table = d.querySelector('#ai-ml table');
+    key(dom, d.body, 'Tab');
+    table.focus();
+    assert.equal(activeText(dom), '1');
+    table.rows[1].hidden = true;
+    key(dom, table, name);
+    if (name === 'Enter') {
+      assert.ok(drawer(dom)?.open, 'mở bằng chứng cho số đang hiện');
+      assert.equal(drawer(dom).querySelector('.app-evidence-value').textContent, '2');
+    }
+    else assert.equal(activeText(dom), '2');
+  });
+}
+
+test('API mở bằng chứng bỏ qua con số vừa bị CSS ẩn', t => {
+  const dom = start(t), value = $(dom, 'kpi-value');
+  value.style.display = 'none';
+  assert.equal(dom.window.appEvidence.open(value), null);
+  assert.equal(drawer(dom), null);
+});
+
+test('mở details sau khi tải vẫn có một vùng bàn phím cho các số bên trong', t => {
+  const dom = new JSDOM('<main id="app-main"><details><summary>Chi tiết</summary><section id="values"><span>42</span><span>43</span></section></details></main>',
+    {url: 'https://example.test/statistics.html', runScripts: 'outside-only'});
+  t.after(() => dom.window.close());
+  dom.window.eval(SCRIPT);
+  const d = dom.window.document, region = d.getElementById('values');
+  d.querySelector('details').open = true;
+  key(dom, d.body, 'Tab');
+  region.focus();
+  assert.equal(activeText(dom), '42');
+  key(dom, region, 'ArrowRight');
+  assert.equal(activeText(dom), '43');
+  assert.equal(region.querySelectorAll('[tabindex]').length, 0);
+});
+
 test('Bàn phím trong khối không phải bảng: đi theo thứ tự, bỏ qua nút đã tự nhận tiêu điểm', t => {
   const dom = start(t), kpi = $(dom, 'kpi');
   key(dom, dom.window.document.body, 'Tab');

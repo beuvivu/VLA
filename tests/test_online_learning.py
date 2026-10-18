@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import json
+from contextlib import contextmanager
 from datetime import date, datetime, timedelta
 
 import numpy as np
@@ -373,6 +374,154 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
     np.testing.assert_array_equal(restored.sort_values("number")["prob"], uniform())
     assert restored["custom"].tolist() == frame["custom"].tolist()
     assert len(pd.read_csv(out / f"predict_next_de_top4_{target}.csv")) == 4
+
+
+@pytest.mark.parametrize("slow_phase", ["lock", "advance", "serialization", "fsync"])
+def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monkeypatch, slow_phase):
+    """Chờ khóa, học, mã hóa hoặc ghi đĩa vượt hạn đều không được xuất bản."""
+    import atomic_io
+    data, out = tmp_path / "data", tmp_path / "data/predict"
+    out.mkdir(parents=True)
+    history().to_csv(data / "xsmb.csv", index=False)
+    target = "2025-01-21"
+    pd.DataFrame({"number": range(100), "prob": uniform()}).to_csv(
+        out / f"predict_next_de_all_{target}.csv", index=False
+    )
+    moment = [before(target).replace(hour=17, minute=59)]
+    monkeypatch.setattr(online, "now_vietnam", lambda: moment[0])
+
+    def expire():
+        moment[0] = before(target).replace(hour=18, minute=1)
+
+    real_lock = online._locked
+
+    @contextmanager
+    def delayed_lock(path):
+        with real_lock(path):
+            if slow_phase == "lock":
+                expire()
+            yield
+
+    monkeypatch.setattr(online, "_locked", delayed_lock)
+    real_experts = online.build_experts
+
+    def delayed_experts(*args, **kwargs):
+        result = real_experts(*args, **kwargs)
+        if slow_phase == "advance":
+            expire()
+        return result
+
+    monkeypatch.setattr(online, "build_experts", delayed_experts)
+    real_json = online._json_bytes
+
+    def delayed_json(value):
+        result = real_json(value)
+        if slow_phase == "serialization" and isinstance(value, dict) and "_checksum" in value:
+            expire()
+        return result
+
+    monkeypatch.setattr(online, "_json_bytes", delayed_json)
+    real_fsync = atomic_io.os.fsync
+
+    def delayed_fsync(fd):
+        result = real_fsync(fd)
+        if slow_phase == "fsync":
+            expire()
+        return result
+
+    monkeypatch.setattr(atomic_io.os, "fsync", delayed_fsync)
+    with pytest.raises(ValueError, match="cutoff|18:00|quá giờ"):
+        online.run_online("de", data, out)
+    assert not (data / "online/de.json").exists()
+    assert list((data / "online").glob(".de.json.*")) == []
+
+
+def test_slow_fsync_keeps_the_previous_journal_and_removes_temporary(online, tmp_path, monkeypatch):
+    import atomic_io
+    frame = history(21)
+    state, _ = issue(online, online.new_state("de"), frame.iloc[:20])
+    path = tmp_path / "de.json"
+    online.save_state(path, state)
+    original = path.read_bytes()
+    updated, record = issue(online, state, frame)
+    target = record["target_date"]
+    moment = [before(target).replace(hour=17, minute=59, second=59)]
+    real_fsync = atomic_io.os.fsync
+
+    def delayed_fsync(fd):
+        real_fsync(fd)
+        moment[0] = before(target).replace(hour=18, second=1)
+
+    monkeypatch.setattr(atomic_io.os, "fsync", delayed_fsync)
+    with pytest.raises(ValueError, match="cutoff|18:00|quá giờ"):
+        online.save_state(path, updated, forecast_target=target, clock=lambda: moment[0])
+    assert path.read_bytes() == original
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_slow_fsync_uses_the_fixed_clock_when_now_is_injected(online, tmp_path, monkeypatch):
+    import atomic_io
+    data, out = tmp_path / "data", tmp_path / "data/predict"
+    out.mkdir(parents=True)
+    history().to_csv(data / "xsmb.csv", index=False)
+    target = "2025-01-21"
+    pd.DataFrame({"number": range(100), "prob": uniform()}).to_csv(
+        out / f"predict_next_de_all_{target}.csv", index=False
+    )
+    fixed = before(target).replace(hour=17, minute=59, second=59)
+    wall_clock = [fixed]
+    monkeypatch.setattr(online, "now_vietnam", lambda: wall_clock[0])
+    real_fsync = atomic_io.os.fsync
+
+    def delayed_fsync(fd):
+        real_fsync(fd)
+        wall_clock[0] = before(target).replace(hour=18, second=1)
+
+    monkeypatch.setattr(atomic_io.os, "fsync", delayed_fsync)
+    report = online.run_online("de", data, out, now=fixed)
+    assert wall_clock[0] > fixed
+    assert report["generated_at"] == fixed.isoformat()
+    assert online.load_state(data / "online/de.json", "de")["records"][0]["generated_at"] == fixed.isoformat()
+
+
+def test_cli_can_restore_existing_forecast_after_cutoff_with_an_injected_clock(online, tmp_path, monkeypatch):
+    """Khôi phục dự báo đóng băng không phải tạo dự báo hồi cứu mới."""
+    data, out = tmp_path / "data", tmp_path / "data/predict"
+    out.mkdir(parents=True)
+    history().to_csv(data / "xsmb.csv", index=False)
+    target = "2025-01-21"
+    path = out / f"predict_next_de_all_{target}.csv"
+    pd.DataFrame({"number": range(100), "prob": uniform()}).to_csv(path, index=False)
+    monkeypatch.setattr(online, "now_vietnam", lambda: pytest.fail("Phải dùng đồng hồ được tiêm"))
+    online.run_online("de", data, out, now=before(target))
+    original = (data / "online/de.json").read_bytes()
+    pd.DataFrame({"number": range(100), "prob": np.linspace(1, 2, 100) / 150}).to_csv(path, index=False)
+    online.run_online("de", data, out, now=before(target).replace(hour=19))
+    assert (data / "online/de.json").read_bytes() == original
+    np.testing.assert_array_equal(pd.read_csv(path).sort_values("number")["prob"], uniform())
+
+
+def test_cli_timestamps_a_new_forecast_after_waiting_for_the_lock(online, tmp_path, monkeypatch):
+    data, out = tmp_path / "data", tmp_path / "data/predict"
+    out.mkdir(parents=True)
+    history().to_csv(data / "xsmb.csv", index=False)
+    target = "2025-01-21"
+    pd.DataFrame({"number": range(100), "prob": uniform()}).to_csv(
+        out / f"predict_next_de_all_{target}.csv", index=False
+    )
+    moment = [before(target).replace(hour=17, minute=58)]
+    monkeypatch.setattr(online, "now_vietnam", lambda: moment[0])
+    real_lock = online._locked
+
+    @contextmanager
+    def delayed_lock(path):
+        with real_lock(path):
+            moment[0] = before(target).replace(hour=17, minute=59)
+            yield
+
+    monkeypatch.setattr(online, "_locked", delayed_lock)
+    report = online.run_online("de", data, out)
+    assert report["generated_at"] == moment[0].isoformat()
 
 
 @pytest.mark.parametrize("active", [False, True])

@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import sqlite3
 import json
+from contextlib import closing
 from pathlib import Path
 
 
@@ -103,7 +104,7 @@ class EngineContractTests(unittest.TestCase):
                 e = self.make(5, 2, path)
                 await e.predict(0)
                 e.close()
-                with sqlite3.connect(path) as connection:
+                with closing(sqlite3.connect(path)) as connection, connection:
                     state = json.loads(connection.execute('SELECT payload FROM checkpoint').fetchone()[0])
                     state['pending']['public']['marginals'] = [1., 1., 0., 0., 0.]
                     connection.execute('UPDATE checkpoint SET payload=?', (json.dumps(state),))

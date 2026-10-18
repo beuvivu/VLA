@@ -279,7 +279,7 @@
     //
     // Cả hai đều khoá theo DỮ LIỆU chứ không theo phần tử, nên dựng lại danh
     // sách — đổi bố cục, xem thêm, đổi khoảng — không làm mất dấu.
-    const markedCells = new Set();
+    const markedCells = new Map();
     const markedValues = new Set();
 
     /** Cặp hai chữ số của một ô. Ô giải lấy hai số cuối; ô mini đã mang sẵn. */
@@ -322,10 +322,22 @@
     function toggleMark(node) {
       const value = markValue(node);
       const cell = markCell(node);
-      if (value !== null && markedValues.has(value)) markedValues.delete(value);
+      const clearPairCells = () => {
+        // Giữ danh tính cả ô đã rời DOM sau khi đổi bộ lọc hoặc bố cục.
+        for (const [key, ownValue] of markedCells) {
+          if (ownValue === value) markedCells.delete(key);
+        }
+      };
+      if (value !== null && markedValues.has(value)) {
+        markedValues.delete(value);
+        clearPairCells();
+      }
       else if (cell !== null && markedCells.has(cell)) markedCells.delete(cell);
-      else if (pairMode.checked && value !== null) markedValues.add(value);
-      else if (cell !== null) markedCells.add(cell);
+      else if (pairMode.checked && value !== null) {
+        clearPairCells();
+        markedValues.add(value);
+      }
+      else if (cell !== null) markedCells.set(cell, value);
       else return false;
       return true;
     }

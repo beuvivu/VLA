@@ -138,10 +138,12 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         lifespan=lifespan,
     )
     _MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
-    # GET mà vẫn GHI trạng thái: làm mới dự báo học thêm từ kỳ mới, ghi sự kiện chấm/phát vào sổ
-    # và lưu checkpoint (forecast.refresh, vlm.forecast.service.refresh_snapshot). Không phải
-    # /scoreboard (chỉ đọc sổ).
-    _REFRESHING_GET = re.compile(r"^/(?:ml/)?forecast/[^/]+(?:/evidence)?/?$")
+    # GET làm mới dự báo ghi trạng thái; GET GCN huấn luyện lại ngay trong lượt yêu cầu.
+    # Cả hai cần cùng cổng token/origin để khách lạ không tiêu CPU qua đường chỉ đọc.
+    # /scoreboard chỉ đọc sổ nên không thuộc cổng này.
+    _PROTECTED_GET = re.compile(
+        r"^/(?:(?:ml/)?forecast/[^/]+(?:/evidence)?|games/[^/]+/ml/gcn/(?:skill|next))/?$"
+    )
     _BOOL = TypeAdapter(bool)
 
     def _asks_to_record(request: Request) -> bool:
@@ -186,7 +188,7 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
         if root_path and path.startswith(root_path + "/"):
             path = path[len(root_path):]
         writes = (request.method in _MUTATING or _asks_to_record(request)
-                  or (request.method in {"GET", "HEAD"} and _REFRESHING_GET.match(path) is not None))
+                  or (request.method in {"GET", "HEAD"} and _PROTECTED_GET.match(path) is not None))
         if writes and token:
             supplied = request.headers.get("authorization", "")
             if not hmac.compare_digest(supplied.encode(), f"Bearer {token}".encode()):
@@ -227,7 +229,7 @@ def create_app(settings: Settings | None = None, repository: DrawRepository | No
             for path, operations in schema["paths"].items():
                 for method, operation in operations.items():
                     if method.upper() in _MUTATING or (
-                        method.upper() in {"GET", "HEAD"} and _REFRESHING_GET.match(path) is not None
+                        method.upper() in {"GET", "HEAD"} and _PROTECTED_GET.match(path) is not None
                     ):
                         operation["security"] = [{"VqeBearer": []}]
             return schema

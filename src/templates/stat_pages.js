@@ -965,6 +965,9 @@ function ganCycles(pair, mode) {
 function openGanPopup(pair) {
   const host = $("sp-gan-modal");
   if (!host) return;
+  const opening = !host.open;
+  const focusedMode = !opening && host.contains(document.activeElement)
+    ? document.activeElement.dataset.gmode : null;
   const mode = (host.dataset.mode === "de") ? "de" : "loto";
   const g = ganCycles(pair, mode);
   const tab = (value, label) => mk("button", {
@@ -1000,7 +1003,14 @@ function openGanPopup(pair) {
   fill(host.querySelector(".sp-modal-body"), body);
   host.querySelector(".sp-modal-title").textContent = `Chu kỳ gan · số ${pair}`;
   host.dataset.pair = pair;
-  host.hidden = false;
+  if (opening) {
+    host._spReturnFocus = document.activeElement;
+    host.hidden = false;
+    host.showModal();
+    host.querySelector("[data-close]").focus();
+  } else if (focusedMode) {
+    host.querySelector(`[data-gmode="${focusedMode}"]`).focus();
+  }
 }
 
 function bindGanPopup(render) {
@@ -1011,18 +1021,32 @@ function bindGanPopup(render) {
   // popup im lặng không làm gì, mà lỗi chỉ hiện trong console nên nhìn từ
   // giao diện thì y như nút hỏng vô cớ.
   const redraw = typeof render === "function" ? render : () => {};
+  host.addEventListener("close", () => {
+    if (host.open) return;
+    host.hidden = true;
+    const trigger = host._spReturnFocus;
+    delete host._spReturnFocus;
+    if (trigger && trigger.isConnected) trigger.focus({preventScroll: true});
+  });
+  host.addEventListener("cancel", (ev) => { ev.preventDefault(); host.close(); });
+  host.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Tab") return;
+    const controls = Array.from(host.querySelectorAll(
+      "a[href], button, input, select, textarea, [tabindex]"
+    )).filter(node => node.tabIndex >= 0 && !node.disabled && node.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  });
   host.addEventListener("click", (ev) => {
-    if (ev.target === host || ev.target.dataset.close !== undefined) { host.hidden = true; return; }
+    if (ev.target === host || ev.target.dataset.close !== undefined) { host.close(); return; }
     const gmode = ev.target.dataset.gmode;
     if (gmode) { host.dataset.mode = gmode; openGanPopup(host.dataset.pair); return; }
     const only = ev.target.dataset.gfilter;
     if (only !== undefined) {
       PICKED = new Set([Number(only)]);
-      savePicked(); host.hidden = true; redraw();
+      savePicked(); host.close(); redraw();
     }
-  });
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") host.hidden = true;
   });
 }
 

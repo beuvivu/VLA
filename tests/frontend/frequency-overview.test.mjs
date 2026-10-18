@@ -106,6 +106,56 @@ test('tổng 50 họ cặp cộng đủ nháy; lọc họ cặp chỉ đổi b�
   assert.equal(totals(dom, '#bf-pair-totals').find(([label]) => label === '00–55')[1], 29);
 });
 
+test('chọn họ cặp giữ tiêu điểm bàn phím trên nút vừa thao tác', t => {
+  const dom = setup(t, 'tan-suat-cap-loto'), d = dom.window.document;
+  const button = d.querySelector('[data-bf-pair="12-21"]');
+  button.closest('details').open = true;
+  button.focus();
+  button.click();
+  assert.equal(d.activeElement, button);
+  assert.equal(button.getAttribute('aria-pressed'), 'false');
+  button.click();
+  assert.equal(d.activeElement, button);
+  assert.equal(button.getAttribute('aria-pressed'), 'true');
+});
+
+test('popup gan là dialog native, nhận tiêu điểm và đóng trả về nút mở', t => {
+  const dom = setup(t, 'tan-suat-loto'), d = dom.window.document;
+  const button = d.querySelector('#sp-picker [data-num="12"]');
+  button.closest('details').open = true;
+  button.focus();
+  button.click();
+  const modal = d.getElementById('sp-gan-modal');
+  assert.equal(modal.tagName, 'DIALOG');
+  assert.equal(modal.open, true);
+  assert.equal(d.activeElement, modal.querySelector('[data-close]'));
+  assert.equal(d.getElementById(modal.getAttribute('aria-labelledby')).textContent, 'Chu kỳ gan · số 12');
+  modal.dispatchEvent(new dom.window.Event('cancel', {cancelable: true}));
+  assert.equal(modal.open, false);
+  assert.equal(modal.hidden, true);
+  assert.equal(d.activeElement, button);
+});
+
+test('đổi mode popup gan giữ tiêu điểm, nút lọc đóng dialog và vẫn lọc đúng số', t => {
+  const dom = setup(t, 'tan-suat-loto'), d = dom.window.document;
+  const button = d.querySelector('#sp-picker [data-num="12"]');
+  button.closest('details').open = true;
+  button.focus();
+  button.click();
+  const modal = d.getElementById('sp-gan-modal');
+  const mode = modal.querySelector('[data-gmode="de"]');
+  mode.focus();
+  mode.click();
+  assert.equal(modal.open, true);
+  assert.equal(d.activeElement, modal.querySelector('[data-gmode="de"]'));
+  assert.equal(modal.querySelector('[data-gmode="de"]').classList.contains('on'), true);
+  modal.querySelector('[data-gfilter="12"]').click();
+  assert.equal(modal.open, false);
+  assert.equal(d.activeElement, button);
+  assert.deepEqual([...d.querySelectorAll('#sp-matrix-grid tbody tr')].filter(row => !row.hidden)
+    .map(row => row.cells[0].dataset.key), ['m|n12']);
+});
+
 test('đổi chiều, sắp xếp và bàn phím giữ danh tính dấu của ô LOTO', t => {
   const dom = setup(t, 'tan-suat-loto'), d = dom.window.document;
   const key = 'm|n12|d2026-09-01';

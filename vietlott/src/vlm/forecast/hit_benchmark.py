@@ -239,9 +239,10 @@ def run_ml(series: Series, start: int, end: int, config: MLConfig, tickets: int)
     """Bộ ML đang chạy: luật trước mỗi kỳ và danh mục ``tickets`` bộ theo đúng luật xếp hạng đã phát (``Law.top``)."""
     model = MLForecaster(series.product, config)
     model.update(series.head(start))
-    comp = model.components['main']
     laws, portfolios = [], []
     for t in range(start, end):
+        # update thay component bằng candidate đã học; không giữ tham chiếu từ warmup.
+        comp = model.components['main']
         law = comp.law(str(series.dates[t])[:10], next_id=int(series.draw_ids[t]))
         top, _ = law.top(tickets, max_nodes=config.search_nodes)
         laws.append(law)

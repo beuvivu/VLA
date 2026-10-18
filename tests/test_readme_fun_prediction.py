@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import update_readme
+from templates import Render
 
 
 def _sample_payload() -> dict:
@@ -89,3 +91,44 @@ def test_automation_block_replaces_legacy_schedule_and_is_idempotent() -> None:
     assert "19:05, 19:25, 19:45, 20:05" in once
     assert "20:10–20:35" in once
     assert "07:15" in once
+
+
+def test_automation_block_replaces_obsolete_source_policy_and_is_idempotent() -> None:
+    original = (
+        "# Test\n\n"
+        "<!-- AUTOMATION:BEGIN -->\n"
+        "Tải 7 nguồn song song, yêu cầu ≥2 nhóm nhà cung cấp độc lập.\n"
+        "<!-- AUTOMATION:END -->\n\n"
+        "## Bảng điều khiển\n"
+    )
+    once = update_readme._replace_automation_block(original)
+    assert "nguồn chính; chỉ gọi dự phòng khi nguồn chính gặp sự cố" in once
+    assert "yêu cầu ≥1 nhóm nhà cung cấp" in once
+    assert "7 nguồn" not in once
+    assert "≥2" not in once
+    assert update_readme._replace_automation_block(once) == once
+
+
+def test_daily_readme_template_and_automation_keep_the_current_source_policy() -> None:
+    context = {
+        field: 72 for _, fields in update_readme.GROUPS for field in fields
+    }
+    render = Render(template_dir=Path(__file__).resolve().parents[1] / "src" / "templates")
+    rendered = render(
+        "README.j2", date=date(2026, 10, 17), loto_result=["2"] * 10,
+        max_count=1, min_count=1, mean=1, std=0, **context,
+    )
+    generated = update_readme._replace_automation_block(rendered)
+    assert "17-10-2026" in generated
+    assert "00072" in generated
+    assert "Nguồn chính: `xoso.com.vn`" in generated
+    assert "Dự phòng theo thứ tự ưu tiên: `mketqua.net`, rồi `www.minhngoc.net.vn`" in generated
+    assert "ít nhất 1 nhóm nhà cung cấp" in generated
+    assert "yêu cầu ≥1 nhóm nhà cung cấp" in generated
+    assert "18:40 giờ Việt Nam" in generated
+    assert "thế hòa" in generated
+    assert "StalePage" in generated
+    assert "7 nguồn" not in generated
+    assert "ít nhất 2 nhóm" not in generated
+    assert "≥2" not in generated
+    assert update_readme._replace_automation_block(generated) == generated

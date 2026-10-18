@@ -79,7 +79,7 @@ class PipelineConfig:
         refit_every: Khớp lại mô hình sau mỗi bấy nhiêu ngày.
         top_k: Số con trả về trong danh sách gợi ý.
         discount: Hệ số chiết khấu của MAB.
-        use_temporal: Có bật cánh tay mô hình chuỗi sâu không.
+        use_temporal: Có bật cánh tay mô hình chuỗi (GRU hoặc đường lui tuyến tính) không.
         use_ranking: Có bật cánh tay LambdaMART không.
         feature_epsilon: Ngưỡng loại đặc trưng theo tầm quan trọng.
         seed: Hạt giống, để tái lập được.
@@ -201,7 +201,7 @@ class ContinuousLearningPipeline:
         }
         if self.config.use_ranking:
             arms["ranking_lambdamart"] = lambda: RankingBooster()
-        if self.config.use_temporal and CAPABILITIES.torch is not None:
+        if self.config.use_temporal:
             arms["temporal_sequence"] = lambda: TemporalSequenceModel()
         return arms
 
@@ -449,7 +449,7 @@ class ContinuousLearningPipeline:
         cursors = self._force_refit, self._last_observed_day
         try:
             self.bandit.update_batch(rewards)
-            score = self.tracker.add(probabilities, outcome)
+            score = self.tracker.add(probabilities, outcome, counts=self.observations.counts[day])
             verdict = self.drift.update(score.brier)
             if verdict.drifted:
                 self._force_refit = True

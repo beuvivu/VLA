@@ -85,7 +85,7 @@ Kết quả đo trên chính kho này (xem `documentation/research/`):
 | Bộ kiểm định ngẫu nhiên | 1/7 thô, **0/7 sau Bonferroni**, không lặp lại được ở nửa sau dữ liệu |
 | So sánh 12 họ mô hình | **0/12 vượt tỉ lệ nền** |
 | `ml_engine` trên 192 kỳ thật | skill **−0,000670** (t = −1,79), chế độ an toàn 120/192 kỳ |
-| Điểm hoà vốn | cần lift **+21,0%** so với nền 0,2377 |
+| Điểm hoà vốn | trả 80 mỗi nháy, đặt 23: cần lift **+6,48%** so với nền 0,27 nháy/con/kỳ; xác suất có về 0,2377 dùng cho chỉ số nhị phân |
 
 Thêm một mô hình thứ mười ba vào danh sách mười hai mô hình không vượt nền là
 việc có chi phí và không có bằng chứng nào cho thấy nó sẽ khác.

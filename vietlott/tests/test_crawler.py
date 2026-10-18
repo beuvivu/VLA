@@ -160,6 +160,60 @@ def test_integrity_detects_gaps(tmp_path: Path) -> None:
     assert rep.id_gaps == [(1, 2), (5, 6)]
 
 
+def test_incremental_sync_repairs_existing_internal_gaps_without_replacing_known_draws() -> None:
+    def rows(ids, numbers=(1, 2, 3, 4, 5, 6)):
+        return "\n".join(json.dumps({"date": f"2026-10-{i:02d}", "id": i, "result": numbers}) for i in ids)
+
+    repo = InMemoryRepository(parse_jsonl(rows([1, 3]), MEGA_645, None, "canonical").draws)
+
+    class Source(GithubMirrorSource):
+        cursors: list[int | None] = []
+
+        async def fetch(self, spec, since_id=None):
+            self.cursors.append(since_id)
+            return await super().fetch(spec, since_id)
+
+    async def run():
+        async with _client(lambda request: httpx.Response(200, text=rows([2, 3, 4], (7, 8, 9, 10, 11, 12)))) as client:
+            source = Source(client, "https://mirror.test/data")
+            report = await SyncPipeline(source, repo).run(MEGA_645)
+            await SyncPipeline(source, repo).run(MEGA_645)
+            return report, source.cursors
+
+    report, cursors = asyncio.run(run())
+    draws = repo.load("mega645")
+    assert [draw.draw_id for draw in draws] == [1, 2, 3, 4]
+    assert (draws[2].numbers, draws[2].source) == ((1, 2, 3, 4, 5, 6), "canonical")
+    assert cursors == [1, 4]
+    assert report.inserted == 2 and report.integrity.id_gaps == []
+
+
+@pytest.mark.parametrize("full_refresh", [False, True])
+def test_gap_repair_preserves_leading_gap_and_full_refresh_contracts(full_refresh: bool) -> None:
+    text = "\n".join(json.dumps({"date": f"2026-10-{i:02d}", "id": i, "result": [1, 2, 3, 4, 5, 6]})
+                     for i in range(1, 6))
+    repo = InMemoryRepository(parse_jsonl(text, MEGA_645, 2, "canonical").draws[:2])
+
+    class Source(GithubMirrorSource):
+        cursor = "unpolled"
+
+        async def fetch(self, spec, since_id=None):
+            self.cursor = since_id
+            return await super().fetch(spec, since_id)
+
+    async def run():
+        async with _client(lambda request: httpx.Response(200, text=text)) as client:
+            source = Source(client, "https://mirror.test/data")
+            report = await SyncPipeline(source, repo).run(MEGA_645, full_refresh=full_refresh)
+            return report, source.cursor
+
+    report, cursor = asyncio.run(run())
+    assert [draw.draw_id for draw in repo.load("mega645")] == ([1, 2, 3, 4, 5] if full_refresh else [3, 4, 5])
+    assert cursor == (None if full_refresh else 4)
+    assert report.integrity.id_gaps == ([] if full_refresh else [(1, 2)])
+    assert repo.load("mega645")[0].source == ("github_mirror" if full_refresh else "canonical")
+
+
 def test_duckdb_repository_roundtrip(tmp_path: Path) -> None:
     pytest.importorskip("duckdb")
     from vietlott_engine.crawler.storage import DuckDBRepository

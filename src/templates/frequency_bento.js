@@ -334,7 +334,10 @@ function installFrequencyBento(renderName) {
       const btn=ev.target.closest("button");if(!btn)return;
       if(btn.dataset.bfPick){pickedPairs.clear();if(btn.dataset.bfPick==="all")CAP50.forEach(p=>pickedPairs.add(p.map(pad2).join("-")));}
       else if(btn.dataset.bfPair){const p=btn.dataset.bfPair;if(pickedPairs.has(p))pickedPairs.delete(p);else pickedPairs.add(p);}
-      drawPicker();render();
+      host.querySelectorAll("[data-bf-pair]").forEach(button => {
+        button.setAttribute("aria-pressed", String(pickedPairs.has(button.dataset.bfPair)));
+      });
+      render();
     });
   }
 }
