@@ -249,3 +249,18 @@ def test_a_cached_pack_without_the_trust_policy_is_retrained(
     joblib.dump({**stale, **_pack()}, tmp_path / "cau_keo_loto.joblib")
     pack, _, _ = cau_keo_ml._load_or_train("loto", tmp_path, cau_keo_ml.CauKeoConfig())
     assert calls == ["loto"] and trust_from_pack(pack) == (0.2, 0.238)
+
+
+@pytest.mark.parametrize("anchor_t,weekday", [(0, 3), (5, 0), (200, 6), (499, 2), (499, 4)])
+def test_same_weekday_feature_equals_the_per_day_scan(anchor_t, weekday) -> None:
+    """Mặt nạ thứ vector hoá phải cộng đúng các ngày mà vòng duyệt từng ngày cộng."""
+    rng = np.random.default_rng(anchor_t + weekday)
+    hit = (rng.random((500, 100)) < .25).astype(np.int8)
+    dates = pd.date_range("2025-01-01", periods=500, freq="D")
+    start = max(0, anchor_t - 364 + 1)
+    idx = [i for i in range(start, anchor_t + 1) if int(dates[i].weekday()) == weekday]
+    expected = hit[idx].sum(axis=0).astype(np.int16) if idx else np.zeros(100, dtype=np.int16)
+    got = cau_keo_ml._build_same_weekday_feature(hit, dates, anchor_t=anchor_t,
+                                                 target_weekday=weekday)
+    assert got.dtype == np.int16
+    np.testing.assert_array_equal(got, expected)

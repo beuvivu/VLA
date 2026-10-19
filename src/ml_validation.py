@@ -258,22 +258,50 @@ def _paired_date_bootstrap(
     if not np.array_equal(baseline.dates, challenger.dates):
         raise ValueError("baseline and challenger must use identical OOS dates and rows")
 
-    unique_dates = pd.unique(baseline.dates)
-    groups = [np.flatnonzero(baseline.dates == date) for date in unique_dates]
+    # Bootstrap theo KỲ: mỗi lượt rút có hoàn lại G kỳ (giữ nguyên mọi hàng
+    # tương quan của một kỳ). Brier và logloss là TRUNG BÌNH theo hàng, nên với
+    # tập kỳ rút được S (kể cả kỳ lặp):
+    #
+    #     mean_S = Σ_{g∈S} tổng_loss[g] / Σ_{g∈S} số_hàng[g]
+    #
+    # Chỉ cần tổng theo kỳ, tính MỘT lần; mỗi lượt là hai phép cộng O(G) thay
+    # cho ghép lại O(N) hàng rồi chấm lại qua sklearn (15 trong 75 giây của
+    # cau_keo_domain_challenger). Thứ tự kỳ và dòng số ngẫu nhiên giữ nguyên.
+    group, _ = pd.factorize(baseline.dates)
+    groups = int(group.max()) + 1
+    sizes = np.bincount(group, minlength=groups).astype(float)
+    sums = {
+        name: np.bincount(group, weights=losses, minlength=groups)
+        for name, losses in (
+            ("base_brier", _row_brier(baseline)),
+            ("cand_brier", _row_brier(challenger)),
+            ("base_logloss", _row_logloss(baseline)),
+            ("cand_logloss", _row_logloss(challenger)),
+        )
+    }
     rng = np.random.default_rng(config.bootstrap_seed)
     brier_delta = np.empty(config.bootstrap_replicates, dtype=float)
     logloss_delta = np.empty(config.bootstrap_replicates, dtype=float)
     for replicate in range(config.bootstrap_replicates):
-        sampled = rng.integers(0, len(groups), size=len(groups))
-        # Concatenation intentionally preserves duplicate sampled dates and all
-        # correlated candidate rows belonging to each sampled draw.
-        idx = np.concatenate([groups[int(i)] for i in sampled])
-        y = baseline.y_true[idx]
-        base = evaluate_predictions(y, baseline.probability[idx], baseline.dates[idx])
-        candidate = evaluate_predictions(y, challenger.probability[idx], challenger.dates[idx])
-        brier_delta[replicate] = base.brier - candidate.brier
-        logloss_delta[replicate] = base.logloss - candidate.logloss
+        sampled = rng.integers(0, groups, size=groups)
+        rows = sizes[sampled].sum()
+        brier_delta[replicate] = (sums["base_brier"][sampled].sum()
+                                  - sums["cand_brier"][sampled].sum()) / rows
+        logloss_delta[replicate] = (sums["base_logloss"][sampled].sum()
+                                    - sums["cand_logloss"][sampled].sum()) / rows
     return brier_delta, logloss_delta
+
+
+def _row_brier(evaluation: PredictionEvaluation) -> np.ndarray:
+    """(y − p)² từng hàng; trung bình của nó là ``brier_score_loss``."""
+    return (evaluation.y_true.astype(float) - evaluation.probability) ** 2
+
+
+def _row_logloss(evaluation: PredictionEvaluation) -> np.ndarray:
+    """−[y·ln p + (1 − y)·ln(1 − p)] từng hàng, p chặn như ``evaluate_predictions``."""
+    y = evaluation.y_true.astype(float)
+    clipped = np.clip(evaluation.probability, 1e-9, 1.0 - 1e-9)
+    return -(y * np.log(clipped) + (1.0 - y) * np.log(1.0 - clipped))
 
 
 def compare_paired_predictions(

@@ -151,3 +151,41 @@ def test_pipeline_formats_exports_as_a_hard_gate(monkeypatch, skip_docs):
     assert names.index("src/online_learning.py") < idx
     if not skip_docs:
         assert idx < names.index("src/build_docs.py")
+
+
+def _slow_code_column(series, width):
+    from lottery_codes import lottery_code
+    return series.map(lambda value: lottery_code(value, width))
+
+
+@pytest.mark.parametrize("column", [
+    pd.Series([0, 3, 99, 3, 0] * 40, dtype="int64"),
+    pd.Series([0.0, 3.0, float("nan"), 99.0, 3.0]),
+    pd.Series([1, None, 7, 7], dtype="Int64"),
+    pd.Series(["03", " 7", "", None, 3, 3.0, float("nan"), pd.NA, "03"], dtype=object),
+    pd.Series([], dtype="int64"),
+    pd.Series([], dtype=object),
+])
+def test_cached_code_column_equals_the_per_cell_formatter(column):
+    """Định dạng một lần cho mỗi giá trị khác nhau phải ra ĐÚNG từng ô như gọi từng ô."""
+    from lottery_codes import code_column
+    for width in (2, 3):
+        fast = code_column(column, width)
+        assert fast.tolist() == _slow_code_column(column, width).tolist()
+        assert fast.index.equals(column.index)
+
+
+@pytest.mark.parametrize("column", [
+    pd.Series([1, True], dtype=object),       # True == 1 nhưng không phải mã
+    pd.Series([True, 1], dtype=object),
+    pd.Series([True, False]),
+    pd.Series([3.0, 1.5]),
+    pd.Series([3, 100]),
+    pd.Series(["03", "003"], dtype=object),
+])
+def test_cached_code_column_rejects_what_the_formatter_rejects(column):
+    from lottery_codes import code_column
+    with pytest.raises(ValueError):
+        _slow_code_column(column, 2)
+    with pytest.raises(ValueError):
+        code_column(column, 2)
