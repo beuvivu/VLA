@@ -366,4 +366,7 @@ Bản này không đổi phép tính, ngưỡng hay dữ liệu nào.
 - 6 phép kiểm mới, mỗi phép so bản mới với bản cũ: 5 ở VLA (24 trường hợp tham số hoá) và 1 ở
   engine (49 phép con).
 - 12 đột biến: 11 đỏ, 1 tương đương (thứ tự hai nhánh −∞, mục 2.9).
-- Bộ kiểm toàn phần: đang chạy.
+- Bộ kiểm toàn phần trên bản cuối:
+  - VLA: 3 923 đạt, 1 bỏ qua (`PYTHONPATH=src python3 -m pytest tests`, 11 phút 35 giây);
+  - engine: 804 đạt, 3 bỏ qua, 92 phép con đạt (`cd vietlott && python3 -m pytest`, 4 phút 13 giây);
+  - `ruff` sạch ở cả hai phía.
