@@ -159,14 +159,14 @@ def panel_html(current: str) -> str:
 
 
 def header_html(current: str) -> str:
-    """Nexlink header layout, exact original vectors, real application actions."""
+    """Shared header with the lottery emblem and real application actions."""
     group = escape(SITE_NAV[_nhom_cua_trang(current)][0])
     page = next((label for _, items in SITE_NAV for href, label, _ in items
                  if href == _trang_chuan(current)), 'Tổng quan')
     return (
         '<header class="app-header" id="app-header">'
         '<a class="app-rail-brand" href="index.html" aria-label="Vietnam Lottery Analysis">'
-        + nexlink_icon('brand', 'app-brand-icon') + '</a>'
+        '<img class="app-brand-icon" src="assets/lottery-drum.webp" alt="" width="48" height="48"></a>'
         '<div class="app-header-inner">'
         '<button class="app-icon-btn app-toggle" id="app-toggle" type="button"'
         ' aria-expanded="false" aria-controls="app-panel">'
@@ -207,7 +207,7 @@ def header_html(current: str) -> str:
         ' aria-expanded="false" aria-controls="app-profile-menu" aria-label="Menu ứng dụng">'
         '<span class="app-profile-copy"><strong>Vietnam Lottery</strong><small>'
         + nexlink_icon('angle-down') + ' Analysis</small></span>'
-        '<span class="app-avatar"><img src="assets/app-avatar.webp" alt="" width="40" height="40"></span></button>'
+        '<span class="app-avatar"><img src="assets/lottery-drum.webp" alt="" width="40" height="40"></span></button>'
         '<div class="app-dropdown-menu app-profile-menu" id="app-profile-menu" hidden>'
         '<a href="index.html">' + nexlink_icon('house-blank') + 'Trang tổng quan</a>'
         '<a href="dashboard.html">' + nexlink_icon('circle-user') + 'Bảng điều khiển AI/ML</a>'

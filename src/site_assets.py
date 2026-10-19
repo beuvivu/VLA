@@ -15,7 +15,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlencode, urlsplit, urlunsplit
 
-_SUFFIXES = {".css", ".js", ".json"}
+_SUFFIXES = {".css", ".js", ".json", ".png", ".webp", ".svg", ".ico"}
 _ATTR = re.compile(
     r'''(?P<name>[^\s"'<>/=]+)(?:\s*=\s*(?:"(?P<double>[^"]*)"|'(?P<single>[^']*)'|(?P<bare>[^\s"'=<>`]+)))?'''
 )
@@ -58,7 +58,7 @@ class _AssetReferences(HTMLParser):
         for name in classes.split():
             if name in self.shell_counts:
                 self.shell_counts[name] += 1
-        wanted = {"script": "src", "link": "href", "a": "href"}.get(tag)
+        wanted = {"script": "src", "link": "href", "a": "href", "img": "src"}.get(tag)
         if not wanted:
             return
         raw = self.get_starttag_text()
