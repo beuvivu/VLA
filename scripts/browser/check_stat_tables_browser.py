@@ -6,6 +6,54 @@ from playwright.sync_api import expect
 
 FREQUENCY_PAGES = ("tan-suat-loto.html", "tan-suat-cap-loto.html")
 CALENDAR_PAGES = ("bang-dac-biet.html", "bang-dac-biet-thang.html", "bang-dac-biet-nam.html")
+PRESET_PAGES = ("cau-dac-biet-theo-bo-so.html", "chu-ky-dac-biet.html",
+                "lo-gan.html", "giai-db-ngay-mai.html")
+
+
+def check_preset_ranges(page, base, out: Path, width, dark):
+    """Bấm các mốc thật, đối chiếu số kỳ và số lần về với dữ liệu gốc."""
+    results = []
+    for name in PRESET_PAGES:
+        errors = []
+        def record_error(error, errors=errors):
+            errors.append(str(error))
+        page.on("pageerror", record_error)
+        try:
+            page.goto(f"{base}/{name}", wait_until="load")
+            if page.locator("html").evaluate("e => e.classList.contains('dark')") != dark:
+                page.locator("#app-theme").click()
+            for days in (30, 60, 90, 180, 365, 30, 0):
+                page.locator(f'.sp-chips .sp-chip[data-days="{days}"]').click()
+                state = page.evaluate("""({days, name}) => {
+                  const expected = days ? DRAWS.slice(-days) : DRAWS;
+                  const actual = selected();
+                  const count = document.getElementById('sp-count').textContent;
+                  const rows = Array.from(document.querySelectorAll('#sp-grid tbody tr'));
+                  const stats = rows.filter(row => row.cells.length === 5);
+                  const hits = stats.reduce((n, row) => n + Number(row.cells[4].textContent), 0);
+                  const wantHits = name === 'lo-gan.html'
+                    ? expected.reduce((n, draw) => n + new Set(draw.n).size, 0) : expected.length;
+                  return {expected:expected.length, actual:actual.length,
+                    sameDates:JSON.stringify(actual.map(r => r.d)) === JSON.stringify(expected.map(r => r.d)),
+                    count, first:expected[0]?.d, last:expected.at(-1)?.d, hits, wantHits,
+                    active:document.querySelector('.sp-chips .on')?.dataset.days};
+                }""", {"days": days, "name": name})
+                assert state["actual"] == state["expected"] and state["sameDates"], state
+                assert state["active"] == str(days), state
+                assert state["count"].startswith(f'{state["expected"]} kỳ · '), state
+                if state["first"]:
+                    assert state["first"] in state["count"] and state["last"] in state["count"], state
+                if name != "giai-db-ngay-mai.html":
+                    assert state["hits"] == state["wantHits"], state
+                page.locator("#sp-clear-marks").click()
+                assert page.locator("#sp-count").inner_text() == state["count"]
+                results.append({"page": name, "width": width, "dark": dark,
+                                "days": days, "preset_range": "passed", "draws": state["actual"]})
+            assert not errors, errors
+            page.screenshot(path=str(out / f"preset-{name}-{width}-{'dark' if dark else 'light'}.png"))
+        finally:
+            page.remove_listener("pageerror", record_error)
+    return results
 
 
 def select_days(page, days):
@@ -382,6 +430,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
         finally:
             page.remove_listener("pageerror", record_error)
     results.extend(check_detail_tables(page, base, out, width, dark))
+    results.extend(check_preset_ranges(page, base, out, width, dark))
     return results
 
 
