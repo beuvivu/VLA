@@ -31,6 +31,10 @@ on:
     paths:
       - .github/workflows/vlm-results.yml
       - vietlott/src/vlm/updates/**
+      - vietlott/src/vietlott_engine/crawler/**
+      - vietlott/src/vietlott_engine/core/config.py
+      - vietlott/src/vietlott_engine/cli.py
+      - vietlott/tests/test_fast_results_recovery.py
       - vietlott/src/vlm/forecast/**
       - vietlott/src/vlm/web/**
       - vietlott/scripts/build_site.py
@@ -63,6 +67,11 @@ jobs:
       VQE_SEED_FILE_DIR: data/seed
       VQE_AUTO_UPDATE_DIR: data/results
       VQE_LOG_LEVEL: WARNING
+      # Mỗi request vẫn hữu hạn; archive có thời gian cho phân vùng tháng và retry.
+      VQE_HTTP_TIMEOUT_S: "10"
+      VQE_MAX_RETRIES: "2"
+      VQE_ARCHIVE_TIMEOUT_S: "90"
+      VQE_AUTO_UPDATE_TIMEOUT_S: "360"
       PYTHONUTF8: "1"
       TZ: Asia/Ho_Chi_Minh
     steps:
@@ -75,7 +84,9 @@ jobs:
           cache: pip
           cache-dependency-path: vietlott/pyproject.toml
       - name: Cài crawler
-        run: python -m pip install -e ".[crawler]"
+        run: python -m pip install -e ".[dev,crawler]"
+      - name: Kiểm thử hồi quy thu thập Keno và Bingo18
+        run: python -m pytest tests/test_fast_results_recovery.py -q
       - name: Đồng bộ main mới nhất trước khi cập nhật
         run: python scripts/persist_site.py sync
 

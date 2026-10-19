@@ -115,6 +115,11 @@ class UpdateRunner:
             entry.update(last_attempt=now.isoformat(), slot=slot_key(product, now))
             try:
                 result = await asyncio.wait_for(self.update(product), self.timeout_s)
+                # Giữ chẩn đoán và cursor thực đã lưu kể cả lượt phục hồi còn lỗi.
+                entry.update({key:result[key] for key in ('source_attempts','continuity') if key in result})
+                if result.get('error'):
+                    entry.update({key:result[key] for key in ('last_draw_id','last_draw_date',
+                        'draws_on_last_date','inserted','source') if key in result})
                 if result.get('error'):
                     raise RuntimeError('Source did not return a usable result')
                 if result.get('last_draw_date') and result['last_draw_date'][:10] > now.date().isoformat():

@@ -366,6 +366,23 @@ python scripts/products_report.py                        # reports/products.{md,
 
 ### 1.7 Khi không vào được vietlott.vn: nguồn dự phòng và bộ Vietlott Quant Engine 1.3.0 (v3.3)
 
+**Cổng đồng bộ Keno/Bingo18 từ 19/10/2026.** Lượt đồng bộ live chỉ nhận dòng archive đúng sản phẩm,
+`draw_status=confirmed`, `validation_status=valid`, có `data_source=official_vietlott` và không còn trạng thái
+xác thực `pending`. `confirmed` của kỳ quay và `valid` của cấu trúc không thay thế xác thực nguồn chính thức.
+Bản sao `mirror` và snapshot `v130` thiếu metadata xác thực không được dùng để đồng bộ live hai sản phẩm này;
+lịch sử và công cụ đọc archive phục vụ nghiên cứu vẫn được giữ nguyên.
+
+Cursor chỉ tiến qua các kỳ đã có kết quả xác thực hoặc thông báo `not_confirmed` có URL HTTPS chính thức.
+Báo cáo có `continuity.missing_ranges`, `historical_missing_ranges`, `latest_observed`, `latest_verified` và
+`attempts` với ngân sách/thời gian/lỗi từng nguồn. Khoảng thiếu lịch sử cũng làm lượt đồng bộ trả lỗi.
+Đoạn liên tục đã xác thực được lưu trước khi báo lỗi phần còn thiếu; không tự sinh kỳ hoặc số quay để lấp chỗ trống.
+Chỉ nhánh chính thức của lượt đọc lại tường minh `--full` mới được sửa số cũ và phải đi qua journal bền.
+
+`VQE_ARCHIVE_TIMEOUT_S` mặc định 90 giây, tách khỏi `VQE_SOURCE_TIMEOUT_S` mặc định 20 giây. HTTP vẫn dùng retry
+hữu hạn; challenge Cloudflare (kể cả HTTP 200) dừng ngay. Workflow dùng HTTP thông thường, timeout request 10 giây,
+tối đa 2 lần retry và thời hạn sản phẩm 360 giây. `products sync` và `vlm-update --once` trả mã 1 khi còn lỗi nguồn/
+validation/continuity; xem artifact trạng thái trước khi kết luận dữ liệu đã được khôi phục.
+
 **Chuỗi dự phòng.** Mọi lệnh đồng bộ nhận `--source auto` (mặc định cho `products sync` và `prizes`): `sync` và `products sync` thử lần lượt theo `VQE_FALLBACK_ORDER`, `prizes` theo thứ tự vietlott → canonical → nhanaz → v130; dừng ở nguồn đầu tiên trả lời, và ghi lại từng lần thử (`attempts`, `source_used`) — người đọc báo cáo biết dữ liệu đến từ đâu.
 
 | Thứ tự | Nguồn | Khi nào dùng được | Cập nhật |

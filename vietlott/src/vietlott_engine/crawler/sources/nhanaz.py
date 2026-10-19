@@ -24,6 +24,7 @@ This module converts rows to the engine's formats: canonical records (schema 1.0
 from __future__ import annotations
 
 import csv
+import asyncio
 import io
 import json
 import re
@@ -31,6 +32,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.products import FOUR_DIGIT_LAYOUT, THREE_DIGIT_LAYOUT, ProductCode
@@ -84,7 +86,7 @@ def _digits_tiers(result: dict, layout: tuple[tuple[str, int], ...]) -> list[dic
     return out
 
 
-def convert_draws(product: ProductCode, csv_rows: list[dict]) -> ArchiveDraws:
+def convert_draws(product: ProductCode, csv_rows: list[dict], *, verified_only: bool = False) -> ArchiveDraws:
     """Archive draw rows → engine rows. Matrix games become canonical records (prizes are
     attached by :func:`attach_prizes`); the other products become ``{"id","date","result"}``."""
     out = ArchiveDraws(product)
@@ -96,6 +98,14 @@ def convert_draws(product: ProductCode, csv_rows: list[dict]) -> ArchiveDraws:
             attrs = _json(r.get("attributes_json"))
             src = attrs.get("data_source", "unknown") if isinstance(attrs, dict) else "unknown"
             status = (r.get("draw_status") or "confirmed").strip()
+            if verified_only:
+                # «confirmed» là trạng thái kỳ, «valid» chỉ là kiểm tra cấu trúc.
+                # Dữ liệu đăng lại còn pending không chứng minh kết quả chính thức.
+                verification = attrs.get('official_verification_status') if isinstance(attrs, dict) else None
+                if (r.get('product') != product.value or r.get('draw_status') != 'confirmed'
+                        or r.get('validation_status') != 'valid' or src != OFFICIAL_SOURCE
+                        or verification not in (None, 'verified') or did <= 0):
+                    raise ValueError('unverified archive result (product/status/validation/official provenance)')
             if product in MATRIX:
                 row = {
                     "draw_id": f"{did:05d}",
@@ -177,9 +187,21 @@ def attach_prizes(records: list[dict], prize_rows: list[dict]) -> int:
     return n
 
 
-def parse_exclusions(csv_rows: list[dict]) -> list[dict]:
+def verified_exclusion(row: dict) -> bool:
+    """Chỉ thông báo loại kỳ có địa chỉ chính thức mới chứng minh được khoảng bỏ qua."""
+    try:
+        url=urlsplit(row.get('source_url') or '')
+        return (row.get('draw_status')=='not_confirmed' and int(str(row.get('draw_id','')).lstrip('#'))>0
+                and url.scheme=='https' and url.hostname in ('vietlott.vn','www.vietlott.vn','media.vietlott.vn'))
+    except (TypeError,ValueError):
+        return False
+
+
+def parse_exclusions(csv_rows: list[dict], *, verified_only: bool = False) -> list[dict]:
     out = []
     for r in csv_rows:
+        if verified_only and not verified_exclusion(r):
+            continue
         try:
             out.append(
                 {
@@ -223,6 +245,7 @@ class NhanAZArchive:
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.root: Path | None = None
+        self.rejected_exclusions: list[dict] = []
         if local_dir is not None:
             p = Path(local_dir)
             self.root = p / "datasets" if (p / "datasets").is_dir() else p
@@ -258,25 +281,27 @@ class NhanAZArchive:
             y, m = (y + 1, 1) if m == 12 else (y, m + 1)
         return out
 
-    async def draws(self, product: ProductCode, since: date | None = None) -> ArchiveDraws:
+    async def draws(self, product: ProductCode, since: date | None = None, *, verified_only: bool = False) -> ArchiveDraws:
         if product in MONTHLY:
             rows: list[dict] = []
             for month in self._months(product, since):
                 text = await self._text(f"draws/{product.value}/{month}.csv", missing_ok=True)
                 if text:
-                    rows += read_csv(text)
+                    rows += await asyncio.to_thread(read_csv, text)
         else:
             rows = read_csv(await self._text(f"draws/{product.value}/all.csv") or "")
-        out = convert_draws(product, rows)
+        out = await asyncio.to_thread(convert_draws, product, rows, verified_only=verified_only)
         if product in MATRIX:
             prizes = await self._text(f"prizes/{product.value}/all.csv", missing_ok=True)
             if prizes:
                 attach_prizes(out.rows, read_csv(prizes))
         return out
 
-    async def exclusions(self) -> list[dict]:
+    async def exclusions(self, *, verified_only: bool = False) -> list[dict]:
         text = await self._text("exclusions.csv", missing_ok=True)
-        return parse_exclusions(read_csv(text)) if text else []
+        rows=read_csv(text) if text else []
+        self.rejected_exclusions=[r for r in rows if verified_only and not verified_exclusion(r)]
+        return parse_exclusions(rows,verified_only=verified_only)
 
     async def prize_rules(self) -> list[dict]:
         text = await self._text("prize_rules.csv", missing_ok=True)

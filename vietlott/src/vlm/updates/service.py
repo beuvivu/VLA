@@ -466,7 +466,8 @@ async def sync_product(state, code, *, source: str = 'auto', max_pages: int | No
                 mirror_base_url=s.product_mirror_base_url, canonical_base_url=s.canonical_base_url,
                 bootstrap_cookie=s.vietlott_cookie_bootstrap, pages_per_batch=s.max_concurrency,
                 nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=s.nhanaz_dir, v130_dir=s.v130_dir,
-                fallback_order=s.fallback_order, source_timeout_s=s.source_timeout_s)
+                fallback_order=s.fallback_order, source_timeout_s=s.source_timeout_s,
+                archive_timeout_s=s.archive_timeout_s)
             report = await pipe.run(code, source, max_pages or s.product_sync_max_pages, full,
                                     before_upsert=persist_results)
         h = await asyncio.to_thread(store.load, code)
@@ -557,10 +558,11 @@ async def update_product(state, product: str, *, learn: bool = True) -> dict:  #
                 'learning':await _learn(state, product) if learn else None}
     code = ProductCode(product)
     report = await sync_product(state, code, learn=False)
-    h = state.product_store().load(code)
+    h = await asyncio.to_thread(state.product_store().load, code)
     count = int((h.dates == h.dates[-1]).sum()) if len(h) else 0
     return {'last_draw_id':report['last_id'], 'last_draw_date':report['last_date'], 'draws_on_last_date':count,
             'inserted':report['inserted'], 'source':report['source_used'], 'error':report['error'],
+            'source_attempts':report['attempts'], 'continuity':report['continuity'],
             'learning':await _learn(state, product) if learn else None}
 
 

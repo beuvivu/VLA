@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     auto_update_timeout_s: float = Field(default=180, gt=0)
     auto_update_dir: Path | None = None
     source_timeout_s: float = Field(default=20, gt=0)
+    archive_timeout_s: float = Field(default=90, gt=0)  # tải phân vùng tháng + retry, tách khỏi nguồn trực tiếp
     ml_auto_update_enabled: bool = True
     ml_bootstrap: int = Field(default=1000, ge=1, le=1000)
     ml_learning_timeout_s: float = Field(default=180, gt=0)

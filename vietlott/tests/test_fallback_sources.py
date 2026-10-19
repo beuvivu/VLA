@@ -47,7 +47,9 @@ def _csv(rows: list[dict], cols: list[str]) -> str:
 
 
 def _draw(product: str, did: str, d: str, result: dict, status: str = "confirmed", source: str = "official_vietlott", **attrs) -> dict:
-    return {"product": product, "draw_id": did, "draw_date": d, "draw_status": status, "result_json": json.dumps(result), "attributes_json": json.dumps({"data_source": source} | attrs)}
+    return {"product": product, "draw_id": did, "draw_date": d, "draw_status": status,
+            "validation_status":"valid", "result_json": json.dumps(result),
+            "attributes_json": json.dumps({"data_source": source} | attrs)}
 
 
 KENO_A = list(range(1, 21))
@@ -177,7 +179,8 @@ def test_product_sync_auto_falls_back_to_archive_and_records_exclusions(tmp_path
 
     rep = asyncio.run(run())
     assert rep.source_used == "nhanaz" and [a["source"] for a in rep.attempts] == ["vietlott", "nhanaz"] and not rep.attempts[0]["ok"]
-    assert (rep.inserted, rep.total_after, rep.exclusions_added) == (2, 2, 1)
+    assert (rep.inserted, rep.total_after, rep.exclusions_added) == (1, 1, 1)
+    assert rep.rejected >= 1  # dòng đăng lại chưa có xác thực chính thức không vào kho live
     store.upsert(ProductCode.KENO, [{"id": 275986, "date": "2026-04-02", "result": KENO_A}], "test")  # a not-confirmed draw reaches the store
     assert 275986 not in store.load(ProductCode.KENO).draw_ids and 275986 in store.load(ProductCode.KENO, include_unconfirmed=True).draw_ids
 
@@ -285,6 +288,7 @@ def test_cli_sync_from_local_archive(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     arch = make_archive(tmp_path / "arch")
     monkeypatch.setenv("VQE_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("VQE_PRODUCT_SEED_DIR", str(tmp_path / "empty-seed"))
     get_settings.cache_clear()
     try:
         assert main(["products", "sync", "--product", "keno", "--source", "nhanaz", "--path", str(arch)]) == 0

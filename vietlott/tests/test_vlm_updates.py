@@ -5,6 +5,18 @@ from datetime import datetime, timedelta
 import pytest
 
 
+def _sync_response(product,rows,request):
+    """Số mẫu từ nguồn chính thức cho kiểm thử journal; matrix giữ JSONL cũ."""
+    import httpx
+    if product=='mega645':
+        return httpx.Response(200,text=''.join(json.dumps(r)+'\n' for r in rows))
+    from tests.test_all_products import _bingo_html
+    page=json.loads(request.content)['PageIndex'] if request.method=='POST' else -1
+    html=_bingo_html([(datetime.fromisoformat(r['date']).strftime('%d/%m/%Y'),r['id'],r['result'])
+                      for r in rows]) if page==1 else ''
+    return httpx.Response(200,json={'value':{'HtmlContent':html}})
+
+
 def test_pending_fsync_failure_closes_temp_before_cleanup(tmp_path, monkeypatch):
     """Mô phỏng Windows: không unlink tệp còn mở, không che lỗi fsync gốc."""
     from vietlott_engine.api.deps import AppState
@@ -377,13 +389,13 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
     service._append(state, [DrawRecord.from_legacy(product,r) for r in (old,latest)])
     @asynccontextmanager
     async def client(_settings):
-        transport = httpx.MockTransport(lambda request:httpx.Response(200,text=''.join(json.dumps(r)+'\n' for r in (corrected,latest))))
+        transport = httpx.MockTransport(lambda request:_sync_response(product,(corrected,latest),request))
         async with httpx.AsyncClient(transport=transport) as c: yield c
     monkeypatch.setattr(service, 'build_http_client', client)
     if product == 'mega645':
         asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True))
     else:
-        asyncio.run(service.sync_product(state, ProductCode(product), source='mirror', full=True))
+        asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True))
     restored = AppState(settings, InMemoryRepository())
     # Simulate cache/database loss for the product store as well.
     if product == 'bingo18':
@@ -508,15 +520,14 @@ def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monke
 
     @asynccontextmanager
     async def client(_settings):
-        payload = ''.join(json.dumps(r) + '\n' for r in (corrected, latest))
-        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200, text=payload))) as c:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:_sync_response(product,(corrected,latest),request))) as c:
             yield c
     monkeypatch.setattr(service, 'build_http_client', client)
 
     def sync(target):
         if product == 'mega645':
             return asyncio.run(service.sync_matrix(target, get_game(product), source='github_mirror', full_refresh=True, learn=False))
-        return asyncio.run(service.sync_product(target, ProductCode(product), source='mirror', full=True, learn=False))
+        return asyncio.run(service.sync_product(target, ProductCode(product), source='vietlott', full=True, learn=False))
 
     def values(target):
         if product == 'mega645':
@@ -640,8 +651,7 @@ def test_durable_pending_correction_recovers_crash_before_cache_without_overridi
     store(state, rows)
     @asynccontextmanager
     async def client(_settings):
-        text = ''.join(json.dumps(row) + '\n' for row in (corrected, rows[1]))
-        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200, text=text))) as http:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:_sync_response(product,(corrected,rows[1]),request))) as http:
             yield http
     monkeypatch.setattr(service, 'build_http_client', client)
     def crash(*args, **kwargs):
@@ -655,7 +665,7 @@ def test_durable_pending_correction_recovers_crash_before_cache_without_overridi
             if product == 'mega645':
                 asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True, learn=False))
             else:
-                asyncio.run(service.sync_product(state, ProductCode(product), source='mirror', full=True, learn=False))
+                asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True, learn=False))
     assert values(state) == numbers
     if restart == 'conflict':
         store(state, [unrelated])
