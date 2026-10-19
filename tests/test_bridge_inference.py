@@ -426,3 +426,30 @@ def test_the_benchmark_merges_only_parts_of_the_same_run() -> None:
 
     with pytest.raises(ValueError, match="cần đúng các phần"):
         bench.merge([good[0], good[0]], run=run, expected_target=expected)
+
+
+def test_the_benchmark_identity_covers_every_module_it_runs(tmp_path, monkeypatch) -> None:
+    """Phép đo chạy cả ``ensemble_utils``, ``vla.backtest.evaluator``, ``xsmb_domain`` và chính kịch bản.
+
+    Đổi BẤT KỲ tệp nào trong số ấy thì danh tính lượt đo phải đổi, để bước gộp
+    không ghép hai phần tính bằng hai logic khác nhau.
+    """
+    bench = _benchmark_script()
+    for rel in ("src/path_prob.py", "src/ensemble_utils.py", "src/xsmb_domain.py",
+                "src/vla/backtest/evaluator.py"):
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("x = 1\n", encoding="utf-8")
+    script = tmp_path / "scripts" / "research" / "benchmark.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("y = 1\n", encoding="utf-8")
+    monkeypatch.setattr(bench, "ROOT", tmp_path)
+    monkeypatch.setattr(bench, "SCRIPT", script)
+    raw = pd.DataFrame({"date": ["2026-10-14", "2026-10-15"], "db": ["12345", "67890"]})
+    base = bench.run_identity(raw, last=2, parts=1)
+    for path in [*sorted((tmp_path / "src").rglob("*.py")), script]:
+        before = path.read_text(encoding="utf-8")
+        path.write_text(before + "# đổi\n", encoding="utf-8")
+        assert bench.run_identity(raw, last=2, parts=1) != base, path
+        path.write_text(before, encoding="utf-8")
+    assert bench.run_identity(raw, last=2, parts=1) == base

@@ -193,21 +193,38 @@ def _history():
     return raw, two, dates, {"loto": hit_loto, "de": hit_de}
 
 
-#: Mã nguồn quyết định xác suất của cầu: đổi một tệp là đổi phép đo.
-_CODE_FILES = ("src/path_prob.py", "src/path_models.py", "src/hierarchical_pooling.py")
+#: Đổi khuôn danh tính thì tăng số này: phần ghi theo khuôn cũ không gộp được với phần mới.
+IDENTITY_VERSION = 2
+SCRIPT = Path(__file__).resolve()
+
+
+def _code_digest(root: Path, script: Path) -> str:
+    """Băm MỌI mã có thể chạy trong phép đo: toàn bộ ``src/**/*.py`` và chính kịch bản này.
+
+    Không liệt kê tay vài module: phép đo còn chạy ``ensemble_utils``,
+    ``vla.backtest.evaluator``, ``xsmb_domain``… và một danh sách tay sẽ sót
+    module mới. Băm rộng hơn cần thiết chỉ làm bước gộp từ chối thừa, không
+    bao giờ để lọt hai phần tính bằng hai logic khác nhau.
+    """
+    digest = hashlib.sha256()
+    for path in [*sorted((root / "src").rglob("*.py")), script]:
+        digest.update(path.relative_to(root).as_posix().encode("utf-8") + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()
 
 
 def run_identity(raw: pd.DataFrame, *, last: int, parts: int) -> dict:
-    """Danh tính một lượt đo: tham số, ảnh chụp dữ liệu và mã nguồn của cầu.
+    """Danh tính một lượt đo: tham số, ảnh chụp dữ liệu, mã nguồn và thư viện số.
 
     Mọi phần của cùng một lượt phải mang đúng danh tính này; bước gộp từ chối
     phần cũ (dữ liệu hay mã đã đổi) hoặc phần chạy với ``--last``/``--parts`` khác.
     """
     data = hashlib.sha256(raw.to_csv(index=False).encode("utf-8")).hexdigest()
-    code = hashlib.sha256(b"".join((ROOT / f).read_bytes() for f in _CODE_FILES)).hexdigest()
-    return {"last": int(last), "parts": int(parts), "window_days": PRODUCTION_WINDOW_DAYS,
+    return {"identity_version": IDENTITY_VERSION,
+            "last": int(last), "parts": int(parts), "window_days": PRODUCTION_WINDOW_DAYS,
             "draws": int(len(raw)), "last_date": str(pd.Timestamp(raw["date"].iloc[-1]).date()),
-            "data_sha256": data, "code_sha256": code}
+            "data_sha256": data, "code_sha256": _code_digest(ROOT, SCRIPT),
+            "libraries": {"numpy": np.__version__, "pandas": pd.__version__}}
 
 
 def expected_targets(dates, last: int) -> list[int]:

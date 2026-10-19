@@ -147,13 +147,16 @@ con khác.
 Tái lập bằng `PYTHONPATH=src python3 scripts/research/benchmark_bridge_inference.py --last 2000`.
 Với cửa sổ 2 000 kỳ của pipeline, mỗi ngày neo mất khoảng 19 giây cho cả hai chế độ, tức gần 3 giờ
 trên 4 lõi. Vì thế kịch bản chạy theo phần (`--parts 4 --part k`) rồi gộp (`--merge`). Mỗi phần ghi
-danh tính lượt đo: tham số, băm dữ liệu, băm mã của cầu. Bước gộp từ chối phần thuộc lượt khác và
+danh tính lượt đo: tham số, băm dữ liệu, băm toàn bộ `src/**/*.py` cùng chính kịch bản, và phiên
+bản thư viện số. Bước gộp từ chối phần thuộc lượt khác và
 đòi các kỳ đích ghép lại trùng đúng dãy kỳ đích. Số liệu thô nằm ở
 `data/research/model_overhaul/bridge_inference.json`.
 
 Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline (cửa sổ 2 000 kỳ), trên
 thuật toán cuối cùng (commit d22815d7, sau mọi sửa chữa theo review; các commit sau không đổi mã
-nguồn của cầu, và báo cáo ghi băm mã ấy ở `run.code_sha256`). Bản cũ được tái lập từng bit: sai lệch
+nguồn của cầu, và báo cáo ghi băm mã ấy ở `run.code_sha256`). Bốn phần chạy liền nhau trên cùng
+một bản checkout (cb2dd1ca; commit kế chỉ sửa tài liệu). Báo cáo được gộp theo khuôn danh tính 1,
+vốn chỉ băm ba module của cầu; khuôn 2 băm mọi mã có thể chạy (theo review). Bản cũ được tái lập từng bit: sai lệch
 0,0 so với mã trước 16-10-2026 ở cả bốn ô, kiểm trên hai ngày neo. Mốc hằng số là tỉ lệ nền tích
 luỹ (LOTO) và 1/100 (Đặc Biệt).
 
@@ -241,7 +244,7 @@ Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (20 phép) ghim:
+- **`tests/test_bridge_inference.py`** (21 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -260,10 +263,11 @@ Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
   - bằng chứng của ngày neo khác không được in;
   - cột trên trang và xác suất của gợi ý là cùng một số, kể cả khi có thiên lệch;
   - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
-  - phép đo chỉ gộp các phần của cùng một lượt (cùng tham số, dữ liệu, mã, đủ kỳ đích).
+  - phép đo chỉ gộp các phần của cùng một lượt (cùng tham số, dữ liệu, mã, đủ kỳ đích);
+  - danh tính lượt đo đổi khi BẤT KỲ module nào phép đo chạy, hay chính kịch bản, đổi.
 - **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
   xác suất ấy dùng chung `rule_next_probability` nên luôn nằm trong (0, 1).
-- **28 đột biến** đều đỏ đúng chỗ:
+- **31 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;
   - nhánh đang chạy bỏ kinh nghiệm chuỗi, hoặc nhánh ổn định cũng cộng nó;
   - nhóm chuỗi lệch một; đếm sau khi cập nhật chuỗi; nhóm chỉ một kỳ vẫn được học;
@@ -275,7 +279,8 @@ Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
   - giữ phần riêng theo N điều hoà chung; phương sai nhị thức thay cho phương sai cụm; trang ghi
     cứng phạm vi;
   - trang không đọc `p_next`; bỏ kiểm ngày neo; cột trang bỏ thiên lệch; Q đo quanh tỉ lệ chung.
-  - gộp không so danh tính lượt đo; gộp chỉ kiểm "có thứ tự, không trùng"; gộp không kiểm đủ phần.
+  - gộp không so danh tính lượt đo; gộp chỉ kiểm "có thứ tự, không trùng"; gộp không kiểm đủ phần;
+  - danh tính chỉ băm module cấp một của `src`, bỏ chính kịch bản, hoặc chỉ băm module của cầu.
 
 **Một bài học về đột biến.** Đột biến "đếm sau khi cập nhật chuỗi" chỉ đổi chỗ hai khối mã, nên tệp
 giữ nguyên kích thước. Khi tệp được khôi phục trong cùng giây, Python vẫn tin bản `.pyc` của mã đột
