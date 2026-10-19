@@ -10,7 +10,7 @@
 ![Meta LOTO](https://img.shields.io/badge/META_LO_TO-NEN-22c55e?style=for-the-badge)
 ![Meta Đặc Biệt](https://img.shields.io/badge/META_DAC_BIET-DA_CHAN-fb7185?style=for-the-badge)
 
-<sub>Tạo lúc 2026-10-19T11:41:33Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
+<sub>Tạo lúc 2026-10-19T16:34:40Z · dữ liệu chuẩn + thống kê + ML + bằng chứng nghiên cứu.</sub>
 
 </div>
 
@@ -47,18 +47,18 @@
 | Giải sáu | 358 · 174 · 123 | 58 · 74 · 23 | Kết quả chuẩn đã xác minh |
 | Giải bảy | 04 · 83 · 55 · 35 | 04 · 83 · 55 · 35 | Kết quả chuẩn đã xác minh |
 
-### Dự đoán vui · 2026-10-19
+### Dự đoán vui · 2026-10-20
 
 | Giải | Mô phỏng | Hai số cuối · xác suất | Ý nghĩa |
 | --- | --- | --- | --- |
-| Đặc Biệt | 35777 | `77` 0.99% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhất | 39219 | `19` 23.78% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải nhì | 35714 · 35711 | `14` 23.77% · `11` 23.70% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải ba | 59284 · 32081 · 46209 · 59504 · 90171 · 74746 | `84` 23.75% · `81` 23.82% · `09` 23.77% · `04` 23.75% · `71` 23.74% · `46` 23.79% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải tư | 6195 · 8369 · 7893 · 0897 | `95` 23.80% · `69` 23.78% · `93` 23.79% · `97` 23.78% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải năm | 2937 · 4097 · 5721 · 5449 · 7569 · 4414 | `37` 23.77% · `97` 23.78% · `21` 23.76% · `49` 23.81% · `69` 23.78% · `14` 23.77% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải sáu | 070 · 059 · 427 | `70` 23.80% · `59` 23.80% · `27` 23.76% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
-| Giải bảy | 32 · 45 · 75 · 52 | `32` 23.77% · `45` 23.78% · `75` 23.78% · `52` 23.78% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Đặc Biệt | 98048 | `48` 0.99% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhất | 22012 | `12` 23.75% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải nhì | 92709 · 97096 | `09` 23.75% · `96` 23.74% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải ba | 49412 · 64509 · 02497 · 74107 · 93248 · 95453 | `12` 23.75% · `09` 23.75% · `97` 23.78% · `07` 23.75% · `48` 23.80% · `53` 23.77% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải tư | 4281 · 8603 · 5580 · 3281 | `81` 23.75% · `03` 23.79% · `80` 23.77% · `81` 23.75% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải năm | 9719 · 3680 · 2839 · 0769 · 3124 · 5271 | `19` 23.79% · `80` 23.77% · `39` 23.80% · `69` 23.76% · `24` 23.75% · `71` 23.80% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải sáu | 498 · 406 · 116 | `98` 23.79% · `06` 23.75% · `16` 23.79% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
+| Giải bảy | 98 · 65 · 41 · 90 | `98` 23.79% · `65` 23.76% · `41` 23.76% · `90` 23.81% | Mô phỏng tất định; xác suất chỉ áp dụng cho 2 số cuối |
 
 ### 10 kỳ gần nhất
 
@@ -90,21 +90,21 @@
 
 | # | Số | Xác suất cuối | Đồng thuận | Ý nghĩa | Thanh so sánh |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **92** | 23.829% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 2 | **67** | 23.825% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 3 | **70** | 23.811% | Thấp · disp 0.002 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 4 | **51** | 23.811% | Thấp · disp 0.003 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
-| 5 | **38** | 23.810% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 6 | **90** | 23.808% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 7 | **35** | 23.801% | Trung bình · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 8 | **48** | 23.801% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 9 | **39** | 23.799% | Trung bình · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 10 | **71** | 23.797% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 11 | **22** | 23.797% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 12 | **62** | 23.795% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 13 | **86** | 23.793% | Thấp · disp 0.002 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 14 | **10** | 23.792% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
-| 15 | **37** | 23.792% | Thấp · disp 0.003 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 1 | **92** | 23.829% | Trung bình · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 2 | **67** | 23.825% | Cao · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 3 | **70** | 23.811% | Cao · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 4 | **51** | 23.811% | Cao · disp 0.000 | Ưu tiên tương đối cao | ▰▰▰▰▰▰▰▰▰▰ |
+| 5 | **38** | 23.810% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 6 | **90** | 23.808% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 7 | **35** | 23.801% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 8 | **48** | 23.801% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 9 | **39** | 23.799% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 10 | **71** | 23.797% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 11 | **22** | 23.797% | Thấp · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 12 | **62** | 23.795% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 13 | **86** | 23.793% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 14 | **10** | 23.792% | Trung bình · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
+| 15 | **37** | 23.792% | Cao · disp 0.000 | Theo dõi trong nhóm xếp hạng | ▰▰▰▰▰▰▰▰▰▰ |
 
 ### LOTO · Ma trận nhiệt xác suất 00–99
 
