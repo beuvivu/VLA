@@ -46,3 +46,28 @@ archive chứa provenance đăng lại/pending nên không được nhập. Các
 Phải đọc log và artifact của lượt Actions sau khi áp dụng, xác nhận kết quả chính thức được nhận, đối chiếu mã kỳ/ngày/số,
 không có gap chưa giải thích và không có pending/mâu thuẫn dùng để tiến cursor. Nếu Cloudflare vẫn chặn và nguồn dự phòng
 vẫn pending, trạng thái đúng là lỗi có chẩn đoán, **chưa khôi phục đồng bộ dữ liệu**. Không đổi mã thoát để làm xanh workflow.
+
+## Xác minh GitHub Actions sau áp dụng
+
+- Bản sửa: [6535b7d](https://github.com/beuvivu/VLA/commit/6535b7dfe43f1e70c72acc07ec72d0f520bf86ed).
+- Run [39221621884](https://github.com/beuvivu/VLA/actions/runs/39221621884), 08:16–08:21 UTC ngày 19/10/2026,
+  job `117958006046`: kiểm thử hồi quy thành công; cập nhật dữ liệu trả mã 1; ghi dữ liệu, dựng trang, lưu cache và artifact thành công;
+  bước báo lỗi cuối giữ kết luận failure.
+- Artifact `vietlott-results-status`, ID `12172575559`, SHA-256
+  `84405518c47eb8d0554a4b7210d0d7a7090f59f2318fac8ffe3402ec14d74ec7`:
+  `results-status.json` và `data/results/status.json` giống nhau; `worker_error=null`.
+- Keno: cursor 299797, `inserted=0`, `not_advancing`, `latest_verified=null`, 119 kỳ lịch sử còn thiếu.
+  NhanAZ tải trong 1,097 giây, từ chối 959 dòng chưa qua xác thực.
+- Bingo18: cursor 191942, `inserted=0`, `not_advancing`, `latest_verified=null`, 73 kỳ lịch sử còn thiếu.
+  NhanAZ tải trong 2,247 giây, từ chối 973 dòng chưa qua xác thực.
+- Không còn `TimeoutError` của hai nguồn dự phòng trong lượt này. Vietlott vẫn trả challenge Cloudflare;
+  mirror thiếu metadata xác thực cũng bị từ chối. Không có dòng fast-game mới được nhập.
+- Đối chiếu journal trên main `1cc5398095b8b2daeead57494737bd0816103f03` với commit sửa:
+  toàn bộ bản ghi Keno (2.280) và Bingo18 (3.152) giữ nguyên; cursor tương ứng 299797/191942.
+  Journal đã có Lotto #955 ngày 19/10/2026, nguồn `xskt`.
+- Mega #1577, Power #1412, Lotto #955, Max 3D #1146 và Max 3D Pro #793 đều `caught_up`.
+  Lotto ghi thêm một kỳ ngày 19/10/2026; không lấy việc dựng trang thành công làm chứng nhận khôi phục hai sản phẩm nhanh.
+
+**Kết quả:** cơ chế timeout/retry, kiểm tra nguồn và liên tục đã được sửa và kiểm chứng; đồng bộ Keno/Bingo18 **chưa được khôi phục**.
+Đầu vào còn thiếu là kết quả/thông báo chính thức có thể xác thực để nhập bù khoảng thiếu và các kỳ mới, hoặc quyền truy cập nguồn
+chính thức qua một kênh được phép. Giữ cron hiện có thử lại; không dùng dữ liệu pending để làm xanh lượt chạy.

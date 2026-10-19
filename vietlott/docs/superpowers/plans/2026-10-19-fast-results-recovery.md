@@ -43,5 +43,6 @@
 
 - [x] Chạy Ruff và toàn bộ pytest của engine; ghi rõ lỗi nền nếu có.
 - [x] Cập nhật workflow: ngân sách hữu hạn, kiểm thử trước đồng bộ, lưu chẩn đoán, kích hoạt khi crawler đổi.
-- [ ] Rà soát diff, áp dụng commit trên main bằng cập nhật có kiểm tra SHA để giữ thay đổi đồng thời.
-- [ ] Chạy lại Actions; đọc log, artifact và journal thực tế. Chỉ xác nhận khôi phục khi dữ liệu xác thực và liên tục; nếu nguồn vẫn chặn/chưa xác thực thì báo rõ phần chưa hoàn tất.
+- [x] Rà soát diff, áp dụng commit trên main bằng cập nhật có kiểm tra SHA để giữ thay đổi đồng thời.
+- [x] Chạy lại Actions; đọc log và artifact: run 39221621884 vẫn failure vì Cloudflare/pending, không còn timeout archive, không nhập thêm Keno/Bingo18.
+- [ ] Khi có nguồn chính thức đọc được, backfill các kỳ còn thiếu và xác nhận liên tục/đúng số trước khi tuyên bố khôi phục đồng bộ.
