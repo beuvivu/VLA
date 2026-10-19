@@ -300,7 +300,16 @@ với bản vô hướng cũ bằng `assert_array_equal`. Bộ thử có 49 ca:
 - 57 phép kiểm và 92 phép con của `tests/multi_agent`, `test_multi_agent_integration` và
   `test_multi_agent_migration` đều đạt.
 
-Số đo toàn bước `vlm-forecast next --product all` từ trạng thái sạch: đang đo.
+**Số đo toàn bước.** Chạy `vlm-forecast next --product all` từ trạng thái sạch (`git clean -x`: không có
+checkpoint ML, mọi sản phẩm học lại từ đầu):
+
+- bản cũ: 473 s;
+- bản mới: 262 s (−45%);
+- JSON đầu ra trùng hoàn toàn, trừ `made_at` và `elapsed_seconds`.
+
+Hai lượt chạy nối tiếp trên cùng máy 4 lõi. Trong lượt cũ có vài phép kiểm ngắn chạy chồng, nên
+mức giảm thật có thể nhỏ hơn đôi chút. Phần còn lại của 262 s là huấn luyện MLP trực tuyến và
+các chuyên gia khác.
 
 ## 3. Nâng cấp thuật toán
 
@@ -331,6 +340,7 @@ Phần nâng cấp có giá trị trong đợt này:
 |---|---:|---:|---|
 | `cau_keo_domain_challenger --mode both --window-days 2000` | 51,8 s | 36,2 s | −30%; trên CI bước này 57,2 s, chậm nhất pipeline |
 | `statistical_matrices` | 22,5 s | 20,3 s | chạy hai lần mỗi lượt pipeline |
+| `vlm-forecast next --product all` (engine, trạng thái sạch) | 473 s | 262 s | −45%; đầu ra trùng hoàn toàn |
 
 | Hàm | Trước | Sau |
 |---|---|---|
@@ -338,6 +348,7 @@ Phần nâng cấp có giá trị trong đợt này:
 | `_build_same_weekday_feature` (gọi A lần) | O(A·W) lần tạo đối tượng `Timestamp` Python | O(A·W) phép so vector C, không tạo đối tượng |
 | Ghép khung đặc trưng | A lần dựng `DataFrame` (khoảng 2,3 ms mỗi lần) + `concat` | một lần `np.concatenate` mỗi cột + một `DataFrame` |
 | `write_code_csv` | O(N) lời gọi Python | O(N) mã hoá C (`factorize`) + O(U) lời gọi Python, U = số mã khác nhau |
+| `SubsetDistribution` (xuôi + ngược) | O(n·k) lời gọi numpy vô hướng | O(n) lời gọi vector độ dài ≤ k + một lượt O(n·k) cho xác suất rẽ nhánh |
 
 Ký hiệu: R = số lượt bootstrap (1 000), N = số hàng ngoài mẫu, G = số kỳ ngoài mẫu (N = 100·G),
 A = số kỳ neo, W = 364 ngày.
