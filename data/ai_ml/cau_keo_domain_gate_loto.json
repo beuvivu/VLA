@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-19T03:09:41Z",
+  "generated_at": "2026-10-19T10:34:20Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -102,7 +102,7 @@
       "mean_logloss_skill": -0.00010147328980073356
     },
     "cham": {
-      "mean_brier_skill": -0.00010507018026490993,
+      "mean_brier_skill": -0.00010507018026475537,
       "mean_logloss_skill": -9.428847100854783e-05
     },
     "tong": {
@@ -322,7 +322,7 @@
   "final_brier_skill": 0.0,
   "final_logloss_skill": 0.0,
   "all_groups_confirmation_brier_skill": 1.0528296546948811e-05,
-  "all_groups_confirmation_logloss_skill": 4.381565077937657e-06,
+  "all_groups_confirmation_logloss_skill": 4.3815650781401055e-06,
   "domain_active": false,
   "domain_trust": 0.0,
   "pattern_selection_bias_risk": "screening folds select feature groups; only the untouched fourth fold is used for the paired promotion decision",
