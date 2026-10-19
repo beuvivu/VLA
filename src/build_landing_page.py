@@ -24,6 +24,8 @@ from app_icons import icon_svg
 from calendar_widget import render_calendar
 from cau_keo_daily_top import top_by_cau_score
 from draw_metadata import load_draw_metadata, station_for_date
+from daily_forecast import load_daily_forecast
+from evidence_catalog import values_block
 from build_position_bridges import best_panel, bridge_css
 from build_position_bridges import load as load_position_bridges
 from shared_results import draw_from_row, render_result_board, shared_results_css
@@ -519,6 +521,8 @@ def _render_bar_card(
             width = max(3, min(100, value / max_value * 100))
             label = str(row.get(label_col, ""))
             number_attr = ""
+            if re.fullmatch(r"\d{2}-\d{2}", label):
+                number_attr = f" data-pair='{label}' aria-pressed='false'"
             if mode and number_col and number_col in row:
                 number_attr = f" data-mode='{mode}' data-number='{_fmt2(row.get(number_col))}'"
             elif mode and re.fullmatch(r"\d{1,2}", label):
@@ -527,13 +531,13 @@ def _render_bar_card(
             items.append(
                 f"<button class='bar-row'{number_attr}>"
                 f"<span class='bar-label'>{_label_parts(label)}</span>"
-                f"<span class='bar-track'><span class='bar-fill' style='width:{width:.1f}%;background:{high}'></span></span>"
+                f"<span class='bar-track'><span class='bar-fill' style='width:{width:.1f}%;background:var(--app-ranking-color,{high})'></span></span>"
                 f"<span class='bar-value' data-evidence-primary>{html.escape(value_text)}</span>"
                 f"</button>"
             )
         body = "<div class='bar-list'>" + "".join(items) + "</div>"
     return f"""
-    <article class="card">
+    <article class="card app-ranking-card" data-ranking-mode="{html.escape(mode or '')}">
       <div class="card-head">
         <div>
           <p class="eyebrow">Biểu đồ thanh</p>
@@ -623,7 +627,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
     )
     body = "".join(
         "<tr>"
-        f"<td class='col-pair'>{html.escape(r['pair'])}</td>"
+        f"<td class='col-pair'>{_pair_number_controls(r['pair'])}</td>"
         f"<td class='col-count numeric'>{r['count']}</td>"
         f"<td class='col-expected numeric'>{r['expected']}</td>"
         f"<td class='col-ratio numeric'>{html.escape(r['ratio'])}</td>"
@@ -640,6 +644,7 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
           <p>Số lần hai con lô cùng về trong một kỳ, trên {n_draws} kỳ gần nhất.</p>
         </div>
       </div>
+      <p class="app-pair-help">Chọn một số để xem căn cứ · Nhấp đúp con số để mở nguồn và các bước tính.</p>
       <div class="table-wrap">
         <table class="stat-table pair-frequency-table"><colgroup><col><col><col><col></colgroup><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>
       </div>
@@ -652,6 +657,16 @@ def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
       </p>
     </article>
     """
+
+
+def _pair_number_controls(pair: str) -> str:
+    """Hai số có đích chọn riêng, vẫn giữ cặp và thứ tự từ dữ liệu nguồn."""
+    if not re.fullmatch(r"\d{2}-\d{2}", pair):
+        return html.escape(pair)
+    return '<span class="app-pair-values">' + '<span aria-hidden="true">–</span>'.join(
+        f'<button type="button" class="app-pair-number" data-mode="loto" data-number="{n}" aria-label="Chọn số {n} trong cặp {pair}">{n}</button>'
+        for n in pair.split('-')
+    ) + '</span>'
 
 
 def _render_table(
@@ -814,6 +829,60 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
     )
 
 
+def _render_daily_forecast(repo_root: Path, anchor_date: str) -> str:
+    """Thẻ gọn cạnh kết quả: chỉ hiện xác suất của đúng kỳ tiếp theo."""
+    forecast = load_daily_forecast(repo_root / "data", anchor_date)
+    heading = '<h3>Dự báo kỳ tiếp theo</h3>'
+    if forecast is None:
+        return (
+            '<aside class="app-next-forecast" aria-label="Dự báo kỳ tiếp theo">'
+            f'{heading}<p class="app-forecast-note">Dự báo đang được cập nhật sau kỳ kết quả mới nhất.</p></aside>'
+        )
+    target = forecast["target_date"]
+    shown_date = datetime.fromisoformat(target).strftime("%d/%m/%Y")
+    groups, evidence = [], []
+    for mode, label, meaning in (
+        ("de", "Đặc Biệt", "Hai số cuối giải Đặc Biệt"),
+        ("loto", "LOTO", "Xuất hiện ít nhất một lần"),
+    ):
+        items = []
+        for item in forecast["groups"][mode]:
+            number, probability = item["number"], item["prob"]
+            ident = f"daily-forecast-{mode}-{number}"
+            percent = f"{100 * probability:.2f}%".replace(".", ",")
+            items.append(
+                '<li class="app-forecast-pick">'
+                f'<b data-evidence="{ident}">{number}</b>'
+                f'<span data-evidence="{ident}">{percent}</span></li>'
+            )
+            evidence.append((ident, {
+                "sources": [{"title": f"Dự báo tổ hợp {label} · {shown_date}",
+                             "snippet": "Xác suất đã công bố của mô hình tổ hợp cho kỳ được ghi trên thẻ.",
+                             "url": "model-quality.html"}],
+                "reasoningTrace": {"steps": [
+                    f"Dùng kết quả đến kỳ {anchor_date}, dự báo kỳ {target}.",
+                    f"Số {number}: {meaning.lower()}; xác suất gốc {probability:.12g}.",
+                    "Nhân xác suất với 100 và làm tròn hai chữ số thập phân để hiển thị phần trăm.",
+                    ("Chọn theo xác suất giảm dần, tối đa ba số cùng đuôi; xác suất không đổi."
+                     if mode == "loto" else "Chọn năm số có xác suất cao nhất; khi bằng nhau, số nhỏ đứng trước."),
+                    "Đây là ước tính của mô hình, không bảo đảm kết quả kỳ quay.",
+                ]},
+            }))
+        groups.append(
+            f'<section class="app-forecast-group" data-forecast-mode="{mode}">'
+            f'<div class="app-forecast-label"><h4>Top 5 {label}</h4><span>{meaning}</span></div>'
+            f'<ol class="app-forecast-picks">{"".join(items)}</ol></section>'
+        )
+    return (
+        f'<aside class="app-next-forecast" data-forecast-date="{target}" aria-label="Dự báo kỳ tiếp theo">'
+        f'<div class="app-forecast-head">{heading}<time datetime="{target}">Kỳ {shown_date}</time></div>'
+        f'<div class="app-forecast-groups">{"".join(groups)}</div>'
+        '<p class="app-forecast-note">Xác suất mô hình · LOTO tối đa 3 số cùng đuôi. '
+        '<a href="model-quality.html">Xem kiểm định →</a></p>'
+        f'{values_block(evidence)}</aside>'
+    )
+
+
 #: Biểu định kiểu của trang tổng hợp.
 #:
 #: Trước đây 1 250 dòng CSS này nằm TRONG f-string của ``_render_html``,
@@ -824,6 +893,43 @@ def _render_group_bars(repo_root: Path, period: str) -> str:
 #: Khối này KHÔNG nội suy biến nào (đã kiểm: 0 chỗ), nên nó là văn bản
 #: thuần và thuộc về một hằng số, không thuộc về thân hàm.
 _LANDING_CSS = """\
+    /* Thẻ dự báo lấp phần dưới hai bảng phụ, giữ nguyên bảng giải bên trái. */
+    #app-daily-results .tr-day-extra { display: contents; }
+    #app-daily-results .app-next-forecast { grid-column: 1 / -1; }
+    .app-next-forecast {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+      min-width: 0; padding: 16px; border: 1px solid var(--ui-border);
+      border-radius: 12px; background: var(--ui-surface-2); color: var(--ui-ink);
+    }
+    .app-forecast-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .app-next-forecast h3 { margin: 0; font-size: 14px; }
+    .app-forecast-head time { font-size: 11px; font-weight: 700; color: var(--ui-ink-soft); }
+    .app-forecast-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .app-forecast-group { min-width: 0; }
+    .app-forecast-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; }
+    .app-forecast-label h4 { margin: 0; font-size: 12px; }
+    .app-forecast-label > span { font-size: 10px; color: var(--ui-ink-soft); }
+    .app-forecast-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .app-forecast-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 2px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); font-variant-numeric: tabular-nums; }
+    .app-forecast-pick b { font-size: clamp(26px, 2vw, 34px); line-height: 1.1; color: var(--ui-brand-ink); }
+    .app-forecast-group[data-forecast-mode="de"] .app-forecast-pick b { color: var(--ui-special-ink); }
+    .app-forecast-pick span { font-size: 12px; color: var(--ui-ink-2); white-space: nowrap; }
+    .app-forecast-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--ui-ink-soft); }
+    .app-forecast-note a { color: var(--ui-brand-ink); font-weight: 600; white-space: nowrap; }
+    @media (min-width: 1321px) {
+      #app-daily-results .tr-day-grid { grid-template-rows: auto 1fr; }
+      #app-daily-results .tr-prizes { grid-column: 1; grid-row: 1 / 3; }
+      #app-daily-results .tr-day-side { grid-column: 2; grid-row: 1; }
+      #app-daily-results .app-bridge-best { grid-column: 3; grid-row: 1; }
+      #app-daily-results .app-next-forecast { grid-column: 2 / 4; grid-row: 2; align-self: stretch; }
+    }
+    @media (max-width: 1320px) {
+      #app-daily-results .app-bridge-best { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .app-forecast-groups { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .app-next-forecast { padding: 12px; }
+    }
     :root {
       --bg: var(--ui-bg);
       --bg-2: var(--ui-bg-2);
@@ -1281,7 +1387,7 @@ _LANDING_CSS = """\
       border-radius: 14px;
       background: var(--ui-brand-soft);
       color: var(--ui-brand-ink);
-      font-size: 18px;
+      font-size: 24px;
     }
     .signal-pill span {
       color: var(--ui-ink-2);
@@ -1338,6 +1444,14 @@ _LANDING_CSS = """\
     .stat-table tbody tr:last-child td { border-bottom: 0; }
     .pair-frequency-table { min-width: 560px; table-layout: fixed; }
     .pair-frequency-table col { width: 25%; }
+    .pair-frequency-table td { vertical-align: middle; }
+    .app-pair-help { margin: 0 0 16px; font-size: 13px; color: var(--ui-ink-soft); line-height: 1.6; }
+    .app-pair-values { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .app-pair-number { min-width: 40px; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-brand-ink); font: inherit; font-size: 18px; font-weight: 800; cursor: pointer; }
+    .app-pair-number:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 3px; }
+    .app-number-selected { box-shadow: none; background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
+    .app-number-selected[data-mode="de"] { background: var(--ui-special-bg); color: var(--ui-special-ink); }
+    .app-pair-feedback { margin: 8px 0 16px; color: var(--ui-brand-ink); font-size: 13px; min-height: 1.5em; }
     .stat-table.dense th, .stat-table.dense td {
       padding: 7px 8px;
       font-size: 12px;
@@ -1512,29 +1626,40 @@ _LANDING_CSS = """\
 
     .matrix-full { width: 100%; margin-bottom: 24px; }
 
-    /* Ba thẻ luôn cùng một hàng. Mô phỏng chỉ còn bảng giải; khi khung hẹp,
-       người đọc cuộn trong khu này, không kéo cả trang rộng ra. */
+    /* Ưu tiên bảng kết quả theo tỷ lệ 2:1:1. Khung hẹp cuộn trong khu này,
+       không kéo cả trang rộng ra. */
     .next-day {
       display: grid;
-      grid-template-columns: repeat(3, minmax(360px, 1fr));
+      grid-template-columns: minmax(400px, 2fr) repeat(2, minmax(280px, 1fr));
       grid-auto-flow: column;
       gap: 16px;
       align-items: stretch;
       overflow-x: auto;
       overscroll-behavior-x: contain;
       padding-bottom: 8px;
+      scroll-snap-type: x proximity;
     }
-    .next-day > * { min-width: 0; margin: 0; }
+    .next-day > * { min-width: 0; margin: 0; scroll-snap-align: start; }
     .next-day > .card { display: flex; flex-direction: column; }
     .next-day .bar-list { grid-template-columns: minmax(0, 1fr); }
-    .next-day .bar-row { grid-template-columns: 40px minmax(0, 1fr) 58px; }
+    .next-day .bar-row { grid-template-columns: 56px minmax(0, 1fr) 72px; min-height: 56px; gap: 16px; padding: 8px; }
+    .next-day .bar-label { font-size: 28px; line-height: 1.15; color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
+    .next-day [data-ranking-mode="de"] .bar-label { color: var(--ui-ink); }
+    .next-day .bar-value { font-size: 14px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+    .next-day .card-head { min-height: 128px; }
+    .app-ranking-card[data-ranking-mode="loto"] { --app-ranking-color: var(--ui-chart-1); }
+    #app-daily-results .tr-number { font-size: clamp(20px, 1.6vw, 24px); }
+    #app-daily-results [data-prize="special"] .tr-number { font-size: clamp(30px, 3vw, 40px); }
+    #app-daily-results .tr-mini:not([data-marked]) { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
+    #app-daily-results .app-bridge-num { font-size: 16px; }
+    #app-daily-results .app-bridge-streak { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
     /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
        dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
        lại khoảng trống; ẩn hẳn đi. */
     .next-day > section:empty { display: none; }
     .inspect-panel {
       background:
-        radial-gradient(circle at 20% 0%, rgba(124,58,237,.16), transparent 18rem),
+        radial-gradient(circle at 20% 0%, var(--ui-brand-soft), transparent 18rem),
         var(--ui-surface);
       border-radius: var(--radius);
       border: 1px solid var(--ui-border);
@@ -1568,8 +1693,8 @@ _LANDING_CSS = """\
       width: 64px;
       height: 64px;
       border-radius: 20px;
-      background: linear-gradient(135deg, #ede9fe, #dbeafe);
-      color: #5b21b6;
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
       font-size: 28px;
       letter-spacing: -.05em;
     }
@@ -1608,6 +1733,7 @@ _LANDING_CSS = """\
       font-size: 13px;
       line-height: 1.45;
     }
+    .inspect-meta strong { color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
     .empty, .muted { color: var(--muted); }
     .empty {
       padding: 22px;
@@ -1916,9 +2042,19 @@ _LANDING_SCRIPT = """\
       return (n > 1 ? n : n * 100).toFixed(1) + '%';
     }
 
+    let appSelectedNumbers = [];
     function showNumber(mode, number) {
       const n = String(number || '').padStart(2, '0').slice(-2);
       const m = mode || 'loto';
+      appSelectedNumbers.forEach(el => {
+        el.classList.remove('app-number-selected');
+        if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', 'false');
+      });
+      appSelectedNumbers = [...document.querySelectorAll('[data-number]')].filter(el => el.dataset.number === n && (el.dataset.mode || 'loto') === m);
+      appSelectedNumbers.forEach(el => {
+        el.classList.add('app-number-selected');
+        if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', 'true');
+      });
       const data = (APP_DATA.explain && APP_DATA.explain[m] && APP_DATA.explain[m][n]) || null;
       document.getElementById('inspect-num').textContent = n;
       document.getElementById('inspect-mode').textContent = m === 'de' ? 'Đặc Biệt' : 'Loto';
@@ -1971,6 +2107,23 @@ _LANDING_SCRIPT = """\
       if (!goc || typeof goc.closest !== 'function') return;
       const el = goc.closest('[data-number]');
       if (el) showNumber(el.dataset.mode || 'loto', el.dataset.number);
+      const pair = goc.closest('[data-pair]');
+      const feedback = document.getElementById('app-pair-feedback');
+      if (pair) {
+        document.querySelectorAll('[data-pair]').forEach(row => {
+          const selected = row.dataset.pair === pair.dataset.pair;
+          row.classList.toggle('app-number-selected', selected);
+          row.setAttribute('aria-pressed', String(selected));
+        });
+        if (!el) showNumber('loto', pair.dataset.pair.split('-')[0]);
+        if (feedback) feedback.textContent = 'Đã chọn cặp ' + pair.dataset.pair.replace('-', '–') + '. Căn cứ đang hiển thị cho số ' + pair.dataset.pair.split('-')[0] + '.';
+      } else if (el && feedback) {
+        document.querySelectorAll('[data-pair]').forEach(row => {
+          row.classList.remove('app-number-selected');
+          row.setAttribute('aria-pressed', 'false');
+        });
+        feedback.textContent = 'Đã chọn số ' + String(el.dataset.number).padStart(2, '0') + ' · Xem căn cứ và nguồn bằng nhấp đúp.';
+      }
     });
 
     const navLinks = [...document.querySelectorAll('.side-nav a')];
@@ -2023,6 +2176,8 @@ def _render_html(
     latest = _latest_draw(repo_root)
     bridge_panel = (best_panel(load_position_bridges(repo_root / "data"), latest["date"])
                     if latest.get("draw") else "")
+    daily_panel = bridge_panel + (_render_daily_forecast(repo_root, latest["date"])
+                                 if latest.get("draw") else "")
     explain_map = _load_explain_map(repo_root)
     if generated_at is None:
         generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
@@ -2220,7 +2375,7 @@ def _render_html(
       </div>
 
       <section id="ket-qua" class="section" aria-label="Kết quả hàng ngày">
-        {render_result_board(latest.get("draw"), include_loto=False, extra=bridge_panel)}
+        {render_result_board(latest.get("draw"), include_loto=False, extra=daily_panel)}
         <p class="app-result-note">Bấm vào từng ô giải để đánh dấu; bấm lại để bỏ chọn.
           <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả</a></p>
       </section>
@@ -2258,7 +2413,7 @@ def _render_html(
           <div>
             <div class="section-kicker">Dự đoán vui</div>
             <h2>Ngày mai</h2>
-            <p>Ba bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược.</p>
+            <p>Ba bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược. Chọn số để xem căn cứ; nhấp đúp để mở nguồn và các bước tính.</p>
           </div>
         </div>
         <div class="next-day">
@@ -2276,6 +2431,7 @@ def _render_html(
             <p>Tần suất hai số cùng xuất hiện trong một kỳ, đi kèm mốc so sánh ngẫu nhiên trên toàn bộ 4 950 cặp.</p>
           </div>
         </div>
+        <p id="app-pair-feedback" class="app-pair-feedback" role="status" aria-live="polite">Chọn số để đối chiếu căn cứ thống kê.</p>
         {_render_pair_frequency(repo_root)}
       </section>
 

@@ -48,7 +48,8 @@ def check_pointer_has_no_tooltip(page, target):
 def check_evidence(page, name, width, dark):
     """Mọi trang: một con số mở được nguồn & bằng chứng.
 
-    Ưu tiên con số chưa có chức năng nhấp (nhấp thường mở ngăn kéo). Trang mà
+    Trang chủ mở căn cứ bằng nhấp đúp. Các trang khác ưu tiên con số chưa có
+    chức năng nhấp (nhấp thường mở ngăn kéo). Trang mà
     mọi con số đều đã có chức năng (ô đánh dấu của trang thống kê) thì dùng
     Alt + nhấp. Rê chuột không được mở tooltip; chữ của giá trị phải đạt AA
     trên nền ngăn kéo ở cả
@@ -78,7 +79,10 @@ def check_evidence(page, name, width, dark):
     assert target is not None, f"{name}: không tìm thấy con số nào nhận được bằng chứng"
     check_pointer_has_no_tooltip(page, target)
     try:
-        target.click(modifiers=["Alt"] if alt else [])
+        if name in ("index.html", "landing.html", "landing_desktop.html"):
+            target.dblclick()
+        else:
+            target.click(modifiers=["Alt"] if alt else [])
     except Exception as error:
         detail = target.evaluate("e => ({html:e.outerHTML.slice(0,500),details:e.closest('details')?.open})")
         raise AssertionError(f"{name} width={width} dark={dark}: {detail}") from error
@@ -110,7 +114,8 @@ def check_evidence(page, name, width, dark):
         page.keyboard.press("Escape")
         expect(drawer).not_to_be_visible()
         assert region.evaluate("e => document.activeElement === e"), f"{name}: tiêu điểm không về vùng"
-    return ("alt:" if alt else "") + target.evaluate("e => e.textContent.trim().slice(0, 24)")
+    trigger = "double:" if name in ("index.html", "landing.html", "landing_desktop.html") else ("alt:" if alt else "")
+    return trigger + target.evaluate("e => e.textContent.trim().slice(0, 24)")
 
 
 def check_evidence_keeps_existing_clicks(page):
@@ -177,6 +182,51 @@ def check_traditional_result_interactions(page):
     expect(marked).to_have_count(0)
     pair_mode.uncheck()
     check_no_native_tooltips(page)
+
+
+def check_year_calendar(page, width, initial=False):
+    """Đối chiếu lịch năm/tháng và bộ lọc trên DOM đã bố trí thật."""
+    card = page.locator('[data-app-year-calendar]')
+    year = card.locator('[data-app-year-select]')
+    month = card.locator('[data-app-month-select]')
+    years = year.locator('option').evaluate_all('nodes => nodes.map(n => n.value)')
+    assert years and years == sorted(years, reverse=True), years
+    if initial:
+        assert bool(month.input_value()) == (width <= 680)
+    year.select_option(years[0])
+    month.select_option('02')
+    panel = card.locator(f'[data-app-year="{years[0]}"]')
+    expect(panel.locator('thead th:not([hidden])')).to_have_count(2)
+    assert panel.locator('.app-year-table').evaluate(
+        'e => e.offsetWidth <= e.parentElement.clientWidth + 1')
+    search = card.locator('[data-app-year-filter]')
+    cell = panel.locator('[data-app-month="02"][data-app-result]').first
+    if cell.count():
+        value = cell.get_attribute('data-app-result')
+        search.fill(value)
+        count = panel.locator('[data-app-month="02"].app-year-match').count()
+        assert count > 0
+        assert card.locator('[data-app-year-status]').inner_text().startswith(f'{count} kết quả khớp')
+        colors = panel.locator('.app-year-match .app-year-tail').first.evaluate(
+            'e => ({fg:getComputedStyle(e).color,bg:getComputedStyle(e.parentElement).backgroundColor})')
+        assert contrast(colors) >= 4.5, colors
+    search.fill('999999')
+    expect(card.locator('[data-app-year-no-match]')).to_be_visible()
+    search.fill('')
+    expect(card.locator('[data-app-year-no-match]')).to_be_hidden()
+    month.select_option('')
+    expect(panel.locator('thead th:not([hidden])')).to_have_count(13)
+    wrap = panel.locator('.app-year-scroll')
+    wrap.evaluate('e => {e.scrollLeft=e.scrollWidth;}')
+    state = wrap.evaluate('''e => ({width:e.clientWidth, table:e.querySelector('table').offsetWidth,
+      right:e.getBoundingClientRect().right,
+      last:e.querySelector('thead th:last-child').getBoundingClientRect().right,
+      first:e.querySelector('tbody th').getBoundingClientRect().left,
+      left:e.getBoundingClientRect().left})''')
+    assert state['last'] <= state['right'] + 2, state
+    assert abs(state['first'] - state['left']) <= 2, state
+    wrap.evaluate('e => {e.scrollLeft=0;}')
+    return {'years': len(years), **state}
 
 
 def main():
@@ -247,6 +297,9 @@ def main():
                             search.press("Escape")
                             assert not page.locator("#app-global-search").is_visible()
                             if name in ("tan-suat-loto.html", "tan-suat-cap-loto.html"):
+                                # Kiểm bảng chi tiết trong chế độ Ngang; thẻ Dọc được
+                                # kiểm riêng cùng biểu đồ và lịch sử từng số.
+                                page.locator('[data-app-orientation="horizontal"]').click()
                                 if name == "tan-suat-cap-loto.html":
                                     picker = page.locator("details").filter(has=page.locator("#bf-pair-picker"))
                                     if picker.get_attribute("open") is None:
@@ -287,6 +340,8 @@ def main():
                                 page.screenshot(path=str(OUT / f"{name}-{width}-{'dark' if dark else 'light'}.png"))
                             if name == "index.html":
                                 state["landing"] = check_landing(page, OUT, width, dark)
+                            if name == "statistics.html":
+                                state["yearCalendar"] = check_year_calendar(page, width, initial=not dark)
                             results.append({"page": name, "width": width, **state})
                         assert not errors, errors
                     except Exception as error:

@@ -492,7 +492,7 @@ def test_marking_keeps_two_separate_stores_not_one() -> None:
     tiếp sẽ xử lý sai: ô đang sáng theo cặp bị thêm dấu ô chồng lên, bấm mãi
     không tắt.
     """
-    assert "const markedCells = new Set();" in JS_CODE
+    assert "const markedCells = new Map();" in JS_CODE
     assert "const markedValues = new Set();" in JS_CODE
     assert "markedCells.has(markCell(node))" in JS_CODE
     assert "markedValues.has(value)" in JS_CODE
@@ -505,8 +505,8 @@ def test_the_default_mode_marks_exactly_the_cell_that_was_clicked() -> None:
     """
     body = JS_CODE[JS_CODE.index("function toggleMark("):]
     body = body[:body.index("\n  }")]
-    assert "pairMode.checked && value !== null) markedValues.add(value)" in body
-    assert "markedCells.add(cell)" in body
+    assert re.search(r"else if \(pairMode\.checked && value !== null\) \{[^}]*markedValues\.add\(value\)", body)
+    assert "markedCells.set(cell, value)" in body
 
 
 def test_clicking_a_lit_cell_turns_it_off_whatever_lit_it() -> None:
@@ -521,7 +521,7 @@ def test_clicking_a_lit_cell_turns_it_off_whatever_lit_it() -> None:
         body.index("markedValues.delete(value)"),
         body.index("markedCells.delete(cell)"),
         body.index("markedValues.add(value)"),
-        body.index("markedCells.add(cell)"),
+        body.index("markedCells.set(cell, value)"),
     ]
     assert order == sorted(order), "nhánh bật đang đứng trước nhánh tắt"
 

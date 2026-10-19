@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 from bs4 import BeautifulSoup
@@ -277,7 +278,11 @@ def test_manual_comparison_widget_is_limited_to_matrix_products_and_loads_asset(
     for path in pages:
         soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
         widget = soup.select_one('[data-vl-comparison-widget]')
-        assert len(soup.select('script[src="assets/vietlott-comparison.js"]')) == 1
+        scripts = [script for script in soup.select('script[src]')
+                   if urlsplit(script['src']).path == 'assets/vietlott-comparison.js']
+        assert len(scripts) == 1
+        assert not urlsplit(scripts[0]['src']).scheme and not urlsplit(scripts[0]['src']).netloc
+        assert scripts[0].has_attr('defer')
         if path.name in matrix_pages:
             assert widget is not None, path.name
             assert widget['data-vl-comparison-widget'] == matrix_pages[path.name]
@@ -415,7 +420,11 @@ def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(t
             assert [int(button['data-vl-number']) for button in board.select('[data-vl-number]')] == list(range(1, maximum + 1))
             assert all(button.get('type') == 'button' for button in board.select('button'))
             assert "bộ số nháp" in board.get_text().lower()
-            assert soup.select_one('script[src="assets/vietlott-picks.js"]') is not None
+            scripts = [script for script in soup.select('script[src]')
+                       if urlsplit(script['src']).path == 'assets/vietlott-picks.js']
+            assert len(scripts) == 1
+            assert not urlsplit(scripts[0]['src']).scheme and not urlsplit(scripts[0]['src']).netloc
+            assert scripts[0].has_attr('defer')
             assert board.select_one('[data-vl-review]').has_attr('disabled')
             assert board.select_one('noscript') is not None
         else:

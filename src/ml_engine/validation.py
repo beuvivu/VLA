@@ -192,7 +192,8 @@ class WalkForwardValidator:
                     features = features[:, keep]
                 probabilities = model.predict_proba(features)
 
-            tracker.add(probabilities, (self.counts[split.predict_day] > 0).astype(float))
+            counts = self.counts[split.predict_day]
+            tracker.add(probabilities, (counts > 0).astype(float), counts=counts)
 
         return tracker.report()
 

@@ -375,6 +375,18 @@ def main() -> None:
     # Cổng cứng: không xuất bản tệp có mã sai miền hoặc mất số 0 đầu.
     _run(_py("src/lottery_codes.py"), allow_fail=False)
 
+    # Chẩn đoán và kho tri thức là dữ liệu đầu vào của tác tử, không phải
+    # tác dụng phụ của dựng HTML. Kể cả --skip-docs cũng phải truy xuất luật
+    # và mức tin của CÙNG lượt chạy, sau chấm dự báo thật và trước snapshot.
+    if not args.skip_docs or not args.skip_ml:
+        _run(_py("src/model_quality.py"), allow_fail=soft_fail)
+        _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
+        _run(_py("src/multi_hit_report.py"), allow_fail=soft_fail)
+        _run(_py("src/knowledge_base.py"), allow_fail=soft_fail)
+    if not args.skip_ml:
+        # Sổ hỏng phải dừng lượt xuất bản; không đánh mất bằng chứng tiến cứu.
+        _run(_py("src/run_xsmb_agents.py"), allow_fail=False)
+
     if not args.skip_docs:
         _run(
             _py("src/build_docs.py", "--display-days", str(args.display_days)),
@@ -385,22 +397,18 @@ def main() -> None:
         # Chẩn đoán trước, dựng trang sau: trang Chất lượng mô hình đọc thẳng
         # `data/model_quality/report.json` nên đảo thứ tự sẽ xuất bản báo cáo
         # của ngày hôm trước mà không có dấu hiệu gì.
-        _run(_py("src/model_quality.py"), allow_fail=soft_fail)
         _run(_py("src/build_model_quality.py"), allow_fail=soft_fail)
         # Confidence Score đọc dự báo vừa công bố cho kỳ tới và trạng thái của
         # kỳ vừa quay, nên đứng sau dự báo và sau chẩn đoán. Phân phối null
         # 10 000 lịch sử được lưu sẵn; chỉ tính lại khi số kỳ trôi quá 2%.
-        _run(_py("src/confidence_matrix.py"), allow_fail=soft_fail)
         _run(_py("src/build_confidence_page.py"), allow_fail=soft_fail)
         # Lô VIP nhiều nháy: khung thách đấu, không vào tổ hợp. Bộ lọc đo lại
         # mỗi ngày (~25 s); lượt hai là phép kiểm một lần, đóng băng ở
         # SECOND_ROUND_UNTIL, chỉ đo lại khi đoạn lịch sử ấy bị sửa.
-        _run(_py("src/multi_hit_report.py"), allow_fail=soft_fail)
         _run(_py("src/build_multi_hit_page.py"), allow_fail=soft_fail)
         # Kho tri thức: luật tự khai phá (chỉ chấm tiến cứu), bộ nhớ ngữ cảnh và lời giải thích
         # top-10. Đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy, nên đứng sau
         # cả ba. Khung thách đấu: không đổi tổ hợp xác suất.
-        _run(_py("src/knowledge_base.py"), allow_fail=soft_fail)
         # Soi cầu vị trí đọc kỳ vừa quay; phải có TRƯỚC trang chủ vì ô "cầu đẹp
         # nhất" nằm cạnh bảng LOTO của khung kết quả hằng ngày.
         _run(_py("src/position_bridges.py"), allow_fail=soft_fail)
@@ -426,6 +434,10 @@ def main() -> None:
         _py("src/cleanup_artifacts.py", "--retention-days", "45"),
         allow_fail=soft_fail,
     )
+
+    if not args.skip_docs:
+        # Chốt mọi URL sau trình dựng cuối: không cho xuất bản tham chiếu cũ/thiếu.
+        _run(_py("src/site_assets.py", "--refresh", "docs", "--check"), allow_fail=False)
 
     logging.info("DONE")
 

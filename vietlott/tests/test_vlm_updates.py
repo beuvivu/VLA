@@ -5,6 +5,50 @@ from datetime import datetime, timedelta
 import pytest
 
 
+def _sync_response(product,rows,request):
+    """Số mẫu từ nguồn chính thức cho kiểm thử journal; matrix giữ JSONL cũ."""
+    import httpx
+    if product=='mega645':
+        return httpx.Response(200,text=''.join(json.dumps(r)+'\n' for r in rows))
+    from tests.test_all_products import _bingo_html
+    page=json.loads(request.content)['PageIndex'] if request.method=='POST' else -1
+    html=_bingo_html([(datetime.fromisoformat(r['date']).strftime('%d/%m/%Y'),r['id'],r['result'])
+                      for r in rows]) if page==1 else ''
+    return httpx.Response(200,json={'value':{'HtmlContent':html}})
+
+
+def test_pending_fsync_failure_closes_temp_before_cleanup(tmp_path, monkeypatch):
+    """Mô phỏng Windows: không unlink tệp còn mở, không che lỗi fsync gốc."""
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    from vlm.updates import service
+
+    state = AppState(Settings(data_dir=tmp_path), InMemoryRepository())
+    record = DrawRecord.from_legacy('mega645', {'id':1, 'date':'2026-10-07', 'result':[1,2,3,4,5,6]})
+    handles = []
+    original_temp = service.tempfile.NamedTemporaryFile
+    original_unlink = service.os.unlink
+    def track_temp(*args, **kwargs):
+        handle = original_temp(*args, **kwargs)
+        handles.append(handle)
+        return handle
+    def refuse_open_unlink(path, *args, **kwargs):
+        if any(not handle.closed for handle in handles):
+            raise PermissionError('temporary file is still open')
+        return original_unlink(path, *args, **kwargs)
+    def fail_fsync(_fd):
+        raise OSError('original fsync failure')
+    monkeypatch.setattr(service.tempfile, 'NamedTemporaryFile', track_temp)
+    monkeypatch.setattr(service.os, 'unlink', refuse_open_unlink)
+    monkeypatch.setattr(service.os, 'fsync', fail_fsync)
+    with pytest.raises(OSError, match='original fsync failure'):
+        service._stage_pending(state, [record], {})
+    assert all(handle.closed for handle in handles)
+    assert list((tmp_path / 'updates').iterdir()) == []
+
+
 @pytest.mark.parametrize('product,now,want', [
     ('mega645','2026-10-03T19:00:00+07:00','2026-10-02T18:30:00+07:00'),
     ('power655','2026-10-03T18:29:59+07:00','2026-10-01T18:30:00+07:00'),
@@ -345,13 +389,13 @@ def test_sync_service_journals_corrections_to_older_existing_draws(tmp_path,monk
     service._append(state, [DrawRecord.from_legacy(product,r) for r in (old,latest)])
     @asynccontextmanager
     async def client(_settings):
-        transport = httpx.MockTransport(lambda request:httpx.Response(200,text=''.join(json.dumps(r)+'\n' for r in (corrected,latest))))
+        transport = httpx.MockTransport(lambda request:_sync_response(product,(corrected,latest),request))
         async with httpx.AsyncClient(transport=transport) as c: yield c
     monkeypatch.setattr(service, 'build_http_client', client)
     if product == 'mega645':
         asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True))
     else:
-        asyncio.run(service.sync_product(state, ProductCode(product), source='mirror', full=True))
+        asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True))
     restored = AppState(settings, InMemoryRepository())
     # Simulate cache/database loss for the product store as well.
     if product == 'bingo18':
@@ -444,3 +488,288 @@ def test_cli_once_returns_failure_for_stale_results_or_failed_checkpoint(tmp_pat
     if worker_error: assert result['worker_error'] == 'OSError'
     else: assert (tmp_path / 'updates' / 'status.json').exists()
     assert 'secret' not in json.dumps(result)
+
+
+@pytest.mark.parametrize('product', ['mega645', 'bingo18'])
+@pytest.mark.parametrize('failure', ['open', 'fsync'])
+def test_seed_only_old_correction_is_durable_before_cache_commit(tmp_path, monkeypatch, product, failure):
+    """Lỗi journal không được đẩy correction khỏi baseline của lần thử lại."""
+    from contextlib import asynccontextmanager
+    import os
+    import httpx
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.games import get_game
+    from vietlott_engine.core.models import Draw
+    from vietlott_engine.core.products import ProductCode
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    import vlm.updates.service as service
+
+    numbers = [1, 2, 3, 4, 5, 6] if product == 'mega645' else [1, 2, 3]
+    old = {'id':1, 'date':'2026-09-30', 'result':numbers}
+    latest = old | {'id':2, 'date':'2026-10-02'}
+    corrected = old | {'result':numbers[:-1] + [7 if product == 'mega645' else 4]}
+    settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed', ml_auto_update_enabled=False)
+    repo = InMemoryRepository()
+    state = AppState(settings, repo)
+    if product == 'mega645':
+        repo.upsert([Draw(game=product, draw_id=r['id'], draw_date=r['date'], numbers=r['result'])
+                     for r in (old, latest)])
+    else:
+        state.product_store().upsert(ProductCode(product), [old, latest], 'seed')
+
+    @asynccontextmanager
+    async def client(_settings):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:_sync_response(product,(corrected,latest),request))) as c:
+            yield c
+    monkeypatch.setattr(service, 'build_http_client', client)
+
+    def sync(target):
+        if product == 'mega645':
+            return asyncio.run(service.sync_matrix(target, get_game(product), source='github_mirror', full_refresh=True, learn=False))
+        return asyncio.run(service.sync_product(target, ProductCode(product), source='vietlott', full=True, learn=False))
+
+    def values(target):
+        if product == 'mega645':
+            return list(target.repository.load(product)[0].numbers)
+        return target.product_store().load(product).values[0].tolist()
+
+    with monkeypatch.context() as failed:
+        if failure == 'open':
+            real_open = os.open
+            def refuse_journal(path, flags, *args, **kwargs):
+                if os.fspath(path) == os.fspath(service.journal_path(state)):
+                    raise OSError('journal unavailable')
+                return real_open(path, flags, *args, **kwargs)
+            failed.setattr(os, 'open', refuse_journal)
+        else:
+            failed.setattr(os, 'fsync', lambda fd:(_ for _ in ()).throw(OSError('journal unavailable')))
+        with pytest.raises(OSError, match='journal unavailable'):
+            sync(state)
+    assert values(state) == old['result']
+
+    # Không phụ thuộc hàng đợi RAM: tạo AppState mới rồi tải đúng nguồn lần nữa.
+    retried = AppState(settings, repo)
+    sync(retried)
+    records = [json.loads(line) for line in service.journal_path(retried).read_text().splitlines()]
+    assert next(row for row in reversed(records) if row['draw_id'] == 1)['winning_numbers'] == corrected['result']
+    assert values(retried) == corrected['result']
+
+    if product != 'mega645':
+        for path in (tmp_path / 'products').iterdir():
+            path.unlink()
+    recovered = AppState(settings, InMemoryRepository())
+    service.replay_results(recovered)
+    assert values(recovered) == corrected['result']
+
+
+def test_unchanged_keno_seed_is_not_copied_into_the_journal(tmp_path, monkeypatch):
+    """Fast poll không được biến toàn lịch sử seed thành delta cần lưu bền."""
+    from contextlib import asynccontextmanager
+    import httpx
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.products import ProductCode
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    import vlm.updates.service as service
+    state = AppState(Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed',
+                              ml_auto_update_enabled=False), InMemoryRepository())
+    rows = [{'id':i, 'date':day, 'result':list(range(1, 21))}
+            for i, day in enumerate(('2026-09-30', '2026-10-01', '2026-10-02'), 1)]
+    state.product_store().upsert(ProductCode.KENO, rows, 'seed')
+    @asynccontextmanager
+    async def client(_settings):
+        text = ''.join(json.dumps(row) + '\n' for row in rows)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:httpx.Response(200, text=text))) as http:
+            yield http
+    monkeypatch.setattr(service, 'build_http_client', client)
+    asyncio.run(service.sync_product(state, ProductCode.KENO, source='mirror', full=True, learn=False))
+    path = service.journal_path(state)
+    saved = path.read_text()
+    assert [json.loads(line)['draw_id'] for line in saved.splitlines()] == [3]
+    asyncio.run(service.sync_product(state, ProductCode.KENO, source='mirror', full=True, learn=False))
+    assert path.read_text() == saved
+
+
+def test_product_precommit_journal_excludes_invalid_and_newly_unconfirmed_rows(tmp_path, monkeypatch):
+    """Hook không được lưu các dòng bị validation hoặc thông báo loại kỳ bỏ qua."""
+    from contextlib import asynccontextmanager
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.products import ProductCode
+    from vietlott_engine.crawler.product_store import ProductSyncPipeline
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    import vlm.updates.service as service
+    state = AppState(Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed',
+                              ml_auto_update_enabled=False), InMemoryRepository())
+    async def fetch(pipe, *_args):
+        pipe._pending_exclusions = [{'product':'bingo18', 'draw_id':2}]
+        return [{'id':1, 'date':'2026-10-01', 'result':[1, 2, 3]},
+                {'id':2, 'date':'2026-10-02', 'result':[1, 2, 3]},
+                {'id':3, 'date':'2026-10-03', 'result':[7, 8, 9]}]
+    @asynccontextmanager
+    async def client(_settings):
+        yield None
+    monkeypatch.setattr(ProductSyncPipeline, 'fetch', fetch)
+    monkeypatch.setattr(service, 'build_http_client', client)
+    asyncio.run(service.sync_product(state, ProductCode.BINGO18, source='mirror', learn=False))
+    records = [json.loads(line) for line in service.journal_path(state).read_text().splitlines()]
+    assert [row['draw_id'] for row in records] == [1]
+    assert state.product_store().load(ProductCode.BINGO18).draw_ids.tolist() == [1]
+
+
+@pytest.mark.parametrize('product', ['mega645', 'bingo18'])
+@pytest.mark.parametrize('restart', ['recover', 'conflict', 'torn'])
+def test_durable_pending_correction_recovers_crash_before_cache_without_overriding_conflicts(
+        tmp_path, monkeypatch, product, restart):
+    """Crash sau journal phải phục hồi correction, chỉ khi cache còn đúng baseline."""
+    from contextlib import asynccontextmanager
+    import httpx
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.games import get_game
+    from vietlott_engine.core.models import Draw
+    from vietlott_engine.core.products import ProductCode
+    from vietlott_engine.crawler.product_store import ProductStore
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    import vlm.updates.service as service
+    numbers = [1, 2, 3, 4, 5, 6] if product == 'mega645' else [1, 2, 3]
+    rows = [{'id':1, 'date':'2026-09-30', 'result':numbers},
+            {'id':2, 'date':'2026-10-02', 'result':numbers}]
+    corrected = rows[0] | {'result':numbers[:-1] + [7 if product == 'mega645' else 4]}
+    unrelated = rows[0] | {'result':numbers[:-1] + [8 if product == 'mega645' else 5]}
+    settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed', ml_auto_update_enabled=False)
+    repo = InMemoryRepository()
+    state = AppState(settings, repo)
+    def store(target, data):
+        if product == 'mega645':
+            target.repository.upsert([Draw(game=product, draw_id=r['id'], draw_date=r['date'], numbers=r['result']) for r in data])
+        else:
+            target.product_store().upsert(ProductCode(product), data, 'seed')
+    def values(target):
+        return list(target.repository.load(product)[0].numbers) if product == 'mega645' else target.product_store().load(product).values[0].tolist()
+    store(state, rows)
+    @asynccontextmanager
+    async def client(_settings):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request:_sync_response(product,(corrected,rows[1]),request))) as http:
+            yield http
+    monkeypatch.setattr(service, 'build_http_client', client)
+    def crash(*args, **kwargs):
+        raise RuntimeError('crash before cache commit')
+    with monkeypatch.context() as failed:
+        if product == 'mega645':
+            failed.setattr(repo, 'upsert', crash)
+        else:
+            failed.setattr(ProductStore, 'upsert', crash)
+        with pytest.raises(RuntimeError, match='crash before cache commit'):
+            if product == 'mega645':
+                asyncio.run(service.sync_matrix(state, get_game(product), source='github_mirror', full_refresh=True, learn=False))
+            else:
+                asyncio.run(service.sync_product(state, ProductCode(product), source='vietlott', full=True, learn=False))
+    assert values(state) == numbers
+    if restart == 'conflict':
+        store(state, [unrelated])
+    restarted = AppState(settings, repo)
+    if restart == 'torn':
+        pending, = (tmp_path / 'updates').glob('pending-*.json')
+        pending.write_text('{"records":[')
+        with pytest.raises((ValueError, json.JSONDecodeError)):
+            service.replay_results(restarted)
+        assert pending.read_text() == '{"records":['
+        assert values(restarted) == numbers
+        return
+    before = service.journal_path(state).read_text()
+    service.replay_results(restarted)
+    assert values(restarted) == (unrelated if restart == 'conflict' else corrected)['result']
+    if restart == 'conflict':
+        assert restarted.replay_conflicts
+        assert list((tmp_path / 'updates').glob('pending-*.json'))
+    else:
+        assert not list((tmp_path / 'updates').glob('pending-*.json'))
+        service.replay_results(restarted)
+        assert service.journal_path(restarted).read_text() == before
+
+
+def test_pending_outboxes_for_two_products_recover_independently_before_journal_creation(tmp_path):
+    """Hai sản phẩm cùng dừng sau stage không được ghi đè outbox của nhau."""
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.core.products import ProductCode
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    import vlm.updates.service as service
+    settings = Settings(data_dir=tmp_path, product_seed_dir=tmp_path / 'empty-seed')
+    state = AppState(settings, InMemoryRepository())
+    records = [DrawRecord.from_legacy(product, {'id':1, 'date':'2026-10-02', 'result':numbers})
+               for product, numbers in [('mega645',[1,2,3,4,5,6]), ('bingo18',[1,2,3])]]
+    for record in records:
+        service._stage_pending(state, [record], {})
+    assert len(list((tmp_path / 'updates').glob('pending-*.json'))) == 2
+    assert not service.journal_path(state).exists()
+    restarted = AppState(settings, InMemoryRepository())
+    assert service.replay_results(restarted) == 2
+    assert restarted.repository.load('mega645')[0].numbers == (1,2,3,4,5,6)
+    assert restarted.product_store().load(ProductCode.BINGO18).values.tolist() == [[1,2,3]]
+    assert not list((tmp_path / 'updates').glob('pending-*.json'))
+
+
+def test_pending_results_support_platforms_without_directory_fsync(tmp_path, monkeypatch):
+    """Windows không có O_DIRECTORY vẫn phải ghi file bền và phục hồi được."""
+    import os
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    import vlm.updates.service as service
+    monkeypatch.delattr(os, 'O_DIRECTORY', raising=False)
+    settings = Settings(data_dir=tmp_path)
+    state = AppState(settings, InMemoryRepository())
+    record = DrawRecord.from_legacy('mega645', {'id':1, 'date':'2026-10-02', 'result':[1,2,3,4,5,6]})
+    service._stage_pending(state, [record], {})
+    restarted = AppState(settings, InMemoryRepository())
+    service.replay_results(restarted)
+    assert restarted.repository.load('mega645')[0].numbers == (1,2,3,4,5,6)
+    assert not list((tmp_path / 'updates').glob('pending-*.json'))
+
+
+def test_pending_is_retained_until_journal_fsync_succeeds_after_restart(tmp_path, monkeypatch):
+    """Đọc được JSON đủ không thay cho fsync đã lỗi; không được xóa outbox sớm."""
+    import os
+    from vietlott_engine.api.deps import AppState
+    from vietlott_engine.core.config import Settings
+    from vietlott_engine.crawler.storage import InMemoryRepository
+    from vlm.database.schema import DrawRecord
+    import vlm.updates.service as service
+    settings = Settings(data_dir=tmp_path)
+    state = AppState(settings, InMemoryRepository())
+    record = DrawRecord.from_legacy('mega645', {'id':1, 'date':'2026-10-02', 'result':[1,2,3,4,5,6]})
+    service._stage_pending(state, [record], {})
+    path = service.journal_path(state)
+    real_fsync = os.fsync
+    attempted = []
+    def fail_only_journal(fd):
+        if path.exists() and (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (path.stat().st_dev, path.stat().st_ino):
+            attempted.append(fd)
+            raise OSError('journal fsync failed')
+        return real_fsync(fd)
+    with monkeypatch.context() as failed:
+        failed.setattr(os, 'fsync', fail_only_journal)
+        with pytest.raises(OSError, match='journal fsync failed'):
+            service._append(state, [record])
+        assert path.read_text().endswith('\n')
+        restarted = AppState(settings, InMemoryRepository())
+        with pytest.raises(OSError, match='journal fsync failed'):
+            service.replay_results(restarted)
+    assert len(attempted) == 2
+    assert list((tmp_path / 'updates').glob('pending-*.json'))
+    journal_syncs = []
+    def observe_fsync(fd):
+        if (os.fstat(fd).st_dev, os.fstat(fd).st_ino) == (path.stat().st_dev, path.stat().st_ino):
+            journal_syncs.append(fd)
+        return real_fsync(fd)
+    monkeypatch.setattr(os, 'fsync', observe_fsync)
+    restored = AppState(settings, InMemoryRepository())
+    service.replay_results(restored)
+    assert journal_syncs
+    assert restored.repository.load('mega645')[0].numbers == (1,2,3,4,5,6)
+    assert not list((tmp_path / 'updates').glob('pending-*.json'))

@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Callable
 
 from vietlott_engine.core.config import Settings
 from vietlott_engine.core.games import GameSpec
@@ -75,12 +76,27 @@ class SyncPipeline:
         self.source = source
         self.repository = repository
 
-    async def run(self, spec: GameSpec, full_refresh: bool = False) -> SyncReport:
+    async def run(self, spec: GameSpec, full_refresh: bool = False,
+                  *, before_upsert: Callable[[list[Draw]], list[Draw] | None] | None = None) -> SyncReport:
         t0 = time.perf_counter()
-        since = None if full_refresh else self.repository.max_draw_id(spec.code)
+        known_ids = sorted({draw.draw_id for draw in self.repository.load(spec.code)}) if not full_refresh else []
+        since = known_ids[-1] if known_ids else None
+        repair_gap = next((a for a, b in zip(known_ids, known_ids[1:]) if b > a + 1), None)
+        if repair_gap is not None:
+            # Chỉ lùi tới khoảng hở NỘI BỘ; kho khởi động thiếu đầu vẫn giữ hợp đồng cũ.
+            since = repair_gap
         log.info("sync %s from %s (since draw_id=%s)", spec.code.value, self.source.name, since)
         fetched = await self.source.fetch(spec, since_id=since)
-        inserted = self.repository.upsert(fetched.draws)
+        additions = fetched.draws
+        if repair_gap is not None:
+            # Lùi cursor không cho nguồn dự phòng sửa các kỳ chuẩn đã có.
+            known = set(known_ids)
+            additions = [draw for draw in additions if draw.draw_id > repair_gap and draw.draw_id not in known]
+        if before_upsert is not None:
+            prepared = before_upsert(additions)
+            if prepared is not None:
+                additions = prepared
+        inserted = self.repository.upsert(additions)
         self.repository.log_sync(spec.code, self.source.name, len(fetched.draws), inserted, len(fetched.rejected))
 
         all_draws = self.repository.load(spec.code)

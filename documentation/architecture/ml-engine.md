@@ -247,21 +247,20 @@ mang một bit thông tin nào.
 
 ### Ngưỡng hòa vốn là con số quan trọng nhất
 
-Với luật chi trả lô tô thông thường (đặt 23, trúng 80):
+Với luật chi trả lô tô thông thường (đặt 23, nhận 80 mỗi nháy):
 
 ```
-ngưỡng hòa vốn        = 23/80 = 0.2875
-nền                   =         0.2377
-lợi thế người chơi ở nền      = −17.34%
-cải thiện tương đối cần để hòa vốn = +21.0%
+ngưỡng hòa vốn (nháy/con/kỳ) = 23/80 = 0.2875
+nền (nháy/con/kỳ)            = 27/100 = 0.27
+lợi thế người chơi ở nền             = −6.09%
+cải thiện tương đối cần để hòa vốn   = +6.48%
 ```
 
-Con số **+21.0%** gần trùng với mức chênh lệch nhỏ nhất mà 391 kỳ đủ sức phát
-hiện (**+25.4%**). Hai đại lượng đến từ hai phép tính hoàn toàn độc lập — một
-từ luật chi trả, một từ lý thuyết thống kê — và việc chúng gặp nhau nói lên
-điều cốt lõi: **ngưỡng để có lãi nằm đúng ở ranh giới khả năng phát hiện của dữ
-liệu.** Một hệ thống báo rằng nó vượt ngưỡng đó, trên lịch sử cỡ này, gần như
-chắc chắn đang đo may rủi.
+Tiền thưởng tính theo số nháy thực, kể cả một con về nhiều lần; Hit-Rate,
+precision, recall, Brier và log-loss vẫn chấm việc con đó có về hay không.
+Nền **23,77%** là xác suất về ít nhất một lần, không phải số nháy kỳ vọng.
+Phép tính công suất cho biến nhị phân không trực tiếp xác định công suất cho
+ROI; muốn kết luận có lãi cần đánh giá riêng doanh thu theo số nháy ngoài mẫu.
 
 ---
 
@@ -278,11 +277,15 @@ python src/ml_engine/main_pipeline.py --start 200 --stop 392 --refit-every 24
 | Kỹ năng Brier | −0.000832 |
 | Vượt nền | **KHÔNG** |
 
-| K | Trúng@K | Chọn ngẫu nhiên | Lời/lỗ |
-|---|---:|---:|---:|
-| 3 | 0.7240 | 0.7130 | −16.1% |
-| 5 | 1.2552 | 1.1883 | −12.7% |
-| 10 | 2.4740 | 2.3766 | −13.9% |
+| K | Trúng@K | Chọn ngẫu nhiên |
+|---|---:|---:|
+| 3 | 0.7240 | 0.7130 |
+| 5 | 1.2552 | 1.1883 |
+| 10 | 2.4740 | 2.3766 |
+
+Bản đo cũ chỉ tính một khoản tiền thưởng cho mỗi con trúng, làm mất số nháy.
+Các tỉ suất lời/lỗ cũ vì vậy không phản ánh luật trả 80 mỗi nháy và đã được bỏ
+khỏi bảng; cần đo lại từ số nháy của các con đã chọn để báo cáo ROI.
 
 | Cánh tay | Trung bình hậu nghiệm | Khoảng tin cậy 95% | Vượt nền |
 |---|---:|---|:---:|
@@ -304,10 +307,9 @@ Ba điều đáng đọc kỹ:
 2. **Trúng@K nhỉnh hơn ngẫu nhiên (+4.1% ở K=10) trong khi kỹ năng log-loss
    âm.** Chính là hiện tượng §5 cảnh báo: chỉ số xếp hạng và quy tắc chấm điểm
    chặt cho hai câu trả lời ngược nhau, và chỉ câu thứ hai đáng tin.
-3. **Lời/lỗ âm ở mọi mức K**, dù có nhỉnh hơn mức −17.34% của việc đặt cược
-   thuần theo nền. Hệ thống chuyển một phần lợi thế nhà cái về phía người chơi
-   nhưng không xóa được nó, và đúng như §5 dự đoán, khoảng cách còn lại lớn hơn
-   những gì dữ liệu đủ sức chứng minh là thật.
+3. **Các chỉ số nhị phân không đủ để kết luận lời/lỗ.** Mốc kinh tế công bằng
+   là −6,09% với 0,27 nháy/con/kỳ; chưa có bản đo lại ROI theo số nháy cho lượt
+   192 kỳ này để so với mốc đó.
 
 Kết quả đúng ở đây là hệ thống **tự chuyển sang chế độ an toàn 62% thời gian**
 mà không cần ai can thiệp. Đó chính là hành vi mà kiến trúc được thiết kế để

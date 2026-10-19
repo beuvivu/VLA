@@ -1330,5 +1330,69 @@
       "G1"
     ],
     "candidates": 1
+  },
+  "2026-10-16": {
+    "checked_at_utc": "2026-10-16T11:35:27Z",
+    "accepted": true,
+    "required_agreement": 1,
+    "agreement": 1,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "sources": [
+      "P1"
+    ],
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ],
+    "candidates": 1
+  },
+  "2026-10-17": {
+    "checked_at_utc": "2026-10-17T11:33:35Z",
+    "accepted": true,
+    "required_agreement": 1,
+    "agreement": 1,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "sources": [
+      "P1"
+    ],
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ],
+    "candidates": 1
+  },
+  "2026-10-18": {
+    "checked_at_utc": "2026-10-18T11:32:17Z",
+    "accepted": true,
+    "required_agreement": 1,
+    "agreement": 1,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "sources": [
+      "P1"
+    ],
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ],
+    "candidates": 1
+  },
+  "2026-10-19": {
+    "checked_at_utc": "2026-10-19T11:33:35Z",
+    "accepted": true,
+    "required_agreement": 1,
+    "agreement": 1,
+    "runner_up_agreement": 0,
+    "ambiguous_tie": false,
+    "sources": [
+      "P1"
+    ],
+    "source_agreement": 1,
+    "independent_groups": [
+      "G1"
+    ],
+    "candidates": 1
   }
 }

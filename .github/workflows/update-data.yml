@@ -326,6 +326,9 @@ jobs:
       - name: Cấu hình GitHub Pages
         uses: actions/configure-pages@v6
 
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        run: python3 src/site_assets.py --refresh docs --check
+
       - name: Tải artifact GitHub Pages lên
         uses: actions/upload-pages-artifact@v5
         with:
@@ -446,8 +449,7 @@ jobs:
             exit 1
           fi
 
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          python3 scripts/ops/push_generated_site.py --branch "${GITHUB_REF_NAME}"
           echo "generated_changed=true" >> "$GITHUB_OUTPUT"
 
   trigger-post-finalization:
@@ -519,6 +521,9 @@ jobs:
 
       - name: Cấu hình GitHub Pages
         uses: actions/configure-pages@v6
+
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        run: python3 src/site_assets.py --refresh docs --check
 
       - name: Tải artifact GitHub Pages lên
         uses: actions/upload-pages-artifact@v5

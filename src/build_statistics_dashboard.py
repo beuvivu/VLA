@@ -9,6 +9,7 @@ CDNs, or JavaScript frameworks.
 """
 
 import html
+import calendar
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -406,7 +407,7 @@ def _matrix(
             parts.append(
                 f"<div class='{cell_class}' "
                 f"style='background:{bg};color:{fg}' "
-                f"title='{n:02d}: {html.escape(val_text + suffix)}'{attrs}>"
+                f"{attrs}>"
                 # Ô gồm nhãn số và giá trị: giá trị là số chính của ô (Alt + Enter).
                 f"<b>{n:02d}</b><span data-evidence-primary>{html.escape(val_text)}{html.escape(suffix)}</span>"
                 "</div>"
@@ -689,6 +690,77 @@ def _board_month_table(df: pd.DataFrame) -> str:
         result_cols=day_cols,
         compact=True,
     )
+
+
+def _board_year_table(raw: pd.DataFrame) -> str:
+    """Lịch đủ mười hai tháng; năm lấy từ ngày lịch sử, không suy từ đuôi số."""
+    heading = '<div class="card-head"><span class="type-badge table">Bảng</span><h3>Bảng Đặc Biệt theo năm</h3></div>'
+    if raw.empty or "date" not in raw.columns:
+        return f'<article class="viz-card app-year-card">{heading}<p>Chưa có lịch sử để lập bảng năm.</p></article>'
+    view = raw.copy()
+    view["date"] = pd.to_datetime(view["date"], format="%Y-%m-%d", errors="coerce")
+    view = view.loc[view["date"].notna()].copy()
+    if view.empty:
+        return f'<article class="viz-card app-year-card">{heading}<p>Chưa có lịch sử ngày hợp lệ để lập bảng năm.</p></article>'
+    years = sorted(view["date"].dt.year.unique().tolist(), reverse=True)
+    view["special"] = view.get("special", pd.Series("", index=view.index)).map(_full_special_value)
+    # Cùng cách xử lý bản ghi trùng của bảng tuần/tháng: lấy kết quả hợp lệ cuối.
+    results = view.loc[view["special"].ne("")].drop_duplicates("date", keep="last")
+    prizes = dict(zip(results["date"].dt.strftime("%Y-%m-%d"), results["special"], strict=True))
+    options = "".join(
+        f'<option value="{year}"{" selected" if index == 0 else ""}>{year}</option>'
+        for index, year in enumerate(years)
+    )
+    month_options = '<option value="">Đủ 12 tháng</option>' + "".join(
+        f'<option value="{month:02d}">Tháng {month:02d}</option>' for month in range(1, 13)
+    )
+    panels = []
+    for index, year in enumerate(years):
+        rows = []
+        count = sum(stamp.startswith(f"{year}-") for stamp in prizes)
+        days = 366 if calendar.isleap(year) else 365
+        year_results = results.loc[results["date"].dt.year.eq(year), "date"]
+        latest_dates = year_results if not year_results.empty else view.loc[view["date"].dt.year.eq(year), "date"]
+        latest_month = f"{int(latest_dates.dt.month.max()):02d}"
+        for day in range(1, 32):
+            cells = [f'<th scope="row">{day:02d}</th>']
+            for month in range(1, 13):
+                if day > calendar.monthrange(year, month)[1]:
+                    cells.append(f'<td class="app-year-invalid" data-app-month="{month:02d}">Không có ngày</td>')
+                    continue
+                stamp = f"{year}-{month:02d}-{day:02d}"
+                full = prizes.get(stamp, "")
+                if full:
+                    cells.append(
+                        f'<td class="app-year-result" data-app-month="{month:02d}" data-app-date="{stamp}" data-app-result="{full}" '
+                        f'aria-label="{day:02d}/{month:02d}/{year}: {full}">'
+                        f'{full[:-2]}<span class="app-year-tail">{full[-2:]}</span></td>'
+                    )
+                else:
+                    cells.append(f'<td class="app-year-missing" data-app-month="{month:02d}" data-app-date="{stamp}" aria-label="{day:02d}/{month:02d}/{year}: chưa có kết quả">Chưa có KQ</td>')
+            rows.append(f'<tr data-app-day="{day:02d}">{"".join(cells)}</tr>')
+        months = "".join(f'<th scope="col" data-app-month="{month:02d}">Tháng {month:02d}</th>' for month in range(1, 13))
+        panels.append(f'''<section class="app-year-panel" data-app-year="{year}" data-app-latest-month="{latest_month}" data-app-draw-count="{count}"{" hidden" if index else ""} aria-label="Lịch Đặc Biệt năm {year}">
+          <p class="app-year-summary">Năm {year} · {count} ngày có kết quả / {days} ngày lịch.</p>
+          <div class="app-year-scroll" tabindex="0" aria-label="Bảng năm {year}, cuộn ngang để xem đủ 12 tháng">
+            <table class="app-year-table"><caption class="app-year-caption">Đặc Biệt năm {year} · Hàng là ngày, cột là tháng</caption>
+              <thead><tr><th scope="col">Ngày</th>{months}</tr></thead><tbody>{"".join(rows)}</tbody>
+            </table>
+          </div>
+        </section>''')
+    return f'''<article class="viz-card app-year-card" data-app-year-calendar>
+      {heading}
+      <p>Tra cứu đủ 12 tháng trong một năm. Giữ đủ 5 chữ số, kể cả số 0 ở đầu; hai số cuối được nhấn màu.</p>
+      <div class="app-year-tools">
+        <label for="app-special-year">Chọn năm <select id="app-special-year" data-app-year-select>{options}</select></label>
+        <label for="app-special-month">Cách xem <select id="app-special-month" data-app-month-select>{month_options}</select></label>
+        <label for="app-special-year-filter">Tìm số <input id="app-special-year-filter" type="search" inputmode="numeric" placeholder="Nhập số cần tìm…" aria-label="Lọc số Đặc Biệt trong năm đã chọn" data-app-year-filter></label>
+      </div>
+      <p class="app-year-legend"><span class="app-year-key-result">Có kết quả</span><span>Chưa có KQ = chưa có kết quả trong lịch sử</span><span>Không có ngày = ngoài lịch tháng</span></p>
+      <p class="app-year-status" role="status" data-app-year-status aria-live="polite">{sum(stamp.startswith(f"{years[0]}-") for stamp in prizes)} kết quả trong năm {years[0]}.</p>
+      <p class="app-year-no-match" data-app-year-no-match hidden>Không có kết quả khớp bộ lọc trong năm đã chọn.</p>
+      {"".join(panels)}
+    </article>'''
 
 
 def _section(title: str, intro: str, body: str, anchor: str, *, eyebrow: str | None = None) -> str:
@@ -1056,11 +1128,11 @@ _DASHBOARD_CSS = """\
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
     }
     .matrix-cell b {
-      font-size: 14px;
+      font-size: 15px;
       letter-spacing: .04em;
     }
     .matrix-cell span {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 850;
       opacity: .96;
     }
@@ -1149,7 +1221,10 @@ _DASHBOARD_CSS = """\
       font-weight: 900;
       letter-spacing: .04em;
       font-variant-numeric: tabular-nums;
+      font-size: 14px;
     }
+    .num-pill[data-mode="de"] { background: var(--ui-n1-bg); color: var(--ui-n1-ink); border-color: currentColor; }
+    .num-pill[data-mode="loto"] { background: var(--ui-n3-bg); color: var(--ui-n3-ink); border-color: currentColor; }
     .band {
       padding: 4px 9px;
       border-radius: 999px;
@@ -1198,7 +1273,7 @@ _DASHBOARD_CSS = """\
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      font-size: 13px;
+      font-size: 14px;
     }
     th, td {
       padding: 9px 10px;
@@ -1218,7 +1293,7 @@ _DASHBOARD_CSS = """\
       letter-spacing: .04em;
     }
     tr:hover td { background: var(--ui-surface-2); }
-    .compact table { font-size: 12px; }
+    .compact table { font-size: 13px; }
     .compact th, .compact td { padding: 8px 9px; text-align: center; }
     .compact th:first-child, .compact td:first-child {
       text-align: left;
@@ -1242,7 +1317,7 @@ _DASHBOARD_CSS = """\
     .result-calendar .special-result {
       color: var(--ui-ink);
       font-weight: 750;
-      font-size: 14px;
+      font-size: 15px;
       font-variant-numeric: tabular-nums;
       letter-spacing: .04em;
     }
@@ -1250,6 +1325,43 @@ _DASHBOARD_CSS = """\
     .result-calendar th:last-child, .result-calendar td:last-child { border-right: 0; }
     .result-calendar tbody tr:last-child td { border-bottom: 0; }
     .result-calendar .table-wrap:focus-visible { outline: 2px solid var(--brand-ink); outline-offset: 3px; }
+
+    .app-year-card { min-width: 0; }
+    .app-year-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin: 16px 0; }
+    .app-year-tools label { display: grid; gap: 8px; font-weight: 650; color: var(--ui-ink-2); }
+    .app-year-tools select, .app-year-tools input {
+      min-height: 44px; max-width: 100%; padding: 8px 12px;
+      border: 1px solid var(--ui-border-strong); border-radius: 8px;
+      background: var(--ui-surface); color: var(--ui-ink); font: inherit;
+    }
+    .app-year-tools :is(select, input):focus-visible, .app-year-scroll:focus-visible {
+      outline: 2px solid var(--ui-brand); outline-offset: 3px;
+    }
+    .app-year-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12px; color: var(--ui-ink-soft); }
+    .app-year-key-result { background: var(--ui-n1-bg); color: var(--ui-n1-ink); padding: 0 8px; border-radius: 4px; }
+    .app-year-scroll { overflow: auto; max-height: 640px; border: 1px solid var(--ui-border); border-radius: 8px; }
+    .app-year-table { min-width: 1140px; font-variant-numeric: tabular-nums; }
+    .app-year-single-month .app-year-table { min-width: 0; table-layout: fixed; }
+    .app-year-single-month .app-year-table th:first-child { width: 72px; }
+    .app-year-caption { text-align: left; padding: 8px 16px; color: var(--ui-ink-2); background: var(--ui-surface-2); }
+    .app-year-table :is(th, td) { min-width: 88px; text-align: center; padding: 10px 8px; border-right: 1px solid var(--ui-border); }
+    .app-year-table :is(th, td):last-child { border-right: 0; }
+    .app-year-table th:first-child { position: sticky; left: 0; min-width: 56px; z-index: 2; background: var(--ui-surface-2); }
+    .app-year-table thead th:first-child { z-index: 3; }
+    .app-year-table tbody th { top: auto; }
+    .app-year-table .app-year-result, .app-year-table tr:hover .app-year-result {
+      font-size: 15px; font-weight: 750; letter-spacing: .03em;
+      color: var(--ui-ink); background: var(--ui-n1-bg);
+    }
+    .app-year-tail { font-weight: 900; color: var(--ui-n1-ink); }
+    .app-year-table .app-year-missing, .app-year-table tr:hover .app-year-missing { font-size: 12px; color: var(--ui-ink-soft); background: var(--ui-surface); }
+    .app-year-table .app-year-invalid, .app-year-table tr:hover .app-year-invalid { font-size: 12px; color: var(--ui-empty-ink); background: var(--ui-empty-bg); }
+    .app-year-table .app-year-match, .app-year-table tr:hover .app-year-match {
+      color: var(--ui-n3-ink); background: var(--ui-n3-bg); box-shadow: inset 0 0 0 2px currentColor;
+    }
+    .app-year-match .app-year-tail { color: inherit; }
+    .app-year-no-match { color: var(--ui-warn); background: var(--ui-warn-soft); border-radius: 8px; padding: 16px; }
+    .app-year-card [hidden] { display: none; }
 
     .mini-bar {
       position: relative;
@@ -1491,7 +1603,56 @@ _DASHBOARD_CSS = """\
       .evidence-metrics { grid-template-columns: 1fr; }
       .evidence-head { padding: 18px 16px 12px; }
       .evidence-body { padding: 14px 14px 22px; }
+      .app-year-tools { align-items: stretch; flex-direction: column; }
+      .app-year-tools :is(select, input) { width: 100%; }
     }"""
+
+
+_DASHBOARD_SCRIPT_YEAR = """\
+    document.querySelectorAll('[data-app-year-calendar]').forEach(card => {
+      const select = card.querySelector('[data-app-year-select]');
+      const month = card.querySelector('[data-app-month-select]');
+      const filter = card.querySelector('[data-app-year-filter]');
+      const status = card.querySelector('[data-app-year-status]');
+      const empty = card.querySelector('[data-app-year-no-match]');
+      const compact = window.matchMedia && window.matchMedia('(max-width: 680px)').matches;
+      let manualMonth = false;
+      function chooseLatestMonth() {
+        if (!compact || manualMonth) return;
+        const panel = Array.from(card.querySelectorAll('[data-app-year]')).find(item => item.dataset.appYear === select.value);
+        if (panel) month.value = panel.dataset.appLatestMonth;
+      }
+      function updateYearCalendar() {
+        const query = filter.value.trim();
+        let count = 0;
+        card.querySelectorAll('[data-app-year]').forEach(panel => {
+          const active = panel.dataset.appYear === select.value;
+          panel.hidden = !active;
+          panel.classList.toggle('app-year-single-month', Boolean(month.value));
+          panel.querySelectorAll('[data-app-month]').forEach(cell => {
+            cell.hidden = Boolean(month.value) && cell.dataset.appMonth !== month.value;
+          });
+          panel.querySelector('.app-year-scroll').setAttribute('aria-label', 'Bảng năm ' + panel.dataset.appYear + (month.value ? ', tháng ' + month.value : ', cuộn ngang để xem đủ 12 tháng'));
+          panel.querySelectorAll('tbody tr').forEach(row => {
+            let rowMatches = 0;
+            row.querySelectorAll('[data-app-result]').forEach(cell => {
+              const matches = !cell.hidden && cell.dataset.appResult.includes(query);
+              cell.classList.toggle('app-year-match', Boolean(query) && matches);
+              if (matches) rowMatches += 1;
+            });
+            row.hidden = Boolean(query) && rowMatches === 0;
+            if (active) count += rowMatches;
+          });
+        });
+        status.textContent = count + (query ? ' kết quả khớp trong năm ' : ' kết quả trong năm ') + select.value + (month.value ? ' · tháng ' + month.value : '') + '.';
+        empty.hidden = !query || count > 0;
+      }
+      select.addEventListener('change', () => { chooseLatestMonth(); updateYearCalendar(); });
+      month.addEventListener('change', () => { manualMonth = true; updateYearCalendar(); });
+      filter.addEventListener('input', updateYearCalendar);
+      chooseLatestMonth();
+      updateYearCalendar();
+    });"""
 
 #: 33 dòng văn bản nhúng, trích khỏi f-string của ``main``.
 #:
@@ -1746,7 +1907,8 @@ def main() -> None:
     pair_current = _read_csv(adv / "reverse_pair_frequency_current.csv", dtype=str)
     hht_current = _read_csv(adv / "head_tail_total_loto_current.csv", dtype=str)
     sg_current = _read_csv(adv / "special_group_frequency_current.csv", dtype=str)
-    special_week, special_month = _full_special_boards(_read_csv(data_dir / "xsmb.csv", dtype=str))
+    special_history = _read_csv(data_dir / "xsmb.csv", dtype=str)
+    special_week, special_month = _full_special_boards(special_history)
     first_overdue = _read_csv(adv / "first_prize_overdue.csv", dtype=str)
     cond_de_loto = _read_csv(adv / "conditional_loto_after_special_top500.csv", dtype=str, nrows=80)
     cond_loto_loto = _read_csv(adv / "conditional_loto_after_loto_top500.csv", dtype=str, nrows=80)
@@ -1974,6 +2136,7 @@ def main() -> None:
     <div class="layout-grid one">
       {_board_week_table(special_week)}
       {_board_month_table(special_month)}
+      {_board_year_table(special_history)}
     </div>
     <div class="layout-grid two">
       {_table(first_overdue, title="Giải nhất gan", subtitle="2 số cuối giải nhất được tách riêng vì hành vi khác LOTO/Đặc Biệt.", columns=["number_str", "current_gap", "hit_count", "mean_gap", "max_gap", "last_seen"], max_rows=35, highlight_col="current_gap", zfill_cols={"number_str"}, evidence_mode="loto")}
@@ -2060,7 +2223,7 @@ def main() -> None:
         ),
         _section(
             "Bảng Đặc Biệt và giải nhất",
-            "Bảng tuần/tháng giữ bố cục lịch để người dùng quen cách xem; giải nhất dùng biểu đồ/bảng gan riêng.",
+            "Tra cứu Đặc Biệt theo tuần, tháng và đủ 12 tháng theo năm; giải nhất có biểu đồ/bảng gan riêng.",
             board_body,
             "bang-db",
         ),
@@ -2163,6 +2326,7 @@ def main() -> None:
   <script id="cauEvidenceData" type="application/json">{evidence_json}</script>
   <script>
 {_DASHBOARD_SCRIPT_EVIDENCE}
+{_DASHBOARD_SCRIPT_YEAR}
   </script>
 </body>
 </html>

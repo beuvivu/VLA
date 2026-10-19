@@ -52,6 +52,7 @@ tests/frontend/node_modules/
 # Khoá tiến trình và tệp tạm của sổ học trực tuyến.
 data/online/*.lock
 data/online/.*
+data/agents/*.lock
 
 # Ảnh chụp và kết quả của scripts/browser/*: CI tải lên làm artifact, không commit.
 ui-browser-artifacts/

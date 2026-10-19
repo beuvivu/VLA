@@ -1,7 +1,12 @@
-name: Xóa cache Actions (thủ công)
+name: Xóa cache Actions
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/cache-purge.yml
+      - scripts/ops/purge_github_caches.py
 
 permissions:
   actions: write

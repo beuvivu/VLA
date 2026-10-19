@@ -4,8 +4,8 @@
    bật tooltip để người xem chọn số và tính cầu liên tục.
    Nhấp: ngăn kéo chi tiết — nguồn dữ liệu, các bước tính, ngữ cảnh của ô.
    Con số đã có chức năng nhấp riêng (đánh dấu ô, chọn số, nút, liên kết) giữ
-   nguyên chức năng ấy; bằng chứng của nó mở bằng Alt + nhấp, hoặc nhấn giữ
-   trên màn hình cảm ứng.
+   nguyên chức năng ấy; trang chủ mở bằng chứng bằng nhấp đúp, trang khác
+   bằng Alt + nhấp; cả hai giữ nhấn giữ trên màn hình cảm ứng.
 
    Danh mục nằm trong khối JSON #app-evidence-data do page_output chèn vào
    <head>. Phần tử khai data-evidence="<id>" lấy bằng chứng riêng trong
@@ -28,6 +28,7 @@
 
   var doc = document;
   var win = window;
+  var homeEvidence = /(?:^|\/)(?:index\.html|landing\.html|landing_desktop\.html)?$/.test(win.location.pathname);
   if (!doc.body || doc.body.dataset.appEvidenceReady) { return; }
   doc.body.dataset.appEvidenceReady = "true";
 
@@ -41,7 +42,7 @@
   var EXCLUDE = [
     ".app-rail", ".app-panel", ".app-header", ".app-global-search", ".app-evidence-tip",
     ".app-evidence-drawer", "input", "textarea", "select", "option", "[contenteditable]",
-    "[data-no-evidence]", "[aria-hidden='true']", "script", "style", "noscript", "code", "pre",
+    "[data-no-evidence]", "[hidden]", "[aria-hidden='true']", "script", "style", "noscript", "code", "pre",
   ].join(",");
   /* Đã có chức năng nhấp riêng: nhấp thường không được cướp. */
   var INTERACTIVE = [
@@ -95,6 +96,28 @@
     return t.length > max ? t.slice(0, max - 1) + "…" : t;
   }
   function isNumber(text) { return text.length > 0 && text.length <= MAX_LEN && NUM.test(text); }
+
+  /* Vùng gấp và CSS có thể giấu số mà không thêm thuộc tính hidden. Không
+     dùng kích thước hộp để trình kiểm DOM không có bố cục vẫn chạy đúng. */
+  function isVisible(el, styles) {
+    if (!el || !root.contains(el) || el.closest(EXCLUDE)) { return false; }
+    for (var ancestor = el; ancestor; ancestor = ancestor.parentElement) {
+      if (ancestor.tagName === "DETAILS" && !ancestor.open) {
+        var summary = ancestor.querySelector(":scope > summary");
+        if (!summary || !summary.contains(el)) { return false; }
+      }
+    }
+    if (typeof el.checkVisibility === "function") { return el.checkVisibility({ checkVisibilityCSS: true }); }
+    for (var node = el; node; node = node.parentElement) {
+      var style = styles && styles.get(node);
+      if (!style) {
+        style = win.getComputedStyle(node);
+        if (styles) { styles.set(node, style); }
+      }
+      if (style.display === "none" || (node === el && /^(hidden|collapse)$/.test(style.visibility))) { return false; }
+    }
+    return true;
+  }
 
   function svgLabel(el) {
     var title = el.querySelector ? el.querySelector(":scope > title") : null;
@@ -438,8 +461,8 @@
         : viaKeyboard
           ? "Enter để xem chi tiết bằng chứng suy luận"
           : interactive
-            ? "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận"
-            : "Click để xem chi tiết bằng chứng suy luận"));
+            ? (homeEvidence ? "Nhấp đúp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận" : "Alt + nhấp (hoặc nhấn giữ) để xem chi tiết bằng chứng suy luận")
+            : (homeEvidence ? "Nhấp đúp để xem chi tiết bằng chứng suy luận" : "Click để xem chi tiết bằng chứng suy luận")));
     tip.replaceChildren.apply(tip, lines);
   }
 
@@ -487,7 +510,7 @@
     if (event.target.hasAttribute && event.target.hasAttribute("data-evidence-region")) {
       if (keyboard && !drawerOpen()) {
         var region = event.target;
-        var keep = activeRegion === region && active && region.contains(active) ? active : null;
+        var keep = currentItem(region);
         var start = keep || firstItem(region);
         if (start) { setActive(region, start); }
       }
@@ -632,6 +655,7 @@
   }
 
   function openFor(el) {
+    if (!isVisible(el)) { return null; }
     var ev = evidenceFor(el);
     hideTip();
     if (!drawer) { buildDrawer(); }
@@ -663,7 +687,18 @@
 
   /* Alt + nhấp: chạy ở pha bắt để tới trước mọi trình xử lý của trang. */
   doc.addEventListener("click", function (event) {
-    if (!event.altKey || event.button !== 0) { return; }
+    if (homeEvidence || !event.altKey || event.button !== 0) { return; }
+    var el = valueTarget(event.target);
+    if (!el) { return; }
+    event.preventDefault();
+    event.stopPropagation();
+    openFor(el);
+  }, true);
+
+  /* Trang chủ: hai lần nhấp vẫn chọn số theo chức năng sẵn có, rồi sự kiện
+     nhấp đúp mở bằng chứng. Không trì hoãn thao tác chọn số hay máy tính. */
+  doc.addEventListener("dblclick", function (event) {
+    if (!homeEvidence || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) { return; }
     var el = valueTarget(event.target);
     if (!el) { return; }
     event.preventDefault();
@@ -673,7 +708,7 @@
 
   /* Nhấp thường: pha nổi, sau trình xử lý của trang; chỉ số chưa có chức năng nhấp. */
   doc.addEventListener("click", function (event) {
-    if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
+    if (homeEvidence || event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey ||
         event.metaKey || event.shiftKey) { return; }
     var el = valueTarget(event.target);
     if (!el || isInteractive(el) || hasSelection()) { return; }
@@ -742,8 +777,9 @@
     return el.namespaceURI === SVG_NS && /\d/.test(svgLabel(el)) && valueTarget(el) === el;
   }
 
-  function eachItem(scope, region, visit) {
+  function eachItem(scope, region, visit, includeInvisible) {
     var walker = doc.createTreeWalker(scope, SHOW_TEXT | SHOW_ELEMENT, null);
+    var styles = new WeakMap();
     var last = null;
     for (var node = walker.nextNode(); node; node = walker.nextNode()) {
       var el;
@@ -755,7 +791,8 @@
         if (!/\d/.test(node.nodeValue) || (holder && holder.namespaceURI === SVG_NS && /^(title|desc)$/.test(holder.localName))) { continue; }
         el = valueTarget(node);
       }
-      if (!el || el === last || selfFocusable(el) || (region && regionFor(el) !== region)) { continue; }
+      if (!el || el === last || selfFocusable(el) || (region && regionFor(el) !== region) ||
+          (!includeInvisible && !isVisible(el, styles))) { continue; }
       last = el;
       if (visit(el) === false) { return; }
     }
@@ -840,6 +877,12 @@
     live.textContent = ev.value + (where ? ", " + where : "");
   }
 
+  function currentItem(region) {
+    return activeRegion === region && active && region.contains(active) &&
+      regionFor(active) === region && !selfFocusable(active) && valueTarget(active) === active && isVisible(active)
+      ? active : null;
+  }
+
   function regionKey(event, region) {
     var key = event.key;
     if (key === "Escape") { deactivate(); return; }
@@ -847,7 +890,8 @@
     var open = key === "Enter" || key === " ";
     if (!open && moves.indexOf(key) < 0) { return; }
     event.preventDefault();
-    var cur = activeRegion === region && active && region.contains(active) ? active : null;
+    var cur = currentItem(region);
+    if (!cur && activeRegion === region) { deactivate(); active = null; }
     if (open) {
       var target = cur || firstItem(region);
       if (target) { event.stopPropagation(); openFor(target); }
@@ -976,7 +1020,7 @@
     eachItem(root, null, function (el) {
       var region = regionFor(el);
       if (seen.indexOf(region) < 0) { seen.push(region); markRegion(region); }
-    });
+    }, true); // Vùng trong details sẵn sàng nhận Tab khi mở; chỉ chọn số đang hiện.
   }
   function scheduleScan() { if (!scanTimer) { scanTimer = setTimeout(scan, 250); } }
   scan();

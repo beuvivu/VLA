@@ -448,8 +448,11 @@ line-height:1.65}
 .sp-gan-modal[hidden] { display: none !important; }
 .sp-gan-modal {
   position: fixed; inset: 0; z-index: 200; display: grid; place-items: center;
+  width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0;
+  box-sizing: border-box; color: var(--ui-ink);
   padding: 16px; background: rgba(15, 23, 42, .55); backdrop-filter: blur(2px);
 }
+.sp-gan-modal::backdrop { background: transparent; }
 .sp-modal-card {
   width: min(560px, 100%); max-height: 86vh; overflow: auto;
   padding: 18px 20px 20px; border-radius: var(--ui-r-lg);
@@ -474,3 +477,76 @@ line-height:1.65}
 .sp-modal-days span { padding: 3px 8px; border-radius: 999px; font-size: .75rem;
   font-weight: 700; background: var(--ui-surface-2); border: 1px solid var(--ui-border);
   font-variant-numeric: tabular-nums; }
+
+/* Đầu/đuôi dùng một dải xanh liên tục; màu tăng theo số lượt thực tế. */
+#sp-head,#sp-tail{width:100%;table-layout:fixed}
+:is(#sp-head,#sp-tail) :is(th,td){padding:10px 4px;white-space:normal;overflow-wrap:anywhere}
+:is(#sp-head,#sp-tail) :is(th,td):first-child{text-align:center}
+:is(#sp-head,#sp-tail) th:nth-child(2),:is(#sp-head,#sp-tail) th:nth-child(3){text-align:right}
+:is(#sp-head,#sp-tail) td:nth-child(2){font-size:clamp(14px,1.3vw,18px)}
+:is(#sp-head,#sp-tail) td:nth-child(3){font-size:clamp(11px,1.1vw,14px)}
+:is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),
+.app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-light,var(--ui-empty-bg));color:var(--app-hit-ink-light,var(--ui-empty-ink))}
+html.dark :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),
+html[data-ui-theme=dark] :is(#sp-head,#sp-tail,#sp-day-head,#sp-day-tail) td.app-head-tail-heat:not(.marked),
+html.dark .app-head-tail-legend .app-head-tail-heat,
+html[data-ui-theme=dark] .app-head-tail-legend .app-head-tail-heat{background:var(--app-hit-bg-dark,var(--ui-empty-bg));color:var(--app-hit-ink-dark,var(--ui-empty-ink))}
+.app-head-tail-heat .sp-zero{color:inherit}
+.app-head-tail-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0;color:var(--ui-ink-soft);font-size:12px;line-height:1.6}
+.app-head-tail-legend-label{font-weight:700}
+.app-head-tail-legend small{font-size:11px}
+.app-head-tail-swatch{display:inline-grid;place-items:center;min-width:32px;min-height:28px;padding:4px 8px;border:0;border-radius:6px;font-weight:750;font-variant-numeric:tabular-nums}
+@media(max-width:480px){.app-head-tail-legend{gap:6px}.app-head-tail-legend-label,.app-head-tail-legend small{flex-basis:100%}}
+
+/* Cặp lộn: đặt hai bảng cạnh nhau, dành độ rộng cho các cặp số thật. */
+.sp-page-cap-lon-loto .app-reverse-layout{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(220px,1fr);align-items:start;gap:24px;margin:24px 0}
+.sp-page-cap-lon-loto .app-reverse-card{min-width:0;padding:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
+.sp-page-cap-lon-loto .app-reverse-card header{min-height:80px}
+.sp-page-cap-lon-loto .app-reverse-card h2{margin:0 0 8px;font-size:18px;line-height:1.4;color:var(--ui-ink)}
+.sp-page-cap-lon-loto .app-reverse-card header p{margin:0 0 16px;font-size:12px;line-height:1.6;color:var(--ui-ink-soft)}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card .sp-scroll{margin:0;border-radius:8px}
+.sp-page-cap-lon-loto .app-reverse-layout #sp-grid{min-width:560px;table-layout:fixed}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card :is(th,td){padding:10px 8px}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card th{white-space:normal;overflow-wrap:anywhere;font-size:12px}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card #sp-grid th:first-child{padding-inline:4px;white-space:nowrap}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card #sp-grid td:first-child{font-size:12px;font-weight:500}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card #sp-kep td:nth-child(2){font-size:14px;font-weight:600}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card :is(#sp-grid td:nth-child(2),#sp-kep td:first-child){font-size:clamp(22px,2vw,26px);line-height:1.35;font-weight:800;font-variant-numeric:tabular-nums}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card :is(#sp-grid td:nth-child(2),#sp-kep td:first-child):not(.marked){color:var(--ui-brand-ink)}
+body.app-workspace.sp-page-cap-lon-loto .app-reverse-layout .app-reverse-card :is(#sp-grid td:first-child,#sp-kep td:nth-child(2)):not(.marked){color:var(--ui-ink-soft)}
+@media(max-width:1023px){.sp-page-cap-lon-loto .app-reverse-layout{grid-template-columns:minmax(0,1fr);gap:16px}.sp-page-cap-lon-loto .app-reverse-card{padding:16px}.sp-page-cap-lon-loto .app-reverse-card header{min-height:0}}
+@media print{.sp-page-cap-lon-loto .app-reverse-layout{display:block}.sp-page-cap-lon-loto .app-reverse-card{margin-bottom:16px;break-inside:avoid}}
+
+/* Cầu Đặc Biệt: đủ mười hàng; chọn số chỉ đổi màu, không đổi cỡ chữ. */
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix{max-height:none;height:auto;overscroll-behavior-y:auto}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid{min-width:620px;table-layout:fixed}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid :is(th,td){padding:8px 6px;text-align:center;vertical-align:middle}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid td :is(b,.sp-none){font-size:24px;line-height:1.3;font-weight:800;font-variant-numeric:tabular-nums}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid td:first-child b{font-size:13px;font-weight:650}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] #sp-lon td:nth-child(2){font-size:24px;line-height:1.35;font-weight:800}
+body.app-workspace[data-app-workspace-page="cau-giai-dac-biet"] .app-special-matrix #sp-grid td.marked :is(.sp-none,.sp-times){color:inherit}
+
+/* Theo tổng: cùng cỡ chữ cho giá trị tổng, chia cột theo nội dung thực. */
+.sp-page-giai-dac-biet-theo-tong .app-total-overview{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start;margin:24px 0}
+.sp-page-giai-dac-biet-theo-tong .app-total-card{min-width:0;padding:24px;border:1px solid var(--ui-border);border-radius:16px;background:var(--ui-surface);box-shadow:var(--ui-sh-sm)}
+.sp-page-giai-dac-biet-theo-tong .app-total-card header{min-height:80px}
+.sp-page-giai-dac-biet-theo-tong .app-total-card h2{margin:0 0 8px;font-size:18px;line-height:1.4;color:var(--ui-ink)}
+.sp-page-giai-dac-biet-theo-tong .app-total-card header p{margin:0 0 16px;font-size:12px;line-height:1.6;color:var(--ui-ink-soft)}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-overview .sp-scroll{max-height:none;margin:0;border-radius:8px}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-card :is(#sp-grid,#sp-parity,#sp-trans){table-layout:fixed;width:100%;min-width:0}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-card :is(th,td){padding:10px 6px}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-card th{white-space:normal;overflow-wrap:normal;font-size:12px;line-height:1.5}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-overview .app-total-card #sp-grid td:nth-child(2){font-size:12px;white-space:normal}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-overview .app-total-card :is(#sp-grid,#sp-parity) td:first-child,
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-transition #sp-trans td:nth-child(-n+2){font-size:clamp(22px,2vw,26px);line-height:1.35;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-overview .app-total-card :is(#sp-grid,#sp-parity) td:first-child:not(.marked),
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-transition #sp-trans td:nth-child(-n+2):not(.marked){color:var(--ui-brand-ink)}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-card td b{font-size:inherit}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-transition #sp-trans{min-width:680px}
+.sp-page-giai-dac-biet-theo-tong .app-total-method{margin:0 0 16px;padding:12px 16px;background:var(--ui-surface-2);border:1px solid var(--ui-border);border-radius:8px}
+.sp-page-giai-dac-biet-theo-tong .app-total-method summary{cursor:pointer;color:var(--ui-brand-ink);font-size:13px;font-weight:700;line-height:1.5;min-height:24px}
+.sp-page-giai-dac-biet-theo-tong .app-total-method .sp-note{margin:16px 0 0;font-size:12px;line-height:1.7}
+body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-card :is(#sp-grid,#sp-parity,#sp-trans) td.sp-empty-row:first-child{font-size:13px;font-weight:500;text-align:left;white-space:normal}
+@media(min-width:1024px){body.app-workspace.sp-page-giai-dac-biet-theo-tong .app-total-overview th{height:64px;box-sizing:border-box}}
+@media(max-width:1023px){.sp-page-giai-dac-biet-theo-tong .app-total-overview{grid-template-columns:minmax(0,1fr);gap:16px}.sp-page-giai-dac-biet-theo-tong .app-total-card{padding:16px}.sp-page-giai-dac-biet-theo-tong .app-total-card header{min-height:0}}
+@media print{.sp-page-giai-dac-biet-theo-tong .app-total-overview{display:block}.sp-page-giai-dac-biet-theo-tong .app-total-card{margin-bottom:16px;break-inside:avoid}}

@@ -7,6 +7,7 @@ import json
 import os
 import threading
 import tempfile
+from copy import deepcopy
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,7 +46,7 @@ def forecast_guard(directory: Path):
 def model_config(settings) -> MLConfig:  # type: ignore[no-untyped-def]
     return MLConfig(bootstrap=settings.ml_bootstrap, tree_every=settings.ml_tree_every,
                     backends=tuple(settings.ml_backends), search_nodes=settings.ml_search_nodes,
-                    adaptive=settings.ml_adaptive)
+                    adaptive=settings.ml_adaptive, multi_agent=settings.ml_multi_agent)
 
 
 def directory_for(state) -> Path:  # type: ignore[no-untyped-def]
@@ -110,6 +111,36 @@ def _event(directory: Path, entry: dict) -> dict:
         file.flush()
         os.fsync(file.fileno())
     return entry
+
+
+def _publish_multi_agent_summary(directory: Path, model: MLForecaster) -> None:
+    """Lưu bản tóm tắt nguyên tử để trang public đọc được ngay cả khi mất cache."""
+    components = {name: comp.multi_agent.report() for name, comp in model.components.items()
+                  if comp.multi_agent is not None}
+    path = directory / 'multi-agent-summary.json'
+    if not components and not path.exists():
+        return
+    document = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {'schema_version': 1, 'products': {}}
+    if components:
+        document['products'][model.product.value] = {
+            'last_id': model.last_id, 'last_date': model.last_date,
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'confidence': model.confidence(), 'components': components,
+        }
+    else:
+        document['products'].pop(model.product.value, None)
+    payload = json.dumps(document, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=directory, delete=False) as stream:
+            temporary = stream.name
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def _restore_pending_issue(model: MLForecaster, series: Series, issues: dict) -> bool:
@@ -243,12 +274,28 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
             model.warnings.append('checkpoint_recovered')
         # A delayed thread must not overwrite a checkpoint that already learned a
         # newer snapshot. Deliberate rollback is available only through explicit fit.
-        if not refit and model.last_id is not None and len(series) and int(series.draw_ids[-1]) < model.last_id:
+        if (not refit and model.last_id is not None
+                and (not len(series) or int(series.draw_ids[-1]) < model.last_id)):
             return model, 0, {'enabled':True, 'learned_draws':0, 'last_id':model.last_id,
                               'issued':False, 'note':'stale_snapshot_ignored', 'error':None}
         _verify_restored_evidence(model, series, directory)
+        preserved_pending = None
+        if (config is not None and config.multi_agent and not model.config.multi_agent
+                and not require_config_match):
+            # Chấm đúng law cũ trước khi nâng cấp; kết quả mới không được làm mất issue.
+            model.update(series, now=now_vn())
+            for score in model.last_live_scores:
+                _event(directory, {'event': 'score', 'product': code.value, **score})
+            preserved_pending = deepcopy(model.pending)
+            warnings = list(model.warnings)
+            model = MLForecaster(code, config)
+            model.warnings = list(dict.fromkeys([*warnings, 'multi_agent_policy_upgrade']))
         previous_components = model.components
         learned = model.update(series, now=now_vn())
+        if preserved_pending is not None:
+            model.pending = preserved_pending
+            if not model.pending_valid():
+                raise ValueError('Issue cũ không khớp lịch sử sau nâng cấp.')
         for score in model.last_live_scores:
             _event(directory, {'event':'score', 'product':code.value, **score})
         verified, note, target = record_window(code, series.dates)
@@ -268,6 +315,7 @@ def refresh_snapshot(product: str, series: Series, directory: Path, *, config: M
                 if not model.pending_valid():
                     raise ValueError('Unverified issued ledger event')
         model.save(path)
+        _publish_multi_agent_summary(directory, model)
         legacy = None
         if include_legacy and state_path(directory, code).exists():
             try:

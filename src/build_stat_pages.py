@@ -143,8 +143,8 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
     """
     # Nút nào đang thật sự có hiệu lực phụ thuộc vào kiểu thanh điều khiển.
     # Trang kiểu ``day`` có hai ô ngày, và stat_pages.js đặt sẵn chúng ở
-    # ``DRAWS.length - 90``. Trang kiểu ``preset`` KHÔNG có ô ngày nào, nên
-    # nhánh đó trong JS không chạy và dải mặc định là toàn bộ lịch sử.
+    # ``DRAWS.length - 90``. Trang kiểu ``preset`` đọc mốc từ nút đang chọn,
+    # mặc định là toàn bộ lịch sử.
     # Tô sáng 90 kỳ ở cả hai kiểu thì trang preset sẽ khoe "90 kỳ" trong khi
     # đang hiển thị 2 396 kỳ.
     active = DEFAULT_RANGE_DRAWS if mode == "day" else 0
@@ -164,6 +164,9 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
             '<div class="sp-controls"><div class="sp-chips">'
             f'{presets}</div><span class="sp-count" id="sp-count" data-evidence-split></span>'
             f"{_mark_tools(pairs=pairs)}</div>"
+            '<p class="sp-note">Thống kê trong dải kỳ đang chọn. Nếu một số '
+            'chưa xuất hiện trong dải, số kỳ chưa về thực tế có thể dài hơn dải này. '
+            'Bảng ghi “từ trước đến nay” dùng toàn bộ lịch sử.</p>'
         )
     return f"""
     <div class="sp-controls">
@@ -251,11 +254,11 @@ def _gan_picker() -> str:
 def _gan_modal() -> str:
     """Khung popup chu kỳ gan. MỘT hàm cho mọi trang, không chép hai bản."""
     return (
-        '<div class="sp-gan-modal" id="sp-gan-modal" hidden>'
-        '<div class="sp-modal-card" role="dialog" aria-modal="true">'
-        '<div class="sp-modal-head"><b class="sp-modal-title"></b>'
+        '<dialog class="sp-gan-modal" id="sp-gan-modal" aria-labelledby="sp-gan-title" hidden>'
+        '<div class="sp-modal-card">'
+        '<div class="sp-modal-head"><b class="sp-modal-title" id="sp-gan-title"></b>'
         '<button type="button" class="sp-btn" data-close>Đóng</button></div>'
-        '<div class="sp-modal-body"></div></div></div>'
+        '<div class="sp-modal-body"></div></div></dialog>'
     )
 
 
@@ -387,8 +390,19 @@ PAGES: tuple[StatPage, ...] = (
         title="Giải Đặc Biệt theo tổng",
         subtitle="Tổng = (Đầu + Đuôi) mod 10. Gan theo tổng, chuyển tổng và chẵn lẻ hôm sau.",
         controls=_range_controls(pairs=False),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Hôm trước tổng X thì hôm sau tổng Y</h3>'
+        body='<div class="app-total-overview">'
+             '<section class="app-total-card" aria-labelledby="app-total-gap-title">'
+             '<header><h2 id="app-total-gap-title">Khoảng cách theo tổng</h2>'
+             '<p>Đối chiếu chữ số tổng, lần xuất hiện gần nhất và số kỳ chưa về.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
+             '<section class="app-total-card" aria-labelledby="app-total-parity-title">'
+             '<header><h2 id="app-total-parity-title">Chẵn lẻ của tổng hôm sau</h2>'
+             '<p>Tỷ lệ lịch sử sau mỗi tổng, kèm số kỳ được đối chiếu.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div></section></div>'
+             '<section class="app-total-card app-total-transition" aria-labelledby="app-total-transition-title">'
+             '<header><h2 id="app-total-transition-title">Hôm trước tổng X thì hôm sau tổng Y</h2>'
+             '<p>Hai chữ số tổng đứng trước; số lượt, cỡ mẫu và độ lệch ở phía sau.</p></header>'
+             '<details class="app-total-method"><summary>Cách đọc bảng chuyển tổng</summary>'
              '<p class="sp-note">Mức ngẫu nhiên là <b>10 %</b> cho mỗi ô, vì tổng chỉ có '
              '10 giá trị. Cột <b>Tỉ lệ</b> quanh 10 % nghĩa là không phân biệt được với '
              'ngẫu nhiên. Bảng xếp theo <b>lệch chuẩn hoá</b> '
@@ -397,10 +411,8 @@ PAGES: tuple[StatPage, ...] = (
              'nên chỉ mẫu đủ lớn mới lên được. Quanh ±2 vẫn là mức thường gặp khi xét 100 ô. '
              'Đây là thống kê MÔ TẢ trên lịch sử, '
              'không phải xác suất đã hiệu chuẩn, và chỉ đếm các kỳ LIỀN KỀ thật — ranh giới '
-             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div>'
-             '<h3 class="sp-subhead">Chẵn lẻ của tổng hôm sau</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-parity"></table></div>',
+             'ngày nghỉ quay bị bỏ qua thay vì nối lại thành một chuyển tiếp không tồn tại.</p></details>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-trans"></table></div></section>',
         render="renderSpecialByTong",
     ),
     StatPage(
@@ -408,7 +420,7 @@ PAGES: tuple[StatPage, ...] = (
         title="Cầu giải Đặc Biệt",
         subtitle="Tần suất hai số cuối giải Đặc Biệt theo Đầu, cặp lộn kèm số lần, ba kỳ gần nhất.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
+        body='<div class="sp-scroll app-special-matrix"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Cặp lộn của giải Đặc Biệt</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-lon"></table></div>'
              '<h3 class="sp-subhead">Ba kỳ gần nhất</h3>'
@@ -420,9 +432,15 @@ PAGES: tuple[StatPage, ...] = (
         title="Cặp lộn LOTO",
         subtitle="45 cặp lộn thật (đảo hai chữ số), kèm 10 số kép liệt kê riêng.",
         controls=_range_controls(),
-        body='<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
-             '<h3 class="sp-subhead">Số kép — đảo lại chính nó nên không có số lộn</h3>'
-             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div>',
+        body='<div class="app-reverse-layout">'
+             '<section class="app-reverse-card" aria-labelledby="app-reverse-title">'
+             '<header><h2 id="app-reverse-title">45 cặp lộn</h2>'
+             '<p>Lượt thuận / lộn ứng với số bên trái / bên phải của cặp.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div></section>'
+             '<section class="app-reverse-card" aria-labelledby="app-double-title">'
+             '<header><h2 id="app-double-title">10 số kép</h2>'
+             '<p>Đảo hai chữ số vẫn giữ nguyên.</p></header>'
+             '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-kep"></table></div></section></div>',
         render="renderReversePairs",
     ),
     StatPage(
@@ -430,10 +448,12 @@ PAGES: tuple[StatPage, ...] = (
         title="Đầu đuôi LOTO",
         subtitle="Phân bố chữ số đầu và chữ số đuôi của toàn bộ LOTO trong dải đã chọn.",
         controls=_range_controls(pairs=False),
-        body='<div class="sp-duo">'
+        body='<div id="app-head-tail-legend" class="app-head-tail-legend" aria-label="Thang màu tổng lượt Đầu và Đuôi"></div>'
+             '<div class="sp-duo">'
              '<div><h3>Theo chữ số ĐẦU</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-head"></table></div>'
              '<div><h3>Theo chữ số ĐUÔI</h3><table class="sp-table sp-grid-lines sp-crosshair" id="sp-tail"></table></div>'
              '</div>'
+             '<div id="app-head-tail-day-legend" class="app-head-tail-legend" aria-label="Thang màu số nháy từng kỳ"></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐẦU</h3>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-day-head"></table></div>'
              '<h3 class="sp-subhead">20 kỳ gần nhất theo chữ số ĐUÔI (đít)</h3>'
@@ -449,9 +469,9 @@ PAGES: tuple[StatPage, ...] = (
         controls=_range_controls(mode="preset"),
         body='<p class="sp-note">Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: '
              'XSMB nghỉ Tết và nghỉ 01–22/04/2020, đếm theo ngày lịch sẽ thổi phồng '
-             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> chỉ tính '
-             'trong kho lịch sử của trang này, nên có thể lệch với trang khác có '
-             'lịch sử dài ngắn khác.</p>'
+             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> trong '
+             'bảng chính tính trong dải đã chọn; hai bảng <b>từ trước đến nay</b> '
+             'tính trên toàn bộ kho lịch sử.</p>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Gan cực đại từ trước đến nay, cả 00–99</h3>'
              '<div class="sp-duo">'
@@ -467,10 +487,9 @@ PAGES: tuple[StatPage, ...] = (
         title="Chu kỳ giải Đặc Biệt",
         subtitle="Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử.",
         controls=_range_controls(mode="preset"),
-        body='<p class="sp-note">Đếm theo <b>kỳ quay</b>, không theo ngày lịch, nên số ở '
-             'đây nhỏ hơn trang nào đếm theo ngày. Ví dụ đối chiếu được: con 98 ra lần cuối '
-             '17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026 không quay '
-             'còn <b>565 kỳ</b> — đúng con số cột "Chưa về".</p>'
+        body='<p class="sp-note">Đếm theo <b>kỳ quay trong dải đã chọn</b>, '
+             'không theo ngày lịch; những ngày nghỉ quay không được tính thêm '
+             'vào chu kỳ.</p>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialCycle",
     ),
@@ -738,7 +757,12 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
   <a class="bf-demo-link" id="bf-demo-link" href="?demo=1">Xem dữ liệu minh họa ↗</a>
 </header>
 {_statistics_tabs(page.slug)}
-<div id="bf-demo-banner" class="bf-demo-banner" hidden>DỮ LIỆU MINH HỌA · Các kỳ và kết quả được giả lập để kiểm tra giao diện.</div>
+<div id="bf-demo-banner" class="bf-demo-banner" hidden>DỮ LIỆU MINH HỌA · 45 kỳ giả lập, tách riêng dữ liệu và đánh dấu của bạn.</div>
+<section id="app-frequency-onboarding" class="app-frequency-onboarding" aria-labelledby="app-frequency-demo-title" hidden>
+  <h2 id="app-frequency-demo-title">Thử đọc tần suất trong 3 bước</h2>
+  <ol><li><b>Chọn dải</b><span>Bấm 30 kỳ hoặc đổi ngày; mọi tổng lượt và biểu đồ cập nhật cùng lúc.</span></li><li><b>Đọc xu hướng</b><span>Ngang: số theo hàng. Dọc: ngày theo hàng. Biểu đồ đi từ kỳ cũ đến kỳ mới.</span></li><li><b>Đối chiếu</b><span>Bấm ô của số và ngày cần theo dõi để đánh dấu. Xem bảng xếp hạng và mốc ngẫu nhiên phía dưới.</span></li></ol>
+  <p>Màu xanh: mức lượt/kỳ nửa sau bằng hoặc cao hơn nửa đầu. Màu đỏ: thấp hơn. Đây là mô tả lịch sử, không dự báo.</p>
+</section>
 <section class="bf-card bf-filters" aria-labelledby="bf-filter-title">
   <header class="bf-card-heading"><div><span class="bf-step">01</span><h2 id="bf-filter-title">Bộ lọc &amp; lựa chọn</h2></div><span>Cập nhật ngay khi thay đổi</span></header>
   {page.controls}
@@ -747,6 +771,8 @@ def frequency_bento_layout(page: StatPage, note_html: str) -> str:
 <section class="bf-kpis" aria-label="Tổng quan dải đã chọn" id="bf-kpis"></section>
 <section class="bf-card bf-matrix-card" aria-labelledby="bf-matrix-title">
   <header class="bf-card-heading"><div><span class="bf-step">02</span><h2 id="bf-matrix-title">Ma trận tần suất</h2></div><span id="sp-matrix-note" class="sp-matrix-note" data-evidence-split></span></header>
+  <div class="app-frequency-toolbar"><div class="app-frequency-orientation" role="group" aria-label="Chiều xem tần suất"><button type="button" data-app-orientation="horizontal" aria-pressed="true">Ngang</button><button type="button" data-app-orientation="vertical" aria-pressed="false">Dọc</button></div><p id="app-frequency-view-help">Ngang: số theo hàng, ngày theo cột. Dọc: ngày theo hàng, số theo cột.</p></div>
+  <p class="app-frequency-chart-help">Xu hướng theo dải đã chọn · cùng thang lượt/kỳ · cũ → mới. Xanh: nửa sau ≥ nửa đầu; đỏ: giảm. Tổng lượt gồm cả các lần về lặp trong cùng kỳ.</p>
   <div class="bf-legend" aria-label="Chú thích số nháy">
     <span><i class="bf-swatch is-empty"></i>Không về</span>
     <span><i class="bf-swatch sp-n1">1</i>1 nháy</span>

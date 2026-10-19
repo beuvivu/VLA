@@ -354,8 +354,10 @@ def test_product_store_merges_seed_and_sync(tmp_path: Path) -> None:
     mirror = [row(i) for i in range(1, 4)]
 
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path.endswith("/bingo18.jsonl")
-        return httpx.Response(200, text="\n".join(json.dumps(r) for r in mirror))
+        assert request.method == 'POST'
+        page = json.loads(request.content)['PageIndex']
+        html = _bingo_html([('28/09/2026',int(r['id']),r['result']) for r in mirror]) if page==1 else ''
+        return httpx.Response(200,json={'value':{'HtmlContent':html}})
 
     seed = tmp_path / "seed"
     seed.mkdir()
@@ -364,10 +366,10 @@ def test_product_store_merges_seed_and_sync(tmp_path: Path) -> None:
 
     async def run() -> list[dict]:
         async with _client(handler) as c:
-            pipe = ProductSyncPipeline(c, store, vietlott_base_url="https://www.vietlott.vn", mirror_base_url="https://m", canonical_base_url="https://c")
-            first = (await pipe.run(ProductCode.BINGO18, "mirror")).to_dict()
+            pipe = ProductSyncPipeline(c, store, vietlott_base_url="https://www.vietlott.vn", mirror_base_url="https://m", canonical_base_url="https://c",bootstrap_cookie=False)
+            first = (await pipe.run(ProductCode.BINGO18, "vietlott")).to_dict()
             mirror.append(row(4))
-            second = (await pipe.run(ProductCode.BINGO18, "mirror")).to_dict()
+            second = (await pipe.run(ProductCode.BINGO18, "vietlott")).to_dict()
             bad = (await pipe.run(ProductCode.BINGO18, "canonical")).to_dict()
             return [first, second, bad]
 

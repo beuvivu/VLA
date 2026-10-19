@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from bs4 import BeautifulSoup
 
 from ui_theme import (
@@ -160,6 +161,94 @@ def _grid_rows_do_not_overflow(page: Path) -> None:
             assert span <= 12, f"{page.name}: span {span} vượt 12 cột"
 
 
+def _selector_targets_body(selector: str) -> bool:
+    """Xét đích cuối của từng selector; body ở vế tổ tiên không phải đích.
+
+    Dấu phẩy/combinator trong thuộc tính hoặc hàm giả không tách selector.
+    Nhờ vậy body.dark:is(...) và body[data-x="a b"] vẫn bị kiểm đầy đủ.
+    """
+    return any(re.match(r"body(?=$|[.#:\[])", part, re.I) for part in _selector_subjects(selector))
+
+
+def _selector_subjects(selector: str) -> list[str]:
+    """Tách compound cuối, giữ nguyên nội dung ngoặc và chuỗi CSS."""
+    subjects = []
+    compound = ""
+    last = ""
+    depth = 0
+    quote = ""
+    escaped = False
+    for char in selector.strip():
+        if escaped:
+            compound += char
+            escaped = False
+        elif char == "\\":
+            compound += char
+            escaped = True
+        elif quote:
+            compound += char
+            if char == quote:
+                quote = ""
+        elif char in "\"'":
+            compound += char
+            quote = char
+        elif char in "([":
+            compound += char
+            depth += 1
+        elif char in ")]":
+            compound += char
+            depth -= 1
+        elif depth == 0 and char == ",":
+            subjects.append(compound or last)
+            compound = last = ""
+        elif depth == 0 and (char.isspace() or char in ">+~"):
+            if compound:
+                last = compound
+                compound = ""
+        else:
+            compound += char
+    subjects.append(compound or last)
+    return subjects
+
+
+def _assert_no_legacy_body_margin(css: str) -> None:
+    """Chặn margin 24px ở body, kể cả trong media lồng nhau."""
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    rules = [rule.rpartition("{") for rule in css.split("}")]
+    body_rules = [declarations for selector, _, declarations in rules
+                  if _selector_targets_body(selector)]
+    assert not any(re.search(r"\bmargin\s*:\s*24px\b", rule) for rule in body_rules)
+
+
+@pytest.mark.parametrize("css", [
+    "body {margin:24px}",
+    "body.app-workspace {margin: 24px 0}",
+    "html > body.dark { margin : 24px!important; }",
+    "body:is(.light,.dark) {margin:24px}",
+    'body[data-note="a b"] {margin:24px}',
+    ".card, body.dark {margin:24px}",
+    "body.dark, .card {margin:24px}",
+    "@media(prefers-color-scheme:dark){@supports(display:grid){html body.dark{margin:24px}}}",
+])
+def test_body_margin_guard_rejects_actual_body_targets(css: str) -> None:
+    with pytest.raises(AssertionError):
+        _assert_no_legacy_body_margin(css)
+
+
+@pytest.mark.parametrize("css", [
+    "body.app-workspace .sp-duo{margin:24px}",
+    "body.dark > .card {margin:24px}",
+    "body .card, html body.dark .sp-duo {margin:24px}",
+    "@media(prefers-color-scheme:dark){@supports(display:grid){body.dark .card{margin:24px}}}",
+    ".nobody {margin:24px}",
+    '.card[data-note="body"] {margin:24px}',
+    ".card:has(body) {margin:24px}",
+    "body {margin:0;padding:24px} body .card {margin:24px}",
+])
+def test_body_margin_guard_allows_descendant_spacing(css: str) -> None:
+    _assert_no_legacy_body_margin(css)
+
+
 def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path) -> None:
     # Dựng vào thư mục tạm: chạy thẳng vào docs/ của kho khiến mỗi lần chạy
     # pytest là cây làm việc bẩn, và bẩn theo dạng "ngược pha" vì chuỗi builder
@@ -184,10 +273,7 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
         assert "https://" not in text, name
         # Chặn margin trên body; khoảng cách 24px của thẻ không phải lỗi này.
         css = "\n".join(style.get_text() for style in BeautifulSoup(text, "html.parser").find_all("style"))
-        rules = [rule.rpartition("{") for rule in css.split("}")]
-        body_rules = [declarations for selector, _, declarations in rules
-                      if re.search(r"(?<![\w-])body(?![\w-])", selector)]
-        assert not any(re.search(r"\bmargin\s*:\s*24px\b", rule) for rule in body_rules), name
+        _assert_no_legacy_body_margin(css)
         _grid_rows_do_not_overflow(page)
 
 

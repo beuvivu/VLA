@@ -49,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--backends', help='rf,xgb,lgb; boosters require pip install -e .[ml]')
     parser.add_argument('--adaptive', action=argparse.BooleanOptionalAction, default=None,
                         help='Bật/tắt challenger chuẩn hóa nhân quả; không tự chứng nhận kỹ năng')
+    parser.add_argument('--multi-agent', action=argparse.BooleanOptionalAction, default=None,
+                        help='Bật/tắt ba lớp tự học cùng bộ nhớ và trọng số động')
     args = parser.parse_args(argv)
     enter_project()
     repo = None
@@ -64,6 +66,8 @@ def main(argv: list[str] | None = None) -> int:
             overrides['backends'] = tuple(args.backends.split(','))
         if args.adaptive is not None:
             overrides['adaptive'] = args.adaptive
+        if args.multi_agent is not None:
+            overrides['multi_agent'] = args.multi_agent
         config = MLConfig.model_validate(overrides)
         directory = args.dir or settings.forecast_dir or settings.data_dir / 'forecast'
         products = list(CONFIGS) if args.product == 'all' else [get_product(args.product)]
@@ -89,7 +93,8 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 model, _, summary = refresh_snapshot(code.value, series, directory, config=config,
                     refit=args.action == 'fit', issue=args.action == 'next', include_legacy=args.action == 'update',
-                    require_config_match=args.backends is not None or args.bootstrap is not None or args.adaptive is not None)
+                    require_config_match=args.backends is not None or args.bootstrap is not None or args.adaptive is not None
+                                         or args.multi_agent is not None)
             report = model.report(args.top_n, args.budget)
             reports.append({**report, 'learning':summary, 'elapsed_seconds':time.perf_counter()-started})
         print(json.dumps(reports if args.product == 'all' else reports[0], ensure_ascii=False, allow_nan=False, indent=2))

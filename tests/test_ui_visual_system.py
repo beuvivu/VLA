@@ -1,6 +1,7 @@
 """The output boundary must preserve behavior while publishing the shared skin."""
 
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -18,7 +19,7 @@ def test_output_publishes_skin_after_page_styles_without_changing_hooks(tmp_path
     result = BeautifulSoup(page.read_text(), "html.parser")
     skin = result.head.find_all(["link", "style"])[-1]
     assert skin.name == "link"
-    assert (tmp_path / skin["href"]).is_file()
+    assert (tmp_path / urlsplit(skin["href"]).path).is_file()
     assert result.body["class"] == ["existing"]
     # Soi trong VÙNG NỘI DUNG, không soi cả tài liệu. Khung ứng dụng chèn nút
     # và kịch bản của chính nó vào trước nội dung trang, nên ``result.button``
@@ -50,7 +51,7 @@ def test_every_published_page_receives_same_skin(tmp_path: Path) -> None:
         assert len(direct) == 1, f"{original.name}: {len(direct)} thẻ tải"
         assert len(fallback) == 1, f"{original.name}: {len(fallback)} bản dự phòng"
         for link in links:
-            assert (tmp_path / link["href"]).is_file(), original.name
+            assert (tmp_path / urlsplit(link["href"]).path).is_file(), original.name
 
 
 def test_html_fragment_is_not_given_a_broken_stylesheet_link(tmp_path: Path) -> None:

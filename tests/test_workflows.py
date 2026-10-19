@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
+import yaml
+
+from site_assets import check_site, refresh_site
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -110,6 +116,104 @@ def test_cache_purge_is_explicit_and_not_scheduled() -> None:
     assert "schedule:" not in text
     assert "actions: write" in text
     assert "scripts/ops/purge_github_caches.py --confirm" in text
+
+
+def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path: Path) -> None:
+    """Dựng vùng phải qua write_page của helper, không tự bọc chồng shell."""
+    workflow = yaml.safe_load(_text("regional-results.yml"))
+    steps = workflow["jobs"]["sync"]["steps"]
+    step = next(step for step in steps if "src/build_regional_results.py" in step.get("run", ""))
+    assert "wrap_page" not in step["run"]
+    assert "app_shell" not in step["run"]
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_python = fake_bin / "python"
+    fake_python.write_text('#!/bin/bash\nprintf "%s\\n" "$*" >> "$PYTHON_CALLS"\n')
+    fake_python.chmod(0o755)
+    calls = tmp_path / "python-calls"
+    env = dict(os.environ, PATH=f"{fake_bin}:{os.environ['PATH']}", PYTHON_CALLS=str(calls))
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
+        cwd=tmp_path, env=env, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert calls.read_text().splitlines() == [
+        "src/build_regional_results.py", "scripts/ops/refresh_navigation.py"
+    ]
+
+
+def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(tmp_path: Path) -> None:
+    """Chạy nguyên bước workflow và xác minh gói trang trên remote Git thật."""
+    workflow = yaml.safe_load(_text("regional-results.yml"))
+    steps = workflow["jobs"]["sync"]["steps"]
+    step = next(step for step in steps if "git add data/regions/" in step.get("run", ""))
+    remote = tmp_path / "remote.git"
+    repo = tmp_path / "writer"
+    subprocess.run(["git", "init", "--bare", "-q", "--initial-branch=main", str(remote)], check=True)
+    subprocess.run(["git", "clone", "-q", str(remote), str(repo)], check=True)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args], cwd=repo, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+
+    git("config", "user.name", "Fixture")
+    git("config", "user.email", "fixture@example.test")
+    infrastructure = {"scripts/ops/push_generated_site.py", "src/site_assets.py"}
+    for relative in infrastructure:
+        target = repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / relative, target)
+
+    contents = {
+        "data/regions/xsmt.csv": "date,version\n2026-10-17,new\n",
+        "data/regions/xsmt.json": '{"region":"xsmt","version":"new"}\n',
+        "data/regions/xsmn.csv": "date,version\n2026-10-17,new\n",
+        "data/regions/xsmn.json": '{"region":"xsmn","version":"new"}\n',
+        "docs/index.html": ('<!doctype html><html><head><link rel="stylesheet" href="assets/ui.css">'
+                            '<script src="assets/app-shell.js"></script></head>'
+                            '<body><p>new</p></body></html>'),
+        "docs/assets/app-shell.js": 'const revision = "new";\n',
+        "docs/assets/ui.css": '/* new */ body { color: inherit; }\n',
+        "docs/assets/icons/probe.svg": '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>\n',
+    }
+    # Cả tệp đã có lẫn icon mới phải được stage; thiếu một trong hai đều làm đỏ.
+    for relative, value in contents.items():
+        if relative.endswith("probe.svg"):
+            continue
+        target = repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(value.replace("new", "old"), encoding="utf-8")
+    refresh_site(repo / "docs")
+    git("add", ".")
+    git("commit", "-qm", "Hạ tầng và gói trang ban đầu")
+    git("push", "-q", "origin", "main")
+    before = git("rev-parse", "HEAD")
+    assert git("status", "--porcelain") == ""
+
+    for relative, value in contents.items():
+        target = repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(value, encoding="utf-8")
+    refresh_site(repo / "docs")
+    expected = set(contents) | {"docs/assets/release.json"}
+    expected_bytes = {relative: (repo / relative).read_bytes() for relative in expected}
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "-c", step["run"]],
+        cwd=repo, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert git("status", "--porcelain") == ""
+    assert git("rev-parse", "HEAD") == git("rev-parse", "origin/main")
+    assert set(git("diff", "--name-only", before, "origin/main").splitlines()) == expected
+    assert set(git("ls-tree", "--name-only", "-r", "origin/main").splitlines()) == expected | infrastructure
+
+    published = tmp_path / "published"
+    subprocess.run(["git", "clone", "-q", str(remote), str(published)], check=True)
+    for relative, value in expected_bytes.items():
+        assert (published / relative).read_bytes() == value, relative
+    assert check_site(published / "docs") == []
 
 
 # --- Thu thập đúng giờ ------------------------------------------------------

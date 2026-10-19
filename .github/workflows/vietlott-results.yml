@@ -34,9 +34,11 @@ on:
       - "src/assets/vietlott-comparison.js"
       - "src/vietlott_navigation_content.py"
       - "src/evidence_catalog.py"
+      - "scripts/ops/push_generated_site.py"
       - "vietlott/src/vlm/web/**"
       - "vietlott/data/results/results.jsonl"
       - "vietlott/data/forecast/*ledger.jsonl"
+      - "vietlott/data/forecast/multi-agent-summary.json"
       - ".github/workflows/vietlott-results.yml"
 
 permissions:
@@ -100,6 +102,10 @@ jobs:
           key: vqe-state-${{ github.run_id }}
           restore-keys: vqe-state-
 
+      - name: Giữ bản tóm tắt mô hình đã commit
+        # Cache *.json có thể cũ hơn sổ công bố; bản tóm tắt theo đúng checkout.
+        run: git restore --source=HEAD -- vietlott/data/forecast/multi-agent-summary.json
+
       - name: Dựng trang Vietlott
         run: python src/build_vietlott_results.py --cache-states vietlott/data/forecast
 
@@ -108,14 +114,19 @@ jobs:
         if: github.ref_name == github.event.repository.default_branch
         run: |
           set -euo pipefail
+          # Trang, URL tài nguyên và manifest phải thuộc cùng ảnh chụp trong git.
+          python3 src/site_assets.py --refresh docs --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/vietlott*.html docs/assets/vietlott-picks.js docs/assets/vietlott-comparison.js
+          git add docs/*.html docs/assets
           if ! git diff --cached --quiet; then
             git commit -m "docs: dựng lại trang Vietlott từ engine"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            python3 scripts/ops/push_generated_site.py --branch "${GITHUB_REF_NAME}"
           fi
+
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        if: github.ref_name == github.event.repository.default_branch
+        run: python3 src/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages
         if: github.ref_name == github.event.repository.default_branch

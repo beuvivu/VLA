@@ -9,9 +9,11 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pandas as pd
 import pytest
+from bs4 import BeautifulSoup
 
 import evidence_catalog
 from evidence_catalog import covered_pages, ml_row_evidence, registry, registry_json, tag_rows, values_block
@@ -48,7 +50,11 @@ def test_every_published_page_carries_sources_and_steps(page: Path) -> None:
         assert (entry.get("match") or entry.get("heading")) and entry["sources"], entry
         assert entry["reasoningTrace"]["steps"], entry
     html = page.read_text(encoding="utf-8")
-    assert html.count('<script src="assets/app-evidence.js" defer data-app-evidence></script>') == 1
+    scripts = BeautifulSoup(html, "html.parser").select("script[data-app-evidence][src]")
+    assert len(scripts) == 1
+    assert urlsplit(scripts[0]["src"]).path == "assets/app-evidence.js"
+    assert not urlsplit(scripts[0]["src"]).scheme and not urlsplit(scripts[0]["src"]).netloc
+    assert scripts[0].has_attr("defer")
 
 
 def test_the_published_script_is_the_source_script() -> None:

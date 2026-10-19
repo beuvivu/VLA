@@ -751,6 +751,12 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
             "Đọc sổ kết quả đã lưu và phân phối null của 10 000 lịch sử ngẫu nhiên cùng độ dài.",
             "Mỗi khối trên trang có cách tính riêng, ghi trong khối ấy.",
         ]), [
+            _sec_heading("Hệ tự học", "Hệ tự học ba tác tử XSMB", _ev([_ket_qua(f), _cham(f)], [
+                "Chỉ dùng kết quả trước ngày đích: tần suất cấp tiên nghiệm cho Bayes/Markov/đồ thị trễ; mạng hai tầng đọc đặc trưng chuỗi và ngữ cảnh quá khứ.",
+                "Trọng số Hedge học từ Brier của dự báo thật đã đóng băng; η và độ quên chọn bằng replay chỉ các kỳ đã có kết quả.",
+                "Xác suất công bố giữ nguyên; xác suất ứng viên = tổng xác suất các tác tử theo trọng số. Hai cột có vai trò riêng.",
+                "Khoảng hiệu chuẩn là xấp xỉ theo nhóm xác suất và SE khối 7 kỳ sau ít nhất 60 kỳ; không phải bảo đảm riêng từng con.",
+            ])),
             _sec_heading("Kết luận cho kỳ kế tiếp", "Kết luận cho kỳ kế tiếp", _ev([_NULL, _ket_qua(f)], [
                 "Xếp từng con 00–99 vào ba tầng theo luật ở khối «Luật ba tầng», rồi đếm số con ở tầng Cao · Trung bình · Thấp/nhiễu.",
                 "«Thành phần mạnh nhất» là tin cậy lớn nhất của ba họ Bayes, Markov, cầu trên cả 100 con.",

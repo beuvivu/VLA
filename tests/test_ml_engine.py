@@ -613,11 +613,11 @@ class TestMetrics:
 
 
 class TestEconomics:
-    def test_break_even_rate_is_above_the_baseline(self) -> None:
-        """Con số đóng khung mọi thứ: phải hơn nền +21% mới hòa vốn."""
+    def test_break_even_occurrences_are_above_the_baseline(self) -> None:
+        """Luật trả mỗi nháy cần hơn nền 0,27 nháy khoảng 6,48% để hòa vốn."""
         economics = EconomicModel()
-        assert economics.break_even_rate > BASELINE_RATE
-        assert economics.required_relative_lift() == pytest.approx(0.21, abs=0.01)
+        assert economics.break_even_rate > LOTO_DRAWS_PER_DAY / NUMBER_SPACE
+        assert economics.required_relative_lift() == pytest.approx(0.0648, abs=0.0001)
 
     def test_baseline_edge_is_negative(self) -> None:
         assert EconomicModel().baseline_edge < 0

@@ -11,6 +11,7 @@ import json
 import re
 from pathlib import Path
 from types import SimpleNamespace
+from urllib.parse import urlsplit
 
 import pytest
 from bs4 import BeautifulSoup
@@ -67,7 +68,7 @@ def _css(path: Path) -> str:
     parts = [text]
     for link in _soup(path).find_all("link", rel="stylesheet"):
         href = link.get("href") or ""
-        sheet = path.parent / href
+        sheet = path.parent / urlsplit(href).path
         if sheet.exists() and sheet.suffix == ".css":
             parts.append(sheet.read_text(encoding="utf-8"))
     return "".join(parts).replace(" ", "").replace("\n", "")
@@ -82,7 +83,8 @@ def test_every_page_pins_the_measured_shell_geometry(page: Path) -> None:
     phép kiểm lặng lẽ ngừng chạy — không một cái nào đỏ. Phép kiểm này quét
     MỌI trang xuất bản, nên tập của nó không thể tự rỗng đi.
     """
-    assert 'href="assets/app-shell.css"' in page.read_text(encoding="utf-8"), page.name
+    hrefs = [urlsplit(link.get("href", "")).path for link in _soup(page).select("link[rel=stylesheet]")]
+    assert "assets/app-shell.css" in hrefs, page.name
     gon = (ROOT / "src/templates/app_shell.css").read_text(encoding="utf-8").replace(" ", "")
     for khoa, gia_tri in (
         ("--app-rail-w:", "80px"),
@@ -199,7 +201,7 @@ def _effective_css(page: Path) -> str:
     soup = BeautifulSoup(text, "html.parser")
     for link in soup.find_all("link", rel="stylesheet"):
         href = link.get("href") or ""
-        target = (page.parent / href).resolve()
+        target = (page.parent / urlsplit(href).path).resolve()
         if target.exists():
             text += target.read_text(encoding="utf-8")
     return text
@@ -292,7 +294,7 @@ def test_pages_link_the_shared_stylesheet_instead_of_inlining_it() -> None:
     """250 KB CSS nội tuyến lặp trên 14 trang không dùng lại được cache."""
     linked = 0
     for page in PAGES:
-        hrefs = [link.get("href") for link in _soup(page).find_all("link", rel="stylesheet")]
+        hrefs = [urlsplit(link.get("href", "")).path for link in _soup(page).find_all("link", rel="stylesheet")]
         if STYLESHEET_NAME in hrefs:
             linked += 1
     assert linked >= 10, f"chỉ {linked}/{len(PAGES)} trang dùng biểu định kiểu chung"
@@ -900,16 +902,16 @@ def test_no_page_shows_a_raw_html_entity(page: Path) -> None:
     assert "&amp;lt;" not in text, page.name
 
 
-# --- Khu dự đoán ngày mai: xếp dọc ----------------------------------------
+# --- Khu dự đoán ngày mai: ba thẻ ngang, mô phỏng được ưu tiên --------------
 
 
-def test_next_day_cards_keep_three_horizontal_tracks_with_internal_scroll() -> None:
-    """Yêu cầu mới giữ ba thẻ ngang, kể cả khi màn hẹp cần cuộn nội bộ."""
+def test_next_day_cards_prioritize_simulation_with_internal_scroll() -> None:
+    """Giữ bố cục 2:1:1 đã có ở generator và cuộn nội bộ khi màn hẹp."""
     css = _css(DOCS / "index.html")
     rule = re.search(r"\.next-day\{([^}]*)\}", css)
     assert rule, "không tìm thấy quy tắc .next-day"
     body = rule.group(1)
-    assert "grid-template-columns:repeat(3,minmax(360px,1fr))" in body
+    assert "grid-template-columns:minmax(400px,2fr)repeat(2,minmax(280px,1fr))" in body
     assert "overflow-x:auto" in body and "align-items:stretch" in body
 
 

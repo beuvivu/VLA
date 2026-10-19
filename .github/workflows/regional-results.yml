@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/regional_lottery.py'
       - 'src/build_regional_results.py'
+      - 'scripts/ops/push_generated_site.py'
       - '.github/workflows/regional-results.yml'
   workflow_dispatch:
     inputs:
@@ -65,12 +66,7 @@ jobs:
       - name: Dựng trang từ kết quả đã thu thập
         run: |
           python src/build_regional_results.py
-          python - <<'PY'
-          from pathlib import Path
-          from app_shell import wrap_page
-          for path in Path("docs").glob("*.html"):
-              path.write_text(wrap_page(path.read_text(encoding="utf-8"), path.name), encoding="utf-8")
-          PY
+          python scripts/ops/refresh_navigation.py
 
       - name: Kiểm tra dữ liệu trước khi ghi
         run: |
@@ -95,14 +91,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/regions/xsmt.csv data/regions/xsmt.json data/regions/xsmn.csv data/regions/xsmn.json \
-                  docs/*.html
+                  docs/*.html docs/assets
           if git diff --cached --quiet; then
             echo "Không có dữ liệu vùng mới."
             exit 0
           fi
           git commit -m "data: sync XSMT/XSMN from xskt.com.vn"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          python3 scripts/ops/push_generated_site.py --branch main
+
+      - name: Chốt phiên bản và kiểm tra tài nguyên
+        run: python3 src/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages đã cập nhật
         uses: actions/upload-pages-artifact@v5

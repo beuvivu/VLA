@@ -28,6 +28,11 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`qa/2026-10-18-quality-plan.md`](qa/2026-10-18-quality-plan.md) | Phạm vi, ràng buộc và kế hoạch kiểm toán XSMB, Vietlott, UI, bảo mật và kiểm chứng. |
+| [`qa/2026-10-18-repository-audit.md`](qa/2026-10-18-repository-audit.md) | Lỗi đã tái hiện, mã đã sửa, số đo hiệu năng, kiểm thử và checklist duy trì chất lượng toàn repo. |
+| [`qa/2026-10-18-pairs-and-special-marks.md`](qa/2026-10-18-pairs-and-special-marks.md) | Kiểm chứng bố cục cặp lộn, dấu chọn Đặc Biệt và các bảng theo tổng. |
+| [`plans/2026-10-17-ui-experience.md`](plans/2026-10-17-ui-experience.md) | Phạm vi và tiêu chí nghiệm thu giao diện trang chủ, ma trận, workspace phân tích và Đặc Biệt theo năm. |
+| [`qa/2026-10-17-ui-experience.md`](qa/2026-10-17-ui-experience.md) | Bằng chứng kiểm thử và render, lỗi được phát hiện trong nghiệm thu, cách dựng giữ nguyên dữ liệu. |
 | [`qa/2026-10-10-step-4-5-verification.md`](qa/2026-10-10-step-4-5-verification.md) | Đối chiếu và khép bước 4–5: dependency/BH-FDR, source manifest benchmark tự động, kiểm scan/source mutation, hai benchmark mới và bằng chứng kiểm thử/CI. |
 | [`qa/2026-10-10-work-completion.md`](qa/2026-10-10-work-completion.md) | Chốt tiến trình VLA: độ bền tệp kết quả, retry xuất bản, độ mới XSMT/XSMN và bằng chứng CI/nguồn dữ liệu. |
 | [`architecture/vietlott-comparison-ui.md`](architecture/vietlott-comparison-ui.md) | Khung responsive, màu bóng số, hiệu ứng nút, bảng đối chiếu theo từng bộ số và API JavaScript tính tỷ lệ/hạng giải; cập nhật trang ngay sau engine. |
@@ -123,3 +128,12 @@ forecasting guarantee.
 - [Hướng dẫn vận hành tự học](operations/adaptive-inference.md)
 - [Kết quả kiểm chứng và giới hạn](qa/2026-09-27-adaptive-inference.md)
 - [Sửa tích hợp CI và vòng đời stacking](qa/2026-09-27-stacking-integration.md)
+
+## Tích hợp đa thuật toán ngày 17-10-2026
+
+- [Kiến trúc và kế hoạch tích hợp](architecture/2026-10-17-multi-agent-integration.md)
+- [Kết quả kiểm chứng](qa/2026-10-17-multi-agent-integration.md)
+- [Kiến trúc ba tác tử XSMB](architecture/2026-10-17-xsmb-multi-agent.md)
+- [Kế hoạch triển khai ba tác tử XSMB](plans/2026-10-17-xsmb-multi-agent.md)
+- [Kiểm chứng và số đo ba tác tử XSMB](qa/2026-10-17-xsmb-multi-agent.md)
+- [Làm mới source, cache và tài nguyên xuất bản](operations/source-refresh.md)

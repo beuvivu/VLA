@@ -55,8 +55,6 @@ def is_cloudflare_challenge(response: httpx.Response) -> bool:
     The engine never tries to solve or evade such a challenge: it is the site's way of saying
     automated clients are not welcome right now. A person can pass it in a browser and save
     the pages (``products import-pages``)."""
-    if response.status_code not in (403, 429, 503):
-        return False
     if response.headers.get("cf-mitigated", "").lower() == "challenge":
         return True
     if "cloudflare" not in response.headers.get("server", "").lower():
@@ -151,11 +149,11 @@ class AsyncHttpClient:
                     last_error = f"{type(exc).__name__}: {exc}"
                     delay = self.retry.backoff(attempt)
                 else:
-                    if response.status_code < 400:
-                        return response
                     if is_cloudflare_challenge(response):
                         self.stats["failures"] += 1
                         raise SourceError(f"{method} {url}: {CF_CHALLENGE_PREFIX} (HTTP {response.status_code})")
+                    if response.status_code < 400:
+                        return response
                     last_error = f"HTTP {response.status_code}"
                     if response.status_code not in self.retry.retry_statuses:
                         self.stats["failures"] += 1

@@ -16,6 +16,7 @@ import copy
 import hashlib
 import json
 import zlib
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -52,6 +53,9 @@ RECIPE = {
     "uncertainty_multiplier": 4.0,
     "minimum_logloss_skill": 0.002,
 }
+# Profile mới dùng CÙNG lõi chốt/học/kiểm toàn vẹn; sổ legacy không đổi schema.
+AGENT_EXPERTS = ("incumbent", "constant", "statistical", "probabilistic", "pattern")
+AGENT_RECIPE = {**RECIPE, "family": "xsmb_three_agents_v1"}
 KEEP_FULL_RECORDS = 365
 ARCHIVE_CHUNK = 64
 
@@ -214,18 +218,21 @@ def build_experts(mode: str, history: pd.DataFrame, incumbent, target_date: str)
     return experts
 
 
-def new_state(mode: str) -> dict:
+def new_state(mode: str, *, profile: str = "legacy") -> dict:
     """Khởi tạo bộ nhớ rỗng; lịch sử sẵn có không trở thành phép kiểm ngoài mẫu."""
     baseline_rate(mode)
+    if profile not in {"legacy", "agents"}:
+        raise ValueError("Profile học trực tuyến không được đăng ký")
+    recipe, experts = (AGENT_RECIPE, AGENT_EXPERTS) if profile == "agents" else (RECIPE, EXPERTS)
     return {
         "schema_version": SCHEMA_VERSION,
         "mode": mode,
-        "recipe": copy.deepcopy(RECIPE),
+        "recipe": copy.deepcopy(recipe),
         "history": None,
         "learning": {
             "n_settled": 0,
-            "slow_loss": [0.0] * len(EXPERTS),
-            "fast_loss": [0.0] * len(EXPERTS),
+            "slow_loss": [0.0] * len(experts),
+            "fast_loss": [0.0] * len(experts),
         },
         "records": [],
         "archive": [],
@@ -246,7 +253,7 @@ def _all_records(state: dict) -> list:
 
 
 def _scores(mode: str, record: dict, labels) -> dict:
-    result = {name: proper_losses(mode, record["experts"][name], labels) for name in EXPERTS}
+    result = {name: proper_losses(mode, p, labels) for name, p in record["experts"].items()}
     result.update(
         {
             name: proper_losses(mode, record[name], labels)
@@ -286,18 +293,27 @@ def _is_scored(record: dict) -> bool:
     return settlement is not None and settlement.get("status", "scored") == "scored"
 
 
+def _profile(state: dict) -> tuple[dict, tuple[str, ...]]:
+    """Chỉ hai cấu hình đóng băng được đăng ký, không nhận recipe tùy ý từ đĩa."""
+    if state.get("recipe") == RECIPE:
+        return RECIPE, EXPERTS
+    if state.get("recipe") == AGENT_RECIPE:
+        return AGENT_RECIPE, AGENT_EXPERTS
+    raise ValueError("Schema hoặc cấu hình học trực tuyến không tương thích")
+
+
 def _validate_state(state: dict, mode: str) -> None:
     """Từ chối phiên bản lạ, vector hỏng và bộ nhớ lệch khỏi sổ đã chốt."""
     try:
+        recipe, experts = _profile(state)
         if (
             state["schema_version"] != SCHEMA_VERSION
             or isinstance(state["schema_version"], bool)
             or state["mode"] != mode
-            or state["recipe"] != RECIPE
         ):
             raise ValueError("Schema hoặc cấu hình học trực tuyến không tương thích")
         _json_bytes(state)
-        slow, fast, count, previous = np.zeros(len(EXPERTS)), np.zeros(len(EXPERTS)), 0, ""
+        slow, fast, count, previous = np.zeros(len(experts)), np.zeros(len(experts)), 0, ""
         for record in _all_records(state):
             target = _date(record["target_date"])
             generated = _clock(datetime.fromisoformat(record["generated_at"]))
@@ -316,13 +332,13 @@ def _validate_state(state: dict, mode: str) -> None:
             ):
                 raise ValueError("Thứ tự sổ hoặc thời gian dự báo không hợp lệ")
             previous = record["target_date"]
-            if set(record["experts"]) != set(EXPERTS):
+            if set(record["experts"]) != set(experts):
                 raise ValueError("Sổ thiếu chuyên gia")
             for p in record["experts"].values():
                 _prob(mode, p)
             for name in ("mixture", "blend", "published"):
                 _prob(mode, record[name])
-            weights = np.asarray([record["weights"][name] for name in EXPERTS])
+            weights = np.asarray([record["weights"][name] for name in experts])
             if (
                 not np.all(np.isfinite(weights))
                 or np.any(weights <= 0)
@@ -330,11 +346,11 @@ def _validate_state(state: dict, mode: str) -> None:
             ):
                 raise ValueError("Trọng số sổ không hợp lệ")
             expected = sum(
-                weights[i] * np.asarray(record["experts"][name]) for i, name in enumerate(EXPERTS)
+                weights[i] * np.asarray(record["experts"][name]) for i, name in enumerate(experts)
             )
             if not np.allclose(record["mixture"], expected, rtol=0, atol=1e-12):
                 raise ValueError("Vector tổ hợp sai so với trọng số đã đóng băng")
-            expected_blend = RECIPE["blend"] * expected + (1 - RECIPE["blend"]) * np.asarray(
+            expected_blend = recipe["blend"] * expected + (1 - recipe["blend"]) * np.asarray(
                 record["experts"]["incumbent"]
             )
             if not np.allclose(record["blend"], expected_blend, rtol=0, atol=1e-12):
@@ -365,9 +381,9 @@ def _validate_state(state: dict, mode: str) -> None:
                 if not _scores_agree(_scores(mode, record, labels), settlement["scores"]):
                     raise ValueError("Điểm kỳ quay lệch khỏi vector đóng băng")
                 # Bộ nhớ học dựng từ điểm ĐÃ CHỐT, đúng như `advance` đã cộng.
-                losses = np.asarray([settlement["scores"][name]["brier"] for name in EXPERTS])
+                losses = np.asarray([settlement["scores"][name]["brier"] for name in experts])
                 slow += losses
-                fast = RECIPE["discount"] * fast + losses
+                fast = recipe["discount"] * fast + losses
                 count += 1
         learning = state["learning"]
         if (
@@ -381,14 +397,51 @@ def _validate_state(state: dict, mode: str) -> None:
         raise ValueError("Sổ học trực tuyến bị hỏng (corrupt state)") from exc
 
 
-def _weights(learning: dict) -> np.ndarray:
+def _weights(learning: dict, *, recipe: dict = RECIPE) -> np.ndarray:
     memories = []
     for name in ("slow_loss", "fast_loss"):
-        logits = -RECIPE["eta"] * np.asarray(learning[name])
+        logits = -recipe["eta"] * np.asarray(learning[name])
         p = np.exp(logits - logits.max())
         memories.append(p / p.sum())
     p = (memories[0] + memories[1]) / 2
-    return (1 - RECIPE["fixed_share"]) * p + RECIPE["fixed_share"] / len(EXPERTS)
+    return (1 - recipe["fixed_share"]) * p + recipe["fixed_share"] / len(p)
+
+
+def tune_agent_weights(records: list[dict], mode: str) -> tuple[np.ndarray, dict]:
+    """Chọn η/độ quên bằng replay: trọng số trước nhãn, loss sau nhãn.
+
+    Điểm replay chỉ chọn siêu tham số cho dự báo tiếp, không cộng vào bằng
+    chứng đề bạt. Tất cả vector ở đây phải là dự báo thật đã đóng băng.
+    """
+    settled = [r for r in records if _is_scored(r)]
+    selection_start = max(0, len(settled) - 180)
+    candidates = [(AGENT_RECIPE["eta"], AGENT_RECIPE["discount"])]
+    if len(settled) >= 30:
+        candidates = [(eta, discount) for eta in (1.0, 4.0, 8.0) for discount in (0.90, 0.97)]
+    trials = []
+    for eta, discount in candidates:
+        recipe = {**AGENT_RECIPE, "eta": eta, "discount": discount}
+        learning = {"slow_loss": np.zeros(len(AGENT_EXPERTS)),
+                    "fast_loss": np.zeros(len(AGENT_EXPERTS))}
+        score = 0.0
+        for index, record in enumerate(settled):
+            weights = _weights(learning, recipe=recipe)
+            p = sum(weights[i] * np.asarray(record["experts"][name])
+                    for i, name in enumerate(AGENT_EXPERTS))
+            labels = record["settlement"]["labels"]
+            if index >= selection_start:
+                score += proper_losses(mode, p, labels)["brier"]
+            losses = np.array([record["settlement"]["scores"][name]["brier"]
+                               for name in AGENT_EXPERTS])
+            learning["slow_loss"] += losses
+            learning["fast_loss"] = discount * learning["fast_loss"] + losses
+        trials.append((score, eta, discount, _weights(learning, recipe=recipe)))
+    score, eta, discount, weights = min(trials, key=lambda row: row[0])
+    count = len(settled) - selection_start
+    return weights, {"eta": eta, "discount": discount, "replay_draws": count,
+                     "history_draws": len(settled),
+                     "replay_brier": score / count if count else None,
+                     "selection_only": True}
 
 
 def _gain_stats(gains) -> dict:
@@ -455,12 +508,14 @@ def promotion_gate(records: list) -> dict:
 
 
 def advance(
-    state: dict, history: pd.DataFrame, incumbent, target_date: str, *, now: datetime
+    state: dict, history: pd.DataFrame, incumbent, target_date: str, *, now: datetime,
+    expert_predictions: dict[str, np.ndarray] | None = None,
 ) -> tuple[dict, dict]:
     """Chốt kỳ cũ một lần, học đủ chuyên gia, rồi đóng băng dự báo kỳ mới."""
     local = _clock(now)
     mode = state["mode"]
     _validate_state(state, mode)
+    recipe, names = _profile(state)
     frame, target = _history(history), _date(target_date)
     if _date(frame.iloc[-1]["date"]) > local.date() or (
         _date(frame.iloc[-1]["date"]) == local.date()
@@ -521,23 +576,41 @@ def advance(
             "settled_at": local.isoformat(),
         }
         learning = result["learning"]
-        losses = np.asarray([record["settlement"]["scores"][name]["brier"] for name in EXPERTS])
+        losses = np.asarray([record["settlement"]["scores"][name]["brier"] for name in names])
         learning["slow_loss"] = (np.asarray(learning["slow_loss"]) + losses).tolist()
         learning["fast_loss"] = (
-            RECIPE["discount"] * np.asarray(learning["fast_loss"]) + losses
+            recipe["discount"] * np.asarray(learning["fast_loss"]) + losses
         ).tolist()
         learning["n_settled"] += 1
-    experts = build_experts(mode, frame, incumbent, target_date)
-    weights = _weights(result["learning"])
-    mixture = sum(weights[i] * experts[name] for i, name in enumerate(EXPERTS))
-    blend = RECIPE["blend"] * mixture + (1 - RECIPE["blend"]) * experts["incumbent"]
+    tuning = None
+    if names == AGENT_EXPERTS:
+        expected = set(AGENT_EXPERTS) - {"incumbent", "constant"}
+        if expert_predictions is None or set(expert_predictions) != expected:
+            raise ValueError("Thiếu đúng ba tác tử đã đăng ký")
+        experts = {"incumbent": _prob(mode, incumbent).copy(),
+                   "constant": np.full(100, baseline_rate(mode)),
+                   **{name: _prob(mode, p).copy() for name, p in expert_predictions.items()}}
+        weights, tuning = tune_agent_weights(_all_records(result), mode)
+    else:
+        if expert_predictions is not None:
+            raise ValueError("Profile legacy không nhận tác tử ngoài sổ")
+        experts = build_experts(mode, frame, incumbent, target_date)
+        weights = _weights(result["learning"])
+    mixture = sum(weights[i] * experts[name] for i, name in enumerate(names))
+    blend = recipe["blend"] * mixture + (1 - recipe["blend"]) * experts["incumbent"]
     gate = promotion_gate(_all_records(result))
+    if names == AGENT_EXPERTS:
+        # Cổng thực nghiệm không tự thay thế benchmark mô hình và đăng ký
+        # tiến cứu của kho. Giữ đúng vector thực sự đang được công bố.
+        gate = {**gate, "experimental_pass": gate["active"], "active": False,
+                "benchmark_required": True,
+                "reason": "Ba tác tử đang kiểm song song; đề bạt cần benchmark và kiểm tiến cứu"}
     record = {
         "target_date": target_date,
         "generated_at": local.isoformat(),
         "anchor_fingerprint": _fingerprint(frame),
         "experts": {key: p.tolist() for key, p in experts.items()},
-        "weights": dict(zip(EXPERTS, weights.tolist(), strict=True)),
+        "weights": dict(zip(names, weights.tolist(), strict=True)),
         "mixture": mixture.tolist(),
         "blend": blend.tolist(),
         "published": (blend if gate["active"] else experts["incumbent"]).tolist(),
@@ -545,6 +618,8 @@ def advance(
         "learning": copy.deepcopy(result["learning"]),
         "settlement": None,
     }
+    if tuning is not None:
+        record["tuning"] = tuning
     result["records"].append(record)
     result["history"] = _fingerprint(frame)
     if len(result["records"]) > KEEP_FULL_RECORDS:
@@ -563,23 +638,43 @@ def advance(
     return result, copy.deepcopy(record)
 
 
-def save_state(path: Path, state: dict) -> None:
+def save_state(
+    path: Path, state: dict, *, forecast_target: str | None = None,
+    clock: Callable[[], datetime] | None = None,
+) -> None:
     """Ghi JSON nguyên tử có checksum; lỗi không đè lên sổ đang dùng."""
     _validate_state(state, state["mode"])
-    atomic_write_bytes(Path(path), _json_bytes({**state, "_checksum": _digest(state)}))
+    payload = _json_bytes({**state, "_checksum": _digest(state)})
+    # Chấm lại, mã hóa và ghi đĩa đều có thể vượt hạn. Kiểm sớm rồi kiểm lại
+    # sau fsync, ngay trước replace; khôi phục bản đóng băng không bị chặn.
+    before_replace = None
+    if forecast_target is not None:
+        deadline = datetime.combine(_date(forecast_target), FORECAST_CUTOFF, VIETNAM_TZ)
+
+        def check_cutoff() -> None:
+            local = _clock(clock() if clock is not None else now_vietnam())
+            if local >= deadline:
+                raise ValueError("Đã quá cutoff 18:00 ICT trước khi ghi sổ")
+
+        check_cutoff()
+        before_replace = check_cutoff
+    atomic_write_bytes(Path(path), payload, before_replace=before_replace)
 
 
-def load_state(path: Path, mode: str) -> dict:
+def load_state(path: Path, mode: str, *, profile: str = "legacy") -> dict:
     """Không tự khởi tạo lại khi sổ cũ hỏng, tránh xoá các lần thua."""
     path = Path(path)
     if not path.exists():
-        return new_state(mode)
+        return new_state(mode, profile=profile)
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
         checksum = state.pop("_checksum")
         if checksum != _digest(state):
             raise ValueError("Checksum sổ không khớp; mất toàn vẹn")
         _validate_state(state, mode)
+        expected = AGENT_RECIPE if profile == "agents" else RECIPE
+        if profile not in {"legacy", "agents"} or state["recipe"] != expected:
+            raise ValueError("Sổ học trực tuyến không đúng profile được yêu cầu")
         return state
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError("Không đọc được sổ học trực tuyến (corrupt state)") from exc
@@ -618,13 +713,15 @@ def run_online(
     data_dir = Path(data_dir)
     out_dir = Path(out_dir) if out_dir is not None else data_dir / "predict"
     state_path = data_dir / "online" / f"{mode}.json"
-    local = _clock(now or now_vietnam())
+    clock = (lambda: _clock(now)) if now is not None else (lambda: _clock(now_vietnam()))
     with _locked(state_path.with_suffix(".lock")):
+        local = clock()
         frame = _history(pd.read_csv(data_dir / "xsmb.csv", dtype={"date": str}))
         target = (_date(frame.iloc[-1]["date"]) + timedelta(days=1)).isoformat()
         prediction_path = out_dir / f"predict_next_{mode}_all_{target}.csv"
         published_frame, incumbent = _prediction_frame(prediction_path, mode)
         state = load_state(state_path, mode)
+        existing = any(record["target_date"] == target for record in state["records"])
         updated, record = advance(state, frame, incumbent, target, now=local)
         report = {
             "schema_version": SCHEMA_VERSION,
@@ -646,7 +743,7 @@ def run_online(
             "journal_sha256": _digest(updated),
         }
         # Sổ ghi trước artifact: nếu tiến trình ngắt, chạy lại khôi phục chính vector này.
-        save_state(state_path, updated)
+        save_state(state_path, updated, forecast_target=None if existing else target, clock=clock)
         final = np.asarray(record["published"])
         changed = not np.array_equal(incumbent, final)
         if changed:

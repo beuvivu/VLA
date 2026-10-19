@@ -19,6 +19,8 @@ for path in sorted(Path("docs").glob("*.html")):
     write_page(path, path.read_text(encoding="utf-8"))
 print("Đã đồng bộ shell cho mọi trang HTML")
 '''], cwd=ROOT, env={**__import__('os').environ, 'PYTHONPATH': str(ROOT / 'src')}, check=True)
+    subprocess.run([sys.executable, str(ROOT / 'src/site_assets.py'), '--refresh', 'docs', '--check'],
+                   cwd=ROOT, check=True)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
 {
   "version": 9,
-  "generated_at": "2026-10-15T19:59:05Z",
-  "source_date": "2026-10-15",
-  "target_date": "2026-10-16",
-  "draws": 4236,
-  "history_sha256": "6a5b13c97fa42f5bf216ff3beec993f5526f584361b987b8a1afd4061aa0903e",
+  "generated_at": "2026-10-19T11:40:55Z",
+  "source_date": "2026-10-19",
+  "target_date": "2026-10-20",
+  "draws": 4240,
+  "history_sha256": "47d6b08fc7b906acf5e8c7bd597ad0427ed5c81d4dbf75471f82b8b51bb7ec22",
   "base_theory": 0.02974563628550431,
   "rule": "lo-vip-cau-keo-v1",
   "config": {
@@ -86,7 +86,7 @@
       {
         "start_date": "2024-07-20",
         "C": 0.0001,
-        "inner_gain": -1.3290760156714487e-05
+        "inner_gain": -1.3290760156686732e-05
       },
       {
         "start_date": "2025-03-31",
@@ -108,15 +108,15 @@
   "experience": [
     {
       "label": "không có cầu",
-      "seen": 325633,
-      "observed": 9573,
-      "rate": 0.029398126111297072
+      "seen": 325969,
+      "observed": 9580,
+      "rate": 0.02938929775530802
     },
     {
       "label": "1–4 cầu",
-      "seen": 91386,
+      "seen": 91450,
       "observed": 2578,
-      "rate": 0.028210010286039436
+      "rate": 0.02819026790595954
     },
     {
       "label": "từ 5 cầu",
@@ -127,87 +127,199 @@
   ],
   "backtest": {
     "first_date": "2016-03-10",
-    "last_date": "2026-10-15",
-    "draws": 3810,
-    "picks": 19050,
-    "hits": 569,
-    "rate": 0.029868766404199474,
+    "last_date": "2026-10-19",
+    "draws": 3814,
+    "picks": 19070,
+    "hits": 570,
+    "rate": 0.029889879391714735,
     "ci95": [
-      0.027581068880279058,
-      0.032339905207017766
+      0.027602798787441294,
+      0.03236015393107377
     ],
-    "design_effect": 0.9676794186096551,
-    "expected": 555.8,
-    "random_rate": 0.0291758530183727,
-    "lift": 1.023749550197913,
-    "z": 0.5819691139013685,
-    "p_value": 0.2802937426098957,
-    "predicted": 0.02855134372886195
+    "design_effect": 0.9674324106706398,
+    "expected": 556.15,
+    "random_rate": 0.029163607760880964,
+    "lift": 1.0249033534118495,
+    "z": 0.6104317269400025,
+    "p_value": 0.2707879283144513,
+    "predicted": 0.028554088177556464
   },
   "prospective": {
     "after": "2026-10-15",
-    "draws": 0,
-    "picks": 0,
-    "hits": 0,
-    "expected": 0.0,
-    "lift": null,
-    "p_anytime": 1.0,
-    "e_max": 1.0
+    "draws": 4,
+    "picks": 20,
+    "hits": 1,
+    "expected": 0.35,
+    "lift": 2.857142857142857,
+    "p_anytime": 0.7818608287724784,
+    "e_max": 1.2790000000000001
   },
   "confidence": "Low",
   "picks": [
     {
-      "number": "11",
-      "probability": 0.03432097124584435,
-      "x_base": 1.153815333329067,
+      "number": "45",
+      "probability": 0.03255805548329546,
+      "x_base": 1.0945489674786921,
       "confidence": "Low",
       "reasons": [
-        "bóng của Đặc Biệt 66",
-        "cùng tổng với Đặc Biệt 66"
+        "bóng của Đặc Biệt 90",
+        "cùng tổng với Đặc Biệt 90"
       ]
     },
     {
-      "number": "66",
-      "probability": 0.03185058793950123,
-      "x_base": 1.0707650572269893,
+      "number": "90",
+      "probability": 0.03072727960042486,
+      "x_base": 1.0330012545537284,
+      "confidence": "Low",
+      "reasons": [
+        "cùng tổng với Đặc Biệt 90",
+        "cùng đầu với Đặc Biệt 90"
+      ]
+    },
+    {
+      "number": "54",
+      "probability": 0.030605113097136587,
+      "x_base": 1.0288942150499945,
+      "confidence": "Low",
+      "reasons": [
+        "cùng tổng với Đặc Biệt 90",
+        "đầu 5 về 19 lần/7 kỳ"
+      ]
+    },
+    {
+      "number": "74",
+      "probability": 0.03025537481045216,
+      "x_base": 1.0171365816503395,
       "confidence": "Low",
       "reasons": [
         "về ≥ 2 nháy ở kỳ mới nhất",
-        "cùng tổng với Đặc Biệt 66"
+        "đầu 7 về 21 lần/7 kỳ"
       ]
     },
     {
-      "number": "48",
-      "probability": 0.030724430365523383,
-      "x_base": 1.032905467902062,
+      "number": "36",
+      "probability": 0.029510055309817214,
+      "x_base": 0.9920801500621488,
       "confidence": "Low",
       "reasons": [
-        "cùng tổng với Đặc Biệt 66",
-        "về 28/90 kỳ gần nhất"
-      ]
-    },
-    {
-      "number": "62",
-      "probability": 0.03057174850332981,
-      "x_base": 1.027772551573492,
-      "confidence": "Low",
-      "reasons": [
-        "đầu 6 về 22 lần/7 kỳ",
-        "cùng đầu với Đặc Biệt 66"
-      ]
-    },
-    {
-      "number": "61",
-      "probability": 0.030469371458760778,
-      "x_base": 1.0243308015437935,
-      "confidence": "Low",
-      "reasons": [
-        "đầu 6 về 22 lần/7 kỳ",
-        "cùng đầu với Đặc Biệt 66"
+        "cùng tổng với Đặc Biệt 90",
+        "đầu 3 về 19 lần/7 kỳ"
       ]
     }
   ],
   "recent": [
+    {
+      "date": "2026-10-19",
+      "picks": [
+        {
+          "number": "97",
+          "hits": 0
+        },
+        {
+          "number": "42",
+          "hits": 0
+        },
+        {
+          "number": "48",
+          "hits": 0
+        },
+        {
+          "number": "33",
+          "hits": 0
+        },
+        {
+          "number": "44",
+          "hits": 1
+        }
+      ],
+      "multi": 0,
+      "numbers_multi": 3,
+      "expected": 0.15
+    },
+    {
+      "date": "2026-10-18",
+      "picks": [
+        {
+          "number": "83",
+          "hits": 0
+        },
+        {
+          "number": "77",
+          "hits": 0
+        },
+        {
+          "number": "34",
+          "hits": 0
+        },
+        {
+          "number": "74",
+          "hits": 0
+        },
+        {
+          "number": "35",
+          "hits": 1
+        }
+      ],
+      "multi": 0,
+      "numbers_multi": 1,
+      "expected": 0.05
+    },
+    {
+      "date": "2026-10-17",
+      "picks": [
+        {
+          "number": "01",
+          "hits": 1
+        },
+        {
+          "number": "61",
+          "hits": 0
+        },
+        {
+          "number": "74",
+          "hits": 0
+        },
+        {
+          "number": "56",
+          "hits": 1
+        },
+        {
+          "number": "62",
+          "hits": 0
+        }
+      ],
+      "multi": 0,
+      "numbers_multi": 1,
+      "expected": 0.05
+    },
+    {
+      "date": "2026-10-16",
+      "picks": [
+        {
+          "number": "11",
+          "hits": 0
+        },
+        {
+          "number": "66",
+          "hits": 0
+        },
+        {
+          "number": "48",
+          "hits": 0
+        },
+        {
+          "number": "62",
+          "hits": 0
+        },
+        {
+          "number": "61",
+          "hits": 2
+        }
+      ],
+      "multi": 1,
+      "numbers_multi": 2,
+      "expected": 0.1
+    },
     {
       "date": "2026-10-15",
       "picks": [
@@ -375,118 +487,6 @@
       "multi": 0,
       "numbers_multi": 1,
       "expected": 0.05
-    },
-    {
-      "date": "2026-10-09",
-      "picks": [
-        {
-          "number": "84",
-          "hits": 0
-        },
-        {
-          "number": "39",
-          "hits": 0
-        },
-        {
-          "number": "48",
-          "hits": 0
-        },
-        {
-          "number": "35",
-          "hits": 1
-        },
-        {
-          "number": "34",
-          "hits": 1
-        }
-      ],
-      "multi": 0,
-      "numbers_multi": 5,
-      "expected": 0.25
-    },
-    {
-      "date": "2026-10-08",
-      "picks": [
-        {
-          "number": "33",
-          "hits": 1
-        },
-        {
-          "number": "80",
-          "hits": 0
-        },
-        {
-          "number": "86",
-          "hits": 0
-        },
-        {
-          "number": "02",
-          "hits": 1
-        },
-        {
-          "number": "97",
-          "hits": 0
-        }
-      ],
-      "multi": 0,
-      "numbers_multi": 3,
-      "expected": 0.15
-    },
-    {
-      "date": "2026-10-07",
-      "picks": [
-        {
-          "number": "09",
-          "hits": 1
-        },
-        {
-          "number": "45",
-          "hits": 2
-        },
-        {
-          "number": "82",
-          "hits": 0
-        },
-        {
-          "number": "97",
-          "hits": 0
-        },
-        {
-          "number": "44",
-          "hits": 0
-        }
-      ],
-      "multi": 1,
-      "numbers_multi": 4,
-      "expected": 0.2
-    },
-    {
-      "date": "2026-10-06",
-      "picks": [
-        {
-          "number": "09",
-          "hits": 0
-        },
-        {
-          "number": "53",
-          "hits": 0
-        },
-        {
-          "number": "72",
-          "hits": 1
-        },
-        {
-          "number": "54",
-          "hits": 1
-        },
-        {
-          "number": "47",
-          "hits": 0
-        }
-      ],
-      "multi": 0,
-      "numbers_multi": 3,
-      "expected": 0.15
     }
   ],
   "pairs": {
@@ -500,11 +500,11 @@
     "picks": [
       {
         "pair": [
-          "52",
-          "90"
+          "34",
+          "35"
         ],
         "together": 15,
-        "last_date": "2026-10-09"
+        "last_date": "2026-10-19"
       },
       {
         "pair": [
@@ -516,59 +516,227 @@
       },
       {
         "pair": [
-          "62",
+          "52",
+          "90"
+        ],
+        "together": 14,
+        "last_date": "2026-10-09"
+      },
+      {
+        "pair": [
+          "50",
           "95"
         ],
         "together": 13,
-        "last_date": "2026-10-14"
+        "last_date": "2026-10-19"
       },
       {
         "pair": [
-          "19",
-          "67"
+          "34",
+          "50"
         ],
         "together": 13,
-        "last_date": "2026-10-13"
-      },
-      {
-        "pair": [
-          "63",
-          "77"
-        ],
-        "together": 13,
-        "last_date": "2026-10-13"
+        "last_date": "2026-10-19"
       }
     ],
     "backtest": {
       "first_date": "2015-04-15",
-      "last_date": "2026-10-15",
-      "draws": 4136,
-      "picks": 20680,
-      "hits": 1136,
-      "rate": 0.05493230174081238,
+      "last_date": "2026-10-19",
+      "draws": 4140,
+      "picks": 20700,
+      "hits": 1137,
+      "rate": 0.05492753623188406,
       "ci95": [
-        0.051699178803472745,
-        0.05835517308999952
+        0.05169649844083953,
+        0.05834808913288154
       ],
-      "design_effect": 1.1478073947055245,
-      "expected": 1141.4575757575758,
-      "random_rate": 0.05519620772522127,
-      "lift": 0.9952187660115588,
-      "z": -0.15578359363066216,
-      "p_value": 0.561898198442281
+      "design_effect": 1.1474922381185935,
+      "expected": 1142.6959595959597,
+      "random_rate": 0.055202703362123656,
+      "lift": 0.9950153323391694,
+      "z": -0.1625333965674984,
+      "p_value": 0.5645570843761029
     },
     "prospective": {
       "after": "2026-10-12",
-      "draws": 3,
-      "picks": 15,
-      "hits": 1,
-      "expected": 0.7444444444444445,
-      "lift": 1.3432835820895521,
+      "draws": 7,
+      "picks": 35,
+      "hits": 2,
+      "expected": 1.9828282828282828,
+      "lift": 1.0086602139582272,
       "p_anytime": 0.8079719903043361,
       "e_max": 1.2376666666666667
     },
     "confidence": "Low",
     "recent": [
+      {
+        "date": "2026-10-19",
+        "picks": [
+          {
+            "pair": [
+              "52",
+              "90"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "34",
+              "35"
+            ],
+            "hit": true
+          },
+          {
+            "pair": [
+              "62",
+              "70"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "38",
+              "48"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "34",
+              "48"
+            ],
+            "hit": false
+          }
+        ],
+        "hits": 1,
+        "expected": 0.2787878787878788
+      },
+      {
+        "date": "2026-10-18",
+        "picks": [
+          {
+            "pair": [
+              "52",
+              "90"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "34",
+              "35"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "62",
+              "70"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "34",
+              "94"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "38",
+              "48"
+            ],
+            "hit": false
+          }
+        ],
+        "hits": 0,
+        "expected": 0.3282828282828283
+      },
+      {
+        "date": "2026-10-17",
+        "picks": [
+          {
+            "pair": [
+              "52",
+              "90"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "34",
+              "35"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "62",
+              "70"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "09",
+              "34"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "62",
+              "95"
+            ],
+            "hit": false
+          }
+        ],
+        "hits": 0,
+        "expected": 0.3282828282828283
+      },
+      {
+        "date": "2026-10-16",
+        "picks": [
+          {
+            "pair": [
+              "52",
+              "90"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "62",
+              "70"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "62",
+              "95"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "19",
+              "67"
+            ],
+            "hit": false
+          },
+          {
+            "pair": [
+              "63",
+              "77"
+            ],
+            "hit": false
+          }
+        ],
+        "hits": 0,
+        "expected": 0.30303030303030304
+      },
       {
         "date": "2026-10-15",
         "picks": [
@@ -820,174 +988,6 @@
         ],
         "hits": 0,
         "expected": 0.3282828282828283
-      },
-      {
-        "date": "2026-10-09",
-        "picks": [
-          {
-            "pair": [
-              "52",
-              "90"
-            ],
-            "hit": true
-          },
-          {
-            "pair": [
-              "34",
-              "92"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "34",
-              "35"
-            ],
-            "hit": true
-          },
-          {
-            "pair": [
-              "09",
-              "38"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "62",
-              "70"
-            ],
-            "hit": false
-          }
-        ],
-        "hits": 2,
-        "expected": 0.23333333333333334
-      },
-      {
-        "date": "2026-10-08",
-        "picks": [
-          {
-            "pair": [
-              "52",
-              "90"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "09",
-              "38"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "34",
-              "48"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "62",
-              "70"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "38",
-              "48"
-            ],
-            "hit": false
-          }
-        ],
-        "hits": 0,
-        "expected": 0.25555555555555554
-      },
-      {
-        "date": "2026-10-07",
-        "picks": [
-          {
-            "pair": [
-              "52",
-              "90"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "35",
-              "38"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "62",
-              "70"
-            ],
-            "hit": true
-          },
-          {
-            "pair": [
-              "27",
-              "90"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "52",
-              "61"
-            ],
-            "hit": false
-          }
-        ],
-        "hits": 1,
-        "expected": 0.25555555555555554
-      },
-      {
-        "date": "2026-10-06",
-        "picks": [
-          {
-            "pair": [
-              "52",
-              "90"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "35",
-              "38"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "62",
-              "70"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "27",
-              "90"
-            ],
-            "hit": false
-          },
-          {
-            "pair": [
-              "52",
-              "61"
-            ],
-            "hit": false
-          }
-        ],
-        "hits": 0,
-        "expected": 0.2787878787878788
       }
     ]
   }

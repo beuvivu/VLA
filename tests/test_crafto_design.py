@@ -3,6 +3,7 @@
 import json
 import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
@@ -26,13 +27,15 @@ def test_design_assets_are_local_and_follow_existing_shell(tmp_path: Path) -> No
     write_page(page, '<html><head></head><body><button id="filter">Lọc</button></body></html>')
     doc = BeautifulSoup(page.read_text(), "html.parser")
     assert doc.body.get("data-app-design") == "crafto"
-    links = [link["href"] for link in doc.select("head > link[rel=stylesheet]")]
+    links = [urlsplit(link["href"]).path for link in doc.select("head > link[rel=stylesheet]")]
     assert links[-1] == "assets/app-design.css"
     assert links.index("assets/app-shell.css") < links.index("assets/app-design.css")
     assert (tmp_path / links[-1]).is_file()
-    script = doc.select_one('head script[src="assets/app-motion.js"]')
+    script = doc.select_one('head script[src^="assets/app-motion.js?"]')
     assert script and script.has_attr("defer")
-    assert (tmp_path / script["src"]).is_file()
+    assert urlsplit(script["src"]).path == "assets/app-motion.js"
+    assert not urlsplit(script["src"]).scheme and not urlsplit(script["src"]).netloc
+    assert (tmp_path / urlsplit(script["src"]).path).is_file()
     assert doc.select_one("#filter").text == "Lọc"
 
 

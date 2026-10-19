@@ -144,6 +144,9 @@ def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> d
     from vietlott_engine.forecast.engine import Forecaster, scoreboard, state_path
 
     boards = {row["product"]: row for row in scoreboard(directory)}
+    summary_path = ENGINE / "data" / "forecast" / "multi-agent-summary.json"
+    multi_agent = (json.loads(summary_path.read_text(encoding="utf-8")).get("products", {})
+                   if summary_path.exists() else {})
     out: dict[str, dict] = {}
     for code in products:
         product = ProductCode(code)
@@ -158,6 +161,7 @@ def _analysis(directory: Path, products: tuple[str, ...] = tuple(PRODUCTS)) -> d
             "draws": rep["draws"], "last_id": rep["last_id"], "last_date": rep["last_date"],
             "verdict": rep["verdict"], "evidence": rep["evidence"], "board": boards.get(code),
             "max_rtp": _max_rtp(rep["components"]),
+            "multi_agent": multi_agent.get(code),
         }
     return out
 
@@ -714,6 +718,68 @@ def comparison_widget(product: str) -> str:
             '<noscript><p class="vl-muted">Bật JavaScript để đối chiếu bộ số vừa nhập.</p></noscript></form></section>')
 
 
+def multi_agent_markup(data: dict | None, *, section_id: str = "app-multi-agent") -> str:
+    """Chỉ in các số đo được cho phép; không in nguyên văn cảnh báo hay nguồn của engine."""
+    main = ((data or {}).get("components") or {}).get("main")
+    if not main:
+        return ""
+    names = (("statistical", "Thống kê và nhịp lặp"),
+             ("bayesian_markov_graph", "Bayes, Markov và đồ thị"),
+             ("temporal_neural", "Nhận diện mẫu neural"), ("uniform", "Phân phối nền"))
+    rows = "".join(
+        f'<tr><th scope="row">{label}</th><td>{100 * float(main["weights"][key]):.1f}%</td></tr>'.replace(".", ",")
+        for key, label in names)
+    confidence = data.get("confidence") or {}
+    validated = confidence.get("validated") is True
+    state = "Đạt cổng kiểm chứng live" if validated else "Chưa đủ bằng chứng live"
+    context = "Biến động" if main.get("context") == "shift" else "Ổn định"
+    matches = main.get("memory_matches") or []
+    support = sum(int(item.get("support", 0)) for item in matches)
+    return (f'<section class="vl-section" id="{esc(section_id)}" aria-labelledby="{esc(section_id)}-title">'
+            '<div class="vl-section-heading"><div><span class="vl-kicker">BỘ MÁY TỰ HỌC</span>'
+            f'<h2 id="{esc(section_id)}-title">Ba lớp phân tích · một vòng phản hồi</h2></div>'
+            f'<span class="vl-badge">{state}</span></div>'
+            f'<p>Trạng thái mô hình hiện tại: đã học <strong>{vn_int(int(main["observations"]))}</strong> kỳ, '
+            f'đến kỳ <strong>#{esc(data.get("last_id"))}</strong> · {day_label(data.get("last_date"))}.</p>'
+            '<div class="vl-cols"><div class="vl-table-wrap"><table class="vl-table">'
+            '<caption>Trọng số bên trong nhóm đa thuật toán</caption><thead><tr><th scope="col">Lớp phân tích</th>'
+            f'<th scope="col">Trọng số nội bộ</th></tr></thead><tbody>{rows}</tbody></table></div>'
+            f'<div><p>Bối cảnh: <strong>{context}</strong> · Nhiệt độ xác suất: '
+            f'<strong>{float(main["temperature"]):g}</strong>.</p>'
+            f'<p>Bộ nhớ gần: {int(main["short_window"])} kỳ · Lịch sử giữ lại: '
+            f'{vn_int(int(main["retained_observations"]))} kỳ.</p>'
+            f'<p>Truy hồi {len(matches)} ngữ cảnh tương tự, có {vn_int(support)} quan sát hỗ trợ. '
+            f'Sổ live đã chấm {vn_int(int(confidence.get("scored_live", 0)))} kỳ.</p></div></div>'
+            '<details><summary>Cách mô hình cập nhật và giới hạn xác suất</summary>'
+            '<p>Các lớp đọc cùng dữ liệu quá khứ; dự báo được khoá trước kỳ quay. Kết quả thực tế được chấm '
+            'trước khi cập nhật bộ nhớ, neural và trọng số. Nhiệt độ được chọn từ các kỳ đã chấm.</p>'
+            '<p>Trọng số nội bộ không phải xác suất trúng. Các số đo hồi cứu không mở cổng tin cậy live. '
+            'Trạng thái học mới không sửa bộ số hay phân phối của các kỳ đã khoá.</p></details></section>')
+
+
+def multi_agent_overview(analysis: dict) -> str:
+    """Đường dẫn tới các mô hình đã có trạng thái thật, dùng trên trang tổng quan."""
+    rows = []
+    for code in MATRIX:
+        data = (analysis.get(code) or {}).get("multi_agent")
+        main = ((data or {}).get("components") or {}).get("main")
+        if not main:
+            continue
+        name, file, _ = PRODUCTS[code]
+        rows.append(f'<tr><th scope="row"><a href="{file}#app-multi-agent">{name}</a></th>'
+                    f'<td>{vn_int(int(main["observations"]))}</td><td>#{esc(data["last_id"])}</td>'
+                    '<td>Thống kê · Bayes/đồ thị · Neural</td></tr>')
+    if not rows:
+        return ""
+    return ('<section class="vl-section" id="app-learning-overview"><div class="vl-section-heading">'
+            '<div><span class="vl-kicker">BỘ MÁY TỰ HỌC</span><h2>Phân tích phối hợp sau mỗi kỳ</h2></div></div>'
+            '<p>Ba lớp thuật toán dùng chung bộ nhớ và phản hồi từ kết quả thực. Mở từng sản phẩm để xem '
+            'trọng số và trạng thái kiểm chứng.</p><div class="vl-table-wrap"><table class="vl-table">'
+            '<caption>Trạng thái học của các bộ số chính</caption><thead><tr><th scope="col">Sản phẩm</th>'
+            '<th scope="col">Kỳ đã học</th><th scope="col">Dữ liệu đến</th><th scope="col">Các lớp phối hợp</th>'
+            f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div></section>')
+
+
 def page(product: str, data: dict | None, analysis: dict | None, now: str | None = None) -> str:
     name, file, desc = PRODUCTS[product]
     latest = (data or {}).get("latest")
@@ -744,7 +810,8 @@ def page(product: str, data: dict | None, analysis: dict | None, now: str | None
                 f'{forecast_markup(product, shown_forecast(data, now))}</section>'
                 f'<section class="vl-section" aria-labelledby="vl-analysis"><h2 id="vl-analysis">Mô hình tự học có '
                 f'vượt ngẫu nhiên?</h2>{analysis_markup(analysis)}</section></div>'
-                f'<section class="vl-section" aria-labelledby="vl-compare"><h2 id="vl-compare">Đối chiếu dự báo</h2>'
+                + multi_agent_markup((analysis or {}).get("multi_agent"))
+                + f'<section class="vl-section" aria-labelledby="vl-compare"><h2 id="vl-compare">Đối chiếu dự báo</h2>'
                 f'{comparisons_markup(product, data.get("comparisons") or [])}</section>'
                 f'<section class="vl-section" aria-labelledby="vl-history"><h2 id="vl-history">{len(draws)} kỳ gần nhất</h2>'
                 '<div class="vl-toolbar"><label>Tìm ngày / kỳ quay<input id="vl-search" type="search" '
@@ -799,6 +866,7 @@ def overview(dashboard: dict) -> str:
             + '<div class="vl-section-heading"><div><span class="vl-kicker">KHÁM PHÁ</span>'
             + '<h2 id="vl-games-title">Một điểm đến. Bảy sản phẩm.</h2></div><span class="vl-muted">Kết quả theo đúng kỳ quay</span></div>'
             + f'<div class="vl-tiles">{"".join(tiles)}</div></section>' + overview_sections(dashboard)
+            + multi_agent_overview(analysis)
             + app_shell_close("vietlott.html") + COMPARISON_SCRIPT + "</body></html>")
 
 

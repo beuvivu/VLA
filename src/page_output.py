@@ -208,6 +208,9 @@ def _inject_source_detail_style(path: Path, html: str) -> str:
 
 
 def write_page(path: Path, html: str) -> None:
+    from site_assets import rewrite_assets
+
+    html = rewrite_assets(path, html, strip=True)
     refined = refine_page(path, html)
     refined = _inject_source_detail_style(path, refined)
     refined = _attach_visual_system(path, refined)
@@ -220,7 +223,7 @@ def write_page(path: Path, html: str) -> None:
     refined = attach_crafto_design(path, refined)
     refined = _attach_theme_bootstrap(path, refined)
     refined = _attach_evidence(path, refined)
-    path.write_text(strip_comments(refined), encoding="utf-8")
+    path.write_text(rewrite_assets(path, strip_comments(refined)), encoding="utf-8")
 
 
 def _attach_theme_bootstrap(path: Path, html: str) -> str:
@@ -282,6 +285,12 @@ _SHELL_CSS_NGUON = Path(__file__).with_name("templates") / "app_shell.css"
 _SHELL_JS_NGUON = Path(__file__).with_name("assets") / "app-shell.js"
 _SHELL_LINK = '<link rel="stylesheet" href="assets/app-shell.css" data-app-shell>'
 _SHELL_LINK_CU = re.compile(r'<link\b[^>]*\bdata-(?:app|vla)-shell\b[^>]*>\s*')
+_BRAND_LINK_CU = re.compile(r'<link\b[^>]*\bdata-app-brand\b[^>]*>\s*')
+_BRAND_FILES = ("lottery-drum.webp", "lottery-favicon.png", "lottery-touch-icon.png")
+_BRAND_LINKS = (
+    '<link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png" data-app-brand>\n'
+    '<link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png" data-app-brand>'
+)
 
 
 def _attach_shell(path: Path, html: str) -> str:
@@ -301,16 +310,19 @@ def _attach_shell(path: Path, html: str) -> str:
             assets / "live-predictions.css",
             (source_dir / "templates/live_predictions.css").read_text(encoding="utf-8"),
         )
-    # Shell typography and profile image use the same local assets as the reference.
+    # Keep the reference typography, with a separate application brand asset.
     reference_assets = Path(__file__).with_name("assets") / "nexlink"
     for source in reference_assets.glob("InstrumentSans-*"):
         (assets / source.name).write_bytes(source.read_bytes())
-    (assets / "app-avatar.webp").write_bytes((reference_assets / "avatar.webp").read_bytes())
+    brand_assets = Path(__file__).with_name("assets") / "brand"
+    for name in _BRAND_FILES:
+        (assets / name).write_bytes((brand_assets / name).read_bytes())
     head, rest = html.split("</head>", 1)
     # Bóc bản cũ trước khi chèn bản mới, đúng thứ tự đã học ở
     # `_attach_visual_system`: ghi lại một trang đã ghi phải cho ra đúng tệp ấy.
     head = _SHELL_LINK_CU.sub("", head)
-    html = head.rstrip() + "\n" + _SHELL_LINK + "\n</head>" + rest
+    head = _BRAND_LINK_CU.sub("", head)
+    html = head.rstrip() + "\n" + _SHELL_LINK + "\n" + _BRAND_LINKS + "\n</head>" + rest
     # Nhập TRỄ, có chủ ý: `app_shell` đọc `ui_theme.SITE_NAV`, mà `ui_theme`
     # lại nhập `page_output`. Nhập ở đầu tệp thì vòng khép lại ngay lúc nạp
     # module và Python dừng với "partially initialized module".

@@ -24,11 +24,14 @@ import asyncio
 import json
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from typing import Callable
 
 from vietlott_engine.core.exceptions import SourceError
 from vietlott_engine.core.logging import get_logger
+from vietlott_engine.core.models import Draw
+from vietlott_engine.core.prizes import PrizeRecord
 from vietlott_engine.core.products import (
     EXCLUSIONS_FILE,
     SEED_FILES,
@@ -43,6 +46,8 @@ from vietlott_engine.core.products import (
     write_jsonl,
 )
 from vietlott_engine.crawler.http import AsyncHttpClient
+from vietlott_engine.crawler.product_integrity import contiguous_results, finish_store_write, identities, parse_fast_rows
+from vietlott_engine.forecast.schedule import VN
 
 log = get_logger(__name__)
 
@@ -50,6 +55,7 @@ PRODUCTS = tuple(SEED_FILES)
 MIRROR_FILES = {ProductCode.KENO: "keno.jsonl", ProductCode.BINGO18: "bingo18.jsonl", ProductCode.MAX3D: "3d.jsonl", ProductCode.MAX3D_PRO: "3d_pro.jsonl"}
 CANONICAL_FILES = {ProductCode.MAX3D: "max3d.jsonl", ProductCode.MAX3D_PRO: "max3d_pro.jsonl"}
 SOURCE_ALIASES = {"github_mirror": "mirror"}
+FAST_PRODUCTS = {ProductCode.KENO, ProductCode.BINGO18}
 
 
 class ProductStore:
@@ -133,6 +139,7 @@ class ProductSyncReport:
     source_used: str | None = None
     exclusions_added: int = 0
     attempts: list[dict] = field(default_factory=list)
+    continuity: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -154,6 +161,7 @@ class ProductSyncPipeline:
         v130_dir: Path | None = None,
         fallback_order: list[str] | None = None,
         source_timeout_s: float = 20,
+        archive_timeout_s: float = 90,
     ) -> None:
         from vietlott_engine.crawler.sources.nhanaz import NHANAZ_RAW_BASE
 
@@ -170,10 +178,15 @@ class ProductSyncPipeline:
         self.fallback_order = [SOURCE_ALIASES.get(s, s) for s in (fallback_order or ["vietlott", "nhanaz", "mirror", "canonical", "v130"])]
         self._pending_exclusions: list[dict] = []
         self.source_timeout_s = source_timeout_s
+        self.archive_timeout_s = archive_timeout_s
+        self._since_id: int | None = None
+        self._since_date: date | None = None
+        self._fetch_rejected: list[dict] = []
+        self._rejected_exclusions: list[dict] = []
 
     async def _jsonl(self, url: str) -> list[dict]:
         text = (await self.client.get(url)).text
-        return [json.loads(line) for line in text.splitlines() if line.strip()]
+        return await asyncio.to_thread(lambda: [json.loads(line) for line in text.splitlines() if line.strip()])
 
     def _archive(self):  # type: ignore[no-untyped-def]
         from vietlott_engine.crawler.sources.nhanaz import NhanAZArchive
@@ -199,14 +212,20 @@ class ProductSyncPipeline:
             from vietlott_engine.crawler.sources.vietlott_official import VietlottProductSource
 
             src = VietlottProductSource(self.client, self.vietlott_base_url, self.pages_per_batch, self.bootstrap_cookie)
-            since = None if full else self.store.max_draw_id(product)
+            since = None if full else self._since_id
             return await src.fetch_pages(product, max_pages=max_pages, since_id=since)
         if source == "nhanaz":
             archive = self._archive()
-            got = await archive.draws(product, since=None if full else self.store.last_date(product))
-            self._pending_exclusions += [e for e in await archive.exclusions() if e["product"] == product.value]
+            got = await archive.draws(product, since=None if full else self._since_date,
+                                      verified_only=product in FAST_PRODUCTS)
+            self._fetch_rejected = got.rejected
+            self._pending_exclusions += [e for e in await archive.exclusions(verified_only=product in FAST_PRODUCTS)
+                                         if e["product"] == product.value]
+            self._rejected_exclusions = [e for e in archive.rejected_exclusions if e.get('product')==product.value]
             return got.rows
         if source == "v130":
+            if product in FAST_PRODUCTS:
+                raise SourceError('unverified fast-game historical snapshot; use verified archive or official pages')
             if self.v130_dir is None:
                 raise SourceError("v130 source needs VQE_V130_DIR (Vietlott Quant Engine 1.3.0 folder)")
             from vietlott_engine.crawler.sources.vqe130 import import_v130, v130_exclusions
@@ -215,6 +234,8 @@ class ProductSyncPipeline:
             self._pending_exclusions += [e for e in v130_exclusions(self.v130_dir) if e["product"] == product.value]
             return got.rows
         if source == "mirror":
+            if product in FAST_PRODUCTS:
+                raise SourceError('unverified fast-game mirror: no official verification metadata; not imported')
             if product not in MIRROR_FILES:
                 raise SourceError(f"no mirror file for {product.value}")
             return await self._jsonl(f"{self.mirror_base_url}/{MIRROR_FILES[product]}")
@@ -224,27 +245,34 @@ class ProductSyncPipeline:
             return await self._jsonl(f"{self.canonical_base_url}/{CANONICAL_FILES[product]}")
         raise SourceError(f"unknown product source {source!r}")
 
-    async def run(self, product: ProductCode, source: str = "auto", max_pages: int = 50, full: bool = False) -> ProductSyncReport:
+    async def run(self, product: ProductCode, source: str = "auto", max_pages: int = 50, full: bool = False,
+                  *, before_upsert: Callable[[ProductHistory, str], None] | None = None) -> ProductSyncReport:
         t0 = time.perf_counter()
         self._pending_exclusions = []
+        history = await asyncio.to_thread(self.store.load, product, include_unconfirmed=True)
+        self._since_id = int(history.draw_ids.max()) if len(history) else None
+        self._since_date = date.fromisoformat(str(history.dates.max())) if len(history) else None
+        if product in FAST_PRODUCTS:
+            return await self._run_fast(product, source, max_pages, full, history, t0, before_upsert)
         attempts: list[dict] = []
         rows: list[dict] = []
         used = None
-        best_rows, best_source, best_id = [], None, -1
-        known_max = self.store.max_draw_id(product) or 0
+        best_rows, best_source, best_id, best_parsed = [], None, -1, None
+        known_max = self._since_id or 0
         for s in self.chain(product) if source == "auto" else [source]:
             try:
-                rows = await asyncio.wait_for(self.fetch(product, s, max_pages, full), self.source_timeout_s)
+                budget = self.archive_timeout_s if s == 'nhanaz' else self.source_timeout_s
+                rows = await asyncio.wait_for(self.fetch(product, s, max_pages, full), budget)
             except (SourceError, OSError, ValueError, TimeoutError) as exc:
                 msg = (str(exc).splitlines() or [type(exc).__name__])[0][:300]
                 attempts.append({"source": s, "ok": False, "rows": 0, "error": msg})
                 log.warning("%s: source %s failed (%s)", product.value, s, msg)
                 continue
             attempts.append({"source": s, "ok": True, "rows": len(rows), "error": None})
-            parsed, _ = parse_product_rows(product, rows, s)
+            parsed, _ = await asyncio.to_thread(parse_product_rows, product, rows, s)
             source_max = int(parsed.draw_ids.max()) if len(parsed) else -1
             if source_max > best_id:
-                best_rows, best_source, best_id = rows, s, source_max
+                best_rows, best_source, best_id, best_parsed = rows, s, source_max, parsed
             if source == 'auto' and source_max <= known_max:
                 attempts[-1]['stale'] = True
                 continue
@@ -252,7 +280,13 @@ class ProductSyncPipeline:
             break
         if used is None and best_source is not None:
             rows, used = best_rows, best_source
+            parsed = best_parsed
         error = None if used else "; ".join(f"{a['source']}: {a['error']}" for a in attempts)
+        if rows and before_upsert is not None:
+            # Hook nhận đúng dòng đã xác thực, bỏ cả thông báo loại kỳ mới tải.
+            excluded = self.store.exclusions().get(product.value, set()) | {
+                int(e['draw_id']) for e in self._pending_exclusions if e['product'] == product.value}
+            before_upsert(drop_ids(parsed, excluded), used or source)
         inserted, rejected = self.store.upsert(product, rows, used or source) if rows else (0, 0)
         excl = self.store.add_exclusions(self._pending_exclusions)
         h = self.store.load(product)
@@ -273,6 +307,123 @@ class ProductSyncPipeline:
             exclusions_added=excl,
             attempts=attempts,
         )
+
+    async def _run_fast(self, product, source, max_pages, full, history, t0, before_upsert):  # type: ignore[no-untyped-def]
+        known = await asyncio.to_thread(identities, history)
+        known_max = max(known,default=0)
+        excluded = (await asyncio.to_thread(self.store.exclusions)).get(product.value, set())
+        candidates, origins, attempts = {}, {}, []
+        blocked_ids = set()
+        conflicts = set()
+        validation_errors = []
+        today = datetime.now(VN).date().isoformat()
+        for s in self.chain(product) if source == 'auto' else [source]:
+            budget = self.archive_timeout_s if s == 'nhanaz' else self.source_timeout_s
+            started = time.perf_counter()
+            self._fetch_rejected = []
+            self._rejected_exclusions = []
+            attempt = {'source':s, 'ok':False, 'rows':0, 'rejected':0, 'error':None,
+                       'timeout_s':budget}
+            attempts.append(attempt)
+            try:
+                rows = await asyncio.wait_for(self.fetch(product, s, max_pages, full), budget)
+                parsed, rejected, duplicates = await asyncio.to_thread(parse_fast_rows, product, rows, s)
+                incoming = await asyncio.to_thread(identities, parsed)
+                attempt.update(rows=len(rows), rejected=len(rejected)+len(self._fetch_rejected))
+                blocked_ids.update(int(str(r['draw_id']).lstrip('#')) for r in self._fetch_rejected
+                                   if str(r.get('draw_id','')).lstrip('#').isdigit())
+                if self._rejected_exclusions:
+                    attempt['rejected_exclusions'] = len(self._rejected_exclusions)
+                    validation_errors.append(f'{s}: unverified exclusion notices rejected')
+                bad = list(duplicates)
+                invalid = [did for did,value in incoming.items() if did<=0 or value[0]>today
+                           or (known and did>known_max and value[0]<known[known_max][0])]
+                for did,value in incoming.items():
+                    previous = candidates.get(did) or known.get(did)
+                    correction = full and s == 'vietlott' and did in known
+                    if (previous is not None and previous != value and not correction) or did in conflicts:
+                        bad.append(did)
+                if rejected or invalid or bad:
+                    # Không báo thành công khi có dòng sai. Vẫn giữ được đoạn
+                    # liên tục đã xác thực trước lỗi; nguồn mâu thuẫn bị loại.
+                    attempt.update(rejected=attempt['rejected']+len(invalid),
+                                   conflicting_ids=sorted(set(bad))[:20],
+                                   conflicting_count=len(set(bad)),error='source rows failed validation or conflict checks')
+                    raw_ids={int(str(r['id']).lstrip('#')) for r in rows
+                             if str(r.get('id','')).lstrip('#').isdigit()}
+                    blocked_ids.update(raw_ids-set(incoming) | set(invalid) | set(bad))
+                    for did in bad:
+                        if did not in known:
+                            candidates.pop(did,None)
+                            conflicts.add(did)
+                    validation_errors.append(f'{s}: source rows failed validation or conflict checks')
+                    if bad:
+                        if source != 'auto':
+                            break
+                        continue
+                    for did in invalid:
+                        incoming.pop(did,None)
+                for did, value in incoming.items():
+                    correction = full and s == 'vietlott' and did in known
+                    if correction:
+                        candidates[did] = value
+                    else:
+                        candidates.setdefault(did, value)
+                    origins.setdefault(did, s)
+                excluded.update(int(e['draw_id']) for e in self._pending_exclusions if e['product']==product.value)
+                accepted, continuity = await asyncio.to_thread(contiguous_results, known, candidates, excluded)
+                new = [r for r in accepted if r['id'] not in known]
+                attempt['ok'] = bool(incoming) and not (rejected or invalid or bad)
+                advanced = any(r['id']>known_max for r in new)
+                attempt['stale'] = not advanced
+                if not incoming and not attempt['error']:
+                    attempt['error'] = 'unverified or invalid archive rows' if attempt['rejected'] else 'no verified results'
+                if source != 'auto' or (attempt['ok'] and advanced and not continuity['missing_ranges']
+                                         and not continuity['historical_missing_ranges']):
+                    break
+            except (SourceError, OSError, ValueError, OverflowError, TimeoutError) as exc:
+                attempt['error'] = (f'source deadline exceeded ({budget:g}s)' if isinstance(exc, TimeoutError)
+                                    else (str(exc).splitlines() or [type(exc).__name__])[0][:300])
+                log.warning('%s: source %s failed (%s)', product.value, s, attempt['error'])
+            finally:
+                attempt['elapsed_s'] = round(time.perf_counter()-started,3)
+        accepted, continuity = await asyncio.to_thread(contiguous_results, known, candidates, excluded)
+        delta = [r for r in accepted if known.get(r['id']) != (r['date'],tuple(r['result']))]
+        used = '+'.join(dict.fromkeys(origins[r['id']] for r in delta)) or next(
+            (a['source'] for a in attempts if a['ok']), None)
+        errors = list(validation_errors)
+        if continuity['missing_ranges']:
+            errors.append('missing verified draw ranges: '+str(continuity['missing_ranges'][:10]))
+        if conflicts:
+            errors.append('conflicting source results: '+str(sorted(conflicts)[:20]))
+        if continuity['historical_missing_ranges']:
+            errors.append('historical verified draw gaps remain: '+str(continuity['historical_missing_ranges'][:10]))
+        if not used:
+            errors.append('; '.join(f"{a['source']}: {a['error'] or 'no verified results'}" for a in attempts))
+        continuity['unverified_rows'] = len(blocked_ids)
+        # Cursor cũ không phải chứng nhận nguồn chính thức cho lịch sử đã nhập.
+        continuity['latest_verified'] = max(candidates,default=None)
+        continuity['latest_observed'] = max(continuity['latest_observed'] or 0,max(blocked_ids,default=0)) or None
+        # Một số kỳ đã xác thực không được che các kỳ mới hơn còn pending.
+        pending_new = blocked_ids - set(candidates) - excluded
+        if any(i > (continuity['contiguous_through'] or 0) for i in pending_new):
+            errors.append('new source rows remain unverified or invalid')
+        if delta and before_upsert is not None:
+            validated, _ = await asyncio.to_thread(parse_product_rows, product, delta, used or source)
+            before_upsert(validated, used or source)
+        def persist():
+            inserted, rejected = self.store.upsert(product, delta, used or source) if delta else (0,0)
+            h = self.store.load(product)
+            return inserted, rejected, len(h), h.coverage()
+        # Tệp loại kỳ được chia sẻ giữa sản phẩm: ghi nhỏ này ở cùng event loop
+        # để hai thread không đọc-sửa-ghi đè thông báo của nhau.
+        added = self.store.add_exclusions(self._pending_exclusions)
+        inserted, rejected, total, cov = await finish_store_write(persist)
+        return ProductSyncReport(product=product.value, source=source, fetched=sum(a['rows'] for a in attempts),
+            inserted=inserted, rejected=rejected+sum(a['rejected'] for a in attempts), total_after=total,
+            last_id=cov['last_id'], last_date=cov['last_date'], missing_ids_inside_range=cov['missing_ids_inside_range'],
+            elapsed_s=round(time.perf_counter()-t0,3), error='; '.join(errors) or None, source_used=used,
+            exclusions_added=added, attempts=attempts, continuity=continuity)
 
 
 # ----------------------------------------------------------------- official prize data
@@ -349,6 +500,7 @@ async def sync_canonical_prizes(
     nhanaz_dir: Path | None = None,
     v130_dir: Path | None = None,
     fallback_order: list[str] | None = None,
+    before_upsert: Callable[[list[Draw], list[PrizeRecord]], None] | None = None,
 ) -> CanonicalPrizeReport:
     """Official prize tables → repository.
 
@@ -413,6 +565,8 @@ async def sync_canonical_prizes(
                 imported_prizes[prize.draw_id] = prize
                 accepted.append(prize)
         # Đồng bộ bảng giải không được sửa số quay để tự làm cho bảng giải khớp.
+        if before_upsert is not None:
+            before_upsert(additions, accepted)
         draws_inserted += repository.upsert(additions) if additions else 0
         prizes_inserted += repository.upsert_prizes(accepted) if accepted else 0
         missing = [did for did in targets if did not in prizes or prizes[did].draw_date != known[did].draw_date

@@ -258,7 +258,7 @@ def _refine_live(page: str) -> str:
     return _append_style(page, _LIVE_CSS)
 
 
-def refine_page(path: Path | str, page: str) -> str:
+def _refine_existing_page(path: Path | str, page: str) -> str:
     """Return idempotently refined HTML for selected public pages."""
     filename = Path(path).name
     if filename in _STAT_PAGES:
@@ -276,3 +276,10 @@ def refine_page(path: Path | str, page: str) -> str:
     if filename == "live.html":
         return _refine_live(page)
     return page
+
+
+def refine_page(path: Path | str, page: str) -> str:
+    """Tinh chỉnh bố cục, giữ nguyên phép tính và các điểm nối tương tác."""
+    from analysis_workspace import refine_workspace
+
+    return refine_workspace(path, _refine_existing_page(path, page))

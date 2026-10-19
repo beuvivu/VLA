@@ -518,13 +518,15 @@ def cmd_products(a: argparse.Namespace) -> int:
                     canonical_base_url=s.canonical_base_url, bootstrap_cookie=s.vietlott_cookie_bootstrap, pages_per_batch=s.max_concurrency,
                     nhanaz_base_url=s.nhanaz_base_url, nhanaz_dir=Path(a.path) if a.path and a.source == "nhanaz" else s.nhanaz_dir,
                     v130_dir=Path(a.path) if a.path and a.source == "v130" else s.v130_dir, fallback_order=s.fallback_order,
+                    source_timeout_s=s.source_timeout_s, archive_timeout_s=s.archive_timeout_s,
                 )
                 for code in targets:
                     out.append((await pipe.run(code, a.source, a.max_pages or s.product_sync_max_pages, a.full)).to_dict())
             return out
 
-        _print(asyncio.run(run()))
-        return 0
+        reports = asyncio.run(run())
+        _print(reports)
+        return 1 if any(report.get('error') for report in reports) else 0
     if a.action == "analyze":
         from vietlott_engine.analytics.products import digit_replication, product_randomness
 

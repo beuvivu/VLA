@@ -1,9 +1,59 @@
 """Đo đủ dữ liệu, chiều cao, tiêu đề dính và cuộn ngang của năm bảng thống kê."""
 from pathlib import Path
 
+from playwright.sync_api import expect
+
 
 FREQUENCY_PAGES = ("tan-suat-loto.html", "tan-suat-cap-loto.html")
 CALENDAR_PAGES = ("bang-dac-biet.html", "bang-dac-biet-thang.html", "bang-dac-biet-nam.html")
+PRESET_PAGES = ("cau-dac-biet-theo-bo-so.html", "chu-ky-dac-biet.html",
+                "lo-gan.html", "giai-db-ngay-mai.html")
+
+
+def check_preset_ranges(page, base, out: Path, width, dark):
+    """Bấm các mốc thật, đối chiếu số kỳ và số lần về với dữ liệu gốc."""
+    results = []
+    for name in PRESET_PAGES:
+        errors = []
+        def record_error(error, errors=errors):
+            errors.append(str(error))
+        page.on("pageerror", record_error)
+        try:
+            page.goto(f"{base}/{name}", wait_until="load")
+            if page.locator("html").evaluate("e => e.classList.contains('dark')") != dark:
+                page.locator("#app-theme").click()
+            for days in (30, 60, 90, 180, 365, 30, 0):
+                page.locator(f'.sp-chips .sp-chip[data-days="{days}"]').click()
+                state = page.evaluate("""({days, name}) => {
+                  const expected = days ? DRAWS.slice(-days) : DRAWS;
+                  const actual = selected();
+                  const count = document.getElementById('sp-count').textContent;
+                  const rows = Array.from(document.querySelectorAll('#sp-grid tbody tr'));
+                  const stats = rows.filter(row => row.cells.length === 5);
+                  const hits = stats.reduce((n, row) => n + Number(row.cells[4].textContent), 0);
+                  const wantHits = name === 'lo-gan.html'
+                    ? expected.reduce((n, draw) => n + new Set(draw.n).size, 0) : expected.length;
+                  return {expected:expected.length, actual:actual.length,
+                    sameDates:JSON.stringify(actual.map(r => r.d)) === JSON.stringify(expected.map(r => r.d)),
+                    count, first:expected[0]?.d, last:expected.at(-1)?.d, hits, wantHits,
+                    active:document.querySelector('.sp-chips .on')?.dataset.days};
+                }""", {"days": days, "name": name})
+                assert state["actual"] == state["expected"] and state["sameDates"], state
+                assert state["active"] == str(days), state
+                assert state["count"].startswith(f'{state["expected"]} kỳ · '), state
+                if state["first"]:
+                    assert state["first"] in state["count"] and state["last"] in state["count"], state
+                if name != "giai-db-ngay-mai.html":
+                    assert state["hits"] == state["wantHits"], state
+                page.locator("#sp-clear-marks").click()
+                assert page.locator("#sp-count").inner_text() == state["count"]
+                results.append({"page": name, "width": width, "dark": dark,
+                                "days": days, "preset_range": "passed", "draws": state["actual"]})
+            assert not errors, errors
+            page.screenshot(path=str(out / f"preset-{name}-{width}-{'dark' if dark else 'light'}.png"))
+        finally:
+            page.remove_listener("pageerror", record_error)
+    return results
 
 
 def select_days(page, days):
@@ -15,6 +65,36 @@ def select_days(page, days):
       to.value = DRAWS.at(-1).d;
       from.dispatchEvent(new Event('change', {bubbles:true}));
     }""", days)
+
+
+def choose_orientation(page, orientation):
+    """Hai nút công khai giữ bộ chọn nội bộ cho hợp đồng dữ liệu cũ."""
+    value = "vertical" if orientation.endswith("dọc") else "horizontal"
+    page.locator(f'[data-app-orientation="{value}"]').click()
+
+
+def check_vertical_matrix(page):
+    """Chiều dọc hoán đổi trục; số lượt, đồ thị và danh tính ô không thay đổi."""
+    state = page.evaluate("""() => {
+      const table = document.getElementById('sp-matrix-grid');
+      const counts = countLoto(selected());
+      const head = Array.from(table.tHead.rows[0].cells);
+      const charts = Array.from(table.querySelectorAll('thead .app-frequency-spark'));
+      const cells = Array.from(table.querySelectorAll('tbody td[data-key]')).filter(c => c.cellIndex > 0);
+      return {pageOverflow:document.documentElement.scrollWidth-innerWidth,
+        tableHidden:table.parentElement.hidden, first:head[0].textContent,
+        columns:head.filter(c => !c.hidden).length - 1, charts:charts.length,
+        scaleCount:new Set(charts.map(chart => chart.dataset.scale)).size,
+        incorrect:charts.filter(chart => Number(chart.dataset.total) !==
+          counts[Number(chart.parentElement.dataset.appNumber)]).length,
+        wrongAxis:cells.filter(c => !c.dataset.key.startsWith(head[c.cellIndex].dataset.key + '|d') ||
+          !c.dataset.key.endsWith(c.parentElement.cells[0].dataset.key.slice(1))).length};
+    }""")
+    assert state['pageOverflow'] <= 1 and not state['tableHidden'], state
+    assert state['first'] == 'Ngày' and state['charts'] > 0, state
+    assert not state['incorrect'] and not state['wrongAxis'] and state['scaleCount'] == 1, state
+    check_geometry(page, '#sp-matrix-grid')
+    return state
 
 
 def check_geometry(page, selector):
@@ -79,7 +159,7 @@ def check_full_history(page):
     """Cuộn tới ngày cũ nhất, quay lại và đổi chiều mà không dựng hàng trăm nghìn ô."""
     results = []
     for orientation in ("Xem theo chiều ngang", "Xem theo chiều dọc"):
-        page.locator("#sp-orient").select_option(value=orientation)
+        choose_orientation(page, orientation)
         page.locator("#sp-sort").select_option('hit-desc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.wait_for_function("document.querySelector('#sp-matrix-grid').hasAttribute('aria-rowcount')")
@@ -167,15 +247,14 @@ def check_full_history(page):
 def check_small_selection(page, pair_page):
     """Khung cũng phải co lại sau dải rỗng hoặc chỉ còn một cặp."""
     if pair_page:
-        page.locator('#sp-orient').select_option(value='Xem theo chiều dọc')
+        choose_orientation(page, 'Xem theo chiều dọc')
         select_days(page, page.evaluate("DRAWS.length"))
         page.locator('details').filter(has=page.locator('#bf-pair-picker')).locator('summary').click()
         page.locator('[data-bf-pick="none"]').click()
         page.locator('[data-bf-pair]').first.click()
-        page.wait_for_function("document.querySelectorAll('#sp-matrix-grid thead th:not([hidden])').length === 2")
-        page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
-        size = page.locator('#sp-matrix-grid').evaluate("e => ({width:e.offsetWidth, frame:e.parentElement.clientWidth})")
-        assert abs(size['width'] - size['frame']) <= 1, size
+        page.wait_for_function("document.querySelectorAll('#sp-matrix-grid thead .app-frequency-spark').length === 2")
+        state = check_vertical_matrix(page)
+        assert state['charts'] == 2 and state['columns'] == 1, state
         page.locator('[data-bf-pick="all"]').click()
     page.evaluate("""() => {
       const from = document.getElementById('sp-from');
@@ -183,12 +262,113 @@ def check_small_selection(page, pair_page):
       from.value = DRAWS.at(-1).d;
       from.dispatchEvent(new Event('change', {bubbles:true}));
     }""")
+    choose_orientation(page, 'Xem theo chiều ngang')
     page.wait_for_function("document.querySelector('#sp-matrix-grid .sp-empty-row')")
     page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
     state = page.locator('#sp-matrix-grid').evaluate("""e => ({width:e.offsetWidth,
       frame:e.parentElement.clientWidth, hidden:e.parentElement.scrollHeight-e.parentElement.clientHeight})""")
     assert state['width'] <= state['frame'] + 1 and state['hidden'] <= 1, state
     select_days(page, 10)
+
+
+def check_gan_keyboard(page):
+    """Popup thật giữ Tab bên trong, đóng trả focus và đổi mode không mất focus."""
+    trigger = page.locator('#sp-gan-pick')
+    trigger.focus()
+    trigger.select_option('12')
+    modal = page.locator('#sp-gan-modal')
+    expect(modal).to_have_attribute('open', '')
+    expect(modal.locator('[data-close]')).to_be_focused()
+    expect(modal).to_have_accessible_name('Chu kỳ gan · số 12')
+    for key in ('Shift+Tab', *('Tab',) * 8):
+        page.keyboard.press(key)
+        assert modal.evaluate('e => e.contains(document.activeElement)'), key
+    page.keyboard.press('Escape')
+    expect(modal).to_be_hidden()
+    expect(trigger).to_be_focused()
+
+    trigger.select_option('12')
+    mode = modal.locator('[data-gmode="de"]')
+    mode.focus()
+    page.keyboard.press('Enter')
+    expect(modal.locator('[data-gmode="de"]')).to_be_focused()
+    expect(modal.locator('[data-gmode="de"]')).to_have_class('sp-btn on')
+    if page.locator('#sp-picker').count():
+        modal.locator('[data-gfilter="12"]').click()
+        keys = page.locator('#sp-matrix-grid [data-key*="|n"]').evaluate_all(
+            'nodes => [...new Set(nodes.map(e => /\\|n(\\d{2})/.exec(e.dataset.key)[1]))]')
+        assert keys == ['12'], keys
+    else:
+        modal.locator('[data-close]').click()
+    expect(modal).to_be_hidden()
+    expect(trigger).to_be_focused()
+
+
+def check_detail_tables(page, base, out: Path, width, dark):
+    """Giữ cỡ số khi chọn, đủ ma trận Đầu–Đuôi và phân cấp bảng chi tiết."""
+    results = []
+
+    def select_without_resize(value):
+        size = value.evaluate("e => getComputedStyle(e).fontSize")
+        value.click()
+        assert value.evaluate("e => getComputedStyle(e).fontSize") == size, size
+        value.click()
+
+    for name in ("cap-lon-loto.html", "cau-giai-dac-biet.html", "giai-dac-biet-theo-tong.html"):
+        page.goto(f"{base}/{name}", wait_until="load")
+        if page.locator("html").evaluate("e => e.classList.contains('dark')") != dark:
+            page.locator("#app-theme").click()
+        page.evaluate("async () => {await document.fonts.ready; await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))}")
+        page.locator("#sp-clear-marks").click()
+        if name == "cau-giai-dac-biet.html":
+            grid = page.locator("#sp-grid")
+            expect(grid.locator("tbody tr")).to_have_count(10)
+            expect(grid.locator("tbody td")).to_have_count(110)
+            state = grid.evaluate("e => ({view:e.parentElement.clientHeight, full:e.parentElement.scrollHeight})")
+            assert state["full"] <= state["view"] + 1, state
+            values = [grid.locator("tbody td:not(:first-child) b").first,
+                      page.locator("#sp-lon tbody td:nth-child(2)").first]
+            if grid.locator(".sp-none").count():
+                values.append(grid.locator(".sp-none").first)
+            for value in values:
+                assert float(value.evaluate("e => getComputedStyle(e).fontSize").removesuffix("px")) >= 24
+                select_without_resize(value)
+        elif name == "cap-lon-loto.html":
+            cards = page.locator(".app-reverse-card").evaluate_all("nodes => nodes.map(e => {const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height}})")
+            assert len(cards) == 2, cards
+            a, b = cards
+            if width >= 1024:
+                assert abs(a["y"] - b["y"]) <= 1 and b["x"] > a["x"] + a["w"], cards
+            else:
+                assert b["y"] >= a["y"] + a["h"], cards
+            for primary, auxiliary in (("#sp-grid tbody td:nth-child(2)", "#sp-grid tbody td:nth-child(3)"),
+                                       ("#sp-kep tbody td:first-child", "#sp-kep tbody td:nth-child(2)")):
+                sizes = [float(page.locator(selector).first.evaluate("e => getComputedStyle(e).fontSize").removesuffix("px"))
+                         for selector in (primary, auxiliary)]
+                assert sizes[0] > sizes[1], sizes
+                select_without_resize(page.locator(primary).first)
+        else:
+            if width >= 1024:
+                tops = page.locator(".app-total-overview table tbody tr:first-child").evaluate_all(
+                    "nodes => nodes.map(e => e.getBoundingClientRect().top)")
+                assert len(tops) == 2 and abs(tops[0] - tops[1]) <= 1, tops
+            for selector in ("#sp-grid tbody td:first-child", "#sp-parity tbody td:first-child",
+                             "#sp-trans tbody td:first-child", "#sp-trans tbody td:nth-child(2)"):
+                select_without_resize(page.locator(selector).first)
+            for table_id, expected in (("sp-grid", [.2, .32, .24, .24]),
+                                       ("sp-parity", [.2, .2, .3, .3]),
+                                       ("sp-trans", [.18, .18, .14, .18, .16, .16])):
+                state = page.locator("#" + table_id).evaluate("""e => ({
+                  widths:Array.from(e.tBodies[0].rows[0].cells,c => c.getBoundingClientRect().width/e.getBoundingClientRect().width),
+                  sizes:Array.from(e.tBodies[0].rows[0].cells,c => parseFloat(getComputedStyle(c).fontSize)),
+                  clipped:Array.from(e.querySelectorAll('tbody td')).filter(c => c.scrollWidth>c.clientWidth+1).map(c => c.textContent)
+                })""")
+                assert all(abs(a - b) < .015 for a, b in zip(state["widths"], expected, strict=True)), state
+                assert state["sizes"][0] > max(state["sizes"][2:]) and not state["clipped"], state
+        assert page.evaluate("document.documentElement.scrollWidth - innerWidth") <= 1
+        page.screenshot(path=str(out / f"detail-{name}-{width}-{'dark' if dark else 'light'}.png"))
+        results.append({"page": name, "width": width, "dark": dark, "detail_layout": "passed"})
+    return results
 
 
 def check_stat_tables(page, base, out: Path, width, dark):
@@ -212,7 +392,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                 orientations = ("Xem theo chiều ngang", "Xem theo chiều dọc") if frequency else (None,)
                 for orientation in orientations:
                     if orientation:
-                        page.locator("#sp-orient").select_option(value=orientation)
+                        choose_orientation(page, orientation)
                         counts = page.evaluate("""() => {
                           const expected = selected().map(r => r.d);
                           const dates = new Set(Array.from(document.querySelectorAll('#sp-matrix-grid [data-key]'),
@@ -221,7 +401,7 @@ def check_stat_tables(page, base, out: Path, width, dark):
                             actual:dates.size, pending:pendingDay(selected()) ? 1 : 0};
                         }""")
                         assert not counts["missing"] and counts["actual"] == counts["expected"] + counts["pending"], counts
-                    geometry = check_geometry(page, selector)
+                    geometry = check_vertical_matrix(page) if frequency and orientation.endswith('dọc') else check_geometry(page, selector)
                     if name == "bang-dac-biet.html":
                         assert page.locator('#sp-grid .sp-de').count() == page.evaluate('selected().length')
                     results.append({"page":name, "width":width, "dark":dark, "days":days,
@@ -231,6 +411,8 @@ def check_stat_tables(page, base, out: Path, width, dark):
                 results.extend({"page":name, "width":width, "dark":dark, **state}
                                for state in check_full_history(page))
                 check_small_selection(page, name == 'tan-suat-cap-loto.html')
+            if frequency:
+                check_gan_keyboard(page)
             if name in ('bang-dac-biet-thang.html', 'bang-dac-biet-nam.html'):
                 picker = page.locator('#sp-year' if name.endswith('thang.html') else '#sp-month')
                 values = picker.locator('option').evaluate_all('nodes => nodes.map(n => n.value)')
@@ -247,6 +429,8 @@ def check_stat_tables(page, base, out: Path, width, dark):
             raise
         finally:
             page.remove_listener("pageerror", record_error)
+    results.extend(check_detail_tables(page, base, out, width, dark))
+    results.extend(check_preset_ranges(page, base, out, width, dark))
     return results
 
 

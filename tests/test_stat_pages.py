@@ -265,7 +265,8 @@ def test_ranking_pages_carry_a_chance_note(slug) -> None:
 
 def test_prediction_page_states_it_is_not_calibrated() -> None:
     """Trang dự báo phải nói rõ đây là xếp hạng mô tả, không phải xác suất."""
-    text = _soup("giai-db-ngay-mai").select_one(".sp-note").get_text(" ", strip=True)
+    text = " ".join(note.get_text(" ", strip=True)
+                    for note in _soup("giai-db-ngay-mai").select(".sp-note"))
     assert "không phải xác suất đã hiệu chuẩn" in text
 
 
@@ -868,17 +869,11 @@ def test_notes_only_name_columns_the_tables_actually_render() -> None:
 
 
 def test_cycle_page_explains_it_counts_draws_not_calendar_days() -> None:
-    """Cùng một con số, hai cách đếm cho hai kết quả — phải nói rõ đang dùng cách nào.
-
-    Đối chiếu với trang tham chiếu: cả hai cùng xếp 98, 58, 15 lên đầu, nhưng
-    họ in 568/473/431 còn ta in 565/470/428. Không phải sai lệch dữ liệu: 98 ra
-    lần cuối 17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026
-    không quay còn đúng 565 kỳ. Người đọc so hai trang mà không có ghi chú này
-    sẽ tưởng một bên hỏng.
-    """
-    page = (DOCS / "chu-ky-dac-biet.html").read_text(encoding="utf-8")
-    assert "kỳ quay" in page, "phải nói rõ đếm theo kỳ"
-    assert "565" in page, "phải kèm ví dụ đối chiếu được bằng số thật"
+    """Ghi chú nói đúng đơn vị và phạm vi động, không lấy ví dụ toàn lịch sử."""
+    notes = " ".join(note.get_text(" ", strip=True)
+                     for note in _soup("chu-ky-dac-biet").select(".sp-note"))
+    assert "kỳ quay trong dải đã chọn" in notes
+    assert "những ngày nghỉ quay không được tính thêm" in notes
 
 
 # --- Nút hành động thôi đội lốt nút lọc -----------------------------------

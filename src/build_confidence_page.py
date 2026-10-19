@@ -14,6 +14,7 @@ import html
 import json
 from pathlib import Path
 
+from atomic_io import atomic_write_text
 from page_output import write_page
 from ui_locale import mode_label
 from ui_theme import app_shell_close, app_shell_open, stylesheet_link, write_stylesheet
@@ -372,9 +373,57 @@ def digit_sum_card(report: dict) -> str:
     )
 
 
-def render(report: dict) -> str:
+def agents_card(report: dict | None, *, target_date: str) -> str:
+    """Hiển thị dự báo thật, ứng viên và loss tiến cứu, không lẫn các thang tin."""
+    if report is None or report.get("target_date") != target_date:
+        return '<p class="ui-muted">Đang chờ báo cáo ba tác tử đúng kỳ dự báo.</p>'
+    from xsmb_agents.algorithms import LABELS
+
+    parts = ['<p class="ui-muted">Ba tác tử đang chạy và tự học song song. '
+             'Cột <b>công bố</b> là xác suất đang dùng; cột <b>ứng viên</b> là tổ hợp mới '
+             'đang được kiểm. Xác suất trúng không phải xác suất mô hình đúng.</p>']
+    for mode in ("de", "loto"):
+        item = report["modes"][mode]
+        rows, explanations = [], []
+        for row in item["candidate_top5"]:
+            explanation = "".join(f"<li>{html.escape(step)}</li>" for step in row["reasoning_path"])
+            risks = " ".join(row["risk_factors"])
+            band = row["calibration_band"]
+            uncertainty = (f"{_pct(band['lower'], 2)} → {_pct(band['upper'], 2)} "
+                           f"({band['draws']} kỳ; xấp xỉ theo nhóm)" if band else "Chưa đủ kỳ hiệu chuẩn")
+            detail = (f'<details class="ui-details"><summary>{html.escape(row["number"])} · Căn cứ và sai số</summary>'
+                      f'<ol>{explanation}</ol><p>{html.escape(uncertainty)}</p>'
+                      f'<p>{html.escape(risks)}</p></details>')
+            rows.append([f"<b>{html.escape(row['number'])}</b>",
+                         _pct(row["published_probability"], 2),
+                         _pct(row["candidate_probability"], 2)])
+            explanations.append(detail)
+        tuning = item["tuning"]
+        parts.append(f'<h3>Hệ tự học · {html.escape(mode_label(mode))} · {item["n_settled"]} kỳ đã chấm</h3>')
+        parts.append(_table(["Số", "Xác suất công bố", "Xác suất ứng viên"], rows,
+                            numeric="app-agent-picks ui-r2 ui-r3"))
+        parts.extend(explanations)
+        weight_rows = []
+        for name, label in LABELS.items():
+            measured = item["confidence_matrix"].get(name, {})
+            weight_rows.append([html.escape(label), _pct(item["weights"][name]),
+                                _num(measured.get("brier"), 5), _num(measured.get("logloss"), 5)])
+        parts.append('<details class="ui-details"><summary>Trọng số, trí nhớ và kết quả tự học</summary>'
+                     + _table(["Tác tử / đối chứng", "Trọng số", "Brier", "Logloss"], weight_rows)
+                     + f'<p class="ui-muted">η = {_num(tuning["eta"], 1)}; '
+                     f'độ quên = {_num(tuning["discount"], 2)}. '
+                     f'{len(item["knowledge"]["similar_contexts"])} ngữ cảnh tương tự đã truy xuất. '
+                     'Brier/logloss càng thấp càng tốt. Dấu — là chưa có kết quả tiến cứu.</p></details>')
+    parts.append('<p><a class="ui-link" href="assets/xsmb-agents.json" download>'
+                 'Tải xác suất và căn cứ của cả 100 số</a></p>')
+    return "".join(parts)
+
+
+def render(report: dict, agents: dict | None = None) -> str:
     blocks = [
         card(summary_cards(report), title="Kết luận cho kỳ kế tiếp", span=12, flush=True, ident="app-lab-conclusion"),
+        card(agents_card(agents, target_date=report["generated_for"]), title="Hệ tự học ba tác tử XSMB",
+             span=12, lift=True, ident="app-agents"),
         card(rules_card(report), title="Luật ba tầng và vì sao phải hiệu chỉnh", span=12, lift=True, ident="app-lab-rules"),
         card(matrix_card(report, "loto"), title="Ma trận suy luận · LOTO", span=12, lift=True, ident="app-lab-loto-matrix"),
         card(matrix_card(report, "de"), title="Ma trận suy luận · Đặc Biệt", span=12, lift=True, ident="app-lab-de-matrix"),
@@ -414,7 +463,7 @@ def render(report: dict) -> str:
     ("Đối chứng ngẫu nhiên", "So tín hiệu mạnh nhất của cả họ với các lịch sử quay công bằng để tránh chọn một con nổi bật chỉ do thử quá nhiều lần."),
     ("Kiểm ngoài mẫu", "Đánh giá trên dữ liệu chưa dùng để chọn tín hiệu. Chỉ đọc kết luận cùng cỡ mẫu, mức nền và độ bất định."),
 ])}
-{lab_jump([("app-lab-conclusion", "Kết luận"), ("app-lab-rules", "Luật ba tầng"),
+{lab_jump([("app-lab-conclusion", "Kết luận"), ("app-agents", "Ba tác tử"), ("app-lab-rules", "Luật ba tầng"),
            ("app-lab-loto-matrix", "Ma trận LOTO"), ("app-lab-de-matrix", "Ma trận Đặc Biệt"),
            ("app-lab-oos", "Ngoài mẫu"), ("app-lab-risk", "Rủi ro")])}
 <div class="ui-grid">{"".join(blocks)}</div>
@@ -428,9 +477,19 @@ def render(report: dict) -> str:
 def build(data_dir: Path, docs_dir: Path) -> Path:
     """Dựng ``docs/do-tin-cay.html`` từ ``data/confidence/report.json``."""
     report = json.loads((data_dir / "confidence" / "report.json").read_text(encoding="utf-8"))
+    agents_path = data_dir / "agents" / "report.json"
+    agents = json.loads(agents_path.read_text(encoding="utf-8")) if agents_path.exists() else None
+    if agents and (agents.get("anchor_date") != report["last_draw"] or
+                   agents.get("target_date") != report["generated_for"]):
+        agents = None
     write_stylesheet(docs_dir)
     out = docs_dir / PAGE
-    write_page(out, render(report))
+    write_page(out, render(report, agents))
+    public_path = docs_dir / "assets" / "xsmb-agents.json"
+    if agents:
+        atomic_write_text(public_path, json.dumps(agents, ensure_ascii=False, allow_nan=False) + "\n")
+    elif public_path.exists():
+        public_path.unlink()
     return out
 
 

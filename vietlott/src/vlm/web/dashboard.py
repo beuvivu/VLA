@@ -169,6 +169,8 @@ def _from_issue(code: ProductCode, event: dict, now: datetime) -> dict | None:
         components.append({'name': name, 'kind': spec.kind, 'top': tops, 'ranking_exact': exact})
     return {k: p[k] for k in ('target_id', 'target_date', 'target_time', 'made_at', 'based_on_id')} | {
         'product': code.value, 'engine': 'ml', 'registered': True, 'components': components,
+        'multi_agent': deepcopy(p.get('multi_agent') or {}),
+        'confidence': deepcopy(p.get('confidence') or {}),
         'status': 'registered', 'note': 'Bộ số tái dựng từ phân phối đã lưu trước kỳ quay.'}
 
 

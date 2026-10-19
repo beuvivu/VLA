@@ -237,3 +237,68 @@ Canh: `test_theme_script_is_local_synchronous_and_precedes_styles`,
 `test_data_state_pairs_are_readable_in_each_theme`,
 `test_renderer_keeps_uniform_geometry_and_accessibility`; các bộ kiểm
 JavaScript tại `tests/frontend/theme.test.mjs` và `tests/frontend/search.test.mjs`.
+
+## 12. Trải nghiệm thống kê, cập nhật 17/10/2026
+
+Trang chủ và hai biến thể landing mở căn cứ số bằng **nhấp đúp**; nhấp đơn
+vẫn chọn số ngay, bàn phím và nhấn giữ vẫn hoạt động. Các trang khác giữ
+thao tác căn cứ riêng của chúng. Các hàng xác suất trang chủ chia cùng ba
+rãnh 56px / phần còn lại / 72px. Hàng ba bảng ưu tiên bảng kết quả mô phỏng
+theo tỷ lệ 2:1:1: bảng kết quả có sàn 400px, hai bảng dự báo có sàn 280px.
+Khung hẹp cuộn bên trong, không đẩy rộng toàn trang.
+
+Tần suất LOTO/cặp dùng cùng một ma trận với hai trục hoán đổi: Ngang đặt số
+hoặc họ cặp theo hàng, ngày theo cột; Dọc đặt ngày theo hàng, số hoặc họ cặp
+theo cột, mặc định trên điện thoại. Mỗi số có tổng lượt và đường diễn biến
+ở nhãn hàng hoặc đầu cột, lấy đúng dải lọc và cùng trần lượt/kỳ. Đây là số
+đo lịch sử, không phải xác suất dự đoán. Dấu chọn bám theo số/họ cặp và ngày,
+không bám vị trí ô; lịch sử dài dựng theo vùng ngày đang xem. Demo và dữ
+liệu thật có trạng thái lưu riêng. Bộ chọn chiều cũ vẫn làm cầu nối nội bộ,
+không là giao diện chính.
+
+Trang Đầu đuôi dùng màu xanh liên tục nhạt → đậm theo số lượt, với chữ đạt
+AA trên từng màu nền ở cả sáng/tối. Đầu và Đuôi dùng chung trần màu; bảng
+tổng và các kỳ gần đây có chú giải riêng, cập nhật theo bộ lọc. Dấu chọn
+ưu tiên hơn màu tần suất. Hai bảng tổng giữ cột chữ số / số lần / tỉ lệ /
+biểu đồ theo đúng 20% / 20% / 20% / 40%; tiêu đề xuống dòng trên điện thoại.
+
+Cặp lộn đặt bảng 45 cặp và bảng 10 số kép song song từ 1024px, tỷ lệ 2,4:1;
+khung hẹp xếp dọc và cuộn bên trong bảng. Cặp số / số kép lớn hơn hạng và
+số lượt; giữ tông xanh cũ, không thêm vòng viền quanh số.
+
+Cầu giải Đặc Biệt giữ số ma trận và cặp lộn ở 24px khi chọn / bỏ chọn;
+nhãn Đầu và số lượt nhỏ hơn. Ma trận hiện đủ mười hàng, không giới hạn
+chiều cao gây cuộn dọc nội bộ. Phạm vi CSS dùng `data-app-workspace-page`
+vì trang này không có lớp `sp-page` cũ.
+
+Trang Theo tổng đặt gan và chẵn/lẻ cùng hàng trên máy tính, bảng chuyển
+tổng dùng trọn chiều ngang ở dưới. Cột gan chia 20/32/24/24%; chẵn/lẻ
+20/20/30/30%; chuyển tổng 18/18/14/18/16/16%. Chữ số tổng dùng xanh cũ,
+lớn hơn số kỳ, tỷ lệ và độ lệch; dấu chọn giữ nguyên cỡ chữ. Điện thoại
+xếp thẻ dọc, hai bảng đầu co theo khung; bảng chuyển tổng cuộn ngang.
+
+Dấu cặp dùng đúng định danh hai chữ số hoặc họ cặp, không đọc từ số nháy /
+thứ hạng. Khi chọn cả cặp, dấu riêng của chính cặp ấy được hợp nhất để bỏ
+chọn không bị kẹt. Dấu cặp đồng bộ qua sự kiện storage giữa các tab. Bảng
+tuần bám tuần/ngày; các danh sách cặp lộn và số kép bám số/cột, giữ dấu khi
+lọc hoặc đổi hạng. Ba trang thay khóa ô dùng phiên bản v3 để tránh nạp nhầm
+tọa độ cũ; kho dấu cặp v1 toàn site được giữ nguyên.
+
+`analysis_workspace.refine_workspace` đọc phạm vi từ điều hướng Soi cầu,
+Dự báo, Nghiên cứu & công cụ, cộng các trang thống kê chi tiết được chỉ định.
+Nó bổ sung phân cấp, hướng dẫn, bộ lọc và thẻ tại ranh giới `write_page`, giữ
+nguyên ID, script và dữ liệu. CSS nguồn riêng được nhúng lại với một ID cố
+định, nên cập nhật hằng ngày và làm mới trang đã bọc đều giữ đúng thiết kế.
+
+`statistics.html#bang-db` có lịch Đặc Biệt theo năm, giữ đủ số gốc. Trên điện
+thoại, mặc định xem tháng có kết quả mới nhất; luôn chuyển được về 12 tháng.
+Năm/tháng và tìm số phối hợp cùng bộ đếm; ngày thiếu kết quả khác ngày không
+tồn tại trong lịch. Màu đuôi và màu kết quả khớp bộ lọc dùng token semantic.
+
+Điều chỉnh theo chủ dự án ngày 17/10: các số và điểm nhấn trang dùng lại
+tông xanh dương cũ (`--ui-brand-ink`/`--ui-brand-soft`); biểu đồ dùng
+`--ui-chart-1`. Bỏ viền và vòng sáng trang trí mới quanh số, kể cả khi chọn.
+Trạng thái chọn dùng nền nhạt; chỉ tiêu điểm bàn phím giữ viền focus riêng.
+Các điểm nhấn nâu mới cũng được gỡ: số giải đặc biệt trở lại đỏ
+`--ui-special-ink`, nội dung phân tích dùng xanh cũ hoặc màu chữ vốn có.
+Màu có ý nghĩa của ô nháy, cảnh báo và trạng thái dữ liệu vẫn theo chú giải.

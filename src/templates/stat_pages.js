@@ -76,7 +76,9 @@ const pad2 = (n) => String(n).padStart(2, "0");
  * quy ước ấy. `true` cho thuộc tính cờ (`checked`), in ra `checked=""`.
  */
 function mk(tag, attrs, kids) {
-  const node = document.createElement(tag);
+  const node = ["svg", "path"].includes(tag)
+    ? document.createElementNS("http://www.w3.org/2000/svg", tag)
+    : document.createElement(tag);
   if (attrs) {
     for (const k in attrs) {
       const v = attrs[k];
@@ -127,9 +129,17 @@ function weekdayOf(value) {
 }
 
 function selected() {
-  const from = $("sp-from") && $("sp-from").value;
-  const to = $("sp-to") && $("sp-to").value;
+  const fromInput = $("sp-from"), toInput = $("sp-to");
+  const from = fromInput && fromInput.value;
+  const to = toInput && toInput.value;
   let rows = DRAWS;
+  // Trang chỉ có mốc nhanh không có ô ngày: chính nút đang chọn xác định
+  // N kỳ cuối. Không suy khoảng từ ngày lịch vì lịch sử có ngày nghỉ quay.
+  if (!fromInput && !toInput) {
+    const active = document.querySelector(".sp-chips .sp-chip.on[data-days]");
+    const count = active ? Number(active.dataset.days) : 0;
+    if (Number.isInteger(count) && count > 0) rows = rows.slice(-count);
+  }
   if (from) rows = rows.filter((r) => r.d >= from);
   if (to) rows = rows.filter((r) => r.d <= to);
   // Lọc thứ chạy SAU khi đã chốt khoảng, không phải trước: yêu cầu là "các
@@ -492,7 +502,9 @@ function table(el, headers, rows, opts) {
 // lại chúng vào lược đồ mới thì chúng rơi vào những ô ngẫu nhiên — đúng cái
 // lỗi vừa sửa. Đổi tên kho tức là bỏ hẳn chúng, sạch hơn là cố chuyển đổi.
 const MARK_SCOPE = (window.__D_DEMO_DRAWS__ ? "demo." : "");
-const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index");
+// Ba bảng đổi từ tọa độ hàng sang danh tính: không nạp lại khóa vị trí cũ.
+const MARK_IDENTITY_SUFFIX = /\/(?:bang-dac-biet|cap-lon-loto|cau-giai-dac-biet)\.html$/.test(location.pathname) ? ".identity-v3" : "";
+const MARK_KEY = "sp.marks.v2." + MARK_SCOPE + (location.pathname.split("/").pop() || "index") + MARK_IDENTITY_SUFFIX;
 
 // Dấu Ô theo TỪNG TRANG, dấu CẶP theo TOÀN SITE — hai phạm vi khác nhau vì hai
 // thứ được đánh dấu có bản chất khác nhau.
@@ -639,9 +651,19 @@ function paintMarks() {
 function toggleMark(td) {
   const key = td.dataset.key;
   const pair = markPair(td);
-  if (pair !== null && PAIR_MARKS.has(pair)) PAIR_MARKS.delete(pair);
+  const clearPairCells = () => {
+    // Một cặp đã chọn theo nhóm không giữ thêm dấu riêng chồng bên dưới.
+    for (const saved of MARKS) if (pairInKey(saved) === pair) MARKS.delete(saved);
+  };
+  if (pair !== null && PAIR_MARKS.has(pair)) {
+    PAIR_MARKS.delete(pair);
+    clearPairCells();
+  }
   else if (MARKS.has(key)) MARKS.delete(key);
-  else if (pairModeOn() && pair !== null) PAIR_MARKS.add(pair);
+  else if (pairModeOn() && pair !== null) {
+    clearPairCells();
+    PAIR_MARKS.add(pair);
+  }
   else MARKS.add(key);
 }
 
@@ -658,6 +680,27 @@ function bindMarking() {
   // rồi tắt đi — những dấu ấy phải còn nguyên vì họ không hề bỏ chọn chúng.
   const pairBox = $("sp-pair-mode");
   if (pairBox) pairBox.addEventListener("change", paintMarks);
+
+  // Cặp dùng chung toàn site: tab đang mở cũng phải thấy thay đổi ngay.
+  window.addEventListener("storage", (ev) => {
+    const pairsChanged = ev.key === PAIR_KEY || ev.key === null;
+    const cellsChanged = ev.key === MARK_KEY || ev.key === null;
+    if (!pairsChanged && !cellsChanged) return;
+    if (pairsChanged) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(PAIR_KEY) || "[]");
+        PAIR_MARKS = new Set(Array.isArray(saved) ? saved.filter(value => asPair(value) === value) : []);
+      } catch (err) { PAIR_MARKS = new Set(); }
+    }
+    if (cellsChanged) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(MARK_KEY) || "{}");
+        const cells = Array.isArray(saved) ? saved : saved && saved.cells;
+        MARKS = new Set(Array.isArray(cells) ? cells.filter(value => typeof value === "string") : []);
+      } catch (err) { MARKS = new Set(); }
+    }
+    paintMarks();
+  });
 
   const clear = $("sp-clear-marks");
   if (clear) {
@@ -930,6 +973,9 @@ function ganCycles(pair, mode) {
 function openGanPopup(pair) {
   const host = $("sp-gan-modal");
   if (!host) return;
+  const opening = !host.open;
+  const focusedMode = !opening && host.contains(document.activeElement)
+    ? document.activeElement.dataset.gmode : null;
   const mode = (host.dataset.mode === "de") ? "de" : "loto";
   const g = ganCycles(pair, mode);
   const tab = (value, label) => mk("button", {
@@ -965,7 +1011,14 @@ function openGanPopup(pair) {
   fill(host.querySelector(".sp-modal-body"), body);
   host.querySelector(".sp-modal-title").textContent = `Chu kỳ gan · số ${pair}`;
   host.dataset.pair = pair;
-  host.hidden = false;
+  if (opening) {
+    host._spReturnFocus = document.activeElement;
+    host.hidden = false;
+    host.showModal();
+    host.querySelector("[data-close]").focus();
+  } else if (focusedMode) {
+    host.querySelector(`[data-gmode="${focusedMode}"]`).focus();
+  }
 }
 
 function bindGanPopup(render) {
@@ -976,18 +1029,32 @@ function bindGanPopup(render) {
   // popup im lặng không làm gì, mà lỗi chỉ hiện trong console nên nhìn từ
   // giao diện thì y như nút hỏng vô cớ.
   const redraw = typeof render === "function" ? render : () => {};
+  host.addEventListener("close", () => {
+    if (host.open) return;
+    host.hidden = true;
+    const trigger = host._spReturnFocus;
+    delete host._spReturnFocus;
+    if (trigger && trigger.isConnected) trigger.focus({preventScroll: true});
+  });
+  host.addEventListener("cancel", (ev) => { ev.preventDefault(); host.close(); });
+  host.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Tab") return;
+    const controls = Array.from(host.querySelectorAll(
+      "a[href], button, input, select, textarea, [tabindex]"
+    )).filter(node => node.tabIndex >= 0 && !node.disabled && node.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  });
   host.addEventListener("click", (ev) => {
-    if (ev.target === host || ev.target.dataset.close !== undefined) { host.hidden = true; return; }
+    if (ev.target === host || ev.target.dataset.close !== undefined) { host.close(); return; }
     const gmode = ev.target.dataset.gmode;
     if (gmode) { host.dataset.mode = gmode; openGanPopup(host.dataset.pair); return; }
     const only = ev.target.dataset.gfilter;
     if (only !== undefined) {
       PICKED = new Set([Number(only)]);
-      savePicked(); host.hidden = true; redraw();
+      savePicked(); host.close(); redraw();
     }
-  });
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") host.hidden = true;
   });
 }
 
@@ -1097,7 +1164,7 @@ function renderReversePairs() {
     .sort((x, y) => y[4] - x[4]);
 
   table($("sp-grid"),
-    ["Hạng", "Cặp lộn", "Về của số đầu", "Về của số lộn", "Tổng", "Lệch"],
+    ["Hạng", "Cặp số", "Lượt thuận", "Lượt lộn", "Tổng lượt", "Chênh lệch"],
     pairs.map((p, k) => [
       k + 1,
       `${pad2(p[0])} ↔ ${pad2(p[1])}`,
@@ -1107,18 +1174,20 @@ function renderReversePairs() {
       (p[2] - p[3] > 0 ? "+" : "") + (p[2] - p[3]),
     ]), {
       numeric: [0, 2, 3, 4, 5],
+      key: (y, i) => `reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}`,
       // Ô hiện "01 ↔ 10", KHÔNG phải dạng "01-10" mà asPair() nhận. Khai
       // thẳng từ dữ liệu thay vì nới lỏng asPair(): dấu ↔ mang nghĩa LỘN, còn
       // dấu - trong khoá mang nghĩa HỌ CẶP; trộn hai thứ là dựng lại đúng lỗi
       // mà chú thích "lộn khác bóng" ở trên đã cảnh báo.
       pairOf: (y, i) => (i === 1 ? `${pad2(pairs[y][0])}-${pad2(pairs[y][1])}` : null),
     });
+  $("sp-grid").prepend(mk("colgroup", null, [9,25,16.5,16.5,16.5,16.5].map(width => mk("col", {style: `width:${width}%`}))));
 
   const kep = $("sp-kep");
   if (kep) {
     const ds = doubleNumbers().map((n) => [pad2(n), c[n]]).sort((a, b) => b[1] - a[1]);
     table(kep, ["Số kép", "Số lần về"], ds,
-      { numeric: [1], pairOf: pairCols(ds, 0) });
+      { numeric: [1], pairOf: pairCols(ds, 0), key: (y, i) => `double|number${ds[y][0]}|field${i}` });
   }
 }
 
@@ -1235,6 +1304,40 @@ function renderPairFrequency() {
 function renderHeadTail() {
   const rows = selected();
   setCount(rows);
+  // Hai bảng cùng một phép đo dùng chung trần; nhiều lượt có nền đậm hơn.
+  const shade = (value, max) => {
+    if (!value) return "";
+    const ratio = Math.min(1, value / Math.max(1, max));
+    const ramp = (theme, low, high) => {
+      const rgb = low.map((v, i) => Math.round(v + (high[i] - v) * ratio));
+      const linear = rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+      const luminance = linear.reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+      // Điểm giao tương phản trắng/đen; mọi mức nền đạt ít nhất 4,58:1.
+      const ink = luminance > .179 ? "#000000" : "#ffffff";
+      return `--app-hit-bg-${theme}:rgb(${rgb.join(",")});--app-hit-ink-${theme}:${ink};`;
+    };
+    return ramp("light", [239,248,255], [7,89,133]) + ramp("dark", [85,120,148], [7,62,98]);
+  };
+  const paint = (cell, value, max, label) => {
+    cell.classList.add("app-head-tail-heat");
+    cell.dataset.appHitCount = String(value);
+    cell.setAttribute("style", shade(value, max));
+    cell.setAttribute("aria-label", `${label} · ${value} lượt`);
+  };
+  const legend = (id, max, daily) => {
+    const host = $(id);
+    if (!host) return;
+    if (!rows.length) { fill(host, "Không có kỳ phù hợp với bộ lọc."); return; }
+    const values = daily
+      ? [...Array.from({length: Math.min(max, 5) + 1}, (_, i) => i), ...(max > 5 ? [max] : [])]
+      : [...new Set([0, ...[.25,.5,.75,1].map(t => Math.ceil(max * t))])];
+    fill(host, [mk("span", {class: "app-head-tail-legend-label"}, daily ? "Nháy trong một kỳ · ít → nhiều" : "Tổng lượt trong dải · ít → nhiều"),
+      ...values.map(value => {
+        const chip = mk("span", {class: "app-head-tail-swatch"}, value);
+        paint(chip, value, max, daily ? "Nháy mỗi kỳ" : "Tổng lượt");
+        return chip;
+      }), mk("small", null, "Cùng thang màu cho Đầu và Đuôi.")]);
+  };
   const head = new Array(10).fill(0);
   const tail = new Array(10).fill(0);
   rows.forEach((r) => r.n.forEach((x) => {
@@ -1242,50 +1345,66 @@ function renderHeadTail() {
     tail[parseInt(x[1], 10)] += 1;
   }));
   const total = rows.length * 27;
+  const rangeMax = Math.max(1, ...head, ...tail);
   const build = (el, counts, label) => {
     const max = Math.max(...counts, 1);
-    table(el, [label, "Số lần", "Tỉ lệ", ""],
+    table(el, [label, "Số lần", "Tỉ lệ", "Biểu đồ"],
       counts.map((v, i) => [
         i, v, total ? ((v / total) * 100).toFixed(2) + "%" : "—",
         mk("span", { class: "sp-bar", style: `width:${(100 * v / max).toFixed(1)}%` }),
       ]), { numeric: [0, 1, 2] });
+    el.prepend(mk("colgroup", null, [20,20,20,40].map(width => mk("col", {style: `width:${width}%`}))));
+    counts.forEach((value, digit) => {
+      const cells = el.tBodies[0].rows[digit].cells;
+      paint(cells[0], value, rangeMax, `${label} ${digit}`);
+      paint(cells[1], value, rangeMax, `${label} ${digit}`);
+    });
   };
   build($("sp-head"), head, "Chữ số đầu");
   build($("sp-tail"), tail, "Chữ số đuôi");
+  legend("app-head-tail-legend", rangeMax, false);
 
   // Ba ma trận NGÀY x chữ số, đúng bố cục trang tham chiếu. Bảng gộp phía
   // trên trả lời "chữ số nào hay ra", ma trận trả lời "hôm nào ra bao nhiêu
   // lần" — hai câu hỏi khác nhau, và bản trước chỉ có câu đầu.
   //
   // Tổng ở đây là (Đầu + Đuôi) mod 10 của từng con lô, giống ô bảng Đặc Biệt.
-  const perDay = (pick, label, el) => {
-    const recent = rows.slice(-20).reverse();
+  const recent = rows.slice(-20).reverse();
+  const daily = recent.map(r => {
+    const counts = {head:new Array(10).fill(0), tail:new Array(10).fill(0), sum:new Array(10).fill(0)};
+    r.n.forEach(x => {counts.head[+x[0]]++; counts.tail[+x[1]]++; counts.sum[(+x[0] + +x[1]) % 10]++;});
+    return counts;
+  });
+  const dayMax = Math.max(1, ...daily.flatMap(day => [...day.head, ...day.tail]));
+  const perDay = (kind, label, el) => {
     const headers = ["Ngày"].concat(
       Array.from({ length: 10 }, (_, d) => `${label} ${d}`));
-    table(el, headers, recent.map((r) => {
-      const count = new Array(10).fill(0);
-      r.n.forEach((x) => { count[pick(+x[0], +x[1])] += 1; });
+    table(el, headers, recent.map((r, index) => {
+      const count = daily[index][kind];
       return [viDate(r.d)].concat(
         count.map((v) => (v ? `${v} lần` : mk("span", { class: "sp-zero" }, "0"))));
     }), { numeric: Array.from({ length: 10 }, (_, i) => i + 1) });
+    if (kind !== "sum") daily.forEach((day, index) => day[kind].forEach((value, digit) =>
+      paint(el.tBodies[0].rows[index].cells[digit + 1], value, dayMax, `${label} ${digit} · ${recent[index].d}`)));
   };
-  perDay((d) => d, "Đầu", $("sp-day-head"));
-  perDay((_, u) => u, "Đuôi", $("sp-day-tail"));
-  perDay((d, u) => (d + u) % 10, "Tổng", $("sp-day-sum"));
+  perDay("head", "Đầu", $("sp-day-head"));
+  perDay("tail", "Đuôi", $("sp-day-tail"));
+  perDay("sum", "Tổng", $("sp-day-sum"));
+  legend("app-head-tail-day-legend", dayMax, true);
 }
 
-function specialGaps() {
+function specialGaps(rows = DRAWS) {
   // Số kỳ chưa về, và chu kỳ dài nhất trong lịch sử, cho từng con 00-99.
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     const k = parseInt(lastTwo(r.s), 10);
     hits[k] += 1;
     if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
     last[k] = t;
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   return { last, maxGap, hits, current: last.map((t) => (t < 0 ? n : n - 1 - t)), n };
 }
 
@@ -1301,11 +1420,11 @@ function specialGaps() {
 // lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
 
 /** Gan của từng con 00-99 trên LOTO (27 con mỗi kỳ). */
-function lotoGaps() {
+function lotoGaps(rows = DRAWS) {
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     // Một con có thể về nhiều lần trong cùng một kỳ. Với gan thì kỳ đó tính
     // MỘT lần — về hai nháy không làm con số bớt gan hơn về một nháy.
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
@@ -1315,7 +1434,7 @@ function lotoGaps() {
       last[k] = t;
     });
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
   return { last, maxGap, current, hits };
 }
@@ -1339,11 +1458,11 @@ function lotoGaps() {
  * thì 0 không bao giờ bằng "00": bản đầu báo cả 50 cặp "chưa từng về" trên
  * 2394 kỳ — kết quả vô lý mà bảng vẫn dựng ra bình thường, không lỗi nào.
  */
-function pairGaps() {
+function pairGaps(rows = DRAWS) {
   const last = new Array(CAP50.length).fill(-1);
   const maxGap = new Array(CAP50.length).fill(0);
   const hits = new Array(CAP50.length).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
     CAP50.forEach((pair, i) => {
       if (!seen.has(pair[0]) && !seen.has(pair[1])) return;
@@ -1352,7 +1471,7 @@ function pairGaps() {
       last[i] = t;
     });
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
   return { last, maxGap, current, hits };
 }
@@ -1363,28 +1482,30 @@ function viDate(d) {
 }
 
 /** Ngày của một kỳ theo chỉ số. */
-function drawDate(i) {
-  return i < 0 ? "chưa từng" : viDate(DRAWS[i].d);
+function drawDate(i, rows = DRAWS) {
+  return i < 0 ? "chưa về trong dải" : viDate(rows[i].d);
 }
 
 function renderLoGan() {
-  const g = lotoGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const g = lotoGaps(rows);
+  setCount(rows);
 
   // 1. Gan hiện tại, giảm dần.
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const ganBody = order.map((p) => [
-    pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+    pad2(p[0]), drawDate(g.last[p[0]], rows), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
   ]);
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
 
-  // 2. Gan cực đại, tách đôi để đọc cạnh nhau như trang tham chiếu.
+  // 2. Hai bảng ghi rõ "từ trước đến nay" vẫn dùng toàn bộ kho lịch sử.
+  const all = rows.length === DRAWS.length ? g : lotoGaps();
   const half = (el, from, to) => {
     const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
-      return [pad2(i), g.maxGap[i] ? `${g.maxGap[i]} kỳ` : "—"];
+      return [pad2(i), all.maxGap[i] ? `${all.maxGap[i]} kỳ` : "—"];
     });
     table(el, ["Bộ số", "Gan cực đại"], body,
       { numeric: [1], pairOf: pairCols(body, 0) });
@@ -1393,10 +1514,10 @@ function renderLoGan() {
   half($("sp-max-hi"), 50, 100);
 
   // 3. Cặp lô gan.
-  const pg = pairGaps();
+  const pg = pairGaps(rows);
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const pairBody = pairOrder.map((p) => [
-    `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
+    `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]], rows), p[1],
     pg.maxGap[p[0]] || "—", pg.hits[p[0]],
   ]);
   table($("sp-pair-gan"),
@@ -1405,8 +1526,9 @@ function renderLoGan() {
 }
 
 function renderSpecialCycle() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const s = specialGaps(rows);
+  setCount(rows);
   const order = s.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const body = order.map((p, k) => [k + 1, pad2(p[0]), p[1], s.maxGap[p[0]] || "—", s.hits[p[0]]]);
   table($("sp-grid"),
@@ -1415,11 +1537,12 @@ function renderSpecialCycle() {
 }
 
 function renderSpecialBySet() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const draws = selected();
+  const s = specialGaps(draws);
+  setCount(draws);
   const rows = [];
   for (let i = 0; i < 100; i++) {
-    const lastDate = s.last[i] >= 0 ? DRAWS[s.last[i]].d : "chưa từng";
+    const lastDate = s.last[i] >= 0 ? draws[s.last[i]].d : "chưa về trong dải";
     rows.push([pad2(i), lastDate, s.current[i], s.maxGap[i] || "—", s.hits[i]]);
   }
   rows.sort((a, b) => b[2] - a[2]);
@@ -1429,8 +1552,9 @@ function renderSpecialBySet() {
 }
 
 function renderTomorrow() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const s = specialGaps(rows);
+  setCount(rows);
   // Điểm tham khảo: số kỳ chưa về chuẩn hoá theo chu kỳ dài nhất của chính
   // con đó. Đây là mô tả lịch sử, KHÔNG phải xác suất đã hiệu chuẩn.
   const scored = [];
@@ -1525,6 +1649,7 @@ function weekGrid(rows) {
   return {
     body: order.map((w) => weeks.get(w)),
     pairs: order.map((w) => pairs.get(w)),
+    weeks: order,
   };
 }
 
@@ -1533,7 +1658,8 @@ function renderSpecialByWeek() {
   setCount(rows);
   const grid = weekGrid(rows);
   table($("sp-grid"), WEEKDAYS, grid.body,
-    { rowHead: false, pairOf: (y, i) => (grid.pairs[y] || [])[i] || null });
+    { rowHead: false, pairOf: (y, i) => (grid.pairs[y] || [])[i] || null,
+      key: (y, i) => `special-week|week${grid.weeks[y]}|day${i}` });
 }
 
 /** Lưới tháng: hàng = ngày 1..31, cột = 12 tháng của một năm. */
@@ -1868,6 +1994,7 @@ function renderSpecialBridge() {
   // chứ không phải bóc từ chữ trong ô (ô còn mang thêm "N lần").
   table($("sp-grid"), head, body,
     { pairOf: (y, i) => (i === 0 ? null : pad2(y * 10 + (i - 1))) });
+  $("sp-grid").prepend(mk("colgroup", null, [12,...Array(10).fill(8.8)].map(width => mk("col", {style: `width:${width}%`}))));
 
   // 2. Cặp lộn kèm số lần. Số kép đảo lại chính nó nên không nằm ở đây.
   const lon = $("sp-lon");
@@ -1878,7 +2005,8 @@ function renderSpecialBridge() {
       .sort((x, y) => y[2] - x[2]);
     const lonBody = pairs.map((p, k) => [k + 1, `${pad2(p[0])} - ${pad2(p[1])}`, p[2]]);
     table(lon, ["Hạng", "Cặp lộn", "Số lần xuất hiện"], lonBody,
-      { numeric: [0, 2], pairOf: pairCols(lonBody, 1) });
+      { numeric: [0, 2], pairOf: pairCols(lonBody, 1),
+        key: (y, i) => `special-reverse|pair${pad2(pairs[y][0])}-${pad2(pairs[y][1])}|field${i}` });
   }
 
   // 3. Ba kỳ gần nhất, đủ giải.
@@ -1917,6 +2045,12 @@ function tongOf(special) {
 function renderSpecialByTong() {
   const rows = selected();
   setCount(rows);
+  const fitColumns = () => Object.entries({
+    "sp-grid": [20,32,24,24],
+    "sp-parity": [20,20,30,30],
+    "sp-trans": [18,18,14,18,16,16],
+  }).forEach(([id, widths]) => $(id).prepend(mk("colgroup", null,
+    widths.map(width => mk("col", {style: `width:${width}%`})))));
   if (!rows.length) {
     // Không return trắng: bảng sẽ giữ số liệu của dải trước. Dựng lại cả ba
     // với đúng tiêu đề của chúng để table() gắn dòng "dải rỗng".
@@ -1925,6 +2059,7 @@ function renderSpecialByTong() {
       "Trên tổng số kỳ", "Tỉ lệ", "Lệch chuẩn hoá"], []);
     table($("sp-parity"), ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn",
       "Hôm sau tổng lẻ"], []);
+    fitColumns();
     return;
   }
 
@@ -1997,4 +2132,5 @@ function renderSpecialByTong() {
     table(par, ["Tổng hôm trước", "Số kỳ", "Hôm sau tổng chẵn", "Hôm sau tổng lẻ"],
       body, { numeric: [0, 1, 2, 3] });
   }
+  fitColumns();
 }
