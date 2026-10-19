@@ -28,6 +28,7 @@ forecasting guarantee.
 
 | Document | Scope |
 | --- | --- |
+| [`qa/2026-10-19-kiem-toan-dinh-luong.md`](qa/2026-10-19-kiem-toan-dinh-luong.md) | Kiểm toán định lượng VLA và engine Vietlott: đối chiếu toán học các hàm lõi (Bayes thực nghiệm, DerSimonian–Laird, Hedge, e-process, phân phối tập con), đo thời gian thật của pipeline và vector hoá các điểm nghẽn đã đo, đầu ra không đổi; phát hiện về độ tin của tác tử mẫu hình và công suất của bandit Thompson. |
 | [`qa/2026-10-18-quality-plan.md`](qa/2026-10-18-quality-plan.md) | Phạm vi, ràng buộc và kế hoạch kiểm toán XSMB, Vietlott, UI, bảo mật và kiểm chứng. |
 | [`qa/2026-10-18-repository-audit.md`](qa/2026-10-18-repository-audit.md) | Lỗi đã tái hiện, mã đã sửa, số đo hiệu năng, kiểm thử và checklist duy trì chất lượng toàn repo. |
 | [`qa/2026-10-18-pairs-and-special-marks.md`](qa/2026-10-18-pairs-and-special-marks.md) | Kiểm chứng bố cục cặp lộn, dấu chọn Đặc Biệt và các bảng theo tổng. |
