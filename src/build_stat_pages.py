@@ -143,8 +143,8 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
     """
     # Nút nào đang thật sự có hiệu lực phụ thuộc vào kiểu thanh điều khiển.
     # Trang kiểu ``day`` có hai ô ngày, và stat_pages.js đặt sẵn chúng ở
-    # ``DRAWS.length - 90``. Trang kiểu ``preset`` KHÔNG có ô ngày nào, nên
-    # nhánh đó trong JS không chạy và dải mặc định là toàn bộ lịch sử.
+    # ``DRAWS.length - 90``. Trang kiểu ``preset`` đọc mốc từ nút đang chọn,
+    # mặc định là toàn bộ lịch sử.
     # Tô sáng 90 kỳ ở cả hai kiểu thì trang preset sẽ khoe "90 kỳ" trong khi
     # đang hiển thị 2 396 kỳ.
     active = DEFAULT_RANGE_DRAWS if mode == "day" else 0
@@ -164,6 +164,9 @@ def _range_controls(*, mode: str = "day", pairs: bool = True, weekday: bool = Fa
             '<div class="sp-controls"><div class="sp-chips">'
             f'{presets}</div><span class="sp-count" id="sp-count" data-evidence-split></span>'
             f"{_mark_tools(pairs=pairs)}</div>"
+            '<p class="sp-note">Thống kê trong dải kỳ đang chọn. Nếu một số '
+            'chưa xuất hiện trong dải, số kỳ chưa về thực tế có thể dài hơn dải này. '
+            'Bảng ghi “từ trước đến nay” dùng toàn bộ lịch sử.</p>'
         )
     return f"""
     <div class="sp-controls">
@@ -466,9 +469,9 @@ PAGES: tuple[StatPage, ...] = (
         controls=_range_controls(mode="preset"),
         body='<p class="sp-note">Gan đếm theo <b>kỳ quay</b>, không theo ngày lịch: '
              'XSMB nghỉ Tết và nghỉ 01–22/04/2020, đếm theo ngày lịch sẽ thổi phồng '
-             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> chỉ tính '
-             'trong kho lịch sử của trang này, nên có thể lệch với trang khác có '
-             'lịch sử dài ngắn khác.</p>'
+             'gan của mọi con ngay sau mỗi đợt nghỉ. Cột <b>Gan cực đại</b> trong '
+             'bảng chính tính trong dải đã chọn; hai bảng <b>từ trước đến nay</b> '
+             'tính trên toàn bộ kho lịch sử.</p>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>'
              '<h3 class="sp-subhead">Gan cực đại từ trước đến nay, cả 00–99</h3>'
              '<div class="sp-duo">'
@@ -484,10 +487,9 @@ PAGES: tuple[StatPage, ...] = (
         title="Chu kỳ giải Đặc Biệt",
         subtitle="Số kỳ chưa về của từng con 00–99 ở giải Đặc Biệt, và chu kỳ dài nhất trong lịch sử.",
         controls=_range_controls(mode="preset"),
-        body='<p class="sp-note">Đếm theo <b>kỳ quay</b>, không theo ngày lịch, nên số ở '
-             'đây nhỏ hơn trang nào đếm theo ngày. Ví dụ đối chiếu được: con 98 ra lần cuối '
-             '17-02-2025, tới 09-09-2026 là 569 ngày lịch, trừ 4 ngày Tết 2026 không quay '
-             'còn <b>565 kỳ</b> — đúng con số cột "Chưa về".</p>'
+        body='<p class="sp-note">Đếm theo <b>kỳ quay trong dải đã chọn</b>, '
+             'không theo ngày lịch; những ngày nghỉ quay không được tính thêm '
+             'vào chu kỳ.</p>'
              '<div class="sp-scroll"><table class="sp-table sp-grid-lines sp-crosshair" id="sp-grid"></table></div>',
         render="renderSpecialCycle",
     ),

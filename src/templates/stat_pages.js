@@ -129,9 +129,17 @@ function weekdayOf(value) {
 }
 
 function selected() {
-  const from = $("sp-from") && $("sp-from").value;
-  const to = $("sp-to") && $("sp-to").value;
+  const fromInput = $("sp-from"), toInput = $("sp-to");
+  const from = fromInput && fromInput.value;
+  const to = toInput && toInput.value;
   let rows = DRAWS;
+  // Trang chỉ có mốc nhanh không có ô ngày: chính nút đang chọn xác định
+  // N kỳ cuối. Không suy khoảng từ ngày lịch vì lịch sử có ngày nghỉ quay.
+  if (!fromInput && !toInput) {
+    const active = document.querySelector(".sp-chips .sp-chip.on[data-days]");
+    const count = active ? Number(active.dataset.days) : 0;
+    if (Number.isInteger(count) && count > 0) rows = rows.slice(-count);
+  }
   if (from) rows = rows.filter((r) => r.d >= from);
   if (to) rows = rows.filter((r) => r.d <= to);
   // Lọc thứ chạy SAU khi đã chốt khoảng, không phải trước: yêu cầu là "các
@@ -1385,18 +1393,18 @@ function renderHeadTail() {
   legend("app-head-tail-day-legend", dayMax, true);
 }
 
-function specialGaps() {
+function specialGaps(rows = DRAWS) {
   // Số kỳ chưa về, và chu kỳ dài nhất trong lịch sử, cho từng con 00-99.
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     const k = parseInt(lastTwo(r.s), 10);
     hits[k] += 1;
     if (last[k] >= 0) maxGap[k] = Math.max(maxGap[k], t - last[k]);
     last[k] = t;
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   return { last, maxGap, hits, current: last.map((t) => (t < 0 ? n : n - 1 - t)), n };
 }
 
@@ -1412,11 +1420,11 @@ function specialGaps() {
 // lịch sẽ thổi phồng gan của mọi con ngay sau mỗi đợt nghỉ.
 
 /** Gan của từng con 00-99 trên LOTO (27 con mỗi kỳ). */
-function lotoGaps() {
+function lotoGaps(rows = DRAWS) {
   const last = new Array(100).fill(-1);
   const maxGap = new Array(100).fill(0);
   const hits = new Array(100).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     // Một con có thể về nhiều lần trong cùng một kỳ. Với gan thì kỳ đó tính
     // MỘT lần — về hai nháy không làm con số bớt gan hơn về một nháy.
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
@@ -1426,7 +1434,7 @@ function lotoGaps() {
       last[k] = t;
     });
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
   return { last, maxGap, current, hits };
 }
@@ -1450,11 +1458,11 @@ function lotoGaps() {
  * thì 0 không bao giờ bằng "00": bản đầu báo cả 50 cặp "chưa từng về" trên
  * 2394 kỳ — kết quả vô lý mà bảng vẫn dựng ra bình thường, không lỗi nào.
  */
-function pairGaps() {
+function pairGaps(rows = DRAWS) {
   const last = new Array(CAP50.length).fill(-1);
   const maxGap = new Array(CAP50.length).fill(0);
   const hits = new Array(CAP50.length).fill(0);
-  DRAWS.forEach((r, t) => {
+  rows.forEach((r, t) => {
     const seen = new Set(r.n.map((x) => parseInt(x, 10)));
     CAP50.forEach((pair, i) => {
       if (!seen.has(pair[0]) && !seen.has(pair[1])) return;
@@ -1463,7 +1471,7 @@ function pairGaps() {
       last[i] = t;
     });
   });
-  const n = DRAWS.length;
+  const n = rows.length;
   const current = last.map((t) => (t >= 0 ? n - 1 - t : n));
   return { last, maxGap, current, hits };
 }
@@ -1474,28 +1482,30 @@ function viDate(d) {
 }
 
 /** Ngày của một kỳ theo chỉ số. */
-function drawDate(i) {
-  return i < 0 ? "chưa từng" : viDate(DRAWS[i].d);
+function drawDate(i, rows = DRAWS) {
+  return i < 0 ? "chưa về trong dải" : viDate(rows[i].d);
 }
 
 function renderLoGan() {
-  const g = lotoGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const g = lotoGaps(rows);
+  setCount(rows);
 
   // 1. Gan hiện tại, giảm dần.
   const order = g.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const ganBody = order.map((p) => [
-    pad2(p[0]), drawDate(g.last[p[0]]), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
+    pad2(p[0]), drawDate(g.last[p[0]], rows), p[1], g.maxGap[p[0]] || "—", g.hits[p[0]],
   ]);
   table($("sp-grid"),
     ["Bộ số", "Ngày ra cuối cùng", "Số kỳ gan", "Gan cực đại", "Tổng lần về"],
     ganBody, { numeric: [2, 3, 4], pairOf: pairCols(ganBody, 0) });
 
-  // 2. Gan cực đại, tách đôi để đọc cạnh nhau như trang tham chiếu.
+  // 2. Hai bảng ghi rõ "từ trước đến nay" vẫn dùng toàn bộ kho lịch sử.
+  const all = rows.length === DRAWS.length ? g : lotoGaps();
   const half = (el, from, to) => {
     const body = Array.from({ length: to - from }, (_, k) => {
       const i = from + k;
-      return [pad2(i), g.maxGap[i] ? `${g.maxGap[i]} kỳ` : "—"];
+      return [pad2(i), all.maxGap[i] ? `${all.maxGap[i]} kỳ` : "—"];
     });
     table(el, ["Bộ số", "Gan cực đại"], body,
       { numeric: [1], pairOf: pairCols(body, 0) });
@@ -1504,10 +1514,10 @@ function renderLoGan() {
   half($("sp-max-hi"), 50, 100);
 
   // 3. Cặp lô gan.
-  const pg = pairGaps();
+  const pg = pairGaps(rows);
   const pairOrder = pg.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const pairBody = pairOrder.map((p) => [
-    `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]]), p[1],
+    `${pad2(CAP50[p[0]][0])} - ${pad2(CAP50[p[0]][1])}`, drawDate(pg.last[p[0]], rows), p[1],
     pg.maxGap[p[0]] || "—", pg.hits[p[0]],
   ]);
   table($("sp-pair-gan"),
@@ -1516,8 +1526,9 @@ function renderLoGan() {
 }
 
 function renderSpecialCycle() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const s = specialGaps(rows);
+  setCount(rows);
   const order = s.current.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]);
   const body = order.map((p, k) => [k + 1, pad2(p[0]), p[1], s.maxGap[p[0]] || "—", s.hits[p[0]]]);
   table($("sp-grid"),
@@ -1526,11 +1537,12 @@ function renderSpecialCycle() {
 }
 
 function renderSpecialBySet() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const draws = selected();
+  const s = specialGaps(draws);
+  setCount(draws);
   const rows = [];
   for (let i = 0; i < 100; i++) {
-    const lastDate = s.last[i] >= 0 ? DRAWS[s.last[i]].d : "chưa từng";
+    const lastDate = s.last[i] >= 0 ? draws[s.last[i]].d : "chưa về trong dải";
     rows.push([pad2(i), lastDate, s.current[i], s.maxGap[i] || "—", s.hits[i]]);
   }
   rows.sort((a, b) => b[2] - a[2]);
@@ -1540,8 +1552,9 @@ function renderSpecialBySet() {
 }
 
 function renderTomorrow() {
-  const s = specialGaps();
-  setCount(DRAWS);
+  const rows = selected();
+  const s = specialGaps(rows);
+  setCount(rows);
   // Điểm tham khảo: số kỳ chưa về chuẩn hoá theo chu kỳ dài nhất của chính
   // con đó. Đây là mô tả lịch sử, KHÔNG phải xác suất đã hiệu chuẩn.
   const scored = [];
