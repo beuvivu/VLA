@@ -30,8 +30,8 @@ Tái lập bằng `PYTHONPATH=src python3 scripts/research/audit_forecast_ceilin
 | Các chữ số trong cùng kỳ phụ thuộc nhau | Phương sai số lần một chữ số xuất hiện trong một kỳ | 2,43 (chục), 2,42 (đơn vị); nhị thức là 2,43 |
 | Lô về hôm nay kéo theo kỳ sau | P(về \| đã về) − P(về \| chưa về), độ trễ 1, 2, 3, 7; sai số theo cụm kỳ đích (100 con của một kỳ không độc lập) | z = +0,74, +0,69, +0,55, +1,13 |
 | Lệch vật lý trôi theo thời gian | Mô hình tần suất chữ số trong W kỳ gần nhất, co về đều với độ mạnh k (20 cấu hình), walk-forward 3 836 kỳ | Cả 20 cấu hình đều kém dự báo đều. Tốt nhất là W = 60, k = 5 000 với z = −0,61; co càng mạnh càng đỡ kém |
-| Cầu vị trí khác nhau thật | Tỉ lệ trúng của 170 130 đường cầu, so độ tản với dao động nhị thức | 0,99 lần (LOTO), 1,00 lần (Đặc Biệt) — mục 2 |
-| Cầu đang chạy dài trúng tiếp nhiều hơn | Tỉ lệ trúng tiếp theo độ dài chuỗi, đếm trên mọi đường cầu | 23,5–24,2% ở mọi độ dài, so với nền 23,76% — mục 2 |
+| Cầu vị trí khác nhau thật | Tỉ lệ trúng của 170 130 đường cầu, so độ tản với dao động nhị thức | 1,00 lần (0,998 LOTO, 0,999 Đặc Biệt), cửa sổ 2 000 kỳ của pipeline — mục 2 |
+| Cầu đang chạy dài trúng tiếp nhiều hơn | Tỉ lệ trúng tiếp theo độ dài chuỗi, đếm trên mọi đường cầu | 23,5–24,0% ở mọi độ dài, so với nền 23,81% — mục 2 |
 
 Kỹ năng ngoài mẫu của vector **đã công bố** (`data/model_quality/report.json`, 48 kỳ):
 
@@ -151,10 +151,11 @@ danh tính lượt đo: tham số, băm dữ liệu, băm mã của cầu. Bư�
 đòi các kỳ đích ghép lại trùng đúng dãy kỳ đích. Số liệu thô nằm ở
 `data/research/model_overhaul/bridge_inference.json`.
 
-Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline, trên thuật toán cuối cùng
-(commit 14e96040, sau mọi sửa chữa theo review). Bản cũ được tái lập từng
-bit: sai lệch 0,0 so với mã trước 16-10-2026 ở cả bốn ô, kiểm trên hai ngày neo. Mốc hằng số là tỉ
-lệ nền tích luỹ (LOTO) và 1/100 (Đặc Biệt).
+Walk-forward 2 000 kỳ, cầu dựng lại mỗi kỳ bằng đúng tham số của pipeline (cửa sổ 2 000 kỳ), trên
+thuật toán cuối cùng (commit d22815d7, sau mọi sửa chữa theo review; các commit sau không đổi mã
+nguồn của cầu, và báo cáo ghi băm mã ấy ở `run.code_sha256`). Bản cũ được tái lập từng bit: sai lệch
+0,0 so với mã trước 16-10-2026 ở cả bốn ô, kiểm trên hai ngày neo. Mốc hằng số là tỉ lệ nền tích
+luỹ (LOTO) và 1/100 (Đặc Biệt).
 
 Luật quyết định chốt TRƯỚC khi đo, ghi trong docstring của kịch bản:
 
@@ -169,41 +170,53 @@ Kỳ đích từ 31-03-2021 đến 15-10-2026, 2 000 kỳ.
 
 | Ô | Mới so với cũ | Cũ so với hằng số | Mới so với hằng số | Tổng LOTO (trung vị): cũ → mới |
 |---|---:|---:|---:|---:|
-| LOTO đang chạy | **z = +7,86** (nửa +5,73 / +5,38) | z = −8,09 | z = −1,62 | 24,48 → 23,82 |
-| LOTO ổn định | **z = +38,25** (nửa +26,61 / +27,48) | z = −38,55 | z = −1,62 | 26,46 → 23,82 |
-| Đặc Biệt đang chạy | z = +1,10 | z = −0,75 | z = +0,85 | — |
-| Đặc Biệt ổn định | z = +1,08 (nửa +0,63 / +0,91) | z = −0,97 | z = +0,84 | — |
+| LOTO đang chạy | z = +0,22 (nửa +1,21 / −0,92) | z = −0,22 | z = +0,12 | 23,90 → 23,83 |
+| LOTO ổn định | **z = +9,69** (nửa +7,23 / +6,47) | z = −9,72 | z = −0,62 | 24,42 → 23,84 |
+| Đặc Biệt đang chạy | z = −0,07 | z = +0,11 | z = +0,26 | — |
+| Đặc Biệt ổn định | z = +1,51 (nửa +0,20 / +1,95) | z = −1,45 | z = +0,92 | — |
+
+Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
 
 **Tổ hợp** (trọng số mặc định, chốt bằng `finalize_blend`):
 
-| | Mới so với cũ | Mới so với hằng số |
-|---|---:|---:|
-| LOTO | z = −0,42 (nửa +0,23 / −0,83) | z = +0,43 |
-| Đặc Biệt | z = +0,27 | z = +0,98 |
+| | Mới so với cũ | Cũ so với hằng số | Mới so với hằng số |
+|---|---:|---:|---:|
+| LOTO | z = −0,09 (nửa +0,60 / −0,71) | z = +0,39 | z = +0,43 |
+| Đặc Biệt | z = +1,01 (nửa −0,13 / +1,57) | z = −0,96 | z = +0,97 |
 
 **Quyết định: đạt cả ba luật, nên đổi.**
 
-1. Nhánh: thấp nhất z = +1,08, cao nhất z = +38,25.
-2. Tổ hợp so với cũ: thấp nhất z = −0,42.
+1. Nhánh: thấp nhất z = −0,07 (Đặc Biệt đang chạy), cao nhất z = +9,69 (LOTO ổn định).
+2. Tổ hợp so với cũ: thấp nhất z = −0,09.
 3. Tổ hợp so với hằng số: thấp nhất z = +0,43.
 
 Đọc cho đúng:
 
-- **Phần thắng lớn nằm ở nhánh, không ở tổ hợp.**
-  - Nhánh cũ kém hằng số rất xa (LOTO ổn định z = −38,55) vì lời nguyền người thắng ở MỨC.
+- **Phần thắng nằm ở nhánh ổn định, không ở tổ hợp.**
+  - Nhánh ổn định cũ thổi tổng LOTO lên 24,42 và kém hằng số z = −9,72. Bản mới đưa tổng về 23,84
+    và ngang hằng số.
+  - Nhánh đang chạy cũ chỉ thổi nhẹ (23,90), nên bản mới không hơn rõ (z = +0,22).
+  - Lần đo trước trên cửa sổ 365 kỳ cho hai ô LOTO z = +7,86 và +38,25. Cầu tính trên 365 kỳ có ít
+    lần chấm hơn, tỉ lệ lịch sử nhiễu hơn, nên top 300 được chọn bị thổi mạnh hơn (tổng 24,48 và
+    26,46). Production dùng 2 000 kỳ, nên các số ở bảng trên mới là số đúng.
   - Ở tầng tổ hợp, `finalize_blend` đã neo mức từ 04-10, nên hai bản ngang nhau. Đó là điều mong
     đợi: tổ hợp đã ở trần, và phép sửa này không được phép làm nó tệ đi.
-- **Nhánh LOTO mới vẫn nhỉnh kém hằng số**, z = −1,62 ở cả hai nhánh, cùng dấu ở cả hai nửa nhưng không
-  có ý nghĩa thống kê. Có hai nguồn, ghi ra thay vì sửa sau khi đã xem kết quả:
-  - tâm co là tỉ lệ trúng chung của cửa sổ 365 kỳ (tổng trung vị 23,82), không phải mốc tích luỹ;
-  - ở 53% số ngày, phương pháp mô men rơi về phía dương do nhiễu nên κ hữu hạn. Phần chênh được giữ
-    khi ấy không quá 1,0%, và độ lệch lớn nhất của kinh nghiệm chuỗi so với nền là 0,03 điểm phần
-    trăm.
-
-  Docstring của `hierarchical_pooling.fit_shrinkage_to_prior_rows` đã cảnh báo đúng hiện tượng này:
-  κ hữu hạn không phải một phát hiện.
-- Độ tản giữa các cầu qua 2 000 ngày neo: trung vị 1,00 lần nhị thức, khoảng 0,99–1,01 (LOTO);
-  trung vị 1,00 lần, khoảng 0,99–1,01 (Đặc Biệt).
+- **Nhánh mới ngang hằng số** ở cả bốn ô: LOTO z = +0,12 (đang chạy) và −0,62 (ổn định), Đặc Biệt
+  z = +0,26 và +0,92. Lần đo trên cửa sổ 365 kỳ từng cho LOTO z = −1,62; ở cửa sổ production phần
+  kém ấy không còn.
+- **Ở Đặc Biệt, z hai nửa nhảy mạnh nhưng không phải tín hiệu.**
+  - Nhánh đang chạy mới khác hằng số ở 292 trên 2 000 kỳ: thua rất nhỏ ở 286 kỳ (trung vị
+    0,000025 nats) và thắng ở 6 kỳ, khi Đặc Biệt rơi vào con có cầu báo.
+  - Với chênh lệch lệch như thế, z của nửa đầu là −11,0 dù cả lượt là +0,26: z đo độ đều đặn của
+    dấu, không đo độ lớn. Chênh lệch trung bình chỉ 7,6·10⁻⁷ nats mỗi kỳ.
+- **Độ tản giữa các cầu qua 2 000 ngày neo** quanh 1,00 lần nhị thức: khoảng 0,996–1,007 (LOTO)
+  và 0,997–1,011 (Đặc Biệt).
+  - Phương pháp mô men co hoàn toàn ở 78% số ngày (LOTO) và 47% (Đặc Biệt).
+  - Những ngày còn lại, phần riêng được giữ không quá 0,7% (LOTO) và 1,1% (Đặc Biệt). Docstring
+    của `hierarchical_pooling.fit_shrinkage_to_prior_rows` đã cảnh báo: κ hữu hạn không phải một
+    phát hiện.
+- **Kinh nghiệm chuỗi** lệch khỏi nền nhiều nhất 0,078 điểm phần trăm (LOTO) và 0,003 điểm (Đặc
+  Biệt) trên cả 2 000 ngày neo.
 
 ## 4. Điều thay đổi với người đọc
 

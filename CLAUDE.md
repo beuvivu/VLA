@@ -480,7 +480,7 @@ THÔ của từng cầu bỏ ra chuỗi đang chạy (không phải tỉ lệ ch
 cầu hai lần). Phần riêng giữ
 `N/(N + κ)` theo số lần chấm của TỪNG độ trễ; trang in phạm vi/độ trễ đúng cấu hình. Đo 15-10-2026 trên cửa sổ 2 000 kỳ của pipeline: độ tản
 giữa 170 130 cầu bằng 1,00 lần nhị thức, chuỗi 0–8+ trúng tiếp 23,5–24,0% so với nền 23,8% — mọi cầu co
-về nền. Walk-forward 2 000 kỳ: nhánh LOTO mới hơn cũ z = +7,86 (đang chạy) và +38,25 (ổn định), tổ hợp không đổi (z = −0,42; +0,27) vì `finalize_blend` đã neo mức; nhánh mới vẫn nhỉnh kém hằng số z ≈ −1,6 (tâm là tỉ lệ cửa sổ 365 kỳ) — ghi ra, không chỉnh sau khi xem. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
+về nền. Walk-forward 2 000 kỳ trên cửa sổ production: nhánh LOTO ổn định mới hơn cũ z = +9,69 (tổng 24,42 → 23,84), đang chạy z = +0,22; tổ hợp không đổi (z = −0,09; +1,01) vì `finalize_blend` đã neo mức; nhánh mới ngang hằng số ở cả bốn ô (LOTO z = +0,12 / −0,62). Phép đo chạy theo phần (`--parts/--part/--merge`); bước gộp đòi cùng danh tính lượt đo. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
 trong mẫu). Trang in câu kết luận TỪ `bridge_evidence_<mode>.json`
 (`documentation/research/2026-10-16-tran-du-bao-va-suy-luan-cau.md`, `tests/test_bridge_inference.py`).
 Trần dự báo của cả hệ thống (lệch chữ số, phụ thuộc giữa các kỳ, mô hình tần suất gần) đo bằng
