@@ -335,6 +335,19 @@ def _overview(f: dict[str, str]) -> tuple[Evidence, list[Section]]:
     ]
 
 
+#: Trang soi cầu theo đường cầu: phép suy luận xác suất kỳ tới (``path_prob.BridgeEvidence``).
+_SOI_PATH = (
+    "Xác suất kỳ tới của một đường cầu = tỉ lệ trúng chung của mọi đường cầu + phần riêng của nó, "
+    "co theo mức chênh THẬT giữa các cầu (Bayes thực nghiệm trên mọi cặp vị trí × độ trễ, không chỉ "
+    "cầu được giữ). Không có phần chênh vượt dao động ngẫu nhiên thì mọi cầu co về tỉ lệ chung; "
+    "cột «Tỷ lệ lịch sử» là tỉ lệ trong mẫu, giữ để đối chiếu."
+)
+_SOI_PATH_CHAY = (
+    "Nhánh đang chạy cộng kinh nghiệm theo độ dài chuỗi: tỉ lệ trúng tiếp của mọi đường cầu đang "
+    "chạy s kỳ, co về tỉ lệ chung theo mô hình hiệu ứng ngẫu nhiên."
+)
+
+
 def _cau(f: dict[str, str], *extra: str) -> Evidence:
     return _ev(
         [_ket_qua(f), _CAU],
@@ -675,10 +688,10 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
         "soi-cau-dac-biet-bo-so.html": cau("Bước trúng: n của kỳ sau cùng bộ với n của kỳ trước; cầu báo Đặc Biệt kỳ sau rơi vào bộ ấy."),
         "soi-cau-dac-biet-theo-thu.html": cau("Như cầu Đặc Biệt, nhưng chỉ trên các kỳ cùng một thứ trong tuần."),
         "soi-cau-loto-theo-thu.html": cau("Như cầu LOTO, nhưng chỉ trên các kỳ cùng một thứ trong tuần."),
-        "soi-path-loto-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
-        "soi-path-loto-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
-        "soi-path-de-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
-        "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang."),
+        "soi-path-loto-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang.", _SOI_PATH, _SOI_PATH_CHAY),
+        "soi-path-loto-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang.", _SOI_PATH),
+        "soi-path-de-active.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang.", _SOI_PATH, _SOI_PATH_CHAY),
+        "soi-path-de-stable.html": cau("Ngày neo, số ngày cầu chạy và trạng thái ghi ở đầu trang.", _SOI_PATH),
         "dashboard.html": (_du_bao_ev(f, "Số trong bảng xác suất và danh sách gợi ý là xác suất (hoặc thứ hạng) của số ấy cho kỳ kế tiếp."), [
             _sec(".ai-status-strip", "Phạm vi và xuất xứ mô hình", _ev([_ket_qua(f), _trong_so(f)], [
                 "Ngày dữ liệu là ngày kỳ quay mới nhất đã lưu. Đây không phải ngày đích của mọi tệp dự báo.",

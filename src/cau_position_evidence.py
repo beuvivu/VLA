@@ -31,7 +31,7 @@ from safe_io import read_csv_or_empty
 
 from lottery import Lottery
 from path_models import PathParams, index_to_label
-from path_prob import fit_paths, paths_to_dataframe
+from path_prob import fit_paths, paths_to_dataframe, rule_next_probability
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -181,16 +181,43 @@ def _rule_score(row: pd.Series) -> float:
     return round(float(score), 4)
 
 
+def _next_probability(row: pd.Series) -> float | None:
+    """Xác suất trúng kỳ tới của đường cầu theo kinh nghiệm học từ MỌI cầu.
+
+    ``p_post`` (``path_prob.BridgeEvidence``), cộng phần kinh nghiệm theo chuỗi
+    với cầu đang chạy — đúng con số trang soi cầu in ở cột «Dự báo kỳ tới».
+    Thiếu cột (tệp dựng trước 16-10-2026) thì trả ``None``.
+    """
+    p_post = pd.to_numeric(row.get("p_post"), errors="coerce")
+    if pd.isna(p_post):
+        return None
+    shift = pd.to_numeric(row.get("streak_shift"), errors="coerce")
+    # Cùng hàm với bước gợi ý của trang soi cầu (cộng chuỗi, chặn biên).
+    frame = pd.DataFrame({"p_post": [float(p_post)], "streak_shift": [0.0 if pd.isna(shift) else float(shift)]})
+    kind = "active" if str(row.get("rule_kind", "")) == "active" else "stable"
+    return float(rule_next_probability(frame, kind=kind)[0])
+
+
 def _row_reason(row: pd.Series) -> str:
+    """Lý do của một đường cầu: tỉ lệ TRONG MẪU kèm xác suất kỳ tới đã co.
+
+    Tỉ lệ lịch sử của một cầu được chọn ra từ hàng nghìn cầu mang lời nguyền
+    người thắng, nên câu không in nó như một xác suất ("p≈0,32"); con số dự
+    báo là hậu nghiệm Bayes thực nghiệm.
+    """
     current_streak = int(_safe_float(row.get("current_streak")))
     max_streak = int(_safe_float(row.get("max_streak")))
-    p_mean = _safe_float(row.get("p_mean"))
     hits = int(_safe_float(row.get("hits")))
     trials = int(_safe_float(row.get("trials")))
     kind = str(row.get("rule_kind", ""))
+    p_next = _next_probability(row)
+    tail = (
+        f"; dự báo kỳ tới {p_next * 100:.2f}% theo kinh nghiệm mọi đường cầu".replace(".", ",")
+        if p_next is not None else ""
+    )
     if kind == "active" and current_streak > 0:
-        return f"Cầu đang chạy {current_streak} nhịp; lịch sử {hits}/{trials}, p≈{p_mean:.3f}."
-    return f"Cầu bền: max streak {max_streak}; lịch sử {hits}/{trials}, p≈{p_mean:.3f}."
+        return f"Cầu đang chạy {current_streak} nhịp; trúng {hits}/{trials} kỳ trong cửa sổ{tail}."
+    return f"Cầu bền: chuỗi dài nhất {max_streak}; trúng {hits}/{trials} kỳ trong cửa sổ{tail}."
 
 
 def _build_positions_for_mode(
@@ -272,6 +299,8 @@ def _build_positions_for_mode(
                 "special_touch": int(_safe_float(r.get("special_touch"))),
                 "special_both": int(_safe_float(r.get("special_both"))),
             }
+            p_next = _next_probability(pd.Series({**r.to_dict(), "rule_kind": kind}))
+            base["p_next"] = round(p_next, 8) if p_next is not None else None
             base["rule_score"] = _rule_score(pd.Series(base | r.to_dict()))
             base["reason"] = _row_reason(pd.Series(base | r.to_dict()))
             rows.append(base)

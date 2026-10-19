@@ -52,6 +52,12 @@
     .path-table-scroll table{margin:0;min-width:max-content}.path-table-scroll th{top:0;box-shadow:0 1px 0 var(--line)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .path-footer{margin-top:14px;color:var(--muted);padding-bottom:8px}
+    .path-experience{margin-top:14px}
+    .path-experience-title{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em}
+    .path-experience-scope{margin:6px 0 0}
+    .path-experience-verdict{margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--ui-ink-2)}
+    .path-experience-scroll{margin-top:10px;max-width:40rem;overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    .path-experience-table caption{caption-side:bottom;text-align:left;padding:8px}
     @media(max-width:979px){.path-overview{grid-template-columns:1fr}.path-table-scroll{max-height:58vh}}
     @media(max-width:640px){.path-shell{padding:12px}.path-hero{padding:14px;border-radius:16px}.card{border-radius:16px;padding:13px}.quick-grid{grid-template-columns:1fr}.kpi{width:100%}.chip{font-size:11px}}
   </style>
@@ -73,7 +79,7 @@
   <div class="grid path-overview" style="margin-top:12px">
     <div class="card">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Tỷ lệ tổng hợp từ các đường cầu đủ điều kiện ({{ kind_label }}).</div></div>
+        <div><b>Gợi ý ngày mai (xác suất)</b><div class="small">Xác suất trúng kỳ tới: trung bình dự báo của các đường cầu đủ điều kiện ({{ kind_label|lower }}) cùng báo con ấy, theo kinh nghiệm học từ mọi đường cầu.</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           {% if other_link %}<a class="btn secondary" href="{{ other_link }}">Xem {{ other_kind_label }} ({{ other_mode_label }})</a>{% endif %}
           {% if index_link %}<a class="btn secondary" href="{{ index_link }}">Trang tổng hợp</a>{% endif %}
@@ -113,7 +119,7 @@
         </div>
         {% endfor %}
       </div>
-      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo điểm tổng hợp; đây là điểm xếp hạng, không phải xác suất đã hiệu chuẩn.</i></div>
+      <div class="small" style="margin-top:8px"><i>Hiển thị 10 số đứng đầu theo xác suất kỳ tới; khối «Kinh nghiệm học từ mọi đường cầu» bên dưới cho biết các con chênh nhau tới đâu.</i></div>
       {% else %}
       <div class="empty-state">Không có đường cầu nào đủ điều kiện ở ngày neo này, nên chưa có danh sách chọn nhanh.</div>
       {% endif %}
@@ -122,6 +128,28 @@
       </div>
     </div>
   </div>
+
+  {% if experience %}
+  <section class="card path-experience" aria-labelledby="path-experience-title">
+    <h2 id="path-experience-title" class="path-experience-title">Kinh nghiệm học từ mọi đường cầu</h2>
+    <p class="small path-experience-scope">Ngày neo {{ experience.anchor_date }} · {{ experience.rules }} đường cầu ({{ experience.scope_text }}), mỗi đường chấm trên {{ experience.trials }} kỳ gần nhất · tỉ lệ trúng chung {{ experience.base_pct }}%.</p>
+    <p class="path-experience-verdict">{{ experience.verdict }}</p>
+    {% if experience.streak_rows %}
+    <div class="path-experience-scroll">
+      <table class="path-experience-table">
+        <caption class="small">Cầu đang chạy s kỳ liên tiếp thì kỳ kế tiếp trúng bao nhiêu — đếm trên mọi đường cầu{% if experience.uses_streak %}; cột «Dự báo» là phần nhánh đang chạy dùng{% endif %}.</caption>
+        <thead><tr><th>Chuỗi trước kỳ</th><th>Số lần chấm</th><th>Trúng tiếp</th><th>Dự báo</th></tr></thead>
+        <tbody>
+          {% for row in experience.streak_rows %}
+          <tr><td>{{ row.label }}</td><td>{{ row.trials }}</td><td>{{ row.raw }}%</td><td>{{ row.post }}%</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    <p class="small">{{ experience.streak_verdict }} Các lần chấm của những cầu cùng kỳ tương quan với nhau qua chính kỳ quay ấy, nên số lần ở đây không phải số quan sát độc lập.</p>
+  </section>
+  {% endif %}
 
   <div class="card path-matrix-card" style="margin-top:12px; overflow:hidden">
     <b>Bảng đường cầu (dữ liệu gốc → số) theo ngày</b>
@@ -153,6 +181,7 @@
           <tr>
             <th class="left">Đường cầu</th>
             <th>Tỷ lệ lịch sử</th>
+            <th>Dự báo kỳ tới</th>
             <th>Chuỗi liên tiếp</th>
             {% for d in days %}
               <th class="mono">{{ d[5:] }}</th>
@@ -167,6 +196,7 @@
               <div class="small">trễ={{ row.lag }} · A={{ row.i }} ({{ row.i_label }}) · B={{ row.j }} ({{ row.j_label }})</div>
             </td>
             <td>{{ (row.p_mean*100)|round(2) }}</td>
+            <td>{% if row.p_next is defined and row.p_next is not none %}{{ (row.p_next*100)|round(2) }}{% else %}—{% endif %}</td>
             <td class="mono">{{ row.streak }}</td>
             {% for cell in row.cells %}
               {% if cell.hitde %}
