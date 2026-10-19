@@ -137,3 +137,7 @@ forecasting guarantee.
 - [Kế hoạch triển khai ba tác tử XSMB](plans/2026-10-17-xsmb-multi-agent.md)
 - [Kiểm chứng và số đo ba tác tử XSMB](qa/2026-10-17-xsmb-multi-agent.md)
 - [Làm mới source, cache và tài nguyên xuất bản](operations/source-refresh.md)
+
+## Đồng bộ Keno/Bingo18 ngày 19-10-2026
+
+- [Khắc phục cơ chế đồng bộ Keno/Bingo18](qa/2026-10-19-vietlott-fast-results.md)
