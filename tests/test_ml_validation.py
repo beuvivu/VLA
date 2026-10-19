@@ -192,3 +192,40 @@ def test_production_inference_rejects_nonfinite_features_and_invalid_probabiliti
             pd.DataFrame({"baseline": [0.5]}),
             ["baseline"],
         )
+
+
+def _reference_bootstrap(baseline, challenger, config):
+    """Bản trước khi vector hoá: ghép lại mọi hàng của các kỳ rút được rồi chấm qua sklearn."""
+    unique_dates = pd.unique(baseline.dates)
+    groups = [np.flatnonzero(baseline.dates == date) for date in unique_dates]
+    rng = np.random.default_rng(config.bootstrap_seed)
+    brier, logloss = [], []
+    for _ in range(config.bootstrap_replicates):
+        sampled = rng.integers(0, len(groups), size=len(groups))
+        idx = np.concatenate([groups[int(i)] for i in sampled])
+        y = baseline.y_true[idx]
+        base = evaluate_predictions(y, baseline.probability[idx], baseline.dates[idx])
+        cand = evaluate_predictions(y, challenger.probability[idx], challenger.dates[idx])
+        brier.append(base.brier - cand.brier)
+        logloss.append(base.logloss - cand.logloss)
+    return np.array(brier), np.array(logloss)
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_grouped_bootstrap_equals_the_row_concatenating_bootstrap(seed) -> None:
+    """Kỳ có số hàng KHÁC nhau và xác suất sát biên: trung bình theo hàng phải trọng số theo cỡ kỳ."""
+    rng = np.random.default_rng(seed)
+    sizes = rng.integers(1, 9, size=37)
+    dates = np.repeat(pd.date_range("2026-01-01", periods=len(sizes)).to_numpy(), sizes)
+    rng.shuffle(dates)  # các hàng của một kỳ không cần liền nhau
+    y = rng.integers(0, 2, size=len(dates))
+    p_base = rng.uniform(0, 1, size=len(dates))
+    p_cand = np.clip(p_base + rng.normal(0, .2, size=len(dates)), 0, 1)
+    p_cand[:3] = [0.0, 1.0, 1e-12]
+    baseline = evaluate_predictions(y, p_base, dates)
+    challenger = evaluate_predictions(y, p_cand, dates)
+    config = ValidationConfig(bootstrap_replicates=150, bootstrap_seed=seed + 5, minimum_oos_dates=1)
+    brier, logloss = _paired_date_bootstrap(baseline, challenger, config=config)
+    ref_brier, ref_logloss = _reference_bootstrap(baseline, challenger, config)
+    np.testing.assert_allclose(brier, ref_brier, rtol=1e-10, atol=1e-13)
+    np.testing.assert_allclose(logloss, ref_logloss, rtol=1e-10, atol=1e-13)

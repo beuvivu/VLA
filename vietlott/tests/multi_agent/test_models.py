@@ -147,3 +147,64 @@ class AlgorithmEnsembleTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def _scalar_reference(logits, k):
+    """Bản quy hoạch động vô hướng trước khi vector hoá theo cột (19-10-2026)."""
+    values = np.asarray(logits, dtype=np.longdouble)
+    n = len(values)
+    order = np.argsort(-values, kind='stable')
+    z = values[order]
+    dp = np.full((n + 1, k + 1), -np.inf, dtype=np.longdouble)
+    dp[:, 0] = 0
+    for i, value in enumerate(z, 1):
+        for j in range(1, min(i, k) + 1):
+            dp[i, j] = np.logaddexp(dp[i - 1, j], dp[i - 1, j - 1] + (value - z[j - 1]))
+    if k == n:
+        return dp, np.ones(n)
+    adjoint = np.zeros_like(dp)
+    adjoint[n, k] = 1
+    marginal = np.zeros(n, dtype=np.longdouble)
+    for i in range(n, 0, -1):
+        for j in range(min(i, k) + 1):
+            mass = adjoint[i, j]
+            if mass == 0:
+                continue
+            if j == 0:
+                adjoint[i - 1, 0] += mass
+                continue
+            excluded = dp[i - 1, j]
+            included = dp[i - 1, j - 1] + (z[i - 1] - z[j - 1])
+            if np.isneginf(excluded):
+                probability = np.longdouble(1)
+            elif np.isneginf(included):
+                probability = np.longdouble(0)
+            else:
+                difference = included - excluded
+                exponential = np.exp(-abs(difference))
+                probability = (1 / (1 + exponential) if difference >= 0
+                               else exponential / (1 + exponential))
+            marginal[i - 1] += mass * probability
+            adjoint[i - 1, j - 1] += mass * probability
+            adjoint[i - 1, j] += mass * (1 - probability)
+    result = np.empty(n)
+    result[order] = np.asarray(np.clip(marginal, 0, 1), dtype=float)
+    return dp, result
+
+
+class VectorisedRecursionTests(unittest.TestCase):
+    """Vector hoá theo cột không được đổi một bit nào: biên đi vào gradient của MLP và sổ live."""
+
+    def test_columns_vectorised_recursion_is_bit_identical_to_the_scalar_loop(self):
+        rng = np.random.default_rng(20261019)
+        cases = [(rng.normal(0, scale, n), k)
+                 for n, k in ((1, 1), (2, 1), (5, 5), (6, 3), (45, 6), (55, 6), (35, 5), (80, 20), (10, 9))
+                 for scale in (0.01, 1.0, 4.0, 50.0, 1e3)]
+        cases += [(np.zeros(10), 3), (np.array([1e308] * 5 + [0.0] * 5), 3),
+                  (np.array([-1e308, 0.0, 1e308, 5.0]), 2), (np.round(rng.normal(0, 1, 30)), 7)]
+        for logits, k in cases:
+            with self.subTest(n=len(logits), k=k, scale=float(np.abs(logits).max())):
+                dp, marginals = _scalar_reference(logits, k)
+                distribution = SubsetDistribution(logits, k)
+                np.testing.assert_array_equal(distribution._dp, dp)
+                np.testing.assert_array_equal(distribution.marginals, marginals)

@@ -89,3 +89,25 @@ def test_future_result_mutation_cannot_change_earlier_domain_features(
     right = right.sort_values(["anchor_date", "number"]).reset_index(drop=True)
 
     pd.testing.assert_frame_equal(left, right, check_dtype=False, check_exact=True)
+
+
+@pytest.mark.parametrize("mode", ["loto", "de"])
+@pytest.mark.parametrize("include_target", [True, False])
+def test_feature_frame_built_once_equals_concatenated_anchor_frames(
+    monkeypatch: pytest.MonkeyPatch, mode: str, include_target: bool
+) -> None:
+    """Dựng khung đặc trưng một lần phải ra ĐÚNG giá trị và kiểu như nối từng khung 100 hàng."""
+    raw, two_digits = _history(80)
+    config = CauKeoConfig(min_history_days=20, lag_max_for_path_support=3, window_days=2_000, top=10)
+    fast, fast_target = cau_keo_ml.build_cau_keo_feature_frame(
+        mode, include_target=include_target, config=config, raw=raw, two=two_digits)
+    monkeypatch.setattr(
+        cau_keo_ml, "_stack_anchor_columns",
+        lambda rows: pd.concat([pd.DataFrame(r) for r in rows], ignore_index=True)
+        if rows else pd.DataFrame())
+    slow, slow_target = cau_keo_ml.build_cau_keo_feature_frame(
+        mode, include_target=include_target, config=config, raw=raw, two=two_digits)
+    assert len(fast) == (100 * 59 if include_target else 100)
+    pd.testing.assert_frame_equal(fast, slow, check_dtype=True, check_exact=True)
+    if include_target:
+        pd.testing.assert_series_equal(fast_target, slow_target)

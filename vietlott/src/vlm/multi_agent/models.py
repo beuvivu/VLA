@@ -35,13 +35,16 @@ class SubsetDistribution:
         self._dp = np.full((self.n + 1, self.k + 1), -np.inf, dtype=np.longdouble)
         self._dp[:, 0] = 0
         for i, value in enumerate(self._logits, 1):
-            for j in range(1, min(i, self.k) + 1):
-                # Normalize each column by the best j-subset's score. Sorting
-                # makes its baseline identical across rows, so even 1e308 ties
-                # retain their log multiplicity rather than losing log(2).
-                penalty = value - self._logits[j - 1]
-                self._dp[i, j] = np.logaddexp(self._dp[i - 1, j],
-                                             self._dp[i - 1, j - 1] + penalty)
+            # Normalize each column by the best j-subset's score. Sorting
+            # makes its baseline identical across rows, so even 1e308 ties
+            # retain their log multiplicity rather than losing log(2).
+            # Row i reads only row i-1, so all columns j = 1..min(i, k) are
+            # one elementwise ufunc call: the same longdouble operations per
+            # cell as a scalar loop over j, without its interpreter overhead.
+            m = min(i, self.k)
+            penalty = value - self._logits[:m]
+            self._dp[i, 1:m + 1] = np.logaddexp(self._dp[i - 1, 1:m + 1],
+                                                self._dp[i - 1, :m] + penalty)
         self._marginals: np.ndarray | None = None
 
     def _differentiate(self) -> np.ndarray:
@@ -50,29 +53,35 @@ class SubsetDistribution:
         adjoint = np.zeros_like(self._dp)
         adjoint[self.n, self.k] = 1
         marginal = np.zeros(self.n, dtype=np.longdouble)
+        one = np.longdouble(1)
+        # P(include item i | j picks left among the first i items) depends only
+        # on the finished forward table, so the whole n x k matrix is one
+        # elementwise pass: row r = i-1, column c = j-1. Each cell gets the same
+        # longdouble operations as the former per-cell scalar code; cells with
+        # j > i are never read.
+        excluded = self._dp[:-1, 1:]
+        included = self._dp[:-1, :-1] + (self._logits[:, None] - self._logits[None, :self.k])
+        with np.errstate(invalid='ignore'):
+            difference = included - excluded
+            exponential = np.exp(-np.abs(difference))
+            probability = np.where(difference >= 0, one / (one + exponential),
+                                   exponential / (one + exponential))
+        probability = np.where(np.isneginf(included), np.longdouble(0), probability)
+        probability = np.where(np.isneginf(excluded), one, probability)
+        complement = one - probability
         for i in range(self.n, 0, -1):
-            for j in range(min(i, self.k) + 1):
-                mass = adjoint[i, j]
-                if mass == 0:
-                    continue
-                if j == 0:
-                    adjoint[i - 1, 0] += mass
-                    continue
-                excluded = self._dp[i - 1, j]
-                included = (self._dp[i - 1, j - 1] +
-                            (self._logits[i - 1] - self._logits[j - 1]))
-                if np.isneginf(excluded):
-                    probability = np.longdouble(1)
-                elif np.isneginf(included):
-                    probability = np.longdouble(0)
-                else:
-                    difference = included - excluded
-                    exponential = np.exp(-abs(difference))
-                    probability = (1 / (1 + exponential) if difference >= 0
-                                   else exponential / (1 + exponential))
-                marginal[i - 1] += mass * probability
-                adjoint[i - 1, j - 1] += mass * probability
-                adjoint[i - 1, j] += mass * (1 - probability)
+            # Every column of row i is read before row i-1 is written, so one
+            # vector step per row. The row sum is accumulated left to right
+            # (np.cumsum), and cell j of row i-1 receives the "stay" share from
+            # cell j before the "move" share from cell j+1, exactly as before:
+            # marginals and every downstream gradient stay bit-for-bit.
+            m = min(i, self.k)
+            mass = adjoint[i, 1:m + 1]
+            moved = mass * probability[i - 1, :m]
+            marginal[i - 1] = np.cumsum(moved)[-1]
+            adjoint[i - 1, 0] = adjoint[i, 0]
+            adjoint[i - 1, 1:m + 1] = mass * complement[i - 1, :m]
+            adjoint[i - 1, :m] += moved
         result = np.empty(self.n)
         result[self._order] = np.asarray(np.clip(marginal, 0, 1), dtype=float)
         return result

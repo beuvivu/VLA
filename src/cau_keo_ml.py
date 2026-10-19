@@ -278,14 +278,29 @@ def _build_same_weekday_feature(
     start = max(0, anchor_t - lookback_days + 1)
     if start > anchor_t:
         return np.zeros(100, dtype=np.int16)
-    idx = [
-        i
-        for i in range(start, anchor_t + 1)
-        if int(dates[i].weekday()) == target_weekday
-    ]
-    if not idx:
+    # Mặt nạ thứ trên lát cửa sổ, một phép vector. Bản cũ lấy từng
+    # ``dates[i]`` (mỗi lần bọc một Timestamp): 1,47 triệu lượt mỗi lần dựng
+    # khung, 16 trong 75 giây của cau_keo_domain_challenger.
+    same = np.asarray(dates[start : anchor_t + 1].weekday) == target_weekday
+    if not same.any():
         return np.zeros(100, dtype=np.int16)
-    return hit[idx].sum(axis=0).astype(np.int16)
+    return hit[start : anchor_t + 1][same].sum(axis=0).astype(np.int16)
+
+
+def _stack_anchor_columns(rows: list[dict[str, object]]) -> pd.DataFrame:
+    """Ghép cột của mọi kỳ neo thành MỘT khung; đúng bằng ``pd.concat`` các khung 100 hàng.
+
+    Mỗi kỳ neo là 100 hàng (một hàng một con số). Dựng một ``DataFrame`` cho
+    từng kỳ rồi ``pd.concat`` tốn ~2,3 ms mỗi khung — 4 185 khung, gần 10 giây
+    trong ``multi_hit_report``. Nối từng cột bằng ``np.concatenate`` rồi dựng
+    một lần cho cùng giá trị và cùng kiểu: danh sách chuỗi thành mảng chuỗi
+    numpy, pandas đổi về ``object`` như khi suy kiểu từ danh sách.
+    """
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(
+        {name: np.concatenate([np.asarray(row[name]) for row in rows]) for name in rows[0]}
+    )
 
 
 def _build_month_year_to_date(
@@ -411,7 +426,7 @@ def build_cau_keo_feature_frame(
     cond_loto_counts = np.zeros((100, 100), dtype=np.int32)
     cond_loto_trials = np.zeros(100, dtype=np.int32)
 
-    rows: list[pd.DataFrame] = []
+    rows: list[dict[str, object]] = []
     targets: list[np.ndarray] = []
     end_t = n_days - 2 if include_target else n_days - 1
     start_save_t = max(1, config.min_history_days)
@@ -481,7 +496,7 @@ def build_cau_keo_feature_frame(
         for tail in range(10):
             tail_freq_7[tail::10] = int(f7_t[tail::10].sum())
 
-        frame = pd.DataFrame(
+        rows.append(
             {
                 "anchor_date": [dates[t].date().isoformat()] * 100,
                 "predict_for_date": [target_date.date().isoformat()] * 100,
@@ -539,11 +554,10 @@ def build_cau_keo_feature_frame(
                 - (freq_30[t].astype(float) * 7.0 / 30.0),
             }
         )
-        rows.append(frame)
         if include_target:
             targets.append(hit[t + 1].astype(np.int16))
 
-    X = pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+    X = _stack_anchor_columns(rows)
     y = (
         pd.Series(np.concatenate(targets).astype(int), name="target")
         if include_target and targets

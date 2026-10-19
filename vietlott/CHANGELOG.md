@@ -1,5 +1,15 @@
 # Nhật ký thay đổi
 
+## Chưa phát hành — kiểm toán định lượng (19-10-2026)
+
+- **`vlm.multi_agent.models.SubsetDistribution` nhanh hơn 4–9 lần, kết quả không đổi một bit.**
+  - Chiều xuôi của quy hoạch động tính mỗi hàng bằng một lời gọi `np.logaddexp` theo cột.
+  - Xác suất rẽ nhánh của chiều ngược tính một lần cho cả ma trận n × k.
+  - Phần lan khối lượng giữ đúng thứ tự cộng cũ.
+  - Phép kiểm so `_dp` và biên với bản vô hướng cũ bằng `assert_array_equal` trên 49 ca, kể cả
+    logit ±1e308 và k = n.
+  - Báo cáo: `../documentation/qa/2026-10-19-kiem-toan-dinh-luong.md`.
+
 ## Chưa phát hành — vé công bố rời nhau, nguồn kết quả nhanh (15-10-2026)
 
 - **Vé công bố:** lần ghi mới mang `ticket_rule = coverage-v1`; bảng điều khiển dựng năm vé rời nhau từ luật đã ghi (`distribution.coverage_tickets`) kèm mốc chính xác "ít nhất một vé ≥ 2/≥ 3 số" (`dashboard.coverage_summary`). Mega 30,6% → 70,9%, Power 22,2% → 53,7% với cùng năm vé; xác suất từng vé không đổi. Lần ghi cũ giữ `Law.top`.
