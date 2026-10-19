@@ -130,7 +130,7 @@ html.dark :is(.app-header,.app-rail,.app-panel){
 }
 .app-header-inner{height:80px;display:flex;align-items:center;padding-right:30px;width:100%;min-width:0}
 .app-rail-brand{position:absolute;left:0;top:0;width:80px;height:80px;display:flex;align-items:center;justify-content:center;background:var(--app-surface);border-bottom:1px solid var(--app-line)}
-.app-brand-icon{width:40px;height:40px}
+.app-brand-icon{display:block;width:48px;height:48px;object-fit:contain}
 .app-icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex:0 0 auto;padding:0;border:0;border-radius:50%;background:transparent;color:var(--app-head-ink);cursor:pointer;font:inherit;text-decoration:none}
 .app-icon-btn:hover{background:var(--app-fill)}
 .app-header .app-nexlink-ic{width:24px;height:25px}
@@ -160,9 +160,8 @@ html.dark :is(.app-header,.app-rail,.app-panel){
 .app-profile-copy strong{display:block;font-size:14px;font-weight:700}
 .app-profile-copy small{display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;color:var(--app-ink-soft)}
 .app-header .app-profile-copy .app-nexlink-ic{width:8px;height:8px}
-.app-avatar{display:flex;align-items:center;justify-content:center;position:relative;width:40px;height:40px;border-radius:50%;background:var(--app-fill);color:var(--app-accent)}
-.app-avatar::after{content:"";position:absolute;right:0;bottom:0;width:10px;height:10px;border:2px solid var(--app-surface);border-radius:50%;background:#009966}
-.app-avatar img{width:40px;height:40px;object-fit:cover;border-radius:50%}
+.app-avatar{display:flex;align-items:center;justify-content:center;width:40px;height:40px}
+.app-avatar img{display:block;width:40px;height:40px;object-fit:contain}
 .app-dropdown-menu{position:absolute;right:0;top:calc(100% + 20px);z-index:50;min-width:225px;padding:8px;border:1px solid var(--app-line);border-radius:8px;background:var(--app-surface);box-shadow:0 8px 30px rgba(0,0,0,.12);color:var(--app-ink)}
 .app-dropdown-menu[hidden],.app-dropdown-menu [hidden]{display:none!important}
 .app-dropdown-menu a,.app-dropdown-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-radius:6px;background:transparent;color:var(--app-ink);font:inherit;text-align:left;text-decoration:none;cursor:pointer}
