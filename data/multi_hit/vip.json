@@ -1,6 +1,6 @@
 {
   "version": 9,
-  "generated_at": "2026-10-19T16:34:11Z",
+  "generated_at": "2026-10-19T17:20:15Z",
   "source_date": "2026-10-19",
   "target_date": "2026-10-20",
   "draws": 4240,
@@ -86,7 +86,7 @@
       {
         "start_date": "2024-07-20",
         "C": 0.0001,
-        "inner_gain": -1.3290760156686732e-05
+        "inner_gain": -1.3290760156714487e-05
       },
       {
         "start_date": "2025-03-31",
@@ -142,7 +142,7 @@
     "lift": 1.0249033534118495,
     "z": 0.6104317269400025,
     "p_value": 0.2707879283144513,
-    "predicted": 0.028554088177556464
+    "predicted": 0.028554088177556364
   },
   "prospective": {
     "after": "2026-10-15",
@@ -158,8 +158,8 @@
   "picks": [
     {
       "number": "45",
-      "probability": 0.03255805548329546,
-      "x_base": 1.0945489674786921,
+      "probability": 0.03255805548329545,
+      "x_base": 1.0945489674786917,
       "confidence": "Low",
       "reasons": [
         "bóng của Đặc Biệt 90",
@@ -168,8 +168,8 @@
     },
     {
       "number": "90",
-      "probability": 0.03072727960042486,
-      "x_base": 1.0330012545537284,
+      "probability": 0.030727279600424845,
+      "x_base": 1.033001254553728,
       "confidence": "Low",
       "reasons": [
         "cùng tổng với Đặc Biệt 90",
@@ -178,8 +178,8 @@
     },
     {
       "number": "54",
-      "probability": 0.030605113097136587,
-      "x_base": 1.0288942150499945,
+      "probability": 0.030605113097136573,
+      "x_base": 1.0288942150499938,
       "confidence": "Low",
       "reasons": [
         "cùng tổng với Đặc Biệt 90",
@@ -188,8 +188,8 @@
     },
     {
       "number": "74",
-      "probability": 0.03025537481045216,
-      "x_base": 1.0171365816503395,
+      "probability": 0.030255374810452148,
+      "x_base": 1.0171365816503393,
       "confidence": "Low",
       "reasons": [
         "về ≥ 2 nháy ở kỳ mới nhất",
