@@ -16,7 +16,6 @@ from ml_engine.drift import DriftVerdict
 from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
 from ml_engine.metrics import score_day
 from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
-from ml_engine.bandit import BanditError, DiscountedThompsonSamplingMAB
 from ml_engine.schema import BASELINE_RATE, DailyRequest, ObservationMatrix, SchemaError
 
 
@@ -47,7 +46,10 @@ def pipeline(observations, monkeypatch):
         {"warmup": 1},
         {"window": 0},
         {"refit_every": 0},
-        {"discount": np.nan},
+        {"learning_rate": np.nan},
+        {"learning_rate": 0.0},
+        {"share": 1.0},
+        {"trust_window": 10, "trust_min_days": 11},
         {"feature_epsilon": np.inf},
         {"feature_epsilon": -1},
     ],
@@ -57,13 +59,19 @@ def test_invalid_configuration_is_rejected(changes):
         PipelineConfig(**changes)
 
 
-def test_repeated_forecast_does_not_change_or_advance_randomness(pipeline):
+def _learning_state(pipeline) -> str:
+    return json.dumps({"weights": pipeline.aggregator.weights(),
+                       "updates": pipeline.aggregator.updates,
+                       "trust": pipeline.safe_mode.state()}, sort_keys=True)
+
+
+def test_repeated_forecast_does_not_change_learning_state(pipeline):
     first = pipeline.predict_day(70)
-    state = json.dumps(pipeline.bandit.to_dict(), sort_keys=True)
+    state = _learning_state(pipeline)
     second = pipeline.predict_day(70)
     assert np.array_equal(first[0], second[0])
     assert first[1] == second[1]
-    assert json.dumps(pipeline.bandit.to_dict(), sort_keys=True) == state
+    assert _learning_state(pipeline) == state
     first[0][:] = 0.99
     assert np.array_equal(pipeline.predict_day(70)[0], second[0])
 
@@ -80,7 +88,7 @@ def test_step_scores_the_forecast_already_issued(pipeline):
 @pytest.mark.parametrize("action", ["step", "run", "predict"])
 def test_past_or_replayed_day_is_rejected_without_learning(pipeline, action):
     pipeline.step(70)
-    before = json.dumps(pipeline.bandit.to_dict(), sort_keys=True)
+    before = _learning_state(pipeline)
     with pytest.raises(ValueError):
         if action == "step":
             pipeline.step(70)
@@ -88,7 +96,7 @@ def test_past_or_replayed_day_is_rejected_without_learning(pipeline, action):
             pipeline.run(start=69, stop=73)
         else:
             pipeline.predict_day(69)
-    assert json.dumps(pipeline.bandit.to_dict(), sort_keys=True) == before
+    assert _learning_state(pipeline) == before
     assert pipeline.tracker.report().days == 1
 
 
@@ -100,7 +108,7 @@ def test_prediction_refuses_to_reuse_a_model_fitted_in_the_future(pipeline):
         pipeline.arm_probabilities(70)
 
 
-def test_rewards_distinguish_identical_rankings_with_wrong_probabilities(pipeline, monkeypatch):
+def test_losses_distinguish_identical_rankings_with_wrong_probabilities(pipeline, monkeypatch):
     ordinary = np.linspace(0.22, 0.25, 100)
     overconfident = np.linspace(0.92, 0.95, 100)
     monkeypatch.setattr(
@@ -114,10 +122,16 @@ def test_rewards_distinguish_identical_rankings_with_wrong_probabilities(pipelin
         },
     )
     result = pipeline.step(70)
-    assert result.arm_rewards["frequency"] > result.arm_rewards["gap_hazard"] + 0.3
+    assert result.arm_losses["gap_hazard"] > result.arm_losses["frequency"] + 0.3
+    weights = pipeline.aggregator.weights()
+    assert weights["gap_hazard"] < weights["frequency"]
 
 
 def test_drift_refits_next_day_and_records_mode_at_prediction(pipeline, monkeypatch):
+    # Cổng đang mở trước kỳ 70: đủ bằng chứng kỹ năng dương.
+    for _ in range(pipeline.config.trust_min_days):
+        pipeline.safe_mode.observe(logloss=0.5, brier=0.17,
+                                   baseline_logloss=0.55, baseline_brier=0.18)
     pipeline.predict_day(70)
     monkeypatch.setattr(
         pipeline.drift,
@@ -131,8 +145,9 @@ def test_drift_refits_next_day_and_records_mode_at_prediction(pipeline, monkeypa
         ),
     )
     result = pipeline.step(70)
-    assert result.mode == "normal"
+    assert result.mode == "normal" and result.trust == 1.0
     assert pipeline.safe_mode.mode.value == "safe"
+    assert "trôi lệch" in pipeline.safe_mode.reason
     pipeline.predict_day(71)
     assert pipeline._fitted_at == 71
 
@@ -145,7 +160,7 @@ def test_invalid_arm_probability_does_not_enter_learning_state(pipeline, monkeyp
     )
     with pytest.raises(ValueError):
         pipeline.step(70)
-    assert pipeline.bandit.total_updates == 0
+    assert pipeline.aggregator.updates == 0
 
 
 def test_failed_new_forecast_preserves_the_pending_forecast(pipeline, monkeypatch):
@@ -252,16 +267,6 @@ def test_ranker_calibration_uses_later_days_unseen_by_ranker(monkeypatch):
     assert model.predict_proba(np.array([[9]]))[0] < 0.01
 
 
-def test_cli_rejects_bandit_only_resume_without_rewriting(tmp_path, caplog):
-    state = tmp_path / "bandit.json"
-    state.write_text('{"legacy": true}')
-    # Không cần dữ liệu đầu vào: resume phải bị từ chối trước khi đọc hay fit.
-    result = orchestration.main(["--bandit-state", str(state), "--raw", "missing.csv"])
-    assert result == 1
-    assert "không đủ để tiếp tục" in caplog.text
-    assert state.read_text() == '{"legacy": true}'
-
-
 def test_failed_tabular_refit_preserves_the_previous_model(monkeypatch):
     model = TabularBooster()
     incumbent = SimpleNamespace(predict_proba=lambda x: np.full((len(x), 2), 0.5))
@@ -314,22 +319,6 @@ def test_model_prediction_rejects_nonfinite_output_before_clipping(bad, kind):
             model.predict_sequence(np.ones((1, 100)))
 
 
-@pytest.mark.parametrize("field,value", [
-    ("successes", np.nan), ("failures", np.inf), ("successes", -1),
-    ("pulls", -1), ("pulls", 1.5), ("pulls", True),
-    ("total_updates", -1), ("total_updates", 0.5), ("total_updates", True),
-    ("prior_alpha", np.nan), ("prior_beta", np.inf),
-])
-def test_bandit_rejects_invalid_checkpoint_values(field, value):
-    payload = DiscountedThompsonSamplingMAB(["a"]).to_dict()
-    if field in {"successes", "failures", "pulls"}:
-        payload["arms"]["a"][field] = value
-    else:
-        payload[field] = value
-    with pytest.raises(BanditError):
-        DiscountedThompsonSamplingMAB.from_dict(payload)
-
-
 def test_failed_pipeline_refit_keeps_incumbent_arm_and_feature_columns(pipeline, monkeypatch):
     pipeline.predict_day(70)
     incumbent = pipeline._fitted["tabular_boosting"]
@@ -355,7 +344,7 @@ def test_failed_initial_arm_is_not_scored_as_a_baseline_alias_and_signals_safe_m
 
     pipeline.arm_builders["tabular_boosting"] = Broken
     result = pipeline.step(70)
-    assert "tabular_boosting" not in result.arm_rewards
+    assert "tabular_boosting" not in result.arm_losses
     assert "tabular_boosting" not in result.arm_weights
     assert pipeline.safe_mode.is_safe
     assert "mô hình lỗi" in pipeline.safe_mode.reason
@@ -364,7 +353,7 @@ def test_failed_initial_arm_is_not_scored_as_a_baseline_alias_and_signals_safe_m
 @pytest.mark.parametrize("stage", ["drift", "safe_mode"])
 def test_step_failure_after_reward_rolls_back_for_retry(pipeline, monkeypatch, stage):
     issued = pipeline.predict_day(70)[0]
-    before = pipeline.bandit.to_dict()
+    before = _learning_state(pipeline)
     real_update = pipeline.drift.update
     real_observe = pipeline.safe_mode.observe
     safe_before = pipeline.safe_mode.state()
@@ -384,7 +373,7 @@ def test_step_failure_after_reward_rolls_back_for_retry(pipeline, monkeypatch, s
         monkeypatch.setattr(pipeline.safe_mode, "observe", fail_safe_after_mutation)
     with pytest.raises(RuntimeError, match=f"{stage} failed"):
         pipeline.step(70)
-    assert pipeline.bandit.to_dict() == before
+    assert _learning_state(pipeline) == before
     with pytest.raises(ValueError, match="chưa có kỳ"):
         pipeline.tracker.report()
     assert len(pipeline.drift._history) == 0
@@ -396,7 +385,7 @@ def test_step_failure_after_reward_rolls_back_for_retry(pipeline, monkeypatch, s
     result = pipeline.step(70)
     np.testing.assert_array_equal(result.probabilities, issued)
     assert pipeline.tracker.report().days == 1
-    assert pipeline.bandit.total_updates == 1
+    assert pipeline.aggregator.updates == 1
 
 
 def test_unavailable_arm_with_all_weight_falls_back_to_named_baseline(pipeline, monkeypatch):
@@ -405,9 +394,92 @@ def test_unavailable_arm_with_all_weight_falls_back_to_named_baseline(pipeline, 
             raise RuntimeError("candidate failed")
 
     pipeline.arm_builders["tabular_boosting"] = Broken
-    monkeypatch.setattr(pipeline.bandit, "select_weights", lambda: {
+    monkeypatch.setattr(pipeline.aggregator, "weights", lambda: {
         "baseline": 0.0, "frequency": 0.0, "gap_hazard": 0.0, "tabular_boosting": 1.0
     })
     probabilities, weights, per_arm = pipeline.predict_day(70)
     np.testing.assert_array_equal(probabilities, per_arm["baseline"])
     assert weights == {"baseline": 1.0}
+
+
+def test_mixer_learns_the_summed_log_loss_of_each_arm(pipeline):
+    """Trọng số là hậu nghiệm Bayes: loss của kỳ là log-loss CỘNG 100 con."""
+    from ml_engine.aggregation import ExponentialWeights
+
+    result = pipeline.step(70)
+    reference = ExponentialWeights(pipeline.arm_builders, learning_rate=pipeline.config.learning_rate,
+                                   share=pipeline.config.share)
+    reference.update({name: 100 * loss for name, loss in result.arm_losses.items()})
+    assert pipeline.aggregator.weights() == pytest.approx(reference.weights(), rel=1e-12)
+
+
+def test_trust_and_drift_read_the_mixture_before_the_gate(pipeline, monkeypatch):
+    """Đo trên dự báo đã qua cổng thì trust = 0 giữ dự báo bằng nền và cổng không bao giờ mở."""
+    _, weights, per_arm = pipeline.predict_day(70)
+    mixture = sum(weights[name] * per_arm[name] for name in weights)
+    outcome = (pipeline.observations.counts[70] > 0).astype(float)
+    expected = score_day(mixture, outcome)
+    seen = {}
+    real_update, real_observe = pipeline.drift.update, pipeline.safe_mode.observe
+
+    def update(error):
+        seen["drift"] = error
+        return real_update(error)
+
+    def observe(**kwargs):
+        seen["trust"] = kwargs
+        return real_observe(**kwargs)
+
+    monkeypatch.setattr(pipeline.drift, "update", update)
+    monkeypatch.setattr(pipeline.safe_mode, "observe", observe)
+    pipeline.step(70)
+    assert seen["drift"] == pytest.approx(expected.brier, rel=1e-12)
+    assert seen["trust"]["logloss"] == pytest.approx(expected.logloss, rel=1e-12)
+    assert seen["trust"]["baseline_logloss"] == pytest.approx(expected.baseline_logloss)
+
+
+def test_arm_skill_is_paired_against_the_baseline_arm_on_shared_days():
+    rows = [
+        orchestration.DayResult(day_index=i, date=pd.Timestamp("2025-01-01"),
+                                probabilities=np.full(100, BASELINE_RATE), top_k=[],
+                                arm_weights={}, mode="safe", trust=0.0, drifted=False,
+                                hits_in_top_k=0, arm_losses=losses)
+        for i, losses in enumerate([
+            {"baseline": 0.50, "tot": 0.45, "te": 0.60},
+            {"baseline": 0.60, "tot": 0.57},
+            {"baseline": 0.55, "tot": 0.53, "te": 0.70},
+        ])
+    ]
+    skill = {row["arm"]: row for row in orchestration.arm_skill(rows)}
+    assert skill["tot"]["days"] == 3
+    assert skill["tot"]["logloss_skill"] == pytest.approx((0.05 + 0.03 + 0.02) / 3 / 0.55)
+    gain = np.array([0.05, 0.03, 0.02])
+    assert skill["tot"]["paired_t"] == pytest.approx(gain.mean() / (gain.std(ddof=1) / np.sqrt(3)))
+    # "te" chỉ so trên hai kỳ nó có mặt, với nền của đúng hai kỳ ấy.
+    assert skill["te"]["days"] == 2
+    assert skill["te"]["logloss_skill"] == pytest.approx(-(0.10 + 0.15) / 2 / 0.525)
+    assert [row["arm"] for row in orchestration.arm_skill(rows)][0] == "tot"
+
+
+def _aggregation_benchmark():
+    import importlib.util
+    from pathlib import Path
+
+    path = (Path(__file__).resolve().parents[1] / "scripts" / "research"
+            / "benchmark_ml_engine_aggregation.py")
+    spec = importlib.util.spec_from_file_location("benchmark_ml_engine_aggregation", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_aggregation_benchmark_uses_the_promotion_gate_error_bar():
+    """Phép đo thay bandit chấm z bằng đúng sai số của cổng đề bạt production."""
+    import online_learning
+
+    rng = np.random.default_rng(5)
+    gain = rng.normal(0.001, 0.01, 200) + np.repeat(rng.normal(0, 0.01, 29), 7)[:200]
+    measured = _aggregation_benchmark().paired(gain)
+    gate = online_learning._gain_stats(gain)
+    assert measured["se"] == pytest.approx(gate["se"], rel=1e-12)
+    assert measured["z"] == pytest.approx(gate["mean"] / gate["se"], rel=1e-12)

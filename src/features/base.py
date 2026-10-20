@@ -4,8 +4,7 @@ Ba điều khung bảo đảm, không phó mặc cho từng extractor:
 
 1. **Không rò rỉ tương lai.** :class:`FeatureContext` chỉ phơi ra lịch sử tính
    tới ``anchor_index``. Ngày mục tiêu không nằm trong tầm với, nên một extractor
-   không thể vô tình đọc kết quả mà nó đang dự đoán — cùng cơ chế mà
-   ``predictor_strategies`` dùng.
+   không thể vô tình đọc kết quả mà nó đang dự đoán.
 2. **Hình dạng thống nhất.** Mọi extractor trả về ma trận ``(100, k)``: một hàng
    cho mỗi con số 00–99, cột là các đặc trưng. Nhờ vậy ghép chúng lại là phép
    nối ngang, không cần lớp điều phối nào biết chi tiết từng phương pháp.

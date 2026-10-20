@@ -238,6 +238,11 @@ Pipeline production không dùng lớp này. Tệp `data/ml_engine/bandit_state.
 **Khuyến nghị:** đừng nối MAB vào production. Muốn dùng thì phần thưởng phải là chênh lệch loss so
 với hằng số đã chuẩn hoá theo độ lệch chuẩn của chính nó, và bỏ trần n_eff.
 
+**Cập nhật 20-10-2026 — đã gỡ theo yêu cầu chủ dự án.** Đo trên 1 000 kỳ (12-01-2024 → 19-10-2026),
+bản bandit + ngưỡng Hit-Rate 7 kỳ kém hằng số z = −3,40. Thay bằng trọng số mũ trên log-loss (Bayes,
+chia sẻ cố định) và cổng `model_trust`: ngang hằng số (kỹ năng −1·10⁻⁸), hơn bản cũ z = +3,40
+(`data/research/ml_engine_aggregation.json`, `documentation/architecture/ml-engine.md` §3.1, §6).
+
 ### 2.7 Dữ liệu biên và đầu ra
 
 - Không có `NaN`/`Infinity` trong mọi JSON xuất bản (`data/`, `docs/`, `vietlott/data`,
@@ -341,7 +346,8 @@ kho và đều chạy qua cổng ngoài mẫu:
 
 - LightGBM phần dư, GRU tuỳ chọn, logistic có hiệu chỉnh Platt;
 - Hedge, e-process, Bayes thực nghiệm, DerSimonian–Laird;
-- bandit/Thompson ở `strategy_lab`.
+- trọng số động của `ml_engine` (bandit Thompson ở đó, không phải ở `strategy_lab` như bản đầu
+  của báo cáo này ghi nhầm; đã gỡ ngày 20-10-2026).
 
 Trần dự báo đo ngày 16-10 cho thấy dữ liệu không có cấu trúc để học. Mọi mô hình mới chỉ được
 đề bạt khi thắng CẢ hằng số LẪN mô hình đang chạy, và chưa mô hình nào làm được.

@@ -1,241 +1,464 @@
 {
-  "generated_at_utc": "2026-09-06T18:24:09Z",
+  "generated_at_utc": "2026-10-20T10:57:22Z",
   "capabilities": {
     "lightgbm": true,
-    "catboost": true,
+    "catboost": false,
     "optuna": true,
     "shap": true,
     "river": true,
-    "torch": true
+    "torch": false
   },
-  "days": 192,
+  "days": 1000,
   "baseline_rate": 0.23765728565289646,
   "metrics": {
-    "logloss": 0.5487308425871953,
-    "brier": 0.18132640811682768,
-    "logloss_skill": -0.0006703564562660604,
-    "brier_skill": -0.0008315200799911051,
-    "paired_t": -1.7916395825618456,
+    "logloss": 0.548798880641791,
+    "brier": 0.18137186033388786,
+    "logloss_skill": -1.1656147215268441e-08,
+    "brier_skill": -1.2779839779615619e-08,
+    "paired_t": -1.0211437584175196,
     "beats_baseline": false,
     "hit_rate_at": {
-      "3": 0.7239583333333334,
-      "5": 1.2552083333333333,
-      "10": 2.4739583333333335,
-      "27": 6.625
+      "3": 0.709,
+      "5": 1.164,
+      "10": 2.309,
+      "27": 6.317
     },
     "random_hit_rate_at": {
-      "3": 0.7129687499999999,
-      "5": 1.18828125,
-      "10": 2.3765625,
-      "27": 6.41671875
+      "3": 0.71409,
+      "5": 1.19015,
+      "10": 2.3803,
+      "27": 6.426810000000001
     },
     "precision_at": {
-      "3": 0.24131944444444442,
-      "5": 0.25104166666666666,
-      "10": 0.24739583333333334,
-      "27": 0.24537037037037032
+      "3": 0.2363333333333333,
+      "5": 0.2328,
+      "10": 0.23089999999999997,
+      "27": 0.23396296296296293
     },
     "recall_at": {
-      "3": 0.030492747364350623,
-      "5": 0.05269595176864198,
-      "10": 0.10383908022834654,
-      "27": 0.2786014955002727
+      "3": 0.029679517768865595,
+      "5": 0.04880685113598157,
+      "10": 0.09691084958435073,
+      "27": 0.26528945423040384
     },
     "profit_ratio": {
-      "3": -0.16062801932367152,
-      "5": -0.12681159420289856,
-      "10": -0.13949275362318844,
-      "27": -0.1465378421900161
+      "3": -0.08057971014492755,
+      "5": -0.09217391304347827,
+      "10": -0.09669565217391306,
+      "27": -0.07671497584541064
     }
   },
-  "bandit": {
+  "aggregation": {
+    "method": "exponential_weights_logloss_fixed_share",
+    "learning_rate": 1.0,
+    "share": 0.001,
+    "updates": 1000,
     "arms": [
       {
+        "arm": "baseline",
+        "weight": 0.481733236214447,
+        "cumulative_logloss": 54879.887424491346
+      },
+      {
         "arm": "temporal_sequence",
-        "posterior_mean": 0.2395465159616284,
-        "credible_low": 0.13571630275815802,
-        "credible_high": 0.3619810080230224,
-        "effective_n": 48.966342792358965,
-        "pulls": 192,
-        "beats_baseline": false
-      },
-      {
-        "arm": "ranking_lambdamart",
-        "posterior_mean": 0.23308104911989652,
-        "credible_low": 0.13056263563706616,
-        "credible_high": 0.35466261953592576,
-        "effective_n": 48.96634279235898,
-        "pulls": 192,
-        "beats_baseline": false
-      },
-      {
-        "arm": "frequency",
-        "posterior_mean": 0.23200234762771416,
-        "credible_low": 0.1297063963289139,
-        "credible_high": 0.3534379826622296,
-        "effective_n": 48.96634279235898,
-        "pulls": 192,
-        "beats_baseline": false
+        "weight": 0.3418453391305353,
+        "cumulative_logloss": 54880.3710593756
       },
       {
         "arm": "gap_hazard",
-        "posterior_mean": 0.22794252081905356,
-        "credible_low": 0.1264932265345984,
-        "credible_high": 0.34881942876843675,
-        "effective_n": 48.96634279235897,
-        "pulls": 192,
-        "beats_baseline": false
+        "weight": 0.13593234052464723,
+        "cumulative_logloss": 54881.64171859234
       },
       {
-        "arm": "baseline",
-        "posterior_mean": 0.2217671550299744,
-        "credible_low": 0.12163466532439106,
-        "credible_high": 0.3417649443465618,
-        "effective_n": 48.96634279235898,
-        "pulls": 192,
-        "beats_baseline": false
+        "arm": "ranking_lambdamart",
+        "weight": 0.020969269007622134,
+        "cumulative_logloss": 55345.43908303725
       },
       {
         "arm": "tabular_boosting",
-        "posterior_mean": 0.21929705699894964,
-        "credible_low": 0.11970126289916783,
-        "credible_high": 0.33893312065071546,
-        "effective_n": 48.966342792358965,
-        "pulls": 192,
-        "beats_baseline": false
+        "weight": 0.011077978803393498,
+        "cumulative_logloss": 55062.94484135446
+      },
+      {
+        "arm": "frequency",
+        "weight": 0.008441836319354775,
+        "cumulative_logloss": 54896.91659080318
       }
-    ],
-    "max_effective_n": 49.99999999999996,
-    "power_floor": 0.060195730783668404
+    ]
   },
+  "arm_skill": [
+    {
+      "arm": "baseline",
+      "days": 1000,
+      "logloss": 0.5487988742449106,
+      "logloss_skill": 0.0,
+      "paired_t": 0.0
+    },
+    {
+      "arm": "temporal_sequence",
+      "days": 1000,
+      "logloss": 0.5488037105937555,
+      "logloss_skill": -8.812607080267822e-06,
+      "paired_t": -0.2795519533503469
+    },
+    {
+      "arm": "gap_hazard",
+      "days": 1000,
+      "logloss": 0.5488164171859239,
+      "logloss_skill": -3.196606596041522e-05,
+      "paired_t": -0.9931330158283237
+    },
+    {
+      "arm": "frequency",
+      "days": 1000,
+      "logloss": 0.5489691659080329,
+      "logloss_skill": -0.0003102988564918078,
+      "paired_t": -3.6144524702342524
+    },
+    {
+      "arm": "tabular_boosting",
+      "days": 1000,
+      "logloss": 0.5506294484135449,
+      "logloss_skill": -0.003335601172930188,
+      "paired_t": -9.539734649095521
+    },
+    {
+      "arm": "ranking_lambdamart",
+      "days": 1000,
+      "logloss": 0.5534543908303727,
+      "logloss_skill": -0.008483101558594778,
+      "paired_t": -6.557034039060997
+    }
+  ],
   "drift": {
     "backend": "river",
-    "detections": 0,
-    "days_in_safe_mode": 120
+    "detections": 0
   },
-  "safe_mode": {
+  "trust": {
+    "mean": 0.0001891877334608649,
+    "days_at_zero": 699,
     "mode": "safe",
-    "reason": "Hit-Rate 7 kỳ = 0.1286 < ngưỡng 0.2377",
-    "threshold": 0.23765728565289646,
-    "recent_hit_rate": 0.12857142857142856,
-    "observations": 7,
+    "trust": 0.0,
+    "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00002 → độ tin 0.000",
+    "window": 60,
+    "min_days": 30,
+    "skill": {
+      "logloss": -1.4002980943227867e-05,
+      "brier": -1.5361000552701837e-05,
+      "days": 60
+    },
+    "observations": 60,
     "transitions": [
       {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 3372
+      },
+      {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2000 < ngưỡng 0.2377",
-        "day": 206
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3373
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2714)",
-        "day": 213
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3379
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
-        "day": 214
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 3380
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2571)",
-        "day": 225
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3383
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
-        "day": 229
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00002, Brier -0.00002 → độ tin 0.000",
+        "day": 3472
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3143)",
-        "day": 253
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3489
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
-        "day": 258
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 3500
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2714)",
-        "day": 268
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3536
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2000 < ngưỡng 0.2377",
-        "day": 271
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3537
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3143)",
-        "day": 279
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 3540
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
-        "day": 286
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3547
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
-        "day": 294
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 3632
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2286 < ngưỡng 0.2377",
-        "day": 297
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3637
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.2571)",
-        "day": 320
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 3638
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
-        "day": 351
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3652
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
-        "day": 359
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3704
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
-        "day": 362
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 3705
       },
       {
         "to": "normal",
-        "reason": "5 kỳ liên tiếp đạt ngưỡng (trung bình 0.3000)",
-        "day": 372
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3716
       },
       {
         "to": "safe",
-        "reason": "Hit-Rate 7 kỳ = 0.2143 < ngưỡng 0.2377",
-        "day": 381
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3728
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3868
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 3883
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3896
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3913
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00002, Brier +0.00002 → độ tin 0.000",
+        "day": 3921
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3924
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 3925
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00002, Brier -0.00002 → độ tin 0.000",
+        "day": 3926
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3964
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00002 → độ tin 0.000",
+        "day": 3965
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3984
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3985
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00003, Brier +0.00003 → độ tin 0.001",
+        "day": 3986
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00004, Brier -0.00004 → độ tin 0.000",
+        "day": 3996
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 3997
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 3998
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00002, Brier +0.00003 → độ tin 0.000",
+        "day": 3999
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 4004
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00002 → độ tin 0.000",
+        "day": 4006
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00002 → độ tin 0.000",
+        "day": 4024
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00003, Brier +0.00004 → độ tin 0.001",
+        "day": 4026
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4041
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4042
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00002, Brier -0.00002 → độ tin 0.000",
+        "day": 4049
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4053
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 4086
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4092
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4093
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4094
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4095
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00003, Brier +0.00003 → độ tin 0.001",
+        "day": 4152
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4159
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier +0.00000 → độ tin 0.000",
+        "day": 4162
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4165
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4166
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00000, Brier -0.00000 → độ tin 0.000",
+        "day": 4182
+      },
+      {
+        "to": "normal",
+        "reason": "kỹ năng 60 kỳ: log-loss +0.00001, Brier +0.00001 → độ tin 0.000",
+        "day": 4204
+      },
+      {
+        "to": "safe",
+        "reason": "kỹ năng 60 kỳ: log-loss -0.00001, Brier -0.00001 → độ tin 0.000",
+        "day": 4208
       }
     ]
   },
   "selected_features": [
-    "fourier_peak",
     "cross_momentum",
-    "fourier_weekly",
-    "rate_30d",
-    "double_rate_90d",
-    "gap_over_mean",
-    "cross_hot_and_overdue",
-    "double_rate_30d",
-    "rate_180d",
-    "digit_span",
-    "digit_sum",
     "rate_90d",
+    "fourier_weekly",
+    "fourier_peak",
+    "rate_180d",
+    "double_rate_90d",
+    "digit_span",
+    "gap_over_mean",
+    "rate_30d",
+    "cross_hot_and_overdue",
     "cross_overdue_squared",
-    "gap_days",
+    "digit_sum",
     "rate_14d",
+    "double_rate_30d",
     "hit_lag_3",
-    "rate_7d",
     "hit_lag_2",
-    "is_double_digit"
+    "gap_days",
+    "rate_7d"
   ]
 }

@@ -1,21 +1,21 @@
 """``ml_engine`` — hệ thống học tiếp diễn tự chủ cho dự đoán XSMB.
 
-Module này gộp sáu thành phần vào một luồng có kiểm soát:
+Module này gộp các thành phần vào một luồng có kiểm soát:
 
 * :mod:`ml_engine.schema` — hợp đồng dữ liệu, chặn rò rỉ thời gian từ gốc.
 * :mod:`ml_engine.features` — sinh đặc trưng tự động, bảo đảm chỉ dùng quá khứ.
 * :mod:`ml_engine.selection` — chọn đặc trưng bằng SHAP hoặc tầm quan trọng hoán vị.
 * :mod:`ml_engine.models` — cây tăng cường, LambdaMART và mô hình chuỗi sâu.
-* :mod:`ml_engine.bandit` — Thompson Sampling có chiết khấu để trộn trọng số.
+* :mod:`ml_engine.aggregation` — trọng số mũ trên log-loss, có chia sẻ cố định.
 * :mod:`ml_engine.drift` — ADWIN và Kolmogorov–Smirnov trên chuỗi sai số.
-* :mod:`ml_engine.fallback` — chuyển chế độ an toàn khi hệ thống hết đáng tin.
+* :mod:`ml_engine.fallback` — cổng độ tin ``model_trust`` từ kỹ năng ngoài mẫu.
 * :mod:`ml_engine.metrics` — quy tắc chấm điểm chặt và chỉ số kinh tế.
 * :mod:`ml_engine.validation` — cuốn chiếu và dò siêu tham số tách ba đoạn thời gian.
 
 Điểm vào vận hành là :func:`ml_engine.main_pipeline.main`.
 """
 
-from ml_engine.bandit import ArmState, BanditError, DiscountedThompsonSamplingMAB
+from ml_engine.aggregation import AggregationError, ExponentialWeights
 from ml_engine.capabilities import CAPABILITIES, Capabilities
 from ml_engine.drift import ConceptDriftDetector, DriftVerdict
 from ml_engine.fallback import Mode, SafeModeController
@@ -29,14 +29,13 @@ from ml_engine.validation import WalkForwardValidator
 __all__ = [
     "BASELINE_RATE",
     "CAPABILITIES",
-    "ArmState",
-    "BanditError",
+    "AggregationError",
     "Capabilities",
     "ConceptDriftDetector",
     "DailyRequest",
-    "DiscountedThompsonSamplingMAB",
     "DriftVerdict",
     "EconomicModel",
+    "ExponentialWeights",
     "FeatureMatrix",
     "Mode",
     "ObservationMatrix",

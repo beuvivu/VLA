@@ -119,8 +119,8 @@ Bốn kết luận rút ra, tất cả đều là số đo:
                               ▼
 ┌───────────────────────────────────────────────────────────┐
 │ HỢP NHẤT  learn_ensemble_weights.py · meta_predictor.py    │
-│  · trọng số học được + Thompson Sampling chiết khấu        │
-│    (ml_engine/bandit.py, γ = 0,98)                         │
+│  · trọng số học được có cổng ngoài mẫu so với mặc định     │
+│  · Hedge theo log-loss, cổng đề bạt (online_learning.py)   │
 │  · phát hiện trôi khái niệm: ADWIN + KS (drift.py)         │
 └───────────────────────────────────────────────────────────┘
                               ▼
@@ -175,7 +175,7 @@ nhiều kiến trúc đề xuất bỏ qua nó.
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Trọng số động theo hiệu suất cầu | **ĐÃ CÓ** — Thompson Sampling chiết khấu γ = 0,98 |
+| Trọng số động theo hiệu suất cầu | **ĐÃ CÓ** — Hedge theo log-loss có cổng đề bạt (`online_learning`); bandit Thompson của `ml_engine` đã gỡ 20-10-2026 vì kém hằng số (z = −3,40 trên 1 000 kỳ) |
 | Phát hiện trôi khái niệm | **ĐÃ CÓ** — ADWIN + KS |
 | Bayesian Model Averaging | **ĐÃ CÓ một phần** — `learn_ensemble_weights.py` |
 | Online/incremental cập nhật trọng số | **CHƯA CÓ** — hiện huấn luyện lại toàn phần |

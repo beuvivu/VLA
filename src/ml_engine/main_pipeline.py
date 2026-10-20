@@ -9,17 +9,16 @@ Luồng
                  → sinh đặc trưng (không rò rỉ)
                  → chọn đặc trưng bằng SHAP
                  → mỗi "cánh tay" khai báo xác suất riêng
-                 → MAB trộn theo phần thưởng 1 − Brier
-                 → chế độ an toàn có quyền phủ quyết
+                 → trọng số mũ trên log-loss trộn các cánh tay
+                 → cổng độ tin: trust·trộn + (1 − trust)·nền
                  → Top-K
-                 → kết quả thật → phần thưởng → cập nhật MAB
-                                → sai số → phát hiện trôi lệch
-                                → chỉ số → nhật ký
+                 → kết quả thật → log-loss từng cánh tay → cập nhật trọng số
+                                → điểm của phép trộn → trôi lệch, kỹ năng → trust
+                                → điểm của dự báo công bố → nhật ký
 
-Thứ tự ở hai bước cuối là có chủ đích: **chế độ an toàn đứng sau MAB**, không
-phải trước. MAB tối ưu trong giả định "có ít nhất một cánh tay đáng dùng"; chế
-độ an toàn là nơi duy nhất chất vấn chính giả định đó, nên nó phải có tiếng nói
-sau cùng.
+Cổng độ tin đứng sau phép trộn, không phải trước. Phép trộn chỉ bảo đảm không
+thua cánh tay tốt nhất quá xa; cổng là nơi duy nhất hỏi phép trộn có kỹ năng ĐO
+ĐƯỢC hay không, nên nó có tiếng nói sau cùng (``ml_engine.fallback``).
 
 Nền là một cánh tay, và điều đó quyết định
 -------------------------------------------
@@ -30,10 +29,9 @@ hình nào đáng tin — trọng số dồn về nền — thay vì phải có 
 đó. Không có cánh tay nền thì trọng số luôn bị chuẩn hóa giữa các mô hình, và
 hệ thống không có cách nào diễn đạt câu "không cái nào đáng dùng".
 
-Bandit ở module nghiên cứu này là heuristic Beta với phần thưởng liên tục:
-khoảng Beta không phải khoảng tin cậy xác suất trúng. Bộ đệm dự báo chỉ sống
-trong tiến trình, nên tệp bandit riêng không đủ để khôi phục vòng học. Luồng
-production dùng sổ dự báo và trạng thái trực tuyến riêng để tiếp tục qua lần chạy.
+Module này là khung nghiên cứu, không nằm trong pipeline production; bộ đệm dự
+báo chỉ sống trong tiến trình. Luồng production dùng sổ dự báo và trạng thái trực
+tuyến riêng (``online_learning``) để tiếp tục qua các lần chạy.
 """
 
 from __future__ import annotations
@@ -53,10 +51,10 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 
-from ml_engine.bandit import DiscountedThompsonSamplingMAB
+from ml_engine.aggregation import DEFAULT_LEARNING_RATE, DEFAULT_SHARE, ExponentialWeights
 from ml_engine.capabilities import CAPABILITIES
 from ml_engine.drift import ConceptDriftDetector
-from ml_engine.fallback import SafeModeController
+from ml_engine.fallback import DEFAULT_MIN_DAYS, DEFAULT_WINDOW, SafeModeController
 from ml_engine.features import build_features, build_training_table
 from ml_engine.metrics import PerformanceTracker, score_day, validate_probabilities
 from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
@@ -64,10 +62,6 @@ from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE, DailyRequest, Observat
 from ml_engine.selection import select_features
 
 LOGGER: Final[logging.Logger] = logging.getLogger("ml_engine")
-
-#: Kỳ vọng của 1 − Brier khi khai báo xác suất nền đúng.
-BASELINE_REWARD: Final[float] = 1.0 - BASELINE_RATE * (1.0 - BASELINE_RATE)
-
 
 @dataclass(frozen=True)
 class PipelineConfig:
@@ -78,33 +72,41 @@ class PipelineConfig:
         warmup: Số ngày đầu chỉ tích lũy, không dự đoán.
         refit_every: Khớp lại mô hình sau mỗi bấy nhiêu ngày.
         top_k: Số con trả về trong danh sách gợi ý.
-        discount: Hệ số chiết khấu của MAB.
+        learning_rate: ``η`` của trọng số mũ trên log-loss cộng 100 con.
+        share: ``α`` của chia sẻ cố định.
+        trust_window: Số kỳ gần nhất dùng để đo kỹ năng của phép trộn.
+        trust_min_days: Số kỳ đo tối thiểu trước khi cổng được mở.
         use_temporal: Có bật cánh tay mô hình chuỗi (GRU hoặc đường lui tuyến tính) không.
         use_ranking: Có bật cánh tay LambdaMART không.
         feature_epsilon: Ngưỡng loại đặc trưng theo tầm quan trọng.
-        seed: Hạt giống, để tái lập được.
     """
 
     window: int = 240
     warmup: int = 120
     refit_every: int = 21
     top_k: int = 10
-    discount: float = 0.98
+    learning_rate: float = DEFAULT_LEARNING_RATE
+    share: float = DEFAULT_SHARE
+    trust_window: int = DEFAULT_WINDOW
+    trust_min_days: int = DEFAULT_MIN_DAYS
     use_temporal: bool = True
     use_ranking: bool = True
     feature_epsilon: float = 1e-4
-    seed: int = 0
 
     def __post_init__(self) -> None:
         for name, minimum in (("window", 30), ("warmup", 60), ("refit_every", 1),
-                              ("top_k", 1), ("seed", 0)):
+                              ("top_k", 1), ("trust_window", 1), ("trust_min_days", 1)):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, Integral) or value < minimum:
                 raise ValueError(f"{name} phải là số nguyên ít nhất {minimum}")
         if self.top_k > NUMBER_SPACE:
             raise ValueError(f"top_k không được vượt {NUMBER_SPACE}")
-        if not np.isfinite(self.discount) or not 0.0 < self.discount <= 1.0:
-            raise ValueError("discount phải hữu hạn trong (0, 1]")
+        if self.trust_min_days > self.trust_window:
+            raise ValueError("trust_min_days không được vượt trust_window")
+        if not np.isfinite(self.learning_rate) or self.learning_rate <= 0.0:
+            raise ValueError("learning_rate phải hữu hạn và dương")
+        if not np.isfinite(self.share) or not 0.0 <= self.share < 1.0:
+            raise ValueError("share phải nằm trong [0, 1)")
         if not np.isfinite(self.feature_epsilon) or self.feature_epsilon < 0.0:
             raise ValueError("feature_epsilon phải hữu hạn và không âm")
 
@@ -116,13 +118,15 @@ class DayResult:
     Attributes:
         day_index: Chỉ số ngày trong ma trận quan sát.
         date: Ngày được dự đoán.
-        probabilities: Xác suất cuối cùng sau khi trộn và qua chế độ an toàn.
+        probabilities: Xác suất công bố, sau phép trộn và cổng độ tin.
         top_k: Danh sách con được gợi ý.
-        arm_weights: Trọng số MAB tại thời điểm dự đoán.
-        mode: Chế độ vận hành khi dự đoán.
+        arm_weights: Trọng số trộn tại thời điểm dự đoán.
+        mode: Chế độ vận hành khi dự đoán (``safe`` khi trust = 0).
+        trust: Mức tin phép trộn khi dự đoán.
         drifted: Có phát hiện trôi lệch sau khi biết kết quả không.
         hits_in_top_k: Số con trong Top-K thực sự về.
-        arm_rewards: Phần thưởng của từng cánh tay ở kỳ này.
+        arm_losses: Log-loss trung bình mỗi con của từng cánh tay ở kỳ này.
+        mixture_logloss: Log-loss của phép trộn trước cổng.
     """
 
     day_index: int
@@ -131,13 +135,15 @@ class DayResult:
     top_k: list[int]
     arm_weights: dict[str, float]
     mode: str
+    trust: float
     drifted: bool
     hits_in_top_k: int
-    arm_rewards: dict[str, float] = field(default_factory=dict)
+    arm_losses: dict[str, float] = field(default_factory=dict)
+    mixture_logloss: float = float("nan")
 
 
 class ContinuousLearningPipeline:
-    """Hệ thống học tiếp diễn với MAB, phát hiện trôi lệch và chế độ an toàn.
+    """Hệ thống học tiếp diễn: trộn theo log-loss, phát hiện trôi lệch, cổng độ tin.
 
     Ví dụ:
         >>> import pandas as pd
@@ -151,9 +157,9 @@ class ContinuousLearningPipeline:
     Attributes:
         observations: Ma trận quan sát đã kiểm hợp đồng.
         config: Tham số vận hành.
-        bandit: Bộ trộn trọng số theo bằng chứng.
-        drift: Bộ phát hiện trôi lệch.
-        safe_mode: Bộ điều khiển chế độ an toàn.
+        aggregator: Trọng số mũ trên log-loss của các cánh tay.
+        drift: Bộ phát hiện trôi lệch trên sai số của phép trộn.
+        safe_mode: Cổng độ tin từ kỹ năng ngoài mẫu của phép trộn.
         tracker: Bộ tích lũy chỉ số.
     """
 
@@ -166,14 +172,15 @@ class ContinuousLearningPipeline:
         self.config = config or PipelineConfig()
         self.arm_builders = self._build_arms()
 
-        self.bandit = DiscountedThompsonSamplingMAB.with_baseline_prior(
-            list(self.arm_builders),
-            baseline=BASELINE_REWARD,
-            discount=self.config.discount,
-            seed=self.config.seed,
+        self.aggregator = ExponentialWeights(
+            self.arm_builders,
+            learning_rate=self.config.learning_rate,
+            share=self.config.share,
         )
         self.drift = ConceptDriftDetector(method="both")
-        self.safe_mode = SafeModeController()
+        self.safe_mode = SafeModeController(
+            window=self.config.trust_window, min_days=self.config.trust_min_days
+        )
         self.tracker = PerformanceTracker()
         self.selected_features: list[str] | None = None
         self._fitted: dict[str, Any] = {}
@@ -185,7 +192,9 @@ class ContinuousLearningPipeline:
         self._last_observed_day = -1
         self._forecast_day = -1
         self._forecast: tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]] | None = None
+        self._forecast_mixture: np.ndarray | None = None
         self._forecast_mode = self.safe_mode.mode.value
+        self._forecast_trust = self.safe_mode.trust
         self._forecast_reason = self.safe_mode.reason
         self._forecast_model_failed = False
 
@@ -352,7 +361,7 @@ class ContinuousLearningPipeline:
         return probabilities.copy(), dict(weights), {name: p.copy() for name, p in per_arm.items()}
 
     def predict_day(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
-        """Dự đoán một kỳ: trộn các cánh tay rồi cho chế độ an toàn phủ quyết.
+        """Dự đoán một kỳ: trộn các cánh tay rồi qua cổng độ tin.
 
         Args:
             day: Chỉ số ngày cần dự đoán.
@@ -365,14 +374,12 @@ class ContinuousLearningPipeline:
             return self._copy_forecast()
         checkpoint = (self._fitted, self._fitted_at, self.selected_features, self._force_refit,
                       self._fitted_features, self._refit_failed, self._model_failed)
-        random_state = deepcopy(self.bandit._rng.bit_generator.state)
         try:
             return self._predict_uncached(day)
         except Exception:
             # Dự báo mới hỏng không được làm mất mô hình hoặc dự báo đang chờ chấm.
             (self._fitted, self._fitted_at, self.selected_features, self._force_refit,
              self._fitted_features, self._refit_failed, self._model_failed) = checkpoint
-            self.bandit._rng.bit_generator.state = random_state
             raise
 
     def _predict_uncached(self, day: int) -> tuple[np.ndarray, dict[str, float], dict[str, np.ndarray]]:
@@ -386,13 +393,13 @@ class ContinuousLearningPipeline:
             name: validate_probabilities(probability).copy()
             for name, probability in self.arm_probabilities(day).items()
         }
-        weights = {name: weight for name, weight in self.bandit.select_weights().items()
+        weights = {name: weight for name, weight in self.aggregator.weights().items()
                    if name in per_arm}
         available_weight = sum(weights.values())
         if available_weight > 0:
             weights = {name: weight / available_weight for name, weight in weights.items()}
         else:
-            # Một cánh tay vắng có thể thắng mọi lần rút; nền vẫn là cánh tay thật.
+            # Mọi trọng số dồn vào cánh tay vắng; nền vẫn là cánh tay thật.
             weights = {"baseline": 1.0}
         blended = np.zeros(NUMBER_SPACE)
         for name, probability in per_arm.items():
@@ -403,11 +410,12 @@ class ContinuousLearningPipeline:
         if total > 0:
             blended /= total
 
-        final = validate_probabilities(
-            self.safe_mode.apply(self.observations.counts[:day], blended)
-        ).copy()
+        blended = validate_probabilities(blended).copy()
+        final = validate_probabilities(self.safe_mode.apply(blended)).copy()
         self._forecast_day = day
+        self._forecast_mixture = blended
         self._forecast_mode = self.safe_mode.mode.value
+        self._forecast_trust = self.safe_mode.trust
         self._forecast_reason = self.safe_mode.reason
         self._forecast_model_failed = self._model_failed
         self._forecast = final, dict(weights), per_arm
@@ -429,33 +437,40 @@ class ContinuousLearningPipeline:
         if day >= self.observations.n_days:
             raise ValueError("chưa có kết quả thật của ngày cần chấm")
         probabilities, weights, per_arm = self.predict_day(day)
-        prediction_mode = self._forecast_mode
+        prediction_mode, prediction_trust = self._forecast_mode, self._forecast_trust
+        assert self._forecast_mixture is not None
         outcome = (self.observations.counts[day] > 0).astype(float)
 
         top_k = np.argsort(-probabilities)[: self.config.top_k]
         hits_in_top_k = int(outcome[top_k].sum())
 
-        # 1 − Brier chấm toàn bộ xác suất, phân biệt được cả sai hiệu chuẩn
-        # khi thứ hạng không đổi. Beta với thưởng liên tục vẫn chỉ là bộ trộn
-        # heuristic: khoảng Beta KHÔNG phải khoảng tin cậy xác suất trúng.
-        rewards = {
-            name: 1.0 - score_day(probability, outcome).brier
+        # Log-loss là quy tắc chấm chặt: phạt cả sai mức xác suất khi thứ hạng
+        # không đổi, và phạt nặng nhất đúng chỗ nguy hiểm — tự tin sai ở đuôi.
+        losses = {
+            name: score_day(probability, outcome).logloss
             for name, probability in per_arm.items()
         }
+        mixture = score_day(self._forecast_mixture, outcome)
         # Chỉ chụp trạng thái học nhỏ; không sao chép observations hay model.
-        components = (self.bandit, self.drift, self.safe_mode)
+        components = (self.aggregator, self.drift, self.safe_mode)
         checkpoint = [deepcopy(component.__dict__) for component in components]
         score_count = len(self.tracker._scores)
         cursors = self._force_refit, self._last_observed_day
         try:
-            self.bandit.update_batch(rewards)
-            score = self.tracker.add(probabilities, outcome, counts=self.observations.counts[day])
-            verdict = self.drift.update(score.brier)
+            # Phép trộn học trên loss CỘNG 100 con (âm log-hợp lý của kỳ).
+            self.aggregator.update({name: NUMBER_SPACE * loss for name, loss in losses.items()})
+            self.tracker.add(probabilities, outcome, counts=self.observations.counts[day])
+            # Trôi lệch đo trên sai số của phép trộn: khi trust = 0 dự báo công
+            # bố trùng nền, và sai số của nó chỉ còn phản ánh kết quả quay.
+            verdict = self.drift.update(mixture.brier)
             if verdict.drifted:
                 self._force_refit = True
             self.safe_mode.observe(
-                hits_in_top_k / self.config.top_k, drifted=verdict.drifted,
-                model_failed=self._forecast_model_failed, day_index=day
+                logloss=mixture.logloss, brier=mixture.brier,
+                baseline_logloss=mixture.baseline_logloss,
+                baseline_brier=mixture.baseline_brier,
+                drifted=verdict.drifted, model_failed=self._forecast_model_failed,
+                day_index=day,
             )
             self._last_observed_day = day
         except Exception:
@@ -474,9 +489,11 @@ class ContinuousLearningPipeline:
             top_k=[int(n) for n in top_k],
             arm_weights=weights,
             mode=prediction_mode,
+            trust=prediction_trust,
             drifted=verdict.drifted,
             hits_in_top_k=hits_in_top_k,
-            arm_rewards=rewards,
+            arm_losses=losses,
+            mixture_logloss=mixture.logloss,
         )
 
     def run(self, *, start: int, stop: int) -> list[DayResult]:
@@ -505,10 +522,10 @@ class ContinuousLearningPipeline:
             results.append(self.step(day))
             if (day - start) % 25 == 0:
                 LOGGER.info(
-                    "Ngày %d/%d · chế độ=%s · trúng@%d=%d",
+                    "Ngày %d/%d · độ tin=%.3f · trúng@%d=%d",
                     day,
                     stop,
-                    results[-1].mode,
+                    results[-1].trust,
                     self.config.top_k,
                     results[-1].hits_in_top_k,
                 )
@@ -540,6 +557,7 @@ class ContinuousLearningPipeline:
             "anchor_date": str(request.anchor_date.date()),
             "target_date": str(request.target_date.date()),
             "mode": self._forecast_mode,
+            "trust": self._forecast_trust,
             "mode_reason": self._forecast_reason,
             "probabilities": [float(p) for p in probabilities],
             "top_k": [
@@ -550,6 +568,41 @@ class ContinuousLearningPipeline:
             "baseline_rate": BASELINE_RATE,
             "selected_features": self.selected_features,
         }
+
+
+def arm_skill(results: list[DayResult]) -> list[dict[str, Any]]:
+    """Kỹ năng log-loss ngoài mẫu của từng cánh tay so với cánh tay nền.
+
+    Chỉ so trên các kỳ cả hai cùng dự báo. ``z`` là t ghép cặp ở mức kỳ, cùng
+    cách tính với ``PerformanceReport.paired_t``; kỹ năng của từng cánh tay là
+    chẩn đoán, không phải căn cứ trộn — phép trộn đã tự học từ chính các loss ấy.
+
+    Args:
+        results: Kết quả theo ngày.
+
+    Returns:
+        Mỗi cánh tay một dòng, xếp theo kỹ năng giảm dần.
+    """
+    names = sorted({name for result in results for name in result.arm_losses})
+    rows = []
+    for name in names:
+        pairs = np.array([
+            (result.arm_losses["baseline"], result.arm_losses[name])
+            for result in results
+            if name in result.arm_losses and "baseline" in result.arm_losses
+        ])
+        if len(pairs) == 0:
+            continue
+        gain = pairs[:, 0] - pairs[:, 1]
+        spread = gain.std(ddof=1) if len(gain) > 1 else 0.0
+        rows.append({
+            "arm": name,
+            "days": len(gain),
+            "logloss": float(pairs[:, 1].mean()),
+            "logloss_skill": float(gain.mean() / pairs[:, 0].mean()),
+            "paired_t": float(gain.mean() / (spread / np.sqrt(len(gain)))) if spread > 0 else 0.0,
+        })
+    return sorted(rows, key=lambda row: -row["logloss_skill"])
 
 
 def summarise(pipeline: ContinuousLearningPipeline, results: list[DayResult]) -> dict[str, Any]:
@@ -581,20 +634,23 @@ def summarise(pipeline: ContinuousLearningPipeline, results: list[DayResult]) ->
             "recall_at": {str(k): v for k, v in report.recall_at.items()},
             "profit_ratio": {str(k): v for k, v in report.profit_ratio.items()},
         },
-        "bandit": {
-            "reward": "one_minus_brier",
-            "interpretation": "heuristic_beta_pseudocounts_not_hit_probability",
-            "baseline_reward": BASELINE_REWARD,
-            "arms": pipeline.bandit.report(BASELINE_REWARD),
-            "max_effective_n": pipeline.bandit.max_effective_n,
-            "heuristic_reward_standard_error": pipeline.bandit.power_floor(BASELINE_REWARD),
+        "aggregation": {
+            "method": "exponential_weights_logloss_fixed_share",
+            "learning_rate": pipeline.aggregator.learning_rate,
+            "share": pipeline.aggregator.share,
+            "updates": pipeline.aggregator.updates,
+            "arms": pipeline.aggregator.report(),
         },
+        "arm_skill": arm_skill(results),
         "drift": {
             "backend": pipeline.drift.backend,
             "detections": pipeline.drift.drift_count,
-            "days_in_safe_mode": sum(1 for r in results if r.mode == "safe"),
         },
-        "safe_mode": pipeline.safe_mode.state(),
+        "trust": {
+            "mean": float(np.mean([r.trust for r in results])) if results else 0.0,
+            "days_at_zero": sum(1 for r in results if r.mode == "safe"),
+            **pipeline.safe_mode.state(),
+        },
         "selected_features": pipeline.selected_features,
     }
 
@@ -617,10 +673,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--window", type=int, default=240)
     parser.add_argument("--refit-every", type=int, default=21)
     parser.add_argument("--top-k", type=int, default=10)
-    parser.add_argument("--discount", type=float, default=0.98)
+    parser.add_argument("--learning-rate", type=float, default=DEFAULT_LEARNING_RATE)
+    parser.add_argument("--share", type=float, default=DEFAULT_SHARE)
     parser.add_argument("--no-temporal", action="store_true", help="tắt cánh tay GRU")
     parser.add_argument("--no-ranking", action="store_true", help="tắt cánh tay LambdaMART")
-    parser.add_argument("--bandit-state", default=None, help="tệp mới để xuất chẩn đoán MAB; không resume")
     parser.add_argument("--log-level", default="INFO")
     args = parser.parse_args(argv)
 
@@ -629,13 +685,6 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
     CAPABILITIES.log_summary()
-
-    if args.bandit_state and Path(args.bandit_state).exists():
-        LOGGER.error(
-            "Trạng thái bandit không đủ để tiếp tục: thiếu cursor, mô hình và dự báo đã phát. "
-            "Chạy replay mới không kèm --bandit-state hoặc chọn tệp xuất mới."
-        )
-        return 1
 
     try:
         observations = ObservationMatrix.from_frame(pd.read_csv(args.raw))
@@ -652,7 +701,8 @@ def main(argv: list[str] | None = None) -> int:
             warmup=args.warmup,
             refit_every=args.refit_every,
             top_k=args.top_k,
-            discount=args.discount,
+            learning_rate=args.learning_rate,
+            share=args.share,
             use_temporal=not args.no_temporal,
             use_ranking=not args.no_ranking,
         )
@@ -675,9 +725,6 @@ def main(argv: list[str] | None = None) -> int:
     target.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     LOGGER.info("Đã ghi báo cáo vào %s", target)
 
-    if args.bandit_state:
-        pipeline.bandit.save_json(args.bandit_state)
-
     metrics = summary["metrics"]
     print(f"\n{'=' * 72}")
     print(f"ml_engine · {summary['days']} kỳ · nền {BASELINE_RATE:.4f}")
@@ -694,19 +741,17 @@ def main(argv: list[str] | None = None) -> int:
                 f"lời/lỗ {metrics['profit_ratio'][k]:+.1%})"
             )
     print(f"  vượt nền         : {'CÓ' if metrics['beats_baseline'] else 'KHÔNG'}")
-    print(
-        f"\n  chẩn đoán MAB 1−Brier (Beta heuristic, "
-        f"trần số đếm {summary['bandit']['max_effective_n']:.0f}):"
-    )
-    for row in summary["bandit"]["arms"]:
-        verdict = "VƯỢT NỀN" if row["beats_baseline"] else ""
+    weights = {row["arm"]: row["weight"] for row in summary["aggregation"]["arms"]}
+    print("\n  cánh tay (kỹ năng log-loss ngoài mẫu so với nền · trọng số cuối):")
+    for row in summary["arm_skill"]:
         print(
-            f"    {row['arm']:<22} thưởng={row['posterior_mean']:.4f} "
-            f"[{row['credible_low']:.4f}, {row['credible_high']:.4f}] {verdict}"
+            f"    {row['arm']:<22} kỹ năng={row['logloss_skill']:+.6f} "
+            f"(t {row['paired_t']:+.2f}) · trọng số={weights.get(row['arm'], 0.0):.4f}"
         )
+    trust = summary["trust"]
     print(
         f"\n  trôi lệch: {summary['drift']['detections']} lần · "
-        f"chế độ an toàn: {summary['drift']['days_in_safe_mode']}/{summary['days']} kỳ"
+        f"độ tin trung bình {trust['mean']:.3f} · về nền {trust['days_at_zero']}/{summary['days']} kỳ"
     )
     print(f"{'=' * 72}\n")
     return 0

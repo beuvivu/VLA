@@ -258,21 +258,6 @@ class PerformanceTracker:
         self._scores.append(score)
         return score
 
-    def recent_hit_rate(self, k: int, window: int = 7) -> float:
-        """Tỉ lệ trúng trung bình trên mỗi con trong Top-K, tính trên cửa sổ gần nhất.
-
-        Args:
-            k: Mức K.
-            window: Số kỳ gần nhất đưa vào tính.
-
-        Returns:
-            Tỉ lệ trong ``[0, 1]``; trả 0 khi chưa có dữ liệu.
-        """
-        recent = self._scores[-window:]
-        if not recent:
-            return 0.0
-        return float(np.mean([score.hit_rate_at.get(k, 0) / k for score in recent]))
-
     def report(self) -> PerformanceReport:
         """Tổng hợp toàn bộ kỳ đã ghi nhận.
 

@@ -48,15 +48,15 @@ neo nhiều hơn một ngày sẽ bị từ chối chứ không âm thầm chấ
 
 ```
 src/ml_engine/
-├── __init__.py          Bề mặt công khai (25 ký hiệu)
+├── __init__.py          Bề mặt công khai (24 ký hiệu)
 ├── capabilities.py      Dò thư viện tùy chọn MỘT LẦN, ở MỘT CHỖ
 ├── schema.py            ObservationMatrix, DailyRequest — chặn rò rỉ từ gốc
 ├── features.py          Sinh đặc trưng tự động, bảo đảm chỉ dùng quá khứ
 ├── selection.py         SHAP → tầm quan trọng hoán vị
 ├── models.py            TabularBooster · RankingBooster · TemporalSequenceModel
-├── bandit.py            DiscountedThompsonSamplingMAB
+├── aggregation.py       ExponentialWeights — trọng số mũ trên log-loss
 ├── drift.py             ConceptDriftDetector (ADWIN + KS)
-├── fallback.py          SafeModeController
+├── fallback.py          SafeModeController — cổng độ tin model_trust
 ├── metrics.py           Quy tắc chấm điểm chặt + chỉ số kinh tế
 ├── validation.py        WalkForwardValidator + Optuna
 └── main_pipeline.py     Tầng điều phối, điểm vào dòng lệnh
@@ -70,8 +70,8 @@ Nguyên tắc SOLID được áp dụng ở ba chỗ có hệ quả thật:
 * **Đảo ngược phụ thuộc** — tầng điều phối phụ thuộc giao thức `Learner`
   (`fit` + `predict_proba`), không phụ thuộc LightGBM. Thêm hay bỏ một họ mô
   hình không chạm phần còn lại.
-* **Đóng/mở** — thêm một "cánh tay" là thêm một mục vào `_build_arms()`; bandit,
-  chỉ số và chế độ an toàn không đổi một dòng nào.
+* **Đóng/mở** — thêm một "cánh tay" là thêm một mục vào `_build_arms()`; phép
+  trộn, chỉ số và cổng độ tin không đổi một dòng nào.
 
 ### Suy giảm khi thiếu thư viện
 
@@ -93,47 +93,41 @@ chúng được dùng tự động nếu môi trường đã có.
 
 ## 3. Các thành phần lõi
 
-### 3.1 `DiscountedThompsonSamplingMAB`
+### 3.1 `ExponentialWeights` — thay bandit Thompson từ 20-10-2026
 
-**Cơ sở.** Mỗi cánh tay có tỉ lệ trúng ẩn `θᵢ`. Tiên nghiệm liên hợp
-`θᵢ ~ Beta(α₀, β₀)`; sau `Sᵢ` lần trúng và `Fᵢ` lần trượt, hậu nghiệm là
-`Beta(α₀+Sᵢ, β₀+Fᵢ)`. Lấy mẫu Thompson rút `θ̃ᵢ ~ Beta(αᵢ, βᵢ)` rồi lấy `argmax`
-— *xác suất khớp*: mỗi cánh tay được chọn đúng bằng xác suất hậu nghiệm rằng nó
-tốt nhất, nên khai thác và thăm dò cân bằng mà không cần tham số `ε`.
+**Vì sao gỡ bandit.** Bản trước trộn bằng Thompson Sampling có chiết khấu
+γ = 0,98, thưởng `1 − Brier`. Chiết khấu chặn số quan sát hiệu dụng ở 50, nên độ
+lệch chuẩn hậu nghiệm không xuống dưới ~0,05, trong khi chênh Brier thật giữa
+các cánh tay cỡ 10⁻⁵–10⁻⁴: trọng số là nhiễu của bộ sinh ngẫu nhiên. Beta với
+thưởng liên tục cũng không phải hậu nghiệm của thứ gì. Đo trên 1 000 kỳ (§6), bản
+bandit kèm ngưỡng Hit-Rate kém hằng số **z = −3,40**.
 
-**Vì sao chiết khấu.** Thompson thuần giả định `θᵢ` cố định. Trong miền này giả
-định đó sai theo cách nguy hiểm nhất: cầu "chạy" rồi "gãy", và bandit không
-chiết khấu còn tin nó rất lâu sau khi gãy.
-
-```
-Sᵢ ← γ·Sᵢ + r      Fᵢ ← γ·Fᵢ + (1−r)
-```
-
-**Hệ quả quan trọng nhất — và là giới hạn thật của phương pháp.** Tổng quan sát
-hiệu dụng bị chặn:
+**Phép trộn mới.** Sau khi biết kết quả kỳ `t`:
 
 ```
-n_eff = Σ γᵏ = 1/(1−γ)          γ = 0.98 → n_eff = 50
+w_i ← w_i · exp(−η · L_i,t)          L = log-loss CỘNG 100 con của kỳ
+w   ← (1 − α) · w / Σw + α / K       chia sẻ cố định (Herbster–Warmuth)
+p_j = Σ_i w_i p_ij                   biên của hỗn hợp
 ```
 
-Với `n_eff = 50` quanh nền 0.2377, sai số chuẩn là **0.0602**. Bandit *không
-thể* phân giải chênh lệch nhỏ hơn khoảng hai lần con số đó, dù chạy bao nhiêu
-năm. `power_floor()` trả về đúng đại lượng này để người gọi không nhầm dao động
-với phong độ.
+Với `η = 1`, `L` là âm log-hợp lý của kỳ dưới luật của cánh tay, nên `w` là hậu
+nghiệm Bayes của các cánh tay; chia sẻ cố định là Bayes với tiên nghiệm "đổi
+cánh tay đúng nhất với xác suất α mỗi kỳ". Hỗn hợp đầy đủ thua cánh tay tốt nhất
+không quá `ln(K/α) + (T − 1)·ln(1/(1 − α))` nat. Biên trộn không thừa hưởng đúng
+chặn ấy, nên phép kiểm đo hối tiếc của chính nó trên ba hạt giống.
 
-Con số 0.0602 gần trùng với ngưỡng phát hiện +0.0603 tính được từ phân tích
-công suất trên 391 kỳ ở [báo cáo định lượng](../research/quantitative-architecture.md).
-Hai phép tính độc lập, cùng một trần.
+**Tham số chốt trước khi đo, không dò trên dữ liệu.**
 
-**Trọng số trộn.** `select_weights()` rút `draws` lần từ hậu nghiệm và đếm tần
-suất mỗi cánh tay thắng — ước lượng Monte Carlo của `P(cánh tay i tốt nhất | dữ
-liệu)`. Trộn theo đó giữ tính chất khớp xác suất nhưng cho dự báo trơn thay vì
-nhảy giữa các cánh tay.
+* `η = 1` trên loss CỘNG — Bayes, không ủ. Đặt `η = 1` trên log-loss TRUNG BÌNH
+  mỗi con là ủ hợp lý đi 100 lần: chênh 10⁻³ nat/con mỗi kỳ, đủ phân biệt sau vài
+  trăm kỳ, chỉ dời trọng số `e⁻⁰·¹` sau 100 kỳ.
+* `α = 0,001`. Trọng số cân bằng của một cánh tay kém đều `Δ` nat mỗi kỳ là
+  khoảng `(α/K)/(α + ηΔ)`; `α = 0,01` giữ ~15% trọng số cho MỖI cánh tay kém
+  0,1 nat/kỳ trong sáu cánh tay.
 
-**Tuần tự hóa.** `to_dict()` lưu **cả trạng thái bộ sinh ngẫu nhiên**. Thiếu
-điều đó thì mỗi lần khởi động lại tiến trình sẽ đổi hành vi thăm dò và không
-bản chạy nào tái lập được. Một phép kiểm khẳng định `select_weights()` trước và
-sau vòng JSON cho kết quả *giống hệt*.
+Không có bộ sinh ngẫu nhiên: cùng lịch sử loss cho cùng trọng số, nên dự báo lặp
+lại hay khôi phục sau lỗi không cần lưu trạng thái RNG. Cánh tay vắng ở một kỳ
+(khớp hoặc dự đoán lỗi) giữ nguyên phần khối lượng của nó.
 
 ### 3.2 `ConceptDriftDetector`
 
@@ -194,43 +188,49 @@ JSON → ObservationMatrix (kiểm hợp đồng)
      → sinh đặc trưng (20 cột, không rò rỉ)
      → chọn đặc trưng bằng SHAP
      → 6 cánh tay khai báo xác suất độc lập
-     → MAB trộn theo trọng số hậu nghiệm
-     → CHẾ ĐỘ AN TOÀN có quyền phủ quyết   ← đứng sau MAB, không phải trước
+     → trọng số mũ trên log-loss trộn các cánh tay
+     → CỔNG ĐỘ TIN: trust·trộn + (1 − trust)·nền   ← đứng sau phép trộn
      → Top-K
-     → kết quả thật → phần thưởng → cập nhật MAB
-                    → sai số → phát hiện trôi lệch
-                    → chỉ số → nhật ký
+     → kết quả thật → log-loss cộng 100 con từng cánh tay → cập nhật trọng số
+                    → điểm của phép trộn (trước cổng) → trôi lệch, kỹ năng → trust
+                    → điểm của dự báo công bố → nhật ký
 ```
 
-Hai quyết định thiết kế mang tính quyết định:
+Ba quyết định thiết kế mang tính quyết định:
 
-**Chế độ an toàn đứng *sau* MAB.** MAB tối ưu trong giả định "có ít nhất một
-cánh tay đáng dùng". Chế độ an toàn là nơi duy nhất chất vấn chính giả định đó,
-nên nó phải có tiếng nói sau cùng.
+**Cổng độ tin đứng *sau* phép trộn.** Phép trộn chỉ bảo đảm không thua cánh tay
+tốt nhất quá xa. Cổng là nơi duy nhất hỏi phép trộn có kỹ năng ĐO ĐƯỢC hay không,
+nên nó có tiếng nói sau cùng.
 
-**Nền là một cánh tay.** `baseline` được đăng ký như cánh tay bình thường, cạnh
-tranh sòng phẳng. Nhờ vậy hệ thống *kết luận bằng dữ liệu* rằng không mô hình
-nào đáng tin — trọng số dồn về nền — thay vì cần người quyết định. Không có
-cánh tay nền thì trọng số luôn bị chuẩn hóa **giữa các mô hình**, và hệ thống
-không có cách nào diễn đạt câu "không cái nào đáng dùng".
+**Nền là một cánh tay.** `baseline` cạnh tranh sòng phẳng trong phép trộn, nên hệ
+thống *kết luận bằng dữ liệu* rằng không mô hình nào đáng tin — trọng số dồn về
+nền. Không có cánh tay nền thì trọng số luôn chuẩn hoá giữa các mô hình, và hệ
+thống không diễn đạt được câu "không cái nào đáng dùng".
 
-**Phần thưởng chấm theo lựa chọn của chính cánh tay.** Mỗi cánh tay được chấm
-theo Top-10 *của riêng nó*, không theo lựa chọn chung — nếu không thì mọi cánh
-tay nhận cùng phần thưởng và bandit không học được gì.
+**Mỗi cánh tay được chấm trên xác suất của chính nó**, bằng log-loss — quy tắc
+chấm chặt, phạt cả sai mức xác suất khi thứ hạng không đổi.
 
-### Ngưỡng `T_min` neo vào miền
+### Cổng độ tin `model_trust` — thay ngưỡng Hit-Rate 7 kỳ
 
-Một ngưỡng tùy chọn kiểu "dưới 30% thì chuyển chế độ an toàn" có vấn đề: không
-ai biện minh được con số đó, nên khi hệ thống chạm ngưỡng, phản xạ tự nhiên là
-hạ ngưỡng.
+`trust = ml_train.model_trust(s_logloss, s_brier) = clip(20·min(s), 0, 1)`, với
+`s` là kỹ năng tương đối của phép trộn so với nền trên 60 kỳ gần nhất đã chấm;
+chưa đủ 30 kỳ thì `trust = 0`. Đây là cùng luật của thành phần ML production,
+cầu-kèo và tác tử mẫu hình: không có kỹ năng thì không tin, và khi `trust = 0`
+dự báo công bố **đúng bằng** nền.
 
-`T_min` mặc định bằng đúng **tỉ lệ nền** (0.2377). Lập luận thẳng: chọn Top-K
-ngẫu nhiên trong 100 con đã cho tỉ lệ trúng bằng nền. Nếu Top-K của mô hình rơi
-*xuống dưới* mức đó thì mô hình đang xếp hạng tệ hơn cả bốc ngẫu nhiên. Đó là
-ngưỡng duy nhất không cần biện minh thêm.
+* Kỹ năng đo trên phép trộn TRƯỚC cổng. Đo trên dự báo đã qua cổng thì khi
+  `trust = 0` dự báo trùng nền, kỹ năng bằng 0 mãi và cổng không bao giờ mở lại.
+* Trôi lệch hoặc lỗi mô hình xoá bằng chứng cũ: nó mô tả một chế độ hoặc một bộ
+  dự báo không còn chạy. Cổng đo lại từ đầu.
+* Trôi lệch cũng đo trên sai số của phép trộn: khi `trust = 0`, sai số của dự báo
+  công bố chỉ còn phản ánh kết quả quay.
 
-Rời chế độ an toàn cần 5 kỳ liên tiếp đạt lại, không phải một kỳ may mắn — nếu
-không hệ thống sẽ dao động vào ra liên tục.
+**Vì sao bỏ ngưỡng Hit-Rate.** Bản trước vào chế độ an toàn khi Hit-Rate@10 trung
+bình 7 kỳ dưới nền 0,2377. Với 70 lượt chọn, độ lệch chuẩn của tỉ lệ ấy là 0,051,
+nên một mô hình đúng bằng nền rơi dưới ngưỡng khoảng một nửa số kỳ. Trên 1 000 kỳ
+nó bật 764 kỳ: phán đoán bằng tung đồng xu. Hit-Rate lại không phải quy tắc chấm
+chặt, nên nó bỏ qua đúng thứ cần canh là mức xác suất. "Chế độ an toàn" cũ còn
+phát `0,8·nền + 0,2·tần suất dài hạn` — một mô hình khác, không phải nền.
 
 ---
 
@@ -264,56 +264,62 @@ ROI; muốn kết luận có lãi cần đánh giá riêng doanh thu theo số n
 
 ---
 
-## 6. Kết quả đo trên 192 kỳ
+## 6. Kết quả đo trên 1 000 kỳ (12-01-2024 → 19-10-2026)
 
 ```bash
-python src/ml_engine/main_pipeline.py --start 200 --stop 392 --refit-every 24
+# Báo cáo của bản đang chạy (cánh tay, trọng số, độ tin)
+python src/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+    --out data/research/ml_engine_report.json
+# So ghép cặp với bản cũ chạy trên mã của main (luật quyết định chốt trước khi đo)
+PYTHONPATH=src python3 scripts/research/benchmark_ml_engine_aggregation.py --last 1000 \
+    --days-out /tmp/moi.csv --against /tmp/cu.csv --against-label cu
 ```
 
-| Chỉ số | Giá trị |
-|---|---:|
-| Kỹ năng log-loss | **−0.000670** |
-| t ghép cặp (mức ngày) | **−1.79** |
-| Kỹ năng Brier | −0.000832 |
-| Vượt nền | **KHÔNG** |
+Cấu hình mặc định, đủ sáu cánh tay (`temporal_sequence` chạy đường lui tuyến
+tính vì môi trường không có torch). Sai số của z lấy max(theo ngày, khối 7 kỳ),
+đúng như cổng đề bạt của `online_learning`.
 
-| K | Trúng@K | Chọn ngẫu nhiên |
-|---|---:|---:|
-| 3 | 0.7240 | 0.7130 |
-| 5 | 1.2552 | 1.1883 |
-| 10 | 2.4740 | 2.3766 |
+| Bản | Kỹ năng log-loss so với hằng số | z so với hằng số | Kỳ về đúng nền |
+|---|---:|---:|---:|
+| Cũ: bandit Thompson + ngưỡng Hit-Rate 7 kỳ | −0,036% | **−3,40** | 764 (chế độ an toàn) |
+| Mới: trọng số mũ log-loss + cổng `model_trust` | −0,000001% | −1,02 | 699 (trust = 0) |
+| **Mới so với cũ** | | **+3,40** | |
 
-Bản đo cũ chỉ tính một khoản tiền thưởng cho mỗi con trúng, làm mất số nháy.
-Các tỉ suất lời/lỗ cũ vì vậy không phản ánh luật trả 80 mỗi nháy và đã được bỏ
-khỏi bảng; cần đo lại từ số nháy của các con đã chọn để báo cáo ROI.
+Luật chốt trước: bản mới được nhận khi không kém hằng số với z ≤ −2 và không kém bản
+cũ với z ≤ −2 — đạt (`data/research/ml_engine_aggregation.json`). Độ tin trung
+bình 0,0002: khi cổng mở, nó chỉ mở vì kỹ năng ngẫu nhiên vừa dương trên 60 kỳ,
+và `20·s` giữ phần trộn ở mức 10⁻⁴.
 
-| Cánh tay | Trung bình hậu nghiệm | Khoảng tin cậy 95% | Vượt nền |
-|---|---:|---|:---:|
-| `temporal_sequence` | 0.2395 | [0.1357, 0.3620] | ✗ |
-| `ranking_lambdamart` | 0.2331 | [0.1306, 0.3547] | ✗ |
-| `frequency` | 0.2320 | [0.1297, 0.3534] | ✗ |
-| `gap_hazard` | 0.2279 | [0.1265, 0.3488] | ✗ |
-| `baseline` | 0.2218 | [0.1216, 0.3418] | — |
-| `tabular_boosting` | 0.2193 | [0.1197, 0.3389] | ✗ |
-
-**Chế độ an toàn: 120/192 kỳ (62%). Trôi lệch: 0 lần.**
+| Cánh tay | Kỹ năng log-loss ngoài mẫu | t ghép cặp | Trọng số cuối |
+|---|---:|---:|---:|
+| `baseline` | 0 | — | 0,482 |
+| `temporal_sequence` | −0,0009% | −0,28 | 0,342 |
+| `gap_hazard` | −0,0032% | −0,99 | 0,136 |
+| `frequency` | −0,031% | −3,61 | 0,008 |
+| `tabular_boosting` | −0,33% | −9,54 | 0,011 |
+| `ranking_lambdamart` | −0,85% | −6,56 | 0,021 |
 
 Ba điều đáng đọc kỹ:
 
-1. **Mọi khoảng tin cậy chồng lên nhau và đều chứa nền.** Sau 192 kỳ, hệ thống
-   không phân biệt được sáu phương pháp với nhau, cũng không phân biệt được cái
-   nào với việc bốc ngẫu nhiên. Đây không phải hạn chế của cài đặt — đó là trần
-   `n_eff = 50` ở §3.1 hiện ra đúng như dự đoán.
-2. **Trúng@K nhỉnh hơn ngẫu nhiên (+4.1% ở K=10) trong khi kỹ năng log-loss
-   âm.** Chính là hiện tượng §5 cảnh báo: chỉ số xếp hạng và quy tắc chấm điểm
-   chặt cho hai câu trả lời ngược nhau, và chỉ câu thứ hai đáng tin.
-3. **Các chỉ số nhị phân không đủ để kết luận lời/lỗ.** Mốc kinh tế công bằng
-   là −6,09% với 0,27 nháy/con/kỳ; chưa có bản đo lại ROI theo số nháy cho lượt
-   192 kỳ này để so với mốc đó.
+1. **Không cánh tay nào hơn nền**, và ba cánh tay học máy kém nền có ý nghĩa: chúng
+   học nhiễu của cửa sổ 240 kỳ. Phép trộn tự dồn trọng số về nền và các cánh tay
+   gần nền mà không cần ai quyết định.
+2. **Bản cũ thua hằng số vì phán đoán, không vì mô hình.** 89% phần thua nằm ở 236
+   kỳ "bình thường", nơi bandit trộn các cánh tay gần đều tay — kể cả
+   `temporal_sequence` khi nó còn kém nền 61,5% — mất trung bình 0,00075 nat mỗi
+   con mỗi kỳ. 11% còn lại ở 764 kỳ "an toàn": `0,8·nền + 0,2·tần suất dài hạn`
+   cũng thua nền (t ≈ −2,6). Ngưỡng Hit-Rate chọn giữa hai chế độ ấy theo nhiễu.
+3. **Lỗi thật của `temporal_sequence` lộ ra nhờ báo cáo từng cánh tay.** Đường lui
+   ridge cũ cố định λ = 10 cho 1 401 tham số mỗi đầu ra trên ~226 mẫu và phạt cả
+   hệ số chặn: độ lệch chuẩn xác suất 0,166 quanh nền, 9,5% dự báo kẹp ở 10⁻⁶,
+   log-loss kém nền 61,5% (t = −58,8). Bản sửa chọn λ trên 20% cửa sổ cuối và co
+   về nền: λ chọn 10⁴–10⁶, độ lệch chuẩn 0,0026, kém nền 0,0009% (t = −0,28).
+   Trên dữ liệu có cài bạc nhớ, cùng phép chọn λ hạ xuống ≤ 10⁴ và hơn nền
+   0,2–1,7% (phép kiểm hai chiều trong `tests/test_ml_engine.py`).
 
-Kết quả đúng ở đây là hệ thống **tự chuyển sang chế độ an toàn 62% thời gian**
-mà không cần ai can thiệp. Đó chính là hành vi mà kiến trúc được thiết kế để
-tạo ra: khi không có bằng chứng, mặc định là nền.
+Chỉ số xếp hạng (Trúng@3/5/10: 0,709 / 1,164 / 2,309 so với chọn ngẫu nhiên
+0,714 / 1,190 / 2,380) không có nghĩa ở đây: khi trust = 0 mọi con cùng xác suất,
+Top-K chỉ là thứ tự chỉ số.
 
 ---
 
@@ -323,30 +329,28 @@ tạo ra: khi không có bằng chứng, mặc định là nền.
 # Cài phụ thuộc tùy chọn (torch/catboost dùng tự động nếu có sẵn)
 pip install -r requirements-ml-engine.txt
 
-# Chạy backtest học tiếp diễn, ghi báo cáo và lưu trạng thái MAB
-python src/ml_engine/main_pipeline.py \
-    --start 200 --stop 392 --refit-every 24 \
-    --out data/research/ml_engine_report.json \
-    --bandit-state data/ml_engine/bandit_state.json
+# Chạy backtest học tiếp diễn, ghi báo cáo
+python src/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+    --out data/research/ml_engine_report.json
 
 # Bỏ các cánh tay nặng khi chạy trên máy yếu
 python src/ml_engine/main_pipeline.py --no-temporal --no-ranking
 
 # Kiểm thử
-python -m pytest tests/test_ml_engine.py -q     # 88 phép kiểm
+PYTHONPATH=src python3 -m pytest tests/test_ml_engine.py \
+    tests/test_ml_engine_integrity.py tests/test_ml_engine_economics.py -q   # 169 phép kiểm
 ```
 
-Trạng thái MAB tích lũy qua các lần chạy nhờ `--bandit-state`: đó là cơ chế
-"học tiếp diễn" ở mức vận hành — hậu nghiệm của hôm nay là tiên nghiệm của ngày
-mai, và chiết khấu bảo đảm dữ liệu quá cũ mờ dần đi.
+Module không lưu trạng thái giữa các lần chạy: phép trộn tất định, mỗi lượt học
+lại từ đầu trên đoạn được chỉ định. Tệp `data/ml_engine/bandit_state.json` và cờ
+`--bandit-state`/`--discount` đã gỡ cùng bandit.
 
 ## 8. Điều gì sẽ làm đổi kết luận
 
-1. Một cánh tay có **cận dưới** khoảng tin cậy vượt nền (`beats_baseline` trả
-   `True` trong báo cáo) — không phải trung bình hậu nghiệm vượt nền, vốn rất
-   dễ xảy ra do may rủi.
-2. Kỹ năng log-loss dương với **t ghép cặp > 2.5** trên ít nhất 200 kỳ.
-3. Chế độ an toàn tự rời trạng thái `safe` và **giữ** `normal` qua một quý.
-4. Thêm dữ liệu: ngưỡng phát hiện co theo `1/√n`. Riêng trần `n_eff` của bandit
-   thì **không** — muốn hạ nó phải nâng `γ`, và điều đó đánh đổi bằng tốc độ
-   thích ứng khi cầu gãy.
+1. Một cánh tay có kỹ năng log-loss dương với **t ghép cặp > 2,5** trên ít nhất
+   200 kỳ trong bảng `arm_skill` của báo cáo.
+2. Cổng độ tin **giữ** trust > 0,5 qua một quý — tức kỹ năng 60 kỳ của phép trộn
+   đều đặn trên 2,5%, gấp hàng trăm lần mức dao động đo được hôm nay.
+3. Thêm dữ liệu: ngưỡng phát hiện co theo `1/√n`. Phép trộn Bayes không có trần
+   số quan sát hiệu dụng như bandit cũ; chia sẻ cố định α = 0,001 chỉ thêm khoảng
+   `T·α` nat hối tiếc.

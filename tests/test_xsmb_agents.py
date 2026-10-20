@@ -347,7 +347,7 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
     assert [item['calibration_band'] for item in report['items']] == expected
     assert len(calls) <= 2, 'Chỉ giải mã một lần cho confidence_matrix và một lần cho toàn bộ bands'
     learner.state = {**state, 'archive': [], 'records': settled[:59]}
-    assert learner.calibration_band(float(p[0])) is None
+    assert learner.calibration_bands([float(p[0])]) == [None]
 
 
 def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observations():

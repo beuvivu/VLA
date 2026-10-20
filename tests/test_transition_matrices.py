@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from association_rules import _wilson_lower, mine_association_rules
 from conditional_matrices import build_cooccurrence_matrix, build_transition_matrix
 
 
@@ -12,42 +11,6 @@ def _sparse(days: int) -> pd.DataFrame:
     frame = pd.DataFrame(0, index=np.arange(days), columns=["date", *range(100)])
     frame["date"] = pd.date_range("2026-02-01", periods=days, freq="D")
     return frame
-
-
-def test_association_support_confidence_and_lift_match_definitions() -> None:
-    history = _sparse(20)
-    history.loc[:9, 1] = 1
-    history.loc[:7, 2] = 1
-    history.loc[10:11, 2] = 1
-
-    rules = mine_association_rules(
-        history,
-        "2026-02-21",
-        min_support=0.1,
-        minimum_antecedent_observations=1,
-    )
-    rule = rules[(rules["antecedent"] == 1) & (rules["consequent"] == 2)].iloc[0]
-
-    assert int(rule["joint_count"]) == 8
-    assert float(rule["support"]) == pytest.approx(8 / 20)
-    assert float(rule["confidence"]) == pytest.approx(8 / 10)
-    assert float(rule["lift"]) == pytest.approx(1.6)
-
-
-def test_minimum_support_filters_sparse_rules() -> None:
-    history = _sparse(10)
-    history.loc[0, [1, 2]] = 1
-    rules = mine_association_rules(
-        history,
-        "2026-02-11",
-        min_support=0.2,
-        minimum_antecedent_observations=1,
-    )
-    assert not bool(((rules["antecedent"] == 1) & (rules["consequent"] == 2)).any())
-
-
-def test_wilson_ranking_penalizes_one_success_from_one_observation() -> None:
-    assert _wilson_lower(70, 100) > _wilson_lower(1, 1)
 
 
 def test_transition_matrix_keeps_raw_counts_and_beta_smoothing() -> None:

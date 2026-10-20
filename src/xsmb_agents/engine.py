@@ -91,10 +91,6 @@ class MetaLearner:
             }
         return rows
 
-    def calibration_band(self, probability: float) -> dict | None:
-        """Khoảng của một con, dùng chung phép chấm theo nhóm với báo cáo."""
-        return self.calibration_bands([probability])[0]
-
     def calibration_bands(self, probabilities: list[float] | np.ndarray) -> list[dict | None]:
         """Sai số hiệu chuẩn theo nhóm, SE khối theo kỳ; thiếu mẫu trả null.
 

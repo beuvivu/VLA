@@ -110,7 +110,6 @@ def reverse(value: int | str) -> str:
 lon = reverse
 
 
-
 def bong_duong(value: int | str) -> str:
     s = normalize_two_digit(value)
     return f"{BONG_DUONG[int(s[0])]}{BONG_DUONG[int(s[1])]}"
@@ -122,7 +121,6 @@ def bong(value: int | str) -> str:
     return bong_duong(value)
 
 
-
 def bong_am(value: int | str) -> str:
     s = normalize_two_digit(value)
     return f"{BONG_AM[int(s[0])]}{BONG_AM[int(s[1])]}"
@@ -131,13 +129,6 @@ def bong_am(value: int | str) -> str:
 def cap_bong_duong(value: int | str) -> frozenset[str]:
     s = normalize_two_digit(value)
     return frozenset({s, bong_duong(s)})
-
-
-def cap_bong_am(value: int | str) -> frozenset[str]:
-    s = normalize_two_digit(value)
-    return frozenset({s, bong_am(s)})
-
-
 
 
 @lru_cache(maxsize=100)
@@ -161,16 +152,8 @@ def bo(value: int | str) -> frozenset[str]:
     return frozenset(out)
 
 
-def bo_seed_label(value: int | str) -> str:
-    return normalize_two_digit(value)
-
-
 def bo_family_id(value: int | str) -> str:
     return min(bo(value))
-
-
-def bo_family_kind(value: int | str) -> str:
-    return "bo_kep" if len(bo(value)) == 4 else "bo_thuong"
 
 
 def all_bo() -> tuple[frozenset[str], ...]:

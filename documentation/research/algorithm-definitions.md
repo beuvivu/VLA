@@ -155,9 +155,11 @@ kết quả Bernoulli; tỷ lệ có điều kiện đã làm trơn là:
 (count(A and B) + alpha) / (count(A) + 2*alpha)
 ```
 
-Các hàng không bị ép có tổng bằng một. `association_rules.mine_association_rules`
-thêm ngưỡng bằng chứng tối thiểu và cận dưới Wilson để mẫu `1/1` không vượt mẫu
-`70/100` chỉ vì độ tin cậy thô.
+Các hàng không bị ép có tổng bằng một. Bộ khai phá luật kết hợp
+`association_rules.mine_association_rules` (đã gỡ 20-10-2026 vì không bước pipeline, workflow hay script nào gọi) từng thêm ngưỡng bằng chứng
+tối thiểu và cận dưới Wilson để mẫu `1/1` không vượt mẫu `70/100` chỉ vì độ tin
+cậy thô. Luật trễ "a về → b về kỳ sau" hiện được khai phá, đóng băng và chấm tiến
+cứu trong `knowledge_base`.
 
 ## Chuỗi Markov trạng thái loại trừ
 
@@ -176,7 +178,8 @@ trưng nào được đưa vào vận hành chỉ vì khớp lịch sử.
 
 ## Điểm ứng viên và xác suất
 
-`candidate_scoring.rank_candidates` trả một điểm xếp hạng:
+`candidate_scoring.rank_candidates` (đã gỡ 20-10-2026 vì không bước pipeline, workflow hay script nào gọi; định nghĩa giữ lại để tham
+chiếu) trả một điểm xếp hạng:
 
 ```text
 score(x) = Σ available_i weight_i * normalized_component_i(x)

@@ -1,9 +1,8 @@
 """Kiểm thử ``ml_engine``.
 
 Trọng tâm không phải "mô hình có tốt không" mà là **các bất biến mà mọi kết
-luận phía sau dựa vào**: không rò rỉ thời gian, tuần tự hóa trung thực, bandit
-hội tụ đúng chiều, phát hiện trôi lệch có cả hai chiều, và chế độ an toàn kích
-hoạt đúng lúc.
+luận phía sau dựa vào**: không rò rỉ thời gian, phép trộn dồn trọng số đúng chiều,
+phát hiện trôi lệch có cả hai chiều, và cổng độ tin chỉ mở khi có kỹ năng đo được.
 
 Mỗi phép kiểm hành vi đều có đối chứng hai chiều. Kiểm một chiều thôi thì một
 hàm trả hằng số cũng qua được — và một hệ thống luôn im lặng không phân biệt
@@ -18,12 +17,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml_engine.bandit import ArmState, BanditError, DiscountedThompsonSamplingMAB
+from ml_engine.aggregation import AggregationError, ExponentialWeights
 from ml_engine.capabilities import CAPABILITIES
 from ml_engine.drift import ConceptDriftDetector, _PureAdwin
 from ml_engine.fallback import Mode, SafeModeController
 from ml_engine.features import FeatureMatrix, build_features, build_training_table
-from ml_engine.main_pipeline import BASELINE_REWARD, ContinuousLearningPipeline, PipelineConfig
+from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
 from ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
 from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
 from ml_engine.schema import (
@@ -226,186 +225,130 @@ class TestFeatureMatrix:
 
 
 # ---------------------------------------------------------------------------
-# Bandit
+# Phép trộn
 # ---------------------------------------------------------------------------
 
 
-class TestBanditContract:
+def _fair_losses(rng: np.random.Generator, probabilities: dict[str, np.ndarray]) -> dict:
+    """Log-loss cộng 100 con của từng cánh tay trên một kỳ rút công bằng."""
+    counts = rng.multinomial(LOTO_DRAWS_PER_DAY, np.full(NUMBER_SPACE, 1 / NUMBER_SPACE))
+    outcome = (counts > 0).astype(float)
+    return {name: NUMBER_SPACE * score_day(p, outcome).logloss
+            for name, p in probabilities.items()}
+
+
+class TestExponentialWeightsContract:
     def test_rejects_duplicate_arms(self) -> None:
-        with pytest.raises(BanditError, match="trùng"):
-            DiscountedThompsonSamplingMAB(["a", "a"])
+        with pytest.raises(AggregationError, match="trùng"):
+            ExponentialWeights(["a", "a"])
 
-    def test_rejects_a_discount_outside_the_unit_interval(self) -> None:
-        with pytest.raises(BanditError, match="discount"):
-            DiscountedThompsonSamplingMAB(["a"], discount=1.5)
+    @pytest.mark.parametrize("field,value", [
+        ("learning_rate", 0.0), ("learning_rate", np.nan), ("share", 1.0), ("share", -0.1),
+    ])
+    def test_rejects_invalid_parameters(self, field, value) -> None:
+        with pytest.raises(AggregationError, match=field):
+            ExponentialWeights(["a"], **{field: value})
 
-    def test_rejects_a_reward_outside_zero_one(self) -> None:
-        mab = DiscountedThompsonSamplingMAB(["a"])
-        with pytest.raises(BanditError, match="reward"):
-            mab.update_reward("a", 1.5)
+    @pytest.mark.parametrize("losses", [{"b": 0.5}, {"a": np.nan}, {"a": -0.1}, {}])
+    def test_rejects_invalid_losses_without_learning(self, losses) -> None:
+        mixer = ExponentialWeights(["a"])
+        with pytest.raises(AggregationError):
+            mixer.update(losses)
+        assert mixer.updates == 0
 
-    def test_rejects_an_unknown_arm(self) -> None:
-        mab = DiscountedThompsonSamplingMAB(["a"])
-        with pytest.raises(BanditError, match="không tồn tại"):
-            mab.update_reward("b", 1.0)
+    def test_starts_uniform_and_stays_a_distribution(self) -> None:
+        mixer = ExponentialWeights(["a", "b", "c"])
+        assert mixer.weights() == pytest.approx({"a": 1 / 3, "b": 1 / 3, "c": 1 / 3})
+        mixer.update({"a": 0.1, "b": 5.0, "c": 50.0})
+        assert sum(mixer.weights().values()) == pytest.approx(1.0)
+        assert min(mixer.weights().values()) >= mixer.share / 3 - 1e-15
 
-    def test_weights_form_a_distribution(self) -> None:
-        mab = DiscountedThompsonSamplingMAB(["a", "b", "c"], seed=1)
-        weights = mab.select_weights()
-        assert sum(weights.values()) == pytest.approx(1.0)
-        assert all(value >= 0.0 for value in weights.values())
+    def test_update_is_the_exponential_weights_rule(self) -> None:
+        """Ghim công thức: w·e^(−η·ℓ), chuẩn hoá, rồi chia sẻ α/K."""
+        mixer = ExponentialWeights(["a", "b"], learning_rate=2.0, share=0.1)
+        mixer.update({"a": 0.3, "b": 0.8})
+        raw = np.array([np.exp(-2.0 * 0.3), np.exp(-2.0 * 0.8)])
+        expected = 0.9 * raw / raw.sum() + 0.1 / 2
+        assert list(mixer.weights().values()) == pytest.approx(expected.tolist(), rel=1e-12)
+
+    def test_absent_arm_keeps_its_mass(self) -> None:
+        """Cánh tay không dự báo không bị phạt, cũng không được thưởng."""
+        mixer = ExponentialWeights(["a", "b", "c"], share=0.0)
+        mixer.update({"a": 0.2, "b": 0.9})
+        assert mixer.weights()["c"] == pytest.approx(1 / 3)
+        assert mixer.weights()["a"] > mixer.weights()["b"]
 
 
-class TestBanditLearns:
-    def test_converges_to_the_better_arm(self) -> None:
-        """Đối chứng dương: cánh tay tốt hơn phải giành phần lớn trọng số."""
-        mab = DiscountedThompsonSamplingMAB(["tot", "te"], discount=1.0, seed=2)
+class TestExponentialWeightsLearns:
+    def test_weight_moves_to_the_calibrated_arm(self) -> None:
+        """Đối chứng dương: cánh tay sai mức xác suất mất trọng số."""
         rng = np.random.default_rng(2)
-        for _ in range(200):
-            mab.update_batch({"tot": float(rng.random() < 0.60), "te": float(rng.random() < 0.20)})
-        weights = mab.select_weights(draws=4000)
-        assert weights["tot"] > 0.9
+        arms = {"nen": np.full(NUMBER_SPACE, BASELINE_RATE),
+                "lech": np.full(NUMBER_SPACE, 0.40)}
+        mixer = ExponentialWeights(arms)
+        for _ in range(60):
+            mixer.update(_fair_losses(rng, arms))
+        assert mixer.weights()["nen"] > 0.95
 
-    def test_stays_undecided_between_identical_arms(self) -> None:
-        """Đối chứng âm: hai cánh tay như nhau thì không được ưu ái cái nào."""
-        mab = DiscountedThompsonSamplingMAB(["a", "b"], discount=1.0, seed=3)
-        rng = np.random.default_rng(3)
-        for _ in range(200):
-            mab.update_batch({"a": float(rng.random() < 0.25), "b": float(rng.random() < 0.25)})
-        weights = mab.select_weights(draws=4000)
-        assert abs(weights["a"] - weights["b"]) < 0.45
+    @pytest.mark.parametrize("seed", [3, 4, 5])
+    def test_pooled_forecast_stays_within_the_mixture_regret_of_the_best_arm(self, seed) -> None:
+        """Đối chứng âm: không có tín hiệu thì phép trộn không thua cánh tay tốt nhất.
 
-    def test_discount_lets_it_follow_a_regime_change(self) -> None:
-        """Cánh tay từng tốt rồi gãy phải mất trọng số; không chiết khấu thì không."""
-        rng = np.random.default_rng(5)
-        discounted = DiscountedThompsonSamplingMAB(["cu", "moi"], discount=0.9, seed=5)
-        plain = DiscountedThompsonSamplingMAB(["cu", "moi"], discount=1.0, seed=5)
-        for mab in (discounted, plain):
-            local = np.random.default_rng(5)
-            for _ in range(150):  # giai đoạn đầu: "cu" tốt
-                mab.update_batch(
-                    {"cu": float(local.random() < 0.7), "moi": float(local.random() < 0.2)}
-                )
-            for _ in range(60):  # đảo chiều: "cu" gãy
-                mab.update_batch(
-                    {"cu": float(local.random() < 0.1), "moi": float(local.random() < 0.7)}
-                )
-        _ = rng
-        assert discounted.select_weights(draws=4000)["moi"] > 0.9
-        assert (
-            plain.select_weights(draws=4000)["moi"] < discounted.select_weights(draws=4000)["moi"]
-        )
-
-    def test_effective_sample_size_is_capped_by_the_discount(self) -> None:
-        """Tính chất quyết định công suất: chiết khấu chặn cứng n hiệu dụng."""
-        mab = DiscountedThompsonSamplingMAB(["a"], discount=0.98)
-        for _ in range(2000):
-            mab.update_reward("a", 1.0)
-        assert mab.arms["a"].effective_n == pytest.approx(mab.max_effective_n, rel=0.02)
-        assert mab.max_effective_n == pytest.approx(50.0, rel=1e-6)
-
-    def test_power_floor_matches_the_standard_error_at_the_cap(self) -> None:
-        mab = DiscountedThompsonSamplingMAB(["a"], discount=0.98)
-        expected = float(np.sqrt(BASELINE_RATE * (1 - BASELINE_RATE) / 50.0))
-        assert mab.power_floor(BASELINE_RATE) == pytest.approx(expected, rel=1e-9)
-
-    def test_baseline_prior_starts_at_the_domain_rate(self) -> None:
-        mab = DiscountedThompsonSamplingMAB.with_baseline_prior(
-            ["a"], baseline=BASELINE_RATE, strength=8.0
-        )
-        alpha, beta = mab.arms["a"].posterior(mab.prior_alpha, mab.prior_beta)
-        assert alpha / (alpha + beta) == pytest.approx(BASELINE_RATE, rel=1e-9)
-
-    def test_noise_arm_does_not_beat_baseline(self) -> None:
-        """Cánh tay thuần nhiễu ở đúng nền không được kết luận là vượt nền."""
-        mab = DiscountedThompsonSamplingMAB.with_baseline_prior(
-            ["nhieu"], baseline=BASELINE_RATE, discount=1.0, seed=7
-        )
-        rng = np.random.default_rng(7)
-        for _ in range(400):
-            mab.update_reward("nhieu", float(rng.random() < BASELINE_RATE))
-        assert not mab.beats_baseline("nhieu", BASELINE_RATE)
-
-
-class TestBanditSerialisation:
-    def _trained(self) -> DiscountedThompsonSamplingMAB:
-        mab = DiscountedThompsonSamplingMAB(["a", "b"], discount=0.95, seed=13)
-        rng = np.random.default_rng(13)
-        for _ in range(50):
-            mab.update_batch({"a": float(rng.random() < 0.5), "b": float(rng.random() < 0.3)})
-        return mab
-
-    def test_json_round_trip_preserves_state(self) -> None:
-        original = self._trained()
-        restored = DiscountedThompsonSamplingMAB.from_dict(
-            json.loads(json.dumps(original.to_dict()))
-        )
-        for name in original.arms:
-            assert restored.arms[name].successes == pytest.approx(original.arms[name].successes)
-            assert restored.arms[name].failures == pytest.approx(original.arms[name].failures)
-        assert restored.total_updates == original.total_updates
-
-    def test_round_trip_preserves_the_random_stream(self) -> None:
-        """Không lưu trạng thái RNG thì mỗi lần khởi động lại đổi hành vi thăm dò."""
-        original = self._trained()
-        restored = DiscountedThompsonSamplingMAB.from_dict(
-            json.loads(json.dumps(original.to_dict()))
-        )
-        assert original.select_weights(draws=64) == restored.select_weights(draws=64)
-
-    def test_json_file_round_trip(self, tmp_path) -> None:
-        original = self._trained()
-        path = original.save_json(tmp_path / "nested" / "mab.json")
-        assert path.exists()
-        restored = DiscountedThompsonSamplingMAB.load_json(path)
-        assert restored.to_dict()["arms"] == original.to_dict()["arms"]
-
-    def test_no_pickle_entry_point_survives_on_the_bandit(self) -> None:
-        """``pickle.load`` là nguyên thuỷ thực thi mã tuỳ ý.
-
-        Cặp ``save_pickle``/``load_pickle`` không có nơi gọi nào trong
-        production — pipeline dùng ``load_json`` — nên nó chỉ là một khẩu súng
-        đã lên đạn không ai cần. Phép kiểm này giữ cho nó không quay lại: thêm
-        một đường nạp pickle mà không ai để ý là cách cửa hậu ấy trở về.
+        Bandit cũ hỏng đúng ở đây: chênh thật bằng 0 mà trọng số nhảy theo bộ
+        sinh ngẫu nhiên, và mỗi lần nhảy là trả giá. Biên trộn được đo trực tiếp
+        so với chặn ``ln(K/α) + (T − 1)·ln(1/(1 − α))`` của hỗn hợp Bayes đầy đủ.
         """
-        import ast
-        import pathlib
+        rng = np.random.default_rng(seed)
+        jitter = np.random.default_rng(seed + 100)
+        arms = {"nen": np.full(NUMBER_SPACE, BASELINE_RATE)}
+        arms.update({f"m{i}": BASELINE_RATE + jitter.normal(0, 0.01, NUMBER_SPACE)
+                     for i in range(5)})
+        mixer = ExponentialWeights(arms)
+        mixture, totals = 0.0, dict.fromkeys(arms, 0.0)
+        days = 400
+        for _ in range(days):
+            counts = rng.multinomial(LOTO_DRAWS_PER_DAY, np.full(NUMBER_SPACE, 1 / NUMBER_SPACE))
+            outcome = (counts > 0).astype(float)
+            weights = mixer.weights()
+            pooled = sum(weights[name] * p for name, p in arms.items())
+            mixture += NUMBER_SPACE * score_day(pooled, outcome).logloss
+            losses = {name: NUMBER_SPACE * score_day(p, outcome).logloss
+                      for name, p in arms.items()}
+            for name, loss in losses.items():
+                totals[name] += loss
+            mixer.update(losses)
+        bound = np.log(len(arms) / mixer.share) + (days - 1) * np.log(1 / (1 - mixer.share))
+        assert mixture <= min(totals.values()) + bound
+        # Nền là cánh tay đúng; các cánh tay nhiễu phải mất phần lớn trọng số.
+        assert mixer.weights()["nen"] > 0.5
 
-        import ml_engine.bandit as module
+    def test_fixed_share_lets_it_follow_a_regime_change(self) -> None:
+        """Cánh tay từng tốt rồi gãy phải nhường lại; không chia sẻ thì chậm hơn."""
+        arms = ("cu", "moi")
+        tracking = ExponentialWeights(arms, share=0.01)
+        frozen = ExponentialWeights(arms, share=0.0)
+        for mixer in (tracking, frozen):
+            for _ in range(400):
+                mixer.update({"cu": 50.0, "moi": 50.1})
+            for _ in range(100):
+                mixer.update({"cu": 50.1, "moi": 50.0})
+        assert tracking.weights()["moi"] > 0.9
+        assert frozen.weights()["moi"] < tracking.weights()["moi"]
 
-        for name in ("save_pickle", "load_pickle"):
-            assert not hasattr(DiscountedThompsonSamplingMAB, name), name
+    def test_is_deterministic(self) -> None:
+        """Không có bộ sinh ngẫu nhiên: cùng loss, cùng trọng số."""
+        first, second = ExponentialWeights(["a", "b"]), ExponentialWeights(["a", "b"])
+        for losses in ({"a": 0.5, "b": 0.6}, {"a": 0.7, "b": 0.4}):
+            first.update(losses)
+            second.update(losses)
+        assert first.weights() == second.weights()
 
-        # Quét bằng AST chứ không so chuỗi: chữ "pickle" xuất hiện hợp lệ trong
-        # chính đoạn chú thích giải thích vì sao nó bị gỡ, nên phép kiểm theo
-        # chuỗi sẽ đỏ vì lý do sai. AST chỉ thấy lệnh nhập thật.
-        tree = ast.parse(pathlib.Path(module.__file__).read_text(encoding="utf-8"))
-        imported = set()
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                imported.update(alias.name.split(".")[0] for alias in node.names)
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                imported.add(node.module.split(".")[0])
-        assert "pickle" not in imported, f"mô-đun nạp lại pickle: {sorted(imported)}"
-
-    def test_missing_file_raises_a_clear_error(self, tmp_path) -> None:
-        with pytest.raises(BanditError, match="không tìm thấy"):
-            DiscountedThompsonSamplingMAB.load_json(tmp_path / "khong-co.json")
-
-    def test_corrupt_json_raises_a_clear_error(self, tmp_path) -> None:
-        broken = tmp_path / "hong.json"
-        broken.write_text("{khong phai json", encoding="utf-8")
-        with pytest.raises(BanditError, match="hỏng"):
-            DiscountedThompsonSamplingMAB.load_json(broken)
-
-    def test_unsupported_version_is_rejected(self) -> None:
-        with pytest.raises(BanditError, match="phiên bản"):
-            DiscountedThompsonSamplingMAB.from_dict({"version": 99})
-
-    def test_arm_state_posterior_adds_the_prior(self) -> None:
-        arm = ArmState(name="a", successes=3.0, failures=7.0)
-        assert arm.posterior(1.0, 1.0) == (4.0, 8.0)
-        assert arm.effective_n == pytest.approx(10.0)
+    def test_report_orders_arms_by_weight(self) -> None:
+        mixer = ExponentialWeights(["a", "b"])
+        mixer.update({"a": 0.9, "b": 0.1})
+        report = mixer.report()
+        assert [row["arm"] for row in report] == ["b", "a"]
+        assert report[0]["cumulative_logloss"] == pytest.approx(0.1)
 
 
 # ---------------------------------------------------------------------------
@@ -483,66 +426,87 @@ class TestDriftDetection:
 # ---------------------------------------------------------------------------
 
 
-class TestSafeMode:
-    def test_threshold_defaults_to_the_domain_baseline(self) -> None:
-        """Ngưỡng phải neo vào miền, không phải một con số chọn tay."""
-        assert SafeModeController().threshold == pytest.approx(BASELINE_RATE)
+def _observe(controller: SafeModeController, gain: float, **flags) -> Mode:
+    """Một kỳ mà phép trộn hơn nền ``gain`` (tương đối) ở cả log-loss lẫn Brier."""
+    return controller.observe(
+        logloss=0.55 * (1 - gain), brier=0.18 * (1 - gain),
+        baseline_logloss=0.55, baseline_brier=0.18, **flags,
+    )
 
-    def test_stays_normal_while_performance_holds(self) -> None:
-        controller = SafeModeController()
-        for _ in range(20):
-            controller.observe(0.35)
+
+class TestTrustGate:
+    def test_starts_at_the_baseline_until_enough_evidence(self) -> None:
+        """Chưa đo đủ thì không tin, kể cả khi vài kỳ đầu rất đẹp."""
+        controller = SafeModeController(window=60, min_days=30)
+        assert controller.is_safe and controller.trust == 0.0
+        for _ in range(29):
+            _observe(controller, 0.5)
+        assert controller.trust == 0.0
+        _observe(controller, 0.5)
+        assert controller.trust == pytest.approx(1.0)
         assert controller.mode is Mode.NORMAL
 
-    def test_enters_safe_mode_when_performance_falls_below_random(self) -> None:
-        controller = SafeModeController()
+    def test_trust_is_the_repository_rule_on_measured_skill(self) -> None:
+        """Ghim luật của kho: trust = clip(20·min(s_logloss, s_brier), 0, 1)."""
+        controller = SafeModeController(window=10, min_days=5)
         for _ in range(10):
-            controller.observe(0.05)
-        assert controller.mode is Mode.SAFE
-        assert "Hit-Rate" in controller.reason
+            controller.observe(logloss=0.548, brier=0.1795,
+                               baseline_logloss=0.55, baseline_brier=0.18)
+        expected = 20 * min((0.55 - 0.548) / 0.55, (0.18 - 0.1795) / 0.18)
+        assert controller.trust == pytest.approx(expected)
 
-    def test_drift_forces_safe_mode_immediately(self) -> None:
-        controller = SafeModeController()
+    def test_no_skill_means_the_baseline_exactly(self) -> None:
+        """Đối chứng âm: phép trộn kém nền thì dự báo công bố ĐÚNG bằng nền."""
+        controller = SafeModeController(window=10, min_days=5)
         for _ in range(10):
-            controller.observe(0.50)
-        controller.observe(0.50, drifted=True)
-        assert controller.mode is Mode.SAFE
-        assert "trôi lệch" in controller.reason
+            _observe(controller, -0.01)
+        assert controller.is_safe
+        loud = np.linspace(0.05, 0.95, NUMBER_SPACE)
+        np.testing.assert_array_equal(controller.apply(loud), np.full(NUMBER_SPACE, BASELINE_RATE))
 
-    def test_model_failure_forces_safe_mode(self) -> None:
-        controller = SafeModeController()
-        controller.observe(0.50, model_failed=True)
-        assert controller.mode is Mode.SAFE
+    def test_skill_opens_the_gate_and_publishes_the_mixture(self) -> None:
+        """Đối chứng dương: kỹ năng ≥ 5% thì trust = 1 và dự báo là phép trộn."""
+        controller = SafeModeController(window=10, min_days=5)
+        for _ in range(10):
+            _observe(controller, 0.06)
+        loud = np.linspace(0.05, 0.95, NUMBER_SPACE)
+        np.testing.assert_allclose(controller.apply(loud), loud)
 
-    def test_recovery_needs_a_sustained_streak(self) -> None:
-        """Một kỳ may mắn không đủ để rời chế độ an toàn."""
-        controller = SafeModeController(window=3, recovery_days=4)
-        for _ in range(5):
-            controller.observe(0.02)
-        assert controller.mode is Mode.SAFE
-        controller.observe(0.90)
-        assert controller.mode is Mode.SAFE, "một kỳ tốt không được kéo ra khỏi chế độ an toàn"
-        for _ in range(5):
-            controller.observe(0.90)
-        assert controller.mode is Mode.NORMAL
+    def test_only_the_window_counts(self) -> None:
+        """Kỹ năng cũ hơn cửa sổ không còn nâng độ tin."""
+        controller = SafeModeController(window=10, min_days=5)
+        for _ in range(50):
+            _observe(controller, 0.5)
+        for _ in range(10):
+            _observe(controller, -0.01)
+        assert controller.is_safe
 
-    def test_safe_probabilities_sit_near_the_baseline(self) -> None:
-        controller = SafeModeController()
-        probabilities = controller.safe_probabilities(synthetic_counts(300, seed=31))
-        assert abs(float(probabilities.mean()) - BASELINE_RATE) < 0.02
-        assert float(probabilities.std()) < 0.02
+    @pytest.mark.parametrize("flag,word", [("drifted", "trôi lệch"), ("model_failed", "mô hình lỗi")])
+    def test_drift_or_failure_voids_the_evidence(self, flag, word) -> None:
+        controller = SafeModeController(window=10, min_days=5)
+        for _ in range(10):
+            _observe(controller, 0.5)
+        assert not controller.is_safe
+        _observe(controller, 0.5, **{flag: True})
+        assert controller.is_safe and word in controller.reason
+        for _ in range(4):
+            _observe(controller, 0.5)
+        assert controller.is_safe, "phải đo lại đủ min_days sau khi bằng chứng bị xoá"
+        _observe(controller, 0.5)
+        assert not controller.is_safe
 
-    def test_apply_overrides_the_model_only_in_safe_mode(self) -> None:
-        controller = SafeModeController()
-        counts = synthetic_counts(200, seed=32)
-        loud = np.full(NUMBER_SPACE, 0.9)
-        assert np.array_equal(controller.apply(counts, loud), loud)
-        controller.observe(0.0, model_failed=True)
-        assert not np.array_equal(controller.apply(counts, loud), loud)
+    @pytest.mark.parametrize("bad", [
+        {"logloss": np.nan}, {"brier": -0.1}, {"baseline_logloss": 0.0}, {"baseline_brier": np.inf},
+    ])
+    def test_rejects_invalid_scores(self, bad) -> None:
+        scores = {"logloss": 0.5, "brier": 0.2, "baseline_logloss": 0.55, "baseline_brier": 0.18}
+        with pytest.raises(ValueError):
+            SafeModeController().observe(**{**scores, **bad})
 
-    def test_rejects_an_out_of_range_hit_rate(self) -> None:
-        with pytest.raises(ValueError, match="hit_rate"):
-            SafeModeController().observe(1.5)
+    @pytest.mark.parametrize("window,min_days", [(0, 1), (10, 0), (10, 11)])
+    def test_rejects_invalid_configuration(self, window, min_days) -> None:
+        with pytest.raises(ValueError):
+            SafeModeController(window=window, min_days=min_days)
 
 
 # ---------------------------------------------------------------------------
@@ -686,6 +650,48 @@ class TestModels:
         assert probabilities.shape == (NUMBER_SPACE,)
         assert np.all(np.isfinite(probabilities))
 
+    def test_ridge_fallback_shrinks_to_the_base_rate_not_to_zero(self, matrix, monkeypatch) -> None:
+        """λ rất lớn phải cho đúng tỉ lệ nền: bản cũ phạt cả hệ số chặn nên co về 0."""
+        import ml_engine.models as learners
+
+        monkeypatch.setattr(learners, "RIDGE_PENALTIES", (1e12,))
+        model = TemporalSequenceModel()
+        model.backend = "linear"
+        model.fit_sequence(matrix.hits[:240])
+        np.testing.assert_allclose(model.predict_sequence(matrix.hits[:240]), BASELINE_RATE,
+                                   atol=1e-6)
+
+    def test_ridge_fallback_without_signal_stays_at_the_base_rate(self) -> None:
+        """Đối chứng âm: chuỗi công bằng thì λ thẩm định chọn co mạnh, không sai mức.
+
+        Bản λ = 10 cố định khai báo xác suất lệch chuẩn 0,166 quanh nền, kẹp 9,5%
+        dự báo ở 10⁻⁶ và kém nền 61,5% log-loss trên 1 000 kỳ thật.
+        """
+        hits = synthetic_matrix(300, seed=71).hits
+        model = TemporalSequenceModel()
+        model.backend = "linear"
+        model.fit_sequence(hits[:240])
+        assert model.ridge_penalty >= 1e4
+        predictions = np.array([model.predict_sequence(hits[:day]) for day in range(240, 300)])
+        assert predictions.std() < 0.02
+        outcome = hits[240:300]
+        loss = -np.mean(outcome * np.log(predictions) + (1 - outcome) * np.log1p(-predictions))
+        base = -np.mean(outcome * np.log(BASELINE_RATE) + (1 - outcome) * np.log1p(-BASELINE_RATE))
+        assert loss < base * 1.002
+
+    def test_ridge_fallback_finds_a_planted_temporal_signal(self) -> None:
+        """Đối chứng dương: có bạc nhớ thật thì λ thẩm định nới ra và dự báo hơn nền."""
+        hits = planted_counts(300, seed=72) > 0
+        model = TemporalSequenceModel()
+        model.backend = "linear"
+        model.fit_sequence(hits[:240])
+        assert model.ridge_penalty <= 1e4
+        predictions = np.array([model.predict_sequence(hits[:day]) for day in range(240, 300)])
+        outcome = hits[240:300]
+        loss = -np.mean(outcome * np.log(predictions) + (1 - outcome) * np.log1p(-predictions))
+        base = -np.mean(outcome * np.log(BASELINE_RATE) + (1 - outcome) * np.log1p(-BASELINE_RATE))
+        assert loss < base * 0.999
+
     def test_gru_capacity_exceeds_the_available_observations(self) -> None:
         """Cảnh báo dung lượng phải kiểm được ở MỌI môi trường, kể cả không torch.
 
@@ -787,7 +793,7 @@ def pipeline(matrix: ObservationMatrix) -> ContinuousLearningPipeline:
 class TestPipeline:
     def test_baseline_is_registered_as_a_competing_arm(self, pipeline) -> None:
         """Điểm mấu chốt của kiến trúc: nền phải cạnh tranh sòng phẳng."""
-        assert "baseline" in pipeline.bandit.arms
+        assert "baseline" in pipeline.aggregator.arm_names
 
     def test_run_produces_one_result_per_day(self, pipeline, matrix) -> None:
         results = pipeline.run(start=260, stop=275)
@@ -803,11 +809,14 @@ class TestPipeline:
         assert sum(weights.values()) == pytest.approx(1.0)
         assert set(per_arm) >= {"baseline", "frequency", "gap_hazard"}
 
-    def test_arms_are_rewarded_on_their_own_picks(self, pipeline, matrix) -> None:
-        """Chấm mỗi cánh tay theo lựa chọn của chính nó, nếu không bandit mù."""
+    def test_arms_are_scored_on_their_own_probabilities(self, pipeline, matrix) -> None:
+        """Chấm mỗi cánh tay trên xác suất của chính nó, nếu không phép trộn mù."""
+        _, _, per_arm = pipeline.predict_day(285)
         result = pipeline.step(285)
-        assert set(result.arm_rewards) >= {"baseline", "frequency", "gap_hazard"}
-        assert all(0.0 <= value <= 1.0 for value in result.arm_rewards.values())
+        outcome = (matrix.counts[285] > 0).astype(float)
+        assert set(result.arm_losses) >= {"baseline", "frequency", "gap_hazard"}
+        for name, probability in per_arm.items():
+            assert result.arm_losses[name] == pytest.approx(score_day(probability, outcome).logloss)
 
     def test_rejects_a_range_before_warmup(self, pipeline) -> None:
         with pytest.raises(ValueError, match="warmup"):
@@ -906,25 +915,24 @@ class TestArchitectureIsTwoSided:
         return pipeline, results, pipeline.tracker.report()
 
     def test_planted_signal_is_found_and_baseline_yields(self) -> None:
-        """Đối chứng dương: có bạc nhớ thật thì nền phải nhường trọng số."""
+        """Đối chứng dương: có bạc nhớ thật thì nền nhường trọng số và cổng mở."""
         pipeline, results, report = self._run(planted_counts(360, seed=61))
-        weights = pipeline.bandit.select_weights(draws=4000)
+        weights = pipeline.aggregator.weights()
         assert report.beats_baseline
         assert report.logloss_skill > 0.1
         assert report.hit_rate_at[10] > 2 * report.random_hit_rate_at[10]
-        # Thưởng 1−Brier đo cả độ đúng xác suất, có biên tách nhỏ hơn hit-rate.
-        # Nền phải mất phần lớn trọng số ban đầu và nhường mô hình có tín hiệu.
         assert weights["baseline"] < 0.5 / len(weights)
         assert weights["tabular_boosting"] > weights["baseline"]
-        assert sum(1 for r in results if r.mode == "safe") == 0
+        # Chưa đo đủ thì không tin: chỉ đúng min_days kỳ đầu về nền, sau đó tin hẳn.
+        warmup = pipeline.config.trust_min_days
+        assert all(r.mode == "safe" for r in results[:warmup])
+        assert min(r.trust for r in results[warmup:]) == pytest.approx(1.0)
 
     def test_fair_data_keeps_the_system_quiet(self) -> None:
         """Đối chứng âm: chuỗi công bằng không được kết luận là có tín hiệu."""
         pipeline, results, report = self._run(synthetic_counts(360, seed=61))
         assert not report.beats_baseline
         assert abs(report.logloss_skill) < 0.01
-        # Không có tín hiệu thì chế độ an toàn phải bật phần lớn thời gian.
-        assert sum(1 for r in results if r.mode == "safe") > len(results) // 3
-        assert not any(
-            pipeline.bandit.beats_baseline(arm, BASELINE_REWARD) for arm in pipeline.bandit.arms
-        )
+        # Không có tín hiệu thì dự báo công bố gần như đúng bằng nền.
+        assert np.mean([r.trust for r in results]) < 0.05
+        assert sum(1 for r in results if r.mode == "safe") > len(results) // 2
