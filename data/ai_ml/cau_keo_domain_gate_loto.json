@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "mode": "loto",
-  "generated_at": "2026-10-19T17:18:01Z",
+  "generated_at": "2026-10-20T01:55:28Z",
   "positive_skill_threshold": 0.0001,
   "folds": [
     {
@@ -329,8 +329,8 @@
       "logloss_skill": 1.4970181746815142e-05,
       "logloss_improvement_ci": {
         "confidence_level": 0.95,
-        "lower": -1.2580213029824939e-05,
-        "upper": 2.857932351492233e-05
+        "lower": -1.2580213029826835e-05,
+        "upper": 2.8579323514924223e-05
       },
       "bootstrap_replicates": 1000,
       "bootstrap_seed": 20260902,
@@ -362,8 +362,8 @@
     "logloss_skill": 1.4970181746815142e-05,
     "logloss_improvement_ci": {
       "confidence_level": 0.95,
-      "lower": -1.2580213029824939e-05,
-      "upper": 2.857932351492233e-05
+      "lower": -1.2580213029826835e-05,
+      "upper": 2.8579323514924223e-05
     },
     "bootstrap_replicates": 1000,
     "bootstrap_seed": 20260902,
