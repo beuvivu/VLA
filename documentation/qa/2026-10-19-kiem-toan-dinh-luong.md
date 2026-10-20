@@ -48,10 +48,10 @@ Bốn chỗ ở VLA và một chỗ ở engine Vietlott đã được vector ho�
 - phân phối tập con của engine Vietlott nhanh hơn 4–9 lần mỗi lần dựng;
 - đầu ra trùng từng byte. Ngoại lệ duy nhất là khoảng tin cậy bootstrap, lệch ở chữ số thứ 11.
 
-**Hai phát hiện về phương pháp, chưa sửa vì cần chủ dự án quyết:**
+**Hai phát hiện về phương pháp, cần chủ dự án quyết:**
 
 - tác tử "mẫu hình" của hệ ba tác tử XSMB trộn cố định 20% mạng nơ-ron dù kỹ năng thẩm định âm
-  (mục 2.4);
+  (mục 2.4) — đã sửa ngày 20-10-2026 theo quyết định của chủ dự án;
 - bandit Thompson của khung `ml_engine` có phương sai hậu nghiệm lớn hơn tín hiệu hàng trăm lần
   (mục 2.6).
 
@@ -144,7 +144,7 @@ Hàm `build_cau_keo_feature_frame` được dùng bởi `cau_keo_ml`, `cau_keo_d
      chính xác và kiểu từng cột) với cách ghép cũ. Phép kiểm chạy trên cả hai chế độ, có và không
      có nhãn. Hai đột biến đều đỏ: ép mọi cột về `object`, đảo thứ tự kỳ neo.
 
-### 2.4 `src/xsmb_agents/` — ba tác tử XSMB (rà, chưa sửa, có khuyến nghị)
+### 2.4 `src/xsmb_agents/` — ba tác tử XSMB (rà; đã sửa ngày 20-10-2026)
 
 Đã đọc từng dòng `algorithms.py`, `engine.py`, `knowledge.py` và `benchmark.py`. Các điểm đã kiểm
 và đúng:
@@ -170,10 +170,33 @@ Tác động hiện nhỏ:
 - Hedge tự hạ trọng số theo loss thật;
 - walk-forward 60 kỳ đo mọi tác tử ngang hằng số (|z| ≤ 1,02).
 
-**Khuyến nghị:** dùng `trust = model_trust(s_logloss, s_brier)`, với kỹ năng tính so với nền trên
-chính 30 kỳ thẩm định. Chưa sửa ở đây vì sổ tiến cứu `agents_<mode>.json` đang chạy với định nghĩa
-hiện tại. Đổi định nghĩa giữa chừng thì phải đánh phiên bản (như
-`ensemble_components.COMPONENT_POLICY`), và đó là quyết định của chủ dự án.
+**Đã sửa (20-10-2026, theo quyết định của chủ dự án).**
+
+- `pattern()` phát `trust·mạng + (1 − trust)·nền`, với
+  `trust = ml_train.model_trust(s_logloss, s_brier)` và s là kỹ năng so với nền trên chính 30 kỳ thẩm
+  định. Khối ấy cũng chọn α nên s hơi lạc quan: lệch về phía tin, không về phía bịa tín hiệu.
+- Sổ được đánh phiên bản theo định nghĩa: họ `online.AGENT_RECIPE` = `xsmb_three_agents_v2`.
+  - Sổ họ v1 được cất nguyên (chỉ đổi tên) thành `agents_<mode>.xsmb_three_agents_v1.json`; sổ
+    mới bắt đầu rỗng. Lọc riêng phần báo cáo là chưa đủ, vì Hedge, bước chọn η/độ quên và cổng
+    đề bạt sẽ vẫn thừa hưởng điểm do bộ dự báo cũ kiếm được (review Codex).
+  - Họ lạ hay bản cất đã có làm dừng sạch trước khi đổi tên hay ghi sổ nào.
+  - Mỗi bản ghi mang `agent_policy` và được kiểm khi nạp.
+- Trang Độ tin cậy in độ tin cùng kỹ năng thẩm định của kỳ đang dự báo.
+- Trên dữ liệu thật (ngày neo 19-10-2026):
+  - Đặc Biệt: kỹ năng logloss −0,13%, độ tin 0, tức phát đúng mức nền;
+  - LOTO: kỹ năng +0,015%, độ tin 0,3% thay cho 20%.
+- Bản ghi kỳ 20-10 đã đóng băng theo định nghĩa 1; bản ghi mới đầu tiên theo định nghĩa 2 là kỳ
+  21-10.
+- Phép kiểm `tests/test_xsmb_agents.py`:
+  - lịch sử công bằng cho độ tin 0 và vector đúng mức nền;
+  - lịch sử cài tín hiệu (con 07 về mọi kỳ) cho độ tin bằng luật và vector đúng công thức trộn;
+  - họ sổ đi theo định nghĩa; sổ họ cũ được cất nguyên từng byte và sổ mới bắt đầu rỗng;
+  - họ lạ hay bản cất đã có thì dừng trước khi đổi tên hay ghi;
+  - sổ đúng họ chỉ chứa bản ghi của định nghĩa đang chạy;
+  - thẻ trang chỉ in độ tin từ định nghĩa 2.
+- Mười đột biến đều đỏ: trộn cố định, đảo dấu kỹ năng, chỉ dùng Brier, không ghi phiên bản, in ghi chú
+  cho định nghĩa cũ, bỏ bước cất sổ, đổi tên trong lúc còn kiểm, ghi đè bản cất, không đổi họ sổ, bỏ
+  kiểm bản ghi khi nạp.
 
 ### 2.5 Hàm thống kê lõi dùng chung (rà, đúng)
 
@@ -328,8 +351,8 @@ Phần nâng cấp có giá trị trong đợt này:
 1. **Bootstrap theo kỳ ở dạng thống kê đủ.** Cùng phân phối bootstrap, chi phí mỗi lượt từ O(N)
    xuống O(G). Nhờ vậy tăng số lượt (ví dụ 1 000 → 10 000 để cận 2,5% ổn định hơn) mà không đổi
    thời gian chạy. Số lượt chưa đổi, vì cổng đề bạt đã đăng ký với 1 000.
-2. **Khuyến nghị độ tin cho tác tử mẫu hình** (mục 2.4): áp `model_trust` như mọi thành phần ML
-   khác, kèm đánh phiên bản sổ tiến cứu.
+2. **Độ tin cho tác tử mẫu hình** (mục 2.4): áp `model_trust` như mọi thành phần ML khác, kèm
+   đánh phiên bản sổ tiến cứu (`AGENT_POLICY` = 2). Đã làm ngày 20-10-2026.
 3. **Khuyến nghị kiểu nghiêm ngặt theo gói** (mục 2.8).
 
 ## 4. Hiệu năng và độ phức tạp

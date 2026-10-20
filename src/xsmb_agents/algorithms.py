@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 
 from calendar_alignment import consecutive_next_pairs
 from ensemble_utils import finalize_blend
+from ml_train import model_trust
 from online_learning import _posterior, _prob, proper_losses
 from xsmb_domain import baseline_rate
 
@@ -23,6 +24,16 @@ LABELS = {"statistical": "Tần suất · n-gram · nhịp",
           "constant": "Mức nền", "incumbent": "Xác suất đang công bố"}
 TRAIN_WINDOW = 240
 MIN_PATTERN_DRAWS = 90
+#: Định nghĩa đang chạy của tác tử mẫu hình. Sổ tiến cứu ``agents_<mode>.json`` ghi số này
+#: trên từng bản ghi mới (``agent_policy``); bản ghi cũ không có trường là định nghĩa 1 và
+#: KHÔNG bị viết lại — chúng là dự báo đã đóng băng.
+#:
+#: 1 (17-10-2026): trộn cố định ``0,8·nền + 0,2·mạng`` bất kể khối thẩm định nói gì.
+#: 2 (20-10-2026): ``trust = ml_train.model_trust(kỹ năng thẩm định)``, cùng luật mọi thành
+#:    phần ML của kho — không có kỹ năng thì không tin. Ba kỳ đầu của sổ, mạng Đặc Biệt có
+#:    logloss thẩm định 4,6146 / 4,6121 / 4,6112, đều kém mức nền log 100 = 4,6052, mà vẫn
+#:    được trộn 20%.
+AGENT_POLICY = 2
 
 
 @dataclass(frozen=True)
@@ -132,18 +143,23 @@ class AlgorithmEnsemble:
                    "prior": "Tác tử thống kê", "shrinkage": 100}
 
     def pattern(self, mode: str) -> tuple[np.ndarray, dict]:
-        """Mạng hai tầng ẩn; L2 chọn bằng hậu tố thời gian của tập học."""
+        """Mạng hai tầng ẩn; L2 chọn bằng hậu tố thời gian của tập học.
+
+        Vector phát ra là ``trust·mạng + (1 − trust)·nền`` với
+        ``trust = ml_train.model_trust(s_logloss, s_brier)``, s là kỹ năng của mạng so với
+        nền trên 30 kỳ thẩm định cuối của tập học (định nghĩa ``AGENT_POLICY`` = 2).
+        """
         base = np.full(100, baseline_rate(mode))
         n = len(self.knowledge.frame)
         if n < MIN_PATTERN_DRAWS:
             return base, {"status": "insufficient_history", "draws": n,
-                          "minimum": MIN_PATTERN_DRAWS}
+                          "minimum": MIN_PATTERN_DRAWS, "trust": 0.0, "policy": AGENT_POLICY}
         features, indices = self.temporal_features(mode)
         train_x = features[:-1]
         train_y = self.knowledge.outcomes[mode][indices[:-1]]
         split = len(train_x) - 30
         if split < 30 or np.unique(train_y[:split]).size < 2:
-            return base, {"status": "insufficient_classes"}
+            return base, {"status": "insufficient_classes", "trust": 0.0, "policy": AGENT_POLICY}
         trials = []
 
         def fit(alpha: float, x: np.ndarray, y: np.ndarray):
@@ -161,19 +177,31 @@ class AlgorithmEnsemble:
             raw = model.predict_proba(scaler.transform(x.reshape(-1, x.shape[-1])))[:, 1]
             return np.array([feasible(mode, row) for row in raw.reshape(-1, 100)])
 
+        def scored(p: np.ndarray) -> dict[str, float]:
+            losses = [proper_losses(mode, q, y) for q, y in zip(p, train_y[split:], strict=True)]
+            return {name: float(np.mean([row[name] for row in losses])) for name in ("logloss", "brier")}
+
         for alpha in (1.0, 10.0):
             scaler, model, _ = fit(alpha, train_x[:split], train_y[:split])
-            p = predict(scaler, model, train_x[split:])
-            loss = np.mean([proper_losses(mode, q, y)["logloss"]
-                            for q, y in zip(p, train_y[split:], strict=True)])
-            trials.append((float(loss), alpha))
-        loss, alpha = min(trials)
+            trials.append((scored(predict(scaler, model, train_x[split:])), alpha))
+        measured, alpha = min(trials, key=lambda row: (row[0]["logloss"], row[1]))
+        # Kỹ năng thẩm định so với NỀN trên đúng 30 kỳ ấy, rồi luật tin chung của kho: kém
+        # hơn trong logloss/Brier, trust = clip(20·s, 0, 1). Khối này cũng đã chọn α (hai
+        # ứng viên) nên s hơi lạc quan — lệch về phía TIN, không bao giờ về phía bịa tín hiệu.
+        reference = scored(np.tile(base, (len(train_y) - split, 1)))
+        skill = {name: (reference[name] - measured[name]) / reference[name] for name in measured}
+        trust = model_trust(skill["logloss"], skill["brier"])
         scaler, model, converged = fit(alpha, train_x, train_y)
         raw = predict(scaler, model, features[-1:])[0]
-        # Co bảo thủ; cổng tiến cứu vẫn chấm chính vector này, không vector thô.
-        p = feasible(mode, .8 * base + .2 * raw)
+        # Không có kỹ năng thì không tin: trust = 0 phát đúng mức nền. Cổng tiến cứu chấm
+        # chính vector này, không vector thô.
+        p = feasible(mode, trust * raw + (1.0 - trust) * base)
         return p, {"status": "fitted", "hidden_layers": [24, 12], "alpha": alpha,
-                   "validation_draws": 30, "validation_logloss": loss,
+                   "validation_draws": 30, "validation_logloss": measured["logloss"],
+                   "validation_brier": measured["brier"],
+                   "baseline_validation_logloss": reference["logloss"],
+                   "baseline_validation_brier": reference["brier"],
+                   "validation_skill": skill, "trust": trust, "policy": AGENT_POLICY,
                    "training_draws": len(train_x), "training_until": str(self.knowledge.frame.iloc[-1]["date"]),
                    "converged": converged, "retrieval_feature": True,
                    "validation_is_prospective": False}

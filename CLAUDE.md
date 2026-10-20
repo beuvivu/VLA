@@ -199,6 +199,13 @@ z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co.
 (trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
 `availability_from_history_day(..., current_policy=True)`.
 Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
+Tác tử mẫu hình của hệ ba tác tử XSMB (`xsmb_agents.algorithms.pattern`) dùng CÙNG luật từ 20-10-2026:
+`trust = model_trust(s)`, s là kỹ năng so với nền trên 30 kỳ thẩm định cuối; định nghĩa 1 trộn cố định
+20% mạng dù logloss thẩm định Đặc Biệt kém nền. Mỗi định nghĩa một SỔ: họ `online.AGENT_RECIPE` =
+`xsmb_three_agents_v<AGENT_POLICY>`; sổ họ cũ được `retire_superseded_ledgers` CẤT NGUYÊN thành
+`data/online/agents_<mode>.<họ>.json` (không chấm lại) và sổ mới bắt đầu rỗng, để Hedge, bước chọn
+η/độ quên và cổng đề bạt không thừa hưởng điểm của bộ dự báo khác. Đổi định nghĩa tác tử thì tăng
+`AGENT_POLICY`, đổi họ và thêm họ cũ vào `RETIRED_AGENT_FAMILIES`.
 
 ## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
 

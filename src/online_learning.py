@@ -55,7 +55,11 @@ RECIPE = {
 }
 # Profile mới dùng CÙNG lõi chốt/học/kiểm toàn vẹn; sổ legacy không đổi schema.
 AGENT_EXPERTS = ("incumbent", "constant", "statistical", "probabilistic", "pattern")
-AGENT_RECIPE = {**RECIPE, "family": "xsmb_three_agents_v1"}
+# Họ sổ đi theo định nghĩa tác tử (``xsmb_agents.algorithms.AGENT_POLICY``): đổi định nghĩa là
+# mở SỔ MỚI, để trí nhớ Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm của một
+# bộ dự báo khác. Sổ của họ đã nghỉ được cất nguyên (``xsmb_agents.engine``), không chấm lại.
+AGENT_RECIPE = {**RECIPE, "family": "xsmb_three_agents_v2"}
+RETIRED_AGENT_FAMILIES = ("xsmb_three_agents_v1",)
 KEEP_FULL_RECORDS = 365
 ARCHIVE_CHUNK = 64
 

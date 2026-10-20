@@ -373,6 +373,21 @@ def digit_sum_card(report: dict) -> str:
     )
 
 
+def _pattern_trust_note(item: dict) -> str:
+    """Độ tin của mạng mẫu hình, in TỪ chẩn đoán của kỳ đang dự báo (định nghĩa 2 trở đi)."""
+    pattern = item.get("diagnostics", {}).get("pattern", {})
+    if item.get("agent_policy", 1) < 2 or pattern.get("status") != "fitted":
+        return ""
+    skill = pattern["validation_skill"]
+    measured = item["confidence_matrix"].get("pattern", {})
+    return ('<p class="ui-muted">Mạng mẫu hình chỉ được tin theo kỹ năng thẩm định so với mức nền '
+            f'(độ tin = clip(20·s, 0, 1)): kỹ năng logloss {_pct(skill["logloss"], 3)}, '
+            f'Brier {_pct(skill["brier"], 3)} trên {pattern["validation_draws"]} kỳ, độ tin '
+            f'{_pct(pattern["trust"], 1)}. Kỹ năng không dương thì tác tử phát đúng mức nền. '
+            f'{measured.get("draws") or 0} kỳ đã chấm theo định nghĩa này '
+            '(sổ riêng từ 20-10-2026).</p>')
+
+
 def agents_card(report: dict | None, *, target_date: str) -> str:
     """Hiển thị dự báo thật, ứng viên và loss tiến cứu, không lẫn các thang tin."""
     if report is None or report.get("target_date") != target_date:
@@ -413,7 +428,8 @@ def agents_card(report: dict | None, *, target_date: str) -> str:
                      + f'<p class="ui-muted">η = {_num(tuning["eta"], 1)}; '
                      f'độ quên = {_num(tuning["discount"], 2)}. '
                      f'{len(item["knowledge"]["similar_contexts"])} ngữ cảnh tương tự đã truy xuất. '
-                     'Brier/logloss càng thấp càng tốt. Dấu — là chưa có kết quả tiến cứu.</p></details>')
+                     'Brier/logloss càng thấp càng tốt. Dấu — là chưa có kết quả tiến cứu.</p>'
+                     + _pattern_trust_note(item) + '</details>')
     parts.append('<p><a class="ui-link" href="assets/xsmb-agents.json" download>'
                  'Tải xác suất và căn cứ của cả 100 số</a></p>')
     return "".join(parts)

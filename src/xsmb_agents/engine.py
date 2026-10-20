@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -15,8 +16,39 @@ from pick_diversity import diversified_order
 from time_policy import now_vietnam
 from xsmb_domain import baseline_rate
 
-from .algorithms import AlgorithmEnsemble, EnsembleResult, LABELS
+from .algorithms import AGENT_POLICY, AlgorithmEnsemble, EnsembleResult, LABELS
 from .knowledge import KnowledgeBaseManager
+
+
+def retire_superseded_ledgers(online_dir: Path) -> list[Path]:
+    """Cất nguyên sổ ba tác tử của định nghĩa đã nghỉ; sổ của định nghĩa đang chạy bắt đầu rỗng.
+
+    Mỗi định nghĩa tác tử có SỔ RIÊNG (họ ``online.AGENT_RECIPE``): trí nhớ Hedge, bước chọn
+    η/độ quên và cổng đề bạt không được thừa hưởng điểm do một bộ dự báo khác kiếm được. Sổ cũ chỉ
+    được ĐỔI TÊN thành ``agents_<mode>.<họ>.json`` — từng byte giữ nguyên, không chấm lại. Kiểm cả
+    hai sổ trước khi đổi tên cái nào; họ lạ (ví dụ của một bản triển khai mới hơn) hay bản cất đã
+    có đều làm dừng sạch.
+    """
+    plan = []
+    for mode in ("de", "loto"):
+        path = Path(online_dir) / f"agents_{mode}.json"
+        if not path.exists():
+            continue
+        try:
+            family = json.loads(path.read_text(encoding="utf-8"))["recipe"]["family"]
+        except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("Không đọc được sổ ba tác tử (corrupt state)") from exc
+        if family == online.AGENT_RECIPE["family"]:
+            continue
+        if family not in online.RETIRED_AGENT_FAMILIES:
+            raise ValueError(f"Sổ ba tác tử mang định nghĩa không được đăng ký: {family!r}")
+        target = path.with_name(f"agents_{mode}.{family}.json")
+        if target.exists():
+            raise ValueError(f"Đã có bản cất {target.name}; không ghi đè")
+        plan.append((path, target))
+    for path, target in plan:
+        os.replace(path, target)
+    return [target for _, target in plan]
 
 
 class MetaLearner:
@@ -25,6 +57,10 @@ class MetaLearner:
     def __init__(self, mode: str, path: Path) -> None:
         self.mode, self.path = mode, Path(path)
         self.state = online.load_state(self.path, mode, profile="agents")
+        # Sổ đúng họ chỉ chứa bản ghi của định nghĩa đang chạy; kiểm cả khối lưu trữ ngay khi nạp,
+        # trước mọi advance/save.
+        if any(record.get("agent_policy") != AGENT_POLICY for record in online._all_records(self.state)):
+            raise ValueError("Định nghĩa tác tử trong sổ không khớp họ sổ")
 
     def advance(self, frame: pd.DataFrame, incumbent: np.ndarray, target_date: str,
                 predictions: dict[str, np.ndarray], *, now: datetime) -> dict:
@@ -120,13 +156,18 @@ class PredictiveEngine:
         # snapshot cũ chỉ được nêu là cũ, không nâng trạng thái hay cộng xác suất.
         matches = knowledge.matching_rules(document)
         modes = {}
+        # Cất sổ của định nghĩa đã nghỉ, rồi nạp (và kiểm) CẢ HAI sổ trước khi chốt kỳ nào: sổ Đặc
+        # Biệt không được ghi xong rồi mới phát hiện sổ LOTO mang định nghĩa không hiểu được.
+        retire_superseded_ledgers(data_dir / "online")
+        learners = {mode: MetaLearner(mode, data_dir / "online" / f"agents_{mode}.json")
+                    for mode in ("de", "loto")}
         for mode in ("de", "loto"):
             path = data_dir / "predict" / f"predict_next_{mode}_all_{target}.csv"
             prediction_frame, incumbent = online._prediction_frame(path, mode)
             for column, expected in (("target_date", target), ("anchor_date", anchor)):
                 if column in prediction_frame and set(prediction_frame[column].astype(str)) != {expected}:
                     raise ValueError("Dự báo sản xuất không khớp ngày neo/ngày đích")
-            learner = MetaLearner(mode, data_dir / "online" / f"agents_{mode}.json")
+            learner = learners[mode]
             existing = next((r for r in learner.state["records"] if r["target_date"] == target), None)
             if existing is not None:
                 result = EnsembleResult({name: np.asarray(existing["experts"][name])
@@ -140,6 +181,7 @@ class PredictiveEngine:
                 result = AlgorithmEnsemble(knowledge).predict(mode, incumbent)
             record = learner.advance(frame, incumbent, target, result.probabilities, now=clock())
             if existing is None:
+                record["agent_policy"] = AGENT_POLICY
                 record["agent_diagnostics"] = result.diagnostics
                 record["knowledge_snapshot"] = {
                     "short_term": knowledge.short_memory(mode),
@@ -177,6 +219,9 @@ class PredictiveEngine:
         pattern = record["agent_diagnostics"]["pattern"]
         if pattern.get("status") == "fitted" and not pattern["converged"]:
             risks.append("Mạng mẫu hình chưa hội tụ trong giới hạn huấn luyện; cần đọc cùng loss tiến cứu.")
+        if pattern.get("status") == "fitted" and pattern.get("trust") == 0:
+            risks.append("Mạng mẫu hình chưa hơn mức nền trên 30 kỳ thẩm định nên độ tin bằng 0: "
+                         "tác tử này phát đúng mức nền.")
         calibration_bands = learner.calibration_bands(incumbent)
         items = []
         for number in range(100):
@@ -202,6 +247,7 @@ class PredictiveEngine:
         candidate_top = (diversified_order(candidate, 5) if mode == "loto"
                          else np.lexsort((np.arange(100), -candidate))[:5].tolist())
         return {"generated_at": record["generated_at"], "n_settled": n,
+                "agent_policy": record["agent_policy"],
                 "weights": record["weights"], "tuning": record["tuning"],
                 "gate": record["gate"], "diagnostics": record["agent_diagnostics"],
                 "knowledge": record["knowledge_snapshot"], "confidence_matrix": matrix,

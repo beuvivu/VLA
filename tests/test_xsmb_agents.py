@@ -294,6 +294,8 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
     state, record = online.advance(online.new_state(mode, profile='agents'), frame, p,
                                    clock(frame).date().isoformat(), now=clock(frame),
                                    expert_predictions=predictions)
+    from xsmb_agents.algorithms import AGENT_POLICY
+    record['agent_policy'] = AGENT_POLICY
     record['agent_diagnostics'] = {'pattern': {'status': 'insufficient_history'}}
     record['knowledge_snapshot'] = {}
     settled = []
@@ -361,3 +363,149 @@ def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observat
         assert scores['agents']['constant']['logloss'] > 0
         assert set(scores['agents']) == {*online.AGENT_EXPERTS, 'mixture'}
     pd.testing.assert_frame_equal(frame, original)
+
+
+def _planted_loto_history(n=100):
+    """Giải cuối luôn có hai số cuối 07: con 07 về MỌI kỳ, mạng phải học được."""
+    frame = history(n)
+    frame[FIELD_WIDTHS[-1][0]] = 7
+    return frame
+
+
+@pytest.mark.parametrize('mode', ['de', 'loto'])
+def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
+    """Không có kỹ năng thì không tin: lịch sử công bằng cho trust = 0 và vector đúng mức nền.
+
+    Định nghĩa 1 trộn cố định 20% mạng bất kể khối thẩm định; bản ghi đầu của sổ thật có logloss
+    thẩm định Đặc Biệt kém nền mà vẫn được trộn.
+    """
+    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from xsmb_agents.algorithms import AGENT_POLICY, feasible
+    p, info = AlgorithmEnsemble(KnowledgeBaseManager(history(100))).pattern(mode)
+    assert info['status'] == 'fitted' and info['policy'] == AGENT_POLICY == 2
+    assert min(info['validation_skill'].values()) <= 0
+    assert info['trust'] == 0.0
+    np.testing.assert_array_equal(p, feasible(mode, np.full(100, baseline_rate(mode))))
+
+
+def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkeypatch):
+    """Mạng có kỹ năng thật: trust = model_trust(s), vector = trust·mạng + (1 − trust)·nền."""
+    import xsmb_agents.algorithms as algorithms
+    from ml_train import model_trust
+    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    frame = _planted_loto_history()
+    p, info = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
+    skill = info['validation_skill']
+    for name in ('logloss', 'brier'):
+        reference = info[f'baseline_validation_{name}']
+        assert skill[name] == pytest.approx((reference - info[f'validation_{name}']) / reference)
+    assert min(skill.values()) > 0
+    assert 0 < info['trust'] == pytest.approx(model_trust(skill['logloss'], skill['brier']))
+    assert p[7] > baseline_rate('loto')
+    monkeypatch.setattr(algorithms, 'model_trust', lambda *_: 1.0)
+    raw, _ = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
+    base = np.full(100, baseline_rate('loto'))
+    expected = algorithms.feasible('loto', info['trust'] * raw + (1 - info['trust']) * base)
+    np.testing.assert_allclose(p, expected, rtol=0, atol=1e-12)
+
+
+def _engine_inputs(tmp_path, frame):
+    frame.to_csv(tmp_path / 'xsmb.csv', index=False)
+    pred = tmp_path / 'predict'
+    pred.mkdir(exist_ok=True)
+    target = clock(frame).date().isoformat()
+    for mode in ('de', 'loto'):
+        pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
+            pred / f'predict_next_{mode}_all_{target}.csv', index=False)
+
+
+def _write_ledger_of_family(path, mode, family, frame):
+    """Sổ có checksum đúng nhưng thuộc một họ khác (save_state chỉ nhận họ đang đăng ký)."""
+    state, _ = online.advance(online.new_state(mode, profile='agents'), frame,
+                              np.full(100, baseline_rate(mode)), clock(frame).date().isoformat(),
+                              now=clock(frame),
+                              expert_predictions={name: np.full(100, baseline_rate(mode))
+                                                  for name in ('statistical', 'probabilistic', 'pattern')})
+    state['recipe'] = {**state['recipe'], 'family': family}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(online._json_bytes({**state, '_checksum': online._digest(state)}))
+
+
+def test_the_ledger_family_follows_the_agent_definition():
+    from xsmb_agents.algorithms import AGENT_POLICY
+    assert online.AGENT_RECIPE['family'] == f'xsmb_three_agents_v{AGENT_POLICY}'
+    assert f'xsmb_three_agents_v{AGENT_POLICY - 1}' in online.RETIRED_AGENT_FAMILIES
+    assert online.new_state('de', profile='agents')['recipe'] == online.AGENT_RECIPE
+
+
+def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty(tmp_path):
+    """Đổi định nghĩa là mở SỔ MỚI: Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm
+    do bộ dự báo cũ kiếm được; sổ cũ được cất nguyên, không chấm lại."""
+    import json
+    from xsmb_agents import PredictiveEngine
+    from xsmb_agents.algorithms import AGENT_POLICY
+    previous, frame = history(40), history(41)
+    online_dir = tmp_path / 'online'
+    for mode in ('de', 'loto'):
+        _write_ledger_of_family(online_dir / f'agents_{mode}.json', mode, 'xsmb_three_agents_v1', previous)
+    before = {mode: (online_dir / f'agents_{mode}.json').read_bytes() for mode in ('de', 'loto')}
+    _engine_inputs(tmp_path, frame)
+    report = PredictiveEngine().run(tmp_path, now=clock(frame))
+    for mode in ('de', 'loto'):
+        assert (online_dir / f'agents_{mode}.xsmb_three_agents_v1.json').read_bytes() == before[mode]
+        state = json.loads((online_dir / f'agents_{mode}.json').read_text(encoding='utf-8'))
+        assert state['recipe'] == online.AGENT_RECIPE
+        assert [r['target_date'] for r in state['records']] == [clock(frame).date().isoformat()]
+        assert state['records'][0]['agent_policy'] == AGENT_POLICY
+        assert state['learning']['n_settled'] == 0
+        assert report['modes'][mode]['agent_policy'] == AGENT_POLICY
+        assert report['modes'][mode]['n_settled'] == 0
+
+
+@pytest.mark.parametrize('case', ['unregistered_family', 'archive_exists'])
+def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
+    """Họ lạ (bản triển khai mới hơn) hay bản cất đã có: dừng TRƯỚC khi đổi tên, chốt hay ghi sổ nào."""
+    from xsmb_agents import PredictiveEngine
+    previous, frame = history(40), history(41)
+    online_dir = tmp_path / 'online'
+    _write_ledger_of_family(online_dir / 'agents_de.json', 'de', 'xsmb_three_agents_v1', previous)
+    family = 'xsmb_three_agents_v99' if case == 'unregistered_family' else 'xsmb_three_agents_v1'
+    _write_ledger_of_family(online_dir / 'agents_loto.json', 'loto', family, previous)
+    if case == 'archive_exists':
+        (online_dir / 'agents_loto.xsmb_three_agents_v1.json').write_text('cũ', encoding='utf-8')
+    before = {path.name: path.read_bytes() for path in online_dir.iterdir()}
+    _engine_inputs(tmp_path, frame)
+    with pytest.raises(ValueError, match='không được đăng ký|bản cất'):
+        PredictiveEngine().run(tmp_path, now=clock(frame))
+    assert {path.name: path.read_bytes() for path in online_dir.iterdir()} == before
+    assert not (tmp_path / 'agents' / 'report.json').exists()
+
+
+def test_a_ledger_of_the_running_family_must_hold_only_running_definition_records(tmp_path):
+    from xsmb_agents.engine import MetaLearner
+    frame = history(40)
+    state, _ = online.advance(online.new_state('de', profile='agents'), frame, np.full(100, .01),
+                              clock(frame).date().isoformat(), now=clock(frame),
+                              expert_predictions={name: np.full(100, .01)
+                                                  for name in ('statistical', 'probabilistic', 'pattern')})
+    online.save_state(tmp_path / 'agents_de.json', state)
+    with pytest.raises(ValueError, match='không khớp họ sổ'):
+        MetaLearner('de', tmp_path / 'agents_de.json')
+
+
+def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
+    from build_confidence_page import agents_card
+    pattern = {'status': 'fitted', 'validation_draws': 30, 'trust': 0.0,
+               'validation_skill': {'logloss': -0.004, 'brier': -0.0005}}
+    mode = {'n_settled': 3, 'agent_policy': 2, 'weights': dict.fromkeys(online.AGENT_EXPERTS, .2),
+            'tuning': {'eta': 4, 'discount': .97},
+            'confidence_matrix': {'pattern': {'draws': 1}},
+            'candidate_top5': [], 'diagnostics': {'pattern': pattern},
+            'knowledge': {'similar_contexts': []}}
+    payload = {'target_date': '2026-10-21', 'modes': {'de': mode, 'loto': mode}}
+    text = agents_card(payload, target_date='2026-10-21')
+    assert 'kỹ năng logloss -0,400%' in text and 'độ tin 0,0%' in text
+    assert '1 kỳ đã chấm theo định nghĩa này' in text
+    old = agents_card({**payload, 'modes': {m: {**mode, 'agent_policy': 1} for m in ('de', 'loto')}},
+                      target_date='2026-10-21')
+    assert 'độ tin 0,0%' not in old
