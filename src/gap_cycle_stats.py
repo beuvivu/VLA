@@ -7,7 +7,9 @@ import pandas as pd
 
 from frequency_stats import (
     FrequencyConfig,
+    GroupKind,
     NUMBER_COLUMNS,
+    _group_members,
     history_before,
 )
 
@@ -172,4 +174,41 @@ def compute_recurrence_intervals(
                 "interval_calendar_days": int((current_date - previous_date).days),
             }
         )
+    return pd.DataFrame(rows)
+
+
+def compute_group_gap_stats(
+    history: pd.DataFrame,
+    as_of_date: object,
+    *,
+    group: GroupKind,
+    lookback_days: int | None = None,
+    lookback_draws: int | None = None,
+) -> pd.DataFrame:
+    """Compute draw gaps for head, tail, total-mod-10, or chạm groups."""
+    window = history_before(
+        history,
+        as_of_date,
+        config=FrequencyConfig(
+            lookback_days=lookback_days,
+            lookback_draws=lookback_draws,
+        ),
+    )
+    dates = pd.DatetimeIndex(window["date"])
+    cutoff = pd.Timestamp(as_of_date).normalize()
+    rows: list[dict[str, object]] = []
+    for value in range(10):
+        members = _group_members(group, value)
+        hit = (window.loc[:, list(members)].to_numpy(dtype=int, copy=False) > 0).any(axis=1)
+        row = _gap_row(
+            value,
+            hit,
+            dates,
+            cutoff,
+            recent_intervals=5,
+        )
+        row["group"] = group
+        row["value"] = row.pop("number")
+        row.pop("number_str")
+        rows.append(row)
     return pd.DataFrame(rows)
