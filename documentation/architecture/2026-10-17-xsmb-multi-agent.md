@@ -39,8 +39,9 @@ flowchart TD
   theo thời gian, không random split. Không gọi biến động xổ số là thị trường.
   Từ 20-10-2026 (`AGENT_POLICY` = 2) vector phát ra là `trust·mạng + (1 − trust)·nền`,
   `trust = ml_train.model_trust(s)` với s là kỹ năng so với nền trên chính khối
-  thẩm định ấy; định nghĩa 1 trộn cố định 20%. Mỗi bản ghi sổ mới mang
-  `agent_policy`; bản ghi cũ giữ nguyên.
+  thẩm định ấy; định nghĩa 1 trộn cố định 20%. Mỗi định nghĩa có sổ riêng (họ
+  `xsmb_three_agents_v2`); sổ định nghĩa 1 được cất nguyên thành
+  `agents_<mode>.xsmb_three_agents_v1.json`.
 - `MetaLearner`: dùng chính lõi `online_learning`, profile riêng với ba tác tử,
   đương nhiệm và hằng số; không viết lại Hedge/settlement/lock/checksum.
   Sổ profile mới không sửa hoặc chấm lại sổ bảy chuyên gia cũ. Trọng số học

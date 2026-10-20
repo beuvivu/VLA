@@ -294,6 +294,8 @@ def test_explanation_decodes_calibration_history_once_and_preserves_intervals(mo
     state, record = online.advance(online.new_state(mode, profile='agents'), frame, p,
                                    clock(frame).date().isoformat(), now=clock(frame),
                                    expert_predictions=predictions)
+    from xsmb_agents.algorithms import AGENT_POLICY
+    record['agent_policy'] = AGENT_POLICY
     record['agent_diagnostics'] = {'pattern': {'status': 'insufficient_history'}}
     record['knowledge_snapshot'] = {}
     settled = []
@@ -407,92 +409,88 @@ def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkey
     np.testing.assert_allclose(p, expected, rtol=0, atol=1e-12)
 
 
-def test_ledger_records_the_agent_policy_without_rewriting_older_records(tmp_path):
-    """Bản ghi mới mang ``agent_policy``; bản ghi cũ không có trường vẫn đọc được là định nghĩa 1."""
-    import json
-    from xsmb_agents import PredictiveEngine
-    from xsmb_agents.algorithms import AGENT_POLICY
-    from xsmb_agents.engine import record_policy
-    frame = history(40)
+def _engine_inputs(tmp_path, frame):
     frame.to_csv(tmp_path / 'xsmb.csv', index=False)
     pred = tmp_path / 'predict'
-    pred.mkdir()
+    pred.mkdir(exist_ok=True)
     target = clock(frame).date().isoformat()
     for mode in ('de', 'loto'):
         pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
             pred / f'predict_next_{mode}_all_{target}.csv', index=False)
-    report = PredictiveEngine().run(tmp_path, now=clock(frame))
-    for mode in ('de', 'loto'):
-        state = json.loads((tmp_path / 'online' / f'agents_{mode}.json').read_text(encoding='utf-8'))
-        assert state['records'][-1]['agent_policy'] == AGENT_POLICY
-        assert report['modes'][mode]['agent_policy'] == AGENT_POLICY
-        assert report['modes'][mode]['confidence_matrix']['pattern']['current_policy'] == AGENT_POLICY
-    assert record_policy({}) == 1
-    for bad in (True, 0, AGENT_POLICY + 1, '2'):
-        with pytest.raises(ValueError, match='Định nghĩa'):
-            record_policy({'agent_policy': bad})
 
 
-def test_pattern_scores_come_from_the_running_definition_only(tmp_path):
-    """Điểm (số kỳ, Brier, logloss, phần lời gần đây) của bản trộn cố định 20% không được đọc như
-    bằng chứng cho định nghĩa mới; các hàng khác không đổi định nghĩa nên giữ cả lịch sử."""
+def _write_ledger_of_family(path, mode, family, frame):
+    """Sổ có checksum đúng nhưng thuộc một họ khác (save_state chỉ nhận họ đang đăng ký)."""
+    state, _ = online.advance(online.new_state(mode, profile='agents'), frame,
+                              np.full(100, baseline_rate(mode)), clock(frame).date().isoformat(),
+                              now=clock(frame),
+                              expert_predictions={name: np.full(100, baseline_rate(mode))
+                                                  for name in ('statistical', 'probabilistic', 'pattern')})
+    state['recipe'] = {**state['recipe'], 'family': family}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(online._json_bytes({**state, '_checksum': online._digest(state)}))
+
+
+def test_the_ledger_family_follows_the_agent_definition():
     from xsmb_agents.algorithms import AGENT_POLICY
-    from xsmb_agents.engine import MetaLearner
-    learner = MetaLearner('de', tmp_path / 'agents_de.json')
-    p = np.full(100, .01)
-    skewed = np.full(100, .005)
-    skewed[:50] = .015
-    state = learner.state
-    for n in (15, 16, 17):
-        frame = history(n)
-        experts = {'statistical': p, 'probabilistic': p, 'pattern': skewed if n == 15 else p}
-        state, _ = online.advance(state, frame, p, clock(frame).date().isoformat(), now=clock(frame),
-                                  expert_predictions=experts)
-        if n == 16:
-            state['records'][-1]['agent_policy'] = AGENT_POLICY
-    learner.state = state
-    matrix = learner.confidence_matrix()
-    current = state['records'][1]['settlement']['scores']['pattern']
-    assert matrix['pattern']['draws'] == matrix['pattern']['current_policy_draws'] == 1
-    assert matrix['pattern']['all_policies_draws'] == 2
-    assert matrix['pattern']['brier'] == pytest.approx(current['brier'])
-    assert matrix['pattern']['logloss'] == pytest.approx(current['logloss'])
-    assert matrix['pattern']['recent_draws'] == 1
-    assert matrix['statistical']['draws'] == matrix['constant']['draws'] == 2
+    assert online.AGENT_RECIPE['family'] == f'xsmb_three_agents_v{AGENT_POLICY}'
+    assert f'xsmb_three_agents_v{AGENT_POLICY - 1}' in online.RETIRED_AGENT_FAMILIES
+    assert online.new_state('de', profile='agents')['recipe'] == online.AGENT_RECIPE
 
 
-def test_a_ledger_from_a_newer_definition_is_refused_before_anything_is_written(tmp_path):
-    """Bản triển khai cũ gặp sổ có định nghĩa mới hơn phải dừng TRƯỚC khi chốt hay ghi sổ nào."""
+def test_a_retired_ledger_is_archived_byte_for_byte_and_the_new_one_starts_empty(tmp_path):
+    """Đổi định nghĩa là mở SỔ MỚI: Hedge, bước chọn η/độ quên và cổng đề bạt không thừa hưởng điểm
+    do bộ dự báo cũ kiếm được; sổ cũ được cất nguyên, không chấm lại."""
     import json
     from xsmb_agents import PredictiveEngine
     from xsmb_agents.algorithms import AGENT_POLICY
-    frame = history(41)
-    frame.to_csv(tmp_path / 'xsmb.csv', index=False)
-    pred = tmp_path / 'predict'
-    pred.mkdir()
-    previous = history(40)
-    for day in (previous, frame):
-        target = clock(day).date().isoformat()
-        for mode in ('de', 'loto'):
-            pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
-                pred / f'predict_next_{mode}_all_{target}.csv', index=False)
-    # Sổ kỳ trước: LOTO mang định nghĩa lạ nhưng checksum đúng (ghi bằng chính save_state).
+    previous, frame = history(40), history(41)
+    online_dir = tmp_path / 'online'
     for mode in ('de', 'loto'):
-        state, record = online.advance(online.new_state(mode, profile='agents'), previous,
-                                       np.full(100, baseline_rate(mode)), clock(previous).date().isoformat(),
-                                       now=clock(previous),
-                                       expert_predictions={name: np.full(100, baseline_rate(mode))
-                                                           for name in ('statistical', 'probabilistic', 'pattern')})
-        state['records'][-1]['agent_policy'] = AGENT_POLICY + 1 if mode == 'loto' else AGENT_POLICY
-        (tmp_path / 'online').mkdir(exist_ok=True)
-        online.save_state(tmp_path / 'online' / f'agents_{mode}.json', state)
-    before = {mode: (tmp_path / 'online' / f'agents_{mode}.json').read_bytes() for mode in ('de', 'loto')}
-    with pytest.raises(ValueError, match='Định nghĩa'):
+        _write_ledger_of_family(online_dir / f'agents_{mode}.json', mode, 'xsmb_three_agents_v1', previous)
+    before = {mode: (online_dir / f'agents_{mode}.json').read_bytes() for mode in ('de', 'loto')}
+    _engine_inputs(tmp_path, frame)
+    report = PredictiveEngine().run(tmp_path, now=clock(frame))
+    for mode in ('de', 'loto'):
+        assert (online_dir / f'agents_{mode}.xsmb_three_agents_v1.json').read_bytes() == before[mode]
+        state = json.loads((online_dir / f'agents_{mode}.json').read_text(encoding='utf-8'))
+        assert state['recipe'] == online.AGENT_RECIPE
+        assert [r['target_date'] for r in state['records']] == [clock(frame).date().isoformat()]
+        assert state['records'][0]['agent_policy'] == AGENT_POLICY
+        assert state['learning']['n_settled'] == 0
+        assert report['modes'][mode]['agent_policy'] == AGENT_POLICY
+        assert report['modes'][mode]['n_settled'] == 0
+
+
+@pytest.mark.parametrize('case', ['unregistered_family', 'archive_exists'])
+def test_ledgers_are_refused_before_anything_is_written(tmp_path, case):
+    """Họ lạ (bản triển khai mới hơn) hay bản cất đã có: dừng TRƯỚC khi đổi tên, chốt hay ghi sổ nào."""
+    from xsmb_agents import PredictiveEngine
+    previous, frame = history(40), history(41)
+    online_dir = tmp_path / 'online'
+    _write_ledger_of_family(online_dir / 'agents_de.json', 'de', 'xsmb_three_agents_v1', previous)
+    family = 'xsmb_three_agents_v99' if case == 'unregistered_family' else 'xsmb_three_agents_v1'
+    _write_ledger_of_family(online_dir / 'agents_loto.json', 'loto', family, previous)
+    if case == 'archive_exists':
+        (online_dir / 'agents_loto.xsmb_three_agents_v1.json').write_text('cũ', encoding='utf-8')
+    before = {path.name: path.read_bytes() for path in online_dir.iterdir()}
+    _engine_inputs(tmp_path, frame)
+    with pytest.raises(ValueError, match='không được đăng ký|bản cất'):
         PredictiveEngine().run(tmp_path, now=clock(frame))
-    for mode in ('de', 'loto'):
-        assert (tmp_path / 'online' / f'agents_{mode}.json').read_bytes() == before[mode]
+    assert {path.name: path.read_bytes() for path in online_dir.iterdir()} == before
     assert not (tmp_path / 'agents' / 'report.json').exists()
-    assert json.loads(before['de'])['records'][-1]['settlement'] is None
+
+
+def test_a_ledger_of_the_running_family_must_hold_only_running_definition_records(tmp_path):
+    from xsmb_agents.engine import MetaLearner
+    frame = history(40)
+    state, _ = online.advance(online.new_state('de', profile='agents'), frame, np.full(100, .01),
+                              clock(frame).date().isoformat(), now=clock(frame),
+                              expert_predictions={name: np.full(100, .01)
+                                                  for name in ('statistical', 'probabilistic', 'pattern')})
+    online.save_state(tmp_path / 'agents_de.json', state)
+    with pytest.raises(ValueError, match='không khớp họ sổ'):
+        MetaLearner('de', tmp_path / 'agents_de.json')
 
 
 def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
@@ -501,7 +499,7 @@ def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
                'validation_skill': {'logloss': -0.004, 'brier': -0.0005}}
     mode = {'n_settled': 3, 'agent_policy': 2, 'weights': dict.fromkeys(online.AGENT_EXPERTS, .2),
             'tuning': {'eta': 4, 'discount': .97},
-            'confidence_matrix': {'pattern': {'current_policy_draws': 1}},
+            'confidence_matrix': {'pattern': {'draws': 1}},
             'candidate_top5': [], 'diagnostics': {'pattern': pattern},
             'knowledge': {'similar_contexts': []}}
     payload = {'target_date': '2026-10-21', 'modes': {'de': mode, 'loto': mode}}

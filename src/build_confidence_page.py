@@ -384,8 +384,8 @@ def _pattern_trust_note(item: dict) -> str:
             f'(độ tin = clip(20·s, 0, 1)): kỹ năng logloss {_pct(skill["logloss"], 3)}, '
             f'Brier {_pct(skill["brier"], 3)} trên {pattern["validation_draws"]} kỳ, độ tin '
             f'{_pct(pattern["trust"], 1)}. Kỹ năng không dương thì tác tử phát đúng mức nền. '
-            f'{measured.get("current_policy_draws", 0)} kỳ đã chấm theo định nghĩa này '
-            '(từ 20-10-2026).</p>')
+            f'{measured.get("draws") or 0} kỳ đã chấm theo định nghĩa này '
+            '(sổ riêng từ 20-10-2026).</p>')
 
 
 def agents_card(report: dict | None, *, target_date: str) -> str:
