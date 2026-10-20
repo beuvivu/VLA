@@ -361,3 +361,111 @@ def test_backtest_is_prefix_only_diagnostic_and_does_not_fabricate_live_observat
         assert scores['agents']['constant']['logloss'] > 0
         assert set(scores['agents']) == {*online.AGENT_EXPERTS, 'mixture'}
     pd.testing.assert_frame_equal(frame, original)
+
+
+def _planted_loto_history(n=100):
+    """Giải cuối luôn có hai số cuối 07: con 07 về MỌI kỳ, mạng phải học được."""
+    frame = history(n)
+    frame[FIELD_WIDTHS[-1][0]] = 7
+    return frame
+
+
+@pytest.mark.parametrize('mode', ['de', 'loto'])
+def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
+    """Không có kỹ năng thì không tin: lịch sử công bằng cho trust = 0 và vector đúng mức nền.
+
+    Định nghĩa 1 trộn cố định 20% mạng bất kể khối thẩm định; bản ghi đầu của sổ thật có logloss
+    thẩm định Đặc Biệt kém nền mà vẫn được trộn.
+    """
+    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    from xsmb_agents.algorithms import AGENT_POLICY, feasible
+    p, info = AlgorithmEnsemble(KnowledgeBaseManager(history(100))).pattern(mode)
+    assert info['status'] == 'fitted' and info['policy'] == AGENT_POLICY == 2
+    assert min(info['validation_skill'].values()) <= 0
+    assert info['trust'] == 0.0
+    np.testing.assert_array_equal(p, feasible(mode, np.full(100, baseline_rate(mode))))
+
+
+def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkeypatch):
+    """Mạng có kỹ năng thật: trust = model_trust(s), vector = trust·mạng + (1 − trust)·nền."""
+    import xsmb_agents.algorithms as algorithms
+    from ml_train import model_trust
+    from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
+    frame = _planted_loto_history()
+    p, info = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
+    skill = info['validation_skill']
+    for name in ('logloss', 'brier'):
+        reference = info[f'baseline_validation_{name}']
+        assert skill[name] == pytest.approx((reference - info[f'validation_{name}']) / reference)
+    assert min(skill.values()) > 0
+    assert 0 < info['trust'] == pytest.approx(model_trust(skill['logloss'], skill['brier']))
+    assert p[7] > baseline_rate('loto')
+    monkeypatch.setattr(algorithms, 'model_trust', lambda *_: 1.0)
+    raw, _ = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
+    base = np.full(100, baseline_rate('loto'))
+    expected = algorithms.feasible('loto', info['trust'] * raw + (1 - info['trust']) * base)
+    np.testing.assert_allclose(p, expected, rtol=0, atol=1e-12)
+
+
+def test_ledger_records_the_agent_policy_without_rewriting_older_records(tmp_path):
+    """Bản ghi mới mang ``agent_policy``; bản ghi cũ không có trường vẫn đọc được là định nghĩa 1."""
+    import json
+    from xsmb_agents import PredictiveEngine
+    from xsmb_agents.algorithms import AGENT_POLICY
+    from xsmb_agents.engine import record_policy
+    frame = history(40)
+    frame.to_csv(tmp_path / 'xsmb.csv', index=False)
+    pred = tmp_path / 'predict'
+    pred.mkdir()
+    target = clock(frame).date().isoformat()
+    for mode in ('de', 'loto'):
+        pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
+            pred / f'predict_next_{mode}_all_{target}.csv', index=False)
+    report = PredictiveEngine().run(tmp_path, now=clock(frame))
+    for mode in ('de', 'loto'):
+        state = json.loads((tmp_path / 'online' / f'agents_{mode}.json').read_text(encoding='utf-8'))
+        assert state['records'][-1]['agent_policy'] == AGENT_POLICY
+        assert report['modes'][mode]['agent_policy'] == AGENT_POLICY
+        assert report['modes'][mode]['confidence_matrix']['pattern']['current_policy'] == AGENT_POLICY
+    assert record_policy({}) == 1
+    for bad in (True, 0, AGENT_POLICY + 1, '2'):
+        with pytest.raises(ValueError, match='Định nghĩa'):
+            record_policy({'agent_policy': bad})
+
+
+def test_pattern_draws_are_counted_under_the_running_definition_only(tmp_path):
+    """Điểm của bản trộn cố định 20% không được đọc như điểm của định nghĩa mới."""
+    from xsmb_agents.algorithms import AGENT_POLICY
+    from xsmb_agents.engine import MetaLearner
+    learner = MetaLearner('de', tmp_path / 'agents_de.json')
+    p = np.full(100, .01)
+    experts = {name: p.copy() for name in ('statistical', 'probabilistic', 'pattern')}
+    state = learner.state
+    for n in (15, 16, 17):
+        frame = history(n)
+        state, _ = online.advance(state, frame, p, clock(frame).date().isoformat(), now=clock(frame),
+                                  expert_predictions=experts)
+        if n == 16:
+            state['records'][-1]['agent_policy'] = AGENT_POLICY
+    learner.state = state
+    matrix = learner.confidence_matrix()
+    assert matrix['pattern']['draws'] == 2
+    assert matrix['pattern']['current_policy_draws'] == 1
+
+
+def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
+    from build_confidence_page import agents_card
+    pattern = {'status': 'fitted', 'validation_draws': 30, 'trust': 0.0,
+               'validation_skill': {'logloss': -0.004, 'brier': -0.0005}}
+    mode = {'n_settled': 3, 'agent_policy': 2, 'weights': dict.fromkeys(online.AGENT_EXPERTS, .2),
+            'tuning': {'eta': 4, 'discount': .97},
+            'confidence_matrix': {'pattern': {'current_policy_draws': 1}},
+            'candidate_top5': [], 'diagnostics': {'pattern': pattern},
+            'knowledge': {'similar_contexts': []}}
+    payload = {'target_date': '2026-10-21', 'modes': {'de': mode, 'loto': mode}}
+    text = agents_card(payload, target_date='2026-10-21')
+    assert 'kỹ năng logloss -0,400%' in text and 'độ tin 0,0%' in text
+    assert '1 kỳ đã chấm theo định nghĩa này' in text
+    old = agents_card({**payload, 'modes': {m: {**mode, 'agent_policy': 1} for m in ('de', 'loto')}},
+                      target_date='2026-10-21')
+    assert 'độ tin 0,0%' not in old

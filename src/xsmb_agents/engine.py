@@ -15,8 +15,16 @@ from pick_diversity import diversified_order
 from time_policy import now_vietnam
 from xsmb_domain import baseline_rate
 
-from .algorithms import AlgorithmEnsemble, EnsembleResult, LABELS
+from .algorithms import AGENT_POLICY, AlgorithmEnsemble, EnsembleResult, LABELS
 from .knowledge import KnowledgeBaseManager
+
+
+def record_policy(record: dict) -> int:
+    """Định nghĩa tác tử mẫu hình của một bản ghi; bản ghi trước 20-10-2026 không có trường là 1."""
+    policy = record.get("agent_policy", 1)
+    if isinstance(policy, bool) or not isinstance(policy, int) or not 1 <= policy <= AGENT_POLICY:
+        raise ValueError("Định nghĩa tác tử trong sổ không hợp lệ")
+    return policy
 
 
 class MetaLearner:
@@ -53,6 +61,11 @@ class MetaLearner:
                 "logloss": float(np.mean([s[name]["logloss"] for s in scores])) if scores else None,
                 "recent_gain": gain,
             }
+        # Tác tử mẫu hình đổi định nghĩa ngày 20-10-2026: số kỳ đã chấm theo ĐỊNH NGHĨA ĐANG
+        # CHẠY tách riêng, để không ai đọc điểm của bản trộn cố định 20% như điểm của bản mới.
+        rows["pattern"]["current_policy"] = AGENT_POLICY
+        rows["pattern"]["current_policy_draws"] = sum(
+            1 for r in settled if record_policy(r) == AGENT_POLICY)
         return rows
 
     def calibration_band(self, probability: float) -> dict | None:
@@ -140,6 +153,7 @@ class PredictiveEngine:
                 result = AlgorithmEnsemble(knowledge).predict(mode, incumbent)
             record = learner.advance(frame, incumbent, target, result.probabilities, now=clock())
             if existing is None:
+                record["agent_policy"] = AGENT_POLICY
                 record["agent_diagnostics"] = result.diagnostics
                 record["knowledge_snapshot"] = {
                     "short_term": knowledge.short_memory(mode),
@@ -177,6 +191,9 @@ class PredictiveEngine:
         pattern = record["agent_diagnostics"]["pattern"]
         if pattern.get("status") == "fitted" and not pattern["converged"]:
             risks.append("Mạng mẫu hình chưa hội tụ trong giới hạn huấn luyện; cần đọc cùng loss tiến cứu.")
+        if record_policy(record) >= 2 and pattern.get("status") == "fitted" and pattern["trust"] == 0:
+            risks.append("Mạng mẫu hình chưa hơn mức nền trên 30 kỳ thẩm định nên độ tin bằng 0: "
+                         "tác tử này phát đúng mức nền.")
         calibration_bands = learner.calibration_bands(incumbent)
         items = []
         for number in range(100):
@@ -202,6 +219,7 @@ class PredictiveEngine:
         candidate_top = (diversified_order(candidate, 5) if mode == "loto"
                          else np.lexsort((np.arange(100), -candidate))[:5].tolist())
         return {"generated_at": record["generated_at"], "n_settled": n,
+                "agent_policy": record_policy(record),
                 "weights": record["weights"], "tuning": record["tuning"],
                 "gate": record["gate"], "diagnostics": record["agent_diagnostics"],
                 "knowledge": record["knowledge_snapshot"], "confidence_matrix": matrix,
