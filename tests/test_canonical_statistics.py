@@ -4,7 +4,11 @@ import numpy as np
 import pandas as pd
 
 from frequency_stats import compute_frequency_stats, compute_group_frequency_stats
-from gap_cycle_stats import compute_gap_stats, compute_recurrence_intervals
+from gap_cycle_stats import (
+    compute_gap_stats,
+    compute_group_gap_stats,
+    compute_recurrence_intervals,
+)
 
 
 def _sparse(days: int = 10) -> pd.DataFrame:
@@ -74,6 +78,27 @@ def test_head_tail_total_and_cham_use_canonical_memberships() -> None:
     assert int(total.loc[3, "occurrence_count"]) == 1
     assert int(total.loc[0, "occurrence_count"]) == 2
     assert int(cham.loc[1, "occurrence_count"]) == 3
+
+
+def test_group_gaps_treat_any_member_as_a_hit() -> None:
+    """Nhóm đầu 1 "về" khi bất kỳ con 10–19 nào về: gan nhóm là gan của cột hợp."""
+    history = _sparse(10)
+    history.loc[[0, 6], 12] = 1
+    history.loc[3, 19] = 2
+    history.loc[[1, 8], 31] = 1  # đuôi 1, không thuộc đầu 1
+    as_of = "2026-01-11"
+
+    head = compute_group_gap_stats(history, as_of, group="head").set_index("value").loc[1]
+    union = _sparse(10)
+    union.loc[[0, 3, 6], 0] = 1
+    expected = compute_gap_stats(union, as_of).set_index("number").loc[0]
+
+    for column in ("mean_interval_draws", "historical_max_gap_draws", "current_gap_draws",
+                   "current_gap_calendar_days"):
+        assert head[column] == expected[column], column
+    assert int(head["current_gap_draws"]) == 3
+    tail = compute_group_gap_stats(history, as_of, group="tail").set_index("value").loc[1]
+    assert int(tail["current_gap_draws"]) == 1
 
 
 def test_future_mutation_cannot_change_earlier_statistics() -> None:

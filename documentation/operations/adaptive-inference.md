@@ -82,7 +82,7 @@ Lượt đầu chưa có forecast trong journal mà đã quá 18:00 ngày đích
 
 **Backfill hoặc hiệu chỉnh lịch sử cũ:** fingerprint sẽ thay đổi và chặn pipeline. Chưa có migration tự động cho trường hợp này. Giữ bản sổ cũ và các artifact đã công bố, xác minh nguồn sửa, xây migration/replay từ forecast nguyên gốc hoặc khởi tạo một phiên nghiên cứu mới được ghi nhận rõ. Không xóa sổ rồi backfill dự báo như thể đã công bố trước kỳ quay. Việc khởi tạo phiên mới phải chờ lại đủ bằng chứng.
 
-Module nghiên cứu `ml_engine` từ chối resume từ tệp chỉ chứa bandit; nó không chứa đủ mô hình/RNG/cursor để tiếp tục một chuỗi đánh giá đúng. Dùng journal production cho vận hành bền vững, hoặc chạy nghiên cứu mới từ trạng thái sạch.
+Module nghiên cứu `ml_engine` không lưu trạng thái giữa các lần chạy (từ 20-10-2026 không còn tệp bandit; phép trộn của nó tất định và học lại từ đầu mỗi lượt). Dùng journal production cho vận hành bền vững, hoặc chạy nghiên cứu mới từ trạng thái sạch.
 
 ## Kiểm tra
 

@@ -13,7 +13,8 @@ kho, và ghi lại hai lỗi thiết kế trong bản đề xuất kèm số đo
 | Cầu chạm / cầu tổng | Hidden Markov Model | `src/markov_stats.py` — `MarkovChain`, `build_markov_chain` | 174 |
 
 Ngoài ra `src/ml_engine/` đã có LightGBM/CatBoost, LambdaMART, GRU chuỗi thời
-gian, Thompson Sampling, phát hiện trôi khái niệm và walk-forward validation.
+gian, trọng số mũ trên log-loss kèm cổng độ tin `model_trust`, phát hiện trôi
+khái niệm và walk-forward validation.
 
 **Viết lại bốn module này là làm lại việc đã xong.** Khoảng trống thật nằm ở
 chỗ khác — xem mục 4.

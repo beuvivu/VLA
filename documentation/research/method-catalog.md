@@ -321,9 +321,10 @@ thiểu, `alpha`.
 
 **Rủi ro rò rỉ:** cao khi chọn và đánh giá trên cùng giai đoạn.
 
-**Tương đương trong VLA:** `association_rules.mine_association_rules`.
+**Tương đương trong VLA:** từng là `association_rules.mine_association_rules`
+(đã gỡ 20-10-2026 vì không bước pipeline, workflow hay script nào gọi); luật trễ có chấm tiến cứu nằm ở `knowledge_base`.
 
-**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao cho
+**Trạng thái triển khai:** đã gỡ. **Độ tin cậy nghiên cứu:** cao cho
 toán học. **Bằng chứng dự báo:** chưa kiểm định.
 
 ## Chuỗi Markov bậc một
@@ -374,10 +375,10 @@ số; lịch sử thiếu trả 0.
 
 **Rủi ro rò rỉ:** trung bình; mọi đầu vào phải tôn trọng ngày chốt.
 
-**Tương đương trong VLA:** `candidate_scoring.rank_candidates`;
-`cau_keo_ml._add_ai_judgement` vận hành vẫn độc lập.
+**Tương đương trong VLA:** từng là `candidate_scoring.rank_candidates`
+(đã gỡ 20-10-2026 vì không bước pipeline, workflow hay script nào gọi); `cau_keo_ml._add_ai_judgement` vận hành vẫn độc lập.
 
-**Trạng thái triển khai:** đã triển khai. **Độ tin cậy nghiên cứu:** cao cho
+**Trạng thái triển khai:** đã gỡ. **Độ tin cậy nghiên cứu:** cao cho
 công thức VLA, thấp cho tính tương đương nguồn. **Bằng chứng dự báo:** chưa kiểm
 định; điểm không phải xác suất đã hiệu chỉnh.
 

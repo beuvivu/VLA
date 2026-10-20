@@ -46,6 +46,12 @@ LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 _EPSILON: Final[float] = 1e-6
 
+#: Lưới λ của đường lui ridge, xét từ mạnh tới yếu; hoà thì giữ λ mạnh hơn.
+RIDGE_PENALTIES: Final[tuple[float, ...]] = (1e6, 1e5, 1e4, 1e3, 1e2, 1e1)
+
+#: Phần cửa sổ cuối (theo thời gian) dùng để chọn λ.
+RIDGE_VALIDATION_FRACTION: Final[float] = 0.2
+
 
 def _clip(values: np.ndarray) -> np.ndarray:
     """Chặn đầu ra hỏng trước khi kẹp về miền xác suất."""
@@ -276,6 +282,13 @@ class TemporalSequenceModel:
     Dùng GRU khi có PyTorch. Không có thì lui về hồi quy ridge đa nhãn trên
     cửa sổ trễ — vẫn là mô hình chuỗi, chỉ là tuyến tính và không có trạng thái.
 
+    Đường lui ridge dùng đặc trưng đã căn giữa và hệ số chặn bằng tỉ lệ nền, với λ
+    chọn trên 20% cửa sổ cuối theo log-loss (``RIDGE_PENALTIES``). Bản trước (tới
+    20-10-2026) cố định λ = 10 cho 1 401 tham số mỗi đầu ra trên ~226 mẫu và phạt
+    cả hệ số chặn: nó gần như nội suy tập huấn luyện, 9,5% dự báo ngoài mẫu bị kẹp
+    ở 10⁻⁶, và trên 1 000 kỳ thật log-loss kém nền 61,5% (t = −58,8). Khi λ lớn,
+    bản này co đúng về nền thay vì về 0.
+
     Cảnh báo về dung lượng, và đây là điểm quan trọng nhất của lớp này: một GRU
     64 chiều trên đầu vào 100 chiều có 38 372 tham số, trong khi lịch sử 391 kỳ
     chỉ cho 39 100 quan sát nhị phân. Tỉ lệ tham số trên quan sát xấp xỉ 1:1.02. Ở tỉ lệ đó mô hình ghi nhớ tập huấn luyện chứ không học quy luật, và
@@ -311,6 +324,7 @@ class TemporalSequenceModel:
         self.backend = "torch" if CAPABILITIES.torch is not None else "linear"
         self._model: Any = None
         self._linear_weights: np.ndarray | None = None
+        self.ridge_penalty: float | None = None
 
     @staticmethod
     def gru_parameter_count(hidden_size: int) -> int:
@@ -413,15 +427,45 @@ class TemporalSequenceModel:
         model.eval()
         self._model = model
 
+    @staticmethod
+    def _ridge_paths(x: np.ndarray, y: np.ndarray, penalties: tuple[float, ...]):
+        """Trọng số ridge cho từng λ trên đặc trưng đã căn giữa.
+
+        Một lần SVD cho cả lưới: ``W(λ) = V·diag(s/(s² + λ))·Uᵀ·y``. Đặc trưng căn
+        giữa nên ``Uᵀ·1 = 0``: trọng số không phụ thuộc mức của đích, và mức nằm trọn
+        ở hệ số chặn, đặt bằng NỀN chứ không bằng trung bình mẫu của từng con. Dự báo
+        là ``nền + (x − trung bình)·W``, nên λ → ∞ cho đúng tỉ lệ nền.
+        """
+        mean = x.mean(axis=0)
+        u, singular, vt = np.linalg.svd(x - mean, full_matrices=False)
+        projected = u.T @ y
+        for penalty in penalties:
+            shrink = singular / (singular**2 + penalty)
+            yield penalty, mean, vt.T @ (shrink[:, None] * projected)
+
     def _fit_linear(self, sequences: np.ndarray, targets: np.ndarray) -> None:
-        """Đường lui: hồi quy ridge đa nhãn trên cửa sổ trễ đã làm phẳng."""
+        """Đường lui: ridge đa nhãn trên cửa sổ trễ, λ chọn ngoài mẫu theo thời gian."""
         if not np.isfinite(sequences).all() or not np.isfinite(targets).all():
             raise ValueError("đặc trưng và nhãn chuỗi phải hữu hạn")
-        flat = sequences.reshape(sequences.shape[0], -1)
-        design = np.hstack([flat, np.ones((flat.shape[0], 1), dtype=np.float32)])
-        ridge = 10.0 * np.eye(design.shape[1], dtype=np.float64)
-        gram = design.T @ design + ridge
-        self._linear_weights = np.linalg.solve(gram, design.T @ targets.astype(np.float64))
+        flat = sequences.reshape(sequences.shape[0], -1).astype(np.float64)
+        labels = targets.astype(np.float64)
+        split = int(len(flat) * (1.0 - RIDGE_VALIDATION_FRACTION))
+        # Không đủ dữ liệu để thẩm định thì không tin: giữ λ mạnh nhất (≈ nền).
+        penalty, best = RIDGE_PENALTIES[0], np.inf
+        if split >= 2:
+            for candidate, mean, weights in self._ridge_paths(
+                flat[:split], labels[:split], RIDGE_PENALTIES
+            ):
+                held = np.clip(BASELINE_RATE + (flat[split:] - mean) @ weights,
+                               _EPSILON, 1.0 - _EPSILON)
+                truth = labels[split:]
+                loss = float(-np.mean(truth * np.log(held) + (1 - truth) * np.log1p(-held)))
+                if loss < best:
+                    penalty, best = candidate, loss
+        ((_, mean, weights),) = self._ridge_paths(flat, labels, (penalty,))
+        intercept = BASELINE_RATE - mean @ weights
+        self._linear_weights = np.vstack([weights, intercept[None, :]])
+        self.ridge_penalty = penalty
 
     def predict_sequence(self, hits: np.ndarray) -> np.ndarray:
         """Xác suất cho ngày ngay sau ``hits``.

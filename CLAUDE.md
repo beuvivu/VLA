@@ -206,6 +206,14 @@ Tác tử mẫu hình của hệ ba tác tử XSMB (`xsmb_agents.algorithms.patt
 `data/online/agents_<mode>.<họ>.json` (không chấm lại) và sổ mới bắt đầu rỗng, để Hedge, bước chọn
 η/độ quên và cổng đề bạt không thừa hưởng điểm của bộ dự báo khác. Đổi định nghĩa tác tử thì tăng
 `AGENT_POLICY`, đổi họ và thêm họ cũ vào `RETIRED_AGENT_FAMILIES`.
+Khung nghiên cứu `ml_engine` dùng CÙNG luật từ 20-10-2026: bandit Thompson và ngưỡng Hit-Rate 7 kỳ
+đã gỡ (kém hằng số z = −3,40 trên 1 000 kỳ); nay trộn bằng trọng số mũ trên log-loss CỘNG 100 con
+(`aggregation.ExponentialWeights`, η = 1 là Bayes, chia sẻ cố định α = 0,001, chốt trước khi đo) rồi
+qua cổng `fallback.SafeModeController`: `trust = model_trust(kỹ năng 60 kỳ của phép trộn TRƯỚC cổng)`,
+chưa đủ 30 kỳ hoặc trôi lệch/lỗi mô hình thì trust = 0 và dự báo đúng bằng nền. Ngang hằng số, hơn bản
+cũ z = +3,40 (`scripts/research/benchmark_ml_engine_aggregation.py`,
+`data/research/ml_engine_aggregation.json`). Đừng đo kỹ năng trên dự báo đã qua cổng: trust = 0 thì
+dự báo trùng nền và cổng không bao giờ mở lại.
 
 ## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
 

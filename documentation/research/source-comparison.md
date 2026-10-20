@@ -36,9 +36,9 @@ hành vi quan sát được công khai**.
 | Cầu 2 nháy | hai nháy | mục tiêu `loto_2_nhay` trong `dynamic_cau` | Một số được dự báo riêng xuất hiện ít nhất hai lần | vị trí/chuỗi/hỗ trợ | Nhận biết số lần xuất hiện | Cao | Chỉ nghiên cứu, chưa kiểm định |
 | Cầu giải đặc biệt | cầu đề, cầu ĐB | mục tiêu `special` trong `dynamic_cau` | Ứng viên chứa hai số cuối ĐB kế tiếp | vị trí/chuỗi | Khai phá mẫu | Cao | Chỉ nghiên cứu, chưa kiểm định |
 | Ma trận điều kiện | lô tô theo lô tô/ĐB | `conditional_matrices`, `conditional_nextday` | Số đếm nguồn–đích theo ngày lịch chính xác và tỷ lệ có làm trơn | alpha, ngày chốt | Cao | Cao | Chưa kết luận/chỉ nghiên cứu |
-| Luật kết hợp | A→B | `association_rules.mine_association_rules` | mức hỗ trợ, độ tin cậy, độ nâng, cận dưới Wilson | ngưỡng, độ trễ | Cao | Cao | Chưa kiểm định |
+| Luật kết hợp | A→B | (đã gỡ 20-10-2026) `association_rules.mine_association_rules` | mức hỗ trợ, độ tin cậy, độ nâng, cận dưới Wilson | ngưỡng, độ trễ | Cao | Cao | Chưa kiểm định |
 | Markov | mô hình chuyển tiếp | `markov_stats.build_markov_chain` | Chuyển tiếp bậc một có làm trơn cộng | alpha, trạng thái | Trung bình | Cao | Chưa kết luận/chỉ nghiên cứu |
-| Điểm ứng viên | chỉ số nổ, điểm | `candidate_scoring.rank_candidates` | Các thành phần chuẩn hóa có trọng số rõ ràng | trọng số, EMA, cửa sổ | Giải thích/xếp hạng | Trung bình | Chưa kiểm định; không gọi là xác suất |
+| Điểm ứng viên | chỉ số nổ, điểm | (đã gỡ 20-10-2026) `candidate_scoring.rank_candidates` | Các thành phần chuẩn hóa có trọng số rõ ràng | trọng số, EMA, cửa sổ | Giải thích/xếp hạng | Trung bình | Chưa kiểm định; không gọi là xác suất |
 | Pascal | tam giác Pascal | Chưa triển khai | Truy hồi tổng kề nhau modulo 10 công khai; ánh xạ chưa đủ rõ | hạt giống/độ sâu/cách trích | Chỉ là phép biến đổi | Cao | Bác bỏ cho tới khi có ánh xạ tái lập được |
 | Fibonacci | cầu Fibonacci | Chưa triển khai | Truy hồi Fibonacci; không tìm thấy ánh xạ xổ số | chưa xác định | Chưa có | Cao | Bác bỏ vì thiếu đặc tả |
 | Đồ thị | mạng số | Chưa có; đã có nền ma trận | Tóm tắt đồ thị có trọng số | cạnh/ngưỡng | Có thể hữu ích mô tả | Cao | Chỉ dự kiến nghiên cứu |

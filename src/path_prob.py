@@ -132,22 +132,13 @@ def _resolve_anchor_index(dates: list[date], anchor_date: Optional[date]) -> int
         raise ValueError(f"anchor_date {anchor_date} not found in dataset") from exc
 
 
-def _streak_stats(hit_matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Max/current streaks for shape (trials, rules).
-
-    The recurrence is inherently sequential, but it does not need to allocate.
-    ``np.where(row, cur + 1, 0).astype(...)`` built three temporary arrays of
-    ``n_rules`` elements on every one of the ``trials`` iterations.  Doing the
-    same arithmetic in place is ~7x faster and bit-identical.
-    """
-    max_streak, current, *_ = _streak_walk(hit_matrix, buckets=0)
-    return max_streak, current
-
-
 def _streak_walk(
     hit_matrix: np.ndarray, *, buckets: int, rule_hits: np.ndarray | None = None
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Như ``_streak_stats``, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
+    """Chuỗi dài nhất/đang chạy của từng cầu, kèm số lần trúng/lần chấm theo chuỗi NGAY TRƯỚC kỳ.
+
+    Phép truy hồi buộc phải tuần tự nhưng không cần cấp phát: làm số học tại chỗ
+    nhanh ~7 lần so với ``np.where(...).astype(...)`` mỗi vòng và trùng từng bit.
 
     Kỳ thứ t được xếp vào nhóm ``min(chuỗi sau kỳ t−1, buckets−1)``; chuỗi tính
     từ đầu cửa sổ, giống hệt ``current_streak``. Số đếm trả về THEO TỪNG KỲ

@@ -1,209 +1,184 @@
-"""Chuyển chế độ an toàn khi hệ thống không còn đáng tin.
+"""Cổng độ tin: chỉ tin phép trộn khi kỹ năng ngoài mẫu đo được của nó dương.
 
-Ngưỡng ``T_min`` phải neo vào miền, không phải chọn tay
---------------------------------------------------------
+Luật của kho, không phải ngưỡng chọn tay
+-----------------------------------------
 
-Một ngưỡng tùy chọn kiểu "dưới 30% thì chuyển chế độ an toàn" có vấn đề: không
-ai biện minh được con số đó, nên khi hệ thống chạm ngưỡng, phản xạ tự nhiên là
-hạ ngưỡng xuống. Ngưỡng nào cũng có thể chỉnh cho tới khi hệ thống "đạt".
+Dự báo công bố là ``p = trust·trộn + (1 − trust)·nền`` với
+``trust = ml_train.model_trust(s_logloss, s_brier) = clip(20·min(s), 0, 1)``, s là
+kỹ năng tương đối của phép trộn so với nền trên ``window`` kỳ gần nhất đã chấm.
+Đó là cùng luật của thành phần ML production, cầu-kèo và tác tử mẫu hình: không
+có kỹ năng thì không tin. Chưa đủ ``min_days`` kỳ đo thì trust = 0.
 
-Ở đây ``T_min`` mặc định bằng đúng **tỉ lệ nền của miền** (0.2377). Lập luận
-thẳng: chọn Top-K trong 100 con một cách ngẫu nhiên đã cho tỉ lệ trúng bằng
-nền. Nếu Top-K của mô hình rơi *xuống dưới* mức đó thì mô hình không chỉ vô ích
-mà đang chủ động làm hại — nó xếp hạng tệ hơn cả bốc ngẫu nhiên. Đó là ngưỡng
-duy nhất không cần biện minh thêm.
+Kỹ năng đo trên phép trộn TRƯỚC cổng. Đo trên dự báo đã qua cổng thì khi trust
+về 0 dự báo trùng nền, kỹ năng bằng 0 mãi mãi và cổng không bao giờ mở lại.
 
-Ba lối vào chế độ an toàn
---------------------------
+Vì sao bỏ ngưỡng Hit-Rate 7 kỳ (20-10-2026)
+-------------------------------------------
 
-1. **Hiệu năng sụt** — Hit-Rate trung bình 7 kỳ gần nhất dưới ``T_min``.
-2. **Trôi lệch khái niệm** — bộ phát hiện báo phân phối sai số đã đổi.
-3. **Lỗi khi khớp** — mô hình ném ngoại lệ; hệ thống không được im lặng đoán
-   bừa mà phải lui về nền và nói rõ.
+Bản trước vào chế độ an toàn khi Hit-Rate@10 trung bình 7 kỳ dưới nền 0,2377.
+Với 70 lượt chọn, độ lệch chuẩn của tỉ lệ ấy là 0,051 — một mô hình đúng bằng
+nền rơi dưới ngưỡng khoảng một nửa số kỳ. Trên 192 kỳ thật nó bật 62% thời gian
+và vào ra 19 lần: phán đoán bằng tung đồng xu. Hit-Rate lại không phải quy tắc
+chấm chặt, nên nó còn bỏ qua đúng thứ cần canh — mức xác suất.
 
-Chế độ an toàn dự đoán gì
---------------------------
+Ba lối về nền
+--------------
 
-Trộn giữa nền của miền và tần suất lịch sử dài hạn, nghiêng hẳn về nền. Đây
-không phải "không làm gì": nó là dự đoán *đúng* khi không có bằng chứng nào cho
-thấy các con khác nhau — và trên dữ liệu của kho này, đó chính là trường hợp đã
-đo được.
+1. **Không có kỹ năng** — s ≤ 0 trên cửa sổ, hoặc chưa đủ kỳ đo.
+2. **Trôi lệch khái niệm** — bằng chứng cũ mô tả một chế độ đã qua, nên bị xoá;
+   cổng đo lại từ đầu.
+3. **Lỗi khi khớp hoặc dự đoán** — bộ dự báo đang chạy không còn là bộ đã được
+   đo, nên bằng chứng cũng bị xoá.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from collections import deque
 from enum import Enum
 from typing import Final
 
 import numpy as np
 
-from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
+from ml_engine.schema import BASELINE_RATE
+from ml_train import model_trust
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
-#: Số kỳ gần nhất dùng để đánh giá hiệu năng.
-DEFAULT_WINDOW: Final[int] = 7
+#: Số kỳ gần nhất dùng để đo kỹ năng của phép trộn.
+DEFAULT_WINDOW: Final[int] = 60
 
-#: Số kỳ liên tiếp phải đạt lại ngưỡng trước khi rời chế độ an toàn.
-DEFAULT_RECOVERY: Final[int] = 5
+#: Số kỳ tối thiểu đã chấm trước khi cổng được phép mở.
+DEFAULT_MIN_DAYS: Final[int] = 30
 
 
 class Mode(str, Enum):
-    """Chế độ vận hành của hệ thống."""
+    """Chế độ vận hành: ``SAFE`` khi trust = 0, tức dự báo đúng bằng nền."""
 
     NORMAL = "normal"
     SAFE = "safe"
 
 
-@dataclass
 class SafeModeController:
-    """Quyết định khi nào tin mô hình và khi nào lui về nền.
+    """Quyết định mức tin phép trộn từ kỹ năng ngoài mẫu của chính nó.
 
     Attributes:
-        threshold: ``T_min``; mặc định bằng tỉ lệ nền của miền.
-        window: Số kỳ gần nhất dùng để tính hiệu năng.
-        recovery_days: Số kỳ liên tiếp phải đạt lại ngưỡng để thoát chế độ an toàn.
-        baseline_weight: Trọng số của nền trong dự đoán chế độ an toàn.
+        window: Số kỳ gần nhất dùng để đo kỹ năng.
+        min_days: Số kỳ tối thiểu trước khi trust được dương.
+        trust: Mức tin hiện hành trong ``[0, 1]``.
+        mode: ``SAFE`` khi trust = 0.
+        reason: Lý do của mức tin hiện hành.
+        transitions: Nhật ký chuyển chế độ.
     """
 
-    threshold: float = BASELINE_RATE
-    window: int = DEFAULT_WINDOW
-    recovery_days: int = DEFAULT_RECOVERY
-    baseline_weight: float = 0.8
-    mode: Mode = Mode.NORMAL
-    reason: str = "khởi động ở chế độ bình thường"
-    _recent: list[float] = field(default_factory=list)
-    _healthy_streak: int = 0
-    transitions: list[dict[str, object]] = field(default_factory=list)
-
-    def __post_init__(self) -> None:
-        if not 0.0 < self.threshold < 1.0:
-            raise ValueError("threshold phải nằm trong (0, 1)")
-        if self.window < 1:
+    def __init__(self, *, window: int = DEFAULT_WINDOW, min_days: int = DEFAULT_MIN_DAYS) -> None:
+        if window < 1:
             raise ValueError("window phải dương")
-        if self.recovery_days < 1:
-            raise ValueError("recovery_days phải dương")
-        if not 0.0 <= self.baseline_weight <= 1.0:
-            raise ValueError("baseline_weight phải nằm trong [0, 1]")
+        if not 1 <= min_days <= window:
+            raise ValueError("min_days phải nằm trong [1, window]")
+        self.window = window
+        self.min_days = min_days
+        self.trust = 0.0
+        self.mode = Mode.SAFE
+        self.reason = f"chưa có kỳ nào đo kỹ năng (cần {min_days})"
+        self.skill: dict[str, float] | None = None
+        self.transitions: list[dict[str, object]] = []
+        self._evidence: deque[tuple[float, float, float, float]] = deque(maxlen=window)
 
     @property
     def is_safe(self) -> bool:
-        """Hệ thống có đang ở chế độ an toàn không."""
+        """Dự báo hiện hành có đúng bằng nền không."""
         return self.mode is Mode.SAFE
 
-    def _enter_safe(self, reason: str, day_index: int | None) -> None:
-        if self.mode is not Mode.SAFE:
-            LOGGER.warning("Chuyển sang CHẾ ĐỘ AN TOÀN: %s", reason)
-            self.transitions.append({"to": Mode.SAFE.value, "reason": reason, "day": day_index})
-        self.mode = Mode.SAFE
-        self.reason = reason
-        self._healthy_streak = 0
-
-    def _leave_safe(self, reason: str, day_index: int | None) -> None:
-        if self.mode is not Mode.NORMAL:
-            LOGGER.info("Rời chế độ an toàn: %s", reason)
-            self.transitions.append({"to": Mode.NORMAL.value, "reason": reason, "day": day_index})
-        self.mode = Mode.NORMAL
+    def _set(self, trust: float, reason: str, day_index: int | None) -> None:
+        mode = Mode.SAFE if trust <= 0.0 else Mode.NORMAL
+        if mode is not self.mode:
+            log = LOGGER.warning if mode is Mode.SAFE else LOGGER.info
+            log("Độ tin → %s: %s", mode.value, reason)
+            self.transitions.append({"to": mode.value, "reason": reason, "day": day_index})
+        self.trust = float(trust)
+        self.mode = mode
         self.reason = reason
 
     def observe(
         self,
-        hit_rate: float,
         *,
+        logloss: float,
+        brier: float,
+        baseline_logloss: float,
+        baseline_brier: float,
         drifted: bool = False,
         model_failed: bool = False,
         day_index: int | None = None,
     ) -> Mode:
-        """Nạp kết quả một kỳ và cập nhật chế độ.
+        """Nạp điểm một kỳ của phép trộn (trước cổng) và cập nhật mức tin.
 
         Args:
-            hit_rate: Tỉ lệ trúng trên mỗi con trong Top-K của kỳ vừa rồi.
+            logloss: Log-loss trung bình mỗi con của phép trộn.
+            brier: Brier trung bình mỗi con của phép trộn.
+            baseline_logloss: Log-loss của nền trên cùng kỳ.
+            baseline_brier: Brier của nền trên cùng kỳ.
             drifted: Bộ phát hiện trôi lệch có báo động ở kỳ này không.
-            model_failed: Mô hình có ném ngoại lệ khi khớp hoặc dự đoán không.
-            day_index: Chỉ số ngày, chỉ dùng để ghi nhật ký chuyển chế độ.
+            model_failed: Có cánh tay lỗi khi khớp hoặc dự đoán cho kỳ này không.
+            day_index: Chỉ số ngày, chỉ dùng để ghi nhật ký.
 
         Returns:
             Chế độ sau khi cập nhật.
 
         Raises:
-            ValueError: Khi ``hit_rate`` ngoài ``[0, 1]``.
+            ValueError: Khi điểm không hữu hạn, âm, hoặc điểm nền bằng 0.
         """
-        if not 0.0 <= hit_rate <= 1.0:
-            raise ValueError(f"hit_rate phải nằm trong [0, 1], nhận {hit_rate}")
-
-        self._recent.append(float(hit_rate))
-        self._recent = self._recent[-self.window :]
+        scores = (logloss, brier, baseline_logloss, baseline_brier)
+        if not all(np.isfinite(value) and value >= 0.0 for value in scores):
+            raise ValueError("điểm phải hữu hạn và không âm")
+        if baseline_logloss <= 0.0 or baseline_brier <= 0.0:
+            raise ValueError("điểm của nền phải dương")
 
         if model_failed:
-            self._enter_safe("mô hình lỗi khi khớp hoặc dự đoán", day_index)
+            self._evidence.clear()
+            self.skill = None
+            self._set(0.0, "mô hình lỗi khi khớp hoặc dự đoán; đo kỹ năng lại từ đầu", day_index)
             return self.mode
         if drifted:
-            self._enter_safe("bộ phát hiện báo trôi lệch khái niệm", day_index)
+            self._evidence.clear()
+            self.skill = None
+            self._set(0.0, "bộ phát hiện báo trôi lệch khái niệm; đo kỹ năng lại từ đầu", day_index)
             return self.mode
 
-        average = float(np.mean(self._recent))
-        # Chỉ xét khi đã đủ cửa sổ: đánh giá trên hai ba kỳ đầu là đo nhiễu.
-        if len(self._recent) < self.window:
+        self._evidence.append(tuple(float(value) for value in scores))
+        if len(self._evidence) < self.min_days:
+            self._set(0.0, f"mới đo {len(self._evidence)}/{self.min_days} kỳ kỹ năng", day_index)
             return self.mode
 
-        if average < self.threshold:
-            self._enter_safe(
-                f"Hit-Rate {self.window} kỳ = {average:.4f} < ngưỡng {self.threshold:.4f}",
-                day_index,
-            )
-            return self.mode
-
-        if self.mode is Mode.SAFE:
-            # Rời chế độ an toàn cần nhiều kỳ liên tiếp đạt lại, không phải một
-            # kỳ may mắn — nếu không hệ thống sẽ dao động vào ra liên tục.
-            self._healthy_streak += 1
-            if self._healthy_streak >= self.recovery_days:
-                self._leave_safe(
-                    f"{self._healthy_streak} kỳ liên tiếp đạt ngưỡng (trung bình {average:.4f})",
-                    day_index,
-                )
-        else:
-            self.reason = f"Hit-Rate {self.window} kỳ = {average:.4f} ≥ ngưỡng"
+        loss, score, base_loss, base_score = np.mean(np.asarray(self._evidence), axis=0)
+        self.skill = {
+            "logloss": float((base_loss - loss) / base_loss),
+            "brier": float((base_score - score) / base_score),
+            "days": len(self._evidence),
+        }
+        trust = model_trust(self.skill["logloss"], self.skill["brier"])
+        self._set(
+            trust,
+            f"kỹ năng {len(self._evidence)} kỳ: log-loss {self.skill['logloss']:+.5f}, "
+            f"Brier {self.skill['brier']:+.5f} → độ tin {trust:.3f}",
+            day_index,
+        )
         return self.mode
 
-    def safe_probabilities(self, counts: np.ndarray) -> np.ndarray:
-        """Dự đoán của chế độ an toàn: nghiêng hẳn về nền của miền.
-
-        Args:
-            counts: Ma trận đếm lịch sử đã biết.
-
-        Returns:
-            Mảng ``(100,)`` xác suất.
-        """
-        if counts.shape[0] == 0:
-            return np.full(NUMBER_SPACE, BASELINE_RATE)
-        empirical = (counts > 0).mean(axis=0)
-        weight = self.baseline_weight
-        return weight * BASELINE_RATE + (1.0 - weight) * empirical
-
-    def apply(self, counts: np.ndarray, model_probabilities: np.ndarray) -> np.ndarray:
-        """Trả xác suất cuối cùng theo chế độ đang hiệu lực.
-
-        Args:
-            counts: Ma trận đếm lịch sử đã biết.
-            model_probabilities: Xác suất do mô hình khai báo.
-
-        Returns:
-            Xác suất của mô hình khi bình thường, của chế độ an toàn khi đã chuyển.
-        """
-        if self.is_safe:
-            return self.safe_probabilities(counts)
-        return model_probabilities
+    def apply(self, model_probabilities: np.ndarray) -> np.ndarray:
+        """Dự báo công bố: ``trust·trộn + (1 − trust)·nền``."""
+        model = np.asarray(model_probabilities, dtype=float)
+        return self.trust * model + (1.0 - self.trust) * BASELINE_RATE
 
     def state(self) -> dict[str, object]:
         """Trạng thái hiện tại, để ghi vào báo cáo chạy."""
         return {
             "mode": self.mode.value,
+            "trust": self.trust,
             "reason": self.reason,
-            "threshold": self.threshold,
-            "recent_hit_rate": float(np.mean(self._recent)) if self._recent else None,
-            "observations": len(self._recent),
+            "window": self.window,
+            "min_days": self.min_days,
+            "skill": self.skill,
+            "observations": len(self._evidence),
             "transitions": list(self.transitions),
         }

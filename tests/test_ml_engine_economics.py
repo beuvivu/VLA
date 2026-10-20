@@ -105,7 +105,7 @@ def test_pipeline_preserves_occurrences_for_payout(observations, monkeypatch):
     pipeline.arm_builders = {name: _FixedLearner for name in pipeline.arm_builders}
     booster = learners.TabularBooster
     monkeypatch.setattr(orchestration, "TabularBooster", lambda: booster(n_estimators=2))
-    pipeline.safe_mode.apply = lambda counts, probabilities: probabilities
+    pipeline.safe_mode.apply = lambda probabilities: probabilities
     pipeline.step(60)
     report = pipeline.tracker.report()
     assert report.hit_rate_at[3] == 1
