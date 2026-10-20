@@ -41,6 +41,10 @@ Tham số chốt trước khi đo, không dò trên dữ liệu (20-10-2026):
 
 Không có bộ sinh ngẫu nhiên: cùng lịch sử loss cho cùng trọng số, nên dự báo
 lặp lại hay khôi phục sau lỗi không cần lưu trạng thái RNG.
+
+Trọng số giữ trong MIỀN LOG. Loss cộng 100 con có thể chênh hàng nghìn nat sau một
+dự báo cực đoan (xác suất kẹp ở 10⁻⁶); trong miền xác suất, ``e⁻⁷⁴⁵`` tràn dưới về
+0, và với ``α = 0`` một lần loss đảo chiều sau đó cho 0/0 = NaN ở mọi trọng số.
 """
 
 from __future__ import annotations
@@ -97,12 +101,16 @@ class ExponentialWeights:
         self.learning_rate = float(learning_rate)
         self.share = float(share)
         self.updates = 0
-        self._weights = np.full(len(names), 1.0 / len(names))
+        self._log_weights = np.full(len(names), -np.log(len(names)))
         self._cumulative_loss = np.zeros(len(names))
+
+    def _normalised(self) -> np.ndarray:
+        weights = np.exp(self._log_weights - self._log_weights.max())
+        return weights / weights.sum()
 
     def weights(self) -> dict[str, float]:
         """Trọng số hiện hành, tổng bằng 1."""
-        return {name: float(w) for name, w in zip(self.arm_names, self._weights, strict=True)}
+        return {name: float(w) for name, w in zip(self.arm_names, self._normalised(), strict=True)}
 
     def update(self, losses: Mapping[str, float]) -> None:
         """Học một kỳ từ log-loss của từng cánh tay.
@@ -129,15 +137,17 @@ class ExponentialWeights:
         present = np.array([name in losses for name in self.arm_names])
         values = np.array([losses.get(name, 0.0) for name in self.arm_names], dtype=float)
 
-        # Trừ loss nhỏ nhất trước khi lấy mũ: cùng tỉ lệ, không tràn số.
-        shifted = np.where(present, values - values[present].min(), 0.0)
-        weights = self._weights * np.exp(-self.learning_rate * shifted)
-        absent_mass = float(self._weights[~present].sum())
-        present_mass = float(weights[present].sum())
-        weights[present] *= (1.0 - absent_mass) / present_mass
-        weights = (1.0 - self.share) * weights / weights.sum() + self.share / len(weights)
+        # Miền log: cánh tay có mặt nhận −η·L rồi được dời chung để tổng khối lượng
+        # của nhóm có mặt giữ nguyên — cánh tay vắng giữ đúng phần của nó.
+        log_weights = self._log_weights.copy()
+        before = np.logaddexp.reduce(log_weights[present])
+        log_weights[present] -= self.learning_rate * values[present]
+        log_weights[present] += before - np.logaddexp.reduce(log_weights[present])
+        if self.share > 0.0:
+            mixed = (1.0 - self.share) * np.exp(log_weights) + self.share / len(log_weights)
+            log_weights = np.log(mixed)
 
-        self._weights = weights
+        self._log_weights = log_weights
         self._cumulative_loss = self._cumulative_loss + np.where(present, values, 0.0)
         self.updates += 1
 
@@ -146,7 +156,7 @@ class ExponentialWeights:
         rows = [
             {"arm": name, "weight": float(w), "cumulative_logloss": float(loss)}
             for name, w, loss in zip(
-                self.arm_names, self._weights, self._cumulative_loss, strict=True
+                self.arm_names, self._normalised(), self._cumulative_loss, strict=True
             )
         ]
         return sorted(rows, key=lambda row: -row["weight"])

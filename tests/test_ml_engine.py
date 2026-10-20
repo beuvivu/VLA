@@ -271,6 +271,20 @@ class TestExponentialWeightsContract:
         expected = 0.9 * raw / raw.sum() + 0.1 / 2
         assert list(mixer.weights().values()) == pytest.approx(expected.tolist(), rel=1e-12)
 
+    @pytest.mark.parametrize("share", [0.0, 0.001])
+    def test_extreme_losses_that_reverse_keep_weights_finite(self, share) -> None:
+        """Chênh > 745 nat tràn dưới e⁻ˣ; trong miền xác suất, đảo chiều sau đó ra NaN."""
+        mixer = ExponentialWeights(["a", "b"], share=share)
+        mixer.update({"a": 0.0, "b": 1000.0})
+        mixer.update({"a": 1000.0, "b": 0.0})
+        weights = mixer.weights()
+        assert all(np.isfinite(w) for w in weights.values())
+        # α = 0: hai lần chênh 1 000 nat triệt tiêu nhau. α > 0: sàn α/K cho b hồi phục hẳn.
+        expected_b = 0.5 if share == 0.0 else 1.0 - share / 2
+        assert weights["b"] == pytest.approx(expected_b)
+        mixer.update({"a": 0.0, "b": 2000.0})
+        assert mixer.weights()["a"] == pytest.approx(1.0 - share / 2)
+
     def test_absent_arm_keeps_its_mass(self) -> None:
         """Cánh tay không dự báo không bị phạt, cũng không được thưởng."""
         mixer = ExponentialWeights(["a", "b", "c"], share=0.0)
