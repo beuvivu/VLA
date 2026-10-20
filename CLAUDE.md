@@ -202,8 +202,9 @@ z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co.
 Tác tử mẫu hình của hệ ba tác tử XSMB (`xsmb_agents.algorithms.pattern`) dùng CÙNG luật từ 20-10-2026:
 `trust = model_trust(s)`, s là kỹ năng so với nền trên 30 kỳ thẩm định cuối; định nghĩa 1 trộn cố định
 20% mạng dù logloss thẩm định Đặc Biệt kém nền. Sổ `data/online/agents_<mode>.json` ghi `agent_policy` trên
-từng bản ghi mới (`AGENT_POLICY`; thiếu trường = 1, KHÔNG viết lại); điểm theo định nghĩa đang chạy tách
-riêng ở `current_policy_draws`. Đổi định nghĩa tác tử thì tăng `AGENT_POLICY`.
+từng bản ghi mới (`AGENT_POLICY`; thiếu trường = 1, KHÔNG viết lại), kiểm ngay khi nạp CẢ HAI sổ trước
+mọi lần chốt/ghi; hàng `pattern` của `confidence_matrix` chỉ chấm kỳ theo định nghĩa đang chạy. Đổi
+định nghĩa tác tử thì tăng `AGENT_POLICY`.
 
 ## Neo mức LOTO của tổ hợp — một phép chốt cho mọi nơi
 

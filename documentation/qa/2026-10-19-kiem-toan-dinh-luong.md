@@ -176,8 +176,10 @@ Tác động hiện nhỏ:
   `trust = ml_train.model_trust(s_logloss, s_brier)` và s là kỹ năng so với nền trên chính 30 kỳ thẩm
   định. Khối ấy cũng chọn α nên s hơi lạc quan: lệch về phía tin, không về phía bịa tín hiệu.
 - Sổ được đánh phiên bản: `AGENT_POLICY` = 2 ghi trên từng bản ghi mới (`agent_policy`). Bản ghi
-  cũ không có trường là định nghĩa 1 và không bị viết lại. `confidence_matrix` tách
-  `current_policy_draws`, và trang Độ tin cậy in độ tin cùng kỹ năng thẩm định của kỳ đang dự báo.
+  cũ không có trường là định nghĩa 1 và không bị viết lại. Phiên bản của mọi bản ghi được kiểm ngay
+  khi nạp cả hai sổ, trước mọi lần chốt hay ghi, nên bản triển khai cũ gặp sổ mới dừng sạch.
+- Hàng mẫu hình của `confidence_matrix` (số kỳ, Brier, logloss, phần lời gần đây) chỉ chấm các kỳ theo
+  định nghĩa đang chạy. Trang Độ tin cậy in độ tin cùng kỹ năng thẩm định của kỳ đang dự báo.
 - Trên dữ liệu thật (ngày neo 19-10-2026):
   - Đặc Biệt: kỹ năng logloss −0,13%, độ tin 0, tức phát đúng mức nền;
   - LOTO: kỹ năng +0,015%, độ tin 0,3% thay cho 20%.

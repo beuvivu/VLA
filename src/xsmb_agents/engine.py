@@ -33,6 +33,10 @@ class MetaLearner:
     def __init__(self, mode: str, path: Path) -> None:
         self.mode, self.path = mode, Path(path)
         self.state = online.load_state(self.path, mode, profile="agents")
+        # Kiểm định nghĩa của MỌI bản ghi (cả khối lưu trữ) ngay khi nạp, trước mọi advance/save:
+        # bản triển khai cũ gặp sổ của định nghĩa mới phải dừng sạch, không ghi chồng nửa chừng.
+        for record in online._all_records(self.state):
+            record_policy(record)
 
     def advance(self, frame: pd.DataFrame, incumbent: np.ndarray, target_date: str,
                 predictions: dict[str, np.ndarray], *, now: datetime) -> dict:
@@ -49,9 +53,13 @@ class MetaLearner:
     def confidence_matrix(self) -> dict:
         """Loss của từng tầng, cỡ mẫu thật và hiệu quả so với nền."""
         settled = [r for r in online._all_records(self.state) if online._is_scored(r)]
+        # Tác tử mẫu hình đổi định nghĩa ngày 20-10-2026: điểm của nó CHỈ lấy từ các kỳ chấm theo
+        # định nghĩa đang chạy, để điểm của bản trộn cố định 20% không bị đọc như bằng chứng cho
+        # bản mới. Các hàng khác không đổi định nghĩa nên giữ cả lịch sử.
+        current = [r for r in settled if record_policy(r) == AGENT_POLICY]
         rows = {}
         for name in online.AGENT_EXPERTS:
-            scores = [r["settlement"]["scores"] for r in settled]
+            scores = [r["settlement"]["scores"] for r in (current if name == "pattern" else settled)]
             recent = scores[-30:]
             gain = online._gain_stats([s["constant"]["logloss"] - s[name]["logloss"]
                                        for s in recent])
@@ -61,11 +69,9 @@ class MetaLearner:
                 "logloss": float(np.mean([s[name]["logloss"] for s in scores])) if scores else None,
                 "recent_gain": gain,
             }
-        # Tác tử mẫu hình đổi định nghĩa ngày 20-10-2026: số kỳ đã chấm theo ĐỊNH NGHĨA ĐANG
-        # CHẠY tách riêng, để không ai đọc điểm của bản trộn cố định 20% như điểm của bản mới.
         rows["pattern"]["current_policy"] = AGENT_POLICY
-        rows["pattern"]["current_policy_draws"] = sum(
-            1 for r in settled if record_policy(r) == AGENT_POLICY)
+        rows["pattern"]["current_policy_draws"] = len(current)
+        rows["pattern"]["all_policies_draws"] = len(settled)
         return rows
 
     def calibration_band(self, probability: float) -> dict | None:
@@ -133,13 +139,17 @@ class PredictiveEngine:
         # snapshot cũ chỉ được nêu là cũ, không nâng trạng thái hay cộng xác suất.
         matches = knowledge.matching_rules(document)
         modes = {}
+        # Nạp (và kiểm) CẢ HAI sổ trước khi chốt kỳ nào: sổ Đặc Biệt không được ghi xong rồi mới
+        # phát hiện sổ LOTO mang định nghĩa mà bản triển khai này không hiểu.
+        learners = {mode: MetaLearner(mode, data_dir / "online" / f"agents_{mode}.json")
+                    for mode in ("de", "loto")}
         for mode in ("de", "loto"):
             path = data_dir / "predict" / f"predict_next_{mode}_all_{target}.csv"
             prediction_frame, incumbent = online._prediction_frame(path, mode)
             for column, expected in (("target_date", target), ("anchor_date", anchor)):
                 if column in prediction_frame and set(prediction_frame[column].astype(str)) != {expected}:
                     raise ValueError("Dự báo sản xuất không khớp ngày neo/ngày đích")
-            learner = MetaLearner(mode, data_dir / "online" / f"agents_{mode}.json")
+            learner = learners[mode]
             existing = next((r for r in learner.state["records"] if r["target_date"] == target), None)
             if existing is not None:
                 result = EnsembleResult({name: np.asarray(existing["experts"][name])

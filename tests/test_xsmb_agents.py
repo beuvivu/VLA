@@ -433,24 +433,66 @@ def test_ledger_records_the_agent_policy_without_rewriting_older_records(tmp_pat
             record_policy({'agent_policy': bad})
 
 
-def test_pattern_draws_are_counted_under_the_running_definition_only(tmp_path):
-    """Điểm của bản trộn cố định 20% không được đọc như điểm của định nghĩa mới."""
+def test_pattern_scores_come_from_the_running_definition_only(tmp_path):
+    """Điểm (số kỳ, Brier, logloss, phần lời gần đây) của bản trộn cố định 20% không được đọc như
+    bằng chứng cho định nghĩa mới; các hàng khác không đổi định nghĩa nên giữ cả lịch sử."""
     from xsmb_agents.algorithms import AGENT_POLICY
     from xsmb_agents.engine import MetaLearner
     learner = MetaLearner('de', tmp_path / 'agents_de.json')
     p = np.full(100, .01)
-    experts = {name: p.copy() for name in ('statistical', 'probabilistic', 'pattern')}
+    skewed = np.full(100, .005)
+    skewed[:50] = .015
     state = learner.state
     for n in (15, 16, 17):
         frame = history(n)
+        experts = {'statistical': p, 'probabilistic': p, 'pattern': skewed if n == 15 else p}
         state, _ = online.advance(state, frame, p, clock(frame).date().isoformat(), now=clock(frame),
                                   expert_predictions=experts)
         if n == 16:
             state['records'][-1]['agent_policy'] = AGENT_POLICY
     learner.state = state
     matrix = learner.confidence_matrix()
-    assert matrix['pattern']['draws'] == 2
-    assert matrix['pattern']['current_policy_draws'] == 1
+    current = state['records'][1]['settlement']['scores']['pattern']
+    assert matrix['pattern']['draws'] == matrix['pattern']['current_policy_draws'] == 1
+    assert matrix['pattern']['all_policies_draws'] == 2
+    assert matrix['pattern']['brier'] == pytest.approx(current['brier'])
+    assert matrix['pattern']['logloss'] == pytest.approx(current['logloss'])
+    assert matrix['pattern']['recent_draws'] == 1
+    assert matrix['statistical']['draws'] == matrix['constant']['draws'] == 2
+
+
+def test_a_ledger_from_a_newer_definition_is_refused_before_anything_is_written(tmp_path):
+    """Bản triển khai cũ gặp sổ có định nghĩa mới hơn phải dừng TRƯỚC khi chốt hay ghi sổ nào."""
+    import json
+    from xsmb_agents import PredictiveEngine
+    from xsmb_agents.algorithms import AGENT_POLICY
+    frame = history(41)
+    frame.to_csv(tmp_path / 'xsmb.csv', index=False)
+    pred = tmp_path / 'predict'
+    pred.mkdir()
+    previous = history(40)
+    for day in (previous, frame):
+        target = clock(day).date().isoformat()
+        for mode in ('de', 'loto'):
+            pd.DataFrame({'number': np.arange(100), 'prob': np.full(100, baseline_rate(mode))}).to_csv(
+                pred / f'predict_next_{mode}_all_{target}.csv', index=False)
+    # Sổ kỳ trước: LOTO mang định nghĩa lạ nhưng checksum đúng (ghi bằng chính save_state).
+    for mode in ('de', 'loto'):
+        state, record = online.advance(online.new_state(mode, profile='agents'), previous,
+                                       np.full(100, baseline_rate(mode)), clock(previous).date().isoformat(),
+                                       now=clock(previous),
+                                       expert_predictions={name: np.full(100, baseline_rate(mode))
+                                                           for name in ('statistical', 'probabilistic', 'pattern')})
+        state['records'][-1]['agent_policy'] = AGENT_POLICY + 1 if mode == 'loto' else AGENT_POLICY
+        (tmp_path / 'online').mkdir(exist_ok=True)
+        online.save_state(tmp_path / 'online' / f'agents_{mode}.json', state)
+    before = {mode: (tmp_path / 'online' / f'agents_{mode}.json').read_bytes() for mode in ('de', 'loto')}
+    with pytest.raises(ValueError, match='Định nghĩa'):
+        PredictiveEngine().run(tmp_path, now=clock(frame))
+    for mode in ('de', 'loto'):
+        assert (tmp_path / 'online' / f'agents_{mode}.json').read_bytes() == before[mode]
+    assert not (tmp_path / 'agents' / 'report.json').exists()
+    assert json.loads(before['de'])['records'][-1]['settlement'] is None
 
 
 def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
