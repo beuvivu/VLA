@@ -652,6 +652,27 @@ def _catalog(f: dict[str, str]) -> dict[str, tuple[Evidence, list[Section]]]:
                 "không phải kết quả.",
                 _GHI_CHU_CAU_KEO,
             )),
+            _sec("#live-scorecard", "Đối chiếu phỏng đoán với kết quả", _ev(
+                [_LIVE, {
+                    "title": "Sổ phỏng đoán đóng băng của kỳ",
+                    "snippet": (
+                        "Mọi danh sách số các trang công bố cho kỳ này — tổ hợp xác suất, Cầu Kèo, ML, "
+                        "hệ ba tác tử, Lô VIP, xiên 2, cầu đẹp nhất, các trang soi cầu và bảng mô phỏng — "
+                        "chụp và khoá lúc 18:10 giờ Việt Nam, trước khi kỳ quay bắt đầu."
+                    ),
+                }],
+                [
+                    "Mỗi mục mang luật trúng của chính trang đã liệt kê nó: LOTO về ít nhất một nháy, "
+                    "Lô VIP về từ hai nháy, cầu lộn cộng gộp nháy hai chiều, xiên 2 cần cả hai số, "
+                    "Đặc Biệt so hai số cuối, cầu Đặc Biệt chạm so hàng chục hoặc hàng đơn vị.",
+                    "Hàng trước giờ quay in xác suất đã công bố; mục chỉ xếp hạng in xác suất chọn bừa "
+                    "chính xác của đúng sự kiện ấy (27 giải đều trên 00–99).",
+                    "Hàng sau giờ quay chấm dần theo giải đã về; một mục chỉ trượt khi phần kết quả "
+                    "liên quan đã đủ.",
+                    "Tỉ lệ trúng của một kỳ là một mẫu rất nhỏ; so sánh có ý nghĩa cần nhiều kỳ, như trang "
+                    "Chất lượng mô hình đã làm.",
+                ],
+            )),
         ]),
         "so-ket-qua-truyen-thong.html": (_ev([_ket_qua(f), _LOTO], ["Lấy đúng kỳ quay đã lưu theo bộ lọc ngày.", "Bảng LOTO đầu – đuôi tách hai chữ số cuối của 27 giải."]), []),
         "ket-qua-mien-trung.html": _vung("Miền Trung"),

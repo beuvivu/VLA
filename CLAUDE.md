@@ -265,6 +265,24 @@ lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 g
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
 
+## Sổ phỏng đoán trong ngày và bảng đối chiếu trang Live — 21-10-2026
+
+`src/prediction_board.py` (bước pipeline sau `build_fun_prediction`) chụp MỌI danh sách số các trang
+công bố cho kỳ tới — tổ hợp Top 10, Cầu Kèo, ML, hệ ba tác tử, Lô VIP, xiên 2, cầu đẹp nhất, bảy trang
+soi cầu, soi đường, bảng mô phỏng — vào `data/prediction_board/<kỳ>.json`; trang Live
+(`src/assets/live-scorecard.js`) đặt từng danh sách thành hai hàng "Trước giờ quay" / "Sau giờ quay"
+cạnh kết quả đang về. Sổ chỉ được ghi TRƯỚC 18:10 giờ VN của kỳ đích (`fun_draw_ledger.cutoff_utc`),
+sau đó đóng băng và không tạo mới: nhiều tệp nguồn không mang ngày và bị ghi đè cho kỳ sau lúc ~19 giờ.
+Nguồn nào không tự khai đúng kỳ đích thì BỎ, ghi vào `missing`. Tệp soi đường
+`path_ui/predict_next_*_<ngày>.csv` mang NGÀY DỮ LIỆU (manifest `anchor_date`) và dự báo kỳ kế tiếp —
+khác mọi `predict_next_*` khác (mang ngày quay); đọc theo ngày quay là chấm danh sách của kỳ trước.
+Mỗi mục mang luật trúng của chính trang liệt kê nó (`rule`: LOTO tổng nháy ≥ t, xiên cần đủ số, Đặc
+Biệt thuộc tập, cầu Đặc Biệt "chạm" theo chữ số) và `base` = xác suất CHÍNH XÁC của đúng sự kiện ấy khi
+kỳ quay công bằng; hàng sau giờ quay chỉ "trượt" khi phần kết quả liên quan đã đủ. Kỳ đã khoá dựng lại
+được bằng `--backfill-from-git` (commit cuối trước 18:10, ghi `backfilled_from`, không đè sổ đã có).
+Các mục trong một danh sách thường trùng nhau (cùng chữ số chạm) nên không độc lập — đừng in "trúng
+10/10" như bằng chứng. `tests/test_prediction_board.py`, `tests/frontend/live-scorecard.test.mjs`.
+
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 
 Theo yêu cầu chủ dự án: nguồn chính `xoso.com.vn`; dự phòng `mketqua.net` rồi

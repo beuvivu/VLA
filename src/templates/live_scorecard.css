@@ -1,0 +1,33 @@
+.live-console .live-scorecard-card{grid-column:1/-1}
+.live-scorecard-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.live-scorecard-heading h2{margin:0;font-size:16px;line-height:1.4;color:var(--ui-ink)}
+.live-scorecard-heading time{color:var(--ui-ink-soft);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-scorecard-summary{margin:0 0 12px;font-size:13px;line-height:1.6;color:var(--ui-ink-2)}
+.live-scorecard-summary p{margin:0}
+.live-scorecard-scroll{overflow-x:auto;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-surface)}
+.live-scorecard-table{width:100%;min-width:720px;border-collapse:collapse;font-size:13px;color:var(--ui-ink)}
+.live-scorecard-table caption{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.live-scorecard-table thead th{position:sticky;top:0;padding:10px 12px;text-align:left;font-size:12px;font-weight:650;color:var(--ui-ink-soft);background:var(--ui-surface-2);border-bottom:1px solid var(--ui-border)}
+.live-scorecard-group{border-top:1px solid var(--ui-border)}
+.live-scorecard-group:first-of-type{border-top:0}
+.live-scorecard-table td,.live-scorecard-name{padding:8px 12px;vertical-align:top}
+.live-scorecard-name{width:22%;text-align:left;font-weight:650}
+.live-scorecard-name a{color:var(--ui-brand-ink);text-decoration:none}
+.live-scorecard-name a:hover{text-decoration:underline}
+.live-scorecard-name a:focus-visible{outline:3px solid var(--ui-brand-ink);outline-offset:2px}
+.live-scorecard-group-name{display:block;margin-top:4px;font-size:11px;font-weight:500;color:var(--ui-ink-soft)}
+.live-scorecard-when{width:110px;white-space:nowrap;font-size:12px;color:var(--ui-ink-soft)}
+.is-after .live-scorecard-when{color:var(--ui-ink)}
+.is-after td{background:var(--ui-surface-2)}
+.live-scorecard-stat{width:24%;font-size:12px;line-height:1.5;color:var(--ui-ink-2);font-variant-numeric:tabular-nums}
+.live-scorecard-stat[data-verdict="above"]{color:var(--ui-ok);font-weight:650}
+.live-scorecard-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.live-scorecard-chip{display:inline-flex;align-items:baseline;gap:6px;min-height:30px;padding:4px 8px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface)}
+.live-scorecard-num{font-size:14px;font-weight:700;color:var(--ui-brand-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-scorecard-chip small{font-size:11px;color:var(--ui-ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.live-scorecard-chip[data-state="hit"]{border-color:var(--ui-ok-border);background:var(--ui-ok-soft)}
+.live-scorecard-chip[data-state="hit"] small,.live-scorecard-chip[data-state="hit"] .live-scorecard-num{color:var(--ui-ok)}
+.live-scorecard-chip[data-state="miss"] .live-scorecard-num{color:var(--ui-ink-soft);font-weight:600}
+.live-scorecard-chip[data-state="wait"]{border-style:dashed}
+.live-scorecard-note{margin:12px 0 0;color:var(--ui-ink-soft);font-size:11px;line-height:1.6}
+@media(max-width:700px){.live-scorecard-heading{flex-wrap:wrap}.live-scorecard-scroll{overflow:visible}.live-scorecard-table{min-width:0;font-size:12px}.live-scorecard-table thead{display:none}.live-scorecard-table,.live-scorecard-group,.live-scorecard-group tr,.live-scorecard-group td,.live-scorecard-name{display:block;width:auto}.live-scorecard-name{padding:12px 12px 4px}.live-scorecard-table td{padding:4px 12px}.live-scorecard-group tr{padding-bottom:8px}.live-scorecard-when{font-weight:650}}

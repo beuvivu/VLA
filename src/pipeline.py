@@ -423,6 +423,10 @@ def main() -> None:
         # error here leaves yesterday's simulation in place and makes the UI
         # appear frozen, so it is a hard step even in non-strict research runs.
         _run(_py("src/build_fun_prediction.py"), allow_fail=False)
+        # Sổ phỏng đoán trong ngày: chụp MỌI danh sách vừa công bố cho kỳ tới để trang Live
+        # đặt cạnh kết quả đang về. Đọc bảng mô phỏng, cầu đẹp nhất và bảy trang soi cầu nên
+        # đứng sau chúng; khoá 18:10 giờ VN của kỳ đích, sau đó sổ đóng băng.
+        _run(_py("src/prediction_board.py"), allow_fail=soft_fail)
         _run(_py("src/build_research_lab.py"), allow_fail=True)
         # Trang thống kê chi tiết: nhúng lịch sử và tính bằng JS phía
         # trình duyệt, nên phải chạy SAU khi dữ liệu đã chốt.
