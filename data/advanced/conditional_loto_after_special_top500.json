@@ -1127,13 +1127,6 @@
     "conditional_rate":0.3863636364
   },
   {
-    "prev_special_2d":"09",
-    "next_loto":"39",
-    "count":20,
-    "base_count":52,
-    "conditional_rate":0.3846153846
-  },
-  {
     "prev_special_2d":"03",
     "next_loto":"90",
     "count":15,
@@ -1510,6 +1503,13 @@
     "count":17,
     "base_count":45,
     "conditional_rate":0.3777777778
+  },
+  {
+    "prev_special_2d":"09",
+    "next_loto":"39",
+    "count":20,
+    "base_count":53,
+    "conditional_rate":0.3773584906
   },
   {
     "prev_special_2d":"39",
@@ -2231,13 +2231,6 @@
     "count":15,
     "base_count":41,
     "conditional_rate":0.3658536585
-  },
-  {
-    "prev_special_2d":"09",
-    "next_loto":"15",
-    "count":19,
-    "base_count":52,
-    "conditional_rate":0.3653846154
   },
   {
     "prev_special_2d":"24",
@@ -3059,6 +3052,27 @@
     "conditional_rate":0.358974359
   },
   {
+    "prev_special_2d":"09",
+    "next_loto":"15",
+    "count":19,
+    "base_count":53,
+    "conditional_rate":0.358490566
+  },
+  {
+    "prev_special_2d":"09",
+    "next_loto":"45",
+    "count":19,
+    "base_count":53,
+    "conditional_rate":0.358490566
+  },
+  {
+    "prev_special_2d":"09",
+    "next_loto":"63",
+    "count":19,
+    "base_count":53,
+    "conditional_rate":0.358490566
+  },
+  {
     "prev_special_2d":"39",
     "next_loto":"19",
     "count":19,
@@ -3481,20 +3495,6 @@
   {
     "prev_special_2d":"95",
     "next_loto":"47",
-    "count":13,
-    "base_count":37,
-    "conditional_rate":0.3513513514
-  },
-  {
-    "prev_special_2d":"95",
-    "next_loto":"71",
-    "count":13,
-    "base_count":37,
-    "conditional_rate":0.3513513514
-  },
-  {
-    "prev_special_2d":"95",
-    "next_loto":"99",
     "count":13,
     "base_count":37,
     "conditional_rate":0.3513513514
