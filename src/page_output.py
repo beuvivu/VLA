@@ -303,13 +303,14 @@ def _attach_shell(path: Path, html: str) -> str:
     (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
     if path.name == "live.html":
         source_dir = Path(__file__).parent
-        (assets / "live-predictions.js").write_text(
-            (source_dir / "assets/live-predictions.js").read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        write_stylesheet_text(
-            assets / "live-predictions.css",
-            (source_dir / "templates/live_predictions.css").read_text(encoding="utf-8"),
-        )
+        for name in ("live-predictions", "live-scorecard"):
+            (assets / f"{name}.js").write_text(
+                (source_dir / f"assets/{name}.js").read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            write_stylesheet_text(
+                assets / f"{name}.css",
+                (source_dir / f"templates/{name.replace('-', '_')}.css").read_text(encoding="utf-8"),
+            )
     # Keep the reference typography, with a separate application brand asset.
     reference_assets = Path(__file__).with_name("assets") / "nexlink"
     for source in reference_assets.glob("InstrumentSans-*"):
