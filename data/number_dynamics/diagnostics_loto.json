@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4242,
+  "history_days": 4243,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-10-21",
-  "active_numbers_last_draw": 24,
+  "calendar_end": "2026-10-22",
+  "active_numbers_last_draw": 26,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 40.93443429788811,
+    "hazard": 40.935516190360296,
     "lag_median": 1000000.0,
-    "regime_recent": 287.47454191178565,
-    "regime_long": 10296.494220337858
+    "regime_recent": 600.651768868185,
+    "regime_long": 44288.652663861096
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 5.991928778214518,
+    "t_statistic": 6.06542372834997,
     "holdout_days": 1061,
-    "brier_arithmetic": 0.181265729501681,
-    "brier_logodds": 0.1814167005379571
+    "brier_arithmetic": 0.18128552895023747,
+    "brier_logodds": 0.18143929511497414
   },
-  "transition_active_mean_trials": 1016.0,
-  "regime_js_divergence_30_vs_180": 0.010613664814423936,
-  "entropy_recent": 4.552714158753259,
-  "entropy_long": 4.596201252977619,
-  "global_dynamics_reliability": 0.7598971729375266,
+  "transition_active_mean_trials": 1009.0769230769231,
+  "regime_js_divergence_30_vs_180": 0.010359235232594088,
+  "entropy_recent": 4.555119466775787,
+  "entropy_long": 4.596324476915865,
+  "global_dynamics_reliability": 0.7608289392593396,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-10-21T14:48:25Z",
+  "generated_at_utc": "2026-10-22T11:36:15Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-10-21"
+  "anchor_date": "2026-10-22"
 }
