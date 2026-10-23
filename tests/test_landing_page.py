@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from build_landing_page import _fmt2, build_landing_page
-from web_security import json_for_html_script
+from pages.build_landing_page import _fmt2, build_landing_page
+from web.web_security import json_for_html_script
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -85,7 +85,7 @@ def test_the_landing_page_delegates_clicks_instead_of_binding_every_cell() -> No
     cần Chromium và một lượt dựng, quá nặng cho bộ kiểm thường. Thứ ghim ở
     đây là KHUÔN — không được quay lại lối gắn từng phần tử.
     """
-    nguon = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    nguon = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     assert "document.querySelectorAll('[data-number]').forEach" not in nguon, (
         "quay lại lối gắn trình nghe cho từng phần tử mang data-number"
     )

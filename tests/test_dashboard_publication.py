@@ -12,7 +12,7 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILDER = Path("src") / "build_markdown_dashboard_v3.py"
+BUILDER = Path("src") / "pages" / "build_markdown_dashboard_v3.py"
 pytestmark = pytest.mark.skipif(
     shutil.which("bash") is None or shutil.which("git") is None,
     reason="cần bash và git",
@@ -46,7 +46,7 @@ class DashboardRepo:
         self.git(tmp, "init", "--bare", "--initial-branch=main", str(self.remote))
         self.other = tmp / "other"
         self.git(tmp, "clone", str(self.remote), str(self.other))
-        (self.other / "src").mkdir()
+        (self.other / BUILDER).parent.mkdir(parents=True)
         (self.other / BUILDER).write_text(
             "from pathlib import Path\n"
             "text = Path('marker').read_text() + '\\n'\n"

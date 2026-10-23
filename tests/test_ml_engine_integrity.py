@@ -475,7 +475,7 @@ def _aggregation_benchmark():
 
 def test_aggregation_benchmark_uses_the_promotion_gate_error_bar():
     """Phép đo thay bandit chấm z bằng đúng sai số của cổng đề bạt production."""
-    import online_learning
+    from forecast import online_learning
 
     rng = np.random.default_rng(5)
     gain = rng.normal(0.001, 0.01, 200) + np.repeat(rng.normal(0, 0.01, 29), 7)[:200]

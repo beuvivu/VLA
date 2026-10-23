@@ -14,7 +14,7 @@ import numpy as np
 
 from bridges.tensor import NUMBER_SPACE
 from features.base import FeatureContext
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 # Vị trí bắt đầu của mỗi trường giải trong luồng chữ số phẳng.
 _OFFSETS: dict[str, int] = {}

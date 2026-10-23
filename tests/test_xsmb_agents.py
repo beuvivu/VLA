@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import online_learning as online
-from time_policy import VIETNAM_TZ
-from xsmb_domain import FIELD_WIDTHS, baseline_rate
+from forecast import online_learning as online
+from core.time_policy import VIETNAM_TZ
+from core.xsmb_domain import FIELD_WIDTHS, baseline_rate
 
 
 def history(n=80, seed=17):
@@ -190,18 +190,18 @@ def test_pipeline_runs_agents_after_both_online_forecasts_even_without_docs(monk
     monkeypatch.setattr(sys, 'argv', ['pipeline.py', '--skip-sync', '--skip-docs', '--strict'])
     pipeline.main()
     agents = [(i, options) for i, (cmd, options) in enumerate(calls)
-              if 'src/run_xsmb_agents.py' in cmd]
+              if 'src/xsmb_agents/run_xsmb_agents.py' in cmd]
     assert len(agents) == 1
     at, options = agents[0]
     assert options['allow_fail'] is False
-    assert all(i < at for i, (cmd, _) in enumerate(calls) if 'src/online_learning.py' in cmd)
-    for producer in ('src/confidence_matrix.py', 'src/multi_hit_report.py', 'src/knowledge_base.py'):
+    assert all(i < at for i, (cmd, _) in enumerate(calls) if 'src/forecast/online_learning.py' in cmd)
+    for producer in ('src/evaluation/confidence_matrix.py', 'src/forecast/multi_hit_report.py', 'src/forecast/knowledge_base.py'):
         produced = [i for i, (cmd, _) in enumerate(calls) if producer in cmd]
         assert len(produced) == 1 and produced[0] < at
 
 
 def test_public_agents_card_distinguishes_candidates_and_rejects_old_date():
-    from build_confidence_page import agents_card
+    from pages.build_confidence_page import agents_card
     mode = {'n_settled': 0, 'weights': dict.fromkeys(online.AGENT_EXPERTS, .2),
             'tuning': {'eta': 4, 'discount': .97}, 'confidence_matrix': {},
             'candidate_top5': [{'number': '<07>', 'published_probability': .01,
@@ -243,7 +243,7 @@ def test_engine_checks_real_clock_after_lock_and_training_before_freezing(tmp_pa
 
 @pytest.mark.parametrize('slow_phase', ['serialization', 'fsync'])
 def test_engine_rechecks_cutoff_after_serializing_a_new_journal(tmp_path, monkeypatch, slow_phase):
-    import atomic_io
+    from core import atomic_io
     import xsmb_agents.engine as engine_module
     from xsmb_agents import PredictiveEngine
     frame = history(40)
@@ -391,7 +391,7 @@ def test_pattern_without_validation_skill_publishes_exactly_the_base_rate(mode):
 def test_pattern_trust_is_the_repository_rule_applied_to_validation_skill(monkeypatch):
     """Mạng có kỹ năng thật: trust = model_trust(s), vector = trust·mạng + (1 − trust)·nền."""
     import xsmb_agents.algorithms as algorithms
-    from ml_train import model_trust
+    from ml.ml_train import model_trust
     from xsmb_agents import AlgorithmEnsemble, KnowledgeBaseManager
     frame = _planted_loto_history()
     p, info = AlgorithmEnsemble(KnowledgeBaseManager(frame)).pattern('loto')
@@ -494,7 +494,7 @@ def test_a_ledger_of_the_running_family_must_hold_only_running_definition_record
 
 
 def test_agents_card_prints_the_pattern_trust_from_the_running_definition():
-    from build_confidence_page import agents_card
+    from pages.build_confidence_page import agents_card
     pattern = {'status': 'fitted', 'validation_draws': 30, 'trust': 0.0,
                'validation_skill': {'logloss': -0.004, 'brier': -0.0005}}
     mode = {'n_settled': 3, 'agent_policy': 2, 'weights': dict.fromkeys(online.AGENT_EXPERTS, .2),

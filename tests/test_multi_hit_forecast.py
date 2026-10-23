@@ -15,10 +15,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import bridge_rules
-import multi_hit_forecast as mf
-import multi_hit_vip as m
-from position_bridges import load_draws
+from soi_cau import bridge_rules
+from forecast import multi_hit_forecast as mf
+from forecast import multi_hit_vip as m
+from soi_cau.position_bridges import load_draws
 
 ROOT = Path(__file__).resolve().parents[1]
 PLANTED = (7, 38, 68)
@@ -123,7 +123,7 @@ def test_the_published_picks_are_the_ones_scored_when_the_draw_arrives(n) -> Non
 
 def test_the_forecast_row_uses_the_real_next_draw_date() -> None:
     """Kỳ tới sau ngày nghỉ: đặc trưng cùng thứ / từ đầu tháng / đầu năm tính theo ngày quay thật."""
-    import cau_keo_ml as ck
+    from ml import cau_keo_ml as ck
 
     raw, two = mf.mock_raw_history(80, seed=4)
     last = pd.Timestamp(two["date"].iloc[-1])

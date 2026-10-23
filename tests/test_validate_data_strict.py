@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from validate_data import FIELD_WIDTHS, main
+from ingest.validate_data import FIELD_WIDTHS, main
 
 
 def _write_data(root: Path, dates: list[str]) -> None:

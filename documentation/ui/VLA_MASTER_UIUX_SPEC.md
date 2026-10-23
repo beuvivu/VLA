@@ -501,9 +501,9 @@ phải gợi ý.
 
 | Safeguard | Vì sao cần | Lấy lại từ |
 |---|---|---|
-| Phát hiện báo cáo cũ hơn dữ liệu | Trang chất lượng từng tự báo khi `covers_through` lùi sau dữ liệu mới nhất | `git show 00cf02ea~1:src/build_model_quality.py` |
-| Cột **độ nâng ngoài mẫu** cho cầu bóng | Chỉ hiện cột huấn luyện là cách trang soi cầu đánh lừa người đọc. Đo được: cầu mạnh nhất trong 206 082 luật đạt 1,235 khi huấn luyện rồi rơi về **0,913** trên tập giữ lại | `git show 00cf02ea~1:src/build_research_lab.py` |
-| Cảnh báo "Không phải kết quả thật" | Bảng mô phỏng vui phải mang cảnh báo trên TRANG, không chỉ trong JSON. Liên quan mục 6.2 | `git show 00cf02ea~1:src/build_fun_prediction.py` |
+| Phát hiện báo cáo cũ hơn dữ liệu | Trang chất lượng từng tự báo khi `covers_through` lùi sau dữ liệu mới nhất | `git show 00cf02ea~1:src/pages/build_model_quality.py` |
+| Cột **độ nâng ngoài mẫu** cho cầu bóng | Chỉ hiện cột huấn luyện là cách trang soi cầu đánh lừa người đọc. Đo được: cầu mạnh nhất trong 206 082 luật đạt 1,235 khi huấn luyện rồi rơi về **0,913** trên tập giữ lại | `git show 00cf02ea~1:src/pages/build_research_lab.py` |
+| Cảnh báo "Không phải kết quả thật" | Bảng mô phỏng vui phải mang cảnh báo trên TRANG, không chỉ trong JSON. Liên quan mục 6.2 | `git show 00cf02ea~1:src/pages/build_fun_prediction.py` |
 
 ## 23.6 Xuất xứ trọng số đã có sẵn ở tầng dữ liệu
 

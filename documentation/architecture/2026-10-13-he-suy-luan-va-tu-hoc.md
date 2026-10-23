@@ -7,7 +7,7 @@ Ngày 13-10-2026. Đây là câu trả lời cho yêu cầu thiết kế "hệ t
 3. Tự học, tự tối ưu trọng số.
 4. Suy luận Bayes/Markov kèm độ tin cậy và lời giải thích.
 
-Ba phần đã có trong kho và đang chạy hằng ngày. Phần 2 chưa có, nay được bổ sung bằng `src/knowledge_base.py`.
+Ba phần đã có trong kho và đang chạy hằng ngày. Phần 2 chưa có, nay được bổ sung bằng `src/forecast/knowledge_base.py`.
 
 ## 0. Nguyên tắc trước khi đọc sơ đồ
 
@@ -330,7 +330,7 @@ Nguyên tắc chọn: kho không có `package.json` và chạy trên runner GitH
 ## 7. Vận hành
 
 ```bash
-python src/knowledge_base.py            # cập nhật data/knowledge/kb.json
+python src/forecast/knowledge_base.py            # cập nhật data/knowledge/kb.json
 PYTHONPATH=src python3 -m pytest tests/test_knowledge_base.py -q
 ```
 

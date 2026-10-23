@@ -52,18 +52,18 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, finalize_blend  # noqa: E402
-from lottery import Lottery  # noqa: E402
-from path_models import PathParams, build_daily_targets, enumerate_position_pairs  # noqa: E402
-from path_prob import (  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
+from ensemble.ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS, finalize_blend  # noqa: E402
+from ingest.lottery import Lottery  # noqa: E402
+from core.path_models import PathParams, build_daily_targets, enumerate_position_pairs  # noqa: E402
+from soi_cau.path_prob import (  # noqa: E402
     fit_paths_with_evidence,
     paths_to_dataframe,
     predict_from_fitted_paths_full,
     prepare_path_history,
 )
 from vla.backtest import evaluator  # noqa: E402
-from xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
+from core.xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "bridge_inference.json"
 MODES = ("loto", "de")

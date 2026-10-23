@@ -16,7 +16,7 @@ import numpy as np
 
 from bridges.tensor import NUMBER_SPACE
 from features.base import FeatureContext
-from xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
 
 _EPS = 1e-9
 

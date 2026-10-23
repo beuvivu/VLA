@@ -22,7 +22,7 @@ import pytest
 
 from bs4 import BeautifulSoup
 
-from build_traditional_results import (
+from pages.build_traditional_results import (
     PRIZE_SPEC,
     ROW_WIDTH,
     embedded_payload,
@@ -30,7 +30,7 @@ from build_traditional_results import (
     load_rows,
     render_page,
 )
-from ui_theme import nav_targets
+from web.ui_theme import nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = (ROOT / "src" / "templates" / "traditional_results.css").read_text(encoding="utf-8")

@@ -74,7 +74,7 @@ luận và chi phí tính toán (mục 3).
 
 ## 2. Chi tiết theo module
 
-### 2.1 `src/lottery_codes.py` — định dạng mã từng ô (đã sửa)
+### 2.1 `src/core/lottery_codes.py` — định dạng mã từng ô (đã sửa)
 
 **Vấn đề.** `write_code_csv` gọi `Series.map(lambda v: lottery_code(v, width))` cho mọi ô của mọi
 cột mã, khoảng 2,5 triệu lần mỗi lượt `statistical_matrices`, dù chỉ có vài trăm mã khác nhau. Có 27
@@ -95,7 +95,7 @@ module ghi CSV qua hàm này.
 - `test_cached_code_column_rejects_what_the_formatter_rejects` kiểm sáu trường hợp bị từ chối.
 - Ba đột biến đều đỏ: khoá đệm bỏ kiểu, ô thiếu thành `"00"`, làm tròn số thực trước khi gom.
 
-### 2.2 `src/ml_validation.py` — bootstrap theo kỳ (đã sửa)
+### 2.2 `src/ml/ml_validation.py` — bootstrap theo kỳ (đã sửa)
 
 **Vấn đề.** `_paired_date_bootstrap` lặp 1 000 lượt. Mỗi lượt ghép lại mọi hàng của các kỳ rút được
 và chấm lại hai lần qua `sklearn.metrics` (kèm toàn bộ kiểm đầu vào): 2 036 lời gọi
@@ -122,7 +122,7 @@ Trên dữ liệu thật, hai tệp `cau_keo_domain_gate_*.json` trùng từng t
 cận khoảng tin cậy bootstrap của LOTO lệch ở chữ số thứ 11 (sai số tương đối ≤ 9,3·10⁻¹²), do thứ
 tự cộng.
 
-### 2.3 `src/cau_keo_ml.py` — đặc trưng cầu kèo (đã sửa)
+### 2.3 `src/ml/cau_keo_ml.py` — đặc trưng cầu kèo (đã sửa)
 
 Hàm `build_cau_keo_feature_frame` được dùng bởi `cau_keo_ml`, `cau_keo_domain_challenger`,
 `multi_hit_forecast` và `multi_hit_report`. Hai điểm nghẽn:

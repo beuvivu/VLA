@@ -13,7 +13,7 @@ Nên bất biến được ghim thẳng vào bộ kiểm, đọc đúng hai tệ
 import csv
 from pathlib import Path
 
-from calendar_alignment import known_non_draw_days, missing_calendar_dates
+from core.calendar_alignment import known_non_draw_days, missing_calendar_dates
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CANONICAL = REPO_ROOT / "data" / "xsmb.csv"

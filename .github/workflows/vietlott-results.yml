@@ -28,12 +28,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/build_vietlott_results.py"
+      - "src/pages/build_vietlott_results.py"
       - "src/templates/vietlott_main.css"
       - "src/assets/vietlott-picks.js"
       - "src/assets/vietlott-comparison.js"
-      - "src/vietlott_navigation_content.py"
-      - "src/evidence_catalog.py"
+      - "src/pages/vietlott_navigation_content.py"
+      - "src/web/evidence_catalog.py"
       - "scripts/ops/push_generated_site.py"
       - "vietlott/src/vlm/web/**"
       - "vietlott/data/results/results.jsonl"
@@ -107,7 +107,7 @@ jobs:
         run: git restore --source=HEAD -- vietlott/data/forecast/multi-agent-summary.json
 
       - name: Dựng trang Vietlott
-        run: python src/build_vietlott_results.py --cache-states vietlott/data/forecast
+        run: python src/pages/build_vietlott_results.py --cache-states vietlott/data/forecast
 
       - name: Ghi trang
         # Chỉ nhánh mặc định ghi; lượt chạy trên nhánh khác là chạy thử.
@@ -115,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           # Trang, URL tài nguyên và manifest phải thuộc cùng ảnh chụp trong git.
-          python3 src/site_assets.py --refresh docs --check
+          python3 src/web/site_assets.py --refresh docs --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/*.html docs/assets
@@ -126,7 +126,7 @@ jobs:
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
         if: github.ref_name == github.event.repository.default_branch
-        run: python3 src/site_assets.py --refresh docs --check
+        run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages
         if: github.ref_name == github.event.repository.default_branch

@@ -14,11 +14,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import build_model_quality as page
-import model_quality as mq
-from ensemble_components import BLEND_POLICY, BLEND_POLICY_COLUMN
-from ensemble_utils import anchor_loto_level
-from xsmb_domain import LOTO_BASELINE_RATE
+from pages import build_model_quality as page
+from evaluation import model_quality as mq
+from ensemble.ensemble_components import BLEND_POLICY, BLEND_POLICY_COLUMN
+from ensemble.ensemble_utils import anchor_loto_level
+from core.xsmb_domain import LOTO_BASELINE_RATE
 
 ROOT = Path(__file__).resolve().parents[1]
 

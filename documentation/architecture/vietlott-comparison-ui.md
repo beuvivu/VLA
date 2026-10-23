@@ -1,13 +1,13 @@
 # Vietlott: giao diện và đối chiếu bộ số
 
 Trang kết quả dùng HTML/CSS/JavaScript native, cùng font và theme của site.
-Nguồn dựng là `src/build_vietlott_results.py`; CSS ở
+Nguồn dựng là `src/pages/build_vietlott_results.py`; CSS ở
 `src/templates/vietlott_main.css`; logic nhập số ở
 `src/assets/vietlott-comparison.js`. Tám trang được sinh vào `docs/`.
 
 ## Tùy chỉnh màu và chuyển động
 
-Màu bóng số lấy từ token chung ở `src/ui_theme.py`. CSS riêng thêm gradient
+Màu bóng số lấy từ token chung ở `src/web/ui_theme.py`. CSS riêng thêm gradient
 và bóng nhẹ, giữ màu chữ tương phản trong cả hai theme.
 
 | Loại bóng | Token | Nền / chữ sáng | Nền / chữ tối |
@@ -89,7 +89,7 @@ Mức giải đọc từ engine, không suy từ phần trăm.
 ## Dựng lại
 
 ```bash
-PYTHONPATH=src python src/build_vietlott_results.py \
+PYTHONPATH=src python src/pages/build_vietlott_results.py \
   --cache-states vietlott/data/forecast
 ```
 

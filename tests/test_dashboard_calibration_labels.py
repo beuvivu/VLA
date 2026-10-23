@@ -4,7 +4,7 @@ import json
 
 from bs4 import BeautifulSoup
 
-from build_dashboard import main
+from pages.build_dashboard import main
 
 
 def test_calibration_selection_is_localized_without_changing_raw_evidence(tmp_path, monkeypatch):

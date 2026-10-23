@@ -22,7 +22,7 @@ kiểm ấy đã được thử đột biến: trả mã về bản cũ thì ph�
 | A11 | LOW | CSP của 49 trang | `script-src 'unsafe-inline'`; `connect-src` mở `*.workers.dev`, `*.deno.dev`. | Một lỗ chèn HTML sẽ thành chạy script; kênh gửi dữ liệu đi rộng. Hiện giảm thiểu nhờ luật cấm DOM sink. | Đề xuất |
 | A12 | LOW | `worker` route `/api/v1/traditional-results` | Không trang nào của site gọi endpoint này (tài liệu kiến trúc giữ nó cho bên gọi khác). | Bề mặt tấn công. | Giữ route; rủi ro khuếch đại của nó đã khép ở A1 |
 | A13 | LOW | `.github/workflows/dashboard-refresh.yml` | Một lần `git push`, không thử lại. | Đụng push của workflow khác thì lượt chạy đỏ (không mất dữ liệu). | Đề xuất |
-| A14 | LOW | `src/lottery_codes.py:76` | ruff B023 (closure bắt biến vòng lặp). Báo nhầm, vì `map` chạy ngay trong vòng lặp, nhưng làm bẩn lint. | — | Đã sửa (ràng tham số mặc định) |
+| A14 | LOW | `src/core/lottery_codes.py:76` | ruff B023 (closure bắt biến vòng lặp). Báo nhầm, vì `map` chạy ngay trong vòng lặp, nhưng làm bẩn lint. | — | Đã sửa (ràng tham số mặc định) |
 
 Không có lỗi mức CRITICAL.
 
@@ -261,7 +261,7 @@ nhận `signal`.
 
 ### A6 — Ghi sổ cái không nguyên tử (MEDIUM)
 
-Mô-đun mới `src/atomic_io.py` (`atomic_write_bytes`, `atomic_write_text`, `atomic_to_csv`)
+Mô-đun mới `src/core/atomic_io.py` (`atomic_write_bytes`, `atomic_write_text`, `atomic_to_csv`)
 ghi ra tệp tạm cạnh đích, `fsync`, rồi `os.replace`. Bốn sổ chuyển sang dùng nó;
 `online_learning.py` bỏ bản chép riêng để dùng chung (DRY).
 

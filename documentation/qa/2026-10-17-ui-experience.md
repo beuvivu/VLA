@@ -11,7 +11,7 @@
 | Soi cầu/phôi tuần | `check_bridge_workspace_browser.py`: 72 trường hợp, 0 lỗi |
 | Dashboard | `check_dashboard_browser.py`: 28 trạng thái bố cục, đạt |
 | Lịch năm mới | 320/390/768/1440 px × sáng/tối: 8 trạng thái; chọn tháng, đủ 12 tháng, lọc, xóa lọc, bộ đếm, cột ngày dính và tương phản đạt |
-| Gói tài nguyên | `python src/site_assets.py --root docs --check`: đạt; CSS workspace trên các trang xuất bản khớp source |
+| Gói tài nguyên | `python src/web/site_assets.py --root docs --check`: đạt; CSS workspace trên các trang xuất bản khớp source |
 
 Lượt Python toàn kho: **3.799 đạt, 1 bỏ qua, 1 guard CSS báo sai** trong
 503,70 giây. Sau khi sửa guard, chạy lại toàn bộ `test_ui_design_system.py`:

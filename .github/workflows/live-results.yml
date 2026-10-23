@@ -137,7 +137,7 @@ jobs:
           export LIVE_PATH="$live_path"
           trap 'rm -f "$live_path"' EXIT
           while true; do
-            python src/live_sync.py --out "$live_path" --min-agreement 1
+            python src/ingest/live_sync.py --out "$live_path" --min-agreement 1
 
             # Ignore checked_at timestamps when deciding whether the user-visible
             # payload changed, so we do not create needless force-pushes.

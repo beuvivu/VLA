@@ -9,11 +9,11 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 
-from calendar_alignment import consecutive_next_pairs
-from ensemble_utils import finalize_blend
-from ml_train import model_trust
-from online_learning import _posterior, _prob, proper_losses
-from xsmb_domain import baseline_rate
+from core.calendar_alignment import consecutive_next_pairs
+from ensemble.ensemble_utils import finalize_blend
+from ml.ml_train import model_trust
+from forecast.online_learning import _posterior, _prob, proper_losses
+from core.xsmb_domain import baseline_rate
 
 from .knowledge import KnowledgeBaseManager
 

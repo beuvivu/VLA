@@ -18,9 +18,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import run_bridge_scan
-from run_daily_prediction import _research_evidence
-from xsmb_domain import FIELD_WIDTHS
+from bridges import run_bridge_scan
+from modeling.run_daily_prediction import _research_evidence
+from core.xsmb_domain import FIELD_WIDTHS
 
 
 def _tiny_raw(days: int = 400, seed: int = 5) -> pd.DataFrame:

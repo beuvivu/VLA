@@ -129,8 +129,8 @@ cd worker && npx wrangler tail
 
 ## 5. Chống trôi lệch giữa hai bản mã
 
-Worker chạy JavaScript nên không dùng lại được `src/sources.py` và
-`src/live_sync.py`. Hai bản cùng một logic là nợ kỹ thuật thật: lệch ở đây
+Worker chạy JavaScript nên không dùng lại được `src/ingest/sources.py` và
+`src/ingest/live_sync.py`. Hai bản cùng một logic là nợ kỹ thuật thật: lệch ở đây
 nghĩa là **trang live hiện một dãy số khác với dãy ghi vào lịch sử** — kiểu
 sai không bao giờ nổ, chỉ âm thầm mâu thuẫn.
 
@@ -201,9 +201,9 @@ thống đứng im vĩnh viễn sau đúng một ngày thành công.
 | Dự phòng | `F2` | `G3` | `www.minhngoc.net.vn` |
 
 Danh sách nằm ở **một chỗ duy nhất**: `PRIMARY_SOURCE_NAMES` và
-`FALLBACK_SOURCE_NAMES` trong `src/sources.py`. Bản JS
+`FALLBACK_SOURCE_NAMES` trong `src/ingest/sources.py`. Bản JS
 (`worker/src/sources.js`) bị `tests/test_worker_sources_parity.py` buộc khớp
-từng mục, và `src/reconcile_live_canonical.py` nhập lại thay vì chép.
+từng mục, và `src/ingest/reconcile_live_canonical.py` nhập lại thay vì chép.
 
 Năm nguồn đã nghỉ, đo trên runner Actions ngày 12/13-10-2026 bằng
 `scripts/ops/diagnose_live_sources.py` (workflow `diagnose-live-sources.yml`):

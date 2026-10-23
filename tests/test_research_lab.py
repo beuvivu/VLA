@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from descriptive_extensions import build_head_table, build_number_recency
-from number_reference import (
+from stats.descriptive_extensions import build_head_table, build_number_recency
+from core.number_reference import (
     BONG,
     all_bo,
     bo,
@@ -16,9 +16,9 @@ from number_reference import (
     normalize_two_digit,
     reverse,
 )
-from research_diagnostics import bh_fdr, build_report
-from research_firewall import evaluate_mode
-from strategy_lab import evaluate_lab, registry
+from research.research_diagnostics import bh_fdr, build_report
+from research.research_firewall import evaluate_mode
+from research.strategy_lab import evaluate_lab, registry
 
 
 def _synthetic(days: int = 420, seed: int = 7) -> tuple[pd.DataFrame, pd.DataFrame]:

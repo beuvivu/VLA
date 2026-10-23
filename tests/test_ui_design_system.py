@@ -15,7 +15,7 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-from ui_theme import (
+from web.ui_theme import (
     ALIGN_CENTER,
     WCAG_AA_NORMAL,
     ALIGN_LEFT,
@@ -31,7 +31,7 @@ from ui_theme import (
     tailwind_style_tag,
 )
 
-import build_landing_page as blp
+from pages import build_landing_page as blp
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -254,14 +254,14 @@ def test_generated_dashboard_pages_use_the_shared_shell_and_grid(tmp_path: Path)
     # pytest là cây làm việc bẩn, và bẩn theo dạng "ngược pha" vì chuỗi builder
     # đầy đủ cho ra HTML khác với một builder chạy lẻ.
     subprocess.run(
-        [sys.executable, "src/build_dashboard.py", "--docs-dir", str(tmp_path)],
+        [sys.executable, "src/pages/build_dashboard.py", "--docs-dir", str(tmp_path)],
         cwd=ROOT,
         check=True,
     )
     # Trang Chất lượng mô hình đã tách sang builder riêng. Nó chỉ ĐỌC báo cáo
     # chẩn đoán sẵn có trong data/ và ghi vào thư mục tạm, nên không làm bẩn kho.
     subprocess.run(
-        [sys.executable, "src/build_model_quality.py", "--docs-dir", str(tmp_path)],
+        [sys.executable, "src/pages/build_model_quality.py", "--docs-dir", str(tmp_path)],
         cwd=ROOT,
         check=True,
     )
@@ -309,7 +309,7 @@ def test_path_ui_template_does_not_apply_light_classes_to_dark_page() -> None:
 
 def test_statistics_matrix_fits_ten_tail_columns_in_a_half_width_card() -> None:
     """Ngưỡng cũ 660px rộng hơn card nên cột ĐUÔI 9 bị đẩy khỏi vùng nhìn."""
-    source = (ROOT / "src/build_statistics_dashboard.py").read_text(
+    source = (ROOT / "src/pages/build_statistics_dashboard.py").read_text(
         encoding="utf-8"
     )
     assert "grid-template-columns: 40px repeat(10, minmax(38px, 1fr));" in source
@@ -321,7 +321,7 @@ def test_statistics_section_nav_wraps_instead_of_hiding_links() -> None:
     """Cuộn ngang khiến các mục nav cuối bị ẩn khỏi tầm nhìn."""
     # Cùng lý do như test_landing_grid_items_...: đòi quy tắc, không đòi cách
     # mã hoá. Dấu ngoặc viết đôi chỉ đúng khi CSS còn nằm trong f-string.
-    import build_statistics_dashboard as bsd
+    from pages import build_statistics_dashboard as bsd
 
     source = bsd._DASHBOARD_CSS
     nav = source[source.index(".sticky-nav {") : source.index(".sticky-nav a {")]
@@ -331,7 +331,7 @@ def test_statistics_section_nav_wraps_instead_of_hiding_links() -> None:
 
 def test_landing_grid_items_can_shrink_below_their_content_width() -> None:
     """Grid item mặc định min-width:auto làm ma trận 430px đẩy tràn trang."""
-    source = (ROOT / "src/build_landing_page.py").read_text(encoding="utf-8")
+    source = (ROOT / "src/pages/build_landing_page.py").read_text(encoding="utf-8")
     # Đòi đúng quy tắc CSS, không đòi cách nó được MÃ HOÁ. Bản trước ghim chuỗi
     # ".result-combo > * {{ min-width: 0; }}" với dấu ngoặc viết đôi — đúng chỉ
     # khi khối CSS còn nằm trong f-string. Khi CSS được trích ra hằng số
@@ -374,9 +374,9 @@ def test_published_path_pages_do_not_ship_light_theme_classes() -> None:
 #
 # Ba chủ thể tạo kiểu độc lập nhau cùng tồn tại trong kho:
 #
-#   src/ui_theme.py                  -> docs/assets/ui.css -> 28 trang
-#   src/build_landing_page.py        -> :root riêng         -> trang chủ
-#   src/build_statistics_dashboard.py-> CSS nội tuyến riêng  -> 1 trang
+#   src/web/ui_theme.py                  -> docs/assets/ui.css -> 28 trang
+#   src/pages/build_landing_page.py        -> :root riêng         -> trang chủ
+#   src/pages/build_statistics_dashboard.py-> CSS nội tuyến riêng  -> 1 trang
 #
 # Một lần đổi giao diện chỉ chạm vào chủ thể thứ ba đã xảy ra rồi: trang
 # statistics đổi hẳn sang nền periwinkle, còn trang chủ — trang người dùng
@@ -413,12 +413,12 @@ def test_every_style_owner_declares_the_same_page_ground() -> None:
     assert f"--ui-bg:{PAGE_GROUND[0]}" in shared.replace(" ", "")
     assert f"--ui-bg-2:{PAGE_GROUND[1]}" in shared.replace(" ", "")
 
-    landing = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    landing = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     landing_root = _light_root(landing)
     assert "--bg:var(--ui-bg)" in landing_root.replace(" ", "")
     assert "--bg-2:var(--ui-bg-2)" in landing_root.replace(" ", "")
 
-    stats = (ROOT / "src" / "build_statistics_dashboard.py").read_text(encoding="utf-8")
+    stats = (ROOT / "src" / "pages" / "build_statistics_dashboard.py").read_text(encoding="utf-8")
     stats_root = _light_root(stats)
     assert "--bg:var(--ui-bg)" in stats_root.replace(" ", "")
     assert "--bg-2:var(--ui-bg-2)" in stats_root.replace(" ", "")
@@ -432,7 +432,7 @@ def test_brand_ramp_is_identical_wherever_it_is_declared() -> None:
     khả năng một chặng chưa ai đo lọt vào trang.
     """
     for name in ("build_landing_page.py", "build_statistics_dashboard.py"):
-        source = (ROOT / "src" / name).read_text(encoding="utf-8")
+        source = (ROOT / "src" / "pages" / name).read_text(encoding="utf-8")
         ramps = re.findall(
             r"(?<!repeating-)linear-gradient\(135deg,\s*(#[0-9A-Fa-f]{6})[^)]*?(#[0-9A-Fa-f]{6})"
             r"[^)]*?(#[0-9A-Fa-f]{6})\s*100%\)",
@@ -653,7 +653,7 @@ def test_matrix_columns_always_have_a_ceiling_of_one_fr() -> None:
     ``minmax(<sàn>, 1fr)`` giữ nguyên hành vi cuộn khi khung chật (nhờ
     ``min-width`` trên chính lưới) và cho cột giãn lấp đầy khi khung rộng.
     """
-    source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     tracks = re.findall(r"grid-template-columns:\s*\d+px\s+repeat\(10,\s*([^)]+)\)", source)
     assert tracks, "không tìm thấy khai báo cột ma trận nào"
     fixed = [t for t in tracks if "1fr" not in t]
@@ -713,7 +713,7 @@ def test_one_measure_uses_one_hue_across_its_time_windows() -> None:
     Chúng từng mang bốn sắc — lam, lục, cam, tím — nên trông như bốn loại dữ
     liệu. Hai ma trận tần suất Đặc Biệt cũng mắc đúng lỗi đó ở quy mô nhỏ hơn.
     """
-    source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
 
     groups = {
         "tần suất LOTO": [

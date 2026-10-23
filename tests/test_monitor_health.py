@@ -1,7 +1,7 @@
 from datetime import datetime, time as dtime
 from zoneinfo import ZoneInfo
 
-from monitor_health import expected_latest_draw_date
+from evaluation.monitor_health import expected_latest_draw_date
 
 
 def test_expected_latest_draw_is_yesterday_before_cutoff() -> None:

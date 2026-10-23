@@ -14,7 +14,7 @@ Kiến trúc hiện tại **không còn là nhiều hệ CSS độc lập**. M�
 bản trong `docs/` phải nạp cùng một nền từ:
 
 ```
-src/ui_theme.py -> docs/assets/ui.css
+src/web/ui_theme.py -> docs/assets/ui.css
 ```
 
 Tại thời điểm chốt 15-09-2026, nền này được nạp trên toàn bộ **29 trang HTML**
@@ -26,10 +26,10 @@ overlay chỉ được bổ sung lên shared base, không được thay thế n�
 
 | Lớp | Phủ | Vai trò |
 |---|---|---|
-| `src/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dark mode |
-| `src/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
+| `src/web/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dark mode |
+| `src/pages/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
 | `src/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
-| `src/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
+| `src/pages/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
 | CSS nội tuyến của `live.html` | `live.html` | màu theo token dùng chung; base từ `ui.css`, khung từ `app_shell` |
 
 `live.html` là ngoại lệ duy nhất còn được lưu như trang viết tay; hàm

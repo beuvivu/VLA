@@ -21,7 +21,7 @@ workflow thất bại sau khi dữ liệu đã sẵn sàng.
 
 ## Fix
 
-- Centralize clock policy in `src/time_policy.py` (UTC+7, cutoff 18:35).
+- Centralize clock policy in `src/core/time_policy.py` (UTC+7, cutoff 18:35).
 - Start live at 18:00 VN, poll 15 seconds for up to 60 minutes.
 - Dispatch daily with `reason=live_verified`; add watchdog recovery windows.
 - Align dashboard assertions and documentation with Vietnamese labels.

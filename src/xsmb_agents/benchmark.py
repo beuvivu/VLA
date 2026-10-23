@@ -7,9 +7,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import online_learning as online
-from time_policy import VIETNAM_TZ
-from xsmb_domain import baseline_rate
+from forecast import online_learning as online
+from core.time_policy import VIETNAM_TZ
+from core.xsmb_domain import baseline_rate
 
 from .algorithms import AlgorithmEnsemble
 from .knowledge import KnowledgeBaseManager

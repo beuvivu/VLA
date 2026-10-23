@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
-from build_regional_results import render
+from pages.build_regional_results import render
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,7 +67,7 @@ def test_regional_pages_offer_every_saved_date_and_station_in_the_filters():
 
 def test_regional_pages_never_name_where_the_data_comes_from():
     """Luật riêng tư của kho: không vẽ danh tính nguồn dữ liệu ra trình duyệt."""
-    from sources import REGIONAL_SOURCE_NAMES
+    from ingest.sources import REGIONAL_SOURCE_NAMES
 
     row = {"date": "2026-10-05", "province": "Cà Mau", "prize": "ĐB", "value": "030118"}
     for region in ("mt", "mn"):
@@ -207,7 +207,7 @@ def test_a4_pdf_keeps_every_full_result_from_all_four_stations(tmp_path: Path) -
     """Giữ min-width/overflow của màn hình khi in sẽ cắt số ở đài cuối."""
     playwright = pytest.importorskip("playwright.sync_api")
     fitz = pytest.importorskip("fitz")
-    from page_output import write_page
+    from web.page_output import write_page
 
     with (ROOT / "data/regions/xsmn.csv").open(encoding="utf-8", newline="") as handle:
         rows = [row for row in csv.DictReader(handle) if row["date"] == "2026-10-03"]

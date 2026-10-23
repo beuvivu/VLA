@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 
-from build_traditional_results import embedded_payload, render_page
+from pages.build_traditional_results import embedded_payload, render_page
 
 
 ENCODED = "2026-09-26" + "00001" + "00000" + "0000200003" + "00004" * 6 + "0005" * 4 + "0006" * 6 + "007" * 3 + "08" * 4
@@ -19,7 +19,7 @@ def test_the_traditional_page_has_all_27_prizes_before_javascript() -> None:
 
 
 def test_the_home_board_has_complete_prizes_and_no_extra_loto_strip() -> None:
-    from shared_results import decode_row, render_result_board
+    from web.shared_results import decode_row, render_result_board
 
     draw = decode_row(ENCODED, metadata={"station": "Nam Định", "special_codes": ["1AB", "2CD"]})
     soup = BeautifulSoup(render_result_board(draw), "html.parser")
@@ -32,7 +32,7 @@ def test_the_home_board_has_complete_prizes_and_no_extra_loto_strip() -> None:
 
 
 def test_metadata_never_leaks_between_draw_dates_or_becomes_markup() -> None:
-    from shared_results import decode_row, render_result_board
+    from web.shared_results import decode_row, render_result_board
 
     draw = decode_row(ENCODED, metadata={"date": "2026-09-25", "station": "Hà Nội", "special_codes": ["1AB"]})
     soup = BeautifulSoup(render_result_board(draw), "html.parser")

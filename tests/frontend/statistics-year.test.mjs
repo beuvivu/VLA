@@ -9,7 +9,7 @@ function calendar(mobile = false) {
 import json, sys
 sys.path.insert(0, 'src')
 import pandas as pd
-import build_statistics_dashboard as d
+from pages import build_statistics_dashboard as d
 assert hasattr(d, '_DASHBOARD_SCRIPT_YEAR'), 'Thiếu điều khiển lịch năm'
 raw = pd.DataFrame({'date': ['2024-02-29', '2024-03-01', '2026-01-01'], 'special': ['04789', '00001', '']})
 print(json.dumps({'markup': d._board_year_table(raw), 'script': d._DASHBOARD_SCRIPT_YEAR}))

@@ -15,11 +15,11 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-import evidence_catalog
-from evidence_catalog import covered_pages, ml_row_evidence, registry, registry_json, tag_rows, values_block
-from page_output import _attach_evidence
+from web import evidence_catalog
+from web.evidence_catalog import covered_pages, ml_row_evidence, registry, registry_json, tag_rows, values_block
+from web.page_output import _attach_evidence
 from test_shipped_pages_are_clean import LEAK_TOKENS
-from ui_theme import SITE_NAV, SITE_SEARCH_EXTRAS
+from web.ui_theme import SITE_NAV, SITE_SEARCH_EXTRAS
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = sorted((ROOT / "docs").glob("*.html"))
@@ -162,7 +162,7 @@ def test_published_ml_pages_tag_every_row_with_its_evidence() -> None:
 
 def test_ml_evidence_flags_files_made_under_the_old_trust_policy() -> None:
     """Tệp tạo trước luật mới không được trình bày như luật hiện hành."""
-    from ml_train import TRUST_POLICY_VERSION
+    from ml.ml_train import TRUST_POLICY_VERSION
 
     # Không ghi phiên bản: không được khẳng định luật cũ (review PR #113) —
     # trust 0 hay 0,001 thì luật cũ có sàn 0,35 không thể sinh ra.

@@ -1,4 +1,4 @@
-// Bản JS của `src/sources.py::extract_partial_prize_map`.
+// Bản JS của `src/ingest/sources.py::extract_partial_prize_map`.
 //
 // VÌ SAO CÓ BẢN THỨ HAI
 // =====================

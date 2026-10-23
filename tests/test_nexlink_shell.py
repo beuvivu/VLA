@@ -14,7 +14,7 @@ RAIL = ['home', 'tags', 'chart', 'clipboard', 'crown', 'layers', 'robot', 'code'
 
 
 def test_reference_vectors_are_preserved_in_the_rendered_shell():
-    from nexlink_icons import nexlink_icon
+    from web.nexlink_icons import nexlink_icon
     manifest = json.loads((ASSETS / 'provenance.json').read_text())
     assert manifest['source'] == 'https://nexlink.layoutdrop.com/demo/index.html'
     # These hashes were recorded directly from the reference, before implementation.
@@ -36,7 +36,7 @@ def test_reference_vectors_are_preserved_in_the_rendered_shell():
 
 
 def test_rail_follows_the_reader_workflow_and_keeps_utilities_separate():
-    from app_shell import rail_html
+    from web.app_shell import rail_html
     soup = BeautifulSoup(rail_html('index.html'), 'html.parser')
     assert [n['data-nexlink-icon'] for n in soup.select('.app-rail svg')] == RAIL
     assert len(soup.select('.app-rail-divider')) == 3
@@ -49,7 +49,7 @@ def test_rail_follows_the_reader_workflow_and_keeps_utilities_separate():
 
 def test_submenus_separate_statistics_bridges_and_forecasts():
     """Trang tần suất không lẫn vào soi cầu; xếp hạng kỳ sau ở nhóm dự báo."""
-    from app_shell import panel_html
+    from web.app_shell import panel_html
 
     for page, group, section in [
         ('cau-giai-dac-biet.html', 'Thống kê Đặc Biệt', 'Tần suất & chu kỳ'),
@@ -70,7 +70,7 @@ def test_submenus_separate_statistics_bridges_and_forecasts():
 
 
 def test_header_has_the_reference_controls_and_real_dropdown_links():
-    from app_shell import header_html
+    from web.app_shell import header_html
     soup = BeautifulSoup(header_html('index.html'), 'html.parser')
     assert [n['data-nexlink-icon'] for n in soup.select('.app-header-inner > .app-toggle svg')] == ['chevrons']
     assert [n['data-nexlink-icon'] for n in soup.select('#app-theme svg')] == ['sun', 'moon']

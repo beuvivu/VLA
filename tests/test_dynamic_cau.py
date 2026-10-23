@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from dynamic_cau import (
+from soi_cau.dynamic_cau import (
     NormalizedDraw,
     PatternSpec,
     PositionRef,

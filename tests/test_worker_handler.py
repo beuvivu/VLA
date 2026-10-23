@@ -37,7 +37,7 @@ def _primary_round_fetches() -> int:
     """
     from datetime import date
 
-    from sources import primary_sources
+    from ingest.sources import primary_sources
 
     return sum(len(s.live_urls(date(2026, 9, 5))) for s in primary_sources())
 

@@ -219,7 +219,7 @@ jobs:
               subprocess.run(
                   [
                       sys.executable,
-                      "src/sync.py",
+                      "src/ingest/sync.py",
                       "--cutoff", cutoff,
                       "--fill-missing-days-back", "14",
                       "--max-retries", "1",
@@ -317,17 +317,17 @@ jobs:
         # kỳ vừa quay, và bảng mô phỏng chèn vào trang chủ nên chạy SAU trang chủ.
         run: |
           set -euo pipefail
-          python src/position_bridges.py
-          python src/build_position_bridges.py
-          python src/build_landing_page.py
-          python src/build_fun_prediction.py
-          python src/build_traditional_results.py
+          python src/soi_cau/position_bridges.py
+          python src/pages/build_position_bridges.py
+          python src/pages/build_landing_page.py
+          python src/pages/build_fun_prediction.py
+          python src/pages/build_traditional_results.py
 
       - name: Cấu hình GitHub Pages
         uses: actions/configure-pages@v6
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
-        run: python3 src/site_assets.py --refresh docs --check
+        run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Tải artifact GitHub Pages lên
         uses: actions/upload-pages-artifact@v5
@@ -393,7 +393,7 @@ jobs:
 
       - name: Xác minh kỳ quay chuẩn mới nhất và tính liên tục
         run: |
-          python src/monitor_health.py \
+          python src/evaluation/monitor_health.py \
             --health data/health.json \
             --cutoff 18:35 \
             --cutoff-aware \
@@ -513,6 +513,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
     steps:
       - name: Lấy commit dữ liệu mới tạo gần nhất
         uses: actions/checkout@v7
@@ -523,7 +525,7 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
-        run: python3 src/site_assets.py --refresh docs --check
+        run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Tải artifact GitHub Pages lên
         uses: actions/upload-pages-artifact@v5
@@ -582,6 +584,6 @@ jobs:
       # Chấm xác suất ĐÃ CÔNG BỐ với kết quả quay thật trên 60 kỳ gần nhất. Kỳ
       # quay đã kiểm là ngẫu nhiên, nên kỹ năng ngoài mẫu phải nằm trong vùng 0;
       # rời vùng theo hướng nào cũng làm lượt chạy đỏ — tệ hơn là hồi quy, tốt
-      # hơn thì phải kiểm lại trước khi tin. Xem src/skill_monitor.py.
+      # hơn thì phải kiểm lại trước khi tin. Xem src/evaluation/skill_monitor.py.
       - name: Kỹ năng ngoài mẫu LOTO và Đặc Biệt còn trong vùng 0
-        run: python src/skill_monitor.py
+        run: python src/evaluation/skill_monitor.py

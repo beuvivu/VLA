@@ -15,10 +15,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-import sync
-from dtos import Result
-from lottery import Lottery, RepoPaths
-from time_policy import VIETNAM_TIMEZONE
+from ingest import sync
+from core.dtos import Result
+from ingest.lottery import Lottery, RepoPaths
+from core.time_policy import VIETNAM_TIMEZONE
 
 
 def _result(d: date, *, special: int) -> Result:
@@ -112,7 +112,7 @@ def test_an_ordinary_miss_is_still_retried(setup) -> None:
 
 
 def test_by_default_the_shipped_ledger_is_used() -> None:
-    from calendar_alignment import known_non_draw_days
+    from core.calendar_alignment import known_non_draw_days
 
     assert {"2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19"} <= known_non_draw_days()
 

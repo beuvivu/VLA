@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from scipy.stats import beta
 
-import statistical_signal as ss
+from stats import statistical_signal as ss
 
 
 def _three_days():

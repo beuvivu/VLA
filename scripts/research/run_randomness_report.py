@@ -27,14 +27,14 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from bridges import DigitTensor  # noqa: E402
-from randomness_battery import (  # noqa: E402
+from stats.randomness_battery import (  # noqa: E402
     DEFAULT_SIMULATIONS,
     lag1_mutual_information,
     minimum_detectable_lift,
     run_battery,
     simulate_draws,
 )
-from xsmb_domain import baseline_rate  # noqa: E402
+from core.xsmb_domain import baseline_rate  # noqa: E402
 
 #: Số giả thuyết của các họ đã quét trong kho, dùng cho phân tích công suất.
 HYPOTHESIS_FAMILIES: tuple[tuple[str, int], ...] = (

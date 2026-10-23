@@ -1,7 +1,7 @@
 """Chặn lỗi đã quan sát trên điều hướng đang xuất bản."""
 from bs4 import BeautifulSoup
 import pytest
-from app_shell import header_html, panel_html, wrap_page
+from web.app_shell import header_html, panel_html, wrap_page
 
 
 def test_home_breadcrumb_does_not_use_the_last_anchor_label():

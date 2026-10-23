@@ -40,19 +40,19 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-import cau_keo_ml as ck  # noqa: E402
-from calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from ensemble_utils import (  # noqa: E402
+from ml import cau_keo_ml as ck  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
+from ensemble.ensemble_utils import (  # noqa: E402
     DEFAULT_ENSEMBLE_WEIGHTS,
     clip01,
     finalize_blend,
     floor_distribution,
 )
-from lottery import Lottery  # noqa: E402
-from path_models import PathParams, build_daily_targets  # noqa: E402
-from path_prob import fit_paths, predict_from_fitted_paths_full, prepare_path_history  # noqa: E402
+from ingest.lottery import Lottery  # noqa: E402
+from core.path_models import PathParams, build_daily_targets  # noqa: E402
+from soi_cau.path_prob import fit_paths, predict_from_fitted_paths_full, prepare_path_history  # noqa: E402
 from vla.backtest import evaluator  # noqa: E402
-from xsmb_domain import baseline_rate  # noqa: E402
+from core.xsmb_domain import baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "component_trust.json"
 MODES = ("loto", "de")

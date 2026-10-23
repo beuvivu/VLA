@@ -19,10 +19,11 @@ import pandas as pd
 import pytest
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-import build_docs
-from hierarchical_pooling import random_effects_posterior
-from path_models import PathParams
-from path_prob import (
+from core.paths import TEMPLATES
+from pages import build_docs
+from ensemble.hierarchical_pooling import random_effects_posterior
+from core.path_models import PathParams
+from soi_cau.path_prob import (
     STREAK_BUCKETS,
     PathStats,
     _streak_walk,
@@ -33,7 +34,7 @@ from path_prob import (
     rule_next_probability,
     streak_experience,
 )
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 PARAMS = PathParams(lag_max=3, window_days=300, min_trials=60, min_max_streak=3,
                     min_current_streak=3, top_rules_per_lag=100)
@@ -251,7 +252,7 @@ def test_the_soi_path_page_prints_the_forecast_and_the_experience(tmp_path, fair
     frame["p_next"] = rule_next_probability(frame, kind="active")
     ui = frame.assign(**{"2025-10-27_num": 12, "2025-10-27_hit": 1, "2025-10-27_is_de": 0})
     picks = pd.DataFrame({"number": [12, 34], "prob": [0.2381, 0.2379], "support_paths_count": [3, 2]})
-    env = Environment(loader=FileSystemLoader(str(build_docs.Path(build_docs.__file__).parent / "templates")),
+    env = Environment(loader=FileSystemLoader(str(TEMPLATES)),
                       autoescape=select_autoescape(["html", "xml"]))
     out = tmp_path / "soi-path-loto-active.html"
     build_docs._render_page(
@@ -435,7 +436,7 @@ def test_the_benchmark_identity_covers_every_module_it_runs(tmp_path, monkeypatc
     không ghép hai phần tính bằng hai logic khác nhau.
     """
     bench = _benchmark_script()
-    for rel in ("src/path_prob.py", "src/ensemble_utils.py", "src/xsmb_domain.py",
+    for rel in ("src/soi_cau/path_prob.py", "src/ensemble/ensemble_utils.py", "src/core/xsmb_domain.py",
                 "src/vla/backtest/evaluator.py"):
         path = tmp_path / rel
         path.parent.mkdir(parents=True, exist_ok=True)

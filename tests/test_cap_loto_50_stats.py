@@ -21,8 +21,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-import cap_loto_50_stats  # noqa: E402
-from cap_loto_50_stats import (  # noqa: E402
+from stats import cap_loto_50_stats  # noqa: E402
+from stats.cap_loto_50_stats import (  # noqa: E402
     _current_cau_scores,
     _current_gap,
     _hit_matrices,

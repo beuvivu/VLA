@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from site_assets import check_site, refresh_site
+from web.site_assets import check_site, refresh_site
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -122,7 +122,7 @@ def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path:
     """Dựng vùng phải qua write_page của helper, không tự bọc chồng shell."""
     workflow = yaml.safe_load(_text("regional-results.yml"))
     steps = workflow["jobs"]["sync"]["steps"]
-    step = next(step for step in steps if "src/build_regional_results.py" in step.get("run", ""))
+    step = next(step for step in steps if "src/pages/build_regional_results.py" in step.get("run", ""))
     assert "wrap_page" not in step["run"]
     assert "app_shell" not in step["run"]
 
@@ -139,7 +139,7 @@ def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path:
     )
     assert result.returncode == 0, result.stderr
     assert calls.read_text().splitlines() == [
-        "src/build_regional_results.py", "scripts/ops/refresh_navigation.py"
+        "src/pages/build_regional_results.py", "scripts/ops/refresh_navigation.py"
     ]
 
 
@@ -160,7 +160,7 @@ def test_regional_workflow_commits_html_and_its_refreshed_asset_bundle(tmp_path:
 
     git("config", "user.name", "Fixture")
     git("config", "user.email", "fixture@example.test")
-    infrastructure = {"scripts/ops/push_generated_site.py", "src/site_assets.py"}
+    infrastructure = {"scripts/ops/push_generated_site.py", "src/web/site_assets.py"}
     for relative in infrastructure:
         target = repo / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -395,12 +395,12 @@ def test_every_dock_page_builder_runs_in_the_release_chain() -> None:
     # thích ra — tức là chốt chặn im lặng ngừng hoạt động.
     lines = {line.strip() for line in chain.splitlines()}
     for name in builders:
-        assert f"python src/{name}" in lines, f"{name} không nằm trong chuỗi phát hành"
+        assert f"python src/pages/{name}" in lines, f"{name} không nằm trong chuỗi phát hành"
 
     # Thứ tự quan trọng: build_docs và build_docs_ml cùng ghi docs/index.html,
     # và bản của build_landing_page mới là bản đúng.
-    assert chain.index("python src/build_docs.py") < chain.index(
-        "python src/build_landing_page.py"
+    assert chain.index("python src/pages/build_docs.py") < chain.index(
+        "python src/pages/build_landing_page.py"
     ), "build_docs phải chạy trước build_landing_page, nếu không index.html bị ghi đè sai"
 
 
@@ -422,10 +422,10 @@ def test_builders_let_callers_redirect_their_output() -> None:
         "build_domain_experiment_report.py": "--output",
     }
     for name, flag in required.items():
-        source = (root / "src" / name).read_text(encoding="utf-8")
+        source = (root / "src" / "pages" / name).read_text(encoding="utf-8")
         assert f'"{flag}"' in source, f"{name} thiếu {flag}"
 
-    landing = (root / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    landing = (root / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     assert "docs_dir: Path | None = None" in landing, (
         "build_landing_page phải nhận docs_dir để tách nơi ghi khỏi nơi đọc"
     )
@@ -445,9 +445,9 @@ def test_no_test_builds_into_the_repository_docs_tree() -> None:
         # xuất hiện trong các danh sách kiểm tra chuỗi phát hành, và khớp nó
         # sẽ báo nhầm những dòng chẳng gọi gì cả.
         for builder, flag in (
-            ("src/build_dashboard.py", "--docs-dir"),
-            ("src/build_markdown_dashboard_v3.py", "--output"),
-            ("src/build_domain_experiment_report.py", "--output"),
+            ("src/pages/build_dashboard.py", "--docs-dir"),
+            ("src/pages/build_markdown_dashboard_v3.py", "--output"),
+            ("src/pages/build_domain_experiment_report.py", "--output"),
         ):
             for line_no, line in enumerate(text.splitlines(), 1):
                 if builder not in line:
@@ -597,7 +597,7 @@ def _jobs_running_python() -> list[tuple[str, str, set[Path], set[str]]]:
             )
             # Khớp RỘNG, mọi lần nhắc tới `src/....py`, chứ không chỉ dạng
             # `python src/x.py`: `watchdog.yml` gọi kịch bản qua
-            # `subprocess.run([sys.executable, "src/production_audit.py", ...])`
+            # `subprocess.run([sys.executable, "src/evaluation/production_audit.py", ...])`
             # bên trong một heredoc, và đó chính là việc bị hỏng lâu nhất.
             scripts = {
                 ROOT / rel

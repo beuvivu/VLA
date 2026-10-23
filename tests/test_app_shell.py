@@ -70,7 +70,7 @@ def test_no_published_page_carries_the_shell_twice(page: Path) -> None:
 
 @pytest.mark.parametrize("query", ["?rev=0123456789abcdef", "?rev=old&amp;mode=fast#tail"])
 def test_wrapping_a_versioned_page_keeps_one_shell(query: str) -> None:
-    from app_shell import wrap_page
+    from web.app_shell import wrap_page
 
     original = '<html><head></head><body><p id="business">07</p></body></html>'
     once = wrap_page(original, "index.html")
@@ -88,7 +88,7 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     ``docs/``: nếu một ngày nào đó không trang nào hỏng thì phép kiểm trên
     vẫn xanh dù ``wrap_page`` đã hỏng hẳn. Ở đây trang hỏng được DỰNG RA.
     """
-    from app_shell import wrap_page
+    from web.app_shell import wrap_page
 
     goc = "<html><head></head><body><p>Nội dung thật</p></body></html>"
     mot = wrap_page(goc, "index.html")
@@ -103,7 +103,7 @@ def test_wrapping_a_page_twice_gives_the_same_page() -> None:
     # Dựng đúng hình dạng đã xảy ra: khung LỒNG NHAU, tức lớp ngoài chứa trọn
     # lớp trong. Hai khung cạnh nhau là một hình dạng khác và chưa từng xảy
     # ra — dựng nhầm nó thì phép kiểm đo một thứ không có thật.
-    from app_shell import header_html, panel_html, rail_html
+    from web.app_shell import header_html, panel_html, rail_html
 
     than = mot.split("<body>", 1)[1].rsplit("</body>", 1)[0]
     long_nhau = (
@@ -151,7 +151,7 @@ def test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired(so_lop: int)
     """
     import re
 
-    from app_shell import header_html, panel_html, rail_html, wrap_page
+    from web.app_shell import header_html, panel_html, rail_html, wrap_page
 
     goc = "<html><head></head><body><p>Nội dung thật</p></body></html>"
     than = wrap_page(goc, "live.html").split("<body>", 1)[1].rsplit("</body>", 1)[0]
@@ -181,7 +181,7 @@ def test_a_page_nested_the_way_the_pipeline_nested_live_is_repaired(so_lop: int)
 def test_refreshing_the_live_page_again_and_again_keeps_one_shell(tmp_path: Path) -> None:
     """Chính đường pipeline chạy mỗi lượt: ``refresh_live_page`` trên một
     ``live.html`` viết tay. Trước bản sửa, mỗi lần gọi thêm đúng một lớp."""
-    from ui_theme import refresh_live_page
+    from web.ui_theme import refresh_live_page
 
     trang = tmp_path / "live.html"
     trang.write_text(
@@ -213,7 +213,7 @@ def test_the_rail_has_one_button_per_navigation_group() -> None:
     Ghim vào chính ``SITE_NAV`` chứ không vào một con số viết tay: thêm nhóm
     mà quên dựng nút thì phép kiểm đỏ, và đổi số nhóm không làm nó đỏ oan.
     """
-    from ui_theme import SITE_NAV
+    from web.ui_theme import SITE_NAV
 
     text = (DOCS / "statistics.html").read_text(encoding="utf-8")
     assert text.count('class="app-rail-btn"') == len(SITE_NAV)
@@ -221,7 +221,7 @@ def test_the_rail_has_one_button_per_navigation_group() -> None:
 
 def test_every_navigation_target_is_a_real_page() -> None:
     """Không liên kết chết trong điều hướng."""
-    from ui_theme import SITE_NAV
+    from web.ui_theme import SITE_NAV
 
     thieu = [
         href
@@ -322,7 +322,7 @@ def test_touch_can_reach_every_navigation_link_on_a_phone(trinh_duyet) -> None:
     dải biểu tượng — đúng đường người dùng điện thoại đi — và đòi mọi mục của
     ``SITE_NAV`` đều chạm được.
     """
-    from ui_theme import SITE_NAV
+    from web.ui_theme import SITE_NAV
 
     pg = _mo(trinh_duyet, 390, 844, cam_ung=True)
     pg.goto(f"file://{DOCS / 'statistics.html'}", wait_until="load")

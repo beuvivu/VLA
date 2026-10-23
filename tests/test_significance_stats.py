@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from significance_stats import _bh_fdr
+from stats.significance_stats import _bh_fdr
 
 
 def test_bh_fdr_is_bounded_and_monotone_in_rank() -> None:

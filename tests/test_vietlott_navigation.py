@@ -1,8 +1,8 @@
 """Vietlott có phân hệ riêng, đích thực và thống kê đúng cửa sổ công bố."""
 from bs4 import BeautifulSoup
-from app_shell import rail_html, panel_html
-from ui_theme import SITE_NAV_SECTIONS
-from vietlott_navigation_content import statistics, overview_sections
+from web.app_shell import rail_html, panel_html
+from web.ui_theme import SITE_NAV_SECTIONS
+from pages.vietlott_navigation_content import statistics, overview_sections
 
 
 def test_vietlott_is_independent_and_keeps_every_product():

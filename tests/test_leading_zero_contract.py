@@ -6,8 +6,8 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-from build_docs_ml import _prediction_table
-from build_research_lab import _conditional_table
+from pages.build_docs_ml import _prediction_table
+from pages.build_research_lab import _conditional_table
 
 
 def test_ml_table_restores_codes_after_csv_type_inference():
@@ -28,7 +28,7 @@ def test_research_conditional_restores_code_including_zero():
 
 
 def test_csv_normalization_is_lossless_and_idempotent(tmp_path):
-    from lottery_codes import normalize_csv
+    from core.lottery_codes import normalize_csv
 
     path = tmp_path / "forecast.csv"
     path.write_text('number,number_str,prob,count,note\n0,0,0.123456789012345,3,"a,b"\n3,03,,0,\n')
@@ -45,20 +45,20 @@ def test_csv_normalization_is_lossless_and_idempotent(tmp_path):
 @pytest.mark.parametrize("value,expected", [(0, "00"), (3.0, "03"), ("03", "03"),
                                            (None, ""), (float("nan"), ""), (pd.NA, ""), ("", "")])
 def test_code_formatter_distinguishes_missing_from_zero(value, expected):
-    from lottery_codes import lottery_code
+    from core.lottery_codes import lottery_code
     assert lottery_code(value) == expected
 
 
 @pytest.mark.parametrize("value", [-1, 100, 1.5, True, "-1", "abc", "003", "1e1"])
 def test_code_formatter_rejects_invalid_codes(value):
-    from lottery_codes import lottery_code
+    from core.lottery_codes import lottery_code
     with pytest.raises(ValueError):
         lottery_code(value)
 
 
 def test_csv_prize_widths_and_conditional_tail_are_distinct(tmp_path):
-    from lottery_codes import normalize_csv
-    from excel_export import FIELD_WIDTHS
+    from core.lottery_codes import normalize_csv
+    from core.excel_export import FIELD_WIDTHS
 
     raw = tmp_path / "xsmb.csv"
     raw.write_text(",".join(FIELD_WIDTHS) + "\n" + ",".join("0" for _ in FIELD_WIDTHS) + "\n")
@@ -78,7 +78,7 @@ def test_csv_prize_widths_and_conditional_tail_are_distinct(tmp_path):
 
 
 def test_invalid_csv_is_not_partly_overwritten(tmp_path):
-    from lottery_codes import normalize_csv
+    from core.lottery_codes import normalize_csv
     path = tmp_path / "forecast.csv"
     original = "number,prob\n3,0.1\n-1,0.2\n"
     path.write_text(original)
@@ -88,7 +88,7 @@ def test_invalid_csv_is_not_partly_overwritten(tmp_path):
 
 
 def test_csv_writer_preserves_internal_types_and_metrics(tmp_path):
-    from lottery_codes import write_code_csv
+    from core.lottery_codes import write_code_csv
     frame = pd.DataFrame({"number": [0, 3], "prob": [.0123456789012345, .2], "count": [3, 0]})
     original = frame.copy(deep=True)
     path = tmp_path / "prediction.csv"
@@ -102,7 +102,7 @@ def test_csv_writer_preserves_internal_types_and_metrics(tmp_path):
 
 
 def test_dashboard_formats_csv_codes_without_padding_rank(tmp_path, monkeypatch):
-    import build_dashboard
+    from pages import build_dashboard
     monkeypatch.chdir(tmp_path)
     pred = tmp_path / "data" / "predict"
     pred.mkdir(parents=True)
@@ -118,8 +118,8 @@ def test_dashboard_formats_csv_codes_without_padding_rank(tmp_path, monkeypatch)
 
 def test_dump_preserves_csv_widths_and_numeric_model_contract(tmp_path, monkeypatch):
     import json
-    import lottery
-    from excel_export import FIELD_WIDTHS
+    from ingest import lottery
+    from core.excel_export import FIELD_WIDTHS
     paths = lottery.RepoPaths(tmp_path, tmp_path / "data", tmp_path / "images")
     paths.data_dir.mkdir()
     raw = {"date": "2026-10-07", **dict.fromkeys(FIELD_WIDTHS, 3)}
@@ -146,15 +146,15 @@ def test_pipeline_formats_exports_as_a_hard_gate(monkeypatch, skip_docs):
     monkeypatch.setattr(pipeline, "_run", lambda cmd, **kw: calls.append((cmd[1], kw)))
     pipeline.main()
     names = [name for name, _ in calls]
-    idx = names.index("src/lottery_codes.py")
+    idx = names.index("src/core/lottery_codes.py")
     assert calls[idx][1]["allow_fail"] is False
-    assert names.index("src/online_learning.py") < idx
+    assert names.index("src/forecast/online_learning.py") < idx
     if not skip_docs:
-        assert idx < names.index("src/build_docs.py")
+        assert idx < names.index("src/pages/build_docs.py")
 
 
 def _slow_code_column(series, width):
-    from lottery_codes import lottery_code
+    from core.lottery_codes import lottery_code
     return series.map(lambda value: lottery_code(value, width))
 
 
@@ -168,7 +168,7 @@ def _slow_code_column(series, width):
 ])
 def test_cached_code_column_equals_the_per_cell_formatter(column):
     """Định dạng một lần cho mỗi giá trị khác nhau phải ra ĐÚNG từng ô như gọi từng ô."""
-    from lottery_codes import code_column
+    from core.lottery_codes import code_column
     for width in (2, 3):
         fast = code_column(column, width)
         assert fast.tolist() == _slow_code_column(column, width).tolist()
@@ -184,7 +184,7 @@ def test_cached_code_column_equals_the_per_cell_formatter(column):
     pd.Series(["03", "003"], dtype=object),
 ])
 def test_cached_code_column_rejects_what_the_formatter_rejects(column):
-    from lottery_codes import code_column
+    from core.lottery_codes import code_column
     with pytest.raises(ValueError):
         _slow_code_column(column, 2)
     with pytest.raises(ValueError):

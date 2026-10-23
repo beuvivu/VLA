@@ -18,8 +18,8 @@ from pathlib import Path
 
 import pytest
 
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, SourceObservation, primary_has_failed
-from time_policy import VIETNAM_TZ
+from ingest.sources import EXPECTED_COUNTS, PRIZE_ORDER, SourceObservation, primary_has_failed
+from core.time_policy import VIETNAM_TZ
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "worker" / "test" / "run_failover.mjs"

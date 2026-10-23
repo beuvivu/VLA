@@ -52,11 +52,11 @@ Tháng 12-2025 → 08-2026: dòng không gắn nhãn nguồn. Tháng 09 → 10-2
 
 Khi so với trước đây, mô hình hiện tại TỐT hơn hẳn, không tệ hơn. Hai tháng đầu tệ vì
 `p_active`/`p_stable` ghi ở thang "gần 1,0 cho mọi con" (tổng ≈ 100). Lỗi được chặn ở
-`src/ensemble_components.py:86` (`loto_marginal_sum_is_plausible`; docstring ghi 212/231 kỳ bị ảnh hưởng).
+`src/ensemble/ensemble_components.py:86` (`loto_marginal_sum_is_plausible`; docstring ghi 212/231 kỳ bị ảnh hưởng).
 
 ### 1.2 "Brier Đặc Biệt tăng gấp 100" là đổi đơn vị
 
-`src/ensemble_utils.py:308` (`categorical_brier`, commit 1f4f537c, 05-09-2026) đổi Brier đa lớp từ
+`src/ensemble/ensemble_utils.py:308` (`categorical_brier`, commit 1f4f537c, 05-09-2026) đổi Brier đa lớp từ
 TRUNG BÌNH sang TỔNG trên 100 lớp. Đây là định nghĩa chuẩn và bản sửa ấy đúng. Nhưng sổ ghi
 `data/prob_eval/ensemble_history.csv` giữ nguyên các dòng cũ, nên cột `brier` của Đặc Biệt lẫn hai
 thang: 0,0099 đến 03-09 và 0,99 từ 04-09. Ai đọc thẳng tệp ấy sẽ thấy sai số "tăng gấp 100".
@@ -70,7 +70,7 @@ không viết lại lịch sử.
 
 | Giả thuyết | Kết luận | Bằng chứng |
 |---|---|---|
-| Quá khớp trên nhiễu | Có, nhưng nhỏ và đã bị chặn | ML production (`src/ml_train.py`) dùng cây nông (độ sâu 2–3), dừng sớm, chọn cấu hình trên khối riêng, rồi co về tỉ lệ nền. Mức co từng có SÀN: `model_trust` không xuống dưới 0,35, nên ngay cả khi không có kỹ năng, 35% xác suất vẫn đến từ mô hình thô (đã bỏ ngày 03-10-2026, mục 5.2). Đo walk-forward: ML production LOTO kém hằng số z = −1,30 (không có ý nghĩa thống kê). Đặc Biệt: z = +0,37. Tầng xếp chồng từng làm nhọn xác suất (a = 4,89 ngày 25-09) và đã bị chặn bởi cổng phải thắng cả dự báo hằng số (`meta_predictor.quality_gate`). |
+| Quá khớp trên nhiễu | Có, nhưng nhỏ và đã bị chặn | ML production (`src/ml/ml_train.py`) dùng cây nông (độ sâu 2–3), dừng sớm, chọn cấu hình trên khối riêng, rồi co về tỉ lệ nền. Mức co từng có SÀN: `model_trust` không xuống dưới 0,35, nên ngay cả khi không có kỹ năng, 35% xác suất vẫn đến từ mô hình thô (đã bỏ ngày 03-10-2026, mục 5.2). Đo walk-forward: ML production LOTO kém hằng số z = −1,30 (không có ý nghĩa thống kê). Đặc Biệt: z = +0,37. Tầng xếp chồng từng làm nhọn xác suất (a = 4,89 ngày 25-09) và đã bị chặn bởi cổng phải thắng cả dự báo hằng số (`meta_predictor.quality_gate`). |
 | Xác suất chưa hiệu chỉnh | Không | Tổ hợp production: độ lệch hiệu chỉnh 0,00030 ≈ độ phân giải 0,00028. Mười nhóm dự báo 23,2–24,5% đều nằm trong khoảng tin cậy của tần suất thật (`data/model_quality/report.json`). Mô hình mới: dự báo 23,64–23,96%, thực tế 23,0–24,4% (bảng hiệu chỉnh trong `benchmark.json`). |
 | Cửa sổ tĩnh, không suy giảm | Không phải nguyên nhân | ML production đã đánh trọng số giảm dần (bán rã 365 ngày khi học, 120 ngày khi hiệu chỉnh; `ml_train.py:191-192`) và có EWM 14/45 ngày. Tiên nghiệm Bayes mới tự CHỌN chu kỳ bán rã bằng Bayes thực nghiệm. Ở mọi lần học lại, nó chọn tiên nghiệm cực mạnh (α = 3 000, tức gần hằng số), đúng như dự đoán khi không có trôi (mục 2). |
 | Rò rỉ dữ liệu | Không tìm thấy | Hàng neo t chỉ đọc kỳ ≤ t (`ml_features.py:235`). Bỏ các bước qua kỳ nghỉ (`ml_features.py:357`). Bốn khối thời gian liên tiếp (`ml_train.py:43`). Rò rỉ thật duy nhất từng có (so trọng số học với chính vector đương nhiệm) đã sửa trong `learn_ensemble_weights.py`. |

@@ -24,7 +24,7 @@ def test_path_template_owns_themed_bento_structure() -> None:
 
 
 def test_detail_statistics_layout_is_source_owned_and_wired_at_output() -> None:
-    output_source = (ROOT / "src" / "page_output.py").read_text(encoding="utf-8")
+    output_source = (ROOT / "src" / "web" / "page_output.py").read_text(encoding="utf-8")
     detail_css = ROOT / "src" / "templates" / "stat_detail_pages.css"
 
     assert detail_css.exists()
@@ -52,7 +52,7 @@ def test_detail_statistics_stylesheet_covers_every_reported_layout_problem() -> 
 def test_dashboard_builder_navigation_reaches_its_analysis_panels(tmp_path, monkeypatch) -> None:
     """Mục lục không được dẫn tới id đã mất khi thay bố cục thẻ."""
     from bs4 import BeautifulSoup
-    from build_dashboard import main
+    from pages.build_dashboard import main
 
     monkeypatch.chdir(tmp_path)
     main(["--docs-dir", "docs"])
@@ -67,7 +67,7 @@ def test_dashboard_builder_navigation_reaches_its_analysis_panels(tmp_path, monk
 
 
 def test_research_builder_owns_core_lab_structure() -> None:
-    source = (ROOT / "src" / "build_research_lab.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "pages" / "build_research_lab.py").read_text(encoding="utf-8")
 
     assert 'class="rl-hero"' in source
     assert 'class="rl-metrics"' in source

@@ -9,9 +9,9 @@ import { JSDOM, VirtualConsole } from 'jsdom';
 // trang chủ in ô "đẹp nhất" từ Python, trang đường cầu tính lại bằng JS.
 const build = `import json
 import pandas as pd
-import build_position_bridges as page
-import position_bridges as pb
-from shared_results import draw_from_row, render_result_board
+from pages import build_position_bridges as page
+from soi_cau import position_bridges as pb
+from web.shared_results import draw_from_row, render_result_board
 raw = pd.read_csv("data/xsmb.csv", dtype=str)
 raw = raw[raw["date"] <= "2026-09-28"]
 dates, digits, values = pb.load_draws(raw.astype({c: int for c in pb.COLUMNS}))

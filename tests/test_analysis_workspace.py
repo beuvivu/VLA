@@ -10,9 +10,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
-from analysis_workspace import refine_workspace, workspace_pages
-from ui_page_refinements import refine_page
-from app_shell import wrap_page
+from web.analysis_workspace import refine_workspace, workspace_pages
+from web.ui_page_refinements import refine_page
+from web.app_shell import wrap_page
 
 
 class _Contract(HTMLParser):
@@ -34,7 +34,7 @@ class _Contract(HTMLParser):
 
 
 def test_workspace_covers_actual_navigation_but_excludes_other_owners():
-    from ui_theme import SITE_NAV_SECTIONS
+    from web.ui_theme import SITE_NAV_SECTIONS
     for group, sections in SITE_NAV_SECTIONS:
         if group not in {'Soi cầu', 'Dự báo', 'Nghiên cứu & công cụ'}:
             continue

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, _parse_result_from_prize_map
+from ingest.sources import EXPECTED_COUNTS, PRIZE_ORDER, _parse_result_from_prize_map
 
 
 def _complete_map() -> dict[str, list[str]]:

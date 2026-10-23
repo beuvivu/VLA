@@ -20,9 +20,9 @@ from pathlib import Path
 
 import pytest
 
-import live_sync
-import sources as sources_module
-from sources import (
+from ingest import live_sync
+from ingest import sources as sources_module
+from ingest.sources import (
     PRIZE_ORDER,
     anonymise_snapshot,
     known_source_domains,
@@ -147,7 +147,7 @@ def test_the_public_audit_log_carries_no_domain_names() -> None:
 def test_the_reconciled_public_payload_carries_no_domain_names(tmp_path) -> None:
     out = tmp_path / "live.json"
     subprocess.run(
-        [sys.executable, str(ROOT / "src" / "reconcile_live_canonical.py"),
+        [sys.executable, str(ROOT / "src" / "ingest" / "reconcile_live_canonical.py"),
          "--canonical", str(ROOT / "data" / "xsmb.csv"),
          "--audit", str(ROOT / "data" / "source_audit.json"),
          "--out", str(out)],
@@ -171,7 +171,7 @@ def test_the_live_page_never_renders_a_source_field() -> None:
 
 
 def _complete_result(day):
-    from dtos import Result
+    from core.dtos import Result
 
     return Result(
         date=day, special=83772, prize1=68785,
@@ -209,7 +209,7 @@ def test_the_audit_writer_records_codes_not_domain_names(min_agreement: int) -> 
     """
     from datetime import date
 
-    from lottery import Lottery
+    from ingest.lottery import Lottery
 
     lot = Lottery(
         http=object(),

@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from statistical_matrices import _write_excel
+from stats.statistical_matrices import _write_excel
 
 
 def _widths(path):

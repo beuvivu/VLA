@@ -29,14 +29,14 @@ python -m pytest -q
 
 printf '%s\n' "== Source policy =="
 # Cổng này TỪNG chép cứng bảy tên miền vào đây. Hai lượt đổi chính sách nguồn
-# sau đó, bản chép lệch khỏi `src/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
+# sau đó, bản chép lệch khỏi `src/ingest/sources.py` và CI đỏ suốt — đúng lớp lỗi mà
 # một bản sao danh sách luôn sinh ra. Danh sách đã có chỗ khai báo duy nhất
 # (`PRIMARY_SOURCE_NAMES`/`FALLBACK_SOURCE_NAMES`) và đã được ghim bởi
 # `tests/test_source_whitelist.py`. Nên ở đây chỉ kiểm các BẤT BIẾN mà một tệp
 # đơn lẻ không tự kiểm được: đăng ký, mã ẩn danh, nhóm độc lập và danh sách
 # đen chống lộ nguồn phải phủ khớp nhau.
 python - <<'PYSOURCE'
-from sources import (
+from ingest.sources import (
     FALLBACK_SOURCE_NAMES,
     PRIMARY_SOURCE_NAMES,
     RETIRED_SOURCE_NAMES,
@@ -48,7 +48,7 @@ from sources import (
     primary_sources,
     source_independence_key,
 )
-from sources import _source_registry
+from ingest.sources import _source_registry
 
 primary = list(PRIMARY_SOURCE_NAMES)
 fallback = list(FALLBACK_SOURCE_NAMES)
@@ -101,16 +101,16 @@ print("OK source policy", len(primary), "chính /", len(fallback), "dự phòng"
 PYSOURCE
 
 printf '%s\n' "== Data integrity + canonical statistics =="
-python src/validate_data.py --lookback-days 90 --out data/health.json
-python src/statistical_signal.py --mode both
-python src/significance_stats.py --windows 30,90,365
+python src/ingest/validate_data.py --lookback-days 90 --out data/health.json
+python src/stats/statistical_signal.py --mode both
+python src/stats/significance_stats.py --windows 30,90,365
 # Rebuild the current production cầu-kèo artifacts and model pack from the
 # calendar-validated feature builder.  The final supervised anchor is necessarily
 # one day behind the latest canonical draw because its label is that latest draw.
-python src/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20 --force-train
-python src/statistical_matrices.py
-python src/conditional_matrices.py --top 500
-python src/statistics_ai_overlay.py
+python src/ml/cau_keo_ml.py --mode both --models-dir models --out-dir data/ai_ml --window-days 2000 --top 20 --force-train
+python src/stats/statistical_matrices.py
+python src/stats/conditional_matrices.py --top 500
+python src/stats/statistics_ai_overlay.py
 
 printf '%s\n' "== Calendar-safe conditional and AI-overlay integrity =="
 python - <<'PYCANON'
@@ -203,18 +203,18 @@ TMP_MODELS="$(mktemp -d)"
 TMP_PRED="$(mktemp -d)"
 TMP_CAU="$(mktemp -d)"
 trap 'rm -rf "$TMP_MODELS" "$TMP_PRED" "$TMP_CAU"' EXIT
-python src/ml_train.py --mode loto --out-dir "$TMP_MODELS" --window-days 365
-python src/ml_train.py --mode de --out-dir "$TMP_MODELS" --window-days 365
-python src/ml_predict.py --models-dir "$TMP_MODELS" --out-dir "$TMP_PRED" --window-days 365 --top 3
+python src/ml/ml_train.py --mode loto --out-dir "$TMP_MODELS" --window-days 365
+python src/ml/ml_train.py --mode de --out-dir "$TMP_MODELS" --window-days 365
+python src/ml/ml_predict.py --models-dir "$TMP_MODELS" --out-dir "$TMP_PRED" --window-days 365 --top 3
 
 test -s "$TMP_PRED/predict_next_loto_ml_all.csv"
 test -s "$TMP_PRED/predict_next_de_ml_all.csv"
 
 printf '%s\n' "== Leakage-safe stacked-ML challenger =="
-python src/meta_predictor.py \
+python src/forecast/meta_predictor.py \
   --mode loto --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
   --window-days 240 --min-days 100 --half-life-days 90
-python src/meta_predictor.py \
+python src/forecast/meta_predictor.py \
   --mode de --models-dir "$TMP_MODELS" --report-dir "$TMP_PRED" \
   --window-days 240 --min-days 100 --half-life-days 90
 
@@ -228,7 +228,7 @@ import joblib
 import math
 import json
 from pathlib import Path
-from meta_predictor import COMPONENT_TIERS, META_SCHEMA_VERSION
+from forecast.meta_predictor import COMPONENT_TIERS, META_SCHEMA_VERSION
 
 for mode in ("loto", "de"):
     path = "$TMP_MODELS/meta_" + mode + ".joblib"
@@ -293,8 +293,8 @@ from datetime import timedelta
 
 import joblib
 import pandas as pd
-from cau_keo_ml import FEATURE_COLS as CAU_FEATURE_COLS
-from ml_train import FEATURE_SCHEMA_VERSION
+from ml.cau_keo_ml import FEATURE_COLS as CAU_FEATURE_COLS
+from ml.ml_train import FEATURE_SCHEMA_VERSION
 
 calendar = sorted(
     pd.to_datetime(pd.read_csv("data/xsmb.csv", usecols=["date"])["date"])
@@ -336,7 +336,7 @@ for path in ["models/cau_keo_loto.joblib", "models/cau_keo_de.joblib"]:
 PYMODEL
 
 printf '%s\n' "== Cầu-kèo production-path smoke =="
-python src/cau_keo_ml.py \
+python src/ml/cau_keo_ml.py \
   --mode both --models-dir models --out-dir "$TMP_CAU" \
   --window-days 2000 --top 3
 for path in \
@@ -360,20 +360,20 @@ printf '%s\n' "== Static GitHub Pages builders =="
 # này, nên các trang đó là hiện vật cũ nằm im: mỗi lần đổi SITE_NAV là chúng
 # lệch khỏi phần còn lại và test điều hướng đỏ. Chạy TRƯỚC build_landing_page
 # vì cả hai cùng ghi docs/index.html và bản của landing mới là bản đúng.
-python src/build_docs.py
-python src/build_docs_ml.py
-python src/build_dashboard.py
-python src/build_markdown_dashboard.py
-python src/build_statistics_dashboard.py
-python src/build_landing_page.py
-python src/build_fun_prediction.py
-python src/build_traditional_results.py
-python src/build_regional_results.py
+python src/pages/build_docs.py
+python src/pages/build_docs_ml.py
+python src/pages/build_dashboard.py
+python src/pages/build_markdown_dashboard.py
+python src/pages/build_statistics_dashboard.py
+python src/pages/build_landing_page.py
+python src/pages/build_fun_prediction.py
+python src/pages/build_traditional_results.py
+python src/pages/build_regional_results.py
 # Lô VIP nhiều nháy: đo lại trên lịch sử hiện tại trước khi dựng (~25 s; lượt hai đóng băng ở ngày
 # đăng ký, chỉ đo lại khi đoạn ấy bị sửa), nếu không trang có thể in số đo của một lịch sử cũ.
-python src/multi_hit_report.py
-python src/build_multi_hit_page.py
-python src/cleanup_artifacts.py --retention-days 45
+python src/forecast/multi_hit_report.py
+python src/pages/build_multi_hit_page.py
+python src/evaluation/cleanup_artifacts.py --retention-days 45
 
 printf '%s\n' "== Fun prediction board integrity =="
 python - <<'PYFUN'
@@ -403,10 +403,10 @@ printf '%s\n' "== Model skill vs baseline =="
 # nên thiếu cột baseline từ nay là dấu hiệu pipeline hỏng, không phải dữ liệu
 # chưa kịp tích. Không có cờ này, một thay đổi làm pipeline ngừng ghi đối chứng
 # sẽ tự tắt cổng trong im lặng - đúng lớp lỗi mà cổng sinh ra để chặn.
-python src/check_baseline_skill.py --require-baseline
+python src/evaluation/check_baseline_skill.py --require-baseline
 
 printf '%s\n' "== Post-build production consistency =="
-python src/production_audit.py \
+python src/evaluation/production_audit.py \
   --consistency-only \
   --strict \
   --json-out "$TMP_PRED/production-audit-release.json"

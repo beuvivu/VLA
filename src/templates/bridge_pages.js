@@ -2,7 +2,7 @@
   "use strict";
 
   // Bảy trang cầu vị trí (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, theo thứ) —
-  // bản trình duyệt của `src/bridge_rules.py`, cùng luật và cùng cách đếm.
+  // bản trình duyệt của `src/soi_cau/bridge_rules.py`, cùng luật và cùng cách đếm.
   // `tests/frontend/bridge-pages.test.mjs` so từng ô với bản Python.
   //
   // Mọi phần tử dựng bằng createElement + textContent; không gán chuỗi HTML.

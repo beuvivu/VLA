@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from vla.features.engineer import History, history_from_frame
-from xsmb_domain import FIELD_WIDTHS, PRIZE_FIELDS
+from core.xsmb_domain import FIELD_WIDTHS, PRIZE_FIELDS
 
 
 def synthetic_history(n: int, seed: int, *, loto_signal: float = 0.5, de_signal: float = 0.15) -> History:

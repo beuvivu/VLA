@@ -1,6 +1,6 @@
 """Hai bản phân tích giải phải cho kết quả giống hệt nhau.
 
-Worker chạy trên nền JavaScript nên không dùng lại được ``src/sources.py``.
+Worker chạy trên nền JavaScript nên không dùng lại được ``src/ingest/sources.py``.
 Hai bản cùng một logic là nợ kỹ thuật thật: chúng sẽ trôi lệch nhau, và lệch ở
 đây nghĩa là TRANG LIVE hiển thị một dãy số khác với dãy được ghi vào LỊCH SỬ —
 kiểu sai không bao giờ nổ, chỉ âm thầm mâu thuẫn.
@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import extract_partial_prize_map
+from ingest.sources import extract_partial_prize_map
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests" / "fixtures" / "prize_pages.json"

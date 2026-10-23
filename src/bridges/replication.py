@@ -38,7 +38,7 @@ import pandas as pd
 from bridges.firewall import FirewallGate, SurvivorSet
 from bridges.scanner import BridgeScanner, _tail_probability, baseline_rate_table
 from bridges.tensor import DigitTensor
-from research_diagnostics import bh_fdr
+from research.research_diagnostics import bh_fdr
 
 #: Các cột nhận diện duy nhất một giả thuyết trong họ cầu ghép chéo.
 IDENTITY_COLUMNS: Final[tuple[str, ...]] = (

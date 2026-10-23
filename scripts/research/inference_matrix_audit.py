@@ -20,9 +20,9 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 # Thống kê, phân phối null và kiểm ngoài mẫu dùng CHUNG với trang production
-# (src/confidence_matrix.py). Bản chép riêng từng lệch khỏi bản production:
+# (src/evaluation/confidence_matrix.py). Bản chép riêng từng lệch khỏi bản production:
 # review PR #104 bắt được script vẫn chấm Markov với null của thống kê khác.
-from confidence_matrix import (  # noqa: E402
+from evaluation.confidence_matrix import (  # noqa: E402
     NAMES,
     SPLIT,
     digits,
@@ -269,7 +269,7 @@ def report(null: np.ndarray, data_dir: Path, out_dir: Path) -> dict:
     out["fwd"]["p_de_in_top10"] = float(np.isin(sim[:, 0], de_picks).mean())
 
     # ---------------- Vòng phản hồi: vector đã công bố vs kết quả ----------------
-    import skill_monitor as sm
+    from evaluation import skill_monitor as sm
 
     fb = {}
     for mode in sm.MODES:

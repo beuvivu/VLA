@@ -34,7 +34,7 @@ from ml_engine.schema import (
 )
 from ml_engine.selection import select_features
 from ml_engine.validation import WalkForwardValidator
-from xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
+from core.xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
 
 
 def synthetic_counts(n_days: int, seed: int = 0) -> np.ndarray:
@@ -98,7 +98,7 @@ class TestObservationMatrix:
         chối, và trước đây nó chỉ lọt vì 50 bản ghi bịa lấp vào chỗ trống —
         bất biến được bảo đảm bởi chính dữ liệu sai.
         """
-        from calendar_alignment import known_non_draw_days
+        from core.calendar_alignment import known_non_draw_days
 
         assert "2025-01-28" in known_non_draw_days(), "cần mốc Tết 2025 để test"
 

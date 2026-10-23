@@ -19,8 +19,8 @@ from typing import Any
 
 import numpy as np
 
-from number_reference import normalize_two_digit
-from time_policy import iso_local
+from core.number_reference import normalize_two_digit
+from core.time_policy import iso_local
 
 SCHEMA_VERSION = "1.0"
 
@@ -85,7 +85,7 @@ def build_picks(
     if max_per_tail is None:
         order = np.lexsort((np.arange(len(probabilities)), -probabilities))[:top_k]
     else:
-        from pick_diversity import diversified_order
+        from ensemble.pick_diversity import diversified_order
 
         order = diversified_order(probabilities, top_k, max_per_tail=max_per_tail)
     return [

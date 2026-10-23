@@ -7,7 +7,7 @@ import subprocess
 
 import pytest
 
-from site_assets import check_site, refresh_site
+from web.site_assets import check_site, refresh_site
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("push_generated_site", ROOT / "scripts/ops/push_generated_site.py")
@@ -39,8 +39,8 @@ def writers(tmp_path):
     (first / "docs/assets/app.js").write_text("/* mã nguồn */", encoding="utf-8")
     for name in ("left.html", "right.html", "same.html", "race.html"):
         (first / "docs" / name).write_text("<!doctype html><p>Ban đầu</p>", encoding="utf-8")
-    (first / "src").mkdir()
-    shutil.copyfile(ROOT / "src/site_assets.py", first / "src/site_assets.py")
+    (first / "src" / "web").mkdir(parents=True)
+    shutil.copyfile(ROOT / "src/web/site_assets.py", first / "src/web/site_assets.py")
     refresh_site(first / "docs")
     git(first, "add", ".")
     git(first, "commit", "-qm", "Ban đầu")

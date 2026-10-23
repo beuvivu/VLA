@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml_validation import (
+from ml.ml_validation import (
     ValidationConfig,
     _paired_date_bootstrap,
     assert_temporal_partitions,

@@ -1,0 +1,388 @@
+"""Boc chu thich khoi trang da dung, truoc khi ghi ra `docs/`.
+
+Vi sao boc o BUOC XUAT chu khong xoa trong ma nguon: chu thich trong
+`src/` la ban ghi ky thuat cua du an. Con thu nguoi xem thay khi bam
+"View Source" la TRANG DA DUNG, va trang ay sach tuyet doi sau buoc nay.
+"""
+
+from __future__ import annotations
+
+import re
+from html import escape
+from pathlib import Path
+
+from web.css_links import CRITICAL_CSS
+from web.ui_page_refinements import refine_page
+from core.paths import ASSETS, SRC, TEMPLATES
+
+__all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
+
+_HTML_COMMENT = re.compile(r"<!--(?!\[if)(?:(?!-->).)*-->", re.S)
+_BLOCK = re.compile(r"<(script|style)\b([^>]*)>(.*?)</\1\s*>", re.I | re.S)
+
+_DETAIL_STAT_PAGES = frozenset({
+    "bang-dac-biet.html",
+    "lo-gan.html",
+    "dau-duoi-loto.html",
+    "giai-dac-biet-theo-tong.html",
+    "cau-dac-biet-theo-bo-so.html",
+    "giai-db-ngay-mai.html",
+    "cap-lon-loto.html",
+})
+_SOURCE_DETAIL_STYLE_ID = "ui-source-detail-layout"
+
+_REGEX_AFTER_KEYWORD = frozenset({
+    "return", "typeof", "instanceof", "in", "of", "new", "delete", "void",
+    "throw", "case", "do", "else", "yield", "await",
+})
+
+_IDENT_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz"
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$")
+
+
+def _strip_css(text: str) -> str:
+    out: list[str] = []
+    i, n = 0, len(text)
+    quote = ""
+    while i < n:
+        ch = text[i]
+        if quote:
+            out.append(ch)
+            if ch == "\\" and i + 1 < n:
+                out.append(text[i + 1]); i += 2; continue
+            if ch == quote:
+                quote = ""
+            i += 1
+            continue
+        if ch in "\"'":
+            quote = ch; out.append(ch); i += 1; continue
+        if ch == "/" and text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+            continue
+        out.append(ch); i += 1
+    return out and "".join(out) or ""
+
+
+def _strip_js(text: str) -> str:
+    out: list[str] = []
+    i, n = 0, len(text)
+    template_depth: list[int] = []
+    previous = ""
+
+    def starts_regex() -> bool:
+        if not previous:
+            return True
+        if previous in _REGEX_AFTER_KEYWORD:
+            return True
+        if previous in (")", "]", "value"):
+            return False
+        return not (previous[0] in _IDENT_CHARS)
+
+    while i < n:
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+
+        if ch == "/" and nxt == "/":
+            end = text.find("\n", i)
+            i = n if end == -1 else end
+            continue
+        if ch == "/" and nxt == "*":
+            end = text.find("*/", i + 2)
+            i = n if end == -1 else end + 2
+            continue
+        if ch in "\"'":
+            quote = ch; out.append(ch); i += 1
+            while i < n:
+                c = text[i]; out.append(c)
+                if c == "\\" and i + 1 < n:
+                    out.append(text[i + 1]); i += 2; continue
+                i += 1
+                if c == quote:
+                    break
+            previous = "value"
+            continue
+        if ch == "`":
+            out.append(ch); i += 1
+            while i < n:
+                c = text[i]; out.append(c)
+                if c == "\\" and i + 1 < n:
+                    out.append(text[i + 1]); i += 2; continue
+                if c == "$" and i + 1 < n and text[i + 1] == "{":
+                    out.append("{"); i += 2
+                    template_depth.append(1)
+                    break
+                i += 1
+                if c == "`":
+                    break
+            previous = "value"
+            continue
+        if ch == "{" and template_depth:
+            template_depth[-1] += 1
+        if ch == "}" and template_depth:
+            template_depth[-1] -= 1
+            if template_depth[-1] == 0:
+                template_depth.pop()
+                out.append(ch); i += 1
+                while i < n:
+                    c = text[i]; out.append(c)
+                    if c == "\\" and i + 1 < n:
+                        out.append(text[i + 1]); i += 2; continue
+                    if c == "$" and i + 1 < n and text[i + 1] == "{":
+                        out.append("{"); i += 2; template_depth.append(1); break
+                    i += 1
+                    if c == "`":
+                        break
+                continue
+        if ch == "/" and starts_regex():
+            out.append(ch); i += 1
+            in_class = False
+            while i < n:
+                c = text[i]; out.append(c)
+                if c == "\\" and i + 1 < n:
+                    out.append(text[i + 1]); i += 2; continue
+                if c == "[":
+                    in_class = True
+                elif c == "]":
+                    in_class = False
+                elif c == "/" and not in_class:
+                    i += 1
+                    break
+                elif c == "\n":
+                    i += 1
+                    break
+                i += 1
+            while i < n and text[i].isalpha():
+                out.append(text[i]); i += 1
+            previous = "value"
+            continue
+
+        if ch in _IDENT_CHARS:
+            start = i
+            while i < n and text[i] in _IDENT_CHARS:
+                out.append(text[i]); i += 1
+            previous = text[start:i]
+            if previous[0].isdigit():
+                previous = "value"
+            continue
+        out.append(ch)
+        if not ch.isspace():
+            previous = ch
+        i += 1
+    return "".join(out)
+
+
+def _tidy(text: str) -> str:
+    text = re.sub(r"[ \t]+(\r?\n)", r"\1", text)
+    return re.sub(r"(\r?\n)[ \t]*(?:\r?\n)+", r"\1\1", text)
+
+
+def strip_comments(html: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        tag, attrs, body = match.group(1), match.group(2), match.group(3)
+        if "application/json" in attrs.lower():
+            return match.group(0)
+        cleaned = _strip_css(body) if tag.lower() == "style" else _strip_js(body)
+        return f"<{tag}{attrs}>{_tidy(cleaned)}</{tag}>"
+
+    parts: list[str] = []
+    cursor = 0
+    for match in _BLOCK.finditer(html):
+        parts.append(_HTML_COMMENT.sub("", html[cursor:match.start()]))
+        parts.append(replace(match))
+        cursor = match.end()
+    parts.append(_HTML_COMMENT.sub("", html[cursor:]))
+    return _tidy("".join(parts))
+
+
+def strip_css(css: str) -> str:
+    return _tidy(_strip_css(css))
+
+
+def _inject_source_detail_style(path: Path, html: str) -> str:
+    if path.name not in _DETAIL_STAT_PAGES or f'id="{_SOURCE_DETAIL_STYLE_ID}"' in html:
+        return html
+    css_path = TEMPLATES / "stat_detail_pages.css"
+    css = css_path.read_text(encoding="utf-8")
+    style = f'<style id="{_SOURCE_DETAIL_STYLE_ID}">{css}</style>'
+    return html.replace("</head>", f"{style}\n</head>", 1)
+
+
+def write_page(path: Path, html: str) -> None:
+    from web.site_assets import rewrite_assets
+
+    html = rewrite_assets(path, html, strip=True)
+    refined = refine_page(path, html)
+    refined = _inject_source_detail_style(path, refined)
+    refined = _attach_visual_system(path, refined)
+    # Khung ứng dụng bọc SAU CÙNG, và chỉ bọc. Mọi trình dựng đều đi qua hàm
+    # này, nên đây là chỗ duy nhất cần sửa để cả hai mươi chín trang có cùng
+    # một khung — thay vì chép khung vào từng trình dựng rồi trôi khỏi nhau.
+    refined = _attach_shell(path, refined)
+    from web.crafto_design import attach_crafto_design
+
+    refined = attach_crafto_design(path, refined)
+    refined = _attach_theme_bootstrap(path, refined)
+    refined = _attach_evidence(path, refined)
+    path.write_text(rewrite_assets(path, strip_comments(refined)), encoding="utf-8")
+
+
+def _attach_theme_bootstrap(path: Path, html: str) -> str:
+    """Nạp màu đã chọn sau metadata/CSP nhưng trước mọi stylesheet."""
+    head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
+    if not head_match:
+        return html
+    source = ASSETS / "app-theme.js"
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "app-theme.js").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+    head = re.sub(
+        r'<script\b[^>]*\bsrc=[\"\']assets/app-theme\.js[\"\'][^>]*>\s*</script>\s*',
+        "", head_match.group(1), flags=re.I,
+    )
+    metadata = list(re.finditer(r"<(?:meta|base)\b[^>]*>", head, re.I))
+    position = metadata[-1].end() if metadata else 0
+    script = '\n<script src="assets/app-theme.js" data-app-theme></script>\n'
+    # Chuẩn hoá hai mép để lần ghi thứ hai không thêm một dòng trắng nữa.
+    head = head[:position].rstrip() + script + head[position:].lstrip()
+    return html[:head_match.start(1)] + head + html[head_match.end(1):]
+
+
+_EVIDENCE_JS_NGUON = ASSETS / "app-evidence.js"
+_EVIDENCE_CU = re.compile(r"<script\b[^>]*\bdata-app-evidence\b[^>]*>.*?</script>\s*", re.I | re.S)
+
+
+def _attach_evidence(path: Path, html: str) -> str:
+    """Nạp hiệu ứng nguồn & bằng chứng cho mọi con số của trang.
+
+    Hai thẻ vào ``<head>``: khối JSON ``#app-evidence-data`` (danh mục của
+    trang, :mod:`evidence_catalog`) và ``assets/app-evidence.js`` chạy trễ.
+    Đặt ở đầu trang chứ không ở đuôi khung: đuôi khung là mốc mà
+    ``app_shell._DUOI_KHUNG`` neo vào để bóc lớp cũ, thêm thẻ vào đó là làm
+    trượt phép bóc. Bóc bản cũ rồi chèn lại, nên ghi hai lần ra cùng một tệp.
+    """
+    head_match = re.search(r"<head\b[^>]*>(.*?)</head\s*>", html, re.I | re.S)
+    if not head_match:
+        return html
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "app-evidence.js").write_text(_EVIDENCE_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    from web.evidence_catalog import registry_json
+
+    head = _EVIDENCE_CU.sub("", head_match.group(1)).rstrip()
+    tags = (
+        '\n<script type="application/json" id="app-evidence-data" data-app-evidence>'
+        + registry_json(path.name)
+        + "</script>"
+        + '\n<script src="assets/app-evidence.js" defer data-app-evidence></script>\n'
+    )
+    return html[:head_match.start(1)] + head + tags + html[head_match.end(1):]
+
+
+#: Tệp tĩnh của khung, chép từ ``src/`` sang ``docs/assets/`` mỗi lần ghi
+#: trang. GitHub Pages chỉ phục vụ ``docs/``, nên trỏ thẳng vào ``src/`` là một
+#: tham chiếu chết.
+_SHELL_CSS_NGUON = TEMPLATES / "app_shell.css"
+_SHELL_JS_NGUON = ASSETS / "app-shell.js"
+_SHELL_LINK = '<link rel="stylesheet" href="assets/app-shell.css" data-app-shell>'
+_SHELL_LINK_CU = re.compile(r'<link\b[^>]*\bdata-(?:app|vla)-shell\b[^>]*>\s*')
+_BRAND_LINK_CU = re.compile(r'<link\b[^>]*\bdata-app-brand\b[^>]*>\s*')
+_BRAND_FILES = ("lottery-drum.webp", "lottery-favicon.png", "lottery-touch-icon.png")
+_BRAND_LINKS = (
+    '<link rel="icon" type="image/png" sizes="64x64" href="assets/lottery-favicon.png" data-app-brand>\n'
+    '<link rel="apple-touch-icon" sizes="180x180" href="assets/lottery-touch-icon.png" data-app-brand>'
+)
+
+
+def _attach_shell(path: Path, html: str) -> str:
+    """Bọc trang vào khung dùng chung và xuất bản biểu định kiểu của khung."""
+    if "</head>" not in html or not re.search(r"<body\b", html, re.I):
+        return html
+    assets = path.parent / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    write_stylesheet_text(assets / "app-shell.css", _SHELL_CSS_NGUON.read_text(encoding="utf-8"))
+    (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
+    if path.name == "live.html":
+        source_dir = SRC
+        for name in ("live-predictions", "live-scorecard"):
+            (assets / f"{name}.js").write_text(
+                (source_dir / f"assets/{name}.js").read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            write_stylesheet_text(
+                assets / f"{name}.css",
+                (source_dir / f"templates/{name.replace('-', '_')}.css").read_text(encoding="utf-8"),
+            )
+    # Keep the reference typography, with a separate application brand asset.
+    reference_assets = ASSETS / "nexlink"
+    for source in reference_assets.glob("InstrumentSans-*"):
+        (assets / source.name).write_bytes(source.read_bytes())
+    brand_assets = ASSETS / "brand"
+    for name in _BRAND_FILES:
+        (assets / name).write_bytes((brand_assets / name).read_bytes())
+    head, rest = html.split("</head>", 1)
+    # Bóc bản cũ trước khi chèn bản mới, đúng thứ tự đã học ở
+    # `_attach_visual_system`: ghi lại một trang đã ghi phải cho ra đúng tệp ấy.
+    head = _SHELL_LINK_CU.sub("", head)
+    head = _BRAND_LINK_CU.sub("", head)
+    html = head.rstrip() + "\n" + _SHELL_LINK + "\n" + _BRAND_LINKS + "\n</head>" + rest
+    # Nhập TRỄ, có chủ ý: `app_shell` đọc `ui_theme.SITE_NAV`, mà `ui_theme`
+    # lại nhập `page_output`. Nhập ở đầu tệp thì vòng khép lại ngay lúc nạp
+    # module và Python dừng với "partially initialized module".
+    from web.app_shell import wrap_page
+
+    return wrap_page(html, path.name)
+
+
+def _attach_visual_system(path: Path, html: str) -> str:
+    """Publish shared skin; load non-blocking for Critical Rendering Path."""
+    if "</head>" not in html or not re.search(r"<body\b", html, re.I):
+        return html
+    css = TEMPLATES / "ui_visual_system.css"
+    target = path.parent / "assets" / "ui-visual-system.css"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    write_stylesheet_text(target, css.read_text(encoding="utf-8"))
+    # `assets/critical.css` cũng phải được ghi lại từ `CRITICAL_CSS`, không
+    # phải để nguyên hiện vật đã commit. Hàm ghi riêng tệp này trước đây (đã gỡ
+    # 13-10-2026) KHÔNG được gọi ở đâu cả, nên tệp xuất bản là một bản chép tay đứng im:
+    # nó còn mang chú thích `/* critical shell ... */` mà nguồn không có, và
+    # nó trôi khỏi `CRITICAL_CSS` mà không dấu hiệu gì. Mỗi trang ghi ra đều
+    # ghi lại tệp này, cùng chỗ với biểu định kiểu anh em ngay trên.
+    write_stylesheet_text(
+        path.parent / "assets" / "critical.css",
+        CRITICAL_CSS,
+    )
+    head, rest = html.split("</head>", 1)
+    # Bóc khối <noscript> TRƯỚC, rồi mới bóc thẻ <link> trần. Đảo thứ tự thì
+    # luật đầu ăn mất chính cái <link> nằm trong <noscript>, luật sau không còn
+    # gì để khớp, và một <noscript></noscript> rỗng ở lại sau mỗi lần ghi — nên
+    # `write_page` không còn là điểm bất động: ghi lại một trang đã ghi cho ra
+    # tệp khác.
+    head = re.sub(
+        r'<noscript>\s*<link\b[^>]*\bdata-ui-visual-system\b[^>]*>\s*</noscript>\s*',
+        "",
+        head,
+        flags=re.I,
+    )
+    head = re.sub(r'<link\b[^>]*\bdata-ui-visual-system\b[^>]*>\s*', "", head)
+    link = (
+        '<link rel="stylesheet" href="assets/ui-visual-system.css" '
+        'media="print" onload="this.media=\'all\'" data-ui-visual-system>'
+    )
+    noscript = (
+        '<noscript><link rel="stylesheet" href="assets/ui-visual-system.css" '
+        'data-ui-visual-system></noscript>'
+    )
+    html = head.rstrip() + "\n" + link + "\n" + noscript + "\n</head>" + rest
+    page_key = "index" if path.stem in {"landing", "landing_desktop"} else path.stem
+    html = re.sub(
+        r'(<body\b[^>]*\bdata-ui-page=")[^"]*(")',
+        lambda match: match[1] + escape(page_key, quote=True) + match[2],
+        html, count=1, flags=re.I,
+    )
+    if not re.search(r'<body\b[^>]*\bdata-ui-page=', html, re.I):
+        html = re.sub(r"<body\b", f'<body data-ui-page="{escape(page_key, quote=True)}"', html, count=1, flags=re.I)
+    return html
+
+
+def write_stylesheet_text(path: Path, css: str) -> None:
+    path.write_text(strip_css(css), encoding="utf-8")

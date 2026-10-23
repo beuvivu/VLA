@@ -6,7 +6,7 @@ Usage:
 
 Writes:
   - docs/assets/critical.css
-  - src/critical_css_generated.py
+  - src/web/critical_css_generated.py
 
 Run after editing docs/assets/ui.css (or wire into the Pages build).
 """
@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 UI_CSS = ROOT / "docs" / "assets" / "ui.css"
-OUT_PY = ROOT / "src" / "critical_css_generated.py"
+OUT_PY = ROOT / "src" / "web" / "critical_css_generated.py"
 OUT_CSS = ROOT / "docs" / "assets" / "critical.css"
 BUDGET = 3500
 

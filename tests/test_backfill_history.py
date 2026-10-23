@@ -10,7 +10,7 @@ from datetime import date
 
 import pytest
 
-from backfill_history import (
+from ingest.backfill_history import (
     EARLIEST_SUPPORTED,
     BackfillReport,
     backfill,
@@ -283,7 +283,7 @@ def test_backfill_never_dumps_without_rebuilding_the_frames() -> None:
     from pathlib import Path
 
     src = (
-        Path(__file__).resolve().parents[1] / "src" / "backfill_history.py"
+        Path(__file__).resolve().parents[1] / "src" / "ingest" / "backfill_history.py"
     ).read_text(encoding="utf-8")
 
     body = src[src.index("def _persist(") :]
@@ -304,7 +304,7 @@ def test_repeated_draw_dates_finds_the_non_draw_days() -> None:
     2020-2026 và 23 ngày giãn cách 01-22/4/2020. Bốn bản trong số đó đã lọt
     qua cả kiểm đồng thuận hai nguồn.
     """
-    from backfill_history import repeated_draw_dates
+    from ingest.backfill_history import repeated_draw_dates
 
     records = [
         {"date": "2026-02-14", "special": 90630, "prize1": 11111},
@@ -325,7 +325,7 @@ def test_repeated_draw_dates_spans_a_hole_in_the_history() -> None:
     Với 2026-02-17 thì cả 02-16 lẫn 02-18 đều đã bị xoá nên không còn gì để
     so — hai bản ghi bịa lọt lại vào kho đúng theo đường đó.
     """
-    from backfill_history import repeated_draw_dates
+    from ingest.backfill_history import repeated_draw_dates
 
     records = [
         {"date": "2026-02-15", "special": 22601},
@@ -339,7 +339,7 @@ def test_repeated_draw_dates_spans_a_hole_in_the_history() -> None:
 def test_repeated_draw_dates_ignores_a_single_matching_field() -> None:
     """Chỉ trùng KHÍT toàn bộ giải mới là hiện vật. Trùng riêng giải Đặc Biệt
     là chuyện thường: xác suất 1/100000 mỗi ngày."""
-    from backfill_history import repeated_draw_dates
+    from ingest.backfill_history import repeated_draw_dates
 
     records = [
         {"date": "2026-01-01", "special": 12345, "prize1": 11111},
@@ -350,7 +350,7 @@ def test_repeated_draw_dates_ignores_a_single_matching_field() -> None:
 
 def test_repeated_draw_dates_is_order_independent() -> None:
     """Backfill lấy từ mới về cũ nên bản ghi tới không theo thứ tự thời gian."""
-    from backfill_history import repeated_draw_dates
+    from ingest.backfill_history import repeated_draw_dates
 
     rows = [
         {"date": "2026-02-17", "special": 22601},
@@ -368,7 +368,7 @@ def test_fake_lottery_matches_the_real_api() -> None:
     """
     import inspect
 
-    from lottery import Lottery
+    from ingest.lottery import Lottery
 
     for name in ("fetch", "dump", "get_dates", "load", "generate_dataframes"):
         assert hasattr(Lottery, name), f"Lottery thiếu {name}"
@@ -387,9 +387,9 @@ def test_backfill_only_uses_methods_the_real_lottery_has() -> None:
     import re
     from pathlib import Path
 
-    from lottery import Lottery
+    from ingest.lottery import Lottery
 
-    src = Path(__file__).resolve().parents[1] / "src" / "backfill_history.py"
+    src = Path(__file__).resolve().parents[1] / "src" / "ingest" / "backfill_history.py"
     used = set(re.findall(r"\blottery\.(\w+)\(", src.read_text(encoding="utf-8")))
     assert used, "không tìm thấy lời gọi nào tới lottery"
     for name in used:
@@ -413,7 +413,7 @@ def _store(tmp_path, name, dates):
 def test_merge_keeps_records_from_both_sides(tmp_path) -> None:
     """Backfill thêm kỳ CŨ, quy trình hàng ngày thêm kỳ MỚI — hai tập gần như
     rời nhau, nên hợp nhất phải giữ cả hai."""
-    from backfill_history import merge_stores
+    from ingest.backfill_history import merge_stores
 
     mine = _store(tmp_path, "mine.json", ["2020-01-01", "2020-01-02"])
     theirs = _store(tmp_path, "theirs.json", ["2026-09-07", "2026-09-08"])
@@ -425,7 +425,7 @@ def test_merge_prefers_the_branch_copy_on_a_shared_date(tmp_path) -> None:
     """Kỳ trên nhánh chính đã qua kiểm đồng thuận hai nguồn; backfill chỉ đòi
     một nguồn."""
     import json
-    from backfill_history import merge_stores
+    from ingest.backfill_history import merge_stores
 
     mine = tmp_path / "mine.json"
     mine.write_text(json.dumps([{"date": "2026-01-01", "special": 111}]), encoding="utf-8")
@@ -439,7 +439,7 @@ def test_merge_prefers_the_branch_copy_on_a_shared_date(tmp_path) -> None:
 def test_merge_output_is_sorted_by_date(tmp_path) -> None:
     """Lottery.load và bộ máy JS đều giả định thứ tự tăng dần."""
     import json
-    from backfill_history import merge_stores
+    from ingest.backfill_history import merge_stores
 
     mine = _store(tmp_path, "mine.json", ["2020-05-05", "2020-01-01"])
     theirs = _store(tmp_path, "theirs.json", ["2026-09-08", "2020-03-03"])
@@ -450,7 +450,7 @@ def test_merge_output_is_sorted_by_date(tmp_path) -> None:
 
 
 def test_merge_tolerates_a_missing_branch_copy(tmp_path) -> None:
-    from backfill_history import merge_stores
+    from ingest.backfill_history import merge_stores
 
     mine = _store(tmp_path, "mine.json", ["2020-01-01"])
     out = tmp_path / "out.json"
@@ -463,7 +463,7 @@ def test_merge_stores_is_defined_before_the_main_guard() -> None:
     """
     from pathlib import Path
 
-    src = (Path(__file__).resolve().parents[1] / "src" / "backfill_history.py").read_text(
+    src = (Path(__file__).resolve().parents[1] / "src" / "ingest" / "backfill_history.py").read_text(
         encoding="utf-8"
     )
     assert src.index("def merge_stores") < src.index('if __name__ == "__main__"')
@@ -472,7 +472,7 @@ def test_merge_stores_is_defined_before_the_main_guard() -> None:
 def test_merge_store_flag_does_not_require_start() -> None:
     """--merge-store là chế độ riêng, không quét ngày nào."""
     import argparse
-    import backfill_history as mod
+    from ingest import backfill_history as mod
 
     parser = argparse.ArgumentParser()
     # Đọc lại đúng cách khai báo trong main() thay vì đoán.

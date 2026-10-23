@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ui_page_refinements import _LEGACY_STYLE_IDS, _STYLE_ID, refine_page  # noqa: E402
+from web.ui_page_refinements import _LEGACY_STYLE_IDS, _STYLE_ID, refine_page  # noqa: E402
 
 
 def _doc(body: str) -> str:
@@ -14,8 +14,8 @@ def _doc(body: str) -> str:
 
 
 def test_page_output_applies_refinement_before_writing() -> None:
-    source = (ROOT / "src" / "page_output.py").read_text(encoding="utf-8")
-    assert "from ui_page_refinements import refine_page" in source
+    source = (ROOT / "src" / "web" / "page_output.py").read_text(encoding="utf-8")
+    assert "from web.ui_page_refinements import refine_page" in source
     assert "refine_page(path, html)" in source
 
 

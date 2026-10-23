@@ -32,14 +32,14 @@ Việc đang chạy khi chỉ thị soát tới, đã hoàn tất trước khi s
 
 Đã chạy phép đo thật trên: 29 trang xuất bản (7 bề ngang, từ 1920 xuống 320),
 `src/templates/stat_pages.js`, `src/templates/frequency_bento.js`,
-`src/app_shell.py`, `src/build_landing_page.py`, `src/build_stat_pages.py`,
-`src/ui_theme.py`, `docs/assets/*.js`, và bốn kịch bản chốt phát hành.
+`src/web/app_shell.py`, `src/pages/build_landing_page.py`, `src/pages/build_stat_pages.py`,
+`src/web/ui_theme.py`, `docs/assets/*.js`, và bốn kịch bản chốt phát hành.
 
 ## 3. Phát hiện
 
 ### A-01 · P1 · Khung ứng dụng bọc hai lần trên `docs/live.html`
 
-**Thành phần.** `src/app_shell.py::wrap_page`, `docs/live.html`.
+**Thành phần.** `src/web/app_shell.py::wrap_page`, `docs/live.html`.
 
 **Tái hiện.** Mở `docs/live.html`, đếm `class="app-rail"` → 2. Đo bằng
 `elementFromPoint` tại tâm nút tab đầu của dải: trả về
@@ -76,7 +76,7 @@ sẵn, nên vẫn đỏ được khi `docs/` đã sạch). Cả hai đã thử b
 
 ### A-02 · P2 · 1 309 trình nghe click gắn từng phần tử trên trang chủ
 
-**Thành phần.** `src/build_landing_page.py` → `docs/index.html`,
+**Thành phần.** `src/pages/build_landing_page.py` → `docs/index.html`,
 `docs/landing.html`, `docs/landing_desktop.html`.
 
 **Tái hiện.** Bọc `EventTarget.prototype.addEventListener` bằng một bộ đếm
@@ -153,7 +153,7 @@ Ghi lại thay vì gỡ, vì **đo cho thấy chúng không chết theo nghĩa t
 | --- | --- | --- |
 | `matrix-virt.js` | 6,5 KB | `scripts/ops/optimize_index_dom.py` |
 | `apply-data-styles.js` | 1,2 KB | `scripts/ops/patch_csp_no_inline.py` |
-| `ui-dock.js` | 2,0 KB | `src/web_security.py::security_script_tags` |
+| `ui-dock.js` | 2,0 KB | `src/web/web_security.py::security_script_tags` |
 | `live-board.js` | 9,6 KB | không mã nào phát ra |
 
 Hai sự thật đo được làm chúng thành ứng viên gỡ ở lần sau, chứ không phải
@@ -202,7 +202,7 @@ nào đo được.
 
 ### A-07 · P3 · 54px trống chừa cho thanh điều hướng đã biến mất
 
-**Thành phần.** `src/ui_page_refinements.py` (`.path-page`), bốn trang
+**Thành phần.** `src/web/ui_page_refinements.py` (`.path-page`), bốn trang
 `soi-path-de-active`, `soi-path-de-stable`, `soi-path-loto-active`,
 `soi-path-loto-stable`.
 

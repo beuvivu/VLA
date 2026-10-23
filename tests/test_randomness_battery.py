@@ -11,7 +11,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from randomness_battery import (
+from stats.randomness_battery import (
     NUMBER_SPACE,
     dispersion_index,
     gap_distribution_distance,
@@ -25,7 +25,7 @@ from randomness_battery import (
     spectral_peak,
     weekday_effect,
 )
-from xsmb_domain import LOTO_DRAWS_PER_DAY
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY
 
 
 @pytest.fixture(scope="module")

@@ -15,7 +15,7 @@ from typing import Final
 
 import numpy as np
 
-from number_reference import BONG_AM, BONG_DUONG
+from core.number_reference import BONG_AM, BONG_DUONG
 
 KIND_THUC: Final[str] = "thuc"
 KIND_BONG_DUONG: Final[str] = "bong_duong"

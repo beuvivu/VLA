@@ -254,7 +254,7 @@ suất có **cùng AUC tuyệt đối** mà Brier chênh nhau hơn hai lần.
 
 ### Tầng 2 — gộp thông tin: ĐÃ TRIỂN KHAI
 
-**5. Học độ co ngót thay vì đặt tay** — `src/hierarchical_pooling.py`
+**5. Học độ co ngót thay vì đặt tay** — `src/ensemble/hierarchical_pooling.py`
 
 `statistical_signal.py` vốn ĐÃ là Beta-Binomial phân cấp: nó dựng tiên nghiệm
 Beta quanh tần suất nền với `prior_strength = 80`. Vấn đề duy nhất là con số 80

@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
-from page_output import write_page
+from web.page_output import write_page
 
 
 def test_theme_script_is_local_synchronous_and_precedes_styles(tmp_path: Path) -> None:

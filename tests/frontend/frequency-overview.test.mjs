@@ -14,8 +14,8 @@ const draws = [
 const build = `import json, sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from build_stat_pages import PAGES, render_page
-from page_output import _attach_evidence
+from pages.build_stat_pages import PAGES, render_page
+from web.page_output import _attach_evidence
 draws = json.load(sys.stdin)
 with TemporaryDirectory() as directory:
  print(json.dumps({page.slug: _attach_evidence(Path(directory) / (page.slug + ".html"), render_page(page, draws, generated="2026-09-03T19:00:00Z"))

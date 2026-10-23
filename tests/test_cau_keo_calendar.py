@@ -3,8 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-import cau_keo_ml
-from cau_keo_ml import CauKeoConfig, build_cau_keo_feature_frame
+from ml import cau_keo_ml
+from ml.cau_keo_ml import CauKeoConfig, build_cau_keo_feature_frame
 
 
 class _FakeLottery:

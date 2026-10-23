@@ -12,7 +12,7 @@ def test_markdown_dashboard_builder_runs_on_repository_data(tmp_path: Path) -> N
     subprocess.run(
         [
             sys.executable,
-            "src/build_markdown_dashboard_v3.py",
+            "src/pages/build_markdown_dashboard_v3.py",
             "--output",
             str(dashboard),
         ],
@@ -75,7 +75,7 @@ def test_redirected_build_reports_the_path_it_actually_wrote(tmp_path: Path) -> 
     """
     output = tmp_path / "board.md"
     result = subprocess.run(
-        [sys.executable, "src/build_markdown_dashboard_v3.py", "--output", str(output)],
+        [sys.executable, "src/pages/build_markdown_dashboard_v3.py", "--output", str(output)],
         check=True,
         capture_output=True,
         text=True,

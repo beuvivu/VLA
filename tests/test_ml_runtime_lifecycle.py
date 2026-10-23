@@ -11,11 +11,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import model_io
-import meta_predictor
-import ml_predict
-import ml_train
-from ensemble_utils import normalize_distribution
+from core import model_io
+from forecast import meta_predictor
+from ml import ml_predict
+from ml import ml_train
+from ensemble.ensemble_utils import normalize_distribution
 
 
 def test_failed_retrain_keeps_incumbent_bytes(tmp_path, monkeypatch):
@@ -84,7 +84,7 @@ def test_corrupt_compressed_pack_reaches_safe_recovery(tmp_path, monkeypatch, co
     def fail_train(*args, **kwargs):
         raise RuntimeError('retrain reached')
     if loader == 'meta':
-        from predict_nextday_2d import _meta_prediction
+        from forecast.predict_nextday_2d import _meta_prediction
         vector = np.full(100, .2)
         prediction, trust, info = _meta_prediction(tmp_path, 'loto', date(2026, 1, 2), *([vector] * 6))
         np.testing.assert_array_equal(prediction, vector)
@@ -95,13 +95,13 @@ def test_corrupt_compressed_pack_reaches_safe_recovery(tmp_path, monkeypatch, co
         with pytest.raises(RuntimeError, match='retrain reached'):
             ml_predict._load_or_train_model('loto', tmp_path, window_days=2000, latest_data_date='2026-10-08')
     elif loader == 'domain':
-        import cau_keo_domain_challenger as module
+        from ml import cau_keo_domain_challenger as module
         (tmp_path / 'cau_keo_loto_all.csv').write_text('existing output')
         monkeypatch.setattr(module, 'run_baseline', fail_train)
         with pytest.raises(RuntimeError, match='retrain reached'):
             module._ensure_baseline(mode='loto', models_dir=tmp_path, out_dir=tmp_path, config=module.CauKeoConfig())
     else:
-        import cau_keo_ml as module
+        from ml import cau_keo_ml as module
         from tests.test_cau_keo_ml import _synthetic_training
         x, y = _synthetic_training(120, signal=0., seed=7)
         monkeypatch.setattr(module, 'build_cau_keo_feature_frame', lambda *args, **kwargs: (x, y))

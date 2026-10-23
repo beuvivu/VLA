@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-import bridge_rules
+from soi_cau import bridge_rules
 from vla.backtest import evaluator, walk_forward
 from vla.backtest.synthetic import synthetic_history
 from vla.features.engineer import (
@@ -279,7 +279,7 @@ def test_the_constant_reference_is_updated_through_each_target_draw() -> None:
 
 def _planted_rates(history: History) -> tuple[float, float]:
     """(tỉ lệ giải bảy thứ nhất = 73 sau kỳ có 37, tỉ lệ Đặc Biệt = kỳ trước + 1)."""
-    from xsmb_domain import PRIZE_FIELDS
+    from core.xsmb_domain import PRIZE_FIELDS
 
     seven = PRIZE_FIELDS.index("prize7_1")
     after_37 = np.array([37 in set((history.values[t - 1] % 100).tolist()) for t in range(1, len(history))])

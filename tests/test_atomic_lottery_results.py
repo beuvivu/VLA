@@ -11,11 +11,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import atomic_io
-import lottery
-from dtos import Result
-from excel_export import FIELD_WIDTHS
-from lottery_codes import write_code_csv
+from core import atomic_io
+from ingest import lottery
+from core.dtos import Result
+from core.excel_export import FIELD_WIDTHS
+from core.lottery_codes import write_code_csv
 
 
 OUTPUTS = [

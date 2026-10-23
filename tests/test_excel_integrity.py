@@ -9,8 +9,8 @@ from openpyxl import load_workbook
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from excel_export import FIELD_WIDTHS, export_excel_outputs
-from validate_excel_integrity import validate_against_canonical
+from core.excel_export import FIELD_WIDTHS, export_excel_outputs
+from ingest.validate_excel_integrity import validate_against_canonical
 
 
 def _raw_frame() -> pd.DataFrame:

@@ -50,8 +50,8 @@ mình và rút kết luận từ số đo mỗi lần dựng.
 
 ## 4. Đã dựng
 
-- `src/bridge_rules.py` (bộ máy + kiểm lịch sử) → `data/bridge_pages/latest.json`.
-- `src/build_bridge_pages.py` → bảy trang `docs/soi-cau-*.html` và `docs/tao-phoi-tuan.html`.
+- `src/soi_cau/bridge_rules.py` (bộ máy + kiểm lịch sử) → `data/bridge_pages/latest.json`.
+- `src/pages/build_bridge_pages.py` → bảy trang `docs/soi-cau-*.html` và `docs/tao-phoi-tuan.html`.
 - `src/templates/bridge_pages.js`: bảng đầu 0–9; rê chuột tô mọi vị trí của các cầu báo
   số ấy trên các bảng kiểu Sổ kết quả; bấm để chọn từng cầu — tô hai chữ số nguồn ở mỗi
   kỳ, tô ô đã về theo cầu kỳ trước; biên ngày, số ngày cầu chạy, thứ, "cả hai chữ số".

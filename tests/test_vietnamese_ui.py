@@ -6,8 +6,8 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from ui_locale import column_label, mode_label, path_kind_label, value_label
-from ui_theme import TAILWIND_LITE_CSS, tailwind_style_tag
+from web.ui_locale import column_label, mode_label, path_kind_label, value_label
+from web.ui_theme import TAILWIND_LITE_CSS, tailwind_style_tag
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,14 +39,14 @@ def test_dashboard_builder_renders_vietnamese_without_shadowing_html_module(
     tmp_path: Path,
 ) -> None:
     subprocess.run(
-        [sys.executable, "src/build_dashboard.py", "--docs-dir", str(tmp_path)],
+        [sys.executable, "src/pages/build_dashboard.py", "--docs-dir", str(tmp_path)],
         cwd=ROOT,
         check=True,
     )
     # Trang Chất lượng mô hình đã tách sang builder riêng. Nó chỉ ĐỌC báo cáo
     # chẩn đoán sẵn có trong data/ và ghi vào thư mục tạm, nên không làm bẩn kho.
     subprocess.run(
-        [sys.executable, "src/build_model_quality.py", "--docs-dir", str(tmp_path)],
+        [sys.executable, "src/pages/build_model_quality.py", "--docs-dir", str(tmp_path)],
         cwd=ROOT,
         check=True,
     )

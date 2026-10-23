@@ -1859,7 +1859,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/advanced_stats.py",
+      "path": "src/stats/advanced_stats.py",
       "sha256": "a97415b8da028bda7d137841dc50f9e072aaf977cb48acea09cd09262d9713c1",
       "lines": 394,
       "imports": [
@@ -1961,7 +1961,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/analyze.py",
+      "path": "src/stats/analyze.py",
       "sha256": "2d404694494dc36633e82852ba19b59b5d6e3f63bbdea923c163eaa02cd23034",
       "lines": 174,
       "imports": [
@@ -2022,7 +2022,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/app_icons.py",
+      "path": "src/web/app_icons.py",
       "sha256": "39926bb55dce6a7172d7ed6817cbf476e639a01fc350ac3d9d96b48efa794096",
       "lines": 94,
       "imports": [
@@ -2070,7 +2070,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/app_shell.py",
+      "path": "src/web/app_shell.py",
       "sha256": "ec3079219b47f9682daa00bb3498f5d2f0fa7a2b6d27a5288613cf071d39ae4a",
       "lines": 385,
       "imports": [
@@ -2176,7 +2176,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/atomic_io.py",
+      "path": "src/core/atomic_io.py",
       "sha256": "c45f9be1a6476458359c956988f67020e80a0b15d97a93417aa2da747f0a5274",
       "lines": 51,
       "imports": [
@@ -2220,7 +2220,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/backfill_baseline_skill.py",
+      "path": "src/evaluation/backfill_baseline_skill.py",
       "sha256": "003d923ee5c1fe0059de1131192061d747ab3729654840d6dd77b305f6b39326",
       "lines": 223,
       "imports": [
@@ -2284,7 +2284,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/backfill_history.py",
+      "path": "src/ingest/backfill_history.py",
       "sha256": "3386948eabdc9577f831ea0d2c5345a770ea10b26557814f6b474aeb42036946",
       "lines": 439,
       "imports": [
@@ -2380,7 +2380,7 @@
       ]
     },
     {
-      "path": "src/bong_bridge_lab.py",
+      "path": "src/research/bong_bridge_lab.py",
       "sha256": "e539d3e615ca13ef886d9a685ddbf15ecaad85a14205878c098a59e7f4997b05",
       "lines": 539,
       "imports": [
@@ -2482,7 +2482,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/bridge_rules.py",
+      "path": "src/soi_cau/bridge_rules.py",
       "sha256": "c43258df6535c7a840cd6bd5f875fc6cc729c95675934db14395da8082be4a2a",
       "lines": 254,
       "imports": [
@@ -2978,7 +2978,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_bridge_pages.py",
+      "path": "src/pages/build_bridge_pages.py",
       "sha256": "07222f1b6c617a29ac2d04474767f81e13a50c427bed93f0d9d6beb5f4100503",
       "lines": 313,
       "imports": [
@@ -3086,7 +3086,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_confidence_page.py",
+      "path": "src/pages/build_confidence_page.py",
       "sha256": "fbab5d4d629b112ae4465c1364929947a87d7d5962f53904efe0a9abbcf4817a",
       "lines": 447,
       "imports": [
@@ -3173,7 +3173,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_dashboard.py",
+      "path": "src/pages/build_dashboard.py",
       "sha256": "cbbdb8d0aefb57b0f322ea1a1a3995d71f8189a8d56f470f9c94671c4bf955df",
       "lines": 178,
       "imports": [
@@ -3323,7 +3323,7 @@
       ]
     },
     {
-      "path": "src/build_docs.py",
+      "path": "src/pages/build_docs.py",
       "sha256": "91f1f039806b1d20babda9da1c2d897e39cbfefe1e11a40efefec6f857dc0db1",
       "lines": 317,
       "imports": [
@@ -3446,7 +3446,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_docs_ml.py",
+      "path": "src/pages/build_docs_ml.py",
       "sha256": "97ed9dbe8531bf021b8f0bcc4303701bcc66e8e941df1f708cdc64a2533329ac",
       "lines": 263,
       "imports": [
@@ -3552,7 +3552,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_domain_experiment_report.py",
+      "path": "src/pages/build_domain_experiment_report.py",
       "sha256": "4971a4fb3dd4f70ee039ede42e58c6574f16b451d6c72479a41f3b26b431a313",
       "lines": 217,
       "imports": [
@@ -3600,7 +3600,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_fun_prediction.py",
+      "path": "src/pages/build_fun_prediction.py",
       "sha256": "e9e8cdccd050266a75cdc94ee3870c1d0b70bc495bcb5502cd4d48306807154a",
       "lines": 617,
       "imports": [
@@ -3710,7 +3710,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_landing_page.py",
+      "path": "src/pages/build_landing_page.py",
       "sha256": "374bc913b30af4e98eee452991dcfc1f5ccd51087bae44a53ba91888aaa566bf",
       "lines": 2592,
       "imports": [
@@ -3903,7 +3903,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_markdown_dashboard.py",
+      "path": "src/pages/build_markdown_dashboard.py",
       "sha256": "dff0b6a74f9330b79268247d2d20689a47fc6584e1304279c9c03eb1c4ce3909",
       "lines": 22,
       "imports": [
@@ -3927,7 +3927,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_markdown_dashboard_v3.py",
+      "path": "src/pages/build_markdown_dashboard_v3.py",
       "sha256": "d559f4dadbf77a5e7a7fd4a308930eced780cf8c3115be76b7346b384c2baa5e",
       "lines": 888,
       "imports": [
@@ -4022,7 +4022,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_model_quality.py",
+      "path": "src/pages/build_model_quality.py",
       "sha256": "7174b2143d8074a386226c52d83209f124ddd6eac7c37e1aa3aae12b54624e6e",
       "lines": 644,
       "imports": [
@@ -4119,7 +4119,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_position_bridges.py",
+      "path": "src/pages/build_position_bridges.py",
       "sha256": "62bb58359c1926909b71cffd7dddb6bf5008571241b8539356bff5886dc242f3",
       "lines": 323,
       "imports": [
@@ -4214,7 +4214,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_regional_results.py",
+      "path": "src/pages/build_regional_results.py",
       "sha256": "f37eaa3bc2c35388835a703ac2aaca521bc219a3b03b195ca9dddac169f385b4",
       "lines": 155,
       "imports": [
@@ -4315,7 +4315,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_research_lab.py",
+      "path": "src/pages/build_research_lab.py",
       "sha256": "0f0f7f0733621768639d9ce47e4d1bb1d9fff9dddc1b5302e5b67e2fc9baa775",
       "lines": 501,
       "imports": [
@@ -4404,7 +4404,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_stat_pages.py",
+      "path": "src/pages/build_stat_pages.py",
       "sha256": "1f0b6ccc89f7398a79323b74d2f58ee97f00a98a36db12e75fc4d126d55b574d",
       "lines": 895,
       "imports": [
@@ -4524,7 +4524,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_statistics_dashboard.py",
+      "path": "src/pages/build_statistics_dashboard.py",
       "sha256": "4a7049b5c424497bde7bdce7a8b7de135022d622eb53cad7895f12ad88f14f00",
       "lines": 2182,
       "imports": [
@@ -4629,7 +4629,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_traditional_results.py",
+      "path": "src/pages/build_traditional_results.py",
       "sha256": "78d361008abcda35f2a848e3d31fa67ee92267b0bc56eeaafbd8382dc824e20d",
       "lines": 282,
       "imports": [
@@ -4744,7 +4744,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/build_vietlott_results.py",
+      "path": "src/pages/build_vietlott_results.py",
       "sha256": "9c4b2b2652fb5923c4755950d641ecaf8115c72be1d94028e445341b499c6126",
       "lines": 771,
       "imports": [
@@ -4894,7 +4894,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/calendar_alignment.py",
+      "path": "src/core/calendar_alignment.py",
       "sha256": "a1f5953288fb831439eb1c9872a16a78bd2160933d374b4c11247fff83652023",
       "lines": 154,
       "imports": [
@@ -4950,7 +4950,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/calendar_widget.py",
+      "path": "src/web/calendar_widget.py",
       "sha256": "9b05e1072bac8f7fa66985a80e17f6f952fad02fc5640ed0347bfbc0699f6715",
       "lines": 73,
       "imports": [
@@ -4992,7 +4992,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/calibration.py",
+      "path": "src/ensemble/calibration.py",
       "sha256": "7764dd11a58dfe5a905ffcc1746392d123e05add9dc59f7b41c85dcb231ca92b",
       "lines": 351,
       "imports": [
@@ -5136,7 +5136,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cap_loto_50_stats.py",
+      "path": "src/stats/cap_loto_50_stats.py",
       "sha256": "87f81b4d382ce9b495065688734d684a0ee17e3dc45f6d2e006fbc73812e8bdf",
       "lines": 277,
       "imports": [
@@ -5228,7 +5228,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cau_keo_daily_top.py",
+      "path": "src/ml/cau_keo_daily_top.py",
       "sha256": "44038bbf239d653091bfef13d68f552dfc22ee9010c4de114ed2ba31ae40ce38",
       "lines": 92,
       "imports": [
@@ -5275,7 +5275,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cau_keo_domain_challenger.py",
+      "path": "src/ml/cau_keo_domain_challenger.py",
       "sha256": "c5b895d25608411a31b815964c21e4062d6f1a9f9f9afb636e8d90803b21a3b0",
       "lines": 795,
       "imports": [
@@ -5439,7 +5439,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cau_keo_feature_groups.py",
+      "path": "src/ml/cau_keo_feature_groups.py",
       "sha256": "66ed21c6c2bc93486e6cc2db6865a1bf84dc7ea0861cb1564cd75b3a1b1ddd2f",
       "lines": 357,
       "imports": [
@@ -5488,7 +5488,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cau_keo_ml.py",
+      "path": "src/ml/cau_keo_ml.py",
       "sha256": "169a8cd72983ac79ca6e506757c6cb9d07900c9eb8077159ff7e643762ac50df",
       "lines": 1129,
       "imports": [
@@ -5671,7 +5671,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cau_position_evidence.py",
+      "path": "src/soi_cau/cau_position_evidence.py",
       "sha256": "e461fbd532467ef2250ba2c9dbb0d3c808a2d2913553367c427ee89e37b4ef59",
       "lines": 472,
       "imports": [
@@ -5802,7 +5802,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/check_baseline_skill.py",
+      "path": "src/evaluation/check_baseline_skill.py",
       "sha256": "795c53131be6ff709461f437df73ef8b5a3a5160410781920735b211efaadbe8",
       "lines": 144,
       "imports": [
@@ -5849,7 +5849,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cleanup_artifacts.py",
+      "path": "src/evaluation/cleanup_artifacts.py",
       "sha256": "a499da3b742af04a49c48cdc8b8b16e051ec417338c86dabfa4d406f08f55a92",
       "lines": 76,
       "imports": [
@@ -5905,7 +5905,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/conditional_matrices.py",
+      "path": "src/stats/conditional_matrices.py",
       "sha256": "807e1abb6da169385bb47167211063dbe75ff286891444dcb3a1b4644b7a89be",
       "lines": 359,
       "imports": [
@@ -5992,7 +5992,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/conditional_nextday.py",
+      "path": "src/research/conditional_nextday.py",
       "sha256": "d87a90fac127fc93f8c551eea6b546d1456cd153f430b12bb85da264b2efed4f",
       "lines": 240,
       "imports": [
@@ -6093,7 +6093,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/confidence_matrix.py",
+      "path": "src/evaluation/confidence_matrix.py",
       "sha256": "06200018dbf8bc36df48a00936933c3f9880529891ea03d48eda1dd7b1b9eefe",
       "lines": 788,
       "imports": [
@@ -6185,7 +6185,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/crafto_design.py",
+      "path": "src/web/crafto_design.py",
       "sha256": "14d537abee98544da3e6a117d8a1643537a5cae8d98668d2dbc0e39a4d2e80db",
       "lines": 47,
       "imports": [
@@ -6376,14 +6376,14 @@
       ]
     },
     {
-      "path": "src/critical_css_generated.py",
+      "path": "src/web/critical_css_generated.py",
       "sha256": "84fb9a23b79bf93feb20fd4181022496e9f8e2cbabd142beed134e564736605b",
       "lines": 2,
       "imports": [],
       "broad_exception_handlers": []
     },
     {
-      "path": "src/crosslag_positional_lab.py",
+      "path": "src/research/crosslag_positional_lab.py",
       "sha256": "5f2041162deb47eba5a671c5372fbab0814f2b8cd4c992bff9d1deb580359e74",
       "lines": 502,
       "imports": [
@@ -6489,7 +6489,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/css_links.py",
+      "path": "src/web/css_links.py",
       "sha256": "2b06bfea48d7f0d542634b940e86c102dc5d186059a459bcfad19558f6cebb10",
       "lines": 71,
       "imports": [
@@ -6521,7 +6521,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/cycle_stats.py",
+      "path": "src/stats/cycle_stats.py",
       "sha256": "ad0b67406965a9f0bb27d779973e2ee0c42bd016dd929a5ac99211293914de12",
       "lines": 133,
       "imports": [
@@ -6579,7 +6579,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/dashboard_tables.py",
+      "path": "src/web/dashboard_tables.py",
       "sha256": "fae08dd1f35f09e2032600654f180d031b7467af4cca16422606ab3febd85074",
       "lines": 131,
       "imports": [
@@ -6645,7 +6645,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/descriptive_extensions.py",
+      "path": "src/stats/descriptive_extensions.py",
       "sha256": "b94d61a3d966cb238f9be9bd60c1925dd5410e693791175e0466592f9acfebd4",
       "lines": 330,
       "imports": [
@@ -6730,7 +6730,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/digit_sum_hypothesis.py",
+      "path": "src/research/digit_sum_hypothesis.py",
       "sha256": "23e5651008d3c4fa908a56c17e73953051e4825658463aad79dd80a5bc57170d",
       "lines": 148,
       "imports": [
@@ -6782,7 +6782,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/digit_sum_rules.py",
+      "path": "src/soi_cau/digit_sum_rules.py",
       "sha256": "a053edb2109d11f11f16934dc6e2e9f16c767cf0e64d3351460c0cef597cfbe3",
       "lines": 343,
       "imports": [
@@ -6859,7 +6859,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/draw_metadata.py",
+      "path": "src/web/draw_metadata.py",
       "sha256": "04948e0a5e5b6802e23b5d6f0db523213d6d270daa6a6c4086f180b8bafda495",
       "lines": 125,
       "imports": [
@@ -6950,7 +6950,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/dtos.py",
+      "path": "src/core/dtos.py",
       "sha256": "47c4db7358bbf5696d3e24adc7a72010978dcb56124d20d282001bdbd2553d81",
       "lines": 92,
       "imports": [
@@ -6976,7 +6976,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/dynamic_cau.py",
+      "path": "src/soi_cau/dynamic_cau.py",
       "sha256": "37d0a1f6e88082a31826285665d9d1bb2d92bf2226417a1c69b76e39f02b4093",
       "lines": 404,
       "imports": [
@@ -7039,7 +7039,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ensemble_components.py",
+      "path": "src/ensemble/ensemble_components.py",
       "sha256": "6626be572097a67e652d6eccfe6e8db2d1bee59886663330b5c7f853b54a1f10",
       "lines": 277,
       "imports": [
@@ -7099,7 +7099,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ensemble_utils.py",
+      "path": "src/ensemble/ensemble_utils.py",
       "sha256": "2aefdcdfec19e3186cc791394c5d26a9f7df282e135bc1760adb7b6b5eaf5142",
       "lines": 419,
       "imports": [
@@ -7171,7 +7171,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/evidence_catalog.py",
+      "path": "src/web/evidence_catalog.py",
       "sha256": "caf8011f1147c0085d98cd6be89661ef3d8b76fdecccfcd6f7c21f3ae66b0f89",
       "lines": 921,
       "imports": [
@@ -7243,7 +7243,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/excel_export.py",
+      "path": "src/core/excel_export.py",
       "sha256": "444d1b5f2789a731dfe154058865c01901f76ac8fab95b5443685dff25a8d744",
       "lines": 434,
       "imports": [
@@ -7351,7 +7351,7 @@
       ]
     },
     {
-      "path": "src/export_number_reference.py",
+      "path": "src/stats/export_number_reference.py",
       "sha256": "a4c6d4342244188cd714566bc857b77d75378ee2ea9dd7d4d36f790532f085eb",
       "lines": 179,
       "imports": [
@@ -7413,7 +7413,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/feature_attribution.py",
+      "path": "src/forecast/feature_attribution.py",
       "sha256": "33ff69ee67daa9f85e7ae453ae9c40395c4368aa8f12336942af6b78d2c2dc05",
       "lines": 323,
       "imports": [
@@ -7856,7 +7856,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/fetch.py",
+      "path": "src/ingest/fetch.py",
       "sha256": "fe2d7f21eede7cdd665ca8f3c3e30a6c347563e6482455158f7d35b3cdb83774",
       "lines": 17,
       "imports": [
@@ -7893,7 +7893,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/frequency_stats.py",
+      "path": "src/stats/frequency_stats.py",
       "sha256": "b88aedfa8657426168c3601aff1df18a7b2a08c6f4ec71dd0290dc2f0f44bcb1",
       "lines": 193,
       "imports": [
@@ -7954,7 +7954,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/fun_draw_ledger.py",
+      "path": "src/evaluation/fun_draw_ledger.py",
       "sha256": "508c82be9f294e09e84885856d2cd2edfa0187c8755d8bf06e37b848e75a3345",
       "lines": 269,
       "imports": [
@@ -8047,7 +8047,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/gap_cycle_stats.py",
+      "path": "src/stats/gap_cycle_stats.py",
       "sha256": "1f0346b33b6048720c5b39127bd4b6c5eb945ab8062dd4999b2fa2e0b3701250",
       "lines": 214,
       "imports": [
@@ -8085,7 +8085,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/hazard_stats.py",
+      "path": "src/stats/hazard_stats.py",
       "sha256": "45ac47ca95aa72d5b87c28f9b4f8d1c3bd1bfe530f23b5e1c7f1d372fa9a2804",
       "lines": 157,
       "imports": [
@@ -8140,7 +8140,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/hierarchical_pooling.py",
+      "path": "src/ensemble/hierarchical_pooling.py",
       "sha256": "3eca84f60eb87082348f99edc923f8e571bf370bb4d331e68ebb3663eb1ead26",
       "lines": 349,
       "imports": [
@@ -8177,7 +8177,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/hot_tail_test.py",
+      "path": "src/research/hot_tail_test.py",
       "sha256": "ea8600e0b23854275ac2f642683c93372f4e189ab29d9f4e500da4f5c64658a2",
       "lines": 147,
       "imports": [
@@ -8234,7 +8234,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/lab_ui.py",
+      "path": "src/web/lab_ui.py",
       "sha256": "fbb1d70ecb809df06f3cd16adefe94d14a22d135795fbcccbf14767a6ec0fa8b",
       "lines": 75,
       "imports": [
@@ -8271,7 +8271,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/learn_ensemble_weights.py",
+      "path": "src/ensemble/learn_ensemble_weights.py",
       "sha256": "4c378e1db3188816d21443f40f9c7085a839d406a580a188e1a673a1431e2ed7",
       "lines": 622,
       "imports": [
@@ -8392,7 +8392,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/legacy_advanced_diagnostics.py",
+      "path": "src/research/legacy_advanced_diagnostics.py",
       "sha256": "d18cf9f223b2e423927341e25ca613fe95cab0fa23baabbfaec20458fb12e24e",
       "lines": 255,
       "imports": [
@@ -8469,7 +8469,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/live_sync.py",
+      "path": "src/ingest/live_sync.py",
       "sha256": "8a7598c688111636cf2dd82b111f09101899c66cf183305576b084243b187d49",
       "lines": 167,
       "imports": [
@@ -8559,7 +8559,7 @@
       ]
     },
     {
-      "path": "src/lottery.py",
+      "path": "src/ingest/lottery.py",
       "sha256": "28c8b30028d09bea81ac9ab6b9bf64c6a41ec49cdd986db87a822f9f5429e109",
       "lines": 381,
       "imports": [
@@ -8701,7 +8701,7 @@
       ]
     },
     {
-      "path": "src/lottery_codes.py",
+      "path": "src/core/lottery_codes.py",
       "sha256": "a99a10b6fe5fc87294626df0940d1e42e286ba72411762b2d26c49d359100f28",
       "lines": 123,
       "imports": [
@@ -8767,7 +8767,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/markov_stats.py",
+      "path": "src/stats/markov_stats.py",
       "sha256": "813f54267209487e0f559791ee3bd187efaf0f64278f3495005fbc09feb12580",
       "lines": 176,
       "imports": [
@@ -8863,7 +8863,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/meta_predictor.py",
+      "path": "src/forecast/meta_predictor.py",
       "sha256": "09c544ec3e739f2a2388b266a50a381f61450759094c7917af990a25d88bde67",
       "lines": 1065,
       "imports": [
@@ -9975,7 +9975,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ml_features.py",
+      "path": "src/ml/ml_features.py",
       "sha256": "ce373473e0816208174bc734390cd4c25df83f4cda1991fa471dd6e87741343d",
       "lines": 443,
       "imports": [
@@ -10059,7 +10059,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ml_models.py",
+      "path": "src/ml/ml_models.py",
       "sha256": "5bba44a00e5cbc436d2893db47f45b2003b6555b384087b7255bab4954bc38ae",
       "lines": 60,
       "imports": [
@@ -10106,7 +10106,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ml_predict.py",
+      "path": "src/ml/ml_predict.py",
       "sha256": "90ab20083dd1bad72bcea0c2bd6acc9e8c29336c5444ee7861136467ab0a7ff6",
       "lines": 228,
       "imports": [
@@ -10216,7 +10216,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ml_train.py",
+      "path": "src/ml/ml_train.py",
       "sha256": "85bd7653a7931ee4552860944f7853c0a5ccd48a1f4ac3ab134113ca39566b3d",
       "lines": 328,
       "imports": [
@@ -10297,7 +10297,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ml_validation.py",
+      "path": "src/ml/ml_validation.py",
       "sha256": "45b743b8829c8f38229fc35f3fee96c8c147162ea5680feebc219511170cc285",
       "lines": 347,
       "imports": [
@@ -10358,7 +10358,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/model_io.py",
+      "path": "src/core/model_io.py",
       "sha256": "b113eae802080f535c1c05c5489945d3899814f9fe8701793effb2da753a95cf",
       "lines": 39,
       "imports": [
@@ -10420,7 +10420,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/model_quality.py",
+      "path": "src/evaluation/model_quality.py",
       "sha256": "ef1c581b1a4293c2cc52a86ca587494a0762d617e400b36323146e7f09e314a5",
       "lines": 409,
       "imports": [
@@ -10970,7 +10970,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/monitor_health.py",
+      "path": "src/evaluation/monitor_health.py",
       "sha256": "d71e48d33c2fc161ebdc183a2ec6b3bdcddb13a081d700b6e680fed95605479b",
       "lines": 132,
       "imports": [
@@ -11037,7 +11037,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/nexlink_icons.py",
+      "path": "src/web/nexlink_icons.py",
       "sha256": "211196721db3218d9e84775c76fd28df105304d589d5c6fb05eb6511defb1ffb",
       "lines": 50,
       "imports": [
@@ -11079,7 +11079,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/normalize_pair_artifacts.py",
+      "path": "src/stats/normalize_pair_artifacts.py",
       "sha256": "aff51b9f79172b5cd933764f38fb018317de713689af4bca3d36f3a888ec4e86",
       "lines": 176,
       "imports": [
@@ -11138,7 +11138,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/number_dynamics.py",
+      "path": "src/stats/number_dynamics.py",
       "sha256": "ecf441439ccd78d15d6453e144788f9d31995f94ca46561f9724a1c3a59b2b67",
       "lines": 724,
       "imports": [
@@ -11268,7 +11268,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/number_reference.py",
+      "path": "src/core/number_reference.py",
       "sha256": "c99c649dec90c2d70fda2acb498a4e68e72163bac49e7e1c501c323611b9c9cf",
       "lines": 516,
       "imports": [
@@ -11300,7 +11300,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/online_learning.py",
+      "path": "src/forecast/online_learning.py",
       "sha256": "3b30c804b301f397b6322d4b23300800def925bea679592cbddf0f88217210f8",
       "lines": 700,
       "imports": [
@@ -11447,7 +11447,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/opinion_pool.py",
+      "path": "src/ensemble/opinion_pool.py",
       "sha256": "287cff4fc426c4b4f9c07eee4e57f3b2bd1c6f8dde4bca776ce8c866479542f1",
       "lines": 253,
       "imports": [
@@ -11496,7 +11496,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/page_output.py",
+      "path": "src/web/page_output.py",
       "sha256": "e6bf53c529cf2f3e4d9265b56df35a8c79b0be53acefe989f8d6abb1e96cfe77",
       "lines": 374,
       "imports": [
@@ -11573,7 +11573,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/pair_stats.py",
+      "path": "src/stats/pair_stats.py",
       "sha256": "893910b780a85c8f0ab0ec034a05e09f5a881d69e3bcc46c9c231ea132a532bd",
       "lines": 135,
       "imports": [
@@ -11741,7 +11741,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/path_models.py",
+      "path": "src/core/path_models.py",
       "sha256": "9b5dc16f159f3b483d7e5f96644316c90da202f1dfc35d9fca85872bac1ac783",
       "lines": 193,
       "imports": [
@@ -11802,7 +11802,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/path_prob.py",
+      "path": "src/soi_cau/path_prob.py",
       "sha256": "e2f83e0e9ae8eac33019a4575d97e8101d645265f5292f19831eec7d16ebc3f8",
       "lines": 571,
       "imports": [
@@ -11884,7 +11884,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/path_timeline_evidence.py",
+      "path": "src/soi_cau/path_timeline_evidence.py",
       "sha256": "a4d7caf166e22d4f138b6ac9411068d0f93e4fe4b14638a2f76598204ea93deb",
       "lines": 202,
       "imports": [
@@ -11957,7 +11957,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/pick_diversity.py",
+      "path": "src/ensemble/pick_diversity.py",
       "sha256": "a290dadcc02241e6d6982b10303ada8a808e7654b1e7c635ad691036999b90c3",
       "lines": 51,
       "imports": [
@@ -12035,7 +12035,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/plot_utils.py",
+      "path": "src/stats/plot_utils.py",
       "sha256": "58d0c82d35d2f0a289a532921c19a7109e7973892bede974ad10736093dacb20",
       "lines": 253,
       "imports": [
@@ -12101,7 +12101,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/position_bridges.py",
+      "path": "src/soi_cau/position_bridges.py",
       "sha256": "cb9a056a3a3d0f46e695031a8eb3970f225fc38b6a4c94939230d17e47caf6a1",
       "lines": 362,
       "imports": [
@@ -12154,7 +12154,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/predict_nextday_2d.py",
+      "path": "src/forecast/predict_nextday_2d.py",
       "sha256": "5785f9320272e60270630cb534b42862bb27dd720c0ed0715bff25f703bc6b53",
       "lines": 425,
       "imports": [
@@ -12508,7 +12508,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/prob_eval_history.py",
+      "path": "src/evaluation/prob_eval_history.py",
       "sha256": "9b646a3c1553e59660f6b4b0bd57d0f6e5f1e1803dceea954a7538f61aa7f32f",
       "lines": 235,
       "imports": [
@@ -12592,7 +12592,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/production_audit.py",
+      "path": "src/evaluation/production_audit.py",
       "sha256": "6bfc3263cf52c9d6196c5b4a5e8ea6964c7069216f518b93312be749281c1bbd",
       "lines": 373,
       "imports": [
@@ -12702,7 +12702,7 @@
       ]
     },
     {
-      "path": "src/randomness_battery.py",
+      "path": "src/stats/randomness_battery.py",
       "sha256": "b543a9a052898c860bc8d640b09c9245f24a116b8aca56cb4849ca0be4bb8f50",
       "lines": 393,
       "imports": [
@@ -12769,7 +12769,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/reconcile_live_canonical.py",
+      "path": "src/ingest/reconcile_live_canonical.py",
       "sha256": "a0c46ae68bf20fcefa13ffc859cf4c01db46dc7da23050e7ab67d0d70c7c6a0e",
       "lines": 131,
       "imports": [
@@ -12842,7 +12842,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/record_pred_history.py",
+      "path": "src/evaluation/record_pred_history.py",
       "sha256": "770c2abb89c8b5feb64da4c4488d92a3173e51331609cdd80d89d427a82f0722",
       "lines": 200,
       "imports": [
@@ -12911,7 +12911,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/regional_lottery.py",
+      "path": "src/ingest/regional_lottery.py",
       "sha256": "e705a78e02a954ab2e1fe6d2cc168143342750ce49cdf5ddb111c62e7dd69112",
       "lines": 235,
       "imports": [
@@ -13022,7 +13022,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/research_diagnostics.py",
+      "path": "src/research/research_diagnostics.py",
       "sha256": "bb861fa3d7a1e0e9ee243314225fba8a37952f5d6f2c9a291a95d1c896f2c1dc",
       "lines": 250,
       "imports": [
@@ -13099,7 +13099,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/research_firewall.py",
+      "path": "src/research/research_firewall.py",
       "sha256": "26b42ad552de53e11a9939d5d78a9efa210b5c9f83a08417eaeb1372f779c4f8",
       "lines": 317,
       "imports": [
@@ -13192,7 +13192,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/research_legacy_extensions.py",
+      "path": "src/research/research_legacy_extensions.py",
       "sha256": "478f26bea3d273cfab6af1673a961357daead2af7acd0af0710a5da9f3959a23",
       "lines": 508,
       "imports": [
@@ -13293,7 +13293,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/run_bridge_scan.py",
+      "path": "src/bridges/run_bridge_scan.py",
       "sha256": "06ba5a5341ca16152885809811f964106ffd5eddf02261d1a646d2c3be1c2390",
       "lines": 138,
       "imports": [
@@ -13382,7 +13382,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/run_daily_prediction.py",
+      "path": "src/modeling/run_daily_prediction.py",
       "sha256": "c996b14b91d08f6de213ad2ac0a4e010f8dfecbb2165c920b43d6dc03f379623",
       "lines": 221,
       "imports": [
@@ -13767,7 +13767,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/run_path_ui.py",
+      "path": "src/soi_cau/run_path_ui.py",
       "sha256": "57945fa71b3eb53abff4cd4b69199a8607321c0d8f68b941e76c8ac857408b84",
       "lines": 401,
       "imports": [
@@ -13958,7 +13958,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/safe_io.py",
+      "path": "src/core/safe_io.py",
       "sha256": "a5af15b7411c30de3a78ca5744df74587d42a3d0bc2b0bae7ea7fa2424a47908",
       "lines": 71,
       "imports": [
@@ -14005,7 +14005,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/shared_results.py",
+      "path": "src/web/shared_results.py",
       "sha256": "0178d126287904f9e1930dab17a133f4345b6230fefb203e7db7a60548f6e332",
       "lines": 216,
       "imports": [
@@ -14062,7 +14062,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/significance_stats.py",
+      "path": "src/stats/significance_stats.py",
       "sha256": "2a965e519e6a2d235fafc09fdcded615ac5510debcda8dbda0024fbd9331e477",
       "lines": 204,
       "imports": [
@@ -14156,7 +14156,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/skill_monitor.py",
+      "path": "src/evaluation/skill_monitor.py",
       "sha256": "f1142be70d6f15657e92ad85b7f3b63ed9ad3b53029ed3340a7fdb54c531fcde",
       "lines": 286,
       "imports": [
@@ -14229,7 +14229,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/sources.py",
+      "path": "src/ingest/sources.py",
       "sha256": "6b391cb7dd42fd41371bfb5667a6ceea88abdf5c9126bfc0a46a0c83557908f9",
       "lines": 862,
       "imports": [
@@ -14319,7 +14319,7 @@
       ]
     },
     {
-      "path": "src/statistical_corrections.py",
+      "path": "src/stats/statistical_corrections.py",
       "sha256": "27e33e88320e6acd99c1860c9f7fbcc4b4a4e3cc8236be44e29ece15d9f6da84",
       "lines": 35,
       "imports": [
@@ -14340,7 +14340,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/statistical_matrices.py",
+      "path": "src/stats/statistical_matrices.py",
       "sha256": "33d036f8f2b55716addbd9f7ee414cf96914f510ae89fb1534c955b624f5ec8f",
       "lines": 1002,
       "imports": [
@@ -14489,7 +14489,7 @@
       ]
     },
     {
-      "path": "src/statistical_signal.py",
+      "path": "src/stats/statistical_signal.py",
       "sha256": "3531e40fe0f789ce2620b5a47d0e136b6833d39423f328bf43aceaf37d2a010e",
       "lines": 687,
       "imports": [
@@ -14613,7 +14613,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/statistics_ai_overlay.py",
+      "path": "src/stats/statistics_ai_overlay.py",
       "sha256": "7ddb5a7e0e04b16258ced5c9787c51d5cee9ee16ab73e8651a3fe4f8cb6da380",
       "lines": 394,
       "imports": [
@@ -14823,7 +14823,7 @@
       ]
     },
     {
-      "path": "src/strategy_lab.py",
+      "path": "src/research/strategy_lab.py",
       "sha256": "2cb54b2a4c76d9118f20a90d67919da944850dea62cb4b215a6b9ae39e54d88f",
       "lines": 536,
       "imports": [
@@ -14942,7 +14942,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/sync.py",
+      "path": "src/ingest/sync.py",
       "sha256": "6edd68accae41757c2c386bd7d2826bf19092222e84ea86ef40d090b415fd5e6",
       "lines": 174,
       "imports": [
@@ -15067,7 +15067,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/time_policy.py",
+      "path": "src/core/time_policy.py",
       "sha256": "6ed519d2a2eee4871a53ba1c3861236ded16b331ef60b3240cb3b84d4863d5f9",
       "lines": 72,
       "imports": [
@@ -15103,7 +15103,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ui_locale.py",
+      "path": "src/web/ui_locale.py",
       "sha256": "88f2d304f78c9b35eaca874bf6b0ceda0ae2d1b71f7a9af9b1d37d0f7c496633",
       "lines": 307,
       "imports": [
@@ -15135,7 +15135,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ui_page_refinements.py",
+      "path": "src/web/ui_page_refinements.py",
       "sha256": "a5ea57cedaddc298a6174575e119b673d595f932927edd2ce0e71092cc6cebae",
       "lines": 278,
       "imports": [
@@ -15164,7 +15164,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/ui_theme.py",
+      "path": "src/web/ui_theme.py",
       "sha256": "76c82ea05bd825e47d7ae3dde80e055ae8328af4bcd72778e690847b6ac0108b",
       "lines": 1291,
       "imports": [
@@ -15231,7 +15231,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/update_pred_labels.py",
+      "path": "src/evaluation/update_pred_labels.py",
       "sha256": "d15ec58a6f08ad117f48fb9a6efc4e0909535e515d7ffc4898f5de53fd41340d",
       "lines": 99,
       "imports": [
@@ -15283,7 +15283,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/update_readme.py",
+      "path": "src/pages/update_readme.py",
       "sha256": "881f54c7cd05f40ceaf428a8ace8a7f409f9bf0be5cce25d9a8cd65d24342944",
       "lines": 292,
       "imports": [
@@ -15419,7 +15419,7 @@
       ]
     },
     {
-      "path": "src/validate_cau_keo_domain.py",
+      "path": "src/ml/validate_cau_keo_domain.py",
       "sha256": "65d4232e0426b19bbc2255b8601c23272eedb350e6d969e6c491e9400c523ea0",
       "lines": 208,
       "imports": [
@@ -15497,7 +15497,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/validate_data.py",
+      "path": "src/ingest/validate_data.py",
       "sha256": "86e5140deea901c44acab41a8f9cb7511ccea5075b9fcbd0dc6db3cde9849d86",
       "lines": 280,
       "imports": [
@@ -15565,7 +15565,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/validate_excel_integrity.py",
+      "path": "src/ingest/validate_excel_integrity.py",
       "sha256": "6740a19136d1e416dc2866cdae253fb809a2ff13fb7ee46ca14e11c729b30e97",
       "lines": 163,
       "imports": [
@@ -15625,7 +15625,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/vietlott_navigation_content.py",
+      "path": "src/pages/vietlott_navigation_content.py",
       "sha256": "02d43e6590b6c53e17a9d801de2240ec4963a495fad859c53226b8166f6145a6",
       "lines": 104,
       "imports": [
@@ -16032,7 +16032,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/web_security.py",
+      "path": "src/web/web_security.py",
       "sha256": "01d431460c039ed1d966f3ccd9fc60fbcda1c7fe6503b419045a8eefaedbf898",
       "lines": 48,
       "imports": [
@@ -16066,7 +16066,7 @@
       "broad_exception_handlers": []
     },
     {
-      "path": "src/xsmb_domain.py",
+      "path": "src/core/xsmb_domain.py",
       "sha256": "06e7a6bb82d12f7696714398349e3b62f04d2303474acfd3319e1578c5b12b50",
       "lines": 207,
       "imports": [

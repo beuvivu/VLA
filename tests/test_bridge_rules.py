@@ -15,9 +15,9 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-import bridge_rules as br
-import build_bridge_pages as pages
-from position_bridges import COLUMNS
+from soi_cau import bridge_rules as br
+from pages import build_bridge_pages as pages
+from soi_cau.position_bridges import COLUMNS
 
 ROOT = Path(__file__).resolve().parents[1]
 REF = json.loads((ROOT / "tests" / "fixtures" / "bridge_reference_2026-09-28.json").read_text(encoding="utf-8"))

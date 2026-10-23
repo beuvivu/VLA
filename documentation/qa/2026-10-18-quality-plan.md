@@ -28,7 +28,7 @@
 
 ### 2. Tính nhân quả và hiệu năng XSMB
 
-**Tệp:** `src/online_learning.py`, `src/xsmb_agents/engine.py`, các phép kiểm tự học/tác tử.
+**Tệp:** `src/forecast/online_learning.py`, `src/xsmb_agents/engine.py`, các phép kiểm tự học/tác tử.
 
 - [x] Tái hiện đồng hồ đọc trước khóa cho phép ghi dự báo mới sau cutoff.
 - [x] Đọc giờ sau khóa và kiểm sát trước ghi; giữ khả năng khôi phục bản ghi cũ.
@@ -64,7 +64,7 @@
 
 ### 6. Lint và tài liệu vận hành
 
-**Tệp:** `src/build_statistics_dashboard.py`, `src/update_readme.py`, `src/templates/README.j2`, `README.md`, phép kiểm README.
+**Tệp:** `src/pages/build_statistics_dashboard.py`, `src/pages/update_readme.py`, `src/templates/README.j2`, `README.md`, phép kiểm README.
 
 - [x] Sửa B905 tại phép ghép hai Series cùng hàng bằng `strict=True`.
 - [x] Đồng bộ mô tả nguồn và template automation với chính sách một nguồn chính/hai dự phòng/ngưỡng một nhóm đang chạy.

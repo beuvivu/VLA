@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ensemble_utils import normalize_distribution
+from ensemble.ensemble_utils import normalize_distribution
 
 
 def test_zero_distribution_uses_its_actual_state_space_size() -> None:

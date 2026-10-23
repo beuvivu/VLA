@@ -14,7 +14,7 @@ TMP_OUT="$(mktemp -d)"
 trap 'rm -rf "$TMP_MODELS" "$TMP_OUT"' EXIT
 
 printf '%s\n' "== Four-fold domain-feature challenger =="
-python src/cau_keo_domain_challenger.py \
+python src/ml/cau_keo_domain_challenger.py \
   --mode both \
   --models-dir "$TMP_MODELS" \
   --out-dir "$TMP_OUT" \
@@ -38,8 +38,8 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from cau_keo_domain_challenger import DOMAIN_FEATURE_GROUPS, DOMAIN_SCHEMA_VERSION
-from cau_keo_ml import FEATURE_COLS
+from ml.cau_keo_domain_challenger import DOMAIN_FEATURE_GROUPS, DOMAIN_SCHEMA_VERSION
+from ml.cau_keo_ml import FEATURE_COLS
 
 for mode in ("loto", "de"):
     gate = json.loads(Path(f"$TMP_OUT/cau_keo_domain_gate_{mode}.json").read_text(encoding="utf-8"))

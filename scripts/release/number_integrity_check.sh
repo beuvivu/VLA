@@ -6,18 +6,18 @@ cd "$ROOT"
 export PYTHONPATH="${PYTHONPATH:-$ROOT/src}"
 
 printf '%s\n' "== Canonical number ontology =="
-python src/export_number_reference.py --out-dir data/reference
+python src/stats/export_number_reference.py --out-dir data/reference
 
 printf '%s\n' "== Pair artifacts + semantics =="
-python src/pair_stats.py --out-dir data/pairs --data-dir data --top 300
-python src/descriptive_extensions.py --out-dir data/descriptive_ext --pair-top 300
-python src/normalize_pair_artifacts.py \
+python src/stats/pair_stats.py --out-dir data/pairs --data-dir data --top 300
+python src/stats/descriptive_extensions.py --out-dir data/descriptive_ext --pair-top 300
+python src/stats/normalize_pair_artifacts.py \
   --descriptive-dir data/descriptive_ext \
   --pairs-dir data/pairs
 
 printf '%s\n' "== Rebuild exact-width Excel outputs from canonical history =="
 python - <<'PY'
-from lottery import Lottery
+from ingest.lottery import Lottery
 
 lot = Lottery()
 lot.load()
@@ -27,7 +27,7 @@ print("OK rebuilt canonical Excel workbooks")
 PY
 
 printf '%s\n' "== Excel canonical roundtrip =="
-python src/validate_excel_integrity.py \
+python src/ingest/validate_excel_integrity.py \
   --data-dir data \
   --json-out data/excel/integrity.json
 

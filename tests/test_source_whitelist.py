@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import (
+from ingest.sources import (
     FALLBACK_SOURCE_NAMES,
     HISTORY_API_SOURCE_NAMES,
     PRIMARY_SOURCE_NAMES,
@@ -82,10 +82,10 @@ def test_the_scan_actually_reaches_the_source_catalogue() -> None:
     """Chốt chặn cho phép kiểm dưới: nếu phép quét không tới được tệp danh mục
     nguồn thì nó xanh mà chẳng chứng minh gì."""
     files = _scanned_files()
-    assert (ROOT / "src" / "sources.py") in files
+    assert (ROOT / "src" / "ingest" / "sources.py") in files
     assert (ROOT / "worker" / "src" / "sources.js") in files
     assert len(files) > 100
-    found = LOTTERY_SHAPED.findall((ROOT / "src" / "sources.py").read_text(encoding="utf-8"))
+    found = LOTTERY_SHAPED.findall((ROOT / "src" / "ingest" / "sources.py").read_text(encoding="utf-8"))
     assert set(found) == {"xoso.com.vn", "mketqua.net", "www.minhngoc.net.vn"}, (
         "biểu thức nhận diện không bắt được danh mục thật"
     )

@@ -1,4 +1,4 @@
-// Bản JS của `src/live_sync.py::fetch_snapshot`, tách làm hai nửa.
+// Bản JS của `src/ingest/live_sync.py::fetch_snapshot`, tách làm hai nửa.
 //
 // `buildSnapshot` là phần THUẦN: vào là các bảng giải đã lấy được, ra là đúng
 // payload live.json. Tách ra như vậy để `tests/test_worker_snapshot_parity.py`
@@ -123,7 +123,7 @@ export function buildSnapshot({ partials, sourceStatus, nowUtcMs, minAgreement =
 const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 /**
- * Thử lại có lùi mũ kèm nhiễu, khớp chính sách của `src/sources.py`.
+ * Thử lại có lùi mũ kèm nhiễu, khớp chính sách của `src/ingest/sources.py`.
  *
  * Nhiễu là bắt buộc chứ không phải trang trí: các nguồn chạy song song, nếu
  * cùng hỏng rồi cùng chờ đúng một khoảng thì lần thử sau lại dội vào cùng một

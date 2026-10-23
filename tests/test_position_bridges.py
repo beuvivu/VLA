@@ -14,8 +14,8 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-import build_position_bridges as page
-import position_bridges as pb
+from pages import build_position_bridges as page
+from soi_cau import position_bridges as pb
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DATE = "2026-09-28"
@@ -258,7 +258,7 @@ def test_the_page_embeds_the_window_and_hides_the_path_until_asked(tmp_path: Pat
 
 
 def test_the_result_board_carries_the_extra_column_only_when_given() -> None:
-    from shared_results import decode_row, render_result_board
+    from web.shared_results import decode_row, render_result_board
 
     row = "2026-09-26" + "00001" + "00000" + "0000200003" + "00004" * 6 + "0005" * 4 + "0006" * 6 + "007" * 3 + "08" * 4
     draw = decode_row(row)

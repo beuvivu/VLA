@@ -10,8 +10,8 @@ import pytest
 import requests
 import yaml
 
-import atomic_io
-import regional_lottery as regional
+from core import atomic_io
+from ingest import regional_lottery as regional
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +38,8 @@ def _clock(monkeypatch, now: str) -> None:
 
 @pytest.fixture
 def repo(tmp_path, monkeypatch):
-    monkeypatch.setattr(regional, "__file__", str(tmp_path / "src/regional_lottery.py"))
+    # Gốc kho đi qua core.paths; vá đúng tên module đọc, nếu không main() ghi vào data/ thật.
+    monkeypatch.setattr(regional, "REPO_ROOT", tmp_path)
     _clock(monkeypatch, "2026-10-09T20:00:00+07:00")
     return tmp_path
 
@@ -145,10 +146,10 @@ def test_workflow_publishes_valid_partial_results_before_reporting_failure(tmp_p
     steps = workflow["jobs"]["sync"]["steps"]
     checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
     assert checkout["with"].get("ref") == "main"
-    collector = next(step for step in steps if "src/regional_lottery.py" in step.get("run", ""))
+    collector = next(step for step in steps if "src/ingest/regional_lottery.py" in step.get("run", ""))
     assert collector.get("id") == "collect"
     assert collector.get("continue-on-error") is True
-    build = next(step for step in steps if "src/build_regional_results.py" in step.get("run", ""))
+    build = next(step for step in steps if "src/pages/build_regional_results.py" in step.get("run", ""))
     deployment = next(step for step in steps if step.get("uses", "").startswith("actions/deploy-pages@"))
     final = steps[-1]
     assert steps.index(collector) < steps.index(build) < steps.index(deployment) < steps.index(final)

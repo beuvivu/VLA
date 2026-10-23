@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from conditional_nextday import compute_loto_nextday_given_special
+from research.conditional_nextday import compute_loto_nextday_given_special
 
 
 def _two(dates: list[str]) -> pd.DataFrame:
@@ -159,7 +159,7 @@ def test_manifest_records_whether_the_strength_was_learned(tmp_path) -> None:
     repo = Path(__file__).resolve().parents[1]
     out = tmp_path / "cond"
     subprocess.run(
-        [sys.executable, str(repo / "src" / "conditional_nextday.py"),
+        [sys.executable, str(repo / "src" / "research" / "conditional_nextday.py"),
          "--out-dir", str(out), "--top", "3"],
         cwd=repo, check=True, capture_output=True,
     )

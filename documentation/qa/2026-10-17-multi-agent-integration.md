@@ -21,7 +21,7 @@ mới, không đổi giao thức benchmark H đã đăng ký.
 | Lotto 5/35 | 950 | 16-10-2026 | 950 |
 
 Đã chạy `vlm.forecast.cli next` trên seed và nhật ký kết quả đã commit, trong
-thư mục runtime riêng. Tám trang dựng bằng `src/build_vietlott_results.py` qua
+thư mục runtime riêng. Tám trang dựng bằng `src/pages/build_vietlott_results.py` qua
 `page_output.write_page`. Phần mới hiển thị cutoff, trọng số nội bộ, bộ nhớ và
 trạng thái live từ `multi-agent-summary.json`; workflow lấy lại bản HEAD sau
 cache để cache cũ không đè tóm tắt đã commit.

@@ -5,7 +5,7 @@ that Vietnamese lottery terminology does not create ambiguous data fields. A
 term being part of the ontology does **not** mean that it has predictive power;
 predictive weight must be established by leakage-safe validation.
 
-The implementation source of truth is `src/number_reference.py`. Feature modules
+The implementation source of truth is `src/core/number_reference.py`. Feature modules
 must not reimplement these rules locally.
 
 ## Contents

@@ -17,7 +17,7 @@ from typing import Literal
 
 import numpy as np
 
-from xsmb_domain import LOTO_DRAWS_PER_DAY
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY
 
 Mode = Literal["loto", "de"]
 EPS = 1e-6

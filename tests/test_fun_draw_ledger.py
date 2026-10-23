@@ -11,9 +11,9 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
-import fun_draw_ledger as L
-from build_fun_prediction import BLOCK_ID, inject_into_html
-from xsmb_domain import FIELD_WIDTH_MAP, PRIZE_FIELDS
+from evaluation import fun_draw_ledger as L
+from pages.build_fun_prediction import BLOCK_ID, inject_into_html
+from core.xsmb_domain import FIELD_WIDTH_MAP, PRIZE_FIELDS
 
 
 def _payload(target: str, special: str, loto: list[str] | None = None) -> dict:

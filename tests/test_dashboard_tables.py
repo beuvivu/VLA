@@ -5,8 +5,8 @@ import json
 from bs4 import BeautifulSoup
 import pandas as pd
 
-from build_dashboard import main
-from dashboard_tables import weights_card
+from pages.build_dashboard import main
+from web.dashboard_tables import weights_card
 
 
 def test_weight_label_identifies_cau_keo_model():

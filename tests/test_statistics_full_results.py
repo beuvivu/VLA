@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
-import build_statistics_dashboard as dashboard
+from pages import build_statistics_dashboard as dashboard
 
 
 def test_dashboard_calendar_reads_full_prizes_instead_of_statistical_tails(

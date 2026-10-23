@@ -11,8 +11,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import number_dynamics as nd  # noqa: E402
-from hierarchical_pooling import (  # noqa: E402
+from stats import number_dynamics as nd  # noqa: E402
+from ensemble.hierarchical_pooling import (  # noqa: E402
     MAX_PRIOR_STRENGTH,
     fit_shrinkage_to_prior,
     fit_shrinkage_to_prior_rows,

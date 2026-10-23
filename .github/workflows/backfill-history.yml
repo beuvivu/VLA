@@ -102,7 +102,7 @@ jobs:
           if [ -n "$END" ]; then
             args+=(--end "$END")
           fi
-          python src/backfill_history.py "${args[@]}"
+          python src/ingest/backfill_history.py "${args[@]}"
 
       - name: Kiểm tính toàn vẹn dữ liệu sau khi bổ sung
         # Backfill ghi thẳng vào nguồn sự thật của kho. Đẩy lên mà chưa kiểm
@@ -139,7 +139,7 @@ jobs:
             git fetch origin "${GITHUB_REF_NAME}"
             git reset --hard "origin/${GITHUB_REF_NAME}"
 
-            python src/backfill_history.py --merge-store "${RUNNER_TEMP}/backfill-store.json"
+            python src/ingest/backfill_history.py --merge-store "${RUNNER_TEMP}/backfill-store.json"
 
             if git diff --quiet -- data/; then
               echo "::notice::Nhánh chính đã có đủ dữ liệu; không cần ghi."

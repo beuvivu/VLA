@@ -26,7 +26,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from bridges import DigitTensor  # noqa: E402
-from ensemble_utils import (  # noqa: E402
+from ensemble.ensemble_utils import (  # noqa: E402
     bernoulli_brier,
     bernoulli_logloss,
     categorical_brier,
@@ -35,7 +35,7 @@ from ensemble_utils import (  # noqa: E402
 )
 from features import FeatureContext, default_registry  # noqa: E402
 from modeling import DeModel, LotoModel, build_training_data  # noqa: E402
-from xsmb_domain import baseline_rate  # noqa: E402
+from core.xsmb_domain import baseline_rate  # noqa: E402
 
 SIGNIFICANCE_T = 1.96
 

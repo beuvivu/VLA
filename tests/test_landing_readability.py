@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from build_landing_page import _render_group_bars, _render_html, _render_pair_frequency, _render_table
+from pages.build_landing_page import _render_group_bars, _render_html, _render_pair_frequency, _render_table
 
 
 ROOT = Path(__file__).resolve().parents[1]

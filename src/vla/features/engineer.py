@@ -32,8 +32,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import lfilter
 
-from bridge_rules import BO_ID, step_matrix
-from position_bridges import load_draws, pair_index, run_lengths
+from soi_cau.bridge_rules import BO_ID, step_matrix
+from soi_cau.position_bridges import load_draws, pair_index, run_lengths
 
 Mode = Literal["loto", "de"]
 NUMBERS = np.arange(100)

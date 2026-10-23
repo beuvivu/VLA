@@ -17,8 +17,8 @@ import pytest
 from bs4 import BeautifulSoup
 from jinja2 import Environment, FileSystemLoader
 
-from page_output import strip_css
-from ui_theme import SITE_NAV, STYLESHEET_NAME, TAILWIND_LITE_CSS, nav_targets
+from web.page_output import strip_css
+from web.ui_theme import SITE_NAV, STYLESHEET_NAME, TAILWIND_LITE_CSS, nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -947,7 +947,7 @@ def test_simulation_uses_the_same_compact_prize_grid() -> None:
     assert board is not None
     assert len(board.select(".app-prize-number")) == 27
     assert len(board.select("tr[data-prize]")) == 8
-    src = (ROOT / "src" / "build_fun_prediction.py").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "pages" / "build_fun_prediction.py").read_text(encoding="utf-8")
     assert "minmax(0, 1.5fr) minmax(300px, 1fr)" in src
     assert "min-width: 520px" not in src
     assert src.index("Đặc Biệt ngày mai") < src.index("LOTO ngày mai")
@@ -957,7 +957,7 @@ def test_simulation_uses_the_same_compact_prize_grid() -> None:
 
 
 def test_pair_frequency_screen_exists() -> None:
-    """src/pair_stats.py tính bảng này hàng ngày vào
+    """src/stats/pair_stats.py tính bảng này hàng ngày vào
     data/pairs/top_unordered_pairs_top300.csv nhưng trước đây không trang nào
     hiển thị nó."""
     soup = _soup(DOCS / "index.html")
@@ -983,7 +983,7 @@ def test_pair_table_carries_the_chance_maximum_warning() -> None:
     Mốc được đọc theo số kỳ mà trang tự khai, không so với hằng số: sau mỗi
     lần bổ sung lịch sử con số phải đổi theo.
     """
-    from build_landing_page import pair_chance_maximum
+    from pages.build_landing_page import pair_chance_maximum
 
     section = _soup(DOCS / "index.html").find(id="tan-suat-cap")
     note = section.find(class_="pair-note")
@@ -1007,7 +1007,7 @@ def test_pair_chance_maximum_scales_with_history_length() -> None:
     thật thành 161.8; giữ 39.8 thì mọi cặp đều vượt mốc và bảng tuyên bố
     "bất thường" cho dữ liệu hoàn toàn ngẫu nhiên.
     """
-    from build_landing_page import pair_chance_maximum
+    from pages.build_landing_page import pair_chance_maximum
 
     short_max, short_band = pair_chance_maximum(393)
     long_max, long_band = pair_chance_maximum(2200)
@@ -1026,7 +1026,7 @@ def test_pair_chance_maximum_stays_above_the_per_pair_expectation() -> None:
     """Cực đại của 4950 cặp phải cao hơn hẳn kỳ vọng của MỘT cặp — đó chính
     là lý do bảng cần cột so sánh. Nếu hai con số xấp xỉ nhau thì phép hiệu
     chỉnh so sánh bội đã hỏng."""
-    from build_landing_page import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
+    from pages.build_landing_page import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
 
     for n_draws in (393, 1200, 2200):
         chance_max, _ = pair_chance_maximum(n_draws)
@@ -1040,7 +1040,7 @@ def test_pair_chance_maximum_stays_above_the_per_pair_expectation() -> None:
 def test_pair_cooccurrence_rate_uses_inclusion_exclusion() -> None:
     """P(hai số cùng về) KHÔNG phải bình phương của tỉ lệ đơn: hai biến cố
     không độc lập vì cùng rút từ 27 ô giải."""
-    from build_landing_page import PAIR_COOCCURRENCE_RATE
+    from pages.build_landing_page import PAIR_COOCCURRENCE_RATE
 
     single = 1.0 - 0.99**27
     exact = 1.0 - 2.0 * (0.99**27) + (0.98**27)
@@ -1071,7 +1071,7 @@ def test_desktop_view_never_overrides_a_layout_the_base_sheet_defines() -> None:
     lớp nền, nên lớp nền tự cho ra bố cục đúng. Ghi đè cột ở đây chỉ có thể làm
     hai trang lệch nhau.
     """
-    css = _css(ROOT / "src" / "build_landing_page.py")
+    css = _css(ROOT / "src" / "pages" / "build_landing_page.py")
     overrides = re.findall(
         r"body\.desktop-view\s*([^{]+)\{([^}]*grid-template-columns[^}]*)\}", css
     )

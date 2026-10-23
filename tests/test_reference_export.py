@@ -8,7 +8,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from export_number_reference import export_reference
+from stats.export_number_reference import export_reference
 
 
 def test_reference_export_has_complete_number_pair_and_bo_catalogs(tmp_path: Path) -> None:

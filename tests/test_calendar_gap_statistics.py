@@ -4,8 +4,8 @@ from datetime import date
 
 import pandas as pd
 
-from cycle_stats import _gap_series_calendar
-from hazard_stats import _calendar_ordinals
+from stats.cycle_stats import _gap_series_calendar
+from stats.hazard_stats import _calendar_ordinals
 
 
 def test_cycle_gap_counts_missing_calendar_dates_as_elapsed_time():

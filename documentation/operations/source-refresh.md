@@ -14,7 +14,7 @@ JSON nhúng, CSS nội tuyến hoặc URL bên ngoài. Không có service worker
 Sau trình dựng cuối, pipeline và cả năm bước đóng gói Pages gọi chung:
 
 ```bash
-python3 src/site_assets.py --refresh docs --check
+python3 src/web/site_assets.py --refresh docs --check
 ```
 
 Lệnh kiểm sự tồn tại và phiên bản của tham chiếu tài nguyên, đồng thời chặn
@@ -25,7 +25,7 @@ hành xác định theo nội dung. Thiếu tệp hoặc kiểm tra không khớ
 đóng gói. Có thể kiểm lại mà không ghi:
 
 ```bash
-python3 src/site_assets.py --root docs --check
+python3 src/web/site_assets.py --root docs --check
 ```
 
 Manifest mô tả gói trang cụ thể; nó không phải chữ ký số, không xác nhận

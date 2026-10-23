@@ -28,7 +28,7 @@ rỗng phải phục hồi cả giá trị Jackpot và số người trúng từ
 
 ## Nguồn dựng
 
-`src/build_vietlott_results.py` đọc CSS native từ
+`src/pages/build_vietlott_results.py` đọc CSS native từ
 `src/templates/vietlott_main.css`, xuất đủ tám trang qua `write_page`, và
 chép `src/assets/vietlott-picks.js` sang `docs/assets`. Workflow Vietlott
 kích hoạt khi các tệp nguồn này thay đổi và lưu cả asset được dựng.

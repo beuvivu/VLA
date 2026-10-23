@@ -18,9 +18,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ensemble_components import COMPONENT_KEYS, COMPONENT_POLICY, policy_column
-from ensemble_utils import EnsembleWeights, floor_distribution
-from feature_attribution import (
+from ensemble.ensemble_components import COMPONENT_KEYS, COMPONENT_POLICY, policy_column
+from ensemble.ensemble_utils import EnsembleWeights, floor_distribution
+from forecast.feature_attribution import (
     MATERIAL_EFFECT_FLOOR,
     _day_matrices,
     decision_share,
@@ -204,9 +204,9 @@ def test_the_log_is_actually_produced_by_the_pipeline() -> None:
     pipeline = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(
         encoding="utf-8"
     )
-    assert "src/feature_attribution.py" in pipeline, "pipeline không gọi log tầm quan trọng"
-    assert pipeline.index("src/learn_ensemble_weights.py") < pipeline.index(
-        "src/feature_attribution.py"
+    assert "src/forecast/feature_attribution.py" in pipeline, "pipeline không gọi log tầm quan trọng"
+    assert pipeline.index("src/ensemble/learn_ensemble_weights.py") < pipeline.index(
+        "src/forecast/feature_attribution.py"
     ), "log tầm quan trọng phải chạy SAU bộ học trọng số"
 
 

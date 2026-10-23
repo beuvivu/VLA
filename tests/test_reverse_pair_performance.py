@@ -17,9 +17,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from number_reference import all_cap_loto_50
-from statistical_matrices import NUMBER_COLS, _prepare_sparse, _period_series
-from statistical_matrices import _reverse_pair_frequency
+from core.number_reference import all_cap_loto_50
+from stats.statistical_matrices import NUMBER_COLS, _prepare_sparse, _period_series
+from stats.statistical_matrices import _reverse_pair_frequency
 
 
 def _sparse(draws: int, *, seed: int = 0) -> pd.DataFrame:

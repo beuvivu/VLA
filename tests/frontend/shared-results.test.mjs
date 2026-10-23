@@ -6,8 +6,8 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 
 const build = `import json
-from build_traditional_results import embedded_payload, render_page
-from shared_results import decode_row, render_result_board
+from pages.build_traditional_results import embedded_payload, render_page
+from web.shared_results import decode_row, render_result_board
 row = "2026-09-26" + "00001" + "00000" + "0000200003" + "00004" * 6 + "0005" * 4 + "0006" * 6 + "007" * 3 + "08" * 4
 metadata = {"station": "Nam Định", "special_codes": ["1AB", "2CD"]}
 draw = decode_row(row, metadata=metadata)

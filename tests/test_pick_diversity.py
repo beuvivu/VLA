@@ -15,9 +15,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import pick_diversity as pdv
+from ensemble import pick_diversity as pdv
 from modeling.bundle import build_picks
-from predict_nextday_2d import top_frames
+from forecast.predict_nextday_2d import top_frames
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -11,7 +11,7 @@ const draws = [
   ['2026-09-04','10021'], ['2026-09-07','00134'], ['2026-09-08','00000'], ['2026-09-09','00012'],
 ].map(([d,s], i) => ({d,s,n:[s.slice(-2),...Array(26).fill(i===0 ? '55' : i%2 ? '21':'12')]}));
 const build = `import json,sys
-from build_stat_pages import PAGES,render_page
+from pages.build_stat_pages import PAGES,render_page
 draws=json.load(sys.stdin)
 print(json.dumps({p.slug:render_page(p,draws,generated="2026-09-09T19:00:00Z") for p in PAGES if p.slug in {"bang-dac-biet","cau-giai-dac-biet","cap-lon-loto","giai-dac-biet-theo-tong"}}))`;
 const pages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python3', ['-c',build], {

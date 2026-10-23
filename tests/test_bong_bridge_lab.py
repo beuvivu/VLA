@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from scipy import stats
 
-import bong_bridge_lab as lab
+from research import bong_bridge_lab as lab
 
 
 def _synthetic(days: int, seed: int = 11):

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from conditional_matrices import build_cooccurrence_matrix, build_transition_matrix
+from stats.conditional_matrices import build_cooccurrence_matrix, build_transition_matrix
 
 
 def _sparse(days: int) -> pd.DataFrame:

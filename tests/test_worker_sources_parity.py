@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import PRIMARY_SOURCE_NAMES, SOURCE_PUBLIC_CODE, default_sources
+from ingest.sources import PRIMARY_SOURCE_NAMES, SOURCE_PUBLIC_CODE, default_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE = ROOT / "worker" / "test" / "run_sources.mjs"

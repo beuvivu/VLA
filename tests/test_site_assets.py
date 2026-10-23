@@ -9,7 +9,7 @@ import pytest
 import yaml
 from bs4 import BeautifulSoup
 
-from site_assets import check_site, refresh_site, rewrite_assets
+from web.site_assets import check_site, refresh_site, rewrite_assets
 
 
 def _site(tmp_path: Path) -> tuple[Path, Path]:
@@ -111,7 +111,7 @@ def test_duplicate_shell_blocks_release_before_writing(tmp_path: Path, component
 
 
 def test_output_boundary_is_idempotent_with_versioned_shell(tmp_path: Path) -> None:
-    from page_output import write_page
+    from web.page_output import write_page
 
     page, _ = _site(tmp_path)
     write_page(page, page.read_text())
@@ -136,7 +136,7 @@ def test_every_pages_upload_finalizes_the_same_source_boundary() -> None:
                     continue
                 uploads += 1
                 assert step["with"]["path"] == "docs", path.name
-                assert "src/site_assets.py --refresh docs --check" in steps[index - 1].get("run", ""), path.name
+                assert "src/web/site_assets.py --refresh docs --check" in steps[index - 1].get("run", ""), path.name
                 assert steps[index - 1].get("if") == step.get("if"), path.name
     assert uploads >= 5
 
@@ -151,7 +151,7 @@ def test_pipeline_finalizes_after_all_builders_and_fails_closed(monkeypatch, ski
     monkeypatch.setattr(sys, "argv", ["pipeline.py", "--skip-sync", "--skip-ml"]
                         + (["--skip-docs"] if skip_docs else []))
     pipeline.main()
-    finalizers = [(cmd, opts) for cmd, opts in calls if "src/site_assets.py" in cmd]
+    finalizers = [(cmd, opts) for cmd, opts in calls if "src/web/site_assets.py" in cmd]
     if skip_docs:
         assert finalizers == []
     else:

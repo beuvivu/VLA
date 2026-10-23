@@ -71,7 +71,7 @@ kịch bản dock, tức là một hình dạng chưa từng xảy ra.
 **Cùng nguyên nhân, trên 25 trang khác:** kịch bản dock mồ côi 1 057 byte, là
 mã chết (tự thoát vì không thấy `.ui-dock`, đo được 0 lỗi JS).
 
-**Bản vá** (`src/app_shell.py`, chỗ duy nhất bọc khung):
+**Bản vá** (`src/web/app_shell.py`, chỗ duy nhất bọc khung):
 `_DOCK_KICH_BAN` gỡ cả kịch bản đi kèm dock; bước bóc nhận cả
 `<div class="app-main" id="app-main">`; `_DUOI_KHUNG` nhận `</main>` hoặc
 `</div>`; trần bóc 64 vòng (mỗi vòng làm chuỗi ngắn đi nên không thể treo).
@@ -276,7 +276,7 @@ Chủ dự án chọn làm cả hai việc đề xuất ở mục 8.
   −0,014%. Thẻ "Nguồn của các con số" nói rõ nguồn chấm, khoảng ngày và kết
   luận của bộ theo dõi. Bản dựng lại chỉ còn làm phương án lùi khi chưa đủ
   `MIN_DAYS` (20) kỳ.
-- **Bộ theo dõi** `src/skill_monitor.py`: 60 kỳ gần nhất, khoảng tin cậy hai
+- **Bộ theo dõi** `src/evaluation/skill_monitor.py`: 60 kỳ gần nhất, khoảng tin cậy hai
   phía z=3 (chạy mỗi ngày trên cửa sổ chồng lấn nên 1,96 sẽ báo giả vài lần
   mỗi năm), sàn hiệu ứng 0,0001%. Chạy trong job `verify-published-pages`; rời
   vùng 0 theo hướng nào cũng làm lượt đỏ. Phép kiểm dựng sẵn bắt được một lỗi

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from strategy_lab import evaluate_lab
+from research.strategy_lab import evaluate_lab
 
 
 def _frames(days: int = 120) -> tuple[pd.DataFrame, pd.DataFrame]:

@@ -55,7 +55,7 @@ test('điểm sóc gần đầu ngày không sinh ngày âm bằng 0 hoặc thá
     { day: 1, month: 11, year: 2033, leap: true });
 });
 
-const fixture = execFileSync('python3', ['-c', 'from pathlib import Path\nfrom calendar_widget import render_calendar\nprint(render_calendar(Path(".")))'], {
+const fixture = execFileSync('python3', ['-c', 'from pathlib import Path\nfrom web.calendar_widget import render_calendar\nprint(render_calendar(Path(".")))'], {
   cwd: fileURLToPath(new URL('../../', import.meta.url)), env: { ...process.env, PYTHONPATH: 'src' }, encoding: 'utf8',
 });
 const widgetSource = readFileSync(new URL('../../src/templates/calendar_widget.js', import.meta.url), 'utf8');

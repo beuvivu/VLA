@@ -12,14 +12,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from time_policy import VIETNAM_TZ
-from xsmb_domain import FIELD_WIDTHS, LOTO_BASELINE_RATE
+from core.time_policy import VIETNAM_TZ
+from core.xsmb_domain import FIELD_WIDTHS, LOTO_BASELINE_RATE
 
 
 @pytest.fixture
 def online():
     try:
-        return importlib.import_module("online_learning")
+        return importlib.import_module("forecast.online_learning")
     except ModuleNotFoundError:
 
         class MissingImplementation:
@@ -258,7 +258,7 @@ def test_compressed_journal_keeps_vectors_and_long_memory(online, tmp_path, monk
 def test_declared_holiday_is_archived_without_becoming_an_observation(
     online, tmp_path, monkeypatch
 ):
-    from calendar_alignment import known_non_draw_days
+    from core.calendar_alignment import known_non_draw_days
 
     assert "2025-01-28" in known_non_draw_days()
     frame = history(45)
@@ -379,7 +379,7 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
 @pytest.mark.parametrize("slow_phase", ["lock", "advance", "serialization", "fsync"])
 def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monkeypatch, slow_phase):
     """Chờ khóa, học, mã hóa hoặc ghi đĩa vượt hạn đều không được xuất bản."""
-    import atomic_io
+    from core import atomic_io
     data, out = tmp_path / "data", tmp_path / "data/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
@@ -437,7 +437,7 @@ def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monk
 
 
 def test_slow_fsync_keeps_the_previous_journal_and_removes_temporary(online, tmp_path, monkeypatch):
-    import atomic_io
+    from core import atomic_io
     frame = history(21)
     state, _ = issue(online, online.new_state("de"), frame.iloc[:20])
     path = tmp_path / "de.json"
@@ -460,7 +460,7 @@ def test_slow_fsync_keeps_the_previous_journal_and_removes_temporary(online, tmp
 
 
 def test_slow_fsync_uses_the_fixed_clock_when_now_is_injected(online, tmp_path, monkeypatch):
-    import atomic_io
+    from core import atomic_io
     data, out = tmp_path / "data", tmp_path / "data/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
@@ -526,7 +526,7 @@ def test_cli_timestamps_a_new_forecast_after_waiting_for_the_lock(online, tmp_pa
 
 @pytest.mark.parametrize("active", [False, True])
 def test_online_loto_tops_keep_diversity_and_identical_prefixes(online, tmp_path, monkeypatch, active):
-    from pick_diversity import diversified_order
+    from ensemble.pick_diversity import diversified_order
 
     data, out = tmp_path / "data", tmp_path / "data/predict"
     out.mkdir(parents=True)

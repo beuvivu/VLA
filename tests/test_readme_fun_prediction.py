@@ -4,7 +4,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-import update_readme
+from pages import update_readme
 from templates import Render
 
 

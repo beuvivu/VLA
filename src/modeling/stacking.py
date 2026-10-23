@@ -22,7 +22,7 @@ from sklearn.model_selection import TimeSeriesSplit
 
 from bridges.tensor import NUMBER_SPACE, DigitTensor
 from features import FeatureContext, FeatureMatrix, FeatureRegistry, default_registry
-from xsmb_domain import baseline_rate
+from core.xsmb_domain import baseline_rate
 
 _EPS: Final[float] = 1e-9
 MIN_UNIFORM_SHARE: Final[float] = 1e-4

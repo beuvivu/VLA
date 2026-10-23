@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from hierarchical_pooling import (
+from ensemble.hierarchical_pooling import (
     MAX_PRIOR_STRENGTH,
     MIN_NUMBERS,
     fit_pooling,
@@ -186,7 +186,7 @@ def test_each_posterior_learns_its_own_shrinkage() -> None:
     """
     import pandas as pd
 
-    from statistical_signal import _loto_signal
+    from stats.statistical_signal import _loto_signal
 
     # Tần suất chung hoàn toàn đồng nhất, nhưng con 7 chỉ về vào thứ Hai.
     dates = pd.date_range("2026-01-05", periods=40 * 7, freq="D")
@@ -210,7 +210,7 @@ def test_the_signal_reports_its_effective_parameter_count() -> None:
     """
     import pandas as pd
 
-    import statistical_signal as ss
+    from stats import statistical_signal as ss
 
     days = 400
     dates = pd.date_range("2025-01-01", periods=days, freq="D")

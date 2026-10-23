@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import confidence_matrix as cm
+from evaluation import confidence_matrix as cm
 
 #: Mười con như dự báo thật: đủ để có kỳ về từ 6 con trở lên.
 PICKS = (7, 11, 22, 33, 44, 55, 66, 77, 88, 99)
@@ -357,7 +357,7 @@ def test_a_rigged_digit_position_is_flagged_and_a_fair_table_is_not(tmp_path: Pa
 
 
 def test_the_page_states_every_tier_and_links_back_to_quality(tmp_path: Path, small_null: dict) -> None:
-    import build_confidence_page as page
+    from pages import build_confidence_page as page
 
     data = tmp_path / "data"
     _store(data, 700, seed=11, rig=True, picks=True)
@@ -384,7 +384,7 @@ def test_the_page_states_every_tier_and_links_back_to_quality(tmp_path: Path, sm
 def test_the_page_never_prints_an_exact_zero_p_and_labels_each_sample() -> None:
     """Review PR #104: p rất nhỏ từng in thành "0,000"; và dòng phản hồi in số
     kỳ của bộ theo dõi (sổ cái) cạnh log-loss tính trên ít kỳ hơn."""
-    import build_confidence_page as page
+    from pages import build_confidence_page as page
 
     report = {
         "intervention": {"tests": [

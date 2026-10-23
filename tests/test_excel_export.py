@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, str((_Path(__file__).resolve().parents[1] / "src")))
 
-from excel_export import export_excel_outputs
+from core.excel_export import export_excel_outputs
 
 
 class TestExcelExport(unittest.TestCase):

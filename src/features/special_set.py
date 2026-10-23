@@ -18,7 +18,7 @@ import numpy as np
 
 from bridges.tensor import NUMBER_SPACE
 from features.base import FeatureContext
-from number_reference import (
+from core.number_reference import (
     bo,
     bong_am,
     bong_duong,

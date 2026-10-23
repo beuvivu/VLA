@@ -23,11 +23,13 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
     steps:
       - uses: actions/checkout@v7
       - uses: actions/configure-pages@v6
       - name: Chốt phiên bản và kiểm tra tài nguyên
-        run: python3 src/site_assets.py --refresh docs --check
+        run: python3 src/web/site_assets.py --refresh docs --check
       - uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-${{ github.run_attempt }}

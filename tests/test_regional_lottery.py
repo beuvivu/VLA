@@ -1,6 +1,6 @@
 from datetime import date
 
-from regional_lottery import parse_xskt_html
+from ingest.regional_lottery import parse_xskt_html
 
 
 SAMPLE = """

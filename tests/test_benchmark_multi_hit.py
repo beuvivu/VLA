@@ -1,4 +1,4 @@
-"""Giao thức của lượt thử thứ hai cho lô nhiều nháy (``src/multi_hit_benchmark.py``).
+"""Giao thức của lượt thử thứ hai cho lô nhiều nháy (``src/forecast/multi_hit_benchmark.py``).
 
 Kết luận "không chiến lược nào hơn chọn bừa" chỉ đáng tin khi chính phép đo đúng: không chiến
 lược nào nhìn trước, phép so với chọn bừa có phân phối đúng, ứng viên được chọn KHÔNG nhìn giai
@@ -13,7 +13,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def bench():
-    import multi_hit_benchmark
+    from forecast import multi_hit_benchmark
 
     return multi_hit_benchmark
 

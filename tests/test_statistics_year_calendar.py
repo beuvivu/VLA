@@ -3,7 +3,7 @@
 import pandas as pd
 from bs4 import BeautifulSoup
 
-import build_statistics_dashboard as dashboard
+from pages import build_statistics_dashboard as dashboard
 
 
 def _calendar(raw: pd.DataFrame) -> BeautifulSoup:

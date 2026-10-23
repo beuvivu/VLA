@@ -111,7 +111,7 @@ class LiveHarness:
         )
         _write_exe(
             self.bin / "python",
-            'if [[ "$1" == "src/live_sync.py" ]]; then\n'
+            'if [[ "$1" == "src/ingest/live_sync.py" ]]; then\n'
             '  status=$(head -n 1 "$FAKE_DIR/statuses")\n'
             '  if (( $(wc -l < "$FAKE_DIR/statuses") > 1 )); then sed -i 1d "$FAKE_DIR/statuses"; fi\n'
             '  printf \'{"status": "%s", "checked_at_utc": "%s"}\' "$status" "$RANDOM" > "$3"\n'
@@ -325,7 +325,7 @@ class PredictionRepo:
         self.bin.mkdir()
         _write_exe(
             self.bin / "python",
-            'if [[ "$1" == "src/run_daily_prediction.py" ]]; then\n'
+            'if [[ "$1" == "src/modeling/run_daily_prediction.py" ]]; then\n'
             '  n=$(( $(cat "$FAKE_DIR/stamp") + 1 )); echo "$n" > "$FAKE_DIR/stamp"\n'
             # Mỗi lần chạy lệch 1e-11 — đúng cỡ nhiễu đo được giữa hai runner
             # (commit b8afdc7f). `data/shift` là thay đổi CÓ NGHĨA của dữ liệu.
@@ -385,7 +385,7 @@ class PredictionRepo:
         path = self.tmp / name
         self.git(self.tmp, "clone", str(self.remote), str(path))
         subprocess.run(
-            ["python", "src/run_daily_prediction.py"], cwd=path, env=self.env, check=True
+            ["python", "src/modeling/run_daily_prediction.py"], cwd=path, env=self.env, check=True
         )
         return path
 

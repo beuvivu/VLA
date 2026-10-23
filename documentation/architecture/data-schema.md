@@ -62,11 +62,11 @@ Tham chiếu bản đã làm đúng: `src/ml_engine/schema.py`.
 
 | Tệp | Nội dung | Sinh bởi |
 |---|---|---|
-| `data/xsmb-2-digits.csv` | 27 cột hai chữ số cuối mỗi kỳ | `src/lottery.py` |
-| `data/xsmb-sparse.csv` | Ma trận nhị phân `(n_kỳ × 100)`, 1 = số về | `src/lottery.py` |
+| `data/xsmb-2-digits.csv` | 27 cột hai chữ số cuối mỗi kỳ | `src/ingest/lottery.py` |
+| `data/xsmb-sparse.csv` | Ma trận nhị phân `(n_kỳ × 100)`, 1 = số về | `src/ingest/lottery.py` |
 | `data/predictions_today.json` | Dự đoán kỳ kế tiếp | `src/pipeline.py` |
-| `data/health.json` | Tình trạng dữ liệu và quy trình | `src/monitor_health.py` |
-| `data/source_audit.json` | Đối soát giữa các nguồn | `src/live_sync.py` |
+| `data/health.json` | Tình trạng dữ liệu và quy trình | `src/evaluation/monitor_health.py` |
+| `data/source_audit.json` | Đối soát giữa các nguồn | `src/ingest/live_sync.py` |
 
 `data/` hiện chứa **857 tệp** artifact dẫn xuất.
 
@@ -97,7 +97,7 @@ Các ràng buộc được kiểm tự động; vi phạm là lỗi phát hành,
 2. Đúng 27 ô giải mỗi kỳ, không thiếu ô nào.
 3. Mỗi ô khớp `^\d{w}$` sau khi zfill theo độ rộng của giải.
 4. Kỳ mới chỉ được ghi khi ≥ 2 nhóm nguồn **độc lập** khớp nhau
-   (`src/sources.py::source_consensus_partial`).
+   (`src/ingest/sources.py::source_consensus_partial`).
 
 ## 4. Vì sao không dùng cơ sở dữ liệu server
 

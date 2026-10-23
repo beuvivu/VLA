@@ -154,7 +154,7 @@ def load_dataset() -> tuple[pd.DataFrame, np.ndarray, pd.Series]:
 
     Đặc trưng cố ý ĐƠN GIẢN và chỉ dùng quá khứ: đây là demo về hàm mất mát và
     hiệu chuẩn, không phải về kỹ thuật đặc trưng. Lớp đặc trưng thật nằm ở
-    ``src/ml_features.py``.
+    ``src/ml/ml_features.py``.
     """
     sparse = pd.read_json(ROOT / "data" / "xsmb-sparse.json")
     sparse["date"] = pd.to_datetime(sparse["date"])

@@ -19,7 +19,7 @@ import numpy as np
 
 from bridges.tensor import NUMBER_SPACE
 from features.base import FeatureContext
-from xsmb_domain import baseline_rate
+from core.xsmb_domain import baseline_rate
 
 _EPS = 1e-9
 _LAPLACE = 1.0
