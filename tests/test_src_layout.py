@@ -75,7 +75,10 @@ def flat_imports(source: str, flat: set[str]) -> list[str]:
 
 
 #: Mã Python nằm trong văn bản khác: khối ``run:`` của workflow, shell, kiểm thử Node.
-_EMBEDDED_IMPORT = re.compile(r"(?:^|[\s;'\"(])(?:from\s+(\w+)(?:\.\w+)*\s+import|import\s+(\w+))\b", re.M)
+#: ``\n`` là xuống dòng viết trong chuỗi ``python -c '...'`` của JS/shell.
+_EMBEDDED_IMPORT = re.compile(
+    r"(?:^|[\s;'\"(]|\\n)(?:from\s+(\w+)(?:\.\w+)*\s+import|import\s+(\w+))\b", re.M
+)
 
 
 def embedded_flat_imports(text: str, flat: set[str]) -> list[str]:
@@ -157,6 +160,7 @@ def test_the_flat_import_rule_itself_catches_a_flat_import() -> None:
     assert flat_imports(sample, {"ensemble_utils", "atomic_io", "lottery"}) == ["ensemble_utils", "lottery"]
     assert embedded_flat_imports("python -c 'from lottery import Lottery'", {"lottery"}) == ["lottery"]
     assert embedded_flat_imports("python -c 'from ingest.lottery import Lottery'", {"lottery"}) == []
+    assert embedded_flat_imports(r"['-c', 'import os\nfrom lottery import Lottery']", {"lottery"}) == ["lottery"]
 
 
 def test_the_cycle_rule_itself_catches_a_cycle() -> None:
