@@ -237,7 +237,7 @@ kẹt của nguồn chính không được cầm phiếu ở ô nào
 khác nhau ở một ô là **thế hoà**: ô ấy là xung đột, không được xác minh
 (`test_two_disagreeing_fallbacks_leave_the_slot_unverified`).
 
-Lịch sử chuẩn (`Lottery.fetch`, `crawler/fetch_results.py`) theo cùng thứ tự:
+Lịch sử chuẩn (`Lottery.fetch`, `src/ingest/fetch_results.py`) theo cùng thứ tự:
 lấy kết quả trọn vẹn đầu tiên theo ưu tiên, nên ngày thường chỉ một lượt gọi
 nguồn chính thay vì hỏi tuần tự cả tám nguồn (~3,3 phút đo ngày 12-10).
 `tests/test_source_failover_parity.py` buộc hai bản Python/JS ra cùng kết luận
@@ -248,7 +248,7 @@ trên từng ca, kể cả đúng mốc 18:40:00.
 Đo trên runner lúc 00:37 ngày 13-10-2026: trang **live** của cả ba nguồn, và trang
 theo ngày 13-10 của `mketqua.net`/`minhngoc.net.vn`, đều hiện **trọn kỳ 12-10**.
 Sổ chuẩn đã có chốt "trùng khít kỳ đã lưu" (`Lottery`), nhưng bản chụp live và bộ
-thăm dò `crawler/fetch_results.py` thì chưa: lượt thăm dò gặp trang chưa xoá bảng
+thăm dò `src/ingest/fetch_results.py` thì chưa: lượt thăm dò gặp trang chưa xoá bảng
 sẽ báo kỳ hôm nay "đã xác minh" bằng số của hôm qua, gọi hoàn tất `live_verified`,
 rồi ngừng thăm dò trước cả khi kỳ hôm nay bắt đầu.
 

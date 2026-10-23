@@ -16,6 +16,11 @@ lập lịch của GitHub chút nào.
 Mô-đun tái dùng nguyên bộ nguồn và phép đồng thuận trong :mod:`sources`. Viết
 lại parser sẽ vứt đi phần đã chạy đúng và đã có test; thứ thực sự thiếu chỉ
 là vòng lặp chờ, User-Agent và hạn thời gian chặt hơn.
+
+Tách khỏi :mod:`live_sync` vì hai mục đích khác nhau: ``live_sync`` chụp MỘT ảnh
+và ghi ra nhánh live để trang web hiển thị số nhỏ giọt, còn mô-đun này CHỜ cho
+tới khi đủ 27 ô được xác minh rồi thoát ngay — nó là cổng "xong hay chưa" cho
+quy trình hoàn tất.
 """
 
 from __future__ import annotations

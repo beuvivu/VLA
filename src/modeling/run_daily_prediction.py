@@ -41,7 +41,7 @@ from modeling import (
 )
 from core.number_reference import digit_sum_mod10, head, tail
 from core.time_policy import DEFAULT_DRAW_CUTOFF, now_vietnam, vietnam_date
-from utils import RetryPolicy, with_retry
+from core.resilience import RetryPolicy, with_retry
 
 logger = logging.getLogger(__name__)
 

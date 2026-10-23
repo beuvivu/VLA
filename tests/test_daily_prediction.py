@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 
 from core.time_policy import utc_cron_for_vietnam
-from utils import RetryPolicy, first_available, with_retry
+from core.resilience import RetryPolicy, first_available, with_retry
 from core.xsmb_domain import FIELD_WIDTHS
 
 ROOT = Path(__file__).resolve().parents[1]
