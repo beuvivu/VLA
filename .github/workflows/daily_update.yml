@@ -204,7 +204,7 @@ jobs:
               exit 1
             fi
           done
-          python src/crawler/fetch_results.py \
+          python src/ingest/fetch_results.py \
             --window-start "$WINDOW_START" \
             --deadline "$DEADLINE" \
             --timeout 8 \

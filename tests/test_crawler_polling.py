@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from crawler.fetch_results import (
+from ingest.fetch_results import (
     DEFAULT_REQUEST_TIMEOUT,
     TOTAL_SLOTS,
     USER_AGENTS,
@@ -505,7 +505,7 @@ class _SilentlyFailingSource:
 
 def test_a_silently_swallowed_error_still_reaches_the_stats(monkeypatch) -> None:
     """Đây là lỗ hổng chẩn đoán thật: nguồn nuốt lỗi, thống kê báo error=None."""
-    import crawler.fetch_results as mod
+    from ingest import fetch_results as mod
 
     monkeypatch.setattr(
         mod, "build_session", lambda *a, **k: _RecordingSession(boom=OSError("mạng hỏng"))
@@ -659,7 +659,7 @@ class _RequestingSource:
 
 def test_attempt_count_reaches_the_stats_for_diagnosis(monkeypatch) -> None:
     """Biết một nguồn phải thử 3 lần mới xong là tín hiệu nó đang chật vật."""
-    import crawler.fetch_results as mod
+    from ingest import fetch_results as mod
 
     monkeypatch.setattr(mod, "build_session", lambda *a, **k: _FlakySession(fail_times=2, status=503))
     monkeypatch.setattr(mod.time, "sleep", lambda _s: None)
@@ -703,7 +703,7 @@ def test_a_late_start_that_finds_no_result_does_not_keep_polling() -> None:
 
 def test_the_command_line_reads_the_previous_draw_from_the_ledger(tmp_path, monkeypatch) -> None:
     """Chốt "kỳ trước" chỉ có tác dụng nếu ``main`` thật sự nạp kỳ ấy từ sổ chuẩn."""
-    import crawler.fetch_results as mod
+    from ingest import fetch_results as mod
 
     full = _full_prize_map()
     header = ["date"] + [

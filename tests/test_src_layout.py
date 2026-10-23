@@ -36,6 +36,15 @@ NOT_PACKAGES = {"assets", "__pycache__"}
 #: bộ nạp mẫu nằm ngay trong thư mục mẫu.
 FILE_RELATIVE_ALLOWED = {"core/paths.py", "templates/__init__.py"}
 #: Mọi nơi nạp pack joblib của production.
+#: Gói đã gom vào gói khác (24-10-2026): ``crawler`` -> ``ingest``, ``utils`` -> ``core``.
+RETIRED_PACKAGES = {"crawler", "utils"}
+#: Đường dẫn ``src/<…>.py`` mà một LỆNH chạy: sau ``python``, ``sys.executable,``, ``_py(`` hoặc
+#: một phép ghép ``/ "…"`` của Python. Câu nhắc trong thông báo lỗi và danh sách tệp bị cấm
+#: tồn tại (``release_check.sh``) không phải lệnh chạy.
+_SRC_SCRIPT = re.compile(
+    r"""(?:\bpython3?\s+(?:-[\w-]+\s+)*["']?|sys\.executable,\s*["']|_py\(\s*["']|\s/\s*["'])"""
+    r"(src/[\w/]+\.py)\b"
+)
 MODEL_LOADERS = (
     "ml.ml_predict",
     "forecast.predict_nextday_2d",
@@ -83,6 +92,16 @@ _EMBEDDED_IMPORT = re.compile(
 
 def embedded_flat_imports(text: str, flat: set[str]) -> list[str]:
     return [a or b for a, b in _EMBEDDED_IMPORT.findall(text) if (a or b) in flat]
+
+
+def missing_src_scripts(text: str, root: Path) -> list[str]:
+    """Đường dẫn ``src/…py`` được nhắc trong một lệnh chạy mà không có tệp.
+
+    Phép kiểm phụ thuộc của workflow (``test_workflows``) lọc các đường dẫn ấy bằng
+    ``is_file()``, nên một lệnh còn trỏ vào chỗ cũ sau khi chuyển module bị bỏ qua lặng lẽ
+    — và workflow chỉ hỏng khi chạy thật.
+    """
+    return sorted({m for m in _SRC_SCRIPT.findall(text) if not (root / m).is_file()})
 
 
 def package_graph(src: Path) -> dict[str, set[str]]:
@@ -163,6 +182,15 @@ def test_the_flat_import_rule_itself_catches_a_flat_import() -> None:
     assert embedded_flat_imports(r"['-c', 'import os\nfrom lottery import Lottery']", {"lottery"}) == ["lottery"]
 
 
+def test_the_missing_script_rule_itself_catches_a_stale_path(tmp_path: Path) -> None:
+    (tmp_path / "src" / "ingest").mkdir(parents=True)
+    (tmp_path / "src" / "ingest" / "fetch_results.py").write_text("", encoding="utf-8")
+    run = "python src/crawler/fetch_results.py && python3 -u src/ingest/fetch_results.py\n"
+    run += "echo ::error::src/vietlott_engine/__init__.py; for f in src/webapp.py; do :; done\n"
+    run += "subprocess.run([sys.executable, \"src/utils/old.py\"]); p = ROOT / \"src/ingest/fetch_results.py\""
+    assert missing_src_scripts(run, tmp_path) == ["src/crawler/fetch_results.py", "src/utils/old.py"]
+
+
 def test_the_cycle_rule_itself_catches_a_cycle() -> None:
     assert find_cycle({"a": {"b"}, "b": {"c"}, "c": {"a"}}) == ["a", "b", "c", "a"]
     assert find_cycle({"a": {"b"}, "b": {"c"}, "c": set()}) == []
@@ -197,7 +225,7 @@ def test_nested_names_really_are_the_old_flat_modules() -> None:
 
 
 def test_nothing_imports_a_module_by_its_old_flat_name() -> None:
-    flat = nested_module_names(SRC)
+    flat = nested_module_names(SRC) | RETIRED_PACKAGES
     offenders = []
     for path in _python_files(SRC, ROOT / "tests", ROOT / "scripts"):
         names = flat_imports(path.read_text(encoding="utf-8"), flat)
@@ -210,6 +238,31 @@ def test_nothing_imports_a_module_by_its_old_flat_name() -> None:
     for path in embedded:
         names = embedded_flat_imports(path.read_text(encoding="utf-8"), flat)
         offenders += [f"{path.relative_to(ROOT)}: {name}" for name in names]
+    assert not offenders, offenders
+
+
+def test_retired_packages_are_really_gone() -> None:
+    assert not any((SRC / name).exists() for name in RETIRED_PACKAGES)
+    assert (SRC / "ingest" / "fetch_results.py").is_file()
+    assert (SRC / "core" / "resilience.py").is_file()
+
+
+def test_every_script_a_command_runs_from_src_exists() -> None:
+    commands = [
+        *(ROOT / ".github" / "workflows").glob("*.yml"),
+        *(ROOT / "scripts").rglob("*.sh"),
+        *(ROOT / "scripts").rglob("*.py"),
+        SRC / "pipeline.py",
+    ]
+    texts = {path: path.read_text(encoding="utf-8") for path in commands}
+    seen = {m for text in texts.values() for m in _SRC_SCRIPT.findall(text)}
+    # Phép quét phải THẤY các lệnh đã biết, nếu không nó xanh vì quét rỗng.
+    assert {"src/ingest/fetch_results.py", "src/ingest/sync.py", "src/evaluation/production_audit.py"} <= seen
+    offenders = {
+        str(path.relative_to(ROOT)): missing
+        for path, text in texts.items()
+        if (missing := missing_src_scripts(text, ROOT))
+    }
     assert not offenders, offenders
 
 

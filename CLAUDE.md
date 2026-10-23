@@ -16,8 +16,8 @@ Gốc `src/` chỉ còn `pipeline.py`; mọi module khác nằm trong một gói
 (chỉ thêm tiền tố gói), nên nhãn đã ghi vào sổ như `calendar_alignment.known_non_draw_days`
 và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
 
-    core        miền XSMB, lịch quay, đồng hồ, mã số, I/O nguyên tử, đường dẫn kho (paths)
-    ingest      nguồn, đồng bộ, live, sổ chuẩn Lottery, kiểm dữ liệu, kết quả vùng
+    core        miền XSMB, lịch quay, đồng hồ, mã số, I/O nguyên tử, đường dẫn kho (paths), thử lại
+    ingest      nguồn, đồng bộ, live, thăm dò đủ 27 ô (fetch_results), sổ chuẩn Lottery, kiểm dữ liệu
     ensemble    neo mức, trọng số, thành phần, hiệu chỉnh, gộp ý kiến, co ngót, đa dạng đuôi
     stats       thống kê mô tả/kiểm định, ma trận, tín hiệu thống kê, động học số
     soi_cau     cầu vị trí, bảy kiểu cầu, cầu theo đường, tổng – bóng – chạm
@@ -28,7 +28,8 @@ và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
     web         shell, theme, page_output, bằng chứng, thành phần trang dùng chung
     pages       trình dựng từng trang trong docs/ (build_*), README
 
-Gói có sẵn giữ nguyên; ba lệnh chạy về cạnh gói chúng điều khiển:
+Gói có sẵn giữ nguyên, trừ `crawler` và `utils` (mỗi gói một module) đã gom vào `ingest` và
+`core`; ba lệnh chạy về cạnh gói chúng điều khiển:
 `bridges/run_bridge_scan.py`, `modeling/run_daily_prediction.py`,
 `xsmb_agents/run_xsmb_agents.py`.
 
@@ -47,7 +48,10 @@ Gói có sẵn giữ nguyên; ba lệnh chạy về cạnh gói chúng điều k
   ấy trong `sys.modules`. Thiếu nó, `MODEL_LOAD_ERRORS` nuốt ImportError và bước dự báo coi
   pack là hỏng mà không báo.
 - Module mới vào gói đúng chức năng, không đặt ở gốc `src/`. Gói không được phụ thuộc vòng.
-- `tests/test_src_layout.py` canh cả sáu điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
+- Chuyển module thì mọi lệnh chạy `src/…py` (workflow, `scripts/`, `pipeline.py`) phải trỏ tệp có
+  thật: phép kiểm phụ thuộc của workflow lọc đường dẫn bằng `is_file()`, nên lệnh trỏ chỗ cũ bị bỏ
+  qua lặng lẽ và chỉ hỏng khi chạy thật. Tên gói đã gom (`crawler`, `utils`) không được import lại.
+- `tests/test_src_layout.py` canh các điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
 
 ## Khung ứng dụng
 
@@ -337,7 +341,7 @@ nguồn khi chưa đo bằng `diagnose-live-sources.yml`. Bản JS của Worker 
 
 Trước giờ quay, trang live của mọi nguồn vẫn hiện TRỌN kỳ hôm qua (đo 00:37 ngày 13-10-2026).
 Nguồn mà mọi giá trị trùng đúng ô của kỳ đã lưu gần nhất bị coi là chưa có gì
-(`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `crawler/fetch_results` và Worker
+(`sources.shows_previous_draw`, lỗi `StalePage`) ở `live_sync`, `ingest/fetch_results` và Worker
 — thiếu chốt này, lượt thăm dò đầu khung báo kỳ hôm nay "đã xác minh" bằng số của hôm qua. Worker
 lấy kỳ MỚI NHẤT trong ảnh chụp KV, khoá `previous-draw.json` và sổ chuẩn `data/xsmb.json` (khởi
 động lạnh); không có gì để so thì không chốt kỳ đủ ô. Sổ chuẩn
