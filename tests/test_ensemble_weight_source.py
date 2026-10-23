@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from ensemble_utils import (
+from ensemble.ensemble_utils import (
     DEFAULT_ENSEMBLE_WEIGHTS,
     MIN_WEIGHTS_SCHEMA,
     load_ensemble_weights,
@@ -153,7 +153,7 @@ def test_the_dashboard_card_shows_the_weights_that_are_actually_in_force() -> No
     ``load_ensemble_weights`` LOẠI. Nên thẻ ghi ``w_ml 0,9987`` trong khi danh
     sách gợi ý — dựng từ chính phép dự đoán — ghi ``w_ml 0,25``.
     """
-    from build_dashboard import _effective_weights
+    from pages.build_dashboard import _effective_weights
 
     for mode in ("loto", "de"):
         card = _effective_weights(REPO / "data", mode)
@@ -174,7 +174,7 @@ def test_the_card_states_the_provenance_the_stored_record_actually_supports() ->
     bày. Nó ghim quan hệ: đã đề bạt thì không được nói là mặc định, và ngược
     lại.
     """
-    from build_dashboard import _effective_weights
+    from pages.build_dashboard import _effective_weights
 
     for mode in ("loto", "de"):
         card = _effective_weights(REPO / "data", mode)
@@ -203,7 +203,7 @@ def test_a_refused_promotion_is_not_reported_as_a_broken_file(tmp_path: Path) ->
     giống nhau thì người đọc không thể biết hệ thống đã ĐO rồi từ chối hay
     chưa đo được gì.
     """
-    from build_dashboard import _effective_weights
+    from pages.build_dashboard import _effective_weights
 
     ens = tmp_path / "ensemble"
     ens.mkdir(parents=True)
@@ -242,7 +242,7 @@ def test_a_refused_promotion_is_not_reported_as_a_broken_file(tmp_path: Path) ->
 
 def test_a_promoted_vector_is_reported_as_learned(tmp_path: Path) -> None:
     """Đề bạt thật thì thẻ phải nói là đã học, kèm số đo ngoài mẫu."""
-    from build_dashboard import _effective_weights
+    from pages.build_dashboard import _effective_weights
 
     ens = tmp_path / "ensemble"
     ens.mkdir(parents=True)
@@ -274,8 +274,8 @@ def test_a_promoted_vector_is_reported_as_learned(tmp_path: Path) -> None:
 
 def test_dashboard_weight_card_accepts_missing_optional_day_list(tmp_path: Path) -> None:
     """Metadata thiếu không làm thẻ trọng số hợp lệ bị crash."""
-    from build_dashboard import _effective_weights
-    from ensemble_utils import weights_provenance
+    from pages.build_dashboard import _effective_weights
+    from ensemble.ensemble_utils import weights_provenance
     path = tmp_path / 'ensemble' / 'weights_loto.json'
     path.parent.mkdir()
     path.write_text(json.dumps({'schema_version':7, 'weights':DEFAULT_ENSEMBLE_WEIGHTS.as_dict(),
@@ -288,7 +288,7 @@ def test_dashboard_weight_card_accepts_missing_optional_day_list(tmp_path: Path)
 
 
 def test_legacy_learned_weight_card_keeps_optional_training_metadata(tmp_path: Path) -> None:
-    from build_dashboard import _effective_weights
+    from pages.build_dashboard import _effective_weights
     path = tmp_path / 'ensemble' / 'weights_loto.json'
     path.parent.mkdir()
     metadata = {'learned_at_utc':'2026-09-01T00:00:00Z', 'window_days':120,

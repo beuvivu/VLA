@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from meta_predictor import (
+from forecast.meta_predictor import (
     COMPONENT_COLS,
     META_SCHEMA_VERSION,
     META_FEATURE_COLUMNS,
@@ -122,7 +122,7 @@ def test_meta_pack_cannot_expand_the_production_feature_allowlist() -> None:
 
 
 def _metrics(logloss: float, brier: float):
-    from meta_predictor import MetaMetrics
+    from forecast.meta_predictor import MetaMetrics
 
     return MetaMetrics(logloss=logloss, brier=brier, auc_roc=float("nan"))
 
@@ -132,7 +132,7 @@ def test_beating_a_broken_linear_baseline_alone_does_not_switch_meta_on() -> Non
     làm nhọn xác suất và cho logloss 1,0157; mô hình xếp chồng 0,5456 "thắng
     46%" — nhưng dự báo hằng số trên cùng lát đạt 0,54566. Không hơn hằng số
     thì không có gì để trộn vào production."""
-    from meta_predictor import quality_gate
+    from forecast.meta_predictor import quality_gate
 
     gate = quality_gate(
         "loto",
@@ -148,7 +148,7 @@ def test_beating_a_broken_linear_baseline_alone_does_not_switch_meta_on() -> Non
 
 def test_a_real_edge_over_both_opponents_still_switches_meta_on() -> None:
     """Cổng chặt hơn không được thành cổng đóng cứng."""
-    from meta_predictor import quality_gate
+    from forecast.meta_predictor import quality_gate
 
     gate = quality_gate(
         "loto",
@@ -163,7 +163,7 @@ def test_a_real_edge_over_both_opponents_still_switches_meta_on() -> None:
 
 
 def test_losing_to_the_constant_forecast_fails_even_when_linear_is_worse() -> None:
-    from meta_predictor import quality_gate
+    from forecast.meta_predictor import quality_gate
 
     gate = quality_gate(
         "de",
@@ -179,7 +179,7 @@ def test_losing_to_the_constant_forecast_fails_even_when_linear_is_worse() -> No
 def test_the_constant_opponent_never_looks_at_the_validation_days() -> None:
     """Tần suất của mốc hằng số LOTO lấy từ ngày TRƯỚC lát thẩm định. Lát
     thẩm định ở đây toàn 1: nếu mốc nhìn vào nó, tần suất sẽ khác 0,25."""
-    from meta_predictor import _constant_validation
+    from forecast.meta_predictor import _constant_validation
 
     rows = []
     for day in range(8):

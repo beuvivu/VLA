@@ -34,7 +34,7 @@ def _fixture(root: Path, *, target: str = TARGET) -> dict[str, np.ndarray]:
 
 
 def _load(root: Path, anchor: str = ANCHOR):
-    from daily_forecast import load_daily_forecast
+    from forecast.daily_forecast import load_daily_forecast
 
     return load_daily_forecast(root, anchor)
 

@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
-from build_stat_pages import (
+from pages.build_stat_pages import (
     CHANCE_NOTES,
     LOTO_BASELINE,
     PAGES,
@@ -159,7 +159,7 @@ def test_pair_chance_note_scales_with_the_embedded_history() -> None:
     độ dài lịch sử, nên sau khi bổ sung dữ liệu nó biến mọi cặp thành bất
     thường nếu không tính lại.
     """
-    from build_stat_pages import chance_note_context
+    from pages.build_stat_pages import chance_note_context
 
     short = chance_note_context(393)
     long = chance_note_context(2200)
@@ -172,8 +172,8 @@ def test_pair_chance_note_scales_with_the_embedded_history() -> None:
 
 def test_pair_chance_grid_matches_the_exact_formula() -> None:
     """Lưới tra là bảng dựng sẵn của chính công thức đóng, không phải số gõ tay."""
-    from build_stat_pages import PAIR_CHANCE_GRID_POINTS, pair_chance_grid
-    from xsmb_domain import pair_chance_maximum
+    from pages.build_stat_pages import PAIR_CHANCE_GRID_POINTS, pair_chance_grid
+    from core.xsmb_domain import pair_chance_maximum
 
     grid = pair_chance_grid()
     assert [row[0] for row in grid] == list(PAIR_CHANCE_GRID_POINTS)
@@ -192,8 +192,8 @@ def test_pair_chance_grid_matches_the_exact_formula() -> None:
 def test_pair_chance_grid_interpolates_within_one_percent() -> None:
     """Trình duyệt nội suy tuyến tính trên lưới này. Lưới quá thưa thì mốc
     hiển thị sai, mà sai ở đây nghĩa là bảng tuyên bố "bất thường" nhầm."""
-    from build_stat_pages import pair_chance_grid
-    from xsmb_domain import pair_chance_maximum
+    from pages.build_stat_pages import pair_chance_grid
+    from core.xsmb_domain import pair_chance_maximum
 
     grid = pair_chance_grid()
 
@@ -238,7 +238,7 @@ def test_pair_page_recomputes_the_chance_note_for_the_filtered_range() -> None:
 def test_chance_notes_are_format_safe() -> None:
     """Ghi chú đi qua ``str.format``; một dấu ngoặc nhọn lạc sẽ làm hỏng trang
     lúc dựng chứ không phải lúc chạy test khác."""
-    from build_stat_pages import chance_note_context
+    from pages.build_stat_pages import chance_note_context
 
     context = chance_note_context(393)
     for note in CHANCE_NOTES.values():
@@ -248,7 +248,7 @@ def test_chance_notes_are_format_safe() -> None:
 def test_baselines_come_from_the_single_source_of_truth() -> None:
     """Hai mốc từng được chép lại trong từng trình dựng trang; chính bản chép
     đó khiến 39,8 nằm lại sau khi lịch sử dài ra."""
-    from xsmb_domain import LOTO_BASELINE_RATE, PAIR_COOCCURRENCE_RATE
+    from core.xsmb_domain import LOTO_BASELINE_RATE, PAIR_COOCCURRENCE_RATE
 
     assert LOTO_BASELINE is LOTO_BASELINE_RATE
     assert PAIR_BASELINE is PAIR_COOCCURRENCE_RATE
@@ -386,7 +386,7 @@ def test_reverse_pairs_are_true_reversals_not_kep_bong() -> None:
 def test_reverse_pair_page_exists_separately() -> None:
     """Trang riêng cho tiện theo dõi, không nhét thêm vào trang tần suất cặp."""
     assert "cap-lon-loto" in {p.slug for p in PAGES}
-    from ui_theme import SITE_NAV
+    from web.ui_theme import SITE_NAV
 
     links = [item[0] for group in SITE_NAV for item in group[1]]
     assert "cap-lon-loto.html" in links, "trang mới phải vào được từ điều hướng"
@@ -435,8 +435,8 @@ def test_bo_lookup_comes_from_the_domain_helper() -> None:
     tra phải dựng SẴN từ hàm đó chứ không cài lại công thức trong JavaScript:
     một bản chép thứ hai là một bản sẽ trôi khỏi bản gốc.
     """
-    from build_stat_pages import bo_lookup
-    from number_reference import bo_family_id
+    from pages.build_stat_pages import bo_lookup
+    from core.number_reference import bo_family_id
 
     table = bo_lookup()
     assert len(table) == 100
@@ -720,7 +720,7 @@ def test_legend_does_not_keep_a_second_copy_of_the_field_names() -> None:
     body = _legend_body()
     assert "DE_FIELDS.map(" in body, "chú giải phải sinh từ DE_FIELDS"
 
-    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    builder = (ROOT / "src" / "pages" / "build_stat_pages.py").read_text(encoding="utf-8")
     block = builder[builder.index("FIELD_TOGGLE = (") :]
     block = block[: block.index("\n)")]
     assert 'id="sp-legend"' in block, "trang phải có chỗ để đặt chú giải"
@@ -856,7 +856,7 @@ def test_notes_only_name_columns_the_tables_actually_render() -> None:
     ``renderSpecialByTong`` chỉ dựng "Tỉ lệ" và "Lệch chuẩn hoá" — không hề
     tính tỉ số đó.
     """
-    builder = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    builder = (ROOT / "src" / "pages" / "build_stat_pages.py").read_text(encoding="utf-8")
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
 
     assert "So mức ngẫu nhiên" not in builder, (
@@ -887,7 +887,7 @@ def test_clear_marks_button_is_not_a_range_filter_chip() -> None:
     có ``data-days`` nên ``parseInt`` trả về ``NaN``, rơi vào nhánh "Tất cả",
     và một cú bấm để gỡ đánh dấu lại âm thầm kéo dải từ 90 kỳ lên 2 396 kỳ.
     """
-    source = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "pages" / "build_stat_pages.py").read_text(encoding="utf-8")
     marker = 'id="sp-clear-marks"'
     line = next(ln for ln in source.splitlines() if marker in ln)
     assert 'class="sp-btn"' in line
@@ -913,7 +913,7 @@ def test_default_range_chip_matches_the_javascript_default() -> None:
     phía Python chỉ để tô sáng nút; lệch nhau thì thanh điều khiển nói một
     đằng còn ô ngày một nẻo.
     """
-    from build_stat_pages import DEFAULT_RANGE_DRAWS
+    from pages.build_stat_pages import DEFAULT_RANGE_DRAWS
 
     js = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
     assert f"DRAWS.length - {DEFAULT_RANGE_DRAWS}" in js
@@ -924,7 +924,7 @@ def test_preset_pages_highlight_all_history_not_ninety_draws() -> None:
 
     Tô sáng "90 kỳ" ở đây thì trang khoe 90 trong khi đang hiển thị 2 396.
     """
-    from build_stat_pages import _range_controls
+    from pages.build_stat_pages import _range_controls
 
     preset = _range_controls(mode="preset")
     assert '<button class="sp-chip on" data-days="0">Tất cả</button>' in preset

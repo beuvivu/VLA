@@ -5,7 +5,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 
-from build_research_lab import build
+from pages.build_research_lab import build
 
 
 def _render(tmp_path: Path, diagnostics: dict, firewall: dict) -> BeautifulSoup:

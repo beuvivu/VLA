@@ -30,6 +30,8 @@ jobs:
   audit-and-recover:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
     steps:
       - name: Lấy mã nguồn main mới nhất
         uses: actions/checkout@v7
@@ -42,7 +44,7 @@ jobs:
           python-version: "3.11"
 
       - name: Cài đặt thư viện phụ thuộc
-        # Việc này gọi `src/production_audit.py`, mà kịch bản ấy nạp pandas từ
+        # Việc này gọi `src/evaluation/production_audit.py`, mà kịch bản ấy nạp pandas từ
         # 0f5f890. Không có bước cài, nó chết ở dòng import — và bộ giám sát
         # ĐỌC NHẦM mã thoát khác 0 thành "production hỏng", rồi kích hoạt một
         # lượt phục hồi GIẢ. Nhật ký lượt chạy #122 cho thấy đúng chuỗi đó:
@@ -193,7 +195,7 @@ jobs:
               audit = subprocess.run(
                   [
                       sys.executable,
-                      "src/production_audit.py",
+                      "src/evaluation/production_audit.py",
                       "--cutoff",
                       "18:35",
                       "--strict",

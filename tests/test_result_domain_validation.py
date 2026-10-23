@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from dtos import Result
+from core.dtos import Result
 
 
 def _valid_kwargs() -> dict[str, object]:

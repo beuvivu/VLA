@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from crosslag_positional_lab import (
+from research.crosslag_positional_lab import (
     RuleSpec,
     _calendar_source_indices,
     evaluate_lab,

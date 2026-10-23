@@ -29,15 +29,15 @@
 ## 1. Bảng kết quả chung
 
 - [x] Kiểm tra cấu trúc 27 số và dữ liệu đầu–đuôi; bỏ bố cục ba thẻ trang chủ.
-- [x] Thêm `src/templates/compact_results.css`, nạp vào `src/ui_theme.py`.
-- [x] Sửa trình bày ở `src/build_landing_page.py`, `src/build_fun_prediction.py`, `docs/live.html`.
+- [x] Thêm `src/templates/compact_results.css`, nạp vào `src/web/ui_theme.py`.
+- [x] Sửa trình bày ở `src/pages/build_landing_page.py`, `src/pages/build_fun_prediction.py`, `docs/live.html`.
 - [x] Dùng bảng giải viền ô cùng kiểu Sổ kết quả, giữ nhãn phân biệt mô phỏng/kết quả thật.
 
 ## 2. Lịch vạn niên
 
 - [x] Thêm kiểm thử `tests/test_calendar_widget.py` cho dữ liệu Đặc Biệt và `tests/frontend/calendar.test.mjs` cho ngày âm và tương tác.
 - [x] Chạy đỏ trước khi tạo thành phần.
-- [x] `src/calendar_widget.py`: `load_special_results(repo_root) -> dict[str, str]`, `render_calendar(repo_root) -> str`.
+- [x] `src/web/calendar_widget.py`: `load_special_results(repo_root) -> dict[str, str]`, `render_calendar(repo_root) -> str`.
 - [x] `src/templates/vietnamese_calendar.js`: `AppVietnameseCalendar.getDay(iso)` và `todayISO(date)`; phạm vi 1900–2099.
 - [x] `src/templates/calendar_widget.js` và `.css`: tháng 7 cột, chọn tháng/năm/hôm nay, thông tin ngày, điều khiển bằng bàn phím.
 - [x] Thay phần `db-tuan-thang`, giữ neo cũ, cập nhật tên trong menu.

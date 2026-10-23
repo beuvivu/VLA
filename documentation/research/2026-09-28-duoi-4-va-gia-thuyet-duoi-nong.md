@@ -63,14 +63,14 @@ phải bằng chứng**:
 
 ## 4. Hai việc đã làm
 
-**Giới hạn đuôi trong top LOTO** (`src/pick_diversity.py`): tối đa 3 con cùng đuôi, giữ
+**Giới hạn đuôi trong top LOTO** (`src/ensemble/pick_diversity.py`): tối đa 3 con cùng đuôi, giữ
 nguyên xác suất và thứ tự của mô hình. Áp dụng cho tệp top-4/8/10 (`predict_nextday_2d`)
 và danh sách trang chủ (`run_daily_prediction`). Mười con cùng đuôi gần như là MỘT lần đặt:
 kỳ nào đuôi ấy trượt thì cả nhóm trượt. Trên chính vector 28-09: cũ 84 94 24 14 34 04 54 64
 44 74 → mới 84 94 24 25 67 68 61 46 97 31. Tệp `*_all` (nguồn chấm kỹ năng) không đổi; tệp
 top đã công bố cho 29-09 giữ nguyên như đã công bố.
 
-**Kiểm tiến cứu** (`src/hot_tail_test.py`), đăng ký ngày 28-09-2026 — tham số chốt trước
+**Kiểm tiến cứu** (`src/research/hot_tail_test.py`), đăng ký ngày 28-09-2026 — tham số chốt trước
 kỳ đầu tiên được chấm, có phép kiểm ghim để không thể sửa lặng lẽ:
 
 | Tham số | Giá trị |

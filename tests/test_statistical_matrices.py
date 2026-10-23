@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from statistical_matrices import (
+from stats.statistical_matrices import (
     _de_sparse_from_raw,
     _period_frequency_from_sparse,
     _prepare_sparse,

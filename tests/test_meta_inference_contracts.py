@@ -11,11 +11,11 @@ import pandas as pd
 import pytest
 from sklearn.dummy import DummyClassifier
 
-import meta_predictor as meta
-import predict_nextday_2d as predictor
-from ensemble_components import COMPONENT_POLICY, policy_column
-from ensemble_utils import anchor_loto_level
-from xsmb_domain import LOTO_BASELINE_RATE
+from forecast import meta_predictor as meta
+from forecast import predict_nextday_2d as predictor
+from ensemble.ensemble_components import COMPONENT_POLICY, policy_column
+from ensemble.ensemble_utils import anchor_loto_level
+from core.xsmb_domain import LOTO_BASELINE_RATE
 
 
 def _history() -> pd.DataFrame:

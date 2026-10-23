@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from frequency_stats import compute_frequency_stats, compute_group_frequency_stats
-from gap_cycle_stats import (
+from stats.frequency_stats import compute_frequency_stats, compute_group_frequency_stats
+from stats.gap_cycle_stats import (
     compute_gap_stats,
     compute_group_gap_stats,
     compute_recurrence_intervals,

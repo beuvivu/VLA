@@ -7,7 +7,7 @@ import subprocess
 
 import yaml
 
-from site_assets import check_site, refresh_site
+from web.site_assets import check_site, refresh_site
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,7 +30,7 @@ def test_vietlott_bot_commits_a_complete_release_snapshot(tmp_path: Path) -> Non
     (docs / "index.html").write_text(
         '<!doctype html><p>Trang chủ</p><script src="assets/app-evidence.js"></script>', encoding="utf-8",
     )
-    for name in ("src/site_assets.py", "scripts/ops/push_generated_site.py"):
+    for name in ("src/web/site_assets.py", "scripts/ops/push_generated_site.py"):
         target = work / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / name, target)

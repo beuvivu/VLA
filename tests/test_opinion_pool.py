@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from opinion_pool import (
+from ensemble.opinion_pool import (
     MIN_SELECTION_DAYS,
     SIGNIFICANCE_SIGMAS,
     PoolParams,

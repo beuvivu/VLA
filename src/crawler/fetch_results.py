@@ -36,7 +36,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from sources import (
+from ingest.sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
     STALE_PAGE_ERROR,

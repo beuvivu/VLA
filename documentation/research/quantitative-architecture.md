@@ -221,11 +221,11 @@ skill = (loss_nền − loss_mô_hình) / loss_nền
 hình đều "thắng" ngoạn mục mà không cần biết gì.
 
 Trong kho này, `LOTO_BASELINE_RATE` được định nghĩa một lần duy nhất tại
-`src/xsmb_domain.py`. Module benchmark nhập lại chứ không tính lại — hai bản
+`src/core/xsmb_domain.py`. Module benchmark nhập lại chứ không tính lại — hai bản
 sao của một hằng số rồi sẽ lệch nhau.
 
 ```python
-from xsmb_domain import LOTO_BASELINE_RATE
+from core.xsmb_domain import LOTO_BASELINE_RATE
 
 class UniformBaseline:
     def predict_next(self, history):
@@ -1121,7 +1121,7 @@ PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
 
 | Tệp | Vai trò |
 |---|---|
-| `src/randomness_battery.py` | 7 phép kiểm cấu trúc, phân phối rỗng Monte Carlo, phân tích công suất |
+| `src/stats/randomness_battery.py` | 7 phép kiểm cấu trúc, phân phối rỗng Monte Carlo, phân tích công suất |
 | `src/modeling/benchmark.py` | 11 họ mô hình + kết hợp co rút, đánh giá cuốn chiếu |
 | `scripts/research/run_randomness_report.py` | → `data/research/randomness_report.json` |
 | `scripts/research/run_model_benchmark.py` | → `data/research/model_benchmark.json` |

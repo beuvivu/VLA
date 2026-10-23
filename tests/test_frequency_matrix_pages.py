@@ -166,7 +166,7 @@ def _without_media(css: str) -> str:
 
 # --- Kỳ chưa quay, lọc thứ, chế độ cặp --------------------------------------
 
-BUILDER = (ROOT / "src" / "build_stat_pages.py").read_text(encoding="utf-8")
+BUILDER = (ROOT / "src" / "pages" / "build_stat_pages.py").read_text(encoding="utf-8")
 
 
 def test_the_pending_draw_is_shown_as_waiting_not_as_a_miss() -> None:
@@ -263,7 +263,7 @@ def test_switching_pair_mode_off_does_not_erase_existing_marks() -> None:
 
 def test_requested_short_and_yearly_ranges_are_available() -> None:
     """Bộ lọc phải có đủ các mốc chủ dự án dùng để đọc bảng responsive."""
-    from build_stat_pages import QUICK_RANGES
+    from pages.build_stat_pages import QUICK_RANGES
 
     assert {"10", "30", "100", "365"}.issubset(dict(QUICK_RANGES))
 
@@ -360,7 +360,7 @@ def test_a_marked_header_actually_changes_colour() -> None:
 
 def test_nhay_cells_and_legend_share_readable_pastel_colors() -> None:
     """Ô và chú giải cùng token; sáng pastel, tối dịu, cả hai đạt AA."""
-    from ui_theme import contrast_ratio
+    from web.ui_theme import contrast_ratio
     for dark in (False, True):
         css = resolve_theme_colors(_without_media(CSS_CODE), dark)
         colors = set()

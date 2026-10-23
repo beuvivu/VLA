@@ -101,7 +101,7 @@ def main():
     if args.seeds <= 0:
         parser.error("--seeds phải lớn hơn 0")
     sys.path.insert(0, str(args.repo / "src"))
-    from hierarchical_pooling import fit_shrinkage_to_prior_rows
+    from ensemble.hierarchical_pooling import fit_shrinkage_to_prior_rows
 
     result = {
         "seeds": [0, args.seeds - 1],

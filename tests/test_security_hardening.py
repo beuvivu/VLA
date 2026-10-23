@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-import ml_predict
-from calibration import CalibParams
-from ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, TRUST_POLICY_VERSION
-from ensemble_utils import load_ensemble_weights
-from predict_nextday_2d import _load_calibration
-from lottery import Lottery, RepoPaths, vietnam_today
+from ml import ml_predict
+from ensemble.calibration import CalibParams
+from ml.ml_train import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, TRUST_POLICY_VERSION
+from ensemble.ensemble_utils import load_ensemble_weights
+from forecast.predict_nextday_2d import _load_calibration
+from ingest.lottery import Lottery, RepoPaths, vietnam_today
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,7 @@ def test_http_collection_does_not_depend_on_anti_bot_bypass_package() -> None:
     assert "cloudscraper" not in (ROOT / "requirements-live.txt").read_text(
         encoding="utf-8"
     )
-    assert "cloudscraper" not in (ROOT / "src" / "lottery.py").read_text(
+    assert "cloudscraper" not in (ROOT / "src" / "ingest" / "lottery.py").read_text(
         encoding="utf-8"
     )
 
@@ -183,10 +183,10 @@ def test_duplicate_dates_in_canonical_json_fail_closed(tmp_path: Path) -> None:
 
 def test_production_modules_do_not_use_optimizable_assertions() -> None:
     for name in (
-        "number_reference.py",
-        "sources.py",
-        "cau_keo_ml.py",
-        "learn_ensemble_weights.py",
+        "core/number_reference.py",
+        "ingest/sources.py",
+        "ml/cau_keo_ml.py",
+        "ensemble/learn_ensemble_weights.py",
     ):
         source = (ROOT / "src" / name).read_text(encoding="utf-8")
         assert "assert " not in source, name

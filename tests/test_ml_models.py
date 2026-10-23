@@ -7,7 +7,7 @@ from pathlib import Path as _Path
 
 sys.path.insert(0, str((_Path(__file__).resolve().parents[1] / "src")))
 
-from ml_models import PlattCalibratedClassifier
+from ml.ml_models import PlattCalibratedClassifier
 
 
 class TestMlModelSerialization(unittest.TestCase):

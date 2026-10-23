@@ -59,7 +59,7 @@ pgvector hoặc Neo4j là hướng mở rộng, chưa được triển khai.
 Lệnh tái lập:
 
 ```bash
-PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python src/run_xsmb_agents.py --benchmark-last 60
+PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python src/xsmb_agents/run_xsmb_agents.py --benchmark-last 60
 ```
 
 Fingerprint và số đo đầy đủ ở `data/agents/benchmark.json`. Đối chứng đương

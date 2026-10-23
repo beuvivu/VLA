@@ -1,0 +1,2680 @@
+from __future__ import annotations
+
+"""Build the modern Vietnamese lottery landing page.
+
+The landing page is intentionally self-contained: it embeds the latest draw,
+statistical matrices, AI/ML ranking, and cầu-position evidence into one HTML
+file so docs/index.html still works when opened directly from disk.
+"""
+
+import argparse
+import html
+import re
+from collections import Counter
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Iterable, Mapping, Sequence
+
+import numpy as np
+import pandas as pd
+
+from core.safe_io import read_csv_or_empty, read_json_or_empty
+
+from web.app_icons import icon_svg
+from web.calendar_widget import render_calendar
+from ml.cau_keo_daily_top import top_by_cau_score
+from web.draw_metadata import load_draw_metadata, station_for_date
+from forecast.daily_forecast import load_daily_forecast
+from web.evidence_catalog import values_block
+from pages.build_position_bridges import best_panel, bridge_css
+from pages.build_position_bridges import load as load_position_bridges
+from web.shared_results import draw_from_row, render_result_board, shared_results_css
+from web.ui_locale import COLUMN_LABELS, mode_label, value_label
+from core.xsmb_domain import PAIR_COOCCURRENCE_RATE, pair_chance_maximum
+from web.ui_theme import LANDING_SECTIONS, readable_ink, stylesheet_link, write_stylesheet
+from web.web_security import json_for_html_script, security_meta_tags
+from web.page_output import write_page
+
+
+NAV_ITEMS = LANDING_SECTIONS
+
+PRIZE_GROUPS: list[tuple[str, str, list[str], str]] = [
+    ("special", "Đặc Biệt", ["special"], "special"),
+    ("prize1", "Giải nhất", ["prize1"], "normal"),
+    ("prize2", "Giải nhì", ["prize2_1", "prize2_2"], "normal"),
+    (
+        "prize3",
+        "Giải ba",
+        ["prize3_1", "prize3_2", "prize3_3", "prize3_4", "prize3_5", "prize3_6"],
+        "normal",
+    ),
+    ("prize4", "Giải tư", ["prize4_1", "prize4_2", "prize4_3", "prize4_4"], "compact"),
+    (
+        "prize5",
+        "Giải năm",
+        ["prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6"],
+        "compact",
+    ),
+    ("prize6", "Giải sáu", ["prize6_1", "prize6_2", "prize6_3"], "compact"),
+    ("prize7", "Giải bảy", ["prize7_1", "prize7_2", "prize7_3", "prize7_4"], "mini"),
+]
+
+PRETTY_COLS = COLUMN_LABELS
+
+
+#: Nhãn cột rút gọn cho hai bảng đường cầu. Tiêu đề dài như "Độ trễ (ngày)"
+#: hay "Chuỗi hiện tại" đặt sàn bề rộng cho cột chỉ chứa MỘT chữ số — đo được
+#: 99px và 102px cho ô hiện "13" và "3". Rút gọn ở đây thay vì sửa
+#: COLUMN_LABELS dùng chung, vì bảng thống kê bên trang khác còn chỗ rộng.
+PATH_TABLE_LABELS = {
+    "lag_days": "Độ trễ",
+    "current_streak": "Chuỗi",
+    "hit_ratio": "Trúng/Mẫu",
+    "p_mean": "Tỷ lệ",
+    "rule_score": "Điểm",
+}
+
+# Căn lề và độ chính xác chỉ thuộc tầng hiển thị; không sửa bảng đầu vào.
+NUMERIC_TABLE_COLUMNS = frozenset({
+    "count", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period",
+    "top_k", "validation_days", "hit_any_days", "avg_hits_per_day", "val_brier",
+    "val_logloss", "base_count", "current_gap", "hit_count", "mean_gap", "max_gap",
+    "z_score", "lag_days", "p_mean", "hit_ratio", "current_streak", "rule_score",
+})
+TABLE_DECIMALS = {
+    "avg_per_draw": 2, "avg_hits_per_day": 2, "mean_gap": 2, "z_score": 2,
+    "val_brier": 4, "val_logloss": 3, "rule_score": 1,
+}
+
+PALETTES = {
+    "blue": ("#eff6ff", "#2563eb"),
+    "sky": ("#ecfeff", "#0891b2"),
+    "purple": ("#f5f3ff", "#7c3aed"),
+    "orange": ("#fff7ed", "#ea580c"),
+    "rose": ("#fff1f2", "#e11d48"),
+    "green": ("#ecfdf5", "#059669"),
+    "slate": ("#f8fafc", "#334155"),
+}
+
+
+def _read_csv(
+    path: Path,
+    *,
+    dtype: str | Mapping[str, object] | None = None,
+    nrows: int | None = None,
+) -> pd.DataFrame:
+    return read_csv_or_empty(path, dtype=dtype, nrows=nrows, keep_default_na=False)
+
+
+def _to_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value is None or value == "":
+            return default
+        x = float(value)
+        if np.isfinite(x):
+            return x
+    except (TypeError, ValueError):
+        return default
+    return default
+
+
+def _to_int(value: Any, default: int = 0) -> int:
+    try:
+        if value is None or value == "":
+            return default
+        return int(float(value))
+    except (TypeError, ValueError, OverflowError):
+        return default
+
+
+def _fmt2(value: Any) -> str:
+    token = str(value).strip()
+    if re.fullmatch(r"[0-9]{1,2}(?:\.0+)?", token) is None:
+        return ""
+    number = int(float(token))
+    return f"{number:02d}" if 0 <= number <= 99 else ""
+
+
+def _fmt_num(value: Any, *, decimals: int = 0, percent: bool = False) -> str:
+    if value is None or value == "":
+        return ""
+    x = _to_float(value, default=np.nan)
+    if not np.isfinite(x):
+        return html.escape(str(value))
+    if percent:
+        return f"{x * 100:.1f}%"
+    if decimals <= 0:
+        return f"{int(round(x)):,}".replace(",", ".")
+    return f"{x:.{decimals}f}".rstrip("0").rstrip(".")
+
+
+def _pct(value: Any) -> str:
+    x = _to_float(value, default=0.0)
+    if x <= 1:
+        x *= 100
+    return f"{x:.1f}%"
+
+
+def _pretty_col(col: str) -> str:
+    return PRETTY_COLS.get(col, col.replace("_", " "))
+
+
+def _prize_width(col: str) -> int:
+    if col == "special" or col == "prize1" or col.startswith("prize2") or col.startswith("prize3"):
+        return 5
+    if col.startswith("prize4") or col.startswith("prize5"):
+        return 4
+    if col.startswith("prize6"):
+        return 3
+    if col.startswith("prize7"):
+        return 2
+    return 2
+
+
+def _fmt_prize(col: str, value: Any) -> str:
+    s = str(value).strip()
+    if not s:
+        return ""
+    digits = re.sub(r"\D+", "", s)
+    if not digits:
+        return html.escape(s)
+    return digits.zfill(_prize_width(col))
+
+
+def _last2_from_prize(col: str, value: Any) -> str:
+    s = _fmt_prize(col, value)
+    digits = re.sub(r"\D+", "", s)
+    return digits[-2:].zfill(2) if digits else ""
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+    color = hex_color.lstrip("#")
+    return tuple(int(color[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+def _rgb_to_hex(rgb: Iterable[int]) -> str:
+    return "#" + "".join(f"{max(0, min(255, int(v))):02x}" for v in rgb)
+
+
+def _mix(low: str, high: str, t: float) -> str:
+    t = max(0.0, min(1.0, t))
+    a = _hex_to_rgb(low)
+    b = _hex_to_rgb(high)
+    return _rgb_to_hex(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+
+def _style_for_value(
+    value: float, min_value: float, max_value: float, palette: str
+) -> tuple[str, str]:
+    low, high = PALETTES.get(palette, PALETTES["blue"])
+    span = max(max_value - min_value, 1e-9)
+    t = (value - min_value) / span
+    bg = _mix(low, high, t)
+    # Chọn màu chữ theo tỉ lệ tương phản thực tế thay vì ngưỡng độ sáng cố
+    # định. Ngưỡng cũ (luminance < 0.42) để lọt cả một dải nền tầm trung: đo
+    # trên trang thật, chữ trắng trên nền #8aacf5 chỉ đạt 2,26:1.
+    return bg, readable_ink(bg)
+
+
+def _df_to_rows(df: pd.DataFrame, columns: Sequence[str], limit: int = 12) -> list[dict[str, Any]]:
+    if df.empty:
+        return []
+    cols = [c for c in columns if c in df.columns]
+    if not cols:
+        cols = list(df.columns[: min(6, len(df.columns))])
+    out = df.loc[:, cols].head(limit).copy()
+    return out.to_dict(orient="records")
+
+
+def _latest_draw(repo_root: Path) -> dict[str, Any]:
+    df = _read_csv(repo_root / "data" / "xsmb.csv", dtype=str)
+    if df.empty:
+        return {"date": "", "groups": [], "numbers": [], "counts": {}}
+    df = df.sort_values("date")
+    row = df.iloc[-1].to_dict()
+    draw_date = row.get("date", "")
+    metadata = load_draw_metadata(repo_root).get(draw_date, {"station": station_for_date(draw_date)})
+    groups = []
+    numbers: list[str] = []
+    for key, label, cols, kind in PRIZE_GROUPS:
+        values = [_fmt_prize(c, row.get(c, "")) for c in cols if str(row.get(c, "")).strip()]
+        groups.append({"key": key, "label": label, "values": values, "kind": kind})
+        for c in cols:
+            n = _last2_from_prize(c, row.get(c, ""))
+            if n:
+                numbers.append(n)
+    counts = dict(Counter(numbers))
+    heads: dict[str, list[str]] = {str(i): [] for i in range(10)}
+    tails: dict[str, list[str]] = {str(i): [] for i in range(10)}
+    for number, count in sorted(counts.items()):
+        label = number if count == 1 else f"{number}×{count}"
+        heads[number[0]].append(label)
+        tails[number[1]].append(label)
+    return {
+        "date": row.get("date", ""),
+        "draw": draw_from_row(row, metadata=metadata),
+        "special": _fmt_prize("special", row.get("special", "")),
+        "special_2d": _last2_from_prize("special", row.get("special", "")),
+        "groups": groups,
+        "numbers": numbers,
+        "counts": counts,
+        "heads": heads,
+        "tails": tails,
+    }
+
+
+def _matrix_from_df(df: pd.DataFrame, value_col: str) -> dict[str, float]:
+    values = {f"{i:02d}": 0.0 for i in range(100)}
+    if df.empty or value_col not in df.columns:
+        return values
+    for _, row in df.iterrows():
+        if "number_str" in df.columns:
+            n = _fmt2(row["number_str"])
+        elif "number" in df.columns:
+            n = _fmt2(row["number"])
+        else:
+            continue
+        values[n] = _to_float(row.get(value_col, 0))
+    return values
+
+
+def _current_period_matrix(
+    repo_root: Path, mode: str, period: str, value_col: str = "freq"
+) -> dict[str, float]:
+    df = _read_csv(
+        repo_root / "data" / "advanced" / f"period_snapshot_{mode}_current.csv", dtype=str
+    )
+    if not df.empty and "period_kind" in df.columns:
+        df = df[df["period_kind"] == period]
+    return _matrix_from_df(df, value_col)
+
+
+def _rhythm_matrix(repo_root: Path, mode: str) -> dict[str, float]:
+    df = _read_csv(repo_root / "data" / "advanced" / f"{mode}_rhythm.csv", dtype=str)
+    return _matrix_from_df(df, "current_gap")
+
+
+def _ai_matrix(repo_root: Path, mode: str) -> dict[str, float]:
+    explain = _read_csv(repo_root / "data" / "ai_ml" / f"cau_number_explain_{mode}.csv", dtype=str)
+    if not explain.empty and "ai_cau_score" in explain.columns:
+        return _matrix_from_df(explain, "ai_cau_score")
+    top = _read_csv(repo_root / "data" / "ai_ml" / f"cau_keo_{mode}_top20.csv", dtype=str)
+    if not top.empty and "cau_score" in top.columns:
+        return _matrix_from_df(top, "cau_score")
+    fallback = _read_csv(repo_root / "data" / "advanced" / f"ai_ml_signal_{mode}.csv", dtype=str)
+    return _matrix_from_df(fallback, "prob")
+
+
+def _sort_top(df: pd.DataFrame, col: str, limit: int = 12, ascending: bool = False) -> pd.DataFrame:
+    if df.empty or col not in df.columns:
+        return pd.DataFrame()
+    out = df.copy()
+    out["_sort_value"] = pd.to_numeric(out[col], errors="coerce").fillna(0.0)
+    out = out.sort_values("_sort_value", ascending=ascending).drop(columns=["_sort_value"])
+    return out.head(limit)
+
+
+def _load_explain_map(repo_root: Path) -> dict[str, dict[str, Any]]:
+    result: dict[str, dict[str, Any]] = {"loto": {}, "de": {}}
+    for mode in ["loto", "de"]:
+        explain = _read_csv(
+            repo_root / "data" / "ai_ml" / f"cau_number_explain_{mode}.csv", dtype=str
+        )
+        if not explain.empty:
+            for _, row in explain.iterrows():
+                number = _fmt2(row.get("number_str", row.get("number", "")))
+                result[mode][number] = {
+                    "number": number,
+                    "score": _to_float(row.get("ai_cau_score", 0)),
+                    "prob": _to_float(row.get("ai_prob_percent", 0)),
+                    "reason": str(row.get("primary_reason", "")),
+                    "evidence": str(row.get("ai_evidence", "")),
+                    "summary": str(row.get("explain_text", "")),
+                    "positions": [
+                        str(row.get("top_position_1", "")),
+                        str(row.get("top_position_2", "")),
+                        str(row.get("top_position_3", "")),
+                    ],
+                    "lines": [],
+                }
+        evidence = _read_csv(
+            repo_root / "data" / "ai_ml" / f"cau_position_evidence_{mode}.csv", dtype=str
+        )
+        if not evidence.empty:
+            sort_cols = [c for c in ["number_str", "rule_score"] if c in evidence.columns]
+            if sort_cols:
+                evidence["_score"] = pd.to_numeric(
+                    evidence.get("rule_score", 0), errors="coerce"
+                ).fillna(0)
+                evidence = evidence.sort_values(
+                    ["number_str", "_score"], ascending=[True, False]
+                ).drop(columns=["_score"])
+            for number, group in evidence.groupby(evidence["number_str"].map(_fmt2)):
+                if number not in result[mode]:
+                    result[mode][number] = {
+                        "number": number,
+                        "score": 0,
+                        "prob": 0,
+                        "reason": "",
+                        "evidence": "",
+                        "summary": "",
+                        "positions": [],
+                        "lines": [],
+                    }
+                lines: list[dict[str, str]] = []
+                for _, row in group.head(6).iterrows():
+                    lines.append(
+                        {
+                            "kind": str(row.get("rule_kind", "")),
+                            "lag": str(row.get("lag_days", "")),
+                            "base_date": str(row.get("base_date", "")),
+                            "path_line": str(row.get("path_line", "")),
+                            "p_mean": _fmt_num(row.get("p_mean", ""), decimals=3),
+                            "hits": str(row.get("hits", "")),
+                            "trials": str(row.get("trials", "")),
+                            "streak": str(row.get("current_streak", "")),
+                            "score": _fmt_num(row.get("rule_score", ""), decimals=1),
+                            "reason": str(row.get("reason", "")),
+                        }
+                    )
+                result[mode][number]["lines"] = lines
+    return result
+
+
+def _render_live_block(latest: Mapping[str, Any]) -> str:
+    """Khối quay trực tiếp, đặt ở vị trí ưu tiên hàng đầu.
+
+    Trang này là HTML tĩnh sinh sẵn, nên không thể tự biết lúc người dùng mở
+    trang là mấy giờ. Việc chuyển giữa "đang quay" và "đã có kết quả" do
+    JavaScript quyết định theo giờ Việt Nam ngay trên máy người xem — nếu để
+    phía dựng trang quyết định, mọi người mở trang sau đó sẽ thấy một trạng thái
+    đã cũ.
+    """
+    date_text = html.escape(str(latest.get("date") or "—"))
+    return f"""
+      <section id="live" class="section card" data-live-block>
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Quay thưởng</p>
+            <h3 id="live-title">Kết quả ngày {date_text}</h3>
+            <p id="live-note">Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.</p>
+          </div>
+          <a class="btn secondary" href="live.html">Mở trang quay trực tiếp</a>
+        </div>
+        <div id="live-status" class="live-status" role="status" aria-live="polite">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span id="live-status-text">Đang xác định trạng thái kỳ quay…</span>
+        </div>
+      </section>
+    """
+
+
+def _render_daily_matrix(latest: Mapping[str, Any]) -> str:
+    counts = {f"{i:02d}": int(latest.get("counts", {}).get(f"{i:02d}", 0)) for i in range(100)}
+    max_count = max(counts.values()) if counts else 0
+    cells = []
+    for head in range(10):
+        row_cells = [f"<div class='matrix-head'>{head}</div>"]
+        for tail in range(10):
+            n = f"{head}{tail}"
+            value = counts[n]
+            bg, fg = _style_for_value(value, 0, max(max_count, 1), "orange")
+            active = " is-hit" if value else ""
+            label = f"{value} lần" if value else "0"
+            row_cells.append(
+                f"<button class='tiny-matrix-cell{active}' data-mode='loto' data-number='{n}' "
+                # Ô chỉ in nhãn số; giá trị nằm trong data-value — bằng chứng mở giá trị.
+                f"data-value='{html.escape(str(label))}' data-evidence-value='{html.escape(str(label))}' "
+                f"style='background:{bg};color:{fg}' title='{n}: {label}'>{n}</button>"
+            )
+        cells.append("".join(row_cells))
+    header = "<div></div>" + "".join(f"<div class='matrix-head'>{i}</div>" for i in range(10))
+    # Trên màn hẹp ma trận có min-width 430px; phải bọc trong .matrix-wrap để
+    # phần dư cuộn ngang trong khung thay vì đẩy cả trang tràn ra ngoài.
+    return f"<div class='matrix-wrap'><div class='tiny-matrix'>{header}{''.join(cells)}</div></div>"
+
+
+
+def _render_matrix_card(
+    *,
+    title: str,
+    subtitle: str,
+    values: Mapping[str, float],
+    palette: str,
+    mode: str,
+    value_suffix: str = "",
+    decimals: int = 0,
+) -> str:
+    numbers = [f"{i:02d}" for i in range(100)]
+    vals = [float(values.get(n, 0.0)) for n in numbers]
+    max_value = max(vals) if vals else 0.0
+    min_value = min(vals) if vals else 0.0
+    cells = []
+    for head in range(10):
+        row = [f"<div class='matrix-axis'>{head}</div>"]
+        for tail in range(10):
+            n = f"{head}{tail}"
+            value = float(values.get(n, 0.0))
+            bg, fg = _style_for_value(value, min_value, max_value, palette)
+            val_label = _fmt_num(value, decimals=decimals)
+            if value_suffix:
+                val_label = f"{val_label}{value_suffix}"
+            row.append(
+                f"<button class='matrix-cell' data-mode='{mode}' data-number='{n}' "
+                f"data-value='{html.escape(val_label)}' data-evidence-value='{html.escape(val_label)}' "
+                f"style='background:{bg};color:{fg}' title='{html.escape(title)} · {n}: {html.escape(val_label)}'>"
+                f"{n}</button>"
+            )
+        cells.append("".join(row))
+    header = "<div></div>" + "".join(f"<div class='matrix-axis'>{i}</div>" for i in range(10))
+    legend_low, legend_high = PALETTES.get(palette, PALETTES["blue"])
+    return f"""
+    <article class="card matrix-card">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Ma trận 00–99</p>
+          <h3>{html.escape(title)}</h3>
+          <p>{html.escape(subtitle)}</p>
+        </div>
+      </div>
+      <div class="matrix-wrap">
+        <div class="matrix-grid">{header}{"".join(cells)}</div>
+      </div>
+      <div class="legend"><span style="background:{legend_low}"></span> Thấp <i></i> Cao <span style="background:{legend_high}"></span></div>
+    </article>
+    """
+
+
+def _label_parts(label: str) -> str:
+    """Nhãn cặp "09-90" thành hai phần tử số; nhãn khác giữ nguyên chữ."""
+    parts = label.split("-")
+    if len(parts) == 2 and all(p.isdigit() for p in parts):
+        return "-".join(f"<span>{html.escape(p)}</span>" for p in parts)
+    return html.escape(label)
+
+
+def _render_bar_card(
+    *,
+    title: str,
+    subtitle: str,
+    df: pd.DataFrame,
+    label_col: str,
+    value_col: str,
+    palette: str,
+    mode: str | None = None,
+    number_col: str | None = None,
+    limit: int = 12,
+    value_decimals: int = 1,
+    percent: bool = False,
+) -> str:
+    if df.empty or label_col not in df.columns or value_col not in df.columns:
+        body = "<div class='empty'>Chưa có dữ liệu.</div>"
+    else:
+        rows = df.head(limit).copy()
+        values = pd.to_numeric(rows[value_col], errors="coerce").fillna(0.0)
+        max_value = max(float(values.max()), 1e-9)
+        _, high = PALETTES.get(palette, PALETTES["blue"])
+        items = []
+        for _, row in rows.iterrows():
+            value = _to_float(row.get(value_col, 0))
+            width = max(3, min(100, value / max_value * 100))
+            label = str(row.get(label_col, ""))
+            number_attr = ""
+            if re.fullmatch(r"\d{2}-\d{2}", label):
+                number_attr = f" data-pair='{label}' aria-pressed='false'"
+            if mode and number_col and number_col in row:
+                number_attr = f" data-mode='{mode}' data-number='{_fmt2(row.get(number_col))}'"
+            elif mode and re.fullmatch(r"\d{1,2}", label):
+                number_attr = f" data-mode='{mode}' data-number='{_fmt2(label)}'"
+            value_text = _pct(value) if percent else _fmt_num(value, decimals=value_decimals)
+            items.append(
+                f"<button class='bar-row'{number_attr}>"
+                f"<span class='bar-label'>{_label_parts(label)}</span>"
+                f"<span class='bar-track'><span class='bar-fill' style='width:{width:.1f}%;background:var(--app-ranking-color,{high})'></span></span>"
+                f"<span class='bar-value' data-evidence-primary>{html.escape(value_text)}</span>"
+                f"</button>"
+            )
+        body = "<div class='bar-list'>" + "".join(items) + "</div>"
+    return f"""
+    <article class="card app-ranking-card" data-ranking-mode="{html.escape(mode or '')}">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Biểu đồ thanh</p>
+          <h3>{html.escape(title)}</h3>
+          <p>{html.escape(subtitle)}</p>
+        </div>
+      </div>
+      {body}
+    </article>
+    """
+
+
+def _hit_ratio_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Gộp ``hits`` và ``trials`` thành một cột ``hit_ratio`` dạng ``9/391``.
+
+    Hai cột riêng tốn 158px để hiện "3" và "379" — bề rộng do TIÊU ĐỀ "Số lần
+    trúng" đặt sàn chứ không phải do dữ liệu. Gộp lại còn ~90px mà không mất
+    thông tin nào, và "trúng/mẫu" đúng là cách khung căn cứ bên trái đã dùng.
+
+    Args:
+        df: Bảng có hai cột ``hits`` và ``trials``.
+
+    Returns:
+        Bản sao có thêm cột ``hit_ratio``; trả nguyên bản nếu thiếu cột nguồn.
+    """
+    if df.empty or not {"hits", "trials"} <= set(df.columns):
+        return df
+    out = df.copy()
+    out["hit_ratio"] = [
+        f"{h}/{t}" for h, t in zip(out["hits"], out["trials"], strict=True)
+    ]
+    return out
+
+
+
+def _render_pair_frequency(repo_root: Path, *, limit: int = 20) -> str:
+    """Bảng tần suất cặp LOTO đồng xuất hiện, kèm mốc so sánh ngẫu nhiên.
+
+    ``src/stats/pair_stats.py`` đã tính bảng này hàng ngày vào
+    ``data/pairs/top_unordered_pairs_top300.csv`` nhưng chưa trang nào hiển
+    thị nó.
+
+    Bảng bắt buộc kèm hai con số, nếu không nó gây hiểu sai: **kỳ vọng** của
+    một cặp bất kỳ, và **cực đại do ngẫu nhiên** trên toàn bộ 4950 cặp. Ở 393
+    kỳ, cặp dẫn đầu có 41 lần so với kỳ vọng 21.6 — nghe như quy luật, nhưng
+    cực đại trên dữ liệu ngẫu nhiên trung bình đã là 39.9. Thiếu cột so sánh
+    thì người đọc chỉ thấy "gấp đôi kỳ vọng".
+
+    Cả hai mốc đều tính lại theo độ dài lịch sử thật
+    (:func:`pair_chance_maximum`), không đóng cứng.
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+        limit: Số cặp hiển thị.
+
+    Returns:
+        Chuỗi HTML của thẻ; chuỗi rỗng nếu chưa có dữ liệu.
+    """
+    df = _read_csv(repo_root / "data" / "pairs" / "top_unordered_pairs_top300.csv")
+    if df.empty or "count" not in df.columns:
+        return ""
+
+    n_draws = _history_days(repo_root)
+    expected = PAIR_COOCCURRENCE_RATE * n_draws if n_draws else 0.0
+
+    rows = []
+    for _, row in df.head(limit).iterrows():
+        count = _to_float(row.get("count"), default=0.0)
+        rows.append(
+            {
+                "pair": str(row.get("pair", "")),
+                "count": int(count),
+                "expected": f"{expected:.1f}",
+                "ratio": f"{count / expected:.2f}×" if expected else "—",
+            }
+        )
+
+    pair_columns = (
+        ("col-pair", "Cặp số"),
+        ("col-count numeric", "Số lần cùng về"),
+        ("col-expected numeric", "Kỳ vọng"),
+        ("col-ratio numeric", "So kỳ vọng"),
+    )
+    header = "".join(
+        f"<th scope='col' class='{cls}'>{html.escape(label)}</th>"
+        for cls, label in pair_columns
+    )
+    body = "".join(
+        "<tr>"
+        f"<td class='col-pair'>{_pair_number_controls(r['pair'])}</td>"
+        f"<td class='col-count numeric'>{r['count']}</td>"
+        f"<td class='col-expected numeric'>{r['expected']}</td>"
+        f"<td class='col-ratio numeric'>{html.escape(r['ratio'])}</td>"
+        "</tr>"
+        for r in rows
+    )
+    chance_max, (low, high) = pair_chance_maximum(n_draws)
+    return f"""
+    <article class="card">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Bảng dữ liệu</p>
+          <h3>Tần suất cặp LOTO</h3>
+          <p>Số lần hai con lô cùng về trong một kỳ, trên {n_draws} kỳ gần nhất.</p>
+        </div>
+      </div>
+      <p class="app-pair-help">Chọn một số để xem căn cứ · Nhấp đúp con số để mở nguồn và các bước tính.</p>
+      <div class="table-wrap">
+        <table class="stat-table pair-frequency-table"><colgroup><col><col><col><col></colgroup><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table>
+      </div>
+      <p class="pair-note">
+        ⚠️ Có <b>4 950</b> cặp số, nên cặp dẫn đầu luôn cao hơn kỳ vọng kể cả khi
+        dữ liệu hoàn toàn ngẫu nhiên. Trên lịch sử ngẫu nhiên dài đúng
+        {n_draws} kỳ, cực đại trung bình là <b>{chance_max:.1f}</b> lần
+        (khoảng 90%: {low}–{high}). Một cặp chỉ đáng chú ý khi vượt hẳn khoảng
+        đó — nằm trong khoảng nghĩa là không phân biệt được với ngẫu nhiên.
+      </p>
+    </article>
+    """
+
+
+def _pair_number_controls(pair: str) -> str:
+    """Hai số có đích chọn riêng, vẫn giữ cặp và thứ tự từ dữ liệu nguồn."""
+    if not re.fullmatch(r"\d{2}-\d{2}", pair):
+        return html.escape(pair)
+    return '<span class="app-pair-values">' + '<span aria-hidden="true">–</span>'.join(
+        f'<button type="button" class="app-pair-number" data-mode="loto" data-number="{n}" aria-label="Chọn số {n} trong cặp {pair}">{n}</button>'
+        for n in pair.split('-')
+    ) + '</span>'
+
+
+def _render_table(
+    *,
+    title: str,
+    subtitle: str,
+    df: pd.DataFrame,
+    columns: Sequence[str],
+    limit: int = 12,
+    dense: bool = False,
+    searchable: bool = False,
+    number_mode: str = "loto",
+    labels: Mapping[str, str] | None = None,
+    framed: bool = True,
+) -> str:
+    rows = _df_to_rows(df, columns, limit=limit)
+    if not rows:
+        body = "<div class='empty'>Chưa có dữ liệu.</div>"
+    else:
+        table_cols = list(rows[0].keys())
+        # Lớp theo tên cột để CSS chỉnh bề rộng từng cột. Cách thay thế là
+        # nth-child, nhưng chỉ số cột đổi theo mỗi lần gọi _render_table nên
+        # quy tắc sẽ trượt sang cột khác lúc nào không hay.
+        overrides = dict(labels or {})
+        column_classes = {
+            c: f"col-{html.escape(c)}" + (
+                " numeric" if c in NUMERIC_TABLE_COLUMNS or c.endswith("rate") else ""
+            )
+            for c in table_cols
+        }
+        thead = "".join(
+            f'<th scope="col" class="{column_classes[c]}">'
+            f"{html.escape(overrides.get(c) or _pretty_col(c))}</th>"
+            for c in table_cols
+        )
+        trs = []
+        for row in rows:
+            cells = []
+            for c in table_cols:
+                value = row.get(c, "")
+                s = str(value)
+                cls = f' class="{column_classes[c]}"'
+                if c.endswith("rate") or c in {"hit_any_rate", "prob", "p_mean"}:
+                    # p_mean từng in nguyên 8 chữ số thập phân ("0.02544529"):
+                    # vừa rộng vô ích vừa không ai đọc tới số thứ tám.
+                    s = _pct(value)
+                elif c in {"number", "number_str", "next_loto", "prev_loto", "prev_special_2d"}:
+                    s = _fmt2(value)
+                    s = f"<button class='num-link' data-mode='{number_mode}' data-number='{s}'>{s}</button>"
+                    cells.append(f"<td{cls}>{s}</td>")
+                    continue
+                elif c in TABLE_DECIMALS:
+                    s = _fmt_num(value, decimals=TABLE_DECIMALS[c])
+                elif c == "mode":
+                    s = mode_label(value)
+                elif c in {"score_band", "period_kind", "stage", "status"}:
+                    s = str(value_label(value))
+                cells.append(f"<td{cls}>{html.escape(s)}</td>")
+            trs.append("<tr>" + "".join(cells) + "</tr>")
+        search = (
+            "<input class='table-filter' type='search' placeholder='Lọc nhanh trong bảng...' aria-label='Lọc bảng'/>"
+            if searchable
+            else ""
+        )
+        body = f"{search}<div class='table-wrap'><table class='stat-table {'dense' if dense else ''}'><thead><tr>{thead}</tr></thead><tbody>{''.join(trs)}</tbody></table></div>"
+    card_class = "card table-card" if framed else "table-card table-card-plain"
+    return f"""
+    <article class="{card_class}">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Bảng dữ liệu</p>
+          <h3>{html.escape(title)}</h3>
+          <p>{html.escape(subtitle)}</p>
+        </div>
+      </div>
+      {body}
+    </article>
+    """
+
+
+
+def _render_group_bars(repo_root: Path, period: str) -> str:
+    """Hiện đủ 0–9 từ tần suất đã chốt, kèm mẫu số và phạm vi quan sát."""
+    df = _read_csv(repo_root / "data" / "advanced" / "head_tail_total_loto_current.csv", dtype=str)
+    if df.empty or not {"period_kind", "period_key", "group_type", "group_value", "freq"} <= set(df.columns):
+        return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng.</div>"
+    df = df[df["period_kind"] == period]
+    if df.empty:
+        return "<div class='empty'>Chưa có dữ liệu đầu/đuôi/tổng cho kỳ này.</div>"
+    period_key = str(df["period_key"].max())
+    df = df[df["period_key"] == period_key]
+    period_label = {
+        "day": "Ngày", "week": "Tuần", "month": "Tháng", "year": "Năm",
+    }.get(period, "Kỳ")
+    period_text = f"{period_label} {period_key}"
+    if period == "month" and re.fullmatch(r"\d{4}-\d{2}", period_key):
+        period_text = f"Tháng {period_key[5:]}/{period_key[:4]}"
+    elif period == "day" and re.fullmatch(r"\d{4}-\d{2}-\d{2}", period_key):
+        period_text = f"Ngày {period_key[8:]}/{period_key[5:7]}/{period_key[:4]}"
+
+    # Phạm vi chỉ đếm ngày thực sự có dữ liệu trong kỳ, không suy ra số kỳ
+    # từ độ dài tháng hoặc lấy ngày hôm nay thay ngày đã cập nhật.
+    history = _read_csv(repo_root / "data" / "xsmb.csv", dtype=str)
+    coverage = "Chưa có thông tin phạm vi ngày quan sát."
+    if not history.empty and "date" in history.columns:
+        dates = pd.to_datetime(history["date"], errors="coerce").dropna().drop_duplicates()
+        if period == "week":
+            iso = dates.dt.isocalendar()
+            keys = iso["year"].astype(str) + "-W" + iso["week"].astype(str).str.zfill(2)
+        else:
+            keys = dates.dt.strftime({"day": "%Y-%m-%d", "month": "%Y-%m", "year": "%Y"}.get(period, "%Y-%m-%d"))
+        observed = dates[keys == period_key]
+        if not observed.empty:
+            coverage = (
+                f"{observed.min():%d/%m/%Y}–{observed.max():%d/%m/%Y} · "
+                f"{len(observed)} kỳ quay có dữ liệu."
+            )
+
+    cards = []
+    _, high = PALETTES["green"]
+    # Cùng phép đo tần suất LOTO nên cả ba biểu đồ giữ cùng sắc xanh lục.
+    for group, title, label, description in (
+        ("head", "Đầu · hàng chục", "Đầu", "Chữ số hàng chục của hai số cuối. Ví dụ: 68 có đầu 6."),
+        ("tail", "Đuôi · hàng đơn vị", "Đuôi", "Chữ số hàng đơn vị của hai số cuối. Ví dụ: 68 có đuôi 8."),
+        ("total", "Tổng · modulo 10", "Tổng", "Cộng hai chữ số rồi lấy số cuối. Ví dụ: 68 → 6 + 8 = 14 → tổng 4."),
+    ):
+        part = df[df["group_type"] == group]
+        frequencies = {digit: 0 for digit in range(10)}
+        for row in part.to_dict("records"):
+            digit = _to_int(row["group_value"], default=-1)
+            if digit in frequencies:
+                frequencies[digit] += _to_int(row["freq"])
+        total = sum(frequencies.values())
+        maximum = max(frequencies.values()) or 1
+        rows = []
+        for digit, frequency in frequencies.items():
+            share = frequency / total * 100 if total else 0.0
+            width = frequency / maximum * 100
+            rows.append(
+                f"<li class='group-bar-row' data-group-value='{digit}' data-frequency='{frequency}'>"
+                f"<span class='group-bar-label'>{label} <b>{digit}</b></span>"
+                f"<span class='bar-track' aria-hidden='true'><span class='bar-fill' style='width:{width:.1f}%;background:{high}'></span></span>"
+                f"<span class='group-bar-value'><b>{_fmt_num(frequency)} lượt</b><small>{share:.1f}%</small></span>"
+                "</li>"
+            )
+        cards.append(
+            f"<article class='card group-chart' data-group='{group}'>"
+            f"<div class='card-head'><div><p class='eyebrow'>Tần suất LOTO</p><h3>{title}</h3>"
+            f"<p>{description}</p></div></div>"
+            f"<p class='group-total'>{_fmt_num(total)} lượt LOTO · tỷ trọng trên tổng lượt của nhóm</p>"
+            f"<ol class='group-bar-list' aria-label='Tần suất {label.lower()} từ 0 đến 9'>{''.join(rows)}</ol>"
+            "</article>"
+        )
+    return (
+        f"<div class='group-context'><strong>{html.escape(period_text)}</strong>"
+        f"<span>{html.escape(coverage)}</span>"
+        "<p>Mỗi lần xuất hiện trong các giải tính là một lượt LOTO; số về nhiều nháy được tính đủ. "
+        "Độ dài thanh so với nhóm cao nhất trong mỗi biểu đồ; tỷ trọng ghi bên phải.</p></div>"
+        "<div class='three-col group-charts'>" + "".join(cards) + "</div>"
+    )
+
+
+def _render_daily_forecast(repo_root: Path, anchor_date: str) -> str:
+    """Thẻ gọn cạnh kết quả: chỉ hiện xác suất của đúng kỳ tiếp theo."""
+    forecast = load_daily_forecast(repo_root / "data", anchor_date)
+    heading = '<h3>Dự báo kỳ tiếp theo</h3>'
+    if forecast is None:
+        return (
+            '<aside class="app-next-forecast" aria-label="Dự báo kỳ tiếp theo">'
+            f'{heading}<p class="app-forecast-note">Dự báo đang được cập nhật sau kỳ kết quả mới nhất.</p></aside>'
+        )
+    target = forecast["target_date"]
+    shown_date = datetime.fromisoformat(target).strftime("%d/%m/%Y")
+    groups, evidence = [], []
+    for mode, label, meaning in (
+        ("de", "Đặc Biệt", "Hai số cuối giải Đặc Biệt"),
+        ("loto", "LOTO", "Xuất hiện ít nhất một lần"),
+    ):
+        items = []
+        for item in forecast["groups"][mode]:
+            number, probability = item["number"], item["prob"]
+            ident = f"daily-forecast-{mode}-{number}"
+            percent = f"{100 * probability:.2f}%".replace(".", ",")
+            items.append(
+                '<li class="app-forecast-pick">'
+                f'<b data-evidence="{ident}">{number}</b>'
+                f'<span data-evidence="{ident}">{percent}</span></li>'
+            )
+            evidence.append((ident, {
+                "sources": [{"title": f"Dự báo tổ hợp {label} · {shown_date}",
+                             "snippet": "Xác suất đã công bố của mô hình tổ hợp cho kỳ được ghi trên thẻ.",
+                             "url": "model-quality.html"}],
+                "reasoningTrace": {"steps": [
+                    f"Dùng kết quả đến kỳ {anchor_date}, dự báo kỳ {target}.",
+                    f"Số {number}: {meaning.lower()}; xác suất gốc {probability:.12g}.",
+                    "Nhân xác suất với 100 và làm tròn hai chữ số thập phân để hiển thị phần trăm.",
+                    ("Chọn theo xác suất giảm dần, tối đa ba số cùng đuôi; xác suất không đổi."
+                     if mode == "loto" else "Chọn năm số có xác suất cao nhất; khi bằng nhau, số nhỏ đứng trước."),
+                    "Đây là ước tính của mô hình, không bảo đảm kết quả kỳ quay.",
+                ]},
+            }))
+        groups.append(
+            f'<section class="app-forecast-group" data-forecast-mode="{mode}">'
+            f'<div class="app-forecast-label"><h4>Top 5 {label}</h4><span>{meaning}</span></div>'
+            f'<ol class="app-forecast-picks">{"".join(items)}</ol></section>'
+        )
+    return (
+        f'<aside class="app-next-forecast" data-forecast-date="{target}" aria-label="Dự báo kỳ tiếp theo">'
+        f'<div class="app-forecast-head">{heading}<time datetime="{target}">Kỳ {shown_date}</time></div>'
+        f'<div class="app-forecast-groups">{"".join(groups)}</div>'
+        '<p class="app-forecast-note">Xác suất mô hình · LOTO tối đa 3 số cùng đuôi. '
+        '<a href="model-quality.html">Xem kiểm định →</a></p>'
+        f'{values_block(evidence)}</aside>'
+    )
+
+
+#: Biểu định kiểu của trang tổng hợp.
+#:
+#: Trước đây 1 250 dòng CSS này nằm TRONG f-string của ``_render_html``,
+#: chiếm 76% một hàm dài 1 795 dòng. Nằm trong f-string nghĩa là mọi dấu
+#: ngoặc CSS phải viết đôi (``{{``/``}}``) — cú pháp CSS bị bóp méo chỉ vì
+#: chỗ đặt, và mỗi lần sửa một quy tắc là một lần phải nhớ nhân đôi.
+#:
+#: Khối này KHÔNG nội suy biến nào (đã kiểm: 0 chỗ), nên nó là văn bản
+#: thuần và thuộc về một hằng số, không thuộc về thân hàm.
+_LANDING_CSS = """\
+    /* Thẻ dự báo lấp phần dưới hai bảng phụ, giữ nguyên bảng giải bên trái. */
+    #app-daily-results .tr-day-extra { display: contents; }
+    #app-daily-results .app-next-forecast { grid-column: 1 / -1; }
+    .app-next-forecast {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+      min-width: 0; padding: 16px; border: 1px solid var(--ui-border);
+      border-radius: 12px; background: var(--ui-surface-2); color: var(--ui-ink);
+    }
+    .app-forecast-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .app-next-forecast h3 { margin: 0; font-size: 14px; }
+    .app-forecast-head time { font-size: 11px; font-weight: 700; color: var(--ui-ink-soft); }
+    .app-forecast-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .app-forecast-group { min-width: 0; }
+    .app-forecast-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; margin-bottom: 8px; }
+    .app-forecast-label h4 { margin: 0; font-size: 12px; }
+    .app-forecast-label > span { font-size: 10px; color: var(--ui-ink-soft); }
+    .app-forecast-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .app-forecast-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 2px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-surface); font-variant-numeric: tabular-nums; }
+    .app-forecast-pick b { font-size: clamp(26px, 2vw, 34px); line-height: 1.1; color: var(--ui-brand-ink); }
+    .app-forecast-group[data-forecast-mode="de"] .app-forecast-pick b { color: var(--ui-special-ink); }
+    .app-forecast-pick span { font-size: 12px; color: var(--ui-ink-2); white-space: nowrap; }
+    .app-forecast-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--ui-ink-soft); }
+    .app-forecast-note a { color: var(--ui-brand-ink); font-weight: 600; white-space: nowrap; }
+    @media (min-width: 1321px) {
+      #app-daily-results .tr-day-grid { grid-template-rows: auto 1fr; }
+      #app-daily-results .tr-prizes { grid-column: 1; grid-row: 1 / 3; }
+      #app-daily-results .tr-day-side { grid-column: 2; grid-row: 1; }
+      #app-daily-results .app-bridge-best { grid-column: 3; grid-row: 1; }
+      #app-daily-results .app-next-forecast { grid-column: 2 / 4; grid-row: 2; align-self: stretch; }
+    }
+    @media (max-width: 1320px) {
+      #app-daily-results .app-bridge-best { grid-column: 1 / -1; }
+    }
+    @media (max-width: 640px) {
+      .app-forecast-groups { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .app-next-forecast { padding: 12px; }
+    }
+    :root {
+      --bg: var(--ui-bg);
+      --bg-2: var(--ui-bg-2);
+      --panel: var(--ui-surface);
+      --panel-soft: var(--ui-surface-2);
+      --panel-2: var(--ui-surface-2);
+      --ink-soft: var(--ui-ink-soft);
+      --ink: var(--ui-ink);
+      --muted: var(--ui-ink-soft);
+      --line: var(--ui-border);
+      /* THƯƠNG HIỆU — chỉ cho hero, điều hướng và hành động chính. Sáu token
+         màu bên dưới là màu PHÂN TÍCH: chúng mã hoá dữ liệu nên phải độc lập
+         với màu thương hiệu, nếu không "đang chọn" sẽ đọc thành "giá trị cao". */
+      --brand: var(--ui-brand);
+      --blue: #2563eb;
+      --sky: #0891b2;
+      --green: #059669;
+      --orange: #ea580c;
+      --purple: #7c3aed;
+      --rose: #e11d48;
+      --shadow: 0 1px 2px rgba(22, 28, 45, .04), 0 8px 26px rgba(22, 28, 45, .06);
+      --shadow-lg: 0 4px 8px rgba(22, 28, 45, .06), 0 22px 60px rgba(22, 28, 45, .13);
+      --shadow-brand: 0 10px 30px rgba(79, 70, 229, .26);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 620px at 10% -8%, rgba(129,140,248,.20), transparent 60%),
+        radial-gradient(900px 520px at 92% 2%, rgba(99,102,241,.15), transparent 62%),
+        linear-gradient(162deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: var(--ui-font);
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    /* Khung, chữ và điều khiển theo chủ đề chung. Màu ma trận do dữ liệu
+       cung cấp luôn giữ nguyên cặp nền/chữ đã kiểm tương phản. */
+    /* Nội dung nằm trong khung Nexlink do write_page gắn. */
+    .app {
+      min-height: 100vh;
+      padding-bottom: 0;
+    }
+    .app > * { min-width: 0; }
+    /* Nhãn ẩn giúp trình đọc màn hình đọc tên các nút chỉ có biểu tượng. */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    /* Căn giữa container tổng. Trước đây .main không có margin:0 auto và chỉ
+       bị giới hạn bằng max-width ở lớp desktop-view, nên ở màn 1920px nó dính
+       sát mép trái và chừa 140px bên phải — lệch hẳn một phía. */
+    .main {
+      min-width: 0;
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 32px clamp(16px, 2.5vw, 40px);
+    }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 32px;
+      padding: 30px;
+      margin-bottom: 20px;
+      color: #fff;
+      /* Ba chặng đã dò trắng trên toàn dải: 6,29:1 / 7,69:1 / 9,02:1. Chọn
+         chặng bằng cách nhìn ba ô màu thì không đủ — lần trước làm thế và hai
+         trong ba chặng trượt chuẩn với chữ trắng. */
+      background: linear-gradient(135deg, #2946f3 0%, #4a44ea 54%, #724ade 100%);
+      box-shadow: var(--shadow-brand);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -12rem;
+      top: -12rem;
+      width: 32rem;
+      height: 32rem;
+      background: radial-gradient(circle, rgba(165,180,252,.28), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 1; display: grid; gap: 18px; }
+    .hero h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: .98;
+      letter-spacing: -.045em;
+    }
+    .hero p { max-width: 820px; margin: 0; color: #F8F9FF; font-size: 16px; line-height: 1.65; }
+    .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .primary-action, .ghost-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 10px 15px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .primary-action { background: #fff; color: #0f172a; }
+    .ghost-action { border: 1px solid rgba(255,255,255,.18); color: #f0f1ff; background: rgba(255,255,255,.07); }
+    /* auto-fit + minmax cho 6 thẻ tự xuống 3 rồi 2 rồi 1 mà không cần một
+       media query riêng cho từng mốc. */
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-tile {
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid var(--ui-border);
+      box-shadow: 0 14px 34px rgba(15,23,42,.06);
+      min-height: 124px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-tile::before {
+      content: "";
+      position: absolute;
+      inset: auto 16px 14px auto;
+      width: 70px;
+      height: 70px;
+      border-radius: 999px;
+      opacity: .12;
+      background: currentColor;
+    }
+    .metric-tile span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; font-weight: 900; }
+    .metric-tile strong {
+      font-size: clamp(26px, 4vw, 42px); line-height: 1; letter-spacing: -.04em;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Giá trị dài (ngày "2026-09-06" là 10 ký tự) không vừa một dòng ở cỡ 42px
+       trong thẻ 213px, và một ngày bị ngắt thành "2026-09-" / "06" thì vô
+       nghĩa. Hạ cỡ chữ theo độ dài thay vì cho xuống dòng. */
+    .metric-tile[data-long="true"] strong { font-size: clamp(20px, 2.1vw, 27px); }
+    .metric-tile em { font-style: normal; color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .metric-tile.blue { color: var(--ui-brand-ink); }
+    .metric-tile.orange { color: var(--ui-warn); }
+    .metric-tile.green { color: var(--ui-ok); }
+    .metric-tile.purple { color: var(--ui-brand-ink); }
+    .layout-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(330px, .72fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .right-rail { display: grid; gap: 18px; }
+    .section {
+      scroll-margin-top: 20px;
+      margin-top: 18px;
+    }
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 30px 0 14px;
+    }
+    .section-title h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: -.035em;
+    }
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 780px;
+      line-height: 1.55;
+    }
+    .section-title .section-kicker {
+      font-size: 11px;
+      color: var(--ui-brand-ink);
+      text-transform: uppercase;
+      letter-spacing: .15em;
+      font-weight: 900;
+    }
+    .card {
+      background: var(--ui-surface);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 42px rgba(15,23,42,.07);
+      padding: 18px;
+      min-width: 0;
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--ui-brand-ink);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 900;
+    }
+    .card h3, .table-card h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+    .card-head p:not(.eyebrow), .card > p {
+      color: var(--muted);
+      margin: 5px 0 0;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+    .result-combo {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, .45fr);
+      gap: 16px;
+      align-items: start;
+    }
+    /* Bảng kết quả có bề rộng tối thiểu do số giải quy định; ở 360px nó rộng
+       520px và trước đây đẩy cả trang tràn ngang 187px. Cho phần dư cuộn
+       trong khung riêng thay vì đẩy body. */
+    .result-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+    /* Grid item mặc định min-width:auto nên phình theo min-content của ma trận
+       (430px) và tràn khỏi khung cha; min-width:0 cho phép nó co lại và để
+       .matrix-wrap cuộn ngang phần dư. */
+    .chuc-card {
+      position: sticky;
+      top: 18px;
+      min-width: 0;
+    }
+    .result-combo > * { min-width: 0; }
+    .tiny-matrix, .matrix-grid {
+      display: grid;
+      grid-template-columns: 26px repeat(10, minmax(38px, 1fr));
+      gap: 6px;
+      align-items: stretch;
+    }
+    .tiny-matrix {
+      grid-template-columns: 22px repeat(10, minmax(27px, 1fr));
+      gap: 4px;
+    }
+    .matrix-axis, .matrix-head {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .tiny-matrix-cell, .matrix-cell {
+      border: 1px solid rgba(15,23,42,.06);
+      border-radius: 12px;
+      cursor: pointer;
+      min-width: 0;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .matrix-cell {
+      min-height: 52px;
+      padding: 7px 4px;
+      display: grid;
+      place-items: center;
+      gap: 2px;
+    }
+    .tiny-matrix-cell {
+      min-height: 42px;
+      padding: 4px 2px;
+      display: grid;
+      place-items: center;
+      gap: 1px;
+    }
+    .tiny-matrix-cell, .matrix-cell {
+      font-weight: 950;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+    }
+    .tiny-matrix-cell::after, .matrix-cell::after {
+      content: attr(data-value);
+      display: block;
+      font-size: 10px;
+      opacity: .88;
+      font-weight: 750;
+      letter-spacing: 0;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Tính chiều cao thật ngay từ đầu: chiều cao tạm của từng thẻ gây lệch
+       các bảng song song và làm vị trí mục thay đổi khi cuộn tới. */
+    .matrix-cell:hover, .tiny-matrix-cell:hover, .bar-row:hover, .num-link:hover, .signal-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 22px rgba(15,23,42,.12);
+      border-color: rgba(37,99,235,.35);
+    }
+    .matrix-wrap { overflow: auto; padding-bottom: 4px; }
+    .legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend span { width: 32px; height: 10px; border-radius: 99px; border: 1px solid rgba(15,23,42,.08); }
+    .legend i { width: 50px; height: 1px; background: var(--line); }
+    .head-tail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .head-tail-card {
+      border-radius: 18px;
+      background: var(--ui-surface-2);
+      border: 1px solid var(--line);
+      padding: 12px;
+    }
+    .head-tail-card h4 { margin: 0 0 8px; font-size: 13px; }
+    .head-tail-row {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 5px 0;
+      border-top: 1px solid var(--ui-border);
+    }
+    .head-tail-row:first-of-type { border-top: 0; }
+    .mini-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 3px 7px;
+      margin: 1px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .matrix-two, .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+    .two-col > .card { display: flex; flex-direction: column; }
+    .matrix-three, .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    /* Sau khi xếp dọc, thẻ biểu đồ chiếm trọn 1504px. Kéo một thanh dài
+       ~1400px không cho biết thêm gì so với 560px, mà nhãn và trị số bị đẩy ra
+       hai mép xa nhau tới mức phải đưa mắt qua cả màn hình mới ghép được cặp.
+
+       Đổi thành nhiều CỘT thay vì giới hạn bề rộng rồi bỏ trống nửa thẻ: 10
+       mục thành 2 cột × 5 hàng, vừa lấp hết chiều ngang vừa giảm nửa chiều
+       cao. minmax(min(100%, 560px), 1fr) tự rơi về một cột khi hẹp mà không
+       cần media query cho từng mốc. */
+    .bar-list {
+      display: grid;
+      gap: 9px 28px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+      grid-auto-flow: row;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr) 74px;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
+    .bar-label {
+      font-weight: 900;
+      color: var(--ui-ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bar-track {
+      height: 13px;
+      border-radius: 999px;
+      background: var(--ui-border);
+      overflow: hidden;
+    }
+    .bar-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+    }
+    .bar-value {
+      color: var(--muted);
+      text-align: right;
+      font-size: 12px;
+      font-weight: 850;
+    }
+    .group-context {
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      margin-bottom: 16px; color: var(--ui-ink-soft); font-size: 13px;
+    }
+    .group-context strong { color: var(--ui-ink); }
+    .group-context p { flex-basis: 100%; margin: 0; line-height: 1.6; }
+    .group-charts { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+    .group-chart { display: flex; flex-direction: column; }
+    .group-chart .card-head { min-height: 96px; margin-bottom: 8px; }
+    .group-chart .group-total { margin: 0 0 16px; font-size: 12px; }
+    .group-bar-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .group-bar-row {
+      display: grid; grid-template-columns: 52px minmax(0, 1fr) 86px;
+      align-items: center; gap: 8px; min-height: 40px;
+      font-variant-numeric: tabular-nums;
+    }
+    .group-bar-label { white-space: nowrap; font-size: 13px; color: var(--ui-ink-2); }
+    .group-bar-label b { color: var(--ui-ink); }
+    .group-bar-value { display: grid; gap: 2px; text-align: right; white-space: nowrap; }
+    .group-bar-value b { color: var(--ui-ink); font-size: 13px; }
+    .group-bar-value small { color: var(--ui-ink-soft); font-size: 12px; }
+    .signal-pills { display: grid; gap: 8px; }
+    .signal-pill {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--ui-surface);
+      text-align: left;
+      cursor: pointer;
+    }
+    .signal-pill b {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
+      font-size: 24px;
+    }
+    .signal-pill span {
+      color: var(--ui-ink-2);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 700;
+    }
+    .table-wrap {
+      overflow: auto;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      max-height: 520px;
+      overscroll-behavior-x: contain;
+    }
+    .table-card { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+    .table-card > .card-head, .table-card > .table-filter { flex-shrink: 0; }
+    .table-card > .table-wrap { display: flex; flex: 1 1 auto; align-items: stretch; }
+    /* Bảng và biểu đồ bên cạnh dùng trọn chiều cao thẻ. Trần 520px từng
+       để lại dải trắng dưới bảng cặp lộn dù biểu đồ còn cao hơn. */
+    .two-col > .table-card > .table-wrap { max-height: none; }
+    .two-col > .table-card .stat-table { height: 100%; }
+    #cap-lon .stat-table { min-width: 560px; }
+    .stat-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 640px;
+      background: var(--ui-surface);
+    }
+    .stat-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 10px 11px;
+      text-align: left;
+      background: var(--ui-surface-2);
+      border-bottom: 1px solid var(--line);
+      color: var(--ui-ink-2);
+      font-size: 12px;
+      white-space: normal;
+    }
+    .stat-table td {
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--ui-border);
+      color: var(--ui-ink);
+      font-size: 13px;
+      vertical-align: top;
+    }
+    .stat-table th.numeric, .stat-table td.numeric {
+      text-align: right; font-variant-numeric: tabular-nums;
+    }
+    .stat-table td.numeric { white-space: nowrap; }
+    .stat-table tbody tr:last-child td { border-bottom: 0; }
+    .pair-frequency-table { min-width: 560px; table-layout: fixed; }
+    .pair-frequency-table col { width: 25%; }
+    .pair-frequency-table td { vertical-align: middle; }
+    .app-pair-help { margin: 0 0 16px; font-size: 13px; color: var(--ui-ink-soft); line-height: 1.6; }
+    .app-pair-values { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .app-pair-number { min-width: 40px; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-brand-ink); font: inherit; font-size: 18px; font-weight: 800; cursor: pointer; }
+    .app-pair-number:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 3px; }
+    .app-number-selected { box-shadow: none; background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
+    .app-number-selected[data-mode="de"] { background: var(--ui-special-bg); color: var(--ui-special-ink); }
+    .app-pair-feedback { margin: 8px 0 16px; color: var(--ui-brand-ink); font-size: 13px; min-height: 1.5em; }
+    .stat-table.dense th, .stat-table.dense td {
+      padding: 7px 8px;
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .table-filter {
+      width: 100%;
+      margin: 0 0 10px;
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      outline: none;
+      background: var(--ui-surface);
+      color: var(--ui-ink);
+    }
+    .num-link {
+      border: 0;
+      border-radius: 10px;
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
+      font-weight: 900;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    /* Hai khối nằm ngang, tự co giãn theo bề rộng còn lại và luôn bằng chiều
+       cao nhau. minmax(0,1fr) là phần chống vỡ khung: thiếu nó, một bảng rộng
+       bên trong sẽ đẩy cột phình ra và làm cả trang tràn ngang. */
+    .live-status {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 12px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      font-size: 13px; color: var(--ink-soft);
+    }
+    .live-dot {
+      width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto;
+      background: #94a3b8;
+    }
+    .live-status[data-state="live"] { border-color: var(--ui-bad-border); color: var(--ui-bad); }
+    .live-status[data-state="live"] .live-dot {
+      background: #ef4444; animation: live-pulse 1.6s ease-in-out infinite;
+    }
+    .live-status[data-state="done"] .live-dot { background: #22c55e; }
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .45; transform: scale(1.35); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .live-status[data-state="live"] .live-dot { animation: none; }
+    }
+
+    .pair-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .pair-row > * { min-width: 0; margin: 0; }
+    @media (max-width: 900px) { .pair-row { grid-template-columns: 1fr; } }
+
+    /* Khu căn cứ xếp theo TẦNG, không theo cột.
+
+       Tầng 1: khung căn cứ trải hết chiều ngang.
+       Tầng 2: bảng cầu Đặc Biệt và bảng cầu LOTO cạnh nhau, Đặc Biệt bên trái.
+
+       Mỗi bảng giữ sàn 860px cho chín cột dễ đọc. Khi khung không đủ rộng,
+       bảng cuộn ngang bên trong; cả hai bảng vẫn nằm cạnh nhau trên desktop. */
+    .inspector {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .inspector > * { min-width: 0; }
+
+    .basis-cell { min-width: 0; }
+    /* KHÔNG còn sticky. sticky có nghĩa khi khung là chú giải nằm CẠNH một
+       khối cuộn dài; nay nó nằm TRÊN, nên dính lại chỉ tổ che mất hai bảng
+       bên dưới. max-height cũng bỏ: trải ngang thì nội dung tự vừa. */
+    .inspector > .inspect-panel { align-self: start; }
+    /* Hai bảng cầu cạnh nhau, Đặc Biệt trước. */
+    .basis-merged {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
+    }
+    .basis-merged > section { min-width: 0; display: flex; flex-direction: column; }
+
+    /* Khối hợp nhất: đường phân cách chỉ nằm GIỮA hai phần, không nằm trên
+       phần đầu — dùng bộ chọn anh em liền kề thay vì border-top cho mọi con. */
+    .basis-merged {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--ui-surface);
+      overflow: hidden;
+    }
+    /* MỘT thanh cuộn cho mỗi bảng, không phải hai. Phần section chỉ là hộp
+       chứa: nó không cuộn. Bảng chỉ hiện tối đa 10 hàng nên để nó cao tự
+       nhiên là đọc được trọn vẹn, không cắt hàng nào. */
+    .basis-merged > section { padding: 24px; }
+    /* Cạnh nhau thì vách ngăn phải DỌC. Giữ border-top cho nhánh xếp dọc
+       bên dưới, nếu không hai bảng chồng lên nhau mà không có gì ngăn. */
+    .basis-merged > section + section { border-left: 1px solid var(--line); }
+    .basis-merged .table-card-plain { flex: 1 1 auto; margin: 0; padding: 0; }
+    /* Bỏ trần chiều cao của .table-wrap RIÊNG trong khối này: 10 hàng là giới
+       hạn cứng ở nơi dựng bảng, nên không có nguy cơ bảng dài vô hạn. */
+    .basis-merged .table-wrap { max-height: none; border-radius: 8px; }
+    .basis-merged .stat-table { min-width: 860px; table-layout: fixed; height: 100%; }
+    /* Dưới 1280px mỗi bảng dùng trọn chiều ngang. Không thu nhỏ chữ hay
+       cột để giấu phần tràn; .table-wrap vẫn là vùng cuộn duy nhất. */
+    @media (max-width: 1279px) {
+      .basis-merged { grid-template-columns: minmax(0, 1fr); }
+      .basis-merged > section + section {
+        border-left: 0; border-top: 1px solid var(--line);
+      }
+    }
+
+    /* Cùng một sơ đồ cột cho cả hai bảng. Cột chữ giữ chỗ đọc, cột số có
+       bề rộng ổn định; khung hẹp cuộn bên trong thay vì ép nội dung chồng lên. */
+    .basis-merged .col-path_line { min-width: 190px; width: 24%; }
+    .basis-merged .col-reason { min-width: 170px; width: 22%; }
+    .basis-merged .col-rule_kind { width: 9%; }
+    .basis-merged .col-number_str { width: 7%; }
+    .basis-merged .col-lag_days { width: 6%; }
+    .basis-merged .col-p_mean { width: 7%; }
+    .basis-merged .col-hit_ratio { width: 10%; }
+    .basis-merged .col-current_streak { width: 7%; }
+    .basis-merged .col-rule_score { width: 8%; }
+    .basis-merged td.col-path_line, .basis-merged td.col-reason { overflow-wrap: anywhere; }
+    /* Cột số: canh phải để so sánh theo cột dọc — mắt bắt được chênh lệch độ
+       lớn ngay mà không phải đọc từng chữ số.
+
+       nowrap chỉ áp cho ô DỮ LIỆU, không áp cho tiêu đề. Áp cả hai thì những
+       tiêu đề dài như "Độ trễ (ngày)" hay "Chuỗi hiện tại" tự đặt sàn bề rộng
+       cho cột, đẩy bảng lên 1051px trong khung 927px và sinh cuộn ngang. Tiêu
+       đề xuống hai dòng là chuyện bình thường ở bảng dày; số bị ngắt dòng mới
+       là lỗi. */
+    .basis-merged th.col-lag_days,
+    .basis-merged th.col-p_mean,
+    .basis-merged th.col-hit_ratio,
+    .basis-merged th.col-current_streak,
+    .basis-merged th.col-rule_score { text-align: right; }
+    .basis-merged td.col-lag_days,
+    .basis-merged td.col-p_mean,
+    .basis-merged td.col-hit_ratio,
+    .basis-merged td.col-current_streak,
+    .basis-merged td.col-rule_score {
+      white-space: nowrap; text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Ghi chú cảnh báo đi kèm bảng cặp. Nó không phải phần trang trí: thiếu
+       nó thì bảng chỉ cho thấy "gấp đôi kỳ vọng" và người đọc kết luận có quy
+       luật, trong khi cực đại ngẫu nhiên đã ở mức đó rồi. */
+    .pair-note {
+      margin: 14px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--ui-warn-soft);
+      border: 1px solid var(--ui-warn-border);
+      color: var(--ui-warn);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .stat-table td.col-count {
+      text-align: right; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-table td.col-pair { font-weight: 800; letter-spacing: .02em; }
+
+    .matrix-full { width: 100%; margin-bottom: 24px; }
+
+    /* Ưu tiên bảng kết quả theo tỷ lệ 2:1:1. Khung hẹp cuộn trong khu này,
+       không kéo cả trang rộng ra. */
+    .next-day {
+      display: grid;
+      grid-template-columns: minmax(400px, 2fr) repeat(2, minmax(280px, 1fr));
+      grid-auto-flow: column;
+      gap: 16px;
+      align-items: stretch;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      padding-bottom: 8px;
+      scroll-snap-type: x proximity;
+    }
+    .next-day > * { min-width: 0; margin: 0; scroll-snap-align: start; }
+    .next-day > .card { display: flex; flex-direction: column; }
+    .next-day .bar-list { grid-template-columns: minmax(0, 1fr); }
+    .next-day .bar-row { grid-template-columns: 56px minmax(0, 1fr) 72px; min-height: 56px; gap: 16px; padding: 8px; }
+    .next-day .bar-label { font-size: 28px; line-height: 1.15; color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
+    .next-day [data-ranking-mode="de"] .bar-label { color: var(--ui-ink); }
+    .next-day .bar-value { font-size: 14px; color: var(--ui-ink-2); font-variant-numeric: tabular-nums; }
+    .next-day .card-head { min-height: 128px; }
+    .app-ranking-card[data-ranking-mode="loto"] { --app-ranking-color: var(--ui-chart-1); }
+    #app-daily-results .tr-number { font-size: clamp(20px, 1.6vw, 24px); }
+    #app-daily-results [data-prize="special"] .tr-number { font-size: clamp(30px, 3vw, 40px); }
+    #app-daily-results .tr-mini:not([data-marked]) { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
+    #app-daily-results .app-bridge-num { font-size: 16px; }
+    #app-daily-results .app-bridge-streak { background: var(--ui-brand-soft); color: var(--ui-brand-ink); }
+    /* Bảng mô phỏng do build_fun_prediction.py chèn vào SAU khi trang được
+       dựng. Nếu bước đó không chạy thì section rỗng vẫn chiếm một hàng và để
+       lại khoảng trống; ẩn hẳn đi. */
+    .next-day > section:empty { display: none; }
+    .inspect-panel {
+      background:
+        radial-gradient(circle at 20% 0%, var(--ui-brand-soft), transparent 18rem),
+        var(--ui-surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--ui-border);
+      padding: 18px;
+      box-shadow: 0 16px 42px rgba(15,23,42,.07);
+    }
+    .inspect-panel > * { min-width: 0; }
+    .inspect-panel p, .position-list li { overflow-wrap: anywhere; }
+    .inspect-paths h4 { margin: 0 0 10px; }
+    @media (min-width: 1024px) {
+      .inspect-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        gap: 24px;
+        align-items: start;
+      }
+      .inspect-paths .position-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin: 0;
+      }
+    }
+    .inspect-number {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .inspect-number b {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand-ink);
+      font-size: 28px;
+      letter-spacing: -.05em;
+    }
+    .inspect-number span { color: var(--muted); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .inspect-panel h3 { margin: 0 0 8px; font-size: 22px; }
+    .inspect-panel p { color: var(--ui-ink-soft); line-height: 1.55; margin: 8px 0; }
+    .inspect-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .inspect-meta div {
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--ui-surface-2);
+      border: 1px solid var(--line);
+    }
+    .inspect-meta span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 900;
+    }
+    .inspect-meta strong { display: block; margin-top: 3px; font-size: 18px; }
+    .position-list { display: grid; gap: 8px; margin-top: 10px; padding: 0; }
+    .position-list li {
+      list-style: none;
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--ui-surface-2);
+      border: 1px solid var(--line);
+      color: var(--ui-ink-2);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .inspect-meta strong { color: var(--ui-brand-ink); font-variant-numeric: tabular-nums; }
+    .empty, .muted { color: var(--muted); }
+    .empty {
+      padding: 22px;
+      border-radius: 18px;
+      background: var(--ui-surface-2);
+      border: 1px dashed var(--ui-border-strong);
+      text-align: center;
+    }
+    .footer {
+      margin: 32px 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    @media (min-width: 1181px) {
+      /* Chỉ nới padding ở màn rộng. max-width giữ nguyên 1600px của lớp cơ sở:
+         trước đây khối này ghi đè thành 1780px nên ba nơi khai báo .main lệch
+         nhau và màn 1920px chạy rộng hơn khung thiết kế 1440-1600px. */
+      .main {
+        padding: 32px clamp(28px, 3vw, 48px);
+      }
+      /* Bề rộng khả dụng của .main đã trừ .side-nav (~247px) nên ở màn 1440px
+         chỉ còn ~1062px. Ngưỡng cũ 760+18+360=1138px lớn hơn mức đó khiến
+         cả lưới tràn ra ngoài viewport. */
+      .layout-top {
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      }
+      .right-rail {
+        position: sticky;
+        top: 22px;
+        max-height: calc(100vh - 44px);
+        overflow: auto;
+        padding-right: 2px;
+      }
+      .result-combo {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+      }
+      .hero-content {
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+        align-items: end;
+      }
+      .hero-content > div:first-child,
+      .hero-content > p,
+      .hero-actions {
+        grid-column: 1;
+      }
+      .hero .signal-pills {
+        grid-column: 2;
+        grid-row: 1 / span 3;
+        align-self: stretch;
+        /* align-content:end dồn ba viên xuống đáy, để lại 140px trống ở đầu
+           panel — 39% chiều cao khối. Căn giữa thì khoảng trống chia đều hai
+           đầu và khối cân về mặt thị giác. */
+        align-content: center;
+        padding: 12px;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 22px;
+        background: rgba(255,255,255,.08);
+        backdrop-filter: blur(18px);
+      }
+      .section-title {
+        padding-right: min(10vw, 180px);
+      }
+    }
+    @media (min-width: 1440px) {
+      .matrix-two {
+        grid-template-columns: repeat(2, minmax(520px, 1fr));
+      }
+      .two-col {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .three-col {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 1180px) {
+      .main { padding: 18px; }
+      .layout-top { grid-template-columns: 1fr; }
+      .right-rail { position: static; max-height: none; overflow: visible; }
+      .chuc-card { position: static; }
+      .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 860px) {
+      .result-combo, .matrix-two, .matrix-three, .two-col, .three-col, .inspector {
+        grid-template-columns: 1fr;
+      }
+      .side-nav { grid-template-columns: 1fr; }
+      .metric-row { grid-template-columns: 1fr; }
+      .hero { padding: 22px; border-radius: 24px; }
+      /* Cột cố định 38px làm ma trận rộng 402px, vượt bề ngang khả dụng của
+         màn hình nhỏ (~354px ở 390px) và đẩy cả trang tràn ngang. Cho cột co
+         lại theo khung để ma trận luôn vừa màn hình. */
+      .tiny-matrix, .matrix-grid {
+        grid-template-columns: 22px repeat(10, minmax(0, 1fr));
+      }
+      .matrix-cell { min-height: 48px; }
+      .bar-row { grid-template-columns: 62px minmax(0, 1fr) 58px; }
+      .head-tail-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      body {
+        background:
+          radial-gradient(circle at top, rgba(37,99,235,.16), transparent 24rem),
+          var(--bg);
+      }
+      .brand {
+        margin-bottom: 8px;
+        padding: 9px;
+      }
+      .brand-logo { width: 34px; height: 34px; border-radius: 12px; }
+      .brand small { display: none; }
+      .nav-title { display: none; }
+      .side-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+      }
+      .side-nav a {
+        min-width: 164px;
+        grid-template-columns: 24px 1fr;
+        gap: 8px;
+        padding: 8px;
+        scroll-snap-align: start;
+      }
+      .side-nav a span {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 10px;
+      }
+      .side-nav a b { font-size: 12px; }
+      .side-nav a small { display: none; }
+      .main { padding: 12px; }
+      .hero {
+        padding: 18px;
+        margin-bottom: 12px;
+        border-radius: 22px;
+      }
+      .hero h1 {
+        font-size: clamp(26px, 8vw, 34px);
+        line-height: 1.05;
+      }
+      .hero p {
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .hero-actions a {
+        width: 100%;
+      }
+      .card {
+        padding: 14px;
+        border-radius: 20px;
+      }
+      .section-title {
+        display: block;
+        margin: 24px 0 12px;
+      }
+      .section-title h2 {
+        font-size: 24px;
+      }
+      .card-head {
+        display: block;
+      }
+      .result-combo > div:first-child,
+      .matrix-wrap,
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      /* minmax chứ không phải 36px cứng. min-width:430px là để ma trận vẫn
+         cuộn được trên máy hẹp; nhưng cột cứng thì có SÀN mà không có TRẦN,
+         nên khi khung rộng hơn 430px các cột đứng yên ở 36px và phần dôi ra
+         thành một mảng trắng bên phải. Đo ở khung 600px: lưới rộng 546px,
+         cột chiếm 444px — thừa 102px. minmax(36px, 1fr) giữ nguyên hành vi
+         cuộn khi chật và cho cột giãn lấp đầy khi rộng. */
+      .tiny-matrix, .matrix-grid {
+        min-width: 430px;
+        grid-template-columns: 24px repeat(10, minmax(36px, 1fr));
+      }
+      .matrix-cell {
+        min-height: 46px;
+        border-radius: 11px;
+      }
+      .tiny-matrix-cell {
+        min-height: 38px;
+        border-radius: 10px;
+      }
+      .inspect-meta {
+        grid-template-columns: 1fr;
+      }
+      .stat-table {
+        min-width: 620px;
+      }
+      .footer {
+        margin-bottom: 70px;
+      }
+    }
+    body.desktop-view {
+      min-width: 1320px;
+    }
+    body.desktop-view .side-nav a {
+      min-width: 0 !important;
+    }
+    body.desktop-view .side-nav a small {
+      display: block !important;
+    }
+    body.desktop-view .main {
+      max-width: min(100%, 1600px) !important;
+      margin-inline: auto !important;
+      padding: 32px clamp(28px, 3vw, 48px) !important;
+    }
+    /* Cùng lý do như .layout-top ở trên: sau khi bỏ sidebar, .main dùng trọn
+       chiều ngang nên ngưỡng cột phải nới theo. */
+    body.desktop-view .layout-top {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px) !important;
+    }
+    body.desktop-view .right-rail {
+      position: sticky !important;
+      top: 22px !important;
+      max-height: calc(100vh - 44px) !important;
+      overflow: auto !important;
+    }
+    body.desktop-view .matrix-two,
+    body.desktop-view .two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    body.desktop-view .matrix-three,
+    body.desktop-view .three-col {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    /* Chế độ máy tính đi theo lớp nền, không dựng lại bố cục riêng.
+       Khu căn cứ nay xếp theo TẦNG (khung căn cứ trải ngang ở trên, hai bảng
+       đường cầu cạnh nhau ở dưới), nên ép nó về hai cột ở đây là quay ngược
+       lại bố cục cũ — và !important khiến việc quay ngược đó thắng tuyệt đối.
+
+       Lớp desktop-view đặt min-width 1320px, tức luôn rộng hơn mọi ngưỡng của
+       lớp nền, nên lớp nền tự cho ra bố cục đúng mà không cần ghi đè gì. */
+    body.desktop-view .inspector {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+    @media print {
+      .hero-actions { display: none; }
+      .app { padding-bottom: 0; }
+      body { background: #fff; }
+      .card, .metric-tile, .hero { box-shadow: none; }
+    }"""
+
+
+#: Mã JavaScript của trang tổng hợp.
+#:
+#: Cùng lý do như ``_LANDING_CSS``: 120 dòng này không nội suy biến nào
+#: (đã kiểm: 0 chỗ), nhưng nằm trong f-string nên mọi dấu ngoặc khối và
+#: mọi object literal phải viết đôi — cú pháp JavaScript bị bóp méo chỉ vì
+#: chỗ đặt.
+_LANDING_SCRIPT = """\
+    const APP_DATA = JSON.parse(document.getElementById('landing-data').textContent);
+
+    /* Sidebar thu gọn. Trạng thái lưu trong localStorage nên giữ nguyên khi
+       chuyển trang; mọi truy cập đều bọc try/catch vì trình duyệt ở chế độ
+       riêng tư có thể ném lỗi ngay khi đọc. */
+    /* Trạng thái kỳ quay tính theo giờ Việt Nam trên máy người xem, không phải
+       theo giờ lúc dựng trang: trang tĩnh dựng một lần rồi phục vụ suốt ngày,
+       nên một trạng thái ghi cứng sẽ sai với gần như mọi lượt xem. */
+    (function () {
+      const box = document.getElementById('live-status');
+      const text = document.getElementById('live-status-text');
+      const note = document.getElementById('live-note');
+      if (!box || !text) return;
+
+      const DRAW_START = 18 * 60 + 10;   // 18:10 — bắt đầu quay các giải phụ
+      const DRAW_END = 18 * 60 + 40;     // 18:40 — thường đã xong giải Đặc Biệt
+
+      function vietnamMinutes() {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(new Date());
+        const get = (k) => Number(parts.find((p) => p.type === k).value);
+        return get('hour') * 60 + get('minute');
+      }
+
+      function refresh() {
+        const m = vietnamMinutes();
+        if (m >= DRAW_START && m <= DRAW_END) {
+          box.setAttribute('data-state', 'live');
+          text.textContent = 'Đang quay thưởng — mở trang trực tiếp để xem từng giải hiện dần.';
+          if (note) note.textContent = 'Kết quả bên dưới là của kỳ trước cho tới khi kỳ hôm nay hoàn tất.';
+        } else {
+          box.setAttribute('data-state', 'done');
+          text.textContent = 'Kỳ quay đã kết thúc. Bảng kết quả đầy đủ hiển thị bên dưới.';
+          if (note) note.textContent = 'Kỳ quay diễn ra lúc 18:30 giờ Việt Nam hằng ngày.';
+        }
+      }
+
+      refresh();
+      window.setInterval(refresh, 30000);
+    })();
+
+
+    function fmtPercent(value) {
+      const n = Number(value || 0);
+      if (!Number.isFinite(n)) return '—';
+      return (n > 1 ? n : n * 100).toFixed(1) + '%';
+    }
+
+    let appSelectedNumbers = [];
+    function showNumber(mode, number) {
+      const n = String(number || '').padStart(2, '0').slice(-2);
+      const m = mode || 'loto';
+      appSelectedNumbers.forEach(el => {
+        el.classList.remove('app-number-selected');
+        if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', 'false');
+      });
+      appSelectedNumbers = [...document.querySelectorAll('[data-number]')].filter(el => el.dataset.number === n && (el.dataset.mode || 'loto') === m);
+      appSelectedNumbers.forEach(el => {
+        el.classList.add('app-number-selected');
+        if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', 'true');
+      });
+      const data = (APP_DATA.explain && APP_DATA.explain[m] && APP_DATA.explain[m][n]) || null;
+      document.getElementById('inspect-num').textContent = n;
+      document.getElementById('inspect-mode').textContent = m === 'de' ? 'Đặc Biệt' : 'Loto';
+      document.getElementById('inspect-title').textContent = data ? 'Căn cứ thống kê cho số ' + n : 'Chưa có căn cứ cho số ' + n;
+      document.getElementById('inspect-score').textContent = data && data.score ? Number(data.score).toFixed(1) : '—';
+      document.getElementById('inspect-prob').textContent = data && data.prob ? fmtPercent(data.prob) : '—';
+      document.getElementById('inspect-reason').textContent = data && data.reason ? data.reason : 'Chưa có lý do AI/ML nổi bật.';
+      document.getElementById('inspect-evidence').textContent = data && data.evidence ? data.evidence : 'Chưa có bằng chứng định lượng.';
+      document.getElementById('inspect-summary').textContent = data && data.summary ? data.summary : 'Số này chưa nằm trong nhóm giải thích AI/ML hoặc chưa có đường cầu vị trí đủ mạnh.';
+      const list = document.getElementById('inspect-lines');
+      list.replaceChildren();
+      const lines = data && Array.isArray(data.lines) ? data.lines : [];
+      if (!lines.length) {
+        const li = document.createElement('li');
+        li.textContent = 'Chưa có đường cầu vị trí đủ điều kiện hiển thị.';
+        list.appendChild(li);
+      } else {
+        lines.forEach(line => {
+          const li = document.createElement('li');
+          const title = document.createElement('b');
+          title.textContent = line.path_line || 'Đường cầu';
+          const metrics = document.createElement('span');
+          metrics.textContent = 'Loại: ' + (line.kind || '—') +
+            ' · Lag: ' + (line.lag || '—') +
+            ' · P: ' + (line.p_mean || '—') +
+            ' · Trúng/Mẫu: ' + (line.hits || '—') + '/' + (line.trials || '—') +
+            ' · Nhịp: ' + (line.streak || '—') +
+            ' · Điểm: ' + (line.score || '—');
+          const reason = document.createElement('span');
+          reason.textContent = line.reason || '';
+          li.append(title, document.createElement('br'), metrics, document.createElement('br'), reason);
+          list.appendChild(li);
+        });
+      }
+    }
+
+    // MỘT trình nghe uỷ quyền, không phải một trình nghe mỗi phần tử.
+    //
+    // Đã đo trên `docs/index.html`: `[data-number]` khớp 1309 phần tử — 1000
+    // ô ma trận, 100 ô ma trận nhỏ, 88 liên kết số, 44 hàng cột, 27 số giải,
+    // 27 số dự đoán vui, 20 hàng xác suất, và vài nút khác. Bản cũ giữ lại
+    // 1309 closure cùng 1309 bản ghi trình nghe, tất cả chỉ để gọi đúng một
+    // hàm với hai giá trị đọc thẳng từ `dataset`.
+    //
+    // Sự kiện click nổi bọt, nên một trình nghe ở `document` cộng `closest`
+    // cho hành vi y hệt. Nó còn phủ cả phần tử được thêm SAU khi trang dựng
+    // xong — bản cũ thì không, vì nó chụp danh sách một lần.
+    document.addEventListener('click', (ev) => {
+      const goc = ev.target;
+      if (!goc || typeof goc.closest !== 'function') return;
+      const el = goc.closest('[data-number]');
+      if (el) showNumber(el.dataset.mode || 'loto', el.dataset.number);
+      const pair = goc.closest('[data-pair]');
+      const feedback = document.getElementById('app-pair-feedback');
+      if (pair) {
+        document.querySelectorAll('[data-pair]').forEach(row => {
+          const selected = row.dataset.pair === pair.dataset.pair;
+          row.classList.toggle('app-number-selected', selected);
+          row.setAttribute('aria-pressed', String(selected));
+        });
+        if (!el) showNumber('loto', pair.dataset.pair.split('-')[0]);
+        if (feedback) feedback.textContent = 'Đã chọn cặp ' + pair.dataset.pair.replace('-', '–') + '. Căn cứ đang hiển thị cho số ' + pair.dataset.pair.split('-')[0] + '.';
+      } else if (el && feedback) {
+        document.querySelectorAll('[data-pair]').forEach(row => {
+          row.classList.remove('app-number-selected');
+          row.setAttribute('aria-pressed', 'false');
+        });
+        feedback.textContent = 'Đã chọn số ' + String(el.dataset.number).padStart(2, '0') + ' · Xem căn cứ và nguồn bằng nhấp đúp.';
+      }
+    });
+
+    const navLinks = [...document.querySelectorAll('.side-nav a')];
+    const sections = navLinks
+      .map(a => document.querySelector(a.getAttribute('href')))
+      .filter(Boolean);
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id));
+        }
+      });
+    }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+    sections.forEach(section => observer.observe(section));
+
+    document.querySelectorAll('.table-filter').forEach(input => {
+      input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        const table = input.parentElement.querySelector('table');
+        if (!table) return;
+        table.querySelectorAll('tbody tr').forEach(tr => {
+          tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+    });
+
+    const firstSignal = document.querySelector('[data-number]');
+    if (firstSignal) showNumber(firstSignal.dataset.mode || 'loto', firstSignal.dataset.number);"""
+
+
+def _render_html(
+    repo_root: Path, *, desktop_view: bool = False, generated_at: str | None = None
+) -> str:
+    """Dựng một bản trang tổng hợp.
+
+    Args:
+        repo_root: Thư mục gốc kho mã.
+        desktop_view: Gắn lớp ``desktop-view`` lên thẻ body.
+        generated_at: Mốc thời gian đã chốt sẵn. Bỏ trống thì lấy giờ hiện tại.
+
+    Returns:
+        Chuỗi HTML hoàn chỉnh.
+
+    ``generated_at`` phải nhận được từ bên ngoài vì hàm này được gọi HAI lần
+    cho hai bản của cùng một trang. Trước đây mỗi lần gọi tự lấy giờ riêng, nên
+    một lần dựng vắt qua ranh giới phút sẽ sinh ra hai trang ghi hai thời điểm
+    khác nhau — tái hiện được: index.html ghi "09:23 UTC" còn
+    landing_desktop.html ghi "09:24 UTC" cho cùng một lần chạy.
+    """
+    latest = _latest_draw(repo_root)
+    bridge_panel = (best_panel(load_position_bridges(repo_root / "data"), latest["date"])
+                    if latest.get("draw") else "")
+    daily_panel = bridge_panel + (_render_daily_forecast(repo_root, latest["date"])
+                                 if latest.get("draw") else "")
+    explain_map = _load_explain_map(repo_root)
+    if generated_at is None:
+        generated_at = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
+
+    loto_snapshot = _read_csv(
+        repo_root / "data" / "advanced" / "period_snapshot_loto_current.csv", dtype=str
+    )
+
+    # Cùng phép xếp với bản chụp theo ngày mà trang trực tiếp đọc
+    # (``cau_keo_daily_top``): hai nơi phải ra đúng một bộ 10 số.
+    ai_loto = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_loto_top20.csv", dtype=str)
+    )
+    ai_de = top_by_cau_score(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_de_top20.csv", dtype=str)
+    )
+    loto_rhythm = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "loto_rhythm.csv", dtype=str), "current_gap", 12
+    )
+    de_rhythm = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "de_rhythm.csv", dtype=str), "current_gap", 12
+    )
+    reverse_pairs = _read_csv(
+        repo_root / "data" / "advanced" / "reverse_pair_frequency_current.csv", dtype=str
+    )
+    if not reverse_pairs.empty and "period_kind" in reverse_pairs.columns:
+        reverse_pairs = reverse_pairs[reverse_pairs["period_kind"] == "month"]
+    reverse_pairs = _sort_top(reverse_pairs, "freq", 12)
+
+    conditional_special = _read_csv(
+        repo_root / "data" / "advanced" / "conditional_loto_after_special_top500.csv", dtype=str
+    )
+    conditional_loto = _read_csv(
+        repo_root / "data" / "advanced" / "conditional_loto_after_loto_top500.csv", dtype=str
+    )
+    first_prize = _sort_top(
+        _read_csv(repo_root / "data" / "advanced" / "first_prize_overdue.csv", dtype=str),
+        "current_gap",
+        10,
+    )
+    report_loto = _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_report_loto.csv", dtype=str)
+    report_de = _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_report_de.csv", dtype=str)
+    evidence_loto = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_loto.csv", dtype=str),
+        "rule_score",
+        10,
+    )
+    evidence_de = _sort_top(
+        _read_csv(repo_root / "data" / "ai_ml" / "cau_position_evidence_de.csv", dtype=str),
+        "rule_score",
+        10,
+    )
+
+    stat_cards_top = [
+        (
+            "Ngày dữ liệu",
+            str(latest.get("date") or "—"),
+            "Ngày kết quả mới nhất",
+            "blue",
+        ),
+        (
+            "Đặc Biệt",
+            str(latest.get("special") or "—"),
+            f"2 số cuối: {latest.get('special_2d') or '—'}",
+            "orange",
+        ),
+        (
+            "Loto về hôm nay",
+            str(sum(_to_int(v) for v in latest.get("counts", {}).values())),
+            "Tổng lượt 2 số từ toàn bộ giải",
+            "green",
+        ),
+        (
+            "Số khác nhau",
+            str(len(latest.get("counts", {}))),
+            "Số bộ 00–99 xuất hiện trong ngày",
+            "purple",
+        ),
+        (
+            "Chuỗi ngày",
+            str(_history_days(repo_root)),
+            "Số kỳ liên tục đã lưu",
+            "blue",
+        ),
+        (
+            "Chất lượng mô hình",
+            _model_grade(repo_root),
+            "Hạng theo kỹ năng log-loss so với nền",
+            "green",
+        ),
+    ]
+
+
+    live_block = _render_live_block(latest)
+
+    def _tile_desc(desc: str) -> str:
+        """Dòng phụ "2 số cuối: 61": chỉ 61 là kết quả, nên chỉ nó thành một giá trị."""
+        label, sep, value = desc.rpartition(": ")
+        if sep and value.isdigit():
+            return f"{html.escape(label)}: <b>{html.escape(value)}</b>"
+        return html.escape(desc)
+
+    stat_tiles = "\n".join(
+        f"<div class='metric-tile {palette}' data-long='{str(len(value) >= 9).lower()}'>"
+        f"<span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>"
+        f"<em>{_tile_desc(desc)}</em></div>"
+        for label, value, desc, palette in stat_cards_top
+    )
+
+    hero_actions = """
+      <div class="hero-actions">
+        <a class="primary-action" href="#ket-qua">Xem kết quả ngày <span aria-hidden="true">→</span></a>
+        <a class="ghost-action" href="landing_desktop.html">Mở giao diện máy tính</a>
+      </div>
+    """
+    hero_features = f"""
+      <div class="app-feature-links" aria-label="Khám phá phân tích">
+        <a class="app-feature-link" href="statistics.html">{icon_svg("tan-suat")}
+          <span><strong>Thống kê</strong><small>Toàn cảnh dữ liệu</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
+        <a class="app-feature-link" href="soi-path-loto-active.html">{icon_svg("ma-tran")}
+          <span><strong>Soi cầu vị trí</strong><small>Khám phá quy luật</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
+        <a class="app-feature-link" href="model-quality.html">{icon_svg("chat-luong")}
+          <span><strong>Kiểm định</strong><small>Đánh giá mô hình</small></span><span class="app-feature-arrow" aria-hidden="true">↗</span></a>
+      </div>
+    """
+
+    ai_summary_rows = ai_loto.head(3).to_dict("records") if not ai_loto.empty else []
+    ai_pills = (
+        "".join(
+            f"<button class='signal-pill' data-mode='loto' data-number='{_fmt2(row.get('number_str', row.get('number', '')))}'>"
+            f"<b>{_fmt2(row.get('number_str', row.get('number', '')))}</b>"
+            f"<span>{html.escape(str(row.get('primary_reason', 'Tín hiệu AI/ML')))}</span>"
+            f"</button>"
+            for row in ai_summary_rows
+        )
+        or "<span class='muted'>Chưa có dữ liệu AI/ML.</span>"
+    )
+
+    data_json = json_for_html_script({"explain": explain_map, "generated_at": generated_at})
+    body_class = ' class="desktop-view"' if desktop_view else ""
+    hero_particles = "".join(f'<span class="app-particle" style="--app-i:{i}"></span>' for i in range(12))
+
+    html_doc = f"""<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  {security_meta_tags()}
+  {stylesheet_link()}
+  <title>Trung tâm phân tích xổ số</title>
+  <style>
+{_LANDING_CSS}
+{shared_results_css()}
+{bridge_css()}
+  </style>
+</head>
+<body{body_class}>
+  <div class="app">
+    <main class="main">
+      <section id="tong-quan" class="hero section">
+        <div class="app-hero-particles" aria-hidden="true">{hero_particles}</div>
+        <div class="hero-content">
+          <div class="app-hero-copy" data-app-reveal>
+            <p class="app-hero-kicker"><span aria-hidden="true"></span> Dữ liệu mỗi ngày · Góc nhìn dài hạn</p>
+            <h1>Trung tâm thống kê xổ số</h1>
+            <p class="app-hero-lead">Đọc dữ liệu. Hiểu quy luật.</p>
+            <p>Kết quả Miền Bắc, ma trận tần suất và kiểm định mô hình — trong một không gian phân tích liền mạch.</p>
+            {hero_actions}
+            <div class="signal-pills" aria-label="Tín hiệu thống kê tham khảo">
+              {ai_pills}
+            </div>
+          </div>
+          <div class="app-hero-visual" data-app-parallax data-app-reveal>
+            <span class="app-hero-orbit" aria-hidden="true"></span>
+            <div class="app-hero-result">
+              <div class="app-hero-result-label">{icon_svg("hom-nay")} Kết quả gần nhất</div>
+              <p class="app-hero-date">Miền Bắc · {html.escape(str(latest.get("date") or "Chưa có dữ liệu"))}</p>
+              <span class="app-hero-chip">Đặc Biệt</span>
+              <strong class="app-hero-number">{html.escape(str(latest.get("special") or "—"))}</strong>
+              <div class="app-hero-meta"><span>Hai số cuối</span><b>{html.escape(str(latest.get("special_2d") or "—"))}</b></div>
+              <a href="#ket-qua">Xem đầy đủ các giải <span aria-hidden="true">↗</span></a>
+            </div>
+            <a class="app-hero-mini app-hero-mini--one app-hero-shortcut" href="statistics.html">{icon_svg("ma-tran")}<span>Thống kê tổng hợp</span><span class="app-hero-shortcut-arrow" aria-hidden="true">↗</span></a>
+            <a class="app-hero-mini app-hero-mini--two app-hero-shortcut" href="so-ket-qua-truyen-thong.html">{icon_svg("so-ket-qua")}<span>Sổ kết quả</span><span class="app-hero-shortcut-arrow" aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        {hero_features}
+        <div class="app-marquee" aria-hidden="true"><div class="app-marquee-track"><span>Vietnam Lottery Analysis · </span><span>Vietnam Lottery Analysis · </span></div></div>
+      </section>
+
+      {live_block}
+
+      <div class="metric-row">
+        {stat_tiles}
+      </div>
+
+      <section id="ket-qua" class="section" aria-label="Kết quả hàng ngày">
+        {render_result_board(latest.get("draw"), include_loto=False, extra=daily_panel)}
+        <p class="app-result-note">Bấm vào từng ô giải để đánh dấu; bấm lại để bỏ chọn.
+          <a href="so-ket-qua-truyen-thong.html">Mở Sổ kết quả</a></p>
+      </section>
+
+      <!-- Tầng 2: ma trận trải hết chiều ngang. Ma trận 10×10 trong cột 637px
+           phải nén mỗi ô xuống dưới 60px; ở 1680px mỗi ô rộng gấp đôi. -->
+      <section id="ma-tran-ngay" class="section card matrix-full">
+        <span id="chuc-don-vi"></span>
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Chục × đơn vị</p>
+            <h3>Ma trận LOTO ngày</h3>
+            <p>Hàng ngang là đơn vị, hàng dọc là hàng chục/đầu. Màu đậm hơn nghĩa là số xuất hiện nhiều lần hơn.</p>
+          </div>
+        </div>
+        {_render_daily_matrix(latest)}
+      </section>
+
+      <section id="db-tuan-thang" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Âm lịch · Dương lịch · Kết quả</div>
+            <h2>Lịch vạn niên</h2>
+            <p>Tra ngày âm dương, can chi, tiết khí và giải Đặc Biệt theo từng ngày.</p>
+          </div>
+        </div>
+        {render_calendar(repo_root)}
+      </section>
+
+      <!-- Ba bảng dự đoán trên MỘT hàng. Khối mô phỏng trước đây là một
+           section rời phía trên, còn Đặc Biệt và LOTO nằm trong section khác, nên
+           ba thứ cùng nói về ngày mai bị tách làm hai vùng cuộn. -->
+      <section id="ai-ml" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Dự đoán vui</div>
+            <h2>Ngày mai</h2>
+            <p>Ba bảng dưới đây là điểm xếp hạng của mô hình, không phải xác suất đã hiệu chuẩn và không phải lời khuyên đặt cược. Chọn số để xem căn cứ; nhấp đúp để mở nguồn và các bước tính.</p>
+          </div>
+        </div>
+        <div class="next-day">
+          <section id="mo-phong" class="section"></section>
+          {_render_bar_card(title="Đặc Biệt ngày mai", subtitle="Tín hiệu Đặc Biệt theo AI/ML, dùng để tham khảo xác suất tương đối.", df=ai_de, label_col="number_str", value_col="cau_score", palette="orange", mode="de", number_col="number_str", limit=10, value_decimals=1)}
+          {_render_bar_card(title="LOTO ngày mai", subtitle="Các số có điểm cầu-kèo cao nhất từ mô hình và thống kê lịch sử.", df=ai_loto, label_col="number_str", value_col="cau_score", palette="sky", mode="loto", number_col="number_str", limit=10, value_decimals=1)}
+        </div>
+      </section>
+
+      <section id="tan-suat-cap" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Cặp LOTO</div>
+            <h2>Tần suất cặp LOTO đồng xuất hiện</h2>
+            <p>Tần suất hai số cùng xuất hiện trong một kỳ, đi kèm mốc so sánh ngẫu nhiên trên toàn bộ 4 950 cặp.</p>
+          </div>
+        </div>
+        <p id="app-pair-feedback" class="app-pair-feedback" role="status" aria-live="polite">Chọn số để đối chiếu căn cứ thống kê.</p>
+        {_render_pair_frequency(repo_root)}
+      </section>
+
+      <section id="tan-suat-loto" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Ma trận tần suất</div>
+            <h2>Tần suất LOTO theo ngày / tuần / tháng / năm</h2>
+            <p>Những phần có đủ 00–99 được thể hiện bằng ma trận để mắt nhận ra vùng nóng/lạnh nhanh hơn bảng dài.</p>
+          </div>
+        </div>
+        <div class="matrix-two">
+          {_render_matrix_card(title="LOTO ngày hiện tại", subtitle="Tần suất 00–99 trong ngày kết quả mới nhất.", values=_current_period_matrix(repo_root, "loto", "day"), palette="green", mode="loto")}
+          {_render_matrix_card(title="LOTO tuần hiện tại", subtitle="Cộng dồn LOTO trong tuần hiện tại.", values=_current_period_matrix(repo_root, "loto", "week"), palette="green", mode="loto")}
+          {_render_matrix_card(title="LOTO tháng hiện tại", subtitle="Cộng dồn LOTO trong tháng hiện tại.", values=_current_period_matrix(repo_root, "loto", "month"), palette="green", mode="loto")}
+          {_render_matrix_card(title="LOTO năm hiện tại", subtitle="Cộng dồn LOTO trong năm hiện tại.", values=_current_period_matrix(repo_root, "loto", "year"), palette="green", mode="loto")}
+        </div>
+      </section>
+
+      <section id="tan-suat-de" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Số Đặc Biệt</div>
+            <h2>Tần suất Đặc Biệt theo kỳ</h2>
+            <p>Đặc Biệt là một kết quả/ngày nên xem bằng ma trận tháng/năm sẽ dễ nhận biết phân bổ hơn bảng xếp hạng đơn thuần.</p>
+          </div>
+        </div>
+        <div class="matrix-two">
+          {_render_matrix_card(title="Đặc Biệt tháng hiện tại", subtitle="Tần suất 2 số cuối giải Đặc Biệt trong tháng.", values=_current_period_matrix(repo_root, "de", "month"), palette="orange", mode="de")}
+          {_render_matrix_card(title="Đặc Biệt năm hiện tại", subtitle="Tần suất 2 số cuối giải Đặc Biệt trong năm.", values=_current_period_matrix(repo_root, "de", "year"), palette="orange", mode="de")}
+          {_render_matrix_card(title="Điểm AI LOTO", subtitle="Điểm AI/ML kết hợp tần suất, nhịp, điều kiện và cầu vị trí.", values=_ai_matrix(repo_root, "loto"), palette="sky", mode="loto", decimals=1)}
+          {_render_matrix_card(title="Điểm AI Đặc Biệt", subtitle="Điểm AI/ML dành riêng cho 2 số cuối giải Đặc Biệt.", values=_ai_matrix(repo_root, "de"), palette="rose", mode="de", decimals=1)}
+        </div>
+      </section>
+
+      <section id="gan-nhip" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Nhịp xuất hiện</div>
+            <h2>Gan / nhịp và áp lực quay lại</h2>
+            <p>Gan cao không đồng nghĩa chắc chắn về; phần này giúp phát hiện số lâu chưa xuất hiện và so sánh với nhịp lịch sử.</p>
+          </div>
+        </div>
+        <div class="matrix-two">
+          {_render_matrix_card(title="Gan LOTO hiện tại", subtitle="Số kỳ chưa về của từng bộ LOTO.", values=_rhythm_matrix(repo_root, "loto"), palette="sky", mode="loto")}
+          {_render_matrix_card(title="Gan Đặc Biệt hiện tại", subtitle="Số kỳ chưa về của từng bộ Đặc Biệt.", values=_rhythm_matrix(repo_root, "de"), palette="rose", mode="de")}
+          {_render_bar_card(title="Gan LOTO đứng đầu", subtitle="Các bộ LOTO có khoảng gan hiện tại cao nhất.", df=loto_rhythm, label_col="number_str", value_col="current_gap", palette="sky", mode="loto", number_col="number_str", limit=12, value_decimals=0)}
+          {_render_bar_card(title="Gan Đặc Biệt đứng đầu", subtitle="Các bộ Đặc Biệt có khoảng gan hiện tại cao nhất.", df=de_rhythm, label_col="number_str", value_col="current_gap", palette="rose", mode="de", number_col="number_str", limit=12, value_decimals=0)}
+        </div>
+      </section>
+
+      <section id="cap-lon" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Cặp lộn / kép-bóng</div>
+            <h2>Cặp lộn và cặp kép-bóng</h2>
+            <p>Biểu đồ thanh phù hợp hơn ma trận vì cần so sánh xếp hạng từng cặp như 36–63, 69–96.</p>
+          </div>
+        </div>
+        <div class="two-col">
+          {_render_bar_card(title="Cặp lộn nổi bật trong tháng", subtitle="45 cặp đảo chiều và 5 cặp kép-bóng có tổng tần suất cao trong tháng hiện tại.", df=reverse_pairs, label_col="pair", value_col="freq", palette="sky", limit=12, value_decimals=0)}
+          {_render_table(title="Chi tiết cặp lộn", subtitle="Có thêm số ngày về và số ngày cùng về để tránh nhìn nhầm chỉ theo tần suất.", df=reverse_pairs, columns=["pair", "freq", "days_hit", "cooccur_days", "avg_per_draw", "rank_in_period"], limit=12, dense=False)}
+        </div>
+      </section>
+
+      <section id="dau-duoi-tong" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Nhóm số</div>
+            <h2>Đầu · đuôi · tổng</h2>
+            <p>So sánh đủ 10 nhóm từ 0 đến 9 theo số lượt xuất hiện và tỷ trọng trong kỳ.</p>
+          </div>
+        </div>
+        {_render_group_bars(repo_root, "month")}
+      </section>
+
+      <section id="duong-cau" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Bấm để xem căn cứ</div>
+            <h2>Vị trí đường cầu và căn cứ tạo số liệu</h2>
+            <p>Bấm vào một số trên ma trận hoặc bảng xếp hạng AI/ML để cập nhật khung căn cứ với lý do, điểm, xác suất và các đường cầu vị trí.</p>
+          </div>
+        </div>
+        <div class="inspector">
+          <aside class="inspect-panel" id="number-inspector">
+            <div class="inspect-overview">
+            <div class="inspect-number">
+              <b id="inspect-num">--</b>
+              <div><span id="inspect-mode">Chưa chọn</span><h3 id="inspect-title">Chọn một số trên trang</h3></div>
+            </div>
+            <p id="inspect-summary">Khi chọn số, hệ thống hiển thị điểm AI, xác suất, bằng chứng và các đường cầu vị trí tốt nhất.</p>
+            <div class="inspect-meta">
+              <div><span>Điểm AI</span><strong id="inspect-score">—</strong></div>
+              <div><span>Xác suất</span><strong id="inspect-prob">—</strong></div>
+            </div>
+            <p><b>Lý do chính:</b> <span id="inspect-reason">—</span></p>
+            <p><b>Bằng chứng:</b> <span id="inspect-evidence">—</span></p>
+            </div>
+            <div class="inspect-paths">
+            <h4>Đường cầu vị trí nổi bật</h4>
+            <ul class="position-list" id="inspect-lines">
+              <li>Bấm vào số để xem chi tiết.</li>
+            </ul>
+            </div>
+          </aside>
+          <!-- Hai bảng dữ liệu ngang hàng: Đặc Biệt trước, LOTO sau. -->
+          <div class="basis-cell">
+            <div class="basis-merged">
+            <section>
+              {_render_table(title="Vị trí cầu Đặc Biệt nổi bật", subtitle="Các đường cầu Đặc Biệt có điểm quy tắc cao nhất hiện tại. Cuộn ngang trong bảng để xem đủ cột.", df=_hit_ratio_column(evidence_de), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, number_mode="de", labels=PATH_TABLE_LABELS, framed=False)}
+            </section>
+            <section>
+              {_render_table(title="Vị trí cầu LOTO nổi bật", subtitle="Các đường cầu LOTO có điểm quy tắc cao nhất hiện tại. Cuộn ngang trong bảng để xem đủ cột.", df=_hit_ratio_column(evidence_loto), columns=["number_str", "rule_kind", "lag_days", "path_line", "p_mean", "hit_ratio", "current_streak", "rule_score", "reason"], limit=10, dense=False, searchable=True, labels=PATH_TABLE_LABELS, framed=False)}
+            </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="backtest" class="section">
+        <div class="section-title">
+          <div>
+            <div class="section-kicker">Kiểm định mô hình</div>
+            <h2>Kiểm định lại AI/ML và thống kê điều kiện</h2>
+            <p>Dùng kiểm định lại để đánh giá chất lượng xếp hạng trên lịch sử; không dùng để cam kết kết quả tương lai.</p>
+          </div>
+        </div>
+        <div class="two-col">
+          {_render_table(title="Báo cáo kiểm định LOTO", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình LOTO.", df=report_loto, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
+          {_render_table(title="Báo cáo kiểm định Đặc Biệt", subtitle="Tỷ lệ trúng theo nhóm K và chỉ số hiệu chỉnh của mô hình Đặc Biệt.", df=report_de, columns=["mode", "top_k", "validation_days", "hit_any_days", "hit_any_rate", "avg_hits_per_day", "val_brier", "val_logloss"], limit=8, dense=False)}
+          {_render_table(title="Điều kiện Đặc Biệt hôm trước → LOTO hôm sau", subtitle="Các cặp điều kiện thường gặp, lọc theo số lần và tỷ lệ có điều kiện.", df=conditional_special, columns=["prev_special_2d", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Điều kiện LOTO hôm trước → LOTO hôm sau", subtitle="Quan hệ chuyển tiếp giữa LOTO hôm trước và LOTO ngày sau.", df=conditional_loto, columns=["prev_loto", "next_loto", "count", "base_count", "conditional_rate"], limit=12, dense=False, searchable=True)}
+          {_render_table(title="Giải nhất lâu chưa về", subtitle="Một bảng phụ để đối chiếu giải nhất với nhịp chung.", df=first_prize, columns=["number_str", "last_seen", "current_gap", "hit_count", "mean_gap", "max_gap"], limit=10, dense=False)}
+          {_render_table(title="Tần suất LOTO nổi bật tháng hiện tại", subtitle="Bảng hỗ trợ đọc số liệu bên cạnh ma trận.", df=_sort_top(loto_snapshot[loto_snapshot["period_kind"] == "month"] if not loto_snapshot.empty and "period_kind" in loto_snapshot.columns else loto_snapshot, "freq", 10), columns=["number_str", "freq", "days_hit", "hit_rate", "avg_per_draw", "z_score", "rank_in_period"], limit=10, dense=False)}
+        </div>
+      </section>
+
+      <div class="footer">
+        Sinh lúc {html.escape(generated_at)}. AI/ML và cầu-kèo là tín hiệu thống kê từ lịch sử, không phải bảo đảm kết quả xổ số tương lai.
+      </div>
+    </main>
+  </div>
+
+  <script type="application/json" id="landing-data">{data_json}</script>
+  <script>
+{_LANDING_SCRIPT}
+  </script>
+</body>
+</html>
+"""
+    return html_doc
+
+
+def _history_days(repo_root: Path) -> int:
+    """Số kỳ quay liên tục có trong tệp kết quả.
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+
+    Returns:
+        Số dòng dữ liệu, hoặc 0 nếu chưa đọc được tệp.
+    """
+    return int(len(read_csv_or_empty(repo_root / "data" / "xsmb.csv")))
+
+
+def _model_grade(repo_root: Path) -> str:
+    """Hạng chất lượng mô hình, quy từ kỹ năng log-loss đã đo.
+
+    Thẻ này cố ý KHÔNG hiện một con số phần trăm. Kỹ năng đo được nằm ở mức
+    một phần vạn, nên in ra "0,07%" sẽ gợi ý một độ chính xác mà phép đo không
+    có. Một chữ cái nói đúng điều cần nói: mô hình có vượt nền hay không.
+
+    Args:
+        repo_root: Thư mục gốc của kho.
+
+    Returns:
+        Một trong ``"A"``, ``"B"``, ``"C"`` hoặc ``"—"`` khi chưa có số liệu.
+    """
+    scores = read_json_or_empty(repo_root / "data" / "research" / "model_scores.json")
+    modes = scores.get("modes") if isinstance(scores, dict) else None
+    if not isinstance(modes, dict) or not modes:
+        return "—"
+    beats = sum(
+        1 for entry in modes.values() if isinstance(entry, dict) and entry.get("beats_baseline")
+    )
+    if beats == len(modes):
+        return "A"
+    return "B" if beats else "C"
+
+
+def build_landing_page(*, repo_root: Path, docs_dir: Path | None = None) -> list[Path]:
+    """Dựng trang tổng hợp và ghi ra ``docs_dir``.
+
+    Args:
+        repo_root: Thư mục gốc kho, nơi ĐỌC dữ liệu.
+        docs_dir: Thư mục ghi kết quả. Mặc định ``repo_root/docs``.
+
+    Returns:
+        Danh sách tệp đã ghi.
+
+    Tách nơi ghi khỏi nơi đọc để test dựng được vào thư mục tạm. Trước đây hai
+    thứ này dính làm một, nên chạy bộ kiểm thử là ghi đè docs/ của kho thật:
+    cây làm việc bẩn sau mỗi lần chạy pytest, và bẩn theo dạng "ngược pha" vì
+    chuỗi builder đầy đủ cho ra HTML khác với một builder chạy lẻ.
+    """
+    docs_dir = docs_dir if docs_dir is not None else repo_root / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    write_stylesheet(docs_dir)
+    # MỘT mốc thời gian cho cả hai bản: chúng là cùng một lần dựng.
+    stamp = datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M UTC")
+    html_doc = (
+        "\n".join(
+            line.rstrip() for line in _render_html(repo_root, generated_at=stamp).splitlines()
+        )
+        + "\n"
+    )
+    desktop_doc = (
+        "\n".join(
+            line.rstrip()
+            for line in _render_html(
+                repo_root, desktop_view=True, generated_at=stamp
+            ).splitlines()
+        )
+        + "\n"
+    )
+    out_index = docs_dir / "index.html"
+    out_landing = docs_dir / "landing.html"
+    out_desktop = docs_dir / "landing_desktop.html"
+    write_page(out_index, html_doc)
+    write_page(out_landing, html_doc)
+    write_page(out_desktop, desktop_doc)
+    return [out_index, out_landing, out_desktop]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Dựng trang tổng hợp thống kê hiện đại.")
+    parser.add_argument("--repo-root", default=".", help="Thư mục gốc kho mã")
+    args = parser.parse_args()
+    outputs = build_landing_page(repo_root=Path(args.repo_root).resolve())
+    for output in outputs:
+        print(output)
+
+
+if __name__ == "__main__":
+    main()

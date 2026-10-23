@@ -7,8 +7,8 @@ from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
-from build_landing_page import build_landing_page
-from page_output import write_page
+from pages.build_landing_page import build_landing_page
+from web.page_output import write_page
 
 
 def test_effect_toggle_does_not_pause_functional_updates() -> None:

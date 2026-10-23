@@ -1,5 +1,5 @@
 /* Bảng đối chiếu kỳ quay: mọi danh sách phỏng đoán đã đóng băng trước 18:10
-   (src/prediction_board.py) đặt cạnh kết quả đang về. Mỗi danh sách là hai hàng
+   (src/evaluation/prediction_board.py) đặt cạnh kết quả đang về. Mỗi danh sách là hai hàng
    song song: "Trước giờ quay" (số và xác suất đã công bố) và "Sau giờ quay"
    (từng số về hay không, tỉ lệ trúng thật so với kỳ vọng). */
 (function () {

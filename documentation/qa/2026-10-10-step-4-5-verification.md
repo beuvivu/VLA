@@ -10,7 +10,7 @@ Bước 4 đáp ứng yêu cầu. Bước 5 có một thiếu sót vận hành: 
 
 | Yêu cầu | Kết quả đối chiếu |
 | --- | --- |
-| NaN không làm mất p-value hợp lệ | `src/statistical_corrections.py` tính BH trên phần hữu hạn, giữ vị trí thiếu là NaN. |
+| NaN không làm mất p-value hợp lệ | `src/stats/statistical_corrections.py` tính BH trên phần hữu hạn, giữ vị trí thiếu là NaN. |
 | Giữ hợp đồng BH hữu hạn, input invalid rõ ràng | Hai wrapper `research_diagnostics.bh_fdr` và `significance_stats._bh_fdr` dùng helper chung; từ chối vector sai chiều và p hữu hạn ngoài `[0,1]`. |
 | Bỏ seaborn không caller | Dependency và import đã bỏ; Matplotlib vẫn phục vụ plot. Nhắc seaborn trong docstring không phải caller. |
 | Sửa closure B023 | Bind `counts` ở navigation renderer và `page_errors` ở browser checker theo đúng vòng lặp. |

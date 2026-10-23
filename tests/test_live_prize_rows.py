@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, extract_partial_prize_map
+from ingest.sources import EXPECTED_COUNTS, PRIZE_ORDER, extract_partial_prize_map
 
 PAGES = json.loads(
     (Path(__file__).resolve().parent / "fixtures" / "prize_pages.json").read_text(encoding="utf-8")

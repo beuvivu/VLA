@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from dtos import Result
-from lottery import Lottery, RepoPaths
+from core.dtos import Result
+from ingest.lottery import Lottery, RepoPaths
 
 
 def _result(d: date, *, special: int) -> Result:

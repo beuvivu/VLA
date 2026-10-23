@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-import build_docs_ml
+from pages import build_docs_ml
 
 
 @pytest.mark.parametrize("trust, expected", [(0.0, "0,0%"), (0.25, "25,0%"), (None, "—"),

@@ -1,4 +1,4 @@
-/* 10 số đứng đầu bảng Cầu Kèo, chụp theo ngày quay (src/cau_keo_daily_top.py)
+/* 10 số đứng đầu bảng Cầu Kèo, chụp theo ngày quay (src/ml/cau_keo_daily_top.py)
    và khoá đúng vào ngày của phiên đang quay. */
 (function () {
   'use strict';
@@ -99,7 +99,7 @@
   // live.json giữ ngày của kỳ vừa quay tới tận phiên hôm sau, nên nếu chỉ khoá
   // theo ngày ấy thì khối đứng yên ở số cũ cả đêm lẫn sáng hôm sau.
   // Mọi trạng thái "complete*" đều nghĩa là đã đủ 27 giải: complete_verified,
-  // complete_provisional, complete_conflict (src/live_sync.py, worker/src/snapshot.js).
+  // complete_provisional, complete_conflict (src/ingest/live_sync.py, worker/src/snapshot.js).
   // Chưa xác minh hay còn bất đồng nguồn thì kỳ quay vẫn đã kết thúc.
   function finished(status) {
     return typeof status === 'string' && status.indexOf('complete') === 0;

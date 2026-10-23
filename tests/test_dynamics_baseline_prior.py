@@ -18,7 +18,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from number_dynamics import LEARN_BASELINE_PRIOR, _baseline
+from stats.number_dynamics import LEARN_BASELINE_PRIOR, _baseline
 
 
 def test_learning_is_the_default() -> None:

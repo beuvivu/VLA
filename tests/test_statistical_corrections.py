@@ -4,8 +4,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from research_diagnostics import bh_fdr
-from significance_stats import _bh_fdr
+from research.research_diagnostics import bh_fdr
+from stats.significance_stats import _bh_fdr
 
 
 @pytest.mark.parametrize("correct", [bh_fdr, _bh_fdr])

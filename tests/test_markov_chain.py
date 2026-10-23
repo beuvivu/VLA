@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from markov_stats import build_markov_chain, compute_markov_for_loto
+from stats.markov_stats import build_markov_chain, compute_markov_for_loto
 
 
 def test_exclusive_markov_chain_counts_smoothing_and_row_sums() -> None:

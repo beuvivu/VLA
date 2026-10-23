@@ -42,10 +42,10 @@ Giữ tên module thực tế và API hiện có; bảng dưới là cấu trúc
 
 | Thư mục/module | Trách nhiệm |
 | --- | --- |
-| `src/model_io.py` | Atomic model packs, exception đọc serialization/codec dùng chung. |
+| `src/core/model_io.py` | Atomic model packs, exception đọc serialization/codec dùng chung. |
 | `src/{ml_train,ml_predict,meta_predictor,cau_keo_ml,online_learning}.py` | Vòng đời model/dự đoán XSMB sản xuất. |
 | `src/ml_engine/{models,main_pipeline,bandit,drift,fallback,metrics}.py` | Runtime nghiên cứu; transaction, availability, checkpoint và safe-mode. |
-| `src/statistical_corrections.py` | BH-FDR finite-aware qua wrappers tương thích. |
+| `src/stats/statistical_corrections.py` | BH-FDR finite-aware qua wrappers tương thích. |
 | `vietlott/src/vlm/forecast/{features,models,distribution,pipeline}.py` | Feature nhân quả, experts, joint law, mixture/target/cursor. |
 | `vietlott/src/vlm/forecast/{adaptation,recovery}.py` | Running mean/std, monitor drift mô tả, challenger chuẩn hóa, bounded retry/backoff/telemetry. |
 | `vietlott/src/vlm/forecast/{service,api,cli,evaluation}.py` | Ledger reconciliation, adapter API/CLI, evaluator ngoài mẫu. |

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from page_output import strip_css
+from web.page_output import strip_css
 
 ROOT = Path(__file__).resolve().parents[1]
 

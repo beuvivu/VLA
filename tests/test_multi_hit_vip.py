@@ -13,7 +13,7 @@ import json
 import numpy as np
 import pytest
 
-import multi_hit_vip as m
+from forecast import multi_hit_vip as m
 
 
 def _model(frame, **cfg) -> m.VIPMultiHitModel:

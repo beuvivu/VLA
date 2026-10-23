@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from descriptive_extensions import build_head_table
+from stats.descriptive_extensions import build_head_table
 
 
 def test_head_table_uses_calendar_window_not_last_n_rows() -> None:

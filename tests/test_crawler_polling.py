@@ -23,7 +23,7 @@ from crawler.fetch_results import (
     poll_until_complete,
     stamp,
 )
-from sources import EXPECTED_COUNTS, PRIZE_ORDER, STALE_PAGE_ERROR
+from ingest.sources import EXPECTED_COUNTS, PRIZE_ORDER, STALE_PAGE_ERROR
 
 TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 TARGET = date(2026, 9, 7)

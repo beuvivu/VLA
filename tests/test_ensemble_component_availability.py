@@ -9,7 +9,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from ensemble_components import (
+from ensemble.ensemble_components import (
     BLEND_POLICY,
     BLEND_POLICY_COLUMN,
     COMPONENT_POLICY,
@@ -18,9 +18,9 @@ from ensemble_components import (
     probability_component,
     renormalize_available_weights,
 )
-from ensemble_utils import EnsembleWeights
-from learn_ensemble_weights import _select_recent_complete_days
-from record_pred_history import _sanitize_history
+from ensemble.ensemble_utils import EnsembleWeights
+from ensemble.learn_ensemble_weights import _select_recent_complete_days
+from evaluation.record_pred_history import _sanitize_history
 
 
 def _frame(value: float = 0.2) -> pd.DataFrame:
@@ -136,7 +136,7 @@ def test_learners_ignore_cau_recorded_under_an_older_definition() -> None:
 
 
 def test_stacked_model_tiers_without_cau_still_use_legacy_days() -> None:
-    import meta_predictor as meta
+    from forecast import meta_predictor as meta
 
     legacy = _history_day("2026-10-01").drop(columns=[policy_column("cau")])
     current = _history_day("2026-10-06")
@@ -148,7 +148,7 @@ def test_stacked_model_tiers_without_cau_still_use_legacy_days() -> None:
 
 
 def test_history_records_the_definition_each_component_declares(tmp_path, monkeypatch) -> None:
-    import record_pred_history as recorder
+    from evaluation import record_pred_history as recorder
 
     data = tmp_path / "data"
     data.mkdir()

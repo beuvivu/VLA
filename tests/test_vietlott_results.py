@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 import pytest
 from bs4 import BeautifulSoup
 
-import build_vietlott_results as b
+from pages import build_vietlott_results as b
 
 SOURCE_MARKERS = ("nhanaz", "minhngoc", "vietlott.vn", "mirror", "SECRET-SOURCE")
 
@@ -434,7 +434,7 @@ def test_pick_boards_exist_only_for_six_number_products_and_have_a_local_asset(t
 
 def test_draft_numbers_have_evidence_for_user_input_instead_of_draw_results() -> None:
     """Giải thích số nháp phải nói về lựa chọn cục bộ, không viện sổ kết quả."""
-    from evidence_catalog import registry
+    from web.evidence_catalog import registry
 
     for file in ('vietlott-mega-645.html', 'vietlott-power-655.html'):
         entries = {entry.get('match'): entry for entry in registry(file)['sections']}

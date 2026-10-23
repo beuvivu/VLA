@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from learn_ensemble_weights import COMPONENT_COLS, _stack_days
+from ensemble.learn_ensemble_weights import COMPONENT_COLS, _stack_days
 
 
 def _history(days: list[str], *, seed: int = 0, shuffle: bool = False) -> pd.DataFrame:

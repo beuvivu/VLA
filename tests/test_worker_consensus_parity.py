@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from sources import (
+from ingest.sources import (
     EXPECTED_COUNTS,
     FALLBACK_SOURCE_NAMES,
     PRIMARY_SOURCE_NAMES,
@@ -168,7 +168,7 @@ def test_the_two_independence_tables_are_entry_for_entry_identical() -> None:
     """
     import re
 
-    from sources import SOURCE_INDEPENDENCE_GROUP
+    from ingest.sources import SOURCE_INDEPENDENCE_GROUP
 
     js = (ROOT / "worker" / "src" / "consensus.js").read_text(encoding="utf-8")
     block = re.search(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from legacy_advanced_diagnostics import (
+from research.legacy_advanced_diagnostics import (
     aggregate_transition_independence,
     full_special_acf,
     rolling_coverage,

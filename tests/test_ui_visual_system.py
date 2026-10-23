@@ -5,7 +5,7 @@ from urllib.parse import urlsplit
 
 from bs4 import BeautifulSoup
 
-from page_output import write_page
+from web.page_output import write_page
 
 
 def test_output_publishes_skin_after_page_styles_without_changing_hooks(tmp_path: Path) -> None:

@@ -7,7 +7,7 @@ from pathlib import Path as _Path
 
 sys.path.insert(0, str((_Path(__file__).resolve().parents[1] / "src")))
 
-from sources import MketquaSource
+from ingest.sources import MketquaSource
 
 
 class DummyResp:

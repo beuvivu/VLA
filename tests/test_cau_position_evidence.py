@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from cau_position_evidence import _pretty_position_label, _rule_score, _summary_text
+from soi_cau.cau_position_evidence import _pretty_position_label, _rule_score, _summary_text
 
 
 def test_pretty_position_label_is_user_friendly() -> None:
@@ -30,7 +30,7 @@ def test_rule_score_and_summary_text_are_explainable() -> None:
 
 
 def test_reason_prints_the_shrunk_next_draw_probability_not_the_in_sample_rate() -> None:
-    from cau_position_evidence import _row_reason
+    from soi_cau.cau_position_evidence import _row_reason
 
     row = {"hits": 117, "trials": 361, "p_mean": 0.3242, "current_streak": 4, "max_streak": 6,
            "p_post": 0.2376, "streak_shift": 0.0010}
@@ -47,7 +47,7 @@ def test_reason_prints_the_shrunk_next_draw_probability_not_the_in_sample_rate()
 
 
 def test_next_probability_stays_a_probability_at_the_edges() -> None:
-    from cau_position_evidence import _next_probability
+    from soi_cau.cau_position_evidence import _next_probability
 
     high = _next_probability(pd.Series({"p_post": 0.999, "streak_shift": 0.01, "rule_kind": "active"}))
     low = _next_probability(pd.Series({"p_post": 0.001, "streak_shift": -0.01, "rule_kind": "active"}))

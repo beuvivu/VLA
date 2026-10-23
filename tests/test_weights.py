@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from ensemble_utils import EnsembleWeights
+from ensemble.ensemble_utils import EnsembleWeights
 
 
 class TestWeightsFormat(unittest.TestCase):

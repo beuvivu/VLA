@@ -20,8 +20,8 @@ from pathlib import Path
 
 import pytest
 
-import build_landing_page as blp
-import build_statistics_dashboard as bsd
+from pages import build_landing_page as blp
+from pages import build_statistics_dashboard as bsd
 
 SOURCE = Path(blp.__file__).read_text(encoding="utf-8")
 DOUBLED_BRACE = re.compile(r"\{\{|\}\}")

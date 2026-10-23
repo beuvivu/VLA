@@ -5,12 +5,12 @@ from collections.abc import Callable
 import numpy as np
 import pytest
 
-from cau_keo_ml import CauKeoConfig
-from cau_position_evidence import PositionEvidenceConfig
-from calibration import CalibParams
-from ml_features import FeatureParams, build_ml_table
-from ml_validation import ValidationConfig
-from path_models import PathParams
+from ml.cau_keo_ml import CauKeoConfig
+from soi_cau.cau_position_evidence import PositionEvidenceConfig
+from ensemble.calibration import CalibParams
+from ml.ml_features import FeatureParams, build_ml_table
+from ml.ml_validation import ValidationConfig
+from core.path_models import PathParams
 
 
 @pytest.mark.parametrize(

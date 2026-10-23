@@ -17,8 +17,8 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from calendar_alignment import require_daily_contiguous
-from xsmb_domain import (
+from core.calendar_alignment import require_daily_contiguous
+from core.xsmb_domain import (
     FIELD_WIDTHS,
     TOTAL_DIGITS,
     build_position_labels,

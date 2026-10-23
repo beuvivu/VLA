@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 
 const root = new URL('../../', import.meta.url);
 const script = process.env.APP_LANDING_SCRIPT ? readFileSync(process.env.APP_LANDING_SCRIPT, 'utf8')
-  : execFileSync('python3', ['-c', 'from build_landing_page import _LANDING_SCRIPT; print(_LANDING_SCRIPT)'],
+  : execFileSync('python3', ['-c', 'from pages.build_landing_page import _LANDING_SCRIPT; print(_LANDING_SCRIPT)'],
     { cwd: root, env: { ...process.env, PYTHONPATH: 'src' }, encoding: 'utf8' });
 function start(t) {
   const ids = ['num', 'mode', 'title', 'score', 'prob', 'reason', 'evidence', 'summary', 'lines'];

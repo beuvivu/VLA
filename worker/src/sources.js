@@ -1,4 +1,4 @@
-// Danh mục nguồn, khớp `src/sources.py`.
+// Danh mục nguồn, khớp `src/ingest/sources.py`.
 //
 // Thứ tự mảng CHÍNH LÀ thứ tự ưu tiên khi các nguồn bất đồng. Đổi thứ tự ở
 // đây mà không đổi bên Python là làm hai bên chọn khác nhau lúc chưa đủ đồng
@@ -12,7 +12,7 @@ function dmy(date, sep) {
   return [pad(date.day), pad(date.month), String(date.year)].join(sep);
 }
 
-// Chính sách nguồn từ 13-10-2026, khớp `src/sources.py`: MỘT nguồn chính; hai nguồn dự
+// Chính sách nguồn từ 13-10-2026, khớp `src/ingest/sources.py`: MỘT nguồn chính; hai nguồn dự
 // phòng chỉ được gọi khi nguồn chính gặp sự cố (`primaryHasFailed` trong snapshot.js).
 // Năm nguồn cũ đã nghỉ — xem chú thích `PRIMARY_SOURCE_NAMES` bên Python để biết vì sao.
 export const PRIMARY_SOURCES = [

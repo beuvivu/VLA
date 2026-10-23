@@ -5,7 +5,7 @@ from datetime import date
 
 import pytest
 
-from draw_metadata import load_draw_metadata, parse_draw_metadata, refresh_draw_metadata, station_for_date
+from web.draw_metadata import load_draw_metadata, parse_draw_metadata, refresh_draw_metadata, station_for_date
 
 
 def page_for(day="26092026", special="18132", codes="3GX 4GX 5GX 11GX 12GX 15GX"):

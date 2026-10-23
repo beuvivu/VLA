@@ -14,8 +14,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import digit_sum_rules as r
-from xsmb_domain import FIELD_WIDTHS
+from soi_cau import digit_sum_rules as r
+from core.xsmb_domain import FIELD_WIDTHS
 
 ROOT = Path(__file__).resolve().parents[1]
 COLUMNS = [field for field, _ in FIELD_WIDTHS]

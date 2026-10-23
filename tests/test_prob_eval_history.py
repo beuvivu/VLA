@@ -8,7 +8,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from prob_eval_history import evaluate_latest_emitted
+from evaluation.prob_eval_history import evaluate_latest_emitted
 
 
 def _history(day: str, *, mode: str) -> pd.DataFrame:
@@ -114,7 +114,7 @@ def test_every_written_row_names_its_brier_unit(tmp_path: Path, monkeypatch) -> 
     Sổ cũ chưa có cột; lần ghi kế tiếp phải gắn nhãn cả dòng cũ, nhận ra dòng
     thang cũ bằng bất biến chứ không bằng ngày, và không đè nhãn đã có.
     """
-    import prob_eval_history
+    from evaluation import prob_eval_history
 
     out = tmp_path / "ensemble_history.csv"
     pd.DataFrame(
@@ -160,7 +160,7 @@ def test_the_repository_ledger_labels_every_brier_with_a_consistent_unit() -> No
     một phân phối và một one-hot tối đa là 2); quy ước tổng thì thoả cận dưới
     ``(1 − e^−logloss)²``.
     """
-    from backfill_baseline_skill import brier_is_comparable
+    from evaluation.backfill_baseline_skill import brier_is_comparable
 
     path = Path(__file__).resolve().parents[1] / "data" / "prob_eval" / "ensemble_history.csv"
     frame = pd.read_csv(path, dtype={"target_date": str})

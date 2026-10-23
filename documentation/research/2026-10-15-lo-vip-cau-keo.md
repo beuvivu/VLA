@@ -32,7 +32,7 @@ nhất cũng vậy: từ 3 kỳ tới trên 10 kỳ đều 2,87–2,93%.
 **Kết luận:** không nhóm nào khác mức chung (2,92%) một cách có ý nghĩa thống kê. Nhóm 5–9 cầu hai
 nháy chỉ có 479 lần, nên 3,97% vẫn nằm trong dao động ngẫu nhiên.
 
-## Mô hình Lô VIP — `src/multi_hit_forecast.py`
+## Mô hình Lô VIP — `src/forecast/multi_hit_forecast.py`
 
 ### Đặc trưng
 

@@ -11,7 +11,7 @@ export NUMEXPR_NUM_THREADS="${NUMEXPR_NUM_THREADS:-1}"
 
 printf '%s\n' "== Miền số chuẩn =="
 python - <<'PYREF'
-from number_reference import BONG, all_bo, bo, bong, dan_cham, dan_tong_mod10, reverse
+from core.number_reference import BONG, all_bo, bo, bong, dan_cham, dan_tong_mod10, reverse
 for d in range(10):
     assert BONG[BONG[d]] == d
 for n in range(100):
@@ -26,32 +26,32 @@ print("OK number ontology", len(all_bo()), "distinct bộ families")
 PYREF
 
 printf '%s\n' "== Bảo toàn thống kê mô tả kế thừa =="
-python src/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
-python src/research_legacy_extensions.py
-python src/legacy_advanced_diagnostics.py --max-lag 15 --coverage-windows 3,7,14,30
-python src/conditional_nextday.py --top 20 --prior-strength 60
+python src/stats/descriptive_extensions.py --head-windows 30,90,365 --pair-top 300
+python src/research/research_legacy_extensions.py
+python src/research/legacy_advanced_diagnostics.py --max-lag 15 --coverage-windows 3,7,14,30
+python src/research/conditional_nextday.py --top 20 --prior-strength 60
 
 printf '%s\n' "== Họ nghiên cứu vị trí chéo độ trễ =="
-python src/crosslag_positional_lab.py \
+python src/research/crosslag_positional_lab.py \
   --lag-pairs 1-1,1-2 \
   --operators concat,lon,bo,cham,tong \
   --warmup 180
 
 printf '%s\n' "== Bảo toàn khả năng giải thích đường cầu kế thừa =="
-python src/path_timeline_evidence.py --recent 20
+python src/soi_cau/path_timeline_evidence.py --recent 20
 
 printf '%s\n' "== Bộ kiểm tra bác bỏ khoa học =="
-python src/research_diagnostics.py --permutations 31 --max-lag 14 --seed 20260901
+python src/research/research_diagnostics.py --permutations 31 --max-lag 14 --seed 20260901
 
 printf '%s\n' "== Tường lửa nghiên cứu chống dò dữ liệu =="
-python src/research_firewall.py \
+python src/research/research_firewall.py \
   --mode both \
   --permutations 15 \
   --max-reality-days 500 \
   --seed 20260901
 
 printf '%s\n' "== Phòng chiến lược đã chuẩn hóa =="
-python src/strategy_lab.py --mode both --warmup 180
+python src/research/strategy_lab.py --mode both --warmup 180
 
 printf '%s\n' "== Tính toàn vẹn artifact nghiên cứu =="
 python - <<'PYRESEARCH'
@@ -180,7 +180,7 @@ print("OK research artifacts")
 PYRESEARCH
 
 printf '%s\n' "== Trang nghiên cứu tĩnh =="
-python src/build_research_lab.py
+python src/pages/build_research_lab.py
 python - <<'PYPAGE'
 from pathlib import Path
 page = Path("docs/research-lab.html")

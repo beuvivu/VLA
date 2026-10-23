@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LogisticRegression
 
-import cau_keo_ml
-from cau_keo_ml import (
+from ml import cau_keo_ml
+from ml.cau_keo_ml import (
     FEATURE_COLS,
     TRUST_POLICY_VERSION,
     _add_ai_judgement,
@@ -19,7 +19,7 @@ from cau_keo_ml import (
     trust_from_pack,
     trusted_probability,
 )
-from ml_train import model_trust
+from ml.ml_train import model_trust
 
 
 def test_bong_number_modulo_5_transform_preserves_two_digit_range() -> None:

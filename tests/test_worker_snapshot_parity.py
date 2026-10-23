@@ -23,8 +23,8 @@ from pathlib import Path
 
 import pytest
 
-import live_sync
-from sources import (
+from ingest import live_sync
+from ingest.sources import (
     EXPECTED_COUNTS,
     FALLBACK_SOURCE_NAMES,
     PRIMARY_COMPLETE_BY,
@@ -32,7 +32,7 @@ from sources import (
     PRIZE_ORDER,
     STALE_PAGE_ERROR,
 )
-from time_policy import VIETNAM_TZ
+from core.time_policy import VIETNAM_TZ
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "worker" / "test" / "run_snapshot.mjs"
@@ -144,7 +144,7 @@ def _cases(count: int = 160) -> list[dict]:
 
 def _python_payload(case: dict, monkeypatch: pytest.MonkeyPatch) -> dict:
     """Thay từng nguồn của danh mục bằng nguồn giả CÙNG TÊN, rồi chạy nguyên ``fetch_snapshot``."""
-    import sources as sources_module
+    from ingest import sources as sources_module
 
     fakes = [_FakeSource(name, pmap) for name, pmap in case["partials"]]
     primary = len(PRIMARY_SOURCE_NAMES)

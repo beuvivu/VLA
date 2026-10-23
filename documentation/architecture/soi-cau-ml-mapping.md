@@ -8,9 +8,9 @@ kho, và ghi lại hai lỗi thiết kế trong bản đề xuất kèm số đo
 | Phương pháp | Ánh xạ ML đề xuất | Đã có tại | Dòng |
 |---|---|---|---|
 | Cầu chạy / cầu động | Bi-LSTM + Spatial Attention | `src/bridges/scanner.py` — quét toàn bộ họ cầu ghép chéo bằng phép ma trận, có tỉ lệ nền và đuôi xác suất | 482 |
-| Lô gan / chu kỳ | Survival Analysis, Hazard | `src/hazard_stats.py` — `hazard_curve_loto`, `hazard_curve_de` | 157 |
-| Bóng âm dương / ngũ hành | Feature engineering + XGBoost | `src/cau_keo_domain_challenger.py`, `src/ml_engine/features.py` | — |
-| Cầu chạm / cầu tổng | Hidden Markov Model | `src/markov_stats.py` — `MarkovChain`, `build_markov_chain` | 174 |
+| Lô gan / chu kỳ | Survival Analysis, Hazard | `src/stats/hazard_stats.py` — `hazard_curve_loto`, `hazard_curve_de` | 157 |
+| Bóng âm dương / ngũ hành | Feature engineering + XGBoost | `src/ml/cau_keo_domain_challenger.py`, `src/ml_engine/features.py` | — |
+| Cầu chạm / cầu tổng | Hidden Markov Model | `src/stats/markov_stats.py` — `MarkovChain`, `build_markov_chain` | 174 |
 
 Ngoài ra `src/ml_engine/` đã có LightGBM/CatBoost, LambdaMART, GRU chuỗi thời
 gian, trọng số mũ trên log-loss kèm cổng độ tin `model_trust`, phát hiện trôi

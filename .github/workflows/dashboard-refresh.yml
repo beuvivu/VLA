@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "src/build_markdown_dashboard_v3.py"
+      - "src/pages/build_markdown_dashboard_v3.py"
       - ".github/workflows/dashboard-refresh.yml"
   workflow_dispatch:
 
@@ -19,6 +19,8 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
     steps:
       - name: Lấy mã nguồn main mới nhất
         uses: actions/checkout@v7
@@ -48,7 +50,7 @@ jobs:
               git fetch origin main
               git reset --hard origin/main
             fi
-            python src/build_markdown_dashboard_v3.py
+            python src/pages/build_markdown_dashboard_v3.py
             python - <<'PY'
           from pathlib import Path
 

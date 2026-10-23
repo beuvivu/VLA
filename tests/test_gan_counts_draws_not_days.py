@@ -20,8 +20,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from advanced_stats import compute_cycle_stats  # noqa: E402
-from gap_cycle_stats import compute_gap_stats  # noqa: E402
+from stats.advanced_stats import compute_cycle_stats  # noqa: E402
+from stats.gap_cycle_stats import compute_gap_stats  # noqa: E402
 
 
 def _sparse(rows: list[tuple[str, list[int]]]) -> pd.DataFrame:
@@ -135,8 +135,8 @@ def test_the_two_recency_weightings_use_different_units_on_purpose() -> None:
     một hàm theo hiểu biết về hàm kia.
     """
 
-    from learn_ensemble_weights import _day_weights
-    from meta_predictor import _recency_row_weights
+    from ensemble.learn_ensemble_weights import _day_weights
+    from forecast.meta_predictor import _recency_row_weights
 
     # Bốn kỳ, nhưng kỳ cuối cách kỳ trước đó 20 NGÀY.
     days = ["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-23"]
@@ -160,7 +160,7 @@ def test_shipped_rhythm_builder_also_counts_draws() -> None:
 
     Ở đây dựng hẳn một đợt nghỉ 20 ngày để hai cách buộc phải khác nhau.
     """
-    from statistical_matrices import _rhythm_from_sparse
+    from stats.statistical_matrices import _rhythm_from_sparse
 
     frame = _sparse(
         [

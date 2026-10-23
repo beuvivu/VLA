@@ -15,7 +15,7 @@ import numpy as np
 
 from bridges.tensor import NUMBER_SPACE
 from features import FeatureContext, PatternMemoryExtractor
-from number_reference import normalize_two_digit
+from core.number_reference import normalize_two_digit
 
 DEFAULT_GAN_THRESHOLD_DAYS = 15
 

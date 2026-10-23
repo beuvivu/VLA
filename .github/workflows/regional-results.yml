@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/regional_lottery.py'
-      - 'src/build_regional_results.py'
+      - 'src/ingest/regional_lottery.py'
+      - 'src/pages/build_regional_results.py'
       - 'scripts/ops/push_generated_site.py'
       - '.github/workflows/regional-results.yml'
   workflow_dispatch:
@@ -61,11 +61,11 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then MANUAL_DAYS=365; fi
           if [ "${{ github.event_name }}" = "push" ]; then MANUAL_DAYS=30; fi
-          python src/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
+          python src/ingest/regional_lottery.py --region both --backfill-days "$MANUAL_DAYS" --delay 0.15 --require-latest
 
       - name: Dựng trang từ kết quả đã thu thập
         run: |
-          python src/build_regional_results.py
+          python src/pages/build_regional_results.py
           python scripts/ops/refresh_navigation.py
 
       - name: Kiểm tra dữ liệu trước khi ghi
@@ -100,7 +100,7 @@ jobs:
           python3 scripts/ops/push_generated_site.py --branch main
 
       - name: Chốt phiên bản và kiểm tra tài nguyên
-        run: python3 src/site_assets.py --refresh docs --check
+        run: python3 src/web/site_assets.py --refresh docs --check
 
       - name: Đóng gói GitHub Pages đã cập nhật
         uses: actions/upload-pages-artifact@v5

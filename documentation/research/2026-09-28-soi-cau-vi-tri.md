@@ -60,8 +60,8 @@ tín hiệu (50% kỳ chép y nguyên kỳ trước) và yêu cầu z > 4 ở k 
 
 ## 3. Đã dựng
 
-- `src/position_bridges.py` — bộ máy, ghi `data/position_bridges/latest.json` sau mỗi kỳ.
-- `src/build_position_bridges.py` — trang `docs/soi-cau-vi-tri.html` và ô cạnh bảng LOTO.
+- `src/soi_cau/position_bridges.py` — bộ máy, ghi `data/position_bridges/latest.json` sau mỗi kỳ.
+- `src/pages/build_position_bridges.py` — trang `docs/soi-cau-vi-tri.html` và ô cạnh bảng LOTO.
 - `src/templates/position_bridges.js` — bộ máy trình duyệt, cùng luật; trang đường cầu kiểu
   Sổ kết quả, bộ chọn số ngày, bảng vị trí cầu (bấm vị trí đậm → vị trí ghép màu đỏ).
 - Pipeline chạy hai bước trên TRƯỚC trang chủ; ô trang chủ từ chối báo cáo của kỳ khác.

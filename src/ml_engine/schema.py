@@ -22,8 +22,8 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 
-from calendar_alignment import unexpected_gap_dates
-from xsmb_domain import (
+from core.calendar_alignment import unexpected_gap_dates
+from core.xsmb_domain import (
     FIELD_WIDTH_MAP,
     LOTO_BASELINE_RATE,
     LOTO_DRAWS_PER_DAY,

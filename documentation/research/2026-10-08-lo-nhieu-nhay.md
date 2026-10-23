@@ -1,6 +1,6 @@
 # Lô nhiều nháy (≥ 2 nháy một kỳ) — bộ lọc VIP và phép đo trên 4 228 kỳ
 
-Ngày 08-10-2026. Mã: `src/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_hit_vip.py`.
+Ngày 08-10-2026. Mã: `src/forecast/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_hit_vip.py`.
 
 > Cập nhật 15-10-2026: bộ lọc này đã nghỉ khỏi trang «Lô VIP nhiều nháy». Thành phần phân tán
 > (phương sai/trung bình) của nó đẩy con gan lên đầu. Năm con trên trang nay là lô rơi theo tỉ lệ
@@ -102,10 +102,10 @@ cho p = 0,72.
 
 ## Tái lập
 
-    python3 src/multi_hit_vip.py --mock                          # 100 kỳ giả định, quay công bằng
-    python3 src/multi_hit_vip.py --mock --plant                  # cài tín hiệu cho 07, 38, 68
-    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07              # 4 228 kỳ, ~20 giây
-    python3 src/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07 --top-k 3 --json /tmp/vip.json
+    python3 src/forecast/multi_hit_vip.py --mock                          # 100 kỳ giả định, quay công bằng
+    python3 src/forecast/multi_hit_vip.py --mock --plant                  # cài tín hiệu cho 07, 38, 68
+    python3 src/forecast/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07              # 4 228 kỳ, ~20 giây
+    python3 src/forecast/multi_hit_vip.py --csv data/xsmb-2-digits.csv --until 2026-10-07 --top-k 3 --json /tmp/vip.json
 
 CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của phép đo đã công bố.
 
@@ -240,7 +240,7 @@ Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lư
 Trang in từ phép đo, đúng như mục này từng đặt điều kiện. Không con số hay kết luận nào được
 viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
 
-- **Số đo.** `src/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
+- **Số đo.** `src/forecast/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
   - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
     trên mọi kỳ, khoảng Wilson 95% theo cụm kỳ (cỡ mẫu hiệu dụng Kish), mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
     kiểm chứng.
@@ -269,9 +269,9 @@ viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
   - Kết quả ngày 12-10-2026: 20/20 lịch sử đạt (KTC 95% 84–100%).
   - Các lượt chạy song song bằng `spawn`, mỗi tiến trình một luồng OpenMP. Nếu dùng `fork` sau
     khi tiến trình cha đã chạy cây tăng cường, tiến trình con kẹt cứng.
-- **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/multi_hit_benchmark.py` để
+- **Mã giao thức.** Giao thức lượt hai chuyển từ `scripts/` sang `src/forecast/multi_hit_benchmark.py` để
   pipeline gọi được. `scripts/research/benchmark_multi_hit.py` nay là lớp vỏ dòng lệnh.
-- **Trình dựng.** `src/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
+- **Trình dựng.** `src/pages/build_multi_hit_page.py` dựng trang. Kết luận rút từ ba cờ:
   - mức tin của bộ lọc: Trung bình hay Cao thì "hơn chọn bừa";
   - ứng viên lượt hai có qua giai đoạn kiểm hay không;
   - phép kiểm độ nhạy có bắt được tín hiệu cài sẵn hay không. Nếu không bắt được, trang ghi
@@ -304,7 +304,7 @@ cứu, và kết luận suy từ số đo. Tiếp theo là bảng 10 kỳ gần 
 
 ### Luật chọn cặp, chốt trước khi kiểm chứng
 
-`src/multi_hit_pairs.py`. Luật và tham số được chốt TRƯỚC khi chạy kiểm chứng; không tham số nào
+`src/forecast/multi_hit_pairs.py`. Luật và tham số được chốt TRƯỚC khi chạy kiểm chứng; không tham số nào
 được dò trên kết quả.
 
 1. Điểm của cặp (a, b) ở kỳ t = số kỳ trong 100 kỳ ngay trước t mà cả a lẫn b cùng về (mỗi con

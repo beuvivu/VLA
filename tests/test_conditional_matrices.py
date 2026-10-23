@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from conditional_matrices import build_conditional_tables
+from stats.conditional_matrices import build_conditional_tables
 
 
 def _frames(dates: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:

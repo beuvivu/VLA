@@ -248,7 +248,7 @@ public; phần ghi kho chuẩn tiếp tục do GitHub Actions hiện hữu đả
 `docs/so-ket-qua-truyen-thong.html` là trang tĩnh, dựng bởi:
 
 ```bash
-python src/build_traditional_results.py
+python src/pages/build_traditional_results.py
 ```
 
 Trang nhúng 500 kỳ VLA mới nhất để vẫn hoạt động khi Worker chưa cấu hình.

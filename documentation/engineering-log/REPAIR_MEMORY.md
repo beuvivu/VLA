@@ -353,7 +353,7 @@ Context: trang tĩnh `soi-path-*-active.html` có bảng dự đoán nhưng kh�
 Symptom: CSV `predict_next_*` có dữ liệu, song HTML chỉ render chú giải màu và
 không có số nào trong thẻ “Chọn nhanh”.
 
-Root cause: `src/build_docs.py` đã truyền danh sách `picks` vào Jinja nhưng
+Root cause: `src/pages/build_docs.py` đã truyền danh sách `picks` vào Jinja nhưng
 `src/templates/path_ui_page.html.j2` không sử dụng danh sách này ở khối
 “Chọn nhanh”.
 
@@ -367,7 +367,7 @@ hiệu chuẩn.
 Regression guard: `tests/test_path_ui_quick_select.py` và kiểm tra HTML tĩnh
 đảm bảo có số dự đoán hoặc thông báo trạng thái rỗng.
 
-Affected modules: `src/templates/path_ui_page.html.j2`, `src/build_docs.py`,
+Affected modules: `src/templates/path_ui_page.html.j2`, `src/pages/build_docs.py`,
 `docs/soi-path-*.html`.
 
 Confidence: high

@@ -4,8 +4,8 @@ Ngày: 05-10-2026. Nguồn: 10 bài (28-09 → 05-10-2026) của chuyên mục b
 chỉ định, đọc toàn văn qua `.github/workflows/inspect-reference-articles.yml` (proxy của môi
 trường phát triển chặn trang). Không lưu nội dung bài vào kho; chỉ ghi phương pháp.
 
-Mã: `src/digit_sum_rules.py`. Phép kiểm: `tests/test_digit_sum_rules.py`. Số đo:
-`data/research/digit_sum_rules.json` (tái lập: `PYTHONPATH=src python3 src/digit_sum_rules.py`).
+Mã: `src/soi_cau/digit_sum_rules.py`. Phép kiểm: `tests/test_digit_sum_rules.py`. Số đo:
+`data/research/digit_sum_rules.json` (tái lập: `PYTHONPATH=src python3 src/soi_cau/digit_sum_rules.py`).
 
 ## Tóm tắt
 
@@ -115,7 +115,7 @@ mẫu và báo cáo kiểm thử ngược. Đối chiếu:
 
 ### 4.2 Kiểm tiến cứu: phần "tự học tích luỹ"
 
-`src/digit_sum_hypothesis.py` đăng ký ngày 05-10-2026: từ kỳ 06-10-2026, mỗi lượt pipeline ghi bộ
+`src/research/digit_sum_hypothesis.py` đăng ký ngày 05-10-2026: từ kỳ 06-10-2026, mỗi lượt pipeline ghi bộ
 số của năm quy tắc cho từng kỳ mới vào `data/hypotheses/digit_sum_rules.csv` (dòng đã ghi không bị
 đè) và chấm với kết quả thật. Sau 180 kỳ: p một phía Poisson-nhị thức, Holm cho năm quy tắc,
 α = 0,01. Kết luận chốt trên ĐÚNG 180 kỳ đầu rồi đóng băng — sổ ghi tiếp nhưng không tính lại,

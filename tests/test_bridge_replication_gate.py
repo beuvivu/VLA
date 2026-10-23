@@ -26,7 +26,7 @@ from bridges.replication import (
 )
 from bridges.scanner import BridgeScanner
 from bridges.tensor import DigitTensor
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 #: Bộ quét thu hẹp: một độ trễ, một loại bóng, một phép biến đổi. 11 449 giả
 #: thuyết thay vì 412 164 — đủ để cổng chạy thật mà phép kiểm không mất phút.

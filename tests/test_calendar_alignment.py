@@ -8,8 +8,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from calendar_alignment import calendar_lag_pairs, consecutive_next_pairs, require_daily_contiguous
-from markov_stats import compute_markov_for_loto
+from core.calendar_alignment import calendar_lag_pairs, consecutive_next_pairs, require_daily_contiguous
+from stats.markov_stats import compute_markov_for_loto
 
 
 def _two_digit_frame(dates: list[str]) -> pd.DataFrame:

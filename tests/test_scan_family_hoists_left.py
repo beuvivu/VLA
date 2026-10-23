@@ -19,7 +19,7 @@ mọi luật — im lặng, không ngoại lệ nào.
 import numpy as np
 import pytest
 
-from bong_bridge_lab import (
+from research.bong_bridge_lab import (
     DEFAULT_LAG_PAIRS,
     DIGIT_OPS,
     N_SLOTS,

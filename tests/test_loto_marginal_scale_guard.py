@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ensemble_components import (
+from ensemble.ensemble_components import (
     LOTO_EXPECTED_MARGINAL_SUM,
     LOTO_PRIZE_SLOTS,
     availability_from_history_day,

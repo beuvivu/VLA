@@ -28,7 +28,7 @@ from bridges.shadow import (
     shadow_table,
 )
 from bridges.spec import CrossDayPatternSpec
-from xsmb_domain import FIELD_WIDTHS, LOTO_DRAWS_PER_DAY, PRIZE_FIELDS
+from core.xsmb_domain import FIELD_WIDTHS, LOTO_DRAWS_PER_DAY, PRIZE_FIELDS
 
 
 def _random_history(days: int, seed: int = 7) -> pd.DataFrame:

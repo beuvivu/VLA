@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from statistics_ai_overlay import (
+from stats.statistics_ai_overlay import (
     _validated_probability_frame,
     _weighted_score,
 )

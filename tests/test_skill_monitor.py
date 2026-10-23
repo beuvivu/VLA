@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import skill_monitor as sm
+from evaluation import skill_monitor as sm
 
 PRIZES = [f"p{i}" for i in range(27)]
 
@@ -131,7 +131,7 @@ def test_the_quality_report_grades_published_artifacts_once_there_are_enough(
 ) -> None:
     """Trang Chất lượng từng chấm một bản dựng lại bỏ qua hiệu chỉnh — một mô
     hình khác mô hình được công bố. Đủ artifact thì phải chấm artifact."""
-    import model_quality as mq
+    from evaluation import model_quality as mq
 
     _write_store(tmp_path, sm.MIN_DAYS, de_mass_on_winner=0.012)
     (tmp_path / "prob_eval").mkdir()
@@ -170,7 +170,7 @@ def test_the_real_cleanup_step_keeps_a_full_monitoring_window(
     """Review của PR #93: pipeline chạy ``cleanup_artifacts --retention-days
     45``, nên chỉ đọc artifact thì cửa sổ 60 kỳ không bao giờ đầy. Chạy đúng
     bước dọn ấy trên 70 kỳ rồi đòi bộ theo dõi vẫn thấy đủ 60."""
-    import cleanup_artifacts
+    from evaluation import cleanup_artifacts
 
     days = _write_store(tmp_path, 70)
     pd.DataFrame({"date": days}).to_csv(tmp_path / "xsmb.csv", index=False)

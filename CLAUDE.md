@@ -10,18 +10,57 @@ mã nguồn cũng tiếng Việt.
 KHÔNG BAO GIỜ hỏi, nhận, hay xử lý GitHub PAT của chủ dự án. Token chỉ được
 đưa vào terminal của họ và cron-job.org, không đi qua phiên làm việc này.
 
+## Bố cục `src/` — gói theo chức năng (23-10-2026)
+
+Gốc `src/` chỉ còn `pipeline.py`; mọi module khác nằm trong một gói. TÊN MODULE GIỮ NGUYÊN
+(chỉ thêm tiền tố gói), nên nhãn đã ghi vào sổ như `calendar_alignment.known_non_draw_days`
+và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
+
+    core        miền XSMB, lịch quay, đồng hồ, mã số, I/O nguyên tử, đường dẫn kho (paths)
+    ingest      nguồn, đồng bộ, live, sổ chuẩn Lottery, kiểm dữ liệu, kết quả vùng
+    ensemble    neo mức, trọng số, thành phần, hiệu chỉnh, gộp ý kiến, co ngót, đa dạng đuôi
+    stats       thống kê mô tả/kiểm định, ma trận, tín hiệu thống kê, động học số
+    soi_cau     cầu vị trí, bảy kiểu cầu, cầu theo đường, tổng – bóng – chạm
+    ml          ML thành phần và Cầu Kèo: đặc trưng, huấn luyện, dự báo, thách đấu miền
+    forecast    xếp chồng, dự báo đầy đủ, học trực tuyến, kho tri thức, Lô VIP (multi_hit_*)
+    evaluation  chất lượng mô hình, sổ dự báo, độ tin cậy, bảng mô phỏng, kiểm toán vận hành
+    research    phòng nghiên cứu và phép kiểm tiến cứu đã đăng ký
+    web         shell, theme, page_output, bằng chứng, thành phần trang dùng chung
+    pages       trình dựng từng trang trong docs/ (build_*), README
+
+Gói có sẵn giữ nguyên; ba lệnh chạy về cạnh gói chúng điều khiển:
+`bridges/run_bridge_scan.py`, `modeling/run_daily_prediction.py`,
+`xsmb_agents/run_xsmb_agents.py`.
+
+- Import: `from ensemble import ensemble_utils` hoặc `from ensemble.ensemble_utils import
+  finalize_blend`. KHÔNG import theo tên phẳng cũ — chạy được khi kịch bản đứng cùng thư
+  mục, hỏng ở mọi nơi khác.
+- Chạy: `PYTHONPATH=src python src/<gói>/<module>.py`. Chạy bằng đường dẫn tệp thì Python
+  đặt thư mục của CHÍNH tệp ấy lên `sys.path`, không phải `src`. `pipeline._child_env` tự
+  đặt cho mọi bước con; job workflow nào chạy `src/<gói>/…` phải khai `PYTHONPATH` trong
+  `env`.
+- Đường dẫn tới gốc kho, `src/templates`, `src/assets` CHỈ qua `core.paths`
+  (`REPO_ROOT`, `SRC`, `TEMPLATES`, `ASSETS`). Đừng đếm `Path(__file__).parents[...]`:
+  `known_non_draw_days` đọc lịch nghỉ bằng đường dẫn ấy, và sai tầng thì lịch rỗng chứ
+  không báo lỗi.
+- Pack joblib ghi trước đợt gom nhắc lớp bằng tên `ml_models`; `ml/ml_models.py` đăng ký tên
+  ấy trong `sys.modules`. Thiếu nó, `MODEL_LOAD_ERRORS` nuốt ImportError và bước dự báo coi
+  pack là hỏng mà không báo.
+- Module mới vào gói đúng chức năng, không đặt ở gốc `src/`. Gói không được phụ thuộc vòng.
+- `tests/test_src_layout.py` canh cả sáu điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
 được bọc vào (`_attach_shell` -> `app_shell.wrap_page`). Đừng chép khung vào
 từng trình dựng: chép là để chúng trôi khỏi nhau.
 
-    src/app_shell.py              dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
+    src/web/app_shell.py          dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
     src/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
     src/assets/app-shell.js       thu/mở, đổi nhóm, hai tìm kiếm độc lập
     src/assets/app-theme.js       khôi phục/đổi màu, OS và storage sync
-    src/app_icons.py              SVG Lucide cho nội dung / global search
-    src/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
+    src/web/app_icons.py          SVG Lucide cho nội dung / global search
+    src/web/nexlink_icons.py      SVG Nexlink gốc cho rail / sidebar / header
 
 Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 8 nhóm chức năng,
 chia cụm có tiêu đề. `SITE_NAV` là bản phẳng được suy ra cho các trình dựng
@@ -88,7 +127,7 @@ còn độ đậm thì phải đo lại. Cùng lý do với `--green #2ebb79` (2
 `--golden-yellow #fd961e` (1,99:1) và `--red #dc3131` (4,21:1): chúng là màu
 TÔ, không phải màu CHỮ.
 
-Đổi bảng màu thì đổi ở **`src/ui_theme.py`** (token dùng chung) và
+Đổi bảng màu thì đổi ở **`src/web/ui_theme.py`** (token dùng chung) và
 **`src/templates/ui_visual_system.css`** (lớp skin). Bốn phép kiểm canh:
 
 - `test_every_text_token_reaches_aa_on_every_surface_it_sits_on` — mọi token
@@ -171,7 +210,7 @@ Hiện xuất xứ CHỈ qua `ensemble_utils.weights_provenance(data_dir, mode)`
 Không tự đọc `weights_<mode>.json` rồi suy ra, và không suy xuất xứ bằng cách
 so trọng số với mặc định — phép suy ấy nói sai với một tệp hoàn toàn lành.
 
-Cổng thẩm định ngoài mẫu trong `src/learn_ensemble_weights.py` chỉ đề bạt
+Cổng thẩm định ngoài mẫu trong `src/ensemble/learn_ensemble_weights.py` chỉ đề bạt
 vector đã học khi nó thắng **mặc định** trên lát kiểm ngoài mẫu. Mốc so sánh
 KHÔNG được là vector đương nhiệm: lần chạy trước đã khớp trên chính những
 ngày đó, nên phép so ấy rò rỉ và luôn báo thắng.
@@ -231,7 +270,7 @@ Số đo: `scripts/research/benchmark_component_trust.py`,
 
 ## Chất lượng mô hình — chấm thứ đã CÔNG BỐ
 
-Trang Chất lượng mô hình và bộ theo dõi `src/skill_monitor.py` chấm chính
+Trang Chất lượng mô hình và bộ theo dõi `src/evaluation/skill_monitor.py` chấm chính
 vector xác suất đã công bố trước kỳ quay
 (`data/predict/predict_next_<mode>_all_<ngày>.csv`) với kết quả quay thật.
 Bản dựng lại từ `data/history/pred_<mode>.csv` bỏ qua hiệu chỉnh và tầng xếp
@@ -243,7 +282,7 @@ VẬY (z=3, cửa sổ 60 kỳ). Kỳ quay đã kiểm là ngẫu nhiên: tệ h
 tốt hơn thì phải kiểm lại trước khi tin. Đừng "sửa" báo động ấy bằng cách nới
 ngưỡng.
 
-Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/atomic_io.py` (tệp tạm + `os.replace`).
+Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atomic_io.py` (tệp tạm + `os.replace`).
 Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
 (`tests/test_atomic_ledgers.py`).
 
@@ -259,7 +298,7 @@ trị cũ; nhãn được gắn bằng bất biến trong `prob_eval_history.lab
 ## Bảng mô phỏng và sổ nhật ký của nó
 
 Bảng mô phỏng trang chủ (`build_fun_prediction.py`) rút 2 số cuối theo xác suất mô
-hình; tiền tố là số ngẫu nhiên. `src/fun_draw_ledger.py` ghi mỗi kỳ bảng đang hiện
+hình; tiền tố là số ngẫu nhiên. `src/evaluation/fun_draw_ledger.py` ghi mỗi kỳ bảng đang hiện
 vào `data/fun_draw/ledger.csv` và chấm với kết quả thật (Đặc Biệt trúng đúng / trúng
 lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 giờ Việt Nam của kỳ đích;
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
@@ -267,7 +306,7 @@ sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ g
 
 ## Sổ phỏng đoán trong ngày và bảng đối chiếu trang Live — 21-10-2026
 
-`src/prediction_board.py` (bước pipeline sau `build_fun_prediction`) chụp MỌI danh sách số các trang
+`src/evaluation/prediction_board.py` (bước pipeline sau `build_fun_prediction`) chụp MỌI danh sách số các trang
 công bố cho kỳ tới — tổ hợp Top 10, Cầu Kèo, ML, hệ ba tác tử, Lô VIP, xiên 2, cầu đẹp nhất, bảy trang
 soi cầu, soi đường, bảng mô phỏng — vào `data/prediction_board/<kỳ>.json`; trang Live
 (`src/assets/live-scorecard.js`) đặt từng danh sách thành hai hàng "Trước giờ quay" / "Sau giờ quay"
@@ -339,7 +378,7 @@ logic của nó ở đây khi không cần — engine tự tìm thư mục dự 
 - Tag phát hành của engine là `vlm-v<phiên bản>`.
 
 Trang Vietlott của site (`vietlott.html` + 7 trang sản phẩm) dựng bằng
-`src/build_vietlott_results.py` từ `vlm.web.dashboard.build_dashboard` của engine:
+`src/pages/build_vietlott_results.py` từ `vlm.web.dashboard.build_dashboard` của engine:
 kết quả đã xác thực, bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước), dự
 báo ghi trước kỳ + đối chiếu, kết luận e-value. Trình dựng KHÔNG in `source`,
 `source_url`, `official_url` hay cảnh báo của engine (chúng nhắc tên nguồn) —
@@ -386,11 +425,11 @@ walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 0
 hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới
 phải qua `scripts/research/benchmark_probability_models.py` (kèm `--power-check`) trước; chỉ đề
-bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô nhiều nháy" `src/multi_hit_vip.py`
+bạt khi thắng CẢ hằng số LẪN mô hình đang chạy. Bộ lọc "lô nhiều nháy" `src/forecast/multi_hit_vip.py`
 (08-10-2026) cũng là khung thách đấu: top-5 trúng 2,91% trên 4 228 kỳ, đúng bằng chọn bừa trên chính các kỳ ấy, nên không
 vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy từ walk-forward, đừng viết cứng
 (`documentation/research/2026-10-08-lo-nhieu-nhay.md`). Lượt thử thứ hai (12-10-2026,
-`src/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/research/benchmark_multi_hit.py`): 22 chiến lược kể cả
+`src/forecast/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/research/benchmark_multi_hit.py`): 22 chiến lược kể cả
 logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
 hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
 `multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT
@@ -401,7 +440,7 @@ tiến cứu mới. Bộ lọc thì đo lại MỖI ngày, nên mức tin của 
 30,9%, với p luôn hợp lệ ở 3,45%. e-process CHỈ chạy trên kỳ quay sau ngày chốt của mô hình đang in
 (`multi_hit_forecast.FROZEN_AT` = 15-10-2026; bộ lọc VIP cũ: `VIP_FROZEN_AT` = 12-10-2026): mô hình được
 thiết kế sau khi đã xem lịch sử trước đó, nên walk-forward hồi cứu chỉ là mô tả.
-Từ 15-10-2026 năm con trên trang là DỰ BÁO KỲ SAU của mô hình Lô VIP (`src/multi_hit_forecast.py`), theo
+Từ 15-10-2026 năm con trên trang là DỰ BÁO KỲ SAU của mô hình Lô VIP (`src/forecast/multi_hit_forecast.py`), theo
 yêu cầu "dựa trên dữ liệu và kinh nghiệm cầu kèo, không phải thống kê hôm nay": đặc trưng cầu kèo của
 `cau_keo_ml` (trừ 6 đặc trưng định danh/lịch), số cầu hai nháy (≥ 2 kỳ) và cầu LOTO (≥ 3 kỳ) đang chạy báo
 con ấy — đếm khớp `bridge_rules.find` —, và dữ liệu nhiều nháy; logistic, C chọn bằng thẩm định trong theo
@@ -417,7 +456,7 @@ lọc VIP (chỉ số phân tán đẩy con gan lên đầu — con 32 đứng �
 (chỉ liệt kê con vừa về). `build_cau_keo_feature_frame` nhận `raw`/`two` để kiểm trên lịch sử giả định.
 `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
 từ mức tin, ứng viên lượt hai và phép kiểm độ nhạy. Từ 13-10-2026 trang GỌN theo yêu cầu: năm con ≥ 2 nháy và
-năm cặp xiên 2 (`src/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
+năm cặp xiên 2 (`src/forecast/multi_hit_pairs.py`: số kỳ cùng về trong 100 kỳ, luật chốt trước, mốc C(d, 2)/4 950
 cùng kỳ; 4 133 kỳ trúng 5,49% so với 5,52% chọn bừa) ở trên cùng, mỗi khối MỘT dòng số đo; giải thích
 thu vào «Chi tiết phép đo». Cặp không có phép kiểm độ nhạy nên chỉ được nói "chưa có bằng chứng", không
 "không hơn". `benchmark.json` có phiên bản riêng (`BENCHMARK_VERSION`): đổi khuôn `vip.json`
@@ -427,7 +466,7 @@ trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,
 
 ## Kho tri thức và lời giải thích — 13-10-2026
 
-`src/knowledge_base.py` (kiến trúc: `documentation/architecture/2026-10-13-he-suy-luan-va-tu-hoc.md`)
+`src/forecast/knowledge_base.py` (kiến trúc: `documentation/architecture/2026-10-13-he-suy-luan-va-tu-hoc.md`)
 lấp phần "tự bổ sung tri thức" của yêu cầu hệ suy luận/tự học; phần bầu chọn có trọng số và tự chỉnh
 trọng số ĐÃ có ở `online_learning` (Hedge hai trí nhớ, cổng đề bạt), đừng dựng bản thứ hai. Luật trễ
 "a về → b về kỳ sau" được khai phá mỗi `DISCOVERY_EVERY` = 30 kỳ, ĐÓNG BĂNG khi đăng ký (định nghĩa,
@@ -445,20 +484,20 @@ Ngân sách α (`alpha_budget`) chốt khi tạo kho: đổi `ALPHA` trên kho �
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán — 05-10-2026
 
-`src/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
+`src/soi_cau/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
 2 số cuối/đầu ĐB và bóng; chạm từ tổng 2 số cuối giải nhất; lô cặp G5; song thủ G2–G1), khớp
 TỪNG con số in trong bài (`tests/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
 Kiểm 4 225 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
 bừa cũng nổ 78,4%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Mốc chấm LOTO là xác suất CÓ
 ĐIỀU KIỆN theo số con đã về ở kỳ ấy, p Poisson-nhị thức, Holm cho năm quy tắc — khớp từng số với bộ
-`xsmb_methods` chủ dự án gửi. `src/digit_sum_hypothesis.py` là phép kiểm TIẾN CỨU đã đăng ký
+`xsmb_methods` chủ dự án gửi. `src/research/digit_sum_hypothesis.py` là phép kiểm TIẾN CỨU đã đăng ký
 05-10-2026 (từ kỳ 06-10, 180 kỳ, α = 0,01 sau Holm), sổ cái `data/hypotheses/digit_sum_rules.csv`
 giữ lần ghi đầu; KHÔNG sửa tham số. Chi tiết:
 `documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`; kỹ năng `soi-cau`.
 
 ## Độ tin cậy dự báo — hiệu chỉnh đa kiểm, không phải hậu nghiệm thô
 
-`src/confidence_matrix.py` dựng Confidence Score ba tầng (High: cả Bayes,
+`src/evaluation/confidence_matrix.py` dựng Confidence Score ba tầng (High: cả Bayes,
 Markov, cầu > 85%; Medium: hai trong ba ≥ 60%; còn lại Low/Noise) và
 `build_confidence_page.py` in ra `docs/do-tin-cay.html`. Tin cậy của một thành
 phần là tỉ lệ lịch sử CÔNG BẰNG mà tín hiệu mạnh nhất của cả họ còn yếu hơn
@@ -477,14 +516,14 @@ Top LOTO (tệp top-4/8/10 và trang chủ) chọn qua `pick_diversity.diversifi
 tối đa 3 con cùng đuôi, xác suất không đổi. Ngày 28-09-2026 cả 10 con đuôi 4 vì đặc
 trưng `tail_freq_7d` của mô hình cầu kèo — mười con cùng đuôi gần như là MỘT lần đặt.
 
-`src/hot_tail_test.py` là phép kiểm TIẾN CỨU đã đăng ký ngày 28-09-2026 (từ kỳ
+`src/research/hot_tail_test.py` là phép kiểm TIẾN CỨU đã đăng ký ngày 28-09-2026 (từ kỳ
 29-09, 180 kỳ, một phía α = 0,01). KHÔNG sửa tham số của nó: muốn đổi thì đăng ký giả
 thuyết mới với ngày bắt đầu mới. Sổ cái `data/hypotheses/hot_tail.csv` giữ lần ghi đầu.
 Chi tiết: `documentation/research/2026-09-28-duoi-4-va-gia-thuyet-duoi-nong.md`.
 
 ## Soi cầu vị trí — đúng luật của trang tham chiếu, kèm kiểm chứng
 
-`src/position_bridges.py` dò cầu trên 107 vị trí chữ số (ĐB 0–4 … G7 99–106),
+`src/soi_cau/position_bridges.py` dò cầu trên 107 vị trí chữ số (ĐB 0–4 … G7 99–106),
 `build_position_bridges.py` in `docs/soi-cau-vi-tri.html` và ô "cầu đẹp nhất"
 cạnh bảng LOTO ở trang chủ (cột `.tr-day-extra` của `render_result_board`). Luật
 đã đối chiếu từng con số với trang tham chiếu ngày 29-09-2026 và bị ghim trong
@@ -522,7 +561,7 @@ không phân biệt được với 0.
 
 ### Bảy kiểu cầu của trang tham chiếu thứ hai + phôi tuần
 
-`src/bridge_rules.py` + `build_bridge_pages.py` in bảy trang `docs/soi-cau-*.html`
+`src/soi_cau/bridge_rules.py` + `build_bridge_pages.py` in bảy trang `docs/soi-cau-*.html`
 (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, Đặc Biệt theo thứ, LOTO theo thứ) và
 `docs/tao-phoi-tuan.html`. Mọi kiểu dùng cặp vị trí a < b, số `10·d[a]+d[b]`; chỉ
 luật "bước trúng" khác nhau — ghi trong docstring và bị ghim từng ô bởi
@@ -564,7 +603,7 @@ tóm tắt, số bước, gợi ý thao tác) và ngăn kéo `<dialog>` (nhấp:
 tài liệu nên phủ cả bảng do JS dựng sau khi tải; nhận diện "con số" bằng chữ
 của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho từng ô.
 
-- Danh mục: `src/evidence_catalog.py` → khối `#app-evidence-data` trong
+- Danh mục: `src/web/evidence_catalog.py` → khối `#app-evidence-data` trong
   `<head>`, chèn bởi `page_output._attach_evidence` (bóc rồi chèn, lũy đẳng).
   KHÔNG đặt thẻ ở đuôi khung: `_DUOI_KHUNG` neo vào đó. Trang mới phải có mục
   trong `_catalog` (`test_the_catalog_covers_every_page_a_reader_can_reach`).

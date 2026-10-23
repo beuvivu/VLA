@@ -18,7 +18,7 @@ import pytest
 import yaml
 from bs4 import BeautifulSoup
 
-from ui_theme import (
+from web.ui_theme import (
     WCAG_AA_NORMAL,
     contrast_ratio,
     readable_ink,
@@ -104,7 +104,7 @@ def test_inverse_surfaces_do_not_use_a_theme_flipping_token() -> None:
 
     Dùng nó làm NỀN cho dải tiêu đề chữ trắng cho ra 1,17:1 khi hệ ở chế độ tối.
     """
-    source = (ROOT / "src/build_research_lab.py").read_text(encoding="utf-8")
+    source = (ROOT / "src/pages/build_research_lab.py").read_text(encoding="utf-8")
     hero = re.search(r"\.rl-hero\{\{[^}]*\}\}", source)
     assert hero, "không tìm thấy .rl-hero"
     assert "background:var(--ui-ink)" not in hero.group(0).replace(" ", "")
@@ -118,7 +118,7 @@ def _tokens(block_selector: str) -> dict[str, str]:
     màu KHÔNG đạt chuẩn thì phép kiểm vẫn xanh, vì nó không hề đọc token. Nó
     kiểm hai con số do chính nó viết ra.
     """
-    from ui_theme import TAILWIND_LITE_CSS
+    from web.ui_theme import TAILWIND_LITE_CSS
 
     # Đếm ngoặc phải bắt đầu TỪ dấu ``{`` mở, không phải từ bên trong khối.
     # Bản trước nhảy qua luôn dấu mở nên độ sâu khởi đầu đã là 1 mà biến đếm
@@ -503,8 +503,8 @@ def test_the_three_copies_of_the_page_background_agree() -> None:
     khi sửa: bản dự phòng vẫn mang ``#F2F4FF`` của bảng màu cũ trong khi hai
     bản kia đã đổi — người đọc thấy nền cũ lóe lên rồi mới đổi sang nền mới.
     """
-    import css_links
-    from ui_theme import TAILWIND_LITE_CSS
+    from web import css_links
+    from web.ui_theme import TAILWIND_LITE_CSS
 
     token = _ui_bg(TAILWIND_LITE_CSS)
     assert _ui_bg(css_links.CRITICAL_CSS) == token, "critical.css lệch khỏi ui.css"
@@ -520,7 +520,7 @@ def test_the_first_frame_paints_the_background_from_tokens_not_a_copy() -> None:
     đổi bảng màu thì khung vẽ ĐẦU TIÊN vẫn là nền cũ. Phép kiểm trên chỉ soi
     ``--ui-bg`` nên nó không thấy — nó không đọc thuộc tính ``background``.
     """
-    import css_links
+    from web import css_links
 
     for ten, css in (
         ("critical sinh ra", css_links.CRITICAL_CSS),

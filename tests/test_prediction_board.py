@@ -1,4 +1,4 @@
-"""Sổ phỏng đoán trong ngày (``src/prediction_board.py``) cho bảng đối chiếu trang Live."""
+"""Sổ phỏng đoán trong ngày (``src/evaluation/prediction_board.py``) cho bảng đối chiếu trang Live."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-import prediction_board as pb
-from fun_draw_ledger import cutoff_utc
-from xsmb_domain import LOTO_BASELINE_RATE
+from evaluation import prediction_board as pb
+from evaluation.fun_draw_ledger import cutoff_utc
+from core.xsmb_domain import LOTO_BASELINE_RATE
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = "2026-10-22"  # thứ Năm: weekday() = 3
@@ -170,9 +170,10 @@ def test_the_board_holds_no_private_token(tmp_path: Path) -> None:
 
 def test_the_pipeline_builds_the_board_after_every_page_it_reads() -> None:
     text = (ROOT / "src" / "pipeline.py").read_text(encoding="utf-8")
-    board = text.index('_py("src/prediction_board.py")')
-    for builder in ("build_fun_prediction.py", "build_bridge_pages.py", "build_position_bridges.py",
-                    "build_multi_hit_page.py", "run_xsmb_agents.py", "cau_keo_daily_top.py"):
+    board = text.index('_py("src/evaluation/prediction_board.py")')
+    for builder in ("pages/build_fun_prediction.py", "pages/build_bridge_pages.py",
+                    "pages/build_position_bridges.py", "pages/build_multi_hit_page.py",
+                    "xsmb_agents/run_xsmb_agents.py", "ml/cau_keo_daily_top.py"):
         assert text.index(f'_py("src/{builder}"') < board, builder
 
 

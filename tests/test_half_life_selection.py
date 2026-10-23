@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from statistical_signal import (
+from stats.statistical_signal import (
     HALF_LIFE_GRID,
     MIN_HALF_LIFE_SELECTION_DAYS,
     select_half_life,
@@ -125,7 +125,7 @@ def test_the_grid_starts_at_the_legacy_value() -> None:
 
 def test_the_signal_reports_which_half_life_it_chose_and_why() -> None:
     """Không báo cáo điểm từng ứng viên thì lựa chọn không kiểm chứng được."""
-    import statistical_signal as ss
+    from stats import statistical_signal as ss
 
     days = 400
     dates = pd.date_range("2025-01-01", periods=days, freq="D")

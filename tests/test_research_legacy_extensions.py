@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from research_legacy_extensions import (
+from research.research_legacy_extensions import (
     coverage_coupon_summary,
     de_weekday_profile,
     ks_special_uniformity,

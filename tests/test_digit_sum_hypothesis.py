@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import digit_sum_hypothesis as dh
-import digit_sum_rules as dsr
-from xsmb_domain import FIELD_WIDTHS
+from research import digit_sum_hypothesis as dh
+from soi_cau import digit_sum_rules as dsr
+from core.xsmb_domain import FIELD_WIDTHS
 
 
 def test_the_registered_parameters_are_not_edited_to_fit_the_result() -> None:
@@ -102,7 +102,7 @@ def test_the_verdict_follows_the_registered_rule(tmp_path: Path, days, planted, 
 
 
 def test_the_page_shows_the_prospective_state(tmp_path: Path) -> None:
-    import build_confidence_page as page
+    from pages import build_confidence_page as page
 
     _write(tmp_path, _history("2026-10-05", 13, seed=5))
     dh.update_ledger(tmp_path)

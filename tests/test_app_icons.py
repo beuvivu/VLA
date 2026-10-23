@@ -21,8 +21,8 @@ DOCS = ROOT / "docs"
 ASSETS = ROOT / "src" / "assets" / "icons"
 sys.path.insert(0, str(ROOT / "src"))
 
-from app_icons import icon_svg  # noqa: E402
-from ui_theme import SITE_NAV  # noqa: E402
+from web.app_icons import icon_svg  # noqa: E402
+from web.ui_theme import SITE_NAV  # noqa: E402
 
 PAGES = sorted(DOCS.glob("*.html"))
 UPSTREAM_COMMIT = "66d8f9fc394b8530377e5f6112f0b8908ba01280"

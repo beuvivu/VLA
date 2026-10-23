@@ -28,8 +28,8 @@ from modeling.benchmark import (
     gradient_boosting,
     walk_forward,
 )
-from randomness_battery import simulate_draws
-from xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
+from stats.randomness_battery import simulate_draws
+from core.xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
 
 
 @pytest.fixture(scope="module")

@@ -44,8 +44,8 @@ from bridges.spec import (
     default_lag_pairs,
 )
 from bridges.tensor import NUMBER_SPACE, DigitTensor
-from number_reference import bo
-from xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
+from core.number_reference import bo
+from core.xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
 
 _MAX_BO_MEMBERS: Final[int] = 8
 

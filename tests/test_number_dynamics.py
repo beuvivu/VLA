@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from number_dynamics import build_dynamics_signal, transition_posterior
+from stats.number_dynamics import build_dynamics_signal, transition_posterior
 
 
 def _synthetic_loto(days: int = 240) -> np.ndarray:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-import meta_predictor as meta
+from forecast import meta_predictor as meta
 
 
 def _labels(days: int = 30) -> np.ndarray:

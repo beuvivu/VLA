@@ -1,0 +1,283 @@
+"""Dựng trang Sổ kết quả truyền thống từ cơ sở dữ liệu lịch sử cục bộ.
+
+Toàn bộ lịch sử được nhúng thẳng vào trang, ở dạng nén. Trang không gọi mạng
+ra ngoài và không phụ thuộc dịch vụ nào — mở là chạy.
+
+Vì sao nén, và vì sao điều đó là phần SỬA LỖI chứ không phải tối ưu
+==================================================================
+Bản trước nhúng ``limit=500`` kỳ ở dạng JSON đầy đủ, mỗi kỳ mang theo ``id``,
+``region``, ``province``, ``status``, ``source``, nhãn và độ rộng của từng
+giải, cộng hai mươi mảng ``head_tail``. Kết quả đo được:
+
+    500 kỳ, JSON đầy đủ     658 KB    phủ 2025-04-29 → 2026-09-14 (503 ngày)
+    2 399 kỳ, dạng nén      281 KB    phủ 2020-01-01 → 2026-09-14
+
+Tức bản nén vừa NHỎ HƠN 2,3 lần vừa phủ nhiều hơn 4,8 lần. Mọi thứ bị bỏ đi
+đều là thứ suy lại được ở trình duyệt: nhãn giải là hằng số, ``head_tail``
+tính từ chính các giải, còn ``region``/``province``/``status``/``source``
+giống hệt nhau ở cả 2 399 kỳ.
+
+Đây là nguyên nhân gốc của lỗi "không tra cứu được quá khứ": người dùng chọn
+một ngày trước 2025-04-29 thì bộ lọc chạy đúng, trả về rỗng, và trang báo
+"Chưa có kết quả trong khoảng đã chọn" — đọc như thể hôm ấy không quay.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Sequence
+
+from web.ui_theme import app_shell_close, app_shell_open
+from web.css_links import stylesheet_link
+from web.web_security import json_for_html_script, security_meta_tags
+from web.page_output import write_page
+
+from web.shared_results import (
+    DATE_WIDTH, PRIZE_SPEC as PRIZE_SPEC, PRIZE_ORDER as PRIZE_ORDER, PRIZE_WIDTHS as PRIZE_WIDTHS, PRIZE_LABELS as PRIZE_LABELS,
+    PRIZE_COUNTS as PRIZE_COUNTS, PRIZE_FIELDS as PRIZE_FIELDS, PRIZE_DIGITS as PRIZE_DIGITS, ROW_WIDTH, encode_row,
+    decode_row, render_draw, shared_results_css, shared_results_script,
+)
+from core.paths import REPO_ROOT, TEMPLATES
+
+def _asset(name: str) -> str:
+    path = TEMPLATES / name
+    return path.read_text(encoding="utf-8")
+
+
+def load_rows(repo_root: Path, *, limit: int | None = None) -> list[str]:
+    """Nạp lịch sử đã nén, kỳ mới nhất trước.
+
+    ``limit=None`` nghĩa là LẤY HẾT — và đó là mặc định có chủ ý. Giới hạn
+    mặc định 500 của bản trước chính là lỗi "không tra cứu được quá khứ".
+    """
+    path = repo_root / "data" / "xsmb.csv"
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    encoded = [value for row in rows if (value := encode_row(row)) is not None]
+    encoded.sort(reverse=True)
+    return encoded if limit is None else encoded[:limit]
+
+
+def embedded_payload(rows: list[str], *, generated: str, draw_metadata: dict[str, dict] | None = None) -> dict[str, object]:
+    latest = rows[0][:DATE_WIDTH] if rows else None
+    earliest = rows[-1][:DATE_WIDTH] if rows else None
+    return {
+        "schema_version": 2,
+        "generated_at_utc": generated,
+        "row_width": ROW_WIDTH,
+        "total_draws": len(rows),
+        "latest_draw_date": latest,
+        "earliest_draw_date": earliest,
+        "timezone": "Asia/Ho_Chi_Minh",
+        "rows": rows,
+        "draw_metadata": draw_metadata or {},
+    }
+
+
+#: Các mốc nhanh. Trang tham chiếu có 11 lựa chọn (10/30/60/90/100/120…);
+#: bản trước chỉ có bốn, nên không có cách nào xem xa hơn 100 kỳ ngoài việc
+#: tự gõ ngày — mà gõ ngày thì lại rơi ra ngoài cửa sổ 500 kỳ đã nhúng.
+PERIOD_PRESETS: tuple[tuple[str, str], ...] = (
+    ("10", "10 kỳ gần nhất"),
+    ("30", "30 kỳ gần nhất"),
+    ("60", "60 kỳ gần nhất"),
+    ("90", "90 kỳ gần nhất"),
+    ("100", "100 kỳ gần nhất"),
+    ("120", "120 kỳ gần nhất"),
+    ("200", "200 kỳ gần nhất"),
+    ("300", "300 kỳ gần nhất"),
+    ("500", "500 kỳ gần nhất"),
+    ("1000", "1000 kỳ gần nhất"),
+    ("all", "Toàn bộ lịch sử"),
+    ("custom", "Chọn khoảng ngày"),
+)
+
+#: Lọc theo thứ trong tuần. Trang tham chiếu có một ô `select name="dow"`
+#: với tám lựa chọn (đã đọc cấu trúc trang: "Chủ nhật, Thứ hai, Thứ ba…"),
+#: tức là "tất cả" cộng bảy thứ.
+#:
+#: GIÁ TRỊ là chỉ số thứ theo chuẩn JavaScript (Chủ nhật = 0). THỨ TỰ hiển
+#: thị thì bắt đầu từ Thứ hai, vì tuần của người Việt bắt đầu từ Thứ hai —
+#: không cần phải trùng thứ tự với giá trị.
+WEEKDAY_CHOICES: tuple[tuple[str, str], ...] = (
+    ("all", "Tất cả các thứ"),
+    ("1", "Thứ hai"),
+    ("2", "Thứ ba"),
+    ("3", "Thứ tư"),
+    ("4", "Thứ năm"),
+    ("5", "Thứ sáu"),
+    ("6", "Thứ bảy"),
+    ("0", "Chủ nhật"),
+)
+
+#: Số cột hiển thị. Trang tham chiếu dùng bốn nút chọn bố cục.
+LAYOUT_CHOICES: tuple[tuple[str, str], ...] = (
+    ("1", "1 cột"),
+    ("2", "2 cột"),
+    ("3", "3 cột"),
+    ("4", "4 cột"),
+)
+
+
+def _period_options() -> str:
+    return "".join(
+        f'<option value="{value}"{" selected" if value == "30" else ""}>{label}</option>'
+        for value, label in PERIOD_PRESETS
+    )
+
+
+def _weekday_options() -> str:
+    return "".join(
+        f'<option value="{value}"{" selected" if value == "all" else ""}>{label}</option>'
+        for value, label in WEEKDAY_CHOICES
+    )
+
+
+def _layout_radios() -> str:
+    return "".join(
+        f'<label class="tr-chip"><input type="radio" name="tr-layout" value="{value}"'
+        f'{" checked" if value == "1" else ""}><span>{label}</span></label>'
+        for value, label in LAYOUT_CHOICES
+    )
+
+
+def render_page(payload: dict[str, object]) -> str:
+    latest = payload.get("latest_draw_date") or ""
+    earliest = payload.get("earliest_draw_date") or ""
+    metadata = payload.get("draw_metadata") or {}
+    fallback = "".join(
+        render_draw(draw)
+        for row in payload.get("rows", [])[:30]
+        if (draw := decode_row(row, metadata=metadata.get(row[:DATE_WIDTH]))) is not None
+    )
+    return f"""<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+{security_meta_tags()}
+{stylesheet_link()}
+<title>Sổ kết quả truyền thống · Xổ số Miền Bắc</title>
+<style>{shared_results_css()}</style>
+</head><body>
+{app_shell_open("so-ket-qua-truyen-thong.html", wide=True)}
+<header class="tr-hero">
+  <div>
+    <p class="tr-eyebrow">KẾT QUẢ XỔ SỐ KIẾN THIẾT MIỀN BẮC</p>
+    <h1>Sổ kết quả truyền thống</h1>
+    <p>Tra cứu đầy đủ các giải và bảng LOTO đầu đuôi của mọi kỳ quay, từ
+    {earliest} đến {latest}.</p>
+  </div>
+  <div class="tr-trust" aria-label="Phạm vi dữ liệu">
+    <span class="tr-status-dot" aria-hidden="true"></span>
+    <strong>SỔ KẾT QUẢ XSMB</strong><small data-evidence-split>{payload.get("total_draws", 0)} kỳ đã lưu</small>
+  </div>
+</header>
+
+<section class="tr-filter" aria-labelledby="tr-filter-title">
+  <div class="tr-filter-head">
+    <div><p class="tr-section-kicker">BỘ LỌC TRA CỨU</p><h2 id="tr-filter-title">Chọn dữ liệu cần xem</h2></div>
+    <p id="tr-source-status" class="tr-source-status" role="status" aria-live="polite" data-evidence-split></p>
+  </div>
+  <form id="tr-form" class="tr-form">
+    <label>Khoảng thời gian
+      <select id="tr-period" name="period">{_period_options()}</select>
+    </label>
+    <label>Thứ trong tuần
+      <select id="tr-weekday" name="weekday">{_weekday_options()}</select>
+    </label>
+    <div class="tr-custom-dates" id="tr-custom-dates" hidden>
+      <label>Từ ngày<input id="tr-from" name="from" type="date"
+        min="{earliest}" max="{latest}" value="{earliest}"></label>
+      <label>Đến ngày<input id="tr-to" name="to" type="date"
+        min="{earliest}" max="{latest}" value="{latest}"></label>
+    </div>
+    <div class="tr-actions">
+      <button class="tr-btn tr-btn-primary" type="submit">Xem kết quả</button>
+      <button class="tr-btn" id="tr-export-csv" type="button">Tải CSV</button>
+      <button class="tr-btn" id="tr-export-xlsx" type="button">Tải Excel</button>
+      <button class="tr-btn" id="tr-print" type="button">In sổ</button>
+    </div>
+  </form>
+  <div class="tr-view-options">
+    <fieldset class="tr-chips">
+      <legend>Bố cục</legend>
+      {_layout_radios()}
+    </fieldset>
+    <fieldset class="tr-chips">
+      <legend>Hiển thị</legend>
+      <label class="tr-chip"><input type="checkbox" id="tr-toggle-headtail" checked><span>Bảng đầu đuôi</span></label>
+      <label class="tr-chip"><input type="checkbox" id="tr-toggle-loto" checked><span>Dãy LOTO</span></label>
+      <label class="tr-chip"><input type="checkbox" id="tr-toggle-tail" checked><span>Tô đậm 2 số cuối</span></label>
+    </fieldset>
+    <fieldset class="tr-chips">
+      <legend>Đánh dấu</legend>
+      <label class="tr-chip"><input type="checkbox" id="tr-pair-mode"><span>Tự động đánh dấu cặp trùng</span></label>
+    </fieldset>
+    <button class="tr-btn tr-mark-clear" id="tr-mark-clear" type="button" hidden>Bỏ đánh dấu</button>
+  </div>
+</section>
+
+<section class="tr-summary" aria-label="Tổng quan kết quả">
+  <div><span>Số kỳ hiển thị</span><strong id="tr-result-count">0</strong></div>
+  <div><span>Kỳ mới nhất</span><strong id="tr-latest">—</strong></div>
+  <div><span>Kỳ cũ nhất</span><strong id="tr-oldest">—</strong></div>
+  <div><span>Dữ liệu máy chủ</span><strong id="tr-total-count">0</strong></div>
+</section>
+
+<section id="tr-results" class="tr-results" data-layout="1" data-headtail="on" data-loto="on" data-tail="on" aria-live="polite">
+  {fallback}
+  <div id="tr-more" class="tr-more" hidden>
+    <button class="tr-btn" id="tr-more-btn" type="button">Xem thêm</button>
+  </div>
+</section>
+<div id="tr-empty" class="tr-empty" hidden>
+  <strong>Chưa có kết quả trong khoảng đã chọn.</strong>
+  <span id="tr-empty-detail"></span>
+</div>
+{app_shell_close("so-ket-qua-truyen-thong.html")}
+
+<script id="tr-embedded-data" type="application/json">{json_for_html_script(payload)}</script>
+<script>
+{shared_results_script()}
+{_asset("traditional_results.js")}
+</script>
+</body></html>
+"""
+
+
+def build(repo_root: Path, docs_dir: Path, *, generated: str | None = None) -> Path:
+    from web.draw_metadata import load_draw_metadata, station_for_date
+
+    rows = load_rows(repo_root)
+    if not rows:
+        raise SystemExit("không có kỳ hợp lệ để dựng Sổ kết quả")
+    stamp = generated or datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    target = docs_dir / "so-ket-qua-truyen-thong.html"
+    available = load_draw_metadata(repo_root)
+    metadata = {}
+    for row in rows:
+        draw_date = row[:DATE_WIDTH]
+        details = available.get(draw_date, {})
+        metadata[draw_date] = {
+            "station": details.get("station") or station_for_date(draw_date),
+            "special_codes": details.get("special_codes", []),
+        }
+    write_page(target, render_page(embedded_payload(rows, generated=stamp, draw_metadata=metadata)))
+    return target
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Dựng trang Sổ kết quả truyền thống.")
+    parser.add_argument("--docs-dir", default="docs")
+    args = parser.parse_args(argv)
+    root = REPO_ROOT
+    target = build(root, root / args.docs_dir)
+    print(f"đã ghi {target} ({target.stat().st_size // 1024} KB)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

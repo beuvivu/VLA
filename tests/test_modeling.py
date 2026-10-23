@@ -23,7 +23,7 @@ from modeling import (
     build_training_data,
 )
 from modeling.stacking import MIN_UNIFORM_SHARE
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 
 def _history(days: int, seed: int = 5) -> pd.DataFrame:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ml_features import (
+from ml.ml_features import (
     FeatureParams,
     build_ml_table_from_history,
     _pairs_indices,
@@ -14,7 +14,7 @@ from ml_features import (
 # FIELD_WIDTHS thuộc về xsmb_domain. Trước đây test lấy nó qua ml_features —
 # một re-export tình cờ, và linter đã gỡ đúng dòng import ấy vì trong chính
 # ml_features nó không được dùng. Trỏ thẳng nguồn gốc thì không vỡ lại được.
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 
 def test_vectorized_path_support_matches_single_day_reference() -> None:
@@ -46,7 +46,7 @@ def test_path_support_includes_anchor_day_but_not_future_day() -> None:
 def test_target_weekday_features_refer_to_prediction_day() -> None:
     import pandas as pd
 
-    from ml_features import _target_weekday_components
+    from ml.ml_features import _target_weekday_components
 
     dates = pd.DatetimeIndex(["2026-08-30", "2026-08-31"])  # Sunday, Monday
     target, sin_v, cos_v = _target_weekday_components(dates)
@@ -59,7 +59,7 @@ def test_target_weekday_features_refer_to_prediction_day() -> None:
 def test_target_weekday_rate_never_uses_future_label() -> None:
     import pandas as pd
 
-    from ml_features import _target_weekday_rate
+    from ml.ml_features import _target_weekday_rate
 
     dates = pd.date_range("2026-08-24", periods=8, freq="D")
     hit = np.zeros((8, 100), dtype=bool)

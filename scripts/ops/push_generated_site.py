@@ -24,7 +24,7 @@ def _raise(result: subprocess.CompletedProcess[str]) -> None:
 
 def _refresh(root: Path) -> None:
     subprocess.run(
-        [sys.executable, "src/site_assets.py", "--refresh", "docs", "--check"],
+        [sys.executable, "src/web/site_assets.py", "--refresh", "docs", "--check"],
         cwd=root, check=True,
     )
 

@@ -1,0 +1,435 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from numbers import Integral
+from typing import Literal
+
+import numpy as np
+import pandas as pd
+from scipy.signal import lfilter
+
+from core.calendar_alignment import normalize_dates
+from ingest.lottery import Lottery
+from core.xsmb_domain import (
+    position_pairs as _pairs_indices,
+    raw_digit_matrix,
+    reverse_indices as _reverse_indices,
+)
+
+Mode = Literal["loto", "de"]
+
+
+@dataclass(frozen=True)
+class FeatureParams:
+    # Rolling windows for frequencies (days)
+    w1: int = 7
+    w2: int = 30
+    w3: int = 90
+    w4: int = 365
+    lag_max_for_path_support: int = 30
+
+    def __post_init__(self) -> None:
+        for name in ("w1", "w2", "w3", "w4", "lag_max_for_path_support"):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, Integral)
+                or value < 1
+            ):
+                raise ValueError(f"{name} must be a positive integer")
+
+
+def _validate_mode(mode: str) -> None:
+    if mode not in {"loto", "de"}:
+        raise ValueError("mode must be 'loto' or 'de'")
+
+
+def _ensure_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["date"] = pd.to_datetime(df["date"])
+    return df.sort_values("date").reset_index(drop=True)
+
+
+def _validate_aligned_histories(
+    df_raw: pd.DataFrame, df_2d: pd.DataFrame
+) -> pd.DatetimeIndex:
+    """Require raw positional inputs and two-digit targets to share a date axis."""
+    if df_raw.empty or df_2d.empty:
+        raise RuntimeError("No data loaded. Run src/ingest/sync.py first.")
+    raw_dates = normalize_dates(df_raw["date"])
+    two_digit_dates = normalize_dates(df_2d["date"])
+    if not raw_dates.equals(two_digit_dates):
+        raise ValueError(
+            "raw and two-digit histories must have the same ordered date axis"
+        )
+    return two_digit_dates
+
+
+def _build_hit_matrices(df_2d: pd.DataFrame) -> tuple[pd.DatetimeIndex, np.ndarray, np.ndarray]:
+    """
+    Return:
+      dates (DatetimeIndex)
+      hit_loto: shape (n_days, 100) boolean, True if number appears in day
+      hit_de:   shape (n_days, 100) boolean, True if special%100 == number
+    """
+    df_2d = _ensure_datetime(df_2d)
+    dates = pd.DatetimeIndex(df_2d["date"])
+    cols = [c for c in df_2d.columns if c != "date"]
+
+    vals = df_2d[cols].to_numpy(dtype=np.int16, copy=False)  # (n, draws)
+    hit_loto = np.zeros((len(df_2d), 100), dtype=bool)
+    for i in range(vals.shape[0]):
+        hit_loto[i, np.unique(vals[i])] = True
+
+    de = (df_2d["special"].to_numpy(dtype=np.int16) % 100).astype(np.int16)
+    hit_de = np.zeros((len(df_2d), 100), dtype=bool)
+    hit_de[np.arange(len(df_2d)), de] = True
+
+    return dates, hit_loto, hit_de
+
+
+def _rolling_sum_bool(hit: np.ndarray, window: int) -> np.ndarray:
+    """Rolling sum over the ``window`` days ending at each day (inclusive).
+
+    Rows before index ``window`` cover a *partial* window (1, 2, ... days of
+    history), so ``freq365`` on a young dataset is not comparable to
+    ``freq365`` once a year of history exists.  Callers must not vary ``window``
+    with dataset length — see the note in ``build_ml_table_from_history``.
+    """
+    if int(window) < 1:
+        raise ValueError("window must be >= 1")
+    x = hit.astype(np.int32)
+    c = np.cumsum(x, axis=0)
+    out = c.copy()
+    if window < len(x):
+        out[window:] = c[window:] - c[:-window]
+    return out
+
+
+def _rolling_coverage(n_days: int, window: int) -> np.ndarray:
+    """How many days each row of ``_rolling_sum_bool`` actually summed over.
+
+    Exposed as a feature so the model can tell "0 hits in a full 365-day window"
+    apart from "0 hits because only 3 days of history exist".
+    """
+    return np.minimum(np.arange(1, n_days + 1, dtype=np.int32), int(window))
+
+
+def _compute_gap(hit: np.ndarray) -> np.ndarray:
+    """
+    gap[t, x] = number of days since last hit up to day t (0 if hit today, 1 if hit yesterday, ...)
+
+    Vectorised with a running maximum of "index of the most recent hit"; ~5x
+    faster than the per-day loop and produces the identical matrix.
+    """
+    n, m = hit.shape
+    if n == 0:
+        return np.zeros((0, m), dtype=np.int16)
+    index = np.arange(n, dtype=np.int32)[:, None]
+    last_hit = np.maximum.accumulate(np.where(hit, index, np.int32(-10_000)), axis=0)
+    return (index - last_hit).astype(np.int16)
+
+
+def _ewm_rate(hit: np.ndarray, half_life_days: float) -> np.ndarray:
+    """Exponentially weighted historical hit rate through each anchor day.
+
+    This is a first-order IIR filter; ``scipy.signal.lfilter`` evaluates the
+    exact same recurrence in C (~3x faster, bit-identical output).
+    """
+    alpha = 1.0 - float(np.exp(np.log(0.5) / max(float(half_life_days), 1.0)))
+    if hit.size == 0:
+        return np.zeros(hit.shape, dtype=np.float32)
+    filtered = lfilter([alpha], [1.0, -(1.0 - alpha)], hit.astype(np.float64), axis=0)
+    return filtered.astype(np.float32)
+
+
+def _hit_streak(hit: np.ndarray) -> np.ndarray:
+    """Consecutive-hit streak through each day for every 00..99 number.
+
+    Same recurrence as before, without the three per-day temporary allocations.
+    """
+    out = np.zeros(hit.shape, dtype=np.int16)
+    if hit.size == 0:
+        return out
+    state = np.zeros(hit.shape[1], dtype=np.int16)
+    for t in range(len(hit)):
+        state += 1
+        state *= hit[t]
+        out[t] = state
+    return out
+
+
+def _target_weekday_rate(
+    dates: pd.DatetimeIndex, hit: np.ndarray, prior_strength: float = 28.0
+) -> np.ndarray:
+    """Empirical-Bayes rate for the weekday of t+1, using observations <= t."""
+    n, m = hit.shape
+    out = np.zeros((n, m), dtype=np.float32)
+    successes = np.zeros((7, m), dtype=np.float64)
+    trials = np.zeros(7, dtype=np.float64)
+    global_success = np.zeros(m, dtype=np.float64)
+    global_trials = 0.0
+    for t in range(n):
+        observed_wd = int(dates[t].weekday())
+        successes[observed_wd] += hit[t]
+        trials[observed_wd] += 1.0
+        global_success += hit[t]
+        global_trials += 1.0
+
+        target_wd = int((dates[t] + pd.Timedelta(days=1)).weekday())
+        baseline = global_success / max(global_trials, 1.0)
+        denom = trials[target_wd] + prior_strength
+        out[t] = ((successes[target_wd] + prior_strength * baseline) / denom).astype(np.float32)
+    return out
+
+
+def _target_weekday_components(
+    dates: pd.DatetimeIndex,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    target = np.array(
+        [(d + pd.Timedelta(days=1)).weekday() for d in dates], dtype=np.int16
+    )
+    angle = 2.0 * np.pi * target.astype(np.float64) / 7.0
+    return target, np.sin(angle).astype(np.float32), np.cos(angle).astype(np.float32)
+
+
+
+# --- PATH-support feature (rawdata -> numbers) ---
+# FIELD_WIDTHS, the digit-stream builder, the pair enumerator and the reverse
+# index all used to be re-declared here.  They now come from ``xsmb_domain``
+# so the ML feature space cannot drift away from the path engine's.
+
+
+
+def _pair_histogram_by_day(raw_digits: list[np.ndarray], I: np.ndarray, J: np.ndarray) -> np.ndarray:
+    """Return per-day counts for every two-digit value generated by position pairs.
+
+    The original implementation rebuilt the same pair combinations once for every
+    lag and every feature day.  Computing each day's 100-bin histogram once makes
+    the ML feature build roughly O(days * pairs) instead of
+    O(days * lag_max * pairs), which is important on GitHub-hosted runners.
+    """
+    hist = np.zeros((len(raw_digits), 100), dtype=np.int32)
+    for t, d in enumerate(raw_digits):
+        nums = (10 * d[I] + d[J]).astype(np.int16, copy=False)
+        hist[t] = np.bincount(nums, minlength=100)
+    return hist
+
+
+def _path_support_matrix(
+    raw_digits: list[np.ndarray], lag_max: int, I: np.ndarray, J: np.ndarray
+) -> np.ndarray:
+    """Path-support features for all days using only *prior* draw days."""
+    daily = _pair_histogram_by_day(raw_digits, I, J)
+    if len(daily) == 0:
+        return daily
+
+    # prefix[k] is the sum of daily[0:k].  Feature row t predicts t+1, so
+    # draw t is already known and is valid evidence.  Include the anchor draw
+    # and up to lag_max-1 prior draws; only t+1 must remain unseen.
+    prefix = np.vstack([np.zeros((1, 100), dtype=np.int64), np.cumsum(daily, axis=0, dtype=np.int64)])
+    out = np.zeros_like(daily, dtype=np.int32)
+    for t in range(len(daily)):
+        start = max(0, t - lag_max + 1)
+        out[t] = (prefix[t + 1] - prefix[start]).astype(np.int32, copy=False)
+    return out
+
+
+def _path_support_for_day(raw_digits: list[np.ndarray], t: int, lag_max: int, I: np.ndarray, J: np.ndarray) -> np.ndarray:
+    """Compatibility helper for one feature day; uses only preceding days."""
+    if t < 0:
+        return np.zeros(100, dtype=np.int32)
+    start = max(0, t - lag_max + 1)
+    hist = _pair_histogram_by_day(raw_digits[start : t + 1], I, J)
+    return hist.sum(axis=0, dtype=np.int64).astype(np.int32, copy=False)
+
+
+def build_ml_table(mode: Mode, params: FeatureParams) -> tuple[pd.DataFrame, pd.Series]:
+    _validate_mode(mode)
+    lot = Lottery()
+    lot.load()
+    return build_ml_table_from_history(
+        mode,
+        params,
+        lot.get_raw_data(),
+        lot.get_2_digits_data(),
+    )
+
+
+def build_ml_table_from_history(
+    mode: Mode,
+    params: FeatureParams,
+    df_raw: pd.DataFrame,
+    df_2d: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Build dataset:
+      X rows = (day t, number x) -> predict hit at day t+1
+      y = hit(t+1, x)
+    """
+    _validate_mode(mode)
+    df_raw = _ensure_datetime(df_raw)
+    df_2d = _ensure_datetime(df_2d)
+    _validate_aligned_histories(df_raw, df_2d)
+
+    dates, hit_loto, hit_de = _build_hit_matrices(df_2d)
+    hit = hit_loto if mode == "loto" else hit_de
+
+    freq7 = _rolling_sum_bool(hit, params.w1)
+    freq30 = _rolling_sum_bool(hit, params.w2)
+    freq90 = _rolling_sum_bool(hit, params.w3)
+    # BUG FIX: the window was ``min(params.w4, len(hit))``, so the meaning of
+    # ``freq365`` changed every time the dataset grew — a model trained on 200
+    # days learned a 200-day count and was then served a 365-day count.  The
+    # window is now fixed at ``params.w4``; ``_rolling_sum_bool`` already
+    # produces partial sums for the early rows, and ``coverage365`` tells the
+    # model how much history each row actually had.
+    freq365 = _rolling_sum_bool(hit, params.w4)
+    ewm14 = _ewm_rate(hit, 14.0)
+    ewm45 = _ewm_rate(hit, 45.0)
+    gap = _compute_gap(hit)
+    streak = _hit_streak(hit)
+    hit_yday = np.vstack([np.zeros((1, 100), dtype=bool), hit[:-1]])
+    hit_today = hit.astype(np.int16)
+    weekday_rate = _target_weekday_rate(dates, hit)
+    target_weekday, target_weekday_sin, target_weekday_cos = _target_weekday_components(dates)
+    reverse_idx = _reverse_indices()
+
+    # One vectorised digit extraction for the whole history, instead of one
+    # ``str().zfill()`` round-trip per draw through ``iterrows`` (~13x faster).
+    raw_matrix = raw_digit_matrix(df_raw)
+    raw_digits = list(raw_matrix)
+    P = raw_matrix.shape[1]
+    I, J = _pairs_indices(P)
+
+    path_sup = _path_support_matrix(raw_digits, params.lag_max_for_path_support, I, J)
+
+    n = len(dates)
+    xs = np.tile(np.arange(100, dtype=np.int16), n - 1)
+    X = pd.DataFrame(
+        {
+            "date": np.repeat(dates[: n - 1].to_pydatetime(), 100),
+            "number": xs,
+            "target_weekday": np.repeat(target_weekday[: n - 1], 100),
+            "target_weekday_sin": np.repeat(target_weekday_sin[: n - 1], 100),
+            "target_weekday_cos": np.repeat(target_weekday_cos[: n - 1], 100),
+            "freq7": freq7[: n - 1].reshape(-1),
+            "freq30": freq30[: n - 1].reshape(-1),
+            "freq90": freq90[: n - 1].reshape(-1),
+            "freq365": freq365[: n - 1].reshape(-1),
+            "ewm14": ewm14[: n - 1].reshape(-1),
+            "ewm45": ewm45[: n - 1].reshape(-1),
+            "trend_7_30": (freq7[: n - 1] / 7.0 - freq30[: n - 1] / 30.0).reshape(-1),
+            "trend_30_90": (freq30[: n - 1] / 30.0 - freq90[: n - 1] / 90.0).reshape(-1),
+            "gap": gap[: n - 1].reshape(-1),
+            "log_gap": np.log1p(gap[: n - 1].astype(np.float32)).reshape(-1),
+            "streak": streak[: n - 1].reshape(-1),
+            "hit_today": hit_today[: n - 1].reshape(-1),
+            "hit_yesterday": hit_yday[: n - 1].reshape(-1).astype(np.int16),
+            "weekday_rate": weekday_rate[: n - 1].reshape(-1),
+            "reverse_freq30": freq30[: n - 1][:, reverse_idx].reshape(-1),
+            "reverse_gap": gap[: n - 1][:, reverse_idx].reshape(-1),
+            "reverse_hit_today": hit_today[: n - 1][:, reverse_idx].reshape(-1),
+            "is_double": np.tile((np.arange(100) // 10 == np.arange(100) % 10).astype(np.int16), n - 1),
+            "digit_sum_mod10": np.tile(((np.arange(100) // 10 + np.arange(100) % 10) % 10).astype(np.int16), n - 1),
+            "path_support": path_sup[: n - 1].reshape(-1),
+            # How many days freq365 actually covered on this row. Without it a
+            # young dataset's "0 hits in 365d" is indistinguishable from a
+            # mature dataset's, and the model silently learns the wrong scale.
+            "coverage365": np.repeat(
+                _rolling_coverage(n, params.w4)[: n - 1], 100
+            ),
+        }
+    )
+
+    y = pd.Series(hit[1:].reshape(-1).astype(np.int16), name="y_nextday_hit")
+
+    # The target is explicitly the next calendar draw. Historical gaps must not
+    # silently turn a t -> t+k pair into a one-day training example.
+    consecutive = np.asarray((dates[1:] - dates[:-1]).days == 1, dtype=bool)
+    row_mask = np.repeat(consecutive, 100)
+    if not bool(np.all(row_mask)):
+        X = X.loc[row_mask].reset_index(drop=True)
+        y = y.loc[row_mask].reset_index(drop=True)
+    X.attrs["source_through_date"] = str(dates[-1].date())
+    return X, y
+
+
+def build_features_for_prediction(mode: Mode, params: FeatureParams) -> tuple[pd.Timestamp, pd.DataFrame]:
+    """
+    Build features for the last available day (t = last_date), to predict t+1.
+    Returns (last_date, X_pred with 100 rows)
+    """
+    _validate_mode(mode)
+    lot = Lottery()
+    lot.load()
+    df_raw = _ensure_datetime(lot.get_raw_data())
+    df_2d = _ensure_datetime(lot.get_2_digits_data())
+    _validate_aligned_histories(df_raw, df_2d)
+
+    dates, hit_loto, hit_de = _build_hit_matrices(df_2d)
+    hit = hit_loto if mode == "loto" else hit_de
+
+    freq7 = _rolling_sum_bool(hit, params.w1)
+    freq30 = _rolling_sum_bool(hit, params.w2)
+    freq90 = _rolling_sum_bool(hit, params.w3)
+    # BUG FIX: the window was ``min(params.w4, len(hit))``, so the meaning of
+    # ``freq365`` changed every time the dataset grew — a model trained on 200
+    # days learned a 200-day count and was then served a 365-day count.  The
+    # window is now fixed at ``params.w4``; ``_rolling_sum_bool`` already
+    # produces partial sums for the early rows, and ``coverage365`` tells the
+    # model how much history each row actually had.
+    freq365 = _rolling_sum_bool(hit, params.w4)
+    ewm14 = _ewm_rate(hit, 14.0)
+    ewm45 = _ewm_rate(hit, 45.0)
+    gap = _compute_gap(hit)
+    streak = _hit_streak(hit)
+    hit_yday = np.vstack([np.zeros((1, 100), dtype=bool), hit[:-1]])
+    hit_today = hit.astype(np.int16)
+    weekday_rate = _target_weekday_rate(dates, hit)
+    target_weekday, target_weekday_sin, target_weekday_cos = _target_weekday_components(dates)
+    reverse_idx = _reverse_indices()
+
+    # One vectorised digit extraction for the whole history, instead of one
+    # ``str().zfill()`` round-trip per draw through ``iterrows`` (~13x faster).
+    raw_matrix = raw_digit_matrix(df_raw)
+    raw_digits = list(raw_matrix)
+    P = raw_matrix.shape[1]
+    I, J = _pairs_indices(P)
+
+    t = len(dates) - 1
+    path_sup_t = _path_support_for_day(raw_digits, t, params.lag_max_for_path_support, I, J)
+
+    X_pred = pd.DataFrame(
+        {
+            "date": [dates[t].to_pydatetime()] * 100,
+            "number": np.arange(100, dtype=np.int16),
+            "target_weekday": [int(target_weekday[t])] * 100,
+            "target_weekday_sin": [float(target_weekday_sin[t])] * 100,
+            "target_weekday_cos": [float(target_weekday_cos[t])] * 100,
+            "freq7": freq7[t],
+            "freq30": freq30[t],
+            "freq90": freq90[t],
+            "freq365": freq365[t],
+            "ewm14": ewm14[t],
+            "ewm45": ewm45[t],
+            "trend_7_30": freq7[t] / 7.0 - freq30[t] / 30.0,
+            "trend_30_90": freq30[t] / 30.0 - freq90[t] / 90.0,
+            "gap": gap[t],
+            "log_gap": np.log1p(gap[t].astype(np.float32)),
+            "streak": streak[t],
+            "hit_today": hit_today[t],
+            "hit_yesterday": hit_yday[t].astype(np.int16),
+            "weekday_rate": weekday_rate[t],
+            "reverse_freq30": freq30[t][reverse_idx],
+            "reverse_gap": gap[t][reverse_idx],
+            "reverse_hit_today": hit_today[t][reverse_idx],
+            "is_double": (np.arange(100) // 10 == np.arange(100) % 10).astype(np.int16),
+            "digit_sum_mod10": ((np.arange(100) // 10 + np.arange(100) % 10) % 10).astype(np.int16),
+            "path_support": path_sup_t,
+            "coverage365": np.full(
+                100, int(_rolling_coverage(len(dates), params.w4)[t]), dtype=np.int32
+            ),
+        }
+    )
+    return dates[t], X_pred

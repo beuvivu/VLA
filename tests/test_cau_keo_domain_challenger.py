@@ -11,7 +11,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from cau_keo_domain_challenger import (
+from ml.cau_keo_domain_challenger import (
     ALL_DOMAIN_FEATURES,
     DOMAIN_FEATURE_GROUPS,
     POSITIVE_SKILL_EPS,
@@ -21,8 +21,8 @@ from cau_keo_domain_challenger import (
     augment_domain_features,
     walk_forward_ablation,
 )
-from cau_keo_feature_groups import DOMAIN_FEATURE_SPECS
-from ml_validation import evaluate_predictions
+from ml.cau_keo_feature_groups import DOMAIN_FEATURE_SPECS
+from ml.ml_validation import evaluate_predictions
 from sklearn.dummy import DummyClassifier
 
 
@@ -172,7 +172,7 @@ def test_production_gate_requires_both_metrics_to_have_positive_skill() -> None:
 def test_ablation_reuses_one_seed_per_fold_and_fails_back_to_baseline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import cau_keo_domain_challenger as module
+    from ml import cau_keo_domain_challenger as module
 
     days = pd.date_range("2025-01-01", periods=300, freq="D")
     frame = pd.DataFrame({"anchor_date": days})
@@ -216,7 +216,7 @@ def test_ablation_reuses_one_seed_per_fold_and_fails_back_to_baseline(
 
 @pytest.mark.parametrize("error", [None, pickle.UnpicklingError("private-pack-contents")])
 def test_corrupt_baseline_serialization_reaches_retrain_without_deleting_pack(tmp_path, monkeypatch, error):
-    import cau_keo_domain_challenger as module
+    from ml import cau_keo_domain_challenger as module
 
     path = tmp_path / "cau_keo_loto.joblib"
     path.write_bytes(b"not-a-valid-joblib")
@@ -238,8 +238,8 @@ def test_corrupt_baseline_serialization_reaches_retrain_without_deleting_pack(tm
 
 
 def test_domain_pack_dump_failure_keeps_the_previous_baseline(tmp_path, monkeypatch):
-    import cau_keo_domain_challenger as module
-    from cau_keo_ml import TRUST_POLICY_VERSION
+    from ml import cau_keo_domain_challenger as module
+    from ml.cau_keo_ml import TRUST_POLICY_VERSION
 
     frame = _base_frame()
     for feature in module.FEATURE_COLS:

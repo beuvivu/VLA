@@ -20,21 +20,21 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-from backfill_baseline_skill import (
+from evaluation.backfill_baseline_skill import (
     BASELINE_COLUMNS,
     backfill,
     baseline_metrics,
     brier_is_comparable,
     load_labels,
 )
-from check_baseline_skill import (
+from evaluation.check_baseline_skill import (
     DEFAULT_THRESHOLD,
     DEFAULT_WINDOW,
     evaluate_history,
 )
-from ensemble_utils import skill_score
-from prob_eval_history import evaluate_latest_emitted
-from xsmb_domain import baseline_rate
+from ensemble.ensemble_utils import skill_score
+from evaluation.prob_eval_history import evaluate_latest_emitted
+from core.xsmb_domain import baseline_rate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -181,7 +181,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
         path, index=False
     )
     result = subprocess.run(
-        [sys.executable, "src/check_baseline_skill.py", "--history", str(path)],
+        [sys.executable, "src/evaluation/check_baseline_skill.py", "--history", str(path)],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -193,7 +193,7 @@ def test_gate_cli_does_not_block_history_without_baseline(tmp_path: Path) -> Non
     strict = subprocess.run(
         [
             sys.executable,
-            "src/check_baseline_skill.py",
+            "src/evaluation/check_baseline_skill.py",
             "--history",
             str(path),
             "--require-baseline",
@@ -210,7 +210,7 @@ def test_gate_cli_fails_on_a_real_regression(tmp_path: Path) -> None:
     path = tmp_path / "history.csv"
     _history_frame("loto", 0.95, 0.55, DEFAULT_WINDOW).to_csv(path, index=False)
     result = subprocess.run(
-        [sys.executable, "src/check_baseline_skill.py", "--history", str(path)],
+        [sys.executable, "src/evaluation/check_baseline_skill.py", "--history", str(path)],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -228,7 +228,7 @@ def test_release_check_runs_the_skill_gate_strictly() -> None:
     im lặng, đúng lớp lỗi mà cổng sinh ra để chặn.
     """
     script = (ROOT / "scripts/release/release_check.sh").read_text(encoding="utf-8")
-    assert "src/check_baseline_skill.py --require-baseline" in script
+    assert "src/evaluation/check_baseline_skill.py --require-baseline" in script
 
 
 # --- Lớp 2: trang Chất lượng mô hình ---------------------------------------
@@ -258,11 +258,11 @@ def _build_quality_page(docs_dir: Path) -> str:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
     subprocess.run(
-        [sys.executable, "src/model_quality.py", "--data-dir", str(data_dir)],
+        [sys.executable, "src/evaluation/model_quality.py", "--data-dir", str(data_dir)],
         cwd=ROOT, check=True,
     )
     subprocess.run(
-        [sys.executable, "src/build_model_quality.py",
+        [sys.executable, "src/pages/build_model_quality.py",
          "--data-dir", str(data_dir), "--docs-dir", str(docs_dir)],
         cwd=ROOT, check=True,
     )

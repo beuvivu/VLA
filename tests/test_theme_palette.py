@@ -4,8 +4,8 @@ import re
 
 import pytest
 
-from ui_theme import TAILWIND_LITE_CSS, contrast_ratio
-import ui_page_refinements
+from web.ui_theme import TAILWIND_LITE_CSS, contrast_ratio
+from web import ui_page_refinements
 
 ROOT = Path(__file__).resolve().parents[1]
 

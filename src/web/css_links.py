@@ -1,0 +1,63 @@
+"""Critical Rendering Path optimized stylesheet links (CSP-safe, no inline)."""
+
+from __future__ import annotations
+
+
+try:
+    from web.critical_css_generated import CRITICAL_CSS as _GENERATED
+except ImportError:
+    # Chỉ khi module sinh ra CHƯA có; module có mà hỏng thì phải nổ, không lặng
+    # lẽ lùi về bản dự phòng.
+    _GENERATED = None
+
+_FALLBACK_CRITICAL = (
+    ":root{--ui-bg:#f0f4fd;--ui-bg-2:#eaedff;--ui-surface:#fff;--ui-border:#e4e7f2;"
+    "--ui-ink:#202329;--ui-ink-2:#262b35;--ui-ink-soft:#5c6270;--ui-brand:#2946f3;"
+    "--ui-brand-ink:#4f46e5;--ui-brand-soft:#eaedff;--ui-on-brand:#fff;"
+    "--ui-font:system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;"
+    "--ui-page-max:1280px;--ui-page-gutter:clamp(16px,2.5vw,32px);"
+    "--ui-r-xl:1.5rem;color-scheme:light}"
+    ':root.dark,:root[data-ui-theme="dark"]{--ui-bg:#121418;--ui-bg-2:#1f232c;'
+    '--ui-surface:#1f232c;--ui-border:#3a4254;--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;'
+    '--ui-ink-soft:#a3afc4;--ui-brand:#8b93f8;--ui-brand-ink:#a5abfa;'
+    '--ui-brand-soft:#1c2140;--ui-on-brand:#121418;color-scheme:dark}'
+    '@media(prefers-color-scheme:dark){:root:not([data-ui-theme="light"]){'
+    '--ui-bg:#121418;--ui-bg-2:#1f232c;--ui-surface:#1f232c;--ui-border:#3a4254;'
+    '--ui-ink:#e8eef6;--ui-ink-2:#cbd7e6;--ui-ink-soft:#a3afc4;--ui-brand:#8b93f8;'
+    '--ui-brand-ink:#a5abfa;--ui-brand-soft:#1c2140;--ui-on-brand:#121418;color-scheme:dark}}'
+    "*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}"
+    "body{margin:0;color:var(--ui-ink-2);"
+    "background:linear-gradient(180deg,var(--ui-bg) 0%,var(--ui-bg-2) 100%);"
+    "background-color:var(--ui-bg);font-family:var(--ui-font);font-size:14px;line-height:1.6;"
+    "min-height:100vh;-webkit-font-smoothing:antialiased}"
+    ".ui-app,.app{min-height:100vh}"
+    ".ui-shell,.main,.path-shell{width:100%;max-width:var(--ui-page-max);margin-inline:auto;"
+    "padding:1.5rem var(--ui-page-gutter) 3rem;min-width:0}"
+    ".ui-header,header.ui-header,.path-hero{margin-bottom:1.25rem;padding:1.25rem 1.5rem;"
+    "border-radius:var(--ui-r-xl);background:var(--ui-surface);border:1px solid var(--ui-border)}"
+    ".ui-header h1,h1{margin:0 0 .35rem;font-size:clamp(1.35rem,2.4vw,1.875rem);font-weight:600;"
+    "letter-spacing:-.02em;color:var(--ui-ink);line-height:1.25}"
+    ".ui-card,.card{background:var(--ui-surface);border:1px solid var(--ui-border);"
+    "border-radius:var(--ui-r-xl);overflow:hidden}"
+)
+
+CRITICAL_CSS = _GENERATED or _FALLBACK_CRITICAL
+
+
+
+def stylesheet_link() -> str:
+    """CRP head links without inline script/style handlers (CSP 'self' only)."""
+    parts = [
+        '<link rel="preload" href="assets/InterVariable.woff2" as="font" type="font/woff2" crossorigin />',
+        '<link rel="stylesheet" href="assets/critical.css" />',
+        '<link rel="preload" href="assets/ui.css" as="style" />',
+        '<link rel="preload" href="assets/ui-visual-system.css" as="style" />',
+        '<link rel="stylesheet" href="assets/ui.css" media="print" data-async-css="1" />',
+        '<link rel="stylesheet" href="assets/ui-visual-system.css" media="print" data-async-css="1" data-ui-visual-system />',
+        '<script src="assets/css-async.js" defer></script>',
+        '<noscript>',
+        '<link rel="stylesheet" href="assets/ui.css" />',
+        '<link rel="stylesheet" href="assets/ui-visual-system.css" data-ui-visual-system />',
+        '</noscript>',
+    ]
+    return "\n  ".join(parts)

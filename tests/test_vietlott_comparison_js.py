@@ -3,11 +3,11 @@
 import json
 import shutil
 import subprocess
-from pathlib import Path
 
 import pytest
 
-import build_vietlott_results as builder
+from core.paths import ASSETS
+from pages import build_vietlott_results as builder
 
 
 def test_browser_comparison_matches_engine_for_every_possible_hit_count() -> None:
@@ -41,7 +41,7 @@ vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), context);
 const cases = JSON.parse(fs.readFileSync(0, 'utf8'));
 process.stdout.write(JSON.stringify(cases.map(args => context.window.vietlottComparison.comparePrediction(...args))));
 """
-    path = Path(builder.__file__).parent / "assets/vietlott-comparison.js"
+    path = ASSETS / "vietlott-comparison.js"
     run = subprocess.run([node, "-e", script, str(path)], input=json.dumps(cases),
                          text=True, capture_output=True, check=True)
     for case, result, (hits, total, bonus_hit, tier) in zip(cases, json.loads(run.stdout), expected, strict=True):

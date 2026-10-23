@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from path_models import FIELD_WIDTHS
-from path_timeline_evidence import build_timeline_table
+from core.path_models import FIELD_WIDTHS
+from soi_cau.path_timeline_evidence import build_timeline_table
 
 
 def _raw_rows() -> pd.DataFrame:

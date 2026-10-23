@@ -27,7 +27,7 @@ from bs4 import BeautifulSoup
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from sources import (  # noqa: E402
+from ingest.sources import (  # noqa: E402
     EXPECTED_COUNTS,
     PRIZE_ORDER,
     _label_key,
@@ -35,7 +35,7 @@ from sources import (  # noqa: E402
     default_sources,
     extract_partial_prize_map,
 )
-from time_policy import VIETNAM_TZ  # noqa: E402
+from core.time_policy import VIETNAM_TZ  # noqa: E402
 
 AFTER_G7_LINES = 30
 

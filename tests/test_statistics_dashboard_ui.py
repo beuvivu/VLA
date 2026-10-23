@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from build_statistics_dashboard import _evidence_payload, _matrix, _table
+from pages.build_statistics_dashboard import _evidence_payload, _matrix, _table
 
 
 def test_modern_matrix_is_self_contained_and_complete() -> None:
@@ -87,13 +87,13 @@ def test_clickable_matrix_and_payload_include_position_evidence() -> None:
 import re
 from pathlib import Path
 
-BUILDER = (Path(__file__).resolve().parents[1] / "src" / "build_statistics_dashboard.py"
+BUILDER = (Path(__file__).resolve().parents[1] / "src" / "pages" / "build_statistics_dashboard.py"
            ).read_text(encoding="utf-8")
 #: Mã đã bỏ chú thích. Các phép kiểm bên dưới hỏi "chuỗi X còn/không còn trong
 #: tệp" — mà chú thích của chính bản sửa lại NHẮC TỚI chuỗi cũ để giải thích vì
 #: sao nó bị bỏ. Không cắt chú thích thì phép kiểm khớp vào lời giải thích và
 #: xanh vĩnh viễn.
-import build_statistics_dashboard as bsd
+from pages import build_statistics_dashboard as bsd
 
 #: Biểu định kiểu đã trích khỏi f-string: quy tắc CSS ở đây mang cú pháp CSS
 #: THẬT (một lớp ngoặc), nên phép kiểm không còn phụ thuộc chỗ đặt khối.

@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from time_policy import utc_cron_for_vietnam
+from core.time_policy import utc_cron_for_vietnam
 from utils import RetryPolicy, first_available, with_retry
-from xsmb_domain import FIELD_WIDTHS
+from core.xsmb_domain import FIELD_WIDTHS
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/daily_prediction.yml"
@@ -159,7 +159,7 @@ def test_runner_refuses_to_predict_a_draw_that_already_happened(
     result = subprocess.run(
         [
             sys.executable,
-            "src/run_daily_prediction.py",
+            "src/modeling/run_daily_prediction.py",
             "--raw",
             str(raw),
             "--out",
@@ -183,7 +183,7 @@ def test_runner_refuses_stale_data(tmp_path: Path) -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "src/run_daily_prediction.py",
+            "src/modeling/run_daily_prediction.py",
             "--raw",
             str(raw),
             "--out",

@@ -20,7 +20,7 @@ const draws = Array.from({length: 420}, (_, i) => ({
 }));
 const fixtures = {full: draws, short: draws.slice(-7), empty: []};
 const build = `import json,sys
-from build_stat_pages import PAGES,render_page
+from pages.build_stat_pages import PAGES,render_page
 fixtures=json.load(sys.stdin)
 slugs={"cau-dac-biet-theo-bo-so","chu-ky-dac-biet","lo-gan","giai-db-ngay-mai"}
 print(json.dumps({key:{p.slug:render_page(p,rows,generated="2026-10-19T10:00:00Z") for p in PAGES if p.slug in slugs} for key,rows in fixtures.items()}))`;

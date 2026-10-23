@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import meta_predictor as meta
-from ensemble_components import COMPONENT_POLICY, policy_column
-from predict_nextday_2d import _meta_prediction
+from forecast import meta_predictor as meta
+from ensemble.ensemble_components import COMPONENT_POLICY, policy_column
+from forecast.predict_nextday_2d import _meta_prediction
 
 
 def _history(mode: str, days: int, valid_days: int | None = None) -> pd.DataFrame:
@@ -123,7 +123,7 @@ def test_cli_shortage_succeeds_but_malformed_history_still_fails(tmp_path):
     history = tmp_path / "pred_loto.csv"
     _history("loto", 28).to_csv(history, index=False)
     root = Path(__file__).resolve().parents[1]
-    command = [sys.executable, str(root / "src/meta_predictor.py"), "--mode", "loto",
+    command = [sys.executable, str(root / "src/forecast/meta_predictor.py"), "--mode", "loto",
                "--history-dir", str(tmp_path), "--models-dir", str(tmp_path / "models"),
                "--report-dir", str(tmp_path / "reports")]
     result = subprocess.run(command, capture_output=True, text=True, cwd=root, check=False)

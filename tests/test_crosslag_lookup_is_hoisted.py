@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from crosslag_positional_lab import RuleSpec, _date_row_lookup, _next_payload
+from research.crosslag_positional_lab import RuleSpec, _date_row_lookup, _next_payload
 
 
 def _dates(count: int) -> pd.DatetimeIndex:
@@ -54,7 +54,7 @@ def test_it_builds_the_lookup_once_not_once_per_rule() -> None:
     Đo thời gian ở đây sẽ là phép kiểm nhạy với máy chạy. Đếm số lần gọi nói
     thẳng điều cần nói: bảng tra là công việc bất biến trong vòng lặp luật.
     """
-    import crosslag_positional_lab as lab
+    from research import crosslag_positional_lab as lab
 
     dates = _dates(30)
     rng = np.random.default_rng(1)

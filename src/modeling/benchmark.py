@@ -38,7 +38,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 
 from bridges.tensor import NUMBER_SPACE
-from xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
+from core.xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
 
 #: Xác suất một con bất kỳ về ít nhất một lần trong 27 giải, nếu công bằng.
 #: Lấy từ ``xsmb_domain`` chứ không tính lại — nền là định nghĩa của miền, và

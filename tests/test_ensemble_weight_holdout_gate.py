@@ -27,8 +27,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from ensemble_components import COMPONENT_POLICY, policy_column
-from ensemble_utils import (
+from ensemble.ensemble_components import COMPONENT_POLICY, policy_column
+from ensemble.ensemble_utils import (
     DEFAULT_ENSEMBLE_WEIGHTS,
     EnsembleWeights,
     bernoulli_brier,
@@ -38,7 +38,7 @@ from ensemble_utils import (
     finalize_blend,
     floor_distribution,
 )
-from learn_ensemble_weights import (
+from ensemble.learn_ensemble_weights import (
     COMPONENT_COLS,
     MIN_RELATIVE_GAIN,
     MIN_VALIDATION_DAYS,
@@ -330,7 +330,7 @@ def test_the_written_file_records_the_refusal(tmp_path: Path) -> None:
     subprocess.run(
         [
             sys.executable,
-            str(SRC / "learn_ensemble_weights.py"),
+            str(SRC / "ensemble" / "learn_ensemble_weights.py"),
             "--mode", "loto",
             "--history-dir", str(hist_dir),
             "--out-dir", str(out_dir),

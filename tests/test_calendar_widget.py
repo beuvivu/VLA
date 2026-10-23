@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from calendar_widget import load_special_results, render_calendar
+from web.calendar_widget import load_special_results, render_calendar
 from bs4 import BeautifulSoup
-from build_landing_page import _LANDING_CSS, _latest_draw
-from shared_results import render_result_board
+from pages.build_landing_page import _LANDING_CSS, _latest_draw
+from web.shared_results import render_result_board
 
 
 def test_special_results_preserve_zeroes_and_reject_invalid_rows(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from build_fun_prediction import (
+from pages.build_fun_prediction import (
     BLOCK_ID,
     STYLE_ID,
     build_fun_draw,

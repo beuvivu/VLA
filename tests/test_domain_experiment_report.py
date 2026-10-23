@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from build_domain_experiment_report import _records_for_mode
+from pages.build_domain_experiment_report import _records_for_mode
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,7 +20,7 @@ def test_domain_experiment_report_matches_current_gated_artifacts(tmp_path: Path
     subprocess.run(
         [
             sys.executable,
-            "src/build_domain_experiment_report.py",
+            "src/pages/build_domain_experiment_report.py",
             "--output",
             str(output),
         ],

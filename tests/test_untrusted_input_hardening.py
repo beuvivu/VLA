@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-import sources
+from ingest import sources
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = sorted((ROOT / ".github" / "workflows").glob("*.yml"))

@@ -8,9 +8,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import knowledge_base as kb
-import multi_hit_vip as m
-from xsmb_domain import baseline_rate
+from forecast import knowledge_base as kb
+from forecast import multi_hit_vip as m
+from core.xsmb_domain import baseline_rate
 
 
 def _fair(n: int, seed: int = 1) -> np.ndarray:
@@ -364,6 +364,6 @@ def test_a_changed_rule_definition_retires_the_old_batch_unscored_and_registers_
 def test_the_pipeline_builds_the_knowledge_base_after_what_it_reads() -> None:
     """Kho tri thức đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy: đứng sau cả ba."""
     source = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(encoding="utf-8")
-    at = source.index('"src/knowledge_base.py"')
+    at = source.index('"src/forecast/knowledge_base.py"')
     for producer in ("online_learning", "confidence_matrix", "multi_hit_report"):
         assert source.index(f'"src/{producer}.py"') < at, producer

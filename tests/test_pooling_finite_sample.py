@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 
-from hierarchical_pooling import (
+from ensemble.hierarchical_pooling import (
     MAX_PRIOR_STRENGTH,
     fit_pooling,
     fit_shrinkage_to_prior,

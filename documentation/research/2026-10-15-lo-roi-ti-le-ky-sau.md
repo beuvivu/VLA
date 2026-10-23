@@ -13,7 +13,7 @@ cao".
 
 ## Chẩn đoán: bộ lọc VIP đẩy con gan lên đầu
 
-Tái hiện walk-forward của bộ lọc VIP (`src/multi_hit_vip.py`) cho mười kỳ 06 → 15-10-2026.
+Tái hiện walk-forward của bộ lọc VIP (`src/forecast/multi_hit_vip.py`) cho mười kỳ 06 → 15-10-2026.
 
 **Con 32 đứng đầu cả mười kỳ.** Trong suốt mười kỳ ấy, 32 không về một nháy nào:
 

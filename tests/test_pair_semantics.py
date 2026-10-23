@@ -7,7 +7,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from normalize_pair_artifacts import annotate_pair_frame
+from stats.normalize_pair_artifacts import annotate_pair_frame
 
 
 def test_same_draw_pair_is_labeled_as_statistical_cooccurrence() -> None:

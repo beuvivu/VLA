@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import sync
+from ingest import sync
 
 ROOT = Path(__file__).resolve().parents[1]
 

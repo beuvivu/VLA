@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from zoneinfo import ZoneInfo
 
-import live_sync
-import sources
-from sources import PRIZE_ORDER
+from ingest import live_sync
+from ingest import sources
+from ingest.sources import PRIZE_ORDER
 
 
 class FakeSource:

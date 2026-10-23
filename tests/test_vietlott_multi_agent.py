@@ -6,7 +6,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import yaml
 
-import build_vietlott_results as b
+from pages import build_vietlott_results as b
 
 
 def diagnostic():
@@ -56,7 +56,7 @@ def test_page_workflow_cannot_publish_a_stale_cached_summary(tmp_path):
     workflow = yaml.safe_load((Path(b.ROOT) / '.github/workflows/vietlott-results.yml').read_text())
     steps = workflow['jobs']['build']['steps']
     restore = next(i for i, s in enumerate(steps) if s.get('uses', '').startswith('actions/cache/restore'))
-    build = next(i for i, s in enumerate(steps) if 'src/build_vietlott_results.py' in s.get('run', ''))
+    build = next(i for i, s in enumerate(steps) if 'src/pages/build_vietlott_results.py' in s.get('run', ''))
     fixes = [s['run'] for s in steps[restore + 1:build] if 'git restore' in s.get('run', '')]
     assert len(fixes) == 1
     def git(*args):

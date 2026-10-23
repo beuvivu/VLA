@@ -15,13 +15,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import feature_attribution
-import learn_ensemble_weights
-import meta_predictor
-import model_quality
-import predict_nextday_2d
-from ensemble_utils import anchor_loto_level, finalize_blend, floor_distribution
-from xsmb_domain import LOTO_BASELINE_RATE
+from forecast import feature_attribution
+from ensemble import learn_ensemble_weights
+from forecast import meta_predictor
+from evaluation import model_quality
+from forecast import predict_nextday_2d
+from ensemble.ensemble_utils import anchor_loto_level, finalize_blend, floor_distribution
+from core.xsmb_domain import LOTO_BASELINE_RATE
 
 EXPECTED_SUM = 100 * LOTO_BASELINE_RATE
 

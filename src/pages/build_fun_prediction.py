@@ -1,0 +1,618 @@
+from __future__ import annotations
+
+"""Dựng và chèn bảng mô phỏng XSMB tất định cho ngày kế tiếp.
+
+The production models predict only the two-digit Loto/Đặc Biệt universe.  This module
+turns those probabilities into a clearly-labelled entertainment simulation of a
+full XSMB prize board while preserving the model probabilities as the auditable
+part of the output.  Prefix digits are synthetic and must never be interpreted as
+modelled five-/four-/three-digit prize probabilities.
+"""
+
+import argparse
+import hashlib
+import html
+import json
+import os
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from bs4 import BeautifulSoup
+from web.page_output import write_page
+
+from evaluation import fun_draw_ledger
+
+
+SCHEMA_VERSION = 1
+STYLE_ID = "fun-prediction-style"
+BLOCK_ID = "du-doan-vui"
+
+PRIZE_GROUPS: list[tuple[str, str, list[str], int]] = [
+    ("special", "Đặc Biệt", ["special"], 5),
+    ("prize1", "Giải nhất", ["prize1"], 5),
+    ("prize2", "Giải nhì", ["prize2_1", "prize2_2"], 5),
+    (
+        "prize3",
+        "Giải ba",
+        ["prize3_1", "prize3_2", "prize3_3", "prize3_4", "prize3_5", "prize3_6"],
+        5,
+    ),
+    ("prize4", "Giải tư", ["prize4_1", "prize4_2", "prize4_3", "prize4_4"], 4),
+    (
+        "prize5",
+        "Giải năm",
+        ["prize5_1", "prize5_2", "prize5_3", "prize5_4", "prize5_5", "prize5_6"],
+        4,
+    ),
+    ("prize6", "Giải sáu", ["prize6_1", "prize6_2", "prize6_3"], 3),
+    ("prize7", "Giải bảy", ["prize7_1", "prize7_2", "prize7_3", "prize7_4"], 2),
+]
+
+
+@dataclass(frozen=True)
+class PredictionInputs:
+    anchor_date: str
+    target_date: str
+    loto: pd.DataFrame
+    de: pd.DataFrame
+    picks_loto: dict[str, Any]
+    picks_de: dict[str, Any]
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.exists() or path.stat().st_size == 0:
+        raise FileNotFoundError(path)
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _prob_frame(path: Path) -> pd.DataFrame:
+    if not path.exists() or path.stat().st_size == 0:
+        raise FileNotFoundError(path)
+    df = pd.read_csv(path)
+    if "number" not in df.columns or "prob" not in df.columns:
+        raise ValueError(f"Tệp dự báo thiếu cột number/prob: {path}")
+    df = df[["number", "prob"]].copy()
+    df["number"] = pd.to_numeric(df["number"], errors="raise").astype(int)
+    df["prob"] = pd.to_numeric(df["prob"], errors="raise").astype(float)
+    df = df.drop_duplicates("number", keep="last").sort_values("number")
+    if df["number"].tolist() != list(range(100)):
+        raise ValueError(f"Tệp dự báo phải chứa đủ đúng miền 00..99: {path}")
+    if not np.isfinite(df["prob"].to_numpy()).all():
+        raise ValueError(f"Tệp có xác suất không hữu hạn: {path}")
+    return df.reset_index(drop=True)
+
+
+def load_prediction_inputs(data_dir: Path) -> PredictionInputs:
+    pred_dir = data_dir / "predict"
+    picks_loto = _read_json(pred_dir / "picks_loto.json")
+    picks_de = _read_json(pred_dir / "picks_de.json")
+
+    target_loto = str(picks_loto.get("target_date", ""))
+    target_de = str(picks_de.get("target_date", ""))
+    anchor_loto = str(picks_loto.get("anchor_date", ""))
+    anchor_de = str(picks_de.get("anchor_date", ""))
+    if not target_loto or target_loto != target_de:
+        raise ValueError(f"Ngày mục tiêu LOTO/Đặc Biệt không khớp: {target_loto!r} và {target_de!r}")
+    if not anchor_loto or anchor_loto != anchor_de:
+        raise ValueError(f"Ngày neo LOTO/Đặc Biệt không khớp: {anchor_loto!r} và {anchor_de!r}")
+
+    loto = _prob_frame(pred_dir / f"predict_next_loto_all_{target_loto}.csv")
+    de = _prob_frame(pred_dir / f"predict_next_de_all_{target_loto}.csv")
+    return PredictionInputs(
+        anchor_date=anchor_loto,
+        target_date=target_loto,
+        loto=loto,
+        de=de,
+        picks_loto=picks_loto,
+        picks_de=picks_de,
+    )
+
+
+def _normalized_sampling_weights(df: pd.DataFrame) -> np.ndarray:
+    p = np.clip(df["prob"].to_numpy(dtype=float), 0.0, None)
+    total = float(p.sum())
+    if total <= 0:
+        return np.full(100, 0.01, dtype=float)
+    return p / total
+
+
+def _seed_for(inputs: PredictionInputs) -> int:
+    material = (
+        f"fun-xsmb-v{SCHEMA_VERSION}|{inputs.anchor_date}|{inputs.target_date}|"
+        f"{inputs.loto['prob'].round(12).tolist()}|{inputs.de['prob'].round(12).tolist()}"
+    )
+    digest = hashlib.sha256(material.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=False)
+
+
+def _synthetic_full_number(rng: np.random.Generator, suffix: int, width: int) -> str:
+    if width <= 2:
+        return f"{suffix:02d}"
+    prefix_width = width - 2
+    prefix = int(rng.integers(0, 10**prefix_width))
+    return f"{prefix:0{prefix_width}d}{suffix:02d}"
+
+
+def _prob_lookup(df: pd.DataFrame) -> dict[int, float]:
+    return {int(row.number): float(row.prob) for row in df.itertuples(index=False)}
+
+
+def _top_candidates(df: pd.DataFrame, limit: int = 10) -> list[dict[str, Any]]:
+    top = df.sort_values(["prob", "number"], ascending=[False, True]).head(limit)
+    return [
+        {
+            "rank": i,
+            "number": f"{int(row.number):02d}",
+            "prob": float(row.prob),
+            "prob_percent": float(row.prob) * 100.0,
+        }
+        for i, row in enumerate(top.itertuples(index=False), start=1)
+    ]
+
+
+def build_fun_draw(inputs: PredictionInputs) -> dict[str, Any]:
+    seed = _seed_for(inputs)
+    rng = np.random.default_rng(seed)
+    loto_w = _normalized_sampling_weights(inputs.loto)
+    de_w = _normalized_sampling_weights(inputs.de)
+    loto_prob = _prob_lookup(inputs.loto)
+    de_prob = _prob_lookup(inputs.de)
+
+    groups: list[dict[str, Any]] = []
+    flat_rows: list[dict[str, Any]] = []
+    for key, label, fields, width in PRIZE_GROUPS:
+        values: list[dict[str, Any]] = []
+        for field in fields:
+            mode = "de" if field == "special" else "loto"
+            weights = de_w if mode == "de" else loto_w
+            suffix = int(rng.choice(np.arange(100), p=weights))
+            prob = (de_prob if mode == "de" else loto_prob)[suffix]
+            value = _synthetic_full_number(rng, suffix, width)
+            item = {
+                "field": field,
+                "value": value,
+                "suffix": f"{suffix:02d}",
+                "mode": mode,
+                "model_prob": float(prob),
+                "model_prob_percent": float(prob) * 100.0,
+            }
+            values.append(item)
+            flat_rows.append({"prize": label, **item})
+        groups.append({"key": key, "label": label, "width": width, "values": values})
+
+    loto_meta = dict(inputs.picks_loto.get("meta") or {})
+    de_meta = dict(inputs.picks_de.get("meta") or {})
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "entertainment_simulation",
+        "anchor_date": inputs.anchor_date,
+        "target_date": inputs.target_date,
+        "seed": seed,
+        "disclaimer": (
+            "Dự đoán vui/mô phỏng để tham khảo. Mô hình chỉ ước lượng xác suất 2 số cuối; "
+            "các chữ số tiền tố trong bảng giải đầy đủ là số tổng hợp tất định, không phải "
+            "xác suất dự đoán giải 3–5 chữ số và không bảo đảm kết quả thực tế."
+        ),
+        "method": (
+            "Đặc Biệt: lấy mẫu tất định có trọng số từ phân phối Đặc Biệt. Các giải khác: lấy mẫu tất định "
+            "có trọng số từ phân phối LOTO. Tiền tố được sinh từ hạt giống cố định theo ảnh chụp "
+            "dữ liệu/mô hình để cùng đầu vào luôn cho cùng một bảng mô phỏng."
+        ),
+        "groups": groups,
+        "rows": flat_rows,
+        "top_loto": _top_candidates(inputs.loto, 10),
+        "top_de": _top_candidates(inputs.de, 10),
+        "model_state": {
+            "loto_meta_active": bool(loto_meta.get("active", False)),
+            "loto_meta_trust": float(loto_meta.get("trust", 0.0) or 0.0),
+            "de_meta_active": bool(de_meta.get("active", False)),
+            "de_meta_trust": float(de_meta.get("trust", 0.0) or 0.0),
+        },
+    }
+
+
+def write_artifacts(payload: dict[str, Any], data_dir: Path) -> tuple[Path, Path]:
+    pred_dir = data_dir / "predict"
+    pred_dir.mkdir(parents=True, exist_ok=True)
+    json_path = pred_dir / "fun_draw_next.json"
+    csv_path = pred_dir / "fun_draw_next.csv"
+
+    # Replace both snapshots atomically.  A runner interruption must not leave
+    # a truncated JSON/CSV pair that the next page build interprets as a stale
+    # simulation.  Temporary files live beside the destination so os.replace
+    # remains atomic on the same filesystem.
+    json_tmp: str | None = None
+    csv_tmp: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".json",
+            delete=False,
+        ) as fh:
+            json_tmp = fh.name
+            json.dump(payload, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=pred_dir,
+            prefix=".fun-draw-",
+            suffix=".csv",
+            delete=False,
+        ) as fh:
+            csv_tmp = fh.name
+            pd.DataFrame(payload["rows"]).to_csv(fh, index=False)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(json_tmp, json_path)
+        json_tmp = None
+        os.replace(csv_tmp, csv_path)
+        csv_tmp = None
+    finally:
+        for path in (json_tmp, csv_tmp):
+            if path:
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
+    return json_path, csv_path
+
+
+def _prob_badges(rows: list[dict[str, Any]], mode: str, label: str) -> str:
+    items: list[str] = []
+    for row in rows:
+        n = html.escape(str(row["number"]))
+        pct = float(row["prob_percent"])
+        width = max(4.0, min(100.0, pct * (4.0 if mode == "de" else 1.0)))
+        items.append(
+            "<button class='fun-prob-row' "
+            f"data-mode='{mode}' data-number='{n}' title='{label} {n}: {pct:.3f}%'>"
+            f"<span class='fun-rank'>#{int(row['rank'])}</span>"
+            f"<b>{n}</b>"
+            "<span class='fun-prob-track'>"
+            f"<i style='width:{width:.1f}%'></i>"
+            "</span>"
+            f"<strong>{pct:.3f}%</strong>"
+            "</button>"
+        )
+    return "".join(items)
+
+
+def _pct(value: float) -> str:
+    return f"{value:.1f}".replace(".", ",")
+
+
+def _short_date(iso: str) -> str:
+    """2026-09-30 -> 30/09; bảng nhật ký phải vừa màn hình điện thoại."""
+    parts = iso.split("-")
+    return f"{parts[2]}/{parts[1]}" if len(parts) == 3 else iso
+
+
+def _ledger_block(ledger: pd.DataFrame | None) -> str:
+    """Nhật ký: bảng đã hiện trước giờ quay so với kết quả thật, kỳ mới trước."""
+    if ledger is None or ledger.empty:
+        return ""
+    total = fun_draw_ledger.summarize(ledger)
+    rows: list[str] = []
+    for row in fun_draw_ledger.recent(ledger, 10):
+        if not row["actual_special"]:
+            verdict, actual, loto = "Chưa quay", "—", "—"
+        else:
+            actual = html.escape(row["actual_special"])
+            if row["exact"] == "1":
+                verdict = "Trúng đúng"
+            elif row["reversed"] == "1":
+                verdict = "Trúng lộn"
+            else:
+                verdict = "Trượt"
+            loto = f"{html.escape(row['loto_hits'])}/{len(row['loto'].split())}"
+        cls = " is-hit" if verdict.startswith("Trúng") else ""
+        rows.append(
+            f"<tr class='fun-ledger-row{cls}'>"
+            # data-col: số mô phỏng, kết quả thật và phép chấm có bằng chứng riêng.
+            f"<td title='{html.escape(row['target_date'])}' data-col='ky'>{html.escape(_short_date(row['target_date']))}</td>"
+            f"<td data-col='sim'>{html.escape(row['special'])}</td><td data-col='actual'>{actual}</td>"
+            f"<td data-col='verdict'>{verdict}</td><td data-col='loto'>{loto}</td></tr>"
+        )
+    if total["days"]:
+        tally = (
+            f"{total['days']} kỳ ({html.escape(total['first_day'])} → {html.escape(total['last_day'])}): "
+            f"Đặc Biệt trúng đúng <b>{total['exact']}</b> lần, trúng lộn <b>{total['reversed']}</b> lần "
+            f"— nếu chỉ do ngẫu nhiên, kỳ vọng {_pct(total['expected_exact'])} và {_pct(total['expected_reversed'])}. "
+            f"LOTO: <b>{total['loto_hits']}</b>/{total['loto_positions']} vị trí có số về "
+            f"({_pct(100 * total['loto_hits'] / total['loto_positions'])}%; ngẫu nhiên "
+            f"≈ {_pct(100 * total['expected_loto_hits'] / total['loto_positions'])}%)."
+        )
+    else:
+        tally = "Chưa có kỳ nào đã quay để chấm."
+    return f"""
+  <details class="fun-simulation-details fun-ledger">
+    <summary>Nhật ký mô phỏng so với kết quả thật</summary>
+    <p class="fun-ledger-tally" data-evidence-split>{tally}</p>
+    <div class="fun-ledger-wrap"><table class="fun-ledger-table">
+      <thead><tr><th scope="col">Kỳ</th><th scope="col">Mô phỏng</th><th scope="col">Đặc Biệt thật</th><th scope="col">Kết quả</th><th scope="col">LOTO về</th></tr></thead>
+      <tbody>{"".join(rows)}</tbody>
+    </table></div>
+    <p class="fun-method">Mỗi kỳ ghi bảng đang hiện lúc 18:10, trước giờ quay; sau giờ đó bảng không được ghi lại. "Trúng lộn" là Đặc Biệt về số đảo của 2 số cuối mô phỏng.</p>
+  </details>"""
+
+
+def _render_board(
+    payload: dict[str, Any],
+    *,
+    simulation_only: bool = False,
+    ledger: pd.DataFrame | None = None,
+) -> str:
+    """Dựng riêng bảng trong thẻ trang chủ; trang cũ vẫn nhận cả bảng xác suất."""
+    rows: list[str] = []
+    for group in payload["groups"]:
+        values = []
+        for item in group["values"]:
+            cls = " fun-special" if item["mode"] == "de" else ""
+            values.append(
+                f"<button type='button' class='fun-prize-number app-prize-number{cls}' data-mode='{item['mode']}' "
+                f"data-number='{html.escape(item['suffix'])}' "
+                f"aria-label='{html.escape(item['value'])} · 2 số cuối {html.escape(item['suffix'])} · xác suất mô hình {float(item['model_prob_percent']):.3f}%'>"
+                f"{html.escape(item['value'])}</button>"
+            )
+        rows.append(
+            f"<tr data-prize='{html.escape(group['key'])}'><th scope='row' class='app-prize-label'>{html.escape(group['label'])}</th>"
+            f"<td><div class='app-prize-values' style='--count:{len(values)}'>{''.join(values)}</div></td></tr>"
+        )
+
+    table = (
+        '<table class="fun-result-table app-prize-table" aria-label="Bảng mô phỏng các giải XSMB">'
+        f'<tbody>{"".join(rows)}</tbody></table>'
+    )
+    if simulation_only:
+        return f"""
+<div id="{BLOCK_ID}" class="fun-prediction-block fun-simulation-card">
+  <div class="fun-prediction-head">
+    <div>
+      <div class="fun-eyebrow">Dự đoán vui · {html.escape(str(payload["target_date"]))}</div>
+      <h3>Bảng mô phỏng XSMB</h3>
+      <p>Dữ liệu đến ngày {html.escape(str(payload["anchor_date"]))}.</p>
+    </div>
+    <span class="fun-warning">Không phải kết quả thật</span>
+  </div>
+  <div class="fun-board-wrap">{table}</div>
+  <p class="fun-simulation-note">Chỉ <b>2 số cuối</b> dùng xác suất mô hình. Tiền tố là mô phỏng, không bảo đảm kết quả thực tế.</p>
+  <details class="fun-simulation-details">
+    <summary>Cách tạo bảng mô phỏng</summary>
+    <p class="fun-method">{html.escape(str(payload["method"]))}</p>
+    <p class="fun-disclaimer">{html.escape(str(payload["disclaimer"]))}</p>
+  </details>{_ledger_block(ledger)}
+</div>
+"""
+
+    state = payload["model_state"]
+    loto_state = (
+        f"ML xếp chồng đang bật · độ tin cậy {float(state['loto_meta_trust']) * 100:.0f}%"
+        if state["loto_meta_active"]
+        else "Mô hình tổ hợp tuyến tính / phương án dự phòng của cổng ML"
+    )
+    de_state = (
+        f"ML xếp chồng đang bật · độ tin cậy {float(state['de_meta_trust']) * 100:.0f}%"
+        if state["de_meta_active"]
+        else "Mô hình tổ hợp tuyến tính / phương án dự phòng của cổng ML"
+    )
+
+    return f"""
+<div id="{BLOCK_ID}" class="fun-prediction-block">
+  <div class="fun-prediction-head">
+    <div>
+      <div class="fun-eyebrow">🎲 Dự đoán vui · ngày kế tiếp</div>
+      <h3>Bảng mô phỏng XSMB {html.escape(str(payload["target_date"]))}</h3>
+      <p>Đặt ngay dưới kết quả thực ngày {html.escape(str(payload["anchor_date"]))}. Chỉ phần <b>2 số cuối</b> dùng xác suất từ mô hình; tiền tố giải là mô phỏng tất định.</p>
+    </div>
+    <span class="fun-warning">Không phải kết quả thật</span>
+  </div>
+  <div class="fun-pred-grid">
+    <div class="fun-board-wrap">
+      {table}
+      <p class="fun-method">{html.escape(str(payload["method"]))}</p>
+    </div>
+    <div class="fun-prob-panels">
+      <article class="fun-prob-card de">
+        <div class="fun-prob-title"><span>Đặc Biệt ngày mai</span><small>{html.escape(de_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_de"], "de", "Đặc Biệt")}</div>
+      </article>
+      <article class="fun-prob-card">
+        <div class="fun-prob-title"><span>LOTO ngày mai</span><small>{html.escape(loto_state)}</small></div>
+        <div class="fun-prob-list">{_prob_badges(payload["top_loto"], "loto", "LOTO")}</div>
+      </article>
+    </div>
+  </div>
+  <div class="fun-disclaimer">⚠ {html.escape(str(payload["disclaimer"]))}</div>{_ledger_block(ledger)}
+</div>
+"""
+
+
+FUN_CSS = r"""
+#du-doan-vui.fun-prediction-block {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--ui-warn-border);
+  border-radius: 22px;
+  background: var(--ui-surface);
+  box-shadow: inset 0 1px 0 var(--ui-border);
+}
+.fun-prediction-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.fun-prediction-head h3 { margin: 3px 0 5px; font-size: 20px; }
+.fun-prediction-head p { margin: 0; color: var(--ui-ink-soft); font-size: 13px; line-height: 1.5; }
+.fun-eyebrow { color: var(--ui-warn); font-size: 11px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.fun-warning {
+  white-space: nowrap;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--ui-warn-soft);
+  color: var(--ui-warn);
+  border: 1px solid var(--ui-warn-border);
+  font-size: 11px;
+  font-weight: 900;
+}
+.fun-pred-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.fun-pred-grid > *, .fun-prob-panels > * { min-width: 0; }
+.fun-board-wrap { min-width: 0; overflow-x: auto; }
+.fun-method { margin: 9px 2px 0; color: var(--ui-ink-soft); font-size: 11px; line-height: 1.45; }
+.fun-prob-panels { display: grid; gap: 12px; }
+@media (min-width: 641px) {
+  .fun-prob-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .fun-pred-grid { grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); }
+  .fun-prob-panels { grid-template-columns: minmax(0, 1fr); }
+}
+.fun-prob-card { padding: 13px; border-radius: 16px; background: var(--ui-surface-2); border: 1px solid var(--ui-border); }
+.fun-prob-card.de { background: var(--ui-warn-soft); border-color: var(--ui-warn-border); }
+.fun-prob-title { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; margin-bottom: 9px; }
+.fun-prob-title span { font-size: 13px; font-weight: 900; color: var(--ui-ink); }
+.fun-prob-card.de .fun-prob-title span { color: var(--ui-warn); }
+.fun-prob-title small { color: var(--ui-ink-soft); text-align: left; font-size: 10px; line-height: 1.35; }
+.fun-prob-list { display: grid; gap: 6px; }
+.fun-prob-row { display: grid; grid-template-columns: 28px 30px minmax(0, 1fr) 67px; gap: 7px; align-items: center; width: 100%; padding: 6px 7px; border: 0; border-radius: 10px; background: var(--ui-surface); cursor: pointer; color: var(--ui-ink); }
+.fun-rank { color: var(--ui-ink-soft); font-size: 10px; font-weight: 800; }
+.fun-prob-row b { font-size: 22px; color: var(--ui-brand-ink); }
+.fun-prob-row strong { text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+.fun-prob-track { height: 7px; overflow: hidden; border-radius: 99px; background: var(--ui-border); }
+.fun-prob-track i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: var(--ui-chart-1); }
+.fun-prob-card.de .fun-prob-track i { background: linear-gradient(90deg, #fb923c, #e11d48); }
+.fun-prob-card.de .fun-prob-row b { color: var(--ui-ink); }
+.fun-disclaimer { margin-top: 12px; padding: 10px 12px; border-radius: 13px; background: var(--ui-warn-soft); border: 1px solid var(--ui-warn-border); color: var(--ui-warn); font-size: 11px; line-height: 1.5; }
+@media (max-width: 900px) {
+  .fun-pred-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  #du-doan-vui.fun-prediction-block { padding: 13px; border-radius: 18px; }
+  .fun-prediction-head { display: block; }
+  .fun-warning { display: inline-flex; margin-top: 9px; }
+  .fun-prob-row { grid-template-columns: 26px 28px minmax(58px, 1fr) 62px; }
+}
+#du-doan-vui.fun-simulation-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border-color: var(--ui-border);
+  border-radius: 16px;
+  box-shadow: none;
+}
+.fun-simulation-card .fun-prediction-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.fun-simulation-card .fun-prediction-head h3 { margin: 4px 0; font-size: 18px; }
+.fun-simulation-card .fun-prediction-head p { font-size: 12px; }
+.fun-simulation-card .fun-eyebrow { letter-spacing: .06em; }
+.fun-simulation-card .fun-warning { margin: 0; padding: 4px 8px; }
+.fun-simulation-card .app-prize-table { --app-prize-label: 70px; }
+.fun-simulation-card .app-prize-table .app-prize-label { padding: 8px; font-size: 11px; }
+.fun-simulation-card .app-prize-table .app-prize-number { min-height: 44px; padding: 8px 4px; font-size: 22px; letter-spacing: -.02em; color: var(--ui-brand-ink); }
+.fun-simulation-card .app-prize-table [data-prize="special"] .app-prize-number { min-height: 64px; font-size: 34px; letter-spacing: .03em; color: var(--ui-special-ink); }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-values,
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(3),
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(3) { border-right: 0; }
+.fun-simulation-card .app-prize-table [data-prize="prize3"] .app-prize-number:nth-child(n+4),
+.fun-simulation-card .app-prize-table [data-prize="prize5"] .app-prize-number:nth-child(n+4) { border-top: 1px solid var(--ui-border); }
+.fun-simulation-note { margin: 16px 0 8px; color: var(--ui-ink-soft); font-size: 12px; line-height: 1.5; }
+.fun-simulation-details { margin-top: auto; color: var(--ui-ink-soft); font-size: 12px; }
+.fun-simulation-details summary { cursor: pointer; color: var(--ui-brand-ink); font-weight: 700; }
+.fun-simulation-details summary:focus-visible { outline: 2px solid var(--ui-brand-ink); outline-offset: 4px; }
+.fun-simulation-details.fun-ledger { margin-top: 10px; }
+.fun-ledger-tally { margin: 8px 0; color: var(--ui-ink); line-height: 1.5; }
+.fun-ledger-wrap { max-width: 100%; overflow-x: auto; }
+.fun-ledger-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fun-ledger-table th, .fun-ledger-table td { padding: 5px 4px; border-bottom: 1px solid var(--ui-border); text-align: left; white-space: nowrap; }
+.fun-ledger-table th { color: var(--ui-ink-soft); font-weight: 700; }
+.fun-ledger-table td { color: var(--ui-ink); }
+.fun-ledger-row.is-hit td { background: var(--ui-warn-soft); font-weight: 800; }
+"""
+
+
+def inject_into_html(
+    path: Path, payload: dict[str, Any], ledger: pd.DataFrame | None = None
+) -> bool:
+    if not path.exists() or path.stat().st_size == 0:
+        return False
+    soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
+    # Bảng mô phỏng có chỗ riêng ngay sau khối ma trận, đúng thứ tự đọc mong
+    # muốn. Vẫn nhận section#ket-qua làm dự phòng để không vỡ với trang cũ.
+    target = soup.select_one("section#mo-phong") or soup.select_one("section#ket-qua")
+    if target is None:
+        raise RuntimeError(f"Không tìm thấy section#mo-phong hoặc section#ket-qua trong {path}")
+
+    old_block = soup.find(id=BLOCK_ID)
+    if old_block is not None:
+        old_block.decompose()
+    old_style = soup.find(id=STYLE_ID)
+    if old_style is not None:
+        old_style.decompose()
+
+    style = soup.new_tag("style", id=STYLE_ID)
+    style.string = FUN_CSS
+    if soup.head is None:
+        raise RuntimeError(f"Thiếu thẻ <head> trong {path}")
+    soup.head.append(style)
+
+    fragment = BeautifulSoup(
+        _render_board(payload, simulation_only=target.get("id") == "mo-phong", ledger=ledger),
+        "html.parser",
+    )
+    block = fragment.find(id=BLOCK_ID)
+    if block is None:
+        raise RuntimeError("Không dựng được khối HTML mô phỏng vui")
+    target.append(block)
+    rendered = "\n".join(line.rstrip() for line in str(soup).splitlines()) + "\n"
+    write_page(path, rendered)
+    return True
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Dựng và chèn bảng mô phỏng vui XSMB ngày kế tiếp.")
+    ap.add_argument("--data-dir", default="data")
+    ap.add_argument("--docs-dir", default="docs")
+    args = ap.parse_args()
+
+    data_dir = Path(args.data_dir)
+    docs_dir = Path(args.docs_dir)
+    inputs = load_prediction_inputs(data_dir)
+    payload = build_fun_draw(inputs)
+    json_path, csv_path = write_artifacts(payload, data_dir)
+    # Sổ nhật ký: ghi bảng này nếu còn trước giờ khoá của kỳ, rồi chấm mọi kỳ đã quay.
+    ledger = fun_draw_ledger.update(
+        data_dir, payload, _prob_lookup(inputs.de), datetime.now(timezone.utc)
+    )
+
+    injected: list[str] = []
+    for name in ("index.html", "landing.html", "landing_desktop.html"):
+        path = docs_dir / name
+        if inject_into_html(path, payload, ledger):
+            injected.append(str(path))
+
+    if not injected:
+        raise RuntimeError("Không có trang HTML tổng hợp để chèn bảng mô phỏng vui")
+
+    print(
+        f"[OK] mô phỏng vui cho ngày={payload['target_date']} -> {json_path}, {csv_path}; "
+        f"đã chèn={', '.join(injected)}"
+    )
+
+
+if __name__ == "__main__":
+    main()

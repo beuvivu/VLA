@@ -9,9 +9,9 @@ description: Soi cầu vị trí XSMB trong kho này — luật đã giải mã 
 
 | Tệp | Vai trò |
 |---|---|
-| `src/position_bridges.py` | Luật trang tham chiếu thứ nhất (tham số `vt=AxB&limit&exactlimit&lon&nhay&db`), ô "cầu đẹp nhất" trang chủ, kiểm lịch sử |
-| `src/bridge_rules.py` | Bảy kiểu cầu của trang tham chiếu thứ hai (bảng đầu 0–9 + số cầu mỗi ô) |
-| `src/build_position_bridges.py`, `src/build_bridge_pages.py` | Trang `soi-cau-vi-tri.html`, `soi-cau-*.html`, `tao-phoi-tuan.html` |
+| `src/soi_cau/position_bridges.py` | Luật trang tham chiếu thứ nhất (tham số `vt=AxB&limit&exactlimit&lon&nhay&db`), ô "cầu đẹp nhất" trang chủ, kiểm lịch sử |
+| `src/soi_cau/bridge_rules.py` | Bảy kiểu cầu của trang tham chiếu thứ hai (bảng đầu 0–9 + số cầu mỗi ô) |
+| `src/pages/build_position_bridges.py`, `src/pages/build_bridge_pages.py` | Trang `soi-cau-vi-tri.html`, `soi-cau-*.html`, `tao-phoi-tuan.html` |
 | `src/templates/position_bridges.js`, `bridge_pages.js`, `weekly_sheet.js` | Bộ máy trình duyệt — PHẢI ra đúng từng cầu như bản Python |
 
 ## Nền chung
@@ -87,7 +87,7 @@ từng ô — `tests/fixtures/bridge_reference_2026-09-28.json`.
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán (05-10-2026)
 
-`src/digit_sum_rules.py` — luật đã giải mã từ loạt bài tuần, khớp từng con số (ghim trong
+`src/soi_cau/digit_sum_rules.py` — luật đã giải mã từ loạt bài tuần, khớp từng con số (ghim trong
 `tests/test_digit_sum_rules.py`). tổng(xy) = (x + y) mod 10, bóng(x) = x + 5 mod 10, giải đệm 0
 đủ độ dài.
 

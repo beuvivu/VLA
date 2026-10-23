@@ -92,7 +92,7 @@ class Runner:
         self.tmp = tmp
         (tmp / "data" / "predict").mkdir(parents=True)
         (tmp / "src").mkdir()
-        (tmp / "src" / "sync.py").write_text(FAKE_SYNC, encoding="utf-8")
+        (tmp / "src" / "ingest" / "sync.py").write_text(FAKE_SYNC, encoding="utf-8")
         (tmp / "site").mkdir()
         (tmp / "site" / "sitecustomize.py").write_text(SITECUSTOMIZE, encoding="utf-8")
         (tmp / "bin").mkdir()
@@ -310,10 +310,10 @@ def test_the_results_pages_do_not_wait_for_the_analytics_pipeline() -> None:
     assert _needs(jobs["update"]) == {"canonical"}
     build = "\n".join(step.get("run", "") for step in publish["steps"])
     order = [
-        "src/position_bridges.py",
-        "src/build_landing_page.py",
-        "src/build_fun_prediction.py",
-        "src/build_traditional_results.py",
+        "src/soi_cau/position_bridges.py",
+        "src/pages/build_landing_page.py",
+        "src/pages/build_fun_prediction.py",
+        "src/pages/build_traditional_results.py",
     ]
     positions = [build.index(script) for script in order]
     assert positions == sorted(positions), "cầu vị trí → trang chủ → bảng mô phỏng"

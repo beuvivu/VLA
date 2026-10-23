@@ -6,8 +6,8 @@ import { JSDOM } from 'jsdom';
 const root = new URL('../../', import.meta.url);
 const build = `import json
 from pathlib import Path
-from app_shell import wrap_page
-from ui_theme import SITE_NAV, LANDING_SECTIONS, SITE_SEARCH_EXTRAS
+from web.app_shell import wrap_page
+from web.ui_theme import SITE_NAV, LANDING_SECTIONS, SITE_SEARCH_EXTRAS
 html = wrap_page('<html><head></head><body><section id="backtest">Nội dung thật</section></body></html>', 'index.html')
 targets = sorted({href for _, items in SITE_NAV for href, _, _ in items} | {'index.html#' + key for key, _, _ in LANDING_SECTIONS} | {href for href, _, _ in SITE_SEARCH_EXTRAS})
 pages = sorted(page.name for page in Path('docs').glob('*.html') if page.name != 'landing.html')

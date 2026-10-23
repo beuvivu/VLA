@@ -43,8 +43,8 @@ PYTHONPATH=src python src/pipeline.py --strict
 Pipeline gọi bộ online cho cả `loto` và `de` ngay sau `predict_nextday_2d`, trước đánh giá và dựng giao diện. Nếu chỉ muốn chạy bước online trên artifact đã có:
 
 ```bash
-PYTHONPATH=src python src/online_learning.py --mode loto --data-dir data --out-dir data/predict
-PYTHONPATH=src python src/online_learning.py --mode de --data-dir data --out-dir data/predict
+PYTHONPATH=src python src/forecast/online_learning.py --mode loto --data-dir data --out-dir data/predict
+PYTHONPATH=src python src/forecast/online_learning.py --mode de --data-dir data --out-dir data/predict
 ```
 
 Lịch sử phải được xác thực và chứa đủ 27 giải mỗi kỳ. Bước online không tải kết quả từ nguồn bên ngoài. Không chạy lệnh này để biến dự báo hồi cứu thành bằng chứng thật.

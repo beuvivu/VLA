@@ -1,4 +1,4 @@
-// Bản JS của `src/sources.py::source_consensus_partial`.
+// Bản JS của `src/ingest/sources.py::source_consensus_partial`.
 // Xem đầu `prize_map.js` để biết vì sao tồn tại bản thứ hai và chốt chặn nào
 // giữ hai bản khỏi trôi lệch.
 
@@ -9,7 +9,7 @@ import {
   validPrizeToken,
 } from "./prize_map.js";
 
-// Bảng này phải khớp TỪNG MỤC với `SOURCE_INDEPENDENCE_GROUP` trong `src/sources.py`.
+// Bảng này phải khớp TỪNG MỤC với `SOURCE_INDEPENDENCE_GROUP` trong `src/ingest/sources.py`.
 // Bỏ sót một mục thì `support_groups` của ô ấy trả về tên miền đầy đủ thay vì khoá nhóm,
 // và bản JS lệch bản Python ngay ở siêu dữ liệu xác minh.
 const SOURCE_INDEPENDENCE_GROUP = {
@@ -87,7 +87,7 @@ export function sourceConsensusPartial(partials, { minAgreement = 1 } = {}) {
           // đổi kết quả: muốn khác nhau thì phải có một nhóm gồm >= 3 nguồn,
           // mà nhóm lớn nhất hiện nay là cặp minhngoc chỉ có 2.
           //
-          // Giữ nguyên cả hai để khớp `src/sources.py` từng dòng — phép kiểm
+          // Giữ nguyên cả hai để khớp `src/ingest/sources.py` từng dòng — phép kiểm
           // đối chiếu không phân biệt được chúng, nên ở đây tài liệu mới là
           // chốt chặn, không phải phép kiểm.
           return [groups.size, names.length, -firstPriority];

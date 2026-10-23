@@ -18,10 +18,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-import ml_train
-from ml_features import FeatureParams, build_ml_table_from_history
+from ml import ml_train
+from ml.ml_features import FeatureParams, build_ml_table_from_history
 from vla.features.engineer import History
-from xsmb_domain import PRIZE_FIELDS
+from core.xsmb_domain import PRIZE_FIELDS
 
 
 def frames(history: History) -> tuple[pd.DataFrame, pd.DataFrame]:

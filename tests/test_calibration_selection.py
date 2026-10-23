@@ -16,7 +16,7 @@ import json
 import numpy as np
 import pytest
 
-from calibration import (
+from ensemble.calibration import (
     DEFAULT_SELECTION_HOLDOUT,
     MIN_SELECTION_DAYS,
     CalibParams,

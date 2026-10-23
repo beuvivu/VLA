@@ -31,7 +31,7 @@ import pandas as pd
 
 from bridges.scanner import BridgeScanner, BridgeScanResult
 from bridges.tensor import DigitTensor
-from research_diagnostics import bh_fdr
+from research.research_diagnostics import bh_fdr
 
 DEFAULT_Q_VALUE: Final[float] = 0.05
 #: Mỗi lần dịch tốn một lượt quét đầy đủ họ giả thuyết (khoảng 6 giây

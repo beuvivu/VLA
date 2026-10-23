@@ -9,8 +9,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import build_landing_page
-import cau_keo_daily_top as daily
+from pages import build_landing_page
+from ml import cau_keo_daily_top as daily
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,14 +67,14 @@ def test_no_table_writes_nothing(tmp_path: Path) -> None:
 def test_the_home_page_ranks_with_the_same_function() -> None:
     """Khối «ngày mai» của trang chủ và trang trực tiếp phải ra cùng bộ số."""
     assert build_landing_page.top_by_cau_score is daily.top_by_cau_score
-    source = (ROOT / "src" / "build_landing_page.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "pages" / "build_landing_page.py").read_text(encoding="utf-8")
     assert '_sort_top(\n        _read_csv(repo_root / "data" / "ai_ml" / "cau_keo_' not in source
 
 
 def test_the_pipeline_snapshots_after_the_challenger_rewrites_the_table() -> None:
     """Domain challenger ghi đè bảng top20, nên bản chụp phải chạy SAU nó."""
     source = (ROOT / "src" / "pipeline.py").read_text(encoding="utf-8")
-    assert source.index('"src/cau_keo_domain_challenger.py"') < source.index('"src/cau_keo_daily_top.py"')
+    assert source.index('"src/ml/cau_keo_domain_challenger.py"') < source.index('"src/ml/cau_keo_daily_top.py"')
 
 
 def test_the_live_page_reads_the_daily_snapshot() -> None:
@@ -93,7 +93,7 @@ def test_old_snapshots_are_pruned_with_the_other_dated_artifacts(tmp_path: Path,
     """Mỗi lượt pipeline thêm hai tệp; không dọn thì thư mục phình mãi."""
     import sys
 
-    import cleanup_artifacts
+    from evaluation import cleanup_artifacts
 
     monkeypatch.setattr(cleanup_artifacts, "update_ledger", lambda data_dir: None)
     pd.DataFrame({"date": ["2026-10-06"]}).to_csv(tmp_path / "xsmb.csv", index=False)

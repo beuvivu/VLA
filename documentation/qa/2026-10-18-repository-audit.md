@@ -84,7 +84,7 @@ Rà soát bảo mật dựa trên source và tái hiện offline. Hosted Codex S
 
 Các tệp nguồn trong cùng bản vá là mã thay thế đầy đủ, giữ convention Python/JavaScript thuần của kho. Các điểm vào để review:
 
-- `src/atomic_io.py::atomic_write_bytes` và `src/online_learning.py::save_state`, `run_online`.
+- `src/core/atomic_io.py::atomic_write_bytes` và `src/forecast/online_learning.py::save_state`, `run_online`.
 - `src/xsmb_agents/engine.py::MetaLearner.calibration_bands`, `PredictiveEngine.explain`.
 - `vietlott/src/vlm/forecast/hit_benchmark.py::run_ml`.
 - `vietlott/src/vietlott_engine/crawler/sources/fallback.py::FallbackDrawSource.fetch` và `crawler/pipeline.py::SyncPipeline.run`.
@@ -148,8 +148,8 @@ npm ci --prefix tests/frontend
 npm test --prefix tests/frontend
 python -m ruff check src tests scripts
 python -m ruff check --select F,B023 vietlott/src vietlott/tests
-PYTHONPATH=src:vietlott/src python src/site_assets.py --check
-PYTHONPATH=src:vietlott/src python src/production_audit.py --consistency-only --strict
+PYTHONPATH=src:vietlott/src python src/web/site_assets.py --check
+PYTHONPATH=src:vietlott/src python src/evaluation/production_audit.py --consistency-only --strict
 ```
 
 Các test Chromium riêng nhận `VN_LOTTERY_CHROMIUM` là đường dẫn executable. Máy QA này dùng bản `chromium_headless_shell` đã cài; browser Chrome đầy đủ bị host chặn socket, không phải lỗi ứng dụng. Kiểm browser toàn trang và 20 ca cuối dùng Chromium thật, không thay bằng mock.

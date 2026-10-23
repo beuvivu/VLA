@@ -15,11 +15,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import atomic_io
-import digit_sum_hypothesis
-import fun_draw_ledger
-import hot_tail_test
-import skill_monitor
+from core import atomic_io
+from research import digit_sum_hypothesis
+from evaluation import fun_draw_ledger
+from research import hot_tail_test
+from evaluation import skill_monitor
 
 DATA = Path(__file__).resolve().parents[1] / "data"
 

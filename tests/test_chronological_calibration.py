@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from calibration import CalibParams, MIN_SELECTION_DAYS, select_calibration
-import learn_ensemble_weights as learner
-from ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS
+from ensemble.calibration import CalibParams, MIN_SELECTION_DAYS, select_calibration
+from ensemble import learn_ensemble_weights as learner
+from ensemble.ensemble_utils import DEFAULT_ENSEMBLE_WEIGHTS
 
 
 def _history(days=180):

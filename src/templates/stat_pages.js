@@ -1,6 +1,6 @@
 // Bộ máy thống kê chạy phía trình duyệt.
 // Toàn bộ lịch sử được nhúng vào trang nên mọi bộ lọc là tức thì, không gọi
-// mạng. Xem docstring của src/build_stat_pages.py để biết vì sao.
+// mạng. Xem docstring của src/pages/build_stat_pages.py để biết vì sao.
 "use strict";
 const DRAWS = window.__D_DEMO_DRAWS__ || window.__D_DRAWS__ || [];
 const LOTO_BASELINE = 1 - Math.pow(0.99, 27);

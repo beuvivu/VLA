@@ -12,10 +12,10 @@ import sys
 # Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
-from lottery import Lottery  # noqa: E402
-from path_models import PathParams, build_daily_targets  # noqa: E402
-from path_prob import predict_next_day  # noqa: E402
+from core.calendar_alignment import consecutive_next_pairs, normalize_dates  # noqa: E402
+from ingest.lottery import Lottery  # noqa: E402
+from core.path_models import PathParams, build_daily_targets  # noqa: E402
+from soi_cau.path_prob import predict_next_day  # noqa: E402
 
 Mode = Literal["loto", "de"]
 Kind = Literal["active", "stable"]
@@ -106,7 +106,7 @@ def main() -> None:
     df_raw = lot.get_raw_data().sort_values("date").reset_index(drop=True)
     df_2d = lot.get_2_digits_data().sort_values("date").reset_index(drop=True)
     if df_raw.empty or df_2d.empty:
-        raise SystemExit("No data loaded. Run src/sync.py first.")
+        raise SystemExit("No data loaded. Run src/ingest/sync.py first.")
 
     raw_dates = normalize_dates(df_raw["date"])
     two_dates = normalize_dates(df_2d["date"])

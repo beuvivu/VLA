@@ -10,8 +10,8 @@ import { JSDOM, VirtualConsole } from 'jsdom';
 const build = `import json, sys
 sys.path.insert(0, "tests")
 import pandas as pd
-import bridge_rules as br
-import build_bridge_pages as pages
+from soi_cau import bridge_rules as br
+from pages import build_bridge_pages as pages
 raw = pd.read_csv("data/xsmb.csv", dtype={"date": str})
 dates, digits, values = br.load_draws(raw[raw["date"] <= "2026-09-28"])
 stub = {"base_rate": 0.4, "rate_kep": 0.2, "rate_pair": 0.4, "draws": 4217,

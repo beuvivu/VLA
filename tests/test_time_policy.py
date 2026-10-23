@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from time_policy import (
+from core.time_policy import (
     DEFAULT_DRAW_CUTOFF,
     iso_local,
     iso_utc,

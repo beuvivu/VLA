@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import hot_tail_test as ht
+from research import hot_tail_test as ht
 
 
 def test_the_registered_parameters_are_not_edited_to_fit_the_result() -> None:
@@ -107,7 +107,7 @@ def test_the_verdict_follows_the_registered_rule(tmp_path: Path, diffs, state) -
 
 
 def test_the_page_shows_the_prospective_state() -> None:
-    import build_confidence_page as page
+    from pages import build_confidence_page as page
 
     report = {"hot_tail": {**ht.evaluate(Path("/nonexistent")), "draws": 12,
                            "first": "2026-09-29", "last": "2026-10-10"}}

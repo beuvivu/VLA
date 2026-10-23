@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  // Soi cầu vị trí — bản trình duyệt của `src/position_bridges.py`.
+  // Soi cầu vị trí — bản trình duyệt của `src/soi_cau/position_bridges.py`.
   //
   // Hai bản PHẢI đếm ra cùng một con số: trang chủ in ba ô "đẹp nhất" từ bản
   // Python, còn trang này tính lại từ đúng những kỳ đã nhúng. Phép kiểm

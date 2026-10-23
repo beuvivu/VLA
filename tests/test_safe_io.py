@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-import safe_io
+from core import safe_io
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 
@@ -73,7 +73,7 @@ def test_a_programming_error_is_not_swallowed(tmp_path: Path) -> None:
 
 def test_the_page_builders_read_through_safe_io(tmp_path: Path, caplog) -> None:
     """Trình dựng thật: JSON hỏng thì ra trạng thái trống KÈM cảnh báo."""
-    import build_landing_page as landing
+    from pages import build_landing_page as landing
 
     research = tmp_path / "data" / "research"
     research.mkdir(parents=True)
@@ -133,8 +133,8 @@ def test_the_rule_itself_catches_a_swallowing_reader() -> None:
 
 
 def test_no_page_builder_swallows_a_file_read_silently() -> None:
-    builders = sorted(SRC.glob("build_*.py")) + [
-        SRC / name for name in ("cau_position_evidence.py", "cap_loto_50_stats.py", "lottery.py")
+    builders = sorted(SRC.glob("*/build_*.py")) + [
+        SRC / name for name in ("soi_cau/cau_position_evidence.py", "stats/cap_loto_50_stats.py", "ingest/lottery.py")
     ]
     assert len(builders) > 10
     offenders = {

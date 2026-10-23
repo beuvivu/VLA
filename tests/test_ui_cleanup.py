@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
-from app_shell import wrap_page
+from web.app_shell import wrap_page
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -1,3 +1,5 @@
+"""Mẫu HTML/CSS/JS dùng chung và bộ nạp Jinja đặt ngay trong thư mục mẫu."""
+
 from __future__ import annotations
 
 from pathlib import Path

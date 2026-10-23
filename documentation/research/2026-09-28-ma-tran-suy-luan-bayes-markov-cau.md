@@ -6,7 +6,7 @@ Tái lập:
     python3 scripts/research/inference_matrix_audit.py --sims 10000 --out-dir <thư mục>
 
 (khoảng 8 phút trên 4 lõi; hạt giống cố định `20260928`, nên cùng dữ liệu cho cùng số.)
-Bản production của phân tích này chạy mỗi lượt pipeline ở `src/confidence_matrix.py`
+Bản production của phân tích này chạy mỗi lượt pipeline ở `src/evaluation/confidence_matrix.py`
 và in ra trang `docs/do-tin-cay.html` (Độ tin cậy dự báo), kèm thêm bốn phép kiểm
 giả thuyết kỳ quay bị sắp đặt.
 Script chỉ ĐỌC dữ liệu và mã hiện có — không đổi phép tính, mô hình hay hợp đồng dữ
@@ -120,7 +120,7 @@ thật, nó nói về việc số trùng nhau trong CÙNG một kỳ, không nó
 dùng được để dự báo. Ghi lại để theo dõi, không đưa vào ma trận quyết định.
 
 **B6. Vòng phản hồi (so dự báo đã công bố với kết quả thật).** Đã có trong production
-từ PR #93: `src/skill_monitor.py` chấm đúng vector xác suất công bố TRƯỚC kỳ quay, ghi
+từ PR #93: `src/evaluation/skill_monitor.py` chấm đúng vector xác suất công bố TRƯỚC kỳ quay, ghi
 sổ cái `data/model_quality/published_skill.csv`, và làm đỏ pipeline khi kỹ năng rời
 vùng 0 theo hướng nào cũng vậy. Số đo 31-08 → 27-09-2026 (28 kỳ đã công bố):
 

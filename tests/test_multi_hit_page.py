@@ -18,11 +18,11 @@ import pandas as pd
 import pytest
 from bs4 import BeautifulSoup
 
-import build_multi_hit_page as page
-import multi_hit_forecast as mf
-import multi_hit_pairs as pairs
-import multi_hit_report as report
-import multi_hit_vip as m
+from pages import build_multi_hit_page as page
+from forecast import multi_hit_forecast as mf
+from forecast import multi_hit_pairs as pairs
+from forecast import multi_hit_report as report
+from forecast import multi_hit_vip as m
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "multi_hit"
@@ -322,7 +322,7 @@ def test_new_draws_after_the_registered_date_do_not_invalidate_it(register_at) -
 
 
 def test_the_benchmark_reads_only_the_registered_draws(register_at, monkeypatch) -> None:
-    import multi_hit_benchmark as bm
+    from forecast import multi_hit_benchmark as bm
 
     class Seen(Exception):
         pass
@@ -534,7 +534,7 @@ def test_the_any_hit_error_is_paired_on_the_same_draws() -> None:
 
 
 def test_the_any_hit_error_uses_the_same_top_k_as_the_rates() -> None:
-    import multi_hit_benchmark as bm
+    from forecast import multi_hit_benchmark as bm
 
     draws, _ = _history(120)
     counts = m.counts_matrix(draws)
@@ -648,8 +648,8 @@ def test_without_a_benchmark_a_measured_edge_still_reads_better(planted_vip) -> 
 def test_the_release_check_measures_before_it_builds_the_page() -> None:
     """release_check dựng trang trên lịch sử hiện tại: bước đo phải chạy NGAY TRƯỚC trình dựng."""
     lines = [ln.strip() for ln in (ROOT / "scripts" / "release" / "release_check.sh").read_text(encoding="utf-8").splitlines()]
-    build = lines.index("python src/build_multi_hit_page.py")
-    assert lines[build - 1] == "python src/multi_hit_report.py"
+    build = lines.index("python src/pages/build_multi_hit_page.py")
+    assert lines[build - 1] == "python src/forecast/multi_hit_report.py"
 
 
 def test_the_verdict_prints_the_measured_numbers(planted_vip, bench) -> None:
@@ -742,7 +742,7 @@ def test_the_candidate_row_is_marked_and_only_that_row(bench, fair_vip) -> None:
 
 def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
     """Ngăn kéo bằng chứng phải mô tả đúng phép tính mà bước đo dùng, không phải bản cũ."""
-    import evidence_catalog
+    from web import evidence_catalog
 
     _, sections = evidence_catalog._catalog({})[page.PAGE]
     steps = {sec["heading"]: " ".join(sec["reasoningTrace"]["steps"]) for sec in sections}
@@ -758,7 +758,7 @@ def test_the_evidence_drawer_describes_the_methods_the_page_uses() -> None:
 
 def test_every_evidence_section_names_a_card_the_page_has(fair_vip, bench) -> None:
     """Ngăn kéo nhận khối theo tiền tố tiêu đề: đổi tên thẻ mà quên danh mục là mất bằng chứng."""
-    import evidence_catalog
+    from web import evidence_catalog
 
     vip = _vip_of(_pair_history(160, pair=(12, 34)))
     titles = [h.get_text(strip=True) for h in _soup(vip, bench).select(".ui-card-head h2")]

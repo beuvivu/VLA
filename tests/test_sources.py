@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from sources import (
+from ingest.sources import (
     EXPECTED_COUNTS,
     PRIZE_ORDER,
     default_sources,
@@ -42,7 +42,7 @@ def test_source_policy_exact_priority_and_no_removed_provider() -> None:
 
 def test_retired_sources_are_neither_called_nor_printable() -> None:
     """Nguồn đã nghỉ không còn trong danh mục gọi, nhưng tên vẫn bị cấm in ra."""
-    from sources import RETIRED_SOURCE_NAMES, known_source_domains
+    from ingest.sources import RETIRED_SOURCE_NAMES, known_source_domains
 
     called = {s.name for s in default_sources()}
     assert called.isdisjoint(RETIRED_SOURCE_NAMES)
@@ -125,7 +125,7 @@ def test_parser_accepts_xosodaiphat_dotted_g_labels() -> None:
 
 
 def test_every_kept_source_is_its_own_independent_group() -> None:
-    from sources import source_independence_key
+    from ingest.sources import source_independence_key
 
     keys = [source_independence_key(s.name) for s in default_sources()]
     assert keys == ["xoso", "mketqua", "minhngoc"]
@@ -172,7 +172,7 @@ class _ManyCandidates:
     """Nguồn giả có nhiều đường dẫn ứng viên — cơ chế dùng chung của ``_TextPageSource``."""
 
     def __new__(cls):
-        from sources import _TextPageSource
+        from ingest.sources import _TextPageSource
 
         class Source(_TextPageSource):
             name = "nhieu-ung-vien.example"

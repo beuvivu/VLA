@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from meta_predictor import MetaMetrics, _evaluate, _roc_auc
+from forecast.meta_predictor import MetaMetrics, _evaluate, _roc_auc
 
 
 def test_auc_matches_the_reference_implementation_including_ties() -> None:
