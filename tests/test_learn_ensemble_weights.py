@@ -98,11 +98,17 @@ def test_it_stays_linear_in_the_number_of_days() -> None:
     import time
 
     def elapsed(count: int) -> float:
+        # Lấy lần nhanh nhất trong ba: nhiễu máy chạy chỉ làm CHẬM thêm, nên tối thiểu là
+        # ước lượng ít nhiễu nhất. Một lần đo đơn trên CI ngày 23-10-2026 ra 0,0087 s ->
+        # 0,264 s (30 lần) trong khi đo lặp lại cùng mã cho 3,1–4,5 lần.
         days = [f"2026-{1 + i // 28:02d}-{1 + i % 28:02d}" for i in range(count)]
         df = _history(days)
-        start = time.perf_counter()
-        _stack_days(df, days)
-        return time.perf_counter() - start
+        runs = []
+        for _ in range(3):
+            start = time.perf_counter()
+            _stack_days(df, days)
+            runs.append(time.perf_counter() - start)
+        return min(runs)
 
     small = max(elapsed(60), 1e-4)
     large = elapsed(240)

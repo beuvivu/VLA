@@ -73,7 +73,10 @@ jobs:
     needs: route
     if: needs.route.outputs.run_checks == 'true'
     name: Giao diện Chromium sáng/tối và mobile
-    runs-on: ubuntu-latest
+    # Ghim 24.04: từ 23-10-2026 `ubuntu-latest` là 26.04 và Playwright 1.55 từ chối cài
+    # Chromium ở đó ("does not support chromium on ubuntu26.04-x64"), nên job chết ngay
+    # bước cài, trước mọi phép kiểm. Bỏ ghim cùng lúc nâng Playwright lên bản hỗ trợ 26.04.
+    runs-on: ubuntu-24.04
     # Cùng một bộ trang, job mất 11,7 phút lúc 17:01 UTC ngày 12-10-2026 và ~15 phút ở ba
     # lượt 21:24–22:25 UTC: mọi bước chậm đều tay 25–35% theo runner. Trần 15 phút chỉ còn
     # ~3 phút dư, và hai lượt bị cắt ở bước cuối dù mọi phép kiểm trước đó đều xanh.
