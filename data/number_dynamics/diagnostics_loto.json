@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
   "mode": "loto",
-  "history_days": 4243,
+  "history_days": 4244,
   "calendar_contiguous": true,
   "calendar_start": "2015-01-01",
-  "calendar_end": "2026-10-22",
-  "active_numbers_last_draw": 26,
+  "calendar_end": "2026-10-23",
+  "active_numbers_last_draw": 23,
   "transition_prior_strength": 1000000.0,
   "component_prior_strengths": {
     "transition_median": 1000000.0,
@@ -15,10 +15,10 @@
       1000000.0,
       1000000.0
     ],
-    "hazard": 40.935516190360296,
+    "hazard": 40.89862264547523,
     "lag_median": 1000000.0,
-    "regime_recent": 600.651768868185,
-    "regime_long": 44288.652663861096
+    "regime_recent": 690.4567314832145,
+    "regime_long": 1000000.0
   },
   "component_priors_learned": {
     "transition": true,
@@ -29,18 +29,18 @@
   },
   "transition_pool": {
     "kind": "arithmetic",
-    "t_statistic": 6.06542372834997,
+    "t_statistic": 6.077004347356308,
     "holdout_days": 1061,
-    "brier_arithmetic": 0.18128552895023747,
-    "brier_logodds": 0.18143929511497414
+    "brier_arithmetic": 0.1812806221093403,
+    "brier_logodds": 0.18143482098663827
   },
-  "transition_active_mean_trials": 1009.0769230769231,
-  "regime_js_divergence_30_vs_180": 0.010359235232594088,
-  "entropy_recent": 4.555119466775787,
-  "entropy_long": 4.596324476915865,
-  "global_dynamics_reliability": 0.7608289392593396,
+  "transition_active_mean_trials": 1009.6086956521739,
+  "regime_js_divergence_30_vs_180": 0.010137676670311301,
+  "entropy_recent": 4.55610638746176,
+  "entropy_long": 4.59643482753326,
+  "global_dynamics_reliability": 0.761641485508915,
   "hazard_nonzero_bins": 44,
-  "generated_at_utc": "2026-10-22T11:36:15Z",
+  "generated_at_utc": "2026-10-23T11:42:52Z",
   "interpretation": "Higher-order Bayesian dynamics are shrinkage-regularized statistical evidence computed only on a verified daily-contiguous calendar. They do not imply deterministic numerical laws.",
-  "anchor_date": "2026-10-22"
+  "anchor_date": "2026-10-23"
 }
