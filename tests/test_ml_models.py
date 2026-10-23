@@ -15,7 +15,7 @@ class TestMlModelSerialization(unittest.TestCase):
         clf = PlattCalibratedClassifier()
         blob = pickle.dumps(clf)
         loaded = pickle.loads(blob)
-        self.assertEqual(loaded.__class__.__module__, "ml_models")
+        self.assertEqual(loaded.__class__.__module__, "ml.ml_models")
 
 
 if __name__ == "__main__":

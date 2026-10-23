@@ -365,5 +365,5 @@ def test_the_pipeline_builds_the_knowledge_base_after_what_it_reads() -> None:
     """Kho tri thức đọc sổ tự học, báo cáo Confidence và số đo Lô VIP của CÙNG lượt chạy: đứng sau cả ba."""
     source = (Path(__file__).resolve().parents[1] / "src" / "pipeline.py").read_text(encoding="utf-8")
     at = source.index('"src/forecast/knowledge_base.py"')
-    for producer in ("online_learning", "confidence_matrix", "multi_hit_report"):
+    for producer in ("forecast/online_learning", "evaluation/confidence_matrix", "forecast/multi_hit_report"):
         assert source.index(f'"src/{producer}.py"') < at, producer

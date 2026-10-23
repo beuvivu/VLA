@@ -91,7 +91,7 @@ class Runner:
     def __init__(self, tmp: Path) -> None:
         self.tmp = tmp
         (tmp / "data" / "predict").mkdir(parents=True)
-        (tmp / "src").mkdir()
+        (tmp / "src" / "ingest").mkdir(parents=True)
         (tmp / "src" / "ingest" / "sync.py").write_text(FAKE_SYNC, encoding="utf-8")
         (tmp / "site").mkdir()
         (tmp / "site" / "sitecustomize.py").write_text(SITECUSTOMIZE, encoding="utf-8")
