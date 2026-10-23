@@ -91,7 +91,7 @@ def test_days_absent_from_the_frame_are_dropped_not_zero_filled() -> None:
 def test_it_stays_linear_in_the_number_of_days() -> None:
     """Bốn lần nhiều ngày hơn thì KHÔNG được chậm hơn bốn lần quá nhiều.
 
-    Bản O(số ngày²) cũ ở đây chậm khoảng 16 lần. Ngưỡng 8 lần nằm giữa hai
+    Bản O(số ngày²) cũ ở đây chậm khoảng 11–12 lần. Ngưỡng 8 lần nằm giữa hai
     hình dạng nên nó phân biệt được chúng mà vẫn chịu được nhiễu đo trên máy
     chạy CI.
     """
@@ -101,7 +101,7 @@ def test_it_stays_linear_in_the_number_of_days() -> None:
         # Lấy lần nhanh nhất trong ba: nhiễu máy chạy chỉ làm CHẬM thêm, nên tối thiểu là
         # ước lượng ít nhiễu nhất. Một lần đo đơn trên CI ngày 23-10-2026 ra 0,0087 s ->
         # 0,264 s (30 lần) trong khi đo lặp lại cùng mã cho 3,1–4,5 lần.
-        days = [f"2026-{1 + i // 28:02d}-{1 + i % 28:02d}" for i in range(count)]
+        days = [f"{2026 + i // 336}-{1 + (i // 28) % 12:02d}-{1 + i % 28:02d}" for i in range(count)]
         df = _history(days)
         runs = []
         for _ in range(3):
@@ -110,8 +110,10 @@ def test_it_stays_linear_in_the_number_of_days() -> None:
             runs.append(time.perf_counter() - start)
         return min(runs)
 
-    small = max(elapsed(60), 1e-4)
-    large = elapsed(240)
+    # 100 -> 400 ngày: đo 23-10-2026, bản tuyến tính ra 3,4–3,9 lần, bản lọc lại cả bảng
+    # mỗi ngày ra 10,9–12,3 lần. Ở 60 -> 240 bản lọc lại chỉ ra 7,8–11,0 lần, sát ngưỡng.
+    small = max(elapsed(100), 1e-4)
+    large = elapsed(400)
     assert large / small < 8.0, (
         f"4 lần nhiều ngày hơn mà chậm {large / small:.1f} lần — mất tính tuyến tính "
         f"({small:.4f}s -> {large:.4f}s)"
