@@ -202,11 +202,15 @@ def _code_only(source: str) -> str:
 
 #: Kiểm kê phụ thuộc đã đóng băng ở ngày lập: ghi đường dẫn của THỜI ĐIỂM ấy, không sửa theo.
 FROZEN_SNAPSHOTS = {"documentation/qa/2026-10-09-python-dependencies.json"}
-SCRIPT_REF = re.compile(r"(?<![\w/.-])(?:scripts/[\w/.-]+\.(?:py|sh)|tests/[\w/.-]+\.py)\b")
+SCRIPT_REF = re.compile(
+    r"(?<![\w/.-])(?:scripts/[\w/.-]+\.(?:py|sh)|tests/[\w/.-]+\.py|documentation/[\w/.-]+\.(?:md|json|gz))\b"
+)
 
 
 def dead_script_references(root: Path, files: list[str]) -> list[str]:
-    """``scripts/…`` hay ``tests/…py`` được nhắc trong tệp của kho mà không tồn tại ở gốc kho hay ``vietlott/``.
+    """``scripts/…``, ``tests/…py`` hay ``documentation/…`` được nhắc trong tệp của kho mà không tồn tại.
+
+    Tìm ở gốc kho hoặc ở ``vietlott/``.
 
     Engine Vietlott có ``scripts/`` riêng; workflow ``vlm-*`` chạy với ``working-directory: vietlott``.
     """
@@ -345,3 +349,8 @@ def test_the_reference_rule_catches_a_stale_path(tmp_path: Path) -> None:
     (tmp_path / "c.yml").write_text("run: pytest tests/web/test_x.py::t tests/test_x.py vietlott/tests/test_y.py",
                                     encoding="utf-8")
     assert dead_script_references(tmp_path, ["c.yml"]) == ["c.yml: tests/test_x.py"]
+    # Tài liệu chuyển nhóm (``documentation/ui/…`` -> ``documentation/architecture/…``) cũng thế.
+    (tmp_path / "documentation" / "architecture").mkdir(parents=True)
+    (tmp_path / "documentation" / "architecture" / "spec.md").write_text("", encoding="utf-8")
+    (tmp_path / "d.md").write_text("`documentation/architecture/spec.md`, `documentation/ui/spec.md`", encoding="utf-8")
+    assert dead_script_references(tmp_path, ["d.md"]) == ["d.md: documentation/ui/spec.md"]
