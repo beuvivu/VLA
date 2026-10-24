@@ -176,8 +176,8 @@ Bộ theo dõi `skill_monitor` vẫn canh kỹ năng ngoài mẫu của vector �
 
 ## 6. Kiểm thử
 
-`tests/test_loto_level_anchor.py` (12 phép), 5 phép mới trong `tests/test_cau_keo_ml.py` và 3 trong
-`tests/test_ensemble_component_availability.py`; bốn phép cũ được viết lại: ba phép chấm vector LOTO
+`tests/ensemble/test_loto_level_anchor.py` (12 phép), 5 phép mới trong `tests/ml/test_cau_keo_ml.py` và 3 trong
+`tests/evaluation/test_ensemble_component_availability.py`; bốn phép cũ được viết lại: ba phép chấm vector LOTO
 đồng đều — dạng mà phép neo làm mất khả năng phân biệt trọng số — và bản tham chiếu điểm theo ngày
 của bộ học trọng số. Fixture lịch sử của các phép cũ ghi thêm `policy_cau` hiện hành. 30 đột biến
 đều làm đỏ: bỏ neo, hàng rỗng nhận 0, `finalize_blend` quay về `clip01`, từng nơi trong năm nơi chấm

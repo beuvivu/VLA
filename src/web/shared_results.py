@@ -10,7 +10,7 @@ from web.web_security import json_for_html_script
 from core.paths import TEMPLATES
 
 #: Thứ tự giải, nhãn và độ rộng. Bên JS giữ một bản y hệt; chúng phải khớp
-#: nhau và ``tests/test_traditional_results_page.py`` kiểm điều đó.
+#: nhau và ``tests/web/test_traditional_results_page.py`` kiểm điều đó.
 PRIZE_SPEC: tuple[tuple[str, str, int, int], ...] = (
     # mã, nhãn, số lượng, độ rộng
     ("special", "Đặc Biệt", 1, 5),

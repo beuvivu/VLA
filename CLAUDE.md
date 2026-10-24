@@ -63,7 +63,7 @@ Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridg
 - Phép kiểm "workflow cài đủ thư viện" (`test_workflows._third_party_closure`) truy theo ĐƯỜNG DẪN
   module đầy đủ: theo tên gốc thì `from ingest.sources import …` chỉ đọc `ingest/__init__.py` và bs4
   biến mất — 23 → 24-10-2026 bốn job cần bs4 gián tiếp đã lọt khỏi phép kiểm như thế.
-- `tests/test_src_layout.py` canh các điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
+- `tests/repo/test_src_layout.py` canh các điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
 
 `scripts/` chia theo chức năng, bảng nhóm là `tests/test_repo_layout.SCRIPT_GROUPS`: `ops` (vận
 hành CI, triển khai), `web` (công cụ dựng và hậu xử lý trang: critical CSS, khung điều hướng, CSP,
@@ -72,6 +72,17 @@ chiếu), `release` (bốn kịch bản chốt phát hành), `research` (phép �
 đúng hai cấp dưới gốc kho (`parents[2]`), có docstring nói nó làm gì, và mọi đường dẫn `scripts/…`
 được nhắc ở đâu trong kho phải trỏ tệp có thật. 22/40 script Python không có argparse: `--help` là
 chạy thật và ghi đè tệp (`extract_critical_css`, `replicate_top5_special` từng bị chạy nhầm như thế).
+
+`tests/` chia theo chức năng (24-10-2026), bảng nhóm là `tests/repo/test_repo_layout.TEST_GROUPS`:
+mười một nhóm trùng tên gói `src/` mà phép kiểm kiểm (`tests/ensemble/`, `tests/web/`…), cộng
+`pipeline` (thứ tự bước của `src/pipeline.py`), `site` (bất biến trên `docs/` đã xuất bản), `worker`
+(Worker và phép so Python ↔ JS), `repo` (bố cục kho, workflow, CI, tài liệu). Tên tệp giữ nguyên và
+phải DUY NHẤT toàn `tests/`: không có `__init__.py`, pytest nạp phép kiểm theo tên tệp. Gốc kho trong
+phép kiểm là `Path(__file__).resolve().parents[2]` (`parents[1]` chỉ để tới `tests/fixtures`):
+`parents[1]` cũ trỏ vào `tests/`, `(ROOT / "docs").glob(...)` ra tập rỗng và phép kiểm tham số hoá
+không chạy lần nào mà vẫn xanh. Helper dùng chung giữa các nhóm đặt ở gốc `tests/` với tên
+`*_helpers.py` (`theme_palette_helpers`, `privacy_helpers`); `conftest.py` đưa `src/` và `tests/` lên
+`sys.path`. Quét tệp kiểm thì dùng `rglob`: hai phép kiểm từng `glob("test_*.py")` ở gốc `tests/`.
 
 ## Khung ứng dụng
 
@@ -128,7 +139,7 @@ trình dựng rời (`build_docs`, `build_docs_ml`, `build_dashboard`,
     documentation/architecture/ui-design-system.md
 
 Stylesheet chuẩn là **`assets/ui.css`**. `assets/vla.css` là tên đã nghỉ;
-`tests/test_published_ui_contract.py` làm đỏ trang nào còn trỏ vào nó.
+`tests/site/test_published_ui_contract.py` làm đỏ trang nào còn trỏ vào nó.
 
 ### Ngôn ngữ thị giác — lấy từ trang tham chiếu, ĐÃ ĐO
 
@@ -162,7 +173,7 @@ TÔ, không phải màu CHỮ.
   `test_the_first_frame_paints_the_background_from_tokens_not_a_copy` — màu nền
   từng có BỐN bản sao (`ui_theme`, module sinh ra, bản dự phòng trong
   `css_links`, và một chuỗi ghim trong `scripts/web/extract_critical_css.py`).
-- `PAGE_GROUND` / `BRAND_RAMP` trong `tests/test_ui_design_system.py` là HỢP
+- `PAGE_GROUND` / `BRAND_RAMP` trong `tests/web/test_ui_design_system.py` là HỢP
   ĐỒNG: mọi chủ sở hữu style phải khai cùng một nền và cùng một dốc nhấn.
 
 `documentation/ui/VLA_MASTER_UIUX_SPEC.md` là bản prompt thiết kế của chủ dự án,
@@ -287,7 +298,7 @@ thổi tổng lên 24,5 và 26,5 (lời nguyền người thắng khi chọn top
 kém hằng số chỉ vì SAI MỨC. Mọi nơi chấm vector tổ hợp — `predict_nextday_2d`,
 `learn_ensemble_weights`, `meta_predictor._baseline_validation`, `model_quality`,
 `feature_attribution` — phải gọi hàm ấy; đừng chép lại `clip01`
-(`tests/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
+(`tests/ensemble/test_loto_level_anchor.py`). Ngoại lệ duy nhất là dựng lại ngày ĐÃ công bố: sổ ghi
 `policy_blend`, và trang Chất lượng chốt dòng cũ (không có cột) bằng `anchor_loto=False`.
 Số đo: `scripts/research/benchmark_component_trust.py`,
 `documentation/research/2026-10-04-ra-soat-thanh-phan-to-hop.md`.
@@ -308,7 +319,7 @@ ngưỡng.
 
 Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atomic_io.py` (tệp tạm + `os.replace`).
 Đừng quay lại `open("w")`/`to_csv(path)`: chết giữa chừng để lại sổ cụt và lần sau mất dòng cũ
-(`tests/test_atomic_ledgers.py`).
+(`tests/core/test_atomic_ledgers.py`).
 
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
 vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
@@ -344,7 +355,7 @@ Biệt thuộc tập, cầu Đặc Biệt "chạm" theo chữ số) và `base` =
 kỳ quay công bằng; hàng sau giờ quay chỉ "trượt" khi phần kết quả liên quan đã đủ. Kỳ đã khoá dựng lại
 được bằng `--backfill-from-git` (commit cuối trước 18:10, ghi `backfilled_from`, không đè sổ đã có).
 Các mục trong một danh sách thường trùng nhau (cùng chữ số chạm) nên không độc lập — đừng in "trúng
-10/10" như bằng chứng. `tests/test_prediction_board.py`, `tests/frontend/live-scorecard.test.mjs`.
+10/10" như bằng chứng. `tests/evaluation/test_prediction_board.py`, `tests/frontend/live-scorecard.test.mjs`.
 
 ## Nguồn kết quả XSMB — một chính, hai dự phòng (13-10-2026)
 
@@ -379,7 +390,7 @@ Lượt `live_verified` gọi `sync.py --cutoff 00:00` (12-10-2026 quay khống 
 khi kỳ hôm nay đã có dự báo kỳ sau (`finalized`) nó bỏ `publish-results` và `update` nhưng VẪN
 triển khai Pages và hậu kiểm lại. Đừng gộp lại thành một job: trang chủ khi ấy chờ ~5 phút
 pipeline. Điều kiện `if:` của các job được ĐÁNH GIÁ (kể cả `success()` ngầm định) trong
-`tests/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
+`tests/repo/test_finalization_timing.py`; xem `documentation/operations/scheduling.md`.
 
 ## Engine Vietlott `vietlott/` — chép từ VLM, chạy riêng
 
@@ -395,7 +406,7 @@ logic của nó ở đây khi không cần — engine tự tìm thư mục dự 
 - Workflow ở `.github/workflows/vlm-*.yml` (GitHub chỉ đọc workflow ở gốc kho),
   `working-directory: vietlott`, đường dẫn cache có tiền tố `vietlott/`. Chúng KHÔNG
   triển khai Pages; trang riêng của engine chỉ được dựng và lưu thành artifact.
-  `tests/test_vietlott_engine_layout.py` canh cả ba điều.
+  `tests/repo/test_vietlott_engine_layout.py` canh cả ba điều.
 - Phép kiểm của engine tìm workflow ở cả hai bố cục (`tests/conftest.py`,
   `find_workflows`): kho riêng thì `.github/workflows/*.yml`, nằm trong VLA thì
   `../.github/workflows/vlm-*.yml`.
@@ -406,7 +417,7 @@ Trang Vietlott của site (`vietlott.html` + 7 trang sản phẩm) dựng bằng
 kết quả đã xác thực, bảng giải ĐÚNG mã kỳ (khuyết in "—", không mượn kỳ trước), dự
 báo ghi trước kỳ + đối chiếu, kết luận e-value. Trình dựng KHÔNG in `source`,
 `source_url`, `official_url` hay cảnh báo của engine (chúng nhắc tên nguồn) —
-`tests/test_vietlott_results.py` canh. Workflow `vietlott-results.yml` không gọi
+`tests/pages/test_vietlott_results.py` canh. Workflow `vietlott-results.yml` không gọi
 mạng: khôi phục (chỉ đọc) cache trạng thái `vqe-state-` rồi dựng và triển khai.
 Câu kết luận về độ ngẫu nhiên ở trang tổng quan in TỪ e-value của engine
 (`randomness_summary`), không viết cứng: Max 3D và Max 3D Pro lệch thật ở hàng đơn vị (số 6
@@ -475,7 +486,7 @@ con người đọc đã thấy. Kỳ được dự báo bỏ qua `known_non_dra
 năm của kỳ ấy tính theo đúng ngày quay (`build_cau_keo_feature_frame(next_date=...)`). Đo đến 15-10-2026: 2,99% so với 2,92% chọn bừa
 (z = +0,58), xác suất đã in TB 2,86%; kinh nghiệm cầu hai nháy ngang mức chung (0 cầu 2,94%, 1–4 cầu
 2,82%, 5+ cầu 3,95% trên 481 lần) — trang in các số ấy TỪ phép đo, đừng viết "tỉ lệ cao"
-(`documentation/research/2026-10-15-lo-vip-cau-keo.md`, `tests/test_multi_hit_forecast.py`). Đã nghỉ: bộ
+(`documentation/research/2026-10-15-lo-vip-cau-keo.md`, `tests/forecast/test_multi_hit_forecast.py`). Đã nghỉ: bộ
 lọc VIP (chỉ số phân tán đẩy con gan lên đầu — con 32 đứng đầu mười kỳ khi gan 10 → 19 kỳ) và luật lô rơi
 (chỉ liệt kê con vừa về). `build_cau_keo_feature_frame` nhận `raw`/`two` để kiểm trên lịch sử giả định.
 `build_multi_hit_page.py` suy "hơn / không hơn / chưa kết luận"
@@ -484,7 +495,7 @@ năm cặp xiên 2 (`src/forecast/multi_hit_pairs.py`: số kỳ cùng về tron
 cùng kỳ; 4 133 kỳ trúng 5,49% so với 5,52% chọn bừa) ở trên cùng, mỗi khối MỘT dòng số đo; giải thích
 thu vào «Chi tiết phép đo». Cặp không có phép kiểm độ nhạy nên chỉ được nói "chưa có bằng chứng", không
 "không hơn". `benchmark.json` có phiên bản riêng (`BENCHMARK_VERSION`): đổi khuôn `vip.json`
-(`MEASURE_VERSION`) không được mở lại phép kiểm một lần. `tests/test_multi_hit_page.py` dựng cả lịch sử
+(`MEASURE_VERSION`) không được mở lại phép kiểm một lần. `tests/forecast/test_multi_hit_page.py` dựng cả lịch sử
 có cài tín hiệu để trang PHẢI nói "hơn" — đừng viết sẵn câu kết luận nào. Top-5 Đặc Biệt từng ra 7,0% chỉ vì PMI làm
 trơn sai (cặp chưa có dữ liệu được PMI = log N); sửa xong còn 5,4% — đừng trích nó như tín hiệu.
 
@@ -501,7 +512,7 @@ nghiệm đã nghỉ (`batches_spent`). 15 họ của `confidence_matrix` vào k
 trên lịch sử dồn), không bao giờ "có bằng chứng"; Holm trên mọi họ chỉ phân loại. Lift trong mẫu không bao giờ là bằng chứng. Bộ nhớ ngữ cảnh (cosine, bỏ
 30 kỳ chồng cửa sổ) kém hằng số trên 1 000 kỳ (z = −11,2) nên CHỈ là thông tin mô tả trong lời giải
 thích, không vào tổ hợp. `explain()` in đúng xác suất đã công bố; nền + Σ đóng góp = hỗn hợp Hedge
-(`tests/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.
+(`tests/forecast/test_knowledge_base.py` canh). Bước pipeline chạy sau `online_learning`, `confidence_matrix` và `multi_hit_report`.
 Đổi bất kỳ tham số nào trong `rule_config()` (kể cả `VERSION`, `HORIZON`, lưới cược) thì `carry_over`
 cất nguyên lô cũ vào `retired` — KHÔNG chấm lại bằng luật chấm mới — và đăng ký lô mới ngay.
 Ngân sách α (`alpha_budget`) chốt khi tạo kho: đổi `ALPHA` trên kho đã có bị `run` từ chối.
@@ -510,7 +521,7 @@ Ngân sách α (`alpha_budget`) chốt khi tạo kho: đổi `ALPHA` trên kho �
 
 `src/soi_cau/digit_sum_rules.py` hệ thống hoá năm quy tắc của loạt bài tuần (đầu/đuôi Đặc Biệt từ tổng
 2 số cuối/đầu ĐB và bóng; chạm từ tổng 2 số cuối giải nhất; lô cặp G5; song thủ G2–G1), khớp
-TỪNG con số in trong bài (`tests/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
+TỪNG con số in trong bài (`tests/soi_cau/test_digit_sum_rules.py`). Loạt bài hằng ngày không tái lập được.
 Kiểm 4 225 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do chấm theo khung (đầu ĐB cả tuần chọn
 bừa cũng nổ 78,4%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Mốc chấm LOTO là xác suất CÓ
 ĐIỀU KIỆN theo số con đã về ở kỳ ấy, p Poisson-nhị thức, Holm cho năm quy tắc — khớp từng số với bộ
@@ -551,7 +562,7 @@ Chi tiết: `documentation/research/2026-09-28-duoi-4-va-gia-thuyet-duoi-nong.md
 `build_position_bridges.py` in `docs/soi-cau-vi-tri.html` và ô "cầu đẹp nhất"
 cạnh bảng LOTO ở trang chủ (cột `.tr-day-extra` của `render_result_board`). Luật
 đã đối chiếu từng con số với trang tham chiếu ngày 29-09-2026 và bị ghim trong
-`tests/test_position_bridges.py`: lộn thì CỘNG GỘP nháy của cả hai chiều; cầu
+`tests/soi_cau/test_position_bridges.py`: lộn thì CỘNG GỘP nháy của cả hai chiều; cầu
 chạy theo KỲ QUAY; số kép chỉ là một số — số bóng (44 → 99) chỉ HIỆN kèm, tính nó
 vào phép trúng thì ra 64 cầu thay vì 43. Bản JS (`templates/position_bridges.js`)
 tính lại cho mọi tham số và phải ra đúng từng cầu như bản Python —
@@ -578,7 +589,7 @@ cầu hai lần). Phần riêng giữ
 giữa 170 130 cầu bằng 1,00 lần nhị thức, chuỗi 0–8+ trúng tiếp 23,5–24,0% so với nền 23,8% — mọi cầu co
 về nền. Walk-forward 2 000 kỳ trên cửa sổ production: nhánh LOTO ổn định mới hơn cũ z = +9,69 (tổng 24,42 → 23,84), đang chạy z = +0,22; tổ hợp không đổi (z = −0,09; +1,01) vì `finalize_blend` đã neo mức; nhánh mới ngang hằng số ở cả bốn ô (LOTO z = +0,12 / −0,62). Phép đo chạy theo phần (`--parts/--part/--merge`); bước gộp đòi cùng danh tính lượt đo. Đừng quay lại độ co đặt tay, và đừng in `p_mean` như xác suất (cột "Tỷ lệ lịch sử" là thống kê
 trong mẫu). Trang in câu kết luận TỪ `bridge_evidence_<mode>.json`
-(`documentation/research/2026-10-16-tran-du-bao-va-suy-luan-cau.md`, `tests/test_bridge_inference.py`).
+(`documentation/research/2026-10-16-tran-du-bao-va-suy-luan-cau.md`, `tests/soi_cau/test_bridge_inference.py`).
 Trần dự báo của cả hệ thống (lệch chữ số, phụ thuộc giữa các kỳ, mô hình tần suất gần) đo bằng
 `scripts/research/audit_forecast_ceiling.py`: không có cấu trúc nào để học; kỹ năng đã công bố
 không phân biệt được với 0.
@@ -589,7 +600,7 @@ không phân biệt được với 0.
 (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, Đặc Biệt theo thứ, LOTO theo thứ) và
 `docs/tao-phoi-tuan.html`. Mọi kiểu dùng cặp vị trí a < b, số `10·d[a]+d[b]`; chỉ
 luật "bước trúng" khác nhau — ghi trong docstring và bị ghim từng ô bởi
-`tests/test_bridge_rules.py` với `tests/fixtures/bridge_reference_2026-09-28.json`.
+`tests/soi_cau/test_bridge_rules.py` với `tests/fixtures/bridge_reference_2026-09-28.json`.
 Hai điểm dễ sai: hai nháy BẤT ĐỐI XỨNG (số lộn về hai nháy KHÔNG tính); bộ số là
 "số giữ nguyên trong một bộ qua các kỳ", không phải "ĐB rơi vào bộ". Hai trang
 tần suất cũ `cau-giai-dac-biet.html`, `cau-dac-biet-theo-bo-so.html` là thống kê
@@ -605,7 +616,7 @@ LUẬT trên dữ liệu dựng sẵn.
 Chạy bộ kiểm: `PYTHONPATH=src python3 -m pytest tests -q`
 
 Khối `run:` của workflow là MÃ, không phải văn bản:
-`tests/test_workflow_shell_behaviour.py` chạy nguyên khối lấy từ YAML bằng
+`tests/repo/test_workflow_shell_behaviour.py` chạy nguyên khối lấy từ YAML bằng
 đúng lệnh shell của GitHub, chỉ thay đồng hồ, lệnh ngủ, nguồn và lệnh đẩy.
 Soi chuỗi trong YAML không thấy được lỗi hệ bát phân của `$(date +%H)` hay
 một vòng thử lại tự kẹt giữa rebase — cả hai đã xảy ra thật.

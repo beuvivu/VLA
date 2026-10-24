@@ -7,7 +7,7 @@
 // lệch nhau, và lệch ở đây nghĩa là trang live hiển thị một dãy số khác với
 // dãy được ghi vào lịch sử.
 //
-// Chốt chặn là `tests/test_worker_parser_parity.py`: nó chạy CẢ HAI bản trên
+// Chốt chặn là `tests/worker/test_worker_parser_parity.py`: nó chạy CẢ HAI bản trên
 // cùng một bộ mẫu HTML và đòi kết quả giống hệt nhau, từng ký tự. Sửa một bản
 // mà quên bản kia thì phép kiểm đỏ ngay.
 //

@@ -82,13 +82,13 @@ từng ô — `tests/fixtures/bridge_reference_2026-09-28.json`.
   `createElement` + `textContent`), biểu mẫu phải tự chặn `submit` vì CSP có
   `form-action 'none'`, mọi màu đọc token.
 - Thêm trang: SITE_NAV + `app_icons.BIEU_TUONG` + `nexlink_icons._NAVIGATION` +
-  `tests/test_app_icons.py` REFERENCE_MAP + số mục nhóm trong `tests/frontend/navigation.test.mjs`
+  `tests/web/test_app_icons.py` REFERENCE_MAP + số mục nhóm trong `tests/frontend/navigation.test.mjs`
   + pipeline (trước `build_landing_page`) + danh sách `test -s` / production_audit / release_check.
 
 ## Phương pháp "tổng – bóng – chạm" của chuyên mục bài dự đoán (05-10-2026)
 
 `src/soi_cau/digit_sum_rules.py` — luật đã giải mã từ loạt bài tuần, khớp từng con số (ghim trong
-`tests/test_digit_sum_rules.py`). tổng(xy) = (x + y) mod 10, bóng(x) = x + 5 mod 10, giải đệm 0
+`tests/soi_cau/test_digit_sum_rules.py`). tổng(xy) = (x + y) mod 10, bóng(x) = x + 5 mod 10, giải đệm 0
 đủ độ dài.
 
 | Quy tắc | Công thức |

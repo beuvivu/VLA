@@ -7,7 +7,7 @@ tích của từng bài và hệ thống hoá thành thuật toán riêng. Đã 
 Hai loạt bài, hai mức tái lập được:
 
 * **Loạt bài tuần** viết rõ công thức, và mọi con số in trong bài tính lại
-  ĐÚNG từ bảng kết quả của kho (ghim trong ``tests/test_digit_sum_rules.py``).
+  ĐÚNG từ bảng kết quả của kho (ghim trong ``tests/soi_cau/test_digit_sum_rules.py``).
   Đó là năm quy tắc dưới đây.
 * **Loạt bài hằng ngày** gọi tên phương pháp ("bạch thủ theo cầu chạy 7 ngày",
   "lô rơi liên tiếp 3 ngày") nhưng con số in ra KHÔNG khớp chính phương pháp ấy

@@ -35,7 +35,7 @@
 
 ## 2. Lịch vạn niên
 
-- [x] Thêm kiểm thử `tests/test_calendar_widget.py` cho dữ liệu Đặc Biệt và `tests/frontend/calendar.test.mjs` cho ngày âm và tương tác.
+- [x] Thêm kiểm thử `tests/web/test_calendar_widget.py` cho dữ liệu Đặc Biệt và `tests/frontend/calendar.test.mjs` cho ngày âm và tương tác.
 - [x] Chạy đỏ trước khi tạo thành phần.
 - [x] `src/web/calendar_widget.py`: `load_special_results(repo_root) -> dict[str, str]`, `render_calendar(repo_root) -> str`.
 - [x] `src/web/templates/vietnamese_calendar.js`: `AppVietnameseCalendar.getDay(iso)` và `todayISO(date)`; phạm vi 1900–2099.

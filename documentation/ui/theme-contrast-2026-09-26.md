@@ -43,5 +43,5 @@ Hợp đồng kiểm thử chuyển từ tìm hex trong từng selector sang ph�
 token của từng chủ đề. Kiểm tra AA và độ phân biệt vẫn giữ nguyên, bổ sung
 kiểm dark không chói, media/explicit cùng bảng màu, không pinlight trên body,
 đường dóng không che ô và in từ màn tối. Phép kiểm nguồn bổ sung nằm ở
-`tests/test_theme_palette.py`; helper chỉ đọc token thật ở
+`tests/web/test_theme_palette.py`; helper chỉ đọc token thật ở
 `tests/theme_palette_helpers.py`. Kiểm tra render cuối thuộc bước tích hợp.

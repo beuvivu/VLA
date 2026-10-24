@@ -38,4 +38,4 @@ Can chi theo chu kỳ Julian day và năm/tháng âm lịch. Giờ hoàng đạo
 
 `compact_results.css` nạp vào stylesheet chuẩn. Bảng thật có một thẻ chứa bảng giải và bảng LOTO đầu–đuôi; nhãn/neo cũ còn hoạt động. Trên điện thoại, các giải sáu số chia hai hàng để giữ cỡ chữ đọc được. Trang trực tiếp dùng cùng ô giải, giữ trạng thái đang quay và hiệu ứng cập nhật. Mô phỏng giữ nguyên nhãn cảnh báo và xác suất.
 
-`tests/test_calendar_widget.py` kiểm dữ liệu, số 0 đầu và đủ 27 số. `tests/frontend/calendar.test.mjs` kiểm Tết/Trung thu/tháng nhuận, can chi, UTC+7, sóc gần nửa đêm, tháng ngắn, bàn phím, giới hạn năm, dữ liệu rỗng và dữ liệu không hợp lệ.
+`tests/web/test_calendar_widget.py` kiểm dữ liệu, số 0 đầu và đủ 27 số. `tests/frontend/calendar.test.mjs` kiểm Tết/Trung thu/tháng nhuận, can chi, UTC+7, sóc gần nửa đêm, tháng ngắn, bàn phím, giới hạn năm, dữ liệu rỗng và dữ liệu không hợp lệ.

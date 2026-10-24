@@ -315,7 +315,7 @@ Ba điều đáng đọc kỹ:
    log-loss kém nền 61,5% (t = −58,8). Bản sửa chọn λ trên 20% cửa sổ cuối và co
    về nền: λ chọn 10⁴–10⁶, độ lệch chuẩn 0,0026, kém nền 0,0009% (t = −0,28).
    Trên dữ liệu có cài bạc nhớ, cùng phép chọn λ hạ xuống ≤ 10⁴ và hơn nền
-   0,2–1,7% (phép kiểm hai chiều trong `tests/test_ml_engine.py`).
+   0,2–1,7% (phép kiểm hai chiều trong `tests/research/test_ml_engine.py`).
 
 Chỉ số xếp hạng (Trúng@3/5/10: 0,709 / 1,164 / 2,309 so với chọn ngẫu nhiên
 0,714 / 1,190 / 2,380) không có nghĩa ở đây: khi trust = 0 mọi con cùng xác suất,
@@ -337,8 +337,8 @@ PYTHONPATH=src python src/research/ml_engine/main_pipeline.py --start 3240 --sto
 PYTHONPATH=src python src/research/ml_engine/main_pipeline.py --no-temporal --no-ranking
 
 # Kiểm thử
-PYTHONPATH=src python3 -m pytest tests/test_ml_engine.py \
-    tests/test_ml_engine_integrity.py tests/test_ml_engine_economics.py -q   # 169 phép kiểm
+PYTHONPATH=src python3 -m pytest tests/research/test_ml_engine.py \
+    tests/research/test_ml_engine_integrity.py tests/research/test_ml_engine_economics.py -q   # 169 phép kiểm
 ```
 
 Module không lưu trạng thái giữa các lần chạy: phép trộn tất định, mỗi lượt học

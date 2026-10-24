@@ -5,7 +5,7 @@
   if (window.TraditionalResults) return;
 
   // Bản sao của PRIZE_SPEC bên Python: mã, nhãn, số lượng, độ rộng.
-  // `tests/test_traditional_results_page.py` buộc hai bản khớp nhau — lệch
+  // `tests/web/test_traditional_results_page.py` buộc hai bản khớp nhau — lệch
   // nhau thì trang vẫn dựng được nhưng cắt sai chuỗi và hiện số rác.
   const PRIZES = [
     ["special", "Đặc Biệt", 1, 5],

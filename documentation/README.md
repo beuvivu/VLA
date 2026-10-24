@@ -22,7 +22,7 @@ forecasting guarantee.
 | `research/` | Nghiên cứu có số đo, tái lập bằng `scripts/research/` |
 | `ui/` | Hệ thiết kế, báo cáo giao diện, bản prompt UI/UX của chủ dự án (trước đây ở `docs/design/`, `docs/ui-ux/`) |
 
-`docs/` ở gốc kho CHỈ chứa trang web xuất bản; `tests/test_repo_layout.py` canh việc ấy.
+`docs/` ở gốc kho CHỈ chứa trang web xuất bản; `tests/repo/test_repo_layout.py` canh việc ấy.
 
 ## Index
 

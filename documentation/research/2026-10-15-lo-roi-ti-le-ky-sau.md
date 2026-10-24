@@ -115,7 +115,7 @@ này sửa đúng điều chủ dự án chỉ ra — không còn chọn con kh�
 
 ## Đã kiểm
 
-- **`tests/test_multi_hit_next_day.py`** (13 phép kiểm) ghim:
+- **`test_multi_hit_next_day.py`** (13 phép kiểm; gỡ cùng luật lô rơi ngày 15-10-2026, commit `2671d6c6`) ghim:
   - không nhìn trước;
   - số đếm nhóm khớp phép đếm thẳng mọi cặp kỳ;
   - hệ số nhóm không đếm hai lần;
@@ -123,7 +123,7 @@ này sửa đúng điều chủ dự án chỉ ra — không còn chọn con kh�
   - chỉ chọn con vừa về;
   - thứ tự hoà;
   - số đo đã xuất bản: năm con và mười kỳ gần nhất đều là con đã về ở kỳ trước.
-- **`tests/test_multi_hit_page.py`**: dải số in xác suất và số nháy vừa về; dòng tỉ lệ nhóm in đúng
+- **`tests/forecast/test_multi_hit_page.py`**: dải số in xác suất và số nháy vừa về; dòng tỉ lệ nhóm in đúng
   phân số; ô "Xác suất đã in" đặt cạnh tỉ lệ trúng thật.
 - **17 đột biến** đều đỏ đúng chỗ.
 - Kỳ có ít hơn 5 con khác nhau bị từ chối thẳng (`multi_hit_next_day.picks`) thay vì lấp chỗ trống

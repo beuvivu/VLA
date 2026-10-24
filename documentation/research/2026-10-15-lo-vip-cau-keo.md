@@ -99,7 +99,7 @@ Luật lô rơi nghỉ cùng ngày; module `multi_hit_next_day.py` đã gỡ.
 
 ## Đã kiểm
 
-- **`tests/test_multi_hit_forecast.py`** ghim:
+- **`tests/forecast/test_multi_hit_forecast.py`** ghim:
   - cầu hai nháy và cầu LOTO đếm khớp `bridge_rules.find`;
   - không nhìn trước;
   - nhãn đúng kỳ sau;
@@ -110,6 +110,6 @@ Luật lô rơi nghỉ cùng ngày; module `multi_hit_next_day.py` đã gỡ.
   - lý do là đóng góp dương lớn nhất;
   - kinh nghiệm cầu đếm đủ mọi kỳ;
   - số đo đã xuất bản là dự báo cho kỳ sau kỳ mới nhất.
-- **`tests/test_multi_hit_page.py`:** chuyển sang mô hình mới. Thêm phép kiểm tiêu đề ghi kỳ dự báo,
+- **`tests/forecast/test_multi_hit_page.py`:** chuyển sang mô hình mới. Thêm phép kiểm tiêu đề ghi kỳ dự báo,
   lý do từng con và dòng kinh nghiệm cầu.
 - **17 đột biến** (15 trong mã, 2 trên chính `vip.json`) đều đỏ đúng chỗ.

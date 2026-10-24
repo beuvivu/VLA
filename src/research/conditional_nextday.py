@@ -38,7 +38,7 @@ from research.research_diagnostics import bh_fdr
 #: thì nó tự nổi lên.
 #: Hiệu chỉnh mô men đúng không bảo đảm rủi ro dự báo thấp hơn mọi κ cố định.
 #: Khi mỗi hàng chỉ có vài kỳ và không có tín hiệu, κ học có thể thua κ=60;
-#: tests/test_conditional_nextday.py kiểm riêng co nhiễu và giữ tín hiệu tiêm
+#: tests/research/test_conditional_nextday.py kiểm riêng co nhiễu và giữ tín hiệu tiêm
 #: trên nhiều seed, thay vì đòi thắng một baseline ở một mẫu ngẫu nhiên.
 LEARN_CONDITIONAL_PRIOR: float | None = None
 

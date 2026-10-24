@@ -246,7 +246,7 @@ xác suất thô để top-k trên trang ML vẫn có thứ tự xác định.
 
 ## 6. Kiểm thử
 
-`tests/test_vla_lab.py`, 16 phép:
+`tests/research/test_vla_lab.py`, 16 phép:
 - Không nhìn trước: đổi mọi kỳ sau t thì hàng 0..t giữ nguyên từng bit, cho cả 30 đặc trưng.
 - Nhãn đúng kỳ t+1.
 - Điểm z của gan khớp tính tay.

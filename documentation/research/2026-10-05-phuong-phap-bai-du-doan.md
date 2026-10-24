@@ -4,7 +4,7 @@ Ngày: 05-10-2026. Nguồn: 10 bài (28-09 → 05-10-2026) của chuyên mục b
 chỉ định, đọc toàn văn qua `.github/workflows/inspect-reference-articles.yml` (proxy của môi
 trường phát triển chặn trang). Không lưu nội dung bài vào kho; chỉ ghi phương pháp.
 
-Mã: `src/soi_cau/digit_sum_rules.py`. Phép kiểm: `tests/test_digit_sum_rules.py`. Số đo:
+Mã: `src/soi_cau/digit_sum_rules.py`. Phép kiểm: `tests/soi_cau/test_digit_sum_rules.py`. Số đo:
 `data/research/digit_sum_rules.json` (tái lập: `PYTHONPATH=src python3 src/soi_cau/digit_sum_rules.py`).
 
 ## Tóm tắt

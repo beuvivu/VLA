@@ -1,6 +1,6 @@
 # Lô nhiều nháy (≥ 2 nháy một kỳ) — bộ lọc VIP và phép đo trên 4 228 kỳ
 
-Ngày 08-10-2026. Mã: `src/forecast/multi_hit_vip.py`. Phép kiểm: `tests/test_multi_hit_vip.py`.
+Ngày 08-10-2026. Mã: `src/forecast/multi_hit_vip.py`. Phép kiểm: `tests/forecast/test_multi_hit_vip.py`.
 
 > Cập nhật 15-10-2026: bộ lọc này đã nghỉ khỏi trang «Lô VIP nhiều nháy». Thành phần phân tán
 > (phương sai/trung bình) của nó đẩy con gan lên đầu. Năm con trên trang nay là lô rơi theo tỉ lệ
@@ -111,7 +111,7 @@ CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của 
 
 ## Kiểm thử
 
-`tests/test_multi_hit_vip.py` gồm 16 phép kiểm. Đã thử mười lăm đột biến và cả mười lăm đều đỏ:
+`tests/forecast/test_multi_hit_vip.py` gồm 16 phép kiểm. Đã thử mười lăm đột biến và cả mười lăm đều đỏ:
 
 - cửa sổ đặc trưng gồm cả kỳ đang dự báo (nhìn trước);
 - cửa sổ chọn trọng số gồm cả kỳ t;
@@ -131,7 +131,7 @@ CSV lịch sử dài thêm mỗi ngày; `--until` chốt đúng các kỳ của 
 
 Chủ dự án thấy tỉ lệ trúng còn quá thấp và yêu cầu thử lại. Lượt này không tinh chỉnh bộ lọc cũ
 mà dò rộng: 22 cách chấm thuộc mọi họ ý tưởng thường gặp, gồm cả hai mô hình học trên toàn bộ
-đặc trưng. Mã: `scripts/research/benchmark_multi_hit.py`. Phép kiểm: `tests/test_benchmark_multi_hit.py`.
+đặc trưng. Mã: `scripts/research/benchmark_multi_hit.py`. Phép kiểm: `tests/forecast/test_benchmark_multi_hit.py`.
 
 ### Giao thức, cố định trước khi chạy
 
@@ -217,7 +217,7 @@ theo tỉ lệ ấy. Tỉ lệ trúng của MỖI con vẫn ở mức nền: 2,9
 
     python3 scripts/research/benchmark_multi_hit.py --until 2026-10-12 --power-check     # khoảng 2 phút, 4 lõi
 
-`tests/test_benchmark_multi_hit.py` gồm 9 phép kiểm, mỗi phép ghim một điều:
+`tests/forecast/test_benchmark_multi_hit.py` gồm 9 phép kiểm, mỗi phép ghim một điều:
 
 - mọi chiến lược, kể cả hai mô hình học, chỉ đọc quá khứ (đổi các kỳ ≥ t0 không đổi điểm ở kỳ ≤ t0);
 - z của chọn bừa xấp xỉ N(0, 1);
@@ -238,7 +238,7 @@ Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lư
 ## Trang «Lô VIP nhiều nháy» — 13-10-2026
 
 Trang in từ phép đo, đúng như mục này từng đặt điều kiện. Không con số hay kết luận nào được
-viết sẵn; luật được ghim trong `tests/test_multi_hit_page.py`.
+viết sẵn; luật được ghim trong `tests/forecast/test_multi_hit_page.py`.
 
 - **Số đo.** `src/forecast/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
   - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
@@ -339,7 +339,7 @@ không được buộc phép kiểm ấy chạy lại.
 
 ### Phép kiểm
 
-`tests/test_multi_hit_page.py` ghim các điều sau:
+`tests/forecast/test_multi_hit_page.py` ghim các điều sau:
 
 - điểm của kỳ t chỉ đọc các kỳ trước t (đảo mọi kỳ từ t trở đi không đổi các cặp đã chọn cho kỳ ≤ t);
 - số trúng và mốc C(d, 2)/4 950 của từng kỳ;

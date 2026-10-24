@@ -79,13 +79,13 @@ trình duyệt tải đúng CSS/JavaScript khi website thay đổi.
 
 ## Kiểm chứng bắt buộc khi sửa luồng này
 
-- `tests/test_site_assets.py`: băm theo byte, tính lũy đẳng, bảo toàn dữ liệu
+- `tests/web/test_site_assets.py`: băm theo byte, tính lũy đẳng, bảo toàn dữ liệu
   nhúng, tham chiếu ngoài phạm vi, manifest, thiếu tệp và thứ tự pipeline.
-- `tests/test_cache_purge.py`, `tests/test_workflows.py`: hợp đồng API,
+- `tests/repo/test_cache_purge.py`, `tests/repo/test_workflows.py`: hợp đồng API,
   phân trang, lỗi mạng, xác minh xóa và phạm vi trigger/quyền workflow.
-- `tests/test_vietlott_release_snapshot.py`: chạy shell ghi trang trong kho
+- `tests/repo/test_vietlott_release_snapshot.py`: chạy shell ghi trang trong kho
   tạm, kiểm manifest từ nội dung đã commit và không để sót thay đổi `docs/`.
-- `tests/test_push_generated_site.py`: các bot dùng clone và bare remote
+- `tests/repo/test_push_generated_site.py`: các bot dùng clone và bare remote
   tạm thật; bảo toàn thay đổi hai phía, chốt manifest sau rebase và chặn
   xung đột ngoài tệp dẫn xuất.
 - Bộ kiểm trang đã xuất, JavaScript, và Chromium trên desktop/mobile.

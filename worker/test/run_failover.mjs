@@ -1,4 +1,4 @@
-// In quyết định chuyển nguồn của bản JS để `tests/test_source_failover_parity.py` so.
+// In quyết định chuyển nguồn của bản JS để `tests/worker/test_source_failover_parity.py` so.
 import { readFileSync } from "node:fs";
 import { primaryHasFailed } from "../src/snapshot.js";
 

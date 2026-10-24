@@ -19,11 +19,11 @@ remove anti-bot tooling; randomize runner temporary paths; narrow workflow
 permissions; validate model allowlists, shapes, probabilities, calibration,
 weights and configuration; keep rejected challengers behind the baseline gate.
 
-Regression guards: `tests/test_security_hardening.py`,
-`tests/test_validate_data_strict.py`, `tests/test_sources.py`,
-`tests/test_ml_validation.py`, `tests/test_meta_predictor.py`,
-`tests/test_ensemble_utils_security.py`, `tests/test_configuration_validation.py`
-and `tests/test_workflows.py`.
+Regression guards: `tests/repo/test_security_hardening.py`,
+`tests/ingest/test_validate_data_strict.py`, `tests/ingest/test_sources.py`,
+`tests/ml/test_ml_validation.py`, `tests/forecast/test_meta_predictor.py`,
+`tests/ensemble/test_ensemble_utils_security.py`, `tests/ml/test_configuration_validation.py`
+and `tests/repo/test_workflows.py`.
 
 Verification: `277 passed`; Ruff CI and additional Bandit-oriented checks on
 `src` passed; compileall and pip dependency checks passed; number-integrity,

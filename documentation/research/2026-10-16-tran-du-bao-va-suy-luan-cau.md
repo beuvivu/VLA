@@ -244,7 +244,7 @@ Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
 
 ## 5. Kiểm thử
 
-- **`tests/test_bridge_inference.py`** (21 phép) ghim:
+- **`tests/soi_cau/test_bridge_inference.py`** (21 phép) ghim:
   - đếm kinh nghiệm chuỗi khớp phép đếm thẳng;
   - lịch sử công bằng: mọi cầu co về tỉ lệ chung, tỉ lệ lịch sử của cầu được chọn cao hơn hẳn còn
     hậu nghiệm thì không, và tổng nhánh đúng mức;
@@ -265,7 +265,7 @@ Tổng LOTO kỳ vọng là 23,77 con mỗi kỳ.
   - Q của DerSimonian–Laird đo quanh trung bình nghịch đảo phương sai.
   - phép đo chỉ gộp các phần của cùng một lượt (cùng tham số, dữ liệu, mã, đủ kỳ đích);
   - danh tính lượt đo đổi khi BẤT KỲ module nào phép đo chạy, hay chính kịch bản, đổi.
-- **`tests/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
+- **`tests/soi_cau/test_cau_position_evidence.py`:** câu lý do in xác suất đã co, không in tỉ lệ trong mẫu;
   xác suất ấy dùng chung `rule_next_probability` nên luôn nằm trong (0, 1).
 - **31 đột biến** đều đỏ đúng chỗ:
   - không co, hoặc co hoàn toàn;

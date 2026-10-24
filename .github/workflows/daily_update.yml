@@ -60,7 +60,7 @@ on:
     # cách nhau <= 44 phút: với mọi độ trễ đo được (4,3-8,6 giờ) có ít nhất
     # BA mốc rơi vào khung chờ 13:55-18:35, vì GitHub còn bỏ mốc (05-10 không
     # mốc nào nổ trong 7,7 giờ). Mô phỏng trên 26 ngày đo: 26/26 ngày thu được
-    # lúc 18:35 (tests/test_workflows.py ghim phép tính này).
+    # lúc 18:35 (tests/repo/test_workflows.py ghim phép tính này).
     #
     # Nổ quá sớm (GitHub bỗng đúng giờ) thì bước chặn cho thoát sau ~20 giây;
     # khi ấy mốc 08:17 UTC (15:17 VN) tự chờ tới 18:15. Mốc cuối cũng là lưới
