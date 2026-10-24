@@ -133,7 +133,7 @@ jobs:
           # Pipeline hỏng giữa chừng thì chưa có dự báo kỳ sau, nên lượt gọi lại chạy đủ.
           next_day = (target + timedelta(days=1)).isoformat()
           finalized = live_verified and latest == target.isoformat() and all(
-              os.path.exists(f"data/predict/predict_next_{mode}_all_{next_day}.csv")
+              os.path.exists(f"data/forecast/predict/predict_next_{mode}_all_{next_day}.csv")
               for mode in ("loto", "de")
           )
           if finalized:
@@ -406,11 +406,11 @@ jobs:
           test -s data/xsmb.csv
           test -s data/xsmb.json
           test -s data/source_audit.json
-          test -s data/history/pred_loto.csv
-          test -s data/history/pred_de.csv
-          test -s data/significance/global_diagnostics.json
-          test -s data/statistical_signal/predict_next_loto_stat_all.csv
-          test -s data/statistical_signal/predict_next_de_stat_all.csv
+          test -s data/evaluation/history/pred_loto.csv
+          test -s data/evaluation/history/pred_de.csv
+          test -s data/stats/significance/global_diagnostics.json
+          test -s data/stats/statistical_signal/predict_next_loto_stat_all.csv
+          test -s data/stats/statistical_signal/predict_next_de_stat_all.csv
           test -s models/ml_loto.joblib
           test -s models/ml_de.joblib
           test -s models/cau_keo_loto.joblib

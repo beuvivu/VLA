@@ -20,7 +20,7 @@ def test_weight_label_identifies_cau_keo_model():
 
 def test_dashboard_separates_readable_panels_without_losing_evidence(tmp_path, monkeypatch):
     data = tmp_path / "data"
-    (data / "predict").mkdir(parents=True)
+    (data / "forecast" / "predict").mkdir(parents=True)
     (data / "ensemble").mkdir()
     picks = {"anchor_date": "2026-10-07", "target_date": "2026-10-08",
              "top4": [0, 3, 8, 9], "top8": list(range(8)), "top10": list(range(10)),
@@ -29,10 +29,10 @@ def test_dashboard_separates_readable_panels_without_losing_evidence(tmp_path, m
     calibration = {"params": {"a": 1.0, "b": 0.0, "temperature": 1.0},
                    "selection": {"chosen": "identity", "fit_days": 20, "holdout_days": 0}}
     for mode in ("loto", "de"):
-        (data / "predict" / f"picks_{mode}.json").write_text(json.dumps(picks))
+        (data / "forecast" / "predict" / f"picks_{mode}.json").write_text(json.dumps(picks))
         (data / "ensemble" / f"calibration_{mode}.json").write_text(json.dumps(calibration))
         pd.DataFrame({"number": [0, 3], "prob": [.123456, .098765]}).to_csv(
-            data / "predict" / f"predict_next_{mode}_all_2026-10-08.csv", index=False)
+            data / "forecast" / "predict" / f"predict_next_{mode}_all_2026-10-08.csv", index=False)
     monkeypatch.chdir(tmp_path)
     main(["--docs-dir", "docs"])
     soup = BeautifulSoup((tmp_path / "docs/dashboard.html").read_text(), "html.parser")
@@ -53,7 +53,7 @@ def test_dashboard_separates_readable_panels_without_losing_evidence(tmp_path, m
     assert "Theo dõi đối chứng" in visible and "Giữ nguyên xác suất" in visible
     assert "20" in visible and "0" in visible
     assert "a" * 64 not in visible
-    for path in (data / "predict").glob("picks_*.json"):
+    for path in (data / "forecast" / "predict").glob("picks_*.json"):
         assert json.loads(path.read_text()) == picks
 
 

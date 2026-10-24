@@ -37,7 +37,7 @@ def _write_store(
     None nghĩa là đặt đúng tỉ lệ nền cho mọi con.
     """
     rng = np.random.default_rng(seed)
-    (root / "predict").mkdir(parents=True, exist_ok=True)
+    (root / "forecast" / "predict").mkdir(parents=True, exist_ok=True)
     rows, out_days = [], []
     base = sm.baseline_rate("loto")
     start = date(2026, 6, 1)
@@ -52,7 +52,7 @@ def _write_store(
             lo[np.unique(np.r_[special, loto])] = loto_winner_prob
         for mode, prob in (("de", de), ("loto", lo)):
             pd.DataFrame({"number": np.arange(100), "prob": prob}).to_csv(
-                root / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False
+                root / "forecast" / "predict" / f"predict_next_{mode}_all_{day}.csv", index=False
             )
         if i < days:  # kỳ cuối có thể là kỳ CHƯA quay
             rows.append({"date": day, "special": special, **dict(zip(PRIZES, [special, *loto], strict=False))})
@@ -134,10 +134,10 @@ def test_the_quality_report_grades_published_artifacts_once_there_are_enough(
     from evaluation import model_quality as mq
 
     _write_store(tmp_path, sm.MIN_DAYS, de_mass_on_winner=0.012)
-    (tmp_path / "prob_eval").mkdir()
+    (tmp_path / "evaluation" / "prob_eval").mkdir(parents=True)
     pd.DataFrame(
         {"mode": ["de"], "target_date": ["2026-06-01"], "logloss": [4.6], "brier": [0.99]}
-    ).to_csv(tmp_path / "prob_eval" / "ensemble_history.csv", index=False)
+    ).to_csv(tmp_path / "evaluation" / "prob_eval" / "ensemble_history.csv", index=False)
 
     report = json.loads(mq.build(tmp_path).read_text(encoding="utf-8"))
 
@@ -180,7 +180,7 @@ def test_the_real_cleanup_step_keeps_a_full_monitoring_window(
     )
     cleanup_artifacts.main()
 
-    left = sorted((tmp_path / "predict").glob("predict_next_de_all_*.csv"))
+    left = sorted((tmp_path / "forecast" / "predict").glob("predict_next_de_all_*.csv"))
     assert len(left) < 60, "mẫu dựng sẵn phải thật sự bị dọn bớt"
     for check in sm.evaluate(tmp_path):
         assert check.days == sm.DEFAULT_WINDOW, check.describe()

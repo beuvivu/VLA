@@ -77,13 +77,13 @@ def test_published_loto_forecast_carries_the_expected_distinct_count(tmp_path, m
     levels = {
         "ml/predict_next_loto_ml_all.csv": 0.236,
         "ai_ml/cau_keo_loto_all.csv": 0.236,
-        "statistical_signal/predict_next_loto_stat_all.csv": 0.237,
-        "path_ui/predict_next_loto_active_2026-01-01_all.csv": 0.245,
-        "path_ui/predict_next_loto_stable_2026-01-01_all.csv": 0.265,
+        "stats/statistical_signal/predict_next_loto_stat_all.csv": 0.237,
+        "soi_cau/path_ui/predict_next_loto_active_2026-01-01_all.csv": 0.245,
+        "soi_cau/path_ui/predict_next_loto_stable_2026-01-01_all.csv": 0.265,
     }
     for relative, level in levels.items():
         path = data / relative
-        path.parent.mkdir(exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         prob = np.full(100, level)
         prob[7] += 0.02  # một con nổi lên để thấy thứ hạng được giữ
         pd.DataFrame({"number": range(100), "prob": prob, "target_date": "2026-01-02"}).to_csv(path, index=False)

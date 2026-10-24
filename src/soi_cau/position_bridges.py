@@ -64,7 +64,7 @@ BEST_COUNT = 10
 WINDOW = 60
 MAX_STREAK = 10
 CONSENSUS_BUCKETS = ((1, 1), (2, 2), (3, 3), (4, 5), (6, 9), (10, None))
-OUT = Path("position_bridges")
+OUT = Path("soi_cau") / "position_bridges"
 
 
 def positions() -> list[dict]:

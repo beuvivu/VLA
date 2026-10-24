@@ -320,8 +320,8 @@ def test_the_written_file_records_the_refusal(tmp_path: Path) -> None:
                     policy_column("cau"): COMPONENT_POLICY["cau"],
                 }
             )
-    hist_dir = tmp_path / "history"
-    hist_dir.mkdir()
+    hist_dir = tmp_path / "evaluation" / "history"
+    hist_dir.mkdir(parents=True)
     import pandas as pd
 
     pd.DataFrame(rows).to_csv(hist_dir / "pred_loto.csv", index=False)

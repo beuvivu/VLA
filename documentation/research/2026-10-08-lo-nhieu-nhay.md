@@ -240,7 +240,7 @@ Hai đột biến sống sót là tương đương: bỏ một nhóm chiến lư
 Trang in từ phép đo, đúng như mục này từng đặt điều kiện. Không con số hay kết luận nào được
 viết sẵn; luật được ghim trong `tests/forecast/test_multi_hit_page.py`.
 
-- **Số đo.** `src/forecast/multi_hit_report.py` ghi hai tệp vào `data/multi_hit/`:
+- **Số đo.** `src/forecast/multi_hit_report.py` ghi hai tệp vào `data/forecast/multi_hit/`:
   - `vip.json`, đo lại mỗi ngày (~25 giây). Gồm bộ lọc VIP, kiểm chứng walk-forward lồng nhau
     trên mọi kỳ, khoảng Wilson 95% theo cụm kỳ (cỡ mẫu hiệu dụng Kish), mức tin, top-5 cho kỳ kế tiếp và 10 kỳ gần nhất của chính
     kiểm chứng.

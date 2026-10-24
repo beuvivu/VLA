@@ -40,7 +40,7 @@ class StatsOutputs:
 
     @classmethod
     def from_paths(cls, paths: RepoPaths) -> "StatsOutputs":
-        return cls(data_dir=paths.data_dir / "advanced", images_dir=paths.images_dir, excel_dir=paths.data_dir / "excel")
+        return cls(data_dir=paths.data_dir / "stats" / "advanced", images_dir=paths.images_dir, excel_dir=paths.data_dir / "excel")
 
 
 def _fmt2(n: int | float | str) -> str:
@@ -563,10 +563,10 @@ def _load_ml_probs(data_dir: Path, mode: str) -> pd.DataFrame:
         # Prefer the newest explainable cầu-kèo AI/ML layer when available.
         data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv",
         data_dir / "ml" / f"predict_next_{mode}_ml_all.csv",
-        data_dir / "predict" / f"predict_next_{mode}_all.csv",
+        data_dir / "forecast" / "predict" / f"predict_next_{mode}_all.csv",
     ]
     # Also support date-stamped ensemble predictions.
-    candidates.extend(sorted((data_dir / "predict").glob(f"predict_next_{mode}_all_*.csv"), reverse=True))
+    candidates.extend(sorted((data_dir / "forecast" / "predict").glob(f"predict_next_{mode}_all_*.csv"), reverse=True))
 
     for path in candidates:
         if not path.exists():

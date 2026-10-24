@@ -173,7 +173,7 @@ def main() -> None:
         default=None,
         help="Ép độ co ngót; bỏ trống thì học từ dữ liệu",
     )
-    ap.add_argument("--out-dir", type=str, default="data/conditional")
+    ap.add_argument("--out-dir", type=str, default="data/stats/conditional")
     args = ap.parse_args()
 
     lot = Lottery()

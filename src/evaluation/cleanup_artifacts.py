@@ -12,7 +12,7 @@ from evaluation.skill_monitor import update_ledger
 DATE_RE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
 #: Thư mục chứa tệp mang ngày trong tên, giữ ``--retention-days`` ngày. Bản chụp
 #: Cầu Kèo theo ngày (``cau_keo_daily_top``) chỉ cần cho phiên quay đang diễn ra.
-DATED_DIRS = ("path_ui", "predict", "ai_ml/daily")
+DATED_DIRS = ("soi_cau/path_ui", "forecast/predict", "ai_ml/daily")
 
 
 def _latest_date(xsmb_csv: Path) -> date:

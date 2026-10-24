@@ -45,11 +45,11 @@ def test_sync_main_loads_committed_history_before_fetch(monkeypatch) -> None:
 
 
 def test_prediction_history_is_compact_csv() -> None:
-    assert (ROOT / "data/history/pred_loto.csv").is_file()
-    assert (ROOT / "data/history/pred_de.csv").is_file()
-    assert not list((ROOT / "data/history").glob("pred_loto_*.csv"))
-    assert not list((ROOT / "data/history").glob("pred_de_*.csv"))
-    assert not list((ROOT / "data/history").glob("*.parquet"))
+    assert (ROOT / "data/evaluation/history/pred_loto.csv").is_file()
+    assert (ROOT / "data/evaluation/history/pred_de.csv").is_file()
+    assert not list((ROOT / "data/evaluation/history").glob("pred_loto_*.csv"))
+    assert not list((ROOT / "data/evaluation/history").glob("pred_de_*.csv"))
+    assert not list((ROOT / "data/evaluation/history").glob("*.parquet"))
 
 
 def test_model_quality_page_is_self_contained_for_docs_pages() -> None:

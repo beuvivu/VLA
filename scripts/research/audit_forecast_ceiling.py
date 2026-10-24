@@ -17,7 +17,7 @@ mỗi dạng một phép thử, rồi đặt kỹ năng ĐÃ CÔNG BỐ của h�
 4. Mô hình tần suất chữ số gần đây (cửa sổ W kỳ, co về đều với độ mạnh k):
    walk-forward so với dự báo đều — dạng duy nhất khai thác được lệch vật lý
    nếu lệch ấy trôi theo thời gian.
-5. Kỹ năng ngoài mẫu của vector ĐÃ CÔNG BỐ (``data/model_quality/report.json``).
+5. Kỹ năng ngoài mẫu của vector ĐÃ CÔNG BỐ (``data/evaluation/model_quality/report.json``).
 
     PYTHONPATH=src python3 scripts/research/audit_forecast_ceiling.py
 """
@@ -149,7 +149,7 @@ def recency_digit_models(last_two: np.ndarray, hit: np.ndarray) -> list[dict]:
 
 
 def published_skill(data_dir: Path) -> dict:
-    report = json.loads((data_dir / "model_quality" / "report.json").read_text(encoding="utf-8"))
+    report = json.loads((data_dir / "evaluation" / "model_quality" / "report.json").read_text(encoding="utf-8"))
     out = {}
     for mode, block in report["modes"].items():
         sk = block["skill"]

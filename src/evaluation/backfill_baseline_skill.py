@@ -7,7 +7,7 @@ cổng ``check_baseline_skill`` còn bỏ qua cho tới khi tích đủ cửa s�
 
 Không cần chờ. Đường cơ sở là **hằng số**: điểm của nó phụ thuộc duy nhất vào
 nhãn kết quả của ngày đó, không phụ thuộc artifact dự đoán. Nhãn đó nằm sẵn
-trong ``data/history/pred_{mode}.csv`` cho cả 219 ngày, nên baseline tính lại
+trong ``data/evaluation/history/pred_{mode}.csv`` cho cả 219 ngày, nên baseline tính lại
 được đúng bằng giá trị mà pipeline sẽ ghi nếu nó đã có mặt từ đầu — dùng đúng
 các hàm đo của mô hình, nên hai con số so sánh trực tiếp được.
 
@@ -171,8 +171,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Sinh lại cột đối chứng đường cơ sở cho lịch sử đánh giá cũ."
     )
-    parser.add_argument("--history", default="data/prob_eval/ensemble_history.csv")
-    parser.add_argument("--history-dir", default="data/history")
+    parser.add_argument("--history", default="data/evaluation/prob_eval/ensemble_history.csv")
+    parser.add_argument("--history-dir", default="data/evaluation/history")
     parser.add_argument(
         "--overwrite",
         action="store_true",

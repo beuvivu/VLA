@@ -92,7 +92,7 @@ def facts(data_dir: str) -> dict[str, str]:
         dates = pd.read_csv(draws, usecols=["date"])["date"].astype(str).sort_values()
         if len(dates):
             out.update(draws=_so(len(dates)), first=_ngay(dates.iloc[0]), last=_ngay(dates.iloc[-1]))
-    predicted = sorted((base / "predict").glob("predict_next_loto_all_*.csv"))
+    predicted = sorted((base / "forecast" / "predict").glob("predict_next_loto_all_*.csv"))
     if predicted:
         out["target"] = _ngay(predicted[-1].stem.rsplit("_", 1)[-1])
     # Siêu dữ liệu trọng số CHỈ qua weights_provenance (luật của kho), không mở tệp.
@@ -101,7 +101,7 @@ def facts(data_dir: str) -> dict[str, str]:
     spec = weights_provenance(base, "loto")
     if spec.get("window_days") and spec.get("half_life_days"):
         out.update(weight_window=str(spec["window_days"]), weight_half_life=str(spec["half_life_days"]))
-    quality = base / "model_quality" / "report.json"
+    quality = base / "evaluation" / "model_quality" / "report.json"
     if quality.exists():
         try:
             covers = json.loads(quality.read_text(encoding="utf-8")).get("covers_through")

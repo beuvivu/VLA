@@ -715,8 +715,8 @@ def run_online(
 ) -> dict:
     """Ghép sau dự báo gốc; giữ CSV đủ 100 số nguyên byte ở lượt shadow đầu."""
     data_dir = Path(data_dir)
-    out_dir = Path(out_dir) if out_dir is not None else data_dir / "predict"
-    state_path = data_dir / "online" / f"{mode}.json"
+    out_dir = Path(out_dir) if out_dir is not None else data_dir / "forecast" / "predict"
+    state_path = data_dir / "forecast" / "online" / f"{mode}.json"
     clock = (lambda: _clock(now)) if now is not None else (lambda: _clock(now_vietnam()))
     with _locked(state_path.with_suffix(".lock")):
         local = clock()
@@ -789,7 +789,7 @@ def main() -> None:
     )
     parser.add_argument("--mode", choices=["de", "loto"], required=True)
     parser.add_argument("--data-dir", default="data")
-    parser.add_argument("--out-dir", default="data/predict")
+    parser.add_argument("--out-dir", default="data/forecast/predict")
     args = parser.parse_args()
     report = run_online(args.mode, Path(args.data_dir), Path(args.out_dir))
     print(

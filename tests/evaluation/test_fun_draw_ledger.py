@@ -11,6 +11,7 @@ from pathlib import Path
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from core.paths import legacy_data_path
 from evaluation import fun_draw_ledger as L
 from pages.build_fun_prediction import BLOCK_ID, inject_into_html
 from core.xsmb_domain import FIELD_WIDTH_MAP, PRIZE_FIELDS
@@ -170,7 +171,7 @@ def test_update_writes_a_ledger_that_survives_a_reread(tmp_path: Path) -> None:
 
 def test_backfill_applies_the_same_cutoff_to_git_history(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
-    (repo / "data" / "predict").mkdir(parents=True)
+    (repo / "data" / "forecast" / "predict").mkdir(parents=True)
 
     def run(*args: str, **env: str) -> None:
         subprocess.run(
@@ -183,7 +184,7 @@ def test_backfill_applies_the_same_cutoff_to_git_history(tmp_path: Path) -> None
     run("init", "-q")
     run("config", "user.email", "t@example.invalid")
     run("config", "user.name", "t")
-    target = repo / "data" / "predict" / "fun_draw_next.json"
+    target = repo / "data" / "forecast" / "predict" / "fun_draw_next.json"
     for special, stamp in [
         ("11111", "2026-09-29T20:00:00+07:00"),
         ("22222", "2026-09-30T18:00:00+07:00"),
@@ -198,6 +199,49 @@ def test_backfill_applies_the_same_cutoff_to_git_history(tmp_path: Path) -> None
     frame = L.backfill_from_git(repo, data)
     assert frame["special"].tolist() == ["22222"]
     assert frame["exact"].tolist() == ["1"]
+
+
+def test_backfill_reads_commits_from_before_the_data_regrouping(tmp_path: Path) -> None:
+    """Commit trước 24-10-2026 giữ bảng ở chỗ cũ; nạp lại phải đọc cả chỗ cũ lẫn chỗ mới."""
+    repo = tmp_path / "repo"
+    old = legacy_data_path("forecast/predict")
+    legacy = repo / "data" / old
+    legacy.mkdir(parents=True)
+
+    def run(*args: str, **env: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            env={**os.environ, **env},
+        )
+
+    run("init", "-q")
+    run("config", "user.email", "t@example.invalid")
+    run("config", "user.name", "t")
+    (legacy / "fun_draw_next.json").write_text(json.dumps(_payload("2026-09-30", "22224")), encoding="utf-8")
+    # Đuôi 24 có xác suất cao nhất: hạng 1 chỉ ra được khi đọc được vector ở chỗ cũ.
+    pd.DataFrame({"number": range(100), "prob": [0.5 if n == 24 else 0.005 for n in range(100)]}).to_csv(
+        legacy / "predict_next_de_all_2026-09-30.csv", index=False
+    )
+    stamp = "2026-09-30T18:00:00+07:00"
+    run("add", "-A")
+    run("commit", "-qm", "cũ", GIT_COMMITTER_DATE=stamp, GIT_AUTHOR_DATE=stamp)
+    (repo / "data" / "forecast").mkdir(parents=True)
+    run("mv", f"data/{old}", "data/forecast/predict")
+    (repo / "data" / "forecast" / "predict" / "fun_draw_next.json").write_text(
+        json.dumps(_payload("2026-10-01", "33333")), encoding="utf-8"
+    )
+    stamp = "2026-10-01T18:00:00+07:00"
+    run("add", "-A")
+    run("commit", "-qm", "mới", GIT_COMMITTER_DATE=stamp, GIT_AUTHOR_DATE=stamp)
+    data = tmp_path / "data"
+    data.mkdir()
+    _xsmb(data / "xsmb.csv", {"2026-09-30": _prizes("95222", ["07"] * 26)})
+    frame = L.backfill_from_git(repo, data)
+    assert frame["target_date"].tolist() == ["2026-09-30", "2026-10-01"]
+    assert frame["special"].tolist() == ["22224", "33333"]
+    assert frame["model_rank"].tolist()[0] == "1"
 
 
 def test_the_page_shows_the_tally_and_the_latest_rows(tmp_path: Path) -> None:

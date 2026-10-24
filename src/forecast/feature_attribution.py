@@ -271,12 +271,12 @@ def per_number_attribution(
 
 
 def build(data_dir: Path, *, seed: int = 20260918) -> Path:
-    """Tính log quy trách cho mọi chế độ và ghi ``data/feature_attribution/report.json``."""
+    """Tính log quy trách cho mọi chế độ và ghi ``data/forecast/feature_attribution/report.json``."""
     rng = np.random.default_rng(seed)
     modes: dict[str, object] = {}
 
     for mode in MODES:
-        history = pd.read_csv(data_dir / "history" / f"pred_{mode}.csv")
+        history = pd.read_csv(data_dir / "evaluation" / "history" / f"pred_{mode}.csv")
         weights = load_ensemble_weights(data_dir, mode)
         raw = np.asarray([getattr(weights, f"w_{key}") for key in COMPONENT_KEYS], dtype=float)
         days, vectors, masks, labels = _day_matrices(history, mode)
@@ -304,7 +304,7 @@ def build(data_dir: Path, *, seed: int = 20260918) -> Path:
         "bootstrap_unit": "ngày quay (không phải con số)",
         "modes": modes,
     }
-    out_dir = data_dir / "feature_attribution"
+    out_dir = data_dir / "forecast" / "feature_attribution"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "report.json"
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

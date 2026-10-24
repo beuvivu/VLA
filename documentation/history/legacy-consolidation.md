@@ -115,7 +115,7 @@ algorithms into scientific Research Lab`) at commit
 - Canonical result was committed before downstream analytics
 - Strict statistics/AI/ML pipeline completed successfully
 - Research plane executed on real production history
-- `data/research/` and `data/descriptive_ext/` were generated on `main`
+- `data/research/` and `data/stats/descriptive_ext/` were generated on `main`
 - `docs/research-lab.html` was generated
 - Next-day prediction artifacts target `2026-09-02`
 - README/dashboard refresh completed

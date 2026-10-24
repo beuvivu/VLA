@@ -62,7 +62,7 @@ Lệnh tái lập:
 PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python src/xsmb_agents/run_xsmb_agents.py --benchmark-last 60
 ```
 
-Fingerprint và số đo đầy đủ ở `data/agents/benchmark.json`. Đối chứng đương
+Fingerprint và số đo đầy đủ ở `data/forecast/agents/benchmark.json`. Đối chứng đương
 nhiệm có artifact của 46/60 kỳ; 14 kỳ còn lại dùng hằng số và được ghi rõ.
 Mỗi kỳ chỉ học trên tiền tố trước đích. Không bản ghi giả nào được đưa vào
 sổ thật: `prospective_draws=0`, `promotion_allowed=false`.

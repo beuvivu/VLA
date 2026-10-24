@@ -43,16 +43,16 @@ logs/
 # _period_frequency_from_sparse. Test cũng gọi hàm chứ không mở tệp.
 #
 # Vẫn được sinh ra mỗi lần chạy nên ai cần vẫn có; chỉ là không đưa vào lịch sử.
-data/advanced/*_day.json
-data/advanced/*_day.csv
+data/stats/advanced/*_day.json
+data/stats/advanced/*_day.csv
 
 # Thư viện chỉ dùng cho kiểm thử tương tác giao diện.
 tests/frontend/node_modules/
 
 # Khoá tiến trình và tệp tạm của sổ học trực tuyến.
-data/online/*.lock
-data/online/.*
-data/agents/*.lock
+data/forecast/online/*.lock
+data/forecast/online/.*
+data/forecast/agents/*.lock
 
 # Ảnh chụp và kết quả của scripts/browser/*: CI tải lên làm artifact, không commit.
 ui-browser-artifacts/

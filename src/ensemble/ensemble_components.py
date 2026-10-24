@@ -20,7 +20,7 @@ Mode = Literal["loto", "de"]
 COMPONENT_KEYS = ("ml", "cau", "stat", "active", "stable")
 
 #: Phiên bản ĐỊNH NGHĨA xác suất của thành phần, cho thành phần từng đổi định
-#: nghĩa. Sổ ``data/history/pred_<mode>.csv`` ghi số này vào cột
+#: nghĩa. Sổ ``data/evaluation/history/pred_<mode>.csv`` ghi số này vào cột
 #: ``policy_<key>`` của mỗi dòng; dòng cũ không có cột ấy.
 #:
 #: Cầu-kèo: 1 = co về nền theo kỹ năng thẩm định (04-10-2026). Trước đó cột

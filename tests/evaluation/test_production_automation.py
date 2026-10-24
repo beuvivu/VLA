@@ -15,16 +15,16 @@ from ingest.reconcile_live_canonical import build_payload
 # pytest.  Their committed copies may therefore reflect the previous production
 # run.  The final post-build production_audit.py --strict remains authoritative.
 POST_BUILD_ONLY_PATHS = {
-    "data/statistical_signal/predict_next_loto_stat_all.csv",
-    "data/statistical_signal/predict_next_de_stat_all.csv",
-    "data/number_dynamics/current_dynamics_loto.csv",
-    "data/number_dynamics/current_dynamics_de.csv",
-    "data/number_dynamics/diagnostics_loto.json",
-    "data/number_dynamics/diagnostics_de.json",
-    "data/advanced/conditional_matrices_diagnostics.json",
-    "data/advanced/ai_ml_signal_diagnostics.json",
-    "data/advanced/ai_ml_signal_loto.csv",
-    "data/advanced/ai_ml_signal_de.csv",
+    "data/stats/statistical_signal/predict_next_loto_stat_all.csv",
+    "data/stats/statistical_signal/predict_next_de_stat_all.csv",
+    "data/stats/number_dynamics/current_dynamics_loto.csv",
+    "data/stats/number_dynamics/current_dynamics_de.csv",
+    "data/stats/number_dynamics/diagnostics_loto.json",
+    "data/stats/number_dynamics/diagnostics_de.json",
+    "data/stats/advanced/conditional_matrices_diagnostics.json",
+    "data/stats/advanced/ai_ml_signal_diagnostics.json",
+    "data/stats/advanced/ai_ml_signal_loto.csv",
+    "data/stats/advanced/ai_ml_signal_de.csv",
     "data/ai_ml/cau_keo_manifest_loto.json",
     "data/ai_ml/cau_keo_manifest_de.json",
 }
@@ -197,7 +197,7 @@ def test_current_repo_data_and_models_are_internally_consistent():
 def test_prebuild_filter_covers_only_regenerated_analytics():
     critical = _prebuild_critical(
         [
-            "missing_or_empty=data/advanced/ai_ml_signal_diagnostics.json,data/xsmb.csv",
+            "missing_or_empty=data/stats/advanced/ai_ml_signal_diagnostics.json,data/xsmb.csv",
             "conditional_diagnostics_invalid=not built yet",
             "cau_keo_loto_calendar_contract_missing",
             "dynamics_de_calendar_not_verified",

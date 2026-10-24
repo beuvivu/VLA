@@ -44,7 +44,7 @@ WINDOW = 7
 MIN_DRAWS = 180
 ALPHA = 0.01
 Z_CRITICAL = 2.326  # z một phía cho α = 0,01
-LEDGER = Path("hypotheses") / "hot_tail.csv"
+LEDGER = Path("research") / "hypotheses" / "hot_tail.csv"
 FIELDS = ["date", "hot_tails", "hot_rate", "all_rate", "diff"]
 
 #: Bằng chứng HỒI CỨU đã dẫn tới giả thuyết — chỉ để đối chiếu, không dùng để kết luận.

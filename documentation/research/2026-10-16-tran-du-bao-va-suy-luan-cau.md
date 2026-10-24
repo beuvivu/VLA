@@ -33,7 +33,7 @@ Tái lập bằng `PYTHONPATH=src python3 scripts/research/audit_forecast_ceilin
 | Cầu vị trí khác nhau thật | Tỉ lệ trúng của 170 130 đường cầu, so độ tản với dao động nhị thức | 1,00 lần (0,998 LOTO, 0,999 Đặc Biệt), cửa sổ 2 000 kỳ của pipeline — mục 2 |
 | Cầu đang chạy dài trúng tiếp nhiều hơn | Tỉ lệ trúng tiếp theo độ dài chuỗi, đếm trên mọi đường cầu | 23,5–24,0% ở mọi độ dài, so với nền 23,81% — mục 2 |
 
-Kỹ năng ngoài mẫu của vector **đã công bố** (`data/model_quality/report.json`, 48 kỳ):
+Kỹ năng ngoài mẫu của vector **đã công bố** (`data/evaluation/model_quality/report.json`, 48 kỳ):
 
 - LOTO: −0,008%, khoảng tin cậy 95% từ −0,031% đến +0,014%.
 - Đặc Biệt: −0,007%, khoảng tin cậy 95% từ −0,19% đến +0,18%.

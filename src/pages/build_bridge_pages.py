@@ -1,7 +1,7 @@
 """Bảy trang cầu vị trí (LOTO, hai nháy, bạch thủ, Đặc Biệt, bộ số, theo thứ) và
 công cụ tạo phôi tuần.
 
-Đọc ``data/bridge_pages/latest.json`` (do ``bridge_rules.py`` sinh ngay sau mỗi
+Đọc ``data/soi_cau/bridge_pages/latest.json`` (do ``bridge_rules.py`` sinh ngay sau mỗi
 kỳ quay). Mỗi trang nhúng 420 kỳ gần nhất; ``templates/bridge_pages.js`` tính lại
 cầu cho mọi tham số người xem chọn (biên ngày, số ngày cầu chạy, thứ trong tuần,
 "cả hai chữ số") và tô vị trí cầu trên các bảng kiểu Sổ kết quả.
@@ -283,7 +283,7 @@ def specials_from(report: dict) -> list[list[str]]:
 def build(data_dir: Path, docs_dir: Path) -> list[Path]:
     report = load(data_dir)
     if report is None:
-        print("Chưa có data/bridge_pages/latest.json — bỏ qua.")
+        print("Chưa có data/soi_cau/bridge_pages/latest.json — bỏ qua.")
         return []
     write_stylesheet(docs_dir)
     written = []

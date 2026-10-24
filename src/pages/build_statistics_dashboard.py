@@ -1882,7 +1882,7 @@ _DASHBOARD_SCRIPT_EVIDENCE = """\
 def main() -> None:
     root = Path(".")
     data_dir = root / "data"
-    adv = data_dir / "advanced"
+    adv = data_dir / "stats" / "advanced"
     docs = root / "docs"
     docs.mkdir(parents=True, exist_ok=True)
 

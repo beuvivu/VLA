@@ -122,11 +122,11 @@ def _upsert_history_csv(df_new: pd.DataFrame, out: Path, key_col: str = "target_
 def main() -> None:
     ap = argparse.ArgumentParser(description="Record component predictions into history store.")
     ap.add_argument("--data-dir", default="data")
-    ap.add_argument("--path-ui-dir", default="data/path_ui")
+    ap.add_argument("--path-ui-dir", default="data/soi_cau/path_ui")
     ap.add_argument("--ml-dir", default="data/ml")
-    ap.add_argument("--out-dir", default="data/history")
+    ap.add_argument("--out-dir", default="data/evaluation/history")
     ap.add_argument("--ai-ml-dir", default="data/ai_ml")
-    ap.add_argument("--stat-dir", default="data/statistical_signal")
+    ap.add_argument("--stat-dir", default="data/stats/statistical_signal")
     args = ap.parse_args()
 
     data_dir = Path(args.data_dir)

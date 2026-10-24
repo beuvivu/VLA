@@ -88,7 +88,7 @@ def _prob_frame(path: Path) -> pd.DataFrame:
 
 
 def load_prediction_inputs(data_dir: Path) -> PredictionInputs:
-    pred_dir = data_dir / "predict"
+    pred_dir = data_dir / "forecast" / "predict"
     picks_loto = _read_json(pred_dir / "picks_loto.json")
     picks_de = _read_json(pred_dir / "picks_de.json")
 
@@ -217,7 +217,7 @@ def build_fun_draw(inputs: PredictionInputs) -> dict[str, Any]:
 
 
 def write_artifacts(payload: dict[str, Any], data_dir: Path) -> tuple[Path, Path]:
-    pred_dir = data_dir / "predict"
+    pred_dir = data_dir / "forecast" / "predict"
     pred_dir.mkdir(parents=True, exist_ok=True)
     json_path = pred_dir / "fun_draw_next.json"
     csv_path = pred_dir / "fun_draw_next.csv"

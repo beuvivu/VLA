@@ -61,7 +61,7 @@ def _load_probs(
     data_dir: Path, mode: Mode, anchor: date
 ) -> tuple[dict[str, np.ndarray], dict[str, bool], dict[str, str]]:
     target = anchor + timedelta(days=1)
-    path_ui = data_dir / "path_ui"
+    path_ui = data_dir / "soi_cau" / "path_ui"
     df_a = _read_prob_file(
         path_ui / f"predict_next_{mode}_active_{anchor.isoformat()}_all.csv"
     )
@@ -81,7 +81,7 @@ def _load_probs(
         "ml": _read_prob_file(data_dir / "ml" / f"predict_next_{mode}_ml_all.csv"),
         "cau": _read_prob_file(data_dir / "ai_ml" / f"cau_keo_{mode}_all.csv"),
         "stat": _read_prob_file(
-            data_dir / "statistical_signal" / f"predict_next_{mode}_stat_all.csv"
+            data_dir / "stats" / "statistical_signal" / f"predict_next_{mode}_stat_all.csv"
         ),
         "active": df_a,
         "stable": df_s,
@@ -294,7 +294,7 @@ def main() -> None:
     ap.add_argument("--mode", choices=["loto", "de"], default="loto")
     ap.add_argument("--data-dir", default="data")
     ap.add_argument("--models-dir", default="models")
-    ap.add_argument("--out-dir", default="data/predict")
+    ap.add_argument("--out-dir", default="data/forecast/predict")
     ap.add_argument("--top", type=int, default=10)
     args = ap.parse_args()
 

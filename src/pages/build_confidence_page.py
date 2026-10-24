@@ -1,6 +1,6 @@
 """Trang Độ tin cậy dự báo: Confidence Score ba tầng cho kỳ kế tiếp.
 
-Đọc ``data/confidence/report.json`` (do ``confidence_matrix.py`` sinh) và dựng
+Đọc ``data/evaluation/confidence/report.json`` (do ``confidence_matrix.py`` sinh) và dựng
 ``docs/do-tin-cay.html``. Trang nói thẳng tầng của từng con, kèm đủ căn cứ để
 người đọc tự kiểm: phân phối null, kiểm ngoài mẫu, phép kiểm giả thuyết can
 thiệp và rủi ro/lợi nhuận. Không có con số nào ở đây được làm tròn về phía
@@ -491,9 +491,9 @@ def render(report: dict, agents: dict | None = None) -> str:
 
 
 def build(data_dir: Path, docs_dir: Path) -> Path:
-    """Dựng ``docs/do-tin-cay.html`` từ ``data/confidence/report.json``."""
-    report = json.loads((data_dir / "confidence" / "report.json").read_text(encoding="utf-8"))
-    agents_path = data_dir / "agents" / "report.json"
+    """Dựng ``docs/do-tin-cay.html`` từ ``data/evaluation/confidence/report.json``."""
+    report = json.loads((data_dir / "evaluation" / "confidence" / "report.json").read_text(encoding="utf-8"))
+    agents_path = data_dir / "forecast" / "agents" / "report.json"
     agents = json.loads(agents_path.read_text(encoding="utf-8")) if agents_path.exists() else None
     if agents and (agents.get("anchor_date") != report["last_draw"] or
                    agents.get("target_date") != report["generated_for"]):

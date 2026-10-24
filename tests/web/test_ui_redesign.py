@@ -958,7 +958,7 @@ def test_simulation_uses_the_same_compact_prize_grid() -> None:
 
 def test_pair_frequency_screen_exists() -> None:
     """src/stats/pair_stats.py tính bảng này hàng ngày vào
-    data/pairs/top_unordered_pairs_top300.csv nhưng trước đây không trang nào
+    data/stats/pairs/top_unordered_pairs_top300.csv nhưng trước đây không trang nào
     hiển thị nó."""
     soup = _soup(DOCS / "index.html")
     section = soup.find(id="tan-suat-cap")

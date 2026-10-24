@@ -126,7 +126,7 @@ def _load_current_ml(
         ),
     ]
     exact_ensemble = (
-        data_dir / "predict" / f"predict_next_{mode}_all_{expected_target}.csv"
+        data_dir / "forecast" / "predict" / f"predict_next_{mode}_all_{expected_target}.csv"
     )
     candidates.append(("ensemble_exact", exact_ensemble, expected_target))
 
@@ -340,7 +340,7 @@ def write_overlays() -> list[Path]:
     latest = pd.to_datetime(raw["date"]).max().date()
     expected_target = (latest + timedelta(days=1)).isoformat()
     sparse_de = _de_sparse_from_raw(raw)
-    out_dir = paths.data_dir / "advanced"
+    out_dir = paths.data_dir / "stats" / "advanced"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     created: list[Path] = []

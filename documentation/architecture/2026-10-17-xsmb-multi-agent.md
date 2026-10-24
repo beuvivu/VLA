@@ -87,14 +87,14 @@ for mode, result in report["modes"].items():
 Chạy độc lập: `PYTHONPATH=src python src/forecast/xsmb_agents/run_xsmb_agents.py`. Pipeline chính
 tự gọi sau khi đủ dự báo sản xuất hai mục tiêu. Tác tử lấy snapshot sau chấm xác suất, chẩn đoán và cập nhật
 kho tri thức của cùng lượt; chỉ bước dựng HTML chạy sau snapshot. Đọc kết quả
-trong `data/agents/report.json`; sổ có checksum ở
-`data/online/agents_de.json` và `data/online/agents_loto.json`. Trang
+trong `data/forecast/agents/report.json`; sổ có checksum ở
+`data/forecast/online/agents_de.json` và `data/forecast/online/agents_loto.json`. Trang
 `do-tin-cay.html#app-agents` có nút tải toàn bộ 100 số mỗi mục tiêu. Những
 tác vụ tính trên CPU chạy tuần tự, không dùng async để giả tăng tốc.
 
 Kiểm hồi cứu tái lập: `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python
 src/forecast/xsmb_agents/run_xsmb_agents.py --benchmark-last 60`. Kết quả nằm trong
-`data/agents/benchmark.json`, có fingerprint đầu vào, cỡ mẫu, Brier/logloss
+`data/forecast/agents/benchmark.json`, có fingerprint đầu vào, cỡ mẫu, Brier/logloss
 từng tầng và đối chứng. Tệp ghi rõ `prospective_draws=0`, không ghi bất kỳ
 sổ dự báo nào và không được dùng để tự đề bạt.
 

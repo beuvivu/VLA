@@ -336,7 +336,7 @@ def test_drift_rolls_back_next_forecast_and_shadow_keeps_learning(online):
 
 def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp_path):
     data = tmp_path / "data"
-    out = data / "predict"
+    out = data / "forecast" / "predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
     target = "2025-01-21"
@@ -380,7 +380,7 @@ def test_cli_artifacts_keep_columns_and_restore_original_probability(online, tmp
 def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monkeypatch, slow_phase):
     """Chờ khóa, học, mã hóa hoặc ghi đĩa vượt hạn đều không được xuất bản."""
     from core import atomic_io
-    data, out = tmp_path / "data", tmp_path / "data/predict"
+    data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
     target = "2025-01-21"
@@ -432,8 +432,8 @@ def test_cli_rechecks_cutoff_before_saving_a_new_forecast(online, tmp_path, monk
     monkeypatch.setattr(atomic_io.os, "fsync", delayed_fsync)
     with pytest.raises(ValueError, match="cutoff|18:00|quá giờ"):
         online.run_online("de", data, out)
-    assert not (data / "online/de.json").exists()
-    assert list((data / "online").glob(".de.json.*")) == []
+    assert not (data / "forecast" / "online/de.json").exists()
+    assert list((data / "forecast" / "online").glob(".de.json.*")) == []
 
 
 def test_slow_fsync_keeps_the_previous_journal_and_removes_temporary(online, tmp_path, monkeypatch):
@@ -461,7 +461,7 @@ def test_slow_fsync_keeps_the_previous_journal_and_removes_temporary(online, tmp
 
 def test_slow_fsync_uses_the_fixed_clock_when_now_is_injected(online, tmp_path, monkeypatch):
     from core import atomic_io
-    data, out = tmp_path / "data", tmp_path / "data/predict"
+    data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
     target = "2025-01-21"
@@ -481,12 +481,12 @@ def test_slow_fsync_uses_the_fixed_clock_when_now_is_injected(online, tmp_path, 
     report = online.run_online("de", data, out, now=fixed)
     assert wall_clock[0] > fixed
     assert report["generated_at"] == fixed.isoformat()
-    assert online.load_state(data / "online/de.json", "de")["records"][0]["generated_at"] == fixed.isoformat()
+    assert online.load_state(data / "forecast" / "online/de.json", "de")["records"][0]["generated_at"] == fixed.isoformat()
 
 
 def test_cli_can_restore_existing_forecast_after_cutoff_with_an_injected_clock(online, tmp_path, monkeypatch):
     """Khôi phục dự báo đóng băng không phải tạo dự báo hồi cứu mới."""
-    data, out = tmp_path / "data", tmp_path / "data/predict"
+    data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
     target = "2025-01-21"
@@ -494,15 +494,15 @@ def test_cli_can_restore_existing_forecast_after_cutoff_with_an_injected_clock(o
     pd.DataFrame({"number": range(100), "prob": uniform()}).to_csv(path, index=False)
     monkeypatch.setattr(online, "now_vietnam", lambda: pytest.fail("Phải dùng đồng hồ được tiêm"))
     online.run_online("de", data, out, now=before(target))
-    original = (data / "online/de.json").read_bytes()
+    original = (data / "forecast" / "online/de.json").read_bytes()
     pd.DataFrame({"number": range(100), "prob": np.linspace(1, 2, 100) / 150}).to_csv(path, index=False)
     online.run_online("de", data, out, now=before(target).replace(hour=19))
-    assert (data / "online/de.json").read_bytes() == original
+    assert (data / "forecast" / "online/de.json").read_bytes() == original
     np.testing.assert_array_equal(pd.read_csv(path).sort_values("number")["prob"], uniform())
 
 
 def test_cli_timestamps_a_new_forecast_after_waiting_for_the_lock(online, tmp_path, monkeypatch):
-    data, out = tmp_path / "data", tmp_path / "data/predict"
+    data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     history().to_csv(data / "xsmb.csv", index=False)
     target = "2025-01-21"
@@ -528,7 +528,7 @@ def test_cli_timestamps_a_new_forecast_after_waiting_for_the_lock(online, tmp_pa
 def test_online_loto_tops_keep_diversity_and_identical_prefixes(online, tmp_path, monkeypatch, active):
     from ensemble.pick_diversity import diversified_order
 
-    data, out = tmp_path / "data", tmp_path / "data/predict"
+    data, out = tmp_path / "data", tmp_path / "data/forecast/predict"
     out.mkdir(parents=True)
     frame = history()
     frame.to_csv(data / "xsmb.csv", index=False)

@@ -19,7 +19,7 @@ from pages.build_fun_prediction import (
 
 
 def _write_prediction_fixture(root: Path) -> None:
-    pred = root / "predict"
+    pred = root / "forecast" / "predict"
     pred.mkdir(parents=True)
     numbers = np.arange(100)
     loto_prob = np.linspace(0.10, 0.30, 100)
@@ -111,7 +111,7 @@ def test_artifact_write_replaces_both_snapshots_without_partial_files(tmp_path: 
     assert json.loads(json_path.read_text(encoding="utf-8"))["target_date"] == "2026-09-03"
     csv = pd.read_csv(csv_path, dtype={"value": str})
     assert csv.iloc[0]["value"] == second_payload["rows"][0]["value"]
-    assert not list((data / "predict").glob(".fun-draw-*"))
+    assert not list((data / "forecast" / "predict").glob(".fun-draw-*"))
 
 
 def test_artifacts_and_html_injection_are_idempotent(tmp_path: Path) -> None:

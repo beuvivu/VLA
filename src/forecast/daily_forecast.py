@@ -38,7 +38,7 @@ def load_daily_forecast(data_dir: Path, anchor_date: str) -> dict | None:
             ):
                 return None
         target_date = next_draw_date(anchor_date, frozenset(closed))
-        pred_dir = data_dir / "predict"
+        pred_dir = data_dir / "forecast" / "predict"
         groups = {}
         for mode in ("de", "loto"):
             metadata = json.loads((pred_dir / f"picks_{mode}.json").read_text(encoding="utf-8"))

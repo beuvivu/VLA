@@ -46,7 +46,7 @@ REGISTERED_ON = "2026-10-05"
 FIRST_TARGET = "2026-10-06"
 MIN_DRAWS = 180
 ALPHA = 0.01
-LEDGER = Path("hypotheses") / "digit_sum_rules.csv"
+LEDGER = Path("research") / "hypotheses" / "digit_sum_rules.csv"
 FIELDS = ["date", "rule", "base_date", "picks", "hit", "chance"]
 
 #: Bằng chứng HỒI CỨU (01-01-2015 → 05-10-2026) — chỉ để đối chiếu, không dùng

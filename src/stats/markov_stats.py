@@ -153,7 +153,7 @@ def compute_markov_for_loto(df_2d: pd.DataFrame, alpha: float = 1.0, beta: float
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=str, default="data/markov/markov_loto.csv")
+    ap.add_argument("--out", type=str, default="data/stats/markov/markov_loto.csv")
     ap.add_argument("--alpha", type=float, default=1.0)
     ap.add_argument("--beta", type=float, default=1.0)
     args = ap.parse_args()

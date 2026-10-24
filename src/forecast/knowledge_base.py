@@ -26,7 +26,7 @@ Với máy quay công bằng không thuật toán nào nâng được xác suấ
 định là THẤP cho tới khi dữ liệu tiến cứu nói khác. Module là KHUNG THÁCH ĐẤU: không đổi tổ hợp
 xác suất của pipeline.
 
-    python src/forecast/knowledge_base.py            # cập nhật data/knowledge/
+    python src/forecast/knowledge_base.py            # cập nhật data/forecast/knowledge/
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ from soi_cau.digit_sum_rules import holm
 from forecast.multi_hit_vip import counts_matrix, draws_from_frame
 from core.xsmb_domain import baseline_rate
 
-OUT_DIR = "knowledge"
+OUT_DIR = "forecast/knowledge"
 KB_FILE = "kb.json"
 VERSION = 1
 #: Vectơ ngữ cảnh: cửa sổ tần suất, số ngữ cảnh láng giềng, độ mạnh tiên nghiệm kéo về nền.
@@ -389,7 +389,7 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
     """Gom kết luận của các phép đo đã có trong kho thành mục tri thức có trạng thái."""
     data_dir = Path(data_dir)
     out = []
-    conf = _read(data_dir / "confidence" / "report.json")
+    conf = _read(data_dir / "evaluation" / "confidence" / "report.json")
     if conf:
         # Các họ của confidence_matrix là ẢNH CHỤP: p tính lại mỗi ngày trên lịch sử dồn, nên xem
         # lại hằng ngày thì xác suất có lúc vượt ngưỡng lớn hơn α nhiều, và một lần vượt có thể biến
@@ -422,7 +422,7 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
                 summary += f", z = {_vn(float(hyp['z']))}"
             out.append({"id": ident, "kind": "hypothesis", "title": title,
                         "status": HYPOTHESIS_STATUS.get(hyp.get("state"), "dang-kiem"), "summary": summary})
-    vip = _read(data_dir / "multi_hit" / "vip.json")
+    vip = _read(data_dir / "forecast" / "multi_hit" / "vip.json")
     if vip:
         level = vip.get("confidence", "Low")
         out.append({"id": "bo-loc-lo-nhieu-nhay", "kind": "challenger", "title": "Mô hình Lô VIP ≥ 2 nháy",
@@ -448,7 +448,7 @@ def measured_knowledge(data_dir: Path) -> list[dict]:
 
 
 def _latest_record(data_dir: Path, mode: str) -> dict | None:
-    state = _read(Path(data_dir) / "online" / f"{mode}.json")
+    state = _read(Path(data_dir) / "forecast" / "online" / f"{mode}.json")
     if not state or not state.get("records"):
         return None
     return state["records"][-1]
@@ -505,7 +505,7 @@ def insights(data_dir: Path, mode: str, rules: list[dict], memory: ContextMemory
     record = _latest_record(data_dir, mode)
     if record is None:
         return None
-    conf = _read(Path(data_dir) / "confidence" / "report.json") or {}
+    conf = _read(Path(data_dir) / "evaluation" / "confidence" / "report.json") or {}
     rows = {(r["mode"], int(r["number"])): r for r in conf.get("matrix", [])}
     published = np.asarray(record["published"], dtype=float)
     order = np.argsort(-published, kind="stable")[:k]

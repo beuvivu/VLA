@@ -55,14 +55,14 @@ flowchart TD
     end
 
     subgraph OUT["Tầng dự đoán"]
-        PRED["Xác suất công bố<br/>data/predict/*"]
+        PRED["Xác suất công bố<br/>data/forecast/predict/*"]
         CONF["Độ tin cậy hiệu chỉnh đa kiểm<br/>confidence_matrix · anytime p"]
         XAI["Lời giải thích từng con<br/>knowledge_base.explain"]
     end
 
     subgraph KB["Kho tri thức (mới)"]
         MINE["Khai phá luật<br/>mine_lag_rules"]
-        STORE[("data/knowledge/kb.json<br/>luật · trạng thái · tri thức đã đo")]
+        STORE[("data/forecast/knowledge/kb.json<br/>luật · trạng thái · tri thức đã đo")]
         SCORE["Chấm TIẾN CỨU<br/>e-process, α chia trước theo lô"]
         ANALOG["Tương tự quá khứ<br/>ContextMemory (vector)<br/>chỉ mô tả, chưa vào Hedge"]
         RULES["Luật đã đăng ký<br/>chỉ mô tả, chưa vào Hedge"]
@@ -117,7 +117,7 @@ sequenceDiagram
 | 1a. Đầu ra A thành đầu vào B | Tần suất làm tiên nghiệm Beta cho hậu nghiệm Bayes (`online_learning.build_experts` → `_posterior`, độ co học bằng `fit_shrinkage_to_prior`); thành phần cầu-kèo và ML vào tổ hợp | Luật trễ khai phá từ thống kê đồng xuất hiện thành mục trong kho, vào lời giải thích |
 | 1b. Ensembling / bầu chọn có trọng số | `ensemble_utils.finalize_blend` (tuyến tính, neo mức LOTO), `opinion_pool` (trộn log-odds có độ sắc học được), `meta_predictor` (xếp chồng có cổng), Hedge của `online_learning` | — |
 | 2a. Tự quét, bóc tách, phân loại tri thức | Các giả thuyết đăng ký tay: `hot_tail_test`, `digit_sum_hypothesis` | `mine_lag_rules`: mỗi 30 kỳ khai phá 20 luật "a về → b về kỳ sau"; `measured_knowledge`: gom kết luận của mọi phép đo đã có; phân loại bằng trạng thái suy từ số đo |
-| 2b. Kho tri thức rule-based + vector | — | `data/knowledge/kb.json` (luật, lô đăng ký, trạng thái, số đo); `ContextMemory`: vectơ ngữ cảnh 300 chiều, truy vấn cosine |
+| 2b. Kho tri thức rule-based + vector | — | `data/forecast/knowledge/kb.json` (luật, lô đăng ký, trạng thái, số đo); `ContextMemory`: vectơ ngữ cảnh 300 chiều, truy vấn cosine |
 | 3a. Vòng phản hồi | `online_learning.advance` chấm Brier từng chuyên gia mỗi kỳ; `skill_monitor` chấm thứ ĐÃ công bố, báo động z = 3 | `score_rule` chấm luật trên kỳ mới mỗi ngày |
 | 3b. Tự chỉnh trọng số ngắn/dài hạn | Hedge hai trí nhớ: dài hạn (tổng loss), ngắn hạn (chiết khấu 0,97, nửa đời ≈ 23 kỳ), fixed-share 0,03; `learn_ensemble_weights` có cổng ngoài mẫu so với MẶC ĐỊNH; `research.ml_engine.aggregation` (trọng số mũ trên log-loss, chia sẻ cố định, kèm cổng `model_trust`; phân hệ nghiên cứu, chưa nối vào pipeline — thay bandit Thompson từ 20-10-2026) | — |
 | 4a. Bayes / Markov chuỗi sự kiện | `confidence_matrix` (Bayes, Markov, cầu), `markov_stats`, `conditional_nextday`, chuyên gia `lag_repeat` | — |
@@ -228,7 +228,7 @@ def explain(number, mode, *, record, confidence_row, rules, analog):
             "confidence": tier, "rules": firing, "analog": analog, "reasons": [...]}
 ```
 
-Kết quả thật cho con LOTO xếp đầu kỳ 13-10-2026, con **74**, từ `data/knowledge/kb.json`:
+Kết quả thật cho con LOTO xếp đầu kỳ 13-10-2026, con **74**, từ `data/forecast/knowledge/kb.json`:
 
 > - Xác suất đã công bố 23,82% so với mức nền 23,77% (×1,002).
 > - Nguồn kéo mạnh nhất: Tổ hợp sản xuất (23,82%, trọng số 0,143).
@@ -330,7 +330,7 @@ Nguyên tắc chọn: kho không có `package.json` và chạy trên runner GitH
 ## 7. Vận hành
 
 ```bash
-python src/forecast/knowledge_base.py            # cập nhật data/knowledge/kb.json
+python src/forecast/knowledge_base.py            # cập nhật data/forecast/knowledge/kb.json
 PYTHONPATH=src python3 -m pytest tests/forecast/test_knowledge_base.py -q
 ```
 

@@ -1,6 +1,6 @@
 """Trang «Lô VIP nhiều nháy»: con số về ≥ 2 nháy và cặp xiên 2 cho kỳ tới, in TỪ phép đo.
 
-Đọc ``data/multi_hit/vip.json`` và ``data/multi_hit/benchmark.json`` (do ``multi_hit_report.py``
+Đọc ``data/forecast/multi_hit/vip.json`` và ``data/forecast/multi_hit/benchmark.json`` (do ``multi_hit_report.py``
 sinh) rồi dựng ``docs/lo-vip-nhieu-nhay.html``. Trang gọn theo yêu cầu ngày 13-10-2026: năm con, năm
 cặp và một dòng số đo kiểm chứng cho mỗi khối ở trên cùng; phần giải thích thu vào mục «Chi tiết
 phép đo». Không con số hay kết luận nào ở đây được đặt tay:
@@ -35,7 +35,7 @@ from web.ui_theme import app_shell_close, app_shell_open, stylesheet_link, write
 from web.web_security import security_meta_tags
 
 PAGE = "lo-vip-nhieu-nhay.html"
-DATA_DIR = "multi_hit"
+DATA_DIR = "forecast/multi_hit"
 
 #: Tên hiển thị của các chiến lược trong ``multi_hit_benchmark.strategy_scores``.
 STRATEGY_LABELS = {

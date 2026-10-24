@@ -81,6 +81,6 @@ kỳ đầu tiên được chấm, có phép kiểm ghim để không thể sử
 | Kết luận sau | 180 kỳ |
 | Kiểm định | z một phía ≥ 2,326 (α = 0,01) → xác nhận; còn lại → bác bỏ |
 
-Sổ cái `data/hypotheses/hot_tail.csv` ghi mỗi kỳ một lần, lần ghi đầu giữ nguyên. Trạng thái
+Sổ cái `data/research/hypotheses/hot_tail.csv` ghi mỗi kỳ một lần, lần ghi đầu giữ nguyên. Trạng thái
 hiện trên trang Độ tin cậy dự báo. Muốn đổi tham số thì đăng ký một giả thuyết MỚI với ngày
 bắt đầu mới — sửa giả thuyết này sau khi thấy kết quả là phá chính phép kiểm.

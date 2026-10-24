@@ -1,6 +1,6 @@
 """Mô hình xếp chồng cho LOTO và Đặc Biệt.
 
-Bố cục dữ liệu theo đúng hợp đồng mà kho đang dùng trong ``data/history/``: mỗi
+Bố cục dữ liệu theo đúng hợp đồng mà kho đang dùng trong ``data/evaluation/history/``: mỗi
 hàng là một cặp (ngày, con số), nhãn là "con đó có về ở ngày kế tiếp không". Nhờ
 vậy LOTO là bài toán phân loại nhị phân đa nhãn còn Đặc Biệt là phân loại một-trong-
 trăm, và cả hai dùng chung một đường đặc trưng.

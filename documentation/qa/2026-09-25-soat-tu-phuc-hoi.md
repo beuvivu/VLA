@@ -235,7 +235,7 @@ Không đọc được trang thật trên `github.io` từ môi trường phát 
 
 Yêu cầu của chủ dự án: xác suất lệch nhiều, cần đẩy mạnh ML tự học. Đo trước.
 
-**Xác suất ĐÃ CÔNG BỐ** (`data/predict/predict_next_*_all_<ngày>.csv`, 28 kỳ
+**Xác suất ĐÃ CÔNG BỐ** (`data/forecast/predict/predict_next_*_all_<ngày>.csv`, 28 kỳ
 10-08 → 24-09, chấm với kết quả quay thật):
 
 | | Kỹ năng so với cơ sở | Lớn nhất từng công bố |
@@ -291,6 +291,6 @@ Chủ dự án chọn làm cả hai việc đề xuất ở mục 8.
 - Review của PR #93 (Codex) chỉ ra đúng: `cleanup_artifacts --retention-days 45`
   xoá artifact trước khi cửa sổ 60 kỳ kịp đầy — và cũng là lý do chỉ còn 28 kỳ
   để chấm. Kỹ năng từng kỳ nay ghi vào sổ cái
-  `data/model_quality/published_skill.csv` ngay trước bước dọn (lần ghi đầu
+  `data/evaluation/model_quality/published_skill.csv` ngay trước bước dọn (lần ghi đầu
   giữ nguyên). Phép kiểm chạy đúng bước dọn thật trên 70 kỳ và đòi bộ theo
   dõi vẫn thấy đủ 60.

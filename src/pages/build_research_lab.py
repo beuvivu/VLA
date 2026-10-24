@@ -299,7 +299,7 @@ def _conditional_table(df: pd.DataFrame, current_special: str, top: int = 10) ->
 
 def build(data_dir: Path, docs_dir: Path) -> Path:
     research = data_dir / "research"
-    desc = data_dir / "descriptive_ext"
+    desc = data_dir / "stats" / "descriptive_ext"
     diagnostics = _read_json(research / "scientific_diagnostics.json")
     firewall = _read_json(research / "research_firewall_report.json")
     strategy_loto = _read_csv(research / "strategy_lab_loto.csv")
@@ -312,8 +312,8 @@ def build(data_dir: Path, docs_dir: Path) -> Path:
     cross_rules = _read_csv(research / "crosslag_positional" / "crosslag_rules.csv")
     bong_report = _read_json(research / "bong_bridge" / "report.json")
     bong_rules = _read_csv(research / "bong_bridge" / "top_rules_loto.csv")
-    conditional_manifest = _read_json(data_dir / "conditional" / "manifest.json")
-    conditional = _read_csv(data_dir / "conditional" / "loto_nextday_given_special_long.csv")
+    conditional_manifest = _read_json(data_dir / "stats" / "conditional" / "manifest.json")
+    conditional = _read_csv(data_dir / "stats" / "conditional" / "loto_nextday_given_special_long.csv")
     current_special = str(conditional_manifest.get("current_special_2d", ""))
 
     table_index = 0

@@ -7,7 +7,7 @@ Vì sao phải có sổ riêng
 ------------------------
 
 Nhiều tệp nguồn KHÔNG mang ngày trong tên (``data/ml/predict_next_*_ml_top10.csv``,
-``data/multi_hit/vip.json``, ``data/agents/report.json``…) và bị ghi đè ngay khi pipeline
+``data/forecast/multi_hit/vip.json``, ``data/forecast/agents/report.json``…) và bị ghi đè ngay khi pipeline
 chạy cho kỳ sau, khoảng 19 giờ — tức trong lúc người đọc còn đang đối chiếu kỳ vừa quay.
 Đọc thẳng các tệp ấy sau giờ quay là chấm danh sách của kỳ KHÁC. Sổ chụp đúng thứ đang
 hiện trên các trang, chỉ được ghi TRƯỚC 18:10 giờ Việt Nam của kỳ đích
@@ -51,13 +51,13 @@ import pandas as pd
 
 from core.atomic_io import atomic_write_text
 from core.calendar_alignment import known_non_draw_days
-from evaluation.fun_draw_ledger import VN, cutoff_utc
+from evaluation.fun_draw_ledger import VN, cutoff_utc, show_data_at
 from forecast.multi_hit_forecast import next_draw_date
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY
 
 LOGGER = logging.getLogger(__name__)
 SCHEMA = 1
-OUT = Path("prediction_board")
+OUT = Path("evaluation") / "prediction_board"
 #: Số mục tối đa lấy từ một bảng xếp hạng (các trang soi cầu liệt kê theo số cầu).
 TOP = 10
 
@@ -140,7 +140,7 @@ def _ranked(path: Path, target: str, mode: str, *, date_column: str | None) -> l
 
 
 def _ensemble(data: Path, target: str, mode: str) -> list[dict]:
-    return _ranked(data / "predict" / f"predict_next_{mode}_top10_{target}.csv", target, mode, date_column=None)
+    return _ranked(data / "forecast" / "predict" / f"predict_next_{mode}_top10_{target}.csv", target, mode, date_column=None)
 
 
 def _cau_keo(data: Path, target: str, mode: str) -> list[dict]:
@@ -156,13 +156,13 @@ def _ml(data: Path, target: str, mode: str) -> list[dict]:
 def _path(data: Path, target: str, mode: str, kind: str) -> list[dict]:
     # Tệp soi đường mang NGÀY DỮ LIỆU (``anchor_date`` của manifest) và dự báo kỳ kế tiếp của
     # ngày ấy — khác các tệp ``predict_next_*`` khác, vốn mang ngày quay.
-    manifest = _json(data / "path_ui" / f"path_manifest_{mode}.json")
+    manifest = _json(data / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json")
     anchor = str(manifest.get("anchor_date", ""))[:10]
     if not anchor:
         raise Skip(f"path_manifest_{mode}.json không ghi ngày dữ liệu")
     _require(next_draw_date(anchor, known_non_draw_days()), target,
              f"soi đường (dữ liệu tới {anchor})")
-    return _ranked(data / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv", target, mode,
+    return _ranked(data / "soi_cau" / "path_ui" / f"predict_next_{mode}_{kind}_{anchor}.csv", target, mode,
                    date_column=None)
 
 
@@ -173,14 +173,14 @@ def _json(path: Path) -> dict:
 
 
 def _vip(data: Path, target: str) -> list[dict]:
-    report = _json(data / "multi_hit" / "vip.json")
+    report = _json(data / "forecast" / "multi_hit" / "vip.json")
     _require(report.get("target_date"), target, "vip.json")
     return [_loto(_number(pick["number"]), _float(pick.get("probability")), need=2)
             for pick in report.get("picks", [])]
 
 
 def _pairs(data: Path, target: str) -> list[dict]:
-    report = _json(data / "multi_hit" / "vip.json")
+    report = _json(data / "forecast" / "multi_hit" / "vip.json")
     _require(report.get("target_date"), target, "vip.json")
     items = []
     for pick in (report.get("pairs") or {}).get("picks", []):
@@ -190,16 +190,16 @@ def _pairs(data: Path, target: str) -> list[dict]:
 
 
 def _agents(data: Path, target: str, mode: str) -> list[dict]:
-    report = _json(data / "agents" / "report.json")
-    _require(report.get("target_date"), target, "agents/report.json")
+    report = _json(data / "forecast" / "agents" / "report.json")
+    _require(report.get("target_date"), target, "forecast/agents/report.json")
     make = _loto if mode == "loto" else _special
     rows = report.get("modes", {}).get(mode, {}).get("candidate_top5", [])
     return [make(_number(row["number"]), _float(row.get("candidate_probability"))) for row in rows]
 
 
 def _best_bridges(data: Path, target: str, key: str) -> list[dict]:
-    report = _json(data / "position_bridges" / "latest.json")
-    _require(report.get("target_date"), target, "position_bridges/latest.json")
+    report = _json(data / "soi_cau" / "position_bridges" / "latest.json")
+    _require(report.get("target_date"), target, "soi_cau/position_bridges/latest.json")
     mode = report["modes"][key]
     items = []
     for bridge in mode.get("best", [])[:TOP]:
@@ -215,8 +215,8 @@ def _best_bridges(data: Path, target: str, key: str) -> list[dict]:
 
 
 def _bridge_page(data: Path, target: str, key: str) -> list[dict]:
-    report = _json(data / "bridge_pages" / "latest.json")
-    _require(report.get("target_date"), target, "bridge_pages/latest.json")
+    report = _json(data / "soi_cau" / "bridge_pages" / "latest.json")
+    _require(report.get("target_date"), target, "soi_cau/bridge_pages/latest.json")
     rule_set = report["rules"][key]
     if rule_set.get("weekday"):
         weekday = pd.Timestamp(target).weekday()
@@ -243,7 +243,7 @@ def _bridge_page(data: Path, target: str, key: str) -> list[dict]:
 
 
 def _fun_draw(data: Path, target: str) -> list[dict]:
-    report = _json(data / "predict" / "fun_draw_next.json")
+    report = _json(data / "forecast" / "predict" / "fun_draw_next.json")
     _require(report.get("target_date"), target, "fun_draw_next.json")
     items = []
     for row in report.get("rows", []):
@@ -300,7 +300,7 @@ SOURCES: tuple[tuple[str, str, str, str, str, Callable[[Path, str], list[dict]]]
 
 
 def _vector(data: Path, target: str, mode: str) -> list[float] | None:
-    path = data / "predict" / f"predict_next_{mode}_all_{target}.csv"
+    path = data / "forecast" / "predict" / f"predict_next_{mode}_all_{target}.csv"
     if not path.exists():
         return None
     frame = _csv(path)
@@ -355,16 +355,16 @@ def write_board(data_dir: Path, target: str, *, now: datetime) -> Path | None:
 def source_files(target: str) -> list[str]:
     """Mọi tệp (tương đối ``data/``) mà các nguồn của kỳ ``target`` đọc."""
     files = [
-        "multi_hit/vip.json", "agents/report.json", "position_bridges/latest.json",
-        "bridge_pages/latest.json", "predict/fun_draw_next.json",
+        "forecast/multi_hit/vip.json", "forecast/agents/report.json", "soi_cau/position_bridges/latest.json",
+        "soi_cau/bridge_pages/latest.json", "forecast/predict/fun_draw_next.json",
     ]
     for mode in ("loto", "de"):
         files += [
-            f"predict/predict_next_{mode}_top10_{target}.csv",
-            f"predict/predict_next_{mode}_all_{target}.csv",
+            f"forecast/predict/predict_next_{mode}_top10_{target}.csv",
+            f"forecast/predict/predict_next_{mode}_all_{target}.csv",
             f"ai_ml/daily/cau_keo_{mode}_top10_{target}.csv",
             f"ml/predict_next_{mode}_ml_top10.csv",
-            f"path_ui/path_manifest_{mode}.json",
+            f"soi_cau/path_ui/path_manifest_{mode}.json",
         ]
     return files
 
@@ -373,10 +373,10 @@ def _anchored_files(root: Path) -> list[str]:
     """Tệp soi đường của ngày dữ liệu ghi trong manifest đã lấy về (xem ``_path``)."""
     files = []
     for mode in ("loto", "de"):
-        manifest = root / "path_ui" / f"path_manifest_{mode}.json"
+        manifest = root / "soi_cau" / "path_ui" / f"path_manifest_{mode}.json"
         if manifest.exists():
             anchor = str(json.loads(manifest.read_text(encoding="utf-8")).get("anchor_date", ""))[:10]
-            files += [f"path_ui/predict_next_{mode}_{kind}_{anchor}.csv" for kind in ("active", "stable")]
+            files += [f"soi_cau/path_ui/predict_next_{mode}_{kind}_{anchor}.csv" for kind in ("active", "stable")]
     return files
 
 
@@ -404,7 +404,7 @@ def backfill_from_git(repo: Path, data_dir: Path, target: str, ref: str = "HEAD"
         def fetch(paths: list[str]) -> None:
             for rel in paths:
                 try:
-                    text = _git(repo, "show", f"{sha}:data/{rel}")
+                    text = show_data_at(repo, sha, rel)
                 except subprocess.CalledProcessError:
                     continue
                 (root / rel).parent.mkdir(parents=True, exist_ok=True)

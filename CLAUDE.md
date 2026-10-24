@@ -91,6 +91,20 @@ là hợp đồng: `tests/repo/test_documentation_index.py` buộc nó khớp th
 tương đối trong MỌI tài liệu trỏ tệp có thật (chuyển tài liệu làm hỏng liên kết của chính nó lẫn của
 tệp trỏ tới nó). Đường dẫn `documentation/…` nhắc ở đâu trong kho cũng phải có tệp.
 
+`data/` gom theo gói `src/` sinh ra dữ liệu (24-10-2026), bảng chuyển là `core.paths.DATA_MOVES`:
+`stats/` (advanced, conditional, cycle, descriptive_ext, hazard, markov, number_dynamics, pairs,
+reference, significance, statistical_signal), `soi_cau/` (path_ui, position_bridges, bridge_pages),
+`forecast/` (predict, online, knowledge, multi_hit, agents, feature_attribution), `evaluation/` (history,
+model_quality, prob_eval, confidence, fun_draw, prediction_board), `research/` (cũ + hypotheses). Gốc
+`data/` chỉ còn sổ chuẩn (`xsmb*`, `regions/`, `excel/`, `non_draw_days.json`…), thứ bên ngoài kho đọc
+bằng địa chỉ cố định (Worker đọc `xsmb.json`, trang Live đọc `ai_ml/daily`) và thư mục đã mang tên gói
+(`ensemble/`, `ml/`). Đường dẫn cũ hỏng LẶNG LẼ (bước vắng tệp coi là "chưa có dữ liệu"), và trang Live
+đọc sổ phỏng đoán bằng đường dẫn MÃ HOÁ base64 trong `live-scorecard.js` mà phép thay chuỗi không thấy;
+`tests/repo/test_data_layout.py` giải mã base64, cấm `data/<tên cũ>`, `data_dir / "<tên cũ>"`,
+`Path("<tên cũ>")` và hằng số `*_DIR = "<tên cũ>"`. Ai đọc LỊCH SỬ git (`git show <sha>:data/…`, như
+hai lệnh `--backfill-from-git`) phải hỏi cả chỗ cũ qua `paths.legacy_data_path` — commit trước ngày gom
+giữ tệp ở đó; `fun_draw_ledger.show_data_at` làm việc ấy.
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
@@ -276,7 +290,7 @@ Cầu-kèo (`cau_keo_ml`, trọng số tổ hợp 0,30) dùng CÙNG luật từ 
 `cau_keo_ml.trust_from_pack` — không có mặc định; gói thiếu luật tin thì học lại. `ml_prob_raw` giữ
 xác suất thô cho điểm và lý do. Walk-forward 1 000 kỳ đo xác suất thô kém hằng số (Đặc Biệt
 z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co. Dòng `p_cau` cũ trong sổ
-`data/history/pred_<mode>.csv` là xác suất THÔ: sổ ghi `policy_cau` cho dòng mới, và nơi HỌC từ sổ
+`data/evaluation/history/pred_<mode>.csv` là xác suất THÔ: sổ ghi `policy_cau` cho dòng mới, và nơi HỌC từ sổ
 (trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
 `availability_from_history_day(..., current_policy=True)`.
 Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
@@ -284,7 +298,7 @@ Tác tử mẫu hình của hệ ba tác tử XSMB (`forecast.xsmb_agents.algori
 `trust = model_trust(s)`, s là kỹ năng so với nền trên 30 kỳ thẩm định cuối; định nghĩa 1 trộn cố định
 20% mạng dù logloss thẩm định Đặc Biệt kém nền. Mỗi định nghĩa một SỔ: họ `online.AGENT_RECIPE` =
 `xsmb_three_agents_v<AGENT_POLICY>`; sổ họ cũ được `retire_superseded_ledgers` CẤT NGUYÊN thành
-`data/online/agents_<mode>.<họ>.json` (không chấm lại) và sổ mới bắt đầu rỗng, để Hedge, bước chọn
+`data/forecast/online/agents_<mode>.<họ>.json` (không chấm lại) và sổ mới bắt đầu rỗng, để Hedge, bước chọn
 η/độ quên và cổng đề bạt không thừa hưởng điểm của bộ dự báo khác. Đổi định nghĩa tác tử thì tăng
 `AGENT_POLICY`, đổi họ và thêm họ cũ vào `RETIRED_AGENT_FAMILIES`.
 Khung nghiên cứu `ml_engine` dùng CÙNG luật từ 20-10-2026: bandit Thompson và ngưỡng Hit-Rate 7 kỳ
@@ -314,8 +328,8 @@ Số đo: `scripts/research/benchmark_component_trust.py`,
 
 Trang Chất lượng mô hình và bộ theo dõi `src/evaluation/skill_monitor.py` chấm chính
 vector xác suất đã công bố trước kỳ quay
-(`data/predict/predict_next_<mode>_all_<ngày>.csv`) với kết quả quay thật.
-Bản dựng lại từ `data/history/pred_<mode>.csv` bỏ qua hiệu chỉnh và tầng xếp
+(`data/forecast/predict/predict_next_<mode>_all_<ngày>.csv`) với kết quả quay thật.
+Bản dựng lại từ `data/evaluation/history/pred_<mode>.csv` bỏ qua hiệu chỉnh và tầng xếp
 chồng — tức chấm một mô hình KHÁC — nên chỉ dùng khi chưa đủ `MIN_DAYS` kỳ.
 
 `skill_monitor` chạy trong job `verify-published-pages` trên mỗi commit của
@@ -329,11 +343,11 @@ Mọi sổ cái "đọc lại rồi ghi lại toàn bộ" ghi qua `src/core/atom
 (`tests/core/test_atomic_ledgers.py`).
 
 `cleanup_artifacts` xoá artifact quá 45 ngày, nên kỹ năng từng kỳ được ghi
-vào sổ cái `data/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
+vào sổ cái `data/evaluation/model_quality/published_skill.csv` TRƯỚC khi dọn (lần ghi đầu
 giữ nguyên, không bị đè). Đừng xoá sổ ấy: nó là chuỗi đánh giá duy nhất dài
 hơn hạn giữ artifact.
 
-Sổ `data/prob_eval/ensemble_history.csv` ghi đơn vị Brier trên từng dòng (`brier_unit`): Đặc Biệt
+Sổ `data/evaluation/prob_eval/ensemble_history.csv` ghi đơn vị Brier trên từng dòng (`brier_unit`): Đặc Biệt
 trước 04-09-2026 là TRUNG BÌNH 100 lớp, sau đó là TỔNG — nhảy 100 lần là đổi đơn vị. Đừng sửa giá
 trị cũ; nhãn được gắn bằng bất biến trong `prob_eval_history.label_brier_units`.
 
@@ -341,7 +355,7 @@ trị cũ; nhãn được gắn bằng bất biến trong `prob_eval_history.lab
 
 Bảng mô phỏng trang chủ (`build_fun_prediction.py`) rút 2 số cuối theo xác suất mô
 hình; tiền tố là số ngẫu nhiên. `src/evaluation/fun_draw_ledger.py` ghi mỗi kỳ bảng đang hiện
-vào `data/fun_draw/ledger.csv` và chấm với kết quả thật (Đặc Biệt trúng đúng / trúng
+vào `data/evaluation/fun_draw/ledger.csv` và chấm với kết quả thật (Đặc Biệt trúng đúng / trúng
 lộn, số vị trí LOTO có về). Bảng chỉ được ghi TRƯỚC 18:10 giờ Việt Nam của kỳ đích;
 sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ git bằng đúng luật đó
 (`--backfill-from-git`). Đừng xoá sổ, đừng nới giờ khoá.
@@ -350,7 +364,7 @@ sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ g
 
 `src/evaluation/prediction_board.py` (bước pipeline sau `build_fun_prediction`) chụp MỌI danh sách số các trang
 công bố cho kỳ tới — tổ hợp Top 10, Cầu Kèo, ML, hệ ba tác tử, Lô VIP, xiên 2, cầu đẹp nhất, bảy trang
-soi cầu, soi đường, bảng mô phỏng — vào `data/prediction_board/<kỳ>.json`; trang Live
+soi cầu, soi đường, bảng mô phỏng — vào `data/evaluation/prediction_board/<kỳ>.json`; trang Live
 (`src/web/assets/live-scorecard.js`) đặt từng danh sách thành hai hàng "Trước giờ quay" / "Sau giờ quay"
 cạnh kết quả đang về. Sổ chỉ được ghi TRƯỚC 18:10 giờ VN của kỳ đích (`fun_draw_ledger.cutoff_utc`),
 sau đó đóng băng và không tạo mới: nhiều tệp nguồn không mang ngày và bị ghi đè cho kỳ sau lúc ~19 giờ.
@@ -474,7 +488,7 @@ vào tổ hợp xác suất; mọi xác suất/Confidence nó in ra đều suy t
 `src/forecast/multi_hit_benchmark.py`, vỏ dòng lệnh `scripts/research/benchmark_multi_hit.py`): 22 chiến lược kể cả
 logistic/GBM, chọn trên giai đoạn phát triển, kiểm một lần trên 1 000 kỳ cuối — không đạt; hạng giữa
 hai giai đoạn tương quan −0,02. Trang `docs/lo-vip-nhieu-nhay.html` (13-10-2026) in cả hai TỪ số đo:
-`multi_hit_report.py` ghi `data/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT
+`multi_hit_report.py` ghi `data/forecast/multi_hit/vip.json` mỗi ngày; `benchmark.json` là phép kiểm MỘT
 lần, đóng băng ở `SECOND_ROUND_UNTIL` (12-10-2026) — đừng dời ngày ấy hay đo lại trên cửa sổ trượt
 (nhìn lại cùng tập kiểm ở cùng α làm sai số loại I cộng dồn); muốn kiểm kỳ mới thì đăng ký phép kiểm
 tiến cứu mới. Bộ lọc thì đo lại MỖI ngày, nên mức tin của nó dùng p luôn hợp lệ (e-process,
@@ -533,7 +547,7 @@ Kiểm 4 225 kỳ: cả năm ngang chọn bừa; "nổ như dự đoán" là do 
 bừa cũng nổ 78,4%). Chúng là MÔ TẢ, không vào tổ hợp xác suất. Mốc chấm LOTO là xác suất CÓ
 ĐIỀU KIỆN theo số con đã về ở kỳ ấy, p Poisson-nhị thức, Holm cho năm quy tắc — khớp từng số với bộ
 `xsmb_methods` chủ dự án gửi. `src/research/digit_sum_hypothesis.py` là phép kiểm TIẾN CỨU đã đăng ký
-05-10-2026 (từ kỳ 06-10, 180 kỳ, α = 0,01 sau Holm), sổ cái `data/hypotheses/digit_sum_rules.csv`
+05-10-2026 (từ kỳ 06-10, 180 kỳ, α = 0,01 sau Holm), sổ cái `data/research/hypotheses/digit_sum_rules.csv`
 giữ lần ghi đầu; KHÔNG sửa tham số. Chi tiết:
 `documentation/research/2026-10-05-phuong-phap-bai-du-doan.md`; kỹ năng `soi-cau`.
 
@@ -546,7 +560,7 @@ phần là tỉ lệ lịch sử CÔNG BẰNG mà tín hiệu mạnh nhất củ
 nó. Đừng thay bằng hậu nghiệm từng con: con cao nhất trong 100 con của một lịch
 sử ngẫu nhiên đạt hậu nghiệm > 99% ở 60% lịch sử.
 
-Phân phối null 10 000 lịch sử nằm ở `data/confidence/null_quantiles.json`,
+Phân phối null 10 000 lịch sử nằm ở `data/evaluation/confidence/null_quantiles.json`,
 tính lại khi số kỳ trôi quá 2% hoặc `STAT_VERSION` đổi (~8 phút, 4 lõi). Đổi
 định nghĩa thống kê nào trong `stats()` thì PHẢI tăng `STAT_VERSION`. Phân vị
 lưu ĐỦ độ chính xác: làm tròn 7 chữ số từng thổi tin cậy cầu Đặc Biệt từ
@@ -560,7 +574,7 @@ trưng `tail_freq_7d` của mô hình cầu kèo — mười con cùng đuôi g�
 
 `src/research/hot_tail_test.py` là phép kiểm TIẾN CỨU đã đăng ký ngày 28-09-2026 (từ kỳ
 29-09, 180 kỳ, một phía α = 0,01). KHÔNG sửa tham số của nó: muốn đổi thì đăng ký giả
-thuyết mới với ngày bắt đầu mới. Sổ cái `data/hypotheses/hot_tail.csv` giữ lần ghi đầu.
+thuyết mới với ngày bắt đầu mới. Sổ cái `data/research/hypotheses/hot_tail.csv` giữ lần ghi đầu.
 Chi tiết: `documentation/research/2026-09-28-duoi-4-va-gia-thuyet-duoi-nong.md`.
 
 ## Soi cầu vị trí — đúng luật của trang tham chiếu, kèm kiểm chứng

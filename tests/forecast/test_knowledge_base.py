@@ -222,7 +222,7 @@ def test_the_alpha_budget_is_fixed_for_the_life_of_the_knowledge_base(tmp_path: 
     frame.to_csv(tmp_path / "xsmb-2-digits.csv", index=False)
     with pytest.raises(ValueError, match="ngân sách α"):
         kb.run(tmp_path)
-    assert json.loads((tmp_path / "knowledge" / "kb.json").read_text(encoding="utf-8")) == first
+    assert json.loads((tmp_path / "forecast" / "knowledge" / "kb.json").read_text(encoding="utf-8")) == first
 
 
 # --------------------------------------------------------------------------- giải thích
@@ -269,9 +269,9 @@ def test_an_active_online_learner_is_not_called_shadow() -> None:
 
 def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
     assert kb.measured_knowledge(tmp_path) == []
-    (tmp_path / "confidence").mkdir()
+    (tmp_path / "evaluation" / "confidence").mkdir(parents=True)
     report = {"families": [{"key": "a", "label": "A", "p": 0.004}, {"key": "b", "label": "B", "p": 0.3}]}
-    (tmp_path / "confidence" / "report.json").write_text(json.dumps(report), encoding="utf-8")
+    (tmp_path / "evaluation" / "confidence" / "report.json").write_text(json.dumps(report), encoding="utf-8")
     status = {e["id"]: e["status"] for e in kb.measured_knowledge(tmp_path)}
     assert status == {"ho-a": "tin-hieu-anh-chup", "ho-b": "khong-hon-ngau-nhien"}
 
@@ -281,10 +281,10 @@ def test_measured_knowledge_follows_the_measurements(tmp_path: Path) -> None:
 def test_confidence_families_are_holm_classified_snapshots_never_evidence(tmp_path: Path, p_best, status) -> None:
     """Mười lăm họ, mỗi họ ở α = 0,01: một họ p = 0,008 là điều thường thấy dưới giả thuyết không.
     Và p tính lại mỗi ngày trên lịch sử dồn thì dù nhỏ đến đâu cũng chỉ là ảnh chụp, không là bằng chứng."""
-    (tmp_path / "confidence").mkdir()
+    (tmp_path / "evaluation" / "confidence").mkdir(parents=True)
     families = [{"key": f"h{i}", "label": f"H{i}", "p": 0.5} for i in range(14)]
     families.append({"key": "best", "label": "Best", "p": p_best})
-    (tmp_path / "confidence" / "report.json").write_text(json.dumps({"families": families}), encoding="utf-8")
+    (tmp_path / "evaluation" / "confidence" / "report.json").write_text(json.dumps({"families": families}), encoding="utf-8")
     entries = {e["id"]: e for e in kb.measured_knowledge(tmp_path)}
     assert entries["ho-best"]["status"] == status
     assert entries["ho-best"]["p_holm"] == pytest.approx(min(1.0, 15 * p_best))
@@ -296,9 +296,9 @@ def test_confidence_families_are_holm_classified_snapshots_never_evidence(tmp_pa
                                                ("bac_bo", "khong-dat")])
 def test_a_registered_hypothesis_keeps_its_own_verdict_and_sample_size(tmp_path: Path, state, status) -> None:
     """14 kỳ của một phép kiểm 180 kỳ là đang thử, dù cửa sổ đặc trưng chỉ 7 ngày."""
-    (tmp_path / "confidence").mkdir()
+    (tmp_path / "evaluation" / "confidence").mkdir(parents=True)
     hot = {"window": 7, "min_draws": 180, "draws": 14, "z": 0.83, "state": state}
-    (tmp_path / "confidence" / "report.json").write_text(json.dumps({"hot_tail": hot}), encoding="utf-8")
+    (tmp_path / "evaluation" / "confidence" / "report.json").write_text(json.dumps({"hot_tail": hot}), encoding="utf-8")
     entry = {e["id"]: e for e in kb.measured_knowledge(tmp_path)}["gia-thuyet-duoi-nong"]
     assert entry["status"] == status
     assert entry["summary"].startswith("14/180 kỳ tiến cứu") and "0,83" in entry["summary"]

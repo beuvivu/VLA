@@ -54,7 +54,7 @@ MetaLearner.advance(...); PredictiveEngine.run(data_dir, now).
 ### Task 3: Pipeline và public
 
 **Files:** src/pipeline.py; src/pages/build_confidence_page.py; tests/forecast/test_xsmb_agents.py.
-**Interfaces:** báo cáo data/agents/report.json; card ở do-tin-cay.html#app-agents.
+**Interfaces:** báo cáo data/forecast/agents/report.json; card ở do-tin-cay.html#app-agents.
 
 - [ ] Viết test thứ tự chạy thực, hiển thị xác suất/ứng viên và loại báo cáo cũ.
 - [ ] Chạy test đỏ; tích hợp sau online và chẩn đoán/kho tri thức, trước dựng trang.

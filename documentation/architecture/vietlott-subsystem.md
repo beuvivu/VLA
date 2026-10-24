@@ -427,7 +427,7 @@ CREATE TABLE stat_snapshot (
     PRIMARY KEY (game, stat_code, version, as_of_draw_id)
 );
 
--- Giả thuyết TIẾN CỨU: tham số chốt trước khi có dữ liệu kiểm, như data/hypotheses/*.csv của XSMB.
+-- Giả thuyết TIẾN CỨU: tham số chốt trước khi có dữ liệu kiểm, như data/research/hypotheses/*.csv của XSMB.
 CREATE TABLE hypothesis (
     hypothesis_id   VARCHAR PRIMARY KEY,          -- ví dụ max3d_units_6_2026_10
     game            VARCHAR NOT NULL,
@@ -441,7 +441,7 @@ CREATE TABLE hypothesis (
     -- hash KHÔNG lưu: view row_digest tính lại từ chính các cột (mục 4.5)
 );
 -- Đăng ký xong thì bảng chỉ được chèn, không được sửa: quyền UPDATE/DELETE bị thu hồi, và
--- bản đăng ký được commit vào git như sổ data/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
+-- bản đăng ký được commit vào git như sổ data/research/hypotheses/*.csv của XSMB (lần ghi đầu giữ nguyên).
 -- Giả thuyết chỉ là TIẾN CỨU khi được đăng ký TRƯỚC giờ quay của kỳ đầu tiên nó tính. Lúc
 -- đăng ký, kỳ ấy thường chưa có trong draw, nên không thể là khóa ngoại hay CHECK; view
 -- hypothesis_eligibility (mục 4.5, sau bảng receipt) xét lại khi kỳ đã có. Kết quả của giả thuyết nào không 'prospective' thì không được
@@ -498,7 +498,7 @@ CREATE TABLE model_deployment (
 -- thức. Vì vậy:
 --   * alpha là cột SINH từ seq_no, không lưu được một giá trị khác;
 --   * bảng chỉ được chèn: quyền UPDATE/DELETE bị thu hồi, và sổ gate_allocation được commit
---     vào git như data/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
+--     vào git như data/research/hypotheses/*.csv (lần ghi đầu giữ nguyên, phép kiểm so kho với sổ);
 --   * bất biến kiểm bằng phép kiểm: seq_no của mỗi sản phẩm liên tục 1..n (xoá một dòng để
 --     dùng lại số nhỏ sẽ làm hở dãy), và BIÊN NHẬN của dòng phân bổ (bảng receipt,
 --     subject_kind = 'gate_allocation') sớm hơn biên nhận của mọi dự báo của (game, model_id) ấy.

@@ -91,8 +91,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     latest = _latest_date(data_dir)
     gen = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).strftime("%d/%m/%Y %H:%M UTC+7")
 
-    picks_loto = _read_json(data_dir / "predict" / "picks_loto.json")
-    picks_de = _read_json(data_dir / "predict" / "picks_de.json")
+    picks_loto = _read_json(data_dir / "forecast" / "predict" / "picks_loto.json")
+    picks_de = _read_json(data_dir / "forecast" / "predict" / "picks_de.json")
     w_loto = _effective_weights(data_dir, "loto")
     w_de = _effective_weights(data_dir, "de")
     c_loto = _read_json(data_dir / "ensemble" / "calibration_loto.json")
@@ -108,7 +108,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         picks_de = {"note": "Chưa tạo danh sách gợi ý"}
 
     def load_pred(mode: str) -> pd.DataFrame:
-        files = sorted((data_dir / "predict").glob(f"predict_next_{mode}_all_*.csv"))
+        files = sorted((data_dir / "forecast" / "predict").glob(f"predict_next_{mode}_all_*.csv"))
         if not files:
             return pd.DataFrame()
         frame = read_csv_or_empty(files[-1])

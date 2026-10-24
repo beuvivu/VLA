@@ -20,8 +20,8 @@ def main() -> int:
         from forecast.xsmb_agents.benchmark import walk_forward
 
         report = walk_forward(pd.read_csv(args.data_dir / "xsmb.csv", dtype=str),
-                              last=args.benchmark_last, prediction_dir=args.data_dir / "predict")
-        path = args.data_dir / "agents" / "benchmark.json"
+                              last=args.benchmark_last, prediction_dir=args.data_dir / "forecast" / "predict")
+        path = args.data_dir / "forecast" / "agents" / "benchmark.json"
         atomic_write_text(path, json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
         print(f"[xsmb-agents] hồi cứu {args.benchmark_last} kỳ; không có kỳ tiến cứu được thêm")
         return 0

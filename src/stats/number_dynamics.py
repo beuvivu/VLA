@@ -709,7 +709,7 @@ def main() -> None:
         description="Build higher-order Bayesian number-dynamics matrices."
     )
     ap.add_argument("--mode", choices=["loto", "de", "both"], default="both")
-    ap.add_argument("--out-dir", default="data/number_dynamics")
+    ap.add_argument("--out-dir", default="data/stats/number_dynamics")
     args = ap.parse_args()
     modes = ["loto", "de"] if args.mode == "both" else [args.mode]
     for mode in modes:

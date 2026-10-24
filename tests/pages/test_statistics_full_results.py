@@ -12,7 +12,7 @@ def test_dashboard_calendar_reads_full_prizes_instead_of_statistical_tails(
     tmp_path: Path, monkeypatch,
 ) -> None:
     """Hai nguồn khác nhau phải hiện kết quả thật, kể cả giá trị 00001."""
-    advanced = tmp_path / "data" / "advanced"
+    advanced = tmp_path / "data" / "stats" / "advanced"
     advanced.mkdir(parents=True)
     (tmp_path / "data" / "xsmb.csv").write_text(
         "date,special\n2025-12-29,1\n2026-01-01,04789\n", encoding="utf-8",

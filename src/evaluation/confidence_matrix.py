@@ -23,7 +23,7 @@ Luật tầng (theo yêu cầu của chủ dự án): High khi CẢ BA > 85 %; M
 nhất hai thành phần ≥ 60 %; còn lại Low/Noise.
 
 Phân phối null tốn ~8 phút trên 4 lõi, nên được lưu thành phân vị trong
-``data/confidence/null_quantiles.json`` và chỉ tính lại khi số kỳ trôi quá
+``data/evaluation/confidence/null_quantiles.json`` và chỉ tính lại khi số kỳ trôi quá
 ``REFRESH_DRIFT`` hoặc định nghĩa thống kê đổi (``STAT_VERSION``). Phần dữ liệu
 thật chạy mỗi lượt pipeline, vì trạng thái "hôm qua" đổi mỗi ngày.
 
@@ -57,7 +57,7 @@ REFRESH_DRIFT = 0.02
 #: Số điểm phân vị lưu cho mỗi họ: độ phân giải tin cậy 0,1 %.
 QUANTILES = 1001
 HIGH, MEDIUM = 0.85, 0.60
-OUT = Path("confidence")
+OUT = Path("evaluation") / "confidence"
 NULL_FILE = "null_quantiles.json"
 REPORT_FILE = "report.json"
 
@@ -542,7 +542,7 @@ PICK_SOURCES = {
 
 
 def _top10(data_dir: Path, mode: str, day: str) -> list[str]:
-    path = data_dir / "predict" / f"predict_next_{mode}_top10_{day}.csv"
+    path = data_dir / "forecast" / "predict" / f"predict_next_{mode}_top10_{day}.csv"
     try:
         frame = pd.read_csv(path, usecols=["number"])
     except (OSError, ValueError):
@@ -562,9 +562,9 @@ def _target_date(data_dir: Path, last: str) -> tuple[str, list[str], list[str], 
     nxt = (date.fromisoformat(last) + timedelta(days=1)).isoformat()
     pattern = "predict_next_loto_top10_*.csv"
     ahead = sorted(
-        day for day in (p.stem.rsplit("_", 1)[-1] for p in (data_dir / "predict").glob(pattern))
+        day for day in (p.stem.rsplit("_", 1)[-1] for p in (data_dir / "forecast" / "predict").glob(pattern))
         if day > last
-    ) if (data_dir / "predict").is_dir() else []
+    ) if (data_dir / "forecast" / "predict").is_dir() else []
     if ahead:
         day = ahead[0]
         return day, _top10(data_dir, "loto", day), _top10(data_dir, "de", day), "top10"
@@ -761,7 +761,7 @@ def build_report(data_dir: Path, null: dict) -> dict:
 
 
 def run(data_dir: Path, *, sims: int = DEFAULT_SIMS, workers: int = 4, force: bool = False) -> Path:
-    """Tính (hoặc tái dùng) null, dựng báo cáo, ghi ``data/confidence/report.json``."""
+    """Tính (hoặc tái dùng) null, dựng báo cáo, ghi ``data/evaluation/confidence/report.json``."""
     frame = pd.read_csv(data_dir / "xsmb-2-digits.csv", usecols=["date"])
     null = load_null(data_dir, len(frame), sims=sims, workers=workers, force=force)
     report = build_report(data_dir, null)

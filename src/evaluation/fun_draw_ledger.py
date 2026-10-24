@@ -6,11 +6,11 @@ khoá, dòng ấy đóng băng: một lượt pipeline chạy muộn không th�
 đoán" khi đã biết kết quả. Phần chấm (Đặc Biệt thật, trúng đúng, trúng lộn,
 số vị trí LOTO có về) tính lại được bất cứ lúc nào từ ``data/xsmb.csv``.
 
-Sổ nằm ở ``data/fun_draw/ledger.csv``, ngoài các thư mục ``cleanup_artifacts``
+Sổ nằm ở ``data/evaluation/fun_draw/ledger.csv``, ngoài các thư mục ``cleanup_artifacts``
 dọn, nên giữ được lâu hơn hạn 45 ngày của artifact.
 
 Lịch sử trước khi có sổ được nạp lại từ các phiên bản
-``data/predict/fun_draw_next.json`` trong git bằng ĐÚNG luật khoá ấy
+``data/forecast/predict/fun_draw_next.json`` trong git bằng ĐÚNG luật khoá ấy
 (``python3 src/evaluation/fun_draw_ledger.py --backfill-from-git``).
 """
 
@@ -27,9 +27,10 @@ from typing import Any
 import pandas as pd
 
 from core.atomic_io import atomic_to_csv
+from core.paths import legacy_data_path
 from core.xsmb_domain import DE_BASELINE_RATE, LOTO_BASELINE_RATE, PRIZE_FIELDS
 
-LEDGER = Path("fun_draw") / "ledger.csv"
+LEDGER = Path("evaluation") / "fun_draw" / "ledger.csv"
 VN = timezone(timedelta(hours=7))
 #: Giờ khoá theo giờ Việt Nam; kỳ quay XSMB bắt đầu 18:15.
 CUTOFF_HOUR, CUTOFF_MINUTE = 18, 10
@@ -208,6 +209,21 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout
 
 
+def show_data_at(repo: Path, sha: str, rel: str) -> str:
+    """Nội dung ``data/<rel>`` ở commit ``sha``.
+
+    Commit trước đợt gom ``data/`` (24-10-2026) giữ tệp ở chỗ cũ, nên hỏi chỗ mới rồi mới đến
+    ``paths.legacy_data_path``; không có ở chỗ nào thì ném ``CalledProcessError``.
+    """
+    try:
+        return _git(repo, "show", f"{sha}:data/{rel}")
+    except subprocess.CalledProcessError:
+        legacy = legacy_data_path(rel)
+        if legacy is None:
+            raise
+        return _git(repo, "show", f"{sha}:data/{legacy}")
+
+
 def backfill_from_git(repo: Path, data_dir: Path, ref: str = "HEAD") -> pd.DataFrame:
     """Nạp lại các kỳ chưa có trong sổ từ lịch sử git của ``fun_draw_next.json``.
 
@@ -217,15 +233,16 @@ def backfill_from_git(repo: Path, data_dir: Path, ref: str = "HEAD") -> pd.DataF
     existing = read_ledger(data_dir)
     known = set(existing["target_date"])
     frame = empty_ledger()
-    rel = "data/predict/fun_draw_next.json"
-    log = _git(repo, "log", ref, "--reverse", "--format=%H %cI", "--", rel)
+    rel = "forecast/predict/fun_draw_next.json"
+    log = _git(repo, "log", ref, "--reverse", "--format=%H %cI", "--",
+               f"data/{rel}", f"data/{legacy_data_path(rel)}")
     for line in log.splitlines():
         if not line.strip():
             continue
         sha, stamp = line.split()
         when = datetime.fromisoformat(stamp)
         try:
-            payload = json.loads(_git(repo, "show", f"{sha}:{rel}"))
+            payload = json.loads(show_data_at(repo, sha, rel))
         except (subprocess.CalledProcessError, json.JSONDecodeError):
             continue
         target = str(payload.get("target_date", ""))
@@ -235,7 +252,7 @@ def backfill_from_git(repo: Path, data_dir: Path, ref: str = "HEAD") -> pd.DataF
         try:
             de = pd.read_csv(
                 io.StringIO(
-                    _git(repo, "show", f"{sha}:data/predict/predict_next_de_all_{target}.csv")
+                    show_data_at(repo, sha, f"forecast/predict/predict_next_de_all_{target}.csv")
                 )
             )
             de_probs = {int(n): float(p) for n, p in zip(de["number"], de["prob"], strict=True)}
