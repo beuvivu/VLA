@@ -134,7 +134,7 @@ ba tệp này. Kiểm đủ năm đường mà §X đòi:
 | Trang xuất bản | 0/29 |
 | `@import` trong CSS | không có |
 | Phép kiểm | không nhắc |
-| `scripts/ops/extract_critical_css.py` | chỉ đọc `ui.css` |
+| `scripts/web/extract_critical_css.py` | chỉ đọc `ui.css` |
 | Trình dựng | không sinh ra — là tệp tĩnh commit thẳng |
 
 Thứ duy nhất nhắc tên chúng là một chuỗi selector trong `css-async.js`, và
@@ -151,8 +151,8 @@ Ghi lại thay vì gỡ, vì **đo cho thấy chúng không chết theo nghĩa t
 
 | Tệp | Kích thước | Ai phát ra |
 | --- | --- | --- |
-| `matrix-virt.js` | 6,5 KB | `scripts/ops/optimize_index_dom.py` |
-| `apply-data-styles.js` | 1,2 KB | `scripts/ops/patch_csp_no_inline.py` |
+| `matrix-virt.js` | 6,5 KB | `scripts/web/optimize_index_dom.py` |
+| `apply-data-styles.js` | 1,2 KB | `scripts/web/patch_csp_no_inline.py` |
 | `ui-dock.js` | 2,0 KB | `src/web/web_security.py::security_script_tags` |
 | `live-board.js` | 9,6 KB | không mã nào phát ra |
 

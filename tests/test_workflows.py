@@ -139,7 +139,7 @@ def test_regional_workflow_refreshes_pages_through_the_shared_pipeline(tmp_path:
     )
     assert result.returncode == 0, result.stderr
     assert calls.read_text().splitlines() == [
-        "src/pages/build_regional_results.py", "scripts/ops/refresh_navigation.py"
+        "src/pages/build_regional_results.py", "scripts/web/refresh_navigation.py"
     ]
 
 
