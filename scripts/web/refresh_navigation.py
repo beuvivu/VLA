@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / 'src'))
 def main():
     from web.ui_theme import write_stylesheet
     write_stylesheet(ROOT / 'docs')
-    subprocess.run([sys.executable, str(ROOT / 'scripts/ops/extract_critical_css.py')], check=True)
+    subprocess.run([sys.executable, str(ROOT / 'scripts/web/extract_critical_css.py')], check=True)
     # Process mới sau khi critical CSS được sinh, tránh cache module cũ.
     subprocess.run([sys.executable, '-c', '''
 from pathlib import Path

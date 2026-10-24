@@ -6,4 +6,4 @@ Design prompt: a compact, stylized rotating lottery cage with sweeping indigo/vi
 
 `lottery-drum-source.png` preserves the generated original. The web exports preserve transparency and are resized with Sharp: `lottery-drum.webp` is 192 × 192 (quality 90), `lottery-favicon.png` is 64 × 64, and `lottery-touch-icon.png` is 180 × 180. Only these three exports are copied into `docs/assets/` by `page_output.py`; their URLs are fingerprinted by `site_assets.py`.
 
-The original reference icon collection in `../nexlink/` remains intact. Regenerate pages with `python scripts/ops/refresh_navigation.py`.
+The original reference icon collection in `../nexlink/` remains intact. Regenerate pages with `python scripts/web/refresh_navigation.py`.

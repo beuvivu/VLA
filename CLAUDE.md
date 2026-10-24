@@ -65,6 +65,14 @@ Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridg
   biến mất — 23 → 24-10-2026 bốn job cần bs4 gián tiếp đã lọt khỏi phép kiểm như thế.
 - `tests/test_src_layout.py` canh các điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
 
+`scripts/` chia theo chức năng, bảng nhóm là `tests/test_repo_layout.SCRIPT_GROUPS`: `ops` (vận
+hành CI, triển khai), `web` (công cụ dựng và hậu xử lý trang: critical CSS, khung điều hướng, CSP,
+DOM; tách khỏi `ops` 24-10-2026), `browser` (kiểm trên Chromium), `reference` (đọc trang tham
+chiếu), `release` (bốn kịch bản chốt phát hành), `research` (phép đo tái lập được). Script nằm
+đúng hai cấp dưới gốc kho (`parents[2]`), có docstring nói nó làm gì, và mọi đường dẫn `scripts/…`
+được nhắc ở đâu trong kho phải trỏ tệp có thật. 22/40 script Python không có argparse: `--help` là
+chạy thật và ghi đè tệp (`extract_critical_css`, `replicate_top5_special` từng bị chạy nhầm như thế).
+
 ## Khung ứng dụng
 
 Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng chung
@@ -153,7 +161,7 @@ TÔ, không phải màu CHỮ.
 - `test_the_three_copies_of_the_page_background_agree` và
   `test_the_first_frame_paints_the_background_from_tokens_not_a_copy` — màu nền
   từng có BỐN bản sao (`ui_theme`, module sinh ra, bản dự phòng trong
-  `css_links`, và một chuỗi ghim trong `scripts/ops/extract_critical_css.py`).
+  `css_links`, và một chuỗi ghim trong `scripts/web/extract_critical_css.py`).
 - `PAGE_GROUND` / `BRAND_RAMP` trong `tests/test_ui_design_system.py` là HỢP
   ĐỒNG: mọi chủ sở hữu style phải khai cùng một nền và cùng một dốc nhấn.
 
@@ -666,7 +674,7 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
 - Mọi bề mặt/chữ/viền/control/modal phải đọc token; màu có nghĩa dữ liệu dùng
   cặp token riêng, kiểm AA cả hai theme. Không dùng OS media riêng để bỏ qua
   lựa chọn sáng tường minh. Bản in đặt lại token sáng để chữ đọc được.
-- Sửa ui_theme thì dựng ui.css, chạy `scripts/ops/extract_critical_css.py`, rồi
+- Sửa ui_theme thì dựng ui.css, chạy `scripts/web/extract_critical_css.py`, rồi
   dựng HTML bằng process mới để không giữ module critical đã import.
 - `tests/frontend` chạy bằng `npm ci --prefix tests/frontend` và
   `npm test --prefix tests/frontend`; fixture shell lấy từ generator nguồn.

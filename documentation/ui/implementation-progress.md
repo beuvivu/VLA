@@ -174,7 +174,7 @@ Màu chữ mờ của họ, `--medium-gray #717580`, chỉ đạt **3,96:1** tr�
 
 Màu nền trang hoá ra có **bốn** bản: `ui_theme.py`, `critical_css_generated`,
 bản dự phòng trong `css_links.py`, và một chuỗi ghim cứng trong
-`scripts/ops/extract_critical_css.py`. Bản thứ tư không ai canh, nên sau khi đổi
+`scripts/web/extract_critical_css.py`. Bản thứ tư không ai canh, nên sau khi đổi
 bảng màu thì **khung vẽ đầu tiên vẫn là nền cũ**. Nay cả hai chỗ sinh CSS tới
 hạn đều đọc `var(--ui-bg)`, và hai phép kiểm canh việc đó.
 

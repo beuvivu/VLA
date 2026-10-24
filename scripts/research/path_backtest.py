@@ -1,3 +1,11 @@
+"""Backtest cuốn chiếu dự báo cầu theo đường (``soi_cau.path_prob``) trên kỳ quay thật.
+
+Với mỗi cặp kỳ neo → kỳ đích đúng NGÀY LỊCH kế tiếp trong ``--bt-days`` cặp cuối, dựng cầu từ
+lịch sử tới hết kỳ neo, chọn ``--top-k`` con theo nhánh ``--kind`` (đang chạy / ổn định) rồi chấm
+với kỳ đích. Ghi từng kỳ vào ``--out`` (mặc định ``data/path/backtest.csv``) và tóm tắt vào
+``<out>_summary.json``. Công cụ nghiên cứu chạy tay.
+"""
+
 from __future__ import annotations
 
 import argparse

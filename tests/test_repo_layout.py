@@ -3,7 +3,7 @@
 * ``docs/`` là gốc GitHub Pages: mọi thứ trong đó đều được xuất bản. Tài liệu nội bộ, kế hoạch
   và báo cáo kiểm toán từng nằm ở ``docs/audit``, ``docs/design``, ``docs/superpowers``,
   ``docs/ui-ux`` — tức bị đăng công khai cùng trang. Nay chúng ở ``documentation/``.
-* ``scripts/`` chia theo công dụng. Script ở hai cấp dưới gốc kho, nên gốc kho là
+* ``scripts/`` chia theo chức năng (``SCRIPT_GROUPS``). Script ở hai cấp dưới gốc kho, nên gốc kho là
   ``Path(__file__).resolve().parents[2]`` (Python) hay ``$(dirname "$0")/../..`` (shell);
   ``parents[1]`` nay trỏ vào ``scripts/`` và làm script đọc sai chỗ mà không báo lỗi.
 """
@@ -17,7 +17,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_GROUPS = {"release", "browser", "ops", "research", "reference"}
+#: Nhóm của ``scripts/`` theo chức năng (24-10-2026: bốn công cụ dựng trang tách khỏi ``ops``).
+SCRIPT_GROUPS = {
+    "ops": "vận hành CI và triển khai: báo động đường đúng giờ, chẩn đoán nguồn, xoá cache, đẩy trang",
+    "web": "công cụ dựng và hậu xử lý trang đã xuất bản: critical CSS, khung điều hướng, CSP, DOM",
+    "browser": "kiểm trang đã xuất bản trên Chromium thật",
+    "reference": "đọc trang tham chiếu qua runner Actions",
+    "release": "bốn kịch bản chốt phát hành",
+    "research": "phép đo và benchmark tái lập được của tài liệu nghiên cứu",
+}
 #: Thư viện chỉ được cài trong job của chính script (trình duyệt, đọc trang tham chiếu), không có
 #: trong môi trường kiểm thử chung.
 TOOL_ONLY = {"playwright"}
@@ -41,7 +49,7 @@ def docs_offenders(docs: Path) -> list[str]:
 
 
 def script_offenders(scripts: Path) -> list[str]:
-    """Script nằm ngoài nhóm, hoặc tính gốc kho sai độ sâu."""
+    """Script nằm ngoài nhóm, tính gốc kho sai độ sâu, hoặc (Python) không nói nó làm gì."""
     bad = []
     for path in _files(scripts):
         rel = path.relative_to(scripts)
@@ -51,6 +59,8 @@ def script_offenders(scripts: Path) -> list[str]:
         text = path.read_text(encoding="utf-8")
         if path.suffix == ".py" and re.search(r"Path\(__file__\)\.resolve\(\)\.parents\[(?!2\])\d+\]", text):
             bad.append(f"{rel.as_posix()}: gốc kho phải là Path(__file__).resolve().parents[2]")
+        if path.suffix == ".py" and not ast.get_docstring(ast.parse(text)):
+            bad.append(f"{rel.as_posix()}: thiếu docstring nói script làm gì")
         if path.suffix == ".sh" and "BASH_SOURCE" in text and '/../.." && pwd' not in text:
             bad.append(f"{rel.as_posix()}: gốc kho phải là $(dirname BASH_SOURCE)/../..")
     return sorted(bad)
@@ -148,16 +158,19 @@ def test_the_layout_rules_catch_a_stray_file(tmp_path: Path) -> None:
     scripts = tmp_path / "scripts"
     (scripts / "ops").mkdir(parents=True)
     (scripts / "release").mkdir()
-    (scripts / "ops" / "good.py").write_text("ROOT = Path(__file__).resolve().parents[2]\n", encoding="utf-8")
+    (scripts / "ops" / "good.py").write_text('"""Việc."""\nROOT = Path(__file__).resolve().parents[2]\n',
+                                         encoding="utf-8")
     (scripts / "release" / "good.sh").write_text(
         'ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"\n', encoding="utf-8")
     assert script_offenders(scripts) == []
     (scripts / "loose.py").write_text("", encoding="utf-8")
-    (scripts / "ops" / "shallow.py").write_text("ROOT = Path(__file__).resolve().parents[1]\n", encoding="utf-8")
+    (scripts / "ops" / "shallow.py").write_text('"""Việc."""\nROOT = Path(__file__).resolve().parents[1]\n',
+                                            encoding="utf-8")
+    (scripts / "ops" / "mute.py").write_text("ROOT = Path(__file__).resolve().parents[2]\n", encoding="utf-8")
     (scripts / "release" / "shallow.sh").write_text(
         'ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"\n', encoding="utf-8")
     found = script_offenders(scripts)
-    assert [f.split(":")[0] for f in found] == ["loose.py", "ops/shallow.py", "release/shallow.sh"]
+    assert [f.split(":")[0] for f in found] == ["loose.py", "ops/mute.py", "ops/shallow.py", "release/shallow.sh"]
 
 
 def test_the_import_rule_catches_a_removed_sibling(tmp_path: Path) -> None:

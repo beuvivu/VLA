@@ -1,6 +1,6 @@
 # Làm mới source và tài nguyên xuất bản
 
-Cập nhật: 17-10-2026. Source tại `src/`, trình vận hành tại `scripts/ops/`,
+Cập nhật: 17-10-2026. Source tại `src/`, trình vận hành tại `scripts/ops/`, công cụ dựng trang tại `scripts/web/`,
 kiểm thử tại `tests/`, tài liệu tại `documentation/`; `docs/` chỉ chứa website.
 
 ## Biên xuất trang
@@ -48,7 +48,7 @@ bỏ nội dung của một bot; số lần thử lại khi remote tiến thêm 
 ## Dựng lại giao diện từ nguồn chuẩn
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 scripts/ops/refresh_navigation.py
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/web/refresh_navigation.py
 ```
 
 Lệnh dựng stylesheet, sinh Critical CSS rồi mở tiến trình Python mới để

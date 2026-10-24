@@ -136,7 +136,7 @@ RGB tám bit có thể cùng màu khi hai tổng lịch sử rất gần nhau; t
 
 Dựng landing, statistics, các trang thống kê chi tiết; chèn mô phỏng bằng
 payload và ledger hiện có qua `inject_into_html`, không ghi lại ledger. Sau
-đó chạy `scripts/ops/refresh_navigation.py` để đồng bộ toàn site và chốt dấu
+đó chạy `scripts/web/refresh_navigation.py` để đồng bộ toàn site và chốt dấu
 phiên bản tài nguyên. Không thay lịch sử kết quả, mô hình, trọng số hoặc sổ
 dự báo trong đợt giao diện này. Các thay đổi nằm trong source nên được giữ
 qua các lần cập nhật dữ liệu tự động.
