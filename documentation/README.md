@@ -108,7 +108,7 @@ forecasting guarantee.
 
 | Location | Content |
 | --- | --- |
-| `README.md` (root) | Operating overview and setup. **Generated** by `src/pages/update_readme.py` from `src/templates/README.j2` — do not edit by hand. |
+| `README.md` (root) | Operating overview and setup. **Generated** by `src/pages/update_readme.py` from `src/web/templates/README.j2` — do not edit by hand. |
 | `DASHBOARD.md` (root) | Analysis dashboard. **Generated** by `src/pages/build_markdown_dashboard_v3.py` — do not edit by hand. |
 | `SECURITY.md` (root) | Vulnerability reporting, trust boundaries and model-artifact policy. |
 | `documentation/engineering-log/` | Engineering log: repair rules, verified repair patterns, known failures, research memory, tuning history and incident records. Renamed from `.codex/`, which read as a reference to the ChatGPT Codex app; it is unrelated to it. |

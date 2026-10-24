@@ -409,7 +409,7 @@ cách nhanh nhất để báo cáo sai.
 |---|---|
 | Tệp trong `docs/` | **1** (`.nojekyll`, 0 byte) |
 | Module trình bày trong `src/` | **0** |
-| Tệp trong `src/templates/` | 2 (`README.j2`, `__init__.py`) — cả hai cho `analyze.py`, không phải trang |
+| Tệp trong `src/web/templates/` | 2 (`README.j2`, `__init__.py`) — cả hai cho `analyze.py`, không phải trang |
 
 Ngày 2026-09-21, theo yêu cầu tường minh của chủ dự án ("Reset và xóa triệt để
 hết giao diện hiện có"), toàn bộ tầng trình bày đã bị xóa: 107 tệp, 82 800

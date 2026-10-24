@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
-ASSETS = ROOT / 'src/assets/nexlink'
+ASSETS = ROOT / 'src/web/assets/nexlink'
 RAIL = ['home', 'tags', 'chart', 'clipboard', 'crown', 'layers', 'robot', 'code', 'plus', 'exit']
 
 

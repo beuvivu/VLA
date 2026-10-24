@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
-const script = readFileSync(process.env.APP_THEME_SCRIPT || new URL('../../src/assets/app-theme.js', import.meta.url), 'utf8');
+const script = readFileSync(process.env.APP_THEME_SCRIPT || new URL('../../src/web/assets/app-theme.js', import.meta.url), 'utf8');
 function setup({ saved = null, dark = false, blocked = false, mediaMissing = false, mediaThrows = false, listenerThrows = false } = {}) {
   const dom = new JSDOM('<!doctype html><html><head></head><body><button id="app-theme"><span class="app-theme-ic"><svg></svg></span></button></body></html>', {
     url: 'https://example.test/', runScripts: 'outside-only',

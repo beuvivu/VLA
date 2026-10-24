@@ -78,7 +78,7 @@ def test_dark_pages_map_their_palette_onto_the_shared_tokens() -> None:
     Đo được trên trang thật trước khi sửa: #0f172a trên card #0f172a, tức
     1,00:1 — chữ vô hình hoàn toàn.
     """
-    template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
+    template = (ROOT / "src/web/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
     for token in ("--text:var(--ui-ink)", "--muted:var(--ui-ink-soft)", "--card:var(--ui-surface)", "--bg:var(--ui-bg)"):
         assert token in template, token
 
@@ -91,7 +91,7 @@ def test_path_page_text_contrasts_with_each_theme(page: Path) -> None:
     from theme_palette_helpers import theme_tokens
     text = (DOCS / page).read_text(encoding="utf-8")
     assert 'assets/ui.css' in text
-    template = (ROOT / "src/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
+    template = (ROOT / "src/web/templates/path_ui_page.html.j2").read_text(encoding="utf-8")
     assert '--text:var(--ui-ink)' in template and '--card:var(--ui-surface)' in template
     for dark in (False, True):
         tokens = theme_tokens(dark)

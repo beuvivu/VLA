@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-const script = readFileSync(new URL('../../src/assets/live-predictions.js', import.meta.url), 'utf8');
+const script = readFileSync(new URL('../../src/web/assets/live-predictions.js', import.meta.url), 'utf8');
 function setup(t, fetcher) {
   const dom = new JSDOM('<section id="live-predictions" data-prediction-root="https://example.test/predict/"><time id="live-prediction-date"></time>' +
     ['de', 'loto'].map(mode => '<section data-prediction-mode="' + mode + '"><ol class="live-prediction-list"></ol><p class="live-prediction-message"></p></section>').join('') + '</section>', {runScripts: 'outside-only'});

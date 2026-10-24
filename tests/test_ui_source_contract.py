@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_path_template_owns_themed_bento_structure() -> None:
-    source = (ROOT / "src" / "templates" / "path_ui_page.html.j2").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "web" / "templates" / "path_ui_page.html.j2").read_text(encoding="utf-8")
 
     assert '<body class="ui-app path-page">' in source
     assert '<div class="wrap path-shell">' in source
@@ -25,7 +25,7 @@ def test_path_template_owns_themed_bento_structure() -> None:
 
 def test_detail_statistics_layout_is_source_owned_and_wired_at_output() -> None:
     output_source = (ROOT / "src" / "web" / "page_output.py").read_text(encoding="utf-8")
-    detail_css = ROOT / "src" / "templates" / "stat_detail_pages.css"
+    detail_css = ROOT / "src" / "web" / "templates" / "stat_detail_pages.css"
 
     assert detail_css.exists()
     assert '"stat_detail_pages.css"' in output_source
@@ -34,7 +34,7 @@ def test_detail_statistics_layout_is_source_owned_and_wired_at_output() -> None:
 
 
 def test_detail_statistics_stylesheet_covers_every_reported_layout_problem() -> None:
-    source = (ROOT / "src" / "templates" / "stat_detail_pages.css").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "web" / "templates" / "stat_detail_pages.css").read_text(encoding="utf-8")
 
     assert ".sp-detail-hero" in source
     assert ".sp-page-bang-dac-biet #sp-grid" in source

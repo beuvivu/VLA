@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { setup } from './shell-fixture.mjs';
 const root = new URL('../../', import.meta.url);
 test('Định danh cặp chỉ nhận số thuần, từ chối chuỗi chứa thẻ', () => {
-  const source = readFileSync(new URL('src/templates/stat_pages.js', root), 'utf8');
+  const source = readFileSync(new URL('src/web/templates/stat_pages.js', root), 'utf8');
   const start = source.indexOf('function asPair(value) {');
   const end = source.indexOf('\nfunction markPair(', start);
   const asPair = runInNewContext(`${source.slice(start, end)}; asPair`);
@@ -238,7 +238,7 @@ test('Header same-page destination releases the mobile overlay and hidden dropdo
 
 test('Reloading shell runtime does not double-bind header menus', () => {
   const dom = setup(), d = dom.window.document;
-  dom.window.eval(readFileSync(new URL('src/assets/app-shell.js', root), 'utf8'));
+  dom.window.eval(readFileSync(new URL('src/web/assets/app-shell.js', root), 'utf8'));
   d.getElementById('app-profile-toggle').click();
   assert.equal(d.getElementById('app-profile-menu').hidden, false);
   dom.window.close();

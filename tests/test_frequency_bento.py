@@ -28,7 +28,7 @@ console.log(JSON.stringify({same:window.__D_DRAWS__===canonical,
   demo:window.__D_DEMO_DRAWS__||null}));
 """
     run = subprocess.run(
-        [node, "-e", script, query, str(ROOT / "src/templates/frequency_demo.js")],
+        [node, "-e", script, query, str(ROOT / "src/web/templates/frequency_demo.js")],
         check=True, capture_output=True, text=True, timeout=10,
     )
     result = json.loads(run.stdout)

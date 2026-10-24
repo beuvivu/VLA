@@ -10,6 +10,7 @@ from core.safe_io import read_csv_or_empty, read_json_or_empty
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from core.path_models import index_to_label
+from core.paths import TEMPLATES
 from web.ui_locale import mode_label, path_kind_label
 from web.ui_theme import refresh_live_page
 from core.xsmb_domain import baseline_rate
@@ -327,7 +328,7 @@ def build_docs(*, repo_root: Path, display_days: int = 10) -> None:
     docs_dir.mkdir(parents=True, exist_ok=True)
 
     env = Environment(
-        loader=FileSystemLoader(str((repo_root / "src" / "templates").resolve())),
+        loader=FileSystemLoader(str(TEMPLATES)),
         autoescape=select_autoescape(["html", "xml"]),
     )
 

@@ -13,7 +13,7 @@ if not Path(CHROMIUM).exists():
     pytest.skip(f"không có Chromium tại {CHROMIUM}", allow_module_level=True)
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = Path(os.environ.get("APP_EVIDENCE_SCRIPT", ROOT / "src/assets/app-evidence.js"))
+SCRIPT = Path(os.environ.get("APP_EVIDENCE_SCRIPT", ROOT / "src/web/assets/app-evidence.js"))
 
 
 @pytest.fixture(scope="module")

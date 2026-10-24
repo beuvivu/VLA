@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
 const root = new URL('../../', import.meta.url);
-const script = new URL('src/assets/vietlott-comparison.js', root);
+const script = new URL('src/web/assets/vietlott-comparison.js', root);
 const main = [1, 2, 3, 4, 5, 6];
 const plain = value => JSON.parse(JSON.stringify(value));
 

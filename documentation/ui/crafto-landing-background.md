@@ -30,7 +30,7 @@ Chỉ thị yêu cầu nền Crafto **chỉ** áp cho `index.html`, `landing.htm
 `landing_desktop.html`, còn phần còn lại của ứng dụng theo NexLink.
 
 Hiện tại bảng màu Crafto đang dùng **toàn cục**: nó nằm trong
-`src/web/ui_theme.py` (token dùng chung) và `src/templates/ui_visual_system.css`.
+`src/web/ui_theme.py` (token dùng chung) và `src/web/templates/ui_visual_system.css`.
 Việc tách đôi là:
 
 * giữ nền + quầng sáng Crafto trong một lớp CSS có phạm vi riêng, chỉ gắn vào

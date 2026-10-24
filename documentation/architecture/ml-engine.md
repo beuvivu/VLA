@@ -1,7 +1,7 @@
 # `src/research/ml_engine/` — Autonomous Continuous Learning & Accuracy Enhancer
 
 > Bản thiết kế kỹ thuật kèm kết quả đo. Mọi con số trong tài liệu này tái lập
-> được bằng `python src/research/ml_engine/main_pipeline.py`; không con số nào viết tay.
+> được bằng `PYTHONPATH=src python src/research/ml_engine/main_pipeline.py`; không con số nào viết tay.
 
 ---
 
@@ -268,7 +268,7 @@ ROI; muốn kết luận có lãi cần đánh giá riêng doanh thu theo số n
 
 ```bash
 # Báo cáo của bản đang chạy (cánh tay, trọng số, độ tin)
-python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+PYTHONPATH=src python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
     --out data/research/ml_engine_report.json
 # So ghép cặp với bản cũ chạy trên mã của main (luật quyết định chốt trước khi đo)
 PYTHONPATH=src python3 scripts/research/benchmark_ml_engine_aggregation.py --last 1000 \
@@ -330,11 +330,11 @@ Top-K chỉ là thứ tự chỉ số.
 pip install -r requirements-ml-engine.txt
 
 # Chạy backtest học tiếp diễn, ghi báo cáo
-python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+PYTHONPATH=src python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
     --out data/research/ml_engine_report.json
 
 # Bỏ các cánh tay nặng khi chạy trên máy yếu
-python src/research/ml_engine/main_pipeline.py --no-temporal --no-ranking
+PYTHONPATH=src python src/research/ml_engine/main_pipeline.py --no-temporal --no-ranking
 
 # Kiểm thử
 PYTHONPATH=src python3 -m pytest tests/test_ml_engine.py \

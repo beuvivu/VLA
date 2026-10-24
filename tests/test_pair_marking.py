@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
-JS = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+JS = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
 
 
 def test_the_table_builder_reads_a_declared_pair_into_the_cell_key() -> None:

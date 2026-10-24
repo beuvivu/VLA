@@ -24,17 +24,20 @@ và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
                 gói con bridges (quét cầu ghép chéo, cổng kiểm định), features (đặc trưng cầu)
     ml          ML thành phần và Cầu Kèo: đặc trưng, huấn luyện, dự báo, thách đấu miền
     forecast    xếp chồng, dự báo đầy đủ, học trực tuyến, kho tri thức, Lô VIP (multi_hit_*);
-                gói con modeling (dự đoán hằng ngày predictions_today.json)
+                gói con modeling (dự đoán hằng ngày predictions_today.json), xsmb_agents (hệ ba tác tử)
     evaluation  chất lượng mô hình, sổ dự báo, độ tin cậy, bảng mô phỏng, kiểm toán vận hành
-    research    phòng nghiên cứu và phép kiểm tiến cứu đã đăng ký
-    web         shell, theme, page_output, bằng chứng, thành phần trang dùng chung
+    research    phòng nghiên cứu và phép kiểm tiến cứu đã đăng ký;
+                gói con ml_engine (khung học tiếp diễn), vla (phòng thử thách mô hình)
+    web         shell, theme, page_output, bằng chứng, thành phần trang dùng chung;
+                tài nguyên templates (mẫu HTML/CSS/JS, Jinja) và assets (tệp tĩnh, phông, biểu tượng)
     pages       trình dựng từng trang trong docs/ (build_*), README
 
-Gói cũ đã gom (24-10-2026): `crawler` → `ingest`, `utils` → `core`; `bridges`, `features` →
-gói con của `soi_cau`, `modeling` → gói con của `forecast` (giữ làm gói con vì tên module chung
-chung như `base`, `spec`, `risk`). Còn đứng riêng: `ml_engine`, `vla`, `xsmb_agents`, `templates`.
+Gói cũ đã gom (24-10-2026), không còn gì đứng riêng: `crawler` → `ingest`, `utils` → `core`;
+`bridges`, `features` → gói con của `soi_cau`; `modeling`, `xsmb_agents` → gói con của `forecast`;
+`ml_engine`, `vla` → gói con của `research`; `templates`, `assets` → `web/templates`, `web/assets`.
+Gói cũ giữ làm GÓI CON vì tên module bên trong chung chung (`base`, `spec`, `risk`, `engine`).
 Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridge_scan.py`,
-`forecast/modeling/run_daily_prediction.py`, `xsmb_agents/run_xsmb_agents.py`.
+`forecast/modeling/run_daily_prediction.py`, `forecast/xsmb_agents/run_xsmb_agents.py`.
 
 - Import: `from ensemble import ensemble_utils` hoặc `from ensemble.ensemble_utils import
   finalize_blend`. KHÔNG import theo tên phẳng cũ — chạy được khi kịch bản đứng cùng thư
@@ -43,10 +46,10 @@ Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridg
   đặt thư mục của CHÍNH tệp ấy lên `sys.path`, không phải `src`. `pipeline._child_env` tự
   đặt cho mọi bước con; job workflow nào chạy `src/<gói>/…` phải khai `PYTHONPATH` trong
   `env`.
-- Đường dẫn tới gốc kho, `src/templates`, `src/assets` CHỈ qua `core.paths`
+- Đường dẫn tới gốc kho, `src/web/templates`, `src/web/assets` CHỈ qua `core.paths`
   (`REPO_ROOT`, `SRC`, `TEMPLATES`, `ASSETS`). Đừng đếm `Path(__file__).parents[...]`:
   `known_non_draw_days` đọc lịch nghỉ bằng đường dẫn ấy, và sai tầng thì lịch rỗng chứ
-  không báo lỗi.
+  không báo lỗi. Cũng đừng ghép `repo_root / "src" / …` hay `SRC / …` ngoài `core/paths.py`.
 - Pack joblib ghi trước đợt gom nhắc lớp bằng tên `ml_models`; `ml/ml_models.py` đăng ký tên
   ấy trong `sys.modules`. Thiếu nó, `MODEL_LOAD_ERRORS` nuốt ImportError và bước dự báo coi
   pack là hỏng mà không báo.
@@ -54,7 +57,9 @@ Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridg
 - Chuyển module thì mọi lệnh chạy `src/…py` (workflow, `scripts/`, `pipeline.py`) phải trỏ tệp có
   thật: phép kiểm phụ thuộc của workflow lọc đường dẫn bằng `is_file()`, nên lệnh trỏ chỗ cũ bị bỏ
   qua lặng lẽ và chỉ hỏng khi chạy thật. Tên gói đã gom (`crawler`, `utils`, `bridges`, `features`,
-  `modeling`) không được import lại.
+  `modeling`, `ml_engine`, `vla`, `xsmb_agents`, `templates`) không được import lại.
+- Bộ lọc `paths:` của workflow phải khớp tệp có thật: GitHub không báo lỗi cho bộ lọc trỏ chỗ trống,
+  workflow chỉ lặng lẽ thôi chạy (`vietlott-results.yml` lọc theo ba tệp trong `web/`).
 - Phép kiểm "workflow cài đủ thư viện" (`test_workflows._third_party_closure`) truy theo ĐƯỜNG DẪN
   module đầy đủ: theo tên gốc thì `from ingest.sources import …` chỉ đọc `ingest/__init__.py` và bs4
   biến mất — 23 → 24-10-2026 bốn job cần bs4 gián tiếp đã lọt khỏi phép kiểm như thế.
@@ -66,12 +71,12 @@ Mọi trang đi qua `page_output.write_page`, và **chỉ ở đó** khung dùng
 được bọc vào (`_attach_shell` -> `app_shell.wrap_page`). Đừng chép khung vào
 từng trình dựng: chép là để chúng trôi khỏi nhau.
 
-    src/web/app_shell.py          dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
-    src/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
-    src/assets/app-shell.js       thu/mở, đổi nhóm, hai tìm kiếm độc lập
-    src/assets/app-theme.js       khôi phục/đổi màu, OS và storage sync
-    src/web/app_icons.py          SVG Lucide cho nội dung / global search
-    src/web/nexlink_icons.py      SVG Nexlink gốc cho rail / sidebar / header
+    src/web/app_shell.py              dựng HTML: dải biểu tượng, dải chi tiết, thanh trên
+    src/web/templates/app_shell.css   hình học và màu, theo số đo trang tham chiếu
+    src/web/assets/app-shell.js       thu/mở, đổi nhóm, hai tìm kiếm độc lập
+    src/web/assets/app-theme.js       khôi phục/đổi màu, OS và storage sync
+    src/web/app_icons.py              SVG Lucide cho nội dung / global search
+    src/web/nexlink_icons.py          SVG Nexlink gốc cho rail / sidebar / header
 
 Điều hướng khai một lần ở `ui_theme.SITE_NAV_SECTIONS` — 8 nhóm chức năng,
 chia cụm có tiêu đề. `SITE_NAV` là bản phẳng được suy ra cho các trình dựng
@@ -139,7 +144,7 @@ còn độ đậm thì phải đo lại. Cùng lý do với `--green #2ebb79` (2
 TÔ, không phải màu CHỮ.
 
 Đổi bảng màu thì đổi ở **`src/web/ui_theme.py`** (token dùng chung) và
-**`src/templates/ui_visual_system.css`** (lớp skin). Bốn phép kiểm canh:
+**`src/web/templates/ui_visual_system.css`** (lớp skin). Bốn phép kiểm canh:
 
 - `test_every_text_token_reaches_aa_on_every_surface_it_sits_on` — mọi token
   chữ trên mọi bề mặt, cả ba khối màu.
@@ -173,7 +178,7 @@ là xong.
 - **CSS viết tay**, không Tailwind, không framework JS. Kho không có
   `package.json` và GitHub Pages phục vụ tệp tĩnh từ `docs/`.
 - **Không cống HTML, trên TOÀN kho.** Mọi mã dựng DOM đi bằng `createElement`
-  + `textContent`. Ba hàm dùng chung ở đầu `src/templates/stat_pages.js` —
+  + `textContent`. Ba hàm dùng chung ở đầu `src/web/templates/stat_pages.js` —
   `mk`, `put`, `fill` — là lối duy nhất; `frequency_bento.js` dùng lại chúng
   vì cả hai tệp nằm trong CÙNG một thẻ `<script>`.
 
@@ -320,7 +325,7 @@ sau đó dòng ấy đóng băng. Lịch sử trước khi có sổ nạp từ g
 `src/evaluation/prediction_board.py` (bước pipeline sau `build_fun_prediction`) chụp MỌI danh sách số các trang
 công bố cho kỳ tới — tổ hợp Top 10, Cầu Kèo, ML, hệ ba tác tử, Lô VIP, xiên 2, cầu đẹp nhất, bảy trang
 soi cầu, soi đường, bảng mô phỏng — vào `data/prediction_board/<kỳ>.json`; trang Live
-(`src/assets/live-scorecard.js`) đặt từng danh sách thành hai hàng "Trước giờ quay" / "Sau giờ quay"
+(`src/web/assets/live-scorecard.js`) đặt từng danh sách thành hai hàng "Trước giờ quay" / "Sau giờ quay"
 cạnh kết quả đang về. Sổ chỉ được ghi TRƯỚC 18:10 giờ VN của kỳ đích (`fun_draw_ledger.cutoff_utc`),
 sau đó đóng băng và không tạo mới: nhiều tệp nguồn không mang ngày và bị ghi đè cho kỳ sau lúc ~19 giờ.
 Nguồn nào không tự khai đúng kỳ đích thì BỎ, ghi vào `missing`. Tệp soi đường
@@ -610,7 +615,7 @@ nhận tiêu điểm từ chuột; bỏ cả tooltip mặc định từ `title` 
 dung mô tả cho trình đọc màn hình. Các ô Vietlott không gạch chân khi hover.
 Mọi con số trong `#app-main` vẫn có gợi ý khi điều hướng BẰNG BÀN PHÍM (nguồn
 tóm tắt, số bước, gợi ý thao tác) và ngăn kéo `<dialog>` (nhấp: ngữ cảnh, nguồn, các bước,
-độ tin cậy nếu có). `src/assets/app-evidence.js` dùng ủy quyền sự kiện ở cấp
+độ tin cậy nếu có). `src/web/assets/app-evidence.js` dùng ủy quyền sự kiện ở cấp
 tài liệu nên phủ cả bảng do JS dựng sau khi tải; nhận diện "con số" bằng chữ
 của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho từng ô.
 
@@ -648,7 +653,7 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
 - Sidebar Filter: `#app-sidebar-filter`, chỉ lọc nhóm đang hiển thị. Không
   dùng lại input, query hoặc handler global search.
 - Theo yêu cầu mới ngày 26/09/2026, rail/header dùng SVG gốc Nexlink tại
-  `src/assets/nexlink`, giữ đúng đường nét, opacity và header. Từ 05-10-2026,
+  `src/web/assets/nexlink`, giữ đúng đường nét, opacity và header. Từ 05-10-2026,
   rail theo thứ tự nhóm trong `SITE_NAV`: Kết quả → Vietlott → Thống kê → Thống kê LOTO →
   Thống kê Đặc Biệt → Soi cầu → Dự báo → Nghiên cứu & công cụ. Tám nút nhóm
   có nhãn ngắn; tìm kiếm và đóng menu là hai nút riêng ngoài tablist. Không
@@ -656,7 +661,7 @@ của phần tử (≤ 24 ký tự, khớp `NUM`), không gắn lớp sẵn cho 
   đang chọn có `tabindex=0`.
   Sidebar dùng outline Flaticon Rounded chuyển nguyên hình học sang SVG.
   `nexlink_icons.py` là renderer của shell; không thay bằng Lucide tương tự.
-  Lucide tại `src/assets/icons` chỉ còn dùng trong nội dung/global search.
+  Lucide tại `src/web/assets/icons` chỉ còn dùng trong nội dung/global search.
   Mọi bộ icon có provenance; không vẽ lại hoặc dùng Unicode/icon font.
 - Mọi bề mặt/chữ/viền/control/modal phải đọc token; màu có nghĩa dữ liệu dùng
   cặp token riêng, kiểm AA cả hai theme. Không dùng OS media riêng để bỏ qua

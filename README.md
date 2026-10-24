@@ -262,8 +262,8 @@ Kiểm tra phát hành xác minh cú pháp/phân tích tĩnh, kiểm thử đơn
 ```text
 .github/workflows/   CI, kết quả trực tiếp, hoàn tất hằng ngày, triển khai Pages
 src/                 mã nguồn: nguồn dữ liệu, thống kê, AI/ML, trình dựng trang
-src/templates/       mẫu HTML/CSS/JS và mẫu README
-src/assets/          tài nguyên trang (JS, phông, biểu tượng)
+src/web/templates/       mẫu HTML/CSS/JS và mẫu README
+src/web/assets/          tài nguyên trang (JS, phông, biểu tượng)
 tests/               kiểm thử Python; tests/frontend/ kiểm thử Node
 data/                dữ liệu chuẩn và đầu ra phân tích
 models/              mô hình đã huấn luyện

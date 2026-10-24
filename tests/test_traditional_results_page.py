@@ -33,7 +33,7 @@ from pages.build_traditional_results import (
 from web.ui_theme import nav_targets
 
 ROOT = Path(__file__).resolve().parents[1]
-CSS = (ROOT / "src" / "templates" / "traditional_results.css").read_text(encoding="utf-8")
+CSS = (ROOT / "src" / "web" / "templates" / "traditional_results.css").read_text(encoding="utf-8")
 #: CSS đã bỏ chú thích.
 #:
 #: Cùng lý do với ``JS_CODE``: phép kiểm "chuỗi X không có trong tệp" sẽ
@@ -42,7 +42,7 @@ CSS = (ROOT / "src" / "templates" / "traditional_results.css").read_text(encodin
 #: để giải thích vì sao nó bị bỏ.
 CSS_CODE = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
 JS = "\n".join(
-    (ROOT / "src" / "templates" / name).read_text(encoding="utf-8")
+    (ROOT / "src" / "web" / "templates" / name).read_text(encoding="utf-8")
     for name in ("shared_results.js", "traditional_results.js")
 )
 

@@ -20,7 +20,7 @@ một hàng còn hơn đặt danh sách hôm qua cạnh kết quả hôm nay.
 Luật trúng của từng mục
 ------------------------
 
-Mỗi mục mang ``rule`` mà trang chấm trên kết quả đang về (``src/assets/live-scorecard.js``):
+Mỗi mục mang ``rule`` mà trang chấm trên kết quả đang về (``src/web/assets/live-scorecard.js``):
 
 * ``{"on": "loto", "numbers": S, "need": t}`` — tổng số nháy của các số trong S ≥ t.
   Một số LOTO là ``S = {n}, t = 1``; Lô VIP là ``t = 2``; cầu lộn cộng gộp nháy hai chiều.

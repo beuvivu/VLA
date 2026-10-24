@@ -45,7 +45,7 @@ async function open(t, search = '') {
     url: `https://example.test/soi-cau-vi-tri.html${search}`, runScripts: 'outside-only', virtualConsole,
   });
   t.after(() => dom.window.close());
-  const source = readFileSync(new URL('../../src/templates/position_bridges.js', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../../src/web/templates/position_bridges.js', import.meta.url), 'utf8');
   const override = process.env.APP_POSITION_BRIDGES_SCRIPT
     ? readFileSync(process.env.APP_POSITION_BRIDGES_SCRIPT, 'utf8') : source;
   for (const script of dom.window.document.querySelectorAll('script:not([src])')) {

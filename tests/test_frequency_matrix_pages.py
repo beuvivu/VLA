@@ -13,8 +13,8 @@ from pathlib import Path
 from theme_palette_helpers import theme_tokens, resolve_theme_colors
 
 ROOT = Path(__file__).resolve().parents[1]
-JS = (ROOT / "src" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
-CSS = (ROOT / "src" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
+JS = (ROOT / "src" / "web" / "templates" / "stat_pages.js").read_text(encoding="utf-8")
+CSS = (ROOT / "src" / "web" / "templates" / "stat_pages.css").read_text(encoding="utf-8")
 JS_CODE = "\n".join(
     line for line in JS.splitlines() if not line.lstrip().startswith(("//", "*", "/*"))
 )

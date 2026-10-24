@@ -19,6 +19,7 @@ Các phép kiểm dưới đây canh những thứ hỏng LẶNG LẼ khi bố c
 from __future__ import annotations
 
 import ast
+import glob
 import os
 import pickle
 import re
@@ -31,18 +32,24 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-#: Thư mục dưới ``src/`` không phải gói Python.
-NOT_PACKAGES = {"assets", "__pycache__"}
+#: Thư mục dưới ``src/`` không phải gói Python. ``assets`` đã về ``web/assets``: dựng lại
+#: ``src/assets`` thì phép kiểm gói có docstring đỏ.
+NOT_PACKAGES = {"__pycache__"}
 #: Hai nơi DUY NHẤT được tính đường dẫn từ ``__file__``: hằng số đường dẫn của kho, và
 #: bộ nạp mẫu nằm ngay trong thư mục mẫu.
-FILE_RELATIVE_ALLOWED = {"core/paths.py", "templates/__init__.py"}
+FILE_RELATIVE_ALLOWED = {"core/paths.py", "web/templates/__init__.py"}
 #: Gói đã gom vào gói khác (24-10-2026): ``crawler`` -> ``ingest``, ``utils`` -> ``core``;
 #: ``bridges``, ``features`` -> gói con của ``soi_cau``; ``modeling``, ``xsmb_agents`` -> gói con
-#: của ``forecast``; ``ml_engine``, ``vla`` -> gói con của ``research``.
-RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling", "ml_engine", "vla", "xsmb_agents"}
+#: của ``forecast``; ``ml_engine``, ``vla`` -> gói con của ``research``; ``templates`` (cùng thư
+#: mục tĩnh ``assets``) -> ``web``.
+RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling", "ml_engine", "vla", "xsmb_agents",
+                    "templates"}
 #: Gói cũ giữ nguyên làm GÓI CON (tên module bên trong chung chung: ``base``, ``spec``, ``engine``).
 NESTED_PACKAGES = ("soi_cau/bridges", "soi_cau/features", "forecast/modeling", "forecast/xsmb_agents",
-                   "research/ml_engine", "research/vla")
+                   "research/ml_engine", "research/vla", "web/templates")
+#: Phép ghép đường dẫn lên ``src/``: chỉ ``core/paths.py`` được làm, nơi khác đi qua
+#: ``TEMPLATES`` / ``ASSETS`` / ``SRC`` của nó mà không tự nối thêm tầng.
+_SRC_JOIN = re.compile(r"""\bSRC\s*/|["']src["']\s*/""")
 #: Đường dẫn ``src/<…>.py`` mà một LỆNH chạy: sau ``python``, ``sys.executable,``, ``_py(`` hoặc
 #: một phép ghép ``/ "…"`` của Python. Câu nhắc trong thông báo lỗi và danh sách tệp bị cấm
 #: tồn tại (``release_check.sh``) không phải lệnh chạy.
@@ -108,6 +115,23 @@ def missing_src_scripts(text: str, root: Path) -> list[str]:
     — và workflow chỉ hỏng khi chạy thật.
     """
     return sorted({m for m in _SRC_SCRIPT.findall(text) if not (root / m).is_file()})
+
+
+def stale_path_filters(document: dict, root: Path) -> list[str]:
+    """Bộ lọc ``paths:`` / ``paths-ignore:`` của workflow không khớp tệp nào.
+
+    GitHub không báo lỗi cho bộ lọc trỏ vào chỗ trống: sau khi chuyển tệp, workflow chỉ
+    lặng lẽ thôi chạy khi tệp ấy đổi.
+    """
+    on = document.get(True, document.get("on")) or {}
+    stale = []
+    for event, config in on.items() if isinstance(on, dict) else ():
+        for key in ("paths", "paths-ignore"):
+            for pattern in (config or {}).get(key) or [] if isinstance(config, dict) else []:
+                matches = glob.glob(str(root / pattern.removeprefix("!")), recursive=True)
+                if not any(Path(m).is_file() for m in matches):
+                    stale.append(f"{event}.{key}: {pattern}")
+    return stale
 
 
 def package_graph(src: Path) -> dict[str, set[str]]:
@@ -202,6 +226,23 @@ def test_the_cycle_rule_itself_catches_a_cycle() -> None:
     assert find_cycle({"a": {"b"}, "b": {"c"}, "c": set()}) == []
 
 
+def test_the_path_filter_rule_itself_catches_a_filter_pointing_nowhere(tmp_path: Path) -> None:
+    (tmp_path / "src" / "web").mkdir(parents=True)
+    (tmp_path / "src" / "web" / "a.css").write_text("", encoding="utf-8")
+    filters = ["src/web/a.css", "src/**", "src/templates/a.css", "!src/assets/b.js", "src/*/a.css"]
+    document = {True: {"push": {"paths": filters}, "workflow_dispatch": None}}
+    assert stale_path_filters(document, tmp_path) == [
+        "push.paths: src/templates/a.css", "push.paths: !src/assets/b.js",
+    ]
+
+
+def test_the_src_join_rule_itself_catches_a_join() -> None:
+    assert _SRC_JOIN.search('loader = repo_root / "src" / "web" / "templates"')
+    assert _SRC_JOIN.search("css = SRC / 'web' / 'templates' / 'a.css'")
+    assert not _SRC_JOIN.search('css = TEMPLATES / "a.css"  # tệp trong ``src/web/templates``')
+    assert not _SRC_JOIN.search('env["PYTHONPATH"] = str(SRC)')
+
+
 def test_the_pythonpath_rule_itself_catches_a_job_without_it() -> None:
     step = {"name": "Dựng", "run": "python src/pages/build_docs.py"}
     assert jobs_missing_pythonpath({"jobs": {"j": {"steps": [step]}}}) == ["j: Dựng"]
@@ -255,6 +296,8 @@ def test_retired_packages_are_really_gone() -> None:
     assert (SRC / "core" / "resilience.py").is_file()
     for nested in NESTED_PACKAGES:
         assert (SRC / nested / "__init__.py").is_file(), nested
+    assert not (SRC / "assets").exists()
+    assert (SRC / "web" / "assets" / "app-shell.js").is_file()
 
 
 def test_every_script_a_command_runs_from_src_exists() -> None:
@@ -294,6 +337,30 @@ def test_repository_paths_are_computed_once() -> None:
         if "__file__" in path.read_text(encoding="utf-8")
         and path.relative_to(SRC).as_posix() not in FILE_RELATIVE_ALLOWED
     ]
+    assert not offenders, offenders
+
+
+def test_only_core_paths_builds_paths_under_src() -> None:
+    """``repo_root / "src" / "templates"`` từng nằm ở hai trình dựng, ngoài ``core.paths``."""
+    offenders = [
+        str(path.relative_to(SRC))
+        for path in _python_files(SRC)
+        if path.relative_to(SRC).as_posix() != "core/paths.py"
+        and _SRC_JOIN.search(path.read_text(encoding="utf-8"))
+    ]
+    assert not offenders, offenders
+
+
+def test_workflow_path_filters_point_at_real_files() -> None:
+    offenders, seen = [], []
+    for workflow in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        document = yaml.safe_load(workflow.read_text(encoding="utf-8")) or {}
+        on = document.get(True, document.get("on")) or {}
+        seen += [p for cfg in (on.values() if isinstance(on, dict) else ()) if isinstance(cfg, dict)
+                 for p in cfg.get("paths") or []]
+        offenders += [f"{workflow.name}: {f}" for f in stale_path_filters(document, ROOT)]
+    # Phép quét phải THẤY các bộ lọc đã biết, nếu không nó xanh vì quét rỗng.
+    assert {"src/web/assets/vietlott-picks.js", "src/**"} <= set(seen)
     assert not offenders, offenders
 
 

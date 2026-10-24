@@ -17,7 +17,7 @@ print(json.dumps({p.slug:render_page(p,draws,generated="2026-09-09T19:00:00Z") f
 const pages = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python3', ['-c',build], {
   cwd:fileURLToPath(root),env:{...process.env,PYTHONPATH:'src'},input:JSON.stringify(draws),encoding:'utf8',
 }));
-const source = readFileSync(new URL('src/templates/stat_pages.js',root),'utf8');
+const source = readFileSync(new URL('src/web/templates/stat_pages.js',root),'utf8');
 const pairKey = 'sp.pairmarks.v1.';
 function setup(t,slug,{storage={},blocked=false}={}) {
   const errors=[];

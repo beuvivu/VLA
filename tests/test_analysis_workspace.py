@@ -83,7 +83,7 @@ def test_raw_detail_has_a_real_hero_filter_heading_and_keyboard_scroll_region():
 
 
 def test_layout_contract_keeps_preferred_number_colour_and_mobile_grids():
-    css = (ROOT / 'src/templates/analysis_workspace.css').read_text()
+    css = (ROOT / 'src/web/templates/analysis_workspace.css').read_text()
     assert '--app-workspace-accent:var(--ui-brand-ink)' in css
     assert 'grid-template-columns:repeat(2,minmax(0,1fr))' in css
     assert 'grid-template-columns:repeat(5,minmax(0,1fr))' in css

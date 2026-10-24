@@ -12,7 +12,7 @@ description: Soi cầu vị trí XSMB trong kho này — luật đã giải mã 
 | `src/soi_cau/position_bridges.py` | Luật trang tham chiếu thứ nhất (tham số `vt=AxB&limit&exactlimit&lon&nhay&db`), ô "cầu đẹp nhất" trang chủ, kiểm lịch sử |
 | `src/soi_cau/bridge_rules.py` | Bảy kiểu cầu của trang tham chiếu thứ hai (bảng đầu 0–9 + số cầu mỗi ô) |
 | `src/pages/build_position_bridges.py`, `src/pages/build_bridge_pages.py` | Trang `soi-cau-vi-tri.html`, `soi-cau-*.html`, `tao-phoi-tuan.html` |
-| `src/templates/position_bridges.js`, `bridge_pages.js`, `weekly_sheet.js` | Bộ máy trình duyệt — PHẢI ra đúng từng cầu như bản Python |
+| `src/web/templates/position_bridges.js`, `bridge_pages.js`, `weekly_sheet.js` | Bộ máy trình duyệt — PHẢI ra đúng từng cầu như bản Python |
 
 ## Nền chung
 

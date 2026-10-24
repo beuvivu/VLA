@@ -85,7 +85,7 @@ def test_every_page_pins_the_measured_shell_geometry(page: Path) -> None:
     """
     hrefs = [urlsplit(link.get("href", "")).path for link in _soup(page).select("link[rel=stylesheet]")]
     assert "assets/app-shell.css" in hrefs, page.name
-    gon = (ROOT / "src/templates/app_shell.css").read_text(encoding="utf-8").replace(" ", "")
+    gon = (ROOT / "src/web/templates/app_shell.css").read_text(encoding="utf-8").replace(" ", "")
     for khoa, gia_tri in (
         ("--app-rail-w:", "80px"),
         ("--app-panel-w:", "240px"),
@@ -260,7 +260,7 @@ def test_only_the_licensed_font_is_distributed() -> None:
         license_text = (DOCS / "assets" / license_name).read_text(encoding="utf-8")
         assert "SIL Open Font License, Version 1.1" in license_text
         assert "Copyright" in license_text
-    source = ROOT / "src" / "assets" / "nexlink"
+    source = ROOT / "src" / "web" / "assets" / "nexlink"
     manifest = json.loads((source / "provenance.json").read_text())["font"]
     assert manifest["family"] == "Instrument Sans"
     assert set(manifest["sha256"]) == {f"InstrumentSans-{w}.woff2" for w in (400, 600, 700)}
@@ -439,7 +439,7 @@ def _render_path_page(*, rows: list, empty_reason: dict | None = None) -> str:
     trạng thái rỗng bằng cách chỉ đích danh một tệp sinh ra sẽ hỏng mỗi lần
     tình trạng dữ liệu đảo chiều — và nó đã hỏng đúng như vậy.
     """
-    environment = Environment(loader=FileSystemLoader(str(ROOT / "src" / "templates")))
+    environment = Environment(loader=FileSystemLoader(str(ROOT / "src" / "web" / "templates")))
     return environment.get_template("path_ui_page.html.j2").render(
         title="Kiểm thử",
         mode="de",

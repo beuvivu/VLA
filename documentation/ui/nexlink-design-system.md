@@ -80,8 +80,8 @@ padding-left, vùng nội dung về `margin-left:0`, và menu mở ra dưới d�
 | Hạng mục | Tệp |
 | --- | --- |
 | Token màu, bóng, bo góc, phông | `src/web/ui_theme.py` |
-| Lớp skin dùng chung | `src/templates/ui_visual_system.css` |
-| Khung ứng dụng (CSS) | `src/templates/app_shell.css` |
+| Lớp skin dùng chung | `src/web/templates/ui_visual_system.css` |
+| Khung ứng dụng (CSS) | `src/web/templates/app_shell.css` |
 | Khung ứng dụng (dựng HTML) | `src/web/app_shell.py` |
-| Khung ứng dụng (hành vi) | `src/assets/app-shell.js` |
+| Khung ứng dụng (hành vi) | `src/web/assets/app-shell.js` |
 | Nơi bọc mọi trang | `src/web/page_output.py::_attach_shell` |

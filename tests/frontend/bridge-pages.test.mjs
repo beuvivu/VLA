@@ -49,8 +49,8 @@ const fixture = JSON.parse(execFileSync(process.env.APP_TEST_PYTHON || 'python3'
 }));
 
 const SOURCE = {
-  pages: readFileSync(new URL('../../src/templates/bridge_pages.js', import.meta.url), 'utf8'),
-  tool: readFileSync(new URL('../../src/templates/weekly_sheet.js', import.meta.url), 'utf8'),
+  pages: readFileSync(new URL('../../src/web/templates/bridge_pages.js', import.meta.url), 'utf8'),
+  tool: readFileSync(new URL('../../src/web/templates/weekly_sheet.js', import.meta.url), 'utf8'),
 };
 
 async function open(t, html, search = '', marker = 'BridgePages') {

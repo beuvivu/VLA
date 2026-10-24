@@ -28,7 +28,7 @@ overlay chỉ được bổ sung lên shared base, không được thay thế n�
 |---|---|---|
 | `src/web/ui_theme.py` -> `docs/assets/ui.css` | mọi `docs/*.html` | token, typography, shell, card, table, grid, dark mode |
 | `src/pages/build_landing_page.py` | `index` / `landing` / `landing_desktop` | bố cục và trực quan riêng của trang chủ |
-| `src/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
+| `src/web/templates/stat_pages.css` | 14 trang thống kê chi tiết | ma trận, bộ lọc và trạng thái ô thống kê |
 | `src/pages/build_statistics_dashboard.py` | `statistics.html` | ma trận nhiệt và dashboard thống kê tổng hợp |
 | CSS nội tuyến của `live.html` | `live.html` | màu theo token dùng chung; base từ `ui.css`, khung từ `app_shell` |
 
@@ -226,12 +226,12 @@ nhóm. Khung giữ số đo 80/240/80px và hành vi phủ lên nội dung.
 
 Cập nhật 26/09/2026: rail/header dùng SVG Nexlink gốc (24px, opacity và nét
 nguyên bản), sidebar dùng Flaticon Rounded từ đúng font của Nexlink chuyển
-sang SVG. Nguồn và SHA-256: `src/assets/nexlink/provenance.json`. Header dùng
+sang SVG. Nguồn và SHA-256: `src/web/assets/nexlink/provenance.json`. Header dùng
 Instrument Sans, theme pill 74×40, ba icon inbox/bell/calendar và menu profile.
 
 Icon nội dung/global search dùng Lucide canonical tự host: viewBox24, kích thước20px, stroke2,
 currentColor. Hover/active dùng Indigo `#4F46E5` ở light và màu chữ nhấn sáng
-đủ tương phản ở dark. Giữ giấy phép và provenance ở `src/assets/icons`.
+đủ tương phản ở dark. Giữ giấy phép và provenance ở `src/web/assets/icons`.
 
 Canh: `test_theme_script_is_local_synchronous_and_precedes_styles`,
 `test_data_state_pairs_are_readable_in_each_theme`,

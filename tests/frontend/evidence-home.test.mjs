@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
-const script = readFileSync(process.env.APP_EVIDENCE_SCRIPT || new URL('../../src/assets/app-evidence.js', import.meta.url), 'utf8');
+const script = readFileSync(process.env.APP_EVIDENCE_SCRIPT || new URL('../../src/web/assets/app-evidence.js', import.meta.url), 'utf8');
 function start(t, path) {
   const dom = new JSDOM(`<!doctype html><body><main id="app-main"><section><h2>Kết quả</h2>
     <button data-number="27"><b id="number">27</b></button><output id="calculator">0</output>

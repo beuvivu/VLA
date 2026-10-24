@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
 
-const script = readFileSync(process.env.APP_MOTION_SCRIPT || new URL('../../src/assets/app-motion.js', import.meta.url), 'utf8');
+const script = readFileSync(process.env.APP_MOTION_SCRIPT || new URL('../../src/web/assets/app-motion.js', import.meta.url), 'utf8');
 
 function setup(t, { saved, reduced = false, fine = true, hover = true, blocked = false, observe = false } = {}) {
   const dom = new JSDOM(`<!doctype html><body data-app-design="crafto">

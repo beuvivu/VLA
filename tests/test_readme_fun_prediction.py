@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from pages import update_readme
-from templates import Render
+from web.templates import Render
 
 
 def _sample_payload() -> dict:
@@ -113,7 +113,7 @@ def test_daily_readme_template_and_automation_keep_the_current_source_policy() -
     context = {
         field: 72 for _, fields in update_readme.GROUPS for field in fields
     }
-    render = Render(template_dir=Path(__file__).resolve().parents[1] / "src" / "templates")
+    render = Render(template_dir=Path(__file__).resolve().parents[1] / "src" / "web" / "templates")
     rendered = render(
         "README.j2", date=date(2026, 10, 17), loto_result=["2"] * 10,
         max_count=1, min_count=1, mean=1, std=0, **context,

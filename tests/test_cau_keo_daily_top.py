@@ -78,7 +78,7 @@ def test_the_pipeline_snapshots_after_the_challenger_rewrites_the_table() -> Non
 
 
 def test_the_live_page_reads_the_daily_snapshot() -> None:
-    script = (ROOT / "src" / "assets" / "live-predictions.js").read_text(encoding="utf-8")
+    script = (ROOT / "src" / "web" / "assets" / "live-predictions.js").read_text(encoding="utf-8")
     assert "/data/ai_ml/daily/" in script
     assert "'cau_keo_' + mode + '_top10_' + date + '.csv'" in script
     assert "predict_next_" not in script

@@ -30,7 +30,7 @@ def test_resolved_dark_class_shares_the_explicit_dark_palette():
 
 def test_page_owners_do_not_override_shared_theme_tokens_on_body():
     sources = {
-        name: (ROOT / 'src/templates' / name).read_text()
+        name: (ROOT / 'src/web/templates' / name).read_text()
         for name in ('ui_visual_system.css', 'frequency_bento.css', 'app_design.css')
     }
     sources['path refinement'] = ui_page_refinements._PATH_CSS
@@ -58,7 +58,7 @@ def test_data_state_pairs_are_readable_in_each_theme(dark):
 
 
 def test_stat_pages_get_theme_state_from_tokens_not_os_specific_rules():
-    css = (ROOT / 'src/templates/stat_pages.css').read_text()
+    css = (ROOT / 'src/web/templates/stat_pages.css').read_text()
     assert 'data-theme=' not in css
     assert 'prefers-color-scheme' not in css
     assert 'body.sp-page .sp-table td.is-empty' not in css
@@ -71,7 +71,7 @@ def test_stat_pages_get_theme_state_from_tokens_not_os_specific_rules():
 
 
 def test_crafto_content_surfaces_follow_theme():
-    css = (ROOT / 'src/templates/app_design.css').read_text()
+    css = (ROOT / 'src/web/templates/app_design.css').read_text()
     samples = ('.main>.hero', '.app-hero-result', '.app-hero-mini', '.app-feature-link')
     for sample in samples:
         matches = [block for selector, block in rules(css) if selector.strip().endswith(sample) and 'background:' in block]
@@ -97,7 +97,7 @@ def test_legacy_neutral_utilities_inherit_the_selected_theme():
 
 
 def test_frequency_crosshair_keeps_the_data_fill_visible():
-    css = (ROOT / 'src/templates/frequency_bento.css').read_text()
+    css = (ROOT / 'src/web/templates/frequency_bento.css').read_text()
     matches = [block for selector, block in rules(css) if selector.strip().endswith('.bf-track::after')]
     assert matches, 'thiếu lớp dóng ma trận'
     assert all('background:transparent' in block for block in matches)
@@ -124,5 +124,5 @@ def _assert_selection_is_distinct(css, base_selector, selected_suffix):
     ('.bf-page .sp-pick', '.sp-pick.on'),
 ])
 def test_selected_number_controls_are_distinct_and_readable(base, selected):
-    css = (ROOT / 'src/templates/frequency_bento.css').read_text()
+    css = (ROOT / 'src/web/templates/frequency_bento.css').read_text()
     _assert_selection_is_distinct(css, base, selected)

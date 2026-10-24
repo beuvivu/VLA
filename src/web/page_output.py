@@ -13,7 +13,7 @@ from pathlib import Path
 
 from web.css_links import CRITICAL_CSS
 from web.ui_page_refinements import refine_page
-from core.paths import ASSETS, SRC, TEMPLATES
+from core.paths import ASSETS, TEMPLATES
 
 __all__ = ["strip_comments", "strip_css", "write_page", "write_stylesheet_text"]
 
@@ -303,14 +303,13 @@ def _attach_shell(path: Path, html: str) -> str:
     write_stylesheet_text(assets / "app-shell.css", _SHELL_CSS_NGUON.read_text(encoding="utf-8"))
     (assets / "app-shell.js").write_text(_SHELL_JS_NGUON.read_text(encoding="utf-8"), encoding="utf-8")
     if path.name == "live.html":
-        source_dir = SRC
         for name in ("live-predictions", "live-scorecard"):
             (assets / f"{name}.js").write_text(
-                (source_dir / f"assets/{name}.js").read_text(encoding="utf-8"), encoding="utf-8"
+                (ASSETS / f"{name}.js").read_text(encoding="utf-8"), encoding="utf-8"
             )
             write_stylesheet_text(
                 assets / f"{name}.css",
-                (source_dir / f"templates/{name.replace('-', '_')}.css").read_text(encoding="utf-8"),
+                (TEMPLATES / f"{name.replace('-', '_')}.css").read_text(encoding="utf-8"),
             )
     # Keep the reference typography, with a separate application brand asset.
     reference_assets = ASSETS / "nexlink"
