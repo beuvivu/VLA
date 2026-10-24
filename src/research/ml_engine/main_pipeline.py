@@ -18,7 +18,7 @@ Luồng
 
 Cổng độ tin đứng sau phép trộn, không phải trước. Phép trộn chỉ bảo đảm không
 thua cánh tay tốt nhất quá xa; cổng là nơi duy nhất hỏi phép trộn có kỹ năng ĐO
-ĐƯỢC hay không, nên nó có tiếng nói sau cùng (``ml_engine.fallback``).
+ĐƯỢC hay không, nên nó có tiếng nói sau cùng (``research.ml_engine.fallback``).
 
 Nền là một cánh tay, và điều đó quyết định
 -------------------------------------------
@@ -51,17 +51,17 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 
-from ml_engine.aggregation import DEFAULT_LEARNING_RATE, DEFAULT_SHARE, ExponentialWeights
-from ml_engine.capabilities import CAPABILITIES
-from ml_engine.drift import ConceptDriftDetector
-from ml_engine.fallback import DEFAULT_MIN_DAYS, DEFAULT_WINDOW, SafeModeController
-from ml_engine.features import build_features, build_training_table
-from ml_engine.metrics import PerformanceTracker, score_day, validate_probabilities
-from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
-from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE, DailyRequest, ObservationMatrix
-from ml_engine.selection import select_features
+from research.ml_engine.aggregation import DEFAULT_LEARNING_RATE, DEFAULT_SHARE, ExponentialWeights
+from research.ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.drift import ConceptDriftDetector
+from research.ml_engine.fallback import DEFAULT_MIN_DAYS, DEFAULT_WINDOW, SafeModeController
+from research.ml_engine.features import build_features, build_training_table
+from research.ml_engine.metrics import PerformanceTracker, score_day, validate_probabilities
+from research.ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
+from research.ml_engine.schema import BASELINE_RATE, NUMBER_SPACE, DailyRequest, ObservationMatrix
+from research.ml_engine.selection import select_features
 
-LOGGER: Final[logging.Logger] = logging.getLogger("ml_engine")
+LOGGER: Final[logging.Logger] = logging.getLogger("research.ml_engine")
 
 @dataclass(frozen=True)
 class PipelineConfig:
@@ -147,7 +147,7 @@ class ContinuousLearningPipeline:
 
     Ví dụ:
         >>> import pandas as pd
-        >>> from ml_engine.schema import ObservationMatrix
+        >>> from research.ml_engine.schema import ObservationMatrix
         >>> frame = pd.read_csv("data/xsmb.csv")  # doctest: +SKIP
         >>> pipeline = ContinuousLearningPipeline(  # doctest: +SKIP
         ...     ObservationMatrix.from_frame(frame)

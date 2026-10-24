@@ -40,11 +40,11 @@ from typing import Any, Final
 
 import numpy as np
 
-from ml_engine.capabilities import CAPABILITIES
-from ml_engine.features import build_features, build_training_table
-from ml_engine.metrics import PerformanceReport, PerformanceTracker
-from ml_engine.models import Learner, TabularBooster
-from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
+from research.ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.features import build_features, build_training_table
+from research.ml_engine.metrics import PerformanceReport, PerformanceTracker
+from research.ml_engine.models import Learner, TabularBooster
+from research.ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 

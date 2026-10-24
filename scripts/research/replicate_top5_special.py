@@ -20,9 +20,9 @@ from scipy.stats import binom
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vla.backtest import evaluator, walk_forward  # noqa: E402
-from vla.features.engineer import build_features, load_history  # noqa: E402
-from vla.models.bayesian_lgb import BayesianLGBModel  # noqa: E402
+from research.vla.backtest import evaluator, walk_forward  # noqa: E402
+from research.vla.features.engineer import build_features, load_history  # noqa: E402
+from research.vla.models.bayesian_lgb import BayesianLGBModel  # noqa: E402
 
 TESTS_READ = 30  # 5 mô hình × 3 mức K × 2 kiểu, đọc sau khi chạy
 

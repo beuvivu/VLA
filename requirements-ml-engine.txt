@@ -1,8 +1,8 @@
-# Phụ thuộc tùy chọn cho src/ml_engine/.
+# Phụ thuộc tùy chọn cho src/research/ml_engine/.
 #
 # Tách khỏi requirements.txt có chủ đích: quy trình dự đoán hằng ngày không cần
 # những gói này, và ml_engine tự suy giảm sang đường lui đã được kiểm thử khi
-# thiếu chúng (xem src/ml_engine/capabilities.py). Cài tệp này để chạy đường
+# thiếu chúng (xem src/research/ml_engine/capabilities.py). Cài tệp này để chạy đường
 # thực thi đầy đủ.
 #
 # torch và catboost KHÔNG có ở đây: torch chiếm khoảng 11 GB nên không hợp lý
@@ -14,7 +14,7 @@ optuna>=5.0.0,<6.0
 shap>=0.51.0,<0.52; python_version < "3.12"
 shap>=0.52.0,<1.0; python_version >= "3.12"
 river>=0.26.1,<1.0
-# Phòng thử thách src/vla: cộng đồng Louvain trên đồ thị đồng xuất hiện. Từng chỉ
+# Phòng thử thách src/research/vla: cộng đồng Louvain trên đồ thị đồng xuất hiện. Từng chỉ
 # có mặt nhờ ăn theo gói khác trên máy dev, nên CI hỏng ở bước thu thập phép kiểm.
 networkx>=3.6.1,<3.7; python_version < "3.12"
 networkx>=3.7,<4.0; python_version >= "3.12"

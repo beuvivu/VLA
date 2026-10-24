@@ -62,7 +62,7 @@ from soi_cau.path_prob import (  # noqa: E402
     predict_from_fitted_paths_full,
     prepare_path_history,
 )
-from vla.backtest import evaluator  # noqa: E402
+from research.vla.backtest import evaluator  # noqa: E402
 from core.xsmb_domain import TOTAL_DIGITS, baseline_rate  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "bridge_inference.json"
@@ -202,7 +202,7 @@ def _code_digest(root: Path, script: Path) -> str:
     """Băm MỌI mã có thể chạy trong phép đo: toàn bộ ``src/**/*.py`` và chính kịch bản này.
 
     Không liệt kê tay vài module: phép đo còn chạy ``ensemble_utils``,
-    ``vla.backtest.evaluator``, ``xsmb_domain``… và một danh sách tay sẽ sót
+    ``research.vla.backtest.evaluator``, ``xsmb_domain``… và một danh sách tay sẽ sót
     module mới. Băm rộng hơn cần thiết chỉ làm bước gộp từ chối thừa, không
     bao giờ để lọt hai phần tính bằng hai logic khác nhau.
     """

@@ -392,7 +392,7 @@ def agents_card(report: dict | None, *, target_date: str) -> str:
     """Hiển thị dự báo thật, ứng viên và loss tiến cứu, không lẫn các thang tin."""
     if report is None or report.get("target_date") != target_date:
         return '<p class="ui-muted">Đang chờ báo cáo ba tác tử đúng kỳ dự báo.</p>'
-    from xsmb_agents.algorithms import LABELS
+    from forecast.xsmb_agents.algorithms import LABELS
 
     parts = ['<p class="ui-muted">Ba tác tử đang chạy và tự học song song. '
              'Cột <b>công bố</b> là xác suất đang dùng; cột <b>ứng viên</b> là tổ hợp mới '

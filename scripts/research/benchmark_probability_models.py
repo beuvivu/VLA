@@ -7,7 +7,7 @@ TRƯỚC khối):
 
 * ``hang_so``        — tỉ lệ nền (LOTO) / 1/100 (Đặc Biệt). Mốc kỹ năng 0.
 * ``ml_production``  — thành phần ML đang chạy production, tái dựng nguyên quy
-  trình huấn luyện (xem ``vla.backtest.production_ml``).
+  trình huấn luyện (xem ``research.vla.backtest.production_ml``).
 * ``tien_nghiem``    — tầng 1 (Dirichlet/Beta) + hiệu chỉnh Platt.
 * ``bayes_lgb``      — tầng 1 + LightGBM phần dư + Platt (mô hình mới).
 * ``bayes_lgb_focal_iso`` — như trên nhưng focal loss + isotonic.
@@ -36,11 +36,11 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vla.backtest import evaluator, walk_forward  # noqa: E402
-from vla.backtest.production_ml import ProductionMLModel  # noqa: E402
-from vla.backtest.synthetic import POWER_SEED, power_history  # noqa: E402
-from vla.features.engineer import History, build_features, load_history  # noqa: E402
-from vla.models.bayesian_lgb import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
+from research.vla.backtest import evaluator, walk_forward  # noqa: E402
+from research.vla.backtest.production_ml import ProductionMLModel  # noqa: E402
+from research.vla.backtest.synthetic import POWER_SEED, power_history  # noqa: E402
+from research.vla.features.engineer import History, build_features, load_history  # noqa: E402
+from research.vla.models.bayesian_lgb import BayesianLGBModel, ConstantModel, ModelConfig, PriorOnlyModel  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul"
 

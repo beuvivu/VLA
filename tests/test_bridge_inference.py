@@ -430,14 +430,14 @@ def test_the_benchmark_merges_only_parts_of_the_same_run() -> None:
 
 
 def test_the_benchmark_identity_covers_every_module_it_runs(tmp_path, monkeypatch) -> None:
-    """Phép đo chạy cả ``ensemble_utils``, ``vla.backtest.evaluator``, ``xsmb_domain`` và chính kịch bản.
+    """Phép đo chạy cả ``ensemble_utils``, ``research.vla.backtest.evaluator``, ``xsmb_domain`` và chính kịch bản.
 
     Đổi BẤT KỲ tệp nào trong số ấy thì danh tính lượt đo phải đổi, để bước gộp
     không ghép hai phần tính bằng hai logic khác nhau.
     """
     bench = _benchmark_script()
     for rel in ("src/soi_cau/path_prob.py", "src/ensemble/ensemble_utils.py", "src/core/xsmb_domain.py",
-                "src/vla/backtest/evaluator.py"):
+                "src/research/vla/backtest/evaluator.py"):
         path = tmp_path / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("x = 1\n", encoding="utf-8")

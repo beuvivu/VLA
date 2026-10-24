@@ -17,23 +17,23 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ml_engine.aggregation import AggregationError, ExponentialWeights
-from ml_engine.capabilities import CAPABILITIES
-from ml_engine.drift import ConceptDriftDetector, _PureAdwin
-from ml_engine.fallback import Mode, SafeModeController
-from ml_engine.features import FeatureMatrix, build_features, build_training_table
-from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
-from ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
-from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
-from ml_engine.schema import (
+from research.ml_engine.aggregation import AggregationError, ExponentialWeights
+from research.ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.drift import ConceptDriftDetector, _PureAdwin
+from research.ml_engine.fallback import Mode, SafeModeController
+from research.ml_engine.features import FeatureMatrix, build_features, build_training_table
+from research.ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
+from research.ml_engine.metrics import EconomicModel, PerformanceTracker, score_day
+from research.ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
+from research.ml_engine.schema import (
     BASELINE_RATE,
     NUMBER_SPACE,
     DailyRequest,
     ObservationMatrix,
     SchemaError,
 )
-from ml_engine.selection import select_features
-from ml_engine.validation import WalkForwardValidator
+from research.ml_engine.selection import select_features
+from research.ml_engine.validation import WalkForwardValidator
 from core.xsmb_domain import LOTO_BASELINE_RATE, LOTO_DRAWS_PER_DAY
 
 
@@ -666,7 +666,7 @@ class TestModels:
 
     def test_ridge_fallback_shrinks_to_the_base_rate_not_to_zero(self, matrix, monkeypatch) -> None:
         """λ rất lớn phải cho đúng tỉ lệ nền: bản cũ phạt cả hệ số chặn nên co về 0."""
-        import ml_engine.models as learners
+        from research.ml_engine import models as learners
 
         monkeypatch.setattr(learners, "RIDGE_PENALTIES", (1e12,))
         model = TemporalSequenceModel()

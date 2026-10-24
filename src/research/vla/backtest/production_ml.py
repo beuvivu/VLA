@@ -20,7 +20,7 @@ import pandas as pd
 
 from ml import ml_train
 from ml.ml_features import FeatureParams, build_ml_table_from_history
-from vla.features.engineer import History
+from research.vla.features.engineer import History
 from core.xsmb_domain import PRIZE_FIELDS
 
 

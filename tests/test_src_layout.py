@@ -2,7 +2,8 @@
 
 ``src/`` từng có 145 module ngang hàng. Nay mỗi module nằm trong một gói (``core``,
 ``ingest``, ``ensemble``, ``stats``, ``soi_cau``, ``ml``, ``forecast``, ``evaluation``,
-``research``, ``web``, ``pages`` và các gói có sẵn); gốc ``src/`` chỉ còn ``pipeline.py``.
+``research``, ``web``, ``pages``; gói có sẵn thành gói con của chúng); gốc ``src/`` chỉ còn
+``pipeline.py``.
 Tên module giữ nguyên nên nhãn đã ghi vào sổ (``calendar_alignment.known_non_draw_days``)
 vẫn đúng.
 
@@ -36,8 +37,12 @@ NOT_PACKAGES = {"assets", "__pycache__"}
 #: bộ nạp mẫu nằm ngay trong thư mục mẫu.
 FILE_RELATIVE_ALLOWED = {"core/paths.py", "templates/__init__.py"}
 #: Gói đã gom vào gói khác (24-10-2026): ``crawler`` -> ``ingest``, ``utils`` -> ``core``;
-#: ``bridges``, ``features`` -> gói con của ``soi_cau``, ``modeling`` -> gói con của ``forecast``.
-RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling"}
+#: ``bridges``, ``features`` -> gói con của ``soi_cau``; ``modeling``, ``xsmb_agents`` -> gói con
+#: của ``forecast``; ``ml_engine``, ``vla`` -> gói con của ``research``.
+RETIRED_PACKAGES = {"crawler", "utils", "bridges", "features", "modeling", "ml_engine", "vla", "xsmb_agents"}
+#: Gói cũ giữ nguyên làm GÓI CON (tên module bên trong chung chung: ``base``, ``spec``, ``engine``).
+NESTED_PACKAGES = ("soi_cau/bridges", "soi_cau/features", "forecast/modeling", "forecast/xsmb_agents",
+                   "research/ml_engine", "research/vla")
 #: Đường dẫn ``src/<…>.py`` mà một LỆNH chạy: sau ``python``, ``sys.executable,``, ``_py(`` hoặc
 #: một phép ghép ``/ "…"`` của Python. Câu nhắc trong thông báo lỗi và danh sách tệp bị cấm
 #: tồn tại (``release_check.sh``) không phải lệnh chạy.
@@ -222,9 +227,9 @@ def test_nested_names_really_are_the_old_flat_modules() -> None:
     """Tập tên phẳng phải chứa các module đã chuyển, nếu không phép quét dưới vô dụng."""
     flat = nested_module_names(SRC)
     assert {"ensemble_utils", "lottery", "ui_theme", "atomic_io", "ml_models"} <= flat
-    # Tên cấp gốc (module ở gốc, gói) không bao giờ là tên phẳng; ``features`` từng là gói gốc,
-    # nay là gói con của ``soi_cau`` nên ``import features`` đúng là phải bị bắt.
-    assert "pipeline" not in flat and "core" not in flat and "features" in flat
+    # Tên cấp gốc (module ở gốc, gói) không bao giờ là tên phẳng. Gói cũ đã thành gói con
+    # (``features``, ``vla``…) bị bắt qua ``RETIRED_PACKAGES``, không qua tập này.
+    assert "pipeline" not in flat and "core" not in flat
 
 
 def test_nothing_imports_a_module_by_its_old_flat_name() -> None:
@@ -248,7 +253,7 @@ def test_retired_packages_are_really_gone() -> None:
     assert not any((SRC / name).exists() for name in RETIRED_PACKAGES)
     assert (SRC / "ingest" / "fetch_results.py").is_file()
     assert (SRC / "core" / "resilience.py").is_file()
-    for nested in ("soi_cau/bridges", "soi_cau/features", "forecast/modeling"):
+    for nested in NESTED_PACKAGES:
         assert (SRC / nested / "__init__.py").is_file(), nested
 
 

@@ -42,7 +42,7 @@ Hedge để không sửa sổ cũ. Tác tử mới được chấm shadow, báo 
 
 ### Task 2: Bộ nhớ, ba tác tử và điều phối
 
-**Files:** src/xsmb_agents/{__init__,knowledge,algorithms,engine}.py; src/xsmb_agents/run_xsmb_agents.py.
+**Files:** src/forecast/xsmb_agents/{__init__,knowledge,algorithms,engine}.py; src/forecast/xsmb_agents/run_xsmb_agents.py.
 **Interfaces:** KnowledgeBaseManager(frame); AlgorithmEnsemble.predict(mode, incumbent);
 MetaLearner.advance(...); PredictiveEngine.run(data_dir, now).
 

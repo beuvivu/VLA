@@ -10,13 +10,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import ml_engine.main_pipeline as orchestration
-import ml_engine.models as learners
-from ml_engine.drift import DriftVerdict
-from ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
-from ml_engine.metrics import score_day
-from ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
-from ml_engine.schema import BASELINE_RATE, DailyRequest, ObservationMatrix, SchemaError
+from research.ml_engine import main_pipeline as orchestration
+from research.ml_engine import models as learners
+from research.ml_engine.drift import DriftVerdict
+from research.ml_engine.main_pipeline import ContinuousLearningPipeline, PipelineConfig
+from research.ml_engine.metrics import score_day
+from research.ml_engine.models import RankingBooster, TabularBooster, TemporalSequenceModel
+from research.ml_engine.schema import BASELINE_RATE, DailyRequest, ObservationMatrix, SchemaError
 
 
 @pytest.fixture(scope="module")
@@ -404,7 +404,7 @@ def test_unavailable_arm_with_all_weight_falls_back_to_named_baseline(pipeline, 
 
 def test_mixer_learns_the_summed_log_loss_of_each_arm(pipeline):
     """Trọng số là hậu nghiệm Bayes: loss của kỳ là log-loss CỘNG 100 con."""
-    from ml_engine.aggregation import ExponentialWeights
+    from research.ml_engine.aggregation import ExponentialWeights
 
     result = pipeline.step(70)
     reference = ExponentialWeights(pipeline.arm_builders, learning_rate=pipeline.config.learning_rate,

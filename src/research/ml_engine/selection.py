@@ -34,7 +34,7 @@ from typing import Any, Final
 import numpy as np
 from sklearn.metrics import log_loss
 
-from ml_engine.capabilities import CAPABILITIES
+from research.ml_engine.capabilities import CAPABILITIES
 
 LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 

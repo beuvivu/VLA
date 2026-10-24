@@ -10,7 +10,7 @@ Python kiểm thử: `/workspace/scratch/b214352c542d/tmp/vla-push-venv/bin/pyth
 
 ## Task 1: Vòng đời model và runtime XSMB
 
-**Phạm vi:** `src/core/atomic_io.py`, `ml_predict.py`, `ml_train.py`, `meta_predictor.py`, các writer pack cầu-kèo; `online_learning.py`; `src/ml_engine/{models,bandit,main_pipeline}.py` và helper normalize liên quan. Test tương ứng trong `tests/`.
+**Phạm vi:** `src/core/atomic_io.py`, `ml_predict.py`, `ml_train.py`, `meta_predictor.py`, các writer pack cầu-kèo; `online_learning.py`; `src/research/ml_engine/{models,bandit,main_pipeline}.py` và helper normalize liên quan. Test tương ứng trong `tests/`.
 
 **Yêu cầu:**
 

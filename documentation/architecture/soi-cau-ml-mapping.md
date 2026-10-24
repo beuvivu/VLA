@@ -9,10 +9,10 @@ kho, và ghi lại hai lỗi thiết kế trong bản đề xuất kèm số đo
 |---|---|---|---|
 | Cầu chạy / cầu động | Bi-LSTM + Spatial Attention | `src/soi_cau/bridges/scanner.py` — quét toàn bộ họ cầu ghép chéo bằng phép ma trận, có tỉ lệ nền và đuôi xác suất | 482 |
 | Lô gan / chu kỳ | Survival Analysis, Hazard | `src/stats/hazard_stats.py` — `hazard_curve_loto`, `hazard_curve_de` | 157 |
-| Bóng âm dương / ngũ hành | Feature engineering + XGBoost | `src/ml/cau_keo_domain_challenger.py`, `src/ml_engine/features.py` | — |
+| Bóng âm dương / ngũ hành | Feature engineering + XGBoost | `src/ml/cau_keo_domain_challenger.py`, `src/research/ml_engine/features.py` | — |
 | Cầu chạm / cầu tổng | Hidden Markov Model | `src/stats/markov_stats.py` — `MarkovChain`, `build_markov_chain` | 174 |
 
-Ngoài ra `src/ml_engine/` đã có LightGBM/CatBoost, LambdaMART, GRU chuỗi thời
+Ngoài ra `src/research/ml_engine/` đã có LightGBM/CatBoost, LambdaMART, GRU chuỗi thời
 gian, trọng số mũ trên log-loss kèm cổng độ tin `model_trust`, phát hiện trôi
 khái niệm và walk-forward validation.
 
@@ -41,7 +41,7 @@ Một mô hình có nhiều tham số hơn mẫu vài nghìn lần sẽ **học 
 huấn luyện và không tổng quát hoá được gì. Walk-forward validation phát hiện
 được điều đó nhưng không sửa được nó.
 
-Đây không phải chuyện chỉnh siêu tham số. `src/ml_engine/models.py` đã chọn
+Đây không phải chuyện chỉnh siêu tham số. `src/research/ml_engine/models.py` đã chọn
 `hidden_size = 16` (**7 364 tham số**) và ghi rõ trong docstring rằng ràng
 buộc nằm ở dữ liệu chứ không ở siêu tham số. Bản đề xuất lớn hơn **632 lần**.
 

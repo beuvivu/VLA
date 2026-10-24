@@ -2,7 +2,7 @@
 
 Vì sao là demo chứ không phải mã sản xuất
 ==========================================
-Kho đã có lớp ML hoàn chỉnh (``src/ml_engine/``). Tệp này KHÔNG thay thế nó.
+Kho đã có lớp ML hoàn chỉnh (``src/research/ml_engine/``). Tệp này KHÔNG thay thế nó.
 Nó tồn tại để trả lời một câu hỏi cụ thể bằng số đo trên chính ``data/xsmb.csv``
 chứ không bằng lý thuyết:
 

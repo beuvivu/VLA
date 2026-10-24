@@ -25,9 +25,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vla.backtest import evaluator, walk_forward  # noqa: E402
-from vla.backtest.production_ml import ProductionMLModel  # noqa: E402
-from vla.features.engineer import History, load_history  # noqa: E402
+from research.vla.backtest import evaluator, walk_forward  # noqa: E402
+from research.vla.backtest.production_ml import ProductionMLModel  # noqa: E402
+from research.vla.features.engineer import History, load_history  # noqa: E402
 
 OUT = ROOT / "data" / "research" / "model_overhaul" / "trust_floor.json"
 

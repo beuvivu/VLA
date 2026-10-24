@@ -56,7 +56,7 @@ tình cờ. Nhưng `00123` thành `123`, hai số cuối vẫn `23` — cũng đ
 là khi lấy chữ số theo **vị trí từ trái**, hoặc khi dựng tensor 107 chiều:
 mọi vị trí sau đó lệch một ô.
 
-Tham chiếu bản đã làm đúng: `src/ml_engine/schema.py`.
+Tham chiếu bản đã làm đúng: `src/research/ml_engine/schema.py`.
 
 ## 2. Bảng dẫn xuất
 

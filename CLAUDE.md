@@ -249,7 +249,7 @@ z = −2,18); `validate_cau_keo_domain` canh `prob` đúng bằng bản đã co.
 (trọng số, hiệu chỉnh, xếp chồng) và bảng đóng góp thành phần gọi
 `availability_from_history_day(..., current_policy=True)`.
 Đổi định nghĩa một thành phần thì tăng `ensemble_components.COMPONENT_POLICY`, đừng viết lại sổ.
-Tác tử mẫu hình của hệ ba tác tử XSMB (`xsmb_agents.algorithms.pattern`) dùng CÙNG luật từ 20-10-2026:
+Tác tử mẫu hình của hệ ba tác tử XSMB (`forecast.xsmb_agents.algorithms.pattern`) dùng CÙNG luật từ 20-10-2026:
 `trust = model_trust(s)`, s là kỹ năng so với nền trên 30 kỳ thẩm định cuối; định nghĩa 1 trộn cố định
 20% mạng dù logloss thẩm định Đặc Biệt kém nền. Mỗi định nghĩa một SỔ: họ `online.AGENT_RECIPE` =
 `xsmb_three_agents_v<AGENT_POLICY>`; sổ họ cũ được `retire_superseded_ledgers` CẤT NGUYÊN thành
@@ -429,9 +429,9 @@ quả" (`build_vietlott_results.shown_forecast`). Kết quả Mega/Power/Lotto: 
 Crawler Vietlott cũ (`src/vietlott_results.py`) đã nghỉ; `data/vietlott/vietlott.sqlite3`
 giữ nguyên làm lưu trữ, không còn được ghi.
 
-## Phòng thử thách mô hình `src/vla/`
+## Phòng thử thách mô hình `src/research/vla/`
 
-`src/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,
+`src/research/vla/` (đặc trưng → tiên nghiệm Dirichlet/Beta → LightGBM phần dư → hiệu chỉnh,
 walk-forward, ROI) là KHUNG THÁCH ĐẤU, không nằm trong pipeline. Ngày 03-10-2026 nó không
 hơn dự báo hằng số trên 1 000 kỳ và không thắng ML production, nên không được đề bạt
 (`documentation/research/2026-10-03-kiem-toan-mo-hinh-xac-suat.md`). Ý tưởng mô hình mới

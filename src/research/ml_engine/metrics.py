@@ -35,7 +35,7 @@ from typing import Final
 
 import numpy as np
 
-from ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
+from research.ml_engine.schema import BASELINE_RATE, NUMBER_SPACE
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY
 
 _EPSILON: Final[float] = 1e-6

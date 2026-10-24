@@ -1,7 +1,7 @@
-# `src/ml_engine/` — Autonomous Continuous Learning & Accuracy Enhancer
+# `src/research/ml_engine/` — Autonomous Continuous Learning & Accuracy Enhancer
 
 > Bản thiết kế kỹ thuật kèm kết quả đo. Mọi con số trong tài liệu này tái lập
-> được bằng `python src/ml_engine/main_pipeline.py`; không con số nào viết tay.
+> được bằng `python src/research/ml_engine/main_pipeline.py`; không con số nào viết tay.
 
 ---
 
@@ -47,7 +47,7 @@ neo nhiều hơn một ngày sẽ bị từ chối chứ không âm thầm chấ
 ## 2. Cấu trúc module
 
 ```
-src/ml_engine/
+src/research/ml_engine/
 ├── __init__.py          Bề mặt công khai (24 ký hiệu)
 ├── capabilities.py      Dò thư viện tùy chọn MỘT LẦN, ở MỘT CHỖ
 ├── schema.py            ObservationMatrix, DailyRequest — chặn rò rỉ từ gốc
@@ -268,7 +268,7 @@ ROI; muốn kết luận có lãi cần đánh giá riêng doanh thu theo số n
 
 ```bash
 # Báo cáo của bản đang chạy (cánh tay, trọng số, độ tin)
-python src/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
     --out data/research/ml_engine_report.json
 # So ghép cặp với bản cũ chạy trên mã của main (luật quyết định chốt trước khi đo)
 PYTHONPATH=src python3 scripts/research/benchmark_ml_engine_aggregation.py --last 1000 \
@@ -330,11 +330,11 @@ Top-K chỉ là thứ tự chỉ số.
 pip install -r requirements-ml-engine.txt
 
 # Chạy backtest học tiếp diễn, ghi báo cáo
-python src/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
+python src/research/ml_engine/main_pipeline.py --start 3240 --stop 4240 \
     --out data/research/ml_engine_report.json
 
 # Bỏ các cánh tay nặng khi chạy trên máy yếu
-python src/ml_engine/main_pipeline.py --no-temporal --no-ranking
+python src/research/ml_engine/main_pipeline.py --no-temporal --no-ranking
 
 # Kiểm thử
 PYTHONPATH=src python3 -m pytest tests/test_ml_engine.py \
