@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bridges import DigitTensor
-from features import (
+from soi_cau.bridges import DigitTensor
+from soi_cau.features import (
     DoubleHitBridgeExtractor,
     FeatureContext,
     FeatureRegistry,
@@ -24,7 +24,7 @@ from features import (
     pascal_reduce,
     touches,
 )
-from features.base import validate_block
+from soi_cau.features.base import validate_block
 from core.xsmb_domain import FIELD_WIDTHS
 
 

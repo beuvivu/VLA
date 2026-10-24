@@ -29,9 +29,9 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from bridges.scanner import BridgeScanner, BridgeScanResult
-from bridges.tensor import DigitTensor
-from research.research_diagnostics import bh_fdr
+from soi_cau.bridges.scanner import BridgeScanner, BridgeScanResult
+from soi_cau.bridges.tensor import DigitTensor
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 DEFAULT_Q_VALUE: Final[float] = 0.05
 #: Mỗi lần dịch tốn một lượt quét đầy đủ họ giả thuyết (khoảng 6 giây

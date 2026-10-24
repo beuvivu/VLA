@@ -17,8 +17,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from bridges.tensor import NUMBER_SPACE
-from features.base import FeatureContext
+from soi_cau.bridges.tensor import NUMBER_SPACE
+from soi_cau.features.base import FeatureContext
 from core.xsmb_domain import baseline_rate
 
 _EPS = 1e-9

@@ -15,10 +15,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from bridges import BridgeScanner, DigitTensor
-from bridges.firewall import DEFAULT_PERMUTATIONS, DEFAULT_Q_VALUE, FirewallGate
-from bridges.replication import DEFAULT_HOLDOUT_FRACTION, ReplicationGate
-from bridges.spec import TARGET_TYPES
+from soi_cau.bridges import BridgeScanner, DigitTensor
+from soi_cau.bridges.firewall import DEFAULT_PERMUTATIONS, DEFAULT_Q_VALUE, FirewallGate
+from soi_cau.bridges.replication import DEFAULT_HOLDOUT_FRACTION, ReplicationGate
+from soi_cau.bridges.spec import TARGET_TYPES
 
 DEFAULT_STREAK = 5
 

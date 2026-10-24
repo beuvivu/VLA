@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from features.base import (
+from soi_cau.features.base import (
     FeatureContext,
     FeatureExtractor,
     FeatureMatrix,

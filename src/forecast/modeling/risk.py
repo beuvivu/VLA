@@ -13,8 +13,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from bridges.tensor import NUMBER_SPACE
-from features import FeatureContext, PatternMemoryExtractor
+from soi_cau.bridges.tensor import NUMBER_SPACE
+from soi_cau.features import FeatureContext, PatternMemoryExtractor
 from core.number_reference import normalize_two_digit
 
 DEFAULT_GAN_THRESHOLD_DAYS = 15

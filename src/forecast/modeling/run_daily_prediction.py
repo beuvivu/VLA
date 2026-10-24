@@ -24,10 +24,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from bridges import DigitTensor
-from features import FeatureContext, SpecialSetExtractor, default_registry
+from soi_cau.bridges import DigitTensor
+from soi_cau.features import FeatureContext, SpecialSetExtractor, default_registry
 from ensemble.pick_diversity import MAX_PER_TAIL, diversified_order
-from modeling import (
+from forecast.modeling import (
     DEFAULT_GAN_THRESHOLD_DAYS,
     DeModel,
     Explainer,

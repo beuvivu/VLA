@@ -1,16 +1,16 @@
 """Đặc trưng soi cầu kinh điển, số hóa thành ma trận cho mô hình học máy."""
 
-from features.base import (
+from soi_cau.features.base import (
     FeatureContext,
     FeatureExtractor,
     FeatureMatrix,
     validate_block,
 )
-from features.double_hit import DoubleHitBridgeExtractor
-from features.geometric import GeometricBridgeExtractor, pascal_reduce
-from features.pattern_memory import PatternMemoryExtractor
-from features.registry import FeatureRegistry
-from features.special_set import DAN_SIZES, SpecialSetExtractor, touches
+from soi_cau.features.double_hit import DoubleHitBridgeExtractor
+from soi_cau.features.geometric import GeometricBridgeExtractor, pascal_reduce
+from soi_cau.features.pattern_memory import PatternMemoryExtractor
+from soi_cau.features.registry import FeatureRegistry
+from soi_cau.features.special_set import DAN_SIZES, SpecialSetExtractor, touches
 
 __all__ = [
     "DAN_SIZES",

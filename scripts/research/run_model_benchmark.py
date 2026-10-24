@@ -28,8 +28,8 @@ import sys
 # Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from bridges import DigitTensor  # noqa: E402
-from modeling.benchmark import (  # noqa: E402
+from soi_cau.bridges import DigitTensor  # noqa: E402
+from forecast.modeling.benchmark import (  # noqa: E402
     BetaBinomialShrinkage,
     ClusterRate,
     Evaluation,

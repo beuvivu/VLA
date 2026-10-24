@@ -18,14 +18,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bridges.firewall import FirewallGate
-from bridges.replication import (
+from soi_cau.bridges.firewall import FirewallGate
+from soi_cau.bridges.replication import (
     MIN_REPLICATION_DAYS,
     ReplicationGate,
     slice_tensor,
 )
-from bridges.scanner import BridgeScanner
-from bridges.tensor import DigitTensor
+from soi_cau.bridges.scanner import BridgeScanner
+from soi_cau.bridges.tensor import DigitTensor
 from core.xsmb_domain import FIELD_WIDTHS
 
 #: Bộ quét thu hẹp: một độ trễ, một loại bóng, một phép biến đổi. 11 449 giả

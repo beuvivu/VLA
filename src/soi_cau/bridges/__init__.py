@@ -1,14 +1,14 @@
 """Quét cầu tọa độ ghép chéo ngày, kèm cổng kiểm định bắt buộc."""
 
-from bridges.scanner import BridgeScanner, BridgeScanResult, target_baseline_rate
-from bridges.shadow import SHADOW_KINDS, apply_shadow, shadow_table
-from bridges.spec import (
+from soi_cau.bridges.scanner import BridgeScanner, BridgeScanResult, target_baseline_rate
+from soi_cau.bridges.shadow import SHADOW_KINDS, apply_shadow, shadow_table
+from soi_cau.bridges.spec import (
     TARGET_TYPES,
     TRANSFORMATIONS,
     CrossDayPatternSpec,
     default_lag_pairs,
 )
-from bridges.tensor import DigitTensor
+from soi_cau.bridges.tensor import DigitTensor
 
 __all__ = [
     "SHADOW_KINDS",

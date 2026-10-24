@@ -7,7 +7,7 @@ kho, và ghi lại hai lỗi thiết kế trong bản đề xuất kèm số đo
 
 | Phương pháp | Ánh xạ ML đề xuất | Đã có tại | Dòng |
 |---|---|---|---|
-| Cầu chạy / cầu động | Bi-LSTM + Spatial Attention | `src/bridges/scanner.py` — quét toàn bộ họ cầu ghép chéo bằng phép ma trận, có tỉ lệ nền và đuôi xác suất | 482 |
+| Cầu chạy / cầu động | Bi-LSTM + Spatial Attention | `src/soi_cau/bridges/scanner.py` — quét toàn bộ họ cầu ghép chéo bằng phép ma trận, có tỉ lệ nền và đuôi xác suất | 482 |
 | Lô gan / chu kỳ | Survival Analysis, Hazard | `src/stats/hazard_stats.py` — `hazard_curve_loto`, `hazard_curve_de` | 157 |
 | Bóng âm dương / ngũ hành | Feature engineering + XGBoost | `src/ml/cau_keo_domain_challenger.py`, `src/ml_engine/features.py` | — |
 | Cầu chạm / cầu tổng | Hidden Markov Model | `src/stats/markov_stats.py` — `MarkovChain`, `build_markov_chain` | 174 |
@@ -74,7 +74,7 @@ viết lại dưới dạng cặp. Nó **không phát hiện được cầu nào
 
 Muốn đo tương tác thật thì cần một đại lượng bậc hai thực sự — thông tin
 tương hỗ giữa cặp vị trí và kết quả, hoặc tần suất đồng xuất hiện so với tỉ lệ
-nền. Đó chính là việc `src/bridges/scanner.py` đang làm, kèm kiểm soát đa
+nền. Đó chính là việc `src/soi_cau/bridges/scanner.py` đang làm, kèm kiểm soát đa
 kiểm định.
 
 ## 4. Khoảng trống thật: không phải thiếu thuật toán

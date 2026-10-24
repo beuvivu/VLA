@@ -208,7 +208,7 @@ chỉ số chính, và cả hai đã có.
 
 ### Tầng 1 — ĐÃ TRIỂN KHAI
 
-**1. Cổng tái lập** — `src/bridges/replication.py`
+**1. Cổng tái lập** — `src/soi_cau/bridges/replication.py`
 
 Quét + BH-FDR + kiểm data snooping **chỉ trên đoạn phát hiện**, rồi chấm điểm
 các đường sống sót trên đoạn giữ riêng vốn chưa từng tham gia vào việc chọn.

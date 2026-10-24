@@ -24,8 +24,8 @@ import sys
 # Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from bridges import DigitTensor  # noqa: E402
-from features import FeatureContext, default_registry  # noqa: E402
+from soi_cau.bridges import DigitTensor  # noqa: E402
+from soi_cau.features import FeatureContext, default_registry  # noqa: E402
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY, baseline_rate  # noqa: E402
 
 #: |t| > 1,96 là ngưỡng hai phía 5%. Dưới mức đó thì không phân biệt được với nhiễu.

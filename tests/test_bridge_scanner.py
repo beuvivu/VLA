@@ -17,17 +17,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bridges import DigitTensor, BridgeScanner, default_lag_pairs
-from bridges.firewall import FirewallGate
-from bridges.scanner import baseline_rate_table, target_baseline_rate
-from bridges.shadow import (
+from soi_cau.bridges import DigitTensor, BridgeScanner, default_lag_pairs
+from soi_cau.bridges.firewall import FirewallGate
+from soi_cau.bridges.scanner import baseline_rate_table, target_baseline_rate
+from soi_cau.bridges.shadow import (
     KIND_BONG_AM,
     KIND_BONG_DUONG,
     KIND_THUC,
     apply_shadow,
     shadow_table,
 )
-from bridges.spec import CrossDayPatternSpec
+from soi_cau.bridges.spec import CrossDayPatternSpec
 from core.xsmb_domain import FIELD_WIDTHS, LOTO_DRAWS_PER_DAY, PRIZE_FIELDS
 
 

@@ -30,8 +30,8 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from bridges.shadow import SHADOW_KINDS, shadow_table
-from bridges.spec import (
+from soi_cau.bridges.shadow import SHADOW_KINDS, shadow_table
+from soi_cau.bridges.spec import (
     TARGET_DE,
     TARGET_LOTO,
     TARGET_LOTO_2_NHAY,
@@ -43,7 +43,7 @@ from bridges.spec import (
     TRANSFORMATIONS,
     default_lag_pairs,
 )
-from bridges.tensor import NUMBER_SPACE, DigitTensor
+from soi_cau.bridges.tensor import NUMBER_SPACE, DigitTensor
 from core.number_reference import bo
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
 

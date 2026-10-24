@@ -14,8 +14,8 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from bridges.tensor import NUMBER_SPACE
-from features.base import FeatureContext
+from soi_cau.bridges.tensor import NUMBER_SPACE
+from soi_cau.features.base import FeatureContext
 from core.xsmb_domain import LOTO_DRAWS_PER_DAY, UNIFORM_TWO_DIGIT_RATE
 
 _EPS = 1e-9

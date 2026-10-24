@@ -25,7 +25,7 @@ import sys
 # Công cụ nghiên cứu chạy tay; nạp mã của src/ như các script khác trong thư mục này.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from bridges import DigitTensor  # noqa: E402
+from soi_cau.bridges import DigitTensor  # noqa: E402
 from ensemble.ensemble_utils import (  # noqa: E402
     bernoulli_brier,
     bernoulli_logloss,
@@ -33,8 +33,8 @@ from ensemble.ensemble_utils import (  # noqa: E402
     categorical_logloss,
     skill_score,
 )
-from features import FeatureContext, default_registry  # noqa: E402
-from modeling import DeModel, LotoModel, build_training_data  # noqa: E402
+from soi_cau.features import FeatureContext, default_registry  # noqa: E402
+from forecast.modeling import DeModel, LotoModel, build_training_data  # noqa: E402
 from core.xsmb_domain import baseline_rate  # noqa: E402
 
 SIGNIFICANCE_T = 1.96

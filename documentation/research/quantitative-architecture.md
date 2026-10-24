@@ -1122,7 +1122,7 @@ PYTHONPATH=src python -m pytest tests/test_randomness_battery.py \
 | Tệp | Vai trò |
 |---|---|
 | `src/stats/randomness_battery.py` | 7 phép kiểm cấu trúc, phân phối rỗng Monte Carlo, phân tích công suất |
-| `src/modeling/benchmark.py` | 11 họ mô hình + kết hợp co rút, đánh giá cuốn chiếu |
+| `src/forecast/modeling/benchmark.py` | 11 họ mô hình + kết hợp co rút, đánh giá cuốn chiếu |
 | `scripts/research/run_randomness_report.py` | → `data/research/randomness_report.json` |
 | `scripts/research/run_model_benchmark.py` | → `data/research/model_benchmark.json` |
 | `tests/test_randomness_battery.py` | 29 phép kiểm |

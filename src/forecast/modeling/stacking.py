@@ -20,8 +20,8 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import TimeSeriesSplit
 
-from bridges.tensor import NUMBER_SPACE, DigitTensor
-from features import FeatureContext, FeatureMatrix, FeatureRegistry, default_registry
+from soi_cau.bridges.tensor import NUMBER_SPACE, DigitTensor
+from soi_cau.features import FeatureContext, FeatureMatrix, FeatureRegistry, default_registry
 from core.xsmb_domain import baseline_rate
 
 _EPS: Final[float] = 1e-9

@@ -20,18 +20,21 @@ và mọi chỗ nhắc `module.hàm` trong tệp này vẫn đúng.
     ingest      nguồn, đồng bộ, live, thăm dò đủ 27 ô (fetch_results), sổ chuẩn Lottery, kiểm dữ liệu
     ensemble    neo mức, trọng số, thành phần, hiệu chỉnh, gộp ý kiến, co ngót, đa dạng đuôi
     stats       thống kê mô tả/kiểm định, ma trận, tín hiệu thống kê, động học số
-    soi_cau     cầu vị trí, bảy kiểu cầu, cầu theo đường, tổng – bóng – chạm
+    soi_cau     cầu vị trí, bảy kiểu cầu, cầu theo đường, tổng – bóng – chạm;
+                gói con bridges (quét cầu ghép chéo, cổng kiểm định), features (đặc trưng cầu)
     ml          ML thành phần và Cầu Kèo: đặc trưng, huấn luyện, dự báo, thách đấu miền
-    forecast    xếp chồng, dự báo đầy đủ, học trực tuyến, kho tri thức, Lô VIP (multi_hit_*)
+    forecast    xếp chồng, dự báo đầy đủ, học trực tuyến, kho tri thức, Lô VIP (multi_hit_*);
+                gói con modeling (dự đoán hằng ngày predictions_today.json)
     evaluation  chất lượng mô hình, sổ dự báo, độ tin cậy, bảng mô phỏng, kiểm toán vận hành
     research    phòng nghiên cứu và phép kiểm tiến cứu đã đăng ký
     web         shell, theme, page_output, bằng chứng, thành phần trang dùng chung
     pages       trình dựng từng trang trong docs/ (build_*), README
 
-Gói có sẵn giữ nguyên, trừ `crawler` và `utils` (mỗi gói một module) đã gom vào `ingest` và
-`core`; ba lệnh chạy về cạnh gói chúng điều khiển:
-`bridges/run_bridge_scan.py`, `modeling/run_daily_prediction.py`,
-`xsmb_agents/run_xsmb_agents.py`.
+Gói cũ đã gom (24-10-2026): `crawler` → `ingest`, `utils` → `core`; `bridges`, `features` →
+gói con của `soi_cau`, `modeling` → gói con của `forecast` (giữ làm gói con vì tên module chung
+chung như `base`, `spec`, `risk`). Còn đứng riêng: `ml_engine`, `vla`, `xsmb_agents`, `templates`.
+Lệnh chạy ở cạnh gói chúng điều khiển: `soi_cau/bridges/run_bridge_scan.py`,
+`forecast/modeling/run_daily_prediction.py`, `xsmb_agents/run_xsmb_agents.py`.
 
 - Import: `from ensemble import ensemble_utils` hoặc `from ensemble.ensemble_utils import
   finalize_blend`. KHÔNG import theo tên phẳng cũ — chạy được khi kịch bản đứng cùng thư
@@ -50,7 +53,11 @@ Gói có sẵn giữ nguyên, trừ `crawler` và `utils` (mỗi gói một modu
 - Module mới vào gói đúng chức năng, không đặt ở gốc `src/`. Gói không được phụ thuộc vòng.
 - Chuyển module thì mọi lệnh chạy `src/…py` (workflow, `scripts/`, `pipeline.py`) phải trỏ tệp có
   thật: phép kiểm phụ thuộc của workflow lọc đường dẫn bằng `is_file()`, nên lệnh trỏ chỗ cũ bị bỏ
-  qua lặng lẽ và chỉ hỏng khi chạy thật. Tên gói đã gom (`crawler`, `utils`) không được import lại.
+  qua lặng lẽ và chỉ hỏng khi chạy thật. Tên gói đã gom (`crawler`, `utils`, `bridges`, `features`,
+  `modeling`) không được import lại.
+- Phép kiểm "workflow cài đủ thư viện" (`test_workflows._third_party_closure`) truy theo ĐƯỜNG DẪN
+  module đầy đủ: theo tên gốc thì `from ingest.sources import …` chỉ đọc `ingest/__init__.py` và bs4
+  biến mất — 23 → 24-10-2026 bốn job cần bs4 gián tiếp đã lọt khỏi phép kiểm như thế.
 - `tests/test_src_layout.py` canh các điều trên, mỗi luật được ghim trên mẫu dựng sẵn.
 
 ## Khung ứng dụng

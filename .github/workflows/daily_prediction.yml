@@ -56,7 +56,7 @@ jobs:
           # Mã nguồn tự dừng sạch khi dữ liệu chưa về hoặc kỳ đích đã quay xong.
           # Đó là kết quả hợp lệ của một lượt chạy sớm, không phải sự cố, nên
           # lượt chạy được đánh dấu bỏ qua thay vì làm đỏ workflow.
-          if python src/modeling/run_daily_prediction.py; then
+          if python src/forecast/modeling/run_daily_prediction.py; then
             echo "generated=true" >> "$GITHUB_OUTPUT"
           else
             echo "generated=false" >> "$GITHUB_OUTPUT"
@@ -130,7 +130,7 @@ jobs:
               git rebase --abort 2>/dev/null || true
               git fetch origin "${GITHUB_REF_NAME}"
               git reset --hard "origin/${GITHUB_REF_NAME}"
-              if ! python src/modeling/run_daily_prediction.py; then
+              if ! python src/forecast/modeling/run_daily_prediction.py; then
                 echo "::notice::Trên nền mới nhất không còn dự đoán nào cần ghi."
                 exit 0
               fi

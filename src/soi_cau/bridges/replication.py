@@ -35,10 +35,10 @@ from typing import Final
 import numpy as np
 import pandas as pd
 
-from bridges.firewall import FirewallGate, SurvivorSet
-from bridges.scanner import BridgeScanner, _tail_probability, baseline_rate_table
-from bridges.tensor import DigitTensor
-from research.research_diagnostics import bh_fdr
+from soi_cau.bridges.firewall import FirewallGate, SurvivorSet
+from soi_cau.bridges.scanner import BridgeScanner, _tail_probability, baseline_rate_table
+from soi_cau.bridges.tensor import DigitTensor
+from stats.statistical_corrections import benjamini_hochberg as bh_fdr
 
 #: Các cột nhận diện duy nhất một giả thuyết trong họ cầu ghép chéo.
 IDENTITY_COLUMNS: Final[tuple[str, ...]] = (
